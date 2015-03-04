@@ -495,13 +495,6 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
                        "Failed to allocate altref buffer");
 }
 
-static void alloc_ref_frame_buffers(VP9_COMP *cpi) {
-  VP9_COMMON *const cm = &cpi->common;
-  if (vp9_alloc_ref_frame_buffers(cm, cm->width, cm->height))
-    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                       "Failed to allocate frame buffers");
-}
-
 static void alloc_util_frame_buffers(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   if (vp9_realloc_frame_buffer(&cpi->last_frame_uf,
@@ -3468,7 +3461,12 @@ static void check_initial_width(VP9_COMP *cpi,
 #endif
 
     alloc_raw_frame_buffers(cpi);
-    alloc_ref_frame_buffers(cpi);
+
+    if (vp9_alloc_ref_frame_buffers(cm)) {
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Failed to allocate frame buffers");
+    }
+
     alloc_util_frame_buffers(cpi);
 
     init_motion_estimation(cpi);  // TODO(agrange) This can be removed.

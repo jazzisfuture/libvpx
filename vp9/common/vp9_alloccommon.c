@@ -154,8 +154,10 @@ static void init_frame_bufs(VP9_COMMON *cm) {
   }
 }
 
-int vp9_alloc_ref_frame_buffers(VP9_COMMON *cm, int width, int height) {
+int vp9_alloc_ref_frame_buffers(VP9_COMMON *cm) {
   int i;
+  const int width = cm->width;
+  const int height = cm->height;
   const int ss_x = cm->subsampling_x;
   const int ss_y = cm->subsampling_y;
 
