@@ -3494,7 +3494,12 @@ static void check_initial_width(VP9_COMP *cpi,
 #endif
 
     alloc_raw_frame_buffers(cpi);
-    init_ref_frame_bufs(cm);
+
+    if (vp9_alloc_ref_frame_buffers(cm)) {
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Failed to allocate frame buffers");
+    }
+
     alloc_util_frame_buffers(cpi);
 
     init_motion_estimation(cpi);  // TODO(agrange) This can be removed.
