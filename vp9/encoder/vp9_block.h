@@ -34,6 +34,11 @@ struct macroblock_plane {
   // Quantizer setings
   int16_t *quant_fp;
   int16_t *round_fp;
+#if CONFIG_NEW_QUANT
+  int16_t *quant_nuq;
+  dequant_val_type_nuq *dequant_val_nuq;
+  cumbins_type_nuq *cumbins_nuq;
+#endif
   int16_t *quant;
   int16_t *quant_shift;
   int16_t *zbin;

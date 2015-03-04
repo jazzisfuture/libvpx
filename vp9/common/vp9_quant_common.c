@@ -8,9 +8,142 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
+#include <math.h>
 #include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_seg_common.h"
+
+#if CONFIG_NEW_QUANT
+// Bin widths expressed as a fraction over 128 of the quant stepsize,
+// for the quantization bins 0-4.
+// So a value x indicates the bin is actually factor x/128 of the
+// nominal quantization step.
+// For the zero bin  the width is only for one side of zero, so the
+// actual width is twice that.
+static const uint8_t vp9_nuq_knotes[2][NUQ_KNOTES] = {
+  {84, 116, 122, 126, 128},  // dc
+  {84, 116, 122, 126, 128},  // ac
+};
+
+static INLINE int16_t quant_to_doff_fixed(int i, int isac) {
+  int16_t doff = (isac ? 16 : 10);
+  (void) i;
+  // if (i > 0 && i < NUQ_KNOTES) doff = doff + 1 * (NUQ_KNOTES - i);
+  return doff;
+}
+
+static INLINE int16_t quant_to_doff(int16_t quant, int isac) {
+  static const int16_t qmax = 1024;
+  static const int16_t qmin = 24;
+  static const int16_t zmax_dc = 24;
+  static const int16_t zmin_dc = 12;
+  static const int16_t zmax_ac = 32;
+  static const int16_t zmin_ac = 16;
+  int16_t z;
+  if (isac) {
+    if (quant < qmin)
+      z = zmin_ac;
+    else if (quant > qmax)
+      z = zmax_ac;
+    else
+      z = zmin_ac + (zmax_ac - zmin_ac) * (double)(quant - qmin) /
+          (double)(qmax - qmin) + 0.5;
+  } else {
+    if (quant < qmin)
+      z = zmin_dc;
+    else if (quant > qmax)
+      z = zmax_dc;
+    else
+      z = zmin_dc + (zmax_dc - zmin_dc) * (double)(quant - qmin) /
+          (double)(qmax - qmin) + 0.5;
+  }
+  return z;
+}
+
+static INLINE double quant_to_z(int16_t quant, int isac) {
+  static const int16_t qmax = 1024;
+  static const int16_t qmin = 24;
+  static const double zmax_dc = 2.0;
+  static const double zmin_dc = 1.0;
+  static const double zmax_ac = 2.4;
+  static const double zmin_ac = 1.4;
+  double z;
+  if (isac) {
+    if (quant < qmin)
+      z = zmin_ac;
+    else if (quant > qmax)
+      z = zmax_ac;
+    else
+      z = zmin_ac + (zmax_ac - zmin_ac) * (double)(quant - qmin) /
+          (double)(qmax - qmin);
+  } else {
+    if (quant < qmin)
+      z = zmin_dc;
+    else if (quant > qmax)
+      z = zmax_dc;
+    else
+      z = zmin_dc + (zmax_dc - zmin_dc) * (double)(quant - qmin) /
+          (double)(qmax - qmin);
+  }
+  return z;
+}
+
+// The function below determines the adjustmemt factor for the dequantized
+// coefficient lower than the mid-point ofthe quantization bin.
+static INLINE int16_t z_to_doff_int(double z) {
+  double doff = 0.5 / tanh(0.5 * z) - 1.0 / z;
+  int16_t doff_int = (int16_t)(doff * 128 + 0.5);
+  if (doff_int > 64) doff_int = 64;
+  else if (doff_int < 0) doff_int = 0;
+  return doff_int;
+}
+
+static INLINE void get_cumbins_nuq(int q, int isac, tran_low_t *cumbins) {
+  const uint8_t *knotes = isac ? vp9_nuq_knotes[1] : vp9_nuq_knotes[0];
+  int16_t cumknotes[NUQ_KNOTES];
+  int i;
+  cumknotes[0] = knotes[0];
+  for (i = 1; i < NUQ_KNOTES; ++i)
+    cumknotes[i] = cumknotes[i - 1] + knotes[i];
+  for (i = 0; i < NUQ_KNOTES; ++i)
+    cumbins[i] = (cumknotes[i] * q + 64) >> 7;
+}
+
+void vp9_get_dequant_val_nuq(int q, int isac,
+                             tran_low_t *dq, tran_low_t *cumbins) {
+  const uint8_t *knotes = isac ? vp9_nuq_knotes[1] : vp9_nuq_knotes[0];
+  tran_low_t cumbins_[NUQ_KNOTES], *cumbins_ptr;
+  tran_low_t doff;
+  int i;
+  cumbins_ptr = (cumbins ? cumbins : cumbins_);
+  get_cumbins_nuq(q, isac, cumbins_ptr);
+  dq[0] = 0;
+  for (i = 1; i < NUQ_KNOTES; ++i) {
+    const int16_t qstep = (knotes[i] * q + 64) >> 7;
+    // doff = quant_to_doff(qstep, isac);
+    doff = quant_to_doff_fixed(i, isac);
+    doff = (2 * doff * qstep + q) / (2 * q);
+    dq[i] = cumbins_ptr[i - 1] + (((knotes[i] - doff * 2) * q + 128) >> 8);
+  }
+  // doff = quant_to_doff(q, isac);
+  doff = quant_to_doff_fixed(i, isac);
+  dq[NUQ_KNOTES] =
+      cumbins_ptr[NUQ_KNOTES - 1] + (((64 - doff) * q + 64) >> 7);
+}
+
+tran_low_t vp9_dequant_abscoeff_nuq(int v, int q, const tran_low_t *dq) {
+  if (v <= NUQ_KNOTES)
+    return dq[v];
+  else
+    return dq[NUQ_KNOTES] + (v - NUQ_KNOTES) * q;
+}
+
+tran_low_t vp9_dequant_coeff_nuq(int v, int q, const tran_low_t *dq) {
+  tran_low_t dqmag = vp9_dequant_abscoeff_nuq(abs(v), q, dq);
+  return (v < 0 ? -dqmag : dqmag);
+}
+#endif  // CONFIG_NEW_QUANT
 
 static const int16_t dc_qlookup[QINDEX_RANGE] = {
   4,       8,    8,    9,   10,   11,   12,   12,
@@ -275,4 +408,3 @@ int vp9_get_qindex(const struct segmentation *seg, int segment_id,
     return base_qindex;
   }
 }
-
