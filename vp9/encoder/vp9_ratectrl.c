@@ -386,6 +386,9 @@ static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
   // Normalize RCF to account for the size-dependent scaling factor.
   factor /= rcf_mult[cpi->rc.frame_size_selector];
 
+  factor = factor < MIN_BPB_FACTOR ? MIN_BPB_FACTOR :
+           factor > MAX_BPB_FACTOR ? MAX_BPB_FACTOR : factor;
+
   if (cpi->common.frame_type == KEY_FRAME) {
     rc->rate_correction_factors[KF_STD] = factor;
   } else if (cpi->oxcf.pass == 2) {
@@ -1310,11 +1313,6 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
     rc->frames_since_key++;
     rc->frames_to_key--;
   }
-
-  // Trigger the resizing of the next frame if it is scaled.
-  cpi->resize_pending =
-      rc->next_frame_size_selector != rc->frame_size_selector;
-  rc->frame_size_selector = rc->next_frame_size_selector;
 }
 
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {

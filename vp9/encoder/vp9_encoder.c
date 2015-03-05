@@ -2323,6 +2323,31 @@ static int scale_down(VP9_COMP *cpi, int q) {
         * MAX(rc->this_frame_target, rc->avg_frame_bandwidth));
     scale = rc->projected_frame_size > max_size_thresh ? 1 : 0;
   }
+
+  return scale;
+}
+
+static int scale_up(VP9_COMP *cpi, int q) {
+  const VP9_COMMON *const cm = &cpi->common;
+
+  RATE_CONTROL *const rc = &cpi->rc;
+  GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+  int scale = 0;
+  assert(frame_is_kf_gf_arf(cpi));
+
+  if (rc->frame_size_selector != UNSCALED) {
+    const int proj_upscale_size = (rc->projected_frame_size
+        * frame_scale_factor[rc->frame_size_selector]
+        * frame_scale_factor[rc->frame_size_selector]) >> 8;
+    const double factor = (double)rc->this_frame_target / proj_upscale_size;
+    const int q_delta = vp9_compute_qdelta_by_rate(rc, cm->frame_type,
+                                                   q, factor,
+                                                   cm->bit_depth);
+    if ((q + q_delta) <
+        rc->rf_level_maxq[gf_group->rf_level[gf_group->index]]) {
+      scale = 1;
+    }
+  }
   return scale;
 }
 
@@ -2339,10 +2364,10 @@ static int recode_loop_test(VP9_COMP *cpi,
   if ((cpi->sf.recode_loop == ALLOW_RECODE) ||
       (frame_is_kfgfarf &&
       (cpi->sf.recode_loop == ALLOW_RECODE_KFARFGF))) {
-    if (frame_is_kfgfarf &&
-        (oxcf->resize_mode == RESIZE_DYNAMIC) &&
-        scale_down(cpi, q)) {
-        // Code this group at a lower resolution.
+    if (frame_is_kfgfarf && oxcf->resize_mode == RESIZE_DYNAMIC &&
+        (cpi->switched_scale_this_frame == 0) &&
+        (scale_down(cpi, q) != 0 || scale_up(cpi, q) != 0)) {
+        // Code this group at a lower/higher resolution.
         cpi->resize_pending = 1;
         return 1;
     }
@@ -2843,6 +2868,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
   set_size_independent_vars(cpi);
 
+  cpi->switched_scale_this_frame = 0;
+
   do {
     vp9_clear_system_state();
 
@@ -2857,6 +2884,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       // Reset the loop state for new frame size.
       overshoot_seen = 0;
       undershoot_seen = 0;
+
+      cpi->switched_scale_this_frame = cpi->resize_pending;
 
       // Reconfiguration for change in frame size has concluded.
       cpi->resize_pending = 0;
