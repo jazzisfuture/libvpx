@@ -762,19 +762,29 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       mode_rd_thresh = best_mode_skip_txfm ? rd_threshes[mode_index] << 1 :
                                              rd_threshes[mode_index];
       if (rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
-                              rd_thresh_freq_fact[mode_index]))
-        continue;
-
-      if (this_mode == NEWMV) {
-        if (ref_frame > LAST_FRAME)
+                              rd_thresh_freq_fact[mode_index])) {
+        if (this_mode == NEWMV && ref_frame == LAST_FRAME) {
+          vp9_int_pro_motion_estimation(cpi, x, bsize);
+          frame_mv[NEWMV][ref_frame].as_mv = mbmi->mv[0].as_mv;
+          rate_mv = vp9_mv_bit_cost(&frame_mv[NEWMV][ref_frame].as_mv,
+                                    &mbmi->ref_mvs[ref_frame][0].as_mv,
+                                    x->nmvjointcost, x->mvcost,
+                                    MV_COST_WEIGHT);
+        } else {
           continue;
-        if (cpi->sf.partition_search_type != VAR_BASED_PARTITION &&
-            best_rdc.rdcost < (int64_t)(1 << num_pels_log2_lookup[bsize]))
-          continue;
-        if (!combined_motion_search(cpi, x, bsize, mi_row, mi_col,
-                                    &frame_mv[NEWMV][ref_frame],
-                                    &rate_mv, best_rdc.rdcost))
-          continue;
+        }
+      } else {
+        if (this_mode == NEWMV) {
+          if (ref_frame > LAST_FRAME)
+            continue;
+          if (cpi->sf.partition_search_type != VAR_BASED_PARTITION &&
+              best_rdc.rdcost < (int64_t)(1 << num_pels_log2_lookup[bsize]))
+            continue;
+          if (!combined_motion_search(cpi, x, bsize, mi_row, mi_col,
+                                      &frame_mv[NEWMV][ref_frame],
+                                      &rate_mv, best_rdc.rdcost))
+            continue;
+        }
       }
 
       if (this_mode != NEARESTMV &&
