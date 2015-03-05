@@ -55,6 +55,10 @@ void vp9_frameworker_signal_stats(VP9Worker *const worker);
 void vp9_frameworker_wait(VP9Worker *const worker, RefCntBuffer *const ref_buf,
                           int row);
 
+void vp9_frameworker_wait_seg_map(VP9Worker *const worker,
+                                  RefCntBuffer *const ref_buf,
+                                  uint8_t *last_frame_seg_map, int row);
+
 // FrameWorker broadcasts its decoding progress so other workers that are
 // waiting on it can resume decoding.
 void vp9_frameworker_broadcast(RefCntBuffer *const buf, int row);
