@@ -39,6 +39,8 @@
 #include "vp9/encoder/vp9_tokenize.h"
 #include "vp9/encoder/vp9_variance.h"
 
+#define DOUBLE_DIVIDE_CHECK(x) ((x) < 0 ? (x) - 0.000001 : (x) + 0.000001)
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
 #include "vp9/encoder/vp9_denoiser.h"
 #endif
@@ -458,6 +460,7 @@ typedef struct VP9_COMP {
 #endif
 
   int resize_pending;
+  int switched_scale_this_frame;
 
   // VAR_BASED_PARTITION thresholds
   int64_t vbp_threshold;
