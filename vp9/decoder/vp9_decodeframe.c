@@ -396,6 +396,14 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   int16_t y_dequant[2], uv_dequant[2];
   int qindex = cm->base_qindex;
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
+  if (cm->seg.enabled && cm->frame_parallel_decode && cm->last_frame_seg_map) {
+    // Wait reference seg map.
+    vp9_frameworker_wait_seg_map(pbi->frame_worker_owner,
+                                 cm->last_seg_map_owner_frame,
+                                 cm->last_frame_seg_map,
+                                 mi_row << MI_BLOCK_SIZE_LOG2);
+  }
+
   vp9_read_mode_info(pbi, xd, counts, tile, mi_row, mi_col, r);
 
   if (less8x8)
