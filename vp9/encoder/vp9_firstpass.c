@@ -2013,11 +2013,6 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
         calculate_section_intra_ratio(start_pos, twopass->stats_in_end,
                                       rc->baseline_gf_interval);
   }
-
-  if (oxcf->resize_mode == RESIZE_DYNAMIC) {
-    // Default to starting GF groups at normal frame size.
-    cpi->rc.next_frame_size_selector = UNSCALED;
-  }
 }
 
 // TODO(PGW) Re-examine the use of II ration in this code in the light of#
@@ -2342,11 +2337,6 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // The count of bits left is adjusted elsewhere based on real coded frame
   // sizes.
   twopass->modified_error_left -= kf_group_err;
-
-  if (oxcf->resize_mode == RESIZE_DYNAMIC) {
-    // Default to normal-sized frame on keyframes.
-    cpi->rc.next_frame_size_selector = UNSCALED;
-  }
 }
 
 // Define the reference buffers that will be updated post encode.

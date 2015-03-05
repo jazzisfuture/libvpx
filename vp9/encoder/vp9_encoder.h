@@ -451,6 +451,7 @@ typedef struct VP9_COMP {
 #endif
 
   int resize_pending;
+  int switched_scale_this_frame;
 
   // VAR_BASED_PARTITION thresholds
   int64_t vbp_threshold;
