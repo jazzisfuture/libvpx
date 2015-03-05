@@ -300,6 +300,11 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->total_target_bits = 0;
   rc->total_target_vs_actual = 0;
 
+  rc->gf_group_sum_q_idx = 0;
+  rc->gf_group_frames = 0;
+  rc->gf_group_target_bits = 0;
+  rc->gf_group_actual_bits = 0;
+
   rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
   rc->frames_since_key = 8;  // Sensible default for first frame.
   rc->this_key_frame_forced = 0;
@@ -1159,8 +1164,11 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi,
   } else {
     // For very small rate targets where the fractional adjustment
     // may be tiny make sure there is at least a minimum range.
-    const int tolerance = (cpi->sf.recode_tolerance * frame_target) / 100;
+    int tolerance = (cpi->sf.recode_tolerance * frame_target) / 100;
     *frame_under_shoot_limit = MAX(frame_target - tolerance - 200, 0);
+    if (cpi->rc.frame_size_selector != UNSCALED) {
+      tolerance >>= 2;
+    }
     *frame_over_shoot_limit = MIN(frame_target + tolerance + 200,
                                   cpi->rc.max_frame_bandwidth);
   }
@@ -1173,10 +1181,9 @@ void vp9_rc_set_frame_target(VP9_COMP *cpi, int target) {
   rc->this_frame_target = target;
 
   // Modify frame size target when down-scaling.
-  if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC &&
-      rc->frame_size_selector != UNSCALED)
+  if (rc->frame_size_selector != UNSCALED)
     rc->this_frame_target = (int)(rc->this_frame_target
-        * rate_thresh_mult[rc->frame_size_selector]);
+        * rc->rate_thresh_mult[rc->frame_size_selector]);
 
   // Target rate per SB64 (including partial SB64s.
   rc->sb64_target_rate = ((int64_t)rc->this_frame_target * 64 * 64) /
@@ -1252,13 +1259,16 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
       rc->last_q[INTER_FRAME] = qindex;
       rc->avg_frame_qindex[INTER_FRAME] =
         ROUND_POWER_OF_TWO(3 * rc->avg_frame_qindex[INTER_FRAME] + qindex, 2);
-      rc->ni_frames++;
+      ++rc->ni_frames;
       rc->tot_q += vp9_convert_qindex_to_q(qindex, cm->bit_depth);
       rc->avg_q = rc->tot_q / rc->ni_frames;
       // Calculate the average Q for normal inter frames (not key or GFU
       // frames).
       rc->ni_tot_qi += qindex;
       rc->ni_av_qi = rc->ni_tot_qi / rc->ni_frames;
+
+      rc->gf_group_sum_q_idx += qindex;
+      ++rc->gf_group_frames;
     }
   }
 
@@ -1295,8 +1305,20 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   // Actual bits spent
   rc->total_actual_bits += rc->projected_frame_size;
   rc->total_target_bits += cm->show_frame ? rc->avg_frame_bandwidth : 0;
-
   rc->total_target_vs_actual = rc->total_actual_bits - rc->total_target_bits;
+
+  if (cm->frame_type != KEY_FRAME) {
+    if (cpi->refresh_alt_ref_frame ||
+            (cpi->refresh_golden_frame && !rc->is_src_frame_alt_ref)) {
+      rc->gf_group_frames = 0;
+      rc->gf_group_sum_q_idx = 0;
+      rc->gf_group_target_bits = 0;
+      rc->gf_group_actual_bits = 0;
+    } else {
+      rc->gf_group_target_bits += rc->this_frame_target;
+      rc->gf_group_actual_bits += rc->projected_frame_size;
+    }
+  }
 
   if (is_altref_enabled(cpi) && cpi->refresh_alt_ref_frame &&
       (cm->frame_type != KEY_FRAME))
@@ -1312,11 +1334,6 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
     rc->frames_since_key++;
     rc->frames_to_key--;
   }
-
-  // Trigger the resizing of the next frame if it is scaled.
-  cpi->resize_pending =
-      rc->next_frame_size_selector != rc->frame_size_selector;
-  rc->frame_size_selector = rc->next_frame_size_selector;
 }
 
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {

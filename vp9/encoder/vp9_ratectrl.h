@@ -35,24 +35,20 @@ typedef enum {
 
 // Internal frame scaling level.
 typedef enum {
-  UNSCALED = 0,     // Frame is unscaled.
-  SCALE_STEP1 = 1,  // First-level down-scaling.
+  UNSCALED = 0,      // Frame is not scaled.
+  SCALED = 1,        // Frame is downscaled.
   FRAME_SCALE_STEPS
 } FRAME_SCALE_LEVEL;
 
-// Frame dimensions multiplier wrt the native frame size, in 1/16ths,
-// specified for the scale-up case.
-// e.g. 24 => 16/24 = 2/3 of native size. The restriction to 1/16th is
+// Frame dimensions multiplier wrt the native frame size, in 1/16ths.
+// e.g. 12 => 12/24 = 3/4 of native size. The restriction to 1/16th is
 // intended to match the capabilities of the normative scaling filters,
 // giving precedence to the up-scaling accuracy.
-static const int frame_scale_factor[FRAME_SCALE_STEPS] = {16, 24};
-
-// Multiplier of the target rate to be used as threshold for triggering scaling.
-static const double rate_thresh_mult[FRAME_SCALE_STEPS] = {1.0, 2.0};
+static const int frame_scale_factor[FRAME_SCALE_STEPS] = {16, 12};
 
 // Scale dependent Rate Correction Factor multipliers. Compensates for the
 // greater number of bits per pixel generated in down-scaled frames.
-static const double rcf_mult[FRAME_SCALE_STEPS] = {1.0, 2.0};
+static const double rcf_mult[FRAME_SCALE_STEPS] = {1.0, 1.75};
 
 typedef struct {
   // Rate targetting variables
@@ -115,6 +111,11 @@ typedef struct {
   int64_t total_target_bits;
   int64_t total_target_vs_actual;
 
+  int64_t gf_group_target_bits;
+  int64_t gf_group_actual_bits;
+  int gf_group_sum_q_idx;
+  int gf_group_frames;
+
   int worst_quality;
   int best_quality;
 
@@ -133,10 +134,12 @@ typedef struct {
 
   // Auto frame-scaling variables.
   FRAME_SCALE_LEVEL frame_size_selector;
-  FRAME_SCALE_LEVEL next_frame_size_selector;
   int frame_width[FRAME_SCALE_STEPS];
   int frame_height[FRAME_SCALE_STEPS];
   int rf_level_maxq[RATE_FACTOR_LEVELS];
+  double rate_thresh_mult[FRAME_SCALE_STEPS];  // Multiplier of the target rate
+                                               // to be used as threshold for
+                                               // triggering scaling.
 } RATE_CONTROL;
 
 struct VP9_COMP;
