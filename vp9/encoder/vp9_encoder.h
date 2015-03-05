@@ -42,6 +42,8 @@
 #include "vp9/encoder/vp9_tokenize.h"
 #include "vpx_dsp/variance.h"
 
+#define DOUBLE_DIVIDE_CHECK(x) ((x) < 0 ? (x) - 0.000001 : (x) + 0.000001)
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
 #include "vp9/encoder/vp9_denoiser.h"
 #endif
@@ -481,12 +483,16 @@ typedef struct VP9_COMP {
 #endif
 
   int resize_pending;
+//<<<<<<< HEAD
   int resize_state;
   int resize_scale_num;
   int resize_scale_den;
   int resize_avg_qp;
   int resize_buffer_underflow;
   int resize_count;
+//=======
+  int switched_scale_this_frame;
+//>>>>>>> a3392ae... (WIP) Improved auto frame size switching
 
   // VAR_BASED_PARTITION thresholds
   // 0 - threshold_64x64; 1 - threshold_32x32;
