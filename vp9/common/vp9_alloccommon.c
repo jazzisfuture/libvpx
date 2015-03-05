@@ -52,14 +52,15 @@ static int alloc_seg_map(VP9_COMMON *cm, int seg_map_size) {
   int i;
 
   for (i = 0; i < NUM_PING_PONG_BUFFERS; ++i) {
+    // Delay allocate prev seg map as it may be being accessed.
+    if (cm->frame_parallel_decode && i == cm->prev_seg_map_idx) {
+      cm->update_last_seg_map = 1;
+      continue;
+    }
     cm->seg_map_array[i] = (uint8_t *)vpx_calloc(seg_map_size, 1);
     if (cm->seg_map_array[i] == NULL)
       return 1;
   }
-
-  // Init the index.
-  cm->seg_map_idx = 0;
-  cm->prev_seg_map_idx = 1;
 
   cm->current_frame_seg_map = cm->seg_map_array[cm->seg_map_idx];
   if (!cm->frame_parallel_decode)
@@ -68,10 +69,13 @@ static int alloc_seg_map(VP9_COMMON *cm, int seg_map_size) {
   return 0;
 }
 
-static void free_seg_map(VP9_COMMON *cm) {
+static void free_seg_map(VP9_COMMON *cm, int decode_done) {
   int i;
 
   for (i = 0; i < NUM_PING_PONG_BUFFERS; ++i) {
+    // Delay free prev seg map as it may be being accessed.
+    if (cm->frame_parallel_decode && i == cm->prev_seg_map_idx &&
+        !decode_done) continue;
     vpx_free(cm->seg_map_array[i]);
     cm->seg_map_array[i] = NULL;
   }
@@ -104,9 +108,9 @@ void vp9_free_ref_frame_buffers(VP9_COMMON *cm) {
 #endif
 }
 
-void vp9_free_context_buffers(VP9_COMMON *cm) {
+void vp9_free_context_buffers(VP9_COMMON *cm, int decode_done) {
   cm->free_mi(cm);
-  free_seg_map(cm);
+  free_seg_map(cm, decode_done);
   vpx_free(cm->above_context);
   cm->above_context = NULL;
   vpx_free(cm->above_seg_context);
@@ -114,14 +118,13 @@ void vp9_free_context_buffers(VP9_COMMON *cm) {
 }
 
 int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
-  vp9_free_context_buffers(cm);
+  vp9_free_context_buffers(cm, 0);
 
   vp9_set_mb_mi(cm, width, height);
   if (cm->alloc_mi(cm, cm->mi_stride * calc_mi_size(cm->mi_rows)))
     goto fail;
 
   // Create the segmentation map structure and set to 0.
-  free_seg_map(cm);
   if (alloc_seg_map(cm, cm->mi_rows * cm->mi_cols))
     goto fail;
 
@@ -137,13 +140,13 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
   return 0;
 
  fail:
-  vp9_free_context_buffers(cm);
+  vp9_free_context_buffers(cm, 0);
   return 1;
 }
 
 void vp9_remove_common(VP9_COMMON *cm) {
   vp9_free_ref_frame_buffers(cm);
-  vp9_free_context_buffers(cm);
+  vp9_free_context_buffers(cm, 1);
 
   vpx_free(cm->fc);
   cm->fc = NULL;
@@ -158,8 +161,18 @@ void vp9_init_context_buffers(VP9_COMMON *cm) {
 }
 
 void vp9_swap_current_and_last_seg_map(VP9_COMMON *cm) {
+  int tmp;
+
+  if (cm->update_last_seg_map) {
+    int seg_map_size = cm->mi_rows * cm->mi_cols;
+    vpx_free(cm->seg_map_array[cm->prev_seg_map_idx]);
+    cm->seg_map_array[cm->prev_seg_map_idx] =
+        (uint8_t *)vpx_calloc(seg_map_size, 1);
+    cm->update_last_seg_map = 0;
+  }
+
   // Swap indices.
-  const int tmp = cm->seg_map_idx;
+  tmp = cm->seg_map_idx;
   cm->seg_map_idx = cm->prev_seg_map_idx;
   cm->prev_seg_map_idx = tmp;
 
