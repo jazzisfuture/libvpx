@@ -106,6 +106,62 @@ void vp9_frameworker_wait(VP9Worker *const worker, RefCntBuffer *const ref_buf,
 #endif  // CONFIG_MULTITHREAD
 }
 
+void vp9_frameworker_wait_seg_map(VP9Worker *const worker,
+                                  RefCntBuffer *const ref_buf,
+                                  uint8_t *last_frame_seg_map, int row) {
+#if CONFIG_MULTITHREAD
+  if (!ref_buf)
+    return;
+
+#ifndef BUILDING_WITH_TSAN
+  // The following line of code will get harmless tsan error but it is the key
+  // to get best performance.
+  if (ref_buf->row >= row && ref_buf->buf.corrupted != 1) return;
+#endif
+
+  {
+    // Find the worker thread that owns the reference frame. If the reference
+    // frame has been fully decoded, it may not have owner.
+    VP9Worker *const ref_worker = ref_buf->frame_worker_owner;
+    FrameWorkerData *const ref_worker_data =
+        (FrameWorkerData *)ref_worker->data1;
+    const VP9Decoder *const pbi = ref_worker_data->pbi;
+
+#ifdef DEBUG_THREAD
+    {
+      FrameWorkerData *const worker_data = (FrameWorkerData *)worker->data1;
+      printf("%d %p worker is waiting for %d %p worker (%d)  ref %d \r\n",
+             worker_data->worker_id, worker, ref_worker_data->worker_id,
+             ref_buf->frame_worker_owner, row, ref_buf->row);
+    }
+#endif
+
+    vp9_frameworker_lock_stats(ref_worker);
+    while (ref_buf->row < row && pbi->cur_buf == ref_buf &&
+           ref_buf->buf.corrupted != 1 &&
+           ref_buf->seg_map == last_frame_seg_map) {
+      pthread_cond_wait(&ref_worker_data->stats_cond,
+                        &ref_worker_data->stats_mutex);
+    }
+
+    if (ref_buf->buf.corrupted == 1) {
+      FrameWorkerData *const worker_data = (FrameWorkerData *)worker->data1;
+      vp9_frameworker_unlock_stats(ref_worker);
+      vpx_internal_error(&worker_data->pbi->common.error,
+                         VPX_CODEC_CORRUPT_FRAME,
+                         "Worker %p failed to decode frame", worker);
+    }
+    vp9_frameworker_unlock_stats(ref_worker);
+  }
+#else
+  (void)worker;
+  (void)ref_buf;
+  (VOID)last_frame_seg_map;
+  (void)row;
+  (void)ref_buf;
+#endif  // CONFIG_MULTITHREAD
+}
+
 void vp9_frameworker_broadcast(RefCntBuffer *const buf, int row) {
 #if CONFIG_MULTITHREAD
   VP9Worker *worker = buf->frame_worker_owner;
@@ -144,25 +200,24 @@ void vp9_frameworker_copy_context(VP9Worker *const dst_worker,
         &src_worker_data->stats_mutex);
   }
 
-  // src worker may have already finished decoding a frame and swapped the mi.
-  // TODO(hkuang): Remove following code after implenment no ModeInfo decoding.
   if (src_worker_data->frame_decoded) {
-    dst_cm->prev_mip = src_cm->prev_mip;
-    dst_cm->prev_mi = src_cm->prev_mi;
+    dst_cm->last_frame_seg_map = src_cm->last_frame_seg_map;
   } else {
-    dst_cm->prev_mip = src_cm->mip;
-    dst_cm->prev_mi = src_cm->mi;
+    dst_cm->last_frame_seg_map = src_cm->seg.enabled ?
+      src_cm->current_frame_seg_map : src_cm->last_frame_seg_map;
   }
 
-  dst_cm->last_frame_seg_map = src_cm->seg.enabled ?
-      src_cm->current_frame_seg_map : src_cm->last_frame_seg_map;
+  memcpy(&dst_cm->lf_info, &src_cm->lf_info,
+         sizeof(loop_filter_info_n));
+  memcpy(&dst_cm->lf, &src_cm->lf, sizeof(dst_cm->lf));
   dst_worker_data->pbi->need_resync = src_worker_data->pbi->need_resync;
+
   vp9_frameworker_unlock_stats(src_worker);
 
-  dst_worker_data->pbi->prev_buf =
-      src_worker_data->pbi->common.show_existing_frame ?
-          NULL : src_worker_data->pbi->cur_buf;
-
+  dst_cm->last_seg_map_owner_frame = src_cm->seg.enabled &&
+                                     !src_cm->show_existing_frame ?
+                                     src_cm->cur_frame :
+                                     src_cm->last_seg_map_owner_frame;
   dst_cm->prev_frame = src_cm->show_existing_frame ?
                        src_cm->prev_frame : src_cm->cur_frame;
   dst_cm->last_width = !src_cm->show_existing_frame ?
@@ -184,13 +239,6 @@ void vp9_frameworker_copy_context(VP9Worker *const dst_worker,
 
   for (i = 0; i < REF_FRAMES; ++i)
     dst_cm->ref_frame_map[i] = src_cm->next_ref_frame_map[i];
-
-  memcpy(dst_cm->lf_info.lfthr, src_cm->lf_info.lfthr,
-         (MAX_LOOP_FILTER + 1) * sizeof(loop_filter_thresh));
-  dst_cm->lf.last_sharpness_level = src_cm->lf.sharpness_level;
-  dst_cm->lf.filter_level = src_cm->lf.filter_level;
-  memcpy(dst_cm->lf.ref_deltas, src_cm->lf.ref_deltas, MAX_REF_LF_DELTAS);
-  memcpy(dst_cm->lf.mode_deltas, src_cm->lf.mode_deltas, MAX_MODE_LF_DELTAS);
   dst_cm->seg = src_cm->seg;
   memcpy(dst_cm->frame_contexts, src_cm->frame_contexts,
          FRAME_CONTEXTS * sizeof(dst_cm->frame_contexts[0]));
