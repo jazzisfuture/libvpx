@@ -60,12 +60,9 @@
 #define RC_FACTOR_MIN       0.75
 #define RC_FACTOR_MAX       1.75
 
-
 #define NCOUNT_INTRA_THRESH 8192
 #define NCOUNT_INTRA_FACTOR 3
 #define NCOUNT_FRAME_II_THRESH 5.0
-
-#define DOUBLE_DIVIDE_CHECK(x) ((x) < 0 ? (x) - 0.000001 : (x) + 0.000001)
 
 #if ARF_STATS_OUTPUT
 unsigned int arf_count = 0;
@@ -1171,9 +1168,9 @@ void vp9_init_subsampling(VP9_COMP *cpi) {
   int i;
 
   for (i = 0; i < FRAME_SCALE_STEPS; ++i) {
-    // Note: Frames with odd-sized dimensions may result from this scaling.
-    rc->frame_width[i] = (w * 16) / frame_scale_factor[i];
-    rc->frame_height[i] = (h * 16) / frame_scale_factor[i];
+    // Note: Scaling may result in frames that have odd dimensions.
+    rc->frame_width[i] = (w * frame_scale_factor[i] + 8) >> 4;
+    rc->frame_height[i] = (h * frame_scale_factor[i] + 8) >> 4;
   }
 
   setup_rf_level_maxq(cpi);
@@ -1246,6 +1243,10 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
     }
     twopass->modified_error_left = modified_error_total;
   }
+
+  // Setup multipliers for number of bits per pixel at each scale.
+  cpi->rc.rate_thresh_mult[0] = 1.0;
+  cpi->rc.rate_thresh_mult[1] = (double)oxcf->two_pass_vbrmax_section / 100.0;
 
   // Reset the vbr bits off target counter
   cpi->rc.vbr_bits_off_target = 0;
@@ -2040,11 +2041,6 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
         calculate_section_intra_ratio(start_pos, twopass->stats_in_end,
                                       rc->baseline_gf_interval);
   }
-
-  if (oxcf->resize_mode == RESIZE_DYNAMIC) {
-    // Default to starting GF groups at normal frame size.
-    cpi->rc.next_frame_size_selector = UNSCALED;
-  }
 }
 
 // TODO(PGW) Re-examine the use of II ration in this code in the light of#
@@ -2369,11 +2365,6 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // The count of bits left is adjusted elsewhere based on real coded frame
   // sizes.
   twopass->modified_error_left -= kf_group_err;
-
-  if (oxcf->resize_mode == RESIZE_DYNAMIC) {
-    // Default to normal-sized frame on keyframes.
-    cpi->rc.next_frame_size_selector = UNSCALED;
-  }
 }
 
 // Define the reference buffers that will be updated post encode.

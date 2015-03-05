@@ -661,28 +661,6 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
   vp9_setup_pc_tree(&cpi->common, &cpi->td);
 }
 
-static void update_frame_size(VP9_COMP *cpi) {
-  VP9_COMMON *const cm = &cpi->common;
-  MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
-
-  vp9_set_mb_mi(cm, cm->width, cm->height);
-  vp9_init_context_buffers(cm);
-  init_macroblockd(cm, xd);
-
-  if (is_two_pass_svc(cpi)) {
-    if (vp9_realloc_frame_buffer(&cpi->alt_ref_buffer,
-                                 cm->width, cm->height,
-                                 cm->subsampling_x, cm->subsampling_y,
-#if CONFIG_VP9_HIGHBITDEPTH
-                                 cm->use_highbitdepth,
-#endif
-                                 VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
-                                 NULL, NULL, NULL))
-      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                         "Failed to reallocate alt_ref_buffer");
-  }
-}
-
 void vp9_new_framerate(VP9_COMP *cpi, double framerate) {
   cpi->framerate = framerate < 0.1 ? 30 : framerate;
   vp9_rc_update_framerate(cpi);
@@ -701,6 +679,30 @@ static void set_tile_limits(VP9_COMP *cpi) {
     cm->log2_tile_cols = clamp(cpi->oxcf.tile_columns,
                                min_log2_tile_cols, max_log2_tile_cols);
     cm->log2_tile_rows = cpi->oxcf.tile_rows;
+  }
+}
+
+static void update_frame_size(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
+
+  vp9_set_mb_mi(cm, cm->width, cm->height);
+  vp9_init_context_buffers(cm);
+  init_macroblockd(cm, xd);
+
+  set_tile_limits(cpi);
+
+  if (is_two_pass_svc(cpi)) {
+    if (vp9_realloc_frame_buffer(&cpi->alt_ref_buffer,
+                                 cm->width, cm->height,
+                                 cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                 cm->use_highbitdepth,
+#endif
+                                 VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                                 NULL, NULL, NULL))
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Failed to reallocate alt_ref_buffer");
   }
 }
 
@@ -2450,17 +2452,90 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   vp9_extend_frame_borders(dst);
 }
 
-static int scale_down(VP9_COMP *cpi, int q) {
+static int scale_down_test(VP9_COMP *cpi, int q) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+  const int q_max = rc->rf_level_maxq[gf_group->rf_level[gf_group->index]];
+  int scale = 0;
+  assert(frame_is_kf_gf_arf(cpi));
+
+  if (rc->frame_size_selector != UNSCALED)
+    return 0;
+
+  if (q >= q_max) {
+    // Check to see if frame size exceeds threshold.
+    const int max_size_thresh =
+        (int)(rc->rate_thresh_mult[SCALED] *
+            MAX(rc->this_frame_target, rc->avg_frame_bandwidth));
+    scale = rc->projected_frame_size > max_size_thresh ? 1 : 0;
+  }
+
+  // Check for overshoot in the previous GF Group as a whole.
+  if (scale == 0 &&
+      rc->gf_group_frames > 0 &&
+      (rc->gf_group_actual_bits > rc->gf_group_target_bits)) {
+    const VP9_COMMON *const cm = &cpi->common;
+    const int q_avg =
+        (int)((double)(rc->gf_group_sum_q_idx + (rc->gf_group_frames >> 1)) /
+            rc->gf_group_frames);
+    const double factor = (double)rc->gf_group_target_bits /
+        DOUBLE_DIVIDE_CHECK(rc->gf_group_actual_bits);
+
+    // What Q would we generate the target number of bits at?
+    const int q_delta = vp9_compute_qdelta_by_rate(rc, cm->frame_type,
+                                                   q_avg, factor,
+                                                   cm->bit_depth);
+    scale = (q_avg + q_delta) > q_max ? 1 : 0;
+  }
+  return scale;
+}
+
+// Scale a frame size (in bytes) given a linear scaling factor.
+#define UPSCALE_FRAME_SIZE(size, scale) (((size) << 8) / ((scale) * (scale)))
+
+static int scale_up_test(VP9_COMP *cpi, int q) {
+  const VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   GF_GROUP *const gf_group = &cpi->twopass.gf_group;
   int scale = 0;
   assert(frame_is_kf_gf_arf(cpi));
 
-  if (rc->frame_size_selector == UNSCALED &&
-      q >= rc->rf_level_maxq[gf_group->rf_level[gf_group->index]]) {
-    const int max_size_thresh = (int)(rate_thresh_mult[SCALE_STEP1]
-        * MAX(rc->this_frame_target, rc->avg_frame_bandwidth));
-    scale = rc->projected_frame_size > max_size_thresh ? 1 : 0;
+  if (rc->frame_size_selector == UNSCALED)
+    return 0;
+
+  // Looking back, could we have scaled up the previous GF Group?
+  if (rc->gf_group_frames > 0) {
+    const int proj_upscale_size =
+        UPSCALE_FRAME_SIZE(rc->gf_group_actual_bits,
+                           frame_scale_factor[rc->frame_size_selector]);
+    const double factor = rc->gf_group_target_bits /
+        DOUBLE_DIVIDE_CHECK((double)proj_upscale_size);
+    const int q_avg =
+        (int)(((double)rc->gf_group_sum_q_idx + (rc->gf_group_frames >> 1)) /
+            rc->gf_group_frames);
+    const int q_delta = vp9_compute_qdelta_by_rate(rc, cm->frame_type,
+                                                   q_avg, factor,
+                                                   cm->bit_depth);
+    if ((q_avg + q_delta) <
+        rc->rf_level_maxq[gf_group->rf_level[INTER_NORMAL]]) {
+      scale = 1;
+    }
+  }
+
+  if (scale == 1) {
+    // Can the current GF be scaled up?
+    const int proj_upscale_size =
+        UPSCALE_FRAME_SIZE(rc->projected_frame_size,
+                           frame_scale_factor[rc->frame_size_selector]);
+    const double factor = (double)rc->this_frame_target /
+        DOUBLE_DIVIDE_CHECK((double)proj_upscale_size);
+    const int q_delta = vp9_compute_qdelta_by_rate(rc, cm->frame_type,
+                                                   q, factor,
+                                                   cm->bit_depth);
+    if ((q + q_delta) >=
+        rc->rf_level_maxq[gf_group->rf_level[gf_group->index]]) {
+      scale = 0;
+    }
   }
   return scale;
 }
@@ -2478,10 +2553,10 @@ static int recode_loop_test(VP9_COMP *cpi,
   if ((cpi->sf.recode_loop == ALLOW_RECODE) ||
       (frame_is_kfgfarf &&
       (cpi->sf.recode_loop == ALLOW_RECODE_KFARFGF))) {
-    if (frame_is_kfgfarf &&
-        (oxcf->resize_mode == RESIZE_DYNAMIC) &&
-        scale_down(cpi, q)) {
-        // Code this group at a lower resolution.
+    if (frame_is_kfgfarf && oxcf->resize_mode == RESIZE_DYNAMIC &&
+        (cpi->switched_scale_this_frame == 0) &&
+            (scale_down_test(cpi, q) != 0 || scale_up_test(cpi, q) != 0)) {
+        // Code this GF group at a different resolution.
         cpi->resize_pending = 1;
         return 1;
     }
@@ -3015,6 +3090,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
   set_size_independent_vars(cpi);
 
+  cpi->switched_scale_this_frame = 0;
+
   do {
     vp9_clear_system_state();
 
@@ -3029,6 +3106,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       // Reset the loop state for new frame size.
       overshoot_seen = 0;
       undershoot_seen = 0;
+
+      cpi->switched_scale_this_frame = cpi->resize_pending;
 
       // Reconfiguration for change in frame size has concluded.
       cpi->resize_pending = 0;
@@ -3158,10 +3237,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         int retries = 0;
 
         if (cpi->resize_pending == 1) {
-          // Change in frame size so go back around the recode loop.
-          cpi->rc.frame_size_selector =
-              SCALE_STEP1 - cpi->rc.frame_size_selector;
-          cpi->rc.next_frame_size_selector = cpi->rc.frame_size_selector;
+          // Frame dimension change signaled so recode at the new size.
+          cpi->rc.frame_size_selector = SCALED - cpi->rc.frame_size_selector;
 
 #if CONFIG_INTERNAL_STATS
           ++cpi->tot_recode_hits;
