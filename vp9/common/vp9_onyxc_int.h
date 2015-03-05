@@ -81,6 +81,9 @@ typedef struct {
   // that no FrameWorker owns, or is decoding, this buffer.
   VP9Worker *frame_worker_owner;
 
+  // Seg map associated with this frame.
+  uint8_t *seg_map;
+
   // row and col indicate which position frame has been decoded to in real
   // pixel unit. They are reset to -1 when decoding begins and set to INT_MAX
   // when the frame is fully decoded.
@@ -208,10 +211,11 @@ typedef struct VP9Common {
   // Persistent mb segment id map used in prediction.
   int seg_map_idx;
   int prev_seg_map_idx;
-
+  int update_last_seg_map;
   uint8_t *seg_map_array[NUM_PING_PONG_BUFFERS];
   uint8_t *last_frame_seg_map;
   uint8_t *current_frame_seg_map;
+  RefCntBuffer *last_seg_map_owner_frame;
 
   INTERP_FILTER interp_filter;
 
