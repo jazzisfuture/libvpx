@@ -301,6 +301,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
     pbi->cur_buf = &frame_bufs[cm->new_fb_idx];
     pbi->cur_buf->row = -1;
     pbi->cur_buf->col = -1;
+    pbi->cur_buf->seg_map = cm->current_frame_seg_map;
     vp9_frameworker_unlock_stats(worker);
   } else {
     pbi->cur_buf = &frame_bufs[cm->new_fb_idx];
@@ -377,6 +378,11 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
     if (cm->show_frame) {
       cm->current_video_frame++;
     }
+
+    if (!cm->show_existing_frame && cm->seg.enabled) {
+      vp9_swap_current_and_last_seg_map(cm);
+    }
+
     frame_worker_data->frame_decoded = 1;
     frame_worker_data->frame_context_ready = 1;
     vp9_frameworker_signal_stats(worker);

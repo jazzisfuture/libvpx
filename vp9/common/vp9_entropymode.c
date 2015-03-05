@@ -429,8 +429,7 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   vp9_clearall_segfeatures(&cm->seg);
   cm->seg.abs_delta = SEGMENT_DELTADATA;
 
-  if (cm->last_frame_seg_map && !cm->frame_parallel_decode)
-    vpx_memset(cm->last_frame_seg_map, 0, (cm->mi_rows * cm->mi_cols));
+  cm->last_frame_seg_map = NULL;
 
   if (cm->current_frame_seg_map)
     vpx_memset(cm->current_frame_seg_map, 0, (cm->mi_rows * cm->mi_cols));

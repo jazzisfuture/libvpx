@@ -406,6 +406,9 @@ static vpx_codec_err_t init_decoder(vpx_codec_alg_priv_t *ctx) {
     frame_worker_data->worker_id = i;
     frame_worker_data->scratch_buffer = NULL;
     frame_worker_data->scratch_buffer_size = 0;
+    frame_worker_data->pbi->common.seg_map_idx = 0;
+    frame_worker_data->pbi->common.last_seg_map_owner_frame = NULL;
+    frame_worker_data->pbi->common.prev_seg_map_idx = 1;
     frame_worker_data->frame_context_ready = 0;
     frame_worker_data->received_frame = 0;
 #if CONFIG_MULTITHREAD
