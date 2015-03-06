@@ -596,9 +596,16 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                              ref_frame, candidates,
                                              mi_row, mi_col);
 
+#if CONFIG_NEW_NEARESTNEAR
+      // Keep the mv precision for NEARESTMV and NEARMV
+      frame_mv[NEARESTMV][ref_frame] = candidates[0];
+      frame_mv[NEARMV][ref_frame] = candidates[1];
+      vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates);
+#else
       vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
                             &frame_mv[NEARESTMV][ref_frame],
                             &frame_mv[NEARMV][ref_frame]);
+#endif  // CONFIG_NEW_NEARESTNEAR
 
       if (!vp9_is_scaled(sf) && bsize >= BLOCK_8X8)
         vp9_mv_pred(cpi, x, yv12_mb[ref_frame][0].buf, yv12->y_stride,
