@@ -588,6 +588,31 @@ static void choose_partitioning(VP9_COMP *cpi,
       bsize = BLOCK_32X32;
 
     y_sad = vp9_int_pro_motion_estimation(cpi, x, bsize);
+
+    if (1) {
+      const YV12_BUFFER_CONFIG *yv12_g =
+          get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+      if (yv12_g && yv12_g != yv12) {
+        unsigned int y_sad_g;
+        vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
+                             &cm->frame_refs[GOLDEN_FRAME - 1].sf);
+        y_sad_g = cpi->fn_ptr[bsize].sdf(x->plane[0].src.buf,
+                                         x->plane[0].src.stride,
+                                         xd->plane[0].pre[0].buf,
+                                         xd->plane[0].pre[0].stride);
+        if (y_sad_g < y_sad) {
+          mbmi->ref_frame[0] = GOLDEN_FRAME;
+          mbmi->ref_frame[1] = NONE;
+          mbmi->sb_type = BLOCK_64X64;
+          mbmi->mv[0].as_int = 0;
+          x->pred_mv[GOLDEN_FRAME] = mbmi->mv[0].as_mv;
+          y_sad = y_sad_g;
+        } else {
+          vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
+            &cm->frame_refs[LAST_FRAME - 1].sf);
+        }
+      }
+    }
 #endif
 
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
