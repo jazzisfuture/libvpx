@@ -2843,6 +2843,13 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
   // transform / motion compensation build reconstruction frame
   vp9_encode_frame(cpi);
 
+  // Check if we should not update golden reference, for non-svc case.
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+      cpi->refresh_golden_frame == 1 &&
+      cm->frame_type != KEY_FRAME &&
+      !cpi->use_svc)
+    vp9_cyclic_refresh_check_golden_update(cpi);
+
   // Update the skip mb flag probabilities based on the distribution
   // seen in the last encoder iteration.
   // update_base_skip_probs(cpi);
@@ -3220,7 +3227,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   TX_SIZE t;
 
   set_ext_overrides(cpi);
-
   vp9_clear_system_state();
 
   // Set the arf sign bias for this frame.
