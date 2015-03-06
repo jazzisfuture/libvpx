@@ -165,8 +165,11 @@ void vp9_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                    mi_row, mi_col);
 }
 
-void vp9_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
-                           int_mv *mvlist, int_mv *nearest, int_mv *near) {
+void vp9_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp, int_mv *mvlist
+#if !CONFIG_NEW_NEARESTNEAR
+                           , int_mv *nearest, int_mv *near
+#endif  // CONFIG_NEW_NEARESTNEAR
+                           ) {
   int i;
   // Make sure all the candidates are properly clamped etc
   for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i) {
@@ -175,8 +178,10 @@ void vp9_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
     vp9_lower_mv_precision(mv, usehp);
     clamp_mv2(mv, xd);
   }
+#if !CONFIG_NEW_NEARESTNEAR
   *nearest = mvlist[0];
   *near = mvlist[1];
+#endif  // CONFIG_NEW_NEARESTNEAR
 }
 
 void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,

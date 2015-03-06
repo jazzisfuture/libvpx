@@ -241,8 +241,11 @@ static INLINE void vp9_lower_mv_precision(MV *mv, const int usehp) {
 // check a list of motion vectors by sad score using a number rows of pixels
 // above and a number cols of pixels in the left to select the one with best
 // score to use as ref motion vector
-void vp9_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
-                           int_mv *mvlist, int_mv *nearest, int_mv *near);
+void vp9_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp, int_mv *mvlist
+#if !CONFIG_NEW_NEARESTNEAR
+                           , int_mv *nearest, int_mv *near
+#endif  // CONFIG_NEW_NEARESTNEAR
+                           );
 
 void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
                                    const TileInfo *const tile,
