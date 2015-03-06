@@ -18,37 +18,6 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
-struct CYCLIC_REFRESH {
-  // Percentage of blocks per frame that are targeted as candidates
-  // for cyclic refresh.
-  int percent_refresh;
-  // Maximum q-delta as percentage of base q.
-  int max_qdelta_perc;
-  // Superblock starting index for cycling through the frame.
-  int sb_index;
-  // Controls how long block will need to wait to be refreshed again, in
-  // excess of the cycle time, i.e., in the case of all zero motion, block
-  // will be refreshed every (100/percent_refresh + time_for_refresh) frames.
-  int time_for_refresh;
-  // // Target number of (8x8) blocks that are set for delta-q (segment 1).
-  int target_num_seg_blocks;
-  // Actual number of (8x8) blocks that were applied delta-q (segment 1).
-  int actual_num_seg_blocks;
-  // RD mult. parameters for segment 1.
-  int rdmult;
-  // Cyclic refresh map.
-  signed char *map;
-  // Thresholds applied to the projected rate/distortion of the coding block,
-  // when deciding whether block should be refreshed.
-  int64_t thresh_rate_sb;
-  int64_t thresh_dist_sb;
-  // Threshold applied to the motion vector (in units of 1/8 pel) of the
-  // coding block, when deciding whether block should be refreshed.
-  int16_t motion_thresh;
-  // Rate target ratio to set q delta.
-  double rate_ratio_qdelta;
-};
-
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   CYCLIC_REFRESH *const cr = vpx_calloc(1, sizeof(*cr));
   if (cr == NULL)
@@ -244,17 +213,45 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
 }
 
 // Update the actual number of blocks that were applied the segment delta q.
-void vp9_cyclic_refresh_update_actual_count(struct VP9_COMP *const cpi) {
+// Update the low content count stats.
+void vp9_cyclic_refresh_postencode(struct VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
+  const RATE_CONTROL *const rc = &cpi->rc;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   unsigned char *const seg_map = cpi->segmentation_map;
   int mi_row, mi_col;
+  double fraction_count = 0.0;
+  cr->low_content_count = 0;
   cr->actual_num_seg_blocks = 0;
   for (mi_row = 0; mi_row < cm->mi_rows; mi_row++)
   for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
     if (seg_map[mi_row * cm->mi_cols + mi_col] != CR_SEGMENT_ID_BASE)
       cr->actual_num_seg_blocks++;
+    if (cr->map[mi_row * cm->mi_cols + mi_col] < 1)
+      cr->low_content_count++;
   }
+  fraction_count =
+      (double)cr->low_content_count / (cm->mi_rows * cm->mi_cols);
+  // Reset at start of update internal.
+  if (rc->frames_till_gf_update_due == rc->baseline_gf_interval)
+    cr->low_content_avg = fraction_count;
+  else
+  // Update with last value.
+    cr->low_content_avg = (fraction_count + 3 * cr->low_content_avg) / 4;
+}
+
+// If the golden reference is to be updated for this just encoded frame,
+// check if we should NOT update the golden reference, based on past stats.
+void vp9_cyclic_refresh_check_golden_update(VP9_COMP *const cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  double fraction_count =
+      (double)cr->low_content_count / (cm->mi_rows * cm->mi_cols);
+  // Don't update golden reference if current encoded frame has low_content
+  // count below threshold, or if recursive average over interval window falls
+  // below threshold.
+  if (fraction_count < 0.8 || cr->low_content_avg < 0.6)
+    cpi->refresh_golden_frame = 0;
 }
 
 // Update the segmentation map, and related quantities: cyclic refresh map,
