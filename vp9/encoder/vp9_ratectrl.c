@@ -1519,6 +1519,7 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
 void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   int target;
   // TODO(yaowu): replace the "auto_key && 0" below with proper decision logic.
   if ((cm->current_video_frame == 0 ||
@@ -1535,7 +1536,15 @@ void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
     cm->frame_type = INTER_FRAME;
   }
   if (rc->frames_till_gf_update_due == 0) {
-    rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      // Note: cr->percent_refresh is not set at this point for first frame.
+      if (cr->percent_refresh > 0)
+        rc->baseline_gf_interval = 2 * (100 / cr->percent_refresh);
+      else
+        rc->baseline_gf_interval = 20;
+    }
+    else
+      rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
     rc->frames_till_gf_update_due = rc->baseline_gf_interval;
     // NOTE: frames_till_gf_update_due must be <= frames_to_key.
     if (rc->frames_till_gf_update_due > rc->frames_to_key)
