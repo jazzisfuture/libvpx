@@ -32,7 +32,38 @@ extern "C" {
 
 struct VP9_COMP;
 
-struct CYCLIC_REFRESH;
+struct CYCLIC_REFRESH {
+  // Percentage of blocks per frame that are targeted as candidates
+  // for cyclic refresh.
+  int percent_refresh;
+  // Maximum q-delta as percentage of base q.
+  int max_qdelta_perc;
+  // Superblock starting index for cycling through the frame.
+  int sb_index;
+  // Controls how long block will need to wait to be refreshed again, in
+  // excess of the cycle time, i.e., in the case of all zero motion, block
+  // will be refreshed every (100/percent_refresh + time_for_refresh) frames.
+  int time_for_refresh;
+  // // Target number of (8x8) blocks that are set for delta-q (segment 1).
+  int target_num_seg_blocks;
+  // Actual number of (8x8) blocks that were applied delta-q (segment 1).
+  int actual_num_seg_blocks;
+  // RD mult. parameters for segment 1.
+  int rdmult;
+  // Cyclic refresh map.
+  signed char *map;
+  // Thresholds applied to the projected rate/distortion of the coding block,
+  // when deciding whether block should be refreshed.
+  int64_t thresh_rate_sb;
+  int64_t thresh_dist_sb;
+  // Threshold applied to the motion vector (in units of 1/8 pel) of the
+  // coding block, when deciding whether block should be refreshed.
+  int16_t motion_thresh;
+  // Rate target ratio to set q delta.
+  double rate_ratio_qdelta;
+  int low_content_count;
+};
+
 typedef struct CYCLIC_REFRESH CYCLIC_REFRESH;
 
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols);
@@ -63,6 +94,9 @@ void vp9_cyclic_refresh_update__map(struct VP9_COMP *const cpi);
 
 // Update the actual number of blocks that were applied the segment delta q.
 void vp9_cyclic_refresh_update_actual_count(struct VP9_COMP *const cpi);
+
+// Check if we should not update golden reference, based on past refresh stats.
+void vp9_cyclic_refresh_check_golden_update(struct VP9_COMP *const cpi);
 
 // Set/update global/frame level refresh parameters.
 void vp9_cyclic_refresh_update_parameters(struct VP9_COMP *const cpi);
