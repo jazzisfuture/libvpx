@@ -362,8 +362,6 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                  BLOCK_SIZE bsize, int mi_row, int mi_col) {
   const int bw = num_8x8_blocks_wide_lookup[bsize];
   const int bh = num_8x8_blocks_high_lookup[bsize];
-  const int x_mis = MIN(bw, cm->mi_cols - mi_col);
-  const int y_mis = MIN(bh, cm->mi_rows - mi_row);
   const int offset = mi_row * cm->mi_stride + mi_col;
   int x, y;
 
@@ -371,8 +369,8 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   xd->mi[0].src_mi = &xd->mi[0];  // Point to self.
   xd->mi[0].mbmi.sb_type = bsize;
 
-  for (y = 0; y < y_mis; ++y)
-    for (x = !y; x < x_mis; ++x) {
+  for (y = 0; y < bh; ++y)
+    for (x = !y; x < bw; ++x) {
       xd->mi[y * cm->mi_stride + x].src_mi = &xd->mi[0];
     }
 
