@@ -585,7 +585,10 @@ static void choose_partitioning(VP9_COMP *cpi,
   int sp;
   int dp;
   int pixels_wide = 64, pixels_high = 64;
-  int_mv nearest_mv, near_mv;
+  int_mv nearest_mv;
+#if !CONFIG_NEW_NEARESTNEAR
+  int_mv near_mv;
+#endif  // CONFIG_NEW_NEARESTNEAR
   const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
   const struct scale_factors *const sf = &cm->frame_refs[LAST_FRAME - 1].sf;
 
@@ -609,9 +612,15 @@ static void choose_partitioning(VP9_COMP *cpi,
     xd->mi[0].src_mi->mbmi.ref_frame[1] = NONE;
 #endif  // CONFIG_INTERINTRA
     xd->mi[0].src_mi->mbmi.sb_type = BLOCK_64X64;
+#if CONFIG_NEW_NEARESTNEAR
+    nearest_mv = xd->mi[0].src_mi->mbmi.ref_mvs[LAST_FRAME][0];
+    vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv,
+                          xd->mi[0].src_mi->mbmi.ref_mvs[LAST_FRAME]);
+#else
     vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv,
                           xd->mi[0].src_mi->mbmi.ref_mvs[LAST_FRAME],
                           &nearest_mv, &near_mv);
+#endif  // CONFIG_NEW_NEARESTNEAR
 
     xd->mi[0].src_mi->mbmi.mv[0] = nearest_mv;
     vp9_build_inter_predictors_sby(xd, mi_row, mi_col, BLOCK_64X64);

@@ -2569,7 +2569,9 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
         const MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
 #if CONFIG_NEWMVREF_SUB8X8
         int_mv mv_ref_list[MAX_MV_REF_CANDIDATES];
+#if !CONFIG_NEW_NEARESTNEAR
         int_mv second_ref_mv;
+#endif  // CONFIG_NEW_NEARESTNEAR
         vp9_update_mv_context(cm, xd, tile, mi, frame, mv_ref_list,
                               i, mi_row, mi_col);
 #endif  // CONFIG_NEWMVREF_SUB8X8
@@ -2583,9 +2585,16 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_NEWMVREF_SUB8X8
         mv_ref_list[0].as_int = frame_mv[NEARESTMV][frame].as_int;
         mv_ref_list[1].as_int = frame_mv[NEARMV][frame].as_int;
+#if CONFIG_NEW_NEARESTNEAR
+        // Keep the mv precision for NEARESTMV and NEARMV
+        vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, mv_ref_list);
+        ref_mv_sub8x8[ref].as_int = mv_ref_list[0].as_int;
+#else
         vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, mv_ref_list,
                               &ref_mv_sub8x8[ref], &second_ref_mv);
+#endif  // CONFIG_NEW_NEARESTNEAR
 #endif  // CONFIG_NEWMVREF_SUB8X8
+
 #if CONFIG_COMPOUND_MODES
         frame_mv[ZERO_ZEROMV][frame].as_int = 0;
         frame_mv[NEAREST_NEARESTMV][frame].as_int =
@@ -3080,9 +3089,15 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
   // Gets an initial list of candidate vectors from neighbours and orders them
   vp9_find_mv_refs(cm, xd, tile, mi, ref_frame, candidates, mi_row, mi_col);
   // Candidate refinement carried out at encoder and decoder
+#if CONFIG_NEW_NEARESTNEAR
+  frame_nearest_mv[ref_frame] = candidates[0];
+  frame_near_mv[ref_frame] = candidates[1];
+  vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates);
+#else
   vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
                         &frame_nearest_mv[ref_frame],
                         &frame_near_mv[ref_frame]);
+#endif  // CONFIG_NEW_NEARESTNEAR
 
   // Further refinement that is encode side only to test the top few candidates
   // in full and choose the best as the centre point for subsequent searches.
