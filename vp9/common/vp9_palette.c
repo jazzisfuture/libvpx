@@ -239,7 +239,7 @@ void calc_centroids(double *data, double *centroids, int *indices,
 
   for (i = 0; i < k; i++) {
     if (!count[i])
-      vpx_memcpy(centroids + i * dim, data + (rand_r(&seed) % n) * dim,
+      vpx_memcpy(centroids + i * dim, data + (rand() % n) * dim,
                  sizeof(centroids[0]) * dim);
     else
       for (j = 0; j < dim; j++)
@@ -424,4 +424,22 @@ void palette_iscan(uint8_t *color_index_map, uint8_t *sequence,
       break;
   }
 }
-#endif
+
+void update_palette_counts(FRAME_COUNTS *counts, MB_MODE_INFO *mbmi,
+                           BLOCK_SIZE bsize, int palette_ctx) {
+  int idx = bsize - BLOCK_8X8;
+
+  counts->y_palette_enabled[idx][palette_ctx][mbmi->palette_enabled[0]]++;
+  counts->uv_palette_enabled[mbmi->palette_enabled[0]]
+                            [mbmi->palette_enabled[1]]++;
+  if (mbmi->palette_enabled[0]) {
+    counts->y_palette_scan_order[idx][mbmi->palette_scan_order[0]]++;
+    counts->y_palette_size[idx][mbmi->palette_size[0] - 2]++;
+  }
+
+  if (mbmi->palette_enabled[1]) {
+    counts->uv_palette_scan_order[idx][mbmi->palette_scan_order[1]]++;
+    counts->uv_palette_size[idx][mbmi->palette_size[1] - 2]++;
+  }
+}
+#endif  // CONFIG_PALETTE
