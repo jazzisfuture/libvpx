@@ -189,6 +189,15 @@ class VP9Encoder : public Encoder {
              const unsigned long init_flags, TwopassStatsStore *stats)
       : Encoder(cfg, deadline, init_flags, stats) {}
 
+  vpx_codec_err_t SetTileColumns(int log2_tile_columns) {
+#if CONFIG_VP9_ENCODER
+    return vpx_codec_control_(&encoder_, VP9E_SET_TILE_COLUMNS,
+                              log2_tile_columns);
+#else
+    return VPX_CODEC_INVALID_PARAM;
+#endif
+  }
+
  protected:
   virtual vpx_codec_iface_t* CodecInterface() const {
 #if CONFIG_VP9_ENCODER
@@ -223,7 +232,14 @@ class VP9CodecFactory : public CodecFactory {
                                  const unsigned long init_flags,
                                  TwopassStatsStore *stats) const {
 #if CONFIG_VP9_ENCODER
-    return new VP9Encoder(cfg, deadline, init_flags, stats);
+    VP9Encoder *const encoder =
+        new VP9Encoder(cfg, deadline, init_flags, stats);
+    const vpx_codec_err_t res = encoder->SetTileColumns(0);
+    if (res != VPX_CODEC_OK) {
+      delete encoder;
+      return NULL;
+    }
+    return encoder;
 #else
     return NULL;
 #endif
