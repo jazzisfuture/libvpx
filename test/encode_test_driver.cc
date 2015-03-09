@@ -26,6 +26,9 @@ void Encoder::InitEncoder(VideoSource *video) {
     cfg_.g_h = img->d_h;
     cfg_.g_timebase = video->timebase();
     cfg_.rc_twopass_stats_in = stats_->buf();
+
+    // Default to 1 thread and 1 tile column.
+    cfg_.g_threads = 1;
     res = vpx_codec_enc_init(&encoder_, CodecInterface(), &cfg_,
                              init_flags_);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
