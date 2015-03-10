@@ -103,6 +103,13 @@ void vp9_build_masked_inter_predictor_complex(
     const struct macroblockd_plane *pd, int mi_row, int mi_col,
     int mi_row_ori, int mi_col_ori, BLOCK_SIZE bsize, BLOCK_SIZE top_bsize,
     PARTITION_TYPE partition);
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_build_masked_inter_predictor_complex_highbd(
+    uint8_t *dst, int dst_stride, uint8_t *dst2, int dst2_stride,
+    const struct macroblockd_plane *pd, int mi_row, int mi_col,
+    int mi_row_ori, int mi_col_ori, BLOCK_SIZE bsize, BLOCK_SIZE top_bsize,
+    PARTITION_TYPE partition);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 void vp9_dec_build_inter_predictors_sby_sub8x8_extend(MACROBLOCKD *xd,
                                                       int mi_row, int mi_col,
                                                       int mi_row_ori,
