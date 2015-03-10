@@ -770,15 +770,43 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         continue;
 
       if (this_mode == NEWMV) {
-        if (ref_frame > LAST_FRAME)
-          continue;
         if (cpi->sf.partition_search_type != VAR_BASED_PARTITION &&
             best_rdc.rdcost < (int64_t)(1 << num_pels_log2_lookup[bsize]))
           continue;
-        if (!combined_motion_search(cpi, x, bsize, mi_row, mi_col,
-                                    &frame_mv[NEWMV][ref_frame],
-                                    &rate_mv, best_rdc.rdcost))
+
+        if (ref_frame > LAST_FRAME) {
+          int tmp_sad;
+          int dis, cost_list[5];
+
+          if (bsize < BLOCK_16X16)
+            continue;
+
+          tmp_sad = vp9_int_pro_motion_estimation(cpi, x, bsize);
+          if (tmp_sad > x->pred_mv_sad[LAST_FRAME])
+            continue;
+
+          frame_mv[NEWMV][ref_frame].as_int = mbmi->mv[0].as_int;
+          rate_mv = vp9_mv_bit_cost(&frame_mv[NEWMV][ref_frame].as_mv,
+                                    &mbmi->ref_mvs[ref_frame][0].as_mv,
+                                    x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+          frame_mv[NEWMV][ref_frame].as_mv.row >>= 3;
+          frame_mv[NEWMV][ref_frame].as_mv.col >>= 3;
+
+          cpi->find_fractional_mv_step(x, &frame_mv[NEWMV][ref_frame].as_mv,
+                                       &mbmi->ref_mvs[ref_frame][0].as_mv,
+                                       cpi->common.allow_high_precision_mv,
+                                       x->errorperbit,
+                                       &cpi->fn_ptr[bsize],
+                                       cpi->sf.mv.subpel_force_stop,
+                                       cpi->sf.mv.subpel_iters_per_step,
+                                       cond_cost_list(cpi, cost_list),
+                                       x->nmvjointcost, x->mvcost, &dis,
+                                       &x->pred_sse[ref_frame], NULL, 0, 0);
+        } else if (!combined_motion_search(cpi, x, bsize, mi_row, mi_col,
+                                           &frame_mv[NEWMV][ref_frame],
+                                           &rate_mv, best_rdc.rdcost)) {
           continue;
+        }
       }
 
       if (this_mode != NEARESTMV &&
@@ -803,7 +831,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
 
       if ((this_mode == NEWMV || filter_ref == SWITCHABLE) &&
-          pred_filter_search &&
+          pred_filter_search && (ref_frame == LAST_FRAME) &&
           ((mbmi->mv[0].as_mv.row & 0x07) != 0 ||
            (mbmi->mv[0].as_mv.col & 0x07) != 0)) {
         int pf_rate[3];
@@ -867,6 +895,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       if (x->color_sensitivity[0] || x->color_sensitivity[1]) {
         int uv_rate = 0;
         int64_t uv_dist = 0;
+        MV tmp_mv = mbmi->mv[0].as_mv;
+        mbmi->mv[0].as_mv.row = (mbmi->mv[0].as_mv.row >> 3) << 3;
+        mbmi->mv[0].as_mv.col = (mbmi->mv[0].as_mv.col >> 3) << 3;
         if (x->color_sensitivity[0])
           vp9_build_inter_predictors_sbp(xd, mi_row, mi_col, bsize, 1);
         if (x->color_sensitivity[1])
@@ -875,6 +906,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                            &var_y, &sse_y);
         this_rdc.rate += uv_rate;
         this_rdc.dist += uv_dist;
+        mbmi->mv[0].as_mv = tmp_mv;
       }
 
       this_rdc.rate += rate_mv;
