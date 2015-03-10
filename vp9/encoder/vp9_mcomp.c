@@ -1859,6 +1859,128 @@ unsigned int vp9_int_pro_motion_estimation(const VP9_COMP *cpi, MACROBLOCK *x,
   return best_sad;
 }
 
+int vp9_sub_pixel_motion_search(const MACROBLOCK *x,
+                                 MV *bestmv, const MV *ref_mv,
+                                 const vp9_variance_fn_ptr_t *vfp,
+                                 unsigned int *sse1) {
+  const uint8_t *const z = x->plane[0].src.buf;
+  const uint8_t *const src_address = z;
+  const int src_stride = x->plane[0].src.stride;
+  const MACROBLOCKD *xd = &x->e_mbd;
+  unsigned int besterr = INT_MAX;
+  unsigned int sse;
+  unsigned int whichdir = 0;
+  int thismse;
+  const int y_stride = xd->plane[0].pre[0].stride;
+  const int offset = bestmv->row * y_stride + bestmv->col;
+  const uint8_t *const y = xd->plane[0].pre[0].buf;
+
+  int rr = ref_mv->row;
+  int rc = ref_mv->col;
+  int br = bestmv->row * 8;
+  int bc = bestmv->col * 8;
+  int hstep = 4;
+  int iter, round = 2;
+  const int minc = MAX(x->mv_col_min * 8, ref_mv->col - MV_MAX);
+  const int maxc = MIN(x->mv_col_max * 8, ref_mv->col + MV_MAX);
+  const int minr = MAX(x->mv_row_min * 8, ref_mv->row - MV_MAX);
+  const int maxr = MIN(x->mv_row_max * 8, ref_mv->row + MV_MAX);
+  int tr = br;
+  int tc = bc;
+  const MV *search_step = search_step_table;
+  int idx, best_idx = -1;
+  unsigned int cost_array[5];
+
+  bestmv->row *= 8;
+  bestmv->col *= 8;
+
+  besterr = vfp->svf(y, y_stride, 0, 0,
+                     src_address, src_stride, &sse);
+
+  for (iter = 0; iter < round; ++iter) {
+    // Check vertical and horizontal sub-pixel positions.
+    for (idx = 0; idx < 4; ++idx) {
+      tr = br + search_step[idx].row;
+      tc = bc + search_step[idx].col;
+      if (tc >= minc && tc <= maxc && tr >= minr && tr <= maxr) {
+        const uint8_t *const pre_address = y + (tr >> 3) * y_stride + (tc >> 3);
+        int row_offset = (tr & 0x07) << 1;
+        int col_offset = (tc & 0x07) << 1;
+        MV this_mv;
+        this_mv.row = tr;
+        this_mv.col = tc;
+          thismse = vfp->svf(pre_address, y_stride, col_offset, row_offset,
+                             src_address, src_stride, &sse);
+        cost_array[idx] = thismse; //  +
+            // mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost, error_per_bit);
+
+        if (cost_array[idx] < besterr) {
+          best_idx = idx;
+          besterr = cost_array[idx];
+          *sse1 = sse;
+        }
+      } else {
+        cost_array[idx] = INT_MAX;
+      }
+    }
+
+    // Check diagonal sub-pixel position
+    tc = bc + (cost_array[0] < cost_array[1] ? -hstep : hstep);
+    tr = br + (cost_array[2] < cost_array[3] ? -hstep : hstep);
+    if (tc >= minc && tc <= maxc && tr >= minr && tr <= maxr) {
+      const uint8_t *const pre_address = y + (tr >> 3) * y_stride + (tc >> 3);
+      int row_offset = (tr & 0x07) << 1;
+      int col_offset = (tc & 0x07) << 1;
+      MV this_mv = {tr, tc};
+        thismse = vfp->svf(pre_address, y_stride, col_offset, row_offset,
+                           src_address, src_stride, &sse);
+
+      cost_array[4] = thismse; // +
+ //         mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost, error_per_bit);
+
+      if (cost_array[4] < besterr) {
+        best_idx = 4;
+        besterr = cost_array[4];
+        *sse1 = sse;
+      }
+    } else {
+      cost_array[idx] = INT_MAX;
+    }
+
+    if (best_idx < 4 && best_idx >= 0) {
+      br += search_step[best_idx].row;
+      bc += search_step[best_idx].col;
+    } else if (best_idx == 4) {
+      br = tr;
+      bc = tc;
+    }
+
+    tr = br;
+    tc = bc;
+
+    search_step += 4;
+    hstep >>= 1;
+    best_idx = -1;
+  }
+
+  // Each subsequent iteration checks at least one point in common with
+  // the last iteration could be 2 ( if diag selected) 1/4 pel
+
+  // These lines insure static analysis doesn't warn that
+  // tr and tc aren't used after the above point.
+  (void) tr;
+  (void) tc;
+
+  bestmv->row = br;
+  bestmv->col = bc;
+
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+    return INT_MAX;
+
+  return besterr;
+}
+
 /* do_refine: If last step (1-away) of n-step search doesn't pick the center
               point as the best match, we will do a final 1-away diamond
               refining search  */
