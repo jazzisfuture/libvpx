@@ -379,7 +379,7 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   if (rc->frames_since_key <  40)
     cr->rate_ratio_qdelta = 3.0;
   else
-    cr->rate_ratio_qdelta = 2.0;
+    cr->rate_ratio_qdelta = 2.5;
 }
 
 // Setup cyclic background refresh: set delta q and segmentation map.
