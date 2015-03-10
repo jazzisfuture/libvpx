@@ -110,7 +110,7 @@ static int candidate_refresh_aq(const CYCLIC_REFRESH *cr,
        mv.col > cr->motion_thresh || mv.col < -cr->motion_thresh ||
        !is_inter_block(mbmi)))
     return CR_SEGMENT_ID_BASE;
-  else  if (bsize >= BLOCK_32X32 &&
+  else  if (bsize >= BLOCK_16X16 &&
             rate < cr->thresh_rate_sb &&
             is_inter_block(mbmi) &&
             mbmi->mv[0].as_int == 0)
