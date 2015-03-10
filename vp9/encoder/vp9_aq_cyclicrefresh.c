@@ -110,7 +110,7 @@ static int candidate_refresh_aq(const CYCLIC_REFRESH *cr,
        mv.col > cr->motion_thresh || mv.col < -cr->motion_thresh ||
        !is_inter_block(mbmi)))
     return CR_SEGMENT_ID_BASE;
-  else  if (bsize >= BLOCK_32X32 &&
+  else  if (bsize >= BLOCK_16X16 &&
             rate < cr->thresh_rate_sb &&
             is_inter_block(mbmi) &&
             mbmi->mv[0].as_int == 0)
@@ -379,7 +379,7 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   if (rc->frames_since_key <  40)
     cr->rate_ratio_qdelta = 3.0;
   else
-    cr->rate_ratio_qdelta = 2.0;
+    cr->rate_ratio_qdelta = 2.5;
 }
 
 // Setup cyclic background refresh: set delta q and segmentation map.
