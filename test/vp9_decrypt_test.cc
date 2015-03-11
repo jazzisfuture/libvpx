@@ -53,7 +53,8 @@ TEST(TestDecrypt, DecryptWorksVp9) {
   video.Begin();
 
   // no decryption
-  vpx_codec_err_t res = decoder.DecodeFrame(video.cxdata(), video.frame_size());
+  vpx_codec_err_t res = decoder.DecodeFrame(video.cxdata(),
+                                            video.frame_size());
   ASSERT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
 
   // decrypt frame
@@ -66,6 +67,47 @@ TEST(TestDecrypt, DecryptWorksVp9) {
 
   res = decoder.DecodeFrame(&encrypted[0], encrypted.size());
   ASSERT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
+}
+
+TEST(TestDecrypt, DecryptWorksVp9FrameParallel) {
+  libvpx_test::IVFVideoSource video("vp90-2-05-resize.ivf");
+  video.Init();
+  int in_frames = 0;
+  int out_frames = 0;
+
+  vpx_codec_dec_cfg_t cfg = vpx_codec_dec_cfg_t();
+  cfg.threads = 4;  // Use 4 threads for parallel decode.
+  const vpx_codec_flags_t flags = VPX_CODEC_USE_FRAME_THREADING;
+  libvpx_test::VP9Decoder decoder(cfg, flags, 0);
+
+  video.Begin();
+
+  do {
+    ++in_frames;
+    std::vector<uint8_t> encrypted(video.frame_size());
+    encrypt_buffer(video.cxdata(), &encrypted[0], video.frame_size(), 0);
+    vpx_decrypt_init di = { test_decrypt_cb, &encrypted[0] };
+    decoder.Control(VPXD_SET_DECRYPTOR, &di);
+
+    const vpx_codec_err_t res = decoder.DecodeFrame(&encrypted[0], encrypted.size());
+    ASSERT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
+
+    video.Next();
+    // Flush the decoder at the end of the video.
+    if (!video.cxdata())
+      decoder.DecodeFrame(NULL, 0);
+
+    libvpx_test::DxDataIterator dec_iter = decoder.GetDxData();
+    const vpx_image_t *img;
+
+    // Get decompressed data
+    while ((img = dec_iter.Next())) {
+      ++out_frames;
+    }
+  } while (video.cxdata() != NULL);
+
+  EXPECT_EQ(in_frames, out_frames) <<
+      "Input frame count does not match output frame count";
 }
 
 }  // namespace libvpx_test
