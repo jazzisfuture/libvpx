@@ -542,6 +542,11 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
     frame_worker_data->data = frame_worker_data->scratch_buffer;
     frame_worker_data->user_priv = user_priv;
 
+    // Set these even if already initialized.  The caller may have changed the
+    // decrypt config between frames.
+    frame_worker_data->pbi->decrypt_cb = ctx->decrypt_cb;
+    frame_worker_data->pbi->decrypt_state = ctx->decrypt_state;
+
     if (ctx->next_submit_worker_id != ctx->last_submit_worker_id)
       ctx->last_submit_worker_id =
           (ctx->last_submit_worker_id + 1) % ctx->num_frame_workers;
