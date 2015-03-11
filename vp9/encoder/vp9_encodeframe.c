@@ -514,12 +514,6 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
   }
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
-#define GLOBAL_MOTION 0
-#else
-#define GLOBAL_MOTION 1
-#endif
-
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for down-sampled inputs.
 static void choose_partitioning(VP9_COMP *cpi,
@@ -564,7 +558,7 @@ static void choose_partitioning(VP9_COMP *cpi,
     MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
     unsigned int uv_sad;
     const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
-#if GLOBAL_MOTION
+
     const YV12_BUFFER_CONFIG *yv12_g = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
     unsigned int y_sad, y_sad_g;
     BLOCK_SIZE bsize;
@@ -576,9 +570,9 @@ static void choose_partitioning(VP9_COMP *cpi,
       bsize = BLOCK_64X32;
     else
       bsize = BLOCK_32X32;
-#endif
+
     assert(yv12 != NULL);
-#if GLOBAL_MOTION
+
     if (yv12_g && yv12_g != yv12) {
       vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
                            &cm->frame_refs[GOLDEN_FRAME - 1].sf);
@@ -589,7 +583,7 @@ static void choose_partitioning(VP9_COMP *cpi,
     } else {
       y_sad_g = UINT_MAX;
     }
-#endif
+
     vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
                          &cm->frame_refs[LAST_FRAME - 1].sf);
     mbmi->ref_frame[0] = LAST_FRAME;
@@ -597,7 +591,7 @@ static void choose_partitioning(VP9_COMP *cpi,
     mbmi->sb_type = BLOCK_64X64;
     mbmi->mv[0].as_int = 0;
     mbmi->interp_filter = BILINEAR;
-#if GLOBAL_MOTION
+
     y_sad = vp9_int_pro_motion_estimation(cpi, x, bsize);
     if (y_sad_g < y_sad) {
       vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
@@ -608,7 +602,6 @@ static void choose_partitioning(VP9_COMP *cpi,
     } else {
       x->pred_mv[LAST_FRAME] = mbmi->mv[0].as_mv;
     }
-#endif
 
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
 
