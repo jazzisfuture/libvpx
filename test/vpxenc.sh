@@ -57,7 +57,7 @@ vpxenc_rt_params() {
     --buf-initial-sz=500
     --buf-optimal-sz=600
     --buf-sz=1000
-    --cpu-used=-5
+    --cpu-used=-6
     --end-usage=cbr
     --error-resilient=1
     --kf-max-dist=90000
@@ -247,6 +247,23 @@ vpxenc_vp9_webm_rt() {
   fi
 }
 
+vpxenc_vp9_webm_rt_multithread() {
+  if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
+     [ "$(webm_io_available)" = "yes" ]; then
+    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_rt_multithread.webm"
+    vpxenc $(yuv_input_hantro_collage) \
+      $(vpxenc_rt_params vp9) \
+      --threads=2 \
+      --tile-columns=1 \
+      --output="${output}"
+
+    if [ ! -e "${output}" ]; then
+      elog "Output file does not exist."
+      return 1
+    fi
+  fi
+}
+
 vpxenc_vp9_webm_2pass() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
@@ -329,6 +346,7 @@ vpxenc_tests="vpxenc_vp8_ivf
               vpxenc_vp9_ivf
               vpxenc_vp9_webm
               vpxenc_vp9_webm_rt
+              vpxenc_vp9_webm_rt_multithread
               vpxenc_vp9_webm_2pass
               vpxenc_vp9_ivf_lossless
               vpxenc_vp9_ivf_minq0_maxq0
