@@ -607,11 +607,11 @@ typedef struct {
 static const REF_MODE ref_mode_set[RT_INTER_MODES] = {
     {LAST_FRAME, ZEROMV},
     {LAST_FRAME, NEARESTMV},
-    {LAST_FRAME, NEARMV},
-    {LAST_FRAME, NEWMV},
-    {GOLDEN_FRAME, ZEROMV},
     {GOLDEN_FRAME, NEARESTMV},
+    {LAST_FRAME, NEARMV},
+    {GOLDEN_FRAME, ZEROMV},
     {GOLDEN_FRAME, NEARMV},
+    {LAST_FRAME, NEWMV},
 };
 
 // TODO(jingning) placeholder for inter-frame non-RD mode decision.
