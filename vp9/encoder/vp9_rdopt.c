@@ -3069,8 +3069,14 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
   // use the UV scaling factors.
   vp9_setup_pred_block(xd, yv12_mb[ref_frame], yv12, mi_row, mi_col, sf, sf);
 
+#if CONFIG_OPT_MVREF
+  vp9_find_opt_ref_mvs(cm, xd, tile, mi_row, mi_col, ref_frame,
+                       yv12_mb[ref_frame][0], candidates);
+#else
   // Gets an initial list of candidate vectors from neighbours and orders them
   vp9_find_mv_refs(cm, xd, tile, mi, ref_frame, candidates, mi_row, mi_col);
+#endif  // CONFIG_OPT_MVREF
+
   // Candidate refinement carried out at encoder and decoder
   vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
                         &frame_nearest_mv[ref_frame],

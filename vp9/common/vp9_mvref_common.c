@@ -9,6 +9,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits.h>
 #include "vp9/common/vp9_mvref_common.h"
 
 // This function searches the neighbourhood of a given MB/SB
@@ -42,8 +43,8 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
       const MODE_INFO *const candidate_mi = xd->mi[mv_ref->col + mv_ref->row *
                                                    xd->mi_stride].src_mi;
       const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
-      // Keep counts for entropy encoding.
 #if !CONFIG_NEWMVREF_SUB8X8
+      // Keep counts for entropy encoding.
       context_counter += mode_2_counter[candidate->mode];
 #endif  // CONFIG_NEWMVREF_SUB8X8
       different_ref_found = 1;
@@ -112,7 +113,7 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
 }
 
-#if CONFIG_NEWMVREF_SUB8X8
+#if CONFIG_NEWMVREF_SUB8X8 || CONFIG_OPT_MVREF
 // This function keeps a mode count for a given MB/SB
 void vp9_update_mv_context(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                            const TileInfo *const tile,
@@ -150,7 +151,7 @@ void vp9_update_mv_context(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 
   mi->mbmi.mode_context[ref_frame] = counter_to_context[context_counter];
 }
-#endif  // CONFIG_NEWMVREF_SUB8X8
+#endif  // CONFIG_NEWMVREF_SUB8X8 || CONFIG_OPT_MVREF
 
 void vp9_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                       const TileInfo *const tile,
@@ -178,6 +179,200 @@ void vp9_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
   *nearest = mvlist[0];
   *near = mvlist[1];
 }
+
+#if CONFIG_OPT_MVREF
+void add_opt_ref_mv_list(
+    int candidate_idx,
+    const MODE_INFO *const candidate_mi,
+    const POSITION *const mv_ref,
+    int ref_frame,
+    const int *ref_sign_bias,
+    int block,
+    int_mv ref_mvs[2][MAX_MV_REF_CANDIDATES * (MVREF_NEIGHBOURS + 1)],
+    int ref_mvs_counter[2],
+    int is_prev) {
+  int ref;
+  const MB_MODE_INFO *const candidate_mbmi = &candidate_mi->mbmi;
+  int ref_frames = has_second_ref(candidate_mbmi) ? 2 : 1;
+
+  if (!is_inter_block(candidate_mbmi))
+    return;
+
+  for (ref = 0; ref < ref_frames; ++ref) {
+    // Note: As currently no unique IDs are maintained for each reference frame,
+    // the same ref frame, e.g. LAST_FRAME, does not indicate that exactly the
+    // same reference frame is being used. Hence all the mv ref candidates from
+    // the previous encoded frame are regarded as not with the same ref frame.
+    if (!is_prev && candidate_mbmi->ref_frame[ref] == ref_frame) {
+      // The nearest 2 blocks are treated differently:
+      // If the size < 8x8, the mv is obtained from the bmi sub-structure.
+      if (candidate_idx < 2) {
+        ref_mvs[0][ref_mvs_counter[0] ++] =
+            get_sub_block_mv(candidate_mi, ref, mv_ref->col, block);
+      } else {
+        ref_mvs[0][ref_mvs_counter[0] ++] = candidate_mbmi->mv[ref];
+      }
+    } else if (ref == 0 || candidate_mbmi->mv[1].as_int !=
+               candidate_mbmi->mv[0].as_int) {
+      ref_mvs[1][ref_mvs_counter[1] ++] =
+          scale_mv(candidate_mbmi, ref, ref_frame, ref_sign_bias);
+    }
+  }
+}
+
+void merge_opt_mv_refs(
+    int_mv ref_mvs[2][MAX_MV_REF_CANDIDATES * (MVREF_NEIGHBOURS + 1)],
+    int ref_mvs_counter[2]) {
+  int i, j, k, m;
+  int_mv ref_mv_list[MAX_MV_REF_CANDIDATES * (MVREF_NEIGHBOURS + 1)];
+  int ref_mv_list_idx = 0;
+
+  vpx_memset(ref_mv_list, 0, sizeof(int_mv) *
+             MAX_MV_REF_CANDIDATES * (MVREF_NEIGHBOURS + 1));
+
+  // Scan through the two motion vector candidate lists.
+  for (m = 0; m < 2; ++m) {
+    if (ref_mvs_counter[m] > 0) {
+      if (m == 0 ||  // 1st mv list, or
+          ref_mv_list_idx == 0) {  // 1st mv list is empty
+        ref_mv_list[ref_mv_list_idx ++].as_int = ref_mvs[m][0].as_int;
+        k = 1;
+      } else {  // (m == 1) && (ref_mv_list_idx > 0)
+        // Check on the 2nd mv list and 1st mv is not empty
+        k = 0;
+      }
+
+      for (i = k; i < ref_mvs_counter[m]; ++i) {
+        for (j = 0; j < ref_mv_list_idx; ++j) {
+          if (ref_mv_list[j].as_int == ref_mvs[m][i].as_int) break;
+        }
+        if (j == ref_mv_list_idx) {
+          ref_mv_list[ref_mv_list_idx ++].as_int = ref_mvs[m][i].as_int;
+        }
+      }
+    }  // ref_mvs_counter[m] > 0
+  }  // m
+
+  vpx_memset(ref_mvs[0], 0, sizeof(int_mv) *
+             MAX_MV_REF_CANDIDATES * (MVREF_NEIGHBOURS + 1));
+
+  // Copy over.
+  for (i = 0; i < ref_mv_list_idx; ++i) {
+    ref_mvs[0][i].as_int = ref_mv_list[i].as_int;
+  }
+  ref_mvs_counter[0] = ref_mv_list_idx;
+}
+
+void vp9_find_opt_ref_mvs(const VP9_COMMON *cm,
+                          const MACROBLOCKD *xd,
+                          const TileInfo *const tile,
+                          int mi_row, int mi_col,
+                          MV_REFERENCE_FRAME ref_frame,
+                          struct buf_2d yv12_mb_ref,
+                          int_mv *mv_ref_list) {
+  const int *ref_sign_bias = cm->ref_frame_sign_bias;
+  MODE_INFO *const mi = xd->mi[0].src_mi;
+  const MODE_INFO *const prev_mi = (!cm->error_resilient_mode) && cm->prev_mi
+      ? cm->prev_mi[mi_row * xd->mi_stride + mi_col].src_mi : NULL;
+
+  const POSITION *const mv_ref_search = mv_ref_blocks[mi->mbmi.sb_type];
+  int ref_mvs_counter[2];
+  int_mv ref_mvs[2][MAX_MV_REF_CANDIDATES * (MVREF_NEIGHBOURS + 1)];
+  int_mv opt_ref_mvs[2];
+  int opt_sad[2] = { INT_MAX, INT_MAX };
+  int i;
+
+  uint8_t *src_buf = xd->plane[0].dst.buf;
+  const int src_stride = xd->plane[0].dst.stride;
+  uint8_t *ref_buf = yv12_mb_ref.buf;
+  const int ref_stride = yv12_mb_ref.stride;
+
+  uint8_t *above_src;
+  uint8_t *left_src;
+  uint8_t *above_ref;
+  uint8_t *left_ref;
+
+  vp9_update_mv_context(cm, xd, tile, mi, ref_frame, mv_ref_list, -1,
+                        mi_row, mi_col);
+
+  // Blank the reference motion vector candidate list.
+  for (i = 0; i < 2; ++i) {
+    vpx_memset(ref_mvs[i], 0, sizeof(int_mv) *
+               MAX_MV_REF_CANDIDATES * (MVREF_NEIGHBOURS + 1));
+    ref_mvs_counter[i] = 0;
+  }
+
+  for (i = 0; i < MVREF_NEIGHBOURS; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MODE_INFO *const candidate_mi =
+          xd->mi[mv_ref->col + mv_ref->row * xd->mi_stride].src_mi;
+
+      add_opt_ref_mv_list(i, candidate_mi, mv_ref, ref_frame, ref_sign_bias,
+                          -1, ref_mvs, ref_mvs_counter, 0);
+    }
+  }
+
+  // Check the last frame's mode and mv info.
+  if (prev_mi) {
+    add_opt_ref_mv_list(i, prev_mi, NULL, ref_frame, ref_sign_bias,
+                        -1, ref_mvs, ref_mvs_counter, 1);
+  }
+
+  // Remove all duplicate motion vector candidates, and merge two lists to one.
+  merge_opt_mv_refs(ref_mvs, ref_mvs_counter);
+
+  // Use the above 2 lines and the left 2 columns to choose the best motion
+  // vector reference that yields the least SAD score.
+
+  above_src = src_buf - src_stride * 2;
+  left_src  = src_buf - 2;
+  above_ref = ref_buf - ref_stride * 2;
+  left_ref  = ref_buf - 2;
+
+  for(i = 0; i < ref_mvs_counter[0]; ++i) {
+    int sad = 0;
+    int offset = 0;
+    int row_offset, col_offset;
+    int_mv this_mv;
+
+    this_mv.as_int = ref_mvs[0][i].as_int;
+    // TODO(zoeliu): Check on the mv clamping.
+    clamp_mv(&this_mv.as_mv,
+             xd->mb_to_left_edge - LEFT_TOP_MARGIN + 16,
+             xd->mb_to_right_edge + RIGHT_BOTTOM_MARGIN,
+             xd->mb_to_top_edge - LEFT_TOP_MARGIN + 16,
+             xd->mb_to_bottom_edge + RIGHT_BOTTOM_MARGIN);
+
+    row_offset = (this_mv.as_mv.row > 0) ?
+        ((this_mv.as_mv.row + 3) >> 3) : ((this_mv.as_mv.row + 4) >> 3);
+    col_offset = (this_mv.as_mv.col > 0) ?
+        ((this_mv.as_mv.col + 3) >> 3) : ((this_mv.as_mv.col + 4) >> 3);
+    offset = ref_stride * row_offset + col_offset;
+
+    sad  = vp9_sad16x2_c(above_src, src_stride,
+                         above_ref + offset, ref_stride);
+    sad += vp9_sad2x16_c(left_src, src_stride,
+                         left_ref + offset, ref_stride);
+
+    if (i == 0) {
+      OPT_REF_MV_UPDATE(0);
+    } else {
+      if (sad < opt_sad[0]) {
+        OPT_REF_MV_SHIFT;
+        OPT_REF_MV_UPDATE(0);
+      } else if (i == 1 ||
+                 sad < opt_sad[1]) {
+        OPT_REF_MV_UPDATE(1);
+      }
+    }
+  }
+
+  for (i = 0; i < 2; ++i) {
+    mv_ref_list[i].as_int = opt_ref_mvs[i].as_int;
+  }
+}
+#endif  // CONFIG_OPT_MVREF
 
 void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
                                    const TileInfo *const tile,

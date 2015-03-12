@@ -215,14 +215,14 @@ static INLINE void clamp_mv2(MV *mv, const MACROBLOCKD *xd) {
                xd->mb_to_bottom_edge + RIGHT_BOTTOM_MARGIN);
 }
 
-#if CONFIG_NEWMVREF_SUB8X8
+#if CONFIG_NEWMVREF_SUB8X8 || CONFIG_OPT_MVREF
 // This function keeps a mode count for a given MB/SB
 void vp9_update_mv_context(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                            const TileInfo *const tile,
                            MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
                            int_mv *mv_ref_list,
                            int block, int mi_row, int mi_col);
-#endif  // CONFIG_NEWMVREF_SUB8X8
+#endif  // CONFIG_NEWMVREF_SUB8X8 || CONFIG_OPT_MVREF
 
 void vp9_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                       const TileInfo *const tile,
@@ -237,6 +237,28 @@ static INLINE void vp9_lower_mv_precision(MV *mv, const int usehp) {
       mv->col += (mv->col > 0 ? -1 : 1);
   }
 }
+
+#if CONFIG_OPT_MVREF
+#define OPT_REF_MV_UPDATE(idx) \
+  do { \
+    opt_sad[idx] = sad; \
+    opt_ref_mvs[idx].as_int = this_mv.as_int; \
+  } while (0)
+
+#define OPT_REF_MV_SHIFT \
+  do { \
+    opt_sad[1] = opt_sad[0]; \
+    opt_ref_mvs[1].as_int = opt_ref_mvs[0].as_int; \
+  } while (0)
+
+void vp9_find_opt_ref_mvs(const VP9_COMMON *cm,
+                          const MACROBLOCKD *xd,
+                          const TileInfo *const tile,
+                          int mi_row, int mi_col,
+                          MV_REFERENCE_FRAME ref_frame,
+                          struct buf_2d yv12_mb_ref,
+                          int_mv *mv_ref_list);
+#endif  // CONFIG_OPT_MVREF
 
 // check a list of motion vectors by sad score using a number rows of pixels
 // above and a number cols of pixels in the left to select the one with best
