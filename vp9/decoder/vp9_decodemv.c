@@ -970,8 +970,13 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
 #if CONFIG_COPY_MODE
     if (mbmi->copy_mode == NOREF)
 #endif
+#if CONFIG_OPT_MVREF
+      vp9_find_opt_ref_mvs(cm, xd, mi, tile, mi_row, mi_col, frame,
+                           xd->plane[0].pre[ref], mbmi->ref_mvs[frame]);
+#else
       vp9_find_mv_refs(cm, xd, tile, mi, frame, mbmi->ref_mvs[frame],
                        mi_row, mi_col);
+#endif  // CONFIG_OPT_MVREF
   }
 #if CONFIG_COPY_MODE
   if (mbmi->copy_mode != NOREF)

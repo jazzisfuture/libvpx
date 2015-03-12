@@ -134,6 +134,13 @@ sadMxNxK(4, 4, 3)
 sadMxNxK(4, 4, 8)
 sadMxNx4D(4, 4)
 
+#if CONFIG_OPT_MVREF
+//16x2
+sadMxN(16, 2)
+//2x16
+sadMxN(2, 16)
+#endif  // CONFIG_OPT_MVREF
+
 #if CONFIG_VP9_HIGHBITDEPTH
 static INLINE unsigned int highbd_sad(const uint8_t *a8, int a_stride,
                                       const uint8_t *b8, int b_stride,

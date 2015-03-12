@@ -1070,6 +1070,14 @@ specialize qw/vp9_sad4x8/, "$sse_x86inc";
 add_proto qw/unsigned int vp9_sad4x4/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int  ref_stride";
 specialize qw/vp9_sad4x4/, "$sse_x86inc";
 
+#if CONFIG_OPT_MVREF
+add_proto qw/unsigned int vp9_sad16x2/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int  ref_stride";
+specialize qw/vp9_sad16x2/;
+
+add_proto qw/unsigned int vp9_sad2x16/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int  ref_stride";
+specialize qw/vp9_sad2x16/;
+#endif  // CONFIG_OPT_MVREF
+
 add_proto qw/unsigned int vp9_sad64x64_avg/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int  ref_stride, const uint8_t *second_pred";
 specialize qw/vp9_sad64x64_avg avx2/, "$sse2_x86inc";
 
