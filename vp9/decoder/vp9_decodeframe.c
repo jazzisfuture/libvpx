@@ -288,75 +288,6 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
   }
 }
 
-struct intra_args {
-  VP9_COMMON *cm;
-  MACROBLOCKD *xd;
-  FRAME_COUNTS *counts;
-  vp9_reader *r;
-  const int16_t *const y_dequant;
-  const int16_t *const uv_dequant;
-};
-
-static void predict_and_reconstruct_intra_block(int plane, int block,
-                                                BLOCK_SIZE plane_bsize,
-                                                TX_SIZE tx_size, void *arg) {
-  struct intra_args *const args = (struct intra_args *)arg;
-  VP9_COMMON *const cm = args->cm;
-  MACROBLOCKD *const xd = args->xd;
-  struct macroblockd_plane *const pd = &xd->plane[plane];
-  MODE_INFO *const mi = xd->mi[0].src_mi;
-  const PREDICTION_MODE mode = (plane == 0) ? get_y_mode(mi, block)
-                                            : mi->mbmi.uv_mode;
-  const int16_t *const dequant = (plane == 0) ? args->y_dequant
-                                              : args->uv_dequant;
-  int x, y;
-  uint8_t *dst;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
-  dst = &pd->dst.buf[4 * y * pd->dst.stride + 4 * x];
-
-  vp9_predict_intra_block(xd, block >> (tx_size << 1),
-                          b_width_log2_lookup[plane_bsize], tx_size, mode,
-                          dst, pd->dst.stride, dst, pd->dst.stride,
-                          x, y, plane);
-
-  if (!mi->mbmi.skip) {
-    const int eob = vp9_decode_block_tokens(cm, xd, args->counts, plane, block,
-                                            plane_bsize, x, y, tx_size,
-                                            args->r, dequant);
-    inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
-                            eob);
-  }
-}
-
-struct inter_args {
-  VP9_COMMON *cm;
-  MACROBLOCKD *xd;
-  vp9_reader *r;
-  FRAME_COUNTS *counts;
-  int *eobtotal;
-  const int16_t *const y_dequant;
-  const int16_t *const uv_dequant;
-};
-
-static void reconstruct_inter_block(int plane, int block,
-                                    BLOCK_SIZE plane_bsize,
-                                    TX_SIZE tx_size, void *arg) {
-  struct inter_args *args = (struct inter_args *)arg;
-  VP9_COMMON *const cm = args->cm;
-  MACROBLOCKD *const xd = args->xd;
-  struct macroblockd_plane *const pd = &xd->plane[plane];
-  const int16_t *const dequant = (plane == 0) ? args->y_dequant
-                                              : args->uv_dequant;
-  int x, y, eob;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
-  eob = vp9_decode_block_tokens(cm, xd, args->counts, plane, block, plane_bsize,
-                                x, y, tx_size, args->r, dequant);
-  inverse_transform_block(xd, plane, block, tx_size,
-                          &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
-                          pd->dst.stride, eob);
-  *args->eobtotal += eob;
-}
-
 static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                  const TileInfo *const tile,
                                  BLOCK_SIZE bsize, int mi_row, int mi_col) {
@@ -386,6 +317,115 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   return &xd->mi[0].mbmi;
 }
 
+static void vp9_recon_intra_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
+                                  FRAME_COUNTS *counts, vp9_reader *reader,
+                                  int16_t *y_dequant, int16_t *uv_dequant,
+                                  MB_MODE_INFO *const mbmi, BLOCK_SIZE bsize) {
+  int plane;
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    const struct macroblockd_plane *const pd = &xd->plane[plane];
+    // block and transform sizes, in number of 4x4 blocks log 2 ("*_b")
+    // 4x4=0, 8x8=2, 16x16=4, 32x32=6, 64x64=8
+    // transform size varies per plane, look it up in a common way.
+    const TX_SIZE tx_size = plane ? get_uv_tx_size(mbmi, pd)
+                                  : mbmi->tx_size;
+    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
+    const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
+    const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+    const int step = 1 << (tx_size << 1);
+    int block = 0, r, c;
+    // If mb_to_right_edge is < 0 we are in a situation in which
+    // the current block size extends into the UMV and we won't
+    // visit the sub blocks that are wholly within the UMV.
+    const int max_blocks_wide = num_4x4_w + (xd->mb_to_right_edge >= 0 ? 0 :
+        xd->mb_to_right_edge >> (5 + pd->subsampling_x));
+    const int max_blocks_high = num_4x4_h + (xd->mb_to_bottom_edge >= 0 ? 0 :
+        xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
+
+    // Keep track of the row and column of the blocks we use so that we know
+    // if we are in the unrestricted motion border.
+    for (r = 0; r < max_blocks_high; r += (1 << tx_size)) {
+      for (c = 0; c < num_4x4_w; c += (1 << tx_size)) {
+        // Skip visiting the sub blocks that are wholly within the UMV.
+        if (c < max_blocks_wide) {
+          const PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi, block)
+                                       : xd->mi->mbmi.uv_mode;
+          const int16_t *const dequant = (plane == 0) ? y_dequant
+                                         : uv_dequant;
+          int x, y;
+          uint8_t *dst;
+          txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
+          dst = &pd->dst.buf[4 * y * pd->dst.stride + 4 * x];
+
+          vp9_predict_intra_block(xd, block >> (tx_size << 1),
+                                  b_width_log2_lookup[plane_bsize], tx_size,
+                                  mode, dst, pd->dst.stride, dst,
+                                  pd->dst.stride, x, y, plane);
+
+          if (!xd->mi->mbmi.skip) {
+            const int eob = vp9_decode_block_tokens(cm, xd, counts, plane,
+                                                    block, plane_bsize, x, y,
+                                                    tx_size, reader, dequant);
+            inverse_transform_block(xd, plane, block, tx_size, dst,
+                                    pd->dst.stride, eob);
+          }
+        }
+        block += step;
+      }
+    }
+  }
+}
+
+static void vp9_recon_inter_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
+                                  FRAME_COUNTS *counts, vp9_reader *reader,
+                                  int16_t *y_dequant, int16_t *uv_dequant,
+                                  MB_MODE_INFO *const mbmi, BLOCK_SIZE bsize,
+                                  int *eobtotal) {
+  int plane;
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    const struct macroblockd_plane *const pd = &xd->plane[plane];
+    // block and transform sizes, in number of 4x4 blocks log 2 ("*_b")
+    // 4x4=0, 8x8=2, 16x16=4, 32x32=6, 64x64=8
+    // transform size varies per plane, look it up in a common way.
+    const TX_SIZE tx_size = plane ? get_uv_tx_size(mbmi, pd)
+                                  : mbmi->tx_size;
+    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
+    const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
+    const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+    const int step = 1 << (tx_size << 1);
+    int block = 0, r, c;
+    // If mb_to_right_edge is < 0 we are in a situation in which
+    // the current block size extends into the UMV and we won't
+    // visit the sub blocks that are wholly within the UMV.
+    const int max_blocks_wide = num_4x4_w + (xd->mb_to_right_edge >= 0 ? 0 :
+        xd->mb_to_right_edge >> (5 + pd->subsampling_x));
+    const int max_blocks_high = num_4x4_h + (xd->mb_to_bottom_edge >= 0 ? 0 :
+        xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
+
+    // Keep track of the row and column of the blocks we use so that we know
+    // if we are in the unrestricted motion border.
+    for (r = 0; r < max_blocks_high; r += (1 << tx_size)) {
+      for (c = 0; c < num_4x4_w; c += (1 << tx_size)) {
+        // Skip visiting the sub blocks that are wholly within the UMV.
+        if (c < max_blocks_wide) {
+          const int16_t *const dequant = (plane == 0) ? y_dequant
+                                              : uv_dequant;
+          int x, y, eob;
+          txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
+          eob = vp9_decode_block_tokens(cm, xd, counts, plane, block,
+                                        plane_bsize, x, y, tx_size, reader,
+                                        dequant);
+          inverse_transform_block(xd, plane, block, tx_size,
+                                  &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
+                                  pd->dst.stride, eob);
+          *eobtotal += eob;
+        }
+        block += step;
+      }
+    }
+  }
+}
+
 static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
                          FRAME_COUNTS *counts,
                          const TileInfo *const tile,
@@ -413,9 +453,8 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   uv_dequant[1] = vp9_ac_quant(qindex, cm->uv_ac_delta_q, cm->bit_depth);
 
   if (!is_inter_block(mbmi)) {
-    struct intra_args arg = {cm, xd, counts, r , y_dequant, uv_dequant};
-    vp9_foreach_transformed_block(xd, bsize,
-                                  predict_and_reconstruct_intra_block, &arg);
+    vp9_recon_intra_block(cm, xd, counts, r, y_dequant, uv_dequant, mbmi,
+                          bsize);
   } else {
     // Prediction
     vp9_dec_build_inter_predictors_sb(pbi, xd, mi_row, mi_col, bsize);
@@ -423,9 +462,8 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
     // Reconstruction
     if (!mbmi->skip) {
       int eobtotal = 0;
-      struct inter_args arg = {cm, xd, r, counts, &eobtotal, y_dequant,
-                               uv_dequant};
-      vp9_foreach_transformed_block(xd, bsize, reconstruct_inter_block, &arg);
+      vp9_recon_inter_block(cm, xd, counts, r, y_dequant, uv_dequant, mbmi,
+                            bsize, &eobtotal);
       if (!less8x8 && eobtotal == 0)
         mbmi->skip = 1;  // skip loopfilter
     }
