@@ -2276,9 +2276,6 @@ static int set_and_cost_bmi_mvs(VP9_COMP *cpi, MACROBLOCKD *xd, int i,
                                 int *mvcost[2]) {
   MODE_INFO *const mic = xd->mi[0].src_mi;
   const MB_MODE_INFO *const mbmi = &mic->mbmi;
-#if CONFIG_NEWMVREF_SUB8X8
-  int usehp = cpi->common.allow_high_precision_mv;
-#endif  // CONFIG_NEWMVREF_SUB8X8
   int thismvcost = 0;
   int idx, idy;
   const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[mbmi->sb_type];
@@ -2332,7 +2329,8 @@ static int set_and_cost_bmi_mvs(VP9_COMP *cpi, MACROBLOCKD *xd, int i,
     case NEW_NEARESTMV:
       this_mv[0].as_int = seg_mvs[mbmi->ref_frame[0]].as_int;
 #if CONFIG_NEWMVREF_SUB8X8
-      usehp = usehp && vp9_use_mv_hp(&best_ref_mv[0]->as_mv);
+      usehp = cpi->common.allow_high_precision_mv &&
+          vp9_use_mv_hp(&best_ref_mv[0]->as_mv);
       if (!usehp)
         vp9_lower_mv_precision(&this_mv[0].as_mv, usehp);
 #endif  // CONFIG_NEWMVREF_SUB8X8
@@ -2345,7 +2343,8 @@ static int set_and_cost_bmi_mvs(VP9_COMP *cpi, MACROBLOCKD *xd, int i,
       this_mv[0].as_int = frame_mv[mbmi->ref_frame[0]].as_int;
       this_mv[1].as_int = seg_mvs[mbmi->ref_frame[1]].as_int;
 #if CONFIG_NEWMVREF_SUB8X8
-      usehp = usehp && vp9_use_mv_hp(&best_ref_mv[1]->as_mv);
+      usehp = cpi->common.allow_high_precision_mv &&
+          vp9_use_mv_hp(&best_ref_mv[1]->as_mv);
       if (!usehp)
         vp9_lower_mv_precision(&this_mv[1].as_mv, usehp);
 #endif  // CONFIG_NEWMVREF_SUB8X8
@@ -3064,7 +3063,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
             have_ref = 1;
             for (ref = 0; ref < 1 + has_second_rf; ++ref)
 #if CONFIG_NEWMVREF_SUB8X8
-              if (have_newmv_in_inter_mode)
+              if (have_newmv_in_inter_mode(this_mode))
                 have_ref &= (
                     (mode_mv[this_mode][ref].as_int ==
                      ref_bsi->rdstat[i][mode_idx].mvs[ref].as_int) &&
