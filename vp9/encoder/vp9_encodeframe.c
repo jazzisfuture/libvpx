@@ -481,7 +481,8 @@ static int set_vt_partitioning(VP9_COMP *cpi,
 
 void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
   SPEED_FEATURES *const sf = &cpi->sf;
-  if (sf->partition_search_type != VAR_BASED_PARTITION) {
+  if (sf->partition_search_type != VAR_BASED_PARTITION &&
+      sf->partition_search_type != REFERENCE_PARTITION) {
     return;
   } else {
     VP9_COMMON *const cm = &cpi->common;
@@ -505,7 +506,7 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
     }
     // TODO(marpan): Allow 4x4 partitions for inter-frames.
     // use_4x4_partition = (variance4x4downsample[i2 + j] == 1);
-    // If 4x4 partition is not used, then 8x8 partition will be selected
+    // If 4x4 partition is not used, then 8x8 partition will be selectL3ed
     // if variance of 16x16 block is very high, so use larger threshold
     // for 16x16 (threshold_bsize_min) in that case.
     cpi->vbp_threshold_16x16 = (use_4x4_partition) ?
@@ -3515,9 +3516,8 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
         set_offsets(cpi, tile_info, x, mi_row, mi_col, BLOCK_64X64);
         if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled &&
             xd->mi[0].src_mi->mbmi.segment_id) {
-          auto_partition_range(cpi, tile_info, xd, mi_row, mi_col,
-                               &x->min_partition_size,
-                               &x->max_partition_size);
+          x->max_partition_size = BLOCK_64X64;
+          x->min_partition_size = BLOCK_8X8;
           nonrd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col,
                                BLOCK_64X64, &dummy_rdc, 1,
                                INT64_MAX, td->pc_root);
