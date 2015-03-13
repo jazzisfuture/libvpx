@@ -353,7 +353,7 @@ class DatarateTestVP9Large : public ::libvpx_test::EncoderTest,
 
   virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
                                   ::libvpx_test::Encoder *encoder) {
-    if (video->frame() == 1)
+    if (video->frame() == 0)
       encoder->Control(VP8E_SET_CPUUSED, set_cpu_used_);
 
     if (denoiser_offon_test_) {
