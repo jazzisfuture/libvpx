@@ -829,7 +829,7 @@ extern "C" {
    *
    * \param[in]    iface   Pointer to the algorithm interface to use.
    * \param[out]   cfg     Configuration buffer to populate
-   * \param[in]    usage   End usage. Set to 0 or use codec specific values.
+   * \param[in]    usage   End usage. Set to 0 for VP8 and VP9.
    *
    * \retval #VPX_CODEC_OK
    *     The configuration was populated.
