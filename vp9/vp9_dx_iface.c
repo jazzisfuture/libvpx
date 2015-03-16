@@ -128,7 +128,7 @@ static vpx_codec_err_t decoder_destroy(vpx_codec_alg_priv_t *ctx) {
     pthread_mutex_destroy(&ctx->buffer_pool->pool_mutex);
 #endif
   }
-
+  vp9_free_ref_frame_buffers(cm);
   if (ctx->buffer_pool)
     vp9_free_internal_frame_buffers(&ctx->buffer_pool->int_frame_buffers);
 

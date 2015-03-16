@@ -1822,6 +1822,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 #endif
 
   vp9_remove_common(cm);
+  vp9_free_ref_frame_buffers(cm);
   vpx_free(cpi);
 
 #if CONFIG_VP9_TEMPORAL_DENOISING

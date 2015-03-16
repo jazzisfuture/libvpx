@@ -142,7 +142,6 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
 }
 
 void vp9_remove_common(VP9_COMMON *cm) {
-  vp9_free_ref_frame_buffers(cm);
   vp9_free_context_buffers(cm);
 
   vpx_free(cm->fc);
