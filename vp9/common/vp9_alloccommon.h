@@ -12,6 +12,8 @@
 #ifndef VP9_COMMON_VP9_ALLOCCOMMON_H_
 #define VP9_COMMON_VP9_ALLOCCOMMON_H_
 
+#include "vp9/common/vp9_onyxc_int.h"
+
 #define INVALID_IDX -1  // Invalid buffer index.
 
 #ifdef __cplusplus
@@ -26,7 +28,8 @@ int vp9_alloc_context_buffers(struct VP9Common *cm, int width, int height);
 void vp9_init_context_buffers(struct VP9Common *cm);
 void vp9_free_context_buffers(struct VP9Common *cm);
 
-void vp9_free_ref_frame_buffers(struct VP9Common *cm);
+void vp9_free_ref_frame_buffers(BufferPool *pool);
+void vp9_free_postproc_buffers(struct VP9Common *cm);
 
 int vp9_alloc_state_buffers(struct VP9Common *cm, int width, int height);
 void vp9_free_state_buffers(struct VP9Common *cm);
