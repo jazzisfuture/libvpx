@@ -41,6 +41,10 @@ void Encoder::InitEncoder(VideoSource *video) {
       res = vpx_codec_control_(&encoder_, VP9E_SET_TILE_COLUMNS,
                                log2_tile_columns);
       ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
+    } else {
+      ASSERT_NE(std::string::npos,
+                codec_name.find("WebM Project VP8 Encoder"))
+          << "Unknown Codec Interface";
     }
   }
 }
