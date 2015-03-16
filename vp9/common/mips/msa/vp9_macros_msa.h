@@ -17,29 +17,29 @@
 #define ALIGNMENT           16
 #define ALIGNMENT_MINUS_1   (ALIGNMENT - 1)
 
-#define LOAD_B(psrc) ( {              \
+#define LOAD_B(psrc) ({               \
   VINT8 out_m;                        \
   out_m = *((const VINT8 *) (psrc));  \
   out_m;                              \
-} )
+})
 
-#define LOAD_H(psrc) ( {               \
+#define LOAD_H(psrc) ({                \
   VINT16 out_m;                        \
   out_m = *((const VINT16 *) (psrc));  \
   out_m;                               \
-} )
+})
 
-#define LOAD_W(psrc) ( {               \
+#define LOAD_W(psrc) ({                \
   VINT32 out_m;                        \
   out_m = *((const VINT32 *) (psrc));  \
   out_m;                               \
-} )
+})
 
-#define LOAD_D(psrc) ( {               \
+#define LOAD_D(psrc) ({                \
   VINT64 out_m;                        \
   out_m = *((const VINT64 *) (psrc));  \
   out_m;                               \
-} )
+})
 
 #define STORE_B(vec, pdest) {    \
   *((VINT8 *) (pdest)) = (vec);  \
@@ -63,7 +63,7 @@
 #define ALLOC_ALIGNED(align) __attribute__ ((aligned((align) << 1)))
 
 #if ((__mips_isa_rev >= 6) && (__mips == 64))
-  #define LOAD_HWORD(psrc) ( {                        \
+  #define LOAD_HWORD(psrc) ({                         \
     const uint8_t *src_m = (const uint8_t *) (psrc);  \
     uint16_t val_m;                                   \
                                                       \
@@ -75,9 +75,9 @@
     );                                                \
                                                       \
     val_m;                                            \
-  } )
+  })
 
-  #define LOAD_WORD(psrc) ( {                         \
+  #define LOAD_WORD(psrc) ({                          \
     const uint8_t *src_m = (const uint8_t *) (psrc);  \
     uint32_t val_m;                                   \
                                                       \
@@ -89,9 +89,9 @@
     );                                                \
                                                       \
     val_m;                                            \
-  } )
+  })
 
-  #define LOAD_DWORD(psrc) ( {                        \
+  #define LOAD_DWORD(psrc) ({                         \
     const uint8_t *src_m = (const uint8_t *) (psrc);  \
     uint64_t val_m = 0;                               \
                                                       \
@@ -103,7 +103,7 @@
     );                                                \
                                                       \
     val_m;                                            \
-  } )
+  })
 
   #define STORE_WORD_WITH_OFFSET_1(pdst, val) {     \
     uint8_t *dst_ptr_m = ((uint8_t *) (pdst)) + 1;  \
@@ -165,7 +165,7 @@
     );                                              \
   }
 #else
-  #define LOAD_HWORD(psrc) ( {                        \
+  #define LOAD_HWORD(psrc) ({                         \
     const uint8_t *src_m = (const uint8_t *) (psrc);  \
     uint16_t val_m;                                   \
                                                       \
@@ -177,9 +177,9 @@
     );                                                \
                                                       \
     val_m;                                            \
-  } )
+  })
 
-  #define LOAD_WORD(psrc) ( {                         \
+  #define LOAD_WORD(psrc) ({                          \
     const uint8_t *src_m = (const uint8_t *) (psrc);  \
     uint32_t val_m;                                   \
                                                       \
@@ -191,9 +191,9 @@
     );                                                \
                                                       \
     val_m;                                            \
-  } )
+  })
 
-  #define LOAD_DWORD(psrc) ( {                                      \
+  #define LOAD_DWORD(psrc) ({                                       \
     const uint8_t *src1_m = (const uint8_t *) (psrc);               \
     const uint8_t *src2_m = ((const uint8_t *) (psrc)) + 4;         \
     uint32_t val0_m, val1_m;                                        \
@@ -218,7 +218,7 @@
     genval_m = (uint64_t) (genval_m | (uint64_t) val0_m);           \
                                                                     \
     genval_m;                                                       \
-  } )
+  })
 
   #define STORE_WORD_WITH_OFFSET_1(pdst, val) {     \
     uint8_t *dst_ptr_m = ((uint8_t *) (pdst)) + 1;  \
@@ -444,16 +444,16 @@
   STORE_H(in7, ((ptr) + 7 * stride));        \
 }
 
-#define CLIP_UNSIGNED_CHAR_H(in) ( {  \
+#define CLIP_UNSIGNED_CHAR_H(in) ({   \
   VINT16 max_m = __ldi_h(255);        \
   VINT16 out_m;                       \
                                       \
   out_m = __maxi_s_h((in), 0);        \
   out_m = __min_s_h(max_m, out_m);    \
   out_m;                              \
-} )
+})
 
-#define CALC_ADDITIVE_SUM(result) ( {         \
+#define CALC_ADDITIVE_SUM(result) ({          \
   VINT64 result_m, result_dup_m;              \
   int32_t sum_m;                              \
                                               \
@@ -462,16 +462,16 @@
   result_m = result_m + result_dup_m;         \
   sum_m = __copy_s_w(result_m, 0);            \
   sum_m;                                      \
-} )
+})
 
-#define CALC_ADDITIVE_SUM_H(sad) ( {     \
+#define CALC_ADDITIVE_SUM_H(sad) ({      \
   VUINT32 sad_m;                         \
   uint32_t sad_out_m;                    \
                                          \
   sad_m = __hadd_u_w((sad), (sad));      \
   sad_out_m = CALC_ADDITIVE_SUM(sad_m);  \
   sad_out_m;                             \
-} )
+})
 
 #define CALC_MSE_B(src, ref, var) {                \
   VUINT8 src_l0_m, src_l1_m;                       \
@@ -503,21 +503,21 @@
   (sub) += res_l0_m + res_l1_m;                    \
 }
 
-#define VARIANCE_WxH(sse, diff, shift) ( {                    \
+#define VARIANCE_WxH(sse, diff, shift) ({                     \
   uint32_t var_m;                                             \
                                                               \
   var_m = (sse) - (((uint32_t) (diff) * (diff)) >> (shift));  \
                                                               \
   var_m;                                                      \
-} )
+})
 
-#define VARIANCE_LARGE_WxH(sse, diff, shift) ( {             \
+#define VARIANCE_LARGE_WxH(sse, diff, shift) ({              \
   uint32_t var_m;                                            \
                                                              \
   var_m = (sse) - (((int64_t) (diff) * (diff)) >> (shift));  \
                                                              \
   var_m;                                                     \
-} )
+})
 
 #define VEC_INSERT_4W(src,                       \
                       src0, src1, src2, src3) {  \
@@ -1081,21 +1081,21 @@
   out3 = __srli_h((in3), (shift_right_val));  \
 }
 
-#define SRARI_SATURATE_UNSIGNED_H(input, right_shift_val, sat_val) ( {  \
+#define SRARI_SATURATE_UNSIGNED_H(input, right_shift_val, sat_val) ({   \
   VUINT16 out_m;                                                        \
                                                                         \
   out_m = __srari_h((input), (right_shift_val));                        \
   out_m = __sat_u_h(out_m, (sat_val));                                  \
   out_m;                                                                \
-} )
+})
 
-#define SRARI_SATURATE_SIGNED_H(input, right_shift_val, sat_val) ( {  \
+#define SRARI_SATURATE_SIGNED_H(input, right_shift_val, sat_val) ({   \
   VINT16 out_m;                                                       \
                                                                       \
   out_m = __srari_h((input), (right_shift_val));                      \
   out_m = __sat_s_h(out_m, (sat_val));                                \
   out_m;                                                              \
-} )
+})
 
 #define ILVR_SIGNED_H_TO_W(in, out1) {  \
   VINT16 sign_m;                        \

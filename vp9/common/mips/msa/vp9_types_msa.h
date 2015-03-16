@@ -22,24 +22,17 @@ typedef signed char VINT8 __attribute__ ((vector_size(NUMWRELEM)));
 /* Vector of unsigned bytes */
 typedef unsigned char VUINT8 __attribute__ ((vector_size(NUMWRELEM)));
 /* Vector of signed halfwords */
-typedef short VINT16 __attribute__ ((vector_size(NUMWRELEM)));
+typedef int16_t VINT16 __attribute__ ((vector_size(NUMWRELEM)));
 /* Vector of unsigned halfwords */
-typedef unsigned short VUINT16 __attribute__ ((vector_size(NUMWRELEM)));
+typedef uint16_t VUINT16 __attribute__ ((vector_size(NUMWRELEM)));
 /* Vector of signed words */
-typedef int VINT32 __attribute__ ((vector_size(NUMWRELEM)));
+typedef int32_t VINT32 __attribute__ ((vector_size(NUMWRELEM)));
 /* Vector of unsigned words */
-typedef unsigned int VUINT32 __attribute__ ((vector_size(NUMWRELEM)));
-#if _MIPS_SIM==_ABI64
-    /* Vector of signed doublewords */
-    typedef long int VINT64 __attribute__ ((vector_size(NUMWRELEM)));
-    /* Vector of unsigned doublewords */
-    typedef unsigned long int VUINT64 __attribute__ ((vector_size(NUMWRELEM)));
-#else
-    /* Vector of signed doublewords */
-    typedef long long VINT64 __attribute__ ((vector_size(NUMWRELEM)));
-    /* Vector of unsigned doublewords */
-    typedef unsigned long long VUINT64 __attribute__ ((vector_size(NUMWRELEM)));
-#endif
+typedef uint32_t VUINT32 __attribute__ ((vector_size(NUMWRELEM)));
+/* Vector of signed doublewords */
+typedef int64_t VINT64 __attribute__ ((vector_size(NUMWRELEM)));
+/* Vector of unsigned doublewords */
+typedef uint64_t VUINT64 __attribute__ ((vector_size(NUMWRELEM)));
 
 /* Vector of single precision floating-point values */
 typedef float VFLOAT __attribute__ ((vector_size(NUMWRELEM)));
