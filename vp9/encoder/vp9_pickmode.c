@@ -636,6 +636,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   struct macroblockd_plane *const pd = &xd->plane[0];
   PREDICTION_MODE best_mode = ZEROMV;
   MV_REFERENCE_FRAME ref_frame, best_ref_frame = LAST_FRAME;
+  MV_REFERENCE_FRAME usable_ref_frame;
   TX_SIZE best_tx_size = TX_SIZES;
   INTERP_FILTER best_pred_filter = EIGHTTAP;
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
@@ -718,14 +719,17 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->ref_frame[1] = NONE;
   mbmi->tx_size = MIN(max_txsize_lookup[bsize],
                       tx_mode_to_biggest_tx_size[cm->tx_mode]);
-  mbmi->interp_filter = cm->interp_filter == SWITCHABLE ?
-                        EIGHTTAP : cm->interp_filter;
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   vp9_denoiser_reset_frame_stats(ctx);
 #endif
-
-  for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ++ref_frame) {
+  if (cpi->rc.frames_since_golden == 0) {
+    ref_frame_skip_mask |= (1 << GOLDEN_FRAME);
+    usable_ref_frame = LAST_FRAME;
+  } else {
+    usable_ref_frame = GOLDEN_FRAME;
+  }
+  for (ref_frame = LAST_FRAME; ref_frame <= usable_ref_frame; ++ref_frame) {
     const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref_frame);
 
     x->pred_mv_sad[ref_frame] = INT_MAX;
@@ -751,6 +755,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
                             &frame_mv[NEARESTMV][ref_frame],
                             &frame_mv[NEARMV][ref_frame]);
+      clamp_mv2(&frame_mv[NEARESTMV][ref_frame].as_mv, xd);
+      clamp_mv2(&frame_mv[NEARMV][ref_frame].as_mv, xd);
 
       if (!vp9_is_scaled(sf) && bsize >= BLOCK_8X8)
         vp9_mv_pred(cpi, x, yv12_mb[ref_frame][0].buf, yv12->y_stride,
@@ -759,9 +765,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       ref_frame_skip_mask |= (1 << ref_frame);
     }
   }
-
-  if (cpi->rc.frames_since_golden == 0)
-    ref_frame_skip_mask |= (1 << GOLDEN_FRAME);
 
   for (idx = 0; idx < RT_INTER_MODES; ++idx) {
     int rate_mv = 0;
@@ -788,9 +791,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // Select prediction reference frames.
     for (i = 0; i < MAX_MB_PLANE; i++)
       xd->plane[i].pre[0] = yv12_mb[ref_frame][i];
-
-    clamp_mv2(&frame_mv[NEARESTMV][ref_frame].as_mv, xd);
-    clamp_mv2(&frame_mv[NEARMV][ref_frame].as_mv, xd);
 
     mbmi->ref_frame[0] = ref_frame;
     set_ref_ptrs(cm, xd, ref_frame, NONE);
