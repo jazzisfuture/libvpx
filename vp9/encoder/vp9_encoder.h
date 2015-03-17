@@ -464,6 +464,7 @@ typedef struct VP9_COMP {
   int64_t vbp_threshold_bsize_min;
   int64_t vbp_threshold_bsize_max;
   int64_t vbp_threshold_16x16;
+  int64_t vbp_threshold_sad;
   BLOCK_SIZE vbp_bsize_min;
 
   // Multi-threading
