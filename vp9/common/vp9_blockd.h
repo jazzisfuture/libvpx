@@ -76,6 +76,12 @@ typedef enum {
   MB_MODE_COUNT
 } PREDICTION_MODE;
 
+enum {
+  need_left = 1 << 1,
+  need_above = 1 << 2,
+  need_aboveright = 1 << 3,
+};
+
 static INLINE int is_inter_mode(PREDICTION_MODE mode) {
   return mode >= NEARESTMV && mode <= NEWMV;
 }
