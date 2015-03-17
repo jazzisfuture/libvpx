@@ -84,6 +84,9 @@ typedef enum {
   NEARMV,
   ZEROMV,
   NEWMV,
+#if CONFIG_NEAR_FORNEWMV
+  NEAR_FORNEWMV,
+#endif  // CONFIG_NEAR_FORNEWMV
 #if CONFIG_COMPOUND_MODES
   NEAREST_NEARESTMV,
   NEAREST_NEARMV,
@@ -119,7 +122,11 @@ typedef enum {
 #endif
 
 static INLINE int is_inter_mode(PREDICTION_MODE mode) {
+#if CONFIG_NEAR_FORNEWMV
+  return mode >= NEARESTMV && mode <= NEAR_FORNEWMV;
+#else
   return mode >= NEARESTMV && mode <= NEWMV;
+#endif  // CONFIG_NEAR_FORNEWMV
 }
 
 #if CONFIG_COMPOUND_MODES
@@ -131,19 +138,31 @@ static INLINE int is_inter_compound_mode(PREDICTION_MODE mode) {
 static INLINE int have_newmv_in_inter_mode(PREDICTION_MODE mode) {
 #if CONFIG_COMPOUND_MODES
   return (mode == NEWMV ||
+#if CONFIG_NEAR_FORNEWMV
+          mode == NEAR_FORNEWMV ||
+#endif  // CONFIG_NEAR_FORNEWMV
           mode == NEW_NEWMV ||
           mode == NEAREST_NEWMV ||
           mode == NEW_NEARESTMV ||
           mode == NEAR_NEWMV ||
           mode == NEW_NEARMV);
 #else
+#if CONFIG_NEAR_FORNEWMV
+  return (mode == NEWMV ||
+          mode == NEAR_FORNEWMV);
+#else
   return (mode == NEWMV);
+#endif  // CONFIG_NEAR_FORNEWMV
 #endif  // CONFIG_COMPOUND_MODES
 }
 
 #define INTRA_MODES (TM_PRED + 1)
 
+#if CONFIG_NEAR_FORNEWMV
+#define INTER_MODES (1 + NEAR_FORNEWMV - NEARESTMV)
+#else
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
+#endif  // CONFIG_NEAR_FORNEWMV
 
 #define INTER_OFFSET(mode) ((mode) - NEARESTMV)
 

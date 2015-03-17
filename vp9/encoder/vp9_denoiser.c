@@ -427,9 +427,16 @@ void vp9_denoiser_update_frame_stats(MB_MODE_INFO *mbmi, unsigned int sse,
   }
 #if CONFIG_COMPOUND_MODES
   if (mode == NEW_NEWMV || mode == NEWMV || mode == NEW_NEARESTMV ||
+#if CONFIG_NEAR_FORNEWMV
+      mode == NEAR_FORNEWMV ||
+#endif  // CONFIG_NEAR_FORNEWMV
       mode == NEAREST_NEWMV) {
 #else
+#if CONFIG_NEAR_FORNEWMV
+  if (mode == NEWMV || mode == NEAR_FORNEWMV) {
+#else
   if (mode == NEWMV) {
+#endif  // CONFIG_NEAR_FORNEWMV
 #endif
     ctx->newmv_sse = sse;
     ctx->best_sse_inter_mode = mode;
