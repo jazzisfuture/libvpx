@@ -481,29 +481,31 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
     return;
   } else {
     VP9_COMMON *const cm = &cpi->common;
-    const int is_key_frame = (cm->frame_type == KEY_FRAME);
-    const int threshold_multiplier = is_key_frame ? 80 : 4;
-    const int64_t threshold_base = (int64_t)(threshold_multiplier *
-        vp9_convert_qindex_to_q(q, cm->bit_depth));
+    int64_t threshold_base =
+        (int64_t)((cpi->y_dequant[q][1] * cpi->y_dequant[q][1]) >> 6);
 
     // TODO(marpan): Allow 4x4 partitions for inter-frames.
     // use_4x4_partition = (variance4x4downsample[i2 + j] == 1);
     // If 4x4 partition is not used, then 8x8 partition will be selected
     // if variance of 16x16 block is very high, so use larger threshold
     // for 16x16 (threshold_bsize_min) in that case.
-    if (is_key_frame) {
-      cpi->vbp_threshold = threshold_base >> 2;
-      cpi->vbp_threshold_bsize_max = threshold_base;
-      cpi->vbp_threshold_bsize_min = threshold_base << 2;
+    if (cm->frame_type == KEY_FRAME) {
+      threshold_base = (threshold_base < 40) ? 40 : threshold_base;
+
+      cpi->vbp_threshold = threshold_base >> 1;
+      cpi->vbp_threshold_bsize_max = threshold_base << 1;
+      cpi->vbp_threshold_bsize_min = threshold_base << 3;
       cpi->vbp_threshold_16x16 = cpi->vbp_threshold;
       cpi->vbp_bsize_min = BLOCK_8X8;
     } else {
+      threshold_base = (threshold_base < 32) ? 32 : threshold_base;
+
       cpi->vbp_threshold = threshold_base;
       if (cm->width <= 352 && cm->height <= 288) {
-        cpi->vbp_threshold_bsize_max = threshold_base >> 2;
-        cpi->vbp_threshold_bsize_min = threshold_base << 3;
+        cpi->vbp_threshold_bsize_max = threshold_base >> 5;
+        cpi->vbp_threshold_bsize_min = threshold_base;
       } else {
-        cpi->vbp_threshold_bsize_max = threshold_base;
+        cpi->vbp_threshold_bsize_max = threshold_base >> 3;
         cpi->vbp_threshold_bsize_min = threshold_base << cpi->oxcf.speed;
       }
       cpi->vbp_threshold_16x16 = cpi->vbp_threshold_bsize_min;
