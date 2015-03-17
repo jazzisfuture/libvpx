@@ -470,10 +470,18 @@ static void estimate_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   args->dist += dist;
 }
 
+#if CONFIG_NEAR_FORNEWMV
+// Note: Excluding NEAR_FORNEWMV mode
+static const THR_MODES mode_idx[MAX_REF_FRAMES - 1][INTER_MODES-1] = {
+  {THR_NEARESTMV, THR_NEARMV, THR_ZEROMV, THR_NEWMV},
+  {THR_NEARESTG, THR_NEARG, THR_ZEROG, THR_NEWG},
+  {THR_NEARESTA, THR_NEARA, THR_ZEROA, THR_NEWA},
+#else
 static const THR_MODES mode_idx[MAX_REF_FRAMES - 1][INTER_MODES] = {
   {THR_NEARESTMV, THR_NEARMV, THR_ZEROMV, THR_NEWMV},
   {THR_NEARESTG, THR_NEARG, THR_ZEROG, THR_NEWG},
   {THR_NEARESTA, THR_NEARA, THR_ZEROA, THR_NEWA},
+#endif  // CONFIG_NEAR_FORNEWMV
 };
 
 // TODO(jingning) placeholder for inter-frame non-RD mode decision.
