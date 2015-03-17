@@ -679,14 +679,30 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
       }
     } else {
 #if CONFIG_COMPOUND_MODES
-      if (mode == NEWMV || mode == NEW_NEWMV) {
+      if (mode == NEWMV ||
+#if CONFIG_NEAR_FORNEWMV
+          mode == NEAR_FORNEWMV ||
+#endif  // CONFIG_NEAR_FORNEWMV
+          mode == NEW_NEWMV) {
+#else  // CONFIG_COMPOUND_MODES
+#if CONFIG_NEAR_FORNEWMV
+      if (mode == NEWMV || mode == NEAR_FORNEWMV) {
 #else
       if (mode == NEWMV) {
+#endif  // CONFIG_NEAR_FORNEWMV
 #endif
-        for (ref = 0; ref < 1 + is_compound; ++ref)
+        for (ref = 0; ref < 1 + is_compound; ++ref) {
+#if CONFIG_NEAR_FORNEWMV
+          if (mode == NEAR_FORNEWMV)
+            vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
+                          &mbmi->ref_mvs[mbmi->ref_frame[ref]][1].as_mv, nmvc,
+                          allow_hp);
+          else
+#endif  // CONFIG_NEAR_FORNEWMV
           vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
                         &mbmi->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
                         allow_hp);
+        }
       }
 #if CONFIG_COMPOUND_MODES
       else if (mode == NEAREST_NEWMV || mode == NEAR_NEWMV) {

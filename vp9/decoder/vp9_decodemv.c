@@ -806,6 +806,9 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
   assert(is_inter_mode(mode));
 #endif
   switch (mode) {
+#if CONFIG_NEAR_FORNEWMV
+    case NEAR_FORNEWMV:
+#endif  // CONFIG_NEAR_FORNEWMV
     case NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
                                             NULL : &cm->counts.mv;
@@ -1150,6 +1153,12 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     mbmi->mv[0].as_int = mi->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
   } else {
+#if CONFIG_NEAR_FORNEWMV
+    if (mbmi->mode == NEAR_FORNEWMV)
+      xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv, nearmv,
+                                  nearestmv, nearmv, is_compound, allow_hp, r);
+    else
+#endif  // CONFIG_NEAR_FORNEWMV
     xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv, nearestmv,
                                 nearestmv, nearmv, is_compound, allow_hp, r);
   }
