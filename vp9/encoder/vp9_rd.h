@@ -38,8 +38,14 @@ extern "C" {
 #if CONFIG_INTERINTRA
 #define MAX_MODES 52
 #define INTERINTRA_START_MODE 40
+#else  // CONFIG_INTERINTRA
+
+#if CONFIG_NEAR_FORNEWMV
+#define MAX_MODES 43
 #else
 #define MAX_MODES 40
+#endif  // CONFIG_NEAR_FORNEWMV
+
 #endif  // CONFIG_INTERINTRA
 
 #else   // CONFIG_COMPOUND_MODES
@@ -48,7 +54,13 @@ extern "C" {
 #define MAX_MODES 42
 #define INTERINTRA_START_MODE 30
 #else
+
+#if CONFIG_NEAR_FORNEWMV
+#define MAX_MODES 35
+#else
 #define MAX_MODES 30
+#endif  // CONFIG_NEAR_FORNEWMV
+
 #endif  // CONFIG_INTERINTRA
 
 #endif  // CONFIG_COMPOUND_MODES
