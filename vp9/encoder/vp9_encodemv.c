@@ -257,8 +257,14 @@ void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
   int i;
   int_mv ref_mv[2];
 
-  for (i = 0; i < 1 + has_second_ref(mbmi); ++i)
-    ref_mv[i].as_int = mbmi->ref_mvs[mbmi->ref_frame[i]][0].as_int;
+  for (i = 0; i < 1 + has_second_ref(mbmi); ++i) {
+#if CONFIG_NEAR_FORNEWMV
+    if (mbmi->sb_type >= BLOCK_8X8 && mbmi->mode == NEAR_FORNEWMV)
+      ref_mv[i].as_int = mbmi->ref_mvs[mbmi->ref_frame[i]][1].as_int;
+    else
+#endif  // CONFIG_NEAR_FORNEWMV
+      ref_mv[i].as_int = mbmi->ref_mvs[mbmi->ref_frame[i]][0].as_int;
+  }
 
   if (mbmi->sb_type < BLOCK_8X8) {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[mbmi->sb_type];
@@ -310,10 +316,19 @@ void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
     }
   } else {
 #if CONFIG_COMPOUND_MODES
+#if CONFIG_NEAR_FORNEWMV
+    if (mbmi->mode == NEWMV || mbmi->mode == NEAR_FORNEWMV ||
+        mbmi->mode == NEW_NEWMV)
+#else  // CONFIG_NEAR_FORNEWMV
     if (mbmi->mode == NEWMV || mbmi->mode == NEW_NEWMV)
-#else
+#endif  // CONFIG_NEAR_FORNEWMV
+#else  // CONFIG_COMPOUND_MODES
+#if CONFIG_NEAR_FORNEWMV
+    if (mbmi->mode == NEWMV || mbmi->mode == NEAR_FORNEWMV)
+#else  // CONFIG_NEAR_FORNEWMV
     if (mbmi->mode == NEWMV)
-#endif
+#endif  // CONFIG_NEAR_FORNEWMV
+#endif  // CONFIG_COMPOUND_MODES
       inc_mvs(mbmi, mbmi->mv, ref_mv, &cm->counts.mv);
 #if CONFIG_COMPOUND_MODES
     else if (mbmi->mode == NEAREST_NEWMV || mbmi->mode == NEAR_NEWMV)
