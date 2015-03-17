@@ -512,12 +512,14 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
     cpi->vbp_threshold_16x16 = (use_4x4_partition) ?
       cpi->vbp_threshold : cpi->vbp_threshold_bsize_min;
     cpi->vbp_bsize_min = (use_4x4_partition) ? BLOCK_8X8 : BLOCK_16X16;
+    // Threshold on sad, below which we take the biggest block size and exit.
+    cpi->vbp_threshold_sad = (low_res) ? 500 : 5000;
   }
 }
 
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for down-sampled inputs.
-static void choose_partitioning(VP9_COMP *cpi,
+static int choose_partitioning(VP9_COMP *cpi,
                                 const TileInfo *const tile,
                                 MACROBLOCK *x,
                                 int mi_row, int mi_col) {
@@ -622,6 +624,19 @@ static void choose_partitioning(VP9_COMP *cpi,
 
     d = xd->plane[0].dst.buf;
     dp = xd->plane[0].dst.stride;
+
+    // If the y_sad is very small, take 64x64 as partition and exit.
+    // Don't check on boosted segment for now, as 64x64 is suppressed there.
+    if (segment_id == CR_SEGMENT_ID_BASE &&
+        y_sad < cpi->vbp_threshold_sad) {
+      const int block_width = num_8x8_blocks_wide_lookup[BLOCK_64X64];
+      const int block_height = num_8x8_blocks_high_lookup[BLOCK_64X64];
+      if (mi_col + block_width / 2 < cm->mi_cols &&
+          mi_row + block_height / 2 < cm->mi_rows) {
+        set_block_size(cpi, xd, mi_row, mi_col, BLOCK_64X64);
+        return 0;
+      }
+    }
   } else {
     d = VP9_VAR_OFFS;
     dp = 0;
@@ -807,6 +822,7 @@ static void choose_partitioning(VP9_COMP *cpi,
       }
     }
   }
+  return 0;
 }
 
 static void update_state(VP9_COMP *cpi, ThreadData *td,
