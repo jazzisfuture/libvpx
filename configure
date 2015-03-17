@@ -293,7 +293,7 @@ EXPERIMENT_LIST="
     compound_modes
     global_motion
     palette
-    newmvref_sub8x8
+    newmvref
 "
 CONFIG_LIST="
     external_build
