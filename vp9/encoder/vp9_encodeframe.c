@@ -405,6 +405,7 @@ static int set_vt_partitioning(VP9_COMP *cpi,
   variance_node vt;
   const int block_width = num_8x8_blocks_wide_lookup[bsize];
   const int block_height = num_8x8_blocks_high_lookup[bsize];
+  const int low_res = (cm->width <= 352 && cm->height <= 288);
 
   assert(block_height == block_width);
   tree_to_node(data, bsize, &vt);
@@ -416,7 +417,9 @@ static int set_vt_partitioning(VP9_COMP *cpi,
   // variance is below threshold, otherwise split will be selected.
   // No check for vert/horiz split as too few samples for variance.
   if (bsize == bsize_min) {
-    get_variance(&vt.part_variances->none);
+    // Variance already computed to set the force_split.
+    if (low_res || cm->frame_type == KEY_FRAME)
+      get_variance(&vt.part_variances->none);
     if (mi_col + block_width / 2 < cm->mi_cols &&
         mi_row + block_height / 2 < cm->mi_rows &&
         vt.part_variances->none.variance < threshold) {
@@ -425,11 +428,10 @@ static int set_vt_partitioning(VP9_COMP *cpi,
     }
     return 0;
   } else if (bsize > bsize_min) {
-    // Variance is already computed for 32x32 blocks to set the force_split.
-    if (bsize != BLOCK_32X32)
+    // Variance already computed to set the force_split.
+    if (low_res || cm->frame_type == KEY_FRAME)
       get_variance(&vt.part_variances->none);
-    // For key frame or low_res: for bsize above 32X32 or very high variance,
-    // take split.
+    // For key frame: take split for bsize above 32X32 or very high variance.
     if (cm->frame_type == KEY_FRAME &&
         (bsize > BLOCK_32X32 ||
         vt.part_variances->none.variance > (threshold << 4))) {
@@ -496,15 +498,18 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
       cpi->vbp_threshold_bsize_max = threshold_base;
       cpi->vbp_threshold_bsize_min = threshold_base << 2;
       cpi->vbp_threshold_16x16 = cpi->vbp_threshold;
+      cpi->vbp_threshold_sad = 0;
       cpi->vbp_bsize_min = BLOCK_8X8;
     } else {
       cpi->vbp_threshold = threshold_base;
       if (cm->width <= 352 && cm->height <= 288) {
         cpi->vbp_threshold_bsize_max = threshold_base >> 2;
         cpi->vbp_threshold_bsize_min = threshold_base << 3;
+        cpi->vbp_threshold_sad = 100;
       } else {
         cpi->vbp_threshold_bsize_max = threshold_base;
         cpi->vbp_threshold_bsize_min = threshold_base << cpi->oxcf.speed;
+        cpi->vbp_threshold_sad = 1000;
       }
       cpi->vbp_threshold_16x16 = cpi->vbp_threshold_bsize_min;
       cpi->vbp_bsize_min = BLOCK_16X16;
@@ -514,7 +519,7 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
 
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for down-sampled inputs.
-static void choose_partitioning(VP9_COMP *cpi,
+static int choose_partitioning(VP9_COMP *cpi,
                                 const TileInfo *const tile,
                                 MACROBLOCK *x,
                                 int mi_row, int mi_col) {
@@ -523,7 +528,8 @@ static void choose_partitioning(VP9_COMP *cpi,
   int i, j, k, m;
   v64x64 vt;
   v16x16 vt2[16];
-  int force_split[5];
+  int force_split[21];
+  int max32x32;
   uint8_t *s;
   const uint8_t *d;
   int sp;
@@ -620,6 +626,19 @@ static void choose_partitioning(VP9_COMP *cpi,
 
     d = xd->plane[0].dst.buf;
     dp = xd->plane[0].dst.stride;
+
+    // If the y_sad is very small, take 64x64 as partition and exit.
+    // Don't check on boosted segment for now, as 64x64 is suppressed there.
+    if (segment_id == CR_SEGMENT_ID_BASE &&
+        y_sad < cpi->vbp_threshold_sad) {
+      const int block_width = num_8x8_blocks_wide_lookup[BLOCK_64X64];
+      const int block_height = num_8x8_blocks_high_lookup[BLOCK_64X64];
+      if (mi_col + block_width / 2 < cm->mi_cols &&
+          mi_row + block_height / 2 < cm->mi_rows) {
+        set_block_size(cpi, xd, mi_row, mi_col, BLOCK_64X64);
+        return 0;
+      }
+    }
   } else {
     d = VP9_VAR_OFFS;
     dp = 0;
@@ -642,6 +661,7 @@ static void choose_partitioning(VP9_COMP *cpi,
   }
 
   // Index for force_split: 0 for 64x64, 1-4 for 32x32 blocks,
+  // 5-20 for the 16x16 blocks.
   force_split[0] = 0;
   // Fill in the entire tree of 8x8 (or 4x4 under some conditions) variances
   // for splits.
@@ -653,7 +673,11 @@ static void choose_partitioning(VP9_COMP *cpi,
     for (j = 0; j < 4; j++) {
       const int x16_idx = x32_idx + ((j & 1) << 4);
       const int y16_idx = y32_idx + ((j >> 1) << 4);
+      const int split_index = 5 + i2 + j;
+      int max16x16 = -512;
+      int min16x16 = 512;
       v16x16 *vst = &vt.split[i].split[j];
+      force_split[split_index] = 0;
       variance4x4downsample[i2 + j] = 0;
       if (!is_key_frame) {
         for (k = 0; k < 4; k++) {
@@ -677,6 +701,10 @@ static void choose_partitioning(VP9_COMP *cpi,
 #endif
             sum = s_avg - d_avg;
             sse = sum * sum;
+            if (sum > max16x16)
+              max16x16 = sum;
+            else if (sum < min16x16)
+              min16x16 = sum;
           }
           // If variance is based on 8x8 downsampling, we stop here and have
           // one sample for 8x8 block (so use 1 for count in fill_variance),
@@ -684,15 +712,21 @@ static void choose_partitioning(VP9_COMP *cpi,
           fill_variance(sse, sum, 0, &vst->split[k].part_variances.none);
         }
         fill_variance_tree(&vt.split[i].split[j], BLOCK_16X16);
-        // For low-resolution, compute the variance based on 8x8 down-sampling,
-        // and if it is large (above the threshold) we go down for 4x4.
-        // For key frame we always go down to 4x4.
-        if (low_res)
-          get_variance(&vt.split[i].split[j].part_variances.none);
+        get_variance(&vt.split[i].split[j].part_variances.none);
+        if ((vt.split[i].split[j].part_variances.none.variance >
+            cpi->vbp_threshold_16x16) ||
+            ((max16x16 - min16x16) > 20)) {
+          // 16X16 variance is above threshold for split, so force split for
+          // this 16x16 block (and corresponding splits for the upper levels).
+          force_split[split_index] = 1;
+          force_split[i + 1] = 1;
+          force_split[0] = 1;
+        }
       }
       if (is_key_frame || (low_res &&
           vt.split[i].split[j].part_variances.none.variance >
           (cpi->vbp_threshold << 1))) {
+        force_split[split_index] = 0;
         // Go down to 4x4 down-sampling for variance.
         variance4x4downsample[i2 + j] = 1;
         for (k = 0; k < 4; k++) {
@@ -741,6 +775,7 @@ static void choose_partitioning(VP9_COMP *cpi,
   if (cyclic_refresh_segment_id_boosted(segment_id))
     force_split[0] = 1;
 
+  max32x32 = 0;
   // Fill the rest of the variance tree by summing split partition values.
   for (i = 0; i < 4; i++) {
     const int i2 = i << 2;
@@ -754,18 +789,29 @@ static void choose_partitioning(VP9_COMP *cpi,
       }
     }
     fill_variance_tree(&vt.split[i], BLOCK_32X32);
-    // If variance of this 32x32 block is above the threshold, force the block
-    // to split. This also forces a split on the upper (64x64) level.
-    get_variance(&vt.split[i].part_variances.none);
-    if (vt.split[i].part_variances.none.variance > cpi->vbp_threshold) {
-      force_split[i + 1] = 1;
+    // Check if variance of this 32x32 block is above the threshold, and if so,
+    // force the block to split.
+    if (!force_split[i + 1]) {
+      get_variance(&vt.split[i].part_variances.none);
+      if (vt.split[i].part_variances.none.variance > max32x32)
+        max32x32 = vt.split[i].part_variances.none.variance;
+      if (!is_key_frame &&
+          vt.split[i].part_variances.none.variance > cpi->vbp_threshold) {
+        force_split[i + 1] = 1;
+        force_split[0] = 1;
+      }
+    }
+  }
+  if (!force_split[0]) {
+    fill_variance_tree(&vt, BLOCK_64X64);
+    get_variance(&vt.part_variances.none);
+    if (!is_key_frame &&
+        max32x32 > (3 * vt.part_variances.none.variance >> 1)) {
       force_split[0] = 1;
     }
   }
-  if (!force_split[0])
-    fill_variance_tree(&vt, BLOCK_64X64);
 
-  // Now go through the entire structure,  splitting every block size until
+  // Now go through the entire structure, splitting every block size until
   // we get to one that's got a variance lower than our threshold.
   if ( mi_col + 8 > cm->mi_cols || mi_row + 8 > cm->mi_rows ||
       !set_vt_partitioning(cpi, xd, &vt, BLOCK_64X64, mi_row, mi_col,
@@ -792,7 +838,8 @@ static void choose_partitioning(VP9_COMP *cpi,
                                    mi_row + y32_idx + y16_idx,
                                    mi_col + x32_idx + x16_idx,
                                    cpi->vbp_threshold_16x16,
-                                   cpi->vbp_bsize_min, 0)) {
+                                   cpi->vbp_bsize_min,
+                                   force_split[5 + i2  + j])) {
             for (k = 0; k < 4; ++k) {
               const int x8_idx = (k & 1);
               const int y8_idx = (k >> 1);
@@ -820,6 +867,7 @@ static void choose_partitioning(VP9_COMP *cpi,
       }
     }
   }
+  return 0;
 }
 
 static void update_state(VP9_COMP *cpi, ThreadData *td,
