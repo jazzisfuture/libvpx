@@ -148,6 +148,20 @@ int vp9_vector_var_c(int16_t const *ref, int16_t const *src,
   return var;
 }
 
+void vp9_minmax_8x8_c(const uint8_t *s, int p, const uint8_t *d, int dp,
+                      int *min, int *max) {
+  int i, j;
+  *min = 255;
+  *max = 0;
+  for (i = 0; i < 8; ++i, s += p, d += dp) {
+    for (j = 0; j < 8; ++j) {
+      int diff = abs(s[j]-d[j]);
+      *min = diff < *min ? diff : *min;
+      *max = diff > *max ? diff : *max;
+    }
+  }
+}
+
 #if CONFIG_VP9_HIGHBITDEPTH
 unsigned int vp9_highbd_avg_8x8_c(const uint8_t *s8, int p) {
   int i, j;
