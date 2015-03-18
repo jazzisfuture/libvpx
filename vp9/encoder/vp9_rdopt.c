@@ -3878,6 +3878,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #else
   DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf, MAX_MB_PLANE * 64 * 64);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+  int tmp_buf_sz = 64 * 64;
   int pred_exists = 0;
   int intpel_mv;
   int64_t rd, tmp_rd, best_rd = INT64_MAX;
@@ -3917,6 +3918,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     tmp_buf = CONVERT_TO_BYTEPTR(tmp_buf16);
+    tmp_buf_sz *= 2;
   } else {
     tmp_buf = tmp_buf8;
   }
@@ -4199,7 +4201,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
             restore_dst_buf(xd, orig_dst, orig_dst_stride);
           } else {
             for (j = 0; j < MAX_MB_PLANE; j++) {
-              xd->plane[j].dst.buf = tmp_buf + j * 64 * 64;
+              xd->plane[j].dst.buf = tmp_buf + j * tmp_buf_sz;
               xd->plane[j].dst.stride = 64;
             }
           }
@@ -4402,7 +4404,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_WEDGE_PARTITION
     mbmi->ref_frame[1] = NONE;
     for (j = 0; j < MAX_MB_PLANE; j++) {
-      xd->plane[j].dst.buf = tmp_buf + j * 64 * 64;
+      xd->plane[j].dst.buf = tmp_buf + j * tmp_buf_sz;
       xd->plane[j].dst.stride = 64;
     }
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
@@ -4414,8 +4416,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       mbmi->interintra_mode = interintra_mode;
       mbmi->interintra_uv_mode = interintra_mode;
       rmode = cpi->mbmode_cost[mbmi->interintra_mode];
-      vp9_build_interintra_predictors(xd, tmp_buf, tmp_buf + 64 * 64,
-                                      tmp_buf + 2* 64 * 64, 64, 64, 64, bsize);
+      vp9_build_interintra_predictors(xd, tmp_buf, tmp_buf + tmp_buf_sz,
+                                      tmp_buf + 2 * tmp_buf_sz, 64, 64, 64,
+                                      bsize);
       model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
                       &skip_txfm_sb, &skip_sse_sb);
       rd = RDCOST(x->rdmult, x->rddiv, rmode + rate_sum, dist_sum);
@@ -4431,8 +4434,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     rmode = cpi->mbmode_cost[mbmi->interintra_mode];
     if (wedge_bits) {
       mbmi->use_wedge_interintra = 0;
-      vp9_build_interintra_predictors(xd, tmp_buf, tmp_buf + 64 * 64,
-                                      tmp_buf + 2* 64 * 64, 64, 64, 64, bsize);
+      vp9_build_interintra_predictors(xd, tmp_buf, tmp_buf + tmp_buf_sz,
+                                      tmp_buf + 2 * tmp_buf_sz, 64, 64, 64,
+                                      bsize);
       model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum, NULL, NULL);
       rwedge = vp9_cost_bit(cm->fc.wedge_interintra_prob[bsize], 0);
       rd = RDCOST(x->rdmult, x->rddiv,
@@ -4446,8 +4450,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
         mbmi->interintra_wedge_index = wedge_index;
         mbmi->interintra_uv_wedge_index = wedge_index;
-        vp9_build_interintra_predictors(xd, tmp_buf, tmp_buf + 64 * 64,
-                                       tmp_buf + 2* 64 * 64, 64, 64, 64, bsize);
+        vp9_build_interintra_predictors(xd, tmp_buf, tmp_buf + tmp_buf_sz,
+                                       tmp_buf + 2 * tmp_buf_sz, 64, 64, 64,
+                                       bsize);
         model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum, NULL, NULL);
         rd = RDCOST(x->rdmult, x->rddiv,
                     rmode + rate_mv_tmp + rwedge + rate_sum, dist_sum);
@@ -4538,7 +4543,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (best_needs_copy) {
       // again temporarily set the buffers to local memory to prevent a memcpy
       for (i = 0; i < MAX_MB_PLANE; i++) {
-        xd->plane[i].dst.buf = tmp_buf + i * 64 * 64;
+        xd->plane[i].dst.buf = tmp_buf + i * tmp_buf_sz;
         xd->plane[i].dst.stride = 64;
       }
     }
