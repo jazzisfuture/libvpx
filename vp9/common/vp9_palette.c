@@ -182,17 +182,6 @@ int get_bit_depth(int n) {
   return i;
 }
 
-int palette_max_run(BLOCK_SIZE bsize) {
-  int table[BLOCK_SIZES] = {
-      32, 32, 32, 32,  // BLOCK_4X4,   BLOCK_4X8,   BLOCK_8X4,   BLOCK_8X8
-      64, 64, 64, 64,  // BLOCK_8X16,  BLOCK_16X8,  BLOCK_16X16, BLOCK_16X32
-      64, 64, 64, 64,  // BLOCK_32X16, BLOCK_32X32, BLOCK_32X64, BLOCK_64X32
-      64               // BLOCK_64X64
-  };
-
-  return table[bsize];
-}
-
 double calc_dist(double *p1, double *p2, int dim) {
   double dist = 0;
   int i = 0;
@@ -441,5 +430,89 @@ void update_palette_counts(FRAME_COUNTS *counts, MB_MODE_INFO *mbmi,
     counts->uv_palette_scan_order[idx][mbmi->palette_scan_order[1]]++;
     counts->uv_palette_size[idx][mbmi->palette_size[1] - 2]++;
   }
+}
+
+static int palette_color_context_lookup[PALETTE_COLOR_CONTEXTS] = {
+    3993,  4235,  4378,  4380,  // (3, 0, 0, 0), (3, 2, 0, 0),
+                                // (3, 3, 2, 0), (3, 3, 2, 2),
+    5720,  6655,  7018,  7040,  // (4, 3, 3, 0), (5, 0, 0, 0),
+                                // (5, 3, 0, 0), (5, 3, 2, 0),
+    7260,  8228,  8250,  8470,  // (5, 5, 0, 0), (6, 2, 0, 0),
+                                // (6, 2, 2, 0), (6, 4, 0, 0),
+    9680, 10648, 10890, 13310   // (7, 3, 0, 0), (8, 0, 0, 0),
+                                // (8, 2, 0, 0), (10, 0, 0, 0)
+};
+
+int get_palette_color_context(uint8_t *color_map, int cols,
+                              int r, int c, int n, int *color_order) {
+  int i, j, max, max_idx, temp;
+  int scores[PALETTE_MAX_SIZE];
+  int weights[4] = {3, 2, 3, 2};
+  int color_ctx = 0;
+  int color_neighbors[4];
+
+  assert(n <= PALETTE_MAX_SIZE);
+
+  if (c - 1 >= 0)
+    color_neighbors[0] = color_map[r * cols + c - 1];
+  else
+    color_neighbors[0] = -1;
+  if (c - 1 >= 0 && r - 1 >= 0)
+    color_neighbors[1] = color_map[(r - 1) * cols + c - 1];
+  else
+    color_neighbors[1] = -1;
+  if (r - 1 >= 0)
+    color_neighbors[2] = color_map[(r - 1) * cols + c];
+  else
+    color_neighbors[2] = -1;
+  if (r - 1 >= 0 && c + 1 <= cols - 1)
+    color_neighbors[3] = color_map[(r - 1) * cols + c + 1];
+  else
+    color_neighbors[3] = -1;
+
+  for (i = 0; i < PALETTE_MAX_SIZE; i++)
+    color_order[i] = i;
+  memset(scores, 0, PALETTE_MAX_SIZE * sizeof(scores[0]));
+  for (i = 0; i < 4; i++) {
+    if (color_neighbors[i] >= 0)
+      scores[color_neighbors[i]] += weights[i];
+  }
+
+  for (i = 0; i < 4; i++) {
+    max = scores[i];
+    max_idx = i;
+    j = i + 1;
+    while (j < n) {
+      if (scores[j] > max) {
+        max = scores[j];
+        max_idx = j;
+      }
+      j++;
+    }
+
+    if (max_idx != i) {
+      temp = scores[i];
+      scores[i] = scores[max_idx];
+      scores[max_idx] = temp;
+
+      temp = color_order[i];
+      color_order[i] = color_order[max_idx];
+      color_order[max_idx] = temp;
+    }
+  }
+
+  for (i = 0; i < 4; i++)
+    color_ctx = color_ctx * 11 + scores[i];
+
+  for (i = 0; i < PALETTE_COLOR_CONTEXTS; i++)
+    if (color_ctx == palette_color_context_lookup[i]) {
+      color_ctx = i;
+      break;
+    }
+
+  if (i == PALETTE_COLOR_CONTEXTS)
+      printf("\n error: %5d is not in the lookup table \n", color_ctx);
+
+  return color_ctx;
 }
 #endif  // CONFIG_PALETTE
