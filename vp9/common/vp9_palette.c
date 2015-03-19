@@ -89,6 +89,14 @@ int run_lengh_decoding(uint16_t *runs, int l, uint8_t *seq) {
     j += runs[i + 1];
   }
 
+  if (j >= 4096 && 0) {
+    printf("\n");
+    for (i = 0; i < l; i += 1)
+      printf("%4d ", runs[i]);
+    printf("\n");
+    scanf("%d", &i);
+  }
+
   return j;
 }
 
@@ -337,6 +345,9 @@ void zz_scan_order(int *order, int rows, int cols) {
     }
   }
   order[idx] = (rows - 1) * cols + cols - 1;
+
+  if (idx >= 4096)
+    printf("zz order %d\n", idx);
 }
 
 void spin_order(int *order, int cols, int r_start, int c_start,
@@ -346,26 +357,44 @@ void spin_order(int *order, int cols, int r_start, int c_start,
   if (h <= 0 && w <= 0) {
     return;
   } else if (h <= 0) {
-    for (c = 0; c < w; c++)
+    for (c = 0; c < w; c++) {
+      if (idx >= 4096)
+          printf("spiral order %d\n", idx);
       order[idx++] = r_start * cols + c + c_start;
+    }
     return;
   } else if  (w <= 0) {
-    for (r = 0; r < h; r++)
-        order[idx++] = (r + r_start) * cols;
+    for (r = 0; r < h; r++) {
+      if (idx >= 4096)
+        printf("spiral order %d\n", idx);
+      order[idx++] = (r + r_start) * cols;
+    }
     return;
   }
 
-  for (r = 0; r < h; r++)
+  for (r = 0; r < h; r++) {
+    if (idx >= 4096)
+              printf("spiral order %d\n", idx);
     order[idx++] = (r + r_start) * cols + c_start;
+  }
 
-  for (c = 0; c < w; c++)
+  for (c = 0; c < w; c++) {
+    if (idx >= 4096)
+              printf("spiral order %d\n", idx);
     order[idx++] = (h + r_start) * cols + c + c_start;
+  }
 
-  for (r = 0; r < h; r++)
+  for (r = 0; r < h; r++) {
+    if (idx >= 4096)
+                  printf("spiral order %d\n", idx);
     order[idx++] = (h - r + r_start) * cols + w + c_start;
+  }
 
-  for (c = 0; c < w; c++)
+  for (c = 0; c < w; c++) {
+    if (idx >= 4096)
+                  printf("spiral order %d\n", idx);
     order[idx++] = r_start * cols + w - c + c_start;
+  }
 
   spin_order(order, cols, r_start + 1, c_start + 1, h - 2, w - 2, idx);
 }

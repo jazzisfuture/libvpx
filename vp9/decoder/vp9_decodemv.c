@@ -235,8 +235,8 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
     int i, m1, m2, d, val;
     int rows = 4 * num_4x4_blocks_high_lookup[bsize];
     int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
-    int scan_order[4096];
-    uint8_t map[4096];
+    int scan_order[2 * 4096];
+    uint8_t map[4097];
     PALETTE_RUN_LENGTH bits;
 
     mbmi->mode = DC_PRED;
@@ -314,7 +314,8 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
                             &cm ->current_palette_size,
                             cm->current_palette_count, mbmi);
 
-    run_lengh_decoding(mbmi->palette_runs, mbmi->palette_run_length[0], map);
+    i = run_lengh_decoding(mbmi->palette_runs, mbmi->palette_run_length[0], map);
+
     switch (mbmi->palette_scan_order[0]) {
       case H_SCAN:
         memcpy(xd->plane[0].color_index_map, map, rows * cols);
@@ -335,6 +336,23 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
       default:
         break;
     }
+
+    if (i > 4096 && 0) {
+      int r, c;
+      printf("\n rows cols %d %d \n", rows, cols);
+      for (r = 0; r < rows; r += 1) {
+        for (c = 0; c < cols; c += 1)
+          printf("%4d ", xd->plane[0].color_index_map[r * cols + c]);
+        printf("\n");
+      }
+      printf("\n");
+      for (i = 0; i < mbmi->palette_run_length[0]; i += 1)
+        printf("%4d ", mbmi->palette_runs[i]);
+      printf("\n");
+      scanf("%d", &i);
+    }
+
+
     mbmi->tx_size = MIN(max_txsize_lookup[bsize],
                         tx_mode_to_biggest_tx_size[cm->tx_mode]);
   }
@@ -345,8 +363,8 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
         xd->plane[1].subsampling_y;
     int cols = 4 * num_4x4_blocks_wide_lookup[bsize] >>
         xd->plane[1].subsampling_x;
-    int scan_order[4096];
-    uint8_t map[4096];
+    int scan_order[2 * 4096];
+    uint8_t map[4097];
     PALETTE_RUN_LENGTH bits;
     BLOCK_SIZE uv_bsize = get_plane_block_size(bsize, &xd->plane[1]);
 
