@@ -299,12 +299,13 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   int shift = mbmi->tx_skip_shift;
   PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block):
-                                        mbmi->uv_mode;
+      mbmi->uv_mode;
 #endif
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
     tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
 #if CONFIG_VP9_HIGHBITDEPTH
+    (void) mode;
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
 #if CONFIG_TX_SKIP
       if (xd->lossless && !mbmi->tx_skip[plane != 0]) {
