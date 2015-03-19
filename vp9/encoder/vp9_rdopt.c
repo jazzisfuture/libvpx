@@ -1544,8 +1544,8 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
-  const int refs[2] = { mbmi->ref_frame[0],
-                        mbmi->ref_frame[1] < 0 ? 0 : mbmi->ref_frame[1] };
+  const int refs[2] = {mbmi->ref_frame[0],
+                       mbmi->ref_frame[1] < 0 ? 0 : mbmi->ref_frame[1]};
   int_mv ref_mv[2];
   int ite, ref;
   // Prediction buffer from second frame.
@@ -1559,7 +1559,6 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
   // Do joint motion search in compound mode to get more accurate mv.
   struct buf_2d backup_yv12[2][MAX_MB_PLANE];
-  struct buf_2d scaled_first_yv12 = xd->plane[0].pre[0];
   int last_besterr[2] = {INT_MAX, INT_MAX};
   const YV12_BUFFER_CONFIG *const scaled_ref_frame[2] = {
     vp9_get_scaled_ref_frame(cpi, mbmi->ref_frame[0]),
@@ -1593,7 +1592,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   // Allow joint search multiple times iteratively for each ref frame
-  // and break out the search loop if it couldn't find better mv.
+  // and break out of the search loop if it couldn't find a better mv.
   for (ite = 0; ite < 4; ite++) {
     struct buf_2d ref_yv12[2];
     int bestsme = INT_MAX;
@@ -1685,8 +1684,9 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
           pw, ph);
     }
 
+    // Restore the first reference frame prediction buffer pointer.
     if (id)
-      xd->plane[0].pre[0] = scaled_first_yv12;
+      xd->plane[0].pre[0] = ref_yv12[0];
 
     if (bestsme < last_besterr[id]) {
       frame_mv[refs[id]].as_mv = tmp_mv;
