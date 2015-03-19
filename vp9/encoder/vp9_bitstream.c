@@ -37,7 +37,10 @@
 #include "vp9/encoder/vp9_tokenize.h"
 #include "vp9/encoder/vp9_write_bit_buffer.h"
 
-static struct vp9_token intra_mode_encodings[INTRA_MODES];
+static struct vp9_token intra_mode_encodings[SPATIAL_INTRA_MODES];
+#if CONFIG_INTRABC
+static struct vp9_token intra_mode_encodings_bc[INTRA_MODES];
+#endif
 static struct vp9_token switchable_interp_encodings[SWITCHABLE_FILTERS];
 static struct vp9_token partition_encodings[PARTITION_TYPES];
 static struct vp9_token inter_mode_encodings[INTER_MODES];
@@ -70,6 +73,9 @@ static int vp9_check_supertx(VP9_COMMON *cm, int mi_row, int mi_col,
 
 void vp9_entropy_mode_init() {
   vp9_tokens_from_tree(intra_mode_encodings, vp9_intra_mode_tree);
+#if CONFIG_INTRABC
+  vp9_tokens_from_tree(intra_mode_encodings_bc, vp9_intra_mode_tree_bc);
+#endif
   vp9_tokens_from_tree(switchable_interp_encodings, vp9_switchable_interp_tree);
   vp9_tokens_from_tree(partition_encodings, vp9_partition_tree);
   vp9_tokens_from_tree(inter_mode_encodings, vp9_inter_mode_tree);
@@ -95,6 +101,18 @@ static void write_intra_mode(vp9_writer *w, PREDICTION_MODE mode,
                              const vp9_prob *probs) {
   vp9_write_token(w, vp9_intra_mode_tree, probs, &intra_mode_encodings[mode]);
 }
+
+#if CONFIG_INTRABC
+static void write_intra_mode_bc(vp9_writer *w, PREDICTION_MODE mode,
+                             const vp9_prob *probs) {
+  vp9_write_token(w, vp9_intra_mode_tree_bc, probs,
+                  &intra_mode_encodings_bc[mode]);
+}
+#define write_intra_mode_kf_y write_intra_mode_bc
+#else
+#define write_intra_mode_kf_y write_intra_mode
+#endif
+
 
 static void write_inter_mode(vp9_writer *w, PREDICTION_MODE mode,
                              const vp9_prob *probs) {
@@ -551,9 +569,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
         }
       }
     }
-#if CONFIG_INTRABC
-    if (!is_intrabc_mode(mode))
-#endif
     write_intra_mode(w, mbmi->uv_mode, cm->fc.uv_mode_prob[mode]);
 #if CONFIG_FILTERINTRA
     if (is_filter_allowed(mbmi->uv_mode) &&
@@ -873,10 +888,11 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   if (bsize >= BLOCK_8X8) {
 #if CONFIG_PALETTE
     if (!mbmi->palette_enabled[0])
-      write_intra_mode(w, mbmi->mode,
-                       get_y_mode_probs(mi, above_mi, left_mi, 0));
+      write_intra_mode_kf_y(w, mbmi->mode,
+                            get_y_mode_probs(mi, above_mi, left_mi, 0));
 #else
-    write_intra_mode(w, mbmi->mode, get_y_mode_probs(mi, above_mi, left_mi, 0));
+    write_intra_mode_kf_y(w, mbmi->mode,
+                          get_y_mode_probs(mi, above_mi, left_mi, 0));
 #endif  // CONFIG_PALETTE
 #if CONFIG_FILTERINTRA
     if (is_filter_allowed(mbmi->mode) && is_filter_enabled(mbmi->tx_size)
@@ -900,7 +916,7 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     for (idy = 0; idy < 2; idy += num_4x4_h) {
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         const int block = idy * 2 + idx;
-        write_intra_mode(w, mi->bmi[block].as_mode,
+        write_intra_mode_kf_y(w, mi->bmi[block].as_mode,
                          get_y_mode_probs(mi, above_mi, left_mi, block));
 #if CONFIG_FILTERINTRA
         if (is_filter_allowed(mi->bmi[block].as_mode))

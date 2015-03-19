@@ -149,10 +149,11 @@ static INLINE int have_newmv_in_inter_mode(PREDICTION_MODE mode) {
 static INLINE int is_intrabc_mode(PREDICTION_MODE mode) {
   return mode == NEWDV;
 }
-#define INTRA_MODES (NEWDV + 1)  // XXX
+#define INTRA_MODES (NEWDV + 1)
 #else
-#define INTRA_MODES (TM_PRED + 1)  // XXX
+#define INTRA_MODES (TM_PRED + 1)
 #endif
+#define SPATIAL_INTRA_MODES (TM_PRED + 1)
 
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
 

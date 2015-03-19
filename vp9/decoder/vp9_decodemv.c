@@ -30,6 +30,14 @@ static PREDICTION_MODE read_intra_mode(vp9_reader *r, const vp9_prob *p) {
   return (PREDICTION_MODE)vp9_read_tree(r, vp9_intra_mode_tree, p);
 }
 
+#if CONFIG_INTRABC
+static PREDICTION_MODE read_intra_mode_kf_y(vp9_reader *r, const vp9_prob *p) {
+  return (PREDICTION_MODE)vp9_read_tree(r, vp9_intra_mode_tree_bc, p);
+}
+#else
+#define read_intra_mode_kf_y read_intra_mode
+#endif
+
 static PREDICTION_MODE read_intra_mode_y(VP9_COMMON *cm, vp9_reader *r,
                                             int size_group) {
   const PREDICTION_MODE y_mode =
@@ -497,7 +505,7 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
       for (i = 0; i < 4; ++i)
 #endif
         mi->bmi[i].as_mode =
-            read_intra_mode(r, get_y_mode_probs(mi, above_mi, left_mi, i));
+            read_intra_mode_kf_y(r, get_y_mode_probs(mi, above_mi, left_mi, i));
 #if CONFIG_FILTERINTRA
         if (is_filter_allowed(mi->bmi[i].as_mode))
           mi->b_filter_info[i] =
@@ -514,7 +522,7 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
       break;
     case BLOCK_4X8:
       mi->bmi[0].as_mode = mi->bmi[2].as_mode =
-          read_intra_mode(r, get_y_mode_probs(mi, above_mi, left_mi, 0));
+          read_intra_mode_kf_y(r, get_y_mode_probs(mi, above_mi, left_mi, 0));
 #if CONFIG_FILTERINTRA
       if (is_filter_allowed(mi->bmi[0].as_mode))
         mi->b_filter_info[0] = mi->b_filter_info[2] =
@@ -526,7 +534,7 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
       xd->corrupted |= !assign_dv(cm, mbmi->mode, &mbmi->mv[0], &dv_ref, r);
 #endif
       mi->bmi[1].as_mode = mi->bmi[3].as_mode = mbmi->mode =
-          read_intra_mode(r, get_y_mode_probs(mi, above_mi, left_mi, 1));
+          read_intra_mode_kf_y(r, get_y_mode_probs(mi, above_mi, left_mi, 1));
 #if CONFIG_FILTERINTRA
       if (is_filter_allowed(mi->bmi[1].as_mode))
         mi->b_filter_info[1] = mi->b_filter_info[3] = mbmi->filterbit =
@@ -540,7 +548,7 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
       break;
     case BLOCK_8X4:
       mi->bmi[0].as_mode = mi->bmi[1].as_mode =
-          read_intra_mode(r, get_y_mode_probs(mi, above_mi, left_mi, 0));
+          read_intra_mode_kf_y(r, get_y_mode_probs(mi, above_mi, left_mi, 0));
 #if CONFIG_FILTERINTRA
       if (is_filter_allowed(mi->bmi[0].as_mode))
         mi->b_filter_info[0] = mi->b_filter_info[1] =
@@ -552,7 +560,7 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
       xd->corrupted |= !assign_dv(cm, mbmi->mode, &mbmi->mv[0], &dv_ref, r);
 #endif
       mi->bmi[2].as_mode = mi->bmi[3].as_mode = mbmi->mode =
-          read_intra_mode(r, get_y_mode_probs(mi, above_mi, left_mi, 2));
+          read_intra_mode_kf_y(r, get_y_mode_probs(mi, above_mi, left_mi, 2));
 #if CONFIG_FILTERINTRA
       if (is_filter_allowed(mi->bmi[2].as_mode))
         mi->b_filter_info[2] = mi->b_filter_info[3] = mbmi->filterbit =
@@ -567,10 +575,10 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
     default:
 #if CONFIG_PALETTE
       if (!mbmi->palette_enabled[0])
-        mbmi->mode = read_intra_mode(r,
+        mbmi->mode = read_intra_mode_kf_y(r,
                        get_y_mode_probs(mi, above_mi, left_mi, 0));
 #else
-      mbmi->mode = read_intra_mode(r,
+      mbmi->mode = read_intra_mode_kf_y(r,
                                    get_y_mode_probs(mi, above_mi, left_mi, 0));
 #endif  // CONFIG_PALETTE
 #if CONFIG_FILTERINTRA

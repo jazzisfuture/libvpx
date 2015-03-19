@@ -42,8 +42,8 @@ struct tx_counts {
 };
 
 typedef struct frame_contexts {
-  vp9_prob y_mode_prob[BLOCK_SIZE_GROUPS][INTRA_MODES - 1];
-  vp9_prob uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
+  vp9_prob y_mode_prob[BLOCK_SIZE_GROUPS][SPATIAL_INTRA_MODES - 1];
+  vp9_prob uv_mode_prob[SPATIAL_INTRA_MODES][SPATIAL_INTRA_MODES - 1];
   vp9_prob partition_prob[PARTITION_CONTEXTS][PARTITION_TYPES - 1];
   vp9_coeff_probs_model coef_probs[TX_SIZES][PLANE_TYPES];
   vp9_prob switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
@@ -151,12 +151,15 @@ typedef struct {
 #endif  // CONFIG_WEDGE_PARTITION
 } FRAME_COUNTS;
 
-extern const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
+extern const vp9_prob vp9_kf_uv_mode_prob[SPATIAL_INTRA_MODES][SPATIAL_INTRA_MODES - 1];
 extern const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES]
                                         [INTRA_MODES - 1];
 extern const vp9_prob vp9_kf_partition_probs[PARTITION_CONTEXTS]
                                             [PARTITION_TYPES - 1];
-extern const vp9_tree_index vp9_intra_mode_tree[TREE_SIZE(INTRA_MODES)];
+extern const vp9_tree_index vp9_intra_mode_tree[TREE_SIZE(SPATIAL_INTRA_MODES)];
+#if CONFIG_INTRABC
+extern const vp9_tree_index vp9_intra_mode_tree_bc[TREE_SIZE(INTRA_MODES)];
+#endif
 extern const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)];
 extern const vp9_tree_index vp9_partition_tree[TREE_SIZE(PARTITION_TYPES)];
 extern const vp9_tree_index vp9_switchable_interp_tree

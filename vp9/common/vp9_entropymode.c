@@ -286,20 +286,7 @@ const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
 };
 
 // FIXME(aconverse): INTRABC UV is always the same as INTRABC Y
-const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1] = {
-#if CONFIG_INTRABC
-  { 144,  11,  54, 157, 195, 130,  46,  58, 108,   1 },  // y = dc
-  { 118,  15, 123, 148, 131, 101,  44,  93, 131,   1 },  // y = v
-  { 113,  12,  23, 188, 226, 142,  26,  32, 125,   1 },  // y = h
-  { 120,  11,  50, 123, 163, 135,  64,  77, 103,   1 },  // y = d45
-  { 113,   9,  36, 155, 111, 157,  32,  44, 161,   1 },  // y = d135
-  { 116,   9,  55, 176,  76,  96,  37,  61, 149,   1 },  // y = d117
-  { 115,   9,  28, 141, 161, 167,  21,  25, 193,   1 },  // y = d153
-  { 120,  12,  32, 145, 195, 142,  32,  38,  86,   1 },  // y = d207
-  { 116,  12,  64, 120, 140, 125,  49, 115, 121,   1 },  // y = d63
-  { 102,  19,  66, 162, 182, 122,  35,  59, 128,   1 },  // y = tm
-  {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0 }   // y = bc
-#else
+const vp9_prob vp9_kf_uv_mode_prob[SPATIAL_INTRA_MODES][SPATIAL_INTRA_MODES - 1] = {
   { 144,  11,  54, 157, 195, 130,  46,  58, 108 },  // y = dc
   { 118,  15, 123, 148, 131, 101,  44,  93, 131 },  // y = v
   { 113,  12,  23, 188, 226, 142,  26,  32, 125 },  // y = h
@@ -310,37 +297,16 @@ const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1] = {
   { 120,  12,  32, 145, 195, 142,  32,  38,  86 },  // y = d207
   { 116,  12,  64, 120, 140, 125,  49, 115, 121 },  // y = d63
   { 102,  19,  66, 162, 182, 122,  35,  59, 128 }   // y = tm
-#endif
 };
 
-static const vp9_prob default_if_y_probs[BLOCK_SIZE_GROUPS][INTRA_MODES - 1] = {
-#if CONFIG_INTRABC
-  {  65,  32,  18, 144, 162, 194,  41,  51,  98, 1 },  // block_size < 8x8
-  { 132,  68,  18, 165, 217, 196,  45,  40,  78, 1 },  // block_size < 16x16
-  { 173,  80,  19, 176, 240, 193,  64,  35,  46, 1 },  // block_size < 32x32
-  { 221, 135,  38, 194, 248, 121,  96,  85,  29, 1 }   // block_size >= 32x32
-#else
+static const vp9_prob default_if_y_probs[BLOCK_SIZE_GROUPS][SPATIAL_INTRA_MODES - 1] = {
   {  65,  32,  18, 144, 162, 194,  41,  51,  98 },  // block_size < 8x8
   { 132,  68,  18, 165, 217, 196,  45,  40,  78 },  // block_size < 16x16
   { 173,  80,  19, 176, 240, 193,  64,  35,  46 },  // block_size < 32x32
   { 221, 135,  38, 194, 248, 121,  96,  85,  29 }   // block_size >= 32x32
-#endif
 };
 
-static const vp9_prob default_if_uv_probs[INTRA_MODES][INTRA_MODES - 1] = {
-#if CONFIG_INTRABC
-  { 120,   7,  76, 176, 208, 126,  28,  54, 103,   1 },  // y = dc
-  {  48,  12, 154, 155, 139,  90,  34, 117, 119,   1 },  // y = v
-  {  67,   6,  25, 204, 243, 158,  13,  21,  96,   1 },  // y = h
-  {  97,   5,  44, 131, 176, 139,  48,  68,  97,   1 },  // y = d45
-  {  83,   5,  42, 156, 111, 152,  26,  49, 152,   1 },  // y = d135
-  {  80,   5,  58, 178,  74,  83,  33,  62, 145,   1 },  // y = d117
-  {  86,   5,  32, 154, 192, 168,  14,  22, 163,   1 },  // y = d153
-  {  85,   5,  32, 156, 216, 148,  19,  29,  73,   1 },  // y = d207
-  {  77,   7,  64, 116, 132, 122,  37, 126, 120,   1 },  // y = d63
-  { 101,  21, 107, 181, 192, 103,  19,  67, 125,   1 },  // y = tm
-  {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0 }   // y = bc
-#else
+static const vp9_prob default_if_uv_probs[SPATIAL_INTRA_MODES][SPATIAL_INTRA_MODES - 1] = {
   { 120,   7,  76, 176, 208, 126,  28,  54, 103 },  // y = dc
   {  48,  12, 154, 155, 139,  90,  34, 117, 119 },  // y = v
   {  67,   6,  25, 204, 243, 158,  13,  21,  96 },  // y = h
@@ -351,7 +317,6 @@ static const vp9_prob default_if_uv_probs[INTRA_MODES][INTRA_MODES - 1] = {
   {  85,   5,  32, 156, 216, 148,  19,  29,  73 },  // y = d207
   {  77,   7,  64, 116, 132, 122,  37, 126, 120 },  // y = d63
   { 101,  21, 107, 181, 192, 103,  19,  67, 125 }   // y = tm
-#endif
 };
 
 #if CONFIG_FILTERINTRA
@@ -437,7 +402,7 @@ static const vp9_prob default_inter_compound_mode_probs
 #endif  // CONFIG_COMPOUND_MODES
 
 /* Array indices are identical to previously-existing INTRAMODECONTEXTNODES. */
-const vp9_tree_index vp9_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {
+const vp9_tree_index vp9_intra_mode_tree[TREE_SIZE(SPATIAL_INTRA_MODES)] = {
   -DC_PRED, 2,                      /* 0 = DC_NODE */
   -TM_PRED, 4,                      /* 1 = TM_NODE */
   -V_PRED, 6,                       /* 2 = V_NODE */
@@ -446,13 +411,23 @@ const vp9_tree_index vp9_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {
   -D135_PRED, -D117_PRED,           /* 5 = D135_NODE */
   -D45_PRED, 14,                    /* 6 = D45_NODE */
   -D63_PRED, 16,                    /* 7 = D63_NODE */
+  -D153_PRED, -D207_PRED            /* 8 = D153_NODE */
+};
+
 #if CONFIG_INTRABC
+const vp9_tree_index vp9_intra_mode_tree_bc[TREE_SIZE(INTRA_MODES)] = {
+  -DC_PRED, 2,                      /* 0 = DC_NODE */
+  -TM_PRED, 4,                      /* 1 = TM_NODE */
+  -V_PRED, 6,                       /* 2 = V_NODE */
+  8, 12,                            /* 3 = COM_NODE */
+  -H_PRED, 10,                      /* 4 = H_NODE */
+  -D135_PRED, -D117_PRED,           /* 5 = D135_NODE */
+  -D45_PRED, 14,                    /* 6 = D45_NODE */
+  -D63_PRED, 16,                    /* 7 = D63_NODE */
   -D153_PRED, 18,                   /* 8 = D153_NODE */
   -D207_PRED, -NEWDV                /* 9 = D207_NODE */
-#else
-  -D153_PRED, -D207_PRED            /* 8 = D153_NODE */
-#endif
 };
+#endif
 
 const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
   -INTER_OFFSET(ZEROMV), 2,
