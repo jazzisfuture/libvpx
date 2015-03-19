@@ -795,7 +795,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   for (i = 0; i < 2; i++) {
     pd[i].color_index_map = ctx->color_index_map[i];
   }
-#endif
+#endif  // CONFIG_PALETTE
 
   // Restore the coding context of the MB to that that was in place
   // when the mode was picked for it

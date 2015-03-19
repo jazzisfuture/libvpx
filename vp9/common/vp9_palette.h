@@ -37,6 +37,8 @@ void palette_iscan(uint8_t *color_index_map, uint8_t *sequence,
                    int rows, int cols, PALETTE_SCAN_ORDER ps, int *scan_order);
 void update_palette_counts(FRAME_COUNTS *counts, MB_MODE_INFO *mbmi,
                            BLOCK_SIZE bsize, int palette_ctx);
+int get_palette_color_context(uint8_t *color_map, int cols,
+                              int r, int c, int n, int *color_order);
 #endif
 
 #endif  // VP9_COMMON_VP9_PALETTE_H_
