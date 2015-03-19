@@ -298,8 +298,6 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
 #if CONFIG_TX_SKIP
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   int shift = mbmi->tx_skip_shift;
-  PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block):
-                                        mbmi->uv_mode;
 #endif
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
@@ -307,6 +305,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
 #if CONFIG_TX_SKIP
+      // (void) mode;
       if (xd->lossless && !mbmi->tx_skip[plane != 0]) {
 #else
       if (xd->lossless) {
@@ -477,6 +476,8 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
           tx_type = get_tx_type_4x4(plane_type, xd, block);
 #if CONFIG_TX_SKIP
           if (mbmi->tx_skip[plane != 0]) {
+            PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block):
+                mbmi->uv_mode;
             if (mode == V_PRED || mode == H_PRED || mode == TM_PRED)
               vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, 4, shift);
             else
@@ -492,6 +493,8 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
           tx_type = get_tx_type(plane_type, xd);
 #if CONFIG_TX_SKIP
           if (mbmi->tx_skip[plane != 0]) {
+            PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block):
+                mbmi->uv_mode;
             if (mode == V_PRED || mode == H_PRED || mode == TM_PRED)
               vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, 8, shift);
             else
@@ -507,6 +510,8 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
           tx_type = get_tx_type(plane_type, xd);
 #if CONFIG_TX_SKIP
           if (mbmi->tx_skip[plane != 0]) {
+            PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block):
+                mbmi->uv_mode;
             if (mode == V_PRED || mode == H_PRED || mode == TM_PRED)
               vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, 16, shift);
             else
@@ -522,6 +527,8 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
           tx_type = DCT_DCT;
 #if CONFIG_TX_SKIP
           if (mbmi->tx_skip[plane != 0]) {
+            PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block):
+                mbmi->uv_mode;
             if (mode == V_PRED || mode == H_PRED || mode == TM_PRED)
               vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, 32, shift);
             else
