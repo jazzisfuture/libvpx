@@ -298,8 +298,6 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
 #if CONFIG_TX_SKIP
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   int shift = mbmi->tx_skip_shift;
-  PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block):
-                                        mbmi->uv_mode;
 #endif
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
@@ -472,6 +470,8 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
       vp9_iwht4x4_add(dqcoeff, dst, stride, eob);
     } else {
       const PLANE_TYPE plane_type = pd->plane_type;
+      PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block):
+                                              mbmi->uv_mode;
       switch (tx_size) {
         case TX_4X4:
           tx_type = get_tx_type_4x4(plane_type, xd, block);
