@@ -336,6 +336,15 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->tx_size_search_method = is_keyframe ? USE_LARGESTALL : USE_TX_8X8;
     sf->mv.reduce_first_step_size = 1;
     sf->skip_encode_sb = 0;
+    if (!is_keyframe) {
+    int i;
+    for (i = 0; i < BLOCK_SIZES; i++)
+      if (i > 6)
+        sf->intra_y_mode_bsize_mask[i] = INTRA_DC;
+      else
+        // Use H and V intra mode block sizes <= 16X16
+        sf->intra_y_mode_bsize_mask[i] = INTRA_DC_H_V;
+    }
   }
 
   if (speed >= 7) {

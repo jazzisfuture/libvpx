@@ -1039,7 +1039,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     for (i = 0; i < 4; ++i) {
       const PREDICTION_MODE this_mode = intra_mode_list[i];
-      if (!((1 << this_mode) & cpi->sf.intra_y_mode_mask[intra_tx_size]))
+      if (!((1 << this_mode) & cpi->sf.intra_y_mode_bsize_mask[bsize]))
         continue;
       args.mode = this_mode;
       args.rate = 0;
