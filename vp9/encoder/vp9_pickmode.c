@@ -1039,8 +1039,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     for (i = 0; i < 4; ++i) {
       const PREDICTION_MODE this_mode = intra_mode_list[i];
-      if (!((1 << this_mode) & cpi->sf.intra_y_mode_mask[intra_tx_size]))
-        continue;
+      if (cpi->sf.partition_search_type == VAR_BASED_PARTITION) {
+        if (!((1 << this_mode) & cpi->sf.intra_y_mode_bsize_mask[bsize]))
+          continue;
+      } else {
+        if (!((1 << this_mode) & cpi->sf.intra_y_mode_mask[intra_tx_size]))
+          continue;
+      }
       args.mode = this_mode;
       args.rate = 0;
       args.dist = 0;
