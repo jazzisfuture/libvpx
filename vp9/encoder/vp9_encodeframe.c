@@ -3511,8 +3511,13 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
         // Tune the thresholds accordingly to use sub8x8 block coding for
         // coding performance improvement.
         choose_partitioning(cpi, tile_info, x, mi_row, mi_col);
-        nonrd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col,
-                            BLOCK_64X64, 1, &dummy_rdc, td->pc_root);
+
+        rd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col,
+                         BLOCK_64X64, &dummy_rdc.rate, &dummy_rdc.dist,
+                         1, td->pc_root);
+
+//        nonrd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col,
+//                            BLOCK_64X64, 1, &dummy_rdc, td->pc_root);
         break;
       case SOURCE_VAR_BASED_PARTITION:
         set_source_var_based_partition(cpi, tile_info, x, mi, mi_row, mi_col);
