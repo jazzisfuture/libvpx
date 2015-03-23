@@ -328,7 +328,7 @@ static const int16_t band_counts[TX_SIZES][8] = {
   { 1, 2, 3, 4, 11,  256 - 21, 0 },
   { 1, 2, 3, 4, 11, 1024 - 21, 0 },
 };
-static int cost_coeffs(MACROBLOCK *x,
+int cost_coeffs(MACROBLOCK *x,
                        int plane, int block,
                        ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L,
                        TX_SIZE tx_size,
@@ -369,8 +369,11 @@ static int cost_coeffs(MACROBLOCK *x,
     int16_t prev_t;
     EXTRABIT e;
     vp9_get_token_extra(v, &prev_t, &e);
-    cost = (*token_costs)[0][pt][prev_t] +
-        vp9_get_cost(prev_t, e, cat6_high_cost);
+
+    cost = (*token_costs)[0][pt][prev_t];
+    cost += vp9_get_cost(prev_t, e, cat6_high_cost);
+//    cost = (*token_costs)[0][pt][prev_t] +
+//        vp9_get_cost(prev_t, e, cat6_high_cost);
 
     token_cache[0] = vp9_pt_energy_class[prev_t];
     ++token_costs;
@@ -609,7 +612,6 @@ static void choose_largest_tx_size(VP9_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
 
   mbmi->tx_size = MIN(max_tx_size, largest_tx_size);
-
   txfm_rd_in_plane(x, rate, distortion, skip,
                    sse, ref_best_rd, 0, bs,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
@@ -2735,13 +2737,18 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     rdcosty = RDCOST(x->rdmult, x->rddiv, *rate2, *distortion);
     rdcosty = MIN(rdcosty, RDCOST(x->rdmult, x->rddiv, 0, *psse));
 
-    if (!super_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv,
-                          &sseuv, bsize, ref_best_rd - rdcosty)) {
-      *rate2 = INT_MAX;
-      *distortion = INT64_MAX;
-      restore_dst_buf(xd, orig_dst, orig_dst_stride);
-      return INT64_MAX;
-    }
+//    if (!super_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv,
+//                          &sseuv, bsize, ref_best_rd - rdcosty)) {
+//      *rate2 = INT_MAX;
+//      *distortion = INT64_MAX;
+//      restore_dst_buf(xd, orig_dst, orig_dst_stride);
+//      return INT64_MAX;
+//    }
+
+    sseuv = 0;
+    *rate_uv = 0;
+    distortion_uv = 0;
+    skippable_uv = 1;
 
     *psse += sseuv;
     *rate2 += *rate_uv;
@@ -2910,6 +2917,14 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
   }
 
   rd_cost->rate = INT_MAX;
+
+  // ====================================================
+//  if (cpi->ref_frame_flags & flag_list[GOLDEN_FRAME])
+//    cpi->ref_frame_flags &= ~flag_list[LAST_FRAME];
+
+  cpi->ref_frame_flags &= ~flag_list[ALTREF_FRAME];
+//  cpi->ref_frame_flags = flag_list[LAST_FRAME];
+  // ====================================================
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     x->pred_mv_sad[ref_frame] = INT_MAX;
@@ -3201,6 +3216,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
     if (ref_frame == INTRA_FRAME) {
       TX_SIZE uv_tx;
       struct macroblockd_plane *const pd = &xd->plane[1];
+
       vpx_memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
       super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
                       NULL, bsize, tx_cache, best_rd);
@@ -3209,17 +3225,22 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
 
       uv_tx = get_uv_tx_size_impl(mbmi->tx_size, bsize, pd->subsampling_x,
                                   pd->subsampling_y);
-      if (rate_uv_intra[uv_tx] == INT_MAX) {
-        choose_intra_uv_mode(cpi, x, ctx, bsize, uv_tx,
-                             &rate_uv_intra[uv_tx], &rate_uv_tokenonly[uv_tx],
-                             &dist_uv[uv_tx], &skip_uv[uv_tx], &mode_uv[uv_tx]);
-      }
+//      if (rate_uv_intra[uv_tx] == INT_MAX) {
+//        choose_intra_uv_mode(cpi, x, ctx, bsize, uv_tx,
+//                             &rate_uv_intra[uv_tx], &rate_uv_tokenonly[uv_tx],
+//                             &dist_uv[uv_tx], &skip_uv[uv_tx], &mode_uv[uv_tx]);
+//      }
+
+      rate_uv_tokenonly[uv_tx] = 0;
+      rate_uv_intra[uv_tx] = 0;
+      dist_uv[uv_tx] = 0;
+      skip_uv[uv_tx] = 1;
+      mode_uv[uv_tx] = mbmi->mode;
 
       rate_uv = rate_uv_tokenonly[uv_tx];
       distortion_uv = dist_uv[uv_tx];
       skippable = skippable && skip_uv[uv_tx];
       mbmi->uv_mode = mode_uv[uv_tx];
-
       rate2 = rate_y + cpi->mbmode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
       if (this_mode != DC_PRED && this_mode != TM_PRED)
         rate2 += intra_cost_penalty;
