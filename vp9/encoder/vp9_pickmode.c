@@ -1095,6 +1095,48 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
+  // =================================================
+  // Hadamard transform based coefficient estimate
+  // =================================================
+  if (mbmi->ref_frame[0] > INTRA_FRAME && bsize >= BLOCK_16X16 && 0) {
+    int block_idx = 0;
+    TX_SIZE tx_size = TX_16X16; // mbmi->tx_size;
+    struct macroblock_plane *const p = &x->plane[0];
+    int16_t *coeff;
+    int idx, idy;
+    int b8;
+    int satd_8 = 0, satd_16 = 0;
+
+    vp9_subtract_plane(x, bsize, 0);
+    for (idy = 0; idy < bh; idy += (4 << tx_size)) {
+      for (idx = 0; idx < bw; idx += (4 << tx_size)) {
+        // Compute 8x8 SATD.
+        for (b8 = 0; b8 < 4; ++b8) {
+          int block = block_idx + b8 * 4;
+          int16_t *src_diff =
+              &p->src_diff[(idy + (b8 >> 1) * 8) * bw + idx + (b8 & 0x01) * 8];
+          int16_t *coeff = BLOCK_OFFSET(p->coeff, block);
+          vp9_hadamard_8x8(src_diff, bw, coeff);
+          satd_8 += vp9_satd(coeff, 64);
+        }
+        // Compute 16x16 SATD
+        coeff = BLOCK_OFFSET(p->coeff, block_idx);
+        vp9_hadamard_16x16(coeff);
+        satd_16 += vp9_satd(coeff, 256);
+
+        block_idx += 1 << (tx_size << 1);
+      }
+    }
+
+//    satd_16 = (satd_16 >> 1);
+
+    if (satd_16 + 10 < satd_8)
+      mbmi->tx_size = TX_16X16;
+    else
+      mbmi->tx_size = TX_8X8;
+  }
+  // =================================================
+
   if (cpi->sf.adaptive_rd_thresh) {
     THR_MODES best_mode_idx = is_inter_block(mbmi) ?
         mode_idx[best_ref_frame][INTER_OFFSET(mbmi->mode)] :
