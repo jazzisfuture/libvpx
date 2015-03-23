@@ -280,7 +280,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
 
   set_block_thresholds(cm, rd);
 
-  if (!cpi->sf.use_nonrd_pick_mode || cm->frame_type == KEY_FRAME)
+  if (!cpi->sf.use_nonrd_pick_mode || cm->frame_type == KEY_FRAME || 1)
     fill_token_costs(x->token_costs, cm->fc->coef_probs);
 
   if (cpi->sf.partition_search_type != VAR_BASED_PARTITION ||
