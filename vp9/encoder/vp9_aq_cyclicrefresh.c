@@ -216,7 +216,7 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
                                        BLOCK_SIZE bsize,
                                        int64_t rate,
                                        int64_t dist,
-                                       int skip) {
+                                       MACROBLOCK *x) {
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   const int bw = num_8x8_blocks_wide_lookup[bsize];
@@ -224,18 +224,33 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   const int xmis = MIN(cm->mi_cols - mi_col, bw);
   const int ymis = MIN(cm->mi_rows - mi_row, bh);
   const int block_index = mi_row * cm->mi_cols + mi_col;
-  const int refresh_this_block = candidate_refresh_aq(cr, mbmi, rate, dist,
-                                                      bsize);
+  int refresh_this_block = candidate_refresh_aq(cr, mbmi, rate, dist,
+                                                bsize);
   // Default is to not update the refresh map.
   int new_map_value = cr->map[block_index];
-  int x = 0; int y = 0;
+  int i = 0; int j = 0;
+
+  int is_skin = 0;
+  if (bsize <= BLOCK_16X16 && cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
+    // Take center pixel in block to determine is_skin.
+    const int shift = bsize >> 1;
+    const int shiftuv = bsize >> 2;
+    const int stride = x->plane[0].src.stride;
+    const int strideuv = x->plane[1].src.stride;
+    const uint8_t ysource = x->plane[0].src.buf[shift * stride + shift];
+    const uint8_t usource = x->plane[1].src.buf[shiftuv * strideuv + shiftuv];
+    const uint8_t vsource = x->plane[2].src.buf[shiftuv * strideuv + shiftuv];
+    is_skin = vp9_skin_pixel(ysource, usource, vsource);
+    if (is_skin && refresh_this_block == 0)
+      refresh_this_block = 1;
+  }
 
   // If this block is labeled for refresh, check if we should reset the
   // segment_id.
   if (cyclic_refresh_segment_id_boosted(mbmi->segment_id)) {
     mbmi->segment_id = refresh_this_block;
     // Reset segment_id if will be skipped.
-    if (skip)
+    if (x->skip)
       mbmi->segment_id = CR_SEGMENT_ID_BASE;
   }
 
@@ -258,16 +273,16 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
 
   // Update entries in the cyclic refresh map with new_map_value, and
   // copy mbmi->segment_id into global segmentation map.
-  for (y = 0; y < ymis; y++)
-    for (x = 0; x < xmis; x++) {
-      int map_offset = block_index + y * cm->mi_cols + x;
+  for (j = 0; j < ymis; j++)
+    for (i = 0; i < xmis; i++) {
+      int map_offset = block_index + j * cm->mi_cols + i;
       cr->map[map_offset] = new_map_value;
       cpi->segmentation_map[map_offset] = mbmi->segment_id;
       // Inter skip blocks were clearly not coded at the current qindex, so
       // don't update the map for them. For cases where motion is non-zero or
       // the reference frame isn't the previous frame, the previous value in
       // the map for this spatial location is not entirely correct.
-      if (!is_inter_block(mbmi) || !skip)
+      if (!is_inter_block(mbmi) || !x->skip)
         cr->last_coded_q_map[map_offset] = clamp(
             cm->base_qindex + cr->qindex_delta[mbmi->segment_id], 0, MAXQ);
     }
