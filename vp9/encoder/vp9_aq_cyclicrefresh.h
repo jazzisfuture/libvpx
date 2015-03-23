@@ -13,6 +13,8 @@
 #define VP9_ENCODER_VP9_AQ_CYCLICREFRESH_H_
 
 #include "vp9/common/vp9_blockd.h"
+#include "vp9/encoder/vp9_block.h"
+#include "vp9/encoder/vp9_skin_detection.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,7 +57,8 @@ int vp9_cyclic_refresh_rc_bits_per_mb(const struct VP9_COMP *cpi, int i,
 void vp9_cyclic_refresh_update_segment(struct VP9_COMP *const cpi,
                                        MB_MODE_INFO *const mbmi,
                                        int mi_row, int mi_col, BLOCK_SIZE bsize,
-                                       int64_t rate, int64_t dist, int skip);
+                                       int64_t rate, int64_t dist, 
+                                       MACROBLOCK *x);
 
 // Update the segmentation map, and related quantities: cyclic refresh map,
 // refresh sb_index, and target number of blocks to be refreshed.
