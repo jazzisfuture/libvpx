@@ -328,7 +328,7 @@ static const int16_t band_counts[TX_SIZES][8] = {
   { 1, 2, 3, 4, 11,  256 - 21, 0 },
   { 1, 2, 3, 4, 11, 1024 - 21, 0 },
 };
-static int cost_coeffs(MACROBLOCK *x,
+int cost_coeffs(MACROBLOCK *x,
                        int plane, int block,
                        ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L,
                        TX_SIZE tx_size,
@@ -609,7 +609,6 @@ static void choose_largest_tx_size(VP9_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
 
   mbmi->tx_size = MIN(max_tx_size, largest_tx_size);
-
   txfm_rd_in_plane(x, rate, distortion, skip,
                    sse, ref_best_rd, 0, bs,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
@@ -3201,6 +3200,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
     if (ref_frame == INTRA_FRAME) {
       TX_SIZE uv_tx;
       struct macroblockd_plane *const pd = &xd->plane[1];
+
       vpx_memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
       super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
                       NULL, bsize, tx_cache, best_rd);
@@ -3219,7 +3219,6 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
       distortion_uv = dist_uv[uv_tx];
       skippable = skippable && skip_uv[uv_tx];
       mbmi->uv_mode = mode_uv[uv_tx];
-
       rate2 = rate_y + cpi->mbmode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
       if (this_mode != DC_PRED && this_mode != TM_PRED)
         rate2 += intra_cost_penalty;

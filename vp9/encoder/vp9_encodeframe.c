@@ -3843,6 +3843,10 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       source_var_based_partition_search_method(cpi);
   }
 
+  if (cpi->rc.frames_since_golden == 0) {
+    fprintf(stderr, "Golden reference frame %d\n", cm->current_video_frame);
+  }
+
   {
     struct vpx_usec_timer emr_timer;
     vpx_usec_timer_start(&emr_timer);
