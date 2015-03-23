@@ -392,6 +392,14 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
   if (frame_is_intra_only(cm)) {
     write_mb_modes_kf(cm, xd, xd->mi, w);
   } else {
+
+    {
+      FILE *pf = fopen("enc_modes.txt", "a");
+      fprintf(pf, "pos (%d, %d), range %d\n", mi_row, mi_col,
+              w->range);
+      fclose(pf);
+    }
+
     pack_inter_mode_mvs(cpi, m, w);
   }
 

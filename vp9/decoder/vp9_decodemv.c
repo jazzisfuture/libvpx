@@ -570,6 +570,13 @@ static void read_inter_frame_mode_info(VP9Decoder *const pbi,
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   int inter_block;
 
+  {
+    FILE *pf = fopen("dec_modes.txt", "a");
+    fprintf(pf, "pos (%d, %d), range %d\n", mi_row, mi_col,
+            r->range);
+    fclose(pf);
+  }
+
   mbmi->mv[0].as_int = 0;
   mbmi->mv[1].as_int = 0;
   mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);

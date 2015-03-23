@@ -331,9 +331,9 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     // Adaptively switch between SOURCE_VAR_BASED_PARTITION and FIXED_PARTITION.
     sf->partition_search_type = VAR_BASED_PARTITION;
     // Turn on this to use non-RD key frame coding mode.
-    sf->use_nonrd_pick_mode = 1;
+    sf->use_nonrd_pick_mode = !is_keyframe;
     sf->mv.search_method = NSTEP;
-    sf->tx_size_search_method = is_keyframe ? USE_LARGESTALL : USE_TX_8X8;
+    sf->tx_size_search_method = is_keyframe || 1 ? USE_LARGESTALL : USE_TX_8X8;
     sf->mv.reduce_first_step_size = 1;
     sf->skip_encode_sb = 0;
   }
