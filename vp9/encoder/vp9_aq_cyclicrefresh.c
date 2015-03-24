@@ -354,10 +354,10 @@ void vp9_cyclic_refresh_update_map(VP9_COMP *const cpi) {
     for (y = 0; y < ymis; y++) {
       for (x = 0; x < xmis; x++) {
         const int bl_index2 = bl_index + y * cm->mi_cols + x;
-        // If the block is as a candidate for clean up then mark it
-        // for possible boost/refresh (segment 1). The segment id may get
-        // reset to 0 later if block gets coded anything other than ZEROMV.
-        if (cr->map[bl_index2] == 0) {
+        // Mark the block as a candidate for boost/refresh (segment 1).
+        // The segment id may get reset to 0 later depending on coding
+        // mode of block.
+        if (cr->map[bl_index2] >= 0) {
           sum_map++;
         } else if (cr->map[bl_index2] < 0) {
           cr->map[bl_index2]++;
