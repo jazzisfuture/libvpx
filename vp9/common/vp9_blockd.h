@@ -245,7 +245,7 @@ extern const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES];
 
 static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
                                   const MACROBLOCKD *xd) {
-  const MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
+  const MB_MODE_INFO *const mbmi = &xd->mi->mbmi;
 
   if (plane_type != PLANE_TYPE_Y || xd->lossless || is_inter_block(mbmi))
     return DCT_DCT;
@@ -255,7 +255,7 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
 
 static INLINE TX_TYPE get_tx_type_4x4(PLANE_TYPE plane_type,
                                       const MACROBLOCKD *xd, int ib) {
-  const MODE_INFO *const mi = xd->mi[0].src_mi;
+  const MODE_INFO *const mi = xd->mi;
 
   if (plane_type != PLANE_TYPE_Y || xd->lossless || is_inter_block(&mi->mbmi))
     return DCT_DCT;
