@@ -304,7 +304,7 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
   VP9_COMMON *const cm = args->cm;
   MACROBLOCKD *const xd = args->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  MODE_INFO *const mi = xd->mi[0].src_mi;
+  MODE_INFO *const mi = xd->mi;
   const PREDICTION_MODE mode = (plane == 0) ? get_y_mode(mi, block)
                                             : mi->mbmi.uv_mode;
   const int16_t *const dequant = (plane == 0) ? args->y_dequant
@@ -1798,7 +1798,7 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
                                 int plane, int block, int bw, int bh, int x,
                                 int y, int w, int h, int mi_x, int mi_y) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  const MODE_INFO *mi = xd->mi[0].src_mi;
+  const MODE_INFO *mi = xd->mi;
   const int is_compound = has_second_ref(&mi->mbmi);
   const InterpKernel *kernel = vp9_get_interp_kernel(mi->mbmi.interp_filter);
   int ref;
@@ -2001,7 +2001,7 @@ void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
     const int bw = 4 * num_4x4_w;
     const int bh = 4 * num_4x4_h;
 
-    if (xd->mi[0].src_mi->mbmi.sb_type < BLOCK_8X8) {
+    if (xd->mi->mbmi.sb_type < BLOCK_8X8) {
       int i = 0, x, y;
       assert(bsize == BLOCK_8X8);
       for (y = 0; y < num_4x4_h; ++y)

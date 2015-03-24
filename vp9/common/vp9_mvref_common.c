@@ -183,7 +183,7 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
                                    int block, int ref, int mi_row, int mi_col,
                                    int_mv *nearest_mv, int_mv *near_mv) {
   int_mv mv_list[MAX_MV_REF_CANDIDATES];
-  MODE_INFO *const mi = xd->mi[0].src_mi;
+  MODE_INFO *const mi = xd->mi;
   b_mode_info *bmi = mi->bmi;
   int n;
 
