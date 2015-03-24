@@ -2877,7 +2877,7 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi,
   mbmi->sb_type = bsize;
 
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled)
-    if (mbmi->segment_id)
+    if (cyclic_refresh_segment_id_boosted(mbmi->segment_id))
       x->rdmult = vp9_cyclic_refresh_get_rdmult(cpi->cyclic_refresh);
 
   if (cm->frame_type == KEY_FRAME)
