@@ -1549,15 +1549,16 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                        mbmi->ref_frame[1] < 0 ? 0 : mbmi->ref_frame[1]};
   int_mv ref_mv[2];
   int ite, ref;
-  // Prediction buffer from second frame.
-#if CONFIG_VP9_HIGHBITDEPTH
-  uint8_t *second_pred;
-  uint8_t *second_pred_alloc;
-#else
-  uint8_t *second_pred = vpx_memalign(16, pw * ph * sizeof(uint8_t));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
   const InterpKernel *kernel = vp9_get_interp_kernel(mbmi->interp_filter);
   struct scale_factors sf;
+
+  // Prediction buffer from second frame.
+#if CONFIG_VP9_HIGHBITDEPTH
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, second_pred_alloc_16, 64 * 64));
+  uint8_t *second_pred;
+#else
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, second_pred, 64 * 64);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   // Do joint motion search in compound mode to get more accurate mv.
   struct buf_2d backup_yv12[2][MAX_MB_PLANE];
@@ -1566,15 +1567,6 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_get_scaled_ref_frame(cpi, mbmi->ref_frame[0]),
     vp9_get_scaled_ref_frame(cpi, mbmi->ref_frame[1])
   };
-#if CONFIG_VP9_HIGHBITDEPTH
-  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    second_pred_alloc = vpx_memalign(16, pw * ph * sizeof(uint16_t));
-    second_pred = CONVERT_TO_BYTEPTR(second_pred_alloc);
-  } else {
-    second_pred_alloc = vpx_memalign(16, pw * ph * sizeof(uint8_t));
-    second_pred = second_pred_alloc;
-  }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   for (ref = 0; ref < 2; ++ref) {
     ref_mv[ref] = mbmi->ref_mvs[refs[ref]][0];
@@ -1596,6 +1588,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   // Since we have scaled the reference frames to match the size of the current
   // frame we must use a unit scaling factor during mode selection.
 #if CONFIG_VP9_HIGHBITDEPTH
+  second_pred = CONVERT_TO_BYTEPTR(second_pred_alloc_16);
   vp9_setup_scale_factors_for_frame(&sf, cm->width, cm->height,
                                     cm->width, cm->height,
                                     cm->use_highbitdepth);
@@ -1722,12 +1715,6 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                 &mbmi->ref_mvs[refs[ref]][0].as_mv,
                                 x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
   }
-
-#if CONFIG_VP9_HIGHBITDEPTH
-  vpx_free(second_pred_alloc);
-#else
-  vpx_free(second_pred);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
