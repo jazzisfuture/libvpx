@@ -34,6 +34,21 @@ int vp9_rb_read_literal(struct vp9_read_bit_buffer *rb, int bits) {
   return value;
 }
 
+int vp9_rb_read_literal_fast(struct vp9_read_bit_buffer *rb, int bits) {
+  const uint8_t *const buf = rb->bit_buffer;
+  size_t offset = rb->bit_offset;
+  const size_t p = offset >> 3;
+  uint8_t a = *(buf + p);
+  uint8_t b = *(buf + p + 1);
+  uint8_t c = *(buf + p + 2);
+  uint8_t d = *(buf + p + 3);
+  uint32_t value = a << 24 | b << 16 | c << 8 | d;
+  value = (value << (offset & 7)) >> (32 - bits);
+  rb->bit_offset += bits;
+  return value;
+}
+
+
 int vp9_rb_read_signed_literal(struct vp9_read_bit_buffer *rb,
                                int bits) {
   const int value = vp9_rb_read_literal(rb, bits);
