@@ -154,7 +154,7 @@ void vp9_caq_select_segment(VP9_COMP *cpi, MACROBLOCK *mb, BLOCK_SIZE bs,
     }
   }
 
-  // Fill in the entires in the segment map corresponding to this SB64.
+  // Fill in the entires in the segment map corresponding to this block.
   for (y = 0; y < ymis; y++) {
     for (x = 0; x < xmis; x++) {
       cpi->segmentation_map[mi_offset + y * cm->mi_cols + x] = segment;

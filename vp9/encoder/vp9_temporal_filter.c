@@ -12,6 +12,7 @@
 #include <limits.h>
 
 #include "vp9/common/vp9_alloccommon.h"
+#include "vp9/encoder/vp9_aq_arf.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_reconinter.h"
@@ -306,6 +307,14 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   }
 #endif
 
+  // If arf based segmentation is enabled clear down the segment map and
+  // segment details.
+  if (cpi->oxcf.aq_mode == ARF_FILTER_AQ) {
+    // Clear down the segment map.
+    vpx_memset(cpi->segmentation_map, DEFAULT_AQ_ARF_SEG,
+               cpi->common.mi_rows * cpi->common.mi_cols);
+  }
+
   for (i = 0; i < MAX_MB_PLANE; i++)
     input_buffer[i] = mbd->plane[i].pre[0].buf;
 
@@ -328,6 +337,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
     for (mb_col = 0; mb_col < mb_cols; mb_col++) {
       int i, j, k;
       int stride;
+      unsigned int weight_accumulator = 0;
 
       vpx_memset(accumulator, 0, 16 * 16 * 3 * sizeof(accumulator[0]));
       vpx_memset(count, 0, 16 * 16 * 3 * sizeof(count[0]));
@@ -361,6 +371,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           filter_weight = err < thresh_low
                           ? 2 : err < thresh_high ? 1 : 0;
         }
+        weight_accumulator += filter_weight;
 
         if (filter_weight != 0) {
           // Construct the predictors
@@ -430,6 +441,11 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
                                     count + 512);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         }
+      }
+
+      // If ARF based segmentation is enabled set the MB segment value
+      if (cpi->oxcf.aq_mode == ARF_FILTER_AQ) {
+        vp9_arf_aq_select_segment(cpi, mb_row, mb_col, weight_accumulator);
       }
 
 #if CONFIG_VP9_HIGHBITDEPTH

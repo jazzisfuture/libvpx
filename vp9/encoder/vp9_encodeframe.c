@@ -33,6 +33,7 @@
 #include "vp9/encoder/vp9_aq_complexity.h"
 #include "vp9/encoder/vp9_aq_cyclicrefresh.h"
 #include "vp9/encoder/vp9_aq_variance.h"
+#include "vp9/encoder/vp9_aq_arf.h"
 #include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemb.h"
 #include "vp9/encoder/vp9_encodemv.h"
@@ -857,8 +858,10 @@ static void update_state(VP9_COMP *cpi, ThreadData *td,
 
   // If segmentation in use
   if (seg->enabled) {
-    // For in frame complexity AQ copy the segment id from the segment map.
-    if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+    // For in frame COMPLEXITY_AQ and ARF_FILTER_AQ copy the segment id from
+    // the segment map.
+    if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) ||
+        (cpi->oxcf.aq_mode == ARF_FILTER_AQ)) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
       mi_addr->mbmi.segment_id =
@@ -1100,7 +1103,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
       mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
     }
     x->rdmult = set_segment_rdmult(cpi, x, mbmi->segment_id);
-  } else if (aq_mode == COMPLEXITY_AQ) {
+  } else if ((aq_mode == COMPLEXITY_AQ) || (aq_mode == ARF_FILTER_AQ)) {
     x->rdmult = set_segment_rdmult(cpi, x, mbmi->segment_id);
   } else if (aq_mode == CYCLIC_REFRESH_AQ) {
     const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
@@ -1127,7 +1130,6 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
                                     rd_cost, bsize, ctx, best_rd);
     }
   }
-
 
   // Examine the resulting rate and for AQ mode 2 make a segment choice.
   if ((rd_cost->rate != INT_MAX) &&
@@ -1550,10 +1552,11 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
   xd->mi[0].src_mi = &xd->mi[0];
 
   if (seg->enabled && cpi->oxcf.aq_mode) {
-    // For in frame complexity AQ or variance AQ, copy segment_id from
-    // segmentation_map.
+    // For in frame complexity, variance and arf_filter AQ, copy segment_id
+    // from segmentation_map.
     if (cpi->oxcf.aq_mode == COMPLEXITY_AQ ||
-        cpi->oxcf.aq_mode == VARIANCE_AQ ) {
+        cpi->oxcf.aq_mode == VARIANCE_AQ ||
+        cpi->oxcf.aq_mode == ARF_FILTER_AQ) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
       mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
