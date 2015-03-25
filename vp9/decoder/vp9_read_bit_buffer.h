@@ -35,7 +35,7 @@ size_t vp9_rb_bytes_read(struct vp9_read_bit_buffer *rb);
 int vp9_rb_read_bit(struct vp9_read_bit_buffer *rb);
 
 int vp9_rb_read_literal(struct vp9_read_bit_buffer *rb, int bits);
-
+int vp9_rb_read_literal_fast(struct vp9_read_bit_buffer *rb, int bits);
 int vp9_rb_read_signed_literal(struct vp9_read_bit_buffer *rb, int bits);
 
 #ifdef __cplusplus
