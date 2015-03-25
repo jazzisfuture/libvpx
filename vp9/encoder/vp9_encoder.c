@@ -31,6 +31,7 @@
 #include "vp9/encoder/vp9_aq_complexity.h"
 #include "vp9/encoder/vp9_aq_cyclicrefresh.h"
 #include "vp9/encoder/vp9_aq_variance.h"
+#include "vp9/encoder/vp9_aq_arf.h"
 #include "vp9/encoder/vp9_bitstream.h"
 #include "vp9/encoder/vp9_context_tree.h"
 #include "vp9/encoder/vp9_encodeframe.h"
@@ -2944,6 +2945,8 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
     vp9_setup_in_frame_q_adj(cpi);
   } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
     vp9_cyclic_refresh_setup(cpi);
+  } else if (cpi->oxcf.aq_mode == ARF_FILTER_AQ) {
+    vp9_setup_arf_aq(cpi);
   }
   vp9_apply_active_map(cpi);
 
@@ -3037,8 +3040,9 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       vp9_vaq_frame_setup(cpi);
     } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
       vp9_setup_in_frame_q_adj(cpi);
+    } else if (cpi->oxcf.aq_mode == ARF_FILTER_AQ) {
+      vp9_setup_arf_aq(cpi);
     }
-
     // transform / motion compensation build reconstruction frame
     vp9_encode_frame(cpi);
 
