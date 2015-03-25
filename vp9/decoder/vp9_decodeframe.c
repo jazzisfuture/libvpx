@@ -570,13 +570,13 @@ static void setup_segmentation(struct segmentation *seg,
   seg->update_map = vp9_rb_read_bit(rb);
   if (seg->update_map) {
     for (i = 0; i < SEG_TREE_PROBS; i++)
-      seg->tree_probs[i] = vp9_rb_read_bit(rb) ? vp9_rb_read_literal(rb, 8)
+      seg->tree_probs[i] = vp9_rb_read_bit(rb) ? vp9_rb_read_literal2(rb, 8)
                                                : MAX_PROB;
 
     seg->temporal_update = vp9_rb_read_bit(rb);
     if (seg->temporal_update) {
       for (i = 0; i < PREDICTION_PROBS; i++)
-        seg->pred_probs[i] = vp9_rb_read_bit(rb) ? vp9_rb_read_literal(rb, 8)
+        seg->pred_probs[i] = vp9_rb_read_bit(rb) ? vp9_rb_read_literal2(rb, 8)
                                                  : MAX_PROB;
     } else {
       for (i = 0; i < PREDICTION_PROBS; i++)
@@ -609,7 +609,7 @@ static void setup_segmentation(struct segmentation *seg,
 
 static void setup_loopfilter(struct loopfilter *lf,
                              struct vp9_read_bit_buffer *rb) {
-  lf->filter_level = vp9_rb_read_literal(rb, 6);
+  lf->filter_level = vp9_rb_read_literal2(rb, 6);
   lf->sharpness_level = vp9_rb_read_literal(rb, 3);
 
   // Read in loop filter deltas applied at the MB level based on mode or ref
@@ -639,7 +639,7 @@ static INLINE int read_delta_q(struct vp9_read_bit_buffer *rb) {
 
 static void setup_quantization(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                struct vp9_read_bit_buffer *rb) {
-  cm->base_qindex = vp9_rb_read_literal(rb, QINDEX_BITS);
+  cm->base_qindex = vp9_rb_read_literal2(rb, QINDEX_BITS);
   cm->y_dc_delta_q = read_delta_q(rb);
   cm->uv_dc_delta_q = read_delta_q(rb);
   cm->uv_ac_delta_q = read_delta_q(rb);
@@ -664,8 +664,8 @@ static INTERP_FILTER read_interp_filter(struct vp9_read_bit_buffer *rb) {
 
 void vp9_read_frame_size(struct vp9_read_bit_buffer *rb,
                          int *width, int *height) {
-  *width = vp9_rb_read_literal(rb, 16) + 1;
-  *height = vp9_rb_read_literal(rb, 16) + 1;
+  *width = vp9_rb_read_literal2(rb, 16) + 1;
+  *height = vp9_rb_read_literal2(rb, 16) + 1;
 }
 
 static void setup_display_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
@@ -1247,9 +1247,9 @@ static void error_handler(void *data) {
 }
 
 int vp9_read_sync_code(struct vp9_read_bit_buffer *const rb) {
-  return vp9_rb_read_literal(rb, 8) == VP9_SYNC_CODE_0 &&
-         vp9_rb_read_literal(rb, 8) == VP9_SYNC_CODE_1 &&
-         vp9_rb_read_literal(rb, 8) == VP9_SYNC_CODE_2;
+  return vp9_rb_read_literal2(rb, 8) == VP9_SYNC_CODE_0 &&
+         vp9_rb_read_literal2(rb, 8) == VP9_SYNC_CODE_1 &&
+         vp9_rb_read_literal2(rb, 8) == VP9_SYNC_CODE_2;
 }
 
 BITSTREAM_PROFILE vp9_read_profile(struct vp9_read_bit_buffer *rb) {
@@ -1395,14 +1395,14 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
 #endif
       }
 
-      pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
+      pbi->refresh_frame_flags = vp9_rb_read_literal2(rb, REF_FRAMES);
       setup_frame_size(cm, rb);
       if (pbi->need_resync) {
         vpx_memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
         pbi->need_resync = 0;
       }
     } else if (pbi->need_resync != 1) {  /* Skip if need resync */
-      pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
+      pbi->refresh_frame_flags = vp9_rb_read_literal2(rb, REF_FRAMES);
       for (i = 0; i < REFS_PER_FRAME; ++i) {
         const int ref = vp9_rb_read_literal(rb, REF_FRAMES_LOG2);
         const int idx = cm->ref_frame_map[ref];
@@ -1489,7 +1489,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
   setup_segmentation(&cm->seg, rb);
 
   setup_tile_info(cm, rb);
-  sz = vp9_rb_read_literal(rb, 16);
+  sz = vp9_rb_read_literal2(rb, 16);
 
   if (sz == 0)
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
