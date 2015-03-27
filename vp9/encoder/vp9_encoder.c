@@ -2565,6 +2565,9 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
     vp9_cyclic_refresh_setup(cpi);
   }
+#if CONFIG_PALETTE
+  cpi->free_palette_map_pending = 0;
+#endif  // CONFIG_PALETTE
   // transform / motion compensation build reconstruction frame
   vp9_encode_frame(cpi);
 
@@ -2616,6 +2619,9 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       vp9_setup_in_frame_q_adj(cpi);
     }
 
+#if CONFIG_PALETTE
+    vp9_free_palette_map(cm);
+#endif  // CONFIG_PALETTE
     // transform / motion compensation build reconstruction frame
     vp9_encode_frame(cpi);
 
@@ -2630,6 +2636,9 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     // to recode.
     if (cpi->sf.recode_loop >= ALLOW_RECODE_KFARFGF) {
       save_coding_context(cpi);
+#if CONFIG_PALETTE
+      cpi->free_palette_map_pending = 0;
+#endif  // CONFIG_PALETTE
       if (!cpi->sf.use_nonrd_pick_mode)
         vp9_pack_bitstream(cpi, dest, size);
 
@@ -3153,6 +3162,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Pick the loop filter level for the frame.
   loopfilter_frame(cpi, cm);
 
+#if CONFIG_PALETTE
+  cpi->free_palette_map_pending = 1;
+#endif  // CONFIG_PALETTE
   // build the bitstream
   vp9_pack_bitstream(cpi, dest, size);
 
