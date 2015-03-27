@@ -29,7 +29,7 @@ using std::string;
 
 #if CONFIG_WEBM_IO
 
-struct FileList {
+struct PauseFileList {
   const char *name;
   // md5 sum for decoded frames which does not include skipped frames.
   const char *expected_md5;
@@ -39,7 +39,8 @@ struct FileList {
 // Decodes |filename| with |num_threads|. Pause at the specified frame_num,
 // seek to next key frame and then continue decoding until the end. Return
 // the md5 of the decoded frames which does not include skipped frames.
-string DecodeFile(const string &filename, int num_threads, int pause_num) {
+string DecodeFileWithPause(const string &filename, int num_threads,
+                           int pause_num) {
   libvpx_test::WebMVideoSource video(filename);
   video.Init();
   int in_frames = 0;
@@ -92,12 +93,12 @@ string DecodeFile(const string &filename, int num_threads, int pause_num) {
   return string(md5.Get());
 }
 
-void DecodeFiles(const FileList files[]) {
-  for (const FileList *iter = files; iter->name != NULL; ++iter) {
+void DecodeFilesWithPause(const PauseFileList files[]) {
+  for (const PauseFileList *iter = files; iter->name != NULL; ++iter) {
     SCOPED_TRACE(iter->name);
     for (int t = 2; t <= 8; ++t) {
       EXPECT_EQ(iter->expected_md5,
-                DecodeFile(iter->name, t, iter->pause_frame_num))
+                DecodeFileWithPause(iter->name, t, iter->pause_frame_num))
           << "threads = " << t;
     }
   }
@@ -106,7 +107,7 @@ void DecodeFiles(const FileList files[]) {
 TEST(VP9MultiThreadedFrameParallel, PauseSeekResume) {
   // vp90-2-07-frame_parallel-1.webm is a 40 frame video file with
   // one key frame for every ten frames.
-  static const FileList files[] = {
+  static const PauseFileList files[] = {
     { "vp90-2-07-frame_parallel-1.webm",
       "6ea7c3875d67252e7caf2bc6e75b36b1", 6},
     { "vp90-2-07-frame_parallel-1.webm",
@@ -115,10 +116,10 @@ TEST(VP9MultiThreadedFrameParallel, PauseSeekResume) {
       "89772591e6ef461f9fa754f916c78ed8", 26},
     { NULL, NULL, 0},
   };
-  DecodeFiles(files);
+  DecodeFilesWithPause(files);
 }
 
-struct InvalidFileList {
+struct FileList {
   const char *name;
   // md5 sum for decoded frames which does not include corrupted frames.
   const char *expected_md5;
@@ -128,7 +129,7 @@ struct InvalidFileList {
 
 // Decodes |filename| with |num_threads|. Return the md5 of the decoded
 // frames which does not include corrupted frames.
-string DecodeInvalidFile(const string &filename, int num_threads,
+string DecodeFile(const string &filename, int num_threads,
                          int expected_frame_count) {
   libvpx_test::WebMVideoSource video(filename);
   video.Init();
@@ -173,19 +174,19 @@ string DecodeInvalidFile(const string &filename, int num_threads,
   return string(md5.Get());
 }
 
-void DecodeInvalidFiles(const InvalidFileList files[]) {
-  for (const InvalidFileList *iter = files; iter->name != NULL; ++iter) {
+void DecodeFiles(const FileList files[]) {
+  for (const FileList *iter = files; iter->name != NULL; ++iter) {
     SCOPED_TRACE(iter->name);
     for (int t = 2; t <= 8; ++t) {
       EXPECT_EQ(iter->expected_md5,
-                DecodeInvalidFile(iter->name, t, iter->expected_frame_count))
+                DecodeFile(iter->name, t, iter->expected_frame_count))
           << "threads = " << t;
     }
   }
 }
 
 TEST(VP9MultiThreadedFrameParallel, InvalidFileTest) {
-  static const InvalidFileList files[] = {
+  static const FileList files[] = {
     // invalid-vp90-2-07-frame_parallel-1.webm is a 40 frame video file with
     // one key frame for every ten frames. The 11th frame has corrupted data.
     { "invalid-vp90-2-07-frame_parallel-1.webm",
@@ -202,8 +203,18 @@ TEST(VP9MultiThreadedFrameParallel, InvalidFileTest) {
       "8256544308de926b0681e04685b98677", 27},
     { NULL, NULL, 0},
   };
-  DecodeInvalidFiles(files);
+  DecodeFiles(files);
 }
 
+TEST(VP9MultiThreadedFrameParallel, ValidFileTest) {
+  static const FileList files[] = {
+#if CONFIG_VP9_HIGHBITDEPTH
+    { "vp92-2-20-10bit-yuv420.webm",
+      "a16b99df180c584e8db2ffeda987d293", 10},
+#endif
+    { NULL, NULL, 0},
+  };
+  DecodeFiles(files);
+}
 #endif  // CONFIG_WEBM_IO
 }  // namespace
