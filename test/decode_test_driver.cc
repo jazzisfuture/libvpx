@@ -68,6 +68,8 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
   Decoder* const decoder = codec_->CreateDecoder(dec_cfg, flags_, 0);
   ASSERT_TRUE(decoder != NULL);
   bool end_of_file = false;
+  int in_frames = 0;
+  int out_frames = 0;
 
   // Decode frames.
   for (video->Begin(); !::testing::Test::HasFailure() && !end_of_file;
@@ -84,6 +86,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
       HandlePeekResult(decoder, video, res_peek);
       ASSERT_FALSE(::testing::Test::HasFailure());
 
+      ++in_frames;
       vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
                                                      video->frame_size());
       if (!HandleDecodeResult(res_dec, *video, decoder))
@@ -99,9 +102,15 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
     const vpx_image_t *img = NULL;
 
     // Get decompressed data
-    while ((img = dec_iter.Next()))
+    while ((img = dec_iter.Next())) {
       DecompressedFrameHook(*img, video->frame_number());
+      ++out_frames;
+    }
   }
+
+  EXPECT_EQ(in_frames, out_frames) <<
+    "Input frame count does not match output frame count";
+
   delete decoder;
 }
 
