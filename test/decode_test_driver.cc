@@ -102,6 +102,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
     while ((img = dec_iter.Next()))
       DecompressedFrameHook(*img, video->frame_number());
   }
+
   delete decoder;
 }
 
