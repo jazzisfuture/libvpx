@@ -1051,6 +1051,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       var_y = pf_var[best_filter];
       sse_y = pf_sse[best_filter];
       x->skip_txfm[0] = skip_txfm;
+      pd->dst.buf = this_mode_pred->data;
+      pd->dst.stride = this_mode_pred->stride;
     } else {
       mbmi->interp_filter = (filter_ref == SWITCHABLE) ? EIGHTTAP : filter_ref;
       vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
@@ -1076,7 +1078,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 //      this_rdc.dist += uv_dist;
 //    }
 
-    vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
     block_yrd(cpi, x, &this_rdc.rate, &this_rdc.dist, &is_skippable, &this_sse,
               0, bsize, mbmi->tx_size);
     x->skip_txfm[0] = is_skippable;
