@@ -1338,6 +1338,23 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
             color_map[i * cols + j] = color_order[color_idx];
           }
         }
+
+        if (0) {
+          FILE *fp = fopen("./debug/decuv.txt", "a");
+          int r, c;
+
+          fprintf(fp, "buffer:\n");
+          for (r = 0; r < rows; r++) {
+            for (c = 0; c < cols; c++) {
+              fprintf(fp, "%4d", color_map[r * cols + c]);
+            }
+            fprintf(fp, "\n");
+          }
+
+          fprintf(fp, "\n");
+          fclose(fp);
+        }
+
       }
     }
 

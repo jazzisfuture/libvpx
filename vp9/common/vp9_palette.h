@@ -27,10 +27,6 @@ int vp9_k_means(double *data, double *centroids, int *indices,
                 int n, int k, int dim, int max_itr);
 void vp9_calc_indices(double *data, double *centroids, int *indices,
                       int n, int k, int dim);
-void vp9_palette_scan(uint8_t *color_index_map, uint8_t *sequence, int rows,
-                      int cols, PALETTE_SCAN_ORDER ps, int *scan_order);
-void vp9_palette_iscan(uint8_t *color_index_map, uint8_t *sequence, int rows,
-                       int cols, PALETTE_SCAN_ORDER ps, int *scan_order);
 void vp9_update_palette_counts(FRAME_COUNTS *counts, MB_MODE_INFO *mbmi,
                                BLOCK_SIZE bsize, int palette_ctx);
 int vp9_get_palette_color_context(uint8_t *color_map, int cols,

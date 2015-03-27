@@ -2616,6 +2616,33 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       vp9_setup_in_frame_q_adj(cpi);
     }
 
+#if CONFIG_PALETTE
+    if (loop_count == 0) {
+      int i, j;
+      MODE_INFO *mi;
+      for (i = 0; i < cm->mi_rows; i++)
+        for (j = 0; j < cm->mi_cols; j++) {
+          mi = cm->mi + (i * cm->mi_stride + j);
+          mi->mbmi.palette_color_map = NULL;
+          mi->mbmi.palette_uv_color_map = NULL;
+        }
+    } else {
+      int i, j;
+      MODE_INFO *mi;
+      for (i = 0; i < cm->mi_rows; i++)
+        for (j = 0; j < cm->mi_cols; j++) {
+          mi = cm->mi + (i * cm->mi_stride + j);
+          if (mi->mbmi.palette_color_map != NULL) {
+            vpx_free(mi->mbmi.palette_color_map);
+            mi->mbmi.palette_color_map = NULL;
+          }
+          if (mi->mbmi.palette_uv_color_map != NULL) {
+            vpx_free(mi->mbmi.palette_uv_color_map);
+            mi->mbmi.palette_uv_color_map = NULL;
+          }
+        }
+    }
+#endif  // CONFIG_PALETTE
     // transform / motion compensation build reconstruction frame
     vp9_encode_frame(cpi);
 
@@ -2630,8 +2657,13 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     // to recode.
     if (cpi->sf.recode_loop >= ALLOW_RECODE_KFARFGF) {
       save_coding_context(cpi);
+#if CONFIG_PALETTE
+      cpi->free_palette_map = 0;
+#endif  // CONFIG_PALETTE
+      //printf("\n enter 1\n");
       if (!cpi->sf.use_nonrd_pick_mode)
         vp9_pack_bitstream(cpi, dest, size);
+      //printf("  \n     exit 1\n");
 
       rc->projected_frame_size = (int)(*size) << 3;
       restore_coding_context(cpi);
@@ -3154,7 +3186,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   loopfilter_frame(cpi, cm);
 
   // build the bitstream
+#if CONFIG_PALETTE
+  cpi->free_palette_map = 1;
+#endif  // CONFIG_PALETTE
+  //printf(" \nenter 2 \n");
   vp9_pack_bitstream(cpi, dest, size);
+  //printf(" \n        exit 2\n");
 
   if (cm->seg.update_map)
     update_reference_segmentation_map(cpi);

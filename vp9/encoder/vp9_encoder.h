@@ -408,6 +408,7 @@ typedef struct VP9_COMP {
                                                 [PALETTE_COLORS];
   int palette_uv_color_costs[PALETTE_MAX_SIZE - 1][PALETTE_COLOR_CONTEXTS]
                                                    [PALETTE_COLORS];
+  int free_palette_map;
 #endif  // CONFIG_PALETTE
 
   PICK_MODE_CONTEXT *leaf_tree;

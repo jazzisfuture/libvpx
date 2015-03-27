@@ -237,7 +237,9 @@ typedef struct {
   int8_t palette_color_delta[PALETTE_MAX_SIZE];
   uint8_t palette_literal_colors[PALETTE_MAX_SIZE];
   uint16_t palette_runs[2 * PALETTE_MAX_RUNS];
-  PALETTE_SCAN_ORDER palette_scan_order[2];
+
+  uint8_t *palette_color_map;
+  uint8_t *palette_uv_color_map;
 #endif  // CONFIG_PALETTE
 } MB_MODE_INFO;
 
