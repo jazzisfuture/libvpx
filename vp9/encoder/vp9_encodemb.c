@@ -709,6 +709,7 @@ void vp9_xform_quant_nuq(MACROBLOCK *x, int plane, int block,
 
 #if CONFIG_TX_SKIP
   if (mbmi->tx_skip[plane != 0]) {
+    band = vp9_coefband_tx_skip;
     switch (tx_size) {
 #if CONFIG_TX64X64
       case TX_64X64:
@@ -931,6 +932,7 @@ void vp9_xform_quant_fp_nuq(MACROBLOCK *x, int plane, int block,
 
 #if CONFIG_TX_SKIP
   if (mbmi->tx_skip[plane != 0]) {
+    band = vp9_coefband_tx_skip;
     switch (tx_size) {
 #if CONFIG_TX64X64
       case TX_64X64:
@@ -1153,6 +1155,7 @@ void vp9_xform_quant_dc_nuq(MACROBLOCK *x, int plane, int block,
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
 
+  printf("\n marker \n");
 #if CONFIG_TX_SKIP
   if (mbmi->tx_skip[plane != 0]) {
     switch (tx_size) {
@@ -1348,6 +1351,7 @@ void vp9_xform_quant_dc_fp_nuq(MACROBLOCK *x, int plane, int block,
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
 
+  printf("\n marker \n");
 #if CONFIG_TX_SKIP
   if (mbmi->tx_skip[plane != 0]) {
     switch (tx_size) {
@@ -1538,6 +1542,7 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
 
+  printf("\n marker \n");
 #if CONFIG_TX_SKIP
   if (mbmi->tx_skip[plane != 0]) {
     switch (tx_size) {
@@ -2090,6 +2095,7 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 
   if (!x->skip_recode) {
+    if (x->quant_fp) printf("\n x->quant_fp marker\n");
     if (max_txsize_lookup[plane_bsize] == tx_size) {
       if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] == 0) {
         // full forward transform and quantization
@@ -2508,7 +2514,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   PREDICTION_MODE mode;
 #if CONFIG_FILTERINTRA
   int fbit = 0;
-#endif
+#endif  // CONFIG_FILTERINTRA
   const int bwl = b_width_log2_lookup[plane_bsize];
   const int diff_stride = 4 * (1 << bwl);
   uint8_t *src, *dst;
@@ -2519,7 +2525,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   int i, j;
 #if CONFIG_NEW_QUANT
   const uint8_t* band = get_band_translate(tx_size);
-#endif
+#endif  // CONFIG_NEW_QUANT
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * (j * dst_stride + i)];
   src = &p->src.buf[4 * (j * src_stride + i)];
@@ -2534,6 +2540,9 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 #if CONFIG_TX_SKIP
   if (mbmi->tx_skip[plane != 0]) {
     int shift = mbmi->tx_skip_shift;
+#if CONFIG_NEW_QUANT
+    band = vp9_coefband_tx_skip;
+#endif  // CONFIG_NEW_QUANT
     switch (tx_size) {
 #if CONFIG_TX64X64
       case TX_64X64:

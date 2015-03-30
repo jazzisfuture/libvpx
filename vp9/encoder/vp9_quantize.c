@@ -14,6 +14,9 @@
 
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_seg_common.h"
+#if CONFIG_TX_SKIP
+#include "vp9/common/vp9_entropy.h"
+#endif  // CONFIG_TX_SKIP
 
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_quantize.h"
@@ -1997,6 +2000,10 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
                               quants->uv_cumbins_nuq[q][i]);
     }
 #endif  // CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+    memset(vp9_coefband_tx_skip, TX_SKIP_COEFF_BAND,
+           sizeof(vp9_coefband_tx_skip[0]) * MAX_NUM_COEFS);
+#endif  // CONFIG_TX_SKIP
 
     for (i = 2; i < 8; i++) {
       quants->y_quant[q][i] = quants->y_quant[q][1];
