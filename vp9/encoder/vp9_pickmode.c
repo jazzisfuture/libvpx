@@ -376,7 +376,7 @@ static void block_yrd(VP9_COMP *cpi, MACROBLOCK *x, int *rate, int64_t *dist,
                                   scan_order->scan, scan_order->iscan);
             break;
           case TX_16X16:
-            vp9_hadamard_16x16(src_diff, diff_stride, (int16_t *)coeff);
+            vp9_hadamard_16x16_c(src_diff, diff_stride, (int16_t *)coeff);
             vp9_quantize_fp(coeff, 256, x->skip_block, p->zbin, p->round_fp,
                             p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                             pd->dequant, eob,
