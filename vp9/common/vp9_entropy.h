@@ -120,7 +120,12 @@ extern const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS];
 #define REF_TYPES 2  // intra=0, inter=1
 
 /* Middle dimension reflects the coefficient position within the transform. */
+#if CONFIG_TX_SKIP
+#define COEF_BANDS 7
+#define TX_SKIP_COEFF_BAND 6
+#else
 #define COEF_BANDS 6
+#endif  // CONFIG_TX_SKIP
 
 /* Inside dimension is measure of nearby complexity, that reflects the energy
    of nearby coefficients are nonzero.  For the first coefficient (DC, unless
