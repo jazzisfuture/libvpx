@@ -2556,6 +2556,10 @@ void vp9_init_dequantizer(VP9_COMMON *cm) {
           cm->uv_dequant_val_nuq[q][b], NULL);
     }
 #endif  // CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP1
+    memset(vp9_coefband_tx_skip, TX_SKIP_COEFF_BAND,
+           sizeof(vp9_coefband_tx_skip[0]) * MAX_NUM_COEFS);
+#endif  // CONFIG_TX_SKIP
     (void) b;
   }
 }
