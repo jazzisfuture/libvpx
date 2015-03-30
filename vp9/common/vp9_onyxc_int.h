@@ -213,6 +213,11 @@ typedef struct VP9Common {
   int allow_palette_mode;
   int palette_counter;
   int block_counter;
+#endif  // CONFIG_PALETTE
+#if 1
+  int stats_token[TX_SIZES][PLANE_TYPES][REF_TYPES][COEFF_CONTEXTS]
+                                                    [ENTROPY_TOKENS];
+  int stats_cats[6][28];
 #endif
 } VP9_COMMON;
 

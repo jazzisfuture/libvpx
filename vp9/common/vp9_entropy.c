@@ -626,6 +626,12 @@ static const vp9_coeff_probs_model default_coef_probs_4x4[PLANE_TYPES] = {
         { 156,  57, 233 }, { 119,  57, 212 }, {  58,  48, 163 },
         {  29,  40, 124 }, {  12,  30,  81 }, {   3,  12,  31 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  31, 107, 169 }, {  35,  99, 159 }, {  17,  82, 140 },
+          {   8,  66, 114 }, {   2,  44,  76 }, {   1,  19,  32 }
+      }
+#endif  // CONFIG_TX_SKIP
     }, {  // Inter
       {  // Band 0
         { 191, 107, 226 }, { 124, 117, 204 }, {  25,  99, 155 }
@@ -645,6 +651,12 @@ static const vp9_coeff_probs_model default_coef_probs_4x4[PLANE_TYPES] = {
         { 149,  65, 234 }, { 121,  57, 215 }, {  61,  49, 166 },
         {  28,  36, 114 }, {  12,  25,  76 }, {   3,  16,  42 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  29, 148, 210 }, {  37, 126, 194 }, {   8,  93, 157 },
+          {   2,  68, 118 }, {   1,  39,  69 }, {   1,  17,  33 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }, {  // UV plane
     {  // Intra
@@ -662,10 +674,16 @@ static const vp9_coeff_probs_model default_coef_probs_4x4[PLANE_TYPES] = {
       }, {  // Band 4
         { 124, 146, 240 }, {  66, 124, 224 }, {  17,  88, 175 },
         {   4,  58, 122 }, {   1,  36,  75 }, {   1,  18,  37 }
-      }, {  //  Band 5
+      }, {  // Band 5
         { 141,  79, 241 }, { 126,  70, 227 }, {  66,  58, 182 },
         {  30,  44, 136 }, {  12,  34,  96 }, {   2,  20,  47 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  85, 137, 221 }, { 104, 131, 216 }, {  49, 111, 192 },
+          {  21,  87, 155 }, {   2,  49,  87 }, {   1,  16,  28 }
+      }
+#endif  // CONFIG_TX_SKIP
     }, {  // Inter
       {  // Band 0
         { 229,  99, 249 }, { 143, 111, 235 }, {  46, 109, 192 }
@@ -685,6 +703,12 @@ static const vp9_coeff_probs_model default_coef_probs_4x4[PLANE_TYPES] = {
         { 157,  78, 244 }, { 140,  72, 231 }, {  69,  58, 184 },
         {  31,  44, 137 }, {  14,  38, 105 }, {   8,  23,  61 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  82, 158, 236 }, {  94, 146, 224 }, {  25, 117, 191 },
+          {   9,  87, 149 }, {   3,  56,  99 }, {   1,  33,  57 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }
 };
@@ -710,6 +734,12 @@ static const vp9_coeff_probs_model default_coef_probs_8x8[PLANE_TYPES] = {
         {  57, 192, 233 }, {  25, 154, 215 }, {   6, 109, 167 },
         {   3,  78, 118 }, {   1,  48,  69 }, {   1,  21,  29 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  37, 109, 153 }, {  51, 102, 147 }, {  23,  87, 128 },
+          {   8,  67, 101 }, {   1,  41,  63 }, {   1,  19,  29 }
+      }
+#endif
     }, {  // Inter
       {  // Band 0
         { 202, 105, 245 }, { 108, 106, 216 }, {  18,  90, 144 }
@@ -729,6 +759,12 @@ static const vp9_coeff_probs_model default_coef_probs_8x8[PLANE_TYPES] = {
         {  57, 192, 227 }, {  20, 143, 204 }, {   3,  96, 154 },
         {   1,  68, 112 }, {   1,  42,  69 }, {   1,  19,  32 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  33, 172, 219 }, {  64, 149, 206 }, {  14, 117, 177 },
+          {   5,  90, 141 }, {   2,  61,  95 }, {   1,  37,  57 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }, {  // UV plane
     {  // Intra
@@ -750,6 +786,12 @@ static const vp9_coeff_probs_model default_coef_probs_8x8[PLANE_TYPES] = {
         {  65, 204, 238 }, {  30, 156, 224 }, {   7, 107, 177 },
         {   2,  70, 124 }, {   1,  42,  73 }, {   1,  18,  34 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  74, 129, 203 }, { 106, 120, 203 }, {  49, 107, 178 },
+          {  19,  84, 144 }, {   4,  50,  84 }, {   1,  15,  25 }
+      }
+#endif  // CONFIG_TX_SKIP
     }, {  // Inter
       {  // Band 0
         { 225,  86, 251 }, { 144, 104, 235 }, {  42,  99, 181 }
@@ -769,6 +811,12 @@ static const vp9_coeff_probs_model default_coef_probs_8x8[PLANE_TYPES] = {
         {  61, 199, 240 }, {  27, 161, 226 }, {   4, 113, 180 },
         {   1,  76, 129 }, {   1,  46,  80 }, {   1,  23,  41 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  85, 175, 239 }, { 112, 165, 229 }, {  29, 136, 200 },
+          {  12, 103, 162 }, {   6,  77, 123 }, {   2,  53,  84 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }
 };
@@ -794,6 +842,12 @@ static const vp9_coeff_probs_model default_coef_probs_16x16[PLANE_TYPES] = {
         {  15, 199, 227 }, {   3, 150, 204 }, {   1,  91, 146 },
         {   1,  55,  95 }, {   1,  30,  53 }, {   1,  11,  20 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  50,  75, 127 }, {  57,  75, 124 }, {  27,  67, 108 },
+          {  10,  54,  86 }, {   1,  33,  52 }, {   1,  12,  18 }
+      }
+#endif  // CONFIG_TX_SKIP
     }, {  // Inter
       {  // Band 0
         {  19,  55, 240 }, {  19,  59, 196 }, {   3,  52, 105 }
@@ -813,6 +867,12 @@ static const vp9_coeff_probs_model default_coef_probs_16x16[PLANE_TYPES] = {
         {  13, 196, 216 }, {   2, 137, 192 }, {   1,  86, 143 },
         {   1,  57,  99 }, {   1,  32,  56 }, {   1,  13,  24 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  41, 166, 207 }, { 104, 153, 199 }, {  31, 123, 181 },
+          {  14, 101, 152 }, {   5,  72, 106 }, {   1,  36,  52 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }, {  // UV plane
     {  // Intra
@@ -834,6 +894,12 @@ static const vp9_coeff_probs_model default_coef_probs_16x16[PLANE_TYPES] = {
         {  26, 219, 229 }, {   5, 155, 207 }, {   1,  94, 151 },
         {   1,  60, 104 }, {   1,  36,  62 }, {   1,  16,  28 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  78, 120, 193 }, { 111, 116, 186 }, {  46, 102, 164 },
+          {  15,  80, 128 }, {   2,  49,  76 }, {   1,  18,  28 }
+      }
+#endif  // CONFIG_TX_SKIP
     }, {  // Inter
       {  // Band 0
         { 233,  29, 248 }, { 146,  47, 220 }, {  43,  52, 140 }
@@ -853,6 +919,12 @@ static const vp9_coeff_probs_model default_coef_probs_16x16[PLANE_TYPES] = {
         {  16, 208, 228 }, {   3, 151, 207 }, {   1,  98, 160 },
         {   1,  67, 117 }, {   1,  41,  74 }, {   1,  17,  31 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          { 100, 163, 232 }, { 179, 161, 222 }, {  63, 142, 204 },
+          {  37, 113, 174 }, {  26,  89, 137 }, {  18,  68,  97 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }
 };
@@ -878,6 +950,12 @@ static const vp9_coeff_probs_model default_coef_probs_32x32[PLANE_TYPES] = {
         {  10, 222, 223 }, {   2, 150, 194 }, {   1,  83, 128 },
         {   1,  48,  79 }, {   1,  27,  45 }, {   1,  11,  17 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  37,  75, 128 }, {  41,  76, 128 }, {  26,  66, 116 },
+          {  12,  52,  94 }, {   2,  32,  55 }, {   1,  10,  16 }
+      }
+#endif  // CONFIG_TX_SKIP
     }, {  // Inter
       {  // Band 0
         {  36,  41, 235 }, {  29,  36, 193 }, {  10,  27, 111 }
@@ -897,6 +975,12 @@ static const vp9_coeff_probs_model default_coef_probs_32x32[PLANE_TYPES] = {
         {  15, 235, 212 }, {   1, 132, 184 }, {   1,  84, 139 },
         {   1,  57,  97 }, {   1,  34,  56 }, {   1,  14,  23 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  85, 165, 222 }, { 177, 162, 215 }, { 110, 135, 195 },
+          {  57, 113, 168 }, {  23,  83, 120 }, {  10,  49,  61 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }, {  // UV plane
     {  // Intra
@@ -918,6 +1002,12 @@ static const vp9_coeff_probs_model default_coef_probs_32x32[PLANE_TYPES] = {
         {  13, 217, 212 }, {   2, 136, 180 }, {   1,  78, 124 },
         {   1,  50,  83 }, {   1,  29,  49 }, {   1,  14,  23 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  47, 106, 172 }, {  95, 104, 173 }, {  42,  93, 159 },
+          {  18,  77, 131 }, {   4,  50,  81 }, {   1,  17,  23 }
+      }
+#endif  // CONFIG_TX_SKIP
     }, {  // Inter
       {  // Band 0
         { 197,  13, 247 }, {  82,  17, 222 }, {  25,  17, 162 }
@@ -937,6 +1027,12 @@ static const vp9_coeff_probs_model default_coef_probs_32x32[PLANE_TYPES] = {
         {  43, 243, 240 }, {   8, 180, 217 }, {   1, 115, 166 },
         {   1,  84, 121 }, {   1,  51,  67 }, {   1,  16,   6 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          { 126, 186, 247 }, { 234, 191, 243 }, { 176, 177, 234 },
+          { 104, 158, 220 }, {  66, 128, 186 }, {  55,  90, 137 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }
 };
@@ -963,6 +1059,12 @@ static const vp9_coeff_probs_model default_coef_probs_64x64[PLANE_TYPES] = {
         {  10, 222, 223 }, {   2, 150, 194 }, {   1,  83, 128 },
         {   1,  48,  79 }, {   1,  27,  45 }, {   1,  11,  17 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  37,  75, 128 }, {  41,  76, 128 }, {  26,  66, 116 },
+          {  12,  52,  94 }, {   2,  32,  55 }, {   1,  10,  16 }
+      }
+#endif  // CONFIG_TX_SKIP
     }, {  // Inter
       {  // Band 0
         {  36,  41, 235 }, {  29,  36, 193 }, {  10,  27, 111 }
@@ -982,6 +1084,12 @@ static const vp9_coeff_probs_model default_coef_probs_64x64[PLANE_TYPES] = {
         {  15, 235, 212 }, {   1, 132, 184 }, {   1,  84, 139 },
         {   1,  57,  97 }, {   1,  34,  56 }, {   1,  14,  23 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  85, 165, 222 }, { 177, 162, 215 }, { 110, 135, 195 },
+          {  57, 113, 168 }, {  23,  83, 120 }, {  10,  49,  61 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }, {  // UV plane
     {  // Intra
@@ -1003,6 +1111,12 @@ static const vp9_coeff_probs_model default_coef_probs_64x64[PLANE_TYPES] = {
         {  13, 217, 212 }, {   2, 136, 180 }, {   1,  78, 124 },
         {   1,  50,  83 }, {   1,  29,  49 }, {   1,  14,  23 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          {  47, 106, 172 }, {  95, 104, 173 }, {  42,  93, 159 },
+          {  18,  77, 131 }, {   4,  50,  81 }, {   1,  17,  23 }
+      }
+#endif  // CONFIG_TX_SKIP
     }, {  // Inter
       {  // Band 0
         { 197,  13, 247 }, {  82,  17, 222 }, {  25,  17, 162 }
@@ -1022,6 +1136,12 @@ static const vp9_coeff_probs_model default_coef_probs_64x64[PLANE_TYPES] = {
         {  43, 243, 240 }, {   8, 180, 217 }, {   1, 115, 166 },
         {   1,  84, 121 }, {   1,  51,  67 }, {   1,  16,   6 }
       }
+#if CONFIG_TX_SKIP
+      , {  // Band 6
+          { 126, 186, 247 }, { 234, 191, 243 }, { 176, 177, 234 },
+          { 104, 158, 220 }, {  66, 128, 186 }, {  55,  90, 137 }
+      }
+#endif  // CONFIG_TX_SKIP
     }
   }
 };

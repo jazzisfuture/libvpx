@@ -2663,6 +2663,21 @@ void vp9_decode_frame(VP9Decoder *pbi,
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
 
+#if 1
+  if (cm->current_video_frame % 5 == 0) {
+    int i1, i2, i3, i4;
+
+    for (i1 = 0; i1 < 4; i1++)
+      for (i2 = 0; i2 < 2; i2++)
+        for (i3 = 0; i3 < 2; i3++)
+          for (i4 = 0; i4 < 6; i4++)
+            memset(cm->stats_token[i1][i2][i3][i4], 0,
+                   ENTROPY_TOKENS * sizeof(cm->stats_token[i1][i2][i3][i4][0]));
+    for (i1 = 0; i1 < 6; i1++)
+      memset(cm->stats_cats[i1], 0, 28 * sizeof(cm->stats_cats[i1][0]));
+  }
+#endif
+
   // TODO(jzern): remove frame_parallel_decoding_mode restriction for
   // single-frame tile decoding.
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1 &&
@@ -2676,6 +2691,32 @@ void vp9_decode_frame(VP9Decoder *pbi,
   } else {
     *p_data_end = decode_tiles(pbi, data + first_partition_size, data_end);
   }
+
+#if 0
+  if (cm->current_video_frame % 5 == 4) {
+    FILE *fp = fopen("./debug/stats.txt", "a");
+    int i1, i2, i3, i4, i5;
+
+    for (i1 = 0; i1 < 4; i1++)
+      for (i2 = 0; i2 < 2; i2++)
+        for (i3 = 0; i3 < 2; i3++)
+          for (i4 = 0; i4 < 6; i4++) {
+            fprintf(fp, "%3d %3d %3d %3d :\n", i1, i2, i3, i4);
+            for (i5 = 0; i5 < ENTROPY_TOKENS; i5++)
+              fprintf(fp, "%10d ", cm->stats_token[i1][i2][i3][i4][i5]);
+            fprintf(fp, "\n \n");
+          }
+    for (i1 = 0; i1 < 6; i1++) {
+      fprintf(fp, "cat %3d :\n", i1 + 1);
+      for (i2 = 0; i2 < 28; i2++)
+        fprintf(fp, "%10d ", cm->stats_cats[i1][i2]);
+      fprintf(fp, "\n \n");
+    }
+
+    fprintf(fp, "\n \n");
+    fclose(fp);
+  }
+#endif
 
   new_fb->corrupted |= xd->corrupted;
   if (!new_fb->corrupted) {
