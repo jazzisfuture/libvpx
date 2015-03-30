@@ -321,6 +321,9 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   const uint8_t *const band = get_band_translate(tx_size);
   const int seg_eob = get_tx_eob(&cpi->common.seg, segment_id, tx_size);
   const TOKENVALUE *dct_value_tokens;
+#if CONFIG_TX_SKIP
+  int tx_skip = mbmi->tx_skip[plane != 0];
+#endif  // CONFIG_TX_SKIP
 
   int aoff, loff;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &aoff, &loff);
@@ -341,7 +344,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 #else
   dct_value_tokens = vp9_dct_value_tokens_ptr;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   while (c < eob) {
     int v = 0;
@@ -349,9 +352,21 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
     v = qcoeff[scan[c]];
 
     while (!v) {
+#if CONFIG_TX_SKIP
+      if (tx_skip) {
+        add_token_no_extra(&t, coef_probs[TX_SKIP_COEFF_BAND][pt], ZERO_TOKEN,
+                           skip_eob, counts[TX_SKIP_COEFF_BAND][pt]);
+        eob_branch[TX_SKIP_COEFF_BAND][pt] += !skip_eob;
+      } else {
+        add_token_no_extra(&t, coef_probs[band[c]][pt], ZERO_TOKEN, skip_eob,
+                           counts[band[c]][pt]);
+        eob_branch[band[c]][pt] += !skip_eob;
+      }
+#else
       add_token_no_extra(&t, coef_probs[band[c]][pt], ZERO_TOKEN, skip_eob,
                          counts[band[c]][pt]);
       eob_branch[band[c]][pt] += !skip_eob;
+#endif  // CONFIG_TX_SKIP
 
       skip_eob = 1;
       token_cache[scan[c]] = 0;
@@ -360,21 +375,51 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
       v = qcoeff[scan[c]];
     }
 
+#if CONFIG_TX_SKIP
+    if (tx_skip) {
+      add_token(&t, coef_probs[TX_SKIP_COEFF_BAND][pt],
+                dct_value_tokens[v].extra,
+                (uint8_t)dct_value_tokens[v].token,
+                (uint8_t)skip_eob,
+                counts[TX_SKIP_COEFF_BAND][pt]);
+      eob_branch[TX_SKIP_COEFF_BAND][pt] += !skip_eob;
+    } else {
+      add_token(&t, coef_probs[band[c]][pt],
+                dct_value_tokens[v].extra,
+                (uint8_t)dct_value_tokens[v].token,
+                (uint8_t)skip_eob,
+                counts[band[c]][pt]);
+      eob_branch[band[c]][pt] += !skip_eob;
+    }
+#else
     add_token(&t, coef_probs[band[c]][pt],
               dct_value_tokens[v].extra,
               (uint8_t)dct_value_tokens[v].token,
               (uint8_t)skip_eob,
               counts[band[c]][pt]);
     eob_branch[band[c]][pt] += !skip_eob;
+#endif  // CONFIG_TX_SKIP
 
     token_cache[scan[c]] = vp9_pt_energy_class[dct_value_tokens[v].token];
     ++c;
     pt = get_coef_context(nb, token_cache, c);
   }
   if (c < seg_eob) {
+#if CONFIG_TX_SKIP
+    if (tx_skip) {
+      add_token_no_extra(&t, coef_probs[TX_SKIP_COEFF_BAND][pt], EOB_TOKEN, 0,
+                         counts[TX_SKIP_COEFF_BAND][pt]);
+      ++eob_branch[TX_SKIP_COEFF_BAND][pt];
+    } else {
+      add_token_no_extra(&t, coef_probs[band[c]][pt], EOB_TOKEN, 0,
+                         counts[band[c]][pt]);
+      ++eob_branch[band[c]][pt];
+    }
+#else
     add_token_no_extra(&t, coef_probs[band[c]][pt], EOB_TOKEN, 0,
                        counts[band[c]][pt]);
     ++eob_branch[band[c]][pt];
+#endif  // CONFIG_TX_SKIP
   }
   *tp = t;
 

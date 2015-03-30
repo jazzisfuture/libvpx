@@ -84,6 +84,9 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
 #endif
   const tran_low_t *dqv_val = &dq_val[0][0];
 #endif  // CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+  int tx_skip = xd->mi[0].src_mi->mbmi.tx_skip[type];
+#endif  // CONFIG_TX_SKIP
   const uint8_t *cat1_prob;
   const uint8_t *cat2_prob;
   const uint8_t *cat3_prob;
@@ -128,6 +131,10 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
   while (c < max_eob) {
     int val = -1;
     band = *band_translate++;
+#if CONFIG_TX_SKIP
+    if (tx_skip)
+      band = TX_SKIP_COEFF_BAND;
+#endif  // CONFIG_TX_SKIP
     prob = coef_probs[band][ctx];
     if (!cm->frame_parallel_decoding_mode)
       ++eob_branch_count[band][ctx];
@@ -148,6 +155,10 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
         return c;  // zero tokens at the end (no eob token)
       ctx = get_coef_context(nb, token_cache, c);
       band = *band_translate++;
+#if CONFIG_TX_SKIP
+      if (tx_skip)
+        band = TX_SKIP_COEFF_BAND;
+#endif  // CONFIG_TX_SKIP
       prob = coef_probs[band][ctx];
 #if CONFIG_NEW_QUANT
       dqv_val = &dq_val[band][0];
@@ -250,12 +261,12 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                      pd->dequant,
 #if CONFIG_NEW_QUANT
                      pd->dequant_val_nuq,
-#endif
+#endif  // CONFIG_NEW_QUANT
                      ctx, so->scan,
                      so->neighbors, r);
 #if CONFIG_TX64X64
   if (plane > 0) assert(tx_size != TX_64X64);
-#endif
+#endif  // CONFIG_TX64X64
   vp9_set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, x, y);
   return eob;
 }
