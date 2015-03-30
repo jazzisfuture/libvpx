@@ -228,7 +228,7 @@ typedef struct macroblockd {
 #endif
 
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
-  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
 
   int lossless;
   int corrupted;
