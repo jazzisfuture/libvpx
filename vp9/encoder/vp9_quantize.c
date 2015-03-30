@@ -14,6 +14,9 @@
 
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_seg_common.h"
+#if CONFIG_TX_SKIP
+#include "vp9/common/vp9_entropy.h"
+#endif  // CONFIG_TX_SKIP
 
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_quantize.h"
