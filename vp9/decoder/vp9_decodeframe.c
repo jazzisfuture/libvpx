@@ -185,9 +185,10 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
                                     TX_SIZE tx_size, uint8_t *dst, int stride,
                                     int eob) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
+  int memset_sizes[TX_SIZES] = {16, 64, 256, 1024};
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
-    tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+    tran_low_t *const dqcoeff = pd->dqcoeff;
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       if (xd->lossless) {
@@ -274,17 +275,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
       }
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-
-    if (eob == 1) {
-      vpx_memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
-    } else {
-      if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
-        vpx_memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
-      else if (tx_size == TX_32X32 && eob <= 34)
-        vpx_memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
-      else
-        vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
-    }
+      vpx_memset(dqcoeff, 0, 32 * 32 * sizeof(dqcoeff[0]));
   }
 }
 
