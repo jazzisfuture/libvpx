@@ -221,6 +221,135 @@ static const int mode_lf_lut[MB_MODE_COUNT] = {
 #endif
 };
 
+#if CONFIG_LOOP_BILATERAL
+
+#define BILATERAL_L 8
+#define BILATERAL_WEIGHT_BITS 4
+static const int bilateral_weight = (1 << BILATERAL_WEIGHT_BITS) - 1;
+static const int bilateral_weight_round = 1 << (BILATERAL_WEIGHT_BITS - 1);
+
+void vp9_loop_bilateral_init(loop_filter_info_n *lfi, int level) {
+  if (level != lfi->bilateral_level_set) {
+    const int T = bilateral_level_to_param(level);
+    int *Y_lut_ = lfi->Y_lut + 255;
+    int *Y2_lut_ = lfi->Y2_lut + 255;
+    int *W2_lut_ = lfi->W2_lut;
+    int R = 1 << (BILATERAL_L - 1);
+    int i, T2;
+    for (i = 0; i < 256; i++)
+      W2_lut_[i] = (i * R + ((i + R) >> 1)) / (i + R);
+    for (i = -T; i <= T; i++) {
+      Y_lut_[i] = i;
+      Y2_lut_[i] = (i << 1);
+    }
+    T2 = (T << 1);
+    for (i = T + 1; i <= 255; i++) {
+      Y_lut_[i] = T;
+      Y_lut_[-i] = -T;
+      Y2_lut_[i] = T2;
+      Y2_lut_[-i] = -T2;
+    }
+    lfi->bilateral_level_set = level;
+  }
+}
+
+void loop_bilateral_filter(uint8_t *data, int width, int height,
+                           int stride, loop_filter_info_n *lfi) {
+  int i, j;
+  uint8_t *d, *e, *f;
+  const int *Y_lut_ = lfi->Y_lut + 255;
+  const int *Y2_lut_ = lfi->Y2_lut + 255;
+  const int *W2_lut_ = lfi->W2_lut;
+  // Filter 1 pixel less on all sides
+  for (i = 1; i < height - 1; ++i) {
+    d = &data[i * stride + 1];
+    e = d - stride;
+    f = d + stride;
+    for (j = 1; j < width - 1; j++, d++, e++, f++) {
+      int M, m, D, I, J, K;
+      int x;
+      const int *lut = Y_lut_ - d[0];
+      const int *lut2 = Y2_lut_ - d[0];
+      const int S = lut[e[-1]] + lut[e[1]] + lut[f[-1]] + lut[f[1]] +
+                    lut2[e[0]] + lut2[d[-1]] + lut2[d[1]] + lut2[f[0]];
+      M = m = e [-1];
+      if (e[0] > M)
+        M = e[0];
+      else if (e[0] < m)
+        m = e[0];
+      if (e[1] > M)
+        M = e[1];
+      else if (e[1] < m)
+        m = e[1];
+      if (d[-1] > M)
+        M = d[-1];
+      else if (d[-1] < m)
+        m = d[-1];
+      if (d[1] > M)
+        M = d[1];
+      else if (d[1] < m)
+        m = d[1];
+      if (f[-1] > M)
+        M = f[-1];
+      else if (f[-1] < m)
+        m = f[-1];
+      if (f[0] > M)
+        M = f[0];
+      else if (f[0] < m)
+        m = f[0];
+      if (f[1] > M)
+        M = f[1];
+      else if (f[1] < m)
+        m = f[1];
+      D = M - m;
+
+      if (D > 16) {
+        I = ((d[0] << 4) + S) >> 4;
+        J = ((I << 1) - (M + m));
+        K = W2_lut_[D];
+
+        if (J >= K)
+          x = M;
+        else if (J <= -K)
+          x = m;
+        else
+          x = ((I << BILATERAL_L) + (D * J)) >> BILATERAL_L;
+        if (x > *d)
+          *d = (x + bilateral_weight * d[0] +
+                bilateral_weight_round - 1) >> BILATERAL_WEIGHT_BITS;
+        else
+          *d = (x + bilateral_weight * d[0] +
+                bilateral_weight_round) >> BILATERAL_WEIGHT_BITS;
+      }
+    }
+  }
+}
+
+void vp9_loop_bilateral_rows(YV12_BUFFER_CONFIG *frame,
+                             VP9_COMMON *cm,
+                             int start_mi_row, int end_mi_row,
+                             int y_only) {
+  const int ywidth = frame->y_crop_width;
+  const int ystride = frame->y_stride;
+  const int uvwidth = frame->uv_crop_width;
+  const int uvstride = frame->uv_stride;
+  const int ystart = start_mi_row << MI_SIZE_LOG2;
+  const int uvstart = ystart >> cm->subsampling_y;
+  int yend = end_mi_row << MI_SIZE_LOG2;
+  int uvend = yend >> cm->subsampling_y;
+  yend = MIN(yend, cm->height);
+  uvend = MIN(uvend, cm->subsampling_y ? (cm->height + 1) >> 1 : cm->height);
+  loop_bilateral_filter(frame->y_buffer + ystart * ystride,
+                        ywidth, yend - ystart, ystride, &cm->lf_info);
+  if (!y_only) {
+    loop_bilateral_filter(frame->u_buffer + uvstart * uvstride,
+                          uvwidth, uvend - uvstart, uvstride, &cm->lf_info);
+    loop_bilateral_filter(frame->v_buffer + uvstart * uvstride,
+                          uvwidth, uvend - uvstart, uvstride, &cm->lf_info);
+  }
+}
+#endif  // CONFIG_LOOP_BILATERAL
+
 static void update_sharpness(loop_filter_info_n *lfi, int sharpness_lvl) {
   int lvl;
 
@@ -261,6 +390,10 @@ void vp9_loop_filter_init(VP9_COMMON *cm) {
   // init hev threshold const vectors
   for (lvl = 0; lvl <= MAX_LOOP_FILTER; lvl++)
     vpx_memset(lfi->lfthr[lvl].hev_thr, (lvl >> 4), SIMD_WIDTH);
+
+#if CONFIG_LOOP_BILATERAL
+  vp9_loop_bilateral_init(lfi, DEF_BILATERAL_LEVEL);
+#endif  // CONFIG_LOOP_BILATERAL
 }
 
 void vp9_loop_filter_frame_init(VP9_COMMON *cm, int default_filt_lvl) {
@@ -1695,7 +1828,8 @@ void vp9_loop_filter_frame(YV12_BUFFER_CONFIG *frame,
                            int frame_filter_level,
                            int y_only, int partial_frame) {
   int start_mi_row, end_mi_row, mi_rows_to_filter;
-  if (!frame_filter_level) return;
+  if (!frame_filter_level)
+      return;
   start_mi_row = 0;
   mi_rows_to_filter = cm->mi_rows;
   if (partial_frame && cm->mi_rows > 8) {
@@ -1704,15 +1838,50 @@ void vp9_loop_filter_frame(YV12_BUFFER_CONFIG *frame,
     mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
   }
   end_mi_row = start_mi_row + mi_rows_to_filter;
-  vp9_loop_filter_frame_init(cm, frame_filter_level);
-  vp9_loop_filter_rows(frame, cm, xd->plane,
-                       start_mi_row, end_mi_row,
-                       y_only);
+  if (frame_filter_level) {
+    vp9_loop_filter_frame_init(cm, frame_filter_level);
+    vp9_loop_filter_rows(frame, cm, xd->plane,
+                         start_mi_row, end_mi_row,
+                         y_only);
+  }
 }
+
+#if CONFIG_LOOP_BILATERAL
+void vp9_loop_filter_gen_frame(YV12_BUFFER_CONFIG *frame,
+                               VP9_COMMON *cm, MACROBLOCKD *xd,
+                               int frame_filter_level,
+                               int bilateral_level,
+                               int y_only, int partial_frame) {
+  int start_mi_row, end_mi_row, mi_rows_to_filter;
+  if (!frame_filter_level)
+    if (!bilateral_level)
+      return;
+  start_mi_row = 0;
+  mi_rows_to_filter = cm->mi_rows;
+  if (partial_frame && cm->mi_rows > 8) {
+    start_mi_row = cm->mi_rows >> 1;
+    start_mi_row &= 0xfffffff8;
+    mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
+  }
+  end_mi_row = start_mi_row + mi_rows_to_filter;
+  if (frame_filter_level) {
+    vp9_loop_filter_frame_init(cm, frame_filter_level);
+    vp9_loop_filter_rows(frame, cm, xd->plane,
+                         start_mi_row, end_mi_row,
+                         y_only);
+  }
+  if (bilateral_level) {
+    vp9_loop_bilateral_init(&cm->lf_info, bilateral_level);
+    vp9_loop_bilateral_rows(frame, cm, start_mi_row, end_mi_row, y_only);
+  }
+}
+#endif  // CONFIG_LOOP_BILATERAL
 
 int vp9_loop_filter_worker(LFWorkerData *const lf_data, void *unused) {
   (void)unused;
-  vp9_loop_filter_rows(lf_data->frame_buffer, lf_data->cm, lf_data->planes,
-                       lf_data->start, lf_data->stop, lf_data->y_only);
+  if (lf_data->cm->lf.filter_level) {
+    vp9_loop_filter_rows(lf_data->frame_buffer, lf_data->cm, lf_data->planes,
+                         lf_data->start, lf_data->stop, lf_data->y_only);
+  }
   return 1;
 }
