@@ -30,6 +30,7 @@ void vp9_quantize_b_sse2(const int16_t* coeff_ptr, intptr_t n_coeffs,
   dqcoeff_ptr += n_coeffs;
   n_coeffs = -n_coeffs;
   zero = _mm_setzero_si128();
+
   if (!skip_block) {
     __m128i eob;
     __m128i zbin;
