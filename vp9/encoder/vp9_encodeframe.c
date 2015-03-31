@@ -219,7 +219,11 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
     if (cpi->oxcf.aq_mode != VARIANCE_AQ) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
-      mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
+      const int mi_offset = mi_row * cm->mi_cols + mi_col;
+      const int xmis = MIN(cm->mi_cols - mi_col, mi_width);
+      const int ymis = MIN(cm->mi_rows - mi_row, mi_height);
+
+      mbmi->segment_id = vp9_get_segment_id(map, mi_offset, cm->mi_cols, xmis, ymis);
     }
     vp9_init_plane_quantizers(cpi, x);
 
@@ -672,7 +676,12 @@ static int choose_partitioning(VP9_COMP *cpi,
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled) {
     const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map :
                                                     cm->last_frame_seg_map;
-    segment_id = vp9_get_segment_id(cm, map, BLOCK_64X64, mi_row, mi_col);
+    const int mi_offset = mi_row * cm->mi_cols + mi_col;
+    const int bw = num_8x8_blocks_wide_lookup[BLOCK_64X64];
+    const int bh = num_8x8_blocks_high_lookup[BLOCK_64X64];
+    const int xmis = MIN(cm->mi_cols - mi_col, bw);
+    const int ymis = MIN(cm->mi_rows - mi_row, bh);
+    segment_id = vp9_get_segment_id(map, mi_offset, cm->mi_cols, xmis, ymis);
 
     if (cyclic_refresh_segment_id_boosted(segment_id)) {
       int q = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
@@ -982,8 +991,11 @@ static void update_state(VP9_COMP *cpi, ThreadData *td,
     if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
+      const int mi_offset = mi_row * cm->mi_cols + mi_col;
+      const int xmis = MIN(cm->mi_cols - mi_col, mi_width);
+      const int ymis = MIN(cm->mi_rows - mi_row, mi_height);
       mi_addr->mbmi.segment_id =
-        vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
+        vp9_get_segment_id(map, mi_offset, cm->mi_cols, xmis, ymis);
     }
     // Else for cyclic refresh mode update the segment map, set the segment id
     // and then update the quantizer.
@@ -1168,6 +1180,12 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
   const AQ_MODE aq_mode = cpi->oxcf.aq_mode;
   int i, orig_rdmult;
 
+  const int mi_offset = mi_row * cm->mi_cols + mi_col;
+  const int bw = num_8x8_blocks_wide_lookup[bsize];
+  const int bh = num_8x8_blocks_high_lookup[bsize];
+  const int xmis = MIN(cm->mi_cols - mi_col, bw);
+  const int ymis = MIN(cm->mi_rows - mi_row, bh);
+
   vp9_clear_system_state();
 
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
@@ -1218,7 +1236,8 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
     } else {
       const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
                                                     : cm->last_frame_seg_map;
-      mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
+      mbmi->segment_id =
+          vp9_get_segment_id(map, mi_offset, cm->mi_cols, xmis, ymis);
     }
     x->rdmult = set_segment_rdmult(cpi, x, mbmi->segment_id);
   } else if (aq_mode == COMPLEXITY_AQ) {
@@ -1228,7 +1247,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
                                                   : cm->last_frame_seg_map;
     // If segment is boosted, use rdmult for that segment.
     if (cyclic_refresh_segment_id_boosted(
-            vp9_get_segment_id(cm, map, bsize, mi_row, mi_col)))
+            vp9_get_segment_id(map, mi_offset, cm->mi_cols, xmis, ymis)))
       x->rdmult = vp9_cyclic_refresh_get_rdmult(cpi->cyclic_refresh);
   }
 
@@ -1676,9 +1695,15 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
     // segmentation_map.
     if (cpi->oxcf.aq_mode == COMPLEXITY_AQ ||
         cpi->oxcf.aq_mode == VARIANCE_AQ ) {
+      const int mi_offset = mi_row * cm->mi_cols + mi_col;
+      const int bw = num_8x8_blocks_wide_lookup[bsize];
+      const int bh = num_8x8_blocks_high_lookup[bsize];
+      const int xmis = MIN(cm->mi_cols - mi_col, bw);
+      const int ymis = MIN(cm->mi_rows - mi_row, bh);
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
-      mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
+      mbmi->segment_id =
+          vp9_get_segment_id(map, mi_offset, cm->mi_cols, xmis, ymis);
     } else {
     // Setting segmentation map for cyclic_refresh.
       vp9_cyclic_refresh_update_segment(cpi, mbmi, mi_row, mi_col, bsize,
@@ -2870,7 +2895,13 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
     if (seg->enabled) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
-      int segment_id = vp9_get_segment_id(cm, map, BLOCK_64X64, mi_row, mi_col);
+      const int mi_offset = mi_row * cm->mi_cols + mi_col;
+      const int bw = num_8x8_blocks_wide_lookup[BLOCK_64X64];
+      const int bh = num_8x8_blocks_high_lookup[BLOCK_64X64];
+      const int xmis = MIN(cm->mi_cols - mi_col, bw);
+      const int ymis = MIN(cm->mi_rows - mi_row, bh);
+      int segment_id = vp9_get_segment_id(map, mi_offset, cm->mi_cols,
+                                          xmis, ymis);
       seg_skip = vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP);
     }
 
@@ -3620,7 +3651,13 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
     if (seg->enabled) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
-      int segment_id = vp9_get_segment_id(cm, map, BLOCK_64X64, mi_row, mi_col);
+      const int mi_offset = mi_row * cm->mi_cols + mi_col;
+      const int bw = num_8x8_blocks_wide_lookup[BLOCK_64X64];
+      const int bh = num_8x8_blocks_high_lookup[BLOCK_64X64];
+      const int xmis = MIN(cm->mi_cols - mi_col, bw);
+      const int ymis = MIN(cm->mi_rows - mi_row, bh);
+      int segment_id = vp9_get_segment_id(map, mi_offset, cm->mi_cols,
+                                          xmis, ymis);
       seg_skip = vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP);
       if (seg_skip) {
         partition_search_type = FIXED_PARTITION;
