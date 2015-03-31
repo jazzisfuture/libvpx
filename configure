@@ -295,6 +295,7 @@ EXPERIMENT_LIST="
     palette
     newmvref_sub8x8
     new_quant
+    loop_bilateral
 "
 CONFIG_LIST="
     external_build

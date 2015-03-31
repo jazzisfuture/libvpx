@@ -29,6 +29,32 @@ extern "C" {
 #define MAX_REF_LF_DELTAS       4
 #define MAX_MODE_LF_DELTAS      2
 
+#if CONFIG_LOOP_BILATERAL
+#define BILATERAL_LEVEL_BITS    3
+#define BILATERAL_LEVELS        (1 << BILATERAL_LEVEL_BITS)
+#define DEF_BILATERAL_LEVEL     2
+
+typedef struct bilateral_params {
+  int bilateral_T;
+  int bilateral_L;
+} bilateral_params_t;
+
+static INLINE bilateral_params_t bilateral_level_to_params(int index) {
+  static bilateral_params_t bilateral_level_to_params_arr[BILATERAL_LEVELS] = {
+    {0, 8},
+    {8, 8},
+    {16, 8},
+    {24, 8},
+    {32, 8},
+    {40, 8},
+    {48, 8},
+    {64, 8}
+  };
+  return bilateral_level_to_params_arr[index];
+}
+
+#endif  // CONFIG_LOOP_BILATERAL
+
 struct loopfilter {
   int filter_level;
 
@@ -45,6 +71,10 @@ struct loopfilter {
   // 0 = ZERO_MV, MV
   signed char mode_deltas[MAX_MODE_LF_DELTAS];
   signed char last_mode_deltas[MAX_MODE_LF_DELTAS];
+
+#if CONFIG_LOOP_BILATERAL
+  int bilateral_level;
+#endif
 };
 
 // Need to align this structure so when it is declared and
@@ -58,6 +88,11 @@ typedef struct {
 typedef struct {
   loop_filter_thresh lfthr[MAX_LOOP_FILTER + 1];
   uint8_t lvl[MAX_SEGMENTS][MAX_REF_FRAMES][MAX_MODE_LF_DELTAS];
+#if CONFIG_LOOP_BILATERAL
+  int Y_lut[512], Y2_lut[512], W2_lut[256];
+  int bilateral_level_set;
+  int bilateral_L;
+#endif
 } loop_filter_info_n;
 
 // This structure holds bit masks for all 8x8 blocks in a 64x64 region.
@@ -115,6 +150,20 @@ void vp9_loop_filter_rows(YV12_BUFFER_CONFIG *frame_buffer,
                           struct VP9Common *cm,
                           struct macroblockd_plane planes[MAX_MB_PLANE],
                           int start, int stop, int y_only);
+#if CONFIG_LOOP_BILATERAL
+void vp9_loop_filter_gen_frame(YV12_BUFFER_CONFIG *frame,
+                               struct VP9Common *cm,
+                               struct macroblockd *mbd,
+                               int frame_filter_level,
+                               int bilateral_level,
+                               int y_only, int partial_frame);
+void vp9_loop_bilateral_init(loop_filter_info_n *lfi, int T);
+void vp9_loop_bilateral_rows(YV12_BUFFER_CONFIG *frame,
+                             struct VP9Common *cm,
+                             int start_mi_row, int end_mi_row,
+                             int y_only);
+#endif
+
 
 typedef struct LoopFilterWorkerData {
   YV12_BUFFER_CONFIG *frame_buffer;
