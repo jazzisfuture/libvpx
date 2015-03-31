@@ -89,42 +89,36 @@ static TX_SIZE read_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd,
     return MIN(max_tx_size, tx_mode_to_biggest_tx_size[tx_mode]);
 }
 
-static void set_segment_id(VP9_COMMON *cm, BLOCK_SIZE bsize,
-                           int mi_row, int mi_col, int segment_id) {
-  const int mi_offset = mi_row * cm->mi_cols + mi_col;
-  const int bw = num_8x8_blocks_wide_lookup[bsize];
-  const int bh = num_8x8_blocks_high_lookup[bsize];
-  const int xmis = MIN(cm->mi_cols - mi_col, bw);
-  const int ymis = MIN(cm->mi_rows - mi_row, bh);
+static void set_segment_id(uint8_t *current_frame_seg_map,
+                           int mi_offset, int mi_cols, int xmis, int ymis,
+                           int segment_id) {
   int x, y;
 
   assert(segment_id >= 0 && segment_id < MAX_SEGMENTS);
 
   for (y = 0; y < ymis; y++)
     for (x = 0; x < xmis; x++)
-      cm->current_frame_seg_map[mi_offset + y * cm->mi_cols + x] = segment_id;
+      current_frame_seg_map[mi_offset + y * mi_cols + x] = segment_id;
 }
 
-static void copy_segment_id(const VP9_COMMON *cm,
-                           const uint8_t *last_segment_ids,
-                           uint8_t *current_segment_ids,
-                           BLOCK_SIZE bsize, int mi_row, int mi_col) {
-  const int mi_offset = mi_row * cm->mi_cols + mi_col;
-  const int bw = num_8x8_blocks_wide_lookup[bsize];
-  const int bh = num_8x8_blocks_high_lookup[bsize];
-  const int xmis = MIN(cm->mi_cols - mi_col, bw);
-  const int ymis = MIN(cm->mi_rows - mi_row, bh);
+static void copy_segment_id(const uint8_t *last_segment_ids,
+                            uint8_t *current_segment_ids,
+                            int mi_offset, int mi_cols, int xmis, int ymis) {
   int x, y;
+
+  if (!last_segment_ids)
+    return set_segment_id(current_segment_ids, mi_offset, mi_cols,
+                          xmis, ymis, 0);
 
   for (y = 0; y < ymis; y++)
     for (x = 0; x < xmis; x++)
-      current_segment_ids[mi_offset + y * cm->mi_cols + x] =  last_segment_ids ?
-          last_segment_ids[mi_offset + y * cm->mi_cols + x] : 0;
+      current_segment_ids[mi_offset + y * mi_cols + x] =
+          last_segment_ids[mi_offset + y * mi_cols + x];
 }
 
-static int read_intra_segment_id(VP9_COMMON *const cm, BLOCK_SIZE bsize,
-                                 int mi_row, int mi_col,
-                                 vp9_reader *r) {
+static int read_intra_segment_id(VP9_COMMON *const cm,
+                                 int mi_offset, int mi_cols,
+                                 int xmis, int ymis, vp9_reader *r) {
   struct segmentation *const seg = &cm->seg;
   int segment_id;
 
@@ -132,43 +126,46 @@ static int read_intra_segment_id(VP9_COMMON *const cm, BLOCK_SIZE bsize,
     return 0;  // Default for disabled segmentation
 
   if (!seg->update_map) {
-    copy_segment_id(cm, cm->last_frame_seg_map, cm->current_frame_seg_map,
-                    bsize, mi_row, mi_col);
+    copy_segment_id(cm->last_frame_seg_map, cm->current_frame_seg_map,
+                    mi_offset, mi_cols, xmis, ymis);
     return 0;
   }
 
   segment_id = read_segment_id(r, seg);
-  set_segment_id(cm, bsize, mi_row, mi_col, segment_id);
+  set_segment_id(cm->current_frame_seg_map, mi_offset, mi_cols, xmis, ymis,
+                 segment_id);
   return segment_id;
 }
 
 static int read_inter_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
-                                 int mi_row, int mi_col, vp9_reader *r) {
+                                 int mi_offset, int mi_cols,
+                                 int xmis, int ymis, vp9_reader *r) {
   struct segmentation *const seg = &cm->seg;
-  MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
-  const BLOCK_SIZE bsize = mbmi->sb_type;
   int segment_id;
 
   if (!seg->enabled)
     return 0;  // Default for disabled segmentation
 
   if (!seg->update_map) {
-    copy_segment_id(cm, cm->last_frame_seg_map, cm->current_frame_seg_map,
-                    bsize, mi_row, mi_col);
+    copy_segment_id(cm->last_frame_seg_map, cm->current_frame_seg_map,
+                    mi_offset, mi_cols, xmis, ymis);
     if (!cm->last_frame_seg_map) {
       return 0;
     }
-    return vp9_get_segment_id(cm, cm->last_frame_seg_map, bsize, mi_row, mi_col);
+    return vp9_get_segment_id(cm->last_frame_seg_map, mi_offset, mi_cols,
+                              xmis, ymis);
   }
 
   if (seg->temporal_update) {
+    MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
     const vp9_prob pred_prob = vp9_get_pred_prob_seg_id(seg, xd);
     mbmi->seg_id_predicted = vp9_read(r, pred_prob);
     if (mbmi->seg_id_predicted) {
       if (!cm->last_frame_seg_map) {
         segment_id = 0;
       } else {
-        segment_id = vp9_get_segment_id(cm, cm->last_frame_seg_map, bsize, mi_row, mi_col);
+        segment_id = vp9_get_segment_id(cm->last_frame_seg_map,
+                                        mi_offset, mi_cols, xmis, ymis);
       }
     } else {
       segment_id = read_segment_id(r, seg);
@@ -176,7 +173,8 @@ static int read_inter_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   } else {
     segment_id = read_segment_id(r, seg);
   }
-  set_segment_id(cm, bsize, mi_row, mi_col, segment_id);
+  set_segment_id(cm->current_frame_seg_map, mi_offset, mi_cols, xmis, ymis,
+                 segment_id);
   return segment_id;
 }
 
@@ -205,7 +203,14 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
   const BLOCK_SIZE bsize = mbmi->sb_type;
   int i;
 
-  mbmi->segment_id = read_intra_segment_id(cm, bsize, mi_row, mi_col, r);
+  const int mi_offset = mi_row * cm->mi_cols + mi_col;
+  const int bw = num_8x8_blocks_wide_lookup[bsize];
+  const int bh = num_8x8_blocks_high_lookup[bsize];
+  const int xmis = MIN(cm->mi_cols - mi_col, bw);
+  const int ymis = MIN(cm->mi_rows - mi_row, bh);
+
+  mbmi->segment_id =
+      read_intra_segment_id(cm, mi_offset, cm->mi_cols, xmis, ymis, r);
   mbmi->skip = read_skip(cm, xd, counts, mbmi->segment_id, r);
   mbmi->tx_size = read_tx_size(cm, xd, counts, 1, r);
   mbmi->ref_frame[0] = INTRA_FRAME;
@@ -577,9 +582,17 @@ static void read_inter_frame_mode_info(VP9Decoder *const pbi,
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   int inter_block;
 
+  const BLOCK_SIZE bsize = mbmi->sb_type;
+  const int mi_offset = mi_row * cm->mi_cols + mi_col;
+  const int bw = num_8x8_blocks_wide_lookup[bsize];
+  const int bh = num_8x8_blocks_high_lookup[bsize];
+  const int xmis = MIN(cm->mi_cols - mi_col, bw);
+  const int ymis = MIN(cm->mi_rows - mi_row, bh);
+
   mbmi->mv[0].as_int = 0;
   mbmi->mv[1].as_int = 0;
-  mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);
+  mbmi->segment_id =
+      read_inter_segment_id(cm, xd, mi_offset, cm->mi_cols, xmis, ymis, r);
   mbmi->skip = read_skip(cm, xd, counts, mbmi->segment_id, r);
   inter_block = read_is_inter_block(cm, xd, counts, mbmi->segment_id, r);
   mbmi->tx_size = read_tx_size(cm, xd, counts, !mbmi->skip || !inter_block, r);
