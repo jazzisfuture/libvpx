@@ -18,8 +18,8 @@
 extern "C" {
 #endif
 
-int vp9_get_segment_id(const VP9_COMMON *cm, const uint8_t *segment_ids,
-                       BLOCK_SIZE bsize, int mi_row, int mi_col);
+int vp9_get_segment_id(const uint8_t *segment_ids,
+                       int mi_offset, int mi_cols, int xmis, int ymis);
 
 static INLINE int vp9_get_pred_context_seg_id(const MACROBLOCKD *xd) {
   const MODE_INFO *const above_mi = xd->above_mi;
