@@ -1525,6 +1525,9 @@ static void encode_loopfilter(struct loopfilter *lf,
       }
     }
   }
+#if CONFIG_LOOP_BILATERAL
+  vp9_wb_write_literal(wb, lf->bilateral_level, BILATERAL_LEVEL_BITS);
+#endif
 }
 
 static void write_delta_q(struct vp9_write_bit_buffer *wb, int delta_q) {
