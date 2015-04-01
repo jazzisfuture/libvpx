@@ -51,7 +51,6 @@
 #define KF_MAX_BOOST        128.0
 #define MIN_ARF_GF_BOOST    240
 #define MIN_DECAY_FACTOR    0.01
-#define MIN_GF_INTERVAL     4
 #define MIN_KF_BOOST        300
 #define NEW_MV_MODE_PENALTY 32
 #define SVC_FACTOR_PT_LOW   0.45
@@ -1324,13 +1323,14 @@ static double get_prediction_decay_rate(const VP9_COMP *cpi,
 // by a static section. For example in slide shows where there is a fade
 // between slides. This is to help with more optimal kf and gf positioning.
 static int detect_transition_to_still(const TWO_PASS *twopass,
+                                      const RATE_CONTROL *const rc,
                                       int frame_interval, int still_interval,
                                       double loop_decay_rate,
                                       double last_decay_rate) {
   // Break clause to detect very still sections after motion
   // For example a static image after a fade or other transition
   // instead of a clean scene cut.
-  if (frame_interval > MIN_GF_INTERVAL &&
+  if (frame_interval > rc->min_gf_interval &&
       loop_decay_rate >= 0.999 &&
       last_decay_rate < 0.9) {
     int j;
@@ -1798,7 +1798,8 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   int64_t gf_group_bits;
   double gf_group_error_left;
   int gf_arf_bits;
-  int is_key_frame = frame_is_intra_only(cm);
+  const int is_key_frame = frame_is_intra_only(cm);
+  const int kf_or_arf_active = is_key_frame || rc->source_alt_ref_active;
 
   // Reset the GF group data structures unless this is a key
   // frame in which case it will already have been done.
@@ -1838,7 +1839,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     int int_lbq =
       (int)(vp9_convert_qindex_to_q(rc->last_boosted_qindex,
                                    cpi->common.bit_depth));
-    active_min_gf_interval = MIN_GF_INTERVAL + MIN(2, int_max_q / 200);
+    active_min_gf_interval = rc->min_gf_interval + MIN(2, int_max_q / 200);
     if (active_min_gf_interval > rc->max_gf_interval)
       active_min_gf_interval = rc->max_gf_interval;
 
@@ -1849,7 +1850,10 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       // bits to spare and are better with a smaller interval and smaller boost.
       // At high Q when there are few bits to spare we are better with a longer
       // interval to spread the cost of the GF.
-      active_max_gf_interval = 12 + MIN(4, (int_lbq / 6));
+      active_max_gf_interval = rc->max_gf_interval - 4 + MIN(4, (int_lbq / 6));
+      if (active_max_gf_interval < active_min_gf_interval)
+        active_max_gf_interval = active_min_gf_interval;
+
       if (active_max_gf_interval > rc->max_gf_interval)
         active_max_gf_interval = rc->max_gf_interval;
     }
@@ -1892,7 +1896,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
       // Break clause to detect very still sections after motion. For example,
       // a static image after a fade or other transition.
-      if (detect_transition_to_still(twopass, i, 5, loop_decay_rate,
+      if (detect_transition_to_still(twopass, rc, i, 5, loop_decay_rate,
                                      last_loop_decay_rate)) {
         allow_alt_ref = 0;
         break;
@@ -1907,10 +1911,11 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     // Break out conditions.
     if (
       // Break at active_max_gf_interval unless almost totally static.
-      (i >= active_max_gf_interval && (zero_motion_accumulator < 0.995)) ||
+      ((i >= active_max_gf_interval + kf_or_arf_active) &&
+       (zero_motion_accumulator < 0.995)) ||
       (
         // Don't break out with a very short interval.
-        (i > active_min_gf_interval) &&
+        (i >= active_min_gf_interval + kf_or_arf_active) &&
         (!flash_detected) &&
         ((mv_ratio_accumulator > mv_ratio_accumulator_thresh) ||
          (abs_mv_in_out_accumulator > 3.0) ||
@@ -1930,7 +1935,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   rc->constrained_gf_group = (i >= rc->frames_to_key) ? 1 : 0;
 
   // Set the interval until the next gf.
-  if (is_key_frame || rc->source_alt_ref_active)
+  if (kf_or_arf_active)
     rc->baseline_gf_interval = i - 1;
   else
     rc->baseline_gf_interval = i;
@@ -1958,7 +1963,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // Should we use the alternate reference frame.
   if (allow_alt_ref &&
       (i < cpi->oxcf.lag_in_frames) &&
-      (i >= MIN_GF_INTERVAL)) {
+      (i >= rc->min_gf_interval)) {
     // Calculate the boost for alt ref.
     rc->gfu_boost = calc_arf_boost(cpi, 0, (i - 1), (i - 1), &f_boost,
                                    &b_boost);
@@ -2205,7 +2210,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
       // Special check for transition or high motion followed by a
       // static scene.
-      if (detect_transition_to_still(twopass, i, cpi->oxcf.key_freq - i,
+      if (detect_transition_to_still(twopass, rc, i, cpi->oxcf.key_freq - i,
                                      loop_decay_rate, decay_accumulator))
         break;
 
