@@ -687,14 +687,11 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
     if (!vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
       if (bsize >= BLOCK_8X8) {
 #if CONFIG_COMPOUND_MODES
-        if (is_inter_compound_mode(mode)) {
+        if (is_inter_compound_mode(mode))
           write_inter_compound_mode(w, mode, inter_compound_probs);
-        } else if (is_inter_mode(mode)) {
-          write_inter_mode(w, mode, inter_probs);
-        }
-#else
-        write_inter_mode(w, mode, inter_probs);
+        else if (is_inter_mode(mode))
 #endif  // CONFIG_COMPOUND_MODES
+        write_inter_mode(w, mode, inter_probs);
       }
     }
 
@@ -743,26 +740,26 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
           const int j = idy * 2 + idx;
           const PREDICTION_MODE b_mode = mi->bmi[j].as_mode;
 #if CONFIG_COMPOUND_MODES
-          if (is_inter_compound_mode(b_mode)) {
+          if (is_inter_compound_mode(b_mode))
             write_inter_compound_mode(w, b_mode, inter_compound_probs);
-          } else if (is_inter_mode(b_mode)) {
-            write_inter_mode(w, b_mode, inter_probs);
-          }
-#else
-          write_inter_mode(w, b_mode, inter_probs);
+          else if (is_inter_mode(b_mode))
 #endif  // CONFIG_COMPOUND_MODES
+          write_inter_mode(w, b_mode, inter_probs);
 
 #if CONFIG_COMPOUND_MODES
           if (b_mode == NEWMV ||
 #if CONFIG_NEWMVREF
               b_mode == NEAR_FORNEWMV ||
+              b_mode == NEW_NEARFORNEWMV ||
+              b_mode == NEARFORNEW_NEWMV ||
+              b_mode == NEARFORNEW_NEARFORNEWMV ||
 #endif  // CONFIG_NEWMVREF
-              b_mode == NEW_NEWMV) {
+              b_mode == NEW_NEWMV)
 #else
 #if CONFIG_NEWMVREF
-          if (b_mode == NEWMV || b_mode == NEAR_FORNEWMV) {
+          if (b_mode == NEWMV || b_mode == NEAR_FORNEWMV)
 #else
-          if (b_mode == NEWMV) {
+          if (b_mode == NEWMV)
 #endif  // CONFIG_NEWMVREF
 #endif  // CONFIG_COMPOUND_MODES
             for (ref = 0; ref < 1 + is_compound; ++ref) {
@@ -774,9 +771,14 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #endif  // CONFIG_NEWMVREF
                             nmvc, allow_hp);
             }
-          }
 #if CONFIG_COMPOUND_MODES
-          else if (b_mode == NEAREST_NEWMV || b_mode == NEAR_NEWMV) {
+#if CONFIG_NEWMVREF
+          else if (b_mode == NEAREST_NEWMV || b_mode == NEAR_NEWMV ||
+                   b_mode == NEAREST_NEARFORNEWMV ||
+                   b_mode == NEAR_NEARFORNEWMV)
+#else
+          else if (b_mode == NEAREST_NEWMV || b_mode == NEAR_NEWMV)
+#endif  // CONFIG_NEWMVREF
             vp9_encode_mv(cpi, w, &mi->bmi[j].as_mv[1].as_mv,
 #if CONFIG_NEWMVREF
                           &mi->bmi[j].ref_mv[1].as_mv,
@@ -784,7 +786,13 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
                           &mbmi->ref_mvs[mbmi->ref_frame[1]][0].as_mv,
 #endif  // CONFIG_NEWMVREF
                           nmvc, allow_hp);
-          } else if (b_mode == NEW_NEARESTMV || b_mode == NEW_NEARMV) {
+#if CONFIG_NEWMVREF
+          else if (b_mode == NEW_NEARESTMV || b_mode == NEW_NEARMV ||
+                   b_mode == NEARFORNEW_NEARESTMV ||
+                   b_mode == NEARFORNEW_NEARMV)
+#else
+          else if (b_mode == NEW_NEARESTMV || b_mode == NEW_NEARMV)
+#endif  // CONFIG_NEWMVREF
             vp9_encode_mv(cpi, w, &mi->bmi[j].as_mv[0].as_mv,
 #if CONFIG_NEWMVREF
                           &mi->bmi[j].ref_mv[0].as_mv,
@@ -792,7 +800,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
                           &mbmi->ref_mvs[mbmi->ref_frame[0]][0].as_mv,
 #endif  // CONFIG_NEWMVREF
                           nmvc, allow_hp);
-          }
 #endif  // CONFIG_COMPOUND_MODES
         }
       }
@@ -801,18 +808,24 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
       if (mode == NEWMV ||
 #if CONFIG_NEWMVREF
           mode == NEAR_FORNEWMV ||
+          mode == NEW_NEARFORNEWMV ||
+          mode == NEARFORNEW_NEWMV ||
+          mode == NEARFORNEW_NEARFORNEWMV ||
 #endif  // CONFIG_NEWMVREF
-          mode == NEW_NEWMV) {
+          mode == NEW_NEWMV)
 #else  // CONFIG_COMPOUND_MODES
 #if CONFIG_NEWMVREF
-      if (mode == NEWMV || mode == NEAR_FORNEWMV) {
+      if (mode == NEWMV || mode == NEAR_FORNEWMV)
 #else
-      if (mode == NEWMV) {
+      if (mode == NEWMV)
 #endif  // CONFIG_NEWMVREF
 #endif  // CONFIG_COMPOUND_MODES
         for (ref = 0; ref < 1 + is_compound; ++ref) {
 #if CONFIG_NEWMVREF
-          if (mode == NEAR_FORNEWMV)
+          if (mode == NEAR_FORNEWMV ||
+              (ref == 0 && mode == NEARFORNEW_NEWMV) ||
+              (ref == 1 && mode == NEW_NEARFORNEWMV) ||
+              mode == NEARFORNEW_NEARFORNEWMV)
             vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
                           &mbmi->ref_mvs[mbmi->ref_frame[ref]][1].as_mv, nmvc,
                           allow_hp);
@@ -822,19 +835,28 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
                         &mbmi->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
                         allow_hp);
         }
-      }
 #if CONFIG_COMPOUND_MODES
-      else if (mode == NEAREST_NEWMV || mode == NEAR_NEWMV) {
+      else if (mode == NEAREST_NEWMV || mode == NEAR_NEWMV)
         vp9_encode_mv(cpi, w, &mbmi->mv[1].as_mv,
                       &mbmi->ref_mvs[mbmi->ref_frame[1]][0].as_mv, nmvc,
                       allow_hp);
-      } else if (mode == NEW_NEARESTMV || mode == NEW_NEARMV) {
+      else if (mode == NEW_NEARESTMV || mode == NEW_NEARMV)
         vp9_encode_mv(cpi, w, &mbmi->mv[0].as_mv,
                       &mbmi->ref_mvs[mbmi->ref_frame[0]][0].as_mv, nmvc,
                       allow_hp);
-      }
+#if CONFIG_NEWMVREF
+      else if (mode == NEAREST_NEARFORNEWMV || mode == NEAR_NEARFORNEWMV)
+        vp9_encode_mv(cpi, w, &mbmi->mv[1].as_mv,
+                      &mbmi->ref_mvs[mbmi->ref_frame[1]][1].as_mv, nmvc,
+                      allow_hp);
+      else if (mode == NEARFORNEW_NEARESTMV || mode == NEARFORNEW_NEARMV)
+        vp9_encode_mv(cpi, w, &mbmi->mv[0].as_mv,
+                      &mbmi->ref_mvs[mbmi->ref_frame[0]][1].as_mv, nmvc,
+                      allow_hp);
+#endif  // CONFIG_NEWMVREF
 #endif  // CONFIG_COMPOUND_MODES
     }
+
 #if CONFIG_WEDGE_PARTITION
     if (cm->reference_mode != SINGLE_REFERENCE &&
 #if CONFIG_COMPOUND_MODES

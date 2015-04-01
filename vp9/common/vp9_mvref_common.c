@@ -150,6 +150,33 @@ void vp9_update_mv_context(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 
   mi->mbmi.mode_context[ref_frame] = counter_to_context[context_counter];
 }
+
+void vp9_get_mv_idx(MB_MODE_INFO *mbmi, int mv_idx[2],
+                    PREDICTION_MODE this_mode) {
+  // Identify reference mv index
+  // 0: NEARESTMV as refmv;  1: NEARMV as ref mv
+  mv_idx[0] = mv_idx[1] = (this_mode == NEAR_FORNEWMV) ? 1 : 0;
+#if CONFIG_COMPOUND_MODES
+  if (has_second_ref(mbmi)) {
+    if (this_mode == NEW_NEARESTMV ||
+        this_mode == NEAREST_NEWMV ||
+        this_mode == NEW_NEWMV)
+      mv_idx[0] = mv_idx[1] = 0;
+    else if (this_mode == NEW_NEARMV ||
+             this_mode == NEAREST_NEARFORNEWMV ||
+             this_mode == NEW_NEARFORNEWMV)
+      mv_idx[0] = 0, mv_idx[1] = 1;
+    else if (this_mode == NEAR_NEWMV ||
+             this_mode == NEARFORNEW_NEARESTMV ||
+             this_mode == NEARFORNEW_NEWMV)
+      mv_idx[0] = 1, mv_idx[1] = 0;
+    else if (this_mode == NEAR_NEARFORNEWMV ||
+             this_mode == NEARFORNEW_NEARMV ||
+             this_mode == NEARFORNEW_NEARFORNEWMV)
+      mv_idx[0] = 1, mv_idx[1] = 1;
+  }
+#endif  // CONFIG_COMPOUND_MODES
+}
 #endif  // CONFIG_NEWMVREF
 
 void vp9_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
