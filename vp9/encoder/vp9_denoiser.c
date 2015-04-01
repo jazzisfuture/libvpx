@@ -430,7 +430,13 @@ void vp9_denoiser_update_frame_stats(MB_MODE_INFO *mbmi, unsigned int sse,
 #if CONFIG_NEWMVREF
       mode == NEAR_FORNEWMV ||
 #endif  // CONFIG_NEWMVREF
-      mode == NEW_NEARESTMV || mode == NEAREST_NEWMV) {
+      mode == NEW_NEARESTMV ||
+#if CONFIG_NEWMVREF
+      mode == NEAREST_NEARFORNEWMV || mode == NEARFORNEW_NEARESTMV ||
+      mode == NEW_NEARFORNEWMV || mode == NEARFORNEW_NEWMV ||
+      mode == NEARFORNEW_NEARFORNEWMV ||
+#endif  // CONFIG_NEWMVREF
+      mode == NEAREST_NEWMV) {
 #else
 #if CONFIG_NEWMVREF
   if (mode == NEWMV || mode == NEAR_FORNEWMV) {
