@@ -318,6 +318,9 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   for (i = 0; i < RATE_FACTOR_LEVELS; ++i) {
     rc->rate_correction_factors[i] = 1.0;
   }
+
+  rc->min_gf_interval = oxcf->min_gf_interval;
+  rc->max_gf_interval = oxcf->max_gf_interval;
 }
 
 int vp9_rc_drop_frame(VP9_COMP *cpi) {
@@ -1613,7 +1616,8 @@ void vp9_rc_set_gf_max_interval(const VP9_COMP *const cpi,
                                 RATE_CONTROL *const rc) {
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   // Set Maximum gf/arf interval
-  rc->max_gf_interval = 16;
+  rc->max_gf_interval = oxcf->max_gf_interval;
+  rc->min_gf_interval = oxcf->min_gf_interval;
 
   // Extended interval for genuinely static scenes
   rc->static_scene_max_gf_interval = MAX_LAG_BUFFERS * 2;
