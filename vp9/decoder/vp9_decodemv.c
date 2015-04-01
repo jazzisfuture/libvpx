@@ -905,6 +905,11 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
       break;
     }
 #if CONFIG_COMPOUND_MODES
+#if CONFIG_NEWMVREF
+    case NEW_NEARFORNEWMV:
+    case NEARFORNEW_NEWMV:
+    case NEARFORNEW_NEARFORNEWMV:
+#endif  // CONFIG_NEWMVREF
     case NEW_NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
                                             NULL : &cm->counts.mv;
@@ -937,6 +942,9 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
       mv[1].as_int = nearest_mv[1].as_int;
       break;
     }
+#if CONFIG_NEWMVREF
+    case NEARFORNEW_NEARESTMV:
+#endif  // CONFIG_NEWMVREF
     case NEW_NEARESTMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
                                             NULL : &cm->counts.mv;
@@ -950,6 +958,9 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
       mv[1].as_int = nearest_mv[1].as_int;
       break;
     }
+#if CONFIG_NEWMVREF
+    case NEAREST_NEARFORNEWMV:
+#endif  // CONFIG_NEWMVREF
     case NEAREST_NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
                                             NULL : &cm->counts.mv;
@@ -963,6 +974,9 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
       ret = ret && is_mv_valid(&mv[1].as_mv);
       break;
     }
+#if CONFIG_NEWMVREF
+    case NEAR_NEARFORNEWMV:
+#endif  // CONFIG_NEWMVREF
     case NEAR_NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
                         NULL : &cm->counts.mv;
@@ -976,6 +990,9 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
       ret = ret && is_mv_valid(&mv[1].as_mv);
       break;
     }
+#if CONFIG_NEWMVREF
+    case NEARFORNEW_NEARMV:
+#endif  // CONFIG_NEWMVREF
     case NEW_NEARMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
                         NULL : &cm->counts.mv;
@@ -1031,6 +1048,10 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   const int allow_hp = cm->allow_high_precision_mv;
 
   int_mv nearestmv[2], nearmv[2];
+  int_mv ref_mv[2];
+#if CONFIG_NEWMVREF
+  int mv_idx[2];
+#endif  // CONFIG_NEWMVREF
   int inter_mode_ctx, ref, is_compound;
 #if CONFIG_SUPERTX
   (void) supertx_enabled;
@@ -1076,14 +1097,11 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   } else {
     if (bsize >= BLOCK_8X8) {
 #if CONFIG_COMPOUND_MODES
-      if (is_compound) {
+      if (is_compound)
         mbmi->mode = read_inter_compound_mode(cm, r, inter_mode_ctx);
-      } else {
-        mbmi->mode = read_inter_mode(cm, r, inter_mode_ctx);
-      }
-#else
-      mbmi->mode = read_inter_mode(cm, r, inter_mode_ctx);
+      else
 #endif
+      mbmi->mode = read_inter_mode(cm, r, inter_mode_ctx);
     }
   }
 
@@ -1096,6 +1114,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     for (ref = 0; ref < 1 + is_compound; ++ref) {
       vp9_find_best_ref_mvs(xd, allow_hp, mbmi->ref_mvs[mbmi->ref_frame[ref]],
                             &nearestmv[ref], &nearmv[ref]);
+      ref_mv[ref].as_int = nearestmv[ref].as_int;
     }
   }
 
@@ -1150,18 +1169,32 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
         int_mv block[2];
         const int j = idy * 2 + idx;
 #if CONFIG_COMPOUND_MODES
-        if (is_compound) {
+        if (is_compound)
           b_mode = read_inter_compound_mode(cm, r, inter_mode_ctx);
-        } else {
-          b_mode = read_inter_mode(cm, r, inter_mode_ctx);
-        }
-#else
-        b_mode = read_inter_mode(cm, r, inter_mode_ctx);
+        else
 #endif
+        b_mode = read_inter_mode(cm, r, inter_mode_ctx);
+
+#if CONFIG_NEWMVREF
+        // Identify the reference mv index
+#if CONFIG_COMPOUND_MODES
+        vp9_get_mv_idx(mv_idx, is_compound, b_mode);
+#else
+        mv_idx[0] = mv_idx[1] = (b_mode == NEAR_FORNEWMV) ? 1 : 0;
+#endif  // CONFIG_COMPOUND_MODES
+#endif  // CONFIG_NEWMVREF
+
 #if CONFIG_COMPOUND_MODES
         if (b_mode == NEARESTMV || b_mode == NEARMV ||
 #if CONFIG_NEWMVREF
             b_mode == NEWMV || b_mode == NEAR_FORNEWMV ||
+            b_mode == NEAREST_NEARFORNEWMV ||
+            b_mode == NEARFORNEW_NEARESTMV ||
+            b_mode == NEAR_NEARFORNEWMV ||
+            b_mode == NEARFORNEW_NEARMV ||
+            b_mode == NEW_NEARFORNEWMV ||
+            b_mode == NEARFORNEW_NEWMV ||
+            b_mode == NEARFORNEW_NEARFORNEWMV ||
             b_mode == NEW_NEWMV ||
 #endif  // CONFIG_NEWMVREF
             b_mode == NEAREST_NEARESTMV ||
@@ -1189,30 +1222,18 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
                                           &nearest_sub8x8[ref],
                                           &near_sub8x8[ref]);
 #if CONFIG_NEWMVREF
-            if (b_mode == NEWMV || b_mode == NEAR_FORNEWMV
-#if CONFIG_COMPOUND_MODES
-                || b_mode == NEW_NEWMV ||
-                b_mode == NEAREST_NEWMV ||
-                b_mode == NEW_NEARESTMV ||
-                b_mode == NEAR_NEWMV ||
-                b_mode == NEW_NEARMV
-#endif  // CONFIG_COMPOUND_MODES
-                ) {
+            if (have_newmv_in_inter_mode(b_mode)) {
               mv_ref_list[0].as_int = nearest_sub8x8[ref].as_int;
               mv_ref_list[1].as_int = near_sub8x8[ref].as_int;
               vp9_find_best_ref_mvs(xd, allow_hp, mv_ref_list,
                                     &ref_mvs[0][ref], &ref_mvs[1][ref]);
+              ref_mv[ref].as_int = ref_mvs[mv_idx[ref]][ref].as_int;
             }
 #endif  // CONFIG_NEWMVREF
           }
         }
 
-        if (!assign_mv(cm, b_mode, block,
-#if CONFIG_NEWMVREF
-                       (b_mode == NEAR_FORNEWMV) ? ref_mvs[1] : ref_mvs[0],
-#else
-                       nearestmv,
-#endif  // CONFIG_NEWMVREF
+        if (!assign_mv(cm, b_mode, block, ref_mv,
                        nearest_sub8x8, near_sub8x8,
                        is_compound, allow_hp, r)) {
           xd->corrupted |= 1;
@@ -1230,17 +1251,23 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
       }
     }
 
-    mi->mbmi.mode = b_mode;
+    mbmi->mode = b_mode;
     mbmi->mv[0].as_int = mi->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
   } else {
 #if CONFIG_NEWMVREF
-    if (mbmi->mode == NEAR_FORNEWMV)
-      xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv, nearmv,
-                                  nearestmv, nearmv, is_compound, allow_hp, r);
-    else
+    // Identify the reference mv index
+#if CONFIG_COMPOUND_MODES
+    vp9_get_mv_idx(mv_idx, is_compound, mbmi->mode);
+#else
+    mv_idx[0] = mv_idx[1] = (mbmi->mode == NEAR_FORNEWMV) ? 1 : 0;
+#endif  // CONFIG_COMPOUND_MODES
+    for (ref = 0; ref < 1 + is_compound; ++ref) {
+      if (mv_idx[ref] == 1)
+        ref_mv[ref].as_int = nearmv[ref].as_int;
+    }
 #endif  // CONFIG_NEWMVREF
-    xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv, nearestmv,
+    xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv, ref_mv,
                                 nearestmv, nearmv, is_compound, allow_hp, r);
   }
 #if CONFIG_TX_SKIP
