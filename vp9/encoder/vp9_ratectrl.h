@@ -74,6 +74,7 @@ typedef struct {
   int frames_since_golden;
   int frames_till_gf_update_due;
   int max_gf_interval;
+  int min_gf_interval;
   int static_scene_max_gf_interval;
   int baseline_gf_interval;
   int constrained_gf_group;

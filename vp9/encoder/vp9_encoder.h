@@ -216,6 +216,9 @@ typedef struct VP9EncoderConfig {
   int arnr_max_frames;
   int arnr_strength;
 
+  int min_gf_interval;
+  int max_gf_interval;
+
   int tile_columns;
   int tile_rows;
 
