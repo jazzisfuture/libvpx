@@ -40,36 +40,72 @@ enum {
 #endif  // CONFIG_NEWMVREF
       (1 << NEAREST_NEARESTMV) | (1 << ZERO_ZEROMV) | (1 << NEAREST_NEARMV) |
       (1 << NEAR_NEARESTMV) | (1 << NEW_NEWMV) | (1 << NEAREST_NEWMV) |
+#if CONFIG_NEWMVREF
+      (1 << NEAREST_NEARFORNEWMV) | (1 << NEARFORNEW_NEARESTMV) |
+      (1 << NEAR_NEARFORNEWMV) | (1 << NEARFORNEW_NEARMV) |
+      (1 << NEW_NEARFORNEWMV) | (1 << NEARFORNEW_NEWMV) |
+      (1 << NEARFORNEW_NEARFORNEWMV) |
+#endif  // CONFIG_NEWMVREF
       (1 << NEAR_NEWMV) | (1 << NEW_NEARMV) | (1 << NEW_NEARESTMV),
   INTER_NEAREST = (1 << NEARESTMV) | (1 << NEAREST_NEARESTMV) |
                   (1 << NEAREST_NEARMV) | (1 << NEAR_NEARESTMV) |
+#if CONFIG_NEWMVREF
+                  (1 << NEAREST_NEARFORNEWMV) | (1 << NEARFORNEW_NEARESTMV) |
+#endif  // CONFIG_NEWMVREF
                   (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV),
   INTER_NEAREST_NEW = (1 << NEARESTMV) | (1 << NEWMV) |
                       (1 << NEAREST_NEARESTMV) | (1 << NEW_NEWMV) |
                       (1 << NEAR_NEARESTMV) | (1 << NEAREST_NEARMV) |
                       (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV) |
+#if CONFIG_NEWMVREF
+                      (1 << NEAREST_NEARFORNEWMV) |
+                      (1 << NEARFORNEW_NEARESTMV) |
+                      (1 << NEAR_NEARFORNEWMV) | (1 << NEARFORNEW_NEARMV) |
+                      (1 << NEW_NEARFORNEWMV) | (1 << NEARFORNEW_NEWMV) |
+                      (1 << NEARFORNEW_NEARFORNEWMV) |
+#endif  // CONFIG_NEWMVREF
                       (1 << NEW_NEARMV) | (1 << NEAR_NEWMV),
   INTER_NEAREST_ZERO = (1 << NEARESTMV) | (1 << ZEROMV) |
                        (1 << NEAREST_NEARESTMV) | (1 << ZERO_ZEROMV) |
                        (1 << NEAREST_NEARMV) | (1 << NEAR_NEARESTMV) |
+#if CONFIG_NEWMVREF
+                       (1 << NEAREST_NEARFORNEWMV) |
+                       (1 << NEARFORNEW_NEARESTMV) |
+#endif  // CONFIG_NEWMVREF
                        (1 << NEAREST_NEWMV) | (1 << NEW_NEARESTMV),
   INTER_NEAREST_NEW_ZERO =
       (1 << NEARESTMV) | (1 << ZEROMV) | (1 << NEWMV) |
       (1 << NEAREST_NEARESTMV) | (1 << ZERO_ZEROMV) | (1 << NEW_NEWMV) |
       (1 << NEAREST_NEARMV) | (1 << NEAR_NEARESTMV) |
       (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV) |
+#if CONFIG_NEWMVREF
+      (1 << NEAREST_NEARFORNEWMV) | (1 << NEARFORNEW_NEARESTMV) |
+      (1 << NEAR_NEARFORNEWMV) | (1 << NEARFORNEW_NEARMV) |
+      (1 << NEW_NEARFORNEWMV) | (1 << NEARFORNEW_NEWMV) |
+      (1 << NEARFORNEW_NEARFORNEWMV) |
+#endif  // CONFIG_NEWMVREF
       (1 << NEW_NEARMV) | (1 << NEAR_NEWMV),
   INTER_NEAREST_NEAR_NEW =
       (1 << NEARESTMV) | (1 << NEARMV) | (1 << NEWMV) |
       (1 << NEAREST_NEARESTMV) | (1 << NEW_NEWMV) |
       (1 << NEAREST_NEARMV) | (1 << NEAR_NEARESTMV) |
       (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV) |
+#if CONFIG_NEWMVREF
+      (1 << NEAREST_NEARFORNEWMV) | (1 << NEARFORNEW_NEARESTMV) |
+      (1 << NEAR_NEARFORNEWMV) | (1 << NEARFORNEW_NEARMV) |
+      (1 << NEW_NEARFORNEWMV) | (1 << NEARFORNEW_NEWMV) |
+      (1 << NEARFORNEW_NEARFORNEWMV) |
+#endif  // CONFIG_NEWMVREF
       (1 << NEW_NEARMV) | (1 << NEAR_NEWMV),
   INTER_NEAREST_NEAR_ZERO =
       (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) |
       (1 << NEAREST_NEARESTMV) | (1 << ZERO_ZEROMV) |
       (1 << NEAREST_NEARMV) | (1 << NEAR_NEARESTMV) |
       (1 << NEAREST_NEWMV) | (1 << NEW_NEARESTMV) |
+#if CONFIG_NEWMVREF
+      (1 << NEAREST_NEARFORNEWMV) | (1 << NEARFORNEW_NEARESTMV) |
+      (1 << NEAR_NEARFORNEWMV) | (1 << NEARFORNEW_NEARMV) |
+#endif  // CONFIG_NEWMVREF
       (1 << NEW_NEARMV) | (1 << NEAR_NEWMV)
 };
 #else
