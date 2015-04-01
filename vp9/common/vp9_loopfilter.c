@@ -226,7 +226,10 @@ static const int mode_lf_lut[MB_MODE_COUNT] = {
 #endif  // CONFIG_NEWMVREF
 #if CONFIG_COMPOUND_MODES
   1, 1, 1, 1, 1, 1, 1, 0, 1          // INTER_COMPOUND_MODES (ZERO_ZEROMV == 0)
-#endif
+#if CONFIG_NEWMVREF
+  , 1, 1, 1, 1, 1, 1, 1
+#endif  // CONFIG_NEWMVREF
+#endif  // CONFIG_COMPOUND_MODES
 };
 
 #if CONFIG_LOOP_POSTFILTER
