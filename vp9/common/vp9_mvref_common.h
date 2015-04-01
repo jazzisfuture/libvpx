@@ -72,7 +72,16 @@ static const int mode_2_counter[MB_MODE_COUNT] = {
   1,  // NEW_NEARMV
   3,  // ZERO_ZEROMV
   1,  // NEW_NEWMV
-#endif
+#if CONFIG_NEWMVREF
+  1,  // NEAREST_NEARFORNEWMV
+  1,  // NEARFORNEW_NEARESTMV
+  1,  // NEAR_NEARFORNEWMV
+  1,  // NEARFORNEW_NEARMV
+  1,  // NEW_NEARFORNEWMV
+  1,  // NEARFORNEW_NEWMV
+  1,  // NEARFORNEW_NEARFORNEWMV
+#endif  // CONFIG_NEWMVREF
+#endif  // CONFIG_COMPOUND_MODES
 };
 
 // There are 3^3 different combinations of 3 counts that can be either 0,1 or
@@ -225,6 +234,11 @@ void vp9_update_mv_context(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                            MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
                            int_mv *mv_ref_list,
                            int block, int mi_row, int mi_col);
+
+#if CONFIG_COMPOUND_MODES
+void vp9_get_mv_idx(int mv_idx[2], int has_second_rf,
+                    PREDICTION_MODE this_mode);
+#endif  // CONFIG_COMPOUND_MODES
 #endif  // CONFIG_NEWMVREF
 
 void vp9_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,

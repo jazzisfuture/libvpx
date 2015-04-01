@@ -101,7 +101,16 @@ typedef enum {
   NEW_NEARMV,
   ZERO_ZEROMV,
   NEW_NEWMV,
-#endif
+#if CONFIG_NEWMVREF
+  NEAREST_NEARFORNEWMV,
+  NEARFORNEW_NEARESTMV,
+  NEAR_NEARFORNEWMV,
+  NEARFORNEW_NEARMV,
+  NEW_NEARFORNEWMV,
+  NEARFORNEW_NEWMV,
+  NEARFORNEW_NEARFORNEWMV,
+#endif  // CONFIG_NEWMVREF
+#endif  // CONFIG_COMPOUND_MODES
   MB_MODE_COUNT
 } PREDICTION_MODE;
 
@@ -125,15 +134,26 @@ static INLINE int is_inter_mode(PREDICTION_MODE mode) {
 
 #if CONFIG_COMPOUND_MODES
 static INLINE int is_inter_compound_mode(PREDICTION_MODE mode) {
+#if CONFIG_NEWMVREF
+  return mode >= NEAREST_NEARESTMV && mode <= NEARFORNEW_NEARFORNEWMV;
+#else
   return mode >= NEAREST_NEARESTMV && mode <= NEW_NEWMV;
+#endif  // CONFIG_NEWMVREF
 }
-#endif
+#endif  // CONFIG_COMPOUND_MODES
 
 static INLINE int have_newmv_in_inter_mode(PREDICTION_MODE mode) {
 #if CONFIG_COMPOUND_MODES
   return (mode == NEWMV ||
 #if CONFIG_NEWMVREF
           mode == NEAR_FORNEWMV ||
+          mode == NEAREST_NEARFORNEWMV ||
+          mode == NEARFORNEW_NEARESTMV ||
+          mode == NEAR_NEARFORNEWMV ||
+          mode == NEARFORNEW_NEARMV ||
+          mode == NEW_NEARFORNEWMV ||
+          mode == NEARFORNEW_NEWMV ||
+          mode == NEARFORNEW_NEARFORNEWMV ||
 #endif  // CONFIG_NEWMVREF
           mode == NEW_NEWMV ||
           mode == NEAREST_NEWMV ||
@@ -169,11 +189,15 @@ static INLINE int is_intrabc_mode(PREDICTION_MODE mode) {
 
 #if CONFIG_COMPOUND_MODES
 
+#if CONFIG_NEWMVREF
+#define INTER_COMPOUND_MODES (1 + NEARFORNEW_NEARFORNEWMV - NEAREST_NEARESTMV)
+#else
 #define INTER_COMPOUND_MODES (1 + NEW_NEWMV - NEAREST_NEARESTMV)
+#endif  // CONFIG_NEWMVREF
 
 #define INTER_COMPOUND_OFFSET(mode) ((mode) - NEAREST_NEARESTMV)
 
-#endif
+#endif  // CONFIG_COMPOUND_MODES
 
 #if CONFIG_TX64X64
 #define MAXTXLEN 64
