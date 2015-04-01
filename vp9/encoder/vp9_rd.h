@@ -64,8 +64,8 @@ extern "C" {
 #if CONFIG_INTERINTRA
 
 #if CONFIG_NEWMVREF
-#define MAX_MODES 47
-#define INTERINTRA_START_MODE 35
+#define MAX_MODES 37
+#define INTERINTRA_START_MODE 25
 #else
 #define MAX_MODES 42
 #define INTERINTRA_START_MODE 30
@@ -74,7 +74,7 @@ extern "C" {
 #else  // CONFIG_INTERINTRA
 
 #if CONFIG_NEWMVREF
-#define MAX_MODES 35
+#define MAX_MODES 25
 #else
 #define MAX_MODES 30
 #endif  // CONFIG_NEWMVREF
@@ -88,9 +88,11 @@ extern "C" {
 // This enumerator type needs to be kept aligned with the mode order in
 // const MODE_DEFINITION vp9_mode_order[MAX_MODES] used in the rd code.
 typedef enum {
+#if !CONFIG_NEWMVREF
   THR_NEARESTMV,
   THR_NEARESTA,
   THR_NEARESTG,
+#endif  // !CONFIG_NEWMVREF
 
   THR_DC,
 
@@ -104,9 +106,11 @@ typedef enum {
   THR_NEAR_FORNEWG,
 #endif  // CONFIG_NEWMVREF
 
+#if !CONFIG_NEWMVREF
   THR_NEARMV,
   THR_NEARA,
   THR_NEARG,
+#endif  // !CONFIG_NEWMVREF
 
   THR_ZEROMV,
   THR_ZEROG,
@@ -116,9 +120,11 @@ typedef enum {
   THR_COMP_NEAREST_NEARESTLA,
   THR_COMP_NEAREST_NEARESTGA,
 #else
+#if !CONFIG_NEWMVREF
   THR_COMP_NEARESTLA,
   THR_COMP_NEARESTGA,
-#endif
+#endif  // !CONFIG_NEWMVREF
+#endif  // CONFIG_COMPOUND_MODES
 
   THR_TM,
 
@@ -143,10 +149,14 @@ typedef enum {
 
   THR_COMP_ZERO_ZEROLA,
   THR_COMP_ZERO_ZEROGA,
-#else
+#else  // CONFIG_COMPOUND_MODES
+#if !CONFIG_NEWMVREF
   THR_COMP_NEARLA,
+#endif  // !CONFIG_NEWMVREF
   THR_COMP_NEWLA,
+#if !CONFIG_NEWMVREF
   THR_COMP_NEARGA,
+#endif  // !CONFIG_NEWMVREF
   THR_COMP_NEWGA,
 
 #if CONFIG_NEWMVREF
