@@ -639,12 +639,32 @@ void vp9_set_rd_speed_thresholds(VP9_COMP *cpi) {
   rd->thresh_mult[THR_COMP_NEAREST_NEWGA] += 1500;
   rd->thresh_mult[THR_COMP_NEW_NEARESTLA] += 1500;
   rd->thresh_mult[THR_COMP_NEW_NEARESTGA] += 1500;
+#if CONFIG_NEWMVREF
+  rd->thresh_mult[THR_COMP_NEAREST_NEARFORNEWLA] += 1500;
+  rd->thresh_mult[THR_COMP_NEAREST_NEARFORNEWGA] += 1500;
+  rd->thresh_mult[THR_COMP_NEARFORNEW_NEARESTLA] += 1500;
+  rd->thresh_mult[THR_COMP_NEARFORNEW_NEARESTGA] += 1500;
+#endif  // CONFIG_NEWMVREF
   rd->thresh_mult[THR_COMP_NEAR_NEWLA] += 1700;
   rd->thresh_mult[THR_COMP_NEAR_NEWGA] += 1700;
   rd->thresh_mult[THR_COMP_NEW_NEARLA] += 1700;
   rd->thresh_mult[THR_COMP_NEW_NEARGA] += 1700;
+#if CONFIG_NEWMVREF
+  rd->thresh_mult[THR_COMP_NEAR_NEARFORNEWLA] += 1700;
+  rd->thresh_mult[THR_COMP_NEAR_NEARFORNEWGA] += 1700;
+  rd->thresh_mult[THR_COMP_NEARFORNEW_NEARLA] += 1700;
+  rd->thresh_mult[THR_COMP_NEARFORNEW_NEARGA] += 1700;
+#endif  // CONFIG_NEWMVREF
   rd->thresh_mult[THR_COMP_NEW_NEWLA] += 2000;
   rd->thresh_mult[THR_COMP_NEW_NEWGA] += 2000;
+#if CONFIG_NEWMVREF
+  rd->thresh_mult[THR_COMP_NEW_NEARFORNEWLA] += 2000;
+  rd->thresh_mult[THR_COMP_NEW_NEARFORNEWGA] += 2000;
+  rd->thresh_mult[THR_COMP_NEARFORNEW_NEWLA] += 2000;
+  rd->thresh_mult[THR_COMP_NEARFORNEW_NEWGA] += 2000;
+  rd->thresh_mult[THR_COMP_NEARFORNEW_NEARFORNEWLA] += 2000;
+  rd->thresh_mult[THR_COMP_NEARFORNEW_NEARFORNEWGA] += 2000;
+#endif  // CONFIG_NEWMVREF
   rd->thresh_mult[THR_COMP_ZERO_ZEROLA] += 2500;
   rd->thresh_mult[THR_COMP_ZERO_ZEROGA] += 2500;
 #else
