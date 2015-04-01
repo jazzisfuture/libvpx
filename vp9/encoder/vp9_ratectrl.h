@@ -155,6 +155,9 @@ double vp9_convert_qindex_to_q(int qindex, vpx_bit_depth_t bit_depth);
 
 void vp9_rc_init_minq_luts(void);
 
+int vp9_rc_get_default_min_gf_interval(int width, int height, double framerate);
+int vp9_rc_get_default_max_gf_interval(double framerate);
+
 // Generally at the high level, the following flow is expected
 // to be enforced for rate control:
 // First call per frame, one of:
