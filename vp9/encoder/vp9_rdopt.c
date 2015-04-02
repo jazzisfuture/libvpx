@@ -2824,13 +2824,9 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
           frame_mv[NEAREST_NEWMV][frame].as_int =
               frame_mv[NEARESTMV][frame].as_int;
-          frame_mv[NEW_NEARESTMV][frame].as_int =
-              frame_mv[NEWMV][frame].as_int;
 
           frame_mv[NEAR_NEWMV][frame].as_int =
               frame_mv[NEARMV][frame].as_int;
-          frame_mv[NEW_NEARMV][frame].as_int =
-              frame_mv[NEWMV][frame].as_int;
         } else if (ref == 1) {
           frame_mv[NEAREST_NEARMV][frame].as_int =
               frame_mv[NEARMV][frame].as_int;
@@ -2839,13 +2835,9 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
           frame_mv[NEW_NEARESTMV][frame].as_int =
               frame_mv[NEARESTMV][frame].as_int;
-          frame_mv[NEAREST_NEWMV][frame].as_int =
-              frame_mv[NEWMV][frame].as_int;
 
           frame_mv[NEW_NEARMV][frame].as_int =
               frame_mv[NEARMV][frame].as_int;
-          frame_mv[NEAR_NEWMV][frame].as_int =
-              frame_mv[NEWMV][frame].as_int;
         }
 #endif
       }
