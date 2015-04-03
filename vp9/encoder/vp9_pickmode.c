@@ -906,18 +906,13 @@ static void estimate_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                           i, j, 0);
 
   // TODO(jingning): This needs further refactoring.
-  if (plane_bsize <= BLOCK_32X32) {
-    block_yrd(cpi, x, &rate, &dist, &is_skippable, &this_sse, 0,
-              bsize_tx, MIN(tx_size, TX_16X16));
-    x->skip_txfm[0] = is_skippable;
-    if (is_skippable)
-      rate = vp9_cost_bit(vp9_get_skip_prob(&cpi->common, xd), 1);
-    else
-      rate += vp9_cost_bit(vp9_get_skip_prob(&cpi->common, xd), 0);
-  } else {
-    unsigned int var_y, sse_y;
-    model_rd_for_sb_y(cpi, bsize_tx, x, xd, &rate, &dist, &var_y, &sse_y);
-  }
+  block_yrd(cpi, x, &rate, &dist, &is_skippable, &this_sse, 0,
+            bsize_tx, MIN(tx_size, TX_16X16));
+  x->skip_txfm[0] = is_skippable;
+  if (is_skippable)
+    rate = vp9_cost_bit(vp9_get_skip_prob(&cpi->common, xd), 1);
+  else
+    rate += vp9_cost_bit(vp9_get_skip_prob(&cpi->common, xd), 0);
 
   p->src.buf = src_buf_base;
   pd->dst.buf = dst_buf_base;
@@ -1342,13 +1337,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc.rate, &this_rdc.dist,
                           &var_y, &sse_y);
       }
-
       this_rdc.rate +=
           cm->interp_filter == SWITCHABLE ?
               vp9_get_switchable_rate(cpi, xd) : 0;
     }
 
-    if (bsize <= BLOCK_32X32) {
+    if (!this_early_term) {
       this_sse = (int64_t)sse_y;
       block_yrd(cpi, x, &this_rdc.rate, &this_rdc.dist, &is_skippable,
                 &this_sse, 0, bsize, MIN(mbmi->tx_size, TX_16X16));
@@ -1370,6 +1364,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         if ((mbmi->mv[0].as_mv.row | mbmi->mv[0].as_mv.col) & 0x07)
           this_rdc.rate += vp9_get_switchable_rate(cpi, xd);
       }
+    } else {
+      this_rdc.rate += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
     }
 
     if (x->color_sensitivity[0] || x->color_sensitivity[1]) {
