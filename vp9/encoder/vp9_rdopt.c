@@ -1608,6 +1608,17 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                     cm->width, cm->height);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+  // Since we have scaled the reference frames to match the size of the current
+  // frame we must use a unit scaling factor during mode selection.
+#if CONFIG_VP9_HIGHBITDEPTH
+  vp9_setup_scale_factors_for_frame(&sf, cm->width, cm->height,
+                                    cm->width, cm->height,
+                                    cm->use_highbitdepth);
+#else
+  vp9_setup_scale_factors_for_frame(&sf, cm->width, cm->height,
+                                    cm->width, cm->height);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
   // Allow joint search multiple times iteratively for each reference frame
   // and break out of the search loop if it couldn't find a better mv.
   for (ite = 0; ite < 4; ite++) {
