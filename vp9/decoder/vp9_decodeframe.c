@@ -1823,11 +1823,10 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
     const MV mv = mi->mbmi.sb_type < BLOCK_8X8
                ? average_split_mvs(pd, mi, ref, block)
                : mi->mbmi.mv[ref].as_mv;
-
-    const MV mv_q4 = clamp_mv_to_umv_border_sb(xd, &mv, bw, bh,
-                                               pd->subsampling_x,
-                                               pd->subsampling_y);
-
+    const MV mv_qr = {
+      src_mv->row * (1 << (1 - ss_y)),
+      src_mv->col * (1 << (1 - ss_x))
+    };
     MV32 scaled_mv;
     int xs, ys, x0, y0, x0_16, y0_16, y1, frame_width, frame_height,
         buf_stride, subpel_x, subpel_y;
