@@ -1823,11 +1823,6 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
     const MV mv = mi->mbmi.sb_type < BLOCK_8X8
                ? average_split_mvs(pd, mi, ref, block)
                : mi->mbmi.mv[ref].as_mv;
-
-    const MV mv_q4 = clamp_mv_to_umv_border_sb(xd, &mv, bw, bh,
-                                               pd->subsampling_x,
-                                               pd->subsampling_y);
-
     MV32 scaled_mv;
     int xs, ys, x0, y0, x0_16, y0_16, y1, frame_width, frame_height,
         buf_stride, subpel_x, subpel_y;
@@ -1850,6 +1845,9 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
     }
 
     if (is_scaled) {
+      const MV mv_q4 = clamp_mv_to_umv_border_sb(xd, &mv, bw, bh,
+                                                 pd->subsampling_x,
+                                                 pd->subsampling_y);
       // Co-ordinate of containing block to pixel precision.
       int x_start = (-xd->mb_to_left_edge >> (3 + pd->subsampling_x));
       int y_start = (-xd->mb_to_top_edge >> (3 + pd->subsampling_y));
@@ -1873,6 +1871,10 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
       xs = sf->x_step_q4;
       ys = sf->y_step_q4;
     } else {
+      const MV mv_q4 = {
+        mv.row * (1 << (1 - pd->subsampling_y)),
+        mv.col * (1 << (1 - pd->subsampling_x))
+      };
       // Co-ordinate of containing block to pixel precision.
       x0 = (-xd->mb_to_left_edge >> (3 + pd->subsampling_x)) + x;
       y0 = (-xd->mb_to_top_edge >> (3 + pd->subsampling_y)) + y;
