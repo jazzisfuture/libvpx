@@ -38,7 +38,7 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   // and we also need to keep a mode count.
   for (i = 0; i < 2; ++i) {
     const POSITION *const mv_ref = &mv_ref_search[i];
-    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+    if (is_inside(tile, mi_col, mi_row, mv_ref)) {
       const MODE_INFO *const candidate_mi = xd->mi[mv_ref->col + mv_ref->row *
                                                    xd->mi_stride].src_mi;
       const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
@@ -61,7 +61,7 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   // mode counts.
   for (; i < MVREF_NEIGHBOURS; ++i) {
     const POSITION *const mv_ref = &mv_ref_search[i];
-    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+    if (is_inside(tile, mi_col, mi_row, mv_ref)) {
       const MB_MODE_INFO *const candidate = &xd->mi[mv_ref->col + mv_ref->row *
                                                     xd->mi_stride].src_mi->mbmi;
       different_ref_found = 1;
@@ -87,7 +87,7 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   if (different_ref_found) {
     for (i = 0; i < MVREF_NEIGHBOURS; ++i) {
       const POSITION *mv_ref = &mv_ref_search[i];
-      if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      if (is_inside(tile, mi_col, mi_row, mv_ref)) {
         const MB_MODE_INFO *const candidate = &xd->mi[mv_ref->col + mv_ref->row
                                               * xd->mi_stride].src_mi->mbmi;
 
@@ -130,7 +130,7 @@ void vp9_update_mv_context(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   // If the size < 8x8, we get the mv from the bmi substructure;
   for (i = 0; i < 2; ++i) {
     const POSITION *const mv_ref = &mv_ref_search[i];
-    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+    if (is_inside(tile, mi_col, mi_row, mv_ref)) {
       const MODE_INFO *const candidate_mi =
           xd->mi[mv_ref->col + mv_ref->row * xd->mi_stride].src_mi;
       const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;

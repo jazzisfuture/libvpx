@@ -202,11 +202,11 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
 // Checks that the given mi_row, mi_col and search point
 // are inside the borders of the tile.
 static INLINE int is_inside(const TileInfo *const tile,
-                            int mi_col, int mi_row, int mi_rows,
+                            int mi_col, int mi_row,
                             const POSITION *mi_pos) {
-  return !(mi_row + mi_pos->row < 0 ||
+  return !(mi_row + mi_pos->row < tile->mi_row_start ||
            mi_col + mi_pos->col < tile->mi_col_start ||
-           mi_row + mi_pos->row >= mi_rows ||
+           mi_row + mi_pos->row >= tile->mi_row_end ||
            mi_col + mi_pos->col >= tile->mi_col_end);
 }
 
