@@ -2650,8 +2650,7 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
       !cpi->rc.is_src_frame_alt_ref) {
     const int maxq_adj_limit =
       rc->worst_quality - twopass->active_worst_quality;
-    const int minq_adj_limit =
-      (cpi->oxcf.rc_mode == VPX_CQ) ? 0 : MINQ_ADJ_LIMIT;
+    const int minq_adj_limit = MINQ_ADJ_LIMIT;
 
     // Undershoot.
     if (rc->rate_error_estimate > cpi->oxcf.under_shoot_pct) {
