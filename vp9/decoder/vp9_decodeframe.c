@@ -398,6 +398,14 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
   vp9_read_mode_info(pbi, xd, counts, tile, mi_row, mi_col, r);
 
+  {
+    FILE *pf = fopen("dec_modes.txt", "a");
+    fprintf(pf, "pos (%d, %d), range %d\n",
+            mi_row, mi_col, r->range);
+    fclose(pf);
+  }
+
+
   if (less8x8)
     bsize = BLOCK_8X8;
 
@@ -918,23 +926,23 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
   int mi_row, mi_col;
   TileData *tile_data = NULL;
 
-  if (cm->lf.filter_level && pbi->lf_worker.data1 == NULL) {
-    CHECK_MEM_ERROR(cm, pbi->lf_worker.data1,
-                    vpx_memalign(32, sizeof(LFWorkerData)));
-    pbi->lf_worker.hook = (VP9WorkerHook)vp9_loop_filter_worker;
-    if (pbi->max_threads > 1 && !winterface->reset(&pbi->lf_worker)) {
-      vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
-                         "Loop filter thread creation failed");
-    }
-  }
-
-  if (cm->lf.filter_level) {
-    LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-    // Be sure to sync as we might be resuming after a failed frame decode.
-    winterface->sync(&pbi->lf_worker);
-    vp9_loop_filter_data_reset(lf_data, get_frame_new_buffer(cm), cm,
-                               pbi->mb.plane);
-  }
+//  if (cm->lf.filter_level && pbi->lf_worker.data1 == NULL) {
+//    CHECK_MEM_ERROR(cm, pbi->lf_worker.data1,
+//                    vpx_memalign(32, sizeof(LFWorkerData)));
+//    pbi->lf_worker.hook = (VP9WorkerHook)vp9_loop_filter_worker;
+//    if (pbi->max_threads > 1 && !winterface->reset(&pbi->lf_worker)) {
+//      vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+//                         "Loop filter thread creation failed");
+//    }
+//  }
+//
+//  if (cm->lf.filter_level) {
+//    LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
+//    // Be sure to sync as we might be resuming after a failed frame decode.
+//    winterface->sync(&pbi->lf_worker);
+//    vp9_loop_filter_data_reset(lf_data, get_frame_new_buffer(cm), cm,
+//                               pbi->mb.plane);
+//  }
 
   assert(tile_rows <= 4);
   assert(tile_cols <= (1 << 6));
@@ -977,11 +985,12 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
   }
 
   for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
-    TileInfo tile;
-    vp9_tile_set_row(&tile, cm, tile_row);
-    for (mi_row = tile.mi_row_start; mi_row < tile.mi_row_end;
-         mi_row += MI_BLOCK_SIZE) {
-      for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
+    for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
+      TileInfo tile;
+      vp9_tile_set_row(&tile, cm, tile_row);
+      vp9_tile_set_col(&tile, cm, tile_col);
+      for (mi_row = tile.mi_row_start; mi_row < tile.mi_row_end;
+           mi_row += MI_BLOCK_SIZE) {
         const int col = pbi->inv_tile_order ?
                         tile_cols - tile_col - 1 : tile_col;
         tile_data = pbi->tile_data + tile_cols * tile_row + col;
@@ -999,48 +1008,48 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
                                "Failed to decode tile data");
       }
       // Loopfilter one row.
-      if (cm->lf.filter_level) {
-        const int lf_start = mi_row - MI_BLOCK_SIZE;
-        LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-
-        // delay the loopfilter by 1 macroblock row.
-        if (lf_start < 0) continue;
-
-        // decoding has completed: finish up the loop filter in this thread.
-        if (mi_row + MI_BLOCK_SIZE >= cm->mi_rows) continue;
-
-        winterface->sync(&pbi->lf_worker);
-        lf_data->start = lf_start;
-        lf_data->stop = mi_row;
-        if (pbi->max_threads > 1) {
-          winterface->launch(&pbi->lf_worker);
-        } else {
-          winterface->execute(&pbi->lf_worker);
-        }
-      }
+//      if (cm->lf.filter_level) {
+//        const int lf_start = mi_row - MI_BLOCK_SIZE;
+//        LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
+//
+//        // delay the loopfilter by 1 macroblock row.
+//        if (lf_start < 0) continue;
+//
+//        // decoding has completed: finish up the loop filter in this thread.
+//        if (mi_row + MI_BLOCK_SIZE >= cm->mi_rows) continue;
+//
+//        winterface->sync(&pbi->lf_worker);
+//        lf_data->start = lf_start;
+//        lf_data->stop = mi_row;
+//        if (pbi->max_threads > 1) {
+//          winterface->launch(&pbi->lf_worker);
+//        } else {
+//          winterface->execute(&pbi->lf_worker);
+//        }
+//      }
       // After loopfiltering, the last 7 row pixels in each superblock row may
       // still be changed by the longest loopfilter of the next superblock
       // row.
-      if (pbi->frame_parallel_decode)
-        vp9_frameworker_broadcast(pbi->cur_buf,
-                                  mi_row << MI_BLOCK_SIZE_LOG2);
+//      if (pbi->frame_parallel_decode)
+//        vp9_frameworker_broadcast(pbi->cur_buf,
+//                                  mi_row << MI_BLOCK_SIZE_LOG2);
     }
   }
 
   // Loopfilter remaining rows in the frame.
-  if (cm->lf.filter_level) {
-    LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-    winterface->sync(&pbi->lf_worker);
-    lf_data->start = lf_data->stop;
-    lf_data->stop = cm->mi_rows;
-    winterface->execute(&pbi->lf_worker);
-  }
+//  if (cm->lf.filter_level) {
+//    LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
+//    winterface->sync(&pbi->lf_worker);
+//    lf_data->start = lf_data->stop;
+//    lf_data->stop = cm->mi_rows;
+//    winterface->execute(&pbi->lf_worker);
+//  }
 
   // Get last tile data.
   tile_data = pbi->tile_data + tile_cols * tile_rows - 1;
 
-  if (pbi->frame_parallel_decode)
-    vp9_frameworker_broadcast(pbi->cur_buf, INT_MAX);
+//  if (pbi->frame_parallel_decode)
+//    vp9_frameworker_broadcast(pbi->cur_buf, INT_MAX);
   return vp9_reader_find_end(&tile_data->bit_reader);
 }
 
@@ -1693,7 +1702,22 @@ void vp9_decode_frame(VP9Decoder *pbi,
     }
   } else {
     *p_data_end = decode_tiles(pbi, data + first_partition_size, data_end);
+//    if (!xd->corrupted) {
+//      if (cm->lf.filter_level > 0)
+//      // If multiple threads are used to decode tiles, then we use those threads
+//      // to do parallel loopfiltering.
+//        vp9_loop_filter_frame_mt(new_fb, cm, pbi->mb.plane, cm->lf.filter_level,
+//                                 0, 0, pbi->tile_workers, pbi->num_tile_workers,
+//                                 &pbi->lf_row_sync);
+//    } else {
+//      vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+//                         "Decode failed. Frame data is corrupted.");
+//
+//    }
   }
+
+  if (cm->lf.filter_level > 0)
+    vp9_loop_filter_frame(new_fb, cm, xd, cm->lf.filter_level, 0, 0);
 
   if (!xd->corrupted) {
     if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {

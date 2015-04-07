@@ -388,10 +388,18 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
                  mi_row, num_8x8_blocks_high_lookup[m->mbmi.sb_type],
                  mi_col, num_8x8_blocks_wide_lookup[m->mbmi.sb_type],
                  cm->mi_rows, cm->mi_cols);
+
   if (frame_is_intra_only(cm)) {
     write_mb_modes_kf(cm, xd, xd->mi, w);
   } else {
     pack_inter_mode_mvs(cpi, m, w);
+  }
+
+  {
+    FILE *pf = fopen("enc_modes.txt", "a");
+    fprintf(pf, "pos (%d, %d), range %d\n",
+            mi_row, mi_col, w->range);
+    fclose(pf);
   }
 
   assert(*tok < tok_end);
