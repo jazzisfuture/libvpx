@@ -43,13 +43,37 @@ static void alloc_mode_context(VP9_COMMON *cm, int num_4x4_blk,
       ctx->eobs_pbuf[i][k]    = ctx->eobs[i][k];
     }
   }
+#if CONFIG_TX_SKIP
+  CHECK_MEM_ERROR(cm, ctx->zcoeff_blk_pxd,
+                  vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    for (k = 0; k < 3; ++k) {
+      CHECK_MEM_ERROR(cm, ctx->coeff_pxd[i][k],
+                      vpx_memalign(16, num_pix *
+                                   sizeof(*ctx->coeff_pxd[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->qcoeff_pxd[i][k],
+                      vpx_memalign(16, num_pix *
+                                   sizeof(*ctx->qcoeff_pxd[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->dqcoeff_pxd[i][k],
+                      vpx_memalign(16, num_pix *
+                                   sizeof(*ctx->dqcoeff_pxd[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->eobs_pxd[i][k],
+                      vpx_memalign(16, num_pix *
+                                   sizeof(*ctx->eobs_pxd[i][k])));
+      ctx->coeff_pxd_pbuf[i][k]   = ctx->coeff_pxd[i][k];
+      ctx->qcoeff_pxd_pbuf[i][k]  = ctx->qcoeff_pxd[i][k];
+      ctx->dqcoeff_pxd_pbuf[i][k] = ctx->dqcoeff_pxd[i][k];
+      ctx->eobs_pxd_pbuf[i][k]    = ctx->eobs_pxd[i][k];
+    }
+  }
+#endif  // CONFIG_TX_SKIP
 #if CONFIG_PALETTE
   for (i = 0; i < 2; i++) {
     CHECK_MEM_ERROR(cm, ctx->color_index_map[i],
                     vpx_memalign(16, num_pix *
                                  sizeof(ctx->color_index_map[i][0])));
   }
-#endif
+#endif  // CONFIG_PALETTE
 }
 
 static void free_mode_context(PICK_MODE_CONTEXT *ctx) {

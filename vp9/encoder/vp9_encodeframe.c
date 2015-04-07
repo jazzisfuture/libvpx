@@ -791,6 +791,22 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     p[i].eobs = ctx->eobs_pbuf[i][2];
   }
 
+#if CONFIG_TX_SKIP
+  for (i = 0; i < max_plane; ++i) {
+    p[i].coeff_pxd = ctx->coeff_pxd_pbuf[i][1];
+    p[i].qcoeff_pxd = ctx->qcoeff_pxd_pbuf[i][1];
+    pd[i].dqcoeff_pxd = ctx->dqcoeff_pxd_pbuf[i][1];
+    p[i].eobs_pxd = ctx->eobs_pxd_pbuf[i][1];
+  }
+
+  for (i = max_plane; i < MAX_MB_PLANE; ++i) {
+    p[i].coeff_pxd = ctx->coeff_pxd_pbuf[i][2];
+    p[i].qcoeff_pxd = ctx->qcoeff_pxd_pbuf[i][2];
+    pd[i].dqcoeff_pxd = ctx->dqcoeff_pxd_pbuf[i][2];
+    p[i].eobs_pxd = ctx->eobs_pxd_pbuf[i][2];
+  }
+#endif  // CONFIG_TX_SKIP
+
 #if CONFIG_PALETTE
   for (i = 0; i < 2; i++) {
     pd[i].color_index_map = ctx->color_index_map[i];

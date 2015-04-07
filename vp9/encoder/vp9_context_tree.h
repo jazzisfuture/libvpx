@@ -24,18 +24,32 @@ typedef struct {
   tran_low_t *qcoeff[MAX_MB_PLANE][3];
   tran_low_t *dqcoeff[MAX_MB_PLANE][3];
   uint16_t *eobs[MAX_MB_PLANE][3];
+#if CONFIG_TX_SKIP
+  uint8_t *zcoeff_blk_pxd;
+  tran_low_t *coeff_pxd[MAX_MB_PLANE][3];
+  tran_low_t *qcoeff_pxd[MAX_MB_PLANE][3];
+  tran_low_t *dqcoeff_pxd[MAX_MB_PLANE][3];
+  uint16_t *eobs_pxd[MAX_MB_PLANE][3];
+#endif  // CONFIG_TX_SKIP
 
   // dual buffer pointers, 0: in use, 1: best in store
   tran_low_t *coeff_pbuf[MAX_MB_PLANE][3];
   tran_low_t *qcoeff_pbuf[MAX_MB_PLANE][3];
   tran_low_t *dqcoeff_pbuf[MAX_MB_PLANE][3];
   uint16_t *eobs_pbuf[MAX_MB_PLANE][3];
+#if CONFIG_TX_SKIP
+  tran_low_t *coeff_pxd_pbuf[MAX_MB_PLANE][3];
+  tran_low_t *qcoeff_pxd_pbuf[MAX_MB_PLANE][3];
+  tran_low_t *dqcoeff_pxd_pbuf[MAX_MB_PLANE][3];
+  uint16_t *eobs_pxd_pbuf[MAX_MB_PLANE][3];
+#endif  // CONFIG_TX_SKIP
+
 #if CONFIG_PALETTE
   uint8_t *color_index_map[2];
   uint8_t palette_colors_buf[PALETTE_BUF_SIZE];
   int palette_buf_size;
   int palette_count_buf[PALETTE_BUF_SIZE];
-#endif
+#endif  // CONFIG_PALETTE
 
   int is_coded;
   int num_4x4_blk;

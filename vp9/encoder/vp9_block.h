@@ -29,6 +29,14 @@ struct macroblock_plane {
   tran_low_t *qcoeff;
   tran_low_t *coeff;
   uint16_t *eobs;
+
+#if CONFIG_TX_SKIP
+  DECLARE_ALIGNED(16, int16_t, src_diff_pxd[64 * 64]);
+  tran_low_t *qcoeff_pxd;
+  tran_low_t *coeff_pxd;
+  uint16_t *eobs_pxd;
+#endif  // CONFIG_TX_SKIP
+
   struct buf_2d src;
 
   // Quantizer setings
