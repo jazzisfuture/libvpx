@@ -1242,6 +1242,7 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   vp9_read_mode_info(cm, xd, tile, mi_row, mi_col, r);
 #endif  // CONFIG_SUPERTX
 #if CONFIG_TX_SKIP
+  (void) q_idx;
   q_idx = vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex);
   mbmi->tx_skip_shift = q_idx > TX_SKIP_SHIFT_THRESH ?
                         TX_SKIP_SHIFT_HQ : TX_SKIP_SHIFT_LQ;
