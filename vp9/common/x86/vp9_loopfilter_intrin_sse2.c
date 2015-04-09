@@ -1396,6 +1396,159 @@ static INLINE void transpose8x16(unsigned char *in0, unsigned char *in1,
   _mm_storeu_si128((__m128i *)(out + 7 * out_p), _mm_unpackhi_epi64(x7, x15));
 }
 
+static INLINE void transpose16x16(unsigned char *in0, unsigned char *in1,
+                                 int in_p, unsigned char *out, int out_p) {
+  __m128i x0, x1, x2, x3, x4, x5, x6, x7;
+  __m128i x8, x9, x10, x11, x12, x13, x14, x15;
+  DECLARE_ALIGNED_ARRAY(16, unsigned char, tmp, 16);
+
+  // interleave 4 loads and 4 unpuck
+  x0 = _mm_loadu_si128((__m128i *)in0);
+  x1 = _mm_loadu_si128((__m128i *)(in0 + in_p));
+  x2 = _mm_loadu_si128((__m128i *)(in0 + 2*in_p));
+  x3 = _mm_loadu_si128((__m128i *)(in0 + 3*in_p));
+
+  x8 = _mm_unpacklo_epi8(x0, x1);
+  x9 = _mm_unpacklo_epi8(x2, x3);
+
+  x0 = _mm_unpackhi_epi8(x0, x1);
+  x2 = _mm_unpackhi_epi8(x2, x3);
+
+  x4 = _mm_loadu_si128((__m128i *)(in0 + 4*in_p));
+  x5 = _mm_loadu_si128((__m128i *)(in0 + 5*in_p));
+  x6 = _mm_loadu_si128((__m128i *)(in0 + 6*in_p));
+  x7 = _mm_loadu_si128((__m128i *)(in0 + 7*in_p));
+
+  x10 = _mm_unpacklo_epi8(x4, x5);
+  x11 = _mm_unpacklo_epi8(x6, x7);
+
+  x4 = _mm_unpackhi_epi8(x4, x5);
+  x6 = _mm_unpackhi_epi8(x6, x7);
+
+  // merge with previouse unpuck
+  x1 = _mm_unpacklo_epi16(x8, x9);
+  x3 = _mm_unpacklo_epi16(x10, x11);
+
+  x5 = _mm_unpacklo_epi16(x0, x2);
+  x7 = _mm_unpacklo_epi16(x4, x6);
+
+  x8 = _mm_unpackhi_epi16(x8, x9);
+  x10 = _mm_unpackhi_epi16(x10, x11);
+
+  x0 = _mm_unpackhi_epi16(x0, x2);
+  x4 = _mm_unpackhi_epi16(x4, x6);
+
+
+  x9 = _mm_unpacklo_epi32(x1, x3);
+  x11 = _mm_unpacklo_epi32(x5, x7);
+  x12 = _mm_unpacklo_epi32(x8, x10);
+  x13 = _mm_unpacklo_epi32(x0, x4);
+
+  _mm_store_si128((__m128i *)tmp, x9);
+
+  x1 = _mm_unpackhi_epi32(x1, x3);
+  x5 = _mm_unpackhi_epi32(x5, x7);
+  x8 = _mm_unpackhi_epi32(x8, x10);
+  x0 = _mm_unpackhi_epi32(x0, x4);
+
+  // interleave next 4 loads and 4 punpack
+  x2 = _mm_loadu_si128((__m128i *)in1);
+  x3 = _mm_loadu_si128((__m128i *)(in1 + in_p));
+  x4 = _mm_loadu_si128((__m128i *)(in1 + 2 * in_p));
+  x6 = _mm_loadu_si128((__m128i *)(in1 + 3*in_p));
+
+  x9 = _mm_unpacklo_epi8(x2, x3);
+  x2 = _mm_unpackhi_epi8(x2, x3);
+
+  x3 = _mm_unpacklo_epi8(x4, x6);
+  x4 = _mm_unpackhi_epi8(x4, x6);
+
+  x7 = _mm_loadu_si128((__m128i *)(in1 + 4*in_p));
+  x10 = _mm_loadu_si128((__m128i *)(in1 + 5*in_p));
+  x14 = _mm_loadu_si128((__m128i *)(in1 + 6*in_p));
+  x15 = _mm_loadu_si128((__m128i *)(in1 + 7*in_p));
+
+
+  x6 = _mm_unpacklo_epi8(x7, x10);
+  x7 = _mm_unpackhi_epi8(x7, x10);
+
+  x10 = _mm_unpacklo_epi8(x14, x15);
+  x14 = _mm_unpackhi_epi8(x14, x15);
+
+  x15 = _mm_unpacklo_epi16(x9, x3);
+  x9 = _mm_unpackhi_epi16(x9, x3);
+
+  x3 = _mm_unpacklo_epi16(x2, x4);
+  x2 = _mm_unpackhi_epi16(x2, x4);
+
+  x4 = _mm_unpacklo_epi16(x6, x10);
+  x6 = _mm_unpackhi_epi16(x6, x10);
+
+  x10 = _mm_unpacklo_epi16(x7, x14);
+  x7 = _mm_unpackhi_epi16(x7, x14);
+
+  x14 = _mm_unpacklo_epi32(x15, x4);
+  x15 = _mm_unpackhi_epi32(x15, x4);
+
+  x4 = _mm_unpacklo_epi32(x3, x10);
+  x3 = _mm_unpackhi_epi32(x3, x10);
+
+  x10 = _mm_unpacklo_epi32(x9, x6);
+  x9 = _mm_unpackhi_epi32(x9, x6);
+
+  x6 = _mm_unpacklo_epi32(x2, x7);
+  x2 = _mm_unpackhi_epi32(x2, x7);
+
+  x7 = _mm_load_si128((__m128i*)tmp);
+  _mm_storeu_si128((__m128i *)out, _mm_unpacklo_epi64(x7, x14));
+
+  x7 = _mm_unpackhi_epi64(x7, x14);
+  _mm_storeu_si128((__m128i *)(out + out_p), x7);
+
+  // interleave 2 punpack with 2 stores
+  x14 = _mm_unpacklo_epi64(x1, x15);
+  x1 = _mm_unpackhi_epi64(x1, x15);
+
+  _mm_storeu_si128((__m128i *)(out + out_p*2), x14);
+  _mm_storeu_si128((__m128i *)(out + out_p*3), x1);
+
+  x7 = _mm_unpacklo_epi64(x12, x10);
+  x12 = _mm_unpackhi_epi64(x12, x10);
+
+  _mm_storeu_si128((__m128i *)(out + out_p*4), x7);
+  _mm_storeu_si128((__m128i *)(out + out_p*5), x12);
+
+  x15 = _mm_unpacklo_epi64(x8, x9);
+  x8 = _mm_unpackhi_epi64(x8, x9);
+
+  _mm_storeu_si128((__m128i *)(out + out_p*6), x15);
+  _mm_storeu_si128((__m128i *)(out + out_p*7), x8);
+
+  x10= _mm_unpacklo_epi64(x11, x4);
+  x11 = _mm_unpackhi_epi64(x11, x4);
+
+  _mm_storeu_si128((__m128i *)(out + out_p*8), x10);
+  _mm_storeu_si128((__m128i *)(out + out_p*9), x11);
+
+  x9 = _mm_unpacklo_epi64(x5, x3);
+  x5 = _mm_unpackhi_epi64(x5, x3);
+
+  _mm_storeu_si128((__m128i *)(out + out_p*10), x9);
+  _mm_storeu_si128((__m128i *)(out + out_p*11), x5);
+
+  x4 = _mm_unpacklo_epi64(x13, x6);
+  x13 = _mm_unpackhi_epi64(x13, x6);
+
+  _mm_storeu_si128((__m128i *)(out + out_p*12), x4);
+  _mm_storeu_si128((__m128i *)(out + out_p*13), x13);
+
+  x11 = _mm_unpacklo_epi64(x0, x2);
+  x0 = _mm_unpackhi_epi64(x0, x2);
+
+  _mm_storeu_si128((__m128i *)(out + out_p*14), x11);
+  _mm_storeu_si128((__m128i *)(out + out_p*15), x0);
+}
+
 static INLINE void transpose(unsigned char *src[], int in_p,
                              unsigned char *dst[], int out_p,
                              int num_8x8_to_transpose) {
@@ -1571,13 +1724,21 @@ void vp9_lpf_vertical_16_dual_sse2(unsigned char *s, int p,
                                    const uint8_t *thresh) {
   DECLARE_ALIGNED_ARRAY(16, unsigned char, t_dst, 256);
 
-  // Transpose 8x16
+  // Transpose 16x16
+#if ARCH_X86_64
+  transpose16x16(s - 8, s - 8 + 8 * p, p, t_dst, 16);
+#else
   transpose8x16(s - 8, s - 8 + 8 * p, p, t_dst, 16);
   transpose8x16(s, s + 8 * p, p, t_dst + 8 * 16, 16);
+#endif
   // Loop filtering
   mb_lpf_horizontal_edge_w_sse2_16(t_dst + 8 * 16, 16, blimit, limit,
                                    thresh);
+#if ARCH_X86_64
+  transpose16x16(t_dst, t_dst + 8 * 16, 16, s - 8, p);
+#else
   // Transpose back
   transpose8x16(t_dst, t_dst + 8 * 16, 16, s - 8, p);
   transpose8x16(t_dst + 8, t_dst + 8 + 8 * 16, 16, s - 8 + 8 * p, p);
+#endif
 }
