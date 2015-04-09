@@ -128,9 +128,6 @@ static int read_intra_segment_id(VP9_COMMON *const cm, BLOCK_SIZE bsize,
   struct segmentation *const seg = &cm->seg;
   int segment_id;
 
-  if (!seg->enabled)
-    return 0;  // Default for disabled segmentation
-
   if (!seg->update_map) {
     copy_segment_id(cm, cm->last_frame_seg_map, cm->current_frame_seg_map,
                     bsize, mi_row, mi_col);
@@ -148,9 +145,6 @@ static int read_inter_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
   int predicted_segment_id, segment_id;
-
-  if (!seg->enabled)
-    return 0;  // Default for disabled segmentation
 
   predicted_segment_id = cm->last_frame_seg_map ?
       vp9_get_segment_id(cm, cm->last_frame_seg_map, bsize, mi_row, mi_col) : 0;
@@ -198,7 +192,8 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
   const BLOCK_SIZE bsize = mbmi->sb_type;
   int i;
 
-  mbmi->segment_id = read_intra_segment_id(cm, bsize, mi_row, mi_col, r);
+  mbmi->segment_id = !cm->seg.enabled ? 0 :
+                     read_intra_segment_id(cm, bsize, mi_row, mi_col, r);
   mbmi->skip = read_skip(cm, xd, counts, mbmi->segment_id, r);
   mbmi->tx_size = read_tx_size(cm, xd, counts, 1, r);
   mbmi->ref_frame[0] = INTRA_FRAME;
@@ -572,7 +567,8 @@ static void read_inter_frame_mode_info(VP9Decoder *const pbi,
 
   mbmi->mv[0].as_int = 0;
   mbmi->mv[1].as_int = 0;
-  mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);
+  mbmi->segment_id = !cm->seg.enabled ? 0 :
+                     read_inter_segment_id(cm, xd, mi_row, mi_col, r);
   mbmi->skip = read_skip(cm, xd, counts, mbmi->segment_id, r);
   inter_block = read_is_inter_block(cm, xd, counts, mbmi->segment_id, r);
   mbmi->tx_size = read_tx_size(cm, xd, counts, !mbmi->skip || !inter_block, r);
