@@ -1915,8 +1915,8 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
                            MAX(0, (y1 + 7)) << (plane == 0 ? 0 : 1));
 
     // Skip border extension if block is inside the frame.
-    if (x0 < 0 || x0 > frame_width - 1 || x1 < 0 || x1 > frame_width - 1 ||
-        y0 < 0 || y0 > frame_height - 1 || y1 < 0 || y1 > frame_height - 1) {
+    if (x0 < 0 || x0 > frame_width || x1 < 0 || x1 > frame_width||
+        y0 < 0 || y0 > frame_height || y1 < 0 || y1 > frame_height) {
       uint8_t *buf_ptr1 = ref_frame + y0 * pre_buf->stride + x0;
       // Extend the border.
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -1952,14 +1952,14 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
       build_mc_border(buf_ptr1,
                       pre_buf->stride,
                       xd->mc_buf,
-                      x1 - x0 + 1,
+                      x1 - x0,
                       x0,
                       y0,
-                      x1 - x0 + 1,
-                      y1 - y0 + 1,
+                      x1 - x0,
+                      y1 - y0,
                       frame_width,
                       frame_height);
-      buf_stride = x1 - x0 + 1;
+      buf_stride = x1 - x0;
       buf_ptr = xd->mc_buf + y_pad * 3 * buf_stride + x_pad * 3;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     }
