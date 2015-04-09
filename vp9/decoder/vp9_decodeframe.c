@@ -1721,7 +1721,6 @@ static void build_mc_border(const uint8_t *src, int src_stride,
                             int x, int y, int b_w, int b_h, int w, int h) {
   // Get a pointer to the start of the real data for this row.
   const uint8_t *ref_row = src - x - y * src_stride;
-
   if (y >= h)
     ref_row += (h - 1) * src_stride;
   else if (y > 0)
@@ -1807,6 +1806,101 @@ static void high_build_mc_border(const uint8_t *src8, int src_stride,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
+                                int plane, int x, int y, int w, int h, int mi_x,
+                                int mi_y, const InterpKernel *kernel,
+                                const struct scale_factors *sf,
+                                struct buf_2d *pre_buf, struct buf_2d *dst_buf,
+                                const MV *mv, RefCntBuffer *ref_frame_buf,
+                                int ref) {
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  uint8_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
+  int xs, ys, x0, y0, frame_width, frame_height, buf_stride, subpel_x, subpel_y;
+  uint8_t *ref_frame, *buf_ptr;
+  int y_pad = 0, x_pad = 0;
+
+  // Get reference frame pointer, width and height.
+  if (plane == 0) {
+    frame_width = ref_frame_buf->buf.y_crop_width;
+    frame_height = ref_frame_buf->buf.y_crop_height;
+    ref_frame = ref_frame_buf->buf.y_buffer;
+  } else {
+    frame_width = ref_frame_buf->buf.uv_crop_width;
+    frame_height = ref_frame_buf->buf.uv_crop_height;
+    ref_frame =
+        plane == 1 ? ref_frame_buf->buf.u_buffer : ref_frame_buf->buf.v_buffer;
+  }
+
+  // Co-ordinate of containing block to pixel precision.
+  x0 = (mi_x >> pd->subsampling_x) + x;
+  y0 = (mi_y >> pd->subsampling_y) + y;
+
+  // Co-ordinate of reference block to pixel precision.
+  y0 = y0 + (mv->row >> (3 + pd->subsampling_y));
+  x0 = x0 + (mv->col >> (3 + pd->subsampling_x));
+
+  subpel_x = mv->col & (plane == 0 ? 7 : 15);
+  subpel_y = mv->row & (plane == 0 ? 7 : 15);
+  x_pad = !!subpel_x;
+  y_pad = !!subpel_y;
+  xs = ys = 16;
+
+  // Get reference block pointer.
+  buf_ptr = ref_frame + y0 * pre_buf->stride + x0;
+  buf_stride = pre_buf->stride;
+
+  if (pbi->frame_parallel_decode) {
+    vp9_frameworker_wait(pbi->frame_worker_owner, ref_frame_buf,
+                         MAX(0, (y0 + h + y_pad * 7 + 7))
+                             << (plane == 0 ? 0 : 1));
+  }
+  if (x0 < x_pad * 3 || y0 < y_pad * 3 || x0 + x_pad * 4 > frame_width - w ||
+      y0 + y_pad * 4 > frame_height - h) {
+    uint8_t *buf_ptr1 =
+        ref_frame + (y0 - y_pad * 3) * pre_buf->stride + x0 - x_pad * 3;
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      build_mc_border(buf_ptr1, pre_buf->stride, xd->mc_buf_high, w + x_pad * 7,
+                      x0 - x_pad * 3, y0 - y_pad * 3, w + x_pad * 7,
+                      h + y_pad * 7, frame_width, frame_height);
+      buf_stride = w + x_pad * 7;
+      buf_ptr = CONVERT_TO_BYTEPTR(xd->mc_buf_high) + y_pad * 3 * buf_stride +
+                x_pad * 3;
+
+    } else {
+      build_mc_border(buf_ptr1, pre_buf->stride, xd->mc_buf, w + x_pad * 7,
+                      x0 - x_pad * 3, y0 - y_pad * 3, w + x_pad * 7,
+                      h + y_pad * 7, frame_width, frame_height);
+      buf_stride = w + x_pad * 7;
+      buf_ptr = xd->mc_buf + y_pad * 3 * buf_stride + x_pad * 3;
+    }
+#else
+    build_mc_border(buf_ptr1, pre_buf->stride, xd->mc_buf, w + x_pad * 7,
+                    x0 - x_pad * 3, y0 - y_pad * 3, w + x_pad * 7,
+                    h + y_pad * 7, frame_width, frame_height);
+    buf_stride = w + x_pad * 7;
+    buf_ptr = xd->mc_buf + y_pad * 3 * buf_stride + x_pad * 3;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      high_inter_predictor(buf_ptr, buf_stride, dst, dst_buf->stride, subpel_x,
+                           subpel_y, sf, w, h, ref, kernel, xs, ys, xd->bd);
+    } else {
+      inter_predictor(buf_ptr, buf_stride, dst, dst_buf->stride, subpel_x,
+                      subpel_y, sf, w, h, ref, kernel, xs, ys);
+    }
+#else
+    inter_predictor(buf_ptr, buf_stride, dst, dst_buf->stride,
+                    plane == 0 ? subpel_x << 1 : subpel_x,
+                    plane == 0 ? subpel_y << 1 : subpel_y, sf, w,
+                    h, ref, kernel, xs, ys);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  }
+
+
+// TODO(hkuang): Cleaup this scale code to handle only scale case.
+void dec_build_inter_predictors_scale(VP9Decoder *const pbi, MACROBLOCKD *xd,
                                 int plane, int bw, int bh, int x,
                                 int y, int w, int h, int mi_x, int mi_y,
                                 const InterpKernel *kernel,
@@ -1996,6 +2090,7 @@ void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
   const InterpKernel *kernel = vp9_get_interp_kernel(mi->mbmi.interp_filter);
   const BLOCK_SIZE sb_type = mi->mbmi.sb_type;
   const int is_compound = has_second_ref(&mi->mbmi);
+  BufferPool *const pool = pbi->common.buffer_pool;
 
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
     const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize,
@@ -2013,7 +2108,6 @@ void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
       const struct scale_factors *const sf = &xd->block_refs[ref]->sf;
       struct buf_2d *const pre_buf = &pd->pre[ref];
       const int idx = xd->block_refs[ref]->idx;
-      BufferPool *const pool = pbi->common.buffer_pool;
       RefCntBuffer *const ref_frame_buf = &pool->frame_bufs[idx];
       const int is_scaled = vp9_is_scaled(sf);
 
@@ -2023,18 +2117,31 @@ void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
         for (y = 0; y < num_4x4_h; ++y) {
           for (x = 0; x < num_4x4_w; ++x) {
             const MV mv = average_split_mvs(pd, mi, ref, i++);
-            dec_build_inter_predictors(pbi, xd, plane, bw, bh,
-                                       4 * x, 4 * y, 4, 4, mi_x, mi_y, kernel,
-                                       sf, pre_buf, dst_buf, &mv,
-                                       ref_frame_buf, is_scaled, ref);
+            if (!is_scaled) {
+              dec_build_inter_predictors(pbi, xd, plane,
+                                         4 * x, 4 * y, 4, 4, mi_x, mi_y, kernel,
+                                         sf, pre_buf, dst_buf, &mv,
+                                         ref_frame_buf, ref);
+            } else {
+              dec_build_inter_predictors_scale(pbi, xd, plane, bw, bh,
+                                         4 * x, 4 * y, 4, 4, mi_x, mi_y, kernel,
+                                         sf, pre_buf, dst_buf, &mv,
+                                         ref_frame_buf, is_scaled, ref);
+            }
           }
         }
       } else {
         const MV mv = mi->mbmi.mv[ref].as_mv;
-        dec_build_inter_predictors(pbi, xd, plane, bw, bh,
-                                   0, 0, bw, bh, mi_x, mi_y, kernel,
-                                   sf, pre_buf, dst_buf, &mv, ref_frame_buf,
-                                   is_scaled, ref);
+        if (!is_scaled) {
+          dec_build_inter_predictors(pbi, xd, plane,
+                                     0, 0, bw, bh, mi_x, mi_y, kernel,
+                                     sf, pre_buf, dst_buf, &mv, ref_frame_buf, ref);
+        } else {
+          dec_build_inter_predictors_scale(pbi, xd, plane, bw, bh,
+                                     0, 0, bw, bh, mi_x, mi_y, kernel,
+                                     sf, pre_buf, dst_buf, &mv, ref_frame_buf,
+                                     is_scaled, ref);
+        }
       }
     }
   }
