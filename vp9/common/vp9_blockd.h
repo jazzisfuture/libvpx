@@ -395,6 +395,11 @@ typedef struct macroblockd {
 
   PARTITION_CONTEXT *above_seg_context;
   PARTITION_CONTEXT left_seg_context[8];
+
+#if 1
+  int mi_row;
+  int mi_col;
+#endif
 } MACROBLOCKD;
 
 static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,
