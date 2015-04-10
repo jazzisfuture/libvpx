@@ -321,7 +321,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = get_tx_type_4x4(plane_type, xd, block);
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 4, shift);
+              vp9_highbd_tx_identity_add(dqcoeff, dst, stride, 4, shift, xd->bd);
             } else {
               vp9_highbd_iht4x4_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
             }
@@ -333,7 +333,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = get_tx_type(plane_type, xd);
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 8, shift);
+              vp9_highbd_tx_identity_add(dqcoeff, dst, stride, 8, shift, xd->bd);
             } else {
               vp9_highbd_iht8x8_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
             }
@@ -345,7 +345,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = get_tx_type(plane_type, xd);
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 16, shift);
+              vp9_highbd_tx_identity_add(dqcoeff, dst, stride, 16, shift, xd->bd);
             } else {
               vp9_highbd_iht16x16_add(tx_type, dqcoeff, dst, stride, eob,
                                       xd->bd);
@@ -358,7 +358,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = DCT_DCT;
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 32, shift);
+              vp9_highbd_tx_identity_add(dqcoeff, dst, stride, 32, shift, xd->bd);
             } else {
               vp9_highbd_idct32x32_add(dqcoeff, dst, stride, eob, xd->bd);
             }
@@ -480,7 +480,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
       if (mbmi->tx_skip[plane != 0]) {
         int bs = 4 << tx_size;
         if (tx_size <= TX_32X32 &&
-            (mode == V_PRED || mode == H_PRED || mode == TM_PRED))
+            (mode == V_PRED || mode == H_PRED || mode == TM_PRED) && 0)
           vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, bs, shift);
         else
           vp9_tx_identity_add(dqcoeff, dst, stride, bs, shift);
@@ -591,7 +591,7 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
 
 #if CONFIG_TX_SKIP
   if ((mi->mbmi.skip || no_coeff) && mi->mbmi.tx_skip[plane != 0] &&
-      mode == TM_PRED && tx_size <= TX_32X32) {
+      mode == TM_PRED && tx_size <= TX_32X32 && 0) {
     int bs = 4 * (1 << tx_size);
     vp9_intra_dpcm_add_nocoeff(dst, pd->dst.stride, mode, bs);
   }

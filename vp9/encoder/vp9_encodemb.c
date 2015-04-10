@@ -2392,6 +2392,9 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   if (mbmi->tx_skip[plane != 0]) {
     int shift = mbmi->tx_skip_shift;
     int bs = 4 << tx_size;
+#if CONFIG_VP9_HIGHBITDEPTH
+    int use_hbd = xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH;
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #if CONFIG_NEW_QUANT
     band = vp9_coefband_tx_skip;
 #endif  // CONFIG_NEW_QUANT
@@ -2417,7 +2420,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                     dst, dst_stride, i, j, plane);
 
     if (!x->skip_recode && tx_size <= TX_32X32 &&
-        (mode == V_PRED || mode == H_PRED || mode == TM_PRED)) {
+        (mode == V_PRED || mode == H_PRED || mode == TM_PRED) && 0) {
       *eob = vp9_dpcm_intra(src, src_stride, dst, dst_stride,
                             src_diff, diff_stride,
                             coeff, qcoeff, dqcoeff, p, pd,
@@ -2429,9 +2432,21 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
     }
 
     if (!x->skip_recode) {
+#if CONFIG_VP9_HIGHBITDEPTH
+      if (use_hbd) {
+        vp9_highbd_subtract_block(bs, bs, src_diff, diff_stride,
+                                  src, src_stride, dst, dst_stride, xd->bd);
+        vp9_tx_identity(src_diff, coeff, diff_stride, bs, shift);
+      } else {
+        vp9_subtract_block(bs, bs, src_diff, diff_stride,
+                           src, src_stride, dst, dst_stride);
+        vp9_tx_identity(src_diff, coeff, diff_stride, bs, shift);
+      }
+#else
       vp9_subtract_block(bs, bs, src_diff, diff_stride,
                          src, src_stride, dst, dst_stride);
       vp9_tx_identity(src_diff, coeff, diff_stride, bs, shift);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
       if (tx_size <= TX_16X16) {
 #if CONFIG_NEW_QUANT
@@ -2451,11 +2466,22 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                            pd->dequant_val_nuq,
                            qcoeff, dqcoeff, eob,
                            scan_order->scan, band);
-#else
+#else  // CONFIG_NEW_QUANT
+#if CONFIG_VP9_HIGHBITDEPTH
+        if (use_hbd)
+          vp9_highbd_quantize_b(coeff, bs * bs, x->skip_block, p->zbin, p->round,
+                                p->quant, p->quant_shift, qcoeff, dqcoeff,
+                                pd->dequant, eob, scan_order->scan, scan_order->iscan);
+        else
+          vp9_quantize_b(coeff, bs * bs, x->skip_block, p->zbin, p->round,
+                         p->quant, p->quant_shift, qcoeff, dqcoeff,
+                         pd->dequant, eob, scan_order->scan, scan_order->iscan);
+#else  // CONFIG_VP9_HIGHBITDEPTH
         vp9_quantize_b(coeff, bs * bs, x->skip_block, p->zbin, p->round,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_NEW_QUANT
       } else if (tx_size == TX_32X32) {
 #if CONFIG_NEW_QUANT
@@ -2475,11 +2501,24 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                  pd->dequant_val_nuq,
                                  qcoeff, dqcoeff, eob,
                                  scan_order->scan, band);
-#else
+#else  // CONFIG_NEW_QUANT
+#if CONFIG_VP9_HIGHBITDEPTH
+        if (use_hbd)
+          vp9_highbd_quantize_b_32x32(coeff, bs * bs, x->skip_block, p->zbin,
+                                      p->round, p->quant, p->quant_shift,
+                                      qcoeff, dqcoeff, pd->dequant, eob,
+                                      scan_order->scan, scan_order->iscan);
+        else
+          vp9_quantize_b_32x32(coeff, bs * bs, x->skip_block, p->zbin,
+                               p->round, p->quant, p->quant_shift,
+                               qcoeff, dqcoeff, pd->dequant, eob,
+                               scan_order->scan, scan_order->iscan);
+#else  // CONFIG_VP9_HIGHBITDEPTH
         vp9_quantize_b_32x32(coeff, bs * bs, x->skip_block, p->zbin,
                              p->round, p->quant, p->quant_shift, qcoeff,
                              dqcoeff, pd->dequant, eob,
                              scan_order->scan, scan_order->iscan);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_NEW_QUANT
       } else {
 #if CONFIG_TX64X64
@@ -2510,8 +2549,17 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       }
     }
 
-    if (!x->skip_encode && *eob)
+    if (!x->skip_encode && *eob) {
+#if CONFIG_VP9_HIGHBITDEPTH
+      if (use_hbd)
+        vp9_highbd_tx_identity_add(dqcoeff, dst, dst_stride, 4 << tx_size,
+                                   shift, xd->bd);
+      else
+        vp9_tx_identity_add(dqcoeff, dst, dst_stride, 4 << tx_size, shift);
+#else
       vp9_tx_identity_add(dqcoeff, dst, dst_stride, 4 << tx_size, shift);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    }
 
     if (*eob)
       *(args->skip) = 0;
