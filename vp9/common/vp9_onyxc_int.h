@@ -358,6 +358,7 @@ static INLINE int calc_mi_size(int len) {
   return len + MI_BLOCK_SIZE;
 }
 
+#define MV_BORDER (16 << 3)  // Allow 16 pels in 1/8th pel units
 static INLINE void set_mi_row_col(MACROBLOCKD *xd, const TileInfo *const tile,
                                   int mi_row, int bh,
                                   int mi_col, int bw,
@@ -366,6 +367,11 @@ static INLINE void set_mi_row_col(MACROBLOCKD *xd, const TileInfo *const tile,
   xd->mb_to_bottom_edge = ((mi_rows - bh - mi_row) * MI_SIZE) * 8;
   xd->mb_to_left_edge   = -((mi_col * MI_SIZE) * 8);
   xd->mb_to_right_edge  = ((mi_cols - bw - mi_col) * MI_SIZE) * 8;
+
+  xd->min_mv.col = xd->mb_to_left_edge - MV_BORDER;
+  xd->min_mv.row = xd->mb_to_top_edge - MV_BORDER;
+  xd->max_mv.col = xd->mb_to_right_edge + MV_BORDER;
+  xd->max_mv.row = xd->mb_to_bottom_edge + MV_BORDER;
 
   // Are edges available for intra prediction?
   xd->up_available    = (mi_row != 0);

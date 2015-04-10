@@ -206,6 +206,9 @@ typedef struct macroblockd {
   int mb_to_top_edge;
   int mb_to_bottom_edge;
 
+  // Use MV32 to avoid overflow.
+  MV32 min_mv, max_mv;
+
   /* pointers to reference frames */
   RefBuffer *block_refs[2];
 

@@ -122,14 +122,9 @@ static const int idx_n_column_to_subblock[4][2] = {
   {3, 3}
 };
 
-// clamp_mv_ref
-#define MV_BORDER (16 << 3)  // Allow 16 pels in 1/8th pel units
-
 static INLINE void clamp_mv_ref(MV *mv, const MACROBLOCKD *xd) {
-  clamp_mv(mv, xd->mb_to_left_edge - MV_BORDER,
-               xd->mb_to_right_edge + MV_BORDER,
-               xd->mb_to_top_edge - MV_BORDER,
-               xd->mb_to_bottom_edge + MV_BORDER);
+  clamp_mv(mv, xd->min_mv.col, xd->max_mv.col, xd->min_mv.row, xd->max_mv.row);
+
 }
 
 // This function returns either the appropriate sub block or block's mv
