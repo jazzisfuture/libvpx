@@ -426,9 +426,12 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
         else
           mbmi->tx_skip[1] = 1;
         } else {
-          mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[0]);
-          mbmi->tx_skip[1] =
-            vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+          //mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[0]);
+         // mbmi->tx_skip[1] =
+           // vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+
+          mbmi->tx_skip[0] = vp9_read_bit(r);
+          mbmi->tx_skip[1] = vp9_read_bit(r);
         }
     } else {
       mbmi->tx_skip[0] = 0;

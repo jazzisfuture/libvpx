@@ -1008,9 +1008,12 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
           vp9_write(w, mbmi->tx_skip[1],
                     cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
       } else {
-        vp9_write(w, mbmi->tx_skip[0], cm->fc.y_tx_skip_prob[0]);
-        vp9_write(w, mbmi->tx_skip[1],
-                  cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+        //vp9_write(w, mbmi->tx_skip[0], cm->fc.y_tx_skip_prob[0]);
+        //vp9_write(w, mbmi->tx_skip[1],
+          //        cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+
+        vp9_write_bit(w, mbmi->tx_skip[0]);
+        vp9_write_bit(w, mbmi->tx_skip[1]);
       }
     }
   }

@@ -3696,6 +3696,15 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
                                 &sf->min_partition_size,
                                 &sf->max_partition_size);
       }
+
+#if 1
+    //cpi->sf.partition_search_type = FIXED_PARTITION;
+    //cpi->sf.always_this_block_size = BLOCK_4X4;
+    //cpi->sf.min_partition_size = BLOCK_16X16;
+    //cpi->sf.max_partition_size = BLOCK_16X16;
+    //cpi->sf.auto_min_max_partition_size = 1;
+#endif
+
       rd_pick_partition(cpi, tile, tp, mi_row, mi_col, BLOCK_64X64, &dummy_rdc,
 #if CONFIG_SUPERTX
                         &dummy_rate_nocoef,
@@ -4736,6 +4745,12 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     if (cm->interp_filter == SWITCHABLE)
       cm->interp_filter = get_interp_filter(filter_thrs, is_alt_ref);
 
+#if 1
+    //cpi->sf.partition_search_type = FIXED_PARTITION;
+    //cpi->sf.always_this_block_size = BLOCK_16X16;
+    //cpi->sf.min_partition_size = BLOCK_16X16;
+    //cpi->sf.max_partition_size = BLOCK_16X16;
+#endif
     encode_frame_internal(cpi);
 
     for (i = 0; i < REFERENCE_MODES; ++i)
@@ -4960,6 +4975,16 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
+#if 1
+  x->output = output_enabled;
+  xd->mi_row = mi_row;
+  xd->mi_col = mi_col;
+  if (output_enabled && 0) {
+    if (bsize > BLOCK_16X16)
+      printf("\n marker %d \n", bsize - BLOCK_16X16);
+  }
+#endif
+
   x->skip_recode = !x->select_tx_size && mbmi->sb_type >= BLOCK_8X8 &&
                    cpi->oxcf.aq_mode != COMPLEXITY_AQ &&
                    cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ &&
@@ -4988,6 +5013,47 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     mbmi->skip = 1;
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
+
+#if 0
+    int use_hbd = xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH;
+
+    if (x->output && use_hbd) {
+      FILE *fp;
+
+      fp = fopen("./debug/md_enc_1.txt", "a");
+      fprintf(fp, "mi %3d_%3d, mode %3d_%3d, tx_skip %3d_%3d \n",
+              mi_row, mi_col, mbmi->mode, mbmi->uv_mode,
+              mbmi->tx_skip[0], mbmi->tx_skip[1]);
+      fclose(fp);
+      //scanf("%d", &r);
+    }
+
+    if (x->output && !use_hbd) {
+      FILE *fp;
+
+      fp = fopen("./debug/md_enc_1.txt", "a");
+      fprintf(fp, "mi %3d_%3d, mode %3d_%3d, tx_skip %3d_%3d \n",
+              mi_row, mi_col, mbmi->mode, mbmi->uv_mode,
+              mbmi->tx_skip[0], mbmi->tx_skip[1]);
+      fclose(fp);
+      //scanf("%d", &r);
+    }
+
+    if (x->output && 0) {
+      FILE *fp;
+      int r, c;
+      int rows = 4 << b_height_log2_lookup[bsize];
+      int cols = 4 << b_width_log2_lookup[bsize];
+
+      fp = fopen("./debug/data_enc_1.txt", "a");
+      fprintf(fp, "mi %3d_%3d, mode %3d_%3d, tx_skip %3d_%3d \n",
+              mi_row, mi_col, mbmi->mode, mbmi->uv_mode,
+              mbmi->tx_skip[0], mbmi->tx_skip[1]);
+      fclose(fp);
+      //scanf("%d", &r);
+    }
+#endif
+
     if (output_enabled)
       sum_intra_stats(&cm->counts,
 #if CONFIG_FILTERINTRA
