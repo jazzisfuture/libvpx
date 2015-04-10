@@ -1,14 +1,3 @@
-;
-;  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
-;
-;  Use of this source code is governed by a BSD-style license
-;  that can be found in the LICENSE file in the root of the source
-;  tree. An additional intellectual property rights grant can be found
-;  in the file PATENTS.  All contributing project authors may
-;  be found in the AUTHORS file in the root of the source tree.
-;
-
-
 %include "vpx_ports/x86_abi_support.asm"
 
 %macro VERTx4 1
@@ -52,23 +41,108 @@
 .loop:
     movd        xmm0, [rsi]                 ;A
     movd        xmm1, [rsi + rdx]           ;B
+    punpcklbw   xmm0, xmm1                  ;A B
+    pmaddubsw   xmm0, k0k1
+
     movd        xmm2, [rsi + rdx * 2]       ;C
     movd        xmm3, [rax + rdx * 2]       ;D
+    punpcklbw   xmm1, xmm2                  ;next A, B
+    punpcklbw   xmm2, xmm3                  ;C D
+    
+    pmaddubsw   xmm1, k0k1
+    pmaddubsw   xmm2, k2k3
+
+
     movd        xmm4, [rsi + rdx * 4]       ;E
     movd        xmm5, [rax + rdx * 4]       ;F
-
-    punpcklbw   xmm0, xmm1                  ;A B
-    punpcklbw   xmm2, xmm3                  ;C D
+    punpcklbw   xmm3, xmm4                  ;next C, D
     punpcklbw   xmm4, xmm5                  ;E F
+    pmaddubsw   xmm3, k2k3
+    pmaddubsw   xmm4, k4k5
+    
+    movd        xmm6, [rsi + rbx]           ;G
+    movd        xmm7, [rax + rbx]           ;H  
+    punpcklbw   xmm5, xmm6                  ;next E F  
+    punpcklbw   xmm6, xmm7                  ;G H  
+    pmaddubsw   xmm6, k6k7   
+    pmaddubsw   xmm5, k4k5 
+     
+    movdqa      tmp, xmm2
+    pmaxsw      xmm2, xmm4
+    pminsw      xmm4, tmp
+    paddsw      xmm0, xmm6
+    
+    movd        xmm6, [rsi + rdx * 8]           ;next H
+    punpcklbw   xmm7, xmm6                    ;next G H  
+    pmaddubsw   xmm7, k6k7   
+   
+    paddsw      xmm0, xmm4
+    paddsw      xmm0, xmm2
 
+    movdqa      xmm4, xmm3
+    pmaxsw      xmm3, xmm5
+    pminsw      xmm5, xmm4
+    paddsw      xmm1, xmm7
+
+    paddsw      xmm0, krd
+    psraw       xmm0, 7
+    packuswb    xmm0, xmm0
+
+    paddsw      xmm1, xmm5
+    paddsw      xmm1, xmm3
+
+    paddsw      xmm1, krd
+    psraw       xmm1, 7
+    packuswb    xmm1, xmm1
+
+    lea         rsi,  [rsi + rdx*2]
+    lea         rax,  [rax + rdx*2]
+%if %1
+    movd        xmm2, [rdi]
+    pavgb       xmm0, xmm2
+%endif
+    movd        [rdi], xmm0
+   
+%if ABI_IS_32BIT
+    add         rdi, DWORD PTR arg(3)       ;out_pitch
+%else
+    add         rdi, r8
+%endif
+
+%if %1    
+    movd        xmm3, [rdi]
+    pavgb       xmm1, xmm3
+%endif 
+    movd        [rdi], xmm1
+
+%if ABI_IS_32BIT
+    add         rdi, DWORD PTR arg(3)       ;out_pitch
+%else
+    add         rdi, r8
+%endif
+    sub         rcx , 2
+    cmp         rcx , 1
+    jg         .loop
+
+    cmp         rcx,  0
+    je          .end      
+
+    movd        xmm0, [rsi]                 ;A
+    movd        xmm1, [rsi + rdx]           ;B
+    punpcklbw   xmm0, xmm1                  ;A B
     movd        xmm6, [rsi + rbx]           ;G
     movd        xmm7, [rax + rbx]           ;H
-
-    pmaddubsw   xmm0, k0k1
-    pmaddubsw   xmm2, k2k3
     punpcklbw   xmm6, xmm7                  ;G H
-    pmaddubsw   xmm4, k4k5
+    movd        xmm2, [rsi + rdx * 2]       ;C
+    pmaddubsw   xmm0, k0k1
     pmaddubsw   xmm6, k6k7
+    movd        xmm3, [rax + rdx * 2]       ;D
+    punpcklbw   xmm2, xmm3                  ;C D
+    movd        xmm4, [rsi + rdx * 4]       ;E
+    pmaddubsw   xmm2, k2k3  
+    movd        xmm5, [rax + rdx * 4]       ;F
+    punpcklbw   xmm4, xmm5                  ;E F
+    pmaddubsw   xmm4, k4k5
 
     movdqa      xmm1, xmm2
     paddsw      xmm0, xmm6
@@ -88,14 +162,7 @@
     pavgb       xmm0, xmm1
 %endif
     movd        [rdi], xmm0
-
-%if ABI_IS_32BIT
-    add         rdi, DWORD PTR arg(3)       ;out_pitch
-%else
-    add         rdi, r8
-%endif
-    dec         rcx
-    jnz         .loop
+.end
 %endm
 
 %macro VERTx8 1
@@ -139,24 +206,110 @@
 .loop:
     movq        xmm0, [rsi]                 ;A
     movq        xmm1, [rsi + rdx]           ;B
-    movq        xmm2, [rsi + rdx * 2]       ;C
-    movq        xmm3, [rax + rdx * 2]       ;D
-    movq        xmm4, [rsi + rdx * 4]       ;E
-    movq        xmm5, [rax + rdx * 4]       ;F
-
     punpcklbw   xmm0, xmm1                  ;A B
-    punpcklbw   xmm2, xmm3                  ;C D
-    punpcklbw   xmm4, xmm5                  ;E F
-
-    movq        xmm6, [rsi + rbx]           ;G
-    movq        xmm7, [rax + rbx]           ;H
-
+    movq        xmm2, [rsi + rdx * 2]       ;C 
     pmaddubsw   xmm0, k0k1
+    
+    movdqa      xmm6, xmm2
+    movq        xmm3, [rax + rdx * 2]       ;D
+    punpcklbw   xmm2, xmm3                  ;C D
     pmaddubsw   xmm2, k2k3
-    punpcklbw   xmm6, xmm7                  ;G H
+   
+    movq        xmm4, [rsi + rdx * 4]       ;E
+    movdqa      xmm7, xmm4
+    movq        xmm5, [rax + rdx * 4]       ;F
+    punpcklbw   xmm4, xmm5                  ;E F
     pmaddubsw   xmm4, k4k5
+    
+    punpcklbw   xmm1, xmm6                  ;A B next iter
+    
+    movq        xmm6, [rsi + rbx]           ;G
+    punpcklbw   xmm5, xmm6                  ;E F next iter
+    punpcklbw   xmm3, xmm7                  ;C D next iter
+    pmaddubsw   xmm5, k4k5
+    movq        xmm7, [rax + rbx]           ;H  
+    punpcklbw   xmm6, xmm7                  ;G H
     pmaddubsw   xmm6, k6k7
+    movdqa      tmp, xmm2
+    
+    pmaddubsw   xmm3, k2k3
+    pmaddubsw   xmm1, k0k1 
+    pmaxsw      xmm2, xmm4    
+    paddsw      xmm0, xmm6 
+   
+    movq        xmm6, [rsi + rdx * 8]       ;H next iter
+    punpcklbw   xmm7, xmm6  
+    pmaddubsw   xmm7, k6k7
 
+    pminsw      xmm4, tmp
+    paddsw      xmm0, xmm4
+    movdqa      xmm4, xmm3
+    paddsw      xmm0, xmm2   
+    pminsw      xmm3, xmm5
+   
+    paddsw      xmm0, krd
+    pmaxsw      xmm5, xmm4
+    psraw       xmm0, 7
+    paddsw      xmm1, xmm7
+    packuswb    xmm0, xmm0
+    
+    paddsw      xmm1, xmm3
+    paddsw      xmm1, xmm5
+    lea         rsi,  [rsi + rdx*2]
+    paddsw      xmm1, krd
+    psraw       xmm1, 7
+    lea         rax,  [rax + rdx*2]
+    packuswb    xmm1, xmm1
+    
+%if %1
+    movq        xmm2, [rdi]
+    pavgb       xmm0, xmm2
+%endif
+    movq        [rdi], xmm0
+
+
+%if ABI_IS_32BIT
+    add         rdi, DWORD PTR arg(3)       ;out_pitch       
+%else
+    add         rdi, r8
+%endif
+
+%if %1
+    movq        xmm3, [rdi]   
+    pavgb       xmm1, xmm3
+%endif
+    movq        [rdi], xmm1
+
+%if ABI_IS_32BIT
+    add         rdi, DWORD PTR arg(3)       ;out_pitch 
+%else
+    add         rdi, r8
+%endif
+
+    sub         rcx , 2
+    cmp         rcx , 1
+    jg         .loop
+
+    cmp         rcx,  0
+    je          .end      
+    movq        xmm0, [rsi]                 ;A
+    movq        xmm1, [rsi + rdx]           ;B
+    movq        xmm6, [rsi + rbx]           ;G
+    punpcklbw   xmm0, xmm1                  ;A B
+    movq        xmm7, [rax + rbx]           ;H
+    pmaddubsw   xmm0, k0k1
+    movq        xmm2, [rsi + rdx * 2]       ;C
+    punpcklbw   xmm6, xmm7                  ;G H
+    movq        xmm3, [rax + rdx * 2]       ;D
+    pmaddubsw   xmm6, k6k7
+    movq        xmm4, [rsi + rdx * 4]       ;E
+    punpcklbw   xmm2, xmm3                  ;C D
+    movq        xmm5, [rax + rdx * 4]       ;F 
+    punpcklbw   xmm4, xmm5                  ;E F
+  
+    pmaddubsw   xmm2, k2k3 
+    pmaddubsw   xmm4, k4k5
+    
     paddsw      xmm0, xmm6
     movdqa      xmm1, xmm2
     pmaxsw      xmm2, xmm4
@@ -175,14 +328,7 @@
     pavgb       xmm0, xmm1
 %endif
     movq        [rdi], xmm0
-
-%if ABI_IS_32BIT
-    add         rdi, DWORD PTR arg(3)       ;out_pitch
-%else
-    add         rdi, r8
-%endif
-    dec         rcx
-    jnz         .loop
+.end
 %endm
 
 
@@ -223,7 +369,6 @@
 
     lea         rbx, [rdx + rdx*4]
     add         rbx, rdx                    ;pitch * 6
-
 .loop:
     movq        xmm0, [rsi]                 ;A
     movq        xmm1, [rsi + rdx]           ;B
@@ -233,73 +378,69 @@
     movq        xmm5, [rax + rdx * 4]       ;F
 
     punpcklbw   xmm0, xmm1                  ;A B
-    punpcklbw   xmm2, xmm3                  ;C D
-    punpcklbw   xmm4, xmm5                  ;E F
-
     movq        xmm6, [rsi + rbx]           ;G
-    movq        xmm7, [rax + rbx]           ;H
-
-    pmaddubsw   xmm0, k0k1
-    pmaddubsw   xmm2, k2k3
-    punpcklbw   xmm6, xmm7                  ;G H
-    pmaddubsw   xmm4, k4k5
-    pmaddubsw   xmm6, k6k7
-
-    paddsw      xmm0, xmm6
-    movdqa      xmm1, xmm2
-    pmaxsw      xmm2, xmm4
-    pminsw      xmm4, xmm1
-    paddsw      xmm0, xmm4
-    paddsw      xmm0, xmm2
-
-    paddsw      xmm0, krd
-    psraw       xmm0, 7
-    packuswb    xmm0, xmm0
-%if %1
-    movq        xmm1, [rdi]
-    pavgb       xmm0, xmm1
-%endif
-    movq        [rdi], xmm0
-
-    movq        xmm0, [rsi + 8]             ;A
-    movq        xmm1, [rsi + rdx + 8]       ;B
-    movq        xmm2, [rsi + rdx * 2 + 8]   ;C
-    movq        xmm3, [rax + rdx * 2 + 8]   ;D
-    movq        xmm4, [rsi + rdx * 4 + 8]   ;E
-    movq        xmm5, [rax + rdx * 4 + 8]   ;F
-
-    punpcklbw   xmm0, xmm1                  ;A B
     punpcklbw   xmm2, xmm3                  ;C D
+    movq        xmm7, [rax + rbx]           ;H
     punpcklbw   xmm4, xmm5                  ;E F
 
-    movq        xmm6, [rsi + rbx + 8]       ;G
-    movq        xmm7, [rax + rbx + 8]       ;H
-    punpcklbw   xmm6, xmm7                  ;G H
-
+    
     pmaddubsw   xmm0, k0k1
+    movq        xmm3, [rsi + 8]             ;A
     pmaddubsw   xmm2, k2k3
+    punpcklbw   xmm6, xmm7                  ;G H
+    movq        xmm5, [rsi + rdx + 8]       ;B
     pmaddubsw   xmm4, k4k5
+    punpcklbw   xmm3, xmm5                  ;A B
+    movq        xmm7, [rsi + rdx * 2 + 8]   ;C
     pmaddubsw   xmm6, k6k7
-
-    paddsw      xmm0, xmm6
+   
     movdqa      xmm1, xmm2
+    movq        xmm5, [rax + rdx * 2 + 8]   ;D
     pmaxsw      xmm2, xmm4
-    pminsw      xmm4, xmm1
+    punpcklbw   xmm7, xmm5                  ;C D
+    pminsw      xmm4, xmm1 
+    paddsw      xmm0, xmm6
+    pmaddubsw   xmm3, k0k1
+    movq        xmm1, [rsi + rdx * 4 + 8]   ;E
     paddsw      xmm0, xmm4
+    pmaddubsw   xmm7, k2k3
+    movq        xmm6, [rax + rdx * 4 + 8]   ;F
+    punpcklbw   xmm1, xmm6                  ;E F
     paddsw      xmm0, xmm2
-
+    
     paddsw      xmm0, krd
+    movq        xmm2, [rsi + rbx + 8]       ;G 
+    pmaddubsw   xmm1, k4k5
+    movq        xmm5, [rax + rbx + 8]       ;H  
     psraw       xmm0, 7
+    punpcklbw   xmm2, xmm5                  ;G H  
     packuswb    xmm0, xmm0
+    pmaddubsw   xmm2, k6k7
+%if %1
+    movq        xmm4, [rdi]
+    pavgb       xmm0, xmm4
+%endif
+    movq        [rdi], xmm0 
+
+    movdqa      xmm6, xmm7
+    pmaxsw      xmm7, xmm1
+    pminsw      xmm1, xmm6
+    paddsw      xmm3, xmm2
+    paddsw      xmm3, xmm1
+    paddsw      xmm3, xmm7
+
+    paddsw      xmm3, krd
+    psraw       xmm3, 7
+    packuswb    xmm3, xmm3
 
     add         rsi,  rdx
     add         rax,  rdx
 %if %1
     movq    xmm1, [rdi+8]
-    pavgb   xmm0, xmm1
+    pavgb   xmm3, xmm1
 %endif
 
-    movq        [rdi+8], xmm0
+    movq        [rdi+8], xmm3
 
 %if ABI_IS_32BIT
     add         rdi, DWORD PTR arg(3)       ;out_pitch
@@ -331,16 +472,17 @@ sym(vp9_filter_block1d4_v8_ssse3):
     ; end prolog
 
     ALIGN_STACK 16, rax
-    sub         rsp, 16*5
+    sub         rsp, 16*6
     %define k0k1 [rsp + 16*0]
     %define k2k3 [rsp + 16*1]
     %define k4k5 [rsp + 16*2]
     %define k6k7 [rsp + 16*3]
-    %define krd [rsp + 16*4]
+    %define tmp [rsp + 16*4]
+    %define krd [rsp + 16*5]
 
     VERTx4 0
 
-    add rsp, 16*5
+    add rsp, 16*6
     pop rsp
     pop rbx
     ; begin epilog
@@ -372,16 +514,17 @@ sym(vp9_filter_block1d8_v8_ssse3):
     ; end prolog
 
     ALIGN_STACK 16, rax
-    sub         rsp, 16*5
+    sub         rsp, 16*6
     %define k0k1 [rsp + 16*0]
     %define k2k3 [rsp + 16*1]
     %define k4k5 [rsp + 16*2]
     %define k6k7 [rsp + 16*3]
-    %define krd [rsp + 16*4]
+    %define tmp [rsp + 16*4]
+    %define krd [rsp + 16*5]
 
     VERTx8 0
 
-    add rsp, 16*5
+    add rsp, 16*6
     pop rsp
     pop rbx
     ; begin epilog
@@ -448,16 +591,17 @@ sym(vp9_filter_block1d4_v8_avg_ssse3):
     ; end prolog
 
     ALIGN_STACK 16, rax
-    sub         rsp, 16*5
+    sub         rsp, 16*6
     %define k0k1 [rsp + 16*0]
     %define k2k3 [rsp + 16*1]
     %define k4k5 [rsp + 16*2]
     %define k6k7 [rsp + 16*3]
-    %define krd [rsp + 16*4]
+    %define tmp [rsp + 16*4]
+    %define krd [rsp + 16*5]
 
     VERTx4 1
 
-    add rsp, 16*5
+    add rsp, 16*6
     pop rsp
     pop rbx
     ; begin epilog
@@ -480,16 +624,17 @@ sym(vp9_filter_block1d8_v8_avg_ssse3):
     ; end prolog
 
     ALIGN_STACK 16, rax
-    sub         rsp, 16*5
+    sub         rsp, 16*6
     %define k0k1 [rsp + 16*0]
     %define k2k3 [rsp + 16*1]
     %define k4k5 [rsp + 16*2]
     %define k6k7 [rsp + 16*3]
-    %define krd [rsp + 16*4]
+    %define tmp [rsp + 16*4]
+    %define krd [rsp + 16*5]
 
     VERTx8 1
 
-    add rsp, 16*5
+    add rsp, 16*6
     pop rsp
     pop rbx
     ; begin epilog
@@ -535,26 +680,31 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %macro HORIZx4_ROW 2
     movdqa      %2,   %1
-    pshufb      %1,   [GLOBAL(shuf_t0t1)]
-    pshufb      %2,   [GLOBAL(shuf_t2t3)]
-    pmaddubsw   %1,   k0k1k4k5
-    pmaddubsw   %2,   k2k3k6k7
+    punpcklbw   %1,   %1
+    punpckhbw   %2,   %2
+    
+    movdqa      xmm3, %2
+    palignr       %2, %1,  1
+    palignr     xmm3, %1,  5
+    
+    pmaddubsw     %2, k0k1k4k5
+    pmaddubsw   xmm3, k2k3k6k7
 
-    movdqa      xmm4, %1
-    movdqa      xmm5, %2
-    psrldq      %1,   8
+    movdqa      xmm4, %2
+    movdqa      xmm5, xmm3
     psrldq      %2,   8
+    psrldq      xmm3, 8
     movdqa      xmm6, xmm5
 
-    paddsw      xmm4, %2
-    pmaxsw      xmm5, %1
-    pminsw      %1, xmm6
-    paddsw      %1, xmm4
-    paddsw      %1, xmm5
+    paddsw      xmm4, xmm3
+    pmaxsw      xmm5, %2
+    pminsw      %2, xmm6
+    paddsw      %2, xmm4
+    paddsw      %2, xmm5
 
-    paddsw      %1,   krd
-    psraw       %1,   7
-    packuswb    %1,   %1
+    paddsw      %2,   krd
+    psraw       %2,   7
+    packuswb    %2,   %2
 %endm
 
 %macro HORIZx4 1
@@ -584,21 +734,71 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     ;Do two rows once
     movq        xmm0,   [rsi - 3]           ;load src
     movq        xmm1,   [rsi + 5]
+    punpcklqdq  xmm0,   xmm1
+    movdqa      xmm1,   xmm0
     movq        xmm2,   [rsi + rax - 3]
     movq        xmm3,   [rsi + rax + 5]
-    punpcklqdq  xmm0,   xmm1
     punpcklqdq  xmm2,   xmm3
+    movdqa      xmm3,   xmm2 
+    
+    punpcklbw   xmm0,   xmm0
+    punpckhbw   xmm1,   xmm1
+    
+    punpcklbw   xmm2,   xmm2
+    punpckhbw   xmm3,   xmm3
 
-    HORIZx4_ROW xmm0,   xmm1
-    HORIZx4_ROW xmm2,   xmm3
+    movdqa      xmm4,   xmm1
+    palignr     xmm4,   xmm0,  1
+    pmaddubsw   xmm4,   k0k1k4k5
+    palignr     xmm1,   xmm0,  5
+    pmaddubsw   xmm1,   k2k3k6k7
+    movdqa      xmm7,   xmm3
+    palignr     xmm7,   xmm2,  1
+    pmaddubsw   xmm7,   k0k1k4k5 
+    palignr     xmm3,   xmm2,  5
+    pmaddubsw   xmm3,   k2k3k6k7
+
+    movdqa      xmm0,   xmm4    
+    movdqa      xmm5,   xmm1
+    movdqa      xmm2,   xmm7
+    
+    psrldq      xmm4,   8
+    psrldq      xmm1,   8
+    movdqa      xmm6, xmm5
+
+    paddsw      xmm0, xmm1
+    movdqa      xmm1, xmm3
+    psrldq      xmm7,   8
+    psrldq      xmm3,   8
+
+    paddsw      xmm2, xmm3
+    movdqa      xmm3, xmm1
+
+    pmaxsw      xmm5, xmm4
+    pminsw      xmm4, xmm6
+    paddsw      xmm4, xmm0
+    paddsw      xmm4, xmm5
+
+    pmaxsw      xmm1, xmm7
+    pminsw      xmm7, xmm3
+    paddsw      xmm7, xmm2
+    paddsw      xmm7, xmm1
+
+    paddsw      xmm4,   krd
+    psraw       xmm4,   7
+    packuswb    xmm4,   xmm4
+
+    paddsw      xmm7,   krd
+    psraw       xmm7,   7
+    packuswb    xmm7,   xmm7
 %if %1
-    movd        xmm1,   [rdi]
-    pavgb       xmm0,   xmm1
-    movd        xmm3,   [rdi + rdx]
-    pavgb       xmm2,   xmm3
+    movd        xmm0,   [rdi]
+    pavgb       xmm4,   xmm0
+    movd        xmm2,   [rdi + rdx]
+    pavgb       xmm7,   xmm2
 %endif
-    movd        [rdi],  xmm0
-    movd        [rdi +rdx],  xmm2
+    movd        [rdi],  xmm4
+    movd        [rdi +rdx],  xmm7
 
     lea         rsi,    [rsi + rax]
     prefetcht0  [rsi + 4 * rax - 3]
@@ -620,33 +820,37 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
 
     HORIZx4_ROW xmm0, xmm1
 %if %1
-    movd        xmm1,   [rdi]
-    pavgb       xmm0,   xmm1
+    movd        xmm0,   [rdi]
+    pavgb       xmm1,   xmm0
 %endif
-    movd        [rdi],  xmm0
+    movd        [rdi],  xmm1
 .done
 %endm
 
-%macro HORIZx8_ROW 4
+%macro HORIZx8_ROW 5
     movdqa      %2,   %1
-    movdqa      %3,   %1
-    movdqa      %4,   %1
-
-    pshufb      %1,   [GLOBAL(shuf_t0t1)]
-    pshufb      %2,   [GLOBAL(shuf_t2t3)]
-    pshufb      %3,   [GLOBAL(shuf_t4t5)]
-    pshufb      %4,   [GLOBAL(shuf_t6t7)]
-
-    pmaddubsw   %1,   k0k1
-    pmaddubsw   %2,   k2k3
-    pmaddubsw   %3,   k4k5
-    pmaddubsw   %4,   k6k7
-
-    paddsw      %1,   %4
+    punpcklbw   %1,   %1
+    punpckhbw   %2,   %2
+    
+    movdqa      %3,   %2
     movdqa      %4,   %2
-    pmaxsw      %2,   %3
+    movdqa      %5,   %2
+
+    palignr     %2,   %1,  1
+    palignr     %3,   %1,  5
+    palignr     %4,   %1,  9
+    palignr     %5,   %1,  13
+    
+    pmaddubsw   %2,   k0k1
+    pmaddubsw   %3,   k2k3
+    pmaddubsw   %4,   k4k5
+    pmaddubsw   %5,   k6k7
+
+    paddsw      %2,   %5
+    movdqa      %1,   %3
     pminsw      %3,   %4
-    paddsw      %1,   %3
+    pmaxsw      %1,   %4
+    paddsw      %2,   %3
     paddsw      %1,   %2
 
     paddsw      %1,   krd
@@ -691,18 +895,71 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     movq        xmm4,   [rsi + rax - 3]
     movq        xmm7,   [rsi + rax + 5]
     punpcklqdq  xmm0,   xmm3
+    
+    movdqa      xmm1,   xmm0
+    punpcklbw   xmm0,   xmm0
+    punpckhbw   xmm1,   xmm1
+    
+    movdqa      xmm5,   xmm1
+    palignr     xmm5,   xmm0,  13
+    pmaddubsw   xmm5,   k6k7
+    
+    movdqa      xmm2,   xmm1
+    movdqa      xmm3,   xmm1
+    palignr     xmm1,   xmm0,  1 
+    pmaddubsw   xmm1,   k0k1
+    
     punpcklqdq  xmm4,   xmm7
+    movdqa      xmm6,   xmm4
+    
+    punpcklbw   xmm4,   xmm4
+    
+    palignr     xmm2,   xmm0,  5
+        
+    punpckhbw   xmm6,   xmm6
+    palignr     xmm3,   xmm0,  9
+    
+    movdqa      xmm7,   xmm6
+    pmaddubsw   xmm2,   k2k3
+    pmaddubsw   xmm3,   k4k5
+    
+    palignr     xmm7,   xmm4,  13
+    paddsw      xmm1,   xmm5
+    movdqa      xmm5,   xmm6   
+    movdqa      xmm0,   xmm2
+    palignr     xmm5,   xmm4,  5
+    pminsw      xmm2,   xmm3
+    pmaddubsw   xmm7,   k6k7
+    pmaxsw      xmm3,   xmm0
+    paddsw      xmm1,   xmm2
+    movdqa      xmm0,   xmm6
+    palignr     xmm6,   xmm4,  1
+    pmaddubsw   xmm5,   k2k3
+    paddsw      xmm1,   xmm3
+    pmaddubsw   xmm6,   k0k1
+    palignr     xmm0,   xmm4,  9
+    paddsw      xmm1,   krd
+    pmaddubsw   xmm0,   k4k5
+    movdqa      xmm4,   xmm5 
+    psraw       xmm1,   7
+    pminsw      xmm5,   xmm0
+    paddsw      xmm6,   xmm7
+    packuswb    xmm1,   xmm1
+    paddsw      xmm6,   xmm5
+    pmaxsw      xmm0,   xmm4  
+    paddsw      xmm6,   xmm0
 
-    HORIZx8_ROW xmm0, xmm1, xmm2, xmm3
-    HORIZx8_ROW xmm4, xmm5, xmm6, xmm7
+    paddsw      xmm6,   krd
+    psraw       xmm6,   7
+    packuswb    xmm6,   xmm6
 %if %1
-    movq        xmm1,   [rdi]
+    movq        xmm0,   [rdi]
     movq        xmm2,   [rdi + rdx]
-    pavgb       xmm0,   xmm1
-    pavgb       xmm4,   xmm2
+    pavgb       xmm1,   xmm0
+    pavgb       xmm6,   xmm2
 %endif
-    movq        [rdi],  xmm0
-    movq        [rdi + rdx],  xmm4
+    movq        [rdi],  xmm1
+    movq        [rdi + rdx],  xmm6
 
     lea         rsi,    [rsi + rax]
     prefetcht0  [rsi + 4 * rax - 3]
@@ -721,7 +978,7 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     movq        xmm3,   [rsi + 5]
     punpcklqdq  xmm0,   xmm3
 
-    HORIZx8_ROW xmm0, xmm1, xmm2, xmm3
+    HORIZx8_ROW xmm0, xmm1, xmm2, xmm3, xmm4
 %if %1
     movq        xmm1,   [rdi]
     pavgb       xmm0,   xmm1
@@ -729,6 +986,7 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     movq        [rdi],  xmm0
 .done
 %endm
+
 
 %macro HORIZx16 1
     mov         rdx, arg(5)                 ;filter ptr
@@ -767,48 +1025,49 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     movq        xmm4,   [rsi + 5]
     movq        xmm6,   [rsi + 13]
     punpcklqdq  xmm0,   xmm4
-    punpcklqdq  xmm4,   xmm6
 
     movdqa      xmm7,   xmm0
-
-    punpcklbw   xmm7,   xmm7
     punpckhbw   xmm0,   xmm0
     movdqa      xmm1,   xmm0
-    movdqa      xmm2,   xmm0
+    punpcklqdq  xmm4,   xmm6 
     movdqa      xmm3,   xmm0
+    punpcklbw   xmm7,   xmm7
 
-    palignr     xmm0,   xmm7, 1
-    palignr     xmm1,   xmm7, 5
-    pmaddubsw   xmm0,   k0k1
-    palignr     xmm2,   xmm7, 9
-    pmaddubsw   xmm1,   k2k3
-    palignr     xmm3,   xmm7, 13
-
-    pmaddubsw   xmm2,   k4k5
+    palignr     xmm3,   xmm7, 13   
+    movdqa      xmm2,   xmm0
     pmaddubsw   xmm3,   k6k7
+    palignr     xmm0,   xmm7, 1
+    pmaddubsw   xmm0,   k0k1
+
+    palignr     xmm1,   xmm7, 5
+    pmaddubsw   xmm1,   k2k3
+    palignr     xmm2,   xmm7, 9
+    pmaddubsw   xmm2,   k4k5
+
     paddsw      xmm0,   xmm3
-
     movdqa      xmm3,   xmm4
-    punpcklbw   xmm3,   xmm3
+    
     punpckhbw   xmm4,   xmm4
-
     movdqa      xmm5,   xmm4
-    movdqa      xmm6,   xmm4
+    punpcklbw   xmm3,   xmm3
     movdqa      xmm7,   xmm4
-
-    palignr     xmm4,   xmm3, 1
     palignr     xmm5,   xmm3, 5
+    movdqa      xmm6,   xmm4
+   
+    palignr     xmm4,   xmm3, 1 
+    pmaddubsw   xmm4,   k0k1
+    pmaddubsw   xmm5,   k2k3
+
     palignr     xmm6,   xmm3, 9
+    pmaddubsw   xmm6,   k4k5
     palignr     xmm7,   xmm3, 13
+    pmaddubsw   xmm7,   k6k7
 
     movdqa      xmm3,   xmm1
-    pmaddubsw   xmm4,   k0k1
     pmaxsw      xmm1,   xmm2
-    pmaddubsw   xmm5,   k2k3
     pminsw      xmm2,   xmm3
-    pmaddubsw   xmm6,   k4k5
     paddsw      xmm0,   xmm2
-    pmaddubsw   xmm7,   k6k7
+
     paddsw      xmm0,   xmm1
 
     paddsw      xmm4,   xmm7
@@ -1056,6 +1315,7 @@ sym(vp9_filter_block1d16_h8_avg_ssse3):
     UNSHADOW_ARGS
     pop         rbp
     ret
+
 SECTION_RODATA
 align 16
 shuf_t0t1:
