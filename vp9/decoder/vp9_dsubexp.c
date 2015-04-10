@@ -46,9 +46,6 @@ static int inv_remap_prob(int v, int m) {
     222, 223, 224, 225, 226, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237,
     238, 239, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252
   };
-  // The clamp is not necessary for conforming VP9 stream, it is added to
-  // prevent out of bound access for bad input data
-  v = clamp(v, 0, 253);
   v = inv_map_table[v];
   m--;
   if ((m << 1) <= MAX_PROB) {
