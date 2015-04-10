@@ -130,6 +130,10 @@ struct macroblock {
   DECLARE_ALIGNED(16, double, kmeans_data_buffer[MAX_MB_PLANE * 64 * 64]);
   DECLARE_ALIGNED(16, int, kmeans_indices_buffer[64 * 64]);
 #endif  // CONFIG_PALETTE
+
+#if 1
+  int output;
+#endif
 };
 
 #ifdef __cplusplus
