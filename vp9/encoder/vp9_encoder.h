@@ -397,6 +397,7 @@ typedef struct VP9_COMP {
   double total;
   uint64_t total_sq_error;
   uint64_t total_samples;
+  double worst_psnr;
 
   double totalp_y;
   double totalp_u;
@@ -406,6 +407,7 @@ typedef struct VP9_COMP {
   uint64_t totalp_samples;
 
   double total_blockiness;
+  double worst_blockiness;
 
   int    bytes;
   double summed_quality;
@@ -413,27 +415,33 @@ typedef struct VP9_COMP {
   double summedp_quality;
   double summedp_weights;
   unsigned int tot_recode_hits;
-
+  double worst_ssim;
 
   double total_ssimg_y;
   double total_ssimg_u;
   double total_ssimg_v;
   double total_ssimg_all;
+  double worst_ssimg;
 
   double total_fastssim_y;
   double total_fastssim_u;
   double total_fastssim_v;
   double total_fastssim_all;
+  double worst_fastssim;
 
   double total_psnrhvs_y;
   double total_psnrhvs_u;
   double total_psnrhvs_v;
   double total_psnrhvs_all;
+  double worst_psnrhvs;
 
   int b_calculate_ssimg;
   int b_calculate_blockiness;
+
   int b_calculate_consistency;
+
   double total_inconsistency;
+  double worst_consistency;
   Ssimv *ssim_vars;
   Metrics metrics;
 #endif

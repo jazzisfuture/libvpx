@@ -1586,6 +1586,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   cpi->b_calculate_blockiness = 1;
   cpi->b_calculate_consistency = 1;
   cpi->total_inconsistency = 0;
+  cpi->worst_psnr = 100.0;
+  cpi->worst_ssim = 100.0;
 
   cpi->count = 0;
   cpi->bytes = 0;
@@ -1617,27 +1619,28 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
     cpi->total_ssimg_u = 0;
     cpi->total_ssimg_v = 0;
     cpi->total_ssimg_all = 0;
+    cpi->worst_ssimg = 100.0;
   }
   cpi->total_fastssim_y = 0;
   cpi->total_fastssim_u = 0;
   cpi->total_fastssim_v = 0;
   cpi->total_fastssim_all = 0;
+  cpi->worst_fastssim = 100.0;
 
   cpi->total_psnrhvs_y = 0;
   cpi->total_psnrhvs_u = 0;
   cpi->total_psnrhvs_v = 0;
   cpi->total_psnrhvs_all = 0;
+  cpi->worst_psnrhvs = 100.0;
 
   if (cpi->b_calculate_blockiness) {
     cpi->total_blockiness = 0;
-  }
-
-  if (cpi->b_calculate_blockiness) {
-    cpi->total_blockiness = 0;
+    cpi->worst_blockiness = 0.0;
   }
 
   if (cpi->b_calculate_consistency) {
     cpi->ssim_vars = vpx_malloc(sizeof(*cpi->ssim_vars)*720*480);
+    cpi->worst_consistency = 100.0;
   }
 
 #endif
@@ -1842,7 +1845,6 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
 #define SNPRINT2(H, T, V) \
   snprintf((H) + strlen(H), sizeof(H) - strlen(H), (T), (V))
 
-
 void vp9_remove_compressor(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   unsigned int i;
@@ -1881,18 +1883,24 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 
         snprintf(headings, sizeof(headings),
                  "Bitrate\tAVGPsnr\tGLBPsnr\tAVPsnrP\tGLPsnrP\t"
-                 "VPXSSIM\tVPSSIMP\tFASTSIM\tPSNRHVS");
+                 "VPXSSIM\tVPSSIMP\tFASTSIM\tPSNRHVS\t"
+                 "WstPsnr\tWstSsim\tWstFast\tWstHVS");
         snprintf(results, sizeof(results),
                  "%7.2f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t"
-                 "%7.3f\t%7.3f\t%7.3f\t%7.3f", dr,
-                 cpi->total / cpi->count, total_psnr,
+                 "%7.3f\t%7.3f\t%7.3f\t%7.3f"
+                 "%7.3f\t%7.3f\t%7.3f\t%7.3f",
+                 dr, cpi->total / cpi->count, total_psnr,
                  cpi->totalp / cpi->count, totalp_psnr,
                  total_ssim, totalp_ssim,
                  cpi->total_fastssim_all / cpi->count,
-                 cpi->total_psnrhvs_all / cpi->count);
+                 cpi->total_psnrhvs_all / cpi->count,
+                 cpi->worst_psnr, cpi->worst_ssim, cpi->worst_fastssim,
+                 cpi->worst_psnrhvs);
+
         if (cpi->b_calculate_blockiness) {
-          SNPRINT(headings, "\t  Block");
+          SNPRINT(headings, "\t  Block\tWstBlck");
           SNPRINT2(results, "\t%7.3f", cpi->total_blockiness / cpi->count);
+          SNPRINT2(results, "\t%7.3f", cpi->worst_blockiness);
         }
 
         if (cpi->b_calculate_consistency) {
@@ -1900,13 +1908,15 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
               vpx_sse_to_psnr((double)cpi->totalp_samples, peak,
                               (double)cpi->total_inconsistency);
 
-          SNPRINT(headings, "\tConsist");
+          SNPRINT(headings, "\tConsist\tWstCons");
           SNPRINT2(results, "\t%7.3f", consistency);
+          SNPRINT2(results, "\t%7.3f", cpi->worst_consistency);
         }
 
         if (cpi->b_calculate_ssimg) {
-          SNPRINT(headings, "\t  SSIMG");
+          SNPRINT(headings, "\t  SSIMG\tWtSSIMG");
           SNPRINT2(results, "\t%7.3f", cpi->total_ssimg_all / cpi->count);
+          SNPRINT2(results, "\t%7.3f", cpi->worst_ssimg);
         }
 
         fprintf(f, "%s\t    Time\n", headings);
@@ -4078,6 +4088,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 #if CONFIG_INTERNAL_STATS
 
   if (oxcf->pass != 1) {
+    double samples;
     cpi->bytes += (int)(*size);
 
     if (cm->show_frame) {
@@ -4101,6 +4112,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         cpi->total_v += psnr.psnr[3];
         cpi->total_sq_error += psnr.sse[0];
         cpi->total_samples += psnr.samples[0];
+
+        samples = psnr.samples[0];
+
+        cpi->worst_psnr = MIN(psnr.psnr[0], cpi->worst_psnr);
 
         {
           PSNR_STATS psnr2;
@@ -4148,6 +4163,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
           frame_ssim2 = vp9_calc_ssim(orig, recon, &weight);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+          cpi->worst_ssim= MIN(cpi->worst_ssim,frame_ssim2);
           cpi->summed_quality += frame_ssim2 * weight;
           cpi->summed_weights += weight;
 
@@ -4175,22 +4191,33 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 #endif
         }
       }
-      if (cpi->b_calculate_blockiness)
-        cpi->total_blockiness +=
-            vp9_get_blockiness(cpi->Source->y_buffer, cpi->Source->y_stride,
-                               cm->frame_to_show->y_buffer,
-                               cm->frame_to_show->y_stride,
-                               cpi->Source->y_width, cpi->Source->y_height);
+      if (cpi->b_calculate_blockiness) {
+        double frame_blockiness = vp9_get_blockiness(
+            cpi->Source->y_buffer, cpi->Source->y_stride,
+            cm->frame_to_show->y_buffer, cm->frame_to_show->y_stride,
+            cpi->Source->y_width, cpi->Source->y_height);
+        cpi->worst_blockiness = MAX(cpi->worst_blockiness, frame_blockiness);
+        cpi->total_blockiness += frame_blockiness;
+      }
 
-      if (cpi->b_calculate_consistency)
-        cpi->total_inconsistency += vp9_get_ssim_metrics(cpi->Source->y_buffer,
-                                                   cpi->Source->y_stride,
-                                                   cm->frame_to_show->y_buffer,
-                                                   cm->frame_to_show->y_stride,
-                                                   cpi->Source->y_width,
-                                                   cpi->Source->y_height,
-                                                   cpi->ssim_vars,
-                                                   &cpi->metrics, 1);
+      if (cpi->b_calculate_consistency) {
+        double this_inconsistency = vp9_get_ssim_metrics(
+            cpi->Source->y_buffer, cpi->Source->y_stride,
+            cm->frame_to_show->y_buffer, cm->frame_to_show->y_stride,
+            cpi->Source->y_width, cpi->Source->y_height, cpi->ssim_vars,
+            &cpi->metrics, 1);
+
+        const double peak = (double)((1 << cpi->oxcf.input_bit_depth) - 1);
+
+
+        double consistency = vpx_sse_to_psnr(samples, peak,
+                                             (double)cpi->total_inconsistency);
+
+        if (consistency > 0.0)
+          cpi->worst_consistency = MIN(cpi->worst_consistency,
+                                       consistency);
+        cpi->total_inconsistency += this_inconsistency;
+      }
 
       if (cpi->b_calculate_ssimg) {
         double y, u, v, frame_all;
@@ -4209,6 +4236,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         cpi->total_ssimg_u += u;
         cpi->total_ssimg_v += v;
         cpi->total_ssimg_all += frame_all;
+        cpi->worst_ssimg = MIN(cpi->worst_ssimg, frame_all);
       }
       {
         double y, u, v, frame_all;
@@ -4219,6 +4247,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         cpi->total_fastssim_u += u;
         cpi->total_fastssim_v += v;
         cpi->total_fastssim_all += frame_all;
+        cpi->worst_fastssim = MIN(cpi->worst_fastssim, frame_all);
       }
       {
         double y, u, v, frame_all;
@@ -4228,6 +4257,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         cpi->total_psnrhvs_u += u;
         cpi->total_psnrhvs_v += v;
         cpi->total_psnrhvs_all += frame_all;
+        cpi->worst_psnrhvs = MIN(cpi->worst_psnrhvs, frame_all);
       }
     }
   }
