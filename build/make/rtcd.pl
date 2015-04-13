@@ -378,6 +378,8 @@ if ($opts{arch} eq 'x86') {
     }
     if (/HAVE_MSA=yes/) {
       @ALL_ARCHS = filter("$opts{arch}", qw/msa/);
+      @REQUIRES = filter(keys %required ? keys %required : qw/msa/);
+      &require(@REQUIRES);
       last;
     }
   }
