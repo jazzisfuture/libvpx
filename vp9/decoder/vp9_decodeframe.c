@@ -1996,6 +1996,20 @@ void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
   const InterpKernel *kernel = vp9_get_interp_kernel(mi->mbmi.interp_filter);
   const BLOCK_SIZE sb_type = mi->mbmi.sb_type;
   const int is_compound = has_second_ref(&mi->mbmi);
+  BufferPool *const pool = pbi->common.buffer_pool;
+  RefCntBuffer *ref_buf[2];
+  struct scale_factors *sf[2];
+  int is_scaled[2];
+
+  ref_buf[0] = &pool->frame_bufs[xd->block_refs[0]->idx];
+  sf[0] = &xd->block_refs[0]->sf;
+  is_scaled[0] = vp9_is_scaled(sf[0]);
+
+  if (is_compound) {
+    ref_buf[1] = &pool->frame_bufs[xd->block_refs[1]->idx];
+    sf[1] = &xd->block_refs[1]->sf;
+    is_scaled[1] = vp9_is_scaled(sf[1]);
+  }
 
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
     const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize,
@@ -2010,13 +2024,7 @@ void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
     int ref;
 
     for (ref = 0; ref < 1 + is_compound; ++ref) {
-      const struct scale_factors *const sf = &xd->block_refs[ref]->sf;
       struct buf_2d *const pre_buf = &pd->pre[ref];
-      const int idx = xd->block_refs[ref]->idx;
-      BufferPool *const pool = pbi->common.buffer_pool;
-      RefCntBuffer *const ref_frame_buf = &pool->frame_bufs[idx];
-      const int is_scaled = vp9_is_scaled(sf);
-
       if (sb_type < BLOCK_8X8) {
         int i = 0, x, y;
         assert(bsize == BLOCK_8X8);
@@ -2025,16 +2033,16 @@ void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
             const MV mv = average_split_mvs(pd, mi, ref, i++);
             dec_build_inter_predictors(pbi, xd, plane, bw, bh,
                                        4 * x, 4 * y, 4, 4, mi_x, mi_y, kernel,
-                                       sf, pre_buf, dst_buf, &mv,
-                                       ref_frame_buf, is_scaled, ref);
+                                       sf[ref], pre_buf, dst_buf, &mv,
+                                       ref_buf[ref], is_scaled[ref], ref);
           }
         }
       } else {
         const MV mv = mi->mbmi.mv[ref].as_mv;
         dec_build_inter_predictors(pbi, xd, plane, bw, bh,
                                    0, 0, bw, bh, mi_x, mi_y, kernel,
-                                   sf, pre_buf, dst_buf, &mv, ref_frame_buf,
-                                   is_scaled, ref);
+                                   sf[ref], pre_buf, dst_buf, &mv, ref_buf[ref],
+                                   is_scaled[ref], ref);
       }
     }
   }
