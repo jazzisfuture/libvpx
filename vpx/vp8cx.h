@@ -331,6 +331,13 @@ enum vp8e_enc_control_id {
    */
   VP8E_SET_SCREEN_CONTENT_MODE,
 
+  /*!\brief Codec control function to allow dropping during the encoding.
+    *
+    * Supported in codecs: VP8
+    */
+  VP8E_SET_DROP_OVERSHOOT,
+
+
   /*!\brief Codec control function to set lossless encoding mode.
    *
    * VP9 can operate in lossless encoding mode, in which the bitstream
@@ -681,6 +688,8 @@ VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTRA_BITRATE_PCT, unsigned int)
 VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTER_BITRATE_PCT, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP8E_SET_SCREEN_CONTENT_MODE, unsigned int)
+
+VPX_CTRL_USE_TYPE(VP8E_SET_DROP_OVERSHOOT, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_GF_CBR_BOOST_PCT, unsigned int)
 
