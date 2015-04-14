@@ -688,7 +688,8 @@ int main(int argc, char **argv) {
     }
   }
   if (strncmp(encoder->name, "vp8", 3) == 0) {
-    vpx_codec_control(&codec, VP8E_SET_SCREEN_CONTENT_MODE, 0);
+    vpx_codec_control(&codec, VP8E_SET_SCREEN_CONTENT_MODE, 1);
+    vpx_codec_control(&codec, VP8E_SET_DROP_OVERSHOOT, 1);
   }
   vpx_codec_control(&codec, VP8E_SET_TOKEN_PARTITIONS, 1);
   // This controls the maximum target size of the key frame.
