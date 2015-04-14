@@ -1215,6 +1215,11 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
 {
     int Q = cpi->active_worst_quality;
 
+    if (cpi->force_maxqp == 1) {
+      cpi->active_worst_quality = cpi->worst_quality;
+      return cpi->worst_quality;
+    }
+
     /* Reset Zbin OQ value */
     cpi->mb.zbin_over_quant = 0;
 
@@ -1558,4 +1563,42 @@ int vp8_pick_frame_size(VP8_COMP *cpi)
         }
     }
     return 1;
+}
+
+// If this just encoded frame (mcomp/transform/quant but before pack_bitstream)
+// has large overshoot, and was not being encoded at the max QP, then
+// drop this frame and force next frame to be encoded at max QP. Condition this
+// on 1 pass CBR with screen content mode and frame dropper being off.
+// TODO(marpan): Should do this exit condition during the encode_frame
+// (i.e., halfway during the encoding of the frame) to save cycles.
+int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
+  if (cpi->pass == 0 &&
+      cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
+      cpi->oxcf.screen_content_mode &&
+      cpi->drop_frames_allowed == 0) {
+    // Note: the "projected_frame_size" from encode_frame() only gives estimate
+    // of mode/mv rate (in the non-rd mode): so below we only require that
+    // projected_frame_size is over the per-frame-bandwidth, but add additional
+    // condition with high threshold on prediction residual.
+    // Threshold for sum residual error of 16x16 block.
+    int thresh_pred_err_mb = 4000;
+    int pred_err_mb = cpi->mb.prediction_error / cpi->common.MBs;
+    if (cpi->force_maxqp == 0 &&
+        Q < cpi->worst_quality &&
+        cpi->projected_frame_size > cpi->av_per_frame_bandwidth &&
+        pred_err_mb > thresh_pred_err_mb) {
+      // Drop this frame: advance frame counters, and set force_maxqp flag.
+      cpi->common.current_video_frame++;
+      cpi->frames_since_key++;
+      cpi->temporal_pattern_counter++;
+      // Flag to indicate we will force next frame to be encoded at max QP.
+      cpi->force_maxqp = 1;
+      return 1;
+    } else {
+     cpi->force_maxqp = 0;
+     return 0;
+    }
+    return 0;
+  }
+  return 0;
 }
