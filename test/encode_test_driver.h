@@ -92,7 +92,8 @@ class Encoder {
  public:
   Encoder(vpx_codec_enc_cfg_t cfg, unsigned long deadline,
           const unsigned long init_flags, TwopassStatsStore *stats)
-      : cfg_(cfg), deadline_(deadline), init_flags_(init_flags), stats_(stats) {
+      : cfg_(cfg), deadline_(deadline), init_flags_(init_flags), stats_(stats),
+        default_threads_(true) {
     memset(&encoder_, 0, sizeof(encoder_));
   }
 
@@ -146,8 +147,16 @@ class Encoder {
     cfg_ = *cfg;
   }
 
+  unsigned int Threads() const {
+    return cfg_.g_threads;
+  }
+
   void set_deadline(unsigned long deadline) {
     deadline_ = deadline;
+  }
+
+  void set_default_threads(bool val) {
+    default_threads_ = val;
   }
 
  protected:
@@ -170,6 +179,7 @@ class Encoder {
   unsigned long        deadline_;
   unsigned long        init_flags_;
   TwopassStatsStore   *stats_;
+  bool                 default_threads_;
 };
 
 // Common test functionality for all Encoder tests.
@@ -183,7 +193,7 @@ class EncoderTest {
  protected:
   explicit EncoderTest(const CodecFactory *codec)
       : codec_(codec), abort_(false), init_flags_(0), frame_flags_(0),
-        last_pts_(0) {}
+        last_pts_(0), threads_set_(false) {}
 
   virtual ~EncoderTest() {}
 
@@ -249,6 +259,11 @@ class EncoderTest {
     return pkt;
   }
 
+  void SetThreads(int threads) {
+    cfg_.g_threads = threads;
+    threads_set_ = true;
+  }
+
   bool                 abort_;
   vpx_codec_enc_cfg_t  cfg_;
   vpx_codec_dec_cfg_t  dec_cfg_;
@@ -258,6 +273,7 @@ class EncoderTest {
   unsigned long        init_flags_;
   unsigned long        frame_flags_;
   vpx_codec_pts_t      last_pts_;
+  bool                 threads_set_;
 };
 
 }  // namespace libvpx_test
