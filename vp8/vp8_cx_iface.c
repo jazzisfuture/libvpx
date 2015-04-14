@@ -38,6 +38,7 @@ struct vp8_extracfg
     unsigned int                cq_level;         /* constrained quality level */
     unsigned int                rc_max_intra_bitrate_pct;
     unsigned int                screen_content_mode;
+    unsigned int                rc_drop_overshoot;
 
 };
 
@@ -64,6 +65,7 @@ static struct vp8_extracfg default_extracfg = {
   10,                         /* cq_level */
   0,                          /* rc_max_intra_bitrate_pct */
   0,                          /* screen_content_mode */
+  0,                          /* rc_drop_overshoot */
 };
 
 struct vpx_codec_alg_priv
@@ -198,6 +200,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     RANGE_CHECK(vp8_cfg, arnr_type,       1, 3);
     RANGE_CHECK(vp8_cfg, cq_level, 0, 63);
     RANGE_CHECK_BOOL(vp8_cfg, screen_content_mode);
+    RANGE_CHECK_BOOL(vp8_cfg, rc_drop_overshoot);
     if (finalize && (cfg->rc_end_usage == VPX_CQ || cfg->rc_end_usage == VPX_Q))
         RANGE_CHECK(vp8_cfg, cq_level,
                     cfg->rc_min_quantizer, cfg->rc_max_quantizer);
@@ -406,6 +409,8 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
 
     oxcf->screen_content_mode    = vp8_cfg.screen_content_mode;
 
+    oxcf->rc_drop_overshoot      = vp8_cfg.rc_drop_overshoot;
+
     /*
         printf("Current VP8 Settings: \n");
         printf("target_bandwidth: %d\n", oxcf->target_bandwidth);
@@ -606,6 +611,15 @@ static vpx_codec_err_t set_screen_content_mode(vpx_codec_alg_priv_t *ctx,
   struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
   extra_cfg.screen_content_mode =
       CAST(VP8E_SET_SCREEN_CONTENT_MODE, args);
+  return update_extracfg(ctx, &extra_cfg);
+}
+
+static vpx_codec_err_t set_rc_drop_overshoot(vpx_codec_alg_priv_t *ctx,
+                                             va_list args)
+{
+  struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
+  extra_cfg.rc_drop_overshoot =
+      CAST(VP8E_SET_DROP_OVERSHOOT, args);
   return update_extracfg(ctx, &extra_cfg);
 }
 
@@ -1294,6 +1308,7 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] =
     {VP8E_SET_CQ_LEVEL,                 set_cq_level},
     {VP8E_SET_MAX_INTRA_BITRATE_PCT,    set_rc_max_intra_bitrate_pct},
     {VP8E_SET_SCREEN_CONTENT_MODE,      set_screen_content_mode},
+    {VP8E_SET_DROP_OVERSHOOT,           set_rc_drop_overshoot},
     { -1, NULL},
 };
 
