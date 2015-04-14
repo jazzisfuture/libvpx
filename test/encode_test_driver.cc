@@ -30,7 +30,8 @@ void Encoder::InitEncoder(VideoSource *video) {
     cfg_.rc_twopass_stats_in = stats_->buf();
 
     // Default to 1 thread.
-    cfg_.g_threads = 1;
+    if (default_threads_)
+      cfg_.g_threads = 1;
     res = vpx_codec_enc_init(&encoder_, CodecInterface(), &cfg_,
                              init_flags_);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
@@ -186,7 +187,9 @@ void EncoderTest::RunLoop(VideoSource *video) {
     ASSERT_TRUE(encoder != NULL);
 
     video->Begin();
+    encoder->set_default_threads(!threads_set_);
     encoder->InitEncoder(video);
+    ASSERT_EQ(cfg_.g_threads, encoder->Threads());
 
     unsigned long dec_init_flags = 0;  // NOLINT
     // Use fragment decoder if encoder outputs partitions.

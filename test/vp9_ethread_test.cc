@@ -113,14 +113,14 @@ TEST_P(VP9EncoderThreadTest, EncoderResultTest) {
   cfg_.rc_target_bitrate = 1000;
 
   // Encode using single thread.
-  cfg_.g_threads = 1;
+  SetThreads(1);
   init_flags_ = VPX_CODEC_USE_PSNR;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   single_thr_md5 = md5_;
   md5_.clear();
 
   // Encode using multiple threads.
-  cfg_.g_threads = 4;
+  SetThreads(4);
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   multi_thr_md5 = md5_;
   md5_.clear();
