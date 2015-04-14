@@ -21,6 +21,7 @@
 #include "vp9/common/vp9_filter.h"
 #include "vp9/common/vp9_mv.h"
 #include "vp9/common/vp9_scale.h"
+#include "vp9/common/vp9_prob.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -199,6 +200,8 @@ typedef struct macroblockd {
 
   int up_available;
   int left_available;
+
+  const vp9_prob (*partition_probs)[PARTITION_TYPES - 1];
 
   /* Distance of MB away from frame edges */
   int mb_to_left_edge;

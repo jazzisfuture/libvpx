@@ -264,6 +264,7 @@ static void set_block_thresholds(const VP9_COMMON *cm, RD_OPT *rd) {
 void vp9_initialize_rd_consts(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->td.mb;
+  MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
   RD_OPT *const rd = &cpi->rd;
   int i;
 
@@ -279,6 +280,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
                        cm->frame_type != KEY_FRAME) ? 0 : 1;
 
   set_block_thresholds(cm, rd);
+  set_partition_probs(cm, xd);
 
   if (!cpi->sf.use_nonrd_pick_mode || cm->frame_type == KEY_FRAME)
     fill_token_costs(x->token_costs, cm->fc->coef_probs);
@@ -286,7 +288,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
   if (cpi->sf.partition_search_type != VAR_BASED_PARTITION ||
       cm->frame_type == KEY_FRAME) {
     for (i = 0; i < PARTITION_CONTEXTS; ++i)
-      vp9_cost_tokens(cpi->partition_cost[i], get_partition_probs(cm, i),
+      vp9_cost_tokens(cpi->partition_cost[i], get_partition_probs(xd, i),
                       vp9_partition_tree);
   }
 
