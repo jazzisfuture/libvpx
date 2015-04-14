@@ -2010,6 +2010,8 @@ struct VP8_COMP* vp8_create_compressor(VP8_CONFIG *oxcf)
     cpi->source_alt_ref_active = 0;
     cpi->common.refresh_alt_ref_frame = 0;
 
+    cpi->force_maxqp = 0;
+
     cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
 #if CONFIG_INTERNAL_STATS
     cpi->b_calculate_ssimg = 0;
@@ -4183,7 +4185,7 @@ static void encode_frame_to_data_rate
     */
     if (cpi->cyclic_refresh_mode_enabled)
     {
-      if (cpi->current_layer==0)
+      if (cpi->current_layer == 0 && cpi->force_maxqp == 0)
         cyclic_background_refresh(cpi, Q, 0);
       else
         disable_segmentation(cpi);
@@ -4404,6 +4406,31 @@ static void encode_frame_to_data_rate
 #else
         /* transform / motion compensation build reconstruction frame */
         vp8_encode_frame(cpi);
+
+        // For screen content mode, and under the "rc_drop_overshoot_pct" flag:
+        // if this encoded frame has large overshoot (and is not already being
+        // encoded at the max QP), then drop this frame and force next frame to be
+        // encoded at max QP. For now also condition this on frame dropper being off.
+        // TODO (marpan): Should do this exit check during the encode_frame
+        // (i.e., during the encoding of the frame) to save cycles.
+        if (cpi->oxcf.screen_content_mode &&
+            cpi->drop_frames_allowed == 0 &&
+            Q < cpi->worst_quality &&
+            cpi->force_maxqp == 0 &&
+            cpi->oxcf.rc_drop_overshoot_pct > 0 &&
+            cpi->projected_frame_size > cpi->oxcf.rc_drop_overshoot_pct *
+                                    (cpi->av_per_frame_bandwidth >> 3) / 100) {
+          // Drop this frame: advance frame counters, set force_maxqp flag, and
+          // return.
+          cm->current_video_frame++;
+          cpi->frames_since_key++;
+          cpi->temporal_pattern_counter++;
+          // Flag to indicate we will force next frame to be encoded at max QP.
+          cpi->force_maxqp = 1;
+          return;
+        } else {
+          cpi->force_maxqp = 0;
+        }
 
         cpi->projected_frame_size -= vp8_estimate_entropy_savings(cpi);
         cpi->projected_frame_size = (cpi->projected_frame_size > 0) ? cpi->projected_frame_size : 0;

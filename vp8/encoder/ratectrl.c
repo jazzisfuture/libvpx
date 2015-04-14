@@ -1215,6 +1215,11 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
 {
     int Q = cpi->active_worst_quality;
 
+    if (cpi->force_maxqp == 1) {
+      cpi->active_worst_quality = cpi->worst_quality;
+      return cpi->worst_quality;
+    }
+
     /* Reset Zbin OQ value */
     cpi->mb.zbin_over_quant = 0;
 

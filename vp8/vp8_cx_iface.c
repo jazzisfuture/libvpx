@@ -38,6 +38,7 @@ struct vp8_extracfg
     unsigned int                cq_level;         /* constrained quality level */
     unsigned int                rc_max_intra_bitrate_pct;
     unsigned int                screen_content_mode;
+    unsigned int                rc_drop_overshoot_pct;
 
 };
 
@@ -64,6 +65,7 @@ static struct vp8_extracfg default_extracfg = {
   10,                         /* cq_level */
   0,                          /* rc_max_intra_bitrate_pct */
   0,                          /* screen_content_mode */
+  0,                          /* rc_drop_overshoot_pct */
 };
 
 struct vpx_codec_alg_priv
@@ -334,6 +336,7 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
 
     oxcf->target_bandwidth         = cfg.rc_target_bitrate;
     oxcf->rc_max_intra_bitrate_pct = vp8_cfg.rc_max_intra_bitrate_pct;
+    oxcf->rc_drop_overshoot_pct =    vp8_cfg.rc_drop_overshoot_pct;
 
     oxcf->best_allowed_q           = cfg.rc_min_quantizer;
     oxcf->worst_allowed_q          = cfg.rc_max_quantizer;
@@ -606,6 +609,15 @@ static vpx_codec_err_t set_screen_content_mode(vpx_codec_alg_priv_t *ctx,
   struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
   extra_cfg.screen_content_mode =
       CAST(VP8E_SET_SCREEN_CONTENT_MODE, args);
+  return update_extracfg(ctx, &extra_cfg);
+}
+
+static vpx_codec_err_t set_rc_drop_overshoot_pct(vpx_codec_alg_priv_t *ctx,
+                                                 va_list args)
+{
+  struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
+  extra_cfg.rc_drop_overshoot_pct =
+      CAST(VP8E_SET_DROP_OVERSHOOT_PCT, args);
   return update_extracfg(ctx, &extra_cfg);
 }
 
@@ -1294,6 +1306,7 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] =
     {VP8E_SET_CQ_LEVEL,                 set_cq_level},
     {VP8E_SET_MAX_INTRA_BITRATE_PCT,    set_rc_max_intra_bitrate_pct},
     {VP8E_SET_SCREEN_CONTENT_MODE,      set_screen_content_mode},
+    {VP8E_SET_DROP_OVERSHOOT_PCT,       set_rc_drop_overshoot_pct},
     { -1, NULL},
 };
 
