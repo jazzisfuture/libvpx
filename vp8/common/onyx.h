@@ -123,6 +123,7 @@ extern "C"
         int cpu_used;
         unsigned int rc_max_intra_bitrate_pct;
         unsigned int screen_content_mode;
+        unsigned int rc_drop_overshoot;
 
         /* mode ->
          *(0)=Realtime/Live Encoding. This mode is optimized for realtim
