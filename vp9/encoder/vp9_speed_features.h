@@ -34,7 +34,10 @@ enum {
 #if CONFIG_COMPOUND_MODES
 enum {
   INTER_ALL =
-      (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) | (1 << NEWMV) |
+#if !CONFIG_NEWMVREF
+      (1 << NEARESTMV) | (1 << NEARMV) |
+#endif  // !CONFIG_NEWMVREF
+      (1 << ZEROMV) | (1 << NEWMV) |
 #if CONFIG_NEWMVREF
       (1 << NEAR_FORNEWMV) |
 #endif  // CONFIG_NEWMVREF
@@ -110,18 +113,24 @@ enum {
 };
 #else
 enum {
-  INTER_ALL = (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) |
 #if CONFIG_NEWMVREF
-      (1 << NEWMV) | (1 << NEAR_FORNEWMV),
+  // TODO(zoeliu): To optimize the SF mode specification for NEWMVREF
+  INTER_ALL = (1 << ZEROMV) | (1 << NEWMV) | (1 << NEAR_FORNEWMV),
+  INTER_NEAREST = 0,
+  INTER_NEAREST_NEW = (1 << NEWMV),
+  INTER_NEAREST_ZERO = (1 << ZEROMV),
+  INTER_NEAREST_NEW_ZERO = (1 << ZEROMV) | (1 << NEWMV),
+  INTER_NEAREST_NEAR_NEW = (1 << NEWMV),
+  INTER_NEAREST_NEAR_ZERO = (1 << ZEROMV),
 #else
-      (1 << NEWMV),
-#endif  // CONFIG_NEWMVREF
+  INTER_ALL = (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) | (1 << NEWMV),
   INTER_NEAREST = (1 << NEARESTMV),
   INTER_NEAREST_NEW = (1 << NEARESTMV) | (1 << NEWMV),
   INTER_NEAREST_ZERO = (1 << NEARESTMV) | (1 << ZEROMV),
   INTER_NEAREST_NEW_ZERO = (1 << NEARESTMV) | (1 << ZEROMV) | (1 << NEWMV),
   INTER_NEAREST_NEAR_NEW = (1 << NEARESTMV) | (1 << NEARMV) | (1 << NEWMV),
   INTER_NEAREST_NEAR_ZERO = (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV),
+#endif  // CONFIG_NEWMVREF
 };
 #endif  // CONFIG_COMPOUND_MODES
 

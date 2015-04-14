@@ -425,7 +425,7 @@ void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
     else if (mbmi->mode == NEW_NEARESTMV || mbmi->mode == NEW_NEARMV)
 #endif  // CONFIG_NEWMVREF
       inc_compound_single_mv(0, mbmi->mv, ref_mv, &cm->counts.mv);
-#endif
+#endif  // CONFIG_COMPOUND_MODES
   }
 }
 

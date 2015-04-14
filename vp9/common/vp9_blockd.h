@@ -84,8 +84,10 @@ typedef enum {
 #if CONFIG_INTRABC
   NEWDV,           // New displacement vector within the same frame buffer
 #endif  // CONFIG_INTRABC
+#if !CONFIG_NEWMVREF
   NEARESTMV,
   NEARMV,
+#endif  // !CONFIG_NEWMVREF
   ZEROMV,
   NEWMV,
 #if CONFIG_NEWMVREF
@@ -126,7 +128,7 @@ typedef enum {
 
 static INLINE int is_inter_mode(PREDICTION_MODE mode) {
 #if CONFIG_NEWMVREF
-  return mode >= NEARESTMV && mode <= NEAR_FORNEWMV;
+  return mode >= ZEROMV && mode <= NEAR_FORNEWMV;
 #else
   return mode >= NEARESTMV && mode <= NEWMV;
 #endif  // CONFIG_NEWMVREF
@@ -180,12 +182,16 @@ static INLINE int is_intrabc_mode(PREDICTION_MODE mode) {
 #endif  // CONFIG_INTRABC
 
 #if CONFIG_NEWMVREF
-#define INTER_MODES (1 + NEAR_FORNEWMV - NEARESTMV)
+#define INTER_MODES (1 + NEAR_FORNEWMV - ZEROMV)
 #else
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
 #endif  // CONFIG_NEWMVREF
 
+#if CONFIG_NEWMVREF
+#define INTER_OFFSET(mode) ((mode) - ZEROMV)
+#else
 #define INTER_OFFSET(mode) ((mode) - NEARESTMV)
+#endif  // CONFIG_NEWMVREF
 
 #if CONFIG_COMPOUND_MODES
 

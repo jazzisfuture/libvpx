@@ -472,9 +472,9 @@ static void estimate_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 
 static const THR_MODES mode_idx[MAX_REF_FRAMES - 1][INTER_MODES] = {
 #if CONFIG_NEWMVREF
-  {THR_NEARESTMV, THR_NEARMV, THR_ZEROMV, THR_NEWMV, THR_NEAR_FORNEWMV},
-  {THR_NEARESTG, THR_NEARG, THR_ZEROG, THR_NEWG, THR_NEAR_FORNEWG},
-  {THR_NEARESTA, THR_NEARA, THR_ZEROA, THR_NEWA, THR_NEAR_FORNEWA},
+  {THR_ZEROMV, THR_NEWMV, THR_NEAR_FORNEWMV},
+  {THR_ZEROG, THR_NEWG, THR_NEAR_FORNEWG},
+  {THR_ZEROA, THR_NEWA, THR_NEAR_FORNEWA},
 #else
   {THR_NEARESTMV, THR_NEARMV, THR_ZEROMV, THR_NEWMV},
   {THR_NEARESTG, THR_NEARG, THR_ZEROG, THR_NEWG},
@@ -578,6 +578,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     PREDICTION_MODE this_mode;
+#if CONFIG_NEWMVREF
+    int_mv nearest_mv[MAX_REF_FRAMES];
+    int_mv near_mv[MAX_REF_FRAMES];
+#endif  /// CONFIG_NEWMVREF
     x->pred_mv_sad[ref_frame] = INT_MAX;
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
@@ -602,9 +606,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                              ref_frame, candidates,
                                              mi_row, mi_col);
 
+#if CONFIG_NEWMVREF
+      vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
+                            &nearest_mv[ref_frame],
+                            &near_mv[ref_frame]);
+#else
       vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
                             &frame_mv[NEARESTMV][ref_frame],
                             &frame_mv[NEARMV][ref_frame]);
+#endif  // CONFIG_NEWMVREF
 
       if (!vp9_is_scaled(sf) && bsize >= BLOCK_8X8)
         vp9_mv_pred(cpi, x, yv12_mb[ref_frame][0].buf, yv12->y_stride,
@@ -616,16 +626,25 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // Select prediction reference frames.
     xd->plane[0].pre[0] = yv12_mb[ref_frame][0];
 
+#if CONFIG_NEWMVREF
+    clamp_mv2(&nearest_mv[ref_frame].as_mv, xd);
+    clamp_mv2(&near_mv[ref_frame].as_mv, xd);
+#else
     clamp_mv2(&frame_mv[NEARESTMV][ref_frame].as_mv, xd);
     clamp_mv2(&frame_mv[NEARMV][ref_frame].as_mv, xd);
+#endif  // CONFIG_NEWMVREF
 
     mbmi->ref_frame[0] = ref_frame;
 
 #if CONFIG_COMPOUND_MODES
     for (this_mode = NEARESTMV; this_mode <= NEW_NEWMV; ++this_mode) {
 #else
+#if CONFIG_NEWMVREF
+    for (this_mode = ZEROMV; this_mode <= NEWMV; ++this_mode) {
+#else
     for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {
-#endif
+#endif  // CONFIG_NEWMVREF
+#endif  // CONFIG_COMPOUND_MODES
       int rate_mv = 0;
       int mode_rd_thresh;
 
@@ -634,9 +653,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           (this_mode == NEARMV || this_mode == ZEROMV ||
            this_mode == ZERO_ZEROMV))
 #else
+#if CONFIG_NEWMVREF
+      if (const_motion[ref_frame] && this_mode == ZEROMV)
+#else
       if (const_motion[ref_frame] &&
           (this_mode == NEARMV || this_mode == ZEROMV))
-#endif
+#endif  // CONFIG_NEWMVREF
+#endif  // CONFIG_COMPOUND_MODES
         continue;
 
       if (!(cpi->sf.inter_mode_mask[bsize] & (1 << this_mode)))
@@ -672,14 +695,16 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           continue;
       }
 
+#if !CONFIG_NEWMVREF
 #if CONFIG_COMPOUND_MODES
       if (this_mode != NEARESTMV && this_mode != NEAREST_NEARESTMV &&
 #else
       if (this_mode != NEARESTMV &&
-#endif
+#endif  // CONFIG_COMPOUND_MODES
           frame_mv[this_mode][ref_frame].as_int ==
               frame_mv[NEARESTMV][ref_frame].as_int)
         continue;
+#endif  // !CONFIG_NEWMVREF
 
       mbmi->mode = this_mode;
       mbmi->mv[0].as_int = frame_mv[this_mode][ref_frame].as_int;
@@ -687,12 +712,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       // Search for the best prediction filter type, when the resulting
       // motion vector is at sub-pixel accuracy level for luma component, i.e.,
       // the last three bits are all zeros.
+#if !CONFIG_NEWMVREF
       if (cpi->sf.reuse_inter_pred_sby) {
 #if CONFIG_COMPOUND_MODES
         if (this_mode == NEARESTMV || this_mode == NEAREST_NEARESTMV) {
 #else
         if (this_mode == NEARESTMV) {
-#endif
+#endif  // CONFIG_COMPOUND_MODES
           this_mode_pred = &tmp[3];
         } else {
           this_mode_pred = &tmp[get_pred_buffer(tmp, 3)];
@@ -700,6 +726,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           pd->dst.stride = bw;
         }
       }
+#endif  // !CONFIG_NEWMVREF
 
 #if CONFIG_COMPOUND_MODES
       if ((this_mode == NEWMV || this_mode == NEW_NEWMV ||
