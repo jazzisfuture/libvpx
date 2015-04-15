@@ -16,9 +16,11 @@
 # if _MSC_VER > 1310 && (defined(_M_X64) || defined(_M_IX86))
 #  include <intrin.h>
 #  define USE_MSC_INTRIN
-# endif
-# define snprintf _snprintf
-#endif
+# endif  // _MSC_VER > 1310 && (defined(_M_X64) || defined(_M_IX86))
+# if _MSC_VER < 1900  // VS2015 provides snprintf
+#  define snprintf _snprintf
+# endif  // _MSC_VER < 1900
+#endif  // _MSC_VER
 
 #ifdef __cplusplus
 extern "C" {
