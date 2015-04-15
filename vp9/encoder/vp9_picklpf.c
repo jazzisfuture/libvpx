@@ -60,14 +60,38 @@ static int try_filter_frame(const YV12_BUFFER_CONFIG *sd, VP9_COMP *const cpi,
 #define JOINT_FILTER_BILATERAL_SEARCH
 static int try_bilateral_frame(const YV12_BUFFER_CONFIG *sd,
                                VP9_COMP *const cpi,
-                               int filt_level,
                                int bilateral_level,
                                int partial_frame) {
   VP9_COMMON *const cm = &cpi->common;
   int filt_err;
+  vp9_loop_bilateral_frame(cm->frame_to_show, cm,
+                           bilateral_level, 1, partial_frame);
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (cm->use_highbitdepth) {
+    filt_err = vp9_highbd_get_y_sse(sd, cm->frame_to_show, cm->bit_depth);
+  } else {
+    filt_err = vp9_get_y_sse(sd, cm->frame_to_show);
+  }
+#else
+  filt_err = vp9_get_y_sse(sd, cm->frame_to_show);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  // Re-instate the unfiltered frame
+  vpx_yv12_copy_y(&cpi->last_frame_db, cm->frame_to_show);
+
+  return filt_err;
+}
+
+static int try_filter_bilateral_frame(const YV12_BUFFER_CONFIG *sd,
+                                      VP9_COMP *const cpi,
+                                      int filt_level,
+                                      int bilateral_level,
+                                      int partial_frame) {
+  VP9_COMMON *const cm = &cpi->common;
+  int filt_err;
 
   vp9_loop_filter_gen_frame(cm->frame_to_show, cm, &cpi->mb.e_mbd, filt_level,
-                            bilateral_level, 1, partial_frame);
+                            bilateral_level, 0, 1, partial_frame);
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
     filt_err = vp9_highbd_get_y_sse(sd, cm->frame_to_show, cm->bit_depth);
@@ -84,31 +108,38 @@ static int try_bilateral_frame(const YV12_BUFFER_CONFIG *sd,
   return filt_err;
 }
 
-// #define USE_RD_BILATERAL_SEARCH
+#define USE_RD_LOOP_POSTFILTER_SEARCH
 static int64_t search_bilateral_level(const YV12_BUFFER_CONFIG *sd,
                                       VP9_COMP *cpi,
                                       int filter_level, int partial_frame,
                                       int64_t *best_cost_ret) {
+  VP9_COMMON *const cm = &cpi->common;
   int i, bilateral_best, err;
   int64_t best_cost;
   int64_t cost[BILATERAL_LEVELS_KF];
   const int bilateral_level_bits = vp9_bilateral_level_bits(&cpi->common);
   const int bilateral_levels = 1 << bilateral_level_bits;
-#ifdef USE_RD_BILATERAL_SEARCH
+#ifdef USE_RD_LOOP_POSTFILTER_SEARCH
   MACROBLOCK *x = &cpi->mb;
 #endif
 
+  //  Make a copy of the unfiltered / processed recon buffer
+  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
+  vp9_loop_filter_frame(cm->frame_to_show, cm, &cpi->mb.e_mbd, filter_level,
+                        1, partial_frame);
+  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_db);
+
   bilateral_best = 0;
-  err = try_bilateral_frame(sd, cpi, filter_level, 0, partial_frame);
-#ifdef USE_RD_BILATERAL_SEARCH
+  err = try_bilateral_frame(sd, cpi, 0, partial_frame);
+#ifdef USE_RD_LOOP_POSTFILTER_SEARCH
   cost[0] = RDCOST(x->rdmult, x->rddiv, 0, err);
 #else
   cost[0] = err;
 #endif
   best_cost = cost[0];
   for (i = 1; i <= bilateral_levels; ++i) {
-    err = try_bilateral_frame(sd, cpi, filter_level, i, partial_frame);
-#ifdef USE_RD_BILATERAL_SEARCH
+    err = try_bilateral_frame(sd, cpi, i, partial_frame);
+#ifdef USE_RD_LOOP_POSTFILTER_SEARCH
     // Normally the rate is rate in bits * 256 and dist is sum sq err * 64
     // when RDCOST is used.  However below we just scale both in the correct
     // ratios appropriately but not exactly by these values.
@@ -123,9 +154,11 @@ static int64_t search_bilateral_level(const YV12_BUFFER_CONFIG *sd,
     }
   }
   if (best_cost_ret) *best_cost_ret = best_cost;
+  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
   return bilateral_best;
 }
 
+#ifdef JOINT_FILTER_BILATERAL_SEARCH
 static int search_filter_bilateral_level(const YV12_BUFFER_CONFIG *sd,
                                          VP9_COMP *cpi,
                                          int partial_frame,
@@ -148,9 +181,6 @@ static int search_filter_bilateral_level(const YV12_BUFFER_CONFIG *sd,
 
   // Set each entry to -1
   vpx_memset(ss_err, 0xFF, sizeof(ss_err));
-
-  //  Make a copy of the unfiltered / processed recon buffer
-  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
 
   bilateral = search_bilateral_level(sd, cpi, filt_mid,
                                      partial_frame, &best_err);
@@ -217,6 +247,57 @@ static int search_filter_bilateral_level(const YV12_BUFFER_CONFIG *sd,
   }
   *bilateral_level = bilateral_best;
   return filt_best;
+}
+#endif
+
+// Returns used (1) or not used (0)
+static int search_filter5tap(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
+                             int filter_level, int bilateral_level,
+                             int partial_frame) {
+  VP9_COMMON *const cm = &cpi->common;
+  int filt_err, filt_err5, used;
+#ifdef USE_RD_LOOP_POSTFILTER_SEARCH
+  MACROBLOCK *x = &cpi->mb;
+#endif
+  //  Make a copy of the unfiltered / processed recon buffer
+  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
+
+  vp9_loop_filter_gen_frame(cm->frame_to_show, cm, &cpi->mb.e_mbd, filter_level,
+                            bilateral_level, 0, 1, partial_frame);
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (cm->use_highbitdepth) {
+    filt_err = vp9_highbd_get_y_sse(sd, cm->frame_to_show, cm->bit_depth);
+  } else {
+    filt_err = vp9_get_y_sse(sd, cm->frame_to_show);
+  }
+#else
+  filt_err = vp9_get_y_sse(sd, cm->frame_to_show);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  if (vp9_estimate_filter5tap(cm->frame_to_show, sd, cm->lf.filter5tap)) {
+    vp9_loop_filter5tap_frame(cm->frame_to_show, cm, 1, 1, partial_frame);
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (cm->use_highbitdepth) {
+      filt_err5 = vp9_highbd_get_y_sse(sd, cm->frame_to_show, cm->bit_depth);
+    } else {
+      filt_err5 = vp9_get_y_sse(sd, cm->frame_to_show);
+    }
+#else
+    filt_err5 = vp9_get_y_sse(sd, cm->frame_to_show);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+#ifdef USE_RD_LOOP_POSTFILTER_SEARCH
+    used = (RDCOST(x->rdmult, x->rddiv, FILTER5TAP_LEVEL_BITS << 4, filt_err5) <
+            RDCOST(x->rdmult, x->rddiv, 0, filt_err));
+#else
+    used = (filt_err5 < filt_err);
+#endif
+  } else {
+    used = 0;
+  }
+
+  // Re-instate the unfiltered frame
+  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+  return used;
 }
 #endif  // CONFIG_LOOP_POSTFILTER
 
@@ -357,6 +438,20 @@ void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
     lf->bilateral_level = search_bilateral_level(
         sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE, NULL);
 #endif  // JOINT_FILTER_BILATERAL_SEARCH
+#ifdef USE_FILTER5TAP
+    lf->filter5tap_used = search_filter5tap(sd, cpi,
+                                            lf->filter_level,
+                                            lf->bilateral_level,
+                                            method == LPF_PICK_FROM_SUBIMAGE);
+#else
+    lf->filter5tap_used = 0;
+#endif  // USE_FILTER5TAP
+    /*
+    if (lf->filter5tap_used)
+      printf("Frame %d: %d %d %d %d %d\n", cm->current_video_frame,
+             lf->filter5tap[0], lf->filter5tap[1], lf->filter5tap[2],
+             lf->filter5tap[3], lf->filter5tap[4]);
+             */
 #else
     lf->filter_level = search_filter_level(
         sd, cpi, method == LPF_PICK_FROM_SUBIMAGE);

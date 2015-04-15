@@ -246,11 +246,11 @@ int vp9_loop_bilateral_used(int level, int kf) {
 }
 
 void vp9_loop_bilateral_init(loop_filter_info_n *lfi, int level, int kf) {
-  if (level != lfi->bilateral_level_set ||
-      kf != lfi->bilateral_kf_set) {
-    lfi->bilateral_used = vp9_loop_bilateral_used(level, kf);
-    if (lfi->bilateral_used) {
-      const bilateral_params_t param = vp9_bilateral_level_to_params(level, kf);
+  const bilateral_params_t param = vp9_bilateral_level_to_params(level, kf);
+  lfi->bilateral_used = vp9_loop_bilateral_used(level, kf);
+  if (lfi->bilateral_used) {
+    if (param.sigma_x != lfi->bilateral_sigma_x_set ||
+        param.sigma_r != lfi->bilateral_sigma_r_set) {
       const int sigma_x = param.sigma_x;
       const int sigma_r = param.sigma_r;
       const double sigma_r_d = (double)sigma_r / BILATERAL_PRECISION;
@@ -267,9 +267,9 @@ void vp9_loop_bilateral_init(loop_filter_info_n *lfi, int level, int kf) {
           wx_lut_[y * BILATERAL_WIN + x] =
               exp(-(x * x + y * y) / (2 * sigma_x_d * sigma_x_d));
         }
+      lfi->bilateral_sigma_x_set = sigma_x;
+      lfi->bilateral_sigma_r_set = sigma_r;
     }
-    lfi->bilateral_level_set = level;
-    lfi->bilateral_kf_set = kf;
   }
 }
 
@@ -356,6 +356,185 @@ void vp9_loop_bilateral_rows(YV12_BUFFER_CONFIG *frame,
                           tmp_buf->uv_stride);
   }
 }
+
+double vp9_find_ymean(const YV12_BUFFER_CONFIG *frm) {
+  const int width = frm->y_crop_width;
+  const int height = frm->y_crop_height;
+  const int frm_stride = frm->y_stride;
+  int i, j, mean;
+  int64_t sum = 0;
+  for (i = 0; i < height; ++i)
+    for (j = 0; j < width; ++j) {
+      sum += frm->y_buffer[i * frm_stride + j];
+    }
+  mean = (double)sum / (width * height);
+  return mean;
+}
+
+// Solves equantion of the for Ax = b, where b is the last col of A
+static void gauss_elimination(double A[5][6], double *x) {
+  const int n = 5;
+  int i, j, k;
+  for (i = 0; i < n; i++) {
+    // Search for maximum in this column
+    double maxEl = abs(A[i][i]);
+    int maxRow = i;
+    for (k = i + 1; k < n; k++) {
+      if (abs(A[k][i]) > maxEl) {
+        maxEl = abs(A[k][i]);
+        maxRow = k;
+      }
+    }
+    // Swap maximum row with current row (column by column)
+    for (k = i; k < n + 1; k++) {
+      double tmp = A[maxRow][k];
+      A[maxRow][k] = A[i][k];
+      A[i][k] = tmp;
+    }
+    // Make all rows below this one 0 in current column
+    for (k = i + 1; k < n; k++) {
+      double c = -A[k][i] / A[i][i];
+      for (j = i; j < n + 1; j++) {
+        if (i == j) {
+          A[k][j] = 0;
+        } else {
+          A[k][j] += c * A[i][j];
+        }
+      }
+    }
+  }
+  // Solve equation Ax=b for an upper triangular matrix A
+  for (i = n - 1; i >= 0; i--) {
+    x[i] = A[i][n] / A[i][i];
+    for (k = i - 1; k >= 0; k--) {
+      A[k][n] -= A[k][i] * x[i];
+    }
+  }
+}
+
+int vp9_estimate_filter5tap(const YV12_BUFFER_CONFIG *frm,
+                            const YV12_BUFFER_CONFIG *src,
+                            int *filter) {
+  const int width = frm->y_crop_width;
+  const int height = frm->y_crop_height;
+  const int frm_stride = frm->y_stride;
+  const int src_stride = src->y_stride;
+  const uint8_t *xdata = frm->y_buffer;
+  const uint8_t *ydata = src->y_buffer;
+  double Rxx[5][6], filter_d[5];
+  int samples;
+  double mean;
+  int i, j, k, l;
+
+  vpx_memset(Rxx, 0, sizeof(Rxx));
+
+  mean = vp9_find_ymean(frm);
+  for (i = 1; i < height - 1; ++i)
+    for (j = 1; j < width - 1; ++j) {
+      const double y = ydata[i * src_stride + j] - mean;
+      double x[5];
+      x[0] = xdata[i * frm_stride + j] - mean;
+      x[1] = xdata[i * frm_stride + j - 1] - mean;
+      x[2] = xdata[(i - 1) * frm_stride + j] - mean;
+      x[3] = xdata[i * frm_stride + j + 1] - mean;
+      x[4] = xdata[(i + 1) * frm_stride + j] - mean;
+      for (k = 0; k < 5; ++k) {
+        Rxx[k][5] += x[k] * y;
+        Rxx[k][k] += x[k] * x[k];
+        for (l = k + 1; l < 5; ++l)
+          Rxx[k][l] += x[k] * x[l];
+      }
+    }
+  samples = (width - 2) * (height - 2);
+  for (k = 0; k < 5; ++k) {
+    Rxx[k][5] /= samples;
+    Rxx[k][k] /= samples;
+    for (l = k + 1; l < 5; ++l) {
+      Rxx[k][l] /= samples;
+      Rxx[l][k] = Rxx[k][l];
+    }
+  }
+  gauss_elimination(Rxx, filter_d);
+  for (k = 1; k < 5; k++) {
+    filter[k] = (int)(filter_d[k] * (1 << FILTER5TAP_BITS) + 0.5);
+    filter[k] = MAX(filter[k], FILTER5TAP_MIN);
+    filter[k] = MIN(filter[k], FILTER5TAP_MAX);
+  }
+  filter[0] = (1 << FILTER5TAP_BITS) -
+              (filter[1] + filter[2] + filter[3] + filter[4]);
+  if (!filter[1] && !filter[2] && !filter[3] && !filter[4])
+    return 0;
+  return 1;
+}
+
+void loop_filter5tap_filter(uint8_t *data, int width, int height,
+                            int stride, int *filter,
+                            uint8_t *tmpdata, int tmpstride) {
+  int i, j;
+  int sum;
+  for (i = 1; i < height - 1; ++i) {
+    for (j = 1; j < width - 1; ++j) {
+      sum = data[i * stride + j] * filter[0] +
+            data[i * stride + j - 1] * filter[1] +
+            data[(i - 1) * stride + j] * filter[2] +
+            data[i * stride + j + 1] * filter[3] +
+            data[(i + 1) * stride + j] *filter[4];
+      tmpdata[i * tmpstride + j] =
+          (sum + (1 << (FILTER5TAP_BITS - 1))) >> FILTER5TAP_BITS;
+    }
+  }
+  for (i = 1; i < height - 1; ++i) {
+    vpx_memcpy(data + i * stride + 1, tmpdata + i * tmpstride + 1,
+               (width - 2) * sizeof(*data));
+  }
+}
+
+void vp9_loop_filter5tap_rows(YV12_BUFFER_CONFIG *frame,
+                              VP9_COMMON *cm,
+                              int start_mi_row, int end_mi_row,
+                              int y_only) {
+  const int ywidth = frame->y_crop_width;
+  const int ystride = frame->y_stride;
+  const int uvwidth = frame->uv_crop_width;
+  const int uvstride = frame->uv_stride;
+  const int ystart = start_mi_row << MI_SIZE_LOG2;
+  const int uvstart = ystart >> cm->subsampling_y;
+  int yend = end_mi_row << MI_SIZE_LOG2;
+  int uvend = yend >> cm->subsampling_y;
+  YV12_BUFFER_CONFIG *tmp_buf;
+  yend = MIN(yend, cm->height);
+  uvend = MIN(uvend, cm->subsampling_y ? (cm->height + 1) >> 1 : cm->height);
+
+  if (vp9_realloc_frame_buffer(&cm->tmp_loop_buf, cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               cm->use_highbitdepth,
+#endif
+                               0, NULL, NULL, NULL) < 0)
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to allocate post-processing buffer");
+
+  tmp_buf = &cm->tmp_loop_buf;
+
+  loop_filter5tap_filter(frame->y_buffer + ystart * ystride,
+                         ywidth, yend - ystart, ystride,
+                         cm->lf.filter5tap,
+                         tmp_buf->y_buffer + ystart * tmp_buf->y_stride,
+                         tmp_buf->y_stride);
+  if (!y_only) {
+    loop_filter5tap_filter(frame->u_buffer + uvstart * uvstride,
+                           uvwidth, uvend - uvstart, uvstride,
+                           cm->lf.filter5tap,
+                           tmp_buf->u_buffer + uvstart * tmp_buf->uv_stride,
+                           tmp_buf->uv_stride);
+    loop_filter5tap_filter(frame->v_buffer + uvstart * uvstride,
+                           uvwidth, uvend - uvstart, uvstride,
+                           cm->lf.filter5tap,
+                           tmp_buf->v_buffer + uvstart * tmp_buf->uv_stride,
+                           tmp_buf->uv_stride);
+  }
+}
+
 #endif  // CONFIG_LOOP_POSTFILTER
 
 static void update_sharpness(loop_filter_info_n *lfi, int sharpness_lvl) {
@@ -1855,15 +2034,58 @@ void vp9_loop_filter_frame(YV12_BUFFER_CONFIG *frame,
 }
 
 #if CONFIG_LOOP_POSTFILTER
+void vp9_loop_bilateral_frame(YV12_BUFFER_CONFIG *frame,
+                              VP9_COMMON *cm,
+                              int bilateral_level,
+                              int y_only, int partial_frame) {
+  int start_mi_row, end_mi_row, mi_rows_to_filter;
+  const int loop_bilateral_used = vp9_loop_bilateral_used(
+      bilateral_level, cm->frame_type == KEY_FRAME);
+  if (!loop_bilateral_used)
+    return;
+  start_mi_row = 0;
+  mi_rows_to_filter = cm->mi_rows;
+  if (partial_frame && cm->mi_rows > 8) {
+    start_mi_row = cm->mi_rows >> 1;
+    start_mi_row &= 0xfffffff8;
+    mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
+  }
+  end_mi_row = start_mi_row + mi_rows_to_filter;
+  if (loop_bilateral_used) {
+    vp9_loop_bilateral_init(&cm->lf_info, bilateral_level,
+                            cm->frame_type == KEY_FRAME);
+    vp9_loop_bilateral_rows(frame, cm, start_mi_row, end_mi_row, y_only);
+  }
+}
+
+void vp9_loop_filter5tap_frame(YV12_BUFFER_CONFIG *frame,
+                               VP9_COMMON *cm,
+                               int filter5tap_used,
+                               int y_only, int partial_frame) {
+  int start_mi_row, end_mi_row, mi_rows_to_filter;
+  if (!filter5tap_used)
+    return;
+  start_mi_row = 0;
+  mi_rows_to_filter = cm->mi_rows;
+  if (partial_frame && cm->mi_rows > 8) {
+    start_mi_row = cm->mi_rows >> 1;
+    start_mi_row &= 0xfffffff8;
+    mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
+  }
+  end_mi_row = start_mi_row + mi_rows_to_filter;
+  vp9_loop_filter5tap_rows(frame, cm, start_mi_row, end_mi_row, y_only);
+}
+
 void vp9_loop_filter_gen_frame(YV12_BUFFER_CONFIG *frame,
                                VP9_COMMON *cm, MACROBLOCKD *xd,
                                int frame_filter_level,
                                int bilateral_level,
+                               int filter5tap_used,
                                int y_only, int partial_frame) {
   int start_mi_row, end_mi_row, mi_rows_to_filter;
   const int loop_bilateral_used = vp9_loop_bilateral_used(
       bilateral_level, cm->frame_type == KEY_FRAME);
-  if (!frame_filter_level && !loop_bilateral_used)
+  if (!frame_filter_level && !loop_bilateral_used && !filter5tap_used)
     return;
   start_mi_row = 0;
   mi_rows_to_filter = cm->mi_rows;
@@ -1883,6 +2105,9 @@ void vp9_loop_filter_gen_frame(YV12_BUFFER_CONFIG *frame,
     vp9_loop_bilateral_init(&cm->lf_info, bilateral_level,
                             cm->frame_type == KEY_FRAME);
     vp9_loop_bilateral_rows(frame, cm, start_mi_row, end_mi_row, y_only);
+  }
+  if (filter5tap_used) {
+    vp9_loop_filter5tap_rows(frame, cm, start_mi_row, end_mi_row, y_only);
   }
 }
 #endif  // CONFIG_LOOP_POSTFILTER

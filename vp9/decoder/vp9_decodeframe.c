@@ -1584,7 +1584,23 @@ static void setup_loopfilter(VP9_COMMON *cm,
     lf->bilateral_level += vp9_rb_read_literal(
         rb, vp9_bilateral_level_bits(cm));
   }
+#ifdef USE_FILTER5TAP
+  lf->filter5tap_used = vp9_rb_read_bit(rb);
+  if (lf->filter5tap_used) {
+    lf->filter5tap[1] = vp9_rb_read_literal(rb, FILTER5TAP_LEVEL_BITS) +
+        FILTER5TAP_MIN;
+    lf->filter5tap[2] = vp9_rb_read_literal(rb, FILTER5TAP_LEVEL_BITS) +
+        FILTER5TAP_MIN;
+    lf->filter5tap[3] = vp9_rb_read_literal(rb, FILTER5TAP_LEVEL_BITS) +
+        FILTER5TAP_MIN;
+    lf->filter5tap[4] = vp9_rb_read_literal(rb, FILTER5TAP_LEVEL_BITS) +
+        FILTER5TAP_MIN;
+    lf->filter5tap[0] = (1 << FILTER5TAP_BITS) -
+                        (lf->filter5tap[1] + lf->filter5tap[2] +
+                         lf->filter5tap[3] + lf->filter5tap[4]);
+  }
 #endif
+#endif  // CONFIG_LOOP_POSTFILTER
 }
 
 static int read_delta_q(struct vp9_read_bit_buffer *rb, int *delta_q) {
@@ -2664,6 +2680,10 @@ void vp9_decode_frame(VP9Decoder *pbi,
   if (cm->lf_info.bilateral_used) {
     vp9_loop_bilateral_rows(new_fb, cm, 0, cm->mi_rows, 0);
   }
+#ifdef USE_FILTER5TAP
+  if (cm->lf.filter5tap_used)
+    vp9_loop_filter5tap_rows(new_fb, cm, 0, cm->mi_rows, 0);
+#endif
 #endif  // CONFIG_LOOP_POSTFILTER
 
   new_fb->corrupted |= xd->corrupted;
