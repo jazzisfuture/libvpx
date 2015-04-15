@@ -125,8 +125,8 @@ const DecodeParam kVP9InvalidFileTests[] = {
   {1, "invalid-vp90-2-03-size-202x210.webm.ivf.s113306_r01-05_b6-.ivf"},
 };
 
-VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
-                          ::testing::ValuesIn(kVP9InvalidFileTests));
+//VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
+//                          ::testing::ValuesIn(kVP9InvalidFileTests));
 
 // This class will include test vectors that are expected to fail
 // peek. However they are still expected to have no fatal failures.
@@ -146,8 +146,8 @@ const DecodeParam kVP9InvalidFileInvalidPeekTests[] = {
   {1, "invalid-vp90-01-v2.webm"},
 };
 
-VP9_INSTANTIATE_TEST_CASE(InvalidFileInvalidPeekTest,
-                          ::testing::ValuesIn(kVP9InvalidFileInvalidPeekTests));
+//VP9_INSTANTIATE_TEST_CASE(InvalidFileInvalidPeekTest,
+//                          ::testing::ValuesIn(kVP9InvalidFileInvalidPeekTests));
 
 const DecodeParam kMultiThreadedVP9InvalidFileTests[] = {
   {4, "invalid-vp90-2-08-tile_1x4_frame_parallel_all_key.webm"},
@@ -158,10 +158,10 @@ const DecodeParam kMultiThreadedVP9InvalidFileTests[] = {
   {4, "invalid-vp90-2-09-subpixel-00.ivf.s19552_r01-05_b6-.v2.ivf"},
 };
 
-INSTANTIATE_TEST_CASE_P(
-    VP9MultiThreaded, InvalidFileTest,
-    ::testing::Combine(
-        ::testing::Values(
-            static_cast<const libvpx_test::CodecFactory*>(&libvpx_test::kVP9)),
-        ::testing::ValuesIn(kMultiThreadedVP9InvalidFileTests)));
-}  // namespace
+//INSTANTIATE_TEST_CASE_P(
+//    VP9MultiThreaded, InvalidFileTest,
+//    ::testing::Combine(
+//        ::testing::Values(
+//            static_cast<const libvpx_test::CodecFactory*>(&libvpx_test::kVP9)),
+//        ::testing::ValuesIn(kMultiThreadedVP9InvalidFileTests)));
+//}  // namespace
