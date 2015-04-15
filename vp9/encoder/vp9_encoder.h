@@ -436,6 +436,7 @@ typedef struct VP9_COMP {
   Ssimv *ssim_vars;
   Metrics metrics;
 #endif
+  int dummy_writing;
   int b_calculate_psnr;
 
   int droppable;
