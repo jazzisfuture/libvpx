@@ -394,7 +394,7 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   VP9_COMMON *const cm = &pbi->common;
   const int less8x8 = bsize < BLOCK_8X8;
   int16_t y_dequant[2], uv_dequant[2];
-  int qindex = cm->base_qindex;
+//  int qindex = cm->base_qindex;
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
   vp9_read_mode_info(pbi, xd, counts, tile, mi_row, mi_col, r);
 
@@ -403,7 +403,9 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
 
   if (mbmi->skip) {
     reset_skip_context(xd, bsize);
-  } else if (cm->seg.enabled) {
+  }
+#if 0
+  else if (cm->seg.enabled) {
     qindex = vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex);
   }
 
@@ -411,7 +413,12 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   y_dequant[1] = vp9_ac_quant(qindex, 0, cm->bit_depth);
   uv_dequant[0] = vp9_dc_quant(qindex, cm->uv_dc_delta_q, cm->bit_depth);
   uv_dequant[1] = vp9_ac_quant(qindex, cm->uv_ac_delta_q, cm->bit_depth);
-
+#else
+  y_dequant[0] = xd->y_dequant[mbmi->segment_id][0];
+  y_dequant[1] = xd->y_dequant[mbmi->segment_id][1];
+  uv_dequant[0] = xd->uv_dequant[mbmi->segment_id][0];
+  uv_dequant[1] = xd->uv_dequant[mbmi->segment_id][1];
+#endif
   if (!is_inter_block(mbmi)) {
     struct intra_args arg = {cm, xd, counts, r , y_dequant, uv_dequant};
     vp9_foreach_transformed_block(xd, bsize,
@@ -639,6 +646,7 @@ static INLINE int read_delta_q(struct vp9_read_bit_buffer *rb) {
 
 static void setup_quantization(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                struct vp9_read_bit_buffer *rb) {
+  int qindex =
   cm->base_qindex = vp9_rb_read_literal(rb, QINDEX_BITS);
   cm->y_dc_delta_q = read_delta_q(rb);
   cm->uv_dc_delta_q = read_delta_q(rb);
@@ -648,6 +656,24 @@ static void setup_quantization(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                  cm->y_dc_delta_q == 0 &&
                  cm->uv_dc_delta_q == 0 &&
                  cm->uv_ac_delta_q == 0;
+
+  xd->y_dequant[0][0] = vp9_dc_quant(qindex, cm->y_dc_delta_q, cm->bit_depth);
+  xd->y_dequant[0][1] = vp9_ac_quant(qindex, 0, cm->bit_depth);
+  xd->uv_dequant[0][0] = vp9_dc_quant(qindex, cm->uv_dc_delta_q, cm->bit_depth);
+  xd->uv_dequant[0][1] = vp9_ac_quant(qindex, cm->uv_ac_delta_q, cm->bit_depth);
+
+  //
+  if (cm->seg.enabled) {
+    int i;
+    for (i = 0; i < MAX_SEGMENTS; ++i) {
+      qindex = vp9_get_qindex(&cm->seg, 0, cm->base_qindex);
+      xd->y_dequant[i][0] = vp9_dc_quant(qindex, cm->y_dc_delta_q, cm->bit_depth);
+      xd->y_dequant[i][1] = vp9_ac_quant(qindex, 0, cm->bit_depth);
+      xd->uv_dequant[i][0] = vp9_dc_quant(qindex, cm->uv_dc_delta_q, cm->bit_depth);
+      xd->uv_dequant[i][1] = vp9_ac_quant(qindex, cm->uv_ac_delta_q, cm->bit_depth);
+    }
+  }
+
 #if CONFIG_VP9_HIGHBITDEPTH
   xd->bd = (int)cm->bit_depth;
 #endif
