@@ -3524,6 +3524,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
          MAX_MODES * sizeof(*cpi->mode_chosen_counts));
 #endif
 
+  cpi->dummy_writing = 1;
   if (cpi->sf.recode_loop == DISALLOW_RECODE) {
     encode_without_recode_loop(cpi);
   } else {
@@ -3569,6 +3570,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Pick the loop filter level for the frame.
   loopfilter_frame(cpi, cm);
 
+  cpi->dummy_writing = 0;
   // build the bitstream
   vp9_pack_bitstream(cpi, dest, size);
 
