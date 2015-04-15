@@ -21,6 +21,7 @@
 #include "vp9/common/vp9_filter.h"
 #include "vp9/common/vp9_mv.h"
 #include "vp9/common/vp9_scale.h"
+#include "vp9/common/vp9_seg_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -205,6 +206,9 @@ typedef struct macroblockd {
   int mb_to_right_edge;
   int mb_to_top_edge;
   int mb_to_bottom_edge;
+
+  int16_t y_dequant[MAX_SEGMENTS][2];
+  int16_t uv_dequant[MAX_SEGMENTS][2];
 
   /* pointers to reference frames */
   RefBuffer *block_refs[2];
