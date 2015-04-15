@@ -42,6 +42,16 @@ struct VP9Common;
 #define BILATERAL_HALFWIN       3
 #define BILATERAL_WIN           (2 * BILATERAL_HALFWIN + 1)
 
+#define USE_FILTER5TAP
+
+#ifdef USE_FILTER5TAP
+#define USE_FILTER5TAP_PROB     192
+#define FILTER5TAP_BITS         8
+#define FILTER5TAP_LEVEL_BITS   3
+#define FILTER5TAP_MIN          -1
+#define FILTER5TAP_MAX          FILTER5TAP_MIN + (1 << FILTER5TAP_LEVEL_BITS) - 1
+#endif  // USE_FILTER5TAP
+
 typedef struct bilateral_params {
   int sigma_x;  // spatial variance
   int sigma_r;  // range variance
@@ -50,7 +60,8 @@ typedef struct bilateral_params {
 static bilateral_params_t
     bilateral_level_to_params_arr[BILATERAL_LEVELS + 1] = {
   // Values are rounded to 1/8 th precision
-  {4, 16},    // 0 - default
+  {0, 0},    // 0 - default
+  {4, 16},
   {5, 16},
   {6, 16},
   {7, 16},
@@ -58,13 +69,13 @@ static bilateral_params_t
   {12, 20},
   {16, 20},
   {20, 20},
-  {24, 24}
 };
 
 static bilateral_params_t
     bilateral_level_to_params_arr_kf[BILATERAL_LEVELS_KF + 1] = {
   // Values are rounded to 1/8 th precision
-  {4, 16},    // 0 - default
+  {0, 0},    // 0 - default
+  {4, 16},
   {5, 16},
   {6, 16},
   {7, 16},
@@ -80,7 +91,6 @@ static bilateral_params_t
   {28, 32},
   {32, 24},
   {32, 28},
-  {32, 32},
 };
 
 int vp9_bilateral_level_bits(const struct VP9Common *const cm);
@@ -91,6 +101,13 @@ static INLINE bilateral_params_t vp9_bilateral_level_to_params(
   return kf ? bilateral_level_to_params_arr_kf[index] :
               bilateral_level_to_params_arr[index];
 }
+
+#ifdef USE_FILTER5TAP
+int vp9_estimate_filter5tap(const YV12_BUFFER_CONFIG *frm,
+                            const YV12_BUFFER_CONFIG *src,
+                            int *filter);
+#endif  // USE_FILTER5TAP
+
 #endif  // CONFIG_LOOP_POSTFILTER
 
 struct loopfilter {
@@ -112,6 +129,10 @@ struct loopfilter {
 
 #if CONFIG_LOOP_POSTFILTER
   int bilateral_level;
+#ifdef USE_FILTER5TAP
+  int filter5tap_used;
+  int filter5tap[5];
+#endif
 #endif
 };
 
@@ -129,8 +150,8 @@ typedef struct {
 #if CONFIG_LOOP_POSTFILTER
   double wx_lut[BILATERAL_WIN * BILATERAL_WIN];
   double wr_lut[512];
-  int bilateral_level_set;
-  int bilateral_kf_set;
+  int bilateral_sigma_x_set;
+  int bilateral_sigma_r_set;
   int bilateral_used;
 #endif
 } loop_filter_info_n;
@@ -190,18 +211,39 @@ void vp9_loop_filter_rows(YV12_BUFFER_CONFIG *frame_buffer,
                           struct macroblockd_plane planes[MAX_MB_PLANE],
                           int start, int stop, int y_only);
 #if CONFIG_LOOP_POSTFILTER
-void vp9_loop_filter_gen_frame(YV12_BUFFER_CONFIG *frame,
-                               struct VP9Common *cm,
-                               struct macroblockd *mbd,
-                               int frame_filter_level,
-                               int bilateral_level,
-                               int y_only, int partial_frame);
+void vp9_loop_bilateral_frame(YV12_BUFFER_CONFIG *frame,
+                              struct VP9Common *cm,
+                              int bilateral_level,
+                              int y_only, int partial_frame);
+void vp9_loop_filter_bilateral_frame(YV12_BUFFER_CONFIG *frame,
+                                     struct VP9Common *cm,
+                                     struct macroblockd *mbd,
+                                     int frame_filter_level,
+                                     int bilateral_level,
+                                     int y_only, int partial_frame);
 void vp9_loop_bilateral_init(loop_filter_info_n *lfi, int T, int kf);
 void vp9_loop_bilateral_rows(YV12_BUFFER_CONFIG *frame,
                              struct VP9Common *cm,
                              int start_mi_row, int end_mi_row,
                              int y_only);
-#endif
+#ifdef USE_FILTER5TAP
+void vp9_loop_filter5tap_frame(YV12_BUFFER_CONFIG *frame,
+                               struct VP9Common *cm,
+                               int filter5tap_used,
+                               int y_only, int partial_frame);
+void vp9_loop_filter5tap_rows(YV12_BUFFER_CONFIG *frame,
+                              struct VP9Common *cm,
+                              int start_mi_row, int end_mi_row,
+                              int y_only);
+void vp9_loop_filter_bilateral_filter5tap_frame(YV12_BUFFER_CONFIG *frame,
+                                                struct VP9Common *cm,
+                                                struct macroblockd *mbd,
+                                                int frame_filter_level,
+                                                int bilateral_level,
+                                                int filter5tap_used,
+                                                int y_only, int partial_frame);
+#endif  // USE_FILTER5TAP
+#endif  // CONFIG_LOOP_POSTFILTER
 
 
 typedef struct LoopFilterWorkerData {
