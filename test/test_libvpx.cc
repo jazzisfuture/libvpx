@@ -12,15 +12,6 @@
 #if ARCH_X86 || ARCH_X86_64
 #include "vpx_ports/x86.h"
 #endif
-extern "C" {
-#if CONFIG_VP8
-#include "./vp8_rtcd.h"
-#endif  // CONFIG_VP8
-#if CONFIG_VP9
-#include "./vp9_rtcd.h"
-#endif  // CONFIG_VP9
-#include "./vpx_scale_rtcd.h"
-}
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 static void append_negative_gtest_filter(const char *str) {
@@ -53,19 +44,6 @@ int main(int argc, char **argv) {
   if (!(simd_caps & HAS_AVX2))
     append_negative_gtest_filter(":AVX2/*");
 #endif
-
-#if !CONFIG_SHARED
-// Shared library builds don't support whitebox tests
-// that exercise internal symbols.
-
-#if CONFIG_VP8
-  vp8_rtcd();
-#endif  // CONFIG_VP8
-#if CONFIG_VP9
-  vp9_rtcd();
-#endif  // CONFIG_VP9
-  vpx_scale_rtcd();
-#endif  // !CONFIG_SHARED
 
   return RUN_ALL_TESTS();
 }
