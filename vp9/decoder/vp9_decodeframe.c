@@ -968,6 +968,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
       tile_data->cm = cm;
       tile_data->xd = pbi->mb;
       tile_data->xd.corrupted = 0;
+      tile_data->xd.mc_buffer = tile_data->mc_buf;
       vp9_tile_init(&tile, tile_data->cm, tile_row, tile_col);
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
                           &tile_data->bit_reader, pbi->decrypt_cb,
@@ -1193,6 +1194,7 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       tile_data->pbi = pbi;
       tile_data->xd = pbi->mb;
       tile_data->xd.corrupted = 0;
+      tile_data->xd.mc_buffer = tile_data->mc_buf;
       vp9_tile_init(tile, cm, 0, buf->col);
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
                           &tile_data->bit_reader, pbi->decrypt_cb,
@@ -1923,7 +1925,7 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
         high_build_mc_border(buf_ptr1,
                              pre_buf->stride,
-                             xd->mc_buf_high,
+                             xd->mc_buffer_high,
                              x1 - x0 + 1,
                              x0,
                              y0,
@@ -1932,12 +1934,12 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
                              frame_width,
                              frame_height);
         buf_stride = x1 - x0 + 1;
-        buf_ptr = CONVERT_TO_BYTEPTR(xd->mc_buf_high) +
+        buf_ptr = CONVERT_TO_BYTEPTR(xd->mc_buffer_high) +
             y_pad * 3 * buf_stride + x_pad * 3;
       } else {
         build_mc_border(buf_ptr1,
                         pre_buf->stride,
-                        xd->mc_buf,
+                        xd->mc_buffer,
                         x1 - x0 + 1,
                         x0,
                         y0,
@@ -1946,12 +1948,12 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
                         frame_width,
                         frame_height);
         buf_stride = x1 - x0 + 1;
-        buf_ptr = xd->mc_buf + y_pad * 3 * buf_stride + x_pad * 3;
+        buf_ptr = xd->mc_buffer + y_pad * 3 * buf_stride + x_pad * 3;
       }
 #else
       build_mc_border(buf_ptr1,
                       pre_buf->stride,
-                      xd->mc_buf,
+                      xd->mc_buffer,
                       x1 - x0 + 1,
                       x0,
                       y0,
@@ -1960,7 +1962,7 @@ void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
                       frame_width,
                       frame_height);
       buf_stride = x1 - x0 + 1;
-      buf_ptr = xd->mc_buf + y_pad * 3 * buf_stride + x_pad * 3;
+      buf_ptr = xd->mc_buffer + y_pad * 3 * buf_stride + x_pad * 3;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     }
   } else {

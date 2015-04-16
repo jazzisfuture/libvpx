@@ -218,13 +218,12 @@ typedef struct macroblockd {
   PARTITION_CONTEXT *above_seg_context;
   PARTITION_CONTEXT left_seg_context[8];
 
-  /* mc buffer */
-  DECLARE_ALIGNED(16, uint8_t, mc_buf[80 * 2 * 80 * 2]);
+  uint8_t *mc_buffer;
 
 #if CONFIG_VP9_HIGHBITDEPTH
   /* Bit depth: 8, 10, 12 */
   int bd;
-  DECLARE_ALIGNED(16, uint16_t, mc_buf_high[80 * 2 * 80 * 2]);
+  uint16_t *mc_buffer_high;
 #endif
 
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
