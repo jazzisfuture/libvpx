@@ -10,7 +10,7 @@
 
 #include <arm_neon.h>
 
-unsigned int vp8_sad8x8_neon(
+unsigned int vpx_sad8x8_neon(
         unsigned char *src_ptr,
         int src_stride,
         unsigned char *ref_ptr,
@@ -44,7 +44,7 @@ unsigned int vp8_sad8x8_neon(
     return vget_lane_u32(d5, 0);
 }
 
-unsigned int vp8_sad8x16_neon(
+unsigned int vpx_sad8x16_neon(
         unsigned char *src_ptr,
         int src_stride,
         unsigned char *ref_ptr,
@@ -78,7 +78,7 @@ unsigned int vp8_sad8x16_neon(
     return vget_lane_u32(d5, 0);
 }
 
-unsigned int vp8_sad4x4_neon(
+unsigned int vpx_sad4x4_neon(
         unsigned char *src_ptr,
         int src_stride,
         unsigned char *ref_ptr,
@@ -109,7 +109,7 @@ unsigned int vp8_sad4x4_neon(
     return vget_lane_u32(vreinterpret_u32_u64(d3), 0);
 }
 
-unsigned int vp8_sad16x16_neon(
+unsigned int vpx_sad16x16_neon(
         unsigned char *src_ptr,
         int src_stride,
         unsigned char *ref_ptr,
@@ -146,7 +146,7 @@ unsigned int vp8_sad16x16_neon(
     return vget_lane_u32(d5, 0);
 }
 
-unsigned int vp8_sad16x8_neon(
+unsigned int vpx_sad16x8_neon(
         unsigned char *src_ptr,
         int src_stride,
         unsigned char *ref_ptr,

@@ -14,6 +14,7 @@
 
 #include "./vpx_config.h"
 #include "./vp9_rtcd.h"
+#include "./vpx_dsp_rtcd.h"
 #include "./vpx_scale_rtcd.h"
 #include "vpx/internal/vpx_psnr.h"
 #include "vpx_ports/vpx_timer.h"
@@ -1770,64 +1771,64 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
     cpi->fn_ptr[BT].sdx8f          = SDX8F; \
     cpi->fn_ptr[BT].sdx4df         = SDX4DF;
 
-  BFP(BLOCK_32X16, vp9_sad32x16, vp9_sad32x16_avg,
+  BFP(BLOCK_32X16, vpx_sad32x16, vpx_sad32x16_avg,
       vp9_variance32x16, vp9_sub_pixel_variance32x16,
-      vp9_sub_pixel_avg_variance32x16, NULL, NULL, vp9_sad32x16x4d)
+      vp9_sub_pixel_avg_variance32x16, NULL, NULL, vpx_sad32x16x4d)
 
-  BFP(BLOCK_16X32, vp9_sad16x32, vp9_sad16x32_avg,
+  BFP(BLOCK_16X32, vpx_sad16x32, vpx_sad16x32_avg,
       vp9_variance16x32, vp9_sub_pixel_variance16x32,
-      vp9_sub_pixel_avg_variance16x32, NULL, NULL, vp9_sad16x32x4d)
+      vp9_sub_pixel_avg_variance16x32, NULL, NULL, vpx_sad16x32x4d)
 
-  BFP(BLOCK_64X32, vp9_sad64x32, vp9_sad64x32_avg,
+  BFP(BLOCK_64X32, vpx_sad64x32, vpx_sad64x32_avg,
       vp9_variance64x32, vp9_sub_pixel_variance64x32,
-      vp9_sub_pixel_avg_variance64x32, NULL, NULL, vp9_sad64x32x4d)
+      vp9_sub_pixel_avg_variance64x32, NULL, NULL, vpx_sad64x32x4d)
 
-  BFP(BLOCK_32X64, vp9_sad32x64, vp9_sad32x64_avg,
+  BFP(BLOCK_32X64, vpx_sad32x64, vpx_sad32x64_avg,
       vp9_variance32x64, vp9_sub_pixel_variance32x64,
-      vp9_sub_pixel_avg_variance32x64, NULL, NULL, vp9_sad32x64x4d)
+      vp9_sub_pixel_avg_variance32x64, NULL, NULL, vpx_sad32x64x4d)
 
-  BFP(BLOCK_32X32, vp9_sad32x32, vp9_sad32x32_avg,
+  BFP(BLOCK_32X32, vpx_sad32x32, vpx_sad32x32_avg,
       vp9_variance32x32, vp9_sub_pixel_variance32x32,
-      vp9_sub_pixel_avg_variance32x32, vp9_sad32x32x3, vp9_sad32x32x8,
-      vp9_sad32x32x4d)
+      vp9_sub_pixel_avg_variance32x32, vpx_sad32x32x3, vpx_sad32x32x8,
+      vpx_sad32x32x4d)
 
-  BFP(BLOCK_64X64, vp9_sad64x64, vp9_sad64x64_avg,
+  BFP(BLOCK_64X64, vpx_sad64x64, vpx_sad64x64_avg,
       vp9_variance64x64, vp9_sub_pixel_variance64x64,
-      vp9_sub_pixel_avg_variance64x64, vp9_sad64x64x3, vp9_sad64x64x8,
-      vp9_sad64x64x4d)
+      vp9_sub_pixel_avg_variance64x64, vpx_sad64x64x3, vpx_sad64x64x8,
+      vpx_sad64x64x4d)
 
-  BFP(BLOCK_16X16, vp9_sad16x16, vp9_sad16x16_avg,
+  BFP(BLOCK_16X16, vpx_sad16x16, vpx_sad16x16_avg,
       vp9_variance16x16, vp9_sub_pixel_variance16x16,
-      vp9_sub_pixel_avg_variance16x16, vp9_sad16x16x3, vp9_sad16x16x8,
-      vp9_sad16x16x4d)
+      vp9_sub_pixel_avg_variance16x16, vpx_sad16x16x3, vpx_sad16x16x8,
+      vpx_sad16x16x4d)
 
-  BFP(BLOCK_16X8, vp9_sad16x8, vp9_sad16x8_avg,
+  BFP(BLOCK_16X8, vpx_sad16x8, vpx_sad16x8_avg,
       vp9_variance16x8, vp9_sub_pixel_variance16x8,
       vp9_sub_pixel_avg_variance16x8,
-      vp9_sad16x8x3, vp9_sad16x8x8, vp9_sad16x8x4d)
+      vpx_sad16x8x3, vpx_sad16x8x8, vpx_sad16x8x4d)
 
-  BFP(BLOCK_8X16, vp9_sad8x16, vp9_sad8x16_avg,
+  BFP(BLOCK_8X16, vpx_sad8x16, vpx_sad8x16_avg,
       vp9_variance8x16, vp9_sub_pixel_variance8x16,
       vp9_sub_pixel_avg_variance8x16,
-      vp9_sad8x16x3, vp9_sad8x16x8, vp9_sad8x16x4d)
+      vpx_sad8x16x3, vpx_sad8x16x8, vpx_sad8x16x4d)
 
-  BFP(BLOCK_8X8, vp9_sad8x8, vp9_sad8x8_avg,
+  BFP(BLOCK_8X8, vpx_sad8x8, vpx_sad8x8_avg,
       vp9_variance8x8, vp9_sub_pixel_variance8x8,
       vp9_sub_pixel_avg_variance8x8,
-      vp9_sad8x8x3, vp9_sad8x8x8, vp9_sad8x8x4d)
+      vpx_sad8x8x3, vpx_sad8x8x8, vpx_sad8x8x4d)
 
-  BFP(BLOCK_8X4, vp9_sad8x4, vp9_sad8x4_avg,
+  BFP(BLOCK_8X4, vpx_sad8x4, vpx_sad8x4_avg,
       vp9_variance8x4, vp9_sub_pixel_variance8x4,
-      vp9_sub_pixel_avg_variance8x4, NULL, vp9_sad8x4x8, vp9_sad8x4x4d)
+      vp9_sub_pixel_avg_variance8x4, NULL, vpx_sad8x4x8, vpx_sad8x4x4d)
 
-  BFP(BLOCK_4X8, vp9_sad4x8, vp9_sad4x8_avg,
+  BFP(BLOCK_4X8, vpx_sad4x8, vpx_sad4x8_avg,
       vp9_variance4x8, vp9_sub_pixel_variance4x8,
-      vp9_sub_pixel_avg_variance4x8, NULL, vp9_sad4x8x8, vp9_sad4x8x4d)
+      vp9_sub_pixel_avg_variance4x8, NULL, vpx_sad4x8x8, vpx_sad4x8x4d)
 
-  BFP(BLOCK_4X4, vp9_sad4x4, vp9_sad4x4_avg,
+  BFP(BLOCK_4X4, vpx_sad4x4, vpx_sad4x4_avg,
       vp9_variance4x4, vp9_sub_pixel_variance4x4,
       vp9_sub_pixel_avg_variance4x4,
-      vp9_sad4x4x3, vp9_sad4x4x8, vp9_sad4x4x4d)
+      vpx_sad4x4x3, vpx_sad4x4x8, vpx_sad4x4x4d)
 
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_set_var_fns(cpi);
