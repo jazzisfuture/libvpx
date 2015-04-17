@@ -329,6 +329,9 @@ struct macroblockd_plane {
   struct buf_2d dst;
   struct buf_2d pre[2];
   const int16_t *dequant;
+#if CONFIG_TX_SKIP
+  const int16_t *dequant_pxd;
+#endif  // CONFIG_TX_SKIP
 #if CONFIG_NEW_QUANT
   const dequant_val_type_nuq *dequant_val_nuq;
 #endif
