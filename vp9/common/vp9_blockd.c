@@ -70,6 +70,19 @@ void vp9_foreach_transformed_block_in_plane(
       i += step;
     }
   }
+
+  if (plane == PLANE_TYPE_UV) {
+    plane = 2;
+    i = 0;
+    for (r = 0; r < max_blocks_high; r += (1 << tx_size)) {
+      for (c = 0; c < num_4x4_w; c += (1 << tx_size)) {
+        // Skip visiting the sub blocks that are wholly within the UMV.
+        if (c < max_blocks_wide)
+          visit(plane, i, plane_bsize, tx_size, arg);
+        i += step;
+      }
+    }
+  }
 }
 
 void vp9_foreach_transformed_block(const MACROBLOCKD* const xd,
@@ -78,7 +91,7 @@ void vp9_foreach_transformed_block(const MACROBLOCKD* const xd,
                                    void *arg) {
   int plane;
 
-  for (plane = 0; plane < MAX_MB_PLANE; ++plane)
+  for (plane = 0; plane <= PLANE_TYPE_UV; ++plane)
     vp9_foreach_transformed_block_in_plane(xd, bsize, plane, visit, arg);
 }
 
