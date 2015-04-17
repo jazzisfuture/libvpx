@@ -197,6 +197,9 @@ static void read_mv_probs(nmv_context *ctx, int allow_hp, vp9_reader *r) {
 static void setup_plane_dequants(VP9_COMMON *cm, MACROBLOCKD *xd, int q_index) {
   int i;
   xd->plane[0].dequant = cm->y_dequant[q_index];
+#if CONFIG_TX_SKIP
+  xd->plane[0].dequant_pxd = cm->y_dequant_pxd[q_index];
+#endif  // CONFIG_TX_SKIP
 #if CONFIG_NEW_QUANT
   xd->plane[0].dequant_val_nuq =
       (const dequant_val_type_nuq *)cm->y_dequant_val_nuq[q_index];
@@ -204,6 +207,9 @@ static void setup_plane_dequants(VP9_COMMON *cm, MACROBLOCKD *xd, int q_index) {
 
   for (i = 1; i < MAX_MB_PLANE; i++) {
     xd->plane[i].dequant = cm->uv_dequant[q_index];
+#if CONFIG_TX_SKIP
+    xd->plane[i].dequant_pxd = cm->uv_dequant_pxd[q_index];
+#endif  // CONFIG_TX_SKIP
 #if CONFIG_NEW_QUANT
     xd->plane[i].dequant_val_nuq =
         (const dequant_val_type_nuq *)cm->uv_dequant_val_nuq[q_index];
@@ -2581,6 +2587,14 @@ void vp9_init_dequantizer(VP9_COMMON *cm) {
           cm->uv_dequant_val_nuq[q][b], NULL);
     }
 #endif  // CONFIG_NEW_QUANT
+
+#if CONFIG_TX_SKIP
+    cm->y_dequant_pxd[q][0] = cm->y_dequant[q][PXD_QUANT_INDEX];
+    cm->y_dequant_pxd[q][1] = cm->y_dequant[q][PXD_QUANT_INDEX];
+
+    cm->uv_dequant_pxd[q][0] = cm->uv_dequant[q][PXD_QUANT_INDEX];
+    cm->uv_dequant_pxd[q][1] = cm->uv_dequant[q][PXD_QUANT_INDEX];
+#endif  // CONFIG_TX_SKIP
     (void) b;
   }
 }
