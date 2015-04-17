@@ -250,11 +250,25 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                                                pd->left_context + y);
   const scan_order *so = get_scan(xd, tx_size, pd->plane_type, block);
   int eob;
+
+  PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi->src_mi, block)
+                                              : xd->mi->src_mi->mbmi.uv_mode;
+
   eob = decode_coefs(cm, xd, pd->plane_type,
                      BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
+#if CONFIG_TX_SKIP
+                     xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
+                         pd->dequant_pxd : pd->dequant,
+#else
                      pd->dequant,
+#endif  // CONFIG_TX_SKIP
 #if CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+                     xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
+                         pd->dequant_val_nuq_pxd : pd->dequant_val_nuq,
+#else
                      pd->dequant_val_nuq,
+#endif  // CONFIG_TX_SKIP
 #endif  // CONFIG_NEW_QUANT
                      ctx, so->scan,
                      so->neighbors, r);
