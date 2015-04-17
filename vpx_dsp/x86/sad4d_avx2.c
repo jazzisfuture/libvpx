@@ -10,7 +10,7 @@
 #include <immintrin.h>  // AVX2
 #include "vpx/vpx_integer.h"
 
-void vp9_sad32x32x4d_avx2(uint8_t *src,
+void vpx_sad32x32x4d_avx2(uint8_t *src,
                           int src_stride,
                           uint8_t *ref[4],
                           int ref_stride,
@@ -80,7 +80,7 @@ void vp9_sad32x32x4d_avx2(uint8_t *src,
   }
 }
 
-void vp9_sad64x64x4d_avx2(uint8_t *src,
+void vpx_sad64x64x4d_avx2(uint8_t *src,
                           int src_stride,
                           uint8_t *ref[4],
                           int ref_stride,
