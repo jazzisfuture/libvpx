@@ -806,8 +806,9 @@ static void encode_block_inter(int blk_row, int blk_col,
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   TX_SIZE plane_tx_size = plane ?
-      get_uv_tx_size_impl(mbmi->tx_size, plane_bsize,
-                          0, 0) : mbmi->tx_size;
+      get_uv_tx_size_impl(mbmi->inter_tx_size[(blk_row * 8 + blk_col) / 2],
+                          plane_bsize, 0, 0) :
+      mbmi->inter_tx_size[(blk_row * 8 + blk_col) / 2];
   int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
   if (xd->mb_to_bottom_edge < 0)
@@ -892,10 +893,9 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
     if (!x->skip_recode)
       vp9_subtract_plane(x, bsize, plane);
 
-    if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
+    if (x->optimize) {
       const struct macroblockd_plane* const pd = &xd->plane[plane];
-      const TX_SIZE tx_size = plane ? get_uv_tx_size(mbmi, pd) : mbmi->tx_size;
-      vp9_get_entropy_contexts(bsize, tx_size, pd,
+      vp9_get_entropy_contexts(bsize, TX_4X4, pd,
                                ctx.ta[plane], ctx.tl[plane]);
     }
 
