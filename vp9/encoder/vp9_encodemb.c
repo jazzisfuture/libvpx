@@ -739,6 +739,163 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 }
 
+static void encode_block_b(int blk_row, int blk_col, int plane,
+                           int block, BLOCK_SIZE plane_bsize,
+                           TX_SIZE tx_size, void *arg) {
+  struct encode_b_args *const args = arg;
+  MACROBLOCK *const x = args->x;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  struct optimize_ctx *const ctx = args->ctx;
+  struct macroblock_plane *const p = &x->plane[plane];
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+  uint8_t *dst;
+  ENTROPY_CONTEXT *a, *l;
+  dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
+  a = &ctx->ta[plane][blk_col];
+  l = &ctx->tl[plane][blk_row];
+
+  // TODO(jingning): per transformed block zero forcing only enabled for
+  // luma component. will integrate chroma components as well.
+  if (x->zcoeff_blk[tx_size][block] && plane == 0) {
+    p->eobs[block] = 0;
+    *a = *l = 0;
+    return;
+  }
+
+  if (!x->skip_recode) {
+    if (x->quant_fp) {
+      // Encoding process for rtc mode
+      if (x->skip_txfm[0] == 1 && plane == 0) {
+        // skip forward transform
+        p->eobs[block] = 0;
+        *a = *l = 0;
+        return;
+      } else {
+        vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
+      }
+    } else {
+      if (max_txsize_lookup[plane_bsize] == tx_size) {
+        int txfm_blk_index = (plane << 2) + (block >> (tx_size << 1));
+        if (x->skip_txfm[txfm_blk_index] == 0) {
+          // full forward transform and quantization
+          vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+        } else if (x->skip_txfm[txfm_blk_index]== 2) {
+          // fast path forward transform and quantization
+          vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
+        } else {
+          // skip forward transform
+          p->eobs[block] = 0;
+          *a = *l = 0;
+          return;
+        }
+      } else {
+        vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+      }
+    }
+  }
+
+  if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
+    const int ctx = combine_entropy_contexts(*a, *l);
+    *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
+  } else {
+    *a = *l = p->eobs[block] > 0;
+  }
+
+  if (p->eobs[block])
+    *(args->skip) = 0;
+
+  if (x->skip_encode || p->eobs[block] == 0)
+    return;
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    switch (tx_size) {
+      case TX_32X32:
+        vp9_highbd_idct32x32_add(dqcoeff, dst, pd->dst.stride,
+                                 p->eobs[block], xd->bd);
+        break;
+      case TX_16X16:
+        vp9_highbd_idct16x16_add(dqcoeff, dst, pd->dst.stride,
+                                 p->eobs[block], xd->bd);
+        break;
+      case TX_8X8:
+        vp9_highbd_idct8x8_add(dqcoeff, dst, pd->dst.stride,
+                               p->eobs[block], xd->bd);
+        break;
+      case TX_4X4:
+        // this is like vp9_short_idct4x4 but has a special case around eob<=1
+        // which is significant (not just an optimization) for the lossless
+        // case.
+        x->highbd_itxm_add(dqcoeff, dst, pd->dst.stride,
+                           p->eobs[block], xd->bd);
+        break;
+      default:
+        assert(0 && "Invalid transform size");
+    }
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  switch (tx_size) {
+    case TX_32X32:
+      vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      break;
+    case TX_16X16:
+      vp9_idct16x16_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      break;
+    case TX_8X8:
+      vp9_idct8x8_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      break;
+    case TX_4X4:
+      // this is like vp9_short_idct4x4 but has a special case around eob<=1
+      // which is significant (not just an optimization) for the lossless
+      // case.
+      x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      break;
+    default:
+      assert(0 && "Invalid transform size");
+      break;
+  }
+}
+
+static void encode_block_inter(int blk_row, int blk_col,
+                               int plane, int block, BLOCK_SIZE plane_bsize,
+                               TX_SIZE tx_size, void *arg) {
+  struct encode_b_args *const args = arg;
+  MACROBLOCK *const x = args->x;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  TX_SIZE plane_tx_size = plane ?
+      get_uv_tx_size_impl(mbmi->tx_size, plane_bsize,
+                          0, 0) : mbmi->tx_size;
+  int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
+  int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
+  if (xd->mb_to_bottom_edge < 0)
+    max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
+  if (xd->mb_to_right_edge < 0)
+    max_blocks_wide += xd->mb_to_right_edge >> (5 + pd->subsampling_x);
+
+  if (blk_row >= max_blocks_high || blk_col >= max_blocks_wide)
+    return;
+
+  if (tx_size == plane_tx_size) {
+    encode_block_b(blk_row, blk_col, plane, block, plane_bsize, tx_size, arg);
+  } else {
+    BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
+    int bh = num_4x4_blocks_high_lookup[bsize];
+    int step = 1 << (2 *(tx_size - 1));
+    int i;
+    for (i = 0; i < 4; ++i) {
+      int offsetr = (i >> 1) * bh / 2;
+      int offsetc = (i & 0x01) * bh / 2;
+      encode_block_inter(blk_row + offsetr, blk_col + offsetc,
+                         plane, block + i * step, plane_bsize,
+                         tx_size - 1, arg);
+    }
+  }
+}
+
 static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
                                TX_SIZE tx_size, void *arg) {
   MACROBLOCK *const x = (MACROBLOCK *)arg;
@@ -782,7 +939,24 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   if (x->skip)
     return;
 
+  if (!is_inter_mode(mbmi->mode)) {
+    for (plane = 0; plane < MAX_MB_PLANE; ++plane)
+      vp9_foreach_transformed_block_in_plane(xd, bsize, plane,
+                                             encode_block, &arg);
+    return;
+  }
+
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    const struct macroblockd_plane *const pd = &xd->plane[plane];
+    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
+    const int mi_width = num_4x4_blocks_wide_lookup[plane_bsize];
+    const int mi_height = num_4x4_blocks_high_lookup[plane_bsize];
+    int txb_size = txsize_to_bsize[max_txsize_lookup[plane_bsize]];
+    int bh = num_4x4_blocks_wide_lookup[txb_size];
+    int idx, idy;
+    int block = 0;
+    int step = 1 << (max_txsize_lookup[plane_bsize] * 2);
+
     if (!x->skip_recode)
       vp9_subtract_plane(x, bsize, plane);
 
@@ -793,8 +967,19 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
                                ctx.ta[plane], ctx.tl[plane]);
     }
 
-    vp9_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block,
-                                           &arg);
+    for (idy = 0; idy < mi_height; idy += bh) {
+      for (idx = 0; idx < mi_width; idx += bh) {
+//        decode_reconstruct_tx(idy, idx, plane, block,
+//                              max_txsize_lookup[plane_bsize],
+//                              plane_bsize, &arg);
+        encode_block_inter(idy, idx, plane, block, plane_bsize,
+                           max_txsize_lookup[plane_bsize], &arg);
+        block += step;
+      }
+    }
+
+//    vp9_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block,
+//                                           &arg);
   }
 }
 
