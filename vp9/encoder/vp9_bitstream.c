@@ -438,6 +438,47 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
 
   assert(*tok < tok_end);
   pack_mb_tokens(w, tok, tok_end, cm->bit_depth);
+
+  if (cpi->dummy_writing == 0) {
+    int i, j;
+    int width = 8 * num_8x8_blocks_wide_lookup[m->mbmi.sb_type];
+    int height = 8 * num_8x8_blocks_high_lookup[m->mbmi.sb_type];
+    struct macroblockd_plane *pd = &xd->plane[0];
+    FILE *pf = fopen("enc_modes.txt", "a");
+    fprintf(pf, "frame %d, pos (%d, %d), range %d\n",
+            cm->current_video_frame, mi_row, mi_col, w->range);
+
+    pd->dst.stride = cm->buffer_pool->frame_bufs[cm->new_fb_idx].buf.y_stride;
+    pd->dst.buf = cm->buffer_pool->frame_bufs[cm->new_fb_idx].buf.y_buffer +
+        mi_row * MI_SIZE * pd->dst.stride + mi_col * MI_SIZE;
+
+    for (j = 0; j < height; ++j) {
+      for (i = 0; i < width; ++i) {
+        if (mi_row * 8 + j < cm->mi_rows * 8 &&
+            mi_col * 8 + i < cm->mi_cols * 8)
+          fprintf(pf, "%d  ", pd->dst.buf[j * pd->dst.stride + i]);
+      }
+      fprintf(pf, "\n");
+    }
+    fprintf(pf, "\n");
+
+    pd->dst.stride = cm->buffer_pool->frame_bufs[cm->new_fb_idx].buf.uv_stride;
+    pd->dst.buf = cm->buffer_pool->frame_bufs[cm->new_fb_idx].buf.u_buffer +
+        ((mi_row * MI_SIZE) / 2) * pd->dst.stride + (mi_col * MI_SIZE) / 2;
+
+    for (j = 0; j < height / 2; ++j) {
+      for (i = 0; i < width / 2; ++i) {
+        if (mi_row * 4 + j < cm->mi_rows * 4 &&
+            mi_col * 4 + i < cm->mi_cols * 4)
+          fprintf(pf, "%d  ", pd->dst.buf[j * pd->dst.stride + i]);
+      }
+      fprintf(pf, "\n");
+    }
+    fprintf(pf, "\n");
+
+
+    fclose(pf);
+  }
 }
 
 static void write_partition(const VP9_COMMON *const cm,
