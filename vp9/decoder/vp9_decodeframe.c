@@ -1557,12 +1557,33 @@ static void read_coef_probs_common(vp9_coeff_probs_model *coef_probs,
               vp9_diff_update_prob(r, &coef_probs[i][j][k][l][m]);
 }
 
+#if CONFIG_TX_SKIP
+static void read_coef_probs_common_pxd(vp9_coeff_probs_pxd *coef_probs,
+                                   vp9_reader *r) {
+  int i, j, l, m;
+
+  if (vp9_read_bit(r))
+    for (i = 0; i < PLANE_TYPES; ++i)
+      for (j = 0; j < REF_TYPES; ++j)
+        for (l = 0; l < 6; ++l)
+          for (m = 0; m < ENTROPY_NODES; ++m)
+            vp9_diff_update_prob(r, &coef_probs[i][j][l][m]);
+}
+#endif  // CONFIG_TX_SKIP
+
 static void read_coef_probs(FRAME_CONTEXT *fc, TX_MODE tx_mode,
                             vp9_reader *r) {
     const TX_SIZE max_tx_size = tx_mode_to_biggest_tx_size[tx_mode];
     TX_SIZE tx_size;
     for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size)
       read_coef_probs_common(fc->coef_probs[tx_size], r);
+
+#if CONFIG_TX_SKIP
+    if (FOR_SCREEN_CONTENT) {
+      for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size)
+        read_coef_probs_common_pxd(fc->coef_probs_pxd[tx_size], r);
+    }
+#endif  // CONFIG_TX_SKIP
 }
 
 static void setup_segmentation(struct segmentation *seg,
@@ -2731,6 +2752,12 @@ void vp9_decode_frame(VP9Decoder *pbi,
   vp9_zero(cm->counts);
   vp9_zero(xd->dqcoeff);
 
+#if 1
+    if (cm->current_video_frame % 200 == 0) {
+      memset(cm->t_counts, 0, 1248 * sizeof(cm->t_counts[0]));
+    }
+#endif
+
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
 
@@ -2754,6 +2781,22 @@ void vp9_decode_frame(VP9Decoder *pbi,
     vp9_loop_bilateral_rows(new_fb, cm, 0, cm->mi_rows, 0);
   }
 #endif  // CONFIG_LOOP_POSTFILTER
+
+#if 0
+  if (cm->current_video_frame % 200 == 199) {
+    FILE *fp;
+    int i;
+
+    fp = fopen("./debug/token_counts.txt", "a");
+    for (i = 0; i < 1248; i++) {
+      fprintf(fp, "%10lld ", cm->t_counts[i]);
+      if (i % 13 == 12)
+        fprintf(fp, "\n");
+    }
+    fprintf(fp, "\n \n");
+    fclose(fp);
+  }
+#endif
 
   new_fb->corrupted |= xd->corrupted;
   if (!new_fb->corrupted) {

@@ -228,6 +228,12 @@ typedef struct VP9Common {
   int palette_counter;
   int block_counter;
 #endif  // CONFIG_PALETTE
+
+#if 1
+  long long int t_counts[4 * 2 * 2 * 6 * 13];
+
+  //int cat_stats[11][PXD_MAX_BITS][28];
+#endif
 } VP9_COMMON;
 
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {
