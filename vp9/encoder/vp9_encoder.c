@@ -1900,7 +1900,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
                                                 cpi->summed_weights, 8.0);
         if (cpi->b_calculate_blockiness) {
           fprintf(f, "Bitrate\tAVGPsnr\tGLBPsnr\tAVPsnrP\tGLPsnrP\t"
-                "VPXSSIM\tVPSSIMP\tFASTSSIM\tPSNRHVS\tTime(ms)\n");
+                "VPXSSIM\tFASTSSIM\tPSNRHVS\tTime(ms)\n");
           fprintf(f, "%7.2f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t"
                 "%7.3f\t%7.3f\t%8.0f\n",
                   dr, cpi->total / cpi->count, total_psnr,
@@ -1910,7 +1910,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
                 total_encode_time);
         } else {
           fprintf(f, "Bitrate\tAVGPsnr\tGLBPsnr\tAVPsnrP\tGLPsnrP\t"
-                "VPXSSIM\tVPSSIMP\tBlockiness\tFASTSSIM\tPSNRHVS\tTime(ms)\n");
+                "VPXSSIM\tBlockiness\tFASTSSIM\tPSNRHVS\tTime(ms)\n");
           fprintf(f, "%7.2f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t"
                   "%7.3f\t%7.3f\t%7.3f\t%8.0f\n",
                   dr, cpi->total / cpi->count, total_psnr,
