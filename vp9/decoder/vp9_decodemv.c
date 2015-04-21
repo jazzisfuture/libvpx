@@ -65,6 +65,7 @@ static void read_tx_size_inter(VP9_COMMON *cm, MACROBLOCKD *xd,
                                vp9_reader *r) {
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   int is_split = 0;
+  int tx_idx = (blk_row / 2) * 8 + (blk_col / 2);
   int max_blocks_high = num_4x4_blocks_high_lookup[mbmi->sb_type];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[mbmi->sb_type];
   if (xd->mb_to_bottom_edge < 0)
@@ -78,6 +79,7 @@ static void read_tx_size_inter(VP9_COMMON *cm, MACROBLOCKD *xd,
   is_split = vp9_read_bit(r);
 
   if (!is_split) {
+    mbmi->inter_tx_size[tx_idx] = tx_size;
     mbmi->tx_size = tx_size;
   } else {
     BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
@@ -85,6 +87,7 @@ static void read_tx_size_inter(VP9_COMMON *cm, MACROBLOCKD *xd,
     int i;
 
     if (tx_size == TX_8X8) {
+      mbmi->inter_tx_size[tx_idx] = TX_4X4;
       mbmi->tx_size = TX_4X4;
       return;
     }
@@ -627,8 +630,11 @@ static void read_inter_frame_mode_info(VP9Decoder *const pbi,
         read_tx_size_inter(cm, xd, max_txsize_lookup[mbmi->sb_type],
                            idy, idx, r);
   } else {
+    int i;
     mbmi->tx_size = read_tx_size(cm, xd, counts,
                                  !mbmi->skip || !inter_block, r);
+    for (i = 0; i < 64; ++i)
+      mbmi->inter_tx_size[i] = mbmi->tx_size;
   }
 
   if (inter_block)
