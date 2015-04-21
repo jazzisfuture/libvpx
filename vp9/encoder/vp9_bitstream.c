@@ -322,16 +322,26 @@ static void pack_mb_tokens(vp9_writer *w,
     // is split into two treed writes.  The first treed write takes care of the
     // unconstrained nodes.  The second treed write takes care of the
     // constrained nodes.
-    if (t >= TWO_TOKEN && t < EOB_TOKEN) {
-      int len = UNCONSTRAINED_NODES - p->skip_eob_node;
-      int bits = v >> (n - len);
-      vp9_write_tree(w, vp9_coef_tree, p->context_tree, bits, len, i);
-      vp9_write_tree(w, vp9_coef_con_tree,
-                     vp9_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
-                     v, n - len, 0);
-    } else {
+#if CONFIG_TX_SKIP
+    if (p->is_pxd_token && PXD_TOKEN) {
+      //int len = UNCONSTRAINED_NODES - p->skip_eob_node;
+      //int bits = v >> (n - len);
       vp9_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
+    } else {
+#endif  // CONFIG_TX_SKIP
+      if (t >= TWO_TOKEN && t < EOB_TOKEN) {
+        int len = UNCONSTRAINED_NODES - p->skip_eob_node;
+        int bits = v >> (n - len);
+        vp9_write_tree(w, vp9_coef_tree, p->context_tree, bits, len, i);
+        vp9_write_tree(w, vp9_coef_con_tree,
+                       vp9_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
+                       v, n - len, 0);
+      } else {
+        vp9_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
+      }
+#if CONFIG_TX_SKIP
     }
+#endif  // CONFIG_TX_SKIP
 
     if (b->base_val) {
       const int e = p->extra, l = b->len;

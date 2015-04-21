@@ -4696,7 +4696,30 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     if (cm->interp_filter == SWITCHABLE)
       cm->interp_filter = get_interp_filter(filter_thrs, is_alt_ref);
 
+
+#if 0
+    if (cm->current_video_frame % 200 == 0) {
+      memset(cm->t_counts, 0, 1152 * sizeof(cm->t_counts[0]));
+    }
+#endif
+
     encode_frame_internal(cpi);
+
+#if 0
+    if (cm->current_video_frame % 200 == 199) {
+      FILE *fp;
+      int i;
+
+      fp = fopen("./debug/token_counts.txt", "a");
+      for (i = 0; i < 1152; i++) {
+        fprintf(fp, "%10lld ", cm->t_counts[i]);
+        if (i % 12 == 11)
+          fprintf(fp, "\n");
+      }
+      fprintf(fp, "\n \n");
+      fclose(fp);
+    }
+#endif
 
     for (i = 0; i < REFERENCE_MODES; ++i)
       mode_thrs[i] = (mode_thrs[i] + rd_opt->comp_pred_diff[i] / cm->MBs) / 2;
