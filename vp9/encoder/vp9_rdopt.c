@@ -502,6 +502,89 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
   return cost;
 }
 
+#if CONFIG_TX_SKIP
+static INLINE int cost_coeffs_pxd(MACROBLOCK *x,
+                                  int plane, int block,
+                                  ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L,
+                                  TX_SIZE tx_size,
+                                  const int16_t *scan, const int16_t *nb,
+                                  int use_fast_coef_costing) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
+  const struct macroblock_plane *p = &x->plane[plane];
+  const struct macroblockd_plane *pd = &xd->plane[plane];
+  const PLANE_TYPE type = pd->plane_type;
+  const int16_t *band_count = &band_counts[tx_size][1];
+  const int eob = p->eobs[block];
+  const tran_low_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
+#if 0
+  unsigned int (*token_costs)[2][COEFF_CONTEXTS][ENTROPY_TOKENS] =
+      x->token_costs[tx_size][type][is_inter_block(mbmi)];
+#else
+  unsigned int (*token_costs)[COEFF_CONTEXTS][ENTROPY_TOKENS] =
+      x->token_costs_pxd[tx_size][type][is_inter_block(mbmi)];
+#endif
+
+  uint8_t token_cache[MAX_NUM_COEFS];
+  int pt = combine_entropy_contexts(*A, *L);
+  int c, cost;
+  // Check for consistency of tx_size with mode info
+#if !CONFIG_SUPERTX
+  assert(type == PLANE_TYPE_Y ? mbmi->tx_size == tx_size
+      : get_uv_tx_size(mbmi, pd) == tx_size);
+#endif  // CONFIG_SUPERTX
+
+  if (eob == 0) {
+    // single eob token
+    //cost = token_costs[0][0][pt][EOB_TOKEN];
+    cost = token_costs[0][pt][EOB_TOKEN];
+    c = 0;
+  } else {
+    int band_left = *band_count++;
+    // dc token
+    int v = qcoeff[0];
+    int prev_t = vp9_dct_value_tokens_ptr[v].token;
+    cost = token_costs[0][pt][prev_t] + vp9_dct_value_cost_ptr[v];
+    token_cache[0] = vp9_pt_energy_class[prev_t];
+
+    // ac tokens
+    for (c = 1; c < eob; c++) {
+      const int rc = scan[c];
+      int t;
+
+      v = qcoeff[rc];
+      t = vp9_dct_value_tokens_ptr[v].token;
+      if (use_fast_coef_costing) {
+        cost += token_costs[!prev_t][!prev_t][t] + vp9_dct_value_cost_ptr[v];
+      } else {
+        pt = get_coef_context(nb, token_cache, c);
+        cost += token_costs[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
+        token_cache[rc] = vp9_pt_energy_class[t];
+      }
+      prev_t = t;
+      if (!--band_left) {
+        band_left = *band_count++;
+      }
+    }
+
+    // eob token
+    if (band_left) {
+      if (use_fast_coef_costing) {
+        cost += token_costs[0][!prev_t][EOB_TOKEN];
+      } else {
+        pt = get_coef_context(nb, token_cache, c);
+        cost += token_costs[0][pt][EOB_TOKEN];
+      }
+    }
+  }
+
+  // is eob first coefficient;
+  *A = *L = (c > 0);
+
+  return cost;
+}
+#endif  // CONFIG_TX_SKIP
+
 #define right_shift_signed(x, s) ((s) < 0 ? (x) << (-(s)) : (x) >> (s))
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -558,10 +641,18 @@ static void rate_block(int plane, int block, BLOCK_SIZE plane_bsize,
   int x_idx, y_idx;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x_idx, &y_idx);
 
-  args->rate = cost_coeffs(args->x, plane, block, args->t_above + x_idx,
-                           args->t_left + y_idx, tx_size,
-                           args->so->scan, args->so->neighbors,
-                           args->use_fast_coef_costing);
+#if CONFIG_TX_SKIP
+  if (args->x->e_mbd.mi[0].src_mi->mbmi.tx_skip[plane != 0] && PXD_TOKEN && 1)
+    args->rate = cost_coeffs_pxd(args->x, plane, block, args->t_above + x_idx,
+                                 args->t_left + y_idx, tx_size,
+                                 args->so->scan, args->so->neighbors,
+                                 args->use_fast_coef_costing);
+  else
+#endif  // CONFIG_TX_SKIP
+    args->rate = cost_coeffs(args->x, plane, block, args->t_above + x_idx,
+                             args->t_left + y_idx, tx_size,
+                             args->so->scan, args->so->neighbors,
+                             args->use_fast_coef_costing);
 }
 
 static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,

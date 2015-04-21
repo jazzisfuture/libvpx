@@ -115,6 +115,11 @@ extern const vp9_extra_bit vp9_extra_bits_high10[ENTROPY_TOKENS];
 extern const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_TX_SKIP
+#define PXD_TOKEN 1
+#define NO_TX 0
+#endif  // CONFIG_TX_SKIP
+
 /* Coefficients are predicted via a 3-dimensional probability table. */
 
 #define REF_TYPES 2  // intra=0, inter=1
@@ -217,6 +222,12 @@ typedef unsigned int vp9_coeff_count_model[REF_TYPES][COEF_BANDS]
                                           [UNCONSTRAINED_NODES + 1];
 
 void vp9_model_to_full_probs(const vp9_prob *model, vp9_prob *full);
+
+#if CONFIG_TX_SKIP
+typedef vp9_prob vp9_coeff_probs_pxd[REF_TYPES][COEFF_CONTEXTS][ENTROPY_NODES];
+typedef unsigned int vp9_coeff_counts_pxd[REF_TYPES][COEFF_CONTEXTS]
+                                                     [ENTROPY_TOKENS];
+#endif  // CONFIG_TX_SKIP
 
 static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
                                       const ENTROPY_CONTEXT *l) {

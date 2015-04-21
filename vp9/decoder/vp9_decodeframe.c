@@ -2731,6 +2731,12 @@ void vp9_decode_frame(VP9Decoder *pbi,
   vp9_zero(cm->counts);
   vp9_zero(xd->dqcoeff);
 
+#if 1
+    if (cm->current_video_frame % 200 == 0) {
+      memset(cm->t_counts, 0, 1152 * sizeof(cm->t_counts[0]));
+    }
+#endif
+
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
 
@@ -2754,6 +2760,22 @@ void vp9_decode_frame(VP9Decoder *pbi,
     vp9_loop_bilateral_rows(new_fb, cm, 0, cm->mi_rows, 0);
   }
 #endif  // CONFIG_LOOP_POSTFILTER
+
+#if 0
+  if (cm->current_video_frame % 200 == 199) {
+    FILE *fp;
+    int i;
+
+    fp = fopen("./debug/token_counts.txt", "a");
+    for (i = 0; i < 1152; i++) {
+      fprintf(fp, "%10lld ", cm->t_counts[i]);
+      if (i % 12 == 11)
+        fprintf(fp, "\n");
+    }
+    fprintf(fp, "\n \n");
+    fclose(fp);
+  }
+#endif
 
   new_fb->corrupted |= xd->corrupted;
   if (!new_fb->corrupted) {
