@@ -314,4 +314,22 @@ INSTANTIATE_TEST_CASE_P(
                    &vp9_idct16x16_10_add_ssse3,
                    TX_16X16, 10)));
 #endif
+
+#if HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+INSTANTIATE_TEST_CASE_P(
+    MSA, PartialIDctTest,
+    ::testing::Values(
+        make_tuple(&vp9_fdct32x32_c,
+                   &vp9_idct32x32_1024_add_c,
+                   &vp9_idct32x32_34_add_msa,
+                   TX_32X32, 34),
+        make_tuple(&vp9_fdct32x32_c,
+                   &vp9_idct32x32_1024_add_msa,
+                   &vp9_idct32x32_34_add_c,
+                   TX_32X32, 34),
+        make_tuple(&vp9_fdct32x32_c,
+                   &vp9_idct32x32_1024_add_c,
+                   &vp9_idct32x32_1_add_msa,
+                   TX_32X32, 1)));
+#endif
 }  // namespace
