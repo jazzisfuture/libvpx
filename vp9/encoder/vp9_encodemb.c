@@ -735,8 +735,11 @@ static void encode_block_b(int blk_row, int blk_col, int plane,
                         plane_bsize, tx_size);
 
   if (x->optimize) {
-    const int ctx = combine_entropy_contexts(*a, *l);
-    *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
+    int context;
+    vp9_get_entropy_contexts(plane_bsize, tx_size, pd,
+                             ctx->ta[plane], ctx->tl[plane]);
+    context = combine_entropy_contexts(*a, *l);
+    *a = *l = optimize_b(x, plane, block, tx_size, context) > 0;
   } else {
     *a = *l = p->eobs[block] > 0;
   }
@@ -893,12 +896,6 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
 
     if (!x->skip_recode)
       vp9_subtract_plane(x, bsize, plane);
-
-    if (x->optimize) {
-      const struct macroblockd_plane* const pd = &xd->plane[plane];
-      vp9_get_entropy_contexts(bsize, TX_4X4, pd,
-                               ctx.ta[plane], ctx.tl[plane]);
-    }
 
     for (idy = 0; idy < mi_height; idy += bh) {
       for (idx = 0; idx < mi_width; idx += bh) {
