@@ -2,6 +2,8 @@ README - 23 March 2015
 
 Welcome to the WebM VP8/VP9 Codec SDK!
 
+****JUST TESTING*****
+
 COMPILING THE APPLICATIONS/LIBRARIES:
   The build system used is similar to autotools. Building generally consists of
   "configuring" with your desired build options, then using GNU make to build
