@@ -39,6 +39,9 @@
 #if CONFIG_SUPERTX
 #include "vp9/encoder/vp9_cost.h"
 #endif
+#if CONFIG_GLOBAL_MOTION
+#include "vp9/encoder/vp9_global_motion.h"
+#endif  // CONFIG_GLOBAL_MOTION
 #include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemb.h"
 #include "vp9/encoder/vp9_encodemv.h"
@@ -1224,8 +1227,9 @@ void vp9_setup_src_planes(MACROBLOCK *x, const YV12_BUFFER_CONFIG *src,
                      x->e_mbd.plane[i].subsampling_y);
 }
 
-static void set_mode_info_seg_skip(MACROBLOCK *x, TX_MODE tx_mode,
+static void set_mode_info_seg_skip(VP9_COMMON *cm, MACROBLOCK *x,
                                    RD_COST *rd_cost, BLOCK_SIZE bsize) {
+  TX_MODE tx_mode = cm->tx_mode;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
   INTERP_FILTER filter_ref;
@@ -1245,10 +1249,16 @@ static void set_mode_info_seg_skip(MACROBLOCK *x, TX_MODE tx_mode,
   mbmi->uv_mode = DC_PRED;
   mbmi->ref_frame[0] = LAST_FRAME;
   mbmi->ref_frame[1] = NONE;
-  mbmi->mv[0].as_int = 0;
   mbmi->interp_filter = filter_ref;
 
+#if CONFIG_GLOBAL_MOTION
+  mbmi->mv[0].as_int = cm->global_motion[mbmi->ref_frame[0]][0].mv.as_int;
+  xd->mi[0].src_mi->bmi[0].as_mv[0].as_int =
+      cm->global_motion[mbmi->ref_frame[0]][0].mv.as_int;
+#else
+  mbmi->mv[0].as_int = 0;
   xd->mi[0].src_mi->bmi[0].as_mv[0].as_int = 0;
+#endif  // CONFIG_GLOBAL_MOTION
   x->skip = 1;
 
   vp9_rd_cost_init(rd_cost);
@@ -3794,7 +3804,7 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
       x->rdmult = vp9_cyclic_refresh_get_rdmult(cpi->cyclic_refresh);
 
   if (vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP))
-    set_mode_info_seg_skip(x, cm->tx_mode, rd_cost, bsize);
+    set_mode_info_seg_skip(cm, x, rd_cost, bsize);
   else
     vp9_pick_inter_mode(cpi, x, tile, mi_row, mi_col, rd_cost, bsize, ctx);
 
@@ -4557,6 +4567,35 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 }
 #endif
 
+#if CONFIG_GLOBAL_MOTION
+static void convert_translation_to_params(
+    double *H, Global_Motion_Params *model) {
+  model->mv.as_mv.col = (int) floor(H[0] * 8 + 0.5);
+  model->mv.as_mv.row = (int) floor(H[1] * 8 + 0.5);
+  model->mv.as_mv.col =
+      clamp(model->mv.as_mv.col,
+            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
+  model->mv.as_mv.row =
+      clamp(model->mv.as_mv.row,
+            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
+}
+
+static void convert_rotzoom_to_params(double *H, Global_Motion_Params *model) {
+  double z = sqrt(H[0] * H[0] + H[1] * H[1]) - 1.0;
+  double r = atan2(-H[1], H[0]) * 180.0 / M_PI;
+  assert(abs(H[0] - (1 + z) * cos(r * M_PI / 180.0)) < 1e-10);
+  assert(abs(H[1] + (1 + z) * sin(r * M_PI / 180.0)) < 1e-10);
+  model->zoom = (int) floor(z * (1 << ZOOM_PRECISION_BITS) + 0.5);
+  model->rotation = (int) floor(r * (1 << ROTATION_PRECISION_BITS) + 0.5);
+  model->zoom = clamp(
+      model->zoom, -(1 << ABS_ZOOM_BITS), (1 << ABS_ZOOM_BITS));
+  model->rotation = clamp(
+      model->rotation, -(1 << ABS_ROTATION_BITS), (1 << ABS_ROTATION_BITS));
+
+  convert_translation_to_params(H + 2, model);
+}
+#endif  // CONFIG_GLOBAL_MOTION
+
 static void encode_frame_internal(VP9_COMP *cpi) {
   SPEED_FEATURES *const sf = &cpi->sf;
   RD_OPT *const rd_opt = &cpi->rd;
@@ -4581,13 +4620,93 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   cm->tx_mode = select_tx_mode(cpi);
 
+#if CONFIG_GLOBAL_MOTION
+  vp9_zero(cpi->global_motion_used);
+  vpx_memset(cm->num_global_motion, 0, sizeof(cm->num_global_motion));
+  vpx_memset(cm->global_motion, 0, sizeof(cm->global_motion));
+  if (cpi->common.current_video_frame > 0) {
+    struct lookahead_entry *q_cur = vp9_lookahead_peek(cpi->lookahead, 0);
+    if (q_cur) {
+      int num;
+      double global_motion[9 * MAX_GLOBAL_MOTION_MODELS];
+      YV12_BUFFER_CONFIG *ref_buf;
+      ref_buf = get_ref_frame_buffer(cpi, LAST_FRAME);
+      if (ref_buf) {
+        if ((num =
+             vp9_compute_global_motion_multiple_feature_based(
+                 cpi, TRANSLATION, &q_cur->img, ref_buf,
+                 MAX_GLOBAL_MOTION_MODELS, 0.75, global_motion))) {
+          int i;
+          for (i = 0; i < num; i++) {
+            convert_translation_to_params(
+                global_motion + i * 2, &cm->global_motion[LAST_FRAME][i]);
+            /*
+            printf("LAST [%d]: %d %d %d %d\n",
+                   cm->current_video_frame,
+                   cm->global_motion[LAST_FRAME][i].zoom,
+                   cm->global_motion[LAST_FRAME][i].rotation,
+                   cm->global_motion[LAST_FRAME][i].mv.as_mv.col,
+                   cm->global_motion[LAST_FRAME][i].mv.as_mv.row);
+                   */
+          }
+          cm->num_global_motion[LAST_FRAME] = num;
+        }
+      }
+      ref_buf = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+      if (ref_buf) {
+        if ((num =
+             vp9_compute_global_motion_multiple_feature_based(
+                 cpi, TRANSLATION, &q_cur->img, ref_buf,
+                 MAX_GLOBAL_MOTION_MODELS, 0.75, global_motion))) {
+          int i;
+          for (i = 0; i < num; i++) {
+            convert_translation_to_params(
+                global_motion + i * 4, &cm->global_motion[GOLDEN_FRAME][i]);
+            /*
+            printf("GOLD [%d]: %d %d %d %d\n",
+                   cm->current_video_frame,
+                   cm->global_motion[GOLDEN_FRAME][i].zoom,
+                   cm->global_motion[GOLDEN_FRAME][i].rotation,
+                   cm->global_motion[GOLDEN_FRAME][i].mv.as_mv.col,
+                   cm->global_motion[GOLDEN_FRAME][i].mv.as_mv.row);
+                   */
+          }
+          cm->num_global_motion[GOLDEN_FRAME] = num;
+        }
+      }
+      ref_buf = get_ref_frame_buffer(cpi, ALTREF_FRAME);
+      if (ref_buf) {
+        if ((num =
+             vp9_compute_global_motion_multiple_feature_based(
+                 cpi, TRANSLATION, &q_cur->img, ref_buf,
+                 MAX_GLOBAL_MOTION_MODELS, 0.75, global_motion))) {
+          int i;
+          for (i = 0; i < num; i++) {
+            convert_translation_to_params(
+                global_motion + i * 4, &cm->global_motion[ALTREF_FRAME][i]);
+            /*
+            printf("AREF [%d]: %d %d %d %d\n",
+                   cm->current_video_frame,
+                   cm->global_motion[ALTREF_FRAME][i].zoom,
+                   cm->global_motion[ALTREF_FRAME][i].rotation,
+                   cm->global_motion[ALTREF_FRAME][i].mv.as_mv.col,
+                   cm->global_motion[ALTREF_FRAME][i].mv.as_mv.row);
+                   */
+          }
+          cm->num_global_motion[ALTREF_FRAME] = num;
+        }
+      }
+    }
+  }
+#endif  // CONFIG_GLOBAL_MOTION
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)
     x->fwd_txm4x4 = xd->lossless ? vp9_highbd_fwht4x4 : vp9_highbd_fdct4x4;
   else
     x->fwd_txm4x4 = xd->lossless ? vp9_fwht4x4 : vp9_fdct4x4;
   x->highbd_itxm_add = xd->lossless ? vp9_highbd_iwht4x4_add :
-                                      vp9_highbd_idct4x4_add;
+      vp9_highbd_idct4x4_add;
 #else
   x->fwd_txm4x4 = xd->lossless ? vp9_fwht4x4 : vp9_fdct4x4;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
