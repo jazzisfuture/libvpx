@@ -77,7 +77,7 @@ typedef struct frame_contexts {
   vp9_prob palette_color_prob[PALETTE_MAX_SIZE - 1][PALETTE_COLOR_CONTEXTS]
                                                     [PALETTE_COLORS - 1];
   vp9_prob palette_uv_color_prob[PALETTE_MAX_SIZE - 1][PALETTE_COLOR_CONTEXTS]
-                                                       [PALETTE_COLORS - 1];
+                                                      [PALETTE_COLORS - 1];
 #endif  // CONFIG_PALETTE
 #if CONFIG_SUPERTX
   vp9_prob supertx_prob[PARTITION_SUPERTX_CONTEXTS][TX_SIZES];
