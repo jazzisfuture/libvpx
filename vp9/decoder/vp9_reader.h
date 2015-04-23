@@ -89,6 +89,57 @@ static INLINE int vp9_read(vp9_reader *r, int prob) {
 
   return bit;
 }
+#define VP9_READ_VARS \
+  unsigned int bit = 0; \
+  BD_VALUE value; \
+  BD_VALUE bigsplit; \
+  int count; \
+  unsigned int range; \
+  unsigned int split;
+
+#define VP9_READ_BIT(r,prob) \
+  split = (r->range * prob + (256 - prob)) >> CHAR_BIT; \
+  if (r->count < 0) \
+    vp9_reader_fill(r); \
+  value = r->value; \
+  count = r->count; \
+  bigsplit = (BD_VALUE)split << (BD_VALUE_SIZE - CHAR_BIT); \
+  bit = (value >= bigsplit);
+
+#define VP9_READ_NORMALIZE \
+  { \
+    register unsigned int shift = vp9_norm[range]; \
+    range <<= shift; \
+    value <<= shift; \
+    count -= shift; \
+  }
+#define VP9_READ_STORE(r) \
+  r->value = value; \
+  r->count = count; \
+  r->range = range;
+
+#define VP9_READ_ADJUST_FOR_ONE(r) \
+  range = r->range - split; \
+  value = value - bigsplit; \
+  VP9_READ_NORMALIZE \
+  VP9_READ_STORE(r)
+
+#define VP9_READ_ADJUST_FOR_ZERO \
+  range = split; \
+  VP9_READ_NORMALIZE \
+  VP9_READ_STORE(r)
+
+
+static INLINE int vp9_readz(vp9_reader *r, int prob) {
+  VP9_READ_VARS;
+  VP9_READ_BIT(r, prob);
+  if (bit) {
+    VP9_READ_ADJUST_FOR_ONE(r)
+  } else {
+    VP9_READ_ADJUST_FOR_ZERO;
+  }
+  return bit;
+}
 
 static INLINE int vp9_read_bit(vp9_reader *r) {
   return vp9_read(r, 128);  // vp9_prob_half
