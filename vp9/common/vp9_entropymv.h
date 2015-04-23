@@ -127,6 +127,31 @@ typedef struct {
 
 void vp9_inc_mv(const MV *mv, nmv_context_counts *mvctx);
 
+#if CONFIG_GLOBAL_MOTION
+#define MAX_GLOBAL_MOTION_MODELS  1
+
+#define ZOOM_PRECISION_BITS       6
+#define ROTATION_PRECISION_BITS   4
+
+#define ABS_ZOOM_BITS             3
+#define ABS_ROTATION_BITS         4
+#define ABS_TRANSLATION_BITS      7
+
+typedef enum {
+  GLOBAL_ZERO = 0,
+  GLOBAL_TRANSLATION = 1,
+  GLOBAL_ROTZOOM = 2,
+  GLOBAL_MOTION_TYPES
+} GLOBAL_MOTION_TYPE;
+
+// Currently this is specialized for rotzoom model only
+typedef struct {
+  int rotation;   // positive or negative rotation angle in degrees
+  int zoom;       // this is actually the zoom multiplier minus 1
+  int_mv mv;
+} Global_Motion_Params;
+#endif  // CONFIG_GLOBAL_MOTION
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

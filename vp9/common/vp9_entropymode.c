@@ -491,6 +491,20 @@ const vp9_tree_index vp9_inter_compound_mode_tree
 };
 #endif  // CONFIG_COMPOUND_MODES
 
+#if CONFIG_GLOBAL_MOTION
+const vp9_tree_index vp9_global_motion_types_tree
+          [TREE_SIZE(GLOBAL_MOTION_TYPES)] = {
+  -GLOBAL_ZERO, 2,
+  -GLOBAL_TRANSLATION, -GLOBAL_ROTZOOM
+};
+
+static const vp9_prob default_global_motion_types_prob
+                 [GLOBAL_MOTION_TYPES - 1] = {
+  // Currently only translation is used, so make the second prob very high.
+  224, 255
+};
+#endif  // CONFIG_GLOBAL_MOTION
+
 const vp9_tree_index vp9_partition_tree[TREE_SIZE(PARTITION_TYPES)] = {
   -PARTITION_NONE, 2,
   -PARTITION_HORZ, 4,
@@ -1028,6 +1042,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
 #if CONFIG_WEDGE_PARTITION
   vp9_copy(fc->wedge_interinter_prob, default_wedge_interinter_prob);
 #endif  // CONFIG_WEDGE_PARTITION
+#if CONFIG_GLOBAL_MOTION
+  vp9_copy(fc->global_motion_types_prob, default_global_motion_types_prob);
+#endif  // CONFIG_GLOBAL_MOTION
 }
 
 const vp9_tree_index vp9_switchable_interp_tree

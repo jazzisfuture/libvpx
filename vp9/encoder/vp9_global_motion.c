@@ -37,23 +37,7 @@
 
 #define MAX_CORNERS 4096
 
-inline int get_numparams(TransformationType type) {
-  switch (type) {
-    case HOMOGRAPHY:
-      return 9;
-    case AFFINE:
-      return 6;
-    case ROTZOOM:
-      return 4;
-    case TRANSLATION:
-      return 2;
-    default:
-      assert(0);
-      return 0;
-  }
-}
-
-inline ransacType get_ransacType(TransformationType type) {
+INLINE ransacType get_ransacType(TransformationType type) {
   switch (type) {
     case HOMOGRAPHY:
       return ransacHomography;
@@ -69,7 +53,7 @@ inline ransacType get_ransacType(TransformationType type) {
   }
 }
 
-inline projectPointsType get_projectPointsType(TransformationType type) {
+INLINE projectPointsType get_projectPointsType(TransformationType type) {
   switch (type) {
     case HOMOGRAPHY:
       return projectPointsHomography;
