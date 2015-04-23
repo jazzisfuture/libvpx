@@ -33,11 +33,25 @@ typedef enum {
   TRANSLATION  // translational motion 2-parameter
 } TransformationType;
 
-inline int get_numparams(TransformationType type);
+static INLINE int get_numparams(TransformationType type) {
+  switch (type) {
+    case HOMOGRAPHY:
+      return 9;
+    case AFFINE:
+      return 6;
+    case ROTZOOM:
+      return 4;
+    case TRANSLATION:
+      return 2;
+    default:
+      assert(0);
+      return 0;
+  }
+}
 
-inline ransacType get_ransacType(TransformationType type);
+INLINE ransacType get_ransacType(TransformationType type);
 
-inline projectPointsType get_projectPointsType(TransformationType type);
+INLINE projectPointsType get_projectPointsType(TransformationType type);
 
 // Returns number of models actually returned: 1 - if success, 0 - if failure
 int vp9_compute_global_motion_single_feature_based(struct VP9_COMP *cpi,
