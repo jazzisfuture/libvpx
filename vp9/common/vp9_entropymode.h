@@ -100,6 +100,9 @@ typedef struct frame_contexts {
 #if CONFIG_WEDGE_PARTITION
   vp9_prob wedge_interinter_prob[BLOCK_SIZES];
 #endif  // CONFIG_WEDGE_PARTITION
+#if CONFIG_GLOBAL_MOTION
+  vp9_prob global_motion_types_prob[GLOBAL_MOTION_TYPES - 1];
+#endif  // CONFIG_GLOBAL_MOTION
 } FRAME_CONTEXT;
 
 typedef struct {
@@ -159,6 +162,9 @@ typedef struct {
   unsigned int y_palette_size[10][PALETTE_SIZES];
   unsigned int uv_palette_size[10][PALETTE_SIZES];
 #endif  // CONFIG_PALETTE
+#if CONFIG_GLOBAL_MOTION
+  unsigned int global_motion_types[GLOBAL_MOTION_TYPES];
+#endif  // CONFIG_GLOBAL_MOTION
 } FRAME_COUNTS;
 
 extern const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
@@ -187,6 +193,11 @@ extern const vp9_tree_index vp9_copy_mode_tree[TREE_SIZE(COPY_MODE_COUNT - 1)];
 extern const vp9_tree_index vp9_inter_compound_mode_tree
                                 [TREE_SIZE(INTER_COMPOUND_MODES)];
 #endif
+
+#if CONFIG_GLOBAL_MOTION
+extern const vp9_tree_index vp9_global_motion_types_tree
+                                [TREE_SIZE(GLOBAL_MOTION_TYPES)];
+#endif  // CONFIG_GLOBAL_MOTION
 
 void vp9_setup_past_independence(struct VP9Common *cm);
 
