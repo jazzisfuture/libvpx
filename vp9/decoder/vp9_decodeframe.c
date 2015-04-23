@@ -856,12 +856,6 @@ static void setup_tile_info(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
     cm->log2_tile_rows += vp9_rb_read_bit(rb);
 }
 
-typedef struct TileBuffer {
-  const uint8_t *data;
-  size_t size;
-  int col;  // only used with multi-threaded decoding
-} TileBuffer;
-
 // Reads the next tile returning its size and adjusting '*data' accordingly
 // based on 'is_last'.
 static void get_tile_buffer(const uint8_t *const data_end,
@@ -1057,7 +1051,12 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
 
 static int tile_worker_hook(TileWorkerData *const tile_data,
                             const TileInfo *const tile) {
-  int mi_row, mi_col;
+  int mi_row, mi_col, n;
+
+  VP9Decoder *pbi = tile_data->pbi;
+  VP9_COMMON *const cm = &pbi->common;
+  const int tile_cols_check = (1 << cm->log2_tile_cols) - 1;
+  (void)tile;
 
   if (setjmp(tile_data->error_info.jmp)) {
     tile_data->error_info.setjmp = 0;
@@ -1068,17 +1067,37 @@ static int tile_worker_hook(TileWorkerData *const tile_data,
   tile_data->error_info.setjmp = 1;
   tile_data->xd.error_info = &tile_data->error_info;
 
-  for (mi_row = tile->mi_row_start; mi_row < tile->mi_row_end;
-       mi_row += MI_BLOCK_SIZE) {
-    vp9_zero(tile_data->xd.left_context);
-    vp9_zero(tile_data->xd.left_seg_context);
-    for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
-         mi_col += MI_BLOCK_SIZE) {
-      decode_partition(tile_data->pbi, &tile_data->xd, &tile_data->counts,
-                       tile, mi_row, mi_col, &tile_data->bit_reader,
-                       BLOCK_64X64);
+  for (n = tile_data->start; n <= tile_data->end; n += tile_data->num_workers) {
+    TileBuffer *const buf = &tile_data->tile_buffers[n];
+    TileInfo local_tile;
+
+    vp9_tile_init(&local_tile, cm, 0, buf->col);
+    setup_token_decoder(buf->data, tile_data->data_end, buf->size,
+                        &tile_data->error_info, &tile_data->bit_reader,
+                        pbi->decrypt_cb, pbi->decrypt_state);
+    init_macroblockd(cm, &tile_data->xd);
+
+    for (mi_row = local_tile.mi_row_start; mi_row < local_tile.mi_row_end;
+         mi_row += MI_BLOCK_SIZE) {
+      vp9_zero(tile_data->xd.left_context);
+      vp9_zero(tile_data->xd.left_seg_context);
+      for (mi_col = local_tile.mi_col_start; mi_col < local_tile.mi_col_end;
+           mi_col += MI_BLOCK_SIZE) {
+        decode_partition(tile_data->pbi, &tile_data->xd, &tile_data->counts,
+                         &local_tile, mi_row, mi_col, &tile_data->bit_reader,
+                         BLOCK_64X64);
+      }
+    }
+
+    if (tile_data->xd.corrupted) {
+      return !tile_data->xd.corrupted;
+    }
+
+    if (buf->col == tile_cols_check) {
+      tile_data->bit_reader_end = vp9_reader_find_end(&tile_data->bit_reader);
     }
   }
+
   return !tile_data->xd.corrupted;
 }
 
@@ -1107,7 +1126,6 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
   const int num_workers = MIN(pbi->max_threads & ~1, tile_cols);
   TileBuffer tile_buffers[1][1 << 6];
   int n;
-  int final_worker = -1;
 
   assert(tile_cols <= (1 << 6));
   assert(tile_rows == 1);
@@ -1147,6 +1165,7 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
     VP9Worker *const worker = &pbi->tile_workers[n];
     winterface->sync(worker);
     worker->hook = (VP9WorkerHook)tile_worker_hook;
+    pbi->tile_worker_data[n].bit_reader_end = 0;
     worker->data1 = &pbi->tile_worker_data[n];
     worker->data2 = &pbi->tile_worker_info[n];
   }
@@ -1195,30 +1214,27 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
   n = 0;
   while (n < tile_cols) {
     int i;
-    for (i = 0; i < num_workers && n < tile_cols; ++i) {
+    for (i = 0; i < num_workers; ++i) {
       VP9Worker *const worker = &pbi->tile_workers[i];
       TileWorkerData *const tile_data = (TileWorkerData*)worker->data1;
-      TileInfo *const tile = (TileInfo*)worker->data2;
-      TileBuffer *const buf = &tile_buffers[0][n];
 
+      tile_data->tile_buffers = tile_buffers[0];
       tile_data->pbi = pbi;
       tile_data->xd = pbi->mb;
       tile_data->xd.corrupted = 0;
-      vp9_tile_init(tile, cm, 0, buf->col);
-      setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
-                          &tile_data->bit_reader, pbi->decrypt_cb,
-                          pbi->decrypt_state);
-      init_macroblockd(cm, &tile_data->xd);
+      tile_data->start = i;
+      tile_data->end = ((tile_cols / num_workers) * num_workers) + i;
+      if (tile_data->end >= tile_cols)
+        tile_data->end -= num_workers;
+
+      tile_data->num_workers = num_workers;
+      tile_data->data_end = data_end;
 
       worker->had_error = 0;
       if (i == num_workers - 1 || n == tile_cols - 1) {
         winterface->execute(worker);
       } else {
         winterface->launch(worker);
-      }
-
-      if (buf->col == tile_cols - 1) {
-        final_worker = i;
       }
 
       ++n;
@@ -1232,11 +1248,15 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       // detected, there's no point in continuing to decode tiles.
       pbi->mb.corrupted |= !winterface->sync(worker);
     }
-    if (final_worker > -1) {
+
+    n = tile_cols;
+    for (i = 0; i < num_workers; ++i) {
       TileWorkerData *const tile_data =
-          (TileWorkerData*)pbi->tile_workers[final_worker].data1;
-      bit_reader_end = vp9_reader_find_end(&tile_data->bit_reader);
-      final_worker = -1;
+          (TileWorkerData*)pbi->tile_workers[i].data1;
+      if (tile_data->bit_reader_end != 0) {
+        bit_reader_end = tile_data->bit_reader_end;
+        break;
+      }
     }
 
     // Accumulate thread frame counts.
