@@ -443,9 +443,31 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd,
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
   PARTITION_TYPE p;
 
-  if (has_rows && has_cols)
-    p = (PARTITION_TYPE)vp9_read_tree(r, vp9_partition_tree, probs);
-  else if (!has_rows && has_cols)
+  if (has_rows && has_cols) {
+    VP9_READ_VARS;
+	VP9_READ_BIT(r, probs[0]);
+	if (!bit) {
+      VP9_READ_ADJUST_FOR_ZERO;
+      p = PARTITION_NONE;
+    } else {
+      VP9_READ_ADJUST_FOR_ONE(r);
+      VP9_READ_BIT(r,probs[1]);
+      if (!bit) {
+    	VP9_READ_ADJUST_FOR_ZERO;
+        p = PARTITION_HORZ;
+      } else {
+    	VP9_READ_ADJUST_FOR_ONE(r);
+    	VP9_READ_BIT(r, probs[2]);
+        if (!bit) {
+          VP9_READ_ADJUST_FOR_ZERO;
+          p = PARTITION_VERT;
+        } else {
+          VP9_READ_ADJUST_FOR_ONE(r)
+          p = PARTITION_SPLIT;
+        }
+      }
+    }
+  }  else if (!has_rows && has_cols)
     p = vp9_read(r, probs[1]) ? PARTITION_SPLIT : PARTITION_HORZ;
   else if (has_rows && !has_cols)
     p = vp9_read(r, probs[2]) ? PARTITION_SPLIT : PARTITION_VERT;
