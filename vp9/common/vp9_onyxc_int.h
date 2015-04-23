@@ -43,6 +43,21 @@ extern "C" {
 #define FRAME_CONTEXTS_LOG2 2
 #define FRAME_CONTEXTS (1 << FRAME_CONTEXTS_LOG2)
 
+#if CONFIG_GLOBAL_MOTION
+#define MAX_GLOBAL_MOTION_MODELS  1
+#define ZOOM_PRECISION_BITS 6
+#define ROT_PRECISION_BITS  4
+#define ABS_ZOOM_BITS 3
+#define ABS_ROT_BITS  4
+#define GLOBAL_TRANSLATION_MAX 256
+// Currently this is specialized for rotzoom model only
+typedef struct {
+  int rotation;   // positive or negative rotation angle in degrees
+  int zoom;       // this is actually the zoom multiplier minus 1
+  int_mv mv;
+} Global_Motion_Params;
+#endif  // CONFIG_GLOBAL_MOTION
+
 extern const struct {
   PARTITION_CONTEXT above;
   PARTITION_CONTEXT left;
@@ -217,6 +232,10 @@ typedef struct VP9Common {
   int palette_counter;
   int block_counter;
 #endif  // CONFIG_PALETTE
+#if CONFIG_GLOBAL_MOTION
+  int num_global_motion[MAX_REF_FRAMES];
+  Global_Motion_Params global_motion[MAX_REF_FRAMES][MAX_GLOBAL_MOTION_MODELS];
+#endif
 } VP9_COMMON;
 
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {
