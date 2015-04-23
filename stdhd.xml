@@ -1,0 +1,56 @@
+<doc>
+  <vpx_parms>--good --cpu-used=0 --threads=0 --profile=0 --limit=1000 --lag-in-frames=25 --min-q=0 --max-q=63 --auto-alt-ref=1 --passes=2 --kf-max-dist=9999 --kf-min-dist=0 --drop-frame=0 --static-thresh=0 --bias-pct=50 --minsection-pct=5 --maxsection-pct=1000 --arnr-maxframes=7 --arnr-strength=5 --sharpness=0 --undershoot-pct=100</vpx_parms>
+  <vpx_ld_parms>--good --cpu-used=0 --threads=0 --profile=0 --limit=1000 --lag-in-frames=0 --min-q=0 --max-q=63 --auto-alt-ref=1 --passes=1 --kf-max-dist=9999 --kf-min-dist=0 --drop-frame=0 --static-thresh=0 --bias-pct=50 --minsection-pct=5 --maxsection-pct=1000 --arnr-maxframes=7 --arnr-strength=5 --sharpness=0 --undershoot-pct=100</vpx_ld_parms>
+  <x264_parms>--preset veryslow --profile high --tune psnr --keyint infinite --threads 1</x264_parms>
+  <x264_ld_parms>--preset veryslow --profile high --tune zerolatency --keyint infinite --threads 1</x264_ld_parms>
+  <x265_parms>--preset veryslow --keyint -1 --merange 256 --tune psnr --frame-threads 1</x265_parms>
+  <x265_ld_parms>--preset veryslow --keyint -1 --merange 256 --tune zero-latency --frame-threads 1</x265_ld_parms>
+  <hevc_parms>--SearchRange=256 -ip -1</hevc_parms>
+  <ffmpeg_parms>-vframes 1000</ffmpeg_parms>
+  <bsets>
+    <low>50 100 150 200 300 400 600 800 1200 1600 2000 3000 4000 6000</low>
+    <low2>100 200 300 400 600 800 1200 1600 2000 2400 3200 4000 6000 8000</low2>
+    <med>100 200 400 600 800 1200 1600 2000 4000 6000 8000 10000 12000</med>
+    <high>200 400 600 800 1200 1600 2000 4000 8000 12000 16000 20000</high>
+    <ultra>1000 2000 4000 8000 16000 24000 32000 40000 48000 56000</ultra>
+  </bsets>
+  <qsets_mpg>
+    <low>12 14 17 20 24 28 32 36 40 44</low>
+    <low2>12 14 17 20 24 28 32 36 40 44</low2>
+    <med>12 14 17 20 24 28 32 36 40 44</med>
+    <high>12 14 17 20 24 28 32 36 40 44</high>
+    <ultra>12 14 17 20 24 28 32 36 40 44</ultra>
+  </qsets_mpg>
+  <qsets_vpx>
+    <low>8 12 16 20 24 30 36 44 52 60</low>
+    <low2>8 12 16 20 24 30 36 44 52 60</low2>
+    <med>8 12 16 20 24 30 36 44 52 60</med>
+    <high>8 12 16 20 24 30 36 44 52 60</high>
+    <ultra>8 12 16 20 24 30 36 44 52 60</ultra>
+  </qsets_vpx>
+  <high>
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/720p50_mobcal_ter.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/720p50_shields_ter.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/old_town_cross_420_720p50.y4m
+  </high>
+  <low2>
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/city.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/night.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/cyclists.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/sunflower_1080p25.y4m
+  </low2>
+  <low>
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/jets.y4m
+  </low>
+  <med>
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/crew.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/ped_1080p.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/sheriff.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/blue_sky_1080p25.y4m
+  </med>
+  <ultra>
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/riverbed_1080p25.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/crowd_run_1080p50.y4m
+    /cns/rc-d/home/on2-prod/hd-set-y4m/mkv-lossless/park_joy_1080p50.y4m
+  </ultra>
+</doc>
