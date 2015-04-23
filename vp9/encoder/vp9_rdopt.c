@@ -1176,7 +1176,7 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
                (blk_col >> (1 - pd->subsampling_x));
   int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
-  int this_rd;
+  int64_t this_rd = INT64_MAX;
 
   if (xd->mb_to_bottom_edge < 0)
     max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
@@ -1194,11 +1194,12 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->inter_tx_size[tx_idx] = tx_size;
   mbmi->tx_size = tx_size;
 
-  tx_block_rd_b(x, tx_size, blk_row, blk_col, plane, block,
-                plane_bsize, rate, dist, bsse, skip);
-
-  *rate += 128;
-  this_rd = RDCOST(x->rdmult, x->rddiv, *rate, *dist);
+  if (cpi->common.tx_mode == TX_MODE_SELECT || tx_size == TX_4X4) {
+    tx_block_rd_b(x, tx_size, blk_row, blk_col, plane, block,
+                  plane_bsize, rate, dist, bsse, skip);
+    *rate += 128;
+    this_rd = RDCOST(x->rdmult, x->rddiv, *rate, *dist);
+  }
 
   if (tx_size > TX_4X4) {
     BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
