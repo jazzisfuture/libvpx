@@ -408,9 +408,10 @@ int ransac_(double *matched_points,
   double *cnp1, *cnp2;
   double T1[9], T2[9];
 
-  srand((unsigned)time(NULL)) ;
-  // srand( 12345 ) ;
-  //
+  // srand((unsigned)time(NULL)) ;
+  // better to make this deterministic for a given sequence for ease of testing
+  srand( npoints );
+
   *number_of_inliers = 0;
   if (npoints < minpts) {
     printf("Cannot find motion with %d matches\n", npoints);
