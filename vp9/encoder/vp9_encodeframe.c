@@ -3988,6 +3988,43 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   sf->skip_encode_frame = sf->skip_encode_sb ?
       get_skip_encode_frame(cm, td) : 0;
 
+  if (sf->use_nonrd_pick_mode && cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    // For video conference clips, if the background has high motion in current
+    // frame, set it as the golden frame.
+    if (cm->frame_type != KEY_FRAME) {
+      MODE_INFO *mi = cm->mi;
+      int mi_row, mi_col;
+      int rows = cm->mi_rows, cols = cm->mi_cols;
+      int cnt1 = 0, cnt2 = 0;
+      RATE_CONTROL *const rc = &cpi->rc;
+
+      for (mi_row = 0; mi_row < rows; mi_row++) {
+        for (mi_col = 0; mi_col < cols; mi_col++) {
+          int16_t mvr = mi->mbmi.mv[0].as_mv.row;
+          int16_t mvc = mi->mbmi.mv[0].as_mv.col;
+
+          if (mvr <= 16 && mvc <= 16) {
+            cnt1++;
+            if (mvr <= 4 && mvc <= 4)
+              cnt2++;
+          }
+          mi++;
+        }
+        mi += 8;
+      }
+
+      // Use 70% and 40% as the thresholds for golden frame refreshing
+      if (cnt1 * 10 > 7 * rows * cols && cnt2 * 10 < (cnt1 << 2)) {
+        vp9_cyclic_refresh_set_golden_update(cpi);
+        rc->frames_till_gf_update_due = rc->baseline_gf_interval;
+
+        if (rc->frames_till_gf_update_due > rc->frames_to_key)
+          rc->frames_till_gf_update_due = rc->frames_to_key;
+        cpi->refresh_golden_frame = 1;
+      }
+    }
+  }
+
 #if 0
   // Keep record of the total distortion this time around for future use
   cpi->last_frame_distortion = cpi->frame_distortion;
