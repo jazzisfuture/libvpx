@@ -5672,7 +5672,7 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     best_rd = MIN(best_rd, rd_cost->rdcost);
     if (rd_pick_intrabc_sb_mode(cpi, x, mi_row, mi_col, &rate_y,
                                 &rate_y_tokenonly, &dist_y, &y_skip, bsize,
-                                tx_cache, best_rd) < best_rd) {
+                                tx_cache, best_rd) < best_rd && 0) {
       if (y_skip) {
         rd_cost->rate = rate_y - rate_y_tokenonly +
                         vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
