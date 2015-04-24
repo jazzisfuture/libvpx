@@ -416,18 +416,18 @@ static void save_coding_context(VP9_COMP *cpi) {
   // quantizer value is adjusted between loop iterations.
   vp9_copy(cc->nmvjointcost,  cpi->td.mb.nmvjointcost);
 
-  vpx_memcpy(cc->nmvcosts[0], cpi->nmvcosts[0],
+  memcpy(cc->nmvcosts[0], cpi->nmvcosts[0],
              MV_VALS * sizeof(*cpi->nmvcosts[0]));
-  vpx_memcpy(cc->nmvcosts[1], cpi->nmvcosts[1],
+  memcpy(cc->nmvcosts[1], cpi->nmvcosts[1],
              MV_VALS * sizeof(*cpi->nmvcosts[1]));
-  vpx_memcpy(cc->nmvcosts_hp[0], cpi->nmvcosts_hp[0],
+  memcpy(cc->nmvcosts_hp[0], cpi->nmvcosts_hp[0],
              MV_VALS * sizeof(*cpi->nmvcosts_hp[0]));
-  vpx_memcpy(cc->nmvcosts_hp[1], cpi->nmvcosts_hp[1],
+  memcpy(cc->nmvcosts_hp[1], cpi->nmvcosts_hp[1],
              MV_VALS * sizeof(*cpi->nmvcosts_hp[1]));
 
   vp9_copy(cc->segment_pred_probs, cm->seg.pred_probs);
 
-  vpx_memcpy(cpi->coding_context.last_frame_seg_map_copy,
+  memcpy(cpi->coding_context.last_frame_seg_map_copy,
              cm->last_frame_seg_map, (cm->mi_rows * cm->mi_cols));
 
   vp9_copy(cc->last_ref_lf_deltas, cm->lf.last_ref_deltas);
@@ -444,18 +444,18 @@ static void restore_coding_context(VP9_COMP *cpi) {
   // previous call to vp9_save_coding_context.
   vp9_copy(cpi->td.mb.nmvjointcost, cc->nmvjointcost);
 
-  vpx_memcpy(cpi->nmvcosts[0], cc->nmvcosts[0],
+  memcpy(cpi->nmvcosts[0], cc->nmvcosts[0],
              MV_VALS * sizeof(*cc->nmvcosts[0]));
-  vpx_memcpy(cpi->nmvcosts[1], cc->nmvcosts[1],
+  memcpy(cpi->nmvcosts[1], cc->nmvcosts[1],
              MV_VALS * sizeof(*cc->nmvcosts[1]));
-  vpx_memcpy(cpi->nmvcosts_hp[0], cc->nmvcosts_hp[0],
+  memcpy(cpi->nmvcosts_hp[0], cc->nmvcosts_hp[0],
              MV_VALS * sizeof(*cc->nmvcosts_hp[0]));
-  vpx_memcpy(cpi->nmvcosts_hp[1], cc->nmvcosts_hp[1],
+  memcpy(cpi->nmvcosts_hp[1], cc->nmvcosts_hp[1],
              MV_VALS * sizeof(*cc->nmvcosts_hp[1]));
 
   vp9_copy(cm->seg.pred_probs, cc->segment_pred_probs);
 
-  vpx_memcpy(cm->last_frame_seg_map,
+  memcpy(cm->last_frame_seg_map,
              cpi->coding_context.last_frame_seg_map_copy,
              (cm->mi_rows * cm->mi_cols));
 
@@ -2606,7 +2606,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
 
       ref_cnt_fb(pool->frame_bufs,
                  &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
-      vpx_memcpy(cpi->interp_filter_selected[ALTREF_FRAME],
+      memcpy(cpi->interp_filter_selected[ALTREF_FRAME],
                  cpi->interp_filter_selected[0],
                  sizeof(cpi->interp_filter_selected[0]));
     }
@@ -2615,11 +2615,11 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
       ref_cnt_fb(pool->frame_bufs,
                  &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
       if (!cpi->rc.is_src_frame_alt_ref)
-        vpx_memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
+        memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
                    cpi->interp_filter_selected[0],
                    sizeof(cpi->interp_filter_selected[0]));
       else
-        vpx_memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
+        memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
                    cpi->interp_filter_selected[ALTREF_FRAME],
                    sizeof(cpi->interp_filter_selected[ALTREF_FRAME]));
     }
@@ -2629,7 +2629,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
     if (!cpi->rc.is_src_frame_alt_ref)
-      vpx_memcpy(cpi->interp_filter_selected[LAST_FRAME],
+      memcpy(cpi->interp_filter_selected[LAST_FRAME],
                  cpi->interp_filter_selected[0],
                  sizeof(cpi->interp_filter_selected[0]));
   }

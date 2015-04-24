@@ -1348,7 +1348,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             *returndistortion = distortion2;
             best_rd_sse = sse;
             best_rd = this_rd;
-            vpx_memcpy(&best_mbmode, &x->e_mbd.mode_info_context->mbmi,
+            memcpy(&best_mbmode, &x->e_mbd.mode_info_context->mbmi,
                        sizeof(MB_MODE_INFO));
 
             /* Testing this mode gave rise to an improvement in best error
@@ -1487,7 +1487,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 
             if (this_rd < best_rd)
             {
-                vpx_memcpy(&best_mbmode, &x->e_mbd.mode_info_context->mbmi,
+                memcpy(&best_mbmode, &x->e_mbd.mode_info_context->mbmi,
                            sizeof(MB_MODE_INFO));
             }
         }
@@ -1512,7 +1512,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     /* set to the best mb mode, this copy can be skip if x->skip since it
      * already has the right content */
     if (!x->skip)
-        vpx_memcpy(&x->e_mbd.mode_info_context->mbmi, &best_mbmode,
+        memcpy(&x->e_mbd.mode_info_context->mbmi, &best_mbmode,
                    sizeof(MB_MODE_INFO));
 
     if (best_mbmode.mode <= B_PRED)
