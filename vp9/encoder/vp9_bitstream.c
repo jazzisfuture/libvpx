@@ -928,7 +928,7 @@ static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int tile_rows = 1 << cm->log2_tile_rows;
 
-  vpx_memset(cm->above_seg_context, 0, sizeof(*cm->above_seg_context) *
+  memset(cm->above_seg_context, 0, sizeof(*cm->above_seg_context) *
              mi_cols_aligned_to_sb(cm->mi_cols));
 
   for (tile_row = 0; tile_row < tile_rows; tile_row++) {

@@ -389,7 +389,7 @@ void vp9_update_mbgraph_stats(VP9_COMP *cpi) {
   cpi->mbgraph_n_frames = n_frames;
   for (i = 0; i < n_frames; i++) {
     MBGRAPH_FRAME_STATS *frame_stats = &cpi->mbgraph_stats[i];
-    vpx_memset(frame_stats->mb_stats, 0,
+    memset(frame_stats->mb_stats, 0,
                cm->mb_rows * cm->mb_cols *
                sizeof(*cpi->mbgraph_stats[i].mb_stats));
   }
