@@ -573,14 +573,14 @@ void vp9_idct8x8_64_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   in6 = _mm_srai_epi16(in6, 5);
   in7 = _mm_srai_epi16(in7, 5);
 
-  RECON_AND_STORE(dest, in0);
-  RECON_AND_STORE(dest, in1);
-  RECON_AND_STORE(dest, in2);
-  RECON_AND_STORE(dest, in3);
-  RECON_AND_STORE(dest, in4);
-  RECON_AND_STORE(dest, in5);
-  RECON_AND_STORE(dest, in6);
-  RECON_AND_STORE(dest, in7);
+  RECON_AND_STORE(dest + 0 * stride, in0);
+  RECON_AND_STORE(dest + 1 * stride, in1);
+  RECON_AND_STORE(dest + 2 * stride, in2);
+  RECON_AND_STORE(dest + 3 * stride, in3);
+  RECON_AND_STORE(dest + 4 * stride, in4);
+  RECON_AND_STORE(dest + 5 * stride, in5);
+  RECON_AND_STORE(dest + 6 * stride, in6);
+  RECON_AND_STORE(dest + 7 * stride, in7);
 }
 
 void vp9_idct8x8_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
@@ -594,14 +594,14 @@ void vp9_idct8x8_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
 
   dc_value = _mm_set1_epi16(a);
 
-  RECON_AND_STORE(dest, dc_value);
-  RECON_AND_STORE(dest, dc_value);
-  RECON_AND_STORE(dest, dc_value);
-  RECON_AND_STORE(dest, dc_value);
-  RECON_AND_STORE(dest, dc_value);
-  RECON_AND_STORE(dest, dc_value);
-  RECON_AND_STORE(dest, dc_value);
-  RECON_AND_STORE(dest, dc_value);
+  RECON_AND_STORE(dest + 0 * stride, dc_value);
+  RECON_AND_STORE(dest + 1 * stride, dc_value);
+  RECON_AND_STORE(dest + 2 * stride, dc_value);
+  RECON_AND_STORE(dest + 3 * stride, dc_value);
+  RECON_AND_STORE(dest + 4 * stride, dc_value);
+  RECON_AND_STORE(dest + 5 * stride, dc_value);
+  RECON_AND_STORE(dest + 6 * stride, dc_value);
+  RECON_AND_STORE(dest + 7 * stride, dc_value);
 }
 
 static void idct8_sse2(__m128i *in) {
@@ -915,14 +915,14 @@ void vp9_iht8x8_64_add_sse2(const int16_t *input, uint8_t *dest, int stride,
   in[6] = _mm_srai_epi16(in[6], 5);
   in[7] = _mm_srai_epi16(in[7], 5);
 
-  RECON_AND_STORE(dest, in[0]);
-  RECON_AND_STORE(dest, in[1]);
-  RECON_AND_STORE(dest, in[2]);
-  RECON_AND_STORE(dest, in[3]);
-  RECON_AND_STORE(dest, in[4]);
-  RECON_AND_STORE(dest, in[5]);
-  RECON_AND_STORE(dest, in[6]);
-  RECON_AND_STORE(dest, in[7]);
+  RECON_AND_STORE(dest + 0 * stride, in[0]);
+  RECON_AND_STORE(dest + 1 * stride, in[1]);
+  RECON_AND_STORE(dest + 2 * stride, in[2]);
+  RECON_AND_STORE(dest + 3 * stride, in[3]);
+  RECON_AND_STORE(dest + 4 * stride, in[4]);
+  RECON_AND_STORE(dest + 5 * stride, in[5]);
+  RECON_AND_STORE(dest + 6 * stride, in[6]);
+  RECON_AND_STORE(dest + 7 * stride, in[7]);
 }
 
 void vp9_idct8x8_12_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
@@ -1055,14 +1055,14 @@ void vp9_idct8x8_12_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   in6 = _mm_srai_epi16(in6, 5);
   in7 = _mm_srai_epi16(in7, 5);
 
-  RECON_AND_STORE(dest, in0);
-  RECON_AND_STORE(dest, in1);
-  RECON_AND_STORE(dest, in2);
-  RECON_AND_STORE(dest, in3);
-  RECON_AND_STORE(dest, in4);
-  RECON_AND_STORE(dest, in5);
-  RECON_AND_STORE(dest, in6);
-  RECON_AND_STORE(dest, in7);
+  RECON_AND_STORE(dest + 0 * stride, in0);
+  RECON_AND_STORE(dest + 1 * stride, in1);
+  RECON_AND_STORE(dest + 2 * stride, in2);
+  RECON_AND_STORE(dest + 3 * stride, in3);
+  RECON_AND_STORE(dest + 4 * stride, in4);
+  RECON_AND_STORE(dest + 5 * stride, in5);
+  RECON_AND_STORE(dest + 6 * stride, in6);
+  RECON_AND_STORE(dest + 7 * stride, in7);
 }
 
 #define IDCT16 \
@@ -1450,24 +1450,24 @@ void vp9_idct16x16_256_add_sse2(const int16_t *input, uint8_t *dest,
       in[14] = _mm_srai_epi16(in[14], 6);
       in[15] = _mm_srai_epi16(in[15], 6);
 
-      RECON_AND_STORE(dest, in[0]);
-      RECON_AND_STORE(dest, in[1]);
-      RECON_AND_STORE(dest, in[2]);
-      RECON_AND_STORE(dest, in[3]);
-      RECON_AND_STORE(dest, in[4]);
-      RECON_AND_STORE(dest, in[5]);
-      RECON_AND_STORE(dest, in[6]);
-      RECON_AND_STORE(dest, in[7]);
-      RECON_AND_STORE(dest, in[8]);
-      RECON_AND_STORE(dest, in[9]);
-      RECON_AND_STORE(dest, in[10]);
-      RECON_AND_STORE(dest, in[11]);
-      RECON_AND_STORE(dest, in[12]);
-      RECON_AND_STORE(dest, in[13]);
-      RECON_AND_STORE(dest, in[14]);
-      RECON_AND_STORE(dest, in[15]);
+      RECON_AND_STORE(dest +  0 * stride, in[0]);
+      RECON_AND_STORE(dest +  1 * stride, in[1]);
+      RECON_AND_STORE(dest +  2 * stride, in[2]);
+      RECON_AND_STORE(dest +  3 * stride, in[3]);
+      RECON_AND_STORE(dest +  4 * stride, in[4]);
+      RECON_AND_STORE(dest +  5 * stride, in[5]);
+      RECON_AND_STORE(dest +  6 * stride, in[6]);
+      RECON_AND_STORE(dest +  7 * stride, in[7]);
+      RECON_AND_STORE(dest +  8 * stride, in[8]);
+      RECON_AND_STORE(dest +  9 * stride, in[9]);
+      RECON_AND_STORE(dest + 10 * stride, in[10]);
+      RECON_AND_STORE(dest + 11 * stride, in[11]);
+      RECON_AND_STORE(dest + 12 * stride, in[12]);
+      RECON_AND_STORE(dest + 13 * stride, in[13]);
+      RECON_AND_STORE(dest + 14 * stride, in[14]);
+      RECON_AND_STORE(dest + 15 * stride, in[15]);
 
-      dest += 8 - (stride * 16);
+      dest += 8;
   }
 }
 
@@ -1483,23 +1483,23 @@ void vp9_idct16x16_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   dc_value = _mm_set1_epi16(a);
 
   for (i = 0; i < 2; ++i) {
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    dest += 8 - (stride * 16);
+    RECON_AND_STORE(dest +  0 * stride, dc_value);
+    RECON_AND_STORE(dest +  1 * stride, dc_value);
+    RECON_AND_STORE(dest +  2 * stride, dc_value);
+    RECON_AND_STORE(dest +  3 * stride, dc_value);
+    RECON_AND_STORE(dest +  4 * stride, dc_value);
+    RECON_AND_STORE(dest +  5 * stride, dc_value);
+    RECON_AND_STORE(dest +  6 * stride, dc_value);
+    RECON_AND_STORE(dest +  7 * stride, dc_value);
+    RECON_AND_STORE(dest +  8 * stride, dc_value);
+    RECON_AND_STORE(dest +  9 * stride, dc_value);
+    RECON_AND_STORE(dest + 10 * stride, dc_value);
+    RECON_AND_STORE(dest + 11 * stride, dc_value);
+    RECON_AND_STORE(dest + 12 * stride, dc_value);
+    RECON_AND_STORE(dest + 13 * stride, dc_value);
+    RECON_AND_STORE(dest + 14 * stride, dc_value);
+    RECON_AND_STORE(dest + 15 * stride, dc_value);
+    dest += 8;
   }
 }
 
@@ -2624,24 +2624,24 @@ void vp9_idct16x16_10_add_sse2(const int16_t *input, uint8_t *dest,
     in[14] = _mm_srai_epi16(in[14], 6);
     in[15] = _mm_srai_epi16(in[15], 6);
 
-    RECON_AND_STORE(dest, in[0]);
-    RECON_AND_STORE(dest, in[1]);
-    RECON_AND_STORE(dest, in[2]);
-    RECON_AND_STORE(dest, in[3]);
-    RECON_AND_STORE(dest, in[4]);
-    RECON_AND_STORE(dest, in[5]);
-    RECON_AND_STORE(dest, in[6]);
-    RECON_AND_STORE(dest, in[7]);
-    RECON_AND_STORE(dest, in[8]);
-    RECON_AND_STORE(dest, in[9]);
-    RECON_AND_STORE(dest, in[10]);
-    RECON_AND_STORE(dest, in[11]);
-    RECON_AND_STORE(dest, in[12]);
-    RECON_AND_STORE(dest, in[13]);
-    RECON_AND_STORE(dest, in[14]);
-    RECON_AND_STORE(dest, in[15]);
+    RECON_AND_STORE(dest +  0 * stride, in[0]);
+    RECON_AND_STORE(dest +  1 * stride, in[1]);
+    RECON_AND_STORE(dest +  2 * stride, in[2]);
+    RECON_AND_STORE(dest +  3 * stride, in[3]);
+    RECON_AND_STORE(dest +  4 * stride, in[4]);
+    RECON_AND_STORE(dest +  5 * stride, in[5]);
+    RECON_AND_STORE(dest +  6 * stride, in[6]);
+    RECON_AND_STORE(dest +  7 * stride, in[7]);
+    RECON_AND_STORE(dest +  8 * stride, in[8]);
+    RECON_AND_STORE(dest +  9 * stride, in[9]);
+    RECON_AND_STORE(dest + 10 * stride, in[10]);
+    RECON_AND_STORE(dest + 11 * stride, in[11]);
+    RECON_AND_STORE(dest + 12 * stride, in[12]);
+    RECON_AND_STORE(dest + 13 * stride, in[13]);
+    RECON_AND_STORE(dest + 14 * stride, in[14]);
+    RECON_AND_STORE(dest + 15 * stride, in[15]);
 
-    dest += 8 - (stride * 16);
+    dest += 8;
   }
 }
 
@@ -3533,40 +3533,40 @@ void vp9_idct32x32_34_add_sse2(const int16_t *input, uint8_t *dest,
       in[30] = _mm_srai_epi16(in[30], 6);
       in[31] = _mm_srai_epi16(in[31], 6);
 
-      RECON_AND_STORE(dest, in[0]);
-      RECON_AND_STORE(dest, in[1]);
-      RECON_AND_STORE(dest, in[2]);
-      RECON_AND_STORE(dest, in[3]);
-      RECON_AND_STORE(dest, in[4]);
-      RECON_AND_STORE(dest, in[5]);
-      RECON_AND_STORE(dest, in[6]);
-      RECON_AND_STORE(dest, in[7]);
-      RECON_AND_STORE(dest, in[8]);
-      RECON_AND_STORE(dest, in[9]);
-      RECON_AND_STORE(dest, in[10]);
-      RECON_AND_STORE(dest, in[11]);
-      RECON_AND_STORE(dest, in[12]);
-      RECON_AND_STORE(dest, in[13]);
-      RECON_AND_STORE(dest, in[14]);
-      RECON_AND_STORE(dest, in[15]);
-      RECON_AND_STORE(dest, in[16]);
-      RECON_AND_STORE(dest, in[17]);
-      RECON_AND_STORE(dest, in[18]);
-      RECON_AND_STORE(dest, in[19]);
-      RECON_AND_STORE(dest, in[20]);
-      RECON_AND_STORE(dest, in[21]);
-      RECON_AND_STORE(dest, in[22]);
-      RECON_AND_STORE(dest, in[23]);
-      RECON_AND_STORE(dest, in[24]);
-      RECON_AND_STORE(dest, in[25]);
-      RECON_AND_STORE(dest, in[26]);
-      RECON_AND_STORE(dest, in[27]);
-      RECON_AND_STORE(dest, in[28]);
-      RECON_AND_STORE(dest, in[29]);
-      RECON_AND_STORE(dest, in[30]);
-      RECON_AND_STORE(dest, in[31]);
+      RECON_AND_STORE(dest +  0 * stride, in[0]);
+      RECON_AND_STORE(dest +  1 * stride, in[1]);
+      RECON_AND_STORE(dest +  2 * stride, in[2]);
+      RECON_AND_STORE(dest +  3 * stride, in[3]);
+      RECON_AND_STORE(dest +  4 * stride, in[4]);
+      RECON_AND_STORE(dest +  5 * stride, in[5]);
+      RECON_AND_STORE(dest +  6 * stride, in[6]);
+      RECON_AND_STORE(dest +  7 * stride, in[7]);
+      RECON_AND_STORE(dest +  8 * stride, in[8]);
+      RECON_AND_STORE(dest +  9 * stride, in[9]);
+      RECON_AND_STORE(dest + 10 * stride, in[10]);
+      RECON_AND_STORE(dest + 11 * stride, in[11]);
+      RECON_AND_STORE(dest + 12 * stride, in[12]);
+      RECON_AND_STORE(dest + 13 * stride, in[13]);
+      RECON_AND_STORE(dest + 14 * stride, in[14]);
+      RECON_AND_STORE(dest + 15 * stride, in[15]);
+      RECON_AND_STORE(dest + 16 * stride, in[16]);
+      RECON_AND_STORE(dest + 17 * stride, in[17]);
+      RECON_AND_STORE(dest + 18 * stride, in[18]);
+      RECON_AND_STORE(dest + 19 * stride, in[19]);
+      RECON_AND_STORE(dest + 20 * stride, in[20]);
+      RECON_AND_STORE(dest + 21 * stride, in[21]);
+      RECON_AND_STORE(dest + 22 * stride, in[22]);
+      RECON_AND_STORE(dest + 23 * stride, in[23]);
+      RECON_AND_STORE(dest + 24 * stride, in[24]);
+      RECON_AND_STORE(dest + 25 * stride, in[25]);
+      RECON_AND_STORE(dest + 26 * stride, in[26]);
+      RECON_AND_STORE(dest + 27 * stride, in[27]);
+      RECON_AND_STORE(dest + 28 * stride, in[28]);
+      RECON_AND_STORE(dest + 29 * stride, in[29]);
+      RECON_AND_STORE(dest + 30 * stride, in[30]);
+      RECON_AND_STORE(dest + 31 * stride, in[31]);
 
-      dest += 8 - (stride * 32);
+      dest += 8;
     }
   }
 
@@ -3902,40 +3902,40 @@ void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
       in[30] = _mm_srai_epi16(in[30], 6);
       in[31] = _mm_srai_epi16(in[31], 6);
 
-      RECON_AND_STORE(dest, in[0]);
-      RECON_AND_STORE(dest, in[1]);
-      RECON_AND_STORE(dest, in[2]);
-      RECON_AND_STORE(dest, in[3]);
-      RECON_AND_STORE(dest, in[4]);
-      RECON_AND_STORE(dest, in[5]);
-      RECON_AND_STORE(dest, in[6]);
-      RECON_AND_STORE(dest, in[7]);
-      RECON_AND_STORE(dest, in[8]);
-      RECON_AND_STORE(dest, in[9]);
-      RECON_AND_STORE(dest, in[10]);
-      RECON_AND_STORE(dest, in[11]);
-      RECON_AND_STORE(dest, in[12]);
-      RECON_AND_STORE(dest, in[13]);
-      RECON_AND_STORE(dest, in[14]);
-      RECON_AND_STORE(dest, in[15]);
-      RECON_AND_STORE(dest, in[16]);
-      RECON_AND_STORE(dest, in[17]);
-      RECON_AND_STORE(dest, in[18]);
-      RECON_AND_STORE(dest, in[19]);
-      RECON_AND_STORE(dest, in[20]);
-      RECON_AND_STORE(dest, in[21]);
-      RECON_AND_STORE(dest, in[22]);
-      RECON_AND_STORE(dest, in[23]);
-      RECON_AND_STORE(dest, in[24]);
-      RECON_AND_STORE(dest, in[25]);
-      RECON_AND_STORE(dest, in[26]);
-      RECON_AND_STORE(dest, in[27]);
-      RECON_AND_STORE(dest, in[28]);
-      RECON_AND_STORE(dest, in[29]);
-      RECON_AND_STORE(dest, in[30]);
-      RECON_AND_STORE(dest, in[31]);
+      RECON_AND_STORE(dest +  0 * stride, in[0]);
+      RECON_AND_STORE(dest +  1 * stride, in[1]);
+      RECON_AND_STORE(dest +  2 * stride, in[2]);
+      RECON_AND_STORE(dest +  3 * stride, in[3]);
+      RECON_AND_STORE(dest +  4 * stride, in[4]);
+      RECON_AND_STORE(dest +  5 * stride, in[5]);
+      RECON_AND_STORE(dest +  6 * stride, in[6]);
+      RECON_AND_STORE(dest +  7 * stride, in[7]);
+      RECON_AND_STORE(dest +  8 * stride, in[8]);
+      RECON_AND_STORE(dest +  9 * stride, in[9]);
+      RECON_AND_STORE(dest + 10 * stride, in[10]);
+      RECON_AND_STORE(dest + 11 * stride, in[11]);
+      RECON_AND_STORE(dest + 12 * stride, in[12]);
+      RECON_AND_STORE(dest + 13 * stride, in[13]);
+      RECON_AND_STORE(dest + 14 * stride, in[14]);
+      RECON_AND_STORE(dest + 15 * stride, in[15]);
+      RECON_AND_STORE(dest + 16 * stride, in[16]);
+      RECON_AND_STORE(dest + 17 * stride, in[17]);
+      RECON_AND_STORE(dest + 18 * stride, in[18]);
+      RECON_AND_STORE(dest + 19 * stride, in[19]);
+      RECON_AND_STORE(dest + 20 * stride, in[20]);
+      RECON_AND_STORE(dest + 21 * stride, in[21]);
+      RECON_AND_STORE(dest + 22 * stride, in[22]);
+      RECON_AND_STORE(dest + 23 * stride, in[23]);
+      RECON_AND_STORE(dest + 24 * stride, in[24]);
+      RECON_AND_STORE(dest + 25 * stride, in[25]);
+      RECON_AND_STORE(dest + 26 * stride, in[26]);
+      RECON_AND_STORE(dest + 27 * stride, in[27]);
+      RECON_AND_STORE(dest + 28 * stride, in[28]);
+      RECON_AND_STORE(dest + 29 * stride, in[29]);
+      RECON_AND_STORE(dest + 30 * stride, in[30]);
+      RECON_AND_STORE(dest + 31 * stride, in[31]);
 
-      dest += 8 - (stride * 32);
+      dest += 8;
     }
 }  //NOLINT
 
@@ -3951,39 +3951,39 @@ void vp9_idct32x32_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   dc_value = _mm_set1_epi16(a);
 
   for (i = 0; i < 4; ++i) {
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    RECON_AND_STORE(dest, dc_value);
-    dest += 8 - (stride * 32);
+    RECON_AND_STORE(dest +  0 * stride, dc_value);
+    RECON_AND_STORE(dest +  1 * stride, dc_value);
+    RECON_AND_STORE(dest +  2 * stride, dc_value);
+    RECON_AND_STORE(dest +  3 * stride, dc_value);
+    RECON_AND_STORE(dest +  4 * stride, dc_value);
+    RECON_AND_STORE(dest +  5 * stride, dc_value);
+    RECON_AND_STORE(dest +  6 * stride, dc_value);
+    RECON_AND_STORE(dest +  7 * stride, dc_value);
+    RECON_AND_STORE(dest +  8 * stride, dc_value);
+    RECON_AND_STORE(dest +  9 * stride, dc_value);
+    RECON_AND_STORE(dest + 10 * stride, dc_value);
+    RECON_AND_STORE(dest + 11 * stride, dc_value);
+    RECON_AND_STORE(dest + 12 * stride, dc_value);
+    RECON_AND_STORE(dest + 13 * stride, dc_value);
+    RECON_AND_STORE(dest + 14 * stride, dc_value);
+    RECON_AND_STORE(dest + 15 * stride, dc_value);
+    RECON_AND_STORE(dest + 16 * stride, dc_value);
+    RECON_AND_STORE(dest + 17 * stride, dc_value);
+    RECON_AND_STORE(dest + 18 * stride, dc_value);
+    RECON_AND_STORE(dest + 19 * stride, dc_value);
+    RECON_AND_STORE(dest + 20 * stride, dc_value);
+    RECON_AND_STORE(dest + 21 * stride, dc_value);
+    RECON_AND_STORE(dest + 22 * stride, dc_value);
+    RECON_AND_STORE(dest + 23 * stride, dc_value);
+    RECON_AND_STORE(dest + 24 * stride, dc_value);
+    RECON_AND_STORE(dest + 25 * stride, dc_value);
+    RECON_AND_STORE(dest + 26 * stride, dc_value);
+    RECON_AND_STORE(dest + 27 * stride, dc_value);
+    RECON_AND_STORE(dest + 28 * stride, dc_value);
+    RECON_AND_STORE(dest + 29 * stride, dc_value);
+    RECON_AND_STORE(dest + 30 * stride, dc_value);
+    RECON_AND_STORE(dest + 31 * stride, dc_value);
+    dest += 8;
   }
 }
 
