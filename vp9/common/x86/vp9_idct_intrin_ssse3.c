@@ -701,62 +701,18 @@ void vp9_idct16x16_10_add_ssse3(const int16_t *input, uint8_t *dest,
 
   // Second 1-D inverse transform, performed per 8x16 block
   for (i = 0; i < 2; i++) {
+    int j;
     array_transpose_4X8(l + 8*i, in);
 
     idct16_10_r2(in);
 
-    // Final rounding and shift
-    in[0] = _mm_adds_epi16(in[0], final_rounding);
-    in[1] = _mm_adds_epi16(in[1], final_rounding);
-    in[2] = _mm_adds_epi16(in[2], final_rounding);
-    in[3] = _mm_adds_epi16(in[3], final_rounding);
-    in[4] = _mm_adds_epi16(in[4], final_rounding);
-    in[5] = _mm_adds_epi16(in[5], final_rounding);
-    in[6] = _mm_adds_epi16(in[6], final_rounding);
-    in[7] = _mm_adds_epi16(in[7], final_rounding);
-    in[8] = _mm_adds_epi16(in[8], final_rounding);
-    in[9] = _mm_adds_epi16(in[9], final_rounding);
-    in[10] = _mm_adds_epi16(in[10], final_rounding);
-    in[11] = _mm_adds_epi16(in[11], final_rounding);
-    in[12] = _mm_adds_epi16(in[12], final_rounding);
-    in[13] = _mm_adds_epi16(in[13], final_rounding);
-    in[14] = _mm_adds_epi16(in[14], final_rounding);
-    in[15] = _mm_adds_epi16(in[15], final_rounding);
+    for (j = 0; j < 16; ++j) {
+      // Final rounding and shift
+      in[j] = _mm_adds_epi16(in[j], final_rounding);
+      in[j] = _mm_srai_epi16(in[j], 6);
+      RECON_AND_STORE(dest + j * stride, in[j]);
+    }
 
-    in[0] = _mm_srai_epi16(in[0], 6);
-    in[1] = _mm_srai_epi16(in[1], 6);
-    in[2] = _mm_srai_epi16(in[2], 6);
-    in[3] = _mm_srai_epi16(in[3], 6);
-    in[4] = _mm_srai_epi16(in[4], 6);
-    in[5] = _mm_srai_epi16(in[5], 6);
-    in[6] = _mm_srai_epi16(in[6], 6);
-    in[7] = _mm_srai_epi16(in[7], 6);
-    in[8] = _mm_srai_epi16(in[8], 6);
-    in[9] = _mm_srai_epi16(in[9], 6);
-    in[10] = _mm_srai_epi16(in[10], 6);
-    in[11] = _mm_srai_epi16(in[11], 6);
-    in[12] = _mm_srai_epi16(in[12], 6);
-    in[13] = _mm_srai_epi16(in[13], 6);
-    in[14] = _mm_srai_epi16(in[14], 6);
-    in[15] = _mm_srai_epi16(in[15], 6);
-
-    RECON_AND_STORE(dest, in[0]);
-    RECON_AND_STORE(dest, in[1]);
-    RECON_AND_STORE(dest, in[2]);
-    RECON_AND_STORE(dest, in[3]);
-    RECON_AND_STORE(dest, in[4]);
-    RECON_AND_STORE(dest, in[5]);
-    RECON_AND_STORE(dest, in[6]);
-    RECON_AND_STORE(dest, in[7]);
-    RECON_AND_STORE(dest, in[8]);
-    RECON_AND_STORE(dest, in[9]);
-    RECON_AND_STORE(dest, in[10]);
-    RECON_AND_STORE(dest, in[11]);
-    RECON_AND_STORE(dest, in[12]);
-    RECON_AND_STORE(dest, in[13]);
-    RECON_AND_STORE(dest, in[14]);
-    RECON_AND_STORE(dest, in[15]);
-
-    dest += 8 - (stride * 16);
+    dest += 8;
   }
 }
