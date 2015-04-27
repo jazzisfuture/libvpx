@@ -2712,7 +2712,6 @@ static int discount_newmv_test(const VP9_COMP *cpi,
 
 static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                  BLOCK_SIZE bsize,
-                                 int64_t txfm_cache[],
                                  int *rate2, int64_t *distortion,
                                  int *skippable,
                                  int *rate_y, int *rate_uv,
@@ -3614,7 +3613,6 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
       distortion2 = distortion_y + distortion_uv;
     } else {
       this_rd = handle_inter_mode(cpi, x, bsize,
-                                  tx_cache,
                                   &rate2, &distortion2, &skippable,
                                   &rate_y, &rate_uv,
                                   &disable_skip, frame_mv,
