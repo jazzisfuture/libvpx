@@ -27,7 +27,7 @@ struct RD_COST;
 
 void vp9_rd_pick_intra_mode_sb(struct VP9_COMP *cpi, struct macroblock *x,
 #if CONFIG_INTRABC
-                               int mi_row, int mi_col,
+                               const TileInfo *const tile, int mi_row, int mi_col,
 #endif  // CONFIG_INTRABC
                                struct RD_COST *rd_cost, BLOCK_SIZE bsize,
                                PICK_MODE_CONTEXT *ctx, int64_t best_rd);
