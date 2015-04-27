@@ -61,13 +61,14 @@ static int read_segment_id(vp9_reader *r, const struct segmentation *seg) {
 }
 
 static void read_tx_size_inter(VP9_COMMON *cm, MACROBLOCKD *xd,
-                               TX_SIZE tx_size, int blk_row, int blk_col,
-                               vp9_reader *r) {
+                               FRAME_COUNTS *counts, TX_SIZE tx_size,
+                               int blk_row, int blk_col, vp9_reader *r) {
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   int is_split = 0;
   int tx_idx = (blk_row / 2) * 8 + (blk_col / 2);
   int max_blocks_high = num_4x4_blocks_high_lookup[mbmi->sb_type];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[mbmi->sb_type];
+  int ctx = txfm_partition_context(xd, blk_row, blk_col, tx_size);
   if (xd->mb_to_bottom_edge < 0)
     max_blocks_high += xd->mb_to_bottom_edge >> 5;
   if (xd->mb_to_right_edge < 0)
@@ -76,11 +77,12 @@ static void read_tx_size_inter(VP9_COMMON *cm, MACROBLOCKD *xd,
   if (blk_row >= max_blocks_high || blk_col >= max_blocks_wide)
     return;
 
-  is_split = vp9_read_bit(r);
+  is_split = vp9_read(r, cm->fc->txfm_partition_prob[ctx]); //  vp9_read_bit(r);
 
   if (!is_split) {
     mbmi->inter_tx_size[tx_idx] = tx_size;
     mbmi->tx_size = tx_size;
+    txfm_partition_update(xd, blk_row, blk_col, tx_size);
   } else {
     BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
     int bh = num_4x4_blocks_high_lookup[bsize];
@@ -89,13 +91,14 @@ static void read_tx_size_inter(VP9_COMMON *cm, MACROBLOCKD *xd,
     if (tx_size == TX_8X8) {
       mbmi->inter_tx_size[tx_idx] = TX_4X4;
       mbmi->tx_size = TX_4X4;
+      txfm_partition_update(xd, blk_row, blk_col, TX_4X4);
       return;
     }
 
     for (i = 0; i < 4; ++i) {
       int offsetr = (i >> 1) * bh / 2;
       int offsetc = (i & 0x01) * bh / 2;
-      read_tx_size_inter(cm, xd, tx_size - 1,
+      read_tx_size_inter(cm, xd, counts, tx_size - 1,
                          blk_row + offsetr, blk_col + offsetc, r);
     }
   }
@@ -625,9 +628,11 @@ static void read_inter_frame_mode_info(VP9Decoder *const pbi,
     int width  = num_4x4_blocks_wide_lookup[bsize];
     int height = num_4x4_blocks_high_lookup[bsize];
     int idx, idy;
+    xd->above_txfm_context = cm->above_txfm_context + mi_col;
+    xd->left_txfm_context = xd->left_txfm_context_buffer + (mi_row & 0x07);
     for (idy = 0; idy < height; idy += bh)
       for (idx = 0; idx < width; idx += bh)
-        read_tx_size_inter(cm, xd, max_txsize_lookup[mbmi->sb_type],
+        read_tx_size_inter(cm, xd, counts, max_txsize_lookup[mbmi->sb_type],
                            idy, idx, r);
   } else {
     int i;
