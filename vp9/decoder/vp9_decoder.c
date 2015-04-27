@@ -47,11 +47,11 @@ static void initialize_dec(void) {
 }
 
 static void vp9_dec_setup_mi(VP9_COMMON *cm) {
+  size_t size_in_bytes = sizeof(*cm->mip) * cm->mi_stride * (cm->mi_rows + 1);
   cm->mi = cm->mip + cm->mi_stride + 1;
-  vpx_memset(cm->mip, 0, cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mip));
+  vpx_memset(cm->mip, 0, size_in_bytes);
   cm->mi_grid_visible = cm->mi_grid_base + cm->mi_stride + 1;
-  vpx_memset(cm->mi_grid_base, 0,
-             cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mi_grid_base));
+  vpx_memset(cm->mi_grid_base, 0, size_in_bytes);
 }
 
 static int vp9_dec_alloc_mi(VP9_COMMON *cm, int mi_size) {
