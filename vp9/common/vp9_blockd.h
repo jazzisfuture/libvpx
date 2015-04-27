@@ -233,6 +233,8 @@ typedef struct macroblockd {
   int corrupted;
 
   struct vpx_internal_error_info *error_info;
+
+  MODE_INFO *mi_stream;
 } MACROBLOCKD;
 
 static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,
