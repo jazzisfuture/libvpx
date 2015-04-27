@@ -35,24 +35,6 @@ enum lf_path {
   LF_PATH_SLOW,
 };
 
-struct loopfilter {
-  int filter_level;
-
-  int sharpness_level;
-  int last_sharpness_level;
-
-  uint8_t mode_ref_delta_enabled;
-  uint8_t mode_ref_delta_update;
-
-  // 0 = Intra, Last, GF, ARF
-  signed char ref_deltas[MAX_REF_LF_DELTAS];
-  signed char last_ref_deltas[MAX_REF_LF_DELTAS];
-
-  // 0 = ZERO_MV, MV
-  signed char mode_deltas[MAX_MODE_LF_DELTAS];
-  signed char last_mode_deltas[MAX_MODE_LF_DELTAS];
-};
-
 // Need to align this structure so when it is declared and
 // passed it can be loaded into vector registers.
 typedef struct {
@@ -85,6 +67,27 @@ typedef struct {
   uint8_t lfl_y[64];
   uint8_t lfl_uv[16];
 } LOOP_FILTER_MASK;
+
+struct loopfilter {
+  int filter_level;
+
+  int sharpness_level;
+  int last_sharpness_level;
+
+  uint8_t mode_ref_delta_enabled;
+  uint8_t mode_ref_delta_update;
+
+  // 0 = Intra, Last, GF, ARF
+  signed char ref_deltas[MAX_REF_LF_DELTAS];
+  signed char last_ref_deltas[MAX_REF_LF_DELTAS];
+
+  // 0 = ZERO_MV, MV
+  signed char mode_deltas[MAX_MODE_LF_DELTAS];
+  signed char last_mode_deltas[MAX_MODE_LF_DELTAS];
+
+  LOOP_FILTER_MASK *lfm;
+  int lfm_stride;
+};
 
 /* assorted loopfilter functions which get used elsewhere */
 struct VP9Common;
@@ -131,6 +134,15 @@ void vp9_loop_filter_rows(YV12_BUFFER_CONFIG *frame_buffer,
                           struct VP9Common *cm,
                           struct macroblockd_plane planes[MAX_MB_PLANE],
                           int start, int stop, int y_only);
+
+static INLINE LOOP_FILTER_MASK *get_lfm(const struct loopfilter *lf,
+                                        int mi_row, int mi_col) {
+  return &lf->lfm[(mi_col >> 3) + ((mi_row >> 3) * lf->lfm_stride)];
+}
+
+void vp9_build_mask(LOOP_FILTER_MASK *const lfm,
+                    const loop_filter_info_n *const lfi_n,
+                    const MB_MODE_INFO *mbmi, int mi_row, int mi_col);
 
 typedef struct LoopFilterWorkerData {
   YV12_BUFFER_CONFIG *frame_buffer;

@@ -431,6 +431,11 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   }
 
   xd->corrupted |= vp9_reader_has_error(r);
+
+  if (cm->lf.filter_level) {
+    vp9_build_mask(get_lfm(&cm->lf, mi_row, mi_col), &cm->lf_info, mbmi,
+                   mi_row, mi_col);
+  }
 }
 
 static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd,
