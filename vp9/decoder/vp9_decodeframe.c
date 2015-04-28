@@ -443,14 +443,15 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd,
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
   PARTITION_TYPE p;
 
-  if (has_rows && has_cols)
-    p = (PARTITION_TYPE)vp9_read_tree(r, vp9_partition_tree, probs);
-  else if (!has_rows && has_cols)
+  if (has_rows && has_cols) {
+      p = (PARTITION_TYPE)vp9_read_tree(r, vp9_partition_tree, probs);
+  }  else if (!has_rows && has_cols) {
     p = vp9_read(r, probs[1]) ? PARTITION_SPLIT : PARTITION_HORZ;
-  else if (has_rows && !has_cols)
+  } else if (has_rows && !has_cols) {
     p = vp9_read(r, probs[2]) ? PARTITION_SPLIT : PARTITION_VERT;
-  else
+  } else {
     p = PARTITION_SPLIT;
+  }
 
   if (!cm->frame_parallel_decoding_mode)
     ++counts->partition[ctx][p];
