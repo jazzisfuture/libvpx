@@ -444,6 +444,9 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd,
   PARTITION_TYPE p;
 
   if (has_rows && has_cols) {
+#if 1
+      p = (PARTITION_TYPE)vp9_read_tree(r, vp9_partition_tree, probs);
+#else
     VP9_READ_VARS(r)
     VP9_READ_BIT(r, probs[0]);
     if (!VP9_READ_SET) {
@@ -468,6 +471,7 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd,
       }
     }
     VP9_READ_STORE(r)
+#endif
   }  else if (!has_rows && has_cols) {
     p = vp9_read(r, probs[1]) ? PARTITION_SPLIT : PARTITION_HORZ;
   } else if (has_rows && !has_cols) {
