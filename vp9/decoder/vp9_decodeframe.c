@@ -979,6 +979,10 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
       tile_data->cm = cm;
       tile_data->xd = pbi->mb;
       tile_data->xd.corrupted = 0;
+      tile_data->xd.mc_buf = tile_data->mc_buf;
+#if CONFIG_VP9_HIGHBITDEPTH
+      tile_data->xd.mc_buf_high = tile_data->mc_buf_high;
+#endif
       vp9_tile_init(&tile, tile_data->cm, tile_row, tile_col);
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
                           &tile_data->bit_reader, pbi->decrypt_cb,
@@ -1204,6 +1208,10 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       tile_data->pbi = pbi;
       tile_data->xd = pbi->mb;
       tile_data->xd.corrupted = 0;
+      tile_data->xd.mc_buf = tile_data->mc_buf;
+#if CONFIG_VP9_HIGHBITDEPTH
+      tile_data->xd.mc_buf_high = tile_data->mc_buf_high;
+#endif
       vp9_tile_init(tile, cm, 0, buf->col);
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
                           &tile_data->bit_reader, pbi->decrypt_cb,
