@@ -719,6 +719,7 @@ static void encode_block_b(int blk_row, int blk_col, int plane,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   uint8_t *dst;
   ENTROPY_CONTEXT *a, *l;
+  int i;
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
   a = &ctx->ta[plane][blk_col];
   l = &ctx->tl[plane][blk_row];
@@ -736,12 +737,17 @@ static void encode_block_b(int blk_row, int blk_col, int plane,
 
   if (x->optimize) {
     int context;
-    vp9_get_entropy_contexts(plane_bsize, tx_size, pd,
-                             ctx->ta[plane], ctx->tl[plane]);
+//    vp9_get_entropy_contexts(MAX(xd->mi[0].src_mi->mbmi.sb_type, BLOCK_8X8),
+//                             tx_size, pd, ctx->ta[plane], ctx->tl[plane]);
     context = combine_entropy_contexts(*a, *l);
     *a = *l = optimize_b(x, plane, block, tx_size, context) > 0;
   } else {
     *a = *l = p->eobs[block] > 0;
+  }
+
+  for (i = 0; i < (1 << tx_size); ++i) {
+    a[i] = a[0];
+    l[i] = l[0];
   }
 
   if (p->eobs[block])
@@ -896,6 +902,8 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
 
     if (!x->skip_recode)
       vp9_subtract_plane(x, bsize, plane);
+
+    vp9_get_entropy_contexts(bsize, TX_4X4, pd, ctx.ta[plane], ctx.tl[plane]);
 
     for (idy = 0; idy < mi_height; idy += bh) {
       for (idx = 0; idx < mi_width; idx += bh) {
