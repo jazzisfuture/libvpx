@@ -736,7 +736,7 @@ static void encode_block_b(int blk_row, int blk_col, int plane,
 
   if (x->optimize) {
     int context;
-    vp9_get_entropy_contexts(plane_bsize, tx_size, pd,
+    vp9_get_entropy_contexts(xd->mi[0].src_mi->mbmi.sb_type, tx_size, pd,
                              ctx->ta[plane], ctx->tl[plane]);
     context = combine_entropy_contexts(*a, *l);
     *a = *l = optimize_b(x, plane, block, tx_size, context) > 0;
