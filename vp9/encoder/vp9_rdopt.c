@@ -1422,7 +1422,6 @@ static int inter_block_uvrd(const VP9_COMP *cpi, MACROBLOCK *x,
     is_cost_valid = 0;
 
   if (is_inter_block(mbmi) && is_cost_valid) {
-    int plane;
     for (plane = 1; plane < MAX_MB_PLANE; ++plane)
       vp9_subtract_plane(x, bsize, plane);
   }
