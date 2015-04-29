@@ -38,12 +38,41 @@
        ++coef_counts[band][ctx][token];                     \
   } while (0)
 
-static INLINE int read_coeff(const vp9_prob *probs, int n, vp9_reader *r) {
+static INLINE int read_coeffz(const vp9_prob *probs, int n, vp9_reader *r) {
   int i, val = 0;
   for (i = 0; i < n; ++i)
     val = (val << 1) | vp9_read(r, probs[i]);
   return val;
 }
+static INLINE int read_coeff(const vp9_prob *probs, int n, vp9_reader *r) {
+  int i, val = 0;
+  VP9_READ_VARS(r)
+  for (i = 0; i < n; ++i) {
+    VP9_READ_BIT(r, probs[i]);
+    val = val << 1;
+    if (VP9_READ_SET) {
+      val |= 1;
+      VP9_READ_ADJUST_FOR_ONE(r);
+    } else {
+      VP9_READ_ADJUST_FOR_ZERO
+    }
+  }
+  VP9_READ_STORE(r)
+  return val;
+}
+#define READ_COEFF(v, probs, n, r) \
+  val = 0; \
+  for (i = 0; i < n; ++i) { \
+    VP9_READ_BIT(r, probs[i]); \
+    val = val << 1; \
+    if (VP9_READ_SET) { \
+      val |= 1; \
+      VP9_READ_ADJUST_FOR_ONE(r); \
+    } else { \
+      VP9_READ_ADJUST_FOR_ZERO \
+    } \
+  } \
+  val += v;
 
 static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
                         FRAME_COUNTS *counts, PLANE_TYPE type,
@@ -64,7 +93,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   uint8_t token_cache[32 * 32];
   const uint8_t *band_translate = get_band_translate(tx_size);
   const int dq_shift = (tx_size == TX_32X32);
-  int v, token;
+  int v, i;
   int16_t dqv = dq[0];
   const uint8_t *cat1_prob;
   const uint8_t *cat2_prob;
@@ -72,6 +101,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   const uint8_t *cat4_prob;
   const uint8_t *cat5_prob;
   const uint8_t *cat6_prob;
+  VP9_READ_VARS(r)
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
@@ -113,12 +143,22 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
     prob = coef_probs[band][ctx];
     if (!cm->frame_parallel_decoding_mode)
       ++eob_branch_count[band][ctx];
-    if (!vp9_read(r, prob[EOB_CONTEXT_NODE])) {
+
+//    if (!vp9_read(r, prob[EOB_CONTEXT_NODE])) {
+    VP9_READ_BIT(r, prob[EOB_CONTEXT_NODE]);
+    if (!VP9_READ_SET) {
+      VP9_READ_ADJUST_FOR_ZERO
       INCREMENT_COUNT(EOB_MODEL_TOKEN);
       break;
     }
-
-    while (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
+    VP9_READ_ADJUST_FOR_ONE(r)
+    while (1) {
+      VP9_READ_BIT(r, prob[ZERO_CONTEXT_NODE])
+      if (VP9_READ_SET) {
+        VP9_READ_ADJUST_FOR_ONE(r)
+        break;
+      }
+      VP9_READ_ADJUST_FOR_ZERO
       INCREMENT_COUNT(ZERO_TOKEN);
       dqv = dq[1];
       token_cache[scan[c]] = 0;
@@ -129,74 +169,134 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       band = *band_translate++;
       prob = coef_probs[band][ctx];
     }
-
-    if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
+    VP9_READ_BIT(r, prob[ONE_CONTEXT_NODE])
+    if (!VP9_READ_SET) {
+      VP9_READ_ADJUST_FOR_ZERO
       INCREMENT_COUNT(ONE_TOKEN);
-      token = ONE_TOKEN;
+      token_cache[scan[c]] = vp9_pt_energy_class[ONE_TOKEN];
       val = 1;
     } else {
+      const vp9_prob *p = vp9_pareto8_full[prob[PIVOT_NODE] - 1];
+      VP9_READ_ADJUST_FOR_ONE(r)
       INCREMENT_COUNT(TWO_TOKEN);
-      token = vp9_read_tree(r, vp9_coef_con_tree,
-                            vp9_pareto8_full[prob[PIVOT_NODE] - 1]);
-      switch (token) {
-        case TWO_TOKEN:
-        case THREE_TOKEN:
-        case FOUR_TOKEN:
-          val = token;
-          break;
-        case CATEGORY1_TOKEN:
-          val = CAT1_MIN_VAL + read_coeff(cat1_prob, 1, r);
-          break;
-        case CATEGORY2_TOKEN:
-          val = CAT2_MIN_VAL + read_coeff(cat2_prob, 2, r);
-          break;
-        case CATEGORY3_TOKEN:
-          val = CAT3_MIN_VAL + read_coeff(cat3_prob, 3, r);
-          break;
-        case CATEGORY4_TOKEN:
-          val = CAT4_MIN_VAL + read_coeff(cat4_prob, 4, r);
-          break;
-        case CATEGORY5_TOKEN:
-          val = CAT5_MIN_VAL + read_coeff(cat5_prob, 5, r);
-          break;
-        case CATEGORY6_TOKEN:
-#if CONFIG_VP9_HIGHBITDEPTH
-          switch (cm->bit_depth) {
-            case VPX_BITS_8:
-              val = CAT6_MIN_VAL + read_coeff(cat6_prob, 14, r);
-              break;
-            case VPX_BITS_10:
-              val = CAT6_MIN_VAL + read_coeff(cat6_prob, 16, r);
-              break;
-            case VPX_BITS_12:
-              val = CAT6_MIN_VAL + read_coeff(cat6_prob, 18, r);
-              break;
-            default:
-              assert(0);
-              return -1;
+      VP9_READ_BIT(r, p[0]);
+      if (VP9_READ_SET) {
+        VP9_READ_ADJUST_FOR_ONE(r);
+        VP9_READ_BIT(r, p[3]);
+        if (VP9_READ_SET) {
+          VP9_READ_ADJUST_FOR_ONE(r);
+          VP9_READ_BIT(r, p[5]);
+          if (VP9_READ_SET) {
+            VP9_READ_ADJUST_FOR_ONE(r);
+            VP9_READ_BIT(r, p[7]);
+            if (VP9_READ_SET) {
+              VP9_READ_ADJUST_FOR_ONE(r);
+              token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY6_TOKEN];
+    #if CONFIG_VP9_HIGHBITDEPTH
+              switch (cm->bit_depth) {
+                case VPX_BITS_8:
+                  READ_COEFF(CAT6_MIN_VAL, cat6_prob, 14, r);
+                  break;
+                case VPX_BITS_10:
+                  READ_COEFF(CAT6_MIN_VAL, cat6_prob, 16, r);
+                  break;
+                case VPX_BITS_12:
+                  READ_COEFF(CAT6_MIN_VAL, cat6_prob, 18, r);
+                  break;
+                default:
+                  assert(0);
+                  return -1;
+              }
+    #else
+              READ_COEFF(CAT6_MIN_VAL, cat6_prob, 14, r);
+    #endif
+            } else {
+              VP9_READ_ADJUST_FOR_ZERO
+              token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY5_TOKEN];
+              READ_COEFF(CAT5_MIN_VAL, cat5_prob, 5, r);
+            }
+          } else {
+            VP9_READ_ADJUST_FOR_ZERO
+            VP9_READ_BIT(r, p[6]);
+            if (VP9_READ_SET) {
+              VP9_READ_ADJUST_FOR_ONE(r);
+              token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY4_TOKEN];
+              READ_COEFF(CAT4_MIN_VAL, cat4_prob, 4, r);
+            } else {
+              VP9_READ_ADJUST_FOR_ZERO
+              token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY3_TOKEN];
+              READ_COEFF(CAT3_MIN_VAL, cat3_prob, 3, r);
+            }
           }
-#else
-          val = CAT6_MIN_VAL + read_coeff(cat6_prob, 14, r);
-#endif
-          break;
+        } else {
+          VP9_READ_ADJUST_FOR_ZERO
+          VP9_READ_BIT(r, p[4]);
+          if (VP9_READ_SET) {
+            VP9_READ_ADJUST_FOR_ONE(r);
+            token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY2_TOKEN];
+            READ_COEFF(CAT2_MIN_VAL, cat2_prob, 2, r);
+          } else {
+            VP9_READ_ADJUST_FOR_ZERO
+            token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY1_TOKEN];
+            READ_COEFF(CAT1_MIN_VAL, cat1_prob, 1, r);
+          }
+        }
+      } else {
+        VP9_READ_ADJUST_FOR_ZERO
+        VP9_READ_BIT(r, p[1]);
+        if (VP9_READ_SET) {
+          VP9_READ_ADJUST_FOR_ONE(r);
+          VP9_READ_BIT(r, p[2]);
+          if (VP9_READ_SET) {
+            VP9_READ_ADJUST_FOR_ONE(r);
+            token_cache[scan[c]] = vp9_pt_energy_class[FOUR_TOKEN];
+            val = 4;
+          } else {
+            VP9_READ_ADJUST_FOR_ZERO
+            token_cache[scan[c]] = vp9_pt_energy_class[THREE_TOKEN];
+            val = 3;
+          }
+        } else {
+          VP9_READ_ADJUST_FOR_ZERO
+          token_cache[scan[c]] = vp9_pt_energy_class[TWO_TOKEN];
+          val = 2;
+        }
       }
     }
     v = (val * dqv) >> dq_shift;
+    VP9_READ_BIT(r, 128)
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
 #if CONFIG_VP9_HIGHBITDEPTH
-    dqcoeff[scan[c]] = highbd_check_range((vp9_read_bit(r) ? -v : v),
-                                          cm->bit_depth);
+    if (VP9_READ_SET) {
+       VP9_READ_ADJUST_FOR_ONE(r)
+       dqcoeff[scan[c]] = highbd_check_range(-v, cm->bit_depth);
+    } else {
+      VP9_READ_ADJUST_FOR_ZERO
+      dqcoeff[scan[c]] = highbd_check_range(v, cm->bit_depth);
+    }
 #else
-    dqcoeff[scan[c]] = check_range(vp9_read_bit(r) ? -v : v);
+    if (VP9_READ_SET) {
+       VP9_READ_ADJUST_FOR_ONE(r)
+       dqcoeff[scan[c]] = check_range(-v, cm->bit_depth);
+    } else {
+      VP9_READ_ADJUST_FOR_ZERO
+      dqcoeff[scan[c]] = check_range(v, cm->bit_depth);
+    }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #else
-    dqcoeff[scan[c]] = vp9_read_bit(r) ? -v : v;
+    if (VP9_READ_SET) {
+       VP9_READ_ADJUST_FOR_ONE(r)
+       dqcoeff[scan[c]] = -v;
+    } else {
+      VP9_READ_ADJUST_FOR_ZERO
+      dqcoeff[scan[c]] = v;
+    }
 #endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
-    token_cache[scan[c]] = vp9_pt_energy_class[token];
     ++c;
     ctx = get_coef_context(nb, token_cache, c);
     dqv = dq[1];
   }
+  VP9_READ_STORE(r)
 
   return c;
 }
