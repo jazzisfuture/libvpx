@@ -109,37 +109,6 @@ static INLINE int vp9_read(vp9_reader *r, int prob) {
 
 #define VP9_READ_SET (value >= bigsplit)
 
-
-static INLINE void vp9_read_normalize(BD_VALUE *value, unsigned int *range,
-                                      unsigned int *count) {
-  register unsigned int shift = vp9_norm[*range];
-  *range <<= shift;
-  *value <<= shift;
-  *count -= shift;
-}
-static INLINE void vp9_read_one(BD_VALUE *value, unsigned int *range,
-                                unsigned int *count, unsigned int *split,
-                                unsigned int *bigsplit) {
-  *range = *split;
-  *value -= *bigsplit;
-  vp9_read_normalize(value, range, count);
-}
-
-static INLINE void vp9_read_zed(BD_VALUE *value, unsigned int *range,
-                                unsigned int *count, unsigned int *split,
-                                unsigned int *bigsplit) {
-  *range = *split;
-  vp9_read_normalize(value, range, count);
-}
-static INLINE void vp9_read_store(BD_VALUE *value, unsigned int *range,
-                                unsigned int *count,
-                                BD_VALUE val, unsigned int rng,
-                                unsigned int cnt) {
-  *value = val;
-  *range = rng;
-  *count = cnt;
-}
-
 #define VP9_READ_NORMALIZE \
   { \
     register unsigned int shift = vp9_norm[range]; \
@@ -160,21 +129,6 @@ static INLINE void vp9_read_store(BD_VALUE *value, unsigned int *range,
 #define VP9_READ_ADJUST_FOR_ZERO \
   range = split; \
   VP9_READ_NORMALIZE
-
-
-static INLINE int vp9_readz(vp9_reader *r, int prob) {
-  int bit = 0;
-  VP9_READ_VARS(r);
-  VP9_READ_BIT(r, prob);
-  bit = VP9_READ_SET;
-  if (bit) {
-    VP9_READ_ADJUST_FOR_ONE(r)
-  } else {
-    VP9_READ_ADJUST_FOR_ZERO;
-  }
-  VP9_READ_STORE(r)
-  return bit;
-}
 
 static INLINE int vp9_read_bit(vp9_reader *r) {
   return vp9_read(r, 128);  // vp9_prob_half
