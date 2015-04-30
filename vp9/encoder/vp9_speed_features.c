@@ -208,6 +208,9 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
   VP9_COMMON *const cm = &cpi->common;
   const int is_keyframe = cm->frame_type == KEY_FRAME;
   const int frames_since_key = is_keyframe ? 0 : cpi->rc.frames_since_key;
+  int i;
+  for (i = 0; i < BLOCK_SIZES; i++)
+    sf->intra_y_mode_bsize_mask[i] = INTRA_DC;
   sf->static_segmentation = 0;
   sf->adaptive_rd_thresh = 1;
   sf->use_fast_coef_costing = 1;
@@ -336,7 +339,16 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->tx_size_search_method = is_keyframe ? USE_LARGESTALL : USE_TX_8X8;
     sf->mv.reduce_first_step_size = 1;
     sf->skip_encode_sb = 0;
-  }
+    if (!is_keyframe) {
+      int i;
+      for (i = 0; i < BLOCK_SIZES; i++)
+        if (i > 6)
+          sf->intra_y_mode_bsize_mask[i] = INTRA_DC;
+        else
+          // Use H and V intra mode for block sizes <= 16X16
+          sf->intra_y_mode_bsize_mask[i] = INTRA_DC_H_V;
+      }
+    }
 
   if (speed >= 7) {
     sf->adaptive_rd_thresh = 3;
