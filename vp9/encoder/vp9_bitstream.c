@@ -96,14 +96,11 @@ static void write_tx_size_inter(const VP9_COMMON *cm, MACROBLOCKD *xd,
   if (tx_size == mbmi->inter_tx_size[tx_idx]) {
     vp9_write(w, 0, cm->fc->txfm_partition_prob[ctx]);
     txfm_partition_update(xd, blk_row, blk_col, tx_size);
-//    vp9_write_bit(w, 0);
   } else {  // further split
     BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
     int bh = num_4x4_blocks_high_lookup[bsize];
     int i;
-
     vp9_write(w, 1, cm->fc->txfm_partition_prob[ctx]);
-//    vp9_write_bit(w, 1);
 
     if (tx_size == TX_8X8) {
       txfm_partition_update(xd, blk_row, blk_col, TX_4X4);
@@ -336,6 +333,19 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 
   if (bsize < BLOCK_8X8)
     txfm_partition_update(xd, 0, 0, TX_4X4);
+
+  if (is_inter) {
+    if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT && skip) {
+      BLOCK_SIZE txb_size = txsize_to_bsize[max_txsize_lookup[bsize]];
+      int bh = num_4x4_blocks_wide_lookup[txb_size];
+      int width  = num_4x4_blocks_wide_lookup[bsize];
+      int height = num_4x4_blocks_high_lookup[bsize];
+      int idx, idy;
+      for (idy = 0; idy < height; idy += bh)
+        for (idx = 0; idx < width; idx += bh)
+          txfm_partition_update(xd, idy, idx, max_txsize_lookup[bsize]);
+      }
+  }
 
   if (!is_inter) {
     if (bsize >= BLOCK_8X8) {
