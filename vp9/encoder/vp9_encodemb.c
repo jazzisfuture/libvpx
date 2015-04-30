@@ -719,6 +719,7 @@ static void encode_block_b(int blk_row, int blk_col, int plane,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   uint8_t *dst;
   ENTROPY_CONTEXT *a, *l;
+  const int block_stride = num_4x4_blocks_wide_lookup[plane_bsize];
   int i;
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
   a = &ctx->ta[plane][blk_col];
@@ -732,13 +733,14 @@ static void encode_block_b(int blk_row, int blk_col, int plane,
 //    return;
 //  }
 
-  vp9_xform_quant_inter(x, plane, block, blk_row, blk_col,
-                        plane_bsize, tx_size);
+  if (x->blk_skip[plane][blk_row * block_stride + blk_col] == 0)
+    vp9_xform_quant_inter(x, plane, block, blk_row, blk_col,
+                          plane_bsize, tx_size);
+  else
+    p->eobs[block] = 0;
 
   if (x->optimize) {
     int context;
-//    vp9_get_entropy_contexts(MAX(xd->mi[0].src_mi->mbmi.sb_type, BLOCK_8X8),
-//                             tx_size, pd, ctx->ta[plane], ctx->tl[plane]);
     context = combine_entropy_contexts(*a, *l);
     *a = *l = optimize_b(x, plane, block, tx_size, context) > 0;
   } else {
