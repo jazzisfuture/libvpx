@@ -1339,11 +1339,12 @@ static void inter_block_yrd(const VP9_COMP *cpi, MACROBLOCK *x,
     const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
     const int mi_width = num_4x4_blocks_wide_lookup[plane_bsize];
     const int mi_height = num_4x4_blocks_high_lookup[plane_bsize];
-    BLOCK_SIZE txb_size = txsize_to_bsize[max_txsize_lookup[plane_bsize]];
+    TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
+    BLOCK_SIZE txb_size = txsize_to_bsize[max_tx_size];
     int bh = num_4x4_blocks_wide_lookup[txb_size];
     int idx, idy;
     int block = 0;
-    int step = 1 << (max_txsize_lookup[plane_bsize] * 2);
+    int step = 1 << (max_tx_size * 2);
     ENTROPY_CONTEXT ctxa[16], ctxl[16];
 
     int pnrate = 0, pnskip = 1;
@@ -1353,8 +1354,7 @@ static void inter_block_yrd(const VP9_COMP *cpi, MACROBLOCK *x,
 
     for (idy = 0; idy < mi_height; idy += bh) {
       for (idx = 0; idx < mi_width; idx += bh) {
-        select_tx_block(cpi, x, idy, idx, 0, block,
-                        max_txsize_lookup[plane_bsize], plane_bsize,
+        select_tx_block(cpi, x, idy, idx, 0, block, max_tx_size, plane_bsize,
                         ctxa, ctxl, &pnrate, &pndist, &pnsse, &pnskip);
         *rate += pnrate;
         *distortion += pndist;
@@ -1362,6 +1362,16 @@ static void inter_block_yrd(const VP9_COMP *cpi, MACROBLOCK *x,
         *skippable &= pnskip;
 
         block += step;
+      }
+    }
+
+    if (*skippable) {
+      for (idy = 0; idy < mi_height; idy += bh) {
+        for (idx = 0; idx < mi_width; idx += bh) {
+          MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
+          mbmi->inter_tx_size[(idy / 2) * 8 + (idx / 2)] = max_tx_size;
+          txfm_partition_update(xd, idy, idx, max_tx_size);
+        }
       }
     }
   }
@@ -3712,6 +3722,16 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
           // Add in the cost of the no skip flag.
           rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 0);
         } else {
+          TX_SIZE max_tx_size = max_txsize_lookup[bsize];
+          BLOCK_SIZE txb_size = txsize_to_bsize[max_tx_size];
+          int bh = num_4x4_blocks_wide_lookup[txb_size];
+          int width  = num_4x4_blocks_wide_lookup[bsize];
+          int height = num_4x4_blocks_high_lookup[bsize];
+          int idx, idy;
+          for (idy = 0; idy < height; idy += bh)
+            for (idx = 0; idx < width; idx += bh)
+              mbmi->inter_tx_size[(idy / 2) * 8 + (idx / 2)] = max_tx_size;
+
           // FIXME(rbultje) make this work for splitmv also
           rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
           distortion2 = total_sse;
