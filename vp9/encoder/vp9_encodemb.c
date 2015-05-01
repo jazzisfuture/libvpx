@@ -237,15 +237,16 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
                                       [tokens[next][0].token];
           rate1 += mb->token_costs_pxd[tx_size][type][ref][0][pt]
                                       [tokens[next][1].token];
-        } else
+        } else {
 #endif  // CONFIG_TX_SKIP
-        {
           rate0 += mb->token_costs[tx_size][type][ref][band][0][pt]
                                   [tokens[next][0].token];
           rate1 += mb->token_costs[tx_size][type][ref][band][0][pt]
                                   [tokens[next][1].token];
         }
+#if CONFIG_TX_SKIP
       }
+#endif  // CONFIG_TX_SKIP
       UPDATE_RD_COST();
       /* And pick the best. */
       best = rd_cost1 < rd_cost0;
@@ -444,12 +445,13 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   if (tx_skip && PXD_TOKEN) {
     rate0 += mb->token_costs_pxd[tx_size][type][ref][0][ctx][t0];
     rate1 += mb->token_costs_pxd[tx_size][type][ref][0][ctx][t1];
-  } else
+  } else {
 #endif  // CONFIG_TX_SKIP
-  {
     rate0 += mb->token_costs[tx_size][type][ref][band][0][ctx][t0];
     rate1 += mb->token_costs[tx_size][type][ref][band][0][ctx][t1];
+#if CONFIG_TX_SKIP
   }
+#endif  // CONFIG_TX_SKIP
   UPDATE_RD_COST();
   best = rd_cost1 < rd_cost0;
   final_eob = -1;
