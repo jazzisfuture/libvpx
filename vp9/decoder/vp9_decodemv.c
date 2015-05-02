@@ -656,8 +656,8 @@ static void read_inter_frame_mode_info(VP9Decoder *const pbi,
       int idx, idy;
       for (idy = 0; idy < height; idy += bh) {
         for (idx = 0; idx < width; idx += bh) {
-          int ctx = txfm_partition_context(xd, idy, idx, max_tx_size);
-          ++counts->txfm_partition[ctx][0];
+//          int ctx = txfm_partition_context(xd, idy, idx, max_tx_size);
+//          ++counts->txfm_partition[ctx][0];
           txfm_partition_update(xd, idy, idx, max_tx_size);
         }
       }

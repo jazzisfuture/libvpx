@@ -1758,6 +1758,8 @@ void vp9_decode_frame(VP9Decoder *pbi,
     vp9_frameworker_unlock_stats(worker);
   }
 
+  fprintf(stderr, "frame quantization parameter %d\n", cm->base_qindex);
+
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1) {
     // Multi-threaded tile decoder
     *p_data_end = decode_tiles_mt(pbi, data + first_partition_size, data_end);

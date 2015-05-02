@@ -4212,8 +4212,11 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td,
       int idx, idy;
       for (idy = 0; idy < height; idy += bh) {
         for (idx = 0; idx < width; idx += bh) {
-          update_txfm_count(xd, td->counts, max_txsize_lookup[bsize],
-                            idy, idx, !output_enabled);
+          if (!mbmi->skip)
+            update_txfm_count(xd, td->counts, max_txsize_lookup[bsize],
+                              idy, idx, !output_enabled);
+          else
+            txfm_partition_update(xd, idy, idx, max_txsize_lookup[bsize]);
         }
       }
     }
