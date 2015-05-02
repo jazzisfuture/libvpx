@@ -2821,6 +2821,9 @@ static MV_REFERENCE_FRAME get_frame_type(const VP9_COMP *cpi) {
 static TX_MODE select_tx_mode(const VP9_COMP *cpi, MACROBLOCKD *const xd) {
   if (xd->lossless)
     return ONLY_4X4;
+
+  return TX_MODE_SELECT;
+
   if (cpi->common.frame_type == KEY_FRAME &&
       cpi->sf.use_nonrd_pick_mode &&
       cpi->sf.partition_search_type == VAR_BASED_PARTITION)
