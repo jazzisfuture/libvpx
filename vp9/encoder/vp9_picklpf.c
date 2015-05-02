@@ -149,7 +149,6 @@ void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
                            LPF_PICK_METHOD method) {
   VP9_COMMON *const cm = &cpi->common;
   struct loopfilter *const lf = &cm->lf;
-
   lf->sharpness_level = cm->frame_type == KEY_FRAME ? 0
                                                     : cpi->oxcf.sharpness;
 
@@ -188,4 +187,5 @@ void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
     lf->filter_level = search_filter_level(sd, cpi,
                                            method == LPF_PICK_FROM_SUBIMAGE);
   }
+  lf->filter_level = 0;
 }
