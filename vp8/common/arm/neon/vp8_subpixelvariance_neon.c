@@ -32,7 +32,7 @@ unsigned int vp8_sub_pixel_variance16x16_neon_func(
         int dst_pixels_per_line,
         unsigned int *sse) {
     int i;
-    DECLARE_ALIGNED_ARRAY(16, unsigned char, tmp, 528);
+    DECLARE_ALIGNED(16, unsigned char, tmp[528]);
     unsigned char *tmpp;
     unsigned char *tmpp2;
     uint8x8_t d0u8, d1u8, d2u8, d3u8, d4u8, d5u8, d6u8, d7u8, d8u8, d9u8;
@@ -1003,8 +1003,8 @@ unsigned int vp8_sub_pixel_variance8x8_neon(
         const unsigned char *dst,
         int dst_stride,
         unsigned int *sse) {
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, temp2, kHeight8PlusOne * kWidth8);
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, fdata3, kHeight8PlusOne * kWidth8);
+  DECLARE_ALIGNED(kAlign16, uint8_t, temp2[kHeight8PlusOne * kWidth8]);
+  DECLARE_ALIGNED(kAlign16, uint8_t, fdata3[kHeight8PlusOne * kWidth8]);
   if (xoffset == 0) {
     var_filter_block2d_bil_w8(src, temp2, src_stride, kWidth8, kHeight8,
                               kWidth8, bilinear_taps_coeff[yoffset]);

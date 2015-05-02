@@ -169,8 +169,8 @@ unsigned int vp9_sub_pixel_variance8x8_neon(const uint8_t *src,
                                             const uint8_t *dst,
                                             int dst_stride,
                                             unsigned int *sse) {
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, temp2, kHeight8 * kWidth8);
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, fdata3, kHeight8PlusOne * kWidth8);
+  DECLARE_ALIGNED(kAlign16, uint8_t, temp2[kHeight8 * kWidth8]);
+  DECLARE_ALIGNED(kAlign16, uint8_t, fdata3[kHeight8PlusOne * kWidth8]);
 
   var_filter_block2d_bil_w8(src, fdata3, src_stride, kPixelStepOne,
                             kHeight8PlusOne, kWidth8,
@@ -187,8 +187,8 @@ unsigned int vp9_sub_pixel_variance16x16_neon(const uint8_t *src,
                                               const uint8_t *dst,
                                               int dst_stride,
                                               unsigned int *sse) {
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, temp2, kHeight16 * kWidth16);
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, fdata3, kHeight16PlusOne * kWidth16);
+  DECLARE_ALIGNED(kAlign16, uint8_t, temp2[kHeight16 * kWidth16]);
+  DECLARE_ALIGNED(kAlign16, uint8_t, fdata3[kHeight16PlusOne * kWidth16]);
 
   var_filter_block2d_bil_w16(src, fdata3, src_stride, kPixelStepOne,
                              kHeight16PlusOne, kWidth16,
@@ -275,8 +275,8 @@ unsigned int vp9_sub_pixel_variance32x32_neon(const uint8_t *src,
                                               const uint8_t *dst,
                                               int dst_stride,
                                               unsigned int *sse) {
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, temp2, kHeight32 * kWidth32);
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, fdata3, kHeight32PlusOne * kWidth32);
+  DECLARE_ALIGNED(kAlign16, uint8_t, temp2[kHeight32 * kWidth32]);
+  DECLARE_ALIGNED(kAlign16, uint8_t, fdata3[kHeight32PlusOne * kWidth32]);
 
   var_filter_block2d_bil_w16(src, fdata3, src_stride, kPixelStepOne,
                              kHeight32PlusOne, kWidth32,
@@ -293,8 +293,8 @@ unsigned int vp9_sub_pixel_variance64x64_neon(const uint8_t *src,
                                               const uint8_t *dst,
                                               int dst_stride,
                                               unsigned int *sse) {
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, temp2, kHeight64 * kWidth64);
-  DECLARE_ALIGNED_ARRAY(kAlign16, uint8_t, fdata3, kHeight64PlusOne * kWidth64);
+  DECLARE_ALIGNED(kAlign16, uint8_t, temp2[kHeight64 * kWidth64]);
+  DECLARE_ALIGNED(kAlign16, uint8_t, fdata3[kHeight64PlusOne * kWidth64]);
 
   var_filter_block2d_bil_w16(src, fdata3, src_stride, kPixelStepOne,
                              kHeight64PlusOne, kWidth64,
