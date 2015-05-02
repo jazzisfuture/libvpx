@@ -398,6 +398,21 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
   vp9_read_mode_info(pbi, xd, counts, tile, mi_row, mi_col, r);
 
+//  if (cm->current_video_frame > 0) {
+//    FILE *pf = fopen("dec_modes.txt", "a");
+//    fprintf(pf, "frame %d, pos (%d, %d), bsize %d, mode %d, tx_size %d, skip %d\n",
+//            cm->current_video_frame,
+//            mi_row, mi_col, bsize, mbmi->mode, mbmi->tx_size, mbmi->skip);
+//    fprintf(pf, "ref frame %d, second ref frame %d, mv (%d, %d), pred filter %d\n\n",
+//            mbmi->ref_frame[0], mbmi->ref_frame[1],
+//            mbmi->mv[0].as_mv.row, mbmi->mv[0].as_mv.col,
+//            mbmi->interp_filter);
+//    fclose(pf);
+//
+//    if (cm->current_video_frame == 2)
+//      exit(0);
+//  }
+
   if (less8x8)
     bsize = BLOCK_8X8;
 
