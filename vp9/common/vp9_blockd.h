@@ -286,6 +286,9 @@ static TX_SIZE get_uv_tx_size_impl(TX_SIZE y_tx_size, BLOCK_SIZE bsize,
     else if (y_tx_size == TX_8X8)
       uv_tx_size = TX_4X4;
 
+//    if (y_tx_size == TX_32X32 && bsize == BLOCK_64X64)
+//      uv_tx_size = TX_32X32;
+
     return MIN(uv_tx_size, max_txsize_lookup[plane_bsize]);
   }
 }
