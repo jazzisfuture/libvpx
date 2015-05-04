@@ -123,9 +123,9 @@ void vp9_encode_tiles_mt(VP9_COMP *cpi) {
       thread_data->td->mb = cpi->td.mb;
       thread_data->td->rd_counts = cpi->td.rd_counts;
     }
-    if (thread_data->td->counts != &cpi->common.counts) {
-      memcpy(thread_data->td->counts, &cpi->common.counts,
-             sizeof(cpi->common.counts));
+    if (thread_data->td->counts != cpi->common.counts) {
+      vpx_memcpy(thread_data->td->counts, cpi->common.counts,
+                 sizeof(cpi->common.counts));
     }
 
     // Handle use_nonrd_pick_mode case.
