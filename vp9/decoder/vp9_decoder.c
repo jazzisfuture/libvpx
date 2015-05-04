@@ -94,6 +94,8 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
   CHECK_MEM_ERROR(cm, cm->frame_contexts,
                   (FRAME_CONTEXT *)vpx_calloc(FRAME_CONTEXTS,
                   sizeof(*cm->frame_contexts)));
+  CHECK_MEM_ERROR(cm, cm->counts,
+                  (FRAME_COUNTS *)vpx_calloc(1, sizeof(*cm->counts)));
 
   pbi->need_resync = 1;
   once(initialize_dec);
