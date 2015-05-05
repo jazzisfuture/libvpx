@@ -3844,6 +3844,10 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   x->quant_fp = cpi->sf.use_quant_fp;
   vp9_zero(x->skip_txfm);
+
+//  fprintf(stderr, "frame index %d, frame base qp %d\n",
+//          cm->current_video_frame, cm->base_qindex);
+
   if (sf->use_nonrd_pick_mode) {
     // Initialize internal buffer pointers for rtc coding, where non-RD
     // mode decision is used and hence no buffer pointer swap needed.
