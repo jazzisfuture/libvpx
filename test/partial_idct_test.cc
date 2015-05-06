@@ -309,6 +309,18 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(
     MSA, PartialIDctTest,
     ::testing::Values(
+        make_tuple(&vp9_fdct32x32_c,
+                   &vp9_idct32x32_1024_add_c,
+                   &vp9_idct32x32_34_add_msa,
+                   TX_32X32, 34),
+        make_tuple(&vp9_fdct32x32_c,
+                   &vp9_idct32x32_1024_add_msa,
+                   &vp9_idct32x32_34_add_c,
+                   TX_32X32, 34),
+        make_tuple(&vp9_fdct32x32_c,
+                   &vp9_idct32x32_1024_add_c,
+                   &vp9_idct32x32_1_add_msa,
+                   TX_32X32, 1),
         make_tuple(&vp9_fdct16x16_c,
                    &vp9_idct16x16_256_add_c,
                    &vp9_idct16x16_10_add_msa,
