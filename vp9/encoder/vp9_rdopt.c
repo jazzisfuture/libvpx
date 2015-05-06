@@ -1136,21 +1136,30 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   return best_rd;
 }
 
-static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
+static void tx_block_rd_b(const VP9_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
                           int blk_row, int blk_col, int plane, int block,
                           int plane_bsize, ENTROPY_CONTEXT *ta,
                           ENTROPY_CONTEXT *tl, int *zero_blk_rate,
                           int *rate, int64_t *dist, int64_t *bsse, int *skip) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  const int ss_txfrm_size = tx_size << 1;
   const struct macroblock_plane *const p = &x->plane[plane];
-  int64_t this_sse;
-  int shift = tx_size == TX_32X32 ? 0 : 2;
-  tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
+  unsigned int this_sse = 0;
+  unsigned int this_dist = 0;
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   scan_order const *sc = get_scan(xd, tx_size, pd->plane_type, 0);
   int pt;
+  BLOCK_SIZE txm_bsize = txsize_to_bsize[tx_size];
+  int bh = 4 * num_4x4_blocks_wide_lookup[txm_bsize];
+  int src_stride = p->src.stride;
+  uint8_t *src = &p->src.buf[4 * blk_row * src_stride + 4 * blk_col];
+  uint8_t *dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, rec_buffer, 32 * 32);
+  vp9_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
+                    NULL, 0, NULL, 0, bh, bh);
+  cpi->fn_ptr[txm_bsize].vf(src, src_stride,
+                            rec_buffer, 32, &this_sse);
+  this_dist = this_sse;
 
   switch (tx_size) {
     case TX_4X4:
@@ -1173,19 +1182,37 @@ static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
   }
 
   pt = (ta[blk_col] != 0) + (tl[blk_row] != 0);
-  this_sse = vp9_xform_quant_inter(x, plane, block, blk_row, blk_col,
-                                   plane_bsize, tx_size) * 16;
-  *bsse += this_sse;
-#if CONFIG_VP9_HIGHBITDEPTH
-  *dist += vp9_highbd_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
-                                  &this_sse, bd) >> shift;
-#else
-  if (p->eobs[block] > 0)
-    *dist += vp9_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
-                             &this_sse) >> shift;
-  else
-    *dist += this_sse;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+  vp9_xform_quant_inter(x, plane, block, blk_row, blk_col,
+                        plane_bsize, tx_size);
+
+  if (p->eobs[block] > 0) {
+    switch (tx_size) {
+      case TX_32X32:
+        vp9_idct32x32_add(dqcoeff, rec_buffer, 32, p->eobs[block]);
+        break;
+      case TX_16X16:
+        vp9_idct16x16_add(dqcoeff, rec_buffer, 32, p->eobs[block]);
+        break;
+      case TX_8X8:
+        vp9_idct8x8_add(dqcoeff, rec_buffer, 32, p->eobs[block]);
+        break;
+      case TX_4X4:
+        // this is like vp9_short_idct4x4 but has a special case around eob<=1
+        // which is significant (not just an optimization) for the lossless
+        // case.
+        x->itxm_add(dqcoeff, rec_buffer, 32, p->eobs[block]);
+        break;
+      default:
+        assert(0 && "Invalid transform size");
+        break;
+    }
+    cpi->fn_ptr[txm_bsize].vf(src, src_stride,
+                              rec_buffer, 32, &this_dist);
+  }
+
+  *bsse += (int64_t)(this_sse) * 16;
+  *dist += (int64_t)(this_dist) * 16;
+
   *zero_blk_rate =
       x->token_costs[tx_size][pd->plane_type][1][0][0][pt][EOB_TOKEN];
   *rate += cost_coeffs(x, plane, block, ta + blk_col, tl + blk_row, tx_size,
@@ -1249,7 +1276,8 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->tx_size = tx_size;
 
   if (cpi->common.tx_mode == TX_MODE_SELECT || tx_size == TX_4X4) {
-    tx_block_rd_b(x, tx_size, blk_row, blk_col, 0, block, bsize, ta[0], tl[0],
+    tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, 0,
+                  block, bsize, ta[0], tl[0],
                   &zero_blk_rate, rate, dist, bsse, skip);
     txfm_partition_update(xd, blk_row, blk_col, tx_size);
     if ((RDCOST(x->rdmult, x->rddiv, *rate, *dist) >=
@@ -1276,7 +1304,7 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
         TX_SIZE uv_tx_size = get_uv_tx_size_impl(tx_size, bsize,
                                                  pdc->subsampling_x,
                                                  pdc->subsampling_y);
-        tx_block_rd_b(x, uv_tx_size, (blk_row / 2), (blk_col / 2),
+        tx_block_rd_b(cpi, x, uv_tx_size, (blk_row / 2), (blk_col / 2),
                       i, block, plane_bsize, ta[i], tl[i],
                       &zero_blk_rate, &rate_uv, &dist_uv, &bsse_uv, &skip_uv);
       }
@@ -1465,7 +1493,7 @@ static void tx_block_rd(const VP9_COMP *cpi, MACROBLOCK *x,
     return;
 
   if (tx_size == plane_tx_size) {
-    tx_block_rd_b(x, tx_size, blk_row, blk_col, plane, block,
+    tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
                   plane_bsize, ta, tl, &zero_blk_rate, rate, dist, bsse, skip);
   } else {
     BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
