@@ -488,7 +488,8 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
     cpi->find_fractional_mv_step = vp9_find_best_sub_pixel_tree_pruned_evenmore;
   }
 
-  x->optimize = sf->optimize_coefficients == 1 && oxcf->pass != 1;
+//  x->optimize = sf->optimize_coefficients == 1 && oxcf->pass != 1;
+  x->optimize = 0;
 
   x->min_partition_size = sf->default_min_partition_size;
   x->max_partition_size = sf->default_max_partition_size;

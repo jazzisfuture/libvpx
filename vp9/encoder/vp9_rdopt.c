@@ -1145,12 +1145,25 @@ static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const int ss_txfrm_size = tx_size << 1;
   const struct macroblock_plane *const p = &x->plane[plane];
-  int64_t this_sse;
+  int64_t this_sse = 0;
   int shift = tx_size == TX_32X32 ? 0 : 2;
   tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   scan_order const *sc = get_scan(xd, tx_size, pd->plane_type, 0);
   int pt;
+  BLOCK_SIZE txm_bsize = txsize_to_bsize[tx_size];
+  int bh = 4 * num_4x4_blocks_wide_lookup[txm_bsize];
+  const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+  const int16_t *src_diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
+  int i, j;
+
+  for (j = 0; j < bh; ++j) {
+    for (i = 0; i < bh; ++i) {
+      int index = j * diff_stride + i;
+      this_sse += src_diff[index] * src_diff[index];
+    }
+  }
+  this_sse *= 16;
 
   switch (tx_size) {
     case TX_4X4:
@@ -1173,8 +1186,8 @@ static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
   }
 
   pt = (ta[blk_col] != 0) + (tl[blk_row] != 0);
-  this_sse = vp9_xform_quant_inter(x, plane, block, blk_row, blk_col,
-                                   plane_bsize, tx_size) * 16;
+  vp9_xform_quant_inter(x, plane, block, blk_row, blk_col,
+                        plane_bsize, tx_size);
   *bsse += this_sse;
 #if CONFIG_VP9_HIGHBITDEPTH
   *dist += vp9_highbd_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
