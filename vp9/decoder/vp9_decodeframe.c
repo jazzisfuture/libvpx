@@ -451,11 +451,7 @@ static void decode_partition(VP9Decoder *const pbi, MACROBLOCKD *const xd,
 
   partition = read_partition(cm, xd, hbs, mi_row, mi_col, bsize, r);
   subsize = get_subsize(bsize, partition);
-  uv_subsize = ss_size_lookup[subsize][cm->subsampling_x][cm->subsampling_y];
-  if (subsize >= BLOCK_8X8 && uv_subsize == BLOCK_INVALID)
-    vpx_internal_error(xd->error_info,
-                       VPX_CODEC_CORRUPT_FRAME, "Invalid block size.");
-  if (subsize < BLOCK_8X8) {
+  if (bsize == BLOCK_8X8) {
     decode_block(pbi, xd, tile, mi_row, mi_col, r, subsize);
   } else {
     switch (partition) {
