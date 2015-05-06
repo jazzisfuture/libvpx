@@ -2192,8 +2192,10 @@ static int64_t rd_pick_intrabc_sb_mode(VP9_COMP *cpi, MACROBLOCK *x,
     this_rate += bmode_costs[mode];
 #if CONFIG_TX_SKIP
     if (try_tx_skip)
-      this_rate += vp9_cost_bit(cpi->common.fc.y_tx_skip_prob[0], 0) +
-                   vp9_cost_bit(cpi->common.fc.uv_tx_skip_prob[0], 0);
+      this_rate +=
+          vp9_cost_bit(cpi->common.fc.y_tx_skip_prob[0], mbmi->tx_skip[0]) +
+          vp9_cost_bit(cpi->common.fc.uv_tx_skip_prob[mbmi->tx_skip[0]],
+                       mbmi->tx_skip[1]);
 #endif  // CONFIG_TX_SKIP
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
     if (this_rd < best_rd) {
