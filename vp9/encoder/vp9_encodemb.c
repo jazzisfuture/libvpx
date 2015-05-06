@@ -530,9 +530,9 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
   }
 }
 
-int64_t vp9_xform_quant_inter(MACROBLOCK *x, int plane, int block,
-                              int blk_row, int blk_col,
-                              BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+void vp9_xform_quant_inter(MACROBLOCK *x, int plane, int block,
+                           int blk_row, int blk_col,
+                           BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
@@ -543,19 +543,7 @@ int64_t vp9_xform_quant_inter(MACROBLOCK *x, int plane, int block,
   uint16_t *const eob = &p->eobs[block];
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int16_t *src_diff;
-  int64_t bsse = 0;
-  BLOCK_SIZE txm_bsize = txsize_to_bsize[tx_size];
-  int bh = 4 * num_4x4_blocks_wide_lookup[txm_bsize];
-  int i, j;
-
   src_diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
-
-  for (j = 0; j < bh; ++j) {
-    for (i = 0; i < bh; ++i) {
-      int index = j * diff_stride + i;
-      bsse += src_diff[index] * src_diff[index];
-    }
-  }
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -628,8 +616,6 @@ int64_t vp9_xform_quant_inter(MACROBLOCK *x, int plane, int block,
       assert(0);
       break;
   }
-
-  return bsse;
 }
 
 void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
