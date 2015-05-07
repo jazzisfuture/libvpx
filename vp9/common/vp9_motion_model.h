@@ -1,0 +1,81 @@
+/*
+ *  Copyright (c) 2015 The WebM project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be
+ *  found  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
+#ifndef VP9_COMMON_VP9_MOTION_MODEL_H
+#define VP9_COMMON_VP9_MOTION_MODEL_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <memory.h>
+#include <math.h>
+#include <assert.h>
+
+#include "vpx_config.h"
+#include "vpx_ports/mem.h"
+
+typedef void (*projectPointsType)(double *mat, double *points, double *proj,
+                                  const int n, const int stride_points,
+                                  const int stride_proj);
+typedef enum {
+  UNKNOWN_TRANSFORM = -1,
+  HOMOGRAPHY,  // homography, 8-parameter
+  AFFINE,      // affine, 6-parameter
+  ROTZOOM,     // simplified affine with rotation and zoom only, 4-parameter
+  TRANSLATION  // translational motion 2-parameter
+} TransformationType;
+
+static INLINE int get_numparams(TransformationType type) {
+  switch (type) {
+    case HOMOGRAPHY:
+      return 9;
+    case AFFINE:
+      return 6;
+    case ROTZOOM:
+      return 4;
+    case TRANSLATION:
+      return 2;
+    default:
+      assert(0);
+      return 0;
+  }
+}
+
+INLINE projectPointsType get_projectPointsType(TransformationType type);
+
+void projectPointsHomography(double *mat, double *points, double *proj,
+                             const int n, const int stride_points,
+                             const int stride_proj);
+void projectPointsAffine(double *mat, double *points, double *proj,
+                         const int n, const int stride_points,
+                         const int stride_proj);
+void projectPointsRotZoom(double *mat, double *points, double *proj,
+                          const int n, const int stride_points,
+                          const int stride_proj);
+void projectPointsTranslation(double *mat, double *points, double *proj,
+                              const int n, const int stride_points,
+                              const int stride_proj);
+
+void WarpImage(TransformationType type,
+               double *H,
+               unsigned char *ref,
+               int width,
+               int height,
+               int stride,
+               unsigned char *pred,
+               int p_col,
+               int p_row,
+               int p_width,
+               int p_height,
+               int subsampling_col,
+               int subsampling_row,
+               int p_stride);
+
+
+#endif  // VP9_COMMON_VP9_MOTION_MODEL_H

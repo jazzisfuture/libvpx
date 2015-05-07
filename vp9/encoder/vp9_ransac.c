@@ -405,7 +405,7 @@ int ransac_(double *matched_points,
             projectPointsType projectPoints) {
 
   static const double INLIER_THRESHOLD_NORMALIZED = 0.1;
-  static const double INLIER_THRESHOLD_UNNORMALIZED = 0.5;
+  static const double INLIER_THRESHOLD_UNNORMALIZED = 1.0;
   static const double PROBABILITY_REQUIRED = 0.9;
   static const double EPS = 1e-12;
   static const int MIN_TRIALS = 20;
@@ -716,61 +716,6 @@ static int isDegenerateHomography(double *p) {
          is_collinear3(p + 2, p + 4, p + 6);
 }
 
-void projectPointsTranslation(double *mat, double *points, double *proj,
-                              const int n,
-                              const int stride_points,
-                              const int stride_proj) {
-  int i;
-  for (i = 0; i < n; ++i) {
-    const double x = *(points++), y = *(points++);
-    *(proj++) = x + mat[0];
-    *(proj++) = y + mat[1];
-    points += stride_points - 2;
-    proj += stride_proj - 2;
-  }
-}
-
-void projectPointsRotZoom(double *mat, double *points,
-                          double *proj, const int n,
-                          const int stride_points, const int stride_proj) {
-  int i;
-  for (i = 0; i < n; ++i) {
-    const double x = *(points++), y = *(points++);
-    *(proj++) = mat[0]*x + mat[1]*y + mat[2];
-    *(proj++) = -mat[1]*x + mat[0]*y + mat[3];
-    points += stride_points - 2;
-    proj += stride_proj - 2;
-  }
-}
-
-void projectPointsAffine(double *mat, double *points,
-                         double *proj, const int n,
-                         const int stride_points, const int stride_proj) {
-  int i;
-  for (i = 0; i < n; ++i) {
-    const double x = *(points++), y = *(points++);
-    *(proj++) = mat[0]*x + mat[1]*y + mat[4];
-    *(proj++) = mat[2]*x + mat[3]*y + mat[5];
-    points += stride_points - 2;
-    proj += stride_proj - 2;
-  }
-}
-
-void projectPointsHomography(double *mat, double *points,
-                             double *proj, const int n,
-                             const int stride_points, const int stride_proj) {
-  int i;
-  double x, y, Z;
-  for (i = 0; i < n; ++i) {
-    x = *(points++), y = *(points++);
-    Z = 1./(mat[6]*x + mat[7]*y + mat[8]);
-    *(proj++) =     (mat[0]*x + mat[1]*y + mat[2])*Z;
-    *(proj++) =     (mat[3]*x + mat[4]*y + mat[5])*Z;
-    points += stride_points - 2;
-    proj += stride_proj - 2;
-  }
-}
-
 int findTranslation(const int np, double *pts1, double *pts2, double *mat) {
   int i;
   double sx, sy, dx, dy;
@@ -1002,7 +947,7 @@ int ransacTranslation(double *matched_points, int npoints,
                  number_of_inliers,
                  best_inlier_mask,
                  bestH,
-                 2,
+                 3,
                  2,
                  isDegenerateTranslation,
                  NULL,  // normalizeHomography,
