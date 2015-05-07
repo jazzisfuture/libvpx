@@ -136,6 +136,92 @@ static const int idx_n_column_to_subblock[4][2] = {
   {3, 3}
 };
 
+#if CONFIG_NEWMVREF
+#define MAX_ZONES 2
+static const POSITION mv_ref_blocks_8x8[MAX_ZONES][MVREF_NEIGHBOURS] = {
+  // 8X8, Zone I,  where top right neighbors are available
+  {{-1,  0}, { 0, -1}, {-1,  1}, {-1, -1},
+   {-2,  0}, { 0, -2}, {-2, -1}, {-1, -2}},
+  // 8X8, Zone II, where no top right neighbor is available
+  {{-1,  0}, { 0, -1}, {-1, -1}, {-2,  0},
+   { 0, -2}, {-2, -1}, {-1, -2}, {-2, -2}}
+};
+
+static const int idx_to_subblock_top_left[8][2][3] = {
+  {  // 4x4 subblock 0 (current)
+    {2, 0, 1},  // top:  4x4, 4x8, 8x4
+    {1, 1, 0}   // left: 4x4, 4x8, 8x4
+  },
+  {  // 4x4 subblock 1 (current)
+    {3, 1, 1},  // top:  4x4, 4x8, 8x4
+    {1, 1, 0}   // left: 4x4, 4x8, 8x4
+  },
+  {  // 4x4 subblock 2 (current)
+    {2, 0, 1},  // top:  4x4, 4x8, 8x4
+    {3, 1, 1}   // left: 4x4, 4x8, 8x4
+  },
+  {  // 4x4 subblock 3 (current)
+    {3, 1, 1},  // top:  4x4, 4x8, 8x4
+    {3, 1, 1}   // left: 4x4, 4x8, 8x4
+  },
+  {  // 4x8 subblock 0 (current)
+    { 2, 0,  1},  // top:  4x4, 4x8, 8x4
+    {-1, 1, -1}   // left: 4x4, 4x8, 8x4
+  },
+  {  // 4x8 subblock 1 (current)
+    { 3, 1,  1},  // top:  4x4, 4x8, 8x4
+    {-1, 1, -1}   // left: 4x4, 4x8, 8x4
+  },
+  {  // 8x4 subblock 0 (current)
+    {-1, -1, 1},  // top:  4x4, 4x8, 8x4
+    { 1,  1, 0}   // left: 4x4, 4x8, 8x4
+  },
+  {  // 8x4 subblock 1 (current)
+    {-1, -1, 1},  // top:  4x4, 4x8, 8x4
+    { 3,  1, 1}   // left: 4x4, 4x8, 8x4
+  }
+};
+
+static const int idx_to_subblock_topright_topleft[2][3] = {
+  {2, 0, 1},  // top-right: 4x4, 4x8, 8x4
+  {3, 1, 1}   // top-left:  4x4, 4x8, 8x4
+};
+
+// This function returns either the appropriate subblock or block's mv,
+// depending on whether block_size < 8x8 for both current block and the
+// examined candidate block.
+static INLINE int_mv get_subblock_mv(const MODE_INFO *candidate,
+                                     const MODE_INFO *current,
+                                     int curr_blk_idx, int which_mv,
+                                     int search_row, int search_col) {
+  int candidate_type = candidate->mbmi.sb_type;
+  if (curr_blk_idx >= 0 && candidate_type < BLOCK_8X8) {
+    int candidate_blk_idx = 0;
+    // Both current block and the candidate block are in sub8x8 mode
+    if ((search_row == -1 && search_col == 0) ||  // top
+        (search_row == 0 && search_col == -1)) {  // left
+      int current_type = current->mbmi.sb_type;
+      int i = curr_blk_idx + ((current_type == BLOCK_4X4) ? 0 :
+                              ((current_type == BLOCK_4X8) ? 4 : 6));
+      int j = (search_row == 0);  // top: 0; left: 1
+
+      candidate_blk_idx = idx_to_subblock_top_left[i][j][candidate_type];
+      if (candidate_blk_idx >= 0)
+        return candidate->bmi[candidate_blk_idx].as_mv[which_mv];
+      else
+        return candidate->mbmi.mv[which_mv];
+    } else if ((search_row == -1 && search_col ==  1) ||  // top_right
+               (search_row == -1 && search_col == -1)) {  // top_left
+      candidate_blk_idx =
+          idx_to_subblock_topright_topleft[search_col == -1][candidate_type];
+      return candidate->bmi[candidate_blk_idx].as_mv[which_mv];
+    }
+  }
+
+  return candidate->mbmi.mv[which_mv];
+}
+#endif  // CONFIG_NEWMVREF
+
 // clamp_mv_ref
 #define MV_BORDER (16 << 3)  // Allow 16 pels in 1/8th pel units
 
@@ -155,7 +241,6 @@ static INLINE int_mv get_sub_block_mv(const MODE_INFO *candidate, int which_mv,
               .as_mv[which_mv]
           : candidate->mbmi.mv[which_mv];
 }
-
 
 // Performs mv sign inversion if indicated by the reference frame combination.
 static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
@@ -209,6 +294,61 @@ static INLINE int is_inside(const TileInfo *const tile,
            mi_row + mi_pos->row >= mi_rows ||
            mi_col + mi_pos->col >= tile->mi_col_end);
 }
+
+#if CONFIG_NEWMVREF
+// This macro is used to add a motion vector as a candidate for the mv ref if
+// it isn't already taken. If it's the third motion vector, it will also skip
+// all additional processing and jump to done!
+#define ADD_MV_REF_CANDIDATE(mv) \
+  do { \
+    if (refmv_count) { \
+      if (refmv_count == 1 && \
+          (mv).as_int != mv_ref_candidates[0].as_int) { \
+        mv_ref_candidates[refmv_count++] = (mv); \
+      } else if (refmv_count == 2 && \
+                 (mv).as_int != mv_ref_candidates[0].as_int && \
+                 (mv).as_int != mv_ref_candidates[1].as_int) { \
+        mv_ref_candidates[refmv_count] = (mv); \
+        goto Done; \
+      } \
+    } else { \
+      mv_ref_candidates[refmv_count++] = (mv); \
+    } \
+  } while (0)
+
+// If either reference frame is different, not INTRA, and they
+// are different from each other scale and add the mv as candidate.
+#define IF_DIFF_REF_FRAME_ADD_MV_CANDIDATE(mbmi) \
+  do { \
+    if (is_inter_block(mbmi)) { \
+      if ((mbmi)->ref_frame[0] != ref_frame) \
+        ADD_MV_REF_CANDIDATE(scale_mv((mbmi), 0, ref_frame, ref_sign_bias)); \
+      if (has_second_ref(mbmi) && \
+          (mbmi)->ref_frame[1] != ref_frame && \
+          (mbmi)->mv[1].as_int != (mbmi)->mv[0].as_int) \
+        ADD_MV_REF_CANDIDATE(scale_mv((mbmi), 1, ref_frame, ref_sign_bias)); \
+    } \
+  } while (0)
+
+static inline int get_mvref_zone_idx(const TileInfo *const tile, int block,
+                                     int mi_row, int mi_col) {
+  int mvref_zone_idx = 0;
+  switch (block) {
+    case BLOCK_8X8:
+      if (mi_col >= (tile->mi_col_end - 1) ||
+          ((mi_row % 8) >= 1 && (mi_col % 8) == 7))
+        mvref_zone_idx = 1;
+      else
+        mvref_zone_idx = 0;
+      break;
+    default:
+      // Only BLOCK_8X8 size is supported currently
+      assert(0);
+      break;
+  };
+  return mvref_zone_idx;
+}
+#endif  // CONFIG_NEWMVREF
 
 // TODO(jingning): this mv clamping function should be block size dependent.
 static INLINE void clamp_mv2(MV *mv, const MACROBLOCKD *xd) {

@@ -11,6 +11,107 @@
 
 #include "vp9/common/vp9_mvref_common.h"
 
+#if CONFIG_NEWMVREF
+// This function searches the neighbourhood of a given MB/SB
+// to try to find candidate reference vectors.
+static void find_mv_refs_idx_8x8(const VP9_COMMON *cm, const MACROBLOCKD *xd,
+                                 const TileInfo *const tile,
+                                 MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                                 int_mv *mv_ref_list,
+                                 int block, int mi_row, int mi_col) {
+  const POSITION *mv_ref_search = mv_ref_blocks_8x8[0];
+  int_mv mv_ref_candidates[MAX_MV_REF_CANDIDATES + 1];
+  const int *ref_sign_bias = cm->ref_frame_sign_bias;
+  int i;
+  int zone_idx = 0;
+  int refmv_count = 0;
+  int different_ref_found = 0;
+  int max_nearest = 3;
+
+  // Zero out the mv reference vector list
+  vpx_memset(mv_ref_list, 0, sizeof(*mv_ref_list) * MAX_MV_REF_CANDIDATES);
+  vpx_memset(mv_ref_candidates, 0,
+             sizeof(*mv_ref_candidates) * (MAX_MV_REF_CANDIDATES + 1));
+
+  zone_idx = get_mvref_zone_idx(tile, block, mi_row, mi_col);
+  mv_ref_search = mv_ref_blocks_8x8[zone_idx];
+  max_nearest = (zone_idx == 0) ? 4 : 3;
+
+  // The nearest 4 neighboring blocks (or 3 blocks, if no top right is
+  // available) are treated differently:
+  //   If the block size < 8x8, we get the mv from the bmi substructure.
+  for (i = 0; i < max_nearest; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MODE_INFO *const candidate_mi =
+          xd->mi[mv_ref->col + mv_ref->row * xd->mi_stride].src_mi;
+      const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
+
+      different_ref_found = 1;
+
+      if (candidate->ref_frame[0] == ref_frame) {
+        ADD_MV_REF_CANDIDATE(
+            get_subblock_mv(candidate_mi, mi, block, 0, mv_ref->row, mv_ref->col));
+      } else if (candidate->ref_frame[1] == ref_frame) {
+        ADD_MV_REF_CANDIDATE(
+            get_subblock_mv(candidate_mi, mi, block, 1, mv_ref->row, mv_ref->col));
+      }
+    }
+  }
+
+  // Check the rest of the neighbors in much the same way
+  // as before except we don't need to keep track of sub blocks.
+  for (; i < MVREF_NEIGHBOURS; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MB_MODE_INFO *const candidate =
+          &xd->mi[mv_ref->col + mv_ref->row * xd->mi_stride].src_mi->mbmi;
+
+      different_ref_found = 1;
+
+      if (candidate->ref_frame[0] == ref_frame)
+        ADD_MV_REF_CANDIDATE(candidate->mv[0]);
+      else if (candidate->ref_frame[1] == ref_frame)
+        ADD_MV_REF_CANDIDATE(candidate->mv[1]);
+    }
+  }
+
+  // Since we couldn't find 3 mvs from the same reference frame
+  // go back through the neighbors and find motion vectors from
+  // different reference frames.
+  if (different_ref_found) {
+    for (i = 0; i < MVREF_NEIGHBOURS; ++i) {
+      const POSITION *mv_ref = &mv_ref_search[i];
+      if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+        const MB_MODE_INFO *const candidate =
+            &xd->mi[mv_ref->col + mv_ref->row * xd->mi_stride].src_mi->mbmi;
+
+        // If the candidate is INTRA we don't want to consider its mv.
+        IF_DIFF_REF_FRAME_ADD_MV_CANDIDATE(candidate);
+      }
+    }
+  }
+
+ Done:
+
+  if (mv_ref_candidates[2].as_int != 0) {
+    mv_ref_list[0].as_mv.row =
+        (mv_ref_candidates[0].as_mv.row + mv_ref_candidates[1].as_mv.row) >> 1;
+    mv_ref_list[0].as_mv.col =
+        (mv_ref_candidates[0].as_mv.col + mv_ref_candidates[1].as_mv.col) >> 1;
+    mv_ref_list[1].as_int = mv_ref_candidates[2].as_int;
+  } else {
+    for (i = 0; i < 2; ++i) {
+      mv_ref_list[i].as_int = mv_ref_candidates[i].as_int;
+    }
+  }
+
+  // Clamp vectors
+  for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i)
+    clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
+}
+#endif  // CONFIG_NEWMVREF
+
 // This function searches the neighbourhood of a given MB/SB
 // to try and find candidate reference vectors.
 static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
@@ -160,6 +261,10 @@ void vp9_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 #if CONFIG_NEWMVREF
   vp9_update_mv_context(cm, xd, tile, mi, ref_frame, mv_ref_list, -1,
                         mi_row, mi_col);
+  if (mi->mbmi.sb_type <= BLOCK_8X8)
+    find_mv_refs_idx_8x8(cm, xd, tile, mi, ref_frame, mv_ref_list, -1,
+                         mi_row, mi_col);
+  else
 #endif  // CONFIG_NEWMVREF
   find_mv_refs_idx(cm, xd, tile, mi, ref_frame, mv_ref_list, -1,
                    mi_row, mi_col);
@@ -195,8 +300,13 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
 
   assert(MAX_MV_REF_CANDIDATES == 2);
 
+#if CONFIG_NEWMVREF
+  find_mv_refs_idx_8x8(cm, xd, tile, mi, mi->mbmi.ref_frame[ref], mv_list, block,
+                       mi_row, mi_col);
+#else
   find_mv_refs_idx(cm, xd, tile, mi, mi->mbmi.ref_frame[ref], mv_list, block,
                    mi_row, mi_col);
+#endif  // CONFIG_NEWMVREF
 
   near->as_int = 0;
   switch (block) {
