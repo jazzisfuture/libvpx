@@ -90,7 +90,9 @@ static INLINE int is_inter_mode(PREDICTION_MODE mode) {
    modes for the Y blocks to the left and above us; for interframes, there
    is a single probability table. */
 
-typedef struct {
+// A block will use one or the other, not both.  Keep as union to reduce
+// memory usage.
+typedef union {
   PREDICTION_MODE as_mode;
   int_mv as_mv[2];  // first, second inter predictor motion vectors
 } b_mode_info;
@@ -110,23 +112,28 @@ typedef enum {
 // This structure now relates to 8x8 block regions.
 typedef struct {
   // Common for both INTER and INTRA blocks
-  BLOCK_SIZE sb_type;
-  PREDICTION_MODE mode;
-  TX_SIZE tx_size;
+  uint8_t sb_type;          // BLOCK_SIZE
+  uint8_t mode;             // PREDICTION_MODE
+  uint8_t tx_size;          // TX_SIZE
   int8_t skip;
   int8_t segment_id;
   int8_t seg_id_predicted;  // valid only when temporal_update is enabled
 
   // Only for INTRA blocks
-  PREDICTION_MODE uv_mode;
+  uint8_t uv_mode;
 
   // Only for INTER blocks
+  uint8_t interp_filter;    // INTERP_FILTER
   MV_REFERENCE_FRAME ref_frame[2];
+
+  // TODO: (slavarnway) Delete and use bmi[3].as_mv[] instead.
   int_mv mv[2];
+
+#if CONFIG_VP9_ENCODER
+  // TODO: (slavarnway) Move to encoder
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
   uint8_t mode_context[MAX_REF_FRAMES];
-  INTERP_FILTER interp_filter;
-
+#endif
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
