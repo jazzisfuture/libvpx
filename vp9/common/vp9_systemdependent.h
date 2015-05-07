@@ -11,14 +11,7 @@
 #ifndef VP9_COMMON_VP9_SYSTEMDEPENDENT_H_
 #define VP9_COMMON_VP9_SYSTEMDEPENDENT_H_
 
-#ifdef _MSC_VER
-# include <math.h>  // the ceil() definition must precede intrin.h
-# if _MSC_VER > 1310 && (defined(_M_X64) || defined(_M_IX86))
-#  include <intrin.h>
-#  define USE_MSC_INTRIN
-# endif
-# define snprintf _snprintf
-#endif
+#include "vpx_ports/msvc.h"
 
 #ifdef __cplusplus
 extern "C" {
