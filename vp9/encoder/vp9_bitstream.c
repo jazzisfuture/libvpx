@@ -1084,6 +1084,16 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
     vp9_write(w, mbmi->uv_filterbit,
               cm->fc.filterintra_prob[get_uv_tx_size(mbmi, &xd->plane[1])][mbmi->uv_mode]);
 #endif  // CONFIG_FILTERINTRA
+
+#if CONFIG_TWO_STAGE
+  if (bsize >= BLOCK_8X8) {
+    vp9_write_bit(w, mbmi->two_stage_coding[0]);
+    //vp9_write_bit(w, mbmi->two_stage_coding[1]);
+    if (mbmi->two_stage_coding[0] || mbmi->two_stage_coding[1])
+      vp9_write_literal(w, mbmi->qindex_plus / TWO_STAGE_QINDEX_PLUS_STEP - 1,
+                        TWO_STAGE_QINDEX_PLUS_BITS);
+  }
+#endif  // CONFIG_TWO_STAGE
 }
 
 static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,

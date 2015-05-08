@@ -199,7 +199,7 @@ static INLINE uint16_t highbd_clip_pixel_add(uint16_t dest, tran_high_t trans,
 #endif
 
 #endif  // VP9_COMMON_VP9_IDCT_H_
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 void vp9_tx_identity_add_rect(const tran_low_t *input, uint8_t *dest,
                               int row, int col, int stride_in,
                               int stride_out, int shift);
@@ -212,4 +212,4 @@ void vp9_highbd_tx_identity_add_rect(const tran_low_t *input, uint8_t *dest,
 void vp9_highbd_tx_identity_add(const tran_low_t *input, uint8_t *dest,
                                 int stride, int bs, int shift, int bd);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
