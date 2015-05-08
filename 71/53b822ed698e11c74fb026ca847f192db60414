@@ -1,0 +1,7 @@
+Verified+1: WebM Builds <builds@webmproject.org>
+Code-Review+2: Scott LaVarnway <slavarnway@google.com>
+Submitted-by: Hangyu Kuang <hkuang@google.com>
+Submitted-at: Fri, 08 May 2015 17:26:29 +0000
+Reviewed-on: https://chromium-review.googlesource.com/269785
+Project: webm/libvpx
+Branch: refs/heads/master
