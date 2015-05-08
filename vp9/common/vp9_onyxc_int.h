@@ -282,6 +282,14 @@ static INLINE void init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd) {
         i * sizeof(*cm->above_context) * 2 * mi_cols_aligned_to_sb(cm->mi_cols);
   }
 
+#if CONFIG_TWO_STAGE
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    xd->plane[i].dqcoeff_stg2 = xd->dqcoeff_stg2[i];
+    //xd->above_context[i] = cm->above_context +
+      //  i * sizeof(*cm->above_context) * 2 * mi_cols_aligned_to_sb(cm->mi_cols);
+  }
+#endif  // CONFIG_TWO_STAGE
+
 #if CONFIG_PALETTE
   for (i = 0; i < 2; ++i) {
     xd->plane[i].color_index_map = xd->color_index_map[i];
