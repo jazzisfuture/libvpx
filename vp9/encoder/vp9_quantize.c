@@ -2064,6 +2064,9 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
   const int qindex = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
   const int rdmult = vp9_compute_rd_mult(cpi, qindex + cm->y_dc_delta_q);
   int i;
+#if CONFIG_TWO_STAGE
+  int j;
+#endif  // CONFIG_TWO_STAGE
 
   // Y
   x->plane[0].quant = quants->y_quant[qindex];
@@ -2090,6 +2093,18 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
   xd->plane[0].dequant_val_nuq_pxd = cm->y_dequant_val_nuq_pxd[qindex];
 #endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+  for (j = 0; j < TWO_STAGE_MAX_QINDEX_PLUS; j++) {
+    int this_qindex = MIN(qindex + j, QINDEX_RANGE - 1);
+    x->plane[0].quant_stg1[j] = quants->y_quant[this_qindex];
+    x->plane[0].quant_fp_stg1[j] = quants->y_quant_fp[this_qindex];
+    x->plane[0].round_fp_stg1[j] = quants->y_round_fp[this_qindex];
+    x->plane[0].quant_shift_stg1[j] = quants->y_quant_shift[this_qindex];
+    x->plane[0].zbin_stg1[j] = quants->y_zbin[this_qindex];
+    x->plane[0].round_stg1[j] = quants->y_round[this_qindex];
+    xd->plane[0].dequant_stg1[j] = cm->y_dequant[this_qindex];
+  }
+#endif  // CONFIG_TWO_STAGE
 
   x->plane[0].quant_thred[0] = x->plane[0].zbin[0] * x->plane[0].zbin[0];
   x->plane[0].quant_thred[1] = x->plane[0].zbin[1] * x->plane[0].zbin[1];
@@ -2120,6 +2135,18 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
     xd->plane[i].dequant_val_nuq_pxd = cm->uv_dequant_val_nuq_pxd[qindex];
 #endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+    for (j = 0; j < 30; j++) {
+      int this_qindex = MIN(qindex + j, QINDEX_RANGE - 1);
+      x->plane[i].quant_stg1[j] = quants->uv_quant[this_qindex];
+      x->plane[i].quant_fp_stg1[j] = quants->uv_quant_fp[this_qindex];
+      x->plane[i].round_fp_stg1[j] = quants->uv_round_fp[this_qindex];
+      x->plane[i].quant_shift_stg1[j] = quants->uv_quant_shift[this_qindex];
+      x->plane[i].zbin_stg1[j] = quants->uv_zbin[this_qindex];
+      x->plane[i].round_stg1[j] = quants->uv_round[this_qindex];
+      xd->plane[i].dequant_stg1[j] = cm->uv_dequant[this_qindex];
+    }
+#endif  // CONFIG_TWO_STAGE
 
     x->plane[i].quant_thred[0] = x->plane[i].zbin[0] * x->plane[i].zbin[0];
     x->plane[i].quant_thred[1] = x->plane[i].zbin[1] * x->plane[i].zbin[1];

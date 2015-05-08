@@ -807,6 +807,22 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     p[i].eobs = ctx->eobs_pbuf[i][2];
   }
 
+#if CONFIG_TWO_STAGE
+  for (i = 0; i < max_plane; ++i) {
+    p[i].coeff_stg2 = ctx->coeff_pbuf_stg2[i][1];
+    p[i].qcoeff_stg2 = ctx->qcoeff_pbuf_stg2[i][1];
+    pd[i].dqcoeff_stg2 = ctx->dqcoeff_pbuf_stg2[i][1];
+    p[i].eobs_stg2 = ctx->eobs_pbuf_stg2[i][1];
+  }
+
+  for (i = max_plane; i < MAX_MB_PLANE; ++i) {
+    p[i].coeff_stg2 = ctx->coeff_pbuf_stg2[i][2];
+    p[i].qcoeff_stg2 = ctx->qcoeff_pbuf_stg2[i][2];
+    pd[i].dqcoeff_stg2 = ctx->dqcoeff_pbuf_stg2[i][2];
+    p[i].eobs_stg2 = ctx->eobs_pbuf_stg2[i][2];
+  }
+#endif  // CONFIG_TWO_STAGE
+
 #if CONFIG_PALETTE
   for (i = 0; i < 2; i++) {
     pd[i].color_index_map = ctx->color_index_map[i];
@@ -1288,11 +1304,21 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
     pd[i].dqcoeff = ctx->dqcoeff_pbuf[i][0];
     p[i].eobs = ctx->eobs_pbuf[i][0];
   }
+
+#if CONFIG_TWO_STAGE
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    p[i].coeff_stg2 = ctx->coeff_pbuf_stg2[i][0];
+    p[i].qcoeff_stg2 = ctx->qcoeff_pbuf_stg2[i][0];
+    pd[i].dqcoeff_stg2 = ctx->dqcoeff_pbuf_stg2[i][0];
+    p[i].eobs_stg2 = ctx->eobs_pbuf_stg2[i][0];
+  }
+#endif  // CONFIG_TWO_STAGE
+
 #if CONFIG_PALETTE
   for (i = 0; i < 2; ++i) {
     pd[i].color_index_map = ctx->color_index_map[i];
   }
-#endif
+#endif  // CONFIG_PALETTE
   ctx->is_coded = 0;
   ctx->skippable = 0;
   ctx->pred_pixel_ready = 0;
@@ -4872,6 +4898,11 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     if (cm->interp_filter == SWITCHABLE)
       cm->interp_filter = get_interp_filter(filter_thrs, is_alt_ref);
 
+#if 1
+    cpi->sf.partition_search_type = FIXED_PARTITION;
+    cpi->sf.always_this_block_size = BLOCK_8X8;
+#endif
+
     encode_frame_internal(cpi);
 
     for (i = 0; i < REFERENCE_MODES; ++i)
@@ -5113,6 +5144,11 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   if (x->skip_encode)
     return;
 
+#if 0
+  if (mbmi->two_stage_coding[0])
+    printf(">>>>>2stg! %d\n", mbmi->qindex_plus);
+#endif
+
   set_ref_ptrs(cm, xd, mbmi->ref_frame[0], mbmi->ref_frame[1]);
 
   if (!is_inter_block(mbmi)
@@ -5122,8 +5158,26 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       ) {
     int plane;
     mbmi->skip = 1;
+
+    x->output = output_enabled;
+
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
+
+#if 0
+    if (output_enabled) {
+        FILE *fp;
+        fp = fopen("./debug/enc.txt", "a");
+
+        fprintf(fp, " mi %2d %2d, mode %3d%3d, tx_size %3d, skip %2d \n",
+                mi_row, mi_col, mbmi->mode, mbmi->uv_mode, mbmi->tx_size,
+                mbmi->skip);
+
+        fclose(fp);
+    }
+#endif
+
+
     if (output_enabled)
       sum_intra_stats(&cm->counts,
 #if CONFIG_FILTERINTRA
