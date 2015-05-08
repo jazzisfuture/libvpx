@@ -425,6 +425,10 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
                    x->token_costs[tx_size][type][is_inter_block(mbmi)];
   uint8_t token_cache[MAX_NUM_COEFS];
   int pt = combine_entropy_contexts(*A, *L);
+#if CONFIG_TWO_STAGE1
+  const int eob_stg2 = p->eobs_stg2[block];
+  const tran_low_t *const qcoeff_stg2 = BLOCK_OFFSET(p->qcoeff_stg2, block);
+#endif  // CONFIG_TWO_STAGE
   int c, cost;
 #if CONFIG_TX_SKIP
   int tx_skip = mbmi->tx_skip[plane != 0];
@@ -497,6 +501,113 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 
   return cost;
 }
+
+#if CONFIG_TWO_STAGE
+static INLINE int cost_coeffs_stg2(MACROBLOCK *x,
+                                   int plane, int block,
+                                   ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L,
+                                   TX_SIZE tx_size,
+                                   const int16_t *scan, const int16_t *nb,
+                                   int use_fast_coef_costing,
+                                   int ctx) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
+  const struct macroblock_plane *p = &x->plane[plane];
+  const struct macroblockd_plane *pd = &xd->plane[plane];
+  const PLANE_TYPE type = pd->plane_type;
+  const int16_t *band_count = &band_counts[tx_size][1];
+  const int eob = p->eobs_stg2[block];
+  const tran_low_t *const qcoeff = BLOCK_OFFSET(p->qcoeff_stg2, block);
+  unsigned int (*token_costs)[2][COEFF_CONTEXTS][ENTROPY_TOKENS] =
+                   x->token_costs[tx_size][type][is_inter_block(mbmi)];
+  unsigned int (*token_costs_pxd)[COEFF_CONTEXTS][ENTROPY_TOKENS] =
+        x->token_costs_pxd[tx_size][type][is_inter_block(mbmi)];
+  uint8_t token_cache[MAX_NUM_COEFS];
+  int pt = combine_entropy_contexts(*A, *L);
+  int c, cost;
+
+  // Check for consistency of tx_size with mode info
+#if !CONFIG_SUPERTX
+  assert(type == PLANE_TYPE_Y ? mbmi->tx_size == tx_size
+                              : get_uv_tx_size(mbmi, pd) == tx_size);
+#endif  // CONFIG_SUPERTX
+
+  if (USE_SKIP_BAND)
+    token_costs = &x->token_costs[tx_size][type][is_inter_block(mbmi)]
+                                                 [TX_SKIP_COEFF_BAND];
+
+  pt = ctx;
+  if (eob == 0) {
+    // single eob token
+    if (FOR_SCREEN_CONTENT)
+      cost = token_costs_pxd[0][pt][EOB_TOKEN];
+    else
+      cost = token_costs[0][0][pt][EOB_TOKEN];
+    c = 0;
+  } else {
+    int band_left = *band_count++;
+
+    // dc token
+    int v = qcoeff[0];
+    int prev_t = vp9_dct_value_tokens_ptr[v].token;
+    if (FOR_SCREEN_CONTENT)
+      cost = token_costs_pxd[0][pt][prev_t] + vp9_dct_value_cost_ptr[v];
+    else
+      cost = (*token_costs)[0][pt][prev_t] + vp9_dct_value_cost_ptr[v];
+    token_cache[0] = vp9_pt_energy_class[prev_t];
+    if (!USE_SKIP_BAND)
+      ++token_costs;
+
+    // ac tokens
+    for (c = 1; c < eob; c++) {
+      const int rc = scan[c];
+      int t;
+
+      v = qcoeff[rc];
+      t = vp9_dct_value_tokens_ptr[v].token;
+      if (use_fast_coef_costing) {
+        if (FOR_SCREEN_CONTENT)
+          cost += token_costs_pxd[!prev_t][!prev_t][t] +
+          vp9_dct_value_cost_ptr[v];
+        else
+          cost += (*token_costs)[!prev_t][!prev_t][t] +
+          vp9_dct_value_cost_ptr[v];
+      } else {
+        pt = get_coef_context(nb, token_cache, c);
+        if (FOR_SCREEN_CONTENT)
+          cost += token_costs_pxd[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
+        else
+          cost += (*token_costs)[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
+        token_cache[rc] = vp9_pt_energy_class[t];
+      }
+      prev_t = t;
+      if (!--band_left) {
+        band_left = *band_count++;
+        if (!USE_SKIP_BAND)
+          ++token_costs;
+      }
+    }
+
+    // eob token
+    if (band_left) {
+      if (use_fast_coef_costing) {
+        if (FOR_SCREEN_CONTENT)
+          cost += token_costs_pxd[0][!prev_t][EOB_TOKEN];
+        else
+          cost += (*token_costs)[0][!prev_t][EOB_TOKEN];
+      } else {
+        pt = get_coef_context(nb, token_cache, c);
+        if (FOR_SCREEN_CONTENT)
+          cost += token_costs_pxd[0][pt][EOB_TOKEN];
+        else
+          cost += (*token_costs)[0][pt][EOB_TOKEN];
+      }
+    }
+  }
+
+  return cost;
+}
+#endif  // CONFIG_TWO_STAGE
 
 #if CONFIG_TX_SKIP
 static INLINE int cost_coeffs_pxd(MACROBLOCK *x,
@@ -593,13 +704,28 @@ static void dist_block(int plane, int block, TX_SIZE tx_size,
   int shift = (tx_size == TX_64X64 ? -2 : (tx_size == TX_32X32 ? 0 : 2));
 #else
   int shift = tx_size == TX_32X32 ? 0 : 2;
-#endif
+#endif  // CONFIG_TX64X64
+#if CONFIG_TWO_STAGE
+  tran_low_t *const coeff =
+      xd->mi[0].src_mi->mbmi.two_stage_coding[plane != 0] ?
+          BLOCK_OFFSET(p->coeff_stg2, block) : BLOCK_OFFSET(p->coeff, block);
+  tran_low_t *const dqcoeff =
+      xd->mi[0].src_mi->mbmi.two_stage_coding[plane != 0] ?
+          BLOCK_OFFSET(pd->dqcoeff_stg2, block) :
+          BLOCK_OFFSET(pd->dqcoeff, block);
+#else
   tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+#endif  // CONFIG_TWO_STAGE
 #if CONFIG_TX_SKIP
   if (xd->mi[0].src_mi->mbmi.tx_skip[plane != 0])
     shift = (xd->mi[0].src_mi->mbmi.tx_skip_shift - 2) << 1;
-#endif
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+  if (xd->mi[0].src_mi->mbmi.two_stage_coding[plane != 0])
+    shift = (STAGE_TWO_SHIFT - 2) * 2;
+#endif  // CONFIG_TWO_STAGE
+
 
 #if CONFIG_VP9_HIGHBITDEPTH
   args->dist = right_shift_signed(
@@ -628,7 +754,14 @@ static void dist_block(int plane, int block, TX_SIZE tx_size,
 static void rate_block(int plane, int block, BLOCK_SIZE plane_bsize,
                        TX_SIZE tx_size, struct rdcost_block_args* args) {
   int x_idx, y_idx;
+#if CONFIG_TWO_STAGE
+  int ctx_stg2;
+#endif  // CONFIG_TWO_STAGE
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x_idx, &y_idx);
+#if CONFIG_TWO_STAGE
+  ctx_stg2 = combine_entropy_contexts(*(args->t_above + x_idx),
+                                      *(args->t_left + y_idx));
+#endif  // CONFIG_TWO_STAGE
 
 #if CONFIG_TX_SKIP
   if (args->x->e_mbd.mi[0].src_mi->mbmi.tx_skip[plane != 0] &&
@@ -643,6 +776,16 @@ static void rate_block(int plane, int block, BLOCK_SIZE plane_bsize,
                              args->t_left + y_idx, tx_size,
                              args->so->scan, args->so->neighbors,
                              args->use_fast_coef_costing);
+#if CONFIG_TWO_STAGE
+  if (args->x->e_mbd.mi[0].src_mi->mbmi.two_stage_coding[plane != 0])
+    args->rate +=
+        cost_coeffs_stg2(args->x, plane, block, args->t_above + x_idx,
+                         args->t_left + y_idx, tx_size,
+                         vp9_default_scan_orders_pxd[tx_size].scan,
+                         vp9_default_scan_orders_pxd[tx_size].neighbors,
+                         args->use_fast_coef_costing,
+                         ctx_stg2);
+#endif  // CONFIG_TWO_STAGE
 }
 
 static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
@@ -1381,6 +1524,9 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
 #if CONFIG_PALETTE
   mic->mbmi.palette_enabled[0] = 0;
 #endif  // CONFIG_PALETTE
+#if CONFIG_TWO_STAGE
+  mic->mbmi.two_stage_coding[0] = 0;
+#endif  // CONFIG_TWO_STAGE
 
   // Pick modes for each sub-block (of size 4x4, 4x8, or 8x4) in an 8x8 block.
   for (idy = 0; idy < 2; idy += num_4x4_blocks_high) {
@@ -1783,6 +1929,11 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   uint8_t best_index[PALETTE_MAX_SIZE], best_literal[PALETTE_MAX_SIZE];
   int8_t palette_color_delta[PALETTE_MAX_SIZE];
 #endif  // CONFIG_PALETTE
+#if CONFIG_TWO_STAGE
+  int use_2stg_coding = 0;
+  int qindex_plus, eob_thresh;
+  int best_eob_thresh = 0, best_qindex_plus = 0;
+#endif  // CONFIG_TWO_STAGE
   bmode_costs = cpi->y_mode_costs[A][L];
 
   if (cpi->sf.tx_size_search_method == USE_FULL_RD)
@@ -1811,14 +1962,16 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
     int64_t local_tx_cache[TX_MODES];
     mic->mbmi.mode = mode;
-#endif
+#endif  // CONFIG_FILTERINTRA
 #if CONFIG_TX_SKIP
     mic->mbmi.tx_skip[0] = 0;
 #endif  // CONFIG_TX_SKIP
-
 #if CONFIG_PALETTE
     mic->mbmi.palette_enabled[0] = 0;
 #endif  // CONFIG_PALETTE
+#if CONFIG_TWO_STAGE
+    mic->mbmi.two_stage_coding[0] = 0;
+#endif  // CONFIG_TWO_STAGE
 
     super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
                     &s, NULL, bsize, local_tx_cache, best_rd);
@@ -1830,25 +1983,28 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_TX_SKIP
     if (try_tx_skip)
       this_rate += vp9_cost_bit(cpi->common.fc.y_tx_skip_prob[0], 0);
-#endif
+#endif  // CONFIG_TX_SKIP
 #if CONFIG_FILTERINTRA
     if (is_filter_allowed(mode) && is_filter_enabled(mic->mbmi.tx_size))
       this_rate += vp9_cost_bit(cpi->common.fc.filterintra_prob
                                 [mic->mbmi.tx_size][mode], fbit);
-#endif
+#endif  // CONFIG_FILTERINTRA
 #if CONFIG_PALETTE
     if (this_rate != INT_MAX && cpi->common.allow_palette_mode)
       this_rate +=
           vp9_cost_bit(cpi->common.fc.
                        palette_enabled_prob[bsize - BLOCK_8X8][palette_ctx], 0);
-#endif
+#endif  // CONFIG_PALETTE
+#if CONFIG_TWO_STAGE
+    this_rate += vp9_cost_bit(cpi->common.fc.y_2stg_prob, 0);
+#endif  // CONFIG_TWO_STAGE
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
     if (this_rd < best_rd) {
       mode_selected   = mode;
 #if CONFIG_FILTERINTRA
       fbit_selected   = fbit;
-#endif
+#endif  // CONFIG_FILTERINTRA
       best_rd         = this_rd;
       best_tx         = mic->mbmi.tx_size;
       *rate           = this_rate;
@@ -1915,10 +2071,86 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
       *rate_tokenonly = this_rate_tokenonly;
       *distortion     = this_distortion;
       *skippable      = s;
-      tx_skipped = 1;
+      tx_skipped      = 1;
     }
   }
-#endif
+#endif  // CONFIG_TX_SKIP
+
+#if CONFIG_TWO_STAGE
+#if CONFIG_FILTERINTRA
+  for (mode_ext = 2 * DC_PRED; mode_ext <= 2 * TM_PRED + 1; mode_ext++) {
+    int64_t local_tx_cache[TX_MODES];
+    fbit = mode_ext & 1;
+    mode = mode_ext >> 1;
+    if (fbit && !is_filter_allowed(mode))
+      continue;
+    mic->mbmi.filterbit = fbit;
+    mic->mbmi.mode = mode;
+#else
+    for (mode = DC_PRED; mode <= TM_PRED; mode++) {
+      int64_t local_tx_cache[TX_MODES];
+      mic->mbmi.mode = mode;
+#endif  // CONFIG_FILTERINTRA
+#if CONFIG_TX_SKIP
+      mic->mbmi.tx_skip[0] = 0;
+#endif  // CONFIG_TX_SKIP
+      mic->mbmi.two_stage_coding[0] = 1;
+      x->stg1_skippable = 1;
+      for (qindex_plus = TWO_STAGE_QINDEX_PLUS_STEP;
+          qindex_plus <=
+          MIN(TWO_STAGE_MAX_QINDEX_PLUS,
+              (1 << TWO_STAGE_QINDEX_PLUS_BITS) * TWO_STAGE_QINDEX_PLUS_STEP);
+          qindex_plus += TWO_STAGE_QINDEX_PLUS_STEP) {
+        mic->mbmi.qindex_plus = qindex_plus - 1;
+        for (eob_thresh = 1; eob_thresh <= 16 *
+        num_4x4_blocks_high_lookup[bsize] * num_4x4_blocks_wide_lookup[bsize];
+        eob_thresh *= 2) {
+          mic->mbmi.eob_thresh = eob_thresh;
+          super_block_yrd(cpi, x, &this_rate_tokenonly,
+                          &this_distortion, &s, NULL, bsize,
+                          local_tx_cache, best_rd);
+          if (this_rate_tokenonly == INT_MAX)
+            continue;
+
+          this_rate = this_rate_tokenonly + bmode_costs[mode];
+          this_rate += vp9_cost_bit(cpi->common.fc.y_2stg_prob, 1);
+          this_rate += vp9_cost_bit(128, 0) * TWO_STAGE_QINDEX_PLUS_BITS;
+#if CONFIG_FILTERINTRA
+          if (is_filter_allowed(mode) && is_filter_enabled(mic->mbmi.tx_size))
+            this_rate += vp9_cost_bit(cpi->common.fc.filterintra_prob
+                                           [mic->mbmi.tx_size][mode], fbit);
+#endif  // CONFIG_FILTERINTRA
+#if CONFIG_TX_SKIP
+          if (try_tx_skip)
+            this_rate += vp9_cost_bit(cpi->common.fc.y_tx_skip_prob[0], 0);
+#endif  // CONFIG_TX_SKIP
+          this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
+          if (this_rd < best_rd) {
+            mode_selected   = mode;
+#if CONFIG_FILTERINTRA
+            fbit_selected   = fbit;
+#endif  // CONFIG_FILTERINTRA
+            best_rd         = this_rd;
+            best_tx         = mic->mbmi.tx_size;
+            *rate           = this_rate;
+            *rate_tokenonly = this_rate_tokenonly;
+            *distortion     = this_distortion;
+            *skippable      = s;
+            use_2stg_coding = 1;
+#if CONFIG_TX_SKIP
+            tx_skipped      = 0;
+#endif  // CONFIG_TX_SKIP
+            best_qindex_plus = mic->mbmi.qindex_plus;
+            best_eob_thresh = mic->mbmi.eob_thresh;
+          }
+          if (x->stg1_skippable)
+            break;
+        }
+        if (x->stg1_skippable && eob_thresh == 1)
+          break;
+      }
+    }
+#endif  // CONFIG_TWO_STAGE
 
 #if CONFIG_PALETTE
   mic->mbmi.current_palette_size = cpi->common.current_palette_size;
@@ -2183,6 +2415,13 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_FILTERINTRA
   }
 #endif  // CONFIG_PALETTE
+#if CONFIG_TWO_STAGE
+  mic->mbmi.two_stage_coding[0] = use_2stg_coding;
+  if (mic->mbmi.two_stage_coding[0]) {
+    mic->mbmi.qindex_plus = best_qindex_plus;
+    mic->mbmi.eob_thresh = best_eob_thresh;
+  }
+#endif  // CONFIG_TWO_STAGE
 
   return best_rd;
 }
@@ -2363,8 +2602,6 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
   uint8_t *src_u = x->plane[1].src.buf;
   uint8_t *src_v = x->plane[2].src.buf;
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
-
-  xd->mi[0].src_mi->mbmi.palette_enabled[1] = 0;
 #endif  // CONFIG_PALETTE
   vpx_memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
 #if CONFIG_FILTERINTRA
@@ -2389,7 +2626,13 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
     xd->mi[0].src_mi->mbmi.uv_mode = mode;
 #if CONFIG_TX_SKIP
     xd->mi[0].src_mi->mbmi.tx_skip[1] = 0;
-#endif
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_PALETTE
+    xd->mi[0].src_mi->mbmi.palette_enabled[1] = 0;
+#endif  // CONFIG_PALETTE
+#if CONFIG_TWO_STAGE
+    xd->mi[0].src_mi->mbmi.two_stage_coding[1] = 0;
+#endif  // CONFIG_TWO_STAGE
 
     if (!super_block_uvrd(cpi, x, &this_rate_tokenonly,
                           &this_distortion, &s, &this_sse, bsize, best_rd))
@@ -6297,6 +6540,10 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->palette_enabled[0] = 0;
     mbmi->palette_enabled[1] = 0;
 #endif  // CONFIG_PALETTE
+#if CONFIG_TWO_STAGE
+    mbmi->two_stage_coding[0] = 0;
+    mbmi->two_stage_coding[1] = 0;
+#endif  // CONFIG_TWO_STAGE
     // Evaluate all sub-pel filters irrespective of whether we can use
     // them for this frame.
     mbmi->interp_filter = cm->interp_filter == SWITCHABLE ? EIGHTTAP
@@ -7546,7 +7793,11 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_TX_SKIP
   mbmi->tx_skip[0] = 0;
   mbmi->tx_skip[1] = 0;
-#endif
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+  mbmi->two_stage_coding[0] = 0;
+  mbmi->two_stage_coding[1] = 0;
+#endif  // CONFIG_TWO_STAGE
   for (ref_index = 0; ref_index < MAX_REFS; ++ref_index) {
     int mode_excluded = 0;
     int64_t this_rd = INT64_MAX;

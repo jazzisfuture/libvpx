@@ -299,6 +299,7 @@ EXPERIMENT_LIST="
     new_inter
     bitstream_fixes
     newmvref
+    two_stage
 "
 CONFIG_LIST="
     external_build
