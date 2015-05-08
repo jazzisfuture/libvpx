@@ -52,6 +52,18 @@ struct macroblock_plane {
   cumbins_type_nuq *cumbins_nuq_pxd;
 #endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+  DECLARE_ALIGNED(16, int16_t, src_diff_stg2[64 * 64]);
+  tran_low_t *coeff_stg2;
+  tran_low_t *qcoeff_stg2;
+  uint16_t *eobs_stg2;
+  int16_t *quant_fp_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *round_fp_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *quant_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *quant_shift_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *zbin_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *round_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+#endif  // CONFIG_TWO_STAGE
 
   int64_t quant_thred[2];
 };
@@ -149,6 +161,10 @@ struct macroblock {
   DECLARE_ALIGNED(16, double, kmeans_data_buffer[MAX_MB_PLANE * 64 * 64]);
   DECLARE_ALIGNED(16, int, kmeans_indices_buffer[64 * 64]);
 #endif  // CONFIG_PALETTE
+
+#if 1
+  int output;
+#endif
 };
 
 #ifdef __cplusplus
