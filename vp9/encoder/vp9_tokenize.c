@@ -308,6 +308,11 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   int eob = p->eobs[block];
   const PLANE_TYPE type = pd->plane_type;
   const tran_low_t *qcoeff = BLOCK_OFFSET(p->qcoeff, block);
+#if CONFIG_TWO_STAGE
+  int eob_stg2 = p->eobs_stg2[block];
+  const tran_low_t *qcoeff_stg2 = BLOCK_OFFSET(p->qcoeff_stg2, block);
+  unsigned int dummy_counts[20];
+#endif  // CONFIG_TWO_STAGE
   const int segment_id = mbmi->segment_id;
   const int16_t *scan, *nb;
   const scan_order *so;
@@ -333,6 +338,9 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
 
   pt = get_entropy_context(tx_size, pd->above_context + aoff,
                            pd->left_context + loff);
+
+  //pt = 0;
+
   so = get_scan(xd, tx_size, type, block);
   scan = so->scan;
   nb = so->neighbors;
@@ -349,6 +357,15 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   dct_value_tokens = vp9_dct_value_tokens_ptr;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if 0
+      {
+        FILE *fp;
+        fp = fopen("./debug/enc.txt", "a");
+        fprintf(fp, "qcoeff %d_%d \n", plane, block);
+        fclose(fp);
+      }
+#endif
+
   while (c < eob) {
     int v = 0;
     int skip_eob = 0;
@@ -357,6 +374,15 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
     while (!v) {
       add_token_no_extra(&t, coef_probs[band[c]][pt], ZERO_TOKEN, skip_eob,
                          counts[band[c]][pt]);
+#if 0
+      {
+        FILE *fp;
+        fp = fopen("./debug/enc.txt", "a");
+        fprintf(fp, "%4d ", ZERO_TOKEN);
+        fclose(fp);
+      }
+#endif
+
       eob_branch[band[c]][pt] += !skip_eob;
       skip_eob = 1;
       token_cache[scan[c]] = 0;
@@ -377,15 +403,135 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
     token_cache[scan[c]] = vp9_pt_energy_class[dct_value_tokens[v].token];
     ++c;
     pt = get_coef_context(nb, token_cache, c);
+#if 0
+      {
+        FILE *fp;
+        fp = fopen("./debug/enc.txt", "a");
+        fprintf(fp, "%4d ", dct_value_tokens[v].token);
+        fclose(fp);
+      }
+#endif
   }
   if (c < seg_eob) {
     add_token_no_extra(&t, coef_probs[band[c]][pt], EOB_TOKEN, 0,
                        counts[band[c]][pt]);
     ++eob_branch[band[c]][pt];
+#if 0
+    {
+      FILE *fp;
+      fp = fopen("./debug/enc.txt", "a");
+      fprintf(fp, "%4d ", EOB_TOKEN);
+      fclose(fp);
+    }
+#endif
   }
+
+#if 0
+    {
+      FILE *fp;
+      fp = fopen("./debug/enc.txt", "a");
+      fprintf(fp, "\n ");
+      fclose(fp);
+    }
+#endif
+
   *tp = t;
 
   vp9_set_contexts(xd, pd, plane_bsize, tx_size, c > 0, aoff, loff);
+
+#if CONFIG_TWO_STAGE
+  if (!mbmi->two_stage_coding[plane != 0] || !USE_2STG)
+    return;
+
+  //pt = get_entropy_context(tx_size, pd->above_context + aoff,
+    //                       pd->left_context + loff);
+  pt = 0; // To-Do
+  c = 0;
+
+#if 0
+      {
+        FILE *fp;
+        fp = fopen("./debug/enc.txt", "a");
+        fprintf(fp, "qcoeff_stg2 %d_%d \n", plane, block);
+        fclose(fp);
+      }
+#endif
+
+  while (c < eob_stg2) {
+    int v = 0;
+    int skip_eob = 0;
+
+    v = qcoeff_stg2[scan[c]];
+
+    while (!v) {
+      add_token_no_extra(&t, coef_probs[band[c]][pt], ZERO_TOKEN, skip_eob,
+                         dummy_counts /*counts[band[c]][pt]*/);
+#if 0
+      {
+        FILE *fp;
+        fp = fopen("./debug/enc.txt", "a");
+        fprintf(fp, "%4d ", EOB_TOKEN);
+        fclose(fp);
+      }
+#endif
+      //eob_branch[band[c]][pt] += !skip_eob;
+      skip_eob = 1;
+      token_cache[scan[c]] = 0;
+      ++c;
+      pt = get_coef_context(nb, token_cache, c);
+      v = qcoeff_stg2[scan[c]];
+    }
+
+#if CONFIG_TX_SKIP
+    t->is_pxd_token = tx_skip;
+#endif  // CONFIG_TX_SKIP
+    add_token(&t, coef_probs[band[c]][pt],
+              dct_value_tokens[v].extra,
+              (uint8_t)dct_value_tokens[v].token,
+              (uint8_t)skip_eob,
+              dummy_counts /*counts[band[c]][pt]*/);
+    //eob_branch[band[c]][pt] += !skip_eob;
+    token_cache[scan[c]] = vp9_pt_energy_class[dct_value_tokens[v].token];
+    ++c;
+    pt = get_coef_context(nb, token_cache, c);
+#if 0
+    {
+      FILE *fp;
+      fp = fopen("./debug/enc.txt", "a");
+      fprintf(fp, "%4d ", dct_value_tokens[v].token);
+      fclose(fp);
+    }
+#endif
+  }
+  if (c < seg_eob) {
+    //if (c == 0)
+      //printf("%d\n", c);
+    add_token_no_extra(&t, coef_probs[band[c]][pt], EOB_TOKEN, 0,
+                       dummy_counts /*counts[band[c]][pt]*/);
+#if 0
+    {
+      FILE *fp;
+      fp = fopen("./debug/enc.txt", "a");
+      fprintf(fp, "%4d ", EOB_TOKEN);
+      fclose(fp);
+    }
+#endif
+    //++eob_branch[band[c]][pt];
+  }
+
+#if 0
+    {
+      FILE *fp;
+      fp = fopen("./debug/enc.txt", "a");
+      fprintf(fp, "\n ");
+      fclose(fp);
+    }
+#endif
+
+  //printf("%d\n", c);
+
+  *tp = t;
+#endif  // CONFIG_TWO_STAGE
 }
 
 #if CONFIG_TX_SKIP

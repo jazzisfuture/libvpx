@@ -196,6 +196,9 @@ static void read_mv_probs(nmv_context *ctx, int allow_hp, vp9_reader *r) {
 
 static void setup_plane_dequants(VP9_COMMON *cm, MACROBLOCKD *xd, int q_index) {
   int i;
+#if CONFIG_TWO_STAGE
+  int j;
+#endif  // CONFIG_TWO_STAGE
   xd->plane[0].dequant = cm->y_dequant[q_index];
 #if CONFIG_NEW_QUANT
   xd->plane[0].dequant_val_nuq =
@@ -208,6 +211,12 @@ static void setup_plane_dequants(VP9_COMMON *cm, MACROBLOCKD *xd, int q_index) {
       (const dequant_val_type_nuq *)cm->y_dequant_val_nuq_pxd[q_index];
 #endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+  for (j = 0; j < TWO_STAGE_MAX_QINDEX_PLUS; j++) {
+    int this_qindex = MIN(q_index + j, QINDEX_RANGE - 1);
+    xd->plane[0].dequant_stg1[j] = cm->y_dequant[this_qindex];
+  }
+#endif  // CONFIG_TWO_STAGE
 
   for (i = 1; i < MAX_MB_PLANE; i++) {
     xd->plane[i].dequant = cm->uv_dequant[q_index];
@@ -222,6 +231,12 @@ static void setup_plane_dequants(VP9_COMMON *cm, MACROBLOCKD *xd, int q_index) {
         (const dequant_val_type_nuq *)cm->uv_dequant_val_nuq_pxd[q_index];
 #endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+    for (j = 0; j < TWO_STAGE_MAX_QINDEX_PLUS; j++) {
+      int this_qindex = MIN(q_index + j, QINDEX_RANGE - 1);
+      xd->plane[i].dequant_stg1[j] = cm->uv_dequant[this_qindex];
+    }
+#endif  // CONFIG_TWO_STAGE
   }
 }
 
@@ -585,6 +600,19 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
         vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
     }
   }
+
+#if CONFIG_TWO_STAGE
+    if (xd->mi[0].src_mi->mbmi.two_stage_coding[plane != 0] &&
+        xd->mi[0].src_mi->mbmi.eob_stg2 > 0 && USE_2STG) {
+      tran_low_t *const dqcoeff_stg2 = BLOCK_OFFSET(pd->dqcoeff_stg2, block);
+      int bs = 4 << tx_size;
+
+      vp9_tx_identity_add(dqcoeff_stg2, dst, stride, bs, 3);
+
+      vpx_memset(dqcoeff_stg2, 0,
+                 (16 << (tx_size << 1)) * sizeof(dqcoeff_stg2[0]));
+    }
+#endif  // CONFIG_TWO_STAGE
 }
 
 struct intra_args {
@@ -636,7 +664,7 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
                             eob);
 #if CONFIG_TX_SKIP
     no_coeff = !eob;
-#endif
+#endif  // CONFIG_TX_SKIP
   }
 
 #if CONFIG_TX_SKIP
@@ -1301,6 +1329,18 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     struct intra_args arg = { cm, xd, r };
     vp9_foreach_transformed_block(xd, bsize,
                                   predict_and_reconstruct_intra_block, &arg);
+#if 0
+    {
+      FILE *fp;
+      fp = fopen("./debug/dec.txt", "a");
+
+      fprintf(fp, " mi %2d %2d, mode %3d%3d, tx_size %3d, skip %2d \n",
+              mi_row, mi_col, mbmi->mode, mbmi->uv_mode, mbmi->tx_size,
+              mbmi->skip);
+
+      fclose(fp);
+    }
+#endif
   } else {
     // Prediction
     vp9_dec_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
@@ -2013,6 +2053,9 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
       init_macroblockd(cm, &tile_data->xd);
 
       vp9_zero(tile_data->xd.dqcoeff);
+#if CONFIG_TWO_STAGE
+      vp9_zero(tile_data->xd.dqcoeff_stg2);
+#endif  // CONFIG_TWO_STAGE
     }
   }
 
@@ -2184,6 +2227,9 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
                           pbi->decrypt_state);
       init_macroblockd(cm, &tile_data->xd);
       vp9_zero(tile_data->xd.dqcoeff);
+#if CONFIG_TWO_STAGE
+      vp9_zero(tile_data->xd.dqcoeff_stg2);
+#endif  // CONFIG_TWO_STAGE
 
       worker->had_error = 0;
       if (i == num_workers - 1 || n == tile_cols - 1) {
@@ -2773,6 +2819,9 @@ void vp9_decode_frame(VP9Decoder *pbi,
   cm->fc = cm->frame_contexts[cm->frame_context_idx];
   vp9_zero(cm->counts);
   vp9_zero(xd->dqcoeff);
+#if CONFIG_TWO_STAGE
+  vp9_zero(xd->dqcoeff_stg2);
+#endif  // CONFIG_TWO_STAGE
 
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);

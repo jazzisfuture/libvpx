@@ -1420,7 +1420,7 @@ void vp9_fdct32x32_rd_c(const int16_t *input, tran_low_t *out, int stride) {
   }
 }
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 void vp9_tx_identity_rect(const int16_t *input, tran_low_t *out,
                           int row, int col,
                           int stride_in, int stride_out, int shift) {

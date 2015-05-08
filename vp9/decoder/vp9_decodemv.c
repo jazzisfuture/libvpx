@@ -562,7 +562,25 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
         cm->fc.filterintra_prob[get_uv_tx_size(mbmi, &xd->plane[1])][mbmi->uv_mode]);
   else
     mbmi->uv_filterbit = 0;
-#endif
+#endif  // CONFIG_FILTERINTRA
+
+#if CONFIG_TWO_STAGE
+  if (mbmi->sb_type >= BLOCK_8X8) {
+    mbmi->two_stage_coding[0] = vp9_read_bit(r);
+    //mbmi->two_stage_coding[1] = vp9_read_bit(r);
+    mbmi->two_stage_coding[1] = 0;
+    if (mbmi->two_stage_coding[0] || mbmi->two_stage_coding[1]) {
+      mbmi->qindex_plus = vp9_read_literal(r, TWO_STAGE_QINDEX_PLUS_BITS);
+      mbmi->qindex_plus = (mbmi->qindex_plus + 1) * TWO_STAGE_QINDEX_PLUS_STEP;
+    }
+  } else {
+    mbmi->two_stage_coding[0] = 0;
+    mbmi->two_stage_coding[1] = 0;
+  }
+
+  if (mbmi->two_stage_coding[0])
+    printf(">>>>>2stg! %d\n", mbmi->qindex_plus);
+#endif  // CONFIG_TWO_STAGE
 }
 
 static int read_mv_component(vp9_reader *r,
@@ -1592,6 +1610,11 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 #endif
                                r);
   }
+
+#if CONFIG_TWO_STAGE
+  mbmi->two_stage_coding[0] = 0;
+  mbmi->two_stage_coding[1] = 0;
+#endif  // CONFIG_TWO_STAGE
 }
 
 void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,

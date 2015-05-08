@@ -295,6 +295,11 @@ static void pack_mb_tokens(vp9_writer *w,
                            TOKENEXTRA **tp, const TOKENEXTRA *const stop,
                            vpx_bit_depth_t bit_depth) {
   TOKENEXTRA *p = *tp;
+#if 0
+  int counter = 0;
+  int position[10];
+  TOKENEXTRA *start_p = p;
+#endif
 
   while (p < stop && p->token != EOSB_TOKEN) {
     const int t = p->token;
@@ -348,6 +353,13 @@ static void pack_mb_tokens(vp9_writer *w,
     }
 #endif  // CONFIG_TX_SKIP
 
+#if 0
+    if (t == EOB_TOKEN) {
+      position[counter] = p - start_p;
+      counter++;
+    }
+#endif
+
     if (b->base_val) {
       const int e = p->extra, l = b->len;
 
@@ -368,6 +380,18 @@ static void pack_mb_tokens(vp9_writer *w,
     }
     ++p;
   }
+
+#if 0
+  {
+    int i;
+    printf("EOB tokens %d\n", counter);
+    for (i = 0; i < counter; i++) {
+      printf("%d ", position[i]);
+    }
+    printf("\n");
+    scanf("%d", &i);
+  }
+#endif
 
   *tp = p + (p->token == EOSB_TOKEN);
 }
@@ -1084,6 +1108,16 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
     vp9_write(w, mbmi->uv_filterbit,
               cm->fc.filterintra_prob[get_uv_tx_size(mbmi, &xd->plane[1])][mbmi->uv_mode]);
 #endif  // CONFIG_FILTERINTRA
+
+#if CONFIG_TWO_STAGE
+  if (bsize >= BLOCK_8X8) {
+    vp9_write_bit(w, mbmi->two_stage_coding[0]);
+    //vp9_write_bit(w, mbmi->two_stage_coding[1]);
+    if (mbmi->two_stage_coding[0] || mbmi->two_stage_coding[1])
+      vp9_write_literal(w, mbmi->qindex_plus / TWO_STAGE_QINDEX_PLUS_STEP - 1,
+                        TWO_STAGE_QINDEX_PLUS_BITS);
+  }
+#endif  // CONFIG_TWO_STAGE
 }
 
 static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
@@ -1099,6 +1133,10 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
 
   xd->mi = cm->mi + (mi_row * cm->mi_stride + mi_col);
   m = xd->mi;
+
+#if 0
+  MB_MODE_INFO *mbmi = &m->mbmi;
+#endif
 
   set_mi_row_col(xd, tile,
                  mi_row, num_8x8_blocks_high_lookup[m->mbmi.sb_type],
@@ -1122,7 +1160,11 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
   if (!supertx_enabled) {
 #endif
   assert(*tok < tok_end);
+  //printf(" mi %2d %2d, mode %3d%3d, tx_size %3d, skip %2d \n",
+    //      mi_row, mi_col, mbmi->mode, mbmi->uv_mode, mbmi->tx_size,
+      //    mbmi->skip);
   pack_mb_tokens(w, tok, tok_end, cm->bit_depth);
+  //printf("<<<<<<<<<<<<<<done packing tokens\n");
 #if CONFIG_SUPERTX
   }
 #endif

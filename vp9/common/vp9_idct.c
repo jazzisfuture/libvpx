@@ -1557,7 +1557,7 @@ void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
   }
 }
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 void vp9_tx_identity_add_rect(const tran_low_t *input, uint8_t *dest,
                               int row, int col,
                               int stride_in, int stride_out, int shift) {

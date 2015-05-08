@@ -298,6 +298,7 @@ EXPERIMENT_LIST="
     intrabc
     loop_postfilter
     row_tile
+    two_stage
 "
 CONFIG_LIST="
     external_build

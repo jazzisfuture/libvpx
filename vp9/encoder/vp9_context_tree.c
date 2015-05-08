@@ -43,13 +43,35 @@ static void alloc_mode_context(VP9_COMMON *cm, int num_4x4_blk,
       ctx->eobs_pbuf[i][k]    = ctx->eobs[i][k];
     }
   }
+
+#if CONFIG_TWO_STAGE
+  CHECK_MEM_ERROR(cm, ctx->zcoeff_blk_stg2,
+                  vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    for (k = 0; k < 3; ++k) {
+      CHECK_MEM_ERROR(cm, ctx->coeff_stg2[i][k],
+                      vpx_memalign(16, num_pix * sizeof(*ctx->coeff_stg2[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->qcoeff_stg2[i][k],
+                      vpx_memalign(16, num_pix * sizeof(*ctx->qcoeff_stg2[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->dqcoeff_stg2[i][k],
+                      vpx_memalign(16, num_pix * sizeof(*ctx->dqcoeff_stg2[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->eobs_stg2[i][k],
+                      vpx_memalign(16, num_pix * sizeof(*ctx->eobs_stg2[i][k])));
+      ctx->coeff_pbuf_stg2[i][k]   = ctx->coeff_stg2[i][k];
+      ctx->qcoeff_pbuf_stg2[i][k]  = ctx->qcoeff_stg2[i][k];
+      ctx->dqcoeff_pbuf_stg2[i][k] = ctx->dqcoeff_stg2[i][k];
+      ctx->eobs_pbuf_stg2[i][k]    = ctx->eobs_stg2[i][k];
+    }
+  }
+#endif  // CONFIG_TWO_STAGE
+
 #if CONFIG_PALETTE
   for (i = 0; i < 2; i++) {
     CHECK_MEM_ERROR(cm, ctx->color_index_map[i],
                     vpx_memalign(16, num_pix *
                                  sizeof(ctx->color_index_map[i][0])));
   }
-#endif
+#endif  // CONFIG_PALETTE
 }
 
 static void free_mode_context(PICK_MODE_CONTEXT *ctx) {
@@ -68,6 +90,23 @@ static void free_mode_context(PICK_MODE_CONTEXT *ctx) {
       ctx->eobs[i][k] = 0;
     }
   }
+
+#if CONFIG_TWO_STAGE
+  vpx_free(ctx->zcoeff_blk_stg2);
+  ctx->zcoeff_blk_stg2 = 0;
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    for (k = 0; k < 3; ++k) {
+      vpx_free(ctx->coeff_stg2[i][k]);
+      ctx->coeff_stg2[i][k] = 0;
+      vpx_free(ctx->qcoeff_stg2[i][k]);
+      ctx->qcoeff_stg2[i][k] = 0;
+      vpx_free(ctx->dqcoeff_stg2[i][k]);
+      ctx->dqcoeff_stg2[i][k] = 0;
+      vpx_free(ctx->eobs_stg2[i][k]);
+      ctx->eobs_stg2[i][k] = 0;
+    }
+  }
+#endif  // CONFIG_TWO_STAGE
 
 #if CONFIG_PALETTE
   for (i = 0; i < 2; i++) {
