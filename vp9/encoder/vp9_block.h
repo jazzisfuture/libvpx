@@ -52,6 +52,18 @@ struct macroblock_plane {
   cumbins_type_nuq *cumbins_nuq_pxd;
 #endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+  DECLARE_ALIGNED(16, int16_t, src_diff_stg2[64 * 64]);
+  tran_low_t *coeff_stg2;
+  tran_low_t *qcoeff_stg2;
+  uint16_t *eobs_stg2;
+  int16_t *quant_fp_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *round_fp_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *quant_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *quant_shift_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *zbin_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+  int16_t *round_stg1[TWO_STAGE_MAX_QINDEX_PLUS];
+#endif  // CONFIG_TWO_STAGE
 
   int64_t quant_thred[2];
 };
@@ -61,10 +73,10 @@ struct macroblock_plane {
 typedef unsigned int vp9_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][2]
                                    [COEFF_CONTEXTS][ENTROPY_TOKENS];
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 typedef unsigned int vp9_coeff_cost_pxd[PLANE_TYPES][REF_TYPES][2]
                                        [COEFF_CONTEXTS][ENTROPY_TOKENS];
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
@@ -116,9 +128,13 @@ struct macroblock {
   // note that token_costs is the cost when eob node is skipped
   vp9_coeff_cost token_costs[TX_SIZES];
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
   vp9_coeff_cost_pxd token_costs_pxd[TX_SIZES];
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
+
+#if CONFIG_TWO_STAGE
+  int stg1_skippable;
+#endif  // CONFIG_TWO_STAGE
 
   int in_static_area;
 

@@ -329,11 +329,11 @@ static void pack_mb_tokens(vp9_writer *w,
     // is split into two treed writes.  The first treed write takes care of the
     // unconstrained nodes.  The second treed write takes care of the
     // constrained nodes.
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
     if (p->is_pxd_token && FOR_SCREEN_CONTENT) {
       vp9_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
     } else {
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
       if (t >= TWO_TOKEN && t < EOB_TOKEN) {
         int len = UNCONSTRAINED_NODES - p->skip_eob_node;
         int bits = v >> (n - len);
@@ -344,9 +344,9 @@ static void pack_mb_tokens(vp9_writer *w,
       } else {
         vp9_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
       }
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
     }
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
     if (b->base_val) {
       const int e = p->extra, l = b->len;
@@ -998,7 +998,7 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
       }
     }
   }
-#endif
+#endif  // CONFIG_TX_SKIP
 
   if (bsize >= BLOCK_8X8) {
 #if CONFIG_PALETTE
@@ -1059,6 +1059,18 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
     vp9_write(w, mbmi->uv_filterbit,
               cm->fc.filterintra_prob[get_uv_tx_size(mbmi, &xd->plane[1])][mbmi->uv_mode]);
 #endif  // CONFIG_FILTERINTRA
+
+#if CONFIG_TWO_STAGE
+  if (bsize >= BLOCK_8X8) {
+#if CONFIG_TX_SKIP
+    if (!mbmi->tx_skip[0])
+#endif  // CONFIG_TX_SKIP
+      vp9_write(w, mbmi->two_stage_coding[0], cm->fc.y_2stg_prob);
+    if (mbmi->two_stage_coding[0] || mbmi->two_stage_coding[1])
+      vp9_write_literal(w, (mbmi->qindex_plus + 1) / TWO_STAGE_QINDEX_PLUS_STEP
+                        - 1, TWO_STAGE_QINDEX_PLUS_BITS);
+  }
+#endif  // CONFIG_TWO_STAGE
 }
 
 static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
@@ -1455,7 +1467,7 @@ static void update_coef_probs_common(vp9_writer* const bc, VP9_COMP *cpi,
   }
 }
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 static void build_tree_distribution_pxd(VP9_COMP *cpi, TX_SIZE tx_size,
                                         vp9_coeff_stats_pxd *coef_branch_ct,
                                         vp9_coeff_probs_pxd *coef_probs) {
@@ -1602,7 +1614,7 @@ static void update_coef_probs_common_pxd(vp9_writer* const bc, VP9_COMP *cpi,
       assert(0);
   }
 }
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 static void update_coef_probs(VP9_COMP *cpi, vp9_writer* w) {
   const TX_MODE tx_mode = cpi->common.tx_mode;
@@ -1610,10 +1622,10 @@ static void update_coef_probs(VP9_COMP *cpi, vp9_writer* w) {
   TX_SIZE tx_size;
   vp9_coeff_stats frame_branch_ct[TX_SIZES][PLANE_TYPES];
   vp9_coeff_probs_model frame_coef_probs[TX_SIZES][PLANE_TYPES];
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
   vp9_coeff_stats_pxd frame_branch_ct_pxd[TX_SIZES][PLANE_TYPES];
   vp9_coeff_probs_pxd frame_coef_probs_pxd[TX_SIZES][PLANE_TYPES];
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
   for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size)
     build_tree_distribution(cpi, tx_size, frame_branch_ct[tx_size],
@@ -1623,7 +1635,7 @@ static void update_coef_probs(VP9_COMP *cpi, vp9_writer* w) {
     update_coef_probs_common(w, cpi, tx_size, frame_branch_ct[tx_size],
                              frame_coef_probs[tx_size]);
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
   if (FOR_SCREEN_CONTENT) {
     for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size)
       build_tree_distribution_pxd(cpi, tx_size, frame_branch_ct_pxd[tx_size],
@@ -1634,7 +1646,7 @@ static void update_coef_probs(VP9_COMP *cpi, vp9_writer* w) {
                                    frame_branch_ct_pxd[tx_size],
                                    frame_coef_probs_pxd[tx_size]);
   }
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 }
 
 static void encode_loopfilter(VP9_COMMON *cm,

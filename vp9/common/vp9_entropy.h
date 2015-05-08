@@ -120,13 +120,16 @@ extern const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS];
 #define REF_TYPES 2  // intra=0, inter=1
 
 /* Middle dimension reflects the coefficient position within the transform. */
-#if CONFIG_TX_SKIP
-#define FOR_SCREEN_CONTENT 0
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
+#define FOR_SCREEN_CONTENT 1
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
+
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 #define COEF_BANDS 7
 #define TX_SKIP_COEFF_BAND 6
 #else
 #define COEF_BANDS 6
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 /* Inside dimension is measure of nearby complexity, that reflects the energy
    of nearby coefficients are nonzero.  For the first coefficient (DC, unless
@@ -153,10 +156,10 @@ typedef unsigned int vp9_coeff_count[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS]
                                     [ENTROPY_TOKENS];
 typedef unsigned int vp9_coeff_stats[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS]
                                     [ENTROPY_NODES][2];
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 typedef unsigned int vp9_coeff_stats_pxd[REF_TYPES][COEFF_CONTEXTS]
                                         [ENTROPY_NODES][2];
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 #define SUBEXP_PARAM                4   /* Subexponential code parameter */
 #define MODULUS_PARAM               13  /* Modulus parameter */
@@ -191,10 +194,10 @@ static INLINE void reset_skip_context(MACROBLOCKD *xd, BLOCK_SIZE bsize) {
 DECLARE_ALIGNED(16, extern const uint8_t,
                 vp9_coefband_trans_8x8plus[MAX_NUM_COEFS]);
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_coefband_trans_4x4[16]);
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 DECLARE_ALIGNED(16, extern uint8_t,
                 vp9_coefband_tx_skip[MAX_NUM_COEFS]);
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 static INLINE const uint8_t *get_band_translate(TX_SIZE tx_size) {
   return tx_size == TX_4X4 ? vp9_coefband_trans_4x4
@@ -223,11 +226,11 @@ typedef unsigned int vp9_coeff_count_model[REF_TYPES][COEF_BANDS]
 
 void vp9_model_to_full_probs(const vp9_prob *model, vp9_prob *full);
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 typedef vp9_prob vp9_coeff_probs_pxd[REF_TYPES][COEFF_CONTEXTS][ENTROPY_NODES];
 typedef unsigned int vp9_coeff_counts_pxd[REF_TYPES][COEFF_CONTEXTS]
                                                      [ENTROPY_TOKENS];
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
                                       const ENTROPY_CONTEXT *l) {
