@@ -308,6 +308,14 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   int eob = p->eobs[block];
   const PLANE_TYPE type = pd->plane_type;
   const tran_low_t *qcoeff = BLOCK_OFFSET(p->qcoeff, block);
+#if CONFIG_TWO_STAGE
+  int two_stg = mbmi->two_stage_coding[plane != 0];
+  int eob_stg2 = p->eobs_stg2[block];
+  const tran_low_t *qcoeff_stg2 = BLOCK_OFFSET(p->qcoeff_stg2, block);
+  int pt_stg2;
+  const uint8_t *const band_stg2 =
+      USE_SKIP_BAND ? vp9_coefband_tx_skip : get_band_translate(tx_size);
+#endif  // CONFIG_TWO_STAGE
   const int segment_id = mbmi->segment_id;
   const int16_t *scan, *nb;
   const scan_order *so;
@@ -332,6 +340,9 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
 
   pt = get_entropy_context(tx_size, pd->above_context + aoff,
                            pd->left_context + loff);
+#if CONFIG_TWO_STAGE
+  pt_stg2 = pt;
+#endif  // CONFIG_TWO_STAGE
   so = get_scan(xd, tx_size, type, block);
   scan = so->scan;
   nb = so->neighbors;
@@ -377,6 +388,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
     ++c;
     pt = get_coef_context(nb, token_cache, c);
   }
+
   if (c < seg_eob) {
     add_token_no_extra(&t, coef_probs[band[c]][pt], EOB_TOKEN, 0,
                        counts[band[c]][pt]);
@@ -385,6 +397,61 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   *tp = t;
 
   vp9_set_contexts(xd, pd, plane_bsize, tx_size, c > 0, aoff, loff);
+
+#if CONFIG_TWO_STAGE
+  if (!two_stg)
+    return;
+
+  pt = pt_stg2;
+  so = &vp9_default_scan_orders_pxd[tx_size];
+  scan = so->scan;
+  nb = so->neighbors;
+  c = 0;
+
+  while (c < eob_stg2) {
+    int v = 0;
+    int skip_eob = 0;
+
+    v = qcoeff_stg2[scan[c]];
+
+    while (!v) {
+#if CONFIG_TX_SKIP
+    t->is_pxd_token = 0;
+#endif  // CONFIG_TX_SKIP
+      add_token_no_extra(&t, coef_probs[band_stg2[c]][pt], ZERO_TOKEN, skip_eob,
+                         counts[band_stg2[c]][pt]);
+      eob_branch[band_stg2[c]][pt] += !skip_eob;
+      skip_eob = 1;
+      token_cache[scan[c]] = 0;
+      ++c;
+      pt = get_coef_context(nb, token_cache, c);
+      v = qcoeff_stg2[scan[c]];
+    }
+
+#if CONFIG_TX_SKIP
+    t->is_pxd_token = 0;
+#endif  // CONFIG_TX_SKIP
+    add_token(&t, coef_probs[band_stg2[c]][pt],
+              dct_value_tokens[v].extra,
+              (uint8_t)dct_value_tokens[v].token,
+              (uint8_t)skip_eob,
+              counts[band_stg2[c]][pt]);
+    eob_branch[band_stg2[c]][pt] += !skip_eob;
+    token_cache[scan[c]] = vp9_pt_energy_class[dct_value_tokens[v].token];
+    ++c;
+    pt = get_coef_context(nb, token_cache, c);
+  }
+  if (c < seg_eob) {
+#if CONFIG_TX_SKIP
+    t->is_pxd_token = 0;
+#endif  // CONFIG_TX_SKIP
+    add_token_no_extra(&t, coef_probs[band_stg2[c]][pt], EOB_TOKEN, 0,
+                       counts[band_stg2[c]][pt]);
+    ++eob_branch[band_stg2[c]][pt];
+  }
+
+  *tp = t;
+#endif  // CONFIG_TWO_STAGE
 }
 
 #if CONFIG_TX_SKIP
@@ -485,6 +552,10 @@ static void is_skippable(int plane, int block,
   (void)plane_bsize;
   (void)tx_size;
   args->skippable[0] &= (!args->x->plane[plane].eobs[block]);
+#if CONFIG_TWO_STAGE
+  if (args->x->e_mbd.mi[0].src_mi->mbmi.two_stage_coding[plane != 0])
+    args->skippable[0] &= (!args->x->plane[plane].eobs_stg2[block]);
+#endif  // CONFIG_TWO_STAGE
 }
 
 // TODO(yaowu): rewrite and optimize this function to remove the usage of

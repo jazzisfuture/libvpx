@@ -35,6 +35,10 @@ static const vp9_prob default_y_tx_skip_prob[2] = {190, 210};
 static const vp9_prob default_uv_tx_skip_prob[2] = {250, 160};
 #endif  // CONFIG_TX_SKIP
 
+#if CONFIG_TWO_STAGE
+static const vp9_prob default_y_2stg_prob = 224;
+#endif  // CONFIG_TWO_STAGE
+
 const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
 #if CONFIG_INTRABC
   {  // above = dc
@@ -1028,6 +1032,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
 #if CONFIG_WEDGE_PARTITION
   vp9_copy(fc->wedge_interinter_prob, default_wedge_interinter_prob);
 #endif  // CONFIG_WEDGE_PARTITION
+#if CONFIG_TWO_STAGE
+  fc->y_2stg_prob = default_y_2stg_prob;
+#endif  // CONFIG_TWO_STAGE
 }
 
 const vp9_tree_index vp9_switchable_interp_tree
@@ -1239,7 +1246,7 @@ static void set_default_lf_deltas(struct loopfilter *lf) {
   lf->mode_deltas[1] = 0;
 }
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 static void init_pxd_scan_orders(int16_t *scan, int16_t *iscan,
                                  int16_t *neighbors, int bs) {
   int i;
@@ -1259,7 +1266,7 @@ static void init_pxd_scan_orders(int16_t *scan, int16_t *iscan,
     }
   }
 }
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 void vp9_setup_past_independence(VP9_COMMON *cm) {
   // Reset the segment feature data to the default stats:
@@ -1308,10 +1315,12 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
 
   cm->frame_context_idx = 0;
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
   memset(vp9_coefband_tx_skip, TX_SKIP_COEFF_BAND,
          sizeof(vp9_coefband_tx_skip[0]) * MAX_NUM_COEFS);
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
   init_pxd_scan_orders(vp9_default_scan_pxd_4x4, vp9_default_iscan_pxd_4x4,
                        vp9_default_scan_pxd_4x4_neighbors, 4);
   init_pxd_scan_orders(vp9_default_scan_pxd_8x8, vp9_default_iscan_pxd_8x8,
@@ -1325,5 +1334,5 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   init_pxd_scan_orders(vp9_default_scan_pxd_64x64, vp9_default_iscan_pxd_64x64,
                        vp9_default_scan_pxd_64x64_neighbors, 64);
 #endif  // CONFIG_TX64X64
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 }

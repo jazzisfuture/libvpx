@@ -104,6 +104,9 @@ typedef struct frame_contexts {
 #if CONFIG_GLOBAL_MOTION
   vp9_prob global_motion_types_prob[GLOBAL_MOTION_TYPES - 1];
 #endif  // CONFIG_GLOBAL_MOTION
+#if CONFIG_TWO_STAGE
+  vp9_prob y_2stg_prob;
+#endif  // CONFIG_TWO_STAGE
 } FRAME_CONTEXT;
 
 typedef struct {
