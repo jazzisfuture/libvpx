@@ -32,7 +32,7 @@ typedef struct {
 extern const scan_order vp9_default_scan_orders[TX_SIZES];
 extern const scan_order vp9_scan_orders[TX_SIZES][TX_TYPES];
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 // pixel domain default scan orders
 extern const scan_order vp9_default_scan_orders_pxd[TX_SIZES];
 
@@ -56,7 +56,7 @@ extern int16_t vp9_default_scan_pxd_64x64[4096];
 extern int16_t vp9_default_iscan_pxd_64x64[4096];
 extern int16_t vp9_default_scan_pxd_64x64_neighbors[4097 * MAX_NEIGHBORS];
 #endif  // CONFIG_TX64X64
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 static INLINE int get_coef_context(const int16_t *neighbors,
                                    const uint8_t *token_cache, int c) {

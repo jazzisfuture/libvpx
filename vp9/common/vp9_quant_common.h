@@ -30,6 +30,12 @@ extern "C" {
 extern int tx_skip_q_thresh_inter;
 extern int tx_skip_q_thresh_intra;
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+#define TWO_STAGE_MAX_QINDEX_PLUS 256
+#define TWO_STAGE_QINDEX_PLUS_STEP 64
+#define TWO_STAGE_QINDEX_PLUS_BITS 2
+#define STAGE_TWO_SHIFT 3
+#endif  // CONFIG_TWO_STAGE
 
 int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
 int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
