@@ -1557,7 +1557,7 @@ void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
   }
 }
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 void vp9_tx_identity_add_rect(const tran_low_t *input, uint8_t *dest,
                               int row, int col,
                               int stride_in, int stride_out, int shift) {
@@ -1593,7 +1593,7 @@ void vp9_highbd_tx_identity_add(const tran_low_t *input, uint8_t *dest8,
   vp9_highbd_tx_identity_add_rect(input, dest8, bs, bs, bs, stride, shift, bd);
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 #if CONFIG_TX64X64
 #define DownshiftMultiplyBy2(x) x * 2
