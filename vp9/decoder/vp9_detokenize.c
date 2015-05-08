@@ -62,12 +62,20 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
                         const dequant_val_type_nuq *dq_val,
 #endif  // CONFIG_NEW_QUANT
                         int ctx, const int16_t *scan, const int16_t *nb,
+#if CONFIG_TWO_STAGE
+                        tran_low_t *dqcoeff_stg2, const int16_t *dq_stg1,
+#endif  // CONFIG_TWO_STAGE
                         vp9_reader *r) {
   const int max_eob = 16 << (tx_size << 1);
   const FRAME_CONTEXT *const fc = &cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
   const int ref = is_inter_block(&xd->mi[0].src_mi->mbmi);
   int band, c = 0;
+#if CONFIG_TWO_STAGE
+  int two_stg = xd->mi[0].src_mi->mbmi.two_stage_coding[type];
+  int eob_stg1;
+  int ctx_stg2 = ctx;
+#endif  // CONFIG_TWO_STAGE
   const vp9_prob (*coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
       fc->coef_probs[tx_size][type][ref];
   const vp9_prob *prob;
@@ -134,6 +142,10 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     if (tx_skip)
       band_translate = vp9_coefband_tx_skip;
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_TWO_STAGE
+    if (two_stg)
+      dqv = dq_stg1[0];
+#endif  // CONFIG_TWO_STAGE
 
   while (c < max_eob) {
     int val = -1;
@@ -152,10 +164,20 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     while (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       dqv = dq[1];
+#if CONFIG_TWO_STAGE
+    if (two_stg)
+      dqv = dq_stg1[1];
+#endif  // CONFIG_TWO_STAGE
       token_cache[scan[c]] = 0;
       ++c;
+
       if (c >= max_eob)
+#if CONFIG_TWO_STAGE
+        goto decoding_stg2;
+#else
         return c;  // zero tokens at the end (no eob token)
+#endif  // CONFIG_TWO_STAGE
+
       ctx = get_coef_context(nb, token_cache, c);
       band = *band_translate++;
       prob = coef_probs[band][ctx];
@@ -242,7 +264,141 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     ++c;
     ctx = get_coef_context(nb, token_cache, c);
     dqv = dq[1];
+#if CONFIG_TWO_STAGE
+    if (two_stg)
+      dqv = dq_stg1[1];
+#endif  // CONFIG_TWO_STAGE
   }
+
+#if CONFIG_TWO_STAGE
+  decoding_stg2:
+
+  eob_stg1 = c;
+  if (!two_stg)
+    goto decoding_done;
+
+  scan = vp9_default_scan_orders_pxd[tx_size].scan;
+  nb = vp9_default_scan_orders_pxd[tx_size].neighbors;
+  c = 0;
+  band_translate = get_band_translate(tx_size);
+  if (USE_SKIP_BAND)
+    band_translate = vp9_coefband_tx_skip;
+
+  dqv = dq[0];
+  ctx = ctx_stg2;
+  while (c < max_eob) {
+    int val = -1;
+    band = *band_translate++;
+    prob = coef_probs[band][ctx];
+    if (!cm->frame_parallel_decoding_mode)
+      ++eob_branch_count[band][ctx];
+    if (!vp9_read(r, prob[EOB_CONTEXT_NODE])) {
+      INCREMENT_COUNT(EOB_MODEL_TOKEN);
+      break;
+    }
+#if CONFIG_NEW_QUANT
+    dqv_val = &dq_val[band][0];
+#endif  // CONFIG_NEW_QUANT
+
+    while (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
+      INCREMENT_COUNT(ZERO_TOKEN);
+      dqv = dq[1];
+      token_cache[scan[c]] = 0;
+      ++c;
+      if (c >= max_eob)
+        goto decoding_done;
+      ctx = get_coef_context(nb, token_cache, c);
+      band = *band_translate++;
+      prob = coef_probs[band][ctx];
+#if CONFIG_NEW_QUANT
+      dqv_val = &dq_val[band][0];
+#endif  // CONFIG_NEW_QUANT
+    }
+
+    if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
+      INCREMENT_COUNT(ONE_TOKEN);
+      token = ONE_TOKEN;
+      val = 1;
+    } else {
+      INCREMENT_COUNT(TWO_TOKEN);
+      token = vp9_read_tree(r, coeff_subtree_high,
+                            vp9_pareto8_full[prob[PIVOT_NODE] - 1]);
+      switch (token) {
+        case TWO_TOKEN:
+        case THREE_TOKEN:
+        case FOUR_TOKEN:
+          val = token;
+          break;
+        case CATEGORY1_TOKEN:
+          val = CAT1_MIN_VAL + read_coeff(cat1_prob, 1, r);
+          break;
+        case CATEGORY2_TOKEN:
+          val = CAT2_MIN_VAL + read_coeff(cat2_prob, 2, r);
+          break;
+        case CATEGORY3_TOKEN:
+          val = CAT3_MIN_VAL + read_coeff(cat3_prob, 3, r);
+          break;
+        case CATEGORY4_TOKEN:
+          val = CAT4_MIN_VAL + read_coeff(cat4_prob, 4, r);
+          break;
+        case CATEGORY5_TOKEN:
+          val = CAT5_MIN_VAL + read_coeff(cat5_prob, 5, r);
+          break;
+        case CATEGORY6_TOKEN:
+#if CONFIG_VP9_HIGHBITDEPTH
+          switch (cm->bit_depth) {
+            case VPX_BITS_8:
+              val = CAT6_MIN_VAL + read_coeff(cat6_prob, NUM_CAT6_BITS, r);
+              break;
+            case VPX_BITS_10:
+              val = CAT6_MIN_VAL +
+              read_coeff(cat6_prob, NUM_CAT6_BITS_HIGH10, r);
+              break;
+            case VPX_BITS_12:
+              val = CAT6_MIN_VAL +
+              read_coeff(cat6_prob, NUM_CAT6_BITS_HIGH12, r);
+              break;
+            default:
+              assert(0);
+              return -1;
+          }
+#else
+          val = CAT6_MIN_VAL + read_coeff(cat6_prob, NUM_CAT6_BITS, r);
+#endif
+          break;
+      }
+    }
+#if CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+    if (use_rect_quant) {
+      v = (val * dqv) >> dq_shift;
+    } else {
+      v = vp9_dequant_abscoeff_nuq(val, dqv, dqv_val);
+      v = dq_shift ? ROUND_POWER_OF_TWO(v, dq_shift) : v;
+    }
+#else
+    v = vp9_dequant_abscoeff_nuq(val, dqv, dqv_val);
+    v = dq_shift ? ROUND_POWER_OF_TWO(v, dq_shift) : v;
+#endif  // CONFIG_TX_SKIP
+#else   // CONFIG_NEW_QUANT
+    v = (val * dqv) >> dq_shift;
+#endif  // CONFIG_NEW_QUANT
+
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
+    dqcoeff_stg2[scan[c]] = check_range(vp9_read_bit(r) ? -v : v);
+#else
+    dqcoeff_stg2[scan[c]] = vp9_read_bit(r) ? -v : v;
+#endif
+    token_cache[scan[c]] = vp9_pt_energy_class[token];
+    ++c;
+    ctx = get_coef_context(nb, token_cache, c);
+    dqv = dq[1];
+  }
+
+  decoding_done:
+  xd->mi[0].src_mi->mbmi.eob_stg2 = c;
+  c = eob_stg1;
+#endif  // CONFIG_TWO_STAGE
 
   return c;
 }
@@ -477,7 +633,12 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
 #endif  // CONFIG_TX_SKIP
 #endif  // CONFIG_NEW_QUANT
                        ctx, so->scan,
-                       so->neighbors, r);
+                       so->neighbors,
+#if CONFIG_TWO_STAGE
+                       BLOCK_OFFSET(pd->dqcoeff_stg2, block),
+                       pd->dequant_stg1[xd->mi->src_mi->mbmi.qindex_plus],
+#endif  // CONFIG_TWO_STAGE
+                       r);
 
 #if CONFIG_TX64X64
   if (plane > 0) assert(tx_size != TX_64X64);

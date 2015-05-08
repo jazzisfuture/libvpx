@@ -2759,7 +2759,7 @@ DECLARE_ALIGNED(16, static const int16_t, vp9_default_iscan_64x64[4096]) = {
 };
 #endif  // CONFIG_TX64X64
 
-#if CONFIG_TX_SKIP
+#if CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 DECLARE_ALIGNED(16, int16_t, vp9_default_scan_pxd_4x4[16]);
 DECLARE_ALIGNED(16, int16_t, vp9_default_scan_pxd_8x8[64]);
 DECLARE_ALIGNED(16, int16_t, vp9_default_scan_pxd_16x16[256]);
@@ -2800,7 +2800,7 @@ const scan_order vp9_default_scan_orders_pxd[TX_SIZES] = {
       vp9_default_scan_pxd_64x64_neighbors},
 #endif
 };
-#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_TX_SKIP || CONFIG_TWO_STAGE
 
 const scan_order vp9_default_scan_orders[TX_SIZES] = {
   {default_scan_4x4,   vp9_default_iscan_4x4,   default_scan_4x4_neighbors},
