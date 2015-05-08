@@ -2743,6 +2743,183 @@ static int vp9_highbd_dpcm_intra(uint8_t *src, int src_stride,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_TX_SKIP
 
+#if CONFIG_TWO_STAGE
+static void encode_block_intra_2stg(int plane, int block,
+                                    BLOCK_SIZE plane_bsize,
+                                    TX_SIZE tx_size, void *arg) {
+  struct encode_b_args* const args = arg;
+  MACROBLOCK *const x = args->x;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
+  struct macroblock_plane *const p = &x->plane[plane];
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  tran_low_t *coeff = BLOCK_OFFSET(p->coeff, block);
+  tran_low_t *qcoeff = BLOCK_OFFSET(p->qcoeff, block);
+  tran_low_t *dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+  const scan_order *scan_order = NULL;
+  TX_TYPE tx_type;
+  PREDICTION_MODE mode;
+#if CONFIG_FILTERINTRA
+  int fbit = 0;
+#endif  // CONFIG_FILTERINTRA
+  const int bwl = b_width_log2_lookup[plane_bsize];
+  const int diff_stride = 4 * (1 << bwl);
+  uint8_t *src, *dst;
+  int16_t *src_diff;
+  uint16_t *eob = &p->eobs[block];
+  tran_low_t *coeff_stg2 = BLOCK_OFFSET(p->coeff_stg2, block);
+  tran_low_t *qcoeff_stg2 = BLOCK_OFFSET(p->qcoeff_stg2, block);
+  tran_low_t *dqcoeff_stg2 = BLOCK_OFFSET(pd->dqcoeff_stg2, block);
+  uint16_t *eob_stg2 = &p->eobs_stg2[block];
+  const int src_stride = p->src.stride;
+  const int dst_stride = pd->dst.stride;
+  int bs = 4 << tx_size;
+  int i, j, c;
+  int eob_limit = bs * bs / mbmi->eob_thresh;
+#if CONFIG_NEW_QUANT
+  const uint8_t* band = get_band_translate(tx_size);
+#endif  // CONFIG_NEW_QUANT
+
+  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
+  dst = &pd->dst.buf[4 * (j * dst_stride + i)];
+  src = &p->src.buf[4 * (j * src_stride + i)];
+  src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+
+#if CONFIG_FILTERINTRA
+  if (mbmi->sb_type < BLOCK_8X8 && plane == 0)
+    fbit = xd->mi[0].b_filter_info[block];
+  else
+    fbit = plane == 0 ? mbmi->filterbit : mbmi->uv_filterbit;
+#endif  // CONFIG_FILTERINTRA
+
+  mode = plane == 0 ? mbmi->mode : mbmi->uv_mode;
+  tx_type = get_tx_type(pd->plane_type, xd);
+  if (tx_size == TX_4X4)
+    get_tx_type_4x4(pd->plane_type, xd, block);
+  scan_order = &vp9_scan_orders[tx_size][tx_type];
+  if (tx_size == TX_32X32)
+    scan_order = &vp9_default_scan_orders[TX_32X32];
+
+  vp9_predict_intra_block(xd, block >> (tx_size << 1), bwl, tx_size, mode,
+#if CONFIG_FILTERINTRA
+                          fbit,
+#endif
+                          x->skip_encode ? src : dst,
+                              x->skip_encode ? src_stride : dst_stride,
+                                  dst, dst_stride, i, j, plane);
+
+  if (!x->skip_recode) {
+    vp9_subtract_block(bs, bs, src_diff, diff_stride,
+                       src, src_stride, dst, dst_stride);
+    switch (tx_size) {
+      case TX_32X32:
+        fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+        break;
+      case TX_16X16:
+        vp9_fht16x16(src_diff, coeff, diff_stride, tx_type);
+        break;
+      case TX_8X8:
+        vp9_fht8x8(src_diff, coeff, diff_stride, tx_type);
+        break;
+      case TX_4X4:
+        if (tx_type != DCT_DCT)
+          vp9_fht4x4(src_diff, coeff, diff_stride, tx_type);
+        else
+          x->fwd_txm4x4(src_diff, coeff, diff_stride);
+        break;
+      default:
+        assert(0);
+        break;
+    }
+
+    if (tx_size <= TX_16X16) {
+      vp9_quantize_b(coeff, bs * bs, x->skip_block,
+                     p->zbin_stg1[mbmi->qindex_plus],
+                     p->round_stg1[mbmi->qindex_plus],
+                     p->quant_stg1[mbmi->qindex_plus],
+                     p->quant_shift_stg1[mbmi->qindex_plus], qcoeff, dqcoeff,
+                     pd->dequant_stg1[mbmi->qindex_plus], eob,
+                     scan_order->scan, scan_order->iscan);
+    } else if (tx_size == TX_32X32) {
+      vp9_quantize_b_32x32(coeff, 1024, x->skip_block,
+                           p->zbin_stg1[mbmi->qindex_plus],
+                           p->round_stg1[mbmi->qindex_plus],
+                           p->quant_stg1[mbmi->qindex_plus],
+                           p->quant_shift_stg1[mbmi->qindex_plus],
+                           qcoeff, dqcoeff,
+                           pd->dequant_stg1[mbmi->qindex_plus], eob,
+                           scan_order->scan, scan_order->iscan);
+    }
+
+    if (*eob > eob_limit) {
+      for (i = eob_limit; i < bs * bs; i++) {
+        c = scan_order->scan[i];
+        qcoeff[c] = 0;
+        dqcoeff[c] = 0;
+      }
+      *eob = eob_limit;
+
+      c = scan_order->scan[*eob - 1];
+      while (!qcoeff[c]) {
+        *eob = *eob - 1;
+        if (*eob == 0)
+          break;
+        c = scan_order->scan[*eob - 1];
+      }
+    }
+
+    if (*eob) {
+      switch (tx_size) {
+        case TX_32X32:
+          vp9_idct32x32_add(dqcoeff, dst, dst_stride, *eob);
+          break;
+        case TX_16X16:
+          vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob);
+          break;
+        case TX_8X8:
+          vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob);
+          break;
+        case TX_4X4:
+          if (tx_type == DCT_DCT)
+            x->itxm_add(dqcoeff, dst, dst_stride, *eob);
+          else
+            vp9_iht4x4_16_add(dqcoeff, dst, dst_stride, tx_type);
+          break;
+        default:
+          assert(0);
+          break;
+      }
+    }
+  }
+
+      // second stage coding
+  if (!x->skip_recode) {
+    vp9_subtract_block(bs, bs, src_diff, diff_stride,
+                       src, src_stride, dst, dst_stride);
+    vp9_tx_identity(src_diff, coeff_stg2, diff_stride, bs, STAGE_TWO_SHIFT);
+
+    scan_order = &vp9_default_scan_orders_pxd[tx_size];
+
+    if (tx_size <= TX_16X16) {
+      vp9_quantize_b(coeff_stg2, bs * bs, x->skip_block,
+                     p->zbin, p->round, p->quant, p->quant_shift,
+                     qcoeff_stg2, dqcoeff_stg2, pd->dequant, eob_stg2,
+                     scan_order->scan, scan_order->iscan);
+    } else if (tx_size == TX_32X32) {
+      vp9_quantize_b_32x32(coeff_stg2, 1024, x->skip_block,
+                           p->zbin, p->round, p->quant, p->quant_shift,
+                           qcoeff_stg2, dqcoeff_stg2, pd->dequant, eob_stg2,
+                           scan_order->scan, scan_order->iscan);
+    }
+    if (*eob_stg2)
+      vp9_tx_identity_add(dqcoeff_stg2, dst, dst_stride, bs, STAGE_TWO_SHIFT);
+  }
+
+  if (*eob || *eob_stg2)
+    *(args->skip) = 0;
+}
+#endif  // CONFIG_TWO_STAGE
+
 static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                TX_SIZE tx_size, void *arg) {
   struct encode_b_args* const args = arg;
@@ -3575,7 +3752,12 @@ void vp9_encode_block_intra(MACROBLOCK *x, int plane, int block,
                             BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
                             int8_t *skip) {
   struct encode_b_args arg = {x, NULL, skip};
-  encode_block_intra(plane, block, plane_bsize, tx_size, &arg);
+#if CONFIG_TWO_STAGE
+  if (x->e_mbd.mi[0].src_mi->mbmi.two_stage_coding[plane != 0])
+    encode_block_intra_2stg(plane, block, plane_bsize, tx_size, &arg);
+  else
+#endif  // CONFIG_TWO_STAGE
+    encode_block_intra(plane, block, plane_bsize, tx_size, &arg);
 }
 
 
@@ -3583,6 +3765,12 @@ void vp9_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   const MACROBLOCKD *const xd = &x->e_mbd;
   struct encode_b_args arg = {x, NULL, &xd->mi[0].src_mi->mbmi.skip};
 
-  vp9_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block_intra,
-                                         &arg);
+#if CONFIG_TWO_STAGE
+  if (x->e_mbd.mi[0].src_mi->mbmi.two_stage_coding[plane != 0])
+    vp9_foreach_transformed_block_in_plane(xd, bsize, plane,
+                                           encode_block_intra_2stg, &arg);
+  else
+#endif  // CONFIG_TWO_STAGE
+    vp9_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block_intra,
+                                           &arg);
 }
