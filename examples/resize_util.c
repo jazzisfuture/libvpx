@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "../vp9/encoder/vp9_resize.h"
+#include "./tools_common.h"
 
 static const char *exec_name = NULL;
 
@@ -26,7 +27,7 @@ static void usage() {
   printf("<output_yuv> [<frames>]\n");
 }
 
-void usage_exit() {
+void usage_exit(void) {
   usage();
   exit(EXIT_FAILURE);
 }

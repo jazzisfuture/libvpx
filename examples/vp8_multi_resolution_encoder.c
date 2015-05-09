@@ -45,7 +45,7 @@
 #define interface (vpx_codec_vp8_cx())
 #define fourcc    0x30385056
 
-void usage_exit() {
+void usage_exit(void) {
   exit(EXIT_FAILURE);
 }
 
