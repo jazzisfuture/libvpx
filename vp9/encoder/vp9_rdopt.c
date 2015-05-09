@@ -3095,6 +3095,10 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
     ref_frame = vp9_mode_order[mode_index].ref_frame[0];
     second_ref_frame = vp9_mode_order[mode_index].ref_frame[1];
 
+    if (cpi->rc.is_src_frame_alt_ref)
+      if (!(this_mode == ZEROMV && ref_frame == ALTREF_FRAME))
+        continue;
+
     // Look at the reference frame of the best mode so far and set the
     // skip mask to look at a subset of the remaining modes.
     if (midx == mode_skip_start && best_mode_index >= 0) {
@@ -3233,10 +3237,10 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
         }
       }
     } else {
-      const MV_REFERENCE_FRAME ref_frames[2] = {ref_frame, second_ref_frame};
-      if (!check_best_zero_mv(cpi, mbmi->mode_context, frame_mv,
-                              this_mode, ref_frames))
-        continue;
+//      const MV_REFERENCE_FRAME ref_frames[2] = {ref_frame, second_ref_frame};
+//      if (!check_best_zero_mv(cpi, mbmi->mode_context, frame_mv,
+//                              this_mode, ref_frames))
+//        continue;
     }
 
     mbmi->mode = this_mode;
@@ -3540,6 +3544,12 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
   if (!cpi->rc.is_src_frame_alt_ref)
     vp9_update_rd_thresh_fact(tile_data->thresh_freq_fact,
                               sf->adaptive_rd_thresh, bsize, best_mode_index);
+
+  if (cpi->rc.is_src_frame_alt_ref) {
+    best_skip2 = 1;
+    assert(best_mbmode.mode == ZEROMV);
+    assert(best_mbmode.ref_frame[0] == ALTREF_FRAME);
+  }
 
   // macroblock modes
   *mbmi = best_mbmode;

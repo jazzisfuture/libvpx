@@ -3521,6 +3521,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
          MAX_MODES * sizeof(*cpi->mode_chosen_counts));
 #endif
 
+  cpi->dummy_writing = 1;
   if (cpi->sf.recode_loop == DISALLOW_RECODE) {
     encode_without_recode_loop(cpi);
   } else {
@@ -3561,12 +3562,21 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cm->frame_type == KEY_FRAME)
     cpi->refresh_last_frame = 1;
 
+  if (cm->show_existing_frame) {
+    const int frame_to_show = cm->ref_frame_map[cpi->alt_fb_idx];
+    lock_buffer_pool(cm->buffer_pool);
+    ref_cnt_fb(cm->buffer_pool->frame_bufs, &cm->new_fb_idx, frame_to_show);
+    unlock_buffer_pool(cm->buffer_pool);
+    cm->lf.filter_level = 0;
+  }
+
   cm->frame_to_show = get_frame_new_buffer(cm);
 
   // Pick the loop filter level for the frame.
   loopfilter_frame(cpi, cm);
 
   // build the bitstream
+  cpi->dummy_writing = 0;
   vp9_pack_bitstream(cpi, dest, size);
 
   if (cm->seg.update_map)
@@ -3575,6 +3585,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (frame_is_intra_only(cm) == 0) {
     release_scaled_references(cpi);
   }
+
   vp9_update_reference_frames(cpi);
 
   for (t = TX_4X4; t <= TX_32X32; t++)
@@ -3584,7 +3595,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode)
     vp9_adapt_coef_probs(cm);
 
-  if (!frame_is_intra_only(cm)) {
+  if (!frame_is_intra_only(cm) && !cm->show_existing_frame) {
     if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
       vp9_adapt_mode_probs(cm);
       vp9_adapt_mv_probs(cm, cm->allow_high_precision_mv);
@@ -4038,6 +4049,14 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       oxcf->rc_mode == VPX_CBR) {
     vp9_update_temporal_layer_framerate(cpi);
     vp9_restore_layer_context(cpi);
+  }
+
+  if (cpi->rc.is_src_frame_alt_ref) {
+//    const int frame_to_show = cm->ref_frame_map[cpi->alt_fb_idx];
+//    ref_cnt_fb(pool->frame_bufs, &cm->new_fb_idx, frame_to_show);
+    cm->show_existing_frame = 1;
+  } else {
+    cm->show_existing_frame = 0;
   }
 
   // Find a free buffer for the new frame, releasing the reference previously

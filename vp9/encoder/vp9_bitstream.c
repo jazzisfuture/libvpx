@@ -1076,7 +1076,12 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
   write_profile(cm->profile, wb);
 
-  vp9_wb_write_bit(wb, 0);  // show_existing_frame
+  vp9_wb_write_bit(wb, cm->show_existing_frame);  // show_existing_frame
+  if (cm->show_existing_frame) {
+    vp9_wb_write_literal(wb, cpi->alt_fb_idx, REF_FRAMES_LOG2);
+    return;
+  }
+
   vp9_wb_write_bit(wb, cm->frame_type);
   vp9_wb_write_bit(wb, cm->show_frame);
   vp9_wb_write_bit(wb, cm->error_resilient_mode);
@@ -1118,6 +1123,13 @@ static void write_uncompressed_header(VP9_COMP *cpi,
         vp9_wb_write_literal(wb, get_ref_frame_map_idx(cpi, ref_frame),
                              REF_FRAMES_LOG2);
         vp9_wb_write_bit(wb, cm->ref_frame_sign_bias[ref_frame]);
+
+        if (cpi->dummy_writing == 0) {
+          fprintf(stderr, "enc ref %d mapped to %d\n", ref_frame,
+                  get_ref_frame_map_idx(cpi, ref_frame));
+          fprintf(stderr, "frame idx %d, show_frame %d\n",
+                  cm->current_video_frame, cm->show_frame);
+        }
       }
 
       write_frame_size_with_refs(cpi, wb);
@@ -1227,6 +1239,12 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
   struct vp9_write_bit_buffer saved_wb;
 
   write_uncompressed_header(cpi, &wb);
+  if (cpi->common.show_existing_frame) {
+    data = dest + (cpi->common.profile <= PROFILE_2 ? 1 : 2);
+    *size = data - dest;
+    return;
+  }
+
   saved_wb = wb;
   vp9_wb_write_literal(&wb, 0, 16);  // don't know in advance first part. size
 
