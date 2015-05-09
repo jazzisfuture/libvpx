@@ -1415,6 +1415,8 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
         ref_frame->idx = idx;
         ref_frame->buf = &frame_bufs[idx].buf;
         cm->ref_frame_sign_bias[LAST_FRAME + i] = vp9_rb_read_bit(rb);
+
+        fprintf(stderr, "dec ref %d mapped to %d\n", i, ref);
       }
 
       setup_frame_size_with_refs(cm, rb);

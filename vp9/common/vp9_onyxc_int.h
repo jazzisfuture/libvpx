@@ -296,7 +296,7 @@ static INLINE YV12_BUFFER_CONFIG *get_frame_new_buffer(VP9_COMMON *cm) {
   return &cm->buffer_pool->frame_bufs[cm->new_fb_idx].buf;
 }
 
-static INLINE int get_free_fb(VP9_COMMON *cm) {
+static int get_free_fb(VP9_COMMON *cm) {
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
   int i;
 
@@ -311,7 +311,7 @@ static INLINE int get_free_fb(VP9_COMMON *cm) {
   return i;
 }
 
-static INLINE void ref_cnt_fb(RefCntBuffer *bufs, int *idx, int new_idx) {
+static void ref_cnt_fb(RefCntBuffer *bufs, int *idx, int new_idx) {
   const int ref_index = *idx;
 
   if (ref_index >= 0 && bufs[ref_index].ref_count > 0)
