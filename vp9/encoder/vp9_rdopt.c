@@ -179,6 +179,12 @@ static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {NEARMV,    {ALTREF_FRAME, INTRA_FRAME}},
   {NEWMV,     {ALTREF_FRAME, INTRA_FRAME}},
 #endif  // CONFIG_INTERINTRA
+
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+  {NEWMV, {LAST_FRAME,   LAST_FRAME}},
+  {NEWMV, {ALTREF_FRAME, ALTREF_FRAME}},
+  {NEWMV, {GOLDEN_FRAME, GOLDEN_FRAME}},
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
 };
 
 static const REF_DEFINITION vp9_ref_order[MAX_REFS] = {
@@ -4477,6 +4483,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   const int is_comp_pred = has_second_ref(mbmi);
   const int this_mode = mbmi->mode;
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+  int_mv *frame_mvs[2];
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
   int_mv *frame_mv = mode_mv[this_mode];
   int i;
   int refs[2] = { mbmi->ref_frame[0],
@@ -4528,6 +4537,14 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_WEDGE_PARTITION
 #endif  // CONFIG_INTERINTRA
 
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+  if (is_comp_pred && this_mode == NEWMV && refs[0] == refs[1]) {
+    frame_mvs[0] = mode_mv[NEWMV];
+    frame_mvs[1] = mode_mv[NEAR_FORNEWMV];
+  } else {
+    frame_mvs[0] = frame_mvs[1] = frame_mv;
+  }
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
   ref_mv[0] = mbmi->ref_mvs[refs[0]][0];
   ref_mv[1] = mbmi->ref_mvs[refs[1]][0];
 
@@ -4570,8 +4587,13 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   if (is_comp_pred) {
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+    if (frame_mvs[0][refs[0]].as_int == INVALID_MV ||
+        frame_mvs[1][refs[1]].as_int == INVALID_MV)
+#else
     if (frame_mv[refs[0]].as_int == INVALID_MV ||
         frame_mv[refs[1]].as_int == INVALID_MV)
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
       return INT64_MAX;
 
     if (cpi->sf.adaptive_mode_search) {
@@ -4638,8 +4660,14 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if CONFIG_NEWMVREF
   if (have_newmv_in_inter_mode(this_mode)) {
-    for (i = 0; i < 1 + is_comp_pred; ++i)
-      ref_mv[i] = mbmi->ref_mvs[refs[i]][mv_idx];
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+    if (is_comp_pred && this_mode == NEWMV && refs[0] == refs[1])
+      for (i = 0; i < 2; ++i)
+        ref_mv[i] = mbmi->ref_mvs[refs[i]][i];
+    else
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+      for (i = 0; i < 1 + is_comp_pred; ++i)
+        ref_mv[i] = mbmi->ref_mvs[refs[i]][mv_idx];
   }
 #endif  // CONFIG_NEWMVREF
 
@@ -4648,10 +4676,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     if (is_comp_pred) {
 #if CONFIG_NEWMVREF
-      for (i = 0; i < 2; ++i) {
-        single_newmv[refs[i]].as_int =
-            single_newmvs[mv_idx][refs[i]].as_int;
-      }
+      for (i = 0; i < 2; ++i)
+        single_newmv[refs[i]].as_int = single_newmvs[mv_idx][refs[i]].as_int;
 #endif  // CONFIG_NEWMVREF
 
 #if CONFIG_COMPOUND_MODES
@@ -4678,6 +4704,17 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         rate_mv = vp9_mv_bit_cost(&frame_mv[refs[0]].as_mv,
                                   &ref_mv[0].as_mv,
                                   x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+      } else if (this_mode == NEWMV && refs[0] == refs[1]) {
+        rate_mv  = vp9_mv_bit_cost(&frame_mvs[0][refs[0]].as_mv,
+                                   &ref_mv[0].as_mv,
+                                   x->nmvjointcost, x->mvcost,
+                                   MV_COST_WEIGHT);
+        rate_mv += vp9_mv_bit_cost(&frame_mvs[1][refs[1]].as_mv,
+                                   &ref_mv[1].as_mv,
+                                   x->nmvjointcost, x->mvcost,
+                                   MV_COST_WEIGHT);
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
       }
 #else
       // Initialize mv using single prediction mode result.
@@ -4757,7 +4794,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   for (i = 0; i < is_comp_pred + 1; ++i) {
-    cur_mv[i] = frame_mv[refs[i]];
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+    if (is_comp_pred && this_mode == NEWMV && refs[0] == refs[1])
+      cur_mv[i] = frame_mvs[i][refs[i]];
+    else
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+      cur_mv[i] = frame_mv[refs[i]];
     // Clip "next_nearest" so that it does not extend to far out of image
 #if CONFIG_COMPOUND_MODES
     if (this_mode != NEWMV && this_mode != NEW_NEWMV
@@ -4931,6 +4973,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t best_rd_nowedge = INT64_MAX;
     int64_t best_rd_wedge = INT64_MAX;
     int wedge_types;
+
     mbmi->use_wedge_interinter = 0;
     rs = vp9_cost_bit(cm->fc.wedge_interinter_prob[bsize], 0);
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
@@ -4941,9 +4984,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     rs = get_wedge_bits(bsize) * 256 +
         vp9_cost_bit(cm->fc.wedge_interinter_prob[bsize], 1);
     wedge_types = (1 << get_wedge_bits(bsize));
+
     if (have_newmv_in_inter_mode(this_mode)) {
       int_mv tmp_mv[2];
       int rate_mvs[2], tmp_rate_mv = 0;
+
       // TODO(spencere, debargha): Reimplement to make this run faster
       for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
         mbmi->interinter_wedge_index = wedge_index;
@@ -4956,6 +5001,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         }
       }
       mbmi->interinter_wedge_index = best_wedge_index;
+
 #if CONFIG_COMPOUND_MODES
       if (this_mode == NEW_NEWMV) {
         do_masked_motion_search_indexed(cpi, x, mbmi->interinter_wedge_index,
@@ -4985,8 +5031,17 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                         1);
         tmp_rate_mv = rate_mvs[1];
         mbmi->mv[1].as_int = tmp_mv[1].as_int;
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+      } else if (this_mode == NEWMV && refs[0] == refs[1]) {
+        do_masked_motion_search_indexed(cpi, x, mbmi->interinter_wedge_index,
+                                        bsize, mi_row, mi_col, tmp_mv, rate_mvs,
+                                        ref_mv, 2);
+        tmp_rate_mv = rate_mvs[0] + rate_mvs[1];
+        mbmi->mv[0].as_int = tmp_mv[0].as_int;
+        mbmi->mv[1].as_int = tmp_mv[1].as_int;
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
       }
-#else
+#else  // CONFIG_COMPOUND_MODES
       do_masked_motion_search_indexed(cpi, x, mbmi->interinter_wedge_index,
                                       bsize, mi_row, mi_col, tmp_mv, rate_mvs,
 #if CONFIG_NEWMVREF
@@ -4997,6 +5052,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       mbmi->mv[0].as_int = tmp_mv[0].as_int;
       mbmi->mv[1].as_int = tmp_mv[1].as_int;
 #endif  // CONFIG_COMPOUND_MODES
+
       vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
       model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum, NULL, NULL);
       rd = RDCOST(x->rdmult, x->rddiv, rs + tmp_rate_mv + rate_sum, dist_sum);
@@ -6809,11 +6865,17 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   // Therefore, sometimes, NEWMV is chosen instead of NEARESTMV, NEARMV, and
   // ZEROMV. Here, checks are added for those cases, and the mode decisions
   // are corrected.
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+  if ((best_mbmode.mode == NEWMV || best_mbmode.mode == NEAR_FORNEWMV)
+      && !(best_mbmode.mode == NEWMV &&
+           best_mbmode.ref_frame[0] == best_mbmode.ref_frame[1])) {
+#else
   if (best_mbmode.mode == NEWMV
 #if CONFIG_NEWMVREF
       || best_mbmode.mode == NEAR_FORNEWMV
 #endif  // CONFIG_NEWMVREF
       ) {
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
     const MV_REFERENCE_FRAME refs[2] = {best_mbmode.ref_frame[0],
         best_mbmode.ref_frame[1]};
     int comp_pred_mode = refs[1] > INTRA_FRAME;
@@ -6973,6 +7035,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
 #endif  // CONFIG_PALETTE
   }
+
 #if CONFIG_COPY_MODE
   for (copy_mode = REF0;
        copy_mode < (COPY_MODE)(MIN(REF0 + inter_ref_count, COPY_MODE_COUNT));
@@ -7157,6 +7220,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_zero(best_tx_diff);
   }
 #endif  // CONFIG_COPY_MODE
+
 #if CONFIG_PALETTE
   if (bsize >= BLOCK_8X8 && cpi->common.allow_palette_mode &&
       !is_inter_block(mbmi)) {

@@ -131,9 +131,16 @@ static void read_inter_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
 static REFERENCE_MODE read_frame_reference_mode(const VP9_COMMON *cm,
                                                 vp9_reader *r) {
   if (is_compound_reference_allowed(cm)) {
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARITION
+    return vp9_read_bit(r) ?
+        (vp9_read_bit(r) ? (vp9_read_bit(r) ? REFERENCE_MODE_SELECT
+                                            : COMP_SAME_REFERENCE)
+                         : COMPOUND_REFERENCE) : SINGLE_REFERENCE;
+#else
     return vp9_read_bit(r) ? (vp9_read_bit(r) ? REFERENCE_MODE_SELECT
                                               : COMPOUND_REFERENCE)
                            : SINGLE_REFERENCE;
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
   } else {
     return SINGLE_REFERENCE;
   }

@@ -49,12 +49,22 @@ extern const struct {
 } partition_context_lookup[BLOCK_SIZES];
 
 
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+typedef enum {
+  SINGLE_REFERENCE      = 0,
+  COMPOUND_REFERENCE    = 1,
+  COMP_SAME_REFERENCE   = 2,
+  REFERENCE_MODE_SELECT = 3,
+  REFERENCE_MODES       = 4,
+} REFERENCE_MODE;
+#else
 typedef enum {
   SINGLE_REFERENCE      = 0,
   COMPOUND_REFERENCE    = 1,
   REFERENCE_MODE_SELECT = 2,
   REFERENCE_MODES       = 3,
 } REFERENCE_MODE;
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
 
 
 typedef struct {

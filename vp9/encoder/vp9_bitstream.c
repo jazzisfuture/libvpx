@@ -397,10 +397,17 @@ static void write_ref_frames(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     if (cm->reference_mode == REFERENCE_MODE_SELECT) {
       vp9_write(w, is_compound, vp9_get_reference_mode_prob(cm, xd));
     } else {
-      assert(!is_compound == (cm->reference_mode == SINGLE_REFERENCE));
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+      if (mbmi->ref_frame[0] != mbmi->ref_frame[1])
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+        assert(!is_compound == (cm->reference_mode == SINGLE_REFERENCE));
     }
 
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+    if (is_compound && mbmi->ref_frame[0] != mbmi->ref_frame[1]) {
+#else
     if (is_compound) {
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
       vp9_write(w, mbmi->ref_frame[0] == GOLDEN_FRAME,
                 vp9_get_pred_prob_comp_ref_p(cm, xd));
     } else {
@@ -819,18 +826,27 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
       if (mode == NEWMV) {
 #endif  // CONFIG_NEWMVREF
 #endif  // CONFIG_COMPOUND_MODES
-        for (ref = 0; ref < 1 + is_compound; ++ref) {
-#if CONFIG_NEWMVREF
-          if (mode == NEAR_FORNEWMV)
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+        if (is_compound && mode == NEWMV &&
+            mbmi->ref_frame[0] == mbmi->ref_frame[1])
+          for (ref = 0; ref < 2; ++ref)
             vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
-                          &mbmi->ref_mvs[mbmi->ref_frame[ref]][1].as_mv, nmvc,
-                          allow_hp);
-          else
+                          &mbmi->ref_mvs[mbmi->ref_frame[ref]][ref].as_mv,
+                          nmvc, allow_hp);
+        else
+#endif  //  CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+          for (ref = 0; ref < 1 + is_compound; ++ref) {
+#if CONFIG_NEWMVREF
+            if (mode == NEAR_FORNEWMV)
+              vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
+                            &mbmi->ref_mvs[mbmi->ref_frame[ref]][1].as_mv, nmvc,
+                            allow_hp);
+            else
 #endif  // CONFIG_NEWMVREF
-          vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
-                        &mbmi->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
-                        allow_hp);
-        }
+            vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
+                          &mbmi->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
+                          allow_hp);
+          }
       }
 #if CONFIG_COMPOUND_MODES
       else if (mode == NEAREST_NEWMV || mode == NEAR_NEWMV) {
