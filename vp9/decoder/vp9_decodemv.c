@@ -679,7 +679,12 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
         ++counts->comp_ref[ctx][bit];
       ref_frame[idx] = cm->comp_fixed_ref;
       ref_frame[!idx] = cm->comp_var_ref[bit];
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+    } else if (mode == COMP_SAME_REFERENCE ||
+               mode == SINGLE_REFERENCE) {
+#else
     } else if (mode == SINGLE_REFERENCE) {
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
       const int ctx0 = vp9_get_pred_context_single_ref_p1(xd);
       const int bit0 = vp9_read(r, fc->single_ref_prob[ctx0][0]);
       if (!cm->frame_parallel_decoding_mode)
@@ -694,7 +699,11 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
         ref_frame[0] = LAST_FRAME;
       }
 
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+      ref_frame[1] = ref_frame[0];
+#else
       ref_frame[1] = NONE;
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
     } else {
       assert(0 && "Invalid prediction mode.");
     }
@@ -1101,6 +1110,17 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     }
   }
 
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+  if (bsize >= BLOCK_8X8 && mbmi->mode == NEWMV &&
+      mbmi->ref_frame[0] == mbmi->ref_frame[1]) {
+    vp9_find_best_ref_mvs(xd, allow_hp, mbmi->ref_mvs[mbmi->ref_frame[0]],
+                          &nearestmv[0], &nearmv[0]);
+    nearestmv[1].as_int = nearestmv[0].as_int;
+    nearmv[1].as_int = nearmv[0].as_int;
+    ref_mv[0].as_int = nearestmv[0].as_int;
+    ref_mv[1].as_int = nearmv[0].as_int;
+  } else {
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
 #if CONFIG_COMPOUND_MODES
   if (bsize < BLOCK_8X8 ||
       (mbmi->mode != ZEROMV && mbmi->mode != ZERO_ZEROMV)) {
@@ -1113,6 +1133,9 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
       ref_mv[ref].as_int = nearestmv[ref].as_int;
     }
   }
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
+  }
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION
 
   mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
                       ? read_switchable_interp_filter(cm, xd, r)
