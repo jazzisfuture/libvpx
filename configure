@@ -297,6 +297,7 @@ EXPERIMENT_LIST="
     newmvref
     intrabc
     loop_postfilter
+    newintra
 "
 CONFIG_LIST="
     external_build
