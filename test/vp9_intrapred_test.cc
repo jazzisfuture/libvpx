@@ -134,6 +134,7 @@ using std::tr1::make_tuple;
 #if ARCH_X86_64
 INSTANTIATE_TEST_CASE_P(SSE2_TO_C_8, VP9IntraPredTest,
                         ::testing::Values(
+#if !CONFIG_NEWINTRA
                             make_tuple(&vp9_highbd_dc_predictor_32x32_sse2,
                                        &vp9_highbd_dc_predictor_32x32_c, 32, 8),
                             make_tuple(&vp9_highbd_tm_predictor_16x16_sse2,
@@ -146,6 +147,7 @@ INSTANTIATE_TEST_CASE_P(SSE2_TO_C_8, VP9IntraPredTest,
                                        &vp9_highbd_dc_predictor_8x8_c, 8, 8),
                             make_tuple(&vp9_highbd_dc_predictor_16x16_sse2,
                                        &vp9_highbd_dc_predictor_16x16_c, 16, 8),
+#endif
                             make_tuple(&vp9_highbd_v_predictor_4x4_sse,
                                        &vp9_highbd_v_predictor_4x4_c, 4, 8),
                             make_tuple(&vp9_highbd_v_predictor_8x8_sse2,
@@ -158,6 +160,7 @@ INSTANTIATE_TEST_CASE_P(SSE2_TO_C_8, VP9IntraPredTest,
                                        &vp9_highbd_tm_predictor_4x4_c, 4, 8),
                             make_tuple(&vp9_highbd_tm_predictor_8x8_sse2,
                                        &vp9_highbd_tm_predictor_8x8_c, 8, 8)));
+                                       
 #else
 INSTANTIATE_TEST_CASE_P(SSE2_TO_C_8, VP9IntraPredTest,
                         ::testing::Values(
@@ -183,6 +186,7 @@ INSTANTIATE_TEST_CASE_P(SSE2_TO_C_8, VP9IntraPredTest,
 #if ARCH_X86_64
 INSTANTIATE_TEST_CASE_P(SSE2_TO_C_10, VP9IntraPredTest,
                         ::testing::Values(
+#if !CONFIG_NEWINTRA
                             make_tuple(&vp9_highbd_dc_predictor_32x32_sse2,
                                        &vp9_highbd_dc_predictor_32x32_c, 32,
                                        10),
@@ -199,6 +203,7 @@ INSTANTIATE_TEST_CASE_P(SSE2_TO_C_10, VP9IntraPredTest,
                             make_tuple(&vp9_highbd_dc_predictor_16x16_sse2,
                                        &vp9_highbd_dc_predictor_16x16_c, 16,
                                        10),
+#endif
                             make_tuple(&vp9_highbd_v_predictor_4x4_sse,
                                        &vp9_highbd_v_predictor_4x4_c, 4, 10),
                             make_tuple(&vp9_highbd_v_predictor_8x8_sse2,
@@ -240,6 +245,7 @@ INSTANTIATE_TEST_CASE_P(SSE2_TO_C_10, VP9IntraPredTest,
 #if ARCH_X86_64
 INSTANTIATE_TEST_CASE_P(SSE2_TO_C_12, VP9IntraPredTest,
                         ::testing::Values(
+#if !CONFIG_NEWINTRA                          
                             make_tuple(&vp9_highbd_dc_predictor_32x32_sse2,
                                        &vp9_highbd_dc_predictor_32x32_c, 32,
                                        12),
@@ -256,6 +262,7 @@ INSTANTIATE_TEST_CASE_P(SSE2_TO_C_12, VP9IntraPredTest,
                             make_tuple(&vp9_highbd_dc_predictor_16x16_sse2,
                                        &vp9_highbd_dc_predictor_16x16_c, 16,
                                        12),
+#endif
                             make_tuple(&vp9_highbd_v_predictor_4x4_sse,
                                        &vp9_highbd_v_predictor_4x4_c, 4, 12),
                             make_tuple(&vp9_highbd_v_predictor_8x8_sse2,
