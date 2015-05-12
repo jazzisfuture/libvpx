@@ -719,7 +719,7 @@ static void encode_block_b(int blk_row, int blk_col, int plane,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   uint8_t *dst;
   ENTROPY_CONTEXT *a, *l;
-  const int block_stride = num_4x4_blocks_wide_lookup[plane_bsize];
+  const int block_stride = num_4x4_blocks_wide_lookup[xd->mi[0].mbmi.sb_type];
   int i;
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
   a = &ctx->ta[plane][blk_col];
@@ -741,6 +741,25 @@ static void encode_block_b(int blk_row, int blk_col, int plane,
 
   if (x->optimize) {
     int context;
+    switch (tx_size) {
+      case TX_4X4:
+        break;
+      case TX_8X8:
+        a[0] = !!*(const uint16_t *)&a[0];
+        l[0] = !!*(const uint16_t *)&l[0];
+        break;
+      case TX_16X16:
+        a[0] = !!*(const uint32_t *)&a[0];
+        l[0] = !!*(const uint32_t *)&l[0];
+        break;
+      case TX_32X32:
+        a[0] = !!*(const uint64_t *)&a[0];
+        l[0] = !!*(const uint64_t *)&l[0];
+        break;
+      default:
+        assert(0 && "Invalid transform size.");
+        break;
+    }
     context = combine_entropy_contexts(*a, *l);
     *a = *l = optimize_b(x, plane, block, tx_size, context) > 0;
   } else {
@@ -823,6 +842,7 @@ static void encode_block_inter(int blk_row, int blk_col,
       mbmi->inter_tx_size[tx_idx];
   int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
+
   if (xd->mb_to_bottom_edge < 0)
     max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
   if (xd->mb_to_right_edge < 0)

@@ -1235,9 +1235,8 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
   int max_blocks_high = num_4x4_blocks_high_lookup[bsize];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
   int block_stride = max_blocks_wide;
-  BLOCK_SIZE txm_bsize = txsize_to_bsize[tx_size];
-  int mi_width = num_8x8_blocks_wide_lookup[txm_bsize];
-  int mi_height = num_8x8_blocks_high_lookup[txm_bsize];
+  int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  int mi_height = num_8x8_blocks_high_lookup[bsize];
   int64_t this_rd = INT64_MAX;
   ENTROPY_CONTEXT ctxa[MAX_MB_PLANE][16], ctxl[MAX_MB_PLANE][16];
   TXFM_CONTEXT txa[8], txl[8];
@@ -1245,7 +1244,7 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
   int ctx = txfm_partition_context(xd, blk_row, blk_col, tx_size);
   int zero_blk_rate;
   int i;
-  int rate_uv = 0, skip_uv = 1;
+  int rate_uv = 0, skip_uv[2] = {1 , 1};
   int64_t dist_uv = 0, bsse_uv = 0;
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
@@ -1301,19 +1300,46 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
       for (i = 1; i < MAX_MB_PLANE; ++i) {
         struct macroblockd_plane *const pdc = &xd->plane[i];
         const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pdc);
+        int this_rate_uv = 0;
+        int64_t this_dist_uv = 0, this_bsse_uv = 0;
+        int this_skip_uv = 1;
         TX_SIZE uv_tx_size = get_uv_tx_size_impl(tx_size, bsize,
                                                  pdc->subsampling_x,
                                                  pdc->subsampling_y);
         tx_block_rd_b(cpi, x, uv_tx_size, (blk_row / 2), (blk_col / 2),
                       i, block, plane_bsize, ta[i], tl[i],
-                      &zero_blk_rate, &rate_uv, &dist_uv, &bsse_uv, &skip_uv);
+                      &zero_blk_rate, &this_rate_uv, &this_dist_uv,
+                      &this_bsse_uv, &this_skip_uv);
+        if ((RDCOST(x->rdmult, x->rddiv, this_rate_uv, this_dist_uv) >=
+             RDCOST(x->rdmult, x->rddiv, zero_blk_rate, this_bsse_uv)) &&
+            !xd->lossless) {
+          int k;
+          this_rate_uv = zero_blk_rate;
+          this_dist_uv = this_bsse_uv;
+          this_skip_uv = 1;
+          for (k = 0; k < (1 << uv_tx_size); ++k) {
+            ta[i][blk_col + k] = 0;
+            tl[i][blk_row + k] = 0;
+          }
+          x->blk_skip[i][(blk_row / 2) * block_stride + (blk_col / 2)] = 1;
+        } else {
+          x->blk_skip[i][(blk_row / 2) * block_stride + (blk_col / 2)] = 0;
+        }
+
+        rate_uv += this_rate_uv;
+        dist_uv += this_dist_uv;
+        bsse_uv += this_bsse_uv;
+        skip_uv[i - 1] = this_skip_uv;
       }
+
       *rate += rate_uv;
       *dist += dist_uv;
       *bsse += bsse_uv;
-      *skip &= skip_uv;
+//      *skip &= (skip_uv[0] & skip_uv[1]);
     }
     this_rd = RDCOST(x->rdmult, x->rddiv, *rate, *dist);
+
+    return;
   }
 
   if (tx_size > TX_4X4) {
@@ -1358,7 +1384,7 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
       sum_rate += rate_uv;
       sum_dist += dist_uv;
       sum_bsse += bsse_uv;
-      all_skip &= skip_uv;
+      all_skip &= (skip_uv[0] & skip_uv[1]);
     }
 
     sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
@@ -1373,6 +1399,9 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
       vpx_memcpy(xd->left_txfm_context, txl,
                  sizeof(*xd->left_txfm_context) * mi_height);
       x->blk_skip[0][blk_row * block_stride + blk_col] = *skip;
+      x->blk_skip[1][(blk_row / 2) * block_stride + (blk_col / 2)] = skip_uv[0];
+      x->blk_skip[2][(blk_row / 2) * block_stride + (blk_col / 2)] = skip_uv[1];
+      *skip &= (skip_uv[0] & skip_uv[1]);
     } else {
       *rate = sum_rate;
       *dist = sum_dist;
@@ -1381,9 +1410,9 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
 
       for (i = 0; i < MAX_MB_PLANE; ++i) {
         vpx_memcpy(ta[i], ctxa[i], sizeof(ENTROPY_CONTEXT) *
-                   num_4x4_blocks_wide_lookup[txm_bsize]);
+                   max_blocks_wide);
         vpx_memcpy(tl[i], ctxl[i], sizeof(ENTROPY_CONTEXT) *
-                   num_4x4_blocks_high_lookup[txm_bsize]);
+                   max_blocks_high);
       }
     }
   }

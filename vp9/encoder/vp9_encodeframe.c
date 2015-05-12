@@ -2700,6 +2700,15 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   if (best_rdc.rate < INT_MAX && best_rdc.dist < INT64_MAX &&
       pc_tree->index != 3) {
     int output_enabled = (bsize == BLOCK_64X64);
+
+//    if (output_enabled && cm->current_video_frame == 11 &&
+//        cm->show_frame == 0) {
+//      FILE *pf = fopen("enc_modes1.txt", "a");
+//      fprintf(pf, "pos (%d, %d), rate %d, dist %d\n",
+//              mi_row, mi_col, best_rdc.rate, best_rdc.dist);
+//      fclose(pf);
+//    }
+
     encode_sb(cpi, td, tile_info, tp, mi_row, mi_col, output_enabled,
               bsize, pc_tree);
   }
