@@ -25,7 +25,7 @@ $$(BUILD_PFX)$(1).h: $$(SRC_PATH_BARE)/$(2)
 	@echo "    [CREATE] $$@"
 	$$(qexec)$$(SRC_PATH_BARE)/build/make/rtcd.pl --arch=$$(TGT_ISA) \
           --sym=$(1) \
-          --config=$$(CONFIG_DIR)$$(target)$$(if $$(FAT_ARCHS),,-$$(TOOLCHAIN)).mk \
+          --config=$$(CONFIG_DIR)$$(target)-$$(TOOLCHAIN).mk \
           $$(RTCD_OPTIONS) $$^ > $$@
 CLEAN-OBJS += $$(BUILD_PFX)$(1).h
 RTCD += $$(BUILD_PFX)$(1).h
@@ -34,12 +34,7 @@ endef
 CODEC_SRCS-yes += CHANGELOG
 CODEC_SRCS-yes += libs.mk
 
-# If this is a universal (fat) binary, then all the subarchitectures have
-# already been built and our job is to stitch them together. The
-# BUILD_LIBVPX variable indicates whether we should be building
-# (compiling, linking) the library. The LIPO_LIBVPX variable indicates
-# that we're stitching.
-$(eval $(if $(filter universal%,$(TOOLCHAIN)),LIPO_LIBVPX,BUILD_LIBVPX):=yes)
+BUILD_LIBVPX := yes
 
 include $(SRC_PATH_BARE)/vpx/vpx_codec.mk
 CODEC_SRCS-yes += $(addprefix vpx/,$(call enabled,API_SRCS))
@@ -313,9 +308,6 @@ INSTALL_MAPS += $(LIBSUBDIR)/pkgconfig/%.pc %.pc
 CLEAN-OBJS += vpx.pc
 endif
 
-LIBS-$(LIPO_LIBVPX) += libvpx.a
-$(eval $(if $(LIPO_LIBVPX),$(call lipo_lib_template,libvpx.a)))
-
 #
 # Rule to make assembler configuration file from C configuration file
 #
@@ -453,8 +445,7 @@ $(foreach bin,$(LIBVPX_TEST_BINS),\
     $(if $(BUILD_LIBVPX),$(eval $(call linkerxx_template,$(bin),\
         $(LIBVPX_TEST_OBJS) \
         -L. -lvpx -lgtest $(extralibs) -lm)\
-        )))\
-    $(if $(LIPO_LIBS),$(eval $(call lipo_bin_template,$(bin))))\
+        )))
 
 endif
 
