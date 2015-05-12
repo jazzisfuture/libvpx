@@ -1604,7 +1604,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       // TODO(yunqingwang): Check intra mode mask and only update freq_fact
       // for those valid modes.
       for (i = 0; i < intra_modes; i++) {
-        PREDICTION_MODE this_mode = intra_mode_list[i];
+        this_mode = intra_mode_list[i];
         update_thresh_freq_fact(cpi, tile_data, bsize, INTRA_FRAME,
                                 best_mode_idx, this_mode);
       }
