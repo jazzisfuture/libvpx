@@ -332,7 +332,31 @@ static INLINE void highbd_dc_top_predictor(uint16_t *dst, ptrdiff_t stride,
     dst += stride;
   }
 }
+#if CONFIG_NEWINTRA
+static INLINE void highbd_dc_predictor(uint16_t *dst, ptrdiff_t stride,
+                                       int bs, const uint16_t *above,
+                                       const uint16_t *left, int bd) {
+  int i, r, expected_dc, sum = 0;
+  const int count = 4 * bs;
+  const uint16_t *row0 = above;
+  const uint16_t *row1 = above - 144;
+  const uint16_t *col0 = left;
+  const uint16_t *col1 = left - 64;
+  (void) bd;
 
+  for (i = 0; i < bs; i++) {
+    sum += row0[i] + row1[i];
+    sum += col0[i] + col1[i];
+  }
+
+  expected_dc = (sum + (count >> 1)) / count;
+
+  for (r = 0; r < bs; r++) {
+    vpx_memset16(dst, expected_dc, bs);
+    dst += stride;
+  }
+}
+#else
 static INLINE void highbd_dc_predictor(uint16_t *dst, ptrdiff_t stride,
                                        int bs, const uint16_t *above,
                                        const uint16_t *left, int bd) {
@@ -352,6 +376,7 @@ static INLINE void highbd_dc_predictor(uint16_t *dst, ptrdiff_t stride,
     dst += stride;
   }
 }
+#endif
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static INLINE void d207_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
@@ -715,6 +740,190 @@ static const int taps4_32[10][4] = {
 #endif  // CONFIG_FILTERINTRA
 
 #if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_NEWINTRA
+static void build_intra_predictors_highbd(const MACROBLOCKD *xd,
+                                          const uint8_t *ref8,
+                                          int ref_stride,
+                                          uint8_t *dst8,
+                                          int dst_stride,
+                                          PREDICTION_MODE mode,
+                                          TX_SIZE tx_size,
+                                          int up_available,
+                                          int left_available,
+                                          int right_available,
+                                          int x, int y,
+                                          int plane, int bd) {
+  int i;
+  uint16_t *dst = CONVERT_TO_SHORTPTR(dst8);
+  uint16_t *ref = CONVERT_TO_SHORTPTR(ref8);
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, left_data, 128);
+#if CONFIG_TX64X64
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, above_data, 512 + 32);
+#else
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, above_data, 256 + 32);
+#endif
+  uint16_t *above_row1 = above_data + 16;
+  uint16_t *above_row0 = above_data + 160;
+  uint16_t *left_col1 = left_data;
+  uint16_t *left_col0 = left_data + 64;
+  const uint16_t *const_above_row0 = above_row0;
+  const int bs = 4 << tx_size;
+  int frame_width, frame_height;
+  int x0, y0;
+  const struct macroblockd_plane *const pd = &xd->plane[plane];
+  int base = 128 << (bd - 8);
+  // 127 127 127 127 .. 127 127 127 127 127 127
+  // 127 127 127 127 .. 127 127 127 127 127 127
+  // 129 129  A   B  ..  Y   Z
+  // 129 129  C   D  ..  W   X
+  // 129 129  E   F  ..  U   V
+  // 129 129  G   H  ..  S   T
+
+  // Get current frame pointer, width and height.
+  if (plane == 0) {
+    frame_width = xd->cur_buf->y_width;
+    frame_height = xd->cur_buf->y_height;
+  } else {
+    frame_width = xd->cur_buf->uv_width;
+    frame_height = xd->cur_buf->uv_height;
+  }
+
+  // Get block position in current frame.
+  x0 = (-xd->mb_to_left_edge >> (3 + pd->subsampling_x)) + x;
+  y0 = (-xd->mb_to_top_edge >> (3 + pd->subsampling_y)) + y;
+
+  // left
+  if (left_available) {
+    if (xd->mb_to_bottom_edge < 0) {
+      /* slower path if the block needs border extension */
+      if (y0 + bs <= frame_height) {
+        for (i = 0; i < bs; ++i)
+          left_col0[i] = ref[i * ref_stride - 1];
+          left_col1[i] = ref[i * ref_stride - 2];
+      } else {
+        const int extend_bottom = frame_height - y0;
+        for (i = 0; i < extend_bottom; ++i) {
+          left_col0[i] = ref[i * ref_stride - 1];
+          left_col1[i] = ref[i * ref_stride - 2];
+        }
+        for (; i < bs; ++i) {
+          left_col0[i] = ref[(extend_bottom - 1) * ref_stride - 1];
+          left_col1[i] = ref[(extend_bottom - 1) * ref_stride - 2];
+        }
+      }
+    } else {
+      /* faster path if the block does not need extension */
+      for (i = 0; i < bs; ++i) {
+        left_col0[i] = ref[i * ref_stride - 1];
+        left_col1[i] = ref[i * ref_stride - 2];
+      }
+    }
+  } else {
+    // TODO(Peter): this value should probably change for high bitdepth
+    vpx_memset16(left_col0, base + 1, bs);
+    vpx_memset16(left_col1, base + 1, bs);
+  }
+
+  // TODO(hkuang) do not extend 2*bs pixels for all modes.
+  // above
+  if (up_available) {
+    const uint16_t *above_ref0 = ref - ref_stride;
+    const uint16_t *above_ref1 = ref - ref_stride * 2;
+    if (xd->mb_to_right_edge < 0) {
+      /* slower path if the block needs border extension */
+      if (x0 + 2 * bs <= frame_width) {
+        if (right_available && bs == 4) {
+          vpx_memcpy(above_row0, above_ref0, 2 * bs * sizeof(uint16_t));
+          vpx_memcpy(above_row1, above_ref1, 2 * bs * sizeof(uint16_t));
+        } else {
+          vpx_memcpy(above_row0, above_ref0, bs * sizeof(uint16_t));
+          vpx_memset16(above_row0 + bs, above_row0[bs - 1], bs);
+          vpx_memcpy(above_row1, above_ref1, bs * sizeof(uint16_t));
+          vpx_memset16(above_row1 + bs, above_row1[bs - 1], bs);
+        }
+      } else if (x0 + bs <= frame_width) {
+        const int r = frame_width - x0;
+        if (right_available && bs == 4) {
+          vpx_memcpy(above_row0, above_ref0, r * sizeof(uint16_t));
+          vpx_memset16(above_row0 + r, above_row0[r - 1],
+                       x0 + 2 * bs - frame_width);
+          vpx_memcpy(above_row1, above_ref1, r * sizeof(uint16_t));
+          vpx_memset16(above_row1 + r, above_row1[r - 1],
+                       x0 + 2 * bs - frame_width);
+        } else {
+          vpx_memcpy(above_row0, above_ref0, bs * sizeof(uint16_t));
+          vpx_memset16(above_row0 + bs, above_row0[bs - 1], bs);
+          vpx_memcpy(above_row1, above_ref1, bs * sizeof(uint16_t));
+          vpx_memset16(above_row1 + bs, above_row1[bs - 1], bs);
+        }
+      } else if (x0 <= frame_width) {
+        const int r = frame_width - x0;
+        if (right_available && bs == 4) {
+          vpx_memcpy(above_row0, above_ref0, r * sizeof(uint16_t));
+          vpx_memset16(above_row0 + r, above_row0[r - 1],
+                       x0 + 2 * bs - frame_width);
+          vpx_memcpy(above_row1, above_ref1, r * sizeof(uint16_t));
+          vpx_memset16(above_row1 + r, above_row1[r - 1],
+                       x0 + 2 * bs - frame_width);
+        } else {
+          vpx_memcpy(above_row0, above_ref0, r * sizeof(uint16_t));
+          vpx_memset16(above_row0 + r, above_row0[r - 1],
+                       x0 + 2 * bs - frame_width);
+          vpx_memcpy(above_row1, above_ref1, r * sizeof(uint16_t));
+          vpx_memset16(above_row1 + r, above_row1[r - 1],
+                       x0 + 2 * bs - frame_width);
+        }
+      }
+      // TODO(Peter) this value should probably change for high bitdepth
+      above_row0[-1] = left_available ? above_ref0[-1] : (base+1);
+      above_row1[-1] = left_available ? above_ref1[-1] : (base+1);
+    } else {
+      /* faster path if the block does not need extension */
+      if (bs == 4 && right_available && left_available) {
+        vpx_memcpy(above_row0, above_ref0, 2 * bs * sizeof(uint16_t));
+        vpx_memcpy(above_row1, above_ref1, 2 * bs * sizeof(uint16_t));
+        const_above_row0 = above_row0;
+        // TODO(Peter): this value should probably change for high bitdepth
+        above_row0[-1] = above_ref0[-1];
+        above_row1[-1] = above_ref1[-1];
+      } else {
+        vpx_memcpy(above_row0, above_ref0, bs * sizeof(uint16_t));
+        vpx_memcpy(above_row1, above_ref1, bs * sizeof(uint16_t));
+        if (bs == 4 && right_available) {
+          vpx_memcpy(above_row0 + bs, above_ref0 + bs, bs * sizeof(uint16_t));
+          vpx_memcpy(above_row1 + bs, above_ref1 + bs, bs * sizeof(uint16_t));
+        } else {
+          vpx_memset16(above_row0 + bs, above_row0[bs - 1], bs);
+          vpx_memset16(above_row1 + bs, above_row1[bs - 1], bs);
+        }
+        // TODO(Peter): this value should probably change for high bitdepth
+        above_row0[-1] = left_available ? above_ref0[-1] : (base+1);
+        above_row1[-1] = left_available ? above_ref1[-1] : (base+1);
+      }
+    }
+  } else {
+    vpx_memset16(above_row0, base - 1, bs * 2);
+    vpx_memset16(above_row1, base - 1, bs * 2);
+    // TODO(Peter): this value should probably change for high bitdepth
+    above_row0[-1] = base - 1;
+    above_row1[-1] = base - 1;
+  }
+
+  // predict
+  if (mode == DC_PRED) {
+    // ToDo (yaowu): currently only pass const_above_row0 with the assumption
+    //               of fixed offset of 144 pixels between row0 and row1 and
+    //               64 pixels between col0 and col1
+    dc_pred_high[left_available][up_available][tx_size](dst, dst_stride,
+                                                        const_above_row0,
+                                                        left_col0, xd->bd);
+  } else {
+    pred_high[mode][tx_size](dst, dst_stride, const_above_row0, left_col0,
+                             xd->bd);
+  }
+}
+
+#else
 static void build_intra_predictors_highbd(const MACROBLOCKD *xd,
                                           const uint8_t *ref8,
                                           int ref_stride,
@@ -853,6 +1062,7 @@ static void build_intra_predictors_highbd(const MACROBLOCKD *xd,
                              xd->bd);
   }
 }
+#endif  // CONFIG_NEWINTRA
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
