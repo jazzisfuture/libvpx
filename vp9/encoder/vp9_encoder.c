@@ -2666,7 +2666,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
 static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
   struct loopfilter *lf = &cm->lf;
-  if (xd->lossless) {
+  if (1||xd->lossless) {
     lf->filter_level = 0;
   } else {
     struct vpx_usec_timer timer;
