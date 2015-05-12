@@ -222,7 +222,7 @@ static const int mode_lf_lut[MB_MODE_COUNT] = {
 #endif  // CONFIG_INTRABC
   1, 1, 0, 1,                    // INTER_MODES (ZEROMV == 0)
 #if CONFIG_NEWMVREF
-  1,  // NEAR_FORNEWMV mode
+  1,    // NEW2MV mode
 #endif  // CONFIG_NEWMVREF
 #if CONFIG_COMPOUND_MODES
   1, 1, 1, 1, 1, 1, 1, 0, 1          // INTER_COMPOUND_MODES (ZERO_ZEROMV == 0)

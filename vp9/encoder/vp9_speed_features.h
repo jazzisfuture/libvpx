@@ -36,7 +36,7 @@ enum {
   INTER_ALL =
       (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) | (1 << NEWMV) |
 #if CONFIG_NEWMVREF
-      (1 << NEAR_FORNEWMV) |
+      (1 << NEW2MV) |
 #endif  // CONFIG_NEWMVREF
       (1 << NEAREST_NEARESTMV) | (1 << ZERO_ZEROMV) | (1 << NEAREST_NEARMV) |
       (1 << NEAR_NEARESTMV) | (1 << NEW_NEWMV) | (1 << NEAREST_NEWMV) |
@@ -76,7 +76,7 @@ enum {
 enum {
   INTER_ALL = (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) |
 #if CONFIG_NEWMVREF
-      (1 << NEWMV) | (1 << NEAR_FORNEWMV),
+      (1 << NEWMV) | (1 << NEW2MV),
 #else
       (1 << NEWMV),
 #endif  // CONFIG_NEWMVREF

@@ -60,7 +60,7 @@ static const int mode_2_counter[MB_MODE_COUNT] = {
   3,  // ZEROMV
   1,  // NEWMV
 #if CONFIG_NEWMVREF
-  1,  // NEAR_FORNEWMV
+  1,  // NEW2MV
 #endif  // CONFIG_NEWMVREF
 #if CONFIG_COMPOUND_MODES
   0,  // NEAREST_NEARESTMV

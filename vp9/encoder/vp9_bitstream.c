@@ -764,12 +764,12 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #if CONFIG_COMPOUND_MODES
           if (b_mode == NEWMV ||
 #if CONFIG_NEWMVREF
-              b_mode == NEAR_FORNEWMV ||
+              b_mode == NEW2MV ||
 #endif  // CONFIG_NEWMVREF
               b_mode == NEW_NEWMV) {
 #else
 #if CONFIG_NEWMVREF
-          if (b_mode == NEWMV || b_mode == NEAR_FORNEWMV) {
+          if (b_mode == NEWMV || b_mode == NEW2MV) {
 #else
           if (b_mode == NEWMV) {
 #endif  // CONFIG_NEWMVREF
@@ -809,19 +809,19 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #if CONFIG_COMPOUND_MODES
       if (mode == NEWMV ||
 #if CONFIG_NEWMVREF
-          mode == NEAR_FORNEWMV ||
+          mode == NEW2MV ||
 #endif  // CONFIG_NEWMVREF
           mode == NEW_NEWMV) {
 #else  // CONFIG_COMPOUND_MODES
 #if CONFIG_NEWMVREF
-      if (mode == NEWMV || mode == NEAR_FORNEWMV) {
+      if (mode == NEWMV || mode == NEW2MV) {
 #else
       if (mode == NEWMV) {
 #endif  // CONFIG_NEWMVREF
 #endif  // CONFIG_COMPOUND_MODES
         for (ref = 0; ref < 1 + is_compound; ++ref) {
 #if CONFIG_NEWMVREF
-          if (mode == NEAR_FORNEWMV)
+          if (mode == NEW2MV)
             vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
                           &mbmi->ref_mvs[mbmi->ref_frame[ref]][1].as_mv, nmvc,
                           allow_hp);
