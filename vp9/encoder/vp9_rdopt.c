@@ -1254,9 +1254,9 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   // Store the above and left transform block partition context.
-  vpx_memcpy(stxa, xd->above_txfm_context,
+  vpx_memcpy(stxa, xd->above_txfm_context + (blk_col / 2),
              sizeof(*xd->above_txfm_context) * mi_width);
-  vpx_memcpy(stxl, xd->left_txfm_context,
+  vpx_memcpy(stxl, xd->left_txfm_context + (blk_row / 2),
              sizeof(*xd->left_txfm_context) * mi_height);
 
   if (xd->mb_to_bottom_edge < 0)
@@ -1326,15 +1326,15 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
     int this_skip, all_skip = 1;
     int64_t sum_rd;
 
-    vpx_memcpy(txa, xd->above_txfm_context,
+    vpx_memcpy(txa, xd->above_txfm_context + (blk_col / 2),
                sizeof(*xd->above_txfm_context) * mi_width);
-    vpx_memcpy(txl, xd->left_txfm_context,
+    vpx_memcpy(txl, xd->left_txfm_context + (blk_row / 2),
                sizeof(*xd->left_txfm_context) * mi_height);
 
     // Restore the above and left transform block partition context.
-    vpx_memcpy(xd->above_txfm_context, stxa,
+    vpx_memcpy(xd->above_txfm_context + (blk_col / 2), stxa,
                sizeof(*xd->above_txfm_context) * mi_width);
-    vpx_memcpy(xd->left_txfm_context, stxl,
+    vpx_memcpy(xd->left_txfm_context + (blk_row / 2), stxl,
                sizeof(*xd->left_txfm_context) * mi_height);
 
     sum_rate = vp9_cost_bit(cpi->common.fc->txfm_partition_prob[ctx], 1);
@@ -1367,9 +1367,9 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
         for (idx = blk_col; idx < blk_col + bh; idx += 2)
           mbmi->inter_tx_size[(idy / 2) * 8 + (idx / 2)] = tx_size;
       mbmi->tx_size = tx_size;
-      vpx_memcpy(xd->above_txfm_context, txa,
+      vpx_memcpy(xd->above_txfm_context + (blk_col / 2), txa,
                  sizeof(*xd->above_txfm_context) * mi_width);
-      vpx_memcpy(xd->left_txfm_context, txl,
+      vpx_memcpy(xd->left_txfm_context + (blk_row / 2), txl,
                  sizeof(*xd->left_txfm_context) * mi_height);
       x->blk_skip[0][blk_row * block_stride + blk_col] = *skip;
       *skip &= skip_uv;
