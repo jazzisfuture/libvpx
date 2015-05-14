@@ -741,6 +741,25 @@ static void encode_block_b(int blk_row, int blk_col, int plane,
 
   if (x->optimize) {
     int context;
+    switch (tx_size) {
+      case TX_4X4:
+        break;
+      case TX_8X8:
+        a[0] = !!*(const uint16_t *)&a[0];
+        l[0] = !!*(const uint16_t *)&l[0];
+        break;
+      case TX_16X16:
+        a[0] = !!*(const uint32_t *)&a[0];
+        l[0] = !!*(const uint32_t *)&l[0];
+        break;
+      case TX_32X32:
+        a[0] = !!*(const uint64_t *)&a[0];
+        l[0] = !!*(const uint64_t *)&l[0];
+        break;
+      default:
+        assert(0 && "Invalid transform size.");
+        break;
+    }
     context = combine_entropy_contexts(*a, *l);
     *a = *l = optimize_b(x, plane, block, tx_size, context) > 0;
   } else {
