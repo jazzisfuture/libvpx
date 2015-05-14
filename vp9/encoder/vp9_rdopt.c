@@ -1311,7 +1311,6 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
       *rate += rate_uv;
       *dist += dist_uv;
       *bsse += bsse_uv;
-      *skip &= skip_uv;
     }
     this_rd = RDCOST(x->rdmult, x->rddiv, *rate, *dist);
   }
@@ -1373,6 +1372,7 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
       vpx_memcpy(xd->left_txfm_context, txl,
                  sizeof(*xd->left_txfm_context) * mi_height);
       x->blk_skip[0][blk_row * block_stride + blk_col] = *skip;
+      *skip &= skip_uv;
     } else {
       *rate = sum_rate;
       *dist = sum_dist;
