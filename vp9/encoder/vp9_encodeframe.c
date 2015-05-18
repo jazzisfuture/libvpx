@@ -4595,13 +4595,14 @@ static void convert_translation_to_params(
   if (abs(model->mv.as_mv.col) < MIN_TRANSLATION_THRESH &&
       abs(model->mv.as_mv.row) < MIN_TRANSLATION_THRESH) {
     model->mv.as_int = 0;
+  } else {
+    model->mv.as_mv.col =
+        clamp(model->mv.as_mv.col,
+              -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
+    model->mv.as_mv.row =
+        clamp(model->mv.as_mv.row,
+              -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
   }
-  model->mv.as_mv.col =
-      clamp(model->mv.as_mv.col,
-            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
-  model->mv.as_mv.row =
-      clamp(model->mv.as_mv.row,
-            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
 }
 
 static void convert_rotzoom_to_params(double *H, Global_Motion_Params *model) {
@@ -4616,7 +4617,21 @@ static void convert_rotzoom_to_params(double *H, Global_Motion_Params *model) {
   model->rotation = clamp(
       model->rotation, -(1 << ABS_ROTATION_BITS), (1 << ABS_ROTATION_BITS));
 
-  convert_translation_to_params(H + 2, model);
+  model->mv.as_mv.col = (int) floor(H[2] * 8 + 0.5);
+  model->mv.as_mv.row = (int) floor(H[3] * 8 + 0.5);
+  model->mv.as_mv.col =
+      clamp(model->mv.as_mv.col,
+            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
+  model->mv.as_mv.row =
+      clamp(model->mv.as_mv.row,
+            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
+
+  if (model->zoom == 0 && model->rotation == 0) {
+    if (abs(model->mv.as_mv.col) < MIN_TRANSLATION_THRESH &&
+        abs(model->mv.as_mv.row) < MIN_TRANSLATION_THRESH) {
+      model->mv.as_int = 0;
+    }
+  }
 }
 
 static void convert_model_to_params(double *H, TransformationType type,
@@ -4660,7 +4675,8 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   cm->tx_mode = select_tx_mode(cpi);
 
 #if CONFIG_GLOBAL_MOTION
-#define GLOBAL_MOTION_MODEL TRANSLATION
+#define GLOBAL_MOTION_MODEL ROTZOOM
+#define GLOBAL_MOTION_ADVANTAGE_THRESH 0.6
 // #define USE_BLOCK_BASED_GLOBAL_MOTION_COMPUTATION
   vp9_clear_system_state();
   vp9_zero(cpi->global_motion_used);
@@ -4688,21 +4704,55 @@ static void encode_frame_internal(VP9_COMP *cpi) {
           int i;
           for (i = 0; i < num; i++) {
             /*
-            printf("Ref %d [%d]: %f %f\n",
+            printf("Ref %d [%d]: %f %f [Warp Error %f]\n",
                    frame, cm->current_video_frame,
                    global_motion[i * get_numparams(GLOBAL_MOTION_MODEL)],
-                   global_motion[i * get_numparams(GLOBAL_MOTION_MODEL) + 1]);
-                   */
+                   global_motion[i * get_numparams(GLOBAL_MOTION_MODEL) + 1],
+                   vp9_warp_erroradv_unq(GLOBAL_MOTION_MODEL,
+                                         global_motion,
+                                         ref_buf->y_buffer,
+                                         ref_buf->y_crop_width,
+                                         ref_buf->y_crop_height,
+                                         ref_buf->y_stride,
+                                         cpi->Source->y_buffer,
+                                         0, 0,
+                                         cpi->Source->y_crop_width,
+                                         cpi->Source->y_crop_height,
+                                         cpi->Source->y_stride,
+                                         0, 0, 16, 16));
+                                         */
             convert_model_to_params(
                 global_motion + i * get_numparams(GLOBAL_MOTION_MODEL),
                 GLOBAL_MOTION_MODEL,
                 &cm->global_motion[frame][i]);
-            printf("Ref %d [%d]: %d %d %d %d\n",
-                   frame, cm->current_video_frame,
-                   cm->global_motion[frame][i].zoom,
-                   cm->global_motion[frame][i].rotation,
-                   cm->global_motion[frame][i].mv.as_mv.col,
-                   cm->global_motion[frame][i].mv.as_mv.row);
+            if (get_gmtype(&cm->global_motion[frame][i]) != GLOBAL_ZERO) {
+              double erroradvantage =
+                  vp9_warp_erroradv(&cm->global_motion[frame][i],
+                                    ref_buf->y_buffer,
+                                    ref_buf->y_crop_width,
+                                    ref_buf->y_crop_height,
+                                    ref_buf->y_stride,
+                                    cpi->Source->y_buffer,
+                                    0, 0,
+                                    cpi->Source->y_crop_width,
+                                    cpi->Source->y_crop_height,
+                                    cpi->Source->y_stride,
+                                    0, 0, 16, 16);
+              /*
+              printf("Ref %d [%d]: %d %d %d %d [Warp Error %f]\n",
+                     frame, cm->current_video_frame,
+                     cm->global_motion[frame][i].zoom,
+                     cm->global_motion[frame][i].rotation,
+                     cm->global_motion[frame][i].mv.as_mv.col,
+                     cm->global_motion[frame][i].mv.as_mv.row,
+                     erroradvantage);
+                     */
+              if (erroradvantage > GLOBAL_MOTION_ADVANTAGE_THRESH) {
+                // Not enough advantage in using a global model. Make 0.
+                vpx_memset(&cm->global_motion[frame][i], 0,
+                           sizeof(cm->global_motion[frame][i]));
+              }
+            }
           }
           cm->num_global_motion[frame] = num;
         }

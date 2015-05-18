@@ -52,9 +52,9 @@ static INLINE void clamp_mv(MV *mv, int min_col, int max_col,
 #define MAX_GLOBAL_MOTION_MODELS  1
 
 #define ZOOM_PRECISION_BITS       6
-#define ROTATION_PRECISION_BITS   4
+#define ROTATION_PRECISION_BITS   6
 
-#define ABS_ZOOM_BITS             3
+#define ABS_ZOOM_BITS             4
 #define ABS_ROTATION_BITS         4
 #define ABS_TRANSLATION_BITS      7
 
