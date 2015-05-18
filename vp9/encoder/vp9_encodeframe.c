@@ -5109,6 +5109,9 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       ) {
     int plane;
     mbmi->skip = 1;
+    xd->debug = (output_enabled && cm->current_video_frame == 0 && mi_row == 8 && mi_col == 1);
+    if (xd->debug)
+      printf("mi_row = %d, mi_col=%d --------e\n", mi_row, mi_col);
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
     if (output_enabled)

@@ -638,6 +638,17 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
     no_coeff = !eob;
 #endif
   }
+  if (xd->debug && plane==0) {
+    int bw = 4 << tx_size;
+    int16_t *dst_s = CONVERT_TO_SHORTPTR(dst);
+    int i, j;
+    printf("decodedframe\n");
+    for (i=0;i<bw; ++i) {
+      for(j=0;j<bw;++j)
+        printf("%5d", dst_s[i*pd->dst.stride + j]);
+      printf("\n");
+    }
+  }
 
 #if CONFIG_TX_SKIP
   if ((mi->mbmi.skip || no_coeff) && mi->mbmi.tx_skip[plane != 0] &&
@@ -1284,6 +1295,9 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   if (less8x8)
     bsize = BLOCK_8X8;
 
+   xd->debug = (cm->current_video_frame == 0 && mi_row == 8 && mi_col == 1);
+   if (xd->debug)
+     printf("mi_row = %d, mi_col=%d --------d\n", mi_row, mi_col);
   if (mbmi->skip) {
     reset_skip_context(xd, bsize);
   } else {

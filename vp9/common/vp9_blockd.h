@@ -389,6 +389,7 @@ typedef struct macroblockd {
   int lossless;
 
   int corrupted;
+  int debug;
 
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[MAX_MB_PLANE][64 * 64]);
 #if CONFIG_PALETTE

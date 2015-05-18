@@ -921,6 +921,16 @@ static void build_intra_predictors_highbd(const MACROBLOCKD *xd,
     pred_high[mode][tx_size](dst, dst_stride, const_above_row0, left_col0,
                              xd->bd);
   }
+  if (xd->debug) {
+    int bw = 4 << tx_size;
+    int i, j;
+    printf("In predict_intra\n");
+    for (i=0;i<bw; ++i) {
+      for(j=0;j<bw;++j)
+        printf("%5d", dst[i*dst_stride + j]);
+      printf("\n");
+    }
+  }
 }
 
 #else

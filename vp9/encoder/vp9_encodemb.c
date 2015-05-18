@@ -3296,6 +3296,17 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         assert(0);
         return;
     }
+    if (xd->debug && plane==0) {
+      int bw = 4 << tx_size;
+      int i, j;
+      int16_t *dst_s = CONVERT_TO_SHORTPTR(dst);
+      printf("encodemb\n");
+      for (i=0;i<bw; ++i) {
+        for(j=0;j<bw;++j)
+          printf("%5d", dst_s[i*dst_stride + j]);
+        printf("\n");
+      }
+    }
     if (*eob)
       *(args->skip) = 0;
     return;
