@@ -1112,7 +1112,19 @@ static void write_partition(const VP9_COMMON *const cm,
   const int has_rows = (mi_row + hbs) < cm->mi_rows;
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
 
-  if (has_rows && has_cols) {
+#if CONFIG_BITSTREAM_FIXES
+  // Do not allow non-rectangular partitions if the second one will
+  // be partially outside the frame
+  const int force_split =
+      mi_row + hbs*2 > cm->mi_rows ||
+      mi_col + hbs*2 > cm->mi_cols;
+
+  if (force_split) {
+    assert(p == PARTITION_SPLIT);
+  } else if (has_rows && has_cols) {
+#else
+    if (has_rows && has_cols) {
+#endif
     vp9_write_token(w, vp9_partition_tree, probs, &partition_encodings[p]);
   } else if (!has_rows && has_cols) {
     assert(p == PARTITION_SPLIT || p == PARTITION_HORZ);
