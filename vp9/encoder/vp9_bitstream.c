@@ -2216,7 +2216,7 @@ static void write_global_motion(VP9_COMP *cpi, vp9_writer *w) {
       write_global_motion_params(
           cm->global_motion[frame], cm->fc.global_motion_types_prob, w);
       /*
-      printf("Ref %d [%d] (used %d): %d %d %d %d\n",
+      printf("Enc Ref %d [%d] (used %d): %d %d %d %d\n",
              frame, cm->current_video_frame, cpi->global_motion_used[frame],
              cm->global_motion[frame][i].zoom,
              cm->global_motion[frame][i].rotation,

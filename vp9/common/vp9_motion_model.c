@@ -165,7 +165,7 @@ static void WarpImage(TransformationType type, double *H,
 
 static void convert_params_to_rotzoom(Global_Motion_Params *model,
                                       double *H) {
-  double z = 1.0 + (double) model->zoom / (1 << ZOOM_PRECISION_BITS);
+  double z = (double) model->zoom / (1 << ZOOM_PRECISION_BITS);
   double r = (double) model->rotation / (1 << ROTATION_PRECISION_BITS);
   H[0] =  (1 + z) * cos(r * M_PI / 180.0);
   H[1] = -(1 + z) * sin(r * M_PI / 180.0);
