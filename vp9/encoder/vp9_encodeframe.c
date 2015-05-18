@@ -2835,6 +2835,10 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   int do_rect = 1;
 
   // Override skipping rectangular partition operations for edge blocks
+#if CONFIG_BITSTREAM_FIXES
+  const int force_full_split = (mi_row + mi_step * 2 >= cm->mi_rows) ||
+                               (mi_col + mi_step * 2 >= cm->mi_cols);
+#endif
   const int force_horz_split = (mi_row + mi_step >= cm->mi_rows);
   const int force_vert_split = (mi_col + mi_step >= cm->mi_cols);
   const int xss = x->e_mbd.plane[1].subsampling_x;
@@ -2848,11 +2852,21 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   int none_complexity = 0;
 #endif
 
+#if CONFIG_BITSTREAM_FIXES
+  int partition_none_allowed = !force_horz_split && !force_vert_split &&
+                               !force_full_split;
+  int partition_horz_allowed = !force_vert_split && yss <= xss &&
+                               bsize >= BLOCK_8X8 && !force_full_split;
+  int partition_vert_allowed = !force_horz_split && xss <= yss &&
+                               bsize >= BLOCK_8X8 && !force_full_split;
+#else
   int partition_none_allowed = !force_horz_split && !force_vert_split;
   int partition_horz_allowed = !force_vert_split && yss <= xss &&
                                bsize >= BLOCK_8X8;
   int partition_vert_allowed = !force_horz_split && xss <= yss &&
                                bsize >= BLOCK_8X8;
+#endif
+
 #if CONFIG_PALETTE
   PICK_MODE_CONTEXT *c, *p;
   int previous_size, previous_count[PALETTE_BUF_SIZE];
