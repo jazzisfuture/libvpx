@@ -1331,6 +1331,18 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd, int hbs,
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
   PARTITION_TYPE p;
 
+#if CONFIG_BITSTREAM_FIXES
+  // Do not allow non-rectangular partitions if the second one will
+  // be partially outside the frame
+  const int force_split =
+      mi_row + hbs*2 >= cm->mi_rows ||
+      mi_col + hbs*2 >= cm->mi_cols;
+
+  if(force_split)
+    p = PARTITION_SPLIT;
+  else
+#endif
+
   if (has_rows && has_cols)
     p = (PARTITION_TYPE)vp9_read_tree(r, vp9_partition_tree, probs);
   else if (!has_rows && has_cols)
