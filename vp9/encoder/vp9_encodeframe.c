@@ -4601,13 +4601,14 @@ static void convert_translation_to_params(
   if (abs(model->mv.as_mv.col) < MIN_TRANSLATION_THRESH &&
       abs(model->mv.as_mv.row) < MIN_TRANSLATION_THRESH) {
     model->mv.as_int = 0;
+  } else {
+    model->mv.as_mv.col =
+        clamp(model->mv.as_mv.col,
+              -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
+    model->mv.as_mv.row =
+        clamp(model->mv.as_mv.row,
+              -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
   }
-  model->mv.as_mv.col =
-      clamp(model->mv.as_mv.col,
-            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
-  model->mv.as_mv.row =
-      clamp(model->mv.as_mv.row,
-            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
 }
 
 static void convert_rotzoom_to_params(double *H, Global_Motion_Params *model) {
@@ -4622,7 +4623,21 @@ static void convert_rotzoom_to_params(double *H, Global_Motion_Params *model) {
   model->rotation = clamp(
       model->rotation, -(1 << ABS_ROTATION_BITS), (1 << ABS_ROTATION_BITS));
 
-  convert_translation_to_params(H + 2, model);
+  model->mv.as_mv.col = (int) floor(H[0] * 8 + 0.5);
+  model->mv.as_mv.row = (int) floor(H[1] * 8 + 0.5);
+  model->mv.as_mv.col =
+      clamp(model->mv.as_mv.col,
+            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
+  model->mv.as_mv.row =
+      clamp(model->mv.as_mv.row,
+            -(1 << ABS_TRANSLATION_BITS), (1 << ABS_TRANSLATION_BITS));
+
+  if (model->zoom == 0 && model->rotation == 0) {
+    if (abs(model->mv.as_mv.col) < MIN_TRANSLATION_THRESH &&
+        abs(model->mv.as_mv.row) < MIN_TRANSLATION_THRESH) {
+      model->mv.as_int = 0;
+    }
+  }
 }
 
 static void convert_model_to_params(double *H, TransformationType type,
@@ -4666,7 +4681,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   cm->tx_mode = select_tx_mode(cpi);
 
 #if CONFIG_GLOBAL_MOTION
-#define GLOBAL_MOTION_MODEL TRANSLATION
+#define GLOBAL_MOTION_MODEL ROTZOOM
 // #define USE_BLOCK_BASED_GLOBAL_MOTION_COMPUTATION
   vp9_clear_system_state();
   vp9_zero(cpi->global_motion_used);
