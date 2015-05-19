@@ -333,6 +333,16 @@ static INLINE void init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd) {
     xd->plane[i].dqcoeff = xd->dqcoeff;
     xd->above_context[i] = cm->above_context +
         i * sizeof(*cm->above_context) * 2 * mi_cols_aligned_to_sb(cm->mi_cols);
+
+    if (!i) {
+      memcpy(&xd->plane[i].seg_dequant[0][0], &cm->y_dequant[0][0],
+          sizeof(cm->y_dequant[0]));
+    } else {
+      memcpy(&xd->plane[i].seg_dequant[0][0], &cm->uv_dequant[0][0],
+          sizeof(cm->uv_dequant[0]));
+    }
+    xd->fc = (struct frame_context *)cm->fc;
+    xd->frame_parallel_decoding_mode = cm->frame_parallel_decoding_mode;
   }
 
   xd->above_seg_context = cm->above_seg_context;

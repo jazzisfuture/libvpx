@@ -21,6 +21,7 @@
 #include "vp9/common/vp9_filter.h"
 #include "vp9/common/vp9_mv.h"
 #include "vp9/common/vp9_scale.h"
+#include "vp9/common/vp9_seg_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -170,9 +171,12 @@ struct macroblockd_plane {
   int subsampling_y;
   struct buf_2d dst;
   struct buf_2d pre[2];
-  const int16_t *dequant;
   ENTROPY_CONTEXT *above_context;
   ENTROPY_CONTEXT *left_context;
+  int16_t seg_dequant[MAX_SEGMENTS][2];
+
+  // encoder
+  const int16_t *dequant;
 };
 
 #define BLOCK_OFFSET(x, i) ((x) + (i) * 16)
@@ -185,6 +189,8 @@ typedef struct RefBuffer {
   struct scale_factors sf;
 } RefBuffer;
 
+struct frame_context;
+
 typedef struct macroblockd {
   struct macroblockd_plane plane[MAX_MB_PLANE];
 
@@ -196,14 +202,19 @@ typedef struct macroblockd {
   MB_MODE_INFO *left_mbmi;
   MB_MODE_INFO *above_mbmi;
 
-  int up_available;
-  int left_available;
+  uint8_t up_available;
+  uint8_t left_available;
+  uint8_t lossless;
+  uint8_t corrupted;
 
   /* Distance of MB away from frame edges */
   int mb_to_left_edge;
   int mb_to_right_edge;
   int mb_to_top_edge;
   int mb_to_bottom_edge;
+
+  struct frame_context *fc;
+  int frame_parallel_decoding_mode;
 
   /* pointers to reference frames */
   RefBuffer *block_refs[2];
@@ -224,9 +235,6 @@ typedef struct macroblockd {
 
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[64 * 64]);
-
-  int lossless;
-  int corrupted;
 
   struct vpx_internal_error_info *error_info;
 } MACROBLOCKD;
