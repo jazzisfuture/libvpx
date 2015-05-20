@@ -333,11 +333,25 @@ static INLINE void init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd) {
     xd->plane[i].dqcoeff = xd->dqcoeff;
     xd->above_context[i] = cm->above_context +
         i * sizeof(*cm->above_context) * 2 * mi_cols_aligned_to_sb(cm->mi_cols);
+
+    if (!i) {
+      memcpy(&xd->plane[i].seg_dequant[0][0], &cm->y_dequant[0][0],
+          sizeof(cm->y_dequant));
+    } else {
+      memcpy(&xd->plane[i].seg_dequant[0][0], &cm->uv_dequant[0][0],
+          sizeof(cm->uv_dequant));
+    }
+    xd->fc = (struct frame_context *)cm->fc;
+    xd->frame_parallel_decoding_mode = cm->frame_parallel_decoding_mode;
   }
 
   xd->above_seg_context = cm->above_seg_context;
   xd->mi_stride = cm->mi_stride;
   xd->error_info = &cm->error;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  xd->use_highbitdepth = cm->use_highbitdepth;
+#endif
 }
 
 static INLINE int frame_is_intra_only(const VP9_COMMON *const cm) {
