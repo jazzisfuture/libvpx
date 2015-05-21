@@ -339,8 +339,8 @@ static void reconstruct_inter_block(int plane, int block,
                                     BLOCK_SIZE plane_bsize,
                                     TX_SIZE tx_size, void *arg) {
   struct inter_args *args = (struct inter_args *)arg;
-  VP9_COMMON *const cm = args->cm;
   MACROBLOCKD *const xd = args->xd;
+  VP9_COMMON *const cm = args->cm;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   int x, y, eob;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);

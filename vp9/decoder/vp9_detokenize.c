@@ -17,6 +17,7 @@
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
 #include "vp9/common/vp9_idct.h"
 #endif
+#include "vp9/common/vp9_scan.h"
 
 #include "vp9/decoder/vp9_detokenize.h"
 
@@ -45,7 +46,7 @@ static INLINE int read_coeff(const vp9_prob *probs, int n, vp9_reader *r) {
   return val;
 }
 
-static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
+static int decode_coefs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                         FRAME_COUNTS *counts, PLANE_TYPE type,
                         tran_low_t *dqcoeff, TX_SIZE tx_size, const int16_t *dq,
                         int ctx, const int16_t *scan, const int16_t *nb,
@@ -75,7 +76,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
-    if (cm->bit_depth == VPX_BITS_10) {
+    if (xd->bd == VPX_BITS_10) {
       cat1_prob = vp9_cat1_prob_high10;
       cat2_prob = vp9_cat2_prob_high10;
       cat3_prob = vp9_cat3_prob_high10;
@@ -161,7 +162,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
           break;
         case CATEGORY6_TOKEN:
 #if CONFIG_VP9_HIGHBITDEPTH
-          switch (cm->bit_depth) {
+          switch (xd->bd) {
             case VPX_BITS_8:
               val = CAT6_MIN_VAL + read_coeff(cat6_prob, 14, r);
               break;
@@ -185,7 +186,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
 #if CONFIG_VP9_HIGHBITDEPTH
     dqcoeff[scan[c]] = highbd_check_range((vp9_read_bit(r) ? -v : v),
-                                          cm->bit_depth);
+                                          cm->bd);
 #else
     dqcoeff[scan[c]] = check_range(vp9_read_bit(r) ? -v : v);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
