@@ -128,7 +128,7 @@ static void printout_rate_control_summary(struct RateControlMetrics *rc,
     rc->layer_avg_rate_mismatch[i] = 100.0 * rc->layer_avg_rate_mismatch[i] /
         rc->layer_enc_frames[i];
     printf("For layer#: %d \n", i);
-    printf("Bitrate (target vs actual): %d %f \n", cfg->ts_target_bitrate[i],
+    printf("Bitrate (target vs actual): %d %f \n", cfg->layer_target_bitrate[i],
            rc->layer_encoding_bitrate[i]);
     printf("Average frame size (target vs actual): %f %f \n", rc->layer_pfb[i],
            rc->layer_avg_frame_size[i]);
@@ -597,7 +597,7 @@ int main(int argc, char **argv) {
   for (i = min_args_base;
        (int)i < min_args_base + mode_to_num_layers[layering_mode];
        ++i) {
-    cfg.ts_target_bitrate[i - 11] = strtol(argv[i], NULL, 0);
+    cfg.layer_target_bitrate[i - 11] = strtol(argv[i], NULL, 0);
   }
 
   // Real time parameters.
