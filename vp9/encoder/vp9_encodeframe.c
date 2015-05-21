@@ -498,7 +498,10 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
         cpi->vbp_threshold_sad = 100;
       } else {
         cpi->vbp_thresholds[0] = threshold_base;
-        cpi->vbp_thresholds[1] = (5 * threshold_base) >> 2;
+        if (cm->width >= 1920 && cm->height >= 1080)
+          cpi->vbp_thresholds[1] = (7 * threshold_base) >> 2;
+        else
+          cpi->vbp_thresholds[1] = (5 * threshold_base) >> 2;
         cpi->vbp_thresholds[2] = threshold_base << cpi->oxcf.speed;
         cpi->vbp_threshold_sad = (cpi->y_dequant[q][1] << 1) > 1000 ?
             (cpi->y_dequant[q][1] << 1) : 1000;
@@ -564,6 +567,10 @@ static void modify_vbp_thresholds(VP9_COMP *cpi, int64_t thresholds[], int q) {
   } else {
     thresholds[0] = threshold_base;
     thresholds[1] = (5 * threshold_base) >> 2;
+    if (cm->width >= 1920 && cm->height >= 1080)
+      cpi->vbp_thresholds[1] = (7 * threshold_base) >> 2;
+    else
+      cpi->vbp_thresholds[1] = (5 * threshold_base) >> 2;
     thresholds[2] = threshold_base << cpi->oxcf.speed;
   }
 }
