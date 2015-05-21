@@ -43,7 +43,10 @@ extern "C" {
 #define MAX_PERIODICITY VPX_TS_MAX_PERIODICITY
 
   /*!\deprecated Use #VPX_TS_MAX_LAYERS instead. */
-#define MAX_LAYERS      VPX_TS_MAX_LAYERS
+#define MAX_LAYERS      16  // 3 temporal + 4 spatial layers are allowed currently.
+
+  /*! Temporal+Spatial Scalability: Maximum number of coding layers */
+#define VPX_MAX_LAYERS  16  // 3 temporal + 4 spatial layers are allowed currently.
 
 /*! Spatial Scalability: Maximum number of coding layers */
 #define VPX_SS_MAX_LAYERS       5
@@ -59,7 +62,7 @@ extern "C" {
    * types, removing or reassigning enums, adding/removing/rearranging
    * fields to structures
    */
-#define VPX_ENCODER_ABI_VERSION (4 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
+#define VPX_ENCODER_ABI_VERSION (5 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
 
 
   /*! \brief Encoder capabilities bitfield
@@ -729,6 +732,8 @@ extern "C" {
      * ts_periodicity=8, then ts_layer_id = (0,1,0,1,0,1,0,1).
     */
     unsigned int           ts_layer_id[VPX_TS_MAX_PERIODICITY];
+    unsigned int           layer_target_bitrate[VPX_MAX_LAYERS];
+    int                     temporal_layering_mode;
   } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
   /*!\brief  vp9 svc extra configure parameters
@@ -737,10 +742,11 @@ extern "C" {
    *
    */
   typedef struct vpx_svc_parameters {
-    int max_quantizers[VPX_SS_MAX_LAYERS]; /**< Max Q for each layer */
-    int min_quantizers[VPX_SS_MAX_LAYERS]; /**< Min Q for each layer */
-    int scaling_factor_num[VPX_SS_MAX_LAYERS]; /**< Scaling factor-numerator*/
-    int scaling_factor_den[VPX_SS_MAX_LAYERS]; /**< Scaling factor-denominator*/
+    int max_quantizers[VPX_MAX_LAYERS]; /**< Max Q for each layer */
+    int min_quantizers[VPX_MAX_LAYERS]; /**< Min Q for each layer */
+    int scaling_factor_num[VPX_MAX_LAYERS]; /**< Scaling factor-numerator*/
+    int scaling_factor_den[VPX_MAX_LAYERS]; /**< Scaling factor-denominator*/
+    int temporal_layering_mode;
   } vpx_svc_extra_cfg_t;
 
 
