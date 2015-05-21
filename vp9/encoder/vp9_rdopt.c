@@ -4720,8 +4720,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #else
     if (this_mode != NEWMV)
 #endif  // CONFIG_NEW_INTER
+#if CONFIG_BITSTREAM_FIXES
+#else
       clamp_mv2(&cur_mv[i].as_mv, xd);
-
+#endif
     if (mv_check_bounds(x, &cur_mv[i].as_mv))
       return INT64_MAX;
 

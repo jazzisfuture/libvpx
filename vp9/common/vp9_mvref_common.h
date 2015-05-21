@@ -134,6 +134,8 @@ static const int idx_n_column_to_subblock[4][2] = {
   {3, 3}
 };
 
+#if CONFIG_BITSTREAM_FIXES
+#else
 // clamp_mv_ref
 #define MV_BORDER (16 << 3)  // Allow 16 pels in 1/8th pel units
 
@@ -143,7 +145,7 @@ static INLINE void clamp_mv_ref(MV *mv, const MACROBLOCKD *xd) {
                xd->mb_to_top_edge - MV_BORDER,
                xd->mb_to_bottom_edge + MV_BORDER);
 }
-
+#endif
 // This function returns either the appropriate sub block or block's mv
 // on whether the block_size < 8x8 and we have check_sub_blocks set.
 static INLINE int_mv get_sub_block_mv(const MODE_INFO *candidate, int which_mv,
@@ -216,6 +218,8 @@ static INLINE int is_inside(const TileInfo *const tile,
 #endif
 }
 
+#if CONFIG_BITSTREAM_FIXES
+#else
 // TODO(jingning): this mv clamping function should be block size dependent.
 static INLINE void clamp_mv2(MV *mv, const MACROBLOCKD *xd) {
   clamp_mv(mv, xd->mb_to_left_edge - LEFT_TOP_MARGIN,
@@ -223,6 +227,7 @@ static INLINE void clamp_mv2(MV *mv, const MACROBLOCKD *xd) {
                xd->mb_to_top_edge - LEFT_TOP_MARGIN,
                xd->mb_to_bottom_edge + RIGHT_BOTTOM_MARGIN);
 }
+#endif
 
 #if CONFIG_NEW_INTER
 // This function keeps a mode count for a given MB/SB

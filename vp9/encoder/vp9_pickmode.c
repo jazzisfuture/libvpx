@@ -106,10 +106,12 @@ static int mv_refs_rt(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 
   mi->mbmi.mode_context[ref_frame] = counter_to_context[context_counter];
 
+#if CONFIG_BITSTREAM_FIXES
+#else
   // Clamp vectors
   for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i)
     clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
-
+#endif
   return const_motion;
 }
 
@@ -615,8 +617,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // Select prediction reference frames.
     xd->plane[0].pre[0] = yv12_mb[ref_frame][0];
 
+#if CONFIG_BITSTREAM_FIXES
+#else
     clamp_mv2(&frame_mv[NEARESTMV][ref_frame].as_mv, xd);
     clamp_mv2(&frame_mv[NEARMV][ref_frame].as_mv, xd);
+#endif
 
     mbmi->ref_frame[0] = ref_frame;
 
