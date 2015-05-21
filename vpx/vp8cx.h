@@ -510,7 +510,9 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_SET_COLOR_SPACE,
-
+  
+  VP9E_SET_TEMPORAL_LAYERING_MODE,
+  
   /*!\brief Codec control function to get an Active map back from the encoder.
    *
    * Supported in codecs: VP9
@@ -529,6 +531,12 @@ typedef enum vpx_scaling_mode_1d {
   VP8E_ONETWO      = 3
 } VPX_SCALING_MODE;
 
+typedef enum vp9e_temporal_layering_mode {
+  VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING   = 0,
+  VP9E_TEMPORAL_LAYERING_MODE_BYPASS       = 1,
+  VP9E_TEMPORAL_LAYERING_MODE_0101         = 2,
+  VP9E_TEMPORAL_LAYERING_MODE_0212         = 3
+} VP9E_TEMPORAL_LAYERING_MODE;
 
 /*!\brief  vpx region of interest map
  *
