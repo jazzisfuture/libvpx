@@ -102,13 +102,16 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 
  Done:
 
+
 #if !CONFIG_NEW_INTER
   mi->mbmi.mode_context[ref_frame] = counter_to_context[context_counter];
 #endif  // !CONFIG_NEW_INTER
 
+#if !CONFIG_BITSTREAM_FIXES
   // Clamp vectors
   for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i)
     clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
+#endif
 }
 
 #if CONFIG_NEW_INTER
@@ -172,7 +175,12 @@ void vp9_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
     MV *mv = &mvlist[i].as_mv;
     const int usehp = allow_hp && vp9_use_mv_hp(mv);
     vp9_lower_mv_precision(mv, usehp);
+#if CONFIG_BITSTREAM_FIXES
+    // For now, avoid unused variable this way
+    (void)xd;
+#else
     clamp_mv2(mv, xd);
+#endif
   }
   *nearest = mvlist[0];
   *near = mvlist[1];
