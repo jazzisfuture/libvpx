@@ -27,8 +27,13 @@ void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd, int mi_row, int mi_col,
 void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                    BLOCK_SIZE bsize);
 
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
+                                       BLOCK_SIZE bsize, int use_highbitdepth);
+#else
 void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                        BLOCK_SIZE bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
@@ -108,12 +113,34 @@ void vp9_build_masked_inter_predictor_complex(
     const struct macroblockd_plane *pd, int mi_row, int mi_col,
     int mi_row_ori, int mi_col_ori, BLOCK_SIZE bsize, BLOCK_SIZE top_bsize,
     PARTITION_TYPE partition);
+
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_dec_build_inter_predictors_sby_sub8x8_extend(MACROBLOCKD *xd,
+                                                      int mi_row, int mi_col,
+                                                      int mi_row_ori,
+                                                      int mi_col_ori,
+                                                      BLOCK_SIZE top_bsize,
+                                                      PARTITION_TYPE p,
+                                                      int use_highbitdepth);
+#else
 void vp9_dec_build_inter_predictors_sby_sub8x8_extend(MACROBLOCKD *xd,
                                                       int mi_row, int mi_col,
                                                       int mi_row_ori,
                                                       int mi_col_ori,
                                                       BLOCK_SIZE top_bsize,
                                                       PARTITION_TYPE p);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
+#if CONFIG_WEDGE_PARTITION
+                                                       int mi_row, int mi_col,
+#endif
+                                                       int mi_row_ori,
+                                                       int mi_col_ori,
+                                                       BLOCK_SIZE top_bsize,
+                                                       int use_highbitdepth);
+#else
 void vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
 #if CONFIG_WEDGE_PARTITION
                                                        int mi_row, int mi_col,
@@ -121,16 +148,25 @@ void vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
                                                        int mi_row_ori,
                                                        int mi_col_ori,
                                                        BLOCK_SIZE top_bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_WEDGE_PARTITION
 void vp9_build_inter_predictors_sb_extend(MACROBLOCKD *xd,
                                           int mi_row, int mi_col,
                                           int mi_row_ori, int mi_col_ori,
                                           BLOCK_SIZE bsize);
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_dec_build_inter_predictors_sb_extend(MACROBLOCKD *xd,
+                                              int mi_row, int mi_col,
+                                              int mi_row_ori, int mi_col_ori,
+                                              BLOCK_SIZE bsize,
+                                              int use_highbitdepth);
+#else
 void vp9_dec_build_inter_predictors_sb_extend(MACROBLOCKD *xd,
                                               int mi_row, int mi_col,
                                               int mi_row_ori, int mi_col_ori,
                                               BLOCK_SIZE bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_WEDGE_PARTITION
 #endif  // CONFIG_SUPERTX
 

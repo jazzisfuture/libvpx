@@ -1317,6 +1317,16 @@ void vp9_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
 
 // TODO(jingning): This function serves as a placeholder for decoder prediction
 // using on demand border extension. It should be moved to /decoder/ directory.
+#if CONFIG_VP9_HIGHBITDEPTH
+static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
+                                       int bw, int bh,
+                                       int x, int y, int w, int h,
+#if CONFIG_SUPERTX && CONFIG_WEDGE_PARTITION
+                                       int wedge_offset_x, int wedge_offset_y,
+#endif
+                                       int mi_x, int mi_y,
+                                       int use_highbitdepth) {
+#else
 static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                                        int bw, int bh,
                                        int x, int y, int w, int h,
@@ -1324,6 +1334,7 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                                        int wedge_offset_x, int wedge_offset_y,
 #endif
                                        int mi_x, int mi_y) {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const MODE_INFO *mi = xd->mi[0].src_mi;
   const int is_compound = has_second_ref(&mi->mbmi);
@@ -1337,7 +1348,11 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
   const int is_intrabc = is_intrabc_mode(mi->mbmi.mode);
   struct scale_factors sf1;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  vp9_setup_scale_factors_for_frame(&sf1, 64, 64, 64, 64, use_highbitdepth);
+#else
   vp9_setup_scale_factors_for_frame(&sf1, 64, 64, 64, 64);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   assert(!is_intrabc || !is_compound);
 #endif  // CONFIG_INTRABC
@@ -1649,8 +1664,13 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
   }
 }
 
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
+                                       BLOCK_SIZE bsize, int use_highbitdepth) {
+#else
 void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                        BLOCK_SIZE bsize) {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   int plane;
   const int mi_x = mi_col * MI_SIZE;
   const int mi_y = mi_row * MI_SIZE;
@@ -1667,19 +1687,37 @@ void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
       assert(bsize == BLOCK_8X8);
       for (y = 0; y < num_4x4_h; ++y)
         for (x = 0; x < num_4x4_w; ++x)
+#if CONFIG_VP9_HIGHBITDEPTH
+          dec_build_inter_predictors(xd, plane, i++, bw, bh,
+                                     4 * x, 4 * y, 4, 4,
+#if CONFIG_SUPERTX && CONFIG_WEDGE_PARTITION
+                                     0, 0,
+#endif
+                                     mi_x, mi_y, use_highbitdepth);
+#else
           dec_build_inter_predictors(xd, plane, i++, bw, bh,
                                      4 * x, 4 * y, 4, 4,
 #if CONFIG_SUPERTX && CONFIG_WEDGE_PARTITION
                                      0, 0,
 #endif
                                      mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
     } else {
+#if CONFIG_VP9_HIGHBITDEPTH
+      dec_build_inter_predictors(xd, plane, 0, bw, bh,
+                                 0, 0, bw, bh,
+#if CONFIG_SUPERTX && CONFIG_WEDGE_PARTITION
+                                 0, 0,
+#endif
+                                 mi_x, mi_y, use_highbitdepth);
+#else
       dec_build_inter_predictors(xd, plane, 0, bw, bh,
                                  0, 0, bw, bh,
 #if CONFIG_SUPERTX && CONFIG_WEDGE_PARTITION
                                  0, 0,
 #endif
                                  mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
     }
   }
 #if CONFIG_INTERINTRA
@@ -1695,10 +1733,18 @@ void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
 
 #if CONFIG_SUPERTX
 #if CONFIG_WEDGE_PARTITION
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_dec_build_inter_predictors_sb_extend(MACROBLOCKD *xd,
+                                              int mi_row, int mi_col,
+                                              int mi_row_ori, int mi_col_ori,
+                                              BLOCK_SIZE bsize,
+                                              int use_highbitdepth) {
+#else
 void vp9_dec_build_inter_predictors_sb_extend(MACROBLOCKD *xd,
                                               int mi_row, int mi_col,
                                               int mi_row_ori, int mi_col_ori,
                                               BLOCK_SIZE bsize) {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   int plane;
   const int mi_x = mi_col_ori * MI_SIZE;
   const int mi_y = mi_row_ori * MI_SIZE;
@@ -1717,18 +1763,40 @@ void vp9_dec_build_inter_predictors_sb_extend(MACROBLOCKD *xd,
       assert(bsize == BLOCK_8X8);
       for (y = 0; y < num_4x4_h; ++y)
         for (x = 0; x < num_4x4_w; ++x)
+#if CONFIG_VP9_HIGHBITDEPTH
+          dec_build_inter_predictors(xd, plane, i++, bw, bh, 4 * x, 4 * y, 4, 4,
+                                     wedge_offset_x, wedge_offset_y,
+                                     mi_x, mi_y, use_highbitdepth);
+#else
           dec_build_inter_predictors(xd, plane, i++, bw, bh, 4 * x, 4 * y, 4, 4,
                                      wedge_offset_x, wedge_offset_y,
                                      mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
     } else {
+#if CONFIG_VP9_HIGHBITDEPTH
+      dec_build_inter_predictors(xd, plane, 0, bw, bh, 0, 0, bw, bh,
+                                 wedge_offset_x, wedge_offset_y,
+                                 mi_x, mi_y, use_highbitdepth);
+#else
       dec_build_inter_predictors(xd, plane, 0, bw, bh, 0, 0, bw, bh,
                                  wedge_offset_x, wedge_offset_y,
                                  mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
     }
   }
 }
 #endif  // CONFIG_WEDGE_PARTITION
 
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_dec_build_inter_predictors_sby_sub8x8_extend(
+    MACROBLOCKD *xd,
+    int mi_row, int mi_col,
+    int mi_row_ori,
+    int mi_col_ori,
+    BLOCK_SIZE top_bsize,
+    PARTITION_TYPE partition,
+    int use_highbitdepth) {
+#else
 void vp9_dec_build_inter_predictors_sby_sub8x8_extend(
     MACROBLOCKD *xd,
     int mi_row, int mi_col,
@@ -1736,6 +1804,7 @@ void vp9_dec_build_inter_predictors_sby_sub8x8_extend(
     int mi_col_ori,
     BLOCK_SIZE top_bsize,
     PARTITION_TYPE partition) {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   const int mi_x = mi_col_ori * MI_SIZE;
   const int mi_y = mi_row_ori * MI_SIZE;
 #if CONFIG_WEDGE_PARTITION
@@ -1758,7 +1827,7 @@ void vp9_dec_build_inter_predictors_sby_sub8x8_extend(
 #if CONFIG_WEDGE_PARTITION
                                wedge_offset_x, wedge_offset_y,
 #endif
-                               mi_x, mi_y);
+                               mi_x, mi_y, use_highbitdepth);
 
     xd->plane[0].dst.buf = CONVERT_TO_BYTEPTR(tmp_buf);
     xd->plane[0].dst.stride = MAXTXLEN;
@@ -1768,35 +1837,35 @@ void vp9_dec_build_inter_predictors_sby_sub8x8_extend(
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
-                                   mi_x, mi_y);
+                                   mi_x, mi_y, use_highbitdepth);
         break;
       case PARTITION_VERT:
         dec_build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
-                                   mi_x, mi_y);
+                                   mi_x, mi_y, use_highbitdepth);
         break;
       case PARTITION_SPLIT:
         dec_build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
-                                   mi_x, mi_y);
+                                   mi_x, mi_y, use_highbitdepth);
         xd->plane[0].dst.buf = CONVERT_TO_BYTEPTR(tmp_buf1);
         xd->plane[0].dst.stride = MAXTXLEN;
         dec_build_inter_predictors(xd, 0, 2, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
-                                   mi_x, mi_y);
+                                   mi_x, mi_y, use_highbitdepth);
         xd->plane[0].dst.buf = CONVERT_TO_BYTEPTR(tmp_buf2);
         xd->plane[0].dst.stride = MAXTXLEN;
         dec_build_inter_predictors(xd, 0, 3, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
-                                   mi_x, mi_y);
+                                   mi_x, mi_y, use_highbitdepth);
         break;
       default:
         assert(0);
@@ -1850,49 +1919,97 @@ void vp9_dec_build_inter_predictors_sby_sub8x8_extend(
 
     orig_dst = xd->plane[0].dst.buf;
     orig_dst_stride = xd->plane[0].dst.stride;
+#if CONFIG_VP9_HIGHBITDEPTH
+    dec_build_inter_predictors(xd, 0, 0, bw, bh, 0, 0, bw, bh,
+#if CONFIG_WEDGE_PARTITION
+                               wedge_offset_x, wedge_offset_y,
+#endif
+                               mi_x, mi_y, use_highbitdepth);
+#else
     dec_build_inter_predictors(xd, 0, 0, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                wedge_offset_x, wedge_offset_y,
 #endif
                                mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
     xd->plane[0].dst.buf = tmp_buf;
     xd->plane[0].dst.stride = MAXTXLEN;
     switch (partition) {
       case PARTITION_HORZ:
+#if CONFIG_VP9_HIGHBITDEPTH
+        dec_build_inter_predictors(xd, 0, 2, bw, bh, 0, 0, bw, bh,
+#if CONFIG_WEDGE_PARTITION
+                                   wedge_offset_x, wedge_offset_y,
+#endif
+                                   mi_x, mi_y, use_highbitdepth);
+#else
         dec_build_inter_predictors(xd, 0, 2, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
                                    mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
         break;
       case PARTITION_VERT:
+#if CONFIG_VP9_HIGHBITDEPTH
+        dec_build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh,
+#if CONFIG_WEDGE_PARTITION
+                                   wedge_offset_x, wedge_offset_y,
+#endif
+                                   mi_x, mi_y, use_highbitdepth);
+#else
         dec_build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
                                    mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
         break;
       case PARTITION_SPLIT:
+#if CONFIG_VP9_HIGHBITDEPTH
+        dec_build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh,
+#if CONFIG_WEDGE_PARTITION
+                                   wedge_offset_x, wedge_offset_y,
+#endif
+                                   mi_x, mi_y, use_highbitdepth);
+#else
         dec_build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
                                    mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
         xd->plane[0].dst.buf = tmp_buf1;
         xd->plane[0].dst.stride = MAXTXLEN;
+#if CONFIG_VP9_HIGHBITDEPTH
+        dec_build_inter_predictors(xd, 0, 2, bw, bh, 0, 0, bw, bh,
+#if CONFIG_WEDGE_PARTITION
+                                   wedge_offset_x, wedge_offset_y,
+#endif
+                                   mi_x, mi_y, use_highbitdepth);
+#else
         dec_build_inter_predictors(xd, 0, 2, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
                                    mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
         xd->plane[0].dst.buf = tmp_buf2;
         xd->plane[0].dst.stride = MAXTXLEN;
+#if CONFIG_VP9_HIGHBITDEPTH
+        dec_build_inter_predictors(xd, 0, 3, bw, bh, 0, 0, bw, bh,
+#if CONFIG_WEDGE_PARTITION
+                                   wedge_offset_x, wedge_offset_y,
+#endif
+                                   mi_x, mi_y, use_highbitdepth);
+#else
         dec_build_inter_predictors(xd, 0, 3, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                    wedge_offset_x, wedge_offset_y,
 #endif
                                    mi_x, mi_y);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
         break;
       default:
         assert(0);
@@ -1934,6 +2051,16 @@ void vp9_dec_build_inter_predictors_sby_sub8x8_extend(
   }
 }
 
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
+#if CONFIG_WEDGE_PARTITION
+                                                       int mi_row, int mi_col,
+#endif
+                                                       int mi_row_ori,
+                                                       int mi_col_ori,
+                                                       BLOCK_SIZE top_bsize,
+                                                       int use_highbitdepth) {
+#else
 void vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
 #if CONFIG_WEDGE_PARTITION
                                                        int mi_row, int mi_col,
@@ -1941,6 +2068,7 @@ void vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
                                                        int mi_row_ori,
                                                        int mi_col_ori,
                                                        BLOCK_SIZE top_bsize) {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   int plane;
   const int mi_x = mi_col_ori * MI_SIZE;
   const int mi_y = mi_row_ori * MI_SIZE;
@@ -1956,11 +2084,19 @@ void vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
     const int bw = 4 * num_4x4_w;
     const int bh = 4 * num_4x4_h;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+    dec_build_inter_predictors(xd, plane, 0, bw, bh, 0, 0, bw, bh,
+#if CONFIG_WEDGE_PARTITION
+                               wedge_offset_x, wedge_offset_y,
+#endif
+                               mi_x, mi_y, use_highbitdepth);
+#else
     dec_build_inter_predictors(xd, plane, 0, bw, bh, 0, 0, bw, bh,
 #if CONFIG_WEDGE_PARTITION
                                wedge_offset_x, wedge_offset_y,
 #endif
                                mi_x, mi_y);
+#endif
   }
 }
 #endif  // CONFIG_SUPERTX

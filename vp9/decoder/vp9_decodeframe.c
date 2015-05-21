@@ -830,10 +830,21 @@ static void dec_predict_b_extend(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     set_ref(cm, xd, 1, mi_row_ori, mi_col_ori);
   mbmi->tx_size = b_width_log2_lookup[top_bsize];
 #if CONFIG_WEDGE_PARTITION
+#if CONFIG_VP9_HIGHBITDEPTH
+  vp9_dec_build_inter_predictors_sb_extend(xd, mi_row, mi_col,
+                                           mi_row_ori, mi_col_ori, top_bsize,
+                                           cm->use_highbitdepth);
+#else
   vp9_dec_build_inter_predictors_sb_extend(xd, mi_row, mi_col,
                                            mi_row_ori, mi_col_ori, top_bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+#else
+#if CONFIG_VP9_HIGHBITDEPTH
+  vp9_dec_build_inter_predictors_sb(xd, mi_row_ori, mi_col_ori, top_bsize,
+                                    cm->use_highbitdepth);
 #else
   vp9_dec_build_inter_predictors_sb(xd, mi_row_ori, mi_col_ori, top_bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_WEDGE_PARTITION
 }
 
@@ -851,15 +862,32 @@ static void dec_predict_b_sub8x8_extend(VP9_COMMON *const cm,
   if (has_second_ref(&xd->mi[0].mbmi))
     set_ref(cm, xd, 1, mi_row_ori, mi_col_ori);
   mbmi->tx_size = b_width_log2_lookup[top_bsize];
+#if CONFIG_VP9_HIGHBITDEPTH
+  vp9_dec_build_inter_predictors_sby_sub8x8_extend(xd, mi_row, mi_col,
+                                                   mi_row_ori, mi_col_ori,
+                                                   top_bsize, partition,
+                                                   cm->use_highbitdepth);
+#else
   vp9_dec_build_inter_predictors_sby_sub8x8_extend(xd, mi_row, mi_col,
                                                    mi_row_ori, mi_col_ori,
                                                    top_bsize, partition);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_HIGHBITDEPTH
+  vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(xd,
+#if CONFIG_WEDGE_PARTITION
+                                                    mi_row, mi_col,
+#endif
+                                                    mi_row_ori, mi_col_ori,
+                                                    top_bsize,
+                                                    cm->use_highbitdepth);
+#else
   vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(xd,
 #if CONFIG_WEDGE_PARTITION
                                                     mi_row, mi_col,
 #endif
                                                     mi_row_ori, mi_col_ori,
                                                     top_bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 static void dec_predict_sb_complex(VP9_COMMON *const cm, MACROBLOCKD *const xd,
@@ -1303,7 +1331,13 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                   predict_and_reconstruct_intra_block, &arg);
   } else {
     // Prediction
+#if CONFIG_VP9_HIGHBITDEPTH
+    vp9_dec_build_inter_predictors_sb(xd, mi_row, mi_col, bsize,
+                                      cm->use_highbitdepth);
+#else
     vp9_dec_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
     // Reconstruction
     if (!mbmi->skip) {
