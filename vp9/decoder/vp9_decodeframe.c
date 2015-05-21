@@ -2035,11 +2035,8 @@ void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
                                                         &xd->plane[plane]);
     struct macroblockd_plane *const pd = &xd->plane[plane];
     struct buf_2d *const dst_buf = &pd->dst;
-    const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
-    const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
-
-    const int bw = 4 * num_4x4_w;
-    const int bh = 4 * num_4x4_h;
+    const int bw = wide_lookup[plane_bsize];
+    const int bh = high_lookup[plane_bsize];
     int ref;
 
     for (ref = 0; ref < 1 + is_compound; ++ref) {
@@ -2049,18 +2046,38 @@ void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
       BufferPool *const pool = pbi->common.buffer_pool;
       RefCntBuffer *const ref_frame_buf = &pool->frame_bufs[idx];
       const int is_scaled = vp9_is_scaled(sf);
-
+      MV mv;
       if (sb_type < BLOCK_8X8) {
         int i = 0, x, y;
-        assert(bsize == BLOCK_8X8);
-        for (y = 0; y < num_4x4_h; ++y) {
-          for (x = 0; x < num_4x4_w; ++x) {
-            const MV mv = average_split_mvs(pd, mi, ref, i++);
-            dec_build_inter_predictors(pbi, xd, plane, bw, bh,
-                                       4 * x, 4 * y, 4, 4, mi_x, mi_y, kernel,
-                                       sf, pre_buf, dst_buf, &mv,
-                                       ref_frame_buf, is_scaled, ref);
-          }
+        if (plane_bsize == BLOCK_4X4) {
+          assert(bsize == BLOCK_8X8);
+          mv = average_split_mvs(pd, mi, ref, 0);
+          dec_build_inter_predictors(pbi, xd, plane, bw, bh,
+                                     0, 0, 4, 4, mi_x, mi_y, kernel,
+                                     sf, pre_buf, dst_buf, &mv,
+                                     ref_frame_buf, is_scaled, ref);
+        } else if (plane_bsize == BLOCK_8X8) {
+          assert(bsize == BLOCK_8X8);
+          mv = average_split_mvs(pd, mi, ref, 0);
+          dec_build_inter_predictors(pbi, xd, plane, bw, bh,
+                                     0, 0, 4, 4, mi_x, mi_y, kernel,
+                                     sf, pre_buf, dst_buf, &mv,
+                                     ref_frame_buf, is_scaled, ref);
+          mv = average_split_mvs(pd, mi, ref, 1);
+          dec_build_inter_predictors(pbi, xd, plane, bw, bh,
+                                     4, 0, 4, 4, mi_x, mi_y, kernel,
+                                     sf, pre_buf, dst_buf, &mv,
+                                     ref_frame_buf, is_scaled, ref);
+          mv = average_split_mvs(pd, mi, ref, 2);
+          dec_build_inter_predictors(pbi, xd, plane, bw, bh,
+                                     0, 4, 4, 4, mi_x, mi_y, kernel,
+                                     sf, pre_buf, dst_buf, &mv,
+                                     ref_frame_buf, is_scaled, ref);
+          mv = average_split_mvs(pd, mi, ref, 3);
+          dec_build_inter_predictors(pbi, xd, plane, bw, bh,
+                                     4, 4, 4, 4, mi_x, mi_y, kernel,
+                                     sf, pre_buf, dst_buf, &mv,
+                                     ref_frame_buf, is_scaled, ref);
         }
       } else {
         const MV mv = mi->mbmi.mv[ref].as_mv;
