@@ -26,6 +26,10 @@ const int num_8x8_blocks_wide_lookup[BLOCK_SIZES] =
   {1, 1, 1, 1, 1, 2, 2, 2, 4, 4, 4, 8, 8};
 const int num_8x8_blocks_high_lookup[BLOCK_SIZES] =
   {1, 1, 1, 1, 2, 1, 2, 4, 2, 4, 8, 4, 8};
+const int wide_lookup[BLOCK_SIZES] =
+  {4, 4, 8, 8, 8, 16, 16, 16, 32, 32, 32, 64, 64};
+const int high_lookup[BLOCK_SIZES] =
+  {4, 8, 4, 8, 16, 8, 16, 32, 16, 32, 64, 32, 64};
 
 // MIN(3, MIN(b_width_log2(bsize), b_height_log2(bsize)))
 const int size_group_lookup[BLOCK_SIZES] =
