@@ -33,10 +33,12 @@ typedef struct {
   // public interface to svc_command options
   int spatial_layers;               // number of spatial layers
   int temporal_layers;               // number of temporal layers
+  int temporal_layering_mode;
   SVC_LOG_LEVEL log_level;  // amount of information to display
   int log_print;  // when set, printf log messages instead of returning the
                   // message with svc_get_message
-
+  int output_rc_stat; // for outputting rc stats
+  int speed;  // speed setting for codec
   // private storage for vpx_svc_encode
   void *internal;
 } SvcContext;
@@ -56,7 +58,6 @@ typedef struct SvcInternal {
   double psnr_sum[VPX_SS_MAX_LAYERS][COMPONENTS];   // total/Y/U/V
   uint64_t sse_sum[VPX_SS_MAX_LAYERS][COMPONENTS];
   uint32_t bytes_sum[VPX_SS_MAX_LAYERS];
-
   // codec encoding values
   int width;    // width of highest layer
   int height;   // height of highest layer
