@@ -210,10 +210,12 @@ static int read_skip(VP9_COMMON *cm, const MACROBLOCKD *xd,
   }
 }
 
+#if !CONFIG_BITSTREAM_FIXES
 static INLINE int is_mv_valid(const MV *mv) {
   return mv->row > MV_LOW && mv->row < MV_UPP &&
          mv->col > MV_LOW && mv->col < MV_UPP;
 }
+#endif
 
 #if CONFIG_INTRABC
 static INLINE void read_mv(vp9_reader *r, MV *mv, const MV *ref,
@@ -564,6 +566,16 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
     mbmi->uv_filterbit = 0;
 #endif
 }
+#if CONFIG_BITSTREAM_FIXES
+static int wrap_mv(int value) {
+  if (value >= (1 << MV_IN_USE_BITS))
+    return value | ((-1) << MV_IN_USE_BITS);
+  else if (value < -(1 << MV_IN_USE_BITS))
+    return value & ((1 << MV_IN_USE_BITS) - 1);
+  else
+    return value;
+}
+#endif
 
 static int read_mv_component(vp9_reader *r,
                              const nmv_component *mvcomp,
@@ -640,6 +652,12 @@ static INLINE void read_mv(vp9_reader *r, MV *mv, const MV *ref,
 
   mv->row = ref->row + diff.row;
   mv->col = ref->col + diff.col;
+
+#if CONFIG_BITSTREAM_FIXES
+  // Wrap MV values over MV_IN_USE_BITS bits.
+  mv->row = wrap_mv(mv->row);
+  mv->col = wrap_mv(mv->col);
+#endif
 }
 
 static REFERENCE_MODE read_block_reference_mode(VP9_COMMON *cm,
@@ -883,7 +901,9 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
                 1,
 #endif  // CONFIG_INTRABC
                 allow_hp);
+#if !CONFIG_BITSTREAM_FIXES
         ret = ret && is_mv_valid(&mv[i].as_mv);
+#endif
         assert(ret);
       }
       break;
