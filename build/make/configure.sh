@@ -469,7 +469,7 @@ EOF
   print_config_h ARCH   "${TMP_H}" ${ARCH_LIST}
   print_config_h HAVE   "${TMP_H}" ${HAVE_LIST}
   print_config_h CONFIG "${TMP_H}" ${CONFIG_LIST}
-  print_config_vars_h   "${TMP_H}" ${VAR_LIST}
+  print_config_vars_h   "${TMP_H}" ${SIZE_LIMIT}
   echo "#endif /* VPX_CONFIG_H */" >> ${TMP_H}
   mkdir -p `dirname "$1"`
   cmp "$1" ${TMP_H} >/dev/null 2>&1 || mv ${TMP_H} "$1"
@@ -544,7 +544,8 @@ process_common_cmdline() {
       --size-limit=*)
         w="${optval%%x*}"
         h="${optval##*x}"
-        VAR_LIST="DECODE_WIDTH_LIMIT ${w} DECODE_HEIGHT_LIMIT ${h}"
+        SIZE_LIMIT="size_limit decode_width_limit ${w}"
+        SIZE_LIMIT="${SIZE_LIMIT} size_limit decode_height_limit ${h}"
         [ ${w} -gt 0 ] && [ ${h} -gt 0 ] || die "Invalid size-limit: too small."
         [ ${w} -lt 65536 ] && [ ${h} -lt 65536 ] \
             || die "Invalid size-limit: too big."
@@ -560,7 +561,7 @@ process_common_cmdline() {
         [ -d "${optval}" ] || die "Not a directory: ${optval}"
         sdk_path="${optval}"
         ;;
-      --libc|--as|--prefix|--libdir|--sdk-path)
+      --libc|--as|--prefix|--libdir|--sdk-path|--size-limit)
         die "Option ${opt} requires argument"
         ;;
       --help|-h)
@@ -1351,13 +1352,21 @@ print_config_h() {
   prefix="${saved_prefix}"
 }
 
+# Expects input in the form:
+# output file name
+# with repeated:
+# controlling configure option
+# define name
+# define value
 print_config_vars_h() {
   header=$1
   shift
   while [ $# -gt 0 ]; do
-    upname="`toupper $1`"
-    echo "#define ${upname} $2" >> $header
-    shift 2
+    if enabled $1; then
+      upname="`toupper $2`"
+      echo "#define ${upname} $3" >> $header
+    fi
+    shift 3
   done
 }
 
