@@ -403,7 +403,7 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
                                   predict_and_reconstruct_intra_block, &arg);
   } else {
     // Prediction
-    vp9_dec_build_inter_predictors_sb(pbi, xd, mi_row, mi_col, bsize);
+    dec_build_inter_predictors_sb(pbi, xd, mi_row, mi_col, bsize);
 
     // Reconstruction
     if (!mbmi->skip) {
@@ -2019,9 +2019,10 @@ static void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
-void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
-                                       int mi_row, int mi_col,
-                                       BLOCK_SIZE bsize) {
+static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
+                                          MACROBLOCKD *xd,
+                                          int mi_row, int mi_col,
+                                          BLOCK_SIZE bsize) {
   int plane;
   const int mi_x = mi_col * MI_SIZE;
   const int mi_y = mi_row * MI_SIZE;
