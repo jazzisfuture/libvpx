@@ -17,6 +17,7 @@
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
 #include "vp9/common/vp9_idct.h"
 #endif
+#include "vp9/common/vp9_scan.h"
 
 #include "vp9/decoder/vp9_detokenize.h"
 
@@ -45,7 +46,7 @@ static INLINE int read_coeff(const vp9_prob *probs, int n, vp9_reader *r) {
   return val;
 }
 
-static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
+static int decode_coefs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                         FRAME_COUNTS *counts, PLANE_TYPE type,
                         tran_low_t *dqcoeff, TX_SIZE tx_size, const int16_t *dq,
                         int ctx, const int16_t *scan, const int16_t *nb,
