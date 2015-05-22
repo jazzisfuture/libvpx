@@ -199,6 +199,13 @@ enable_feature multithread
 enable_feature os_support
 enable_feature temporal_denoising
 
+# reject vp9 files over 16384x16384 when decoding
+# vp9 officially supports 64kx64k. use --disable-size-limit or --size-limit=WxH
+# to override.
+SIZE_LIMIT="size_limit decode_width_limit 16384 "
+SIZE_LIMIT+="size_limit decode_height_limit 16384"
+enable_feature size_limit
+
 [ -d "${source_path}/../include" ] && enable_feature alt_tree_layout
 for d in vp8 vp9; do
     [ -d "${source_path}/${d}" ] && disable_feature alt_tree_layout;
