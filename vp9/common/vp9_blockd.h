@@ -124,9 +124,12 @@ struct macroblockd_plane {
   int subsampling_y;
   struct buf_2d dst;
   struct buf_2d pre[2];
-  const int16_t *dequant;
   ENTROPY_CONTEXT *above_context;
   ENTROPY_CONTEXT *left_context;
+  int16_t seg_dequant[MAX_SEGMENTS][2];
+
+  // encoder
+  const int16_t *dequant;
 };
 
 #define BLOCK_OFFSET(x, i) ((x) + (i) * 16)
@@ -159,6 +162,9 @@ typedef struct macroblockd {
   int mb_to_top_edge;
   int mb_to_bottom_edge;
 
+  FRAME_CONTEXT *fc;
+  int frame_parallel_decoding_mode;
+
   /* pointers to reference frames */
   RefBuffer *block_refs[2];
 
@@ -174,6 +180,7 @@ typedef struct macroblockd {
 #if CONFIG_VP9_HIGHBITDEPTH
   /* Bit depth: 8, 10, 12 */
   int bd;
+  uint8_t use_highbitdepth;
 #endif
 
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
