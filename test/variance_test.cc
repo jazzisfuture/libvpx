@@ -84,6 +84,12 @@ static unsigned int variance_ref(const uint8_t *src, const uint8_t *ref,
   return sse - (((int64_t) se * se) >> (l2w + l2h));
 }
 
+/* The subpel reference functions differs from the codec version in one aspect:
+ * because it calculates the bilinear factors directly instead of using a
+ * lookup table, it expects xoff and yoff to be << 1. Only half the table is
+ * used so the codec version shrinks the table to save space and maintain
+ * compatibility with vp8.
+ */
 static unsigned int subpel_variance_ref(const uint8_t *ref, const uint8_t *src,
                                         int l2w, int l2h, int xoff, int yoff,
                                         unsigned int *sse_ptr,
@@ -582,8 +588,8 @@ class SubpelVarianceTest
 
 template<typename SubpelVarianceFunctionType>
 void SubpelVarianceTest<SubpelVarianceFunctionType>::RefTest() {
-  for (int x = 0; x < 16; ++x) {
-    for (int y = 0; y < 16; ++y) {
+  for (int x = 0; x < 8; ++x) {
+    for (int y = 0; y < 8; ++y) {
       if (!use_high_bit_depth_) {
         for (int j = 0; j < block_size_; j++) {
           src_[j] = rnd_.Rand8();
@@ -606,7 +612,7 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::RefTest() {
       ASM_REGISTER_STATE_CHECK(var1 = subpel_variance_(ref_, width_ + 1, x, y,
                                                        src_, width_, &sse1));
       const unsigned int var2 = subpel_variance_ref(ref_, src_, log2width_,
-                                                    log2height_, x, y, &sse2,
+                                                    log2height_, x << 1, y << 1, &sse2,
                                                     use_high_bit_depth_,
                                                     bit_depth_);
       EXPECT_EQ(sse1, sse2) << "at position " << x << ", " << y;
@@ -620,8 +626,8 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::ExtremeRefTest() {
   // Compare against reference.
   // Src: Set the first half of values to 0, the second half to the maximum.
   // Ref: Set the first half of values to the maximum, the second half to 0.
-  for (int x = 0; x < 16; ++x) {
-    for (int y = 0; y < 16; ++y) {
+  for (int x = 0; x < 8; ++x) {
+    for (int y = 0; y < 8; ++y) {
       const int half = block_size_ / 2;
       if (!use_high_bit_depth_) {
         memset(src_, 0, half);
@@ -642,7 +648,7 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::ExtremeRefTest() {
       ASM_REGISTER_STATE_CHECK(
           var1 = subpel_variance_(ref_, width_ + 1, x, y, src_, width_, &sse1));
       const unsigned int var2 =
-          subpel_variance_ref(ref_, src_, log2width_, log2height_, x, y, &sse2,
+          subpel_variance_ref(ref_, src_, log2width_, log2height_, x << 1, y << 1, &sse2,
                               use_high_bit_depth_, bit_depth_);
       EXPECT_EQ(sse1, sse2) << "at position " << x << ", " << y;
       EXPECT_EQ(var1, var2) << "at position " << x << ", " << y;
@@ -653,8 +659,8 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::ExtremeRefTest() {
 #if CONFIG_VP9_ENCODER
 template<>
 void SubpelVarianceTest<vp9_subp_avg_variance_fn_t>::RefTest() {
-  for (int x = 0; x < 16; ++x) {
-    for (int y = 0; y < 16; ++y) {
+  for (int x = 0; x < 8; ++x) {
+    for (int y = 0; y < 8; ++y) {
       if (!use_high_bit_depth_) {
         for (int j = 0; j < block_size_; j++) {
           src_[j] = rnd_.Rand8();
@@ -681,7 +687,7 @@ void SubpelVarianceTest<vp9_subp_avg_variance_fn_t>::RefTest() {
                                   src_, width_, &sse1, sec_));
       const unsigned int var2 = subpel_avg_variance_ref(ref_, src_, sec_,
                                                         log2width_, log2height_,
-                                                        x, y, &sse2,
+                                                        x << 1, y << 1, &sse2,
                                                         use_high_bit_depth_,
                                                         bit_depth_);
       EXPECT_EQ(sse1, sse2) << "at position " << x << ", " << y;
@@ -705,6 +711,13 @@ TEST_P(VpxVarianceTest, RefStride) { RefStrideTest(); }
 TEST_P(VpxVarianceTest, OneQuarter) { OneQuarterTest(); }
 TEST_P(SumOfSquaresTest, Const) { ConstTest(); }
 TEST_P(SumOfSquaresTest, Ref) { RefTest(); }
+
+#if CONFIG_VP8
+typedef SubpelVarianceTest<vp8_subpixvariance_fn_t> VP8SubpelVarianceTest;
+
+TEST_P(VP8SubpelVarianceTest, Ref) { RefTest(); }
+TEST_P(VP8SubpelVarianceTest, ExtremeRef) { ExtremeRefTest(); }
+#endif  // CONFIG_VP8
 
 INSTANTIATE_TEST_CASE_P(C, SumOfSquaresTest,
                         ::testing::Values(vpx_get_mb_ss_c));
@@ -779,7 +792,6 @@ const VarianceMxNFunc highbd_8_mse16x16_c = vpx_highbd_8_mse16x16_c;
 const VarianceMxNFunc highbd_8_mse16x8_c = vpx_highbd_8_mse16x8_c;
 const VarianceMxNFunc highbd_8_mse8x16_c = vpx_highbd_8_mse8x16_c;
 const VarianceMxNFunc highbd_8_mse8x8_c = vpx_highbd_8_mse8x8_c;
-
 INSTANTIATE_TEST_CASE_P(
     C, VpxHBDMseTest, ::testing::Values(make_tuple(4, 4, highbd_12_mse16x16_c),
                                         make_tuple(4, 4, highbd_12_mse16x8_c),
@@ -880,6 +892,13 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(2, 2, highbd_8_variance4x4_c, 8)));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if HAVE_NEON
+const vp8_sse_fn_t get4x4sse_cs_neon = vp8_get4x4sse_cs_neon;
+INSTANTIATE_TEST_CASE_P(
+    NEON, VP8SseTest,
+    ::testing::Values(make_tuple(2, 2, get4x4sse_cs_neon)));
+#endif  // HAVE_NEON
+
 #if HAVE_MMX
 const VarianceMxNFunc mse16x16_mmx = vpx_mse16x16_mmx;
 INSTANTIATE_TEST_CASE_P(MMX, VpxMseTest,
@@ -900,6 +919,26 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(3, 4, variance8x16_mmx, 0),
                       make_tuple(3, 3, variance8x8_mmx, 0),
                       make_tuple(2, 2, variance4x4_mmx, 0)));
+
+#if CONFIG_VP8
+const vp8_subpixvariance_fn_t subpel_variance16x16_mmx =
+    vp8_sub_pixel_variance16x16_mmx;
+const vp8_subpixvariance_fn_t subpel_variance16x8_mmx =
+    vp8_sub_pixel_variance16x8_mmx;
+const vp8_subpixvariance_fn_t subpel_variance8x16_mmx =
+    vp8_sub_pixel_variance8x16_mmx;
+const vp8_subpixvariance_fn_t subpel_variance8x8_mmx =
+    vp8_sub_pixel_variance8x8_mmx;
+const vp8_subpixvariance_fn_t subpel_variance4x4_mmx =
+    vp8_sub_pixel_variance4x4_mmx;
+INSTANTIATE_TEST_CASE_P(
+    MMX, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(4, 4, subpel_variance16x16_mmx, 0),
+                      make_tuple(4, 3, subpel_variance16x8_mmx, 0),
+                      make_tuple(3, 4, subpel_variance8x16_mmx, 0),
+                      make_tuple(3, 3, subpel_variance8x8_mmx, 0),
+                      make_tuple(2, 2, subpel_variance4x4_mmx, 0)));
+#endif  // CONFIG_VP8
 #endif  // HAVE_MMX
 
 #if HAVE_SSE2
@@ -960,7 +999,6 @@ const VarianceMxNFunc highbd_8_mse16x16_sse2 = vpx_highbd_8_mse16x16_sse2;
 const VarianceMxNFunc highbd_8_mse16x8_sse2 = vpx_highbd_8_mse16x8_sse2;
 const VarianceMxNFunc highbd_8_mse8x16_sse2 = vpx_highbd_8_mse8x16_sse2;
 const VarianceMxNFunc highbd_8_mse8x8_sse2 = vpx_highbd_8_mse8x8_sse2;
-
 INSTANTIATE_TEST_CASE_P(
     SSE2, VpxHBDMseTest, ::testing::Values(make_tuple(4, 4, highbd_12_mse16x16_sse2),
                                            make_tuple(4, 3, highbd_12_mse16x8_sse2),
@@ -1131,6 +1169,27 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(5, 6, subpel_variance32x64_c, 0),
                       make_tuple(6, 5, subpel_variance64x32_c, 0),
                       make_tuple(6, 6, subpel_variance64x64_c, 0)));
+
+#if CONFIG_VP8
+const vp8_subpixvariance_fn_t subpel_variance16x16_c =
+    vp8_sub_pixel_variance16x16_c;
+const vp8_subpixvariance_fn_t subpel_variance16x8_c =
+    vp8_sub_pixel_variance16x8_c;
+const vp8_subpixvariance_fn_t subpel_variance8x16_c =
+    vp8_sub_pixel_variance8x16_c;
+const vp8_subpixvariance_fn_t subpel_variance8x8_c =
+    vp8_sub_pixel_variance8x8_c;
+const vp8_subpixvariance_fn_t subpel_variance4x4_c =
+    vp8_sub_pixel_variance4x4_c;
+INSTANTIATE_TEST_CASE_P(
+    C, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(2, 2, subpel_variance4x4_c, 0),
+                      make_tuple(3, 3, subpel_variance8x8_c, 0),
+                      make_tuple(3, 4, subpel_variance8x16_c, 0),
+                      make_tuple(4, 3, subpel_variance16x8_c, 0),
+                      make_tuple(4, 4, subpel_variance16x16_c, 0)));
+#endif  // CONFIG_VP8
+
 const vp9_subp_avg_variance_fn_t subpel_avg_variance4x4_c =
     vp9_sub_pixel_avg_variance4x4_c;
 const vp9_subp_avg_variance_fn_t subpel_avg_variance4x8_c =
@@ -1709,6 +1768,28 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_SSE2
 #endif  // CONFIG_VP9_ENCODER
 
+#if CONFIG_VP8
+#if HAVE_SSE2
+const vp8_subpixvariance_fn_t subpel_variance16x16_sse2 =
+    vp8_sub_pixel_variance16x16_wmt;
+const vp8_subpixvariance_fn_t subpel_variance16x8_sse2 =
+    vp8_sub_pixel_variance16x8_wmt;
+const vp8_subpixvariance_fn_t subpel_variance8x16_sse2 =
+    vp8_sub_pixel_variance8x16_wmt;
+const vp8_subpixvariance_fn_t subpel_variance8x8_sse2 =
+    vp8_sub_pixel_variance8x8_wmt;
+const vp8_subpixvariance_fn_t subpel_variance4x4_sse2 =
+    vp8_sub_pixel_variance4x4_wmt;
+INSTANTIATE_TEST_CASE_P(
+    SSE2, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(2, 2, subpel_variance4x4_sse2, 0),
+                      make_tuple(3, 3, subpel_variance8x8_sse2, 0),
+                      make_tuple(3, 4, subpel_variance8x16_sse2, 0),
+                      make_tuple(4, 3, subpel_variance16x8_sse2, 0),
+                      make_tuple(4, 4, subpel_variance16x16_sse2, 0)));
+#endif  // HAVE_SSE2
+#endif  // CONFIG_VP8
+
 #if CONFIG_VP9_ENCODER
 #if HAVE_SSSE3
 #if CONFIG_USE_X86INC
@@ -1799,6 +1880,19 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_SSSE3
 #endif  // CONFIG_VP9_ENCODER
 
+#if CONFIG_VP8
+#if HAVE_SSSE3
+const vp8_subpixvariance_fn_t subpel_variance16x16_ssse3 =
+    vp8_sub_pixel_variance16x16_wmt;
+const vp8_subpixvariance_fn_t subpel_variance16x8_ssse3 =
+    vp8_sub_pixel_variance16x8_wmt;
+INSTANTIATE_TEST_CASE_P(
+    SSSE3, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(4, 3, subpel_variance16x8_ssse3, 0),
+                      make_tuple(4, 4, subpel_variance16x16_ssse3, 0)));
+#endif  // HAVE_SSSE3
+#endif  // CONFIG_VP8
+
 #if HAVE_AVX2
 const VarianceMxNFunc mse16x16_avx2 = vpx_mse16x16_avx2;
 INSTANTIATE_TEST_CASE_P(AVX2, VpxMseTest,
@@ -1838,6 +1932,19 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // CONFIG_VP9_ENCODER
 #endif  // HAVE_AVX2
 
+#if CONFIG_VP8
+#if HAVE_MEDIA
+const vp8_subpixvariance_fn_t subpel_variance16x16_media =
+    vp8_sub_pixel_variance16x16_armv6;
+const vp8_subpixvariance_fn_t subpel_variance8x8_media =
+    vp8_sub_pixel_variance8x8_armv6;
+INSTANTIATE_TEST_CASE_P(
+    MEDIA, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(3, 3, subpel_variance8x8_media, 0),
+                      make_tuple(4, 4, subpel_variance16x16_media, 0)));
+#endif  // HAVE_MEDIA
+#endif  // CONFIG_VP8
+
 #if HAVE_NEON
 const Get4x4SSEFunc get4x4sse_cs_neon = vpx_get4x4sse_cs_neon;
 INSTANTIATE_TEST_CASE_P(NEON, VpxSseTest,
@@ -1865,6 +1972,19 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(4, 4, variance16x8_neon, 0),
                       make_tuple(4, 4, variance8x16_neon, 0),
                       make_tuple(3, 3, variance8x8_neon, 0)));
+
+#if CONFIG_VP8
+#if HAVE_NEON_ASM
+const vp8_subpixvariance_fn_t subpel_variance16x16_neon =
+    vp8_sub_pixel_variance16x16_neon;
+const vp8_subpixvariance_fn_t subpel_variance8x8_neon =
+    vp8_sub_pixel_variance8x8_neon;
+INSTANTIATE_TEST_CASE_P(
+    NEON, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(3, 3, subpel_variance8x8_neon, 0),
+                      make_tuple(4, 4, subpel_variance16x16_neon, 0)));
+#endif  // HAVE_NEON_ASM
+#endif  // CONFIG_VP8
 
 #if CONFIG_VP9_ENCODER
 const vp9_subpixvariance_fn_t subpel_variance8x8_neon =

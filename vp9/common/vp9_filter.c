@@ -12,6 +12,10 @@
 
 #include "vp9/common/vp9_filter.h"
 
+/* Initial experiments suggest the bilinear filter can be removed from
+ * vp9_filter_kernels[]. However, sticking with what's safe.
+ */
+
 const InterpKernel vp9_bilinear_filters[SUBPEL_SHIFTS] = {
   { 0, 0, 0, 128,   0, 0, 0, 0 },
   { 0, 0, 0, 120,   8, 0, 0, 0 },
