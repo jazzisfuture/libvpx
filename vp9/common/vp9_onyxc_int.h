@@ -308,7 +308,7 @@ static INLINE int get_free_fb(VP9_COMMON *cm) {
   assert(i < FRAME_BUFFERS);
   frame_bufs[i].ref_count = 1;
   unlock_buffer_pool(cm->buffer_pool);
-  return i;
+  return i == FRAME_BUFFERS ? -1 : i;
 }
 
 static INLINE void ref_cnt_fb(RefCntBuffer *bufs, int *idx, int new_idx) {
