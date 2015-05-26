@@ -21,6 +21,9 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
+#if CONFIG_VP8_ENCODER
+# include "./vp8_rtcd.h"
+#endif  // CONFIG_VP8_ENCODER
 #if CONFIG_VP9_ENCODER
 # include "./vp9_rtcd.h"
 # include "vp9/encoder/vp9_variance.h"
@@ -32,6 +35,10 @@ namespace {
 typedef unsigned int (*VarianceMxNFunc)(const uint8_t *a, int a_stride,
                                         const uint8_t *b, int b_stride,
                                         unsigned int *sse);
+typedef unsigned int (*SubpixVarMxNFunc)(const uint8_t *a, int a_stride,
+                                         int xoffset, int yoffset,
+                                         const uint8_t *b, int b_stride,
+                                         unsigned int *sse);
 typedef unsigned int (*Get4x4SseFunc)(const uint8_t *a, int a_stride,
                                       const uint8_t *b, int b_stride);
 
@@ -84,6 +91,12 @@ static unsigned int variance_ref(const uint8_t *src, const uint8_t *ref,
   return sse - (((int64_t) se * se) >> (l2w + l2h));
 }
 
+/* The subpel reference functions differs from the codec version in one aspect:
+ * because it calculates the bilinear factors directly instead of using a
+ * lookup table, it expects xoff and yoff to be << 1. Only half the table is
+ * used so the codec version shrinks the table to save space and maintain
+ * compatibility with vp8.
+ */
 static unsigned int subpel_variance_ref(const uint8_t *ref, const uint8_t *src,
                                         int l2w, int l2h, int xoff, int yoff,
                                         unsigned int *sse_ptr,
@@ -582,8 +595,8 @@ class SubpelVarianceTest
 
 template<typename SubpelVarianceFunctionType>
 void SubpelVarianceTest<SubpelVarianceFunctionType>::RefTest() {
-  for (int x = 0; x < 16; ++x) {
-    for (int y = 0; y < 16; ++y) {
+  for (int x = 0; x < 8; ++x) {
+    for (int y = 0; y < 8; ++y) {
       if (!use_high_bit_depth_) {
         for (int j = 0; j < block_size_; j++) {
           src_[j] = rnd_.Rand8();
@@ -605,8 +618,10 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::RefTest() {
       unsigned int var1;
       ASM_REGISTER_STATE_CHECK(var1 = subpel_variance_(ref_, width_ + 1, x, y,
                                                        src_, width_, &sse1));
-      const unsigned int var2 = subpel_variance_ref(ref_, src_, log2width_,
-                                                    log2height_, x, y, &sse2,
+      const unsigned int var2 = subpel_variance_ref(ref_, src_,
+                                                    log2width_, log2height_,
+                                                    x << 1, y << 1,
+                                                    &sse2,
                                                     use_high_bit_depth_,
                                                     bit_depth_);
       EXPECT_EQ(sse1, sse2) << "at position " << x << ", " << y;
@@ -620,8 +635,8 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::ExtremeRefTest() {
   // Compare against reference.
   // Src: Set the first half of values to 0, the second half to the maximum.
   // Ref: Set the first half of values to the maximum, the second half to 0.
-  for (int x = 0; x < 16; ++x) {
-    for (int y = 0; y < 16; ++y) {
+  for (int x = 0; x < 8; ++x) {
+    for (int y = 0; y < 8; ++y) {
       const int half = block_size_ / 2;
       if (!use_high_bit_depth_) {
         memset(src_, 0, half);
@@ -642,7 +657,8 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::ExtremeRefTest() {
       ASM_REGISTER_STATE_CHECK(
           var1 = subpel_variance_(ref_, width_ + 1, x, y, src_, width_, &sse1));
       const unsigned int var2 =
-          subpel_variance_ref(ref_, src_, log2width_, log2height_, x, y, &sse2,
+          subpel_variance_ref(ref_, src_, log2width_, log2height_,
+                              x << 1, y << 1, &sse2,
                               use_high_bit_depth_, bit_depth_);
       EXPECT_EQ(sse1, sse2) << "at position " << x << ", " << y;
       EXPECT_EQ(var1, var2) << "at position " << x << ", " << y;
@@ -653,8 +669,8 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::ExtremeRefTest() {
 #if CONFIG_VP9_ENCODER
 template<>
 void SubpelVarianceTest<vp9_subp_avg_variance_fn_t>::RefTest() {
-  for (int x = 0; x < 16; ++x) {
-    for (int y = 0; y < 16; ++y) {
+  for (int x = 0; x < 8; ++x) {
+    for (int y = 0; y < 8; ++y) {
       if (!use_high_bit_depth_) {
         for (int j = 0; j < block_size_; j++) {
           src_[j] = rnd_.Rand8();
@@ -681,7 +697,7 @@ void SubpelVarianceTest<vp9_subp_avg_variance_fn_t>::RefTest() {
                                   src_, width_, &sse1, sec_));
       const unsigned int var2 = subpel_avg_variance_ref(ref_, src_, sec_,
                                                         log2width_, log2height_,
-                                                        x, y, &sse2,
+                                                        x << 1, y << 1, &sse2,
                                                         use_high_bit_depth_,
                                                         bit_depth_);
       EXPECT_EQ(sse1, sse2) << "at position " << x << ", " << y;
@@ -779,7 +795,6 @@ const VarianceMxNFunc highbd_8_mse16x16_c = vpx_highbd_8_mse16x16_c;
 const VarianceMxNFunc highbd_8_mse16x8_c = vpx_highbd_8_mse16x8_c;
 const VarianceMxNFunc highbd_8_mse8x16_c = vpx_highbd_8_mse8x16_c;
 const VarianceMxNFunc highbd_8_mse8x8_c = vpx_highbd_8_mse8x8_c;
-
 INSTANTIATE_TEST_CASE_P(
     C, VpxHBDMseTest, ::testing::Values(make_tuple(4, 4, highbd_12_mse16x16_c),
                                         make_tuple(4, 4, highbd_12_mse16x8_c),
@@ -960,7 +975,6 @@ const VarianceMxNFunc highbd_8_mse16x16_sse2 = vpx_highbd_8_mse16x16_sse2;
 const VarianceMxNFunc highbd_8_mse16x8_sse2 = vpx_highbd_8_mse16x8_sse2;
 const VarianceMxNFunc highbd_8_mse8x16_sse2 = vpx_highbd_8_mse8x16_sse2;
 const VarianceMxNFunc highbd_8_mse8x8_sse2 = vpx_highbd_8_mse8x8_sse2;
-
 INSTANTIATE_TEST_CASE_P(
     SSE2, VpxHBDMseTest, ::testing::Values(make_tuple(4, 4, highbd_12_mse16x16_sse2),
                                            make_tuple(4, 3, highbd_12_mse16x8_sse2),
@@ -1072,8 +1086,15 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // HAVE_SSE2
 
+#if CONFIG_VP8
+typedef SubpelVarianceTest<SubpixVarMxNFunc> VP8SubpelVarianceTest;
+
+TEST_P(VP8SubpelVarianceTest, Ref) { RefTest(); }
+TEST_P(VP8SubpelVarianceTest, ExtremeRef) { ExtremeRefTest(); }
+#endif  // CONFIG_VP8
+
 #if CONFIG_VP9_ENCODER
-typedef SubpelVarianceTest<vp9_subpixvariance_fn_t> VP9SubpelVarianceTest;
+typedef SubpelVarianceTest<SubpixVarMxNFunc> VP9SubpelVarianceTest;
 typedef SubpelVarianceTest<vp9_subp_avg_variance_fn_t> VP9SubpelAvgVarianceTest;
 
 TEST_P(VP9SubpelVarianceTest, Ref) { RefTest(); }
@@ -1081,7 +1102,7 @@ TEST_P(VP9SubpelVarianceTest, ExtremeRef) { ExtremeRefTest(); }
 TEST_P(VP9SubpelAvgVarianceTest, Ref) { RefTest(); }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-typedef SubpelVarianceTest<vp9_subpixvariance_fn_t> VP9SubpelVarianceHighTest;
+typedef SubpelVarianceTest<SubpixVarMxNFunc> VP9SubpelVarianceHighTest;
 typedef SubpelVarianceTest<vp9_subp_avg_variance_fn_t>
     VP9SubpelAvgVarianceHighTest;
 
@@ -1090,31 +1111,31 @@ TEST_P(VP9SubpelVarianceHighTest, ExtremeRef) { ExtremeRefTest(); }
 TEST_P(VP9SubpelAvgVarianceHighTest, Ref) { RefTest(); }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-const vp9_subpixvariance_fn_t subpel_variance4x4_c =
+const SubpixVarMxNFunc subpel_variance4x4_c =
     vp9_sub_pixel_variance4x4_c;
-const vp9_subpixvariance_fn_t subpel_variance4x8_c =
+const SubpixVarMxNFunc subpel_variance4x8_c =
     vp9_sub_pixel_variance4x8_c;
-const vp9_subpixvariance_fn_t subpel_variance8x4_c =
+const SubpixVarMxNFunc subpel_variance8x4_c =
     vp9_sub_pixel_variance8x4_c;
-const vp9_subpixvariance_fn_t subpel_variance8x8_c =
+const SubpixVarMxNFunc subpel_variance8x8_c =
     vp9_sub_pixel_variance8x8_c;
-const vp9_subpixvariance_fn_t subpel_variance8x16_c =
+const SubpixVarMxNFunc subpel_variance8x16_c =
     vp9_sub_pixel_variance8x16_c;
-const vp9_subpixvariance_fn_t subpel_variance16x8_c =
+const SubpixVarMxNFunc subpel_variance16x8_c =
     vp9_sub_pixel_variance16x8_c;
-const vp9_subpixvariance_fn_t subpel_variance16x16_c =
+const SubpixVarMxNFunc subpel_variance16x16_c =
     vp9_sub_pixel_variance16x16_c;
-const vp9_subpixvariance_fn_t subpel_variance16x32_c =
+const SubpixVarMxNFunc subpel_variance16x32_c =
     vp9_sub_pixel_variance16x32_c;
-const vp9_subpixvariance_fn_t subpel_variance32x16_c =
+const SubpixVarMxNFunc subpel_variance32x16_c =
     vp9_sub_pixel_variance32x16_c;
-const vp9_subpixvariance_fn_t subpel_variance32x32_c =
+const SubpixVarMxNFunc subpel_variance32x32_c =
     vp9_sub_pixel_variance32x32_c;
-const vp9_subpixvariance_fn_t subpel_variance32x64_c =
+const SubpixVarMxNFunc subpel_variance32x64_c =
     vp9_sub_pixel_variance32x64_c;
-const vp9_subpixvariance_fn_t subpel_variance64x32_c =
+const SubpixVarMxNFunc subpel_variance64x32_c =
     vp9_sub_pixel_variance64x32_c;
-const vp9_subpixvariance_fn_t subpel_variance64x64_c =
+const SubpixVarMxNFunc subpel_variance64x64_c =
     vp9_sub_pixel_variance64x64_c;
 INSTANTIATE_TEST_CASE_P(
     C, VP9SubpelVarianceTest,
@@ -1131,6 +1152,27 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(5, 6, subpel_variance32x64_c, 0),
                       make_tuple(6, 5, subpel_variance64x32_c, 0),
                       make_tuple(6, 6, subpel_variance64x64_c, 0)));
+
+#if CONFIG_VP8
+const SubpixVarMxNFunc vp8_subpel_variance16x16_c =
+    vp8_sub_pixel_variance16x16_c;
+const SubpixVarMxNFunc vp8_subpel_variance16x8_c =
+    vp8_sub_pixel_variance16x8_c;
+const SubpixVarMxNFunc vp8_subpel_variance8x16_c =
+    vp8_sub_pixel_variance8x16_c;
+const SubpixVarMxNFunc vp8_subpel_variance8x8_c =
+    vp8_sub_pixel_variance8x8_c;
+const SubpixVarMxNFunc vp8_subpel_variance4x4_c =
+    vp8_sub_pixel_variance4x4_c;
+INSTANTIATE_TEST_CASE_P(
+    C, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(2, 2, vp8_subpel_variance4x4_c, 0),
+                      make_tuple(3, 3, vp8_subpel_variance8x8_c, 0),
+                      make_tuple(3, 4, vp8_subpel_variance8x16_c, 0),
+                      make_tuple(4, 3, vp8_subpel_variance16x8_c, 0),
+                      make_tuple(4, 4, vp8_subpel_variance16x16_c, 0)));
+#endif  // CONFIG_VP8
+
 const vp9_subp_avg_variance_fn_t subpel_avg_variance4x4_c =
     vp9_sub_pixel_avg_variance4x4_c;
 const vp9_subp_avg_variance_fn_t subpel_avg_variance4x8_c =
@@ -1173,83 +1215,83 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(6, 5, subpel_avg_variance64x32_c, 0),
                       make_tuple(6, 6, subpel_avg_variance64x64_c, 0)));
 #if CONFIG_VP9_HIGHBITDEPTH
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance4x4_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance4x4_c =
     vp9_highbd_10_sub_pixel_variance4x4_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance4x8_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance4x8_c =
     vp9_highbd_10_sub_pixel_variance4x8_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance8x4_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance8x4_c =
     vp9_highbd_10_sub_pixel_variance8x4_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance8x8_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance8x8_c =
     vp9_highbd_10_sub_pixel_variance8x8_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance8x16_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance8x16_c =
     vp9_highbd_10_sub_pixel_variance8x16_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance16x8_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance16x8_c =
     vp9_highbd_10_sub_pixel_variance16x8_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance16x16_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance16x16_c =
     vp9_highbd_10_sub_pixel_variance16x16_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance16x32_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance16x32_c =
     vp9_highbd_10_sub_pixel_variance16x32_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance32x16_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance32x16_c =
     vp9_highbd_10_sub_pixel_variance32x16_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance32x32_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance32x32_c =
     vp9_highbd_10_sub_pixel_variance32x32_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance32x64_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance32x64_c =
     vp9_highbd_10_sub_pixel_variance32x64_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance64x32_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance64x32_c =
     vp9_highbd_10_sub_pixel_variance64x32_c;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance64x64_c =
+const SubpixVarMxNFunc highbd_10_subpel_variance64x64_c =
     vp9_highbd_10_sub_pixel_variance64x64_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance4x4_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance4x4_c =
     vp9_highbd_12_sub_pixel_variance4x4_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance4x8_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance4x8_c =
     vp9_highbd_12_sub_pixel_variance4x8_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance8x4_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance8x4_c =
     vp9_highbd_12_sub_pixel_variance8x4_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance8x8_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance8x8_c =
     vp9_highbd_12_sub_pixel_variance8x8_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance8x16_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance8x16_c =
     vp9_highbd_12_sub_pixel_variance8x16_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance16x8_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance16x8_c =
     vp9_highbd_12_sub_pixel_variance16x8_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance16x16_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance16x16_c =
     vp9_highbd_12_sub_pixel_variance16x16_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance16x32_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance16x32_c =
     vp9_highbd_12_sub_pixel_variance16x32_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance32x16_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance32x16_c =
     vp9_highbd_12_sub_pixel_variance32x16_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance32x32_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance32x32_c =
     vp9_highbd_12_sub_pixel_variance32x32_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance32x64_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance32x64_c =
     vp9_highbd_12_sub_pixel_variance32x64_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance64x32_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance64x32_c =
     vp9_highbd_12_sub_pixel_variance64x32_c;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance64x64_c =
+const SubpixVarMxNFunc highbd_12_subpel_variance64x64_c =
     vp9_highbd_12_sub_pixel_variance64x64_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance4x4_c =
+const SubpixVarMxNFunc highbd_subpel_variance4x4_c =
     vp9_highbd_sub_pixel_variance4x4_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance4x8_c =
+const SubpixVarMxNFunc highbd_subpel_variance4x8_c =
     vp9_highbd_sub_pixel_variance4x8_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance8x4_c =
+const SubpixVarMxNFunc highbd_subpel_variance8x4_c =
     vp9_highbd_sub_pixel_variance8x4_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance8x8_c =
+const SubpixVarMxNFunc highbd_subpel_variance8x8_c =
     vp9_highbd_sub_pixel_variance8x8_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance8x16_c =
+const SubpixVarMxNFunc highbd_subpel_variance8x16_c =
     vp9_highbd_sub_pixel_variance8x16_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance16x8_c =
+const SubpixVarMxNFunc highbd_subpel_variance16x8_c =
     vp9_highbd_sub_pixel_variance16x8_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance16x16_c =
+const SubpixVarMxNFunc highbd_subpel_variance16x16_c =
     vp9_highbd_sub_pixel_variance16x16_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance16x32_c =
+const SubpixVarMxNFunc highbd_subpel_variance16x32_c =
     vp9_highbd_sub_pixel_variance16x32_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance32x16_c =
+const SubpixVarMxNFunc highbd_subpel_variance32x16_c =
     vp9_highbd_sub_pixel_variance32x16_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance32x32_c =
+const SubpixVarMxNFunc highbd_subpel_variance32x32_c =
     vp9_highbd_sub_pixel_variance32x32_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance32x64_c =
+const SubpixVarMxNFunc highbd_subpel_variance32x64_c =
     vp9_highbd_sub_pixel_variance32x64_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance64x32_c =
+const SubpixVarMxNFunc highbd_subpel_variance64x32_c =
     vp9_highbd_sub_pixel_variance64x32_c;
-const vp9_subpixvariance_fn_t highbd_subpel_variance64x64_c =
+const SubpixVarMxNFunc highbd_subpel_variance64x64_c =
     vp9_highbd_sub_pixel_variance64x64_c;
 INSTANTIATE_TEST_CASE_P(
     C, VP9SubpelVarianceHighTest,
@@ -1415,34 +1457,57 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_VP9_ENCODER
 
+
+#if CONFIG_VP8
+#if HAVE_MMX
+const SubpixVarMxNFunc subpel_variance16x16_mmx =
+    vp8_sub_pixel_variance16x16_mmx;
+const SubpixVarMxNFunc subpel_variance16x8_mmx =
+    vp8_sub_pixel_variance16x8_mmx;
+const SubpixVarMxNFunc subpel_variance8x16_mmx =
+    vp8_sub_pixel_variance8x16_mmx;
+const SubpixVarMxNFunc subpel_variance8x8_mmx =
+    vp8_sub_pixel_variance8x8_mmx;
+const SubpixVarMxNFunc subpel_variance4x4_mmx =
+    vp8_sub_pixel_variance4x4_mmx;
+INSTANTIATE_TEST_CASE_P(
+    MMX, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(4, 4, subpel_variance16x16_mmx, 0),
+                      make_tuple(4, 3, subpel_variance16x8_mmx, 0),
+                      make_tuple(3, 4, subpel_variance8x16_mmx, 0),
+                      make_tuple(3, 3, subpel_variance8x8_mmx, 0),
+                      make_tuple(2, 2, subpel_variance4x4_mmx, 0)));
+#endif  // HAVE_MMX
+#endif  // CONFIG_VP8
+
 #if CONFIG_VP9_ENCODER
 #if HAVE_SSE2
 #if CONFIG_USE_X86INC
-const vp9_subpixvariance_fn_t subpel_variance4x4_sse =
+const SubpixVarMxNFunc subpel_variance4x4_sse =
     vp9_sub_pixel_variance4x4_sse;
-const vp9_subpixvariance_fn_t subpel_variance4x8_sse =
+const SubpixVarMxNFunc subpel_variance4x8_sse =
     vp9_sub_pixel_variance4x8_sse;
-const vp9_subpixvariance_fn_t subpel_variance8x4_sse2 =
+const SubpixVarMxNFunc subpel_variance8x4_sse2 =
     vp9_sub_pixel_variance8x4_sse2;
-const vp9_subpixvariance_fn_t subpel_variance8x8_sse2 =
+const SubpixVarMxNFunc subpel_variance8x8_sse2 =
     vp9_sub_pixel_variance8x8_sse2;
-const vp9_subpixvariance_fn_t subpel_variance8x16_sse2 =
+const SubpixVarMxNFunc subpel_variance8x16_sse2 =
     vp9_sub_pixel_variance8x16_sse2;
-const vp9_subpixvariance_fn_t subpel_variance16x8_sse2 =
+const SubpixVarMxNFunc subpel_variance16x8_sse2 =
     vp9_sub_pixel_variance16x8_sse2;
-const vp9_subpixvariance_fn_t subpel_variance16x16_sse2 =
+const SubpixVarMxNFunc subpel_variance16x16_sse2 =
     vp9_sub_pixel_variance16x16_sse2;
-const vp9_subpixvariance_fn_t subpel_variance16x32_sse2 =
+const SubpixVarMxNFunc subpel_variance16x32_sse2 =
     vp9_sub_pixel_variance16x32_sse2;
-const vp9_subpixvariance_fn_t subpel_variance32x16_sse2 =
+const SubpixVarMxNFunc subpel_variance32x16_sse2 =
     vp9_sub_pixel_variance32x16_sse2;
-const vp9_subpixvariance_fn_t subpel_variance32x32_sse2 =
+const SubpixVarMxNFunc subpel_variance32x32_sse2 =
     vp9_sub_pixel_variance32x32_sse2;
-const vp9_subpixvariance_fn_t subpel_variance32x64_sse2 =
+const SubpixVarMxNFunc subpel_variance32x64_sse2 =
     vp9_sub_pixel_variance32x64_sse2;
-const vp9_subpixvariance_fn_t subpel_variance64x32_sse2 =
+const SubpixVarMxNFunc subpel_variance64x32_sse2 =
     vp9_sub_pixel_variance64x32_sse2;
-const vp9_subpixvariance_fn_t subpel_variance64x64_sse2 =
+const SubpixVarMxNFunc subpel_variance64x64_sse2 =
     vp9_sub_pixel_variance64x64_sse2;
 INSTANTIATE_TEST_CASE_P(
     SSE2, VP9SubpelVarianceTest,
@@ -1501,71 +1566,71 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(6, 5, subpel_avg_variance64x32_sse2, 0),
                       make_tuple(6, 6, subpel_avg_variance64x64_sse2, 0)));
 #if CONFIG_VP9_HIGHBITDEPTH
-const vp9_subpixvariance_fn_t highbd_subpel_variance8x4_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance8x4_sse2 =
     vp9_highbd_sub_pixel_variance8x4_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance8x8_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance8x8_sse2 =
     vp9_highbd_sub_pixel_variance8x8_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance8x16_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance8x16_sse2 =
     vp9_highbd_sub_pixel_variance8x16_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance16x8_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance16x8_sse2 =
     vp9_highbd_sub_pixel_variance16x8_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance16x16_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance16x16_sse2 =
     vp9_highbd_sub_pixel_variance16x16_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance16x32_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance16x32_sse2 =
     vp9_highbd_sub_pixel_variance16x32_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance32x16_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance32x16_sse2 =
     vp9_highbd_sub_pixel_variance32x16_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance32x32_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance32x32_sse2 =
     vp9_highbd_sub_pixel_variance32x32_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance32x64_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance32x64_sse2 =
     vp9_highbd_sub_pixel_variance32x64_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance64x32_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance64x32_sse2 =
     vp9_highbd_sub_pixel_variance64x32_sse2;
-const vp9_subpixvariance_fn_t highbd_subpel_variance64x64_sse2 =
+const SubpixVarMxNFunc highbd_subpel_variance64x64_sse2 =
     vp9_highbd_sub_pixel_variance64x64_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance8x4_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance8x4_sse2 =
     vp9_highbd_10_sub_pixel_variance8x4_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance8x8_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance8x8_sse2 =
     vp9_highbd_10_sub_pixel_variance8x8_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance8x16_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance8x16_sse2 =
     vp9_highbd_10_sub_pixel_variance8x16_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance16x8_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance16x8_sse2 =
     vp9_highbd_10_sub_pixel_variance16x8_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance16x16_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance16x16_sse2 =
     vp9_highbd_10_sub_pixel_variance16x16_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance16x32_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance16x32_sse2 =
     vp9_highbd_10_sub_pixel_variance16x32_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance32x16_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance32x16_sse2 =
     vp9_highbd_10_sub_pixel_variance32x16_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance32x32_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance32x32_sse2 =
     vp9_highbd_10_sub_pixel_variance32x32_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance32x64_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance32x64_sse2 =
     vp9_highbd_10_sub_pixel_variance32x64_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance64x32_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance64x32_sse2 =
     vp9_highbd_10_sub_pixel_variance64x32_sse2;
-const vp9_subpixvariance_fn_t highbd_10_subpel_variance64x64_sse2 =
+const SubpixVarMxNFunc highbd_10_subpel_variance64x64_sse2 =
     vp9_highbd_10_sub_pixel_variance64x64_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance8x4_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance8x4_sse2 =
     vp9_highbd_12_sub_pixel_variance8x4_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance8x8_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance8x8_sse2 =
     vp9_highbd_12_sub_pixel_variance8x8_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance8x16_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance8x16_sse2 =
     vp9_highbd_12_sub_pixel_variance8x16_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance16x8_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance16x8_sse2 =
     vp9_highbd_12_sub_pixel_variance16x8_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance16x16_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance16x16_sse2 =
     vp9_highbd_12_sub_pixel_variance16x16_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance16x32_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance16x32_sse2 =
     vp9_highbd_12_sub_pixel_variance16x32_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance32x16_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance32x16_sse2 =
     vp9_highbd_12_sub_pixel_variance32x16_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance32x32_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance32x32_sse2 =
     vp9_highbd_12_sub_pixel_variance32x32_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance32x64_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance32x64_sse2 =
     vp9_highbd_12_sub_pixel_variance32x64_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance64x32_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance64x32_sse2 =
     vp9_highbd_12_sub_pixel_variance64x32_sse2;
-const vp9_subpixvariance_fn_t highbd_12_subpel_variance64x64_sse2 =
+const SubpixVarMxNFunc highbd_12_subpel_variance64x64_sse2 =
     vp9_highbd_12_sub_pixel_variance64x64_sse2;
 INSTANTIATE_TEST_CASE_P(
     SSE2, VP9SubpelVarianceHighTest,
@@ -1709,35 +1774,56 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_SSE2
 #endif  // CONFIG_VP9_ENCODER
 
+#if CONFIG_VP8
+#if HAVE_SSE2
+const SubpixVarMxNFunc vp8_subpel_variance16x16_sse2 =
+    vp8_sub_pixel_variance16x16_wmt;
+const SubpixVarMxNFunc vp8_subpel_variance16x8_sse2 =
+    vp8_sub_pixel_variance16x8_wmt;
+const SubpixVarMxNFunc vp8_subpel_variance8x16_sse2 =
+    vp8_sub_pixel_variance8x16_wmt;
+const SubpixVarMxNFunc vp8_subpel_variance8x8_sse2 =
+    vp8_sub_pixel_variance8x8_wmt;
+const SubpixVarMxNFunc vp8_subpel_variance4x4_sse2 =
+    vp8_sub_pixel_variance4x4_wmt;
+INSTANTIATE_TEST_CASE_P(
+    SSE2, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(2, 2, vp8_subpel_variance4x4_sse2, 0),
+                      make_tuple(3, 3, vp8_subpel_variance8x8_sse2, 0),
+                      make_tuple(3, 4, vp8_subpel_variance8x16_sse2, 0),
+                      make_tuple(4, 3, vp8_subpel_variance16x8_sse2, 0),
+                      make_tuple(4, 4, vp8_subpel_variance16x16_sse2, 0)));
+#endif  // HAVE_SSE2
+#endif  // CONFIG_VP8
+
 #if CONFIG_VP9_ENCODER
 #if HAVE_SSSE3
 #if CONFIG_USE_X86INC
-
-const vp9_subpixvariance_fn_t subpel_variance4x4_ssse3 =
+const SubpixVarMxNFunc subpel_variance4x4_ssse3 =
     vp9_sub_pixel_variance4x4_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance4x8_ssse3 =
+const SubpixVarMxNFunc subpel_variance4x8_ssse3 =
     vp9_sub_pixel_variance4x8_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance8x4_ssse3 =
+const SubpixVarMxNFunc subpel_variance8x4_ssse3 =
     vp9_sub_pixel_variance8x4_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance8x8_ssse3 =
+const SubpixVarMxNFunc subpel_variance8x8_ssse3 =
     vp9_sub_pixel_variance8x8_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance8x16_ssse3 =
+const SubpixVarMxNFunc subpel_variance8x16_ssse3 =
     vp9_sub_pixel_variance8x16_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance16x8_ssse3 =
+const SubpixVarMxNFunc subpel_variance16x8_ssse3 =
     vp9_sub_pixel_variance16x8_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance16x16_ssse3 =
+const SubpixVarMxNFunc subpel_variance16x16_ssse3 =
     vp9_sub_pixel_variance16x16_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance16x32_ssse3 =
+const SubpixVarMxNFunc subpel_variance16x32_ssse3 =
     vp9_sub_pixel_variance16x32_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance32x16_ssse3 =
+const SubpixVarMxNFunc subpel_variance32x16_ssse3 =
     vp9_sub_pixel_variance32x16_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance32x32_ssse3 =
+const SubpixVarMxNFunc subpel_variance32x32_ssse3 =
     vp9_sub_pixel_variance32x32_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance32x64_ssse3 =
+const SubpixVarMxNFunc subpel_variance32x64_ssse3 =
     vp9_sub_pixel_variance32x64_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance64x32_ssse3 =
+const SubpixVarMxNFunc subpel_variance64x32_ssse3 =
     vp9_sub_pixel_variance64x32_ssse3;
-const vp9_subpixvariance_fn_t subpel_variance64x64_ssse3 =
+const SubpixVarMxNFunc subpel_variance64x64_ssse3 =
     vp9_sub_pixel_variance64x64_ssse3;
 INSTANTIATE_TEST_CASE_P(
     SSSE3, VP9SubpelVarianceTest,
@@ -1799,6 +1885,19 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_SSSE3
 #endif  // CONFIG_VP9_ENCODER
 
+#if CONFIG_VP8
+#if HAVE_SSSE3
+const SubpixVarMxNFunc vp8_subpel_variance16x16_ssse3 =
+    vp8_sub_pixel_variance16x16_ssse3;
+const SubpixVarMxNFunc vp8_subpel_variance16x8_ssse3 =
+    vp8_sub_pixel_variance16x8_ssse3;
+INSTANTIATE_TEST_CASE_P(
+    SSSE3, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(4, 3, vp8_subpel_variance16x8_ssse3, 0),
+                      make_tuple(4, 4, vp8_subpel_variance16x16_ssse3, 0)));
+#endif  // HAVE_SSSE3
+#endif  // CONFIG_VP8
+
 #if HAVE_AVX2
 const VarianceMxNFunc mse16x16_avx2 = vpx_mse16x16_avx2;
 INSTANTIATE_TEST_CASE_P(AVX2, VpxMseTest,
@@ -1818,9 +1917,9 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(4, 4, variance16x16_avx2, 0)));
 
 #if CONFIG_VP9_ENCODER
-const vp9_subpixvariance_fn_t subpel_variance32x32_avx2 =
+const SubpixVarMxNFunc subpel_variance32x32_avx2 =
     vp9_sub_pixel_variance32x32_avx2;
-const vp9_subpixvariance_fn_t subpel_variance64x64_avx2 =
+const SubpixVarMxNFunc subpel_variance64x64_avx2 =
     vp9_sub_pixel_variance64x64_avx2;
 INSTANTIATE_TEST_CASE_P(
     AVX2, VP9SubpelVarianceTest,
@@ -1837,6 +1936,19 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(6, 6, subpel_avg_variance64x64_avx2, 0)));
 #endif  // CONFIG_VP9_ENCODER
 #endif  // HAVE_AVX2
+
+#if CONFIG_VP8
+#if HAVE_MEDIA
+const SubpixVarMxNFunc subpel_variance16x16_media =
+    vp8_sub_pixel_variance16x16_armv6;
+const SubpixVarMxNFunc subpel_variance8x8_media =
+    vp8_sub_pixel_variance8x8_armv6;
+INSTANTIATE_TEST_CASE_P(
+    MEDIA, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(3, 3, subpel_variance8x8_media, 0),
+                      make_tuple(4, 4, subpel_variance16x16_media, 0)));
+#endif  // HAVE_MEDIA
+#endif  // CONFIG_VP8
 
 #if HAVE_NEON
 const Get4x4SseFunc get4x4sse_cs_neon = vpx_get4x4sse_cs_neon;
@@ -1866,14 +1978,27 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(4, 4, variance8x16_neon, 0),
                       make_tuple(3, 3, variance8x8_neon, 0)));
 
+#if CONFIG_VP8
+#if HAVE_NEON_ASM
+const SubpixVarMxNFunc vp8_subpel_variance16x16_neon =
+    vp8_sub_pixel_variance16x16_neon;
+const SubpixVarMxNFunc vp8_subpel_variance8x8_neon =
+    vp8_sub_pixel_variance8x8_neon;
+INSTANTIATE_TEST_CASE_P(
+    NEON, VP8SubpelVarianceTest,
+    ::testing::Values(make_tuple(3, 3, vp8_subpel_variance8x8_neon, 0),
+                      make_tuple(4, 4, vp8_subpel_variance16x16_neon, 0)));
+#endif  // HAVE_NEON_ASM
+#endif  // CONFIG_VP8
+
 #if CONFIG_VP9_ENCODER
-const vp9_subpixvariance_fn_t subpel_variance8x8_neon =
+const SubpixVarMxNFunc subpel_variance8x8_neon =
     vp9_sub_pixel_variance8x8_neon;
-const vp9_subpixvariance_fn_t subpel_variance16x16_neon =
+const SubpixVarMxNFunc subpel_variance16x16_neon =
     vp9_sub_pixel_variance16x16_neon;
-const vp9_subpixvariance_fn_t subpel_variance32x32_neon =
+const SubpixVarMxNFunc subpel_variance32x32_neon =
     vp9_sub_pixel_variance32x32_neon;
-const vp9_subpixvariance_fn_t subpel_variance64x64_neon =
+const SubpixVarMxNFunc subpel_variance64x64_neon =
     vp9_sub_pixel_variance64x64_neon;
 INSTANTIATE_TEST_CASE_P(
     NEON, VP9SubpelVarianceTest,
