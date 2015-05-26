@@ -299,7 +299,10 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
       && frame_bufs[cm->new_fb_idx].ref_count == 0)
     pool->release_fb_cb(pool->cb_priv,
                         &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
+  // Find a free frame buffer. Return error if can not find any.
   cm->new_fb_idx = get_free_fb(cm);
+  if (cm->new_fb_idx == -1)
+    return VPX_CODEC_MEM_ERROR;
 
   // Assign a MV array to the frame buffer.
   cm->cur_frame = &pool->frame_bufs[cm->new_fb_idx];

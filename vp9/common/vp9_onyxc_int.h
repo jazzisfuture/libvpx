@@ -306,7 +306,12 @@ static INLINE int get_free_fb(VP9_COMMON *cm) {
       break;
 
   assert(i < FRAME_BUFFERS);
-  frame_bufs[i].ref_count = 1;
+  if (i != FRAME_BUFFERS) {
+    frame_bufs[i].ref_count = 1;
+  } else {
+    // Reset i to be -1 to indicate no free buffer found.
+    i = -1;
+  }
   unlock_buffer_pool(cm->buffer_pool);
   return i;
 }
