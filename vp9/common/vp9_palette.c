@@ -171,9 +171,9 @@ void vp9_calc_indices(const double *data, const double *centroids, int *indices,
 
 static void calc_centroids(const double *data, double *centroids,
                            const int *indices, int n, int k, int dim) {
-  int i, j, index;
+  int i, j, index, seed_idx = 1;
   int count[256];
-  unsigned int seed = time(NULL);
+  unsigned int seed = data[0];
   vpx_memset(count, 0, sizeof(count[0]) * k);
   vpx_memset(centroids, 0, sizeof(centroids[0]) * k * dim);
 
@@ -186,12 +186,15 @@ static void calc_centroids(const double *data, double *centroids,
   }
 
   for (i = 0; i < k; i++) {
-    if (!count[i])
+    if (!count[i]) {
       vpx_memcpy(centroids + i * dim, data + (rand_r(&seed) % n) * dim,
                  sizeof(centroids[0]) * dim);
-    else
+      seed += data[seed_idx];
+      seed_idx = (seed_idx + 1) % n;
+    } else {
       for (j = 0; j < dim; j++)
         centroids[i * dim + j] /= count[i];
+    }
   }
 }
 
@@ -225,7 +228,7 @@ int vp9_k_means(const double *data, double *centroids, int *indices,
     vp9_calc_indices(data, centroids, indices, n, k, dim);
     cur_total_dist = calc_total_dist(data, centroids, indices, n, k, dim);
 
-    if (cur_total_dist > pre_total_dist && 0) {
+    if (cur_total_dist > pre_total_dist) {
       vpx_memcpy(centroids, pre_centroids, sizeof(pre_centroids[0]) * k * dim);
       vpx_memcpy(indices, pre_indices, sizeof(pre_indices[0]) * n);
       break;
