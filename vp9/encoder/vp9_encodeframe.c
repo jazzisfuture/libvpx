@@ -4536,7 +4536,7 @@ static void encode_tiles(VP9_COMP *cpi) {
   const int tile_rows = cm->tile_rows;
 
   int tile_col, tile_row;
-#if CONFIG_ROW_TILE
+#if CONFIG_ROW_TILE || 1
   TileInfo (*tile)[1024] = cpi->tile_info;
   TOKENEXTRA *(*tok)[1024] = cpi->tile_tok;
 #else
@@ -4560,6 +4560,17 @@ static void encode_tiles(VP9_COMP *cpi) {
       const TileInfo * const ptile = &tile[tile_row][tile_col];
       TOKENEXTRA * const old_tok = tok[tile_row][tile_col];
       int mi_row;
+
+#if CONFIG_ROW_TILE || 1
+      int row_length =
+          mi_cols_aligned_to_sb(ptile->mi_row_end - ptile->mi_row_start);
+//      vpx_memset(&cm->above_context[ptile->mi_row_start * 2], 0,
+//                 sizeof(*cm->above_context) * 2 *
+//               mi_cols_aligned_to_sb(ptile->mi_row_end - ptile->mi_row_start));
+      vpx_memset(&cm->above_seg_context[ptile->mi_col_start], 0,
+                 sizeof(*cm->above_seg_context) *
+               mi_cols_aligned_to_sb(ptile->mi_col_end - ptile->mi_col_start));
+#endif
 
       for (mi_row = ptile->mi_row_start; mi_row < ptile->mi_row_end;
            mi_row += MI_BLOCK_SIZE) {
