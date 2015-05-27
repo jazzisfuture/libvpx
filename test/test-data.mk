@@ -666,6 +666,8 @@ LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-20-big_superframe-01.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-20-big_superframe-01.webm.md5
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-20-big_superframe-02.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-20-big_superframe-02.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-20-temporal_svc.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-20-temporal_svc.webm.md5
 ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp92-2-20-10bit-yuv420.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp92-2-20-10bit-yuv420.webm.md5

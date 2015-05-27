@@ -192,6 +192,7 @@ const char *const kVP9TestVectors[] = {
   "vp93-2-20-10bit-yuv444.webm", "vp93-2-20-12bit-yuv444.webm",
 #endif  // CONFIG_VP9_HIGHBITDEPTH`
   "vp90-2-20-big_superframe-01.webm", "vp90-2-20-big_superframe-02.webm",
+  "vp90-2-20-temporal_svc.webm",
 };
 const int kNumVP9TestVectors = NELEMENTS(kVP9TestVectors);
 #endif  // CONFIG_VP9_DECODER
