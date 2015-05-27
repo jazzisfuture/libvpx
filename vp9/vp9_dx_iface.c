@@ -43,6 +43,10 @@ struct vpx_codec_alg_priv {
   int                     flushed;
   int                     invert_tile_order;
   int                     frame_parallel_decode;  // frame-based threading.
+#if CONFIG_ROW_TILE && CONFIG_KEY_FRAME_TILE
+  int                     tile_row;
+  int                     tile_col;
+#endif
 
   // External frame buffer info to save for VP9 common.
   void *ext_priv;  // Private data associated with the external frame buffers.

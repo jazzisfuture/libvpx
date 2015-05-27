@@ -210,6 +210,10 @@ extern "C" {
       const void                     *raw;
     }                        config;      /**< Configuration pointer aliasing union */
     vpx_codec_priv_t        *priv;        /**< Algorithm private storage */
+#if CONFIG_ROW_TILE && CONFIG_KEY_FRAME_TILE || 1
+    int                      tile_row;    /**< Row index of the decoded tile */
+    int                      tile_col;    /**< Column index of the decoded tile */
+#endif
   } vpx_codec_ctx_t;
 
   /*!\brief Bit depth for codec
