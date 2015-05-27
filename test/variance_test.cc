@@ -76,10 +76,12 @@ static unsigned int variance_ref(const uint8_t *src, const uint8_t *ref,
       }
     }
   }
+#if CONFIG_VP9_HIGHBITDEPTH
   if (bit_depth > VPX_BITS_8) {
     sse = ROUND_POWER_OF_TWO(sse, 2 * (bit_depth - 8));
     se = ROUND_POWER_OF_TWO(se, bit_depth - 8);
   }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   *sse_ptr = sse;
   return sse - (((int64_t) se * se) >> (l2w + l2h));
 }
@@ -125,10 +127,12 @@ static unsigned int subpel_variance_ref(const uint8_t *ref, const uint8_t *src,
       }
     }
   }
+#if CONFIG_VP9_HIGHBITDEPTH
   if (bit_depth > VPX_BITS_8) {
     sse = ROUND_POWER_OF_TWO(sse, 2 * (bit_depth - 8));
     se = ROUND_POWER_OF_TWO(se, bit_depth - 8);
   }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   *sse_ptr = sse;
   return sse - (((int64_t) se * se) >> (l2w + l2h));
 }
@@ -496,10 +500,12 @@ unsigned int subpel_avg_variance_ref(const uint8_t *ref,
       }
     }
   }
+#if CONFIG_VP9_HIGHBITDEPTH
   if (bit_depth > 8) {
     sse = ROUND_POWER_OF_TWO(sse, 2*(bit_depth-8));
     se = ROUND_POWER_OF_TWO(se, bit_depth-8);
   }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   *sse_ptr = sse;
   return sse - (((int64_t) se * se) >> (l2w + l2h));
 }
