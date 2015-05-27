@@ -1260,8 +1260,13 @@ static void write_modes_sb(VP9_COMP *cpi,
 static void write_modes(VP9_COMP *cpi,
                         const TileInfo *const tile, vp9_writer *w,
                         TOKENEXTRA **tok, const TOKENEXTRA *const tok_end) {
+  VP9_COMMON *cm = &cpi->common;
   int mi_row, mi_col;
-
+#if CONFIG_ROW_TILE || 1
+  vpx_memset(&cm->above_seg_context[tile->mi_row_start], 0,
+             sizeof(*cm->above_seg_context) *
+             mi_cols_aligned_to_sb(tile->mi_row_end - tile->mi_row_start));
+#endif
   for (mi_row = tile->mi_row_start; mi_row < tile->mi_row_end;
        mi_row += MI_BLOCK_SIZE) {
     vp9_zero(cpi->mb.e_mbd.left_seg_context);
