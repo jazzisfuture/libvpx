@@ -1952,7 +1952,7 @@ static void get_tile_buffer(const uint8_t *const data_end,
   *data += size;
 }
 
-#if CONFIG_ROW_TILE
+#if CONFIG_ROW_TILE || 1
 static void get_tile_buffers(VP9Decoder *pbi,
                              const uint8_t *data, const uint8_t *data_end,
                              int tile_cols, int tile_rows,
