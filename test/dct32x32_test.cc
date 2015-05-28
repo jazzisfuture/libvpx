@@ -387,6 +387,6 @@ INSTANTIATE_TEST_CASE_P(
     MSA, Trans32x32Test,
     ::testing::Values(
         make_tuple(&vp9_fdct32x32_c,
-                   &vp9_idct32x32_1024_add_msa, 0, VPX_BITS_8)));
+                   &vp9_idct32x32_1024_add_c, 0, VPX_BITS_8)));
 #endif  // HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 }  // namespace

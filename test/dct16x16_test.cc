@@ -933,13 +933,13 @@ INSTANTIATE_TEST_CASE_P(
     MSA, Trans16x16DCT,
     ::testing::Values(
         make_tuple(&vp9_fdct16x16_c,
-                   &vp9_idct16x16_256_add_msa, 0, VPX_BITS_8)));
+                   &vp9_idct16x16_256_add_c, 0, VPX_BITS_8)));
 INSTANTIATE_TEST_CASE_P(
     MSA, Trans16x16HT,
     ::testing::Values(
-        make_tuple(&vp9_fht16x16_c, &vp9_iht16x16_256_add_msa, 0, VPX_BITS_8),
-        make_tuple(&vp9_fht16x16_c, &vp9_iht16x16_256_add_msa, 1, VPX_BITS_8),
-        make_tuple(&vp9_fht16x16_c, &vp9_iht16x16_256_add_msa, 2, VPX_BITS_8),
-        make_tuple(&vp9_fht16x16_c, &vp9_iht16x16_256_add_msa, 3, VPX_BITS_8)));
+        make_tuple(&vp9_fht16x16_c, &vp9_iht16x16_256_add_c, 0, VPX_BITS_8),
+        make_tuple(&vp9_fht16x16_c, &vp9_iht16x16_256_add_c, 1, VPX_BITS_8),
+        make_tuple(&vp9_fht16x16_c, &vp9_iht16x16_256_add_c, 2, VPX_BITS_8),
+        make_tuple(&vp9_fht16x16_c, &vp9_iht16x16_256_add_c, 3, VPX_BITS_8)));
 #endif  // HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 }  // namespace
