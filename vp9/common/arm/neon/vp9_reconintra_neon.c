@@ -82,6 +82,79 @@ void vp9_dc_128_predictor_8x8_neon(uint8_t *dst, ptrdiff_t y_stride,
   dc_8x8(dst, y_stride, NULL, NULL);
 }
 
+//------------------------------------------------------------------------------
+// DC 16x16
+static INLINE void dc_16x16(uint8_t *dst, ptrdiff_t stride,
+                            const uint8_t *above, const uint8_t *left) {
+  uint16x8_t sum_top;
+  uint16x8_t sum_left;
+  uint8x8_t dc0;
+
+  if (above) {
+    const uint8x16_t A = vld1q_u8(above);  // top row
+    const uint16x8_t p0 = vpaddlq_u8(A);  // cascading summation of the top
+    const uint16x4_t p1 = vadd_u16(vget_low_u16(p0), vget_high_u16(p0));
+    const uint16x4_t p2 = vpadd_u16(p1, p1);
+    const uint16x4_t p3 = vpadd_u16(p2, p2);
+    sum_top = vcombine_u16(p3, p3);
+  }
+
+  if (left) {
+    const uint8x16_t L = vld1q_u8(left);  // left row
+    const uint16x8_t p0 = vpaddlq_u8(L);  // cascading summation of the left
+    const uint16x4_t p1 = vadd_u16(vget_low_u16(p0), vget_high_u16(p0));
+    const uint16x4_t p2 = vpadd_u16(p1, p1);
+    const uint16x4_t p3 = vpadd_u16(p2, p2);
+    sum_left = vcombine_u16(p3, p3);
+  }
+
+  if (above && left) {
+    const uint16x8_t sum = vaddq_u16(sum_left, sum_top);
+    dc0 = vrshrn_n_u16(sum, 5);
+  } else if (above) {
+    dc0 = vrshrn_n_u16(sum_top, 4);
+  } else if (left) {
+    dc0 = vrshrn_n_u16(sum_left, 4);
+  } else {
+    dc0 = vdup_n_u8(0x80);
+  }
+
+  {
+    const uint8x16_t dc = vdupq_lane_u8(dc0, 0);
+    int i;
+    for (i = 0; i < 16; ++i) {
+      vst1q_u8(dst + i * stride, dc);
+    }
+  }
+}
+
+void vp9_dc_predictor_16x16_neon(uint8_t *dst, ptrdiff_t y_stride,
+                                 const uint8_t *above, const uint8_t *left) {
+  dc_16x16(dst, y_stride, above, left);
+}
+
+void vp9_dc_left_predictor_16x16_neon(uint8_t *dst, ptrdiff_t y_stride,
+                                      const uint8_t *above,
+                                      const uint8_t *left) {
+  (void)above;
+  dc_16x16(dst, y_stride, NULL, left);
+}
+
+void vp9_dc_top_predictor_16x16_neon(uint8_t *dst, ptrdiff_t y_stride,
+                                     const uint8_t *above,
+                                     const uint8_t *left) {
+  (void)left;
+  dc_16x16(dst, y_stride, above, NULL);
+}
+
+void vp9_dc_128_predictor_16x16_neon(uint8_t *dst, ptrdiff_t y_stride,
+                                     const uint8_t *above,
+                                     const uint8_t *left) {
+  (void)above;
+  (void)left;
+  dc_16x16(dst, y_stride, NULL, NULL);
+}
+
 #if !HAVE_NEON_ASM
 
 void vp9_v_predictor_4x4_neon(uint8_t *dst, ptrdiff_t y_stride,
