@@ -1,4 +1,3 @@
-#!/bin/bash
 ##
 ##  Copyright (c) 2014 The WebM project authors. All Rights Reserved.
 ##
