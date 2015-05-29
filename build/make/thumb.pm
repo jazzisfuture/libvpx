@@ -1,4 +1,3 @@
-#!/usr/bin/env perl
 ##
 ##  Copyright (c) 2013 The WebM project authors. All Rights Reserved.
 ##
