@@ -2616,8 +2616,8 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
   // below, forcing the use of context 0 for those frame types.
   cm->frame_context_idx = vp9_rb_read_literal(rb, FRAME_CONTEXTS_LOG2);
 
-  if (frame_is_intra_only(cm) || cm->error_resilient_mode)
-    vp9_setup_past_independence(cm);
+  //if (frame_is_intra_only(cm) || cm->error_resilient_mode)
+    //vp9_setup_past_independence(cm);
 
   setup_loopfilter(cm, rb);
   setup_quantization(cm, &pbi->mb, rb);
@@ -2625,6 +2625,9 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
 
   setup_tile_info(cm, rb);
   sz = vp9_rb_read_literal(rb, 16);
+
+  if (frame_is_intra_only(cm) || cm->error_resilient_mode)
+    vp9_setup_past_independence(cm);
 
   if (sz == 0)
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
@@ -2989,6 +2992,19 @@ void vp9_decode_frame(VP9Decoder *pbi,
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
 
+#if 0
+  if (cm->current_video_frame % 100 == 0) {
+    memset(cm->stats, 0,
+           32 * TX_SIZES * PLANE_TYPES * REF_TYPES * COEF_BANDS *
+           COEFF_CONTEXTS * (UNCONSTRAINED_NODES + 2)* sizeof(cm->stats[0]));
+  }
+#endif
+
+#if 0
+  printf("\n frame %3d, type %2d, showframe %2d \n", cm->current_video_frame,
+         frame_is_intra_only(cm), cm->show_frame);
+#endif
+
   // TODO(jzern): remove frame_parallel_decoding_mode restriction for
   // single-frame tile decoding.
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1 &&
@@ -3009,6 +3025,45 @@ void vp9_decode_frame(VP9Decoder *pbi,
     vp9_loop_bilateral_rows(new_fb, cm, 0, cm->mi_rows, 0);
   }
 #endif  // CONFIG_LOOP_POSTFILTER
+
+#if 0
+  if (cm->current_video_frame % 100 == 99) {
+    FILE *fp;
+    int i1, i2, i3, i4, i5, i6, i7;
+    int sizes[6] = {
+        TX_SIZES * PLANE_TYPES * REF_TYPES * COEF_BANDS * COEFF_CONTEXTS *
+        (UNCONSTRAINED_NODES + 2),
+        PLANE_TYPES * REF_TYPES * COEF_BANDS * COEFF_CONTEXTS *
+        (UNCONSTRAINED_NODES + 2),
+        REF_TYPES * COEF_BANDS * COEFF_CONTEXTS * (UNCONSTRAINED_NODES + 2),
+        COEF_BANDS * COEFF_CONTEXTS * (UNCONSTRAINED_NODES + 2),
+        COEFF_CONTEXTS * (UNCONSTRAINED_NODES + 2),
+        (UNCONSTRAINED_NODES + 2)
+    };
+    //int total = 0;
+
+    fp = fopen("stats_token.txt", "a");
+    for (i1 = 0; i1 < 32; i1++)
+      for (i2 = 0; i2 < TX_SIZES; i2++)
+        for (i3 = 0; i3 < PLANE_TYPES; i3++)
+          for (i4 = 0; i4 < REF_TYPES; i4++)
+            for (i5 = 0; i5 < COEF_BANDS; i5++)
+              for (i6 = 0; i6 < COEFF_CONTEXTS; i6++){
+                for (i7 = 0; i7 < UNCONSTRAINED_NODES + 2; i7++)
+                  fprintf(fp, "%10d ",
+                          cm->stats[i1 * sizes[5] + i2 * sizes[4] +
+                                    i3 * sizes[3] + i4 * sizes[2] +
+                                    i5 * sizes[1] + i6 * sizes[0] + i7]);
+                fprintf(fp, "\n \n");
+                //total += cm->stats[i1 * 3360 + i2 * 840 + i3 * 420 +
+                  //                 i4 * 210 + i5 * 30 + i6 * 5 + i7];
+              }
+    fprintf(fp, "\n \n");
+    fclose(fp);
+
+    //printf("\n total %d \n ", total);
+  }
+#endif
 
   new_fb->corrupted |= xd->corrupted;
   if (!new_fb->corrupted) {

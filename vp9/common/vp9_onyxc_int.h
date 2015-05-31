@@ -234,6 +234,10 @@ typedef struct VP9Common {
   int num_global_motion[MAX_REF_FRAMES];
   Global_Motion_Params global_motion[MAX_REF_FRAMES][MAX_GLOBAL_MOTION_MODELS];
 #endif
+#if 0
+  int stats[32 * TX_SIZES * PLANE_TYPES * REF_TYPES * COEF_BANDS *
+            COEFF_CONTEXTS * (UNCONSTRAINED_NODES + 2)];
+#endif
 } VP9_COMMON;
 
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {

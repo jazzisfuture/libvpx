@@ -2899,7 +2899,9 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
     vp9_set_quantizer(cm, q);
 
+#if !CONFIG_QCTX_TPROBS
     if (loop_count == 0)
+#endif
       setup_frame(cpi);
 
 #if CONFIG_PALETTE
@@ -3418,6 +3420,13 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   } else {
     encode_with_recode_loop(cpi, size, dest, q, bottom_index, top_index);
   }
+
+#if 0
+  if (frame_is_intra_only(cm) || cm->error_resilient_mode) {
+    vp9_default_coef_probs(cm);
+    //printf("<<<<<<<< enc q %d\n", cm->base_qindex);
+  }
+#endif
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
 #ifdef OUTPUT_YUV_DENOISED

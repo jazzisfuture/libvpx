@@ -14,6 +14,9 @@
 #include "vp9/common/vp9_entropymode.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx/vpx_integer.h"
+#if CONFIG_QCTX_TPROBS
+#include "vp9/common/vp9_qctx_token_probs.h"
+#endif  // CONFIG_QCTX_TPROBS
 
 const vp9_prob vp9_cat1_prob[] = { 159 };
 const vp9_prob vp9_cat2_prob[] = { 165, 145 };
@@ -1602,6 +1605,20 @@ void vp9_model_to_full_probs(const vp9_prob *model, vp9_prob *full) {
   extend_to_full_distribution(&full[UNCONSTRAINED_NODES], model[PIVOT_NODE]);
 }
 
+#if CONFIG_QCTX_TPROBS
+static void fill_probs(int q, int tx_size, vp9_coeff_probs_model *coef_probs) {
+  int i3, i4, i5, i6, i7;
+
+    for (i3 = 0; i3 < PLANE_TYPES; i3++)
+      for (i4 = 0; i4 < REF_TYPES; i4++)
+        for (i5 = 0; i5 < COEF_BANDS; i5++)
+          for (i6 = 0; i6 < COEFF_CONTEXTS; i6++)
+            for (i7 = 0; i7 < UNCONSTRAINED_NODES; i7++)
+              coef_probs[i3][i4][i5][i6][i7] =
+                  default_coef_probs[q][tx_size][i3][i4][i5][i6][i7];
+}
+#endif  // CONFIG_QCTX_TPROBS
+
 void vp9_default_coef_probs(VP9_COMMON *cm) {
   vp9_copy(cm->fc.coef_probs[TX_4X4], default_coef_probs_4x4);
   vp9_copy(cm->fc.coef_probs[TX_8X8], default_coef_probs_8x8);
@@ -1614,6 +1631,27 @@ void vp9_default_coef_probs(VP9_COMMON *cm) {
 #if CONFIG_TX_SKIP
   vp9_copy(cm->fc.coef_probs_pxd, default_coef_probs_pxd);
 #endif  // CONFIG_TX_SKIP
+
+#if CONFIG_QCTX_TPROBS
+  {
+    int q = cm->base_qindex >> 3;
+
+    q = q >> 3;
+    //q = 28;
+
+    if (0) {
+      int i;
+      printf(" base_qindex %d\n", cm->base_qindex);
+      scanf("%d", &i);
+    }
+
+
+    fill_probs(q, TX_4X4, cm->fc.coef_probs[TX_4X4]);
+    fill_probs(q, TX_8X8, cm->fc.coef_probs[TX_8X8]);
+    fill_probs(q, TX_16X16, cm->fc.coef_probs[TX_16X16]);
+    fill_probs(q, TX_32X32, cm->fc.coef_probs[TX_32X32]);
+  }
+#endif  // CONFIG_QCTX_TPROBS
 }
 
 #define COEF_COUNT_SAT 24

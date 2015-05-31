@@ -96,6 +96,36 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
   const uint8_t *cat5_prob;
   const uint8_t *cat6_prob;
 
+#if 0
+  int q_idx = vp9_get_qindex(&cm->seg, xd->mi[0].src_mi->mbmi.segment_id,
+                             cm->base_qindex);
+  int sizes[6] = {
+      TX_SIZES * PLANE_TYPES * REF_TYPES * COEF_BANDS * COEFF_CONTEXTS *
+      (UNCONSTRAINED_NODES + 2),
+      PLANE_TYPES * REF_TYPES * COEF_BANDS * COEFF_CONTEXTS *
+      (UNCONSTRAINED_NODES + 2),
+      REF_TYPES * COEF_BANDS * COEFF_CONTEXTS * (UNCONSTRAINED_NODES + 2),
+      COEF_BANDS * COEFF_CONTEXTS * (UNCONSTRAINED_NODES + 2),
+      COEFF_CONTEXTS * (UNCONSTRAINED_NODES + 2),
+      (UNCONSTRAINED_NODES + 2)
+  };
+
+  if (0) {
+    int i;
+    for (i = 0; i < 6; i++)
+      printf("%4d ", sizes[i]);
+    printf("\n");
+  }
+
+  q_idx = q_idx >> 3;
+  if (q_idx > 31)
+    printf("q_idx error %d\n", q_idx);
+
+  //printf("q_index is %d \n",
+    //     vp9_get_qindex(&cm->seg, xd->mi[0].src_mi->mbmi.segment_id,
+      //                  cm->base_qindex));
+#endif
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
     if (cm->bit_depth == VPX_BITS_10) {
@@ -141,8 +171,16 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     prob = coef_probs[band][ctx];
     if (!cm->frame_parallel_decoding_mode)
       ++eob_branch_count[band][ctx];
+#if 0
+    cm->stats[q_idx * sizes[5] + tx_size * sizes[4] + type * sizes[3] +
+              ref * sizes[2] + band * sizes[1] + ctx * sizes[0] + 4]++;
+#endif
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE])) {
       INCREMENT_COUNT(EOB_MODEL_TOKEN);
+#if 0
+      cm->stats[q_idx * sizes[5] + tx_size * sizes[4] + type * sizes[3] +
+                ref * sizes[2] + band * sizes[1] + ctx * sizes[0] + 0]++;
+#endif
       break;
     }
 #if CONFIG_NEW_QUANT
@@ -151,6 +189,10 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
 
     while (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
+#if 0
+      cm->stats[q_idx * sizes[5] + tx_size * sizes[4] + type * sizes[3] +
+                ref * sizes[2] + band * sizes[1] + ctx * sizes[0] + 1]++;
+#endif
       dqv = dq[1];
       token_cache[scan[c]] = 0;
       ++c;
@@ -166,10 +208,18 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
 
     if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
       INCREMENT_COUNT(ONE_TOKEN);
+#if 0
+      cm->stats[q_idx * sizes[5] + tx_size * sizes[4] + type * sizes[3] +
+                ref * sizes[2] + band * sizes[1] + ctx * sizes[0] + 2]++;
+#endif
       token = ONE_TOKEN;
       val = 1;
     } else {
       INCREMENT_COUNT(TWO_TOKEN);
+#if 0
+      cm->stats[q_idx * sizes[5] + tx_size * sizes[4] + type * sizes[3] +
+                ref * sizes[2] + band * sizes[1] + ctx * sizes[0] + 3]++;
+#endif
       token = vp9_read_tree(r, coeff_subtree_high,
                             vp9_pareto8_full[prob[PIVOT_NODE] - 1]);
       switch (token) {
@@ -326,9 +376,17 @@ static int decode_coefs_pxd(VP9_COMMON *cm, const MACROBLOCKD *xd,
     prob = coef_probs_pxd[ctx];
     if (!cm->frame_parallel_decoding_mode)
       ++eob_branch_count_pxd[ctx];
+#if 0
+    cm->stats[tx_size * 312 + type * 156 + ref * 78
+              + ctx * 13 + 12]++;
+#endif
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE])) {
       if (!cm->frame_parallel_decoding_mode)
         ++coef_counts_pxd[ctx][EOB_TOKEN];
+#if 0
+      cm->stats[tx_size * 312 + type * 156 + ref * 78
+                + ctx * 13 + EOB_TOKEN]++;
+#endif
       break;
     }
 
@@ -340,6 +398,10 @@ static int decode_coefs_pxd(VP9_COMMON *cm, const MACROBLOCKD *xd,
     while (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       if (!cm->frame_parallel_decoding_mode)
         ++coef_counts_pxd[ctx][ZERO_TOKEN];
+#if 0
+      cm->stats[tx_size * 312 + type * 156 + ref * 78
+                + ctx * 13 + ZERO_TOKEN]++;
+#endif
       dqv = dq[1];
       token_cache[scan[c]] = 0;
       ++c;
@@ -355,6 +417,10 @@ static int decode_coefs_pxd(VP9_COMMON *cm, const MACROBLOCKD *xd,
     if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
       if (!cm->frame_parallel_decoding_mode)
         ++coef_counts_pxd[ctx][ONE_TOKEN];
+#if 0
+      cm->stats[tx_size * 312 + type * 156 + ref * 78
+                + ctx * 13 + ONE_TOKEN]++;
+#endif
       token = ONE_TOKEN;
       val = 1;
     } else {
@@ -362,6 +428,10 @@ static int decode_coefs_pxd(VP9_COMMON *cm, const MACROBLOCKD *xd,
 
       if (!cm->frame_parallel_decoding_mode)
         ++coef_counts_pxd[ctx][token];
+#if 0
+      cm->stats[tx_size * 312 + type * 156 + ref * 78
+                + ctx * 13 + token]++;
+#endif
       switch (token) {
         case TWO_TOKEN:
         case THREE_TOKEN:
