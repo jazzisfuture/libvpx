@@ -48,6 +48,11 @@ void vp9_encode_block_intra(MACROBLOCK *x, int plane, int block,
 
 void vp9_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane);
 
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+void vp9_encode_intra_block_plane_sc(MACROBLOCK *x, BLOCK_SIZE bsize,
+                                     int plane);
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+
 #if CONFIG_TX_SKIP
 void vp9_tx_identity_rect(const int16_t *input, tran_low_t *out,
                           int row, int col,

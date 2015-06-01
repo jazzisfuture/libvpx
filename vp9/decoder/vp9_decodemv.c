@@ -211,7 +211,13 @@ static int read_skip(VP9_COMMON *cm, const MACROBLOCKD *xd,
 #endif
   } else {
     const int ctx = vp9_get_skip_context(xd);
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+    MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
+    const int skip = (mbmi->single_color[0] && mbmi->single_color[1]) ?
+        1 : vp9_read(r, cm->fc.skip_probs[ctx]);
+#else
     const int skip = vp9_read(r, cm->fc.skip_probs[ctx]);
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
     if (!cm->frame_parallel_decoding_mode)
       ++cm->counts.skip[ctx][skip];
     return skip;
@@ -268,26 +274,80 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
 #endif  // CONFIG_INTRABC
 
   mbmi->segment_id = read_intra_segment_id(cm, xd, mi_row, mi_col, r);
+
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+  if (bsize >= BLOCK_64X64 && cm->allow_palette_mode) {
+    if (xd->sc_count[0] != 0) {
+      mbmi->single_color[0] = 1;
+      mbmi->single_color_value[0] = xd->previous_color[0];
+      xd->sc_count[0]--;
+    } else {
+      mbmi->single_color[0] = vp9_read(r, 224);
+      if (mbmi->single_color[0]) {
+        int use_index;
+        use_index = vp9_read(r, 32);
+        if (use_index) {
+          int index =
+              vp9_read_literal(r, vp9_ceil_log2(cm->current_palette_size));
+          mbmi->single_color_value[0] = cm->current_palette_colors[index];
+        } else {
+          mbmi->single_color_value[0] = vp9_read_literal(r, 8);
+        }
+        xd->sc_count[0] = vp9_read_literal(r, SC_LENGTH_BITS);
+        xd->previous_color[0] = mbmi->single_color_value[0];
+      }
+    }
+
+    if (mbmi->single_color[0]) {
+      mbmi->mode = DC_PRED;
+      mbmi->tx_size = MIN(max_txsize_lookup[bsize],
+                          tx_mode_to_biggest_tx_size[cm->tx_mode]);
+
+      mbmi->palette_indexed_size = 0;
+      mbmi->palette_literal_size = 1;
+      mbmi->palette_literal_colors[0] = mbmi->single_color_value[0];
+      vp9_palette_color_insertion(cm->current_palette_colors,
+                                  &cm ->current_palette_size,
+                                  cm->current_palette_count, mbmi);
+    }
+
+    // mbmi->single_color[1] = vp9_read(r, 128);
+    mbmi->single_color[1] = 0;
+    if (mbmi->single_color[1]) {
+      mbmi->single_color_value[1] = vp9_read_literal(r, 8);
+      mbmi->single_color_value[2] = vp9_read_literal(r, 8);
+      mbmi->uv_mode = DC_PRED;
+    }
+  } else {
+    mbmi->single_color[0] = 0;
+    mbmi->single_color[1] = 0;
+  }
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+
 #if CONFIG_MISC_ENTROPY
   mbmi->skip = 0;
 #else
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
 #endif
 #if CONFIG_PALETTE
+  mbmi->palette_enabled[0] = 0;
+  mbmi->palette_enabled[1] = 0;
   if (bsize >= BLOCK_8X8 && cm->allow_palette_mode) {
     int palette_ctx = 0;
     if (above_mi)
       palette_ctx += (above_mi->mbmi.palette_enabled[0] == 1);
     if (left_mi)
       palette_ctx += (left_mi->mbmi.palette_enabled[0] == 1);
-    mbmi->palette_enabled[0] =
-        vp9_read(r,
-                 cm->fc.palette_enabled_prob[bsize - BLOCK_8X8][palette_ctx]);
-    mbmi->palette_enabled[1] =
-        vp9_read(r, cm->fc.palette_uv_enabled_prob[mbmi->palette_enabled[0]]);
-  } else {
-    mbmi->palette_enabled[0] = 0;
-    mbmi->palette_enabled[1] = 0;
+#if CONFIG_SINGLE_COLOR
+    if (!mbmi->single_color[0])
+#endif  // CONFIG_SINGLE_COLOR
+      mbmi->palette_enabled[0] = vp9_read(r, cm->fc.palette_enabled_prob
+                                          [bsize - BLOCK_8X8][palette_ctx]);
+#if CONFIG_SINGLE_COLOR
+    if (!mbmi->single_color[1])
+#endif  // CONFIG_SINGLE_COLOR
+      mbmi->palette_enabled[1] = vp9_read(r, cm->fc.palette_uv_enabled_prob
+                                          [mbmi->palette_enabled[0]]);
   }
 
   if (mbmi->palette_enabled[0]) {
@@ -413,9 +473,12 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
     }
   }
 
-  if (!mbmi->palette_enabled[0]) {
+  if (!mbmi->palette_enabled[0]
+#if CONFIG_SINGLE_COLOR
+      && !mbmi->single_color[0]
+#endif  // CONFIG_SINGLE_COLOR
+  )
     mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, bsize, 1, r);
-  }
 #else
   mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, bsize, 1, r);
 #endif
@@ -423,33 +486,41 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
   mbmi->ref_frame[1] = NONE;
 
 #if CONFIG_TX_SKIP
+  mbmi->tx_skip[0] = 0;
+  mbmi->tx_skip[1] = 0;
   if (mbmi->sb_type >= BLOCK_8X8) {
     int q_idx = vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex);
     int try_tx_skip = q_idx <= tx_skip_q_thresh_intra;
     if (try_tx_skip) {
       if (xd->lossless) {
-        if (mbmi->tx_size == TX_4X4)
+        if (mbmi->tx_size == TX_4X4
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+            && !mbmi->single_color[0]
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+        )
           mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[0]);
         else
           mbmi->tx_skip[0] = 1;
 
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+        if (mbmi->single_color[0])
+          mbmi->tx_skip[0] = 0;
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+
         if (get_uv_tx_size(mbmi, &xd->plane[1]) == TX_4X4)
           mbmi->tx_skip[1] =
-            vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+              vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
         else
           mbmi->tx_skip[1] = 1;
-        } else {
-          mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[0]);
-          mbmi->tx_skip[1] =
+      } else {
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+        if (!mbmi->single_color[0])
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+        mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[0]);
+        mbmi->tx_skip[1] =
             vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
-        }
-    } else {
-      mbmi->tx_skip[0] = 0;
-      mbmi->tx_skip[1] = 0;
+      }
     }
-  } else {
-    mbmi->tx_skip[0] = 0;
-    mbmi->tx_skip[1] = 0;
   }
 #endif
 
@@ -530,9 +601,14 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
       break;
     default:
 #if CONFIG_PALETTE
-      if (!mbmi->palette_enabled[0])
+      if (!mbmi->palette_enabled[0]
+#if CONFIG_SINGLE_COLOR
+      && !mbmi->single_color[0]
+#endif  // CONFIG_SINGLE_COLOR
+      )
         mbmi->mode = read_intra_mode(r,
                        get_y_mode_probs(mi, above_mi, left_mi, 0));
+
 #else
       mbmi->mode = read_intra_mode(r,
                                    get_y_mode_probs(mi, above_mi, left_mi, 0));
@@ -541,6 +617,9 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
       if (is_filter_enabled(mbmi->tx_size) && is_filter_allowed(mbmi->mode)
 #if CONFIG_PALETTE
             && !mbmi->palette_enabled[0]
+#if CONFIG_SINGLE_COLOR
+            && !mbmi->single_color[0]
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
       )
         mbmi->filterbit = vp9_read(r,
@@ -560,7 +639,11 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
   } else
 #endif  // CONFIG_INTRABC
 #if CONFIG_PALETTE
-  if (!mbmi->palette_enabled[1])
+  if (!mbmi->palette_enabled[1]
+#if CONFIG_SINGLE_COLOR
+      && !mbmi->single_color[1]
+#endif  // CONFIG_SINGLE_COLOR
+  )
 #endif  // CONFIG_PALETTE
   mbmi->uv_mode = read_intra_mode(r, vp9_kf_uv_mode_prob[mbmi->mode]);
 
@@ -1353,6 +1436,10 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 #endif  // CONFIG_COPY_MODE
 
   mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+  mbmi->single_color[0] = 0;
+  mbmi->single_color[1] = 0;
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
 #if CONFIG_SUPERTX
   if (!supertx_enabled) {
 #endif
