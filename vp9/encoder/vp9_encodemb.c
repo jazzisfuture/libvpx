@@ -3586,3 +3586,23 @@ void vp9_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   vp9_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block_intra,
                                          &arg);
 }
+
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+void vp9_encode_intra_block_plane_sc(MACROBLOCK *x, BLOCK_SIZE bsize,
+                                     int plane) {
+    MACROBLOCKD *const xd = &x->e_mbd;
+    MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
+    struct macroblockd_plane *const pd = &xd->plane[plane];
+    const int dst_stride = pd->dst.stride;
+    int i;
+    int rows = (4 * num_4x4_blocks_high_lookup[bsize]) >>
+        (pd->subsampling_x);
+    int cols = (4 * num_4x4_blocks_wide_lookup[bsize]) >>
+        (pd->subsampling_y);
+    uint8_t *dst = pd->dst.buf;
+    uint8_t color_value = mbmi->single_color_value[plane];
+
+    for (i = 0; i < rows; i++)
+      memset(dst + i * dst_stride, color_value, cols * sizeof(dst[0]));
+}
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR

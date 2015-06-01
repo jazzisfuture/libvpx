@@ -1381,6 +1381,9 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
 #endif  // CONFIG_TX_SKIP
 #if CONFIG_PALETTE
   mic->mbmi.palette_enabled[0] = 0;
+#if CONFIG_SINGLE_COLOR
+    mic->mbmi.single_color[0] = 0;
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
 
   // Pick modes for each sub-block (of size 4x4, 4x8, or 8x4) in an 8x8 block.
@@ -1822,6 +1825,9 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if CONFIG_PALETTE
     mic->mbmi.palette_enabled[0] = 0;
+#if CONFIG_SINGLE_COLOR
+    mic->mbmi.single_color[0] = 0;
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
 
     super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
@@ -1927,6 +1933,18 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_PALETTE
   mic->mbmi.current_palette_size = cpi->common.current_palette_size;
   colors = vp9_count_colors(src, src_stride, rows, cols);
+
+#if CONFIG_SINGLE_COLOR
+  if (colors == 1 && bsize == BLOCK_64X64) {
+    mic->mbmi.single_color_value[0] = src[0];
+    mic->mbmi.single_color_index[0] =
+        vp9_palette_color_lookup(cpi->common.current_palette_colors,
+                                 cpi->common.current_palette_size,
+                                 mic->mbmi.single_color_value[0], 0);
+    mic->mbmi.single_color[0] = 1;
+  }
+#endif  // CONFIG_SINGLE_COLOR
+
   if (colors > 1 && colors <= 64 && cpi->common.allow_palette_mode) {
     int n, r, c, i, j, temp, max_itr = 200, k;
     int m1, m2;
@@ -2186,6 +2204,19 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
     mic->mbmi.filterbit = 0;
 #endif  // CONFIG_FILTERINTRA
   }
+#if CONFIG_SINGLE_COLOR
+  if (mic->mbmi.single_color[0]) {
+    mic->mbmi.mode = DC_PRED;
+    mic->mbmi.tx_size = MIN(max_txsize_lookup[bsize],
+                        tx_mode_to_biggest_tx_size[cpi->common.tx_mode]);
+#if CONFIG_FILTERINTRA
+    mic->mbmi.filterbit = 0;
+#endif  // CONFIG_FILTERINTRA
+#if CONFIG_TX_SKIP
+    mic->mbmi.tx_skip[0] = 0;
+#endif  // CONFIG_TX_SKIP
+  }
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
 
   return best_rd;
@@ -2367,8 +2398,13 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
   uint8_t *src_u = x->plane[1].src.buf;
   uint8_t *src_v = x->plane[2].src.buf;
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
+#endif  // CONFIG_PALETTE
 
-  xd->mi[0].src_mi->mbmi.palette_enabled[1] = 0;
+#if CONFIG_PALETTE
+  mbmi->palette_enabled[1] = 0;
+#if CONFIG_SINGLE_COLOR
+  mbmi->single_color[1] = 0;
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
   vpx_memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
 #if CONFIG_FILTERINTRA
@@ -2504,6 +2540,15 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int colors_u = vp9_count_colors(src_u, src_stride, rows, cols);
     int colors_v = vp9_count_colors(src_v, src_stride, rows, cols);
     int colors = colors_u > colors_v ? colors_u : colors_v;
+
+    // UV is currently not enabled
+#if CONFIG_SINGLE_COLOR && 0
+    if (colors_u == 1 && colors_v == 1 && frame_is_intra_only(&cpi->common)) {
+      mbmi->single_color[1] = 1;
+      mbmi->single_color_value[1] = src_u[0];
+      mbmi->single_color_value[2] = src_v[0];
+    }
+#endif  // CONFIG_SINGLE_COLOR
 
     if (colors > 1 && colors <= 64) {
       int n, r, c, i, j, max_itr = 200;
@@ -2675,6 +2720,11 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
     memcpy(xd->plane[1].color_index_map, xd->palette_map_buffer,
            rows * cols * sizeof(xd->palette_map_buffer[0]));
   }
+#if CONFIG_SINGLE_COLOR
+    if (mbmi->single_color[1]) {
+      mbmi->uv_mode = DC_PRED;
+    }
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
   return best_rd;
 }
@@ -5758,14 +5808,22 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
 #if CONFIG_PALETTE
-  if (bsize >= BLOCK_8X8 && !pd[1].subsampling_x && !pd[1].subsampling_y) {
+  if (bsize >= BLOCK_8X8 && !pd[1].subsampling_x && !pd[1].subsampling_y
+#if CONFIG_SINGLE_COLOR
+      && !xd->mi[0].src_mi->mbmi.single_color[0]
+#endif  // CONFIG_SINGLE_COLOR
+  ) {
     best_rd = MIN(best_rd, rd_cost->rdcost);
     rd_pick_palette_444(cpi, x, rd_cost, bsize, ctx, best_rd);
   }
 #endif  // CONFIG_PALETTE
 
 #if CONFIG_INTRABC
-  if (bsize >= BLOCK_8X8) {
+  if (bsize >= BLOCK_8X8
+#if CONFIG_SINGLE_COLOR
+      && !xd->mi[0].src_mi->mbmi.single_color[0]
+#endif  // CONFIG_SINGLE_COLOR
+  ) {
     best_rd = MIN(best_rd, rd_cost->rdcost);
     if (rd_pick_intrabc_sb_mode(cpi, x, mi_row, mi_col, &rate_y,
                                 &dist_y, &y_skip, bsize,
@@ -5798,6 +5856,17 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                 ctx->palette_count_buf,
                                 &(ctx->mic.mbmi));
   }
+#if CONFIG_SINGLE_COLOR
+  if (rd_cost->rate < INT_MAX && ctx->mic.mbmi.single_color[0]) {
+    ctx->mic.mbmi.palette_indexed_size = 0;
+    ctx->mic.mbmi.palette_literal_size = 1;
+    ctx->mic.mbmi.palette_literal_colors[0] =
+        ctx->mic.mbmi.single_color_value[0];
+    vp9_palette_color_insertion(ctx->palette_colors_buf,
+                                &ctx->palette_buf_size,
+                                ctx->palette_count_buf, &(ctx->mic.mbmi));
+  }
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
 }
 
@@ -6350,6 +6419,10 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_PALETTE
     mbmi->palette_enabled[0] = 0;
     mbmi->palette_enabled[1] = 0;
+#if CONFIG_SINGLE_COLOR
+    mbmi->single_color[0] = 0;
+    mbmi->single_color[1] = 0;
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
     // Evaluate all sub-pel filters irrespective of whether we can use
     // them for this frame.
@@ -7582,6 +7655,9 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_PALETTE
   for (i = 0; i < 2; ++i) {
     mbmi->palette_enabled[i] = 0;
+#if CONFIG_SINGLE_COLOR
+    mbmi->single_color[i] = 0;
+#endif  // CONFIG_SINGLE_COLOR
   }
 #endif  // CONFIG_PALETTE
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ref_frame++) {

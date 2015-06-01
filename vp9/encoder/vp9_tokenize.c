@@ -329,6 +329,12 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
 
   int aoff, loff;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &aoff, &loff);
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+  if (mbmi->single_color[plane != 0]) {
+    vp9_set_contexts(xd, pd, plane_bsize, tx_size, 0, aoff, loff);
+    return;
+  }
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
 
   pt = get_entropy_context(tx_size, pd->above_context + aoff,
                            pd->left_context + loff);

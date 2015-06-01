@@ -1386,6 +1386,16 @@ void vp9_predict_intra_block(const MACROBLOCKD *xd, int block_idx, int bwl_in,
   if (!filterflag) {
 #endif  // CONFIG_FILTERINTRA
 #if CONFIG_PALETTE
+#if CONFIG_SINGLE_COLOR
+    if (xd->mi[0].src_mi->mbmi.single_color[plane != 0]) {
+      int bs = 4 * (1 << tx_size), r;
+      for (r = 0; r < bs; r++)
+        memset(dst + r * dst_stride,
+               xd->mi[0].src_mi->mbmi.single_color_value[plane],
+               bs * sizeof(dst[0]));
+      return;
+    }
+#endif  // CONFIG_SINGLE_COLOR
     if (xd->mi[0].src_mi->mbmi.palette_enabled[plane !=0]) {
       uint8_t *palette = xd->mi[0].src_mi->mbmi.palette_colors +
           plane * PALETTE_MAX_SIZE;

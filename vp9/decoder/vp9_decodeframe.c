@@ -390,7 +390,14 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
   PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block):
                                         mbmi->uv_mode;
   (void) mode;
-#endif
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+  if (xd->mi[0].src_mi->mbmi.single_color[plane != 0]) {
+    tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+    vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
+    return;
+  }
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
     tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
@@ -1334,6 +1341,11 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd, int hbs,
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
   PARTITION_TYPE p;
 
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+  if (cm->allow_palette_mode && xd->sc_count[0] != 0)
+    p = PARTITION_NONE;
+  else
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
   if (has_rows && has_cols)
     p = (PARTITION_TYPE)vp9_read_tree(r, vp9_partition_tree, probs);
   else if (!has_rows && has_cols)
@@ -2988,6 +3000,10 @@ void vp9_decode_frame(VP9Decoder *pbi,
 
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
+
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+  xd->sc_count[0] = 0;
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
 
   // TODO(jzern): remove frame_parallel_decoding_mode restriction for
   // single-frame tile decoding.
