@@ -143,7 +143,7 @@ static const arg_def_t use_i444 = ARG_DEF(
 static const arg_def_t use_i440 = ARG_DEF(
     NULL, "i440", 0, "Input file is I440");
 static const arg_def_t codecarg = ARG_DEF(
-    NULL, "codec", 1, "Codec to use");
+    NULL, "codec", 1, "Codec to use ('vp9'(default), or 'vp8')");
 static const arg_def_t passes = ARG_DEF(
     "p", "passes", 1, "Number of passes (1/2)");
 static const arg_def_t pass_arg = ARG_DEF(
