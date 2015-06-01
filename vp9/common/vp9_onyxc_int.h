@@ -229,11 +229,16 @@ typedef struct VP9Common {
   int allow_palette_mode;
   int palette_counter;
   int block_counter;
+#if CONFIG_SINGLE_COLOR1
+  int sc_count[2];
+  uint8_t previous_color[3];
+  MODE_INFO *sc_starting_mi;
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
 #if CONFIG_GLOBAL_MOTION
   int num_global_motion[MAX_REF_FRAMES];
   Global_Motion_Params global_motion[MAX_REF_FRAMES][MAX_GLOBAL_MOTION_MODELS];
-#endif
+#endif  // CONFIG_GLOBAL_MOTION
 } VP9_COMMON;
 
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {
