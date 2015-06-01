@@ -498,9 +498,15 @@ void usage_exit(void) {
 
   for (i = 0; i < get_vpx_encoder_count(); ++i) {
     const VpxInterface *const encoder = get_vpx_encoder_by_index(i);
-    fprintf(stderr, "    %-6s - %s\n",
-            encoder->name, vpx_codec_iface_name(encoder->codec_interface()));
+    if (i==0)
+      fprintf(stderr, "    %-6s - %s (default)\n",
+              encoder->name, vpx_codec_iface_name(encoder->codec_interface()));
+    else
+      fprintf(stderr, "    %-6s - %s\n",
+              encoder->name, vpx_codec_iface_name(encoder->codec_interface()));
   }
+  fprintf(stderr, "\n        ");
+  fprintf(stderr, "Use --codec to switch to a non-default encoder.\n\n");
 
   exit(EXIT_FAILURE);
 }
