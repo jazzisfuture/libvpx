@@ -143,7 +143,7 @@ static const arg_def_t use_i444 = ARG_DEF(
 static const arg_def_t use_i440 = ARG_DEF(
     NULL, "i440", 0, "Input file is I440");
 static const arg_def_t codecarg = ARG_DEF(
-    NULL, "codec", 1, "Codec to use");
+    NULL, "codec", 1, "Codec to use ('vp9'(default), or 'vp8')");
 static const arg_def_t passes = ARG_DEF(
     "p", "passes", 1, "Number of passes (1/2)");
 static const arg_def_t pass_arg = ARG_DEF(
@@ -814,7 +814,7 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
 
   /* Initialize default parameters */
   memset(global, 0, sizeof(*global));
-  global->codec = get_vpx_encoder_by_index(0);
+  global->codec = get_vpx_encoder_by_name("vp9");
   global->passes = 0;
   global->color_type = I420;
   /* Assign default deadline to good quality */
