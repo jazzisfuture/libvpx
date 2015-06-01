@@ -40,6 +40,10 @@ extern "C" {
 #define PALETTE_MAX_SIZE 8
 #define PALETTE_DELTA_BIT 0
 #define PALETTE_COLOR_CONTEXTS 16
+#if CONFIG_SINGLE_COLOR
+// number of bits used to transmit length of consecutive single color blocks
+#define SC_LENGTH_BITS 5
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
 
 /* Segment Feature Masks */
@@ -256,6 +260,12 @@ typedef struct {
   uint8_t palette_literal_colors[PALETTE_MAX_SIZE];
   uint8_t *palette_color_map;
   uint8_t *palette_uv_color_map;
+#if CONFIG_SINGLE_COLOR
+  int single_color[2];  // signal if Y/UV block is single color only
+  uint8_t single_color_value[3];  // value of the single color
+  int single_color_index[3];  // buffer index of the single color value
+  int sc_length[2];  // length of following consecutive single color blocks
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
 } MB_MODE_INFO;
 
@@ -388,6 +398,11 @@ typedef struct macroblockd {
 #if CONFIG_PALETTE
   DECLARE_ALIGNED(16, uint8_t, color_index_map[2][64 * 64]);
   DECLARE_ALIGNED(16, uint8_t, palette_map_buffer[64 * 64]);
+#if CONFIG_SINGLE_COLOR
+  int sc_count[2];
+  uint8_t previous_color[3];
+  MODE_INFO *sc_starting_mi;
+#endif  // CONFIG_SINGLE_COLOR
 #endif  // CONFIG_PALETTE
 
   ENTROPY_CONTEXT *above_context[MAX_MB_PLANE];

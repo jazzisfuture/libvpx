@@ -448,6 +448,13 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
   const scan_order *so = get_scan(xd, tx_size, pd->plane_type, block);
   int eob;
 
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+  if (xd->mi->src_mi->mbmi.single_color[plane != 0]) {
+    vp9_set_contexts(xd, pd, plane_bsize, tx_size, 0, x, y);
+    return 0;
+  }
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+
 #if CONFIG_TX_SKIP
   if (xd->mi->src_mi->mbmi.tx_skip[plane != 0] && FOR_SCREEN_CONTENT)
     eob = decode_coefs_pxd(cm, xd, pd->plane_type,

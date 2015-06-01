@@ -4845,8 +4845,14 @@ static void encode_frame_internal(VP9_COMP *cpi) {
                  PALETTE_BUF_SIZE * sizeof(cm->current_palette_count[0]));
       cm->palette_counter = 0;
       cm->block_counter = 0;
+#if CONFIG_SINGLE_COLOR1
+      cm->sc_count[0] = 0;
+#endif  // CONFIG_SINGLE_COLOR
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+      xd->sc_count[0] = 0;
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
     }
-#endif
+#endif  // CONFIG_PALETTE
 
     encode_tiles(cpi);
 
@@ -5186,8 +5192,18 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       ) {
     int plane;
     mbmi->skip = 1;
-    for (plane = 0; plane < MAX_MB_PLANE; ++plane)
-      vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
+
+    for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+      if (mbmi->single_color[plane != 0]) {
+        vp9_encode_intra_block_plane_sc(x, bsize, plane);
+        //if (bsize < BLOCK_8X8) printf("error\n");
+      }
+      else
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+        vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
+    }
+
     if (output_enabled)
       sum_intra_stats(&cm->counts,
 #if CONFIG_FILTERINTRA
@@ -5211,6 +5227,42 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
                rows * cols * sizeof(xd->plane[0].color_index_map[0]));
       }
 
+#if CONFIG_SINGLE_COLOR
+      mbmi->sc_length[0] = 0;
+      if (mbmi->single_color[0]) {
+        mbmi->palette_indexed_size = 0;
+        mbmi->palette_literal_size = 1;
+        mbmi->palette_literal_colors[0] = mbmi->single_color_value[0];
+        vp9_palette_color_insertion(cm->current_palette_colors,
+                                    &cm ->current_palette_size,
+                                    cm->current_palette_count, mbmi);
+
+        if (xd->sc_count[0] == 0) {
+          xd->sc_count[0] = 1;
+          xd->previous_color[0] = mbmi->single_color_value[0];
+          xd->sc_starting_mi = mi;
+        } else {
+          if (xd->sc_count[0] >= (1 << SC_LENGTH_BITS) ||
+              xd->previous_color[0] != mbmi->single_color_value[0]) {
+            xd->sc_starting_mi->mbmi.sc_length[0] = xd->sc_count[0];
+            xd->sc_count[0] = 1;
+            xd->previous_color[0] = mbmi->single_color_value[0];
+            xd->sc_starting_mi = mi;
+          } else {
+            xd->sc_count[0]++;
+            if (mi_row + mi_height >= cm->mi_rows &&
+                mi_col + mi_width >= cm->mi_cols) {
+              xd->sc_starting_mi->mbmi.sc_length[0] = xd->sc_count[0];
+            }
+          }
+        }
+      } else {
+        if (xd->sc_count[0] != 0)
+          xd->sc_starting_mi->mbmi.sc_length[0] = xd->sc_count[0];
+        xd->sc_count[0] = 0;
+      }
+#endif  // CONFIG_SINGLE_COLOR
+
       if (mbmi->palette_enabled[1]) {
         int rows = 4 * num_4x4_blocks_high_lookup[bsize] >>
             xd->plane[1].subsampling_y;
@@ -5229,8 +5281,12 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       cm->block_counter++;
       if (mbmi->palette_enabled[0])
         cm->palette_counter++;
+#if CONFIG_SINGLE_COLOR
+      if (mbmi->single_color[0])
+        cm->palette_counter++;
+#endif  // CONFIG_SINGLE_COLOR
     }
-#endif
+#endif  // CONFIG_PALETTE
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);

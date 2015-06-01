@@ -197,7 +197,10 @@ static int write_skip(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     return 1;
   } else {
     const int skip = mi->mbmi.skip;
-    vp9_write(w, skip, vp9_get_skip_prob(cm, xd));
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+    if (!mi->mbmi.single_color[0] || !mi->mbmi.single_color[1])
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+      vp9_write(w, skip, vp9_get_skip_prob(cm, xd));
     return skip;
   }
 }
@@ -862,7 +865,34 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
 
   if (seg->update_map)
     write_segment_id(w, seg, mbmi->segment_id);
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+  if (bsize >= BLOCK_8X8 && cm->allow_palette_mode) {
+    if (xd->sc_count[0] != 0) {
+      xd->sc_count[0]--;
+    } else {
+      vp9_write(w, mbmi->single_color[0], 224);
+      if (mbmi->single_color[0]) {
+        vp9_write(w, mbmi->single_color_index[0] >= 0, 32);
+        if (mbmi->single_color_index[0] >= 0) {
+          vp9_write_literal(w, mbmi->single_color_index[0],
+                            vp9_ceil_log2(mbmi->current_palette_size));
+        } else {
+          vp9_write_literal(w, mbmi->single_color_value[0], 8);
+        }
 
+        vp9_write_literal(w, mbmi->sc_length[0] - 1, SC_LENGTH_BITS);
+        xd->sc_count[0] = mbmi->sc_length[0] - 1;
+      }
+    }
+
+    // UV is currently not enabled
+    //vp9_write(w, mbmi->single_color[1], 128);
+    if (mbmi->single_color[1]) {
+      vp9_write_literal(w, mbmi->single_color_value[1], 8);
+      vp9_write_literal(w, mbmi->single_color_value[2], 8);
+    }
+  }
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
   write_skip(cm, xd, mbmi->segment_id, mi, w);
 
 #if CONFIG_PALETTE
@@ -876,10 +906,16 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
       palette_ctx += (above_mi->mbmi.palette_enabled[0] == 1);
     if (left_mi)
       palette_ctx += (left_mi->mbmi.palette_enabled[0] == 1);
-    vp9_write(w, mbmi->palette_enabled[0],
-              cm->fc.palette_enabled_prob[bsize - BLOCK_8X8][palette_ctx]);
-    vp9_write(w, mbmi->palette_enabled[1],
-              cm->fc.palette_uv_enabled_prob[mbmi->palette_enabled[0]]);
+#if CONFIG_SINGLE_COLOR
+    if (!mbmi->single_color[0])
+#endif  // CONFIG_SINGLE_COLOR
+      vp9_write(w, mbmi->palette_enabled[0],
+                cm->fc.palette_enabled_prob[bsize - BLOCK_8X8][palette_ctx]);
+#if CONFIG_SINGLE_COLOR
+    if (!mbmi->single_color[1])
+#endif  // CONFIG_SINGLE_COLOR
+      vp9_write(w, mbmi->palette_enabled[1],
+                cm->fc.palette_uv_enabled_prob[mbmi->palette_enabled[0]]);
 
     if (mbmi->palette_enabled[0]) {
       rows = 4 * num_4x4_blocks_high_lookup[bsize];
@@ -975,10 +1011,14 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
   }
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
-      !mbmi->palette_enabled[0])
+      !mbmi->palette_enabled[0]
+#if CONFIG_SINGLE_COLOR
+      && !mbmi->single_color[0]
+#endif  // CONFIG_SINGLE_COLOR
+  )
 #else
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT)
-#endif
+#endif  // CONFIG_PALETTE
     write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
 
 #if CONFIG_TX_SKIP
@@ -1003,7 +1043,11 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
 
   if (bsize >= BLOCK_8X8) {
 #if CONFIG_PALETTE
-    if (!mbmi->palette_enabled[0])
+    if (!mbmi->palette_enabled[0]
+#if CONFIG_SINGLE_COLOR
+      && !mbmi->single_color[0]
+#endif  // CONFIG_SINGLE_COLOR
+    )
       write_intra_mode(w, mbmi->mode,
                        get_y_mode_probs(mi, above_mi, left_mi, 0));
 #else
@@ -1043,7 +1087,11 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
   }
 
 #if CONFIG_PALETTE
-  if (!mbmi->palette_enabled[1])
+  if (!mbmi->palette_enabled[1]
+#if CONFIG_SINGLE_COLOR
+      && !mbmi->single_color[1]
+#endif  // CONFIG_SINGLE_COLOR
+  )
 #endif  // CONFIG_PALETTE
 #if CONFIG_INTRABC
   if (!is_intrabc_mode(mbmi->mode))
@@ -1944,6 +1992,10 @@ static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
 
   vpx_memset(cm->above_seg_context, 0, sizeof(*cm->above_seg_context) *
              mi_cols_aligned_to_sb(cm->mi_cols));
+
+#if CONFIG_PALETTE && CONFIG_SINGLE_COLOR
+  cpi->mb.e_mbd.sc_count[0] = 0;
+#endif  // CONFIG_PALETTE && CONFIG_SINGLE_COLOR
 
   for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
     for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
