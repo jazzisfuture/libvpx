@@ -3263,40 +3263,20 @@ void vp9_idct32x32_34_add_sse2(const int16_t *input, uint8_t *dest,
           stp2_30, stp2_31;
   __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   int i;
-  // Load input data.
-  LOAD_DQCOEFF(in[0], input);
-  LOAD_DQCOEFF(in[8], input);
-  LOAD_DQCOEFF(in[16], input);
-  LOAD_DQCOEFF(in[24], input);
-  LOAD_DQCOEFF(in[1], input);
-  LOAD_DQCOEFF(in[9], input);
-  LOAD_DQCOEFF(in[17], input);
-  LOAD_DQCOEFF(in[25], input);
-  LOAD_DQCOEFF(in[2], input);
-  LOAD_DQCOEFF(in[10], input);
-  LOAD_DQCOEFF(in[18], input);
-  LOAD_DQCOEFF(in[26], input);
-  LOAD_DQCOEFF(in[3], input);
-  LOAD_DQCOEFF(in[11], input);
-  LOAD_DQCOEFF(in[19], input);
-  LOAD_DQCOEFF(in[27], input);
 
-  LOAD_DQCOEFF(in[4], input);
-  LOAD_DQCOEFF(in[12], input);
-  LOAD_DQCOEFF(in[20], input);
-  LOAD_DQCOEFF(in[28], input);
-  LOAD_DQCOEFF(in[5], input);
-  LOAD_DQCOEFF(in[13], input);
-  LOAD_DQCOEFF(in[21], input);
-  LOAD_DQCOEFF(in[29], input);
-  LOAD_DQCOEFF(in[6], input);
-  LOAD_DQCOEFF(in[14], input);
-  LOAD_DQCOEFF(in[22], input);
-  LOAD_DQCOEFF(in[30], input);
-  LOAD_DQCOEFF(in[7], input);
-  LOAD_DQCOEFF(in[15], input);
-  LOAD_DQCOEFF(in[23], input);
-  LOAD_DQCOEFF(in[31], input);
+  // Load input data. Only need to load the top left 8x8 block.
+  in[0] = _mm_load_si128((const __m128i *)input);
+  in[1] = _mm_load_si128((const __m128i *)(input + 32));
+  in[2] = _mm_load_si128((const __m128i *)(input + 64));
+  in[3] = _mm_load_si128((const __m128i *)(input + 96));
+  in[4] = _mm_load_si128((const __m128i *)(input + 128));
+  in[5] = _mm_load_si128((const __m128i *)(input + 160));
+  in[6] = _mm_load_si128((const __m128i *)(input + 192));
+  in[7] = _mm_load_si128((const __m128i *)(input + 224));
+
+  for (i = 8; i < 32; ++i) {
+    in[i] = _mm_setzero_si128();
+  }
 
   array_transpose_8x8(in, in);
   array_transpose_8x8(in + 8, in + 8);
