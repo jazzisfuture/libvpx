@@ -1389,6 +1389,34 @@ void vp9_fdct32x32_c(const int16_t *input, tran_low_t *out, int stride) {
   }
 }
 
+#if CONFIG_WAVELETS
+void vp9_fdct32x32_noscale(const int16_t *input, tran_low_t *out, int stride) {
+  int i, j;
+  tran_high_t output[32 * 32];
+
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    tran_high_t temp_in[32], temp_out[32];
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = input[j * stride + i];
+    vp9_fdct32(temp_in, temp_out, 0);
+    for (j = 0; j < 32; ++j)
+      output[j * 32 + i] = (temp_out[j] + 1 + (temp_out[j] > 0)) >> 2;
+  }
+
+  // Rows
+  for (i = 0; i < 32; ++i) {
+    tran_high_t temp_in[32], temp_out[32];
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = output[j + i * 32];
+    vp9_fdct32(temp_in, temp_out, 0);
+    for (j = 0; j < 32; ++j)
+      out[j + i * 32] = (tran_low_t)
+          ((temp_out[j] + 1 + (temp_out[j] < 0)) >> 2);
+  }
+}
+#endif  // CONFIG_WAVELETS
+
 // Note that although we use dct_32_round in dct32 computation flow,
 // this 2d fdct32x32 for rate-distortion optimization loop is operating
 // within 16 bits precision.

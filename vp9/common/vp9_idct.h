@@ -153,10 +153,16 @@ void vp9_idct16x16_add(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob);
 void vp9_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob);
+#if CONFIG_WAVELETS
+void vp9_idct16x16_noscale(const tran_low_t *input, int16_t *dest, int stride);
+#endif  // CONFIG_WAVELETS
 #if CONFIG_TX64X64
 void vp9_idct64x64_add(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob);
-#endif
+#if CONFIG_WAVELETS
+void vp9_idct32x32_noscale(const tran_low_t *input, int16_t *dest, int stride);
+#endif  // CONFIG_WAVELETS
+#endif  // CONFIG_TX64X64
 void vp9_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
                     int stride, int eob);
 void vp9_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,

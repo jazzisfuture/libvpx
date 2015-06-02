@@ -24,6 +24,12 @@ void vp9_highbd_fdct16x16_c(const int16_t *input, tran_low_t *output,
 void vp9_highbd_fdct32x32_c(const int16_t *input, tran_low_t *out, int stride);
 void vp9_highbd_fdct32x32_rd_c(const int16_t *input, tran_low_t *out,
                                int stride);
+#if CONFIG_WAVELETS
+void vp9_fdct16x16_noscale(const int16_t *input, tran_low_t *out, int stride);
+#if CONFIG_TX64X64
+void vp9_fdct32x32_noscale(const int16_t *input, tran_low_t *out, int stride);
+#endif  // CONFIG_TX64X64
+#endif  // CONFIG_WAVELETS
 
 void vp9_fdct4(const tran_low_t *input, tran_low_t *output);
 void vp9_fadst4(const tran_low_t *input, tran_low_t *output);
