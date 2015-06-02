@@ -2560,7 +2560,6 @@ void vp9_idct16x16_10_add_sse2(const int16_t *input, uint8_t *dest,
 #define LOAD_DQCOEFF(reg, input) \
   {  \
     reg = _mm_load_si128((const __m128i *) input); \
-    input += 8; \
   }  \
 
 #define IDCT32_34 \
@@ -3265,38 +3264,38 @@ void vp9_idct32x32_34_add_sse2(const int16_t *input, uint8_t *dest,
   int i;
   // Load input data.
   LOAD_DQCOEFF(in[0], input);
-  LOAD_DQCOEFF(in[8], input);
-  LOAD_DQCOEFF(in[16], input);
-  LOAD_DQCOEFF(in[24], input);
-  LOAD_DQCOEFF(in[1], input);
-  LOAD_DQCOEFF(in[9], input);
-  LOAD_DQCOEFF(in[17], input);
-  LOAD_DQCOEFF(in[25], input);
-  LOAD_DQCOEFF(in[2], input);
-  LOAD_DQCOEFF(in[10], input);
-  LOAD_DQCOEFF(in[18], input);
-  LOAD_DQCOEFF(in[26], input);
-  LOAD_DQCOEFF(in[3], input);
-  LOAD_DQCOEFF(in[11], input);
-  LOAD_DQCOEFF(in[19], input);
-  LOAD_DQCOEFF(in[27], input);
+  LOAD_DQCOEFF(in[8], input + 8);
+  LOAD_DQCOEFF(in[16], input + 16);
+  LOAD_DQCOEFF(in[24], input + 24);
+  LOAD_DQCOEFF(in[1], input + 32);
+  LOAD_DQCOEFF(in[9], input + 40);
+  LOAD_DQCOEFF(in[17], input + 48);
+  LOAD_DQCOEFF(in[25], input + 56);
+  LOAD_DQCOEFF(in[2], input + 64);
+  LOAD_DQCOEFF(in[10], input + 72);
+  LOAD_DQCOEFF(in[18], input + 80);
+  LOAD_DQCOEFF(in[26], input + 88);
+  LOAD_DQCOEFF(in[3], input + 96);
+  LOAD_DQCOEFF(in[11], input + 104);
+  LOAD_DQCOEFF(in[19], input + 112);
+  LOAD_DQCOEFF(in[27], input + 120);
 
-  LOAD_DQCOEFF(in[4], input);
-  LOAD_DQCOEFF(in[12], input);
-  LOAD_DQCOEFF(in[20], input);
-  LOAD_DQCOEFF(in[28], input);
-  LOAD_DQCOEFF(in[5], input);
-  LOAD_DQCOEFF(in[13], input);
-  LOAD_DQCOEFF(in[21], input);
-  LOAD_DQCOEFF(in[29], input);
-  LOAD_DQCOEFF(in[6], input);
-  LOAD_DQCOEFF(in[14], input);
-  LOAD_DQCOEFF(in[22], input);
-  LOAD_DQCOEFF(in[30], input);
-  LOAD_DQCOEFF(in[7], input);
-  LOAD_DQCOEFF(in[15], input);
-  LOAD_DQCOEFF(in[23], input);
-  LOAD_DQCOEFF(in[31], input);
+  LOAD_DQCOEFF(in[4], input + 128);
+  LOAD_DQCOEFF(in[12], input + 136);
+  LOAD_DQCOEFF(in[20], input + 144);
+  LOAD_DQCOEFF(in[28], input + 152);
+  LOAD_DQCOEFF(in[5], input + 160);
+  LOAD_DQCOEFF(in[13], input + 168);
+  LOAD_DQCOEFF(in[21], input + 176);
+  LOAD_DQCOEFF(in[29], input + 184);
+  LOAD_DQCOEFF(in[6], input + 192);
+  LOAD_DQCOEFF(in[14], input + 200);
+  LOAD_DQCOEFF(in[22], input + 208);
+  LOAD_DQCOEFF(in[30], input + 216);
+  LOAD_DQCOEFF(in[7], input + 224);
+  LOAD_DQCOEFF(in[15], input + 232);
+  LOAD_DQCOEFF(in[23], input + 240);
+  LOAD_DQCOEFF(in[31], input + 248);
 
   array_transpose_8x8(in, in);
   array_transpose_8x8(in + 8, in + 8);
@@ -3463,38 +3462,38 @@ void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
     // First 1-D idct
     // Load input data.
     LOAD_DQCOEFF(in[0], input);
-    LOAD_DQCOEFF(in[8], input);
-    LOAD_DQCOEFF(in[16], input);
-    LOAD_DQCOEFF(in[24], input);
-    LOAD_DQCOEFF(in[1], input);
-    LOAD_DQCOEFF(in[9], input);
-    LOAD_DQCOEFF(in[17], input);
-    LOAD_DQCOEFF(in[25], input);
-    LOAD_DQCOEFF(in[2], input);
-    LOAD_DQCOEFF(in[10], input);
-    LOAD_DQCOEFF(in[18], input);
-    LOAD_DQCOEFF(in[26], input);
-    LOAD_DQCOEFF(in[3], input);
-    LOAD_DQCOEFF(in[11], input);
-    LOAD_DQCOEFF(in[19], input);
-    LOAD_DQCOEFF(in[27], input);
+    LOAD_DQCOEFF(in[8], input + 8);
+    LOAD_DQCOEFF(in[16], input + 16);
+    LOAD_DQCOEFF(in[24], input + 24);
+    LOAD_DQCOEFF(in[1], input + 32);
+    LOAD_DQCOEFF(in[9], input + 40);
+    LOAD_DQCOEFF(in[17], input + 48);
+    LOAD_DQCOEFF(in[25], input + 56);
+    LOAD_DQCOEFF(in[2], input + 64);
+    LOAD_DQCOEFF(in[10], input + 72);
+    LOAD_DQCOEFF(in[18], input + 80);
+    LOAD_DQCOEFF(in[26], input + 88);
+    LOAD_DQCOEFF(in[3], input + 96);
+    LOAD_DQCOEFF(in[11], input + 104);
+    LOAD_DQCOEFF(in[19], input + 112);
+    LOAD_DQCOEFF(in[27], input + 120);
 
-    LOAD_DQCOEFF(in[4], input);
-    LOAD_DQCOEFF(in[12], input);
-    LOAD_DQCOEFF(in[20], input);
-    LOAD_DQCOEFF(in[28], input);
-    LOAD_DQCOEFF(in[5], input);
-    LOAD_DQCOEFF(in[13], input);
-    LOAD_DQCOEFF(in[21], input);
-    LOAD_DQCOEFF(in[29], input);
-    LOAD_DQCOEFF(in[6], input);
-    LOAD_DQCOEFF(in[14], input);
-    LOAD_DQCOEFF(in[22], input);
-    LOAD_DQCOEFF(in[30], input);
-    LOAD_DQCOEFF(in[7], input);
-    LOAD_DQCOEFF(in[15], input);
-    LOAD_DQCOEFF(in[23], input);
-    LOAD_DQCOEFF(in[31], input);
+    LOAD_DQCOEFF(in[4], input + 128);
+    LOAD_DQCOEFF(in[12], input + 136);
+    LOAD_DQCOEFF(in[20], input + 144);
+    LOAD_DQCOEFF(in[28], input + 152);
+    LOAD_DQCOEFF(in[5], input + 160);
+    LOAD_DQCOEFF(in[13], input + 168);
+    LOAD_DQCOEFF(in[21], input + 176);
+    LOAD_DQCOEFF(in[29], input + 184);
+    LOAD_DQCOEFF(in[6], input + 192);
+    LOAD_DQCOEFF(in[14], input + 200);
+    LOAD_DQCOEFF(in[22], input + 208);
+    LOAD_DQCOEFF(in[30], input + 216);
+    LOAD_DQCOEFF(in[7], input + 224);
+    LOAD_DQCOEFF(in[15], input + 232);
+    LOAD_DQCOEFF(in[23], input + 240);
+    LOAD_DQCOEFF(in[31], input + 248);
 
     // checking if all entries are zero
     zero_idx[0] = _mm_or_si128(in[0], in[1]);
