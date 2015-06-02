@@ -688,7 +688,7 @@ int main(int argc, char **argv) {
       vpx_codec_control(&codec, VP9E_SET_NOISE_SENSITIVITY, 0);
       vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 0);
       vpx_codec_control(&codec, VP9E_SET_TILE_COLUMNS, (cfg.g_threads >> 1));
-      if (vpx_codec_control(&codec, VP9E_SET_SVC, layering_mode > 0 ? 1: 0)) {
+      if (vpx_codec_control(&codec, VP9E_SET_SVC, layering_mode > 0 ? 1: 0))
         die_codec(&codec, "Failed to set SVC");
 #if VPX_ENCODER_ABI_VERSION > (4 + VPX_CODEC_ABI_VERSION)
       for (i = 0; i < cfg.ts_number_layers; ++i) {
@@ -699,7 +699,6 @@ int main(int argc, char **argv) {
       svc_params.scaling_factor_den[0] = cfg.g_h;
       vpx_codec_control(&codec, VP9E_SET_SVC_PARAMETERS, &svc_params);
 #endif
-    }
   }
   if (strncmp(encoder->name, "vp8", 3) == 0) {
     vpx_codec_control(&codec, VP8E_SET_SCREEN_CONTENT_MODE, 0);
