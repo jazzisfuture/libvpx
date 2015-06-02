@@ -334,7 +334,7 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
     }
     if (m2 > 0) {
       for (i = 0; i < m2; i++) {
-        mbmi->palette_literal_colors[i] = vp9_read_literal(r, 8);
+        mbmi->palette_literal_colors[i] = vp9_read_literal(r, cm->bit_depth);
         mbmi->palette_colors[m1 + i] = mbmi->palette_literal_colors[i];
       }
     }
@@ -378,9 +378,11 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
     }
 
     for (i = 0; i < mbmi->palette_size[1]; i++)
-      mbmi->palette_colors[PALETTE_MAX_SIZE + i] = vp9_read_literal(r, 8);
+      mbmi->palette_colors[PALETTE_MAX_SIZE + i] =
+          vp9_read_literal(r, cm->bit_depth);
     for (i = 0; i < mbmi->palette_size[1]; i++)
-      mbmi->palette_colors[2 * PALETTE_MAX_SIZE + i] = vp9_read_literal(r, 8);
+      mbmi->palette_colors[2 * PALETTE_MAX_SIZE + i] =
+          vp9_read_literal(r, cm->bit_depth);
 
     if (xd->plane[1].subsampling_x && xd->plane[1].subsampling_y) {
       int color_idx = 0, color_ctx = 0;
@@ -1388,7 +1390,7 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
       n = mbmi->palette_size[0];
 
       for (i = 0; i < mbmi->palette_size[0]; i++)
-        mbmi->palette_colors[i] = vp9_read_literal(r, 8);
+        mbmi->palette_colors[i] = vp9_read_literal(r, cm->bit_depth);
 
       color_map[0] = vp9_read_literal(r,
                                       vp9_ceil_log2(mbmi->palette_size[0]));
@@ -1430,9 +1432,11 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
       }
 
       for (i = 0; i < mbmi->palette_size[1]; i++)
-        mbmi->palette_colors[PALETTE_MAX_SIZE + i] = vp9_read_literal(r, 8);
+        mbmi->palette_colors[PALETTE_MAX_SIZE + i] =
+            vp9_read_literal(r, cm->bit_depth);
       for (i = 0; i < mbmi->palette_size[1]; i++)
-        mbmi->palette_colors[2 * PALETTE_MAX_SIZE + i] = vp9_read_literal(r, 8);
+        mbmi->palette_colors[2 * PALETTE_MAX_SIZE + i] =
+            vp9_read_literal(r, cm->bit_depth);
 
       if (xd->plane[1].subsampling_x && xd->plane[1].subsampling_y) {
         int color_idx = 0, color_ctx = 0;
