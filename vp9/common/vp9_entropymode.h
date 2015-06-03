@@ -52,6 +52,9 @@ typedef struct frame_contexts {
   vp9_prob skip_probs[SKIP_CONTEXTS];
   nmv_context nmvc;
   int initialized;
+#if CONFIG_DST_BASIS
+	vp9_prob ext_tx_prob[256][EXT_TX_TYPES - 1];
+#endif
 } FRAME_CONTEXT;
 
 typedef struct FRAME_COUNTS {
@@ -71,6 +74,9 @@ typedef struct FRAME_COUNTS {
   struct tx_counts tx;
   unsigned int skip[SKIP_CONTEXTS][2];
   nmv_context_counts mv;
+#if	CONFIG_DST_BASIS
+	unsigned int ext_tx[256][EXT_TX_TYPES];
+#endif
 } FRAME_COUNTS;
 
 extern const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
@@ -83,6 +89,9 @@ extern const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)];
 extern const vp9_tree_index vp9_partition_tree[TREE_SIZE(PARTITION_TYPES)];
 extern const vp9_tree_index vp9_switchable_interp_tree
                                 [TREE_SIZE(SWITCHABLE_FILTERS)];
+#if CONFIG_DST_BASIS
+extern const vp9_tree_index vp9_ext_tx_tree[TREE_SIZE(EXT_TX_TYPES)];
+#endif
 
 void vp9_setup_past_independence(struct VP9Common *cm);
 

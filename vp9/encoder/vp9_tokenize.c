@@ -527,6 +527,17 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   scan = so->scan;
   nb = so->neighbors;
   c = 0;
+#if CONFIG_DST_BASIS
+  VP9_COMMON *const cm = &cpi->common;
+  if (!mbmi->skip &&
+      is_inter_block(mbmi) &&
+      mbmi->tx_size <= TX_16X16 &&
+      cm->base_qindex > 0 &&
+      mbmi->sb_type >= BLOCK_8X8 &&
+      !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+      mbmi->eobs[block] = eob;
+  }
+#endif
 
   while (c < eob) {
     int v = 0;

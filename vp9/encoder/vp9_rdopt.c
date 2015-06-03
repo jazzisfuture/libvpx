@@ -52,6 +52,25 @@
 #define MIN_EARLY_TERM_INDEX    3
 #define NEW_MV_DISCOUNT_FACTOR  8
 
+#if CONFIG_DST_BASIS
+const double ext_tx_th = 0.99;
+
+struct ext_tx_cost_arg {
+	int64_t *rate;
+	VP9_COMP *cpi;
+	MB_MODE_INFO *mbmi;
+	MACROBLOCK *x
+};
+
+static void cal_ext_tx_cost(int plane, int block, BLOCK_SIZE plane_bsize,
+														TX_SIZE tx_size, struct ext_tx_cost_arg *arg) {
+  struct macroblock_plane *p = &arg->x->plane[0];
+  if (p->eobs[block])
+    *(arg->rate) = arg->cpi->ext_tx_costs[block][arg->mbmi->ext_txfrm[block]]
+                   + *(arg->rate);
+}
+#endif
+
 typedef struct {
   PREDICTION_MODE mode;
   MV_REFERENCE_FRAME ref_frame[2];
@@ -504,7 +523,36 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
   } else if (max_txsize_lookup[plane_bsize] == tx_size) {
     if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] == 0) {
       // full forward transform and quantization
+#if CONFIG_DST_BASIS
+    if (plane == PLANE_TYPE_Y && tx_size < TX_32X32 && !xd->lossless &&
+        is_inter_block(mbmi)) {
+      int ext_tx_type, best_tx_type = 0;
+      int64_t minrd = INT64_MAX;
+      // Select best transform based on rdcost
+      for (ext_tx_type = 0; ext_tx_type < EXT_TX_TYPES; ext_tx_type++) {
+        vp9_xform_quant(x, plane, block, plane_bsize, tx_size, ext_tx_type);
+        dist_block(plane, block, tx_size, args);
+        rate_block(plane, block, plane_bsize, tx_size, args);
+        rd1 = RDCOST(x->rdmult, x->rddiv, args->rate, args->dist);
+        rd2 = RDCOST(x->rdmult, x->rddiv, 0, args->sse);
+        rd = MIN(rd1, rd2);
+        if (rd < minrd) {
+          minrd = rd;
+          best_tx_type = ext_tx_type;
+        }
+      }
+      // Select transform type
+      // If not go to this line, then it must be DCT, ext_txfrm is set to 0
+      // at initialization.
+      mbmi->ext_txfrm[block] = best_tx_type;
+      // Redo transform and quant to write internal variables
+      vp9_xform_quant(x, plane, block, plane_bsize, tx_size, best_tx_type);
+    } else {
+      vp9_xform_quant(x, plane, block, plane_bsize, tx_size, 0);
+    }
+#else
       vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+#endif
 #if CONFIG_VP9_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
         dist_block(plane, block, tx_size, args, xd->bd);
@@ -541,7 +589,37 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     }
   } else {
     // full forward transform and quantization
+#if CONFIG_DST_BASIS
+    if (plane == PLANE_TYPE_Y && tx_size < TX_32X32 && !xd->lossless &&
+        is_inter_block(mbmi)) {
+      int ext_tx_type, best_tx_type = 0;
+      int64_t minrd = INT64_MAX;
+      // Select best transform based on rdcost
+      for (ext_tx_type = 0; ext_tx_type < EXT_TX_TYPES; ext_tx_type++) {
+        vp9_xform_quant(x, plane, block, plane_bsize, tx_size, ext_tx_type);
+        dist_block(plane, block, tx_size, args);
+        rate_block(plane, block, plane_bsize, tx_size, args);
+        rd1 = RDCOST(x->rdmult, x->rddiv, args->rate, args->dist);
+        rd2 = RDCOST(x->rdmult, x->rddiv, 0, args->sse);
+        rd = MIN(rd1, rd2);
+        if (rd < minrd) {
+          minrd = rd;
+          best_tx_type = ext_tx_type;
+        }
+      }
+      // Select transform type
+      // If not go to this line, then it must be DCT, ext_txfrm is set to 0
+      // at initialization.
+      mbmi->ext_txfrm[block] = best_tx_type;
+      // Redo transform and quant to write internal variables
+      vp9_xform_quant(x, plane, block, plane_bsize, tx_size, best_tx_type);
+    } else {
+      vp9_xform_quant(x, plane, block, plane_bsize, tx_size, 0);
+    }
+#else
     vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+#endif
+
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       dist_block(plane, block, tx_size, args, xd->bd);
@@ -550,6 +628,7 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     }
 #else
     dist_block(plane, block, tx_size, args);
+
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   }
 
@@ -559,6 +638,7 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
 
   // TODO(jingning): temporarily enabled only for luma component
   rd = MIN(rd1, rd2);
+
   if (plane == 0)
     x->zcoeff_blk[tx_size][block] = !x->plane[plane].eobs[block] ||
                                     (rd1 > rd2 && !xd->lossless);
@@ -597,6 +677,7 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
 
   vp9_foreach_transformed_block_in_plane(xd, bsize, plane,
                                          block_rd_txfm, &args);
+
   if (args.skip) {
     *rate       = INT_MAX;
     *distortion = INT64_MAX;
@@ -626,6 +707,15 @@ static void choose_largest_tx_size(VP9_COMP *cpi, MACROBLOCK *x,
   txfm_rd_in_plane(x, rate, distortion, skip,
                    sse, ref_best_rd, 0, bs,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
+#if CONFIG_DST_BASIS
+  if (is_inter_block(mbmi) && mbmi->tx_size < TX_32X32 && bs >= BLOCK_8X8 &&
+      !xd->lossless && *rate != INT_MAX) {
+    int64_t rate_tmp = 0;
+    struct ext_tx_cost_arg args = {&rate_tmp, cpi, mbmi, x};
+    vp9_foreach_transformed_block_in_plane(xd, bs, 0, cal_ext_tx_cost, &args);
+    *rate += *(args.rate);
+	}
+#endif
 }
 
 static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
@@ -635,7 +725,11 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
                                    int64_t *psse,
                                    int64_t tx_cache[TX_MODES],
                                    int64_t ref_best_rd,
-                                   BLOCK_SIZE bs) {
+                                   BLOCK_SIZE bs
+#if CONFIG_DST_BASIS
+                                   , int is_tx_size_selected
+#endif
+                                   ) {
   const TX_SIZE max_tx_size = max_txsize_lookup[bs];
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -659,9 +753,22 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   s1 = vp9_cost_bit(skip_prob, 1);
 
   for (n = max_tx_size; n >= 0;  n--) {
+#if CONFIG_DST_BASIS
+    if (is_tx_size_selected && mbmi->tx_size != n) continue;
+#endif
     txfm_rd_in_plane(x, &r[n][0], &d[n], &s[n],
                      &sse[n], ref_best_rd, 0, bs, n,
                      cpi->sf.use_fast_coef_costing);
+#if CONFIG_DST_BASIS
+		if (is_inter_block(mbmi) && n < TX_32X32 && bs >= BLOCK_8X8 &&
+			  !xd->lossless && r[n][0] != INT_MAX) {
+			int64_t rate_tmp = 0;
+		  struct ext_tx_cost_arg args = {&rate_tmp, cpi, mbmi, x};
+			mbmi->tx_size = n;
+			vp9_foreach_transformed_block_in_plane(xd, bs, 0, cal_ext_tx_cost, &args);
+			r[n][0] += *(args.rate);
+		}
+#endif
     r[n][1] = r[n][0];
     if (r[n][0] < INT_MAX) {
       for (m = 0; m <= n - (n == (int) max_tx_size); m++) {
@@ -733,8 +840,18 @@ static void super_block_yrd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
     choose_largest_tx_size(cpi, x, rate, distortion, skip, ret_sse, ref_best_rd,
                            bs);
   } else {
+#if CONFIG_DST_BASIS
+    // First pass, select tx_size.
+    // Second pass, write internal variables under tx_size
+    int i;
+    for (i = 0; i < 2; i++)
+#endif
     choose_tx_size_from_rd(cpi, x, rate, distortion, skip, ret_sse,
-                           txfm_cache, ref_best_rd, bs);
+                           txfm_cache, ref_best_rd, bs
+#if CONFIG_DST_BASIS
+                           , i
+#endif
+                           );
   }
 }
 
@@ -2725,6 +2842,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     // Y cost and distortion
     vp9_subtract_plane(x, bsize, 0);
+
     super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                     bsize, txfm_cache, ref_best_rd);
 
@@ -3267,6 +3385,12 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
       TX_SIZE uv_tx;
       struct macroblockd_plane *const pd = &xd->plane[1];
       memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
+#if CONFIG_DST_BASIS
+			for (i = 0; i < 256; i++) {
+				mbmi->ext_txfrm[i] = NORM;
+				mbmi->eobs[i] = 0;
+			}
+#endif
       super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
                       NULL, bsize, tx_cache, best_rd);
       if (rate_y == INT_MAX)
@@ -3290,6 +3414,12 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
     } else {
+#if CONFIG_DST_BASIS
+      for (i = 0; i < 256; i++) {
+        mbmi->ext_txfrm[i] = NORM;
+        mbmi->eobs[i] = 0;
+      }
+#endif
       this_rd = handle_inter_mode(cpi, x, bsize,
                                   tx_cache,
                                   &rate2, &distortion2, &skippable,
@@ -3749,6 +3879,12 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
   int ref_frame_skip_mask[2] = { 0 };
   int64_t mask_filter = 0;
   int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
+#if CONFIG_DST_BASIS
+  for (i = 0; i < 256; i++) {
+    mbmi->ext_txfrm[i] = NORM;
+    mbmi->eobs[i] = 0;
+  }
+#endif
 
   x->skip_encode = sf->skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
   memset(x->zcoeff_blk[TX_4X4], 0, 4);
@@ -3908,6 +4044,12 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
 
     if (ref_frame == INTRA_FRAME) {
       int rate;
+#if CONFIG_DST_BASIS
+      for (i = 0; i < 256; i++) {
+        mbmi->ext_txfrm[i] = NORM;
+        mbmi->eobs[i] = 0;
+      }
+#endif
       if (rd_pick_intra_sub_8x8_y_mode(cpi, x, &rate, &rate_y,
                                        &distortion_y, best_rd) >= best_rd)
         continue;

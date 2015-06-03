@@ -94,7 +94,6 @@ static INLINE vp9_prob mode_mv_merge_probs(vp9_prob pre_prob,
 void vp9_tree_merge_probs(const vp9_tree_index *tree, const vp9_prob *pre_probs,
                           const unsigned int *counts, vp9_prob *probs);
 
-
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
 
 #ifdef __cplusplus

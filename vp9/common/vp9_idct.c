@@ -21,6 +21,307 @@ static INLINE uint8_t clip_pixel_add(uint8_t dest, tran_high_t trans) {
   return clip_pixel(WRAPLOW(dest + trans, 8));
 }
 
+#if CONFIG_DST_BASIS
+#ifndef PI
+  #define PI 3.14159265358979
+#endif
+
+// Integers to represent double.
+// The sine transform formula is: X{i} = Sum_{0<=j<N}( x_j * sin((i+1)*(j+1)/(N+1) * PI) ) * sqrt(2/(N+1))
+// e.g. when N == 4, it is a series of sin(PI*i/5) and sqrt(2/5). Similar for N = 8 and 16.
+// For integer calculation, we multiply 2^14.
+// sin_pi_5 = sin(PI/5)*pow(2,14)
+// sqrt_2_5 = sqrt(2/5)*pow(2,14)
+#define val_2_5 6554
+#define val_2_9 3641
+#define val_2_17 1928
+int sinvalue_lookup_table_4[2] = {9630, 15582}; // {sin(pi/5), sin(pi*2/5)}
+int sinvalue_lookup_table_8[4] = {5604, 10531, 14189, 16135}; // {sin(pi/9), sin(pi*2/9), ..., sin(pi*4/9)}
+int sinvalue_lookup_table_16[] = {3011, 5919, 8625, 11038, 13075, 14666, 15759, 16314}; // {sin(pi/17), ...
+																																												//	sin(pi*8/17)}
+
+// Function: calculate 1d discrete sine transform, typeI. The inverse transfrom is itself.
+void dst1d_type1(double *in, double *out, int N) {
+  int i, j;
+  for (i = 0; i < N; i++) {
+    double sum = 0;
+    for (j = 0; j < N; j++) {
+      sum += in[j] * sin( PI * (double)(i+1) * (double)(j+1) / (double)(N+1) ) * sqrt(2.0/(N+1));
+    }
+    out[i] = sum;
+  }
+}
+
+// Function: calculate 1d discrete sine transform, typeI. The inverse transfrom is itself.
+// Approaximate floating operation by integer operation.
+// Sin(pi/5) etc and sqrt(2/5) etc, are representd by int.
+// Sinvalue, sqrt value are multiplied by 2^14. Therefore, the output is multiplied by 2^14;
+void dst1d_type1_int(int64_t *in, int64_t *out, int N) {
+	int i, j;
+	for (i = 0; i < N; i++) {
+		int64_t sum = 0;
+		for (j = 0; j < N; j++) {
+			int idx = (i+1)*(j+1);
+			int sign = 0;
+			if (idx > N+1) {
+				sign = idx/(N+1);
+				sign = sign%2 ? 1 : 0; // sin((2k+1)pi + x) = -sin(x); sin(2kpi + x) = sin(x);
+				idx %= (N+1);
+			}
+			idx = idx > N+1-idx ? N+1-idx : idx; // sin(x) = sin(pi-x);
+			if (idx == 0) continue;
+
+			int64_t sinvalue;
+			idx--;
+			if (N == 4) sinvalue = sinvalue_lookup_table_4[idx];
+			else if (N == 8) sinvalue = sinvalue_lookup_table_8[idx];
+			else if (N == 16) sinvalue = sinvalue_lookup_table_16[idx];
+			else {
+				assert(0 && "Invalid transform size.");
+				return;
+			}
+			if (sign) sinvalue = -sinvalue;
+
+			sum += in[j] * sinvalue;
+		}
+		out[i] = sum;
+	}
+}
+
+// Function: calculate forward 2d discrete sine transform using typeI.
+void vp9_dst(const int16_t *input, tran_low_t *output, int stride, int N) {
+  int i, j;
+  double *in = (double *) malloc (N * sizeof(double));
+  double *inter = (double *) malloc (N * sizeof(double));
+  double *mat = (double *) malloc (N*N * sizeof(double));
+  double *mat2 = (double *) malloc (N*N * sizeof(double));
+
+  // 1d dst: transform columns
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < N; i++) {
+      in[i] = input[i*stride + j];
+    }
+    dst1d_type1(in, inter, N);
+    for (i = 0; i < N; i++)
+      mat2[i*N + j] = inter[i];
+  }
+
+  // transpose
+  for (i = 0; i < N; i++)
+    for (j = 0; j < N; j++)
+      mat[i*N + j] = mat2[i + j*N];
+
+  // 1d dst: transform rows
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < N; i++) {
+      in[i] = mat[i*N + j];
+    }
+    dst1d_type1(in, inter, N);
+    for (i = 0; i < N; i++)
+      mat[i*N + j] = inter[i];
+  }
+
+  for (i = 0; i < N; i++) {
+    for (j = 0; j < N; j++) {
+			output[i*N + j] = floor(mat[i*N + j] * 8);
+    }
+  }
+  free(in);
+  free(inter);
+  free(mat);
+  free(mat2);
+}
+
+// Function: calculate forward 2d discrete sine transform using typeI.
+// Approaximate floating operation by integer operation.
+// Value in the 1d dst is multiplied by 2^14.
+// And the output is shifted by 3*14-14-3=39. -3 is because output gain is 8.
+// In dst1d_type1_int, result should multiply sqrt(2/N+1),
+// dst1d_type1_int are called twice, therefore, val is 2/N+1.
+void vp9_dst_int(const int16_t *input, tran_low_t *output, int stride, int N) {
+  int i, j;
+	const int shift = 14;
+  int64_t *in = (int64_t *) malloc (N * sizeof(int64_t));
+  int64_t *inter = (int64_t *) malloc (N * sizeof(int64_t));
+  int64_t *mat = (int64_t *) malloc (N*N * sizeof(int64_t));
+  int64_t *mat2 = (int64_t *) malloc (N*N * sizeof(int64_t));
+
+  // 1d dst: transform columns
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < N; i++) {
+      in[i] = input[i*stride + j];
+    }
+    dst1d_type1_int(in, inter, N);
+    for (i = 0; i < N; i++)
+      mat2[i*N + j] = inter[i];
+  }
+
+  // transpose
+  for (i = 0; i < N; i++)
+    for (j = 0; j < N; j++)
+      mat[i*N + j] = mat2[i + j*N];
+
+  int64_t val;
+	switch (N) {
+		case 4:
+			val = val_2_5;
+			break;
+		case 8:
+			val = val_2_9;
+			break;
+		case 16:
+			val = val_2_17;
+			break;
+		default:
+			//assert(0 && "Invalid transform size.");
+			return;
+	}
+
+  // 1d dst: transform rows
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < N; i++) {
+      in[i] = mat[i*N + j];
+    }
+    dst1d_type1_int(in, inter, N);
+    for (i = 0; i < N; i++) {
+			int64_t tmp = inter[i];
+			tmp = tmp >> shift;
+			tmp *= val;
+			mat[i*N + j] = tmp >> (2*shift-3);
+		}
+  }
+
+  for (i = 0; i < N; i++) {
+    for (j = 0; j < N; j++) {
+			tran_high_t tmp = mat[i*N + j];
+      output[i*N + j] = WRAPLOW(mat[i*N + j], 8);
+    }
+  }
+  free(in);
+  free(inter);
+  free(mat);
+  free(mat2);
+}
+
+// Function: calculate inverse 2d discrete sine transform using typeI.
+void vp9_idst(const tran_low_t *input, uint8_t *output, int stride, int N) {
+  int i, j;
+  double *in = (double *) malloc (N * sizeof(double));
+  double *inter = (double *) malloc (N * sizeof(double));
+  double *mat = (double *) malloc (N*N * sizeof(double));
+  double *mat2 = (double *) malloc (N*N * sizeof(double));
+
+  // 1d dst: transform columns
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < N; i++) {
+      in[i] = input[i*N + j];
+    }
+    dst1d_type1(in, inter, N);
+    for (i = 0; i < N; i++)
+      mat2[i*N + j] = inter[i];
+  }
+
+  // transpose
+  for (i = 0; i < N; i++)
+    for (j = 0; j < N; j++)
+      mat[i*N + j] = mat2[i + j*N];
+
+  // 1d dst: transform rows
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < N; i++) {
+      in[i] = mat[i*N + j];
+    }
+    dst1d_type1(in, inter, N);
+    for (i = 0; i < N; i++)
+      mat[i*N + j] = inter[i];
+  }
+
+  for (i = 0; i < N; i++) {
+    for (j = 0; j < N; j++) {
+      tran_high_t tmp = floor(mat[i*N + j]); // This step is questionable
+      output[i*stride + j] = clip_pixel_add(output[i*stride + j],
+                                            ROUND_POWER_OF_TWO(tmp, 3));
+    }
+  }
+  free(in);
+  free(inter);
+  free(mat);
+  free(mat2);
+}
+
+// Function: calculate inverse 2d discrete sine transform using typeI.
+// Approaximate floating operation by integer operation.
+// Value in the 1d dst is multiplied by 2^14.
+// Therefore, the output should be shifted by 3*14.
+void vp9_idst_int(const tran_low_t *input, uint8_t *output, int stride, int N) {
+  int i, j;
+	const int shift = 14;
+  int64_t *in = (int64_t *) malloc (N * sizeof(int64_t));
+  int64_t *inter = (int64_t *) malloc (N * sizeof(int64_t));
+  int64_t *mat = (int64_t *) malloc (N*N * sizeof(int64_t));
+  int64_t *mat2 = (int64_t *) malloc (N*N * sizeof(int64_t));
+
+  // 1d dst: transform columns
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < N; i++) {
+      in[i] = input[i*N + j];
+    }
+    dst1d_type1_int(in, inter, N);
+    for (i = 0; i < N; i++) {
+      mat2[i*N + j] = inter[i];
+		}
+  }
+
+  // transpose
+  for (i = 0; i < N; i++)
+    for (j = 0; j < N; j++)
+      mat[i*N + j] = mat2[i + j*N];
+
+  int64_t val;
+	switch (N) {
+		case 4:
+			val = val_2_5;
+			break;
+		case 8:
+			val = val_2_9;
+			break;
+		case 16:
+			val = val_2_17;
+			break;
+		default:
+			assert(0 && "Invalid transform size.");
+			return;
+	}
+
+  // 1d dst: transform rows
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < N; i++) {
+      in[i] = mat[i*N + j];
+    }
+    dst1d_type1_int(in, inter, N);
+    for (i = 0; i < N; i++) {
+			int64_t tmp = inter[i];
+			tmp = tmp >> shift+2;
+			tmp *= val;
+			mat[i*N + j] = tmp >> (2*shift-2);
+		}
+  }
+
+  for (i = 0; i < N; i++) {
+    for (j = 0; j < N; j++) {
+      tran_high_t tmp = mat[i*N + j];
+			tmp = WRAPLOW(tmp, 8);
+      output[i*stride + j] = clip_pixel_add(output[i*stride + j],
+                                            ROUND_POWER_OF_TWO(tmp, 3));
+    }
+  }
+  free(in);
+  free(inter);
+  free(mat);
+  free(mat2);
+}
+#endif // CONFIG_DST_BASIS
+
 void vp9_iwht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
 /* 4-point reversible, orthonormal inverse Walsh-Hadamard in 3.5 adds,
    0.5 shifts per pixel. */

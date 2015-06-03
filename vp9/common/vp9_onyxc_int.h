@@ -330,7 +330,9 @@ static INLINE void init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd) {
   int i;
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
-    xd->plane[i].dqcoeff = xd->dqcoeff;
+    // Let each plane has its own dqcoeff
+    //xd->plane[i].dqcoeff = xd->dqcoeff;
+    xd->plane[i].dqcoeff = xd->dqcoeff[i];
     xd->above_context[i] = cm->above_context +
         i * sizeof(*cm->above_context) * 2 * mi_cols_aligned_to_sb(cm->mi_cols);
   }

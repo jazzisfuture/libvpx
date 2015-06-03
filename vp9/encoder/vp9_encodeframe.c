@@ -49,6 +49,19 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData * td,
                               TOKENEXTRA **t, int output_enabled,
                               int mi_row, int mi_col, BLOCK_SIZE bsize,
                               PICK_MODE_CONTEXT *ctx);
+#if CONFIG_DST_BASIS
+struct ext_tx_arg {
+	VP9_COMMON *cm;
+	MB_MODE_INFO *mbmi;
+};
+
+static void accumulate_ext_tx(int plane, int block, BLOCK_SIZE plane_bsize,
+															TX_SIZE tx_size, struct ext_tx_arg *arg) {
+  // todo: eob mismatch at decoder and encoder.
+  //if (arg->mbmi->eobs[block])
+    ++arg->cm->counts.ext_tx[block][arg->mbmi->ext_txfrm[block]];
+}
+#endif
 
 // This is used as a reference when computing the source variance for the
 //  purposes of activity masking.
@@ -4224,6 +4237,16 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td,
           if (mi_col + x < cm->mi_cols && mi_row + y < cm->mi_rows)
             mi_8x8[mis * y + x]->mbmi.tx_size = tx_size;
     }
+#if CONFIG_DST_BASIS
+    if (is_inter_block(mbmi) && cm->base_qindex > 0 && bsize >= BLOCK_8X8 &&
+        !mbmi->skip &&
+				mbmi->tx_size < TX_32X32 &&
+        !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+			struct ext_tx_arg args = {cm, mbmi};
+			vp9_foreach_transformed_block_in_plane(xd, bsize, 0, accumulate_ext_tx,
+																						 &args);
+		}
+#endif
     ++td->counts->tx.tx_totals[mbmi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mbmi, &xd->plane[1])];
   }

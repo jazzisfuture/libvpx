@@ -36,6 +36,10 @@ int vp9_prob_diff_update_savings_search_model(const unsigned int *ct,
                                               vp9_prob *bestp,
                                               vp9_prob upd,
                                               int stepsize);
+#if CONFIG_DST_BASIS
+int vp9_cond_prob_diff_update_savings(vp9_prob *oldp,
+                                      const unsigned int ct[2]);
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

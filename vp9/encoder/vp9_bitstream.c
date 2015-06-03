@@ -43,6 +43,27 @@ static const struct vp9_token partition_encodings[PARTITION_TYPES] =
   {{0, 1}, {2, 2}, {6, 3}, {7, 3}};
 static const struct vp9_token inter_mode_encodings[INTER_MODES] =
   {{2, 2}, {6, 3}, {0, 1}, {7, 3}};
+#if CONFIG_DST_BASIS
+static struct vp9_token ext_tx_encodings[EXT_TX_TYPES];
+
+void vp9_entropy_mode_init() {
+  vp9_tokens_from_tree(ext_tx_encodings, vp9_ext_tx_tree);
+}
+
+struct ext_tx_write_arg {
+	vp9_writer *w;
+	VP9_COMMON *cm;
+	MB_MODE_INFO *mbmi;
+};
+
+static void write_ext_tx_token(int plane, int block, BLOCK_SIZE plane_bsize,
+															 TX_SIZE tx_size, struct ext_tx_write_arg *arg) {
+  // todo: eob mismatch at decoder and encoder.
+  //if (arg->mbmi->eobs[block])
+    vp9_write_token(arg->w, vp9_ext_tx_tree, arg->cm->fc->ext_tx_prob[block],
+                    &ext_tx_encodings[arg->mbmi->ext_txfrm[block]]);
+}
+#endif
 
 static void write_intra_mode(vp9_writer *w, PREDICTION_MODE mode,
                              const vp9_prob *probs) {
@@ -118,6 +139,42 @@ static void update_switchable_interp_probs(VP9_COMMON *cm, vp9_writer *w,
                      cm->fc->switchable_interp_prob[j],
                      counts->switchable_interp[j], SWITCHABLE_FILTERS, w);
 }
+
+#if CONFIG_DST_BASIS
+static int prob_diff_update_savings(const vp9_tree_index *tree,
+                                    vp9_prob probs[/*n - 1*/],
+                                    const unsigned int counts[],
+                                    int n) {
+  int i;
+  unsigned int branch_ct[32][2];
+  int savings = 0;
+  assert(n <= 32);
+  vp9_tree_probs_from_distribution(tree, branch_ct, counts);
+  for (i = 0; i < n - 1; ++i)
+    savings += vp9_cond_prob_diff_update_savings(&probs[i], branch_ct[i]);
+  return savings;
+}
+
+static void update_ext_tx_probs(VP9_COMMON *cm, vp9_writer *w) {
+  const int savings_thresh = vp9_cost_one(DIFF_UPDATE_PROB) -
+                             vp9_cost_zero(DIFF_UPDATE_PROB);
+  int i;
+  int savings = 0;
+  int do_update = 0;
+  for (i = 0; i < 256; ++i) {
+    savings += prob_diff_update_savings(vp9_ext_tx_tree, cm->fc->ext_tx_prob[i],
+                                        cm->counts.ext_tx[i], EXT_TX_TYPES);
+  }
+  do_update = savings > savings_thresh;
+  vp9_write(w, do_update, DIFF_UPDATE_PROB);
+  if (do_update) {
+    for (i = 0; i < 256; ++i) {
+      prob_diff_update(vp9_ext_tx_tree, cm->fc->ext_tx_prob[i],
+                       cm->counts.ext_tx[i], EXT_TX_TYPES, w);
+    }
+  }
+}
+#endif  // CONFIG_DST_BASIS
 
 static void pack_mb_tokens(vp9_writer *w,
                            TOKENEXTRA **tp, const TOKENEXTRA *const stop,
@@ -396,6 +453,24 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
 
   assert(*tok < tok_end);
   pack_mb_tokens(w, tok, tok_end, cm->bit_depth);
+
+#if CONFIG_DST_BASIS
+  // Write transform types for each block
+  MB_MODE_INFO * mbmi = &m->mbmi;
+  MACROBLOCK *x = &cpi->td.mb;
+  if (is_inter_block(mbmi) &&
+      mbmi->tx_size < TX_32X32 &&
+      cm->base_qindex > 0 &&
+      mbmi->sb_type >= BLOCK_8X8 &&
+      !mbmi->skip &&
+      !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+    struct ext_tx_write_arg args = {w, cm, mbmi};
+
+    // Then write ext_tx_token
+    vp9_foreach_transformed_block_in_plane(xd, mbmi->sb_type, 0,
+                                           write_ext_tx_token, &args);
+  }
+#endif  // CONFIG_DST_BASIS
 }
 
 static void write_partition(const VP9_COMMON *const cm,
@@ -1212,6 +1287,10 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
 
     vp9_write_nmv_probs(cm, cm->allow_high_precision_mv, &header_bc,
                         &counts->mv);
+
+#if CONFIG_DST_BASIS
+    update_ext_tx_probs(cm, &header_bc);
+#endif
   }
 
   vp9_stop_encode(&header_bc);

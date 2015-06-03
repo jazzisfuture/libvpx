@@ -95,8 +95,19 @@ typedef enum {
   ADST_DCT  = 1,                      // ADST in vertical, DCT in horizontal
   DCT_ADST  = 2,                      // DCT  in vertical, ADST in horizontal
   ADST_ADST = 3,                      // ADST in both directions
-  TX_TYPES = 4
+  TX_TYPES,
+#if CONFIG_DST_BASIS
+  DST_DST = 4,												// DST in both horizontal and vertical
+#endif
 } TX_TYPE;
+
+#if CONFIG_DST_BASIS
+typedef enum {
+  NORM = 0,
+	DST = 1,
+  EXT_TX_TYPES
+} EXT_TX_TYPE;
+#endif
 
 typedef enum {
   VP9_LAST_FLAG = 1 << 0,

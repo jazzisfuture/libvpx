@@ -461,6 +461,10 @@ typedef struct VP9_COMP {
 
   search_site_config ss_cfg;
 
+#if CONFIG_DST_BASIS
+	int ext_tx_costs[256][EXT_TX_TYPES];
+#endif
+
   int mbmode_cost[INTRA_MODES];
   unsigned int inter_mode_cost[INTER_MODE_CONTEXTS][INTER_MODES];
   int intra_uv_mode_cost[FRAME_TYPES][INTRA_MODES];

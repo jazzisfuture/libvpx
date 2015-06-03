@@ -326,6 +326,9 @@ void vp9_initialize_enc(void) {
     vp9_init_me_luts();
     vp9_rc_init_minq_luts();
     vp9_entropy_mv_init();
+#if CONFIG_DST_BASIS
+		vp9_entropy_mode_init();
+#endif
     vp9_temporal_filter_init();
     init_done = 1;
   }

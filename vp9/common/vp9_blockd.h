@@ -127,6 +127,11 @@ typedef struct {
   uint8_t mode_context[MAX_REF_FRAMES];
   INTERP_FILTER interp_filter;
 
+#if CONFIG_DST_BASIS
+	EXT_TX_TYPE ext_txfrm[256];
+	int eobs[256];
+#endif
+
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
@@ -223,7 +228,9 @@ typedef struct macroblockd {
 #endif
 
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
-  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[64 * 64]);
+  // Let each plane have its own dqcoeff.
+  //DECLARE_ALIGNED(16, tran_low_t, dqcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[MAX_MB_PLANE][64 * 64]);
 
   int lossless;
   int corrupted;
@@ -238,6 +245,28 @@ static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,
 
 extern const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES];
 
+#if CONFIG_DST_BASIS
+static TX_TYPE ext_tx_to_txtype[EXT_TX_TYPES] = {
+	DCT_DCT,
+	DST_DST, // dst
+};
+#endif
+
+#if CONFIG_DST_BASIS
+static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type, const MACROBLOCKD *xd, 
+																	int block) {
+  const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+
+	if (plane_type != PLANE_TYPE_Y || xd->lossless)
+		return DCT_DCT;
+
+	if (is_inter_block(mbmi))
+		return ext_tx_to_txtype[mbmi->ext_txfrm[block]];
+
+  return intra_mode_to_tx_type_lookup[mbmi->mode];
+}
+
+#else
 static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
                                   const MACROBLOCKD *xd) {
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
@@ -247,7 +276,24 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
 
   return intra_mode_to_tx_type_lookup[mbmi->mode];
 }
+#endif
 
+#if CONFIG_DST_BASIS
+static INLINE TX_TYPE get_tx_type_4x4(PLANE_TYPE plane_type,
+                                      const MACROBLOCKD *xd,
+																			int block) {
+  const MODE_INFO *const mi = xd->mi[0];
+
+	if (plane_type != PLANE_TYPE_Y || xd->lossless)
+		return DCT_DCT;
+
+	if (is_inter_block(&mi->mbmi))
+		return ext_tx_to_txtype[mi->mbmi.ext_txfrm[block]];
+
+  return intra_mode_to_tx_type_lookup[get_y_mode(mi, block)];
+}
+
+#else
 static INLINE TX_TYPE get_tx_type_4x4(PLANE_TYPE plane_type,
                                       const MACROBLOCKD *xd, int ib) {
   const MODE_INFO *const mi = xd->mi[0];
@@ -257,6 +303,8 @@ static INLINE TX_TYPE get_tx_type_4x4(PLANE_TYPE plane_type,
 
   return intra_mode_to_tx_type_lookup[get_y_mode(mi, ib)];
 }
+#endif
+
 
 void vp9_setup_block_planes(MACROBLOCKD *xd, int ss_x, int ss_y);
 

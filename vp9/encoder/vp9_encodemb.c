@@ -25,6 +25,63 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vp9/encoder/vp9_tokenize.h"
 
+static INLINE void fdct32x32(int rd_transform,
+                             const int16_t *src, tran_low_t *dst,
+                             int src_stride) {
+  if (rd_transform)
+    vp9_fdct32x32_rd(src, dst, src_stride);
+  else
+    vp9_fdct32x32(src, dst, src_stride);
+}
+
+#if CONFIG_DST_BASIS
+static void vp9_txfm(MACROBLOCK *x, int plane,
+											const int16_t *src_diff, tran_low_t *const coeff,
+											int diff_stride, TX_SIZE tx_size, int ext_tx_type) {
+	if (ext_tx_type == NORM) {
+		switch(tx_size) {
+			case TX_32X32:
+				fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+				break;
+			case TX_16X16:
+				vp9_fdct16x16(src_diff, coeff, diff_stride);
+				break;
+			case TX_8X8:
+				vp9_fdct8x8(src_diff, coeff, diff_stride);
+				break;
+			case TX_4X4:
+				x->fwd_txm4x4(src_diff, coeff, diff_stride);
+				break;
+			default:
+				assert(0 && "Invalid transform size");
+				break;
+		}
+	} else if (ext_tx_type == DST) {
+	  // !watch out! tx_type == DST_DST(== 4), tx_type is from ext_tx_to_tx_type
+	  // ext_tx_type == DST(== 1)
+		int N;
+		switch(tx_size) {
+			case TX_4X4:
+				N = 4;
+				break;
+			case TX_8X8:
+				N = 8;
+				break;
+			case TX_16X16:
+				N = 16;
+				break;
+			case TX_32X32:
+				N = 32;
+				break;
+			default:
+				assert(0 && "Invalid transform size");
+				break;
+		};
+		vp9_dst_int(src_diff, coeff, diff_stride, N);
+	}
+}
+#endif
+
 struct optimize_ctx {
   ENTROPY_CONTEXT ta[MAX_MB_PLANE][16];
   ENTROPY_CONTEXT tl[MAX_MB_PLANE][16];
@@ -341,15 +398,6 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   return final_eob;
 }
 
-static INLINE void fdct32x32(int rd_transform,
-                             const int16_t *src, tran_low_t *dst,
-                             int src_stride) {
-  if (rd_transform)
-    vp9_fdct32x32_rd(src, dst, src_stride);
-  else
-    vp9_fdct32x32(src, dst, src_stride);
-}
-
 #if CONFIG_VP9_HIGHBITDEPTH
 static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
                                     tran_low_t *dst, int src_stride) {
@@ -532,7 +580,11 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
 }
 
 void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
-                     BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+                     BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+#if CONFIG_DST_BASIS
+                     int ext_tx_type
+#endif
+                     ) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
@@ -594,21 +646,33 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                            scan_order->iscan);
       break;
     case TX_16X16:
+#if CONFIG_DST_BASIS
+      vp9_txfm(x, plane, src_diff, coeff, diff_stride, TX_16X16, ext_tx_type);
+#else
       vp9_fdct16x16(src_diff, coeff, diff_stride);
+#endif
       vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_8X8:
+#if CONFIG_DST_BASIS
+      vp9_txfm(x, plane, src_diff, coeff, diff_stride, TX_8X8, ext_tx_type);
+#else
       vp9_fdct8x8(src_diff, coeff, diff_stride);
+#endif
       vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_4X4:
+#if CONFIG_DST_BASIS
+      vp9_txfm(x, plane, src_diff, coeff, diff_stride, TX_4X4, ext_tx_type);
+#else
       x->fwd_txm4x4(src_diff, coeff, diff_stride);
+#endif
       vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
@@ -644,6 +708,46 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     *a = *l = 0;
     return;
   }
+#if CONFIG_DST_BASIS
+  // Read transform type
+  TX_TYPE tx_type = DCT_DCT;
+  const PLANE_TYPE plane_type = pd->plane_type;
+  int N;
+  if (xd->lossless) tx_type = DCT_DCT;
+  switch(tx_size) {
+    case TX_4X4:
+      N = 4;
+      tx_type = get_tx_type_4x4(plane_type, xd, block);
+      break;
+    case TX_8X8:
+      N = 8;
+      tx_type = get_tx_type(plane_type, xd, block);
+      break;
+    case TX_16X16:
+      N = 16;
+      tx_type = get_tx_type(plane_type, xd, block);
+      break;
+    case TX_32X32:
+      N = 32;
+      tx_type = DCT_DCT;
+      break;
+    default:
+      assert(0 && "Invalid transform size");
+      return;
+  }
+  int ext_tx_type;
+  switch(tx_type) {
+    case DCT_DCT:
+      ext_tx_type = NORM;
+      break;
+    case DST_DST:
+      ext_tx_type = DST;
+      break;
+    default:
+      assert(0);
+      break;
+  }
+#endif
 
   if (!x->skip_recode) {
     if (x->quant_fp) {
@@ -661,7 +765,11 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
         int txfm_blk_index = (plane << 2) + (block >> (tx_size << 1));
         if (x->skip_txfm[txfm_blk_index] == 0) {
           // full forward transform and quantization
-          vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+          vp9_xform_quant(x, plane, block, plane_bsize, tx_size
+#if CONFIG_DST_BASIS
+                          , ext_tx_type
+#endif
+                          );
         } else if (x->skip_txfm[txfm_blk_index]== 2) {
           // fast path forward transform and quantization
           vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
@@ -672,7 +780,11 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
           return;
         }
       } else {
-        vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+        vp9_xform_quant(x, plane, block, plane_bsize, tx_size
+#if CONFIG_DST_BASIS
+                        , ext_tx_type
+#endif
+                        );
       }
     }
   }
@@ -718,6 +830,40 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_DST_BASIS
+	if (xd->lossless) {
+		tx_type = DCT_DCT;
+		vp9_iwht4x4_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+		return;
+	} else {
+		switch(tx_size) {
+			case TX_4X4:
+				N = 4;
+				tx_type = get_tx_type_4x4(plane_type, xd, block);
+				break;
+			case TX_8X8:
+				N = 8;
+				tx_type = get_tx_type(plane_type, xd, block);
+				break;
+			case TX_16X16:
+				N = 16;
+				tx_type = get_tx_type(plane_type, xd, block);
+				break;
+			case TX_32X32:
+				N = 32;
+				tx_type = DCT_DCT;
+				break;
+			default:
+				assert(0 && "Invalid transform size");
+				return;
+		}
+		if(tx_type == DST_DST) {
+			vp9_idst_int(dqcoeff, dst, pd->dst.stride, N);
+			return;
+		}
+	}
+#endif // CONFIG_DST_BASIS
+
   switch (tx_size) {
     case TX_32X32:
       vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
@@ -749,10 +895,19 @@ static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   int i, j;
   uint8_t *dst;
+#if CONFIG_DST_BASIS
+	MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
+	for (i = 0; i < 256; i++)
+		mbmi->ext_txfrm[i] = NORM;
+#endif
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
 
-  vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+  vp9_xform_quant(x, plane, block, plane_bsize, tx_size
+#if CONFIG_DST_BASIS
+                  , 0
+#endif
+                  );
 
   if (p->eobs[block] > 0) {
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -957,7 +1112,11 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vp9_idct32x32_add(dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_16X16:
+#if CONFIG_DST_BASIS
+      tx_type = get_tx_type(pd->plane_type, xd, block);
+#else
       tx_type = get_tx_type(pd->plane_type, xd);
+#endif
       scan_order = &vp9_scan_orders[TX_16X16][tx_type];
       mode = plane == 0 ? mbmi->mode : mbmi->uv_mode;
       vp9_predict_intra_block(xd, block >> 4, bwl, TX_16X16, mode,
@@ -977,7 +1136,11 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_8X8:
+#if CONFIG_DST_BASIS
+      tx_type = get_tx_type(pd->plane_type, xd, block);
+#else
       tx_type = get_tx_type(pd->plane_type, xd);
+#endif
       scan_order = &vp9_scan_orders[TX_8X8][tx_type];
       mode = plane == 0 ? mbmi->mode : mbmi->uv_mode;
       vp9_predict_intra_block(xd, block >> 2, bwl, TX_8X8, mode,

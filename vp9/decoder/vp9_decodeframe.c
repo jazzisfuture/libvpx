@@ -43,6 +43,36 @@
 
 #define MAX_VP9_HEADER_SIZE 80
 
+#if CONFIG_DST_BASIS
+struct read_ext_tx_arg {
+  vp9_reader *r;
+  VP9_COMMON *cm;
+  MB_MODE_INFO *mbmi;
+  int *eob;
+};
+
+static void read_ext_tx(int plane, int block, BLOCK_SIZE plane_bsize,
+                        TX_SIZE tx_size, struct read_ext_tx_arg *arg) {
+  assert(plane == 0);
+  // todo: eob mismatch at decoder and encoder.
+  //if (arg->eob[block]) {
+    arg->mbmi->ext_txfrm[block] = vp9_read_tree(arg->r, vp9_ext_tx_tree,
+                                  arg->cm->fc->ext_tx_prob[block]);
+    if (!arg->cm->frame_parallel_decoding_mode)
+      ++arg->cm->counts.ext_tx[block][arg->mbmi->ext_txfrm[block]];
+  //}
+}
+
+static void read_ext_tx_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
+  int i, j;
+  if (vp9_read(r, DIFF_UPDATE_PROB)) {
+    for (j = 0; j < 256; ++j)
+      for (i = 0; i < EXT_TX_TYPES - 1; ++i)
+        vp9_diff_update_prob(r, &fc->ext_tx_prob[j][i]);
+  }
+}
+#endif  // CONFIG_DST_BASIS
+
 static int is_compound_reference_allowed(const VP9_COMMON *cm) {
   int i;
   for (i = 1; i < REFS_PER_FRAME; ++i)
@@ -189,6 +219,60 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
     tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+
+#if CONFIG_DST_BASIS
+    int N;
+		if (xd->lossless) {
+			tx_type = DCT_DCT;
+			vp9_iwht4x4_add(dqcoeff, dst, stride, eob);
+		} else {
+			const PLANE_TYPE plane_type = pd->plane_type;
+			switch(tx_size) {
+				case TX_4X4:
+					N = 4;
+					tx_type = get_tx_type_4x4(plane_type, xd, block);
+					break;
+				case TX_8X8:
+					N = 8;
+					tx_type = get_tx_type(plane_type, xd, block);
+					break;
+				case TX_16X16:
+					N = 16;
+					tx_type = get_tx_type(plane_type, xd, block);
+					break;
+				case TX_32X32:
+					N = 32;
+					tx_type = DCT_DCT;
+					break;
+				default:
+					assert(0 && "Invalid transform size");
+					return;
+			};
+			if(tx_type == DST_DST) {
+				vp9_idst_int(dqcoeff, dst, pd->dst.stride, N);
+			}
+			else {
+	      switch (tx_size) {
+		      case TX_4X4:
+				    vp9_iht4x4_add(tx_type, dqcoeff, dst, stride, eob);
+	          break;
+		      case TX_8X8:
+				    vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
+					  break;
+	        case TX_16X16:
+		        vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
+				    break;
+					case TX_32X32:
+		        vp9_idct32x32_add(dqcoeff, dst, stride, eob);
+			      break;
+				  default:
+					  assert(0 && "Invalid transform size");
+				   return;
+				}
+			}
+		}
+#else
+
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       if (xd->lossless) {
@@ -276,10 +360,13 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#endif  // CONFIG_DST_BASIS
+
     if (eob == 1) {
       memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
     } else {
-      if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
+      //if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
+      if (tx_size <= TX_16X16 && eob <= 10)
         memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
       else if (tx_size == TX_32X32 && eob <= 34)
         memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
@@ -323,6 +410,25 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
                                             args->r, args->seg_id);
     inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
                             eob);
+#if CONFIG_DST_BASIS
+    tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+    const PLANE_TYPE plane_type = pd->plane_type;
+    TX_TYPE tx_type;
+    if (tx_size == TX_4X4)
+      tx_type = get_tx_type_4x4(plane_type, xd, block);
+    else
+      tx_type = get_tx_type(plane_type, xd, block);
+    if (eob == 1) {
+      memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
+    } else {
+      if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
+        memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
+      else if (tx_size == TX_32X32 && eob <= 34)
+        memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
+      else
+        memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
+    }
+#endif
   }
 }
 
@@ -333,7 +439,48 @@ struct inter_args {
   FRAME_COUNTS *counts;
   int *eobtotal;
   int seg_id;
+#if CONFIG_DST_BASIS
+  int *eobs;
+#endif
 };
+
+#if CONFIG_DST_BASIS
+static void read_eobs(int plane, int block,
+                                    BLOCK_SIZE plane_bsize,
+                                    TX_SIZE tx_size, void *arg) {
+  struct inter_args *args = (struct inter_args *)arg;
+  VP9_COMMON *const cm = args->cm;
+  MACROBLOCKD *const xd = args->xd;
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  int x, y, eob;
+  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
+
+  eob = vp9_decode_block_tokens(cm, xd, args->counts, plane, block, plane_bsize,
+                                x, y, tx_size, args->r, args->seg_id);
+
+  int idx = plane * 256 + block;
+  args->eobs[idx] = eob;
+  *args->eobtotal += eob;
+}
+
+static void reconstruct_inter_only(int plane, int block,
+                                    BLOCK_SIZE plane_bsize,
+                                    TX_SIZE tx_size, void *arg) {
+  struct inter_args *args = (struct inter_args *)arg;
+  VP9_COMMON *const cm = args->cm;
+  MACROBLOCKD *const xd = args->xd;
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  int x, y, eob;
+  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
+
+  int idx = plane * 256 + block;
+  eob = args->eobs[idx];
+
+  inverse_transform_block(xd, plane, block, tx_size,
+                          &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
+                          pd->dst.stride, eob);
+}
+#endif
 
 static void reconstruct_inter_block(int plane, int block,
                                     BLOCK_SIZE plane_bsize,
@@ -346,6 +493,7 @@ static void reconstruct_inter_block(int plane, int block,
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
   eob = vp9_decode_block_tokens(cm, xd, args->counts, plane, block, plane_bsize,
                                 x, y, tx_size, args->r, args->seg_id);
+
   inverse_transform_block(xd, plane, block, tx_size,
                           &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
                           pd->dst.stride, eob);
@@ -397,6 +545,13 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
     reset_skip_context(xd, bsize);
   }
 
+#if CONFIG_DST_BASIS
+  // Set all transform types to be NORM by default
+  int i;
+  for (i = 0; i < 256; i++)
+    mbmi->ext_txfrm[i] = NORM;
+#endif
+
   if (!is_inter_block(mbmi)) {
     struct intra_args arg = {cm, xd, counts, r, mbmi->segment_id};
     vp9_foreach_transformed_block(xd, bsize,
@@ -407,11 +562,38 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
 
     // Reconstruction
     if (!mbmi->skip) {
+#if CONFIG_DST_BASIS
+      int eobtotal = 0;
+      int eobs[768] = {0};
+      struct inter_args arg = {cm, xd, r, counts, &eobtotal, mbmi->segment_id,
+                               &eobs[0]};
+      // First read eob and dqcoeff from bitstream
+      vp9_foreach_transformed_block(xd, bsize, read_eobs, &arg);
+
+      // Then read transform types from bitstream
+      if (!mbmi->skip &&
+          is_inter_block(mbmi) &&
+          mbmi->tx_size <= TX_16X16 &&
+          cm->base_qindex > 0 &&
+          mbmi->sb_type >= BLOCK_8X8 &&
+          !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+        struct read_ext_tx_arg args = {r, cm, mbmi, &eobs[0]};
+        vp9_foreach_transformed_block_in_plane(xd, mbmi->sb_type, 0,
+                                               read_ext_tx, &args);
+      }
+
+      // Inverse transform
+      vp9_foreach_transformed_block(xd, bsize, reconstruct_inter_only, &arg);
+
+      if (!less8x8 && eobtotal == 0)
+        mbmi->skip = 1;  // skip loopfilter
+#else
       int eobtotal = 0;
       struct inter_args arg = {cm, xd, r, counts, &eobtotal, mbmi->segment_id};
       vp9_foreach_transformed_block(xd, bsize, reconstruct_inter_block, &arg);
       if (!less8x8 && eobtotal == 0)
         mbmi->skip = 1;  // skip loopfilter
+#endif
     }
   }
 
@@ -1552,6 +1734,9 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
         vp9_diff_update_prob(&r, &fc->partition_prob[j][i]);
 
     read_mv_probs(nmvc, cm->allow_high_precision_mv, &r);
+#if CONFIG_DST_BASIS
+    read_ext_tx_probs(fc, &r);
+#endif
   }
 
   return vp9_reader_has_error(&r);
@@ -1591,6 +1776,10 @@ static void debug_check_frame_counts(const VP9_COMMON *const cm) {
   assert(!memcmp(&cm->counts.tx, &zero_counts.tx, sizeof(cm->counts.tx)));
   assert(!memcmp(cm->counts.skip, zero_counts.skip, sizeof(cm->counts.skip)));
   assert(!memcmp(&cm->counts.mv, &zero_counts.mv, sizeof(cm->counts.mv)));
+#if CONFIG_DST_BASIS
+  assert(!memcmp(cm->counts.ext_tx, zero_counts.ext_tx,
+                 sizeof(cm->counts.ext_tx)));
+#endif
 }
 #endif  // NDEBUG
 

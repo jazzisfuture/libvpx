@@ -205,6 +205,12 @@ static INLINE uint16_t highbd_clip_pixel_add(uint16_t dest, tran_high_t trans,
   return clip_pixel_highbd(WRAPLOW(dest + trans, bd), bd);
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+#if CONFIG_DST_BASIS
+void vp9_dst(const int16_t *input, tran_low_t *output, int stride, int N);
+void vp9_idst(const tran_low_t *input, uint8_t *output, int stride, int N);
+#endif // CONFIG_DST_BASIS
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
