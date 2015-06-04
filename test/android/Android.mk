@@ -25,6 +25,35 @@ LOCAL_STATIC_LIBRARIES := libwebm
 include $(BINDINGS_DIR)/libvpx/build/make/Android.mk
 LOCAL_PATH := $(CUR_WD)/../..
 
+ifeq ($(TARGET_ARCH_ABI),$(filter $(TARGET_ARCH_ABI),x86 x86_64))
+include $(CLEAR_VARS)
+LOCAL_MODULE := vpxdec
+LOCAL_STATIC_LIBRARIES := libwebm
+ifeq ($(ENABLE_SHARED),1)
+  LOCAL_SHARED_LIBRARIES := vpx
+else
+  LOCAL_STATIC_LIBRARIES += vpx
+endif
+include $(LOCAL_PATH)/examples.mk
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/third_party/libyuv/include/
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
+LOCAL_SRC_FILES := $(sort $(filter %.cc %.c, $(vpxdec.SRCS)))
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := vpxenc
+LOCAL_STATIC_LIBRARIES := libwebm
+ifeq ($(ENABLE_SHARED),1)
+  LOCAL_SHARED_LIBRARIES := vpx
+else
+  LOCAL_STATIC_LIBRARIES += vpx
+endif
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/third_party/libyuv/include/
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
+include $(LOCAL_PATH)/examples.mk
+LOCAL_SRC_FILES := $(sort $(filter %.cc %.c, $(vpxenc.SRCS)))
+include $(BUILD_EXECUTABLE)
+else
 #libgtest
 include $(CLEAR_VARS)
 LOCAL_ARM_MODE := arm
@@ -52,3 +81,4 @@ LOCAL_C_INCLUDES := $(BINDINGS_DIR)
 FILTERED_SRC := $(sort $(filter %.cc %.c, $(LIBVPX_TEST_SRCS-yes)))
 LOCAL_SRC_FILES := $(addprefix ./test/, $(FILTERED_SRC))
 include $(BUILD_EXECUTABLE)
+endif
