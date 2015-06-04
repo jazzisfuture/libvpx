@@ -46,6 +46,8 @@
 #include "vp9/encoder/vp9_denoiser.h"
 #endif
 
+#define DOUBLE_DIVIDE_CHECK(x) ((x) < 0 ? (x) - 0.000001 : (x) + 0.000001)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -478,6 +480,7 @@ typedef struct VP9_COMP {
 #endif
 
   int resize_pending;
+  int switched_scale_this_frame;
 
   // VAR_BASED_PARTITION thresholds
   // 0 - threshold_64x64; 1 - threshold_32x32;
