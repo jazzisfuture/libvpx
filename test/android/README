@@ -5,10 +5,21 @@ Android.mk will build vpx unittests on android.
   --enable-temporal-denoising --disable-unit-tests --disable-install-docs \
   --disable-examples --disable-runtime-cpu-detect --sdk-path=$NDK
 
+   or for x86 inside the folder libvpx:
+ ./configure --target=x86-android-gcc --enable-external-build --enable-postproc \
+   --disable-install-srcs --enable-multi-res-encoding --enable-temporal-denoising \
+   --disable-unit-tests --disable-install-docs --disable-examples --disable-runtime-cpu-detect \
+   --sdk-path=$NDK
+
 2) From the parent directory, invoke ndk-build:
 NDK_PROJECT_PATH=. ndk-build APP_BUILD_SCRIPT=./libvpx/test/android/Android.mk \
   APP_ABI=armeabi-v7a APP_PLATFORM=android-18 APP_OPTIM=release \
   APP_STL=gnustl_static
+
+for x86 from the libvpx directory
+  compiling vpxenc/dec:
+  ndk-build APP_BUILD_SCRIPT=./test/android/Android.mk \
+  APP_ABI=x86 APP_PLATFORM=android-21 APP_CFLAGS=-static APP_LDFLAGS=-static APP_OPTIM=release APP_STL=gnustl_static NDK_PROJECT_PATH=. 
 
 Note: Both adb and ndk-build are available prebuilt at:
   https://chromium.googlesource.com/android_tools

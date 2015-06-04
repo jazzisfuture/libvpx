@@ -343,6 +343,7 @@ INSTALL-BINS-$(CONFIG_MSVS) += $(foreach p,$(VS_PLATFORMS),\
 $(foreach proj,$(call enabled,PROJECTS),\
     $(eval $(call vcproj_template,$(proj))))
 
+ifeq ($(TOOLCHAIN),$(filter $(TOOLCHAIN),x86-android-gcc x86_64-android-gcc))
 #
 # Documentation Rules
 #
@@ -376,3 +377,5 @@ CLEAN-OBJS += examples.doxy samples.dox $(ALL_EXAMPLES:.c=.dox)
 DOCS-yes += examples.doxy samples.dox
 examples.doxy: samples.dox $(ALL_EXAMPLES:.c=.dox)
 	@echo "INPUT += $^" > $@
+endef
+
