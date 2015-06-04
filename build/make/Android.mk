@@ -67,6 +67,8 @@ else ifeq  ($(TARGET_ARCH_ABI),arm64-v8a)
   LOCAL_ARM_MODE := arm
 else ifeq ($(TARGET_ARCH_ABI),x86)
   include $(CONFIG_DIR)libs-x86-android-gcc.mk
+else ifeq ($(TARGET_ARCH_ABI),x86_64)
+  include $(CONFIG_DIR)libs-x86_64-android-gcc.mk
 else ifeq ($(TARGET_ARCH_ABI),mips)
   include $(CONFIG_DIR)libs-mips-android-gcc.mk
 else
@@ -172,7 +174,7 @@ endif
 $(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): vpx_scale_rtcd.h
 $(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): vpx_dsp_rtcd.h
 
-ifeq ($(TARGET_ARCH_ABI),x86)
+ifeq ($(TARGET_ARCH_ABI),$(filter $(TARGET_ARCH_ABI),x86 x86_64))
 $(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): vpx_config.asm
 endif
 
