@@ -260,8 +260,11 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
                                  FLAG_SKIP_INTRA_LOWVAR;
     sf->adaptive_pred_interp_filter = 2;
 
-    // Reference masking is not supported in dynamic scaling mode.
-    sf->reference_masking = cpi->oxcf.resize_mode != RESIZE_DYNAMIC ? 1 : 0;
+    // Reference masking is not supported in dynamic scaling mode or for spatial
+    // svc mode for now.
+    // TODO(marpan/agrange): Fix this condition.
+    sf->reference_masking = (cpi->oxcf.resize_mode != RESIZE_DYNAMIC &&
+                             cpi->svc.number_spatial_layers == 1) ? 1 : 0;
 
     sf->disable_filter_search_var_thresh = 50;
     sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
