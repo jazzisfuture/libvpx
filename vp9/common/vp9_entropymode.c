@@ -1312,18 +1312,18 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   memset(vp9_coefband_tx_skip, TX_SKIP_COEFF_BAND,
          sizeof(vp9_coefband_tx_skip[0]) * MAX_NUM_COEFS);
 
-  init_pxd_scan_orders(vp9_default_scan_pxd_4x4, vp9_default_iscan_pxd_4x4,
-                       vp9_default_scan_pxd_4x4_neighbors, 4);
-  init_pxd_scan_orders(vp9_default_scan_pxd_8x8, vp9_default_iscan_pxd_8x8,
-                       vp9_default_scan_pxd_8x8_neighbors, 8);
-  init_pxd_scan_orders(vp9_default_scan_pxd_16x16, vp9_default_iscan_pxd_16x16,
-                       vp9_default_scan_pxd_16x16_neighbors, 16);
-  init_pxd_scan_orders(vp9_default_scan_pxd_32x32, vp9_default_iscan_pxd_32x32,
-                       vp9_default_scan_pxd_32x32_neighbors, 32);
+  init_pxd_scan_orders(vp9_scan_pxd_4x4, vp9_iscan_pxd_4x4,
+                       vp9_scan_pxd_4x4_neighbors, 4);
+  init_pxd_scan_orders(vp9_scan_pxd_8x8, vp9_iscan_pxd_8x8,
+                       vp9_scan_pxd_8x8_neighbors, 8);
+  init_pxd_scan_orders(vp9_scan_pxd_16x16, vp9_iscan_pxd_16x16,
+                       vp9_scan_pxd_16x16_neighbors, 16);
+  init_pxd_scan_orders(vp9_scan_pxd_32x32, vp9_iscan_pxd_32x32,
+                       vp9_scan_pxd_32x32_neighbors, 32);
 
 #if CONFIG_TX64X64
-  init_pxd_scan_orders(vp9_default_scan_pxd_64x64, vp9_default_iscan_pxd_64x64,
-                       vp9_default_scan_pxd_64x64_neighbors, 64);
+  init_pxd_scan_orders(vp9_scan_pxd_64x64, vp9_iscan_pxd_64x64,
+                       vp9_scan_pxd_64x64_neighbors, 64);
 #endif  // CONFIG_TX64X64
 #endif  // CONFIG_TX_SKIP
 }
