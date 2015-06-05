@@ -8,13 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "./vp9_rtcd.h"
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_ports/mem.h"
-#include "vp9/common/vp9_filter.h"
-#include "vp9/common/mips/msa/vp9_macros_msa.h"
+#include "vpx_dsp/mips/macros_msa.h"
 
-DECLARE_ALIGNED(256, static const int8_t, vp9_bilinear_filters_msa[15][2]) = {
+DECLARE_ALIGNED(256, static const int8_t, bilinear_filters_msa[15][2]) = {
   { 120,   8 },
   { 112,  16 },
   { 104,  24 },
@@ -715,8 +713,8 @@ static uint32_t sub_pixel_sse_diff_64width_hv_msa(const uint8_t *src,
 #define VARIANCE_64Wx32H(sse, diff) VARIANCE_LARGE_WxH(sse, diff, 11);
 #define VARIANCE_64Wx64H(sse, diff) VARIANCE_LARGE_WxH(sse, diff, 12);
 
-#define VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(wd, ht)                         \
-uint32_t vp9_sub_pixel_variance##wd##x##ht##_msa(const uint8_t *src,     \
+#define VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(wd, ht)                         \
+uint32_t vpx_sub_pixel_variance##wd##x##ht##_msa(const uint8_t *src,     \
                                                  int32_t src_stride,     \
                                                  int32_t xoffset,        \
                                                  int32_t yoffset,        \
@@ -725,8 +723,8 @@ uint32_t vp9_sub_pixel_variance##wd##x##ht##_msa(const uint8_t *src,     \
                                                  uint32_t *sse) {        \
   int32_t diff;                                                          \
   uint32_t var;                                                          \
-  const int8_t *h_filter = vp9_bilinear_filters_msa[xoffset - 1];        \
-  const int8_t *v_filter = vp9_bilinear_filters_msa[yoffset - 1];        \
+  const int8_t *h_filter = bilinear_filters_msa[xoffset - 1];            \
+  const int8_t *v_filter = bilinear_filters_msa[yoffset - 1];            \
                                                                          \
   if (yoffset) {                                                         \
     if (xoffset) {                                                       \
@@ -757,20 +755,20 @@ uint32_t vp9_sub_pixel_variance##wd##x##ht##_msa(const uint8_t *src,     \
   return var;                                                            \
 }
 
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(4, 4);
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(4, 8);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(4, 4);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(4, 8);
 
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(8, 4);
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(8, 8);
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(8, 16);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(8, 4);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(8, 8);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(8, 16);
 
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(16, 8);
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(16, 16);
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(16, 32);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(16, 8);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(16, 16);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(16, 32);
 
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(32, 16);
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(32, 32);
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(32, 64);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(32, 16);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(32, 32);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(32, 64);
 
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(64, 32);
-VP9_SUB_PIXEL_VARIANCE_WDXHT_MSA(64, 64);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(64, 32);
+VPX_SUB_PIXEL_VARIANCE_WDXHT_MSA(64, 64);
