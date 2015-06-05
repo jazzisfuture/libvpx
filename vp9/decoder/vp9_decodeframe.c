@@ -1313,6 +1313,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
   size_t sz;
 
   cm->last_frame_type = cm->frame_type;
+  cm->last_intra_only = cm->intra_only;
 
   if (vp9_rb_read_literal(rb, 2) != VP9_FRAME_MARKER)
       vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
@@ -1640,7 +1641,9 @@ void vp9_decode_frame(VP9Decoder *pbi,
                            cm->width == cm->last_width &&
                            cm->height == cm->last_height &&
                            !cm->intra_only &&
-                           cm->last_show_frame;
+                           cm->last_show_frame &&
+                           (cm->last_frame_type != KEY_FRAME) &&
+                           !cm->last_intra_only;
 
   vp9_setup_block_planes(xd, cm->subsampling_x, cm->subsampling_y);
 
