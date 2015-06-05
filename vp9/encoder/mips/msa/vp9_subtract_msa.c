@@ -9,7 +9,7 @@
  */
 
 #include "./vp9_rtcd.h"
-#include "vp9/common/mips/msa/vp9_macros_msa.h"
+#include "vpx_dsp/mips/macros_msa.h"
 
 static void sub_blk_4x4_msa(const uint8_t *src_ptr, int32_t src_stride,
                             const uint8_t *pred_ptr, int32_t pred_stride,
