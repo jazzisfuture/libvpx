@@ -1178,7 +1178,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                            sf, sf);
 
       if (cm->use_prev_frame_mvs)
-        vp9_find_mv_refs(cm, xd, tile_info, xd->mi[0], ref_frame,
+        vp9_find_mv_refs(cm, xd, xd->mi[0], ref_frame,
                          candidates, mi_row, mi_col, NULL, NULL);
       else
         const_motion[ref_frame] = mv_refs_rt(cm, xd, tile_info,
@@ -1621,11 +1621,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 }
 
 void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
-                                TileDataEnc *tile_data,
                                 int mi_row, int mi_col, RD_COST *rd_cost,
                                 BLOCK_SIZE bsize, PICK_MODE_CONTEXT *ctx) {
   VP9_COMMON *const cm = &cpi->common;
-  TileInfo *const tile_info = &tile_data->tile_info;
   SPEED_FEATURES *const sf = &cpi->sf;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
@@ -1657,7 +1655,7 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
                              &cm->frame_refs[ref_frame - 1].sf;
       vp9_setup_pred_block(xd, yv12_mb[ref_frame], yv12, mi_row, mi_col,
                            sf, sf);
-      vp9_find_mv_refs(cm, xd, tile_info, xd->mi[0], ref_frame,
+      vp9_find_mv_refs(cm, xd, xd->mi[0], ref_frame,
                        candidates, mi_row, mi_col, NULL, NULL);
 
       vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
@@ -1730,7 +1728,7 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
 
         b_mv[ZEROMV].as_int = 0;
         b_mv[NEWMV].as_int = INVALID_MV;
-        vp9_append_sub8x8_mvs_for_idx(cm, xd, tile_info, i, 0, mi_row, mi_col,
+        vp9_append_sub8x8_mvs_for_idx(cm, xd, i, 0, mi_row, mi_col,
                                       &b_mv[NEARESTMV],
                                       &b_mv[NEARMV]);
 
