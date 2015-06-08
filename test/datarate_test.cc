@@ -781,6 +781,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest,
       encoder->Control(VP8E_SET_CPUUSED, speed_setting_);
       encoder->Control(VP9E_SET_TILE_COLUMNS, 0);
       encoder->Control(VP8E_SET_MAX_INTRA_BITRATE_PCT, 300);
+      encoder->Control(VP9E_SET_TILE_COLUMNS, (cfg_.g_threads >> 1));
     }
     const vpx_rational_t tb = video->timebase();
     timebase_ = static_cast<double>(tb.num) / tb.den;
@@ -867,7 +868,7 @@ static void assign_layer_bitrates(vpx_codec_enc_cfg_t *const enc_cfg,
 }
 
 // Check basic rate targeting for 1 pass CBR SVC: 2 spatial layers and
-// 3 temporal layers.
+// 3 temporal layers. Run CIF clip with 1 thread.
 TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc) {
   cfg_.rc_buf_initial_sz = 500;
   cfg_.rc_buf_optimal_sz = 500;
@@ -882,6 +883,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc) {
   cfg_.ts_rate_decimator[1] = 2;
   cfg_.ts_rate_decimator[2] = 1;
   cfg_.g_error_resilient = 1;
+  cfg_.g_threads = 1;
   cfg_.temporal_layering_mode = 3;
   svc_params_.scaling_factor_num[0] = 144;
   svc_params_.scaling_factor_den[0] = 288;
@@ -906,6 +908,45 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc) {
     ASSERT_LE(cfg_.rc_target_bitrate, file_datarate_ * 1.15)
         << " The datarate for the file is lower than the target by too much!";
   }
+}
+
+// Check basic rate targeting for 1 pass CBR SVC: 2 spatial layers and
+// 3 temporal layers. Run HD clip with 4 threads.
+TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc4threads) {
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.rc_end_usage = VPX_CBR;
+  cfg_.g_lag_in_frames = 0;
+  cfg_.ss_number_layers = 2;
+  cfg_.ts_number_layers = 3;
+  cfg_.ts_rate_decimator[0] = 4;
+  cfg_.ts_rate_decimator[1] = 2;
+  cfg_.ts_rate_decimator[2] = 1;
+  cfg_.g_error_resilient = 1;
+  cfg_.g_threads = 4;
+  cfg_.temporal_layering_mode = 3;
+  svc_params_.scaling_factor_num[0] = 144;
+  svc_params_.scaling_factor_den[0] = 288;
+  svc_params_.scaling_factor_num[1] = 288;
+  svc_params_.scaling_factor_den[1] = 288;
+  // TODO(wonkap/marpan): No frame drop for now, we need to implement correct
+  // frame dropping for SVC.
+  cfg_.rc_dropframe_thresh = 0;
+  ::libvpx_test::I420VideoSource video("niklas_1280_720_30.y4m", 1280, 720,
+                                       30, 1, 0, 300);
+  cfg_.rc_target_bitrate = 800;
+  ResetModel();
+  assign_layer_bitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
+      cfg_.ts_number_layers, cfg_.temporal_layering_mode,
+      cfg_.rc_target_bitrate);
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  ASSERT_GE(cfg_.rc_target_bitrate, effective_datarate_ * 0.85)
+          << " The datarate for the file exceeds the target by too much!";
+  ASSERT_LE(cfg_.rc_target_bitrate, file_datarate_ * 1.15)
+      << " The datarate for the file is lower than the target by too much!";
 }
 
 VP8_INSTANTIATE_TEST_CASE(DatarateTestLarge, ALL_TEST_MODES);
