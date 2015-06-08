@@ -1756,3 +1756,52 @@ void vp9_set_target_rate(VP9_COMP *cpi) {
     vbr_rate_correction(cpi, &target_rate);
   vp9_rc_set_frame_target(cpi, target_rate);
 }
+
+// Check if we should resize, based on average QP from past x frames.
+// Only allow for resize at most one scale down for now.
+int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
+  const VP9_COMMON *const cm = &cpi->common;
+  RATE_CONTROL *const rc = &cpi->rc;
+  int resize_now = 0;
+  // Don't resize on key frame; reset the counters on key frame.
+  if (cm->frame_type == KEY_FRAME) {
+    cpi->resize_avg_qp = 0;
+    cpi->resize_count = 0;
+    return 0;
+  }
+  // Resize based on average QP over some window. Note that is called via
+  // set_frame_size(), which is called twice before encoding the frame, so
+  // the actual number of frames for checking to resize = window / 2.
+  // Ignore samples close to key frame, since QP is usually high after key.
+  if (cpi->rc.frames_since_key > 30) {
+    int window = 8 * cpi->framerate;
+    cpi->resize_avg_qp += cm->base_qindex;
+    cpi->resize_count++;
+    // Check for resize action every "window" frames.
+    if (cpi->resize_count == window) {
+      int avg_qp = cpi->resize_avg_qp / cpi->resize_count;
+      // Resize down if average QP is high, and we are at original resolution.
+      // Resize back up if average QP is low, and we are currently in a resized
+      // down state.
+      if (cpi->resize_state == 0 && avg_qp > 90 *cpi->rc.worst_quality / 100) {
+        cpi->resize_state = 1;
+        resize_now = 1;
+      } else if (cpi->resize_state == 1 &&
+                 avg_qp < 40 *cpi->rc.worst_quality / 100) {
+        cpi->resize_state = 0;
+        resize_now = -1;
+      }
+      // Reset for next window measurement.
+      cpi->resize_avg_qp = 0;
+      cpi->resize_count = 0;
+    }
+  }
+  // If decision is to resize, reset some quantities.
+  if (resize_now != 0) {
+    rc->buffer_level = rc->optimal_buffer_level;
+    rc->bits_off_target = rc->optimal_buffer_level;
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
+      vp9_cyclic_refresh_reset_resize(cpi);
+  }
+  return resize_now;
+}
