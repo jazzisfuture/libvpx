@@ -619,6 +619,9 @@ int main(int argc, char **argv) {
   cfg.rc_buf_optimal_sz = 600;
   cfg.rc_buf_sz = 1000;
 
+  // To enable dynamic resizing. Off by default.
+  cfg.rc_resize_allowed = 0;
+
   // Use 1 thread as default.
   cfg.g_threads = 1;
 
