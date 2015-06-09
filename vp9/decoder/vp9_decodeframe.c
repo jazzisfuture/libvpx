@@ -1333,15 +1333,22 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd, int hbs,
   const int has_rows = (mi_row + hbs) < cm->mi_rows;
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
   PARTITION_TYPE p;
-
-  if (has_rows && has_cols)
+  if (has_rows && has_cols) {
+#if CONFIG_EXT_PARTITION
+    if (bsize <= BLOCK_8X8)
+      p = (PARTITION_TYPE)vp9_read_tree(r, vp9_partition_tree, probs);
+    else
+      p = (PARTITION_TYPE)vp9_read_tree(r, vp9_ext_partition_tree, probs);
+#else
     p = (PARTITION_TYPE)vp9_read_tree(r, vp9_partition_tree, probs);
-  else if (!has_rows && has_cols)
+#endif
+  } else if (!has_rows && has_cols) {
     p = vp9_read(r, probs[1]) ? PARTITION_SPLIT : PARTITION_HORZ;
-  else if (has_rows && !has_cols)
+  } else if (has_rows && !has_cols) {
     p = vp9_read(r, probs[2]) ? PARTITION_SPLIT : PARTITION_VERT;
-  else
+  } else {
     p = PARTITION_SPLIT;
+  }
 
   if (!cm->frame_parallel_decoding_mode)
     ++cm->counts.partition[ctx][p];
@@ -2772,10 +2779,17 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
       for (i = 0; i < INTRA_MODES - 1; ++i)
         vp9_diff_update_prob(&r, &fc->y_mode_prob[j][i]);
 
+#if CONFIG_EXT_PARTITION
+    for (i = 0; i < PARTITION_TYPES - 1; ++i)
+      vp9_diff_update_prob(&r, &fc->partition_prob[0][i]);
+    for (j = 1; j < PARTITION_CONTEXTS; ++j)
+      for (i = 0; i < EXT_PARTITION_TYPES - 1; ++i)
+        vp9_diff_update_prob(&r, &fc->partition_prob[j][i]);
+#else
     for (j = 0; j < PARTITION_CONTEXTS; ++j)
       for (i = 0; i < PARTITION_TYPES - 1; ++i)
         vp9_diff_update_prob(&r, &fc->partition_prob[j][i]);
-
+#endif
     read_mv_probs(nmvc, cm->allow_high_precision_mv, &r);
 #if CONFIG_EXT_TX
     read_ext_tx_probs(fc, &r);
