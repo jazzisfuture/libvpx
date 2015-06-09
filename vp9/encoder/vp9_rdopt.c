@@ -517,7 +517,7 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
                                                    dst, dst_stride, &tmp_sse);
     args->dist = (int64_t)tmp_sse * 16;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-  } else if (max_txsize_lookup[plane_bsize] == tx_size) {
+  } else if (max_txsize_lookup[plane_bsize] == tx_size && 0) {
     if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] == 0) {
       // full forward transform and quantization
       vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
@@ -556,6 +556,27 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
       args->dist = args->sse;
     }
   } else {
+    int i, j;
+    uint8_t *dst, *src;
+    int src_stride, dst_stride;
+    unsigned int tmp_sse;
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, rec_buffer, 32 * 32);
+    BLOCK_SIZE txm_bsize = txsize_to_bsize[tx_size];
+    int bh = 4 * num_4x4_blocks_wide_lookup[txm_bsize];
+    tran_low_t *const dqcoeff = BLOCK_OFFSET(xd->plane[plane].dqcoeff, block);
+
+    txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
+    src_stride = x->plane[plane].src.stride;
+    dst_stride = xd->plane[plane].dst.stride;
+    src = &x->plane[plane].src.buf[4 * (j * src_stride + i)];
+    dst = &xd->plane[plane].dst.buf[4 * (j * dst_stride + i)];
+
+    vp9_convolve_copy(dst, dst_stride, rec_buffer, 32,
+                      NULL, 0, NULL, 0, bh, bh);
+
+    args->cpi->fn_ptr[txm_bsize].vf(src, src_stride, dst, dst_stride, &tmp_sse);
+    args->sse = (int64_t)tmp_sse * 16;
+
     // full forward transform and quantization
     vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -565,7 +586,33 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
       dist_block(plane, block, tx_size, args, 8);
     }
 #else
-    dist_block(plane, block, tx_size, args);
+//    dist_block(plane, block, tx_size, args);
+
+    if (x->plane[plane].eobs[block]) {
+      switch (tx_size) {
+        case TX_32X32:
+          vp9_idct32x32_add(dqcoeff, rec_buffer, 32, x->plane[plane].eobs[block]);
+          break;
+        case TX_16X16:
+          vp9_idct16x16_add(dqcoeff, rec_buffer, 32, x->plane[plane].eobs[block]);
+          break;
+        case TX_8X8:
+          vp9_idct8x8_add(dqcoeff, rec_buffer, 32, x->plane[plane].eobs[block]);
+          break;
+        case TX_4X4:
+          // this is like vp9_short_idct4x4 but has a special case around eob<=1
+          // which is significant (not just an optimization) for the lossless
+          // case.
+          x->itxm_add(dqcoeff, rec_buffer, 32, x->plane[plane].eobs[block]);
+          break;
+        default:
+          assert(0 && "Invalid transform size");
+          break;
+      }
+      args->cpi->fn_ptr[txm_bsize].vf(src, src_stride,
+                                rec_buffer, 32, &tmp_sse);
+    }
+    args->dist = (int64_t)tmp_sse * 16;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   }
 
@@ -711,7 +758,6 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   }
   mbmi->tx_size = cm->tx_mode == TX_MODE_SELECT ?
                       best_tx : MIN(max_tx_size, max_mode_tx_size);
-
 
   *distortion = d[mbmi->tx_size];
   *rate       = r[mbmi->tx_size][cm->tx_mode == TX_MODE_SELECT];
@@ -1162,7 +1208,7 @@ static void tx_block_rd_b(VP9_COMP const *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   MACROBLOCKD *const xd = &x->e_mbd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const struct macroblock_plane *const p = &x->plane[plane];
-  unsigned int tmp_sse;
+  unsigned int tmp_sse = 0;
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   ENTROPY_CONTEXT *ta = above_ctx + blk_col;
   ENTROPY_CONTEXT *tl = left_ctx + blk_row;
@@ -1188,10 +1234,37 @@ static void tx_block_rd_b(VP9_COMP const *cpi, MACROBLOCK *x, TX_SIZE tx_size,
                                   &this_sse, xd->bd) >> shift;
   *bsse += this_sse >> shift;
 #else
+  // TODO(jingning) refactor the data structure to save repeated computation.
+  int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
+  int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
+
+  if (xd->mb_to_bottom_edge < 0)
+    max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
+  if (xd->mb_to_right_edge < 0)
+    max_blocks_wide += xd->mb_to_right_edge >> (5 + pd->subsampling_x);
+
   vp9_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
                     NULL, 0, NULL, 0, bh, bh);
-  cpi->fn_ptr[txm_bsize].vf(src, src_stride,
-                            rec_buffer, 32, &tmp_sse);
+
+  if ((bh >> 2) + blk_col > max_blocks_wide ||
+      (bh >> 2) + blk_row > max_blocks_high) {
+    int idx, idy;
+    unsigned int this_sse;
+    int blocks_height = MIN(bh >> 2, max_blocks_high - blk_row);
+    int blocks_width  = MIN(bh >> 2, max_blocks_wide - blk_col);
+    for (idy = 0; idy < blocks_height; idy += 2) {
+      for (idx = 0; idx < blocks_width; idx += 2) {
+        cpi->fn_ptr[BLOCK_8X8].vf(src + 4 * idy * src_stride + 4 * idx,
+                                  src_stride,
+                                  rec_buffer + 4 * idy * 32 + 4 * idx,
+                                  32, &this_sse);
+        tmp_sse += this_sse;
+      }
+    }
+  } else {
+    cpi->fn_ptr[txm_bsize].vf(src, src_stride,
+                              rec_buffer, 32, &tmp_sse);
+  }
   *bsse += (int64_t)tmp_sse * 16;
 
   vp9_xform_quant_inter(x, plane, block, blk_row, blk_col,
@@ -1218,10 +1291,30 @@ static void tx_block_rd_b(VP9_COMP const *cpi, MACROBLOCK *x, TX_SIZE tx_size,
         assert(0 && "Invalid transform size");
         break;
     }
-    cpi->fn_ptr[txm_bsize].vf(src, src_stride,
-                              rec_buffer, 32, &tmp_sse);
+
+    if ((bh >> 2) + blk_col > max_blocks_wide ||
+        (bh >> 2) + blk_row > max_blocks_high) {
+      int idx, idy;
+      unsigned int this_sse;
+      int blocks_height = MIN(bh >> 2, max_blocks_high - blk_row);
+      int blocks_width  = MIN(bh >> 2, max_blocks_wide - blk_col);
+      tmp_sse = 0;
+      for (idy = 0; idy < blocks_height; idy += 2) {
+        for (idx = 0; idx < blocks_width; idx += 2) {
+          cpi->fn_ptr[BLOCK_8X8].vf(src + 4 * idy * src_stride + 4 * idx,
+                                    src_stride,
+                                    rec_buffer + 4 * idy * 32 + 4 * idx,
+                                    32, &this_sse);
+          tmp_sse += this_sse;
+        }
+      }
+    } else {
+      cpi->fn_ptr[txm_bsize].vf(src, src_stride,
+                                rec_buffer, 32, &tmp_sse);
+    }
   }
   *dist += (int64_t)tmp_sse * 16;
+
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   switch (tx_size) {
@@ -1352,6 +1445,9 @@ static void inter_block_yrd(const VP9_COMP *cpi, MACROBLOCK *x,
   MACROBLOCKD *const xd = &x->e_mbd;
   int is_cost_valid = 1;
   int64_t this_rd;
+  vp9_prob skip_prob = vp9_get_skip_prob(&cpi->common, xd);
+  int s0 = 0; // vp9_cost_bit(skip_prob, 0);
+  int s1 = 0; // vp9_cost_bit(skip_prob, 1);
 
   if (ref_best_rd < 0)
     is_cost_valid = 0;
@@ -1392,12 +1488,12 @@ static void inter_block_yrd(const VP9_COMP *cpi, MACROBLOCK *x,
         block += step;
       }
     }
-  }
 
-  this_rd = MIN(RDCOST(x->rdmult, x->rddiv, *rate, *distortion),
-                RDCOST(x->rdmult, x->rddiv, 0, *sse));
-  if (this_rd > ref_best_rd)
-    is_cost_valid = 0;
+    this_rd = MIN(RDCOST(x->rdmult, x->rddiv, *rate + s0, *distortion),
+                  RDCOST(x->rdmult, x->rddiv, s1, *sse));
+    if (this_rd > ref_best_rd)
+      is_cost_valid = 0;
+  }
 
   if (!is_cost_valid) {
     // reset cost value
@@ -1463,8 +1559,15 @@ static int inter_block_uvrd(const VP9_COMP *cpi, MACROBLOCK *x,
   int is_cost_valid = 1;
   int64_t this_rd;
 
-  if (ref_best_rd < 0)
+  if (ref_best_rd < 0) {
     is_cost_valid = 0;
+    // reset cost value
+    *rate = INT_MAX;
+    *distortion = INT64_MAX;
+    *sse = INT64_MAX;
+    *skippable = 0;
+    return is_cost_valid;
+  }
 
   if (is_inter_block(mbmi) && is_cost_valid) {
     int plane;
@@ -3124,9 +3227,30 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       inter_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                       bsize, ref_best_rd);
     } else {
+
+      int tmp_rate, tmp_skip;
+      int64_t tmp_dist, tmp_sse;
+      TX_SIZE tmp_tx_size;
       super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                       bsize, txfm_cache, ref_best_rd);
 
+      tmp_tx_size = mbmi->tx_size;
+
+      inter_block_yrd(cpi, x, &tmp_rate, &tmp_dist, &tmp_skip, &tmp_sse,
+                      bsize, ref_best_rd);
+
+      if (*rate_y < INT_MAX) {
+        if (tmp_sse != *psse) {
+
+          fprintf(stderr, "pos (%d, %d), bsize %d, mode %d, ref %d, %d, tmp_sse %d, psse %d\n",
+                  mi_row, mi_col, bsize, mbmi->mode, mbmi->ref_frame[0],
+                  mbmi->ref_frame[1], tmp_sse, *psse);
+
+          fprintf(stderr, "tmp_tx_size %d\n", tmp_tx_size);
+        }
+      }
+
+      mbmi->tx_size = tmp_tx_size;
       // sudo load
       for (i = 0; i < 64; ++i)
         mbmi->inter_tx_size[i] = mbmi->tx_size;
