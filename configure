@@ -301,6 +301,7 @@ EXPERIMENT_LIST="
     bitstream_fixes
     newmvref
     misc_entropy
+    ext_partition
 "
 CONFIG_LIST="
     external_build
