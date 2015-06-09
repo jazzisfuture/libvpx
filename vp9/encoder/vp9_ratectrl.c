@@ -327,7 +327,6 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
 int vp9_rc_drop_frame(VP9_COMP *cpi) {
   const VP9EncoderConfig *oxcf = &cpi->oxcf;
   RATE_CONTROL *const rc = &cpi->rc;
-
   if (!oxcf->drop_frames_water_mark) {
     return 0;
   } else {
@@ -335,16 +334,21 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
       // Always drop if buffer is below 0.
       return 1;
     } else {
-      // If buffer is below drop_mark, for now just drop every other frame
-      // (starting with the next frame) until it increases back over drop_mark.
+      // If buffer is below drop_mark drop every other frame, if below
+      // drop_mark2 drop 2 every 3 frames, (always starting with the next frame)
+      // until buffer increases back up over drop_mark.
       int drop_mark = (int)(oxcf->drop_frames_water_mark *
           rc->optimal_buffer_level / 100);
+      int drop_mark2 = drop_mark >> 1;
       if ((rc->buffer_level > drop_mark) &&
           (rc->decimation_factor > 0)) {
         --rc->decimation_factor;
       } else if (rc->buffer_level <= drop_mark &&
           rc->decimation_factor == 0) {
         rc->decimation_factor = 1;
+      } else if (rc->buffer_level <= drop_mark2 &&
+          rc->decimation_factor <= 1) {
+        rc->decimation_factor = 2;
       }
       if (rc->decimation_factor > 0) {
         if (rc->decimation_count > 0) {
