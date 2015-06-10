@@ -65,6 +65,10 @@ typedef unsigned int vp9_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][2]
 typedef unsigned int vp9_coeff_cost_pxd[PLANE_TYPES][REF_TYPES][2]
                                        [COEFF_CONTEXTS][ENTROPY_TOKENS];
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_CODE_ZEROGROUP
+typedef unsigned int vp9_zpc_cost[PLANE_TYPES][REF_TYPES][ZPC_BANDS]
+                                 [ZPC_PTOKS][2];
+#endif  // CONFIG_CODE_ZEROGROUP
 
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
@@ -115,10 +119,12 @@ struct macroblock {
 
   // note that token_costs is the cost when eob node is skipped
   vp9_coeff_cost token_costs[TX_SIZES];
-
 #if CONFIG_TX_SKIP
   vp9_coeff_cost_pxd token_costs_pxd[TX_SIZES];
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_CODE_ZEROGROUP
+  vp9_zpc_cost zpc_costs[ZPC_TX_SIZES];
+#endif  // CONFIG_CODE_ZEROGROUP
 
   int in_static_area;
 

@@ -54,6 +54,9 @@ typedef struct frame_contexts {
   vp9_prob partition_prob[PARTITION_CONTEXTS][PARTITION_TYPES - 1];
 #endif
   vp9_coeff_probs_model coef_probs[TX_SIZES][PLANE_TYPES];
+#if CONFIG_CODE_ZEROGROUP
+  vp9_zpc_probs zpc_probs[ZPC_TX_SIZES][PLANE_TYPES];
+#endif  // CONFIG_CODE_ZEROGROUP
   vp9_prob switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
                                  [SWITCHABLE_FILTERS - 1];
   vp9_prob inter_mode_probs[INTER_MODE_CONTEXTS][INTER_MODES - 1];
@@ -123,6 +126,9 @@ typedef struct {
   unsigned int partition[PARTITION_CONTEXTS][PARTITION_TYPES];
 #endif
   vp9_coeff_count_model coef[TX_SIZES][PLANE_TYPES];
+#if CONFIG_CODE_ZEROGROUP
+  vp9_zpc_count zpc[ZPC_TX_SIZES][PLANE_TYPES];
+#endif  // CONFIG_CODE_ZEROGROUP
   unsigned int eob_branch[TX_SIZES][PLANE_TYPES][REF_TYPES]
                          [COEF_BANDS][COEFF_CONTEXTS];
   unsigned int switchable_interp[SWITCHABLE_FILTER_CONTEXTS]

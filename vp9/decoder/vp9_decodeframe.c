@@ -2117,7 +2117,7 @@ static void read_coef_probs_common(vp9_coeff_probs_model *coef_probs,
 
 #if CONFIG_TX_SKIP
 static void read_coef_probs_common_pxd(vp9_coeff_probs_pxd *coef_probs,
-                                   vp9_reader *r) {
+                                       vp9_reader *r) {
   int i, j, l, m;
 
   if (vp9_read_bit(r))
@@ -2142,6 +2142,30 @@ static void read_coef_probs(FRAME_CONTEXT *fc, TX_MODE tx_mode,
         read_coef_probs_common_pxd(fc->coef_probs_pxd[tx_size], r);
 #endif  // CONFIG_TX_SKIP
 }
+
+#if CONFIG_CODE_ZEROGROUP
+static void read_zpc_probs_common(vp9_zpc_probs *probs, vp9_reader *r) {
+  if (vp9_read(r, GROUP_DIFF_UPDATE_PROB)) {
+    int i, j, k, l;
+    for (i = 0; i < PLANE_TYPES; ++i) {
+      for (j = 0; j < REF_TYPES; ++j) {
+        for (k = 0; k < ZPC_BANDS; ++k) {
+          for (l = 0; l < ZPC_PTOKS; ++l) {
+            vp9_diff_update_prob(r, &probs[i][j][k][l]);
+          }
+        }
+      }
+    }
+  }
+}
+
+static void read_zpc_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
+  int t;
+  for (t = 0; t < ZPC_TX_SIZES; ++t) {
+    read_zpc_probs_common(fc->zpc_probs[t], r);
+  }
+}
+#endif  // CONFIG_CODE_ZEROGROUP
 
 static void setup_segmentation(struct segmentation *seg,
                                struct vp9_read_bit_buffer *rb) {
@@ -3314,6 +3338,9 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
   if (cm->tx_mode == TX_MODE_SELECT)
     read_tx_mode_probs(&fc->tx_probs, &r);
   read_coef_probs(fc, cm->tx_mode, &r);
+#if CONFIG_CODE_ZEROGROUP
+  read_zpc_probs(fc, &r);
+#endif  // CONFIG_CODE_ZEROGROUP
 
   for (k = 0; k < SKIP_CONTEXTS; ++k)
     vp9_diff_update_prob(&r, &fc->skip_probs[k]);

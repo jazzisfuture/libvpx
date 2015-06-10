@@ -95,6 +95,19 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
   const uint8_t *cat4_prob;
   const uint8_t *cat5_prob;
   const uint8_t *cat6_prob;
+#if CONFIG_CODE_ZEROGROUP
+  int is_eoo[3] = {0, 0, 0};
+  int is_last_zero[3] = {0, 0, 0};
+  int o, skip_coef_val;
+  vp9_zpc_probs *zpc_probs =
+      tx_size >= ZPC_MIN_TX_SIZE ?
+      &cm->fc.zpc_probs[tx_size - ZPC_MIN_TX_SIZE][type] : NULL;
+  vp9_zpc_count *zpc_count =
+      tx_size >= ZPC_MIN_TX_SIZE ?
+      &counts->zpc[tx_size - ZPC_MIN_TX_SIZE][type] : NULL;
+  vp9_prob *zprobs;
+  vpx_memset(token_cache, UNKNOWN_TOKEN, sizeof(token_cache));
+#endif
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
@@ -131,14 +144,29 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
 #endif
 
 #if CONFIG_TX_SKIP
-    if (tx_skip)
-      band_translate = vp9_coefband_tx_skip;
+  if (tx_skip)
+    band_translate = vp9_coefband_tx_skip;
 #endif  // CONFIG_TX_SKIP
 
   while (c < max_eob) {
     int val = -1;
     band = *band_translate++;
     prob = coef_probs[band][ctx];
+#if CONFIG_CODE_ZEROGROUP
+    o = vp9_get_orientation(scan[c], tx_size);
+    skip_coef_val = is_eoo[o];
+    if (skip_coef_val) {
+      dqv = dq[1];
+      token_cache[scan[c]] = 0;
+      is_last_zero[o] = 1;
+      ++c;
+      if (c >= max_eob)
+        return c;  // zero tokens at the end (no eob token)
+      ctx = get_coef_context(nb, token_cache, c);
+      continue;
+    }
+    zprobs = &(*zpc_probs)[ref][coef_to_zpc_band(band)][coef_to_zpc_ptok(ctx)];
+#endif  // CONFIG_CODE_ZEROGROUP
     if (!cm->frame_parallel_decoding_mode)
       ++eob_branch_count[band][ctx];
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE])) {
@@ -149,20 +177,80 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     dqv_val = &dq_val[band][0];
 #endif  // CONFIG_NEW_QUANT
 
-    while (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
-      INCREMENT_COUNT(ZERO_TOKEN);
-      dqv = dq[1];
-      token_cache[scan[c]] = 0;
-      ++c;
-      if (c >= max_eob)
-        return c;  // zero tokens at the end (no eob token)
-      ctx = get_coef_context(nb, token_cache, c);
-      band = *band_translate++;
-      prob = coef_probs[band][ctx];
+    while (1) {
+#if CONFIG_CODE_ZEROGROUP
+      if (skip_coef_val) {
+        dqv = dq[1];
+        token_cache[scan[c]] = 0;
+        is_last_zero[o] = 1;
+        ++c;
+        if (c >= max_eob)
+          return c;  // zero tokens at the end (no eob token)
+        ctx = get_coef_context(nb, token_cache, c);
+        band = *band_translate++;
+        prob = coef_probs[band][ctx];
 #if CONFIG_NEW_QUANT
-      dqv_val = &dq_val[band][0];
+        dqv_val = &dq_val[band][0];
 #endif  // CONFIG_NEW_QUANT
+        o = vp9_get_orientation(scan[c], tx_size);
+        skip_coef_val = is_eoo[o];
+        zprobs =
+            &(*zpc_probs)[ref][coef_to_zpc_band(band)][coef_to_zpc_ptok(ctx)];
+      } else  if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
+        INCREMENT_COUNT(ZERO_TOKEN);
+        dqv = dq[1];
+        token_cache[scan[c]] = 0;
+        if (!is_eoo[o]) {
+          int use_eoo, eoo = 0;
+          use_eoo = vp9_use_eoo(c, max_eob, scan, tx_size, ctx, band,
+                                is_last_zero, is_eoo);
+          if (use_eoo) {
+            eoo = vp9_read(r, zprobs[0]);
+            (*zpc_count)[ref][coef_to_zpc_band(band)]
+                             [coef_to_zpc_ptok(ctx)][eoo]++;
+            if (eoo) is_eoo[o] = 1;
+          }
+        }
+        is_last_zero[o] = 1;
+        ++c;
+        if (c >= max_eob)
+          return c;  // zero tokens at the end (no eob token)
+        ctx = get_coef_context(nb, token_cache, c);
+        band = *band_translate++;
+        prob = coef_probs[band][ctx];
+#if CONFIG_NEW_QUANT
+        dqv_val = &dq_val[band][0];
+#endif  // CONFIG_NEW_QUANT
+        o = vp9_get_orientation(scan[c], tx_size);
+        skip_coef_val = is_eoo[o];
+        zprobs =
+            &(*zpc_probs)[ref][coef_to_zpc_band(band)][coef_to_zpc_ptok(ctx)];
+      } else {
+        break;
+      }
+#else  // CONFIG_CODE_ZEROGROUP
+      if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
+        INCREMENT_COUNT(ZERO_TOKEN);
+        dqv = dq[1];
+        token_cache[scan[c]] = 0;
+        ++c;
+        if (c >= max_eob)
+          return c;  // zero tokens at the end (no eob token)
+        ctx = get_coef_context(nb, token_cache, c);
+        band = *band_translate++;
+        prob = coef_probs[band][ctx];
+#if CONFIG_NEW_QUANT
+        dqv_val = &dq_val[band][0];
+#endif  // CONFIG_NEW_QUANT
+      } else {
+        break;
+      }
+#endif  // CONFIG_CODE_ZEROGROUP
     }
+
+#if CONFIG_CODE_ZEROGROUP
+    is_last_zero[o] = 0;
+#endif  // CONFIG_CODE_ZEROGROUP
 
     if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
       INCREMENT_COUNT(ONE_TOKEN);
@@ -243,7 +331,6 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     ctx = get_coef_context(nb, token_cache, c);
     dqv = dq[1];
   }
-
   return c;
 }
 

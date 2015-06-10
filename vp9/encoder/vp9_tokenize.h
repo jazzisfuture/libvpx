@@ -42,6 +42,9 @@ typedef struct {
 #endif
   uint8_t         token;
   uint8_t         skip_eob_node;
+#if CONFIG_CODE_ZEROGROUP
+  uint8_t         skip_coef_val;
+#endif  // CONFIG_CODE_ZEROGROUP
 #if CONFIG_TX_SKIP
   uint8_t         is_pxd_token;
 #endif  // CONFIG_TX_SKIP
@@ -62,6 +65,11 @@ void vp9_tokenize_sb(struct VP9_COMP *cpi, TOKENEXTRA **t, int dry_run,
 void vp9_tokenize_sb_supertx(struct VP9_COMP *cpi, TOKENEXTRA **t, int dry_run,
                              BLOCK_SIZE bsize);
 #endif
+
+#if CONFIG_CODE_ZEROGROUP
+int vp9_is_eoo(int c, int eob, const int16_t *scan, TX_SIZE tx_size,
+               int *last_nz_pos);
+#endif  // CONFIG_CODE_ZEROGROUP
 
 extern const int16_t *vp9_dct_value_cost_ptr;
 /* TODO: The Token field should be broken out into a separate char array to
