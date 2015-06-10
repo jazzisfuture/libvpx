@@ -316,74 +316,87 @@ static void pack_mb_tokens(vp9_writer *w,
 
   while (p < stop && p->token != EOSB_TOKEN) {
     const int t = p->token;
-    const struct vp9_token *const a = &vp9_coef_encodings[t];
-    int i = 0;
-    int v = a->value;
-    int n = a->len;
+#if CONFIG_CODE_ZEROGROUP
+    if (t == ZPC_ISOLATED || t == ZPC_NOTISOLATED) {
+      assert((p - 1)->Token == ZERO_TOKEN);
+      vp9_write(w, t == ZPC_NOTISOLATED, p->context_tree[0]);
+    } else if (p->skip_coef_val) {
+      assert(p->skip_eob_node == 0);
+      assert(t == DCT_EOB_TOKEN || t == ZERO_TOKEN);
+      vp9_write(w, t == ZERO_TOKEN, p->context_tree[0]);
+    } else {
+#endif  // CONFIG_CODE_ZEROGROUP
+      const struct vp9_token *const a = &vp9_coef_encodings[t];
+      int i = 0;
+      int v = a->value;
+      int n = a->len;
 #if CONFIG_VP9_HIGHBITDEPTH
-    const vp9_extra_bit *b;
-    if (bit_depth == VPX_BITS_12)
-      b = &vp9_extra_bits_high12[t];
-    else if (bit_depth == VPX_BITS_10)
-      b = &vp9_extra_bits_high10[t];
-    else
-      b = &vp9_extra_bits[t];
+      const vp9_extra_bit *b;
+      if (bit_depth == VPX_BITS_12)
+        b = &vp9_extra_bits_high12[t];
+      else if (bit_depth == VPX_BITS_10)
+        b = &vp9_extra_bits_high10[t];
+      else
+        b = &vp9_extra_bits[t];
 #else
-    const vp9_extra_bit *const b = &vp9_extra_bits[t];
-    (void) bit_depth;
+      const vp9_extra_bit *const b = &vp9_extra_bits[t];
+      (void) bit_depth;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-    /* skip one or two nodes */
-    if (p->skip_eob_node) {
-      n -= p->skip_eob_node;
-      i = 2 * p->skip_eob_node;
-    }
+      /* skip one or two nodes */
+      if (p->skip_eob_node) {
+        n -= p->skip_eob_node;
+        i = 2 * p->skip_eob_node;
+      }
 
-    // TODO(jbb): expanding this can lead to big gains.  It allows
-    // much better branch prediction and would enable us to avoid numerous
-    // lookups and compares.
+      // TODO(jbb): expanding this can lead to big gains.  It allows
+      // much better branch prediction and would enable us to avoid numerous
+      // lookups and compares.
 
-    // If we have a token that's in the constrained set, the coefficient tree
-    // is split into two treed writes.  The first treed write takes care of the
-    // unconstrained nodes.  The second treed write takes care of the
-    // constrained nodes.
+      // If we have a token that's in the constrained set, the coefficient tree
+      // is split into two treed writes.  The first treed write takes care of the
+      // unconstrained nodes.  The second treed write takes care of the
+      // constrained nodes.
 #if CONFIG_TX_SKIP
-    if (p->is_pxd_token && FOR_SCREEN_CONTENT) {
-      vp9_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
-    } else {
-#endif  // CONFIG_TX_SKIP
-      if (t >= TWO_TOKEN && t < EOB_TOKEN) {
-        int len = UNCONSTRAINED_NODES - p->skip_eob_node;
-        int bits = v >> (n - len);
-        vp9_write_tree(w, vp9_coef_tree, p->context_tree, bits, len, i);
-        vp9_write_tree(w, vp9_coef_con_tree,
-                       vp9_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
-                       v, n - len, 0);
-      } else {
+      if (p->is_pxd_token && FOR_SCREEN_CONTENT) {
         vp9_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
-      }
+      } else {
+#endif  // CONFIG_TX_SKIP
+        if (t >= TWO_TOKEN && t < EOB_TOKEN) {
+          int len = UNCONSTRAINED_NODES - p->skip_eob_node;
+          int bits = v >> (n - len);
+          vp9_write_tree(w, vp9_coef_tree, p->context_tree, bits, len, i);
+          vp9_write_tree(w, vp9_coef_con_tree,
+                         vp9_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
+                         v, n - len, 0);
+        } else {
+          vp9_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
+        }
 #if CONFIG_TX_SKIP
-    }
+      }
 #endif  // CONFIG_TX_SKIP
 
-    if (b->base_val) {
-      const int e = p->extra, l = b->len;
+      if (b->base_val) {
+        const int e = p->extra, l = b->len;
 
-      if (l) {
-        const unsigned char *pb = b->prob;
-        int v = e >> 1;
-        int n = l;              /* number of bits in v, assumed nonzero */
-        int i = 0;
+        if (l) {
+          const unsigned char *pb = b->prob;
+          int v = e >> 1;
+          int n = l;              /* number of bits in v, assumed nonzero */
+          int i = 0;
 
-        do {
-          const int bb = (v >> --n) & 1;
-          vp9_write(w, bb, pb[i >> 1]);
-          i = b->tree[i + bb];
-        } while (n);
+          do {
+            const int bb = (v >> --n) & 1;
+            vp9_write(w, bb, pb[i >> 1]);
+            i = b->tree[i + bb];
+          } while (n);
+        }
+
+        vp9_write_bit(w, e & 1);
       }
-
-      vp9_write_bit(w, e & 1);
+#if CONFIG_CODE_ZEROGROUP
     }
+#endif  // CONFIG_CODE_ZEROGROUP
     ++p;
   }
 

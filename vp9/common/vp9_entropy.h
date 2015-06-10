@@ -147,6 +147,50 @@ extern const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS];
 #define COEFF_CONTEXTS 6
 #define BAND_COEFF_CONTEXTS(band) ((band) == 0 ? 3 : COEFF_CONTEXTS)
 
+#if CONFIG_CODE_ZEROGROUP
+typedef enum {
+  HORIZONTAL = 0,
+  DIAGONAL,
+  VERTICAL,
+} OrientationType;
+
+#define ZPC_ISOLATED     (ENTROPY_TOKENS + 0)    /* Isolated zero */
+#define ZPC_NOTISOLATED  (ENTROPY_TOKENS + 1)    /* Not Isolated zero */
+
+/* ZPC_ZEROEXTRA: Extra zero pattern that is not end of orientation -
+ * could be zerotree root or zerorun */
+#define ZPC_ZEROEXTRA    (ENTROPY_TOKENS + 2)    /* Extra zeros not eoo */
+
+/* ZPC_EOORIENT: All remaining coefficients in the same orientation are 0.
+ * In other words all remaining coeffs in the current subband, and all
+ * children of the current subband are zero. Subbands are defined by
+ * dyadic partitioning in the coeff domain */
+#define ZPC_EOORIENT     (ENTROPY_TOKENS + 3)    /* End of Orientation */
+
+#define ZPC_NODES                1
+
+#define UNKNOWN_TOKEN          255       /* Not signalled, encoder only */
+
+#define ZPC_PTOKS                3       /* context pt for zpcs */
+
+#define coef_to_zpc_ptok(p)      ((p) > 2 ? 2 : (p))
+
+OrientationType vp9_get_orientation(int rc, TX_SIZE tx_size);
+int vp9_use_eoo(int c, int eob, const int16_t *scan, TX_SIZE tx_size,
+                int *is_last_zero, int *is_eoo);
+int vp9_is_eoo(int c, int eob, const int16_t *scan, TX_SIZE tx_size,
+               int *last_nz_pos);
+
+#define ZPC_USEEOO_THRESH        4
+#define ZPC_ZEROSSAVED_IZR       7   /* encoder only */
+
+typedef vp9_prob vp9_zpc_probs[REF_TYPES][COEF_BANDS]
+                              [ZPC_PTOKS][ZPC_NODES];
+typedef unsigned int vp9_zpc_count[REF_TYPES][COEF_BANDS]
+                                  [ZPC_PTOKS][ZPC_NODES][2];
+
+#endif  // CONFIG_CODE_ZEROGROUP
+
 // #define ENTROPY_STATS
 
 typedef unsigned int vp9_coeff_count[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS]

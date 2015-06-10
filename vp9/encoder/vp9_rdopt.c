@@ -429,16 +429,42 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 #if CONFIG_TX_SKIP
   int tx_skip = mbmi->tx_skip[plane != 0];
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_CODE_ZEROGROUP
+  unsigned int (*token_skipval_costs)[COEFF_CONTEXTS] =
+                   x->token_skipval_costs[tx_size][type][is_inter_block(mbmi)];
+  unsigned int (*zpc_costs)[ZPC_PTOKS][ZPC_NODES + 1] =
+                   x->zpc_costs[tx_size][type][is_inter_block(mbmi)];
+  int last_nz_pos[3] = {-1, -1, -1};
+  int is_eoo[3] = {0, 0, 0};
+  int is_last_zero[3] = {0, 0, 0};
+  int o;
+  vpx_memset(token_cache, UNKNOWN_TOKEN, sizeof(token_cache));
+#endif  // CONFIG_CODE_ZEROGROUP
   // Check for consistency of tx_size with mode info
 #if !CONFIG_SUPERTX
   assert(type == PLANE_TYPE_Y ? mbmi->tx_size == tx_size
                               : get_uv_tx_size(mbmi, pd) == tx_size);
 #endif  // CONFIG_SUPERTX
 #if CONFIG_TX_SKIP
-  if (tx_skip)
+  if (tx_skip) {
     token_costs = &x->token_costs[tx_size][type][is_inter_block(mbmi)]
+                                 [TX_SKIP_COEFF_BAND];
+#if CONFIG_CODE_ZEROGROUP
+    token_skipval_costs = &x->token_skipval_costs[tx_size][type]
+                                                 [is_inter_block(mbmi)]
                                                  [TX_SKIP_COEFF_BAND];
+#endif  // CONFIG_CODE_ZEROGROUP
+  }
 #endif  // CONFIG_TX_SKIP
+
+#if CONFIG_CODE_ZEROGROUP
+  for (c = 0; c < eob; ++c) {
+    int rc = scan[c];
+    o = vp9_get_orientation(rc, tx_size);
+    if (qcoeff[rc] != 0)
+      last_nz_pos[o] = c;
+  }
+#endif
 
   if (eob == 0) {
     // single eob token
@@ -446,16 +472,22 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
     c = 0;
   } else {
     int band_left = *band_count++;
+    int skip_eob = 0;
+#if CONFIG_CODE_ZEROGROUP
+    int skip_coef_val = 0;
+#endif
 
     // dc token
     int v = qcoeff[0];
     int prev_t = vp9_dct_value_tokens_ptr[v].token;
+    (void) skip_eob;
     cost = (*token_costs)[0][pt][prev_t] + vp9_dct_value_cost_ptr[v];
     token_cache[0] = vp9_pt_energy_class[prev_t];
 #if CONFIG_TX_SKIP
     if (!tx_skip)
 #endif  // CONFIG_TX_SKIP
     ++token_costs;
+    skip_eob = prev_t == ZERO_TOKEN;
 
     // ac tokens
     for (c = 1; c < eob; c++) {
@@ -464,6 +496,31 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 
       v = qcoeff[rc];
       t = vp9_dct_value_tokens_ptr[v].token;
+#if CONFIG_CODE_ZEROGROUP
+      o = vp9_get_orientation(scan[c], tx_size);
+      pt = get_coef_context(nb, token_cache, c);
+      if (skip_coef_val) {
+        assert(t == ZERO_TOKEN);
+        if (prev_t) {
+          cost += (*token_skipval_costs)[pt];
+        }
+      } else {
+        cost += (*token_costs)[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
+      }
+      if (!is_eoo[o] && t == ZERO_TOKEN) {
+        int use_eoo, eoo = 0;
+        use_eoo = vp9_use_eoo(c, 16 << (2 * tx_size), scan,
+                              tx_size, is_last_zero, is_eoo);
+        if (use_eoo) {
+          eoo = vp9_is_eoo(c, eob, scan, tx_size, last_nz_pos);
+          cost += (*zpc_costs)[coef_to_zpc_ptok(pt)][eoo];
+          if (eoo)
+            is_eoo[o] = 1;
+        }
+      }
+      is_last_zero[o] = 1;
+      token_cache[rc] = vp9_pt_energy_class[t];
+#else
       if (use_fast_coef_costing) {
         cost += (*token_costs)[!prev_t][!prev_t][t] + vp9_dct_value_cost_ptr[v];
       } else {
@@ -471,14 +528,24 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
         cost += (*token_costs)[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
         token_cache[rc] = vp9_pt_energy_class[t];
       }
+#endif  // CONFIG_CODE_ZEROGROUP
       prev_t = t;
       if (!--band_left) {
         band_left = *band_count++;
 #if CONFIG_TX_SKIP
-        if (!tx_skip)
+        if (!tx_skip) {
 #endif  // CONFIG_TX_SKIP
-        ++token_costs;
+          ++token_costs;
+#if CONFIG_CODE_ZEROGROUP
+          ++token_skipval_costs;
+          ++zpc_costs;
+#endif  // CONFIG_CODE_ZEROGROUP
+#if CONFIG_TX_SKIP
+        }
+#endif  // CONFIG_TX_SKIP
       }
+      if (t == ZERO_TOKEN)
+        skip_eob = 1;
     }
 
     // eob token

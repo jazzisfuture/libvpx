@@ -637,6 +637,11 @@ static INLINE int is_rect_quant_used(const MB_MODE_INFO *mbmi,
 }
 #endif  // CONFIG_NEW_QUANT && CONFIG_TX_SKIP
 
+#if CONFIG_CODE_ZEROGROUP
+static int get_zpc_used(TX_SIZE tx_size) {
+  return (tx_size >= TX_16X16);
+}
+#endif  // CONFIG_CODE_ZEROGROUP
 #ifdef __cplusplus
 }  // extern "C"
 #endif

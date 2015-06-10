@@ -1594,6 +1594,218 @@ vp9_coeff_probs_pxd default_coef_probs_pxd[TX_SIZES][PLANE_TYPES] = {
 };
 #endif  // CONFIG_TX_SKIP
 
+#if CONFIG_CODE_ZEROGROUP
+static const vp9_zpc_probs default_zpc_probs_4x4 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  }
+};
+
+static const vp9_zpc_probs default_zpc_probs_8x8 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  }
+};
+
+static const vp9_zpc_probs default_zpc_probs_16x16 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  },
+};
+
+static const vp9_zpc_probs default_zpc_probs_32x32 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  },
+};
+
+#if CONFIG_TX64X64
+static const vp9_zpc_probs default_zpc_probs_64x64 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 1 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 2 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 3 */
+      { 200, }, { 200, }, { 200, },
+    }, { /* Coeff Band 4 */
+      { 160, }, { 160, }, { 160, },
+    }, { /* Coeff Band 5 */
+      { 128, }, { 128, }, { 128, },
+    }
+  },
+};
+#endif  // CONFIG_TX64X64
+
+OrientationType vp9_get_orientation(int rc, TX_SIZE tx_size) {
+  int i = rc >> (tx_size + 2);
+  int j = rc & ((4 << tx_size) - 1);
+  if (i == 0 && j == 0) return DIAGONAL;
+  while (i > 1 || j > 1) {
+    i >>= 1;
+    j >>= 1;
+  }
+  if (i == 0 && j == 1)
+    return HORIZONTAL;  // horizontal
+  else if (i == 1 && j == 1)
+    return DIAGONAL;    // diagonal
+  else if (i == 1 && j == 0)
+    return VERTICAL;    // vertical
+  assert(0);
+  return 0;
+}
+
+int vp9_use_eoo(int c, int seg_eob, const int16_t *scan,
+                TX_SIZE tx_size, int *is_last_zero, int *is_eoo) {
+  // NOTE: returning 0 from this function will turn off eoo symbols
+  // For instance we can experiment with turning eoo off for smaller blocks
+  // and/or lower bands
+  int o = vp9_get_orientation(scan[c], tx_size);
+  int use_eoo = (!is_last_zero[o] &&
+                 !is_eoo[o] &&
+                 get_zpc_used(tx_size) &&
+                 seg_eob - c > (ZPC_USEEOO_THRESH << tx_size) &&
+                 is_eoo[0] + is_eoo[1] + is_eoo[2] < 2);
+  return use_eoo;
+}
+
+int vp9_is_eoo(int c, int eob, const int16_t *scan, TX_SIZE tx_size,
+               int *last_nz_pos) {
+  int zeros_saved = 0;
+  int rc = scan[c];
+  OrientationType o = vp9_get_orientation(rc, tx_size);
+  int eoo = c > last_nz_pos[o];
+  if (!eoo) return 0;
+  for (c++; c < eob; ++c) {
+    if (o == vp9_get_orientation(scan[c], tx_size))
+      zeros_saved++;
+  }
+  // TODO(debargha): Need to do a better job at deciding whether
+  // to send the eoo symbol or not, based on costing.
+  return (zeros_saved >= ZPC_ZEROSSAVED_IZR);
+}
+#endif  // CONFIG_CODE_ZEROGROUP
+
 static void extend_to_full_distribution(vp9_prob *probs, vp9_prob p) {
   vpx_memcpy(probs, vp9_pareto8_full[p = 0 ? 0 : p - 1],
              MODEL_NODES * sizeof(vp9_prob));
@@ -1643,6 +1855,15 @@ void vp9_default_coef_probs(VP9_COMMON *cm) {
   fill_qctx_probs(cm->base_qindex >> (8 - QCTX_BINS_BITS), TX_32X32,
                   cm->fc.coef_probs[TX_32X32]);
 #endif  // CONFIG_QCTX_TPROBS
+#if CONFIG_CODE_ZEROGROUP
+  vp9_copy(cm->fc.zpc_probs[TX_4X4], default_zpc_probs_4x4);
+  vp9_copy(cm->fc.zpc_probs[TX_8X8], default_zpc_probs_8x8);
+  vp9_copy(cm->fc.zpc_probs[TX_16X16], default_zpc_probs_16x16);
+  vp9_copy(cm->fc.zpc_probs[TX_32X32], default_zpc_probs_32x32);
+#if CONFIG_TX64X64
+  vp9_copy(cm->fc.zpc_probs[TX_64X64], default_zpc_probs_64x64);
+#endif  // CONFIG_TX64X64
+#endif  // CONFIG_CODE_ZEROGROUP
 }
 
 #define COEF_COUNT_SAT 24
