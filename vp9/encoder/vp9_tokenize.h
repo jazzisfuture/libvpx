@@ -42,6 +42,9 @@ typedef struct {
 #endif
   uint8_t         token;
   uint8_t         skip_eob_node;
+#if CONFIG_CODE_ZEROGROUP
+  uint8_t         skip_coef_val;
+#endif  // CONFIG_CODE_ZEROGROUP
 #if CONFIG_TX_SKIP
   uint8_t         is_pxd_token;
 #endif  // CONFIG_TX_SKIP

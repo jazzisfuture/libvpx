@@ -304,6 +304,7 @@ EXPERIMENT_LIST="
     wavelets
     ext_partition
     qctx_tprobs
+    code_zerogroup
 "
 CONFIG_LIST="
     external_build

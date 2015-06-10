@@ -171,6 +171,9 @@ static void count_segs_sb(const VP9_COMMON *cm, MACROBLOCKD *xd,
   (void) bw;
   (void) bh;
 
+  (void) bw;
+  (void) bh;
+
 #if CONFIG_EXT_PARTITION
   if (bsize == BLOCK_8X8)
     partition = PARTITION_NONE;

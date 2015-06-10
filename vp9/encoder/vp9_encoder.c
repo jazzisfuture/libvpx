@@ -2583,6 +2583,7 @@ static int recode_loop_test(const VP9_COMP *cpi,
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   int force_recode = 0;
+  return 0;
 
   // Special case trap if maximum allowed frame size exceeded.
   if (rc->projected_frame_size > rc->max_frame_bandwidth) {
