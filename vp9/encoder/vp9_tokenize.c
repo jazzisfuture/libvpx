@@ -286,6 +286,37 @@ static INLINE void add_token_no_extra(TOKENEXTRA **t,
   ++counts[token];
 }
 
+#if CONFIG_CODE_ZEROGROUP
+static INLINE void add_token_zpc(TOKENEXTRA **t,
+                                 const vp9_prob *context_tree,
+                                 uint8_t eoo,
+                                 uint8_t skip_eob_node,
+                                 unsigned int *counts) {
+  (*t)->token = eoo ? ZPC_EOORIENT : ZPC_ISOLATED;
+  (*t)->context_tree = context_tree;
+  (*t)->skip_eob_node = skip_eob_node;
+  (*t)++;
+  ++counts[eoo];
+}
+
+int vp9_is_eoo(int c, int eob, const int16_t *scan, TX_SIZE tx_size,
+               int *last_nz_pos) {
+  static const int zeros_saved_target = 9;
+  int zeros_saved = 0;
+  int rc = scan[c];
+  OrientationType o = vp9_get_orientation(rc, tx_size);
+  int eoo = c > last_nz_pos[o];
+  if (!eoo) return 0;
+  for (c++; c < eob; ++c) {
+    if (o == vp9_get_orientation(scan[c], tx_size))
+      zeros_saved++;
+  }
+  // TODO(debargha): Need to do a better job at deciding whether
+  // to send the eoo symbol or not, based on costing.
+  return (zeros_saved >= zeros_saved_target);
+}
+#endif  // CONFIG_CODE_ZEROGROUP
+
 static INLINE int get_tx_eob(const struct segmentation *seg, int segment_id,
                              TX_SIZE tx_size) {
   const int eob_max = 16 << (tx_size << 1);
@@ -328,6 +359,19 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   const TOKENVALUE *dct_value_tokens;
 
   int aoff, loff;
+#if CONFIG_CODE_ZEROGROUP
+  int last_nz_pos[3] = {-1, -1, -1};  // Encoder only
+  int is_eoo[3] = {0, 0, 0};
+  int is_last_zero[3] = {0, 0, 0};
+  int o, skip_coef_val = 0;
+  vp9_zpc_probs *zpc_probs =
+      tx_size >= ZPC_MIN_TX_SIZE ?
+      &cpi->common.fc.zpc_probs[tx_size - ZPC_MIN_TX_SIZE][type] : NULL;
+  vp9_zpc_count *zpc_count =
+      tx_size >= ZPC_MIN_TX_SIZE ?
+      &cpi->common.counts.zpc[tx_size - ZPC_MIN_TX_SIZE][type] : NULL;
+  vpx_memset(token_cache, UNKNOWN_TOKEN, sizeof(token_cache));
+#endif  // CONFIG_CODE_ZEROGROUP
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &aoff, &loff);
 
   pt = get_entropy_context(tx_size, pd->above_context + aoff,
@@ -335,6 +379,15 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   so = get_scan(xd, tx_size, type, block);
   scan = so->scan;
   nb = so->neighbors;
+#if CONFIG_CODE_ZEROGROUP
+  for (c = 0; c < eob; ++c) {
+    int rc = scan[c];
+    o = vp9_get_orientation(rc, tx_size);
+    if (qcoeff[rc] != 0)
+      last_nz_pos[o] = c;
+  }
+#endif
+
   c = 0;
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cpi->common.profile >= PROFILE_2) {
@@ -348,20 +401,68 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   dct_value_tokens = vp9_dct_value_tokens_ptr;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-  while (c < eob) {
+  while (1) {
     int v = 0;
     int skip_eob = 0;
+#if CONFIG_CODE_ZEROGROUP
+    o = vp9_get_orientation(scan[c], tx_size);
+    skip_coef_val = is_eoo[o];
+    while (skip_coef_val) {
+      token_cache[scan[c]] = 0;
+      is_last_zero[o] = 1;
+      ++c;
+      if (c >= seg_eob) break;
+      pt = get_coef_context(nb, token_cache, c);
+      o = vp9_get_orientation(scan[c], tx_size);
+      skip_coef_val = is_eoo[o];
+    }
+#endif  // CONFIG_CODE_ZEROGROUP
+    if (c >= eob) break;
     v = qcoeff[scan[c]];
 
     while (!v) {
-      add_token_no_extra(&t, coef_probs[band[c]][pt], ZERO_TOKEN, skip_eob,
+#if CONFIG_CODE_ZEROGROUP
+      if (!skip_coef_val) {
+        int use_eoo, eoo = 0;
+        add_token_no_extra(&t, coef_probs[band[c]][pt],
+                           ZERO_TOKEN,
+                           (uint8_t)skip_eob,
+                           counts[band[c]][pt]);
+
+        eob_branch[band[c]][pt] += !skip_eob;
+        use_eoo = vp9_use_eoo(c, seg_eob, scan, tx_size, pt, band[c],
+                              is_last_zero, is_eoo);
+        if (use_eoo) {
+          eoo = vp9_is_eoo(c, eob, scan, tx_size, last_nz_pos);
+          add_token_zpc(&t,
+                        &((*zpc_probs)[ref]
+                          [coef_to_zpc_band(band[c])][coef_to_zpc_ptok(pt)]),
+                        (uint8_t)eoo,
+                        (uint8_t)skip_eob,
+                        ((*zpc_count)[ref]
+                         [coef_to_zpc_band(band[c])][coef_to_zpc_ptok(pt)]));
+          if (eoo) is_eoo[o] = 1;
+        }
+        skip_eob = 1;
+      }
+      is_last_zero[o] = 1;
+#else
+      add_token_no_extra(&t,
+                         coef_probs[band[c]][pt],
+                         ZERO_TOKEN,
+                         (uint8_t)skip_eob,
                          counts[band[c]][pt]);
       eob_branch[band[c]][pt] += !skip_eob;
       skip_eob = 1;
+#endif  // CONFIG_CODE_ZEROGROUP
       token_cache[scan[c]] = 0;
       ++c;
       pt = get_coef_context(nb, token_cache, c);
       v = qcoeff[scan[c]];
+#if CONFIG_CODE_ZEROGROUP
+      o = vp9_get_orientation(scan[c], tx_size);
+      skip_coef_val = is_eoo[o];
+#endif  // CONFIG_CODE_ZEROGROUP
     }
 
 #if CONFIG_TX_SKIP
@@ -374,6 +475,9 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
               counts[band[c]][pt]);
     eob_branch[band[c]][pt] += !skip_eob;
     token_cache[scan[c]] = vp9_pt_energy_class[dct_value_tokens[v].token];
+#if CONFIG_CODE_ZEROGROUP
+    is_last_zero[o] = 0;
+#endif
     ++c;
     pt = get_coef_context(nb, token_cache, c);
   }

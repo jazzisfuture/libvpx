@@ -125,7 +125,7 @@ extern const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS];
 #define COEF_BANDS 7
 #define TX_SKIP_COEFF_BAND 6
 #else
-#define COEF_BANDS 6
+#define COEF_BANDS         6
 #endif  // CONFIG_TX_SKIP
 
 /* Inside dimension is measure of nearby complexity, that reflects the energy
@@ -146,6 +146,42 @@ extern const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS];
 
 #define COEFF_CONTEXTS 6
 #define BAND_COEFF_CONTEXTS(band) ((band) == 0 ? 3 : COEFF_CONTEXTS)
+
+#if CONFIG_CODE_ZEROGROUP
+typedef enum {
+  HORIZONTAL = 0,
+  DIAGONAL,
+  VERTICAL,
+} OrientationType;
+
+#define ZPC_ISOLATED     (ENTROPY_TOKENS + 0)    /* Isolated zero */
+#define ZPC_EOORIENT     (ENTROPY_TOKENS + 1)    /* Not Isolated zero */
+
+#define UNKNOWN_TOKEN          255     /* Not signalled, encoder only */
+
+#define ZPC_MIN_TX_SIZE        TX_32X32
+#define ZPC_MIN_BAND           3
+#define ZPC_MAX_PT             2
+
+#define ZPC_TX_SIZES           (TX_SIZES - ZPC_MIN_TX_SIZE + 1)  /* tx_sizes */
+#define ZPC_PTOKS              3       /* context pt for zpcs */
+#define ZPC_BANDS              3       /* bands for zpcs */
+
+#define ZPC_USEEOO_THRESH      7
+
+#define coef_to_zpc_ptok(p)    ((p) >= ZPC_PTOKS ? ZPC_PTOKS - 1 : (p))
+#define coef_to_zpc_band(b)    \
+    ((b) >= (COEF_BANDS - ZPC_BANDS) ? (b) - (COEF_BANDS - ZPC_BANDS) : 0)
+
+OrientationType vp9_get_orientation(int rc, TX_SIZE tx_size);
+int vp9_use_eoo(int c, int eob, const int16_t *scan,
+                TX_SIZE tx_size, int pt, int band,
+                int *is_last_zero, int *is_eoo);
+
+typedef vp9_prob vp9_zpc_probs[REF_TYPES][ZPC_BANDS][ZPC_PTOKS];
+typedef unsigned int vp9_zpc_count[REF_TYPES][ZPC_BANDS][ZPC_PTOKS][2];
+
+#endif  // CONFIG_CODE_ZEROGROUP
 
 // #define ENTROPY_STATS
 

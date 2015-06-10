@@ -105,7 +105,7 @@ static void fill_token_costs(vp9_coeff_cost *c,
   for (t = TX_4X4; t < TX_SIZES; ++t)
     for (i = 0; i < PLANE_TYPES; ++i)
       for (j = 0; j < REF_TYPES; ++j)
-        for (k = 0; k < COEF_BANDS; ++k)
+        for (k = 0; k < COEF_BANDS; ++k) {
           for (l = 0; l < BAND_COEFF_CONTEXTS(k); ++l) {
             vp9_prob probs[ENTROPY_NODES];
             vp9_model_to_full_probs(p[t][i][j][k][l], probs);
@@ -116,6 +116,7 @@ static void fill_token_costs(vp9_coeff_cost *c,
             assert(c[t][i][j][k][0][l][EOB_TOKEN] ==
                    c[t][i][j][k][1][l][EOB_TOKEN]);
           }
+        }
 }
 
 #if CONFIG_TX_SKIP
@@ -138,6 +139,23 @@ static void fill_token_costs_pxd(vp9_coeff_cost_pxd *c,
           }
 }
 #endif  // CONFIG_TX_SKIP
+
+#if CONFIG_CODE_ZEROGROUP
+static void fill_zpc_costs(vp9_zpc_cost *c,
+                           vp9_zpc_probs (*p)[PLANE_TYPES]) {
+  int i, j, k, l;
+  TX_SIZE t;
+  for (t = TX_4X4; t < TX_SIZES - ZPC_MIN_TX_SIZE; ++t)
+    for (i = 0; i < PLANE_TYPES; ++i)
+      for (j = 0; j < REF_TYPES; ++j)
+        for (k = 0; k < ZPC_BANDS; ++k) {
+          for (l = 0; l < ZPC_PTOKS; ++l) {
+            c[t][i][j][k][l][0] = vp9_cost_zero(p[t][i][j][k][l]);
+            c[t][i][j][k][l][1] = vp9_cost_one(p[t][i][j][k][l]);
+          }
+        }
+}
+#endif  // CONFIG_CODE_ZEROGROUP
 
 // Values are now correlated to quantizer.
 static int sad_per_bit16lut_8[QINDEX_RANGE];
@@ -319,6 +337,9 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
   if (FOR_SCREEN_CONTENT)
     fill_token_costs_pxd(x->token_costs_pxd, cm->fc.coef_probs_pxd);
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_CODE_ZEROGROUP
+    fill_zpc_costs(x->zpc_costs, cm->fc.zpc_probs);
+#endif  // CONFIG_CODE_ZEROGROUP
 
 #if CONFIG_EXT_PARTITION
   vp9_cost_tokens(cpi->partition_cost[0], get_partition_probs(cm, 0),
