@@ -893,6 +893,10 @@ static void update_state(VP9_COMP *cpi, ThreadData *td,
   vpx_memcpy(x->zcoeff_blk[mbmi->tx_size], ctx->zcoeff_blk,
              sizeof(uint8_t) * ctx->num_4x4_blk);
 
+  for (i = 0; i < MAX_MB_PLANE; ++i)
+    vpx_memcpy(x->blk_skip[i], ctx->blk_skip[i],
+               sizeof(uint8_t) * ctx->num_4x4_blk);
+
   if (!output_enabled)
     return;
 
