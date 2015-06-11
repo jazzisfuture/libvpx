@@ -1300,33 +1300,34 @@ static void tx_block_rd_b(VP9_COMP const *cpi, MACROBLOCK *x, TX_SIZE tx_size,
 }
 
 static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
-                            int blk_row, int blk_col, int plane, int block,
-                            TX_SIZE tx_size, BLOCK_SIZE plane_bsize,
+                            int blk_row, int blk_col, int block,
+                            TX_SIZE tx_size, BLOCK_SIZE bsize,
                             BLOCK_SIZE txb_bsize,
-                            ENTROPY_CONTEXT *ta, ENTROPY_CONTEXT *tl,
+                            ENTROPY_CONTEXT (*ta)[16],
+                            ENTROPY_CONTEXT (*tl)[16],
                             TXFM_CONTEXT *txa, TXFM_CONTEXT *txl,
                             int *rate, int64_t *dist,
                             int64_t *bsse, int *skip) {
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
-  struct macroblockd_plane *const pd = &xd->plane[plane];
-  int tx_idx = (blk_row >> (1 - pd->subsampling_y)) * 8 +
-               (blk_col >> (1 - pd->subsampling_x));
-  int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
-  int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
+  int tx_idx = (blk_row >> 1) * 8 + (blk_col >> 1);
+  int max_blocks_high = num_4x4_blocks_high_lookup[bsize];
+  int max_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
   int mi_width = num_8x8_blocks_wide_lookup[txb_bsize];
   int mi_height = num_8x8_blocks_high_lookup[txb_bsize];
   int64_t this_rd = INT64_MAX;
-  ENTROPY_CONTEXT ctxa[16], ctxl[16];
-  ENTROPY_CONTEXT *pta = ta + (blk_col >> pd->subsampling_x);
-  ENTROPY_CONTEXT *ptl = tl + (blk_row >> pd->subsampling_y);
+  ENTROPY_CONTEXT ctxa[MAX_MB_PLANE][16], ctxl[MAX_MB_PLANE][16];
   TXFM_CONTEXT stxa[8], stxl[8];
-  int ctx = txfm_partition_context(txa + (blk_col / 2),
-                                   txl + (blk_row / 2),
+  int ctx = txfm_partition_context(txa + (blk_col / 2), txl + (blk_row / 2),
                                    tx_size);
+  int i;
+  int rate_uv = 0, skip_uv = 1;
+  int64_t dist_uv = 0, bsse_uv = 0;
 
-  vpx_memcpy(ctxa, ta, sizeof(ENTROPY_CONTEXT) * max_blocks_wide);
-  vpx_memcpy(ctxl, tl, sizeof(ENTROPY_CONTEXT) * max_blocks_high);
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    vpx_memcpy(ctxa[i], ta[i], sizeof(ENTROPY_CONTEXT) * max_blocks_wide);
+    vpx_memcpy(ctxl[i], tl[i], sizeof(ENTROPY_CONTEXT) * max_blocks_high);
+  }
 
   // Store the above and left transform block partition context.
   vpx_memcpy(stxa + (blk_col / 2), txa + (blk_col / 2),
@@ -1335,9 +1336,9 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
              sizeof(TXFM_CONTEXT) * mi_height);
 
   if (xd->mb_to_bottom_edge < 0)
-    max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
+    max_blocks_high += (xd->mb_to_bottom_edge >> 5);
   if (xd->mb_to_right_edge < 0)
-    max_blocks_wide += xd->mb_to_right_edge >> (5 + pd->subsampling_x);
+    max_blocks_wide += (xd->mb_to_right_edge >> 5);
 
   *rate = 0;
   *dist = 0;
@@ -1351,17 +1352,33 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->tx_size = tx_size;
 
   if (cpi->common.tx_mode == TX_MODE_SELECT || tx_size == TX_4X4) {
-    tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
-                  plane_bsize, ta, tl, rate, dist, bsse, skip);
+    tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, 0, block,
+                  bsize, ta[0], tl[0], rate, dist, bsse, skip);
     txfm_partition_update(txa + (blk_col / 2), txl + (blk_row / 2), tx_size);
-    if (tx_size >= TX_8X8)
+    if (tx_size >= TX_8X8) {
       *rate += vp9_cost_bit(cpi->common.fc->txfm_partition_prob[ctx], 0);
+      for (i = 1; i < MAX_MB_PLANE; ++i) {
+         struct macroblockd_plane *const pd = &xd->plane[i];
+         const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
+         TX_SIZE uv_tx_size = get_uv_tx_size_impl(tx_size, bsize,
+                                                  pd->subsampling_x,
+                                                  pd->subsampling_y);
+         tx_block_rd_b(cpi, x, uv_tx_size,
+                       (blk_row >> pd->subsampling_y),
+                       (blk_col >> pd->subsampling_x),
+                       i, block, plane_bsize, ta[i], tl[i],
+                       &rate_uv, &dist_uv, &bsse_uv, &skip_uv);
+       }
+       *rate += rate_uv;
+       *dist += dist_uv;
+       *bsse += bsse_uv;
+       *skip &= skip_uv;
+    }
     this_rd = RDCOST(x->rdmult, x->rddiv, *rate, *dist);
   }
 
   if (tx_size > TX_4X4) {
-    BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
-    int bh = num_4x4_blocks_high_lookup[bsize];
+    int bh = num_4x4_blocks_high_lookup[txb_bsize];
     int sub_step = 1 << (2 * (tx_size - 1));
     int i;
     int this_rate, sum_rate;
@@ -1375,8 +1392,8 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
       int offsetr = (i >> 1) * bh / 2;
       int offsetc = (i & 0x01) * bh / 2;
       select_tx_block(cpi, x, blk_row + offsetr, blk_col + offsetc,
-                      plane, block + i * sub_step, tx_size - 1,
-                      plane_bsize, txsize_to_bsize[tx_size - 1],
+                      block + i * sub_step, tx_size - 1,
+                      bsize, txsize_to_bsize[tx_size - 1],
                       ctxa, ctxl, stxa, stxl, &this_rate, &this_dist,
                       &this_bsse, &this_skip);
       sum_rate += this_rate;
@@ -1384,6 +1401,15 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
       sum_bsse += this_bsse;
       all_skip &= this_skip;
     }
+    // Add 4x4 chroma component rate distortion costs, if the current
+    // sub-tx-size for luma component is 4x4.
+    if (tx_size == TX_8X8) {
+      sum_rate += rate_uv;
+      sum_dist += dist_uv;
+      sum_bsse += bsse_uv;
+      all_skip &= skip_uv;
+    }
+
     sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
 
     if (this_rd < sum_rd) {
@@ -1397,10 +1423,15 @@ static void select_tx_block(const VP9_COMP *cpi, MACROBLOCK *x,
       *dist = sum_dist;
       *bsse = sum_bsse;
       *skip = all_skip;
-      vpx_memcpy(pta, ctxa + (blk_col >> pd->subsampling_x),
-          sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide_lookup[txb_bsize]);
-      vpx_memcpy(ptl, ctxl + (blk_row >> pd->subsampling_y),
-          sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high_lookup[txb_bsize]);
+      for (i = 0; i < MAX_MB_PLANE; ++i) {
+        struct macroblockd_plane *const pd = &xd->plane[i];
+        vpx_memcpy(ta[i] + (blk_col >> pd->subsampling_x),
+                   ctxa[i] + (blk_col >> pd->subsampling_x),
+            sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide_lookup[txb_bsize]);
+        vpx_memcpy(tl[i] + (blk_row >> pd->subsampling_y),
+                   ctxl[i] + (blk_row >> pd->subsampling_y),
+            sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high_lookup[txb_bsize]);
+      }
       vpx_memcpy(txa + (blk_col / 2), stxa + (blk_col / 2),
                  sizeof(TXFM_CONTEXT) * mi_width);
       vpx_memcpy(txl + (blk_row / 2), stxl + (blk_row / 2),
@@ -1429,32 +1460,34 @@ static void inter_block_yrd(const VP9_COMP *cpi, MACROBLOCK *x,
   *skippable = 1;
 
   if (is_cost_valid) {
-    const struct macroblockd_plane *const pd = &xd->plane[0];
-    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
-    const int mi_width = num_4x4_blocks_wide_lookup[plane_bsize];
-    const int mi_height = num_4x4_blocks_high_lookup[plane_bsize];
-    BLOCK_SIZE txb_size = txsize_to_bsize[max_txsize_lookup[plane_bsize]];
+    const int mi_width = num_4x4_blocks_wide_lookup[bsize];
+    const int mi_height = num_4x4_blocks_high_lookup[bsize];
+    BLOCK_SIZE txb_size = txsize_to_bsize[max_txsize_lookup[bsize]];
     int bh = num_4x4_blocks_wide_lookup[txb_size];
     int idx, idy;
     int block = 0;
-    int step = 1 << (max_txsize_lookup[plane_bsize] * 2);
-    ENTROPY_CONTEXT ctxa[16], ctxl[16];
+    int step = 1 << (max_txsize_lookup[bsize] * 2);
+    ENTROPY_CONTEXT ctxa[MAX_MB_PLANE][16], ctxl[MAX_MB_PLANE][16];
     TXFM_CONTEXT txa[8], txl[8];
+    int i;
 
     int pnrate = 0, pnskip = 1;
     int64_t pndist = 0, pnsse = 0;
 
-    vp9_get_entropy_contexts(bsize, TX_4X4, pd, ctxa, ctxl);
+    for (i = 0; i < MAX_MB_PLANE; ++i) {
+      const struct macroblockd_plane *const pd = &xd->plane[i];
+      vp9_get_entropy_contexts(bsize, TX_4X4, pd, ctxa[i], ctxl[i]);
+    }
 
     vpx_memcpy(txa, xd->above_txfm_context,
-               sizeof(TXFM_CONTEXT) * num_8x8_blocks_wide_lookup[plane_bsize]);
+               sizeof(TXFM_CONTEXT) * num_8x8_blocks_wide_lookup[bsize]);
     vpx_memcpy(txl, xd->left_txfm_context,
-               sizeof(TXFM_CONTEXT) * num_8x8_blocks_high_lookup[plane_bsize]);
+               sizeof(TXFM_CONTEXT) * num_8x8_blocks_high_lookup[bsize]);
 
     for (idy = 0; idy < mi_height; idy += bh) {
       for (idx = 0; idx < mi_width; idx += bh) {
-        select_tx_block(cpi, x, idy, idx, 0, block,
-                        max_txsize_lookup[plane_bsize], plane_bsize, txb_size,
+        select_tx_block(cpi, x, idy, idx, block,
+                        max_txsize_lookup[bsize], bsize, txb_size,
                         ctxa, ctxl, txa, txl,
                         &pnrate, &pndist, &pnsse, &pnskip);
         *rate += pnrate;
@@ -3197,13 +3230,13 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t sseuv = INT64_MAX;
     int64_t rdcosty = INT64_MAX;
 
-    // Y cost and distortion
-    vp9_subtract_plane(x, bsize, 0);
-
     if (cm->tx_mode == TX_MODE_SELECT) {
+      for (i = 0; i < MAX_MB_PLANE; ++i)
+        vp9_subtract_plane(x, bsize, i);
       inter_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                       bsize, ref_best_rd);
     } else {
+      vp9_subtract_plane(x, bsize, 0);
       super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                       bsize, txfm_cache, ref_best_rd);
       // sudo load
@@ -3220,22 +3253,24 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     *rate2 += *rate_y;
     *distortion += distortion_y;
+    *skippable = skippable_y;
 
     rdcosty = RDCOST(x->rdmult, x->rddiv, *rate2, *distortion);
     rdcosty = MIN(rdcosty, RDCOST(x->rdmult, x->rddiv, 0, *psse));
 
-    if (!inter_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv,
-                          &sseuv, bsize, ref_best_rd - rdcosty)) {
-      *rate2 = INT_MAX;
-      *distortion = INT64_MAX;
-      restore_dst_buf(xd, orig_dst, orig_dst_stride);
-      return INT64_MAX;
+    if (cm->tx_mode != TX_MODE_SELECT) {
+      if (!inter_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv,
+                            &sseuv, bsize, ref_best_rd - rdcosty)) {
+        *rate2 = INT_MAX;
+        *distortion = INT64_MAX;
+        restore_dst_buf(xd, orig_dst, orig_dst_stride);
+        return INT64_MAX;
+      }
+      *psse += sseuv;
+      *rate2 += *rate_uv;
+      *distortion += distortion_uv;
+      *skippable = skippable_y && skippable_uv;
     }
-
-    *psse += sseuv;
-    *rate2 += *rate_uv;
-    *distortion += distortion_uv;
-    *skippable = skippable_y && skippable_uv;
   } else {
     x->skip = 1;
     *disable_skip = 1;
