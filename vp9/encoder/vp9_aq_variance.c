@@ -52,7 +52,7 @@ void vp9_vaq_frame_setup(VP9_COMP *cpi) {
       cpi->refresh_alt_ref_frame ||
       (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
     vp9_enable_segmentation(seg);
-    vp9_clearall_segfeatures(seg);
+    clearall_segfeatures(seg);
 
     seg->abs_delta = SEGMENT_DELTADATA;
 
@@ -76,8 +76,8 @@ void vp9_vaq_frame_setup(VP9_COMP *cpi) {
         continue;
       }
 
-      vp9_set_segdata(seg, i, SEG_LVL_ALT_Q, qindex_delta);
-      vp9_enable_segfeature(seg, i, SEG_LVL_ALT_Q);
+      set_segdata(seg, i, SEG_LVL_ALT_Q, qindex_delta);
+      enable_segfeature(seg, i, SEG_LVL_ALT_Q);
     }
   }
 }

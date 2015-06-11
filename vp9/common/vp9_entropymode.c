@@ -426,7 +426,7 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   struct loopfilter *const lf = &cm->lf;
 
   int i;
-  vp9_clearall_segfeatures(&cm->seg);
+  clearall_segfeatures(&cm->seg);
   cm->seg.abs_delta = SEGMENT_DELTADATA;
 
   if (cm->last_frame_seg_map && !cm->frame_parallel_decode)

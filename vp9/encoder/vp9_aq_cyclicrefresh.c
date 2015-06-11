@@ -492,7 +492,7 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     // Set up segmentation.
     // Clear down the segment map.
     vp9_enable_segmentation(&cm->seg);
-    vp9_clearall_segfeatures(seg);
+    clearall_segfeatures(seg);
     // Select delta coding method.
     seg->abs_delta = SEGMENT_DELTADATA;
 
@@ -506,9 +506,9 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     // Segment BASE "Q" feature is disabled so it defaults to the baseline Q.
     vp9_disable_segfeature(seg, CR_SEGMENT_ID_BASE, SEG_LVL_ALT_Q);
     // Use segment BOOST1 for in-frame Q adjustment.
-    vp9_enable_segfeature(seg, CR_SEGMENT_ID_BOOST1, SEG_LVL_ALT_Q);
+    enable_segfeature(seg, CR_SEGMENT_ID_BOOST1, SEG_LVL_ALT_Q);
     // Use segment BOOST2 for more aggressive in-frame Q adjustment.
-    vp9_enable_segfeature(seg, CR_SEGMENT_ID_BOOST2, SEG_LVL_ALT_Q);
+    enable_segfeature(seg, CR_SEGMENT_ID_BOOST2, SEG_LVL_ALT_Q);
 
     // Set the q delta for segment BOOST1.
     qindex_delta = compute_deltaq(cpi, cm->base_qindex, cr->rate_ratio_qdelta);
@@ -519,14 +519,14 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
 
     cr->rdmult = vp9_compute_rd_mult(cpi, qindex2);
 
-    vp9_set_segdata(seg, CR_SEGMENT_ID_BOOST1, SEG_LVL_ALT_Q, qindex_delta);
+    set_segdata(seg, CR_SEGMENT_ID_BOOST1, SEG_LVL_ALT_Q, qindex_delta);
 
     // Set a more aggressive (higher) q delta for segment BOOST2.
     qindex_delta = compute_deltaq(cpi, cm->base_qindex,
                                   MIN(CR_MAX_RATE_TARGET_RATIO,
                                   cr->rate_boost_fac * cr->rate_ratio_qdelta));
     cr->qindex_delta_seg2 = qindex_delta;
-    vp9_set_segdata(seg, CR_SEGMENT_ID_BOOST2, SEG_LVL_ALT_Q, qindex_delta);
+    set_segdata(seg, CR_SEGMENT_ID_BOOST2, SEG_LVL_ALT_Q, qindex_delta);
 
     // Update the segmentation and refresh map.
     cyclic_refresh_update_map(cpi);
