@@ -799,9 +799,9 @@ static void encode_segmentation(VP9_COMMON *cm, MACROBLOCKD *xd,
         vpx_wb_write_bit(wb, active);
         if (active) {
           const int data = get_segdata(seg, i, j);
-          const int data_max = vp9_seg_feature_data_max(j);
+          const int data_max = seg_feature_data_max(j);
 
-          if (vp9_is_segfeature_signed(j)) {
+          if (is_segfeature_signed(j)) {
             encode_unsigned_max(wb, abs(data), data_max);
             vpx_wb_write_bit(wb, data < 0);
           } else {

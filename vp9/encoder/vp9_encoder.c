@@ -141,12 +141,12 @@ static void apply_active_map(VP9_COMP *cpi) {
       for (i = 0; i < cpi->common.mi_rows * cpi->common.mi_cols; ++i)
         if (seg_map[i] == AM_SEGMENT_ID_ACTIVE) seg_map[i] = active_map[i];
       vp9_enable_segmentation(seg);
-      vp9_enable_segfeature(seg, AM_SEGMENT_ID_INACTIVE, SEG_LVL_SKIP);
-      vp9_enable_segfeature(seg, AM_SEGMENT_ID_INACTIVE, SEG_LVL_ALT_LF);
+      enable_segfeature(seg, AM_SEGMENT_ID_INACTIVE, SEG_LVL_SKIP);
+      enable_segfeature(seg, AM_SEGMENT_ID_INACTIVE, SEG_LVL_ALT_LF);
       // Setting the data to -MAX_LOOP_FILTER will result in the computed loop
       // filter level being zero regardless of the value of seg->abs_delta.
-      vp9_set_segdata(seg, AM_SEGMENT_ID_INACTIVE,
-                      SEG_LVL_ALT_LF, -MAX_LOOP_FILTER);
+      set_segdata(seg, AM_SEGMENT_ID_INACTIVE, SEG_LVL_ALT_LF,
+                  -MAX_LOOP_FILTER);
     } else {
       vp9_disable_segfeature(seg, AM_SEGMENT_ID_INACTIVE, SEG_LVL_SKIP);
       vp9_disable_segfeature(seg, AM_SEGMENT_ID_INACTIVE, SEG_LVL_ALT_LF);
@@ -493,7 +493,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
     vp9_disable_segmentation(seg);
 
     // Clear down the segment features.
-    vp9_clearall_segfeatures(seg);
+    clearall_segfeatures(seg);
   } else if (cpi->refresh_alt_ref_frame) {
     // If this is an alt ref frame
     // Clear down the global segmentation map
@@ -504,7 +504,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
 
     // Disable segmentation and individual segment features by default
     vp9_disable_segmentation(seg);
-    vp9_clearall_segfeatures(seg);
+    clearall_segfeatures(seg);
 
     // Scan frames from current to arf frame.
     // This function re-enables segmentation if appropriate.
@@ -518,11 +518,11 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
 
       qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 0.875,
                                     cm->bit_depth);
-      vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta - 2);
-      vp9_set_segdata(seg, 1, SEG_LVL_ALT_LF, -2);
+      set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta - 2);
+      set_segdata(seg, 1, SEG_LVL_ALT_LF, -2);
 
-      vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
-      vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_LF);
+      enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
+      enable_segfeature(seg, 1, SEG_LVL_ALT_LF);
 
       // Where relevant assume segment data is delta data
       seg->abs_delta = SEGMENT_DELTADATA;
@@ -540,17 +540,17 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
 
         qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 1.125,
                                       cm->bit_depth);
-        vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta + 2);
-        vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
+        set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta + 2);
+        enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
 
-        vp9_set_segdata(seg, 1, SEG_LVL_ALT_LF, -2);
-        vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_LF);
+        set_segdata(seg, 1, SEG_LVL_ALT_LF, -2);
+        enable_segfeature(seg, 1, SEG_LVL_ALT_LF);
 
         // Segment coding disabled for compred testing
         if (high_q || (cpi->static_mb_pct == 100)) {
-          vp9_set_segdata(seg, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME);
-          vp9_enable_segfeature(seg, 1, SEG_LVL_REF_FRAME);
-          vp9_enable_segfeature(seg, 1, SEG_LVL_SKIP);
+          set_segdata(seg, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME);
+          enable_segfeature(seg, 1, SEG_LVL_REF_FRAME);
+          enable_segfeature(seg, 1, SEG_LVL_SKIP);
         }
       } else {
         // Disable segmentation and clear down features if alt ref
@@ -563,7 +563,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
         seg->update_map = 0;
         seg->update_data = 0;
 
-        vp9_clearall_segfeatures(seg);
+        clearall_segfeatures(seg);
       }
     } else if (rc->is_src_frame_alt_ref) {
       // Special case where we are coding over the top of a previous
@@ -571,19 +571,19 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
       // Segment coding disabled for compred testing
 
       // Enable ref frame features for segment 0 as well
-      vp9_enable_segfeature(seg, 0, SEG_LVL_REF_FRAME);
-      vp9_enable_segfeature(seg, 1, SEG_LVL_REF_FRAME);
+      enable_segfeature(seg, 0, SEG_LVL_REF_FRAME);
+      enable_segfeature(seg, 1, SEG_LVL_REF_FRAME);
 
       // All mbs should use ALTREF_FRAME
       vp9_clear_segdata(seg, 0, SEG_LVL_REF_FRAME);
-      vp9_set_segdata(seg, 0, SEG_LVL_REF_FRAME, ALTREF_FRAME);
+      set_segdata(seg, 0, SEG_LVL_REF_FRAME, ALTREF_FRAME);
       vp9_clear_segdata(seg, 1, SEG_LVL_REF_FRAME);
-      vp9_set_segdata(seg, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME);
+      set_segdata(seg, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME);
 
       // Skip all MBs if high Q (0,0 mv and skip coeffs)
       if (high_q) {
-        vp9_enable_segfeature(seg, 0, SEG_LVL_SKIP);
-        vp9_enable_segfeature(seg, 1, SEG_LVL_SKIP);
+        enable_segfeature(seg, 0, SEG_LVL_SKIP);
+        enable_segfeature(seg, 1, SEG_LVL_SKIP);
       }
       // Enable data update
       seg->update_data = 1;
