@@ -438,6 +438,10 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
 #endif
   mbmi->ref_frame[0] = INTRA_FRAME;
   mbmi->ref_frame[1] = NONE;
+#if CONFIG_HVDC
+  mbmi->hvdc[0] = 0;
+  mbmi->hvdc[1] = 0;
+#endif  // CONFIG_HVDC
 
 #if CONFIG_TX_SKIP
   if (mbmi->sb_type >= BLOCK_8X8) {
@@ -544,6 +548,54 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
       mbmi->mode = read_intra_mode(r,
                                    get_y_mode_probs(mi, above_mi, left_mi, 0));
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+      if (mbmi->mode == DC_PRED && cm->allow_hvdc) {
+        int left_ctx = 0, right_ctx = 0;
+
+        if (left_mi) {
+          if (left_mi->mbmi.hvdc[0] & 2)
+            left_ctx += 1;
+          if (left_mi->mbmi.hvdc[0] & 1)
+            right_ctx += 1;
+        }
+
+        if (above_mi) {
+          if (above_mi->mbmi.hvdc[0] & 2)
+            left_ctx += 1;
+          if (above_mi->mbmi.hvdc[0] & 1)
+            right_ctx += 1;
+        }
+
+        if (1)
+        mbmi->hvdc[0] = vp9_read_tree(r, vp9_hvdc_tree,
+                                      cm->fc.hvdc_prob[mbmi->tx_size]
+                                                       [left_ctx][right_ctx]);
+        else
+        mbmi->hvdc[0] = vp9_read_literal(r, 2);
+        //printf("hvdc is %d\n", mbmi->hvdc[0]);
+
+#if 0
+        {
+          int L = 0, A = 0;
+
+          if (left_mi) {
+            if (left_mi->mbmi.hvdc[0] & 2)
+              L += 1;
+            if (left_mi->mbmi.hvdc[0] & 1)
+              A += 1;
+          }
+
+          if (above_mi) {
+            if (above_mi->mbmi.hvdc[0] & 2)
+              L += 1;
+            if (above_mi->mbmi.hvdc[0] & 1)
+              A += 1;
+          }
+          cm->stats[mbmi->tx_size][L][A][mbmi->hvdc[0]]++;
+        }
+#endif
+      }
+#endif  // CONFIG_HVDC
 #if CONFIG_FILTERINTRA
       if (is_filter_enabled(mbmi->tx_size) && is_filter_allowed(mbmi->mode)
 #if CONFIG_PALETTE
@@ -738,6 +790,10 @@ static void read_intra_block_mode_info(VP9_COMMON *const cm, MODE_INFO *mi,
 
   mbmi->ref_frame[0] = INTRA_FRAME;
   mbmi->ref_frame[1] = NONE;
+#if CONFIG_HVDC
+  mbmi->hvdc[0] = 0;
+  mbmi->hvdc[1] = 0;
+#endif  // CONFIG_HVDC
 
   switch (bsize) {
     case BLOCK_4X4:

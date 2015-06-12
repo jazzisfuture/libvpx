@@ -3283,6 +3283,11 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
   if (frame_is_intra_only(cm))
     cm->allow_palette_mode = vp9_read_bit(&r);
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+  if (frame_is_intra_only(cm))
+    cm->allow_hvdc = vp9_read_bit(&r);
+  //printf("\n %d \n", cm->allow_hvdc);
+#endif  // CONFIG_HVDC
 
   return vp9_reader_has_error(&r);
 }
@@ -3443,6 +3448,18 @@ void vp9_decode_frame(VP9Decoder *pbi,
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
 
+#if 0
+  if (cm->current_video_frame % 100 == 0) {
+    int i1, i2, i3, i4;
+
+    for (i1 = 0; i1 < TX_SIZES; i1++)
+      for (i2 = 0; i2 < 3; i2++)
+        for (i3 = 0; i3 < 3; i3++)
+          for (i4 = 0; i4 < HVDC_MODES; i4++)
+            cm->stats[i1][i2][i3][i4] = 0;
+  }
+#endif
+
   // TODO(jzern): remove frame_parallel_decoding_mode restriction for
   // single-frame tile decoding.
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1 &&
@@ -3463,6 +3480,25 @@ void vp9_decode_frame(VP9Decoder *pbi,
     vp9_loop_bilateral_rows(new_fb, cm, 0, cm->mi_rows, 0);
   }
 #endif  // CONFIG_LOOP_POSTFILTER
+
+#if 0
+  if (cm->current_video_frame % 100 == 99) {
+    FILE *fp;
+    int i1, i2, i3, i4;
+
+    fp = fopen("stats_hvdc.txt", "a");
+    for (i1 = 0; i1 < TX_SIZES; i1++)
+      for (i2 = 0; i2 < 3; i2++)
+        for (i3 = 0; i3 < 3; i3++) {
+          for (i4 = 0; i4 < HVDC_MODES; i4++) {
+              fprintf(fp, "%10d ", cm->stats[i1][i2][i3][i4]);
+          }
+          fprintf(fp, "\n");
+        }
+    fprintf(fp, "\n \n");
+    fclose(fp);
+  }
+#endif
 
   new_fb->corrupted |= xd->corrupted;
   if (!new_fb->corrupted) {

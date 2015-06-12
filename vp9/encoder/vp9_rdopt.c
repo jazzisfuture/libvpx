@@ -1382,6 +1382,9 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
 #if CONFIG_PALETTE
   mic->mbmi.palette_enabled[0] = 0;
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+    xd->mi[0].src_mi->mbmi.hvdc[0] = 0;
+#endif  // CONFIG_HVDC
 
   // Pick modes for each sub-block (of size 4x4, 4x8, or 8x4) in an 8x8 block.
   for (idy = 0; idy < 2; idy += num_4x4_blocks_high) {
@@ -1792,6 +1795,12 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (is_intrabc_mode(A)) A = DC_PRED;
   if (is_intrabc_mode(L)) L = DC_PRED;
 #endif  // CONFIG_INTRABC
+#if CONFIG_HVDC
+  int hvdc = 0;
+  int hvdc_mode_cost[HVDC_MODES];
+  int hvdc_left_ctx = 0, hvdc_right_ctx = 0;
+  int64_t no_overhead_rd = INT64_MAX;
+#endif  // CONFIG_HVDC
   bmode_costs = cpi->y_mode_costs[A][L];
 
   if (cpi->sf.tx_size_search_method == USE_FULL_RD)
@@ -1806,6 +1815,20 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (left_mi)
     palette_ctx += (left_mi->mbmi.palette_enabled[0] == 1);
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+  if (left_mi) {
+    if (left_mi->mbmi.hvdc[0] & 2)
+      hvdc_left_ctx += 1;
+    if (left_mi->mbmi.hvdc[0] & 1)
+      hvdc_right_ctx += 1;
+  }
+  if (above_mi) {
+    if (above_mi->mbmi.hvdc[0] & 2)
+      hvdc_left_ctx += 1;
+    if (above_mi->mbmi.hvdc[0] & 1)
+      hvdc_right_ctx += 1;
+  }
+#endif  // CONFIG_HVDC
   /* Y Search for intra prediction mode */
 #if CONFIG_FILTERINTRA
   for (mode_ext = 2 * DC_PRED; mode_ext <= 2 * TM_PRED + 1; mode_ext++) {
@@ -1824,13 +1847,62 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_TX_SKIP
     mic->mbmi.tx_skip[0] = 0;
 #endif  // CONFIG_TX_SKIP
-
 #if CONFIG_PALETTE
     mic->mbmi.palette_enabled[0] = 0;
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+    mic->mbmi.hvdc[0] = 0;
+#endif  // CONFIG_HVDC
 
     super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
                     &s, NULL, bsize, local_tx_cache, best_rd);
+
+#if CONFIG_HVDC
+    if (mode == DC_PRED && cpi->common.allow_hvdc) {
+      int i, best_hvdc = 0;
+
+      if (this_rate_tokenonly == INT_MAX) {
+        this_rd = INT64_MAX;
+        no_overhead_rd = INT64_MAX;
+      } else {
+        vp9_cost_tokens(hvdc_mode_cost,
+                        cpi->common.fc.hvdc_prob
+                        [mic->mbmi.tx_size][hvdc_left_ctx][hvdc_right_ctx],
+                        vp9_hvdc_tree);
+        this_rate = this_rate_tokenonly + bmode_costs[mode] +
+            hvdc_mode_cost[0];
+        this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
+        no_overhead_rd = RDCOST(x->rdmult, x->rddiv,
+                                this_rate - hvdc_mode_cost[0], this_distortion);
+      }
+
+      for (i = 1; i < 4; i++) {
+        mic->mbmi.hvdc[0] = i;
+        super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
+                        &s, NULL, bsize, local_tx_cache, best_rd);
+        if (this_rate_tokenonly == INT_MAX) {
+          continue;
+        } else {
+          vp9_cost_tokens(hvdc_mode_cost,
+                          cpi->common.fc.hvdc_prob
+                          [mic->mbmi.tx_size][hvdc_left_ctx][hvdc_right_ctx],
+                          vp9_hvdc_tree);
+          this_rate = this_rate_tokenonly + bmode_costs[mode] +
+              hvdc_mode_cost[i];
+          if (RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion) <
+              this_rd) {
+            best_hvdc = i;
+            this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
+          }
+        }
+      }
+
+      mic->mbmi.hvdc[0] = best_hvdc;
+      hvdc = best_hvdc;
+      super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
+                      &s, NULL, bsize, local_tx_cache, best_rd);
+    }
+#endif  // CONFIG_HVDC
 
     if (this_rate_tokenonly == INT_MAX)
       continue;
@@ -1839,7 +1911,7 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_TX_SKIP
     if (try_tx_skip)
       this_rate += vp9_cost_bit(cpi->common.fc.y_tx_skip_prob[0], 0);
-#endif
+#endif  // CONFIG_TX_SKIP
 #if CONFIG_INTRABC
     if (cpi->common.allow_intrabc_mode)
       this_rate += vp9_cost_bit(INTRABC_PROB, 0);
@@ -1848,13 +1920,24 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (is_filter_allowed(mode) && is_filter_enabled(mic->mbmi.tx_size))
       this_rate += vp9_cost_bit(cpi->common.fc.filterintra_prob
                                 [mic->mbmi.tx_size][mode], fbit);
-#endif
+#endif  // CONFIG_FILTERINTRA
 #if CONFIG_PALETTE
     if (this_rate != INT_MAX && cpi->common.allow_palette_mode)
       this_rate +=
           vp9_cost_bit(cpi->common.fc.
                        palette_enabled_prob[bsize - BLOCK_8X8][palette_ctx], 0);
-#endif
+#endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+    if (mode == DC_PRED && cpi->common.allow_hvdc) {
+      vp9_cost_tokens(hvdc_mode_cost,
+                      cpi->common.fc.hvdc_prob
+                      [mic->mbmi.tx_size][hvdc_left_ctx][hvdc_right_ctx],
+                      vp9_hvdc_tree);
+      this_rate += hvdc_mode_cost[mic->mbmi.hvdc[0]];
+
+      //this_rate += 2 * vp9_cost_bit(128, 0);
+    }
+#endif  // CONFIG_HVDC
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
     if (this_rd < best_rd) {
@@ -2204,6 +2287,20 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_FILTERINTRA
   }
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+    if (mode_selected == DC_PRED && cpi->common.allow_hvdc) {
+      mic->mbmi.hvdc[0] = hvdc;
+      mic->mbmi.no_overhead_rd = no_overhead_rd;
+      mic->mbmi.hvdc_rd = best_rd;
+      if (no_overhead_rd != INT64_MAX && best_rd != INT64_MAX)
+        mic->mbmi.hvdc_savings[0] = no_overhead_rd - best_rd;
+      else
+        mic->mbmi.hvdc_savings[0] = 0;
+      //printf("no overhead is %10lld, new is %10lld, saving is %10lld\n",
+        //     no_overhead_rd, this_rd,
+           //  mic->mbmi.hvdc_savings[0][mic->mbmi.hvdc[0]]);
+    }
+#endif  // CONFIG_HVDC
 
   return best_rd;
 }
@@ -2405,7 +2502,10 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
     xd->mi[0].src_mi->mbmi.uv_mode = mode;
 #if CONFIG_TX_SKIP
     xd->mi[0].src_mi->mbmi.tx_skip[1] = 0;
-#endif
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_HVDC
+    xd->mi[0].src_mi->mbmi.hvdc[1] = 0;
+#endif  // CONFIG_HVDC
 
     if (!super_block_uvrd(cpi, x, &this_rate_tokenonly,
                           &this_distortion, &s, &this_sse, bsize, best_rd))
@@ -6368,6 +6468,10 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->palette_enabled[0] = 0;
     mbmi->palette_enabled[1] = 0;
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+    mbmi->hvdc[0] = 0;
+    mbmi->hvdc[1] = 0;
+#endif  // CONFIG_HVDC
     // Evaluate all sub-pel filters irrespective of whether we can use
     // them for this frame.
     mbmi->interp_filter = cm->interp_filter == SWITCHABLE ? EIGHTTAP
@@ -7617,7 +7721,11 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_TX_SKIP
   mbmi->tx_skip[0] = 0;
   mbmi->tx_skip[1] = 0;
-#endif
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_HVDC
+  mbmi->hvdc[0] = 0;
+  mbmi->hvdc[1] = 0;
+#endif  // CONFIG_HVDC
   for (ref_index = 0; ref_index < MAX_REFS; ++ref_index) {
     int mode_excluded = 0;
     int64_t this_rd = INT64_MAX;

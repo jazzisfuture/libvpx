@@ -87,6 +87,9 @@ typedef struct frame_contexts {
   vp9_prob palette_uv_color_prob[PALETTE_MAX_SIZE - 1][PALETTE_COLOR_CONTEXTS]
                                                        [PALETTE_COLORS - 1];
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+  vp9_prob hvdc_prob[TX_SIZES][3][3][HVDC_MODES - 1];
+#endif  // CONFIG_HVDC
 #if CONFIG_SUPERTX
   vp9_prob supertx_prob[PARTITION_SUPERTX_CONTEXTS][TX_SIZES];
 #endif  // CONFIG_SUPERTX
@@ -208,6 +211,9 @@ extern const vp9_tree_index vp9_ext_tx_tree[TREE_SIZE(EXT_TX_TYPES)];
 extern const vp9_tree_index vp9_palette_size_tree[TREE_SIZE(PALETTE_SIZES)];
 extern const vp9_tree_index vp9_palette_color_tree[TREE_SIZE(PALETTE_COLORS)];
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+extern const vp9_tree_index vp9_hvdc_tree[TREE_SIZE(HVDC_MODES)];
+#endif  // CONFIG_HVDC
 #if CONFIG_COPY_MODE
 extern const vp9_tree_index vp9_copy_mode_tree_l2[TREE_SIZE(2)];
 extern const vp9_tree_index vp9_copy_mode_tree[TREE_SIZE(COPY_MODE_COUNT - 1)];

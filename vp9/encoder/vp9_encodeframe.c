@@ -5283,6 +5283,13 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       cm->intrabc_blocks_signalled = 0;
     }
 #endif  // CONFIG_INTRABC
+#if CONFIG_HVDC
+    if (frame_is_intra_only(cm)) {
+      cm->hvdc_counter = 0;
+      cm->hvdc_blocks_signalled = 0;
+      cm->hvdc_total_savings = 0;
+    }
+#endif  // CONFIG_HVDC
 
     encode_tiles(cpi);
 
@@ -5672,6 +5679,25 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
         cm->palette_counter++;
     }
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+    if (frame_is_intra_only(cm) && output_enabled && bsize >= BLOCK_8X8 &&
+        mbmi->mode == DC_PRED && cpi->common.allow_hvdc) {
+      cm->hvdc_blocks_signalled++;
+      cm->hvdc_total_savings += mbmi->hvdc_savings[0];
+      if (mbmi->hvdc[0])
+        cm->hvdc_counter++;
+
+      //printf("no overhead is %10lld, new is %10lld, saving is %10lld\n",
+        //     mbmi->no_overhead_rd, mbmi->hvdc_rd,
+          //   mbmi->hvdc_savings[0][mbmi->hvdc[0]]);
+
+      //printf("%6d savings is %10d \n",
+        //     mbmi->hvdc_savings[0][mbmi->hvdc[0]], cm->hvdc_total_savings);
+
+      //printf("mode is %2d, savings is %6d \n", mbmi->hvdc[0],
+        //     mbmi->hvdc_savings[0][mbmi->hvdc[0]]);
+    }
+#endif  // CONFIG_HVDC
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);

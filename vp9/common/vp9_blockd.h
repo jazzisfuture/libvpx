@@ -255,6 +255,12 @@ typedef struct {
   uint8_t *palette_color_map;
   uint8_t *palette_uv_color_map;
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+  int hvdc[2];
+  int64_t hvdc_savings[2];
+  int64_t no_overhead_rd;
+  int64_t hvdc_rd;
+#endif  // CONFIG_HVDC
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
