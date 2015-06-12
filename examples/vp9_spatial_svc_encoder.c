@@ -630,7 +630,7 @@ int main(int argc, const char **argv) {
 
   if (svc_ctx.speed != -1)
     vpx_codec_control(&codec, VP8E_SET_CPUUSED, svc_ctx.speed);
-  vpx_codec_control(&codec, VP9E_SET_TILE_COLUMNS, 0);
+  vpx_codec_control(&codec, VP9E_SET_TILE_COLUMNS, 3);
 
   // Encode frames
   while (!end_of_stream) {

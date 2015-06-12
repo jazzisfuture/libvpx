@@ -54,12 +54,28 @@ static int enc_worker_hook(EncWorkerData *const thread_data, void *unused) {
   return 0;
 }
 
+static int get_max_tile_cols(VP9_COMP *cpi) {
+  const int aligned_width = ALIGN_POWER_OF_TWO(cpi->oxcf.width, MI_SIZE_LOG2);
+  int mi_cols = aligned_width >> MI_SIZE_LOG2;
+  int min_log2_tile_cols, max_log2_tile_cols;
+
+  vp9_get_tile_n_bits(mi_cols, &min_log2_tile_cols, &max_log2_tile_cols);
+  return clamp(cpi->oxcf.tile_columns, min_log2_tile_cols, max_log2_tile_cols);
+}
+
 void vp9_encode_tiles_mt(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   const int tile_cols = 1 << cm->log2_tile_cols;
   const VP9WorkerInterface *const winterface = vp9_get_worker_interface();
-  const int num_workers = MIN(cpi->oxcf.max_threads, tile_cols);
+  int num_workers = MIN(cpi->oxcf.max_threads, tile_cols);
   int i;
+
+  // While using SVC, we need to allocate threads according to the highest
+  // resolution.
+  if (cpi->use_svc) {
+    int max_tile_cols = 1 << get_max_tile_cols(cpi);
+    num_workers = MIN(cpi->oxcf.max_threads, max_tile_cols);
+  }
 
   vp9_init_tile_data(cpi);
 
@@ -108,6 +124,8 @@ void vp9_encode_tiles_mt(VP9_COMP *cpi) {
       winterface->sync(worker);
     }
   }
+
+  if ()
 
   for (i = 0; i < num_workers; i++) {
     VP9Worker *const worker = &cpi->workers[i];

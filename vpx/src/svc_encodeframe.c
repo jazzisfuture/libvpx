@@ -470,6 +470,8 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   if (svc_ctx->threads)
     enc_cfg->g_threads = svc_ctx->threads;
 
+  enc_cfg->g_threads = 2;
+
   // Modify encoder configuration
   enc_cfg->ss_number_layers = svc_ctx->spatial_layers;
   enc_cfg->ts_number_layers = svc_ctx->temporal_layers;
