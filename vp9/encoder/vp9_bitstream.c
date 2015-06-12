@@ -51,6 +51,9 @@ static struct vp9_token ext_tx_encodings[EXT_TX_TYPES];
 static struct vp9_token palette_size_encodings[PALETTE_SIZES];
 static struct vp9_token palette_color_encodings[PALETTE_COLORS];
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+static struct vp9_token hvdc_encodings[HVDC_MODES];
+#endif  // CONFIG_HVDC
 #if CONFIG_COPY_MODE
 static struct vp9_token copy_mode_encodings_l2[2];
 static struct vp9_token copy_mode_encodings[COPY_MODE_COUNT - 1];
@@ -89,6 +92,9 @@ void vp9_entropy_mode_init() {
   vp9_tokens_from_tree(palette_size_encodings, vp9_palette_size_tree);
   vp9_tokens_from_tree(palette_color_encodings, vp9_palette_color_tree);
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+  vp9_tokens_from_tree(hvdc_encodings, vp9_hvdc_tree);
+#endif  // CONFIG_HVDC
 #if CONFIG_NEW_INTER
   vp9_tokens_from_tree(inter_compound_mode_encodings,
                        vp9_inter_compound_mode_tree);
@@ -1042,6 +1048,32 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
     if (!is_intrabc_mode(mbmi->mode))
 #endif  // CONFIG_INTRABC
     write_intra_mode(w, mbmi->mode, get_y_mode_probs(mi, above_mi, left_mi, 0));
+#if CONFIG_HVDC
+    if (mbmi->mode == DC_PRED && cm->allow_hvdc) {
+      int left_ctx = 0, right_ctx = 0;
+
+      if (left_mi) {
+        if (left_mi->mbmi.hvdc[0] & 2)
+          left_ctx += 1;
+        if (left_mi->mbmi.hvdc[0] & 1)
+          right_ctx += 1;
+      }
+
+      if (above_mi) {
+        if (above_mi->mbmi.hvdc[0] & 2)
+          left_ctx += 1;
+        if (above_mi->mbmi.hvdc[0] & 1)
+          right_ctx += 1;
+      }
+
+      if (1)
+      vp9_write_token(w, vp9_hvdc_tree,
+                      cm->fc.hvdc_prob[mbmi->tx_size][left_ctx][right_ctx],
+                      &hvdc_encodings[mbmi->hvdc[0]]);
+      else
+      vp9_write_literal(w, mbmi->hvdc[0], 2);
+    }
+#endif  // CONFIG_HVDC
 #if CONFIG_FILTERINTRA
     if (is_filter_allowed(mbmi->mode) && is_filter_enabled(mbmi->tx_size)
 #if CONFIG_PALETTE
@@ -2519,6 +2551,10 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
   if (frame_is_intra_only(cm))
     vp9_write_bit(&header_bc, cm->allow_palette_mode);
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+  if (frame_is_intra_only(cm))
+    vp9_write_bit(&header_bc, cm->allow_hvdc);
+#endif  // CONFIG_HVDC
 
   vp9_stop_encode(&header_bc);
   assert(header_bc.pos <= 0xffff);

@@ -754,6 +754,157 @@ static const vp9_prob default_palette_uv_color_prob
 };
 #endif  // CONFIG_PALETTE
 
+#if CONFIG_HVDC
+const vp9_tree_index vp9_hvdc_tree[TREE_SIZE(HVDC_MODES)] = {
+  -DC_LA, 2,
+  -DC_L, 4,
+  -DC_A, -DC_NONE
+};
+
+static const vp9_prob default_hvdc_prob[TX_SIZES][3][3][HVDC_MODES - 1] = {
+    {  // TX_SIZE 0
+        {  // Left context 0
+            {  // Up context 0
+                44, 132, 232,
+            },
+            {  // Up context 1
+                44, 167, 247,
+            },
+            {  // Up context 2
+                60, 180, 254,
+            },
+        },
+        {  // Left context 1
+            {  // Up context 0
+                48, 114, 241,
+            },
+            {  // Up context 1
+                36, 102, 178,
+            },
+            {  // Up context 2
+                28, 138, 185,
+            },
+        },
+        {  // Left context 2
+            {  // Up context 0
+                66,  86, 242,
+            },
+            {  // Up context 1
+                12,  30, 152,
+            },
+            {  // Up context 2
+                1,  67, 109,
+            },
+        },
+    },
+    {  // TX_SIZE 1
+        {  // Left context 0
+            {  // Up context 0
+                61,  97, 208,
+            },
+            {  // Up context 1
+                65, 124, 227,
+            },
+            {  // Up context 2
+                71, 135, 240,
+            },
+        },
+        {  // Left context 1
+            {  // Up context 0
+                56,  78, 228,
+            },
+            {  // Up context 1
+                48,  78, 172,
+            },
+            {  // Up context 2
+                48,  87, 148,
+            },
+        },
+        {  // Left context 2
+            {  // Up context 0
+                55,  64, 240,
+            },
+            {  // Up context 1
+                33,  61, 167,
+            },
+            {  // Up context 2
+                28,  57, 114,
+            },
+        },
+    },
+    {  // TX_SIZE 2
+        {  // Left context 0
+            {  // Up context 0
+                61,  86, 195,
+            },
+            {  // Up context 1
+                62, 115, 210,
+            },
+            {  // Up context 2
+                68, 136, 229,
+            },
+        },
+        {  // Left context 1
+            {  // Up context 0
+                53,  76, 214,
+            },
+            {  // Up context 1
+                46,  72, 157,
+            },
+            {  // Up context 2
+                39,  78, 128,
+            },
+        },
+        {  // Left context 2
+            {  // Up context 0
+                55,  71, 228,
+            },
+            {  // Up context 1
+                28,  48, 153,
+            },
+            {  // Up context 2
+                29,  34, 115,
+            },
+        },
+    },
+    {  // TX_SIZE 3
+        {  // Left context 0
+            {  // Up context 0
+                75,  93, 198,
+            },
+            {  // Up context 1
+                67, 124, 212,
+            },
+            {  // Up context 2
+                68, 140, 227,
+            },
+        },
+        {  // Left context 1
+            {  // Up context 0
+                54,  76, 223,
+            },
+            {  // Up context 1
+                48,  86, 172,
+            },
+            {  // Up context 2
+                31,  76, 127,
+            },
+        },
+        {  // Left context 2
+            {  // Up context 0
+                48,  66, 241,
+            },
+            {  // Up context 1
+                34,  58, 146,
+            },
+            {  // Up context 2
+                23,  55, 108,
+            },
+        },
+    },
+};
+#endif  // CONFIG_HVDC
+
 #if CONFIG_SUPERTX
 static const vp9_prob default_supertx_prob[PARTITION_SUPERTX_CONTEXTS]
                                           [TX_SIZES] = {
@@ -892,6 +1043,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   vp9_copy(fc->palette_color_prob, default_palette_color_prob);
   vp9_copy(fc->palette_uv_color_prob, default_palette_uv_color_prob);
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+  vp9_copy(fc->hvdc_prob, default_hvdc_prob);
+#endif  // CONFIG_HVDC
 #if CONFIG_SUPERTX
   vp9_copy(fc->supertx_prob, default_supertx_prob);
 #endif  // CONFIG_SUPERTX

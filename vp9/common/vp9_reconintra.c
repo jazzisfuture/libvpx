@@ -972,6 +972,16 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
     above_row[-1] = 127;
   }
 
+#if CONFIG_HVDC
+  if (xd->mi->src_mi->mbmi.hvdc[0] && 1) {
+    if (xd->mi->src_mi->mbmi.hvdc[0] & 1)
+      up_available = 0;
+    if (xd->mi->src_mi->mbmi.hvdc[0] & 2)
+      left_available = 0;
+    //printf("%d\n", xd->mi->src_mi->mbmi.hvdc[plane != 0]);
+  }
+#endif  // CONFIG_HVDC
+
   // predict
   if (mode == DC_PRED) {
     dc_pred[left_available][up_available][tx_size](dst, dst_stride,

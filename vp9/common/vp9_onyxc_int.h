@@ -222,6 +222,11 @@ typedef struct VP9Common {
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
 
+#if CONFIG_HVDC
+  int allow_hvdc;
+  int hvdc_counter;
+  int hvdc_blocks_signalled;
+#endif  // CONFIG_HVDC
 #if CONFIG_PALETTE
   uint8_t current_palette_colors[PALETTE_BUF_SIZE];
   int current_palette_size;
@@ -238,6 +243,9 @@ typedef struct VP9Common {
 #if CONFIG_GLOBAL_MOTION
   int num_global_motion[MAX_REF_FRAMES];
   Global_Motion_Params global_motion[MAX_REF_FRAMES][MAX_GLOBAL_MOTION_MODELS];
+#endif
+#if 0
+  int stats[TX_SIZES][3][3][HVDC_MODES];
 #endif
 } VP9_COMMON;
 

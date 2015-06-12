@@ -5283,6 +5283,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       cm->intrabc_blocks_signalled = 0;
     }
 #endif  // CONFIG_INTRABC
+#if CONFIG_HVDC
+    if (frame_is_intra_only(cm)) {
+      cm->hvdc_counter = 0;
+      cm->hvdc_blocks_signalled = 0;
+    }
+#endif  // CONFIG_HVDC
 
     encode_tiles(cpi);
 
@@ -5672,6 +5678,14 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
         cm->palette_counter++;
     }
 #endif  // CONFIG_PALETTE
+#if CONFIG_HVDC
+    if (frame_is_intra_only(cm) && output_enabled && bsize >= BLOCK_8X8 &&
+        mbmi->mode == DC_PRED) {
+      cm->hvdc_blocks_signalled++;
+      if (mbmi->hvdc[0])
+        cm->hvdc_counter++;
+    }
+#endif  // CONFIG_HVDC
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);

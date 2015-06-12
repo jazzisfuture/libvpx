@@ -2910,6 +2910,10 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     if (loop_count == 0 && frame_is_intra_only(cm))
       cm->allow_intrabc_mode = 1;
 #endif  // CONFIG_INTRABC
+#if CONFIG_HVDC
+    if (loop_count == 0 && frame_is_intra_only(cm))
+      cm->allow_hvdc = 1;
+#endif  // CONFIG_HVDC
 
     // Variance adaptive and in frame q adjustment experiments are mutually
     // exclusive.
@@ -3099,6 +3103,16 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       loop = 1;
     }
 #endif  // CONFIG_INTRABC
+#if CONFIG_HVDC
+    //if (frame_is_intra_only(cm))
+      //printf("%4d out of %4d\n", cm->hvdc_counter, cm->hvdc_blocks_signalled);
+
+    if (frame_is_intra_only(cm) && cm->allow_hvdc &&
+        (double)cm->hvdc_counter < (double)cm->hvdc_blocks_signalled * 0.75) {
+      cm->allow_hvdc = 0;
+      loop = 1;
+    }
+#endif  // CONFIG_HVDC
 
     if (loop) {
       loop_count++;

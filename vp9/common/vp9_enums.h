@@ -168,6 +168,16 @@ typedef enum {
 } PALETTE_COLOR;
 #endif  // CONFIG_PALETTE
 
+#if CONFIG_HVDC
+typedef enum {
+  DC_LA,
+  DC_L,
+  DC_A,
+  DC_NONE,
+  HVDC_MODES
+} HVDC_MODE;
+#endif  // CONFIG_HVDC
+
 typedef enum {
   VP9_LAST_FLAG = 1 << 0,
   VP9_GOLD_FLAG = 1 << 1,
