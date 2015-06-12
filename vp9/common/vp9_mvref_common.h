@@ -141,6 +141,50 @@ static const int idx_n_column_to_subblock[4][2] = {
 };
 
 #if CONFIG_NEWMVREF
+static const POSITION mv_ref_blocks_8x16[MAX_ZONES][MVREF_NEIGHBOURS] = {
+  {  // 8X16, Zone I, where top right neighbors are available
+    {0, -1}, {-1, 0}, { 1, -1}, {-1,  1}, {-1, -1},  // nearest neighbors
+    {0, -2}, {-2, 0}, {-2, -1}
+  },
+  {  // 8X16, Zone II, where no top right neighbor is available
+    {0, -1}, {-1, 0}, { 1, -1}, {-1, -1},            // nearest neighbors
+    {0, -2}, {-2, 0}, {-2, -1}, {-1, -2}
+  }
+};
+
+static const int mv_ref_topright_avail_8x16[8][8] = {
+  {1, 1, 1, 1, 1, 1, 1, 1},
+  {1, 1, 1, 1, 1, 1, 1, 1},
+  {1, 1, 1, 0, 1, 1, 1, 0},
+  {1, 1, 1, 0, 1, 1, 1, 0},
+  {1, 1, 1, 1, 1, 1, 1, 0},
+  {1, 1, 1, 1, 1, 1, 1, 0},
+  {1, 1, 1, 0, 1, 1, 1, 0},
+  {1, 1, 1, 0, 1, 1, 1, 0}
+};
+
+static const POSITION mv_ref_blocks_16x8[MAX_ZONES][MVREF_NEIGHBOURS] = {
+  {  // 16x8, Zone I, where top right neighbors are available
+    {-1, 0}, {0, -1}, {-1,  1}, {-1, -2}, {-1, -1},  // nearest neighbors
+    {-2, 0}, {0, -2}, {-1, -2}
+  },
+  {  // 16x8, Zone II, where no top right neighbor is available
+    {-1, 0}, {0, -1}, {-1,  1}, {-1, -1},            // nearest neighbors
+    {-2, 0}, {0, -2}, {-1, -2}, {-2, -1}
+  }
+};
+
+static const int mv_ref_topright_avail_16x8[8][8] = {
+  {1, 1, 1, 1, 1, 1, 1, 1},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {1, 1, 1, 1, 1, 1, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0}
+};
+
 static const POSITION mv_ref_blocks_8x8[MAX_ZONES][MVREF_NEIGHBOURS] = {
   {  // 8X8, Zone I,  where top right neighbors are available
     {-1,  0}, { 0, -1}, {-1,  1}, {-1, -1},  // nearest neighboring blocks
