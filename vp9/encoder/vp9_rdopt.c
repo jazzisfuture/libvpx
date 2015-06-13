@@ -1538,6 +1538,26 @@ static void tx_block_rd(const VP9_COMP *cpi, MACROBLOCK *x,
                   plane_bsize, above_ctx, left_ctx,
                   &zero_blk_rate, &this_rate,
                   &this_dist, &this_bsse, &this_skip);
+    if (this_skip == 1) {
+      x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = 1;
+    } else {
+      if (RDCOST(x->rdmult, x->rddiv, this_rate, this_dist) >
+          RDCOST(x->rdmult, x->rddiv, zero_blk_rate, this_bsse) &&
+          !xd->lossless) {
+        int i;
+        this_rate = zero_blk_rate;
+        this_dist = this_bsse;
+        this_skip = 1;
+        x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = 1;
+        for (i = 0; i < (1 << tx_size); ++i) {
+          above_ctx[i + blk_col] = 0;
+          left_ctx[i + blk_row] = 0;
+        }
+      } else {
+        x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = 0;
+      }
+    }
+
     *rate += this_rate;
     *dist += this_dist;
     *bsse += this_bsse;
@@ -1545,7 +1565,7 @@ static void tx_block_rd(const VP9_COMP *cpi, MACROBLOCK *x,
   } else {
     BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
     int bh = num_4x4_blocks_high_lookup[bsize];
-    int step = 1 << (2 *(tx_size - 1));
+    int step = 1 << (2 * (tx_size - 1));
     int i;
     for (i = 0; i < 4; ++i) {
       int offsetr = (i >> 1) * bh / 2;
