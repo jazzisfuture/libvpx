@@ -1457,11 +1457,12 @@ static void inter_block_yrd(const VP9_COMP *cpi, MACROBLOCK *x,
     const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
     const int mi_width = num_4x4_blocks_wide_lookup[plane_bsize];
     const int mi_height = num_4x4_blocks_high_lookup[plane_bsize];
-    BLOCK_SIZE txb_size = txsize_to_bsize[max_txsize_lookup[plane_bsize]];
+    TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
+    BLOCK_SIZE txb_size = txsize_to_bsize[max_tx_size];
     int bh = num_4x4_blocks_wide_lookup[txb_size];
     int idx, idy;
     int block = 0;
-    int step = 1 << (max_txsize_lookup[plane_bsize] * 2);
+    int step = 1 << (max_tx_size * 2);
     ENTROPY_CONTEXT ctxa[16], ctxl[16];
     TXFM_CONTEXT txa[8], txl[8];
 
@@ -1487,6 +1488,22 @@ static void inter_block_yrd(const VP9_COMP *cpi, MACROBLOCK *x,
         *skippable &= pnskip;
 
         block += step;
+      }
+    }
+
+    if (!xd->lossless) {
+      if (RDCOST(x->rdmult, x->rddiv, *rate + s0, *distortion) >
+          RDCOST(x->rdmult, x->rddiv, s1, *sse) || *skippable == 1) {
+        for (idy = 0; idy < mi_height; idy += 2) {
+          for (idx = 0; idx < mi_width; idx += 2) {
+            MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
+            mbmi->inter_tx_size[(idy / 2) * 8 + (idx / 2)] = max_tx_size;
+            x->blk_skip[0][idy * mi_width + idx] = 1;
+          }
+        }
+        *rate = 0;
+        *distortion = *sse;
+        *skippable = 1;
       }
     }
 
