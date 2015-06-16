@@ -134,8 +134,10 @@ void vp9_int_pro_row_c(int16_t *hbuf, uint8_t const *ref,
   for (idx = 0; idx < 16; ++idx) {
     int i;
     hbuf[idx] = 0;
+    // hbuf[idx]: 14 bit, dynamic range [0, 16320].
     for (i = 0; i < height; ++i)
       hbuf[idx] += ref[i * ref_stride];
+    // hbuf[idx]: 9 bit, dynamic range [0, 510].
     hbuf[idx] /= norm_factor;
     ++ref;
   }
