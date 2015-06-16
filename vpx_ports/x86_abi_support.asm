@@ -138,7 +138,7 @@
 ; Return the address specification of the given argument
 ;
 %if ABI_IS_32BIT
-  %define arg(x) [ebp+8+4*x]
+  %define arg(x)  [ebp+8+4*x]
 %else
   ; 64 bit ABI passes arguments in registers. This is a workaround to get up
   ; and running quickly. Relies on SHADOW_ARGS_TO_STACK
@@ -149,6 +149,17 @@
   %endif
 %endif
 
+%if ABI_IS_32BIT
+  %define arg_rsp(x) [esp+8+4*x]
+%else
+  ; 64 bit ABI passes arguments in registers. This is a workaround to get up
+  ; and running quickly. Relies on SHADOW_ARGS_TO_STACK
+  %if LIBVPX_YASM_WIN64
+    %define arg_rsp(x) [rsp+16+8*x]
+  %else
+    %define arg_rsp(x) [rsp-8-8*x]
+  %endif
+%endif
 ; REG_SZ_BYTES, REG_SZ_BITS
 ; Size of a register
 %if ABI_IS_32BIT
