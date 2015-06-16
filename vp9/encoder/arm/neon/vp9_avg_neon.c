@@ -47,3 +47,32 @@ unsigned int vp9_avg_8x8_neon(const uint8_t *s, int p) {
 
   return (horizontal_add_u16x8(v_sum) + 32) >> 6;
 }
+
+void vp9_int_pro_row_neon(int16_t hbuf[16], uint8_t const *ref,
+                          const int ref_stride, const int height) {
+  int i;
+  uint16x8_t vec_sum_lo = vdupq_n_u16(0);
+  uint16x8_t vec_sum_hi = vdupq_n_u16(0);
+
+  for (i = 0; i < height; ++i) {
+    const uint8x16_t vec_row = vld1q_u8(ref);
+    vec_sum_lo = vaddw_u8(vec_sum_lo, vget_low_u8(vec_row));
+    vec_sum_hi = vaddw_u8(vec_sum_hi, vget_high_u8(vec_row));
+    ref += ref_stride;
+  }
+
+  if (height == 64) {
+    vec_sum_lo = vshrq_n_u16(vec_sum_lo, 5);
+    vec_sum_hi = vshrq_n_u16(vec_sum_hi, 5);
+  } else if (height == 32) {
+    vec_sum_lo = vshrq_n_u16(vec_sum_lo, 4);
+    vec_sum_hi = vshrq_n_u16(vec_sum_hi, 4);
+  } else {
+    vec_sum_lo = vshrq_n_u16(vec_sum_lo, 3);
+    vec_sum_hi = vshrq_n_u16(vec_sum_hi, 3);
+  }
+
+  vst1q_s16(hbuf, vreinterpretq_s16_u16(vec_sum_lo));
+  hbuf += 8;
+  vst1q_s16(hbuf, vreinterpretq_s16_u16(vec_sum_hi));
+}
