@@ -262,8 +262,8 @@ static double calculate_modified_err(const VP9_COMP *cpi,
   // remaining active MBs. The correction here assumes that coding
   // 0.5N blocks of complexity 2X is a little easier than coding N
   // blocks of complexity X.
-  modified_error *=
-    pow(calculate_active_area(cpi, this_frame), ACT_AREA_CORRECTION);
+  // modified_error *=
+  //   pow(calculate_active_area(cpi, this_frame), ACT_AREA_CORRECTION);
 
   return fclamp(modified_error,
                 twopass->modified_error_min, twopass->modified_error_max);
