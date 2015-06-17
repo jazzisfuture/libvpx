@@ -22,7 +22,8 @@ struct TileInfo;
 
 void vp9_read_mode_info(VP9Decoder *const pbi, MACROBLOCKD *xd,
                         const struct TileInfo *const tile,
-                        int mi_row, int mi_col, vp9_reader *r);
+                        int mi_row, int mi_col, vp9_reader *r,
+                        int x_mis, int y_mis);
 
 #ifdef __cplusplus
 }  // extern "C"
