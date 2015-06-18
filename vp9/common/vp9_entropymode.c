@@ -303,8 +303,9 @@ void tx_counts_to_branch_counts_8x8(const unsigned int *tx_count_8x8p,
 }
 
 static const vp9_prob default_txfm_partition_probs[TXFM_PARTITION_CONTEXTS] = {
-    // 64, 128, 192, 64, 128, 192, 64, 128, 192,
-    192, 128, 64, 192, 128, 64, 192, 128, 64,
+//    192, 128, 64, 192, 128, 64, 192, 128, 64,
+//    128, 128, 128, 128, 128, 128, 128, 128, 128
+    138, 128, 103, 177, 128, 144, 123, 201, 128
 };
 
 static const vp9_prob default_skip_probs[SKIP_CONTEXTS] = {
