@@ -133,6 +133,10 @@ struct macroblockd_plane {
   ENTROPY_CONTEXT *left_context;
   int16_t seg_dequant[MAX_SEGMENTS][2];
 
+  // number of 4x4s in current block
+  int n4_w, n4_h;
+  // TODO(slavarnway): maybe use log2 instead? tx_size seems to be log2
+
   // encoder
   const int16_t *dequant;
 };
