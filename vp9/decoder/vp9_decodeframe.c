@@ -1598,6 +1598,11 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
   for (k = 0; k < TXFM_PARTITION_CONTEXTS; ++k)
     vp9_diff_update_prob(&r, &fc->txfm_partition_prob[k]);
 
+  fprintf(stderr, "\n");
+  for (k = 0; k < TXFM_PARTITION_CONTEXTS; ++k)
+    fprintf(stderr, "%d ", fc->txfm_partition_prob[k]);
+  fprintf(stderr, "\n");
+
   for (k = 0; k < SKIP_CONTEXTS; ++k)
     vp9_diff_update_prob(&r, &fc->skip_probs[k]);
 
