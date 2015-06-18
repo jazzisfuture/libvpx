@@ -1035,6 +1035,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
   set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
   mbmi = &xd->mi[0].src_mi->mbmi;
   mbmi->sb_type = bsize;
+  mbmi->max_tx_size = max_txsize_lookup[bsize];
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
     p[i].coeff = ctx->coeff_pbuf[i][0];
