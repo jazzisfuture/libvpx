@@ -289,6 +289,27 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
   }
 }
 
+// const int b_width_log2_lookup[BLOCK_SIZES] =
+  // {0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4};
+
+// valid 8x8 widths: 0, 1, 2, 4, 8
+// static const int dec_b_width_log2_lookup[8 + 1] =
+//  {0, 1, 2, 2, 3, 3, 3, 3, 4};
+
+static INLINE int dec_txfrm_block_to_raster_xy(int bw,
+                                                TX_SIZE tx_size, int block,
+                                                int *x, int *y) {
+// TODO(slavarnway): eliminate this lookup
+//  const int bwl = dec_b_width_log2_lookup[bw];
+  const int bwl = (bw >> 1) + !(bw & 0x8) - !bw;
+  const int tx_cols_log2 = bwl - tx_size;
+  const int tx_cols = 1 << tx_cols_log2;
+  const int raster_mb = block >> (tx_size << 1);
+  *x = (raster_mb & (tx_cols - 1)) << tx_size;
+  *y = (raster_mb >> tx_cols_log2) << tx_size;
+  return bwl;
+}
+
 struct intra_args {
   MACROBLOCKD *xd;
   vp9_reader *r;
@@ -296,7 +317,7 @@ struct intra_args {
 };
 
 static void predict_and_reconstruct_intra_block(int plane, int block,
-                                                BLOCK_SIZE plane_bsize,
+                                                int bw,
                                                 TX_SIZE tx_size, void *arg) {
   struct intra_args *const args = (struct intra_args *)arg;
   MACROBLOCKD *const xd = args->xd;
@@ -306,17 +327,17 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
                                             : mi->mbmi.uv_mode;
   int x, y;
   uint8_t *dst;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
+  const int bwl = dec_txfrm_block_to_raster_xy(bw, tx_size, block, &x, &y);
   dst = &pd->dst.buf[4 * y * pd->dst.stride + 4 * x];
 
   vp9_predict_intra_block(xd, block >> (tx_size << 1),
-                          b_width_log2_lookup[plane_bsize], tx_size, mode,
+                          bwl, tx_size, mode,
                           dst, pd->dst.stride, dst, pd->dst.stride,
                           x, y, plane);
 
   if (!mi->mbmi.skip) {
     const int eob = vp9_decode_block_tokens(xd, plane, block,
-                                            plane_bsize, x, y, tx_size,
+                                            x, y, tx_size,
                                             args->r, args->seg_id);
     inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
                             eob);
@@ -331,14 +352,14 @@ struct inter_args {
 };
 
 static void reconstruct_inter_block(int plane, int block,
-                                    BLOCK_SIZE plane_bsize,
+                                    int bw,
                                     TX_SIZE tx_size, void *arg) {
   struct inter_args *args = (struct inter_args *)arg;
   MACROBLOCKD *const xd = args->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   int x, y, eob;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
-  eob = vp9_decode_block_tokens(xd, plane, block, plane_bsize,
+  dec_txfrm_block_to_raster_xy(bw, tx_size, block, &x, &y);
+  eob = vp9_decode_block_tokens(xd, plane, block,
                                 x, y, tx_size, args->r, args->seg_id);
   inverse_transform_block(xd, plane, block, tx_size,
                           &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
@@ -644,8 +665,7 @@ static void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
 
 static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
                                           MACROBLOCKD *xd,
-                                          int mi_row, int mi_col,
-                                          BLOCK_SIZE bsize) {
+                                          int mi_row, int mi_col) {
   int plane;
   const int mi_x = mi_col * MI_SIZE;
   const int mi_y = mi_row * MI_SIZE;
@@ -655,15 +675,13 @@ static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
   const int is_compound = has_second_ref(&mi->mbmi);
 
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize,
-                                                        &xd->plane[plane]);
     struct macroblockd_plane *const pd = &xd->plane[plane];
     struct buf_2d *const dst_buf = &pd->dst;
-    const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
-    const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+    const int num_4x4_w = pd->n4_w;
+    const int num_4x4_h = pd->n4_h;
 
-    const int bw = 4 * num_4x4_w;
-    const int bh = 4 * num_4x4_h;
+    const int n4w_x4 = 4 * num_4x4_w;
+    const int n4h_x4 = 4 * num_4x4_h;
     int ref;
 
     for (ref = 0; ref < 1 + is_compound; ++ref) {
@@ -676,11 +694,10 @@ static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
 
       if (sb_type < BLOCK_8X8) {
         int i = 0, x, y;
-        assert(bsize == BLOCK_8X8);
         for (y = 0; y < num_4x4_h; ++y) {
           for (x = 0; x < num_4x4_w; ++x) {
             const MV mv = average_split_mvs(pd, mi, ref, i++);
-            dec_build_inter_predictors(pbi, xd, plane, bw, bh,
+            dec_build_inter_predictors(pbi, xd, plane, n4w_x4, n4h_x4,
                                        4 * x, 4 * y, 4, 4, mi_x, mi_y, kernel,
                                        sf, pre_buf, dst_buf, &mv,
                                        ref_frame_buf, is_scaled, ref);
@@ -688,8 +705,8 @@ static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
         }
       } else {
         const MV mv = mi->mbmi.mv[ref].as_mv;
-        dec_build_inter_predictors(pbi, xd, plane, bw, bh,
-                                   0, 0, bw, bh, mi_x, mi_y, kernel,
+        dec_build_inter_predictors(pbi, xd, plane, n4w_x4, n4h_x4,
+                                   0, 0, n4w_x4, n4h_x4, mi_x, mi_y, kernel,
                                    sf, pre_buf, dst_buf, &mv, ref_frame_buf,
                                    is_scaled, ref);
       }
@@ -697,13 +714,143 @@ static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
   }
 }
 
+// TODO(slavarnway): delete
+#if 0
+// block transform size
+typedef uint8_t TX_SIZE;
+#define TX_4X4   ((TX_SIZE)0)   // 4x4 transform
+#define TX_8X8   ((TX_SIZE)1)   // 8x8 transform
+#define TX_16X16 ((TX_SIZE)2)   // 16x16 transform
+#define TX_32X32 ((TX_SIZE)3)   // 32x32 transform
+#define TX_SIZES ((TX_SIZE)4)
+
+const TX_SIZE max_txsize_lookup[BLOCK_SIZES] = {
+  TX_4X4,   TX_4X4,   TX_4X4,
+  TX_8X8,   TX_8X8,   TX_8X8,
+  TX_16X16, TX_16X16, TX_16X16,
+  TX_32X32, TX_32X32, TX_32X32, TX_32X32
+};
+
+const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES][2][2] = {
+//  ss_x == 0    ss_x == 0        ss_x == 1      ss_x == 1
+//  ss_y == 0    ss_y == 1        ss_y == 0      ss_y == 1
+  {{BLOCK_4X4,   BLOCK_INVALID}, {BLOCK_INVALID, BLOCK_INVALID}},
+  {{BLOCK_4X8,   BLOCK_4X4},     {BLOCK_INVALID, BLOCK_INVALID}},
+  {{BLOCK_8X4,   BLOCK_INVALID}, {BLOCK_4X4,     BLOCK_INVALID}},
+  {{BLOCK_8X8,   BLOCK_8X4},     {BLOCK_4X8,     BLOCK_4X4}},
+  {{BLOCK_8X16,  BLOCK_8X8},     {BLOCK_INVALID, BLOCK_4X8}},
+  {{BLOCK_16X8,  BLOCK_INVALID}, {BLOCK_8X8,     BLOCK_8X4}},
+  {{BLOCK_16X16, BLOCK_16X8},    {BLOCK_8X16,    BLOCK_8X8}},
+  {{BLOCK_16X32, BLOCK_16X16},   {BLOCK_INVALID, BLOCK_8X16}},
+  {{BLOCK_32X16, BLOCK_INVALID}, {BLOCK_16X16,   BLOCK_16X8}},
+  {{BLOCK_32X32, BLOCK_32X16},   {BLOCK_16X32,   BLOCK_16X16}},
+  {{BLOCK_32X64, BLOCK_32X32},   {BLOCK_INVALID, BLOCK_16X32}},
+  {{BLOCK_64X32, BLOCK_INVALID}, {BLOCK_32X32,   BLOCK_32X16}},
+  {{BLOCK_64X64, BLOCK_64X32},   {BLOCK_32X64,   BLOCK_32X32}},
+};
+#endif
+
+// TODO(slavarnway): delete
+#if 0
+static INLINE TX_SIZE dec_get_uv_tx_size_impl(TX_SIZE y_tx_size,
+                                              BLOCK_SIZE bsize,
+                                              int xss, int yss) {
+  if (bsize < BLOCK_8X8) {
+    return TX_4X4;
+  } else {
+    const BLOCK_SIZE plane_bsize = ss_size_lookup[bsize][xss][yss];
+    return MIN(y_tx_size, max_txsize_lookup[plane_bsize]);
+  }
+}
+
+static INLINE TX_SIZE dec_get_uv_tx_size(const MB_MODE_INFO *mbmi,
+                                     const struct macroblockd_plane *pd,
+                                     int bw) {
+  (void) bw;
+  return dec_get_uv_tx_size_impl(mbmi->tx_size, mbmi->sb_type,
+                                 pd->subsampling_x,
+                                 pd->subsampling_y);
+}
+#else
+static INLINE TX_SIZE dec_get_uv_tx_size(const MB_MODE_INFO *mbmi,
+                                     int n4_w, int n4_h) {
+  // calculate minimum number of 8x8s in current block
+  const int x = MIN(n4_w >> 1, n4_h >> 1);
+  if (!x) {
+    return TX_4X4;
+  } else {
+    return MIN(mbmi->tx_size, ((x >> 1) + !(x & 0x8)) );
+  }
+}
+#endif
+
+// TODO(slavarnway): Eliminate the foreach_ functions in future commits.
+
+typedef void (*dec_foreach_transformed_block_visitor)(int plane, int block,
+                                                      int bw,
+                                                      TX_SIZE tx_size,
+                                                      void *arg);
+
+static void dec_foreach_transformed_block_in_plane(
+    const MACROBLOCKD *const xd,
+    int plane,
+    dec_foreach_transformed_block_visitor visit, void *arg) {
+  const struct macroblockd_plane *const pd = &xd->plane[plane];
+  const MB_MODE_INFO* mbmi = &xd->mi[0]->mbmi;
+  const int num_4x4_w = pd->n4_w;
+  const int num_4x4_h = pd->n4_h;
+  // block and transform sizes, in number of 4x4 blocks log 2 ("*_b")
+  // 4x4=0, 8x8=2, 16x16=4, 32x32=6, 64x64=8
+  // transform size varies per plane, look it up in a common way.
+  const TX_SIZE tx_size = plane ? dec_get_uv_tx_size(mbmi, num_4x4_w, num_4x4_h)
+                                : mbmi->tx_size;
+  const int step = 1 << (tx_size << 1);
+  int i = 0, r, c;
+
+  // If mb_to_right_edge is < 0 we are in a situation in which
+  // the current block size extends into the UMV and we won't
+  // visit the sub blocks that are wholly within the UMV.
+  const int max_blocks_wide = num_4x4_w + (xd->mb_to_right_edge >= 0 ? 0 :
+      xd->mb_to_right_edge >> (5 + pd->subsampling_x));
+  const int max_blocks_high = num_4x4_h + (xd->mb_to_bottom_edge >= 0 ? 0 :
+      xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
+
+  // Keep track of the row and column of the blocks we use so that we know
+  // if we are in the unrestricted motion border.
+  for (r = 0; r < max_blocks_high; r += (1 << tx_size)) {
+    for (c = 0; c < num_4x4_w; c += (1 << tx_size)) {
+      // Skip visiting the sub blocks that are wholly within the UMV.
+      if (c < max_blocks_wide)
+        visit(plane, i, (num_4x4_w >> 1), tx_size, arg);
+      i += step;
+    }
+  }
+}
+
+static void dec_foreach_transformed_block(const MACROBLOCKD* const xd,
+    dec_foreach_transformed_block_visitor visit, void *arg) {
+  int plane;
+
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane)
+    dec_foreach_transformed_block_in_plane(xd, plane, visit, arg);
+}
+
+//static INLINE
+void dec_reset_skip_context(MACROBLOCKD *xd) {
+  int i;
+  for (i = 0; i < MAX_MB_PLANE; i++) {
+    struct macroblockd_plane *const pd = &xd->plane[i];
+    memset(pd->above_context, 0,
+           sizeof(ENTROPY_CONTEXT) * pd->n4_w);
+    memset(pd->left_context, 0,
+           sizeof(ENTROPY_CONTEXT) * pd->n4_h);
+  }
+}
+
 static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                  const TileInfo *const tile,
-                                 BLOCK_SIZE bsize, int mi_row, int mi_col) {
-  const int bw = num_8x8_blocks_wide_lookup[bsize];
-  const int bh = num_8x8_blocks_high_lookup[bsize];
-  const int x_mis = MIN(bw, cm->mi_cols - mi_col);
-  const int y_mis = MIN(bh, cm->mi_rows - mi_row);
+                                 BLOCK_SIZE bsize, int mi_row, int mi_col,
+                                 int bw, int bh, int x_mis, int y_mis) {
   const int offset = mi_row * cm->mi_stride + mi_col;
   int x, y;
 
@@ -714,6 +861,15 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     for (x = !y; x < x_mis; ++x) {
       xd->mi[y * cm->mi_stride + x] = xd->mi[0];
     }
+
+  // TODO(slavarnway): is there a better place to put this code?
+  {
+    int i;
+    for (i = 0; i < MAX_MB_PLANE; i++) {
+      xd->plane[i].n4_w = (bw << 1) >> xd->plane[i].subsampling_x;
+      xd->plane[i].n4_h = (bh << 1) >> xd->plane[i].subsampling_y;
+    }
+  }
 
   set_skip_context(xd, mi_row, mi_col);
 
@@ -728,10 +884,15 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
                          const TileInfo *const tile,
                          int mi_row, int mi_col,
-                         vp9_reader *r, BLOCK_SIZE bsize) {
+                         vp9_reader *r, BLOCK_SIZE bsize,
+                         int bw, int bh) {
   VP9_COMMON *const cm = &pbi->common;
   const int less8x8 = bsize < BLOCK_8X8;
-  MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
+  const int x_mis = MIN(bw, cm->mi_cols - mi_col);
+  const int y_mis = MIN(bh, cm->mi_rows - mi_row);
+
+  MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col,
+                                   bw, bh, x_mis, y_mis);
 
   if (bsize >= BLOCK_8X8 && (cm->subsampling_x || cm->subsampling_y)) {
     const BLOCK_SIZE uv_subsize =
@@ -741,28 +902,29 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
                          VPX_CODEC_CORRUPT_FRAME, "Invalid block size.");
   }
 
-  vp9_read_mode_info(pbi, xd, tile, mi_row, mi_col, r);
+  vp9_read_mode_info(pbi, xd, tile, mi_row, mi_col, r, x_mis, y_mis);
 
   if (less8x8)
     bsize = BLOCK_8X8;
 
   if (mbmi->skip) {
-    reset_skip_context(xd, bsize);
+    dec_reset_skip_context(xd);
   }
 
   if (!is_inter_block(mbmi)) {
     struct intra_args arg = {xd, r, mbmi->segment_id};
-    vp9_foreach_transformed_block(xd, bsize,
+    dec_foreach_transformed_block(xd,
                                   predict_and_reconstruct_intra_block, &arg);
   } else {
     // Prediction
-    dec_build_inter_predictors_sb(pbi, xd, mi_row, mi_col, bsize);
+    dec_build_inter_predictors_sb(pbi, xd, mi_row, mi_col);
 
     // Reconstruction
     if (!mbmi->skip) {
       int eobtotal = 0;
       struct inter_args arg = {xd, r, &eobtotal, mbmi->segment_id};
-      vp9_foreach_transformed_block(xd, bsize, reconstruct_inter_block, &arg);
+      dec_foreach_transformed_block(xd,
+                                    reconstruct_inter_block, &arg);
       if (!less8x8 && eobtotal == 0)
         mbmi->skip = 1;  // skip loopfilter
     }
@@ -771,10 +933,66 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   xd->corrupted |= vp9_reader_has_error(r);
 }
 
+// TODO(slavarnway): partition_plane_context() copy for now
+static INLINE int dec_partition_plane_context(const MACROBLOCKD *xd,
+                                              int mi_row, int mi_col,
+                                              int bw) {
+  const PARTITION_CONTEXT *above_ctx = xd->above_seg_context + mi_col;
+  const PARTITION_CONTEXT *left_ctx = xd->left_seg_context + (mi_row & MI_MASK);
+  const int bsl = (bw >> 1) - !!(bw & 0x8);
+  int above = (*above_ctx >> bsl) & 1 , left = (*left_ctx >> bsl) & 1;
+
+//  assert(b_width_log2_lookup[bsize] == b_height_log2_lookup[bsize]);
+//  assert(bsl >= 0);
+
+  return (left * 2 + above) + bsl * PARTITION_PLOFFSET;
+}
+
+
+// TODO(slavarnway): delete
+#if 0
+// Generates 4 bit field in which each bit set to 1 represents
+// a blocksize partition  1111 means we split 64x64, 32x32, 16x16
+// and 8x8.  1000 means we just split the 64x64 to 32x32
+const struct {
+  PARTITION_CONTEXT above;
+  PARTITION_CONTEXT left;
+} partition_context_lookup[BLOCK_SIZES]= {
+  {15, 15},  // 4X4   - {0b1111, 0b1111}
+  {15, 14},  // 4X8   - {0b1111, 0b1110}
+  {14, 15},  // 8X4   - {0b1110, 0b1111}
+  {14, 14},  // 8X8   - {0b1110, 0b1110}
+  {14, 12},  // 8X16  - {0b1110, 0b1100}
+  {12, 14},  // 16X8  - {0b1100, 0b1110}
+  {12, 12},  // 16X16 - {0b1100, 0b1100}
+  {12, 8 },  // 16X32 - {0b1100, 0b1000}
+  {8,  12},  // 32X16 - {0b1000, 0b1100}
+  {8,  8 },  // 32X32 - {0b1000, 0b1000}
+  {8,  0 },  // 32X64 - {0b1000, 0b0000}
+  {0,  8 },  // 64X32 - {0b0000, 0b1000}
+  {0,  0 },  // 64X64 - {0b0000, 0b0000}
+};
+#endif
+static INLINE void dec_update_partition_context(MACROBLOCKD *xd,
+                                                int mi_row, int mi_col,
+                                                BLOCK_SIZE subsize,
+                                                int bw) {
+  PARTITION_CONTEXT *const above_ctx = xd->above_seg_context + mi_col;
+  PARTITION_CONTEXT *const left_ctx = xd->left_seg_context + (mi_row & MI_MASK);
+
+  //  const int bs = num_8x8_blocks_wide_lookup[bsize];
+
+  // update the partition context at the end notes. set partition bits
+  // of block sizes larger than the current one to be one, and partition
+  // bits of smaller block sizes to be zero.
+  memset(above_ctx, partition_context_lookup[subsize].above, bw);
+  memset(left_ctx, partition_context_lookup[subsize].left, bw);
+}
+
 static PARTITION_TYPE read_partition(MACROBLOCKD *xd, int mi_row, int mi_col,
-                                     BLOCK_SIZE bsize, vp9_reader *r,
-                                     int has_rows, int has_cols) {
-  const int ctx = partition_plane_context(xd, mi_row, mi_col, bsize);
+                                     vp9_reader *r,
+                                     int has_rows, int has_cols, int bw) {
+  const int ctx = dec_partition_plane_context(xd, mi_row, mi_col, bw);
   const vp9_prob *const probs = get_partition_probs(xd, ctx);
   FRAME_COUNTS *counts = xd->counts;
   PARTITION_TYPE p;
@@ -797,9 +1015,9 @@ static PARTITION_TYPE read_partition(MACROBLOCKD *xd, int mi_row, int mi_col,
 static void decode_partition(VP9Decoder *const pbi, MACROBLOCKD *const xd,
                              const TileInfo *const tile,
                              int mi_row, int mi_col,
-                             vp9_reader* r, BLOCK_SIZE bsize) {
+                             vp9_reader* r, BLOCK_SIZE bsize, int num_8x8_wh) {
   VP9_COMMON *const cm = &pbi->common;
-  const int hbs = num_8x8_blocks_wide_lookup[bsize] / 2;
+  const int hbs = num_8x8_wh >> 1;
   PARTITION_TYPE partition;
   BLOCK_SIZE subsize;
   const int has_rows = (mi_row + hbs) < cm->mi_rows;
@@ -808,30 +1026,37 @@ static void decode_partition(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
-  partition = read_partition(xd, mi_row, mi_col, bsize, r, has_rows, has_cols);
-  subsize = get_subsize(bsize, partition);
-  if (bsize == BLOCK_8X8) {
-    decode_block(pbi, xd, tile, mi_row, mi_col, r, subsize);
+  partition = read_partition(xd, mi_row, mi_col, r, has_rows, has_cols,
+      num_8x8_wh);
+  subsize = subsize_lookup[partition][bsize];  // get_subsize(bsize, partition);
+  if (!hbs) {
+    decode_block(pbi, xd, tile, mi_row, mi_col, r, subsize, 1, 1);
   } else {
     switch (partition) {
       case PARTITION_NONE:
-        decode_block(pbi, xd, tile, mi_row, mi_col, r, subsize);
+        decode_block(pbi, xd, tile, mi_row, mi_col, r, subsize,
+                     num_8x8_wh, num_8x8_wh);
         break;
       case PARTITION_HORZ:
-        decode_block(pbi, xd, tile, mi_row, mi_col, r, subsize);
+        decode_block(pbi, xd, tile, mi_row, mi_col, r, subsize,
+                     num_8x8_wh, hbs);
         if (has_rows)
-          decode_block(pbi, xd, tile, mi_row + hbs, mi_col, r, subsize);
+          decode_block(pbi, xd, tile, mi_row + hbs, mi_col, r, subsize,
+                       num_8x8_wh, hbs);
         break;
       case PARTITION_VERT:
-        decode_block(pbi, xd, tile, mi_row, mi_col, r, subsize);
+        decode_block(pbi, xd, tile, mi_row, mi_col, r, subsize,
+                     hbs, num_8x8_wh);
         if (has_cols)
-          decode_block(pbi, xd, tile, mi_row, mi_col + hbs, r, subsize);
+          decode_block(pbi, xd, tile, mi_row, mi_col + hbs, r, subsize,
+                       hbs, num_8x8_wh);
         break;
       case PARTITION_SPLIT:
-        decode_partition(pbi, xd, tile, mi_row, mi_col, r, subsize);
-        decode_partition(pbi, xd, tile, mi_row, mi_col + hbs, r, subsize);
-        decode_partition(pbi, xd, tile, mi_row + hbs, mi_col, r, subsize);
-        decode_partition(pbi, xd, tile, mi_row + hbs, mi_col + hbs, r, subsize);
+        decode_partition(pbi, xd, tile, mi_row, mi_col, r, subsize, hbs);
+        decode_partition(pbi, xd, tile, mi_row, mi_col + hbs, r, subsize, hbs);
+        decode_partition(pbi, xd, tile, mi_row + hbs, mi_col, r, subsize, hbs);
+        decode_partition(pbi, xd, tile, mi_row + hbs, mi_col + hbs, r, subsize,
+                         hbs);
         break;
       default:
         assert(0 && "Invalid partition type");
@@ -841,7 +1066,7 @@ static void decode_partition(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   // update partition context
   if (bsize >= BLOCK_8X8 &&
       (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT))
-    update_partition_context(xd, mi_row, mi_col, subsize, bsize);
+    dec_update_partition_context(xd, mi_row, mi_col, subsize, num_8x8_wh);
 }
 
 static void setup_token_decoder(const uint8_t *data,
@@ -1346,7 +1571,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
         for (mi_col = tile.mi_col_start; mi_col < tile.mi_col_end;
              mi_col += MI_BLOCK_SIZE) {
           decode_partition(pbi, &tile_data->xd, &tile, mi_row,
-                           mi_col, &tile_data->bit_reader, BLOCK_64X64);
+                           mi_col, &tile_data->bit_reader, BLOCK_64X64, 8);
         }
         pbi->mb.corrupted |= tile_data->xd.corrupted;
         if (pbi->mb.corrupted)
@@ -1420,7 +1645,7 @@ static int tile_worker_hook(TileWorkerData *const tile_data,
          mi_col += MI_BLOCK_SIZE) {
       decode_partition(tile_data->pbi, &tile_data->xd,
                        tile, mi_row, mi_col, &tile_data->bit_reader,
-                       BLOCK_64X64);
+                       BLOCK_64X64, 8);
     }
   }
   return !tile_data->xd.corrupted;

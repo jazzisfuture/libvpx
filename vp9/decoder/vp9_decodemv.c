@@ -517,8 +517,8 @@ static void read_inter_block_mode_info(VP9Decoder *const pbi,
                       : cm->interp_filter;
 
   if (bsize < BLOCK_8X8) {
-    const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];  // 1 or 2
-    const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];  // 1 or 2
+    const int num_4x4_w = xd->plane[0].n4_w;
+    const int num_4x4_h = xd->plane[0].n4_h;
     int idx, idy;
     PREDICTION_MODE b_mode;
     int_mv nearest_sub8x8[2], near_sub8x8[2];
@@ -589,13 +589,14 @@ static void read_inter_frame_mode_info(VP9Decoder *const pbi,
 
 void vp9_read_mode_info(VP9Decoder *const pbi, MACROBLOCKD *xd,
                         const TileInfo *const tile,
-                        int mi_row, int mi_col, vp9_reader *r) {
+                        int mi_row, int mi_col, vp9_reader *r,
+                        int x_mis, int y_mis) {
   VP9_COMMON *const cm = &pbi->common;
   MODE_INFO *const mi = xd->mi[0];
-  const int bw = num_8x8_blocks_wide_lookup[mi->mbmi.sb_type];
-  const int bh = num_8x8_blocks_high_lookup[mi->mbmi.sb_type];
-  const int x_mis = MIN(bw, cm->mi_cols - mi_col);
-  const int y_mis = MIN(bh, cm->mi_rows - mi_row);
+//  const int bw = num_8x8_blocks_wide_lookup[mi->mbmi.sb_type];
+//  const int bh = num_8x8_blocks_high_lookup[mi->mbmi.sb_type];
+//  const int x_mis = MIN(bw, cm->mi_cols - mi_col);
+//  const int y_mis = MIN(bh, cm->mi_rows - mi_row);
   MV_REF* frame_mvs = cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;
   int w, h;
 
