@@ -232,10 +232,10 @@
    Arguments   : Inputs  - psrc    (source pointer to load from)
                          - stride
                  Outputs - out0, out1, out2, out3
-   Details     : Loads word in 'out0' from (psrc)
-                 Loads word in 'out1' from (psrc + stride)
-                 Loads word in 'out2' from (psrc + 2 * stride)
-                 Loads word in 'out3' from (psrc + 3 * stride)
+   Details     : Load word in 'out0' from (psrc)
+                 Load word in 'out1' from (psrc + stride)
+                 Load word in 'out2' from (psrc + 2 * stride)
+                 Load word in 'out3' from (psrc + 3 * stride)
 */
 #define LW4(psrc, stride, out0, out1, out2, out3) {  \
   out0 = LW((psrc));                                 \
@@ -248,8 +248,8 @@
    Arguments   : Inputs  - psrc    (source pointer to load from)
                          - stride
                  Outputs - out0, out1
-   Details     : Loads double word in 'out0' from (psrc)
-                 Loads double word in 'out1' from (psrc + stride)
+   Details     : Load double word in 'out0' from (psrc)
+                 Load double word in 'out1' from (psrc + stride)
 */
 #define LD2(psrc, stride, out0, out1) {  \
   out0 = LD((psrc));                     \
@@ -262,10 +262,10 @@
 
 /* Description : Store 4 words with stride
    Arguments   : Inputs  - in0, in1, in2, in3, pdst, stride
-   Details     : Stores word from 'in0' to (pdst)
-                 Stores word from 'in1' to (pdst + stride)
-                 Stores word from 'in2' to (pdst + 2 * stride)
-                 Stores word from 'in3' to (pdst + 3 * stride)
+   Details     : Store word from 'in0' to (pdst)
+                 Store word from 'in1' to (pdst + stride)
+                 Store word from 'in2' to (pdst + 2 * stride)
+                 Store word from 'in3' to (pdst + 3 * stride)
 */
 #define SW4(in0, in1, in2, in3, pdst, stride) {  \
   SW(in0, (pdst))                                \
@@ -276,10 +276,10 @@
 
 /* Description : Store 4 double words with stride
    Arguments   : Inputs  - in0, in1, in2, in3, pdst, stride
-   Details     : Stores double word from 'in0' to (pdst)
-                 Stores double word from 'in1' to (pdst + stride)
-                 Stores double word from 'in2' to (pdst + 2 * stride)
-                 Stores double word from 'in3' to (pdst + 3 * stride)
+   Details     : Store double word from 'in0' to (pdst)
+                 Store double word from 'in1' to (pdst + stride)
+                 Store double word from 'in2' to (pdst + 2 * stride)
+                 Store double word from 'in3' to (pdst + 3 * stride)
 */
 #define SD4(in0, in1, in2, in3, pdst, stride) {  \
   SD(in0, (pdst))                                \
@@ -293,8 +293,8 @@
                          - stride
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Loads 16 byte elements in 'out0' from (psrc)
-                 Loads 16 byte elements in 'out1' from (psrc + stride)
+   Details     : Load 16 byte elements in 'out0' from (psrc)
+                 Load 16 byte elements in 'out1' from (psrc + stride)
 */
 #define LD_B2(RTYPE, psrc, stride, out0, out1) {  \
   out0 = LD_B(RTYPE, (psrc));                     \
@@ -336,8 +336,8 @@
    Arguments   : Inputs  - psrc    (source pointer to load from)
                          - stride
                  Outputs - out0, out1
-   Details     : Loads 8 halfword elements in 'out0' from (psrc)
-                 Loads 8 halfword elements in 'out1' from (psrc + stride)
+   Details     : Load 8 halfword elements in 'out0' from (psrc)
+                 Load 8 halfword elements in 'out1' from (psrc + stride)
 */
 #define LD_H2(RTYPE, psrc, stride, out0, out1) {  \
   out0 = LD_H(RTYPE, (psrc));                     \
@@ -368,7 +368,7 @@
 }
 #define LD_SH16(...) LD_H16(v8i16, __VA_ARGS__)
 
-/* Description : Load as 4x4 block of signed halfword elements from 1D source
+/* Description : Load 4x4 block of signed halfword elements from 1D source
                  data into 4 vectors (Each vector with 4 signed halfwords)
    Arguments   : Inputs  - psrc
                  Outputs - out0, out1, out2, out3
@@ -393,9 +393,9 @@
 
 /* Description : Store vectors of 16 byte elements with stride
    Arguments   : Inputs  - in0, in1, stride
-                 Outputs - pdst    (destination pointer to store to)
-   Details     : Stores 16 byte elements from 'in0' to (pdst)
-                 Stores 16 byte elements from 'in1' to (pdst + stride)
+                         - pdst    (destination pointer to store to)
+   Details     : Store 16 byte elements from 'in0' to (pdst)
+                 Store 16 byte elements from 'in1' to (pdst + stride)
 */
 #define ST_B2(RTYPE, in0, in1, pdst, stride) {  \
   ST_B(RTYPE, in0, (pdst));                     \
@@ -418,9 +418,9 @@
 
 /* Description : Store vectors of 8 halfword elements with stride
    Arguments   : Inputs  - in0, in1, stride
-                 Outputs - pdst    (destination pointer to store to)
-   Details     : Stores 8 halfword elements from 'in0' to (pdst)
-                 Stores 8 halfword elements from 'in1' to (pdst + stride)
+                         - pdst    (destination pointer to store to)
+   Details     : Store 8 halfword elements from 'in0' to (pdst)
+                 Store 8 halfword elements from 'in1' to (pdst + stride)
 */
 #define ST_H2(RTYPE, in0, in1, pdst, stride) {  \
   ST_H(RTYPE, in0, (pdst));                     \
@@ -440,17 +440,16 @@
 }
 #define ST_SH8(...) ST_H8(v8i16, __VA_ARGS__)
 
-/* Description : Store as 2x4 byte block to destination memory from input vector
+/* Description : Store 2x4 byte block to destination memory from input vector
    Arguments   : Inputs  - in, stidx, pdst, stride
-                 Return Type - unsigned byte
-   Details     : Index stidx halfword element from 'in' vector is copied and
-                 stored on first line
-                 Index stidx+1 halfword element from 'in' vector is copied and
-                 stored on second line
-                 Index stidx+2 halfword element from 'in' vector is copied and
-                 stored on third line
-                 Index stidx+3 halfword element from 'in' vector is copied and
-                 stored on fourth line
+   Details     : Index 'stidx' halfword element from 'in' vector is copied to
+                 GP register and stored to (pdst)
+                 Index 'stidx+1' halfword element from 'in' vector is copied to
+                 GP register and stored to (pdst + stride)
+                 Index 'stidx+2' halfword element from 'in' vector is copied to
+                 GP register and stored to (pdst + 2 * stride)
+                 Index 'stidx+3' halfword element from 'in' vector is copied to
+                 GP register and stored to (pdst + 3 * stride)
 */
 #define ST2x4_UB(in, stidx, pdst, stride) {         \
   uint16_t out0_m, out1_m, out2_m, out3_m;          \
@@ -467,17 +466,16 @@
   SH(out3_m, pblk_2x4_m + 3 * stride);              \
 }
 
-/* Description : Store as 4x4 byte block to destination memory from input vector
+/* Description : Store 4x4 byte block to destination memory from input vector
    Arguments   : Inputs  - in0, in1, pdst, stride
-                 Return Type - unsigned byte
-   Details     : Idx0 word element from input vector 'in0' is copied and stored
-                 on first line
-                 Idx1 word element from input vector 'in0' is copied and stored
-                 on second line
-                 Idx2 word element from input vector 'in1' is copied and stored
-                 on third line
-                 Idx3 word element from input vector 'in1' is copied and stored
-                 on fourth line
+   Details     : 'Idx0' word element from input vector 'in0' is copied to
+                 GP register and stored to (pdst)
+                 'Idx1' word element from input vector 'in0' is copied to
+                 GP register and stored to (pdst + stride)
+                 'Idx2' word element from input vector 'in0' is copied to
+                 GP register and stored to (pdst + 2 * stride)
+                 'Idx3' word element from input vector 'in0' is copied to
+                 GP register and stored to (pdst + 3 * stride)
 */
 #define ST4x4_UB(in0, in1, idx0, idx1, idx2, idx3, pdst, stride) {  \
   uint32_t out0_m, out1_m, out2_m, out3_m;                          \
@@ -497,10 +495,10 @@
   ST4x4_UB(in1, in1, 0, 1, 2, 3, pblk_4x8 + 4 * stride, stride);  \
 }
 
-/* Description : Store as 8x1 byte block to destination memory from input vector
+/* Description : Store 8x1 byte block to destination memory from input vector
    Arguments   : Inputs  - in, pdst
-   Details     : Index 0 double word element from input vector 'in' is copied
-                 and stored to destination memory at (pdst)
+   Details     : Index 0 double word element from 'in' vector is copied to
+                 GP register and stored to (pdst)
 */
 #define ST8x1_UB(in, pdst) {              \
   uint64_t out0_m;                        \
@@ -509,12 +507,12 @@
   SD(out0_m, pdst);                       \
 }
 
-/* Description : Store as 8x2 byte block to destination memory from input vector
+/* Description : Store 8x2 byte block to destination memory from input vector
    Arguments   : Inputs  - in, pdst, stride
-   Details     : Index 0 double word element from input vector 'in' is copied
-                 and stored to destination memory at (pdst)
-                 Index 1 double word element from input vector 'in' is copied
-                 and stored to destination memory at (pdst + stride)
+   Details     : Index 0 double word element from 'in' vector is copied to
+                 GP register and stored to (pdst)
+                 Index 1 double word element from 'in' vector is copied to
+                 GP register and stored to (pdst + stride)
 */
 #define ST8x2_UB(in, pdst, stride) {        \
   uint64_t out0_m, out1_m;                  \
@@ -527,17 +525,17 @@
   SD(out1_m, pblk_8x2_m + stride);          \
 }
 
-/* Description : Store as 8x4 byte block to destination memory from input
+/* Description : Store 8x4 byte block to destination memory from input
                  vectors
    Arguments   : Inputs  - in0, in1, pdst, stride
-   Details     : Index 0 double word element from input vector 'in0' is copied
-                 and stored to destination memory at (pblk_8x4_m)
-                 Index 1 double word element from input vector 'in0' is copied
-                 and stored to destination memory at (pblk_8x4_m + stride)
-                 Index 0 double word element from input vector 'in1' is copied
-                 and stored to destination memory at (pblk_8x4_m + 2 * stride)
-                 Index 1 double word element from input vector 'in1' is copied
-                 and stored to destination memory at (pblk_8x4_m + 3 * stride)
+   Details     : Index 0 double word element from 'in0' vector is copied to
+                 GP register and stored to (pdst)
+                 Index 1 double word element from 'in0' vector is copied to
+                 GP register and stored to (pdst + stride)
+                 Index 0 double word element from 'in1' vector is copied to
+                 GP register and stored to (pdst + 2 * stride)
+                 Index 1 double word element from 'in1' vector is copied to
+                 GP register and stored to (pdst + 3 * stride)
 */
 #define ST8x4_UB(in0, in1, pdst, stride) {                  \
   uint64_t out0_m, out1_m, out2_m, out3_m;                  \
@@ -554,14 +552,10 @@
 /* Description : average with rounding (in0 + in1 + 1) / 2.
    Arguments   : Inputs  - in0, in1, in2, in3,
                  Outputs - out0, out1
-                 Return Type - signed byte
-   Details     : Each byte element from 'in0' vector is added with each byte
-                 element from 'in1' vector. The addition of the elements plus 1
-                (for rounding) is done unsigned with full precision,
-                i.e. the result has one extra bit. Unsigned division by 2
-                (or logical shift right by one bit) is performed before writing
-                the result to vector 'out0'
-                Similar for the pair of 'in2' and 'in3'
+                 Return Type - as per RTYPE
+   Details     : Each unsigned byte element from 'in0' vector is added with
+                 each unsigned byte element from 'in1' vector.
+                 Average with rounding is calculated and written to 'out0'
 */
 #define AVER_UB2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_aver_u_b((v16u8)in0, (v16u8)in1);    \
@@ -576,12 +570,12 @@
 }
 #define AVER_UB4_UB(...) AVER_UB4(v16u8, __VA_ARGS__)
 
-/* Description : Immediate number of columns to slide with zero
+/* Description : Immediate number of elements to slide with zero
    Arguments   : Inputs  - in0, in1, slide_val
                  Outputs - out0, out1
                  Return Type - as per RTYPE
    Details     : Byte elements from 'zero_m' vector are slide into 'in0' by
-                 number of elements specified by 'slide_val'
+                 value specified in 'slide_val'
 */
 #define SLDI_B2_0(RTYPE, in0, in1, out0, out1, slide_val) {          \
   v16i8 zero_m = { 0 };                                              \
@@ -597,12 +591,12 @@
 }
 #define SLDI_B4_0_UB(...) SLDI_B4_0(v16u8, __VA_ARGS__)
 
-/* Description : Immediate number of columns to slide
+/* Description : Immediate number of elements to slide
    Arguments   : Inputs  - in0_0, in0_1, in1_0, in1_1, slide_val
                  Outputs - out0, out1
                  Return Type - as per RTYPE
    Details     : Byte elements from 'in0_0' vector are slide into 'in1_0' by
-                 number of elements specified by 'slide_val'
+                 value specified in 'slide_val'
 */
 #define SLDI_B2(RTYPE, in0_0, in0_1, in1_0, in1_1, out0, out1, slide_val) {  \
   out0 = (RTYPE)__msa_sldi_b((v16i8)in0_0, (v16i8)in1_0, slide_val);         \
@@ -622,10 +616,8 @@
    Arguments   : Inputs  - in0, in1, in2, in3, mask0, mask1
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Selective byte elements from in0 & in1 are copied to out0 as
-                 per control vector mask0
-                 Selective byte elements from in2 & in3 are copied to out1 as
-                 per control vector mask1
+   Details     : Selective byte elements from 'in0' & 'in1' are copied to
+                 'out0' as per control vector 'mask0'
 */
 #define VSHF_B2(RTYPE, in0, in1, in2, in3, mask0, mask1, out0, out1) {  \
   out0 = (RTYPE)__msa_vshf_b((v16i8)mask0, (v16i8)in1, (v16i8)in0);     \
@@ -647,13 +639,12 @@
    Arguments   : Inputs  - mult0, mult1
                            cnst0, cnst1
                  Outputs - out0, out1
-                 Return Type - unsigned halfword
-   Details     : Unsigned byte elements from mult0 are multiplied with
-                 unsigned byte elements from cnst0 producing a result
+                 Return Type - as per RTYPE
+   Details     : Unsigned byte elements from 'mult0' are multiplied with
+                 unsigned byte elements from 'cnst0' producing a result
                  twice the size of input i.e. unsigned halfword.
-                 Then this multiplication results of adjacent odd-even elements
-                 are added together and stored to the out vector
-                 (2 unsigned halfword results)
+                 Multiplication result of adjacent odd-even elements
+                 are added together and written to the 'out0' vector
 */
 #define DOTP_UB2(RTYPE, mult0, mult1, cnst0, cnst1, out0, out1) {  \
   out0 = (RTYPE)__msa_dotp_u_h((v16u8)mult0, (v16u8)cnst0);        \
@@ -673,13 +664,12 @@
    Arguments   : Inputs  - mult0, mult1
                            cnst0, cnst1
                  Outputs - out0, out1
-                 Return Type - signed halfword
-   Details     : Signed byte elements from mult0 are multiplied with
-                 signed byte elements from cnst0 producing a result
+                 Return Type - as per RTYPE
+   Details     : Signed byte elements from 'mult0' are multiplied with
+                 signed byte elements from 'cnst0' producing a result
                  twice the size of input i.e. signed halfword.
-                 Then this multiplication results of adjacent odd-even elements
-                 are added together and stored to the out vector
-                 (2 signed halfword results)
+                 Multiplication result of adjacent odd-even elements
+                 are added together and written to the 'out0' vector
 */
 #define DOTP_SB2(RTYPE, mult0, mult1, cnst0, cnst1, out0, out1) {  \
   out0 = (RTYPE)__msa_dotp_s_h((v16i8)mult0, (v16i8)cnst0);        \
@@ -698,13 +688,12 @@
    Arguments   : Inputs  - mult0, mult1
                            cnst0, cnst1
                  Outputs - out0, out1
-                 Return Type - signed word
-   Details     : Signed halfword elements from mult0 are multiplied with
-                 signed halfword elements from cnst0 producing a result
+                 Return Type - as per RTYPE
+   Details     : Signed halfword elements from 'mult0' are multiplied with
+                 signed halfword elements from 'cnst0' producing a result
                  twice the size of input i.e. signed word.
-                 Then this multiplication results of adjacent odd-even elements
-                 are added together and stored to the out vector
-                 (2 signed word results)
+                 Multiplication result of adjacent odd-even elements
+                 are added together and written to the 'out0' vector
 */
 #define DOTP_SH2(RTYPE, mult0, mult1, cnst0, cnst1, out0, out1) {  \
   out0 = (RTYPE)__msa_dotp_s_w((v8i16)mult0, (v8i16)cnst0);        \
@@ -724,13 +713,12 @@
    Arguments   : Inputs  - mult0, mult1
                            cnst0, cnst1
                  Outputs - out0, out1
-                 Return Type - signed word
-   Details     : Signed word elements from mult0 are multiplied with
-                 signed word elements from cnst0 producing a result
+                 Return Type - as per RTYPE
+   Details     : Signed word elements from 'mult0' are multiplied with
+                 signed word elements from 'cnst0' producing a result
                  twice the size of input i.e. signed double word.
-                 Then this multiplication results of adjacent odd-even elements
-                 are added together and stored to the out vector
-                 (2 signed double word results)
+                 Multiplication result of adjacent odd-even elements
+                 are added together and written to the 'out0' vector
 */
 #define DOTP_SW2(RTYPE, mult0, mult1, cnst0, cnst1, out0, out1) {  \
   out0 = (RTYPE)__msa_dotp_s_d((v4i32)mult0, (v4i32)cnst0);        \
@@ -742,13 +730,12 @@
    Arguments   : Inputs  - mult0, mult1
                            cnst0, cnst1
                  Outputs - out0, out1
-                 Return Type - signed halfword
-   Details     : Signed byte elements from mult0 are multiplied with
-                 signed byte elements from cnst0 producing a result
+                 Return Type - as per RTYPE
+   Details     : Signed byte elements from 'mult0' are multiplied with
+                 signed byte elements from 'cnst0' producing a result
                  twice the size of input i.e. signed halfword.
-                 Then this multiplication results of adjacent odd-even elements
-                 are added to the out vector
-                 (2 signed halfword results)
+                 Multiplication result of adjacent odd-even elements
+                 are added to the 'out0' vector
 */
 #define DPADD_SB2(RTYPE, mult0, mult1, cnst0, cnst1, out0, out1) {         \
   out0 = (RTYPE)__msa_dpadd_s_h((v8i16)out0, (v16i8)mult0, (v16i8)cnst0);  \
@@ -766,10 +753,10 @@
 /* Description : Minimum values between unsigned elements of
                  either vector are copied to the output vector
    Arguments   : Inputs  - in0, in1, min_vec
-                 Outputs - in0, in1, (in place)
-                 Return Type - unsigned halfword
+                 Outputs - in place operation
+                 Return Type - as per RTYPE
    Details     : Minimum of unsigned halfword element values from 'in0' and
-                 'min_value' are written to output vector 'in0'
+                 'min_vec' are written to output vector 'in0'
 */
 #define MIN_UH2(RTYPE, in0, in1, min_vec) {         \
   in0 = (RTYPE)__msa_min_u_h((v8u16)in0, min_vec);  \
@@ -785,8 +772,8 @@
 
 /* Description : Clips all signed halfword elements of input vector
                  between 0 & 255
-   Arguments   : Inputs  - in       (input vector)
-                 Outputs - out_m    (output vector with clipped elements)
+   Arguments   : Input  - in
+                 Output - out_m
                  Return Type - signed halfword
 */
 #define CLIP_SH_0_255(in) ({                          \
@@ -806,12 +793,12 @@
   CLIP_SH2_0_255(in2, in3);                   \
 }
 
-/* Description : Addition of 4 signed word elements
-                 4 signed word elements of input vector are added together and
+/* Description : Horizontal addition of 4 signed word elements of input vector
+   Arguments   : Input  - in       (signed word vector)
+                 Output - sum_m    (i32 sum)
+                 Return Type - signed word (GP)
+   Details     : 4 signed word elements of 'in' vector are added together and
                  the resulting integer sum is returned
-   Arguments   : Inputs  - in       (signed word vector)
-                 Outputs - sum_m    (i32 sum)
-                 Return Type - signed word
 */
 #define HADD_SW_S32(in) ({                        \
   v2i64 res0_m, res1_m;                           \
@@ -830,7 +817,7 @@
                  Return Type - as per RTYPE
    Details     : Each unsigned odd byte element from 'in0' is added to
                  even unsigned byte element from 'in0' (pairwise) and the
-                 halfword result is stored in 'out0'
+                 halfword result is written to 'out0'
 */
 #define HADD_UB2(RTYPE, in0, in1, out0, out1) {          \
   out0 = (RTYPE)__msa_hadd_u_h((v16u8)in0, (v16u8)in0);  \
@@ -844,11 +831,11 @@
 }
 #define HADD_UB4_UH(...) HADD_UB4(v8u16, __VA_ARGS__)
 
-/* Description : Insert specified word elements from input vectors to 1
-                 destination vector
+/* Description : Set element n input vector to GPR value
    Arguments   : Inputs  - in0, in1, in2, in3 (4 input vectors)
-                 Outputs - out                (output vector)
+                 Output - out                 (output vector)
                  Return Type - as per RTYPE
+   Details     : Set element 0 in vector 'out' to value specified in 'in0'
 */
 #define INSERT_W2(RTYPE, in0, in1, out) {           \
   out = (RTYPE)__msa_insert_w((v4i32)out, 0, in0);  \
@@ -856,12 +843,15 @@
 }
 #define INSERT_W2_SB(...) INSERT_W2(v16i8, __VA_ARGS__)
 
-/* Description : Insert specified double word elements from input vectors to 1
-                 destination vector
-   Arguments   : Inputs  - in0, in1      (2 input vectors)
-                 Outputs - out           (output vector)
-                 Return Type - as per RTYPE
-*/
+#define INSERT_W4(RTYPE, in0, in1, in2, in3, out) {  \
+  out = (RTYPE)__msa_insert_w((v4i32)out, 0, in0);   \
+  out = (RTYPE)__msa_insert_w((v4i32)out, 1, in1);   \
+  out = (RTYPE)__msa_insert_w((v4i32)out, 2, in2);   \
+  out = (RTYPE)__msa_insert_w((v4i32)out, 3, in3);   \
+}
+#define INSERT_W4_UB(...) INSERT_W4(v16u8, __VA_ARGS__)
+#define INSERT_W4_SB(...) INSERT_W4(v16i8, __VA_ARGS__)
+
 #define INSERT_D2(RTYPE, in0, in1, out) {           \
   out = (RTYPE)__msa_insert_d((v2i64)out, 0, in0);  \
   out = (RTYPE)__msa_insert_d((v2i64)out, 1, in1);  \
@@ -873,10 +863,8 @@
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Even byte elements of 'in0' and even byte
-                 elements of 'in1' are interleaved and copied to 'out0'
-                 Even byte elements of 'in2' and even byte
-                 elements of 'in3' are interleaved and copied to 'out1'
+   Details     : Even byte elements of 'in0' and 'in1' are interleaved
+                 and written to 'out0'
 */
 #define ILVEV_B2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_ilvev_b((v16i8)in1, (v16i8)in0);     \
@@ -889,10 +877,8 @@
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Even halfword elements of 'in0' and even halfword
-                 elements of 'in1' are interleaved and copied to 'out0'
-                 Even halfword elements of 'in2' and even halfword
-                 elements of 'in3' are interleaved and copied to 'out1'
+   Details     : Even halfword elements of 'in0' and 'in1' are interleaved
+                 and written to 'out0'
 */
 #define ILVEV_H2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_ilvev_h((v8i16)in1, (v8i16)in0);     \
@@ -902,14 +888,25 @@
 #define ILVEV_H2_SH(...) ILVEV_H2(v8i16, __VA_ARGS__)
 #define ILVEV_H2_SW(...) ILVEV_H2(v4i32, __VA_ARGS__)
 
+/* Description : Interleave even word elements from vectors
+   Arguments   : Inputs  - in0, in1, in2, in3
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Even word elements of 'in0' and 'in1' are interleaved
+                 and written to 'out0'
+*/
+#define ILVEV_W2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
+  out0 = (RTYPE)__msa_ilvev_w((v4i32)in1, (v4i32)in0);     \
+  out1 = (RTYPE)__msa_ilvev_w((v4i32)in3, (v4i32)in2);     \
+}
+#define ILVEV_W2_SB(...) ILVEV_W2(v16i8, __VA_ARGS__)
+
 /* Description : Interleave even double word elements from vectors
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Even double word elements of 'in0' and even double word
-                 elements of 'in1' are interleaved and copied to 'out0'
-                 Even double word elements of 'in2' and even double word
-                 elements of 'in3' are interleaved and copied to 'out1'
+   Details     : Even double word elements of 'in0' and 'in1' are interleaved
+                 and written to 'out0'
 */
 #define ILVEV_D2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_ilvev_d((v2i64)in1, (v2i64)in0);     \
@@ -921,10 +918,8 @@
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Left half of byte elements of in0 and left half of byte
-                 elements of in1 are interleaved and copied to out0.
-                 Left half of byte elements of in2 and left half of byte
-                 elements of in3 are interleaved and copied to out1.
+   Details     : Left half of byte elements of 'in0' and 'in1' are interleaved
+                 and written to 'out0'.
 */
 #define ILVL_B2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_ilvl_b((v16i8)in0, (v16i8)in1);     \
@@ -947,10 +942,8 @@
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Left half of halfword elements of in0 and left half of halfword
-                 elements of in1 are interleaved and copied to out0.
-                 Left half of halfword elements of in2 and left half of halfword
-                 elements of in3 are interleaved and copied to out1.
+   Details     : Left half of halfword elements of 'in0' and 'in1' are
+                 interleaved and written to 'out0'.
 */
 #define ILVL_H2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_ilvl_h((v8i16)in0, (v8i16)in1);     \
@@ -962,10 +955,8 @@
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Left half of word elements of in0 and left half of word
-                 elements of in1 are interleaved and copied to out0.
-                 Left half of word elements of in2 and left half of word
-                 elements of in3 are interleaved and copied to out1.
+   Details     : Left half of word elements of 'in0' and 'in1' are interleaved
+                 and written to 'out0'.
 */
 #define ILVL_W2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_ilvl_w((v4i32)in0, (v4i32)in1);     \
@@ -975,14 +966,11 @@
 #define ILVL_W2_SH(...) ILVL_W2(v8i16, __VA_ARGS__)
 
 /* Description : Interleave right half of byte elements from vectors
-   Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7
-                 Outputs - out0, out1, out2, out3
+   Arguments   : Inputs  - in0, in1, in2, in3
+                 Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Right half of byte elements of in0 and right half of byte
-                 elements of in1 are interleaved and copied to out0.
-                 Right half of byte elements of in2 and right half of byte
-                 elements of in3 are interleaved and copied to out1.
-                 Similar for other pairs
+   Details     : Right half of byte elements of 'in0' and 'in1' are interleaved
+                 and written to out0.
 */
 #define ILVR_B2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_ilvr_b((v16i8)in0, (v16i8)in1);     \
@@ -1014,14 +1002,11 @@
 #define ILVR_B8_UH(...) ILVR_B8(v8u16, __VA_ARGS__)
 
 /* Description : Interleave right half of halfword elements from vectors
-   Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7
-                 Outputs - out0, out1, out2, out3
-                 Return Type - signed halfword
-   Details     : Right half of halfword elements of in0 and right half of
-                 halfword elements of in1 are interleaved and copied to out0.
-                 Right half of halfword elements of in2 and right half of
-                 halfword elements of in3 are interleaved and copied to out1.
-                 Similar for other pairs
+   Arguments   : Inputs  - in0, in1, in2, in3
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Right half of halfword elements of 'in0' and 'in1' are
+                 interleaved and written to 'out0'.
 */
 #define ILVR_H2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_ilvr_h((v8i16)in0, (v8i16)in1);     \
@@ -1051,13 +1036,11 @@
 #define ILVR_W4_UB(...) ILVR_W4(v16u8, __VA_ARGS__)
 
 /* Description : Interleave right half of double word elements from vectors
-   Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7
-                 Outputs - out0, out1, out2, out3
-                 Return Type - unsigned double word
-   Details     : Right half of double word elements of in0 and right half of
-                 double word elements of in1 are interleaved and copied to out0.
-                 Right half of double word elements of in2 and right half of
-                 double word elements of in3 are interleaved and copied to out1.
+   Arguments   : Inputs  - in0, in1, in2, in3
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Right half of double word elements of 'in0' and 'in1' are
+                 interleaved and written to 'out0'.
 */
 #define ILVR_D2(RTYPE, in0, in1, in2, in3, out0, out1) {   \
   out0 = (RTYPE)__msa_ilvr_d((v2i64)(in0), (v2i64)(in1));  \
@@ -1086,9 +1069,7 @@
                  Outputs - out0, out1
                  Return Type - as per RTYPE
    Details     : Right half of byte elements from 'in0' and 'in1' are
-                 interleaved and stored to 'out0'
-                 Left half of byte elements from 'in0' and 'in1' are
-                 interleaved and stored to 'out1'
+                 interleaved and written to 'out0'
 */
 #define ILVRL_B2(RTYPE, in0, in1, out0, out1) {        \
   out0 = (RTYPE)__msa_ilvr_b((v16i8)in0, (v16i8)in1);  \
@@ -1114,14 +1095,14 @@
 #define ILVRL_W2_SW(...) ILVRL_W2(v4i32, __VA_ARGS__)
 
 /* Description : Saturate the halfword element values to the max
-                 unsigned value of (sat_val+1 bits)
+                 unsigned value of (sat_val + 1 bits)
                  The element data width remains unchanged
-   Arguments   : Inputs  - in0, in1, in2, in3, sat_val
-                 Outputs - in0, in1, in2, in3 (in place)
-                 Return Type - unsigned halfword
+   Arguments   : Inputs  - in0, in1, sat_val
+                 Outputs - in place operation
+                 Return Type - as per RTYPE
    Details     : Each unsigned halfword element from 'in0' is saturated to the
                  value generated with (sat_val+1) bit range.
-                 The results are stored in place
+                 The results are written in place
 */
 #define SAT_UH2(RTYPE, in0, in1, sat_val) {         \
   in0 = (RTYPE)__msa_sat_u_h((v8u16)in0, sat_val);  \
@@ -1138,12 +1119,12 @@
 /* Description : Saturate the halfword element values to the max
                  unsigned value of (sat_val+1 bits)
                  The element data width remains unchanged
-   Arguments   : Inputs  - in0, in1, in2, in3, sat_val
-                 Outputs - in0, in1, in2, in3 (in place)
-                 Return Type - unsigned halfword
+   Arguments   : Inputs  - in0, in1, sat_val
+                 Outputs - in place operation
+                 Return Type - as per RTYPE
    Details     : Each unsigned halfword element from 'in0' is saturated to the
                  value generated with (sat_val+1) bit range
-                 The results are stored in place
+                 The results are written in place
 */
 #define SAT_SH2(RTYPE, in0, in1, sat_val) {         \
   in0 = (RTYPE)__msa_sat_s_h((v8i16)in0, sat_val);  \
@@ -1184,12 +1165,9 @@
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Even byte elements of in0 are copied to the left half of
-                 out0 & even byte elements of in1 are copied to the right
-                 half of out0.
-                 Even byte elements of in2 are copied to the left half of
-                 out1 & even byte elements of in3 are copied to the right
-                 half of out1.
+   Details     : Even byte elements of 'in0' are copied to the left half of
+                 'out0' & even byte elements of 'in1' are copied to the right
+                 half of 'out0'.
 */
 #define PCKEV_B2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_pckev_b((v16i8)in0, (v16i8)in1);     \
@@ -1212,12 +1190,9 @@
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
                  Return Type - as per RTYPE
-   Details     : Even halfword elements of in0 are copied to the left half of
-                 out0 & even halfword elements of in1 are copied to the right
-                 half of out0.
-                 Even halfword elements of in2 are copied to the left half of
-                 out1 & even halfword elements of in3 are copied to the right
-                 half of out1.
+   Details     : Even halfword elements of 'in0' are copied to the left half of
+                 'out0' & even halfword elements of 'in1' are copied to the
+                 right half of 'out0'.
 */
 #define PCKEV_H2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_pckev_h((v8i16)in0, (v8i16)in1);     \
@@ -1236,13 +1211,10 @@
 /* Description : Pack even double word elements of vector pairs
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
-                 Return Type - unsigned byte
-   Details     : Even double elements of in0 are copied to the left half of
-                 out0 & even double elements of in1 are copied to the right
-                 half of out0.
-                 Even double elements of in2 are copied to the left half of
-                 out1 & even double elements of in3 are copied to the right
-                 half of out1.
+                 Return Type - as per RTYPE
+   Details     : Even double elements of 'in0' are copied to the left half of
+                 'out0' & even double elements of 'in1' are copied to the right
+                 half of 'out0'.
 */
 #define PCKEV_D2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_pckev_d((v2i64)in0, (v2i64)in1);     \
@@ -1260,15 +1232,10 @@
 
 /* Description : Each byte element is logically xor'ed with immediate 128
    Arguments   : Inputs  - in0, in1
-                 Outputs - in0, in1 (in-place)
+                 Outputs - in place operation
                  Return Type - as per RTYPE
    Details     : Each unsigned byte element from input vector 'in0' is
-                 logically xor'ed with 128 and the result is in-place stored in
-                 'in0' vector
-                 Each unsigned byte element from input vector 'in1' is
-                 logically xor'ed with 128 and the result is in-place stored in
-                 'in1' vector
-                 Similar for other pairs
+                 logically xor'ed with 128 and the result is stored in-place.
 */
 #define XORI_B2_128(RTYPE, in0, in1) {         \
   in0 = (RTYPE)__msa_xori_b((v16u8)in0, 128);  \
@@ -1296,14 +1263,31 @@
 }
 #define XORI_B7_128_SB(...) XORI_B7_128(v16i8, __VA_ARGS__)
 
+/* Description : Average of signed halfword elements -> (a + b) / 2
+   Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7
+                 Outputs - out0, out1, out2, out3
+                 Return Type - as per RTYPE
+   Details     : Each signed halfword element from 'in0' is added to each
+                 signed halfword element of 'in1' with full precision resulting
+                 one extra bit in result. The result is then divided by 2 and
+                 written to 'out0'
+*/
+#define AVE_SH4(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,  \
+                out0, out1, out2, out3) {                       \
+  out0 = (RTYPE)__msa_ave_s_h((v8i16)in0, (v8i16)in1);          \
+  out1 = (RTYPE)__msa_ave_s_h((v8i16)in2, (v8i16)in3);          \
+  out2 = (RTYPE)__msa_ave_s_h((v8i16)in4, (v8i16)in5);          \
+  out3 = (RTYPE)__msa_ave_s_h((v8i16)in6, (v8i16)in7);          \
+}
+#define AVE_SH4_SH(...) AVE_SH4(v8i16, __VA_ARGS__)
+
 /* Description : Addition of signed halfword elements and signed saturation
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
                  Return Type - as per RTYPE
    Details     : Signed halfword elements from 'in0' are added to signed
                  halfword elements of 'in1'. The result is then signed saturated
-                 between -32768 to +32767 (as per halfword data type)
-                 Similar for other pairs
+                 between halfword data type range
 */
 #define ADDS_SH2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
   out0 = (RTYPE)__msa_adds_s_h((v8i16)in0, (v8i16)in1);    \
@@ -1320,11 +1304,10 @@
 
 /* Description : Shift left all elements of vector (generic for all data types)
    Arguments   : Inputs  - in0, in1, in2, in3, shift
-                 Outputs - in0, in1, in2, in3 (in place)
+                 Outputs - in place operation
                  Return Type - as per input vector RTYPE
    Details     : Each element of vector 'in0' is left shifted by 'shift' and
-                 the result is in place written to 'in0'
-                 Similar for other pairs
+                 the result is written in-place.
 */
 #define SLLI_4V(in0, in1, in2, in3, shift) {  \
   in0 = in0 << shift;                         \
@@ -1336,12 +1319,10 @@
 /* Description : Arithmetic shift right all elements of vector
                  (generic for all data types)
    Arguments   : Inputs  - in0, in1, in2, in3, shift
-                 Outputs - in0, in1, in2, in3 (in place)
+                 Outputs - in place operation
                  Return Type - as per input vector RTYPE
    Details     : Each element of vector 'in0' is right shifted by 'shift' and
-                 the result is in place written to 'in0'
-                 Here, 'shift' is GP variable passed in
-                 Similar for other pairs
+                 the result is written in-place. 'shift' is a GP variable.
 */
 #define SRA_4V(in0, in1, in2, in3, shift) {  \
   in0 = in0 >> shift;                        \
@@ -1350,15 +1331,35 @@
   in3 = in3 >> shift;                        \
 }
 
-/* Description : Shift right arithmetic rounded (immediate)
-   Arguments   : Inputs  - in0, in1, in2, in3, shift
-                 Outputs - in0, in1, in2, in3 (in place)
+/* Description : Shift right arithmetic rounded words
+   Arguments   : Inputs  - in0, in1, shift
+                 Outputs - in place operation
                  Return Type - as per RTYPE
    Details     : Each element of vector 'in0' is shifted right arithmetic by
-                 value in 'shift'.
+                 number of bits respective element holds in vector 'shift'.
                  The last discarded bit is added to shifted value for rounding
-                 and the result is in place written to 'in0'
-                 Similar for other pairs
+                 and the result is written in-place.
+                 'shift' is a vector.
+*/
+#define SRAR_W2(RTYPE, in0, in1, shift) {               \
+  in0 = (RTYPE)__msa_srar_w((v4i32)in0, (v4i32)shift);  \
+  in1 = (RTYPE)__msa_srar_w((v4i32)in1, (v4i32)shift);  \
+}
+
+#define SRAR_W4(RTYPE, in0, in1, in2, in3, shift) {  \
+  SRAR_W2(RTYPE, in0, in1, shift)                    \
+  SRAR_W2(RTYPE, in2, in3, shift)                    \
+}
+#define SRAR_W4_SW(...) SRAR_W4(v4i32, __VA_ARGS__)
+
+/* Description : Shift right arithmetic rounded (immediate)
+   Arguments   : Inputs  - in0, in1, shift
+                 Outputs - in place operation
+                 Return Type - as per RTYPE
+   Details     : Each element of vector 'in0' is shifted right arithmetic by
+                 value in 'shift'. The last discarded bit is added to shifted
+                 value for rounding and the result is written in-place.
+                 'shift' is an immediate value.
 */
 #define SRARI_H2(RTYPE, in0, in1, shift) {        \
   in0 = (RTYPE)__msa_srari_h((v8i16)in0, shift);  \
@@ -1374,16 +1375,6 @@
 #define SRARI_H4_UH(...) SRARI_H4(v8u16, __VA_ARGS__)
 #define SRARI_H4_SH(...) SRARI_H4(v8i16, __VA_ARGS__)
 
-/* Description : Shift right arithmetic rounded (immediate)
-   Arguments   : Inputs  - in0, in1, shift
-                 Outputs - in0, in1     (in place)
-                 Return Type - as per RTYPE
-   Details     : Each element of vector 'in0' is shifted right arithmetic by
-                 value in 'shift'.
-                 The last discarded bit is added to shifted value for rounding
-                 and the result is in place written to 'in0'
-                 Similar for other pairs
-*/
 #define SRARI_W2(RTYPE, in0, in1, shift) {        \
   in0 = (RTYPE)__msa_srari_w((v4i32)in0, shift);  \
   in1 = (RTYPE)__msa_srari_w((v4i32)in1, shift);  \
@@ -1396,11 +1387,26 @@
 }
 #define SRARI_W4_SW(...) SRARI_W4(v4i32, __VA_ARGS__)
 
+/* Description : Logical shift right all elements of vector (immediate)
+   Arguments   : Inputs  - in0, in1, in2, in3, shift
+                 Outputs - out0, out1, out2, out3
+                 Return Type - as per RTYPE
+   Details     : Each element of vector 'in0' is right shifted by 'shift' and
+                 the result is written in-place. 'shift' is an immediate value.
+*/
+#define SRLI_H4(RTYPE, in0, in1, in2, in3, out0, out1, out2, out3, shift) {  \
+  out0 = (RTYPE)__msa_srli_h((v8i16)in0, shift);                             \
+  out1 = (RTYPE)__msa_srli_h((v8i16)in1, shift);                             \
+  out2 = (RTYPE)__msa_srli_h((v8i16)in2, shift);                             \
+  out3 = (RTYPE)__msa_srli_h((v8i16)in3, shift);                             \
+}
+#define SRLI_H4_SH(...) SRLI_H4(v8i16, __VA_ARGS__)
+
 /* Description : Addition of 2 pairs of vectors
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
-   Details     : Each element from 2 pairs vectors is added and 2 results are
-                 produced
+   Details     : Each element in 'in0' is added to 'in1' and result is written
+                 to 'out0'.
 */
 #define ADD2(in0, in1, in2, in3, out0, out1) {  \
   out0 = in0 + in1;                             \
@@ -1415,8 +1421,8 @@
 /* Description : Subtraction of 2 pairs of vectors
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
-   Details     : Each element from 2 pairs vectors is subtracted and 2 results
-                 are produced
+   Details     : Each element in 'in1' is subtracted from 'in0' and result is
+                 written to 'out0'.
 */
 #define SUB2(in0, in1, in2, in3, out0, out1) {  \
   out0 = in0 - in1;                             \
@@ -1431,8 +1437,8 @@
 }
 
 /* Description : Sign extend halfword elements from right half of the vector
-   Arguments   : Inputs  - in    (input halfword vector)
-                 Outputs - out   (sign extended word vectors)
+   Arguments   : Input  - in    (halfword vector)
+                 Output - out   (sign extended word vector)
                  Return Type - signed word
    Details     : Sign bit of halfword elements from input vector 'in' is
                  extracted and interleaved with same vector 'in0' to generate
@@ -1446,8 +1452,8 @@
 }
 
 /* Description : Zero extend unsigned byte elements to halfword elements
-   Arguments   : Inputs  - in           (1 input unsigned byte vector)
-                 Outputs - out0, out1   (unsigned 2 halfword vectors)
+   Arguments   : Input  - in           (unsigned byte vector)
+                 Outputs - out0, out1  (unsigned  halfword vectors)
                  Return Type - signed halfword
    Details     : Zero extended right half of vector is returned in 'out0'
                  Zero extended left half of vector is returned in 'out1'
@@ -1459,9 +1465,9 @@
 }
 
 /* Description : Sign extend halfword elements from input vector and return
-                 result in pair of vectors
-   Arguments   : Inputs  - in           (1 input halfword vector)
-                 Outputs - out0, out1   (sign extended 2 word vectors)
+                 the result in pair of vectors
+   Arguments   : Input  - in            (halfword vector)
+                 Outputs - out0, out1   (sign extended word vectors)
                  Return Type - signed word
    Details     : Sign bit of halfword elements from input vector 'in' is
                  extracted and interleaved right with same vector 'in0' to
@@ -1535,13 +1541,10 @@
   out15 = in0 - in15;                                                         \
 }
 
-/* Description : Transposes input 8x8 byte block
+/* Description : Transpose input 8x8 byte block
    Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7
-                           (input 8x8 byte block)
                  Outputs - out0, out1, out2, out3, out4, out5, out6, out7
-                           (output 8x8 byte block)
-                 Return Type - unsigned byte
-   Details     :
+                 Return Type - as per RTYPE
 */
 #define TRANSPOSE8x8_UB(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,     \
                         out0, out1, out2, out3, out4, out5, out6, out7) {  \
@@ -1559,12 +1562,11 @@
 }
 #define TRANSPOSE8x8_UB_UB(...) TRANSPOSE8x8_UB(v16u8, __VA_ARGS__)
 
-/* Description : Transposes 16x8 block into 8x16 with byte elements in vectors
+/* Description : Transpose 16x8 block into 8x16 with byte elements in vectors
    Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7,
                            in8, in9, in10, in11, in12, in13, in14, in15
                  Outputs - out0, out1, out2, out3, out4, out5, out6, out7
                  Return Type - unsigned byte
-   Details     :
 */
 #define TRANSPOSE16x8_UB_UB(in0, in1, in2, in3, in4, in5, in6, in7,            \
                             in8, in9, in10, in11, in12, in13, in14, in15,      \
@@ -1607,11 +1609,10 @@
   out7 = (v16u8)__msa_ilvod_w((v4i32)tmp3_m, (v4i32)tmp2_m);                   \
 }
 
-/* Description : Transposes 4x4 block with half word elements in vectors
+/* Description : Transpose 4x4 block with half word elements in vectors
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1, out2, out3
                  Return Type - signed halfword
-   Details     :
 */
 #define TRANSPOSE4x4_SH_SH(in0, in1, in2, in3, out0, out1, out2, out3) {  \
   v8i16 s0_m, s1_m;                                                       \
@@ -1622,11 +1623,10 @@
   out3 = (v8i16)__msa_ilvl_d((v2i64)out0, (v2i64)out2);                   \
 }
 
-/* Description : Transposes 4x8 block with half word elements in vectors
+/* Description : Transpose 4x8 block with half word elements in vectors
    Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7
                  Outputs - out0, out1, out2, out3, out4, out5, out6, out7
                  Return Type - signed halfword
-   Details     :
 */
 #define TRANSPOSE4X8_SH_SH(in0, in1, in2, in3, in4, in5, in6, in7,            \
                            out0, out1, out2, out3, out4, out5, out6, out7) {  \
@@ -1650,11 +1650,10 @@
   out7 = zero_m;                                                              \
 }
 
-/* Description : Transposes 8x4 block with half word elements in vectors
+/* Description : Transpose 8x4 block with half word elements in vectors
    Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7
                  Outputs - out0, out1, out2, out3, out4, out5, out6, out7
                  Return Type - signed halfword
-   Details     :
 */
 #define TRANSPOSE8X4_SH_SH(in0, in1, in2, in3, out0, out1, out2, out3) {  \
   v8i16 tmp0_m, tmp1_m, tmp2_m, tmp3_m;                                   \
@@ -1665,11 +1664,10 @@
   ILVL_W2_SH(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out1, out3);                 \
 }
 
-/* Description : Transposes 8x8 block with half word elements in vectors
+/* Description : Transpose 8x8 block with half word elements in vectors
    Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7
                  Outputs - out0, out1, out2, out3, out4, out5, out6, out7
-                 Return Type - signed halfword
-   Details     :
+                 Return Type - as per RTYPE
 */
 #define TRANSPOSE8x8_H(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,     \
                        out0, out1, out2, out3, out4, out5, out6, out7) {  \
@@ -1694,11 +1692,10 @@
 }
 #define TRANSPOSE8x8_SH_SH(...) TRANSPOSE8x8_H(v8i16, __VA_ARGS__)
 
-/* Description : Transposes 4x4 block with word elements in vectors
+/* Description : Transpose 4x4 block with word elements in vectors
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1, out2, out3
                  Return Type - signed word
-   Details     :
 */
 #define TRANSPOSE4x4_SW_SW(in0, in1, in2, in3, out0, out1, out2, out3) {  \
   v4i32 s0_m, s1_m, s2_m, s3_m;                                           \
@@ -1714,14 +1711,11 @@
 
 /* Description : Add block 4x4
    Arguments   : Inputs  - in0, in1, in2, in3, pdst, stride
-                 Outputs -
-                 Return Type - unsigned bytes
    Details     : Least significant 4 bytes from each input vector are added to
-                 the destination bytes, clipped between 0-255 and then stored.
+                 the destination bytes, clipped between 0-255 and stored.
 */
 #define ADDBLK_ST4x4_UB(in0, in1, in2, in3, pdst, stride) {     \
   uint32_t src0_m, src1_m, src2_m, src3_m;                      \
-  uint32_t out0_m, out1_m, out2_m, out3_m;                      \
   v8i16 inp0_m, inp1_m, res0_m, res1_m;                         \
   v16i8 dst0_m = { 0 };                                         \
   v16i8 dst1_m = { 0 };                                         \
@@ -1735,12 +1729,7 @@
   ADD2(res0_m, inp0_m, res1_m, inp1_m, res0_m, res1_m);         \
   CLIP_SH2_0_255(res0_m, res1_m);                               \
   PCKEV_B2_SB(res0_m, res0_m, res1_m, res1_m, dst0_m, dst1_m);  \
-                                                                \
-  out0_m = __msa_copy_u_w((v4i32)dst0_m, 0);                    \
-  out1_m = __msa_copy_u_w((v4i32)dst0_m, 1);                    \
-  out2_m = __msa_copy_u_w((v4i32)dst1_m, 0);                    \
-  out3_m = __msa_copy_u_w((v4i32)dst1_m, 1);                    \
-  SW4(out0_m, out1_m, out2_m, out3_m, pdst, stride);            \
+  ST4x4_UB(dst0_m, dst1_m, 0, 1, 0, 1, pdst, stride);           \
 }
 
 /* Description : Pack even elements of input vectors & xor with 128
