@@ -133,6 +133,11 @@ struct macroblockd_plane {
   ENTROPY_CONTEXT *left_context;
   int16_t seg_dequant[MAX_SEGMENTS][2];
 
+  // number of 4x4s in current block
+  uint16_t n4_w, n4_h;
+  // log2 of n4_w, n4_h
+  uint8_t n4_wl, n4_hl;
+
   // encoder
   const int16_t *dequant;
 };
