@@ -441,7 +441,7 @@ static void txfm_partition_update(TXFM_CONTEXT *above_ctx,
   }
 }
 
-static int max_tx_size_offset[TX_SIZES] = {0, 0, 2, 6};
+static int max_tx_size_offset[TX_SIZES] = {0, 0, 3, 9};
 
 static int txfm_partition_context(const TXFM_CONTEXT *above_ctx,
                                   const TXFM_CONTEXT *left_ctx,
@@ -450,7 +450,7 @@ static int txfm_partition_context(const TXFM_CONTEXT *above_ctx,
   int above = *above_ctx < tx_size;
   int left = *left_ctx < tx_size;
   return max_tx_size_offset[max_tx_size] +
-      2 * (max_tx_size - tx_size) + (above || left);
+      3 * (max_tx_size - tx_size) + (above + left);
 }
 
 #ifdef __cplusplus
