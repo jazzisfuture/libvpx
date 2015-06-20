@@ -50,6 +50,7 @@ typedef struct frame_contexts {
   vp9_prob comp_ref_prob[REF_CONTEXTS];
   struct tx_probs tx_probs;
   vp9_prob txfm_partition_prob[TXFM_PARTITION_CONTEXTS];
+  vp9_prob intra_predictor_prob[3];
   vp9_prob skip_probs[SKIP_CONTEXTS];
   nmv_context nmvc;
   int initialized;
@@ -72,9 +73,11 @@ typedef struct FRAME_COUNTS {
   struct tx_counts tx;
   unsigned int skip[SKIP_CONTEXTS][2];
   unsigned int txfm_partition[TXFM_PARTITION_CONTEXTS][2];
+  unsigned int intra_predictor[2][2];
   nmv_context_counts mv;
 } FRAME_COUNTS;
 
+extern const vp9_prob vp9_intra_mode_prob[INTRA_MODES];
 extern const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
 extern const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES]
                                         [INTRA_MODES - 1];

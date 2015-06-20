@@ -13,6 +13,14 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_seg_common.h"
 
+const vp9_prob vp9_intra_mode_prob[INTRA_MODES] = {
+    227, 223, 219, 213, 204, 191, 170, 127
+};
+
+const vp9_prob vp9_intra_predictor_prob[3] = {
+    170, 192, 170
+};
+
 const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
   {  // above = dc
     { 137,  30,  42, 148, 151, 207,  70,  52,  91 },  // left = dc
@@ -329,6 +337,7 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   vp9_copy(fc->single_ref_prob, default_single_ref_p);
   fc->tx_probs = default_tx_probs;
   vp9_copy(fc->txfm_partition_prob, default_txfm_partition_probs);
+  vp9_copy(fc->intra_predictor_prob, vp9_intra_predictor_prob);
   vp9_copy(fc->skip_probs, default_skip_probs);
   vp9_copy(fc->inter_mode_probs, default_inter_mode_probs);
 }
