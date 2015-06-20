@@ -44,6 +44,52 @@ static const struct vp9_token partition_encodings[PARTITION_TYPES] =
 static const struct vp9_token inter_mode_encodings[INTER_MODES] =
   {{2, 2}, {6, 3}, {0, 1}, {7, 3}};
 
+static void write_intra_mode_exp(vp9_writer *w, const MODE_INFO *mi,
+                                 const MODE_INFO *above_mi,
+                                 const MODE_INFO *left_mi, int block,
+                                 PREDICTION_MODE mode) {
+  const PREDICTION_MODE above = vp9_above_block_mode(mi, above_mi, block);
+  const PREDICTION_MODE left = vp9_left_block_mode(mi, left_mi, block);
+  PREDICTION_MODE i;
+  int count = 0;
+
+  if (above == left) {
+    vp9_write(w, mode == above, 170);
+    if (mode == above)
+      return;
+
+    for (i = DC_PRED; i < INTRA_MODES - 1; ++i) {
+      if (i == above)
+        continue;
+      vp9_write(w, i == mode, vp9_intra_mode_prob[count]);
+      ++count;
+      if (i == mode)
+        return;
+      if (count == INTRA_MODES - 2)
+        return;
+    }
+  } else {
+    // above and left reference modes differ
+    vp9_write(w, mode == above, 192);
+    if (mode == above)
+      return;
+    vp9_write(w, mode == left, 170);
+    if (mode == left)
+      return;
+
+    for (i = DC_PRED; i < INTRA_MODES - 1; ++i) {
+      if (i == above || i == left)
+        continue;
+      vp9_write(w, i == mode, vp9_intra_mode_prob[count + 1]);
+      ++count;
+      if (i == mode)
+        return;
+      if (count == INTRA_MODES - 3)
+        return;
+    }
+  }
+}
+
 static void write_intra_mode(vp9_writer *w, PREDICTION_MODE mode,
                              const vp9_prob *probs) {
   vp9_write_token(w, vp9_intra_mode_tree, probs, &intra_mode_encodings[mode]);
@@ -449,7 +495,8 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     write_selected_tx_size(cm, xd, w);
 
   if (bsize >= BLOCK_8X8) {
-    write_intra_mode(w, mbmi->mode, get_y_mode_probs(mi, above_mi, left_mi, 0));
+    write_intra_mode_exp(w, mi, above_mi, left_mi, 0, mbmi->mode);
+//    write_intra_mode(w, mbmi->mode, get_y_mode_probs(mi, above_mi, left_mi, 0));
   } else {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
     const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
@@ -458,8 +505,10 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     for (idy = 0; idy < 2; idy += num_4x4_h) {
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         const int block = idy * 2 + idx;
-        write_intra_mode(w, mi->bmi[block].as_mode,
-                         get_y_mode_probs(mi, above_mi, left_mi, block));
+        write_intra_mode_exp(w, mi, above_mi, left_mi, block,
+                             mi->bmi[block].as_mode);
+//        write_intra_mode(w, mi->bmi[block].as_mode,
+//                         get_y_mode_probs(mi, above_mi, left_mi, block));
       }
     }
   }

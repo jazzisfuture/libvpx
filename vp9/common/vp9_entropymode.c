@@ -13,6 +13,11 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_seg_common.h"
 
+const vp9_prob vp9_intra_mode_prob[INTRA_MODES] = {
+    227, 223, 219, 213, 204, 191, 170, 127
+    //    28, 32, 36, 42, 51, 64, 85, 128
+};
+
 const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
   {  // above = dc
     { 137,  30,  42, 148, 151, 207,  70,  52,  91 },  // left = dc

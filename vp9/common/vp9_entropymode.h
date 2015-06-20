@@ -75,6 +75,7 @@ typedef struct FRAME_COUNTS {
   nmv_context_counts mv;
 } FRAME_COUNTS;
 
+extern const vp9_prob vp9_intra_mode_prob[INTRA_MODES];
 extern const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
 extern const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES]
                                         [INTRA_MODES - 1];
@@ -99,7 +100,7 @@ void tx_counts_to_branch_counts_16x16(const unsigned int *tx_count_16x16p,
 void tx_counts_to_branch_counts_8x8(const unsigned int *tx_count_8x8p,
                                     unsigned int (*ct_8x8p)[2]);
 
-static INLINE const vp9_prob *get_y_mode_probs(const MODE_INFO *mi,
+static const vp9_prob *get_y_mode_probs(const MODE_INFO *mi,
                                                const MODE_INFO *above_mi,
                                                const MODE_INFO *left_mi,
                                                int block) {
