@@ -41,6 +41,8 @@ struct CYCLIC_REFRESH {
   signed char *map;
   // Map of the last q a block was coded at.
   uint8_t *last_coded_q_map;
+  // Count on how many consecutive times a block uses ZER0MV_LAST for encoding.
+  uint8_t *consec_zero_last;
   // Thresholds applied to the projected rate/distortion of the coding block,
   // when deciding whether block should be refreshed.
   int64_t thresh_rate_sb;
@@ -58,6 +60,7 @@ struct CYCLIC_REFRESH {
 
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   size_t last_coded_q_map_size;
+  size_t consec_zero_last_size;
   CYCLIC_REFRESH *const cr = vpx_calloc(1, sizeof(*cr));
   if (cr == NULL)
     return NULL;
@@ -76,12 +79,20 @@ CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   assert(MAXQ <= 255);
   memset(cr->last_coded_q_map, MAXQ, last_coded_q_map_size);
 
+  consec_zero_last_size = mi_rows * mi_cols * sizeof(*cr->consec_zero_last);
+  cr->consec_zero_last = vpx_malloc(consec_zero_last_size);
+  if (cr->consec_zero_last == NULL) {
+    vpx_free(cr);
+    return NULL;
+  }
+  memset(cr->consec_zero_last, 0, consec_zero_last_size);
   return cr;
 }
 
 void vp9_cyclic_refresh_free(CYCLIC_REFRESH *cr) {
   vpx_free(cr->map);
   vpx_free(cr->last_coded_q_map);
+  vpx_free(cr->consec_zero_last);
   vpx_free(cr);
 }
 
@@ -270,6 +281,15 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
       if (!is_inter_block(mbmi) || !skip)
         cr->last_coded_q_map[map_offset] = clamp(
             cm->base_qindex + cr->qindex_delta[mbmi->segment_id], 0, MAXQ);
+      // Update the consecutive zero_last count.
+      if (is_inter_block(mbmi) &&
+          mbmi->mv[0].as_int == 0 &&
+          mbmi->ref_frame[0] == LAST_FRAME) {
+        if (cr->consec_zero_last[map_offset] < 255)
+          cr->consec_zero_last[map_offset]++;
+      } else {
+        cr->consec_zero_last[map_offset] = 0;
+      }
     }
 }
 
@@ -406,7 +426,10 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     int qindex_thresh =
         cpi->oxcf.content == VP9E_CONTENT_SCREEN
             ? vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex)
-            : 0;
+            : cm->base_qindex >> 1;
+    int consec_zero_last_thresh =
+        cpi->oxcf.content == VP9E_CONTENT_SCREEN ? 0 :
+            3 * (100 / cr->percent_refresh);
     assert(mi_row >= 0 && mi_row < cm->mi_rows);
     assert(mi_col >= 0 && mi_col < cm->mi_cols);
     bl_index = mi_row * cm->mi_cols + mi_col;
@@ -422,7 +445,8 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         // for possible boost/refresh (segment 1). The segment id may get
         // reset to 0 later if block gets coded anything other than ZEROMV.
         if (cr->map[bl_index2] == 0) {
-          if (cr->last_coded_q_map[bl_index2] > qindex_thresh)
+          if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
+              cr->consec_zero_last[bl_index2] < consec_zero_last_thresh)
             sum_map++;
         } else if (cr->map[bl_index2] < 0) {
           cr->map[bl_index2]++;
