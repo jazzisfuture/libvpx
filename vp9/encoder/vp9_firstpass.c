@@ -126,6 +126,7 @@ static void output_stats(FIRSTPASS_STATS *stats,
             stats->pcnt_neutral,
             stats->intra_skip_pct,
             stats->inactive_zone_rows,
+            stats->inactive_zone_cols,
             stats->MVr,
             stats->mvr_abs,
             stats->MVc,
@@ -164,6 +165,7 @@ static void zero_stats(FIRSTPASS_STATS *section) {
   section->pcnt_neutral = 0.0;
   section->intra_skip_pct = 0.0;
   section->inactive_zone_rows = 0.0;
+  section->inactive_zone_cols = 0.0;
   section->MVr = 0.0;
   section->mvr_abs     = 0.0;
   section->MVc        = 0.0;
@@ -191,6 +193,7 @@ static void accumulate_stats(FIRSTPASS_STATS *section,
   section->pcnt_neutral += frame->pcnt_neutral;
   section->intra_skip_pct += frame->intra_skip_pct;
   section->inactive_zone_rows += frame->inactive_zone_rows;
+  section->inactive_zone_cols += frame->inactive_zone_cols;
   section->MVr += frame->MVr;
   section->mvr_abs     += frame->mvr_abs;
   section->MVc        += frame->MVc;
@@ -216,6 +219,7 @@ static void subtract_stats(FIRSTPASS_STATS *section,
   section->pcnt_neutral -= frame->pcnt_neutral;
   section->intra_skip_pct -= frame->intra_skip_pct;
   section->inactive_zone_rows -= frame->inactive_zone_rows;
+  section->inactive_zone_cols -= frame->inactive_zone_cols;
   section->MVr -= frame->MVr;
   section->mvr_abs     -= frame->mvr_abs;
   section->MVc        -= frame->MVc;
