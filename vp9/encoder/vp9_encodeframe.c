@@ -170,12 +170,14 @@ static BLOCK_SIZE get_rd_var_based_fixed_partition(VP9_COMP *cpi, MACROBLOCK *x,
 // Lighter version of set_offsets that only sets the mode info
 // pointers.
 static INLINE void set_mode_info_offsets(VP9_COMMON *const cm,
+                                         MACROBLOCK *const x,
                                          MACROBLOCKD *const xd,
                                          int mi_row,
                                          int mi_col) {
   const int idx_str = xd->mi_stride * mi_row + mi_col;
   xd->mi = cm->mi_grid_visible + idx_str;
   xd->mi[0] = cm->mi + idx_str;
+  x->mbmi_ext = x->mbmi_ext_base + (mi_row * cm->mi_cols + mi_col);
 }
 
 static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
@@ -190,7 +192,8 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
 
   set_skip_context(xd, mi_row, mi_col);
 
-  set_mode_info_offsets(cm, xd, mi_row, mi_col);
+  set_mode_info_offsets(cm, x, xd, mi_row, mi_col);
+
 
   mbmi = &xd->mi[0]->mbmi;
 
@@ -250,7 +253,7 @@ static void set_block_size(VP9_COMP * const cpi,
                            int mi_row, int mi_col,
                            BLOCK_SIZE bsize) {
   if (cpi->common.mi_cols > mi_col && cpi->common.mi_rows > mi_row) {
-    set_mode_info_offsets(&cpi->common, xd, mi_row, mi_col);
+    set_mode_info_offsets(&cpi->common, &cpi->td.mb, xd, mi_row, mi_col);
     xd->mi[0]->mbmi.sb_type = bsize;
   }
 }
@@ -985,6 +988,7 @@ static void update_state(VP9_COMP *cpi, ThreadData *td,
   assert(mi->mbmi.sb_type == bsize);
 
   *mi_addr = *mi;
+  *x->mbmi_ext = ctx->mbmi_ext;
 
   // If segmentation in use
   if (seg->enabled) {
@@ -1286,6 +1290,7 @@ static void update_stats(VP9_COMMON *cm, ThreadData *td) {
   const MACROBLOCKD *const xd = &x->e_mbd;
   const MODE_INFO *const mi = xd->mi[0];
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
+  const MB_MODE_INFO_EXT *const mbmi_ext = x->mbmi_ext;
   const BLOCK_SIZE bsize = mbmi->sb_type;
 
   if (!frame_is_intra_only(cm)) {
@@ -1318,7 +1323,7 @@ static void update_stats(VP9_COMMON *cm, ThreadData *td) {
     }
     if (inter_block &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      const int mode_ctx = mbmi->mode_context[mbmi->ref_frame[0]];
+      const int mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
       if (bsize >= BLOCK_8X8) {
         const PREDICTION_MODE mode = mbmi->mode;
         ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];
@@ -1679,6 +1684,7 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
   const int y_mis = MIN(bh, cm->mi_rows - mi_row);
 
   *(xd->mi[0]) = ctx->mic;
+  *(x->mbmi_ext) = ctx->mbmi_ext;
 
   if (seg->enabled && cpi->oxcf.aq_mode) {
     // For in frame complexity AQ or variance AQ, copy segment_id from
@@ -2957,27 +2963,27 @@ static void fill_mode_info_sb(VP9_COMMON *cm, MACROBLOCK *x,
 
   switch (partition) {
     case PARTITION_NONE:
-      set_mode_info_offsets(cm, xd, mi_row, mi_col);
+      set_mode_info_offsets(cm, x, xd, mi_row, mi_col);
       *(xd->mi[0]) = pc_tree->none.mic;
       duplicate_mode_info_in_sb(cm, xd, mi_row, mi_col, bsize);
       break;
     case PARTITION_VERT:
-      set_mode_info_offsets(cm, xd, mi_row, mi_col);
+      set_mode_info_offsets(cm, x, xd, mi_row, mi_col);
       *(xd->mi[0]) = pc_tree->vertical[0].mic;
       duplicate_mode_info_in_sb(cm, xd, mi_row, mi_col, subsize);
 
       if (mi_col + hbs < cm->mi_cols) {
-        set_mode_info_offsets(cm, xd, mi_row, mi_col + hbs);
+        set_mode_info_offsets(cm, x, xd, mi_row, mi_col + hbs);
         *(xd->mi[0]) = pc_tree->vertical[1].mic;
         duplicate_mode_info_in_sb(cm, xd, mi_row, mi_col + hbs, subsize);
       }
       break;
     case PARTITION_HORZ:
-      set_mode_info_offsets(cm, xd, mi_row, mi_col);
+      set_mode_info_offsets(cm, x, xd, mi_row, mi_col);
       *(xd->mi[0]) = pc_tree->horizontal[0].mic;
       duplicate_mode_info_in_sb(cm, xd, mi_row, mi_col, subsize);
       if (mi_row + hbs < cm->mi_rows) {
-        set_mode_info_offsets(cm, xd, mi_row + hbs, mi_col);
+        set_mode_info_offsets(cm, x, xd, mi_row + hbs, mi_col);
         *(xd->mi[0]) = pc_tree->horizontal[1].mic;
         duplicate_mode_info_in_sb(cm, xd, mi_row + hbs, mi_col, subsize);
       }
@@ -3079,6 +3085,7 @@ static void nonrd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     nonrd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col,
                         &this_rdc, bsize, ctx);
     ctx->mic.mbmi = xd->mi[0]->mbmi;
+    ctx->mbmi_ext = *x->mbmi_ext;
     ctx->skip_txfm[0] = x->skip_txfm[0];
     ctx->skip = x->skip;
 
