@@ -41,6 +41,13 @@ static BLOCK_SIZE set_partition_min_limit(VP9_COMMON *const cm) {
   }
 }
 
+// Do we have an internal image edge (e.g. formatting bars).
+static INLINE int internal_image_edge(VP9_COMP *cpi) {
+  return (cpi->oxcf.pass == 2) &&
+         ((cpi->twopass.this_frame_stats.inactive_zone_rows > 0) ||
+          (cpi->twopass.this_frame_stats.inactive_zone_cols > 0));
+}
+
 static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
                                                        SPEED_FEATURES *sf,
                                                        int speed) {
@@ -90,7 +97,8 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
   // If this is a two pass clip that fits the criteria for animated or
   // graphics content then reset disable_split_mask for speeds 1-4.
   if ((speed >= 1) && (cpi->oxcf.pass == 2) &&
-      (cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION)) {
+      ((cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ||
+       (internal_image_edge(cpi)))) {
     sf->disable_split_mask = DISABLE_COMPOUND_SPLIT;
   }
 
