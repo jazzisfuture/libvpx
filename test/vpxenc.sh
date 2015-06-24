@@ -290,6 +290,32 @@ vpxenc_vp9_webm_rt_multithread_tiled() {
   fi
 }
 
+vpxenc_vp9_webm_rt_multithread_frameparallel() {
+  if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
+     [ "$(webm_io_available)" = "yes" ]; then
+    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_rt_mt_fp.webm"
+    local readonly thread_min=2
+    local readonly thread_max=4
+    local readonly num_threads="$(seq ${thread_min} ${thread_max})"
+
+    for threads in ${num_threads}; do
+      vpxenc $(yuv_input_hantro_collage) \
+        $(vpxenc_rt_params vp9) \
+        --limit="${TEST_FRAMES}" \
+        --threads=${threads} \
+        --frame-parallel=1 \
+        --output="${output}"
+    done
+
+    if [ ! -e "${output}" ]; then
+      elog "Output file does not exist."
+      return 1
+    fi
+
+    rm "${output}"
+  fi
+}
+
 vpxenc_vp9_webm_2pass() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
@@ -390,6 +416,7 @@ vpxenc_tests="vpxenc_vp8_ivf
               vpxenc_vp9_webm
               vpxenc_vp9_webm_rt
               vpxenc_vp9_webm_rt_multithread_tiled
+              vpxenc_vp9_webm_rt_multithread_frameparallel
               vpxenc_vp9_webm_2pass
               vpxenc_vp9_ivf_lossless
               vpxenc_vp9_ivf_minq0_maxq0
