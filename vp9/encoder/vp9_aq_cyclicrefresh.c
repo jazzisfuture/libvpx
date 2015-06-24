@@ -130,7 +130,7 @@ static int candidate_refresh_aq(const CYCLIC_REFRESH *cr,
             rate < cr->thresh_rate_sb &&
             is_inter_block(mbmi) &&
             mbmi->mv[0].as_int == 0 &&
-            cr->rate_boost_fac > 1.0)
+            (int)(cr->rate_boost_fac * 10) > 10)
     // More aggressive delta-q for bigger blocks with zero motion.
     return CR_SEGMENT_ID_BOOST2;
   else
