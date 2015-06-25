@@ -595,9 +595,11 @@ static void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
 
     // Wait until reference block is ready. Pad 7 more pixels as last 7
     // pixels of each superblock row can be changed by next superblock row.
+    // TODO(hkuang): Pading 8 pixels now to avoid unit test failure in extreme
+    // case.
     if (pbi->frame_parallel_decode)
       vp9_frameworker_wait(pbi->frame_worker_owner, ref_frame_buf,
-                           MAX(0, (y1 + 7)) << (plane == 0 ? 0 : 1));
+                           MAX(0, (y1 + 8)) << (plane == 0 ? 0 : 1));
 
     // Skip border extension if block is inside the frame.
     if (x0 < 0 || x0 > frame_width - 1 || x1 < 0 || x1 > frame_width - 1 ||
