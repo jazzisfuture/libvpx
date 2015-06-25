@@ -120,7 +120,12 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
   sf->allow_skip_recode = 1;
 
   if (speed >= 1) {
-    sf->use_square_partition_only = !frame_is_intra_only(cm);
+    if ((cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ||
+        internal_image_edge(cpi)) {
+      sf->use_square_partition_only = frame_is_boosted(cpi);
+    } else {
+      sf->use_square_partition_only = !frame_is_intra_only(cm);
+    }
     sf->less_rectangular_check  = 1;
 
     sf->use_rd_breakout = 1;
@@ -160,6 +165,7 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
   }
 
   if (speed >= 3) {
+    sf->use_square_partition_only = !frame_is_intra_only(cm);
     sf->tx_size_search_method = frame_is_intra_only(cm) ? USE_FULL_RD
                                                         : USE_LARGESTALL;
     sf->mv.subpel_search_method = SUBPEL_TREE_PRUNED;
