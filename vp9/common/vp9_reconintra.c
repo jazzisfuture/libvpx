@@ -852,6 +852,129 @@ static void build_intra_predictors_highbd(const MACROBLOCKD *xd,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_BDINTRA
+static void bdintra_h_pred(TX_SIZE tx_size,
+                           uint8_t *dst, ptrdiff_t stride,
+                           const uint8_t *left, const uint8_t *right) {
+  //pred[H_PRED][tx_size](dst, stride, 0, left);
+
+  int bs = 4 << tx_size;
+  int r;
+
+#if 0
+  for (r = 0; r < bs; r++) {
+    vpx_memset(dst, left[r], hbs);
+    vpx_memset(dst + hbs, right[r], hbs);
+    dst += stride;
+  }
+#endif
+
+#if 1
+  for (r = 0; r < bs; r++) {
+    int val = (left[r] + right[r] + 1) >> 1;
+    vpx_memset(dst, val, bs);
+    dst += stride;
+  }
+#endif
+}
+
+static void bdintra_v_pred(TX_SIZE tx_size,
+                           uint8_t *dst, ptrdiff_t stride,
+                           const uint8_t *above, const uint8_t *below) {
+  //pred[V_PRED][tx_size](dst, stride, above, 0);
+
+  int bs = 4 << tx_size;
+  int i;
+  uint8_t val[64];
+
+#if 0
+  for (r = 0; r < bs / 2; r++) {
+    vpx_memcpy(dst, above, bs);
+    dst += stride;
+  }
+
+  for (r = bs / 2; r < bs; r++) {
+    vpx_memcpy(dst, below, bs);
+    dst += stride;
+  }
+#endif
+
+#if 1
+  for (i = 0; i < bs; i++)
+    val[i] = (above[i] + below[i] + 1) >> 1;
+
+  for (i = 0; i < bs; i++) {
+    vpx_memcpy(dst, val, bs);
+    dst += stride;
+  }
+#endif
+}
+
+static void bdintra_dc_pred(TX_SIZE tx_size,
+                           uint8_t *dst, ptrdiff_t stride,
+                           int left_available, int up_available,
+                           int right_available, int below_available,
+                           const uint8_t *above, const uint8_t *left,
+                           const uint8_t *below, const uint8_t *right) {
+  //dc_pred[left_available][up_available][tx_size](dst, stride, above, left);
+
+  int i, r, expected_dc, sum = 0;
+  int bs = 4 << tx_size;
+  int count = (left_available + up_available +
+      right_available + below_available) * bs;
+
+
+
+    for (i = 0; i < bs; i++) {
+      sum += up_available * above[i];
+      sum += left_available * left[i];
+      sum += right_available * right[i];
+      sum += below_available * below[i];
+    }
+
+    expected_dc = (sum + (count >> 1)) / count;
+
+    for (r = 0; r < bs; r++) {
+      vpx_memset(dst, expected_dc, bs);
+      dst += stride;
+    }
+}
+
+static void bdintra_pred(PREDICTION_MODE mode, TX_SIZE tx_size,
+                         uint8_t *dst, ptrdiff_t stride,
+                         int left_available, int up_available,
+                         int right_available, int below_available,
+                         const uint8_t *above, const uint8_t *left,
+                         const uint8_t *below, const uint8_t *right) {
+  assert(mode == DC_PRED || mode == H_PRED || mode == V_PRED);
+  (void) right_available;
+  (void) below_available;
+  (void) below;
+  (void) right;
+  switch (mode) {
+    case DC_PRED:
+      bdintra_dc_pred(tx_size, dst, stride, left_available, up_available,
+                      right_available, below_available,
+                      above, left, below, right);
+      break;
+    case H_PRED:
+      if (right_available)
+        bdintra_h_pred(tx_size, dst, stride, left, right);
+      else
+        pred[H_PRED][tx_size](dst, stride, above, left);
+      break;
+    case V_PRED:
+      if (below_available)
+        bdintra_v_pred(tx_size, dst, stride, above, below);
+      else
+        pred[V_PRED][tx_size](dst, stride, above, left);
+      break;
+    default:
+      break;
+  }
+}
+#endif  // CONFIG_BDINTRA
+
 static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
                                    int ref_stride, uint8_t *dst, int dst_stride,
                                    PREDICTION_MODE mode, TX_SIZE tx_size,
@@ -971,6 +1094,49 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
     vpx_memset(above_row, 127, bs * 2);
     above_row[-1] = 127;
   }
+
+#if CONFIG_BDINTRA
+  if (((xd->use_bdi[0] && (mode == V_PRED || mode == DC_PRED)) ||
+      (xd->use_bdi[1] && (mode == H_PRED || mode == DC_PRED)))
+      && up_available && left_available && plane == 0) {
+    int i, has_below_row = 0, has_right_col = 0;
+    const int8_t *below_pixels_available = xd->below_pixels_available + x;
+    const uint8_t *below_ref = ref + bs * ref_stride;
+    const int8_t *right_pixels_available = xd->right_pixels_available + y;
+    const uint8_t *right_ref = ref + bs;
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, right_col, 64);
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, below_row, 64);
+
+    memcpy(below_row, above_row, 64 * sizeof(below_row[0]));
+    memcpy(right_col, left_col, 64 * sizeof(right_col[0]));
+
+    if (xd->use_bdi[0]) {
+      for (i = 0 ; i < bs; i++) {
+        if (below_pixels_available[i]) {
+          has_below_row = 1;
+          below_row[i] = below_ref[i];
+        }
+      }
+    }
+
+    if (xd->use_bdi[1]) {
+      for (i = 0 ; i < bs; i++) {
+        if (right_pixels_available[i]) {
+          has_right_col = 1;
+          right_col[i] = right_ref[i * ref_stride];
+        }
+      }
+    }
+
+    if ((has_below_row && (mode == V_PRED || mode == DC_PRED)) ||
+        (has_right_col && (mode == H_PRED || mode == DC_PRED))) {
+      bdintra_pred(mode, tx_size, dst, dst_stride, left_available, up_available,
+                   has_right_col, has_below_row, const_above_row, left_col,
+                   below_row, right_col);
+      return;
+    }
+  }
+#endif  // CONFIG_BDINTRA
 
   // predict
   if (mode == DC_PRED) {

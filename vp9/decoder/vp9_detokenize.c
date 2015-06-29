@@ -460,6 +460,45 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                            so->neighbors, r);
   else
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_BDINTRA
+    if (frame_is_intra_only(cm) || cm->bdintra_round == 0) {
+#if 0
+      if (plane == 0 && 0) {
+        int bs = 4 << tx_size;
+        printf("plane %d, block %d, bsize %d %d, from %3d to %3d \n",
+             plane, block, plane_bsize, 4 << tx_size,
+             BLOCK_OFFSET(pd->dqcoeff, block) - xd->dqcoeff[plane],
+             BLOCK_OFFSET(pd->dqcoeff, block) - xd->dqcoeff[plane] + bs * bs);
+        //scanf("%d", &bs);
+      }
+#endif
+      eob = decode_coefs(cm, xd, pd->plane_type,
+                             BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
+      #if CONFIG_TX_SKIP
+                             xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
+                                 pd->dequant_pxd : pd->dequant,
+      #else
+                             pd->dequant,
+      #endif  // CONFIG_TX_SKIP
+      #if CONFIG_NEW_QUANT
+      #if CONFIG_TX_SKIP
+                             xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
+                                 pd->dequant_val_nuq_pxd : pd->dequant_val_nuq,
+      #else
+                             pd->dequant_val_nuq,
+      #endif  // CONFIG_TX_SKIP
+      #endif  // CONFIG_NEW_QUANT
+                             ctx, so->scan,
+                             so->neighbors, r);
+      if (!frame_is_intra_only(cm)) {
+        cm->eob_history[cm->eob_index] = eob;
+        cm->eob_index++;
+      }
+    } else {
+      eob = cm->eob_history[cm->eob_index];
+      cm->eob_index++;
+    }
+#else
     eob = decode_coefs(cm, xd, pd->plane_type,
                        BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
 #if CONFIG_TX_SKIP
@@ -478,10 +517,14 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
 #endif  // CONFIG_NEW_QUANT
                        ctx, so->scan,
                        so->neighbors, r);
+#endif  // CONFIG_BDINTRA
 
 #if CONFIG_TX64X64
   if (plane > 0) assert(tx_size != TX_64X64);
 #endif  // CONFIG_TX64X64
+#if CONFIG_BDINTRA
+  if (frame_is_intra_only(cm) || cm->bdintra_round == 0)
+#endif  // CONFIG_BDINTRA
   vp9_set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, x, y);
   return eob;
 }

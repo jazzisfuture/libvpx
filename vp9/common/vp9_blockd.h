@@ -260,6 +260,12 @@ typedef struct {
   uint8_t palette_literal_colors[PALETTE_MAX_SIZE];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_PALETTE
+#if CONFIG_BDINTRA
+  int64_t best_rd[2];
+  int best_rate_y;
+  int mode_cost_y;
+  int64_t best_dist_y;
+#endif  // CONFIG_BDINTRA
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
@@ -361,6 +367,11 @@ typedef struct macroblockd {
 
   int up_available;
   int left_available;
+#if CONFIG_BDINTRA
+  int use_bdi[2];
+  int8_t right_pixels_available[64];
+  int8_t below_pixels_available[64];
+#endif  // CONFIG_BDINTRA
 
   /* Distance of MB away from frame edges */
   int mb_to_left_edge;
@@ -401,6 +412,9 @@ typedef struct macroblockd {
 #if CONFIG_GLOBAL_MOTION
   Global_Motion_Params (*global_motion)[MAX_GLOBAL_MOTION_MODELS];
 #endif  // CONFIG_GLOBAL_MOTION
+#if 0
+  int caller;
+#endif
 } MACROBLOCKD;
 
 static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,

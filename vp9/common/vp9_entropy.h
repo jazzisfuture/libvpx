@@ -128,6 +128,10 @@ extern const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS];
 #define COEF_BANDS 6
 #endif  // CONFIG_TX_SKIP
 
+#if 1
+#define MISMATCH_DEBUG 0
+#endif
+
 /* Inside dimension is measure of nearby complexity, that reflects the energy
    of nearby coefficients are nonzero.  For the first coefficient (DC, unless
    block type is 0), we look at the (already encoded) blocks above and to the
