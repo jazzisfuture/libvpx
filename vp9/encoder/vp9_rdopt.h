@@ -85,4 +85,9 @@ void txfm_rd_in_plane(MACROBLOCK *x,
 }  // extern "C"
 #endif
 
+#if CONFIG_BDINTRA
+void repick_bdintra_mode(VP9_COMP *cpi, BLOCK_SIZE bsize,
+                         PICK_MODE_CONTEXT *ctx, int mi_row, int mi_col);
+#endif  // CONFIG_BDINTRA
+
 #endif  // VP9_ENCODER_VP9_RDOPT_H_

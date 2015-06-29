@@ -852,6 +852,151 @@ static void build_intra_predictors_highbd(const MACROBLOCKD *xd,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_BDINTRA
+// Bi-directional horizontal intra prediction using weighted average of
+// left and right boundaries.
+static void bdintra_h_pred(TX_SIZE tx_size,
+                           uint8_t *dst, ptrdiff_t stride,
+                           const uint8_t *left, const uint8_t *right) {
+  int bs = 4 << tx_size;
+  int i, j;
+  double val;
+
+  for (i = 0; i < bs; i++) {
+    for (j = 0; j < bs; j++) {
+      val = (right[i] - left[i]);
+      val = val / (bs + 1);
+      dst[i * stride + j] = clip_pixel(round(val * (j + 1) + left[i]));
+    }
+  }
+}
+
+// Bi-directional vertical intra prediction using weighted average of
+// above and below boundaries.
+static void bdintra_v_pred(TX_SIZE tx_size,
+                           uint8_t *dst, ptrdiff_t stride,
+                           const uint8_t *above, const uint8_t *below) {
+  int bs = 4 << tx_size;
+  int i, j;
+  double val;
+
+  for (i = 0; i < bs; i++) {
+    for (j = 0; j < bs; j++) {
+      val = (below[j] - above[j]);
+      val = val / (bs + 1);
+      dst[i * stride + j] = clip_pixel(round(val * (i + 1) + above[j]));
+    }
+  }
+}
+
+// Bi-directional DC intra prediction using average of 4 boundaries.
+static void bdintra_dc_pred(TX_SIZE tx_size,
+                           uint8_t *dst, ptrdiff_t stride,
+                           int left_available, int up_available,
+                           int right_available, int below_available,
+                           const uint8_t *above, const uint8_t *left,
+                           const uint8_t *below, const uint8_t *right) {
+  int i, r, expected_dc, sum = 0;
+  int count, bs = 4 << tx_size;
+  double val;
+
+  (void)left_available;
+  (void)up_available;
+  (void)right_available;
+  (void)below_available;
+
+  count = 4 * bs;
+  for (i = 0; i < bs; i++) {
+    sum += above[i];
+    sum += left[i];
+    sum += right[i];
+    sum += below[i];
+  }
+  val = sum / count;
+  expected_dc = clip_pixel(round(val));
+  for (r = 0; r < bs; r++) {
+    vpx_memset(dst, expected_dc, bs);
+    dst += stride;
+  }
+}
+
+// Bi-directional TM intra prediction, currently not used.
+static void bdintra_tm_predictor(TX_SIZE tx_size, uint8_t *dst,
+                                 ptrdiff_t stride,
+                                 const uint8_t *above, const uint8_t *left,
+                                 const uint8_t *below, const uint8_t *right) {
+  int r, c;
+  int ytop_left = above[-1];
+  int bs = 4 << tx_size;
+  int val;
+
+#if 0
+  for (r = 0; r < bs; r++) {
+    for (c = 0; c < bs; c++) {
+      val = (left[r] + right[r] + above[c] + below[c] + 1) >> 1;
+      dst[c] = clip_pixel(val - ytop_left);
+    }
+    dst += stride;
+  }
+#endif
+
+#if 1
+  {
+    double gradient_h, gradient_v;
+    (void)val;
+
+    for (r = 0; r < bs; r++) {
+      for (c = 0; c < bs; c++) {
+        gradient_h = 1.0 * (right[r] - left[r]) / (bs + 1);
+        gradient_v = 1.0 * (below[c] - above[c]) / (bs + 1);
+        val = round(gradient_h * (c + 1) + gradient_v * (r + 1));
+        dst[c] = clip_pixel(val + ytop_left);
+      }
+      dst += stride;
+    }
+  }
+#endif
+}
+
+static void bdintra_pred(PREDICTION_MODE mode, TX_SIZE tx_size,
+                         uint8_t *dst, ptrdiff_t stride,
+                         int left_available, int up_available,
+                         int right_available, int below_available,
+                         const uint8_t *above, const uint8_t *left,
+                         const uint8_t *below, const uint8_t *right) {
+  assert(mode == DC_PRED || mode == H_PRED ||
+         mode == V_PRED || mode == TM_PRED);
+  (void) right_available;
+  (void) below_available;
+  (void) below;
+  (void) right;
+  switch (mode) {
+    case DC_PRED:
+      bdintra_dc_pred(tx_size, dst, stride, left_available, up_available,
+                      right_available, below_available,
+                      above, left, below, right);
+      break;
+    case H_PRED:
+      if (right_available && 1)
+        bdintra_h_pred(tx_size, dst, stride, left, right);
+      else
+        pred[H_PRED][tx_size](dst, stride, above, left);
+      break;
+    case V_PRED:
+      if (below_available && 1)
+        bdintra_v_pred(tx_size, dst, stride, above, below);
+      else
+        pred[V_PRED][tx_size](dst, stride, above, left);
+      break;
+    case TM_PRED:
+      bdintra_tm_predictor(tx_size, dst, stride, above, left, below, right);
+      break;
+    default:
+      break;
+  }
+}
+#endif  // CONFIG_BDINTRA
+
 static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
                                    int ref_stride, uint8_t *dst, int dst_stride,
                                    PREDICTION_MODE mode, TX_SIZE tx_size,
@@ -971,6 +1116,55 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
     vpx_memset(above_row, 127, bs * 2);
     above_row[-1] = 127;
   }
+
+#if CONFIG_BDINTRA
+  if (xd->allow_bdintra &&
+      (mode == V_PRED || mode == H_PRED || mode == DC_PRED)
+      && (xd->use_bdi[0] || xd->use_bdi[1])
+      && up_available && left_available && plane == 0) {
+    int i, has_below_row = 0, has_right_col = 0;
+    const int8_t *below_pixels_available = xd->below_pixels_available + x;
+    const uint8_t *below_ref = ref + bs * ref_stride;
+    const int8_t *right_pixels_available = xd->right_pixels_available + y;
+    const uint8_t *right_ref = ref + bs;
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, right_col, 64);
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, below_row, 64);
+
+    memcpy(below_row, above_row, 64 * sizeof(below_row[0]));
+    memcpy(right_col, left_col, 64 * sizeof(right_col[0]));
+
+    if (xd->use_bdi[0]) {
+      for (i = 0 ; i < bs; i++) {
+        // If below boundary is availale, copy that pixel to the below_row ref.
+        if (below_pixels_available[i]) {
+          has_below_row = 1;
+          below_row[i] = below_ref[i];
+        }
+      }
+    }
+
+    if (xd->use_bdi[1]) {
+      for (i = 0 ; i < bs; i++) {
+        // If right boundary is availale, copy that pixel to the right_col ref.
+        if (right_pixels_available[i]) {
+          has_right_col = 1;
+          right_col[i] = right_ref[i * ref_stride];
+        }
+      }
+    }
+
+    if (((has_below_row && mode == V_PRED) ||
+        (has_right_col && mode == H_PRED) ||
+        (has_below_row && has_right_col && mode == DC_PRED) ||
+        (has_below_row && has_right_col && mode == TM_PRED))) {
+      bdintra_pred(mode, tx_size, dst, dst_stride, left_available, up_available,
+                   has_right_col, has_below_row, const_above_row, left_col,
+                   below_row, right_col);
+
+      return;
+    }
+  }
+#endif  // CONFIG_BDINTRA
 
   // predict
   if (mode == DC_PRED) {

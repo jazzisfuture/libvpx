@@ -574,6 +574,10 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_BDINTRA
+    // Do not reset decoeff buffer, becase we are going to use them in the
+    // final round of decoding.
+#else
     if (eob == 1) {
       vpx_memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
     } else {
@@ -584,6 +588,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
       else
         vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
     }
+#endif  // CONFIG_BDINTRA
   }
 }
 
@@ -621,6 +626,24 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
   dst = &pd->dst.buf[4 * y * pd->dst.stride + 4 * x];
 
+#if CONFIG_BDINTRA
+  xd->use_bdi[0] = 0;
+  xd->use_bdi[1] = 0;
+
+  // If the height of block is equal to transform size, we may be able to
+  // use the bottom boundary.
+  if (num_4x4_blocks_high_lookup[plane_bsize] == (1 << tx_size))
+    xd->use_bdi[0] = 1;
+
+  // If the width of block is equal to transform size, we may be able to
+  // use the right boundary.
+  if (num_4x4_blocks_wide_lookup[plane_bsize] == (1 << tx_size))
+    xd->use_bdi[1] = 1;
+
+  // For inter frame, only do intra prediction in the
+  // final round (cm->bdintra_round == 1).
+  if (frame_is_intra_only(cm) || cm->bdintra_round == 1)
+#endif  // CONFIG_BDINTRA
   vp9_predict_intra_block(xd, block >> (tx_size << 1),
                           b_width_log2_lookup[plane_bsize], tx_size, mode,
 #if CONFIG_FILTERINTRA
@@ -628,10 +651,16 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
 #endif
                           dst, pd->dst.stride, dst, pd->dst.stride,
                           x, y, plane);
+
   if (!mi->mbmi.skip) {
     const int eob = vp9_decode_block_tokens(cm, xd, plane, block,
                                             plane_bsize, x, y, tx_size,
                                             args->r);
+#if CONFIG_BDINTRA
+    // For inter frame, only do intra reconstruction in the
+    // final round (cm->bdintra_round == 1).
+    if (frame_is_intra_only(cm) || cm->bdintra_round == 1)
+#endif  // CONFIG_BDINTRA
     inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
                             eob);
 #if CONFIG_TX_SKIP
@@ -685,9 +714,15 @@ static void reconstruct_inter_block(int plane, int block,
   MACROBLOCKD *const xd = args->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   int x, y, eob;
+
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
   eob = vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize, x, y,
                                 tx_size, args->r);
+#if CONFIG_BDINTRA
+  // For inter frame, only do inter reconstruction in the
+  // first round (cm->bdintra_round == 0).
+  if (frame_is_intra_only(cm) || cm->bdintra_round == 0)
+#endif  // CONFIG_BDINTRA
   inverse_transform_block(xd, plane, block, tx_size,
                           &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
                           pd->dst.stride, eob);
@@ -708,6 +743,9 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   xd->mi[0].src_mi = &xd->mi[0];  // Point to self.
   xd->mi[0].mbmi.sb_type = bsize;
 
+#if CONFIG_BDINTRA
+  if (frame_is_intra_only(cm) || cm->bdintra_round == 0 || 0)
+#endif  // CONFIG_BDINTRA
   for (y = 0; y < y_mis; ++y)
     for (x = !y; x < x_mis; ++x) {
       xd->mi[y * cm->mi_stride + x].src_mi = &xd->mi[0];
@@ -1594,7 +1632,7 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   const int less8x8 = bsize < BLOCK_8X8;
 #if CONFIG_TX_SKIP
   int q_idx;
-#endif
+#endif  // CONFIG_TX_SKIP
 #if CONFIG_SUPERTX
   MB_MODE_INFO *mbmi;
   if (supertx_enabled) {
@@ -1611,6 +1649,13 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                      mi_row, mi_col, r);
 #else
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
+
+#if CONFIG_BDINTRA
+  BLOCK_SIZE real_bsize = bsize;
+  int i;
+
+  if (frame_is_intra_only(cm) || cm->bdintra_round == 0)
+#endif  // CONFIG_BDINTRA
   vp9_read_mode_info(cm, xd, tile,
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
@@ -1619,11 +1664,12 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
                      mi_row, mi_col, r);
 #endif  // CONFIG_SUPERTX
+
 #if CONFIG_TX_SKIP
   q_idx = vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex);
   mbmi->tx_skip_shift = q_idx > TX_SKIP_SHIFT_THRESH ?
                         TX_SKIP_SHIFT_HQ : TX_SKIP_SHIFT_LQ;
-#endif
+#endif  // CONFIG_TX_SKIP
 
 #if CONFIG_SUPERTX
   if (!supertx_enabled) {
@@ -1632,6 +1678,9 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     bsize = BLOCK_8X8;
 
   if (mbmi->skip) {
+#if CONFIG_BDINTRA
+    if (frame_is_intra_only(cm) || cm->bdintra_round == 0)
+#endif  // CONFIG_BDINTRA
     reset_skip_context(xd, bsize);
   } else {
     if (cm->seg.enabled) {
@@ -1646,10 +1695,57 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif  // CONFIG_INTRABC
       ) {
     struct intra_args arg = { cm, xd, r };
+#if CONFIG_BDINTRA
+    memset(xd->right_pixels_available, 0,
+           64 * sizeof(xd -> right_pixels_available[0]));
+    memset(xd->below_pixels_available, 0,
+           64 * sizeof(xd -> below_pixels_available[0]));
+  if (cm->bdintra_round == 1) {
+    if (real_bsize >= BLOCK_8X8) {
+      int bw = num_8x8_blocks_wide_lookup[bsize];
+      int bh = num_8x8_blocks_high_lookup[bsize];
+
+      if (mi_row + bh < cm->mi_rows
+          && mi_row - cm->sb_start_mi_row + bh < MI_BLOCK_SIZE
+          && mi_col + bw < cm->mi_cols) {
+        int i = 0;
+        MODE_INFO *bottom_mi = xd->mi + bh * cm->mi_stride;
+
+        while (i < bw * 8) {
+          // If below block is inter, then below_pixels_available is 1.
+          if (is_inter_block(&bottom_mi->src_mi->mbmi))
+            memset(xd->below_pixels_available + i, 1,
+                   8 * sizeof(xd -> below_pixels_available[0]));
+          bottom_mi += 1;
+          i += 8;
+        }
+      }
+
+      if (mi_row + bh < cm->mi_rows
+          && mi_col + bw < cm->mi_cols
+          && mi_col - cm->sb_start_mi_col + bw < MI_BLOCK_SIZE) {
+        int i = 0;
+        MODE_INFO *right_mi = xd->mi + bw;
+
+        while (i < bh * 8) {
+          // If right block is inter, then right_pixels_available is 1.
+          if (is_inter_block(&right_mi->src_mi->mbmi))
+            memset(xd->right_pixels_available + i, 1,
+                   8 * sizeof(xd -> right_pixels_available[0]));
+          right_mi += cm->mi_stride;
+          i += 8;
+        }
+      }
+    }
+  }
+#endif  // CONFIG_BDINTRA
     vp9_foreach_transformed_block(xd, bsize,
                                   predict_and_reconstruct_intra_block, &arg);
   } else {
     // Prediction
+#if CONFIG_BDINTRA
+    if (frame_is_intra_only(cm) || cm->bdintra_round == 0)
+#endif  // CONFIG_BDINTRA
     vp9_dec_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
 
     // Reconstruction
@@ -1660,15 +1756,27 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
       vp9_foreach_transformed_block(xd, bsize, reconstruct_inter_block, &arg);
 #if CONFIG_BITSTREAM_FIXES
 #else
+#if CONFIG_BDINTRA
+    if (frame_is_intra_only(cm) || cm->bdintra_round == 1)
+#endif  // CONFIG_BDINTRA
       if (!less8x8 && eobtotal == 0)
         mbmi->skip = 1;  // skip loopfilter
 #endif
     }
   }
+
 #if CONFIG_SUPERTX
   }
 #endif
 
+#if CONFIG_BDINTRA
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    xd->plane[i].dqcoeff += 16 * num_4x4_blocks_wide_lookup[bsize] *
+        num_4x4_blocks_high_lookup[bsize];
+  }
+
+  if (frame_is_intra_only(cm) || cm->bdintra_round == 0)
+#endif  // CONFIG_BDINTRA
   xd->corrupted |= vp9_reader_has_error(r);
 }
 
@@ -1739,12 +1847,28 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
+#if CONFIG_BDINTRA
+  if (!frame_is_intra_only(cm)) {
+    if (cm->bdintra_round == 0) {
+      partition = read_partition(cm, xd, hbs, mi_row, mi_col, bsize, r);
+      cm->partition_history[cm->partition_index] = partition;
+      cm->partition_index++;
+    } else {
+      partition = cm->partition_history[cm->partition_index];
+      cm->partition_index++;
+    }
+  } else {
+    partition = read_partition(cm, xd, hbs, mi_row, mi_col, bsize, r);
+  }
+#else
   partition = read_partition(cm, xd, hbs, mi_row, mi_col, bsize, r);
+#endif  // CONFIG_BDINTRA
   subsize = get_subsize(bsize, partition);
   uv_subsize = ss_size_lookup[subsize][cm->subsampling_x][cm->subsampling_y];
   if (subsize >= BLOCK_8X8 && uv_subsize == BLOCK_INVALID)
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Invalid block size.");
+
 #if CONFIG_SUPERTX
   if (cm->frame_type != KEY_FRAME &&
       partition != PARTITION_NONE &&
@@ -2754,12 +2878,57 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
           vp9_zero(tile_data->xd.left_seg_context);
           for (mi_col = tile.mi_col_start; mi_col < tile.mi_col_end;
                mi_col += MI_BLOCK_SIZE) {
+#if CONFIG_BDINTRA
+            vp9_zero(tile_data->xd.dqcoeff);
+            cm->bdintra_round = 0;
+            cm->partition_index = 0;
+            cm->eob_index = 0;
+            cm->sb_start_mi_row = mi_row;
+            cm->sb_start_mi_col = mi_col;
+
+            {
+              int i;
+              MACROBLOCKD *xd = &tile_data->xd;
+              for (i = 0; i < MAX_MB_PLANE; ++i) {
+                xd->plane[i].dqcoeff = xd->dqcoeff[i];
+              }
+              vp9_zero(xd->dqcoeff);
+            }
             decode_partition(tile_data->cm, &tile_data->xd, &tile,
 #if CONFIG_SUPERTX
                              0,
 #endif
                              mi_row, mi_col,
                              &tile_data->bit_reader, BLOCK_64X64);
+
+            if (!frame_is_intra_only(cm)) {
+              cm->bdintra_round = 1;
+              cm->partition_index = 0;
+              cm->eob_index = 0;
+              {
+                int i;
+                MACROBLOCKD *xd = &tile_data->xd;
+                for (i = 0; i < MAX_MB_PLANE; ++i) {
+                  xd->plane[i].dqcoeff = xd->dqcoeff[i];
+                }
+
+                xd->allow_bdintra = cm->base_qindex <= BDINTRA_Q_THRESH;
+              }
+              decode_partition(tile_data->cm, &tile_data->xd, &tile,
+#if CONFIG_SUPERTX
+                               0,
+#endif
+                               mi_row, mi_col,
+                               &tile_data->bit_reader, BLOCK_64X64);
+            }
+#else
+            decode_partition(tile_data->cm, &tile_data->xd, &tile,
+#if CONFIG_SUPERTX
+                             0,
+#endif
+                             mi_row, mi_col,
+                             &tile_data->bit_reader, BLOCK_64X64);
+#endif  // CONFIG_BDINTRA
           }
           pbi->mb.corrupted |= tile_data->xd.corrupted;
         }
@@ -3541,6 +3710,18 @@ void vp9_decode_frame(VP9Decoder *pbi,
 #if CONFIG_GLOBAL_MOTION
   xd->global_motion = cm->global_motion;
 #endif  // CONFIG_GLOBAL_MOTION
+
+#if MISMATCH_DEBUG
+  {
+    FILE *fp;
+
+    fp = fopen("./debug/dec", "a");
+
+    fprintf(fp, "\n start frame %d\n", cm->current_video_frame);
+
+    fclose(fp);
+  }
+#endif
 
   if (!first_partition_size) {
     // showing a frame directly
