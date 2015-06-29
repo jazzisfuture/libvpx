@@ -361,6 +361,12 @@ typedef struct macroblockd {
 
   int up_available;
   int left_available;
+#if CONFIG_BDINTRA
+  int allow_bdintra;
+  int use_bdi[2];
+  int8_t right_pixels_available[64];
+  int8_t below_pixels_available[64];
+#endif  // CONFIG_BDINTRA
 
   /* Distance of MB away from frame edges */
   int mb_to_left_edge;

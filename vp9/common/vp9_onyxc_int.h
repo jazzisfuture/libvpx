@@ -242,7 +242,16 @@ typedef struct VP9Common {
 #if CONFIG_GLOBAL_MOTION
   int num_global_motion[MAX_REF_FRAMES];
   Global_Motion_Params global_motion[MAX_REF_FRAMES][MAX_GLOBAL_MOTION_MODELS];
-#endif
+#endif  // CONFIG_GLOBAL_MOTION
+#if CONFIG_BDINTRA
+  int sb_start_mi_row;
+  int sb_start_mi_col;
+  int bdintra_round;
+  int partition_index;
+  int eob_index;
+  int eob_history[1024];
+  PARTITION_TYPE partition_history[1024];
+#endif  // CONFIG_BDINTRA
 } VP9_COMMON;
 
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {

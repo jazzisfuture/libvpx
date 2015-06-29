@@ -2289,7 +2289,12 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
+#if CONFIG_BDINTRA
+    const int ctx = combine_entropy_contexts(x->above_is_intra ? 0 : *a,
+        x->left_is_intra ? 0 : *l);
+#else
     const int ctx = combine_entropy_contexts(*a, *l);
+#endif  // CONFIG_BDINTRA
     *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
   } else {
     *a = *l = p->eobs[block] > 0;
@@ -2775,6 +2780,20 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   dst = &pd->dst.buf[4 * (j * dst_stride + i)];
   src = &p->src.buf[4 * (j * src_stride + i)];
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+
+#if CONFIG_BDINTRA
+  // To-Do
+  xd->use_bdi[0] = 0;
+  xd->use_bdi[1] = 0;
+
+  if (num_4x4_blocks_high_lookup[plane_bsize] == (1 << tx_size))
+  //if ((j + (1 << tx_size)) == num_4x4_blocks_high_lookup[plane_bsize])
+    xd->use_bdi[0] = 1;
+
+  if (num_4x4_blocks_wide_lookup[plane_bsize] == (1 << tx_size))
+  //if ((i + (1 << tx_size)) == num_4x4_blocks_wide_lookup[plane_bsize])
+    xd->use_bdi[1] = 1;
+#endif  // CONFIG_BDINTRA
 
 #if CONFIG_FILTERINTRA
   if (mbmi->sb_type < BLOCK_8X8 && plane == 0)
