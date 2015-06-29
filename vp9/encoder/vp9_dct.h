@@ -17,6 +17,12 @@
 extern "C" {
 #endif
 
+#if CONFIG_BDINTRA
+void vp9_fdst4x4(const int16_t *input, tran_low_t *output, int stride);
+void vp9_fdst8x8(const int16_t *input, tran_low_t *output, int stride);
+void vp9_fdst16x16(const int16_t *input, tran_low_t *output, int stride);
+#endif  // CONFIG_BDINTRA
+
 void vp9_highbd_fdct4x4_c(const int16_t *input, tran_low_t *output, int stride);
 void vp9_highbd_fdct8x8_c(const int16_t *input, tran_low_t *output, int stride);
 void vp9_highbd_fdct16x16_c(const int16_t *input, tran_low_t *output,

@@ -2289,7 +2289,14 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
+#if CONFIG_BDINTRA
+    // ctx is set to 0 if the neighbor is intra. This is to avoid
+    // encoder/decoder mismatch
+    const int ctx = combine_entropy_contexts(x->above_is_intra ? 0 : *a,
+        x->left_is_intra ? 0 : *l);
+#else
     const int ctx = combine_entropy_contexts(*a, *l);
+#endif  // CONFIG_BDINTRA
     *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
   } else {
     *a = *l = p->eobs[block] > 0;
@@ -2771,10 +2778,29 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 #if CONFIG_NEW_QUANT
   const uint8_t* band = get_band_translate(tx_size);
 #endif  // CONFIG_NEW_QUANT
+
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * (j * dst_stride + i)];
   src = &p->src.buf[4 * (j * src_stride + i)];
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+
+#if CONFIG_BDINTRA
+  // To-Do
+  xd->use_bdi[0] = 0;
+  xd->use_bdi[1] = 0;
+
+  if (xd->allow_bdintra && xd->bdintra_pass == 1) {
+    // If the height of block is equal to transform size, we may be able to
+    // use the bottom boundary.
+    if (num_4x4_blocks_high_lookup[plane_bsize] == (1 << tx_size) + j)
+      xd->use_bdi[0] = 1;
+
+    // If the width of block is equal to transform size, we may be able to
+    // use the right boundary.
+    if (num_4x4_blocks_wide_lookup[plane_bsize] == (1 << tx_size) + i)
+      xd->use_bdi[1] = 1;
+  }
+#endif  // CONFIG_BDINTRA
 
 #if CONFIG_FILTERINTRA
   if (mbmi->sb_type < BLOCK_8X8 && plane == 0)
@@ -3442,10 +3468,19 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                               x->skip_encode ? src : dst,
                               x->skip_encode ? src_stride : dst_stride,
                               dst, dst_stride, i, j, plane);
+#if CONFIG_BDINTRA1
+      if (xd->force_dct)
+        tx_type = DCT_DCT;
+#endif  // CONFIG_BDINTRA
       if (!x->skip_recode) {
         vp9_subtract_block(16, 16, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
-        vp9_fht16x16(src_diff, coeff, diff_stride, tx_type);
+#if CONFIG_BDINTRA
+        if (xd->force_dct)
+          vp9_fdst16x16(src_diff, coeff, diff_stride);
+        else
+#endif  // CONFIG_BDINTRA
+          vp9_fht16x16(src_diff, coeff, diff_stride, tx_type);
 #if CONFIG_NEW_QUANT
         if (x->quant_fp)
           vp9_quantize_fp_nuq(coeff, 256, x->skip_block,
@@ -3469,7 +3504,12 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 #endif  // CONFIG_NEW_QUANT
       }
       if (!x->skip_encode && *eob)
-        vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob);
+#if CONFIG_BDINTRA
+        if (xd->force_dct)
+          vp9_idst16x16_add(dqcoeff, dst, dst_stride);
+        else
+#endif  // CONFIG_BDINTRA
+          vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_8X8:
       tx_type = get_tx_type(pd->plane_type, xd);
@@ -3482,10 +3522,19 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                               x->skip_encode ? src : dst,
                               x->skip_encode ? src_stride : dst_stride,
                               dst, dst_stride, i, j, plane);
+#if CONFIG_BDINTRA1
+      if (xd->force_dct)
+        tx_type = DCT_DCT;
+#endif  // CONFIG_BDINTRA
       if (!x->skip_recode) {
         vp9_subtract_block(8, 8, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
-        vp9_fht8x8(src_diff, coeff, diff_stride, tx_type);
+#if CONFIG_BDINTRA
+        if (xd->force_dct)
+          vp9_fdst8x8(src_diff, coeff, diff_stride);
+        else
+#endif  // CONFIG_BDINTRA
+          vp9_fht8x8(src_diff, coeff, diff_stride, tx_type);
 #if CONFIG_NEW_QUANT
         if (x->quant_fp)
           vp9_quantize_fp_nuq(coeff, 64, x->skip_block,
@@ -3509,7 +3558,12 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 #endif  // CONFIG_NEW_QUANT
       }
       if (!x->skip_encode && *eob)
-        vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob);
+#if CONFIG_BDINTRA
+        if (xd->force_dct)
+          vp9_idst8x8_add(dqcoeff, dst, dst_stride);
+        else
+#endif  // CONFIG_BDINTRA
+          vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_4X4:
       tx_type = get_tx_type_4x4(pd->plane_type, xd, block);
@@ -3522,14 +3576,22 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                               x->skip_encode ? src : dst,
                               x->skip_encode ? src_stride : dst_stride,
                               dst, dst_stride, i, j, plane);
-
+#if CONFIG_BDINTRA1
+      if (xd->force_dct)
+        tx_type = DCT_DCT;
+#endif  // CONFIG_BDINTRA
       if (!x->skip_recode) {
         vp9_subtract_block(4, 4, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
-        if (tx_type != DCT_DCT)
-          vp9_fht4x4(src_diff, coeff, diff_stride, tx_type);
+#if CONFIG_BDINTRA
+        if (xd->force_dct)
+          vp9_fdst4x4(src_diff, coeff, diff_stride);
         else
-          x->fwd_txm4x4(src_diff, coeff, diff_stride);
+#endif  // CONFIG_BDINTRA
+          if (tx_type != DCT_DCT)
+            vp9_fht4x4(src_diff, coeff, diff_stride, tx_type);
+          else
+            x->fwd_txm4x4(src_diff, coeff, diff_stride);
 #if CONFIG_NEW_QUANT
         if (x->quant_fp)
           vp9_quantize_fp_nuq(coeff, 16, x->skip_block,
@@ -3554,19 +3616,25 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       }
 
       if (!x->skip_encode && *eob) {
-        if (tx_type == DCT_DCT)
-          // this is like vp9_short_idct4x4 but has a special case around eob<=1
-          // which is significant (not just an optimization) for the lossless
-          // case.
-          x->itxm_add(dqcoeff, dst, dst_stride, *eob);
+#if CONFIG_BDINTRA
+        if (xd->force_dct)
+          vp9_idst4x4_add(dqcoeff, dst, dst_stride);
         else
-          vp9_iht4x4_16_add(dqcoeff, dst, dst_stride, tx_type);
+#endif  // CONFIG_BDINTRA
+          if (tx_type == DCT_DCT)
+            // this is like vp9_short_idct4x4 but has a special case around eob<=1
+            // which is significant (not just an optimization) for the lossless
+            // case.
+            x->itxm_add(dqcoeff, dst, dst_stride, *eob);
+          else
+            vp9_iht4x4_16_add(dqcoeff, dst, dst_stride, tx_type);
       }
       break;
     default:
       assert(0);
       break;
   }
+
   if (*eob)
     *(args->skip) = 0;
 }

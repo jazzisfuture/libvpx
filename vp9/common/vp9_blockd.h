@@ -361,6 +361,24 @@ typedef struct macroblockd {
 
   int up_available;
   int left_available;
+#if CONFIG_BDINTRA
+  int allow_bdintra;
+  // Indicates which round the encode/decoder is at. Could be either 0 or 1
+  int bdintra_pass;
+  int use_bdi[2];
+  int force_dct;
+  int8_t right_pixels_available[64];
+  int8_t below_pixels_available[64];
+
+  int sb_start_mi_row;
+  int sb_start_mi_col;
+  // Decoder reads eob and partition info. in the 0-th round, and store these
+  // in the buffer to use them in the 1-th round.
+  int partition_index;
+  int eob_index;
+  int eob_history[1024];
+  PARTITION_TYPE partition_history[1024];
+#endif  // CONFIG_BDINTRA
 
   /* Distance of MB away from frame edges */
   int mb_to_left_edge;

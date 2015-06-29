@@ -852,12 +852,163 @@ static void build_intra_predictors_highbd(const MACROBLOCKD *xd,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
-                                   int ref_stride, uint8_t *dst, int dst_stride,
-                                   PREDICTION_MODE mode, TX_SIZE tx_size,
-                                   int up_available, int left_available,
-                                   int right_available, int x, int y,
-                                   int plane) {
+#if CONFIG_BDINTRA
+// Bi-directional horizontal intra prediction using weighted average of
+// left and right boundaries.
+static void bdintra_h_pred(int bs, uint8_t *dst, ptrdiff_t stride,
+                           const uint8_t *above, const uint8_t *left,
+                           const uint8_t *below, const uint8_t *right) {
+  int i, j;
+  double val;
+
+  (void)above;
+  (void)below;
+
+  for (i = 0; i < bs; i++) {
+    val = 1.0 * (right[i] - left[i]) / (bs + 1);
+    for (j = 0; j < bs; j++) {
+      dst[i * stride + j] = clip_pixel(round(val * (j + 1) + left[i]));
+    }
+  }
+}
+
+// Bi-directional vertical intra prediction using weighted average of
+// above and below boundaries.
+static void bdintra_v_pred(int bs, uint8_t *dst, ptrdiff_t stride,
+                           const uint8_t *above, const uint8_t *left,
+                           const uint8_t *below, const uint8_t *right) {
+  int i, j;
+  double val;
+
+  (void)left;
+  (void)right;
+
+  for (j = 0; j < bs; j++) {
+    val = 1.0 * (below[j] - above[j]) / (bs + 1);
+    for (i = 0; i < bs; i++) {
+      dst[i * stride + j] = clip_pixel(round(val * (i + 1) + above[j]));
+    }
+  }
+}
+
+static void bdintra_45_pred(int bs, uint8_t *dst, ptrdiff_t stride,
+                           const uint8_t *above, const uint8_t *left,
+                           const uint8_t *below, const uint8_t *right) {
+  int r, c;
+  double val;
+
+  dst[bs - 1] = ROUND_POWER_OF_TWO(above[bs - 1] + above[bs] * 2 + right[0], 2);
+
+  for (r = 1; r < bs; r++) {
+    dst[r * stride + bs - 1 - r] = dst[bs - 1];
+  }
+
+  for (c = 0; c < bs - 1; c++) {
+    val = 1.0 * (left[c + 1] - above[c + 1]) / (c + 2);
+    for (r = 0; r < c + 1; r++) {
+      dst[r * stride + c - r] =
+          clip_pixel(round(val * (r + 1) + above[c + 1]));
+    }
+  }
+
+  for (r = 1; r < bs; r++) {
+    val = 1.0 * (below[r - 1] - right[r - 1]) / (bs  + 1 - r);
+    for (c = bs - 1; c >= r; c--) {
+      dst[(r + bs - 1 - c) * stride + c] =
+          clip_pixel(round(val * (bs - c) + right[r - 1]));
+    }
+  }
+}
+
+static void bdintra_135_pred(int bs, uint8_t *dst, ptrdiff_t stride,
+                             const uint8_t *above, const uint8_t *left,
+                             const uint8_t *below, const uint8_t *right) {
+  int r, c;
+  double val;
+
+  dst[0] = ROUND_POWER_OF_TWO(left[0] + above[-1] * 2 + above[0], 2);
+
+  for (r = 1; r < bs; r++) {
+    dst[r * stride + r] = dst[0];
+    val = 1.0 * (below[bs - r] - left[r - 1]) / (bs + 1 - r);
+    for (c = 0; c < bs - r; c++) {
+      dst[(r + c) * stride + c] =
+          clip_pixel(round(val * (c + 1) + left[r - 1]));
+    }
+  }
+
+  for (c = 1; c < bs; c++) {
+    val = 1.0 * (right[bs - c] - above[c - 1]) / (bs + 1 - c);
+    for (r = 0; r < bs - c; r++) {
+      dst[r * stride + c + r] =
+          clip_pixel(round(val * (r + 1) + above[c - 1]));
+    }
+  }
+}
+
+static void bdintra_bilinear_pred(int bs, uint8_t *dst, ptrdiff_t stride,
+                                  const uint8_t *above, const uint8_t *left,
+                                  const uint8_t *below, const uint8_t *right) {
+  int r, c;
+  double val;
+  double gradient_h[64], gradient_v[64];
+
+  for (r = 0; r < bs; r++) {
+    gradient_h[r] = 1.0 * (right[r] - left[r]) / (bs + 1);
+    gradient_v[r] = 1.0 * (below[r] - above[r]) / (bs + 1);
+  }
+
+  for (r = 0; r < bs; r++) {
+    for (c = 0; c < bs; c++) {
+      val = (gradient_h[r] * (c + 1) + left[r] +
+          gradient_v[c] * (r + 1) + above[c]) / 2;
+      dst[r * stride + c] = clip_pixel(round(val));
+    }
+  }
+}
+
+static void bdintra_pred(PREDICTION_MODE mode, TX_SIZE tx_size,
+                         uint8_t *dst, ptrdiff_t stride,
+                         int left_available, int up_available,
+                         int right_available, int below_available,
+                         const uint8_t *above, const uint8_t *left,
+                         const uint8_t *below, const uint8_t *right) {
+  (void) right_available;
+  (void) below_available;
+  (void) left_available;
+  (void) up_available;
+
+  switch (mode) {
+    case H_PRED:
+      bdintra_h_pred(4 << tx_size, dst, stride, above, left, below, right);
+      break;
+    case V_PRED:
+      bdintra_v_pred(4 << tx_size, dst, stride, above, left, below, right);
+      break;
+    case D45_PRED:
+      bdintra_45_pred(4 << tx_size, dst, stride, above, left, below, right);
+      break;
+    case D135_PRED:
+      bdintra_135_pred(4 << tx_size, dst, stride, above, left, below, right);
+      break;
+    default:
+      break;
+  }
+}
+#endif  // CONFIG_BDINTRA
+
+static void build_intra_predictors(
+#if CONFIG_BDINTRA
+    MACROBLOCKD *xd,
+#else
+    const MACROBLOCKD *xd,
+#endif  // CONFIG_BDINTRA
+    const uint8_t *ref,
+    int ref_stride, uint8_t *dst, int dst_stride,
+    PREDICTION_MODE mode, TX_SIZE tx_size,
+    int up_available, int left_available,
+    int right_available, int x, int y,
+    int plane) {
   int i;
   DECLARE_ALIGNED_ARRAY(16, uint8_t, left_col, 64);
 #if CONFIG_TX64X64
@@ -971,6 +1122,69 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
     vpx_memset(above_row, 127, bs * 2);
     above_row[-1] = 127;
   }
+
+#if CONFIG_BDINTRA
+  xd->force_dct = 0;
+  if (xd->allow_bdintra && xd->bdintra_pass == 1 &&
+      (mode == V_PRED || mode == H_PRED || mode == D135_PRED ||
+          mode == D45_PRED) && (xd->use_bdi[0] || xd->use_bdi[1]) &&
+          up_available && left_available
+      && plane == 0) {
+    int i, has_below_row = 0, has_right_col = 0, step;
+    int below_row_complete = 1, right_col_complete = 1;
+    const int8_t *below_pixels_available =
+        xd->below_pixels_available + (x << pd->subsampling_x);
+    const uint8_t *below_ref = ref + bs * ref_stride;
+    const int8_t *right_pixels_available =
+        xd->right_pixels_available + (y << pd->subsampling_y);
+    const uint8_t *right_ref = ref + bs;
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, right_col, 64);
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, below_row, 64);
+
+    memcpy(below_row, above_row, 64 * sizeof(below_row[0]));
+    memcpy(right_col, left_col, 64 * sizeof(right_col[0]));
+
+    step = 1 << pd->subsampling_x;
+    if (xd->use_bdi[0]) {
+      for (i = 0 ; i < bs; i++) {
+        // If below boundary is availale, copy that pixel to the below_row ref.
+        if (below_pixels_available[i * step]) {
+          has_below_row = 1;
+          below_row[i] = below_ref[i];
+        } else {
+          below_row_complete = 0;
+        }
+      }
+    } else {
+      below_row_complete = 0;
+    }
+
+    step = 1 << pd->subsampling_y;
+    if (xd->use_bdi[1]) {
+      for (i = 0 ; i < bs; i++) {
+        // If right boundary is availale, copy that pixel to the right_col ref.
+        if (right_pixels_available[i * step]) {
+          has_right_col = 1;
+          right_col[i] = right_ref[i * ref_stride];
+        } else {
+          right_col_complete = 0;
+        }
+      }
+    } else {
+      right_col_complete = 0;
+    }
+
+    if ((has_below_row && mode == V_PRED) || (has_right_col && mode == H_PRED)
+        || (right_col_complete && below_row_complete && mode == D45_PRED)
+        || (right_col_complete && below_row_complete && mode == D135_PRED)) {
+      xd->force_dct = 1;
+      bdintra_pred(mode, tx_size, dst, dst_stride, left_available, up_available,
+                   has_right_col, has_below_row, const_above_row, left_col,
+                   below_row, right_col);
+      return;
+    }
+  }
+#endif  // CONFIG_BDINTRA
 
   // predict
   if (mode == DC_PRED) {

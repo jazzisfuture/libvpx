@@ -460,6 +460,35 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                            so->neighbors, r);
   else
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_BDINTRA
+    if (frame_is_intra_only(cm) || xd->bdintra_pass == 0) {
+      eob = decode_coefs(cm, xd, pd->plane_type,
+                             BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
+      #if CONFIG_TX_SKIP
+                             xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
+                                 pd->dequant_pxd : pd->dequant,
+      #else
+                             pd->dequant,
+      #endif  // CONFIG_TX_SKIP
+      #if CONFIG_NEW_QUANT
+      #if CONFIG_TX_SKIP
+                             xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
+                                 pd->dequant_val_nuq_pxd : pd->dequant_val_nuq,
+      #else
+                             pd->dequant_val_nuq,
+      #endif  // CONFIG_TX_SKIP
+      #endif  // CONFIG_NEW_QUANT
+                             ctx, so->scan,
+                             so->neighbors, r);
+      if (!frame_is_intra_only(cm)) {
+        xd->eob_history[xd->eob_index] = eob;
+        xd->eob_index++;
+      }
+    } else {
+      eob = xd->eob_history[xd->eob_index];
+      xd->eob_index++;
+    }
+#else
     eob = decode_coefs(cm, xd, pd->plane_type,
                        BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
 #if CONFIG_TX_SKIP
@@ -478,10 +507,14 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
 #endif  // CONFIG_NEW_QUANT
                        ctx, so->scan,
                        so->neighbors, r);
+#endif  // CONFIG_BDINTRA
 
 #if CONFIG_TX64X64
   if (plane > 0) assert(tx_size != TX_64X64);
 #endif  // CONFIG_TX64X64
+#if CONFIG_BDINTRA
+  if (frame_is_intra_only(cm) || xd->bdintra_pass == 0)
+#endif  // CONFIG_BDINTRA
   vp9_set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, x, y);
   return eob;
 }
