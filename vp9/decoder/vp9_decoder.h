@@ -75,6 +75,17 @@ typedef struct VP9Decoder {
   int inv_tile_order;
   int need_resync;  // wait for key/intra-only frame.
   int hold_ref_buf;  // hold the reference buffer.
+
+#if CONFIG_INTERNAL_STATS
+  // Total blocks in unit of 8x8 inside the frame.
+  int total_block_in_8x8;
+  // Number of blocks using 1-D sub-pixel filtering for motion compensated
+  // prediction. if a block is using sub-pixel filter in both vertical and
+  // horizontal directions, it counts as using 1-D sub-pixel filter twice.
+  int subpel_mc_block_in_4x4;
+  // Nubmer of blocks using intra prediction modes.
+  int intra_block_in_8x8;
+#endif
 } VP9Decoder;
 
 int vp9_receive_compressed_data(struct VP9Decoder *pbi,
