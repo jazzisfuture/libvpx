@@ -294,13 +294,13 @@ INSTANTIATE_TEST_CASE_P(
                    TX_4X4, 1)));
 #endif
 
-#if HAVE_SSSE3 && ARCH_X86_64 && !CONFIG_VP9_HIGHBITDEPTH && \
-    !CONFIG_EMULATE_HARDWARE
+#if HAVE_SSSE3 && CONFIG_USE_X86INC && ARCH_X86_64 && \
+    !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
     SSSE3_64, PartialIDctTest,
     ::testing::Values(
         make_tuple(&vp9_fdct8x8_c,
-                   &vp9_idct8x8_64_add_c,
+                   &vp9_idct8x8_64_add_ssse3,
                    &vp9_idct8x8_12_add_ssse3,
                    TX_8X8, 12)));
 #endif
