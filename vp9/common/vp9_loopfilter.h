@@ -129,14 +129,16 @@ typedef struct {
   loop_filter_thresh lfthr[MAX_LOOP_FILTER + 1];
   uint8_t lvl[MAX_SEGMENTS][MAX_REF_FRAMES][MAX_MODE_LF_DELTAS];
 #if CONFIG_LOOP_POSTFILTER
-  double wx_lut[BILATERAL_WIN * BILATERAL_WIN];
-  double wr_lut[512];
+  double * wx_lut[BILATERAL_WIN];
+  double * wr_lut;
   int bilateral_sigma_x_set;
   int bilateral_sigma_y_set;
   int bilateral_sigma_r_set;
   int bilateral_used;
 #endif
 } loop_filter_info_n;
+
+extern FILE * fp;
 
 // This structure holds bit masks for all 8x8 blocks in a 64x64 region.
 // Each 1 bit represents a position in which we want to apply the loop filter.
