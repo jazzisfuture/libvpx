@@ -1659,6 +1659,24 @@ static void encode_b(VP9_COMP *cpi, const TileInfo *const tile,
                      PICK_MODE_CONTEXT *ctx) {
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
   update_state(cpi, ctx, mi_row, mi_col, bsize, output_enabled);
+#if CONFIG_BDINTRA
+  if (output_enabled && !is_inter_block(&cpi->mb.e_mbd.mi->mbmi) &&
+      !frame_is_intra_only(&cpi->common)) {
+    if (cpi->common.bdintra_round == 0) {
+      return;
+    } else if (cpi->mb.e_mbd.allow_bdintra) {
+      MB_MODE_INFO *mbmi = &cpi->mb.e_mbd.mi[0].src_mi->mbmi;
+      if (mbmi->sb_type >= BLOCK_8X8)
+        repick_bdintra_mode(cpi, bsize, ctx, mi_row, mi_col);
+    }
+  }
+
+  ctx->mic = cpi->mb.e_mbd.mi[0];
+
+  if (!frame_is_intra_only(&cpi->common) && cpi->common.bdintra_round == 0)
+    output_enabled = 0;
+#endif  // CONFIG_BDINTRA
+
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize, ctx);
 
   if (output_enabled) {
@@ -1701,7 +1719,11 @@ static void encode_sb(VP9_COMP *cpi, const TileInfo *const tile,
   if (bsize > BLOCK_8X8)
     partition = pc_tree->partitioning;
 #endif
-  if (output_enabled && bsize != BLOCK_4X4)
+  if (output_enabled && bsize != BLOCK_4X4
+#if CONFIG_BDINTRA
+      && cm->bdintra_round == 1
+#endif  // CONFIG_BDINTRA
+  )
     cm->counts.partition[ctx][partition]++;
 
 #if CONFIG_SUPERTX
@@ -3703,7 +3725,38 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   if (best_rdc.rate < INT_MAX && best_rdc.dist < INT64_MAX &&
       pc_tree->index != 3) {
     int output_enabled = (bsize == BLOCK_64X64);
+#if CONFIG_BDINTRA
+    // Check the projected output rate for this SB against it's target
+    // and and if necessary apply a Q delta using segmentation to get
+    // closer to the target.
+    if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && cm->seg.update_map)
+      vp9_select_in_frame_q_segment(cpi, mi_row, mi_col, output_enabled * 0,
+                                    best_rdc.rate);
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
+      vp9_cyclic_refresh_set_rate_and_dist_sb(cpi->cyclic_refresh,
+                                              best_rdc.rate, best_rdc.dist);
 
+    cpi->mb.e_mbd.allow_bdintra = cm->base_qindex <= BDINTRA_Q_THRESH;
+    //cpi->mb.e_mbd.allow_bdintra = 1;
+
+    cm->bdintra_round = 0;
+    encode_sb(cpi, tile, tp, mi_row, mi_col, output_enabled, bsize, pc_tree);
+
+    if (!frame_is_intra_only(&cpi->common) && output_enabled && 1) {
+      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+      if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && cm->seg.update_map)
+        vp9_select_in_frame_q_segment(cpi, mi_row, mi_col, output_enabled,
+                                      best_rdc.rate);
+      if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
+        vp9_cyclic_refresh_set_rate_and_dist_sb(cpi->cyclic_refresh,
+                                                best_rdc.rate, best_rdc.dist);
+
+      cm->bdintra_round = 1;
+      encode_sb(cpi, tile, tp, mi_row, mi_col, 1, bsize, pc_tree);
+    }
+
+
+#else
     // Check the projected output rate for this SB against it's target
     // and and if necessary apply a Q delta using segmentation to get
     // closer to the target.
@@ -3715,6 +3768,7 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
                                               best_rdc.rate, best_rdc.dist);
 
     encode_sb(cpi, tile, tp, mi_row, mi_col, output_enabled, bsize, pc_tree);
+#endif  // CONFIG_BDINTRA
   }
 
   if (bsize == BLOCK_64X64) {
@@ -3750,6 +3804,11 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
 
     const int idx_str = cm->mi_stride * mi_row + mi_col;
     MODE_INFO *mi = cm->mi + idx_str;
+
+#if CONFIG_BDINTRA
+    cm->sb_start_mi_row = mi_row;
+    cm->sb_start_mi_col = mi_col;
+#endif  // CONFIG_BDINTRA
 
     if (sf->adaptive_pred_interp_filter) {
       for (i = 0; i < 64; ++i)
@@ -4176,6 +4235,18 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   x->quant_fp = cpi->sf.use_quant_fp;
   vp9_zero(x->skip_txfm);
 
+#if MISMATCH_DEBUG
+  {
+    FILE *fp;
+
+    fp = fopen("./debug/enc", "a");
+
+    fprintf(fp, "\n start frame %d\n", cm->current_video_frame);
+
+    fclose(fp);
+  }
+#endif
+
   {
     struct vpx_usec_timer emr_timer;
     vpx_usec_timer_start(&emr_timer);
@@ -4290,6 +4361,11 @@ void vp9_encode_frame(VP9_COMP *cpi) {
 
     if (cm->interp_filter == SWITCHABLE)
       cm->interp_filter = get_interp_filter(filter_thrs, is_alt_ref);
+
+#if 0
+    cpi->sf.partition_search_type = FIXED_PARTITION;
+    cpi->sf.always_this_block_size = BLOCK_8X8;
+#endif
 
     encode_frame_internal(cpi);
 
@@ -4545,8 +4621,68 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
 #else
     mbmi->skip = 1;
 #endif
+
+#if MISMATCH_DEBUG
+    if (cpi->common.bdintra_round == 1) {
+      FILE *fp;
+
+      fp = fopen("./debug/enc", "a");
+
+      fprintf(fp, "start mb %3d %3d, bsize %3d %3d, mode %3d %3d\n",
+              mi_row, mi_col,
+              4 * num_4x4_blocks_high_lookup[bsize],
+              4 * num_4x4_blocks_wide_lookup[bsize],
+              mbmi->mode, mbmi->uv_mode);
+
+      fclose(fp);
+    }
+#endif
+
+#if CONFIG_BDINTRA
+    memset(xd->right_pixels_available, 0,
+           64 * sizeof(xd -> right_pixels_available[0]));
+    memset(xd->below_pixels_available, 0,
+           64 * sizeof(xd -> below_pixels_available[0]));
+
+    if (cpi->common.bdintra_round == 1) {
+      if (bsize >= BLOCK_8X8) {
+        int bw = num_8x8_blocks_wide_lookup[bsize];
+        int bh = num_8x8_blocks_high_lookup[bsize];
+
+        if (mi_row + bh < cm->mi_rows
+            && mi_row - cm->sb_start_mi_row + bh < MI_BLOCK_SIZE
+            && mi_col + bw < cm->mi_cols) {
+          int i = 0;
+          MODE_INFO *bottom_mi = xd->mi + bh * cm->mi_stride;
+          while (i < bw * 8 && 1) {
+            if (is_inter_block(&bottom_mi->src_mi->mbmi))
+              memset(xd->below_pixels_available + i, 1,
+                     8 * sizeof(xd -> below_pixels_available[0]));
+            bottom_mi += 1;
+            i += 8;
+          }
+        }
+
+
+        if (mi_row + bh < cm->mi_rows
+            && mi_col + bw < cm->mi_cols
+            && mi_col - cm->sb_start_mi_col + bw < MI_BLOCK_SIZE) {
+          int i = 0;
+          MODE_INFO *right_mi = xd->mi + bw;
+          while (i < bh * 8 && 1) {
+            if (is_inter_block(&right_mi->src_mi->mbmi))
+              memset(xd->right_pixels_available + i, 1,
+                     8 * sizeof(xd -> right_pixels_available[0]));
+            right_mi += cm->mi_stride;
+            i += 8;
+          }
+        }
+      }
+    }
+#endif  // CONFIG_BDINTRA
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
+
     if (output_enabled)
       sum_intra_stats(&cm->counts,
 #if CONFIG_FILTERINTRA
@@ -4594,6 +4730,42 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);
+
+#if CONFIG_BDINTRA
+    x->above_is_intra = 0;
+    x->left_is_intra = 0;
+
+    if (mi_row > 0) {
+      MODE_INFO *above_mi = xd->mi - mis;
+      int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
+      int mi_count = 0;
+
+      while(cols > 0 && mi_col + mi_count < cm->mi_cols) {
+        //if (above_mi->src_mi->mbmi.mode <= H_PRED)
+        if (!is_inter_block(&above_mi->src_mi->mbmi))
+          x->above_is_intra = 1;
+        cols -= 8;
+        above_mi += 1;
+        mi_count += 1;
+      }
+    }
+
+    if (mi_col > 0) {
+      MODE_INFO *left_mi = xd->mi - 1;
+      int rows = 4 * num_4x4_blocks_high_lookup[bsize];
+      int mi_count = 0;
+
+      while(rows > 0 && mi_row + mi_count < cm->mi_rows) {
+        //if (left_mi->src_mi->mbmi.mode <= H_PRED)
+        if (!is_inter_block(&left_mi->src_mi->mbmi))
+          x->left_is_intra = 1;
+        rows -= 8;
+        left_mi += mis;
+        mi_count += 1;
+      }
+    }
+#endif  // CONFIG_BDINTRA
+
     for (ref = 0; ref < 1 + is_compound; ++ref) {
       YV12_BUFFER_CONFIG *cfg = get_ref_frame_buffer(cpi,
                                                      mbmi->ref_frame[ref]);
