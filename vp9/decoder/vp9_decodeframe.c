@@ -789,8 +789,10 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   int x, y;
   const TileInfo *const tile = &xd->tile;
 
+  // get the position of the MODE_INFO* for this block
   xd->mi = cm->mi_grid_visible + offset;
-  xd->mi[0] = &cm->mi[offset];
+  // get the next available MODE_INFO in the stream
+  xd->mi[0] = xd->mi_stream++;
   // TODO(slavarnway): Generate sb_type based on bwl and bhl, instead of
   // passing bsize from decode_partition().
   xd->mi[0]->mbmi.sb_type = bsize;
@@ -1492,6 +1494,18 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
     }
   }
 
+  // Initialize MODE_INFO streams based on tile column widths.
+  {
+    MODE_INFO *mi_base = cm->mi;
+    tile_data = pbi->tile_data;
+    for (tile_col = 0; tile_col < tile_cols; ++tile_col, ++tile_data) {
+      TileInfo tile;
+      vp9_tile_set_col(&tile, tile_data->cm, tile_col);
+      tile_data->xd.mi_stream = mi_base;
+      mi_base += (tile.mi_col_end - tile.mi_col_start) * cm->mi_rows;;
+    }
+  }
+
   for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
     TileInfo tile;
     vp9_tile_set_row(&tile, cm, tile_row);
@@ -1540,6 +1554,17 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
       if (pbi->frame_parallel_decode)
         vp9_frameworker_broadcast(pbi->cur_buf,
                                   mi_row << MI_BLOCK_SIZE_LOG2);
+    }
+
+    // Copy the tile cols mi_stream to the next tile row.
+    if (tile_row < (tile_rows - 1)) {
+      TileData *tile_data_src = pbi->tile_data + tile_cols * tile_row;
+      TileData *tile_data_dst = pbi->tile_data + tile_cols * (tile_row + 1);
+      for (tile_col = 0; tile_col < tile_cols;
+           ++tile_col, ++tile_data_dst, ++tile_data_src) {
+        // Use the stream from the last row
+        tile_data_dst->xd.mi_stream = tile_data_src->xd.mi_stream;
+      }
     }
   }
 
@@ -1607,6 +1632,7 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
   TileBuffer tile_buffers[1][1 << 6];
   int n;
   int final_worker = -1;
+  MODE_INFO *mi_base = cm->mi;
 
   assert(tile_cols <= (1 << 6));
   assert(tile_rows == 1);
@@ -1706,6 +1732,9 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       vp9_zero(tile_data->dqcoeff);
       vp9_tile_init(tile, cm, 0, buf->col);
       vp9_tile_init(&tile_data->xd.tile, cm, 0, buf->col);
+      // Initialize MODE_INFO streams
+      tile_data->xd.mi_stream = mi_base;
+      mi_base += (tile->mi_col_end - tile->mi_col_start) * cm->mi_rows;;
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
                           &tile_data->bit_reader, pbi->decrypt_cb,
                           pbi->decrypt_state);
