@@ -20,7 +20,7 @@
 
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_frame_buffers.h"
-#include "vp9/common/vp9_thread.h"
+#include "vpx_thread/vpx_thread.h"
 
 #include "vp9/decoder/vp9_decoder.h"
 #include "vp9/decoder/vp9_decodeframe.h"

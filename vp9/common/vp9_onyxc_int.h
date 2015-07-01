@@ -21,7 +21,7 @@
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_frame_buffers.h"
 #include "vp9/common/vp9_quant_common.h"
-#include "vp9/common/vp9_thread.h"
+#include "vpx_thread/vpx_thread.h"
 #include "vp9/common/vp9_tile_common.h"
 
 #if CONFIG_VP9_POSTPROC
