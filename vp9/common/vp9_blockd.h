@@ -82,7 +82,7 @@ typedef enum {
   D63_PRED,        // Directional 63  deg = round(arctan(2/1) * 180/pi)
   TM_PRED,         // True-motion
 #if CONFIG_INTRABC
-  NEWDV,           // New displacement vector within the same frame buffer
+  INTRABC,         // Displacement vector within the same frame buffer
 #endif  // CONFIG_INTRABC
   NEARESTMV,
   NEARMV,
@@ -143,7 +143,7 @@ static INLINE int have_newmv_in_inter_mode(PREDICTION_MODE mode) {
 
 #if CONFIG_INTRABC
 static INLINE int is_intrabc_mode(PREDICTION_MODE mode) {
-  return mode == NEWDV;
+  return mode == INTRABC;
 }
 #endif  // CONFIG_INTRABC
 

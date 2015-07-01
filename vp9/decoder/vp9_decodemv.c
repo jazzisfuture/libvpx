@@ -235,7 +235,7 @@ static INLINE int assign_dv(VP9_COMMON *cm, PREDICTION_MODE mode,
   int ret = 1;
 
   switch (mode) {
-    case NEWDV: {
+    case INTRABC: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
                                             NULL : &cm->counts.dv;
       read_mv(r, &mv->as_mv, &ref_mv->as_mv, &cm->fc.ndvc, mv_counts,
@@ -281,7 +281,7 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
   if (bsize >= BLOCK_8X8 && cm->allow_intrabc_mode) {
     use_intrabc = vp9_read(r, INTRABC_PROB);
     if (use_intrabc) {
-      mbmi->mode = mbmi->uv_mode = NEWDV;
+      mbmi->mode = mbmi->uv_mode = INTRABC;
       mbmi->interp_filter = BILINEAR;
     }
   } else {

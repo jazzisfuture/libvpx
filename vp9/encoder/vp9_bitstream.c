@@ -1078,7 +1078,7 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
                 cm->fc.filterintra_prob[mbmi->tx_size][mbmi->mode]);
 #endif  // CONFIG_FILTERINTRA
 #if CONFIG_INTRABC
-    if (mbmi->mode == NEWDV) {
+    if (is_intrabc_mode(mbmi->mode)) {
       int_mv dv_ref = mbmi->ref_mvs[INTRA_FRAME][0];
       vp9_encode_dv(w, &mbmi->mv[0].as_mv, &dv_ref.as_mv, ndvc);
     }

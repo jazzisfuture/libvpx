@@ -59,7 +59,7 @@ static const int mode_2_counter[MB_MODE_COUNT] = {
   9,  // D63_PRED
   9,  // TM_PRED
 #if CONFIG_INTRABC
-  9,  // NEWDV
+  9,  // INTRABC
 #endif  // CONFIG_INTRABC
   0,  // NEARESTMV
   0,  // NEARMV
