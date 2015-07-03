@@ -32,7 +32,7 @@ extern const BLOCK_SIZE subsize_lookup[PARTITION_TYPES][BLOCK_SIZES];
 extern const TX_SIZE max_txsize_lookup[BLOCK_SIZES];
 extern const BLOCK_SIZE txsize_to_bsize[TX_SIZES];
 extern const TX_SIZE tx_mode_to_biggest_tx_size[TX_MODES];
-extern const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES][2][2];
+extern const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES + 1][2][2];
 
 #ifdef __cplusplus
 }  // extern "C"
