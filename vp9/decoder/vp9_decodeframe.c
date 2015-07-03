@@ -895,6 +895,10 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   }
 
   xd->corrupted |= vpx_reader_has_error(r);
+
+  if (cm->lf.filter_level) {
+    vp9_build_mask(cm, mbmi, mi_row, mi_col);
+  }
 }
 
 static INLINE int dec_partition_plane_context(const MACROBLOCKD *xd,
@@ -1461,6 +1465,8 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
   memset(cm->above_seg_context, 0,
          sizeof(*cm->above_seg_context) * aligned_cols);
 
+  vp9_reset_lfm(cm);
+
   get_tile_buffers(pbi, data, data_end, tile_cols, tile_rows, tile_buffers);
 
   if (pbi->tile_data == NULL ||
@@ -1654,6 +1660,8 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
          sizeof(*cm->above_context) * MAX_MB_PLANE * 2 * aligned_mi_cols);
   memset(cm->above_seg_context, 0,
          sizeof(*cm->above_seg_context) * aligned_mi_cols);
+
+  vp9_reset_lfm(cm);
 
   // Load tile data into tile_buffers
   get_tile_buffers(pbi, data, data_end, tile_cols, tile_rows, tile_buffers);

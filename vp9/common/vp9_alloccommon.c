@@ -116,6 +116,8 @@ void vp9_free_context_buffers(VP9_COMMON *cm) {
   cm->above_context = NULL;
   vpx_free(cm->above_seg_context);
   cm->above_seg_context = NULL;
+  vpx_free(cm->lf.lfm);
+  cm->lf.lfm = NULL;
 }
 
 int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
@@ -149,6 +151,15 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
     if (!cm->above_seg_context) goto fail;
     cm->above_context_alloc_cols = cm->mi_cols;
   }
+
+  if (cm->lf.lfm)
+    vpx_free(cm->lf.lfm);
+
+  cm->lf.lfm_stride = (cm->mi_cols + (MI_BLOCK_SIZE - 1)) >> 3;
+  cm->lf.lfm = (LOOP_FILTER_MASK *)vpx_calloc(
+      ((cm->mi_rows + (MI_BLOCK_SIZE - 1)) >> 3) * cm->lf.lfm_stride,
+      sizeof(*cm->lf.lfm));
+  if (!cm->lf.lfm) goto fail;
 
   return 0;
 
