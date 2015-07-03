@@ -119,22 +119,24 @@ const TX_SIZE tx_mode_to_biggest_tx_size[TX_MODES] = {
   TX_32X32,  // TX_MODE_SELECT
 };
 
-const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES][2][2] = {
-//  ss_x == 0    ss_x == 0        ss_x == 1      ss_x == 1
-//  ss_y == 0    ss_y == 1        ss_y == 0      ss_y == 1
-  {{BLOCK_4X4,   BLOCK_INVALID}, {BLOCK_INVALID, BLOCK_INVALID}},
-  {{BLOCK_4X8,   BLOCK_4X4},     {BLOCK_INVALID, BLOCK_INVALID}},
-  {{BLOCK_8X4,   BLOCK_INVALID}, {BLOCK_4X4,     BLOCK_INVALID}},
-  {{BLOCK_8X8,   BLOCK_8X4},     {BLOCK_4X8,     BLOCK_4X4}},
-  {{BLOCK_8X16,  BLOCK_8X8},     {BLOCK_INVALID, BLOCK_4X8}},
-  {{BLOCK_16X8,  BLOCK_INVALID}, {BLOCK_8X8,     BLOCK_8X4}},
-  {{BLOCK_16X16, BLOCK_16X8},    {BLOCK_8X16,    BLOCK_8X8}},
-  {{BLOCK_16X32, BLOCK_16X16},   {BLOCK_INVALID, BLOCK_8X16}},
-  {{BLOCK_32X16, BLOCK_INVALID}, {BLOCK_16X16,   BLOCK_16X8}},
-  {{BLOCK_32X32, BLOCK_32X16},   {BLOCK_16X32,   BLOCK_16X16}},
-  {{BLOCK_32X64, BLOCK_32X32},   {BLOCK_INVALID, BLOCK_16X32}},
-  {{BLOCK_64X32, BLOCK_INVALID}, {BLOCK_32X32,   BLOCK_32X16}},
-  {{BLOCK_64X64, BLOCK_64X32},   {BLOCK_32X64,   BLOCK_32X32}},
+const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES + 1][2][2] = {
+//  ss_x == 0      ss_x == 0        ss_x == 1      ss_x == 1
+//  ss_y == 0      ss_y == 1        ss_y == 0      ss_y == 1
+  {{BLOCK_4X4,     BLOCK_INVALID}, {BLOCK_INVALID, BLOCK_INVALID}},
+  {{BLOCK_4X8,     BLOCK_4X4},     {BLOCK_INVALID, BLOCK_INVALID}},
+  {{BLOCK_8X4,     BLOCK_INVALID}, {BLOCK_4X4,     BLOCK_INVALID}},
+  {{BLOCK_8X8,     BLOCK_8X4},     {BLOCK_4X8,     BLOCK_4X4}},
+  {{BLOCK_8X16,    BLOCK_8X8},     {BLOCK_INVALID, BLOCK_4X8}},
+  {{BLOCK_16X8,    BLOCK_INVALID}, {BLOCK_8X8,     BLOCK_8X4}},
+  {{BLOCK_16X16,   BLOCK_16X8},    {BLOCK_8X16,    BLOCK_8X8}},
+  {{BLOCK_16X32,   BLOCK_16X16},   {BLOCK_INVALID, BLOCK_8X16}},
+  {{BLOCK_32X16,   BLOCK_INVALID}, {BLOCK_16X16,   BLOCK_16X8}},
+  {{BLOCK_32X32,   BLOCK_32X16},   {BLOCK_16X32,   BLOCK_16X16}},
+  {{BLOCK_32X64,   BLOCK_32X32},   {BLOCK_INVALID, BLOCK_16X32}},
+  {{BLOCK_64X32,   BLOCK_INVALID}, {BLOCK_32X32,   BLOCK_32X16}},
+  {{BLOCK_64X64,   BLOCK_64X32},   {BLOCK_32X64,   BLOCK_32X32}},
+  // handles invalid block size
+  {{BLOCK_INVALID, BLOCK_INVALID}, {BLOCK_INVALID, BLOCK_INVALID}},
 };
 
 // Generates 4 bit field in which each bit set to 1 represents
