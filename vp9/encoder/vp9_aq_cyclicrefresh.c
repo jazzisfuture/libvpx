@@ -470,6 +470,10 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->motion_thresh = 32;
     cr->rate_boost_fac = 17;
   }
+  if (rc->force_max_qp == 1) {
+    cr->rate_ratio_qdelta = 1.0;
+    cr->rate_boost_fac = 10;
+  }
 }
 
 // Setup cyclic background refresh: set delta q and segmentation map.
