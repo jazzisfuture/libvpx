@@ -388,6 +388,7 @@ extern "C" {
   vpx_codec_err_t vpx_codec_control_(vpx_codec_ctx_t  *ctx,
                                      int               ctrl_id,
                                      ...);
+
 #if defined(VPX_DISABLE_CTRL_TYPECHECKS) && VPX_DISABLE_CTRL_TYPECHECKS
 #    define vpx_codec_control(ctx,id,data) vpx_codec_control_(ctx,id,data)
 #    define VPX_CTRL_USE_TYPE(id, typ)
