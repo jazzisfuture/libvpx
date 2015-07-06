@@ -14,7 +14,7 @@
 
 #include "vpx/vpx_integer.h"
 
-void vp9_subtract_block_neon(int rows, int cols,
+void vpx_subtract_block_neon(int rows, int cols,
                              int16_t *diff, ptrdiff_t diff_stride,
                              const uint8_t *src, ptrdiff_t src_stride,
                              const uint8_t *pred, ptrdiff_t pred_stride) {
