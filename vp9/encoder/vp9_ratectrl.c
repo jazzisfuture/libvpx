@@ -487,6 +487,10 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
   int i, target_bits_per_mb, bits_per_mb_at_this_q;
   const double correction_factor = get_rate_correction_factor(cpi);
 
+  if (cpi->rc.force_max_qp == 1) {
+    return active_worst_quality;
+  }
+
   // Calculate required scaling factor based on target frame size and size of
   // frame produced using previous Q.
   target_bits_per_mb =
@@ -498,7 +502,8 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
         cm->seg.enabled &&
         cpi->svc.temporal_layer_id == 0 &&
-        cpi->svc.spatial_layer_id == 0) {
+        cpi->svc.spatial_layer_id == 0 &&
+        cpi->rc.force_max_qp == 0) {
       bits_per_mb_at_this_q =
           (int)vp9_cyclic_refresh_rc_bits_per_mb(cpi, i, correction_factor);
     } else {
@@ -1848,4 +1853,54 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
     }
   }
   return resize_now;
+}
+
+void vp9_avg_temporal_sad(VP9_COMP *cpi) {
+  VP9_COMMON * const cm = &cpi->common;
+  RATE_CONTROL *const rc = &cpi->rc;
+  if (rc->frames_since_key > 1 && cpi->Last_Source != NULL) {
+    const uint8_t *src_y = cpi->Source->y_buffer;
+    const int src_ystride = cpi->Source->y_stride;
+    const uint8_t *last_src_y = cpi->Last_Source->y_buffer;
+    const int last_src_ystride = cpi->Last_Source->y_stride;
+    int sbi_row, sbi_col;
+    const BLOCK_SIZE bsize = BLOCK_64X64;
+    // Loop over subsample of frame, and compute average 64x64 sad between
+    // source and last_source.
+    unsigned int y_sad = 0;
+    int avg_sad = 0;
+    int num_samples = 0;
+    int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+    int sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+    for (sbi_row = 0; sbi_row < sb_rows; sbi_row ++) {
+      for (sbi_col = 0; sbi_col < sb_cols; sbi_col ++) {
+        // Checkerboard pattern, ignore boundary.
+        if ((sbi_row > 0 && sbi_col > 0) &&
+            (sbi_row < sb_rows - 1 && sbi_col < sb_cols - 1) &&
+            ((sbi_row % 2 == 0 && sbi_col % 2 == 0) ||
+            (sbi_row % 2 != 0 && sbi_col % 2 != 0))) {
+          num_samples++;
+          y_sad = cpi->fn_ptr[bsize].sdf(src_y,
+                                         src_ystride,
+                                         last_src_y,
+                                         last_src_ystride);
+          avg_sad += y_sad;
+        }
+        src_y += 64;
+        last_src_y += 64;
+      }
+      src_y += (src_ystride << 6) - (sb_cols << 6);
+      last_src_y += (last_src_ystride << 6) - (sb_cols << 6);
+    }
+    if (num_samples > 0)
+      avg_sad = avg_sad / num_samples;
+    // Set force_max_qp flag if we detect very high increase in sad between
+    // current and previous frame.
+    if (avg_sad > (rc->avg_frame_temp_sad << 2) &&
+        rc->avg_frame_temp_sad > 0)
+      rc->force_max_qp = 0;
+    else
+      rc->force_max_qp = 0;
+    rc->avg_frame_temp_sad = avg_sad;
+  }
 }
