@@ -1622,6 +1622,10 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   cpi->resize_buffer_underflow = 0;
   cpi->common.buffer_pool = pool;
 
+  cpi->rc.force_max_qp = 0;
+  cpi->rc.high_source_sad = 0;
+  cpi->rc.drop_overshoot = 0;
+
   init_config(cpi, oxcf);
   vp9_rc_init(&cpi->oxcf, oxcf->pass, &cpi->rc);
 
@@ -3178,7 +3182,9 @@ static void set_frame_size(VP9_COMP *cpi) {
   set_ref_ptrs(cm, xd, LAST_FRAME, LAST_FRAME);
 }
 
-static void encode_without_recode_loop(VP9_COMP *cpi) {
+static void encode_without_recode_loop(VP9_COMP *cpi,
+                                       size_t *size,
+                                       uint8_t *dest) {
   VP9_COMMON *const cm = &cpi->common;
   int q = 0, bottom_index = 0, top_index = 0;  // Dummy variables.
 
@@ -3208,6 +3214,11 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
                                                &cpi->scaled_last_source);
   }
 
+  if (cpi->oxcf.pass == 0 &&
+      cpi->oxcf.rc_mode == VPX_CBR &&
+      cpi->resize_state == 0)
+    vp9_avg_source_sad(cpi);
+
   if (frame_is_intra_only(cm) == 0) {
     vp9_scale_references(cpi);
   }
@@ -3234,6 +3245,12 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
 
   // transform / motion compensation build reconstruction frame
   vp9_encode_frame(cpi);
+
+  if (cpi->oxcf.pass == 0 &&
+      cpi->oxcf.rc_mode == VPX_CBR &&
+      cpi->resize_state == 0) {
+    vp9_drop_encodedframe_overshoot(cpi, size, dest);
+  }
 
   // Update some stats from cyclic refresh, and check if we should not update
   // golden reference, for non-SVC 1 pass CBR.
@@ -3734,8 +3751,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
 
   if (cpi->sf.recode_loop == DISALLOW_RECODE) {
-    encode_without_recode_loop(cpi);
+    encode_without_recode_loop(cpi, size, dest);
+    if (cpi->rc.drop_overshoot == 1)
+      return;
   } else {
+    printf("re-encode !!! \n");
     encode_with_recode_loop(cpi, size, dest);
   }
 
