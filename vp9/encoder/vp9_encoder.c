@@ -3164,6 +3164,11 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
                                                &cpi->scaled_last_source);
   }
 
+  if (cpi->oxcf.pass == 0 &&
+      cpi->oxcf.rc_mode == VPX_CBR &&
+      cpi->resize_state == 0)
+    vp9_avg_source_sad(cpi);
+
   if (frame_is_intra_only(cm) == 0) {
     vp9_scale_references(cpi);
   }
