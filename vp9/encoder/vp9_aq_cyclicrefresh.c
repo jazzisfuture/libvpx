@@ -488,7 +488,8 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
   if (!apply_cyclic_refresh ||
       (cm->frame_type == KEY_FRAME) ||
       (cpi->svc.temporal_layer_id > 0) ||
-      (cpi->svc.spatial_layer_id > 0)) {
+      (cpi->svc.spatial_layer_id > 0) ||
+      (rc->force_max_qp == 1)) {
     // Set segmentation map to 0 and disable.
     unsigned char *const seg_map = cpi->segmentation_map;
     memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
