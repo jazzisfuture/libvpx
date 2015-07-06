@@ -163,8 +163,10 @@ typedef struct macroblockd {
   MB_MODE_INFO *left_mbmi;
   MB_MODE_INFO *above_mbmi;
 
-  int up_available;
-  int left_available;
+  uint8_t up_available;
+  uint8_t left_available;
+  uint8_t lossless;
+  uint8_t corrupted;
 
   const vp9_prob (*partition_probs)[PARTITION_TYPES - 1];
 
@@ -193,9 +195,6 @@ typedef struct macroblockd {
   /* Bit depth: 8, 10, 12 */
   int bd;
 #endif
-
-  int lossless;
-  int corrupted;
 
   struct vpx_internal_error_info *error_info;
 } MACROBLOCKD;
