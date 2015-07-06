@@ -415,6 +415,7 @@ static double get_rate_correction_factor(const VP9_COMP *cpi) {
       rcf = rc->rate_correction_factors[INTER_NORMAL];
   }
   rcf *= rcf_mult[rc->frame_size_selector];
+  //rcf *= rc->norm_source_sad;
   return fclamp(rcf, MIN_BPB_FACTOR, MAX_BPB_FACTOR);
 }
 
@@ -423,6 +424,7 @@ static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
 
   // Normalize RCF to account for the size-dependent scaling factor.
   factor /= rcf_mult[cpi->rc.frame_size_selector];
+  //factor /= rc->norm_source_sad;
 
   factor = fclamp(factor, MIN_BPB_FACTOR, MAX_BPB_FACTOR);
 
@@ -521,6 +523,10 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
   int i, target_bits_per_mb, bits_per_mb_at_this_q;
   const double correction_factor = get_rate_correction_factor(cpi);
 
+  if (cpi->rc.force_max_qp == 1) {
+    return cpi->rc.worst_quality;
+  }
+
   // Calculate required scaling factor based on target frame size and size of
   // frame produced using previous Q.
   target_bits_per_mb =
@@ -532,7 +538,8 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
         cm->seg.enabled &&
         cpi->svc.temporal_layer_id == 0 &&
-        cpi->svc.spatial_layer_id == 0) {
+        cpi->svc.spatial_layer_id == 0 &&
+        cpi->rc.force_max_qp == 0) {
       bits_per_mb_at_this_q =
           (int)vp9_cyclic_refresh_rc_bits_per_mb(cpi, i, correction_factor);
     } else {
@@ -635,7 +642,7 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
   int adjustment = 0;
   int active_worst_quality;
   int ambient_qp;
-  if (cm->frame_type == KEY_FRAME)
+  if (cm->frame_type == KEY_FRAME || rc->force_max_qp)
     return rc->worst_quality;
   // For ambient_qp we use minimum of avg_frame_qindex[KEY_FRAME/INTER_FRAME]
   // for the first few frames following key frame. These are both initialized
@@ -1886,4 +1893,62 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
     }
   }
   return resize_now;
+}
+
+// Compute average source sad (temporal sad: between current source and
+// previous source) over a subset of superblocks. Use this is detect big changes
+// in content and allow rate control to react.
+// TODO(marpan): Superblock sad is computed again in variance partition for
+// non-rd mode (but based on last reconstructed frame). Should try to reuse
+// these computations.
+void vp9_avg_source_sad(VP9_COMP *cpi) {
+  VP9_COMMON * const cm = &cpi->common;
+  RATE_CONTROL *const rc = &cpi->rc;
+  rc->force_max_qp = 0;
+  rc->norm_source_sad = 1.0;
+  if (cpi->Last_Source != NULL) {
+    const uint8_t *src_y = cpi->Source->y_buffer;
+    const int src_ystride = cpi->Source->y_stride;
+    const uint8_t *last_src_y = cpi->Last_Source->y_buffer;
+    const int last_src_ystride = cpi->Last_Source->y_stride;
+    int sbi_row, sbi_col;
+    const BLOCK_SIZE bsize = BLOCK_64X64;
+    // Loop over sub-sample of frame, and compute average sad over 64x64 blocks.
+    int avg_sad = 0;
+    int num_samples = 0;
+    int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+    int sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+    for (sbi_row = 0; sbi_row < sb_rows; sbi_row ++) {
+      for (sbi_col = 0; sbi_col < sb_cols; sbi_col ++) {
+        // Checker-board pattern, ignore boundary.
+        if ((sbi_row > 0 && sbi_col > 0) &&
+            (sbi_row < sb_rows - 1 && sbi_col < sb_cols - 1) &&
+            ((sbi_row % 2 == 0 && sbi_col % 2 == 0) ||
+            (sbi_row % 2 != 0 && sbi_col % 2 != 0))) {
+          num_samples++;
+          avg_sad += cpi->fn_ptr[bsize].sdf(src_y,
+                                            src_ystride,
+                                            last_src_y,
+                                            last_src_ystride);
+        }
+        src_y += 64;
+        last_src_y += 64;
+      }
+      src_y += (src_ystride << 6) - (sb_cols << 6);
+      last_src_y += (last_src_ystride << 6) - (sb_cols << 6);
+    }
+    if (num_samples > 0)
+      avg_sad = avg_sad / num_samples;
+    // TODO(marpan): Test factoring this into rate correction factor/QP setting.
+    rc->norm_source_sad = MAX(0.2, MIN(10.0, (float)(avg_sad) / 4096));
+    // Set force_max_qp flag if we detect very high increase in avg_sad between
+    // current and the previous frame value(s). Use a minimum threshold for
+    // cases where there is small change from content that is completely static.
+    if (avg_sad > MAX(4000, (rc->avg_source_sad << 3)) &&
+        rc->frames_since_key > 1)
+      rc->force_max_qp = 1;
+    else
+      rc->force_max_qp = 0;
+    rc->avg_source_sad = (rc->avg_source_sad  + avg_sad) >> 1;
+  }
 }
