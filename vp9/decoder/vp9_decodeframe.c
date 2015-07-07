@@ -897,7 +897,9 @@ static INLINE void dec_update_partition_context(MACROBLOCKD *xd,
 
 static PARTITION_TYPE read_partition(MACROBLOCKD *xd, int mi_row, int mi_col,
                                      vp9_reader *r,
-                                     int has_rows, int has_cols, int bsl) {
+                                     int has_rows, int has_cols,
+                                     int n4x4_l2, int bsl,
+                                     int num_8x8_wh, int hbs) {
   const int ctx = dec_partition_plane_context(xd, mi_row, mi_col, bsl);
   const vp9_prob *const probs = get_partition_probs(xd, ctx);
   FRAME_COUNTS *counts = xd->counts;
@@ -914,6 +916,12 @@ static PARTITION_TYPE read_partition(MACROBLOCKD *xd, int mi_row, int mi_col,
 
   if (counts)
     ++counts->partition[ctx][p];
+
+  // update partition context
+  if (!hbs || p != PARTITION_SPLIT)
+    dec_update_partition_context(xd, mi_row, mi_col, num_8x8_wh,
+        n4x4_l2 - !!(p & PARTITION_HORZ),
+        n4x4_l2 - !!(p & PARTITION_VERT));
 
   return p;
 }
@@ -933,7 +941,7 @@ static void decode_partition(VP9Decoder *const pbi, MACROBLOCKD *const xd,
     return;
 
   partition = read_partition(xd, mi_row, mi_col, r, has_rows, has_cols,
-                             n8x8_l2);
+                             n4x4_l2, n8x8_l2, num_8x8_wh, hbs);
 
   xd->bmode_blocks_wl =
   xd->bmode_blocks_hl = 1;
@@ -967,12 +975,6 @@ static void decode_partition(VP9Decoder *const pbi, MACROBLOCKD *const xd,
         assert(0 && "Invalid partition type");
     }
   }
-
-  // update partition context
-  if (!hbs || partition != PARTITION_SPLIT)
-    dec_update_partition_context(xd, mi_row, mi_col, num_8x8_wh,
-        n4x4_l2 - !!(partition & PARTITION_HORZ),
-        n4x4_l2 - !!(partition & PARTITION_VERT));
 }
 
 static void setup_token_decoder(const uint8_t *data,
