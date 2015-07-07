@@ -10,6 +10,7 @@
 
 #include "vp9/common/vp9_prob.h"
 
+#if defined(vp9_norm)
 const uint8_t vp9_norm[256] = {
   0, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,
   3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -28,6 +29,7 @@ const uint8_t vp9_norm[256] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
+#endif
 
 static unsigned int tree_merge_probs_impl(unsigned int i,
                                           const vp9_tree_index *tree,

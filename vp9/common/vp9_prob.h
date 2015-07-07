@@ -16,6 +16,7 @@
 #include "vpx_ports/mem.h"
 
 #include "vp9/common/vp9_common.h"
+#include "vp9/common/vp9_systemdependent.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,7 +96,13 @@ void vp9_tree_merge_probs(const vp9_tree_index *tree, const vp9_prob *pre_probs,
                           const unsigned int *counts, vp9_prob *probs);
 
 
+#if HAVE_FAST_MSB
+#define VP9_NORM(x) (get_msb(x) ^ 7)
+#else
+#define vp9_norm vp9_norm
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
+#define VP9_NORM(x) vp9_norm[x]
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

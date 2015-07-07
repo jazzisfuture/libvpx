@@ -99,7 +99,7 @@ static INLINE int vp9_read(vp9_reader *r, int prob) {
   }
 
   {
-    register unsigned int shift = vp9_norm[range];
+    register unsigned int shift = VP9_NORM(range);
     range <<= shift;
     value <<= shift;
     count -= shift;

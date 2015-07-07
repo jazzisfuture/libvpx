@@ -46,12 +46,13 @@ static INLINE int round(double x) {
 // use GNU builtins where available.
 #if defined(__GNUC__) && \
     ((__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || __GNUC__ >= 4)
+#define HAVE_FAST_MSB 1
 static INLINE int get_msb(unsigned int n) {
   return 31 ^ __builtin_clz(n);
 }
 #elif defined(USE_MSC_INTRINSICS)
 #pragma intrinsic(_BitScanReverse)
-
+#define HAVE_FAST_MSB 1
 static INLINE int get_msb(unsigned int n) {
   unsigned long first_set_bit;
   _BitScanReverse(&first_set_bit, n);
@@ -59,6 +60,7 @@ static INLINE int get_msb(unsigned int n) {
 }
 #undef USE_MSC_INTRINSICS
 #else
+#define HAVE_FAST_MSB 0
 // Returns (int)floor(log2(n)). n must be > 0.
 static INLINE int get_msb(unsigned int n) {
   int log = 0;
