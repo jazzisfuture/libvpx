@@ -11,6 +11,7 @@
 #include "vpx_ports/mem.h"
 #include "vpx_mem/vpx_mem.h"
 
+#include "./vpx_config.h"
 #include "vp9/decoder/vp9_reader.h"
 
 int vp9_reader_init(vp9_reader *r,
@@ -58,11 +59,41 @@ void vp9_reader_fill(vp9_reader *r) {
   }
 
   if (x < 0 || bits_left) {
+#if CONFIG_BIG_ENDIAN
     while (shift >= loop_end) {
       count += CHAR_BIT;
       value |= (BD_VALUE)*buffer++ << shift;
       shift -= CHAR_BIT;
     }
+#else
+#if defined(__GNUC__) && UINTPTR_MAX == 0xffffffffffffffff
+    BD_VALUE vv = __builtin_bswap64(*((const BD_VALUE *) buffer));
+    int bytes = ((shift - loop_end) >> 3) + 1;
+    int bits = bytes << 3;
+    BD_VALUE nv = 0;
+
+    shift = shift + 8 - bits;
+    count += bits;
+    buffer += bytes;
+    nv = vv >> (64 - bits);
+    value = r->value | (nv << shift);
+#else
+    BD_VALUE v = *((const BD_VALUE *) buffer);
+    int bytes = ((shift - loop_end) >> 3) + 1;
+    BD_VALUE nv = 0;
+
+    shift = shift + 8 - (bytes << 3);
+    count += (bytes << 3);
+    buffer += bytes;
+    // This while loop can be replaced with a single pshuffb command on intel.
+    while (bytes--) {
+      nv <<= 8;
+      nv |= (v & 0xff);
+      v >>= 8;
+    }
+    value = r->value | (nv << shift);
+#endif
+#endif
   }
 
   // NOTE: Variable 'buffer' may not relate to 'r->buffer' after decryption,
