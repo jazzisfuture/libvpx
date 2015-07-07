@@ -202,7 +202,7 @@ void vp9_highbd_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input,
 static INLINE uint16_t highbd_clip_pixel_add(uint16_t dest, tran_high_t trans,
                                              int bd) {
   trans = WRAPLOW(trans, bd);
-  return clip_pixel_highbd(WRAPLOW(dest + trans, bd), bd);
+  return clip_pixel_highbd((int)WRAPLOW(dest + trans, bd), bd);
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #ifdef __cplusplus
