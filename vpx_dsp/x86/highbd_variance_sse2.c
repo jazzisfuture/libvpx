@@ -52,7 +52,7 @@ static void highbd_10_variance_sse2(const uint16_t *src, int src_stride,
                                     high_variance_fn_t var_fn, int block_size) {
   int i, j;
   uint64_t sse_long = 0;
-  int64_t sum_long = 0;
+  int32_t sum_long = 0;
 
   for (i = 0; i < h; i += block_size) {
     for (j = 0; j < w; j += block_size) {
@@ -65,7 +65,7 @@ static void highbd_10_variance_sse2(const uint16_t *src, int src_stride,
     }
   }
   *sum = ROUND_POWER_OF_TWO(sum_long, 2);
-  *sse = ROUND_POWER_OF_TWO(sse_long, 4);
+  *sse = (uint32_t)ROUND_POWER_OF_TWO(sse_long, 4);
 }
 
 static void highbd_12_variance_sse2(const uint16_t *src, int src_stride,
@@ -74,7 +74,7 @@ static void highbd_12_variance_sse2(const uint16_t *src, int src_stride,
                                     high_variance_fn_t var_fn, int block_size) {
   int i, j;
   uint64_t sse_long = 0;
-  int64_t sum_long = 0;
+  int32_t sum_long = 0;
 
   for (i = 0; i < h; i += block_size) {
     for (j = 0; j < w; j += block_size) {
@@ -87,7 +87,7 @@ static void highbd_12_variance_sse2(const uint16_t *src, int src_stride,
     }
   }
   *sum = ROUND_POWER_OF_TWO(sum_long, 4);
-  *sse = ROUND_POWER_OF_TWO(sse_long, 8);
+  *sse = (uint32_t)ROUND_POWER_OF_TWO(sse_long, 8);
 }
 
 

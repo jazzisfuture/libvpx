@@ -155,7 +155,7 @@ uint32_t vp9_highbd_12_sub_pixel_variance##w##x##h##_##opt( \
     } \
   } \
   se = ROUND_POWER_OF_TWO(se, 4); \
-  sse = ROUND_POWER_OF_TWO(long_sse, 8); \
+  sse = (uint32_t)ROUND_POWER_OF_TWO(long_sse, 8); \
   *sse_ptr = sse; \
   return sse - ((cast se * se) >> (wlog2 + hlog2)); \
 }
@@ -324,7 +324,7 @@ uint32_t vp9_highbd_12_sub_pixel_avg_variance##w##x##h##_##opt( \
     } \
   } \
   se = ROUND_POWER_OF_TWO(se, 4); \
-  sse = ROUND_POWER_OF_TWO(long_sse, 8); \
+  sse = (uint32_t)ROUND_POWER_OF_TWO(long_sse, 8); \
   *sse_ptr = sse; \
   return sse - ((cast se * se) >> (wlog2 + hlog2)); \
 }
