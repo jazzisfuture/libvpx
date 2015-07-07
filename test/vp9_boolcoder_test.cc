@@ -31,6 +31,8 @@ TEST(VP9, TestBitIO) {
   for (int n = 0; n < num_tests; ++n) {
     for (int method = 0; method <= 7; ++method) {   // we generate various proba
       const int kBitsToTest = 1000;
+      const int kWriterIters = 1;
+      const int kReaderIters = 10000;
       uint8_t probas[kBitsToTest];
 
       for (int i = 0; i < kBitsToTest; ++i) {
@@ -50,11 +52,13 @@ TEST(VP9, TestBitIO) {
         const int random_seed = 6432;
         const int kBufferSize = 10000;
         ACMRandom bit_rnd(random_seed);
-        vp9_writer bw;
         uint8_t bw_buffer[kBufferSize];
-        vp9_start_encode(&bw, bw_buffer);
-
         int bit = (bit_method == 0) ? 0 : (bit_method == 1) ? 1 : 0;
+
+        for (int ii = 0; ii < kWriterIters; ++ii) {
+        vp9_writer bw;
+        vp9_start_encode(&bw, bw_buffer);
+        bit_rnd.Reset(random_seed);
         for (int i = 0; i < kBitsToTest; ++i) {
           if (bit_method == 2) {
             bit = (i & 1);
@@ -63,12 +67,13 @@ TEST(VP9, TestBitIO) {
           }
           vp9_write(&bw, bit, static_cast<int>(probas[i]));
         }
-
         vp9_stop_encode(&bw);
+        }
 
         // First bit should be zero
         GTEST_ASSERT_EQ(bw_buffer[0] & 0x80, 0);
 
+        for (int ii = 0; ii < kReaderIters; ++ii) {
         vp9_reader br;
         vp9_reader_init(&br, bw_buffer, kBufferSize, NULL, NULL);
         bit_rnd.Reset(random_seed);
@@ -82,6 +87,7 @@ TEST(VP9, TestBitIO) {
               << "pos: " << i << " / " << kBitsToTest
               << " bit_method: " << bit_method
               << " method: " << method;
+        }
         }
       }
     }
