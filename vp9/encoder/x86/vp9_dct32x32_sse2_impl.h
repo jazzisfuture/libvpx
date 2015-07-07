@@ -28,7 +28,8 @@ void vp9_fdct32x32_rows_c(const int16_t *intermediate, tran_low_t *out) {
         temp_in[j] = intermediate[j * 32 + i];
       vp9_fdct32(temp_in, temp_out, 0);
       for (j = 0; j < 32; ++j)
-        out[j + i * 32] = (temp_out[j] + 1 + (temp_out[j] < 0)) >> 2;
+        out[j + i * 32] =
+            (tran_low_t)((temp_out[j] + 1 + (temp_out[j] < 0)) >> 2);
     }
 }
   #define HIGH_FDCT32x32_2D_C vp9_highbd_fdct32x32_c
@@ -39,10 +40,10 @@ void vp9_fdct32x32_rd_rows_c(const int16_t *intermediate, tran_low_t *out) {
     for (i = 0; i < 32; ++i) {
       tran_high_t temp_in[32], temp_out[32];
       for (j = 0; j < 32; ++j)
-        temp_in[j] = intermediate[j * 32 + i];
+        temp_in[j] =intermediate[j * 32 + i];
       vp9_fdct32(temp_in, temp_out, 1);
       for (j = 0; j < 32; ++j)
-        out[j + i * 32] = temp_out[j];
+        out[j + i * 32] = (tran_low_t)temp_out[j];
     }
 }
   #define HIGH_FDCT32x32_2D_C vp9_highbd_fdct32x32_rd_c
