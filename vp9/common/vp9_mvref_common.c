@@ -657,10 +657,8 @@ static int check_inside(const TileInfo *const tile, int mi_row, int mi_col) {
          mi_row < tile->mi_row_end && mi_col < tile->mi_col_end;
 }
 
+#if !CONFIG_EXT_PARTITION
 static int is_right_available(BLOCK_SIZE bsize,
-#if CONFIG_EXT_PARTITION
-                              PARTITION_TYPE partition,
-#endif
                               int mi_row, int mi_col) {
   int depth, max_depth = 4 - MIN(b_width_log2_lookup[bsize],
                                  b_height_log2_lookup[bsize]);
@@ -683,15 +681,8 @@ static int is_right_available(BLOCK_SIZE bsize,
     if (block[max_depth] > 0)
       return 0;
   } else {
-#if CONFIG_EXT_PARTITION
-    if (block[max_depth] == 0)
-      return 1;
-    if (block[max_depth] == 2)
-      return partition != PARTITION_VERT_A;
-#else
     if (block[max_depth] == 0 || block[max_depth] == 2)
       return 1;
-#endif
     else if (block[max_depth] == 3)
       return 0;
   }
@@ -704,6 +695,7 @@ static int is_right_available(BLOCK_SIZE bsize,
   }
   return 1;
 }
+#endif
 
 static int is_second_rec(int mi_row, int mi_col, BLOCK_SIZE bsize) {
   int bw = 4 << b_width_log2_lookup[bsize];
@@ -721,7 +713,7 @@ int vp9_construct_ref_inter_list(VP9_COMMON *cm,  MACROBLOCKD *xd,
                                  const TileInfo *const tile,
                                  BLOCK_SIZE bsize,
 #if CONFIG_EXT_PARTITION
-                                 PARTITION_TYPE partition,
+                                 int top_right_available,
 #endif
                                  int mi_row, int mi_col,
                                  MB_MODE_INFO *ref_list[18]) {
@@ -786,11 +778,12 @@ int vp9_construct_ref_inter_list(VP9_COMMON *cm,  MACROBLOCKD *xd,
     row_offset = row_offset_cand[i];
     col_offset = col_offset_cand[i];
     if ((col_offset < (bw / 8) ||
-        (col_offset == (bw / 8) && is_right_available(bsize,
 #if CONFIG_EXT_PARTITION
-                                                      partition,
-#endif
+        (col_offset == (bw / 8) && top_right_available))
+#else
+        (col_offset == (bw / 8) && is_right_available(bsize,
                                                       mi_row, mi_col)))
+#endif
         && check_inside(tile, mi_row + row_offset, mi_col + col_offset)) {
       mi_offset = row_offset * cm->mi_stride + col_offset;
       ref_mbmi = &xd->mi[mi_offset].src_mi->mbmi;

@@ -387,7 +387,7 @@ int vp9_construct_ref_inter_list(VP9_COMMON *cm,  MACROBLOCKD *xd,
                                  const TileInfo *const tile,
                                  BLOCK_SIZE bsize,
 #if CONFIG_EXT_PARTITION
-                                 PARTITION_TYPE partition,
+                                 int top_right_available,
 #endif
                                  int mi_row, int mi_col,
                                  MB_MODE_INFO *ref_list[18]);

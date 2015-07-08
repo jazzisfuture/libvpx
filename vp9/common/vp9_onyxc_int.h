@@ -389,7 +389,6 @@ static INLINE void update_ext_partition_context(MACROBLOCKD *xd,
                                                 PARTITION_TYPE partition) {
   if (bsize >= BLOCK_8X8) {
     const int bsl = b_width_log2_lookup[bsize], hbs = (1 << bsl) / 4;
-    BLOCK_SIZE bsize2 = get_subsize(bsize, PARTITION_SPLIT);
     switch (partition) {
       case PARTITION_SPLIT:
         if (bsize != BLOCK_8X8)
@@ -400,20 +399,16 @@ static INLINE void update_ext_partition_context(MACROBLOCKD *xd,
         update_partition_context(xd, mi_row, mi_col, subsize, bsize);
         break;
       case PARTITION_HORZ_A:
-        update_partition_context(xd, mi_row, mi_col, bsize2, subsize);
         update_partition_context(xd, mi_row + hbs, mi_col, subsize, subsize);
         break;
       case PARTITION_HORZ_B:
         update_partition_context(xd, mi_row, mi_col, subsize, subsize);
-        update_partition_context(xd, mi_row + hbs, mi_col, bsize2, subsize);
         break;
       case PARTITION_VERT_A:
-        update_partition_context(xd, mi_row, mi_col, bsize2, subsize);
         update_partition_context(xd, mi_row, mi_col + hbs, subsize, subsize);
         break;
       case PARTITION_VERT_B:
         update_partition_context(xd, mi_row, mi_col, subsize, subsize);
-        update_partition_context(xd, mi_row, mi_col + hbs, bsize2, subsize);
         break;
       default:
         assert(0 && "Invalid partition type");

@@ -42,7 +42,7 @@ void vp9_rd_pick_inter_mode_sb(struct VP9_COMP *cpi, struct macroblock *x,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                               PARTITION_TYPE partition,
+                               int top_right_available,
 #endif
 #endif
 
