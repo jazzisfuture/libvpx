@@ -352,7 +352,9 @@ static INLINE void vp9_init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd) {
   int i;
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
+#if CONFIG_VP9_DECODER
     xd->plane[i].dqcoeff = xd->dqcoeff;
+#endif
     xd->above_context[i] = cm->above_context +
         i * sizeof(*cm->above_context) * 2 * mi_cols_aligned_to_sb(cm->mi_cols);
 
