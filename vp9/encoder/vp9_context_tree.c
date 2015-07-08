@@ -144,8 +144,13 @@ static void free_tree_contexts(PC_TREE *tree) {
 // represents the state of our search.
 void vp9_setup_pc_tree(VP9_COMMON *cm, VP9_COMP *cpi) {
   int i, j;
+#if CONFIG_EXT_PARTITION
+  const int leaf_nodes = 12 * 12 * 12;
+  const int tree_nodes = 12 * 12 * 12 + 12 * 12 + 12 + 1;
+#else
   const int leaf_nodes = 64;
   const int tree_nodes = 64 + 16 + 4 + 1;
+#endif
   int pc_tree_index = 0;
   PC_TREE *this_pc;
   PICK_MODE_CONTEXT *this_leaf;
@@ -183,13 +188,23 @@ void vp9_setup_pc_tree(VP9_COMMON *cm, VP9_COMP *cpi) {
 
   // Each node has 4 leaf nodes, fill each block_size level of the tree
   // from leafs to the root.
+#if CONFIG_EXT_PARTITION
+  for (nodes = 12*12; nodes > 0; nodes /= 12) {
+#else
   for (nodes = 16; nodes > 0; nodes >>= 2) {
+#endif
     for (i = 0; i < nodes; ++i) {
       PC_TREE *const tree = &cpi->pc_tree[pc_tree_index];
       alloc_tree_contexts(cm, tree, 4 << (2 * square_index));
       tree->block_size = square[square_index];
       for (j = 0; j < 4; j++)
         tree->split[j] = this_pc++;
+#if CONFIG_EXT_PARTITION
+      for (j = 0; j < 4; j++)
+        tree->splith[j] = this_pc++;
+      for (j = 0; j < 4; j++)
+        tree->splitv[j] = this_pc++;
+#endif
       ++pc_tree_index;
     }
     ++square_index;
@@ -199,11 +214,17 @@ void vp9_setup_pc_tree(VP9_COMMON *cm, VP9_COMP *cpi) {
 }
 
 void vp9_free_pc_tree(VP9_COMP *cpi) {
+#if CONFIG_EXT_PARTITION
+  const int leaf_nodes = 12 * 12 * 12;
+  const int tree_nodes = 12 * 12 * 12 + 12 * 12 + 12 + 1;
+#else
+  const int leaf_nodes = 64;
   const int tree_nodes = 64 + 16 + 4 + 1;
+#endif
   int i;
 
   // Set up all 4x4 mode contexts
-  for (i = 0; i < 64; ++i)
+  for (i = 0; i < leaf_nodes; ++i)
     free_mode_context(&cpi->leaf_tree[i]);
 
   // Sets up all the leaf nodes in the tree.

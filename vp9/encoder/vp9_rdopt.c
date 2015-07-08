@@ -6022,7 +6022,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                               PARTITION_TYPE partition,
+                               int top_right_available,
 #endif
 #endif
                                BLOCK_SIZE bsize,
@@ -6134,7 +6134,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   inter_ref_count =
     vp9_construct_ref_inter_list(cm, xd, tile, bsize,
 #if CONFIG_EXT_PARTITION
-                                 partition,
+                                 top_right_available,
 #endif
                                  mi_row, mi_col, inter_ref_list);
   mbmi->inter_ref_count = inter_ref_count;
