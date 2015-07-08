@@ -32,6 +32,8 @@ typedef struct TileData {
   VP9_COMMON *cm;
   vp9_reader bit_reader;
   DECLARE_ALIGNED(16, MACROBLOCKD, xd);
+  /* dqcoeff are shared by all the planes. So planes must be decoded serially */
+  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
 } TileData;
 
 typedef struct TileWorkerData {
@@ -39,11 +41,15 @@ typedef struct TileWorkerData {
   vp9_reader bit_reader;
   FRAME_COUNTS counts;
   DECLARE_ALIGNED(16, MACROBLOCKD, xd);
+  /* dqcoeff are shared by all the planes. So planes must be decoded serially */
+  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
   struct vpx_internal_error_info error_info;
 } TileWorkerData;
 
 typedef struct VP9Decoder {
   DECLARE_ALIGNED(16, MACROBLOCKD, mb);
+  /* dqcoeff are shared by all the planes. So planes must be decoded serially */
+  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
 
   DECLARE_ALIGNED(16, VP9_COMMON, common);
 
