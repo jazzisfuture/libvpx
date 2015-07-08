@@ -161,6 +161,7 @@ static void count_segs_sb(const VP9_COMMON *cm, MACROBLOCKD *xd,
   const int bs = num_8x8_blocks_wide_lookup[bsize], hbs = bs / 2;
 #if CONFIG_EXT_PARTITION
   PARTITION_TYPE partition;
+  const BLOCK_SIZE bsize2 = subsize_lookup[PARTITION_SPLIT][bsize];
 #endif
 
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
@@ -197,11 +198,13 @@ static void count_segs_sb(const VP9_COMMON *cm, MACROBLOCKD *xd,
                  t_unpred_seg_counts, hbs, bs, mi_row, mi_col + hbs);
       break;
     case PARTITION_HORZ_A:
-      count_segs(cm, xd, tile, mi, no_pred_segcounts, temporal_predictor_count,
-                 t_unpred_seg_counts, hbs, hbs, mi_row, mi_col);
-      count_segs(cm, xd, tile, mi + hbs, no_pred_segcounts,
-                 temporal_predictor_count, t_unpred_seg_counts, hbs, hbs,
-                 mi_row, mi_col + hbs);
+      count_segs_sb(cm, xd, tile, mi,
+                    no_pred_segcounts, temporal_predictor_count,
+                    t_unpred_seg_counts,
+                    mi_row, mi_col, bsize2);
+      count_segs_sb(cm, xd, tile, mi + hbs, no_pred_segcounts,
+                    temporal_predictor_count, t_unpred_seg_counts,
+                    mi_row, mi_col + hbs, bsize2);
       count_segs(cm, xd, tile, mi + hbs * mis, no_pred_segcounts,
                  temporal_predictor_count, t_unpred_seg_counts, bs, hbs,
                  mi_row + hbs, mi_col);
@@ -209,19 +212,20 @@ static void count_segs_sb(const VP9_COMMON *cm, MACROBLOCKD *xd,
     case PARTITION_HORZ_B:
       count_segs(cm, xd, tile, mi, no_pred_segcounts, temporal_predictor_count,
                  t_unpred_seg_counts, bs, hbs, mi_row, mi_col);
-      count_segs(cm, xd, tile, mi + hbs * mis, no_pred_segcounts,
-                 temporal_predictor_count, t_unpred_seg_counts, hbs, hbs,
-                 mi_row + hbs, mi_col);
-      count_segs(cm, xd, tile, mi + hbs + hbs * mis, no_pred_segcounts,
-                 temporal_predictor_count, t_unpred_seg_counts, hbs, hbs,
-                 mi_row + hbs, mi_col + hbs);
+      count_segs_sb(cm, xd, tile, mi + hbs * mis, no_pred_segcounts,
+                    temporal_predictor_count, t_unpred_seg_counts,
+                    mi_row + hbs, mi_col, bsize2);
+      count_segs_sb(cm, xd, tile, mi + hbs + hbs * mis, no_pred_segcounts,
+                    temporal_predictor_count, t_unpred_seg_counts,
+                    mi_row + hbs, mi_col + hbs, bsize2);
       break;
     case PARTITION_VERT_A:
-      count_segs(cm, xd, tile, mi, no_pred_segcounts, temporal_predictor_count,
-                 t_unpred_seg_counts, hbs, hbs, mi_row, mi_col);
-      count_segs(cm, xd, tile, mi + hbs * mis, no_pred_segcounts,
-                 temporal_predictor_count, t_unpred_seg_counts, hbs, hbs,
-                 mi_row + hbs, mi_col);
+      count_segs_sb(cm, xd, tile, mi, no_pred_segcounts,
+                    temporal_predictor_count,
+                    t_unpred_seg_counts, mi_row, mi_col, bsize2);
+      count_segs_sb(cm, xd, tile, mi + hbs * mis, no_pred_segcounts,
+                    temporal_predictor_count, t_unpred_seg_counts,
+                    mi_row + hbs, mi_col, bsize2);
       count_segs(cm, xd, tile, mi + hbs,
                  no_pred_segcounts, temporal_predictor_count,
                  t_unpred_seg_counts, hbs, bs, mi_row, mi_col + hbs);
@@ -229,12 +233,12 @@ static void count_segs_sb(const VP9_COMMON *cm, MACROBLOCKD *xd,
     case PARTITION_VERT_B:
       count_segs(cm, xd, tile, mi, no_pred_segcounts, temporal_predictor_count,
                  t_unpred_seg_counts, hbs, bs, mi_row, mi_col);
-      count_segs(cm, xd, tile, mi + hbs,
-                 no_pred_segcounts, temporal_predictor_count,
-                 t_unpred_seg_counts, hbs, hbs, mi_row, mi_col + hbs);
-      count_segs(cm, xd, tile, mi + hbs + hbs * mis,
-                 no_pred_segcounts, temporal_predictor_count,
-                 t_unpred_seg_counts, hbs, hbs, mi_row + hbs, mi_col + hbs);
+      count_segs_sb(cm, xd, tile, mi + hbs,
+                    no_pred_segcounts, temporal_predictor_count,
+                    t_unpred_seg_counts, mi_row, mi_col + hbs, bsize2);
+      count_segs_sb(cm, xd, tile, mi + hbs + hbs * mis,
+                    no_pred_segcounts, temporal_predictor_count,
+                    t_unpred_seg_counts, mi_row + hbs, mi_col + hbs, bsize2);
       break;
     case PARTITION_SPLIT:
       {
