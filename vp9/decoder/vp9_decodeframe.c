@@ -1586,7 +1586,7 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                         PARTITION_TYPE partition,
+                         int top_right_available,
 #endif
 #endif
                          int mi_row, int mi_col,
@@ -1605,7 +1605,7 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   vp9_read_mode_info(cm, xd, tile, supertx_enabled,
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                     top_right_available,
 #endif
 #endif
                      mi_row, mi_col, r);
@@ -1614,7 +1614,7 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   vp9_read_mode_info(cm, xd, tile,
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                     top_right_available,
 #endif
 #endif
                      mi_row, mi_col, r);
@@ -1719,6 +1719,11 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #if CONFIG_SUPERTX
                              int supertx_enabled,
 #endif
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                             int top_right_available,
+#endif
+#endif
                              int mi_row, int mi_col,
                              vp9_reader* r, BLOCK_SIZE bsize) {
   const int hbs = num_8x8_blocks_wide_lookup[bsize] / 2;
@@ -1785,7 +1790,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                 partition,
+                 top_right_available,
 #endif
 #endif
                  mi_row, mi_col, r, subsize);
@@ -1798,7 +1803,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                     top_right_available,
 #endif
 #endif
                      mi_row, mi_col, r, subsize);
@@ -1810,7 +1815,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                     top_right_available,
 #endif
 #endif
                      mi_row, mi_col, r, subsize);
@@ -1821,7 +1826,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                       partition,
+                       0,
 #endif
 #endif
                        mi_row + hbs, mi_col, r, subsize);
@@ -1833,7 +1838,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                     1,
 #endif
 #endif
                      mi_row, mi_col, r, subsize);
@@ -1844,7 +1849,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                       partition,
+                       top_right_available,
 #endif
 #endif
                        mi_row, mi_col + hbs, r, subsize);
@@ -1852,49 +1857,93 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
       case PARTITION_SPLIT:
 #if CONFIG_SUPERTX
         decode_partition(cm, xd, tile, supertx_enabled,
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         1,
+#endif
+#endif
                          mi_row, mi_col, r, subsize);
         decode_partition(cm, xd, tile, supertx_enabled,
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         top_right_available,
+#endif
+#endif
                          mi_row, mi_col + hbs, r, subsize);
         decode_partition(cm, xd, tile, supertx_enabled,
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         1,
+#endif
+#endif
                          mi_row + hbs, mi_col, r, subsize);
         decode_partition(cm, xd, tile, supertx_enabled,
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         0,
+#endif
+#endif
                          mi_row + hbs, mi_col + hbs, r, subsize);
 #else
-        decode_partition(cm, xd, tile, mi_row,       mi_col,       r, subsize);
-        decode_partition(cm, xd, tile, mi_row,       mi_col + hbs, r, subsize);
-        decode_partition(cm, xd, tile, mi_row + hbs, mi_col,       r, subsize);
-        decode_partition(cm, xd, tile, mi_row + hbs, mi_col + hbs, r, subsize);
+        decode_partition(cm, xd, tile,
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         1,
+#endif
+#endif
+                         mi_row,       mi_col,       r, subsize);
+        decode_partition(cm, xd, tile,
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         top_right_available,
+#endif
+#endif
+                         mi_row,       mi_col + hbs, r, subsize);
+        decode_partition(cm, xd, tile,
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         1,
+#endif
+#endif
+                         mi_row + hbs, mi_col,       r, subsize);
+        decode_partition(cm, xd, tile,
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         0,
+#endif
+#endif
+                         mi_row + hbs, mi_col + hbs, r, subsize);
 #endif
         break;
 #if CONFIG_EXT_PARTITION
       case PARTITION_HORZ_A:
+        decode_partition(cm, xd, tile,
+#if CONFIG_SUPERTX
+                         supertx_enabled,
+#endif
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         1,
+#endif
+#endif
+                         mi_row, mi_col, r, bsize2);
+        decode_partition(cm, xd, tile,
+#if CONFIG_SUPERTX
+                         supertx_enabled,
+#endif
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         top_right_available,
+#endif
+#endif
+                         mi_row, mi_col + hbs, r, bsize2);
         decode_block(cm, xd, tile,
 #if CONFIG_SUPERTX
                      supertx_enabled,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
-#endif
-#endif
-                     mi_row,       mi_col,       r, bsize2);
-        decode_block(cm, xd, tile,
-#if CONFIG_SUPERTX
-                     supertx_enabled,
-#endif
-#if CONFIG_COPY_MODE
-#if CONFIG_EXT_PARTITION
-                     partition,
-#endif
-#endif
-                     mi_row,       mi_col + hbs, r, bsize2);
-        decode_block(cm, xd, tile,
-#if CONFIG_SUPERTX
-                     supertx_enabled,
-#endif
-#if CONFIG_COPY_MODE
-#if CONFIG_EXT_PARTITION
-                     partition,
+                     0,
 #endif
 #endif
                      mi_row + hbs, mi_col, r, subsize);
@@ -1906,59 +1955,59 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                     top_right_available,
 #endif
 #endif
                      mi_row, mi_col, r, subsize);
-        decode_block(cm, xd, tile,
+        decode_partition(cm, xd, tile,
 #if CONFIG_SUPERTX
-                     supertx_enabled,
+                         supertx_enabled,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                         1,
 #endif
 #endif
-                     mi_row + hbs, mi_col,       r, bsize2);
-        decode_block(cm, xd, tile,
+                         mi_row + hbs, mi_col, r, bsize2);
+        decode_partition(cm, xd, tile,
 #if CONFIG_SUPERTX
-                     supertx_enabled,
+                         supertx_enabled,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                         0,
 #endif
 #endif
-                     mi_row + hbs, mi_col + hbs, r, bsize2);
+                         mi_row + hbs, mi_col + hbs, r, bsize2);
         break;
       case PARTITION_VERT_A:
+        decode_partition(cm, xd, tile,
+#if CONFIG_SUPERTX
+                         supertx_enabled,
+#endif
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         1,
+#endif
+#endif
+                         mi_row, mi_col, r, bsize2);
+        decode_partition(cm, xd, tile,
+#if CONFIG_SUPERTX
+                         supertx_enabled,
+#endif
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         0,
+#endif
+#endif
+                         mi_row + hbs, mi_col, r, bsize2);
         decode_block(cm, xd, tile,
 #if CONFIG_SUPERTX
                      supertx_enabled,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
-#endif
-#endif
-                     mi_row,       mi_col,       r, bsize2);
-        decode_block(cm, xd, tile,
-#if CONFIG_SUPERTX
-                     supertx_enabled,
-#endif
-#if CONFIG_COPY_MODE
-#if CONFIG_EXT_PARTITION
-                     partition,
-#endif
-#endif
-                     mi_row + hbs, mi_col,       r, bsize2);
-        decode_block(cm, xd, tile,
-#if CONFIG_SUPERTX
-                     supertx_enabled,
-#endif
-#if CONFIG_COPY_MODE
-#if CONFIG_EXT_PARTITION
-                     partition,
+                     top_right_available,
 #endif
 #endif
                      mi_row, mi_col + hbs, r, subsize);
@@ -1970,30 +2019,30 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                     1,
 #endif
 #endif
                      mi_row, mi_col, r, subsize);
-        decode_block(cm, xd, tile,
+        decode_partition(cm, xd, tile,
 #if CONFIG_SUPERTX
-                     supertx_enabled,
+                         supertx_enabled,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                         top_right_available,
 #endif
 #endif
-                     mi_row,       mi_col + hbs, r, bsize2);
-        decode_block(cm, xd, tile,
+                         mi_row, mi_col + hbs, r, bsize2);
+        decode_partition(cm, xd, tile,
 #if CONFIG_SUPERTX
-                     supertx_enabled,
+                         supertx_enabled,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                     partition,
+                         0,
 #endif
 #endif
-                     mi_row + hbs, mi_col + hbs, r, bsize2);
+                         mi_row + hbs, mi_col + hbs, r, bsize2);
         break;
 #endif
       default:
@@ -2056,20 +2105,16 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
         update_partition_context(xd, mi_row, mi_col, subsize, bsize);
         break;
       case PARTITION_HORZ_A:
-        update_partition_context(xd, mi_row, mi_col, bsize2, subsize);
         update_partition_context(xd, mi_row + hbs, mi_col, subsize, subsize);
         break;
       case PARTITION_HORZ_B:
         update_partition_context(xd, mi_row, mi_col, subsize, subsize);
-        update_partition_context(xd, mi_row + hbs, mi_col, bsize2, subsize);
         break;
       case PARTITION_VERT_A:
-        update_partition_context(xd, mi_row, mi_col, bsize2, subsize);
         update_partition_context(xd, mi_row, mi_col + hbs, subsize, subsize);
         break;
       case PARTITION_VERT_B:
         update_partition_context(xd, mi_row, mi_col, subsize, subsize);
-        update_partition_context(xd, mi_row, mi_col + hbs, bsize2, subsize);
         break;
       default:
         assert(0 && "Invalid partition type");
@@ -2717,6 +2762,11 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
 #if CONFIG_SUPERTX
                          0,
 #endif
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                         1,
+#endif
+#endif
                          mi_row, mi_col,
                          &tile_data->bit_reader, BLOCK_64X64);
       }
@@ -2757,6 +2807,11 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
             decode_partition(tile_data->cm, &tile_data->xd, &tile,
 #if CONFIG_SUPERTX
                              0,
+#endif
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                             1,
+#endif
 #endif
                              mi_row, mi_col,
                              &tile_data->bit_reader, BLOCK_64X64);
@@ -2821,6 +2876,11 @@ static int tile_worker_hook(TileWorkerData *const tile_data,
       decode_partition(tile_data->cm, &tile_data->xd, tile,
 #if CONFIG_SUPERTX
                        0,
+#endif
+#if CONFIG_COPY_MODE
+#if CONFIG_EXT_PARTITION
+                       1,
+#endif
 #endif
                        mi_row, mi_col, &tile_data->bit_reader, BLOCK_64X64);
     }
