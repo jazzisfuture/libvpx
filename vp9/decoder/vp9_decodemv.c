@@ -1303,7 +1303,7 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                                       PARTITION_TYPE partition,
+                                       int top_right_available,
 #endif
 #endif
                                        int mi_row, int mi_col, vp9_reader *r) {
@@ -1326,7 +1326,7 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
     num_candidate = vp9_construct_ref_inter_list(
         cm, xd, tile, mbmi->sb_type,
 #if CONFIG_EXT_PARTITION
-        partition,
+        top_right_available,
 #endif
         mi_row, mi_col, inter_ref_list);
   if (mbmi->sb_type >= BLOCK_8X8 && num_candidate > 0) {
@@ -1633,7 +1633,7 @@ void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                        PARTITION_TYPE partition,
+                        int top_right_available,
 #endif
 #endif
                         int mi_row, int mi_col, vp9_reader *r) {
@@ -1650,7 +1650,7 @@ void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
 #endif
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
-                               partition,
+                               top_right_available,
 #endif
 #endif
                                mi_row, mi_col, r);
