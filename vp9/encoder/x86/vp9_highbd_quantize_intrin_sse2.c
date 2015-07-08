@@ -85,11 +85,10 @@ void vp9_highbd_quantize_b_sse2(const tran_low_t *coeff_ptr,
       for (j = 0; j < 4; j++) {
         if (test & (1 << (4 * j))) {
           int k = 4 * i + j;
-          int64_t tmp = clamp(abs_coeff[j] + round_ptr[k != 0],
-                              INT32_MIN, INT32_MAX);
-          tmp = ((((tmp * quant_ptr[k != 0]) >> 16) + tmp) *
-                    quant_shift_ptr[k != 0]) >> 16;  // quantization
-          qcoeff_ptr[k] = (tmp ^ coeff_sign[j]) - coeff_sign[j];
+          uint32_t tmp = abs_coeff[j] + round_ptr[k != 0];
+          tmp = (uint32_t)((((((int64_t)tmp * quant_ptr[k != 0]) >> 16) + tmp) *
+                            quant_shift_ptr[k != 0]) >> 16);  // quantization
+          qcoeff_ptr[k] = (int)(tmp ^ coeff_sign[j]) - coeff_sign[j];
           dqcoeff_ptr[k] = qcoeff_ptr[k] * dequant_ptr[k != 0];
           if (tmp)
             eob_i = iscan[k] > eob_i ? iscan[k] : eob_i;
@@ -163,13 +162,10 @@ void vp9_highbd_quantize_b_32x32_sse2(const tran_low_t *coeff_ptr,
       const int coeff = coeff_ptr[rc];
       const int coeff_sign = (coeff >> 31);
       int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
-      int64_t tmp = clamp(abs_coeff +
-                          ROUND_POWER_OF_TWO(round_ptr[rc != 0], 1),
-                          INT32_MIN, INT32_MAX);
-      tmp = ((((tmp * quant_ptr[rc != 0]) >> 16) + tmp) *
-               quant_shift_ptr[rc != 0]) >> 15;
-
-      qcoeff_ptr[rc] = (tmp ^ coeff_sign) - coeff_sign;
+      uint32_t tmp = abs_coeff + ROUND_POWER_OF_TWO(round_ptr[rc != 0], 1);
+      tmp = (uint32_t)((((((int64_t)tmp * quant_ptr[rc != 0]) >> 16) + tmp) *
+                        quant_shift_ptr[rc != 0]) >> 15);
+      qcoeff_ptr[rc] = (int)(tmp ^ coeff_sign) - coeff_sign;
       dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0] / 2;
 
       if (tmp)
