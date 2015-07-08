@@ -318,7 +318,8 @@ void vp9_int_pro_row_sse2(int16_t *hbuf, uint8_t const*ref,
   __m128i s0 = _mm_unpacklo_epi8(src_line, zero);
   __m128i s1 = _mm_unpackhi_epi8(src_line, zero);
   __m128i t0, t1;
-  int height_1 = height - 1;
+  const int height_1 = height - 1;
+  const int shift_factor = (height >> 5) + 3;
   ref += ref_stride;
 
   for (idx = 1; idx < height_1; idx += 2) {
@@ -343,16 +344,8 @@ void vp9_int_pro_row_sse2(int16_t *hbuf, uint8_t const*ref,
   s0 = _mm_adds_epu16(s0, t0);
   s1 = _mm_adds_epu16(s1, t1);
 
-  if (height == 64) {
-    s0 = _mm_srai_epi16(s0, 5);
-    s1 = _mm_srai_epi16(s1, 5);
-  } else if (height == 32) {
-    s0 = _mm_srai_epi16(s0, 4);
-    s1 = _mm_srai_epi16(s1, 4);
-  } else {
-    s0 = _mm_srai_epi16(s0, 3);
-    s1 = _mm_srai_epi16(s1, 3);
-  }
+  s0 = _mm_srai_epi16(s0, shift_factor);
+  s1 = _mm_srai_epi16(s1, shift_factor);
 
   _mm_storeu_si128((__m128i *)hbuf, s0);
   hbuf += 8;
