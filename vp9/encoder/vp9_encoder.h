@@ -306,6 +306,7 @@ typedef struct VP9_COMP {
   YV12_BUFFER_CONFIG scaled_source;
   YV12_BUFFER_CONFIG *unscaled_last_source;
   YV12_BUFFER_CONFIG scaled_last_source;
+  YV12_BUFFER_CONFIG *temp_scale_frame;
 
   TileDataEnc *tile_data;
   int allocated_tiles;  // Keep track of memory allocated for tiles.
@@ -613,6 +614,10 @@ void vp9_scale_references(VP9_COMP *cpi);
 void vp9_update_reference_frames(VP9_COMP *cpi);
 
 void vp9_set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv);
+
+YV12_BUFFER_CONFIG *vp9_scale_fast(VP9_COMP *cpi,
+                                   YV12_BUFFER_CONFIG *unscaled,
+                                   YV12_BUFFER_CONFIG *scaled);
 
 YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
                                           YV12_BUFFER_CONFIG *unscaled,

@@ -19,6 +19,7 @@
 #include "vpx/internal/vpx_psnr.h"
 #include "vpx_ports/mem.h"
 #include "vpx_ports/vpx_timer.h"
+#include "vpx_scale/vpx_scale.h"
 
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_filter.h"
@@ -671,6 +672,7 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
                                NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled last source buffer");
+
 }
 
 
@@ -2724,6 +2726,24 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
              cpi->interp_filter_selected[0],
              sizeof(cpi->interp_filter_selected[0]));
   }
+
+  // Update to the scaled references, so avoid scaling references except on the
+  // resized frame.
+  if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC && cpi->resize_state != 0) {
+    if (!cpi->refresh_alt_ref_frame) {
+      cm->ref_frame_map[cpi->alt_fb_idx] =
+          cpi->scaled_ref_idx[ALTREF_FRAME - 1];
+    }
+    if (!cpi->refresh_golden_frame) {
+      cm->ref_frame_map[cpi->gld_fb_idx] =
+          cpi->scaled_ref_idx[GOLDEN_FRAME - 1];
+    }
+    if (!cpi->refresh_last_frame) {
+       cm->ref_frame_map[cpi->lst_fb_idx] =
+           cpi->scaled_ref_idx[LAST_FRAME - 1];
+    }
+  }
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0) {
     vp9_denoiser_update_frame_info(&cpi->denoiser,
@@ -2829,7 +2849,6 @@ void vp9_scale_references(VP9_COMP *cpi) {
         scale_and_extend_frame(ref, &new_fb_ptr->buf);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
-
         alloc_frame_mvs(cm, new_fb);
       } else {
         const int buf_idx = get_ref_frame_buf_idx(cpi, ref_frame);
@@ -3135,17 +3154,27 @@ static void set_frame_size(VP9_COMP *cpi) {
 static void encode_without_recode_loop(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   int q = 0, bottom_index = 0, top_index = 0;  // Dummy variables.
-
   vp9_clear_system_state();
 
   set_frame_size(cpi);
 
-  cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
-                                      &cpi->scaled_source);
-
-  if (cpi->unscaled_last_source != NULL)
-    cpi->Last_Source = vp9_scale_if_required(cm, cpi->unscaled_last_source,
-                                             &cpi->scaled_last_source);
+  // For real-time speeds, use faster scaling for source. Only for 2x2 scaling
+  // for now.
+  if (cpi->oxcf.speed >= 5 &&
+      cpi->resize_scale_num == 1 &&
+      cpi->resize_scale_den == 2) {
+    cpi->Source = vp9_scale_fast(cpi, cpi->un_scaled_source,
+                                 &cpi->scaled_source);
+    if (cpi->unscaled_last_source != NULL)
+       cpi->Last_Source = vp9_scale_fast(cpi, cpi->unscaled_last_source,
+                                         &cpi->scaled_last_source);
+  } else {
+    cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
+                                         &cpi->scaled_source);
+    if (cpi->unscaled_last_source != NULL)
+      cpi->Last_Source = vp9_scale_if_required(cm, cpi->unscaled_last_source,
+                                               &cpi->scaled_last_source);
+  }
 
   if (frame_is_intra_only(cm) == 0) {
     vp9_scale_references(cpi);
@@ -3491,6 +3520,21 @@ static void set_ext_overrides(VP9_COMP *cpi) {
   }
 }
 
+YV12_BUFFER_CONFIG *vp9_scale_fast(VP9_COMP *cpi,
+                                   YV12_BUFFER_CONFIG *unscaled,
+                                   YV12_BUFFER_CONFIG *scaled) {
+  if (cpi->common.mi_cols * MI_SIZE != unscaled->y_width ||
+      cpi->common.mi_rows * MI_SIZE != unscaled->y_height) {
+    // For 2x2 scaling down.
+    vpx_scale_frame(unscaled, scaled, cpi->temp_scale_frame->y_buffer, 9, 2, 1,
+                    2, 1, 0);
+    vp9_extend_frame_borders(scaled);
+    return scaled;
+  } else {
+    return unscaled;
+  }
+}
+
 YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
                                           YV12_BUFFER_CONFIG *unscaled,
                                           YV12_BUFFER_CONFIG *scaled) {
@@ -3499,7 +3543,7 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
 #if CONFIG_VP9_HIGHBITDEPTH
     scale_and_extend_frame_nonnormative(unscaled, scaled, (int)cm->bit_depth);
 #else
-    scale_and_extend_frame_nonnormative(unscaled, scaled);
+      scale_and_extend_frame_nonnormative(unscaled, scaled);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     return scaled;
   } else {
@@ -3708,10 +3752,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cm->seg.update_map)
     update_reference_segmentation_map(cpi);
 
+  vp9_update_reference_frames(cpi);
+
   if (frame_is_intra_only(cm) == 0) {
     release_scaled_references(cpi);
   }
-  vp9_update_reference_frames(cpi);
 
   for (t = TX_4X4; t <= TX_32X32; t++)
     full_to_model_counts(cpi->td.counts->coef[t],
@@ -4150,6 +4195,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                                                            : &source->img;
 
     cpi->unscaled_last_source = last_source != NULL ? &last_source->img : NULL;
+
+
+    cpi->temp_scale_frame = cpi->Source = force_src_buffer ? force_src_buffer
+                                                               : &source->img;
 
     *time_stamp = source->ts_start;
     *time_end = source->ts_end;
