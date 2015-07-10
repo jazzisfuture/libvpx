@@ -102,6 +102,15 @@ void vp9_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
                                                    int mi_row_ori,
                                                    int mi_col_ori,
                                                    BLOCK_SIZE top_bsize);
+
+#define SIMPLE_SUPERTX 1
+void vp9_smooth_inter_predictor_simple(VP9_COMMON *const cm,
+                                       MACROBLOCKD *xd, int i,
+                                       const struct macroblockd_plane *pd,
+                                       int mi_row, int mi_col,
+                                       BLOCK_SIZE top_bsize,
+                                       PARTITION_TYPE partition);
+
 void vp9_build_masked_inter_predictor_complex(
     MACROBLOCKD *xd,
     uint8_t *dst, int dst_stride, uint8_t *dst2, int dst2_stride,
