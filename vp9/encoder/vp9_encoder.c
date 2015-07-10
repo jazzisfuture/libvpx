@@ -2801,36 +2801,48 @@ void vp9_scale_references(VP9_COMP *cpi) {
 
 #if CONFIG_VP9_HIGHBITDEPTH
       if (ref->y_crop_width != cm->width || ref->y_crop_height != cm->height) {
-        const int new_fb = get_free_fb(cm);
         RefCntBuffer *new_fb_ptr = NULL;
+        int new_fb = cpi->scaled_ref_idx[ref_frame - 1];
+        if (new_fb == INVALID_IDX)
+          new_fb = get_free_fb(cm);
+        new_fb_ptr = &pool->frame_bufs[new_fb];
         if (cm->new_fb_idx == INVALID_IDX)
           return;
-        new_fb_ptr = &pool->frame_bufs[new_fb];
-        cm->cur_frame = &pool->frame_bufs[new_fb];
-        vp9_realloc_frame_buffer(&pool->frame_bufs[new_fb].buf,
-                                 cm->width, cm->height,
-                                 cm->subsampling_x, cm->subsampling_y,
-                                 cm->use_highbitdepth,
-                                 VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
-                                 NULL, NULL, NULL);
-        scale_and_extend_frame(ref, &new_fb_ptr->buf, (int)cm->bit_depth);
+        if (cpi->use_svc ||
+            new_fb_ptr->buf.y_width != cm->width ||
+            new_fb_ptr->buf.y_height != cm->height) {
+          vp9_realloc_frame_buffer(&new_fb_ptr->buf,
+                                   cm->width, cm->height,
+                                   cm->subsampling_x, cm->subsampling_y,
+                                   cm->use_highbitdepth,
+                                   VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                                   NULL, NULL, NULL);
+          scale_and_extend_frame(ref, &new_fb_ptr->buf, (int)cm->bit_depth);
+          cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
+          alloc_frame_mvs(cm, new_fb);
+        }
 #else
       if (ref->y_crop_width != cm->width || ref->y_crop_height != cm->height) {
-        const int new_fb = get_free_fb(cm);
         RefCntBuffer *new_fb_ptr = NULL;
+        int new_fb = cpi->scaled_ref_idx[ref_frame - 1];
+        if (new_fb == INVALID_IDX)
+          new_fb = get_free_fb(cm);
+        new_fb_ptr = &pool->frame_bufs[new_fb];
         if (cm->new_fb_idx == INVALID_IDX)
           return;
-        new_fb_ptr = &pool->frame_bufs[new_fb];
-        vp9_realloc_frame_buffer(&new_fb_ptr->buf,
-                                 cm->width, cm->height,
-                                 cm->subsampling_x, cm->subsampling_y,
-                                 VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
-                                 NULL, NULL, NULL);
-        scale_and_extend_frame(ref, &new_fb_ptr->buf);
+        if (cpi->use_svc ||
+            new_fb_ptr->buf.y_width != cm->width ||
+            new_fb_ptr->buf.y_height != cm->height) {
+          vp9_realloc_frame_buffer(&new_fb_ptr->buf,
+                                   cm->width, cm->height,
+                                   cm->subsampling_x, cm->subsampling_y,
+                                   VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                                   NULL, NULL, NULL);
+          scale_and_extend_frame(ref, &new_fb_ptr->buf);
+          cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
+          alloc_frame_mvs(cm, new_fb);
+        }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-        cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
-
-        alloc_frame_mvs(cm, new_fb);
       } else {
         const int buf_idx = get_ref_frame_buf_idx(cpi, ref_frame);
         cpi->scaled_ref_idx[ref_frame - 1] = buf_idx;
@@ -2845,13 +2857,30 @@ void vp9_scale_references(VP9_COMP *cpi) {
 static void release_scaled_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   int i;
-  for (i = 0; i < MAX_REF_FRAMES; ++i) {
-    const int idx = cpi->scaled_ref_idx[i];
-    RefCntBuffer *const buf = idx != INVALID_IDX ?
-        &cm->buffer_pool->frame_bufs[idx] : NULL;
-    if (buf != NULL) {
-      --buf->ref_count;
-      cpi->scaled_ref_idx[i] = INVALID_IDX;
+  if (!cpi->use_svc) {
+    // Only release scaled references if the resolution of the scaled reference
+    // is the same as the (unscaled) reference.
+    for (i = LAST_FRAME; i <= ALTREF_FRAME; ++i) {
+      const int idx = cpi->scaled_ref_idx[i - 1];
+      RefCntBuffer *const buf = idx != INVALID_IDX ?
+          &cm->buffer_pool->frame_bufs[idx] : NULL;
+      const YV12_BUFFER_CONFIG *const ref = get_ref_frame_buffer(cpi, i);
+      if (buf != NULL &&
+          buf->buf.y_width == ref->y_crop_width &&
+          buf->buf.y_height == ref->y_crop_height) {
+        --buf->ref_count;
+        cpi->scaled_ref_idx[i -1] = INVALID_IDX;
+      }
+    }
+  } else {
+    for (i = 0; i < MAX_REF_FRAMES; ++i) {
+      const int idx = cpi->scaled_ref_idx[i];
+      RefCntBuffer *const buf = idx != INVALID_IDX ?
+          &cm->buffer_pool->frame_bufs[idx] : NULL;
+      if (buf != NULL) {
+        --buf->ref_count;
+        cpi->scaled_ref_idx[i] = INVALID_IDX;
+      }
     }
   }
 }
@@ -4217,8 +4246,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     set_frame_size(cpi);
   }
 
-  for (i = 0; i < MAX_REF_FRAMES; ++i)
-    cpi->scaled_ref_idx[i] = INVALID_IDX;
+  if (cpi->use_svc || cpi->common.current_video_frame == 0) {
+    for (i = 0; i < MAX_REF_FRAMES; ++i)
+      cpi->scaled_ref_idx[i] = INVALID_IDX;
+  }
 
   if (oxcf->pass == 1 &&
       (!cpi->use_svc || is_two_pass_svc(cpi))) {
