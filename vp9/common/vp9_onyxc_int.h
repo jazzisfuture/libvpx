@@ -246,12 +246,13 @@ typedef struct VP9Common {
 } VP9_COMMON;
 
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {
+  int fb_idx;
   if (index < 0 || index >= REF_FRAMES)
     return NULL;
-  if (cm->ref_frame_map[index] < 0)
+  fb_idx = cm->ref_frame_map[index];
+  if (fb_idx < 0 || fb_idx >= FRAME_BUFFERS)
     return NULL;
-  assert(cm->ref_frame_map[index] < FRAME_BUFFERS);
-  return &cm->frame_bufs[cm->ref_frame_map[index]].buf;
+  return &cm->frame_bufs[fb_idx].buf;
 }
 
 static INLINE YV12_BUFFER_CONFIG *get_frame_new_buffer(VP9_COMMON *cm) {
