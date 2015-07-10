@@ -551,6 +551,19 @@ static void extend_and_predict(const uint8_t *buf_ptr1, int pre_buf_stride,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+static void prefetch_ref(uint8_t *src_ptr, int width, int height, int stride) {
+  int h;
+
+  for (h = height; h > 0; --h) {
+    __builtin_prefetch ((char*)(src_ptr + 0), 0, 2);
+
+//    if(width >= 16)
+    (void) width;
+      __builtin_prefetch ((char*)(src_ptr + 64), 0, 2);
+    src_ptr += stride;
+  }
+}
+
 static void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
                                        int plane, int bw, int bh, int x,
                                        int y, int w, int h, int mi_x, int mi_y,
@@ -631,6 +644,8 @@ static void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
   // Get reference block pointer.
   buf_ptr = ref_frame + y0 * pre_buf->stride + x0;
   buf_stride = pre_buf->stride;
+
+  prefetch_ref(buf_ptr - 3 - (buf_stride * 3), w, h + 3, buf_stride);
 
   // Do border extension if there is motion or the
   // width/height is not a multiple of 8 pixels.
