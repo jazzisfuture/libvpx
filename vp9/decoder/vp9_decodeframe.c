@@ -738,6 +738,11 @@ static MB_MODE_INFO *set_offsets_extend(VP9_COMMON *const cm,
   xd->mi[0].src_mi = &xd->mi[0];
   set_mi_row_col(xd, tile, mi_row_ori, bh, mi_col_ori, bw,
                  cm->mi_rows, cm->mi_cols);
+
+#if SIMPLE_SUPERTX
+  vp9_setup_dst_planes(xd->plane, get_frame_new_buffer(cm), mi_row, mi_col);
+#endif
+
   return &xd->mi[0].mbmi;
 }
 
@@ -861,6 +866,117 @@ static void dec_predict_b_sub8x8_extend(VP9_COMMON *const cm,
                                                     mi_row_ori, mi_col_ori,
                                                     top_bsize);
 }
+
+static void dec_predict_b_simple(VP9_COMMON *const cm, MACROBLOCKD *const xd,
+                                 const TileInfo *const tile,
+                                 int mi_row, int mi_col,
+                                 BLOCK_SIZE bsize, BLOCK_SIZE topbsize) {
+  MB_MODE_INFO *mbmi = set_offsets_extend(cm, xd, tile, bsize,
+                                          mi_row, mi_col,
+                                          mi_row, mi_col);
+  set_ref(cm, xd, 0, mi_row, mi_col);
+  if (has_second_ref(&xd->mi[0].mbmi))
+    set_ref(cm, xd, 1, mi_row, mi_col);
+  mbmi->tx_size = b_width_log2_lookup[topbsize];
+
+#if CONFIG_WEDGE_PARTITION
+  vp9_dec_build_inter_predictors_sb_extend(xd, mi_row, mi_col,
+                                           mi_row_ori, mi_col_ori, top_bsize);
+#else
+  vp9_dec_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+#endif  // CONFIG_WEDGE_PARTITION
+}
+
+static void dec_predict_sb_simple(VP9_COMMON *const cm, MACROBLOCKD *const xd,
+                                  const TileInfo *const tile,
+                                  int mi_row, int mi_col,
+                                  BLOCK_SIZE bsize, BLOCK_SIZE topbsize) {
+  const int bsl = b_width_log2_lookup[bsize], hbs = (1 << bsl) / 4;
+  PARTITION_TYPE partition;
+  BLOCK_SIZE subsize;
+#if !CONFIG_EXT_PARTITION
+  MB_MODE_INFO *mbmi;
+#endif
+  int i, offset = mi_row * cm->mi_stride + mi_col;
+
+  assert(bsize >= BLOCK_8X8);
+
+  if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
+    return;
+
+  xd->mi = cm->mi + offset;
+  xd->mi[0].src_mi = &xd->mi[0];
+#if CONFIG_EXT_PARTITION
+  partition = get_partition(cm->mi, cm->mi_stride, cm->mi_rows, cm->mi_cols,
+                            mi_row, mi_col, bsize);
+#else
+  mbmi = &xd->mi[0].mbmi;
+  partition = partition_lookup[bsl][mbmi->sb_type];
+#endif
+  subsize = get_subsize(bsize, partition);
+
+  switch (partition) {
+    case PARTITION_NONE:
+      dec_predict_b_simple(cm, xd, tile, mi_row, mi_col, bsize, topbsize);
+      break;
+    case PARTITION_HORZ:
+      dec_predict_b_simple(cm, xd, tile, mi_row, mi_col,
+                           MAX(subsize, BLOCK_8X8), topbsize);
+      if (mi_row + hbs < cm->mi_rows && bsize > BLOCK_8X8) {
+        dec_predict_b_simple(cm, xd, tile, mi_row + hbs, mi_col, subsize, topbsize);
+        for (i = 0; i < MAX_MB_PLANE; i++) {
+          vp9_smooth_inter_predictor_simple(cm, xd, i, &xd->plane[i],
+                                            mi_row, mi_col, bsize, PARTITION_HORZ);
+        }
+      }
+      if (bsize == BLOCK_8X8)
+        for (i = 0; i < MAX_MB_PLANE; i++) 
+          vp9_smooth_inter_predictor_simple(cm, xd, i, &xd->plane[i],
+                                            mi_row, mi_col, bsize, PARTITION_HORZ);
+      break;
+    case PARTITION_VERT:
+      dec_predict_b_simple(cm, xd, tile, mi_row, mi_col,
+                           MAX(subsize, BLOCK_8X8), topbsize);
+      if (mi_col + hbs < cm->mi_cols && bsize > BLOCK_8X8) {
+        dec_predict_b_simple(cm, xd, tile, mi_row, mi_col + hbs, subsize, topbsize);
+        for (i = 0; i < MAX_MB_PLANE; i++) {
+          vp9_smooth_inter_predictor_simple(cm, xd, i, &xd->plane[i],
+                                            mi_row, mi_col, bsize, PARTITION_VERT);
+        }
+      }
+      if (bsize == BLOCK_8X8)
+        for (i = 0; i < MAX_MB_PLANE; i++) 
+          vp9_smooth_inter_predictor_simple(cm, xd, i, &xd->plane[i],
+                                            mi_row, mi_col, bsize, PARTITION_VERT);
+      break;
+    case PARTITION_SPLIT:
+      if (bsize != BLOCK_8X8) {
+        dec_predict_sb_simple(cm, xd, tile, mi_row, mi_col, subsize, topbsize);
+        if (mi_row < cm->mi_rows && mi_col + hbs < cm->mi_cols)
+          dec_predict_sb_simple(cm, xd, tile, mi_row, mi_col + hbs, subsize, topbsize);
+        if (mi_row + hbs < cm->mi_rows && mi_col < cm->mi_cols)
+          dec_predict_sb_simple(cm, xd, tile, mi_row + hbs, mi_col, subsize, topbsize);
+        if (mi_row + hbs < cm->mi_rows && mi_col + hbs < cm->mi_cols)
+          dec_predict_sb_simple(cm, xd, tile, mi_row + hbs, mi_col + hbs, subsize, topbsize);
+        if (mi_row + hbs < cm->mi_rows && mi_col + hbs < cm->mi_cols) {
+          for (i = 0; i < MAX_MB_PLANE; i++)
+            vp9_smooth_inter_predictor_simple(cm, xd, i, &xd->plane[i],
+                                              mi_row, mi_col, bsize, PARTITION_SPLIT);
+        }
+      }
+      else {
+        dec_predict_b_simple(cm, xd, tile, mi_row, mi_col,
+                             MAX(subsize, BLOCK_8X8), topbsize);
+        for (i = 0; i < MAX_MB_PLANE; i++)
+          vp9_smooth_inter_predictor_simple(cm, xd, i, &xd->plane[i],
+                                            mi_row, mi_col, bsize, PARTITION_SPLIT);
+      }
+      break;
+    default:
+      assert(0);
+  }
+}
+
 
 static void dec_predict_sb_complex(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                    const TileInfo *const tile,
@@ -1731,6 +1847,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   const int read_token = !supertx_enabled;
   int skip = 0;
   TX_SIZE supertx_size = b_width_log2_lookup[bsize];
+
 #if CONFIG_EXT_TX
   int txfm = NORM;
 #endif
@@ -2003,6 +2120,15 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 
 #if CONFIG_SUPERTX
   if (supertx_enabled && read_token) {
+#if SIMPLE_SUPERTX
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+      dec_predict_sb_complex_highbd(cm, xd, tile, mi_row, mi_col, mi_row,
+                                    mi_col, bsize, bsize, dst_buf, dst_stride);
+    else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    dec_predict_sb_simple(cm, xd, tile, mi_row, mi_col, bsize, bsize);
+#else
     uint8_t *dst_buf[3];
     int dst_stride[3], i;
 
@@ -2019,6 +2145,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       dec_predict_sb_complex(cm, xd, tile, mi_row, mi_col, mi_row, mi_col,
                              bsize, bsize, dst_buf, dst_stride);
+#endif  // SIMPLE_SUPERTX
 
     if (!skip) {
       int eobtotal = 0;
