@@ -976,6 +976,83 @@ static void generate_1dmask(int length, uint8_t *mask) {
   }
 }
 
+//int b_output_enabled = 0;
+static void smooth_filter_1D(uint8_t * buf, int offset, int stride, int border_size, int plane) {
+
+  if (plane == 0) {
+    int i, p0, p1, p2, q0, q1, q2, delta_0, delta_p1, delta_q1;
+    for (i = 0; i < border_size; i++) {
+      p0 = buf[0];
+      p1 = buf[-offset];
+      p2 = buf[-2 * offset];
+      q0 = buf[offset];
+      q1 = buf[2 * offset];
+      q2 = buf[3 * offset];
+      delta_0 = (9 * (q0 - p0) - 3 * (q1 - p1) + 8) >> 4;
+      delta_p1 = (((p2 + p0 + 1) >> 1) - p1 + delta_0) >> 1;
+      delta_q1 = (((q2 + q0 + 1) >> 1) - q1 - delta_0) >> 1;
+
+      buf[0] = clip_pixel(buf[0] + delta_0);
+      buf[offset] = clip_pixel(buf[offset] - delta_0);
+      buf[-offset] = clip_pixel(buf[-offset] + delta_p1);
+      buf[2 * offset] = clip_pixel(buf[2 * offset] + delta_q1);
+
+      buf += stride;
+    }
+  }
+  else {
+    int i, p0, p1, q0, q1, delta_0;
+    for (i = 0; i < border_size; i++) {
+      p0 = buf[0];
+      p1 = buf[-offset];
+      q0 = buf[offset];
+      q1 = buf[2 * offset];
+      delta_0 = (9 * (q0 - p0) - 3 * (q1 - p1) + 8) >> 4;
+
+      buf[0] = clip_pixel(buf[0] + delta_0);
+      buf[offset] = clip_pixel(buf[offset] - delta_0);
+      buf += stride;
+    }
+  }
+}
+
+
+void vp9_smooth_inter_predictor_simple(VP9_COMMON *const cm, MACROBLOCKD *xd, int i,
+                                       const struct macroblockd_plane *pd,
+                                       int mi_row, int mi_col,
+                                       BLOCK_SIZE top_bsize,
+                                       PARTITION_TYPE partition) {
+
+  int dst_stride;
+  uint8_t * dst;
+  int w = 4 << b_width_log2_lookup[top_bsize],
+      h = 4 << b_height_log2_lookup[top_bsize];
+  w >>= pd->subsampling_x;
+  h >>= pd->subsampling_y;
+  
+  vp9_setup_dst_planes(xd->plane, get_frame_new_buffer(cm), mi_row, mi_col);
+  dst = xd->plane[i].dst.buf;
+  dst_stride = xd->plane[i].dst.stride;
+  assert(dst_stride != 0);
+
+  assert(!CONFIG_VP9_HIGHBITDEPTH); // not ready for highbd yet
+
+  switch (partition) {
+    case PARTITION_HORZ:
+      smooth_filter_1D(dst + ((h >> 1) - 1) * dst_stride, dst_stride, 1, w, i);
+      break;
+    case PARTITION_VERT:
+      smooth_filter_1D(dst + ((w >> 1) - 1), 1, dst_stride, h, i);
+      break;
+    case PARTITION_SPLIT:
+      smooth_filter_1D(dst + ((h >> 1) - 1) * dst_stride, dst_stride, 1, w, i);
+      smooth_filter_1D(dst + ((w >> 1) - 1), 1, dst_stride, h, i);
+      break;
+    default:
+      assert(0);
+  }
+}
+
 void vp9_build_masked_inter_predictor_complex(
     MACROBLOCKD *xd,
     uint8_t *dst, int dst_stride, uint8_t *dst2, int dst2_stride,
