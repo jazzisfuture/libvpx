@@ -760,7 +760,8 @@ static int conditional_skipintra(PREDICTION_MODE mode,
   return 0;
 }
 
-static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
+static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x,
+                                     int row, int col,
                                      PREDICTION_MODE *best_mode,
                                      const int *bmode_costs,
                                      ENTROPY_CONTEXT *a, ENTROPY_CONTEXT *l,
@@ -770,15 +771,12 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   PREDICTION_MODE mode;
   MACROBLOCKD *const xd = &x->e_mbd;
   int64_t best_rd = rd_thresh;
-
   struct macroblock_plane *p = &x->plane[0];
   struct macroblockd_plane *pd = &xd->plane[0];
   const int src_stride = p->src.stride;
   const int dst_stride = pd->dst.stride;
-  const uint8_t *src_init = &p->src.buf[vp9_raster_block_offset(BLOCK_8X8, ib,
-                                                                src_stride)];
-  uint8_t *dst_init = &pd->dst.buf[vp9_raster_block_offset(BLOCK_8X8, ib,
-                                                           dst_stride)];
+  const uint8_t *src_init = &p->src.buf[0];
+  uint8_t *dst_init = &pd->dst.buf[0];
   ENTROPY_CONTEXT ta[2], tempa[2];
   ENTROPY_CONTEXT tl[2], templ[2];
 
@@ -789,8 +787,6 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
 #if CONFIG_VP9_HIGHBITDEPTH
   uint16_t best_dst16[8 * 8];
 #endif
-
-  assert(ib < 4);
 
   memcpy(ta, a, sizeof(ta));
   memcpy(tl, l, sizeof(tl));
@@ -819,19 +815,21 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
 
       for (idy = 0; idy < num_4x4_blocks_high; ++idy) {
         for (idx = 0; idx < num_4x4_blocks_wide; ++idx) {
-          const int block = ib + idy * 2 + idx;
-          const uint8_t *const src = &src_init[idx * 4 + idy * 4 * src_stride];
-          uint8_t *const dst = &dst_init[idx * 4 + idy * 4 * dst_stride];
+          const int block = (row + idy) * 2 + (col + idx);
+          const uint8_t *const src =
+              &src_init[(col + idx) * 4 + (row + idy) * 4 * src_stride];
+          uint8_t *const dst =
+              &dst_init[(col + idx) * 4 + (row + idy) * 4 * dst_stride];
           int16_t *const src_diff = vp9_raster_block_offset_int16(BLOCK_8X8,
                                                                   block,
                                                                   p->src_diff);
           tran_low_t *const coeff = BLOCK_OFFSET(x->plane[0].coeff, block);
           xd->mi[0]->bmi[block].as_mode = mode;
-          vp9_predict_intra_block(xd, block, 1,
-                                  TX_4X4, mode,
-                                  x->skip_encode ? src : dst,
+          vp9_predict_intra_block(xd, 1, TX_4X4, mode,
+                                  x->skip_encode ? src : dst_init,
                                   x->skip_encode ? src_stride : dst_stride,
-                                  dst, dst_stride, idx, idy, 0);
+                                  dst_init, dst_stride,
+                                  col + idx, row + idy, 0);
           vpx_highbd_subtract_block(4, 4, src_diff, 8, src, src_stride,
                                     dst, dst_stride, xd->bd);
           if (xd->lossless) {
@@ -879,7 +877,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
         memcpy(l, templ, sizeof(templ));
         for (idy = 0; idy < num_4x4_blocks_high * 4; ++idy) {
           memcpy(best_dst16 + idy * 8,
-                 CONVERT_TO_SHORTPTR(dst_init + idy * dst_stride),
+                 CONVERT_TO_SHORTPTR(dst_init + (row + idy) * dst_stride),
                  num_4x4_blocks_wide * 4 * sizeof(uint16_t));
         }
       }
@@ -890,7 +888,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
       return best_rd;
 
     for (idy = 0; idy < num_4x4_blocks_high * 4; ++idy) {
-      memcpy(CONVERT_TO_SHORTPTR(dst_init + idy * dst_stride),
+      memcpy(CONVERT_TO_SHORTPTR(dst_init + (row + idy) * dst_stride),
              best_dst16 + idy * 8,
              num_4x4_blocks_wide * 4 * sizeof(uint16_t));
     }
@@ -920,18 +918,19 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
 
     for (idy = 0; idy < num_4x4_blocks_high; ++idy) {
       for (idx = 0; idx < num_4x4_blocks_wide; ++idx) {
-        const int block = ib + idy * 2 + idx;
-        const uint8_t *const src = &src_init[idx * 4 + idy * 4 * src_stride];
-        uint8_t *const dst = &dst_init[idx * 4 + idy * 4 * dst_stride];
+        const int block = (row + idy) * 2 + (col + idx);
+        const uint8_t *const src =
+            &src_init[(col + idx) * 4 + (row + idy) * 4 * src_stride];
+        uint8_t *const dst =
+            &dst_init[(col + idx) * 4 + (row + idy) * 4 * dst_stride];
         int16_t *const src_diff =
             vp9_raster_block_offset_int16(BLOCK_8X8, block, p->src_diff);
         tran_low_t *const coeff = BLOCK_OFFSET(x->plane[0].coeff, block);
         xd->mi[0]->bmi[block].as_mode = mode;
-        vp9_predict_intra_block(xd, block, 1,
-                                TX_4X4, mode,
-                                x->skip_encode ? src : dst,
+        vp9_predict_intra_block(xd, 1, TX_4X4, mode,
+                                x->skip_encode ? src_init : dst_init,
                                 x->skip_encode ? src_stride : dst_stride,
-                                dst, dst_stride, idx, idy, 0);
+                                dst_init, dst_stride, col + idx, row + idy, 0);
         vpx_subtract_block(4, 4, src_diff, 8, src, src_stride, dst, dst_stride);
 
         if (xd->lossless) {
@@ -976,7 +975,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
       memcpy(a, tempa, sizeof(tempa));
       memcpy(l, templ, sizeof(templ));
       for (idy = 0; idy < num_4x4_blocks_high * 4; ++idy)
-        memcpy(best_dst + idy * 8, dst_init + idy * dst_stride,
+        memcpy(best_dst + idy * 8, dst_init + (row + idy) * dst_stride + col,
                num_4x4_blocks_wide * 4);
     }
   next:
@@ -987,7 +986,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     return best_rd;
 
   for (idy = 0; idy < num_4x4_blocks_high * 4; ++idy)
-    memcpy(dst_init + idy * dst_stride, best_dst + idy * 8,
+    memcpy(dst_init + (row + idy) * dst_stride + col, best_dst + idy * 8,
            num_4x4_blocks_wide * 4);
 
   return best_rd;
@@ -1030,9 +1029,9 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
         bmode_costs  = cpi->y_mode_costs[A][L];
       }
 
-      this_rd = rd_pick_intra4x4block(cpi, mb, i, &best_mode, bmode_costs,
-                                      t_above + idx, t_left + idy, &r, &ry, &d,
-                                      bsize, best_rd - total_rd);
+      this_rd = rd_pick_intra4x4block(cpi, mb, idy, idx, &best_mode,
+                                      bmode_costs, t_above + idx, t_left + idy,
+                                      &r, &ry, &d, bsize, best_rd - total_rd);
       if (this_rd >= best_rd - total_rd)
         return INT64_MAX;
 
