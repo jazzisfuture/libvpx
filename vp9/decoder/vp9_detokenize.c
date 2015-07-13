@@ -32,10 +32,33 @@
 
 static INLINE int read_coeff(const vpx_prob *probs, int n, vpx_reader *r) {
   int i, val = 0;
-  for (i = 0; i < n; ++i)
-    val = (val << 1) | vpx_read(r, probs[i]);
+  VPX_READ_VARS(r)
+  for (i = 0; i < n; ++i) {
+    VPX_READ_BIT(r, probs[i]);
+    val = val << 1;
+    if (VPX_READ_SET) {
+      val |= 1;
+      VPX_READ_ADJUST_FOR_ONE(r);
+    } else {
+      VPX_READ_ADJUST_FOR_ZERO
+    }
+  }
+  VPX_READ_STORE(r)
   return val;
 }
+#define READ_COEFF(v, probs, n, r) \
+  val = 0; \
+  for (i = 0; i < n; ++i) { \
+    VPX_READ_BIT(r, probs[i]); \
+    val = val << 1; \
+    if (VPX_READ_SET) { \
+      val |= 1; \
+      VPX_READ_ADJUST_FOR_ONE(r); \
+    } else { \
+      VPX_READ_ADJUST_FOR_ZERO \
+    } \
+  } \
+  val += v;
 
 static int decode_coefs(const MACROBLOCKD *xd,
                         PLANE_TYPE type,
@@ -55,7 +78,7 @@ static int decode_coefs(const MACROBLOCKD *xd,
   uint8_t token_cache[32 * 32];
   const uint8_t *band_translate = get_band_translate(tx_size);
   const int dq_shift = (tx_size == TX_32X32);
-  int v, token;
+  int v, i;
   int16_t dqv = dq[0];
   const uint8_t *const cat6_prob =
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -70,6 +93,8 @@ static int decode_coefs(const MACROBLOCKD *xd,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       14;
 
+  VPX_READ_VARS(r)
+
   if (counts) {
     coef_counts = counts->coef[tx_size][type][ref];
     eob_branch_count = counts->eob_branch[tx_size][type][ref];
@@ -81,73 +106,144 @@ static int decode_coefs(const MACROBLOCKD *xd,
     prob = coef_probs[band][ctx];
     if (counts)
       ++eob_branch_count[band][ctx];
-    if (!vpx_read(r, prob[EOB_CONTEXT_NODE])) {
+
+    VPX_READ_BIT(r, prob[EOB_CONTEXT_NODE]);
+    if (!VPX_READ_SET) {
+      VPX_READ_ADJUST_FOR_ZERO
       INCREMENT_COUNT(EOB_MODEL_TOKEN);
       break;
     }
-
-    while (!vpx_read(r, prob[ZERO_CONTEXT_NODE])) {
+    VPX_READ_ADJUST_FOR_ONE(r)
+    while (1) {
+      VPX_READ_BIT(r, prob[ZERO_CONTEXT_NODE])
+      if (VPX_READ_SET) {
+        VPX_READ_ADJUST_FOR_ONE(r)
+        break;
+      }
+      VPX_READ_ADJUST_FOR_ZERO
       INCREMENT_COUNT(ZERO_TOKEN);
       dqv = dq[1];
       token_cache[scan[c]] = 0;
       ++c;
-      if (c >= max_eob)
+      if (c >= max_eob) {
+        VPX_READ_STORE(r)
         return c;  // zero tokens at the end (no eob token)
+      }
       ctx = get_coef_context(nb, token_cache, c);
       band = *band_translate++;
       prob = coef_probs[band][ctx];
     }
-
-    if (!vpx_read(r, prob[ONE_CONTEXT_NODE])) {
-      INCREMENT_COUNT(ONE_TOKEN);
-      token = ONE_TOKEN;
-      val = 1;
-    } else {
+    VPX_READ_BIT(r, prob[ONE_CONTEXT_NODE])
+    if (VPX_READ_SET) {
+      const vpx_prob *p = vp9_pareto8_full[prob[PIVOT_NODE] - 1];
+      VPX_READ_ADJUST_FOR_ONE(r)
       INCREMENT_COUNT(TWO_TOKEN);
-      token = vpx_read_tree(r, vp9_coef_con_tree,
-                            vp9_pareto8_full[prob[PIVOT_NODE] - 1]);
-      switch (token) {
-        case TWO_TOKEN:
-        case THREE_TOKEN:
-        case FOUR_TOKEN:
-          val = token;
-          break;
-        case CATEGORY1_TOKEN:
-          val = CAT1_MIN_VAL + read_coeff(vp9_cat1_prob, 1, r);
-          break;
-        case CATEGORY2_TOKEN:
-          val = CAT2_MIN_VAL + read_coeff(vp9_cat2_prob, 2, r);
-          break;
-        case CATEGORY3_TOKEN:
-          val = CAT3_MIN_VAL + read_coeff(vp9_cat3_prob, 3, r);
-          break;
-        case CATEGORY4_TOKEN:
-          val = CAT4_MIN_VAL + read_coeff(vp9_cat4_prob, 4, r);
-          break;
-        case CATEGORY5_TOKEN:
-          val = CAT5_MIN_VAL + read_coeff(vp9_cat5_prob, 5, r);
-          break;
-        case CATEGORY6_TOKEN:
-          val = CAT6_MIN_VAL + read_coeff(cat6_prob, cat6_bits, r);
-          break;
+      VPX_READ_BIT(r, p[0]);
+      if (VPX_READ_SET) {
+        VPX_READ_ADJUST_FOR_ONE(r);
+        VPX_READ_BIT(r, p[3]);
+        if (VPX_READ_SET) {
+          VPX_READ_ADJUST_FOR_ONE(r);
+          VPX_READ_BIT(r, p[5]);
+          if (VPX_READ_SET) {
+            VPX_READ_ADJUST_FOR_ONE(r);
+            VPX_READ_BIT(r, p[7]);
+            if (VPX_READ_SET) {
+              VPX_READ_ADJUST_FOR_ONE(r);
+              token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY6_TOKEN];
+              READ_COEFF(CAT6_MIN_VAL, cat6_prob, cat6_bits, r);
+            } else {
+              VPX_READ_ADJUST_FOR_ZERO
+              token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY5_TOKEN];
+              READ_COEFF(CAT5_MIN_VAL, vp9_cat5_prob, 5, r);
+            }
+          } else {
+            VPX_READ_ADJUST_FOR_ZERO
+            VPX_READ_BIT(r, p[6]);
+            if (VPX_READ_SET) {
+              VPX_READ_ADJUST_FOR_ONE(r);
+              token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY4_TOKEN];
+              READ_COEFF(CAT4_MIN_VAL, vp9_cat4_prob, 4, r);
+            } else {
+              VPX_READ_ADJUST_FOR_ZERO
+              token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY3_TOKEN];
+              READ_COEFF(CAT3_MIN_VAL, vp9_cat3_prob, 3, r);
+            }
+          }
+        } else {
+          VPX_READ_ADJUST_FOR_ZERO
+          VPX_READ_BIT(r, p[4]);
+          if (VPX_READ_SET) {
+            VPX_READ_ADJUST_FOR_ONE(r);
+            token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY2_TOKEN];
+            READ_COEFF(CAT2_MIN_VAL, vp9_cat2_prob, 2, r);
+          } else {
+            VPX_READ_ADJUST_FOR_ZERO
+            token_cache[scan[c]] = vp9_pt_energy_class[CATEGORY1_TOKEN];
+            READ_COEFF(CAT1_MIN_VAL, vp9_cat1_prob, 1, r);
+          }
+        }
+      } else {
+        VPX_READ_ADJUST_FOR_ZERO
+        VPX_READ_BIT(r, p[1]);
+        if (VPX_READ_SET) {
+          VPX_READ_ADJUST_FOR_ONE(r);
+          VPX_READ_BIT(r, p[2]);
+          if (VPX_READ_SET) {
+            VPX_READ_ADJUST_FOR_ONE(r);
+            token_cache[scan[c]] = vp9_pt_energy_class[FOUR_TOKEN];
+            val = 4;
+          } else {
+            VPX_READ_ADJUST_FOR_ZERO
+            token_cache[scan[c]] = vp9_pt_energy_class[THREE_TOKEN];
+            val = 3;
+          }
+        } else {
+          VPX_READ_ADJUST_FOR_ZERO
+          token_cache[scan[c]] = vp9_pt_energy_class[TWO_TOKEN];
+          val = 2;
+        }
       }
+    } else {
+      VPX_READ_ADJUST_FOR_ZERO
+      token_cache[scan[c]] = vp9_pt_energy_class[ONE_TOKEN];
+      INCREMENT_COUNT(ONE_TOKEN);
+      val = 1;
     }
     v = (val * dqv) >> dq_shift;
+    VPX_READ_BIT(r, 128)
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
 #if CONFIG_VP9_HIGHBITDEPTH
-    dqcoeff[scan[c]] = highbd_check_range((vpx_read_bit(r) ? -v : v),
-                                          xd->bd);
+    if (VPX_READ_SET) {
+       VPX_READ_ADJUST_FOR_ONE(r)
+       dqcoeff[scan[c]] = highbd_check_range(-v, cm->bit_depth);
+    } else {
+      VPX_READ_ADJUST_FOR_ZERO
+      dqcoeff[scan[c]] = highbd_check_range(v, cm->bit_depth);
+    }
 #else
-    dqcoeff[scan[c]] = check_range(vpx_read_bit(r) ? -v : v);
+    if (VPX_READ_SET) {
+       VPX_READ_ADJUST_FOR_ONE(r)
+       dqcoeff[scan[c]] = check_range(-v, cm->bit_depth);
+    } else {
+      VPX_READ_ADJUST_FOR_ZERO
+      dqcoeff[scan[c]] = check_range(v, cm->bit_depth);
+    }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #else
-    dqcoeff[scan[c]] = vpx_read_bit(r) ? -v : v;
+    if (VPX_READ_SET) {
+       VPX_READ_ADJUST_FOR_ONE(r)
+       dqcoeff[scan[c]] = -v;
+    } else {
+      VPX_READ_ADJUST_FOR_ZERO
+      dqcoeff[scan[c]] = v;
+    }
 #endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
-    token_cache[scan[c]] = vp9_pt_energy_class[token];
     ++c;
     ctx = get_coef_context(nb, token_cache, c);
     dqv = dq[1];
   }
+  VPX_READ_STORE(r)
 
   return c;
 }
