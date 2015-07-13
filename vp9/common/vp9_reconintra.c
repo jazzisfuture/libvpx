@@ -1064,6 +1064,7 @@ void vp9_predict_intra_block(const MACROBLOCKD *xd, int block_idx, int bwl_in,
                              const uint8_t *ref, int ref_stride,
                              uint8_t *dst, int dst_stride,
                              int aoff, int loff, int plane) {
+  const int txw = (1 << tx_size);
   const int bwl = bwl_in - tx_size;
   const int wmask = (1 << bwl) - 1;
   const int have_top = (block_idx >> bwl) || xd->up_available;
