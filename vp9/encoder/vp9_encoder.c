@@ -1476,14 +1476,6 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   vp9_reset_segment_features(&cm->seg);
   vp9_set_high_precision_mv(cpi, 0);
 
-  {
-    int i;
-
-    for (i = 0; i < MAX_SEGMENTS; i++)
-      cpi->segment_encode_breakout[i] = cpi->oxcf.encode_breakout;
-  }
-  cpi->encode_breakout = cpi->oxcf.encode_breakout;
-
   set_rc_buffer_sizes(rc, &cpi->oxcf);
 
   // Under a configuration change, where maximum_buffer_size may change,
@@ -1739,8 +1731,6 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   framepsnr = fopen("framepsnr.stt", "a");
   kf_list = fopen("kf_list.stt", "w");
 #endif
-
-  cpi->allow_encode_breakout = ENCODE_BREAKOUT_ENABLED;
 
   if (oxcf->pass == 1) {
     vp9_init_first_pass(cpi);
@@ -3429,7 +3419,6 @@ static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
 
 static void Pass2Encode(VP9_COMP *cpi, size_t *size,
                         uint8_t *dest, unsigned int *frame_flags) {
-  cpi->allow_encode_breakout = ENCODE_BREAKOUT_ENABLED;
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
   vp9_twopass_postencode_update(cpi);
 }

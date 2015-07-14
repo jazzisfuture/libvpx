@@ -297,12 +297,6 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed) {
     sf->mv.search_method = FAST_DIAMOND;
     sf->mv.fullpel_search_step_param = 10;
     sf->lpf_pick = LPF_PICK_MINIMAL_LPF;
-    sf->encode_breakout_thresh = (MIN(cm->width, cm->height) >= 720) ?
-        800 : 300;
-  }
-
-  if (speed >= 12) {
-    sf->mv.subpel_force_stop = 2;
   }
 }
 
@@ -370,7 +364,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   // to FIXED_PARTITION.
   sf->always_this_block_size = BLOCK_16X16;
   sf->search_type_check_frequency = 50;
-  sf->encode_breakout_thresh = 0;
   // Recode loop tolerence %.
   sf->recode_tolerance = 25;
   sf->default_interp_filter = SWITCHABLE;
@@ -418,8 +411,4 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   if (!cpi->oxcf.frame_periodic_boost) {
     sf->max_delta_qindex = 0;
   }
-
-  if (cpi->encode_breakout && oxcf->mode == REALTIME &&
-      sf->encode_breakout_thresh > cpi->encode_breakout)
-    cpi->encode_breakout = sf->encode_breakout_thresh;
 }

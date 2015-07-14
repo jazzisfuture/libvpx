@@ -291,11 +291,8 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
       mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
     }
     vp9_init_plane_quantizers(cpi, x);
-
-    x->encode_breakout = cpi->segment_encode_breakout[mbmi->segment_id];
   } else {
     mbmi->segment_id = 0;
-    x->encode_breakout = cpi->encode_breakout;
   }
 }
 
@@ -358,11 +355,8 @@ static void set_offsets_extend(VP9_COMP *cpi, const TileInfo *const tile,
       mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
     }
     vp9_init_plane_quantizers(cpi, x);
-
-    x->encode_breakout = cpi->segment_encode_breakout[mbmi->segment_id];
   } else {
     mbmi->segment_id = 0;
-    x->encode_breakout = cpi->encode_breakout;
   }
 }
 #endif  // CONFIG_SUPERTX
