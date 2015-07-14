@@ -102,7 +102,6 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
       sf->partition_search_breakout_dist_thr = (1 << 25);
       sf->partition_search_breakout_rate_thr = 200;
     } else {
-      sf->max_intra_bsize = BLOCK_32X32;
       sf->disable_split_mask = DISABLE_ALL_INTER_SPLIT;
       sf->schedule_mode_search = cm->base_qindex < 175 ? 1 : 0;
       sf->partition_search_breakout_dist_thr = (1 << 23);
@@ -257,11 +256,6 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->frame_parameter_update = 0;
     sf->mv.search_method = FAST_HEX;
 
-    sf->inter_mode_mask[BLOCK_32X32] = INTER_NEAREST_NEAR_NEW;
-    sf->inter_mode_mask[BLOCK_32X64] = INTER_NEAREST;
-    sf->inter_mode_mask[BLOCK_64X32] = INTER_NEAREST;
-    sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST;
-    sf->max_intra_bsize = BLOCK_32X32;
     sf->allow_skip_recode = 1;
   }
 
@@ -278,10 +272,6 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->max_delta_qindex = is_keyframe ? 20 : 15;
     sf->partition_search_type = REFERENCE_PARTITION;
     sf->allow_skip_recode = 0;
-    sf->inter_mode_mask[BLOCK_32X32] = INTER_NEAREST_NEW_ZERO;
-    sf->inter_mode_mask[BLOCK_32X64] = INTER_NEAREST_NEW_ZERO;
-    sf->inter_mode_mask[BLOCK_64X32] = INTER_NEAREST_NEW_ZERO;
-    sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST_NEW_ZERO;
 
     // This feature is only enabled when partition search is disabled.
     sf->reuse_inter_pred_sby = 1;
@@ -294,13 +284,6 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
   }
 
   if (speed >= 6) {
-    if (content == VP9E_CONTENT_SCREEN) {
-      int i;
-      // Allow fancy modes at all sizes since SOURCE_VAR_BASED_PARTITION is used
-      for (i = 0; i < BLOCK_SIZES; ++i)
-        sf->inter_mode_mask[i] = INTER_NEAREST_NEAR_NEW;
-    }
-
     // Adaptively switch between SOURCE_VAR_BASED_PARTITION and FIXED_PARTITION.
     sf->partition_search_type = VAR_BASED_PARTITION;
     sf->search_type_check_frequency = 50;
@@ -326,13 +309,6 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
   if (speed >= 12) {
     sf->elevate_newmv_thresh = 4000;
     sf->mv.subpel_force_stop = 2;
-  }
-
-  if (speed >= 13) {
-    int i;
-    sf->max_intra_bsize = BLOCK_32X32;
-    for (i = 0; i < BLOCK_SIZES; ++i)
-      sf->inter_mode_mask[i] = INTER_NEAREST;
   }
 }
 
@@ -395,9 +371,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_fast_coef_costing = 0;
   sf->mode_skip_start = MAX_MODES;  // Mode index at which mode skip mask set
   sf->schedule_mode_search = 0;
-  for (i = 0; i < BLOCK_SIZES; ++i)
-    sf->inter_mode_mask[i] = INTER_ALL;
-  sf->max_intra_bsize = BLOCK_64X64;
   sf->reuse_inter_pred_sby = 0;
   // This setting only takes effect when partition_search_type is set
   // to FIXED_PARTITION.
