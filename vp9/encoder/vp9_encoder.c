@@ -3180,7 +3180,6 @@ static void set_frame_size(VP9_COMP *cpi) {
 static void encode_without_recode_loop(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   int q = 0, bottom_index = 0, top_index = 0;  // Dummy variables.
-
   vp9_clear_system_state();
 
   set_frame_size(cpi);
@@ -3190,8 +3189,8 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
   if (cpi->oxcf.pass == 0 &&
       cpi->oxcf.rc_mode == VPX_CBR &&
       cpi->oxcf.resize_mode == RESIZE_DYNAMIC &&
-      cpi->resize_scale_num == 1 &&
-      cpi->resize_scale_den == 2) {
+      cpi->un_scaled_source->y_width == (cm->width << 1) &&
+      cpi->un_scaled_source->y_height == (cm->height << 1)) {
     cpi->Source = vp9_scale_if_required_fast(cm,
                                              cpi->un_scaled_source,
                                              &cpi->scaled_source);
