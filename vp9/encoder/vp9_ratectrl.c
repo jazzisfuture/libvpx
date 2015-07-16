@@ -1848,6 +1848,8 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
     int active_worst_quality;
     int qindex;
     int tot_scale_change;
+    if (!cpi->use_svc)
+      cpi->refresh_golden_frame = 1;
     // For now, resize is by 1/2 x 1/2.
     cpi->resize_scale_num = 1;
     cpi->resize_scale_den = 2;
