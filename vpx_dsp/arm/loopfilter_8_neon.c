@@ -10,7 +10,7 @@
 
 #include <arm_neon.h>
 
-#include "./vpx_config.h"
+#include "./vpx_dsp_rtcd.h"
 
 static INLINE void vp9_mbloop_filter_neon(
         uint8x8_t dblimit,   // mblimit

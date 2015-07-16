@@ -13,6 +13,32 @@ DSP_SRCS-yes += vpx_dsp_common.h
 
 DSP_SRCS-$(HAVE_MSA)    += mips/macros_msa.h
 
+# loop filters
+DSP_SRCS-yes += loopfilter.c
+
+DSP_SRCS-$(HAVE_SSE2)   += x86/loopfilter_sse2.c
+DSP_SRCS-$(HAVE_AVX2)   += x86/loopfilter_avx2.c
+DSP_SRCS-$(HAVE_MMX)    += x86/loopfilter_mmx.asm
+
+DSP_SRCS-$(HAVE_NEON_ASM)  += arm/loopfilter_mb_media$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM)  += arm/loopfilter_16_media$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM)  += arm/loopfilter_8_media$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM)  += arm/loopfilter_4_media$(ASM)
+
+DSP_SRCS-$(HAVE_NEON)   += arm/loopfilter_16_neon.c
+DSP_SRCS-$(HAVE_NEON)   += arm/loopfilter_8_neon.c
+DSP_SRCS-$(HAVE_NEON)   += arm/loopfilter_4_neon.c
+DSP_SRCS-$(HAVE_NEON)   += arm/loopfilter_neon.c
+
+DSP_SRCS-$(HAVE_MSA)    += mips/loopfilter_msa.h
+DSP_SRCS-$(HAVE_MSA)    += mips/loopfilter_16_msa.c
+DSP_SRCS-$(HAVE_MSA)    += mips/loopfilter_8_msa.c
+DSP_SRCS-$(HAVE_MSA)    += mips/loopfilter_4_msa.c
+
+ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_loopfilter_sse2.c
+endif  # CONFIG_VP9_HIGHBITDEPTH
+
 ifeq ($(CONFIG_ENCODERS),yes)
 DSP_SRCS-yes            += sad.c
 DSP_SRCS-yes            += subtract.c
