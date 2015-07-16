@@ -3195,6 +3195,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
   // golden reference, for non-SVC 1 pass CBR.
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
       cm->frame_type != KEY_FRAME &&
+      cpi->resize_pending == 0 &&
       !cpi->use_svc &&
       (cpi->oxcf.pass == 0 && cpi->oxcf.rc_mode == VPX_CBR))
     vp9_cyclic_refresh_check_golden_update(cpi);
