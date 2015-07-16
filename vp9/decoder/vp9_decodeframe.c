@@ -1759,10 +1759,13 @@ static void error_handler(void *data) {
 
 static void read_bitdepth_colorspace_sampling(
     VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
-  if (cm->profile >= PROFILE_2) {
-    cm->bit_depth = vp9_rb_read_bit(rb) ? VPX_BITS_12 : VPX_BITS_10;
+  if (cm->profile > PROFILE_1) {
 #if CONFIG_VP9_HIGHBITDEPTH
+    cm->bit_depth = vp9_rb_read_bit(rb) ? VPX_BITS_12 : VPX_BITS_10;
     cm->use_highbitdepth = 1;
+#else
+    vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
+                       "The profile is not supported by this decoder");
 #endif
   } else {
     cm->bit_depth = VPX_BITS_8;
