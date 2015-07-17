@@ -1769,13 +1769,22 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     if (skip)
       reset_skip_context(xd, bsize);
 #if CONFIG_EXT_TX
-    if (bsize <= BLOCK_16X16 && !skip) {
-      txfm = vp9_read_tree(r, vp9_ext_tx_tree,
-                           cm->fc.ext_tx_prob[supertx_size]);
-      if (!cm->frame_parallel_decoding_mode)
-        ++cm->counts.ext_tx[supertx_size][txfm];
+    if (!skip) {
+      if (supertx_size <= TX_16X16) {
+        txfm = vp9_read_tree(r, vp9_ext_tx_tree,
+                             cm->fc.ext_tx_prob[supertx_size]);
+        if (!cm->frame_parallel_decoding_mode)
+          ++cm->counts.ext_tx[supertx_size][txfm];
+#if CONFIG_WAVELETS
+      } else {
+        txfm = vp9_read_tree(r, vp9_ext_tx_large_tree,
+                             cm->fc.ext_tx_prob[supertx_size]);
+        if (!cm->frame_parallel_decoding_mode)
+          ++cm->counts.ext_tx[supertx_size][txfm];
+#endif  // CONFIG_WAVELETS
+      }
     }
-#endif
+#endif  // CONFIG_EXT_TX
   }
 #endif  // CONFIG_SUPERTX
   if (subsize < BLOCK_8X8) {
@@ -3207,8 +3216,13 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
 static void read_ext_tx_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
   int i, j;
   if (vp9_read(r, GROUP_DIFF_UPDATE_PROB)) {
+#if CONFIG_WAVELETS
+    for (j = TX_4X4; j < TX_SIZES; ++j)
+      for (i = 0; i < GET_EXT_TX_TYPES(j) - 1; ++i)
+#else
     for (j = TX_4X4; j <= TX_16X16; ++j)
       for (i = 0; i < EXT_TX_TYPES - 1; ++i)
+#endif
         vp9_diff_update_prob(r, &fc->ext_tx_prob[j][i]);
   }
 }
@@ -3494,7 +3508,11 @@ static void debug_check_frame_counts(const VP9_COMMON *const cm) {
 #if CONFIG_EXT_TX
   assert(!memcmp(cm->counts.ext_tx, zero_counts.ext_tx,
                  sizeof(cm->counts.ext_tx)));
-#endif
+#if CONFIG_WAVELETS
+  assert(!memcmp(cm->counts.ext_tx_large, zero_counts.ext_tx_large,
+                 sizeof(cm->counts.ext_tx_large)));
+#endif  // CONFIG_WAVELETS
+#endif  // CONFIG_EXT_TX
 #if CONFIG_NEW_INTER
   assert(!memcmp(cm->counts.inter_compound_mode,
                  zero_counts.inter_compound_mode,
