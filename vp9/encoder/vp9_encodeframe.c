@@ -1764,9 +1764,16 @@ static void encode_sb(VP9_COMP *cpi, const TileInfo *const tile,
             [partition_supertx_context_lookup[partition]][supertx_size][1]++;
         cm->counts.supertx_size[supertx_size]++;
 #if CONFIG_EXT_TX
-        if (supertx_size < TX_32X32 && !xd->mi[0].mbmi.skip)
-          ++cm->counts.ext_tx[xd->mi[0].mbmi.tx_size][xd->mi[0].mbmi.ext_txfrm];
-#endif
+#if CONFIG_WAVELETS
+        if (!xd->mi[0].mbmi.skip)
+          ++cm->counts.ext_tx[xd->mi[0].mbmi.tx_size]
+                             [xd->mi[0].mbmi.ext_txfrm];
+#else
+        if (supertx_size <= TX_16X16 && !xd->mi[0].mbmi.skip)
+          ++cm->counts.ext_tx[xd->mi[0].mbmi.tx_size]
+                             [xd->mi[0].mbmi.ext_txfrm];
+#endif  // CONFIG_WAVELETS
+#endif  // CONFIG_EXT_TX
         (*tp)->token = EOSB_TOKEN;
         (*tp)++;
       }
@@ -4523,6 +4530,16 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   if (!x->skip_recode)
     vpx_memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
 
+  /*
+  if (output_enabled && is_inter_block(mbmi) &&
+      cm->current_video_frame == 6 &&
+      mi_row == 8 && mi_col == 0) {
+    printf("EFrame %d, (row, col) = %d %d, sb_type %d, tx_size %d, alt_tx %d\n",
+           cm->current_video_frame, mi_row, mi_col, mbmi->sb_type,
+           mbmi->tx_size, mbmi->ext_txfrm);
+  }
+  */
+
   x->skip_optimize = ctx->is_coded;
   ctx->is_coded = 1;
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
@@ -4638,8 +4655,10 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
             mi_8x8[mis * y + x].src_mi->mbmi.tx_size = tx_size;
     }
 #if CONFIG_EXT_TX
-    if (mbmi->tx_size < TX_32X32 &&
-        is_inter_block(mbmi) &&
+    if (is_inter_block(mbmi) &&
+#if !CONFIG_WAVELETS
+        mbmi->tx_size <= TX_16X16 &&
+#endif
         cm->base_qindex > 0 &&
         bsize >= BLOCK_8X8 &&
         !mbmi->skip &&
@@ -5789,10 +5808,7 @@ static void rd_supertx_sb(VP9_COMP *cpi, const TileInfo *const tile,
   tx_size = bsize_to_tx_size(bsize);
   vp9_subtract_plane(x, bsize, 0);
 #if CONFIG_EXT_TX
-  for (txfm = NORM; txfm < EXT_TX_TYPES; txfm++) {
-    if (tx_size > TX_16X16 && txfm != NORM)
-      continue;
-
+  for (txfm = NORM; txfm < GET_EXT_TX_TYPES(tx_size); txfm++) {
     xd->mi[0].mbmi.ext_txfrm = txfm;
 #endif  // CONFIG_EXT_TX
     txfm_rd_in_plane_supertx(x, &this_rate, &this_dist, &pnskip, &pnsse,
@@ -5807,7 +5823,9 @@ static void rd_supertx_sb(VP9_COMP *cpi, const TileInfo *const tile,
       x->skip = 1;
     } else {
 #if CONFIG_EXT_TX
-      if (tx_size < TX_32X32)
+#if !CONFIG_WAVELETS
+      if (tx_size <= TX_16X16)
+#endif
         *tmp_rate += cpi->ext_tx_costs[tx_size][txfm];
 #endif  // CONFIG_EXT_TX
       if (RDCOST(x->rdmult, x->rddiv, *tmp_rate, *tmp_dist)
