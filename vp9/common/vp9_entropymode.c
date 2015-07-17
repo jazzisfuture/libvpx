@@ -439,6 +439,20 @@ static const vp9_prob default_ext_tx_prob[3][EXT_TX_TYPES - 1] = {
   { 208, 128, 128, 128, 128, 128, 128, 128 },
   { 176, 128, 128, 128, 128, 128, 128, 128 },
 };
+
+#if CONFIG_WAVELETS
+const vp9_tree_index vp9_ext_tx_large_tree[TREE_SIZE(EXT_TX_TYPES_LARGE)] = {
+  -NORM, -ALT1,
+};
+
+static const vp9_prob default_ext_tx_large_prob[1 + CONFIG_TX64X64]
+                                               [EXT_TX_TYPES_LARGE - 1] = {
+  { 240, },
+#if CONFIG_TX64X64
+  { 208, },
+#endif
+};
+#endif  // CONFIG_WAVELETS
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_PALETTE
