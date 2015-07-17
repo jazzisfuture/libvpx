@@ -24,7 +24,7 @@ extern "C" {
 #if HAVE_DSPR2
 /* processing 4 pixels at the same time
  * compute hev and mask in the same function */
-static INLINE void vp9_filter_hev_mask_dspr2(uint32_t limit, uint32_t flimit,
+static INLINE void vpx_filter_hev_mask_dspr2(uint32_t limit, uint32_t flimit,
                                              uint32_t p1, uint32_t p0,
                                              uint32_t p3, uint32_t p2,
                                              uint32_t q0, uint32_t q1,
@@ -129,7 +129,7 @@ static INLINE void vp9_filter_hev_mask_dspr2(uint32_t limit, uint32_t flimit,
   *mask = s2;
 }
 
-static INLINE void vp9_filter_hev_mask_flatmask4_dspr2(uint32_t limit,
+static INLINE void vpx_filter_hev_mask_flatmask4_dspr2(uint32_t limit,
                                                        uint32_t flimit,
                                                        uint32_t thresh,
                                                        uint32_t p1, uint32_t p0,
@@ -279,7 +279,7 @@ static INLINE void vp9_filter_hev_mask_flatmask4_dspr2(uint32_t limit,
   *flat = flat1;
 }
 
-static INLINE void vp9_flatmask5(uint32_t p4, uint32_t p3,
+static INLINE void vpx_flatmask5(uint32_t p4, uint32_t p3,
                                  uint32_t p2, uint32_t p1,
                                  uint32_t p0, uint32_t q0,
                                  uint32_t q1, uint32_t q2,
