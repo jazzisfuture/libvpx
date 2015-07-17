@@ -879,7 +879,10 @@ static void choose_largest_tx_size(VP9_COMP *cpi, MACROBLOCK *x,
                    sse, ref_best_rd, 0, bs,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
 #if CONFIG_EXT_TX
-  if (is_inter_block(mbmi) && mbmi->tx_size < TX_32X32 && bs >= BLOCK_8X8 &&
+  if (is_inter_block(mbmi) && bs >= BLOCK_8X8 &&
+#if !CONFIG_WAVELETS
+      mbmi->tx_size <= TX_16X16 &&
+#endif
       !xd->lossless && *rate != INT_MAX)
     *rate += cpi->ext_tx_costs[mbmi->tx_size][mbmi->ext_txfrm];
 #endif
@@ -921,14 +924,28 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   s1 = vp9_cost_bit(skip_prob, 1);
 
   for (n = max_tx_size; n >= 0;  n--) {
-    txfm_rd_in_plane(x, &r[n][0], &d[n], &s[n],
-                     &sse[n], ref_best_rd, 0, bs, n,
-                     cpi->sf.use_fast_coef_costing);
 #if CONFIG_EXT_TX
-    if (is_inter_block(mbmi) && n < TX_32X32 && bs >= BLOCK_8X8 &&
+#if CONFIG_WAVELETS
+    if (mbmi->ext_txfrm >= GET_EXT_TX_TYPES(n)) {
+#else
+    if (n > TX_16X16 && mbmi->ext_txfrm != NORM) {
+#endif
+      r[n][0] = r[n][1] = INT_MAX;
+      d[n] = INT64_MAX;
+    } else {
+#endif  // CONFIG_EXT_TX
+      txfm_rd_in_plane(x, &r[n][0], &d[n], &s[n],
+                       &sse[n], ref_best_rd, 0, bs, n,
+                       cpi->sf.use_fast_coef_costing);
+#if CONFIG_EXT_TX
+    }
+    if (is_inter_block(mbmi) && bs >= BLOCK_8X8 &&
+#if !CONFIG_WAVELETS
+        n <= TX_16X16 &&
+#endif
         !xd->lossless && r[n][0] != INT_MAX)
       r[n][0] += cpi->ext_tx_costs[n][mbmi->ext_txfrm];
-#endif
+#endif  // CONFIG_EXT_TX
     r[n][1] = r[n][0];
     if (r[n][0] < INT_MAX) {
       for (m = 0; m <= n - (n == (int) max_tx_size); m++) {
@@ -5429,7 +5446,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       int64_t best_rdcost_tx = INT64_MAX;
       int best_ext_tx = NORM;
 
-      for (i = 0; i < EXT_TX_TYPES; i++) {
+      for (i = NORM; i < EXT_TX_TYPES; i++) {
         mbmi->ext_txfrm = i;
         super_block_yrd(cpi, x, &rate_y_tx, &distortion_y_tx, &dummy, psse,
                         bsize, txfm_cache, INT64_MAX);
