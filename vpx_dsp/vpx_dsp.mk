@@ -18,10 +18,10 @@ DSP_SRCS-yes += vp9_prob.h
 DSP_SRCS-yes += vp9_prob.c
 
 ifeq ($(CONFIG_DECODERS),yes)
-DSP_SRCS-yes += vp9_reader.h
-DSP_SRCS-yes += vp9_reader.c
-DSP_SRCS-yes += vp9_read_bit_buffer.c
-DSP_SRCS-yes += vp9_read_bit_buffer.h
+DSP_SRCS-yes += bitreader.h
+DSP_SRCS-yes += bitreader.c
+DSP_SRCS-yes += bitreader_buffer.c
+DSP_SRCS-yes += bitreader_buffer.h
 endif
 
 # loop filters
