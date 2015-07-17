@@ -11,7 +11,7 @@
 #include <emmintrin.h>
 
 #include "vpx_ports/mem.h"
-#include "vp9/common/vp9_common.h"
+//#include "vp9/common/vp9_common.h"
 
 #if CONFIG_VP9_HIGHBITDEPTH
 // from vp9_idct.h: typedef int32_t tran_low_t;
