@@ -774,7 +774,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   tran_low_t *qcoeff = BLOCK_OFFSET(p->qcoeff, block);
   tran_low_t *dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   const scan_order *scan_order;
-  TX_TYPE tx_type;
+  TX_TYPE tx_type = DCT_DCT;
   PREDICTION_MODE mode;
   const int bwl = b_width_log2_lookup[plane_bsize];
   const int diff_stride = 4 * (1 << bwl);
@@ -784,10 +784,30 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   const int src_stride = p->src.stride;
   const int dst_stride = pd->dst.stride;
   int i, j;
+  int bs = 4 << tx_size;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * (j * dst_stride + i)];
   src = &p->src.buf[4 * (j * src_stride + i)];
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+
+  if (tx_size == TX_4X4) {
+      tx_type = get_tx_type_4x4(pd->plane_type, xd, block);
+      scan_order = &vp9_scan_orders[TX_4X4][tx_type];
+      mode = plane == 0 ? get_y_mode(xd->mi[0], block) : mbmi->uv_mode;
+    } else {
+      mode = plane == 0 ? mbmi->mode : mbmi->uv_mode;
+      if (tx_size == TX_32X32) {
+        scan_order = &vp9_default_scan_orders[TX_32X32];
+      } else {
+        tx_type = get_tx_type(pd->plane_type, xd);
+        scan_order = &vp9_scan_orders[tx_size][tx_type];
+      }
+    }
+
+  //vp9_predict_intra_block(xd, bwl, tx_size, mode,
+    //                      x->skip_encode ? src : dst,
+      //                        x->skip_encode ? src_stride : dst_stride,
+        //                          dst, dst_stride, i, j, plane);
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
