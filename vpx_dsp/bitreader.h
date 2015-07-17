@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_DECODER_VP9_READER_H_
-#define VP9_DECODER_VP9_READER_H_
+#ifndef VPX_DSP_BITREADER_H_
+#define VPX_DSP_BITREADER_H_
 
 #include <stddef.h>
 #include <limits.h>
