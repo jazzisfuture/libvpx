@@ -13,6 +13,7 @@ DSP_SRCS-yes += vpx_dsp_common.h
 
 DSP_SRCS-$(HAVE_MSA)    += mips/macros_msa.h
 
+
 # bit reader
 DSP_SRCS-yes += prob.h
 DSP_SRCS-yes += prob.c
@@ -23,6 +24,17 @@ DSP_SRCS-yes += bitreader.c
 DSP_SRCS-yes += bitreader_buffer.c
 DSP_SRCS-yes += bitreader_buffer.h
 endif
+
+
+# intra predictions
+DSP_SRCS-yes += intrapred.h
+DSP_SRCS-yes += intrapred.c
+
+ifeq ($(CONFIG_USE_X86INC),yes)
+DSP_SRCS-$(HAVE_SSE2) += x86/intrapred_sse2.asm
+DSP_SRCS-$(HAVE_SSSE3) += x86/intrapred_ssse3.asm
+endif
+
 
 # loop filters
 DSP_SRCS-yes += loopfilter.c
