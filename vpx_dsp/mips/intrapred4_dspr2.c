@@ -9,14 +9,19 @@
  */
 #include <stdlib.h>
 
-#include "./vp9_rtcd.h"
-#include "vp9/common/vp9_common.h"
-#include "vp9/common/mips/dspr2/vp9_common_dspr2.h"
+#include "./vpx_dsp_rtcd.h"
+//#include "vp9/common/vp9_common.h"
+//#include "vpx_dsp/mips/common_dspr2.h"
 
 #if HAVE_DSPR2
+
+this should not go through!!!
+
 void vp9_h_predictor_4x4_dspr2(uint8_t *dst, ptrdiff_t stride,
                                const uint8_t *above, const uint8_t *left) {
   int32_t  tmp1, tmp2, tmp3, tmp4;
+
+  this should not go through!!!
 
   __asm__ __volatile__ (
       "lb         %[tmp1],      (%[left])                    \n\t"

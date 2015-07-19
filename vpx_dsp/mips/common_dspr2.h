@@ -21,6 +21,22 @@ extern "C" {
 #if HAVE_DSPR2
 #define CROP_WIDTH 512
 
+uint8_t vp9_ff_cropTbl_a[256 + 2 * CROP_WIDTH];
+uint8_t *vp9_ff_cropTbl;
+
+void vp9_dsputil_static_init(void) {
+  int i;
+
+  for (i = 0; i < 256; i++) vp9_ff_cropTbl_a[i + CROP_WIDTH] = i;
+
+  for (i = 0; i < CROP_WIDTH; i++) {
+    vp9_ff_cropTbl_a[i] = 0;
+    vp9_ff_cropTbl_a[i + CROP_WIDTH + 256] = 255;
+  }
+
+  vp9_ff_cropTbl = &vp9_ff_cropTbl_a[CROP_WIDTH];
+}
+
 static INLINE void prefetch_load(const unsigned char *src) {
   __asm__ __volatile__ (
       "pref   0,  0(%[src])   \n\t"
