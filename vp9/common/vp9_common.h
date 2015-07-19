@@ -95,6 +95,8 @@ typedef int16_t tran_low_t;
 
 #define VP9_FRAME_MARKER 0x2
 
+#define FLAG 1
+
 
 #ifdef __cplusplus
 }  // extern "C"

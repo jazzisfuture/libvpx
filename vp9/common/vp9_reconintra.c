@@ -10,6 +10,7 @@
 
 #include "./vpx_config.h"
 #include "./vp9_rtcd.h"
+#include "./vpx_dsp_rtcd.h"
 
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
@@ -372,6 +373,7 @@ void vp9_d207_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
       DST(0, 3) = DST(1, 3) = DST(2, 3) = DST(3, 3) = L;
 }
 
+#if FLAG
 static INLINE void d207_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                   const uint8_t *above, const uint8_t *left) {
   int r, c;
@@ -397,6 +399,7 @@ static INLINE void d207_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     for (c = 0; c < bs - 2; ++c)
       dst[r * stride + c] = dst[(r + 1) * stride + c - 2];
 }
+#endif
 intra_pred_no_4x4(d207)
 
 void vp9_d63_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
@@ -422,6 +425,7 @@ void vp9_d63_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
               DST(3, 3) = AVG3(E, F, G);  // differs from vp8
 }
 
+#if FLAG
 static INLINE void d63_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                  const uint8_t *above, const uint8_t *left) {
   int r, c;
@@ -438,6 +442,7 @@ static INLINE void d63_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     memset(dst + (r + 1) * stride + size, above[bs - 1], bs - size);
   }
 }
+#endif
 intra_pred_no_4x4(d63)
 
 void vp9_d45_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
@@ -461,6 +466,7 @@ void vp9_d45_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
                                       DST(3, 3) = H;  // differs from vp8
 }
 
+#if FLAG
 static INLINE void d45_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                  const uint8_t *above, const uint8_t *left) {
   const uint8_t above_right = above[bs - 1];
@@ -479,6 +485,7 @@ static INLINE void d45_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_no_4x4(d45)
 
 void vp9_d117_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
@@ -504,6 +511,7 @@ void vp9_d117_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
   DST(3, 1) =             AVG3(B, C, D);
 }
 
+#if FLAG
 static INLINE void d117_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                   const uint8_t *above, const uint8_t *left) {
   int r, c;
@@ -531,6 +539,7 @@ static INLINE void d117_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_no_4x4(d117)
 
 void vp9_d135_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
@@ -554,6 +563,7 @@ void vp9_d135_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
                                       DST(3, 0) = AVG3(D, C, B);
 }
 
+#if FLAG
 static INLINE void d135_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                   const uint8_t *above, const uint8_t *left) {
   int r, c;
@@ -572,6 +582,7 @@ static INLINE void d135_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_no_4x4(d135)
 
 void vp9_d153_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
@@ -598,6 +609,7 @@ void vp9_d153_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
   DST(1, 3)             = AVG3(L, K, J);
 }
 
+#if FLAG
 static INLINE void d153_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                   const uint8_t *above, const uint8_t *left) {
   int r, c;
@@ -622,8 +634,10 @@ static INLINE void d153_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_no_4x4(d153)
 
+#if FLAG
 static INLINE void v_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                const uint8_t *above, const uint8_t *left) {
   int r;
@@ -634,8 +648,10 @@ static INLINE void v_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_allsizes(v)
 
+#if FLAG
 static INLINE void h_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                const uint8_t *above, const uint8_t *left) {
   int r;
@@ -646,8 +662,10 @@ static INLINE void h_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_allsizes(h)
 
+#if FLAG
 static INLINE void tm_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                 const uint8_t *above, const uint8_t *left) {
   int r, c;
@@ -659,8 +677,10 @@ static INLINE void tm_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_allsizes(tm)
 
+#if FLAG
 static INLINE void dc_128_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                     const uint8_t *above, const uint8_t *left) {
   int r;
@@ -672,8 +692,10 @@ static INLINE void dc_128_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_allsizes(dc_128)
 
+#if FLAG
 static INLINE void dc_left_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                      const uint8_t *above,
                                      const uint8_t *left) {
@@ -689,8 +711,10 @@ static INLINE void dc_left_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_allsizes(dc_left)
 
+#if FLAG
 static INLINE void dc_top_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                     const uint8_t *above, const uint8_t *left) {
   int i, r, expected_dc, sum = 0;
@@ -705,8 +729,10 @@ static INLINE void dc_top_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_allsizes(dc_top)
 
+#if FLAG
 static INLINE void dc_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                 const uint8_t *above, const uint8_t *left) {
   int i, r, expected_dc, sum = 0;
@@ -724,6 +750,7 @@ static INLINE void dc_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     dst += stride;
   }
 }
+#endif
 intra_pred_allsizes(dc)
 #undef intra_pred_allsizes
 
