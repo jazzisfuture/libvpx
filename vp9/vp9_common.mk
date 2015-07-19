@@ -84,16 +84,11 @@ endif
 
 ifeq ($(CONFIG_USE_X86INC),yes)
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_copy_sse2.asm
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_intrapred_sse2.asm
-VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_intrapred_ssse3.asm
 endif
 
 ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_high_subpixel_8t_sse2.asm
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_high_subpixel_bilinear_sse2.asm
-ifeq ($(CONFIG_USE_X86INC),yes)
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_high_intrapred_sse2.asm
-endif
 endif
 
 # common (c)
@@ -135,7 +130,6 @@ VP9_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/vp9_idct8x8_msa.c
 VP9_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/vp9_idct16x16_msa.c
 VP9_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/vp9_idct32x32_msa.c
 VP9_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/vp9_idct_msa.h
-VP9_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/vp9_intra_predict_msa.c
 
 ifeq ($(CONFIG_VP9_POSTPROC),yes)
 VP9_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/vp9_mfqe_msa.c
@@ -174,7 +168,6 @@ VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct4x4_1_add_neon_asm$(ASM)
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct4x4_add_neon_asm$(ASM)
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct8x8_1_add_neon_asm$(ASM)
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct8x8_add_neon_asm$(ASM)
-VP9_COMMON_SRCS-yes += common/arm/neon/vp9_reconintra_neon_asm$(ASM)
 else
 ifeq ($(HAVE_NEON), yes)
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_convolve8_avg_neon.c
@@ -193,7 +186,5 @@ VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct8x8_1_add_neon.c
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct8x8_add_neon.c
 endif  # HAVE_NEON
 endif  # HAVE_NEON_ASM
-
-VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_reconintra_neon.c
 
 $(eval $(call rtcd_h_template,vp9_rtcd,vp9/common/vp9_rtcd_defs.pl))
