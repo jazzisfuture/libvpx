@@ -9,9 +9,9 @@
  */
 #include <stdlib.h>
 
-#include "./vp9_rtcd.h"
-#include "vp9/common/vp9_common.h"
-#include "vp9/common/mips/dspr2/vp9_common_dspr2.h"
+#include "./vpx_dsp_rtcd.h"
+//#include "vp9/common/vp9_common.h"
+#include "vpx_dsp/mips/common_dspr2.h"
 
 #if HAVE_DSPR2
 void vp9_h_predictor_4x4_dspr2(uint8_t *dst, ptrdiff_t stride,
