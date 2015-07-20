@@ -2519,11 +2519,12 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         // The dist & rate thresholds are set to 0 at speed 0 to disable the
         // early termination at that speed.
         if (!x->e_mbd.lossless &&
-            (ctx->skippable && best_rdc.dist < dist_breakout_thr &&
-            best_rdc.rate < rate_breakout_thr)) {
+            (best_rdc.dist < dist_breakout_thr &&
+             best_rdc.rate < rate_breakout_thr)) {
           do_split = 0;
           do_rect = 0;
         }
+
 
 #if CONFIG_FP_MB_STATS
         // Check if every 16x16 first pass block statistics has zero
