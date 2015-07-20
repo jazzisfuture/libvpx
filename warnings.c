@@ -66,6 +66,9 @@ static int continue_prompt(int num_warnings) {
   fprintf(stderr,
           "%d encoder configuration warning(s). Continue? (y to continue) ",
           num_warnings);
+#if CONFIG_LEARNING_MODE
+  return 'y';
+#endif
   c = getchar();
   return c == 'y';
 }

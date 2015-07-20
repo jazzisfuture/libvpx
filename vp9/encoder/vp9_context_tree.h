@@ -12,6 +12,9 @@
 #define VP9_ENCODER_VP9_CONTEXT_TREE_H_
 
 #include "vp9/common/vp9_blockd.h"
+#if CONFIG_LEARNING_MODE
+//#include "vp9/encoder/vp9_rd.h"
+#endif
 
 struct VP9_COMP;
 struct VP9Common;

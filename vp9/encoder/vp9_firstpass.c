@@ -140,12 +140,12 @@ static void output_stats(FIRSTPASS_STATS *stats,
 }
 
 #if CONFIG_FP_MB_STATS
-static void output_fpmb_stats(uint8_t *this_frame_mb_stats, VP9_COMMON *cm,
+static void output_fpmb_stats(FP_MB_STATS *fp_mb_stats_buf, VP9_COMP *cpi,
                          struct vpx_codec_pkt_list *pktlist) {
   struct vpx_codec_cx_pkt pkt;
   pkt.kind = VPX_CODEC_FPMB_STATS_PKT;
-  pkt.data.firstpass_mb_stats.buf = this_frame_mb_stats;
-  pkt.data.firstpass_mb_stats.sz = cm->initial_mbs * sizeof(uint8_t);
+  pkt.data.firstpass_mb_stats.buf = fp_mb_stats_buf;
+  pkt.data.firstpass_mb_stats.sz = cpi->initial_mbs * sizeof(FP_MB_STATS);
   vpx_codec_pkt_list_add(pktlist, &pkt);
 }
 #endif
@@ -501,7 +501,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
-    vp9_zero_array(cpi->twopass.frame_mb_stats_buf, cm->initial_mbs);
+	  vp9_zero_array(cpi->twopass.fp_mb_stats_buf, cpi->initial_mbs);
   }
 #endif
 
@@ -513,7 +513,6 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
   set_first_pass_params(cpi);
   vp9_set_quantizer(cm, find_fp_qindex(cm->bit_depth));
-
   if (lc != NULL) {
     twopass = &lc->twopass;
 
@@ -690,7 +689,9 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 #if CONFIG_FP_MB_STATS
       if (cpi->use_fp_mb_stats) {
         // initialization
-        cpi->twopass.frame_mb_stats_buf[mb_index] = 0;
+        cpi->twopass.fp_mb_stats_buf[mb_index].mv.row = 0;
+        cpi->twopass.fp_mb_stats_buf[mb_index].mv.col = 0;
+        cpi->twopass.fp_mb_stats_buf[mb_index].pred_var = 0;
       }
 #endif
 
@@ -812,15 +813,11 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
 #if CONFIG_FP_MB_STATS
         if (cpi->use_fp_mb_stats) {
-          // intra predication statistics
-          cpi->twopass.frame_mb_stats_buf[mb_index] = 0;
-          cpi->twopass.frame_mb_stats_buf[mb_index] |= FPMB_DCINTRA_MASK;
-          cpi->twopass.frame_mb_stats_buf[mb_index] |= FPMB_MOTION_ZERO_MASK;
-          if (this_error > FPMB_ERROR_LARGE_TH) {
-            cpi->twopass.frame_mb_stats_buf[mb_index] |= FPMB_ERROR_LARGE_MASK;
-          } else if (this_error < FPMB_ERROR_SMALL_TH) {
-            cpi->twopass.frame_mb_stats_buf[mb_index] |= FPMB_ERROR_SMALL_MASK;
-          }
+			int pred_var = vp9_get_mvpred_var(x, &mv, &mv,
+											&cpi->fn_ptr[bsize], 0);
+			// save mv and prediction variance
+			cpi->twopass.fp_mb_stats_buf[mb_index].mv = mv;
+			cpi->twopass.fp_mb_stats_buf[mb_index].pred_var = pred_var;
         }
 #endif
 
@@ -861,51 +858,8 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
           best_ref_mv = mv;
 
-#if CONFIG_FP_MB_STATS
-          if (cpi->use_fp_mb_stats) {
-            // inter predication statistics
-            cpi->twopass.frame_mb_stats_buf[mb_index] = 0;
-            cpi->twopass.frame_mb_stats_buf[mb_index] &= ~FPMB_DCINTRA_MASK;
-            cpi->twopass.frame_mb_stats_buf[mb_index] |= FPMB_MOTION_ZERO_MASK;
-            if (this_error > FPMB_ERROR_LARGE_TH) {
-              cpi->twopass.frame_mb_stats_buf[mb_index] |=
-                  FPMB_ERROR_LARGE_MASK;
-            } else if (this_error < FPMB_ERROR_SMALL_TH) {
-              cpi->twopass.frame_mb_stats_buf[mb_index] |=
-                  FPMB_ERROR_SMALL_MASK;
-            }
-          }
-#endif
-
           if (!is_zero_mv(&mv)) {
             ++mvcount;
-
-#if CONFIG_FP_MB_STATS
-            if (cpi->use_fp_mb_stats) {
-              cpi->twopass.frame_mb_stats_buf[mb_index] &=
-                  ~FPMB_MOTION_ZERO_MASK;
-              // check estimated motion direction
-              if (mv.as_mv.col > 0 && mv.as_mv.col >= abs(mv.as_mv.row)) {
-                // right direction
-                cpi->twopass.frame_mb_stats_buf[mb_index] |=
-                    FPMB_MOTION_RIGHT_MASK;
-              } else if (mv.as_mv.row < 0 &&
-                         abs(mv.as_mv.row) >= abs(mv.as_mv.col)) {
-                // up direction
-                cpi->twopass.frame_mb_stats_buf[mb_index] |=
-                    FPMB_MOTION_UP_MASK;
-              } else if (mv.as_mv.col < 0 &&
-                         abs(mv.as_mv.col) >= abs(mv.as_mv.row)) {
-                // left direction
-                cpi->twopass.frame_mb_stats_buf[mb_index] |=
-                    FPMB_MOTION_LEFT_MASK;
-              } else {
-                // down direction
-                cpi->twopass.frame_mb_stats_buf[mb_index] |=
-                    FPMB_MOTION_DOWN_MASK;
-              }
-            }
-#endif
 
             // Non-zero vector, was it different from the last non zero vector?
             if (!is_equal_mv(&mv, &lastmv))
@@ -1022,7 +976,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
 #if CONFIG_FP_MB_STATS
     if (cpi->use_fp_mb_stats) {
-      output_fpmb_stats(twopass->frame_mb_stats_buf, cm, cpi->output_pkt_list);
+      output_fpmb_stats(twopass->fp_mb_stats_buf, cpi, cpi->output_pkt_list);
     }
 #endif
   }

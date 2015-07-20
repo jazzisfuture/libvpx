@@ -1632,13 +1632,13 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   }
 
 #if CONFIG_FP_MB_STATS
-  cpi->use_fp_mb_stats = 0;
+  cpi->use_fp_mb_stats = 1;
   if (cpi->use_fp_mb_stats) {
     // a place holder used to store the first pass mb stats in the first pass
-    CHECK_MEM_ERROR(cm, cpi->twopass.frame_mb_stats_buf,
-                    vpx_calloc(cm->MBs * sizeof(uint8_t), 1));
+    CHECK_MEM_ERROR(cm, cpi->twopass.fp_mb_stats_buf,
+                    vpx_calloc(cm->MBs * sizeof(FP_MB_STATS), 1));
   } else {
-    cpi->twopass.frame_mb_stats_buf = NULL;
+	  cpi->twopass.fp_mb_stats_buf = NULL;
   }
 #endif
 
@@ -1770,14 +1770,13 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
     } else {
 #if CONFIG_FP_MB_STATS
       if (cpi->use_fp_mb_stats) {
-        const size_t psz = cpi->common.MBs * sizeof(uint8_t);
+        const size_t psz = cpi->common.MBs * sizeof(FP_MB_STATS);
         const int ps = (int)(oxcf->firstpass_mb_stats_in.sz / psz);
-
         cpi->twopass.firstpass_mb_stats.mb_stats_start =
             oxcf->firstpass_mb_stats_in.buf;
         cpi->twopass.firstpass_mb_stats.mb_stats_end =
             cpi->twopass.firstpass_mb_stats.mb_stats_start +
-            (ps - 1) * cpi->common.MBs * sizeof(uint8_t);
+            (ps - 1) * cpi->common.MBs;
       }
 #endif
 
@@ -2018,8 +2017,8 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
-    vpx_free(cpi->twopass.frame_mb_stats_buf);
-    cpi->twopass.frame_mb_stats_buf = NULL;
+    vpx_free(cpi->twopass.fp_mb_stats_buf);
+    cpi->twopass.fp_mb_stats_buf = NULL;
   }
 #endif
 

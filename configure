@@ -252,6 +252,8 @@ EXPERIMENT_LIST="
     spatial_svc
     fp_mb_stats
     emulate_hardware
+    learning_mode
+    output_mode
 "
 CONFIG_LIST="
     dependency_tracking

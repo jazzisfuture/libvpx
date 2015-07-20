@@ -46,6 +46,9 @@
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_tokenize.h"
 
+
+
+
 static void encode_superblock(VP9_COMP *cpi, ThreadData * td,
                               TOKENEXTRA **t, int output_enabled,
                               int mi_row, int mi_col, BLOCK_SIZE bsize,
@@ -150,6 +153,24 @@ static unsigned int get_sby_perpixel_diff_variance(VP9_COMP *cpi,
   var = cpi->fn_ptr[bs].vf(ref->buf, ref->stride, last_y, last->y_stride, &sse);
   return ROUND_POWER_OF_TWO(var, num_pels_log2_lookup[bs]);
 }
+
+#if CONFIG_LEARNING_MODE
+
+static unsigned int get_sby_perpixel_diff_sad(VP9_COMP *cpi,
+                                                   const struct buf_2d *ref,
+                                                   int mi_row, int mi_col,
+                                                   BLOCK_SIZE bs) {
+  unsigned int sad;
+  uint8_t *last_y;
+  const YV12_BUFFER_CONFIG *last = get_ref_frame_buffer(cpi, LAST_FRAME);
+
+  assert(last != NULL);
+  last_y =
+      &last->y_buffer[mi_row * MI_SIZE * last->y_stride + mi_col * MI_SIZE];
+  sad = cpi->fn_ptr[bs].sdf(ref->buf, ref->stride, last_y, last->y_stride);
+  return sad;
+}
+#endif
 
 static BLOCK_SIZE get_rd_var_based_fixed_partition(VP9_COMP *cpi, MACROBLOCK *x,
                                                    int mi_row,
@@ -304,6 +325,7 @@ typedef enum {
   V64X64,
 } TREE_LEVEL;
 
+// give node the value of data according to the block size
 static void tree_to_node(void *data, BLOCK_SIZE bsize, variance_node *node) {
   int i;
   node->part_variances = NULL;
@@ -362,6 +384,7 @@ static void get_variance(var *v) {
       ((v->sum_error * v->sum_error) >> v->log2_count)) >> v->log2_count);
 }
 
+// merge 2 var a and b that have same size
 static void sum_2_variances(const var *a, const var *b, var *r) {
   assert(a->log2_count == b->log2_count);
   fill_variance(a->sum_square_error + b->sum_square_error,
@@ -1276,6 +1299,20 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
 
   ctx->rate = rd_cost->rate;
   ctx->dist = rd_cost->dist;
+#if CONFIG_LEARNING_MODE
+  // calculate the mb stats for learning
+  ctx->mic.mbmi.source_var = x->source_variance;
+  if (frame_is_intra_only(&cpi->common)) {
+	  ctx->mic.mbmi.last_var = 0;
+	  ctx->mic.mbmi.last_sad = 0;
+  }
+  else {
+  ctx->mic.mbmi.last_var = get_sby_perpixel_diff_variance(cpi, &x->plane[0].src,
+                                             mi_row, mi_col, bsize);
+  ctx->mic.mbmi.last_sad = get_sby_perpixel_diff_sad(cpi, &x->plane[0].src,
+                                             mi_row, mi_col, bsize);
+  }
+#endif
 }
 
 static void update_stats(VP9_COMMON *cm, ThreadData *td) {
@@ -2344,49 +2381,64 @@ const int num_16x16_blocks_wide_lookup[BLOCK_SIZES] =
   {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 4, 4};
 const int num_16x16_blocks_high_lookup[BLOCK_SIZES] =
   {1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 4, 2, 4};
-const int qindex_skip_threshold_lookup[BLOCK_SIZES] =
-  {0, 10, 10, 30, 40, 40, 60, 80, 80, 90, 100, 100, 120};
-const int qindex_split_threshold_lookup[BLOCK_SIZES] =
-  {0, 3, 3, 7, 15, 15, 30, 40, 40, 60, 80, 80, 120};
-const int complexity_16x16_blocks_threshold[BLOCK_SIZES] =
-  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 6};
 
-typedef enum {
-  MV_ZERO = 0,
-  MV_LEFT = 1,
-  MV_UP = 2,
-  MV_RIGHT = 3,
-  MV_DOWN = 4,
-  MV_INVALID
-} MOTION_DIRECTION;
-
-static INLINE MOTION_DIRECTION get_motion_direction_fp(uint8_t fp_byte) {
-  if (fp_byte & FPMB_MOTION_ZERO_MASK) {
-    return MV_ZERO;
-  } else if (fp_byte & FPMB_MOTION_LEFT_MASK) {
-    return MV_LEFT;
-  } else if (fp_byte & FPMB_MOTION_RIGHT_MASK) {
-    return MV_RIGHT;
-  } else if (fp_byte & FPMB_MOTION_UP_MASK) {
-    return MV_UP;
-  } else {
-    return MV_DOWN;
-  }
-}
-
-static INLINE int get_motion_inconsistency(MOTION_DIRECTION this_mv,
-                                           MOTION_DIRECTION that_mv) {
-  if (this_mv == that_mv) {
-    return 0;
-  } else {
-    return abs(this_mv - that_mv) == 2 ? 2 : 1;
-  }
-}
 #endif
 
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
 // unlikely to be selected depending on previous rate-distortion optimization
 // results, for encoding speed-up.
+
+#if CONFIG_OUTPUT_MODE
+
+// write mode information into a file for training mode decision model
+static void write_mode_info(FILE *f, PC_TREE *pc_tree, BLOCK_SIZE bsize,
+							int mi_row, int mi_col, VP9_COMP *cpi ) {
+	const int bsl = b_width_log2_lookup[bsize], hbs = (1 << bsl) / 4;
+	int i;
+	BLOCK_SIZE subsize;
+	if (bsize >= BLOCK_16X16) {
+//		if (bsize == BLOCK_32X32) {
+		fprintf(f, "%d %d %d %d %d %d ", cpi->common.current_video_frame,
+				cpi->common.base_qindex,
+				pc_tree->partitioning, mi_row, mi_col, hbs * 2);
+		fprintf(f, "%d ", pc_tree->none.mic.mbmi.source_var);
+		for (i = 0; i < 4; i++) {
+			fprintf(f, "%d ", pc_tree->split[i]->none.mic.mbmi.source_var);
+		}
+
+		fprintf(f, "%d ", pc_tree->none.mic.mbmi.last_var);
+		for (i = 0; i < 4; i++) {
+			fprintf(f, "%d ", pc_tree->split[i]->none.mic.mbmi.last_var);
+		}
+		fprintf(f, "%d %d ", pc_tree->none.mic.mbmi.mv[0].as_mv.row,
+				pc_tree->none.mic.mbmi.mv[0].as_mv.col);
+
+		for (i = 0; i < 4; i++) {
+			fprintf(f, "%d %d ", pc_tree->split[i]->none.mic.mbmi.mv[0].as_mv.row,
+					pc_tree->split[i]->none.mic.mbmi.mv[0].as_mv.col);
+		}
+		fprintf(f, "%d %" PRId64 " ", pc_tree->none.rate,
+						pc_tree->none.dist);
+		for (i = 0; i < 4; i++) {
+			fprintf(f, "%d %" PRId64 " ", pc_tree->split[i]->none.rate,
+					pc_tree->split[i]->none.dist);
+		}
+
+		fprintf(f,"\n");
+//		}
+		if (pc_tree->partitioning == PARTITION_SPLIT) {
+			subsize = get_subsize(bsize, PARTITION_SPLIT);
+			write_mode_info(f, pc_tree->split[0], subsize, mi_row, mi_col, cpi);
+			write_mode_info(f, pc_tree->split[1], subsize, mi_row, mi_col + hbs, cpi);
+			write_mode_info(f, pc_tree->split[2], subsize, mi_row + hbs, mi_col, cpi);
+			write_mode_info(f, pc_tree->split[3], subsize, mi_row + hbs, mi_col + hbs, cpi);
+		}
+	}
+}
+
+#endif
+
+
 static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
                               TileDataEnc *tile_data,
                               TOKENEXTRA **tp, int mi_row, int mi_col,
@@ -2415,11 +2467,6 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   BLOCK_SIZE min_size = x->min_partition_size;
   BLOCK_SIZE max_size = x->max_partition_size;
-
-#if CONFIG_FP_MB_STATS
-  unsigned int src_diff_var = UINT_MAX;
-  int none_complexity = 0;
-#endif
 
   int partition_none_allowed = !force_horz_split && !force_vert_split;
   int partition_horz_allowed = !force_vert_split && yss <= xss &&
@@ -2466,20 +2513,12 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   save_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
 
-#if CONFIG_FP_MB_STATS
-  if (cpi->use_fp_mb_stats) {
-    set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
-    src_diff_var = get_sby_perpixel_diff_variance(cpi, &x->plane[0].src,
-                                                  mi_row, mi_col, bsize);
-  }
-#endif
 
 #if CONFIG_FP_MB_STATS
-  // Decide whether we shall split directly and skip searching NONE by using
-  // the first pass block statistics
+  // first pass stats are used for early termination for 32X32 and 64X64 blks
   if (cpi->use_fp_mb_stats && bsize >= BLOCK_32X32 && do_split &&
-      partition_none_allowed && src_diff_var > 4 &&
-      cm->base_qindex < qindex_split_threshold_lookup[bsize]) {
+	  (!frame_is_intra_only(&cpi->common)) && cpi->common.show_frame &&
+	  mi_row + 2*mi_step <= cm->mi_rows && mi_col + 2*mi_step <= cm->mi_cols){
     int mb_row = mi_row >> 1;
     int mb_col = mi_col >> 1;
     int mb_row_end =
@@ -2487,41 +2526,61 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     int mb_col_end =
         MIN(mb_col + num_16x16_blocks_wide_lookup[bsize], cm->mb_cols);
     int r, c;
+    int mvcount =  num_16x16_blocks_wide_lookup[bsize] *
+    		num_16x16_blocks_high_lookup[bsize];
+    int64_t sum_mvrs = 0, sum_mvcs = 0;
+    int sum_mvr = 0, sum_mvc = 0;
+    int motion_error_sum = 0;
 
-    // compute a complexity measure, basically measure inconsistency of motion
+    // compute the variance of the  measure, basically measure inconsistency of motion
     // vectors obtained from the first pass in the current block
+#if CONFIG_OUTPUT_MODE
+    // output the first pass statistics for input of the classifier
+    char str[80];
+	FILE *f;
+	if (bsize == BLOCK_32X32)
+		sprintf(str, "frame_mb32_%d.txt",
+			cpi->common.current_video_frame);
+	else
+		sprintf(str, "frame_mb64_%d.txt",
+			cpi->common.current_video_frame);
+
+	if (mi_row == 0 && mi_col == 0)
+		f = fopen(str,"w");
+	else
+		f = fopen(str,"a+");
+	fprintf(f, "%d %d %d ", cpi->common.current_video_frame, mi_row, mi_col);
+#endif
+
     for (r = mb_row; r < mb_row_end ; r++) {
       for (c = mb_col; c < mb_col_end; c++) {
         const int mb_index = r * cm->mb_cols + c;
-
-        MOTION_DIRECTION this_mv;
-        MOTION_DIRECTION right_mv;
-        MOTION_DIRECTION bottom_mv;
-
-        this_mv =
-            get_motion_direction_fp(cpi->twopass.this_frame_mb_stats[mb_index]);
-
-        // to its right
-        if (c != mb_col_end - 1) {
-          right_mv = get_motion_direction_fp(
-              cpi->twopass.this_frame_mb_stats[mb_index + 1]);
-          none_complexity += get_motion_inconsistency(this_mv, right_mv);
-        }
-
-        // to its bottom
-        if (r != mb_row_end - 1) {
-          bottom_mv = get_motion_direction_fp(
-              cpi->twopass.this_frame_mb_stats[mb_index + cm->mb_cols]);
-          none_complexity += get_motion_inconsistency(this_mv, bottom_mv);
-        }
-
-        // do not count its left and top neighbors to avoid double counting
+        MV mb_mv = cpi->twopass.this_mb_stats_buf[mb_index].mv;
+        sum_mvrs += mb_mv.row * mb_mv.row;
+        sum_mvcs += mb_mv.col * mb_mv.col;
+        sum_mvr += mb_mv.row;
+        sum_mvc += mb_mv.col;
+        motion_error_sum += cpi->twopass.this_mb_stats_buf[mb_index].pred_var;
+#if CONFIG_OUTPUT_MODE
+    // output the first pass statistics for input of the classifier
+		fprintf(f, "%d %d %d %d %d ", mb_mv.row, mb_mv.col,
+		      cpi->twopass.this_mb_stats_buf[mb_index].pred_var);
+#endif
       }
     }
 
-    if (none_complexity > complexity_16x16_blocks_threshold[bsize]) {
-      partition_none_allowed = 0;
-    }
+    // if motion is consistent (variance of motion vectors are 0) and motion
+    // and motion distortion is small, early terminate the partition
+    if (motion_error_sum < 2000 && sum_mvrs * mvcount == sum_mvr * sum_mvr
+    		&& sum_mvcs * mvcount == sum_mvc * sum_mvc) {
+    	do_split = 0;
+		  do_rect = 0;
+	}
+
+#if CONFIG_OUTPUT_MODE
+    fprintf(f,"\n");
+	fclose(f);
+#endif
   }
 #endif
 
@@ -2536,7 +2595,6 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,
                                  this_rdc.rate, this_rdc.dist);
       }
-
       if (this_rdc.rdcost < best_rdc.rdcost) {
         int64_t dist_breakout_thr = cpi->sf.partition_search_breakout_dist_thr;
         int rate_breakout_thr = cpi->sf.partition_search_breakout_rate_thr;
@@ -2562,52 +2620,6 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
           do_split = 0;
           do_rect = 0;
         }
-
-#if CONFIG_FP_MB_STATS
-        // Check if every 16x16 first pass block statistics has zero
-        // motion and the corresponding first pass residue is small enough.
-        // If that is the case, check the difference variance between the
-        // current frame and the last frame. If the variance is small enough,
-        // stop further splitting in RD optimization
-        if (cpi->use_fp_mb_stats && do_split != 0 &&
-            cm->base_qindex > qindex_skip_threshold_lookup[bsize]) {
-          int mb_row = mi_row >> 1;
-          int mb_col = mi_col >> 1;
-          int mb_row_end =
-              MIN(mb_row + num_16x16_blocks_high_lookup[bsize], cm->mb_rows);
-          int mb_col_end =
-              MIN(mb_col + num_16x16_blocks_wide_lookup[bsize], cm->mb_cols);
-          int r, c;
-
-          int skip = 1;
-          for (r = mb_row; r < mb_row_end; r++) {
-            for (c = mb_col; c < mb_col_end; c++) {
-              const int mb_index = r * cm->mb_cols + c;
-              if (!(cpi->twopass.this_frame_mb_stats[mb_index] &
-                    FPMB_MOTION_ZERO_MASK) ||
-                  !(cpi->twopass.this_frame_mb_stats[mb_index] &
-                    FPMB_ERROR_SMALL_MASK)) {
-                skip = 0;
-                break;
-              }
-            }
-            if (skip == 0) {
-              break;
-            }
-          }
-          if (skip) {
-            if (src_diff_var == UINT_MAX) {
-              set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
-              src_diff_var = get_sby_perpixel_diff_variance(
-                  cpi, &x->plane[0].src, mi_row, mi_col, bsize);
-            }
-            if (src_diff_var < 8) {
-              do_split = 0;
-              do_rect = 0;
-            }
-          }
-        }
-#endif
       }
     }
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -2632,7 +2644,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
       if (sum_rdc.rate == INT_MAX)
         sum_rdc.rdcost = INT64_MAX;
     } else {
-      for (i = 0; i < 4 && sum_rdc.rdcost < best_rdc.rdcost; ++i) {
+        for (i = 0; i < 4 && sum_rdc.rdcost < best_rdc.rdcost; ++i) {
       const int x_idx = (i & 1) * mi_step;
       const int y_idx = (i >> 1) * mi_step;
 
@@ -2647,7 +2659,6 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
                           mi_row + y_idx, mi_col + x_idx,
                           subsize, &this_rdc,
                           best_rdc.rdcost - sum_rdc.rdcost, pc_tree->split[i]);
-
         if (this_rdc.rate == INT_MAX) {
           sum_rdc.rdcost = INT64_MAX;
           break;
@@ -2787,6 +2798,24 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     int output_enabled = (bsize == BLOCK_64X64);
     encode_sb(cpi, td, tile_info, tp, mi_row, mi_col, output_enabled,
               bsize, pc_tree);
+#if CONFIG_OUTPUT_MODE
+    // obtain training data
+    if (output_enabled && cpi->common.show_frame &&
+        mi_row + mi_step < cm->mi_rows &&
+    		mi_col + mi_step < cm->mi_cols) {
+    	// write the mode info to a file for training
+      char str[80];
+      FILE *f;
+      sprintf(str, "frame_%d.txt",
+          cpi->common.current_video_frame);
+      if (mi_row == 0 && mi_col == 0)
+        f = fopen(str,"w");
+      else
+        f = fopen(str,"a+");
+        write_mode_info(f, pc_tree, bsize, mi_row, mi_col, cpi);
+        fclose(f);
+      }
+#endif
   }
 
   if (bsize == BLOCK_64X64) {
@@ -2826,6 +2855,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
 
     const int idx_str = cm->mi_stride * mi_row + mi_col;
     MODE_INFO **mi = cm->mi_grid_visible + idx_str;
+
 
     if (sf->adaptive_pred_interp_filter) {
       for (i = 0; i < 64; ++i)
@@ -2879,6 +2909,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
       }
       rd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col, BLOCK_64X64,
                         &dummy_rdc, INT64_MAX, td->pc_root);
+
     }
   }
 }
@@ -3828,7 +3859,7 @@ void vp9_encode_tile(VP9_COMP *cpi, ThreadData *td,
     if (cpi->sf.use_nonrd_pick_mode)
       encode_nonrd_sb_row(cpi, td, this_tile, mi_row, &tok);
     else
-      encode_rd_sb_row(cpi, td, this_tile, mi_row, &tok);
+    	encode_rd_sb_row(cpi, td, this_tile, mi_row, &tok);
   }
   cpi->tok_count[tile_row][tile_col] =
       (unsigned int)(tok - cpi->tile_tok[tile_row][tile_col]);
@@ -3851,15 +3882,13 @@ static void encode_tiles(VP9_COMP *cpi) {
 
 #if CONFIG_FP_MB_STATS
 static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
-                            VP9_COMMON *cm, uint8_t **this_frame_mb_stats) {
-  uint8_t *mb_stats_in = firstpass_mb_stats->mb_stats_start +
-      cm->current_video_frame * cm->MBs * sizeof(uint8_t);
+                            VP9_COMMON *cm, FP_MB_STATS **this_mb_stats_buf) {
+	FP_MB_STATS *mb_stats_in = firstpass_mb_stats->mb_stats_start +
+      cm->current_video_frame * cm->MBs;
 
   if (mb_stats_in > firstpass_mb_stats->mb_stats_end)
-    return EOF;
-
-  *this_frame_mb_stats = mb_stats_in;
-
+      return EOF;
+  *this_mb_stats_buf = mb_stats_in;
   return 1;
 }
 #endif
@@ -3952,7 +3981,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
     input_fpmb_stats(&cpi->twopass.firstpass_mb_stats, cm,
-                     &cpi->twopass.this_frame_mb_stats);
+    				&cpi->twopass.this_mb_stats_buf);
   }
 #endif
 

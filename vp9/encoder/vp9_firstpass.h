@@ -22,20 +22,15 @@ extern "C" {
 
 #define FPMB_DCINTRA_MASK 0x01
 
-#define FPMB_MOTION_ZERO_MASK 0x02
-#define FPMB_MOTION_LEFT_MASK 0x04
-#define FPMB_MOTION_RIGHT_MASK 0x08
-#define FPMB_MOTION_UP_MASK 0x10
-#define FPMB_MOTION_DOWN_MASK 0x20
-
-#define FPMB_ERROR_SMALL_MASK 0x40
-#define FPMB_ERROR_LARGE_MASK 0x80
-#define FPMB_ERROR_SMALL_TH 2000
-#define FPMB_ERROR_LARGE_TH 48000
+typedef struct {
+  // store the mv and prediction distortion in the first pass
+  MV mv;
+  int pred_var;
+} FP_MB_STATS;
 
 typedef struct {
-  uint8_t *mb_stats_start;
-  uint8_t *mb_stats_end;
+  FP_MB_STATS *mb_stats_start;
+  FP_MB_STATS *mb_stats_end;
 } FIRSTPASS_MB_STATS;
 #endif
 
@@ -99,8 +94,8 @@ typedef struct {
   double mb_av_energy;
 
 #if CONFIG_FP_MB_STATS
-  uint8_t *frame_mb_stats_buf;
-  uint8_t *this_frame_mb_stats;
+  FP_MB_STATS *fp_mb_stats_buf;
+  FP_MB_STATS *this_mb_stats_buf;
   FIRSTPASS_MB_STATS firstpass_mb_stats;
 #endif
 

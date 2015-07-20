@@ -81,6 +81,12 @@ typedef struct {
   uint8_t mode_context[MAX_REF_FRAMES];
   INTERP_FILTER interp_filter;
 
+#if CONFIG_LEARNING_MODE
+  // mb stats for learning mode
+  unsigned int source_var;
+  unsigned int last_var;
+  unsigned int last_sad;
+#endif
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
