@@ -139,13 +139,10 @@ SECTION .text
       %define sec_str sec_stridemp
 
       ;Store bilin_filter and pw_8 location in stack
-      GET_GOT eax
-      add esp, 4                ; restore esp
-
-      lea ecx, [GLOBAL(bilin_filter_m)]
+      lea ecx, [bilin_filter_m]
       mov g_bilin_filterm, ecx
 
-      lea ecx, [GLOBAL(pw_8)]
+      lea ecx, [pw_8]
       mov g_pw_8m, ecx
 
       LOAD_IF_USED 0, 1         ; load eax, ecx back
@@ -156,13 +153,10 @@ SECTION .text
       %define h heightd
 
       ;Store bilin_filter and pw_8 location in stack
-      GET_GOT eax
-      add esp, 4                ; restore esp
-
-      lea ecx, [GLOBAL(bilin_filter_m)]
+      lea ecx, [bilin_filter_m]
       mov g_bilin_filterm, ecx
 
-      lea ecx, [GLOBAL(pw_8)]
+      lea ecx, [pw_8]
       mov g_pw_8m, ecx
 
       LOAD_IF_USED 0, 1         ; load eax, ecx back

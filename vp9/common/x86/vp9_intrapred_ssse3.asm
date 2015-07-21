@@ -111,15 +111,14 @@ cglobal h_predictor_32x32, 2, 4, 3, dst, stride, line, left
 
 INIT_MMX ssse3
 cglobal d45_predictor_4x4, 3, 4, 4, dst, stride, above, goffset
-  GET_GOT     goffsetq
 
   movq                m0, [aboveq]
-  pshufb              m2, m0, [GLOBAL(sh_b23456777)]
-  pshufb              m1, m0, [GLOBAL(sh_b01234577)]
-  pshufb              m0, [GLOBAL(sh_b12345677)]
+  pshufb              m2, m0, [sh_b23456777]
+  pshufb              m1, m0, [sh_b01234577]
+  pshufb              m0, [sh_b12345677]
   pavgb               m3, m2, m1
   pxor                m2, m1
-  pand                m2, [GLOBAL(pb_1)]
+  pand                m2, [pb_1]
   psubb               m3, m2
   pavgb               m0, m3
 
@@ -133,22 +132,20 @@ cglobal d45_predictor_4x4, 3, 4, 4, dst, stride, above, goffset
   psrlq               m0, 8
   movd    [dstq+strideq], m0
 
-  RESTORE_GOT
   RET
 
 INIT_MMX ssse3
 cglobal d45_predictor_8x8, 3, 4, 4, dst, stride, above, goffset
-  GET_GOT     goffsetq
 
   movq                m0, [aboveq]
-  mova                m1, [GLOBAL(sh_b12345677)]
+  mova                m1, [sh_b12345677]
   DEFINE_ARGS dst, stride, stride3
   lea           stride3q, [strideq*3]
-  pshufb              m2, m0, [GLOBAL(sh_b23456777)]
+  pshufb              m2, m0, [sh_b23456777]
   pavgb               m3, m2, m0
   pxor                m2, m0
   pshufb              m0, m1
-  pand                m2, [GLOBAL(pb_1)]
+  pand                m2, [pb_1]
   psubb               m3, m2
   pavgb               m0, m3
 
@@ -172,23 +169,21 @@ cglobal d45_predictor_8x8, 3, 4, 4, dst, stride, above, goffset
   pshufb              m0, m1
   movq  [dstq+stride3q ], m0
 
-  RESTORE_GOT
   RET
 
 INIT_XMM ssse3
 cglobal d45_predictor_16x16, 3, 6, 4, dst, stride, above, dst8, line, goffset
-  GET_GOT     goffsetq
 
   mova                   m0, [aboveq]
   DEFINE_ARGS dst, stride, stride3, dst8, line
   lea              stride3q, [strideq*3]
   lea                 dst8q, [dstq+strideq*8]
-  mova                   m1, [GLOBAL(sh_b123456789abcdeff)]
-  pshufb                 m2, m0, [GLOBAL(sh_b23456789abcdefff)]
+  mova                   m1, [sh_b123456789abcdeff]
+  pshufb                 m2, m0, [sh_b23456789abcdefff]
   pavgb                  m3, m2, m0
   pxor                   m2, m0
   pshufb                 m0, m1
-  pand                   m2, [GLOBAL(pb_1)]
+  pand                   m2, [pb_1]
   psubb                  m3, m2
   pavgb                  m0, m3
 
@@ -223,12 +218,10 @@ cglobal d45_predictor_16x16, 3, 6, 4, dst, stride, above, dst8, line, goffset
   movhps [dstq+strideq*2+8], m0
   movhps [dstq+stride3q +8], m0
 
-  RESTORE_GOT
   RET
 
 INIT_XMM ssse3
 cglobal d45_predictor_32x32, 3, 6, 7, dst, stride, above, dst16, line, goffset
-  GET_GOT     goffsetq
 
   mova                   m0, [aboveq]
   mova                   m4, [aboveq+16]
@@ -236,19 +229,19 @@ cglobal d45_predictor_32x32, 3, 6, 7, dst, stride, above, dst16, line, goffset
   lea              stride3q, [strideq*3]
   lea                dst16q, [dstq  +strideq*8]
   lea                dst16q, [dst16q+strideq*8]
-  mova                   m1, [GLOBAL(sh_b123456789abcdeff)]
-  pshufb                 m2, m4, [GLOBAL(sh_b23456789abcdefff)]
+  mova                   m1, [sh_b123456789abcdeff]
+  pshufb                 m2, m4, [sh_b23456789abcdefff]
   pavgb                  m3, m2, m4
   pxor                   m2, m4
   palignr                m5, m4, m0, 1
   palignr                m6, m4, m0, 2
   pshufb                 m4, m1
-  pand                   m2, [GLOBAL(pb_1)]
+  pand                   m2, [pb_1]
   psubb                  m3, m2
   pavgb                  m4, m3
   pavgb                  m3, m0, m6
   pxor                   m0, m6
-  pand                   m0, [GLOBAL(pb_1)]
+  pand                   m0, [pb_1]
   psubb                  m3, m0
   pavgb                  m5, m3
 
@@ -301,7 +294,6 @@ cglobal d45_predictor_32x32, 3, 6, 7, dst, stride, above, dst16, line, goffset
   mova [dstq  +strideq*2+16], m4
   mova [dstq  +stride3q +16], m4
 
-  RESTORE_GOT
   RET
 
 ; ------------------------------------------
@@ -316,18 +308,17 @@ cglobal d45_predictor_32x32, 3, 6, 7, dst, stride, above, dst16, line, goffset
 %macro X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 4
   pavgb               %4, %1, %3
   pxor                %3, %1
-  pand                %3, [GLOBAL(pb_1)]
+  pand                %3, [pb_1]
   psubb               %4, %3
   pavgb               %4, %2
 %endmacro
 
 INIT_XMM ssse3
 cglobal d63_predictor_4x4, 3, 4, 5, dst, stride, above, goffset
-  GET_GOT     goffsetq
 
   movq                m3, [aboveq]
-  pshufb              m1, m3, [GLOBAL(sh_b23456777)]
-  pshufb              m2, m3, [GLOBAL(sh_b12345677)]
+  pshufb              m1, m3, [sh_b23456777]
+  pshufb              m2, m3, [sh_b12345677]
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m3, m2, m1, m4
   pavgb               m3, m2
@@ -340,20 +331,18 @@ cglobal d63_predictor_4x4, 3, 4, 5, dst, stride, above, goffset
   psrldq              m4, 1
   movd    [dstq        ], m3
   movd    [dstq+strideq], m4
-  RESTORE_GOT
   RET
 
 INIT_XMM ssse3
 cglobal d63_predictor_8x8, 3, 4, 5, dst, stride, above, goffset
-  GET_GOT     goffsetq
 
   movq                m3, [aboveq]
   DEFINE_ARGS dst, stride, stride3
   lea           stride3q, [strideq*3]
-  pshufb              m1, m3, [GLOBAL(sh_b2345677777777777)]
-  pshufb              m0, m3, [GLOBAL(sh_b0123456777777777)]
-  pshufb              m2, m3, [GLOBAL(sh_b1234567777777777)]
-  pshufb              m3, [GLOBAL(sh_b0123456777777777)]
+  pshufb              m1, m3, [sh_b2345677777777777]
+  pshufb              m0, m3, [sh_b0123456777777777]
+  pshufb              m2, m3, [sh_b1234567777777777]
+  pshufb              m3, [sh_b0123456777777777]
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m2, m1, m4
   pavgb               m3, m2
@@ -376,18 +365,16 @@ cglobal d63_predictor_8x8, 3, 4, 5, dst, stride, above, goffset
   psrldq              m4, 1
   movq  [dstq+strideq*2], m3
   movq  [dstq+stride3q ], m4
-  RESTORE_GOT
   RET
 
 INIT_XMM ssse3
 cglobal d63_predictor_16x16, 3, 5, 5, dst, stride, above, line, goffset
-  GET_GOT     goffsetq
 
   mova                m0, [aboveq]
   DEFINE_ARGS dst, stride, stride3, line
   lea           stride3q, [strideq*3]
-  mova                m1, [GLOBAL(sh_b123456789abcdeff)]
-  pshufb              m2, m0, [GLOBAL(sh_b23456789abcdefff)]
+  mova                m1, [sh_b123456789abcdeff]
+  pshufb              m2, m0, [sh_b23456789abcdefff]
   pshufb              m3, m0, m1
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m3, m2, m4
@@ -406,19 +393,17 @@ cglobal d63_predictor_16x16, 3, 5, 5, dst, stride, above, line, goffset
   lea               dstq, [dstq+strideq*4]
   dec              lined
   jnz .loop
-  RESTORE_GOT
   REP_RET
 
 INIT_XMM ssse3
 cglobal d63_predictor_32x32, 3, 5, 8, dst, stride, above, line, goffset
-  GET_GOT     goffsetq
 
   mova                   m0, [aboveq]
   mova                   m7, [aboveq+16]
   DEFINE_ARGS dst, stride, stride3, line
-  mova                   m1, [GLOBAL(sh_b123456789abcdeff)]
+  mova                   m1, [sh_b123456789abcdeff]
   lea              stride3q, [strideq*3]
-  pshufb                 m2, m7, [GLOBAL(sh_b23456789abcdefff)]
+  pshufb                 m2, m7, [sh_b23456789abcdefff]
   pshufb                 m3, m7, m1
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m7, m3, m2, m4
@@ -451,16 +436,14 @@ cglobal d63_predictor_32x32, 3, 5, 8, dst, stride, above, line, goffset
   lea                  dstq, [dstq+strideq*4]
   dec                 lined
   jnz .loop
-  RESTORE_GOT
   REP_RET
 
 INIT_XMM ssse3
 cglobal d153_predictor_4x4, 4, 5, 4, dst, stride, above, left, goffset
-  GET_GOT     goffsetq
   movd                m0, [leftq]               ; l1, l2, l3, l4
   movd                m1, [aboveq-1]            ; tl, t1, t2, t3
   punpckldq           m0, m1                    ; l1, l2, l3, l4, tl, t1, t2, t3
-  pshufb              m0, [GLOBAL(sh_b32104567)]; l4, l3, l2, l1, tl, t1, t2, t3
+  pshufb              m0, [sh_b32104567]; l4, l3, l2, l1, tl, t1, t2, t3
   psrldq              m1, m0, 1                 ; l3, l2, l1, tl, t1, t2, t3
   psrldq              m2, m0, 2                 ; l2, l1, tl, t1, t2, t3
   ; comments below are for a predictor like this
@@ -475,7 +458,7 @@ cglobal d153_predictor_4x4, 4, 5, 4, dst, stride, above, left, goffset
 
   DEFINE_ARGS dst, stride, stride3
   lea           stride3q, [strideq*3]
-  pshufb              m3, [GLOBAL(sh_b8091a2b345)] ; A4 B4 A3 B3 A2 B2 A1 B1 C1 D1 ..
+  pshufb              m3, [sh_b8091a2b345] ; A4 B4 A3 B3 A2 B2 A1 B1 C1 D1 ..
   movd  [dstq+stride3q ], m3
   psrldq              m3, 2                     ; A3 B3 A2 B2 A1 B1 C1 D1 ..
   movd  [dstq+strideq*2], m3
@@ -483,18 +466,16 @@ cglobal d153_predictor_4x4, 4, 5, 4, dst, stride, above, left, goffset
   movd  [dstq+strideq  ], m3
   psrldq              m3, 2                     ; A1 B1 C1 D1 ..
   movd  [dstq          ], m3
-  RESTORE_GOT
   RET
 
 INIT_XMM ssse3
 cglobal d153_predictor_8x8, 4, 5, 8, dst, stride, above, left, goffset
-  GET_GOT     goffsetq
   movq                m0, [leftq]                     ; [0- 7] l1-8 [byte]
   movhps              m0, [aboveq-1]                  ; [8-15] tl, t1-7 [byte]
-  pshufb              m1, m0, [GLOBAL(sh_b76543210)]  ; l8-1 [word]
-  pshufb              m2, m0, [GLOBAL(sh_b65432108)]  ; l7-1,tl [word]
-  pshufb              m3, m0, [GLOBAL(sh_b54321089)]  ; l6-1,tl,t1 [word]
-  pshufb              m0, [GLOBAL(sh_b89abcdef)]      ; tl,t1-7 [word]
+  pshufb              m1, m0, [sh_b76543210]  ; l8-1 [word]
+  pshufb              m2, m0, [sh_b65432108]  ; l7-1,tl [word]
+  pshufb              m3, m0, [sh_b54321089]  ; l6-1,tl,t1 [word]
+  pshufb              m0, [sh_b89abcdef]      ; tl,t1-7 [word]
   psrldq              m4, m0, 1                       ; t1-7 [word]
   psrldq              m5, m0, 2                       ; t2-7 [word]
   ; comments below are for a predictor like this
@@ -532,12 +513,10 @@ cglobal d153_predictor_8x8, 4, 5, 8, dst, stride, above, left, goffset
   movq  [dstq+strideq  ], m6
   psrldq              m6, 2                     ; A-B5, A-B4, A-B3, A-B2
   movq  [dstq          ], m6
-  RESTORE_GOT
   RET
 
 INIT_XMM ssse3
 cglobal d153_predictor_16x16, 4, 5, 8, dst, stride, above, left, goffset
-  GET_GOT     goffsetq
   mova                m0, [leftq]
   movu                m7, [aboveq-1]
   ; comments below are for a predictor like this
@@ -557,23 +536,23 @@ cglobal d153_predictor_16x16, 4, 5, 8, dst, stride, above, left, goffset
   ; Ae Be Ad Bd Ac Bc Ab Bb Aa Ba A9 B9 A8 B8 A7 B7
   ; Af Bf Ae Be Ad Bd Ac Bc Ab Bb Aa Ba A9 B9 A8 B8
   ; Ag Bg Af Bf Ae Be Ad Bd Ac Bc Ab Bb Aa Ba A9 B9
-  pshufb              m6, m7, [GLOBAL(sh_bfedcba9876543210)]
+  pshufb              m6, m7, [sh_bfedcba9876543210]
   palignr             m5, m0, m6, 15
   palignr             m3, m0, m6, 14
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m5, m3, m4          ; 3-tap avg B3-Bg
-  pshufb              m1, m0, [GLOBAL(sh_b123456789abcdeff)]
+  pshufb              m1, m0, [sh_b123456789abcdeff]
   pavgb               m5, m0                            ; A1 - Ag
 
   punpcklbw           m0, m4, m5                        ; A-B8 ... A-B1
   punpckhbw           m4, m5                            ; A-B9 ... A-Bg
 
-  pshufb              m3, m7, [GLOBAL(sh_b123456789abcdeff)]
-  pshufb              m5, m7, [GLOBAL(sh_b23456789abcdefff)]
+  pshufb              m3, m7, [sh_b123456789abcdeff]
+  pshufb              m5, m7, [sh_b23456789abcdefff]
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m7, m3, m5, m1          ; 3-tap avg C1-P1
 
-  pshufb              m6, m0, [GLOBAL(sh_bfedcba9876543210)]
+  pshufb              m6, m0, [sh_bfedcba9876543210]
   DEFINE_ARGS dst, stride, stride3
   lea           stride3q, [strideq*3]
   palignr             m2, m1, m6, 14
@@ -591,7 +570,7 @@ cglobal d153_predictor_16x16, 4, 5, 8, dst, stride, above, left, goffset
   mova  [dstq+strideq  ], m2
   palignr             m2, m1, m6, 2
   mova  [dstq+strideq*2], m2
-  pshufb              m4, [GLOBAL(sh_bfedcba9876543210)]
+  pshufb              m4, [sh_bfedcba9876543210]
   mova  [dstq+stride3q ], m6
   lea               dstq, [dstq+strideq*4]
 
@@ -611,18 +590,16 @@ cglobal d153_predictor_16x16, 4, 5, 8, dst, stride, above, left, goffset
   palignr             m2, m6, m4, 2
   mova  [dstq+strideq*2], m2
   mova  [dstq+stride3q ], m4
-  RESTORE_GOT
   RET
 
 INIT_XMM ssse3
 cglobal d153_predictor_32x32, 4, 5, 8, dst, stride, above, left, goffset
-  GET_GOT     goffsetq
   mova                  m0, [leftq]
   movu                  m7, [aboveq-1]
   movu                  m1, [aboveq+15]
 
-  pshufb                m4, m1, [GLOBAL(sh_b123456789abcdeff)]
-  pshufb                m6, m1, [GLOBAL(sh_b23456789abcdefff)]
+  pshufb                m4, m1, [sh_b123456789abcdeff]
+  pshufb                m6, m1, [sh_b23456789abcdefff]
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m1, m4, m6, m2          ; 3-tap avg above [high]
 
@@ -631,7 +608,7 @@ cglobal d153_predictor_32x32, 4, 5, 8, dst, stride, above, left, goffset
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m7, m3, m5, m1          ; 3-tap avg above [low]
 
-  pshufb                m7, [GLOBAL(sh_bfedcba9876543210)]
+  pshufb                m7, [sh_bfedcba9876543210]
   palignr               m5, m0, m7, 15
   palignr               m3, m0, m7, 14
 
@@ -639,8 +616,8 @@ cglobal d153_predictor_32x32, 4, 5, 8, dst, stride, above, left, goffset
   pavgb                 m5, m0                            ; A1 - Ag
   punpcklbw             m6, m4, m5                        ; A-B8 ... A-B1
   punpckhbw             m4, m5                            ; A-B9 ... A-Bg
-  pshufb                m6, [GLOBAL(sh_bfedcba9876543210)]
-  pshufb                m4, [GLOBAL(sh_bfedcba9876543210)]
+  pshufb                m6, [sh_bfedcba9876543210]
+  pshufb                m4, [sh_bfedcba9876543210]
 
   DEFINE_ARGS dst, stride, stride3, left, line
   lea             stride3q, [strideq*3]
@@ -720,8 +697,8 @@ cglobal d153_predictor_32x32, 4, 5, 8, dst, stride, above, left, goffset
   pavgb                  m5, m3                            ; Ah -
   punpcklbw              m3, m2, m5                        ; A-B8 ... A-B1
   punpckhbw              m2, m5                            ; A-B9 ... A-Bg
-  pshufb                 m3, [GLOBAL(sh_bfedcba9876543210)]
-  pshufb                 m2, [GLOBAL(sh_bfedcba9876543210)]
+  pshufb                 m3, [sh_bfedcba9876543210]
+  pshufb                 m2, [sh_bfedcba9876543210]
 
   palignr                m7, m6, m4, 14
   palignr                m0, m4, m3, 14
@@ -788,15 +765,13 @@ cglobal d153_predictor_32x32, 4, 5, 8, dst, stride, above, left, goffset
   mova  [dstq+stride3q    ], m2
   mova  [dstq+stride3q+16 ], m3
 
-  RESTORE_GOT
   RET
 
 INIT_MMX ssse3
 cglobal d207_predictor_4x4, 4, 5, 4, dst, stride, unused, left, goffset
-  GET_GOT     goffsetq
   movd                m0, [leftq]                ; abcd [byte]
-  pshufb              m1, m0, [GLOBAL(sh_b1233)] ; bcdd [byte]
-  pshufb              m3, m0, [GLOBAL(sh_b2333)] ; cddd
+  pshufb              m1, m0, [sh_b1233] ; bcdd [byte]
+  pshufb              m3, m0, [sh_b2333] ; cddd
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m1, m3, m2
   pavgb               m1, m0             ; ab, bc, cd, d [byte]
@@ -810,18 +785,16 @@ cglobal d207_predictor_4x4, 4, 5, 4, dst, stride, unused, left, goffset
   movd    [dstq        ], m1
   pshufw              m1, m1, q1111      ; d, d, d, d
   movd    [dstq+strideq], m1
-  RESTORE_GOT
   RET
 
 INIT_XMM ssse3
 cglobal d207_predictor_8x8, 4, 5, 4, dst, stride, stride3, left, goffset
-  GET_GOT     goffsetq
   movq                m3, [leftq]            ; abcdefgh [byte]
   lea           stride3q, [strideq*3]
 
-  pshufb              m1, m3, [GLOBAL(sh_b2345677777777777)]
-  pshufb              m0, m3, [GLOBAL(sh_b0123456777777777)]
-  pshufb              m2, m3, [GLOBAL(sh_b1234567777777777)]
+  pshufb              m1, m3, [sh_b2345677777777777]
+  pshufb              m0, m3, [sh_b0123456777777777]
+  pshufb              m2, m3, [sh_b1234567777777777]
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m2, m1, m3
   pavgb               m0, m2
@@ -844,16 +817,14 @@ cglobal d207_predictor_8x8, 4, 5, 4, dst, stride, stride3, left, goffset
   movq  [dstq+strideq*2], m0
   psrldq              m0, 2
   movq  [dstq+stride3q ], m0
-  RESTORE_GOT
   RET
 
 INIT_XMM ssse3
 cglobal d207_predictor_16x16, 4, 5, 5, dst, stride, stride3, left, goffset
-  GET_GOT     goffsetq
   lea           stride3q, [strideq*3]
   mova                m0, [leftq]            ; abcdefghijklmnop [byte]
-  pshufb              m1, m0, [GLOBAL(sh_b123456789abcdeff)] ; bcdefghijklmnopp
-  pshufb              m2, m0, [GLOBAL(sh_b23456789abcdefff)]
+  pshufb              m1, m0, [sh_b123456789abcdeff] ; bcdefghijklmnopp
+  pshufb              m2, m0, [sh_b23456789abcdefff]
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m1, m2, m3
   pavgb               m1, m0                 ; ab, bc, cd .. no, op, pp [byte]
@@ -878,7 +849,7 @@ cglobal d207_predictor_16x16, 4, 5, 5, dst, stride, stride3, left, goffset
   mova  [dstq+stride3q ], m3
   DEFINE_ARGS dst, stride, stride3, line
   mov              lined, 2
-  mova                m0, [GLOBAL(sh_b23456789abcdefff)]
+  mova                m0, [sh_b23456789abcdefff]
 .loop:
   lea               dstq, [dstq+strideq*4]
   mova  [dstq          ], m4
@@ -891,17 +862,15 @@ cglobal d207_predictor_16x16, 4, 5, 5, dst, stride, stride3, left, goffset
   pshufb              m4, m0
   dec              lined
   jnz .loop
-  RESTORE_GOT
   REP_RET
 
 INIT_XMM ssse3
 cglobal d207_predictor_32x32, 4, 5, 8, dst, stride, stride3, left, goffset
-  GET_GOT     goffsetq
   lea           stride3q, [strideq*3]
   mova                m1, [leftq]              ;  0-15 [byte]
   mova                m2, [leftq+16]           ; 16-31 [byte]
-  pshufb              m0, m2, [GLOBAL(sh_b23456789abcdefff)]
-  pshufb              m4, m2, [GLOBAL(sh_b123456789abcdeff)]
+  pshufb              m0, m2, [sh_b23456789abcdefff]
+  pshufb              m4, m2, [sh_b123456789abcdeff]
 
   X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m2, m4, m0, m3
   palignr             m6, m2, m1, 1
@@ -993,7 +962,7 @@ cglobal d207_predictor_32x32, 4, 5, 8, dst, stride, stride3, left, goffset
   lea              dst8q, [dst8q+strideq*4]
 
   ; output 2nd half of 3rd 8 lines and half of 4th 8 lines
-  mova                m0, [GLOBAL(sh_b23456789abcdefff)]
+  mova                m0, [sh_b23456789abcdefff]
   mova  [dstq           +16], m7
   mova  [dst8q             ], m7
   pshufb              m7, m0
@@ -1034,5 +1003,4 @@ cglobal d207_predictor_32x32, 4, 5, 8, dst, stride, stride3, left, goffset
   mova  [dstq +stride3q +16], m7
 
   ; done!
-  RESTORE_GOT
   RET

@@ -21,7 +21,6 @@ pw_32: times 4 dd 32
 SECTION .text
 INIT_MMX sse
 cglobal highbd_dc_predictor_4x4, 4, 5, 4, dst, stride, above, left, goffset
-  GET_GOT     goffsetq
 
   movq                  m0, [aboveq]
   movq                  m2, [leftq]
@@ -34,7 +33,7 @@ cglobal highbd_dc_predictor_4x4, 4, 5, 4, dst, stride, above, left, goffset
   pmaddwd               m0, m3
   packssdw              m0, m1
   pmaddwd               m0, m3
-  paddw                 m0, [GLOBAL(pw_4)]
+  paddw                 m0, [pw_4]
   psraw                 m0, 3
   pshufw                m0, m0, 0x0
   movq    [dstq          ], m0
@@ -43,12 +42,10 @@ cglobal highbd_dc_predictor_4x4, 4, 5, 4, dst, stride, above, left, goffset
   movq    [dstq          ], m0
   movq    [dstq+strideq*2], m0
 
-  RESTORE_GOT
   RET
 
 INIT_XMM sse2
 cglobal highbd_dc_predictor_8x8, 4, 5, 4, dst, stride, above, left, goffset
-  GET_GOT     goffsetq
 
   pxor                  m1, m1
   mova                  m0, [aboveq]
@@ -64,7 +61,7 @@ cglobal highbd_dc_predictor_8x8, 4, 5, 4, dst, stride, above, left, goffset
   pmaddwd               m0, m3
   packssdw              m0, m1
   pmaddwd               m0, m3
-  paddw                 m0, [GLOBAL(pw_8)]
+  paddw                 m0, [pw_8]
   psrlw                 m0, 4
   pshuflw               m0, m0, 0x0
   punpcklqdq            m0, m0
@@ -78,12 +75,10 @@ cglobal highbd_dc_predictor_8x8, 4, 5, 4, dst, stride, above, left, goffset
   mova   [dstq+strideq*4 ], m0
   mova   [dstq+stride3q*2], m0
 
-  RESTORE_GOT
   RET
 
 INIT_XMM sse2
 cglobal highbd_dc_predictor_16x16, 4, 5, 5, dst, stride, above, left, goffset
-  GET_GOT     goffsetq
 
   pxor                  m1, m1
   mova                  m0, [aboveq]
@@ -104,7 +99,7 @@ cglobal highbd_dc_predictor_16x16, 4, 5, 5, dst, stride, above, left, goffset
   punpckldq             m0, m1
   movhlps               m2, m0
   paddd                 m0, m2
-  paddd                 m0, [GLOBAL(pw_16)]
+  paddd                 m0, [pw_16]
   psrad                 m0, 5
   pshuflw               m0, m0, 0x0
   punpcklqdq            m0, m0
@@ -121,13 +116,11 @@ cglobal highbd_dc_predictor_16x16, 4, 5, 5, dst, stride, above, left, goffset
   dec              lines4d
   jnz .loop
 
-  RESTORE_GOT
   REP_RET
 
 %if ARCH_X86_64
 INIT_XMM sse2
 cglobal highbd_dc_predictor_32x32, 4, 5, 9, dst, stride, above, left, goffset
-  GET_GOT     goffsetq
 
   pxor                  m1, m1
   mova                  m0, [aboveq]
@@ -156,7 +149,7 @@ cglobal highbd_dc_predictor_32x32, 4, 5, 9, dst, stride, above, left, goffset
   punpckldq             m0, m1
   movhlps               m2, m0
   paddd                 m0, m2
-  paddd                 m0, [GLOBAL(pw_32)]
+  paddd                 m0, [pw_32]
   psrad                 m0, 6
   pshuflw               m0, m0, 0x0
   punpcklqdq            m0, m0
@@ -181,7 +174,6 @@ cglobal highbd_dc_predictor_32x32, 4, 5, 9, dst, stride, above, left, goffset
   dec              lines4d
   jnz .loop
 
-  RESTORE_GOT
   REP_RET
 %endif
 
