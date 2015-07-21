@@ -9,6 +9,8 @@
 ;
 %include "third_party/x86inc/x86inc.asm"
 
+%define private_prefix vp9
+
 SECTION .text
 
 %macro REORDER_INPUTS 0
