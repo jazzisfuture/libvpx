@@ -37,7 +37,7 @@
 %include "vpx_config.asm"
 
 %ifndef program_name
-%define program_name vp9
+%define program_name vpx
 %endif
 
 
