@@ -15,31 +15,31 @@
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_mem/vpx_mem.h"
 
-void vp9_d207_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
+void vpx_d207_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
                               const uint8_t *above, const uint8_t *left);
-void vp9_d63_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
+void vpx_d63_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
                              const uint8_t *above, const uint8_t *left);
-void vp9_d45_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
+void vpx_d45_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
                              const uint8_t *above, const uint8_t *left);
-void vp9_d117_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
+void vpx_d117_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
                               const uint8_t *above, const uint8_t *left);
-void vp9_d135_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
+void vpx_d135_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
                               const uint8_t *above, const uint8_t *left);
-void vp9_d153_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
+void vpx_d153_predictor_4x4_c(uint8_t *dst, ptrdiff_t stride,
                               const uint8_t *above, const uint8_t *left);
 
 // This serves as a wrapper function, so that all the prediction functions
 // can be unified and accessed as a pointer array. Note that the boundary
 // above and left are not necessarily used all the time.
 #define declare_intra_pred_sized(type, size) \
-  void vp9_##type##_predictor_##size##x##size##_c(uint8_t *dst, \
+  void vpx_##type##_predictor_##size##x##size##_c(uint8_t *dst, \
                                                   ptrdiff_t stride, \
                                                   const uint8_t *above, \
                                                   const uint8_t *left);
 
 #if CONFIG_VP9_HIGHBITDEPTH
 #define declare_intra_pred_highbd_sized(type, size) \
-  void vp9_highbd_##type##_predictor_##size##x##size##_c( \
+  void vpx_highbd_##type##_predictor_##size##x##size##_c( \
       uint16_t *dst, ptrdiff_t stride, const uint16_t *above, \
       const uint16_t *left, int bd);
 
