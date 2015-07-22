@@ -1504,15 +1504,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         this_mode_pred = &tmp[get_pred_buffer(tmp, 3)];
 #if CONFIG_VP9_HIGHBITDEPTH
         if (cm->use_highbitdepth)
-          vp9_highbd_convolve_copy(best_pred->data, best_pred->stride,
+          vpx_highbd_convolve_copy(best_pred->data, best_pred->stride,
                                    this_mode_pred->data, this_mode_pred->stride,
                                    NULL, 0, NULL, 0, bw, bh, xd->bd);
         else
-          vp9_convolve_copy(best_pred->data, best_pred->stride,
+          vpx_convolve_copy(best_pred->data, best_pred->stride,
                           this_mode_pred->data, this_mode_pred->stride,
                           NULL, 0, NULL, 0, bw, bh);
 #else
-        vp9_convolve_copy(best_pred->data, best_pred->stride,
+        vpx_convolve_copy(best_pred->data, best_pred->stride,
                           this_mode_pred->data, this_mode_pred->stride,
                           NULL, 0, NULL, 0, bw, bh);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -1577,15 +1577,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (best_pred->data != orig_dst.buf && is_inter_mode(mbmi->mode)) {
 #if CONFIG_VP9_HIGHBITDEPTH
       if (cm->use_highbitdepth)
-        vp9_highbd_convolve_copy(best_pred->data, best_pred->stride,
+        vpx_highbd_convolve_copy(best_pred->data, best_pred->stride,
                                  pd->dst.buf, pd->dst.stride, NULL, 0,
                                  NULL, 0, bw, bh, xd->bd);
       else
-        vp9_convolve_copy(best_pred->data, best_pred->stride,
+        vpx_convolve_copy(best_pred->data, best_pred->stride,
                           pd->dst.buf, pd->dst.stride, NULL, 0,
                           NULL, 0, bw, bh);
 #else
-      vp9_convolve_copy(best_pred->data, best_pred->stride,
+      vpx_convolve_copy(best_pred->data, best_pred->stride,
                         pd->dst.buf, pd->dst.stride, NULL, 0,
                         NULL, 0, bw, bh);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -1812,7 +1812,7 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
                                     &xd->block_refs[0]->sf,
                                     4 * num_4x4_blocks_wide,
                                     4 * num_4x4_blocks_high, 0,
-                                    vp9_filter_kernels[mbmi->interp_filter],
+                                    vpx_filter_kernels[mbmi->interp_filter],
                                     MV_PRECISION_Q3,
                                     mi_col * MI_SIZE + 4 * (i & 0x01),
                                     mi_row * MI_SIZE + 4 * (i >> 1), xd->bd);
@@ -1824,7 +1824,7 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
                                      &xd->block_refs[0]->sf,
                                      4 * num_4x4_blocks_wide,
                                      4 * num_4x4_blocks_high, 0,
-                                     vp9_filter_kernels[mbmi->interp_filter],
+                                     vpx_filter_kernels[mbmi->interp_filter],
                                      MV_PRECISION_Q3,
                                      mi_col * MI_SIZE + 4 * (i & 0x01),
                                      mi_row * MI_SIZE + 4 * (i >> 1));
