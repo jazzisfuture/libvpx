@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <arm_neon.h>
 
-void vp9_convolve_avg_neon(
+void vpx_convolve_avg_neon(
         const uint8_t *src,    // r0
         ptrdiff_t src_stride,  // r1
         uint8_t *dst,          // r2
