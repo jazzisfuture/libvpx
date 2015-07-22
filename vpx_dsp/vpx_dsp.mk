@@ -61,6 +61,7 @@ ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_loopfilter_sse2.c
 endif  # CONFIG_VP9_HIGHBITDEPTH
 
+DSP_SRCS-$(HAVE_MSA)    += mips/txfm_macros_msa.h
 # forward transform
 ifeq ($(CONFIG_VP9_ENCODER),yes)
 DSP_SRCS-yes            += fwd_txfm.c
@@ -71,8 +72,9 @@ ifeq ($(CONFIG_USE_X86INC),yes)
 DSP_SRCS-$(HAVE_SSSE3)  += x86/fwd_txfm_ssse3.asm
 endif
 DSP_SRCS-$(HAVE_NEON)   += arm/fwd_txfm_neon.c
+DSP_SRCS-$(HAVE_MSA)    += mips/fwd_txfm_msa.h
+DSP_SRCS-$(HAVE_MSA)    += mips/fwd_txfm_msa.c
 endif  # CONFIG_VP9_ENCODER
-DSP_SRCS-$(HAVE_MSA)    += mips/txfm_macros_msa.h
 
 # quantization
 ifeq ($(CONFIG_VP9_ENCODER),yes)
