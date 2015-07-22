@@ -12,6 +12,7 @@
 #define VPX_DSP_COMMON_H_
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"

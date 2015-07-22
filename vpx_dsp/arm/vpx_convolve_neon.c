@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "./vp9_rtcd.h"
-#include "vp9/common/vp9_common.h"
+#include "./vpx_dsp_rtcd.h"
+#include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_ports/mem.h"
 
 void vp9_convolve8_neon(const uint8_t *src, ptrdiff_t src_stride,
