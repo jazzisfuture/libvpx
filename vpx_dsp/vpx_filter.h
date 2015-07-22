@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_COMMON_VP9_FILTER_H_
-#define VP9_COMMON_VP9_FILTER_H_
+#ifndef VPX_DSP_INTERPFILTER_H_
+#define VPX_DSP_INTERPFILTER_H_
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
@@ -40,10 +40,10 @@ typedef uint8_t INTERP_FILTER;
 
 typedef int16_t InterpKernel[SUBPEL_TAPS];
 
-extern const InterpKernel *vp9_filter_kernels[4];
+extern const InterpKernel *vpx_filter_kernels[4];
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // VP9_COMMON_VP9_FILTER_H_
+#endif  // VPX_DSP_INTERPFILTER_H_
