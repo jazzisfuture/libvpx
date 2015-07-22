@@ -11,6 +11,9 @@
 #include "./vpx_config.h"
 #include "./vp9_rtcd.h"
 
+#if CONFIG_VP9_HIGHBITDEPTH
+#include "vpx_dsp/vpx_dsp_common.h"
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
 #include "vpx_ports/vpx_once.h"

@@ -12,6 +12,7 @@
 #define VP9_COMMON_VP9_RECONINTER_H_
 
 #include "vpx/vpx_integer.h"
+#include "vpx_dsp/vpx_filter.h"
 #include "vp9/common/vp9_onyxc_int.h"
 
 #ifdef __cplusplus
