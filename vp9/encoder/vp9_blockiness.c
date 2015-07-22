@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "./vpx_config.h"
 #include "./vp9_rtcd.h"
+#include "./vpx_config.h"
+#include "./vpx_dsp_rtcd.h"
 #include "vp9/common/vp9_common.h"
-#include "vp9/common/vp9_convolve.h"
-#include "vp9/common/vp9_filter.h"
+#include "vpx_dsp/vpx_convolve.h"
+#include "vpx_dsp/vpx_filter.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
 
