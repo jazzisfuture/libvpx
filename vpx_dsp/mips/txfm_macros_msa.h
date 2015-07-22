@@ -46,7 +46,7 @@
               dst0, dst1, dst2, dst3);                                     \
 }
 
-#define DOT_SHIFT_RIGHT_PCK_H(in0, in1, in2) ({   \
+#define DOT_SHIFT_RIGHT_PCK_H(in0, in1, in2) {   \
   v8i16 dst_m;                                        \
   v4i32 tp0_m, tp1_m;                                 \
                                                       \
@@ -55,7 +55,7 @@
   dst_m = __msa_pckev_h((v8i16)tp1_m, (v8i16)tp0_m);  \
                                                       \
   dst_m;                                              \
-})
+}
 
 #define MADD_SHORT(m0, m1, c0, c1, res0, res1) {                \
   v4i32 madd0_m, madd1_m, madd2_m, madd3_m;                         \
