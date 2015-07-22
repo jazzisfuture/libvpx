@@ -11,7 +11,7 @@
 #ifndef VP9_COMMON_VP9_ENTROPYMODE_H_
 #define VP9_COMMON_VP9_ENTROPYMODE_H_
 
-#include "vp9/common/vp9_filter.h"
+#include "vpx_dsp/vpx_filter.h"
 #include "vp9/common/vp9_entropy.h"
 #include "vp9/common/vp9_entropymv.h"
 
