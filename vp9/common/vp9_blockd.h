@@ -484,6 +484,9 @@ static TX_TYPE ext_tx_to_txtype[EXT_TX_TYPES] = {
   DCT_ADST,
   FLIPADST_DCT,
   DCT_FLIPADST,
+#if CONFIG_DST1
+  DST_DST,
+#endif
 };
 #endif  // CONFIG_EXT_TX
 
