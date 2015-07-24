@@ -381,10 +381,8 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
                           col, row, plane);
 
   if (!mbmi->skip) {
-    const TX_TYPE tx_type = (plane || xd->lossless) ?
-        DCT_DCT : intra_mode_to_tx_type_lookup[mode];
-    const scan_order *sc = (plane || xd->lossless) ?
-        &vp9_default_scan_orders[tx_size] : &vp9_scan_orders[tx_size][tx_type];
+    const TX_TYPE tx_type = get_tx_type_4x4(plane, xd, (row << 1) + col);
+    const scan_order *sc = get_scan(xd, tx_size, plane, (row << 1) + col);
     const int eob = vp9_decode_block_tokens(xd, plane, sc, col, row, tx_size,
                                             r, mbmi->segment_id);
     inverse_transform_block_intra(xd, plane, tx_type, tx_size,
