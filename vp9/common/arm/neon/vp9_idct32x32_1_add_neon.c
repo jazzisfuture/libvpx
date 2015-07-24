@@ -12,8 +12,8 @@
 
 #include "./vpx_config.h"
 
+#include "vpx_dsp/txfm_common.h"
 #include "vpx_ports/mem.h"
-#include "vp9/common/vp9_idct.h"
 
 static INLINE void LD_16x8(
         uint8_t *d,

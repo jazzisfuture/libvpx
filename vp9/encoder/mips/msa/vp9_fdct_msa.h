@@ -12,7 +12,6 @@
 #define VP9_ENCODER_MIPS_MSA_VP9_FDCT_MSA_H_
 
 #include "vpx_ports/mem.h"
-#include "vp9/common/vp9_idct.h"
 #include "vpx_dsp/mips/txfm_macros_msa.h"
 #include "vpx_dsp/mips/fwd_txfm_msa.h"
 
