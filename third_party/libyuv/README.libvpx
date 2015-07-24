@@ -13,3 +13,5 @@ which down-samples the original input video (f.g. 1280x720) a number of times
 in order to encode multiple resolution bit streams.
 
 Local Modifications:
+cherry-pick row_common.cc -Wcast-qual warning fix from:
+https://code.google.com/p/libyuv/issues/detail?id=475
