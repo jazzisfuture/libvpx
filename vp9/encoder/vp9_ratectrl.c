@@ -278,8 +278,8 @@ static void update_buffer_level(VP9_COMP *cpi, int encoded_frame_size) {
 
 int vp9_rc_get_default_min_gf_interval(
     int width, int height, double framerate) {
-  // Assume we do not need any constraint lower than 4K 20 fps
-  static const double factor_safe = 3840 * 2160 * 20.0;
+  // Assume we do not need any constraint lower than 4K 24 fps
+  static const double factor_safe = 3840 * 2160 * 24.0;
   const double factor = width * height * framerate;
   const double default_interval =
       MIN(MAX_GF_INTERVAL, MAX(MIN_GF_INTERVAL, (int)(framerate * 0.125)));
@@ -290,9 +290,9 @@ int vp9_rc_get_default_min_gf_interval(
     return (int)MAX(default_interval,
                     (int)(MIN_GF_INTERVAL * factor / factor_safe + 0.5));
   // Note this logic makes:
-  // 4K24: 5
-  // 4K30: 6
-  // 4K60: 12
+  // 4K24: 4
+  // 4K30: 5
+  // 4K60: 10
 }
 
 int vp9_rc_get_default_max_gf_interval(double framerate, int min_gf_interval) {
