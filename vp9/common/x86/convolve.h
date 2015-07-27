@@ -109,7 +109,7 @@ typedef void filter8_1dfunction (
   } \
 }
 
-#define FUN_CONV_2D(avg, opt) \
+#define FUN_CONV_2D(avg, opt, scaling) \
 void vp9_convolve8_##avg##opt(const uint8_t *src, ptrdiff_t src_stride, \
                               uint8_t *dst, ptrdiff_t dst_stride, \
                               const int16_t *filter_x, int x_step_q4, \
@@ -137,8 +137,9 @@ void vp9_convolve8_##avg##opt(const uint8_t *src, ptrdiff_t src_stride, \
                                       y_step_q4, w, h); \
     } \
   } else { \
-    vp9_convolve8_##avg##c(src, src_stride, dst, dst_stride, \
-                           filter_x, x_step_q4, filter_y, y_step_q4, w, h); \
+    vp9_##scaling(src, src_stride, dst, dst_stride, \
+                  filter_x, x_step_q4, filter_y, y_step_q4, \
+                   w, h); \
   } \
 }
 
