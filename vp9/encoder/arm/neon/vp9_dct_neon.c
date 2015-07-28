@@ -17,7 +17,7 @@
 #include "vp9/common/vp9_blockd.h"
 #include "vpx_dsp/txfm_common.h"
 
-void vp9_fdct8x8_quant_neon(const int16_t *input, int stride,
+void vpx_fdct8x8_quant_neon(const int16_t *input, int stride,
                             int16_t* coeff_ptr, intptr_t n_coeffs,
                             int skip_block, const int16_t* zbin_ptr,
                             const int16_t* round_ptr, const int16_t* quant_ptr,
@@ -29,7 +29,7 @@ void vp9_fdct8x8_quant_neon(const int16_t *input, int stride,
   int16_t temp_buffer[64];
   (void)coeff_ptr;
 
-  vp9_fdct8x8_neon(input, temp_buffer, stride);
+  vpx_fdct8x8_neon(input, temp_buffer, stride);
   vp9_quantize_fp_neon(temp_buffer, n_coeffs, skip_block, zbin_ptr, round_ptr,
                        quant_ptr, quant_shift_ptr, qcoeff_ptr, dqcoeff_ptr,
                        dequant_ptr, eob_ptr, scan_ptr, iscan_ptr);
