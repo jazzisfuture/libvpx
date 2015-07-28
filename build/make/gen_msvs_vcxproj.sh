@@ -168,7 +168,7 @@ for opt in "$@"; do
         --ver=*)
             vs_ver="$optval"
             case "$optval" in
-                10|11|12)
+                10|11|12|14)
                 ;;
                 *) die Unrecognized Visual Studio Version in $opt
                 ;;
@@ -218,7 +218,7 @@ guid=${guid:-`generate_uuid`}
 asm_use_custom_step=false
 uses_asm=${uses_asm:-false}
 case "${vs_ver:-11}" in
-    10|11|12)
+    10|11|12|14)
        asm_use_custom_step=$uses_asm
     ;;
 esac
@@ -343,6 +343,9 @@ generate_vcxproj() {
                 # enough to build code for arm with MSVC 2013, one strictly
                 # has to enable AppContainerApplication as well.
                 tag_content PlatformToolset v120
+            fi
+            if [ "$vs_ver" = "14" ]; then
+                tag_content PlatformToolset v140
             fi
             tag_content CharacterSet Unicode
             if [ "$config" = "Release" ]; then
