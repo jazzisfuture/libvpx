@@ -161,7 +161,7 @@ void vp9_tm_predictor_8x8_dspr2(uint8_t *dst, ptrdiff_t stride,
   int32_t   res0, res1, res2, res3;
   int32_t   reshw;
   int32_t   top_left;
-  uint8_t   *cm = vp9_ff_cropTbl;
+  uint8_t   *cm = vpx_ff_cropTbl;
 
   __asm__ __volatile__ (
       "ulw             %[reshw],       (%[above])                         \n\t"

@@ -91,7 +91,7 @@ void vp9_tm_predictor_4x4_dspr2(uint8_t *dst, ptrdiff_t stride,
   int32_t  resl;
   int32_t  resr;
   int32_t  top_left;
-  uint8_t  *cm = vp9_ff_cropTbl;
+  uint8_t  *cm = vpx_ff_cropTbl;
 
   __asm__ __volatile__ (
       "ulw             %[resl],       (%[above])                         \n\t"
