@@ -691,6 +691,10 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
     %xdefine current_function %2
     %ifidn __OUTPUT_FORMAT__,elf
         global %2:function %%VISIBILITY
+    %elifidn __OUTPUT_FORMAT__,elf32
+        global %2:function %%VISIBILITY
+    %elifidn __OUTPUT_FORMAT__,elf64
+        global %2:function %%VISIBILITY
     %else
         global %2
     %endif
@@ -724,6 +728,10 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
     %xdefine %1 mangle(private_prefix %+ _ %+ %1)
     %ifidn __OUTPUT_FORMAT__,elf
         global %1:data hidden
+    %elifidn __OUTPUT_FORMAT__,elf32
+        global %1:data hidden
+    %elifidn __OUTPUT_FORMAT__,elf64
+        global %1:data hidden
     %else
         global %1
     %endif
@@ -733,6 +741,10 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
 ; This is needed for ELF, otherwise the GNU linker assumes the stack is
 ; executable by default.
 %ifidn __OUTPUT_FORMAT__,elf
+SECTION .note.GNU-stack noalloc noexec nowrite progbits
+%elifidn __OUTPUT_FORMAT__,elf32
+SECTION .note.GNU-stack noalloc noexec nowrite progbits
+%elifidn __OUTPUT_FORMAT__,elf64
 SECTION .note.GNU-stack noalloc noexec nowrite progbits
 %endif
 
