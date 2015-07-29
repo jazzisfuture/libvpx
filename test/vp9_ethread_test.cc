@@ -8,9 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include <string>
 #include <vector>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/md5_helper.h"

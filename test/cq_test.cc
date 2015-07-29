@@ -7,9 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
+#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include <cmath>
 #include <map>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"

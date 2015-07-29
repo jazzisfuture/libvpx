@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <string>
 #include "third_party/googletest/src/include/gtest/gtest.h"
+
+#include <string>
+
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
 #include "test/i420_video_source.h"

@@ -11,9 +11,11 @@
 #ifndef TEST_UTIL_H_
 #define TEST_UTIL_H_
 
+#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include <stdio.h>
 #include <math.h>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include "vpx/vpx_image.h"
 
 // Macros

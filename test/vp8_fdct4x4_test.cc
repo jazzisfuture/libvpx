@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -18,7 +20,6 @@
 #include "./vp8_rtcd.h"
 
 #include "test/acm_random.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
 #include "vpx/vpx_integer.h"
 
 namespace {

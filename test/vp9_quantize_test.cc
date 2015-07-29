@@ -8,18 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "./vpx_config.h"
+#include "./vpx_dsp_rtcd.h"
 
 #include "test/acm_random.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
-#include "./vpx_config.h"
-#include "./vpx_dsp_rtcd.h"
+
 #include "vp9/common/vp9_entropy.h"
 #include "vp9/common/vp9_scan.h"
 #include "vpx/vpx_codec.h"

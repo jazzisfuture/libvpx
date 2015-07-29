@@ -9,10 +9,10 @@
  */
 //  Test and time VPX intra-predictor functions
 
+#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include <stdio.h>
 #include <string.h>
-
-#include "third_party/googletest/src/include/gtest/gtest.h"
 
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"

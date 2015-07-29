@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include <string>
 
 #include "./vpx_config.h"
@@ -16,7 +18,6 @@
 #include "test/decode_test_driver.h"
 #include "test/register_state_check.h"
 #include "test/video_source.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
 
 namespace libvpx_test {
 void Encoder::InitEncoder(VideoSource *video) {

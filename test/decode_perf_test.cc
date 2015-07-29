@@ -9,6 +9,10 @@
  */
 
 #include <string>
+
+#include "./ivfenc.h"
+#include "./vpx_version.h"
+
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
 #include "test/encode_test_driver.h"
@@ -18,8 +22,6 @@
 #include "test/util.h"
 #include "test/webm_video_source.h"
 #include "vpx_ports/vpx_timer.h"
-#include "./ivfenc.h"
-#include "./vpx_version.h"
 
 using std::tr1::make_tuple;
 

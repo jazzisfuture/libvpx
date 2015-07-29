@@ -10,15 +10,17 @@
 #ifndef TEST_ENCODE_TEST_DRIVER_H_
 #define TEST_ENCODE_TEST_DRIVER_H_
 
+#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include <string>
 #include <vector>
 
 #include "./vpx_config.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
-#include "vpx/vpx_encoder.h"
+
 #if CONFIG_VP8_ENCODER || CONFIG_VP9_ENCODER
 #include "vpx/vp8cx.h"
 #endif
+#include "vpx/vpx_encoder.h"
 
 namespace libvpx_test {
 
