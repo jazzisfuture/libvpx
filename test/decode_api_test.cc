@@ -9,8 +9,8 @@
  */
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
-#include "test/ivf_video_source.h"
 #include "./vpx_config.h"
+#include "test/ivf_video_source.h"
 #include "vpx/vp8dx.h"
 #include "vpx/vpx_decoder.h"
 
