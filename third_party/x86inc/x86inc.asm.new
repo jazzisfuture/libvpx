@@ -80,8 +80,19 @@
     %define mangle(x) _ %+ x
 %endif
 
+; OS X strips the .rodata section for some reason on 32 bit PIC (at least).
+; This causes all the tables referenced in the code to go missing.
 %macro SECTION_RODATA 0-1 16
-    SECTION .rodata align=%1
+    %ifidn __OUTPUT_FORMAT__,macho64
+        SECTION .text align=%1
+    %elifidn __OUTPUT_FORMAT__,macho32
+        SECTION .text align=%1
+        fakegot:
+    %elifidn __OUTPUT_FORMAT__,macho
+        SECTION .text align=%1
+    %else
+        SECTION .rodata align=%1
+    %endif
 %endmacro
 
 %macro SECTION_TEXT 0-1 16
