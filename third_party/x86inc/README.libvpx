@@ -17,3 +17,4 @@ Catch all elf formats for 'hidden' status and SECTION notes.
 Avoid 'amdnop' when building with nasm.
 Set 'private_extern' visibilty for macho targets.
 Copy PIC 'GLOBAL' macros from x86_abi_support.asm
+Use .text instead of .rodata on mach-o to avoid losing tables in PIC mode.
