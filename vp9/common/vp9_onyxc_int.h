@@ -222,6 +222,11 @@ typedef struct VP9Common {
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
 
+#if CONFIG_EXT_SCAN_ORDER
+  int allow_ext_scan_order;
+  int ext_scan_counter;
+  int ext_scan_blocks_signalled;
+#endif  // CONFIG_EXT_SCAN_ORDER
 #if CONFIG_PALETTE
 #if CONFIG_VP9_HIGHBITDEPTH
   uint16_t current_palette_colors[PALETTE_BUF_SIZE];

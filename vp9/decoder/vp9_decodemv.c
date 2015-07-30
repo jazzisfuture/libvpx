@@ -590,6 +590,14 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
   else
     mbmi->uv_filterbit = 0;
 #endif
+#if CONFIG_EXT_SCAN_ORDER
+  mbmi->scan_order[0] = SO_NORM;
+  mbmi->scan_order[1] = SO_NORM;
+  if (cm->allow_ext_scan_order && bsize >= BLOCK_8X8 && !mbmi->skip && 1) {
+    mbmi->scan_order[0] = vp9_read_tree(r, vp9_scan_order_tree,
+                                        cm->fc.scan_order_prob);
+  }
+#endif  // CONFIG_EXT_SCAN_ORDER
 }
 
 static int read_mv_component(vp9_reader *r,
@@ -1631,6 +1639,14 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 #endif
                                r);
   }
+#if CONFIG_EXT_SCAN_ORDER
+  mbmi->scan_order[0] = SO_NORM;
+  mbmi->scan_order[1] = SO_NORM;
+  if (mbmi->sb_type >= BLOCK_8X8 && !mbmi->skip && 0) {
+    mbmi->scan_order[0] = vp9_read_tree(r, vp9_scan_order_tree,
+                                        cm->fc.scan_order_prob);
+  }
+#endif  // CONFIG_EXT_SCAN_ORDER
 }
 
 void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,

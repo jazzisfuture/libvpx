@@ -593,6 +593,9 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_EXT_SCAN_ORDER
+    vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
+#else
     if (eob == 1) {
       vpx_memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
     } else {
@@ -603,6 +606,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
       else
         vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
     }
+#endif
   }
 }
 
@@ -3367,6 +3371,12 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
     read_global_motion(cm, &r);
 #endif  // CONFIG_GLOBAL_MOTION
   }
+#if CONFIG_EXT_SCAN_ORDER
+  if (frame_is_intra_only(cm)) {
+    cm->allow_ext_scan_order = vp9_read_bit(&r);
+    printf("\n %d \n", cm->allow_ext_scan_order);
+  }
+#endif  // CONFIG_EXT_SCAN_ORDER
 #if CONFIG_INTRABC
   if (frame_is_intra_only(cm))
     cm->allow_intrabc_mode = vp9_read_bit(&r);

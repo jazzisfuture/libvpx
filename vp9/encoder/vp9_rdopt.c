@@ -423,6 +423,11 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
   const tran_low_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
   unsigned int (*token_costs)[2][COEFF_CONTEXTS][ENTROPY_TOKENS] =
                    x->token_costs[tx_size][type][is_inter_block(mbmi)];
+#if CONFIG_EXT_SCAN_ORDER
+  unsigned int (*token_costs2)[2][COEFF_CONTEXTS][ENTROPY_TOKENS] =
+      x->token_costs[tx_size][type][is_inter_block(mbmi)];
+  uint8_t *band = get_band_translate(tx_size);
+#endif  // CONFIG_EXT_SCAN_ORDER
   uint8_t token_cache[MAX_NUM_COEFS];
   int pt = combine_entropy_contexts(*A, *L);
   int c, cost;
@@ -439,6 +444,11 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
     token_costs = &x->token_costs[tx_size][type][is_inter_block(mbmi)]
                                                  [TX_SKIP_COEFF_BAND];
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_EXT_SCAN_ORDER
+  if (plane == 0 && mbmi->scan_order[plane != 0] != SO_NORM) {
+    band = vp9_ext_scan_band[tx_size][mbmi->scan_order[plane != 0]];
+  }
+#endif  // CONFIG_EXT_SCAN_ORDER
 
   if (eob == 0) {
     // single eob token
@@ -468,7 +478,11 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
         cost += (*token_costs)[!prev_t][!prev_t][t] + vp9_dct_value_cost_ptr[v];
       } else {
         pt = get_coef_context(nb, token_cache, c);
+#if CONFIG_EXT_SCAN_ORDER
+        cost += token_costs2[band[c]][!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
+#else
         cost += (*token_costs)[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
+#endif  // CONFIG_EXT_SCAN_ORDER
         token_cache[rc] = vp9_pt_energy_class[t];
       }
       prev_t = t;
@@ -487,7 +501,12 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
         cost += (*token_costs)[0][!prev_t][EOB_TOKEN];
       } else {
         pt = get_coef_context(nb, token_cache, c);
+#if CONFIG_EXT_SCAN_ORDER
+        cost += token_costs2[eob == (4 << tx_size) * (4 << tx_size) ?
+            band[eob - 1]: band[eob]][0][pt][EOB_TOKEN];
+#else
         cost += (*token_costs)[0][pt][EOB_TOKEN];
+#endif  // CONFIG_EXT_SCAN_ORDER
       }
     }
   }
@@ -927,8 +946,15 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   const TX_SIZE max_mode_tx_size = tx_mode_to_biggest_tx_size[cm->tx_mode];
   int64_t best_rd = INT64_MAX;
   TX_SIZE best_tx = max_tx_size;
-
+#if CONFIG_EXT_SCAN_ORDER
+  SCAN_ORDER best_scan_order[TX_SIZES], this_so, best_so = SO_NORM;
+  int best_rate;
+  int scan_order_cost[SCAN_ORDERS];
+#endif  // CONFIG_EXT_SCAN_ORDER
   const vp9_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc.tx_probs);
+
+  int use_inter = 0;
+
   assert(skip_prob > 0);
   s0 = vp9_cost_bit(skip_prob, 0);
   s1 = vp9_cost_bit(skip_prob, 1);
@@ -940,9 +966,43 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
       d[n] = INT64_MAX;
     } else {
 #endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_SCAN_ORDER
+      best_so = SO_NORM;
+      if (cm->allow_ext_scan_order && bs >= BLOCK_8X8 &&
+          (frame_is_intra_only(cm) || use_inter)) {
+        vp9_cost_tokens(scan_order_cost, cpi->common.fc.scan_order_prob,
+                        vp9_scan_order_tree);
+        best_rate = INT_MAX;
+        for (this_so = SO_NORM; this_so < SCAN_ORDERS; this_so++) {
+          mbmi->scan_order[0] = this_so;
+          txfm_rd_in_plane(x, &r[n][0], &d[n], &s[n],
+                           &sse[n], ref_best_rd, 0, bs, n,
+                           cpi->sf.use_fast_coef_costing);
+          if (r[n][0] != INT_MAX)
+            r[n][0] += scan_order_cost[this_so];
+          if (r[n][0] < best_rate) {
+            best_rate = r[n][0];
+            best_so = this_so;
+          }
+        }
+      }
+
+      //if (!frame_is_intra_only(cm) && (is_inter_block(mbmi) || 0))
+        //best_so = SO_NORM;
+
+      mbmi->scan_order[0] = best_so;
+      best_scan_order[n] = best_so;
+#endif  // CONFIG_EXT_SCAN_ORDER
       txfm_rd_in_plane(x, &r[n][0], &d[n], &s[n],
                        &sse[n], ref_best_rd, 0, bs, n,
                        cpi->sf.use_fast_coef_costing);
+#if CONFIG_EXT_SCAN_ORDER
+      if (cm->allow_ext_scan_order && bs >= BLOCK_8X8 &&
+          (frame_is_intra_only(cm) || use_inter)) {
+        if (r[n][0] != INT_MAX)
+          r[n][0] += scan_order_cost[mbmi->scan_order[0]];
+      }
+#endif  // CONFIG_EXT_SCAN_ORDER
 #if CONFIG_EXT_TX
     }
     if (is_inter_block(mbmi) && bs >= BLOCK_8X8 &&
@@ -984,6 +1044,9 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   }
   mbmi->tx_size = cm->tx_mode == TX_MODE_SELECT ?
       best_tx : MIN(max_tx_size, max_mode_tx_size);
+#if CONFIG_EXT_SCAN_ORDER
+  mbmi->scan_order[0] = best_scan_order[mbmi->tx_size];
+#endif  // CONFIG_EXT_SCAN_ORDER
 
   *distortion = d[mbmi->tx_size];
   *rate       = r[mbmi->tx_size][cm->tx_mode == TX_MODE_SELECT];
@@ -1119,6 +1182,10 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   vpx_memcpy(ta, a, sizeof(ta));
   vpx_memcpy(tl, l, sizeof(tl));
   xd->mi[0].src_mi->mbmi.tx_size = TX_4X4;
+#if CONFIG_EXT_SCAN_ORDER
+  xd->mi[0].src_mi->mbmi.scan_order[0] = SO_NORM;
+  xd->mi[0].src_mi->mbmi.scan_order[1] = SO_NORM;
+#endif  // CONFIG_EXT_SCAN_ORDER
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {

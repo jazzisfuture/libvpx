@@ -64,6 +64,9 @@ static struct vp9_token inter_compound_mode_encodings[INTER_COMPOUND_MODES];
 #if CONFIG_GLOBAL_MOTION
 static struct vp9_token global_motion_types_encodings[GLOBAL_MOTION_TYPES];
 #endif  // CONFIG_GLOBAL_MOTION
+#if CONFIG_EXT_SCAN_ORDER
+static struct vp9_token vp9_scan_oder_encodings[SCAN_ORDERS];
+#endif  // CONFIG_EXT_SCAN_ORDER
 
 #if CONFIG_SUPERTX
 static int vp9_check_supertx(VP9_COMMON *cm, int mi_row, int mi_col,
@@ -107,6 +110,9 @@ void vp9_entropy_mode_init() {
   vp9_tokens_from_tree(global_motion_types_encodings,
                        vp9_global_motion_types_tree);
 #endif  // CONFIG_GLOBAL_MOTION
+#if CONFIG_EXT_SCAN_ORDER
+  vp9_tokens_from_tree(vp9_scan_oder_encodings, vp9_scan_order_tree);
+#endif  // CONFIG_EXT_SCAN_ORDER
 }
 
 static void write_intra_mode(vp9_writer *w, PREDICTION_MODE mode,
@@ -886,6 +892,12 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
     }
 #endif  // CONFIG_NEW_INTER
   }
+#if CONFIG_EXT_SCAN_ORDER
+    if (cm->allow_ext_scan_order && bsize >= BLOCK_8X8 && !skip && 0) {
+      vp9_write_token(w, vp9_scan_order_tree, cm->fc.scan_order_prob,
+                      &vp9_scan_oder_encodings[mbmi->scan_order[0]]);
+    }
+#endif  // CONFIG_EXT_SCAN_ORDER
 }
 
 static void write_mb_modes_kf(const VP9_COMMON *cm,
@@ -1120,6 +1132,12 @@ static void write_mb_modes_kf(const VP9_COMMON *cm,
     vp9_write(w, mbmi->uv_filterbit,
               cm->fc.filterintra_prob[get_uv_tx_size(mbmi, &xd->plane[1])][mbmi->uv_mode]);
 #endif  // CONFIG_FILTERINTRA
+#if CONFIG_EXT_SCAN_ORDER
+  if (cm->allow_ext_scan_order && bsize >= BLOCK_8X8 && !mbmi->skip) {
+    vp9_write_token(w, vp9_scan_order_tree, cm->fc.scan_order_prob,
+                    &vp9_scan_oder_encodings[mbmi->scan_order[0]]);
+  }
+#endif  // CONFIG_EXT_SCAN_ORDER
 }
 
 static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
@@ -2522,6 +2540,10 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
 #endif  // CONFIG_GLOBAL_MOTION
   }
 
+#if CONFIG_EXT_SCAN_ORDER
+  if (frame_is_intra_only(cm))
+    vp9_write_bit(&header_bc, cm->allow_ext_scan_order);
+#endif  // CONFIG_EXT_SCAN_ORDER
 #if CONFIG_INTRABC
   if (frame_is_intra_only(cm))
     vp9_write_bit(&header_bc, cm->allow_intrabc_mode);

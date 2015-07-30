@@ -494,6 +494,15 @@ const vp9_tree_index vp9_ext_tx_large_tree[TREE_SIZE(EXT_TX_TYPES_LARGE)] = {
 #endif   // CONFIG_WAVELETS
 #endif  // CONFIG_EXT_TX
 
+#if CONFIG_EXT_SCAN_ORDER
+const vp9_tree_index vp9_scan_order_tree[TREE_SIZE(SCAN_ORDERS)] = {
+  -SO_NORM, 2,
+  -SO_ALT1, -SO_ALT2
+};
+
+const vp9_prob vp9_default_scan_order_prob[SCAN_ORDERS - 1] = {252, 128};
+#endif  // CONFIG_EXT_SCAN_ORDER
+
 #if CONFIG_PALETTE
 const vp9_tree_index vp9_palette_size_tree[TREE_SIZE(PALETTE_SIZES)] = {
   -TWO_COLORS, 2,
@@ -966,6 +975,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
 #if CONFIG_WEDGE_PARTITION
   vp9_copy(fc->wedge_interinter_prob, default_wedge_interinter_prob);
 #endif  // CONFIG_WEDGE_PARTITION
+#if CONFIG_EXT_SCAN_ORDER
+  vp9_copy(fc->scan_order_prob, vp9_default_scan_order_prob);
+#endif  // CONFIG_EXT_SCAN_ORDER
 }
 
 const vp9_tree_index vp9_switchable_interp_tree
@@ -1213,6 +1225,167 @@ static void init_pxd_scan_orders(int16_t *scan, int16_t *iscan,
 }
 #endif  // CONFIG_TX_SKIP
 
+#if CONFIG_EXT_SCAN_ORDER
+static void init_ext_scan_order(int16_t *scan, int16_t *iscan,
+                                int16_t *neighbors, int8_t *band,
+                                int bs, SCAN_ORDER so) {
+  int i, r, c, idx;
+  int flags[1024];
+  int counts[32 * 8];
+  int total[32 * 8];
+  int para = 4;
+
+  scan[0] = iscan[0] = 0;
+  neighbors[0] = neighbors[1] = 0;
+  band[0] = 0;
+
+  switch (so) {
+    case SO_NORM:
+      break;
+    case SO_ALT1: // 2 * r + c
+      memset(flags, 0, 1024 * sizeof(flags[0]));
+      memset(counts, 0, 32 * 8 * sizeof(counts[0]));
+      memset(total, 0, 32 * 8 * sizeof(total[0]));
+
+      for (r = 0; r < bs; r++) {
+        for (c = 0; c < bs; c++) {
+          counts[para * r + c]++;
+        }
+      }
+
+      total[0] = counts[0];
+      for (i = 1; i <= (para + 1) * (bs - 1); i++) {
+        total[i] = total[i - 1] + counts[i];
+      }
+
+      flags[0] = 1;
+      for (r = 0; r < bs; r++) {
+        for (c = (r == 0 ? 1 : 0); c < bs; c++) {
+          idx = para * r + c;
+          idx = total[idx] - counts[idx];
+          scan[idx] = r * bs + c;
+          iscan[r * bs + c] = idx;
+          counts[para * r + c]--;
+          flags[r * bs + c] = 1;
+
+          neighbors[MAX_NEIGHBORS * idx] = 0;
+          neighbors[MAX_NEIGHBORS * idx + 1] = 0;
+          if (r == 0) {
+            if (flags[c - 1])
+              neighbors[MAX_NEIGHBORS * idx] =
+                  neighbors[MAX_NEIGHBORS * idx + 1] = c - 1;
+          } else if (c == 0) {
+            if (flags[(r - 1) * bs])
+              neighbors[MAX_NEIGHBORS * idx] =
+                  neighbors[MAX_NEIGHBORS * idx + 1] = (r - 1) * bs;
+          } else {
+            if (flags[(r - 1) * bs + c]) {
+              neighbors[MAX_NEIGHBORS * idx] = (r - 1) * bs + c;
+              neighbors[MAX_NEIGHBORS * idx + 1] = neighbors[MAX_NEIGHBORS * idx];
+            }
+            if (flags[r * bs + c - 1]) {
+              neighbors[MAX_NEIGHBORS * idx + 1] = r * bs + c - 1;
+              if (!neighbors[MAX_NEIGHBORS * idx]) {
+                neighbors[MAX_NEIGHBORS * idx] =
+                    neighbors[MAX_NEIGHBORS * idx + 1];
+              }
+            }
+          }
+
+          band[idx] = r + c;
+          if (bs >= 8) {
+            if (band[idx] == 5)
+              band[idx] = 4;
+          }
+          if (band[idx] > 5)
+            band[idx] = 5;
+        }
+      }
+
+#if 1
+      if (bs < 8)
+        memcpy(band, vp9_coefband_trans_4x4, bs * bs * sizeof(band[0]));
+      else
+        memcpy(band, vp9_coefband_trans_8x8plus, bs * bs * sizeof(band[0]));
+#endif
+      break;
+
+    case SO_ALT2:
+      memset(flags, 0, 1024 * sizeof(flags[0]));
+      memset(counts, 0, 32 * 8 * sizeof(counts[0]));
+      memset(total, 0, 32 * 8 * sizeof(total[0]));
+
+      for (r = 0; r < bs; r++) {
+        for (c = 0; c < bs; c++) {
+          counts[r + para * c]++;
+        }
+      }
+
+      total[0] = counts[0];
+      for (i = 1; i <= (para + 1) * (bs - 1); i++) {
+        total[i] = total[i - 1] + counts[i];
+      }
+
+      for (c = 0; c < bs; c++) {
+        for (r = (c == 0 ? 1 : 0); r < bs; r++) {
+          idx = r + para * c;
+          idx = total[idx] - counts[idx];
+          scan[idx] = r * bs + c;
+          iscan[r * bs + c] = idx;
+          counts[r + para * c]--;
+          flags[r * bs + c] = 1;
+
+          neighbors[MAX_NEIGHBORS * idx] = 0;
+          neighbors[MAX_NEIGHBORS * idx + 1] = 0;
+          if (r == 0) {
+            if (flags[c - 1])
+              neighbors[MAX_NEIGHBORS * idx] =
+                  neighbors[MAX_NEIGHBORS * idx + 1] = c - 1;
+          } else if (c == 0) {
+            if (flags[(r - 1) * bs])
+              neighbors[MAX_NEIGHBORS * idx] =
+                  neighbors[MAX_NEIGHBORS * idx + 1] = (r - 1) * bs;
+          } else {
+            if (flags[(r - 1) * bs + c]) {
+              neighbors[MAX_NEIGHBORS * idx] = (r - 1) * bs + c;
+              neighbors[MAX_NEIGHBORS * idx + 1] = neighbors[MAX_NEIGHBORS * idx];
+            }
+            if (flags[r * bs + c - 1]) {
+              neighbors[MAX_NEIGHBORS * idx + 1] = r * bs + c - 1;
+              if (!neighbors[MAX_NEIGHBORS * idx]) {
+                neighbors[MAX_NEIGHBORS * idx] =
+                    neighbors[MAX_NEIGHBORS * idx + 1];
+              }
+            }
+          }
+
+          band[idx] = r + c;
+          if (bs >= 8) {
+            if (band[idx] == 5)
+              band[idx] = 4;
+          }
+          if (band[idx] > 5)
+            band[idx] = 5;
+        }
+      }
+
+#if 1
+      if (bs < 8)
+        memcpy(band, vp9_coefband_trans_4x4, bs * bs * sizeof(band[0]));
+      else
+        memcpy(band, vp9_coefband_trans_8x8plus, bs * bs * sizeof(band[0]));
+#endif
+      break;
+    default:
+      break;
+  }
+
+  scan[0] = iscan[0] = 0;
+  neighbors[0] = neighbors[1] = 0;
+  band[0] = 0;
+}
+#endif  // CONFIG_EXT_SCAN_ORDER
+
 void vp9_setup_past_independence(VP9_COMMON *cm) {
   // Reset the segment feature data to the default stats:
   // Features disabled, 0, with delta coding (Default state).
@@ -1278,4 +1451,28 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
                        vp9_default_scan_pxd_64x64_neighbors, 64);
 #endif  // CONFIG_TX64X64
 #endif  // CONFIG_TX_SKIP
+
+#if CONFIG_EXT_SCAN_ORDER
+  init_ext_scan_order(vp9_scan_alt1_4x4, vp9_iscan_alt1_4x4,
+                      vp9_neighbors_alt1_4x4, vp9_band_alt1_4x4, 4, SO_ALT1);
+  init_ext_scan_order(vp9_scan_alt1_8x8, vp9_iscan_alt1_8x8,
+                      vp9_neighbors_alt1_8x8, vp9_band_alt1_8x8, 8, SO_ALT1);
+  init_ext_scan_order(vp9_scan_alt1_16x16, vp9_iscan_alt1_16x16,
+                      vp9_neighbors_alt1_16x16, vp9_band_alt1_16x16,
+                      16, SO_ALT1);
+  init_ext_scan_order(vp9_scan_alt1_32x32, vp9_iscan_alt1_32x32,
+                      vp9_neighbors_alt1_32x32, vp9_band_alt1_32x32,
+                      32, SO_ALT1);
+
+  init_ext_scan_order(vp9_scan_alt2_4x4, vp9_iscan_alt2_4x4,
+                      vp9_neighbors_alt2_4x4, vp9_band_alt2_4x4, 4, SO_ALT2);
+  init_ext_scan_order(vp9_scan_alt2_8x8, vp9_iscan_alt2_8x8,
+                      vp9_neighbors_alt2_8x8, vp9_band_alt2_8x8, 8, SO_ALT2);
+  init_ext_scan_order(vp9_scan_alt2_16x16, vp9_iscan_alt2_16x16,
+                      vp9_neighbors_alt2_16x16, vp9_band_alt2_16x16,
+                      16, SO_ALT2);
+  init_ext_scan_order(vp9_scan_alt2_32x32, vp9_iscan_alt2_32x32,
+                      vp9_neighbors_alt2_32x32, vp9_band_alt2_32x32,
+                      32, SO_ALT2);
+#endif  // CONFIG_EXT_SCAN_ORDER
 }

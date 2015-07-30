@@ -260,6 +260,9 @@ typedef struct {
   uint8_t palette_literal_colors[PALETTE_MAX_SIZE];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_PALETTE
+#if CONFIG_EXT_SCAN_ORDER
+  SCAN_ORDER scan_order[2];
+#endif  // CONFIG_EXT_SCAN_ORDER
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {

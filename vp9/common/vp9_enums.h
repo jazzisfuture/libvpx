@@ -134,6 +134,15 @@ typedef enum {
 #endif  // CONFIG_EXT_TX
 } TX_TYPE;
 
+#if CONFIG_EXT_SCAN_ORDER
+typedef enum {
+  SO_NORM = 0,
+  SO_ALT1 = 1,  // horizontal
+  SO_ALT2 = 2,  // vertical
+  SCAN_ORDERS
+} SCAN_ORDER;
+#endif  // CONFIG_EXT_SCAN_ORDER
+
 #if CONFIG_EXT_TX
 typedef enum {
   NORM = 0,

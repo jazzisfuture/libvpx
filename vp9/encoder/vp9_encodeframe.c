@@ -4183,6 +4183,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     }
 #endif
 
+#if CONFIG_EXT_SCAN_ORDER
+    if (frame_is_intra_only(cm)) {
+      cm->ext_scan_counter = 0;
+      cm->ext_scan_blocks_signalled = 0;
+    }
+#endif  // CONFIG_EXT_SCAN_ORDER
 #if CONFIG_PALETTE
     if (frame_is_intra_only(cm)) {
       cm->current_palette_size = 0;
@@ -4588,6 +4594,13 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
         cm->palette_counter++;
     }
 #endif  // CONFIG_PALETTE
+#if CONFIG_EXT_SCAN_ORDER
+    if (frame_is_intra_only(cm) && output_enabled && bsize >= BLOCK_8X8) {
+      cm->ext_scan_blocks_signalled++;
+      if (mbmi->scan_order[0] != SO_NORM)
+        cm->ext_scan_counter++;
+    }
+#endif  // CONFIG_EXT_SCAN_ORDER
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);

@@ -2801,6 +2801,10 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 #endif  // CONFIG_QCTX_TPROBS
       setup_frame(cpi);
 
+#if CONFIG_EXT_SCAN_ORDER
+  if (loop_count == 0 && frame_is_intra_only(cm))
+    cm->allow_ext_scan_order = 1;
+#endif  // CONFIG_EXT_SCAN_ORDER
 #if CONFIG_PALETTE
     if (loop_count == 0 && frame_is_intra_only(cm))
       cm->allow_palette_mode = 1;
@@ -2984,6 +2988,19 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         rc->projected_frame_size < rc->max_frame_bandwidth)
       loop = 0;
 
+#if CONFIG_EXT_SCAN_ORDER
+#if 0
+    if (frame_is_intra_only(cm)) {
+      printf("\n %3d out of %3d \n",
+             cm->ext_scan_counter, cm->ext_scan_blocks_signalled);
+    }
+#endif
+    if (frame_is_intra_only(cm) && cm->allow_ext_scan_order &&
+        cm->ext_scan_counter * 100 < cm->ext_scan_blocks_signalled) {
+      cm->allow_ext_scan_order = 0;
+      loop = 1;
+    }
+#endif  // CONFIG_EXT_SCAN_ORDER
 #if CONFIG_PALETTE
     if (frame_is_intra_only(cm) && cm->allow_palette_mode &&
         cm->palette_counter * 100 < cm->palette_blocks_signalled) {

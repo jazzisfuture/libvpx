@@ -116,6 +116,9 @@ typedef struct frame_contexts {
 #if CONFIG_GLOBAL_MOTION
   vp9_prob global_motion_types_prob[GLOBAL_MOTION_TYPES - 1];
 #endif  // CONFIG_GLOBAL_MOTION
+#if CONFIG_EXT_SCAN_ORDER
+  vp9_prob scan_order_prob[SCAN_ORDERS - 1];
+#endif  // CONFIG_EXT_SCAN_ORDER
 } FRAME_CONTEXT;
 
 typedef struct {
@@ -224,6 +227,10 @@ extern const vp9_tree_index vp9_palette_color_tree[TREE_SIZE(PALETTE_COLORS)];
 extern const vp9_tree_index vp9_copy_mode_tree_l2[TREE_SIZE(2)];
 extern const vp9_tree_index vp9_copy_mode_tree[TREE_SIZE(COPY_MODE_COUNT - 1)];
 #endif  // CONFIG_COPY_MODE
+#if CONFIG_EXT_SCAN_ORDER
+extern const vp9_tree_index vp9_scan_order_tree[TREE_SIZE(SCAN_ORDERS)];
+extern const vp9_prob vp9_default_scan_order_prob[SCAN_ORDERS - 1];
+#endif  // CONFIG_EXT_SCAN_ORDER
 
 #if CONFIG_NEW_INTER
 extern const vp9_tree_index vp9_inter_compound_mode_tree

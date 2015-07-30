@@ -4623,6 +4623,87 @@ const scan_order vp9_default_scan_orders_pxd[TX_SIZES] = {
 };
 #endif  // CONFIG_TX_SKIP
 
+#if CONFIG_EXT_SCAN_ORDER
+int16_t vp9_scan_alt1_4x4[16];
+int16_t vp9_scan_alt1_8x8[64];
+int16_t vp9_scan_alt1_16x16[256];
+int16_t vp9_scan_alt1_32x32[1024];
+
+int16_t vp9_iscan_alt1_4x4[16];
+int16_t vp9_iscan_alt1_8x8[64];
+int16_t vp9_iscan_alt1_16x16[256];
+int16_t vp9_iscan_alt1_32x32[1024];
+
+int16_t vp9_neighbors_alt1_4x4[17 * MAX_NEIGHBORS];
+int16_t vp9_neighbors_alt1_8x8[65 * MAX_NEIGHBORS];
+int16_t vp9_neighbors_alt1_16x16[257 * MAX_NEIGHBORS];
+int16_t vp9_neighbors_alt1_32x32[1025 * MAX_NEIGHBORS];
+
+int16_t vp9_scan_alt2_4x4[16];
+int16_t vp9_scan_alt2_8x8[64];
+int16_t vp9_scan_alt2_16x16[256];
+int16_t vp9_scan_alt2_32x32[1024];
+
+int16_t vp9_iscan_alt2_4x4[16];
+int16_t vp9_iscan_alt2_8x8[64];
+int16_t vp9_iscan_alt2_16x16[256];
+int16_t vp9_iscan_alt2_32x32[1024];
+
+int16_t vp9_neighbors_alt2_4x4[17 * MAX_NEIGHBORS];
+int16_t vp9_neighbors_alt2_8x8[65 * MAX_NEIGHBORS];
+int16_t vp9_neighbors_alt2_16x16[257 * MAX_NEIGHBORS];
+int16_t vp9_neighbors_alt2_32x32[1025 * MAX_NEIGHBORS];
+
+const scan_order vp9_ext_scan_orders[TX_SIZES][SCAN_ORDERS] = {
+  {  // TX_4X4
+    {0, 0, 0},
+    {vp9_scan_alt1_4x4, vp9_iscan_alt1_4x4, vp9_neighbors_alt1_4x4},
+    {vp9_scan_alt2_4x4, vp9_iscan_alt2_4x4, vp9_neighbors_alt2_4x4},
+  },
+  {  // TX_8X8
+    {0, 0, 0},
+    {vp9_scan_alt1_8x8, vp9_iscan_alt1_8x8, vp9_neighbors_alt1_8x8},
+    {vp9_scan_alt2_8x8, vp9_iscan_alt2_8x8, vp9_neighbors_alt2_8x8},
+  },
+  {  // TX_16X16
+    {0, 0, 0},
+    {vp9_scan_alt1_16x16, vp9_iscan_alt1_16x16, vp9_neighbors_alt1_16x16},
+    {vp9_scan_alt2_16x16, vp9_iscan_alt2_16x16, vp9_neighbors_alt2_16x16},
+  },
+  {  // TX_32X32
+    {0, 0, 0},
+    {vp9_scan_alt1_32x32, vp9_iscan_alt1_32x32, vp9_neighbors_alt1_32x32},
+    {vp9_scan_alt2_32x32, vp9_iscan_alt2_32x32, vp9_neighbors_alt2_32x32},
+  },
+};
+
+int8_t vp9_band_alt1_4x4[16];
+int8_t vp9_band_alt1_8x8[64];
+int8_t vp9_band_alt1_16x16[256];
+int8_t vp9_band_alt1_32x32[1024];
+
+int8_t vp9_band_alt2_4x4[16];
+int8_t vp9_band_alt2_8x8[64];
+int8_t vp9_band_alt2_16x16[256];
+int8_t vp9_band_alt2_32x32[1024];
+
+const int8_t *vp9_ext_scan_band[TX_SIZES][SCAN_ORDERS] = {
+    {  // TX_4X4
+        NULL, vp9_band_alt1_4x4, vp9_band_alt2_4x4,
+    },
+    {  // TX_8X8
+        NULL, vp9_band_alt1_8x8, vp9_band_alt2_8x8,
+    },
+    {  // TX_16X16
+        NULL, vp9_band_alt1_16x16, vp9_band_alt2_16x16,
+    },
+    {  // TX_32X32
+        NULL, vp9_band_alt1_32x32, vp9_band_alt2_32x32,
+    },
+};
+
+#endif  // CONFIG_EXT_SCAN_ORDER
+
 const scan_order vp9_default_scan_orders[TX_SIZES] = {
   {default_scan_4x4,   vp9_default_iscan_4x4,   default_scan_4x4_neighbors},
   {default_scan_8x8,   vp9_default_iscan_8x8,   default_scan_8x8_neighbors},

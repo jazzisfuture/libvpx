@@ -61,6 +61,52 @@ extern int16_t vp9_default_scan_pxd_64x64_neighbors[4097 * MAX_NEIGHBORS];
 #endif  // CONFIG_TX64X64
 #endif  // CONFIG_TX_SKIP
 
+#if CONFIG_EXT_SCAN_ORDER
+// extra scan orders
+extern const scan_order vp9_ext_scan_orders[TX_SIZES][SCAN_ORDERS];
+extern const int8_t *vp9_ext_scan_band[TX_SIZES][SCAN_ORDERS];
+
+extern int16_t vp9_scan_alt1_4x4[16];
+extern int16_t vp9_scan_alt1_8x8[64];
+extern int16_t vp9_scan_alt1_16x16[256];
+extern int16_t vp9_scan_alt1_32x32[1024];
+
+extern int16_t vp9_iscan_alt1_4x4[16];
+extern int16_t vp9_iscan_alt1_8x8[64];
+extern int16_t vp9_iscan_alt1_16x16[256];
+extern int16_t vp9_iscan_alt1_32x32[1024];
+
+extern int16_t vp9_neighbors_alt1_4x4[17 * MAX_NEIGHBORS];
+extern int16_t vp9_neighbors_alt1_8x8[65 * MAX_NEIGHBORS];
+extern int16_t vp9_neighbors_alt1_16x16[257 * MAX_NEIGHBORS];
+extern int16_t vp9_neighbors_alt1_32x32[1025 * MAX_NEIGHBORS];
+
+extern int16_t vp9_scan_alt2_4x4[16];
+extern int16_t vp9_scan_alt2_8x8[64];
+extern int16_t vp9_scan_alt2_16x16[256];
+extern int16_t vp9_scan_alt2_32x32[1024];
+
+extern int16_t vp9_iscan_alt2_4x4[16];
+extern int16_t vp9_iscan_alt2_8x8[64];
+extern int16_t vp9_iscan_alt2_16x16[256];
+extern int16_t vp9_iscan_alt2_32x32[1024];
+
+extern int16_t vp9_neighbors_alt2_4x4[17 * MAX_NEIGHBORS];
+extern int16_t vp9_neighbors_alt2_8x8[65 * MAX_NEIGHBORS];
+extern int16_t vp9_neighbors_alt2_16x16[257 * MAX_NEIGHBORS];
+extern int16_t vp9_neighbors_alt2_32x32[1025 * MAX_NEIGHBORS];
+
+extern int8_t vp9_band_alt1_4x4[16];
+extern int8_t vp9_band_alt1_8x8[64];
+extern int8_t vp9_band_alt1_16x16[256];
+extern int8_t vp9_band_alt1_32x32[1024];
+
+extern int8_t vp9_band_alt2_4x4[16];
+extern int8_t vp9_band_alt2_8x8[64];
+extern int8_t vp9_band_alt2_16x16[256];
+extern int8_t vp9_band_alt2_32x32[1024];
+#endif  // CONFIG_EXT_SCAN_ORDER
+
 static INLINE int get_coef_context(const int16_t *neighbors,
                                    const uint8_t *token_cache, int c) {
   return (1 + token_cache[neighbors[MAX_NEIGHBORS * c + 0]] +

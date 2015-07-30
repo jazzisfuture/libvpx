@@ -268,6 +268,24 @@ static INLINE const scan_order *get_scan(const MACROBLOCKD *xd, TX_SIZE tx_size,
                                          PLANE_TYPE type, int block_idx) {
   const MODE_INFO *const mi = xd->mi[0].src_mi;
 
+#if CONFIG_EXT_SCAN_ORDER
+  //return &vp9_default_scan_orders[tx_size];
+  if (type == PLANE_TYPE_Y && mi->mbmi.scan_order[type] != SO_NORM) {
+    /*
+    const PREDICTION_MODE mode = get_y_mode(mi, block_idx);
+    int idx;
+
+    if (is_inter_block(&mi->mbmi))
+      idx = 0;
+    else
+      idx = intra_mode_to_tx_type_lookup[mode];
+    idx = (idx % 3 + mi->mbmi.scan_order[type]) % 3;
+
+    return &vp9_intra_scan_orders[tx_size][idx];*/
+    return &vp9_ext_scan_orders[tx_size][mi->mbmi.scan_order[type]];
+  }
+#endif  // CONFIG_EXT_SCAN_ORDER
+
 #if CONFIG_TX_SKIP
   if (mi->mbmi.tx_skip[type])
     return &vp9_default_scan_orders_pxd[tx_size];

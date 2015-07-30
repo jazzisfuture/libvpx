@@ -322,7 +322,11 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   const uint8_t *const band = mbmi->tx_skip[plane != 0] ?
       vp9_coefband_tx_skip : get_band_translate(tx_size);
 #else
+#if CONFIG_EXT_SCAN_ORDER
+  uint8_t *band = get_band_translate(tx_size);
+#else
   const uint8_t *const band = get_band_translate(tx_size);
+#endif  // CONFIG_EXT_SCAN_ORDER
 #endif  // CONFIG_TX_SKIP
   const int seg_eob = get_tx_eob(&cpi->common.seg, segment_id, tx_size);
   const TOKENVALUE *dct_value_tokens;
@@ -336,6 +340,12 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   scan = so->scan;
   nb = so->neighbors;
   c = 0;
+#if CONFIG_EXT_SCAN_ORDER
+  if (plane == 0 && mbmi->scan_order[plane != 0] != SO_NORM) {
+    band = vp9_ext_scan_band[tx_size][mbmi->scan_order[plane != 0]];
+  }
+#endif  // CONFIG_EXT_SCAN_ORDER
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cpi->common.profile >= PROFILE_2) {
     dct_value_tokens = (cpi->common.bit_depth == VPX_BITS_10 ?

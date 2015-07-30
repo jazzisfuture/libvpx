@@ -76,7 +76,11 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
   unsigned int (*eob_branch_count)[COEFF_CONTEXTS] =
       counts->eob_branch[tx_size][type][ref];
   uint8_t token_cache[MAX_NUM_COEFS];
+#if CONFIG_EXT_SCAN_ORDER
+  uint8_t *band_translate = get_band_translate(tx_size);
+#else
   const uint8_t *band_translate = get_band_translate(tx_size);
+#endif  // CONFIG_EXT_SCAN_ORDER
   const int dq_shift = (tx_size > TX_16X16) ? tx_size - TX_16X16 : 0;
   int v, token;
   int16_t dqv = dq[0];
@@ -95,6 +99,14 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
   const uint8_t *cat4_prob;
   const uint8_t *cat5_prob;
   const uint8_t *cat6_prob;
+
+#if CONFIG_EXT_SCAN_ORDER
+  if (type == PLANE_TYPE_Y &&
+      xd->mi[0].src_mi->mbmi.scan_order[type] != SO_NORM) {
+    band_translate =
+        vp9_ext_scan_band[tx_size][xd->mi[0].src_mi->mbmi.scan_order[type]];
+  }
+#endif  // CONFIG_EXT_SCAN_ORDER
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
