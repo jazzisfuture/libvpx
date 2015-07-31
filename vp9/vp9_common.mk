@@ -70,7 +70,6 @@ VP9_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/vp9_postproc.h
 VP9_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/vp9_postproc.c
 VP9_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/vp9_mfqe.h
 VP9_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/vp9_mfqe.c
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_idct_sse2.asm
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_subpixel_8t_sse2.asm
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_subpixel_bilinear_sse2.asm
 VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_subpixel_8t_ssse3.asm
@@ -133,13 +132,6 @@ VP9_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/vp9_mfqe_msa.c
 endif
 
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_idct_intrin_sse2.c
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_idct_intrin_sse2.h
-
-ifeq ($(ARCH_X86_64), yes)
-ifeq ($(CONFIG_USE_X86INC),yes)
-VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_idct_ssse3_x86_64.asm
-endif
-endif
 
 VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_save_reg_neon$(ASM)
 
