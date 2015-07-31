@@ -106,6 +106,20 @@ DSP_SRCS-$(HAVE_MSA)    += mips/fwd_txfm_msa.c
 DSP_SRCS-$(HAVE_MSA)    += mips/fwd_dct32x32_msa.c
 endif  # CONFIG_VP9_ENCODER
 
+# inverse transform
+ifeq ($(CONFIG_VP9),yes)
+DSP_SRCS-yes            += inv_txfm.h
+DSP_SRCS-yes            += inv_txfm.c
+DSP_SRCS-$(HAVE_SSE2)   += x86/inv_txfm_sse2.h
+DSP_SRCS-$(HAVE_SSE2)   += x86/inv_txfm_sse2.c
+DSP_SRCS-$(HAVE_SSE2)   += x86/inv_txfm_sse2.asm
+ifeq ($(ARCH_X86_64),yes)
+ifeq ($(CONFIG_USE_X86INC),yes)
+DSP_SRCS-$(HAVE_SSSE3)  += x86/inv_txfm_ssse3_x86_64.asm
+endif  # CONFIG_USE_X86INC
+endif  # ARCH_X86_64
+endif  # CONFIG_VP9
+
 # quantization
 ifeq ($(CONFIG_VP9_ENCODER),yes)
 DSP_SRCS-yes            += quantize.c
