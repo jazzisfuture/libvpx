@@ -791,17 +791,14 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 
   if (tx_size == TX_4X4) {
     tx_type = get_tx_type_4x4(pd->plane_type, xd, block);
-    scan_order = &vp9_scan_orders[TX_4X4][tx_type];
     mode = plane == 0 ? get_y_mode(xd->mi[0], block) : mbmi->uv_mode;
   } else {
     mode = plane == 0 ? mbmi->mode : mbmi->uv_mode;
-    if (tx_size == TX_32X32) {
-      scan_order = &vp9_default_scan_orders[TX_32X32];
-    } else {
+    if (tx_size < TX_32X32)
       tx_type = get_tx_type(pd->plane_type, xd);
-      scan_order = &vp9_scan_orders[tx_size][tx_type];
-    }
   }
+  scan_order = get_scan(xd, tx_size,
+                        plane == 0 ? PLANE_TYPE_Y : PLANE_TYPE_UV, block);
 
   vp9_predict_intra_block(xd, bwl, tx_size, mode, x->skip_encode ? src : dst,
                           x->skip_encode ? src_stride : dst_stride,
