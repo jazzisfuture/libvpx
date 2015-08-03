@@ -438,6 +438,13 @@ static void write_ref_frames(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     }
 
     if (is_compound) {
+#if CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+      vp9_write(w, mbmi->ref_frame[0] == mbmi->ref_frame[1],
+                vp9_get_pred_prob_comp_same_ref_p(cm, xd));
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+      // TODO(zoeliu): We should differentiate the probability for GOLDEN_FRAME
+      // chosen as the 1st reference frame when the two reference frames are
+      // identical from that when the two reference frames are different.
       vp9_write(w, mbmi->ref_frame[0] == GOLDEN_FRAME,
                 vp9_get_pred_prob_comp_ref_p(cm, xd));
     } else {
@@ -456,6 +463,8 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
                                 int supertx_enabled,
 #endif
                                 vp9_writer *w) {
+//                                vp9_writer *w,
+//                                int mi_row, int mi_col) {
   VP9_COMMON *const cm = &cpi->common;
   const nmv_context *nmvc = &cm->fc.nmvc;
   const MACROBLOCK *const x = &cpi->mb;
@@ -750,15 +759,31 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #endif  // CONFIG_NEW_INTER
     write_ref_frames(cm, xd, w);
 
+    /*
+    if (is_inter_compound_mode(mode) &&
+        mbmi->ref_frame[0] == mbmi->ref_frame[1] &&
+        mi_row == 10 && mi_col == 20) {
+      printf("\npack_inter_mode_mvs(): current_video_frame=%d, mode=%d, "
+             "(%d, %d)\n",
+             cm->current_video_frame, mbmi->mode, mi_row, mi_col);
+    }*/
+
     // If segment skip is not enabled code the mode.
     if (!vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
       if (bsize >= BLOCK_8X8) {
 #if CONFIG_NEW_INTER
-        if (is_inter_compound_mode(mode))
+        if (is_inter_compound_mode(mode)) {
           write_inter_compound_mode(w, mode, inter_compound_probs);
-        else if (is_inter_mode(mode))
+          /*if (mbmi->ref_frame[0] == mbmi->ref_frame[1]) {
+            printf("Encoder: cm->current_video_frame=%d, mode=%d\n",
+                   cm->current_video_frame, mode);
+          }*/
+        } else if (is_inter_mode(mode)) {
 #endif  // CONFIG_NEW_INTER
         write_inter_mode(w, mode, inter_probs);
+#if CONFIG_NEW_INTER
+        }
+#endif  // CONFIG_NEW_INTER
       }
     }
 
@@ -878,8 +903,11 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #endif  // CONFIG_NEW_INTER
         get_wedge_bits(bsize) &&
         mbmi->ref_frame[1] > INTRA_FRAME) {
-      vp9_write(w, mbmi->use_wedge_interinter,
-                cm->fc.wedge_interinter_prob[bsize]);
+#if CONFIG_NEW_WEDGE
+      if (mbmi->ref_frame[0] != mbmi->ref_frame[1])
+#endif  // CONFIG_NEW_WEDGE
+        vp9_write(w, mbmi->use_wedge_interinter,
+                  cm->fc.wedge_interinter_prob[bsize]);
       if (mbmi->use_wedge_interinter)
         vp9_write_literal(w, mbmi->interinter_wedge_index,
                           get_wedge_bits(bsize));
@@ -1148,6 +1176,7 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
                         supertx_enabled,
 #endif
                         w);
+//                        w, mi_row, mi_col);
   }
 
 #if CONFIG_SUPERTX
@@ -2441,10 +2470,16 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
       }
     }
 
-    if (cm->reference_mode != SINGLE_REFERENCE)
-      for (i = 0; i < REF_CONTEXTS; i++)
+    if (cm->reference_mode != SINGLE_REFERENCE) {
+      for (i = 0; i < REF_CONTEXTS; i++) {
+#if CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+        vp9_cond_prob_diff_update(&header_bc, &fc->comp_same_ref_prob[i],
+                                  cm->counts.comp_same_ref[i]);
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
         vp9_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i],
                                   cm->counts.comp_ref[i]);
+      }
+    }
 
     for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
       prob_diff_update(vp9_intra_mode_tree, cm->fc.y_mode_prob[i],
