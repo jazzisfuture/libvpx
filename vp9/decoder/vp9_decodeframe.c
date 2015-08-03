@@ -154,8 +154,12 @@ static void read_frame_reference_mode_probs(VP9_COMMON *cm, vp9_reader *r) {
     }
 
   if (cm->reference_mode != SINGLE_REFERENCE)
-    for (i = 0; i < REF_CONTEXTS; ++i)
+    for (i = 0; i < REF_CONTEXTS; ++i) {
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+      vp9_diff_update_prob(r, &fc->comp_same_ref_prob[i]);
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
       vp9_diff_update_prob(r, &fc->comp_ref_prob[i]);
+    }
 }
 
 static void update_mv_probs(vp9_prob *p, int n, vp9_reader *r) {
