@@ -54,6 +54,11 @@ DSP_SRCS-$(HAVE_DSPR2)  += mips/intrapred8_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2)  += mips/intrapred16_dspr2.c
 endif  # CONFIG_VP9
 
+ifeq ($(CONFIG_VP9),yes)
+DSP_SRCS-$(HAVE_DSPR2)  += mips/common_dspr2.h
+DSP_SRCS-$(HAVE_DSPR2)  += mips/common_dspr2.c
+endif  # CONFIG_VP9
+
 # interpolation filters
 DSP_SRCS-yes += vpx_convolve.c
 DSP_SRCS-yes += vpx_convolve.h
