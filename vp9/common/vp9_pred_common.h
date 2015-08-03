@@ -73,6 +73,17 @@ static INLINE vp9_prob vp9_get_reference_mode_prob(const VP9_COMMON *cm,
   return cm->fc.comp_inter_prob[vp9_get_reference_mode_context(cm, xd)];
 }
 
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+int vp9_get_pred_context_comp_same_ref_p(const VP9_COMMON *cm,
+                                         const MACROBLOCKD *xd);
+
+static INLINE vp9_prob vp9_get_pred_prob_comp_same_ref_p(
+    const VP9_COMMON *cm, const MACROBLOCKD *xd) {
+  const int pred_context = vp9_get_pred_context_comp_same_ref_p(cm, xd);
+  return cm->fc.comp_same_ref_prob[pred_context];
+}
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+
 int vp9_get_pred_context_comp_ref_p(const VP9_COMMON *cm,
                                     const MACROBLOCKD *xd);
 

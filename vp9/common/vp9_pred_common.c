@@ -75,7 +75,7 @@ int vp9_get_reference_mode_context(const VP9_COMMON *cm,
   const int has_above = above_mbmi != NULL;
   const int has_left = left_mbmi != NULL;
   // Note:
-  // The mode info data structure has a one element border above and to the
+  // The mode info data structure has a one-element border above and to the
   // left of the entries correpsonding to real macroblocks.
   // The prediction flags in these dummy entries are initialised to 0.
   if (has_above && has_left) {  // both edges available
@@ -108,6 +108,89 @@ int vp9_get_reference_mode_context(const VP9_COMMON *cm,
   assert(ctx >= 0 && ctx < COMP_INTER_CONTEXTS);
   return ctx;
 }
+
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+// Returns a context number for the given MB prediction signal
+int vp9_get_pred_context_comp_same_ref_p(const VP9_COMMON *cm,
+                                         const MACROBLOCKD *xd) {
+  int pred_context;
+  const MB_MODE_INFO *const above_mbmi = get_mbmi(get_above_mi(xd));
+  const MB_MODE_INFO *const left_mbmi = get_mbmi(get_left_mi(xd));
+  const int has_above = (above_mbmi != NULL);
+  const int has_left = (left_mbmi != NULL);
+
+  // Note:
+  // The mode info data structure has a one element border above and to the
+  // left of the entries correpsonding to real macroblocks.
+  // The prediction flags in these dummy entries are initialised to 0.
+  if (has_above && has_left) {  // both edges available
+    const int above_intra = !is_inter_block(above_mbmi);
+    const int left_intra = !is_inter_block(left_mbmi);
+
+    if (above_intra && left_intra) {  // intra/intra (2)
+      pred_context = 2;
+    } else if (above_intra || left_intra) {  // intra/inter
+      const MB_MODE_INFO *edge_mbmi = above_intra ? left_mbmi : above_mbmi;
+
+      // intra/inter comp pred same ref (4)
+      if (has_second_ref(edge_mbmi) &&
+          edge_mbmi->ref_frame[0] == edge_mbmi->ref_frame[1])
+        pred_context = 4;
+      // intra/inter comp pred diff ref (1)
+      else if (has_second_ref(edge_mbmi))
+        pred_context = 1;
+      else  // intra/inter single pred (1/3)
+        pred_context = 1 + 2 * (edge_mbmi->ref_frame[0] != ALTREF_FRAME);
+    } else {  // inter/inter
+      const int a_sg = !has_second_ref(above_mbmi);
+      const int l_sg = !has_second_ref(left_mbmi);
+      const MV_REFERENCE_FRAME vrfa = above_mbmi->ref_frame[0];
+      const MV_REFERENCE_FRAME vrfl = left_mbmi->ref_frame[0];
+
+      if (a_sg && l_sg) {  // single/single (0/2/4)
+        pred_context = 2 * (vrfa != ALTREF_FRAME) + 2 * (vrfl != ALTREF_FRame);
+      } else if (a_sg || l_sg) {  // single/comp
+        const MB_MODE_INFO *comp_mbmi = a_sg ? left_mbmi : above_mbmi;
+        const MV_REFERENCE_FRAME rfs = a_sg ? vrfa : vrfl;
+
+        // single/comp same ref (3/4)
+        if (comp_mbmi->ref_frame[0] == comp_mbmi->ref_frame[1])
+          pred_context = 3 + (rfs != ALTREF_FRAME);
+        // single/comp diff ref (1/3)
+        else
+          pred_context = 1 + 2 * (rfs != ALTREF_FRAME);
+      } else {  // comp/comp
+        // comp/comp at least one same ref (4)
+        if (above_mbmi->ref_frame[0] == above_mbmi->ref_frame[1] ||
+            left_mbmi->ref_frame[0] == left_mbmi->ref_frame[1])
+          pred_context = 4;
+        else  // comp/comp both diff ref (1/3)
+          pred_context = 1 + 2 * (vrfa == vrfl);
+      }
+    }
+  } else if (has_above || has_left) {  // one edge available
+    const MB_MODE_INFO *edge_mbmi = has_above ? above_mbmi : left_mbmi;
+
+    if (!is_inter_block(edge_mbmi)) {  // intra (2)
+      pred_context = 2;
+    } else {  // inter
+      // inter comp pred same ref (4)
+      if (has_second_ref(edge_mbmi) &&
+          edge_mbmi->ref_frame[0] == edge_mbmi->ref_frame[1])
+        pred_context = 4;
+      else if (has_second_ref(edge_mbmi))  // inter comp pred diff ref (1)
+        pred_context = 1;
+      else  // inter single pred (0/3)
+        pred_context = 3 * (edge_mbmi->ref_frame[0] != ALTREF_FRAME);
+    }
+  } else {  // no edges available (2)
+    pred_context = 2;
+  }
+  assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
+
+  return pred_context;
+}
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
 
 // Returns a context number for the given MB prediction signal
 int vp9_get_pred_context_comp_ref_p(const VP9_COMMON *cm,

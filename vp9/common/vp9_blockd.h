@@ -99,6 +99,9 @@ typedef enum {
   NEW_NEARMV,
   ZERO_ZEROMV,
   NEW_NEWMV,
+#if CONFIG_NEW_WEDGE
+  NEW_NEW2MV,
+#endif  // CONFIG_NEW_WEDGE
 #endif  // CONFIG_NEW_INTER
   MB_MODE_COUNT
 } PREDICTION_MODE;
@@ -123,7 +126,11 @@ static INLINE int is_inter_mode(PREDICTION_MODE mode) {
 
 #if CONFIG_NEW_INTER
 static INLINE int is_inter_compound_mode(PREDICTION_MODE mode) {
+#if CONFIG_NEW_WEDGE
+  return mode >= NEAREST_NEARESTMV && mode <= NEW_NEW2MV;
+#else
   return mode >= NEAREST_NEARESTMV && mode <= NEW_NEWMV;
+#endif  // CONFIG_NEW_WEDGE
 }
 #endif  // CONFIG_NEW_INTER
 
@@ -132,6 +139,9 @@ static INLINE int have_newmv_in_inter_mode(PREDICTION_MODE mode) {
   return (mode == NEWMV ||
           mode == NEW2MV ||
           mode == NEW_NEWMV ||
+#if CONFIG_NEW_WEDGE
+          mode == NEW_NEW2MV ||
+#endif  // CONFIG_NEW_WEDGE
           mode == NEAREST_NEWMV ||
           mode == NEW_NEARESTMV ||
           mode == NEAR_NEWMV ||
@@ -158,7 +168,11 @@ static INLINE int is_intrabc_mode(PREDICTION_MODE mode) {
 
 #if CONFIG_NEW_INTER
 
+#if CONFIG_NEW_WEDGE
+#define INTER_COMPOUND_MODES (1 + NEW_NEW2MV - NEAREST_NEARESTMV)
+#else
 #define INTER_COMPOUND_MODES (1 + NEW_NEWMV - NEAREST_NEARESTMV)
+#endif  // CONFIG_NEW_WEDGE
 
 #define INTER_COMPOUND_OFFSET(mode) ((mode) - NEAREST_NEARESTMV)
 
