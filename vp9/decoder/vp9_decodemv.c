@@ -700,11 +700,28 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     // FIXME(rbultje) I'm pretty sure this breaks segmentation ref frame coding
     if (mode == COMPOUND_REFERENCE) {
       const int idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
+
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+      const int ctx0 = vp9_get_pred_context_comp_same_ref_p(xd);
+      const int bit0 = vp9_read(r, fc->comp_same_ref_prob[ctx0]);
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+
       const int ctx = vp9_get_pred_context_comp_ref_p(cm, xd);
       const int bit = vp9_read(r, fc->comp_ref_prob[ctx]);
-      if (!cm->frame_parallel_decoding_mode)
+
+      if (!cm->frame_parallel_decoding_mode) {
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+        ++counts->comp_same_ref[ctx0][bit0];
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
         ++counts->comp_ref[ctx][bit];
+      }
+
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+      // bit0 == 1: Two reference frames are identical.
+      ref_frame[idx] = bit0 ? cm->comp_var_ref[bit] : cm->comp_fixed_ref;
+#else
       ref_frame[idx] = cm->comp_fixed_ref;
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
       ref_frame[!idx] = cm->comp_var_ref[bit];
     } else if (mode == SINGLE_REFERENCE) {
       const int ctx0 = vp9_get_pred_context_single_ref_p1(xd);
