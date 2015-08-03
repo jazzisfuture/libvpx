@@ -140,7 +140,16 @@ static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
 
   {ZERO_ZEROMV,    {LAST_FRAME,   ALTREF_FRAME}},
   {ZERO_ZEROMV,    {GOLDEN_FRAME, ALTREF_FRAME}},
-#else
+
+#if CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+  {NEW_NEWMV,      {LAST_FRAME,   LAST_FRAME}},
+  {NEW_NEWMV,      {GOLDEN_FRAME, GOLDEN_FRAME}},
+// NOTE (zoeliu): May consider ALTREF_FRAME later as we save 1 bit by not
+// considering it currently.
+// {NEW_NEWMV,      {ALTREF_FRAME, ALTREF_FRAME}},
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+
+#else  // CONFIG_NEW_INTER
   {NEARMV,    {LAST_FRAME,   ALTREF_FRAME}},
   {NEWMV,     {LAST_FRAME,   ALTREF_FRAME}},
   {NEARMV,    {GOLDEN_FRAME, ALTREF_FRAME}},
@@ -3996,11 +4005,25 @@ static void estimate_ref_frame_costs(const VP9_COMMON *cm,
       ref_costs_single[ALTREF_FRAME] = 512;
     }
     if (cm->reference_mode != SINGLE_REFERENCE) {
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+      vp9_prob ref_same_comp_p = vp9_get_pred_prob_comp_same_ref_p(cm, xd);
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
       vp9_prob ref_comp_p = vp9_get_pred_prob_comp_ref_p(cm, xd);
+
       unsigned int base_cost = vp9_cost_bit(intra_inter_p, 1);
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+      unsigned int same_ref_cost = (vp9_cost_bit(ref_same_comp_p, 1) *
+                                    ref_same_comp_p +
+                                    vp9_cost_bit(ref_same_comp_p, 0) *
+                                    vp9_complement(ref_same_comp_p)) >> 8;
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
 
       if (cm->reference_mode == REFERENCE_MODE_SELECT)
         base_cost += vp9_cost_bit(comp_inter_p, 1);
+
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+      base_cost += same_ref_cost;
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
 
       ref_costs_comp[LAST_FRAME]   = base_cost + vp9_cost_bit(ref_comp_p, 0);
       ref_costs_comp[GOLDEN_FRAME] = base_cost + vp9_cost_bit(ref_comp_p, 1);
@@ -4560,7 +4583,12 @@ static void do_masked_motion_search_indexed(VP9_COMP *cpi, MACROBLOCK *x,
   vp9_generate_masked_weight(wedge_index, sb_type, h, w, mask, mask_stride);
   // vp9_generate_hard_mask(wedge_index, sb_type, h, w, mask, mask_stride);
 
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+  // NOTE: 3 - same reference frame but 2 separate mvs
+  if (which == 0 || which == 2 || which == 3)
+#else
   if (which == 0 || which == 2)
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
     do_masked_motion_search(cpi, x, mask, mask_stride, bsize,
                             mi_row, mi_col, &tmp_mv[0], &rate_mv[0],
 #if CONFIG_NEW_INTER
@@ -4568,11 +4596,23 @@ static void do_masked_motion_search_indexed(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_NEW_INTER
                             0);
 
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+  // NOTE: 3 - same reference frame but 2 separate mvs
+  if (which == 1 || which == 2 || which == 3) {
+#else
   if (which == 1 || which == 2) {
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
     for (i = 0; i < h; ++i)
       for (j = 0; j < w; ++j)
         mask[i * mask_stride + j] = 64 - mask[i * mask_stride + j];
 
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+    if (which == 3)
+      do_masked_motion_search(cpi, x, mask, mask_stride, bsize,
+                              mi_row, mi_col, &tmp_mv[1], &rate_mv[1],
+                              &ref_mv[0], 0);
+    else
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
     do_masked_motion_search(cpi, x, mask, mask_stride, bsize,
                             mi_row, mi_col, &tmp_mv[1], &rate_mv[1],
 #if CONFIG_NEW_INTER
@@ -4779,7 +4819,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (have_newmv_in_inter_mode(this_mode)) {
     int rate_mv = 0;
 
+#if CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+    if (is_comp_pred && refs[0] != refs[1]) {
+#else
     if (is_comp_pred) {
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
 #if CONFIG_NEW_INTER
       for (i = 0; i < 2; ++i) {
         single_newmv[refs[i]].as_int =
@@ -4829,8 +4873,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if !(CONFIG_INTERINTRA || CONFIG_WEDGE_PARTITION)
       *rate2 += rate_mv;
-#endif
+#endif  // !(CONFIG_INTERINTRA || CONFIG_WEDGE_PARTITION)
+#if CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+    } else if (!is_comp_pred) {
+#else
     } else {
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
       int_mv tmp_mv;
 
 #if CONFIG_INTERINTRA
@@ -4878,7 +4926,13 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_NEW_INTER
 #endif  // CONFIG_INTERINTRA
     }
+
 #if CONFIG_WEDGE_PARTITION || CONFIG_INTERINTRA
+#if CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+    if (refs[0] == refs[1])
+      rate_mv_tmp = INT32_MAX;
+    else
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
     rate_mv_tmp = rate_mv;
 #endif  // CONFIG_WEDGE_PARTITION || CONFIG_INTERINTRA
   }
@@ -4913,9 +4967,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   /* We don't include the cost of the second reference here, because there
-   * are only three options: Last/Golden, ARF/Last or Golden/ARF, or in other
-   * words if you present them in that order, the second one is always known
-   * if the first is known */
+   * are only two options: Last/ARF or Golden/ARF; The second one is always
+   * known, which is ARF. */
   *rate2 += cost_mv_ref(cpi, this_mode, mbmi->mode_context[refs[0]]);
 
   if (RDCOST(x->rdmult, x->rddiv, *rate2, 0) > ref_best_rd &&
@@ -5052,16 +5105,26 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t best_rd_nowedge = INT64_MAX;
     int64_t best_rd_wedge = INT64_MAX;
     int wedge_types;
+
     mbmi->use_wedge_interinter = 0;
+
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+    if (refs[0] != refs[1]) {
+#endif // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
     rs = vp9_cost_bit(cm->fc.wedge_interinter_prob[bsize], 0);
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
     model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum, NULL, NULL);
     rd = RDCOST(x->rdmult, x->rddiv, rs + rate_mv_tmp + rate_sum, dist_sum);
     best_rd_nowedge = rd;
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+    }
+#endif // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+
     mbmi->use_wedge_interinter = 1;
     rs = get_wedge_bits(bsize) * 256 +
         vp9_cost_bit(cm->fc.wedge_interinter_prob[bsize], 1);
     wedge_types = (1 << get_wedge_bits(bsize));
+
     if (have_newmv_in_inter_mode(this_mode)) {
       int_mv tmp_mv[2];
       int rate_mvs[2], tmp_rate_mv = 0;
@@ -5079,9 +5142,24 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       mbmi->interinter_wedge_index = best_wedge_index;
 #if CONFIG_NEW_INTER
       if (this_mode == NEW_NEWMV) {
+#if CONFIG_NEW_WEDGE
+        if (refs[0] == refs[1]) {
+          // NOTE: To search for 2 separate mvs along the wedge over the same
+          // reference frame.
+          do_masked_motion_search_indexed(cpi, x, mbmi->interinter_wedge_index,
+                                          bsize, mi_row, mi_col, tmp_mv, rate_mvs,
+                                          ref_mv, 3);
+          // NOTE: For same references and same mvs along the wedge, skip.
+          if (tmp_mv[0].as_int == tmp_mv[1].as_int)
+            return INT64_MAX;
+        } else {
+#endif  // CONFIG_NEW_WEDGE
         do_masked_motion_search_indexed(cpi, x, mbmi->interinter_wedge_index,
                                         bsize, mi_row, mi_col, tmp_mv, rate_mvs,
                                         ref_mv, 2);
+#if CONFIG_NEW_WEDGE
+        }
+#endif  // CONFIG_NEW_WEDGE
         tmp_rate_mv = rate_mvs[0] + rate_mvs[1];
         mbmi->mv[0].as_int = tmp_mv[0].as_int;
         mbmi->mv[1].as_int = tmp_mv[1].as_int;
@@ -5106,9 +5184,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       mbmi->mv[0].as_int = tmp_mv[0].as_int;
       mbmi->mv[1].as_int = tmp_mv[1].as_int;
 #endif  // CONFIG_NEW_INTER
+
       vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
       model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum, NULL, NULL);
       rd = RDCOST(x->rdmult, x->rddiv, rs + tmp_rate_mv + rate_sum, dist_sum);
+
       if (rd < best_rd_wedge) {
         best_rd_wedge = rd;
       } else {
@@ -5116,6 +5196,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mbmi->mv[1].as_int = cur_mv[1].as_int;
         tmp_rate_mv = rate_mv_tmp;
       }
+
       if (best_rd_wedge < best_rd_nowedge) {
         mbmi->use_wedge_interinter = 1;
         mbmi->interinter_wedge_index = best_wedge_index;

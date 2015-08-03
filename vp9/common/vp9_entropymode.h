@@ -64,6 +64,9 @@ typedef struct frame_contexts {
   vp9_prob intra_inter_prob[INTRA_INTER_CONTEXTS];
   vp9_prob comp_inter_prob[COMP_INTER_CONTEXTS];
   vp9_prob single_ref_prob[REF_CONTEXTS][2];
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+  vp9_prob comp_same_ref_prob[REF_CONTEXTS];
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
   vp9_prob comp_ref_prob[REF_CONTEXTS];
   struct tx_probs tx_probs;
   vp9_prob skip_probs[SKIP_CONTEXTS];
@@ -138,6 +141,9 @@ typedef struct {
   unsigned int intra_inter[INTRA_INTER_CONTEXTS][2];
   unsigned int comp_inter[COMP_INTER_CONTEXTS][2];
   unsigned int single_ref[REF_CONTEXTS][2][2];
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
+  unsigned int comp_same_ref[REF_CONTEXTS][2];
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_NEW_WEDGE
   unsigned int comp_ref[REF_CONTEXTS][2];
   struct tx_counts tx;
   unsigned int skip[SKIP_CONTEXTS][2];
