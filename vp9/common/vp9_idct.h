@@ -38,15 +38,15 @@ typedef struct {
 } highbd_transform_2d;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-void vp9_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vpx_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                      int eob);
 void vp9_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                      int eob);
 void vp9_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
                      int eob);
-void vp9_idct16x16_add(const tran_low_t *input, uint8_t *dest, int stride, int
+void vpx_idct16x16_add(const tran_low_t *input, uint8_t *dest, int stride, int
                        eob);
-void vp9_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vpx_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob);
 
 void vp9_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
@@ -59,13 +59,13 @@ void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd);
-void vp9_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vpx_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd);
-void vp9_highbd_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vpx_highbd_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd);
-void vp9_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
+void vpx_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
                               int stride, int eob, int bd);
-void vp9_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
+void vpx_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
                               int stride, int eob, int bd);
 void vp9_highbd_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input,
                            uint8_t *dest, int stride, int eob, int bd);
