@@ -324,17 +324,17 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vpx_highbd_fdct32x32_rd_c,
                    &idct32x32_12, 1, VPX_BITS_12),
         make_tuple(&vpx_fdct32x32_c,
-                   &vp9_idct32x32_1024_add_c, 0, VPX_BITS_8),
+                   &vpx_idct32x32_1024_add_c, 0, VPX_BITS_8),
         make_tuple(&vpx_fdct32x32_rd_c,
-                   &vp9_idct32x32_1024_add_c, 1, VPX_BITS_8)));
+                   &vpx_idct32x32_1024_add_c, 1, VPX_BITS_8)));
 #else
 INSTANTIATE_TEST_CASE_P(
     C, Trans32x32Test,
     ::testing::Values(
         make_tuple(&vpx_fdct32x32_c,
-                   &vp9_idct32x32_1024_add_c, 0, VPX_BITS_8),
+                   &vpx_idct32x32_1024_add_c, 0, VPX_BITS_8),
         make_tuple(&vpx_fdct32x32_rd_c,
-                   &vp9_idct32x32_1024_add_c, 1, VPX_BITS_8)));
+                   &vpx_idct32x32_1024_add_c, 1, VPX_BITS_8)));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
@@ -342,9 +342,9 @@ INSTANTIATE_TEST_CASE_P(
     NEON, Trans32x32Test,
     ::testing::Values(
         make_tuple(&vpx_fdct32x32_c,
-                   &vp9_idct32x32_1024_add_neon, 0, VPX_BITS_8),
+                   &vpx_idct32x32_1024_add_neon, 0, VPX_BITS_8),
         make_tuple(&vpx_fdct32x32_rd_c,
-                   &vp9_idct32x32_1024_add_neon, 1, VPX_BITS_8)));
+                   &vpx_idct32x32_1024_add_neon, 1, VPX_BITS_8)));
 #endif  // HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
 #if HAVE_SSE2 && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
@@ -352,9 +352,9 @@ INSTANTIATE_TEST_CASE_P(
     SSE2, Trans32x32Test,
     ::testing::Values(
         make_tuple(&vpx_fdct32x32_sse2,
-                   &vp9_idct32x32_1024_add_sse2, 0, VPX_BITS_8),
+                   &vpx_idct32x32_1024_add_sse2, 0, VPX_BITS_8),
         make_tuple(&vpx_fdct32x32_rd_sse2,
-                   &vp9_idct32x32_1024_add_sse2, 1, VPX_BITS_8)));
+                   &vpx_idct32x32_1024_add_sse2, 1, VPX_BITS_8)));
 #endif  // HAVE_SSE2 && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
 #if HAVE_SSE2 && CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
@@ -367,9 +367,9 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vpx_highbd_fdct32x32_sse2, &idct32x32_12, 0, VPX_BITS_12),
         make_tuple(&vpx_highbd_fdct32x32_rd_sse2, &idct32x32_12, 1,
                    VPX_BITS_12),
-        make_tuple(&vpx_fdct32x32_sse2, &vp9_idct32x32_1024_add_c, 0,
+        make_tuple(&vpx_fdct32x32_sse2, &vpx_idct32x32_1024_add_c, 0,
                    VPX_BITS_8),
-        make_tuple(&vpx_fdct32x32_rd_sse2, &vp9_idct32x32_1024_add_c, 1,
+        make_tuple(&vpx_fdct32x32_rd_sse2, &vpx_idct32x32_1024_add_c, 1,
                    VPX_BITS_8)));
 #endif  // HAVE_SSE2 && CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
@@ -378,9 +378,9 @@ INSTANTIATE_TEST_CASE_P(
     AVX2, Trans32x32Test,
     ::testing::Values(
         make_tuple(&vpx_fdct32x32_avx2,
-                   &vp9_idct32x32_1024_add_sse2, 0, VPX_BITS_8),
+                   &vpx_idct32x32_1024_add_sse2, 0, VPX_BITS_8),
         make_tuple(&vpx_fdct32x32_rd_avx2,
-                   &vp9_idct32x32_1024_add_sse2, 1, VPX_BITS_8)));
+                   &vpx_idct32x32_1024_add_sse2, 1, VPX_BITS_8)));
 #endif  // HAVE_AVX2 && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
 #if HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
@@ -388,8 +388,8 @@ INSTANTIATE_TEST_CASE_P(
     MSA, Trans32x32Test,
     ::testing::Values(
         make_tuple(&vpx_fdct32x32_msa,
-                   &vp9_idct32x32_1024_add_msa, 0, VPX_BITS_8),
+                   &vpx_idct32x32_1024_add_msa, 0, VPX_BITS_8),
         make_tuple(&vpx_fdct32x32_rd_msa,
-                   &vp9_idct32x32_1024_add_msa, 1, VPX_BITS_8)));
+                   &vpx_idct32x32_1024_add_msa, 1, VPX_BITS_8)));
 #endif  // HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 }  // namespace

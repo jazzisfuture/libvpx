@@ -656,15 +656,15 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
-        vp9_highbd_idct32x32_add(dqcoeff, dst, pd->dst.stride,
+        vpx_highbd_idct32x32_add(dqcoeff, dst, pd->dst.stride,
                                  p->eobs[block], xd->bd);
         break;
       case TX_16X16:
-        vp9_highbd_idct16x16_add(dqcoeff, dst, pd->dst.stride,
+        vpx_highbd_idct16x16_add(dqcoeff, dst, pd->dst.stride,
                                  p->eobs[block], xd->bd);
         break;
       case TX_8X8:
-        vp9_highbd_idct8x8_add(dqcoeff, dst, pd->dst.stride,
+        vpx_highbd_idct4x8_add(dqcoeff, dst, pd->dst.stride,
                                p->eobs[block], xd->bd);
         break;
       case TX_4X4:
@@ -683,10 +683,10 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
 
   switch (tx_size) {
     case TX_32X32:
-      vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      vpx_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
       break;
     case TX_16X16:
-      vp9_idct16x16_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      vpx_idct16x16_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
       break;
     case TX_8X8:
       vp9_idct8x8_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
@@ -821,7 +821,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                       scan_order->scan, scan_order->iscan);
         }
         if (!x->skip_encode && *eob) {
-          vp9_highbd_idct32x32_add(dqcoeff, dst, dst_stride, *eob, xd->bd);
+          vpx_highbd_idct32x32_add(dqcoeff, dst, dst_stride, *eob, xd->bd);
         }
         break;
       case TX_16X16:
@@ -907,7 +907,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                              scan_order->iscan);
       }
       if (!x->skip_encode && *eob)
-        vp9_idct32x32_add(dqcoeff, dst, dst_stride, *eob);
+        vpx_idct32x32_add(dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_16X16:
       if (!x->skip_recode) {
