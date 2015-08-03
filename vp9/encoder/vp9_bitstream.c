@@ -438,6 +438,10 @@ static void write_ref_frames(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     }
 
     if (is_compound) {
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+      vp9_write(w, mbmi->ref_frame[0] == mbmi->ref_frame[1],
+                vp9_get_pred_prob_comp_same_ref_p(cm, xd));
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
       vp9_write(w, mbmi->ref_frame[0] == GOLDEN_FRAME,
                 vp9_get_pred_prob_comp_ref_p(cm, xd));
     } else {
@@ -2441,10 +2445,16 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
       }
     }
 
-    if (cm->reference_mode != SINGLE_REFERENCE)
-      for (i = 0; i < REF_CONTEXTS; i++)
+    if (cm->reference_mode != SINGLE_REFERENCE) {
+      for (i = 0; i < REF_CONTEXTS; i++) {
         vp9_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i],
                                   cm->counts.comp_ref[i]);
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+        vp9_cond_prob_diff_update(&header_bc, &fc->comp_same_ref_prob[i],
+                                  cm->counts.comp_same_ref[i]);
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+      }
+    }
 
     for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
       prob_diff_update(vp9_intra_mode_tree, cm->fc.y_mode_prob[i],

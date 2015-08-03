@@ -76,6 +76,9 @@ static const int mode_2_counter[MB_MODE_COUNT] = {
   1,  // NEW_NEARMV
   3,  // ZERO_ZEROMV
   1,  // NEW_NEWMV
+#if CONFIG_NEW_WEDGE
+//  1,  // NEW_NEW2MV
+#endif  // CONFIG_NEW_WEDGE
 #endif  // CONFIG_NEW_INTER
 };
 
