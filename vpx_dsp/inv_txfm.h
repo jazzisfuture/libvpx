@@ -97,9 +97,9 @@ void iadst8_c(const tran_low_t *input, tran_low_t *output);
 void iadst16_c(const tran_low_t *input, tran_low_t *output);
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_highbd_idct4_c(const tran_low_t *input, tran_low_t *output, int bd);
-void vp9_highbd_idct8_c(const tran_low_t *input, tran_low_t *output, int bd);
-void vp9_highbd_idct16_c(const tran_low_t *input, tran_low_t *output, int bd);
+void vpx_highbd_idct4_c(const tran_low_t *input, tran_low_t *output, int bd);
+void vpx_highbd_idct8_c(const tran_low_t *input, tran_low_t *output, int bd);
+void vpx_highbd_idct16_c(const tran_low_t *input, tran_low_t *output, int bd);
 void highbd_idct32_c(const tran_low_t *input, tran_low_t *output, int bd);
 
 void highbd_iadst4_c(const tran_low_t *input, tran_low_t *output, int bd);

@@ -3881,11 +3881,11 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   else
     x->fwd_txm4x4 = xd->lossless ? vp9_fwht4x4 : vpx_fdct4x4;
   x->highbd_itxm_add = xd->lossless ? vp9_highbd_iwht4x4_add :
-                                      vp9_highbd_idct4x4_add;
+                                      vpx_highbd_idct4x4_add;
 #else
   x->fwd_txm4x4 = xd->lossless ? vp9_fwht4x4 : vpx_fdct4x4;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-  x->itxm_add = xd->lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
+  x->itxm_add = xd->lossless ? vpx_iwht4x4_add : vp9_idct4x4_add;
 
   if (xd->lossless)
     x->optimize = 0;
