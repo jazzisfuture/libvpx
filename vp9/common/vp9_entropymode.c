@@ -313,6 +313,18 @@ static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
 };
 
 #if CONFIG_NEW_INTER
+#if CONFIG_NEW_WEDGE
+static const vp9_prob default_inter_compound_mode_probs
+                      [INTER_MODE_CONTEXTS][INTER_COMPOUND_MODES - 1] = {
+  {240,  2, 173,  68, 192, 192, 128, 180, 180},   // 0 = both zero mv
+  {245,  7, 145, 160, 192, 192, 128, 180, 180},   // 1 = 1 zero + 1 predicted
+  {244,  7, 166, 126, 192, 192, 128, 180, 180},   // 2 = two predicted mvs
+  {236,  7,  94, 132, 192, 192, 128, 180, 180},   // 3 = 1 pred/zero, 1 new
+  {219,  8,  64,  64, 192, 192, 128, 180, 180},   // 4 = two new mvs
+  {220, 17,  81,  52, 192, 192, 128, 180, 180},   // 5 = one intra neighbour
+  {210, 25,  29,  50, 192, 192, 128, 180, 180},   // 6 = two intra neighbours
+};
+#else
 static const vp9_prob default_inter_compound_mode_probs
                       [INTER_MODE_CONTEXTS][INTER_COMPOUND_MODES - 1] = {
   { 2, 173,  68, 192, 192, 128, 180, 180},   // 0 = both zero mv
@@ -323,6 +335,7 @@ static const vp9_prob default_inter_compound_mode_probs
   {17,  81,  52, 192, 192, 128, 180, 180},   // 5 = one intra neighbour
   {25,  29,  50, 192, 192, 128, 180, 180},   // 6 = two intra neighbours
 };
+#endif  // CONFIG_NEW_WEDGE
 #endif  // CONFIG_NEW_INTER
 
 /* Array indices are identical to previously-existing INTRAMODECONTEXTNODES. */
@@ -350,6 +363,21 @@ const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
 };
 
 #if CONFIG_NEW_INTER
+#if CONFIG_NEW_WEDGE
+const vp9_tree_index vp9_inter_compound_mode_tree
+    [TREE_SIZE(INTER_COMPOUND_MODES)] = {
+  2, -INTER_COMPOUND_OFFSET(NEW_NEW2MV),
+  -INTER_COMPOUND_OFFSET(ZERO_ZEROMV), 4,
+  -INTER_COMPOUND_OFFSET(NEAREST_NEARESTMV), 6,
+  8, -INTER_COMPOUND_OFFSET(NEW_NEWMV),
+  10, 12,
+  -INTER_COMPOUND_OFFSET(NEAREST_NEARMV),
+      -INTER_COMPOUND_OFFSET(NEAR_NEARESTMV),
+  14, 16,
+  -INTER_COMPOUND_OFFSET(NEAREST_NEWMV), -INTER_COMPOUND_OFFSET(NEW_NEARESTMV),
+  -INTER_COMPOUND_OFFSET(NEAR_NEWMV), -INTER_COMPOUND_OFFSET(NEW_NEARMV),
+};
+#else
 const vp9_tree_index vp9_inter_compound_mode_tree
     [TREE_SIZE(INTER_COMPOUND_MODES)] = {
   -INTER_COMPOUND_OFFSET(ZERO_ZEROMV), 2,
@@ -362,6 +390,7 @@ const vp9_tree_index vp9_inter_compound_mode_tree
   -INTER_COMPOUND_OFFSET(NEAREST_NEWMV), -INTER_COMPOUND_OFFSET(NEW_NEARESTMV),
   -INTER_COMPOUND_OFFSET(NEAR_NEWMV), -INTER_COMPOUND_OFFSET(NEW_NEARMV),
 };
+#endif  // CONFIG_NEW_WEDGE
 #endif  // CONFIG_NEW_INTER
 
 const vp9_tree_index vp9_partition_tree[TREE_SIZE(PARTITION_TYPES)] = {
@@ -397,6 +426,12 @@ static const vp9_prob default_comp_inter_p[COMP_INTER_CONTEXTS] = {
 static const vp9_prob default_comp_ref_p[REF_CONTEXTS] = {
   50, 126, 123, 221, 226
 };
+
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+static const vp9_prob default_comp_same_ref_p[REF_CONTEXTS] = {
+  50, 90, 140, 200, 230
+};
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
 
 static const vp9_prob default_single_ref_p[REF_CONTEXTS][2] = {
   {  33,  16 },
@@ -924,6 +959,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   vp9_copy(fc->intra_inter_prob, default_intra_inter_p);
   vp9_copy(fc->comp_inter_prob, default_comp_inter_p);
   vp9_copy(fc->comp_ref_prob, default_comp_ref_p);
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+  vp9_copy(fc->comp_same_ref_prob, default_comp_same_ref_p);
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
   vp9_copy(fc->single_ref_prob, default_single_ref_p);
   fc->tx_probs = default_tx_probs;
   vp9_copy(fc->skip_probs, default_skip_probs);
@@ -1003,6 +1041,12 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   for (i = 0; i < REF_CONTEXTS; i++)
     fc->comp_ref_prob[i] = adapt_prob(pre_fc->comp_ref_prob[i],
                                       counts->comp_ref[i]);
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+  for (i = 0; i < REF_CONTEXTS; i++)
+    fc->comp_same_ref_prob[i] = adapt_prob(pre_fc->comp_same_ref_prob[i],
+                                           counts->comp_same_ref[i]);
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+
   for (i = 0; i < REF_CONTEXTS; i++)
     for (j = 0; j < 2; j++)
       fc->single_ref_prob[i][j] = adapt_prob(pre_fc->single_ref_prob[i][j],

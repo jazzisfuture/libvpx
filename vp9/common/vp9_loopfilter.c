@@ -225,6 +225,9 @@ static const int mode_lf_lut[MB_MODE_COUNT] = {
 #if CONFIG_NEW_INTER
   1,                             // NEW2MV mode
   1, 1, 1, 1, 1, 1, 1, 0, 1      // INTER_COMPOUND_MODES (ZERO_ZEROMV == 0)
+#if CONFIG_NEW_WEDGE
+  , 1
+#endif  // CONFIG_NEW_WEDGE
 #endif  // CONFIG_NEW_INTER
 };
 
