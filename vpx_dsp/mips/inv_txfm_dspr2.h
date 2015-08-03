@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_COMMON_MIPS_DSPR2_VP9_COMMON_DSPR2_H_
-#define VP9_COMMON_MIPS_DSPR2_VP9_COMMON_DSPR2_H_
+#ifndef VPX_DSP_MIPS_INV_TXFM_DSPR2_H_
+#define VPX_DSP_MIPS_INV_TXFM_DSPR2_H_
 
 #include <assert.h>
 
@@ -56,4 +56,4 @@ void vp9_idct32_cols_add_blk_dspr2(int16_t *input, uint8_t *dest,
 }  // extern "C"
 #endif
 
-#endif  // VP9_COMMON_MIPS_DSPR2_VP9_COMMON_DSPR2_H_
+#endif  // VPX_DSP_MIPS_INV_TXFM_DSPR2_H_
