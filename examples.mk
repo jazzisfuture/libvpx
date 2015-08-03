@@ -325,7 +325,7 @@ endif
 define vcproj_template
 $(1): $($(1:.$(VCPROJ_SFX)=).SRCS) vpx.$(VCPROJ_SFX)
 	@echo "    [vcproj] $$@"
-	$$(GEN_VCPROJ)\
+	$$(qexec)$$(GEN_VCPROJ)\
             --exe\
             --target=$$(TOOLCHAIN)\
             --name=$$(@:.$(VCPROJ_SFX)=)\
