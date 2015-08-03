@@ -1505,6 +1505,10 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
                             [has_second_ref(mbmi)]++;
 
         if (has_second_ref(mbmi)) {
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+          counts->comp_same_ref[vp9_get_pred_context_comp_same_ref_p(xd)]
+                               [ref0 == mbmi->ref_frame[1]]++;
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
           counts->comp_ref[vp9_get_pred_context_comp_ref_p(cm, xd)]
                           [ref0 == GOLDEN_FRAME]++;
         } else {

@@ -700,12 +700,31 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     // FIXME(rbultje) I'm pretty sure this breaks segmentation ref frame coding
     if (mode == COMPOUND_REFERENCE) {
       const int idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
+
+#if CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
+      const int ctx0 = vp9_get_pred_context_comp_same_ref_p(xd);
+      const int bit0 = vp9_read(r, fc->comp_same_ref_prob[ctx0]);
+
+      const int ctx1 = vp9_get_pred_context_comp_ref_p(cm, xd);
+      const int bit1 = vp9_read(r, fc->comp_ref_prob[ctx1]);
+
+      if (!cm->frame_parallel_decoding_mode) {
+        ++counts->comp_ref[ctx0][bit0];
+        ++counts->comp_ref[ctx1][bit1];
+      }
+
+      ref_frame[idx] = bit0 ? cm->comp_var_ref[bit1] : cm->comp_fixed_ref;
+      ref_frame[!idx] = cm->comp_var_ref[bit1];
+#else
       const int ctx = vp9_get_pred_context_comp_ref_p(cm, xd);
       const int bit = vp9_read(r, fc->comp_ref_prob[ctx]);
+
       if (!cm->frame_parallel_decoding_mode)
         ++counts->comp_ref[ctx][bit];
+
       ref_frame[idx] = cm->comp_fixed_ref;
       ref_frame[!idx] = cm->comp_var_ref[bit];
+#endif  // CONFIG_NEW_WEDGE && CONFIG_NEW_INTER
     } else if (mode == SINGLE_REFERENCE) {
       const int ctx0 = vp9_get_pred_context_single_ref_p1(xd);
       const int bit0 = vp9_read(r, fc->single_ref_prob[ctx0][0]);
