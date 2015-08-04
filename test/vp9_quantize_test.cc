@@ -331,21 +331,21 @@ using std::tr1::make_tuple;
 INSTANTIATE_TEST_CASE_P(
     SSE2, VP9QuantizeTest,
     ::testing::Values(
-        make_tuple(&vp9_highbd_quantize_b_sse2,
-                   &vp9_highbd_quantize_b_c, VPX_BITS_8),
-        make_tuple(&vp9_highbd_quantize_b_sse2,
-                   &vp9_highbd_quantize_b_c, VPX_BITS_10),
-        make_tuple(&vp9_highbd_quantize_b_sse2,
-                   &vp9_highbd_quantize_b_c, VPX_BITS_12)));
+        make_tuple(&vpx_highbd_quantize_b_sse2,
+                   &vpx_highbd_quantize_b_c, VPX_BITS_8),
+        make_tuple(&vpx_highbd_quantize_b_sse2,
+                   &vpx_highbd_quantize_b_c, VPX_BITS_10),
+        make_tuple(&vpx_highbd_quantize_b_sse2,
+                   &vpx_highbd_quantize_b_c, VPX_BITS_12)));
 INSTANTIATE_TEST_CASE_P(
     SSE2, VP9Quantize32Test,
     ::testing::Values(
-        make_tuple(&vp9_highbd_quantize_b_32x32_sse2,
-                   &vp9_highbd_quantize_b_32x32_c, VPX_BITS_8),
-        make_tuple(&vp9_highbd_quantize_b_32x32_sse2,
-                   &vp9_highbd_quantize_b_32x32_c, VPX_BITS_10),
-        make_tuple(&vp9_highbd_quantize_b_32x32_sse2,
-                   &vp9_highbd_quantize_b_32x32_c, VPX_BITS_12)));
+        make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
+                   &vpx_highbd_quantize_b_32x32_c, VPX_BITS_8),
+        make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
+                   &vpx_highbd_quantize_b_32x32_c, VPX_BITS_10),
+        make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
+                   &vpx_highbd_quantize_b_32x32_c, VPX_BITS_12)));
 #endif  // HAVE_SSE2
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace
