@@ -455,11 +455,14 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   cr->percent_refresh = 10;
+  if (cpi->use_svc)
+    cr->percent_refresh = 15;
   cr->max_qdelta_perc = 50;
   cr->time_for_refresh = 0;
   // Use larger delta-qp (increase rate_ratio_qdelta) for first few (~4)
   // periods of the refresh cycle, after a key frame.
-  if (rc->frames_since_key <  4 * cr->percent_refresh)
+  if (rc->frames_since_key <  (4 * cpi->svc.number_temporal_layers) *
+      (100 / cr->percent_refresh))
     cr->rate_ratio_qdelta = 3.0;
   else
     cr->rate_ratio_qdelta = 2.0;
