@@ -400,6 +400,12 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->mv.subpel_force_stop = 2;
     sf->lpf_pick = LPF_PICK_MINIMAL_LPF;
   }
+  if (cpi->svc.number_temporal_layers > 1) {
+    if (cpi->svc.temporal_layer_id == 0) {
+      sf->mv.search_method = NSTEP;
+      sf->mv.fullpel_search_step_param = 6;
+    }
+  }
 }
 
 void vp9_set_speed_features_framesize_dependent(VP9_COMP *cpi) {
