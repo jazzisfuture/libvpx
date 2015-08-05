@@ -256,6 +256,22 @@ static INLINE const uint8_t *pre(const uint8_t *buf, int stride, int r, int c) {
     }                                                   \
   }
 
+// TODO(yunqingwang): SECOND_LEVEL_CHECKS_BEST was a rewrote of
+// SECOND_LEVEL_CHECKS, and SECOND_LEVEL_CHECKS should be rewritten
+// later in the same way.
+#define SECOND_LEVEL_CHECKS_BEST                        \
+  {                                                     \
+    unsigned int second;                                \
+    assert(tr == br || tc == bc);                       \
+    if (tr == br && tc != bc) {                         \
+      kc = bc - tc;                                     \
+    } else if (tr != br && tc == bc) {                  \
+      kr = br - tr;                                     \
+    }                                                   \
+    CHECK_BETTER(second, br + kr, bc);                  \
+    CHECK_BETTER(second, br, bc + kc);                  \
+  }
+
 #define SETUP_SUBPEL_SEARCH                                                \
   const uint8_t *const z = x->plane[0].src.buf;                            \
   const int src_stride = x->plane[0].src.stride;                           \
@@ -636,7 +652,6 @@ int vp9_find_best_sub_pixel_tree(const MACROBLOCK *x,
   const MACROBLOCKD *xd = &x->e_mbd;
   unsigned int besterr = INT_MAX;
   unsigned int sse;
-  unsigned int whichdir = 0;
   int thismse;
   const int y_stride = xd->plane[0].pre[0].stride;
   const int offset = bestmv->row * y_stride + bestmv->col;
@@ -657,6 +672,7 @@ int vp9_find_best_sub_pixel_tree(const MACROBLOCK *x,
   const MV *search_step = search_step_table;
   int idx, best_idx = -1;
   unsigned int cost_array[5];
+  int kr, kc;
 
   if (!(allow_hp && vp9_use_mv_hp(ref_mv)))
     if (round == 3)
@@ -703,8 +719,11 @@ int vp9_find_best_sub_pixel_tree(const MACROBLOCK *x,
     }
 
     // Check diagonal sub-pixel position
-    tc = bc + (cost_array[0] <= cost_array[1] ? -hstep : hstep);
-    tr = br + (cost_array[2] <= cost_array[3] ? -hstep : hstep);
+    kc = (cost_array[0] <= cost_array[1] ? -hstep : hstep);
+    kr = (cost_array[2] <= cost_array[3] ? -hstep : hstep);
+
+    tc = bc + kc;
+    tr = br + kr;
     if (tc >= minc && tc <= maxc && tr >= minr && tr <= maxr) {
       const uint8_t *const pre_address = y + (tr >> 3) * y_stride + (tc >> 3);
       MV this_mv = {tr, tc};
@@ -736,7 +755,7 @@ int vp9_find_best_sub_pixel_tree(const MACROBLOCK *x,
     }
 
     if (iters_per_step > 1 && best_idx != -1)
-      SECOND_LEVEL_CHECKS;
+      SECOND_LEVEL_CHECKS_BEST;
 
     tr = br;
     tc = bc;
