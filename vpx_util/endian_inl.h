@@ -63,6 +63,13 @@
 #define HAVE_BUILTIN_BSWAP16
 #endif
 
+#if HAVE_MIPS32 && defined(__mips__) && !defined(__mips64) && \
+    defined(__mips_isa_rev) && (__mips_isa_rev >= 1) && (__mips_isa_rev < 6)
+#if (__mips_isa_rev >= 2)
+#define VPX_USE_MIPS32_R2
+#endif
+#endif
+
 static INLINE uint16_t BSwap16(uint16_t x) {
 #if defined(HAVE_BUILTIN_BSWAP16)
   return __builtin_bswap16(x);
@@ -75,7 +82,7 @@ static INLINE uint16_t BSwap16(uint16_t x) {
 }
 
 static INLINE uint32_t BSwap32(uint32_t x) {
-#if HAVE_MIPS32
+#if defined(VPX_USE_MIPS32_R2)
   uint32_t ret;
   __asm__ volatile (
     "wsbh   %[ret], %[x]          \n\t"
