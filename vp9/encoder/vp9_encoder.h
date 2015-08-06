@@ -35,7 +35,7 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_rd.h"
 #if CONFIG_INTERNAL_STATS
-#include "vp9/encoder/vp9_ssim.h"
+#include "vpx_dsp/vpx_ssim.h"
 #endif
 #include "vp9/encoder/vp9_speed_features.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
