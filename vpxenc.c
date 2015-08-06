@@ -374,7 +374,7 @@ static const int vp8_arg_ctrl_map[] = {
 };
 #endif
 
-#if CONFIG_VP9_ENCODER
+#if CONFIG_VP9_ENCODER || CONFIG_VP10_ENCODER
 static const arg_def_t cpu_used_vp9 = ARG_DEF(
     NULL, "cpu-used", 1, "CPU Used (-8..8)");
 static const arg_def_t tile_cols = ARG_DEF(
@@ -1071,6 +1071,13 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
 #endif
 #if CONFIG_VP9_ENCODER
   } else if (strcmp(global->codec->name, "vp9") == 0) {
+    ctrl_args = vp9_args;
+    ctrl_args_map = vp9_arg_ctrl_map;
+#endif
+#if CONFIG_VP10_ENCODER
+  } else if (strcmp(global->codec->name, "vp10") == 0) {
+    // TODO(jingning): Reuse VP9 specific encoder configuration parameters.
+    // Consider to expand this set for VP10 encoder control.
     ctrl_args = vp9_args;
     ctrl_args_map = vp9_arg_ctrl_map;
 #endif

@@ -135,6 +135,7 @@ TEST_P(TestVectorTest, MD5Match) {
 
 // Test VP8 decode in serial mode with single thread.
 // NOTE: VP8 only support serial mode.
+#if CONFIG_VP8_DECODER
 VP8_INSTANTIATE_TEST_CASE(
     TestVectorTest,
     ::testing::Combine(
@@ -143,8 +144,10 @@ VP8_INSTANTIATE_TEST_CASE(
         ::testing::ValuesIn(libvpx_test::kVP8TestVectors,
                             libvpx_test::kVP8TestVectors +
                                 libvpx_test::kNumVP8TestVectors)));
+#endif
 
 // Test VP9 decode in serial mode with single thread.
+#if CONFIG_VP9_DECODER
 VP9_INSTANTIATE_TEST_CASE(
     TestVectorTest,
     ::testing::Combine(
@@ -153,7 +156,7 @@ VP9_INSTANTIATE_TEST_CASE(
         ::testing::ValuesIn(libvpx_test::kVP9TestVectors,
                             libvpx_test::kVP9TestVectors +
                                 libvpx_test::kNumVP9TestVectors)));
-
+#endif
 
 #if CONFIG_VP9_DECODER
 // Test VP9 decode in frame parallel mode with different number of threads.
