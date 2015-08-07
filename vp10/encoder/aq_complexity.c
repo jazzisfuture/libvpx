@@ -38,16 +38,16 @@ static const double aq_c_var_thresholds[AQ_C_STRENGTHS][AQ_C_SEGMENTS] =
 
 static int get_aq_c_strength(int q_index, vpx_bit_depth_t bit_depth) {
   // Approximate base quatizer (truncated to int)
-  const int base_quant = vp9_ac_quant(q_index, 0, bit_depth) / 4;
+  const int base_quant = vp10_ac_quant(q_index, 0, bit_depth) / 4;
   return (base_quant > 10) + (base_quant > 25);
 }
 
-void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
+void vp10_setup_in_frame_q_adj(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   struct segmentation *const seg = &cm->seg;
 
   // Make SURE use of floating point in this function is safe.
-  vp9_clear_system_state();
+  vp10_clear_system_state();
 
   if (cm->frame_type == KEY_FRAME ||
       cpi->refresh_alt_ref_frame ||
@@ -58,22 +58,22 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
     // Clear down the segment map.
     memset(cpi->segmentation_map, DEFAULT_AQ2_SEG, cm->mi_rows * cm->mi_cols);
 
-    vp9_clearall_segfeatures(seg);
+    vp10_clearall_segfeatures(seg);
 
     // Segmentation only makes sense if the target bits per SB is above a
     // threshold. Below this the overheads will usually outweigh any benefit.
     if (cpi->rc.sb64_target_rate < 256) {
-      vp9_disable_segmentation(seg);
+      vp10_disable_segmentation(seg);
       return;
     }
 
-    vp9_enable_segmentation(seg);
+    vp10_enable_segmentation(seg);
 
     // Select delta coding method.
     seg->abs_delta = SEGMENT_DELTADATA;
 
     // Default segment "Q" feature is disabled so it defaults to the baseline Q.
-    vp9_disable_segfeature(seg, DEFAULT_AQ2_SEG, SEG_LVL_ALT_Q);
+    vp10_disable_segfeature(seg, DEFAULT_AQ2_SEG, SEG_LVL_ALT_Q);
 
     // Use some of the segments for in frame Q adjustment.
     for (segment = 0; segment < AQ_C_SEGMENTS; ++segment) {
@@ -83,7 +83,7 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
         continue;
 
       qindex_delta =
-        vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, cm->base_qindex,
+        vp10_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, cm->base_qindex,
                                    aq_c_q_adj_factor[aq_strength][segment],
                                    cm->bit_depth);
 
@@ -96,8 +96,8 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
         qindex_delta = -cm->base_qindex + 1;
       }
       if ((cm->base_qindex + qindex_delta) > 0) {
-        vp9_enable_segfeature(seg, segment, SEG_LVL_ALT_Q);
-        vp9_set_segdata(seg, segment, SEG_LVL_ALT_Q, qindex_delta);
+        vp10_enable_segfeature(seg, segment, SEG_LVL_ALT_Q);
+        vp10_set_segdata(seg, segment, SEG_LVL_ALT_Q, qindex_delta);
       }
     }
   }
@@ -109,7 +109,7 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
 // Select a segment for the current block.
 // The choice of segment for a block depends on the ratio of the projected
 // bits for the block vs a target average and its spatial complexity.
-void vp9_caq_select_segment(VP9_COMP *cpi, MACROBLOCK *mb, BLOCK_SIZE bs,
+void vp10_caq_select_segment(VP9_COMP *cpi, MACROBLOCK *mb, BLOCK_SIZE bs,
                             int mi_row, int mi_col, int projected_rate) {
   VP9_COMMON *const cm = &cpi->common;
 
@@ -133,13 +133,13 @@ void vp9_caq_select_segment(VP9_COMP *cpi, MACROBLOCK *mb, BLOCK_SIZE bs,
     double low_var_thresh;
     const int aq_strength = get_aq_c_strength(cm->base_qindex, cm->bit_depth);
 
-    vp9_clear_system_state();
+    vp10_clear_system_state();
     low_var_thresh = (cpi->oxcf.pass == 2)
       ? MAX(cpi->twopass.mb_av_energy, MIN_DEFAULT_LV_THRESH)
       : DEFAULT_LV_THRESH;
 
-    vp9_setup_src_planes(mb, cpi->Source, mi_row, mi_col);
-    logvar = vp9_log_block_var(cpi, mb, bs);
+    vp10_setup_src_planes(mb, cpi->Source, mi_row, mi_col);
+    logvar = vp10_log_block_var(cpi, mb, bs);
 
     segment = AQ_C_SEGMENTS - 1;    // Just in case no break out below.
     for (i = 0; i < AQ_C_SEGMENTS; ++i) {

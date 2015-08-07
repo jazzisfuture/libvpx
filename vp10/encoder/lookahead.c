@@ -32,7 +32,7 @@ static struct lookahead_entry *pop(struct lookahead_ctx *ctx,
 }
 
 
-void vp9_lookahead_destroy(struct lookahead_ctx *ctx) {
+void vp10_lookahead_destroy(struct lookahead_ctx *ctx) {
   if (ctx) {
     if (ctx->buf) {
       unsigned int i;
@@ -46,7 +46,7 @@ void vp9_lookahead_destroy(struct lookahead_ctx *ctx) {
 }
 
 
-struct lookahead_ctx *vp9_lookahead_init(unsigned int width,
+struct lookahead_ctx *vp10_lookahead_init(unsigned int width,
                                          unsigned int height,
                                          unsigned int subsampling_x,
                                          unsigned int subsampling_y,
@@ -83,13 +83,13 @@ struct lookahead_ctx *vp9_lookahead_init(unsigned int width,
   }
   return ctx;
  bail:
-  vp9_lookahead_destroy(ctx);
+  vp10_lookahead_destroy(ctx);
   return NULL;
 }
 
 #define USE_PARTIAL_COPY 0
 
-int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
+int vp10_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
                        int64_t ts_start, int64_t ts_end,
 #if CONFIG_VP9_HIGHBITDEPTH
                        int use_highbitdepth,
@@ -126,7 +126,7 @@ int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
 
 #if USE_PARTIAL_COPY
   // TODO(jkoleszar): This is disabled for now, as
-  // vp9_copy_and_extend_frame_with_rect is not subsampling/alpha aware.
+  // vp10_copy_and_extend_frame_with_rect is not subsampling/alpha aware.
 
   // Only do this partial copy if the following conditions are all met:
   // 1. Lookahead queue has has size of 1.
@@ -156,7 +156,7 @@ int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
         }
 
         // Only copy this active region.
-        vp9_copy_and_extend_frame_with_rect(src, &buf->img,
+        vp10_copy_and_extend_frame_with_rect(src, &buf->img,
                                             row << 4,
                                             col << 4, 16,
                                             (active_end - col) << 4);
@@ -191,7 +191,7 @@ int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
       buf->img.subsampling_y = src->subsampling_y;
     }
     // Partial copy not implemented yet
-    vp9_copy_and_extend_frame(src, &buf->img);
+    vp10_copy_and_extend_frame(src, &buf->img);
 #if USE_PARTIAL_COPY
   }
 #endif
@@ -203,7 +203,7 @@ int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
 }
 
 
-struct lookahead_entry *vp9_lookahead_pop(struct lookahead_ctx *ctx,
+struct lookahead_entry *vp10_lookahead_pop(struct lookahead_ctx *ctx,
                                           int drain) {
   struct lookahead_entry *buf = NULL;
 
@@ -215,7 +215,7 @@ struct lookahead_entry *vp9_lookahead_pop(struct lookahead_ctx *ctx,
 }
 
 
-struct lookahead_entry *vp9_lookahead_peek(struct lookahead_ctx *ctx,
+struct lookahead_entry *vp10_lookahead_peek(struct lookahead_ctx *ctx,
                                            int index) {
   struct lookahead_entry *buf = NULL;
 
@@ -240,6 +240,6 @@ struct lookahead_entry *vp9_lookahead_peek(struct lookahead_ctx *ctx,
   return buf;
 }
 
-unsigned int vp9_lookahead_depth(struct lookahead_ctx *ctx) {
+unsigned int vp10_lookahead_depth(struct lookahead_ctx *ctx) {
   return ctx->sz;
 }

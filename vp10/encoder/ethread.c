@@ -45,7 +45,7 @@ static int enc_worker_hook(EncWorkerData *const thread_data, void *unused) {
     int tile_row = t / tile_cols;
     int tile_col = t % tile_cols;
 
-    vp9_encode_tile(cpi, thread_data->td, tile_row, tile_col);
+    vp10_encode_tile(cpi, thread_data->td, tile_row, tile_col);
   }
 
   return 0;
@@ -57,20 +57,20 @@ static int get_max_tile_cols(VP9_COMP *cpi) {
   int min_log2_tile_cols, max_log2_tile_cols;
   int log2_tile_cols;
 
-  vp9_get_tile_n_bits(mi_cols, &min_log2_tile_cols, &max_log2_tile_cols);
+  vp10_get_tile_n_bits(mi_cols, &min_log2_tile_cols, &max_log2_tile_cols);
   log2_tile_cols = clamp(cpi->oxcf.tile_columns,
                    min_log2_tile_cols, max_log2_tile_cols);
   return (1 << log2_tile_cols);
 }
 
-void vp9_encode_tiles_mt(VP9_COMP *cpi) {
+void vp10_encode_tiles_mt(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   const int tile_cols = 1 << cm->log2_tile_cols;
   const VPxWorkerInterface *const winterface = vpx_get_worker_interface();
   const int num_workers = MIN(cpi->oxcf.max_threads, tile_cols);
   int i;
 
-  vp9_init_tile_data(cpi);
+  vp10_init_tile_data(cpi);
 
   // Only run once to create threads and allocate thread data.
   if (cpi->num_workers == 0) {
@@ -103,12 +103,12 @@ void vp9_encode_tiles_mt(VP9_COMP *cpi) {
         // Allocate thread data.
         CHECK_MEM_ERROR(cm, thread_data->td,
                         vpx_memalign(32, sizeof(*thread_data->td)));
-        vp9_zero(*thread_data->td);
+        vp10_zero(*thread_data->td);
 
         // Set up pc_tree.
         thread_data->td->leaf_tree = NULL;
         thread_data->td->pc_tree = NULL;
-        vp9_setup_pc_tree(cm, thread_data->td);
+        vp10_setup_pc_tree(cm, thread_data->td);
 
         // Allocate frame counters in thread data.
         CHECK_MEM_ERROR(cm, thread_data->td->counts,
@@ -191,7 +191,7 @@ void vp9_encode_tiles_mt(VP9_COMP *cpi) {
 
     // Accumulate counters.
     if (i < cpi->num_workers - 1) {
-      vp9_accumulate_frame_counts(cm, thread_data->td->counts, 0);
+      vp10_accumulate_frame_counts(cm, thread_data->td->counts, 0);
       accumulate_rd_opt(&cpi->td, thread_data->td);
     }
   }

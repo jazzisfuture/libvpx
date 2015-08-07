@@ -15,9 +15,9 @@
 extern "C" {
 #endif
 
-void vp9_blit_text(const char *msg, unsigned char *address, int pitch);
+void vp10_blit_text(const char *msg, unsigned char *address, int pitch);
 
-void vp9_blit_line(int x0, int x1, int y0, int y1, unsigned char *image,
+void vp10_blit_line(int x0, int x1, int y0, int y1, unsigned char *image,
                    int pitch);
 
 #ifdef __cplusplus

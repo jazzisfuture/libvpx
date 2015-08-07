@@ -33,17 +33,17 @@ static const int segment_id[ENERGY_SPAN] = {0, 1, 1, 2, 3, 4};
 
 #define SEGMENT_ID(i) segment_id[(i) - ENERGY_MIN]
 
-DECLARE_ALIGNED(16, static const uint8_t, vp9_64_zeros[64]) = {0};
+DECLARE_ALIGNED(16, static const uint8_t, vp10_64_zeros[64]) = {0};
 #if CONFIG_VP9_HIGHBITDEPTH
-DECLARE_ALIGNED(16, static const uint16_t, vp9_highbd_64_zeros[64]) = {0};
+DECLARE_ALIGNED(16, static const uint16_t, vp10_highbd_64_zeros[64]) = {0};
 #endif
 
-unsigned int vp9_vaq_segment_id(int energy) {
+unsigned int vp10_vaq_segment_id(int energy) {
   ENERGY_IN_BOUNDS(energy);
   return SEGMENT_ID(energy);
 }
 
-void vp9_vaq_frame_setup(VP9_COMP *cpi) {
+void vp10_vaq_frame_setup(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   struct segmentation *seg = &cm->seg;
   int i;
@@ -51,16 +51,16 @@ void vp9_vaq_frame_setup(VP9_COMP *cpi) {
   if (cm->frame_type == KEY_FRAME ||
       cpi->refresh_alt_ref_frame ||
       (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
-    vp9_enable_segmentation(seg);
-    vp9_clearall_segfeatures(seg);
+    vp10_enable_segmentation(seg);
+    vp10_clearall_segfeatures(seg);
 
     seg->abs_delta = SEGMENT_DELTADATA;
 
-    vp9_clear_system_state();
+    vp10_clear_system_state();
 
     for (i = 0; i < MAX_SEGMENTS; ++i) {
       int qindex_delta =
-          vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, cm->base_qindex,
+          vp10_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, cm->base_qindex,
                                      rate_ratio[i], cm->bit_depth);
 
       // We don't allow qindex 0 in a segment if the base value is not 0.
@@ -76,8 +76,8 @@ void vp9_vaq_frame_setup(VP9_COMP *cpi) {
         continue;
       }
 
-      vp9_set_segdata(seg, i, SEG_LVL_ALT_Q, qindex_delta);
-      vp9_enable_segfeature(seg, i, SEG_LVL_ALT_Q);
+      vp10_set_segdata(seg, i, SEG_LVL_ALT_Q, qindex_delta);
+      vp10_enable_segfeature(seg, i, SEG_LVL_ALT_Q);
     }
   }
 }
@@ -154,17 +154,17 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       aq_highbd_8_variance(x->plane[0].src.buf, x->plane[0].src.stride,
-                           CONVERT_TO_BYTEPTR(vp9_highbd_64_zeros), 0, bw, bh,
+                           CONVERT_TO_BYTEPTR(vp10_highbd_64_zeros), 0, bw, bh,
                            &sse, &avg);
       sse >>= 2 * (xd->bd - 8);
       avg >>= (xd->bd - 8);
     } else {
       aq_variance(x->plane[0].src.buf, x->plane[0].src.stride,
-                  vp9_64_zeros, 0, bw, bh, &sse, &avg);
+                  vp10_64_zeros, 0, bw, bh, &sse, &avg);
     }
 #else
     aq_variance(x->plane[0].src.buf, x->plane[0].src.stride,
-                vp9_64_zeros, 0, bw, bh, &sse, &avg);
+                vp10_64_zeros, 0, bw, bh, &sse, &avg);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     var = sse - (((int64_t)avg * avg) / (bw * bh));
     return (256 * var) / (bw * bh);
@@ -173,35 +173,35 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
                                x->plane[0].src.stride,
-                               CONVERT_TO_BYTEPTR(vp9_highbd_64_zeros),
+                               CONVERT_TO_BYTEPTR(vp10_highbd_64_zeros),
                                0, &sse);
     } else {
       var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
                                x->plane[0].src.stride,
-                               vp9_64_zeros, 0, &sse);
+                               vp10_64_zeros, 0, &sse);
     }
 #else
     var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
                              x->plane[0].src.stride,
-                             vp9_64_zeros, 0, &sse);
+                             vp10_64_zeros, 0, &sse);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     return (256 * var) >> num_pels_log2_lookup[bs];
   }
 }
 
-double vp9_log_block_var(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
+double vp10_log_block_var(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
   unsigned int var = block_variance(cpi, x, bs);
-  vp9_clear_system_state();
+  vp10_clear_system_state();
   return log(var + 1.0);
 }
 
 #define DEFAULT_E_MIDPOINT 10.0
-int vp9_block_energy(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
+int vp10_block_energy(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
   double energy;
   double energy_midpoint;
-  vp9_clear_system_state();
+  vp10_clear_system_state();
   energy_midpoint =
     (cpi->oxcf.pass == 2) ? cpi->twopass.mb_av_energy : DEFAULT_E_MIDPOINT;
-  energy = vp9_log_block_var(cpi, x, bs) - energy_midpoint;
+  energy = vp10_log_block_var(cpi, x, bs) - energy_midpoint;
   return clamp((int)round(energy), ENERGY_MIN, ENERGY_MAX);
 }

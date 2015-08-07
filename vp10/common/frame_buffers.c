@@ -13,9 +13,9 @@
 #include "vp10/common/frame_buffers.h"
 #include "vpx_mem/vpx_mem.h"
 
-int vp9_alloc_internal_frame_buffers(InternalFrameBufferList *list) {
+int vp10_alloc_internal_frame_buffers(InternalFrameBufferList *list) {
   assert(list != NULL);
-  vp9_free_internal_frame_buffers(list);
+  vp10_free_internal_frame_buffers(list);
 
   list->num_internal_frame_buffers =
       VP9_MAXIMUM_REF_BUFFERS + VPX_MAXIMUM_WORK_BUFFERS;
@@ -25,7 +25,7 @@ int vp9_alloc_internal_frame_buffers(InternalFrameBufferList *list) {
   return (list->int_fb == NULL);
 }
 
-void vp9_free_internal_frame_buffers(InternalFrameBufferList *list) {
+void vp10_free_internal_frame_buffers(InternalFrameBufferList *list) {
   int i;
 
   assert(list != NULL);
@@ -38,7 +38,7 @@ void vp9_free_internal_frame_buffers(InternalFrameBufferList *list) {
   list->int_fb = NULL;
 }
 
-int vp9_get_frame_buffer(void *cb_priv, size_t min_size,
+int vp10_get_frame_buffer(void *cb_priv, size_t min_size,
                          vpx_codec_frame_buffer_t *fb) {
   int i;
   InternalFrameBufferList *const int_fb_list =
@@ -77,7 +77,7 @@ int vp9_get_frame_buffer(void *cb_priv, size_t min_size,
   return 0;
 }
 
-int vp9_release_frame_buffer(void *cb_priv, vpx_codec_frame_buffer_t *fb) {
+int vp10_release_frame_buffer(void *cb_priv, vpx_codec_frame_buffer_t *fb) {
   InternalFrameBuffer *const int_fb = (InternalFrameBuffer *)fb->priv;
   (void)cb_priv;
   if (int_fb)

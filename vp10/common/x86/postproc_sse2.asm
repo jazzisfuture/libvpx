@@ -11,7 +11,7 @@
 
 %include "vpx_ports/x86_abi_support.asm"
 
-;void vp9_post_proc_down_and_across_xmm
+;void vp10_post_proc_down_and_across_xmm
 ;(
 ;    unsigned char *src_ptr,
 ;    unsigned char *dst_ptr,
@@ -21,8 +21,8 @@
 ;    int cols,
 ;    int flimit
 ;)
-global sym(vp9_post_proc_down_and_across_xmm) PRIVATE
-sym(vp9_post_proc_down_and_across_xmm):
+global sym(vp10_post_proc_down_and_across_xmm) PRIVATE
+sym(vp10_post_proc_down_and_across_xmm):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 7
@@ -248,11 +248,11 @@ sym(vp9_post_proc_down_and_across_xmm):
 %undef RD42
 
 
-;void vp9_mbpost_proc_down_xmm(unsigned char *dst,
+;void vp10_mbpost_proc_down_xmm(unsigned char *dst,
 ;                            int pitch, int rows, int cols,int flimit)
-extern sym(vp9_rv)
-global sym(vp9_mbpost_proc_down_xmm) PRIVATE
-sym(vp9_mbpost_proc_down_xmm):
+extern sym(vp10_rv)
+global sym(vp10_mbpost_proc_down_xmm) PRIVATE
+sym(vp10_mbpost_proc_down_xmm):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 5
@@ -275,7 +275,7 @@ sym(vp9_mbpost_proc_down_xmm):
 %define flimit4 [rsp+128]
 
 %if ABI_IS_32BIT=0
-    lea         r8,       [GLOBAL(sym(vp9_rv))]
+    lea         r8,       [GLOBAL(sym(vp10_rv))]
 %endif
 
     ;rows +=8;
@@ -393,13 +393,13 @@ sym(vp9_mbpost_proc_down_xmm):
             and         rcx,        127
 %if ABI_IS_32BIT=1 && CONFIG_PIC=1
             push        rax
-            lea         rax,        [GLOBAL(sym(vp9_rv))]
-            movdqu      xmm4,       [rax + rcx*2] ;vp9_rv[rcx*2]
+            lea         rax,        [GLOBAL(sym(vp10_rv))]
+            movdqu      xmm4,       [rax + rcx*2] ;vp10_rv[rcx*2]
             pop         rax
 %elif ABI_IS_32BIT=0
-            movdqu      xmm4,       [r8 + rcx*2] ;vp9_rv[rcx*2]
+            movdqu      xmm4,       [r8 + rcx*2] ;vp10_rv[rcx*2]
 %else
-            movdqu      xmm4,       [sym(vp9_rv) + rcx*2]
+            movdqu      xmm4,       [sym(vp10_rv) + rcx*2]
 %endif
 
             paddw       xmm1,       xmm4
@@ -449,10 +449,10 @@ sym(vp9_mbpost_proc_down_xmm):
 %undef flimit4
 
 
-;void vp9_mbpost_proc_across_ip_xmm(unsigned char *src,
+;void vp10_mbpost_proc_across_ip_xmm(unsigned char *src,
 ;                                int pitch, int rows, int cols,int flimit)
-global sym(vp9_mbpost_proc_across_ip_xmm) PRIVATE
-sym(vp9_mbpost_proc_across_ip_xmm):
+global sym(vp10_mbpost_proc_across_ip_xmm) PRIVATE
+sym(vp10_mbpost_proc_across_ip_xmm):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 5
@@ -624,13 +624,13 @@ sym(vp9_mbpost_proc_across_ip_xmm):
 %undef flimit4
 
 
-;void vp9_plane_add_noise_wmt (unsigned char *start, unsigned char *noise,
+;void vp10_plane_add_noise_wmt (unsigned char *start, unsigned char *noise,
 ;                            unsigned char blackclamp[16],
 ;                            unsigned char whiteclamp[16],
 ;                            unsigned char bothclamp[16],
 ;                            unsigned int width, unsigned int height, int pitch)
-global sym(vp9_plane_add_noise_wmt) PRIVATE
-sym(vp9_plane_add_noise_wmt):
+global sym(vp10_plane_add_noise_wmt) PRIVATE
+sym(vp10_plane_add_noise_wmt):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 8

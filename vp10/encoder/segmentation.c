@@ -19,31 +19,31 @@
 #include "vp10/encoder/cost.h"
 #include "vp10/encoder/segmentation.h"
 
-void vp9_enable_segmentation(struct segmentation *seg) {
+void vp10_enable_segmentation(struct segmentation *seg) {
   seg->enabled = 1;
   seg->update_map = 1;
   seg->update_data = 1;
 }
 
-void vp9_disable_segmentation(struct segmentation *seg) {
+void vp10_disable_segmentation(struct segmentation *seg) {
   seg->enabled = 0;
   seg->update_map = 0;
   seg->update_data = 0;
 }
 
-void vp9_set_segment_data(struct segmentation *seg,
+void vp10_set_segment_data(struct segmentation *seg,
                           signed char *feature_data,
                           unsigned char abs_delta) {
   seg->abs_delta = abs_delta;
 
   memcpy(seg->feature_data, feature_data, sizeof(seg->feature_data));
 }
-void vp9_disable_segfeature(struct segmentation *seg, int segment_id,
+void vp10_disable_segfeature(struct segmentation *seg, int segment_id,
                             SEG_LVL_FEATURES feature_id) {
   seg->feature_mask[segment_id] &= ~(1 << feature_id);
 }
 
-void vp9_clear_segdata(struct segmentation *seg, int segment_id,
+void vp10_clear_segdata(struct segmentation *seg, int segment_id,
                        SEG_LVL_FEATURES feature_id) {
   seg->feature_data[segment_id][feature_id] = 0;
 }
@@ -75,32 +75,32 @@ static int cost_segmap(int *segcounts, vpx_prob *probs) {
   const int c4567 = c45 + c67;
 
   // Cost the top node of the tree
-  int cost = c0123 * vp9_cost_zero(probs[0]) +
-             c4567 * vp9_cost_one(probs[0]);
+  int cost = c0123 * vp10_cost_zero(probs[0]) +
+             c4567 * vp10_cost_one(probs[0]);
 
   // Cost subsequent levels
   if (c0123 > 0) {
-    cost += c01 * vp9_cost_zero(probs[1]) +
-            c23 * vp9_cost_one(probs[1]);
+    cost += c01 * vp10_cost_zero(probs[1]) +
+            c23 * vp10_cost_one(probs[1]);
 
     if (c01 > 0)
-      cost += segcounts[0] * vp9_cost_zero(probs[3]) +
-              segcounts[1] * vp9_cost_one(probs[3]);
+      cost += segcounts[0] * vp10_cost_zero(probs[3]) +
+              segcounts[1] * vp10_cost_one(probs[3]);
     if (c23 > 0)
-      cost += segcounts[2] * vp9_cost_zero(probs[4]) +
-              segcounts[3] * vp9_cost_one(probs[4]);
+      cost += segcounts[2] * vp10_cost_zero(probs[4]) +
+              segcounts[3] * vp10_cost_one(probs[4]);
   }
 
   if (c4567 > 0) {
-    cost += c45 * vp9_cost_zero(probs[2]) +
-            c67 * vp9_cost_one(probs[2]);
+    cost += c45 * vp10_cost_zero(probs[2]) +
+            c67 * vp10_cost_one(probs[2]);
 
     if (c45 > 0)
-      cost += segcounts[4] * vp9_cost_zero(probs[5]) +
-              segcounts[5] * vp9_cost_one(probs[5]);
+      cost += segcounts[4] * vp10_cost_zero(probs[5]) +
+              segcounts[5] * vp10_cost_one(probs[5]);
     if (c67 > 0)
-      cost += segcounts[6] * vp9_cost_zero(probs[6]) +
-              segcounts[7] * vp9_cost_one(probs[6]);
+      cost += segcounts[6] * vp10_cost_zero(probs[6]) +
+              segcounts[7] * vp10_cost_one(probs[6]);
   }
 
   return cost;
@@ -132,7 +132,7 @@ static void count_segs(const VP9_COMMON *cm, MACROBLOCKD *xd,
     const int pred_segment_id = get_segment_id(cm, cm->last_frame_seg_map,
                                                bsize, mi_row, mi_col);
     const int pred_flag = pred_segment_id == segment_id;
-    const int pred_context = vp9_get_pred_context_seg_id(xd);
+    const int pred_context = vp10_get_pred_context_seg_id(xd);
 
     // Store the prediction status for this mb and update counts
     // as appropriate
@@ -195,7 +195,7 @@ static void count_segs_sb(const VP9_COMMON *cm, MACROBLOCKD *xd,
   }
 }
 
-void vp9_choose_segmap_coding_method(VP9_COMMON *cm, MACROBLOCKD *xd) {
+void vp10_choose_segmap_coding_method(VP9_COMMON *cm, MACROBLOCKD *xd) {
   struct segmentation *seg = &cm->seg;
 
   int no_pred_cost;
@@ -221,7 +221,7 @@ void vp9_choose_segmap_coding_method(VP9_COMMON *cm, MACROBLOCKD *xd) {
   for (tile_col = 0; tile_col < 1 << cm->log2_tile_cols; tile_col++) {
     TileInfo tile;
     MODE_INFO **mi_ptr;
-    vp9_tile_init(&tile, cm, 0, tile_col);
+    vp10_tile_init(&tile, cm, 0, tile_col);
 
     mi_ptr = cm->mi_grid_visible + tile.mi_col_start;
     for (mi_row = 0; mi_row < cm->mi_rows;
@@ -255,8 +255,8 @@ void vp9_choose_segmap_coding_method(VP9_COMMON *cm, MACROBLOCKD *xd) {
       t_nopred_prob[i] = get_binary_prob(count0, count1);
 
       // Add in the predictor signaling cost
-      t_pred_cost += count0 * vp9_cost_zero(t_nopred_prob[i]) +
-                     count1 * vp9_cost_one(t_nopred_prob[i]);
+      t_pred_cost += count0 * vp10_cost_zero(t_nopred_prob[i]) +
+                     count1 * vp10_cost_one(t_nopred_prob[i]);
     }
   }
 
@@ -271,11 +271,11 @@ void vp9_choose_segmap_coding_method(VP9_COMMON *cm, MACROBLOCKD *xd) {
   }
 }
 
-void vp9_reset_segment_features(struct segmentation *seg) {
+void vp10_reset_segment_features(struct segmentation *seg) {
   // Set up default state for MB feature flags
   seg->enabled = 0;
   seg->update_map = 0;
   seg->update_data = 0;
   memset(seg->tree_probs, 255, sizeof(seg->tree_probs));
-  vp9_clearall_segfeatures(seg);
+  vp10_clearall_segfeatures(seg);
 }

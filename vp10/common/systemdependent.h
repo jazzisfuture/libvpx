@@ -28,9 +28,9 @@ extern "C" {
 #include "./vpx_config.h"
 #if ARCH_X86 || ARCH_X86_64
 void vpx_reset_mmx_state(void);
-#define vp9_clear_system_state() vpx_reset_mmx_state()
+#define vp10_clear_system_state() vpx_reset_mmx_state()
 #else
-#define vp9_clear_system_state()
+#define vp10_clear_system_state()
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER < 1800

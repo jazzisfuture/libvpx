@@ -21,7 +21,7 @@
 #include "vp10/encoder/quantize.h"
 #include "vp10/encoder/rd.h"
 
-void vp9_quantize_fp_neon(const int16_t *coeff_ptr, intptr_t count,
+void vp10_quantize_fp_neon(const int16_t *coeff_ptr, intptr_t count,
                           int skip_block, const int16_t *zbin_ptr,
                           const int16_t *round_ptr, const int16_t *quant_ptr,
                           const int16_t *quant_shift_ptr, int16_t *qcoeff_ptr,

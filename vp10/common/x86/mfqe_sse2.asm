@@ -12,7 +12,7 @@
 ;  TODO(jackychen): Find a way to fix the duplicate.
 %include "vpx_ports/x86_abi_support.asm"
 
-;void vp9_filter_by_weight16x16_sse2
+;void vp10_filter_by_weight16x16_sse2
 ;(
 ;    unsigned char *src,
 ;    int            src_stride,
@@ -20,8 +20,8 @@
 ;    int            dst_stride,
 ;    int            src_weight
 ;)
-global sym(vp9_filter_by_weight16x16_sse2) PRIVATE
-sym(vp9_filter_by_weight16x16_sse2):
+global sym(vp10_filter_by_weight16x16_sse2) PRIVATE
+sym(vp10_filter_by_weight16x16_sse2):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 5
@@ -90,7 +90,7 @@ sym(vp9_filter_by_weight16x16_sse2):
 
     ret
 
-;void vp9_filter_by_weight8x8_sse2
+;void vp10_filter_by_weight8x8_sse2
 ;(
 ;    unsigned char *src,
 ;    int            src_stride,
@@ -98,8 +98,8 @@ sym(vp9_filter_by_weight16x16_sse2):
 ;    int            dst_stride,
 ;    int            src_weight
 ;)
-global sym(vp9_filter_by_weight8x8_sse2) PRIVATE
-sym(vp9_filter_by_weight8x8_sse2):
+global sym(vp10_filter_by_weight8x8_sse2) PRIVATE
+sym(vp10_filter_by_weight8x8_sse2):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 5
@@ -157,7 +157,7 @@ sym(vp9_filter_by_weight8x8_sse2):
 
     ret
 
-;void vp9_variance_and_sad_16x16_sse2 | arg
+;void vp10_variance_and_sad_16x16_sse2 | arg
 ;(
 ;    unsigned char *src1,          0
 ;    int            stride1,       1
@@ -166,8 +166,8 @@ sym(vp9_filter_by_weight8x8_sse2):
 ;    unsigned int  *variance,      4
 ;    unsigned int  *sad,           5
 ;)
-global sym(vp9_variance_and_sad_16x16_sse2) PRIVATE
-sym(vp9_variance_and_sad_16x16_sse2):
+global sym(vp10_variance_and_sad_16x16_sse2) PRIVATE
+sym(vp10_variance_and_sad_16x16_sse2):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 6

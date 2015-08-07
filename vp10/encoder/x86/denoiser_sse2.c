@@ -37,7 +37,7 @@ static INLINE int sum_diff_16x1(__m128i acc_diff) {
 }
 
 // Denoise a 16x1 vector.
-static INLINE __m128i vp9_denoiser_16x1_sse2(const uint8_t *sig,
+static INLINE __m128i vp10_denoiser_16x1_sse2(const uint8_t *sig,
                                              const uint8_t *mc_running_avg_y,
                                              uint8_t *running_avg_y,
                                              const __m128i *k_0,
@@ -94,7 +94,7 @@ static INLINE __m128i vp9_denoiser_16x1_sse2(const uint8_t *sig,
 }
 
 // Denoise a 16x1 vector with a weaker filter.
-static INLINE __m128i vp9_denoiser_adj_16x1_sse2(
+static INLINE __m128i vp10_denoiser_adj_16x1_sse2(
     const uint8_t *sig, const uint8_t *mc_running_avg_y,
     uint8_t *running_avg_y, const __m128i k_0,
     const __m128i k_delta, __m128i acc_diff) {
@@ -126,7 +126,7 @@ static INLINE __m128i vp9_denoiser_adj_16x1_sse2(
 }
 
 // Denoiser for 4xM and 8xM blocks.
-static int vp9_denoiser_NxM_sse2_small(
+static int vp10_denoiser_NxM_sse2_small(
     const uint8_t *sig, int sig_stride, const uint8_t *mc_running_avg_y,
     int mc_avg_y_stride, uint8_t *running_avg_y, int avg_y_stride,
     int increase_denoising, BLOCK_SIZE bs, int motion_magnitude, int width) {
@@ -169,7 +169,7 @@ static int vp9_denoiser_NxM_sse2_small(
       memcpy(running_buffer[r] + width * 3,
              running_avg_y + avg_y_stride * 3, width);
     }
-    acc_diff = vp9_denoiser_16x1_sse2(sig_buffer[r],
+    acc_diff = vp10_denoiser_16x1_sse2(sig_buffer[r],
                                       mc_running_buffer[r],
                                       running_buffer[r],
                                       &k_0, &k_4, &k_8, &k_16,
@@ -209,7 +209,7 @@ static int vp9_denoiser_NxM_sse2_small(
         const __m128i k_delta = _mm_set1_epi8(delta);
         running_avg_y -= avg_y_stride * (4 << b_height_log2_lookup[bs]);
         for (r = 0; r < ((4 << b_height_log2_lookup[bs]) >> shift); ++r) {
-          acc_diff = vp9_denoiser_adj_16x1_sse2(
+          acc_diff = vp10_denoiser_adj_16x1_sse2(
               sig_buffer[r], mc_running_buffer[r], running_buffer[r],
               k_0, k_delta, acc_diff);
           memcpy(running_avg_y, running_buffer[r], width);
@@ -237,7 +237,7 @@ static int vp9_denoiser_NxM_sse2_small(
 }
 
 // Denoiser for 16xM, 32xM and 64xM blocks
-static int vp9_denoiser_NxM_sse2_big(const uint8_t *sig, int sig_stride,
+static int vp10_denoiser_NxM_sse2_big(const uint8_t *sig, int sig_stride,
                                      const uint8_t *mc_running_avg_y,
                                      int mc_avg_y_stride,
                                      uint8_t *running_avg_y,
@@ -269,7 +269,7 @@ static int vp9_denoiser_NxM_sse2_big(const uint8_t *sig, int sig_stride,
 
   for (r = 0; r < (4 << b_height_log2_lookup[bs]); ++r) {
     for (c = 0; c < (4 << b_width_log2_lookup[bs]); c += 16) {
-      acc_diff[c>>4][r>>4] = vp9_denoiser_16x1_sse2(
+      acc_diff[c>>4][r>>4] = vp10_denoiser_16x1_sse2(
           sig, mc_running_avg_y, running_avg_y, &k_0, &k_4,
           &k_8, &k_16, &l3, &l32, &l21, acc_diff[c>>4][r>>4]);
       // Update pointers for next iteration.
@@ -309,7 +309,7 @@ static int vp9_denoiser_NxM_sse2_big(const uint8_t *sig, int sig_stride,
         sum_diff = 0;
         for (r = 0; r < (4 << b_height_log2_lookup[bs]); ++r) {
           for (c = 0; c < (4 << b_width_log2_lookup[bs]); c += 16) {
-            acc_diff[c>>4][r>>4] = vp9_denoiser_adj_16x1_sse2(
+            acc_diff[c>>4][r>>4] = vp10_denoiser_adj_16x1_sse2(
                 sig, mc_running_avg_y, running_avg_y, k_0,
                 k_delta, acc_diff[c>>4][r>>4]);
             // Update pointers for next iteration.
@@ -342,7 +342,7 @@ static int vp9_denoiser_NxM_sse2_big(const uint8_t *sig, int sig_stride,
   return FILTER_BLOCK;
 }
 
-int vp9_denoiser_filter_sse2(const uint8_t *sig, int sig_stride,
+int vp10_denoiser_filter_sse2(const uint8_t *sig, int sig_stride,
                              const uint8_t *mc_avg,
                              int mc_avg_stride,
                              uint8_t *avg, int avg_stride,
@@ -350,13 +350,13 @@ int vp9_denoiser_filter_sse2(const uint8_t *sig, int sig_stride,
                              BLOCK_SIZE bs,
                              int motion_magnitude) {
   if (bs == BLOCK_4X4 || bs == BLOCK_4X8) {
-    return vp9_denoiser_NxM_sse2_small(sig, sig_stride,
+    return vp10_denoiser_NxM_sse2_small(sig, sig_stride,
                                        mc_avg, mc_avg_stride,
                                        avg, avg_stride,
                                        increase_denoising,
                                        bs, motion_magnitude, 4);
   } else if (bs == BLOCK_8X4 || bs == BLOCK_8X8 || bs == BLOCK_8X16) {
-    return vp9_denoiser_NxM_sse2_small(sig, sig_stride,
+    return vp10_denoiser_NxM_sse2_small(sig, sig_stride,
                                        mc_avg, mc_avg_stride,
                                        avg, avg_stride,
                                        increase_denoising,
@@ -364,7 +364,7 @@ int vp9_denoiser_filter_sse2(const uint8_t *sig, int sig_stride,
   } else if (bs == BLOCK_16X8 || bs == BLOCK_16X16 || bs == BLOCK_16X32 ||
              bs == BLOCK_32X16|| bs == BLOCK_32X32 || bs == BLOCK_32X64 ||
              bs == BLOCK_64X32 || bs == BLOCK_64X64) {
-    return vp9_denoiser_NxM_sse2_big(sig, sig_stride,
+    return vp10_denoiser_NxM_sse2_big(sig, sig_stride,
                                      mc_avg, mc_avg_stride,
                                      avg, avg_stride,
                                      increase_denoising,

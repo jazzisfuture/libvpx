@@ -151,7 +151,7 @@ static void fadst4_sse2(__m128i *in) {
   transpose_4x4(in);
 }
 
-void vp9_fht4x4_sse2(const int16_t *input, tran_low_t *output,
+void vp10_fht4x4_sse2(const int16_t *input, tran_low_t *output,
                      int stride, int tx_type) {
   __m128i in[4];
 
@@ -183,7 +183,7 @@ void vp9_fht4x4_sse2(const int16_t *input, tran_low_t *output,
   }
 }
 
-void vp9_fdct8x8_quant_sse2(const int16_t *input, int stride,
+void vp10_fdct8x8_quant_sse2(const int16_t *input, int stride,
                             int16_t* coeff_ptr, intptr_t n_coeffs,
                             int skip_block, const int16_t* zbin_ptr,
                             const int16_t* round_ptr, const int16_t* quant_ptr,
@@ -1135,7 +1135,7 @@ static void fadst8_sse2(__m128i *in) {
   array_transpose_8x8(in, in);
 }
 
-void vp9_fht8x8_sse2(const int16_t *input, tran_low_t *output,
+void vp10_fht8x8_sse2(const int16_t *input, tran_low_t *output,
                      int stride, int tx_type) {
   __m128i in[8];
 
@@ -2022,7 +2022,7 @@ static void fadst16_sse2(__m128i *in0, __m128i *in1) {
   array_transpose_16x16(in0, in1);
 }
 
-void vp9_fht16x16_sse2(const int16_t *input, tran_low_t *output,
+void vp10_fht16x16_sse2(const int16_t *input, tran_low_t *output,
                        int stride, int tx_type) {
   __m128i in0[16], in1[16];
 

@@ -17,18 +17,18 @@
 extern "C" {
 #endif
 
-void vp9_tree_probs_from_distribution(vpx_tree tree,
+void vp10_tree_probs_from_distribution(vpx_tree tree,
                                       unsigned int branch_ct[ /* n - 1 */ ][2],
                                       const unsigned int num_events[ /* n */ ]);
 
-struct vp9_token {
+struct vp10_token {
   int value;
   int len;
 };
 
-void vp9_tokens_from_tree(struct vp9_token*, const vpx_tree_index *);
+void vp10_tokens_from_tree(struct vp10_token*, const vpx_tree_index *);
 
-static INLINE void vp9_write_tree(vpx_writer *w, const vpx_tree_index *tree,
+static INLINE void vp10_write_tree(vpx_writer *w, const vpx_tree_index *tree,
                                   const vpx_prob *probs, int bits, int len,
                                   vpx_tree_index i) {
   do {
@@ -38,10 +38,10 @@ static INLINE void vp9_write_tree(vpx_writer *w, const vpx_tree_index *tree,
   } while (len);
 }
 
-static INLINE void vp9_write_token(vpx_writer *w, const vpx_tree_index *tree,
+static INLINE void vp10_write_token(vpx_writer *w, const vpx_tree_index *tree,
                                    const vpx_prob *probs,
-                                   const struct vp9_token *token) {
-  vp9_write_tree(w, tree, probs, token->value, token->len, 0);
+                                   const struct vp10_token *token) {
+  vp10_write_tree(w, tree, probs, token->value, token->len, 0);
 }
 
 #ifdef __cplusplus

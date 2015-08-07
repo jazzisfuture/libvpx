@@ -11,7 +11,7 @@
 
 #include "vp10/encoder/cost.h"
 
-const unsigned int vp9_prob_cost[256] = {
+const unsigned int vp10_prob_cost[256] = {
   2047, 2047, 1791, 1641, 1535, 1452, 1385, 1328, 1279, 1235, 1196, 1161,
   1129, 1099, 1072, 1046, 1023, 1000, 979,  959,  940,  922,  905,  889,
   873,  858,  843,  829,  816,  803,  790,  778,  767,  755,  744,  733,
@@ -41,7 +41,7 @@ static void cost(int *costs, vpx_tree tree, const vpx_prob *probs,
   int b;
 
   for (b = 0; b <= 1; ++b) {
-    const int cc = c + vp9_cost_bit(prob, b);
+    const int cc = c + vp10_cost_bit(prob, b);
     const vpx_tree_index ii = tree[i + b];
 
     if (ii <= 0)
@@ -51,13 +51,13 @@ static void cost(int *costs, vpx_tree tree, const vpx_prob *probs,
   }
 }
 
-void vp9_cost_tokens(int *costs, const vpx_prob *probs, vpx_tree tree) {
+void vp10_cost_tokens(int *costs, const vpx_prob *probs, vpx_tree tree) {
   cost(costs, tree, probs, 0, 0);
 }
 
-void vp9_cost_tokens_skip(int *costs, const vpx_prob *probs, vpx_tree tree) {
+void vp10_cost_tokens_skip(int *costs, const vpx_prob *probs, vpx_tree tree) {
   assert(tree[0] <= 0 && tree[1] > 0);
 
-  costs[-tree[0]] = vp9_cost_bit(probs[0], 0);
+  costs[-tree[0]] = vp10_cost_bit(probs[0], 0);
   cost(costs, tree, probs, 2, 0);
 }

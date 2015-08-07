@@ -13,7 +13,7 @@
 #include "./vp10_rtcd.h"
 #include "vpx/vpx_integer.h"
 
-int64_t vp9_block_error_avx2(const int16_t *coeff,
+int64_t vp10_block_error_avx2(const int16_t *coeff,
                              const int16_t *dqcoeff,
                              intptr_t block_size,
                              int64_t *ssz) {

@@ -20,36 +20,36 @@ extern "C" {
 
 #define MOTION_MAGNITUDE_THRESHOLD (8 * 3)
 
-typedef enum vp9_denoiser_decision {
+typedef enum vp10_denoiser_decision {
   COPY_BLOCK,
   FILTER_BLOCK
 } VP9_DENOISER_DECISION;
 
-typedef struct vp9_denoiser {
+typedef struct vp10_denoiser {
   YV12_BUFFER_CONFIG running_avg_y[MAX_REF_FRAMES];
   YV12_BUFFER_CONFIG mc_running_avg_y;
   int increase_denoising;
   int frame_buffer_initialized;
 } VP9_DENOISER;
 
-void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
+void vp10_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                                     YV12_BUFFER_CONFIG src,
                                     FRAME_TYPE frame_type,
                                     int refresh_alt_ref_frame,
                                     int refresh_golden_frame,
                                     int refresh_last_frame);
 
-void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
+void vp10_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                           int mi_row, int mi_col, BLOCK_SIZE bs,
                           PICK_MODE_CONTEXT *ctx);
 
-void vp9_denoiser_reset_frame_stats(PICK_MODE_CONTEXT *ctx);
+void vp10_denoiser_reset_frame_stats(PICK_MODE_CONTEXT *ctx);
 
-void vp9_denoiser_update_frame_stats(MB_MODE_INFO *mbmi,
+void vp10_denoiser_update_frame_stats(MB_MODE_INFO *mbmi,
                                      unsigned int sse, PREDICTION_MODE mode,
                                      PICK_MODE_CONTEXT *ctx);
 
-int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
+int vp10_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
                        int ssx, int ssy,
 #if CONFIG_VP9_HIGHBITDEPTH
                        int use_highbitdepth,
@@ -57,10 +57,12 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
                        int border);
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
-int total_adj_strong_thresh(BLOCK_SIZE bs, int increase_denoising);
+static int total_adj_strong_thresh(BLOCK_SIZE bs, int increase_denoising) {
+  return (1 << num_pels_log2_lookup[bs]) * (increase_denoising ? 3 : 2);
+}
 #endif
 
-void vp9_denoiser_free(VP9_DENOISER *denoiser);
+void vp10_denoiser_free(VP9_DENOISER *denoiser);
 
 #ifdef __cplusplus
 }  // extern "C"

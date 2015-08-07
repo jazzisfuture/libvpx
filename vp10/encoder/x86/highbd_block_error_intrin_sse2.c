@@ -13,7 +13,7 @@
 
 #include "vp10/common/common.h"
 
-int64_t vp9_highbd_block_error_sse2(tran_low_t *coeff, tran_low_t *dqcoeff,
+int64_t vp10_highbd_block_error_sse2(tran_low_t *coeff, tran_low_t *dqcoeff,
                                     intptr_t block_size, int64_t *ssz,
                                     int bps) {
   int i, j, test;

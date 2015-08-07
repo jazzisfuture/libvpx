@@ -20,18 +20,18 @@ extern "C" {
 
 struct vpx_writer;
 
-void vp9_write_prob_diff_update(struct vpx_writer *w,
+void vp10_write_prob_diff_update(struct vpx_writer *w,
                                 vpx_prob newp, vpx_prob oldp);
 
-void vp9_cond_prob_diff_update(struct vpx_writer *w, vpx_prob *oldp,
+void vp10_cond_prob_diff_update(struct vpx_writer *w, vpx_prob *oldp,
                                const unsigned int ct[2]);
 
-int vp9_prob_diff_update_savings_search(const unsigned int *ct,
+int vp10_prob_diff_update_savings_search(const unsigned int *ct,
                                         vpx_prob oldp, vpx_prob *bestp,
                                         vpx_prob upd);
 
 
-int vp9_prob_diff_update_savings_search_model(const unsigned int *ct,
+int vp10_prob_diff_update_savings_search_model(const unsigned int *ct,
                                               const vpx_prob *oldp,
                                               vpx_prob *bestp,
                                               vpx_prob upd,

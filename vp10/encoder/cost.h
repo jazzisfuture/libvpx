@@ -17,18 +17,18 @@
 extern "C" {
 #endif
 
-extern const unsigned int vp9_prob_cost[256];
+extern const unsigned int vp10_prob_cost[256];
 
-#define vp9_cost_zero(prob) (vp9_prob_cost[prob])
+#define vp10_cost_zero(prob) (vp10_prob_cost[prob])
 
-#define vp9_cost_one(prob) vp9_cost_zero(vpx_complement(prob))
+#define vp10_cost_one(prob) vp10_cost_zero(vpx_complement(prob))
 
-#define vp9_cost_bit(prob, bit) vp9_cost_zero((bit) ? vpx_complement(prob) \
+#define vp10_cost_bit(prob, bit) vp10_cost_zero((bit) ? vpx_complement(prob) \
                                                     : (prob))
 
 static INLINE unsigned int cost_branch256(const unsigned int ct[2],
                                           vpx_prob p) {
-  return ct[0] * vp9_cost_zero(p) + ct[1] * vp9_cost_one(p);
+  return ct[0] * vp10_cost_zero(p) + ct[1] * vp10_cost_one(p);
 }
 
 static INLINE int treed_cost(vpx_tree tree, const vpx_prob *probs,
@@ -38,15 +38,15 @@ static INLINE int treed_cost(vpx_tree tree, const vpx_prob *probs,
 
   do {
     const int bit = (bits >> --len) & 1;
-    cost += vp9_cost_bit(probs[i >> 1], bit);
+    cost += vp10_cost_bit(probs[i >> 1], bit);
     i = tree[i + bit];
   } while (len);
 
   return cost;
 }
 
-void vp9_cost_tokens(int *costs, const vpx_prob *probs, vpx_tree tree);
-void vp9_cost_tokens_skip(int *costs, const vpx_prob *probs, vpx_tree tree);
+void vp10_cost_tokens(int *costs, const vpx_prob *probs, vpx_tree tree);
+void vp10_cost_tokens_skip(int *costs, const vpx_prob *probs, vpx_tree tree);
 
 #ifdef __cplusplus
 }  // extern "C"

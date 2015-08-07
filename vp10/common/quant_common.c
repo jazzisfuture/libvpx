@@ -226,7 +226,7 @@ static const int16_t ac_qlookup_12[QINDEX_RANGE] = {
 };
 #endif
 
-int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
+int16_t vp10_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
 #if CONFIG_VP9_HIGHBITDEPTH
   switch (bit_depth) {
     case VPX_BITS_8:
@@ -245,7 +245,7 @@ int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
 #endif
 }
 
-int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
+int16_t vp10_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
 #if CONFIG_VP9_HIGHBITDEPTH
   switch (bit_depth) {
     case VPX_BITS_8:
@@ -264,7 +264,7 @@ int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
 #endif
 }
 
-int vp9_get_qindex(const struct segmentation *seg, int segment_id,
+int vp10_get_qindex(const struct segmentation *seg, int segment_id,
                    int base_qindex) {
   if (segfeature_active(seg, segment_id, SEG_LVL_ALT_Q)) {
     const int data = get_segdata(seg, segment_id, SEG_LVL_ALT_Q);

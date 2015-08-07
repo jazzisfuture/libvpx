@@ -37,26 +37,26 @@ struct scale_factors {
 #endif
 };
 
-MV32 vp9_scale_mv(const MV *mv, int x, int y, const struct scale_factors *sf);
+MV32 vp10_scale_mv(const MV *mv, int x, int y, const struct scale_factors *sf);
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
+void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
                                        int other_w, int other_h,
                                        int this_w, int this_h,
                                        int use_high);
 #else
-void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
+void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
                                        int other_w, int other_h,
                                        int this_w, int this_h);
 #endif
 
-static INLINE int vp9_is_valid_scale(const struct scale_factors *sf) {
+static INLINE int vp10_is_valid_scale(const struct scale_factors *sf) {
   return sf->x_scale_fp != REF_INVALID_SCALE &&
          sf->y_scale_fp != REF_INVALID_SCALE;
 }
 
-static INLINE int vp9_is_scaled(const struct scale_factors *sf) {
-  return vp9_is_valid_scale(sf) &&
+static INLINE int vp10_is_scaled(const struct scale_factors *sf) {
+  return vp10_is_valid_scale(sf) &&
          (sf->x_scale_fp != REF_NO_SCALE || sf->y_scale_fp != REF_NO_SCALE);
 }
 

@@ -50,12 +50,6 @@ extern "C" {
 
 #define NUM_PING_PONG_BUFFERS 2
 
-extern const struct {
-  PARTITION_CONTEXT above;
-  PARTITION_CONTEXT left;
-} partition_context_lookup[BLOCK_SIZES];
-
-
 typedef enum {
   SINGLE_REFERENCE      = 0,
   COMPOUND_REFERENCE    = 1,
@@ -285,8 +279,21 @@ typedef struct VP9Common {
 
 // TODO(hkuang): Don't need to lock the whole pool after implementing atomic
 // frame reference count.
-void lock_buffer_pool(BufferPool *const pool);
-void unlock_buffer_pool(BufferPool *const pool);
+static void lock_buffer_pool(BufferPool *const pool) {
+#if CONFIG_MULTITHREAD
+  pthread_mutex_lock(&pool->pool_mutex);
+#else
+  (void)pool;
+#endif
+}
+
+static void unlock_buffer_pool(BufferPool *const pool) {
+#if CONFIG_MULTITHREAD
+  pthread_mutex_unlock(&pool->pool_mutex);
+#else
+  (void)pool;
+#endif
+}
 
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {
   if (index < 0 || index >= REF_FRAMES)
@@ -344,11 +351,11 @@ static INLINE void set_partition_probs(const VP9_COMMON *const cm,
                                        MACROBLOCKD *const xd) {
   xd->partition_probs =
       frame_is_intra_only(cm) ?
-          &vp9_kf_partition_probs[0] :
+          &vp10_kf_partition_probs[0] :
           (const vpx_prob (*)[PARTITION_TYPES - 1])cm->fc->partition_prob;
 }
 
-static INLINE void vp9_init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd,
+static INLINE void vp10_init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd,
                                         tran_low_t *dqcoeff) {
   int i;
 

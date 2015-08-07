@@ -124,13 +124,13 @@ static void filter_by_weight16x16_msa(const uint8_t *src_ptr,
   }
 }
 
-void vp9_filter_by_weight8x8_msa(const uint8_t *src, int src_stride,
+void vp10_filter_by_weight8x8_msa(const uint8_t *src, int src_stride,
                                  uint8_t *dst, int dst_stride,
                                  int src_weight) {
   filter_by_weight8x8_msa(src, src_stride, dst, dst_stride, src_weight);
 }
 
-void vp9_filter_by_weight16x16_msa(const uint8_t *src, int src_stride,
+void vp10_filter_by_weight16x16_msa(const uint8_t *src, int src_stride,
                                    uint8_t *dst, int dst_stride,
                                    int src_weight) {
   filter_by_weight16x16_msa(src, src_stride, dst, dst_stride, src_weight);

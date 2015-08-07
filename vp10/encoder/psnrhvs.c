@@ -201,12 +201,12 @@ static double calc_psnrhvs(const unsigned char *_src, int _systride,
   ret /= pixels;
   return ret;
 }
-double vp9_psnrhvs(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
+double vp10_psnrhvs(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
                    double *y_psnrhvs, double *u_psnrhvs, double *v_psnrhvs) {
   double psnrhvs;
   double par = 1.0;
   int step = 7;
-  vp9_clear_system_state();
+  vp10_clear_system_state();
   *y_psnrhvs = calc_psnrhvs(source->y_buffer, source->y_stride, dest->y_buffer,
                             dest->y_stride, par, source->y_crop_width,
                             source->y_crop_height, step, csf_y);

@@ -41,21 +41,21 @@ static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
   int64_t filt_err;
 
   if (cpi->num_workers > 1)
-    vp9_loop_filter_frame_mt(cm->frame_to_show, cm, cpi->td.mb.e_mbd.plane,
+    vp10_loop_filter_frame_mt(cm->frame_to_show, cm, cpi->td.mb.e_mbd.plane,
                              filt_level, 1, partial_frame,
                              cpi->workers, cpi->num_workers, &cpi->lf_row_sync);
   else
-    vp9_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
+    vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
                           1, partial_frame);
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
-    filt_err = vp9_highbd_get_y_sse(sd, cm->frame_to_show);
+    filt_err = vp10_highbd_get_y_sse(sd, cm->frame_to_show);
   } else {
-    filt_err = vp9_get_y_sse(sd, cm->frame_to_show);
+    filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
   }
 #else
-  filt_err = vp9_get_y_sse(sd, cm->frame_to_show);
+  filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   // Re-instate the unfiltered frame
@@ -146,7 +146,7 @@ static int search_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
   return filt_best;
 }
 
-void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
+void vp10_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
                            LPF_PICK_METHOD method) {
   VP9_COMMON *const cm = &cpi->common;
   struct loopfilter *const lf = &cm->lf;
@@ -159,7 +159,7 @@ void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
   } else if (method >= LPF_PICK_FROM_Q) {
     const int min_filter_level = 0;
     const int max_filter_level = get_max_filter_level(cpi);
-    const int q = vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth);
+    const int q = vp10_ac_quant(cm->base_qindex, 0, cm->bit_depth);
     // These values were determined by linear fitting the result of the
     // searched level, filt_guess = q * 0.316206 + 3.87252
 #if CONFIG_VP9_HIGHBITDEPTH

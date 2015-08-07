@@ -38,40 +38,40 @@ typedef struct {
 } highbd_transform_2d;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-void vp9_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp10_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                      int eob);
-void vp9_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp10_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                      int eob);
-void vp9_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp10_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
                      int eob);
-void vp9_idct16x16_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp10_idct16x16_add(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob);
-void vp9_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp10_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob);
 
-void vp9_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+void vp10_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
                     int stride, int eob);
-void vp9_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+void vp10_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
                     int stride, int eob);
-void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+void vp10_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
                       int stride, int eob);
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp10_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd);
-void vp9_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp10_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd);
-void vp9_highbd_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp10_highbd_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd);
-void vp9_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
+void vp10_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
                               int stride, int eob, int bd);
-void vp9_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
+void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
                               int stride, int eob, int bd);
-void vp9_highbd_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input,
+void vp10_highbd_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input,
                            uint8_t *dest, int stride, int eob, int bd);
-void vp9_highbd_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input,
+void vp10_highbd_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input,
                            uint8_t *dest, int stride, int eob, int bd);
-void vp9_highbd_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input,
+void vp10_highbd_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input,
                              uint8_t *dest, int stride, int eob, int bd);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #ifdef __cplusplus

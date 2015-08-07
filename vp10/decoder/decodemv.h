@@ -19,9 +19,9 @@
 extern "C" {
 #endif
 
-void vpx_read_mode_info(VP9Decoder *const pbi, MACROBLOCKD *xd,
-                        int mi_row, int mi_col, vpx_reader *r,
-                        int x_mis, int y_mis);
+void vp10_read_mode_info(VP9Decoder *const pbi, MACROBLOCKD *xd,
+                         int mi_row, int mi_col, vpx_reader *r,
+                         int x_mis, int y_mis);
 
 #ifdef __cplusplus
 }  // extern "C"

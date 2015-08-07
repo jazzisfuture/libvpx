@@ -12,7 +12,7 @@
 #include "vpx_dsp/x86/txfm_common_sse2.h"
 #include "vpx_ports/mem.h"
 
-void vp9_iht4x4_16_add_sse2(const int16_t *input, uint8_t *dest, int stride,
+void vp10_iht4x4_16_add_sse2(const int16_t *input, uint8_t *dest, int stride,
                             int tx_type) {
   __m128i in[2];
   const __m128i zero = _mm_setzero_si128();
@@ -77,7 +77,7 @@ void vp9_iht4x4_16_add_sse2(const int16_t *input, uint8_t *dest, int stride,
   }
 }
 
-void vp9_iht8x8_64_add_sse2(const int16_t *input, uint8_t *dest, int stride,
+void vp10_iht8x8_64_add_sse2(const int16_t *input, uint8_t *dest, int stride,
                             int tx_type) {
   __m128i in[8];
   const __m128i zero = _mm_setzero_si128();
@@ -144,7 +144,7 @@ void vp9_iht8x8_64_add_sse2(const int16_t *input, uint8_t *dest, int stride,
   RECON_AND_STORE(dest + 7 * stride, in[7]);
 }
 
-void vp9_iht16x16_256_add_sse2(const int16_t *input, uint8_t *dest, int stride,
+void vp10_iht16x16_256_add_sse2(const int16_t *input, uint8_t *dest, int stride,
                                int tx_type) {
   __m128i in0[16], in1[16];
 

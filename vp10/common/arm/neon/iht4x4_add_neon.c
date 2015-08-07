@@ -154,7 +154,7 @@ static INLINE void IADST4x4_1D(
     return;
 }
 
-void vp9_iht4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
+void vp10_iht4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
                             int dest_stride, int tx_type) {
     uint8x8_t d26u8, d27u8;
     int16x4_t d0s16, d1s16, d2s16, d3s16, d4s16, d5s16;
@@ -171,7 +171,7 @@ void vp9_iht4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
 
     switch (tx_type) {
       case 0:  // idct_idct is not supported. Fall back to C
-        vp9_iht4x4_16_add_c(input, dest, dest_stride, tx_type);
+        vp10_iht4x4_16_add_c(input, dest, dest_stride, tx_type);
         return;
         break;
       case 1:  // iadst_idct

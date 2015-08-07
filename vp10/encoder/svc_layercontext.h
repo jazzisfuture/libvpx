@@ -75,45 +75,45 @@ typedef struct {
 struct VP9_COMP;
 
 // Initialize layer context data from init_config().
-void vp9_init_layer_context(struct VP9_COMP *const cpi);
+void vp10_init_layer_context(struct VP9_COMP *const cpi);
 
 // Update the layer context from a change_config() call.
-void vp9_update_layer_context_change_config(struct VP9_COMP *const cpi,
+void vp10_update_layer_context_change_config(struct VP9_COMP *const cpi,
                                             const int target_bandwidth);
 
 // Prior to encoding the frame, update framerate-related quantities
 // for the current temporal layer.
-void vp9_update_temporal_layer_framerate(struct VP9_COMP *const cpi);
+void vp10_update_temporal_layer_framerate(struct VP9_COMP *const cpi);
 
 // Update framerate-related quantities for the current spatial layer.
-void vp9_update_spatial_layer_framerate(struct VP9_COMP *const cpi,
+void vp10_update_spatial_layer_framerate(struct VP9_COMP *const cpi,
                                         double framerate);
 
 // Prior to encoding the frame, set the layer context, for the current layer
 // to be encoded, to the cpi struct.
-void vp9_restore_layer_context(struct VP9_COMP *const cpi);
+void vp10_restore_layer_context(struct VP9_COMP *const cpi);
 
 // Save the layer context after encoding the frame.
-void vp9_save_layer_context(struct VP9_COMP *const cpi);
+void vp10_save_layer_context(struct VP9_COMP *const cpi);
 
 // Initialize second pass rc for spatial svc.
-void vp9_init_second_pass_spatial_svc(struct VP9_COMP *cpi);
+void vp10_init_second_pass_spatial_svc(struct VP9_COMP *cpi);
 
 // Increment number of video frames in layer
-void vp9_inc_frame_in_layer(struct VP9_COMP *const cpi);
+void vp10_inc_frame_in_layer(struct VP9_COMP *const cpi);
 
 // Check if current layer is key frame in spatial upper layer
-int vp9_is_upper_layer_key_frame(const struct VP9_COMP *const cpi);
+int vp10_is_upper_layer_key_frame(const struct VP9_COMP *const cpi);
 
 // Get the next source buffer to encode
-struct lookahead_entry *vp9_svc_lookahead_pop(struct VP9_COMP *const cpi,
+struct lookahead_entry *vp10_svc_lookahead_pop(struct VP9_COMP *const cpi,
                                               struct lookahead_ctx *ctx,
                                               int drain);
 
 // Start a frame and initialize svc parameters
-int vp9_svc_start_frame(struct VP9_COMP *const cpi);
+int vp10_svc_start_frame(struct VP9_COMP *const cpi);
 
-int vp9_one_pass_cbr_svc_start_layer(struct VP9_COMP *const cpi);
+int vp10_one_pass_cbr_svc_start_layer(struct VP9_COMP *const cpi);
 
 #ifdef __cplusplus
 }  // extern "C"

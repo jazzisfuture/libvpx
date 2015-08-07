@@ -22,7 +22,7 @@
 
 #include "vp10/common/entropymv.h"
 #include "vp10/common/quant_common.h"
-#include "vp10/common/reconinter.h"  // vp9_setup_dst_planes()
+#include "vp10/common/reconinter.h"  // vp10_setup_dst_planes()
 #include "vp10/common/systemdependent.h"
 #include "vp10/encoder/aq_variance.h"
 #include "vp10/encoder/block.h"
@@ -143,8 +143,9 @@ static void output_stats(FIRSTPASS_STATS *stats,
 }
 
 #if CONFIG_FP_MB_STATS
-static void output_fpmb_stats(uint8_t *this_frame_mb_stats, VP9_COMMON *cm,
-                         struct vpx_codec_pkt_list *pktlist) {
+static void output_fpmb_stats(uint8_t *this_frame_mb_stats,
+                              VP9_COMMON *cm,
+                              struct vpx_codec_pkt_list *pktlist) {
   struct vpx_codec_cx_pkt pkt;
   pkt.kind = VPX_CODEC_FPMB_STATS_PKT;
   pkt.data.firstpass_mb_stats.buf = this_frame_mb_stats;
@@ -286,11 +287,11 @@ static int frame_max_bits(const RATE_CONTROL *rc,
   return (int)max_bits;
 }
 
-void vp9_init_first_pass(VP9_COMP *cpi) {
+void vp10_init_first_pass(VP9_COMP *cpi) {
   zero_stats(&cpi->twopass.total_stats);
 }
 
-void vp9_end_first_pass(VP9_COMP *cpi) {
+void vp10_end_first_pass(VP9_COMP *cpi) {
   if (is_two_pass_svc(cpi)) {
     int i;
     for (i = 0; i < cpi->svc.number_spatial_layers; ++i) {
@@ -397,7 +398,7 @@ static void first_pass_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   MV ref_mv_full = {ref_mv->row >> 3, ref_mv->col >> 3};
   int num00, tmp_err, n;
   const BLOCK_SIZE bsize = xd->mi[0]->mbmi.sb_type;
-  vp9_variance_fn_ptr_t v_fn_ptr = cpi->fn_ptr[bsize];
+  vp10_variance_fn_ptr_t v_fn_ptr = cpi->fn_ptr[bsize];
   const int new_mv_mode_penalty = NEW_MV_MODE_PENALTY;
 
   int step_param = 3;
@@ -419,7 +420,7 @@ static void first_pass_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                     step_param,
                                     x->sadperbit16, &num00, &v_fn_ptr, ref_mv);
   if (tmp_err < INT_MAX)
-    tmp_err = vp9_get_mvpred_var(x, &tmp_mv, ref_mv, &v_fn_ptr, 1);
+    tmp_err = vp10_get_mvpred_var(x, &tmp_mv, ref_mv, &v_fn_ptr, 1);
   if (tmp_err < INT_MAX - new_mv_mode_penalty)
     tmp_err += new_mv_mode_penalty;
 
@@ -442,7 +443,7 @@ static void first_pass_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                         step_param + n, x->sadperbit16,
                                         &num00, &v_fn_ptr, ref_mv);
       if (tmp_err < INT_MAX)
-        tmp_err = vp9_get_mvpred_var(x, &tmp_mv, ref_mv, &v_fn_ptr, 1);
+        tmp_err = vp10_get_mvpred_var(x, &tmp_mv, ref_mv, &v_fn_ptr, 1);
       if (tmp_err < INT_MAX - new_mv_mode_penalty)
         tmp_err += new_mv_mode_penalty;
 
@@ -468,7 +469,7 @@ static int find_fp_qindex(vpx_bit_depth_t bit_depth) {
   int i;
 
   for (i = 0; i < QINDEX_RANGE; ++i)
-    if (vp9_convert_qindex_to_q(i, bit_depth) >= FIRST_PASS_Q)
+    if (vp10_convert_qindex_to_q(i, bit_depth) >= FIRST_PASS_Q)
       break;
 
   if (i == QINDEX_RANGE)
@@ -492,7 +493,7 @@ static void set_first_pass_params(VP9_COMP *cpi) {
 
 #define UL_INTRA_THRESH 50
 #define INVALID_ROW -1
-void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
+void vp10_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   int mb_row, mb_col;
   MACROBLOCK *const x = &cpi->td.mb;
   VP9_COMMON *const cm = &cpi->common;
@@ -542,18 +543,18 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
-    vp9_zero_array(cpi->twopass.frame_mb_stats_buf, cm->initial_mbs);
+    vp10_zero_array(cpi->twopass.frame_mb_stats_buf, cm->initial_mbs);
   }
 #endif
 
-  vp9_clear_system_state();
+  vp10_clear_system_state();
 
   intra_factor = 0.0;
   brightness_factor = 0.0;
   neutral_count = 0.0;
 
   set_first_pass_params(cpi);
-  vp9_set_quantizer(cm, find_fp_qindex(cm->bit_depth));
+  vp10_set_quantizer(cm, find_fp_qindex(cm->bit_depth));
 
   if (lc != NULL) {
     twopass = &lc->twopass;
@@ -574,17 +575,17 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     if (lc->current_video_frame_in_layer == 0)
       cpi->ref_frame_flags = 0;
 
-    vp9_scale_references(cpi);
+    vp10_scale_references(cpi);
 
     // Use either last frame or alt frame for motion search.
     if (cpi->ref_frame_flags & VP9_LAST_FLAG) {
-      first_ref_buf = vp9_get_scaled_ref_frame(cpi, LAST_FRAME);
+      first_ref_buf = vp10_get_scaled_ref_frame(cpi, LAST_FRAME);
       if (first_ref_buf == NULL)
         first_ref_buf = get_ref_frame_buffer(cpi, LAST_FRAME);
     }
 
     if (cpi->ref_frame_flags & VP9_GOLD_FLAG) {
-      gld_yv12 = vp9_get_scaled_ref_frame(cpi, GOLDEN_FRAME);
+      gld_yv12 = vp10_get_scaled_ref_frame(cpi, GOLDEN_FRAME);
       if (gld_yv12 == NULL) {
         gld_yv12 = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
       }
@@ -596,23 +597,23 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
                  (cpi->ref_frame_flags & VP9_LAST_FLAG) ? LAST_FRAME: NONE,
                  (cpi->ref_frame_flags & VP9_GOLD_FLAG) ? GOLDEN_FRAME : NONE);
 
-    cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
+    cpi->Source = vp10_scale_if_required(cm, cpi->un_scaled_source,
                                         &cpi->scaled_source);
   }
 
-  vp9_setup_block_planes(&x->e_mbd, cm->subsampling_x, cm->subsampling_y);
+  vp10_setup_block_planes(&x->e_mbd, cm->subsampling_x, cm->subsampling_y);
 
-  vp9_setup_src_planes(x, cpi->Source, 0, 0);
-  vp9_setup_dst_planes(xd->plane, new_yv12, 0, 0);
+  vp10_setup_src_planes(x, cpi->Source, 0, 0);
+  vp10_setup_dst_planes(xd->plane, new_yv12, 0, 0);
 
   if (!frame_is_intra_only(cm)) {
-    vp9_setup_pre_planes(xd, 0, first_ref_buf, 0, 0, NULL);
+    vp10_setup_pre_planes(xd, 0, first_ref_buf, 0, 0, NULL);
   }
 
   xd->mi = cm->mi_grid_visible;
   xd->mi[0] = cm->mi;
 
-  vp9_frame_init_quantizer(cpi);
+  vp10_frame_init_quantizer(cpi);
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
     p[i].coeff = ctx->coeff_pbuf[i][1];
@@ -622,11 +623,11 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   }
   x->skip_recode = 0;
 
-  vp9_init_mv_probs(cm);
-  vp9_initialize_rd_consts(cpi);
+  vp10_init_mv_probs(cm);
+  vp10_initialize_rd_consts(cpi);
 
   // Tiling is ignored in the first pass.
-  vp9_tile_init(&tile, cm, 0, 0);
+  vp10_tile_init(&tile, cm, 0, 0);
 
   recon_y_stride = new_yv12->y_stride;
   recon_uv_stride = new_yv12->uv_stride;
@@ -657,7 +658,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
       const int mb_index = mb_row * cm->mb_cols + mb_col;
 #endif
 
-      vp9_clear_system_state();
+      vp10_clear_system_state();
 
       xd->plane[0].dst.buf = new_yv12->y_buffer + recon_yoffset;
       xd->plane[1].dst.buf = new_yv12->u_buffer + recon_uvoffset;
@@ -675,7 +676,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
       xd->mi[0]->mbmi.mode = DC_PRED;
       xd->mi[0]->mbmi.tx_size = use_dc_pred ?
          (bsize >= BLOCK_16X16 ? TX_16X16 : TX_8X8) : TX_4X4;
-      vp9_encode_intra_block_plane(x, bsize, 0);
+      vp10_encode_intra_block_plane(x, bsize, 0);
       this_error = vpx_get_mb_ss(x->plane[0].src_diff);
 
       // Keep a record of blocks that have almost no intra error residual
@@ -708,7 +709,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
       }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-      vp9_clear_system_state();
+      vp10_clear_system_state();
       log_intra = log(this_error + 1.0);
       if (log_intra < 10.0)
         intra_factor += 1.0 + ((10.0 - log_intra) * 0.05);
@@ -878,7 +879,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 #endif
 
         if (motion_error <= this_error) {
-          vp9_clear_system_state();
+          vp10_clear_system_state();
 
           // Keep a count of cases where the inter and intra were very close
           // and very low. This helps with scene cut detection for example in
@@ -902,8 +903,8 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
           xd->mi[0]->mbmi.tx_size = TX_4X4;
           xd->mi[0]->mbmi.ref_frame[0] = LAST_FRAME;
           xd->mi[0]->mbmi.ref_frame[1] = NONE;
-          vp9_build_inter_predictors_sby(xd, mb_row << 1, mb_col << 1, bsize);
-          vp9_encode_sby_pass1(x, bsize);
+          vp10_build_inter_predictors_sby(xd, mb_row << 1, mb_col << 1, bsize);
+          vp10_encode_sby_pass1(x, bsize);
           sum_mvr += mv.row;
           sum_mvr_abs += abs(mv.row);
           sum_mvc += mv.col;
@@ -1013,7 +1014,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     x->plane[2].src.buf += uv_mb_height * x->plane[1].src.stride -
                            uv_mb_height * cm->mb_cols;
 
-    vp9_clear_system_state();
+    vp10_clear_system_state();
   }
 
   // Clamp the image start to rows/2. This number of rows is discarded top
@@ -1116,7 +1117,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   vp9_extend_frame_borders(new_yv12);
 
   if (lc != NULL) {
-    vp9_update_reference_frames(cpi);
+    vp10_update_reference_frames(cpi);
   } else {
     // The frame we just compressed now becomes the last frame.
     ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->lst_fb_idx],
@@ -1149,7 +1150,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
   ++cm->current_video_frame;
   if (cpi->use_svc)
-    vp9_inc_frame_in_layer(cpi);
+    vp10_inc_frame_in_layer(cpi);
 }
 
 static double calc_correction_factor(double err_per_mb,
@@ -1162,7 +1163,7 @@ static double calc_correction_factor(double err_per_mb,
 
   // Adjustment based on actual quantizer to power term.
   const double power_term =
-      MIN(vp9_convert_qindex_to_q(q, bit_depth) * 0.01 + pt_low, pt_high);
+      MIN(vp10_convert_qindex_to_q(q, bit_depth) * 0.01 + pt_low, pt_high);
 
   // Calculate correction factor.
   if (power_term < 1.0)
@@ -1215,7 +1216,7 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
                                  FACTOR_PT_LOW, FACTOR_PT_HIGH, q,
                                  cpi->common.bit_depth);
       const int bits_per_mb =
-        vp9_rc_bits_per_mb(INTER_FRAME, q,
+        vp10_rc_bits_per_mb(INTER_FRAME, q,
                            factor * speed_term * group_weight_factor,
                            cpi->common.bit_depth);
       if (bits_per_mb <= target_norm_bits_per_mb)
@@ -1233,12 +1234,12 @@ static void setup_rf_level_maxq(VP9_COMP *cpi) {
   int i;
   RATE_CONTROL *const rc = &cpi->rc;
   for (i = INTER_NORMAL; i < RATE_FACTOR_LEVELS; ++i) {
-    int qdelta = vp9_frame_type_qdelta(cpi, i, rc->worst_quality);
+    int qdelta = vp10_frame_type_qdelta(cpi, i, rc->worst_quality);
     rc->rf_level_maxq[i] = MAX(rc->worst_quality + qdelta, rc->best_quality);
   }
 }
 
-void vp9_init_subsampling(VP9_COMP *cpi) {
+void vp10_init_subsampling(VP9_COMP *cpi) {
   const VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   const int w = cm->width;
@@ -1254,7 +1255,7 @@ void vp9_init_subsampling(VP9_COMP *cpi) {
   setup_rf_level_maxq(cpi);
 }
 
-void calculate_coded_size(VP9_COMP *cpi,
+void vp10_calculate_coded_size(VP9_COMP *cpi,
                           int *scaled_frame_width,
                           int *scaled_frame_height) {
   RATE_CONTROL *const rc = &cpi->rc;
@@ -1262,7 +1263,7 @@ void calculate_coded_size(VP9_COMP *cpi,
   *scaled_frame_height = rc->frame_height[rc->frame_size_selector];
 }
 
-void vp9_init_second_pass(VP9_COMP *cpi) {
+void vp10_init_second_pass(VP9_COMP *cpi) {
   SVC *const svc = &cpi->svc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   const int is_two_pass_svc = (svc->number_spatial_layers > 1) ||
@@ -1291,12 +1292,12 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
   // first pass.
 
   if (is_two_pass_svc) {
-    vp9_update_spatial_layer_framerate(cpi, frame_rate);
+    vp10_update_spatial_layer_framerate(cpi, frame_rate);
     twopass->bits_left = (int64_t)(stats->duration *
         svc->layer_context[svc->spatial_layer_id].target_bandwidth /
         10000000.0);
   } else {
-    vp9_new_framerate(cpi, frame_rate);
+    vp10_new_framerate(cpi, frame_rate);
     twopass->bits_left = (int64_t)(stats->duration * oxcf->target_bandwidth /
                              10000000.0);
   }
@@ -1333,7 +1334,7 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
   twopass->last_kfgroup_zeromotion_pct = 100;
 
   if (oxcf->resize_mode != RESIZE_NONE) {
-    vp9_init_subsampling(cpi);
+    vp10_init_subsampling(cpi);
   }
 }
 
@@ -1482,7 +1483,7 @@ static double calc_frame_boost(VP9_COMP *cpi,
                                double max_boost) {
   double frame_boost;
   const double lq =
-    vp9_convert_qindex_to_q(cpi->rc.avg_frame_qindex[INTER_FRAME],
+    vp10_convert_qindex_to_q(cpi->rc.avg_frame_qindex[INTER_FRAME],
                             cpi->common.bit_depth);
   const double boost_q_correction = MIN((0.5 + (lq * 0.015)), 1.5);
   int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE)
@@ -1707,7 +1708,7 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
     alt_frame_index = cpi->svc.number_temporal_layers;
 
   key_frame = cpi->common.frame_type == KEY_FRAME ||
-              vp9_is_upper_layer_key_frame(cpi);
+              vp10_is_upper_layer_key_frame(cpi);
 
   get_arf_buffer_indices(arf_buffer_indices);
 
@@ -1816,7 +1817,7 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
   // Note:
   // We need to configure the frame at the end of the sequence + 1 that will be
   // the start frame for the next group. Otherwise prior to the call to
-  // vp9_rc_get_second_pass_params() the data will be undefined.
+  // vp10_rc_get_second_pass_params() the data will be undefined.
   gf_group->arf_update_idx[frame_index] = arf_buffer_indices[0];
   gf_group->arf_ref_idx[frame_index] = arf_buffer_indices[0];
 
@@ -1888,11 +1889,11 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // Reset the GF group data structures unless this is a key
   // frame in which case it will already have been done.
   if (is_key_frame == 0) {
-    vp9_zero(twopass->gf_group);
+    vp10_zero(twopass->gf_group);
   }
 
-  vp9_clear_system_state();
-  vp9_zero(next_frame);
+  vp10_clear_system_state();
+  vp10_zero(next_frame);
 
   // Load stats for the current frame.
   mod_frame_err = calculate_modified_err(cpi, twopass, oxcf, this_frame);
@@ -1920,10 +1921,10 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // If the image appears almost completely static we can extend beyond this.
   {
     int int_max_q =
-      (int)(vp9_convert_qindex_to_q(twopass->active_worst_quality,
+      (int)(vp10_convert_qindex_to_q(twopass->active_worst_quality,
                                    cpi->common.bit_depth));
     int int_lbq =
-      (int)(vp9_convert_qindex_to_q(rc->last_boosted_qindex,
+      (int)(vp10_convert_qindex_to_q(rc->last_boosted_qindex,
                                    cpi->common.bit_depth));
     active_min_gf_interval = rc->min_gf_interval + MIN(2, int_max_q / 200);
     if (active_min_gf_interval > rc->max_gf_interval)
@@ -2281,12 +2282,12 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   double kf_group_err = 0.0;
   double recent_loop_decay[8] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
-  vp9_zero(next_frame);
+  vp10_zero(next_frame);
 
   cpi->common.frame_type = KEY_FRAME;
 
   // Reset the GF group data structures.
-  vp9_zero(*gf_group);
+  vp10_zero(*gf_group);
 
   // Is this a forced key frame by interval.
   rc->this_key_frame_forced = rc->next_key_frame_forced;
@@ -2577,7 +2578,7 @@ static int is_skippable_frame(const VP9_COMP *cpi) {
     twopass->stats_in->pcnt_inter - twopass->stats_in->pcnt_motion == 1);
 }
 
-void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
+void vp10_rc_get_second_pass_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   TWO_PASS *const twopass = &cpi->twopass;
@@ -2606,7 +2607,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     int target_rate;
     configure_buffer_updates(cpi);
     target_rate = gf_group->bit_allocation[gf_group->index];
-    target_rate = vp9_rc_clamp_pframe_target_size(cpi, target_rate);
+    target_rate = vp10_rc_clamp_pframe_target_size(cpi, target_rate);
     rc->base_frame_target = target_rate;
 
     cm->frame_type = INTER_FRAME;
@@ -2632,7 +2633,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     return;
   }
 
-  vp9_clear_system_state();
+  vp10_clear_system_state();
 
   if (cpi->oxcf.rc_mode == VPX_Q) {
     twopass->active_worst_quality = cpi->oxcf.cq_level;
@@ -2658,12 +2659,12 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     twopass->baseline_active_worst_quality = tmp_q;
     rc->ni_av_qi = tmp_q;
     rc->last_q[INTER_FRAME] = tmp_q;
-    rc->avg_q = vp9_convert_qindex_to_q(tmp_q, cm->bit_depth);
+    rc->avg_q = vp10_convert_qindex_to_q(tmp_q, cm->bit_depth);
     rc->avg_frame_qindex[INTER_FRAME] = tmp_q;
     rc->last_q[KEY_FRAME] = (tmp_q + cpi->oxcf.best_allowed_q) / 2;
     rc->avg_frame_qindex[KEY_FRAME] = rc->last_q[KEY_FRAME];
   }
-  vp9_zero(this_frame);
+  vp10_zero(this_frame);
   if (EOF == input_stats(twopass, &this_frame))
     return;
 
@@ -2738,9 +2739,9 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 
   target_rate = gf_group->bit_allocation[gf_group->index];
   if (cpi->common.frame_type == KEY_FRAME)
-    target_rate = vp9_rc_clamp_iframe_target_size(cpi, target_rate);
+    target_rate = vp10_rc_clamp_iframe_target_size(cpi, target_rate);
   else
-    target_rate = vp9_rc_clamp_pframe_target_size(cpi, target_rate);
+    target_rate = vp10_rc_clamp_pframe_target_size(cpi, target_rate);
 
   rc->base_frame_target = target_rate;
 
@@ -2760,7 +2761,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 #define MINQ_ADJ_LIMIT 48
 #define MINQ_ADJ_LIMIT_CQ 20
 #define HIGH_UNDERSHOOT_RATIO 2
-void vp9_twopass_postencode_update(VP9_COMP *cpi) {
+void vp10_twopass_postencode_update(VP9_COMP *cpi) {
   TWO_PASS *const twopass = &cpi->twopass;
   RATE_CONTROL *const rc = &cpi->rc;
   const int bits_used = rc->base_frame_target;
@@ -2783,7 +2784,7 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
   }
 
   if (cpi->common.frame_type != KEY_FRAME &&
-      !vp9_is_upper_layer_key_frame(cpi)) {
+      !vp10_is_upper_layer_key_frame(cpi)) {
     twopass->kf_group_bits -= bits_used;
     twopass->last_kfgroup_zeromotion_pct = twopass->kf_zeromotion_pct;
   }
