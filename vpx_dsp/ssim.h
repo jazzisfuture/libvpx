@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_ENCODER_VP9_SSIM_H_
-#define VPX_ENCODER_VP9_SSIM_H_
+#ifndef VPX_DSP_SSIM_H_
+#define VPX_DSP_SSIM_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,52 +26,6 @@ void vpx_reset_mmx_state(void);
 #define vpx_clear_system_state()
 #endif
 
-// metrics used for calculating ssim, ssim2, dssim, and ssimc
-typedef struct {
-  // source sum ( over 8x8 region )
-  uint32_t sum_s;
-
-  // reference sum (over 8x8 region )
-  uint32_t sum_r;
-
-  // source sum squared ( over 8x8 region )
-  uint32_t sum_sq_s;
-
-  // reference sum squared (over 8x8 region )
-  uint32_t sum_sq_r;
-
-  // sum of source times reference (over 8x8 region)
-  uint32_t sum_sxr;
-
-  // calculated ssim score between source and reference
-  double ssim;
-} Ssimv;
-
-// metrics collected on a frame basis
-typedef struct {
-  // ssim consistency error metric ( see code for explanation )
-  double ssimc;
-
-  // standard ssim
-  double ssim;
-
-  // revised ssim ( see code for explanation)
-  double ssim2;
-
-  // ssim restated as an error metric like sse
-  double dssim;
-
-  // dssim converted to decibels
-  double dssimd;
-
-  // ssimc converted to decibels
-  double ssimcd;
-} Metrics;
-
-double vpx_get_ssim_metrics(uint8_t *img1, int img1_pitch, uint8_t *img2,
-                      int img2_pitch, int width, int height, Ssimv *sv2,
-                      Metrics *m, int do_inconsistency);
-
 double vpx_calc_ssim(const YV12_BUFFER_CONFIG *source,
                      const YV12_BUFFER_CONFIG *dest,
                      double *weight);
@@ -79,12 +33,6 @@ double vpx_calc_ssim(const YV12_BUFFER_CONFIG *source,
 double vpx_calc_ssimg(const YV12_BUFFER_CONFIG *source,
                       const YV12_BUFFER_CONFIG *dest,
                       double *ssim_y, double *ssim_u, double *ssim_v);
-
-double vpx_calc_fastssim(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
-                         double *ssim_y, double *ssim_u, double *ssim_v);
-
-double vpx_psnrhvs(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
-                   double *ssim_y, double *ssim_u, double *ssim_v);
 
 #if CONFIG_VP9_HIGHBITDEPTH
 double vpx_highbd_calc_ssim(const YV12_BUFFER_CONFIG *source,
@@ -104,4 +52,4 @@ double vpx_highbd_calc_ssimg(const YV12_BUFFER_CONFIG *source,
 }  // extern "C"
 #endif
 
-#endif  // VPX_ENCODER_VP9_SSIM_H_
+#endif  // VPX_DSP_SSIM_H_
