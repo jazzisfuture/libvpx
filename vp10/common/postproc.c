@@ -30,7 +30,7 @@ static const short kernel5[] = {
   1, 1, 4, 1, 1
 };
 
-const short vp9_rv[] = {
+const short vp10_rv[] = {
   8, 5, 2, 2, 8, 12, 4, 9, 8, 3,
   0, 3, 9, 0, 0, 0, 8, 3, 14, 4,
   10, 1, 11, 14, 1, 14, 9, 6, 12, 11,
@@ -80,7 +80,7 @@ const short vp9_rv[] = {
 static const uint8_t q_diff_thresh = 20;
 static const uint8_t last_q_thresh = 170;
 
-void vp9_post_proc_down_and_across_c(const uint8_t *src_ptr,
+void vp10_post_proc_down_and_across_c(const uint8_t *src_ptr,
                                      uint8_t *dst_ptr,
                                      int src_pixels_per_line,
                                      int dst_pixels_per_line,
@@ -154,7 +154,7 @@ void vp9_post_proc_down_and_across_c(const uint8_t *src_ptr,
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_highbd_post_proc_down_and_across_c(const uint16_t *src_ptr,
+void vp10_highbd_post_proc_down_and_across_c(const uint16_t *src_ptr,
                                             uint16_t *dst_ptr,
                                             int src_pixels_per_line,
                                             int dst_pixels_per_line,
@@ -235,7 +235,7 @@ static int q2mbl(int x) {
   return x * x / 3;
 }
 
-void vp9_mbpost_proc_across_ip_c(uint8_t *src, int pitch,
+void vp10_mbpost_proc_across_ip_c(uint8_t *src, int pitch,
                                  int rows, int cols, int flimit) {
   int r, c, i;
   uint8_t *s = src;
@@ -271,7 +271,7 @@ void vp9_mbpost_proc_across_ip_c(uint8_t *src, int pitch,
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_highbd_mbpost_proc_across_ip_c(uint16_t *src, int pitch,
+void vp10_highbd_mbpost_proc_across_ip_c(uint16_t *src, int pitch,
                                         int rows, int cols, int flimit) {
   int r, c, i;
 
@@ -310,10 +310,10 @@ void vp9_highbd_mbpost_proc_across_ip_c(uint16_t *src, int pitch,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-void vp9_mbpost_proc_down_c(uint8_t *dst, int pitch,
+void vp10_mbpost_proc_down_c(uint8_t *dst, int pitch,
                             int rows, int cols, int flimit) {
   int r, c, i;
-  const short *rv3 = &vp9_rv[63 & rand()]; // NOLINT
+  const short *rv3 = &vp10_rv[63 & rand()]; // NOLINT
 
   for (c = 0; c < cols; c++) {
     uint8_t *s = &dst[c];
@@ -343,10 +343,10 @@ void vp9_mbpost_proc_down_c(uint8_t *dst, int pitch,
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_highbd_mbpost_proc_down_c(uint16_t *dst, int pitch,
+void vp10_highbd_mbpost_proc_down_c(uint16_t *dst, int pitch,
                                    int rows, int cols, int flimit) {
   int r, c, i;
-  const int16_t *rv3 = &vp9_rv[63 & rand()];  // NOLINT
+  const int16_t *rv3 = &vp10_rv[63 & rand()];  // NOLINT
 
   for (c = 0; c < cols; c++) {
     uint16_t *s = &dst[c];
@@ -388,69 +388,69 @@ static void deblock_and_de_macro_block(YV12_BUFFER_CONFIG   *source,
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (source->flags & YV12_FLAG_HIGHBITDEPTH) {
-    vp9_highbd_post_proc_down_and_across(CONVERT_TO_SHORTPTR(source->y_buffer),
+    vp10_highbd_post_proc_down_and_across(CONVERT_TO_SHORTPTR(source->y_buffer),
                                          CONVERT_TO_SHORTPTR(post->y_buffer),
                                          source->y_stride, post->y_stride,
                                          source->y_height, source->y_width,
                                          ppl);
 
-    vp9_highbd_mbpost_proc_across_ip(CONVERT_TO_SHORTPTR(post->y_buffer),
+    vp10_highbd_mbpost_proc_across_ip(CONVERT_TO_SHORTPTR(post->y_buffer),
                                      post->y_stride, post->y_height,
                                      post->y_width, q2mbl(q));
 
-    vp9_highbd_mbpost_proc_down(CONVERT_TO_SHORTPTR(post->y_buffer),
+    vp10_highbd_mbpost_proc_down(CONVERT_TO_SHORTPTR(post->y_buffer),
                                 post->y_stride, post->y_height,
                                 post->y_width, q2mbl(q));
 
-    vp9_highbd_post_proc_down_and_across(CONVERT_TO_SHORTPTR(source->u_buffer),
+    vp10_highbd_post_proc_down_and_across(CONVERT_TO_SHORTPTR(source->u_buffer),
                                          CONVERT_TO_SHORTPTR(post->u_buffer),
                                          source->uv_stride, post->uv_stride,
                                          source->uv_height, source->uv_width,
                                          ppl);
-    vp9_highbd_post_proc_down_and_across(CONVERT_TO_SHORTPTR(source->v_buffer),
+    vp10_highbd_post_proc_down_and_across(CONVERT_TO_SHORTPTR(source->v_buffer),
                                          CONVERT_TO_SHORTPTR(post->v_buffer),
                                          source->uv_stride, post->uv_stride,
                                          source->uv_height, source->uv_width,
                                          ppl);
   } else {
-    vp9_post_proc_down_and_across(source->y_buffer, post->y_buffer,
+    vp10_post_proc_down_and_across(source->y_buffer, post->y_buffer,
                                   source->y_stride, post->y_stride,
                                   source->y_height, source->y_width, ppl);
 
-    vp9_mbpost_proc_across_ip(post->y_buffer, post->y_stride, post->y_height,
+    vp10_mbpost_proc_across_ip(post->y_buffer, post->y_stride, post->y_height,
                               post->y_width, q2mbl(q));
 
-    vp9_mbpost_proc_down(post->y_buffer, post->y_stride, post->y_height,
+    vp10_mbpost_proc_down(post->y_buffer, post->y_stride, post->y_height,
                          post->y_width, q2mbl(q));
 
-    vp9_post_proc_down_and_across(source->u_buffer, post->u_buffer,
+    vp10_post_proc_down_and_across(source->u_buffer, post->u_buffer,
                                   source->uv_stride, post->uv_stride,
                                   source->uv_height, source->uv_width, ppl);
-    vp9_post_proc_down_and_across(source->v_buffer, post->v_buffer,
+    vp10_post_proc_down_and_across(source->v_buffer, post->v_buffer,
                                   source->uv_stride, post->uv_stride,
                                   source->uv_height, source->uv_width, ppl);
   }
 #else
-  vp9_post_proc_down_and_across(source->y_buffer, post->y_buffer,
+  vp10_post_proc_down_and_across(source->y_buffer, post->y_buffer,
                                 source->y_stride, post->y_stride,
                                 source->y_height, source->y_width, ppl);
 
-  vp9_mbpost_proc_across_ip(post->y_buffer, post->y_stride, post->y_height,
+  vp10_mbpost_proc_across_ip(post->y_buffer, post->y_stride, post->y_height,
                             post->y_width, q2mbl(q));
 
-  vp9_mbpost_proc_down(post->y_buffer, post->y_stride, post->y_height,
+  vp10_mbpost_proc_down(post->y_buffer, post->y_stride, post->y_height,
                        post->y_width, q2mbl(q));
 
-  vp9_post_proc_down_and_across(source->u_buffer, post->u_buffer,
+  vp10_post_proc_down_and_across(source->u_buffer, post->u_buffer,
                                 source->uv_stride, post->uv_stride,
                                 source->uv_height, source->uv_width, ppl);
-  vp9_post_proc_down_and_across(source->v_buffer, post->v_buffer,
+  vp10_post_proc_down_and_across(source->v_buffer, post->v_buffer,
                                 source->uv_stride, post->uv_stride,
                                 source->uv_height, source->uv_width, ppl);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
-void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
+void vp10_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
                  int q) {
   const int ppl = (int)(6.0e-05 * q * q * q - 0.0067 * q * q + 0.306 * q
                         + 0.0065 + 0.5);
@@ -469,24 +469,24 @@ void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
     assert((src->flags & YV12_FLAG_HIGHBITDEPTH) ==
            (dst->flags & YV12_FLAG_HIGHBITDEPTH));
     if (src->flags & YV12_FLAG_HIGHBITDEPTH) {
-      vp9_highbd_post_proc_down_and_across(CONVERT_TO_SHORTPTR(srcs[i]),
+      vp10_highbd_post_proc_down_and_across(CONVERT_TO_SHORTPTR(srcs[i]),
                                            CONVERT_TO_SHORTPTR(dsts[i]),
                                            src_strides[i], dst_strides[i],
                                            src_heights[i], src_widths[i], ppl);
     } else {
-      vp9_post_proc_down_and_across(srcs[i], dsts[i],
+      vp10_post_proc_down_and_across(srcs[i], dsts[i],
                                     src_strides[i], dst_strides[i],
                                     src_heights[i], src_widths[i], ppl);
     }
 #else
-    vp9_post_proc_down_and_across(srcs[i], dsts[i],
+    vp10_post_proc_down_and_across(srcs[i], dsts[i],
                                   src_strides[i], dst_strides[i],
                                   src_heights[i], src_widths[i], ppl);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   }
 }
 
-void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
+void vp10_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
                  int q) {
   const int ppl = (int)(6.0e-05 * q * q * q - 0.0067 * q * q + 0.306 * q
                         + 0.0065 + 0.5);
@@ -514,20 +514,20 @@ void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
           srcs[i] + 2 * src_stride + 2);
       uint16_t *const dst_plane = CONVERT_TO_SHORTPTR(
           dsts[i] + 2 * dst_stride + 2);
-      vp9_highbd_post_proc_down_and_across(src_plane, dst_plane, src_stride,
+      vp10_highbd_post_proc_down_and_across(src_plane, dst_plane, src_stride,
                                            dst_stride, src_height, src_width,
                                            ppl);
     } else {
       const uint8_t *const src_plane = srcs[i] + 2 * src_stride + 2;
       uint8_t *const dst_plane = dsts[i] + 2 * dst_stride + 2;
 
-      vp9_post_proc_down_and_across(src_plane, dst_plane, src_stride,
+      vp10_post_proc_down_and_across(src_plane, dst_plane, src_stride,
                                     dst_stride, src_height, src_width, ppl);
     }
 #else
     const uint8_t *const src_plane = srcs[i] + 2 * src_stride + 2;
     uint8_t *const dst_plane = dsts[i] + 2 * dst_stride + 2;
-    vp9_post_proc_down_and_across(src_plane, dst_plane, src_stride, dst_stride,
+    vp10_post_proc_down_and_across(src_plane, dst_plane, src_stride, dst_stride,
                                   src_height, src_width, ppl);
 #endif
   }
@@ -544,7 +544,7 @@ static void fillrd(struct postproc_state *state, int q, int a) {
   double sigma;
   int ai = a, qi = q, i;
 
-  vp9_clear_system_state();
+  vp10_clear_system_state();
 
   sigma = ai + .5 + .6 * (63 - qi) / 63.0;
 
@@ -586,7 +586,7 @@ static void fillrd(struct postproc_state *state, int q, int a) {
   state->last_noise = a;
 }
 
-void vp9_plane_add_noise_c(uint8_t *start, char *noise,
+void vp10_plane_add_noise_c(uint8_t *start, char *noise,
                            char blackclamp[16],
                            char whiteclamp[16],
                            char bothclamp[16],
@@ -623,8 +623,8 @@ static void swap_mi_and_prev_mi(VP9_COMMON *cm) {
   cm->postproc_state.prev_mi = cm->postproc_state.prev_mip + cm->mi_stride + 1;
 }
 
-int vp9_post_proc_frame(struct VP9Common *cm,
-                        YV12_BUFFER_CONFIG *dest, vp9_ppflags_t *ppflags) {
+int vp10_post_proc_frame(struct VP9Common *cm,
+                        YV12_BUFFER_CONFIG *dest, vp10_ppflags_t *ppflags) {
   const int q = MIN(105, cm->lf.filter_level * 2);
   const int flags = ppflags->post_proc_flag;
   YV12_BUFFER_CONFIG *const ppbuf = &cm->post_proc_buffer;
@@ -638,7 +638,7 @@ int vp9_post_proc_frame(struct VP9Common *cm,
     return 0;
   }
 
-  vp9_clear_system_state();
+  vp10_clear_system_state();
 
   // Alloc memory for prev_mip in the first frame.
   if (cm->current_video_frame == 1) {
@@ -691,7 +691,7 @@ int vp9_post_proc_frame(struct VP9Common *cm,
       cm->postproc_state.last_frame_valid && cm->bit_depth == 8 &&
       cm->postproc_state.last_base_qindex <= last_q_thresh &&
       cm->base_qindex - cm->postproc_state.last_base_qindex >= q_diff_thresh) {
-    vp9_mfqe(cm);
+    vp10_mfqe(cm);
     // TODO(jackychen): Consider whether enable deblocking by default
     // if mfqe is enabled. Need to take both the quality and the speed
     // into consideration.
@@ -703,7 +703,7 @@ int vp9_post_proc_frame(struct VP9Common *cm,
                                  q + (ppflags->deblocking_level - 5) * 10,
                                  1, 0);
     } else if (flags & VP9D_DEBLOCK) {
-      vp9_deblock(&cm->post_proc_buffer_int, ppbuf, q);
+      vp10_deblock(&cm->post_proc_buffer_int, ppbuf, q);
     } else {
       vp8_yv12_copy_frame(&cm->post_proc_buffer_int, ppbuf);
     }
@@ -711,7 +711,7 @@ int vp9_post_proc_frame(struct VP9Common *cm,
     deblock_and_de_macro_block(cm->frame_to_show, ppbuf,
                                q + (ppflags->deblocking_level - 5) * 10, 1, 0);
   } else if (flags & VP9D_DEBLOCK) {
-    vp9_deblock(cm->frame_to_show, ppbuf, q);
+    vp10_deblock(cm->frame_to_show, ppbuf, q);
   } else {
     vp8_yv12_copy_frame(cm->frame_to_show, ppbuf);
   }
@@ -726,7 +726,7 @@ int vp9_post_proc_frame(struct VP9Common *cm,
       fillrd(ppstate, 63 - q, noise_level);
     }
 
-    vp9_plane_add_noise(ppbuf->y_buffer, ppstate->noise, ppstate->blackclamp,
+    vp10_plane_add_noise(ppbuf->y_buffer, ppstate->noise, ppstate->blackclamp,
                         ppstate->whiteclamp, ppstate->bothclamp,
                         ppbuf->y_width, ppbuf->y_height, ppbuf->y_stride);
   }

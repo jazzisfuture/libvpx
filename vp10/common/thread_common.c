@@ -117,23 +117,23 @@ void thread_loop_filter_rows(const YV12_BUFFER_CONFIG *const frame_buffer,
 
       sync_read(lf_sync, r, c);
 
-      vp9_setup_dst_planes(planes, frame_buffer, mi_row, mi_col);
+      vp10_setup_dst_planes(planes, frame_buffer, mi_row, mi_col);
 
       // TODO(JBB): Make setup_mask work for non 420.
-      vp9_setup_mask(cm, mi_row, mi_col, mi + mi_col, cm->mi_stride,
+      vp10_setup_mask(cm, mi_row, mi_col, mi + mi_col, cm->mi_stride,
                      &lfm);
 
-      vp9_filter_block_plane_ss00(cm, &planes[0], mi_row, &lfm);
+      vp10_filter_block_plane_ss00(cm, &planes[0], mi_row, &lfm);
       for (plane = 1; plane < num_planes; ++plane) {
         switch (path) {
           case LF_PATH_420:
-            vp9_filter_block_plane_ss11(cm, &planes[plane], mi_row, &lfm);
+            vp10_filter_block_plane_ss11(cm, &planes[plane], mi_row, &lfm);
             break;
           case LF_PATH_444:
-            vp9_filter_block_plane_ss00(cm, &planes[plane], mi_row, &lfm);
+            vp10_filter_block_plane_ss00(cm, &planes[plane], mi_row, &lfm);
             break;
           case LF_PATH_SLOW:
-            vp9_filter_block_plane_non420(cm, &planes[plane], mi + mi_col,
+            vp10_filter_block_plane_non420(cm, &planes[plane], mi + mi_col,
                                           mi_row, mi_col);
             break;
         }
@@ -170,8 +170,8 @@ static void loop_filter_rows_mt(YV12_BUFFER_CONFIG *frame,
 
   if (!lf_sync->sync_range || sb_rows != lf_sync->rows ||
       num_workers > lf_sync->num_workers) {
-    vp9_loop_filter_dealloc(lf_sync);
-    vp9_loop_filter_alloc(lf_sync, cm, sb_rows, cm->width, num_workers);
+    vp10_loop_filter_dealloc(lf_sync);
+    vp10_loop_filter_alloc(lf_sync, cm, sb_rows, cm->width, num_workers);
   }
 
   // Initialize cur_sb_col to -1 for all SB rows.
@@ -194,7 +194,7 @@ static void loop_filter_rows_mt(YV12_BUFFER_CONFIG *frame,
     worker->data2 = lf_data;
 
     // Loopfilter data
-    vp9_loop_filter_data_reset(lf_data, frame, cm, planes);
+    vp10_loop_filter_data_reset(lf_data, frame, cm, planes);
     lf_data->start = start + i * MI_BLOCK_SIZE;
     lf_data->stop = stop;
     lf_data->y_only = y_only;
@@ -213,7 +213,7 @@ static void loop_filter_rows_mt(YV12_BUFFER_CONFIG *frame,
   }
 }
 
-void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame,
+void vp10_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame,
                               VP9_COMMON *cm,
                               struct macroblockd_plane planes[MAX_MB_PLANE],
                               int frame_filter_level,
@@ -232,7 +232,7 @@ void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame,
     mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
   }
   end_mi_row = start_mi_row + mi_rows_to_filter;
-  vp9_loop_filter_frame_init(cm, frame_filter_level);
+  vp10_loop_filter_frame_init(cm, frame_filter_level);
 
   loop_filter_rows_mt(frame, cm, planes, start_mi_row, end_mi_row,
                       y_only, workers, num_workers, lf_sync);
@@ -253,7 +253,7 @@ static INLINE int get_sync_range(int width) {
 }
 
 // Allocate memory for lf row synchronization
-void vp9_loop_filter_alloc(VP9LfSync *lf_sync, VP9_COMMON *cm, int rows,
+void vp10_loop_filter_alloc(VP9LfSync *lf_sync, VP9_COMMON *cm, int rows,
                            int width, int num_workers) {
   lf_sync->rows = rows;
 #if CONFIG_MULTITHREAD
@@ -290,7 +290,7 @@ void vp9_loop_filter_alloc(VP9LfSync *lf_sync, VP9_COMMON *cm, int rows,
 }
 
 // Deallocate lf synchronization related mutex and data
-void vp9_loop_filter_dealloc(VP9LfSync *lf_sync) {
+void vp10_loop_filter_dealloc(VP9LfSync *lf_sync) {
   if (lf_sync != NULL) {
 #if CONFIG_MULTITHREAD
     int i;
@@ -312,12 +312,12 @@ void vp9_loop_filter_dealloc(VP9LfSync *lf_sync) {
     vpx_free(lf_sync->cur_sb_col);
     // clear the structure as the source of this call may be a resize in which
     // case this call will be followed by an _alloc() which may fail.
-    vp9_zero(*lf_sync);
+    vp10_zero(*lf_sync);
   }
 }
 
 // Accumulate frame counts.
-void vp9_accumulate_frame_counts(VP9_COMMON *cm, FRAME_COUNTS *counts,
+void vp10_accumulate_frame_counts(VP9_COMMON *cm, FRAME_COUNTS *counts,
                                  int is_dec) {
   int i, j, k, l, m;
 

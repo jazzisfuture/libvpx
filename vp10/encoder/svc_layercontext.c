@@ -18,7 +18,7 @@
 #define SMALL_FRAME_WIDTH  16
 #define SMALL_FRAME_HEIGHT 16
 
-void vp9_init_layer_context(VP9_COMP *const cpi) {
+void vp10_init_layer_context(VP9_COMP *const cpi) {
   SVC *const svc = &cpi->svc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   int sl, tl;
@@ -103,7 +103,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
 }
 
 // Update the layer context from a change_config() call.
-void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
+void vp10_update_layer_context_change_config(VP9_COMP *const cpi,
                                             const int target_bandwidth) {
   SVC *const svc = &cpi->svc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
@@ -202,7 +202,7 @@ static LAYER_CONTEXT *get_layer_context(VP9_COMP *const cpi) {
              &cpi->svc.layer_context[cpi->svc.spatial_layer_id];
 }
 
-void vp9_update_temporal_layer_framerate(VP9_COMP *const cpi) {
+void vp10_update_temporal_layer_framerate(VP9_COMP *const cpi) {
   SVC *const svc = &cpi->svc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   LAYER_CONTEXT *const lc = get_layer_context(cpi);
@@ -229,7 +229,7 @@ void vp9_update_temporal_layer_framerate(VP9_COMP *const cpi) {
   }
 }
 
-void vp9_update_spatial_layer_framerate(VP9_COMP *const cpi, double framerate) {
+void vp10_update_spatial_layer_framerate(VP9_COMP *const cpi, double framerate) {
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   LAYER_CONTEXT *const lc = get_layer_context(cpi);
   RATE_CONTROL *const lrc = &lc->rc;
@@ -240,10 +240,10 @@ void vp9_update_spatial_layer_framerate(VP9_COMP *const cpi, double framerate) {
                                    oxcf->two_pass_vbrmin_section / 100);
   lrc->max_frame_bandwidth = (int)(((int64_t)lrc->avg_frame_bandwidth *
                                    oxcf->two_pass_vbrmax_section) / 100);
-  vp9_rc_set_gf_interval_range(cpi, lrc);
+  vp10_rc_set_gf_interval_range(cpi, lrc);
 }
 
-void vp9_restore_layer_context(VP9_COMP *const cpi) {
+void vp10_restore_layer_context(VP9_COMP *const cpi) {
   LAYER_CONTEXT *const lc = get_layer_context(cpi);
   const int old_frame_since_key = cpi->rc.frames_since_key;
   const int old_frame_to_key = cpi->rc.frames_to_key;
@@ -260,7 +260,7 @@ void vp9_restore_layer_context(VP9_COMP *const cpi) {
   }
 }
 
-void vp9_save_layer_context(VP9_COMP *const cpi) {
+void vp10_save_layer_context(VP9_COMP *const cpi) {
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   LAYER_CONTEXT *const lc = get_layer_context(cpi);
 
@@ -270,7 +270,7 @@ void vp9_save_layer_context(VP9_COMP *const cpi) {
   lc->alt_ref_source = cpi->alt_ref_source;
 }
 
-void vp9_init_second_pass_spatial_svc(VP9_COMP *cpi) {
+void vp10_init_second_pass_spatial_svc(VP9_COMP *cpi) {
   SVC *const svc = &cpi->svc;
   int i;
 
@@ -278,7 +278,7 @@ void vp9_init_second_pass_spatial_svc(VP9_COMP *cpi) {
     TWO_PASS *const twopass = &svc->layer_context[i].twopass;
 
     svc->spatial_layer_id = i;
-    vp9_init_second_pass(cpi);
+    vp10_init_second_pass(cpi);
 
     twopass->total_stats.spatial_layer_id = i;
     twopass->total_left_stats.spatial_layer_id = i;
@@ -286,7 +286,7 @@ void vp9_init_second_pass_spatial_svc(VP9_COMP *cpi) {
   svc->spatial_layer_id = 0;
 }
 
-void vp9_inc_frame_in_layer(VP9_COMP *const cpi) {
+void vp10_inc_frame_in_layer(VP9_COMP *const cpi) {
   LAYER_CONTEXT *const lc =
       &cpi->svc.layer_context[cpi->svc.spatial_layer_id *
                               cpi->svc.number_temporal_layers];
@@ -294,7 +294,7 @@ void vp9_inc_frame_in_layer(VP9_COMP *const cpi) {
   ++lc->frames_from_key_frame;
 }
 
-int vp9_is_upper_layer_key_frame(const VP9_COMP *const cpi) {
+int vp10_is_upper_layer_key_frame(const VP9_COMP *const cpi) {
   return is_two_pass_svc(cpi) &&
          cpi->svc.spatial_layer_id > 0 &&
          cpi->svc.layer_context[cpi->svc.spatial_layer_id *
@@ -478,7 +478,7 @@ static void set_flags_and_fb_idx_for_temporal_mode_noLayering(
     cpi->gld_fb_idx = 0;
 }
 
-int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
+int vp10_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   int width = 0, height = 0;
   LAYER_CONTEXT *lc = NULL;
 
@@ -509,14 +509,14 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
                        lc->scaling_factor_num, lc->scaling_factor_den,
                        &width, &height);
 
-  if (vp9_set_size_literal(cpi, width, height) != 0)
+  if (vp10_set_size_literal(cpi, width, height) != 0)
     return VPX_CODEC_INVALID_PARAM;
 
   return 0;
 }
 
 #if CONFIG_SPATIAL_SVC
-int vp9_svc_start_frame(VP9_COMP *const cpi) {
+int vp10_svc_start_frame(VP9_COMP *const cpi) {
   int width = 0, height = 0;
   LAYER_CONTEXT *lc;
   struct lookahead_entry *buf;
@@ -581,7 +581,7 @@ int vp9_svc_start_frame(VP9_COMP *const cpi) {
   // we put a empty invisible frame in front of them, then we will not use
   // prev_mi when encoding these frames.
 
-  buf = vp9_lookahead_peek(cpi->lookahead, 0);
+  buf = vp10_lookahead_peek(cpi->lookahead, 0);
   if (cpi->oxcf.error_resilient_mode == 0 && cpi->oxcf.pass == 2 &&
       cpi->svc.encode_empty_frame_state == NEED_TO_ENCODE &&
       lc->rc.frames_to_key != 0 &&
@@ -590,7 +590,7 @@ int vp9_svc_start_frame(VP9_COMP *const cpi) {
          cpi->svc.temporal_layer_id < cpi->svc.number_temporal_layers - 1) ||
         (cpi->svc.number_spatial_layers > 1 &&
          cpi->svc.spatial_layer_id == 0)) {
-      struct lookahead_entry *buf = vp9_lookahead_peek(cpi->lookahead, 0);
+      struct lookahead_entry *buf = vp10_lookahead_peek(cpi->lookahead, 0);
 
       if (buf != NULL) {
         cpi->svc.empty_frame.ts_start = buf->ts_start;
@@ -611,15 +611,15 @@ int vp9_svc_start_frame(VP9_COMP *const cpi) {
     }
   }
 
-  cpi->oxcf.worst_allowed_q = vp9_quantizer_to_qindex(lc->max_q);
-  cpi->oxcf.best_allowed_q = vp9_quantizer_to_qindex(lc->min_q);
+  cpi->oxcf.worst_allowed_q = vp10_quantizer_to_qindex(lc->max_q);
+  cpi->oxcf.best_allowed_q = vp10_quantizer_to_qindex(lc->min_q);
 
-  vp9_change_config(cpi, &cpi->oxcf);
+  vp10_change_config(cpi, &cpi->oxcf);
 
-  if (vp9_set_size_literal(cpi, width, height) != 0)
+  if (vp10_set_size_literal(cpi, width, height) != 0)
     return VPX_CODEC_INVALID_PARAM;
 
-  vp9_set_high_precision_mv(cpi, 1);
+  vp10_set_high_precision_mv(cpi, 1);
 
   cpi->alt_ref_source = get_layer_context(cpi)->alt_ref_source;
 
@@ -628,16 +628,16 @@ int vp9_svc_start_frame(VP9_COMP *const cpi) {
 
 #endif
 
-struct lookahead_entry *vp9_svc_lookahead_pop(VP9_COMP *const cpi,
+struct lookahead_entry *vp10_svc_lookahead_pop(VP9_COMP *const cpi,
                                               struct lookahead_ctx *ctx,
                                               int drain) {
   struct lookahead_entry *buf = NULL;
   if (ctx->sz && (drain || ctx->sz == ctx->max_sz - MAX_PRE_FRAMES)) {
-    buf = vp9_lookahead_peek(ctx, 0);
+    buf = vp10_lookahead_peek(ctx, 0);
     if (buf != NULL) {
       // Only remove the buffer when pop the highest layer.
       if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
-        vp9_lookahead_pop(ctx, drain);
+        vp10_lookahead_pop(ctx, drain);
       }
     }
   }

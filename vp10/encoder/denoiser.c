@@ -19,8 +19,8 @@
 
 /* The VP9 denoiser is a work-in-progress. It currently is only designed to work
  * with speed 6, though it (inexplicably) seems to also work with speed 5 (one
- * would need to modify the source code in vp9_pickmode.c and vp9_encoder.c to
- * make the calls to the vp9_denoiser_* functions when in speed 5).
+ * would need to modify the source code in vp10_pickmode.c and vp10_encoder.c to
+ * make the calls to the vp10_denoiser_* functions when in speed 5).
  *
  * The implementation is very similar to that of the VP8 denoiser. While
  * choosing the motion vectors / reference frames, the denoiser is run, and if
@@ -74,7 +74,7 @@ static int total_adj_weak_thresh(BLOCK_SIZE bs, int increase_denoising) {
 // TODO(jackychen): If increase_denoising is enabled in the future,
 // we might need to update the code for calculating 'total_adj' in
 // case the C code is not bit-exact with corresponding sse2 code.
-int vp9_denoiser_filter_c(const uint8_t *sig, int sig_stride,
+int vp10_denoiser_filter_c(const uint8_t *sig, int sig_stride,
                           const uint8_t *mc_avg,
                           int mc_avg_stride,
                           uint8_t *avg, int avg_stride,
@@ -295,7 +295,7 @@ static VP9_DENOISER_DECISION perform_motion_compensation(VP9_DENOISER *denoiser,
                   mi_row, mi_col);
   filter_mbd->plane[2].dst.stride = denoiser->mc_running_avg_y.uv_stride;
 
-  vp9_build_inter_predictors_sby(filter_mbd, mv_row, mv_col, bs);
+  vp10_build_inter_predictors_sby(filter_mbd, mv_row, mv_col, bs);
 
   // Restore everything to its original state
   *mbmi = saved_mbmi;
@@ -312,7 +312,7 @@ static VP9_DENOISER_DECISION perform_motion_compensation(VP9_DENOISER *denoiser,
   return FILTER_BLOCK;
 }
 
-void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
+void vp10_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                           int mi_row, int mi_col, BLOCK_SIZE bs,
                           PICK_MODE_CONTEXT *ctx) {
   int motion_magnitude = 0;
@@ -330,7 +330,7 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                                          &motion_magnitude);
 
   if (decision == FILTER_BLOCK) {
-    decision = vp9_denoiser_filter(src.buf, src.stride,
+    decision = vp10_denoiser_filter(src.buf, src.stride,
                                  mc_avg_start, mc_avg.y_stride,
                                  avg_start, avg.y_stride,
                                  0, bs, motion_magnitude);
@@ -373,7 +373,7 @@ static void swap_frame_buffer(YV12_BUFFER_CONFIG *dest,
   src->y_buffer = tmp_buf;
 }
 
-void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
+void vp10_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                                     YV12_BUFFER_CONFIG src,
                                     FRAME_TYPE frame_type,
                                     int refresh_alt_ref_frame,
@@ -402,12 +402,12 @@ void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
   }
 }
 
-void vp9_denoiser_reset_frame_stats(PICK_MODE_CONTEXT *ctx) {
+void vp10_denoiser_reset_frame_stats(PICK_MODE_CONTEXT *ctx) {
   ctx->zeromv_sse = UINT_MAX;
   ctx->newmv_sse = UINT_MAX;
 }
 
-void vp9_denoiser_update_frame_stats(MB_MODE_INFO *mbmi, unsigned int sse,
+void vp10_denoiser_update_frame_stats(MB_MODE_INFO *mbmi, unsigned int sse,
                                      PREDICTION_MODE mode,
                                      PICK_MODE_CONTEXT *ctx) {
   // TODO(tkopp): Use both MVs if possible
@@ -424,7 +424,7 @@ void vp9_denoiser_update_frame_stats(MB_MODE_INFO *mbmi, unsigned int sse,
   }
 }
 
-int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
+int vp10_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
                        int ssx, int ssy,
 #if CONFIG_VP9_HIGHBITDEPTH
                        int use_highbitdepth,
@@ -442,7 +442,7 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
 #endif
                                   border, legacy_byte_alignment);
     if (fail) {
-      vp9_denoiser_free(denoiser);
+      vp10_denoiser_free(denoiser);
       return 1;
     }
 #ifdef OUTPUT_YUV_DENOISED
@@ -457,7 +457,7 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
 #endif
                                 border, legacy_byte_alignment);
   if (fail) {
-    vp9_denoiser_free(denoiser);
+    vp10_denoiser_free(denoiser);
     return 1;
   }
 #ifdef OUTPUT_YUV_DENOISED
@@ -469,7 +469,7 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
   return 0;
 }
 
-void vp9_denoiser_free(VP9_DENOISER *denoiser) {
+void vp10_denoiser_free(VP9_DENOISER *denoiser) {
   int i;
   denoiser->frame_buffer_initialized = 0;
   if (denoiser == NULL) {

@@ -13,7 +13,7 @@
 #include "vp10/common/enums.h"
 #include "vp10/encoder/mips/msa/fdct_msa.h"
 
-void vp9_fwht4x4_msa(const int16_t *input, int16_t *output,
+void vp10_fwht4x4_msa(const int16_t *input, int16_t *output,
                      int32_t src_stride) {
   v8i16 in0, in1, in2, in3, in4;
 
@@ -45,7 +45,7 @@ void vp9_fwht4x4_msa(const int16_t *input, int16_t *output,
   ST4x2_UB(in2, output + 12, 4);
 }
 
-void vp9_fht4x4_msa(const int16_t *input, int16_t *output, int32_t stride,
+void vp10_fht4x4_msa(const int16_t *input, int16_t *output, int32_t stride,
                     int32_t tx_type) {
   v8i16 in0, in1, in2, in3;
 

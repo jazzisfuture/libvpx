@@ -23,7 +23,7 @@
 #include "vp10/decoder/decodeframe.h"
 
 static PREDICTION_MODE read_intra_mode(vpx_reader *r, const vpx_prob *p) {
-  return (PREDICTION_MODE)vpx_read_tree(r, vp9_intra_mode_tree, p);
+  return (PREDICTION_MODE)vpx_read_tree(r, vp10_intra_mode_tree, p);
 }
 
 static PREDICTION_MODE read_intra_mode_y(VP9_COMMON *cm, MACROBLOCKD *xd,
@@ -49,7 +49,7 @@ static PREDICTION_MODE read_intra_mode_uv(VP9_COMMON *cm, MACROBLOCKD *xd,
 
 static PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, MACROBLOCKD *xd,
                                        vpx_reader *r, int ctx) {
-  const int mode = vpx_read_tree(r, vp9_inter_mode_tree,
+  const int mode = vpx_read_tree(r, vp10_inter_mode_tree,
                                  cm->fc->inter_mode_probs[ctx]);
   FRAME_COUNTS *counts = xd->counts;
   if (counts)
@@ -59,7 +59,7 @@ static PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, MACROBLOCKD *xd,
 }
 
 static int read_segment_id(vpx_reader *r, const struct segmentation *seg) {
-  return vpx_read_tree(r, vp9_segment_tree, seg->tree_probs);
+  return vpx_read_tree(r, vp10_segment_tree, seg->tree_probs);
 }
 
 static TX_SIZE read_selected_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd,
@@ -173,7 +173,7 @@ static int read_inter_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   }
 
   if (seg->temporal_update) {
-    const vpx_prob pred_prob = vp9_get_pred_prob_seg_id(seg, xd);
+    const vpx_prob pred_prob = vp10_get_pred_prob_seg_id(seg, xd);
     mbmi->seg_id_predicted = vpx_read(r, pred_prob);
     segment_id = mbmi->seg_id_predicted ? predicted_segment_id
                                         : read_segment_id(r, seg);
@@ -189,7 +189,7 @@ static int read_skip(VP9_COMMON *cm, const MACROBLOCKD *xd,
   if (segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP)) {
     return 1;
   } else {
-    const int ctx = vp9_get_skip_context(xd);
+    const int ctx = vp10_get_skip_context(xd);
     const int skip = vpx_read(r, cm->fc->skip_probs[ctx]);
     FRAME_COUNTS *counts = xd->counts;
     if (counts)
@@ -245,19 +245,19 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
                                    get_y_mode_probs(mi, above_mi, left_mi, 0));
   }
 
-  mbmi->uv_mode = read_intra_mode(r, vp9_kf_uv_mode_prob[mbmi->mode]);
+  mbmi->uv_mode = read_intra_mode(r, vp10_kf_uv_mode_prob[mbmi->mode]);
 }
 
 static int read_mv_component(vpx_reader *r,
                              const nmv_component *mvcomp, int usehp) {
   int mag, d, fr, hp;
   const int sign = vpx_read(r, mvcomp->sign);
-  const int mv_class = vpx_read_tree(r, vp9_mv_class_tree, mvcomp->classes);
+  const int mv_class = vpx_read_tree(r, vp10_mv_class_tree, mvcomp->classes);
   const int class0 = mv_class == MV_CLASS_0;
 
   // Integer part
   if (class0) {
-    d = vpx_read_tree(r, vp9_mv_class0_tree, mvcomp->class0);
+    d = vpx_read_tree(r, vp10_mv_class0_tree, mvcomp->class0);
     mag = 0;
   } else {
     int i;
@@ -270,7 +270,7 @@ static int read_mv_component(vpx_reader *r,
   }
 
   // Fractional part
-  fr = vpx_read_tree(r, vp9_mv_fp_tree, class0 ? mvcomp->class0_fp[d]
+  fr = vpx_read_tree(r, vp10_mv_fp_tree, class0 ? mvcomp->class0_fp[d]
                                                : mvcomp->fp);
 
   // High precision part (if hp is not used, the default value of the hp is 1)
@@ -286,8 +286,8 @@ static INLINE void read_mv(vpx_reader *r, MV *mv, const MV *ref,
                            const nmv_context *ctx,
                            nmv_context_counts *counts, int allow_hp) {
   const MV_JOINT_TYPE joint_type =
-      (MV_JOINT_TYPE)vpx_read_tree(r, vp9_mv_joint_tree, ctx->joints);
-  const int use_hp = allow_hp && vp9_use_mv_hp(ref);
+      (MV_JOINT_TYPE)vpx_read_tree(r, vp10_mv_joint_tree, ctx->joints);
+  const int use_hp = allow_hp && vp10_use_mv_hp(ref);
   MV diff = {0, 0};
 
   if (mv_joint_vertical(joint_type))
@@ -296,7 +296,7 @@ static INLINE void read_mv(vpx_reader *r, MV *mv, const MV *ref,
   if (mv_joint_horizontal(joint_type))
     diff.col = read_mv_component(r, &ctx->comps[1], use_hp);
 
-  vp9_inc_mv(&diff, counts);
+  vp10_inc_mv(&diff, counts);
 
   mv->row = ref->row + diff.row;
   mv->col = ref->col + diff.col;
@@ -306,7 +306,7 @@ static REFERENCE_MODE read_block_reference_mode(VP9_COMMON *cm,
                                                 const MACROBLOCKD *xd,
                                                 vpx_reader *r) {
   if (cm->reference_mode == REFERENCE_MODE_SELECT) {
-    const int ctx = vp9_get_reference_mode_context(cm, xd);
+    const int ctx = vp10_get_reference_mode_context(cm, xd);
     const REFERENCE_MODE mode =
         (REFERENCE_MODE)vpx_read(r, cm->fc->comp_inter_prob[ctx]);
     FRAME_COUNTS *counts = xd->counts;
@@ -334,19 +334,19 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     // FIXME(rbultje) I'm pretty sure this breaks segmentation ref frame coding
     if (mode == COMPOUND_REFERENCE) {
       const int idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
-      const int ctx = vp9_get_pred_context_comp_ref_p(cm, xd);
+      const int ctx = vp10_get_pred_context_comp_ref_p(cm, xd);
       const int bit = vpx_read(r, fc->comp_ref_prob[ctx]);
       if (counts)
         ++counts->comp_ref[ctx][bit];
       ref_frame[idx] = cm->comp_fixed_ref;
       ref_frame[!idx] = cm->comp_var_ref[bit];
     } else if (mode == SINGLE_REFERENCE) {
-      const int ctx0 = vp9_get_pred_context_single_ref_p1(xd);
+      const int ctx0 = vp10_get_pred_context_single_ref_p1(xd);
       const int bit0 = vpx_read(r, fc->single_ref_prob[ctx0][0]);
       if (counts)
         ++counts->single_ref[ctx0][0][bit0];
       if (bit0) {
-        const int ctx1 = vp9_get_pred_context_single_ref_p2(xd);
+        const int ctx1 = vp10_get_pred_context_single_ref_p2(xd);
         const int bit1 = vpx_read(r, fc->single_ref_prob[ctx1][1]);
         if (counts)
           ++counts->single_ref[ctx1][1][bit1];
@@ -366,9 +366,9 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 static INLINE INTERP_FILTER read_switchable_interp_filter(
     VP9_COMMON *const cm, MACROBLOCKD *const xd,
     vpx_reader *r) {
-  const int ctx = vp9_get_pred_context_switchable_interp(xd);
+  const int ctx = vp10_get_pred_context_switchable_interp(xd);
   const INTERP_FILTER type =
-      (INTERP_FILTER)vpx_read_tree(r, vp9_switchable_interp_tree,
+      (INTERP_FILTER)vpx_read_tree(r, vp10_switchable_interp_tree,
                                    cm->fc->switchable_interp_prob[ctx]);
   FRAME_COUNTS *counts = xd->counts;
   if (counts)
@@ -465,7 +465,7 @@ static int read_is_inter_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   if (segfeature_active(&cm->seg, segment_id, SEG_LVL_REF_FRAME)) {
     return get_segdata(&cm->seg, segment_id, SEG_LVL_REF_FRAME) != INTRA_FRAME;
   } else {
-    const int ctx = vp9_get_intra_inter_context(xd);
+    const int ctx = vp10_get_intra_inter_context(xd);
     const int is_inter = vpx_read(r, cm->fc->intra_inter_prob[ctx]);
     FRAME_COUNTS *counts = xd->counts;
     if (counts)
@@ -476,7 +476,7 @@ static int read_is_inter_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 
 static void fpm_sync(void *const data, int mi_row) {
   VP9Decoder *const pbi = (VP9Decoder *)data;
-  vp9_frameworker_wait(pbi->frame_worker_owner, pbi->common.prev_frame,
+  vp10_frameworker_wait(pbi->frame_worker_owner, pbi->common.prev_frame,
                        mi_row << MI_BLOCK_SIZE_LOG2);
 }
 
@@ -501,12 +501,12 @@ static void read_inter_block_mode_info(VP9Decoder *const pbi,
     RefBuffer *ref_buf = &cm->frame_refs[frame - LAST_FRAME];
 
     xd->block_refs[ref] = ref_buf;
-    if ((!vp9_is_valid_scale(&ref_buf->sf)))
+    if ((!vp10_is_valid_scale(&ref_buf->sf)))
       vpx_internal_error(xd->error_info, VPX_CODEC_UNSUP_BITSTREAM,
                          "Reference frame has invalid dimensions");
-    vp9_setup_pre_planes(xd, ref, ref_buf->buf, mi_row, mi_col,
+    vp10_setup_pre_planes(xd, ref, ref_buf->buf, mi_row, mi_col,
                          &ref_buf->sf);
-    vp9_find_mv_refs(cm, xd, mi, frame, ref_mvs[frame],
+    vp10_find_mv_refs(cm, xd, mi, frame, ref_mvs[frame],
                      mi_row, mi_col, fpm_sync, (void *)pbi, inter_mode_ctx);
   }
 
@@ -525,7 +525,7 @@ static void read_inter_block_mode_info(VP9Decoder *const pbi,
 
   if (bsize < BLOCK_8X8 || mbmi->mode != ZEROMV) {
     for (ref = 0; ref < 1 + is_compound; ++ref) {
-      vp9_find_best_ref_mvs(xd, allow_hp, ref_mvs[mbmi->ref_frame[ref]],
+      vp10_find_best_ref_mvs(xd, allow_hp, ref_mvs[mbmi->ref_frame[ref]],
                             &nearestmv[ref], &nearmv[ref]);
     }
   }
@@ -549,7 +549,7 @@ static void read_inter_block_mode_info(VP9Decoder *const pbi,
         if (b_mode == NEARESTMV || b_mode == NEARMV) {
           uint8_t dummy_mode_ctx[MAX_REF_FRAMES];
           for (ref = 0; ref < 1 + is_compound; ++ref)
-            vp9_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,
+            vp10_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,
                                           &nearest_sub8x8[ref],
                                           &near_sub8x8[ref],
                                           dummy_mode_ctx);
@@ -604,9 +604,9 @@ static void read_inter_frame_mode_info(VP9Decoder *const pbi,
     read_intra_block_mode_info(cm, xd, mi, r);
 }
 
-void vpx_read_mode_info(VP9Decoder *const pbi, MACROBLOCKD *xd,
-                        int mi_row, int mi_col, vpx_reader *r,
-                        int x_mis, int y_mis) {
+void vp10_read_mode_info(VP9Decoder *const pbi, MACROBLOCKD *xd,
+                         int mi_row, int mi_col, vpx_reader *r,
+                         int x_mis, int y_mis) {
   VP9_COMMON *const cm = &pbi->common;
   MODE_INFO *const mi = xd->mi[0];
   MV_REF* frame_mvs = cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;

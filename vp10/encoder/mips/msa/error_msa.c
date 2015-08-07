@@ -85,7 +85,7 @@ BLOCK_ERROR_BLOCKSIZE_MSA(64);
 BLOCK_ERROR_BLOCKSIZE_MSA(256);
 BLOCK_ERROR_BLOCKSIZE_MSA(1024);
 
-int64_t vp9_block_error_msa(const tran_low_t *coeff_ptr,
+int64_t vp10_block_error_msa(const tran_low_t *coeff_ptr,
                             const tran_low_t *dq_coeff_ptr,
                             intptr_t blk_size, int64_t *ssz) {
   int64_t err;
@@ -106,7 +106,7 @@ int64_t vp9_block_error_msa(const tran_low_t *coeff_ptr,
       err = block_error_1024size_msa(coeff, dq_coeff, ssz);
       break;
     default:
-      err = vp9_block_error_c(coeff_ptr, dq_coeff_ptr, blk_size, ssz);
+      err = vp10_block_error_c(coeff_ptr, dq_coeff_ptr, blk_size, ssz);
       break;
   }
 

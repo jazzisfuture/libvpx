@@ -34,7 +34,7 @@ static int get_fixed_point_scale_factor(int other_size, int this_size) {
   return (other_size << REF_SCALE_SHIFT) / this_size;
 }
 
-MV32 vp9_scale_mv(const MV *mv, int x, int y, const struct scale_factors *sf) {
+MV32 vp10_scale_mv(const MV *mv, int x, int y, const struct scale_factors *sf) {
   const int x_off_q4 = scaled_x(x << SUBPEL_BITS, sf) & SUBPEL_MASK;
   const int y_off_q4 = scaled_y(y << SUBPEL_BITS, sf) & SUBPEL_MASK;
   const MV32 res = {
@@ -45,12 +45,12 @@ MV32 vp9_scale_mv(const MV *mv, int x, int y, const struct scale_factors *sf) {
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
+void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
                                        int other_w, int other_h,
                                        int this_w, int this_h,
                                        int use_highbd) {
 #else
-void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
+void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
                                        int other_w, int other_h,
                                        int this_w, int this_h) {
 #endif
@@ -65,7 +65,7 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
   sf->x_step_q4 = scaled_x(16, sf);
   sf->y_step_q4 = scaled_y(16, sf);
 
-  if (vp9_is_scaled(sf)) {
+  if (vp10_is_scaled(sf)) {
     sf->scale_value_x = scaled_x;
     sf->scale_value_y = scaled_y;
   } else {
