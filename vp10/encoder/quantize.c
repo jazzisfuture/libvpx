@@ -20,7 +20,7 @@
 #include "vp10/encoder/quantize.h"
 #include "vp10/encoder/rd.h"
 
-void vp9_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+void vp10_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                        int skip_block,
                        const int16_t *zbin_ptr, const int16_t *round_ptr,
                        const int16_t *quant_ptr, const int16_t *quant_shift_ptr,
@@ -61,7 +61,7 @@ void vp9_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_highbd_quantize_fp_c(const tran_low_t *coeff_ptr,
+void vp10_highbd_quantize_fp_c(const tran_low_t *coeff_ptr,
                               intptr_t count,
                               int skip_block,
                               const int16_t *zbin_ptr,
@@ -107,7 +107,7 @@ void vp9_highbd_quantize_fp_c(const tran_low_t *coeff_ptr,
 
 // TODO(jingning) Refactor this file and combine functions with similar
 // operations.
-void vp9_quantize_fp_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+void vp10_quantize_fp_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                              int skip_block,
                              const int16_t *zbin_ptr, const int16_t *round_ptr,
                              const int16_t *quant_ptr,
@@ -148,7 +148,7 @@ void vp9_quantize_fp_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_highbd_quantize_fp_32x32_c(const tran_low_t *coeff_ptr,
+void vp10_highbd_quantize_fp_32x32_c(const tran_low_t *coeff_ptr,
                                     intptr_t n_coeffs, int skip_block,
                                     const int16_t *zbin_ptr,
                                     const int16_t *round_ptr,
@@ -191,7 +191,7 @@ void vp9_highbd_quantize_fp_32x32_c(const tran_low_t *coeff_ptr,
 }
 #endif
 
-void vp9_regular_quantize_b_4x4(MACROBLOCK *x, int plane, int block,
+void vp10_regular_quantize_b_4x4(MACROBLOCK *x, int plane, int block,
                                 const int16_t *scan, const int16_t *iscan) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct macroblock_plane *p = &x->plane[plane];
@@ -229,7 +229,7 @@ static void invert_quant(int16_t *quant, int16_t *shift, int d) {
 }
 
 static int get_qzbin_factor(int q, vpx_bit_depth_t bit_depth) {
-  const int quant = vp9_dc_quant(q, 0, bit_depth);
+  const int quant = vp10_dc_quant(q, 0, bit_depth);
 #if CONFIG_VP9_HIGHBITDEPTH
   switch (bit_depth) {
     case VPX_BITS_8:
@@ -248,7 +248,7 @@ static int get_qzbin_factor(int q, vpx_bit_depth_t bit_depth) {
 #endif
 }
 
-void vp9_init_quantizer(VP9_COMP *cpi) {
+void vp10_init_quantizer(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   QUANTS *const quants = &cpi->quants;
   int i, q, quant;
@@ -263,8 +263,8 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
         qrounding_factor_fp = 64;
 
       // y
-      quant = i == 0 ? vp9_dc_quant(q, cm->y_dc_delta_q, cm->bit_depth)
-                     : vp9_ac_quant(q, 0, cm->bit_depth);
+      quant = i == 0 ? vp10_dc_quant(q, cm->y_dc_delta_q, cm->bit_depth)
+                     : vp10_ac_quant(q, 0, cm->bit_depth);
       invert_quant(&quants->y_quant[q][i], &quants->y_quant_shift[q][i], quant);
       quants->y_quant_fp[q][i] = (1 << 16) / quant;
       quants->y_round_fp[q][i] = (qrounding_factor_fp * quant) >> 7;
@@ -273,8 +273,8 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       cpi->y_dequant[q][i] = quant;
 
       // uv
-      quant = i == 0 ? vp9_dc_quant(q, cm->uv_dc_delta_q, cm->bit_depth)
-                     : vp9_ac_quant(q, cm->uv_ac_delta_q, cm->bit_depth);
+      quant = i == 0 ? vp10_dc_quant(q, cm->uv_dc_delta_q, cm->bit_depth)
+                     : vp10_ac_quant(q, cm->uv_ac_delta_q, cm->bit_depth);
       invert_quant(&quants->uv_quant[q][i],
                    &quants->uv_quant_shift[q][i], quant);
       quants->uv_quant_fp[q][i] = (1 << 16) / quant;
@@ -304,13 +304,13 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
   }
 }
 
-void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
+void vp10_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
   const VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   QUANTS *const quants = &cpi->quants;
   const int segment_id = xd->mi[0]->mbmi.segment_id;
-  const int qindex = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
-  const int rdmult = vp9_compute_rd_mult(cpi, qindex + cm->y_dc_delta_q);
+  const int qindex = vp10_get_qindex(&cm->seg, segment_id, cm->base_qindex);
+  const int rdmult = vp10_compute_rd_mult(cpi, qindex + cm->y_dc_delta_q);
   int i;
 
   // Y
@@ -345,15 +345,15 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
   x->errorperbit = rdmult >> 6;
   x->errorperbit += (x->errorperbit == 0);
 
-  vp9_initialize_me_consts(cpi, x, x->q_index);
+  vp10_initialize_me_consts(cpi, x, x->q_index);
 }
 
-void vp9_frame_init_quantizer(VP9_COMP *cpi) {
-  vp9_init_plane_quantizers(cpi, &cpi->td.mb);
+void vp10_frame_init_quantizer(VP9_COMP *cpi) {
+  vp10_init_plane_quantizers(cpi, &cpi->td.mb);
 }
 
-void vp9_set_quantizer(VP9_COMMON *cm, int q) {
-  // quantizer has to be reinitialized with vp9_init_quantizer() if any
+void vp10_set_quantizer(VP9_COMMON *cm, int q) {
+  // quantizer has to be reinitialized with vp10_init_quantizer() if any
   // delta_q changes.
   cm->base_qindex = q;
   cm->y_dc_delta_q = 0;
@@ -374,11 +374,11 @@ static const int quantizer_to_qindex[] = {
   224, 228, 232, 236, 240, 244, 249, 255,
 };
 
-int vp9_quantizer_to_qindex(int quantizer) {
+int vp10_quantizer_to_qindex(int quantizer) {
   return quantizer_to_qindex[quantizer];
 }
 
-int vp9_qindex_to_quantizer(int qindex) {
+int vp10_qindex_to_quantizer(int qindex) {
   int quantizer;
 
   for (quantizer = 0; quantizer < 64; ++quantizer)

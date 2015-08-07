@@ -18,7 +18,7 @@
 // Intra only frames, golden frames (except alt ref overlays) and
 // alt ref frames tend to be coded at a higher than ambient quality
 static int frame_is_boosted(const VP9_COMP *cpi) {
-  return frame_is_kf_gf_arf(cpi) || vp9_is_upper_layer_key_frame(cpi);
+  return frame_is_kf_gf_arf(cpi) || vp10_is_upper_layer_key_frame(cpi);
 }
 
 // Sets a partition size down to which the auto partition code will always
@@ -94,7 +94,7 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
   // Also if the image edge is internal to the coded area.
   if ((speed >= 1) && (cpi->oxcf.pass == 2) &&
       ((cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ||
-       (vp9_internal_image_edge(cpi)))) {
+       (vp10_internal_image_edge(cpi)))) {
     sf->disable_split_mask = DISABLE_COMPOUND_SPLIT;
   }
 
@@ -117,7 +117,7 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
 
   if (speed >= 1) {
     if ((cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ||
-        vp9_internal_image_edge(cpi)) {
+        vp10_internal_image_edge(cpi)) {
       sf->use_square_partition_only = !frame_is_boosted(cpi);
     } else {
       sf->use_square_partition_only = !frame_is_intra_only(cm);
@@ -281,7 +281,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->adaptive_pred_interp_filter = 2;
 
     // Disable reference masking if using spatial scaling since
-    // pred_mv_sad will not be set (since vp9_mv_pred will not
+    // pred_mv_sad will not be set (since vp10_mv_pred will not
     // be called).
     // TODO(marpan/agrange): Fix this condition.
     sf->reference_masking = (cpi->oxcf.resize_mode != RESIZE_DYNAMIC &&
@@ -402,7 +402,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
   }
 }
 
-void vp9_set_speed_features_framesize_dependent(VP9_COMP *cpi) {
+void vp10_set_speed_features_framesize_dependent(VP9_COMP *cpi) {
   SPEED_FEATURES *const sf = &cpi->sf;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   RD_OPT *const rd = &cpi->rd;
@@ -431,7 +431,7 @@ void vp9_set_speed_features_framesize_dependent(VP9_COMP *cpi) {
   }
 }
 
-void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
+void vp10_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   SPEED_FEATURES *const sf = &cpi->sf;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->td.mb;
@@ -516,9 +516,9 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   else if (oxcf->mode == GOOD)
     set_good_speed_feature(cpi, cm, sf, oxcf->speed);
 
-  cpi->full_search_sad = vp9_full_search_sad;
-  cpi->diamond_search_sad = oxcf->mode == BEST ? vp9_full_range_search
-                                               : vp9_diamond_search_sad;
+  cpi->full_search_sad = vp10_full_search_sad;
+  cpi->diamond_search_sad = oxcf->mode == BEST ? vp10_full_range_search
+                                               : vp10_diamond_search_sad;
 
   // Slow quant, dct and trellis not worthwhile for first pass
   // so make sure they are always turned off.
@@ -532,13 +532,13 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   }
 
   if (sf->mv.subpel_search_method == SUBPEL_TREE) {
-    cpi->find_fractional_mv_step = vp9_find_best_sub_pixel_tree;
+    cpi->find_fractional_mv_step = vp10_find_best_sub_pixel_tree;
   } else if (sf->mv.subpel_search_method == SUBPEL_TREE_PRUNED) {
-    cpi->find_fractional_mv_step = vp9_find_best_sub_pixel_tree_pruned;
+    cpi->find_fractional_mv_step = vp10_find_best_sub_pixel_tree_pruned;
   } else if (sf->mv.subpel_search_method == SUBPEL_TREE_PRUNED_MORE) {
-    cpi->find_fractional_mv_step = vp9_find_best_sub_pixel_tree_pruned_more;
+    cpi->find_fractional_mv_step = vp10_find_best_sub_pixel_tree_pruned_more;
   } else if (sf->mv.subpel_search_method == SUBPEL_TREE_PRUNED_EVENMORE) {
-    cpi->find_fractional_mv_step = vp9_find_best_sub_pixel_tree_pruned_evenmore;
+    cpi->find_fractional_mv_step = vp10_find_best_sub_pixel_tree_pruned_evenmore;
   }
 
   x->optimize = sf->optimize_coefficients == 1 && oxcf->pass != 1;

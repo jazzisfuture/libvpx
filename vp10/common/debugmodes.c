@@ -45,7 +45,7 @@ static void print_mi_data(VP9_COMMON *cm, FILE *file, const char *descriptor,
   fprintf(file, "\n");
 }
 
-void vp9_print_modes_and_motion_vectors(VP9_COMMON *cm, const char *file) {
+void vp10_print_modes_and_motion_vectors(VP9_COMMON *cm, const char *file) {
   int mi_row;
   int mi_col;
   FILE *mvs = fopen(file, "a");

@@ -20,6 +20,6 @@ typedef struct EncWorkerData {
   int start;
 } EncWorkerData;
 
-void vp9_encode_tiles_mt(struct VP9_COMP *cpi);
+void vp10_encode_tiles_mt(struct VP9_COMP *cpi);
 
 #endif  // VP9_ENCODER_VP9_ETHREAD_H_

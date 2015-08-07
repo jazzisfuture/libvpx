@@ -31,7 +31,7 @@ typedef struct {
 
 struct VP9_COMP;
 
-void vp9_update_mbgraph_stats(struct VP9_COMP *cpi);
+void vp10_update_mbgraph_stats(struct VP9_COMP *cpi);
 
 #ifdef __cplusplus
 }  // extern "C"

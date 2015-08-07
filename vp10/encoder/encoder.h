@@ -253,7 +253,7 @@ typedef struct TileDataEnc {
 } TileDataEnc;
 
 typedef struct RD_COUNTS {
-  vp9_coeff_count coef_counts[TX_SIZES][PLANE_TYPES];
+  vp10_coeff_count coef_counts[TX_SIZES][PLANE_TYPES];
   int64_t comp_pred_diff[REFERENCE_MODES];
   int64_t filter_diff[SWITCHABLE_FILTER_CONTEXTS];
 } RD_COUNTS;
@@ -385,9 +385,9 @@ typedef struct VP9_COMP {
   ActiveMap active_map;
 
   fractional_mv_step_fp *find_fractional_mv_step;
-  vp9_full_search_fn_t full_search_sad;
-  vp9_diamond_search_fn_t diamond_search_sad;
-  vp9_variance_fn_ptr_t fn_ptr[BLOCK_SIZES];
+  vp10_full_search_fn_t full_search_sad;
+  vp10_diamond_search_fn_t diamond_search_sad;
+  vp10_variance_fn_ptr_t fn_ptr[BLOCK_SIZES];
   uint64_t time_receive_data;
   uint64_t time_compress_data;
   uint64_t time_pick_lpf;
@@ -502,52 +502,52 @@ typedef struct VP9_COMP {
   VP9LfSync lf_row_sync;
 } VP9_COMP;
 
-void vp9_initialize_enc(void);
+void vp10_initialize_enc(void);
 
-struct VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
+struct VP9_COMP *vp10_create_compressor(VP9EncoderConfig *oxcf,
                                        BufferPool *const pool);
-void vp9_remove_compressor(VP9_COMP *cpi);
+void vp10_remove_compressor(VP9_COMP *cpi);
 
-void vp9_change_config(VP9_COMP *cpi, const VP9EncoderConfig *oxcf);
+void vp10_change_config(VP9_COMP *cpi, const VP9EncoderConfig *oxcf);
 
   // receive a frames worth of data. caller can assume that a copy of this
   // frame is made and not just a copy of the pointer..
-int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
+int vp10_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
                           YV12_BUFFER_CONFIG *sd, int64_t time_stamp,
                           int64_t end_time_stamp);
 
-int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
+int vp10_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush);
 
-int vp9_get_preview_raw_frame(VP9_COMP *cpi, YV12_BUFFER_CONFIG *dest,
-                              vp9_ppflags_t *flags);
+int vp10_get_preview_raw_frame(VP9_COMP *cpi, YV12_BUFFER_CONFIG *dest,
+                              vp10_ppflags_t *flags);
 
-int vp9_use_as_reference(VP9_COMP *cpi, int ref_frame_flags);
+int vp10_use_as_reference(VP9_COMP *cpi, int ref_frame_flags);
 
-void vp9_update_reference(VP9_COMP *cpi, int ref_frame_flags);
+void vp10_update_reference(VP9_COMP *cpi, int ref_frame_flags);
 
-int vp9_copy_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
+int vp10_copy_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
                            YV12_BUFFER_CONFIG *sd);
 
-int vp9_set_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
+int vp10_set_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
                           YV12_BUFFER_CONFIG *sd);
 
-int vp9_update_entropy(VP9_COMP *cpi, int update);
+int vp10_update_entropy(VP9_COMP *cpi, int update);
 
-int vp9_set_active_map(VP9_COMP *cpi, unsigned char *map, int rows, int cols);
+int vp10_set_active_map(VP9_COMP *cpi, unsigned char *map, int rows, int cols);
 
-int vp9_get_active_map(VP9_COMP *cpi, unsigned char *map, int rows, int cols);
+int vp10_get_active_map(VP9_COMP *cpi, unsigned char *map, int rows, int cols);
 
-int vp9_set_internal_size(VP9_COMP *cpi,
+int vp10_set_internal_size(VP9_COMP *cpi,
                           VPX_SCALING horiz_mode, VPX_SCALING vert_mode);
 
-int vp9_set_size_literal(VP9_COMP *cpi, unsigned int width,
+int vp10_set_size_literal(VP9_COMP *cpi, unsigned int width,
                          unsigned int height);
 
-void vp9_set_svc(VP9_COMP *cpi, int use_svc);
+void vp10_set_svc(VP9_COMP *cpi, int use_svc);
 
-int vp9_get_quantizer(struct VP9_COMP *cpi);
+int vp10_get_quantizer(struct VP9_COMP *cpi);
 
 static INLINE int frame_is_kf_gf_arf(const VP9_COMP *cpi) {
   return frame_is_intra_only(&cpi->common) ||
@@ -599,29 +599,29 @@ static INLINE int allocated_tokens(TileInfo tile) {
   return get_token_alloc(tile_mb_rows, tile_mb_cols);
 }
 
-int64_t vp9_get_y_sse(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b);
+int64_t vp10_get_y_sse(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b);
 #if CONFIG_VP9_HIGHBITDEPTH
-int64_t vp9_highbd_get_y_sse(const YV12_BUFFER_CONFIG *a,
+int64_t vp10_highbd_get_y_sse(const YV12_BUFFER_CONFIG *a,
                              const YV12_BUFFER_CONFIG *b);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-void vp9_alloc_compressor_data(VP9_COMP *cpi);
+void vp10_alloc_compressor_data(VP9_COMP *cpi);
 
-void vp9_scale_references(VP9_COMP *cpi);
+void vp10_scale_references(VP9_COMP *cpi);
 
-void vp9_update_reference_frames(VP9_COMP *cpi);
+void vp10_update_reference_frames(VP9_COMP *cpi);
 
-void vp9_set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv);
+void vp10_set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv);
 
-YV12_BUFFER_CONFIG *vp9_scale_if_required_fast(VP9_COMMON *cm,
+YV12_BUFFER_CONFIG *vp10_scale_if_required_fast(VP9_COMMON *cm,
                                                YV12_BUFFER_CONFIG *unscaled,
                                                YV12_BUFFER_CONFIG *scaled);
 
-YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
+YV12_BUFFER_CONFIG *vp10_scale_if_required(VP9_COMMON *cm,
                                           YV12_BUFFER_CONFIG *unscaled,
                                           YV12_BUFFER_CONFIG *scaled);
 
-void vp9_apply_encoding_flags(VP9_COMP *cpi, vpx_enc_frame_flags_t flags);
+void vp10_apply_encoding_flags(VP9_COMP *cpi, vpx_enc_frame_flags_t flags);
 
 static INLINE int is_two_pass_svc(const struct VP9_COMP *const cpi) {
   return cpi->use_svc && cpi->oxcf.pass != 0;
@@ -655,7 +655,7 @@ static INLINE int *cond_cost_list(const struct VP9_COMP *cpi, int *cost_list) {
   return cpi->sf.mv.subpel_search_method != SUBPEL_TREE ? cost_list : NULL;
 }
 
-void vp9_new_framerate(VP9_COMP *cpi, double framerate);
+void vp10_new_framerate(VP9_COMP *cpi, double framerate);
 
 #define LAYER_IDS_TO_IDX(sl, tl, num_tl) ((sl) * (num_tl) + (tl))
 

@@ -48,7 +48,7 @@ struct lookahead_ctx {
  * The lookahead stage is a queue of frame buffers on which some analysis
  * may be done when buffers are enqueued.
  */
-struct lookahead_ctx *vp9_lookahead_init(unsigned int width,
+struct lookahead_ctx *vp10_lookahead_init(unsigned int width,
                                          unsigned int height,
                                          unsigned int subsampling_x,
                                          unsigned int subsampling_y,
@@ -60,7 +60,7 @@ struct lookahead_ctx *vp9_lookahead_init(unsigned int width,
 
 /**\brief Destroys the lookahead stage
  */
-void vp9_lookahead_destroy(struct lookahead_ctx *ctx);
+void vp10_lookahead_destroy(struct lookahead_ctx *ctx);
 
 
 /**\brief Enqueue a source buffer
@@ -78,7 +78,7 @@ void vp9_lookahead_destroy(struct lookahead_ctx *ctx);
  * \param[in] flags       Flags set on this frame
  * \param[in] active_map  Map that specifies which macroblock is active
  */
-int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG *src,
+int vp10_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG *src,
                        int64_t ts_start, int64_t ts_end,
 #if CONFIG_VP9_HIGHBITDEPTH
                        int use_highbitdepth,
@@ -96,7 +96,7 @@ int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG *src,
  * \retval NULL, if drain set and queue is empty
  * \retval NULL, if drain not set and queue not of the configured depth
  */
-struct lookahead_entry *vp9_lookahead_pop(struct lookahead_ctx *ctx,
+struct lookahead_entry *vp10_lookahead_pop(struct lookahead_ctx *ctx,
                                           int drain);
 
 
@@ -107,7 +107,7 @@ struct lookahead_entry *vp9_lookahead_pop(struct lookahead_ctx *ctx,
  *
  * \retval NULL, if no buffer exists at the specified index
  */
-struct lookahead_entry *vp9_lookahead_peek(struct lookahead_ctx *ctx,
+struct lookahead_entry *vp10_lookahead_peek(struct lookahead_ctx *ctx,
                                            int index);
 
 
@@ -115,7 +115,7 @@ struct lookahead_entry *vp9_lookahead_peek(struct lookahead_ctx *ctx,
  *
  * \param[in] ctx       Pointer to the lookahead context
  */
-unsigned int vp9_lookahead_depth(struct lookahead_ctx *ctx);
+unsigned int vp10_lookahead_depth(struct lookahead_ctx *ctx);
 
 #ifdef __cplusplus
 }  // extern "C"
