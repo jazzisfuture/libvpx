@@ -21,19 +21,6 @@
 #include "vp10/common/reconintra.h"
 #include "vp10/common/onyxc_int.h"
 
-const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
-  DCT_DCT,    // DC
-  ADST_DCT,   // V
-  DCT_ADST,   // H
-  DCT_DCT,    // D45
-  ADST_ADST,  // D135
-  ADST_DCT,   // D117
-  DCT_ADST,   // D153
-  DCT_ADST,   // D207
-  ADST_DCT,   // D63
-  ADST_ADST,  // TM
-};
-
 enum {
   NEED_LEFT = 1 << 1,
   NEED_ABOVE = 1 << 2,
@@ -67,7 +54,7 @@ static intra_high_pred_fn pred_high[INTRA_MODES][4];
 static intra_high_pred_fn dc_pred_high[2][2][4];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-static void vp9_init_intra_predictors_internal(void) {
+static void vp10_init_intra_predictors_internal(void) {
 #define INIT_ALL_SIZES(p, type) \
   p[TX_4X4] = vpx_##type##_predictor_4x4; \
   p[TX_8X8] = vpx_##type##_predictor_8x8; \
@@ -385,7 +372,7 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
   }
 }
 
-void vp9_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
+void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
                              TX_SIZE tx_size, PREDICTION_MODE mode,
                              const uint8_t *ref, int ref_stride,
                              uint8_t *dst, int dst_stride,
@@ -410,6 +397,6 @@ void vp9_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
                          have_top, have_left, have_right, x, y, plane);
 }
 
-void vp9_init_intra_predictors(void) {
-  once(vp9_init_intra_predictors_internal);
+void vp10_init_intra_predictors(void) {
+  once(vp10_init_intra_predictors_internal);
 }

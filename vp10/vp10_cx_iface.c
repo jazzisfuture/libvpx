@@ -21,7 +21,7 @@
 #include "vp10/encoder/firstpass.h"
 #include "vp10/vp10_iface_common.h"
 
-struct vp9_extracfg {
+struct vp10_extracfg {
   int                         cpu_used;  // available cpu percentage in 1/16
   unsigned int                enable_auto_alt_ref;
   unsigned int                noise_sensitivity;
@@ -47,7 +47,7 @@ struct vp9_extracfg {
   vpx_color_space_t           color_space;
 };
 
-static struct vp9_extracfg default_extra_cfg = {
+static struct vp10_extracfg default_extra_cfg = {
   0,                          // cpu_used
   1,                          // enable_auto_alt_ref
   0,                          // noise_sensitivity
@@ -76,7 +76,7 @@ static struct vp9_extracfg default_extra_cfg = {
 struct vpx_codec_alg_priv {
   vpx_codec_priv_t        base;
   vpx_codec_enc_cfg_t     cfg;
-  struct vp9_extracfg     extra_cfg;
+  struct vp10_extracfg     extra_cfg;
   VP9EncoderConfig        oxcf;
   VP9_COMP               *cpi;
   unsigned char          *cx_data;
@@ -96,7 +96,7 @@ struct vpx_codec_alg_priv {
   BufferPool              *buffer_pool;
 };
 
-static VP9_REFFRAME ref_frame_to_vp9_reframe(vpx_ref_frame_type_t frame) {
+static VP9_REFFRAME ref_frame_to_vp10_reframe(vpx_ref_frame_type_t frame) {
   switch (frame) {
     case VP8_LAST_FRAME:
       return VP9_LAST_FLAG;
@@ -147,7 +147,7 @@ static vpx_codec_err_t update_error_state(vpx_codec_alg_priv_t *ctx,
 
 static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
                                        const vpx_codec_enc_cfg_t *cfg,
-                                       const struct vp9_extracfg *extra_cfg) {
+                                       const struct vp10_extracfg *extra_cfg) {
   RANGE_CHECK(cfg, g_w,                   1, 65535);  // 16 bits available
   RANGE_CHECK(cfg, g_h,                   1, 65535);  // 16 bits available
   RANGE_CHECK(cfg, g_timebase.den,        1, 1000000000);
@@ -379,7 +379,7 @@ static int get_image_bps(const vpx_image_t *img) {
 static vpx_codec_err_t set_encoder_config(
   VP9EncoderConfig *oxcf,
   const vpx_codec_enc_cfg_t *cfg,
-  const struct vp9_extracfg *extra_cfg) {
+  const struct vp10_extracfg *extra_cfg) {
   const int is_vbr = cfg->rc_end_usage == VPX_VBR;
   int sl, tl;
   oxcf->profile = cfg->g_profile;
@@ -418,10 +418,10 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->gf_cbr_boost_pct = extra_cfg->gf_cbr_boost_pct;
 
   oxcf->best_allowed_q =
-      extra_cfg->lossless ? 0 : vp9_quantizer_to_qindex(cfg->rc_min_quantizer);
+      extra_cfg->lossless ? 0 : vp10_quantizer_to_qindex(cfg->rc_min_quantizer);
   oxcf->worst_allowed_q =
-      extra_cfg->lossless ? 0 : vp9_quantizer_to_qindex(cfg->rc_max_quantizer);
-  oxcf->cq_level        = vp9_quantizer_to_qindex(extra_cfg->cq_level);
+      extra_cfg->lossless ? 0 : vp10_quantizer_to_qindex(cfg->rc_max_quantizer);
+  oxcf->cq_level        = vp10_quantizer_to_qindex(extra_cfg->cq_level);
   oxcf->fixed_q = -1;
 
   oxcf->under_shoot_pct         = cfg->rc_undershoot_pct;
@@ -574,7 +574,7 @@ static vpx_codec_err_t encoder_set_config(vpx_codec_alg_priv_t *ctx,
     set_encoder_config(&ctx->oxcf, &ctx->cfg, &ctx->extra_cfg);
     // On profile change, request a key frame
     force_key |= ctx->cpi->common.profile != ctx->oxcf.profile;
-    vp9_change_config(ctx->cpi, &ctx->oxcf);
+    vp10_change_config(ctx->cpi, &ctx->oxcf);
   }
 
   if (force_key)
@@ -588,7 +588,7 @@ static vpx_codec_err_t ctrl_get_quantizer(vpx_codec_alg_priv_t *ctx,
   int *const arg = va_arg(args, int *);
   if (arg == NULL)
     return VPX_CODEC_INVALID_PARAM;
-  *arg = vp9_get_quantizer(ctx->cpi);
+  *arg = vp10_get_quantizer(ctx->cpi);
   return VPX_CODEC_OK;
 }
 
@@ -597,80 +597,80 @@ static vpx_codec_err_t ctrl_get_quantizer64(vpx_codec_alg_priv_t *ctx,
   int *const arg = va_arg(args, int *);
   if (arg == NULL)
     return VPX_CODEC_INVALID_PARAM;
-  *arg = vp9_qindex_to_quantizer(vp9_get_quantizer(ctx->cpi));
+  *arg = vp10_qindex_to_quantizer(vp10_get_quantizer(ctx->cpi));
   return VPX_CODEC_OK;
 }
 
 static vpx_codec_err_t update_extra_cfg(vpx_codec_alg_priv_t *ctx,
-                                        const struct vp9_extracfg *extra_cfg) {
+                                        const struct vp10_extracfg *extra_cfg) {
   const vpx_codec_err_t res = validate_config(ctx, &ctx->cfg, extra_cfg);
   if (res == VPX_CODEC_OK) {
     ctx->extra_cfg = *extra_cfg;
     set_encoder_config(&ctx->oxcf, &ctx->cfg, &ctx->extra_cfg);
-    vp9_change_config(ctx->cpi, &ctx->oxcf);
+    vp10_change_config(ctx->cpi, &ctx->oxcf);
   }
   return res;
 }
 
 static vpx_codec_err_t ctrl_set_cpuused(vpx_codec_alg_priv_t *ctx,
                                         va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.cpu_used = CAST(VP8E_SET_CPUUSED, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_enable_auto_alt_ref(vpx_codec_alg_priv_t *ctx,
                                                     va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.enable_auto_alt_ref = CAST(VP8E_SET_ENABLEAUTOALTREF, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_noise_sensitivity(vpx_codec_alg_priv_t *ctx,
                                                   va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.noise_sensitivity = CAST(VP9E_SET_NOISE_SENSITIVITY, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_sharpness(vpx_codec_alg_priv_t *ctx,
                                           va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.sharpness = CAST(VP8E_SET_SHARPNESS, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_static_thresh(vpx_codec_alg_priv_t *ctx,
                                               va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.static_thresh = CAST(VP8E_SET_STATIC_THRESHOLD, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_tile_columns(vpx_codec_alg_priv_t *ctx,
                                              va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.tile_columns = CAST(VP9E_SET_TILE_COLUMNS, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_tile_rows(vpx_codec_alg_priv_t *ctx,
                                           va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.tile_rows = CAST(VP9E_SET_TILE_ROWS, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_arnr_max_frames(vpx_codec_alg_priv_t *ctx,
                                                 va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.arnr_max_frames = CAST(VP8E_SET_ARNR_MAXFRAMES, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_arnr_strength(vpx_codec_alg_priv_t *ctx,
                                               va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.arnr_strength = CAST(VP8E_SET_ARNR_STRENGTH, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
@@ -684,21 +684,21 @@ static vpx_codec_err_t ctrl_set_arnr_type(vpx_codec_alg_priv_t *ctx,
 
 static vpx_codec_err_t ctrl_set_tuning(vpx_codec_alg_priv_t *ctx,
                                        va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.tuning = CAST(VP8E_SET_TUNING, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_cq_level(vpx_codec_alg_priv_t *ctx,
                                          va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.cq_level = CAST(VP8E_SET_CQ_LEVEL, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_rc_max_intra_bitrate_pct(
     vpx_codec_alg_priv_t *ctx, va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.rc_max_intra_bitrate_pct =
       CAST(VP8E_SET_MAX_INTRA_BITRATE_PCT, args);
   return update_extra_cfg(ctx, &extra_cfg);
@@ -706,7 +706,7 @@ static vpx_codec_err_t ctrl_set_rc_max_intra_bitrate_pct(
 
 static vpx_codec_err_t ctrl_set_rc_max_inter_bitrate_pct(
     vpx_codec_alg_priv_t *ctx, va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.rc_max_inter_bitrate_pct =
       CAST(VP8E_SET_MAX_INTER_BITRATE_PCT, args);
   return update_extra_cfg(ctx, &extra_cfg);
@@ -714,7 +714,7 @@ static vpx_codec_err_t ctrl_set_rc_max_inter_bitrate_pct(
 
 static vpx_codec_err_t ctrl_set_rc_gf_cbr_boost_pct(
     vpx_codec_alg_priv_t *ctx, va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.gf_cbr_boost_pct =
       CAST(VP9E_SET_GF_CBR_BOOST_PCT, args);
   return update_extra_cfg(ctx, &extra_cfg);
@@ -722,14 +722,14 @@ static vpx_codec_err_t ctrl_set_rc_gf_cbr_boost_pct(
 
 static vpx_codec_err_t ctrl_set_lossless(vpx_codec_alg_priv_t *ctx,
                                          va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.lossless = CAST(VP9E_SET_LOSSLESS, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_frame_parallel_decoding_mode(
     vpx_codec_alg_priv_t *ctx, va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.frame_parallel_decoding_mode =
       CAST(VP9E_SET_FRAME_PARALLEL_DECODING, args);
   return update_extra_cfg(ctx, &extra_cfg);
@@ -737,28 +737,28 @@ static vpx_codec_err_t ctrl_set_frame_parallel_decoding_mode(
 
 static vpx_codec_err_t ctrl_set_aq_mode(vpx_codec_alg_priv_t *ctx,
                                         va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.aq_mode = CAST(VP9E_SET_AQ_MODE, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_min_gf_interval(vpx_codec_alg_priv_t *ctx,
                                                 va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.min_gf_interval = CAST(VP9E_SET_MIN_GF_INTERVAL, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_max_gf_interval(vpx_codec_alg_priv_t *ctx,
                                                 va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.max_gf_interval = CAST(VP9E_SET_MAX_GF_INTERVAL, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_frame_periodic_boost(vpx_codec_alg_priv_t *ctx,
                                                      va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.frame_periodic_boost = CAST(VP9E_SET_FRAME_PERIODIC_BOOST, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
@@ -794,7 +794,7 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
     }
 
     priv->extra_cfg = default_extra_cfg;
-    once(vp9_initialize_enc);
+    once(vp10_initialize_enc);
 
     res = validate_config(priv, &priv->cfg, &priv->extra_cfg);
 
@@ -804,7 +804,7 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
       priv->oxcf.use_highbitdepth =
           (ctx->init_flags & VPX_CODEC_USE_HIGHBITDEPTH) ? 1 : 0;
 #endif
-      priv->cpi = vp9_create_compressor(&priv->oxcf, priv->buffer_pool);
+      priv->cpi = vp10_create_compressor(&priv->oxcf, priv->buffer_pool);
       if (priv->cpi == NULL)
         res = VPX_CODEC_MEM_ERROR;
       else
@@ -817,7 +817,7 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
 
 static vpx_codec_err_t encoder_destroy(vpx_codec_alg_priv_t *ctx) {
   free(ctx->cx_data);
-  vp9_remove_compressor(ctx->cpi);
+  vp10_remove_compressor(ctx->cpi);
 #if CONFIG_MULTITHREAD
   pthread_mutex_destroy(&ctx->buffer_pool->pool_mutex);
 #endif
@@ -856,7 +856,7 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
 
   if (ctx->oxcf.mode != new_mode) {
     ctx->oxcf.mode = new_mode;
-    vp9_change_config(ctx->cpi, &ctx->oxcf);
+    vp10_change_config(ctx->cpi, &ctx->oxcf);
   }
 }
 
@@ -995,7 +995,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
     return VPX_CODEC_INVALID_PARAM;
   }
 
-  vp9_apply_encoding_flags(cpi, flags);
+  vp10_apply_encoding_flags(cpi, flags);
 
   // Handle fixed keyframe intervals
   if (ctx->cfg.kf_mode == VPX_KF_AUTO &&
@@ -1025,7 +1025,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
 
       // Store the original flags in to the frame buffer. Will extract the
       // key frame flag when we actually encode this frame.
-      if (vp9_receive_raw_frame(cpi, flags | ctx->next_frame_flags,
+      if (vp10_receive_raw_frame(cpi, flags | ctx->next_frame_flags,
                                 &sd, dst_time_stamp, dst_end_time_stamp)) {
         res = update_error_state(ctx, &cpi->common.error);
       }
@@ -1052,7 +1052,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
     }
 
     while (cx_data_sz >= ctx->cx_data_sz / 2 &&
-           -1 != vp9_get_compressed_data(cpi, &lib_flags, &size,
+           -1 != vp10_get_compressed_data(cpi, &lib_flags, &size,
                                          cx_data, &dst_time_stamp,
                                          &dst_end_time_stamp, !img)) {
       if (size) {
@@ -1137,8 +1137,8 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
         if (cpi->use_svc && !ctx->output_cx_pkt_cb.output_cx_pkt) {
           vpx_codec_cx_pkt_t pkt_sizes, pkt_psnr;
           int sl;
-          vp9_zero(pkt_sizes);
-          vp9_zero(pkt_psnr);
+          vp10_zero(pkt_sizes);
+          vp10_zero(pkt_psnr);
           pkt_sizes.kind = VPX_CODEC_SPATIAL_SVC_LAYER_SIZES;
           pkt_psnr.kind = VPX_CODEC_SPATIAL_SVC_LAYER_PSNR;
           for (sl = 0; sl < cpi->svc.number_spatial_layers; ++sl) {
@@ -1180,8 +1180,9 @@ static vpx_codec_err_t ctrl_set_reference(vpx_codec_alg_priv_t *ctx,
     YV12_BUFFER_CONFIG sd;
 
     image2yuvconfig(&frame->img, &sd);
-    vp9_set_reference_enc(ctx->cpi, ref_frame_to_vp9_reframe(frame->frame_type),
-                          &sd);
+    vp10_set_reference_enc(ctx->cpi,
+                           ref_frame_to_vp10_reframe(frame->frame_type),
+                           &sd);
     return VPX_CODEC_OK;
   } else {
     return VPX_CODEC_INVALID_PARAM;
@@ -1196,8 +1197,8 @@ static vpx_codec_err_t ctrl_copy_reference(vpx_codec_alg_priv_t *ctx,
     YV12_BUFFER_CONFIG sd;
 
     image2yuvconfig(&frame->img, &sd);
-    vp9_copy_reference_enc(ctx->cpi,
-                           ref_frame_to_vp9_reframe(frame->frame_type), &sd);
+    vp10_copy_reference_enc(ctx->cpi,
+                           ref_frame_to_vp10_reframe(frame->frame_type), &sd);
     return VPX_CODEC_OK;
   } else {
     return VPX_CODEC_INVALID_PARAM;
@@ -1239,8 +1240,8 @@ static vpx_codec_err_t ctrl_set_previewpp(vpx_codec_alg_priv_t *ctx,
 
 static vpx_image_t *encoder_get_preview(vpx_codec_alg_priv_t *ctx) {
   YV12_BUFFER_CONFIG sd;
-  vp9_ppflags_t flags;
-  vp9_zero(flags);
+  vp10_ppflags_t flags;
+  vp10_zero(flags);
 
   if (ctx->preview_ppcfg.post_proc_flag) {
     flags.post_proc_flag   = ctx->preview_ppcfg.post_proc_flag;
@@ -1248,7 +1249,7 @@ static vpx_image_t *encoder_get_preview(vpx_codec_alg_priv_t *ctx) {
     flags.noise_level      = ctx->preview_ppcfg.noise_level;
   }
 
-  if (vp9_get_preview_raw_frame(ctx->cpi, &sd, &flags) == 0) {
+  if (vp10_get_preview_raw_frame(ctx->cpi, &sd, &flags) == 0) {
     yuvconfig2image(&ctx->preview_img, &sd, NULL);
     return &ctx->preview_img;
   } else {
@@ -1260,7 +1261,7 @@ static vpx_codec_err_t ctrl_update_entropy(vpx_codec_alg_priv_t *ctx,
                                            va_list args) {
   const int update = va_arg(args, int);
 
-  vp9_update_entropy(ctx->cpi, update);
+  vp10_update_entropy(ctx->cpi, update);
   return VPX_CODEC_OK;
 }
 
@@ -1268,7 +1269,7 @@ static vpx_codec_err_t ctrl_update_reference(vpx_codec_alg_priv_t *ctx,
                                              va_list args) {
   const int ref_frame_flags = va_arg(args, int);
 
-  vp9_update_reference(ctx->cpi, ref_frame_flags);
+  vp10_update_reference(ctx->cpi, ref_frame_flags);
   return VPX_CODEC_OK;
 }
 
@@ -1276,7 +1277,7 @@ static vpx_codec_err_t ctrl_use_reference(vpx_codec_alg_priv_t *ctx,
                                           va_list args) {
   const int reference_flag = va_arg(args, int);
 
-  vp9_use_as_reference(ctx->cpi, reference_flag);
+  vp10_use_as_reference(ctx->cpi, reference_flag);
   return VPX_CODEC_OK;
 }
 
@@ -1295,7 +1296,7 @@ static vpx_codec_err_t ctrl_set_active_map(vpx_codec_alg_priv_t *ctx,
   vpx_active_map_t *const map = va_arg(args, vpx_active_map_t *);
 
   if (map) {
-    if (!vp9_set_active_map(ctx->cpi, map->active_map,
+    if (!vp10_set_active_map(ctx->cpi, map->active_map,
                             (int)map->rows, (int)map->cols))
       return VPX_CODEC_OK;
     else
@@ -1310,7 +1311,7 @@ static vpx_codec_err_t ctrl_get_active_map(vpx_codec_alg_priv_t *ctx,
   vpx_active_map_t *const map = va_arg(args, vpx_active_map_t *);
 
   if (map) {
-    if (!vp9_get_active_map(ctx->cpi, map->active_map,
+    if (!vp10_get_active_map(ctx->cpi, map->active_map,
                             (int)map->rows, (int)map->cols))
       return VPX_CODEC_OK;
     else
@@ -1325,7 +1326,7 @@ static vpx_codec_err_t ctrl_set_scale_mode(vpx_codec_alg_priv_t *ctx,
   vpx_scaling_mode_t *const mode = va_arg(args, vpx_scaling_mode_t *);
 
   if (mode) {
-    const int res = vp9_set_internal_size(ctx->cpi,
+    const int res = vp10_set_internal_size(ctx->cpi,
                                           (VPX_SCALING)mode->h_scaling_mode,
                                           (VPX_SCALING)mode->v_scaling_mode);
     return (res == 0) ? VPX_CODEC_OK : VPX_CODEC_INVALID_PARAM;
@@ -1344,7 +1345,7 @@ static vpx_codec_err_t ctrl_set_svc(vpx_codec_alg_priv_t *ctx, va_list args) {
   // In one-pass setting:
   //      either or both cfg->ss_number_layers > 1, or cfg->ts_number_layers > 1
 
-  vp9_set_svc(ctx->cpi, data);
+  vp10_set_svc(ctx->cpi, data);
 
   if (data == 1 &&
       (cfg->g_pass == VPX_RC_FIRST_PASS ||
@@ -1424,14 +1425,14 @@ static vpx_codec_err_t ctrl_register_cx_callback(vpx_codec_alg_priv_t *ctx,
 
 static vpx_codec_err_t ctrl_set_tune_content(vpx_codec_alg_priv_t *ctx,
                                              va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.content = CAST(VP9E_SET_TUNE_CONTENT, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_color_space(vpx_codec_alg_priv_t *ctx,
                                             va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.color_space = CAST(VP9E_SET_COLOR_SPACE, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }

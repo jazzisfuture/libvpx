@@ -443,10 +443,10 @@ static double convert_ssim_db(double _ssim, double _weight) {
   return 10 * (log10(_weight) - log10(_weight - _ssim));
 }
 
-double vp9_calc_fastssim(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
+double vp10_calc_fastssim(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
                          double *ssim_y, double *ssim_u, double *ssim_v) {
   double ssimv;
-  vp9_clear_system_state();
+  vp10_clear_system_state();
 
   *ssim_y = calc_ssim(source->y_buffer, source->y_stride, dest->y_buffer,
                       dest->y_stride, source->y_crop_width,

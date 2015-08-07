@@ -43,19 +43,19 @@ static void initialize_dec(void) {
     vp10_rtcd();
     vpx_dsp_rtcd();
     vpx_scale_rtcd();
-    vp9_init_intra_predictors();
+    vp10_init_intra_predictors();
     init_done = 1;
   }
 }
 
-static void vp9_dec_setup_mi(VP9_COMMON *cm) {
+static void vp10_dec_setup_mi(VP9_COMMON *cm) {
   cm->mi = cm->mip + cm->mi_stride + 1;
   cm->mi_grid_visible = cm->mi_grid_base + cm->mi_stride + 1;
   memset(cm->mi_grid_base, 0,
          cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mi_grid_base));
 }
 
-static int vp9_dec_alloc_mi(VP9_COMMON *cm, int mi_size) {
+static int vp10_dec_alloc_mi(VP9_COMMON *cm, int mi_size) {
   cm->mip = vpx_calloc(mi_size, sizeof(*cm->mip));
   if (!cm->mip)
     return 1;
@@ -66,25 +66,25 @@ static int vp9_dec_alloc_mi(VP9_COMMON *cm, int mi_size) {
   return 0;
 }
 
-static void vp9_dec_free_mi(VP9_COMMON *cm) {
+static void vp10_dec_free_mi(VP9_COMMON *cm) {
   vpx_free(cm->mip);
   cm->mip = NULL;
   vpx_free(cm->mi_grid_base);
   cm->mi_grid_base = NULL;
 }
 
-VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
+VP9Decoder *vp10_decoder_create(BufferPool *const pool) {
   VP9Decoder *volatile const pbi = vpx_memalign(32, sizeof(*pbi));
   VP9_COMMON *volatile const cm = pbi ? &pbi->common : NULL;
 
   if (!cm)
     return NULL;
 
-  vp9_zero(*pbi);
+  vp10_zero(*pbi);
 
   if (setjmp(cm->error.jmp)) {
     cm->error.setjmp = 0;
-    vp9_decoder_remove(pbi);
+    vp10_decoder_remove(pbi);
     return NULL;
   }
 
@@ -110,11 +110,11 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
   cm->bit_depth = VPX_BITS_8;
   cm->dequant_bit_depth = VPX_BITS_8;
 
-  cm->alloc_mi = vp9_dec_alloc_mi;
-  cm->free_mi = vp9_dec_free_mi;
-  cm->setup_mi = vp9_dec_setup_mi;
+  cm->alloc_mi = vp10_dec_alloc_mi;
+  cm->free_mi = vp10_dec_free_mi;
+  cm->setup_mi = vp10_dec_setup_mi;
 
-  vp9_loop_filter_init(cm);
+  vp10_loop_filter_init(cm);
 
   cm->error.setjmp = 0;
 
@@ -123,7 +123,7 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
   return pbi;
 }
 
-void vp9_decoder_remove(VP9Decoder *pbi) {
+void vp10_decoder_remove(VP9Decoder *pbi) {
   int i;
 
   vpx_get_worker_interface()->end(&pbi->lf_worker);
@@ -138,7 +138,7 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
   vpx_free(pbi->tile_workers);
 
   if (pbi->num_tile_workers > 0) {
-    vp9_loop_filter_dealloc(&pbi->lf_row_sync);
+    vp10_loop_filter_dealloc(&pbi->lf_row_sync);
   }
 
   vpx_free(pbi);
@@ -150,7 +150,7 @@ static int equal_dimensions(const YV12_BUFFER_CONFIG *a,
            a->uv_height == b->uv_height && a->uv_width == b->uv_width;
 }
 
-vpx_codec_err_t vp9_copy_reference_dec(VP9Decoder *pbi,
+vpx_codec_err_t vp10_copy_reference_dec(VP9Decoder *pbi,
                                        VP9_REFFRAME ref_frame_flag,
                                        YV12_BUFFER_CONFIG *sd) {
   VP9_COMMON *cm = &pbi->common;
@@ -181,7 +181,7 @@ vpx_codec_err_t vp9_copy_reference_dec(VP9Decoder *pbi,
 }
 
 
-vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
+vpx_codec_err_t vp10_set_reference_dec(VP9_COMMON *cm,
                                       VP9_REFFRAME ref_frame_flag,
                                       YV12_BUFFER_CONFIG *sd) {
   RefBuffer *ref_buf = NULL;
@@ -269,7 +269,7 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
     cm->frame_refs[ref_index].idx = -1;
 }
 
-int vp9_receive_compressed_data(VP9Decoder *pbi,
+int vp10_receive_compressed_data(VP9Decoder *pbi,
                                 size_t size, const uint8_t **psource) {
   VP9_COMMON *volatile const cm = &pbi->common;
   BufferPool *volatile const pool = cm->buffer_pool;
@@ -312,13 +312,13 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   pbi->hold_ref_buf = 0;
   if (pbi->frame_parallel_decode) {
     VPxWorker *const worker = pbi->frame_worker_owner;
-    vp9_frameworker_lock_stats(worker);
+    vp10_frameworker_lock_stats(worker);
     frame_bufs[cm->new_fb_idx].frame_worker_owner = worker;
     // Reset decoding progress.
     pbi->cur_buf = &frame_bufs[cm->new_fb_idx];
     pbi->cur_buf->row = -1;
     pbi->cur_buf->col = -1;
-    vp9_frameworker_unlock_stats(worker);
+    vp10_frameworker_unlock_stats(worker);
   } else {
     pbi->cur_buf = &frame_bufs[cm->new_fb_idx];
   }
@@ -365,22 +365,22 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
     decrease_ref_count(cm->new_fb_idx, frame_bufs, pool);
     unlock_buffer_pool(pool);
 
-    vp9_clear_system_state();
+    vp10_clear_system_state();
     return -1;
   }
 
   cm->error.setjmp = 1;
-  vp9_decode_frame(pbi, source, source + size, psource);
+  vp10_decode_frame(pbi, source, source + size, psource);
 
   swap_frame_buffers(pbi);
 
-  vp9_clear_system_state();
+  vp10_clear_system_state();
 
   if (!cm->show_existing_frame) {
     cm->last_show_frame = cm->show_frame;
     cm->prev_frame = cm->cur_frame;
     if (cm->seg.enabled && !pbi->frame_parallel_decode)
-      vp9_swap_current_and_last_seg_map(cm);
+      vp10_swap_current_and_last_seg_map(cm);
   }
 
   // Update progress in frame parallel decode.
@@ -389,15 +389,15 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
     // be accessing this buffer.
     VPxWorker *const worker = pbi->frame_worker_owner;
     FrameWorkerData *const frame_worker_data = worker->data1;
-    vp9_frameworker_lock_stats(worker);
+    vp10_frameworker_lock_stats(worker);
 
     if (cm->show_frame) {
       cm->current_video_frame++;
     }
     frame_worker_data->frame_decoded = 1;
     frame_worker_data->frame_context_ready = 1;
-    vp9_frameworker_signal_stats(worker);
-    vp9_frameworker_unlock_stats(worker);
+    vp10_frameworker_signal_stats(worker);
+    vp10_frameworker_unlock_stats(worker);
   } else {
     cm->last_width = cm->width;
     cm->last_height = cm->height;
@@ -410,8 +410,8 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   return retcode;
 }
 
-int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
-                      vp9_ppflags_t *flags) {
+int vp10_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
+                      vp10_ppflags_t *flags) {
   VP9_COMMON *const cm = &pbi->common;
   int ret = -1;
 #if !CONFIG_VP9_POSTPROC
@@ -431,7 +431,7 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
 
 #if CONFIG_VP9_POSTPROC
   if (!cm->show_existing_frame) {
-    ret = vp9_post_proc_frame(cm, sd, flags);
+    ret = vp10_post_proc_frame(cm, sd, flags);
   } else {
     *sd = *cm->frame_to_show;
     ret = 0;
@@ -440,11 +440,11 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
   *sd = *cm->frame_to_show;
   ret = 0;
 #endif /*!CONFIG_POSTPROC*/
-  vp9_clear_system_state();
+  vp10_clear_system_state();
   return ret;
 }
 
-vpx_codec_err_t vp9_parse_superframe_index(const uint8_t *data,
+vpx_codec_err_t vp10_parse_superframe_index(const uint8_t *data,
                                            size_t data_sz,
                                            uint32_t sizes[8], int *count,
                                            vpx_decrypt_cb decrypt_cb,

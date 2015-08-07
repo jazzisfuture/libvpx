@@ -80,35 +80,35 @@ static int decode_coefs(const MACROBLOCKD *xd,
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->bd > VPX_BITS_8) {
     if (xd->bd == VPX_BITS_10) {
-      cat1_prob = vp9_cat1_prob_high10;
-      cat2_prob = vp9_cat2_prob_high10;
-      cat3_prob = vp9_cat3_prob_high10;
-      cat4_prob = vp9_cat4_prob_high10;
-      cat5_prob = vp9_cat5_prob_high10;
-      cat6_prob = vp9_cat6_prob_high10;
+      cat1_prob = vp10_cat1_prob_high10;
+      cat2_prob = vp10_cat2_prob_high10;
+      cat3_prob = vp10_cat3_prob_high10;
+      cat4_prob = vp10_cat4_prob_high10;
+      cat5_prob = vp10_cat5_prob_high10;
+      cat6_prob = vp10_cat6_prob_high10;
     } else {
-      cat1_prob = vp9_cat1_prob_high12;
-      cat2_prob = vp9_cat2_prob_high12;
-      cat3_prob = vp9_cat3_prob_high12;
-      cat4_prob = vp9_cat4_prob_high12;
-      cat5_prob = vp9_cat5_prob_high12;
-      cat6_prob = vp9_cat6_prob_high12;
+      cat1_prob = vp10_cat1_prob_high12;
+      cat2_prob = vp10_cat2_prob_high12;
+      cat3_prob = vp10_cat3_prob_high12;
+      cat4_prob = vp10_cat4_prob_high12;
+      cat5_prob = vp10_cat5_prob_high12;
+      cat6_prob = vp10_cat6_prob_high12;
     }
   } else {
-    cat1_prob = vp9_cat1_prob;
-    cat2_prob = vp9_cat2_prob;
-    cat3_prob = vp9_cat3_prob;
-    cat4_prob = vp9_cat4_prob;
-    cat5_prob = vp9_cat5_prob;
-    cat6_prob = vp9_cat6_prob;
+    cat1_prob = vp10_cat1_prob;
+    cat2_prob = vp10_cat2_prob;
+    cat3_prob = vp10_cat3_prob;
+    cat4_prob = vp10_cat4_prob;
+    cat5_prob = vp10_cat5_prob;
+    cat6_prob = vp10_cat6_prob;
   }
 #else
-  cat1_prob = vp9_cat1_prob;
-  cat2_prob = vp9_cat2_prob;
-  cat3_prob = vp9_cat3_prob;
-  cat4_prob = vp9_cat4_prob;
-  cat5_prob = vp9_cat5_prob;
-  cat6_prob = vp9_cat6_prob;
+  cat1_prob = vp10_cat1_prob;
+  cat2_prob = vp10_cat2_prob;
+  cat3_prob = vp10_cat3_prob;
+  cat4_prob = vp10_cat4_prob;
+  cat5_prob = vp10_cat5_prob;
+  cat6_prob = vp10_cat6_prob;
 #endif
 
   while (c < max_eob) {
@@ -140,8 +140,8 @@ static int decode_coefs(const MACROBLOCKD *xd,
       val = 1;
     } else {
       INCREMENT_COUNT(TWO_TOKEN);
-      token = vpx_read_tree(r, vp9_coef_con_tree,
-                            vp9_pareto8_full[prob[PIVOT_NODE] - 1]);
+      token = vpx_read_tree(r, vp10_coef_con_tree,
+                            vp10_pareto8_full[prob[PIVOT_NODE] - 1]);
       switch (token) {
         case TWO_TOKEN:
         case THREE_TOKEN:
@@ -196,7 +196,7 @@ static int decode_coefs(const MACROBLOCKD *xd,
 #else
     dqcoeff[scan[c]] = vpx_read_bit(r) ? -v : v;
 #endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
-    token_cache[scan[c]] = vp9_pt_energy_class[token];
+    token_cache[scan[c]] = vp10_pt_energy_class[token];
     ++c;
     ctx = get_coef_context(nb, token_cache, c);
     dqv = dq[1];
@@ -205,7 +205,7 @@ static int decode_coefs(const MACROBLOCKD *xd,
   return c;
 }
 
-// TODO(slavarnway): Decode version of vp9_set_context.  Modify vp9_set_context
+// TODO(slavarnway): Decode version of vp10_set_context.  Modify vp10_set_context
 // after testing is complete, then delete this version.
 static
 void dec_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
@@ -250,7 +250,7 @@ void dec_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
   }
 }
 
-int vp9_decode_block_tokens(MACROBLOCKD *xd,
+int vp10_decode_block_tokens(MACROBLOCKD *xd,
                             int plane, const scan_order *sc,
                             int x, int y,
                             TX_SIZE tx_size, vpx_reader *r,

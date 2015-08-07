@@ -59,29 +59,29 @@ typedef struct {
   double ssimcd;
 } Metrics;
 
-double vp9_get_ssim_metrics(uint8_t *img1, int img1_pitch, uint8_t *img2,
+double vp10_get_ssim_metrics(uint8_t *img1, int img1_pitch, uint8_t *img2,
                       int img2_pitch, int width, int height, Ssimv *sv2,
                       Metrics *m, int do_inconsistency);
 
-double vp9_calc_ssim(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
+double vp10_calc_ssim(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
                      double *weight);
 
-double vp9_calc_ssimg(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
+double vp10_calc_ssimg(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
                       double *ssim_y, double *ssim_u, double *ssim_v);
 
-double vp9_calc_fastssim(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
+double vp10_calc_fastssim(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
                          double *ssim_y, double *ssim_u, double *ssim_v);
 
-double vp9_psnrhvs(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
+double vp10_psnrhvs(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
                    double *ssim_y, double *ssim_u, double *ssim_v);
 
 #if CONFIG_VP9_HIGHBITDEPTH
-double vp9_highbd_calc_ssim(YV12_BUFFER_CONFIG *source,
+double vp10_highbd_calc_ssim(YV12_BUFFER_CONFIG *source,
                             YV12_BUFFER_CONFIG *dest,
                             double *weight,
                             unsigned int bd);
 
-double vp9_highbd_calc_ssimg(YV12_BUFFER_CONFIG *source,
+double vp10_highbd_calc_ssimg(YV12_BUFFER_CONFIG *source,
                              YV12_BUFFER_CONFIG *dest,
                              double *ssim_y,
                              double *ssim_u,

@@ -28,7 +28,7 @@ static void plot(int x, int y, unsigned char *image, int pitch) {
   image[x + y * pitch] ^= 255;
 }
 
-void vp9_blit_text(const char *msg, unsigned char *address, const int pitch) {
+void vp10_blit_text(const char *msg, unsigned char *address, const int pitch) {
   int letter_bitmap;
   unsigned char *output_pos = address;
   int colpos = 0;
@@ -57,7 +57,7 @@ void vp9_blit_text(const char *msg, unsigned char *address, const int pitch) {
 
 
 /* Bresenham line algorithm */
-void vp9_blit_line(int x0, int x1, int y0, int y1, unsigned char *image,
+void vp10_blit_line(int x0, int x1, int y0, int y1, unsigned char *image,
                    int pitch) {
   int steep = abs(y1 - y0) > abs(x1 - x0);
   int deltax, deltay;

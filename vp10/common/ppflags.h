@@ -34,7 +34,7 @@ typedef struct {
   int post_proc_flag;
   int deblocking_level;
   int noise_level;
-} vp9_ppflags_t;
+} vp10_ppflags_t;
 
 #ifdef __cplusplus
 }  // extern "C"

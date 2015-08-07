@@ -34,25 +34,25 @@
 #include "vp10/encoder/subexp.h"
 #include "vp10/encoder/tokenize.h"
 
-static const struct vp9_token intra_mode_encodings[INTRA_MODES] = {
+static const struct vp10_token intra_mode_encodings[INTRA_MODES] = {
   {0, 1}, {6, 3}, {28, 5}, {30, 5}, {58, 6}, {59, 6}, {126, 7}, {127, 7},
   {62, 6}, {2, 2}};
-static const struct vp9_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
+static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
   {{0, 1}, {2, 2}, {3, 2}};
-static const struct vp9_token partition_encodings[PARTITION_TYPES] =
+static const struct vp10_token partition_encodings[PARTITION_TYPES] =
   {{0, 1}, {2, 2}, {6, 3}, {7, 3}};
-static const struct vp9_token inter_mode_encodings[INTER_MODES] =
+static const struct vp10_token inter_mode_encodings[INTER_MODES] =
   {{2, 2}, {6, 3}, {0, 1}, {7, 3}};
 
 static void write_intra_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {
-  vp9_write_token(w, vp9_intra_mode_tree, probs, &intra_mode_encodings[mode]);
+  vp10_write_token(w, vp10_intra_mode_tree, probs, &intra_mode_encodings[mode]);
 }
 
 static void write_inter_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {
   assert(is_inter_mode(mode));
-  vp9_write_token(w, vp9_inter_mode_tree, probs,
+  vp10_write_token(w, vp10_inter_mode_tree, probs,
                   &inter_mode_encodings[INTER_OFFSET(mode)]);
 }
 
@@ -71,9 +71,9 @@ static void prob_diff_update(const vpx_tree_index *tree,
   // Assuming max number of probabilities <= 32
   assert(n <= 32);
 
-  vp9_tree_probs_from_distribution(tree, branch_ct, counts);
+  vp10_tree_probs_from_distribution(tree, branch_ct, counts);
   for (i = 0; i < n - 1; ++i)
-    vp9_cond_prob_diff_update(w, &probs[i], branch_ct[i]);
+    vp10_cond_prob_diff_update(w, &probs[i], branch_ct[i]);
 }
 
 static void write_selected_tx_size(const VP9_COMMON *cm,
@@ -97,7 +97,7 @@ static int write_skip(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     return 1;
   } else {
     const int skip = mi->mbmi.skip;
-    vpx_write(w, skip, vp9_get_skip_prob(cm, xd));
+    vpx_write(w, skip, vp10_get_skip_prob(cm, xd));
     return skip;
   }
 }
@@ -107,14 +107,14 @@ static void update_skip_probs(VP9_COMMON *cm, vpx_writer *w,
   int k;
 
   for (k = 0; k < SKIP_CONTEXTS; ++k)
-    vp9_cond_prob_diff_update(w, &cm->fc->skip_probs[k], counts->skip[k]);
+    vp10_cond_prob_diff_update(w, &cm->fc->skip_probs[k], counts->skip[k]);
 }
 
 static void update_switchable_interp_probs(VP9_COMMON *cm, vpx_writer *w,
                                            FRAME_COUNTS *counts) {
   int j;
   for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j)
-    prob_diff_update(vp9_switchable_interp_tree,
+    prob_diff_update(vp10_switchable_interp_tree,
                      cm->fc->switchable_interp_prob[j],
                      counts->switchable_interp[j], SWITCHABLE_FILTERS, w);
 }
@@ -126,20 +126,20 @@ static void pack_mb_tokens(vpx_writer *w,
 
   while (p < stop && p->token != EOSB_TOKEN) {
     const int t = p->token;
-    const struct vp9_token *const a = &vp9_coef_encodings[t];
+    const struct vp10_token *const a = &vp10_coef_encodings[t];
     int i = 0;
     int v = a->value;
     int n = a->len;
 #if CONFIG_VP9_HIGHBITDEPTH
-    const vp9_extra_bit *b;
+    const vp10_extra_bit *b;
     if (bit_depth == VPX_BITS_12)
-      b = &vp9_extra_bits_high12[t];
+      b = &vp10_extra_bits_high12[t];
     else if (bit_depth == VPX_BITS_10)
-      b = &vp9_extra_bits_high10[t];
+      b = &vp10_extra_bits_high10[t];
     else
-      b = &vp9_extra_bits[t];
+      b = &vp10_extra_bits[t];
 #else
-    const vp9_extra_bit *const b = &vp9_extra_bits[t];
+    const vp10_extra_bit *const b = &vp10_extra_bits[t];
     (void) bit_depth;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -160,12 +160,12 @@ static void pack_mb_tokens(vpx_writer *w,
     if (t >= TWO_TOKEN && t < EOB_TOKEN) {
       int len = UNCONSTRAINED_NODES - p->skip_eob_node;
       int bits = v >> (n - len);
-      vp9_write_tree(w, vp9_coef_tree, p->context_tree, bits, len, i);
-      vp9_write_tree(w, vp9_coef_con_tree,
-                     vp9_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
+      vp10_write_tree(w, vp10_coef_tree, p->context_tree, bits, len, i);
+      vp10_write_tree(w, vp10_coef_con_tree,
+                     vp10_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
                      v, n - len, 0);
     } else {
-      vp9_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
+      vp10_write_tree(w, vp10_coef_tree, p->context_tree, v, n, i);
     }
 
     if (b->base_val) {
@@ -195,7 +195,7 @@ static void pack_mb_tokens(vpx_writer *w,
 static void write_segment_id(vpx_writer *w, const struct segmentation *seg,
                              int segment_id) {
   if (seg->enabled && seg->update_map)
-    vp9_write_tree(w, vp9_segment_tree, seg->tree_probs, segment_id, 3, 0);
+    vp10_write_tree(w, vp10_segment_tree, seg->tree_probs, segment_id, 3, 0);
 }
 
 // This function encodes the reference frame
@@ -215,20 +215,20 @@ static void write_ref_frames(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     // does the feature use compound prediction or not
     // (if not specified at the frame/segment level)
     if (cm->reference_mode == REFERENCE_MODE_SELECT) {
-      vpx_write(w, is_compound, vp9_get_reference_mode_prob(cm, xd));
+      vpx_write(w, is_compound, vp10_get_reference_mode_prob(cm, xd));
     } else {
       assert(!is_compound == (cm->reference_mode == SINGLE_REFERENCE));
     }
 
     if (is_compound) {
       vpx_write(w, mbmi->ref_frame[0] == GOLDEN_FRAME,
-                vp9_get_pred_prob_comp_ref_p(cm, xd));
+                vp10_get_pred_prob_comp_ref_p(cm, xd));
     } else {
       const int bit0 = mbmi->ref_frame[0] != LAST_FRAME;
-      vpx_write(w, bit0, vp9_get_pred_prob_single_ref_p1(cm, xd));
+      vpx_write(w, bit0, vp10_get_pred_prob_single_ref_p1(cm, xd));
       if (bit0) {
         const int bit1 = mbmi->ref_frame[0] != GOLDEN_FRAME;
-        vpx_write(w, bit1, vp9_get_pred_prob_single_ref_p2(cm, xd));
+        vpx_write(w, bit1, vp10_get_pred_prob_single_ref_p2(cm, xd));
       }
     }
   }
@@ -254,7 +254,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
   if (seg->update_map) {
     if (seg->temporal_update) {
       const int pred_flag = mbmi->seg_id_predicted;
-      vpx_prob pred_prob = vp9_get_pred_prob_seg_id(seg, xd);
+      vpx_prob pred_prob = vp10_get_pred_prob_seg_id(seg, xd);
       vpx_write(w, pred_flag, pred_prob);
       if (!pred_flag)
         write_segment_id(w, seg, segment_id);
@@ -266,7 +266,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
   skip = write_skip(cm, xd, segment_id, mi, w);
 
   if (!segfeature_active(seg, segment_id, SEG_LVL_REF_FRAME))
-    vpx_write(w, is_inter, vp9_get_intra_inter_prob(cm, xd));
+    vpx_write(w, is_inter, vp10_get_intra_inter_prob(cm, xd));
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !(is_inter && skip)) {
@@ -301,8 +301,8 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
     }
 
     if (cm->interp_filter == SWITCHABLE) {
-      const int ctx = vp9_get_pred_context_switchable_interp(xd);
-      vp9_write_token(w, vp9_switchable_interp_tree,
+      const int ctx = vp10_get_pred_context_switchable_interp(xd);
+      vp10_write_token(w, vp10_switchable_interp_tree,
                       cm->fc->switchable_interp_prob[ctx],
                       &switchable_interp_encodings[mbmi->interp_filter]);
       ++cpi->interp_filter_selected[0][mbmi->interp_filter];
@@ -321,7 +321,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
           write_inter_mode(w, b_mode, inter_probs);
           if (b_mode == NEWMV) {
             for (ref = 0; ref < 1 + is_compound; ++ref)
-              vp9_encode_mv(cpi, w, &mi->bmi[j].as_mv[ref].as_mv,
+              vp10_encode_mv(cpi, w, &mi->bmi[j].as_mv[ref].as_mv,
                             &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv,
                             nmvc, allow_hp);
           }
@@ -330,7 +330,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
     } else {
       if (mode == NEWMV) {
         for (ref = 0; ref < 1 + is_compound; ++ref)
-          vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
+          vp10_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
                         &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
                         allow_hp);
       }
@@ -371,7 +371,7 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     }
   }
 
-  write_intra_mode(w, mbmi->uv_mode, vp9_kf_uv_mode_prob[mbmi->mode]);
+  write_intra_mode(w, mbmi->uv_mode, vp10_kf_uv_mode_prob[mbmi->mode]);
 }
 
 static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
@@ -412,7 +412,7 @@ static void write_partition(const VP9_COMMON *const cm,
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
 
   if (has_rows && has_cols) {
-    vp9_write_token(w, vp9_partition_tree, probs, &partition_encodings[p]);
+    vp10_write_token(w, vp10_partition_tree, probs, &partition_encodings[p]);
   } else if (!has_rows && has_cols) {
     assert(p == PARTITION_SPLIT || p == PARTITION_HORZ);
     vpx_write(w, p == PARTITION_SPLIT, probs[1]);
@@ -493,7 +493,7 @@ static void write_modes(VP9_COMP *cpi,
 
   for (mi_row = tile->mi_row_start; mi_row < tile->mi_row_end;
        mi_row += MI_BLOCK_SIZE) {
-    vp9_zero(xd->left_seg_context);
+    vp10_zero(xd->left_seg_context);
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
          mi_col += MI_BLOCK_SIZE)
       write_modes_sb(cpi, tile, w, tok, tok_end, mi_row, mi_col,
@@ -502,9 +502,9 @@ static void write_modes(VP9_COMP *cpi,
 }
 
 static void build_tree_distribution(VP9_COMP *cpi, TX_SIZE tx_size,
-                                    vp9_coeff_stats *coef_branch_ct,
-                                    vp9_coeff_probs_model *coef_probs) {
-  vp9_coeff_count *coef_counts = cpi->td.rd_counts.coef_counts[tx_size];
+                                    vp10_coeff_stats *coef_branch_ct,
+                                    vp10_coeff_probs_model *coef_probs) {
+  vp10_coeff_count *coef_counts = cpi->td.rd_counts.coef_counts[tx_size];
   unsigned int (*eob_branch_ct)[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS] =
       cpi->common.counts.eob_branch[tx_size];
   int i, j, k, l, m;
@@ -513,7 +513,7 @@ static void build_tree_distribution(VP9_COMP *cpi, TX_SIZE tx_size,
     for (j = 0; j < REF_TYPES; ++j) {
       for (k = 0; k < COEF_BANDS; ++k) {
         for (l = 0; l < BAND_COEFF_CONTEXTS(k); ++l) {
-          vp9_tree_probs_from_distribution(vp9_coef_tree,
+          vp10_tree_probs_from_distribution(vp10_coef_tree,
                                            coef_branch_ct[i][j][k][l],
                                            coef_counts[i][j][k][l]);
           coef_branch_ct[i][j][k][l][0][1] = eob_branch_ct[i][j][k][l] -
@@ -530,9 +530,9 @@ static void build_tree_distribution(VP9_COMP *cpi, TX_SIZE tx_size,
 
 static void update_coef_probs_common(vpx_writer* const bc, VP9_COMP *cpi,
                                      TX_SIZE tx_size,
-                                     vp9_coeff_stats *frame_branch_ct,
-                                     vp9_coeff_probs_model *new_coef_probs) {
-  vp9_coeff_probs_model *old_coef_probs = cpi->common.fc->coef_probs[tx_size];
+                                     vp10_coeff_stats *frame_branch_ct,
+                                     vp10_coeff_probs_model *new_coef_probs) {
+  vp10_coeff_probs_model *old_coef_probs = cpi->common.fc->coef_probs[tx_size];
   const vpx_prob upd = DIFF_UPDATE_PROB;
   const int entropy_nodes_update = UNCONSTRAINED_NODES;
   int i, j, k, l, t;
@@ -553,18 +553,18 @@ static void update_coef_probs_common(vpx_writer* const bc, VP9_COMP *cpi,
                 int s;
                 int u = 0;
                 if (t == PIVOT_NODE)
-                  s = vp9_prob_diff_update_savings_search_model(
+                  s = vp10_prob_diff_update_savings_search_model(
                       frame_branch_ct[i][j][k][l][0],
                       old_coef_probs[i][j][k][l], &newp, upd, stepsize);
                 else
-                  s = vp9_prob_diff_update_savings_search(
+                  s = vp10_prob_diff_update_savings_search(
                       frame_branch_ct[i][j][k][l][t], oldp, &newp, upd);
                 if (s > 0 && newp != oldp)
                   u = 1;
                 if (u)
-                  savings += s - (int)(vp9_cost_zero(upd));
+                  savings += s - (int)(vp10_cost_zero(upd));
                 else
-                  savings -= (int)(vp9_cost_zero(upd));
+                  savings -= (int)(vp10_cost_zero(upd));
                 update[u]++;
               }
             }
@@ -591,11 +591,11 @@ static void update_coef_probs_common(vpx_writer* const bc, VP9_COMP *cpi,
                 int s;
                 int u = 0;
                 if (t == PIVOT_NODE)
-                  s = vp9_prob_diff_update_savings_search_model(
+                  s = vp10_prob_diff_update_savings_search_model(
                       frame_branch_ct[i][j][k][l][0],
                       old_coef_probs[i][j][k][l], &newp, upd, stepsize);
                 else
-                  s = vp9_prob_diff_update_savings_search(
+                  s = vp10_prob_diff_update_savings_search(
                       frame_branch_ct[i][j][k][l][t],
                       *oldp, &newp, upd);
                 if (s > 0 && newp != *oldp)
@@ -603,7 +603,7 @@ static void update_coef_probs_common(vpx_writer* const bc, VP9_COMP *cpi,
                 vpx_write(bc, u, upd);
                 if (u) {
                   /* send/use new probability */
-                  vp9_write_prob_diff_update(bc, newp, *oldp);
+                  vp10_write_prob_diff_update(bc, newp, *oldp);
                   *oldp = newp;
                 }
               }
@@ -629,11 +629,11 @@ static void update_coef_probs_common(vpx_writer* const bc, VP9_COMP *cpi,
                 int u = 0;
 
                 if (t == PIVOT_NODE) {
-                  s = vp9_prob_diff_update_savings_search_model(
+                  s = vp10_prob_diff_update_savings_search_model(
                       frame_branch_ct[i][j][k][l][0],
                       old_coef_probs[i][j][k][l], &newp, upd, stepsize);
                 } else {
-                  s = vp9_prob_diff_update_savings_search(
+                  s = vp10_prob_diff_update_savings_search(
                       frame_branch_ct[i][j][k][l][t],
                       *oldp, &newp, upd);
                 }
@@ -655,7 +655,7 @@ static void update_coef_probs_common(vpx_writer* const bc, VP9_COMP *cpi,
                 vpx_write(bc, u, upd);
                 if (u) {
                   /* send/use new probability */
-                  vp9_write_prob_diff_update(bc, newp, *oldp);
+                  vp10_write_prob_diff_update(bc, newp, *oldp);
                   *oldp = newp;
                 }
               }
@@ -678,8 +678,8 @@ static void update_coef_probs(VP9_COMP *cpi, vpx_writer* w) {
   const TX_SIZE max_tx_size = tx_mode_to_biggest_tx_size[tx_mode];
   TX_SIZE tx_size;
   for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size) {
-    vp9_coeff_stats frame_branch_ct[PLANE_TYPES];
-    vp9_coeff_probs_model frame_coef_probs[PLANE_TYPES];
+    vp10_coeff_stats frame_branch_ct[PLANE_TYPES];
+    vp10_coeff_probs_model frame_coef_probs[PLANE_TYPES];
     if (cpi->td.counts->tx.tx_totals[tx_size] <= 20 ||
         (tx_size >= TX_16X16 && cpi->sf.tx_size_search_method == USE_TX_8X8)) {
       vpx_write_bit(w, 0);
@@ -764,7 +764,7 @@ static void encode_segmentation(VP9_COMMON *cm, MACROBLOCKD *xd,
   vpx_wb_write_bit(wb, seg->update_map);
   if (seg->update_map) {
     // Select the coding strategy (temporal or spatial)
-    vp9_choose_segmap_coding_method(cm, xd);
+    vp10_choose_segmap_coding_method(cm, xd);
     // Write out probabilities used to decode unpredicted  macro-block segments
     for (i = 0; i < SEG_TREE_PROBS; i++) {
       const int prob = seg->tree_probs[i];
@@ -798,9 +798,9 @@ static void encode_segmentation(VP9_COMMON *cm, MACROBLOCKD *xd,
         vpx_wb_write_bit(wb, active);
         if (active) {
           const int data = get_segdata(seg, i, j);
-          const int data_max = vp9_seg_feature_data_max(j);
+          const int data_max = vp10_seg_feature_data_max(j);
 
-          if (vp9_is_segfeature_signed(j)) {
+          if (vp10_is_segfeature_signed(j)) {
             encode_unsigned_max(wb, abs(data), data_max);
             vpx_wb_write_bit(wb, data < 0);
           } else {
@@ -828,22 +828,22 @@ static void encode_txfm_probs(VP9_COMMON *cm, vpx_writer *w,
 
 
     for (i = 0; i < TX_SIZE_CONTEXTS; i++) {
-      tx_counts_to_branch_counts_8x8(counts->tx.p8x8[i], ct_8x8p);
+      vp10_tx_counts_to_branch_counts_8x8(counts->tx.p8x8[i], ct_8x8p);
       for (j = 0; j < TX_SIZES - 3; j++)
-        vp9_cond_prob_diff_update(w, &cm->fc->tx_probs.p8x8[i][j], ct_8x8p[j]);
+        vp10_cond_prob_diff_update(w, &cm->fc->tx_probs.p8x8[i][j], ct_8x8p[j]);
     }
 
     for (i = 0; i < TX_SIZE_CONTEXTS; i++) {
-      tx_counts_to_branch_counts_16x16(counts->tx.p16x16[i], ct_16x16p);
+      vp10_tx_counts_to_branch_counts_16x16(counts->tx.p16x16[i], ct_16x16p);
       for (j = 0; j < TX_SIZES - 2; j++)
-        vp9_cond_prob_diff_update(w, &cm->fc->tx_probs.p16x16[i][j],
+        vp10_cond_prob_diff_update(w, &cm->fc->tx_probs.p16x16[i][j],
                                   ct_16x16p[j]);
     }
 
     for (i = 0; i < TX_SIZE_CONTEXTS; i++) {
-      tx_counts_to_branch_counts_32x32(counts->tx.p32x32[i], ct_32x32p);
+      vp10_tx_counts_to_branch_counts_32x32(counts->tx.p32x32[i], ct_32x32p);
       for (j = 0; j < TX_SIZES - 1; j++)
-        vp9_cond_prob_diff_update(w, &cm->fc->tx_probs.p32x32[i][j],
+        vp10_cond_prob_diff_update(w, &cm->fc->tx_probs.p32x32[i][j],
                                   ct_32x32p[j]);
     }
   }
@@ -884,7 +884,7 @@ static void fix_interp_filter(VP9_COMMON *cm, FRAME_COUNTS *counts) {
 static void write_tile_info(const VP9_COMMON *const cm,
                             struct vpx_write_bit_buffer *wb) {
   int min_log2_tile_cols, max_log2_tile_cols, ones;
-  vp9_get_tile_n_bits(cm->mi_cols, &min_log2_tile_cols, &max_log2_tile_cols);
+  vp10_get_tile_n_bits(cm->mi_cols, &min_log2_tile_cols, &max_log2_tile_cols);
 
   // columns
   ones = cm->log2_tile_cols - min_log2_tile_cols;
@@ -901,12 +901,12 @@ static void write_tile_info(const VP9_COMMON *const cm,
 }
 
 static int get_refresh_mask(VP9_COMP *cpi) {
-  if (vp9_preserve_existing_gf(cpi)) {
+  if (vp10_preserve_existing_gf(cpi)) {
     // We have decided to preserve the previously existing golden frame as our
     // new ARF frame. However, in the short term we leave it in the GF slot and,
     // if we're updating the GF with the current decoded frame, we save it
     // instead to the ARF slot.
-    // Later, in the function vp9_encoder.c:vp9_update_reference_frames() we
+    // Later, in the function vp10_encoder.c:vp10_update_reference_frames() we
     // will swap gld_fb_idx and alt_fb_idx to achieve our objective. We do it
     // there so that it can be done outside of the recode loop.
     // Note: This is highly specific to the use of ARF as a forward reference,
@@ -1171,14 +1171,14 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
     int i;
 
     for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
-      prob_diff_update(vp9_inter_mode_tree, cm->fc->inter_mode_probs[i],
+      prob_diff_update(vp10_inter_mode_tree, cm->fc->inter_mode_probs[i],
                        counts->inter_mode[i], INTER_MODES, &header_bc);
 
     if (cm->interp_filter == SWITCHABLE)
       update_switchable_interp_probs(cm, &header_bc, counts);
 
     for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
-      vp9_cond_prob_diff_update(&header_bc, &fc->intra_inter_prob[i],
+      vp10_cond_prob_diff_update(&header_bc, &fc->intra_inter_prob[i],
                                 counts->intra_inter[i]);
 
     if (cpi->allow_comp_inter_inter) {
@@ -1190,34 +1190,34 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
         vpx_write_bit(&header_bc, use_hybrid_pred);
         if (use_hybrid_pred)
           for (i = 0; i < COMP_INTER_CONTEXTS; i++)
-            vp9_cond_prob_diff_update(&header_bc, &fc->comp_inter_prob[i],
+            vp10_cond_prob_diff_update(&header_bc, &fc->comp_inter_prob[i],
                                       counts->comp_inter[i]);
       }
     }
 
     if (cm->reference_mode != COMPOUND_REFERENCE) {
       for (i = 0; i < REF_CONTEXTS; i++) {
-        vp9_cond_prob_diff_update(&header_bc, &fc->single_ref_prob[i][0],
+        vp10_cond_prob_diff_update(&header_bc, &fc->single_ref_prob[i][0],
                                   counts->single_ref[i][0]);
-        vp9_cond_prob_diff_update(&header_bc, &fc->single_ref_prob[i][1],
+        vp10_cond_prob_diff_update(&header_bc, &fc->single_ref_prob[i][1],
                                   counts->single_ref[i][1]);
       }
     }
 
     if (cm->reference_mode != SINGLE_REFERENCE)
       for (i = 0; i < REF_CONTEXTS; i++)
-        vp9_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i],
+        vp10_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i],
                                   counts->comp_ref[i]);
 
     for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
-      prob_diff_update(vp9_intra_mode_tree, cm->fc->y_mode_prob[i],
+      prob_diff_update(vp10_intra_mode_tree, cm->fc->y_mode_prob[i],
                        counts->y_mode[i], INTRA_MODES, &header_bc);
 
     for (i = 0; i < PARTITION_CONTEXTS; ++i)
-      prob_diff_update(vp9_partition_tree, fc->partition_prob[i],
+      prob_diff_update(vp10_partition_tree, fc->partition_prob[i],
                        counts->partition[i], PARTITION_TYPES, &header_bc);
 
-    vp9_write_nmv_probs(cm, cm->allow_high_precision_mv, &header_bc,
+    vp10_write_nmv_probs(cm, cm->allow_high_precision_mv, &header_bc,
                         &counts->mv);
   }
 
@@ -1227,7 +1227,7 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
   return header_bc.pos;
 }
 
-void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
+void vp10_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
   uint8_t *data = dest;
   size_t first_part_size, uncompressed_hdr_size;
   struct vpx_write_bit_buffer wb = {data, 0};
@@ -1240,7 +1240,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
   uncompressed_hdr_size = vpx_wb_bytes_written(&wb);
   data += uncompressed_hdr_size;
 
-  vp9_clear_system_state();
+  vp10_clear_system_state();
 
   first_part_size = write_compressed_header(cpi, data);
   data += first_part_size;

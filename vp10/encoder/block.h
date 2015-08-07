@@ -44,7 +44,7 @@ struct macroblock_plane {
 
 /* The [2] dimension is for whether we skip the EOB node (i.e. if previous
  * coefficient in this block was zero) or not. */
-typedef unsigned int vp9_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][2]
+typedef unsigned int vp10_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][2]
                                    [COEFF_CONTEXTS][ENTROPY_TOKENS];
 
 typedef struct {
@@ -109,7 +109,7 @@ struct macroblock {
   int encode_breakout;
 
   // note that token_costs is the cost when eob node is skipped
-  vp9_coeff_cost token_costs[TX_SIZES];
+  vp10_coeff_cost token_costs[TX_SIZES];
 
   int optimize;
 

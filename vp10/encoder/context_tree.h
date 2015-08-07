@@ -81,7 +81,7 @@ typedef struct PC_TREE {
   };
 } PC_TREE;
 
-void vp9_setup_pc_tree(struct VP9Common *cm, struct ThreadData *td);
-void vp9_free_pc_tree(struct ThreadData *td);
+void vp10_setup_pc_tree(struct VP9Common *cm, struct ThreadData *td);
+void vp10_free_pc_tree(struct ThreadData *td);
 
 #endif /* VP9_ENCODER_VP9_CONTEXT_TREE_H_ */

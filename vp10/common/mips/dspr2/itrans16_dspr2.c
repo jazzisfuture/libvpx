@@ -21,7 +21,7 @@
 #include "vpx_ports/mem.h"
 
 #if HAVE_DSPR2
-void vp9_iht16x16_256_add_dspr2(const int16_t *input, uint8_t *dest,
+void vp10_iht16x16_256_add_dspr2(const int16_t *input, uint8_t *dest,
                                 int pitch, int tx_type) {
   int i, j;
   DECLARE_ALIGNED(32, int16_t,  out[16 * 16]);
@@ -101,7 +101,7 @@ void vp9_iht16x16_256_add_dspr2(const int16_t *input, uint8_t *dest,
     }
     break;
     default:
-      printf("vp9_short_iht16x16_add_dspr2 : Invalid tx_type\n");
+      printf("vp10_short_iht16x16_add_dspr2 : Invalid tx_type\n");
       break;
   }
 }

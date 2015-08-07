@@ -90,7 +90,7 @@ static void free_tree_contexts(PC_TREE *tree) {
 // partition level. There are contexts for none, horizontal, vertical, and
 // split.  Along with a block_size value and a selected block_size which
 // represents the state of our search.
-void vp9_setup_pc_tree(VP9_COMMON *cm, ThreadData *td) {
+void vp10_setup_pc_tree(VP9_COMMON *cm, ThreadData *td) {
   int i, j;
   const int leaf_nodes = 64;
   const int tree_nodes = 64 + 16 + 4 + 1;
@@ -142,7 +142,7 @@ void vp9_setup_pc_tree(VP9_COMMON *cm, ThreadData *td) {
   td->pc_root[0].none.best_mode_index = 2;
 }
 
-void vp9_free_pc_tree(ThreadData *td) {
+void vp10_free_pc_tree(ThreadData *td) {
   const int tree_nodes = 64 + 16 + 4 + 1;
   int i;
 
