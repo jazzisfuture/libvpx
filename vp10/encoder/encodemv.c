@@ -17,16 +17,16 @@
 #include "vp10/encoder/cost.h"
 #include "vp10/encoder/encodemv.h"
 
-static struct vp9_token mv_joint_encodings[MV_JOINTS];
-static struct vp9_token mv_class_encodings[MV_CLASSES];
-static struct vp9_token mv_fp_encodings[MV_FP_SIZE];
-static struct vp9_token mv_class0_encodings[CLASS0_SIZE];
+static struct vp10_token mv_joint_encodings[MV_JOINTS];
+static struct vp10_token mv_class_encodings[MV_CLASSES];
+static struct vp10_token mv_fp_encodings[MV_FP_SIZE];
+static struct vp10_token mv_class0_encodings[CLASS0_SIZE];
 
-void vp9_entropy_mv_init(void) {
-  vp9_tokens_from_tree(mv_joint_encodings, vp9_mv_joint_tree);
-  vp9_tokens_from_tree(mv_class_encodings, vp9_mv_class_tree);
-  vp9_tokens_from_tree(mv_class0_encodings, vp9_mv_class0_tree);
-  vp9_tokens_from_tree(mv_fp_encodings, vp9_mv_fp_tree);
+void vp10_entropy_mv_init(void) {
+  vp10_tokens_from_tree(mv_joint_encodings, vp10_mv_joint_tree);
+  vp10_tokens_from_tree(mv_class_encodings, vp10_mv_class_tree);
+  vp10_tokens_from_tree(mv_class0_encodings, vp10_mv_class0_tree);
+  vp10_tokens_from_tree(mv_fp_encodings, vp10_mv_fp_tree);
 }
 
 static void encode_mv_component(vpx_writer* w, int comp,
@@ -34,7 +34,7 @@ static void encode_mv_component(vpx_writer* w, int comp,
   int offset;
   const int sign = comp < 0;
   const int mag = sign ? -comp : comp;
-  const int mv_class = vp9_get_mv_class(mag - 1, &offset);
+  const int mv_class = vp10_get_mv_class(mag - 1, &offset);
   const int d = offset >> 3;                // int mv data
   const int fr = (offset >> 1) & 3;         // fractional mv data
   const int hp = offset & 1;                // high precision mv data
@@ -45,12 +45,12 @@ static void encode_mv_component(vpx_writer* w, int comp,
   vpx_write(w, sign, mvcomp->sign);
 
   // Class
-  vp9_write_token(w, vp9_mv_class_tree, mvcomp->classes,
+  vp10_write_token(w, vp10_mv_class_tree, mvcomp->classes,
                   &mv_class_encodings[mv_class]);
 
   // Integer bits
   if (mv_class == MV_CLASS_0) {
-    vp9_write_token(w, vp9_mv_class0_tree, mvcomp->class0,
+    vp10_write_token(w, vp10_mv_class0_tree, mvcomp->class0,
                     &mv_class0_encodings[d]);
   } else {
     int i;
@@ -60,7 +60,7 @@ static void encode_mv_component(vpx_writer* w, int comp,
   }
 
   // Fractional bits
-  vp9_write_token(w, vp9_mv_fp_tree,
+  vp10_write_token(w, vp10_mv_fp_tree,
                   mv_class == MV_CLASS_0 ?  mvcomp->class0_fp[d] : mvcomp->fp,
                   &mv_fp_encodings[fr]);
 
@@ -80,30 +80,30 @@ static void build_nmv_component_cost_table(int *mvcost,
   int class0_fp_cost[CLASS0_SIZE][MV_FP_SIZE], fp_cost[MV_FP_SIZE];
   int class0_hp_cost[2], hp_cost[2];
 
-  sign_cost[0] = vp9_cost_zero(mvcomp->sign);
-  sign_cost[1] = vp9_cost_one(mvcomp->sign);
-  vp9_cost_tokens(class_cost, mvcomp->classes, vp9_mv_class_tree);
-  vp9_cost_tokens(class0_cost, mvcomp->class0, vp9_mv_class0_tree);
+  sign_cost[0] = vp10_cost_zero(mvcomp->sign);
+  sign_cost[1] = vp10_cost_one(mvcomp->sign);
+  vp10_cost_tokens(class_cost, mvcomp->classes, vp10_mv_class_tree);
+  vp10_cost_tokens(class0_cost, mvcomp->class0, vp10_mv_class0_tree);
   for (i = 0; i < MV_OFFSET_BITS; ++i) {
-    bits_cost[i][0] = vp9_cost_zero(mvcomp->bits[i]);
-    bits_cost[i][1] = vp9_cost_one(mvcomp->bits[i]);
+    bits_cost[i][0] = vp10_cost_zero(mvcomp->bits[i]);
+    bits_cost[i][1] = vp10_cost_one(mvcomp->bits[i]);
   }
 
   for (i = 0; i < CLASS0_SIZE; ++i)
-    vp9_cost_tokens(class0_fp_cost[i], mvcomp->class0_fp[i], vp9_mv_fp_tree);
-  vp9_cost_tokens(fp_cost, mvcomp->fp, vp9_mv_fp_tree);
+    vp10_cost_tokens(class0_fp_cost[i], mvcomp->class0_fp[i], vp10_mv_fp_tree);
+  vp10_cost_tokens(fp_cost, mvcomp->fp, vp10_mv_fp_tree);
 
   if (usehp) {
-    class0_hp_cost[0] = vp9_cost_zero(mvcomp->class0_hp);
-    class0_hp_cost[1] = vp9_cost_one(mvcomp->class0_hp);
-    hp_cost[0] = vp9_cost_zero(mvcomp->hp);
-    hp_cost[1] = vp9_cost_one(mvcomp->hp);
+    class0_hp_cost[0] = vp10_cost_zero(mvcomp->class0_hp);
+    class0_hp_cost[1] = vp10_cost_one(mvcomp->class0_hp);
+    hp_cost[0] = vp10_cost_zero(mvcomp->hp);
+    hp_cost[1] = vp10_cost_one(mvcomp->hp);
   }
   mvcost[0] = 0;
   for (v = 1; v <= MV_MAX; ++v) {
     int z, c, o, d, e, f, cost = 0;
     z = v - 1;
-    c = vp9_get_mv_class(z, &o);
+    c = vp10_get_mv_class(z, &o);
     cost += class_cost[c];
     d = (o >> 3);               /* int mv data */
     f = (o >> 1) & 3;           /* fractional pel mv data */
@@ -136,8 +136,8 @@ static void build_nmv_component_cost_table(int *mvcost,
 static int update_mv(vpx_writer *w, const unsigned int ct[2], vpx_prob *cur_p,
                      vpx_prob upd_p) {
   const vpx_prob new_p = get_binary_prob(ct[0], ct[1]) | 1;
-  const int update = cost_branch256(ct, *cur_p) + vp9_cost_zero(upd_p) >
-                     cost_branch256(ct, new_p) + vp9_cost_one(upd_p) + 7 * 256;
+  const int update = cost_branch256(ct, *cur_p) + vp10_cost_zero(upd_p) >
+                     cost_branch256(ct, new_p) + vp10_cost_one(upd_p) + 7 * 256;
   vpx_write(w, update, upd_p);
   if (update) {
     *cur_p = new_p;
@@ -156,26 +156,26 @@ static void write_mv_update(const vpx_tree_index *tree,
   // Assuming max number of probabilities <= 32
   assert(n <= 32);
 
-  vp9_tree_probs_from_distribution(tree, branch_ct, counts);
+  vp10_tree_probs_from_distribution(tree, branch_ct, counts);
   for (i = 0; i < n - 1; ++i)
     update_mv(w, branch_ct[i], &probs[i], MV_UPDATE_PROB);
 }
 
-void vp9_write_nmv_probs(VP9_COMMON *cm, int usehp, vpx_writer *w,
+void vp10_write_nmv_probs(VP9_COMMON *cm, int usehp, vpx_writer *w,
                          nmv_context_counts *const counts) {
   int i, j;
   nmv_context *const mvc = &cm->fc->nmvc;
 
-  write_mv_update(vp9_mv_joint_tree, mvc->joints, counts->joints, MV_JOINTS, w);
+  write_mv_update(vp10_mv_joint_tree, mvc->joints, counts->joints, MV_JOINTS, w);
 
   for (i = 0; i < 2; ++i) {
     nmv_component *comp = &mvc->comps[i];
     nmv_component_counts *comp_counts = &counts->comps[i];
 
     update_mv(w, comp_counts->sign, &comp->sign, MV_UPDATE_PROB);
-    write_mv_update(vp9_mv_class_tree, comp->classes, comp_counts->classes,
+    write_mv_update(vp10_mv_class_tree, comp->classes, comp_counts->classes,
                     MV_CLASSES, w);
-    write_mv_update(vp9_mv_class0_tree, comp->class0, comp_counts->class0,
+    write_mv_update(vp10_mv_class0_tree, comp->class0, comp_counts->class0,
                     CLASS0_SIZE, w);
     for (j = 0; j < MV_OFFSET_BITS; ++j)
       update_mv(w, comp_counts->bits[j], &comp->bits[j], MV_UPDATE_PROB);
@@ -183,10 +183,10 @@ void vp9_write_nmv_probs(VP9_COMMON *cm, int usehp, vpx_writer *w,
 
   for (i = 0; i < 2; ++i) {
     for (j = 0; j < CLASS0_SIZE; ++j)
-      write_mv_update(vp9_mv_fp_tree, mvc->comps[i].class0_fp[j],
+      write_mv_update(vp10_mv_fp_tree, mvc->comps[i].class0_fp[j],
                       counts->comps[i].class0_fp[j], MV_FP_SIZE, w);
 
-    write_mv_update(vp9_mv_fp_tree, mvc->comps[i].fp, counts->comps[i].fp,
+    write_mv_update(vp10_mv_fp_tree, mvc->comps[i].fp, counts->comps[i].fp,
                     MV_FP_SIZE, w);
   }
 
@@ -199,15 +199,15 @@ void vp9_write_nmv_probs(VP9_COMMON *cm, int usehp, vpx_writer *w,
   }
 }
 
-void vp9_encode_mv(VP9_COMP* cpi, vpx_writer* w,
+void vp10_encode_mv(VP9_COMP* cpi, vpx_writer* w,
                    const MV* mv, const MV* ref,
                    const nmv_context* mvctx, int usehp) {
   const MV diff = {mv->row - ref->row,
                    mv->col - ref->col};
-  const MV_JOINT_TYPE j = vp9_get_mv_joint(&diff);
-  usehp = usehp && vp9_use_mv_hp(ref);
+  const MV_JOINT_TYPE j = vp10_get_mv_joint(&diff);
+  usehp = usehp && vp10_use_mv_hp(ref);
 
-  vp9_write_token(w, vp9_mv_joint_tree, mvctx->joints, &mv_joint_encodings[j]);
+  vp10_write_token(w, vp10_mv_joint_tree, mvctx->joints, &mv_joint_encodings[j]);
   if (mv_joint_vertical(j))
     encode_mv_component(w, diff.row, &mvctx->comps[0], usehp);
 
@@ -222,9 +222,9 @@ void vp9_encode_mv(VP9_COMP* cpi, vpx_writer* w,
   }
 }
 
-void vp9_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
+void vp10_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
                               const nmv_context* ctx, int usehp) {
-  vp9_cost_tokens(mvjoint, ctx->joints, vp9_mv_joint_tree);
+  vp10_cost_tokens(mvjoint, ctx->joints, vp10_mv_joint_tree);
   build_nmv_component_cost_table(mvcost[0], &ctx->comps[0], usehp);
   build_nmv_component_cost_table(mvcost[1], &ctx->comps[1], usehp);
 }
@@ -238,11 +238,11 @@ static void inc_mvs(const MB_MODE_INFO *mbmi, const MB_MODE_INFO_EXT *mbmi_ext,
     const MV *ref = &mbmi_ext->ref_mvs[mbmi->ref_frame[i]][0].as_mv;
     const MV diff = {mvs[i].as_mv.row - ref->row,
                      mvs[i].as_mv.col - ref->col};
-    vp9_inc_mv(&diff, counts);
+    vp10_inc_mv(&diff, counts);
   }
 }
 
-void vp9_update_mv_count(ThreadData *td) {
+void vp10_update_mv_count(ThreadData *td) {
   const MACROBLOCKD *xd = &td->mb.e_mbd;
   const MODE_INFO *mi = xd->mi[0];
   const MB_MODE_INFO *const mbmi = &mi->mbmi;

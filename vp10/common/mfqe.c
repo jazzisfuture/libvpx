@@ -36,12 +36,12 @@ static void filter_by_weight(const uint8_t *src, int src_stride,
   }
 }
 
-void vp9_filter_by_weight8x8_c(const uint8_t *src, int src_stride,
+void vp10_filter_by_weight8x8_c(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride, int src_weight) {
   filter_by_weight(src, src_stride, dst, dst_stride, 8, src_weight);
 }
 
-void vp9_filter_by_weight16x16_c(const uint8_t *src, int src_stride,
+void vp10_filter_by_weight16x16_c(const uint8_t *src, int src_stride,
                                  uint8_t *dst, int dst_stride,
                                  int src_weight) {
   filter_by_weight(src, src_stride, dst, dst_stride, 16, src_weight);
@@ -49,12 +49,12 @@ void vp9_filter_by_weight16x16_c(const uint8_t *src, int src_stride,
 
 static void filter_by_weight32x32(const uint8_t *src, int src_stride,
                                   uint8_t *dst, int dst_stride, int weight) {
-  vp9_filter_by_weight16x16(src, src_stride, dst, dst_stride, weight);
-  vp9_filter_by_weight16x16(src + 16, src_stride, dst + 16, dst_stride,
+  vp10_filter_by_weight16x16(src, src_stride, dst, dst_stride, weight);
+  vp10_filter_by_weight16x16(src + 16, src_stride, dst + 16, dst_stride,
                             weight);
-  vp9_filter_by_weight16x16(src + src_stride * 16, src_stride,
+  vp10_filter_by_weight16x16(src + src_stride * 16, src_stride,
                             dst + dst_stride * 16, dst_stride, weight);
-  vp9_filter_by_weight16x16(src + src_stride * 16 + 16, src_stride,
+  vp10_filter_by_weight16x16(src + src_stride * 16 + 16, src_stride,
                             dst + dst_stride * 16 + 16, dst_stride, weight);
 }
 
@@ -75,13 +75,13 @@ static void apply_ifactor(const uint8_t *y, int y_stride, uint8_t *yd,
                           int uvd_stride, BLOCK_SIZE block_size,
                           int weight) {
   if (block_size == BLOCK_16X16) {
-    vp9_filter_by_weight16x16(y, y_stride, yd, yd_stride, weight);
-    vp9_filter_by_weight8x8(u, uv_stride, ud, uvd_stride, weight);
-    vp9_filter_by_weight8x8(v, uv_stride, vd, uvd_stride, weight);
+    vp10_filter_by_weight16x16(y, y_stride, yd, yd_stride, weight);
+    vp10_filter_by_weight8x8(u, uv_stride, ud, uvd_stride, weight);
+    vp10_filter_by_weight8x8(v, uv_stride, vd, uvd_stride, weight);
   } else if (block_size == BLOCK_32X32) {
     filter_by_weight32x32(y, y_stride, yd, yd_stride, weight);
-    vp9_filter_by_weight16x16(u, uv_stride, ud, uvd_stride, weight);
-    vp9_filter_by_weight16x16(v, uv_stride, vd, uvd_stride, weight);
+    vp10_filter_by_weight16x16(u, uv_stride, ud, uvd_stride, weight);
+    vp10_filter_by_weight16x16(v, uv_stride, vd, uvd_stride, weight);
   } else if (block_size == BLOCK_64X64) {
     filter_by_weight64x64(y, y_stride, yd, yd_stride, weight);
     filter_by_weight32x32(u, uv_stride, ud, uvd_stride, weight);
@@ -349,7 +349,7 @@ static void mfqe_partition(VP9_COMMON *cm, MODE_INFO *mi, BLOCK_SIZE bs,
   }
 }
 
-void vp9_mfqe(VP9_COMMON *cm) {
+void vp10_mfqe(VP9_COMMON *cm) {
   int mi_row, mi_col;
   // Current decoded frame.
   const YV12_BUFFER_CONFIG *show = cm->frame_to_show;

@@ -13,7 +13,7 @@
 
 #include "./vp10_rtcd.h"
 
-int64_t vp9_block_error_fp_neon(const int16_t *coeff, const int16_t *dqcoeff,
+int64_t vp10_block_error_fp_neon(const int16_t *coeff, const int16_t *dqcoeff,
                                 int block_size) {
   int64x2_t error = vdupq_n_s64(0);
 

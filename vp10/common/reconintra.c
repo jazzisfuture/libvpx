@@ -67,7 +67,7 @@ static intra_high_pred_fn pred_high[INTRA_MODES][4];
 static intra_high_pred_fn dc_pred_high[2][2][4];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-static void vp9_init_intra_predictors_internal(void) {
+static void vp10_init_intra_predictors_internal(void) {
 #define INIT_ALL_SIZES(p, type) \
   p[TX_4X4] = vpx_##type##_predictor_4x4; \
   p[TX_8X8] = vpx_##type##_predictor_8x8; \
@@ -385,7 +385,7 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
   }
 }
 
-void vp9_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
+void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
                              TX_SIZE tx_size, PREDICTION_MODE mode,
                              const uint8_t *ref, int ref_stride,
                              uint8_t *dst, int dst_stride,
@@ -410,6 +410,6 @@ void vp9_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
                          have_top, have_left, have_right, x, y, plane);
 }
 
-void vp9_init_intra_predictors(void) {
-  once(vp9_init_intra_predictors_internal);
+void vp10_init_intra_predictors(void) {
+  once(vp10_init_intra_predictors_internal);
 }

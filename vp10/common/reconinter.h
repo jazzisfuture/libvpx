@@ -55,19 +55,19 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                                    int x, int y, int w, int h,
                                    int mi_x, int mi_y);
 
-void vp9_build_inter_predictors_sby(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp10_build_inter_predictors_sby(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     BLOCK_SIZE bsize);
 
-void vp9_build_inter_predictors_sbp(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp10_build_inter_predictors_sbp(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     BLOCK_SIZE bsize, int plane);
 
-void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp10_build_inter_predictors_sbuv(MACROBLOCKD *xd, int mi_row, int mi_col,
                                      BLOCK_SIZE bsize);
 
-void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp10_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                    BLOCK_SIZE bsize);
 
-void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
+void vp10_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
                                const MV *mv_q3,
                                const struct scale_factors *sf,
@@ -77,7 +77,7 @@ void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                int x, int y);
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void vp9_highbd_build_inter_predictor(const uint8_t *src, int src_stride,
+void vp10_highbd_build_inter_predictor(const uint8_t *src, int src_stride,
                                       uint8_t *dst, int dst_stride,
                                       const MV *mv_q3,
                                       const struct scale_factors *sf,
@@ -105,11 +105,11 @@ static INLINE void setup_pred_plane(struct buf_2d *dst,
   dst->stride = stride;
 }
 
-void vp9_setup_dst_planes(struct macroblockd_plane planes[MAX_MB_PLANE],
+void vp10_setup_dst_planes(struct macroblockd_plane planes[MAX_MB_PLANE],
                           const YV12_BUFFER_CONFIG *src,
                           int mi_row, int mi_col);
 
-void vp9_setup_pre_planes(MACROBLOCKD *xd, int idx,
+void vp10_setup_pre_planes(MACROBLOCKD *xd, int idx,
                           const YV12_BUFFER_CONFIG *src, int mi_row, int mi_col,
                           const struct scale_factors *sf);
 

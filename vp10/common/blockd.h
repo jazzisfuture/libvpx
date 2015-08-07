@@ -101,10 +101,10 @@ static INLINE int has_second_ref(const MB_MODE_INFO *mbmi) {
   return mbmi->ref_frame[1] > INTRA_FRAME;
 }
 
-PREDICTION_MODE vp9_left_block_mode(const MODE_INFO *cur_mi,
+PREDICTION_MODE vp10_left_block_mode(const MODE_INFO *cur_mi,
                                     const MODE_INFO *left_mi, int b);
 
-PREDICTION_MODE vp9_above_block_mode(const MODE_INFO *cur_mi,
+PREDICTION_MODE vp10_above_block_mode(const MODE_INFO *cur_mi,
                                      const MODE_INFO *above_mi, int b);
 
 enum mv_precision {
@@ -141,7 +141,7 @@ struct macroblockd_plane {
 
 typedef struct RefBuffer {
   // TODO(dkovalev): idx is not really required and should be removed, now it
-  // is used in vp9_onyxd_if.c
+  // is used in vp10_onyxd_if.c
   int idx;
   YV12_BUFFER_CONFIG *buf;
   struct scale_factors sf;
@@ -227,7 +227,7 @@ static INLINE TX_TYPE get_tx_type_4x4(PLANE_TYPE plane_type,
   return intra_mode_to_tx_type_lookup[get_y_mode(mi, ib)];
 }
 
-void vp9_setup_block_planes(MACROBLOCKD *xd, int ss_x, int ss_y);
+void vp10_setup_block_planes(MACROBLOCKD *xd, int ss_x, int ss_y);
 
 static INLINE TX_SIZE get_uv_tx_size_impl(TX_SIZE y_tx_size, BLOCK_SIZE bsize,
                                           int xss, int yss) {
@@ -266,9 +266,9 @@ static INLINE const vpx_prob *get_y_mode_probs(const MODE_INFO *mi,
                                                const MODE_INFO *above_mi,
                                                const MODE_INFO *left_mi,
                                                int block) {
-  const PREDICTION_MODE above = vp9_above_block_mode(mi, above_mi, block);
-  const PREDICTION_MODE left = vp9_left_block_mode(mi, left_mi, block);
-  return vp9_kf_y_mode_prob[above][left];
+  const PREDICTION_MODE above = vp10_above_block_mode(mi, above_mi, block);
+  const PREDICTION_MODE left = vp10_left_block_mode(mi, left_mi, block);
+  return vp10_kf_y_mode_prob[above][left];
 }
 
 typedef void (*foreach_transformed_block_visitor)(int plane, int block,
@@ -276,12 +276,12 @@ typedef void (*foreach_transformed_block_visitor)(int plane, int block,
                                                   TX_SIZE tx_size,
                                                   void *arg);
 
-void vp9_foreach_transformed_block_in_plane(
+void vp10_foreach_transformed_block_in_plane(
     const MACROBLOCKD *const xd, BLOCK_SIZE bsize, int plane,
     foreach_transformed_block_visitor visit, void *arg);
 
 
-void vp9_foreach_transformed_block(
+void vp10_foreach_transformed_block(
     const MACROBLOCKD* const xd, BLOCK_SIZE bsize,
     foreach_transformed_block_visitor visit, void *arg);
 
@@ -296,7 +296,7 @@ static INLINE void txfrm_block_to_raster_xy(BLOCK_SIZE plane_bsize,
   *y = (raster_mb >> tx_cols_log2) << tx_size;
 }
 
-void vp9_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
+void vp10_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
                       BLOCK_SIZE plane_bsize, TX_SIZE tx_size, int has_eob,
                       int aoff, int loff);
 

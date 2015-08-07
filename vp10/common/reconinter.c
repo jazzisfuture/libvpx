@@ -33,7 +33,7 @@ void high_inter_predictor(const uint8_t *src, int src_stride,
       kernel[subpel_x], xs, kernel[subpel_y], ys, w, h, bd);
 }
 
-void vp9_highbd_build_inter_predictor(const uint8_t *src, int src_stride,
+void vp10_highbd_build_inter_predictor(const uint8_t *src, int src_stride,
                                       uint8_t *dst, int dst_stride,
                                       const MV *src_mv,
                                       const struct scale_factors *sf,
@@ -44,7 +44,7 @@ void vp9_highbd_build_inter_predictor(const uint8_t *src, int src_stride,
   const int is_q4 = precision == MV_PRECISION_Q4;
   const MV mv_q4 = { is_q4 ? src_mv->row : src_mv->row * 2,
                      is_q4 ? src_mv->col : src_mv->col * 2 };
-  MV32 mv = vp9_scale_mv(&mv_q4, x, y, sf);
+  MV32 mv = vp10_scale_mv(&mv_q4, x, y, sf);
   const int subpel_x = mv.col & SUBPEL_MASK;
   const int subpel_y = mv.row & SUBPEL_MASK;
 
@@ -55,7 +55,7 @@ void vp9_highbd_build_inter_predictor(const uint8_t *src, int src_stride,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
+void vp10_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
                                const MV *src_mv,
                                const struct scale_factors *sf,
@@ -66,7 +66,7 @@ void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
   const int is_q4 = precision == MV_PRECISION_Q4;
   const MV mv_q4 = { is_q4 ? src_mv->row : src_mv->row * 2,
                      is_q4 ? src_mv->col : src_mv->col * 2 };
-  MV32 mv = vp9_scale_mv(&mv_q4, x, y, sf);
+  MV32 mv = vp10_scale_mv(&mv_q4, x, y, sf);
   const int subpel_x = mv.col & SUBPEL_MASK;
   const int subpel_y = mv.row & SUBPEL_MASK;
 
@@ -160,7 +160,7 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const MODE_INFO *mi = xd->mi[0];
   const int is_compound = has_second_ref(&mi->mbmi);
-  const InterpKernel *kernel = vp9_filter_kernels[mi->mbmi.interp_filter];
+  const InterpKernel *kernel = vp10_filter_kernels[mi->mbmi.interp_filter];
   int ref;
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
@@ -184,11 +184,11 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     uint8_t *pre;
     MV32 scaled_mv;
     int xs, ys, subpel_x, subpel_y;
-    const int is_scaled = vp9_is_scaled(sf);
+    const int is_scaled = vp10_is_scaled(sf);
 
     if (is_scaled) {
       pre = pre_buf->buf + scaled_buffer_offset(x, y, pre_buf->stride, sf);
-      scaled_mv = vp9_scale_mv(&mv_q4, mi_x + x, mi_y + y, sf);
+      scaled_mv = vp10_scale_mv(&mv_q4, mi_x + x, mi_y + y, sf);
       xs = sf->x_step_q4;
       ys = sf->y_step_q4;
     } else {
@@ -246,29 +246,29 @@ static void build_inter_predictors_for_planes(MACROBLOCKD *xd, BLOCK_SIZE bsize,
   }
 }
 
-void vp9_build_inter_predictors_sby(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp10_build_inter_predictors_sby(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     BLOCK_SIZE bsize) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 0, 0);
 }
 
-void vp9_build_inter_predictors_sbp(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp10_build_inter_predictors_sbp(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     BLOCK_SIZE bsize, int plane) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, plane, plane);
 }
 
-void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp10_build_inter_predictors_sbuv(MACROBLOCKD *xd, int mi_row, int mi_col,
                                      BLOCK_SIZE bsize) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 1,
                                     MAX_MB_PLANE - 1);
 }
 
-void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp10_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                    BLOCK_SIZE bsize) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 0,
                                     MAX_MB_PLANE - 1);
 }
 
-void vp9_setup_dst_planes(struct macroblockd_plane planes[MAX_MB_PLANE],
+void vp10_setup_dst_planes(struct macroblockd_plane planes[MAX_MB_PLANE],
                           const YV12_BUFFER_CONFIG *src,
                           int mi_row, int mi_col) {
   uint8_t *const buffers[MAX_MB_PLANE] = { src->y_buffer, src->u_buffer,
@@ -284,7 +284,7 @@ void vp9_setup_dst_planes(struct macroblockd_plane planes[MAX_MB_PLANE],
   }
 }
 
-void vp9_setup_pre_planes(MACROBLOCKD *xd, int idx,
+void vp10_setup_pre_planes(MACROBLOCKD *xd, int idx,
                           const YV12_BUFFER_CONFIG *src,
                           int mi_row, int mi_col,
                           const struct scale_factors *sf) {

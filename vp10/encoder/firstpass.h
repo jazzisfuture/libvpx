@@ -141,19 +141,19 @@ typedef struct {
 
 struct VP9_COMP;
 
-void vp9_init_first_pass(struct VP9_COMP *cpi);
-void vp9_rc_get_first_pass_params(struct VP9_COMP *cpi);
-void vp9_first_pass(struct VP9_COMP *cpi, const struct lookahead_entry *source);
-void vp9_end_first_pass(struct VP9_COMP *cpi);
+void vp10_init_first_pass(struct VP9_COMP *cpi);
+void vp10_rc_get_first_pass_params(struct VP9_COMP *cpi);
+void vp10_first_pass(struct VP9_COMP *cpi, const struct lookahead_entry *source);
+void vp10_end_first_pass(struct VP9_COMP *cpi);
 
-void vp9_init_second_pass(struct VP9_COMP *cpi);
-void vp9_rc_get_second_pass_params(struct VP9_COMP *cpi);
-void vp9_twopass_postencode_update(struct VP9_COMP *cpi);
+void vp10_init_second_pass(struct VP9_COMP *cpi);
+void vp10_rc_get_second_pass_params(struct VP9_COMP *cpi);
+void vp10_twopass_postencode_update(struct VP9_COMP *cpi);
 
 // Post encode update of the rate control parameters for 2-pass
-void vp9_twopass_postencode_update(struct VP9_COMP *cpi);
+void vp10_twopass_postencode_update(struct VP9_COMP *cpi);
 
-void vp9_init_subsampling(struct VP9_COMP *cpi);
+void vp10_init_subsampling(struct VP9_COMP *cpi);
 
 void calculate_coded_size(struct VP9_COMP *cpi,
                           int *scaled_frame_width,
