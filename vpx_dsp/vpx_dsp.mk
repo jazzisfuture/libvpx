@@ -22,11 +22,15 @@ DSP_SRCS-yes += bitwriter.h
 DSP_SRCS-yes += bitwriter.c
 DSP_SRCS-yes += bitwriter_buffer.c
 DSP_SRCS-yes += bitwriter_buffer.h
-DSP_SRCS-$(CONFIG_INTERNAL_STATS) += ssim.c
 DSP_SRCS-$(CONFIG_INTERNAL_STATS) += ssim.h
+DSP_SRCS-$(CONFIG_INTERNAL_STATS) += ssim.c
+ifeq ($(CONFIG_VP9_ENCODER),yes)
+DSP_SRCS-$(CONFIG_INTERNAL_STATS) += ssim_metrics.h
+DSP_SRCS-$(CONFIG_INTERNAL_STATS) += ssim_metrics.c
 DSP_SRCS-$(CONFIG_INTERNAL_STATS) += psnrhvs.c
 DSP_SRCS-$(CONFIG_INTERNAL_STATS) += fastssim.c
-endif
+endif  # CONFIG_VP9_ENCODER
+endif  # CONFIG_ENCODERS
 
 ifeq ($(CONFIG_DECODERS),yes)
 DSP_SRCS-yes += bitreader.h

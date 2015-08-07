@@ -17,7 +17,7 @@
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx/vp8cx.h"
 #if CONFIG_INTERNAL_STATS
-#include "vpx_dsp/ssim.h"
+#include "vpx_dsp/ssim_metrics.h"
 #endif
 #include "vpx_dsp/variance.h"
 #include "vpx_util/vpx_thread.h"

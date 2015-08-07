@@ -20,6 +20,7 @@
 #include "vpx_dsp/vpx_filter.h"
 #if CONFIG_INTERNAL_STATS
 #include "vpx_dsp/ssim.h"
+#include "vpx_dsp/ssim_metrics.h"
 #endif
 #include "vpx_ports/mem.h"
 #include "vpx_ports/vpx_timer.h"
