@@ -199,7 +199,11 @@ static INLINE uint16_t highbd_clip_pixel_add(uint16_t dest, tran_high_t trans,
   return clip_pixel_highbd(WRAPLOW(dest + trans, bd), bd);
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
+#endif  // VP9_COMMON_VP9_IDCT_H_
 #if CONFIG_TX_SKIP
 void vp9_tx_identity_add_rect(const tran_low_t *input, uint8_t *dest,
                               int row, int col, int stride_in,
@@ -215,15 +219,25 @@ void vp9_highbd_tx_identity_add(const tran_low_t *input, uint8_t *dest,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_TX_SKIP
 
-#if CONFIG_DST1
-void vp9_dst1d_type1(int64_t *in, int64_t *out, int N);
-void vp9_idst4x4_add(const tran_low_t *input, uint8_t *dest, int stride);
-void vp9_idst8x8_add(const tran_low_t *input, uint8_t *dest, int stride);
-void vp9_idst16x16_add(const tran_low_t *input, uint8_t *dest, int stride);
+#if CONFIG_SR_MODE
+void vp9_iwht4x4(const tran_low_t *input, int16_t *dest, int stride,
+                 int eob);
+void vp9_idct4x4(const tran_low_t *input, int16_t *dest, int stride,
+                 int eob);
+void vp9_idct8x8(const tran_low_t *input, int16_t *dest, int stride,
+                 int eob);
+void vp9_idct16x16(const tran_low_t *input, int16_t *dest, int stride,
+                   int eob);
+void vp9_idct32x32(const tran_low_t *input, int16_t *dest, int stride,
+                   int eob);
+void vp9_iht4x4(TX_TYPE tx_type, const tran_low_t *input, int16_t *dest,
+                int stride, int eob);
+void vp9_iht8x8(TX_TYPE tx_type, const tran_low_t *input, int16_t *dest,
+                int stride, int eob);
+void vp9_iht16x16(TX_TYPE tx_type, const tran_low_t *input, int16_t *dest,
+                  int stride, int eob);
+#if CONFIG_TX64X64
+void vp9_idct64x64(const tran_low_t *input, int16_t *dest, int stride,
+                   int eob);
+#endif  // CONFIG_TX64X64
 #endif
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
-
-#endif  // VP9_COMMON_VP9_IDCT_H_

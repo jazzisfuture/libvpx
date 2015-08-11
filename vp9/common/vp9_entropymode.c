@@ -423,39 +423,6 @@ static const struct tx_probs default_tx_probs = {
 };
 
 #if CONFIG_EXT_TX
-#if CONFIG_DST1
-const vp9_tree_index vp9_ext_tx_tree[TREE_SIZE(EXT_TX_TYPES)] = {
-  -NORM, 2,
-  -ALT9, 4,
-  6, 12,
-  8, 10,
-  -ALT1, -ALT2,
-  -ALT3, -ALT4,
-  14, 16,
-  -ALT5, -ALT6,
-  -ALT7, -ALT8,
-};
-
-#if CONFIG_WAVELETS
-static const vp9_prob default_ext_tx_prob[TX_SIZES][EXT_TX_TYPES - 1] = {
-  { 240, 32, 128, 128, 128, 128, 128, 128, 128 },
-  { 208, 32, 128, 128, 128, 128, 128, 128, 128 },
-  { 176, 32, 128, 128, 128, 128, 128, 128, 128 },
-  { 160, 32, 128, 128, 128, 128, 128, 128, 128 },
-#if CONFIG_TX64X64
-  { 160, 32, 128, 128, 128, 128, 128, 128, 128 },
-#endif  // CONFIG_TX64X64
-};
-#else
-static const vp9_prob default_ext_tx_prob[3][EXT_TX_TYPES - 1] = {
-  { 240, 32, 128, 128, 128, 128, 128, 128, 128 },
-  { 208, 32, 128, 128, 128, 128, 128, 128, 128 },
-  { 176, 32, 128, 128, 128, 128, 128, 128, 128 },
-};
-#endif  // CONFIG_WAVELETS
-
-#else  // CONFIG_DST1
-
 const vp9_tree_index vp9_ext_tx_tree[TREE_SIZE(EXT_TX_TYPES)] = {
   -NORM, 2,
   4, 10,
@@ -475,7 +442,11 @@ static const vp9_prob default_ext_tx_prob[TX_SIZES][EXT_TX_TYPES - 1] = {
   { 160, 128, 128, 128, 128, 128, 128, 128 },
 #if CONFIG_TX64X64
   { 160, 128, 128, 128, 128, 128, 128, 128 },
-#endif  // CONFIG_TX64X64
+#endif
+};
+
+const vp9_tree_index vp9_ext_tx_large_tree[TREE_SIZE(EXT_TX_TYPES_LARGE)] = {
+  -NORM, -ALT1,
 };
 #else   // CONFIG_WAVELETS
 static const vp9_prob default_ext_tx_prob[3][EXT_TX_TYPES - 1] = {
@@ -484,14 +455,6 @@ static const vp9_prob default_ext_tx_prob[3][EXT_TX_TYPES - 1] = {
   { 176, 128, 128, 128, 128, 128, 128, 128 },
 };
 #endif  // CONFIG_WAVELETS
-
-#endif  // CONFIG_DST1
-
-#if CONFIG_WAVELETS
-const vp9_tree_index vp9_ext_tx_large_tree[TREE_SIZE(EXT_TX_TYPES_LARGE)] = {
-  -NORM, -ALT1,
-};
-#endif   // CONFIG_WAVELETS
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_PALETTE
@@ -908,6 +871,12 @@ static const vp9_prob default_skip_probs[SKIP_CONTEXTS] = {
   192, 128, 64
 };
 
+#if CONFIG_SR_MODE
+static const vp9_prob default_sr_probs[SKIP_CONTEXTS] = {
+    192, 128, 64
+};
+#endif
+
 static const vp9_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
                                                     [SWITCHABLE_FILTERS - 1] = {
   { 235, 162, },
@@ -928,6 +897,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   fc->tx_probs = default_tx_probs;
   vp9_copy(fc->skip_probs, default_skip_probs);
   vp9_copy(fc->inter_mode_probs, default_inter_mode_probs);
+#if CONFIG_SR_MODE
+  vp9_copy(fc->sr_probs, default_sr_probs);
+#endif
 #if CONFIG_NEW_INTER
   vp9_copy(fc->inter_compound_mode_probs, default_inter_compound_mode_probs);
 #endif  // CONFIG_NEW_INTER
@@ -1088,6 +1060,11 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
 
   for (i = 0; i < SKIP_CONTEXTS; ++i)
     fc->skip_probs[i] = adapt_prob(pre_fc->skip_probs[i], counts->skip[i]);
+
+#if CONFIG_SR_MODE
+  for (i = 0; i < SR_CONTEXTS; i ++)
+    fc->sr_probs[i] = adapt_prob(pre_fc->sr_probs[i], counts->sr[i]);
+#endif
 
 #if CONFIG_EXT_TX
   for (i = TX_4X4; i <= TX_16X16; ++i) {
