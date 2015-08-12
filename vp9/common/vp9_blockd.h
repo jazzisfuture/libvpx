@@ -31,6 +31,14 @@ extern "C" {
 #define SKIP_CONTEXTS 3
 #define INTER_MODE_CONTEXTS 7
 
+#if CONFIG_SR_MODE
+#define SR_CONTEXTS 3
+#define SR_USE_MULTI_F 0  //1: choose from multiple interpl filters
+#define SR_USFILTER_NUM_D 2
+#define SR_USFILTER_NUM (SR_USFILTER_NUM_D * SR_USFILTER_NUM_D)
+#define SR_USFILTER_CONTEXTS 9
+#endif
+
 #if CONFIG_COPY_MODE
 #define COPY_MODE_CONTEXTS 5
 #endif  // CONFIG_COPY_MODE
@@ -201,6 +209,10 @@ typedef struct {
   PREDICTION_MODE mode;
 #if CONFIG_FILTERINTRA
   int filterbit, uv_filterbit;
+#endif
+#if CONFIG_SR_MODE
+  int sr;
+  int us_filter_idx;
 #endif
   TX_SIZE tx_size;
   int8_t skip;

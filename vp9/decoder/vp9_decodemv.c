@@ -9,6 +9,7 @@
  */
 
 #include <assert.h>
+#include <vp9/common/vp9_entropymode.h>
 
 #include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_entropy.h"
@@ -17,6 +18,9 @@
 #include "vp9/common/vp9_mvref_common.h"
 #if CONFIG_PALETTE
 #include "vp9/common/vp9_palette.h"
+#endif
+#if CONFIG_SR_MODE
+#include "vp9/common/vp9_sr_txfm.h"
 #endif
 #include "vp9/common/vp9_pred_common.h"
 #include "vp9/common/vp9_reconinter.h"
@@ -217,6 +221,39 @@ static int read_skip(VP9_COMMON *cm, const MACROBLOCKD *xd,
     return skip;
   }
 }
+
+#if CONFIG_SR_MODE
+static int read_sr(VP9_COMMON *cm, const MACROBLOCKD *xd,
+                   int segment_id, BLOCK_SIZE bsize, vp9_reader *r) {
+  if (vp9_segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP))
+    return 0;
+  else if (is_enable_srmode(bsize)) {
+    const int ctx = vp9_get_sr_context(xd);
+    const int sr = vp9_read(r, cm->fc.sr_probs[ctx]);
+    if (!cm->frame_parallel_decoding_mode)
+      ++cm->counts.sr[ctx][sr];
+    return sr;
+  } else
+    return 0;
+}
+
+static int read_sr_usfilter_idx(VP9_COMMON *cm, const MACROBLOCKD *xd,
+                                int segment_id, vp9_reader *r) {
+  if (vp9_segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP))
+    return 0;
+
+  const int ctx = vp9_get_sr_usfilter_context(xd);
+  const int f_idx = vp9_read_tree(r, vp9_sr_usfilter_tree,
+                                  cm->fc.sr_usfilter_probs[ctx]);
+
+  assert(f_idx >= 0 && f_idx < 4);
+  assert(ctx >= 0 && ctx < SR_USFILTER_CONTEXTS);
+
+  if (!cm->frame_parallel_decoding_mode)
+    ++cm->counts.sr_usfilters[ctx][f_idx];
+  return f_idx;
+}
+#endif
 
 static INLINE int is_mv_valid(const MV *mv) {
   return mv->row > MV_LOW && mv->row < MV_UPP &&
@@ -435,10 +472,38 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
   }
 
   if (!mbmi->palette_enabled[0]) {
+#if CONFIG_SR_MODE
+    mbmi->sr = read_sr(cm, xd, mbmi->segment_id, bsize, r);
+#if SR_USE_MULTI_F
+    if (mbmi->sr) {
+      mbmi->us_filter_idx = read_sr_usfilter_idx(cm, xd, mbmi->segment_id, r);
+    }
+#endif
+    mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, bsize, !(mbmi->sr), r);
+    if (mbmi->sr && !mbmi->skip) {
+      //assert(mbmi->tx_size == TX_16X16 || mbmi->tx_size == TX_32X32);
+      assert(mbmi->tx_size == max_txsize_lookup[bsize]);
+    }
+#else  // CONFIG_SR_MODE
     mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, bsize, 1, r);
+#endif  // CONFIG_SR_MODE
   }
 #else
+#if CONFIG_SR_MODE
+  mbmi->sr = read_sr(cm, xd, mbmi->segment_id, bsize, r);
+#if SR_USE_MULTI_F
+  if (mbmi->sr) {
+    mbmi->us_filter_idx = read_sr_usfilter_idx(cm, xd, mbmi->segment_id, r);
+  }
+#endif
+  mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, bsize, !(mbmi->sr), r);
+  if (mbmi->sr && !mbmi->skip) {
+    //assert(mbmi->tx_size == TX_16X16 || mbmi->tx_size == TX_32X32);
+    assert(mbmi->tx_size == max_txsize_lookup[bsize]);
+  }
+#else  // CONFIG_SR_MODE
   mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, bsize, 1, r);
+#endif  // CONFIG_SR_MODE
 #endif
   mbmi->ref_frame[0] = INTRA_FRAME;
   mbmi->ref_frame[1] = NONE;
@@ -1512,12 +1577,45 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
     }
 
     if (!mbmi->palette_enabled[0]) {
+#if CONFIG_SR_MODE
+      mbmi->sr = read_sr(cm, xd, mbmi->segment_id, mbmi->sb_type, r);
+#if SR_USE_MULTI_F
+      if (mbmi->sr) {
+        mbmi->us_filter_idx = read_sr_usfilter_idx(cm, xd, mbmi->segment_id, r);
+      }
+#endif
+      //if (mbmi->sr)
+      //  mbmi->tx_size = max_txsize_lookup[mbmi->sb_type];
+      //else
+        mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
+                                   (!mbmi->skip || !inter_block) && !(mbmi->sr), r);
+        if (mbmi->sr && !mbmi->skip) {
+          //assert(mbmi->tx_size == TX_16X16 || mbmi->tx_size == TX_32X32);
+          assert(mbmi->tx_size == max_txsize_lookup[mbmi->sb_type]);
+        }
+#else  // CONFIG_SR_MODE
       mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
                                    !mbmi->skip || !inter_block, r);
+#endif  // CONFIG_SR_MODE
     }
 #else
+#if CONFIG_SR_MODE
+    mbmi->sr = read_sr(cm, xd, mbmi->segment_id, mbmi->sb_type, r);
+#if SR_USE_MULTI_F
+    if (mbmi->sr) {
+      mbmi->us_filter_idx = read_sr_usfilter_idx(cm, xd, mbmi->segment_id, r);
+    }
+#endif
+    mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
+                                   (!mbmi->skip || !inter_block) && !(mbmi->sr), r);
+    if (mbmi->sr && !mbmi->skip) {
+      //assert(mbmi->tx_size == TX_16X16 || mbmi->tx_size == TX_32X32);
+      assert(mbmi->tx_size == max_txsize_lookup[mbmi->sb_type]);
+    }
+#else  // CONFIG_SR_MODE
     mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
                                      !mbmi->skip || !inter_block, r);
+#endif  // CONFIG_SR_MODE
 #endif  // CONFIG_PALETTE
 
 #if CONFIG_EXT_TX

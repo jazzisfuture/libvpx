@@ -30,6 +30,9 @@
 #include "vp9/common/vp9_seg_common.h"
 #include "vp9/common/vp9_thread.h"
 #include "vp9/common/vp9_tile_common.h"
+#if CONFIG_SR_MODE
+#include "vp9/common/vp9_sr_txfm.h"
+#endif
 
 #include "vp9/decoder/vp9_decodeframe.h"
 #include "vp9/decoder/vp9_detokenize.h"
@@ -127,6 +130,15 @@ static void read_inter_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
     for (j = 0; j < INTER_MODES - 1; ++j)
       vp9_diff_update_prob(r, &fc->inter_mode_probs[i][j]);
 }
+
+#if CONFIG_SR_MODE
+static void read_sr_usfilter_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
+  int i, j;
+  for (i = 0; i < SR_USFILTER_CONTEXTS; ++i)
+    for (j = 0; j < SR_USFILTER_NUM - 1; ++j)
+      vp9_diff_update_prob(r, &fc->sr_usfilter_probs[i][j]);
+}
+#endif
 
 static REFERENCE_MODE read_frame_reference_mode(const VP9_COMMON *cm,
                                                 vp9_reader *r) {
@@ -380,6 +392,65 @@ static void vp9_highbd_intra_dpcm_add_nocoeff(uint8_t *dst8, int stride,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_TX_SKIP
 
+#if CONFIG_SR_MODE
+static void inverse_transform_block_sr(
+    MACROBLOCKD* xd, int plane, int block, TX_SIZE tx_size,
+    int16_t *dst, int stride, int eob) {
+  // only perform inverse transform but don't add
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+
+  if (eob > 0) {
+    TX_TYPE tx_type = DCT_DCT;
+    tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+
+        if (xd->lossless) {
+          tx_type = DCT_DCT;
+          vp9_iwht4x4(dqcoeff, dst, stride, eob);
+        } else {
+          const PLANE_TYPE plane_type = pd->plane_type;
+          switch (tx_size) {
+            case TX_4X4:
+              tx_type = get_tx_type_4x4(plane_type, xd, block);
+              vp9_iht4x4(tx_type, dqcoeff, dst, stride, eob);
+              break;
+            case TX_8X8:
+              tx_type = get_tx_type(plane_type, xd);
+              vp9_iht8x8(tx_type, dqcoeff, dst, stride, eob);
+              break;
+            case TX_16X16:
+              tx_type = get_tx_type(plane_type, xd);
+              vp9_iht16x16(tx_type, dqcoeff, dst, stride, eob);
+              break;
+            case TX_32X32:
+              tx_type = get_tx_type_large(plane_type, xd);
+                vp9_idct32x32(dqcoeff, dst, stride, eob);
+              break;
+#if CONFIG_TX64X64
+            case TX_64X64:
+              tx_type = get_tx_type_large(plane_type, xd);
+              vp9_idct64x64(dqcoeff, dst, stride, eob);
+              break;
+#endif  // CONFIG_TX64X64
+            default:
+              assert(0 && "Invalid transform size");
+              return;
+          }
+        }
+
+    if (eob == 1) {
+      vpx_memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
+    } else {
+      if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
+        vpx_memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
+      else if (tx_size == TX_32X32 && eob <= 34)
+        vpx_memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
+      else
+        vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
+    }
+  }
+}
+#endif
+
 static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
                                     TX_SIZE tx_size, uint8_t *dst, int stride,
                                     int eob) {
@@ -456,6 +527,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
 #endif  // CONFIG_TX_SKIP
       }
     } else {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #if CONFIG_TX_SKIP
       if (xd->lossless && !mbmi->tx_skip[plane != 0]) {
 #else
@@ -522,75 +594,8 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
           }
 #endif  // CONFIG_TX_SKIP
         }
+#if CONFIG_VP9_HIGHBITDEPTH
       }
-
-#else  // CONFIG_VP9_HIGHBITDEPTH
-
-#if CONFIG_TX_SKIP
-    if (xd->lossless && !mbmi->tx_skip[plane != 0]) {
-#else
-    if (xd->lossless) {
-#endif
-      tx_type = DCT_DCT;
-      vp9_iwht4x4_add(dqcoeff, dst, stride, eob);
-    } else {
-      const PLANE_TYPE plane_type = pd->plane_type;
-#if CONFIG_TX_SKIP
-      if (mbmi->tx_skip[plane != 0]) {
-        int bs = 4 << tx_size;
-        if (tx_size <= TX_32X32 &&
-            (mode == V_PRED || mode == H_PRED || mode == TM_PRED))
-          vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, bs, shift);
-        else
-          vp9_tx_identity_add(dqcoeff, dst, stride, bs, shift);
-        tx_type = DCT_DCT;
-        if (tx_size == TX_4X4)
-          tx_type = get_tx_type_4x4(pd->plane_type, xd, block);
-        else if (tx_size <= TX_16X16)
-          tx_type = get_tx_type(pd->plane_type, xd);
-      } else {
-#endif  // CONFIG_TX_SKIP
-      switch (tx_size) {
-        case TX_4X4:
-          tx_type = get_tx_type_4x4(plane_type, xd, block);
-          vp9_iht4x4_add(tx_type, dqcoeff, dst, stride, eob);
-          break;
-        case TX_8X8:
-          tx_type = get_tx_type(plane_type, xd);
-          vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
-          break;
-        case TX_16X16:
-          tx_type = get_tx_type(plane_type, xd);
-          vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
-          break;
-        case TX_32X32:
-          tx_type = get_tx_type_large(plane_type, xd);
-#if CONFIG_EXT_TX && CONFIG_WAVELETS
-          if (tx_type == WAVELET1_DCT_DCT)
-            vp9_idwtdct32x32_add(dqcoeff, dst, stride);
-          else
-#endif  // CONFIG_EXT_TX && CONFIG_WAVELETS
-            vp9_idct32x32_add(dqcoeff, dst, stride, eob);
-          break;
-#if CONFIG_TX64X64
-        case TX_64X64:
-          tx_type = get_tx_type_large(plane_type, xd);
-#if CONFIG_EXT_TX && CONFIG_WAVELETS
-          if (tx_type == WAVELET1_DCT_DCT)
-            vp9_idwtdct64x64_add(dqcoeff, dst, stride);
-          else
-#endif  // CONFIG_EXT_TX && CONFIG_WAVELETS
-          vp9_idct64x64_add(dqcoeff, dst, stride, eob);
-          break;
-#endif  // CONFIG_TX64X64
-        default:
-          assert(0 && "Invalid transform size");
-          return;
-      }
-#if CONFIG_TX_SKIP
-    }
-#endif  // CONFIG_TX_SKIP
-    }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
     if (eob == 1) {
@@ -612,6 +617,42 @@ struct intra_args {
   vp9_reader *r;
 };
 
+#if CONFIG_SR_MODE
+static int dec_sr_trfm_quant(VP9_COMMON *cm, MACROBLOCKD *xd, int plane,
+                             int block, BLOCK_SIZE plane_bsize, int x, int y,
+                             TX_SIZE tx_size, vp9_reader *r,
+                             uint8_t *dst, int dst_stride) {
+  //struct macroblockd_plane *const pd = &xd->plane[plane];
+  DECLARE_ALIGNED_ARRAY(16, int16_t, tmp_buf, 64 * 64);
+  int tmp_stride = 64;
+  int eob, bs = 4 << tx_size;
+#if SR_USE_MULTI_F
+  MODE_INFO *const mi = xd->mi[0].src_mi;
+  int f_idx = mi->mbmi.us_filter_idx;
+  int f_hor = f_idx & 0x01;
+  int f_ver = (f_idx & 0x02) >> 1;
+#endif
+
+  if (plane == 0)
+    assert(bs == 32 || bs == 16);
+  tx_size --;
+  eob = vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize,
+                                x, y, tx_size, r);
+  if (eob <= 0)
+    return eob;
+
+  inverse_transform_block_sr(xd, plane, block, tx_size,
+                             tmp_buf, tmp_stride, eob);
+#if SR_USE_MULTI_F
+  sr_recon(tmp_buf, tmp_stride, dst, dst_stride, bs, bs, f_hor, f_ver);
+#else
+  sr_recon(tmp_buf, tmp_stride, dst, dst_stride, bs, bs);
+#endif
+
+  return eob;
+}
+#endif
+
 static void predict_and_reconstruct_intra_block(int plane, int block,
                                                 BLOCK_SIZE plane_bsize,
                                                 TX_SIZE tx_size, void *arg) {
@@ -627,6 +668,7 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
 #if CONFIG_TX_SKIP
   int no_coeff = 0;
 #endif
+  int eob;
 #if CONFIG_FILTERINTRA
   int fbit;
   if (plane == 0)
@@ -647,12 +689,24 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
 #endif
                           dst, pd->dst.stride, dst, pd->dst.stride,
                           x, y, plane);
+  
   if (!mi->mbmi.skip) {
-    const int eob = vp9_decode_block_tokens(cm, xd, plane, block,
+#if CONFIG_SR_MODE
+    //if (mi->mbmi.sr && plane == 0) {
+    if (mi->mbmi.sr) {
+      eob = dec_sr_trfm_quant(cm, xd, plane, block, plane_bsize,
+                              x, y, tx_size, args->r,
+                              dst, pd->dst.stride);
+    } else {
+#endif
+      eob = vp9_decode_block_tokens(cm, xd, plane, block,
                                             plane_bsize, x, y, tx_size,
                                             args->r);
-    inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
-                            eob);
+      inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
+                              eob);
+#if CONFIG_SR_MODE
+    }
+#endif
 #if CONFIG_TX_SKIP
     no_coeff = !eob;
 #endif
@@ -705,11 +759,21 @@ static void reconstruct_inter_block(int plane, int block,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   int x, y, eob;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
-  eob = vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize, x, y,
+#if CONFIG_SR_MODE
+  if (xd->mi[0].src_mi->mbmi.sr) {
+    eob = dec_sr_trfm_quant(cm, xd, plane, block, plane_bsize, x, y, tx_size, args->r,
+                      &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
+                      pd->dst.stride);
+  } else {
+#endif
+    eob = vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize, x, y,
                                 tx_size, args->r);
-  inverse_transform_block(xd, plane, block, tx_size,
-                          &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
-                          pd->dst.stride, eob);
+    inverse_transform_block(xd, plane, block, tx_size,
+                            &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
+                            pd->dst.stride, eob);
+#if CONFIG_SR_MODE
+  }
+#endif
   *args->eobtotal += eob;
 }
 
@@ -1624,7 +1688,6 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #if CONFIG_SUPERTX
   }
 #endif
-
   xd->corrupted |= vp9_reader_has_error(r);
 }
 
@@ -3282,7 +3345,13 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
 
   for (k = 0; k < SKIP_CONTEXTS; ++k)
     vp9_diff_update_prob(&r, &fc->skip_probs[k]);
-
+#if CONFIG_SR_MODE
+  for (k = 0; k < SR_CONTEXTS; ++k)
+    vp9_diff_update_prob(&r, &fc->sr_probs[k]);
+#if SR_USE_MULTI_F
+  read_sr_usfilter_probs(fc, &r);
+#endif
+#endif  // CONFIG_SR_MODE
   if (!frame_is_intra_only(cm)) {
     nmv_context *const nmvc = &fc->nmvc;
     int i, j;
@@ -3456,6 +3525,13 @@ static void debug_check_frame_counts(const VP9_COMMON *const cm) {
   assert(!memcmp(&cm->counts.tx, &zero_counts.tx, sizeof(cm->counts.tx)));
   assert(!memcmp(cm->counts.skip, zero_counts.skip, sizeof(cm->counts.skip)));
   assert(!memcmp(&cm->counts.mv, &zero_counts.mv, sizeof(cm->counts.mv)));
+#if CONFIG_SR_MODE
+  assert(!memcmp(&cm->counts.sr, &zero_counts.sr, sizeof(cm->counts.sr)));
+#if SR_USE_MULTI_F
+  assert(!memcmp(cm->counts.sr_usfilters, zero_counts.sr_usfilters,
+                 sizeof(cm->counts.sr_usfilters)));
+#endif
+#endif  // CONFIG_SR_MODE
 #if CONFIG_EXT_TX
   assert(!memcmp(cm->counts.ext_tx, zero_counts.ext_tx,
                  sizeof(cm->counts.ext_tx)));
