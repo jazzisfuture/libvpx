@@ -31,6 +31,10 @@ extern "C" {
 #define SKIP_CONTEXTS 3
 #define INTER_MODE_CONTEXTS 7
 
+#if CONFIG_SR_MODE
+#define SR_CONTEXTS 3
+#endif
+
 #if CONFIG_COPY_MODE
 #define COPY_MODE_CONTEXTS 5
 #endif  // CONFIG_COPY_MODE
@@ -201,6 +205,9 @@ typedef struct {
   PREDICTION_MODE mode;
 #if CONFIG_FILTERINTRA
   int filterbit, uv_filterbit;
+#endif
+#if CONFIG_SR_MODE
+  int sr;
 #endif
   TX_SIZE tx_size;
   int8_t skip;
