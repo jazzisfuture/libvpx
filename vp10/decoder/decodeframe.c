@@ -188,74 +188,74 @@ static void inverse_transform_block_inter(MACROBLOCKD* xd, int plane,
                                           uint8_t *dst, int stride,
                                           int eob) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
+  TX_TYPE tx_type = DCT_DCT;
   if (eob > 0) {
     tran_low_t *const dqcoeff = pd->dqcoeff;
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-      if (xd->lossless) {
-        vp10_highbd_iwht4x4_add(dqcoeff, dst, stride, eob, xd->bd);
-      } else {
-        switch (tx_size) {
-          case TX_4X4:
-            vp10_highbd_idct4x4_add(dqcoeff, dst, stride, eob, xd->bd);
-            break;
-          case TX_8X8:
-            vp10_highbd_idct8x8_add(dqcoeff, dst, stride, eob, xd->bd);
-            break;
-          case TX_16X16:
-            vp10_highbd_idct16x16_add(dqcoeff, dst, stride, eob, xd->bd);
-            break;
-          case TX_32X32:
-            vp10_highbd_idct32x32_add(dqcoeff, dst, stride, eob, xd->bd);
-            break;
-          default:
-            assert(0 && "Invalid transform size");
-        }
-      }
-    } else {
-      if (xd->lossless) {
-        vp10_iwht4x4_add(dqcoeff, dst, stride, eob);
-      } else {
-        switch (tx_size) {
-          case TX_4X4:
-            vp10_idct4x4_add(dqcoeff, dst, stride, eob);
-            break;
-          case TX_8X8:
-            vp10_idct8x8_add(dqcoeff, dst, stride, eob);
-            break;
-          case TX_16X16:
-            vp10_idct16x16_add(dqcoeff, dst, stride, eob);
-            break;
-          case TX_32X32:
-            vp10_idct32x32_add(dqcoeff, dst, stride, eob);
-            break;
-          default:
-            assert(0 && "Invalid transform size");
-            return;
-        }
-      }
-    }
-#else
-    if (xd->lossless) {
-      vp10_iwht4x4_add(dqcoeff, dst, stride, eob);
-    } else {
       switch (tx_size) {
         case TX_4X4:
-          vp10_idct4x4_add(dqcoeff, dst, stride, eob);
+          vp10_highbd_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, xd->bd,
+                                       tx_type, xd->lossless ?
+                                           vp10_highbd_iwht4x4_add :
+                                           vp10_highbd_idct4x4_add);
           break;
         case TX_8X8:
-          vp10_idct8x8_add(dqcoeff, dst, stride, eob);
+          vp10_highbd_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, xd->bd,
+                                       tx_type);
           break;
         case TX_16X16:
-          vp10_idct16x16_add(dqcoeff, dst, stride, eob);
+          vp10_highbd_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, xd->bd,
+                                         tx_type);
           break;
         case TX_32X32:
-          vp10_idct32x32_add(dqcoeff, dst, stride, eob);
+          vp10_highbd_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, xd->bd,
+                                         tx_type);
           break;
         default:
           assert(0 && "Invalid transform size");
           return;
       }
+    } else {
+      switch (tx_size) {
+        case TX_4X4:
+          vp10_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, tx_type,
+                                xd->lossless ? vp10_iwht4x4_add :
+                                    vp10_idct4x4_add);
+          break;
+        case TX_8X8:
+          vp10_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, tx_type);
+          break;
+        case TX_16X16:
+          vp10_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, tx_type);
+          break;
+        case TX_32X32:
+          vp10_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, tx_type);
+          break;
+        default:
+          assert(0 && "Invalid transform size");
+          return;
+      }
+    }
+#else
+    switch (tx_size) {
+      case TX_4X4:
+        vp10_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, tx_type,
+                              xd->lossless ? vp10_iwht4x4_add :
+                                  vp10_idct4x4_add);
+        break;
+      case TX_8X8:
+        vp10_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, tx_type);
+        break;
+      case TX_16X16:
+        vp10_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, tx_type);
+        break;
+      case TX_32X32:
+        vp10_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, tx_type);
+        break;
+      default:
+        assert(0 && "Invalid transform size");
+        return;
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -282,70 +282,69 @@ static void inverse_transform_block_intra(MACROBLOCKD* xd, int plane,
     tran_low_t *const dqcoeff = pd->dqcoeff;
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-      if (xd->lossless) {
-        vp10_highbd_iwht4x4_add(dqcoeff, dst, stride, eob, xd->bd);
-      } else {
-        switch (tx_size) {
-          case TX_4X4:
-            vp10_highbd_iht4x4_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
-            break;
-          case TX_8X8:
-            vp10_highbd_iht8x8_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
-            break;
-          case TX_16X16:
-            vp10_highbd_iht16x16_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
-            break;
-          case TX_32X32:
-            vp10_highbd_idct32x32_add(dqcoeff, dst, stride, eob, xd->bd);
-            break;
-          default:
-            assert(0 && "Invalid transform size");
-        }
-      }
-    } else {
-      if (xd->lossless) {
-        vp10_iwht4x4_add(dqcoeff, dst, stride, eob);
-      } else {
-        switch (tx_size) {
-          case TX_4X4:
-            vp10_iht4x4_add(tx_type, dqcoeff, dst, stride, eob);
-            break;
-          case TX_8X8:
-            vp10_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
-            break;
-          case TX_16X16:
-            vp10_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
-            break;
-          case TX_32X32:
-            vp10_idct32x32_add(dqcoeff, dst, stride, eob);
-            break;
-          default:
-            assert(0 && "Invalid transform size");
-            return;
-        }
-      }
-    }
-#else
-    if (xd->lossless) {
-      vp10_iwht4x4_add(dqcoeff, dst, stride, eob);
-    } else {
       switch (tx_size) {
         case TX_4X4:
-          vp10_iht4x4_add(tx_type, dqcoeff, dst, stride, eob);
+          vp10_highbd_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, xd->bd,
+                                       tx_type, xd->lossless ?
+                                           vp10_highbd_iwht4x4_add :
+                                           vp10_highbd_idct4x4_add);
           break;
         case TX_8X8:
-          vp10_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
+          vp10_highbd_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, xd->bd,
+                                       tx_type);
           break;
         case TX_16X16:
-          vp10_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
+          vp10_highbd_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, xd->bd,
+                                         tx_type);
           break;
         case TX_32X32:
-          vp10_idct32x32_add(dqcoeff, dst, stride, eob);
+          vp10_highbd_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, xd->bd,
+                                         tx_type);
           break;
         default:
           assert(0 && "Invalid transform size");
           return;
       }
+    } else {
+      switch (tx_size) {
+        case TX_4X4:
+          vp10_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, tx_type,
+                                xd->lossless ? vp10_iwht4x4_add :
+                                    vp10_idct4x4_add);
+          break;
+        case TX_8X8:
+          vp10_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, tx_type);
+          break;
+        case TX_16X16:
+          vp10_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, tx_type);
+          break;
+        case TX_32X32:
+          vp10_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, tx_type);
+          break;
+        default:
+          assert(0 && "Invalid transform size");
+          return;
+      }
+    }
+#else
+    switch (tx_size) {
+      case TX_4X4:
+        vp10_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, tx_type,
+                              xd->lossless ? vp10_iwht4x4_add :
+                                  vp10_idct4x4_add);
+        break;
+      case TX_8X8:
+        vp10_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, tx_type);
+        break;
+      case TX_16X16:
+        vp10_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, tx_type);
+        break;
+      case TX_32X32:
+        vp10_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, tx_type);
+        break;
+      default:
+        assert(0 && "Invalid transform size");
+        return;
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -382,7 +381,7 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
                           col, row, plane);
 
   if (!mbmi->skip) {
-    const TX_TYPE tx_type = (plane || xd->lossless) ?
+    const TX_TYPE tx_type = (plane || xd->lossless || tx_size >= TX_32X32) ?
         DCT_DCT : intra_mode_to_tx_type_lookup[mode];
     const scan_order *sc = (plane || xd->lossless) ?
         &vp10_default_scan_orders[tx_size] : &vp10_scan_orders[tx_size][tx_type];
