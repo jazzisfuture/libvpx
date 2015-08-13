@@ -548,12 +548,8 @@ void vpx_convolve8_msa(const uint8_t *src, ptrdiff_t src_stride,
                        int32_t w, int32_t h) {
   int8_t cnt, filt_hor[8], filt_ver[8];
 
-  if (16 != x_step_q4 || 16 != y_step_q4) {
-    vpx_convolve8_c(src, src_stride, dst, dst_stride,
-                    filter_x, x_step_q4, filter_y, y_step_q4,
-                    w, h);
-    return;
-  }
+  assert(x_step_q4 == 16);
+  assert(y_step_q4 == 16);
 
   if (((const int32_t *)filter_x)[1] == 0x800000 &&
       ((const int32_t *)filter_y)[1] == 0x800000) {
