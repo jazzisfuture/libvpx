@@ -905,8 +905,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x,
                                cpi->sf.use_fast_coef_costing);
           if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
             goto next;
-          vp10_iwht4x4_add(BLOCK_OFFSET(pd->dqcoeff, block), dst, dst_stride,
-                          p->eobs[block]);
+          vp10_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
+                                dst, dst_stride, p->eobs[block], DCT_DCT,
+                                vp10_iwht4x4_add);
         } else {
           int64_t unused;
           const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
@@ -920,8 +921,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x,
                                         16, &unused) >> 2;
           if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
             goto next;
-          vp10_iht4x4_add(tx_type, BLOCK_OFFSET(pd->dqcoeff, block),
-                         dst, dst_stride, p->eobs[block]);
+          vp10_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
+                                dst, dst_stride, p->eobs[block], tx_type,
+                                vp10_idct4x4_add);
         }
       }
     }
@@ -978,6 +980,7 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
   memcpy(t_above, xd->plane[0].above_context, sizeof(t_above));
   memcpy(t_left, xd->plane[0].left_context, sizeof(t_left));
 
+  mic->mbmi.tx_type_mode = USE_DEFAULT_TX_TYPE;
   // Pick modes for each sub-block (of size 4x4, 4x8, or 8x4) in an 8x8 block.
   for (idy = 0; idy < 2; idy += num_4x4_blocks_high) {
     for (idx = 0; idx < 2; idx += num_4x4_blocks_wide) {
@@ -1043,6 +1046,7 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   bmode_costs = cpi->y_mode_costs[A][L];
 
   memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
+  mic->mbmi.tx_type_mode = USE_DEFAULT_TX_TYPE;
   /* Y Search for intra prediction mode */
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
 
@@ -3088,6 +3092,7 @@ void vp10_rd_pick_inter_mode_sb(VP9_COMP *cpi,
     midx = end_pos;
   }
 
+  mbmi->tx_type_mode = USE_DEFAULT_TX_TYPE;
   for (midx = 0; midx < MAX_MODES; ++midx) {
     int mode_index = mode_map[midx];
     int mode_excluded = 0;
@@ -3624,6 +3629,7 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP9_COMP *cpi,
   mbmi->ref_frame[1] = NONE;
   mbmi->mv[0].as_int = 0;
   x->skip = 1;
+  mbmi->tx_type_mode = USE_DEFAULT_TX_TYPE;
 
   if (cm->interp_filter != BILINEAR) {
     best_filter = EIGHTTAP;
@@ -3766,6 +3772,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
     frame_mv[ZEROMV][ref_frame].as_int = 0;
   }
 
+  mbmi->tx_type_mode = USE_DEFAULT_TX_TYPE;
   for (ref_index = 0; ref_index < MAX_REFS; ++ref_index) {
     int mode_excluded = 0;
     int64_t this_rd = INT64_MAX;

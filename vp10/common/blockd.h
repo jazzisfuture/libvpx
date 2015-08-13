@@ -68,6 +68,7 @@ typedef struct {
   BLOCK_SIZE sb_type;
   PREDICTION_MODE mode;
   TX_SIZE tx_size;
+  TX_TYPE_MODE tx_type_mode;
   int8_t skip;
   int8_t segment_id;
   int8_t seg_id_predicted;  // valid only when temporal_update is enabled
@@ -221,6 +222,18 @@ static const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
 static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
                                   const MACROBLOCKD *xd) {
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+
+  if (plane_type == PLANE_TYPE_Y && mbmi->tx_type_mode != USE_DEFAULT_TX_TYPE) {
+    //printf("error\n");
+    switch (mbmi->tx_type_mode) {
+      case USE_NO_TX:
+        // ToDo (huisu) return tx_type corresponding to tx skip
+        return DCT_DCT;
+        break;
+      default:
+        break;
+    }
+  }
 
   if (plane_type != PLANE_TYPE_Y || xd->lossless || is_inter_block(mbmi))
     return DCT_DCT;

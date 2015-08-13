@@ -98,6 +98,12 @@ typedef enum {
 } TX_TYPE;
 
 typedef enum {
+  USE_DEFAULT_TX_TYPE = 0,
+  USE_NO_TX           = 1,
+  TX_TYPE_MODES
+} TX_TYPE_MODE;
+
+typedef enum {
   VP9_LAST_FLAG = 1 << 0,
   VP9_GOLD_FLAG = 1 << 1,
   VP9_ALT_FLAG = 1 << 2,
