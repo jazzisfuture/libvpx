@@ -60,7 +60,7 @@ static void extend_plane(uint8_t *const src, int src_stride,
   }
 }
 
-#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9 || CONFIG_VP10 && CONFIG_VP9_HIGHBITDEPTH
 static void extend_plane_high(uint8_t *const src8, int src_stride,
                               int width, int height,
                               int extend_top, int extend_left,
