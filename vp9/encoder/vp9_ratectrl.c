@@ -532,7 +532,7 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
         cm->seg.enabled &&
         cpi->svc.temporal_layer_id == 0 &&
-        cpi->svc.spatial_layer_id == 0) {
+        cpi->svc.spatial_layer_id == cpi->svc.first_spatial_layer_to_encode) {
       bits_per_mb_at_this_q =
           (int)vp9_cyclic_refresh_rc_bits_per_mb(cpi, i, correction_factor);
     } else {
@@ -1573,7 +1573,7 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
     cm->frame_type = INTER_FRAME;
     if (is_two_pass_svc(cpi)) {
       LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
-      if (cpi->svc.spatial_layer_id == 0) {
+      if (cpi->svc.spatial_layer_id == cpi->svc.first_spatial_layer_to_encode) {
         lc->is_key_frame = 0;
       } else {
         lc->is_key_frame =
@@ -1584,7 +1584,7 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
       cpi->ref_frame_flags &= (~VP9_ALT_FLAG);
     } else if (is_one_pass_cbr_svc(cpi)) {
       LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
-      if (cpi->svc.spatial_layer_id == 0) {
+      if (cpi->svc.spatial_layer_id == cpi->svc.first_spatial_layer_to_encode) {
         lc->is_key_frame = 0;
       } else {
         lc->is_key_frame =

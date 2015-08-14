@@ -535,14 +535,15 @@ int vp9_svc_start_frame(VP9_COMP *const cpi) {
 
   cpi->lst_fb_idx = cpi->svc.spatial_layer_id;
 
-  if (cpi->svc.spatial_layer_id == 0)
+  if (cpi->svc.spatial_layer_id == cpi->svc.first_spatial_layer_to_encode)
     cpi->gld_fb_idx = (lc->gold_ref_idx >= 0) ?
                       lc->gold_ref_idx : cpi->lst_fb_idx;
   else
     cpi->gld_fb_idx = cpi->svc.spatial_layer_id - 1;
 
   if (lc->current_video_frame_in_layer == 0) {
-    if (cpi->svc.spatial_layer_id >= 2) {
+    if (cpi->svc.spatial_layer_id >=
+        cpi->svc.first_spatial_layer_to_encode + 2) {
       cpi->alt_fb_idx = cpi->svc.spatial_layer_id - 2;
     } else {
       cpi->alt_fb_idx = cpi->lst_fb_idx;
@@ -555,7 +556,7 @@ int vp9_svc_start_frame(VP9_COMP *const cpi) {
         cpi->ref_frame_flags &= (~VP9_ALT_FLAG);
     } else {
       // Find a proper alt_fb_idx for layers that don't have alt ref frame
-      if (cpi->svc.spatial_layer_id == 0) {
+      if (cpi->svc.spatial_layer_id == cpi->svc.first_spatial_layer_to_encode) {
         cpi->alt_fb_idx = cpi->lst_fb_idx;
       } else {
         LAYER_CONTEXT *lc_lower =
@@ -564,7 +565,8 @@ int vp9_svc_start_frame(VP9_COMP *const cpi) {
         if (cpi->oxcf.ss_enable_auto_arf[cpi->svc.spatial_layer_id - 1] &&
             lc_lower->alt_ref_source != NULL)
           cpi->alt_fb_idx = lc_lower->alt_ref_idx;
-        else if (cpi->svc.spatial_layer_id >= 2)
+        else if (cpi->svc.spatial_layer_id >=
+                 cpi->svc.first_spatial_layer_to_encode + 2)
           cpi->alt_fb_idx = cpi->svc.spatial_layer_id - 2;
         else
           cpi->alt_fb_idx = cpi->lst_fb_idx;
@@ -589,7 +591,7 @@ int vp9_svc_start_frame(VP9_COMP *const cpi) {
     if ((cpi->svc.number_temporal_layers > 1 &&
          cpi->svc.temporal_layer_id < cpi->svc.number_temporal_layers - 1) ||
         (cpi->svc.number_spatial_layers > 1 &&
-         cpi->svc.spatial_layer_id == 0)) {
+         cpi->svc.spatial_layer_id == cpi->svc.first_spatial_layer_to_encode)) {
       struct lookahead_entry *buf = vp9_lookahead_peek(cpi->lookahead, 0);
 
       if (buf != NULL) {
