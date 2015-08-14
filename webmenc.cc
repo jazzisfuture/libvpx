@@ -49,7 +49,8 @@ void write_webm_file_header(struct EbmlGlobal *glob,
       static_cast<mkvmuxer::VideoTrack*>(
           segment->GetTrackByNumber(video_track_id));
   video_track->SetStereoMode(stereo_fmt);
-  video_track->set_codec_id(fourcc == VP8_FOURCC ? "V_VP8" : "V_VP9");
+  video_track->set_codec_id(fourcc == VP8_FOURCC ?
+      "V_VP8" : (fourcc == VP9_FOURCC ? "V_VP9" :"V_VP10"));
   if (par->numerator > 1 || par->denominator > 1) {
     // TODO(fgalligan): Add support of DisplayUnit, Display Aspect Ratio type
     // to WebM format.
