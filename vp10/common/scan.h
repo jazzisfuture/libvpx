@@ -39,15 +39,18 @@ static INLINE int get_coef_context(const int16_t *neighbors,
 }
 
 static INLINE const scan_order *get_scan(const MACROBLOCKD *xd, TX_SIZE tx_size,
-                                         PLANE_TYPE type, int block_idx) {
+                                         PLANE_TYPE plane_type, int block_id,
+                                         TX_TYPE *tx_type) {
   const MODE_INFO *const mi = xd->mi[0];
+  const MB_MODE_INFO *const mbmi = &mi->mbmi;
 
-  if (is_inter_block(&mi->mbmi) || type != PLANE_TYPE_Y || xd->lossless) {
+  if (plane_type != PLANE_TYPE_Y || xd->lossless || is_inter_block(mbmi)) {
+    *tx_type = DCT_DCT;
     return &vp10_default_scan_orders[tx_size];
-  } else {
-    const PREDICTION_MODE mode = get_y_mode(mi, block_idx);
-    return &vp10_scan_orders[tx_size][intra_mode_to_tx_type_lookup[mode]];
   }
+
+  *tx_type = intra_mode_to_tx_type_lookup[get_y_mode(mi, block_id)];
+  return &vp10_scan_orders[tx_size][*tx_type];
 }
 
 #ifdef __cplusplus
