@@ -558,6 +558,7 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblockd_plane *const pd = &xd->plane[plane];
   struct rdcost_block_args args;
+  TX_TYPE tx_type;
   vp10_zero(args);
   args.x = x;
   args.best_rd = ref_best_rd;
@@ -569,7 +570,7 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
 
   vp10_get_entropy_contexts(bsize, tx_size, pd, args.t_above, args.t_left);
 
-  args.so = get_scan(xd, tx_size, pd->plane_type, 0);
+  args.so = get_scan(xd, tx_size, pd->plane_type, 0, &tx_type);
 
   vp10_foreach_transformed_block_in_plane(xd, bsize, plane,
                                          block_rd_txfm, &args);
@@ -808,7 +809,7 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                                    p->eobs[block], xd->bd);
           } else {
             int64_t unused;
-            const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
+            const TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block);
             const scan_order *so = &vp10_scan_orders[TX_4X4][tx_type];
             if (tx_type == DCT_DCT)
               vpx_highbd_fdct4x4(src_diff, coeff, 8);
@@ -909,7 +910,7 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                           p->eobs[block]);
         } else {
           int64_t unused;
-          const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
+          const TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block);
           const scan_order *so = &vp10_scan_orders[TX_4X4][tx_type];
           vp10_fht4x4(src_diff, coeff, 8, tx_type);
           vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
