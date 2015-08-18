@@ -382,6 +382,8 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
                           col, row, plane);
 
   if (!mbmi->skip) {
+    //const TX_TYPE tx_type = (plane || xd->lossless) ?
+      //  DCT_DCT : intra_mode_to_tx_type_lookup[mode];
     const TX_TYPE tx_type = (plane || xd->lossless) ?
         DCT_DCT : intra_mode_to_tx_type_lookup[mode];
     const scan_order *sc = (plane || xd->lossless) ?

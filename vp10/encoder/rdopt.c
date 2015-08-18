@@ -808,7 +808,8 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                                    p->eobs[block], xd->bd);
           } else {
             int64_t unused;
-            const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
+            const TX_TYPE tx_type =
+                get_tx_type(PLANE_TYPE_Y, xd, get_y_mode(xd->mi[0], block));
             const scan_order *so = &vp10_scan_orders[TX_4X4][tx_type];
             if (tx_type == DCT_DCT)
               vpx_highbd_fdct4x4(src_diff, coeff, 8);
@@ -909,7 +910,8 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                           p->eobs[block]);
         } else {
           int64_t unused;
-          const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
+          const TX_TYPE tx_type =
+              get_tx_type(PLANE_TYPE_Y, xd, get_y_mode(xd->mi[0], block));
           const scan_order *so = &vp10_scan_orders[TX_4X4][tx_type];
           vp10_fht4x4(src_diff, coeff, 8, tx_type);
           vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
