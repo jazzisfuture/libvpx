@@ -524,7 +524,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
 
   pt = get_entropy_context(tx_size, pd->above_context + aoff,
                            pd->left_context + loff);
-  so = get_scan(xd, tx_size, type, block);
+  so = get_scan(xd, tx_size, type, block, NULL);
   scan = so->scan;
   nb = so->neighbors;
   c = 0;

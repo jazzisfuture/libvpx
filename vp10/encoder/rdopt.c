@@ -569,7 +569,7 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
 
   vp10_get_entropy_contexts(bsize, tx_size, pd, args.t_above, args.t_left);
 
-  args.so = get_scan(xd, tx_size, pd->plane_type, 0);
+  args.so = get_scan(xd, tx_size, pd->plane_type, 0, NULL);
 
   vp10_foreach_transformed_block_in_plane(xd, bsize, plane,
                                          block_rd_txfm, &args);
@@ -795,7 +795,8 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
           vpx_highbd_subtract_block(4, 4, src_diff, 8, src, src_stride,
                                     dst, dst_stride, xd->bd);
           if (xd->lossless) {
-            const scan_order *so = &vp10_default_scan_orders[TX_4X4];
+            const scan_order *so =
+                get_scan(xd, TX_4X4, PLANE_TYPE_Y, block, NULL);
             vp10_highbd_fwht4x4(src_diff, coeff, 8);
             vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
             ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
@@ -808,8 +809,9 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                                    p->eobs[block], xd->bd);
           } else {
             int64_t unused;
-            const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
-            const scan_order *so = &vp10_scan_orders[TX_4X4][tx_type];
+            TX_TYPE tx_type;
+            const scan_order *so = get_scan(xd, TX_4X4, PLANE_TYPE_Y, block,
+                                            &tx_type);
             if (tx_type == DCT_DCT)
               vpx_highbd_fdct4x4(src_diff, coeff, 8);
             else
@@ -897,7 +899,8 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
         vpx_subtract_block(4, 4, src_diff, 8, src, src_stride, dst, dst_stride);
 
         if (xd->lossless) {
-          const scan_order *so = &vp10_default_scan_orders[TX_4X4];
+          const scan_order *so =
+              get_scan(xd, TX_4X4, PLANE_TYPE_Y, block, NULL);
           vp10_fwht4x4(src_diff, coeff, 8);
           vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
           ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
@@ -909,8 +912,9 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                           p->eobs[block]);
         } else {
           int64_t unused;
-          const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
-          const scan_order *so = &vp10_scan_orders[TX_4X4][tx_type];
+          TX_TYPE tx_type;
+          const scan_order *so = get_scan(xd, TX_4X4, PLANE_TYPE_Y, block,
+                                          &tx_type);
           vp10_fht4x4(src_diff, coeff, 8, tx_type);
           vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
           ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
@@ -1301,7 +1305,8 @@ static int64_t encode_inter_mb_segment(VP10_COMP *cpi,
                                                             pd->dst.stride)];
   int64_t thisdistortion = 0, thissse = 0;
   int thisrate = 0, ref;
-  const scan_order *so = &vp10_default_scan_orders[TX_4X4];
+  const scan_order *so =
+      get_scan(xd, TX_4X4, PLANE_TYPE_Y, i, NULL);
   const int is_compound = has_second_ref(&mi->mbmi);
   const InterpKernel *kernel = vp10_filter_kernels[mi->mbmi.interp_filter];
 
