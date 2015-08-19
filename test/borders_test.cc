@@ -78,6 +78,9 @@ TEST_P(BordersTest, TestLowBitrate) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
+VP10_INSTANTIATE_TEST_CASE(BordersTest, ::testing::Values(
+    ::libvpx_test::kTwoPassGood));
+
 VP9_INSTANTIATE_TEST_CASE(BordersTest, ::testing::Values(
     ::libvpx_test::kTwoPassGood));
 }  // namespace

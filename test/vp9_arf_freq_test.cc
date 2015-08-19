@@ -224,6 +224,12 @@ TEST_P(ArfFreqTest, MinArfFreqTest) {
   delete(video);
 }
 
+VP10_INSTANTIATE_TEST_CASE(
+    ArfFreqTest,
+    ::testing::ValuesIn(kTestVectors),
+    ::testing::ValuesIn(kEncodeVectors),
+    ::testing::ValuesIn(kMinArfVectors));
+
 VP9_INSTANTIATE_TEST_CASE(
     ArfFreqTest,
     ::testing::ValuesIn(kTestVectors),
