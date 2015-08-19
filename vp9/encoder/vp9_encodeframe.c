@@ -510,6 +510,7 @@ void vp9_set_variance_partition_thresholds(VP9_COMP *cpi, int q) {
       sf->partition_search_type != REFERENCE_PARTITION) {
     return;
   } else {
+    int shift_minmax = 0;
     set_vbp_thresholds(cpi, cpi->vbp_thresholds, q);
     // The thresholds below are not changed locally.
     if (is_key_frame) {
@@ -523,7 +524,9 @@ void vp9_set_variance_partition_thresholds(VP9_COMP *cpi, int q) {
             (cpi->y_dequant[q][1] << 1) : 1000;
       cpi->vbp_bsize_min = BLOCK_16X16;
     }
-    cpi->vbp_threshold_minmax = 15 + (q >> 3);
+    if (cpi->svc.number_temporal_layers > 1)
+      shift_minmax = 1;
+    cpi->vbp_threshold_minmax = (15 + (q >> 3)) << shift_minmax;
   }
 }
 
