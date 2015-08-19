@@ -134,4 +134,9 @@ VP9_INSTANTIATE_TEST_CASE(
     ::testing::Values(::libvpx_test::kTwoPassGood, ::libvpx_test::kOnePassGood,
                       ::libvpx_test::kRealTime),
     ::testing::Range(1, 9));
+
+VP10_INSTANTIATE_TEST_CASE(
+    VP9EncoderThreadTest,
+    ::testing::Values(::libvpx_test::kTwoPassGood, ::libvpx_test::kOnePassGood),
+    ::testing::Range(1, 3));
 }  // namespace
