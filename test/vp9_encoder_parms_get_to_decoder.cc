@@ -191,4 +191,8 @@ VP9_INSTANTIATE_TEST_CASE(
     ::testing::ValuesIn(kVP9EncodeParameterSet),
     ::testing::ValuesIn(kVP9EncodePerfTestVectors));
 
+VP10_INSTANTIATE_TEST_CASE(
+    Vp9EncoderParmsGetToDecoder,
+    ::testing::ValuesIn(kVP9EncodeParameterSet),
+    ::testing::ValuesIn(kVP9EncodePerfTestVectors));
 }  // namespace
