@@ -86,17 +86,17 @@ int is_extension_y4m(const char *filename) {
     return !strcmp(dot, ".y4m");
 }
 
-class Vp9EncoderParmsGetToDecoder
+class VPxEncoderParmsGetToDecoder
     : public ::libvpx_test::EncoderTest,
       public ::libvpx_test::CodecTestWith2Params<EncodeParameters, \
                                                  EncodePerfTestVideo> {
  protected:
-  Vp9EncoderParmsGetToDecoder()
+  VPxEncoderParmsGetToDecoder()
       : EncoderTest(GET_PARAM(0)),
         encode_parms(GET_PARAM(1)) {
   }
 
-  virtual ~Vp9EncoderParmsGetToDecoder() {}
+  virtual ~VPxEncoderParmsGetToDecoder() {}
 
   virtual void SetUp() {
     InitializeConfig();
@@ -166,7 +166,7 @@ class Vp9EncoderParmsGetToDecoder
 
 // TODO(hkuang): This test conflicts with frame parallel decode. So disable it
 // for now until fix.
-TEST_P(Vp9EncoderParmsGetToDecoder, DISABLED_BitstreamParms) {
+TEST_P(VPxEncoderParmsGetToDecoder, DISABLED_BitstreamParms) {
   init_flags_ = VPX_CODEC_USE_PSNR;
 
   libvpx_test::VideoSource *video;
@@ -187,8 +187,12 @@ TEST_P(Vp9EncoderParmsGetToDecoder, DISABLED_BitstreamParms) {
 }
 
 VP9_INSTANTIATE_TEST_CASE(
-    Vp9EncoderParmsGetToDecoder,
+    VPxEncoderParmsGetToDecoder,
     ::testing::ValuesIn(kVP9EncodeParameterSet),
     ::testing::ValuesIn(kVP9EncodePerfTestVectors));
 
+VP10_INSTANTIATE_TEST_CASE(
+    VPxEncoderParmsGetToDecoder,
+    ::testing::ValuesIn(kVP9EncodeParameterSet),
+    ::testing::ValuesIn(kVP9EncodePerfTestVectors));
 }  // namespace
