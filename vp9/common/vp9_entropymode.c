@@ -1292,10 +1292,19 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
 
 #if CONFIG_WEDGE_PARTITION
   for (i = 0; i < BLOCK_SIZES; ++i) {
-    if (get_wedge_bits(i))
+    if (get_wedge_bits(i)) {
+#if CONFIG_WEDGE_TEST
+      for (j = 0; j < 2; ++j) {
+        fc->wedge_interinter_prob[i][j] = adapt_prob
+            (pre_fc->wedge_interinter_prob[i][j],
+             counts->wedge_interinter[i][j]);
+      }
+#else  // CONFIG_WEDGE_TEST
       fc->wedge_interinter_prob[i] = adapt_prob
           (pre_fc->wedge_interinter_prob[i],
            counts->wedge_interinter[i]);
+#endif  // CONFIG_WEDGE_TEST
+    }
   }
 #endif  // CONFIG_WEDGE_PARTITION
 
