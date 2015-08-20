@@ -66,6 +66,16 @@ extern "C" {
 #define COMP_INTER_CONTEXTS 5
 #define REF_CONTEXTS 5
 
+/*
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+// TOP - LEFT neighbors:
+// (1) No wedge;
+// (2) Wedge with compound refs;
+// (3) Wedge with a single ref.
+#define WEDGE_INTERINTER_CONTEXTS 3
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+*/
+
 #if CONFIG_MULTI_REF
 
 #if CONFIG_LAST4_REF
@@ -344,8 +354,17 @@ static INLINE int is_inter_block(const MB_MODE_INFO *mbmi) {
   return mbmi->ref_frame[0] > INTRA_FRAME;
 }
 
+static INLINE int is_compound_ref(const MV_REFERENCE_FRAME *ref_frame) {
+  assert(ref_frame != NULL);
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+  return (ref_frame[1] > INTRA_FRAME && ref_frame[0] != ref_frame[1]);
+#else
+  return ref_frame[1] > INTRA_FRAME;
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+}
+
 static INLINE int has_second_ref(const MB_MODE_INFO *mbmi) {
-  return mbmi->ref_frame[1] > INTRA_FRAME;
+  return is_compound_ref(mbmi->ref_frame);
 }
 
 PREDICTION_MODE vp9_left_block_mode(const MODE_INFO *cur_mi,
