@@ -462,6 +462,18 @@ static const vp9_prob default_comp_ref_probs[REF_CONTEXTS][COMP_REFS - 1] = {
 #endif  // CONFIG_MULTI_REF
 };
 
+// TODO(zoeliu): Currently the experiment of wedge-test does not work with
+// experiments of multi-ref and last4 yet.
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+static const vp9_prob default_comp_same_ref_probs[REF_CONTEXTS]
+                                                 [COMP_SAME_REFS - 1] = {
+  {  33,  16 },
+  {  77,  74 },
+  { 142, 142 },
+  { 172, 170 },
+  { 238, 247 }
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+
 /*
 // TODO(zoeliu): Tree structure may be introduced when all bits of the encoding
 // of either the compound or the single references share the same contexts.
@@ -1047,6 +1059,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   vp9_copy(fc->comp_inter_prob, default_comp_inter_p);
   vp9_copy(fc->single_ref_probs, default_single_ref_probs);
   vp9_copy(fc->comp_ref_probs, default_comp_ref_probs);
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+  vp9_copy(fc->comp_same_ref_probs, default_comp_same_ref_probs);
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
   fc->tx_probs = default_tx_probs;
   vp9_copy(fc->skip_probs, default_skip_probs);
   vp9_copy(fc->inter_mode_probs, default_inter_mode_probs);
@@ -1142,6 +1157,15 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
                                             counts->comp_ref[i][j]);
     }
   }
+
+#if CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+  for (i = 0; i < REF_CONTEXTS; i++) {
+    for (j = 0; j < (COMP_SAME_REFS - 1); j++) {
+      fc->comp_same_ref_probs[i][j] = adapt_prob(
+          pre_fc->comp_same_ref_probs[i][j], counts->comp_same_ref[i][j]);
+    }
+  }
+#endif  // CONFIG_NEW_INTER && CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
 
   for (i = 0; i < INTER_MODE_CONTEXTS; i++)
     adapt_probs(vp9_inter_mode_tree, pre_fc->inter_mode_probs[i],
