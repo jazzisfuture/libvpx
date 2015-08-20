@@ -31,6 +31,7 @@
 #include "vp9/common/vp9_systemdependent.h"
 
 #include "vp9/encoder/vp9_cost.h"
+#include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemb.h"
 #include "vp9/encoder/vp9_encodemv.h"
 #include "vp9/encoder/vp9_encoder.h"
@@ -8409,5 +8410,421 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
                        best_pred_diff, best_tx_diff, best_filter_diff, 0);
 }
 
+#if CONFIG_WEDGE_PARTITION
+// TODO(JBB): Obviously these shouldn't be globals.
+//#define DEBUG_WEDGE
+unsigned char dest[3][64*64*4];
+unsigned char dif[2][64*64*4];
+unsigned char mask[64*64*4];
+uint8_t wedge[64*64];
+
+static void make_predictor(VP9_COMP *cpi, uint8_t *dst, int dst_pitch,
+                           BLOCK_SIZE bs, int mi_row, int mi_col,
+                           MV_REFERENCE_FRAME ref, int_mv mv) {
+  MACROBLOCK *const x = &cpi->mb;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  VP9_COMMON *const cm = &cpi->common;
+  int width = num_4x4_blocks_wide_lookup[bs] << 2;
+  int height = num_4x4_blocks_high_lookup[bs] << 2;
+
+  const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref);
+  const struct scale_factors *const sf = &cm->frame_refs[LAST_FRAME - 1].sf;
+  const InterpKernel *kernel = vp9_get_interp_kernel(EIGHTTAP);
+  vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col, NULL);
+  vp9_clear_system_state();
+
+  vp9_build_inter_predictor(xd->plane[0].pre[0].buf,
+                            xd->plane[0].pre[0].stride,
+                            dst, dst_pitch, &mv.as_mv, sf,
+                            width, height, 0, kernel, MV_PRECISION_Q3,
+                            mi_row, mi_col);
+}
+#ifdef DEBUG_WEDGE
+static void write_file(char *filename, uint8_t *s, int sp,
+                       BLOCK_SIZE bs) {
+  FILE *file = fopen(filename,"wb");
+  int i;
+  int width = num_4x4_blocks_wide_lookup[bs] << 2;
+  int height = num_4x4_blocks_high_lookup[bs] << 2;
+  uint8_t *so=s;
+  for (i = 0; i < height; ++i, s+= sp) fwrite(s, width, 1, file);
+  s = so;
+  for (i = 0; i < height; ++i, s+= sp) fwrite(s, width, 1, file);
+  s = so;
+  for (i = 0; i < height; ++i, s+= sp) fwrite(s, width, 1, file);
+  fclose(file);
+}
+#endif
+extern void vp9_generate_hard_mask(int wedge_index, BLOCK_SIZE sb_type,
+                                   int h, int w, uint8_t *mask, int stride);
+void vp9_generate_masked_weight(int wedge_index, BLOCK_SIZE sb_type,
+                                int h, int w, uint8_t *mask, int stride);
 
 
+// TODO(JBB): The following 4 functions are not used but represent an idea
+// for an optimization, in which we find out which of the two prospective
+// motion vectors are better for each pixel ( 1 bit ) store that into an
+// "ideal" mask and then try to find the mask which best matches that ideal
+// mask using bit operations.
+#ifdef USE_FAST_WEDGE_SEARCH
+static void make_difference(uint8_t *s1, int s1_pitch, uint8_t *s2,
+                            int s2_pitch, uint8_t *d, int d_pitch,
+                            BLOCK_SIZE bs) {
+  int width = num_4x4_blocks_wide_lookup[bs] << 2;
+  int height = num_4x4_blocks_high_lookup[bs] << 2;
+  int hi, wi;
+  for (hi = 0; hi < height;
+      ++hi, s1 += s1_pitch, s2 += s2_pitch, d += d_pitch) {
+    for (wi = 0; wi < width; ++wi) {
+      d[wi] = abs(s1[wi] - s2[wi]);
+    }
+  }
+}
+
+static void make_mask(uint8_t *s1, int s1_pitch, uint8_t *s2, int s2_pitch,
+                      uint8_t *d, int d_pitch, BLOCK_SIZE bs) {
+  int width = num_4x4_blocks_wide_lookup[bs] << 2;
+  int height = num_4x4_blocks_high_lookup[bs] << 2;
+  int hi, wi;
+  for (hi = 0; hi < height;
+      ++hi, s1 += s1_pitch, s2 += s2_pitch, d += d_pitch) {
+    for (wi = 0; wi < width; ++wi) {
+      if (abs(s1[wi] - s2[wi]) < 8)
+        d[wi] = 128;
+      else
+        d[wi] = s1[wi] < s2[wi] ? 0 : 255;
+    }
+  }
+}
+int score_wedge(uint8_t *ideal, int ideal_pitch, uint8_t *wedge,
+                int wedge_pitch, BLOCK_SIZE bsize) {
+
+  // TODO(jbb): The entire 64x64 mask can fit into 64 long longs and these
+  // operations can be done with masks and ors so that testing each mask should
+  // be on the order of 64 * ( 5 or 6 ) operations rather than the 64*64*6
+  // operations we use now.
+  int width = num_4x4_blocks_wide_lookup[bsize] << 2;
+  int height = num_4x4_blocks_high_lookup[bsize] << 2;
+  int hh = 0;
+  int ll = 0;
+  int hl = 0;
+  int lh = 0;
+  int hi, wi;
+
+  for (hi = 0; hi < height; ++hi, ideal += ideal_pitch, wedge += wedge_pitch) {
+    for (wi = 0; wi < width; ++wi) {
+      if (ideal[wi]==128)
+        continue;
+      if (ideal[wi] && wedge[wi]>32) ++hh;
+      if (!ideal[wi] && wedge[wi]>32) ++lh;
+      if (ideal[wi] && wedge[wi]<32) ++hl;
+      if (!ideal[wi] && wedge[wi]<32) ++ll;
+    }
+  }
+  return hl + lh;
+}
+static int find_wedge(uint8_t *ideal_mask, BLOCK_SIZE bsize) {
+  int wedge_types = (1 << get_wedge_bits(bsize));
+  int wi;
+  int width = num_4x4_blocks_wide_lookup[bsize] << 2;
+  int height = num_4x4_blocks_high_lookup[bsize] << 2;
+  int this_score, lowest_score = 64 * 65;
+  int best_wi = 0;
+  for (wi =0; wi < wedge_types; ++wi) {
+    vp9_generate_hard_mask(wi, bsize, height, width, wedge, 64);
+    this_score = score_wedge(ideal_mask, 64, wedge, 64, bsize);
+    if (this_score < lowest_score) {
+      lowest_score = this_score;
+      best_wi = wi;
+    }
+  }
+  return best_wi;
+}
+#endif
+
+// TODO(JBB): this can be simd optimized really quite easily,  I think this
+// is better than the code elsewhere.
+static int64_t masked_error(uint8_t *source, int source_pitch, uint8_t *ref1,
+                            int ref1_pitch, uint8_t *ref2, int ref2_pitch,
+                            uint8_t *wedge, int wedge_pitch, BLOCK_SIZE bsize) {
+
+  // TODO(jbb): This can be done using simd.
+  int width = num_4x4_blocks_wide_lookup[bsize] << 2;
+  int height = num_4x4_blocks_high_lookup[bsize] << 2;
+  int64_t error = 0;
+
+  int hi, wi;
+  for (hi = 0; hi < height; ++hi) {
+    for (wi = 0; wi < width; ++wi) {
+      int value = (32 + (wedge[wi]-1) * ref2[wi] + (64 - wedge[wi]) * ref1[wi]) /
+                  64;
+      error += abs(source[wi]-value);
+    }
+    source += source_pitch;
+    ref1 += ref1_pitch;
+    ref2 += ref2_pitch;
+    wedge += wedge_pitch;
+  }
+  return error;
+}
+//
+static int64_t predict_masked(uint8_t *ref1, int ref1_pitch, uint8_t *ref2,
+                              int ref2_pitch, uint8_t *wedge, int wedge_pitch,
+                              uint8_t *dest, int dest_pitch, BLOCK_SIZE bsize) {
+
+  // TODO(jbb): This can be done using simd.
+  int width = num_4x4_blocks_wide_lookup[bsize] << 2;
+  int height = num_4x4_blocks_high_lookup[bsize] << 2;
+  int64_t error = 0;
+
+  int hi, wi;
+  for (hi = 0; hi < height; ++hi) {
+    for (wi = 0; wi < width; ++wi) {
+      int value = (32 + (wedge[wi]-1) * ref2[wi] + (64 - wedge[wi]) * ref1[wi]) /
+                  64;
+      dest[wi] = value;
+    }
+    ref1 += ref1_pitch;
+    ref2 += ref2_pitch;
+    dest += dest_pitch;
+    wedge += wedge_pitch;
+  }
+  return error;
+}
+
+// TODO(JBB) : This function could possibly be replaced by the function above
+// which can be faster in simd.   This function tries all the wedges and just
+// checks the sad score.
+static int find_wedge2(BLOCK_SIZE bsize, uint8_t *source, int source_pitch) {
+  int wedge_types = (1 << get_wedge_bits(bsize));
+  int wi;
+  int width = num_4x4_blocks_wide_lookup[bsize] << 2;
+  int height = num_4x4_blocks_high_lookup[bsize] << 2;
+  int this_score, lowest_score = 64 * 64* 255;
+  int best_wi = 0;
+  for (wi =0; wi < wedge_types; ++wi) {
+    vp9_generate_masked_weight(wi, bsize, height, width, wedge, 64);
+    this_score = masked_error(source, source_pitch, dest[0], 64, dest[1], 64,
+                              wedge, 64,bsize);
+#ifdef DEBUG_WEDGE
+    predict_masked(dest[0], 64, dest[1], 64, wedge, 64, dest[2], 64, bsize);
+    write_file("wedge.data", wedge, 64, bsize);
+    write_file("masked.data", dest[2], 64, bsize);
+#endif
+    if (this_score < lowest_score) {
+      lowest_score = this_score;
+      best_wi = wi;
+    }
+  }
+  return best_wi;
+}
+
+// Structure for mv and reference frame, together.
+typedef struct ReferenceMv{
+  int_mv mv;
+  MV_REFERENCE_FRAME ref;
+} ReferenceMv;
+
+static int mv_distance(int_mv *mv1, int_mv *mv2) {
+  return abs(mv1->as_mv.row - mv2->as_mv.row) +
+      abs(mv1->as_mv.col - mv2->as_mv.col);
+}
+
+// Function to convert a PC_TREE to a list of motion vectors that are at least
+// dist apart from each other.  It recurses through checking motion vectors
+// only at split and none.
+// TODO(JBB): Could be changed to check the "best_partition" and its selected
+// motion vector..
+static void pc_tree_to_mv_list(PC_TREE *current, ReferenceMv *refmv,
+                               int *count) {
+  int i,k, found;
+  int dist = 4;
+  found = 0;
+  if (current->none.mic.mbmi.ref_frame[0] != INTRA_FRAME) {
+    for (k = 0; k < *count; ++k) {
+      if (refmv[k].ref == current->none.mic.mbmi.ref_frame[0] &&
+          mv_distance(&current->none.mic.mbmi.mv[0], &refmv[k].mv) < dist) {
+        found = 1;
+        break;
+      }
+    }
+    if (!found) {
+      refmv[*count].mv = current->none.mic.mbmi.mv[0];
+      refmv[*count].ref = current->none.mic.mbmi.ref_frame[0];
+      ++*count;
+    }
+  }
+  // TODO(JBB): probably could check sub 8x8..
+  if (current->block_size < BLOCK_16X16)
+    return;
+  for (i = 0; i < 4; ++i) {
+    pc_tree_to_mv_list(current->split[0], refmv, count);
+  }
+}
+
+// This function tries every combination of 2 motion vectors found in
+// the split pc tree,  and fills in an rd cost.  Its not clear to me that it
+// doesn't need its own set of contexts...
+void play_mvs(VP9_COMP *cpi, int mi_row, int mi_col, BLOCK_SIZE bsize,
+                 RD_COST *this_rdc, PC_TREE *pc_tree) {
+  int i, k;
+
+  MACROBLOCK *const x = &cpi->mb;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  VP9_COMMON *const cm = &cpi->common;
+  MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
+  int width = num_4x4_blocks_wide_lookup[bsize] << 2;
+  int height = num_4x4_blocks_high_lookup[bsize] << 2;
+  int64_t this_sad = 0;
+  int64_t best_sad = INT64_MAX;
+  int_mv best_mv[2];
+  int best_wi = 0;
+  MV_REFERENCE_FRAME best_rf[2];
+  MODE_INFO *const mic = xd->mi[0].src_mi;
+
+  ReferenceMv refmv[64];
+  int refmvcount = 0;
+  this_rdc->rate = INT_MAX;
+  this_rdc->rdcost = INT64_MAX;
+
+  pc_tree_to_mv_list(pc_tree, refmv, &refmvcount);
+
+#ifdef DEBUG_WEDGE
+  printf("block size: %d\n",bsize);
+  printf("PCTREE MVS \n");
+  for (i = 0; i < refmvcount; ++i) {
+    printf("%d:%d,%d \n",refmv[i].ref, refmv[i].mv.as_mv.row,
+           refmv[i].mv.as_mv.col);
+  }
+  printf("\n");
+#endif
+
+  vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
+
+#ifdef DEBUG_WEDGE
+  write_file("source.data", x->plane[0].src.buf, x->plane[0].src.stride,
+             bsize);
+#endif
+  for (k = 0; k < refmvcount; ++k) {
+    for (i = k + 1; i < refmvcount; ++i) {
+      int wi;
+#ifdef DEBUG_WEDGE
+      printf("%d:[%4d,%-4d]  ", refmv[k].ref, refmv[k].mv.as_mv.row,
+             refmv[k].mv.as_mv.col);
+      printf(" vs ");
+      printf("%d:[%4d,%-4d]  ", refmv[i].ref, refmv[i].mv.as_mv.row,
+             refmv[i].mv.as_mv.col);
+      printf("\n");
+#endif
+      make_predictor(cpi, dest[0], 64, bsize, mi_row, mi_col,
+                     refmv[k].ref, refmv[k].mv);
+      make_predictor(cpi, dest[1], 64, bsize, mi_row, mi_col,
+                     refmv[i].ref, refmv[i].mv);
+
+#ifdef DEBUG_WEDGE
+      write_file("predictor1.data", dest[0], 64, bsize);
+      write_file("predictor2.data", dest[1], 64, bsize);
+#endif
+      wi = find_wedge2(bsize, x->plane[0].src.buf, x->plane[0].src.stride);
+
+      vp9_generate_masked_weight(wi, bsize, height, width, wedge, 64);
+      this_sad = masked_error(x->plane[0].src.buf, x->plane[0].src.stride,
+                              dest[0], 64, dest[1], 64, wedge, 64, bsize);
+#ifdef DEBUG_WEDGE
+      printf("this_sad:%d vs best_sad:%d\n", (int) this_sad, (int) best_sad);
+#endif
+      if (this_sad < best_sad) {
+        best_sad = this_sad;
+        best_mv[0] = refmv[k].mv;
+        best_mv[1] = refmv[i].mv;
+        best_rf[0] = refmv[k].ref;
+        best_rf[1] = refmv[i].ref;
+        best_wi = wi;
+      }
+#ifdef DEBUG_WEDGE
+      write_file("wedge.data", wedge, 64, bsize);
+      printf("wi:%d\n",wi);
+      printf("\n");
+#endif
+    }
+  }
+#ifdef DEBUG_WEDGE
+  printf("\n");
+#endif
+  if (best_sad != INT64_MAX) {
+
+    int ref;
+
+#ifdef DEBUG_WEDGE
+    printf("best[ sad: %d, wi:%d, mv0: %d,%d:%d, mv1: %d,%d:%d]\n",
+           (int) best_sad, best_wi,
+           best_mv[0].as_mv.row,best_mv[0].as_mv.col, best_rf[0],
+           best_mv[1].as_mv.row,best_mv[1].as_mv.col, best_rf[1]);
+    make_predictor(cpi, dest[0], 64, bsize, mi_row, mi_col, best_rf[0],
+                   best_mv[0]);
+    make_predictor(cpi, dest[1], 64, bsize, mi_row, mi_col, best_rf[1],
+                   best_mv[1]);
+    vp9_generate_masked_weight(best_wi, bsize, height, width, wedge, 64);
+    write_file("wedge.data", wedge, 64, bsize);
+    predict_masked(dest[0], 64, dest[1], 64, wedge, 64, dest[2], 64, bsize);
+
+    write_file("wedge2.data", wedge, 64, bsize);
+    write_file("source.data", x->plane[0].src.buf, x->plane[0].src.stride,
+               bsize);
+    write_file("predictor1.data", dest[0], 64, bsize);
+    write_file("predictor2.data", dest[1], 64, bsize);
+    write_file("masked.data", dest[2], 64, bsize);
+    printf("\n");
+#endif
+
+    // Not sure this is everything we need to set up?
+    mbmi->mode = NEWMV;
+    mbmi->sb_type = bsize;
+    mbmi->ref_frame[0] = best_rf[1];
+    mbmi->ref_frame[1] = best_rf[0];
+    mic->bmi[i].as_mv[0].as_int = best_mv[1].as_int;
+    mic->bmi[i].as_mv[1].as_int = best_mv[0].as_int;
+    mbmi->mv[0].as_int = best_mv[1].as_int;
+    mbmi->mv[1].as_int = best_mv[0].as_int;
+    mbmi->use_wedge_interinter = 1;
+    mbmi->interinter_wedge_index = best_wi;
+    for (ref = 0; ref < 2; ++ref) {
+      YV12_BUFFER_CONFIG *cfg = get_ref_frame_buffer(cpi,
+                                                     mbmi->ref_frame[ref]);
+      vp9_setup_pre_planes(xd, ref, cfg, mi_row, mi_col,
+                           &xd->block_refs[ref]->sf);
+    }
+    vp9_setup_dst_planes(xd->plane, get_frame_new_buffer(cm), mi_row, mi_col);
+    vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+#ifdef DEBUG_WEDGE
+    write_file("interpred.data", xd->plane[0].dst.buf, xd->plane[0].dst.stride,
+               bsize);
+#endif
+    vp9_subtract_plane(x, bsize, 0);
+
+    {
+      int64_t tmp_rate_mv = 0, rs = 0;
+      int skippable_y;
+      int64_t psse;
+      int64_t tx_cache[TX_MODES];
+
+      // TODO(JBB): obviously we shouldn't need to do both model_rd and
+      // super_block_yrd.  Pick one.
+      model_rd_for_sb(cpi, bsize, x, xd, &this_rdc->rate, &this_rdc->dist,
+                      NULL, NULL);
+      // Y cost and distortion
+      super_block_yrd(cpi, x, &this_rdc->rate, &this_rdc->dist, &skippable_y,
+                      &psse, bsize, tx_cache, INT64_MAX);
+      this_rdc->rdcost = RDCOST(x->rdmult, x->rddiv,
+                                rs + tmp_rate_mv + this_rdc->rate,
+                                this_rdc->dist);
+
+      // TODO(JBB):  account for the cost of wedge mode and partitioning.
+    }
+
+  }
+
+
+  return;
+}
+#endif  // CONFIG_WEDGE_PARTITION
