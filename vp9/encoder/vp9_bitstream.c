@@ -592,7 +592,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
       write_copy_mode(cm, w, mbmi->copy_mode, mbmi->inter_ref_count,
                       copy_mode_context);
   }
-#endif
+#endif  // CONFIG_COPY_MODE
 
   if (seg->update_map) {
     if (seg->temporal_update) {
@@ -611,11 +611,9 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
   if (supertx_enabled)
     skip = mbmi->skip;
   else
-    skip = write_skip(cm, xd, segment_id, mi, w);
-#else
-  skip = write_skip(cm, xd, segment_id, mi, w);
 #endif  // CONFIG_SUPERTX
-#endif
+   skip = write_skip(cm, xd, segment_id, mi, w);
+#endif  // !CONFIG_MISC_ENTROPY
 
 #if CONFIG_SUPERTX
   if (!supertx_enabled) {
@@ -726,7 +724,8 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
       }
     }
   }
-#endif
+#endif  // CONFIG_PALETTE
+
 #if CONFIG_SR_MODE
   if (!(is_inter && skip)) {
     write_sr(cm, xd, segment_id, mi, w);
@@ -735,6 +734,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
     assert(mbmi->tx_size == max_txsize_lookup[bsize]);
   }
 #endif  // CONFIG_SR_MODE
+
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
 #if CONFIG_SUPERTX
       !supertx_enabled &&
@@ -749,6 +749,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
         (skip || vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)))) {
     write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
   }
+
 #if CONFIG_EXT_TX
   if (is_inter &&
 #if !CONFIG_WAVELETS
@@ -847,6 +848,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
         }
       }
     }
+
 #if CONFIG_PALETTE
     if (!mbmi->palette_enabled[1])
 #endif  // CONFIG_PALETTE
@@ -875,6 +877,16 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #endif  // CONFIG_NEW_INTER
     write_ref_frames(cm, xd, w);
 
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+    if (get_wedge_bits(bsize)) {
+      vp9_write(w, mbmi->use_wedge_interinter,
+                cm->fc.wedge_interinter_prob[bsize]);
+      if (mbmi->use_wedge_interinter)
+        vp9_write_literal(w, mbmi->interinter_wedge_index,
+                          get_wedge_bits(bsize));
+    }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+
     // If segment skip is not enabled code the mode.
     if (!vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
       if (bsize >= BLOCK_8X8) {
@@ -896,6 +908,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
     } else {
       assert(mbmi->interp_filter == cm->interp_filter);
     }
+
 #if CONFIG_INTERINTRA
     if (cpi->common.reference_mode != COMPOUND_REFERENCE &&
         is_interintra_allowed(bsize) &&
@@ -971,7 +984,16 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #else
       if (mode == NEWMV) {
 #endif  // CONFIG_NEW_INTER
-        for (ref = 0; ref < 1 + is_compound; ++ref) {
+        int has_second_mv = is_compound;
+
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+        if (mbmi->use_wedge_interinter &&
+            mbmi->ref_frame[0] == mbmi->ref_frame[1]) {
+          has_second_mv = 1;
+        }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+
+        for (ref = 0; ref < 1 + has_second_mv; ++ref) {
 #if CONFIG_NEW_INTER
           if (mode == NEW2MV)
             vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
@@ -996,20 +1018,21 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
       }
 #endif  // CONFIG_NEW_INTER
     }
-#if CONFIG_WEDGE_PARTITION
+
+#if CONFIG_WEDGE_PARTITION && !CONFIG_WEDGE_TEST
     if (cm->reference_mode != SINGLE_REFERENCE &&
 #if CONFIG_NEW_INTER
         is_inter_compound_mode(mode) &&
 #endif  // CONFIG_NEW_INTER
         get_wedge_bits(bsize) &&
-        mbmi->ref_frame[1] > INTRA_FRAME) {
+        has_second_ref(mbmi)) {
       vp9_write(w, mbmi->use_wedge_interinter,
                 cm->fc.wedge_interinter_prob[bsize]);
       if (mbmi->use_wedge_interinter)
         vp9_write_literal(w, mbmi->interinter_wedge_index,
                           get_wedge_bits(bsize));
     }
-#endif  // CONFIG_NEW_INTER
+#endif  // CONFIG_WEDGE_PARTITION && !CONFIG_WEDGE_TEST
   }
 }
 
@@ -1280,6 +1303,24 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
   if (frame_is_intra_only(cm)) {
     write_mb_modes_kf(cm, xd, xd->mi, w);
   } else {
+    /*
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+    if (cpi->common.current_video_frame == 1 ||
+        cpi->common.current_video_frame == 2) {
+      const VP9_COMMON *const cm = &cpi->common;
+      const MB_MODE_INFO *const mbmi = &m->mbmi;
+      printf("\n==================ENC===========================\n");
+      printf("Frame=%d, show_frame=%d, (mi_row,mi_col)=(%d,%d), bsize=%d, "
+             "refs=(%d, %d), mode=%d, mv[0]=(%d,%d), mv[1]=(%d,%d), "
+             "use_wedge_interinter=%d, interinter_wedge_index=%d\n",
+             cm->current_video_frame, cm->show_frame, mi_row, mi_col,
+             mbmi->sb_type, mbmi->ref_frame[0], mbmi->ref_frame[1],
+             mbmi->mode, mbmi->mv[0].as_mv.row, mbmi->mv[0].as_mv.col,
+             mbmi->mv[1].as_mv.row, mbmi->mv[1].as_mv.col,
+             mbmi->use_wedge_interinter, mbmi->interinter_wedge_index);
+    }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+    */
     pack_inter_mode_mvs(cpi, m,
 #if CONFIG_SUPERTX
                         supertx_enabled,
@@ -2679,15 +2720,23 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
 #endif  // CONFIG_WEDGE_PARTITION
     }
 #endif  // CONFIG_INTERINTRA
+
 #if CONFIG_WEDGE_PARTITION
+#if !CONFIG_WEDGE_TEST
     if (cm->reference_mode != SINGLE_REFERENCE) {
-      for (i = 0; i < BLOCK_SIZES; i++)
-        if (get_wedge_bits(i))
+#endif  // !CONFIG_WEDGE_TEST
+      for (i = 0; i < BLOCK_SIZES; i++) {
+        if (get_wedge_bits(i)) {
           vp9_cond_prob_diff_update(&header_bc,
                                     &fc->wedge_interinter_prob[i],
                                     cm->counts.wedge_interinter[i]);
+        }
+      }
+#if !CONFIG_WEDGE_TEST
     }
+#endif  // !CONFIG_WEDGE_TEST
 #endif  // CONFIG_WEDGE_PARTITION
+
 #if CONFIG_GLOBAL_MOTION
     write_global_motion(cpi, &header_bc);
 #endif  // CONFIG_GLOBAL_MOTION

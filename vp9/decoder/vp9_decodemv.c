@@ -1037,15 +1037,21 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
                             MV_REFERENCE_FRAME ref_frame[2],
                             int_mv mv[2], int_mv ref_mv[2],
                             int_mv nearest_mv[2], int_mv near_mv[2],
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+                            int use_wedge_interinter,
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
                             int is_compound, int allow_hp, vp9_reader *r) {
   int i;
   int ret = 1;
+#if CONFIG_WEDGE_PARTITION && !CONFIG_WEDGE_TEST
   (void) ref_frame;
+#endif  // CONFIG_WEDGE_PARTITION && !CONFIG_WEDGE_TEST
 #if CONFIG_NEW_INTER
   assert(is_inter_mode(mode) || is_inter_compound_mode(mode));
 #else
   assert(is_inter_mode(mode));
 #endif  // CONFIG_NEW_INTER
+
   switch (mode) {
 #if CONFIG_NEW_INTER
     case NEW2MV:
@@ -1053,7 +1059,14 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
     case NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
                                             NULL : &cm->counts.mv;
-      for (i = 0; i < 1 + is_compound; ++i) {
+      int has_second_mv = is_compound;
+
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+      if (use_wedge_interinter && ref_frame[0] == ref_frame[1]) {
+        has_second_mv = 1;
+      }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+      for (i = 0; i < 1 + has_second_mv; ++i) {
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc.nmvc, mv_counts,
 #if CONFIG_INTRABC
                 1,
@@ -1225,6 +1238,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   int mv_idx;
 #endif  // CONFIG_NEW_INTER
   int inter_mode_ctx, ref, is_compound;
+
 #if CONFIG_SUPERTX
   (void) supertx_enabled;
 #endif
@@ -1233,6 +1247,26 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   if (mbmi->copy_mode == NOREF)
 #endif
     read_ref_frames(cm, xd, r, mbmi->segment_id, mbmi->ref_frame);
+
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+  mbmi->use_wedge_interinter = 0;
+  if (get_wedge_bits(bsize)) {
+    mbmi->use_wedge_interinter =
+        vp9_read(r, cm->fc.wedge_interinter_prob[bsize]);
+    cm->counts.wedge_interinter[bsize][mbmi->use_wedge_interinter]++;
+    if (mbmi->use_wedge_interinter)
+      mbmi->interinter_wedge_index = vp9_read_literal(r, get_wedge_bits(bsize));
+  }
+
+  if (mbmi->use_wedge_interinter &&
+      mbmi->ref_frame[1] <= INTRA_FRAME) {
+    // NOTE: When wedge is used for a single reference frame, set up the second
+    //       reference frame as the same of the first one as the compound motion
+    //       vectors to be read out next will be based on the same reference.
+    mbmi->ref_frame[1] = mbmi->ref_frame[0];
+  }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+
   is_compound = has_second_ref(mbmi);
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
@@ -1253,6 +1287,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
       vp9_find_mv_refs(cm, xd, tile, mi, frame, mbmi->ref_mvs[frame],
                        mi_row, mi_col);
   }
+
 #if CONFIG_COPY_MODE
   if (mbmi->copy_mode != NOREF)
     return;
@@ -1288,6 +1323,15 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
                             &nearestmv[ref], &nearmv[ref]);
       ref_mv[ref].as_int = nearestmv[ref].as_int;
     }
+
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+    if (mbmi->use_wedge_interinter &&
+        mbmi->ref_frame[0] == mbmi->ref_frame[1]) {
+      nearestmv[1].as_int = nearestmv[0].as_int;
+      nearmv[1].as_int = nearmv[0].as_int;
+      ref_mv[1].as_int = ref_mv[0].as_int;
+    }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
   }
 
   mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
@@ -1392,6 +1436,9 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
         if (!assign_mv(cm, b_mode, mbmi->ref_frame,
                        mv_sub8x8, ref_mv,
                        nearest_sub8x8, near_sub8x8,
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+                       0,
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
                        is_compound, allow_hp, r)) {
           xd->corrupted |= 1;
           break;
@@ -1415,34 +1462,60 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   } else {
 #if CONFIG_NEW_INTER
     if (mbmi->mode == NEW2MV) {
-      for (ref = 0; ref < 1 + is_compound; ++ref)
+      for (ref = 0; ref < 1 + is_compound; ++ref) {
         ref_mv[ref].as_int = nearmv[ref].as_int;
+      }
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+      if (mbmi->use_wedge_interinter &&
+          mbmi->ref_frame[0] == mbmi->ref_frame[1]) {
+        ref_mv[1].as_int = ref_mv[0].as_int;
+      }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
     }
 #endif  // CONFIG_NEW_INTER
-    xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->ref_frame, mbmi->mv,
-                                ref_mv, nearestmv, nearmv, is_compound,
-                                allow_hp, r);
+    xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->ref_frame,
+                                mbmi->mv, ref_mv, nearestmv, nearmv,
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+                                mbmi->use_wedge_interinter,
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+                                is_compound, allow_hp, r);
+
+    /*
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+    if (cm->current_video_frame == 1 || cm->current_video_frame == 2) {
+      printf("\n==================DEC===========================\n");
+      printf("Frame=%d, show_frame=%d, (mi_row,mi_col)=(%d,%d), bsize=%d, "
+             "refs=(%d, %d), mode=%d, mv[0]=(%d,%d), mv[1]=(%d,%d), "
+             "use_wedge_interinter=%d, interinter_wedge_index=%d\n",
+             cm->current_video_frame, cm->show_frame, mi_row, mi_col,
+             mbmi->sb_type, mbmi->ref_frame[0], mbmi->ref_frame[1],
+             mbmi->mode, mbmi->mv[0].as_mv.row, mbmi->mv[0].as_mv.col,
+             mbmi->mv[1].as_mv.row, mbmi->mv[1].as_mv.col,
+             mbmi->use_wedge_interinter, mbmi->interinter_wedge_index);
+    }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+    */
   }
 
 #if CONFIG_TX_SKIP
   mbmi->uv_mode = mbmi->mode;
 #endif
-#if CONFIG_WEDGE_PARTITION
+
+#if CONFIG_WEDGE_PARTITION && !CONFIG_WEDGE_TEST
   mbmi->use_wedge_interinter = 0;
   if (cm->reference_mode != SINGLE_REFERENCE &&
 #if CONFIG_NEW_INTER
       is_inter_compound_mode(mbmi->mode) &&
 #endif  // CONFIG_NEW_INTER
       get_wedge_bits(bsize) &&
-      mbmi->ref_frame[1] > INTRA_FRAME) {
+      has_second_ref(mbmi)) {
     mbmi->use_wedge_interinter =
         vp9_read(r, cm->fc.wedge_interinter_prob[bsize]);
     cm->counts.wedge_interinter[bsize][mbmi->use_wedge_interinter]++;
-    if (mbmi->use_wedge_interinter) {
+    if (mbmi->use_wedge_interinter)
       mbmi->interinter_wedge_index = vp9_read_literal(r, get_wedge_bits(bsize));
-    }
   }
-#endif  // CONFIG_WEDGE_PARTITION
+#endif  // CONFIG_WEDGE_PARTITION && !CONFIG_WEDGE_TEST
 }
 
 static void read_inter_frame_mode_info(VP9_COMMON *const cm,
