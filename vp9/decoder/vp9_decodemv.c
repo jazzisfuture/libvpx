@@ -1233,6 +1233,26 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   if (mbmi->copy_mode == NOREF)
 #endif
     read_ref_frames(cm, xd, r, mbmi->segment_id, mbmi->ref_frame);
+
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+  mbmi->use_wedge_interinter = 0;
+  if (get_wedge_bits(bsize)) {
+    mbmi->use_wedge_interinter =
+        vp9_read(r, cm->fc.wedge_interinter_prob[bsize]);
+    cm->counts.wedge_interinter[bsize][mbmi->use_wedge_interinter]++;
+    if (mbmi->use_wedge_interinter)
+      mbmi->interinter_wedge_index = vp9_read_literal(r, get_wedge_bits(bsize));
+  }
+
+  if (mbmi->use_wedge_interinter &&
+      mbmi->ref_frame[1] <= INTRA_FRAME) {
+    // NOTE: When wedge is used for a single reference frame, set up the second
+    //       reference frame as the same of the first one as the compound motion
+    //       vectors to be read out next will be based on the same reference.
+    mbmi->ref_frame[1] = mbmi->ref_frame[0];
+  }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+
   is_compound = has_second_ref(mbmi);
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
@@ -1427,22 +1447,22 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
 #if CONFIG_TX_SKIP
   mbmi->uv_mode = mbmi->mode;
 #endif
-#if CONFIG_WEDGE_PARTITION
+
+#if CONFIG_WEDGE_PARTITION && !CONFIG_WEDGE_TEST
   mbmi->use_wedge_interinter = 0;
   if (cm->reference_mode != SINGLE_REFERENCE &&
 #if CONFIG_NEW_INTER
       is_inter_compound_mode(mbmi->mode) &&
 #endif  // CONFIG_NEW_INTER
       get_wedge_bits(bsize) &&
-      mbmi->ref_frame[1] > INTRA_FRAME) {
+      has_second_ref(mbmi)) {
     mbmi->use_wedge_interinter =
         vp9_read(r, cm->fc.wedge_interinter_prob[bsize]);
     cm->counts.wedge_interinter[bsize][mbmi->use_wedge_interinter]++;
-    if (mbmi->use_wedge_interinter) {
+    if (mbmi->use_wedge_interinter)
       mbmi->interinter_wedge_index = vp9_read_literal(r, get_wedge_bits(bsize));
-    }
   }
-#endif  // CONFIG_WEDGE_PARTITION
+#endif  // CONFIG_WEDGE_PARTITION && !CONFIG_WEDGE_TEST
 }
 
 static void read_inter_frame_mode_info(VP9_COMMON *const cm,

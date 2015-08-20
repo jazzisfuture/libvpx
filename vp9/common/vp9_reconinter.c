@@ -284,7 +284,12 @@ static int get_masked_weight(int m) {
 }
 
 static int get_hard_mask(int m) {
-  return 1 << WEDGE_WEIGHT_BITS * (m > 0);
+#if CONFIG_WEDGE_TEST
+  if (m == 0)
+    return 1 << (WEDGE_WEIGHT_BITS - 1);
+  else
+#endif  // CONFIG_WEDGE_TEST
+    return (1 << WEDGE_WEIGHT_BITS) * (m > 0);
 }
 
 // Equation of line: f(x, y) = a[0]*(x - a[2]*w/4) + a[1]*(y - a[3]*h/4) = 0
@@ -539,10 +544,20 @@ void vp9_generate_hard_mask(int wedge_index, BLOCK_SIZE sb_type,
 static void build_masked_compound(uint8_t *dst, int dst_stride,
                                   uint8_t *dst2, int dst2_stride,
                                   int wedge_index, BLOCK_SIZE sb_type,
+#if CONFIG_WEDGE_TEST
+                                  const MV_REFERENCE_FRAME *refs,
+#endif  // CONFIG_WEDGE_TEST
                                   int h, int w) {
   int i, j;
   uint8_t mask[4096];
-  vp9_generate_masked_weight(wedge_index, sb_type, h, w, mask, 64);
+
+#if CONFIG_WEDGE_TEST
+  if (refs[0] == refs[1])
+    vp9_generate_hard_mask(wedge_index, sb_type, h, w, mask, 64);
+  else
+#endif  // CONFIG_WEDGE_TEST
+    vp9_generate_masked_weight(wedge_index, sb_type, h, w, mask, 64);
+
   for (i = 0; i < h; ++i)
     for (j = 0; j < w; ++j) {
       int m = mask[i * 64 + j];
@@ -558,12 +573,22 @@ static void build_masked_compound(uint8_t *dst, int dst_stride,
 static void build_masked_compound_highbd(uint8_t *dst_8, int dst_stride,
                                          uint8_t *dst2_8, int dst2_stride,
                                          int wedge_index, BLOCK_SIZE sb_type,
+#if CONFIG_WEDGE_TEST
+                                         const MV_REFERENCE_FRAME *refs,
+#endif  // CONFIG_WEDGE_TEST
                                          int h, int w) {
   int i, j;
   uint8_t mask[4096];
   uint16_t *dst = CONVERT_TO_SHORTPTR(dst_8);
   uint16_t *dst2 = CONVERT_TO_SHORTPTR(dst2_8);
-  vp9_generate_masked_weight(wedge_index, sb_type, h, w, mask, 64);
+
+#if CONFIG_WEDGE_TEST
+  if (refs[0] == refs[1])
+    vp9_generate_hard_mask(wedge_index, sb_type, h, w, mask, 64);
+  else
+#endif  // CONFIG_WEDGE_TEST
+    vp9_generate_masked_weight(wedge_index, sb_type, h, w, mask, 64);
+
   for (i = 0; i < h; ++i)
     for (j = 0; j < w; ++j) {
       int m = mask[i * 64 + j];
@@ -652,7 +677,7 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                                    int mi_x, int mi_y) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const MODE_INFO *mi = xd->mi[0].src_mi;
-  const int is_compound = has_second_ref(&mi->mbmi);
+  int is_compound = has_second_ref(&mi->mbmi);
 #if CONFIG_INTRABC
   const int is_intrabc = is_intrabc_mode(mi->mbmi.mode);
 #endif  // CONFIG_INTRABC
@@ -665,9 +690,15 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
   if (is_compound)
     gm[1] = &xd->global_motion[mi->mbmi.ref_frame[1]][0];
 #endif  // CONFIG_GLOBAL_MOTION
+
 #if CONFIG_INTRABC
   assert(!is_intrabc || mi->mbmi.interp_filter == BILINEAR);
 #endif  // CONFIG_INTRABC
+
+#if CONFIG_WEDGE_TEST
+  if (mi->mbmi.ref_frame[0] == mi->mbmi.ref_frame[1])
+    is_compound = 1;
+#endif  // CONFIG_WEDGE_TEST
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
     const struct scale_factors *const sf = &xd->block_refs[ref]->sf;
@@ -700,7 +731,7 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     is_global = (get_y_mode(mi, block) == ZEROMV &&
 #if CONFIG_INTRABC
                  !is_intrabc &&
-#endif
+#endif  // CONFIG_INTRABC
                  get_gmtype(gm[ref]) == GLOBAL_ROTZOOM);
 #endif  // CONFIG_GLOBAL_MOTION
 
@@ -733,74 +764,69 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
           CONVERT_TO_BYTEPTR(tmp_dst_) : tmp_dst_;
 #else
       uint8_t tmp_dst[4096];
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
 #if CONFIG_GLOBAL_MOTION
-      if (is_global) {
+      if (is_global)
         vp9_warp_plane(gm[ref], pre_buf->buf0,
                        pre_buf->width, pre_buf->height, pre_buf->stride,
                        tmp_dst, (mi_x >> pd->subsampling_x) + x,
                        (mi_y >> pd->subsampling_y) + y, w, h, 64,
                        pd->subsampling_x, pd->subsampling_y, xs, ys);
-      } else {
+      else
 #endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_VP9_HIGHBITDEPTH
-        if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+        if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
           highbd_inter_predictor(pre, pre_buf->stride, tmp_dst, 64,
                                  subpel_x, subpel_y, sf, w, h, 0, kernel,
                                  xs, ys, xd->bd);
-        } else {
+        else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
           inter_predictor(pre, pre_buf->stride, tmp_dst, 64,
                           subpel_x, subpel_y, sf, w, h, 0, kernel, xs, ys);
-        }
-#else
-        inter_predictor(pre, pre_buf->stride, tmp_dst, 64,
-                        subpel_x, subpel_y, sf, w, h, 0, kernel, xs, ys);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-#if CONFIG_GLOBAL_MOTION
-      }
-#endif  // CONFIG_GLOBAL_MOTION
+
 #if CONFIG_SUPERTX
 #if CONFIG_VP9_HIGHBITDEPTH
-      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
         build_masked_compound_extend_highbd(
             dst, dst_buf->stride, tmp_dst, 64, plane,
             mi->mbmi.interinter_wedge_index,
             mi->mbmi.sb_type,
             wedge_offset_x, wedge_offset_y, h, w);
-      } else {
-        build_masked_compound_extend(
-            dst, dst_buf->stride, tmp_dst, 64, plane,
-            mi->mbmi.interinter_wedge_index,
-            mi->mbmi.sb_type,
-            wedge_offset_x, wedge_offset_y, h, w);
-      }
-#else
+      else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
       build_masked_compound_extend(dst, dst_buf->stride, tmp_dst, 64, plane,
                                    mi->mbmi.interinter_wedge_index,
                                    mi->mbmi.sb_type,
                                    wedge_offset_x, wedge_offset_y, h, w);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
 #else   // CONFIG_SUPERTX
 #if CONFIG_VP9_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
         build_masked_compound_highbd(dst, dst_buf->stride, tmp_dst, 64,
                                      mi->mbmi.interinter_wedge_index,
-                                     mi->mbmi.sb_type, h, w);
+                                     mi->mbmi.sb_type,
+#if CONFIG_WEDGE_TEST
+                                     mi->mbmi.ref_frame,
+#endif  // CONFIG_WEDGE_TEST
+                                     h, w);
       else
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         build_masked_compound(dst, dst_buf->stride, tmp_dst, 64,
                               mi->mbmi.interinter_wedge_index, mi->mbmi.sb_type,
+#if CONFIG_WEDGE_TEST
+                              mi->mbmi.ref_frame,
+#endif  // CONFIG_WEDGE_TEST
                               h, w);
 #endif  // CONFIG_SUPERTX
     } else {
 #if CONFIG_GLOBAL_MOTION
-      if (is_global) {
+      if (is_global)
         vp9_warp_plane(gm[ref], pre_buf->buf0,
                        pre_buf->width, pre_buf->height, pre_buf->stride, dst,
                        (mi_x >> pd->subsampling_x) + x,
                        (mi_y >> pd->subsampling_y) + y, w, h, dst_buf->stride,
                        pd->subsampling_x, pd->subsampling_y, xs, ys);
-      } else {
+      else
 #endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_VP9_HIGHBITDEPTH
         if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
@@ -811,38 +837,28 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
           inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                           subpel_x, subpel_y, sf, w, h, ref, kernel, xs, ys);
-#if CONFIG_GLOBAL_MOTION
-      }
-#endif  // CONFIG_GLOBAL_MOTION
     }
 
 #else  // CONFIG_WEDGE_PARTITION
 
 #if CONFIG_GLOBAL_MOTION
-    if (is_global) {
+    if (is_global)
       vp9_warp_plane(gm[ref], pre_buf->buf0,
                      pre_buf->width, pre_buf->height, pre_buf->stride, dst,
                      (mi_x >> pd->subsampling_x) + x,
                      (mi_y >> pd->subsampling_y) + y, w, h, dst_buf->stride,
                      pd->subsampling_x, pd->subsampling_y, xs, ys);
-    } else {
+    else
 #endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_VP9_HIGHBITDEPTH
-      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
         highbd_inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                                subpel_x, subpel_y, sf, w, h, ref, kernel,
                                xs, ys, xd->bd);
-      } else {
+      else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
         inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                         subpel_x, subpel_y, sf, w, h, ref, kernel, xs, ys);
-      }
-#else
-      inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
-                      subpel_x, subpel_y, sf, w, h, ref, kernel, xs, ys);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-#if CONFIG_GLOBAL_MOTION
-    }
-#endif  // CONFIG_GLOBAL_MOTION
 #endif  // CONFIG_WEDGE_PARTITION
   }
 }
@@ -1273,7 +1289,7 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                                        int mi_x, int mi_y) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const MODE_INFO *mi = xd->mi[0].src_mi;
-  const int is_compound = has_second_ref(&mi->mbmi);
+  int is_compound = has_second_ref(&mi->mbmi);
   const InterpKernel *kernel = vp9_get_interp_kernel(mi->mbmi.interp_filter);
   int ref;
 #if CONFIG_GLOBAL_MOTION
@@ -1289,14 +1305,19 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
 #else
   vp9_setup_scale_factors_for_frame(&sf1, 64, 64, 64, 64);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-
   assert(!is_intrabc || !is_compound);
 #endif  // CONFIG_INTRABC
+
 #if CONFIG_GLOBAL_MOTION
   gm[0] = &xd->global_motion[mi->mbmi.ref_frame[0]][0];
   if (is_compound)
     gm[1] = &xd->global_motion[mi->mbmi.ref_frame[1]][0];
 #endif  // CONFIG_GLOBAL_MOTION
+
+#if CONFIG_WEDGE_TEST
+  if (mi->mbmi.ref_frame[0] == mi->mbmi.ref_frame[1])
+    is_compound = 1;
+#endif  // CONFIG_WEDGE_TEST
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
     struct buf_2d *const dst_buf = &pd->dst;
@@ -1331,7 +1352,7 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     is_global = (get_y_mode(mi, block) == ZEROMV &&
 #if CONFIG_INTRABC
                  !is_intrabc &&
-#endif
+#endif  // CONFIG_INTRABC
                  get_gmtype(gm[ref]) == GLOBAL_ROTZOOM);
 #endif  // CONFIG_GLOBAL_MOTION
 
@@ -1484,66 +1505,55 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
       uint8_t tmp_dst[4096];
 #endif
 #if CONFIG_GLOBAL_MOTION
-      if (is_global) {
+      if (is_global)
         vp9_warp_plane(gm[ref], pre_buf->buf0,
                        pre_buf->width, pre_buf->height, pre_buf->stride,
                        tmp_dst, (mi_x >> pd->subsampling_x) + x,
                        (mi_y >> pd->subsampling_y) + y, w, h, 64,
                        pd->subsampling_x, pd->subsampling_y, xs, ys);
-      } else {
+      else
 #endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_VP9_HIGHBITDEPTH
-        if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+        if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
           highbd_inter_predictor(buf_ptr, buf_stride, tmp_dst, 64,
                                  subpel_x, subpel_y, sf, w, h, 0, kernel,
                                  xs, ys, xd->bd);
-        } else {
+        else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
           inter_predictor(buf_ptr, buf_stride, tmp_dst, 64,
                           subpel_x, subpel_y, sf, w, h, 0, kernel, xs, ys);
-        }
-#else
-        inter_predictor(buf_ptr, buf_stride, tmp_dst, 64,
-                        subpel_x, subpel_y, sf, w, h, 0, kernel, xs, ys);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-#if CONFIG_GLOBAL_MOTION
-      }
-#endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_SUPERTX
 #if CONFIG_VP9_HIGHBITDEPTH
-      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
         build_masked_compound_extend_highbd(
             dst, dst_buf->stride, tmp_dst, 64, plane,
             mi->mbmi.interinter_wedge_index,
             mi->mbmi.sb_type,
             wedge_offset_x, wedge_offset_y, h, w);
-      } else {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+      else
         build_masked_compound_extend(dst, dst_buf->stride, tmp_dst, 64, plane,
                                      mi->mbmi.interinter_wedge_index,
                                      mi->mbmi.sb_type,
                                      wedge_offset_x, wedge_offset_y, h, w);
-      }
-#else
-      build_masked_compound_extend(dst, dst_buf->stride, tmp_dst, 64, plane,
-                                   mi->mbmi.interinter_wedge_index,
-                                   mi->mbmi.sb_type,
-                                   wedge_offset_x, wedge_offset_y, h, w);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
 #else   // CONFIG_SUPERTX
 #if CONFIG_VP9_HIGHBITDEPTH
-      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
         build_masked_compound_highbd(dst, dst_buf->stride, tmp_dst, 64,
                                      mi->mbmi.interinter_wedge_index,
-                                     mi->mbmi.sb_type, h, w);
-      } else {
+                                     mi->mbmi.sb_type,
+#if CONFIG_WEDGE_TEST
+                                     mi->mbmi.ref_frame,
+#endif  // CONFIG_WEDGE_TEST
+                                     h, w);
+      else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
         build_masked_compound(dst, dst_buf->stride, tmp_dst, 64,
                               mi->mbmi.interinter_wedge_index, mi->mbmi.sb_type,
+#if CONFIG_WEDGE_TEST
+                              mi->mbmi.ref_frame,
+#endif  // CONFIG_WEDGE_TEST
                               h, w);
-      }
-#else
-      build_masked_compound(dst, dst_buf->stride, tmp_dst, 64,
-                            mi->mbmi.interinter_wedge_index, mi->mbmi.sb_type,
-                            h, w);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_SUPERTX
     } else {
 #if CONFIG_GLOBAL_MOTION
@@ -2085,12 +2095,19 @@ static void build_wedge_inter_predictor_from_buf(MACROBLOCKD *xd, int plane,
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
         build_masked_compound_highbd(dst, dst_buf->stride, tmp_dst, 64,
                                      mi->mbmi.interinter_wedge_index,
-                                     mi->mbmi.sb_type, h, w);
+                                     mi->mbmi.sb_type,
+#if CONFIG_WEDGE_TEST
+                                     mi->mbmi.ref_frame,
+#endif  // CONFIG_WEDGE_TEST
+                                     h, w);
       else
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         build_masked_compound(dst, dst_buf->stride, tmp_dst, 64,
-                              mi->mbmi.interinter_wedge_index,
-                              mi->mbmi.sb_type, h, w);
+                              mi->mbmi.interinter_wedge_index, mi->mbmi.sb_type,
+#if CONFIG_WEDGE_TEST
+                              mi->mbmi.ref_frame,
+#endif  // CONFIG_WEDGE_TEST
+                              h, w);
 #endif  // CONFIG_SUPERTX
     } else {
 #if CONFIG_GLOBAL_MOTION
