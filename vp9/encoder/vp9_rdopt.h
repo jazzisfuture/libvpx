@@ -81,6 +81,12 @@ void txfm_rd_in_plane(MACROBLOCK *x,
                       BLOCK_SIZE bsize, TX_SIZE tx_size,
                       int use_fast_coef_casting);
 #endif
+
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+void rd_pick_wedge_mvs(VP9_COMP *cpi, int mi_row, int mi_col, BLOCK_SIZE bsize,
+                       RD_COST *rd_cost, PC_TREE *pc_tree);
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
