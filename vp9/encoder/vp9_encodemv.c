@@ -291,8 +291,16 @@ void vp9_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
 static void inc_mvs(const MB_MODE_INFO *mbmi, const int_mv mv[2],
                     const int_mv ref_mv[2], nmv_context_counts *counts) {
   int i;
+  int has_second_mv = has_second_ref(mbmi);
 
-  for (i = 0; i < 1 + has_second_ref(mbmi); ++i) {
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+  if (mbmi->use_wedge_interinter == 1 &&
+      mbmi->ref_frame[0] == mbmi->ref_frame[1]) {
+    has_second_mv = 1;
+  }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+
+  for (i = 0; i < 1 + has_second_mv; ++i) {
     const MV diff = {mv[i].as_mv.row - ref_mv[i].as_mv.row,
                      mv[i].as_mv.col - ref_mv[i].as_mv.col};
     vp9_inc_mv(&diff, counts);
@@ -313,16 +321,24 @@ static void inc_compound_single_mv(int ref_idx,
 void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
   const MODE_INFO *mi = xd->mi[0].src_mi;
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
-  int ref;
+  int mv_idx;
   int_mv ref_mv[2];
+  int has_second_mv = has_second_ref(mbmi);
 
-  for (ref = 0; ref < 1 + has_second_ref(mbmi); ++ref) {
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+  if (mbmi->use_wedge_interinter == 1 &&
+      mbmi->ref_frame[0] == mbmi->ref_frame[1]) {
+    has_second_mv = 1;
+  }
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+
+  for (mv_idx = 0; mv_idx < 1 + has_second_mv; ++mv_idx) {
 #if CONFIG_NEW_INTER
     if (mbmi->sb_type >= BLOCK_8X8 && mbmi->mode == NEW2MV)
-      ref_mv[ref].as_int = mbmi->ref_mvs[mbmi->ref_frame[ref]][1].as_int;
+      ref_mv[mv_idx].as_int = mbmi->ref_mvs[mbmi->ref_frame[mv_idx]][1].as_int;
     else
 #endif  // CONFIG_NEW_INTER
-    ref_mv[ref].as_int = mbmi->ref_mvs[mbmi->ref_frame[ref]][0].as_int;
+    ref_mv[mv_idx].as_int = mbmi->ref_mvs[mbmi->ref_frame[mv_idx]][0].as_int;
   }
 
   if (mbmi->sb_type < BLOCK_8X8) {
@@ -335,8 +351,8 @@ void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
         const int i = idy * 2 + idx;
 
 #if CONFIG_NEW_INTER
-        for (ref = 0; ref < 1 + has_second_ref(mbmi); ++ref)
-          ref_mv[ref].as_int = mi->bmi[i].ref_mv[ref].as_int;
+        for (mv_idx = 0; mv_idx < 1 + has_second_mv; ++mv_idx)
+          ref_mv[mv_idx].as_int = mi->bmi[i].ref_mv[mv_idx].as_int;
 #endif  // CONFIG_NEW_INTER
 
 #if CONFIG_NEW_INTER
