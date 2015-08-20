@@ -456,6 +456,10 @@ typedef struct VP9_COMP {
 #if CONFIG_GLOBAL_MOTION
   int global_motion_used[MAX_REF_FRAMES];
 #endif
+
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+  int wedge_better_count[2];
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
 } VP9_COMP;
 
 void vp9_initialize_enc();
