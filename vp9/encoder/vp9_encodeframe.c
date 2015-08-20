@@ -1359,10 +1359,12 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_TX_SKIP
   int q_idx;
 #endif
-  ENTROPY_CONTEXT l[16 * MAX_MB_PLANE], a[16 * MAX_MB_PLANE];
-  PARTITION_CONTEXT sl[8], sa[8];
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+  ENTROPY_CONTEXT a[16 * MAX_MB_PLANE], l[16 * MAX_MB_PLANE];
+  PARTITION_CONTEXT sa[8], sl[8];
 
   save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
 
   vp9_clear_system_state();
   rdmult_ratio = 1.0;  // avoid uninitialized warnings
@@ -1527,7 +1529,9 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   if (rd_cost->rate == INT_MAX)
     rd_cost->rdcost = INT64_MAX;
 
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
   restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
 }
 
 static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
@@ -2792,13 +2796,6 @@ static void rd_test_partition3(VP9_COMP *cpi, const TileInfo *const tile,
 }
 #endif
 
-#if CONFIG_WEDGE_PARTITION
-void play_mvs(VP9_COMP *cpi, int mi_row, int mi_col, BLOCK_SIZE bsize,
-              RD_COST *this_rdc, PC_TREE *pc_tree);
-#endif  // CONFIG_WEDGE_PARTITION
-
-
-int wedge_better_count[2]={0,0};
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
 // unlikely to be selected depending on previous rate-distortion optimization
 // results, for encoding speed-up.
@@ -3203,6 +3200,7 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
     }
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
+
   // PARTITION_NONE
   if (partition_none_allowed) {
     rd_pick_sb_modes(cpi, tile, mi_row, mi_col, &this_rdc,
@@ -3304,19 +3302,19 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
       }
     }
 
-#if CONFIG_WEDGE_PARTITION
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
     if (cm->frame_type != KEY_FRAME) {
-      RD_COST this_rdc;
-      play_mvs(cpi, mi_row, mi_col, bsize, &this_rdc, pc_tree);
-      // This counts every call to play_mvs another way to count this is to
-      // only count when there are 2 separate mvs in split mode which gives
-      // a much higher percentage.
+      rd_pick_wedge_mvs(cpi, mi_row, mi_col, bsize, &this_rdc, pc_tree);
+
+      // This counts every call to rd_pick_wedge_mvs. Another way to count this
+      // is to only count when there are 2 separate mvs in split mode which
+      // gives a much higher percentage.
       if (this_rdc.rdcost < best_rdc.rdcost)
-        wedge_better_count[0]++;
+        cpi->wedge_better_count[0]++;
       else
-        wedge_better_count[1]++;
+        cpi->wedge_better_count[1]++;
     }
-#endif // CONFIG_WEDGE_PARTITION
+#endif // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
 
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
@@ -4070,7 +4068,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   xd->mi = cm->mi;
   xd->mi[0].src_mi = &xd->mi[0];
-  vp9_zero(wedge_better_count);
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+  vp9_zero(cpi->wedge_better_count);
+#endif // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
   vp9_zero(cm->counts);
   vp9_zero(cpi->coef_counts);
   vp9_zero(rd_opt->comp_pred_diff);
@@ -4234,9 +4234,11 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   }
 
   sf->skip_encode_frame = sf->skip_encode_sb ? get_skip_encode_frame(cm) : 0;
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
   printf(" Wedge is better: %14.4f%% of the time \n",
-         100.0 * wedge_better_count[0] /
-         ( 1 + wedge_better_count[0] + wedge_better_count[1]));
+         100.0 * cpi->wedge_better_count[0] /
+         (1 + cpi->wedge_better_count[0] + cpi->wedge_better_count[1]));
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
 
 #if 0
   // Keep record of the total distortion this time around for future use
