@@ -348,6 +348,14 @@ static INLINE int has_second_ref(const MB_MODE_INFO *mbmi) {
   return mbmi->ref_frame[1] > INTRA_FRAME;
 }
 
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+#define IS_SINGLE_REF(mbmi) \
+    ((!has_second_ref(mbmi)) || \
+     ((mbmi)->ref_frame[0] == (mbmi)->ref_frame[1]))
+#else
+#define IS_SINGLE_REF(mbmi) (!has_second_ref(mbmi))
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+
 PREDICTION_MODE vp9_left_block_mode(const MODE_INFO *cur_mi,
                                     const MODE_INFO *left_mi, int b);
 

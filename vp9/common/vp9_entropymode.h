@@ -128,7 +128,13 @@ typedef struct frame_contexts {
 #endif  // CONFIG_WEDGE_PARTITION
 #endif  // CONFIG_INTERINTRA
 #if CONFIG_WEDGE_PARTITION
+#if CONFIG_WEDGE_TEST
+  // Note: Cases of wedge usage using compound references and those using single
+  //       references are traced separately.
+  vp9_prob wedge_interinter_prob[BLOCK_SIZES][2];
+#else  // CONFIG_WEDGE_TEST
   vp9_prob wedge_interinter_prob[BLOCK_SIZES];
+#endif  // CONFIG_WEDGE_TEST
 #endif  // CONFIG_WEDGE_PARTITION
 #if CONFIG_GLOBAL_MOTION
   vp9_prob global_motion_types_prob[GLOBAL_MOTION_TYPES - 1];
@@ -200,7 +206,13 @@ typedef struct {
 #endif  // CONFIG_WEDGE_PARTITION
 #endif  // CONFIG_INTERINTRA
 #if CONFIG_WEDGE_PARTITION
+#if CONFIG_WEDGE_TEST
+  // Note: Cases of wedge usage using compound references and those using single
+  //       references are traced separately.
+  unsigned int wedge_interinter[BLOCK_SIZES][2][2];
+#else  // CONFIG_WEDGE_TEST
   unsigned int wedge_interinter[BLOCK_SIZES][2];
+#endif  // CONFIG_WEDGE_TEST
 #endif  // CONFIG_WEDGE_PARTITION
 #if CONFIG_PALETTE
   unsigned int y_palette_enabled[10][3][2];
