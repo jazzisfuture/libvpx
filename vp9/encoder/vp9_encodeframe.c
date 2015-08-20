@@ -293,6 +293,71 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
   }
 }
 
+static void restore_context(VP9_COMP *cpi, int mi_row, int mi_col,
+                            ENTROPY_CONTEXT a[16 * MAX_MB_PLANE],
+                            ENTROPY_CONTEXT l[16 * MAX_MB_PLANE],
+                            PARTITION_CONTEXT sa[8], PARTITION_CONTEXT sl[8],
+                            BLOCK_SIZE bsize) {
+  MACROBLOCK *const x = &cpi->mb;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  int p;
+  const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
+  const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
+  int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  int mi_height = num_8x8_blocks_high_lookup[bsize];
+
+  for (p = 0; p < MAX_MB_PLANE; p++) {
+    vpx_memcpy(
+        xd->above_context[p] + ((mi_col * 2) >> xd->plane[p].subsampling_x),
+        a + num_4x4_blocks_wide * p,
+        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide) >>
+        xd->plane[p].subsampling_x);
+    vpx_memcpy(
+        xd->left_context[p]
+            + ((mi_row & MI_MASK) * 2 >> xd->plane[p].subsampling_y),
+        l + num_4x4_blocks_high * p,
+        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high) >>
+        xd->plane[p].subsampling_y);
+  }
+  vpx_memcpy(xd->above_seg_context + mi_col, sa,
+             sizeof(*xd->above_seg_context) * mi_width);
+  vpx_memcpy(xd->left_seg_context + (mi_row & MI_MASK), sl,
+             sizeof(xd->left_seg_context[0]) * mi_height);
+}
+
+static void save_context(VP9_COMP *cpi, int mi_row, int mi_col,
+                         ENTROPY_CONTEXT a[16 * MAX_MB_PLANE],
+                         ENTROPY_CONTEXT l[16 * MAX_MB_PLANE],
+                         PARTITION_CONTEXT sa[8], PARTITION_CONTEXT sl[8],
+                         BLOCK_SIZE bsize) {
+  const MACROBLOCK *const x = &cpi->mb;
+  const MACROBLOCKD *const xd = &x->e_mbd;
+  int p;
+  const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
+  const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
+  int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  int mi_height = num_8x8_blocks_high_lookup[bsize];
+
+  // buffer the above/left context information of the block in search.
+  for (p = 0; p < MAX_MB_PLANE; ++p) {
+    vpx_memcpy(
+        a + num_4x4_blocks_wide * p,
+        xd->above_context[p] + (mi_col * 2 >> xd->plane[p].subsampling_x),
+        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide) >>
+        xd->plane[p].subsampling_x);
+    vpx_memcpy(
+        l + num_4x4_blocks_high * p,
+        xd->left_context[p]
+            + ((mi_row & MI_MASK) * 2 >> xd->plane[p].subsampling_y),
+        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high) >>
+        xd->plane[p].subsampling_y);
+  }
+  vpx_memcpy(sa, xd->above_seg_context + mi_col,
+             sizeof(*xd->above_seg_context) * mi_width);
+  vpx_memcpy(sl, xd->left_seg_context + (mi_row & MI_MASK),
+             sizeof(xd->left_seg_context[0]) * mi_height);
+}
+
 #if CONFIG_SUPERTX
 static void set_offsets_supertx(VP9_COMP *cpi, const TileInfo *const tile,
                                 int mi_row, int mi_col, BLOCK_SIZE bsize) {
@@ -1309,6 +1374,12 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_TX_SKIP
   int q_idx;
 #endif
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+  ENTROPY_CONTEXT a[16 * MAX_MB_PLANE], l[16 * MAX_MB_PLANE];
+  PARTITION_CONTEXT sa[8], sl[8];
+
+  save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
 
   vp9_clear_system_state();
   rdmult_ratio = 1.0;  // avoid uninitialized warnings
@@ -1475,6 +1546,10 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   // refactored to provide proper exit/return handle.
   if (rd_cost->rate == INT_MAX)
     rd_cost->rdcost = INT64_MAX;
+
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
 }
 
 static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
@@ -1604,10 +1679,14 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
         }
       }
 #endif  // CONFIG_INTERINTRA
+
 #if CONFIG_WEDGE_PARTITION
-      if (cm->reference_mode != SINGLE_REFERENCE &&
-          get_wedge_bits(bsize) &&
-          mbmi->ref_frame[1] > INTRA_FRAME) {
+      if (get_wedge_bits(bsize)
+#if !CONFIG_WEDGE_TEST
+          && cm->reference_mode != SINGLE_REFERENCE &&
+          has_second_ref(mbmi)
+#endif  // !CONFIG_WEDGE_TEST
+          ) {
         ++cm->counts.wedge_interinter[bsize][mbmi->use_wedge_interinter];
       }
 #endif  // CONFIG_WEDGE_PARTITION
@@ -1646,69 +1725,6 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
   }
 }
 
-static void restore_context(VP9_COMP *cpi, int mi_row, int mi_col,
-                            ENTROPY_CONTEXT a[16 * MAX_MB_PLANE],
-                            ENTROPY_CONTEXT l[16 * MAX_MB_PLANE],
-                            PARTITION_CONTEXT sa[8], PARTITION_CONTEXT sl[8],
-                            BLOCK_SIZE bsize) {
-  MACROBLOCK *const x = &cpi->mb;
-  MACROBLOCKD *const xd = &x->e_mbd;
-  int p;
-  const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
-  const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
-  int mi_width = num_8x8_blocks_wide_lookup[bsize];
-  int mi_height = num_8x8_blocks_high_lookup[bsize];
-  for (p = 0; p < MAX_MB_PLANE; p++) {
-    vpx_memcpy(
-        xd->above_context[p] + ((mi_col * 2) >> xd->plane[p].subsampling_x),
-        a + num_4x4_blocks_wide * p,
-        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide) >>
-        xd->plane[p].subsampling_x);
-    vpx_memcpy(
-        xd->left_context[p]
-            + ((mi_row & MI_MASK) * 2 >> xd->plane[p].subsampling_y),
-        l + num_4x4_blocks_high * p,
-        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high) >>
-        xd->plane[p].subsampling_y);
-  }
-  vpx_memcpy(xd->above_seg_context + mi_col, sa,
-             sizeof(*xd->above_seg_context) * mi_width);
-  vpx_memcpy(xd->left_seg_context + (mi_row & MI_MASK), sl,
-             sizeof(xd->left_seg_context[0]) * mi_height);
-}
-
-static void save_context(VP9_COMP *cpi, int mi_row, int mi_col,
-                         ENTROPY_CONTEXT a[16 * MAX_MB_PLANE],
-                         ENTROPY_CONTEXT l[16 * MAX_MB_PLANE],
-                         PARTITION_CONTEXT sa[8], PARTITION_CONTEXT sl[8],
-                         BLOCK_SIZE bsize) {
-  const MACROBLOCK *const x = &cpi->mb;
-  const MACROBLOCKD *const xd = &x->e_mbd;
-  int p;
-  const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
-  const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
-  int mi_width = num_8x8_blocks_wide_lookup[bsize];
-  int mi_height = num_8x8_blocks_high_lookup[bsize];
-
-  // buffer the above/left context information of the block in search.
-  for (p = 0; p < MAX_MB_PLANE; ++p) {
-    vpx_memcpy(
-        a + num_4x4_blocks_wide * p,
-        xd->above_context[p] + (mi_col * 2 >> xd->plane[p].subsampling_x),
-        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide) >>
-        xd->plane[p].subsampling_x);
-    vpx_memcpy(
-        l + num_4x4_blocks_high * p,
-        xd->left_context[p]
-            + ((mi_row & MI_MASK) * 2 >> xd->plane[p].subsampling_y),
-        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high) >>
-        xd->plane[p].subsampling_y);
-  }
-  vpx_memcpy(sa, xd->above_seg_context + mi_col,
-             sizeof(*xd->above_seg_context) * mi_width);
-  vpx_memcpy(sl, xd->left_seg_context + (mi_row & MI_MASK),
-             sizeof(xd->left_seg_context[0]) * mi_height);
-}
 
 static void encode_b(VP9_COMP *cpi, const TileInfo *const tile,
                      TOKENEXTRA **tp, int mi_row, int mi_col,
@@ -3030,6 +3046,229 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   }
 #endif
 
+  // PARTITION_SPLIT
+  // TODO(jingning): use the motion vectors given by the above search as
+  // the starting point of motion search in the following partition type check.
+  if (do_split) {
+#if CONFIG_PALETTE
+    int last = -1;
+#endif
+    subsize = get_subsize(bsize, PARTITION_SPLIT);
+    if (bsize == BLOCK_8X8) {
+      i = 4;
+      if (cpi->sf.adaptive_pred_interp_filter && partition_none_allowed)
+        pc_tree->leaf_split[0]->pred_interp_filter =
+            ctx->mic.mbmi.interp_filter;
+#if CONFIG_SUPERTX
+      rd_pick_sb_modes(cpi, tile, mi_row, mi_col, &sum_rdc, &sum_rate_nocoef,
+                       subsize, pc_tree->leaf_split[0], INT64_MAX);
+#else
+      rd_pick_sb_modes(cpi, tile, mi_row, mi_col, &sum_rdc,
+                       subsize, pc_tree->leaf_split[0], best_rdc.rdcost);
+#endif
+      if (sum_rdc.rate == INT_MAX) {
+        sum_rdc.rdcost = INT64_MAX;
+#if CONFIG_SUPERTX
+        sum_rate_nocoef = INT_MAX;
+#endif
+      }
+#if CONFIG_SUPERTX
+      if (cm->frame_type != KEY_FRAME && sum_rdc.rdcost < INT64_MAX &&
+          !xd->lossless) {
+        TX_SIZE supertx_size = bsize_to_tx_size(bsize);  // b_width_log2(bsize);
+        best_partition = pc_tree->partitioning;
+        pc_tree->partitioning = PARTITION_SPLIT;
+
+        sum_rdc.rate += vp9_cost_bit(
+            cm->fc.supertx_prob
+            [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
+            0);
+        sum_rdc.rdcost =
+            RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
+#if CONFIG_NEW_INTER
+        if (is_inter_mode(pc_tree->leaf_split[0]->mic.mbmi.mode) ||
+            is_inter_compound_mode(pc_tree->leaf_split[0]->mic.mbmi.mode)) {
+#else
+        if (is_inter_mode(pc_tree->leaf_split[0]->mic.mbmi.mode)) {
+#endif  // CONFIG_NEW_INTER
+#if CONFIG_EXT_TX
+          EXT_TX_TYPE best_tx = NORM;
+#endif  // CONFIG_EXT_TX
+
+          tmp_rate = sum_rate_nocoef;
+          tmp_dist = 0;
+          restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+          rd_supertx_sb(cpi, tile, mi_row, mi_col, bsize, &tmp_rate, &tmp_dist,
+#if CONFIG_EXT_TX
+                        &best_tx,
+#endif  // CONFIG_EXT_TX
+                        pc_tree);
+
+          tmp_rate += vp9_cost_bit(
+              cm->fc.supertx_prob
+              [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
+              1);
+          tmp_rd = RDCOST(x->rdmult, x->rddiv, tmp_rate, tmp_dist);
+          if (tmp_rd < sum_rdc.rdcost) {
+            sum_rdc.rdcost = tmp_rd;
+            sum_rdc.rate = tmp_rate;
+            sum_rdc.dist = tmp_dist;
+            update_supertx_param_sb(cpi, mi_row, mi_col, bsize,
+#if CONFIG_EXT_TX
+                                    best_tx,
+#endif  // CONFIG_EXT_TX
+                                    supertx_size, pc_tree);
+          }
+        }
+        pc_tree->partitioning = best_partition;
+      }
+#endif  // CONFIG_SUPERTX
+    } else {
+#if CONFIG_SUPERTX
+      for (i = 0; i < 4 && sum_rdc.rdcost < INT64_MAX; ++i) {
+#else
+      for (i = 0; i < 4 && sum_rdc.rdcost < best_rdc.rdcost; ++i) {
+#endif
+      const int x_idx = (i & 1) * mi_step;
+      const int y_idx = (i >> 1) * mi_step;
+
+        if (mi_row + y_idx >= cm->mi_rows || mi_col + x_idx >= cm->mi_cols)
+          continue;
+
+        if (cpi->sf.adaptive_motion_search)
+          load_pred_mv(x, ctx);
+
+        pc_tree->split[i]->index = i;
+
+#if CONFIG_PALETTE
+        c = &pc_tree->split[i]->current;
+        if (last < 0) {
+          c->palette_buf_size = previous_size;
+          vpx_memcpy(c->palette_colors_buf, previous_colors,
+                     previous_size * sizeof(previous_colors[0]));
+          vpx_memcpy(c->palette_count_buf, previous_count,
+                     previous_size * sizeof(previous_count[0]));
+        } else {
+          p = &pc_tree->split[last]->current;
+          copy_palette_info(c, p);
+        }
+        last = i;
+#endif  // CONFIG_PALETTE
+
+#if CONFIG_SUPERTX
+        rd_pick_partition(cpi, tile, tp, mi_row + y_idx, mi_col + x_idx,
+                          subsize, &this_rdc, &this_rate_nocoef,
+                          INT64_MAX - sum_rdc.rdcost, pc_tree->split[i]);
+#else
+        rd_pick_partition(cpi, tile, tp, mi_row + y_idx, mi_col + x_idx,
+                          subsize, &this_rdc,
+                          best_rdc.rdcost - sum_rdc.rdcost, pc_tree->split[i]);
+#endif  // CONFIG_SUPERTX
+
+        if (this_rdc.rate == INT_MAX) {
+          sum_rdc.rdcost = INT64_MAX;
+#if CONFIG_SUPERTX
+          sum_rate_nocoef = INT_MAX;
+#endif  // CONFIG_SUPERTX
+          break;
+        } else {
+          sum_rdc.rate += this_rdc.rate;
+          sum_rdc.dist += this_rdc.dist;
+          sum_rdc.rdcost += this_rdc.rdcost;
+#if CONFIG_SUPERTX
+          sum_rate_nocoef += this_rate_nocoef;
+#endif  // CONFIG_SUPERTX
+        }
+      }
+#if CONFIG_SUPERTX
+      if (cm->frame_type != KEY_FRAME && sum_rdc.rdcost < INT64_MAX &&
+          i == 4 && bsize <= MAX_SUPERTX_BLOCK_SIZE  && !xd->lossless) {
+        TX_SIZE supertx_size = bsize_to_tx_size(bsize);
+        best_partition = pc_tree->partitioning;
+        pc_tree->partitioning = PARTITION_SPLIT;
+
+        sum_rdc.rate += vp9_cost_bit(
+            cm->fc.supertx_prob
+            [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
+            0);
+        sum_rdc.rdcost =
+            RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
+
+        if (!check_intra_sb(cpi, tile, mi_row, mi_col, bsize, pc_tree)) {
+#if CONFIG_EXT_TX
+          EXT_TX_TYPE best_tx = NORM;
+#endif  // CONFIG_EXT_TX
+
+          tmp_rate = sum_rate_nocoef;
+          tmp_dist = 0;
+          restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+          rd_supertx_sb(cpi, tile, mi_row, mi_col, bsize, &tmp_rate, &tmp_dist,
+#if CONFIG_EXT_TX
+                        &best_tx,
+#endif  // CONFIG_EXT_TX
+                        pc_tree);
+
+          tmp_rate += vp9_cost_bit(
+              cm->fc.supertx_prob
+              [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
+              1);
+          tmp_rd = RDCOST(x->rdmult, x->rddiv, tmp_rate, tmp_dist);
+          if (tmp_rd < sum_rdc.rdcost) {
+            sum_rdc.rdcost = tmp_rd;
+            sum_rdc.rate = tmp_rate;
+            sum_rdc.dist = tmp_dist;
+            update_supertx_param_sb(cpi, mi_row, mi_col, bsize,
+#if CONFIG_EXT_TX
+                                    best_tx,
+#endif  // CONFIG_EXT_TX
+                                    supertx_size, pc_tree);
+          }
+        }
+        pc_tree->partitioning = best_partition;
+      }
+#endif  // CONFIG_SUPERTX
+    }
+
+    if (sum_rdc.rdcost < best_rdc.rdcost && i == 4) {
+      pl = partition_plane_context(xd, mi_row, mi_col, bsize);
+      sum_rdc.rate += cpi->partition_cost[pl][PARTITION_SPLIT];
+      sum_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,
+                              sum_rdc.rate, sum_rdc.dist);
+#if CONFIG_SUPERTX
+      sum_rate_nocoef += cpi->partition_cost[pl][PARTITION_SPLIT];
+#endif  // CONFIG_SUPERTX
+
+      if (sum_rdc.rdcost < best_rdc.rdcost) {
+        best_rdc = sum_rdc;
+#if CONFIG_SUPERTX
+        best_rate_nocoef = sum_rate_nocoef;
+        assert(best_rate_nocoef >= 0);
+#endif  // CONFIG_SUPERTX
+        pc_tree->partitioning = PARTITION_SPLIT;
+#if CONFIG_PALETTE
+        if (bsize > BLOCK_8X8 && last >= 0) {
+          c = &pc_tree->current;
+          p = &(pc_tree->split[last]->current);
+          copy_palette_info(c, p);
+        } else {
+          c = &pc_tree->current;
+          c->palette_buf_size = previous_size;
+          vpx_memcpy(c->palette_colors_buf, previous_colors,
+                     previous_size * sizeof(previous_colors[0]));
+          vpx_memcpy(c->palette_count_buf, previous_count,
+                     previous_size * sizeof(previous_count[0]));
+        }
+#endif  // CONFIG_PALETTE
+      }
+    } else {
+      // skip rectangular partition test when larger block size
+      // gives better rd cost
+      if (cpi->sf.less_rectangular_check)
+        do_rect &= !partition_none_allowed;
+    }
+    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+  }
+
   // PARTITION_NONE
   if (partition_none_allowed) {
     rd_pick_sb_modes(cpi, tile, mi_row, mi_col, &this_rdc,
@@ -3130,235 +3369,27 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #endif
       }
     }
+
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+    if (cm->frame_type != KEY_FRAME) {
+      rd_pick_wedge_mvs(cpi, mi_row, mi_col, bsize, &this_rdc, pc_tree);
+
+      // This counts every call to rd_pick_wedge_mvs. Another way to count this
+      // is to only count when there are 2 separate mvs in split mode which
+      // gives a much higher percentage.
+      if (this_rdc.rdcost < best_rdc.rdcost)
+        cpi->wedge_better_count[0]++;
+      else
+        cpi->wedge_better_count[1]++;
+    }
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
 
   // store estimated motion vector
   if (cpi->sf.adaptive_motion_search)
     store_pred_mv(x, ctx);
-
-  // PARTITION_SPLIT
-  // TODO(jingning): use the motion vectors given by the above search as
-  // the starting point of motion search in the following partition type check.
-  if (do_split) {
-#if CONFIG_PALETTE
-    int last = -1;
-#endif
-    subsize = get_subsize(bsize, PARTITION_SPLIT);
-    if (bsize == BLOCK_8X8) {
-      i = 4;
-      if (cpi->sf.adaptive_pred_interp_filter && partition_none_allowed)
-        pc_tree->leaf_split[0]->pred_interp_filter =
-            ctx->mic.mbmi.interp_filter;
-#if CONFIG_SUPERTX
-      rd_pick_sb_modes(cpi, tile, mi_row, mi_col, &sum_rdc, &sum_rate_nocoef,
-                       subsize, pc_tree->leaf_split[0], INT64_MAX);
-#else
-      rd_pick_sb_modes(cpi, tile, mi_row, mi_col, &sum_rdc,
-                       subsize, pc_tree->leaf_split[0], best_rdc.rdcost);
-#endif
-      if (sum_rdc.rate == INT_MAX) {
-        sum_rdc.rdcost = INT64_MAX;
-#if CONFIG_SUPERTX
-        sum_rate_nocoef = INT_MAX;
-#endif
-      }
-#if CONFIG_SUPERTX
-      if (cm->frame_type != KEY_FRAME && sum_rdc.rdcost < INT64_MAX &&
-          !xd->lossless) {
-        TX_SIZE supertx_size = bsize_to_tx_size(bsize);  // b_width_log2(bsize);
-        best_partition = pc_tree->partitioning;
-        pc_tree->partitioning = PARTITION_SPLIT;
-
-        sum_rdc.rate += vp9_cost_bit(
-            cm->fc.supertx_prob
-            [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
-            0);
-        sum_rdc.rdcost =
-            RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
-#if CONFIG_NEW_INTER
-        if (is_inter_mode(pc_tree->leaf_split[0]->mic.mbmi.mode) ||
-            is_inter_compound_mode(pc_tree->leaf_split[0]->mic.mbmi.mode)) {
-#else
-        if (is_inter_mode(pc_tree->leaf_split[0]->mic.mbmi.mode)) {
-#endif  // CONFIG_NEW_INTER
-#if CONFIG_EXT_TX
-          EXT_TX_TYPE best_tx = NORM;
-#endif
-
-          tmp_rate = sum_rate_nocoef;
-          tmp_dist = 0;
-          restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-          rd_supertx_sb(cpi, tile, mi_row, mi_col, bsize, &tmp_rate, &tmp_dist,
-#if CONFIG_EXT_TX
-                        &best_tx,
-#endif
-                        pc_tree);
-
-          tmp_rate += vp9_cost_bit(
-              cm->fc.supertx_prob
-              [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
-              1);
-          tmp_rd = RDCOST(x->rdmult, x->rddiv, tmp_rate, tmp_dist);
-          if (tmp_rd < sum_rdc.rdcost) {
-            sum_rdc.rdcost = tmp_rd;
-            sum_rdc.rate = tmp_rate;
-            sum_rdc.dist = tmp_dist;
-            update_supertx_param_sb(cpi, mi_row, mi_col, bsize,
-#if CONFIG_EXT_TX
-                                    best_tx,
-#endif
-                                    supertx_size, pc_tree);
-          }
-        }
-        pc_tree->partitioning = best_partition;
-      }
-#endif  // CONFIG_SUPERTX
-    } else {
-#if CONFIG_SUPERTX
-      for (i = 0; i < 4 && sum_rdc.rdcost < INT64_MAX; ++i) {
-#else
-      for (i = 0; i < 4 && sum_rdc.rdcost < best_rdc.rdcost; ++i) {
-#endif
-      const int x_idx = (i & 1) * mi_step;
-      const int y_idx = (i >> 1) * mi_step;
-
-        if (mi_row + y_idx >= cm->mi_rows || mi_col + x_idx >= cm->mi_cols)
-          continue;
-
-        if (cpi->sf.adaptive_motion_search)
-          load_pred_mv(x, ctx);
-
-        pc_tree->split[i]->index = i;
-
-#if CONFIG_PALETTE
-        c = &pc_tree->split[i]->current;
-        if (last < 0) {
-          c->palette_buf_size = previous_size;
-          vpx_memcpy(c->palette_colors_buf, previous_colors,
-                     previous_size * sizeof(previous_colors[0]));
-          vpx_memcpy(c->palette_count_buf, previous_count,
-                     previous_size * sizeof(previous_count[0]));
-        } else {
-          p = &pc_tree->split[last]->current;
-          copy_palette_info(c, p);
-        }
-        last = i;
-#endif
-
-#if CONFIG_SUPERTX
-        rd_pick_partition(cpi, tile, tp, mi_row + y_idx, mi_col + x_idx,
-                          subsize, &this_rdc, &this_rate_nocoef,
-                          INT64_MAX - sum_rdc.rdcost, pc_tree->split[i]);
-#else
-        rd_pick_partition(cpi, tile, tp, mi_row + y_idx, mi_col + x_idx,
-                          subsize, &this_rdc,
-                          best_rdc.rdcost - sum_rdc.rdcost, pc_tree->split[i]);
-#endif
-
-        if (this_rdc.rate == INT_MAX) {
-          sum_rdc.rdcost = INT64_MAX;
-#if CONFIG_SUPERTX
-          sum_rate_nocoef = INT_MAX;
-#endif
-          break;
-        } else {
-          sum_rdc.rate += this_rdc.rate;
-          sum_rdc.dist += this_rdc.dist;
-          sum_rdc.rdcost += this_rdc.rdcost;
-#if CONFIG_SUPERTX
-          sum_rate_nocoef += this_rate_nocoef;
-#endif
-        }
-      }
-#if CONFIG_SUPERTX
-      if (cm->frame_type != KEY_FRAME && sum_rdc.rdcost < INT64_MAX &&
-          i == 4 && bsize <= MAX_SUPERTX_BLOCK_SIZE  && !xd->lossless) {
-        TX_SIZE supertx_size = bsize_to_tx_size(bsize);
-        best_partition = pc_tree->partitioning;
-        pc_tree->partitioning = PARTITION_SPLIT;
-
-        sum_rdc.rate += vp9_cost_bit(
-            cm->fc.supertx_prob
-            [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
-            0);
-        sum_rdc.rdcost =
-            RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
-
-        if (!check_intra_sb(cpi, tile, mi_row, mi_col, bsize, pc_tree)) {
-#if CONFIG_EXT_TX
-          EXT_TX_TYPE best_tx = NORM;
-#endif
-
-          tmp_rate = sum_rate_nocoef;
-          tmp_dist = 0;
-          restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-          rd_supertx_sb(cpi, tile, mi_row, mi_col, bsize, &tmp_rate, &tmp_dist,
-#if CONFIG_EXT_TX
-                        &best_tx,
-#endif
-                        pc_tree);
-
-          tmp_rate += vp9_cost_bit(
-              cm->fc.supertx_prob
-              [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
-              1);
-          tmp_rd = RDCOST(x->rdmult, x->rddiv, tmp_rate, tmp_dist);
-          if (tmp_rd < sum_rdc.rdcost) {
-            sum_rdc.rdcost = tmp_rd;
-            sum_rdc.rate = tmp_rate;
-            sum_rdc.dist = tmp_dist;
-            update_supertx_param_sb(cpi, mi_row, mi_col, bsize,
-#if CONFIG_EXT_TX
-                                    best_tx,
-#endif
-                                    supertx_size, pc_tree);
-          }
-        }
-        pc_tree->partitioning = best_partition;
-      }
-#endif  // CONFIG_SUPERTX
-    }
-
-    if (sum_rdc.rdcost < best_rdc.rdcost && i == 4) {
-      pl = partition_plane_context(xd, mi_row, mi_col, bsize);
-      sum_rdc.rate += cpi->partition_cost[pl][PARTITION_SPLIT];
-      sum_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,
-                              sum_rdc.rate, sum_rdc.dist);
-#if CONFIG_SUPERTX
-      sum_rate_nocoef += cpi->partition_cost[pl][PARTITION_SPLIT];
-#endif
-
-      if (sum_rdc.rdcost < best_rdc.rdcost) {
-        best_rdc = sum_rdc;
-#if CONFIG_SUPERTX
-        best_rate_nocoef = sum_rate_nocoef;
-        assert(best_rate_nocoef >= 0);
-#endif
-        pc_tree->partitioning = PARTITION_SPLIT;
-#if CONFIG_PALETTE
-        if (bsize > BLOCK_8X8 && last >= 0) {
-          c = &pc_tree->current;
-          p = &(pc_tree->split[last]->current);
-          copy_palette_info(c, p);
-        } else {
-          c = &pc_tree->current;
-          c->palette_buf_size = previous_size;
-          vpx_memcpy(c->palette_colors_buf, previous_colors,
-                     previous_size * sizeof(previous_colors[0]));
-          vpx_memcpy(c->palette_count_buf, previous_count,
-                     previous_size * sizeof(previous_count[0]));
-        }
-#endif
-      }
-    } else {
-      // skip rectangular partition test when larger block size
-      // gives better rd cost
-      if (cpi->sf.less_rectangular_check)
-        do_rect &= !partition_none_allowed;
-    }
-    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-  }
 
   // PARTITION_HORZ
   if (partition_horz_allowed && do_rect) {
@@ -3516,6 +3547,7 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
     }
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
+
   // PARTITION_VERT
   if (partition_vert_allowed && do_rect) {
 #if CONFIG_PALETTE
@@ -4114,7 +4146,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   xd->mi = cm->mi;
   xd->mi[0].src_mi = &xd->mi[0];
-
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+  vp9_zero(cpi->wedge_better_count);
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
   vp9_zero(cm->counts);
   vp9_zero(cpi->coef_counts);
   vp9_zero(rd_opt->comp_pred_diff);
@@ -4281,6 +4315,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   }
 
   sf->skip_encode_frame = sf->skip_encode_sb ? get_skip_encode_frame(cm) : 0;
+#if CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
+  /*
+  printf(" Wedge is better: %14.4f%% of the time \n",
+         100.0 * cpi->wedge_better_count[0] /
+         (1 + cpi->wedge_better_count[0] + cpi->wedge_better_count[1]));*/
+#endif  // CONFIG_WEDGE_TEST && CONFIG_WEDGE_PARTITION
 
 #if 0
   // Keep record of the total distortion this time around for future use

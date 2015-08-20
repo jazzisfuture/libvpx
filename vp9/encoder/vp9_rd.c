@@ -795,6 +795,39 @@ void vp9_set_rd_speed_thresholds(VP9_COMP *cpi) {
   rd->thresh_mult[THR_D207_PRED] += 2500;
   rd->thresh_mult[THR_D63_PRED] += 2500;
 
+#if CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+  rd->thresh_mult[THR_NEWLL] += 2000;
+  rd->thresh_mult[THR_NEWGG] += 2000;
+  rd->thresh_mult[THR_NEWAA] += 2000;
+
+#if CONFIG_NEW_INTER
+  rd->thresh_mult[THR_NEAR_NEARESTLL] += 1200;
+  rd->thresh_mult[THR_NEAR_NEARESTGG] += 1200;
+  rd->thresh_mult[THR_NEAR_NEARESTAA] += 1200;
+  rd->thresh_mult[THR_NEAREST_NEARLL] += 1200;
+  rd->thresh_mult[THR_NEAREST_NEARGG] += 1200;
+  rd->thresh_mult[THR_NEAREST_NEARAA] += 1200;
+
+  rd->thresh_mult[THR_NEAREST_NEWLL] += 1500;
+  rd->thresh_mult[THR_NEAREST_NEWGG] += 1500;
+  rd->thresh_mult[THR_NEAREST_NEWAA] += 1500;
+  rd->thresh_mult[THR_NEW_NEARESTLL] += 1500;
+  rd->thresh_mult[THR_NEW_NEARESTGG] += 1500;
+  rd->thresh_mult[THR_NEW_NEARESTAA] += 1500;
+
+  rd->thresh_mult[THR_NEAR_NEWLL] += 1700;
+  rd->thresh_mult[THR_NEAR_NEWGG] += 1700;
+  rd->thresh_mult[THR_NEAR_NEWAA] += 1700;
+  rd->thresh_mult[THR_NEW_NEARLL] += 1700;
+  rd->thresh_mult[THR_NEW_NEARGG] += 1700;
+  rd->thresh_mult[THR_NEW_NEARAA] += 1700;
+
+  rd->thresh_mult[THR_ZERO_ZEROLL] += 2500;
+  rd->thresh_mult[THR_ZERO_ZEROGG] += 2500;
+  rd->thresh_mult[THR_ZERO_ZEROAA] += 2500;
+#endif  // CONFIG_NEW_INTER
+#endif  // CONFIG_WEDGE_PARTITION && CONFIG_WEDGE_TEST
+
 #if CONFIG_INTERINTRA
   rd->thresh_mult[THR_COMP_INTERINTRA_ZEROL   ] += 1500;
 #if CONFIG_MULTI_REF
