@@ -3481,14 +3481,21 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
 #endif  // CONFIG_WEDGE_PARTITION
     }
 #endif  // CONFIG_INTERINTRA
+
 #if CONFIG_WEDGE_PARTITION
+#if !CONFIG_WEDGE_TEST
     if (cm->reference_mode != SINGLE_REFERENCE) {
+#endif  // !CONFIG_WEDGE_TEST
       for (i = 0; i < BLOCK_SIZES; i++) {
-        if (get_wedge_bits(i))
+        if (get_wedge_bits(i)) {
           vp9_diff_update_prob(&r, &fc->wedge_interinter_prob[i]);
+        }
       }
+#if !CONFIG_WEDGE_TEST
     }
+#endif  // !CONFIG_WEDGE_TEST
 #endif  // CONFIG_WEDGE_PARTITION
+
 #if CONFIG_GLOBAL_MOTION
     read_global_motion(cm, &r);
 #endif  // CONFIG_GLOBAL_MOTION
