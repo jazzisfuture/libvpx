@@ -308,6 +308,11 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
   ctx->pbi->decrypt_state = ctx->decrypt_state;
 
   cm = &ctx->pbi->common;
+#if CONFIG_MULTI_REF
+  // TODO(zoeliu): To be further investigated ...
+  cm->ref_frame_map[LAST2_FRAME - LAST_FRAME] =
+      cm->ref_frame_map[LAST_FRAME - LAST_FRAME];
+#endif  // CONFIG_MULTI_REF
 
 #if CONFIG_ROW_TILE
 #if CONFIG_KEY_FRAME_TILE
