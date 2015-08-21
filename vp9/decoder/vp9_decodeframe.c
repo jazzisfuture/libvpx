@@ -53,16 +53,27 @@ static int is_compound_reference_allowed(const VP9_COMMON *cm) {
 
 static void setup_compound_reference_mode(VP9_COMMON *cm) {
   if (cm->ref_frame_sign_bias[LAST_FRAME] ==
-          cm->ref_frame_sign_bias[GOLDEN_FRAME]) {
+      cm->ref_frame_sign_bias[GOLDEN_FRAME]) {
     cm->comp_fixed_ref = ALTREF_FRAME;
     cm->comp_var_ref[0] = LAST_FRAME;
+#if CONFIG_MULTI_REF
+    cm->comp_var_ref[1] = LAST2_FRAME;
+    cm->comp_var_ref[2] = GOLDEN_FRAME;
+#else
     cm->comp_var_ref[1] = GOLDEN_FRAME;
+#endif  // CONFIG_MULTI_REF
   } else if (cm->ref_frame_sign_bias[LAST_FRAME] ==
-                 cm->ref_frame_sign_bias[ALTREF_FRAME]) {
+             cm->ref_frame_sign_bias[ALTREF_FRAME]) {
+#if CONFIG_MULTI_REF
+    assert(0);
+#endif  // CONFIG_MULTI_REF
     cm->comp_fixed_ref = GOLDEN_FRAME;
     cm->comp_var_ref[0] = LAST_FRAME;
     cm->comp_var_ref[1] = ALTREF_FRAME;
-  } else {
+  } else {  // same sign bias for GOLDEN / ALTREF
+#if CONFIG_MULTI_REF
+    assert(0);
+#endif  // CONFIG_MULTI_REF
     cm->comp_fixed_ref = LAST_FRAME;
     cm->comp_var_ref[0] = GOLDEN_FRAME;
     cm->comp_var_ref[1] = ALTREF_FRAME;
@@ -151,11 +162,20 @@ static void read_frame_reference_mode_probs(VP9_COMMON *cm, vp9_reader *r) {
     for (i = 0; i < REF_CONTEXTS; ++i) {
       vp9_diff_update_prob(r, &fc->single_ref_prob[i][0]);
       vp9_diff_update_prob(r, &fc->single_ref_prob[i][1]);
+#if CONFIG_MULTI_REF
+      vp9_diff_update_prob(r, &fc->single_ref_prob[i][2]);
+#endif  // CONFIG_MULTI_REF
     }
 
   if (cm->reference_mode != SINGLE_REFERENCE)
-    for (i = 0; i < REF_CONTEXTS; ++i)
+    for (i = 0; i < REF_CONTEXTS; ++i) {
+#if CONFIG_MULTI_REF
+      vp9_diff_update_prob(r, &fc->comp_ref_prob[i][0]);
+      vp9_diff_update_prob(r, &fc->comp_ref_prob[i][1]);
+#else
       vp9_diff_update_prob(r, &fc->comp_ref_prob[i]);
+#endif  // CONFIG_MULTI_REF
+    }
 }
 
 static void update_mv_probs(vp9_prob *p, int n, vp9_reader *r) {
@@ -2355,6 +2375,10 @@ static void setup_frame_size_with_refs(VP9_COMMON *cm,
             cm->bit_depth,
             cm->subsampling_x,
             cm->subsampling_y))
+      /*printf("bit_depth=%d, sampling_x=%d, sampling_y=%d\n",
+             ref_frame->buf->bit_depth,
+             ref_frame->buf->subsampling_x,
+             ref_frame->buf->subsampling_y);*/
       vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                          "Referenced frame has incompatible color space");
   }
@@ -2714,12 +2738,20 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
           vp9_zero(tile_data->xd.left_seg_context);
           for (mi_col = tile.mi_col_start; mi_col < tile.mi_col_end;
                mi_col += MI_BLOCK_SIZE) {
+            /*
+            printf("============================================\n");
+            printf("decode_tiles(): current_video_frame=%d, "
+                   "mi_row=%d, mi_col=%d\n",
+                   cm->current_video_frame, mi_row, mi_col);*/
             decode_partition(tile_data->cm, &tile_data->xd, &tile,
 #if CONFIG_SUPERTX
                              0,
 #endif
                              mi_row, mi_col,
                              &tile_data->bit_reader, BLOCK_64X64);
+            /*
+            printf("tile_data->xd.corrupted=%d\n", tile_data->xd.corrupted);
+            printf("============================================\n");*/
           }
           pbi->mb.corrupted |= tile_data->xd.corrupted;
         }
@@ -3037,6 +3069,9 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
 
     read_bitdepth_colorspace_sampling(cm, rb);
     pbi->refresh_frame_flags = (1 << REF_FRAMES) - 1;
+#if CONFIG_MULTI_REF
+    pbi->refresh_frame_flags &= ~(1 << 1);
+#endif  // COFNIG_MULTI_REF
 
     for (i = 0; i < REFS_PER_FRAME; ++i) {
       cm->frame_refs[i].idx = -1;
@@ -3083,6 +3118,13 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
         ref_frame->buf = &cm->frame_bufs[idx].buf;
         cm->ref_frame_sign_bias[LAST_FRAME + i] = vp9_rb_read_bit(rb);
       }
+#if CONFIG_MULTI_REF
+      // NOTE(zoeliu): If LAST_FRAME is being refreshed, LAST2_FRAME should be
+      // refreshed as well.
+      // For LAST_FRAME, ref == 0; For LAST2_FRAME, ref == 1.
+      assert((!!(pbi->refresh_frame_flags & 1)) ==
+             (!!(pbi->refresh_frame_flags & 2)));
+#endif  // CONFIG_MULTI_REF
 
       setup_frame_size_with_refs(cm, rb);
 
@@ -3108,6 +3150,11 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
       }
     }
   }
+  /*
+  printf("Decoder ==> ref_frame_map:");
+  for (i = 0; i < REF_FRAMES; ++i)
+    printf(" %d", cm->ref_frame_map[i]);
+  printf("\n");*/
 
 #if CONFIG_VP9_HIGHBITDEPTH
   get_frame_new_buffer(cm)->bit_depth = cm->bit_depth;
