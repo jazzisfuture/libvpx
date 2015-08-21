@@ -126,10 +126,10 @@ DSP_SRCS-$(HAVE_DSPR2)  += mips/convolve8_vert_dspr2.c
 
 # loop filters
 DSP_SRCS-yes += loopfilter.c
-
 DSP_SRCS-$(ARCH_X86)$(ARCH_X86_64)   += x86/loopfilter_sse2.c
 DSP_SRCS-$(HAVE_AVX2)                += x86/loopfilter_avx2.c
 DSP_SRCS-$(HAVE_MMX)                 += x86/loopfilter_mmx.asm
+DSP_SRCS-$(HAVE_SSE2)                += x86/loopfilter_sse2.asm
 
 DSP_SRCS-$(HAVE_NEON)   += arm/loopfilter_neon.c
 ifeq ($(HAVE_NEON_ASM),yes)
