@@ -438,15 +438,34 @@ static void write_ref_frames(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     }
 
     if (is_compound) {
-      vp9_write(w, mbmi->ref_frame[0] == GOLDEN_FRAME,
-                vp9_get_pred_prob_comp_ref_p(cm, xd));
+      const int bit0 = mbmi->ref_frame[0] == GOLDEN_FRAME;
+      vp9_write(w, bit0, vp9_get_pred_prob_comp_ref_p(cm, xd));
+#if CONFIG_MULTI_REF
+      if (!bit0) {
+        const int bit1 = mbmi->ref_frame[0] == LAST_FRAME;
+        vp9_write(w, bit1, vp9_get_pred_prob_comp_ref_p1(cm, xd));
+      }
+#endif  // CONFIG_MULTI_REF
     } else {
+#if CONFIG_MULTI_REF
+      const int bit0 = !(mbmi->ref_frame[0] == LAST_FRAME ||
+                         mbmi->ref_frame[0] == LAST2_FRAME);
+      vp9_write(w, bit0, vp9_get_pred_prob_single_ref_p1(cm, xd));
+      if (bit0) {
+        const int bit1 = mbmi->ref_frame[0] != GOLDEN_FRAME;
+        vp9_write(w, bit1, vp9_get_pred_prob_single_ref_p2(cm, xd));
+      } else {
+        const int bit2 = mbmi->ref_frame[0] != LAST_FRAME;
+        vp9_write(w, bit2, vp9_get_pred_prob_single_ref_p3(cm, xd));
+      }
+#else
       const int bit0 = mbmi->ref_frame[0] != LAST_FRAME;
       vp9_write(w, bit0, vp9_get_pred_prob_single_ref_p1(cm, xd));
       if (bit0) {
         const int bit1 = mbmi->ref_frame[0] != GOLDEN_FRAME;
         vp9_write(w, bit1, vp9_get_pred_prob_single_ref_p2(cm, xd));
       }
+#endif  // CONFIG_MULTI_REF
     }
   }
 }
@@ -1143,6 +1162,22 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
   if (frame_is_intra_only(cm)) {
     write_mb_modes_kf(cm, xd, xd->mi, w);
   } else {
+    const int mode_ctx = m->mbmi.mode_context[m->mbmi.ref_frame[0]];
+    /*
+    int i;
+    if (cm->current_video_frame == 1) {
+      printf("\n========================Encoder====================\n");
+      printf("Frame 2: (mi_row,mi_col)=(%d,%d), sb_type=%d, mode=%d, "
+             "ref_frame[0]=%d, ref_frame[1]=%d, inter_mode_ctx=%d\n",
+             mi_row, mi_col, m->mbmi.sb_type, m->mbmi.mode,
+             m->mbmi.ref_frame[0], m->mbmi.ref_frame[1], mode_ctx);
+      printf("inter_mode_probs:");
+      for (i = 0; i < (INTER_MODES - 1); ++i)
+        printf("  %u", cm->fc.inter_mode_probs[mode_ctx][i]);
+      printf("\n");
+    printf("===================================================\n");
+    }*/
+
     pack_inter_mode_mvs(cpi, m,
 #if CONFIG_SUPERTX
                         supertx_enabled,
@@ -2059,6 +2094,9 @@ static int get_refresh_mask(VP9_COMP *cpi) {
     // and this needs to be generalized as other uses are implemented
     // (like RTC/temporal scalability).
     return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
+#if CONFIG_MULTI_REF
+           (cpi->refresh_last2_frame << cpi->lst2_fb_idx) |
+#endif  // CONFIG_MULTI_REF
            (cpi->refresh_golden_frame << cpi->alt_fb_idx);
   } else {
     int arf_idx = cpi->alt_fb_idx;
@@ -2067,6 +2105,9 @@ static int get_refresh_mask(VP9_COMP *cpi) {
       arf_idx = gf_group->arf_update_idx[gf_group->index];
     }
     return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
+#if CONFIG_MULTI_REF
+           (cpi->refresh_last2_frame << cpi->lst2_fb_idx) |
+#endif  // CONFIG_MULTI_REF
            (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
            (cpi->refresh_alt_ref_frame << arf_idx);
   }
@@ -2270,6 +2311,15 @@ static void write_uncompressed_header(VP9_COMP *cpi,
   vp9_wb_write_bit(wb, cm->show_frame);
   vp9_wb_write_bit(wb, cm->error_resilient_mode);
 
+#if CONFIG_MULTI_REF
+  /*
+  cpi->refresh_last2_frame =
+      ((cm->frame_type != KEY_FRAME) && cpi->refresh_last_frame) ? 1 : 0;
+      */
+  cpi->refresh_last2_frame =
+      (cm->frame_type == KEY_FRAME || cpi->refresh_last_frame) ? 1 : 0;
+#endif  // CONFIG_MULTI_REF
+
   if (cm->frame_type == KEY_FRAME) {
     write_sync_code(wb);
     write_bitdepth_colorspace_sampling(cm, wb);
@@ -2280,6 +2330,12 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
     if (!cm->error_resilient_mode)
       vp9_wb_write_literal(wb, cm->reset_frame_context, 2);
+
+#if CONFIG_MULTI_REF
+    /*
+    if (get_refresh_mask(cpi) == 8)
+      printf("\nwrite_uncompressed_header(): To be investigated...\n");*/
+#endif  // CONFIG_MULTI_REF
 
     if (cm->intra_only) {
       write_sync_code(wb);
@@ -2394,7 +2450,7 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
     cm->tx_mode = ONLY_4X4;
   else
     encode_txfm_probs(cm, &header_bc);
-#endif
+#endif  // CONFIG_TX_SKIP
 
   update_coef_probs(cpi, &header_bc);
   update_skip_probs(cm, &header_bc);
@@ -2425,6 +2481,7 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
       vp9_write_bit(&header_bc, use_compound_pred);
       if (use_compound_pred) {
         vp9_write_bit(&header_bc, use_hybrid_pred);
+
         if (use_hybrid_pred)
           for (i = 0; i < COMP_INTER_CONTEXTS; i++)
             vp9_cond_prob_diff_update(&header_bc, &fc->comp_inter_prob[i],
@@ -2438,13 +2495,26 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
                                   cm->counts.single_ref[i][0]);
         vp9_cond_prob_diff_update(&header_bc, &fc->single_ref_prob[i][1],
                                   cm->counts.single_ref[i][1]);
+#if CONFIG_MULTI_REF
+        vp9_cond_prob_diff_update(&header_bc, &fc->single_ref_prob[i][2],
+                                  cm->counts.single_ref[i][2]);
+#endif  // CONFIG_MULTI_REF
       }
     }
 
-    if (cm->reference_mode != SINGLE_REFERENCE)
-      for (i = 0; i < REF_CONTEXTS; i++)
+    if (cm->reference_mode != SINGLE_REFERENCE) {
+      for (i = 0; i < REF_CONTEXTS; i++) {
+#if CONFIG_MULTI_REF
+        vp9_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i][0],
+                                  cm->counts.comp_ref[i][0]);
+        vp9_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i][1],
+                                  cm->counts.comp_ref[i][1]);
+#else
         vp9_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i],
                                   cm->counts.comp_ref[i]);
+#endif  // CONFIG_MULTI_REF
+      }
+    }
 
     for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
       prob_diff_update(vp9_intra_mode_tree, cm->fc.y_mode_prob[i],
