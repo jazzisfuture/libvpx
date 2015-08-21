@@ -438,15 +438,34 @@ static void write_ref_frames(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     }
 
     if (is_compound) {
-      vp9_write(w, mbmi->ref_frame[0] == GOLDEN_FRAME,
-                vp9_get_pred_prob_comp_ref_p(cm, xd));
+      const int bit0 = mbmi->ref_frame[0] == GOLDEN_FRAME;
+      vp9_write(w, bit0, vp9_get_pred_prob_comp_ref_p(cm, xd));
+#if CONFIG_MULTI_REF
+      if (!bit0) {
+        const int bit1 = mbmi->ref_frame[0] == LAST_FRAME;
+        vp9_write(w, bit1, vp9_get_pred_prob_comp_ref_p1(cm, xd));
+      }
+#endif  // CONFIG_MULTI_REF
     } else {
+#if CONFIG_MULTI_REF
+      const int bit0 = !(mbmi->ref_frame[0] == LAST_FRAME ||
+                         mbmi->ref_frame[0] == LAST2_FRAME);
+      vp9_write(w, bit0, vp9_get_pred_prob_single_ref_p1(cm, xd));
+      if (bit0) {
+        const int bit1 = mbmi->ref_frame[0] != GOLDEN_FRAME;
+        vp9_write(w, bit1, vp9_get_pred_prob_single_ref_p2(cm, xd));
+      } else {
+        const int bit2 = mbmi->ref_frame[0] != LAST_FRAME;
+        vp9_write(w, bit2, vp9_get_pred_prob_single_ref_p3(cm, xd));
+      }
+#else
       const int bit0 = mbmi->ref_frame[0] != LAST_FRAME;
       vp9_write(w, bit0, vp9_get_pred_prob_single_ref_p1(cm, xd));
       if (bit0) {
         const int bit1 = mbmi->ref_frame[0] != GOLDEN_FRAME;
         vp9_write(w, bit1, vp9_get_pred_prob_single_ref_p2(cm, xd));
       }
+#endif  // CONFIG_MULTI_REF
     }
   }
 }
@@ -2438,13 +2457,26 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
                                   cm->counts.single_ref[i][0]);
         vp9_cond_prob_diff_update(&header_bc, &fc->single_ref_prob[i][1],
                                   cm->counts.single_ref[i][1]);
+#if CONFIG_MUTLI_REF
+        vp9_cond_prob_diff_update(&header_bc, &fc->single_ref_prob[i][2],
+                                  cm->counts.single_ref[i][2]);
+#endif  // COFNIG_MULTI_REF
       }
     }
 
-    if (cm->reference_mode != SINGLE_REFERENCE)
-      for (i = 0; i < REF_CONTEXTS; i++)
+    if (cm->reference_mode != SINGLE_REFERENCE) {
+      for (i = 0; i < REF_CONTEXTS; i++) {
+#if CONFIG_MULTI_REF
+        vp9_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i][0],
+                                  cm->counts.comp_ref[i][0]);
+        vp9_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i][1],
+                                  cm->counts.comp_ref[i][1]);
+#else
         vp9_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i],
                                   cm->counts.comp_ref[i]);
+#endif  // CONFIG_MULTI_REF
+      }
+    }
 
     for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
       prob_diff_update(vp9_intra_mode_tree, cm->fc.y_mode_prob[i],

@@ -1505,14 +1505,32 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
                             [has_second_ref(mbmi)]++;
 
         if (has_second_ref(mbmi)) {
+#if CONFIG_MULTI_REF
+          counts->comp_ref[vp9_get_pred_context_comp_ref_p(cm, xd)][0]
+                          [ref0 == GOLDEN_FRAME]++;
+          counts->comp_ref[vp9_get_pred_context_comp_ref_p1(cm, xd)][1]
+                          [ref0 == LAST_FRAME]++;
+#else
           counts->comp_ref[vp9_get_pred_context_comp_ref_p(cm, xd)]
                           [ref0 == GOLDEN_FRAME]++;
+#endif  // CONFIG_MULTI_REF
         } else {
+#if CONFIG_MULTI_REF
+          counts->single_ref[vp9_get_pred_context_single_ref_p1(xd)][0]
+                            [ref0 != LAST_FRAME && ref0 != LAST2_FRAME]++;
+          if (ref0 != LAST_FRAME && ref0 != LAST2_FRAME)
+            counts->single_ref[vp9_get_pred_context_single_ref_p2(xd)][1]
+                              [ref0 != GOLDEN_FRAME]++;
+          else
+            counts->single_ref[vp9_get_pred_context_single_ref_p3(xd)][2]
+                              [ref0 != LAST_FRAME]++;
+#else
           counts->single_ref[vp9_get_pred_context_single_ref_p1(xd)][0]
                             [ref0 != LAST_FRAME]++;
           if (ref0 != LAST_FRAME)
             counts->single_ref[vp9_get_pred_context_single_ref_p2(xd)][1]
                               [ref0 != GOLDEN_FRAME]++;
+#endif  // CONFIG_MULTI_REF
         }
       }
     }
@@ -4250,7 +4268,12 @@ void vp9_encode_frame(VP9_COMP *cpi) {
       cm->allow_comp_inter_inter = 1;
       cm->comp_fixed_ref = ALTREF_FRAME;
       cm->comp_var_ref[0] = LAST_FRAME;
+#if CONFIG_MULTI_REF
+      cm->comp_var_ref[1] = LAST2_FRAME;
+      cm->comp_var_ref[2] = GOLDEN_FRAME;
+#else
       cm->comp_var_ref[1] = GOLDEN_FRAME;
+#endif  // CONFIG_MULTI_REF
     }
   }
 
