@@ -305,6 +305,7 @@ EXPERIMENT_LIST="
     ext_partition
     qctx_tprobs
     dst1
+    multi_ref
 "
 CONFIG_LIST="
     external_build
