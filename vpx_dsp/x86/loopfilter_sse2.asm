@@ -1,3 +1,13 @@
+;
+;  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
+;
+;  Use of this source code is governed by a BSD-style license
+;  that can be found in the LICENSE file in the root of the source
+;  tree. An additional intellectual property rights grant can be found
+;  in the file PATENTS.  All contributing project authors may
+;  be found in the AUTHORS file in the root of the source tree.
+;
+
 %include "vpx_ports/x86_abi_support.asm"
 
 SECTION_ROTEXT
@@ -68,7 +78,11 @@ sym(vpx_lpf_horizontal_8_dual_sse2):
   push    rbp
   mov     rbp, rsp
   SHADOW_ARGS_TO_STACK 8
+%if ABI_IS_32BIT=0
   SAVE_XMM 7
+%else
+  SAVE_XMM 15
+%endif
   GET_GOT     rbx
   push rdi
   push rsi
@@ -1266,4 +1280,3 @@ four:
 align 16
 eight:
     times 8 dw  0x8
-
