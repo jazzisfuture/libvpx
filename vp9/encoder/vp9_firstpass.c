@@ -481,6 +481,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   LAYER_CONTEXT *const lc = is_two_pass_svc(cpi) ?
         &cpi->svc.layer_context[cpi->svc.spatial_layer_id] : NULL;
 
+  printf("vp9_first_pass().\n");
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
     vp9_zero_array(cpi->twopass.frame_mb_stats_buf, cm->MBs);

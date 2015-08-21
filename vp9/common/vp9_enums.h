@@ -168,11 +168,20 @@ typedef enum {
 } PALETTE_COLOR;
 #endif  // CONFIG_PALETTE
 
+#if CONFIG_MULTI_REF
+typedef enum {
+  VP9_LAST_FLAG = 1 << 0,
+  VP9_LAST2_FLAG = 1 << 1,
+  VP9_GOLD_FLAG = 1 << 2,
+  VP9_ALT_FLAG = 1 << 3,
+} VP9_REFFRAME;
+#else
 typedef enum {
   VP9_LAST_FLAG = 1 << 0,
   VP9_GOLD_FLAG = 1 << 1,
   VP9_ALT_FLAG = 1 << 2,
 } VP9_REFFRAME;
+#endif  // CONFIG_MULTI_REF
 
 #ifdef __cplusplus
 }  // extern "C"

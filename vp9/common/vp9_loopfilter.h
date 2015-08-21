@@ -26,7 +26,12 @@ extern "C" {
 
 #define SIMD_WIDTH 16
 
+#if CONFIG_MULTI_REF
+#define MAX_REF_LF_DELTAS       5
+#else
 #define MAX_REF_LF_DELTAS       4
+#endif  // CONFIG_MULTI_REF
+
 #define MAX_MODE_LF_DELTAS      2
 
 struct VP9Common;

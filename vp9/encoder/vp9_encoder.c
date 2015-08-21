@@ -611,8 +611,14 @@ static void set_tile_limits(VP9_COMP *cpi) {
 
 static void init_buffer_indices(VP9_COMP *cpi) {
   cpi->lst_fb_idx = 0;
+#if CONFIG_MULTI_REF
+  cpi->lst2_fb_idx = 1;
+  cpi->gld_fb_idx = 2;
+  cpi->alt_fb_idx = 3;
+#else
   cpi->gld_fb_idx = 1;
   cpi->alt_fb_idx = 2;
+#endif  // CONFIG_MULTI_REF
 }
 
 static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
@@ -1514,6 +1520,9 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
   cpi->refresh_golden_frame = 0;
   cpi->refresh_last_frame = 1;
+#if CONFIG_MULTI_REF
+  cpi->refresh_last2_frame = cpi->refresh_last_frame;
+#endif  // CONFIG_MULTI_REF
   cm->refresh_frame_context = 1;
   cm->reset_frame_context = 0;
 
@@ -2339,6 +2348,9 @@ void vp9_update_reference(VP9_COMP *cpi, int ref_frame_flags) {
   cpi->ext_refresh_golden_frame = (ref_frame_flags & VP9_GOLD_FLAG) != 0;
   cpi->ext_refresh_alt_ref_frame = (ref_frame_flags & VP9_ALT_FLAG) != 0;
   cpi->ext_refresh_last_frame = (ref_frame_flags & VP9_LAST_FLAG) != 0;
+#if CONFIG_MULTI_REF
+  cpi->ext_refresh_last2_frame = (ref_frame_flags & VP9_LAST2_FLAG) != 0;
+#endif  // CONFIG_MULTI_REF
   cpi->ext_refresh_frame_flags_pending = 1;
 }
 
@@ -2347,6 +2359,10 @@ static YV12_BUFFER_CONFIG *get_vp9_ref_frame_buffer(VP9_COMP *cpi,
   MV_REFERENCE_FRAME ref_frame = NONE;
   if (ref_frame_flag == VP9_LAST_FLAG)
     ref_frame = LAST_FRAME;
+#if CONFIG_MULTI_REF
+  else if (ref_frame_flag == VP9_LAST2_FLAG)
+    ref_frame = LAST2_FRAME;
+#endif  // CONFIG_MULTI_REF
   else if (ref_frame_flag == VP9_GOLD_FLAG)
     ref_frame = GOLDEN_FRAME;
   else if (ref_frame_flag == VP9_ALT_FLAG)
@@ -2613,6 +2629,7 @@ static int recode_loop_test(const VP9_COMP *cpi,
 
 void vp9_update_reference_frames(VP9_COMP *cpi) {
   VP9_COMMON * const cm = &cpi->common;
+  // printf("vp9_update_reference_frames()\n");
 
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
@@ -2673,13 +2690,27 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   }
 
   if (cpi->refresh_last_frame) {
+#if CONFIG_MULTI_REF
+    if (cpi->refresh_last2_frame)
+      ref_cnt_fb(cm->frame_bufs,
+                 &cm->ref_frame_map[cpi->lst2_fb_idx], cpi->lst_fb_idx);
+#endif  // CONFIG_MULTI_REF
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
-    if (!cpi->rc.is_src_frame_alt_ref)
+    if (!cpi->rc.is_src_frame_alt_ref) {
+#if CONFIG_MULTI_REF
+      if (cpi->refresh_last2_frame) {
+        vpx_memcpy(cpi->interp_filter_selected[LAST2_FRAME],
+                   cpi->interp_filter_selected[LAST_FRAME],
+                   sizeof(cpi->interp_filter_selected[LAST_FRAME]));
+      }
+#endif  // CONFIG_MULTI_REF
       vpx_memcpy(cpi->interp_filter_selected[LAST_FRAME],
                  cpi->interp_filter_selected[0],
                  sizeof(cpi->interp_filter_selected[0]));
+    }
   }
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0) {
     vp9_denoiser_update_frame_info(&cpi->denoiser,
@@ -2687,7 +2718,11 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
                                    cpi->common.frame_type,
                                    cpi->refresh_alt_ref_frame,
                                    cpi->refresh_golden_frame,
-                                   cpi->refresh_last_frame);
+                                   cpi->refresh_last_frame
+#if CONFIG_MULTI_REF
+                                   , cpi->refresh_last2_frame
+#endif  // CONFIG_MULTI_REF
+                                   );
   }
 #endif
 }
@@ -2727,7 +2762,12 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 void vp9_scale_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   MV_REFERENCE_FRAME ref_frame;
+#if CONFIG_MULTI_REF
+  const VP9_REFFRAME ref_mask[4] = {
+    VP9_LAST_FLAG, VP9_LAST2_FLAG, VP9_GOLD_FLAG, VP9_ALT_FLAG};
+#else
   const VP9_REFFRAME ref_mask[3] = {VP9_LAST_FLAG, VP9_GOLD_FLAG, VP9_ALT_FLAG};
+#endif  // CONFIG_MULTI_REF
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
@@ -3117,6 +3157,10 @@ static int get_ref_frame_flags(const VP9_COMP *cpi) {
   const int gold_is_alt = map[cpi->gld_fb_idx] == map[cpi->alt_fb_idx];
   int flags = VP9_ALT_FLAG | VP9_GOLD_FLAG | VP9_LAST_FLAG;
 
+#if CONFIG_MULTI_REF
+  flags |= VP9_LAST2_FLAG;
+#endif  // CONFIG_MULTI_REF
+
   if (gold_is_last)
     flags &= ~VP9_GOLD_FLAG;
 
@@ -3143,6 +3187,9 @@ static void set_ext_overrides(VP9_COMP *cpi) {
   }
   if (cpi->ext_refresh_frame_flags_pending) {
     cpi->refresh_last_frame = cpi->ext_refresh_last_frame;
+#if CONFIG_MULTI_REF
+    cpi->refresh_last2_frame = cpi->ext_refresh_last2_frame;
+#endif  // CONFIG_MULTI_REF
     cpi->refresh_golden_frame = cpi->ext_refresh_golden_frame;
     cpi->refresh_alt_ref_frame = cpi->ext_refresh_alt_ref_frame;
     cpi->ext_refresh_frame_flags_pending = 0;
@@ -3458,8 +3505,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 
   // If the encoder forced a KEY_FRAME decision
-  if (cm->frame_type == KEY_FRAME)
+  if (cm->frame_type == KEY_FRAME) {
     cpi->refresh_last_frame = 1;
+#if CONFIG_MULTI_REF
+    cpi->refresh_last2_frame = 1;
+#endif  // CONFIG_MULTI_REF
+  }
 
   cm->frame_to_show = get_frame_new_buffer(cm);
 
@@ -3566,6 +3617,7 @@ static void SvcEncode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
 
 static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
                         unsigned int *frame_flags) {
+  // printf("Pass0Encode()\n");
   if (cpi->oxcf.rc_mode == VPX_CBR) {
     vp9_rc_get_one_pass_cbr_params(cpi);
   } else {
@@ -3576,6 +3628,7 @@ static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
 
 static void Pass2Encode(VP9_COMP *cpi, size_t *size,
                         uint8_t *dest, unsigned int *frame_flags) {
+  // printf("Pass2Encode()\n");
   cpi->allow_encode_breakout = ENCODE_BREAKOUT_ENABLED;
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 
@@ -3663,6 +3716,9 @@ static int frame_is_reference(const VP9_COMP *cpi) {
 
   return cm->frame_type == KEY_FRAME ||
          cpi->refresh_last_frame ||
+#if CONFIG_MULTI_REF
+         cpi->refresh_last2_frame ||
+#endif  // CONFIG_MULTI_REF
          cpi->refresh_golden_frame ||
          cpi->refresh_alt_ref_frame ||
          cm->refresh_frame_context ||
@@ -3748,6 +3804,9 @@ static void check_src_altref(VP9_COMP *cpi,
     // Don't refresh the last buffer for an ARF overlay frame. It will
     // become the GF so preserve last as an alternative prediction option.
     cpi->refresh_last_frame = 0;
+#if CONFIG_MULTI_REF
+    cpi->refresh_last2_frame = cpi->refresh_last_frame;
+#endif  // CONFIG_MULTI_REF
   }
 }
 
@@ -3764,6 +3823,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   struct lookahead_entry *source = NULL;
   MV_REFERENCE_FRAME ref_frame;
   int arf_src_index;
+
+  // printf("vp9_get_compressed_data()\n");
 
   if (is_two_pass_svc(cpi)) {
 #if CONFIG_SPATIAL_SVC
@@ -3794,6 +3855,9 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   cm->reset_frame_context = 0;
   cm->refresh_frame_context = 1;
   cpi->refresh_last_frame = 1;
+#if CONFIG_MULTI_REF
+  cpi->refresh_last2_frame = cpi->refresh_last_frame;
+#endif  // CONFIG_MULTI_REF
   cpi->refresh_golden_frame = 0;
   cpi->refresh_alt_ref_frame = 0;
 
@@ -3835,6 +3899,9 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->refresh_alt_ref_frame = 1;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_last_frame = 0;
+#if CONFIG_MULTI_REF
+      cpi->refresh_last2_frame = cpi->refresh_last_frame;
+#endif  // CONFIG_MULTI_REF
       rc->is_src_frame_alt_ref = 0;
       rc->source_alt_ref_pending = 0;
     } else {
@@ -4042,7 +4109,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
       if (cpi->b_calculate_psnr) {
         YV12_BUFFER_CONFIG *orig = cpi->Source;
-        YV12_BUFFER_CONFIG *recon = cpi->common.frame_to_show;
+        YV12_BUFFER_CONFIG *recon = cm->frame_to_show;
         YV12_BUFFER_CONFIG *pp = &cm->post_proc_buffer;
         PSNR_STATS psnr;
 #if CONFIG_VP9_HIGHBITDEPTH
