@@ -468,6 +468,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   const MV zero_mv = {0, 0};
   const YV12_BUFFER_CONFIG *first_ref_buf = lst_yv12;
 
+  printf("vp9_first_pass().\n");
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
     vp9_zero_array(cpi->twopass.frame_mb_stats_buf, cm->MBs);
