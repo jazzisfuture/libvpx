@@ -40,22 +40,26 @@ extern "C" {
 #if CONFIG_NEW_INTER
 
 #if CONFIG_INTERINTRA
-#define MAX_MODES 55
+#define MAX_MODES 69
 #else  // CONFIG_INTERINTRA
-#define MAX_MODES 43
+#define MAX_MODES 57
 #endif  // CONFIG_INTERINTRA
 
 #else   // CONFIG_NEW_INTER
 
 #if CONFIG_INTERINTRA
-#define MAX_MODES 42
+#define MAX_MODES 50
 #else  // CONFIG_INTERINTRA
-#define MAX_MODES 30
+#define MAX_MODES 38
 #endif  // CONFIG_INTERINTRA
 
 #endif  // CONFIG_NEW_INTER
 
+#if CONFIG_MULTI_REF
+#define MAX_REFS  8
+#else
 #define MAX_REFS  6
+#endif  // CONFIG_MULTI_REF
 
 // This enumerator type needs to be kept aligned with the mode order in
 // const MODE_DEFINITION vp9_mode_order[MAX_MODES] used in the rd code.
