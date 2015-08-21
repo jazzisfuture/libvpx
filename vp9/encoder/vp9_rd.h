@@ -40,17 +40,17 @@ extern "C" {
 #if CONFIG_NEW_INTER
 
 #if CONFIG_INTERINTRA
-#define MAX_MODES 55
+#define MAX_MODES 69
 #else  // CONFIG_INTERINTRA
-#define MAX_MODES 43
+#define MAX_MODES 57
 #endif  // CONFIG_INTERINTRA
 
 #else   // CONFIG_NEW_INTER
 
 #if CONFIG_INTERINTRA
-#define MAX_MODES 42
+#define MAX_MODES 50
 #else  // CONFIG_INTERINTRA
-#define MAX_MODES 30
+#define MAX_MODES 38
 #endif  // CONFIG_INTERINTRA
 
 #endif  // CONFIG_NEW_INTER

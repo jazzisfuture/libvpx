@@ -383,7 +383,11 @@ void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                                     FRAME_TYPE frame_type,
                                     int refresh_alt_ref_frame,
                                     int refresh_golden_frame,
-                                    int refresh_last_frame) {
+                                    int refresh_last_frame
+#if CONFIG_MULTI_REF
+                                    , int refresh_last2_frame
+#endif  // CONFIG_MULTI_REF
+                                    ) {
   if (frame_type == KEY_FRAME) {
     int i;
     // Start at 1 so as not to overwrite the INTRA_FRAME
@@ -400,6 +404,11 @@ void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                  denoiser->running_avg_y[INTRA_FRAME]);
     }
     if (refresh_last_frame) {
+#if CONFIG_MULTI_REF
+      if (refresh_last2_frame)
+        copy_frame(denoiser->running_avg_y[LAST2_FRAME],
+                   denoiser->running_avg_y[LAST_FRAME]);
+#endif  // CONFIG_MULTI_REF
       copy_frame(denoiser->running_avg_y[LAST_FRAME],
                  denoiser->running_avg_y[INTRA_FRAME]);
     }
