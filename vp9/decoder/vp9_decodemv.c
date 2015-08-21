@@ -701,12 +701,56 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     if (mode == COMPOUND_REFERENCE) {
       const int idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
       const int ctx = vp9_get_pred_context_comp_ref_p(cm, xd);
+#if CONFIG_MULTI_REF
+      const int bit = vp9_read(r, fc->comp_ref_prob[ctx][0]);
+#else
       const int bit = vp9_read(r, fc->comp_ref_prob[ctx]);
+#endif  // CONFIG_MULTI_REF
+
       if (!cm->frame_parallel_decoding_mode)
+#if CONFIG_MULTI_REF
+        ++counts->comp_ref[ctx][0][bit];
+#else
         ++counts->comp_ref[ctx][bit];
+#endif  // CONFIG_MULTI_REF
+
       ref_frame[idx] = cm->comp_fixed_ref;
+
+#if CONFIG_MULTI_REF
+      if (!bit) {
+        const int ctx1 = vp9_get_pred_context_comp_ref_p1(cm, xd);
+        const int bit1 = vp9_read(r, fc->comp_ref_prob[ctx1][1]);
+
+        if (!cm->frame_parallel_decoding_mode)
+          ++counts->comp_ref[ctx1][1][bit1];
+
+        ref_frame[!idx] = cm->comp_var_ref[bit1 ? 0 : 1];
+      } else {
+        ref_frame[!idx] = cm->comp_var_ref[2];
+      }
+#else
       ref_frame[!idx] = cm->comp_var_ref[bit];
+#endif  // CONFIG_MULTI_REF
     } else if (mode == SINGLE_REFERENCE) {
+#if CONFIG_MULTI_REF
+      const int ctx0 = vp9_get_pred_context_single_ref_p1(xd);
+      const int bit0 = vp9_read(r, fc->single_ref_prob[ctx0][0]);
+      if (!cm->frame_parallel_decoding_mode)
+        ++counts->single_ref[ctx0][0][bit0];
+      if (bit0) {
+        const int ctx1 = vp9_get_pred_context_single_ref_p2(xd);
+        const int bit1 = vp9_read(r, fc->single_ref_prob[ctx1][1]);
+        if (!cm->frame_parallel_decoding_mode)
+          ++counts->single_ref[ctx1][1][bit1];
+        ref_frame[0] = bit1 ? ALTREF_FRAME : GOLDEN_FRAME;
+      } else {
+        const int ctx2 = vp9_get_pred_context_single_ref_p3(xd);
+        const int bit2 = vp9_read(r, fc->single_ref_prob[ctx2][2]);
+        if (!cm->frame_parallel_decoding_mode)
+          ++counts->single_ref[ctx2][2][bit2];
+        ref_frame[0] = bit2 ? LAST2_FRAME : LAST_FRAME;
+      }
+#else
       const int ctx0 = vp9_get_pred_context_single_ref_p1(xd);
       const int bit0 = vp9_read(r, fc->single_ref_prob[ctx0][0]);
       if (!cm->frame_parallel_decoding_mode)
@@ -720,6 +764,7 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
       } else {
         ref_frame[0] = LAST_FRAME;
       }
+#endif  // CONFIG_MULTI_REF
 
       ref_frame[1] = NONE;
     } else {
@@ -1274,6 +1319,34 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
                                 ref_mv, nearestmv, nearmv, is_compound,
                                 allow_hp, r);
   }
+
+  /*
+  if (cm->current_video_frame == 3) {
+    int i;
+    printf("\n========================Decoder====================\n");
+    if (bsize < BLOCK_8X8)
+      printf("Frame %d: (mi_row,mi_col)=(%d,%d), sb_type=%d, "
+             "mode=(%d, %d, %d, %d), "
+             "ref_frame[0]=%d, ref_frame[1]=%d, inter_mode_ctx=%d\n",
+             cm->current_video_frame,
+             mi_row, mi_col, mbmi->sb_type,
+             mi->bmi[0].as_mode, mi->bmi[1].as_mode,
+             mi->bmi[2].as_mode, mi->bmi[3].as_mode,
+             mbmi->ref_frame[0], mbmi->ref_frame[1], inter_mode_ctx);
+    else
+      printf("Frame %d: (mi_row,mi_col)=(%d,%d), sb_type=%d, mode=%d, "
+             "ref_frame[0]=%d, ref_frame[1]=%d, inter_mode_ctx=%d\n",
+             cm->current_video_frame,
+             mi_row, mi_col, mbmi->sb_type, mbmi->mode,
+             mbmi->ref_frame[0], mbmi->ref_frame[1], inter_mode_ctx);
+    printf("inter_mode_probs:");
+    for (i = 0; i < (INTER_MODES - 1); ++i) {
+      printf("  %u", cm->fc.inter_mode_probs[inter_mode_ctx][i]);
+    }
+    printf("\n");
+    printf("===================================================\n");
+  }*/
+
 #if CONFIG_TX_SKIP
   mbmi->uv_mode = mbmi->mode;
 #endif
@@ -1630,6 +1703,18 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
                                xd,
 #endif
                                r);
+
+    /*
+    if (cm->current_video_frame == 3) {
+      printf("\n========================Decoder====================\n");
+      printf("Frame %d: (mi_row,mi_col)=(%d,%d), sb_type=%d, mode=%d, "
+             "ref_frame[0]=%d, ref_frame[1]=%d\n",
+             cm->current_video_frame,
+             mi_row, mi_col, mbmi->sb_type, mbmi->mode,
+             mbmi->ref_frame[0], mbmi->ref_frame[1]);
+      printf("\n");
+      printf("===================================================\n");
+    }*/
   }
 }
 
