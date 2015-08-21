@@ -1266,4 +1266,3 @@ four:
 align 16
 eight:
     times 8 dw  0x8
-
