@@ -155,10 +155,19 @@ vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
   // later commit that adds VP9-specific controls for this functionality.
   if (ref_frame_flag == VP9_LAST_FLAG) {
     ref_buf = &cm->frame_refs[0];
+#if CONFIG_MULTI_REF
+  } else if (ref_frame_flag == VP9_LAST2_FLAG) {
+    ref_buf = &cm->frame_refs[1];
+  } else if (ref_frame_flag == VP9_GOLD_FLAG) {
+    ref_buf = &cm->frame_refs[2];
+  } else if (ref_frame_flag == VP9_ALT_FLAG) {
+    ref_buf = &cm->frame_refs[3];
+#else
   } else if (ref_frame_flag == VP9_GOLD_FLAG) {
     ref_buf = &cm->frame_refs[1];
   } else if (ref_frame_flag == VP9_ALT_FLAG) {
     ref_buf = &cm->frame_refs[2];
+#endif  // CONFIG_MULTI_REF
   } else {
     vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                        "Invalid reference frame");
@@ -191,9 +200,42 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
   int ref_index = 0, mask;
   VP9_COMMON *const cm = &pbi->common;
 
+#if CONFIG_MULTI_REF
+  assert((!!(pbi->refresh_frame_flags & 1)) ==
+         (!!(pbi->refresh_frame_flags & 2)));
+#endif  // CONFIG_MULTI_REF
+
   for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
+#if CONFIG_MULTI_REF
+    // NOTE(zoeliu): When ref_index == 1 and the mask bit is set, it indicates
+    // LAST2_FRAME shall be refreshed, but it has already been handled when
+    // LAST_FRAME is being refreshed, i.e., when ref_index == 0 and mask is set
+    // correspondingly.
+    if ((mask & 1) && ref_index != 1) {
+#else
     if (mask & 1) {
+#endif  // CONFIG_MULTI_REF
       const int old_idx = cm->ref_frame_map[ref_index];
+
+#if CONFIG_MULTI_REF
+      if (ref_index == 0) {  // LAST_FRAME
+        // NOTE(zoeliu): We need to handle LAST2_FRAME first.
+        const int ref_index_last2 = ref_index + 1;
+        const int old_buf_idx_last2 =
+            cm->ref_frame_map[ref_index_last2];
+
+        ref_cnt_fb(cm->frame_bufs,
+                   &cm->ref_frame_map[ref_index_last2],
+                   cm->ref_frame_map[ref_index]);
+        if (old_buf_idx_last2 >= 0 &&
+            cm->frame_bufs[old_buf_idx_last2].ref_count == 0) {
+          cm->release_fb_cb(
+              cm->cb_priv,
+              &cm->frame_bufs[old_buf_idx_last2].raw_frame_buffer);
+        }
+      }
+#endif  // CONFIG_MULTI_REF
+
       ref_cnt_fb(cm->frame_bufs, &cm->ref_frame_map[ref_index],
                  cm->new_fb_idx);
       if (old_idx >= 0 && cm->frame_bufs[old_idx].ref_count == 0)
@@ -207,7 +249,7 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
   cm->frame_bufs[cm->new_fb_idx].ref_count--;
 
   // Invalidate these references until the next frame starts.
-  for (ref_index = 0; ref_index < 3; ref_index++)
+  for (ref_index = 0; ref_index < REFS_PER_FRAME; ref_index++)
     cm->frame_refs[ref_index].idx = INT_MAX;
 }
 
