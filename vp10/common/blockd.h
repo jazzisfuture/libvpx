@@ -218,20 +218,6 @@ static const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
   ADST_ADST,  // TM
 };
 
-static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type, const MACROBLOCKD *xd,
-                                  int block_idx) {
-  const MODE_INFO *const mi = xd->mi[0];
-  const MB_MODE_INFO *const mbmi = &mi->mbmi;
-
-  if (plane_type != PLANE_TYPE_Y || xd->lossless || is_inter_block(mbmi) ||
-      mbmi->tx_size >= TX_32X32)
-    return DCT_DCT;
-
-  return intra_mode_to_tx_type_lookup[get_y_mode(mi, block_idx)];
-}
-
-void vp10_setup_block_planes(MACROBLOCKD *xd, int ss_x, int ss_y);
-
 static INLINE TX_SIZE get_uv_tx_size_impl(TX_SIZE y_tx_size, BLOCK_SIZE bsize,
                                           int xss, int yss) {
   if (bsize < BLOCK_8X8) {
@@ -247,6 +233,25 @@ static INLINE TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi,
   return get_uv_tx_size_impl(mbmi->tx_size, mbmi->sb_type, pd->subsampling_x,
                              pd->subsampling_y);
 }
+
+static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type, const MACROBLOCKD *xd,
+                                  int block_idx, TX_SIZE tx_size) {
+  const MODE_INFO *const mi = xd->mi[0];
+  const MB_MODE_INFO *const mbmi = &mi->mbmi;
+  PREDICTION_MODE mode;
+
+  if (xd->lossless || is_inter_block(mbmi) || tx_size >= TX_32X32)
+    return DCT_DCT;
+
+  if (plane_type == PLANE_TYPE_Y)
+    mode = get_y_mode(mi, block_idx);
+  else
+    mode = mbmi->uv_mode;
+
+  return intra_mode_to_tx_type_lookup[mode];
+}
+
+void vp10_setup_block_planes(MACROBLOCKD *xd, int ss_x, int ss_y);
 
 static INLINE BLOCK_SIZE get_plane_block_size(BLOCK_SIZE bsize,
     const struct macroblockd_plane *pd) {
