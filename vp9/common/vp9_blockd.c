@@ -101,8 +101,10 @@ void vp9_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
 
     for (i = 0; i < above_contexts; ++i)
       a[i] = has_eob;
-    for (i = above_contexts; i < tx_size_in_blocks; ++i)
+    for (i = above_contexts; i < tx_size_in_blocks; ++i) {
       a[i] = 0;
+      printf("qc broken right\n");
+    }
   } else {
     memset(a, has_eob, sizeof(ENTROPY_CONTEXT) * tx_size_in_blocks);
   }
@@ -118,8 +120,10 @@ void vp9_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
 
     for (i = 0; i < left_contexts; ++i)
       l[i] = has_eob;
-    for (i = left_contexts; i < tx_size_in_blocks; ++i)
+    for (i = left_contexts; i < tx_size_in_blocks; ++i) {
       l[i] = 0;
+      printf("qc broken bottom\n");
+    }
   } else {
     memset(l, has_eob, sizeof(ENTROPY_CONTEXT) * tx_size_in_blocks);
   }
