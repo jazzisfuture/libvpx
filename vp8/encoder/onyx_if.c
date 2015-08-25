@@ -516,41 +516,6 @@ static void set_segment_data(VP8_COMP *cpi, signed char *feature_data, unsigned 
 }
 
 
-static void segmentation_test_function(VP8_COMP *cpi)
-{
-    unsigned char *seg_map;
-    signed char feature_data[MB_LVL_MAX][MAX_MB_SEGMENTS];
-
-    // Create a temporary map for segmentation data.
-    CHECK_MEM_ERROR(seg_map, vpx_calloc(cpi->common.mb_rows * cpi->common.mb_cols, 1));
-
-    // Set the segmentation Map
-    set_segmentation_map(cpi, seg_map);
-
-    // Activate segmentation.
-    enable_segmentation(cpi);
-
-    // Set up the quant segment data
-    feature_data[MB_LVL_ALT_Q][0] = 0;
-    feature_data[MB_LVL_ALT_Q][1] = 4;
-    feature_data[MB_LVL_ALT_Q][2] = 0;
-    feature_data[MB_LVL_ALT_Q][3] = 0;
-    // Set up the loop segment data
-    feature_data[MB_LVL_ALT_LF][0] = 0;
-    feature_data[MB_LVL_ALT_LF][1] = 0;
-    feature_data[MB_LVL_ALT_LF][2] = 0;
-    feature_data[MB_LVL_ALT_LF][3] = 0;
-
-    // Initialise the feature data structure
-    // SEGMENT_DELTADATA    0, SEGMENT_ABSDATA      1
-    set_segment_data(cpi, &feature_data[0][0], SEGMENT_DELTADATA);
-
-    // Delete sementation map
-    vpx_free(seg_map);
-
-    seg_map = 0;
-}
-
 /* A simple function to cyclically refresh the background at a lower Q */
 static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment)
 {
@@ -3018,6 +2983,7 @@ static void update_rd_ref_frame_probs(VP8_COMP *cpi)
 }
 
 
+#if !(CONFIG_REALTIME_ONLY)
 /* 1 = key, 0 = inter */
 static int decide_key_frame(VP8_COMP *cpi)
 {
@@ -3085,7 +3051,6 @@ static int decide_key_frame(VP8_COMP *cpi)
 
 }
 
-#if !(CONFIG_REALTIME_ONLY)
 static void Pass1Encode(VP8_COMP *cpi, unsigned long *size, unsigned char *dest, unsigned int *frame_flags)
 {
     (void) size;
@@ -3131,6 +3096,7 @@ void write_cx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame)
 #endif
 /* return of 0 means drop frame */
 
+#if !(CONFIG_REALTIME_ONLY)
 /* Function to test for conditions that indeicate we should loop
  * back and recode a frame.
  */
@@ -3180,6 +3146,7 @@ static int recode_loop_test( VP8_COMP *cpi,
 
     return force_recode;
 }
+#endif  // !(CONFIG_REALTIME_ONLY)
 
 static void update_reference_frames(VP8_COMP *cpi)
 {
