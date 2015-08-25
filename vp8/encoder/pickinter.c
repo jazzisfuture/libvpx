@@ -1240,7 +1240,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             }
 
             mode_mv[NEWMV].as_int = d->bmi.mv.as_int;
-
+            vp8_clamp_mv2(&mode_mv[this_mode], xd);
             /* mv cost; */
             rate2 += vp8_mv_bit_cost(&mode_mv[NEWMV], &best_ref_mv,
                                      cpi->mb.mvcost, 128);
@@ -1248,7 +1248,6 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 
         case NEARESTMV:
         case NEARMV:
-
             if (mode_mv[this_mode].as_int == 0)
                 continue;
 
