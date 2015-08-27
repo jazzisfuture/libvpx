@@ -555,7 +555,11 @@ static void fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
     case ADST_DCT:
     case DCT_ADST:
     case ADST_ADST:
+#if CONFIG_EXT_TX
+      fdct32x32(rd_transform, src_diff, coeff, diff_stride);
+#else
       assert(0);
+#endif  // CONFIG_EXT_TX
       break;
     default:
       assert(0);

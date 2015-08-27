@@ -764,6 +764,9 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
   memcpy(ta, a, sizeof(ta));
   memcpy(tl, l, sizeof(tl));
   xd->mi[0]->mbmi.tx_size = TX_4X4;
+#if CONFIG_EXT_TX
+  xd->mi[0]->mbmi.tx_type[PLANE_TYPE_Y] = DCT_DCT;
+#endif  // CONFIG_EXT_TX
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -1045,6 +1048,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                       int64_t best_rd) {
   PREDICTION_MODE mode;
   PREDICTION_MODE mode_selected = DC_PRED;
+#if CONFIG_EXT_TX
+  TX_TYPE tx_type, tx_type_selected = DCT_DCT;
+#endif  // CONFIG_EXT_TX
   MACROBLOCKD *const xd = &x->e_mbd;
   MODE_INFO *const mic = xd->mi[0];
   int this_rate, this_rate_tokenonly, s;
@@ -1055,6 +1061,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   const MODE_INFO *left_mi = xd->left_mi;
   const PREDICTION_MODE A = vp10_above_block_mode(mic, above_mi, 0);
   const PREDICTION_MODE L = vp10_left_block_mode(mic, left_mi, 0);
+
   bmode_costs = cpi->y_mode_costs[A][L];
 
   memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
@@ -1071,29 +1078,45 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
     }
 
     mic->mbmi.mode = mode;
+#if CONFIG_EXT_TX
+    for (tx_type = DCT_DCT; tx_type < TX_TYPES - 1; tx_type++) {
+      mic->mbmi.tx_type[0] = tx_type;
+#endif  // CONFIG_EXT_TX
+      super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
+                      &s, NULL, bsize, best_rd);
 
-    super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
-        &s, NULL, bsize, best_rd);
+      if (this_rate_tokenonly == INT_MAX)
+        continue;
 
-    if (this_rate_tokenonly == INT_MAX)
-      continue;
+      this_rate = this_rate_tokenonly + bmode_costs[mode];
+#if CONFIG_EXT_TX
+      if (mic->mbmi.tx_size < TX_32X32)
+        this_rate += cpi->tx_type_cost[mic->mbmi.tx_size][mode][tx_type];
+#endif  // CONFIG_EXT_TX
+      this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
-    this_rate = this_rate_tokenonly + bmode_costs[mode];
-    this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
-
-    if (this_rd < best_rd) {
-      mode_selected   = mode;
-      best_rd         = this_rd;
-      best_tx         = mic->mbmi.tx_size;
-      *rate           = this_rate;
-      *rate_tokenonly = this_rate_tokenonly;
-      *distortion     = this_distortion;
-      *skippable      = s;
+      if (this_rd < best_rd) {
+        mode_selected    = mode;
+#if CONFIG_EXT_TX
+        tx_type_selected = tx_type;
+#endif  // CONFIG_EXT_TX
+        best_rd          = this_rd;
+        best_tx          = mic->mbmi.tx_size;
+        *rate            = this_rate;
+        *rate_tokenonly  = this_rate_tokenonly;
+        *distortion      = this_distortion;
+        *skippable       = s;
+      }
+#if CONFIG_EXT_TX
     }
+#endif  // CONFIG_EXT_TX
   }
 
   mic->mbmi.mode = mode_selected;
   mic->mbmi.tx_size = best_tx;
+#if CONFIG_EXT_TX
+  mic->mbmi.tx_type[0] = tx_type_selected;
+#endif  // CONFIG_EXT_TX
 
   return best_rd;
 }
@@ -1169,6 +1192,9 @@ static int64_t rd_pick_intra_sbuv_mode(VP10_COMP *cpi, MACROBLOCK *x,
       continue;
 
     xd->mi[0]->mbmi.uv_mode = mode;
+#if CONFIG_EXT_TX
+    xd->mi[0]->mbmi.tx_type[1] = DCT_DCT;
+#endif  // CONFIG_EXT_TX
 
     if (!super_block_uvrd(cpi, x, &this_rate_tokenonly,
                           &this_distortion, &s, &this_sse, bsize, best_rd))
@@ -2689,6 +2715,11 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     int64_t sseuv = INT64_MAX;
     int64_t rdcosty = INT64_MAX;
 
+#if CONFIG_EXT_TX
+    mbmi->tx_type[0] = DCT_DCT;
+    mbmi->tx_type[1] = DCT_DCT;
+#endif  // CONFIG_EXT_TX
+
     // Y cost and distortion
     vp10_subtract_plane(x, bsize, 0);
     super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
@@ -3288,11 +3319,45 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     if (ref_frame == INTRA_FRAME) {
       TX_SIZE uv_tx;
       struct macroblockd_plane *const pd = &xd->plane[1];
+#if CONFIG_EXT_TX
+      int this_rate_y = INT_MAX, this_skippable = 0;
+      int64_t this_distortion_y = INT64_MAX, this_rd_y, best_rd_y = INT64_MAX;
+      TX_TYPE tx_type, best_tx_type = DCT_DCT;
+      TX_SIZE best_tx_size = TX_4X4;
+
+      mbmi->tx_type[1] = DCT_DCT;
       memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
-      super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
-                      NULL, bsize, best_rd);
+      rate_y = INT_MAX;
+      for (tx_type = DCT_DCT; tx_type < TX_TYPES - 1; tx_type++) {
+        mbmi->tx_type[0] = tx_type;
+        super_block_yrd(cpi, x, &this_rate_y, &this_distortion_y,
+                        &this_skippable, NULL, bsize, best_rd);
+        if (this_rate_y == INT_MAX)
+          continue;
+        if (mbmi->tx_size < TX_32X32)
+          this_rate_y += cpi->tx_type_cost[mbmi->tx_size][mbmi->mode][tx_type];
+        this_rd_y = RDCOST(x->rdmult, x->rddiv, this_rate_y, this_distortion_y);
+        if (this_rd_y < best_rd_y) {
+          best_rd_y = this_rd_y;
+          rate_y = this_rate_y;
+          distortion_y = this_distortion_y;
+          skippable = this_skippable;
+          best_tx_type = tx_type;
+          best_tx_size = mbmi->tx_size;
+        }
+      }
+
+      mbmi->tx_size = best_tx_size;
+      mbmi->tx_type[0] = best_tx_type;
       if (rate_y == INT_MAX)
         continue;
+#else
+    memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
+    super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
+                    NULL, bsize, best_rd);
+    if (rate_y == INT_MAX)
+      continue;
+#endif  // CONFIG_EXT_TX
 
       uv_tx = get_uv_tx_size_impl(mbmi->tx_size, bsize, pd->subsampling_x,
                                   pd->subsampling_y);
@@ -3639,6 +3704,9 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
   mbmi->ref_frame[0] = LAST_FRAME;
   mbmi->ref_frame[1] = NONE;
   mbmi->mv[0].as_int = 0;
+#if CONFIG_EXT_TX
+  mbmi->tx_type[0] = mbmi->tx_type[1] = DCT_DCT;
+#endif  // CONFIG_EXT_TX
   x->skip = 1;
 
   if (cm->interp_filter != BILINEAR) {
@@ -3782,6 +3850,9 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
     frame_mv[ZEROMV][ref_frame].as_int = 0;
   }
 
+#if CONFIG_EXT_TX
+  mbmi->tx_type[0] = mbmi->tx_type[1] = DCT_DCT;
+#endif  // CONFIG_EXT_TX
   for (ref_index = 0; ref_index < MAX_REFS; ++ref_index) {
     int mode_excluded = 0;
     int64_t this_rd = INT64_MAX;

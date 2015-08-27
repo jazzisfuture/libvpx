@@ -79,6 +79,12 @@ static void fill_mode_costs(VP10_COMP *cpi) {
                   vp10_kf_uv_mode_prob[TM_PRED], vp10_intra_mode_tree);
   vp10_cost_tokens(cpi->intra_uv_mode_cost[INTER_FRAME],
                   fc->uv_mode_prob[TM_PRED], vp10_intra_mode_tree);
+#if CONFIG_EXT_TX
+  for (i = 0; i < TX_SIZES; ++i)
+    for (j = 0; j < INTRA_MODES; ++j)
+      vp10_cost_tokens(cpi->tx_type_cost[i][j], fc->tx_type_probs[i][j],
+                       vp10_tx_type_tree);
+#endif  // CONFIG_EXT_TX
 
   for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
     vp10_cost_tokens(cpi->switchable_interp_costs[i],

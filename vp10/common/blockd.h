@@ -68,6 +68,9 @@ typedef struct {
   BLOCK_SIZE sb_type;
   PREDICTION_MODE mode;
   TX_SIZE tx_size;
+#if CONFIG_EXT_TX
+  TX_TYPE tx_type[2];
+#endif  // CONFIG_EXT_TX
   int8_t skip;
   int8_t segment_id;
   int8_t seg_id_predicted;  // valid only when temporal_update is enabled
@@ -224,6 +227,9 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type, const MACROBLOCKD *xd,
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
 
 #if CONFIG_EXT_TX
+  if (!xd->lossless && mbmi->tx_type[plane_type] != DCT_DCT)
+    return mbmi->tx_type[plane_type];
+
   if (xd->lossless || is_inter_block(mbmi) || tx_size >= TX_32X32)
     return DCT_DCT;
   return intra_mode_to_tx_type_lookup[plane_type == PLANE_TYPE_Y ?

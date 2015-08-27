@@ -707,21 +707,33 @@ const scan_order vp10_scan_orders[TX_SIZES][TX_TYPES] = {
     {default_scan_4x4, vp10_default_iscan_4x4, default_scan_4x4_neighbors},
     {row_scan_4x4,     vp10_row_iscan_4x4,     row_scan_4x4_neighbors},
     {col_scan_4x4,     vp10_col_iscan_4x4,     col_scan_4x4_neighbors},
-    {default_scan_4x4, vp10_default_iscan_4x4, default_scan_4x4_neighbors}
+    {default_scan_4x4, vp10_default_iscan_4x4, default_scan_4x4_neighbors},
+#if CONFIG_EXT_TX
+    {default_scan_4x4, vp10_default_iscan_4x4, default_scan_4x4_neighbors},
+#endif  // CONFIG_EXT_TX
   }, {  // TX_8X8
     {default_scan_8x8, vp10_default_iscan_8x8, default_scan_8x8_neighbors},
     {row_scan_8x8,     vp10_row_iscan_8x8,     row_scan_8x8_neighbors},
     {col_scan_8x8,     vp10_col_iscan_8x8,     col_scan_8x8_neighbors},
-    {default_scan_8x8, vp10_default_iscan_8x8, default_scan_8x8_neighbors}
+    {default_scan_8x8, vp10_default_iscan_8x8, default_scan_8x8_neighbors},
+#if CONFIG_EXT_TX
+    {default_scan_8x8, vp10_default_iscan_8x8, default_scan_8x8_neighbors},
+#endif  // CONFIG_EXT_TX
   }, {  // TX_16X16
     {default_scan_16x16, vp10_default_iscan_16x16, default_scan_16x16_neighbors},
     {row_scan_16x16,     vp10_row_iscan_16x16,     row_scan_16x16_neighbors},
     {col_scan_16x16,     vp10_col_iscan_16x16,     col_scan_16x16_neighbors},
-    {default_scan_16x16, vp10_default_iscan_16x16, default_scan_16x16_neighbors}
+    {default_scan_16x16, vp10_default_iscan_16x16, default_scan_16x16_neighbors},
+#if CONFIG_EXT_TX
+    {default_scan_16x16, vp10_default_iscan_16x16, default_scan_16x16_neighbors},
+#endif  // CONFIG_EXT_TX
   }, {  // TX_32X32
     {default_scan_32x32, vp10_default_iscan_32x32, default_scan_32x32_neighbors},
     {default_scan_32x32, vp10_default_iscan_32x32, default_scan_32x32_neighbors},
     {default_scan_32x32, vp10_default_iscan_32x32, default_scan_32x32_neighbors},
     {default_scan_32x32, vp10_default_iscan_32x32, default_scan_32x32_neighbors},
+#if CONFIG_EXT_TX
+    {default_scan_32x32, vp10_default_iscan_32x32, default_scan_32x32_neighbors},
+#endif  // CONFIG_EXT_TX
   }
 };

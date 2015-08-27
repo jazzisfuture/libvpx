@@ -53,6 +53,9 @@ typedef struct frame_contexts {
   vpx_prob comp_inter_prob[COMP_INTER_CONTEXTS];
   vpx_prob single_ref_prob[REF_CONTEXTS][2];
   vpx_prob comp_ref_prob[REF_CONTEXTS];
+#if CONFIG_EXT_TX
+  vpx_prob tx_type_probs[TX_SIZES][INTRA_MODES][TX_TYPES - 1];
+#endif  // CONFIG_EXT_TX
   struct tx_probs tx_probs;
   vpx_prob skip_probs[SKIP_CONTEXTS];
   nmv_context nmvc;
@@ -85,6 +88,10 @@ extern const vpx_prob vp10_kf_partition_probs[PARTITION_CONTEXTS]
                                             [PARTITION_TYPES - 1];
 extern const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(INTRA_MODES)];
 extern const vpx_tree_index vp10_inter_mode_tree[TREE_SIZE(INTER_MODES)];
+#if CONFIG_EXT_TX
+extern const vpx_tree_index vp10_tx_type_tree[TREE_SIZE(TX_TYPES)];
+extern const vpx_prob defualt_tx_type_prob[TX_SIZES][INTRA_MODES][TX_TYPES - 1];
+#endif  // CONFIG_EXT_TX
 extern const vpx_tree_index vp10_partition_tree[TREE_SIZE(PARTITION_TYPES)];
 extern const vpx_tree_index vp10_switchable_interp_tree
                                 [TREE_SIZE(SWITCHABLE_FILTERS)];

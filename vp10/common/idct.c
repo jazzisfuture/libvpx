@@ -240,7 +240,11 @@ void vp10_inv_txfm_add_32x32(const tran_low_t *input, uint8_t *dest,
     case ADST_DCT:
     case DCT_ADST:
     case ADST_ADST:
+#if CONFIG_EXT_TX
+      vp10_idct32x32_add(input, dest, stride, eob);
+#else
       assert(0);
+#endif  // CONFIG_EXT_TX
       break;
     default:
       assert(0);
