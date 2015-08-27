@@ -90,11 +90,15 @@ typedef enum {
 } TX_MODE;
 
 typedef enum {
-  DCT_DCT   = 0,                      // DCT  in both horizontal and vertical
-  ADST_DCT  = 1,                      // ADST in vertical, DCT in horizontal
-  DCT_ADST  = 2,                      // DCT  in vertical, ADST in horizontal
-  ADST_ADST = 3,                      // ADST in both directions
-  TX_TYPES = 4
+  DCT_DCT    = 0,                      // DCT  in both horizontal and vertical
+  ADST_DCT   = 1,                      // ADST in vertical, DCT in horizontal
+  DCT_ADST   = 2,                      // DCT  in vertical, ADST in horizontal
+  ADST_ADST  = 3,                      // ADST in both directions
+#if CONFIG_EXT_TX
+  // (To-do huisu) NOTX_NO_TX is currently not enabled.
+  NOTX_NOTX  = 4,                      // No transform in either direction
+#endif  // CONFIG_EXT_TX
+  TX_TYPES
 } TX_TYPE;
 
 typedef enum {

@@ -238,6 +238,54 @@ const vpx_tree_index vp10_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
   -INTER_OFFSET(NEARMV), -INTER_OFFSET(NEWMV)
 };
 
+#if CONFIG_EXT_TX
+const vpx_tree_index vp10_tx_type_tree[TREE_SIZE(TX_TYPES)] = {
+  -DCT_DCT, 2,
+  -ADST_DCT, 4,
+  -DCT_ADST, 6,
+  -ADST_ADST, -NOTX_NO_TX,
+};
+
+const vpx_prob defualt_tx_type_prob[TX_SIZES][INTRA_MODES][TX_TYPES - 1] = {
+    {  // TX_4X4
+        { 110,  61,  85, 255, },
+        { 175,   1,  24, 255, },
+        { 154,  28,   1, 255, },
+        {  56, 112,  30, 255, },
+        { 177, 125, 255, 255, },
+        { 115,   1,  34, 255, },
+        { 100,  35,   1, 255, },
+        { 128,  28,   1, 255, },
+        { 146,   1,  27, 255, },
+        { 176, 131, 255, 255, },
+    },
+    {  // TX_8X8
+        { 189,  96, 128, 255, },
+        { 182,   1,  39, 255, },
+        { 184,  51,   1, 255, },
+        { 154, 175,  41, 255, },
+        { 189, 126, 255, 255, },
+        { 118,   1,  47, 255, },
+        { 121,  50,   1, 255, },
+        { 188,  43,   1, 255, },
+        { 196,   1,  33, 255, },
+        { 192, 126, 255, 255, },
+    },
+    {  // TX_16X16
+        { 178, 128, 146, 255, },
+        { 197,   1,  36, 255, },
+        { 176,  42,   1, 255, },
+        { 147, 209,  53, 255, },
+        { 210, 133, 255, 255, },
+        {  95,   1,  27, 255, },
+        {  93,  29,   1, 255, },
+        { 186,  27,   1, 255, },
+        { 212,   1,  16, 255, },
+        { 179, 123, 255, 255, },
+    },
+};
+#endif  // CONFIG_EXT_TX
+
 const vpx_tree_index vp10_partition_tree[TREE_SIZE(PARTITION_TYPES)] = {
   -PARTITION_NONE, 2,
   -PARTITION_HORZ, 4,
@@ -326,6 +374,9 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
   fc->tx_probs = default_tx_probs;
   vp10_copy(fc->skip_probs, default_skip_probs);
   vp10_copy(fc->inter_mode_probs, default_inter_mode_probs);
+#if CONFIG_EXT_TX
+  vp10_copy(fc->tx_type_probs, defualt_tx_type_prob);
+#endif  // CONFIG_EXT_TX
 }
 
 const vpx_tree_index vp10_switchable_interp_tree

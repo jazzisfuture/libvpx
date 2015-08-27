@@ -43,6 +43,12 @@ static const struct vp10_token partition_encodings[PARTITION_TYPES] =
   {{0, 1}, {2, 2}, {6, 3}, {7, 3}};
 static const struct vp10_token inter_mode_encodings[INTER_MODES] =
   {{2, 2}, {6, 3}, {0, 1}, {7, 3}};
+#if CONFIG_EXT_TX
+static struct vp10_token tx_type_encodings[TX_TYPES] = {
+    {0, 1}, {2, 2}, {6, 3}, {14, 4}, {30, 5},
+};
+#endif  // CONFIG_EXT_TX
+
 
 static void write_intra_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {
@@ -288,6 +294,12 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       }
     }
     write_intra_mode(w, mbmi->uv_mode, cm->fc->uv_mode_prob[mode]);
+#if CONFIG_EXT_TX
+    if (bsize >= BLOCK_8X8 && xd->mi[0]->mbmi.tx_size < TX_32X32 && !skip)
+      vp10_write_token(w, vp10_tx_type_tree,
+                       cm->fc->tx_type_probs[mbmi->tx_size][mbmi->mode],
+                       &tx_type_encodings[mbmi->tx_type[0]]);
+#endif  // CONFIG_EXT_TX
   } else {
     const int mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
     const vpx_prob *const inter_probs = cm->fc->inter_mode_probs[mode_ctx];
@@ -372,6 +384,13 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   }
 
   write_intra_mode(w, mbmi->uv_mode, vp10_kf_uv_mode_prob[mbmi->mode]);
+#if CONFIG_EXT_TX
+  if (bsize >= BLOCK_8X8 && xd->mi[0]->mbmi.tx_size < TX_32X32 && !mbmi->skip &&
+      !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP))
+    vp10_write_token(w, vp10_tx_type_tree,
+                     cm->fc->tx_type_probs[mbmi->tx_size][mbmi->mode],
+                     &tx_type_encodings[mbmi->tx_type[0]]);
+#endif  // CONFIG_EXT_TX
 }
 
 static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,

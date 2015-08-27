@@ -246,6 +246,13 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
   }
 
   mbmi->uv_mode = read_intra_mode(r, vp10_kf_uv_mode_prob[mbmi->mode]);
+#if CONFIG_EXT_TX
+  mbmi->tx_type[0] = mbmi->tx_type[1] = DCT_DCT;
+  if (bsize >= BLOCK_8X8 && mbmi->tx_size < TX_32X32 && !mbmi->skip)
+    mbmi->tx_type[0] =
+        vpx_read_tree(r, vp10_tx_type_tree,
+                      cm->fc->tx_type_probs[mbmi->tx_size][mbmi->mode]);
+#endif  // CONFIG_EXT_TX
 }
 
 static int read_mv_component(vpx_reader *r,
@@ -409,6 +416,12 @@ static void read_intra_block_mode_info(VP10_COMMON *const cm,
   }
 
   mbmi->uv_mode = read_intra_mode_uv(cm, xd, r, mbmi->mode);
+#if CONFIG_EXT_TX
+  if (bsize >= BLOCK_8X8 && mbmi->tx_size < TX_32X32 && !mbmi->skip)
+    mbmi->tx_type[0] =
+        vpx_read_tree(r, vp10_tx_type_tree,
+                      cm->fc->tx_type_probs[mbmi->tx_size][mbmi->mode]);
+#endif  // CONFIG_EXT_TX
 }
 
 static INLINE int is_mv_valid(const MV *mv) {
@@ -596,6 +609,9 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
   inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
+#if CONFIG_EXT_TX
+  mbmi->tx_type[0] = mbmi->tx_type[1] = DCT_DCT;
+#endif  // CONFIG_EXT_TX
   mbmi->tx_size = read_tx_size(cm, xd, !mbmi->skip || !inter_block, r);
 
   if (inter_block)
