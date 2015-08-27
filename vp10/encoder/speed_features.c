@@ -284,8 +284,7 @@ static void set_rt_speed_feature(VP10_COMP *cpi, SPEED_FEATURES *sf,
     // pred_mv_sad will not be set (since vp10_mv_pred will not
     // be called).
     // TODO(marpan/agrange): Fix this condition.
-    sf->reference_masking = (cpi->oxcf.resize_mode != RESIZE_DYNAMIC &&
-                             cpi->svc.number_spatial_layers == 1) ? 1 : 0;
+    sf->reference_masking = (cpi->oxcf.resize_mode != RESIZE_DYNAMIC) ? 1 : 0;
 
     sf->disable_filter_search_var_thresh = 50;
     sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
