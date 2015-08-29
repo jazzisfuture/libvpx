@@ -44,6 +44,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_lossless_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_end_to_end_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_ethread_test.cc
 
+
 LIBVPX_TEST_SRCS-yes                   += decode_test_driver.cc
 LIBVPX_TEST_SRCS-yes                   += decode_test_driver.h
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += encode_test_driver.cc
@@ -90,6 +91,9 @@ endif
 ## Whitebox tests invoke functions not exposed via the public API. Certain
 ## shared library builds don't make these functions accessible.
 ##
+
+LIBVPX_TEST_SRCS-$(CONFIG_VP10_ENCODER) += vp10_dct_test.cc
+
 ifeq ($(CONFIG_SHARED),)
 LIBVPX_TEST_SRCS-$(CONFIG_VP9)         += lpf_8_test.cc
 
