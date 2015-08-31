@@ -19,8 +19,11 @@ namespace {
 const int kMaxErrorFrames = 12;
 const int kMaxDroppableFrames = 12;
 
+const int SvcSupported = 1;
+const int SvcNotSupported = 0;
+
 class ErrorResilienceTestLarge : public ::libvpx_test::EncoderTest,
-    public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
+    public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
  protected:
   ErrorResilienceTestLarge()
       : EncoderTest(GET_PARAM(0)),
@@ -28,7 +31,8 @@ class ErrorResilienceTestLarge : public ::libvpx_test::EncoderTest,
         nframes_(0),
         mismatch_psnr_(0.0),
         mismatch_nframes_(0),
-        encoding_mode_(GET_PARAM(1)) {
+        encoding_mode_(GET_PARAM(1)),
+        svc_support_(GET_PARAM(2)) {
     Reset();
   }
 
@@ -204,6 +208,8 @@ class ErrorResilienceTestLarge : public ::libvpx_test::EncoderTest,
   unsigned int error_frames_[kMaxErrorFrames];
   unsigned int droppable_frames_[kMaxDroppableFrames];
   libvpx_test::TestMode encoding_mode_;
+ protected:
+  int svc_support_;
 };
 
 TEST_P(ErrorResilienceTestLarge, OnVersusOff) {
@@ -302,84 +308,90 @@ TEST_P(ErrorResilienceTestLarge, DropFramesWithoutRecovery) {
 // two layer temporal pattern. The base layer does not predict from the top
 // layer, so successful decoding is expected.
 TEST_P(ErrorResilienceTestLarge, 2LayersDropEnhancement) {
-  const vpx_rational timebase = { 33333333, 1000000000 };
-  cfg_.g_timebase = timebase;
-  cfg_.rc_target_bitrate = 500;
-  cfg_.g_lag_in_frames = 0;
+  // This test doesn't run if SVC is not supported.
+  if (svc_support_) {
+    const vpx_rational timebase = { 33333333, 1000000000 };
+    cfg_.g_timebase = timebase;
+    cfg_.rc_target_bitrate = 500;
+    cfg_.g_lag_in_frames = 0;
 
-  cfg_.rc_end_usage = VPX_CBR;
-  // 2 Temporal layers, no spatial layers, CBR mode.
-  cfg_.ss_number_layers = 1;
-  cfg_.ts_number_layers = 2;
-  cfg_.ts_rate_decimator[0] = 2;
-  cfg_.ts_rate_decimator[1] = 1;
-  cfg_.ts_periodicity = 2;
-  cfg_.ts_target_bitrate[0] = 60 * cfg_.rc_target_bitrate / 100;
-  cfg_.ts_target_bitrate[1] = cfg_.rc_target_bitrate;
+    cfg_.rc_end_usage = VPX_CBR;
+    // 2 Temporal layers, no spatial layers, CBR mode.
+    cfg_.ss_number_layers = 1;
+    cfg_.ts_number_layers = 2;
+    cfg_.ts_rate_decimator[0] = 2;
+    cfg_.ts_rate_decimator[1] = 1;
+    cfg_.ts_periodicity = 2;
+    cfg_.ts_target_bitrate[0] = 60 * cfg_.rc_target_bitrate / 100;
+    cfg_.ts_target_bitrate[1] = cfg_.rc_target_bitrate;
 
-  init_flags_ = VPX_CODEC_USE_PSNR;
+    init_flags_ = VPX_CODEC_USE_PSNR;
 
-  libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
-                                     timebase.den, timebase.num, 0, 40);
+    libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       timebase.den, timebase.num, 0, 40);
 
-  // Error resilient mode ON.
-  cfg_.g_error_resilient = 1;
-  cfg_.kf_mode = VPX_KF_DISABLED;
-  SetPatternSwitch(0);
+    // Error resilient mode ON.
+    cfg_.g_error_resilient = 1;
+    cfg_.kf_mode = VPX_KF_DISABLED;
+    SetPatternSwitch(0);
 
-  // The odd frames are the enhancement layer for 2 layer pattern, so set
-  // those frames as droppable. Drop the last 7 frames.
-  unsigned int num_droppable_frames = 7;
-  unsigned int droppable_frame_list[] = {27, 29, 31, 33, 35, 37, 39};
-  SetDroppableFrames(num_droppable_frames, droppable_frame_list);
-  SetErrorFrames(num_droppable_frames, droppable_frame_list);
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  // Test that no mismatches have been found
-  std::cout << "             Mismatch frames: "
-            << GetMismatchFrames() << "\n";
-  EXPECT_EQ(GetMismatchFrames(), (unsigned int) 0);
+    // The odd frames are the enhancement layer for 2 layer pattern, so set
+    // those frames as droppable. Drop the last 7 frames.
+    unsigned int num_droppable_frames = 7;
+    unsigned int droppable_frame_list[] = {27, 29, 31, 33, 35, 37, 39};
+    SetDroppableFrames(num_droppable_frames, droppable_frame_list);
+    SetErrorFrames(num_droppable_frames, droppable_frame_list);
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    // Test that no mismatches have been found
+    std::cout << "             Mismatch frames: "
+              << GetMismatchFrames() << "\n";
+    EXPECT_EQ(GetMismatchFrames(), (unsigned int) 0);
 
-  // Reset previously set of error/droppable frames.
-  Reset();
+    // Reset previously set of error/droppable frames.
+    Reset();
+  }
 }
 
 // Check for successful decoding and no encoder/decoder mismatch
 // for a two layer temporal pattern, where at some point in the
 // sequence, the LAST ref is not used anymore.
 TEST_P(ErrorResilienceTestLarge, 2LayersNoRefLast) {
-  const vpx_rational timebase = { 33333333, 1000000000 };
-  cfg_.g_timebase = timebase;
-  cfg_.rc_target_bitrate = 500;
-  cfg_.g_lag_in_frames = 0;
+  // This test doesn't run if SVC is not supported.
+  if (svc_support_) {
+    const vpx_rational timebase = { 33333333, 1000000000 };
+    cfg_.g_timebase = timebase;
+    cfg_.rc_target_bitrate = 500;
+    cfg_.g_lag_in_frames = 0;
 
-  cfg_.rc_end_usage = VPX_CBR;
-  // 2 Temporal layers, no spatial layers, CBR mode.
-  cfg_.ss_number_layers = 1;
-  cfg_.ts_number_layers = 2;
-  cfg_.ts_rate_decimator[0] = 2;
-  cfg_.ts_rate_decimator[1] = 1;
-  cfg_.ts_periodicity = 2;
-  cfg_.ts_target_bitrate[0] = 60 * cfg_.rc_target_bitrate / 100;
-  cfg_.ts_target_bitrate[1] = cfg_.rc_target_bitrate;
+    cfg_.rc_end_usage = VPX_CBR;
+    // 2 Temporal layers, no spatial layers, CBR mode.
+    cfg_.ss_number_layers = 1;
+    cfg_.ts_number_layers = 2;
+    cfg_.ts_rate_decimator[0] = 2;
+    cfg_.ts_rate_decimator[1] = 1;
+    cfg_.ts_periodicity = 2;
+    cfg_.ts_target_bitrate[0] = 60 * cfg_.rc_target_bitrate / 100;
+    cfg_.ts_target_bitrate[1] = cfg_.rc_target_bitrate;
 
-  init_flags_ = VPX_CODEC_USE_PSNR;
+    init_flags_ = VPX_CODEC_USE_PSNR;
 
-  libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
-                                     timebase.den, timebase.num, 0, 100);
+    libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       timebase.den, timebase.num, 0, 100);
 
-  // Error resilient mode ON.
-  cfg_.g_error_resilient = 1;
-  cfg_.kf_mode = VPX_KF_DISABLED;
-  SetPatternSwitch(60);
+    // Error resilient mode ON.
+    cfg_.g_error_resilient = 1;
+    cfg_.kf_mode = VPX_KF_DISABLED;
+    SetPatternSwitch(60);
 
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  // Test that no mismatches have been found
-  std::cout << "             Mismatch frames: "
-            << GetMismatchFrames() << "\n";
-  EXPECT_EQ(GetMismatchFrames(), (unsigned int) 0);
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    // Test that no mismatches have been found
+    std::cout << "             Mismatch frames: "
+              << GetMismatchFrames() << "\n";
+    EXPECT_EQ(GetMismatchFrames(), (unsigned int) 0);
 
-  // Reset previously set of error/droppable frames.
-  Reset();
+    // Reset previously set of error/droppable frames.
+    Reset();
+  }
 }
 
 class ErrorResilienceTestLargeCodecControls : public ::libvpx_test::EncoderTest,
@@ -579,9 +591,13 @@ TEST_P(ErrorResilienceTestLargeCodecControls, CodecControl3TemporalLayers) {
   }
 }
 
-VP8_INSTANTIATE_TEST_CASE(ErrorResilienceTestLarge, ONE_PASS_TEST_MODES);
+VP8_INSTANTIATE_TEST_CASE(ErrorResilienceTestLarge, ONE_PASS_TEST_MODES,
+                          ::testing::Values(SvcSupported));
 VP8_INSTANTIATE_TEST_CASE(ErrorResilienceTestLargeCodecControls,
                           ONE_PASS_TEST_MODES);
-VP9_INSTANTIATE_TEST_CASE(ErrorResilienceTestLarge, ONE_PASS_TEST_MODES);
-VP10_INSTANTIATE_TEST_CASE(ErrorResilienceTestLarge, ONE_PASS_TEST_MODES);
+VP9_INSTANTIATE_TEST_CASE(ErrorResilienceTestLarge, ONE_PASS_TEST_MODES,
+                          ::testing::Values(SvcSupported));
+// SVC-related tests don't run for VP10 since SVC is not supported.
+VP10_INSTANTIATE_TEST_CASE(ErrorResilienceTestLarge, ONE_PASS_TEST_MODES,
+                           ::testing::Values(SvcNotSupported));
 }  // namespace
