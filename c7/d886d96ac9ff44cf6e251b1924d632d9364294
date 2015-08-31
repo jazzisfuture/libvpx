@@ -1,0 +1,7 @@
+Verified+1: WebM Builds <builds@webmproject.org>
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Submitted-by: Shunyao Li <shunyaoli@google.com>
+Submitted-at: Mon, 31 Aug 2015 20:44:44 +0000
+Reviewed-on: https://chromium-review.googlesource.com/296321
+Project: webm/libvpx
+Branch: refs/heads/nextgen
