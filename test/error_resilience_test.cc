@@ -297,6 +297,7 @@ TEST_P(ErrorResilienceTestLarge, DropFramesWithoutRecovery) {
 #endif
 }
 
+#if !CONFIG_VP10
 // Check for successful decoding and no encoder/decoder mismatch
 // if we lose (i.e., drop before decoding) the enhancement layer frames for a
 // two layer temporal pattern. The base layer does not predict from the top
@@ -381,6 +382,7 @@ TEST_P(ErrorResilienceTestLarge, 2LayersNoRefLast) {
   // Reset previously set of error/droppable frames.
   Reset();
 }
+#endif
 
 class ErrorResilienceTestLargeCodecControls : public ::libvpx_test::EncoderTest,
     public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
