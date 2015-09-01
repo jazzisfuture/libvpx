@@ -1456,6 +1456,10 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
                           &tile_data->bit_reader, pbi->decrypt_cb,
                           pbi->decrypt_state);
       vp10_init_macroblockd(cm, &tile_data->xd, tile_data->dqcoeff);
+#if CONFIG_PALETTE
+      tile_data->xd.plane[0].color_index_map = tile_data->color_index_map[0];
+      tile_data->xd.plane[1].color_index_map = tile_data->color_index_map[1];
+#endif  // CONFIG_PALETTE
     }
   }
 
@@ -1677,6 +1681,10 @@ static const uint8_t *decode_tiles_mt(VP10Decoder *pbi,
                           &tile_data->bit_reader, pbi->decrypt_cb,
                           pbi->decrypt_state);
       vp10_init_macroblockd(cm, &tile_data->xd, tile_data->dqcoeff);
+#if CONFIG_PALETTE
+      tile_data->xd.plane[0].color_index_map = tile_data->color_index_map[0];
+      tile_data->xd.plane[1].color_index_map = tile_data->color_index_map[1];
+#endif  // CONFIG_PALETTE
 
       worker->had_error = 0;
       if (i == num_workers - 1 || n == tile_cols - 1) {
@@ -1841,6 +1849,10 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
       memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
       pbi->need_resync = 0;
     }
+#if CONFIG_PALETTE
+    if (cm->current_video_frame == 0)
+      cm->allow_screen_content_tools = vpx_rb_read_bit(rb);
+#endif  // CONFIG_PALETTE
   } else {
     cm->intra_only = cm->show_frame ? 0 : vpx_rb_read_bit(rb);
 
