@@ -597,7 +597,6 @@ process_toolchain() {
           ;;
           *) check_add_cflags -Wunused-but-set-variable ;;
         esac
-        enabled extra_warnings || check_add_cflags -Wno-unused-function
     fi
 
     if enabled icc; then
