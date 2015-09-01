@@ -26,7 +26,7 @@ extern void vpx_dsp_rtcd();
 extern void vpx_scale_rtcd();
 }
 
-static void append_negative_gtest_filter(const char *str) {
+void append_negative_gtest_filter(const char *str) {
   std::string filter = ::testing::FLAGS_gtest_filter;
   // Negative patterns begin with one '-' followed by a ':' separated list.
   if (filter.find('-') == std::string::npos) filter += '-';
