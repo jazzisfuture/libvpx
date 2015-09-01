@@ -275,6 +275,9 @@ typedef struct VP10Common {
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
   int above_context_alloc_cols;
+#if CONFIG_SCREEN_CONTENT
+  int allow_screen_content_tools;
+#endif  // CONFIG_SCREEN_CONTENT
 } VP10_COMMON;
 
 // TODO(hkuang): Don't need to lock the whole pool after implementing atomic

@@ -1542,6 +1542,10 @@ void vp10_change_config(struct VP10_COMP *cpi, const VP10EncoderConfig *oxcf) {
   cpi->ext_refresh_frame_flags_pending = 0;
   cpi->ext_refresh_frame_context_pending = 0;
 
+#if CONFIG_SCREEN_CONTENT
+  cm->allow_screen_content_tools = (cpi->oxcf.content == VP9E_CONTENT_SCREEN);
+#endif  // CONFIG_SCREEN_CONTENT
+
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_set_var_fns(cpi);
 #endif

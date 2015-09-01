@@ -265,6 +265,7 @@ EXPERIMENT_LIST="
     fp_mb_stats
     emulate_hardware
     ext_tx
+    screen_content
 "
 CONFIG_LIST="
     dependency_tracking
