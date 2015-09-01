@@ -134,4 +134,7 @@ VP10_CX_SRCS-$(HAVE_MSA) += encoder/mips/msa/fdct16x16_msa.c
 VP10_CX_SRCS-$(HAVE_MSA) += encoder/mips/msa/fdct_msa.h
 VP10_CX_SRCS-$(HAVE_MSA) += encoder/mips/msa/temporal_filter_msa.c
 
+VP10_CX_SRCS-$(CONFIG_PALETTE) += encoder/palette.h
+VP10_CX_SRCS-$(CONFIG_PALETTE) += encoder/palette.c
+
 VP10_CX_SRCS-yes := $(filter-out $(VP10_CX_SRCS_REMOVE-yes),$(VP10_CX_SRCS-yes))

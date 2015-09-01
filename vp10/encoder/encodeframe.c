@@ -1028,6 +1028,11 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
     p[i].eobs = ctx->eobs_pbuf[i][2];
   }
 
+#if CONFIG_PALETTE
+  for (i = 0; i < 2; ++i)
+    pd[i].color_index_map = ctx->color_index_map[i];
+#endif  // CONFIG_PALETTE
+
   // Restore the coding context of the MB to that that was in place
   // when the mode was picked for it
   for (y = 0; y < mi_height; y++)
@@ -1189,6 +1194,10 @@ static void rd_pick_sb_modes(VP10_COMP *cpi,
     pd[i].dqcoeff = ctx->dqcoeff_pbuf[i][0];
     p[i].eobs = ctx->eobs_pbuf[i][0];
   }
+#if CONFIG_PALETTE
+  for (i = 0; i < 2; ++i)
+    pd[i].color_index_map = ctx->color_index_map[i];
+#endif  // CONFIG_PALETTE
   ctx->is_coded = 0;
   ctx->skippable = 0;
   ctx->pred_pixel_ready = 0;
@@ -4164,6 +4173,25 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     if (output_enabled)
       sum_intra_stats(td->counts, mi);
     vp10_tokenize_sb(cpi, td, t, !output_enabled, MAX(bsize, BLOCK_8X8));
+#if CONFIG_PALETTE
+    if (bsize >= BLOCK_8X8 && output_enabled) {
+      if (mbmi->palette_mode_info.palette_size[0] > 0) {
+        int rows = 4 * num_4x4_blocks_high_lookup[bsize];
+        int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
+
+        if (mbmi->palette_mode_info.palette_color_map[0] != NULL) {
+          vpx_free(mbmi->palette_mode_info.palette_color_map[0]);
+          mbmi->palette_mode_info.palette_color_map[0] = NULL;
+        }
+        CHECK_MEM_ERROR(cm, mbmi->palette_mode_info.palette_color_map[0],
+                        vpx_memalign(16, rows * cols *
+                                     sizeof(xd->plane[0].color_index_map[0])));
+        memcpy(mbmi->palette_mode_info.palette_color_map[0],
+               xd->plane[0].color_index_map,
+               rows * cols * sizeof(xd->plane[0].color_index_map[0]));
+      }
+    }
+#endif  // CONFIG_PALETTE
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);

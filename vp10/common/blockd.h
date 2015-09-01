@@ -62,6 +62,18 @@ typedef struct {
 #define MAX_REF_FRAMES  4
 typedef int8_t MV_REFERENCE_FRAME;
 
+#if CONFIG_PALETTE
+typedef struct {
+  int palette_size[2];
+  uint8_t *palette_color_map[2];
+#if CONFIG_VP9_HIGHBITDEPTH
+  uint16_t palette_colors[3 * PALETTE_MAX_SIZE];
+#else
+  uint8_t palette_colors[3 * PALETTE_MAX_SIZE];
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+} PALETTE_MODE_INFO;
+#endif  // CONFIG_PALETTE
+
 // This structure now relates to 8x8 block regions.
 typedef struct {
   // Common for both INTER and INTRA blocks
@@ -74,6 +86,9 @@ typedef struct {
 
   // Only for INTRA blocks
   PREDICTION_MODE uv_mode;
+#if CONFIG_PALETTE
+  PALETTE_MODE_INFO palette_mode_info;
+#endif  // CONFIG_PALETTE
 
   // Only for INTER blocks
   INTERP_FILTER interp_filter;
@@ -127,6 +142,9 @@ struct macroblockd_plane {
   ENTROPY_CONTEXT *above_context;
   ENTROPY_CONTEXT *left_context;
   int16_t seg_dequant[MAX_SEGMENTS][2];
+#if CONFIG_PALETTE
+  uint8_t *color_index_map;
+#endif  // CONFIG_PALETTE
 
   // number of 4x4s in current block
   uint16_t n4_w, n4_h;
