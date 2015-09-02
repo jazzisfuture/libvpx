@@ -1981,7 +1981,8 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi,
     // different (low QP) state, then not re-adjusting them may cause next
     // frame to select low QP and overshoot again.
     // TODO(marpan): Check if rate correction factor should also be adjusted.
-    cpi->rc.avg_frame_qindex[INTER_FRAME] = *q;
+    cpi->rc.avg_frame_qindex[INTER_FRAME] =
+        (cpi->rc.avg_frame_qindex[INTER_FRAME] + *q) >> 1;
     rc->buffer_level = rc->optimal_buffer_level;
     rc->bits_off_target = rc->optimal_buffer_level;
     return 1;

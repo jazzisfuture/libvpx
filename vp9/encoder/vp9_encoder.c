@@ -3255,12 +3255,9 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
       vp9_set_quantizer(cm, q);
       vp9_set_variance_partition_thresholds(cpi, q);
       suppress_active_map(cpi);
-      // Turn-off cyclic refresh for re-encoded frame.
-      if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
-        unsigned char *const seg_map = cpi->segmentation_map;
-        memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
-        vp9_disable_segmentation(&cm->seg);
-      }
+      // Turn-off and reset cyclic refresh on re-encoded frame.
+      if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
+        vp9_cyclic_refresh_reset_reencode(cpi);
       apply_active_map(cpi);
       vp9_encode_frame(cpi);
     }
