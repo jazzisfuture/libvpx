@@ -18,6 +18,10 @@
 extern "C" {
 #endif
 
+#if CONFIG_SCREEN_CONTENT
+#define PALETTE_MAX_SIZE 8
+#endif  // CONFIG_SCREEN_CONTENT
+
 void vp10_init_intra_predictors(void);
 
 void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,

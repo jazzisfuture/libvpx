@@ -1841,6 +1841,12 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
       memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
       pbi->need_resync = 0;
     }
+#if CONFIG_SCREEN_CONTENT
+    if (cm->current_video_frame == 0)
+      cm->allow_screen_content_tools = vpx_rb_read_bit(rb);
+    //printf("\n cm->allow_screen_content_tools %d\n",
+      //     cm->allow_screen_content_tools);
+#endif  // CONFIG_SCREEN_CONTENT
   } else {
     cm->intra_only = cm->show_frame ? 0 : vpx_rb_read_bit(rb);
 

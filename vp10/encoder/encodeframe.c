@@ -1028,6 +1028,11 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
     p[i].eobs = ctx->eobs_pbuf[i][2];
   }
 
+#if CONFIG_SCREEN_CONTENT
+  for (i = 0; i < 2; ++i)
+    pd[i].color_index_map = ctx->color_index_map[i];
+#endif  // CONFIG_SCREEN_CONTENT
+
   // Restore the coding context of the MB to that that was in place
   // when the mode was picked for it
   for (y = 0; y < mi_height; y++)
@@ -1189,6 +1194,10 @@ static void rd_pick_sb_modes(VP10_COMP *cpi,
     pd[i].dqcoeff = ctx->dqcoeff_pbuf[i][0];
     p[i].eobs = ctx->eobs_pbuf[i][0];
   }
+#if CONFIG_SCREEN_CONTENT
+  for (i = 0; i < 2; ++i)
+    pd[i].color_index_map = ctx->color_index_map[i];
+#endif  // CONFIG_SCREEN_CONTENT
   ctx->is_coded = 0;
   ctx->skippable = 0;
   ctx->pred_pixel_ready = 0;

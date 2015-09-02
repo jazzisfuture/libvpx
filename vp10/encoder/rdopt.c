@@ -36,6 +36,9 @@
 #include "vp10/encoder/encoder.h"
 #include "vp10/encoder/mcomp.h"
 #include "vp10/encoder/quantize.h"
+#if CONFIG_SCREEN_CONTENT
+#include "vp10/encoder/palette.h"
+#endif  // CONFIG_SCREEN_CONTENT
 #include "vp10/encoder/ratectrl.h"
 #include "vp10/encoder/rd.h"
 #include "vp10/encoder/rdopt.h"
@@ -1051,6 +1054,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   int64_t this_distortion, this_rd;
   TX_SIZE best_tx = TX_4X4;
   int *bmode_costs;
+#if CONFIG_SCREEN_CONTENT
+  int palette_mode = 0;
+#endif  // CONFIG_SCREEN_CONTENT
   const MODE_INFO *above_mi = xd->above_mi;
   const MODE_INFO *left_mi = xd->left_mi;
   const PREDICTION_MODE A = vp10_above_block_mode(mic, above_mi, 0);
@@ -1091,6 +1097,92 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
       *skippable      = s;
     }
   }
+
+#if CONFIG_SCREEN_CONTENT
+  if (cpi->common.allow_screen_content_tools) {
+    int colors, n;
+    int rows = 4 * num_4x4_blocks_high_lookup[bsize];
+    int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
+    int src_stride = x->plane[0].src.stride;
+    uint8_t *src = x->plane[0].src.buf;
+
+    colors = vp10_count_colors(src, src_stride, rows, cols);
+    //printf("colors  %4d \n", colors);
+    if (colors > 1 && colors <= 64 && cpi->common.allow_screen_content_tools) {
+      int lb = src[0], ub = src[0];
+      int r, c, i, j, k;
+      int max_itr = 50;
+      int val;
+      double *data = vpx_calloc(rows * cols, sizeof(*data));
+      int *indices = vpx_calloc(rows * cols, sizeof(*indices));
+      double centroids[PALETTE_MAX_SIZE];
+
+      for (r = 0; r < rows; ++r) {
+        for (c = 0; c < cols; ++c) {
+          val = src[r * src_stride + c];
+          data[r * cols + c] = val;
+          if (val < lb)
+            lb = val;
+          else if (val > ub)
+            ub = val;
+        }
+      }
+
+      for (n = colors > PALETTE_MAX_SIZE ? PALETTE_MAX_SIZE : colors;
+          n >= 2; --n) {
+        for (i = 0; i < n; ++i)
+          centroids[i] = lb + (2 * i + 1) * (ub - lb) / n / 2;
+        vp10_k_means(data, centroids, indices, rows * cols, n, 1, max_itr);
+        vp10_insertion_sort(centroids, n);
+        i = 1;
+        k = n;
+        while (i < k) {
+          if (centroids[i] == centroids[i - 1]) {
+            j = i;
+            while (j < k - 1) {
+              centroids[j] = centroids[j + 1];
+              ++j;
+            }
+            --k;
+          } else {
+            ++i;
+          }
+        }
+
+        for (i = 0; i < k; ++i) {
+          //mic->mbmi.palette_colors[i] = clip_pixel(round(centroids[i]));
+        }
+
+
+#if 0
+        if (1) {
+          printf("n = %d\n", n);
+
+          for (r = 0; r < rows; ++r) {
+            for (c = 0; c < cols; ++c) {
+              printf("%4d ", src[r * src_stride + c]);
+            }
+            printf("\n");
+          }
+          printf("\n");
+
+          for (r = 0; r < rows; ++r) {
+            for (c = 0; c < cols; ++c) {
+              printf("%4d ", (int)centroids[indices[r * cols + c]]);
+            }
+            printf("\n");
+          }
+          printf("\n");
+        }
+#endif
+
+      }
+
+      vpx_free(data);
+      vpx_free(indices);
+    }
+  }
+#endif  // CONFIG_SCREEN_CONTENT
 
   mic->mbmi.mode = mode_selected;
   mic->mbmi.tx_size = best_tx;

@@ -43,6 +43,13 @@ static void alloc_mode_context(VP10_COMMON *cm, int num_4x4_blk,
       ctx->eobs_pbuf[i][k]    = ctx->eobs[i][k];
     }
   }
+
+#if CONFIG_SCREEN_CONTENT
+  for (i = 0; i < 2; ++i)
+    CHECK_MEM_ERROR(cm, ctx->color_index_map[i],
+                    vpx_memalign(16, num_pix *
+                                 sizeof(*ctx->color_index_map[i])));
+#endif  // CONFIG_SCREEN_CONTENT
 }
 
 static void free_mode_context(PICK_MODE_CONTEXT *ctx) {
@@ -61,6 +68,13 @@ static void free_mode_context(PICK_MODE_CONTEXT *ctx) {
       ctx->eobs[i][k] = 0;
     }
   }
+
+#if CONFIG_SCREEN_CONTENT
+  for (i = 0; i < 2; ++i) {
+    vpx_free(ctx->color_index_map[i]);
+    ctx->color_index_map[i] = 0;
+  }
+#endif  // CONFIG_SCREEN_CONTENT
 }
 
 static void alloc_tree_contexts(VP10_COMMON *cm, PC_TREE *tree,
