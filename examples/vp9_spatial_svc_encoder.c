@@ -560,6 +560,7 @@ int main(int argc, const char **argv) {
   VpxVideoWriter *outfile[VPX_TS_MAX_LAYERS] = {NULL};
   struct RateControlStats rc;
   vpx_svc_layer_id_t layer_id;
+  vpx_svc_frame_flags_t frame_flags_spatial;
   int sl, tl;
   double sum_bitrate = 0.0;
   double sum_bitrate2 = 0.0;
@@ -647,6 +648,22 @@ int main(int argc, const char **argv) {
       // We need one extra vpx_svc_encode call at end of stream to flush
       // encoder and get remaining data
       end_of_stream = 1;
+    }
+
+    // For BYPASS/FLEXIBLE mode, set the frame flags (reference and updates)
+    // and the buffer indices for each spatial layer of the current
+    // (super)-frame to be encoded.
+    // TODO(marpan): Rename the "temporal_layering_mode_bypass" mode to just
+    // VP9E_LAYERING_MODE_BYPASS.
+    if (svc_ctx.temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
+      int sl = 0;
+      for (sl = 0; sl < svc_ctx.spatial_layers; ++sl) {
+        frame_flags_spatial.frame_flags[sl] = 0;
+        frame_flags_spatial.lst_fb_idx[sl] = 0;
+        frame_flags_spatial.gld_fb_idx[sl] = 1;
+        frame_flags_spatial.alt_fb_idx[sl] = 2;
+      }
+      vpx_codec_control(&codec, VP9E_SET_SVC_FRAME_FLAGS, &frame_flags_spatial);
     }
 
     vpx_usec_timer_start(&timer);
