@@ -574,3 +574,16 @@ void vp9_cyclic_refresh_reset_resize(VP9_COMP *const cpi) {
   cr->sb_index = 0;
   cpi->refresh_golden_frame = 1;
 }
+
+void vp9_cyclic_refresh_reset_reencode(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  unsigned char *const seg_map = cpi->segmentation_map;
+  memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
+  vp9_disable_segmentation(&cm->seg);
+  memset(cr->last_coded_q_map, MAXQ,
+         cm->mi_rows * cm->mi_cols * sizeof(*cr->last_coded_q_map));
+  memset(cr->map, 0, cm->mi_rows * cm->mi_cols);
+  cr->sb_index = 0;
+  cpi->refresh_golden_frame = 1;
+}
