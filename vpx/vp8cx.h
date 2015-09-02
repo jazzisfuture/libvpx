@@ -547,6 +547,14 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_GET_ACTIVEMAP,
+
+  /*!\brief Codec control function to set frame flags for spatial layers.
+   *
+   * By default the value is set as 0.
+   *
+   * Supported in codecs: VP9
+  */
+  VP9E_SET_SVC_FRAME_FLAGS,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -673,6 +681,22 @@ typedef struct vpx_svc_layer_id {
   int temporal_layer_id;      /**< Temporal layer id number. */
 } vpx_svc_layer_id_t;
 
+/*!\brief  vp9 svc frame flag parameters.
+ *
+ * This defines the frame flags and buffer indices for each spatial layer for
+ * svc encoding.
+ * This is used with the #VP9E_SET_SVC_FRAME_FLAGS control to set the frame
+ * flags and buffer indices for each spatial layer for the current (super)frame.
+ *
+ */
+typedef struct vpx_svc_frame_flags {
+  int frame_flags[VPX_TS_MAX_LAYERS];  /**< Frame flags. */
+  int lst_fb_idx[VPX_TS_MAX_LAYERS];  /**< Last buffer index. */
+  int gld_fb_idx[VPX_TS_MAX_LAYERS];  /**< Golden buffer index. */
+  int alt_fb_idx[VPX_TS_MAX_LAYERS];  /**< Altref buffer index. */
+} vpx_svc_frame_flags_t;
+
+
 /*!\brief VP8 encoder control function parameter type
  *
  * Defines the data types that VP8E control functions take. Note that
@@ -698,6 +722,7 @@ VPX_CTRL_USE_TYPE(VP9E_SET_SVC,                int)
 VPX_CTRL_USE_TYPE(VP9E_SET_SVC_PARAMETERS,     void *)
 VPX_CTRL_USE_TYPE(VP9E_REGISTER_CX_CALLBACK,   void *)
 VPX_CTRL_USE_TYPE(VP9E_SET_SVC_LAYER_ID,       vpx_svc_layer_id_t *)
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_FRAME_FLAGS,    vpx_svc_frame_flags_t *)
 
 VPX_CTRL_USE_TYPE(VP8E_SET_CPUUSED,            int)
 VPX_CTRL_USE_TYPE(VP8E_SET_ENABLEAUTOALTREF,   unsigned int)
