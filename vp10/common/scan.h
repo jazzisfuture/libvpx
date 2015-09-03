@@ -42,6 +42,15 @@ static INLINE const scan_order *get_scan(TX_SIZE tx_size, TX_TYPE tx_type) {
   return &vp10_scan_orders[tx_size][tx_type];
 }
 
+extern const scan_order vp10_inter_scan_orders[TX_SIZES][TOTAL_TX_TYPES];
+
+static INLINE const scan_order *get_inter_scan(TX_SIZE tx_size, TX_TYPE tx_type) {
+#if CONFIG_EXT_TX
+  return &vp10_inter_scan_orders[tx_size][tx_type];
+#else
+  return &vp10_scan_orders[tx_size][tx_type];
+#endif  // CONFIG_EXT_TX
+}
 #ifdef __cplusplus
 }  // extern "C"
 #endif
