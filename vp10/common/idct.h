@@ -16,7 +16,7 @@
 #include "./vpx_config.h"
 #include "vp10/common/common.h"
 #include "vp10/common/enums.h"
-#include "vpx_dsp/inv_txfm.h"
+#include "vp10/common/vp10_inv_txfm.h"
 #include "vpx_dsp/txfm_common.h"
 #include "vpx_ports/mem.h"
 
