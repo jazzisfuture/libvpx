@@ -1092,8 +1092,18 @@ static void write_uncompressed_header(VP10_COMP *cpi,
     if (!cm->show_frame)
       vpx_wb_write_bit(wb, cm->intra_only);
 
-    if (!cm->error_resilient_mode)
-      vpx_wb_write_literal(wb, cm->reset_frame_context, 2);
+    if (!cm->error_resilient_mode) {
+      if (cm->intra_only) {
+        vpx_wb_write_bit(wb,
+                         cm->reset_frame_context == RESET_FRAME_CONTEXT_ALL);
+      } else {
+        vpx_wb_write_bit(wb,
+                         cm->reset_frame_context != RESET_FRAME_CONTEXT_NONE);
+        if (cm->reset_frame_context != RESET_FRAME_CONTEXT_NONE)
+          vpx_wb_write_bit(wb,
+                           cm->reset_frame_context == RESET_FRAME_CONTEXT_ALL);
+      }
+    }
 
     if (cm->intra_only) {
       write_sync_code(wb);
