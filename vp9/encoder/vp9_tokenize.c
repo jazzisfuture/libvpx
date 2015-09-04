@@ -431,7 +431,7 @@ const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS] = {
 };
 #endif
 
-const struct vp9_token vp9_coef_encodings[ENTROPY_TOKENS] = {
+const struct vpx_token vp9_coef_encodings[ENTROPY_TOKENS] = {
   {2, 2}, {6, 3}, {28, 5}, {58, 6}, {59, 6}, {60, 6}, {61, 6}, {124, 7},
   {125, 7}, {126, 7}, {127, 7}, {0, 1}
 };
