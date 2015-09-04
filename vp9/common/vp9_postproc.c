@@ -691,7 +691,8 @@ int vp9_post_proc_frame(struct VP9Common *cm,
   if ((flags & VP9D_MFQE) && cm->current_video_frame >= 2 &&
       cm->postproc_state.last_frame_valid && cm->bit_depth == 8 &&
       cm->postproc_state.last_base_qindex <= last_q_thresh &&
-      cm->base_qindex - cm->postproc_state.last_base_qindex >= q_diff_thresh) {
+      cm->base_qindex - cm->postproc_state.last_base_qindex >= q_diff_thresh &&
+      cm->width == cm->last_width && cm->height == cm->last_height) {
     vp9_mfqe(cm);
     // TODO(jackychen): Consider whether enable deblocking by default
     // if mfqe is enabled. Need to take both the quality and the speed
