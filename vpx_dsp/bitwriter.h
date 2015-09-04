@@ -19,6 +19,11 @@
 extern "C" {
 #endif
 
+struct vpx_token {
+  int value;
+  int len;
+};
+
 typedef struct vpx_writer {
   unsigned int lowvalue;
   unsigned int range;
@@ -26,9 +31,6 @@ typedef struct vpx_writer {
   unsigned int pos;
   uint8_t *buffer;
 } vpx_writer;
-
-void vpx_start_encode(vpx_writer *bc, uint8_t *buffer);
-void vpx_stop_encode(vpx_writer *bc);
 
 static INLINE void vpx_write(vpx_writer *br, int bit, int probability) {
   unsigned int split;
@@ -88,6 +90,23 @@ static INLINE void vpx_write_literal(vpx_writer *w, int data, int bits) {
   for (bit = bits - 1; bit >= 0; bit--)
     vpx_write_bit(w, 1 & (data >> bit));
 }
+
+static INLINE void vpx_write_tree(vpx_writer *w, const vpx_tree_index *tree,
+                                  const vpx_prob *probs, int bits, int len,
+                                  vpx_tree_index i) {
+  do {
+    const int bit = (bits >> --len) & 1;
+    vpx_write(w, bit, probs[i >> 1]);
+    i = tree[i + bit];
+  } while (len);
+}
+
+void vpx_tree_probs_from_distribution(vpx_tree tree,
+                                      unsigned int branch_ct[ /* n - 1 */ ][2],
+                                      const unsigned int num_events[ /* n */ ]);
+void vpx_tokens_from_tree(struct vpx_token*, const vpx_tree_index *);
+void vpx_start_encode(vpx_writer *bc, uint8_t *buffer);
+void vpx_stop_encode(vpx_writer *bc);
 
 #define vpx_write_prob(w, v) vpx_write_literal((w), (v), 8)
 

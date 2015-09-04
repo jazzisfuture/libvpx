@@ -49,7 +49,6 @@ VP10_CX_SRCS-yes += encoder/ratectrl.h
 VP10_CX_SRCS-yes += encoder/rd.h
 VP10_CX_SRCS-yes += encoder/rdopt.h
 VP10_CX_SRCS-yes += encoder/tokenize.h
-VP10_CX_SRCS-yes += encoder/treewriter.h
 VP10_CX_SRCS-yes += encoder/mcomp.c
 VP10_CX_SRCS-yes += encoder/encoder.c
 VP10_CX_SRCS-yes += encoder/picklpf.c
@@ -69,7 +68,6 @@ VP10_CX_SRCS-yes += encoder/resize.h
 VP10_CX_SRCS-$(CONFIG_INTERNAL_STATS) += encoder/blockiness.c
 
 VP10_CX_SRCS-yes += encoder/tokenize.c
-VP10_CX_SRCS-yes += encoder/treewriter.c
 VP10_CX_SRCS-yes += encoder/aq_variance.c
 VP10_CX_SRCS-yes += encoder/aq_variance.h
 VP10_CX_SRCS-yes += encoder/aq_cyclicrefresh.c

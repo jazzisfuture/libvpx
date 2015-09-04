@@ -51,7 +51,6 @@ VP9_CX_SRCS-yes += encoder/vp9_rdopt.h
 VP9_CX_SRCS-yes += encoder/vp9_pickmode.h
 VP9_CX_SRCS-yes += encoder/vp9_svc_layercontext.h
 VP9_CX_SRCS-yes += encoder/vp9_tokenize.h
-VP9_CX_SRCS-yes += encoder/vp9_treewriter.h
 VP9_CX_SRCS-yes += encoder/vp9_mcomp.c
 VP9_CX_SRCS-yes += encoder/vp9_encoder.c
 VP9_CX_SRCS-yes += encoder/vp9_picklpf.c
@@ -73,7 +72,6 @@ VP9_CX_SRCS-yes += encoder/vp9_resize.h
 VP9_CX_SRCS-$(CONFIG_INTERNAL_STATS) += encoder/vp9_blockiness.c
 
 VP9_CX_SRCS-yes += encoder/vp9_tokenize.c
-VP9_CX_SRCS-yes += encoder/vp9_treewriter.c
 VP9_CX_SRCS-yes += encoder/vp9_aq_variance.c
 VP9_CX_SRCS-yes += encoder/vp9_aq_variance.h
 VP9_CX_SRCS-yes += encoder/vp9_aq_cyclicrefresh.c
