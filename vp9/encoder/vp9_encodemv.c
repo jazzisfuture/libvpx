@@ -18,16 +18,16 @@
 
 #include "vpx_dsp/vpx_dsp_common.h"
 
-static struct vp9_token mv_joint_encodings[MV_JOINTS];
-static struct vp9_token mv_class_encodings[MV_CLASSES];
-static struct vp9_token mv_fp_encodings[MV_FP_SIZE];
-static struct vp9_token mv_class0_encodings[CLASS0_SIZE];
+static struct vpx_token mv_joint_encodings[MV_JOINTS];
+static struct vpx_token mv_class_encodings[MV_CLASSES];
+static struct vpx_token mv_fp_encodings[MV_FP_SIZE];
+static struct vpx_token mv_class0_encodings[CLASS0_SIZE];
 
 void vp9_entropy_mv_init(void) {
-  vp9_tokens_from_tree(mv_joint_encodings, vp9_mv_joint_tree);
-  vp9_tokens_from_tree(mv_class_encodings, vp9_mv_class_tree);
-  vp9_tokens_from_tree(mv_class0_encodings, vp9_mv_class0_tree);
-  vp9_tokens_from_tree(mv_fp_encodings, vp9_mv_fp_tree);
+  vpx_tokens_from_tree(mv_joint_encodings, vp9_mv_joint_tree);
+  vpx_tokens_from_tree(mv_class_encodings, vp9_mv_class_tree);
+  vpx_tokens_from_tree(mv_class0_encodings, vp9_mv_class0_tree);
+  vpx_tokens_from_tree(mv_fp_encodings, vp9_mv_fp_tree);
 }
 
 static void encode_mv_component(vpx_writer* w, int comp,
@@ -46,13 +46,15 @@ static void encode_mv_component(vpx_writer* w, int comp,
   vpx_write(w, sign, mvcomp->sign);
 
   // Class
-  vp9_write_token(w, vp9_mv_class_tree, mvcomp->classes,
-                  &mv_class_encodings[mv_class]);
+  vpx_write_tree(w, vp9_mv_class_tree, mvcomp->classes,
+                 mv_class_encodings[mv_class].value,
+                 mv_class_encodings[mv_class].len, 0);
 
   // Integer bits
   if (mv_class == MV_CLASS_0) {
-    vp9_write_token(w, vp9_mv_class0_tree, mvcomp->class0,
-                    &mv_class0_encodings[d]);
+    vpx_write_tree(w, vp9_mv_class0_tree, mvcomp->class0,
+                   mv_class0_encodings[d].value,
+                   mv_class0_encodings[d].len, 0);
   } else {
     int i;
     const int n = mv_class + CLASS0_BITS - 1;  // number of bits
@@ -61,9 +63,9 @@ static void encode_mv_component(vpx_writer* w, int comp,
   }
 
   // Fractional bits
-  vp9_write_token(w, vp9_mv_fp_tree,
-                  mv_class == MV_CLASS_0 ?  mvcomp->class0_fp[d] : mvcomp->fp,
-                  &mv_fp_encodings[fr]);
+  vpx_write_tree(w, vp9_mv_fp_tree,
+                 mv_class == MV_CLASS_0 ?  mvcomp->class0_fp[d] : mvcomp->fp,
+                     mv_fp_encodings[fr].value, mv_fp_encodings[fr].len, 0);
 
   // High precision bit
   if (usehp)
@@ -157,7 +159,7 @@ static void write_mv_update(const vpx_tree_index *tree,
   // Assuming max number of probabilities <= 32
   assert(n <= 32);
 
-  vp9_tree_probs_from_distribution(tree, branch_ct, counts);
+  vpx_tree_probs_from_distribution(tree, branch_ct, counts);
   for (i = 0; i < n - 1; ++i)
     update_mv(w, branch_ct[i], &probs[i], MV_UPDATE_PROB);
 }
@@ -208,7 +210,8 @@ void vp9_encode_mv(VP9_COMP* cpi, vpx_writer* w,
   const MV_JOINT_TYPE j = vp9_get_mv_joint(&diff);
   usehp = usehp && vp9_use_mv_hp(ref);
 
-  vp9_write_token(w, vp9_mv_joint_tree, mvctx->joints, &mv_joint_encodings[j]);
+  vpx_write_tree(w, vp9_mv_joint_tree, mvctx->joints,
+                 mv_joint_encodings[j].value, mv_joint_encodings[j].len, 0);
   if (mv_joint_vertical(j))
     encode_mv_component(w, diff.row, &mvctx->comps[0], usehp);
 

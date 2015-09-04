@@ -35,26 +35,29 @@
 #include "vp9/encoder/vp9_subexp.h"
 #include "vp9/encoder/vp9_tokenize.h"
 
-static const struct vp9_token intra_mode_encodings[INTRA_MODES] = {
+static const struct vpx_token intra_mode_encodings[INTRA_MODES] = {
   {0, 1}, {6, 3}, {28, 5}, {30, 5}, {58, 6}, {59, 6}, {126, 7}, {127, 7},
   {62, 6}, {2, 2}};
-static const struct vp9_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
+static const struct vpx_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
   {{0, 1}, {2, 2}, {3, 2}};
-static const struct vp9_token partition_encodings[PARTITION_TYPES] =
+static const struct vpx_token partition_encodings[PARTITION_TYPES] =
   {{0, 1}, {2, 2}, {6, 3}, {7, 3}};
-static const struct vp9_token inter_mode_encodings[INTER_MODES] =
+static const struct vpx_token inter_mode_encodings[INTER_MODES] =
   {{2, 2}, {6, 3}, {0, 1}, {7, 3}};
 
 static void write_intra_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {
-  vp9_write_token(w, vp9_intra_mode_tree, probs, &intra_mode_encodings[mode]);
+  vpx_write_tree(w, vp9_intra_mode_tree, probs,
+                 intra_mode_encodings[mode].value,
+                 intra_mode_encodings[mode].len, 0);
 }
 
 static void write_inter_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {
   assert(is_inter_mode(mode));
-  vp9_write_token(w, vp9_inter_mode_tree, probs,
-                  &inter_mode_encodings[INTER_OFFSET(mode)]);
+  vpx_write_tree(w, vp9_inter_mode_tree, probs,
+                 inter_mode_encodings[INTER_OFFSET(mode)].value,
+                 inter_mode_encodings[INTER_OFFSET(mode)].len, 0);
 }
 
 static void encode_unsigned_max(struct vpx_write_bit_buffer *wb,
@@ -72,7 +75,7 @@ static void prob_diff_update(const vpx_tree_index *tree,
   // Assuming max number of probabilities <= 32
   assert(n <= 32);
 
-  vp9_tree_probs_from_distribution(tree, branch_ct, counts);
+  vpx_tree_probs_from_distribution(tree, branch_ct, counts);
   for (i = 0; i < n - 1; ++i)
     vp9_cond_prob_diff_update(w, &probs[i], branch_ct[i]);
 }
@@ -127,7 +130,7 @@ static void pack_mb_tokens(vpx_writer *w,
 
   while (p < stop && p->token != EOSB_TOKEN) {
     const int t = p->token;
-    const struct vp9_token *const a = &vp9_coef_encodings[t];
+    const struct vpx_token *const a = &vp9_coef_encodings[t];
     int i = 0;
     int v = a->value;
     int n = a->len;
@@ -161,12 +164,12 @@ static void pack_mb_tokens(vpx_writer *w,
     if (t >= TWO_TOKEN && t < EOB_TOKEN) {
       int len = UNCONSTRAINED_NODES - p->skip_eob_node;
       int bits = v >> (n - len);
-      vp9_write_tree(w, vp9_coef_tree, p->context_tree, bits, len, i);
-      vp9_write_tree(w, vp9_coef_con_tree,
+      vpx_write_tree(w, vp9_coef_tree, p->context_tree, bits, len, i);
+      vpx_write_tree(w, vp9_coef_con_tree,
                      vp9_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
                      v, n - len, 0);
     } else {
-      vp9_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
+      vpx_write_tree(w, vp9_coef_tree, p->context_tree, v, n, i);
     }
 
     if (b->base_val) {
@@ -196,7 +199,7 @@ static void pack_mb_tokens(vpx_writer *w,
 static void write_segment_id(vpx_writer *w, const struct segmentation *seg,
                              int segment_id) {
   if (seg->enabled && seg->update_map)
-    vp9_write_tree(w, vp9_segment_tree, seg->tree_probs, segment_id, 3, 0);
+    vpx_write_tree(w, vp9_segment_tree, seg->tree_probs, segment_id, 3, 0);
 }
 
 // This function encodes the reference frame
@@ -303,9 +306,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 
     if (cm->interp_filter == SWITCHABLE) {
       const int ctx = vp9_get_pred_context_switchable_interp(xd);
-      vp9_write_token(w, vp9_switchable_interp_tree,
-                      cm->fc->switchable_interp_prob[ctx],
-                      &switchable_interp_encodings[mbmi->interp_filter]);
+      vpx_write_tree(w, vp9_switchable_interp_tree,
+                     cm->fc->switchable_interp_prob[ctx],
+                     switchable_interp_encodings[mbmi->interp_filter].value,
+                     switchable_interp_encodings[mbmi->interp_filter].len, 0);
       ++cpi->interp_filter_selected[0][mbmi->interp_filter];
     } else {
       assert(mbmi->interp_filter == cm->interp_filter);
@@ -413,7 +417,8 @@ static void write_partition(const VP9_COMMON *const cm,
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
 
   if (has_rows && has_cols) {
-    vp9_write_token(w, vp9_partition_tree, probs, &partition_encodings[p]);
+    vpx_write_tree(w, vp9_partition_tree, probs, partition_encodings[p].value,
+                   partition_encodings[p].len, 0);
   } else if (!has_rows && has_cols) {
     assert(p == PARTITION_SPLIT || p == PARTITION_HORZ);
     vpx_write(w, p == PARTITION_SPLIT, probs[1]);
@@ -514,7 +519,7 @@ static void build_tree_distribution(VP9_COMP *cpi, TX_SIZE tx_size,
     for (j = 0; j < REF_TYPES; ++j) {
       for (k = 0; k < COEF_BANDS; ++k) {
         for (l = 0; l < BAND_COEFF_CONTEXTS(k); ++l) {
-          vp9_tree_probs_from_distribution(vp9_coef_tree,
+          vpx_tree_probs_from_distribution(vp9_coef_tree,
                                            coef_branch_ct[i][j][k][l],
                                            coef_counts[i][j][k][l]);
           coef_branch_ct[i][j][k][l][0][1] = eob_branch_ct[i][j][k][l] -

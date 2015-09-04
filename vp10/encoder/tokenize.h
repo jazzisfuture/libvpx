@@ -11,10 +11,9 @@
 #ifndef VP10_ENCODER_TOKENIZE_H_
 #define VP10_ENCODER_TOKENIZE_H_
 
+#include "vpx_dsp/bitwriter.h"
 #include "vp10/common/entropy.h"
-
 #include "vp10/encoder/block.h"
-#include "vp10/encoder/treewriter.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +42,7 @@ typedef struct {
 
 extern const vpx_tree_index vp10_coef_tree[];
 extern const vpx_tree_index vp10_coef_con_tree[];
-extern const struct vp10_token vp10_coef_encodings[];
+extern const struct vpx_token vp10_coef_encodings[];
 
 int vp10_is_skippable_in_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane);
 int vp10_has_high_freq_in_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane);
