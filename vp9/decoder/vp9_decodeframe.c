@@ -598,8 +598,8 @@ static void dec_build_inter_predictors(VP9Decoder *const pbi, MACROBLOCKD *xd,
     y0_16 = sf->scale_value_y(y0_16, sf);
 
     // Map the top left corner of the block into the reference frame.
-    x0 = sf->scale_value_x(x_start + x, sf);
-    y0 = sf->scale_value_y(y_start + y, sf);
+    x0 = sf->scale_value_x(x_start, sf) + sf->scale_value_x(x, sf);
+    y0 = sf->scale_value_y(y_start, sf) + sf->scale_value_y(y, sf);
 
     // Scale the MV and incorporate the sub-pixel offset of the block
     // in the reference frame.
