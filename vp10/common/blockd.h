@@ -69,7 +69,7 @@ typedef struct {
   BLOCK_SIZE sb_type;
   PREDICTION_MODE mode;
   TX_SIZE tx_size;
-  int8_t skip;
+  int8_t skip, has_no_coeffs;
   int8_t segment_id;
   int8_t seg_id_predicted;  // valid only when temporal_update is enabled
 

@@ -754,7 +754,7 @@ static void build_masks(const loop_filter_info_n *const lfi_n,
 
   // If the block has no coefficients and is not intra we skip applying
   // the loop filter on block edges.
-  if (mbmi->skip && is_inter_block(mbmi))
+  if ((mbmi->skip || mbmi->has_no_coeffs) && is_inter_block(mbmi))
     return;
 
   // Here we are adding a mask for the transform size. The transform
@@ -812,7 +812,7 @@ static void build_y_mask(const loop_filter_info_n *const lfi_n,
   *above_y |= above_prediction_mask[block_size] << shift_y;
   *left_y |= left_prediction_mask[block_size] << shift_y;
 
-  if (mbmi->skip && is_inter_block(mbmi))
+  if ((mbmi->skip || mbmi->has_no_coeffs) && is_inter_block(mbmi))
     return;
 
   *above_y |= (size_mask[block_size] &
