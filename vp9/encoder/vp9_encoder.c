@@ -773,6 +773,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   cm->use_highbitdepth = oxcf->use_highbitdepth;
 #endif
   cm->color_space = oxcf->color_space;
+  cm->color_range = oxcf->color_range;
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
@@ -1460,6 +1461,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
     cm->profile = oxcf->profile;
   cm->bit_depth = oxcf->bit_depth;
   cm->color_space = oxcf->color_space;
+  cm->color_range = oxcf->color_range;
 
   if (cm->profile <= PROFILE_1)
     assert(cm->bit_depth == VPX_BITS_8);
