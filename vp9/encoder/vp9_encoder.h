@@ -239,6 +239,8 @@ typedef struct VP9EncoderConfig {
 #endif
   vpx_color_space_t color_space;
   int color_range;
+  int display_width;
+  int display_height;
   VP9E_TEMPORAL_LAYERING_MODE temporal_layering_mode;
 } VP9EncoderConfig;
 

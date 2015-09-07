@@ -1505,8 +1505,13 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
   cm->interp_filter = cpi->sf.default_interp_filter;
 
-  cm->display_width = cpi->oxcf.width;
-  cm->display_height = cpi->oxcf.height;
+  if (cpi->oxcf.display_width > 0 && cpi->oxcf.display_height > 0) {
+    cm->display_width = cpi->oxcf.display_width;
+    cm->display_height = cpi->oxcf.display_height;
+  } else {
+    cm->display_width = cpi->oxcf.width;
+    cm->display_height = cpi->oxcf.height;
+  }
   cm->width = cpi->oxcf.width;
   cm->height = cpi->oxcf.height;
 

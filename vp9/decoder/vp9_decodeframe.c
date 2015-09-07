@@ -1257,6 +1257,8 @@ static void setup_frame_size(VP9_COMMON *cm, struct vpx_read_bit_buffer *rb) {
   pool->frame_bufs[cm->new_fb_idx].buf.bit_depth = (unsigned int)cm->bit_depth;
   pool->frame_bufs[cm->new_fb_idx].buf.color_space = cm->color_space;
   pool->frame_bufs[cm->new_fb_idx].buf.color_range = cm->color_range;
+  pool->frame_bufs[cm->new_fb_idx].buf.display_width  = cm->display_width;
+  pool->frame_bufs[cm->new_fb_idx].buf.display_height = cm->display_height;
 }
 
 static INLINE int valid_ref_frame_img_fmt(vpx_bit_depth_t ref_bit_depth,
@@ -1339,6 +1341,8 @@ static void setup_frame_size_with_refs(VP9_COMMON *cm,
   pool->frame_bufs[cm->new_fb_idx].buf.bit_depth = (unsigned int)cm->bit_depth;
   pool->frame_bufs[cm->new_fb_idx].buf.color_space = cm->color_space;
   pool->frame_bufs[cm->new_fb_idx].buf.color_range = cm->color_range;
+  pool->frame_bufs[cm->new_fb_idx].buf.display_width  = cm->display_width;
+  pool->frame_bufs[cm->new_fb_idx].buf.display_height = cm->display_height;
 }
 
 static void setup_tile_info(VP9_COMMON *cm, struct vpx_read_bit_buffer *rb) {
@@ -1949,6 +1953,8 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
 #endif
   get_frame_new_buffer(cm)->color_space = cm->color_space;
   get_frame_new_buffer(cm)->color_range = cm->color_range;
+  get_frame_new_buffer(cm)->display_width  = cm->display_width;
+  get_frame_new_buffer(cm)->display_height = cm->display_height;
 
   if (pbi->need_resync) {
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,

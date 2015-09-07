@@ -556,6 +556,14 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_SET_COLOR_RANGE,
+
+  /*!\brief Codec control function to set physical image size.
+   *
+   * By default, this is identical to the image size in pixels.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_PHYSICAL_SIZE,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -682,6 +690,16 @@ typedef struct vpx_svc_layer_id {
   int temporal_layer_id;      /**< Temporal layer id number. */
 } vpx_svc_layer_id_t;
 
+/*!\brief  vp9 physical image size parameters
+ *
+ * Defines the physical size (in arbitrary units) of the image to be encoded.
+ *
+ */
+typedef struct vpx_physical_size_t {
+  int width;       /**< Physical width. */
+  int height;      /**< Physical height. */
+} vpx_physical_size_t;
+
 /*!\brief VP8 encoder control function parameter type
  *
  * Defines the data types that VP8E control functions take. Note that
@@ -768,6 +786,8 @@ VPX_CTRL_USE_TYPE(VP9E_SET_MAX_GF_INTERVAL,  unsigned int)
 VPX_CTRL_USE_TYPE(VP9E_GET_ACTIVEMAP, vpx_active_map_t *)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_COLOR_RANGE, int)
+
+VPX_CTRL_USE_TYPE(VP9E_SET_PHYSICAL_SIZE, vpx_physical_size_t *)
 /*! @} - end defgroup vp8_encoder */
 #ifdef __cplusplus
 }  // extern "C"
