@@ -10,6 +10,7 @@
 
 #include <math.h>
 
+#include "vp9/encoder/vp9_aq_cyclicrefresh.h"
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_extend.h"
@@ -22,6 +23,8 @@
 void vp9_init_layer_context(VP9_COMP *const cpi) {
   SVC *const svc = &cpi->svc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  int mi_rows = cpi->common.mi_rows;
+  int mi_cols = cpi->common.mi_cols;
   int sl, tl;
   int alt_ref_idx = svc->number_spatial_layers;
 
@@ -52,6 +55,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
       int layer = LAYER_IDS_TO_IDX(sl, tl, oxcf->ts_number_layers);
       LAYER_CONTEXT *const lc = &svc->layer_context[layer];
       RATE_CONTROL *const lrc = &lc->rc;
+      size_t last_coded_q_map_size;
       int i;
       lc->current_video_frame_in_layer = 0;
       lc->layer_size = 0;
@@ -94,6 +98,21 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
       lrc->buffer_level = oxcf->starting_buffer_level_ms *
                               lc->target_bandwidth / 1000;
       lrc->bits_off_target = lrc->buffer_level;
+
+      // Initialize the cyclic refresh parameters. If spatial layers are used
+      // (i.e., ss_number_layers > 1), these need to updated per spatial layer.
+      // Cyclic refresh is only applied on base temporal layer.
+      if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+          oxcf->ss_number_layers > 1 &&
+          tl == 0) {
+        lc->sb_index = 0;
+        lc->map = vpx_calloc(mi_rows * mi_cols, sizeof(*lc->map));
+        last_coded_q_map_size =
+            mi_rows * mi_cols * sizeof(*lc->last_coded_q_map);
+        lc->last_coded_q_map = vpx_malloc(last_coded_q_map_size);
+        assert(MAXQ <= 255);
+        memset(lc->last_coded_q_map, MAXQ, last_coded_q_map_size);
+      }
     }
   }
 
@@ -244,6 +263,7 @@ void vp9_update_spatial_layer_framerate(VP9_COMP *const cpi, double framerate) {
 
 void vp9_restore_layer_context(VP9_COMP *const cpi) {
   LAYER_CONTEXT *const lc = get_layer_context(cpi);
+  VP9_COMMON *const cm = &cpi->common;
   const int old_frame_since_key = cpi->rc.frames_since_key;
   const int old_frame_to_key = cpi->rc.frames_to_key;
 
@@ -257,16 +277,43 @@ void vp9_restore_layer_context(VP9_COMP *const cpi) {
     cpi->rc.frames_since_key = old_frame_since_key;
     cpi->rc.frames_to_key = old_frame_to_key;
   }
+
+  // For spatial-svc, allow cyclic-refresh to be applied on the spatial layers,
+  // for the base temporal layer.
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+      cm->seg.enabled &&
+      cpi->svc.number_spatial_layers > 0 &&
+      cpi->svc.temporal_layer_id == 0) {
+    CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+    int num_mb = cm->mi_rows * cm->mi_cols;
+    memcpy(cr->map, lc->map, num_mb);
+    memcpy(cr->last_coded_q_map, lc->last_coded_q_map, num_mb);
+    cr->sb_index = lc->sb_index;
+  }
 }
 
 void vp9_save_layer_context(VP9_COMP *const cpi) {
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  VP9_COMMON *const cm = &cpi->common;
   LAYER_CONTEXT *const lc = get_layer_context(cpi);
 
   lc->rc = cpi->rc;
   lc->twopass = cpi->twopass;
   lc->target_bandwidth = (int)oxcf->target_bandwidth;
   lc->alt_ref_source = cpi->alt_ref_source;
+
+  // For spatial-svc, allow cyclic-refresh to be applied on the spatial layers,
+  // for the base temporal layer.
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+      cm->seg.enabled &&
+      cpi->svc.number_spatial_layers > 0 &&
+      cpi->svc.temporal_layer_id == 0) {
+    CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+    int num_mb = cm->mi_rows * cm->mi_cols;
+    memcpy(lc->map, cr->map, num_mb);
+    memcpy(lc->last_coded_q_map, cr->last_coded_q_map, num_mb);
+    lc->sb_index = cr->sb_index;
+  }
 }
 
 void vp9_init_second_pass_spatial_svc(VP9_COMP *cpi) {
