@@ -93,6 +93,7 @@ extern const vpx_tree_index vp10_switchable_interp_tree
 #define PALETTE_MAX_SIZE 8
 
 extern const vpx_prob default_palette_y_mode_prob[10][3];
+extern const vpx_prob default_palette_uv_mode_prob[2];
 extern const vpx_prob default_palette_y_size_prob[10][PALETTE_SIZES - 1];
 extern const vpx_prob default_palette_uv_size_prob[10][PALETTE_SIZES - 1];
 extern const vpx_prob default_palette_y_color_prob

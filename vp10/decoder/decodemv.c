@@ -252,6 +252,7 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
   mbmi->palette_mode_info.palette_size[1] = 0;
   if (bsize >= BLOCK_8X8 && cm->allow_screen_content_tools) {
     int palette_ctx = 0;
+    PALETTE_MODE_INFO *pmi = &mbmi->palette_mode_info;
     if (above_mi)
       palette_ctx += (above_mi->mbmi.palette_mode_info.palette_size[0] > 0);
     if (left_mi)
@@ -264,14 +265,13 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
       int color_idx, color_ctx, color_order[PALETTE_MAX_SIZE];
       uint8_t *color_map = xd->plane[0].color_index_map;
 
-      mbmi->palette_mode_info.palette_size[0] =
+      pmi->palette_size[0] =
           vpx_read_tree(r, vp10_palette_size_tree,
                         default_palette_y_size_prob[bsize - BLOCK_8X8]) + 2;
-      n = mbmi->palette_mode_info.palette_size[0];
+      n = pmi->palette_size[0];
 
       for (i = 0; i < n; ++i)
-        mbmi->palette_mode_info.palette_colors[i] =
-            vpx_read_literal(r, cm->bit_depth);
+        pmi->palette_colors[i] = vpx_read_literal(r, cm->bit_depth);
 
       color_map[0] = vpx_read_literal(r, vp10_ceil_log2(n));
       for (i = 0; i < rows; ++i) {
@@ -282,6 +282,45 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
               vpx_read_tree(r, vp10_palette_color_tree,
                             default_palette_y_color_prob[n - 2][color_ctx]);
           color_map[i * cols + j] = color_order[color_idx];
+        }
+      }
+    }
+
+    if (vpx_read(r, default_palette_uv_mode_prob[pmi->palette_size[0] > 0])) {
+      int n, j;
+      int rows = 4 * num_4x4_blocks_high_lookup[bsize] >>
+          xd->plane[1].subsampling_y;
+      int cols = 4 * num_4x4_blocks_wide_lookup[bsize] >>
+          xd->plane[1].subsampling_x;
+      int color_idx, color_ctx, color_order[PALETTE_MAX_SIZE];
+      uint8_t *color_map = xd->plane[1].color_index_map;
+
+      if (xd->plane[1].subsampling_x || xd->plane[1].subsampling_y)
+        pmi->palette_size[1] =
+            vpx_read_tree(r, vp10_palette_size_tree,
+                          default_palette_uv_size_prob[bsize - BLOCK_8X8]) + 2;
+      else
+        pmi->palette_size[1] = pmi->palette_size[0];
+      n = pmi->palette_size[1];
+
+      for (i = 0; i < n; ++i)
+        pmi->palette_colors[PALETTE_MAX_SIZE + i] =
+            vpx_read_literal(r, cm->bit_depth);
+      for (i = 0; i < n; ++i)
+        pmi->palette_colors[2 * PALETTE_MAX_SIZE + i] =
+            vpx_read_literal(r, cm->bit_depth);
+
+      if (xd->plane[1].subsampling_x || xd->plane[1].subsampling_y) {
+        color_map[0] = vpx_read_literal(r, vp10_ceil_log2(n));
+        for (i = 0; i < rows; ++i) {
+          for (j = (i == 0 ? 1 : 0); j < cols; ++j) {
+            color_ctx = vp10_get_palette_color_context(color_map, cols, i, j, n,
+                                                       color_order);
+            color_idx =
+                vpx_read_tree(r, vp10_palette_color_tree,
+                              default_palette_uv_color_prob[n - 2][color_ctx]);
+            color_map[i * cols + j] = color_order[color_idx];
+          }
         }
       }
     }
