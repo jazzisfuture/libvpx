@@ -784,6 +784,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest,
       encoder->Control(VP9E_SET_TILE_COLUMNS, 0);
       encoder->Control(VP8E_SET_MAX_INTRA_BITRATE_PCT, 300);
       encoder->Control(VP9E_SET_TILE_COLUMNS, (cfg_.g_threads >> 1));
+      encoder->Control(VP9E_SET_AQ_MODE, 3);
     }
     const vpx_rational_t tb = video->timebase();
     timebase_ = static_cast<double>(tb.num) / tb.den;
