@@ -41,6 +41,10 @@ typedef struct {
   int has_alt_frame;
   size_t layer_size;
   struct vpx_psnr_pkt psnr_pkt;
+  // Cyclic refresh parameters (aq-mode=3), that need to be updated per-frame.
+  int sb_index;
+  signed char *map;
+  uint8_t *last_coded_q_map;
 } LAYER_CONTEXT;
 
 typedef struct {
