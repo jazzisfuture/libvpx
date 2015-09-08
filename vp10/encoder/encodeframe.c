@@ -4142,6 +4142,9 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
   MODE_INFO **mi_8x8 = xd->mi;
   MODE_INFO *mi = mi_8x8[0];
   MB_MODE_INFO *mbmi = &mi->mbmi;
+#if CONFIG_PALETTE
+  PALETTE_MODE_INFO *pmi = &mbmi->palette_mode_info;
+#endif  // CONFIG_PALETTE
   const int seg_skip = segfeature_active(&cm->seg, mbmi->segment_id,
                                          SEG_LVL_SKIP);
   const int mis = cm->mi_stride;
@@ -4175,20 +4178,38 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     vp10_tokenize_sb(cpi, td, t, !output_enabled, MAX(bsize, BLOCK_8X8));
 #if CONFIG_PALETTE
     if (bsize >= BLOCK_8X8 && output_enabled) {
-      if (mbmi->palette_mode_info.palette_size[0] > 0) {
+      if (pmi->palette_size[0] > 0) {
         int rows = 4 * num_4x4_blocks_high_lookup[bsize];
         int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
 
-        if (mbmi->palette_mode_info.palette_color_map[0] != NULL) {
-          vpx_free(mbmi->palette_mode_info.palette_color_map[0]);
-          mbmi->palette_mode_info.palette_color_map[0] = NULL;
+        if (pmi->palette_color_map[0] != NULL) {
+          vpx_free(pmi->palette_color_map[0]);
+          pmi->palette_color_map[0] = NULL;
         }
-        CHECK_MEM_ERROR(cm, mbmi->palette_mode_info.palette_color_map[0],
+        CHECK_MEM_ERROR(cm, pmi->palette_color_map[0],
                         vpx_memalign(16, rows * cols *
                                      sizeof(xd->plane[0].color_index_map[0])));
-        memcpy(mbmi->palette_mode_info.palette_color_map[0],
+        memcpy(pmi->palette_color_map[0],
                xd->plane[0].color_index_map,
                rows * cols * sizeof(xd->plane[0].color_index_map[0]));
+      }
+
+      if (pmi->palette_size[1] > 0) {
+        int rows = (4 * num_4x4_blocks_high_lookup[bsize]) >>
+            (xd->plane[1].subsampling_x);
+        int cols = (4 * num_4x4_blocks_wide_lookup[bsize]) >>
+            (xd->plane[1].subsampling_y);
+
+        if (pmi->palette_color_map[1] != NULL) {
+          vpx_free(pmi->palette_color_map[1]);
+          pmi->palette_color_map[1] = NULL;
+        }
+        CHECK_MEM_ERROR(cm, pmi->palette_color_map[1],
+                        vpx_memalign(16, rows * cols *
+                                     sizeof(xd->plane[1].color_index_map[0])));
+        memcpy(pmi->palette_color_map[1],
+               xd->plane[1].color_index_map,
+               rows * cols * sizeof(xd->plane[1].color_index_map[0]));
       }
     }
 #endif  // CONFIG_PALETTE

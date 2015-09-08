@@ -285,7 +285,7 @@ const vpx_tree_index vp10_palette_size_tree[TREE_SIZE(PALETTE_SIZES)] = {
     -SEVEN_COLORS, -EIGHT_COLORS,
 };
 
-// TODO (huisu): tune these probs
+// TODO(huisu): tune these probs
 const vpx_prob default_palette_y_size_prob[10][PALETTE_SIZES - 1] = {
     {  96,  89, 100,  64,  77, 130},
     {  22,  15,  44,  16,  34,  82},
@@ -326,7 +326,7 @@ const vpx_prob default_palette_y_mode_prob[10][3] = {
 };
 
 
-const vpx_prob default_uv_palette_mode_prob[2] = {
+const vpx_prob default_palette_uv_mode_prob[2] = {
     253, 229
 };
 

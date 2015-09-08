@@ -1568,6 +1568,7 @@ void vp10_change_config(struct VP10_COMP *cpi, const VP10EncoderConfig *oxcf) {
 
 #if CONFIG_PALETTE
   cm->allow_screen_content_tools = (cpi->oxcf.content == VP9E_CONTENT_SCREEN);
+  cm->allow_screen_content_tools = 1;
 #endif  // CONFIG_PALETTE
 
 #if CONFIG_VP9_HIGHBITDEPTH
