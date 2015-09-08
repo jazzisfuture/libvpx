@@ -125,8 +125,7 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
     }
 
     if (prev_frame_mvs->ref_frame[1] > INTRA_FRAME &&
-        prev_frame_mvs->ref_frame[1] != ref_frame &&
-        prev_frame_mvs->mv[1].as_int != prev_frame_mvs->mv[0].as_int) {
+        prev_frame_mvs->ref_frame[1] != ref_frame) {
       int_mv mv = prev_frame_mvs->mv[1];
       if (ref_sign_bias[prev_frame_mvs->ref_frame[1]] !=
           ref_sign_bias[ref_frame]) {
