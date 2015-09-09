@@ -1015,7 +1015,11 @@ void vp10_setup_mask(VP10_COMMON *const cm, const int mi_row, const int mi_col,
       lfm->above_uv[i] &= mask_uv;
     }
     lfm->int_4x4_y &= mask_y;
+#if CONFIG_MISC_FIXES
+    lfm->int_4x4_uv_masked[0] = lfm->int_4x4_uv & mask_uv;
+#else
     lfm->int_4x4_uv &= mask_uv;
+#endif
 
     // We don't apply a wide loop filter on the last uv block row. If set
     // apply the shorter one instead.
@@ -1049,7 +1053,11 @@ void vp10_setup_mask(VP10_COMMON *const cm, const int mi_row, const int mi_col,
       lfm->above_uv[i] &= mask_uv;
     }
     lfm->int_4x4_y &= mask_y;
+#if CONFIG_MISC_FIXES
+    lfm->int_4x4_uv_masked[1] = lfm->int_4x4_uv & mask_uv_int;
+#else
     lfm->int_4x4_uv &= mask_uv_int;
+#endif
 
     // We don't apply a wide loop filter on the last uv column. If set
     // apply the shorter one instead.
@@ -1442,7 +1450,11 @@ void vp10_filter_block_plane_ss11(VP10_COMMON *const cm,
   uint16_t mask_16x16 = lfm->left_uv[TX_16X16];
   uint16_t mask_8x8 = lfm->left_uv[TX_8X8];
   uint16_t mask_4x4 = lfm->left_uv[TX_4X4];
+#if CONFIG_MISC_FIXES
+  uint16_t mask_4x4_int = lfm->int_4x4_uv_masked[1];
+#else
   uint16_t mask_4x4_int = lfm->int_4x4_uv;
+#endif
 
   assert(plane->subsampling_x == 1 && plane->subsampling_y == 1);
 
@@ -1494,7 +1506,11 @@ void vp10_filter_block_plane_ss11(VP10_COMMON *const cm,
   mask_16x16 = lfm->above_uv[TX_16X16];
   mask_8x8 = lfm->above_uv[TX_8X8];
   mask_4x4 = lfm->above_uv[TX_4X4];
+#if CONFIG_MISC_FIXES
+  mask_4x4_int = lfm->int_4x4_uv_masked[0];
+#else
   mask_4x4_int = lfm->int_4x4_uv;
+#endif
 
   for (r = 0; r < MI_BLOCK_SIZE && mi_row + r < cm->mi_rows; r += 2) {
     const int skip_border_4x4_r = mi_row + r == cm->mi_rows - 1;
