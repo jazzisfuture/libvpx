@@ -3787,11 +3787,6 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
     int64_t total_sse = INT_MAX;
     int early_term = 0;
     struct buf_2d backup_yv12[2][MAX_MB_PLANE];
-    const YV12_BUFFER_CONFIG *scaled_ref_frame[2] = {
-        vp9_get_scaled_ref_frame(cpi, vp9_ref_order[ref_index].ref_frame[0]),
-        vp9_get_scaled_ref_frame(cpi, vp9_ref_order[ref_index].ref_frame[1])
-    };
-    int ref;
 
     ref_frame = vp9_ref_order[ref_index].ref_frame[0];
     second_ref_frame = vp9_ref_order[ref_index].ref_frame[1];
@@ -3926,6 +3921,12 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
       BEST_SEG_INFO bsi[SWITCHABLE_FILTERS];
       int pred_exists = 0;
       int uv_skippable;
+
+      const YV12_BUFFER_CONFIG *scaled_ref_frame[2] = {
+          vp9_get_scaled_ref_frame(cpi, vp9_ref_order[ref_index].ref_frame[0]),
+          vp9_get_scaled_ref_frame(cpi, vp9_ref_order[ref_index].ref_frame[1])
+      };
+      int ref;
 
       for (ref = 0; ref < 2; ++ref) {
         if (scaled_ref_frame[ref]) {
@@ -4089,14 +4090,14 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
         skippable = skippable && uv_skippable;
         total_sse += uv_sse;
       }
-    }
 
-    for (ref = 0; ref < 2; ++ref) {
-      if (scaled_ref_frame[ref]) {
-        // Restore the prediction frame pointers to their unscaled versions.
-        int i;
-        for (i = 0; i < MAX_MB_PLANE; ++i)
-          xd->plane[i].pre[ref] = backup_yv12[ref][i];
+      for (ref = 0; ref < 2; ++ref) {
+        if (scaled_ref_frame[ref]) {
+          // Restore the prediction frame pointers to their unscaled versions.
+          int i;
+          for (i = 0; i < MAX_MB_PLANE; ++i)
+            xd->plane[i].pre[ref] = backup_yv12[ref][i];
+        }
       }
     }
 
