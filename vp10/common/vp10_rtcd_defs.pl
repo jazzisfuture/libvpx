@@ -118,8 +118,20 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   }
 }
 
+#
+# Intra pred
+#
+add_proto qw/void vp10_d45_predictor_4x4/, "uint8_t *dst, ptrdiff_t stride, const uint8_t *above, const uint8_t *left";
+specialize qw/vp10_d45_predictor_4x4/;
+
 # High bitdepth functions
 if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+  #
+  # Intra pred
+  #
+  add_proto qw/void vp10_highbd_d45_predictor_4x4/, "uint16_t *dst, ptrdiff_t stride, const uint16_t *above, const uint16_t *left, int bd";
+  specialize qw/vp10_highbd_d45_predictor_4x4/;
+
   #
   # Sub Pixel Filters
   #
