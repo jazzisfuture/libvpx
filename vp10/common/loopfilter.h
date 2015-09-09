@@ -81,6 +81,9 @@ typedef struct {
   uint16_t left_uv[TX_SIZES];
   uint16_t above_uv[TX_SIZES];
   uint16_t int_4x4_uv;
+#if CONFIG_MISC_FIXES
+  uint16_t int_4x4_uv_masked[2];
+#endif
   uint8_t lfl_y[64];
   uint8_t lfl_uv[16];
 } LOOP_FILTER_MASK;
