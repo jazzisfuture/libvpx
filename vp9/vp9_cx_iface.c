@@ -46,6 +46,8 @@ struct vp9_extracfg {
   vp9e_tune_content           content;
   vpx_color_space_t           color_space;
   int                         color_range;
+  int                         display_width;
+  int                         display_height;
 };
 
 static struct vp9_extracfg default_extra_cfg = {
@@ -73,6 +75,8 @@ static struct vp9_extracfg default_extra_cfg = {
   VP9E_CONTENT_DEFAULT,       // content
   VPX_CS_UNKNOWN,             // color space
   0,                          // color range
+  0,                          // display width
+  0,                          // display height
 };
 
 struct vpx_codec_alg_priv {
@@ -469,6 +473,8 @@ static vpx_codec_err_t set_encoder_config(
 
   oxcf->color_space = extra_cfg->color_space;
   oxcf->color_range = extra_cfg->color_range;
+  oxcf->display_width  = extra_cfg->display_width;
+  oxcf->display_height = extra_cfg->display_height;
   oxcf->arnr_max_frames = extra_cfg->arnr_max_frames;
   oxcf->arnr_strength   = extra_cfg->arnr_strength;
   oxcf->min_gf_interval = extra_cfg->min_gf_interval;
@@ -1447,6 +1453,15 @@ static vpx_codec_err_t ctrl_set_color_range(vpx_codec_alg_priv_t *ctx,
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
+static vpx_codec_err_t ctrl_set_physical_size(vpx_codec_alg_priv_t *ctx,
+                                              va_list args) {
+  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  vpx_physical_size_t *const params = va_arg(args, vpx_physical_size_t *);
+  extra_cfg.display_width  = params->width;
+  extra_cfg.display_height = params->height;
+  return update_extra_cfg(ctx, &extra_cfg);
+}
+
 static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP8_COPY_REFERENCE,                ctrl_copy_reference},
   {VP8E_UPD_ENTROPY,                  ctrl_update_entropy},
@@ -1487,6 +1502,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP9E_SET_NOISE_SENSITIVITY,        ctrl_set_noise_sensitivity},
   {VP9E_SET_MIN_GF_INTERVAL,          ctrl_set_min_gf_interval},
   {VP9E_SET_MAX_GF_INTERVAL,          ctrl_set_max_gf_interval},
+  {VP9E_SET_PHYSICAL_SIZE,            ctrl_set_physical_size},
 
   // Getters
   {VP8E_GET_LAST_QUANTIZER,           ctrl_get_quantizer},
