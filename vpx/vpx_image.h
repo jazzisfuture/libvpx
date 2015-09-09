@@ -93,6 +93,10 @@ extern "C" {
     unsigned int  d_w;   /**< Displayed image width */
     unsigned int  d_h;   /**< Displayed image height */
 
+    /* Image physical dimensions */
+    unsigned int  p_w;   /**< Physical image width */
+    unsigned int  p_h;   /**< Physical image height */
+
     /* Chroma subsampling info */
     unsigned int  x_chroma_shift;   /**< subsampling order, X */
     unsigned int  y_chroma_shift;   /**< subsampling order, Y */
