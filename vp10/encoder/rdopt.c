@@ -607,6 +607,21 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
 }
 
+static void choose_smallest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
+                                    int *rate, int64_t *distortion,
+                                    int *skip, int64_t *sse,
+                                    int64_t ref_best_rd,
+                                    BLOCK_SIZE bs) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+
+  mbmi->tx_size = TX_4X4;
+
+  txfm_rd_in_plane(x, rate, distortion, skip,
+                   sse, ref_best_rd, 0, bs,
+                   TX_4X4, cpi->sf.use_fast_coef_costing);
+}
+
 static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
                                    int *rate,
                                    int64_t *distortion,
@@ -705,7 +720,10 @@ static void super_block_yrd(VP10_COMP *cpi, MACROBLOCK *x, int *rate,
 
   assert(bs == xd->mi[0]->mbmi.sb_type);
 
-  if (cpi->sf.tx_size_search_method == USE_LARGESTALL || xd->lossless) {
+  if (CONFIG_MISC_FIXES && xd->lossless[xd->mi[0]->mbmi.segment_id]) {
+    choose_smallest_tx_size(cpi, x, rate, distortion, skip, ret_sse,
+                            ref_best_rd, bs);
+  } else if (cpi->sf.tx_size_search_method == USE_LARGESTALL || xd->lossless) {
     choose_largest_tx_size(cpi, x, rate, distortion, skip, ret_sse, ref_best_rd,
                            bs);
   } else {

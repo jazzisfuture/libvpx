@@ -197,7 +197,7 @@ typedef struct macroblockd {
   int bd;
 #endif
 
-  int lossless;
+  int lossless[MAX_SEGMENTS];
   int corrupted;
 
   struct vpx_internal_error_info *error_info;
