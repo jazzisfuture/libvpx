@@ -94,15 +94,15 @@ typedef enum {
   ADST_DCT  = 1,                      // ADST in vertical, DCT in horizontal
   DCT_ADST  = 2,                      // DCT  in vertical, ADST in horizontal
   ADST_ADST = 3,                      // ADST in both directions
-  TX_TYPES,
 #if CONFIG_EXT_TX
   FLIPADST_DCT = 4,
   DCT_FLIPADST = 5,
   FLIPADST_FLIPADST = 6,
   ADST_FLIPADST = 7,
   FLIPADST_ADST = 8,
-  TOTAL_TX_TYPES,
+  DST_DST = 9,
 #endif  // CONFIG_EXT_TX
+  TX_TYPES,
 } TX_TYPE;
 
 #if CONFIG_EXT_TX
@@ -117,6 +117,7 @@ typedef enum {
   ALT6 = 6,
   ALT7 = 7,
   ALT8 = 8,
+  ALT9 = 9,
   EXT_TX_TYPES
 } EXT_TX_TYPE;
 #endif  // CONFIG_EXT_TX
