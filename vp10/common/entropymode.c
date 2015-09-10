@@ -317,19 +317,20 @@ static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
 #if CONFIG_EXT_TX
 const vpx_tree_index vp10_ext_tx_tree[TREE_SIZE(EXT_TX_TYPES)] = {
   -NORM, 2,
-  4, 10,
-  6, 8,
+  -ALT9, 4,
+  6, 12,
+  8, 10,
   -ALT1, -ALT2,
   -ALT3, -ALT4,
-  12, 14,
+  14, 16,
   -ALT5, -ALT6,
   -ALT7, -ALT8,
 };
 
 static const vpx_prob default_ext_tx_prob[EXT_TX_SIZES][EXT_TX_TYPES - 1] = {
-  { 240, 128, 128, 128, 128, 128, 128, 128 },
-  { 208, 128, 128, 128, 128, 128, 128, 128 },
-  { 176, 128, 128, 128, 128, 128, 128, 128 },
+  { 224, 28, 128, 128, 128, 128, 128, 128, 128 },
+  { 200, 28, 128, 128, 128, 128, 128, 128, 128 },
+  { 176, 28, 128, 128, 128, 128, 128, 128, 128 },
 };
 #endif  // CONFIG_EXT_TX
 

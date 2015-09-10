@@ -100,6 +100,7 @@ typedef enum {
   FLIPADST_FLIPADST = 6,
   ADST_FLIPADST = 7,
   FLIPADST_ADST = 8,
+  DST_DST = 9,
 #endif  // CONFIG_EXT_TX
   TX_TYPES,
 } TX_TYPE;
@@ -116,6 +117,7 @@ typedef enum {
   ALT6 = 6,
   ALT7 = 7,
   ALT8 = 8,
+  ALT9 = 9,
   EXT_TX_TYPES
 } EXT_TX_TYPE;
 #endif  // CONFIG_EXT_TX
