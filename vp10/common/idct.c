@@ -179,12 +179,12 @@ void vp10_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
 }
 
 void vp10_inv_txfm_add_4x4(const tran_low_t *input, uint8_t *dest,
-                           int stride, int eob, TX_TYPE tx_type,
-                           void (*itxm_add_4x4)(const tran_low_t *input,
-                               uint8_t *dest, int stride, int eob)) {
-  switch (tx_type) {
+                           int stride, int eob, TX_TYPE tx_type, int lossless) {
+  if (lossless) {
+    vp10_iwht4x4_add(input, dest, stride, eob);
+  } else switch (tx_type) {
     case DCT_DCT:
-      itxm_add_4x4(input, dest, stride, eob);
+      vp10_idct4x4_add(input, dest, stride, eob);
       break;
     case ADST_DCT:
     case DCT_ADST:
@@ -418,12 +418,12 @@ void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
 
 void vp10_highbd_inv_txfm_add_4x4(const tran_low_t *input, uint8_t *dest,
                                   int stride, int eob, int bd, TX_TYPE tx_type,
-                                  void (*highbd_itxm_add_4x4)
-                                  (const tran_low_t *input, uint8_t *dest,
-                                      int stride, int eob, int bd)) {
-  switch (tx_type) {
+                                  int lossless) {
+  if (lossless) {
+    vp10_highbd_iwht4x4_add(input, dest, stride, eob, bd);
+  } else switch (tx_type) {
     case DCT_DCT:
-      highbd_itxm_add_4x4(input, dest, stride, eob, bd);
+      vp10_highbd_idct4x4_add(input, dest, stride, eob, bd);
       break;
     case ADST_DCT:
     case DCT_ADST:
