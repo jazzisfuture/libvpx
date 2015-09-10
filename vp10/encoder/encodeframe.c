@@ -2574,7 +2574,7 @@ static MV_REFERENCE_FRAME get_frame_type(const VP10_COMP *cpi) {
 }
 
 static TX_MODE select_tx_mode(const VP10_COMP *cpi, MACROBLOCKD *const xd) {
-  if (xd->lossless)
+  if (!cpi->common.seg.enabled && xd->lossless[0])
     return ONLY_4X4;
   if (cpi->sf.tx_size_search_method == USE_LARGESTALL)
     return ALLOW_32X32;
@@ -2696,6 +2696,7 @@ static void encode_frame_internal(VP10_COMP *cpi) {
   VP10_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   RD_COUNTS *const rdc = &cpi->td.rd_counts;
+  int i;
 
   xd->mi = cm->mi_grid_visible;
   xd->mi[0] = cm->mi;
@@ -2705,13 +2706,15 @@ static void encode_frame_internal(VP10_COMP *cpi) {
   vp10_zero(rdc->comp_pred_diff);
   vp10_zero(rdc->filter_diff);
 
-  xd->lossless = cm->base_qindex == 0 &&
-                 cm->y_dc_delta_q == 0 &&
-                 cm->uv_dc_delta_q == 0 &&
-                 cm->uv_ac_delta_q == 0;
-
-  if (xd->lossless)
-    x->optimize = 0;
+  for (i = 0; i < (cm->seg.enabled ? 8 : 1); i++)
+    xd->lossless[i] = cm->y_dc_delta_q == 0 &&
+#if CONFIG_MISC_FIXES
+                      vp10_get_qindex(&cm->seg, i, cm->base_qindex) == 0 &&
+#else
+                      cm->base_qindex == 0 &&
+#endif
+                      cm->uv_dc_delta_q == 0 &&
+                      cm->uv_ac_delta_q == 0;
 
   cm->tx_mode = select_tx_mode(cpi, xd);
 
