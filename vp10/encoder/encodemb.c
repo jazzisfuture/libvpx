@@ -367,7 +367,11 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
                                scan_order->scan, scan_order->iscan);
         break;
       case TX_4X4:
-        x->fwd_txm4x4(src_diff, coeff, diff_stride);
+        if (xd->lossless) {
+          vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
+        } else {
+          vpx_highbd_fdct4x4(src_diff, coeff, diff_stride);
+        }
         vp10_highbd_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
                                p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                                pd->dequant, eob,
@@ -403,7 +407,11 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
                         scan_order->scan, scan_order->iscan);
       break;
     case TX_4X4:
-      x->fwd_txm4x4(src_diff, coeff, diff_stride);
+      if (xd->lossless) {
+        vp10_fwht4x4(src_diff, coeff, diff_stride);
+      } else {
+        vpx_fdct4x4(src_diff, coeff, diff_stride);
+      }
       vp10_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
                       p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                       pd->dequant, eob,
@@ -453,7 +461,11 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
                                pd->dequant[0], eob);
         break;
       case TX_4X4:
-        x->fwd_txm4x4(src_diff, coeff, diff_stride);
+        if (xd->lossless) {
+          vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
+        } else {
+          vpx_highbd_fdct4x4(src_diff, coeff, diff_stride);
+        }
         vpx_highbd_quantize_dc(coeff, 16, x->skip_block, p->round,
                                p->quant_fp[0], qcoeff, dqcoeff,
                                pd->dequant[0], eob);
@@ -485,7 +497,11 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
                       pd->dequant[0], eob);
       break;
     case TX_4X4:
-      x->fwd_txm4x4(src_diff, coeff, diff_stride);
+      if (xd->lossless) {
+        vp10_fwht4x4(src_diff, coeff, diff_stride);
+      } else {
+        vpx_fdct4x4(src_diff, coeff, diff_stride);
+      }
       vpx_quantize_dc(coeff, 16, x->skip_block, p->round,
                       p->quant_fp[0], qcoeff, dqcoeff,
                       pd->dequant[0], eob);
@@ -496,13 +512,13 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
   }
 }
 
-void vp10_fwd_txfm_4x4(const int16_t *src_diff,
-                       tran_low_t *coeff, int diff_stride, TX_TYPE tx_type,
-                       void (*fwd_txm4x4)(const int16_t *input,
-                           tran_low_t *output, int stride)) {
-  switch (tx_type) {
+void vp10_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
+                       int diff_stride, TX_TYPE tx_type, int lossless) {
+  if (lossless) {
+    vp10_fwht4x4(src_diff, coeff, diff_stride);
+  } else switch (tx_type) {
     case DCT_DCT:
-      fwd_txm4x4(src_diff, coeff, diff_stride);
+      vpx_fdct4x4(src_diff, coeff, diff_stride);
       break;
     case ADST_DCT:
     case DCT_ADST:
@@ -565,12 +581,13 @@ static void fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
-                              int diff_stride, TX_TYPE tx_type,
-                              void (*highbd_fwd_txm4x4)(const int16_t *input,
-                                  tran_low_t *output, int stride)) {
-  switch (tx_type) {
+                              int diff_stride, TX_TYPE tx_type, int lossless) {
+  if (lossless) {
+    assert(tx_type == DCT_DCT);
+    vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
+  } else switch (tx_type) {
     case DCT_DCT:
-      highbd_fwd_txm4x4(src_diff, coeff, diff_stride);
+      vpx_highbd_fdct4x4(src_diff, coeff, diff_stride);
       break;
     case ADST_DCT:
     case DCT_ADST:
@@ -681,7 +698,7 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
         break;
       case TX_4X4:
         vp10_highbd_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type,
-                                 x->fwd_txm4x4);
+                                 xd->lossless);
         vpx_highbd_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                               p->quant, p->quant_shift, qcoeff, dqcoeff,
                               pd->dequant, eob,
@@ -717,7 +734,7 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_4X4:
-      vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type, x->fwd_txm4x4);
+      vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type, xd->lossless);
       vpx_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
@@ -1000,7 +1017,7 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
           vpx_highbd_subtract_block(4, 4, src_diff, diff_stride,
                                     src, src_stride, dst, dst_stride, xd->bd);
           vp10_highbd_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type,
-                                   x->fwd_txm4x4);
+                                   xd->lossless);
           vpx_highbd_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                                 p->quant, p->quant_shift, qcoeff, dqcoeff,
                                 pd->dequant, eob,
@@ -1069,7 +1086,7 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (!x->skip_recode) {
         vpx_subtract_block(4, 4, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
-        vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type, x->fwd_txm4x4);
+        vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type, xd->lossless);
         vpx_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round, p->quant,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
