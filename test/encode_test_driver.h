@@ -170,11 +170,13 @@ class Encoder {
   // Flush the encoder on EOS
   void Flush();
 
-  vpx_codec_ctx_t      encoder_;
   vpx_codec_enc_cfg_t  cfg_;
   unsigned long        deadline_;
   unsigned long        init_flags_;
   TwopassStatsStore   *stats_;
+
+ public:
+  vpx_codec_ctx_t      encoder_;
 };
 
 // Common test functionality for all Encoder tests.
