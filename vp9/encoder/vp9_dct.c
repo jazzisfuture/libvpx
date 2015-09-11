@@ -27,82 +27,85 @@ static INLINE tran_high_t fdct_round_shift(tran_high_t input) {
   return rv;
 }
 
+#if CONFIG_EXT_TX
 #if CONFIG_DST1
-static void fdstNxN(const int16_t *input, tran_low_t *output,
-                    int stride, int N) {
-  const int val_2_5 = 6554;
-  const int val_2_9 = 3641;
-  const int val_2_17 = 1928;
+void vp9_fdst4(const tran_low_t *input, tran_low_t *output) {
+  static const int N = 4;
+  // {sin(pi/5), sin(pi*2/5)} * sqrt(2/5) * sqrt(2)
+  static const int32_t sinvalue_lookup[] = {
+    141124871, 228344838,
+  };
   int i, j;
-  int64_t *in = (int64_t *) malloc (N * sizeof(int64_t));
-  int64_t *inter = (int64_t *) malloc (N * sizeof(int64_t));
-  int64_t *mat = (int64_t *) malloc (N * N * sizeof(int64_t));
-  int64_t *mat2 = (int64_t *) malloc (N * N * sizeof(int64_t));
-  int64_t val;
-
-  // 1d dst: transform columns
-  for (j = 0; j < N; j++) {
-    for (i = 0; i < N; i++) {
-      in[i] = input[i * stride + j];
-    }
-    vp9_dst1d_type1(in, inter, N);
-    for (i = 0; i < N; i++)
-      mat2[i * N + j] = inter[i];
-  }
-  // transpose
-  for (i = 0; i < N; i++)
-    for (j = 0; j < N; j++)
-      mat[i*N + j] = mat2[i + j*N];
-
-  switch (N) {
-    case 4:
-      val = val_2_5;
-      break;
-    case 8:
-      val = val_2_9;
-      break;
-    case 16:
-      val = val_2_17;
-      break;
-    default:
-      return;
-  }
-  // 1d dst: transform rows
-  for (j = 0; j < N; j++) {
-    for (i = 0; i < N; i++) {
-      in[i] = mat[i * N + j];
-    }
-    vp9_dst1d_type1(in, inter, N);
-    for (i = 0; i < N; i++) {
-      int64_t tmp = inter[i];
-      tmp = tmp >> DCT_CONST_BITS;
-      tmp *= val;
-      mat[i * N + j] = tmp >> (2 * DCT_CONST_BITS - 3);
-    }
-  }
   for (i = 0; i < N; i++) {
+    int64_t sum = 0;
     for (j = 0; j < N; j++) {
-      output[i * N + j] = WRAPLOW(mat[i * N + j], 8);
+      int idx = (i + 1) * (j + 1);
+      int sign = 0;
+      if (idx > N + 1) {
+        sign = (idx / (N + 1)) & 1;
+        idx %= (N + 1);
+      }
+      idx = idx > N + 1 - idx ? N + 1 - idx : idx;
+      if (idx == 0) continue;
+      idx--;
+      sum += (int64_t)input[j] * sinvalue_lookup[idx] * (sign ? -1 : 1);
     }
+    output[i] = ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS));
   }
-  free(in);
-  free(inter);
-  free(mat);
-  free(mat2);
 }
 
-void vp9_fdst4x4(const int16_t *input, tran_low_t *output, int stride) {
-  fdstNxN(input, output, stride, 4);
+void vp9_fdst8(const tran_low_t *input, tran_low_t *output) {
+  static const int N = 8;
+  // {sin(pi/9), sin(pi*2/9), ..., sin(pi*4/9)} * sqrt(2/9) * 2
+  static const int sinvalue_lookup[] = {
+    86559612, 162678858, 219176632, 249238470
+  };
+  int i, j;
+  for (i = 0; i < N; i++) {
+    int64_t sum = 0;
+    for (j = 0; j < N; j++) {
+      int idx = (i + 1) * (j + 1);
+      int sign = 0;
+      if (idx > N + 1) {
+        sign = (idx / (N + 1)) & 1;
+        idx %= (N + 1);
+      }
+      idx = idx > N + 1 - idx ? N + 1 - idx : idx;
+      if (idx == 0) continue;
+      idx--;
+      sum += (int64_t)input[j] * sinvalue_lookup[idx] * (sign ? -1 : 1);
+    }
+    output[i] = ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS));
+  }
 }
 
-void vp9_fdst8x8(const int16_t *input, tran_low_t *output, int stride) {
-  fdstNxN(input, output, stride, 8);
-}
-
-void vp9_fdst16x16(const int16_t *input, tran_low_t *output, int stride) {
-  fdstNxN(input, output, stride, 16);
+void vp9_fdst16(const tran_low_t *input, tran_low_t *output) {
+  static const int N = 16;
+  // {sin(pi/17), sin(pi*2/17, ..., sin(pi*8/17)} * sqrt(2/17) * 2 * sqrt(2)
+  static const int sinvalue_lookup[] = {
+    47852167, 94074787, 137093803, 175444254,
+    207820161, 233119001, 250479254, 259309736
+  };
+  int i, j;
+  for (i = 0; i < N; i++) {
+    int64_t sum = 0;
+    for (j = 0; j < N; j++) {
+      int idx = (i + 1) * (j + 1);
+      int sign = 0;
+      if (idx > N + 1) {
+        sign = (idx / (N + 1)) & 1;
+        idx %= (N + 1);
+      }
+      idx = idx > N + 1 - idx ? N + 1 - idx : idx;
+      if (idx == 0) continue;
+      idx--;
+      sum += (int64_t)input[j] * sinvalue_lookup[idx] * (sign ? -1 : 1);
+    }
+    output[i] = ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS));
+  }
 }
 #endif  // CONFIG_DST1
+#endif  // CONFIG_EXT_TX
 
 void vp9_fdct4(const tran_low_t *input, tran_low_t *output) {
   tran_high_t step[4];
