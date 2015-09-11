@@ -261,6 +261,52 @@ TEST_P(ResizeInternalTest, TestInternalResizeWorks) {
   }
 }
 
+
+class ResizeInternalRealtimeTest : public ResizeTest {
+ protected:
+  ResizeInternalRealtimeTest() : ResizeTest(), mismatch_nframes_(0) {}
+  virtual ~ResizeInternalRealtimeTest() {}
+
+  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
+                                  libvpx_test::Encoder *encoder) {
+    if (video->frame() == 0)
+      encoder->Control(VP8E_SET_CPUUSED, 6);
+      encoder->Control(VP9E_SET_AQ_MODE, 3);
+  }
+
+  virtual void MismatchHook(const vpx_image_t *img1,
+                            const vpx_image_t *img2) {
+
+    ++mismatch_nframes_;
+    printf("mismatch_nframes_ = %d\n", mismatch_nframes_);
+  }
+ private:
+  int mismatch_nframes_;
+};
+
+TEST_P(ResizeInternalRealtimeTest, TestInternalRealtimeResizeWorks) {
+  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       30, 1, 0, 299);
+  // Config quality parameters.
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_dropframe_thresh = 1;
+  cfg_.rc_min_quantizer = 2;
+  cfg_.rc_max_quantizer = 56;
+  cfg_.rc_end_usage = VPX_CBR;
+  cfg_.g_lag_in_frames = 0;
+  cfg_.rc_resize_allowed = 1;
+  cfg_.rc_target_bitrate = 200;
+
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+
+  for (std::vector<FrameInfo>::const_iterator info = frame_info_list_.begin();
+       info != frame_info_list_.end(); ++info) {
+    //printf("w = %d, h = %d\n", info->w, info->h);
+  }
+}
+
 vpx_img_fmt_t CspForFrameNumber(int frame) {
   if (frame < 10)
     return VPX_IMG_FMT_I420;
@@ -371,6 +417,8 @@ VP9_INSTANTIATE_TEST_CASE(ResizeTest,
                           ::testing::Values(::libvpx_test::kRealTime));
 VP9_INSTANTIATE_TEST_CASE(ResizeInternalTest,
                           ::testing::Values(::libvpx_test::kOnePassBest));
+VP9_INSTANTIATE_TEST_CASE(ResizeInternalRealtimeTest,
+                          ::testing::Values(::libvpx_test::kRealTime));
 VP9_INSTANTIATE_TEST_CASE(ResizeCspTest,
                           ::testing::Values(::libvpx_test::kRealTime));
 }  // namespace
