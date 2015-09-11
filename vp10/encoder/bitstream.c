@@ -154,6 +154,27 @@ static void update_ext_tx_probs(VP10_COMMON *cm, vpx_writer *w) {
   int i;
   int savings = 0;
   int do_update = 0;
+  /*
+  for (i = TX_4X4; i <= TX_16X16; ++i) {
+    int t;
+    for (t = NORM; t < EXT_TX_TYPES; ++t)
+      printf(" %d", cm->counts.ext_tx[i][t]);
+    printf("\n");
+  }
+  */
+  /*
+  int tot_non_dct[3] = {0}, tot_dct[3] = {0};
+  for (i = TX_4X4; i <= TX_16X16; ++i) {
+    int t;
+    tot_dct[i] += cm->counts.ext_tx[i][NORM];
+    for (t = ALT1; t < EXT_TX_TYPES; ++t)
+      tot_non_dct[i] += cm->counts.ext_tx[i][t];
+  }
+  printf("Counts 4x4:   dct %d non-dct %d\n", tot_dct[0], tot_non_dct[0]);
+  printf("Counts 8x8:   dct %d non-dct %d\n", tot_dct[1], tot_non_dct[1]);
+  printf("Counts 16x16: dct %d non-dct %d\n", tot_dct[2], tot_non_dct[2]);
+  */
+
   for (i = TX_4X4; i <= TX_16X16; ++i) {
     savings += prob_diff_update_savings(
         vp10_ext_tx_tree, cm->fc->ext_tx_prob[i],
