@@ -3601,19 +3601,9 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
   if (cm->mi_cols * MI_SIZE != unscaled->y_width ||
       cm->mi_rows * MI_SIZE != unscaled->y_height) {
 #if CONFIG_VP9_HIGHBITDEPTH
-    if (unscaled->y_width == (scaled->y_width << 1) &&
-        unscaled->y_height == (scaled->y_height << 1))
-      scale_and_extend_frame(unscaled, scaled, (int)cm->bit_depth);
-    else
-      scale_and_extend_frame_nonnormative(unscaled, scaled, (int)cm->bit_depth);
+    scale_and_extend_frame(unscaled, scaled, (int)cm->bit_depth);
 #else
-    // Use the faster normative (convolve8) scaling filter: for now only for
-    // scaling factor of 2.
-    if (unscaled->y_width == (scaled->y_width << 1) &&
-        unscaled->y_height == (scaled->y_height << 1))
-      scale_and_extend_frame(unscaled, scaled);
-    else
-      scale_and_extend_frame_nonnormative(unscaled, scaled);
+    scale_and_extend_frame(unscaled, scaled);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     return scaled;
   } else {
