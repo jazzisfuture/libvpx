@@ -609,6 +609,9 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
                                       cm->fc->ext_tx_prob[mbmi->tx_size]);
       if (!cm->frame_parallel_decoding_mode)
         ++cm->counts.ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
+
+      //printf("%d\n", mbmi->ext_txfrm);
+
     } else {
       mbmi->ext_txfrm = NORM;
     }
