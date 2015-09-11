@@ -269,10 +269,19 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
   if (!segfeature_active(seg, segment_id, SEG_LVL_REF_FRAME))
     vpx_write(w, is_inter, vp10_get_intra_inter_prob(cm, xd));
 
+#if CONFIG_MISC_FIXES
+  if (xd->lossless[segment_id])
+    assert(mbmi->tx_size == TX_4X4);
+  else if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
+           !(is_inter && skip)) {
+    write_selected_tx_size(cm, xd, w);
+  }
+#else
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !(is_inter && skip)) {
     write_selected_tx_size(cm, xd, w);
   }
+#endif
 
   if (!is_inter) {
     if (bsize >= BLOCK_8X8) {
@@ -353,8 +362,15 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 
   write_skip(cm, xd, mbmi->segment_id, mi, w);
 
+#if CONFIG_MISC_FIXES
+  if (xd->lossless[mbmi->segment_id])
+    assert(mbmi->tx_size == TX_4X4);
+  else if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT)
+    write_selected_tx_size(cm, xd, w);
+#else
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT)
     write_selected_tx_size(cm, xd, w);
+#endif
 
   if (bsize >= BLOCK_8X8) {
     write_intra_mode(w, mbmi->mode, get_y_mode_probs(mi, above_mi, left_mi, 0));
@@ -1166,7 +1182,7 @@ static void write_uncompressed_header(VP10_COMP *cpi,
   encode_quantization(cm, wb);
   encode_segmentation(cm, xd, wb);
 #if CONFIG_MISC_FIXES
-  if (xd->lossless)
+  if (!cm->seg.enabled && xd->lossless[0])
     cm->tx_mode = TX_4X4;
   else
     write_txfm_mode(cm->tx_mode, wb);
