@@ -96,6 +96,19 @@ void vp10_encode_tiles_mt(VP10_COMP *cpi) {
         CHECK_MEM_ERROR(cm, thread_data->td->counts,
                         vpx_calloc(1, sizeof(*thread_data->td->counts)));
 
+        // Allocate buffers used by palette coding mode.
+        if (cpi->common.allow_screen_content_tools) {
+          MACROBLOCK *x= &thread_data->td->mb;
+          CHECK_MEM_ERROR(cm, x->kmeans_data_buf,
+                          vpx_memalign(16, 4096 * sizeof(*x->kmeans_data_buf)));
+          CHECK_MEM_ERROR(cm, x->kmeans_indices_buf,
+                          vpx_memalign(16, 4096 *
+                                       sizeof(*x->kmeans_indices_buf)));
+          CHECK_MEM_ERROR(cm, x->best_palette_color_map,
+                          vpx_memalign(16, 4096 *
+                                       sizeof(*x->best_palette_color_map)));
+        }
+
         // Create threads
         if (!winterface->reset(worker))
           vpx_internal_error(&cm->error, VPX_CODEC_ERROR,

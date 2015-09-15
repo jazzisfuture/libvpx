@@ -92,6 +92,10 @@ struct macroblock {
   int *nmvsadcost_hp[2];
   int **mvsadcost;
 
+  double *kmeans_data_buf;
+  int *kmeans_indices_buf;
+  uint8_t *best_palette_color_map;
+
   // These define limits to motion vector components to prevent them
   // from extending outside the UMV borders
   int mv_col_min;
