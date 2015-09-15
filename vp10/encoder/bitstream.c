@@ -44,6 +44,12 @@ static const struct vp10_token partition_encodings[PARTITION_TYPES] =
   {{0, 1}, {2, 2}, {6, 3}, {7, 3}};
 static const struct vp10_token inter_mode_encodings[INTER_MODES] =
   {{2, 2}, {6, 3}, {0, 1}, {7, 3}};
+static const struct vp10_token palette_size_encodings[] = {
+    {0, 1}, {2, 2}, {6, 3}, {14, 4}, {30, 5}, {62, 6}, {63, 6},
+};
+static const struct vp10_token palette_color_encodings[] = {
+    {0, 1}, {2, 2}, {6, 3}, {14, 4}, {30, 5}, {62, 6}, {126, 7}, {127, 7},
+};
 
 static void write_intra_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {
@@ -339,6 +345,58 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
   }
 }
 
+static void write_palette_mode_info(const VP10_COMMON *cm,
+                                    const MACROBLOCKD *xd,
+                                    const MODE_INFO *const mi,
+                                    vpx_writer *w) {
+  const MB_MODE_INFO *const mbmi = &mi->mbmi;
+  const MODE_INFO *const above_mi = xd->above_mi;
+  const MODE_INFO *const left_mi = xd->left_mi;
+  const BLOCK_SIZE bsize = mbmi->sb_type;
+  const PALETTE_MODE_INFO *pmi = &mbmi->palette_mode_info;
+  int palette_ctx = 0;
+  int n, i;
+
+  n = pmi->palette_size[0];
+  if (above_mi)
+    palette_ctx += (above_mi->mbmi.palette_mode_info.palette_size[0] > 0);
+  if (left_mi)
+    palette_ctx += (left_mi->mbmi.palette_mode_info.palette_size[0] > 0);
+  vpx_write(w, n > 0,
+            vp10_default_palette_y_mode_prob[bsize - BLOCK_8X8][palette_ctx]);
+  if (n > 0) {
+    int rows = 4 * num_4x4_blocks_high_lookup[bsize];
+    int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
+    int color_ctx, color_order[PALETTE_MAX_SIZE];
+    int color_new_idx = -1;
+    int j, k;
+    uint8_t *color_map = pmi->palette_color_map[0];
+
+    vp10_write_token(w, vp10_palette_size_tree,
+                     vp10_default_palette_y_size_prob[bsize - BLOCK_8X8],
+                     &palette_size_encodings[n - 2]);
+    for (i = 0; i < n; ++i)
+      vpx_write_literal(w, pmi->palette_colors[i],
+                        cm->bit_depth);
+    vpx_write_literal(w, color_map[0], vp10_ceil_log2(n));
+    for (i = 0; i < rows; ++i) {
+      for (j = (i == 0 ? 1 : 0); j < cols; ++j) {
+        color_ctx = vp10_get_palette_color_context(color_map, cols, i, j, n,
+                                                   color_order);
+        for (k = 0; k < n; ++k)
+          if (color_map[i * cols + j] == color_order[k]) {
+            color_new_idx = k;
+            break;
+          }
+        assert(color_new_idx >= 0 && color_new_idx < n);
+        vp10_write_token(w, vp10_palette_color_tree,
+                         vp10_default_palette_y_color_prob[n - 2][color_ctx],
+                         &palette_color_encodings[color_new_idx]);
+      }
+    }
+  }
+}
+
 static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                               MODE_INFO **mi_8x8, vpx_writer *w) {
   const struct segmentation *const seg = &cm->seg;
@@ -373,6 +431,10 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   }
 
   write_intra_mode(w, mbmi->uv_mode, vp10_kf_uv_mode_prob[mbmi->mode]);
+
+  if (bsize >= BLOCK_8X8 && cm->allow_screen_content_tools &&
+      mbmi->mode == DC_PRED)
+    write_palette_mode_info(cm, xd, mi, w);
 }
 
 static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
@@ -1088,6 +1150,8 @@ static void write_uncompressed_header(VP10_COMP *cpi,
     write_sync_code(wb);
     write_bitdepth_colorspace_sampling(cm, wb);
     write_frame_size(cm, wb);
+    if (cm->current_video_frame == 0)
+      vpx_wb_write_bit(wb, cm->allow_screen_content_tools);
   } else {
     if (!cm->show_frame)
       vpx_wb_write_bit(wb, cm->intra_only);

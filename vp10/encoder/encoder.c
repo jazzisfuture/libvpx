@@ -288,7 +288,27 @@ static int vp10_enc_alloc_mi(VP10_COMMON *cm, int mi_size) {
   return 0;
 }
 
+static void free_palette_map(VP10_COMMON *cm) {
+  int i, j;
+  MODE_INFO *mi;
+
+  for (i = 0; i < cm->mi_rows; i++)
+    for (j = 0; j < cm->mi_cols; j++) {
+      mi = cm->mip + cm->mi_stride + 1 + (i * cm->mi_stride + j);
+      if (mi->mbmi.palette_mode_info.palette_color_map[0] != NULL) {
+        vpx_free(mi->mbmi.palette_mode_info.palette_color_map[0]);
+        mi->mbmi.palette_mode_info.palette_color_map[0] = NULL;
+      }
+      if (mi->mbmi.palette_mode_info.palette_color_map[1] != NULL) {
+        vpx_free(mi->mbmi.palette_mode_info.palette_color_map[1]);
+        mi->mbmi.palette_mode_info.palette_color_map[1] = NULL;
+      }
+    }
+}
+
 static void vp10_enc_free_mi(VP10_COMMON *cm) {
+  if (cm && cm->mip)
+    free_palette_map(cm);
   vpx_free(cm->mip);
   cm->mip = NULL;
   vpx_free(cm->prev_mip);
@@ -1486,6 +1506,8 @@ void vp10_change_config(struct VP10_COMP *cpi, const VP10EncoderConfig *oxcf) {
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_set_var_fns(cpi);
 #endif
+
+  cm->allow_screen_content_tools = (cpi->oxcf.content == VP9E_CONTENT_SCREEN);
 }
 
 #ifndef M_LOG2_E
