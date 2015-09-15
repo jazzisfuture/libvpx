@@ -269,7 +269,8 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
     if (plane_type == PLANE_TYPE_Y) {
       return ext_tx_to_txtype[mi->mbmi.ext_txfrm];
     } else {
-      return DCT_DCT;
+      return ext_tx_to_txtype[mi->mbmi.ext_txfrm];
+      //return DCT_DCT;
     }
   }
   return intra_mode_to_tx_type_lookup[plane_type == PLANE_TYPE_Y ?
