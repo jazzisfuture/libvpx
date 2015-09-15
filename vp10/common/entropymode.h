@@ -26,6 +26,11 @@ extern "C" {
 
 #define INTER_OFFSET(mode) ((mode) - NEARESTMV)
 
+#if CONFIG_PALETTE
+#define PALETTE_COLOR_CONTEXTS 16
+#define PALETTE_MAX_SIZE 8
+#endif  // CONFIG_PALETTE
+
 struct VP10Common;
 
 struct tx_probs {
@@ -83,11 +88,26 @@ extern const vpx_prob vp10_kf_y_mode_prob[INTRA_MODES][INTRA_MODES]
                                         [INTRA_MODES - 1];
 extern const vpx_prob vp10_kf_partition_probs[PARTITION_CONTEXTS]
                                             [PARTITION_TYPES - 1];
+#if CONFIG_PALETTE
+extern const vpx_prob default_palette_y_mode_prob[10][3];
+extern const vpx_prob default_palette_y_size_prob[10][PALETTE_SIZES - 1];
+extern const vpx_prob default_palette_uv_size_prob[10][PALETTE_SIZES - 1];
+extern const vpx_prob default_palette_y_color_prob
+[PALETTE_MAX_SIZE - 1][PALETTE_COLOR_CONTEXTS][PALETTE_COLORS - 1];
+extern const vpx_prob default_palette_uv_color_prob
+[PALETTE_MAX_SIZE - 1][PALETTE_COLOR_CONTEXTS][PALETTE_COLORS - 1];
+#endif  // CONFIG_PALETTE
+
 extern const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(INTRA_MODES)];
 extern const vpx_tree_index vp10_inter_mode_tree[TREE_SIZE(INTER_MODES)];
 extern const vpx_tree_index vp10_partition_tree[TREE_SIZE(PARTITION_TYPES)];
 extern const vpx_tree_index vp10_switchable_interp_tree
                                 [TREE_SIZE(SWITCHABLE_FILTERS)];
+#if CONFIG_PALETTE
+extern const vpx_tree_index vp10_palette_size_tree[TREE_SIZE(PALETTE_SIZES)];
+extern const vpx_tree_index vp10_palette_color_tree[TREE_SIZE(PALETTE_COLORS)];
+#endif  // CONFIG_PALETTE
+
 
 void vp10_setup_past_independence(struct VP10Common *cm);
 
@@ -99,6 +119,31 @@ void vp10_tx_counts_to_branch_counts_16x16(const unsigned int *tx_count_16x16p,
                                       unsigned int (*ct_16x16p)[2]);
 void vp10_tx_counts_to_branch_counts_8x8(const unsigned int *tx_count_8x8p,
                                     unsigned int (*ct_8x8p)[2]);
+
+#if CONFIG_PALETTE
+static INLINE int vp10_ceil_log2(int n) {
+  int i = 1, p = 2;
+  while (p < n) {
+    i++;
+    p = p << 1;
+  }
+  return i;
+}
+
+static const int palette_color_context_lookup[PALETTE_COLOR_CONTEXTS] = {
+    // (3, 0, 0, 0), (3, 2, 0, 0), (3, 3, 2, 0), (3, 3, 2, 2),
+    3993,  4235,  4378,  4380,
+    // (4, 3, 3, 0), (5, 0, 0, 0), (5, 3, 0, 0), (5, 3, 2, 0),
+    5720,  6655,  7018,  7040,
+    // (5, 5, 0, 0), (6, 2, 0, 0), (6, 2, 2, 0), (6, 4, 0, 0),
+    7260,  8228,  8250,  8470,
+    // (7, 3, 0, 0), (8, 0, 0, 0), (8, 2, 0, 0), (10, 0, 0, 0)
+    9680, 10648, 10890, 13310
+};
+
+int vp10_get_palette_color_context(const uint8_t *color_map, int cols,
+                                   int r, int c, int n, int *color_order);
+#endif  // CONFIG_PALETTE
 
 #ifdef __cplusplus
 }  // extern "C"
