@@ -147,6 +147,12 @@ void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
         lrc->max_frame_bandwidth = rc->max_frame_bandwidth;
         lrc->worst_quality = rc->worst_quality;
         lrc->best_quality = rc->best_quality;
+        // For non-bypass mode, worst/best qp is set via the
+        // encoder control: SET_SVC_PARAMETERS.
+        if (svc->temporal_layering_mode != VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
+          lrc->worst_quality = vp9_quantizer_to_qindex(lc->max_q);
+          lrc->best_quality =  vp9_quantizer_to_qindex(lc->min_q);
+        }
       }
     }
   } else {
@@ -184,8 +190,8 @@ void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
       lrc->avg_frame_bandwidth = (int)(lc->target_bandwidth / lc->framerate);
       lrc->max_frame_bandwidth = rc->max_frame_bandwidth;
       // Update qp-related quantities.
-      lrc->worst_quality = rc->worst_quality;
-      lrc->best_quality = rc->best_quality;
+      lrc->worst_quality = vp9_quantizer_to_qindex(lc->max_q);
+      lrc->best_quality =  vp9_quantizer_to_qindex(lc->min_q);
     }
   }
 }
