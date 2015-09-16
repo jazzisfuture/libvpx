@@ -1657,7 +1657,7 @@ INSTANTIATE_TEST_CASE_P(SSE2, ConvolveTest, ::testing::Values(
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif
 
-#if HAVE_SSSE3
+#if HAVE_SSSE3 && CONFIG_USE_X86INC
 const ConvolveFunctions convolve8_ssse3(
     vpx_convolve_copy_c, vpx_convolve_avg_c,
     vpx_convolve8_horiz_ssse3, vpx_convolve8_avg_horiz_ssse3,
@@ -1683,7 +1683,7 @@ INSTANTIATE_TEST_CASE_P(SSSE3, ConvolveTest, ::testing::Values(
     make_tuple(64, 64, &convolve8_ssse3)));
 #endif
 
-#if HAVE_AVX2 && HAVE_SSSE3
+#if HAVE_AVX2 && HAVE_SSSE3 && CONFIG_USE_X86INC
 const ConvolveFunctions convolve8_avx2(
     vpx_convolve_copy_c, vpx_convolve_avg_c,
     vpx_convolve8_horiz_avx2, vpx_convolve8_avg_horiz_ssse3,

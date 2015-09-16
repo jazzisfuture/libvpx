@@ -17,6 +17,8 @@ $mmx_x86inc = $sse_x86inc = $sse2_x86inc = $ssse3_x86inc = $avx_x86inc =
   $avx2_x86inc = '';
 $mmx_x86_64_x86inc = $sse_x86_64_x86inc = $sse2_x86_64_x86inc =
   $ssse3_x86_64_x86inc = $avx_x86_64_x86inc = $avx2_x86_64_x86inc = '';
+# optimizations which depend on multiple features
+$avx2_ssse3_x86inc = '';
 if (vpx_config("CONFIG_USE_X86INC") eq "yes") {
   $mmx_x86inc = 'mmx';
   $sse_x86inc = 'sse';
@@ -32,12 +34,9 @@ if (vpx_config("CONFIG_USE_X86INC") eq "yes") {
     $avx_x86_64_x86inc = 'avx';
     $avx2_x86_64_x86inc = 'avx2';
   }
-}
-
-# optimizations which depend on multiple features
-$avx2_ssse3 = '';
-if ((vpx_config("HAVE_AVX2") eq "yes") && (vpx_config("HAVE_SSSE3") eq "yes")) {
-  $avx2_ssse3 = 'avx2';
+  if (vpx_config("HAVE_AVX2") eq "yes" && vpx_config("HAVE_SSSE3") eq "yes") {
+    $avx2_ssse3_x86inc = 'avx2';
+  }
 }
 
 # functions that are 64 bit only.
@@ -381,22 +380,22 @@ add_proto qw/void vpx_convolve_avg/, "const uint8_t *src, ptrdiff_t src_stride, 
 specialize qw/vpx_convolve_avg neon dspr2 msa/, "$sse2_x86inc";
 
 add_proto qw/void vpx_convolve8/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
-specialize qw/vpx_convolve8 sse2 ssse3 neon dspr2 msa/, "$avx2_ssse3";
+specialize qw/vpx_convolve8 sse2 neon dspr2 msa/, "$ssse3_x86inc", "$avx2_ssse3_x86inc";
 
 add_proto qw/void vpx_convolve8_horiz/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
-specialize qw/vpx_convolve8_horiz sse2 ssse3 neon dspr2 msa/, "$avx2_ssse3";
+specialize qw/vpx_convolve8_horiz sse2 neon dspr2 msa/, "$ssse3_x86inc", "$avx2_ssse3_x86inc";
 
 add_proto qw/void vpx_convolve8_vert/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
-specialize qw/vpx_convolve8_vert sse2 ssse3 neon dspr2 msa/, "$avx2_ssse3";
+specialize qw/vpx_convolve8_vert sse2 neon dspr2 msa/, "$ssse3_x86inc", "$avx2_ssse3_x86inc";
 
 add_proto qw/void vpx_convolve8_avg/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
-specialize qw/vpx_convolve8_avg sse2 ssse3 neon dspr2 msa/;
+specialize qw/vpx_convolve8_avg sse2 neon dspr2 msa/, "$ssse3_x86inc";
 
 add_proto qw/void vpx_convolve8_avg_horiz/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
-specialize qw/vpx_convolve8_avg_horiz sse2 ssse3 neon dspr2 msa/;
+specialize qw/vpx_convolve8_avg_horiz sse2 neon dspr2 msa/, "$ssse3_x86inc";
 
 add_proto qw/void vpx_convolve8_avg_vert/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
-specialize qw/vpx_convolve8_avg_vert sse2 ssse3 neon dspr2 msa/;
+specialize qw/vpx_convolve8_avg_vert sse2 neon dspr2 msa/, "$ssse3_x86inc";
 
 add_proto qw/void vpx_scaled_2d/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
 specialize qw/vpx_scaled_2d ssse3/;

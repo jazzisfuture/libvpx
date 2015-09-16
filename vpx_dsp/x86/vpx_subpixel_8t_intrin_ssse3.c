@@ -408,6 +408,7 @@ static void vpx_filter_block1d16_v8_intrin_ssse3(const uint8_t *src_ptr,
 }
 #endif  // ARCH_X86_64
 
+#if CONFIG_USE_X86INC
 filter8_1dfunction vpx_filter_block1d16_v8_ssse3;
 filter8_1dfunction vpx_filter_block1d16_h8_ssse3;
 filter8_1dfunction vpx_filter_block1d8_v8_ssse3;
@@ -459,6 +460,7 @@ FUN_CONV_1D(vert, y_step_q4, filter_y, v, src - src_stride * 3, , ssse3);
 FUN_CONV_1D(avg_horiz, x_step_q4, filter_x, h, src, avg_, ssse3);
 FUN_CONV_1D(avg_vert, y_step_q4, filter_y, v, src - src_stride * 3, avg_,
             ssse3);
+#endif  // CONFIG_USE_X86INC
 
 #define TRANSPOSE_8X8(in0, in1, in2, in3, in4, in5, in6, in7,           \
                       out0, out1, out2, out3, out4, out5, out6, out7) { \
@@ -1028,5 +1030,7 @@ void vpx_scaled_2d_ssse3(const uint8_t *src, ptrdiff_t src_stride,
 //                              const int16_t *filter_x, int x_step_q4,
 //                              const int16_t *filter_y, int y_step_q4,
 //                              int w, int h);
+#if CONFIG_USE_X86INC
 FUN_CONV_2D(, ssse3);
 FUN_CONV_2D(avg_ , ssse3);
+#endif
