@@ -61,7 +61,12 @@ static void setup_compound_reference_mode(VP9_COMMON *cm) {
     cm->comp_var_ref[0] = LAST_FRAME;
 #if CONFIG_MULTI_REF
     cm->comp_var_ref[1] = LAST2_FRAME;
+#if CONFIG_LAST3_REF
+    cm->comp_var_ref[2] = LAST3_FRAME;
+    cm->comp_var_ref[3] = GOLDEN_FRAME;
+#else
     cm->comp_var_ref[2] = GOLDEN_FRAME;
+#endif  // CONFIG_LAST3_REF
 #else
     cm->comp_var_ref[1] = GOLDEN_FRAME;
 #endif  // CONFIG_MULTI_REF

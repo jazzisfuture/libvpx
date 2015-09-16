@@ -31,7 +31,11 @@ extern "C" {
 #endif
 
 #if CONFIG_MULTI_REF
+#if CONFIG_LAST3_REF
+#define REFS_PER_FRAME 5
+#else
 #define REFS_PER_FRAME 4
+#endif  // CONFIG_LAST3_REF
 #else
 #define REFS_PER_FRAME 3
 #endif  // CONFIG_MULTI_REF
@@ -190,7 +194,11 @@ typedef struct VP9Common {
   int allow_comp_inter_inter;
   MV_REFERENCE_FRAME comp_fixed_ref;
 #if CONFIG_MULTI_REF
+#if CONFIG_LAST3_REF
+  MV_REFERENCE_FRAME comp_var_ref[4];
+#else
   MV_REFERENCE_FRAME comp_var_ref[3];
+#endif  // CONFIG_LAST3_REF
 #else
   MV_REFERENCE_FRAME comp_var_ref[2];
 #endif  // CONFIG_MULTI_REF

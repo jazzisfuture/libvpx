@@ -39,6 +39,28 @@ extern "C" {
 
 #if CONFIG_MULTI_REF
 
+#if CONFIG_LAST3_REF
+
+#if CONFIG_NEW_INTER
+
+#if CONFIG_INTERINTRA
+#define MAX_MODES 91
+#else  // CONFIG_INTERINTRA
+#define MAX_MODES 71
+#endif  // CONFIG_INTERINTRA
+
+#else   // CONFIG_NEW_INTER
+
+#if CONFIG_INTERINTRA
+#define MAX_MODES 66
+#else  // CONFIG_INTERINTRA
+#define MAX_MODES 46
+#endif  // CONFIG_INTERINTRA
+
+#endif  // CONFIG_NEW_INTER
+
+#else  // CONFIG_LAST3_REF
+
 #if CONFIG_NEW_INTER
 
 #if CONFIG_INTERINTRA
@@ -56,6 +78,8 @@ extern "C" {
 #endif  // CONFIG_INTERINTRA
 
 #endif  // CONFIG_NEW_INTER
+
+#endif  // CONFIG_LAST3_REF
 
 #else  // CONFIG_MULTI_REF
 
