@@ -53,6 +53,11 @@ void vp10_inv_txfm_add_16x16(const tran_low_t *input, uint8_t *dest,
                              int stride, int eob, TX_TYPE tx_type);
 void vp10_inv_txfm_add_32x32(const tran_low_t *input, uint8_t *dest,
                              int stride, int eob, TX_TYPE tx_type);
+#if CONFIG_NOSCALE32
+void vp10_idct32x32s8_add(const tran_low_t *input, uint8_t *dest,
+                          int stride, int eob);
+#endif  // CONFIG_NOSCALE32
+
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp10_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
@@ -78,6 +83,10 @@ void vp10_highbd_inv_txfm_add_16x16(const tran_low_t *input, uint8_t *dest,
 void vp10_highbd_inv_txfm_add_32x32(const tran_low_t *input, uint8_t *dest,
                                     int stride, int eob, int bd,
                                     TX_TYPE tx_type);
+#if CONFIG_NOSCALE32
+void vp10_highbd_idct32x32s8_add(const tran_low_t *input, uint8_t *dest,
+                                 int stride, int eob, int bd);
+#endif  // CONFIG_NOSCALE32
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #ifdef __cplusplus
 }  // extern "C"

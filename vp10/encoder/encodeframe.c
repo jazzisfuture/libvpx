@@ -2577,8 +2577,12 @@ static TX_MODE select_tx_mode(const VP10_COMP *cpi, MACROBLOCKD *const xd) {
   if (xd->lossless)
     return ONLY_4X4;
   if (cpi->sf.tx_size_search_method == USE_LARGESTALL)
+#if CONFIG_NOSCALE32
+    return TX_MODE_SELECT;
+#else
     return ALLOW_32X32;
-  else if (cpi->sf.tx_size_search_method == USE_FULL_RD||
+#endif
+  else if (cpi->sf.tx_size_search_method == USE_FULL_RD ||
            cpi->sf.tx_size_search_method == USE_TX_8X8)
     return TX_MODE_SELECT;
   else

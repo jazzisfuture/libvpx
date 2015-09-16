@@ -17,11 +17,12 @@
 
 #include "vp10/common/blockd.h"
 #include "vp10/common/idct.h"
+#include "vp10/encoder/dct.h"
 #include "vpx_dsp/fwd_txfm.h"
 #include "vpx_ports/mem.h"
 
 #if CONFIG_EXT_TX
-void fdst4(const tran_low_t *input, tran_low_t *output) {
+static void fdst4(const tran_low_t *input, tran_low_t *output) {
   static const int N = 4;
   // {sin(pi/5), sin(pi*2/5)} * sqrt(2/5) * sqrt(2)
   static const int32_t sinvalue_lookup[] = {
@@ -46,7 +47,7 @@ void fdst4(const tran_low_t *input, tran_low_t *output) {
   }
 }
 
-void fdst8(const tran_low_t *input, tran_low_t *output) {
+static void fdst8(const tran_low_t *input, tran_low_t *output) {
   static const int N = 8;
   // {sin(pi/9), sin(pi*2/9), ..., sin(pi*4/9)} * sqrt(2/9) * 2
   static const int sinvalue_lookup[] = {
@@ -71,7 +72,7 @@ void fdst8(const tran_low_t *input, tran_low_t *output) {
   }
 }
 
-void fdst16(const tran_low_t *input, tran_low_t *output) {
+static void fdst16(const tran_low_t *input, tran_low_t *output) {
   static const int N = 16;
   // {sin(pi/17), sin(pi*2/17, ..., sin(pi*8/17)} * sqrt(2/17) * 2 * sqrt(2)
   static const int sinvalue_lookup[] = {
@@ -112,7 +113,7 @@ static INLINE void range_check(const tran_low_t *input, const int size,
 #endif
 }
 
-static void fdct4(const tran_low_t *input, tran_low_t *output) {
+void fdct4(const tran_low_t *input, tran_low_t *output) {
   tran_high_t temp;
   tran_low_t step[4];
 
@@ -148,7 +149,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   range_check(output, 4, 13);
 }
 
-static void fdct8(const tran_low_t *input, tran_low_t *output) {
+void fdct8(const tran_low_t *input, tran_low_t *output) {
   tran_high_t temp;
   tran_low_t step[8];
 
@@ -226,7 +227,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   range_check(output, 8, 14);
 }
 
-static void fdct16(const tran_low_t *input, tran_low_t *output) {
+void fdct16(const tran_low_t *input, tran_low_t *output) {
   tran_high_t temp;
   tran_low_t step[16];
 
@@ -400,7 +401,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   range_check(output, 16, 16);
 }
 
-static void fdct32(const tran_low_t *input, tran_low_t *output) {
+void fdct32(const tran_low_t *input, tran_low_t *output) {
   tran_high_t temp;
   tran_low_t step[32];
 
@@ -1395,9 +1396,76 @@ void vp10_fht16x16_c(const int16_t *input, tran_low_t *output,
   }
 }
 
+#if CONFIG_NOSCALE32
+void vp10_fdct32x32s8(const int16_t *input, tran_low_t *out, int stride) {
+  int i, j;
+  tran_high_t output[32 * 32];
+
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    tran_high_t temp_in[32], temp_out[32];
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = input[j * stride + i] * 8;
+    vpx_fdct32(temp_in, temp_out, 0);
+    for (j = 0; j < 32; ++j)
+      output[j * 32 + i] = (temp_out[j] + 1 + (temp_out[j] > 0)) >> 2;
+  }
+
+  // Rows
+  for (i = 0; i < 32; ++i) {
+    tran_high_t temp_in[32], temp_out[32];
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = output[j + i * 32];
+    vpx_fdct32(temp_in, temp_out, 0);
+    for (j = 0; j < 32; ++j)
+      out[j + i * 32] =
+          (tran_low_t)((temp_out[j] + 1 + (temp_out[j] < 0)) >> 2);
+  }
+}
+
+void vp10_fdct32x32s8_rd(const int16_t *input, tran_low_t *out, int stride) {
+  int i, j;
+  tran_high_t output[32 * 32];
+
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    tran_high_t temp_in[32], temp_out[32];
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = input[j * stride + i] * 8;
+    vpx_fdct32(temp_in, temp_out, 0);
+    for (j = 0; j < 32; ++j)
+      // TODO(cd): see quality impact of only doing
+      //           output[j * 32 + i] = (temp_out[j] + 1) >> 2;
+      //           PS: also change code in vpx_dsp/x86/vpx_dct_sse2.c
+      output[j * 32 + i] = (temp_out[j] + 1 + (temp_out[j] > 0)) >> 2;
+  }
+
+  // Rows
+  for (i = 0; i < 32; ++i) {
+    tran_high_t temp_in[32], temp_out[32];
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = output[j + i * 32];
+    vpx_fdct32(temp_in, temp_out, 1);
+    for (j = 0; j < 32; ++j)
+      out[j + i * 32] = (tran_low_t)temp_out[j];
+  }
+}
+
+void vp10_fdct32x32s8_1(const int16_t *input, tran_low_t *output, int stride) {
+  int r, c;
+  tran_low_t sum = 0;
+  for (r = 0; r < 32; ++r)
+    for (c = 0; c < 32; ++c)
+      sum += input[r * stride + c];
+
+  output[0] = sum >> 2;
+  output[1] = 0;
+}
+#endif  // CONFIG_NOSCALE32
+
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp10_highbd_fht4x4_c(const int16_t *input, tran_low_t *output,
-                         int stride, int tx_type) {
+                          int stride, int tx_type) {
   vp10_fht4x4_c(input, output, stride, tx_type);
 }
 
@@ -1415,4 +1483,21 @@ void vp10_highbd_fht16x16_c(const int16_t *input, tran_low_t *output,
                            int stride, int tx_type) {
   vp10_fht16x16_c(input, output, stride, tx_type);
 }
+
+#if CONFIG_NOSCALE32
+void vp10_highbd_fdct32x32s8(const int16_t *input, tran_low_t *out,
+                             int stride) {
+  vp10_fdct32x32s8(input, out, stride);
+}
+
+void vp10_highbd_fdct32x32s8_rd(const int16_t *input, tran_low_t *out,
+                                int stride) {
+  vp10_fdct32x32s8_rd(input, out, stride);
+}
+
+void vp10_highbd_fdct32x32s8_1(const int16_t *input, tran_low_t *out,
+                               int stride) {
+  vp10_fdct32x32s8_1(input, out, stride);
+}
+#endif  // CONFIG_NOSCALE32
 #endif  // CONFIG_VP9_HIGHBITDEPTH

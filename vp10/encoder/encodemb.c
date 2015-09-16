@@ -22,6 +22,7 @@
 #include "vp10/common/reconintra.h"
 #include "vp10/common/scan.h"
 
+#include "vp10/encoder/dct.h"
 #include "vp10/encoder/encodemb.h"
 #include "vp10/encoder/rd.h"
 #include "vp10/encoder/tokenize.h"
@@ -101,7 +102,11 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   const int eob = p->eobs[block];
   const PLANE_TYPE type = pd->plane_type;
   const int default_eob = 16 << (tx_size << 1);
+#if CONFIG_NOSCALE32
+  const int mul = 1;
+#else
   const int mul = 1 + (tx_size == TX_32X32);
+#endif  // CONFIG_NOSCALE32
   const int16_t *dequant_ptr = pd->dequant;
   const uint8_t *const band_translate = get_band_translate(tx_size);
   TX_TYPE tx_type = get_tx_type(type, xd, block, tx_size);
@@ -309,19 +314,33 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
 static INLINE void fdct32x32(int rd_transform,
                              const int16_t *src, tran_low_t *dst,
                              int src_stride) {
+#if CONFIG_NOSCALE32
+  if (rd_transform)
+    vp10_fdct32x32s8_rd(src, dst, src_stride);
+  else
+    vp10_fdct32x32s8(src, dst, src_stride);
+#else
   if (rd_transform)
     vpx_fdct32x32_rd(src, dst, src_stride);
   else
     vpx_fdct32x32(src, dst, src_stride);
+#endif  // CONFIG_NOSCALE32
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
                                     tran_low_t *dst, int src_stride) {
+#if CONFIG_NOSCALE32
+  if (rd_transform)
+    vp10_highbd_fdct32x32s8_rd(src, dst, src_stride);
+  else
+    vp10_highbd_fdct32x32s8(src, dst, src_stride);
+#else
   if (rd_transform)
     vpx_highbd_fdct32x32_rd(src, dst, src_stride);
   else
     vpx_highbd_fdct32x32(src, dst, src_stride);
+#endif  // CONFIG_NOSCALE32
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -694,7 +713,11 @@ static void fwd_txfm_32x32_1(const int16_t *src_diff,
                              TX_TYPE tx_type) {
   switch (tx_type) {
     case DCT_DCT:
+#if CONFIG_NOSCALE32
+      vp10_fdct32x32s8_1(src_diff, coeff, diff_stride);
+#else
       vpx_fdct32x32_1(src_diff, coeff, diff_stride);
+#endif  // CONFIG_NOSCALE32
       break;
     case ADST_DCT:
     case DCT_ADST:
@@ -1023,7 +1046,11 @@ static void highbd_fwd_txfm_32x32_1(const int16_t *src_diff,
                                     TX_TYPE tx_type) {
   switch (tx_type) {
     case DCT_DCT:
+#if CONFIG_NOSCALE32
+      vp10_highbd_fdct32x32s8_1(src_diff, coeff, diff_stride);
+#else
       vpx_highbd_fdct32x32_1(src_diff, coeff, diff_stride);
+#endif  // CONFIG_NOSCALE32
       break;
     case ADST_DCT:
     case DCT_ADST:
@@ -1037,7 +1064,23 @@ static void highbd_fwd_txfm_32x32_1(const int16_t *src_diff,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
+#if CONFIG_NOSCALE32
+static int is_invalid_diff_32x32(const int16_t *src_diff,
+                                 int diff_stride, int bd) {
+  int i, j;
+  const int val = (1 << (bd - 1));
+  const int16_t *s = src_diff;
+  for (i = 0; i < 32; ++i, s += diff_stride) {
+    for (j = 0; j < 32; ++j) {
+      if (s[j] >= val || s[j] <= -val)
+        return 1;
+    }
+  }
+  return 0;
+}
+#endif  // CONFIG_NOSCALE32
+
+int vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
@@ -1053,6 +1096,7 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   int i, j;
   const int16_t *src_diff;
+  int invalid = 0;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
 
@@ -1060,13 +1104,24 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
+#if CONFIG_NOSCALE32
+        invalid = is_invalid_diff_32x32(src_diff, diff_stride, xd->bd);
+#endif  // CONFIG_NOSCALE32
         highbd_fwd_txfm_32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride,
                               tx_type);
+#if CONFIG_NOSCALE32
+        vp10_highbd_quantize_fp(coeff, 1024, x->skip_block, p->zbin,
+                                p->round_fp, p->quant_fp, p->quant_shift,
+                                qcoeff, dqcoeff, pd->dequant,
+                                eob, scan_order->scan,
+                                scan_order->iscan);
+#else
         vp10_highbd_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin,
                                       p->round_fp, p->quant_fp, p->quant_shift,
                                       qcoeff, dqcoeff, pd->dequant,
                                       eob, scan_order->scan,
                                       scan_order->iscan);
+#endif  // CONFIG_NOSCALE32
         break;
       case TX_16X16:
         highbd_fwd_txfm_16x16(src_diff, coeff, diff_stride, tx_type);
@@ -1093,17 +1148,27 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
       default:
         assert(0);
     }
-    return;
+    return invalid;
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   switch (tx_size) {
     case TX_32X32:
+#if CONFIG_NOSCALE32
+      invalid = is_invalid_diff_32x32(src_diff, diff_stride, 8);
+#endif  // CONFIG_NOSCALE32
       fwd_txfm_32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride, tx_type);
+#if CONFIG_NOSCALE32
+      vp10_quantize_fp(coeff, 1024, x->skip_block, p->zbin, p->round_fp,
+                       p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                       pd->dequant, eob, scan_order->scan,
+                       scan_order->iscan);
+#else
       vp10_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin, p->round_fp,
                              p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, eob, scan_order->scan,
                              scan_order->iscan);
+#endif  // CONFIG_NOSCALE32
       break;
     case TX_16X16:
       fwd_txfm_16x16(src_diff, coeff, diff_stride, tx_type);
@@ -1131,9 +1196,10 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
       assert(0);
       break;
   }
+  return invalid;
 }
 
-void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
+int vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
@@ -1147,6 +1213,7 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   int i, j;
   const int16_t *src_diff;
+  int invalid = 0;
 
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
@@ -1155,10 +1222,19 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
+#if CONFIG_NOSCALE32
+        invalid = is_invalid_diff_32x32(src_diff, diff_stride, xd->bd);
+#endif  // CONFIG_NOSCALE32
         highbd_fwd_txfm_32x32_1(src_diff, coeff, diff_stride, tx_type);
+#if CONFIG_NOSCALE32
+        vpx_highbd_quantize_dc(coeff, 1024, x->skip_block, p->round,
+                               p->quant_fp[0], qcoeff, dqcoeff,
+                               pd->dequant[0], eob);
+#else
         vpx_highbd_quantize_dc_32x32(coeff, x->skip_block, p->round,
                                      p->quant_fp[0], qcoeff, dqcoeff,
                                      pd->dequant[0], eob);
+#endif  // CONFIG_NOSCALE32
         break;
       case TX_16X16:
         highbd_fwd_txfm_16x16_1(src_diff, coeff, diff_stride, tx_type);
@@ -1182,16 +1258,25 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
       default:
         assert(0);
     }
-    return;
+    return invalid;
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   switch (tx_size) {
     case TX_32X32:
+#if CONFIG_NOSCALE32
+      invalid = is_invalid_diff_32x32(src_diff, diff_stride, 8);
+#endif  // CONFIG_NOSCALE32
       fwd_txfm_32x32_1(src_diff, coeff, diff_stride, tx_type);
+#if CONFIG_NOSCALE32
+      vpx_quantize_dc(coeff, 1024, x->skip_block, p->round,
+                     p->quant_fp[0], qcoeff, dqcoeff,
+                     pd->dequant[0], eob);
+#else
       vpx_quantize_dc_32x32(coeff, x->skip_block, p->round,
                             p->quant_fp[0], qcoeff, dqcoeff,
                             pd->dequant[0], eob);
+#endif  // CONFIG_NOSCALE32
       break;
     case TX_16X16:
       fwd_txfm_16x16_1(src_diff, coeff, diff_stride, tx_type);
@@ -1216,9 +1301,10 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
       assert(0);
       break;
   }
+  return invalid;
 }
 
-void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
+int vp10_xform_quant(MACROBLOCK *x, int plane, int block,
                      BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
@@ -1234,6 +1320,7 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   int i, j;
   const int16_t *src_diff;
+  int invalid = 0;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
 
@@ -1241,12 +1328,22 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
      switch (tx_size) {
       case TX_32X32:
+#if CONFIG_NOSCALE32
+        invalid = is_invalid_diff_32x32(src_diff, diff_stride, xd->bd);
+#endif  // CONFIG_NOSCALE32
         highbd_fwd_txfm_32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride,
                               tx_type);
+#if CONFIG_NOSCALE32
+        vpx_highbd_quantize_b(coeff, 1024, x->skip_block, p->zbin,
+                              p->round, p->quant, p->quant_shift, qcoeff,
+                              dqcoeff, pd->dequant, eob,
+                              scan_order->scan, scan_order->iscan);
+#else
         vpx_highbd_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin,
                                     p->round, p->quant, p->quant_shift, qcoeff,
                                     dqcoeff, pd->dequant, eob,
                                     scan_order->scan, scan_order->iscan);
+#endif  // CONFIG_NOSCALE32
         break;
       case TX_16X16:
         highbd_fwd_txfm_16x16(src_diff, coeff, diff_stride, tx_type);
@@ -1273,17 +1370,27 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
       default:
         assert(0);
     }
-    return;
+    return invalid;
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   switch (tx_size) {
     case TX_32X32:
+#if CONFIG_NOSCALE32
+      invalid = is_invalid_diff_32x32(src_diff, diff_stride, 8);
+#endif  // CONFIG_NOSCALE32
       fwd_txfm_32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride, tx_type);
+#if CONFIG_NOSCALE32
+      vpx_quantize_b(coeff, 1024, x->skip_block, p->zbin, p->round,
+                     p->quant, p->quant_shift, qcoeff, dqcoeff,
+                     pd->dequant, eob, scan_order->scan,
+                     scan_order->iscan);
+#else
       vpx_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                            p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, eob, scan_order->scan,
                            scan_order->iscan);
+#endif  // CONFIG_NOSCALE32
       break;
     case TX_16X16:
       fwd_txfm_16x16(src_diff, coeff, diff_stride, tx_type);
@@ -1310,6 +1417,7 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
       assert(0);
       break;
   }
+  return invalid;
 }
 
 static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
@@ -1475,7 +1583,11 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx ctx;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
+#if CONFIG_NOSCALE32
+  struct encode_b_args arg = {x, &ctx, &mbmi->skip, 0};
+#else
   struct encode_b_args arg = {x, &ctx, &mbmi->skip};
+#endif  // CONFIG_NOSCALE32
   int plane;
 
   mbmi->skip = 1;
@@ -1494,13 +1606,13 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
                                ctx.ta[plane], ctx.tl[plane]);
     }
 
-    vp10_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block,
-                                           &arg);
+    vp10_foreach_transformed_block_in_plane(xd, bsize, plane,
+                                            encode_block, &arg);
   }
 }
 
 void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
-                            TX_SIZE tx_size, void *arg) {
+                             TX_SIZE tx_size, void *arg) {
   struct encode_b_args* const args = arg;
   MACROBLOCK *const x = args->x;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -1538,12 +1650,22 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         if (!x->skip_recode) {
           vpx_highbd_subtract_block(32, 32, src_diff, diff_stride,
                                     src, src_stride, dst, dst_stride, xd->bd);
+#if CONFIG_NOSCALE32
+          args->invalid = is_invalid_diff_32x32(src_diff, diff_stride, xd->bd);
+#endif  // CONFIG_NOSCALE32
           highbd_fwd_txfm_32x32(x->use_lp32x32fdct, src_diff, coeff,
                                 diff_stride, tx_type);
+#if CONFIG_NOSCALE32
+          vpx_highbd_quantize_b(coeff, 1024, x->skip_block, p->zbin,
+                                p->round, p->quant, p->quant_shift,
+                                qcoeff, dqcoeff, pd->dequant, eob,
+                                scan_order->scan, scan_order->iscan);
+#else
           vpx_highbd_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin,
                                       p->round, p->quant, p->quant_shift,
                                       qcoeff, dqcoeff, pd->dequant, eob,
                                       scan_order->scan, scan_order->iscan);
+#endif  // CONFIG_NOSCALE32
         }
         if (*eob)
           vp10_highbd_inv_txfm_add_32x32(dqcoeff, dst, dst_stride, *eob, xd->bd,
@@ -1611,12 +1733,22 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (!x->skip_recode) {
         vpx_subtract_block(32, 32, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
+#if CONFIG_NOSCALE32
+        args->invalid = is_invalid_diff_32x32(src_diff, diff_stride, 8);
+#endif  // CONFIG_NOSCALE32
         fwd_txfm_32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride,
                        tx_type);
+#if CONFIG_NOSCALE32
+        vpx_quantize_b(coeff, 1024, x->skip_block, p->zbin, p->round,
+                       p->quant, p->quant_shift, qcoeff, dqcoeff,
+                       pd->dequant, eob, scan_order->scan,
+                       scan_order->iscan);
+#else
         vpx_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, eob, scan_order->scan,
                              scan_order->iscan);
+#endif  // CONFIG_NOSCALE32
       }
       if (*eob)
         vp10_inv_txfm_add_32x32(dqcoeff, dst, dst_stride, *eob, tx_type);
@@ -1676,8 +1808,12 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 
 void vp10_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   const MACROBLOCKD *const xd = &x->e_mbd;
+#if CONFIG_NOSCALE32
+  struct encode_b_args arg = {x, NULL, &xd->mi[0]->mbmi.skip, 0};
+#else
   struct encode_b_args arg = {x, NULL, &xd->mi[0]->mbmi.skip};
+#endif  // CONFIG_NOSCALE32
 
   vp10_foreach_transformed_block_in_plane(xd, bsize, plane,
-                                         vp10_encode_block_intra, &arg);
+                                          vp10_encode_block_intra, &arg);
 }

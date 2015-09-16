@@ -447,6 +447,100 @@ void vp10_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
     vpx_idct32x32_1024_add(input, dest, stride);
 }
 
+#if CONFIG_NOSCALE32
+void vp10_idct32x32s8_1024_add(const tran_low_t *input, uint8_t *dest,
+                               int stride) {
+  tran_low_t out[32 * 32];
+  tran_low_t *outptr = out;
+  int i, j;
+  tran_low_t temp_in[32], temp_out[32];
+
+  // Rows
+  for (i = 0; i < 32; ++i) {
+    int16_t zero_coeff[16];
+    for (j = 0; j < 16; ++j)
+      zero_coeff[j] = input[2 * j] | input[2 * j + 1];
+    for (j = 0; j < 8; ++j)
+      zero_coeff[j] = zero_coeff[2 * j] | zero_coeff[2 * j + 1];
+    for (j = 0; j < 4; ++j)
+      zero_coeff[j] = zero_coeff[2 * j] | zero_coeff[2 * j + 1];
+    for (j = 0; j < 2; ++j)
+      zero_coeff[j] = zero_coeff[2 * j] | zero_coeff[2 * j + 1];
+
+    if (zero_coeff[0] | zero_coeff[1])
+      idct32_c(input, outptr);
+    else
+      memset(outptr, 0, sizeof(tran_low_t) * 32);
+    input += 32;
+    outptr += 32;
+  }
+
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = out[j * 32 + i];
+    idct32_c(temp_in, temp_out);
+    for (j = 0; j < 32; ++j) {
+      dest[j * stride + i] = clip_pixel_add(dest[j * stride + i],
+                                            ROUND_POWER_OF_TWO(temp_out[j], 7));
+    }
+  }
+}
+
+void vp10_idct32x32s8_34_add(const tran_low_t *input, uint8_t *dest,
+                           int stride) {
+  tran_low_t out[32 * 32] = {0};
+  tran_low_t *outptr = out;
+  int i, j;
+  tran_low_t temp_in[32], temp_out[32];
+
+  // Rows
+  // only upper-left 8x8 has non-zero coeff
+  for (i = 0; i < 8; ++i) {
+    idct32_c(input, outptr);
+    input += 32;
+    outptr += 32;
+  }
+
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = out[j * 32 + i];
+    idct32_c(temp_in, temp_out);
+    for (j = 0; j < 32; ++j) {
+      dest[j * stride + i] = clip_pixel_add(dest[j * stride + i],
+                                            ROUND_POWER_OF_TWO(temp_out[j], 7));
+    }
+  }
+}
+
+void vp10_idct32x32s8_1_add(const tran_low_t *input, uint8_t *dest, int stride) {
+  int i, j;
+  tran_high_t a1;
+
+  tran_low_t out = WRAPLOW(dct_const_round_shift(input[0] * cospi_16_64), 8);
+  out = WRAPLOW(dct_const_round_shift(out * cospi_16_64), 8);
+  a1 = ROUND_POWER_OF_TWO(out, 7);
+
+  for (j = 0; j < 32; ++j) {
+    for (i = 0; i < 32; ++i)
+      dest[i] = clip_pixel_add(dest[i], a1);
+    dest += stride;
+  }
+}
+
+void vp10_idct32x32s8_add(const tran_low_t *input, uint8_t *dest, int stride,
+                          int eob) {
+  if (eob == 1)
+    vp10_idct32x32s8_1_add(input, dest, stride);
+  else if (eob <= 34)
+    // non-zero coeff only in upper-left 8x8
+    vp10_idct32x32s8_34_add(input, dest, stride);
+  else
+    vp10_idct32x32s8_1024_add(input, dest, stride);
+}
+#endif  // CONFIG_NOSCALE32
+
 void vp10_inv_txfm_add_4x4(
     const tran_low_t *input, uint8_t *dest,
     int stride, int eob, TX_TYPE tx_type,
@@ -640,7 +734,11 @@ void vp10_inv_txfm_add_32x32(const tran_low_t *input, uint8_t *dest,
                              int stride, int eob, TX_TYPE tx_type) {
   switch (tx_type) {
     case DCT_DCT:
+#if CONFIG_NOSCALE32
+      vp10_idct32x32s8_add(input, dest, stride, eob);
+#else
       vp10_idct32x32_add(input, dest, stride, eob);
+#endif  // CONFIG_NOSCALE32
       break;
     case ADST_DCT:
     case DCT_ADST:
@@ -852,7 +950,7 @@ void vp10_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
 }
 
 void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
-                              int stride, int eob, int bd) {
+                               int stride, int eob, int bd) {
   // Non-zero coeff only in upper-left 8x8
   if (eob == 1) {
     vpx_highbd_idct32x32_1_add(input, dest, stride, bd);
@@ -862,6 +960,105 @@ void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
     vpx_highbd_idct32x32_1024_add(input, dest, stride, bd);
   }
 }
+
+#if CONFIG_NOSCALE32
+void vp10_highbd_idct32x32s8_1024_add(const tran_low_t *input, uint8_t *dest8,
+                                      int stride, int bd) {
+  tran_low_t out[32 * 32];
+  tran_low_t *outptr = out;
+  int i, j;
+  tran_low_t temp_in[32], temp_out[32];
+  uint16_t *dest = CONVERT_TO_SHORTPTR(dest8);
+
+  // Rows
+  for (i = 0; i < 32; ++i) {
+    tran_low_t zero_coeff[16];
+    for (j = 0; j < 16; ++j)
+      zero_coeff[j] = input[2 * j] | input[2 * j + 1];
+    for (j = 0; j < 8; ++j)
+      zero_coeff[j] = zero_coeff[2 * j] | zero_coeff[2 * j + 1];
+    for (j = 0; j < 4; ++j)
+      zero_coeff[j] = zero_coeff[2 * j] | zero_coeff[2 * j + 1];
+    for (j = 0; j < 2; ++j)
+      zero_coeff[j] = zero_coeff[2 * j] | zero_coeff[2 * j + 1];
+
+    if (zero_coeff[0] | zero_coeff[1])
+      highbd_idct32_c(input, outptr, bd);
+    else
+      memset(outptr, 0, sizeof(tran_low_t) * 32);
+    input += 32;
+    outptr += 32;
+  }
+
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = out[j * 32 + i];
+    highbd_idct32_c(temp_in, temp_out, bd);
+    for (j = 0; j < 32; ++j) {
+      dest[j * stride + i] = highbd_clip_pixel_add(
+          dest[j * stride + i], ROUND_POWER_OF_TWO(temp_out[j], 7), bd);
+    }
+  }
+}
+
+void vp10_highbd_idct32x32s8_34_add(const tran_low_t *input, uint8_t *dest8,
+                                    int stride, int bd) {
+  tran_low_t out[32 * 32] = {0};
+  tran_low_t *outptr = out;
+  int i, j;
+  tran_low_t temp_in[32], temp_out[32];
+  uint16_t *dest = CONVERT_TO_SHORTPTR(dest8);
+
+  // Rows
+  // Only upper-left 8x8 has non-zero coeff.
+  for (i = 0; i < 8; ++i) {
+    highbd_idct32_c(input, outptr, bd);
+    input += 32;
+    outptr += 32;
+  }
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = out[j * 32 + i];
+    highbd_idct32_c(temp_in, temp_out, bd);
+    for (j = 0; j < 32; ++j) {
+      dest[j * stride + i] = highbd_clip_pixel_add(
+          dest[j * stride + i], ROUND_POWER_OF_TWO(temp_out[j], 7), bd);
+    }
+  }
+}
+
+void vp10_highbd_idct32x32s8_1_add(const tran_low_t *input, uint8_t *dest8,
+                                   int stride, int bd) {
+  int i, j;
+  int a1;
+  uint16_t *dest = CONVERT_TO_SHORTPTR(dest8);
+
+  tran_low_t out = WRAPLOW(
+      highbd_dct_const_round_shift(input[0] * cospi_16_64, bd), bd);
+  out = WRAPLOW(highbd_dct_const_round_shift(out * cospi_16_64, bd), bd);
+  a1 = ROUND_POWER_OF_TWO(out, 7);
+
+  for (j = 0; j < 32; ++j) {
+    for (i = 0; i < 32; ++i)
+      dest[i] = highbd_clip_pixel_add(dest[i], a1, bd);
+    dest += stride;
+  }
+}
+
+void vp10_highbd_idct32x32s8_add(const tran_low_t *input, uint8_t *dest,
+                                 int stride, int eob, int bd) {
+  // Non-zero coeff only in upper-left 8x8
+  if (eob == 1) {
+    vpx_highbd_idct32x32s8_1_add(input, dest, stride, bd);
+  } else if (eob <= 34) {
+    vpx_highbd_idct32x32s8_34_add(input, dest, stride, bd);
+  } else {
+    vpx_highbd_idct32x32s8_1024_add(input, dest, stride, bd);
+  }
+}
+#endif  // CONFIG_NOSCALE32
 
 void vp10_highbd_inv_txfm_add_4x4(const tran_low_t *input, uint8_t *dest,
                                   int stride, int eob, int bd, TX_TYPE tx_type,
@@ -1059,7 +1256,11 @@ void vp10_highbd_inv_txfm_add_32x32(const tran_low_t *input, uint8_t *dest,
                                     TX_TYPE tx_type) {
   switch (tx_type) {
     case DCT_DCT:
+#if CONFIG_NOSCALE32
+      vp10_highbd_idct32x32s8_add(input, dest, stride, eob, bd);
+#else
       vp10_highbd_idct32x32_add(input, dest, stride, eob, bd);
+#endif  // CONFIG_NOSCALE32
       break;
     case ADST_DCT:
     case DCT_ADST:

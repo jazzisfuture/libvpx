@@ -430,7 +430,11 @@ static void dist_block(MACROBLOCK *x, int plane, int block, TX_SIZE tx_size,
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
   int64_t this_sse;
+#if CONFIG_NOSCALE32
+  int shift = 2;
+#else
   int shift = tx_size == TX_32X32 ? 0 : 2;
+#endif  // CONFIG_NOSCALE32
   tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -470,21 +474,37 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     return;
 
   if (!is_inter_block(mbmi)) {
+#if CONFIG_NOSCALE32
+    struct encode_b_args arg = {x, NULL, &mbmi->skip, 0};
+#else
     struct encode_b_args arg = {x, NULL, &mbmi->skip};
+#endif
     vp10_encode_block_intra(plane, block, plane_bsize, tx_size, &arg);
+#if CONFIG_NOSCALE32
+    if (arg.invalid) {
+      args->exit_early = 1;
+      return;
+    }
+#endif  // CONFIG_NOSCALE32
     dist_block(x, plane, block, tx_size, &dist, &sse);
   } else if (max_txsize_lookup[plane_bsize] == tx_size) {
     if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] ==
         SKIP_TXFM_NONE) {
       // full forward transform and quantization
-      vp10_xform_quant(x, plane, block, plane_bsize, tx_size);
+      if (vp10_xform_quant(x, plane, block, plane_bsize, tx_size)) {
+        args->exit_early = 1;
+        return;
+      }
       dist_block(x, plane, block, tx_size, &dist, &sse);
     } else if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] ==
                SKIP_TXFM_AC_ONLY) {
       // compute DC coefficient
       tran_low_t *const coeff   = BLOCK_OFFSET(x->plane[plane].coeff, block);
       tran_low_t *const dqcoeff = BLOCK_OFFSET(xd->plane[plane].dqcoeff, block);
-      vp10_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
+      if (vp10_xform_quant_dc(x, plane, block, plane_bsize, tx_size)) {
+        args->exit_early = 1;
+        return;
+      }
       sse  = x->bsse[(plane << 2) + (block >> (tx_size << 1))] << 4;
       dist = sse;
       if (x->plane[plane].eobs[block]) {
@@ -494,8 +514,12 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
 #if CONFIG_VP9_HIGHBITDEPTH
         dc_correct >>= ((xd->bd - 8) * 2);
 #endif
+#if CONFIG_NOSCALE32
+        dc_correct >>= 2;
+#else
         if (tx_size != TX_32X32)
           dc_correct >>= 2;
+#endif  // CONFIG_NOSCALE32
 
         dist = VPXMAX(0, sse - dc_correct);
       }
@@ -508,7 +532,10 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     }
   } else {
     // full forward transform and quantization
-    vp10_xform_quant(x, plane, block, plane_bsize, tx_size);
+    if (vp10_xform_quant(x, plane, block, plane_bsize, tx_size)) {
+      args->exit_early = 1;
+      return;
+    }
     dist_block(x, plane, block, tx_size, &dist, &sse);
   }
 

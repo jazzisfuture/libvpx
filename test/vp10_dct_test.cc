@@ -16,15 +16,18 @@
 #include "test/acm_random.h"
 #include "test/util.h"
 #include "./vpx_config.h"
+#include "./vp10_rtcd.h"
+#include "./vpx_dsp_rtcd.h"
 #include "vpx_ports/msvc.h"
+#include "vp10/encoder/dct.h"
 
 #undef CONFIG_COEFFICIENT_RANGE_CHECKING
 #define CONFIG_COEFFICIENT_RANGE_CHECKING 1
-#include "vp10/encoder/dct.c"
 
 using libvpx_test::ACMRandom;
 
 namespace {
+
 void reference_dct_1d(const double *in, double *out, int size) {
   const double PI = 3.141592653589793238462643383279502884;
   const double kInvSqrt2 = 0.707106781186547524400844362104;
