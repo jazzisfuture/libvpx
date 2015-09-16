@@ -266,12 +266,12 @@ int vp9_get_pred_context_comp_ref_p1(const VP9_COMMON *cm,
         else if (rfs == LAST_FRAME && vrfc != LAST_FRAME)
           pred_context = 2;
         else
-          pred_context = 3 + (vrfc == LAST2_FRAME || rfs != GOLDEN_FRAME);
+          pred_context = 3 + (vrfc == LAST2_FRAME || rfs == GOLDEN_FRAME);
       } else {  // comp/comp
         if (vrfa == LAST_FRAME || vrfl == LAST_FRAME)
           pred_context = 2;
         else
-          pred_context = 3 + (vrfa != GOLDEN_FRAME || vrfl != GOLDEN_FRAME);
+          pred_context = 3 + (vrfa == GOLDEN_FRAME || vrfl == GOLDEN_FRAME);
       }
     }
   } else if (above_in_image || left_in_image) {  // one edge available
@@ -286,7 +286,7 @@ int vp9_get_pred_context_comp_ref_p1(const VP9_COMMON *cm,
         if (edge_mbmi->ref_frame[0] == LAST_FRAME)
           pred_context = 0;
         else
-          pred_context = 2 + (edge_mbmi->ref_frame[0] != GOLDEN_FRAME);
+          pred_context = 2 + (edge_mbmi->ref_frame[0] == GOLDEN_FRAME);
       }
     }
   } else {  // no edges available (2)
@@ -459,8 +459,8 @@ int vp9_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
   return pred_context;
 }
 
-// For the bit to signal whether the single reference is a LAST_FRAME or a
-// LAST2_FRAME, knowing that it shall be either of these 2 choices.
+// For the bit to signal whether the single reference is ALTREF_FRAME or
+// GOLDEN_FRAME, knowing that it shall be either of these 2 choices.
 int vp9_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
   int pred_context;
   const MB_MODE_INFO *const above_mbmi = get_mbmi(get_above_mi(xd));
@@ -552,8 +552,8 @@ int vp9_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
 #define CHECK_GOLDEN_OR_ALTREF(ref_frame) \
   ((ref_frame == GOLDEN_FRAME) || (ref_frame == ALTREF_FRAME))
 
-// For the bit to signal whether the single reference is a GOLDEN_FRAME or an
-// ALTREF_FRAME, knowing that it shall be either of these 2 choices.
+// For the bit to signal whether the single reference is LAST_FRAME or
+// LAST2_FRAME, knowing that it shall be either of these 2 choices.
 int vp9_get_pred_context_single_ref_p3(const MACROBLOCKD *xd) {
   int pred_context;
   const MB_MODE_INFO *const above_mbmi = get_mbmi(get_above_mi(xd));
