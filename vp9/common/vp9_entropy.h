@@ -264,8 +264,10 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
   return combine_entropy_contexts(above_ec, left_ec);
 }
 
-static INLINE const scan_order *get_scan(const MACROBLOCKD *xd, TX_SIZE tx_size,
-                                         PLANE_TYPE type, int block_idx) {
+static INLINE const scan_order *get_scan(const MACROBLOCKD *xd,
+                                         TX_SIZE tx_size,
+                                         PLANE_TYPE type,
+                                         int block_idx) {
   const MODE_INFO *const mi = xd->mi[0].src_mi;
 
 #if CONFIG_TX_SKIP
@@ -273,7 +275,7 @@ static INLINE const scan_order *get_scan(const MACROBLOCKD *xd, TX_SIZE tx_size,
     return &vp9_default_scan_orders_pxd[tx_size];
 #endif  // CONFIG_TX_SKIP
 
-  if (type != PLANE_TYPE_Y || xd->lossless
+  if (xd->lossless
 #if CONFIG_INTRABC
       || is_intrabc_mode(mi->mbmi.mode)
 #endif
@@ -288,7 +290,8 @@ static INLINE const scan_order *get_scan(const MACROBLOCKD *xd, TX_SIZE tx_size,
     return &vp9_default_scan_orders[tx_size];
 #endif
   } else {
-    const PREDICTION_MODE mode = get_y_mode(mi, block_idx);
+    const PREDICTION_MODE mode =
+        (type == PLANE_TYPE_Y ? get_y_mode(mi, block_idx) : mi->mbmi.uv_mode);
     return &vp9_intra_scan_orders[tx_size][intra_mode_to_tx_type_lookup[mode]];
   }
 }
