@@ -132,7 +132,7 @@ cglobal filter_block1d4_%1, 6, 6+(ARCH_X86_64*2), 11, LOCAL_VARS_SIZE, \
     mova               krd, m1
 %endif
     mov        orig_height, heightq
-    shr            heightq, 1
+    shr            heightd, 1
 .loop:
     ;Do two rows at once
     movh                m0, [srcq - 3]
@@ -200,12 +200,12 @@ cglobal filter_block1d4_%1, 6, 6+(ARCH_X86_64*2), 11, LOCAL_VARS_SIZE, \
     lea               dstq, [dstq + 2 * dstrideq    ]
     prefetcht0              [srcq + 2 * sstrideq - 3]
 
-    dec            heightq
+    dec            heightd
     jnz              .loop
 
     ; Do last row if output_height is odd
     mov            heightq, orig_height
-    and            heightq, 1
+    and            heightd, 1
     je               .done
 
     movh                m0, [srcq - 3]    ; load src
@@ -254,7 +254,7 @@ cglobal filter_block1d4_%1, 6, 6+(ARCH_X86_64*2), 11, LOCAL_VARS_SIZE, \
 
 ;-------------------------------------------------------------------------------
 %macro SUBPIX_HFILTER8 1
-cglobal filter_block1d8_%1, 6, 6+(ARCH_X86_64*1), 13, LOCAL_VARS_SIZE, \
+cglobal filter_block1d8_%1, 6, 6+(ARCH_X86_64*1), 14, LOCAL_VARS_SIZE, \
                             src, sstride, dst, dstride, height, filter
     mova                 m4, [filterq]
     SETUP_LOCAL_VARS
@@ -264,7 +264,7 @@ cglobal filter_block1d8_%1, 6, 6+(ARCH_X86_64*1), 13, LOCAL_VARS_SIZE, \
     %define     orig_height heightmp
 %endif
     mov         orig_height, heightq
-    shr             heightq, 1
+    shr             heightd, 1
 
 .loop:
     movh                 m0, [srcq - 3]
@@ -336,12 +336,12 @@ cglobal filter_block1d8_%1, 6, 6+(ARCH_X86_64*1), 13, LOCAL_VARS_SIZE, \
     lea                srcq, [srcq + sstrideq        ]
     lea                dstq, [dstq + 2 * dstrideq    ]
     prefetcht0               [srcq + 2 * sstrideq - 3]
-    dec             heightq
+    dec             heightd
     jnz             .loop
 
     ;Do last row if output_height is odd
     mov             heightq, orig_height
-    and             heightq, 1
+    and             heightd, 1
     je                .done
 
     movh                 m0, [srcq - 3]
@@ -361,7 +361,7 @@ cglobal filter_block1d8_%1, 6, 6+(ARCH_X86_64*1), 13, LOCAL_VARS_SIZE, \
 
 ;-------------------------------------------------------------------------------
 %macro SUBPIX_HFILTER16 1
-cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*0), 13, LOCAL_VARS_SIZE, \
+cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*0), 14, LOCAL_VARS_SIZE, \
                              src, sstride, dst, dstride, height, filter
     mova          m4, [filterq]
     SETUP_LOCAL_VARS
@@ -427,7 +427,7 @@ cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*0), 13, LOCAL_VARS_SIZE, \
     lea         srcq, [srcq + sstrideq]
     mova      [dstq], m0
     lea         dstq, [dstq + dstrideq]
-    dec      heightq
+    dec      heightd
     jnz        .loop
     RET
 %endm
@@ -527,11 +527,11 @@ cglobal filter_block1d%2_%1, 6, 6+(ARCH_X86_64*3), 14, LOCAL_VARS_SIZE, \
 %endif
     movx     [dstq], m1
     add        dstq, dst_stride
-    sub     heightq, 2
-    cmp     heightq, 1
+    sub     heightd, 2
+    cmp     heightd, 1
     jg        .loop
 
-    cmp     heightq, 0
+    cmp     heightd, 0
     je        .done
 
     movx         m0, [srcq                ]     ;A
@@ -570,7 +570,7 @@ cglobal filter_block1d%2_%1, 6, 6+(ARCH_X86_64*3), 14, LOCAL_VARS_SIZE, \
 
 ;-------------------------------------------------------------------------------
 %macro SUBPIX_VFILTER16 1
-cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*2), 13, LOCAL_VARS_SIZE, \
+cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*3), 14, LOCAL_VARS_SIZE, \
                              src, sstride, dst, dstride, height, filter
 
     mova          m4, [filterq]
@@ -655,7 +655,7 @@ cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*2), 13, LOCAL_VARS_SIZE, \
 %endif
     movh  [dstq + 8], m3
     add         dstq, dst_stride
-    dec      heightq
+    dec      heightd
     jnz        .loop
     RET
 %endm
