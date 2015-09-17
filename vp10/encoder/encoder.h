@@ -460,6 +460,7 @@ typedef struct VP10_COMP {
   int multi_arf_allowed;
   int multi_arf_enabled;
   int multi_arf_last_grp_enabled;
+  int is_dummy_writing;
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;

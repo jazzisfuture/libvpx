@@ -705,6 +705,7 @@ static void dec_build_inter_predictors_sb(VP10Decoder *const pbi,
         for (y = 0; y < num_4x4_h; ++y) {
           for (x = 0; x < num_4x4_w; ++x) {
             const MV mv = average_split_mvs(pd, mi, ref, i++);
+            kernel = vp10_filter_kernels[mi->bmi[y * 2 + x].pred_filter];
             dec_build_inter_predictors(pbi, xd, plane, n4w_x4, n4h_x4,
                                        4 * x, 4 * y, 4, 4, mi_x, mi_y, kernel,
                                        sf, pre_buf, dst_buf, &mv,

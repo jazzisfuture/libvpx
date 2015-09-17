@@ -42,15 +42,6 @@ static INLINE int is_inter_mode(PREDICTION_MODE mode) {
   return mode >= NEARESTMV && mode <= NEWMV;
 }
 
-/* For keyframes, intra block modes are predicted by the (already decoded)
-   modes for the Y blocks to the left and above us; for interframes, there
-   is a single probability table. */
-
-typedef struct {
-  PREDICTION_MODE as_mode;
-  int_mv as_mv[2];  // first, second inter predictor motion vectors
-} b_mode_info;
-
 // Note that the rate-distortion optimization loop, bit-stream writer, and
 // decoder implementation modules critically rely on the defined entry values
 // specified herein. They should be refactored concurrently.
@@ -62,6 +53,13 @@ typedef struct {
 #define ALTREF_FRAME    3
 #define MAX_REF_FRAMES  4
 typedef int8_t MV_REFERENCE_FRAME;
+
+typedef struct {
+  PREDICTION_MODE as_mode;
+  INTERP_FILTER pred_filter;
+  MV_REFERENCE_FRAME ref_frame[2];
+  int_mv as_mv[2];  // first, second inter predictor motion vectors
+} b_mode_info;
 
 // This structure now relates to 8x8 block regions.
 typedef struct {

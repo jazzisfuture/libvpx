@@ -3231,6 +3231,7 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
     // to recode.
     if (cpi->sf.recode_loop >= ALLOW_RECODE_KFARFGF) {
       save_coding_context(cpi);
+      cpi->is_dummy_writing = 1;
       vp10_pack_bitstream(cpi, dest, size);
 
       rc->projected_frame_size = (int)(*size) << 3;
@@ -3631,6 +3632,7 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   loopfilter_frame(cpi, cm);
 
   // build the bitstream
+  cpi->is_dummy_writing = 0;
   vp10_pack_bitstream(cpi, dest, size);
 
   if (cm->seg.update_map)

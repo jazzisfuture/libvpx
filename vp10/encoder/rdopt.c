@@ -3620,13 +3620,13 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
 }
 
 void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
-                                   TileDataEnc *tile_data,
-                                   MACROBLOCK *x,
-                                   int mi_row, int mi_col,
-                                   RD_COST *rd_cost,
-                                   BLOCK_SIZE bsize,
-                                   PICK_MODE_CONTEXT *ctx,
-                                   int64_t best_rd_so_far) {
+                                    TileDataEnc *tile_data,
+                                    MACROBLOCK *x,
+                                    int mi_row, int mi_col,
+                                    RD_COST *rd_cost,
+                                    BLOCK_SIZE bsize,
+                                    PICK_MODE_CONTEXT *ctx,
+                                    int64_t best_rd_so_far) {
   VP10_COMMON *const cm = &cpi->common;
   RD_OPT *const rd_opt = &cpi->rd;
   SPEED_FEATURES *const sf = &cpi->sf;
@@ -4200,6 +4200,13 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
 
     mbmi->mv[0].as_int = xd->mi[0]->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = xd->mi[0]->bmi[3].as_mv[1].as_int;
+  }
+
+  // TODO(jingning): rewrite sub8x8 block rate-distortion optimization scheme.
+  for (i = 0; i < 4; ++i) {
+    xd->mi[0]->bmi[i].pred_filter = mbmi->interp_filter;
+    xd->mi[0]->bmi[i].ref_frame[0] = mbmi->ref_frame[0];
+    xd->mi[0]->bmi[i].ref_frame[1] = mbmi->ref_frame[1];
   }
 
   for (i = 0; i < REFERENCE_MODES; ++i) {

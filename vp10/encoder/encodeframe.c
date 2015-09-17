@@ -1055,7 +1055,19 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
 
       if (cm->interp_filter == SWITCHABLE) {
         const int ctx = vp10_get_pred_context_switchable_interp(xd);
-        ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
+        if (mbmi->sb_type >= BLOCK_8X8) {
+          ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
+        } else {
+          const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
+          const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
+          int idx, idy;
+          for (idy = 0; idy < 2; idy += num_4x4_h) {
+            for (idx = 0; idx < 2; idx += num_4x4_w) {
+              INTERP_FILTER pred_filter = mi->bmi[idy * 2 + idx].pred_filter;
+              ++td->counts->switchable_interp[ctx][pred_filter];
+            }
+          }
+        }
       }
     }
 
@@ -2965,12 +2977,9 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
       vp10_setup_pre_planes(xd, ref, cfg, mi_row, mi_col,
                            &xd->block_refs[ref]->sf);
     }
-    if (!(cpi->sf.reuse_inter_pred_sby && ctx->pred_pixel_ready) || seg_skip)
-      vp10_build_inter_predictors_sby(xd, mi_row, mi_col,
-                                      VPXMAX(bsize, BLOCK_8X8));
 
-    vp10_build_inter_predictors_sbuv(xd, mi_row, mi_col,
-                                     VPXMAX(bsize, BLOCK_8X8));
+    vp10_build_inter_predictors_sb(xd, mi_row, mi_col,
+                                   VPXMAX(bsize, BLOCK_8X8));
 
     vp10_encode_sb(x, VPXMAX(bsize, BLOCK_8X8));
     vp10_tokenize_sb(cpi, td, t, !output_enabled, VPXMAX(bsize, BLOCK_8X8));

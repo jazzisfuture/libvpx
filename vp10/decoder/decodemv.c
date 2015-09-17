@@ -528,10 +528,6 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
     }
   }
 
-  mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
-                      ? read_switchable_interp_filter(cm, xd, r)
-                      : cm->interp_filter;
-
   if (bsize < BLOCK_8X8) {
     const int num_4x4_w = 1 << xd->bmode_blocks_wl;
     const int num_4x4_h = 1 << xd->bmode_blocks_hl;
@@ -552,6 +548,9 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
                                           &near_sub8x8[ref],
                                           dummy_mode_ctx);
         }
+
+        mi->bmi[j].pred_filter = (cm->interp_filter == SWITCHABLE) ?
+            read_switchable_interp_filter(cm, xd, r) : cm->interp_filter;
 
         if (!assign_mv(cm, xd, b_mode, block, nearestmv,
                        nearest_sub8x8, near_sub8x8,
@@ -575,7 +574,11 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
 
     mbmi->mv[0].as_int = mi->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
+    mbmi->interp_filter = mi->bmi[3].pred_filter;
   } else {
+    mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
+                        ? read_switchable_interp_filter(cm, xd, r)
+                        : cm->interp_filter;
     xd->corrupted |= !assign_mv(cm, xd, mbmi->mode, mbmi->mv, nearestmv,
                                 nearestmv, nearmv, is_compound, allow_hp, r);
   }

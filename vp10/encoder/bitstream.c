@@ -292,6 +292,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
   } else {
     const int mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
     const vpx_prob *const inter_probs = cm->fc->inter_mode_probs[mode_ctx];
+
     write_ref_frames(cm, xd, w);
 
     // If segment skip is not enabled code the mode.
@@ -302,11 +303,13 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
     }
 
     if (cm->interp_filter == SWITCHABLE) {
-      const int ctx = vp10_get_pred_context_switchable_interp(xd);
-      vp10_write_token(w, vp10_switchable_interp_tree,
-                      cm->fc->switchable_interp_prob[ctx],
-                      &switchable_interp_encodings[mbmi->interp_filter]);
-      ++cpi->interp_filter_selected[0][mbmi->interp_filter];
+      if (bsize >= BLOCK_8X8) {
+        const int ctx = vp10_get_pred_context_switchable_interp(xd);
+        vp10_write_token(w, vp10_switchable_interp_tree,
+                        cm->fc->switchable_interp_prob[ctx],
+                        &switchable_interp_encodings[mbmi->interp_filter]);
+        ++cpi->interp_filter_selected[0][mbmi->interp_filter];
+      }
     } else {
       assert(mbmi->interp_filter == cm->interp_filter);
     }
@@ -320,6 +323,16 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
           const int j = idy * 2 + idx;
           const PREDICTION_MODE b_mode = mi->bmi[j].as_mode;
           write_inter_mode(w, b_mode, inter_probs);
+
+          if (cm->interp_filter == SWITCHABLE) {
+            const int ctx = vp10_get_pred_context_switchable_interp(xd);
+            INTERP_FILTER pred_filter = mi->bmi[j].pred_filter;
+            vp10_write_token(w, vp10_switchable_interp_tree,
+                             cm->fc->switchable_interp_prob[ctx],
+                             &switchable_interp_encodings[pred_filter]);
+            ++cpi->interp_filter_selected[0][pred_filter];
+          }
+
           if (b_mode == NEWMV) {
             for (ref = 0; ref < 1 + is_compound; ++ref)
               vp10_encode_mv(cpi, w, &mi->bmi[j].as_mv[ref].as_mv,
