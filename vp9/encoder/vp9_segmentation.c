@@ -277,5 +277,5 @@ void vp9_reset_segment_features(struct segmentation *seg) {
   seg->update_map = 0;
   seg->update_data = 0;
   memset(seg->tree_probs, 255, sizeof(seg->tree_probs));
-  vp9_clearall_segfeatures(seg);
+  clearall_segfeatures(seg);
 }

@@ -11,6 +11,7 @@
 #ifndef VP9_COMMON_VP9_SEG_COMMON_H_
 #define VP9_COMMON_VP9_SEG_COMMON_H_
 
+#include "vp9/common/vp9_common.h"
 #include "vpx_dsp/prob.h"
 
 #ifdef __cplusplus
@@ -49,6 +50,9 @@ struct segmentation {
   unsigned int feature_mask[MAX_SEGMENTS];
 };
 
+extern const uint8_t vp9_seg_feature_data_signed[SEG_LVL_MAX];
+extern const uint8_t vp9_seg_feature_data_max[SEG_LVL_MAX];
+
 static INLINE int segfeature_active(const struct segmentation *seg,
                                     int segment_id,
                                     SEG_LVL_FEATURES feature_id) {
@@ -56,20 +60,34 @@ static INLINE int segfeature_active(const struct segmentation *seg,
          (seg->feature_mask[segment_id] & (1 << feature_id));
 }
 
-void vp9_clearall_segfeatures(struct segmentation *seg);
+static INLINE void clearall_segfeatures(struct segmentation *seg) {
+  vp9_zero(seg->feature_data);
+  vp9_zero(seg->feature_mask);
+}
 
-void vp9_enable_segfeature(struct segmentation *seg,
-                           int segment_id,
-                           SEG_LVL_FEATURES feature_id);
+static INLINE void enable_segfeature(struct segmentation *seg, int segment_id,
+                                     SEG_LVL_FEATURES feature_id) {
+  seg->feature_mask[segment_id] |= 1 << feature_id;
+}
 
-int vp9_seg_feature_data_max(SEG_LVL_FEATURES feature_id);
+static INLINE int seg_feature_data_max(SEG_LVL_FEATURES feature_id) {
+  return vp9_seg_feature_data_max[feature_id];
+}
 
-int vp9_is_segfeature_signed(SEG_LVL_FEATURES feature_id);
+static INLINE int is_segfeature_signed(SEG_LVL_FEATURES feature_id) {
+  return vp9_seg_feature_data_signed[feature_id];
+}
 
-void vp9_set_segdata(struct segmentation *seg,
-                     int segment_id,
-                     SEG_LVL_FEATURES feature_id,
-                     int seg_data);
+static INLINE void set_segdata(struct segmentation *seg, int segment_id,
+                               SEG_LVL_FEATURES feature_id, int seg_data) {
+  assert(seg_data <= seg_feature_data_max(feature_id));
+  if (seg_data < 0) {
+    assert(is_segfeature_signed(feature_id));
+    assert(-seg_data <= seg_feature_data_max(feature_id));
+  }
+
+  seg->feature_data[segment_id][feature_id] = seg_data;
+}
 
 static INLINE int get_segdata(const struct segmentation *seg, int segment_id,
                               SEG_LVL_FEATURES feature_id) {

@@ -1080,19 +1080,19 @@ static void setup_segmentation(struct segmentation *seg,
   if (seg->update_data) {
     seg->abs_delta = vpx_rb_read_bit(rb);
 
-    vp9_clearall_segfeatures(seg);
+    clearall_segfeatures(seg);
 
     for (i = 0; i < MAX_SEGMENTS; i++) {
       for (j = 0; j < SEG_LVL_MAX; j++) {
         int data = 0;
         const int feature_enabled = vpx_rb_read_bit(rb);
         if (feature_enabled) {
-          vp9_enable_segfeature(seg, i, j);
-          data = decode_unsigned_max(rb, vp9_seg_feature_data_max(j));
-          if (vp9_is_segfeature_signed(j))
+          enable_segfeature(seg, i, j);
+          data = decode_unsigned_max(rb, seg_feature_data_max(j));
+          if (is_segfeature_signed(j))
             data = vpx_rb_read_bit(rb) ? -data : data;
         }
-        vp9_set_segdata(seg, i, j, data);
+        set_segdata(seg, i, j, data);
       }
     }
   }

@@ -60,7 +60,7 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
     // Clear down the segment map.
     memset(cpi->segmentation_map, DEFAULT_AQ2_SEG, cm->mi_rows * cm->mi_cols);
 
-    vp9_clearall_segfeatures(seg);
+    clearall_segfeatures(seg);
 
     // Segmentation only makes sense if the target bits per SB is above a
     // threshold. Below this the overheads will usually outweigh any benefit.
@@ -98,8 +98,8 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
         qindex_delta = -cm->base_qindex + 1;
       }
       if ((cm->base_qindex + qindex_delta) > 0) {
-        vp9_enable_segfeature(seg, segment, SEG_LVL_ALT_Q);
-        vp9_set_segdata(seg, segment, SEG_LVL_ALT_Q, qindex_delta);
+        enable_segfeature(seg, segment, SEG_LVL_ALT_Q);
+        set_segdata(seg, segment, SEG_LVL_ALT_Q, qindex_delta);
       }
     }
   }
