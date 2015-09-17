@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (313413 Inter UV blocks use the same transform type as Y)
 /*
  *  Copyright (c) 2014 The WebM project authors. All Rights Reserved.
  *
@@ -1889,3 +1890,5 @@ void vp10_pick_inter_mode_sub8x8(VP10_COMP *cpi, MACROBLOCK *x,
   // Dummy assignment for speed -5. No effect in speed -6.
   rd_cost->rdcost = best_rd;
 }
+=======
+>>>>>>> BRANCH (50f944 vp10: do sub8x8 block reconstruction in full subblocks.)
