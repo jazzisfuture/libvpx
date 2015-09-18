@@ -728,7 +728,14 @@ process_common_toolchain() {
   # Handle darwin variants. Newer SDKs allow targeting older
   # platforms, so use the newest one available.
   case ${toolchain} in
-    *-darwin*)
+    arm*-darwin*)
+      iphoneos_sdk_dir="$(show_darwin_sdk_path iphoneos)"
+      if [ -d "${iphoneos_sdk_dir}" ]; then
+        add_cflags  "-isysroot ${iphoneos_sdk_dir}"
+        add_ldflags "-isysroot ${iphoneos_sdk_dir}"
+      fi
+      ;;
+    x86*-darwin*)
       osx_sdk_dir="$(show_darwin_sdk_path macosx)"
       if [ -d "${osx_sdk_dir}" ]; then
         add_cflags  "-isysroot ${osx_sdk_dir}"
