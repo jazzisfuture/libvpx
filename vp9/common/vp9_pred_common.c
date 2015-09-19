@@ -119,6 +119,413 @@ int vp9_get_reference_mode_context(const VP9_COMMON *cm,
 #define CHECK_GOLDEN_OR_LAST3(ref_frame) \
   ((ref_frame == GOLDEN_FRAME) || (ref_frame == LAST3_FRAME))
 
+#if CONFIG_LAST4_REF
+
+#define CHECK_GOLDEN_LAST3_LAST4(ref_frame) \
+  ((ref_frame == GOLDEN_FRAME) || (ref_frame == LAST3_FRAME) || \
+  (ref_frame == LAST4_FRAME))
+
+// TODO(zoeliu): Would like to create a master function.
+
+// Returns a context number for the given MB prediction signal
+// Signal the first reference frame for a compound mode is either
+// GOLDEN/LAST3/LAST4, or LAST/LAST2.
+//
+// NOTE(zoeliu): The probability of ref_frame[0] is either
+//               GOLDEN_FRAME/LAST3_FRAME/LAST4_FRAME.
+int vp9_get_pred_context_comp_ref_p(const VP9_COMMON *cm,
+                                    const MACROBLOCKD *xd) {
+  int pred_context;
+  const MB_MODE_INFO *const above_mbmi = get_mbmi(get_above_mi(xd));
+  const MB_MODE_INFO *const left_mbmi = get_mbmi(get_left_mi(xd));
+  const int above_in_image = above_mbmi != NULL;
+  const int left_in_image = left_mbmi != NULL;
+
+  // Note:
+  // The mode info data structure has a one element border above and to the
+  // left of the entries correpsonding to real macroblocks.
+  // The prediction flags in these dummy entries are initialised to 0.
+  const int fix_ref_idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
+  const int var_ref_idx = !fix_ref_idx;
+
+  if (above_in_image && left_in_image) {  // both edges available
+    const int above_intra = !is_inter_block(above_mbmi);
+    const int left_intra = !is_inter_block(left_mbmi);
+
+    if (above_intra && left_intra) {  // intra/intra (2)
+      pred_context = 2;
+    } else if (above_intra || left_intra) {  // intra/inter
+      const MB_MODE_INFO *edge_mbmi = above_intra ? left_mbmi : above_mbmi;
+
+      if (!has_second_ref(edge_mbmi))  // single pred (1/3)
+        pred_context = 1 +
+            2 * (!CHECK_GOLDEN_LAST3_LAST4(edge_mbmi->ref_frame[0]));
+      else  // comp pred (1/3)
+        pred_context = 1 +
+            2 * (!CHECK_GOLDEN_LAST3_LAST4(edge_mbmi->ref_frame[var_ref_idx]));
+    } else {  // inter/inter
+      const int l_sg = !has_second_ref(left_mbmi);
+      const int a_sg = !has_second_ref(above_mbmi);
+      const MV_REFERENCE_FRAME vrfa = a_sg ? above_mbmi->ref_frame[0]
+                                           : above_mbmi->ref_frame[var_ref_idx];
+      const MV_REFERENCE_FRAME vrfl = l_sg ? left_mbmi->ref_frame[0]
+                                           : left_mbmi->ref_frame[var_ref_idx];
+
+      if (vrfa == vrfl && CHECK_GOLDEN_LAST3_LAST4(vrfa)) {
+        pred_context = 0;
+      } else if (l_sg && a_sg) {  // single/single
+        if ((vrfa == ALTREF_FRAME && CHECK_LAST_OR_LAST2(vrfl)) ||
+            (vrfl == ALTREF_FRAME && CHECK_LAST_OR_LAST2(vrfa))) {
+          pred_context = 4;
+        } else if (vrfa == vrfl || (CHECK_LAST_OR_LAST2(vrfa) &&
+                                    CHECK_LAST_OR_LAST2(vrfl))) {
+          pred_context = 3;
+        } else {  // Either vrfa or vrfl is GOLDEN / LAST3 / LAST4
+          // NOTE(zoeliu): Following assert may be removed once confirmed.
+          assert(CHECK_GOLDEN_LAST3_LAST4(vrfa) || CHECK_GOLDEN_LAST3_LAST4(vrfl));
+          pred_context = 1;
+        }
+      } else if (l_sg || a_sg) {  // single/comp
+        const MV_REFERENCE_FRAME vrfc = l_sg ? vrfa : vrfl;
+        const MV_REFERENCE_FRAME rfs = a_sg ? vrfa : vrfl;
+
+        if (CHECK_GOLDEN_LAST3_LAST4(vrfc) && !CHECK_GOLDEN_LAST3_LAST4(rfs))
+          pred_context = 1;
+        else if (CHECK_GOLDEN_LAST3_LAST4(rfs) && !CHECK_GOLDEN_LAST3_LAST4(vrfc))
+          pred_context = 2;
+        else
+          pred_context = 4;
+      } else {  // comp/comp
+        if ((CHECK_LAST_OR_LAST2(vrfa) && CHECK_LAST_OR_LAST2(vrfl))) {
+          pred_context = 4;
+        } else {
+          // NOTE(zoeliu): Following assert may be removed once confirmed.
+          assert(CHECK_GOLDEN_LAST3_LAST4(vrfa) || CHECK_GOLDEN_LAST3_LAST4(vrfl));
+          pred_context = 2;
+        }
+      }
+    }
+  } else if (above_in_image || left_in_image) {  // one edge available
+    const MB_MODE_INFO *edge_mbmi = above_in_image ? above_mbmi : left_mbmi;
+
+    if (!is_inter_block(edge_mbmi)) {
+      pred_context = 2;
+    } else {
+      if (has_second_ref(edge_mbmi))
+        pred_context =
+            4 * (!CHECK_GOLDEN_LAST3_LAST4(edge_mbmi->ref_frame[var_ref_idx]));
+      else
+        pred_context = 3 * (!CHECK_GOLDEN_LAST3_LAST4(edge_mbmi->ref_frame[0]));
+    }
+  } else {  // no edges available (2)
+    pred_context = 2;
+  }
+
+  assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
+
+  return pred_context;
+}
+
+// Returns a context number for the given MB prediction signal
+// Signal the first reference frame for a compound mode is LAST,
+// conditioning on that it is known either LAST/LAST2.
+//
+// NOTE(zoeliu): The probability of ref_frame[0] is LAST_FRAME,
+// conditioning on it is either LAST_FRAME or LAST2_FRAME.
+int vp9_get_pred_context_comp_ref_p1(const VP9_COMMON *cm,
+                                     const MACROBLOCKD *xd) {
+  int pred_context;
+  const MB_MODE_INFO *const above_mbmi = get_mbmi(get_above_mi(xd));
+  const MB_MODE_INFO *const left_mbmi = get_mbmi(get_left_mi(xd));
+  const int above_in_image = above_mbmi != NULL;
+  const int left_in_image = left_mbmi != NULL;
+
+  // Note:
+  // The mode info data structure has a one element border above and to the
+  // left of the entries correpsonding to real macroblocks.
+  // The prediction flags in these dummy entries are initialised to 0.
+  const int fix_ref_idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
+  const int var_ref_idx = !fix_ref_idx;
+
+  if (above_in_image && left_in_image) {  // both edges available
+    const int above_intra = !is_inter_block(above_mbmi);
+    const int left_intra = !is_inter_block(left_mbmi);
+
+    if (above_intra && left_intra) {  // intra/intra (2)
+      pred_context = 2;
+    } else if (above_intra || left_intra) {  // intra/inter
+      const MB_MODE_INFO *edge_mbmi = above_intra ? left_mbmi : above_mbmi;
+
+      if (!has_second_ref(edge_mbmi))  // single pred (1/3)
+        pred_context = 1 + 2 * (edge_mbmi->ref_frame[0] != LAST_FRAME);
+      else  // comp pred (1/3)
+        pred_context = 1 + 2 * (edge_mbmi->ref_frame[var_ref_idx]
+                                != LAST_FRAME);
+    } else {  // inter/inter
+      const int l_sg = !has_second_ref(left_mbmi);
+      const int a_sg = !has_second_ref(above_mbmi);
+      const MV_REFERENCE_FRAME vrfa = a_sg ? above_mbmi->ref_frame[0]
+                                           : above_mbmi->ref_frame[var_ref_idx];
+      const MV_REFERENCE_FRAME vrfl = l_sg ? left_mbmi->ref_frame[0]
+                                           : left_mbmi->ref_frame[var_ref_idx];
+
+      if (vrfa == vrfl && vrfa == LAST_FRAME)
+        pred_context = 0;
+      else if (l_sg && a_sg) {  // single/single
+        if (vrfa == LAST_FRAME || vrfl == LAST_FRAME)
+          pred_context = 1;
+        else if (CHECK_GOLDEN_LAST3_LAST4(vrfa) || CHECK_GOLDEN_LAST3_LAST4(vrfl))
+          pred_context = 2 + (vrfa != vrfl);
+        else if (vrfa == vrfl)
+          pred_context = 3;
+        else
+          pred_context = 4;
+      } else if (l_sg || a_sg) {  // single/comp
+        const MV_REFERENCE_FRAME vrfc = l_sg ? vrfa : vrfl;
+        const MV_REFERENCE_FRAME rfs = a_sg ? vrfa : vrfl;
+
+        if (vrfc == LAST_FRAME && rfs != LAST_FRAME)
+          pred_context = 1;
+        else if (rfs == LAST_FRAME && vrfc != LAST_FRAME)
+          pred_context = 2;
+        else
+          pred_context = 3 +
+              (vrfc == LAST2_FRAME || CHECK_GOLDEN_LAST3_LAST4(rfs));
+      } else {  // comp/comp
+        if (vrfa == LAST_FRAME || vrfl == LAST_FRAME)
+          pred_context = 2;
+        else
+          pred_context = 3 +
+              (CHECK_GOLDEN_LAST3_LAST4(vrfa) || CHECK_GOLDEN_LAST3_LAST4(vrfl));
+      }
+    }
+  } else if (above_in_image || left_in_image) {  // one edge available
+    const MB_MODE_INFO *edge_mbmi = above_in_image ? above_mbmi : left_mbmi;
+
+    if (!is_inter_block(edge_mbmi)) {
+      pred_context = 2;
+    } else {
+      if (has_second_ref(edge_mbmi)) {
+        pred_context = 4 * (edge_mbmi->ref_frame[var_ref_idx] != LAST_FRAME);
+      } else {
+        if (edge_mbmi->ref_frame[0] == LAST_FRAME)
+          pred_context = 0;
+        else
+          pred_context = 2 + CHECK_GOLDEN_LAST3_LAST4(edge_mbmi->ref_frame[0]);
+      }
+    }
+  } else {  // no edges available (2)
+    pred_context = 2;
+  }
+
+  assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
+
+  return pred_context;
+}
+
+#define CHECK_LAST3_OR_LAST4(ref_frame) \
+  ((ref_frame == LAST3_FRAME) || (ref_frame == LAST4_FRAME))
+
+// Returns a context number for the given MB prediction signal
+// Signal the first reference frame for a compound mode is GOLDEN,
+// conditioning on that it is known either GOLDEN/LAST3/LAST4.
+//
+// NOTE(zoeliu): The probability of ref_frame[0] is GOLDEN_FRAME,
+// conditioning on it is either GOLDEN / LAST3 / LAST4.
+int vp9_get_pred_context_comp_ref_p2(const VP9_COMMON *cm,
+                                     const MACROBLOCKD *xd) {
+  int pred_context;
+  const MB_MODE_INFO *const above_mbmi = get_mbmi(get_above_mi(xd));
+  const MB_MODE_INFO *const left_mbmi = get_mbmi(get_left_mi(xd));
+  const int above_in_image = above_mbmi != NULL;
+  const int left_in_image = left_mbmi != NULL;
+
+  // Note:
+  // The mode info data structure has a one element border above and to the
+  // left of the entries correpsonding to real macroblocks.
+  // The prediction flags in these dummy entries are initialised to 0.
+  const int fix_ref_idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
+  const int var_ref_idx = !fix_ref_idx;
+
+  if (above_in_image && left_in_image) {  // both edges available
+    const int above_intra = !is_inter_block(above_mbmi);
+    const int left_intra = !is_inter_block(left_mbmi);
+
+    if (above_intra && left_intra) {  // intra/intra (2)
+      pred_context = 2;
+    } else if (above_intra || left_intra) {  // intra/inter
+      const MB_MODE_INFO *edge_mbmi = above_intra ? left_mbmi : above_mbmi;
+
+      if (!has_second_ref(edge_mbmi))  // single pred (1/3)
+        pred_context = 1 + 2 * (edge_mbmi->ref_frame[0] != GOLDEN_FRAME);
+      else  // comp pred (1/3)
+        pred_context = 1 +
+            2 * (edge_mbmi->ref_frame[var_ref_idx] != GOLDEN_FRAME);
+    } else {  // inter/inter
+      const int l_sg = !has_second_ref(left_mbmi);
+      const int a_sg = !has_second_ref(above_mbmi);
+      const MV_REFERENCE_FRAME vrfa = a_sg ? above_mbmi->ref_frame[0]
+                                           : above_mbmi->ref_frame[var_ref_idx];
+      const MV_REFERENCE_FRAME vrfl = l_sg ? left_mbmi->ref_frame[0]
+                                           : left_mbmi->ref_frame[var_ref_idx];
+
+      if (vrfa == vrfl && vrfa == GOLDEN_FRAME)
+        pred_context = 0;
+      else if (l_sg && a_sg) {  // single/single
+        if (vrfa == GOLDEN_FRAME || vrfl == GOLDEN_FRAME)
+          pred_context = 1;
+        else if (CHECK_LAST_OR_LAST2(vrfa) || CHECK_LAST_OR_LAST2(vrfl))
+          pred_context = 2 + (vrfa != vrfl);
+        else if (vrfa == vrfl)
+          pred_context = 3;
+        else
+          pred_context = 4;
+      } else if (l_sg || a_sg) {  // single/comp
+        const MV_REFERENCE_FRAME vrfc = l_sg ? vrfa : vrfl;
+        const MV_REFERENCE_FRAME rfs = a_sg ? vrfa : vrfl;
+
+        if (vrfc == GOLDEN_FRAME && rfs != GOLDEN_FRAME)
+          pred_context = 1;
+        else if (rfs == GOLDEN_FRAME && vrfc != GOLDEN_FRAME)
+          pred_context = 2;
+        else
+          pred_context = 3 +
+              (CHECK_LAST3_OR_LAST4(vrfc) || CHECK_LAST_OR_LAST2(rfs));
+      } else {  // comp/comp
+        if (vrfa == GOLDEN_FRAME || vrfl == GOLDEN_FRAME)
+          pred_context = 2;
+        else
+          pred_context = 3 +
+              (CHECK_LAST_OR_LAST2(vrfa) || CHECK_LAST_OR_LAST2(vrfl));
+      }
+    }
+  } else if (above_in_image || left_in_image) {  // one edge available
+    const MB_MODE_INFO *edge_mbmi = above_in_image ? above_mbmi : left_mbmi;
+
+    if (!is_inter_block(edge_mbmi)) {
+      pred_context = 2;
+    } else {
+      if (has_second_ref(edge_mbmi)) {
+        pred_context = 4 * (edge_mbmi->ref_frame[var_ref_idx] != GOLDEN_FRAME);
+      } else {
+        if (edge_mbmi->ref_frame[0] == GOLDEN_FRAME)
+          pred_context = 0;
+        else
+          pred_context = 2 + CHECK_LAST_OR_LAST2(edge_mbmi->ref_frame[0]);
+      }
+    }
+  } else {  // no edges available (2)
+    pred_context = 2;
+  }
+
+  assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
+
+  return pred_context;
+}
+
+#define CHECK_LAST_LAST2_GOLDEN(ref_frame) \
+  ((ref_frame == LAST_FRAME) || (ref_frame == LAST2_FRAME) || \
+  (ref_frame == GOLDEN_FRAME))
+
+// Returns a context number for the given MB prediction signal
+// Signal the first reference frame for a compound mode is LAST3,
+// conditioning on that it is known either LAST3/LAST4.
+//
+// NOTE(zoeliu): The probability of ref_frame[0] is LAST3_FRAME,
+// conditioning on it is either LAST3 / LAST4.
+int vp9_get_pred_context_comp_ref_p3(const VP9_COMMON *cm,
+                                     const MACROBLOCKD *xd) {
+  int pred_context;
+  const MB_MODE_INFO *const above_mbmi = get_mbmi(get_above_mi(xd));
+  const MB_MODE_INFO *const left_mbmi = get_mbmi(get_left_mi(xd));
+  const int above_in_image = above_mbmi != NULL;
+  const int left_in_image = left_mbmi != NULL;
+
+  // Note:
+  // The mode info data structure has a one element border above and to the
+  // left of the entries correpsonding to real macroblocks.
+  // The prediction flags in these dummy entries are initialised to 0.
+  const int fix_ref_idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
+  const int var_ref_idx = !fix_ref_idx;
+
+  if (above_in_image && left_in_image) {  // both edges available
+    const int above_intra = !is_inter_block(above_mbmi);
+    const int left_intra = !is_inter_block(left_mbmi);
+
+    if (above_intra && left_intra) {  // intra/intra (2)
+      pred_context = 2;
+    } else if (above_intra || left_intra) {  // intra/inter
+      const MB_MODE_INFO *edge_mbmi = above_intra ? left_mbmi : above_mbmi;
+
+      if (!has_second_ref(edge_mbmi))  // single pred (1/3)
+        pred_context = 1 + 2 * (edge_mbmi->ref_frame[0] != LAST3_FRAME);
+      else  // comp pred (1/3)
+        pred_context = 1 +
+            2 * (edge_mbmi->ref_frame[var_ref_idx] != LAST3_FRAME);
+    } else {  // inter/inter
+      const int l_sg = !has_second_ref(left_mbmi);
+      const int a_sg = !has_second_ref(above_mbmi);
+      const MV_REFERENCE_FRAME vrfa = a_sg ? above_mbmi->ref_frame[0]
+                                           : above_mbmi->ref_frame[var_ref_idx];
+      const MV_REFERENCE_FRAME vrfl = l_sg ? left_mbmi->ref_frame[0]
+                                           : left_mbmi->ref_frame[var_ref_idx];
+
+      if (vrfa == vrfl && vrfa == LAST3_FRAME)
+        pred_context = 0;
+      else if (l_sg && a_sg) {  // single/single
+        if (vrfa == LAST3_FRAME || vrfl == LAST3_FRAME)
+          pred_context = 1;
+        else if (CHECK_LAST_LAST2_GOLDEN(vrfa) || CHECK_LAST_LAST2_GOLDEN(vrfl))
+          pred_context = 2 + (vrfa != vrfl);
+        else if (vrfa == vrfl)
+          pred_context = 3;
+        else
+          pred_context = 4;
+      } else if (l_sg || a_sg) {  // single/comp
+        const MV_REFERENCE_FRAME vrfc = l_sg ? vrfa : vrfl;
+        const MV_REFERENCE_FRAME rfs = a_sg ? vrfa : vrfl;
+
+        if (vrfc == LAST3_FRAME && rfs != LAST3_FRAME)
+          pred_context = 1;
+        else if (rfs == LAST3_FRAME && vrfc != LAST3_FRAME)
+          pred_context = 2;
+        else
+          pred_context = 3 +
+              (vrfc == LAST4_FRAME || CHECK_LAST_LAST2_GOLDEN(rfs));
+      } else {  // comp/comp
+        if (vrfa == LAST3_FRAME || vrfl == LAST3_FRAME)
+          pred_context = 2;
+        else
+          pred_context = 3 +
+              (CHECK_LAST_LAST2_GOLDEN(vrfa) || CHECK_LAST_LAST2_GOLDEN(vrfl));
+      }
+    }
+  } else if (above_in_image || left_in_image) {  // one edge available
+    const MB_MODE_INFO *edge_mbmi = above_in_image ? above_mbmi : left_mbmi;
+
+    if (!is_inter_block(edge_mbmi)) {
+      pred_context = 2;
+    } else {
+      if (has_second_ref(edge_mbmi)) {
+        pred_context = 4 * (edge_mbmi->ref_frame[var_ref_idx] != LAST3_FRAME);
+      } else {
+        if (edge_mbmi->ref_frame[0] == LAST3_FRAME)
+          pred_context = 0;
+        else
+          pred_context = 2 + CHECK_LAST_LAST2_GOLDEN(edge_mbmi->ref_frame[0]);
+      }
+    }
+  } else {  // no edges available (2)
+    pred_context = 2;
+  }
+
+  assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
+
+  return pred_context;
+}
+
+#else  // CONFIG_LAST4_REF
+
 // Returns a context number for the given MB prediction signal
 // Signal the first reference frame for a compound mode is GOLDEN.
 //
@@ -410,6 +817,8 @@ int vp9_get_pred_context_comp_ref_p2(const VP9_COMMON *cm,
 
   return pred_context;
 }
+
+#endif  // CONFIG_LAST4_REF
 
 #else  // CONFIG_LAST3_REF
 
