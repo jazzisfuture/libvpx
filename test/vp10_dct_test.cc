@@ -17,10 +17,7 @@
 #include "test/util.h"
 #include "./vpx_config.h"
 #include "vpx_ports/msvc.h"
-
-#undef CONFIG_COEFFICIENT_RANGE_CHECKING
-#define CONFIG_COEFFICIENT_RANGE_CHECKING 1
-#include "vp10/encoder/dct.c"
+#include "vp10/encoder/dct.h"
 
 using libvpx_test::ACMRandom;
 
