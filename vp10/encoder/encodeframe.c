@@ -1262,7 +1262,7 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td) {
     }
     if (inter_block &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      const int mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
+      const int mode_ctx = mbmi_ext->mode_context;
       if (bsize >= BLOCK_8X8) {
         const PREDICTION_MODE mode = mbmi->mode;
         ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];

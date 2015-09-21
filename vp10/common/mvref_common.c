@@ -17,13 +17,11 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                              MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
                              int_mv *mv_ref_list,
                              int block, int mi_row, int mi_col,
-                             find_mv_refs_sync sync, void *const data,
-                             uint8_t *mode_context) {
+                             find_mv_refs_sync sync, void *const data) {
   const int *ref_sign_bias = cm->ref_frame_sign_bias;
   int i, refmv_count = 0;
   const POSITION *const mv_ref_search = mv_ref_blocks[mi->mbmi.sb_type];
   int different_ref_found = 0;
-  int context_counter = 0;
   const MV_REF *const  prev_frame_mvs = cm->use_prev_frame_mvs ?
       cm->prev_frame->mvs + mi_row * cm->mi_cols + mi_col : NULL;
   const TileInfo *const tile = &xd->tile;
@@ -40,8 +38,6 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       const MODE_INFO *const candidate_mi = xd->mi[mv_ref->col + mv_ref->row *
                                                    xd->mi_stride];
       const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
-      // Keep counts for entropy encoding.
-      context_counter += mode_2_counter[candidate->mode];
       different_ref_found = 1;
 
       if (candidate->ref_frame[0] == ref_frame)
@@ -141,21 +137,41 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 
  Done:
 
-  mode_context[ref_frame] = counter_to_context[context_counter];
-
   // Clamp vectors
   for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i)
     clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
+}
+
+uint8_t vp10_find_mode_ctx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
+                           int mi_row, int mi_col) {
+  const MODE_INFO *mi = xd->mi[0];
+  const POSITION *const mv_ref_search = mv_ref_blocks[mi->mbmi.sb_type];
+  int context_counter = 0;
+  const TileInfo *const tile = &xd->tile;
+  int i;
+
+  // Compute the mode context
+  for (i = 0; i < 2; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MODE_INFO *const candidate_mi = xd->mi[mv_ref->col + mv_ref->row *
+                                                   xd->mi_stride];
+      const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
+      // Keep counts for entropy encoding.
+      context_counter += mode_2_counter[candidate->mode];
+    }
+  }
+
+  return counter_to_context[context_counter];
 }
 
 void vp10_find_mv_refs(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                       MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
                       int_mv *mv_ref_list,
                       int mi_row, int mi_col,
-                      find_mv_refs_sync sync, void *const data,
-                      uint8_t *mode_context) {
+                      find_mv_refs_sync sync, void *const data) {
   find_mv_refs_idx(cm, xd, mi, ref_frame, mv_ref_list, -1,
-                   mi_row, mi_col, sync, data, mode_context);
+                   mi_row, mi_col, sync, data);
 }
 
 static void lower_mv_precision(MV *mv, int allow_hp) {
@@ -185,14 +201,14 @@ void vp10_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
 void vp10_append_sub8x8_mvs_for_idx(VP10_COMMON *cm, MACROBLOCKD *xd,
                                    int block, int ref, int mi_row, int mi_col,
                                    int_mv *nearest_mv, int_mv *near_mv,
-                                   int_mv *nearby_mv, uint8_t *mode_context) {
+                                   int_mv *nearby_mv) {
   int_mv mv_list[MAX_MV_REF_CANDIDATES];
   MODE_INFO *const mi = xd->mi[0];
   b_mode_info *bmi = mi->bmi;
   int n;
 
   find_mv_refs_idx(cm, xd, mi, mi->mbmi.ref_frame[ref], mv_list, block,
-                   mi_row, mi_col, NULL, NULL, mode_context);
+                   mi_row, mi_col, NULL, NULL);
 
   near_mv->as_int = 0;
   nearby_mv->as_int = 0;

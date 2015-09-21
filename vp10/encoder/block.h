@@ -49,7 +49,7 @@ typedef unsigned int vp10_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][2]
 
 typedef struct {
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
-  uint8_t mode_context[MAX_REF_FRAMES];
+  uint8_t mode_context;
 } MB_MODE_INFO_EXT;
 
 typedef struct macroblock MACROBLOCK;

@@ -216,25 +216,26 @@ static INLINE void clamp_mv2(MV *mv, const MACROBLOCKD *xd) {
 
 typedef void (*find_mv_refs_sync)(void *const data, int mi_row);
 void vp10_find_mv_refs(const VP10_COMMON *cm, const MACROBLOCKD *xd,
-                      MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
-                      int_mv *mv_ref_list, int mi_row, int mi_col,
-                      find_mv_refs_sync sync, void *const data,
-                      uint8_t *mode_context);
+                       MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                       int_mv *mv_ref_list, int mi_row, int mi_col,
+                       find_mv_refs_sync sync, void *const data);
+
+uint8_t vp10_find_mode_ctx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
+                           int mi_row, int mi_col);
 
 // check a list of motion vectors by sad score using a number rows of pixels
 // above and a number cols of pixels in the left to select the one with best
 // score to use as ref motion vector
 void vp10_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
-                           int_mv *mvlist,
-                           int_mv *nearest_mv,
-                           int_mv *near_mv,
-                           int_mv *nearby_mv);
+                            int_mv *mvlist,
+                            int_mv *nearest_mv,
+                            int_mv *near_mv,
+                            int_mv *nearby_mv);
 
 void vp10_append_sub8x8_mvs_for_idx(VP10_COMMON *cm, MACROBLOCKD *xd,
-                                   int block, int ref, int mi_row, int mi_col,
-                                   int_mv *nearest_mv, int_mv *near_mv,
-                                   int_mv *nearby_mv,
-                                   uint8_t *mode_context);
+                                    int block, int ref, int mi_row, int mi_col,
+                                    int_mv *nearest_mv, int_mv *near_mv,
+                                    int_mv *nearby_mv);
 
 #ifdef __cplusplus
 }  // extern "C"

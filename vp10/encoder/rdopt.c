@@ -1268,7 +1268,7 @@ static int set_and_cost_bmi_mvs(VP10_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
     for (idx = 0; idx < num_4x4_blocks_wide; ++idx)
       memmove(&mic->bmi[i + idy * 2 + idx], &mic->bmi[i], sizeof(mic->bmi[i]));
 
-  return cost_mv_ref(cpi, mode, mbmi_ext->mode_context[mbmi->ref_frame[0]]) +
+  return cost_mv_ref(cpi, mode, mbmi_ext->mode_context) +
             thismvcost;
 }
 
@@ -1457,7 +1457,7 @@ static INLINE int mv_has_subpel(const MV *mv) {
 // Check if NEARESTMV/NEARMV/ZEROMV is the cheapest way encode zero motion.
 // TODO(aconverse): Find out if this is still productive then clean up or remove
 static int check_best_zero_mv(
-    const VP10_COMP *cpi, const uint8_t mode_context[MAX_REF_FRAMES],
+    const VP10_COMP *cpi, const uint8_t mode_context,
     int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES], int this_mode,
     const MV_REFERENCE_FRAME ref_frames[2]) {
   if ((this_mode == NEARMV || this_mode == NEARESTMV ||
@@ -1465,7 +1465,7 @@ static int check_best_zero_mv(
       frame_mv[this_mode][ref_frames[0]].as_int == 0 &&
       (ref_frames[1] == NONE ||
        frame_mv[this_mode][ref_frames[1]].as_int == 0)) {
-    int rfc = mode_context[ref_frames[0]];
+    int rfc = mode_context;
     int c1 = cost_mv_ref(cpi, NEARMV, rfc);
     int c2 = cost_mv_ref(cpi, NEARESTMV, rfc);
     int c3 = cost_mv_ref(cpi, NEARBYMV, rfc);
@@ -1756,9 +1756,10 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
         vp10_append_sub8x8_mvs_for_idx(cm, xd, i, ref, mi_row, mi_col,
                                       &frame_mv[NEARESTMV][frame],
                                       &frame_mv[NEARMV][frame],
-                                      &frame_mv[NEARBYMV][frame],
-                                      mbmi_ext->mode_context);
+                                      &frame_mv[NEARBYMV][frame]);
       }
+
+      mbmi_ext->mode_context = vp10_find_mode_ctx(cm, xd, mi_row, mi_col);
 
       // search for the best motion vector on this segment
       for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {
@@ -2174,7 +2175,9 @@ static void setup_buffer_inter(VP10_COMP *cpi, MACROBLOCK *x,
 
   // Gets an initial list of candidate vectors from neighbours and orders them
   vp10_find_mv_refs(cm, xd, mi, ref_frame, candidates, mi_row, mi_col,
-                    NULL, NULL, mbmi_ext->mode_context);
+                    NULL, NULL);
+
+  mbmi_ext->mode_context = vp10_find_mode_ctx(cm, xd, mi_row, mi_col);
 
   // Candidate refinement carried out at encoder and decoder
   vp10_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
@@ -2509,11 +2512,11 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   if (discount_newmv_test(cpi, this_mode, frame_mv[refs[0]],
                           mode_mv, refs[0])) {
     *rate2 += VPXMIN(cost_mv_ref(cpi, this_mode,
-                                 mbmi_ext->mode_context[refs[0]]),
+                                 mbmi_ext->mode_context),
                      cost_mv_ref(cpi, NEARESTMV,
-                                 mbmi_ext->mode_context[refs[0]]));
+                                 mbmi_ext->mode_context));
   } else {
-    *rate2 += cost_mv_ref(cpi, this_mode, mbmi_ext->mode_context[refs[0]]);
+    *rate2 += cost_mv_ref(cpi, this_mode, mbmi_ext->mode_context);
   }
 
   if (RDCOST(x->rdmult, x->rddiv, *rate2, 0) > ref_best_rd &&

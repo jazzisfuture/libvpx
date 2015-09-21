@@ -290,7 +290,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
     }
     write_intra_mode(w, mbmi->uv_mode, cm->fc->uv_mode_prob[mode]);
   } else {
-    const int mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
+    const int mode_ctx = mbmi_ext->mode_context;
     const vpx_prob *const inter_probs = cm->fc->inter_mode_probs[mode_ctx];
     write_ref_frames(cm, xd, w);
 

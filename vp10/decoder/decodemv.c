@@ -496,7 +496,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   int_mv nearestmv[2], nearmv[2], nearbymv[2];
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
   int ref, is_compound;
-  uint8_t inter_mode_ctx[MAX_REF_FRAMES];
+  uint8_t inter_mode_ctx = vp10_find_mode_ctx(cm, xd, mi_row, mi_col);
 
   read_ref_frames(cm, xd, r, mbmi->segment_id, mbmi->ref_frame);
   is_compound = has_second_ref(mbmi);
@@ -512,7 +512,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
     vp10_setup_pre_planes(xd, ref, ref_buf->buf, mi_row, mi_col,
                          &ref_buf->sf);
     vp10_find_mv_refs(cm, xd, mi, frame, ref_mvs[frame],
-                     mi_row, mi_col, fpm_sync, (void *)pbi, inter_mode_ctx);
+                     mi_row, mi_col, fpm_sync, (void *)pbi);
   }
 
   if (segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
@@ -524,8 +524,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
     }
   } else {
     if (bsize >= BLOCK_8X8)
-      mbmi->mode = read_inter_mode(cm, xd, r,
-                                   inter_mode_ctx[mbmi->ref_frame[0]]);
+      mbmi->mode = read_inter_mode(cm, xd, r, inter_mode_ctx);
   }
 
   if (bsize < BLOCK_8X8 || mbmi->mode != ZEROMV) {
@@ -549,16 +548,14 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         int_mv block[2];
         const int j = idy * 2 + idx;
-        b_mode = read_inter_mode(cm, xd, r, inter_mode_ctx[mbmi->ref_frame[0]]);
+        b_mode = read_inter_mode(cm, xd, r, inter_mode_ctx);
 
         if (b_mode == NEARESTMV || b_mode == NEARMV || b_mode == NEARBYMV) {
-          uint8_t dummy_mode_ctx[MAX_REF_FRAMES];
           for (ref = 0; ref < 1 + is_compound; ++ref)
             vp10_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,
                                           &nearest_sub8x8[ref],
                                           &near_sub8x8[ref],
-                                          &nearby_sub8x8[ref],
-                                          dummy_mode_ctx);
+                                          &nearby_sub8x8[ref]);
         }
 
         if (!assign_mv(cm, xd, b_mode, block, nearestmv,
