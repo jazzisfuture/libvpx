@@ -30,7 +30,6 @@ extern "C" {
 // TODO(hkuang): combine this with TileWorkerData.
 typedef struct TileData {
   VP9_COMMON *cm;
-  vpx_reader bit_reader;
   DECLARE_ALIGNED(16, MACROBLOCKD, xd);
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
@@ -46,6 +45,9 @@ typedef struct TileWorkerData {
   const uint8_t *data_end;
   int buf_start, buf_end;  // pbi->tile_buffers to decode, inclusive
   vpx_reader bit_reader;
+
+  struct VP9Decoder *pbi;
+
   FRAME_COUNTS counts;
   DECLARE_ALIGNED(16, MACROBLOCKD, xd);
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
