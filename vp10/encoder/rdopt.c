@@ -94,6 +94,10 @@ static const MODE_DEFINITION vp10_mode_order[MAX_MODES] = {
   {NEARMV,    {ALTREF_FRAME, NONE}},
   {NEARMV,    {GOLDEN_FRAME, NONE}},
 
+  {NEARBYMV,  {LAST_FRAME,   NONE}},
+  {NEARBYMV,  {ALTREF_FRAME, NONE}},
+  {NEARBYMV,  {GOLDEN_FRAME, NONE}},
+
   {ZEROMV,    {LAST_FRAME,   NONE}},
   {ZEROMV,    {GOLDEN_FRAME, NONE}},
   {ZEROMV,    {ALTREF_FRAME, NONE}},
@@ -104,8 +108,10 @@ static const MODE_DEFINITION vp10_mode_order[MAX_MODES] = {
   {TM_PRED,   {INTRA_FRAME,  NONE}},
 
   {NEARMV,    {LAST_FRAME,   ALTREF_FRAME}},
+  {NEARBYMV,  {LAST_FRAME,   ALTREF_FRAME}},
   {NEWMV,     {LAST_FRAME,   ALTREF_FRAME}},
   {NEARMV,    {GOLDEN_FRAME, ALTREF_FRAME}},
+  {NEARBYMV,  {GOLDEN_FRAME, ALTREF_FRAME}},
   {NEWMV,     {GOLDEN_FRAME, ALTREF_FRAME}},
 
   {ZEROMV,    {LAST_FRAME,   ALTREF_FRAME}},
@@ -1237,6 +1243,7 @@ static int set_and_cost_bmi_mvs(VP10_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
       }
       break;
     case NEARMV:
+    case NEARBYMV:
     case NEARESTMV:
       this_mv[0].as_int = frame_mv[mode][mbmi->ref_frame[0]].as_int;
       if (is_compound)
@@ -1453,30 +1460,37 @@ static int check_best_zero_mv(
     const VP10_COMP *cpi, const uint8_t mode_context[MAX_REF_FRAMES],
     int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES], int this_mode,
     const MV_REFERENCE_FRAME ref_frames[2]) {
-  if ((this_mode == NEARMV || this_mode == NEARESTMV || this_mode == ZEROMV) &&
+  if ((this_mode == NEARMV || this_mode == NEARESTMV ||
+       this_mode == NEARBYMV || this_mode == ZEROMV) &&
       frame_mv[this_mode][ref_frames[0]].as_int == 0 &&
       (ref_frames[1] == NONE ||
        frame_mv[this_mode][ref_frames[1]].as_int == 0)) {
     int rfc = mode_context[ref_frames[0]];
     int c1 = cost_mv_ref(cpi, NEARMV, rfc);
     int c2 = cost_mv_ref(cpi, NEARESTMV, rfc);
-    int c3 = cost_mv_ref(cpi, ZEROMV, rfc);
+    int c3 = cost_mv_ref(cpi, NEARBYMV, rfc);
+    int c4 = cost_mv_ref(cpi, ZEROMV, rfc);
 
     if (this_mode == NEARMV) {
-      if (c1 > c3) return 0;
+      if (c1 > c4) return 0;
     } else if (this_mode == NEARESTMV) {
-      if (c2 > c3) return 0;
+      if (c2 > c4) return 0;
+    } else if (this_mode == NEARBYMV) {
+      if (c3 > c4) return 0;
     } else {
       assert(this_mode == ZEROMV);
       if (ref_frames[1] == NONE) {
-        if ((c3 >= c2 && frame_mv[NEARESTMV][ref_frames[0]].as_int == 0) ||
-            (c3 >= c1 && frame_mv[NEARMV][ref_frames[0]].as_int == 0))
+        if ((c4 >= c2 && frame_mv[NEARESTMV][ref_frames[0]].as_int == 0) ||
+            (c4 >= c1 && frame_mv[NEARMV][ref_frames[0]].as_int == 0) ||
+            (c4 >= c3 && frame_mv[NEARBYMV][ref_frames[0]].as_int == 0))
           return 0;
       } else {
-        if ((c3 >= c2 && frame_mv[NEARESTMV][ref_frames[0]].as_int == 0 &&
+        if ((c4 >= c2 && frame_mv[NEARESTMV][ref_frames[0]].as_int == 0 &&
              frame_mv[NEARESTMV][ref_frames[1]].as_int == 0) ||
-            (c3 >= c1 && frame_mv[NEARMV][ref_frames[0]].as_int == 0 &&
-             frame_mv[NEARMV][ref_frames[1]].as_int == 0))
+            (c4 >= c1 && frame_mv[NEARMV][ref_frames[0]].as_int == 0 &&
+             frame_mv[NEARMV][ref_frames[1]].as_int == 0) ||
+            (c4 >= c3 && frame_mv[NEARBYMV][ref_frames[0]].as_int == 0 &&
+             frame_mv[NEARBYMV][ref_frames[1]].as_int == 0))
           return 0;
       }
     }
@@ -2334,7 +2348,9 @@ static int discount_newmv_test(const VP10_COMP *cpi,
           ((mode_mv[NEARESTMV][ref_frame].as_int == 0) ||
            (mode_mv[NEARESTMV][ref_frame].as_int == INVALID_MV)) &&
           ((mode_mv[NEARMV][ref_frame].as_int == 0) ||
-           (mode_mv[NEARMV][ref_frame].as_int == INVALID_MV)));
+           (mode_mv[NEARMV][ref_frame].as_int == INVALID_MV)) &&
+          ((mode_mv[NEARBYMV][ref_frame].as_int == 0) ||
+           (mode_mv[NEARBYMV][ref_frame].as_int == INVALID_MV)));
 }
 
 static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
@@ -3438,6 +3454,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         ((comp_pred_mode && frame_mv[NEARMV][refs[1]].as_int ==
             best_mbmode.mv[1].as_int) || !comp_pred_mode))
       best_mbmode.mode = NEARMV;
+    else if (frame_mv[NEARBYMV][refs[0]].as_int == best_mbmode.mv[0].as_int &&
+        ((comp_pred_mode && frame_mv[NEARBYMV][refs[1]].as_int ==
+            best_mbmode.mv[1].as_int) || !comp_pred_mode))
+      best_mbmode.mode = NEARBYMV;
     else if (best_mbmode.mv[0].as_int == 0 &&
         ((comp_pred_mode && best_mbmode.mv[1].as_int == 0) || !comp_pred_mode))
       best_mbmode.mode = ZEROMV;
@@ -3624,13 +3644,13 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
 }
 
 void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
-                                   TileDataEnc *tile_data,
-                                   MACROBLOCK *x,
-                                   int mi_row, int mi_col,
-                                   RD_COST *rd_cost,
-                                   BLOCK_SIZE bsize,
-                                   PICK_MODE_CONTEXT *ctx,
-                                   int64_t best_rd_so_far) {
+                                    TileDataEnc *tile_data,
+                                    MACROBLOCK *x,
+                                    int mi_row, int mi_col,
+                                    RD_COST *rd_cost,
+                                    BLOCK_SIZE bsize,
+                                    PICK_MODE_CONTEXT *ctx,
+                                    int64_t best_rd_so_far) {
   VP10_COMMON *const cm = &cpi->common;
   RD_OPT *const rd_opt = &cpi->rd;
   SPEED_FEATURES *const sf = &cpi->sf;
