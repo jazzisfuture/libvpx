@@ -43,7 +43,7 @@ static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
 static const struct vp10_token partition_encodings[PARTITION_TYPES] =
   {{0, 1}, {2, 2}, {6, 3}, {7, 3}};
 static const struct vp10_token inter_mode_encodings[INTER_MODES] =
-  {{2, 2}, {6, 3}, {0, 1}, {7, 3}};
+  {{2, 2}, {6, 3}, {14, 4}, {0, 1}, {15, 4}};
 
 static void write_intra_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {

@@ -170,7 +170,7 @@ static void lower_mv_precision(MV *mv, int allow_hp) {
 
 void vp10_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
                            int_mv *mvlist, int_mv *nearest_mv,
-                           int_mv *near_mv) {
+                           int_mv *near_mv, int_mv *nearby_mv) {
   int i;
   // Make sure all the candidates are properly clamped etc
   for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i) {
@@ -179,12 +179,13 @@ void vp10_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
   }
   *nearest_mv = mvlist[0];
   *near_mv = mvlist[1];
+  *nearby_mv = mvlist[2];
 }
 
 void vp10_append_sub8x8_mvs_for_idx(VP10_COMMON *cm, MACROBLOCKD *xd,
                                    int block, int ref, int mi_row, int mi_col,
                                    int_mv *nearest_mv, int_mv *near_mv,
-                                   uint8_t *mode_context) {
+                                   int_mv *nearby_mv, uint8_t *mode_context) {
   int_mv mv_list[MAX_MV_REF_CANDIDATES];
   MODE_INFO *const mi = xd->mi[0];
   b_mode_info *bmi = mi->bmi;
@@ -194,19 +195,29 @@ void vp10_append_sub8x8_mvs_for_idx(VP10_COMMON *cm, MACROBLOCKD *xd,
                    mi_row, mi_col, NULL, NULL, mode_context);
 
   near_mv->as_int = 0;
+  nearby_mv->as_int = 0;
   switch (block) {
     case 0:
       nearest_mv->as_int = mv_list[0].as_int;
-      near_mv->as_int = mv_list[1].as_int;
+      near_mv->as_int    = mv_list[1].as_int;
+      nearby_mv->as_int  = mv_list[2].as_int;
       break;
     case 1:
     case 2:
       nearest_mv->as_int = bmi[0].as_mv[ref].as_int;
-      for (n = 0; n < MAX_MV_REF_CANDIDATES; ++n)
+      for (n = 0; n < MAX_MV_REF_CANDIDATES; ++n) {
         if (nearest_mv->as_int != mv_list[n].as_int) {
           near_mv->as_int = mv_list[n].as_int;
           break;
         }
+      }
+      for (; n < MAX_MV_REF_CANDIDATES; ++n) {
+        if (nearest_mv->as_int != mv_list[n].as_int &&
+            near_mv->as_int != mv_list[n].as_int) {
+          nearby_mv->as_int = mv_list[n].as_int;
+          break;
+        }
+      }
       break;
     case 3: {
       int_mv candidates[2 + MAX_MV_REF_CANDIDATES];
@@ -214,13 +225,24 @@ void vp10_append_sub8x8_mvs_for_idx(VP10_COMMON *cm, MACROBLOCKD *xd,
       candidates[1] = bmi[0].as_mv[ref];
       candidates[2] = mv_list[0];
       candidates[3] = mv_list[1];
+      candidates[4] = mv_list[2];
 
       nearest_mv->as_int = bmi[2].as_mv[ref].as_int;
-      for (n = 0; n < 2 + MAX_MV_REF_CANDIDATES; ++n)
+      for (n = 0; n < 2 + MAX_MV_REF_CANDIDATES; ++n) {
         if (nearest_mv->as_int != candidates[n].as_int) {
           near_mv->as_int = candidates[n].as_int;
           break;
         }
+      }
+
+      for (; n < 2 + MAX_MV_REF_CANDIDATES; ++n) {
+        if (nearest_mv->as_int != candidates[n].as_int &&
+            near_mv->as_int != candidates[n].as_int) {
+          nearby_mv->as_int = candidates[n].as_int;
+          break;
+        }
+      }
+
       break;
     }
     default:

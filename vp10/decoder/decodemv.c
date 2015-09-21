@@ -418,6 +418,7 @@ static INLINE int assign_mv(VP10_COMMON *cm, MACROBLOCKD *xd,
                             PREDICTION_MODE mode,
                             int_mv mv[2], int_mv ref_mv[2],
                             int_mv nearest_mv[2], int_mv near_mv[2],
+                            int_mv nearby_mv[2],
                             int is_compound, int allow_hp, vpx_reader *r) {
   int i;
   int ret = 1;
@@ -443,6 +444,12 @@ static INLINE int assign_mv(VP10_COMMON *cm, MACROBLOCKD *xd,
       mv[0].as_int = near_mv[0].as_int;
       if (is_compound)
         mv[1].as_int = near_mv[1].as_int;
+      break;
+    }
+    case NEARBYMV: {
+      mv[0].as_int = nearby_mv[0].as_int;
+      if (is_compound)
+        mv[1].as_int = nearby_mv[1].as_int;
       break;
     }
     case ZEROMV: {
@@ -486,7 +493,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
   const int allow_hp = cm->allow_high_precision_mv;
-  int_mv nearestmv[2], nearmv[2];
+  int_mv nearestmv[2], nearmv[2], nearbymv[2];
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
   int ref, is_compound;
   uint8_t inter_mode_ctx[MAX_REF_FRAMES];
@@ -524,7 +531,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   if (bsize < BLOCK_8X8 || mbmi->mode != ZEROMV) {
     for (ref = 0; ref < 1 + is_compound; ++ref) {
       vp10_find_best_ref_mvs(xd, allow_hp, ref_mvs[mbmi->ref_frame[ref]],
-                            &nearestmv[ref], &nearmv[ref]);
+                             &nearestmv[ref], &nearmv[ref], &nearbymv[ref]);
     }
   }
 
@@ -537,7 +544,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
     const int num_4x4_h = 1 << xd->bmode_blocks_hl;
     int idx, idy;
     PREDICTION_MODE b_mode;
-    int_mv nearest_sub8x8[2], near_sub8x8[2];
+    int_mv nearest_sub8x8[2], near_sub8x8[2], nearby_sub8x8[2];
     for (idy = 0; idy < 2; idy += num_4x4_h) {
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         int_mv block[2];
@@ -550,11 +557,12 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
             vp10_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,
                                           &nearest_sub8x8[ref],
                                           &near_sub8x8[ref],
+                                          &nearby_sub8x8[ref],
                                           dummy_mode_ctx);
         }
 
         if (!assign_mv(cm, xd, b_mode, block, nearestmv,
-                       nearest_sub8x8, near_sub8x8,
+                       nearest_sub8x8, near_sub8x8, nearby_sub8x8,
                        is_compound, allow_hp, r)) {
           xd->corrupted |= 1;
           break;
@@ -577,7 +585,8 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
   } else {
     xd->corrupted |= !assign_mv(cm, xd, mbmi->mode, mbmi->mv, nearestmv,
-                                nearestmv, nearmv, is_compound, allow_hp, r);
+                                nearestmv, nearmv, nearbymv,
+                                is_compound, allow_hp, r);
   }
 }
 

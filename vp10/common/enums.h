@@ -121,9 +121,10 @@ typedef enum {
 #define TM_PRED    9       // True-motion
 #define NEARESTMV 10
 #define NEARMV    11
-#define ZEROMV    12
-#define NEWMV     13
-#define MB_MODE_COUNT 14
+#define NEARBYMV  12
+#define ZEROMV    13
+#define NEWMV     14
+#define MB_MODE_COUNT 15
 typedef uint8_t PREDICTION_MODE;
 
 #define INTRA_MODES (TM_PRED + 1)
