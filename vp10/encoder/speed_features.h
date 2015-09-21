@@ -32,7 +32,8 @@ enum {
 };
 
 enum {
-  INTER_ALL = (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) | (1 << NEWMV),
+  INTER_ALL = (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) | (1 << NEWMV) |
+              (1 << NEARBYMV),
   INTER_NEAREST = (1 << NEARESTMV),
   INTER_NEAREST_NEW = (1 << NEARESTMV) | (1 << NEWMV),
   INTER_NEAREST_ZERO = (1 << NEARESTMV) | (1 << ZEROMV),

@@ -551,7 +551,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
         const int j = idy * 2 + idx;
         b_mode = read_inter_mode(cm, xd, r, inter_mode_ctx[mbmi->ref_frame[0]]);
 
-        if (b_mode == NEARESTMV || b_mode == NEARMV) {
+        if (b_mode == NEARESTMV || b_mode == NEARMV || b_mode == NEARBYMV) {
           uint8_t dummy_mode_ctx[MAX_REF_FRAMES];
           for (ref = 0; ref < 1 + is_compound; ++ref)
             vp10_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,

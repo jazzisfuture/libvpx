@@ -585,15 +585,20 @@ void vp10_set_rd_speed_thresholds(VP10_COMP *cpi) {
 
   rd->thresh_mult[THR_NEARMV] += 1000;
   rd->thresh_mult[THR_NEARA] += 1000;
+  rd->thresh_mult[THR_NEARBYMV] += 1000;
+  rd->thresh_mult[THR_NEARBYA]  += 1000;
   rd->thresh_mult[THR_COMP_NEARESTLA] += 1000;
   rd->thresh_mult[THR_COMP_NEARESTGA] += 1000;
 
   rd->thresh_mult[THR_TM] += 1000;
 
   rd->thresh_mult[THR_COMP_NEARLA] += 1500;
+  rd->thresh_mult[THR_COMP_NEARBYLA] += 1500;
   rd->thresh_mult[THR_COMP_NEWLA] += 2000;
   rd->thresh_mult[THR_NEARG] += 1000;
+  rd->thresh_mult[THR_NEARBYG] += 1000;
   rd->thresh_mult[THR_COMP_NEARGA] += 1500;
+  rd->thresh_mult[THR_COMP_NEARBYGA] += 1500;
   rd->thresh_mult[THR_COMP_NEWGA] += 2000;
 
   rd->thresh_mult[THR_ZEROMV] += 2000;
