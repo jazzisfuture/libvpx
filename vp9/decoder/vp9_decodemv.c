@@ -607,10 +607,11 @@ static void read_inter_frame_mode_info(VP9Decoder *const pbi,
 }
 
 void vpx_read_mode_info(VP9Decoder *const pbi, MACROBLOCKD *xd,
-                        int mi_row, int mi_col, vpx_reader *r,
+                        int mi_row, int mi_col,
                         int x_mis, int y_mis) {
   VP9_COMMON *const cm = &pbi->common;
   MODE_INFO *const mi = xd->mi[0];
+  vpx_reader *r = &xd->bit_reader;
   MV_REF* frame_mvs = cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;
   int w, h;
 

@@ -45,11 +45,11 @@ static INLINE int read_coeff(const vpx_prob *probs, int n, vpx_reader *r) {
   return val;
 }
 
-static int decode_coefs(const MACROBLOCKD *xd,
+static int decode_coefs(MACROBLOCKD *xd,
                         PLANE_TYPE type,
                         tran_low_t *dqcoeff, TX_SIZE tx_size, const int16_t *dq,
-                        int ctx, const int16_t *scan, const int16_t *nb,
-                        vpx_reader *r) {
+                        int ctx, const int16_t *scan, const int16_t *nb) {
+  vpx_reader *r = &xd->bit_reader;
   FRAME_COUNTS *counts = xd->counts;
   const int max_eob = 16 << (tx_size << 1);
   const FRAME_CONTEXT *const fc = xd->fc;
@@ -253,15 +253,14 @@ void dec_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
 int vp9_decode_block_tokens(MACROBLOCKD *xd,
                             int plane, const scan_order *sc,
                             int x, int y,
-                            TX_SIZE tx_size, vpx_reader *r,
-                            int seg_id) {
+                            TX_SIZE tx_size, int seg_id) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const int16_t *const dequant = pd->seg_dequant[seg_id];
   const int ctx = get_entropy_context(tx_size, pd->above_context + x,
                                                pd->left_context + y);
   const int eob = decode_coefs(xd, pd->plane_type,
                                pd->dqcoeff, tx_size,
-                               dequant, ctx, sc->scan, sc->neighbors, r);
+                               dequant, ctx, sc->scan, sc->neighbors);
   dec_set_contexts(xd, pd, tx_size, eob > 0, x, y);
   return eob;
 }

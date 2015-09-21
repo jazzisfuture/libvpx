@@ -14,6 +14,7 @@
 
 #include "./vpx_config.h"
 
+#include "vpx_dsp/bitreader.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_ports/mem.h"
 #include "vpx_scale/yv12config.h"
@@ -153,6 +154,7 @@ typedef struct macroblockd {
   uint8_t bmode_blocks_wl;
   uint8_t bmode_blocks_hl;
 
+  vpx_reader bit_reader;
   FRAME_COUNTS *counts;
   TileInfo tile;
 
