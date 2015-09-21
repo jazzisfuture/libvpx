@@ -160,14 +160,19 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
 // skip all additional processing and jump to done!
 #define ADD_MV_REF_LIST(mv, refmv_count, mv_ref_list, Done) \
   do { \
-    if (refmv_count) { \
-      if ((mv).as_int != (mv_ref_list)[0].as_int) { \
+      int tmp_idx; \
+      int diff = 1; \
+      for (tmp_idx = 0; diff && tmp_idx < refmv_count; ++tmp_idx) \
+        if ((mv).as_int == (mv_ref_list)[tmp_idx].as_int) \
+          diff = 0; \
+      if (diff == 1) { \
         (mv_ref_list)[(refmv_count)] = (mv); \
-        goto Done; \
+        if (refmv_count == MAX_MV_REF_CANDIDATES - 1) { \
+          goto Done; \
+        } else { \
+          ++(refmv_count); \
+        } \
       } \
-    } else { \
-      (mv_ref_list)[(refmv_count)++] = (mv); \
-    } \
   } while (0)
 
 // If either reference frame is different, not INTRA, and they
