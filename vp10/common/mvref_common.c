@@ -190,8 +190,6 @@ void vp10_append_sub8x8_mvs_for_idx(VP10_COMMON *cm, MACROBLOCKD *xd,
   b_mode_info *bmi = mi->bmi;
   int n;
 
-  assert(MAX_MV_REF_CANDIDATES == 2);
-
   find_mv_refs_idx(cm, xd, mi, mi->mbmi.ref_frame[ref], mv_list, block,
                    mi_row, mi_col, NULL, NULL, mode_context);
 
