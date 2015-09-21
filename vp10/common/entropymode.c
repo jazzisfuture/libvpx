@@ -210,13 +210,13 @@ static const vpx_prob default_partition_probs[PARTITION_CONTEXTS]
 
 static const vpx_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
                                               [INTER_MODES - 1] = {
-  {2,       173,   34},  // 0 = both zero mv
-  {7,       145,   85},  // 1 = one zero mv + one a predicted mv
-  {7,       166,   63},  // 2 = two predicted mvs
-  {7,       94,    66},  // 3 = one predicted/zero and one new mv
-  {8,       64,    46},  // 4 = two new mvs
-  {17,      81,    31},  // 5 = one intra neighbour + x
-  {25,      29,    30},  // 6 = two intra neighbours
+  {2,       150,  150,   34},  // 0 = both zero mv
+  {7,       125,  125,   85},  // 1 = one zero mv + one a predicted mv
+  {7,       105,  105,   63},  // 2 = two predicted mvs
+  {7,       94,    94,   66},  // 3 = one predicted/zero and one new mv
+  {8,       64,    64,   46},  // 4 = two new mvs
+  {17,      81,    81,   31},  // 5 = one intra neighbour + x
+  {25,      29,    29,   30},  // 6 = two intra neighbours
 };
 
 /* Array indices are identical to previously-existing INTRAMODECONTEXTNODES. */
@@ -235,7 +235,8 @@ const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {
 const vpx_tree_index vp10_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
   -INTER_OFFSET(ZEROMV), 2,
   -INTER_OFFSET(NEARESTMV), 4,
-  -INTER_OFFSET(NEARMV), -INTER_OFFSET(NEWMV)
+  -INTER_OFFSET(NEARMV), 6,
+  -INTER_OFFSET(NEARBYMV), -INTER_OFFSET(NEWMV)
 };
 
 const vpx_tree_index vp10_partition_tree[TREE_SIZE(PARTITION_TYPES)] = {

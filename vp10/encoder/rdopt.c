@@ -1742,6 +1742,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
         vp10_append_sub8x8_mvs_for_idx(cm, xd, i, ref, mi_row, mi_col,
                                       &frame_mv[NEARESTMV][frame],
                                       &frame_mv[NEARMV][frame],
+                                      &frame_mv[NEARBYMV][frame],
                                       mbmi_ext->mode_context);
       }
 
@@ -2141,6 +2142,7 @@ static void setup_buffer_inter(VP10_COMP *cpi, MACROBLOCK *x,
                                int mi_row, int mi_col,
                                int_mv frame_nearest_mv[MAX_REF_FRAMES],
                                int_mv frame_near_mv[MAX_REF_FRAMES],
+                               int_mv frame_nearby_mv[MAX_REF_FRAMES],
                                struct buf_2d yv12_mb[4][MAX_MB_PLANE]) {
   const VP10_COMMON *cm = &cpi->common;
   const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref_frame);
@@ -2163,7 +2165,8 @@ static void setup_buffer_inter(VP10_COMP *cpi, MACROBLOCK *x,
   // Candidate refinement carried out at encoder and decoder
   vp10_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
                         &frame_nearest_mv[ref_frame],
-                        &frame_near_mv[ref_frame]);
+                        &frame_near_mv[ref_frame],
+                        &frame_nearby_mv[ref_frame]);
 
   // Further refinement that is encode side only to test the top few candidates
   // in full and choose the best as the centre point for subsequent searches.
@@ -2979,7 +2982,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
       assert(get_ref_frame_buffer(cpi, ref_frame) != NULL);
       setup_buffer_inter(cpi, x, ref_frame, bsize, mi_row, mi_col,
-                         frame_mv[NEARESTMV], frame_mv[NEARMV], yv12_mb);
+                         frame_mv[NEARESTMV], frame_mv[NEARMV],
+                         frame_mv[NEARBYMV], yv12_mb);
     }
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
@@ -3693,7 +3697,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
       setup_buffer_inter(cpi, x, ref_frame, bsize, mi_row, mi_col,
                          frame_mv[NEARESTMV], frame_mv[NEARMV],
-                         yv12_mb);
+                         frame_mv[NEARBYMV], yv12_mb);
     } else {
       ref_frame_skip_mask[0] |= (1 << ref_frame);
       ref_frame_skip_mask[1] |= SECOND_REF_FRAME_MASK;

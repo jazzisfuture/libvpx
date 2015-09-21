@@ -57,6 +57,7 @@ static const int mode_2_counter[MB_MODE_COUNT] = {
   9,  // TM_PRED
   0,  // NEARESTMV
   0,  // NEARMV
+  0,  // NEARBYMV
   3,  // ZEROMV
   1,  // NEWMV
 };
@@ -224,11 +225,15 @@ void vp10_find_mv_refs(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 // above and a number cols of pixels in the left to select the one with best
 // score to use as ref motion vector
 void vp10_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
-                           int_mv *mvlist, int_mv *nearest_mv, int_mv *near_mv);
+                           int_mv *mvlist,
+                           int_mv *nearest_mv,
+                           int_mv *near_mv,
+                           int_mv *nearby_mv);
 
 void vp10_append_sub8x8_mvs_for_idx(VP10_COMMON *cm, MACROBLOCKD *xd,
                                    int block, int ref, int mi_row, int mi_col,
                                    int_mv *nearest_mv, int_mv *near_mv,
+                                   int_mv *nearby_mv,
                                    uint8_t *mode_context);
 
 #ifdef __cplusplus
