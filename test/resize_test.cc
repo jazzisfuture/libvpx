@@ -261,6 +261,36 @@ TEST_P(ResizeInternalTest, TestInternalResizeWorks) {
   }
 }
 
+class ResizeInternalNoCrashTest : public ResizeInternalTest {
+ protected:
+  ResizeInternalNoCrashTest() : ResizeInternalTest() {}
+
+  virtual ~ResizeInternalNoCrashTest() {}
+
+  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
+                                  libvpx_test::Encoder *encoder) {
+    int new_q = 60;
+    if (video->frame() == 0) {
+      struct vpx_scaling_mode mode = {VP8E_ONETWO, VP8E_ONETWO};
+      encoder->Control(VP8E_SET_SCALEMODE, &mode);
+    }
+    if (video->frame() == 1) {
+      struct vpx_scaling_mode mode = {VP8E_NORMAL, VP8E_NORMAL};
+      encoder->Control(VP8E_SET_SCALEMODE, &mode);
+      cfg_.rc_min_quantizer = cfg_.rc_max_quantizer = new_q;
+      encoder->Config(&cfg_);
+    }
+  }
+};
+
+TEST_P(ResizeInternalNoCrashTest, TestInternalResizeNoCrash) {
+  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       30, 1, 0, 10);
+  cfg_.g_w = 352;
+  cfg_.g_h = 288;
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
+
 class ResizeInternalRealtimeTest : public ::libvpx_test::EncoderTest,
   public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
  protected:
@@ -498,6 +528,8 @@ VP8_INSTANTIATE_TEST_CASE(ResizeTest, ONE_PASS_TEST_MODES);
 VP9_INSTANTIATE_TEST_CASE(ResizeTest,
                           ::testing::Values(::libvpx_test::kRealTime));
 VP9_INSTANTIATE_TEST_CASE(ResizeInternalTest,
+                          ::testing::Values(::libvpx_test::kOnePassBest));
+VP9_INSTANTIATE_TEST_CASE(ResizeInternalNoCrashTest,
                           ::testing::Values(::libvpx_test::kOnePassBest));
 VP9_INSTANTIATE_TEST_CASE(ResizeInternalRealtimeTest,
                           ::testing::Values(::libvpx_test::kRealTime),
