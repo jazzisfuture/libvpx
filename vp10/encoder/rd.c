@@ -464,7 +464,7 @@ void vp10_mv_pred(VP10_COMP *cpi, MACROBLOCK *x,
                     (cpi->sf.adaptive_motion_search &&
                      block_size < x->max_partition_size);
 
-  MV pred_mv[3];
+  MV pred_mv[MAX_MV_REF_CANDIDATES + 1];
   pred_mv[0] = x->mbmi_ext->ref_mvs[ref_frame][0].as_mv;
   pred_mv[1] = x->mbmi_ext->ref_mvs[ref_frame][1].as_mv;
   pred_mv[2] = x->pred_mv[ref_frame];

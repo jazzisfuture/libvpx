@@ -160,12 +160,17 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
 // skip all additional processing and jump to done!
 #define ADD_MV_REF_LIST(mv, refmv_count, mv_ref_list, Done) \
   do { \
-    if (refmv_count) { \
-      if ((mv).as_int != (mv_ref_list)[0].as_int) { \
+    if (refmv_count == 2) { \
+      if ((mv).as_int != (mv_ref_list)[0].as_int && \
+          (mv).as_int != (mv_ref_list)[1].as_int) { \
         (mv_ref_list)[(refmv_count)] = (mv); \
         goto Done; \
       } \
-    } else { \
+    } else if (refmv_count == 1) { \
+      if ((mv).as_int != (mv_ref_list)[0].as_int) { \
+        (mv_ref_list)[(refmv_count)++] = (mv); \
+      } \
+    }else { \
       (mv_ref_list)[(refmv_count)++] = (mv); \
     } \
   } while (0)
