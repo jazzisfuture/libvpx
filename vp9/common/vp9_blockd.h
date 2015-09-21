@@ -14,6 +14,10 @@
 
 #include "./vpx_config.h"
 
+#if CONFIG_VP9_DECODER
+#include "vpx_dsp/bitreader.h"
+#endif
+
 #include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_ports/mem.h"
 #include "vpx_scale/yv12config.h"
@@ -152,6 +156,10 @@ typedef struct macroblockd {
   struct macroblockd_plane plane[MAX_MB_PLANE];
   uint8_t bmode_blocks_wl;
   uint8_t bmode_blocks_hl;
+
+#if CONFIG_VP9_DECODER
+  vpx_reader bit_reader;
+#endif
 
   FRAME_COUNTS *counts;
   TileInfo tile;
