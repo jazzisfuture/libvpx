@@ -41,7 +41,15 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                                                    xd->mi_stride];
       const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
       // Keep counts for entropy encoding.
-      context_counter += mode_2_counter[candidate->mode];
+      uint8_t mode_counter;
+      if (candidate->ref_frame[0] == ref_frame ||
+          candidate->ref_frame[1] == ref_frame)
+        mode_counter = mode_2_counter[candidate->mode];
+      else
+        mode_counter = mode_2_counter[DC_PRED];
+
+      context_counter += mode_counter;
+//      context_counter += mode_2_counter[candidate->mode];
       different_ref_found = 1;
 
       if (candidate->ref_frame[0] == ref_frame)
