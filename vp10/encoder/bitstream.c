@@ -292,7 +292,6 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
   } else {
     const int mode_ctx = mbmi_ext->mode_context;
     const vpx_prob *const inter_probs = cm->fc->inter_mode_probs[mode_ctx];
-    write_ref_frames(cm, xd, w);
 
     // If segment skip is not enabled code the mode.
     if (!segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
@@ -300,6 +299,8 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
         write_inter_mode(w, mode, inter_probs);
       }
     }
+
+    write_ref_frames(cm, xd, w);
 
     if (cm->interp_filter == SWITCHABLE) {
       const int ctx = vp10_get_pred_context_switchable_interp(xd);

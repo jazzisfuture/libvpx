@@ -498,6 +498,18 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   int ref, is_compound;
   uint8_t inter_mode_ctx = vp10_find_mode_ctx(cm, xd, mi_row, mi_col);
 
+  if (segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+    mbmi->mode = ZEROMV;
+    if (bsize < BLOCK_8X8) {
+        vpx_internal_error(xd->error_info, VPX_CODEC_UNSUP_BITSTREAM,
+                           "Invalid usage of segement feature on small blocks");
+        return;
+    }
+  } else {
+    if (bsize >= BLOCK_8X8)
+      mbmi->mode = read_inter_mode(cm, xd, r, inter_mode_ctx);
+  }
+
   read_ref_frames(cm, xd, r, mbmi->segment_id, mbmi->ref_frame);
   is_compound = has_second_ref(mbmi);
 
@@ -513,18 +525,6 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
                          &ref_buf->sf);
     vp10_find_mv_refs(cm, xd, mi, frame, ref_mvs[frame],
                      mi_row, mi_col, fpm_sync, (void *)pbi);
-  }
-
-  if (segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-    mbmi->mode = ZEROMV;
-    if (bsize < BLOCK_8X8) {
-        vpx_internal_error(xd->error_info, VPX_CODEC_UNSUP_BITSTREAM,
-                           "Invalid usage of segement feature on small blocks");
-        return;
-    }
-  } else {
-    if (bsize >= BLOCK_8X8)
-      mbmi->mode = read_inter_mode(cm, xd, r, inter_mode_ctx);
   }
 
   if (bsize < BLOCK_8X8 || mbmi->mode != ZEROMV) {

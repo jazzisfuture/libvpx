@@ -149,6 +149,7 @@ uint8_t vp10_find_mode_ctx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   int context_counter = 0;
   const TileInfo *const tile = &xd->tile;
   int i;
+  int ref_count = 0;
 
   // Compute the mode context
   for (i = 0; i < 2; ++i) {
@@ -159,6 +160,14 @@ uint8_t vp10_find_mode_ctx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
       // Keep counts for entropy encoding.
       context_counter += mode_2_counter[candidate->mode];
+    }
+  }
+
+  for (; i < MVREF_NEIGHBOURS; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MB_MODE_INFO *const candidate = &xd->mi[mv_ref->col + mv_ref->row *
+                                                    xd->mi_stride]->mbmi;
     }
   }
 
