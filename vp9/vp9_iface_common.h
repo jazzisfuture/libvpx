@@ -43,6 +43,8 @@ static void yuvconfig2image(vpx_image_t *img, const YV12_BUFFER_CONFIG  *yv12,
   img->h = ALIGN_POWER_OF_TWO(yv12->y_height + 2 * VP9_ENC_BORDER_IN_PIXELS, 3);
   img->d_w = yv12->y_crop_width;
   img->d_h = yv12->y_crop_height;
+  img->p_w = yv12->display_width;
+  img->p_h = yv12->display_height;
   img->x_chroma_shift = yv12->subsampling_x;
   img->y_chroma_shift = yv12->subsampling_y;
   img->planes[VPX_PLANE_Y] = yv12->y_buffer;
@@ -84,6 +86,8 @@ static vpx_codec_err_t image2yuvconfig(const vpx_image_t *img,
 
   yv12->y_crop_width  = img->d_w;
   yv12->y_crop_height = img->d_h;
+  yv12->display_width  = img->p_w;
+  yv12->display_height = img->p_h;
   yv12->y_width  = img->d_w;
   yv12->y_height = img->d_h;
 
