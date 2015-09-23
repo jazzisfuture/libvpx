@@ -1318,6 +1318,11 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
       rd[n][1] = RDCOST(x->rdmult, x->rddiv, r[n][1] + s0, d[n]);
     }
 
+    if (is_inter_block(mbmi) && !xd->lossless && !s[n] && sse[n] != INT64_MAX) {
+      rd[n][0] = MIN(rd[n][0], RDCOST(x->rdmult, x->rddiv, s1, sse[n]));
+      rd[n][1] = MIN(rd[n][1], RDCOST(x->rdmult, x->rddiv, s1, sse[n]));
+    }
+
     // Early termination in transform size search.
     if (cpi->sf.tx_size_search_breakout &&
         (rd[n][1] == INT64_MAX ||
@@ -1366,6 +1371,11 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
         tmp_rd = RDCOST(x->rdmult, x->rddiv, tmp_r + s0, tmp_d);
       }
 
+      if (is_inter_block(mbmi) && !xd->lossless && !tmp_s &&
+          tmp_sse != INT64_MAX) {
+        tmp_rd = MIN(tmp_rd, RDCOST(x->rdmult, x->rddiv, s1, tmp_sse));
+      }
+
       if (tmp_rd < best_rd) {
         best_rd = tmp_rd;
         sr_d = tmp_d;
@@ -1405,6 +1415,11 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
         sr_rd = RDCOST(x->rdmult, x->rddiv, s1 + sr1, sr_sse);
     } else {
       sr_rd = RDCOST(x->rdmult, x->rddiv, sr_r + s0, sr_d);
+    }
+
+    if (is_inter_block(mbmi) && !xd->lossless && !sr_s &&
+        sr_sse != INT64_MAX) {
+      sr_rd = MIN(sr_rd, RDCOST(x->rdmult, x->rddiv, s1, sr_sse));
     }
 
     if (sr_rd < best_rd) {  //  debugtest
