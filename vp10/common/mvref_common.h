@@ -221,6 +221,8 @@ void vp10_find_mv_refs(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                        find_mv_refs_sync sync, void *const data);
 
 uint8_t vp10_find_mode_ctx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
+                           MV_REFERENCE_FRAME dev_ref_frame[3][2],
+                           INTERP_FILTER dev_pred_filter[3],
                            int mi_row, int mi_col);
 
 // check a list of motion vectors by sad score using a number rows of pixels

@@ -1053,7 +1053,11 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
     if (is_inter_block(mbmi)) {
       vp10_update_mv_count(td);
 
-      if (cm->interp_filter == SWITCHABLE) {
+      if (mbmi->mode_skip == 1)
+        if (bsize < BLOCK_8X8)
+          assert(0);
+
+      if (cm->interp_filter == SWITCHABLE && mbmi->mode_skip == 0) {
         const int ctx = vp10_get_pred_context_switchable_interp(xd);
         ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
       }
@@ -1242,7 +1246,7 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td) {
       // If the segment reference feature is enabled we have only a single
       // reference frame allowed for the segment so exclude it from
       // the reference frame counts used to work out probabilities.
-      if (inter_block) {
+      if (inter_block && mbmi->mode_skip == 0) {
         const MV_REFERENCE_FRAME ref0 = mbmi->ref_frame[0];
         if (cm->reference_mode == REFERENCE_MODE_SELECT)
           counts->comp_inter[vp10_get_reference_mode_context(cm, xd)]

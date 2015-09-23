@@ -70,6 +70,7 @@ typedef struct {
   PREDICTION_MODE mode;
   TX_SIZE tx_size;
   int8_t skip;
+  uint8_t mode_skip;
 #if CONFIG_MISC_FIXES
   int8_t has_no_coeffs;
 #endif

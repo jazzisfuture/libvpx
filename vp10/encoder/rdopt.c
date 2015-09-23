@@ -1749,6 +1749,8 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
       int64_t best_rd = INT64_MAX;
       const int i = idy * 2 + idx;
       int ref;
+      MV_REFERENCE_FRAME dev_ref_frame[3][2];
+      INTERP_FILTER dev_pred_filter[3];
 
       for (ref = 0; ref < 1 + has_second_rf; ++ref) {
         const MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
@@ -1759,7 +1761,9 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                       &frame_mv[NEARBYMV][frame]);
       }
 
-      mbmi_ext->mode_context = vp10_find_mode_ctx(cm, xd, mi_row, mi_col);
+      mbmi_ext->mode_context = vp10_find_mode_ctx(cm, xd, dev_ref_frame,
+                                                  dev_pred_filter,
+                                                  mi_row, mi_col);
 
       // search for the best motion vector on this segment
       for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {
@@ -2158,6 +2162,8 @@ static void setup_buffer_inter(VP10_COMP *cpi, MACROBLOCK *x,
                                int_mv frame_nearest_mv[MAX_REF_FRAMES],
                                int_mv frame_near_mv[MAX_REF_FRAMES],
                                int_mv frame_nearby_mv[MAX_REF_FRAMES],
+                               MV_REFERENCE_FRAME dev_ref_frame[3][2],
+                               INTERP_FILTER dev_pred_filter[3],
                                struct buf_2d yv12_mb[4][MAX_MB_PLANE]) {
   const VP10_COMMON *cm = &cpi->common;
   const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref_frame);
@@ -2177,7 +2183,9 @@ static void setup_buffer_inter(VP10_COMP *cpi, MACROBLOCK *x,
   vp10_find_mv_refs(cm, xd, mi, ref_frame, candidates, mi_row, mi_col,
                     NULL, NULL);
 
-  mbmi_ext->mode_context = vp10_find_mode_ctx(cm, xd, mi_row, mi_col);
+  mbmi_ext->mode_context = vp10_find_mode_ctx(cm, xd, dev_ref_frame,
+                                              dev_pred_filter,
+                                              mi_row, mi_col);
 
   // Candidate refinement carried out at encoder and decoder
   vp10_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
@@ -2970,6 +2978,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   const int mode_search_skip_flags = sf->mode_search_skip_flags;
   int64_t mask_filter = 0;
   int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
+  MV_REFERENCE_FRAME dev_ref_frame[3][2];
+  INTERP_FILTER dev_pred_filter[3];
 
   vp10_zero(best_mbmode);
 
@@ -3002,7 +3012,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       assert(get_ref_frame_buffer(cpi, ref_frame) != NULL);
       setup_buffer_inter(cpi, x, ref_frame, bsize, mi_row, mi_col,
                          frame_mv[NEARESTMV], frame_mv[NEARMV],
-                         frame_mv[NEARBYMV], yv12_mb);
+                         frame_mv[NEARBYMV], dev_ref_frame,
+                         dev_pred_filter, yv12_mb);
     }
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
@@ -3231,6 +3242,14 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         xd->plane[i].pre[1] = yv12_mb[second_ref_frame][i];
     }
 
+    // Estimate the reference frame signaling cost and add it
+    // to the rolling cost variable.
+    if (comp_pred) {
+      rate2 += ref_costs_comp[ref_frame];
+    } else {
+      rate2 += ref_costs_single[ref_frame];
+    }
+
     if (ref_frame == INTRA_FRAME) {
       TX_SIZE uv_tx;
       struct macroblockd_plane *const pd = &xd->plane[1];
@@ -3258,6 +3277,11 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
     } else {
+      compmode_cost = vp10_cost_bit(comp_mode_p, comp_pred);
+
+      if (cm->reference_mode == REFERENCE_MODE_SELECT)
+        rate2 += compmode_cost;
+
       this_rd = handle_inter_mode(cpi, x, bsize,
                                   &rate2, &distortion2, &skippable,
                                   &rate_y, &rate_uv,
@@ -3268,19 +3292,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
                                   &mask_filter, filter_cache);
       if (this_rd == INT64_MAX)
         continue;
-
-      compmode_cost = vp10_cost_bit(comp_mode_p, comp_pred);
-
-      if (cm->reference_mode == REFERENCE_MODE_SELECT)
-        rate2 += compmode_cost;
-    }
-
-    // Estimate the reference frame signaling cost and add it
-    // to the rolling cost variable.
-    if (comp_pred) {
-      rate2 += ref_costs_comp[ref_frame];
-    } else {
-      rate2 += ref_costs_single[ref_frame];
     }
 
     if (!disable_skip) {
@@ -3500,6 +3511,39 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   *mbmi = best_mbmode;
   x->skip |= best_skip2;
 
+//  if (mbmi->mode >= NEARESTMV && mbmi->mode <= NEARBYMV) {
+//    static int count = 0;
+//    static int copy = 0;
+//    int inter_mode = INTER_OFFSET(mbmi->mode);
+//
+//    assert(inter_mode >= 0 && inter_mode <= 2);
+//
+//    if (mbmi->ref_frame[0] == dev_ref_frame[inter_mode][0] &&
+//        mbmi->ref_frame[1] == dev_ref_frame[inter_mode][1] &&
+//        mbmi->interp_filter == dev_pred_filter[inter_mode] &&
+//        mbmi->mode >= NEARESTMV && mbmi->mode <= NEARBYMV)
+//      ++copy;
+//    ++count;
+//
+//    if (count == 1000) {
+//      fprintf(stderr, "\n %d copy out of total %d\n", copy, count);
+//      copy = 0;
+//      count = 0;
+//    }
+//  }
+
+  mbmi->mode_skip = 0;
+  if (mbmi->mode >= NEARESTMV && mbmi->mode <= NEARBYMV) {
+    int inter_mode = INTER_OFFSET(mbmi->mode);
+
+    assert(inter_mode >= 0 && inter_mode <= 2);
+
+    if (mbmi->ref_frame[0] == dev_ref_frame[inter_mode][0] &&
+        mbmi->ref_frame[1] == dev_ref_frame[inter_mode][1] &&
+        mbmi->interp_filter == dev_pred_filter[inter_mode])
+      mbmi->mode_skip = 1;
+  }
+
   for (i = 0; i < REFERENCE_MODES; ++i) {
     if (best_pred_rd[i] == INT64_MAX)
       best_pred_diff[i] = INT_MIN;
@@ -3692,6 +3736,8 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
   int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
   int internal_active_edge =
     vp10_active_edge_sb(cpi, mi_row, mi_col) && vp10_internal_image_edge(cpi);
+  MV_REFERENCE_FRAME dev_ref_frame[3][2];
+  INTERP_FILTER dev_pred_filter[3];
 
   memset(x->zcoeff_blk[TX_4X4], 0, 4);
   vp10_zero(best_mbmode);
@@ -3720,7 +3766,8 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
       setup_buffer_inter(cpi, x, ref_frame, bsize, mi_row, mi_col,
                          frame_mv[NEARESTMV], frame_mv[NEARMV],
-                         frame_mv[NEARBYMV], yv12_mb);
+                         frame_mv[NEARBYMV], dev_ref_frame,
+                         dev_pred_filter, yv12_mb);
     } else {
       ref_frame_skip_mask[0] |= (1 << ref_frame);
       ref_frame_skip_mask[1] |= SECOND_REF_FRAME_MASK;
@@ -3834,6 +3881,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
     mbmi->uv_mode = DC_PRED;
     mbmi->ref_frame[0] = ref_frame;
     mbmi->ref_frame[1] = second_ref_frame;
+    mbmi->mode_skip = 0;
     // Evaluate all sub-pel filters irrespective of whether we can use
     // them for this frame.
     mbmi->interp_filter = cm->interp_filter == SWITCHABLE ? EIGHTTAP

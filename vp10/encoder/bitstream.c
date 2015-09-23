@@ -300,6 +300,12 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       }
     }
 
+    if (bsize >= BLOCK_8X8 && mode >= NEARESTMV && mode <= NEARBYMV) {
+      vpx_write(w, mbmi->mode_skip, 80);
+      if (mbmi->mode_skip)
+        return;
+    }
+
     write_ref_frames(cm, xd, w);
 
     if (cm->interp_filter == SWITCHABLE) {

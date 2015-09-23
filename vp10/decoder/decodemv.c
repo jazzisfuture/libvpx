@@ -495,8 +495,13 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   const int allow_hp = cm->allow_high_precision_mv;
   int_mv nearestmv[2], nearmv[2], nearbymv[2];
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
+  MV_REFERENCE_FRAME dev_ref_frame[3][2];
+  INTERP_FILTER dev_pred_filter[3];
+
   int ref, is_compound;
-  uint8_t inter_mode_ctx = vp10_find_mode_ctx(cm, xd, mi_row, mi_col);
+  uint8_t inter_mode_ctx = vp10_find_mode_ctx(cm, xd, dev_ref_frame,
+                                              dev_pred_filter,
+                                              mi_row, mi_col);
 
   if (segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
     mbmi->mode = ZEROMV;
@@ -510,7 +515,22 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
       mbmi->mode = read_inter_mode(cm, xd, r, inter_mode_ctx);
   }
 
-  read_ref_frames(cm, xd, r, mbmi->segment_id, mbmi->ref_frame);
+  mbmi->mode_skip = 0;
+  if (bsize >= BLOCK_8X8 &&
+      mbmi->mode >= NEARESTMV && mbmi->mode <= NEARBYMV) {
+    mbmi->mode_skip = vpx_read(r, 80);
+    if (mbmi->mode_skip) {
+      int inter_mode = INTER_OFFSET(mbmi->mode);
+      assert(inter_mode >= 0 && inter_mode <= 2);
+
+      mbmi->ref_frame[0] = dev_ref_frame[inter_mode][0];
+      mbmi->ref_frame[1] = dev_ref_frame[inter_mode][1];
+      mbmi->interp_filter = dev_pred_filter[inter_mode];
+    }
+  }
+
+  if (mbmi->mode_skip == 0)
+    read_ref_frames(cm, xd, r, mbmi->segment_id, mbmi->ref_frame);
   is_compound = has_second_ref(mbmi);
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
@@ -534,9 +554,10 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
     }
   }
 
-  mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
-                      ? read_switchable_interp_filter(cm, xd, r)
-                      : cm->interp_filter;
+  if (mbmi->mode_skip == 0)
+    mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
+                        ? read_switchable_interp_filter(cm, xd, r)
+                        : cm->interp_filter;
 
   if (bsize < BLOCK_8X8) {
     const int num_4x4_w = 1 << xd->bmode_blocks_wl;

@@ -143,6 +143,8 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 }
 
 uint8_t vp10_find_mode_ctx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
+                           MV_REFERENCE_FRAME dev_ref_frame[3][2],
+                           INTERP_FILTER dev_pred_filter[3],
                            int mi_row, int mi_col) {
   const MODE_INFO *mi = xd->mi[0];
   const POSITION *const mv_ref_search = mv_ref_blocks[mi->mbmi.sb_type];
@@ -150,6 +152,10 @@ uint8_t vp10_find_mode_ctx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   const TileInfo *const tile = &xd->tile;
   int i;
   int ref_count = 0;
+
+  memset(dev_ref_frame[0], 0, sizeof(dev_ref_frame[0]));
+  memset(dev_ref_frame[1], 0, sizeof(dev_ref_frame[0]));
+  memset(dev_ref_frame[2], 0, sizeof(dev_ref_frame[0]));
 
   // Compute the mode context
   for (i = 0; i < 2; ++i) {
@@ -160,6 +166,10 @@ uint8_t vp10_find_mode_ctx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
       // Keep counts for entropy encoding.
       context_counter += mode_2_counter[candidate->mode];
+      dev_ref_frame[ref_count][0] = candidate->ref_frame[0];
+      dev_ref_frame[ref_count][1] = candidate->ref_frame[1];
+      dev_pred_filter[ref_count] = candidate->interp_filter;
+      ++ref_count;
     }
   }
 
@@ -168,6 +178,10 @@ uint8_t vp10_find_mode_ctx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
     if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
       const MB_MODE_INFO *const candidate = &xd->mi[mv_ref->col + mv_ref->row *
                                                     xd->mi_stride]->mbmi;
+      dev_ref_frame[ref_count][0] = candidate->ref_frame[0];
+      dev_ref_frame[ref_count][1] = candidate->ref_frame[1];
+      dev_pred_filter[ref_count] = candidate->interp_filter;
+      ++ref_count;
     }
   }
 

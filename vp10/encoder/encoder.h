@@ -481,6 +481,8 @@ typedef struct VP10_COMP {
   int64_t vbp_threshold_sad;
   BLOCK_SIZE vbp_bsize_min;
 
+  int dummy_writing;
+
   // Multi-threading
   int num_workers;
   VPxWorker *workers;
