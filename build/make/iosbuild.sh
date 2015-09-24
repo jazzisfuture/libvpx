@@ -58,7 +58,7 @@ build_target() {
     ${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS} ${target_specific_flags} \
     ${devnull}
   export DIST_DIR
-  eval make -j ${MAKE_JOBS} dist ${devnull}
+  eval make -j ${MAKE_JOBS} ${EXTRA_MAKE_ARGS} dist ${devnull}
   cd "${old_pwd}"
 
   vlog "***Done building target: ${target}***"
@@ -203,6 +203,7 @@ cat << EOF
   Usage: ${0##*/} [arguments]
     --help: Display this message and exit.
     --extra-configure-args <args>: Extra args to pass when configuring libvpx.
+    --extra-make-args <args>: Extra args to pass to make when building libvpx.
     --jobs: Number of make jobs.
     --preserve-build-output: Do not delete the build directory.
     --show-build-output: Show output from each library build.
@@ -232,6 +233,10 @@ while [ -n "$1" ]; do
   case "$1" in
     --extra-configure-args)
       EXTRA_CONFIGURE_ARGS="$2"
+      shift
+      ;;
+    --extra-make-args)
+      EXTRA_MAKE_ARGS="$2"
       shift
       ;;
     --help)
@@ -272,6 +277,7 @@ cat << EOF
   DIST_DIR=${DIST_DIR}
   CONFIGURE_ARGS=${CONFIGURE_ARGS}
   EXTRA_CONFIGURE_ARGS=${EXTRA_CONFIGURE_ARGS}
+  EXTRA_MAKE_ARGS=${EXTRA_MAKE_ARGS}
   FRAMEWORK_DIR=${FRAMEWORK_DIR}
   HEADER_DIR=${HEADER_DIR}
   MAKE_JOBS=${MAKE_JOBS}
