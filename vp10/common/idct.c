@@ -177,7 +177,7 @@ void highbd_idst16_c(const tran_low_t *input, tran_low_t *output, int bd) {
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_EXT_TX
-void fliplr(uint8_t *dest, int stride, int l) {
+static void fliplr(uint8_t *dest, int stride, int l) {
   int i, j;
   for (i = 0; i < l; ++i) {
     for (j = 0; j < l / 2; ++j) {
@@ -188,7 +188,7 @@ void fliplr(uint8_t *dest, int stride, int l) {
   }
 }
 
-void flipud(uint8_t *dest, int stride, int l) {
+static void flipud(uint8_t *dest, int stride, int l) {
   int i, j;
   for (j = 0; j < l; ++j) {
     for (i = 0; i < l / 2; ++i) {
@@ -199,7 +199,7 @@ void flipud(uint8_t *dest, int stride, int l) {
   }
 }
 
-void fliplrud(uint8_t *dest, int stride, int l) {
+static void fliplrud(uint8_t *dest, int stride, int l) {
   int i, j;
   for (i = 0; i < l / 2; ++i) {
     for (j = 0; j < l; ++j) {
@@ -210,7 +210,20 @@ void fliplrud(uint8_t *dest, int stride, int l) {
   }
 }
 
-void fliplr16(uint16_t *dest, int stride, int l) {
+// Inverse identiy transform and add.
+static void inv_idtx_add_c(const tran_low_t *input, uint8_t *dest, int stride,
+                           int bs) {
+  int r, c, temp;
+  int shift = bs < 32 ? 3 : 2;
+  for (r = 0; r < bs; ++r)
+    for (c = 0; c < bs; ++c) {
+      temp = dest[r * stride + c] + (input[r * bs + c] >> shift);
+      dest[r * stride + c] = clip_pixel(temp);
+    }
+}
+
+#if CONFIG_VP9_HIGHBITDEPTH
+static void fliplr16(uint16_t *dest, int stride, int l) {
   int i, j;
   for (i = 0; i < l; ++i) {
     for (j = 0; j < l / 2; ++j) {
@@ -221,7 +234,7 @@ void fliplr16(uint16_t *dest, int stride, int l) {
   }
 }
 
-void flipud16(uint16_t *dest, int stride, int l) {
+static void flipud16(uint16_t *dest, int stride, int l) {
   int i, j;
   for (j = 0; j < l; ++j) {
     for (i = 0; i < l / 2; ++i) {
@@ -232,7 +245,7 @@ void flipud16(uint16_t *dest, int stride, int l) {
   }
 }
 
-void fliplrud16(uint16_t *dest, int stride, int l) {
+static void fliplrud16(uint16_t *dest, int stride, int l) {
   int i, j;
   for (i = 0; i < l / 2; ++i) {
     for (j = 0; j < l; ++j) {
@@ -242,10 +255,11 @@ void fliplrud16(uint16_t *dest, int stride, int l) {
     }
   }
 }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_EXT_TX
 
 void vp10_iht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride,
-                         int tx_type) {
+                          int tx_type) {
   const transform_2d IHT_4[] = {
     { idct4_c, idct4_c  },   // DCT_DCT  = 0
     { iadst4_c, idct4_c  },  // ADST_DCT = 1
@@ -505,6 +519,9 @@ void vp10_inv_txfm_add_4x4(
       vp10_iht4x4_16_add_c(input, dest, stride, DST_ADST);
       fliplr(dest, stride, 4);
       break;
+    case NOTX_NOTX:
+      inv_idtx_add_c(input, dest, stride, 4);
+      break;
 #endif  // CONFIG_EXT_TX
     default:
       assert(0);
@@ -567,6 +584,9 @@ void vp10_inv_txfm_add_8x8(const tran_low_t *input, uint8_t *dest,
       vp10_iht8x8_64_add_c(input, dest, stride, DST_ADST);
       fliplr(dest, stride, 8);
       break;
+    case NOTX_NOTX:
+      inv_idtx_add_c(input, dest, stride, 8);
+      break;
 #endif  // CONFIG_EXT_TX
     default:
       assert(0);
@@ -628,6 +648,9 @@ void vp10_inv_txfm_add_16x16(const tran_low_t *input, uint8_t *dest,
       fliplr(dest, stride, 16);
       vp10_iht16x16_256_add_c(input, dest, stride, DST_ADST);
       fliplr(dest, stride, 16);
+      break;
+    case NOTX_NOTX:
+      inv_idtx_add_c(input, dest, stride, 16);
       break;
 #endif  // CONFIG_EXT_TX
     default:
