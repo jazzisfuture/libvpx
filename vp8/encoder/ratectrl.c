@@ -1358,6 +1358,13 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
 
         }
     }
+    // Special case for screen_content with the drop due to overshoot feature.
+    // Within x frames of the last dropped frame (due to overshoot), constrain
+    // how much Q can decrease.
+    if (cpi->oxcf.screen_content_mode == 2 &&
+        cpi->common.current_video_frame < cpi->last_frame_drop_overshoot + 30 &&
+        Q < cpi->last_q[1] - 20)
+      Q = cpi->last_q[1] - 20;
 
     return Q;
 }
@@ -1596,10 +1603,17 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
       // Drop this frame: advance frame counters, and set force_maxqp flag.
       cpi->common.current_video_frame++;
       cpi->frames_since_key++;
-      // Adjust rate correction factor upwards.
-      cpi->rate_correction_factor *= 2.0;
-      if (cpi->rate_correction_factor > MAX_BPB_FACTOR)
-        cpi->rate_correction_factor = MAX_BPB_FACTOR;
+      // Adjust rate correction factor upwards. This is to prevent a bad state
+      // where the re-encoded frame at max_QP undershoots significantly, and
+      // then we end up dropping every other frame because the
+      // QP/rate_correction_factor may haven been to low before the drop and
+      // then takes too long to come up. Another solution is to constrain the
+      // QP change from one frame to the next around the drop point. The latter
+      // approach is currently used.
+      // cpi->rate_correction_factor *= 2.0;
+      // if (cpi->rate_correction_factor > MAX_BPB_FACTOR)
+      //  cpi->rate_correction_factor = MAX_BPB_FACTOR;
+      cpi->last_frame_drop_overshoot = cpi->common.current_video_frame;
       // Flag to indicate we will force next frame to be encoded at max QP.
       cpi->force_maxqp = 1;
       return 1;
