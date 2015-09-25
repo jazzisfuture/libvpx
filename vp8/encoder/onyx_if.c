@@ -1959,6 +1959,10 @@ struct VP8_COMP* vp8_create_compressor(VP8_CONFIG *oxcf)
     cpi->common.refresh_alt_ref_frame = 0;
 
     cpi->force_maxqp = 0;
+    // Set the initial value for last_frame_drop_overshoot to be larger than
+    // the threshold used in vp8_regulate_q to constrain the QP change/decrease
+    // for screen_content mode = 2.
+    cpi->last_frame_drop_overshoot = 100;
 
     cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
 #if CONFIG_INTERNAL_STATS

@@ -527,6 +527,7 @@ typedef struct VP8_COMP
     int mse_source_denoised;
 
     int force_maxqp;
+    int last_frame_drop_overshoot;
 
 #if CONFIG_MULTITHREAD
     /* multithread data */
