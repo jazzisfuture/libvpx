@@ -82,6 +82,7 @@ extern "C" {
   typedef struct vpx_image {
     vpx_img_fmt_t fmt; /**< Image Format */
     vpx_color_space_t cs; /**< Color Space */
+    int range; /**< Limited (0) vs. Full-range (1) sample data */
 
     /* Image storage dimensions */
     unsigned int  w;           /**< Stored image width */
@@ -91,6 +92,10 @@ extern "C" {
     /* Image display dimensions */
     unsigned int  d_w;   /**< Displayed image width */
     unsigned int  d_h;   /**< Displayed image height */
+
+    /* Image intended rendering dimensions */
+    unsigned int  r_w;   /**< Intended rendering image width */
+    unsigned int  r_h;   /**< Intended rendering image height */
 
     /* Chroma subsampling info */
     unsigned int  x_chroma_shift;   /**< subsampling order, X */

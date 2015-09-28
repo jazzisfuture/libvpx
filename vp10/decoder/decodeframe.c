@@ -17,6 +17,7 @@
 
 #include "vpx_dsp/bitreader_buffer.h"
 #include "vpx_dsp/bitreader.h"
+#include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
 #include "vpx_ports/mem_ops.h"
@@ -80,12 +81,18 @@ static int decode_unsigned_max(struct vpx_read_bit_buffer *rb, int max) {
   return data > max ? max : data;
 }
 
+#if CONFIG_MISC_FIXES
+static TX_MODE read_tx_mode(struct vpx_read_bit_buffer *rb) {
+  return vpx_rb_read_bit(rb) ? TX_MODE_SELECT : vpx_rb_read_literal(rb, 2);
+}
+#else
 static TX_MODE read_tx_mode(vpx_reader *r) {
   TX_MODE tx_mode = vpx_read_literal(r, 2);
   if (tx_mode == ALLOW_32X32)
     tx_mode += vpx_read_bit(r);
   return tx_mode;
 }
+#endif
 
 static void read_tx_mode_probs(struct tx_probs *tx_probs, vpx_reader *r) {
   int i, j;
@@ -117,6 +124,18 @@ static void read_inter_mode_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
       vp10_diff_update_prob(r, &fc->inter_mode_probs[i][j]);
 }
 
+#if CONFIG_MISC_FIXES
+static REFERENCE_MODE read_frame_reference_mode(const VP10_COMMON *cm,
+    struct vpx_read_bit_buffer *rb) {
+  if (is_compound_reference_allowed(cm)) {
+    return vpx_rb_read_bit(rb) ? REFERENCE_MODE_SELECT
+                               : (vpx_rb_read_bit(rb) ? COMPOUND_REFERENCE
+                                                      : SINGLE_REFERENCE);
+  } else {
+    return SINGLE_REFERENCE;
+  }
+}
+#else
 static REFERENCE_MODE read_frame_reference_mode(const VP10_COMMON *cm,
                                                 vpx_reader *r) {
   if (is_compound_reference_allowed(cm)) {
@@ -127,6 +146,7 @@ static REFERENCE_MODE read_frame_reference_mode(const VP10_COMMON *cm,
     return SINGLE_REFERENCE;
   }
 }
+#endif
 
 static void read_frame_reference_mode_probs(VP10_COMMON *cm, vpx_reader *r) {
   FRAME_CONTEXT *const fc = cm->fc;
@@ -196,9 +216,7 @@ static void inverse_transform_block_inter(MACROBLOCKD* xd, int plane,
       switch (tx_size) {
         case TX_4X4:
           vp10_highbd_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, xd->bd,
-                                       tx_type, xd->lossless ?
-                                           vp10_highbd_iwht4x4_add :
-                                           vp10_highbd_idct4x4_add);
+                                       tx_type, xd->lossless);
           break;
         case TX_8X8:
           vp10_highbd_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, xd->bd,
@@ -221,8 +239,7 @@ static void inverse_transform_block_inter(MACROBLOCKD* xd, int plane,
       switch (tx_size) {
         case TX_4X4:
           vp10_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, tx_type,
-                                xd->lossless ? vp10_iwht4x4_add :
-                                    vp10_idct4x4_add);
+                                xd->lossless);
           break;
         case TX_8X8:
           vp10_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, tx_type);
@@ -267,9 +284,7 @@ static void inverse_transform_block_intra(MACROBLOCKD* xd, int plane,
       switch (tx_size) {
         case TX_4X4:
           vp10_highbd_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, xd->bd,
-                                       tx_type, xd->lossless ?
-                                           vp10_highbd_iwht4x4_add :
-                                           vp10_highbd_idct4x4_add);
+                                       tx_type, xd->lossless);
           break;
         case TX_8X8:
           vp10_highbd_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, xd->bd,
@@ -292,8 +307,7 @@ static void inverse_transform_block_intra(MACROBLOCKD* xd, int plane,
       switch (tx_size) {
         case TX_4X4:
           vp10_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, tx_type,
-                                xd->lossless ? vp10_iwht4x4_add :
-                                    vp10_idct4x4_add);
+                                xd->lossless);
           break;
         case TX_8X8:
           vp10_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, tx_type);
@@ -526,6 +540,7 @@ static void dec_build_inter_predictors(VP10Decoder *const pbi, MACROBLOCKD *xd,
                                        struct buf_2d *dst_buf, const MV* mv,
                                        RefCntBuffer *ref_frame_buf,
                                        int is_scaled, int ref) {
+  VP10_COMMON *const cm = &pbi->common;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   uint8_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
   MV32 scaled_mv;
@@ -622,9 +637,9 @@ static void dec_build_inter_predictors(VP10Decoder *const pbi, MACROBLOCKD *xd,
 
     // Wait until reference block is ready. Pad 7 more pixels as last 7
     // pixels of each superblock row can be changed by next superblock row.
-    if (pbi->frame_parallel_decode)
+    if (cm->frame_parallel_decode)
       vp10_frameworker_wait(pbi->frame_worker_owner, ref_frame_buf,
-                           MAX(0, (y1 + 7)) << (plane == 0 ? 0 : 1));
+                            VPXMAX(0, (y1 + 7)) << (plane == 0 ? 0 : 1));
 
     // Skip border extension if block is inside the frame.
     if (x0 < 0 || x0 > frame_width - 1 || x1 < 0 || x1 > frame_width - 1 ||
@@ -649,10 +664,10 @@ static void dec_build_inter_predictors(VP10Decoder *const pbi, MACROBLOCKD *xd,
   } else {
     // Wait until reference block is ready. Pad 7 more pixels as last 7
     // pixels of each superblock row can be changed by next superblock row.
-     if (pbi->frame_parallel_decode) {
+     if (cm->frame_parallel_decode) {
        const int y1 = (y0_16 + (h - 1) * ys) >> SUBPEL_BITS;
        vp10_frameworker_wait(pbi->frame_worker_owner, ref_frame_buf,
-                            MAX(0, (y1 + 7)) << (plane == 0 ? 0 : 1));
+                             VPXMAX(0, (y1 + 7)) << (plane == 0 ? 0 : 1));
      }
   }
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -699,12 +714,19 @@ static void dec_build_inter_predictors_sb(VP10Decoder *const pbi,
       const int is_scaled = vp10_is_scaled(sf);
 
       if (sb_type < BLOCK_8X8) {
-        int i = 0, x, y;
+        const PARTITION_TYPE bp = BLOCK_8X8 - sb_type;
+        const int have_vsplit = bp != PARTITION_HORZ;
+        const int have_hsplit = bp != PARTITION_VERT;
+        const int num_4x4_w = 2 >> ((!have_vsplit) | pd->subsampling_x);
+        const int num_4x4_h = 2 >> ((!have_hsplit) | pd->subsampling_y);
+        const int pw = 8 >> (have_vsplit | pd->subsampling_x);
+        const int ph = 8 >> (have_hsplit | pd->subsampling_y);
+        int x, y;
         for (y = 0; y < num_4x4_h; ++y) {
           for (x = 0; x < num_4x4_w; ++x) {
-            const MV mv = average_split_mvs(pd, mi, ref, i++);
+            const MV mv = average_split_mvs(pd, mi, ref, y * 2 + x);
             dec_build_inter_predictors(pbi, xd, plane, n4w_x4, n4h_x4,
-                                       4 * x, 4 * y, 4, 4, mi_x, mi_y, kernel,
+                                       4 * x, 4 * y, pw, ph, mi_x, mi_y, kernel,
                                        sf, pre_buf, dst_buf, &mv,
                                        ref_frame_buf, is_scaled, ref);
           }
@@ -723,8 +745,8 @@ static void dec_build_inter_predictors_sb(VP10Decoder *const pbi,
 static INLINE TX_SIZE dec_get_uv_tx_size(const MB_MODE_INFO *mbmi,
                                          int n4_wl, int n4_hl) {
   // get minimum log2 num4x4s dimension
-  const int x = MIN(n4_wl, n4_hl);
-  return MIN(mbmi->tx_size,  x);
+  const int x = VPXMIN(n4_wl, n4_hl);
+  return VPXMIN(mbmi->tx_size,  x);
 }
 
 static INLINE void dec_reset_skip_context(MACROBLOCKD *xd) {
@@ -785,8 +807,8 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
   const int less8x8 = bsize < BLOCK_8X8;
   const int bw = 1 << (bwl - 1);
   const int bh = 1 << (bhl - 1);
-  const int x_mis = MIN(bw, cm->mi_cols - mi_col);
-  const int y_mis = MIN(bh, cm->mi_rows - mi_row);
+  const int x_mis = VPXMIN(bw, cm->mi_cols - mi_col);
+  const int y_mis = VPXMIN(bh, cm->mi_rows - mi_row);
 
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, bsize, mi_row, mi_col,
                                    bw, bh, x_mis, y_mis, bwl, bhl);
@@ -856,7 +878,11 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
       }
 
       if (!less8x8 && eobtotal == 0)
+#if CONFIG_MISC_FIXES
+        mbmi->has_no_coeffs = 1;  // skip loopfilter
+#else
         mbmi->skip = 1;  // skip loopfilter
+#endif
     }
   }
 
@@ -1011,8 +1037,9 @@ static void read_coef_probs(FRAME_CONTEXT *fc, TX_MODE tx_mode,
       read_coef_probs_common(fc->coef_probs[tx_size], r);
 }
 
-static void setup_segmentation(struct segmentation *seg,
+static void setup_segmentation(VP10_COMMON *const cm,
                                struct vpx_read_bit_buffer *rb) {
+  struct segmentation *const seg = &cm->seg;
   int i, j;
 
   seg->update_map = 0;
@@ -1023,13 +1050,21 @@ static void setup_segmentation(struct segmentation *seg,
     return;
 
   // Segmentation map update
-  seg->update_map = vpx_rb_read_bit(rb);
+  if (frame_is_intra_only(cm) || cm->error_resilient_mode) {
+    seg->update_map = 1;
+  } else {
+    seg->update_map = vpx_rb_read_bit(rb);
+  }
   if (seg->update_map) {
     for (i = 0; i < SEG_TREE_PROBS; i++)
       seg->tree_probs[i] = vpx_rb_read_bit(rb) ? vpx_rb_read_literal(rb, 8)
                                                : MAX_PROB;
 
-    seg->temporal_update = vpx_rb_read_bit(rb);
+    if (frame_is_intra_only(cm) || cm->error_resilient_mode) {
+      seg->temporal_update = 0;
+    } else {
+      seg->temporal_update = vpx_rb_read_bit(rb);
+    }
     if (seg->temporal_update) {
       for (i = 0; i < PREDICTION_PROBS; i++)
         seg->pred_probs[i] = vpx_rb_read_bit(rb) ? vpx_rb_read_literal(rb, 8)
@@ -1080,17 +1115,17 @@ static void setup_loopfilter(struct loopfilter *lf,
 
       for (i = 0; i < MAX_REF_FRAMES; i++)
         if (vpx_rb_read_bit(rb))
-          lf->ref_deltas[i] = vpx_rb_read_signed_literal(rb, 6);
+          lf->ref_deltas[i] = vpx_rb_read_inv_signed_literal(rb, 6);
 
       for (i = 0; i < MAX_MODE_LF_DELTAS; i++)
         if (vpx_rb_read_bit(rb))
-          lf->mode_deltas[i] = vpx_rb_read_signed_literal(rb, 6);
+          lf->mode_deltas[i] = vpx_rb_read_inv_signed_literal(rb, 6);
     }
   }
 }
 
 static INLINE int read_delta_q(struct vpx_read_bit_buffer *rb) {
-  return vpx_rb_read_bit(rb) ? vpx_rb_read_signed_literal(rb, 4) : 0;
+  return vpx_rb_read_bit(rb) ? vpx_rb_read_inv_signed_literal(rb, 4) : 0;
 }
 
 static void setup_quantization(VP10_COMMON *const cm, MACROBLOCKD *const xd,
@@ -1138,20 +1173,15 @@ static void setup_segmentation_dequant(VP10_COMMON *const cm) {
 }
 
 static INTERP_FILTER read_interp_filter(struct vpx_read_bit_buffer *rb) {
-  const INTERP_FILTER literal_to_filter[] = { EIGHTTAP_SMOOTH,
-                                              EIGHTTAP,
-                                              EIGHTTAP_SHARP,
-                                              BILINEAR };
-  return vpx_rb_read_bit(rb) ? SWITCHABLE
-                             : literal_to_filter[vpx_rb_read_literal(rb, 2)];
+  return vpx_rb_read_bit(rb) ? SWITCHABLE : vpx_rb_read_literal(rb, 2);
 }
 
-static void setup_display_size(VP10_COMMON *cm,
-                               struct vpx_read_bit_buffer *rb) {
-  cm->display_width = cm->width;
-  cm->display_height = cm->height;
+static void setup_render_size(VP10_COMMON *cm,
+                              struct vpx_read_bit_buffer *rb) {
+  cm->render_width = cm->width;
+  cm->render_height = cm->height;
   if (vpx_rb_read_bit(rb))
-    vp10_read_frame_size(rb, &cm->display_width, &cm->display_height);
+    vp10_read_frame_size(rb, &cm->render_width, &cm->render_height);
 }
 
 static void resize_mv_buffer(VP10_COMMON *cm) {
@@ -1199,7 +1229,7 @@ static void setup_frame_size(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
   BufferPool *const pool = cm->buffer_pool;
   vp10_read_frame_size(rb, &width, &height);
   resize_context_buffers(cm, width, height);
-  setup_display_size(cm, rb);
+  setup_render_size(cm, rb);
 
   lock_buffer_pool(pool);
   if (vpx_realloc_frame_buffer(
@@ -1222,6 +1252,9 @@ static void setup_frame_size(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
   pool->frame_bufs[cm->new_fb_idx].buf.subsampling_y = cm->subsampling_y;
   pool->frame_bufs[cm->new_fb_idx].buf.bit_depth = (unsigned int)cm->bit_depth;
   pool->frame_bufs[cm->new_fb_idx].buf.color_space = cm->color_space;
+  pool->frame_bufs[cm->new_fb_idx].buf.color_range = cm->color_range;
+  pool->frame_bufs[cm->new_fb_idx].buf.render_width  = cm->render_width;
+  pool->frame_bufs[cm->new_fb_idx].buf.render_height = cm->render_height;
 }
 
 static INLINE int valid_ref_frame_img_fmt(vpx_bit_depth_t ref_bit_depth,
@@ -1280,7 +1313,7 @@ static void setup_frame_size_with_refs(VP10_COMMON *cm,
   }
 
   resize_context_buffers(cm, width, height);
-  setup_display_size(cm, rb);
+  setup_render_size(cm, rb);
 
   lock_buffer_pool(pool);
   if (vpx_realloc_frame_buffer(
@@ -1303,6 +1336,9 @@ static void setup_frame_size_with_refs(VP10_COMMON *cm,
   pool->frame_bufs[cm->new_fb_idx].buf.subsampling_y = cm->subsampling_y;
   pool->frame_bufs[cm->new_fb_idx].buf.bit_depth = (unsigned int)cm->bit_depth;
   pool->frame_bufs[cm->new_fb_idx].buf.color_space = cm->color_space;
+  pool->frame_bufs[cm->new_fb_idx].buf.color_range = cm->color_range;
+  pool->frame_bufs[cm->new_fb_idx].buf.render_width  = cm->render_width;
+  pool->frame_bufs[cm->new_fb_idx].buf.render_height = cm->render_height;
 }
 
 static void setup_tile_info(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
@@ -1448,8 +1484,9 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
       tile_data->cm = cm;
       tile_data->xd = pbi->mb;
       tile_data->xd.corrupted = 0;
-      tile_data->xd.counts = cm->frame_parallel_decoding_mode ?
-                             NULL : &cm->counts;
+      tile_data->xd.counts =
+          cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD ?
+              &cm->counts : NULL;
       vp10_zero(tile_data->dqcoeff);
       vp10_tile_init(&tile_data->xd.tile, tile_data->cm, tile_row, tile_col);
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
@@ -1504,7 +1541,7 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
       // After loopfiltering, the last 7 row pixels in each superblock row may
       // still be changed by the longest loopfilter of the next superblock
       // row.
-      if (pbi->frame_parallel_decode)
+      if (cm->frame_parallel_decode)
         vp10_frameworker_broadcast(pbi->cur_buf,
                                   mi_row << MI_BLOCK_SIZE_LOG2);
     }
@@ -1522,7 +1559,7 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
   // Get last tile data.
   tile_data = pbi->tile_data + tile_cols * tile_rows - 1;
 
-  if (pbi->frame_parallel_decode)
+  if (cm->frame_parallel_decode)
     vp10_frameworker_broadcast(pbi->cur_buf, INT_MAX);
   return vpx_reader_find_end(&tile_data->bit_reader);
 }
@@ -1570,7 +1607,7 @@ static const uint8_t *decode_tiles_mt(VP10Decoder *pbi,
   const int aligned_mi_cols = mi_cols_aligned_to_sb(cm->mi_cols);
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int tile_rows = 1 << cm->log2_tile_rows;
-  const int num_workers = MIN(pbi->max_threads & ~1, tile_cols);
+  const int num_workers = VPXMIN(pbi->max_threads & ~1, tile_cols);
   TileBuffer tile_buffers[1][1 << 6];
   int n;
   int final_worker = -1;
@@ -1637,7 +1674,7 @@ static const uint8_t *decode_tiles_mt(VP10Decoder *pbi,
     int group_start = 0;
     while (group_start < tile_cols) {
       const TileBuffer largest = tile_buffers[0][group_start];
-      const int group_end = MIN(group_start + num_workers, tile_cols) - 1;
+      const int group_end = VPXMIN(group_start + num_workers, tile_cols) - 1;
       memmove(tile_buffers[0] + group_start, tile_buffers[0] + group_start + 1,
               (group_end - group_start) * sizeof(tile_buffers[0][0]));
       tile_buffers[0][group_end] = largest;
@@ -1646,7 +1683,7 @@ static const uint8_t *decode_tiles_mt(VP10Decoder *pbi,
   }
 
   // Initialize thread frame counts.
-  if (!cm->frame_parallel_decoding_mode) {
+  if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
     int i;
 
     for (i = 0; i < num_workers; ++i) {
@@ -1668,8 +1705,9 @@ static const uint8_t *decode_tiles_mt(VP10Decoder *pbi,
       tile_data->pbi = pbi;
       tile_data->xd = pbi->mb;
       tile_data->xd.corrupted = 0;
-      tile_data->xd.counts = cm->frame_parallel_decoding_mode ?
-                             0 : &tile_data->counts;
+      tile_data->xd.counts =
+          cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD ?
+              &tile_data->counts : NULL;
       vp10_zero(tile_data->dqcoeff);
       vp10_tile_init(tile, cm, 0, buf->col);
       vp10_tile_init(&tile_data->xd.tile, cm, 0, buf->col);
@@ -1708,7 +1746,8 @@ static const uint8_t *decode_tiles_mt(VP10Decoder *pbi,
     }
 
     // Accumulate thread frame counts.
-    if (n >= tile_cols && !cm->frame_parallel_decoding_mode) {
+    if (n >= tile_cols &&
+        cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
       for (i = 0; i < num_workers; ++i) {
         TileWorkerData *const tile_data =
             (TileWorkerData*)pbi->tile_workers[i].data1;
@@ -1740,7 +1779,8 @@ static void read_bitdepth_colorspace_sampling(
   }
   cm->color_space = vpx_rb_read_literal(rb, 3);
   if (cm->color_space != VPX_CS_SRGB) {
-    vpx_rb_read_bit(rb);  // [16,235] (including xvycc) vs [0,255] range
+    // [16,235] (including xvycc) vs [0,255] range
+    cm->color_range = vpx_rb_read_bit(rb);
     if (cm->profile == PROFILE_1 || cm->profile == PROFILE_3) {
       cm->subsampling_x = vpx_rb_read_bit(rb);
       cm->subsampling_y = vpx_rb_read_bit(rb);
@@ -1771,6 +1811,9 @@ static void read_bitdepth_colorspace_sampling(
 static size_t read_uncompressed_header(VP10Decoder *pbi,
                                        struct vpx_read_bit_buffer *rb) {
   VP10_COMMON *const cm = &pbi->common;
+#if CONFIG_MISC_FIXES
+  MACROBLOCKD *const xd = &pbi->mb;
+#endif
   BufferPool *const pool = cm->buffer_pool;
   RefCntBuffer *const frame_bufs = pool->frame_bufs;
   int i, mask, ref_index = 0;
@@ -1812,7 +1855,7 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
     cm->lf.filter_level = 0;
     cm->show_frame = 1;
 
-    if (pbi->frame_parallel_decode) {
+    if (cm->frame_parallel_decode) {
       for (i = 0; i < REF_FRAMES; ++i)
         cm->next_ref_frame_map[i] = cm->ref_frame_map[i];
     }
@@ -1844,8 +1887,33 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   } else {
     cm->intra_only = cm->show_frame ? 0 : vpx_rb_read_bit(rb);
 
-    cm->reset_frame_context = cm->error_resilient_mode ?
-        0 : vpx_rb_read_literal(rb, 2);
+    if (cm->error_resilient_mode) {
+        cm->reset_frame_context = RESET_FRAME_CONTEXT_ALL;
+    } else {
+#if CONFIG_MISC_FIXES
+      if (cm->intra_only) {
+          cm->reset_frame_context =
+              vpx_rb_read_bit(rb) ? RESET_FRAME_CONTEXT_ALL
+                                  : RESET_FRAME_CONTEXT_CURRENT;
+      } else {
+          cm->reset_frame_context =
+              vpx_rb_read_bit(rb) ? RESET_FRAME_CONTEXT_CURRENT
+                                  : RESET_FRAME_CONTEXT_NONE;
+          if (cm->reset_frame_context == RESET_FRAME_CONTEXT_CURRENT)
+            cm->reset_frame_context =
+                  vpx_rb_read_bit(rb) ? RESET_FRAME_CONTEXT_ALL
+                                      : RESET_FRAME_CONTEXT_CURRENT;
+      }
+#else
+      static const RESET_FRAME_CONTEXT_MODE reset_frame_context_conv_tbl[4] = {
+        RESET_FRAME_CONTEXT_NONE, RESET_FRAME_CONTEXT_NONE,
+        RESET_FRAME_CONTEXT_CURRENT, RESET_FRAME_CONTEXT_ALL
+      };
+
+      cm->reset_frame_context =
+          reset_frame_context_conv_tbl[vpx_rb_read_literal(rb, 2)];
+#endif
+    }
 
     if (cm->intra_only) {
       if (!vp10_read_sync_code(rb))
@@ -1859,6 +1927,7 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
         // specifies that the default color format should be YUV 4:2:0 in this
         // case (normative).
         cm->color_space = VPX_CS_BT_601;
+        cm->color_range = 0;
         cm->subsampling_y = cm->subsampling_x = 1;
         cm->bit_depth = VPX_BITS_8;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -1909,6 +1978,9 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   get_frame_new_buffer(cm)->bit_depth = cm->bit_depth;
 #endif
   get_frame_new_buffer(cm)->color_space = cm->color_space;
+  get_frame_new_buffer(cm)->color_range = cm->color_range;
+  get_frame_new_buffer(cm)->render_width  = cm->render_width;
+  get_frame_new_buffer(cm)->render_height = cm->render_height;
 
   if (pbi->need_resync) {
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
@@ -1917,11 +1989,20 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   }
 
   if (!cm->error_resilient_mode) {
-    cm->refresh_frame_context = vpx_rb_read_bit(rb);
-    cm->frame_parallel_decoding_mode = vpx_rb_read_bit(rb);
+    cm->refresh_frame_context =
+        vpx_rb_read_bit(rb) ? REFRESH_FRAME_CONTEXT_FORWARD
+                            : REFRESH_FRAME_CONTEXT_OFF;
+    if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_FORWARD) {
+        cm->refresh_frame_context =
+            vpx_rb_read_bit(rb) ? REFRESH_FRAME_CONTEXT_FORWARD
+                                : REFRESH_FRAME_CONTEXT_BACKWARD;
+#if !CONFIG_MISC_FIXES
+    } else {
+      vpx_rb_read_bit(rb);  // parallel decoding mode flag
+#endif
+    }
   } else {
-    cm->refresh_frame_context = 0;
-    cm->frame_parallel_decoding_mode = 1;
+    cm->refresh_frame_context = REFRESH_FRAME_CONTEXT_OFF;
   }
 
   // This flag will be overridden by the call to vp10_setup_past_independence
@@ -1957,8 +2038,12 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
 
   setup_loopfilter(&cm->lf, rb);
   setup_quantization(cm, &pbi->mb, rb);
-  setup_segmentation(&cm->seg, rb);
+  setup_segmentation(cm, rb);
   setup_segmentation_dequant(cm);
+#if CONFIG_MISC_FIXES
+  cm->tx_mode = xd->lossless ? ONLY_4X4 : read_tx_mode(rb);
+  cm->reference_mode = read_frame_reference_mode(cm, rb);
+#endif
 
   setup_tile_info(cm, rb);
   sz = vpx_rb_read_literal(rb, 16);
@@ -1984,7 +2069,9 @@ static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
 static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
                                   size_t partition_size) {
   VP10_COMMON *const cm = &pbi->common;
+#if !CONFIG_MISC_FIXES
   MACROBLOCKD *const xd = &pbi->mb;
+#endif
   FRAME_CONTEXT *const fc = cm->fc;
   vpx_reader r;
   int k;
@@ -1994,7 +2081,9 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder 0");
 
+#if !CONFIG_MISC_FIXES
   cm->tx_mode = xd->lossless ? ONLY_4X4 : read_tx_mode(&r);
+#endif
   if (cm->tx_mode == TX_MODE_SELECT)
     read_tx_mode_probs(&fc->tx_probs, &r);
   read_coef_probs(fc, cm->tx_mode, &r);
@@ -2014,7 +2103,9 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
       vp10_diff_update_prob(&r, &fc->intra_inter_prob[i]);
 
+#if !CONFIG_MISC_FIXES
     cm->reference_mode = read_frame_reference_mode(cm, &r);
+#endif
     if (cm->reference_mode != SINGLE_REFERENCE)
       setup_compound_reference_mode(cm);
     read_frame_reference_mode_probs(cm, &r);
@@ -2044,7 +2135,8 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
 static void debug_check_frame_counts(const VP10_COMMON *const cm) {
   FRAME_COUNTS zero_counts;
   vp10_zero(zero_counts);
-  assert(cm->frame_parallel_decoding_mode || cm->error_resilient_mode);
+  assert(cm->refresh_frame_context != REFRESH_FRAME_CONTEXT_BACKWARD ||
+         cm->error_resilient_mode);
   assert(!memcmp(cm->counts.y_mode, zero_counts.y_mode,
                  sizeof(cm->counts.y_mode)));
   assert(!memcmp(cm->counts.uv_mode, zero_counts.uv_mode,
@@ -2087,7 +2179,7 @@ static struct vpx_read_bit_buffer *init_read_bit_buffer(
   rb->error_handler = error_handler;
   rb->error_handler_data = &pbi->common;
   if (pbi->decrypt_cb) {
-    const int n = (int)MIN(MAX_VP9_HEADER_SIZE, data_end - data);
+    const int n = (int)VPXMIN(MAX_VP9_HEADER_SIZE, data_end - data);
     pbi->decrypt_cb(pbi->decrypt_state, data, clear_data, n);
     rb->bit_buffer = clear_data;
     rb->bit_buffer_end = clear_data + n;
@@ -2174,10 +2266,11 @@ void vp10_decode_frame(VP10Decoder *pbi,
 
   // If encoded in frame parallel mode, frame context is ready after decoding
   // the frame header.
-  if (pbi->frame_parallel_decode && cm->frame_parallel_decoding_mode) {
+  if (cm->frame_parallel_decode &&
+      cm->refresh_frame_context != REFRESH_FRAME_CONTEXT_BACKWARD) {
     VPxWorker *const worker = pbi->frame_worker_owner;
     FrameWorkerData *const frame_worker_data = worker->data1;
-    if (cm->refresh_frame_context) {
+    if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_FORWARD) {
       context_updated = 1;
       cm->frame_contexts[cm->frame_context_idx] = *cm->fc;
     }
@@ -2211,7 +2304,7 @@ void vp10_decode_frame(VP10Decoder *pbi,
   }
 
   if (!xd->corrupted) {
-    if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
+    if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
       vp10_adapt_coef_probs(cm);
 
       if (!frame_is_intra_only(cm)) {
@@ -2227,6 +2320,7 @@ void vp10_decode_frame(VP10Decoder *pbi,
   }
 
   // Non frame parallel update frame context here.
-  if (cm->refresh_frame_context && !context_updated)
+  if (cm->refresh_frame_context != REFRESH_FRAME_CONTEXT_OFF &&
+      !context_updated)
     cm->frame_contexts[cm->frame_context_idx] = *cm->fc;
 }
