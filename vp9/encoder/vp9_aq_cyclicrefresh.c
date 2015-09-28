@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <math.h>
 
+#include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_ports/system_state.h"
 
 #include "vp9/encoder/vp9_aq_cyclicrefresh.h"
@@ -20,46 +21,9 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
-struct CYCLIC_REFRESH {
-  // Percentage of blocks per frame that are targeted as candidates
-  // for cyclic refresh.
-  int percent_refresh;
-  // Maximum q-delta as percentage of base q.
-  int max_qdelta_perc;
-  // Superblock starting index for cycling through the frame.
-  int sb_index;
-  // Controls how long block will need to wait to be refreshed again, in
-  // excess of the cycle time, i.e., in the case of all zero motion, block
-  // will be refreshed every (100/percent_refresh + time_for_refresh) frames.
-  int time_for_refresh;
-  // Target number of (8x8) blocks that are set for delta-q.
-  int target_num_seg_blocks;
-  // Actual number of (8x8) blocks that were applied delta-q.
-  int actual_num_seg1_blocks;
-  int actual_num_seg2_blocks;
-  // RD mult. parameters for segment 1.
-  int rdmult;
-  // Cyclic refresh map.
-  signed char *map;
-  // Map of the last q a block was coded at.
-  uint8_t *last_coded_q_map;
-  // Thresholds applied to the projected rate/distortion of the coding block,
-  // when deciding whether block should be refreshed.
-  int64_t thresh_rate_sb;
-  int64_t thresh_dist_sb;
-  // Threshold applied to the motion vector (in units of 1/8 pel) of the
-  // coding block, when deciding whether block should be refreshed.
-  int16_t motion_thresh;
-  // Rate target ratio to set q delta.
-  double rate_ratio_qdelta;
-  // Boost factor for rate target ratio, for segment CR_SEGMENT_ID_BOOST2.
-  int rate_boost_fac;
-  double low_content_avg;
-  int qindex_delta[3];
-};
-
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   size_t last_coded_q_map_size;
+  size_t consec_zero_mv_size;
   CYCLIC_REFRESH *const cr = vpx_calloc(1, sizeof(*cr));
   if (cr == NULL)
     return NULL;
@@ -78,12 +42,20 @@ CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   assert(MAXQ <= 255);
   memset(cr->last_coded_q_map, MAXQ, last_coded_q_map_size);
 
+  consec_zero_mv_size = mi_rows * mi_cols * sizeof(*cr->consec_zero_mv);
+  cr->consec_zero_mv = vpx_malloc(consec_zero_mv_size);
+  if (cr->consec_zero_mv == NULL) {
+    vpx_free(cr);
+    return NULL;
+  }
+  memset(cr->consec_zero_mv, 0, consec_zero_mv_size);
   return cr;
 }
 
 void vp9_cyclic_refresh_free(CYCLIC_REFRESH *cr) {
   vpx_free(cr->map);
   vpx_free(cr->last_coded_q_map);
+  vpx_free(cr->consec_zero_mv);
   vpx_free(cr);
 }
 
@@ -223,8 +195,8 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   const int bw = num_8x8_blocks_wide_lookup[bsize];
   const int bh = num_8x8_blocks_high_lookup[bsize];
-  const int xmis = MIN(cm->mi_cols - mi_col, bw);
-  const int ymis = MIN(cm->mi_rows - mi_row, bh);
+  const int xmis = VPXMIN(cm->mi_cols - mi_col, bw);
+  const int ymis = VPXMIN(cm->mi_rows - mi_row, bh);
   const int block_index = mi_row * cm->mi_cols + mi_col;
   const int refresh_this_block = candidate_refresh_aq(cr, mbmi, rate, dist,
                                                       bsize);
@@ -265,14 +237,48 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
       int map_offset = block_index + y * cm->mi_cols + x;
       cr->map[map_offset] = new_map_value;
       cpi->segmentation_map[map_offset] = mbmi->segment_id;
+    }
+}
+
+void vp9_cyclic_refresh_update_sb_postencode(VP9_COMP *const cpi,
+                                             const MB_MODE_INFO *const mbmi,
+                                             int mi_row, int mi_col,
+                                             BLOCK_SIZE bsize) {
+  const VP9_COMMON *const cm = &cpi->common;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  MV mv = mbmi->mv[0].as_mv;
+  const int bw = num_8x8_blocks_wide_lookup[bsize];
+  const int bh = num_8x8_blocks_high_lookup[bsize];
+  const int xmis = VPXMIN(cm->mi_cols - mi_col, bw);
+  const int ymis = VPXMIN(cm->mi_rows - mi_row, bh);
+  const int block_index = mi_row * cm->mi_cols + mi_col;
+  int x, y;
+  for (y = 0; y < ymis; y++)
+    for (x = 0; x < xmis; x++) {
+      int map_offset = block_index + y * cm->mi_cols + x;
       // Inter skip blocks were clearly not coded at the current qindex, so
       // don't update the map for them. For cases where motion is non-zero or
       // the reference frame isn't the previous frame, the previous value in
       // the map for this spatial location is not entirely correct.
-      if (!is_inter_block(mbmi) || !skip)
+      if ((!is_inter_block(mbmi) || !mbmi->skip) &&
+          mbmi->segment_id <= CR_SEGMENT_ID_BOOST2) {
         cr->last_coded_q_map[map_offset] = clamp(
             cm->base_qindex + cr->qindex_delta[mbmi->segment_id], 0, MAXQ);
+      } else if (is_inter_block(mbmi) && mbmi->skip &&
+                 mbmi->segment_id <= CR_SEGMENT_ID_BOOST2) {
+        cr->last_coded_q_map[map_offset] = VPXMIN(
+            clamp(cm->base_qindex + cr->qindex_delta[mbmi->segment_id],
+                  0, MAXQ),
+            cr->last_coded_q_map[map_offset]);
+      // Update the consecutive zero/low_mv count.
+      if (is_inter_block(mbmi) && (abs(mv.row) < 8 && abs(mv.col) < 8)) {
+        if (cr->consec_zero_mv[map_offset] < 255)
+          cr->consec_zero_mv[map_offset]++;
+      } else {
+        cr->consec_zero_mv[map_offset] = 0;
+      }
     }
+  }
 }
 
 // Update the actual number of blocks that were applied the segment delta q.
@@ -409,17 +415,18 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     int mi_row = sb_row_index * MI_BLOCK_SIZE;
     int mi_col = sb_col_index * MI_BLOCK_SIZE;
     int qindex_thresh =
-        cpi->oxcf.content == VP9E_CONTENT_SCREEN
-            ? vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex)
-            : 0;
+        vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex);
+    int consec_zero_mv_thresh =
+        cpi->oxcf.content == VP9E_CONTENT_SCREEN ? 0
+        : 10 * (100 / cr->percent_refresh);
     assert(mi_row >= 0 && mi_row < cm->mi_rows);
     assert(mi_col >= 0 && mi_col < cm->mi_cols);
     bl_index = mi_row * cm->mi_cols + mi_col;
     // Loop through all 8x8 blocks in superblock and update map.
-    xmis = MIN(cm->mi_cols - mi_col,
-               num_8x8_blocks_wide_lookup[BLOCK_64X64]);
-    ymis = MIN(cm->mi_rows - mi_row,
-               num_8x8_blocks_high_lookup[BLOCK_64X64]);
+    xmis =
+        VPXMIN(cm->mi_cols - mi_col, num_8x8_blocks_wide_lookup[BLOCK_64X64]);
+    ymis =
+        VPXMIN(cm->mi_rows - mi_row, num_8x8_blocks_high_lookup[BLOCK_64X64]);
     for (y = 0; y < ymis; y++) {
       for (x = 0; x < xmis; x++) {
         const int bl_index2 = bl_index + y * cm->mi_cols + x;
@@ -427,7 +434,8 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         // for possible boost/refresh (segment 1). The segment id may get
         // reset to 0 later if block gets coded anything other than ZEROMV.
         if (cr->map[bl_index2] == 0) {
-          if (cr->last_coded_q_map[bl_index2] > qindex_thresh)
+          if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
+              cr->consec_zero_mv[bl_index2] < consec_zero_mv_thresh)
             sum_map++;
         } else if (cr->map[bl_index2] < 0) {
           cr->map[bl_index2]++;
@@ -476,7 +484,11 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->rate_boost_fac = 10;
   } else {
     cr->motion_thresh = 32;
-    cr->rate_boost_fac = 17;
+    cr->rate_boost_fac = 15;
+  }
+  if (cpi->svc.spatial_layer_id > 0) {
+    cr->motion_thresh = 4;
+    cr->rate_boost_fac = 12;
   }
 }
 
@@ -489,11 +501,10 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
   const int apply_cyclic_refresh  = apply_cyclic_refresh_bitrate(cm, rc);
   if (cm->current_video_frame == 0)
     cr->low_content_avg = 0.0;
-  // Don't apply refresh on key frame or enhancement layer frames.
+  // Don't apply refresh on key frame or temporal enhancement layer frames.
   if (!apply_cyclic_refresh ||
       (cm->frame_type == KEY_FRAME) ||
-      (cpi->svc.temporal_layer_id > 0) ||
-      (cpi->svc.spatial_layer_id > 0)) {
+      (cpi->svc.temporal_layer_id > 0)) {
     // Set segmentation map to 0 and disable.
     unsigned char *const seg_map = cpi->segmentation_map;
     memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
@@ -501,6 +512,8 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     if (cm->frame_type == KEY_FRAME) {
       memset(cr->last_coded_q_map, MAXQ,
              cm->mi_rows * cm->mi_cols * sizeof(*cr->last_coded_q_map));
+      memset(cr->consec_zero_mv, 0,
+             cm->mi_rows * cm->mi_cols * sizeof(*cr->consec_zero_mv));
       cr->sb_index = 0;
     }
     return;
@@ -551,8 +564,9 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
 
     // Set a more aggressive (higher) q delta for segment BOOST2.
     qindex_delta = compute_deltaq(
-        cpi, cm->base_qindex, MIN(CR_MAX_RATE_TARGET_RATIO,
-        0.1 * cr->rate_boost_fac * cr->rate_ratio_qdelta));
+        cpi, cm->base_qindex,
+        VPXMIN(CR_MAX_RATE_TARGET_RATIO,
+               0.1 * cr->rate_boost_fac * cr->rate_ratio_qdelta));
     cr->qindex_delta[2] = qindex_delta;
     vp9_set_segdata(seg, CR_SEGMENT_ID_BOOST2, SEG_LVL_ALT_Q, qindex_delta);
 
@@ -569,6 +583,8 @@ void vp9_cyclic_refresh_reset_resize(VP9_COMP *const cpi) {
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   memset(cr->map, 0, cm->mi_rows * cm->mi_cols);
+  memset(cr->last_coded_q_map, MAXQ, cm->mi_rows * cm->mi_cols);
+  memset(cr->consec_zero_mv, 0, cm->mi_rows * cm->mi_cols);
   cr->sb_index = 0;
   cpi->refresh_golden_frame = 1;
 }

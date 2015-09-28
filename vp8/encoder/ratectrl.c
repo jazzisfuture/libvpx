@@ -22,6 +22,7 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/systemdependent.h"
 #include "encodemv.h"
+#include "vpx_dsp/vpx_dsp_common.h"
 
 
 #define MIN_BPB_FACTOR          0.01
@@ -380,7 +381,8 @@ static void calc_iframe_target_size(VP8_COMP *cpi)
         int initial_boost = 32; /* |3.0 * per_frame_bandwidth| */
         /* Boost depends somewhat on frame rate: only used for 1 layer case. */
         if (cpi->oxcf.number_of_layers == 1) {
-          kf_boost = MAX(initial_boost, (int)(2 * cpi->output_framerate - 16));
+          kf_boost = VPXMAX(initial_boost,
+                            (int)(2 * cpi->output_framerate - 16));
         }
         else {
           /* Initial factor: set target size to: |3.0 * per_frame_bandwidth|. */
@@ -1594,6 +1596,10 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
       // Drop this frame: advance frame counters, and set force_maxqp flag.
       cpi->common.current_video_frame++;
       cpi->frames_since_key++;
+      // Adjust rate correction factor upwards.
+      cpi->rate_correction_factor *= 2.0;
+      if (cpi->rate_correction_factor > MAX_BPB_FACTOR)
+        cpi->rate_correction_factor = MAX_BPB_FACTOR;
       // Flag to indicate we will force next frame to be encoded at max QP.
       cpi->force_maxqp = 1;
       return 1;
