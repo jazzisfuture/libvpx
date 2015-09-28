@@ -461,6 +461,14 @@ typedef struct VP10_COMP {
 #if CONFIG_EXT_TX
   int ext_tx_costs[EXT_TX_SIZES][EXT_TX_TYPES];
 #endif  // CONFIG_EXT_TX
+#if CONFIG_PALETTE
+  int palette_y_size_cost[10][PALETTE_SIZES];
+  int palette_uv_size_cost[10][PALETTE_SIZES];
+  int palette_y_color_cost[PALETTE_MAX_SIZE - 1][PALETTE_COLOR_CONTEXTS]
+                                                 [PALETTE_COLORS];
+  int palette_uv_color_cost[PALETTE_MAX_SIZE - 1][PALETTE_COLOR_CONTEXTS]
+                                                  [PALETTE_COLORS];
+#endif  // CONFIG_PALETTE
 
   int multi_arf_allowed;
   int multi_arf_enabled;

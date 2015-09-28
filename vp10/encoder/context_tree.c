@@ -61,6 +61,13 @@ static void free_mode_context(PICK_MODE_CONTEXT *ctx) {
       ctx->eobs[i][k] = 0;
     }
   }
+
+#if CONFIG_PALETTE
+  for (i = 0; i < 2; ++i) {
+    vpx_free(ctx->color_index_map[i]);
+    ctx->color_index_map[i] = 0;
+  }
+#endif  // CONFIG_PALETTE
 }
 
 static void alloc_tree_contexts(VP10_COMMON *cm, PC_TREE *tree,

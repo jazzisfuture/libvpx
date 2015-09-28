@@ -89,6 +89,26 @@ static void fill_mode_costs(VP10_COMP *cpi) {
     vp10_cost_tokens(cpi->ext_tx_costs[i], fc->ext_tx_prob[i],
                      vp10_ext_tx_tree);
 #endif  // CONFIG_EXT_TX
+#if CONFIG_PALETTE
+  for (i = 0; i < 10; ++i) {
+    vp10_cost_tokens(cpi->palette_y_size_cost[i],
+                     vp10_default_palette_y_size_prob[i],
+                     vp10_palette_size_tree);
+    vp10_cost_tokens(cpi->palette_uv_size_cost[i],
+                     vp10_default_palette_uv_size_prob[i],
+                     vp10_palette_size_tree);
+  }
+
+  for (i = 0; i < PALETTE_MAX_SIZE - 1; ++i)
+    for (j = 0; j < PALETTE_COLOR_CONTEXTS; ++j) {
+      vp10_cost_tokens(cpi->palette_y_color_cost[i][j],
+                       vp10_default_palette_y_color_prob[i][j],
+                       vp10_palette_color_tree[i]);
+      vp10_cost_tokens(cpi->palette_uv_color_cost[i][j],
+                       vp10_default_palette_uv_color_prob[i][j],
+                       vp10_palette_color_tree[i]);
+    }
+#endif  // CONFIG_PALETTE
 }
 
 static void fill_token_costs(vp10_coeff_cost *c,
