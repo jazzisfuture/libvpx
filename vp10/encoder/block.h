@@ -52,6 +52,15 @@ typedef struct {
   uint8_t mode_context[MAX_REF_FRAMES];
 } MB_MODE_INFO_EXT;
 
+#if CONFIG_PALETTE
+typedef struct {
+  uint8_t best_palette_color_map[4096];
+  double kmeans_data_buf[4096];
+  uint8_t kmeans_indices_buf[4096];
+  uint8_t kmeans_pre_indices_buf[4096];
+} PALETTE_BUFFER;
+#endif  // CONFIG_PALETTE
+
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
   struct macroblock_plane plane[MAX_MB_PLANE];
@@ -86,6 +95,10 @@ struct macroblock {
   int *nmvcost[2];
   int *nmvcost_hp[2];
   int **mvcost;
+
+#if CONFIG_PALETTE
+  PALETTE_BUFFER *palette_buffer;
+#endif  // CONFIG_PALETTE
 
   int nmvjointsadcost[MV_JOINTS];
   int *nmvsadcost[2];
