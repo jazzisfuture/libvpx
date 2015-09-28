@@ -343,6 +343,11 @@ static void fliplr(int16_t *dest, int stride, int l) {
       dest[i * stride + j] = dest[i * stride + l - 1 - j];
       dest[i * stride + l - 1 - j] = tmp;
     }
+        if (xd->lossless) {
+          vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
+        } else {
+        x->fwd_txm4x4(src_diff, coeff, diff_stride);
+        }
   }
 }
 
@@ -353,6 +358,11 @@ static void flipud(int16_t *dest, int stride, int l) {
       const int16_t tmp = dest[i * stride + j];
       dest[i * stride + j] = dest[(l - 1 - i) * stride + j];
       dest[(l - 1 - i) * stride + j] = tmp;
+      if (xd->lossless) {
+        vp10_fwht4x4(src_diff, coeff, diff_stride);
+      } else {
+      x->fwd_txm4x4(src_diff, coeff, diff_stride);
+      }
     }
   }
 }
@@ -366,6 +376,11 @@ static void fliplrud(int16_t *dest, int stride, int l) {
       dest[(l - 1 - i) * stride + l - 1 - j] = tmp;
     }
   }
+        if (xd->lossless) {
+          vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
+        } else {
+        x->fwd_txm4x4(src_diff, coeff, diff_stride);
+        }
 }
 
 static void copy_fliplr(const int16_t *src, int src_stride, int l,
@@ -378,6 +393,11 @@ static void copy_flipud(const int16_t *src, int src_stride, int l,
                           int16_t *dest, int dest_stride) {
   copy_block(src, src_stride, l, dest, dest_stride);
   flipud(dest, dest_stride, l);
+      if (xd->lossless) {
+        vp10_fwht4x4(src_diff, coeff, diff_stride);
+      } else {
+      x->fwd_txm4x4(src_diff, coeff, diff_stride);
+      }
 }
 
 static void copy_fliplrud(const int16_t *src, int src_stride, int l,
@@ -387,22 +407,23 @@ static void copy_fliplrud(const int16_t *src, int src_stride, int l,
 }
 #endif  // CONFIG_EXT_TX
 
-void vp10_fwd_txfm_4x4(const int16_t *src_diff,
-                       tran_low_t *coeff, int diff_stride, TX_TYPE tx_type,
-                       void (*fwd_txm4x4)(const int16_t *input,
-                                          tran_low_t *output, int stride)) {
+void vp10_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
+                       int diff_stride, TX_TYPE tx_type, int lossless) {
+  if (lossless) {
+    vp10_fwht4x4(src_diff, coeff, diff_stride);
+  } else {
 #if CONFIG_EXT_TX
   int16_t src_diff2[16];
 #endif  // CONFIG_EXT_TX
-  switch (tx_type) {
-    case DCT_DCT:
-      fwd_txm4x4(src_diff, coeff, diff_stride);
-      break;
-    case ADST_DCT:
-    case DCT_ADST:
-    case ADST_ADST:
-      vp10_fht4x4(src_diff, coeff, diff_stride, tx_type);
-      break;
+    switch (tx_type) {
+      case DCT_DCT:
+        vpx_fdct4x4(src_diff, coeff, diff_stride);
+        break;
+      case ADST_DCT:
+      case DCT_ADST:
+      case ADST_ADST:
+        vp10_fht4x4(src_diff, coeff, diff_stride, tx_type);
+        break;
 #if CONFIG_EXT_TX
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 4, src_diff2, 4);
@@ -441,9 +462,10 @@ void vp10_fwd_txfm_4x4(const int16_t *src_diff,
       vp10_fht4x4_c(src_diff2, coeff, 4, ADST_DST);
       break;
 #endif  // CONFIG_EXT_TX
-    default:
-      assert(0);
-      break;
+      default:
+        assert(0);
+        break;
+    }
   }
 }
 
@@ -709,21 +731,23 @@ static void fwd_txfm_32x32_1(const int16_t *src_diff,
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
-                              int diff_stride, TX_TYPE tx_type,
-                              void (*highbd_fwd_txm4x4)(const int16_t *input,
-                                  tran_low_t *output, int stride)) {
+                              int diff_stride, TX_TYPE tx_type, int lossless) {
+  if (lossless) {
+    assert(tx_type == DCT_DCT);
+    vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
+  } else {
 #if CONFIG_EXT_TX
   int16_t src_diff2[16];
 #endif  // CONFIG_EXT_TX
-  switch (tx_type) {
-    case DCT_DCT:
-      highbd_fwd_txm4x4(src_diff, coeff, diff_stride);
-      break;
-    case ADST_DCT:
-    case DCT_ADST:
-    case ADST_ADST:
-      vp10_highbd_fht4x4(src_diff, coeff, diff_stride, tx_type);
-      break;
+    switch (tx_type) {
+      case DCT_DCT:
+        vpx_highbd_fdct4x4(src_diff, coeff, diff_stride);
+        break;
+      case ADST_DCT:
+      case DCT_ADST:
+      case ADST_ADST:
+        vp10_highbd_fht4x4(src_diff, coeff, diff_stride, tx_type);
+        break;
 #if CONFIG_EXT_TX
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 4, src_diff2, 4);
@@ -762,9 +786,10 @@ void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
       vp10_highbd_fht4x4_c(src_diff2, coeff, 4, ADST_DST);
       break;
 #endif  // CONFIG_EXT_TX
-    default:
-      assert(0);
-      break;
+      default:
+        assert(0);
+        break;
+    }
   }
 }
 
@@ -1084,7 +1109,7 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
         break;
       case TX_4X4:
         vp10_highbd_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type,
-                                 x->fwd_txm4x4);
+                                 xd->lossless);
         vp10_highbd_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
                                 p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                                 pd->dequant, eob,
@@ -1121,7 +1146,7 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
       break;
     case TX_4X4:
       vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type,
-                        x->fwd_txm4x4);
+                        xd->lossless);
       vp10_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
                        p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob,
@@ -1174,7 +1199,7 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
         break;
       case TX_4X4:
         vp10_highbd_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type,
-                                 x->fwd_txm4x4);
+                                 xd->lossless);
         vpx_highbd_quantize_dc(coeff, 16, x->skip_block, p->round,
                                p->quant_fp[0], qcoeff, dqcoeff,
                                pd->dequant[0], eob);
@@ -1207,7 +1232,7 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
       break;
     case TX_4X4:
       vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type,
-                        x->fwd_txm4x4);
+                        xd->lossless);
       vpx_quantize_dc(coeff, 16, x->skip_block, p->round,
                       p->quant_fp[0], qcoeff, dqcoeff,
                       pd->dequant[0], eob);
@@ -1264,7 +1289,7 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
         break;
       case TX_4X4:
         vp10_highbd_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type,
-                                 x->fwd_txm4x4);
+                                 xd->lossless);
         vpx_highbd_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                               p->quant, p->quant_shift, qcoeff, dqcoeff,
                               pd->dequant, eob,
@@ -1300,7 +1325,7 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_4X4:
-      vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type, x->fwd_txm4x4);
+      vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type, xd->lossless);
       vpx_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
@@ -1403,7 +1428,7 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
         // case.
         vp10_highbd_inv_txfm_add_4x4(dqcoeff, dst, pd->dst.stride,
                                      p->eobs[block], xd->bd, tx_type,
-                                     x->highbd_itxm_add);
+                                     xd->lossless);
         break;
       default:
         assert(0 && "Invalid transform size");
@@ -1432,7 +1457,7 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
       // which is significant (not just an optimization) for the lossless
       // case.
       vp10_inv_txfm_add_4x4(dqcoeff, dst, pd->dst.stride, p->eobs[block],
-                            tx_type, x->itxm_add);
+                            tx_type, xd->lossless);
       break;
     default:
       assert(0 && "Invalid transform size");
@@ -1457,11 +1482,21 @@ static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
   if (p->eobs[block] > 0) {
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-       x->highbd_itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], xd->bd);
-       return;
+      if (xd->lossless) {
+        vp10_highbd_iwht4x4_add(dqcoeff, dst, pd->dst.stride,
+                                p->eobs[block], xd->bd);
+      } else {
+        vp10_highbd_idct4x4_add(dqcoeff, dst, pd->dst.stride,
+                                p->eobs[block], xd->bd);
+      }
+      return;
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-    x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+    if (xd->lossless) {
+      vp10_iwht4x4_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+    } else {
+      vp10_idct4x4_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+    }
   }
 }
 
@@ -1582,7 +1617,7 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
           vpx_highbd_subtract_block(4, 4, src_diff, diff_stride,
                                     src, src_stride, dst, dst_stride, xd->bd);
           vp10_highbd_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type,
-                                   x->fwd_txm4x4);
+                                   xd->lossless);
           vpx_highbd_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                                 p->quant, p->quant_shift, qcoeff, dqcoeff,
                                 pd->dequant, eob,
@@ -1594,7 +1629,7 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
           // eob<=1 which is significant (not just an optimization) for the
           // lossless case.
           vp10_highbd_inv_txfm_add_4x4(dqcoeff, dst, dst_stride, *eob, xd->bd,
-                                       tx_type, x->highbd_itxm_add);
+                                       tx_type, xd->lossless);
         break;
       default:
         assert(0);
@@ -1651,7 +1686,7 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (!x->skip_recode) {
         vpx_subtract_block(4, 4, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
-        vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type, x->fwd_txm4x4);
+        vp10_fwd_txfm_4x4(src_diff, coeff, diff_stride, tx_type, xd->lossless);
         vpx_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round, p->quant,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
@@ -1663,7 +1698,7 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         // which is significant (not just an optimization) for the lossless
         // case.
         vp10_inv_txfm_add_4x4(dqcoeff, dst, dst_stride, *eob, tx_type,
-                              x->itxm_add);
+                              xd->lossless);
       }
       break;
     default:
