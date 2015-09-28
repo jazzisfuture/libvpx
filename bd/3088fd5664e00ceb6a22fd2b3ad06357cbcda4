@@ -1,0 +1,8 @@
+Code-Review+2: Adrian Grange <agrange@google.com>
+Verified+1: Marco Paniconi <marpan@google.com>
+Verified+1: WebM Builds <builds@webmproject.org>
+Submitted-by: Marco Paniconi <marpan@google.com>
+Submitted-at: Mon, 28 Sep 2015 19:53:13 +0000
+Reviewed-on: https://chromium-review.googlesource.com/302697
+Project: webm/libvpx
+Branch: refs/heads/master
