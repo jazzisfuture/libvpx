@@ -296,6 +296,10 @@ typedef struct VP10Common {
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
   int above_context_alloc_cols;
+
+#if 1
+  int stats[EXT_TX_SIZES][INTRA_MODES][EXT_TX_TYPES];
+#endif
 } VP10_COMMON;
 
 // TODO(hkuang): Don't need to lock the whole pool after implementing atomic
