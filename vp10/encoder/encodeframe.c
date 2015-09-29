@@ -3006,7 +3006,7 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
         bsize >= BLOCK_8X8 &&
         !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      ++td->counts->ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
+      ++td->counts->inter_ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
     }
 #endif  // CONFIG_EXT_TX
   }

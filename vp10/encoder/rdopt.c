@@ -694,7 +694,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
 
 #if CONFIG_EXT_TX
   start_tx_type = NORM;
-  if (is_inter_block(mbmi) && bs >= BLOCK_8X8 && !xd->lossless)
+  if ((is_inter_block(mbmi) || 1) && bs >= BLOCK_8X8 && !xd->lossless)
     end_tx_type = EXT_TX_TYPES - 1;
   else
     end_tx_type = NORM;
@@ -708,6 +708,11 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_TX
       if (mbmi->ext_txfrm >= GET_EXT_TX_TYPES(n))
         continue;
+
+
+      if (mbmi->ext_txfrm > 3 && 1)
+        continue;
+       /* */
 #endif  // CONFIG_EXT_TX
 
       for (m = 0; m <= n - (n == (int) max_tx_size); ++m) {
@@ -721,9 +726,12 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
                        &sse, ref_best_rd, 0, bs, n,
                        cpi->sf.use_fast_coef_costing);
 #if CONFIG_EXT_TX
-      if (is_inter_block(mbmi) && bs >= BLOCK_8X8 &&
-          !xd->lossless && r != INT_MAX)
-        r += cpi->ext_tx_costs[n][mbmi->ext_txfrm];
+      if (bs >= BLOCK_8X8 && !xd->lossless && r != INT_MAX) {
+        if (is_inter_block(mbmi))
+          r += cpi->ext_tx_costs[n][mbmi->ext_txfrm];
+        else
+          r += 5 * vp10_cost_bit(128, 0);
+      }
 #endif  // CONFIG_EXT_TX
 
       if (r == INT_MAX)
@@ -1080,6 +1088,10 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP10_COMP *cpi, MACROBLOCK *mb,
   memcpy(t_above, xd->plane[0].above_context, sizeof(t_above));
   memcpy(t_left, xd->plane[0].left_context, sizeof(t_left));
 
+#if CONFIG_EXT_TX1
+  xd->mi[0]->mbmi.ext_txfrm = NORM;
+#endif  // CONFIG_EXT_TX
+
   // Pick modes for each sub-block (of size 4x4, 4x8, or 8x4) in an 8x8 block.
   for (idy = 0; idy < 2; idy += num_4x4_blocks_high) {
     for (idx = 0; idx < 2; idx += num_4x4_blocks_wide) {
@@ -1137,6 +1149,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   int this_rate, this_rate_tokenonly, s;
   int64_t this_distortion, this_rd;
   TX_SIZE best_tx = TX_4X4;
+#if CONFIG_EXT_TX
+  EXT_TX_TYPE best_tx_type = NORM;
+#endif  // CONFIG_EXT_TX
   int *bmode_costs;
   const MODE_INFO *above_mi = xd->above_mi;
   const MODE_INFO *left_mi = xd->left_mi;
@@ -1162,6 +1177,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
       mode_selected   = mode;
       best_rd         = this_rd;
       best_tx         = mic->mbmi.tx_size;
+#if CONFIG_EXT_TX
+      best_tx_type    = mic->mbmi.ext_txfrm;
+#endif  // CONFIG_EXT_TX
       *rate           = this_rate;
       *rate_tokenonly = this_rate_tokenonly;
       *distortion     = this_distortion;
@@ -1171,6 +1189,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
   mic->mbmi.mode = mode_selected;
   mic->mbmi.tx_size = best_tx;
+#if CONFIG_EXT_TX
+  mic->mbmi.ext_txfrm = best_tx_type;
+#endif  // CONFIG_EXT_TX
 
   return best_rd;
 }
@@ -3315,7 +3336,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     if (ref_frame == INTRA_FRAME) {
       TX_SIZE uv_tx;
       struct macroblockd_plane *const pd = &xd->plane[1];
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
       mbmi->ext_txfrm = NORM;
 #endif  // CONFIG_EXT_TX
       memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
@@ -3342,7 +3363,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
     } else {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
       mbmi->ext_txfrm = NORM;
 #endif
       this_rd = handle_inter_mode(cpi, x, bsize,
@@ -3775,7 +3796,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
   int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
   int internal_active_edge =
     vp10_active_edge_sb(cpi, mi_row, mi_col) && vp10_internal_image_edge(cpi);
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   mbmi->ext_txfrm = NORM;
 #endif
 
@@ -3936,7 +3957,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
 
     if (ref_frame == INTRA_FRAME) {
       int rate;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
       mbmi->ext_txfrm = NORM;
 #endif
       if (rd_pick_intra_sub_8x8_y_mode(cpi, x, &rate, &rate_y,
