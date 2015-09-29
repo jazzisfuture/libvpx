@@ -208,7 +208,8 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   // segment_id.
   if (cyclic_refresh_segment_id_boosted(mbmi->segment_id)) {
     mbmi->segment_id = refresh_this_block;
-    // Reset segment_id if will be skipped.
+    // Reset segment_id if it will be skipped, or has been encoded as
+    // small/zero_mv x frames in a row and is at least larger than 16x16.
     if (skip)
       mbmi->segment_id = CR_SEGMENT_ID_BASE;
   }
@@ -287,8 +288,10 @@ void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   unsigned char *const seg_map = cpi->segmentation_map;
   int mi_row, mi_col;
+  int tot_zeromv = 0;
   cr->actual_num_seg1_blocks = 0;
   cr->actual_num_seg2_blocks = 0;
+  cr->reduce_refresh = 0;
   for (mi_row = 0; mi_row < cm->mi_rows; mi_row++)
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
       if (cyclic_refresh_segment_id(
@@ -297,7 +300,11 @@ void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
       else if (cyclic_refresh_segment_id(
           seg_map[mi_row * cm->mi_cols + mi_col]) == CR_SEGMENT_ID_BOOST2)
         cr->actual_num_seg2_blocks++;
+      if (cr->consec_zero_mv[mi_row * cm->mi_cols + mi_col] > 100)
+        tot_zeromv++;
     }
+  if (tot_zeromv > ((cm->mi_rows * cm->mi_cols) >> 1))
+    cr->reduce_refresh = 1;
 }
 
 // Set golden frame update interval, for non-svc 1 pass CBR mode.
@@ -476,6 +483,8 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->rate_ratio_qdelta = 3.0;
   else
     cr->rate_ratio_qdelta = 2.0;
+  if (cr->reduce_refresh)
+    cr->rate_ratio_qdelta = 1.7;
   // Adjust some parameters for low resolutions at low bitrates.
   if (cm->width <= 352 &&
       cm->height <= 288 &&
