@@ -207,9 +207,15 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   // If this block is labeled for refresh, check if we should reset the
   // segment_id.
   if (cyclic_refresh_segment_id_boosted(mbmi->segment_id)) {
+    int consec_zero_mv_thresh =
+        cpi->oxcf.content == VP9E_CONTENT_SCREEN ? 0
+        : 10 * (100 / cr->percent_refresh);
     mbmi->segment_id = refresh_this_block;
-    // Reset segment_id if will be skipped.
-    if (skip)
+    // Reset segment_id if it will be skipped, or has been encoded as
+    // small/zero_mv x frames in a row and is at least larger than 16x16.
+    if (skip ||
+        (bsize > BLOCK_16X16 &&
+         cr->consec_zero_mv[block_index] > consec_zero_mv_thresh))
       mbmi->segment_id = CR_SEGMENT_ID_BASE;
   }
 
@@ -415,10 +421,9 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     int mi_row = sb_row_index * MI_BLOCK_SIZE;
     int mi_col = sb_col_index * MI_BLOCK_SIZE;
     int qindex_thresh =
-        vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex);
-    int consec_zero_mv_thresh =
-        cpi->oxcf.content == VP9E_CONTENT_SCREEN ? 0
-        : 10 * (100 / cr->percent_refresh);
+        cpi->oxcf.content == VP9E_CONTENT_SCREEN
+            ? vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex)
+            : 0;
     assert(mi_row >= 0 && mi_row < cm->mi_rows);
     assert(mi_col >= 0 && mi_col < cm->mi_cols);
     bl_index = mi_row * cm->mi_cols + mi_col;
@@ -434,8 +439,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         // for possible boost/refresh (segment 1). The segment id may get
         // reset to 0 later if block gets coded anything other than ZEROMV.
         if (cr->map[bl_index2] == 0) {
-          if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
-              cr->consec_zero_mv[bl_index2] < consec_zero_mv_thresh)
+          if (cr->last_coded_q_map[bl_index2] > qindex_thresh)
             sum_map++;
         } else if (cr->map[bl_index2] < 0) {
           cr->map[bl_index2]++;
