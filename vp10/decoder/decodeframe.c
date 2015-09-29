@@ -339,6 +339,7 @@ static void inverse_transform_block_intra(MACROBLOCKD* xd, int plane,
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if 1
     if (eob == 1) {
       dqcoeff[0] = 0;
     } else {
@@ -349,6 +350,9 @@ static void inverse_transform_block_intra(MACROBLOCKD* xd, int plane,
       else
         memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
     }
+#else
+    memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
+#endif
   }
 }
 
@@ -2070,11 +2074,18 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
 
 #if CONFIG_EXT_TX
 static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
-  int i, j;
+  int i, j, k;
   if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
-    for (j = TX_4X4; j <= TX_16X16; ++j)
-      for (i = 0; i < EXT_TX_TYPES - 1; ++i)
-        vp10_diff_update_prob(r, &fc->ext_tx_prob[j][i]);
+    for (i = TX_4X4; i <= TX_16X16; ++i)
+      for (j = 0; j < EXT_TX_TYPES - 1; ++j)
+        vp10_diff_update_prob(r, &fc->inter_ext_tx_prob[i][j]);
+  }
+
+  if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+    for (i = TX_4X4; i <= TX_16X16; ++i)
+      for (j = 0; j < INTRA_MODES; ++j)
+        for (k = 0; k < EXT_TX_TYPES - 1; ++k)
+          vp10_diff_update_prob(r, &fc->intra_ext_tx_prob[i][j][k]);
   }
 }
 #endif  // CONFIG_EXT_TX
