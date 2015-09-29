@@ -208,7 +208,7 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   // segment_id.
   if (cyclic_refresh_segment_id_boosted(mbmi->segment_id)) {
     mbmi->segment_id = refresh_this_block;
-    // Reset segment_id if will be skipped.
+    // Reset segment_id if it will be skipped.
     if (skip)
       mbmi->segment_id = CR_SEGMENT_ID_BASE;
   }
@@ -287,8 +287,10 @@ void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   unsigned char *const seg_map = cpi->segmentation_map;
   int mi_row, mi_col;
+  int tot_zeromv = 0;
   cr->actual_num_seg1_blocks = 0;
   cr->actual_num_seg2_blocks = 0;
+  cr->reduce_refresh = 0;
   for (mi_row = 0; mi_row < cm->mi_rows; mi_row++)
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
       if (cyclic_refresh_segment_id(
@@ -297,7 +299,11 @@ void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
       else if (cyclic_refresh_segment_id(
           seg_map[mi_row * cm->mi_cols + mi_col]) == CR_SEGMENT_ID_BOOST2)
         cr->actual_num_seg2_blocks++;
+      if (cr->consec_zero_mv[mi_row * cm->mi_cols + mi_col] > 100)
+        tot_zeromv++;
     }
+  if (tot_zeromv > ((cm->mi_rows * cm->mi_cols) >> 1))
+    cr->reduce_refresh = 1;
 }
 
 // Set golden frame update interval, for non-svc 1 pass CBR mode.
@@ -396,6 +402,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   int i, block_count, bl_index, sb_rows, sb_cols, sbs_in_frame;
   int xmis, ymis, x, y;
   int consec_zero_mv_thresh = 0;
+  int qindex_thresh = 0;
   memset(seg_map, CR_SEGMENT_ID_BASE, cm->mi_rows * cm->mi_cols);
   sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
   sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
@@ -411,6 +418,10 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   if (cpi->oxcf.content != VP9E_CONTENT_SCREEN &&
       cr->percent_refresh > 0)
     consec_zero_mv_thresh = 10 * (100 / cr->percent_refresh);
+  qindex_thresh =
+       cpi->oxcf.content == VP9E_CONTENT_SCREEN
+       ? vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex)
+       : vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex);
   do {
     int sum_map = 0;
     // Get the mi_row/mi_col corresponding to superblock index i.
@@ -418,8 +429,6 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     int sb_col_index = i - sb_row_index * sb_cols;
     int mi_row = sb_row_index * MI_BLOCK_SIZE;
     int mi_col = sb_col_index * MI_BLOCK_SIZE;
-    int qindex_thresh =
-        vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex);
     assert(mi_row >= 0 && mi_row < cm->mi_rows);
     assert(mi_col >= 0 && mi_col < cm->mi_cols);
     bl_index = mi_row * cm->mi_cols + mi_col;
@@ -491,6 +500,8 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->motion_thresh = 4;
     cr->rate_boost_fac = 12;
   }
+  if (cr->reduce_refresh && cpi->oxcf.content != VP9E_CONTENT_SCREEN)
+    cr->rate_boost_fac = 10;
 }
 
 // Setup cyclic background refresh: set delta q and segmentation map.
