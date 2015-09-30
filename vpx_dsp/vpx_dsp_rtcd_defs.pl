@@ -61,11 +61,20 @@ if ((vpx_config("CONFIG_VP8") eq "yes") || (vpx_config("CONFIG_VP9") eq "yes") |
   add_proto qw/void vpx_d45_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
   specialize qw/vpx_d45_predictor_4x4 neon/, "$ssse3_x86inc";
 
+  add_proto qw/void vpx_d45e_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
+  specialize qw/vpx_d45e_predictor_4x4/;
+
   add_proto qw/void vpx_d63_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
   specialize qw/vpx_d63_predictor_4x4/, "$ssse3_x86inc";
 
+  add_proto qw/void vpx_d63e_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
+  specialize qw/vpx_d63e_predictor_4x4/;
+
   add_proto qw/void vpx_h_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
   specialize qw/vpx_h_predictor_4x4 neon dspr2 msa/, "$ssse3_x86inc";
+
+  add_proto qw/void vpx_he_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
+  specialize qw/vpx_he_predictor_4x4/;
 
   add_proto qw/void vpx_d117_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
   specialize qw/vpx_d117_predictor_4x4/;
@@ -78,6 +87,9 @@ if ((vpx_config("CONFIG_VP8") eq "yes") || (vpx_config("CONFIG_VP9") eq "yes") |
 
   add_proto qw/void vpx_v_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
   specialize qw/vpx_v_predictor_4x4 neon msa/, "$sse_x86inc";
+
+  add_proto qw/void vpx_ve_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
+  specialize qw/vpx_ve_predictor_4x4/;
 
   add_proto qw/void vpx_tm_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
   specialize qw/vpx_tm_predictor_4x4 neon dspr2 msa/, "$sse_x86inc";
