@@ -7,6 +7,9 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#ifdef _MSC_VER
+#define NOMINMAX
+#endif
 #include <algorithm>
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "test/codec_factory.h"
