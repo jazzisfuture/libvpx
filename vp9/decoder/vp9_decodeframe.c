@@ -787,11 +787,12 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                  int bw, int bh, int x_mis, int y_mis,
                                  int bwl, int bhl) {
   const int offset = mi_row * cm->mi_stride + mi_col;
+  const int offset2 = (mi_row & cm->mi_row_mask) * cm->mi_stride + mi_col;
   int x, y;
   const TileInfo *const tile = &xd->tile;
 
   xd->mi = cm->mi_grid_visible + offset;
-  xd->mi[0] = &cm->mi[offset];
+  xd->mi[0] = &cm->mi[offset2];
   // TODO(slavarnway): Generate sb_type based on bwl and bhl, instead of
   // passing bsize from decode_partition().
   xd->mi[0]->mbmi.sb_type = bsize;

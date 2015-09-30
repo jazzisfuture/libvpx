@@ -48,7 +48,27 @@ static void initialize_dec(void) {
   }
 }
 
+static int is_full_frame_mi(VP9_COMMON *cm) {
+
+  // If 444 or 420, the loopfilter can use the masks built during decode.
+  // Otherwise, the mode_info for the entire frame must be preserved.
+  if (cm->subsampling_y == cm->subsampling_x)
+    return 0;
+
+  // TODO(slavarnway): check for postproc (vp9_mfqe) requirements here
+
+  return 1;
+}
+
 static void vp9_dec_setup_mi(VP9_COMMON *cm) {
+  cm->mi = cm->mip + cm->mi_stride + 1;
+
+  if (!is_full_frame_mi(cm)) {
+    cm->mi_row_mask = 0xf;
+  } else {
+    cm->mi_row_mask = 0xffffffff;
+  }
+
   cm->mi = cm->mip + cm->mi_stride + 1;
   cm->mi_grid_visible = cm->mi_grid_base + cm->mi_stride + 1;
   memset(cm->mi_grid_base, 0,
@@ -56,9 +76,15 @@ static void vp9_dec_setup_mi(VP9_COMMON *cm) {
 }
 
 static int vp9_dec_alloc_mi(VP9_COMMON *cm, int mi_size) {
-  cm->mip = vpx_calloc(mi_size, sizeof(*cm->mip));
+  if (!is_full_frame_mi(cm)) {
+    cm->mip = vpx_calloc(cm->mi_stride * ((MI_BLOCK_SIZE * 2) + 1),
+                         sizeof(*cm->mip));
+  } else {
+    cm->mip = vpx_calloc(mi_size, sizeof(*cm->mip));
+  }
   if (!cm->mip)
     return 1;
+
   cm->mi_alloc_size = mi_size;
   cm->mi_grid_base = (MODE_INFO **)vpx_calloc(mi_size, sizeof(MODE_INFO*));
   if (!cm->mi_grid_base)

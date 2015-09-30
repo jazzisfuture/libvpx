@@ -179,6 +179,7 @@ typedef struct VP9Common {
   int mb_rows, mi_rows;
   int mb_cols, mi_cols;
   int mi_stride;
+  int mi_row_mask;
 
   /* profile settings */
   TX_MODE tx_mode;
