@@ -54,7 +54,7 @@ if ($opts{arch} eq "x86_64") {
 # Intra prediction
 #
 
-if ((vpx_config("CONFIG_VP9") eq "yes") || (vpx_config("CONFIG_VP10") eq "yes")) {
+if ((vpx_config("CONFIG_VP8") eq "yes") || (vpx_config("CONFIG_VP9") eq "yes") || (vpx_config("CONFIG_VP10") eq "yes")) {
   add_proto qw/void vpx_d207_predictor_4x4/, "uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left";
   specialize qw/vpx_d207_predictor_4x4/, "$ssse3_x86inc";
 
@@ -369,7 +369,7 @@ if ((vpx_config("CONFIG_VP9") eq "yes") || (vpx_config("CONFIG_VP10") eq "yes"))
     add_proto qw/void vpx_highbd_dc_128_predictor_32x32/, "uint16_t *dst, ptrdiff_t y_stride, const uint16_t *above, const uint16_t *left, int bd";
     specialize qw/vpx_highbd_dc_128_predictor_32x32/;
   }  # CONFIG_VP9_HIGHBITDEPTH
-}  # CONFIG_VP9 || CONFIG_VP10
+}  # CONFIG_VP8 || CONFIG_VP9 || CONFIG_VP10
 
 #
 # Sub Pixel Filters

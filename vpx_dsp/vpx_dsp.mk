@@ -36,7 +36,7 @@ DSP_SRCS-yes += bitreader_buffer.h
 endif
 
 # intra predictions
-ifneq ($(filter yes,$(CONFIG_VP9) $(CONFIG_VP10)),)
+ifneq ($(filter yes,$(CONFIG_VP8) $(CONFIG_VP9) $(CONFIG_VP10)),)
 DSP_SRCS-yes += intrapred.c
 
 ifeq ($(CONFIG_USE_X86INC),yes)
