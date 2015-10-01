@@ -415,7 +415,9 @@ static void save_coding_context(VP10_COMP *cpi) {
   memcpy(cc->nmvcosts_hp[1], cpi->nmvcosts_hp[1],
          MV_VALS * sizeof(*cpi->nmvcosts_hp[1]));
 
+#if !CONFIG_MISC_FIXES
   vp10_copy(cc->segment_pred_probs, cm->seg.pred_probs);
+#endif
 
   memcpy(cpi->coding_context.last_frame_seg_map_copy,
          cm->last_frame_seg_map, (cm->mi_rows * cm->mi_cols));
@@ -441,7 +443,9 @@ static void restore_coding_context(VP10_COMP *cpi) {
   memcpy(cpi->nmvcosts_hp[1], cc->nmvcosts_hp[1],
          MV_VALS * sizeof(*cc->nmvcosts_hp[1]));
 
+#if !CONFIG_MISC_FIXES
   vp10_copy(cm->seg.pred_probs, cc->segment_pred_probs);
+#endif
 
   memcpy(cm->last_frame_seg_map,
          cpi->coding_context.last_frame_seg_map_copy,
