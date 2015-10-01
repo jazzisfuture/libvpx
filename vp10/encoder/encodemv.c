@@ -134,8 +134,11 @@ static void build_nmv_component_cost_table(int *mvcost,
   }
 }
 
-static int update_mv(vpx_writer *w, const unsigned int ct[2], vpx_prob *cur_p,
-                     vpx_prob upd_p) {
+static void update_mv(vpx_writer *w, const unsigned int ct[2], vpx_prob *cur_p,
+                      vpx_prob upd_p) {
+#if CONFIG_MISC_FIXES
+  vp10_cond_prob_diff_update(w, cur_p, ct);
+#else
   const vpx_prob new_p = get_binary_prob(ct[0], ct[1]) | 1;
   const int update = cost_branch256(ct, *cur_p) + vp10_cost_zero(upd_p) >
                      cost_branch256(ct, new_p) + vp10_cost_one(upd_p) + 7 * 256;
@@ -144,7 +147,7 @@ static int update_mv(vpx_writer *w, const unsigned int ct[2], vpx_prob *cur_p,
     *cur_p = new_p;
     vpx_write_literal(w, new_p >> 1, 7);
   }
-  return update;
+#endif
 }
 
 static void write_mv_update(const vpx_tree_index *tree,
