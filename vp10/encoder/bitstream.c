@@ -122,8 +122,11 @@ static void update_switchable_interp_probs(VP10_COMMON *cm, vpx_writer *w,
 
 static void pack_mb_tokens(vpx_writer *w,
                            TOKENEXTRA **tp, const TOKENEXTRA *const stop,
-                           vpx_bit_depth_t bit_depth) {
+                           vpx_bit_depth_t bit_depth, const TX_SIZE tx) {
   TOKENEXTRA *p = *tp;
+#if !CONFIG_MISC_FIXES
+  (void) tx;
+#endif
 
   while (p < stop && p->token != EOSB_TOKEN) {
     const int t = p->token;
@@ -171,11 +174,19 @@ static void pack_mb_tokens(vpx_writer *w,
 
     if (b->base_val) {
       const int e = p->extra, l = b->len;
+#if CONFIG_MISC_FIXES
+      const int skip_bits =
+          (b->base_val == CAT6_MIN_VAL) ? TX_SIZES - 1 - tx : 0;
+#endif
 
       if (l) {
         const unsigned char *pb = b->prob;
         int v = e >> 1;
+#if CONFIG_MISC_FIXES
+        int n = l - skip_bits;  /* number of bits in v, assumed nonzero */
+#else
         int n = l;              /* number of bits in v, assumed nonzero */
+#endif
         int i = 0;
 
         do {
@@ -399,7 +410,7 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
   }
 
   assert(*tok < tok_end);
-  pack_mb_tokens(w, tok, tok_end, cm->bit_depth);
+  pack_mb_tokens(w, tok, tok_end, cm->bit_depth, m->mbmi.tx_size);
 }
 
 static void write_partition(const VP10_COMMON *const cm,
