@@ -26,6 +26,7 @@ extern "C" {
 
 #define MIN_GF_INTERVAL     4
 #define MAX_GF_INTERVAL     16
+#define ONEHALFONLY_RESIZE  0
 
 typedef enum {
   INTER_NORMAL = 0,
@@ -42,6 +43,20 @@ typedef enum {
   SCALE_STEP1 = 1,  // First-level down-scaling.
   FRAME_SCALE_STEPS
 } FRAME_SCALE_LEVEL;
+
+typedef enum {
+  NO_RESIZE = 0,
+  ONE2THREEFOUR = 1,
+  TOONEHALF = 2,
+  ONEHALF2THREEFOUR = -1,
+  TOONE = -2,
+} RESIZE_DIRECT;
+
+typedef enum {
+  ORIG = 0,
+  THREE_QUARTER = 1,
+  ONE_HALF = 2
+} RESIZE_STATE;
 
 // Frame dimensions multiplier wrt the native frame size, in 1/16ths,
 // specified for the scale-up case.
