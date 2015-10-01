@@ -2988,5 +2988,17 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     }
     ++td->counts->tx.tx_totals[mbmi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mbmi, &xd->plane[1])];
+#if CONFIG_MISC_FIXES
+    ++td->counts->seg.tree_total[mbmi->segment_id];
+    {
+      const uint8_t *const map = cpi->common.seg.update_map
+          ? cpi->segmentation_map : cm->last_frame_seg_map;
+      int seg_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
+      int ctx = vp10_get_pred_context_seg_id(xd);
+      ++td->counts->seg.pred[ctx][seg_id == mbmi->segment_id];
+      if (seg_id != mbmi->segment_id)
+        ++td->counts->seg.tree_mispred[mbmi->segment_id];
+    }
+#endif
   }
 }
