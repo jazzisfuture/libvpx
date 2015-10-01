@@ -43,7 +43,6 @@ typedef struct TileBuffer {
 } TileBuffer;
 
 typedef struct TileWorkerData {
-  struct VP9Decoder *pbi;
   TileBuffer buffers[1 << 6];
   const uint8_t *data_end;
   int buf_start, buf_end;
