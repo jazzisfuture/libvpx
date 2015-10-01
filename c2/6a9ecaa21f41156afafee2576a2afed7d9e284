@@ -1,0 +1,8 @@
+Code-Review+2: Johann Koenig <johannkoenig@google.com>
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebM Builds <builds@webmproject.org>
+Submitted-by: Ronald S. Bultje <rsbultje@gmail.com>
+Submitted-at: Thu, 01 Oct 2015 01:01:59 +0000
+Reviewed-on: https://chromium-review.googlesource.com/303410
+Project: webm/libvpx
+Branch: refs/heads/master
