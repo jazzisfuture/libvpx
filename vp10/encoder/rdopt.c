@@ -522,7 +522,8 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
   rd = VPXMIN(rd1, rd2);
   if (plane == 0)
     x->zcoeff_blk[tx_size][block] = !x->plane[plane].eobs[block] ||
-                                    (rd1 > rd2 && !xd->lossless);
+                                    (rd1 > rd2 &&
+                                     !xd->lossless[mbmi->segment_id]);
 
   args->this_rate += rate;
   args->this_dist += dist;
@@ -594,6 +595,21 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
 }
 
+static void choose_smallest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
+                                    int *rate, int64_t *distortion,
+                                    int *skip, int64_t *sse,
+                                    int64_t ref_best_rd,
+                                    BLOCK_SIZE bs) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+
+  mbmi->tx_size = TX_4X4;
+
+  txfm_rd_in_plane(x, rate, distortion, skip,
+                   sse, ref_best_rd, 0, bs,
+                   TX_4X4, cpi->sf.use_fast_coef_costing);
+}
+
 static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
                                    int *rate,
                                    int64_t *distortion,
@@ -663,7 +679,8 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       rd[n][1] = RDCOST(x->rdmult, x->rddiv, r[n][1] + s0, d[n]);
     }
 
-    if (is_inter_block(mbmi) && !xd->lossless && !s[n] && sse[n] != INT64_MAX) {
+    if (is_inter_block(mbmi) && !xd->lossless[mbmi->segment_id] &&
+        !s[n] && sse[n] != INT64_MAX) {
       rd[n][0] = VPXMIN(rd[n][0], RDCOST(x->rdmult, x->rddiv, s1, sse[n]));
       rd[n][1] = VPXMIN(rd[n][1], RDCOST(x->rdmult, x->rddiv, s1, sse[n]));
     }
@@ -698,7 +715,10 @@ static void super_block_yrd(VP10_COMP *cpi, MACROBLOCK *x, int *rate,
 
   assert(bs == xd->mi[0]->mbmi.sb_type);
 
-  if (cpi->sf.tx_size_search_method == USE_LARGESTALL || xd->lossless) {
+  if (CONFIG_MISC_FIXES && xd->lossless[xd->mi[0]->mbmi.segment_id]) {
+    choose_smallest_tx_size(cpi, x, rate, distortion, skip, ret_sse,
+                            ref_best_rd, bs);
+  } else if (cpi->sf.tx_size_search_method == USE_LARGESTALL) {
     choose_largest_tx_size(cpi, x, rate, distortion, skip, ret_sse, ref_best_rd,
                            bs);
   } else {
@@ -782,7 +802,11 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
 
       for (idy = 0; idy < num_4x4_blocks_high; ++idy) {
         for (idx = 0; idx < num_4x4_blocks_wide; ++idx) {
+          TX_TYPE tx_type;
+          int64_t unused;
+          const scan_order *so;
           const int block = (row + idy) * 2 + (col + idx);
+          const int seg_id = xd->mi[0]->mbmi.segment_id;
           const uint8_t *const src = &src_init[idx * 4 + idy * 4 * src_stride];
           uint8_t *const dst = &dst_init[idx * 4 + idy * 4 * dst_stride];
           int16_t *const src_diff = vp10_raster_block_offset_int16(BLOCK_8X8,
@@ -795,37 +819,23 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                                   col + idx, row + idy, 0);
           vpx_highbd_subtract_block(4, 4, src_diff, 8, src, src_stride,
                                     dst, dst_stride, xd->bd);
-          if (xd->lossless) {
-            TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block);
-            const scan_order *so = get_scan(TX_4X4, tx_type);
-            vp10_highbd_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT, 1);
-            vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-            ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
-                                 so->scan, so->neighbors,
-                                 cpi->sf.use_fast_coef_costing);
-            if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
-              goto next_highbd;
-            vp10_highbd_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
-                                         dst, dst_stride, p->eobs[block],
-                                         xd->bd, DCT_DCT, 1);
-          } else {
-            int64_t unused;
-            TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block);
-            const scan_order *so = get_scan(TX_4X4, tx_type);
-            vp10_highbd_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, 0);
-            vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-            ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
-                                 so->scan, so->neighbors,
-                                 cpi->sf.use_fast_coef_costing);
+          tx_type = get_tx_type(PLANE_TYPE_Y, xd, block);
+          so = get_scan(TX_4X4, tx_type);
+          vp10_highbd_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT,
+                                   xd->lossless[seg_id]);
+          vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
+          ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
+                               so->scan, so->neighbors,
+                               cpi->sf.use_fast_coef_costing);
+          if (!xd->lossless[seg_id])
             distortion += vp10_highbd_block_error(
                 coeff, BLOCK_OFFSET(pd->dqcoeff, block),
                 16, &unused, xd->bd) >> 2;
-            if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
-              goto next_highbd;
-            vp10_highbd_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
-                                         dst, dst_stride, p->eobs[block],
-                                         xd->bd, tx_type, 0);
-          }
+          if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
+            goto next_highbd;
+          vp10_highbd_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
+                                       dst, dst_stride, p->eobs[block],
+                                       xd->bd, DCT_DCT, xd->lossless[seg_id]);
         }
       }
 
@@ -883,6 +893,10 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
 
     for (idy = 0; idy < num_4x4_blocks_high; ++idy) {
       for (idx = 0; idx < num_4x4_blocks_wide; ++idx) {
+        const scan_order *so;
+        TX_TYPE tx_type;
+        int64_t unused;
+        const int seg_id = xd->mi[0]->mbmi.segment_id;
         const int block = (row + idy) * 2 + (col + idx);
         const uint8_t *const src = &src_init[idx * 4 + idy * 4 * src_stride];
         uint8_t *const dst = &dst_init[idx * 4 + idy * 4 * dst_stride];
@@ -894,34 +908,22 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                                 dst, dst_stride, col + idx, row + idy, 0);
         vpx_subtract_block(4, 4, src_diff, 8, src, src_stride, dst, dst_stride);
 
-        if (xd->lossless) {
-          TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block);
-          const scan_order *so = get_scan(TX_4X4, tx_type);
-          vp10_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT, 1);
-          vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-          ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
-                               so->scan, so->neighbors,
-                               cpi->sf.use_fast_coef_costing);
-          if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
-            goto next;
-          vp10_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
-                                dst, dst_stride, p->eobs[block], DCT_DCT, 1);
-        } else {
-          int64_t unused;
-          TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block);
-          const scan_order *so = get_scan(TX_4X4, tx_type);
-          vp10_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, 0);
-          vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-          ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
+        tx_type = get_tx_type(PLANE_TYPE_Y, xd, block);
+        so = get_scan(TX_4X4, tx_type);
+        vp10_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT, xd->lossless[seg_id]);
+        vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
+        ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
                              so->scan, so->neighbors,
                              cpi->sf.use_fast_coef_costing);
-          distortion += vp10_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, block),
-                                        16, &unused) >> 2;
-          if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
-            goto next;
-          vp10_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
-                                dst, dst_stride, p->eobs[block], tx_type, 0);
-        }
+        if (xd->lossless[seg_id])
+          distortion += vp10_block_error(coeff,
+                                         BLOCK_OFFSET(pd->dqcoeff, block),
+                                         16, &unused) >> 2;
+        if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
+          goto next;
+        vp10_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
+                              dst, dst_stride, p->eobs[block], DCT_DCT,
+                              xd->lossless[seg_id]);
       }
     }
 
@@ -3258,7 +3260,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
         // Cost the skip mb case
         rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1);
-      } else if (ref_frame != INTRA_FRAME && !xd->lossless) {
+      } else if (ref_frame != INTRA_FRAME && !xd->lossless[mbmi->segment_id]) {
         if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
             RDCOST(x->rdmult, x->rddiv, 0, total_sse)) {
           // Add in the cost of the no skip flag.
@@ -4008,7 +4010,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
       // Skip is never coded at the segment level for sub8x8 blocks and instead
       // always coded in the bitstream at the mode info level.
 
-      if (ref_frame != INTRA_FRAME && !xd->lossless) {
+      if (ref_frame != INTRA_FRAME && !xd->lossless[mbmi->segment_id]) {
         if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
             RDCOST(x->rdmult, x->rddiv, 0, total_sse)) {
           // Add in the cost of the no skip flag.
