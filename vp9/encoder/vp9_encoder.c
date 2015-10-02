@@ -3991,7 +3991,7 @@ static void check_initial_width(VP9_COMP *cpi,
 }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
-static void setup_denoiser_buffer(VP9_COMP *cpi) {
+void vp9_setup_denoiser_buffer(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   if (cpi->oxcf.noise_sensitivity > 0 &&
       !cpi->denoiser.frame_buffer_initialized) {
@@ -4021,7 +4021,7 @@ int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
-  setup_denoiser_buffer(cpi);
+  vp9_setup_denoiser_buffer(cpi);
 #endif
   vpx_usec_timer_start(&timer);
 
@@ -4676,7 +4676,7 @@ int vp9_set_size_literal(VP9_COMP *cpi, unsigned int width,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
-  setup_denoiser_buffer(cpi);
+  vp9_setup_denoiser_buffer(cpi);
 #endif
 
   if (width) {

@@ -513,6 +513,10 @@ void vp9_remove_compressor(VP9_COMP *cpi);
 
 void vp9_change_config(VP9_COMP *cpi, const VP9EncoderConfig *oxcf);
 
+#if CONFIG_VP9_TEMPORAL_DENOISING
+void vp9_setup_denoiser_buffer(VP9_COMP *cpi);
+#endif
+
   // receive a frames worth of data. caller can assume that a copy of this
   // frame is made and not just a copy of the pointer..
 int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,

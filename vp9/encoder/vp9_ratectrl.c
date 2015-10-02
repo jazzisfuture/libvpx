@@ -1878,6 +1878,11 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
     // Reset cyclic refresh parameters.
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled)
       vp9_cyclic_refresh_reset_resize(cpi);
+#if CONFIG_VP9_TEMPORAL_DENOISING
+    // Reset the denoiser on the resized frame.
+    vp9_denoiser_free(&(cpi->denoiser));
+    vp9_setup_denoiser_buffer(cpi);
+#endif
     // Get the projected qindex, based on the scaled target frame size (scaled
     // so target_bits_per_mb in vp9_rc_regulate_q will be correct target).
     target_bits_per_frame = (resize_now == 1) ?
