@@ -102,6 +102,11 @@ static INLINE int has_second_ref(const MB_MODE_INFO *mbmi) {
   return mbmi->ref_frame[1] > INTRA_FRAME;
 }
 
+static INLINE int is_compound_ref(MV_REFERENCE_FRAME ref_frame,
+                                  MV_REFERENCE_FRAME second_ref_frame) {
+  return ref_frame > INTRA_FRAME && second_ref_frame > INTRA_FRAME;
+}
+
 PREDICTION_MODE vp9_left_block_mode(const MODE_INFO *cur_mi,
                                     const MODE_INFO *left_mi, int b);
 
