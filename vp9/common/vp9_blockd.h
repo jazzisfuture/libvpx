@@ -98,8 +98,13 @@ static INLINE int is_inter_block(const MB_MODE_INFO *mbmi) {
   return mbmi->ref_frame[0] > INTRA_FRAME;
 }
 
+static INLINE int is_compound_ref(MV_REFERENCE_FRAME ref_frame,
+                                  MV_REFERENCE_FRAME second_ref_frame) {
+  return ref_frame > INTRA_FRAME && second_ref_frame > INTRA_FRAME;
+}
+
 static INLINE int has_second_ref(const MB_MODE_INFO *mbmi) {
-  return mbmi->ref_frame[1] > INTRA_FRAME;
+  return is_compound_ref(mbmi->ref_frame[0], mbmi->ref_frame[1]);
 }
 
 PREDICTION_MODE vp9_left_block_mode(const MODE_INFO *cur_mi,
