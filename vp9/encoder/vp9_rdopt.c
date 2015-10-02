@@ -3114,10 +3114,14 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
     int this_skip2 = 0;
     int64_t total_sse = INT64_MAX;
     int early_term = 0;
+    const MV_REFERENCE_FRAME refs[2] = {
+      vp9_mode_order[mode_index].ref_frame[0],
+      vp9_mode_order[mode_index].ref_frame[1]
+    };
 
     this_mode = vp9_mode_order[mode_index].mode;
-    ref_frame = vp9_mode_order[mode_index].ref_frame[0];
-    second_ref_frame = vp9_mode_order[mode_index].ref_frame[1];
+    ref_frame = refs[0];
+    second_ref_frame = refs[1];
 
     // Look at the reference frame of the best mode so far and set the
     // skip mask to look at a subset of the remaining modes.
@@ -3206,7 +3210,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
           continue;
     }
 
-    comp_pred = second_ref_frame > INTRA_FRAME;
+    comp_pred = is_compound_ref(refs);
     if (comp_pred) {
       if (!cpi->allow_comp_inter_inter)
         continue;
@@ -3499,7 +3503,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
   if (best_mbmode.mode == NEWMV) {
     const MV_REFERENCE_FRAME refs[2] = {best_mbmode.ref_frame[0],
         best_mbmode.ref_frame[1]};
-    int comp_pred_mode = refs[1] > INTRA_FRAME;
+    int comp_pred_mode = is_compound_ref(refs);
 
     if (frame_mv[NEARESTMV][refs[0]].as_int == best_mbmode.mv[0].as_int &&
         ((comp_pred_mode && frame_mv[NEARESTMV][refs[1]].as_int ==
@@ -3793,9 +3797,13 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
     int64_t total_sse = INT_MAX;
     int early_term = 0;
     struct buf_2d backup_yv12[2][MAX_MB_PLANE];
+    const MV_REFERENCE_FRAME refs[2] = {
+      vp9_ref_order[ref_index].ref_frame[0],
+      vp9_ref_order[ref_index].ref_frame[1]
+    };
 
-    ref_frame = vp9_ref_order[ref_index].ref_frame[0];
-    second_ref_frame = vp9_ref_order[ref_index].ref_frame[1];
+    ref_frame = refs[0];
+    second_ref_frame = refs[1];
 
     // Look at the reference frame of the best mode so far and set the
     // skip mask to look at a subset of the remaining modes.
@@ -3834,7 +3842,7 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
                             tile_data->thresh_freq_fact[bsize][ref_index]))
       continue;
 
-    comp_pred = second_ref_frame > INTRA_FRAME;
+    comp_pred = is_compound_ref(refs);
     if (comp_pred) {
       if (!cpi->allow_comp_inter_inter)
         continue;
@@ -4112,7 +4120,7 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
 
     // Estimate the reference frame signaling cost and add it
     // to the rolling cost variable.
-    if (second_ref_frame > INTRA_FRAME) {
+    if (is_compound_ref(mbmi->ref_frame)) {
       rate2 += ref_costs_comp[ref_frame];
     } else {
       rate2 += ref_costs_single[ref_frame];
