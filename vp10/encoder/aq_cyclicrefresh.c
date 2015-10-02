@@ -485,7 +485,8 @@ void vp10_cyclic_refresh_setup(VP10_COMP *const cpi) {
   if (cm->current_video_frame == 0)
     cr->low_content_avg = 0.0;
   // Don't apply refresh on key frame or enhancement layer frames.
-  if (!apply_cyclic_refresh || cm->frame_type == KEY_FRAME) {
+  if (!apply_cyclic_refresh || cm->frame_type == KEY_FRAME ||
+      is_lossless_requested(&cpi->oxcf)) {
     // Set segmentation map to 0 and disable.
     unsigned char *const seg_map = cpi->segmentation_map;
     memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
