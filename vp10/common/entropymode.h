@@ -91,11 +91,13 @@ typedef struct FRAME_COUNTS {
 #endif
 } FRAME_COUNTS;
 
-extern const vpx_prob vp10_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
 extern const vpx_prob vp10_kf_y_mode_prob[INTRA_MODES][INTRA_MODES]
                                         [INTRA_MODES - 1];
+#if !CONFIG_MISC_FIXES
+extern const vpx_prob vp10_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
 extern const vpx_prob vp10_kf_partition_probs[PARTITION_CONTEXTS]
                                             [PARTITION_TYPES - 1];
+#endif
 extern const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(INTRA_MODES)];
 extern const vpx_tree_index vp10_inter_mode_tree[TREE_SIZE(INTER_MODES)];
 extern const vpx_tree_index vp10_partition_tree[TREE_SIZE(PARTITION_TYPES)];
