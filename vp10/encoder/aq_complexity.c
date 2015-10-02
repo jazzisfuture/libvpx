@@ -51,9 +51,10 @@ void vp10_setup_in_frame_q_adj(VP10_COMP *cpi) {
   // Make SURE use of floating point in this function is safe.
   vpx_clear_system_state();
 
-  if (cm->frame_type == KEY_FRAME ||
-      cpi->refresh_alt_ref_frame ||
-      (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
+  if (!is_lossless_requested(&cpi->oxcf) &&
+      (cm->frame_type == KEY_FRAME ||
+       cpi->refresh_alt_ref_frame ||
+       (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref))) {
     int segment;
     const int aq_strength = get_aq_c_strength(cm->base_qindex, cm->bit_depth);
 
