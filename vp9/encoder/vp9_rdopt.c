@@ -3206,7 +3206,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
           continue;
     }
 
-    comp_pred = second_ref_frame > INTRA_FRAME;
+    comp_pred = is_compound_ref(ref_frame, second_ref_frame);
     if (comp_pred) {
       if (!cpi->allow_comp_inter_inter)
         continue;
@@ -3499,7 +3499,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
   if (best_mbmode.mode == NEWMV) {
     const MV_REFERENCE_FRAME refs[2] = {best_mbmode.ref_frame[0],
         best_mbmode.ref_frame[1]};
-    int comp_pred_mode = refs[1] > INTRA_FRAME;
+    int comp_pred_mode = is_compound_ref(refs[0], refs[1]);
 
     if (frame_mv[NEARESTMV][refs[0]].as_int == best_mbmode.mv[0].as_int &&
         ((comp_pred_mode && frame_mv[NEARESTMV][refs[1]].as_int ==
@@ -3834,7 +3834,7 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
                             tile_data->thresh_freq_fact[bsize][ref_index]))
       continue;
 
-    comp_pred = second_ref_frame > INTRA_FRAME;
+    comp_pred = is_compound_ref(ref_frame, second_ref_frame);
     if (comp_pred) {
       if (!cpi->allow_comp_inter_inter)
         continue;
@@ -4112,7 +4112,7 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
 
     // Estimate the reference frame signaling cost and add it
     // to the rolling cost variable.
-    if (second_ref_frame > INTRA_FRAME) {
+    if (is_compound_ref(ref_frame, second_ref_frame)) {
       rate2 += ref_costs_comp[ref_frame];
     } else {
       rate2 += ref_costs_single[ref_frame];
