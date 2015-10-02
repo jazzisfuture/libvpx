@@ -47,9 +47,10 @@ void vp10_vaq_frame_setup(VP10_COMP *cpi) {
   struct segmentation *seg = &cm->seg;
   int i;
 
-  if (cm->frame_type == KEY_FRAME ||
-      cpi->refresh_alt_ref_frame ||
-      (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
+  if (!is_lossless_requested(&cpi->oxcf) &&
+      (cm->frame_type == KEY_FRAME ||
+       cpi->refresh_alt_ref_frame ||
+       (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref))) {
     vp10_enable_segmentation(seg);
     vp10_clearall_segfeatures(seg);
 
