@@ -961,6 +961,80 @@ using std::tr1::make_tuple;
 
 #if CONFIG_VP9_HIGHBITDEPTH
 #if HAVE_SSE2 && ARCH_X86_64
+#if CONFIG_USE_X86INC
+void wrap_convolve_copy_sse2_8(const uint8_t *src, ptrdiff_t src_stride,
+                               uint8_t *dst, ptrdiff_t dst_stride,
+                               const int16_t *filter_x,
+                               int filter_x_stride,
+                               const int16_t *filter_y,
+                               int filter_y_stride,
+                               int w, int h) {
+  vpx_highbd_convolve_copy_sse2(src, src_stride, dst, dst_stride,
+                                filter_x, filter_x_stride,
+                                filter_y, filter_y_stride, w, h, 8);
+}
+
+void wrap_convolve_avg_sse2_8(const uint8_t *src, ptrdiff_t src_stride,
+                              uint8_t *dst, ptrdiff_t dst_stride,
+                              const int16_t *filter_x,
+                              int filter_x_stride,
+                              const int16_t *filter_y,
+                              int filter_y_stride,
+                              int w, int h) {
+  vpx_highbd_convolve_avg_sse2(src, src_stride, dst, dst_stride,
+                               filter_x, filter_x_stride,
+                               filter_y, filter_y_stride, w, h, 8);
+}
+
+void wrap_convolve_copy_sse2_10(const uint8_t *src, ptrdiff_t src_stride,
+                                uint8_t *dst, ptrdiff_t dst_stride,
+                                const int16_t *filter_x,
+                                int filter_x_stride,
+                                const int16_t *filter_y,
+                                int filter_y_stride,
+                                int w, int h) {
+  vpx_highbd_convolve_copy_sse2(src, src_stride, dst, dst_stride,
+                                filter_x, filter_x_stride,
+                                filter_y, filter_y_stride, w, h, 10);
+}
+
+void wrap_convolve_avg_sse2_10(const uint8_t *src, ptrdiff_t src_stride,
+                               uint8_t *dst, ptrdiff_t dst_stride,
+                               const int16_t *filter_x,
+                               int filter_x_stride,
+                               const int16_t *filter_y,
+                               int filter_y_stride,
+                               int w, int h) {
+  vpx_highbd_convolve_avg_sse2(src, src_stride, dst, dst_stride,
+                               filter_x, filter_x_stride,
+                               filter_y, filter_y_stride, w, h, 10);
+}
+
+void wrap_convolve_copy_sse2_12(const uint8_t *src, ptrdiff_t src_stride,
+                                uint8_t *dst, ptrdiff_t dst_stride,
+                                const int16_t *filter_x,
+                                int filter_x_stride,
+                                const int16_t *filter_y,
+                                int filter_y_stride,
+                                int w, int h) {
+  vpx_highbd_convolve_copy_sse2(src, src_stride, dst, dst_stride,
+                                filter_x, filter_x_stride,
+                                filter_y, filter_y_stride, w, h, 12);
+}
+
+void wrap_convolve_avg_sse2_12(const uint8_t *src, ptrdiff_t src_stride,
+                               uint8_t *dst, ptrdiff_t dst_stride,
+                               const int16_t *filter_x,
+                               int filter_x_stride,
+                               const int16_t *filter_y,
+                               int filter_y_stride,
+                               int w, int h) {
+  vpx_highbd_convolve_avg_sse2(src, src_stride, dst, dst_stride,
+                               filter_x, filter_x_stride,
+                               filter_y, filter_y_stride, w, h, 12);
+}
+#endif  // CONFIG_USE_X86INC
+
 void wrap_convolve8_horiz_sse2_8(const uint8_t *src, ptrdiff_t src_stride,
                                  uint8_t *dst, ptrdiff_t dst_stride,
                                  const int16_t *filter_x,
@@ -1563,7 +1637,11 @@ INSTANTIATE_TEST_CASE_P(C, ConvolveTest, ::testing::Values(
 #if HAVE_SSE2 && ARCH_X86_64
 #if CONFIG_VP9_HIGHBITDEPTH
 const ConvolveFunctions convolve8_sse2(
+#if CONFIG_USE_X86INC
+    wrap_convolve_copy_sse2_8, wrap_convolve_avg_sse2_8,
+#else
     wrap_convolve_copy_c_8, wrap_convolve_avg_c_8,
+#endif  // CONFIG_USE_X86INC
     wrap_convolve8_horiz_sse2_8, wrap_convolve8_avg_horiz_sse2_8,
     wrap_convolve8_vert_sse2_8, wrap_convolve8_avg_vert_sse2_8,
     wrap_convolve8_sse2_8, wrap_convolve8_avg_sse2_8,
@@ -1571,7 +1649,11 @@ const ConvolveFunctions convolve8_sse2(
     wrap_convolve8_vert_sse2_8, wrap_convolve8_avg_vert_sse2_8,
     wrap_convolve8_sse2_8, wrap_convolve8_avg_sse2_8, 8);
 const ConvolveFunctions convolve10_sse2(
+#if CONFIG_USE_X86INC
+    wrap_convolve_copy_sse2_10, wrap_convolve_avg_sse2_10,
+#else
     wrap_convolve_copy_c_10, wrap_convolve_avg_c_10,
+#endif  // CONFIG_USE_X86INC
     wrap_convolve8_horiz_sse2_10, wrap_convolve8_avg_horiz_sse2_10,
     wrap_convolve8_vert_sse2_10, wrap_convolve8_avg_vert_sse2_10,
     wrap_convolve8_sse2_10, wrap_convolve8_avg_sse2_10,
@@ -1579,7 +1661,11 @@ const ConvolveFunctions convolve10_sse2(
     wrap_convolve8_vert_sse2_10, wrap_convolve8_avg_vert_sse2_10,
     wrap_convolve8_sse2_10, wrap_convolve8_avg_sse2_10, 10);
 const ConvolveFunctions convolve12_sse2(
+#if CONFIG_USE_X86INC
+    wrap_convolve_copy_sse2_12, wrap_convolve_avg_sse2_12,
+#else
     wrap_convolve_copy_c_12, wrap_convolve_avg_c_12,
+#endif  // CONFIG_USE_X86INC
     wrap_convolve8_horiz_sse2_12, wrap_convolve8_avg_horiz_sse2_12,
     wrap_convolve8_vert_sse2_12, wrap_convolve8_avg_vert_sse2_12,
     wrap_convolve8_sse2_12, wrap_convolve8_avg_sse2_12,
