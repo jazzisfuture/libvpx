@@ -9,6 +9,7 @@
  */
 
 #include "vp10/common/vp10_fwd_txfm.h"
+#include "vp10/common/txfm2d_cfg.h"
 
 void vp10_fdct4x4_c(const int16_t *input, tran_low_t *output, int stride) {
   // The 2D transform is done with two passes which are actually pretty
@@ -784,41 +785,49 @@ void vp10_fdct32x32_1_c(const int16_t *input, tran_low_t *output, int stride) {
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp10_highbd_fdct4x4_c(const int16_t *input, tran_low_t *output,
                           int stride) {
-  vp10_fdct4x4_c(input, output, stride);
+  //vp10_fdct4x4_c(input, output, stride);
+  vp10_fdct_2d_c(input, output, stride, &fwd_txfm_2d_cfg_dct_dct_4);
 }
 
-void vp10_highbd_fdct8x8_c(const int16_t *input, tran_low_t *final_output,
+void vp10_highbd_fdct8x8_c(const int16_t *input, tran_low_t *output,
                           int stride) {
-  vp10_fdct8x8_c(input, final_output, stride);
+  //vp10_fdct8x8_c(input, final_output, stride);
+  vp10_fdct_2d_c(input, output, stride, &fwd_txfm_2d_cfg_dct_dct_8);
 }
 
-void vp10_highbd_fdct8x8_1_c(const int16_t *input, tran_low_t *final_output,
+void vp10_highbd_fdct8x8_1_c(const int16_t *input, tran_low_t *output,
                             int stride) {
-  vp10_fdct8x8_1_c(input, final_output, stride);
+  //vp10_fdct8x8_1_c(input, final_output, stride);
+  vp10_fdct_2d_c(input, output, stride, &fwd_txfm_2d_cfg_dct_dct_8);
 }
 
 void vp10_highbd_fdct16x16_c(const int16_t *input, tran_low_t *output,
                             int stride) {
-  vp10_fdct16x16_c(input, output, stride);
+  //vp10_fdct16x16_c(input, output, stride);
+  vp10_fdct_2d_c(input, output, stride, &fwd_txfm_2d_cfg_dct_dct_16);
 }
 
 void vp10_highbd_fdct16x16_1_c(const int16_t *input, tran_low_t *output,
                               int stride) {
-  vp10_fdct16x16_1_c(input, output, stride);
+  //vp10_fdct16x16_1_c(input, output, stride);
+  vp10_fdct_2d_c(input, output, stride, &fwd_txfm_2d_cfg_dct_dct_16);
 }
 
 void vp10_highbd_fdct32x32_c(const int16_t *input,
-    tran_low_t *out, int stride) {
-  vp10_fdct32x32_c(input, out, stride);
+    tran_low_t *output, int stride) {
+  //vp10_fdct32x32_c(input, out, stride);
+  vp10_fdct_2d_c(input, output, stride, &fwd_txfm_2d_cfg_dct_dct_32);
 }
 
-void vp10_highbd_fdct32x32_rd_c(const int16_t *input, tran_low_t *out,
+void vp10_highbd_fdct32x32_rd_c(const int16_t *input, tran_low_t *output,
                                int stride) {
-  vp10_fdct32x32_rd_c(input, out, stride);
+  //vp10_fdct32x32_rd_c(input, out, stride);
+  vp10_fdct_2d_c(input, output, stride, &fwd_txfm_2d_cfg_dct_dct_32);
 }
 
 void vp10_highbd_fdct32x32_1_c(const int16_t *input,
-    tran_low_t *out, int stride) {
-  vp10_fdct32x32_1_c(input, out, stride);
+    tran_low_t *output, int stride) {
+  //vp10_fdct32x32_1_c(input, out, stride);
+  vp10_fdct_2d_c(input, output, stride, &fwd_txfm_2d_cfg_dct_dct_32);
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH

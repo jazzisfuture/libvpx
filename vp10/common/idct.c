@@ -17,6 +17,8 @@
 #include "vpx_dsp/inv_txfm.h"
 #include "vpx_ports/mem.h"
 
+#include "vp10/common/txfm2d_cfg.h"
+
 void vp10_iht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride,
                          int tx_type) {
   const transform_2d IHT_4[] = {
@@ -356,13 +358,19 @@ void vp10_highbd_iht16x16_256_add_c(const tran_low_t *input, uint8_t *dest8,
   }
 }
 
+#define OLD_DCT 0
 // idct
 void vp10_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd) {
+#if OLD_DCT
   if (eob > 1)
     vp10_highbd_idct4x4_16_add(input, dest, stride, bd);
   else
     vp10_highbd_idct4x4_1_add(input, dest, stride, bd);
+#else
+  uint16_t *output = CONVERT_TO_SHORTPTR(dest);
+  vp10_idct_2d_add_c(input, output, stride, &inv_txfm_2d_cfg_dct_dct_4);
+#endif
 }
 
 
@@ -376,6 +384,7 @@ void vp10_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
 
 void vp10_highbd_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd) {
+#if OLD_DCT
   // If dc is 1, then input[0] is the reconstructed value, do not need
   // dequantization. Also, when dc is 1, dc is counted in eobs, namely eobs >=1.
 
@@ -391,10 +400,15 @@ void vp10_highbd_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
   } else {
     vp10_highbd_idct8x8_64_add(input, dest, stride, bd);
   }
+#else
+  uint16_t *output = CONVERT_TO_SHORTPTR(dest);
+  vp10_idct_2d_add_c(input, output, stride, &inv_txfm_2d_cfg_dct_dct_8);
+#endif
 }
 
 void vp10_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
                               int stride, int eob, int bd) {
+#if OLD_DCT
   // The calculation can be simplified if there are not many non-zero dct
   // coefficients. Use eobs to separate different cases.
   // DC only DCT coefficient.
@@ -405,10 +419,15 @@ void vp10_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
   } else {
     vp10_highbd_idct16x16_256_add(input, dest, stride, bd);
   }
+#else
+  uint16_t *output = CONVERT_TO_SHORTPTR(dest);
+  vp10_idct_2d_add_c(input, output, stride, &inv_txfm_2d_cfg_dct_dct_16);
+#endif
 }
 
 void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
                               int stride, int eob, int bd) {
+#if OLD_DCT
   // Non-zero coeff only in upper-left 8x8
   if (eob == 1) {
     vp10_highbd_idct32x32_1_add(input, dest, stride, bd);
@@ -417,6 +436,10 @@ void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
   } else {
     vp10_highbd_idct32x32_1024_add(input, dest, stride, bd);
   }
+#else
+  uint16_t *output = CONVERT_TO_SHORTPTR(dest);
+  vp10_idct_2d_add_c(input, output, stride, &inv_txfm_2d_cfg_dct_dct_32);
+#endif
 }
 
 void vp10_highbd_inv_txfm_add_4x4(const tran_low_t *input, uint8_t *dest,
