@@ -22,16 +22,16 @@
 
 static INLINE void range_check(const tran_low_t *input, const int size,
                                const int bit) {
-#if CONFIG_COEFFICIENT_RANGE_CHECKING
-  int i;
-  for (i = 0; i < size; ++i) {
-    assert(abs(input[i]) < (1 << bit));
-  }
-#else
+//#if CONFIG_COEFFICIENT_RANGE_CHECKING
+//  int i;
+//  for (i = 0; i < size; ++i) {
+//    assert(abs(input[i]) < (1 << bit));
+//  }
+//#else
   (void)input;
   (void)size;
   (void)bit;
-#endif
+//#endif
 }
 
 static void fdct4(const tran_low_t *input, tran_low_t *output) {
