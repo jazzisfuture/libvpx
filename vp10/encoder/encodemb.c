@@ -313,10 +313,18 @@ static INLINE void fdct32x32(int rd_transform,
     vpx_fdct32x32(src, dst, src_stride);
 }
 
+#define OLD_DCT (1)
 #if CONFIG_VP9_HIGHBITDEPTH
 static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
                                     tran_low_t *dst, int src_stride) {
-  vp10_highbd_fdct32x32(src, dst, src_stride);
+#if OLD_DCT
+  if (rd_transform)
+    vpx_highbd_fdct32x32_rd(src, dst, src_stride);
+  else
+    vpx_highbd_fdct32x32(src, dst, src_stride);
+#else
+  vp10_highbd_fdct32x32_c(src, dst, src_stride);
+#endif
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -350,14 +358,22 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
                                      scan_order->iscan);
         break;
       case TX_16X16:
-        vp10_highbd_fdct16x16(src_diff, coeff, diff_stride);
+#if OLD_DCT
+        vpx_highbd_fdct16x16(src_diff, coeff, diff_stride);
+#else
+        vp10_highbd_fdct16x16_c(src_diff, coeff, diff_stride);
+#endif
         vp10_highbd_quantize_fp(coeff, 256, x->skip_block, p->zbin, p->round_fp,
                                p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                                pd->dequant, eob,
                                scan_order->scan, scan_order->iscan);
         break;
       case TX_8X8:
-        vp10_highbd_fdct8x8(src_diff, coeff, diff_stride);
+#if OLD_DCT
+        vpx_highbd_fdct8x8(src_diff, coeff, diff_stride);
+#else
+        vp10_highbd_fdct8x8_c(src_diff, coeff, diff_stride);
+#endif
         vp10_highbd_quantize_fp(coeff, 64, x->skip_block, p->zbin, p->round_fp,
                                p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                                pd->dequant, eob,
@@ -367,7 +383,11 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
         if (xd->lossless) {
           vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
         } else {
-          vp10_highbd_fdct4x4(src_diff, coeff, diff_stride);
+#if OLD_DCT
+          vpx_highbd_fdct4x4(src_diff, coeff, diff_stride);
+#else
+          vp10_highbd_fdct4x4_c(src_diff, coeff, diff_stride);
+#endif
         }
         vp10_highbd_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
                                p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
@@ -440,19 +460,31 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
-        vp10_highbd_fdct32x32_1(src_diff, coeff, diff_stride);
+#if OLD_DCT
+        vpx_highbd_fdct32x32_1(src_diff, coeff, diff_stride);
+#else
+        vp10_highbd_fdct32x32_1_c(src_diff, coeff, diff_stride);
+#endif
         vpx_highbd_quantize_dc_32x32(coeff, x->skip_block, p->round,
                                      p->quant_fp[0], qcoeff, dqcoeff,
                                      pd->dequant[0], eob);
         break;
       case TX_16X16:
-        vp10_highbd_fdct16x16_1(src_diff, coeff, diff_stride);
+#if OLD_DCT
+        vpx_highbd_fdct16x16_1(src_diff, coeff, diff_stride);
+#else
+        vp10_highbd_fdct16x16_1_c(src_diff, coeff, diff_stride);
+#endif
         vpx_highbd_quantize_dc(coeff, 256, x->skip_block, p->round,
                                p->quant_fp[0], qcoeff, dqcoeff,
                                pd->dequant[0], eob);
         break;
       case TX_8X8:
-        vp10_highbd_fdct8x8_1(src_diff, coeff, diff_stride);
+#if OLD_DCT
+        vpx_highbd_fdct8x8_1(src_diff, coeff, diff_stride);
+#else
+        vp10_highbd_fdct8x8_1_c(src_diff, coeff, diff_stride);
+#endif
         vpx_highbd_quantize_dc(coeff, 64, x->skip_block, p->round,
                                p->quant_fp[0], qcoeff, dqcoeff,
                                pd->dequant[0], eob);
@@ -461,7 +493,11 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
         if (xd->lossless) {
           vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
         } else {
-          vp10_highbd_fdct4x4(src_diff, coeff, diff_stride);
+#if OLD_DCT
+          vpx_highbd_fdct4x4(src_diff, coeff, diff_stride);
+#else
+          vp10_highbd_fdct4x4_c(src_diff, coeff, diff_stride);
+#endif
         }
         vpx_highbd_quantize_dc(coeff, 16, x->skip_block, p->round,
                                p->quant_fp[0], qcoeff, dqcoeff,
@@ -587,7 +623,11 @@ void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
   } else {
     switch (tx_type) {
       case DCT_DCT:
-        vp10_highbd_fdct4x4(src_diff, coeff, diff_stride);
+#if OLD_DCT
+        vpx_highbd_fdct4x4(src_diff, coeff, diff_stride);
+#else
+        vp10_highbd_fdct4x4_c(src_diff, coeff, diff_stride);
+#endif
         break;
       case ADST_DCT:
       case DCT_ADST:
@@ -605,7 +645,11 @@ static void highbd_fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
                          int diff_stride, TX_TYPE tx_type) {
   switch (tx_type) {
     case DCT_DCT:
-      vp10_highbd_fdct8x8(src_diff, coeff, diff_stride);
+#if OLD_DCT
+      vpx_highbd_fdct8x8(src_diff, coeff, diff_stride);
+#else
+      vp10_highbd_fdct8x8_c(src_diff, coeff, diff_stride);
+#endif
       break;
     case ADST_DCT:
     case DCT_ADST:
@@ -622,7 +666,11 @@ static void highbd_fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
                            int diff_stride, TX_TYPE tx_type) {
   switch (tx_type) {
     case DCT_DCT:
-      vp10_highbd_fdct16x16(src_diff, coeff, diff_stride);
+#if OLD_DCT
+      vpx_highbd_fdct16x16(src_diff, coeff, diff_stride);
+#else
+      vp10_highbd_fdct16x16_c(src_diff, coeff, diff_stride);
+#endif
       break;
     case ADST_DCT:
     case DCT_ADST:

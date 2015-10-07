@@ -358,15 +358,15 @@ void vp10_highbd_iht16x16_256_add_c(const tran_low_t *input, uint8_t *dest8,
   }
 }
 
-#define OLD_DCT 0
+#define OLD_DCT 1
 // idct
 void vp10_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd) {
 #if OLD_DCT
   if (eob > 1)
-    vp10_highbd_idct4x4_16_add(input, dest, stride, bd);
+    vpx_highbd_idct4x4_16_add(input, dest, stride, bd);
   else
-    vp10_highbd_idct4x4_1_add(input, dest, stride, bd);
+    vpx_highbd_idct4x4_1_add(input, dest, stride, bd);
 #else
   uint16_t *output = CONVERT_TO_SHORTPTR(dest);
   vp10_idct_2d_add_c(input, output, stride, &inv_txfm_2d_cfg_dct_dct_4);
@@ -394,11 +394,11 @@ void vp10_highbd_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
   // Combine that with code here.
   // DC only DCT coefficient
   if (eob == 1) {
-    vp10_highbd_idct8x8_1_add(input, dest, stride, bd);
+    vpx_highbd_idct8x8_1_add(input, dest, stride, bd);
   } else if (eob <= 10) {
-    vp10_highbd_idct8x8_10_add(input, dest, stride, bd);
+    vpx_highbd_idct8x8_10_add(input, dest, stride, bd);
   } else {
-    vp10_highbd_idct8x8_64_add(input, dest, stride, bd);
+    vpx_highbd_idct8x8_64_add(input, dest, stride, bd);
   }
 #else
   uint16_t *output = CONVERT_TO_SHORTPTR(dest);
@@ -413,11 +413,11 @@ void vp10_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
   // coefficients. Use eobs to separate different cases.
   // DC only DCT coefficient.
   if (eob == 1) {
-    vp10_highbd_idct16x16_1_add(input, dest, stride, bd);
+    vpx_highbd_idct16x16_1_add(input, dest, stride, bd);
   } else if (eob <= 10) {
-    vp10_highbd_idct16x16_10_add(input, dest, stride, bd);
+    vpx_highbd_idct16x16_10_add(input, dest, stride, bd);
   } else {
-    vp10_highbd_idct16x16_256_add(input, dest, stride, bd);
+    vpx_highbd_idct16x16_256_add(input, dest, stride, bd);
   }
 #else
   uint16_t *output = CONVERT_TO_SHORTPTR(dest);
@@ -430,11 +430,11 @@ void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
 #if OLD_DCT
   // Non-zero coeff only in upper-left 8x8
   if (eob == 1) {
-    vp10_highbd_idct32x32_1_add(input, dest, stride, bd);
+    vpx_highbd_idct32x32_1_add(input, dest, stride, bd);
   } else if (eob <= 34) {
-    vp10_highbd_idct32x32_34_add(input, dest, stride, bd);
+    vpx_highbd_idct32x32_34_add(input, dest, stride, bd);
   } else {
-    vp10_highbd_idct32x32_1024_add(input, dest, stride, bd);
+    vpx_highbd_idct32x32_1024_add(input, dest, stride, bd);
   }
 #else
   uint16_t *output = CONVERT_TO_SHORTPTR(dest);
