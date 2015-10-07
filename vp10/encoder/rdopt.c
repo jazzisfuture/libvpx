@@ -455,7 +455,8 @@ static int rate_block(int plane, int block, BLOCK_SIZE plane_bsize,
                      args->use_fast_coef_costing);
 }
 
-static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
+static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
+                          BLOCK_SIZE plane_bsize,
                           TX_SIZE tx_size, void *arg) {
   struct rdcost_block_args *args = arg;
   MACROBLOCK *const x = args->x;
@@ -465,21 +466,20 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
   int rate;
   int64_t dist;
   int64_t sse;
-  int i, j;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
 
   if (args->exit_early)
     return;
 
   if (!is_inter_block(mbmi)) {
     struct encode_b_args arg = {x, NULL, &mbmi->skip};
-    vp10_encode_block_intra(plane, block, plane_bsize, tx_size, &arg);
+    vp10_encode_block_intra(plane, block, blk_row, blk_col,
+                            plane_bsize, tx_size, &arg);
     dist_block(x, plane, block, tx_size, &dist, &sse);
   } else if (max_txsize_lookup[plane_bsize] == tx_size) {
     if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] ==
         SKIP_TXFM_NONE) {
       // full forward transform and quantization
-      vp10_xform_quant(x, plane, block, j, i, plane_bsize, tx_size);
+      vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size);
       dist_block(x, plane, block, tx_size, &dist, &sse);
     } else if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] ==
                SKIP_TXFM_AC_ONLY) {
@@ -510,7 +510,7 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     }
   } else {
     // full forward transform and quantization
-    vp10_xform_quant(x, plane, block, j, i, plane_bsize, tx_size);
+    vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size);
     dist_block(x, plane, block, tx_size, &dist, &sse);
   }
 

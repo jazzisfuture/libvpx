@@ -301,6 +301,7 @@ static INLINE const vpx_prob *get_y_mode_probs(const MODE_INFO *mi,
 }
 
 typedef void (*foreach_transformed_block_visitor)(int plane, int block,
+                                                  int blk_row, int blk_col,
                                                   BLOCK_SIZE plane_bsize,
                                                   TX_SIZE tx_size,
                                                   void *arg);
