@@ -36,17 +36,13 @@ TEST(vp10_round_trip, vp10_round_trip){
   tran_low_t *dct_idct_output = new tran_low_t[sqr_txfm_size_];
 
   ACMRandom rnd(ACMRandom::DeterministicSeed());
-  int count = 1000;
-  for(int bi = 1; bi < 11; bi++){
-    double avg_psnr = 0;
+  int count = 5000;
+  for(int bi = 10; bi < 11; bi++){
     double avg_error = 0;
-    double dct_idct_avg_psnr = 0;
     double dct_idct_avg_error = 0;
     for(int ci = 0; ci < count; ci++){
-      double sig = 0;
       for(int i = 0; i < sqr_txfm_size_; i++){
         dct_input[i] = (rnd.Rand16() >> (16 - bi));
-        sig += dct_input[i]*dct_input[i];
         dct_idct_input[i] = dct_input[i];
         dct_output[i] = 0;
         idct_output[i] = 0;
@@ -62,33 +58,26 @@ TEST(vp10_round_trip, vp10_round_trip){
       // compare dct_input and idct_output
       double error = 0;
       for(int i = 0; i < sqr_txfm_size_; i++){
-        double curr_error = (int16_t)idct_output[i] - dct_input[i];
-        error += curr_error*curr_error;
+        double curr_error = idct_output[i] - dct_input[i];
+        error += fabs(curr_error);
       }
 
-      sig = sqrt(sig);
-      error = sqrt(error);
+      error = error/sqr_txfm_size_;
       avg_error += error;
-      avg_psnr += error/sig;
 
       // compare dct_input and dct_idct_output
       double dct_idct_error = 0;
       for(int i = 0; i < sqr_txfm_size_; i++){
         double curr_error = dct_idct_output[i] - dct_input[i];
-        dct_idct_error += curr_error*curr_error;
-        //if(i < 32)
-        //  printf("dct_idct_output: %d dct_idct_input: %d\n", dct_idct_output[i], dct_idct_input[i]);
+        dct_idct_error += fabs(curr_error);
       }
 
-      dct_idct_error = sqrt(dct_idct_error);
+      dct_idct_error = dct_idct_error/sqr_txfm_size_;
       dct_idct_avg_error += dct_idct_error;
-      dct_idct_avg_psnr += dct_idct_error/sig;
 
     }
     avg_error /= count;
-    avg_psnr /= count;
     dct_idct_avg_error /= count;
-    dct_idct_avg_psnr /= count;
     printf("(%d, avg_error: %f, dct_idct_avg_error: %f)\n", 
         bi, avg_error, dct_idct_avg_error);
   }
