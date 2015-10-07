@@ -3225,6 +3225,26 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
   if (!is_inter_block(mbmi)) {
     int plane;
     mbmi->skip = 1;
+
+#if 0
+    if (output_enabled && mbmi->ext_intra_mode_info.use_ext_intra_mode[0]) {
+      if (mbmi->ext_intra_mode_info.ext_intra_mode[0] > FILTER_TM_PRED)
+        if (mbmi->ext_intra_mode_info.ext_intra_angle[0] % 4)
+        printf("%d %d\n",
+               mbmi->ext_intra_mode_info.ext_intra_mode[0],
+               mbmi->ext_intra_mode_info.ext_intra_angle[0]);
+    }
+
+    if (mbmi->ext_intra_mode_info.use_ext_intra_mode[1] && 0) {
+      if (mbmi->ext_intra_mode_info.ext_intra_mode[1] >= EXT_DR_PRED) {
+        int mode = mbmi->ext_intra_mode_info.ext_intra_mode[1];
+        if (mbmi->ext_intra_mode_info.ext_intra_angle[1] !=
+            vp10_ext_intra_angles[mode - EXT_DR_PRED])
+          printf("error UV\n");
+      }
+    }
+#endif
+
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp10_encode_intra_block_plane(x, VPXMAX(bsize, BLOCK_8X8), plane);
     if (output_enabled)
@@ -3311,6 +3331,16 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
       }
     }
 #endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_INTRA
+    if (bsize >= BLOCK_8X8 && !is_inter_block(mbmi)) {
+      if (mbmi->mode == DC_PRED)
+        ++td->counts->ext_intra[0]
+                              [mbmi->ext_intra_mode_info.use_ext_intra_mode[0]];
+      if (mbmi->uv_mode == DC_PRED)
+        ++td->counts->ext_intra[1]
+                              [mbmi->ext_intra_mode_info.use_ext_intra_mode[1]];
+    }
+#endif  // CONFIG_EXT_INTRA
   }
 
 #if CONFIG_VAR_TX
