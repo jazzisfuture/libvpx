@@ -68,6 +68,14 @@ typedef struct {
 #define MAX_REF_FRAMES  4
 typedef int8_t MV_REFERENCE_FRAME;
 
+#if CONFIG_EXT_INTRA
+typedef struct {
+  // 1: an ext intra mode is used; 0: otherwise.
+  uint8_t use_ext_intra_mode[PLANE_TYPES];
+  EXT_INTRA_MODE ext_intra_mode[PLANE_TYPES];
+} EXT_INTRA_MODE_INFO;
+#endif  // CONFIG_EXT_INTRA
+
 // This structure now relates to 8x8 block regions.
 typedef struct {
   // Common for both INTER and INTRA blocks
@@ -95,6 +103,10 @@ typedef struct {
 #if CONFIG_EXT_TX
   TX_TYPE tx_type;
 #endif  // CONFIG_EXT_TX
+
+#if CONFIG_EXT_INTRA
+  EXT_INTRA_MODE_INFO ext_intra_mode_info;
+#endif  // CONFIG_EXT_INTRA
 
   // TODO(slavarnway): Delete and use bmi[3].as_mv[] instead.
   int_mv mv[2];
@@ -234,11 +246,35 @@ static const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
   ADST_ADST,  // TM
 };
 
+#if CONFIG_EXT_INTRA
+static const TX_TYPE ext_intra_mode_to_tx_type_lookup[EXT_INTRA_MODES] = {
+  ADST_DCT,   // D76_PRED
+  ADST_DCT,   // D104_PRED
+  DCT_ADST,   // D166_PRED
+  DCT_ADST,   // D194_PRED
+};
+#endif  // CONFIG_EXT_INTRA
+
 static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
                                   const MACROBLOCKD *xd,
                                   int block_idx, TX_SIZE tx_size) {
   const MODE_INFO *const mi = xd->mi[0];
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
+#if CONFIG_EXT_INTRA
+  const int use_ext_intra_mode_info =
+      mbmi->ext_intra_mode_info.use_ext_intra_mode[plane_type];
+  const EXT_INTRA_MODE ext_intra_mode =
+      mbmi->ext_intra_mode_info.ext_intra_mode[plane_type];
+
+  if (tx_size <= TX_16X16 && !is_inter_block(mbmi) && use_ext_intra_mode_info) {
+#if CONFIG_EXT_TX
+    if (mbmi->sb_type >= BLOCK_8X8 && plane_type == PLANE_TYPE_Y)
+      return mbmi->tx_type;
+    else
+#endif  // CONFIG_EXT_TX
+      return ext_intra_mode_to_tx_type_lookup[ext_intra_mode];
+  }
+#endif  // CONFIG_EXT_INTRA
 
 #if CONFIG_EXT_TX
   if (xd->lossless || tx_size >= TX_32X32)

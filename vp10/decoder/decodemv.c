@@ -24,6 +24,15 @@
 
 #include "vpx_dsp/vpx_dsp_common.h"
 
+static INLINE int read_uniform(vpx_reader *r, int n) {
+  int l = get_unsigned_bits(n);
+  int m = (1 << l) - n;
+  int v = vpx_read_literal(r, l-1);
+
+  assert(l != 0);
+  return (v < m) ? v : ((v << 1) - m + vpx_read_literal(r, 1));
+}
+
 static PREDICTION_MODE read_intra_mode(vpx_reader *r, const vpx_prob *p) {
   return (PREDICTION_MODE)vpx_read_tree(r, vp10_intra_mode_tree, p);
 }
@@ -239,6 +248,33 @@ static int read_skip(VP10_COMMON *cm, const MACROBLOCKD *xd,
   }
 }
 
+#if CONFIG_EXT_INTRA
+static void read_ext_intra_mode_info(VP10_COMMON *const cm,
+                                     MACROBLOCKD *const xd, vpx_reader *r) {
+  MODE_INFO *const mi = xd->mi[0];
+  MB_MODE_INFO *const mbmi = &mi->mbmi;
+  FRAME_COUNTS *counts = xd->counts;
+  if (mbmi->mode == DC_PRED) {
+    mbmi->ext_intra_mode_info.use_ext_intra_mode[0] =
+        vpx_read(r, cm->fc->ext_intra_probs[0]);
+    if (mbmi->ext_intra_mode_info.use_ext_intra_mode[0])
+      mbmi->ext_intra_mode_info.ext_intra_mode[0] =
+          read_uniform(r, EXT_INTRA_MODES);
+    if (counts)
+      ++counts->ext_intra[0][mbmi->ext_intra_mode_info.use_ext_intra_mode[0]];
+  }
+  if (mbmi->uv_mode == DC_PRED) {
+    mbmi->ext_intra_mode_info.use_ext_intra_mode[1] =
+        vpx_read(r, cm->fc->ext_intra_probs[1]);
+    if (mbmi->ext_intra_mode_info.use_ext_intra_mode[1])
+      mbmi->ext_intra_mode_info.ext_intra_mode[1] =
+          read_uniform(r, EXT_INTRA_MODES);
+    if (counts)
+      ++counts->ext_intra[1][mbmi->ext_intra_mode_info.use_ext_intra_mode[1]];
+  }
+}
+#endif  // CONFIG_EXT_INTRA
+
 static void read_intra_frame_mode_info(VP10_COMMON *const cm,
                                        MACROBLOCKD *const xd,
                                        int mi_row, int mi_col, vpx_reader *r) {
@@ -299,6 +335,13 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
       mbmi->tx_type = DCT_DCT;
     }
 #endif  // CONFIG_EXT_TX
+
+#if CONFIG_EXT_INTRA
+    mbmi->ext_intra_mode_info.use_ext_intra_mode[0] = 0;
+    mbmi->ext_intra_mode_info.use_ext_intra_mode[1] = 0;
+    if (bsize >= BLOCK_8X8)
+      read_ext_intra_mode_info(cm, xd, r);
+#endif  // CONFIG_EXT_INTRA
 }
 
 static int read_mv_component(vpx_reader *r,
@@ -462,6 +505,12 @@ static void read_intra_block_mode_info(VP10_COMMON *const cm,
   }
 
   mbmi->uv_mode = read_intra_mode_uv(cm, xd, r, mbmi->mode);
+#if CONFIG_EXT_INTRA
+  mbmi->ext_intra_mode_info.use_ext_intra_mode[0] = 0;
+  mbmi->ext_intra_mode_info.use_ext_intra_mode[1] = 0;
+  if (bsize >= BLOCK_8X8)
+    read_ext_intra_mode_info(cm, xd, r);
+#endif  // CONFIG_EXT_INTRA
 }
 
 static INLINE int is_mv_valid(const MV *mv) {

@@ -415,6 +415,10 @@ default_intra_tx_type_prob[EXT_TX_SIZES][INTRA_MODES][TX_TYPES - 1] = {
 };
 #endif  // CONFIG_EXT_TX
 
+#if CONFIG_EXT_INTRA
+static  const vpx_prob default_ext_intra_probs[2] = {246, 246};
+#endif  // CONFIG_EXT_INTRA
+
 static void init_mode_probs(FRAME_CONTEXT *fc) {
   vp10_copy(fc->uv_mode_prob, default_if_uv_probs);
   vp10_copy(fc->y_mode_prob, default_if_y_probs);
@@ -431,6 +435,9 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
   vp10_copy(fc->inter_tx_type_prob, default_inter_tx_type_prob);
   vp10_copy(fc->intra_tx_type_prob, default_intra_tx_type_prob);
 #endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_INTRA
+  vp10_copy(fc->ext_intra_probs, default_ext_intra_probs);
+#endif  // CONFIG_EXT_INTRA
 }
 
 const vpx_tree_index vp10_switchable_interp_tree
@@ -522,6 +529,12 @@ void vp10_adapt_mode_probs(VP10_COMMON *cm) {
                            fc->intra_tx_type_prob[i][j]);
   }
 #endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_INTRA
+  for (i = 0; i < PLANE_TYPES; ++i) {
+    fc->ext_intra_probs[i] = mode_mv_merge_probs(
+              pre_fc->ext_intra_probs[i], counts->ext_intra[i]);
+  }
+#endif  // CONFIG_EXT_INTRA
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {

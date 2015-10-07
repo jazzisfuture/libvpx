@@ -3014,5 +3014,15 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
         ++td->counts->intra_tx_type[mbmi->tx_size][mbmi->mode][mbmi->tx_type];
     }
 #endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_INTRA
+    if (bsize >= BLOCK_8X8 && !is_inter_block(mbmi)) {
+      if (mbmi->mode == DC_PRED)
+        ++td->counts->ext_intra[0]
+                              [mbmi->ext_intra_mode_info.use_ext_intra_mode[0]];
+      if (mbmi->uv_mode == DC_PRED)
+        ++td->counts->ext_intra[1]
+                              [mbmi->ext_intra_mode_info.use_ext_intra_mode[1]];
+    }
+#endif  // CONFIG_EXT_INTRA
   }
 }
