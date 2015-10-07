@@ -478,6 +478,15 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                      &tx_type_encodings[mbmi->tx_type]);
   }
 #endif  // CONFIG_EXT_TX
+
+#if CONFIG_EXT_INTRA
+  if (bsize >= BLOCK_8X8 && mbmi->mode == DC_PRED) {
+    vpx_write(w, mbmi->ext_intra_mode_info.use_ext_intra_mode[0],
+              EXT_INTRA_PROB_Y);
+    if (mbmi->ext_intra_mode_info.use_ext_intra_mode[0])
+      vpx_write_literal(w, mbmi->ext_intra_mode_info.ext_intra_mode[0], 2);
+  }
+#endif  // CONFIG_EXT_INTRA
 }
 
 static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,

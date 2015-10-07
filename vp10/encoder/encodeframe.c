@@ -2699,6 +2699,10 @@ static void encode_frame_internal(VP10_COMP *cpi) {
   if (xd->lossless)
     x->optimize = 0;
 
+#if 1
+  xd->flag = 0;
+#endif
+
   cm->tx_mode = select_tx_mode(cpi, xd);
 
   vp10_frame_init_quantizer(cpi);
@@ -2963,6 +2967,16 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     vp10_encode_sb(x, VPXMAX(bsize, BLOCK_8X8));
     vp10_tokenize_sb(cpi, td, t, !output_enabled, VPXMAX(bsize, BLOCK_8X8));
   }
+
+#if 0
+  {
+    if (output_enabled) {
+      if (mbmi->ext_intra_mode_info.use_ext_intra_mode[0])
+        printf("marker %d\n",
+               mbmi->ext_intra_mode_info.ext_intra_mode[0]);
+    }
+  }
+#endif
 
   if (output_enabled) {
     if (cm->tx_mode == TX_MODE_SELECT &&

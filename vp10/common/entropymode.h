@@ -20,6 +20,10 @@
 extern "C" {
 #endif
 
+#if CONFIG_EXT_INTRA
+#define EXT_INTRA_PROB_Y 246
+#endif  // CONFIG_EXT_INTRA
+
 #define BLOCK_SIZE_GROUPS 4
 
 #define TX_SIZE_CONTEXTS 2

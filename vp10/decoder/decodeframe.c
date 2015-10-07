@@ -2247,6 +2247,10 @@ void vp10_decode_frame(VP10Decoder *pbi,
   YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
   xd->cur_buf = new_fb;
 
+#if 1
+  xd->flag = 1;
+#endif
+
   if (!first_partition_size) {
     // showing a frame directly
     *p_data_end = data + (cm->profile <= PROFILE_2 ? 1 : 2);

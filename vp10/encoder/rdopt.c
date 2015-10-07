@@ -1097,6 +1097,10 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP10_COMP *cpi, MACROBLOCK *mb,
   memcpy(t_above, xd->plane[0].above_context, sizeof(t_above));
   memcpy(t_left, xd->plane[0].left_context, sizeof(t_left));
 
+#if CONFIG_EXT_INTRA
+  mic->mbmi.ext_intra_mode_info.use_ext_intra_mode[0] = 0;
+#endif  // CONFIG_EXT_INTRA
+
   // Pick modes for each sub-block (of size 4x4, 4x8, or 8x4) in an 8x8 block.
   for (idy = 0; idy < 2; idy += num_4x4_blocks_high) {
     for (idx = 0; idx < 2; idx += num_4x4_blocks_wide) {
@@ -1141,6 +1145,68 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP10_COMP *cpi, MACROBLOCK *mb,
   return RDCOST(mb->rdmult, mb->rddiv, cost, total_distortion);
 }
 
+#if CONFIG_EXT_INTRA
+static int64_t rd_pick_ext_intra_sby(VP10_COMP *cpi, MACROBLOCK *x,
+                                     int *rate, int *rate_tokenonly,
+                                     int64_t *distortion, int *skippable,
+                                     BLOCK_SIZE bsize, int64_t *best_rd) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MODE_INFO *const mic = xd->mi[0];
+  MB_MODE_INFO *mbmi = &mic->mbmi;
+  int this_rate, this_rate_tokenonly, s;
+  int ext_intra_selected_flag = 0;
+  int64_t this_distortion, this_rd;
+  EXT_INTRA_MODE mode;
+  TX_SIZE best_tx_size;
+  PREDICTION_MODE mode_selected;
+  EXT_INTRA_MODE_INFO ext_intra_mode_info;
+#if CONFIG_EXT_TX
+  TX_TYPE best_tx_type;
+#endif  // CONFIG_EXT_TX
+
+  mbmi->ext_intra_mode_info.use_ext_intra_mode[0] = 1;
+  mbmi->mode = DC_PRED;
+  for (mode = D76_PRED; mode < EXT_INTRA_MODES; ++mode) {
+    mbmi->ext_intra_mode_info.ext_intra_mode[0] = mode;
+    super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
+                    &s, NULL, bsize, *best_rd);
+    if (this_rate_tokenonly == INT_MAX)
+      continue;
+
+    this_rate = this_rate_tokenonly + vp10_cost_bit(EXT_INTRA_PROB_Y, 1) +
+        2 * vp10_cost_bit(128, 0);
+    this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
+
+    if (this_rd < *best_rd) {
+      mode_selected       = DC_PRED;
+      *best_rd            = this_rd;
+      best_tx_size        = mic->mbmi.tx_size;
+      ext_intra_mode_info = mbmi->ext_intra_mode_info;
+#if CONFIG_EXT_TX
+      best_tx_type        = mic->mbmi.tx_type;
+#endif  // CONFIG_EXT_TX
+      *rate               = this_rate;
+      *rate_tokenonly     = this_rate_tokenonly;
+      *distortion         = this_distortion;
+      *skippable          = s;
+      ext_intra_selected_flag = 1;
+    }
+  }
+
+  if (ext_intra_selected_flag) {
+    mbmi->mode = mode_selected;
+    mbmi->tx_size = best_tx_size;
+    mbmi->ext_intra_mode_info = ext_intra_mode_info;
+#if CONFIG_EXT_TX
+    mbmi->tx_type = best_tx_type;
+#endif  // CONFIG_EXT_TX
+    return 1;
+  } else {
+    return 0;
+  }
+}
+#endif  // CONFIG_EXT_INTRA
+
 // This function is used only for intra_only frames
 static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                       int *rate, int *rate_tokenonly,
@@ -1154,6 +1220,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   int this_rate, this_rate_tokenonly, s;
   int64_t this_distortion, this_rd;
   TX_SIZE best_tx = TX_4X4;
+#if CONFIG_EXT_INTRA
+  EXT_INTRA_MODE_INFO ext_intra_mode_info;
+#endif  // CONFIG_EXT_INTRA
 #if CONFIG_EXT_TX
   TX_TYPE best_tx_type = DCT_DCT;
 #endif  // CONFIG_EXT_TX
@@ -1164,9 +1233,13 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   const PREDICTION_MODE L = vp10_left_block_mode(mic, left_mi, 0);
   bmode_costs = cpi->y_mode_costs[A][L];
 
+#if CONFIG_EXT_INTRA
+  ext_intra_mode_info.use_ext_intra_mode[0] = 0;
+  mic->mbmi.ext_intra_mode_info.use_ext_intra_mode[0] = 0;
+#endif  // CONFIG_EXT_INTRA
   memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
   /* Y Search for intra prediction mode */
-  for (mode = DC_PRED; mode <= TM_PRED; mode++) {
+  for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
     mic->mbmi.mode = mode;
 
     super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
@@ -1176,6 +1249,10 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
       continue;
 
     this_rate = this_rate_tokenonly + bmode_costs[mode];
+#if CONFIG_EXT_INTRA
+    if (mode == DC_PRED)
+      this_rate += vp10_cost_bit(EXT_INTRA_PROB_Y, 0);
+#endif  // CONFIG_EXT_INTRA
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
     if (this_rd < best_rd) {
@@ -1192,11 +1269,30 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
     }
   }
 
+#if CONFIG_EXT_INTRA
+  if (rd_pick_ext_intra_sby(cpi, x, rate, rate_tokenonly, distortion, skippable,
+                            bsize, &best_rd)) {
+    mode_selected       = mic->mbmi.mode;
+    best_tx             = mic->mbmi.tx_size;
+    ext_intra_mode_info = mic->mbmi.ext_intra_mode_info;
+#if CONFIG_EXT_TX
+    best_tx_type        = mic->mbmi.tx_type;
+#endif  // CONFIG_EXT_TX
+  }
+#endif  // CONFIG_EXT_INTRA
+
   mic->mbmi.mode = mode_selected;
   mic->mbmi.tx_size = best_tx;
 #if CONFIG_EXT_TX
   mic->mbmi.tx_type = best_tx_type;
 #endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_INTRA
+  mic->mbmi.ext_intra_mode_info.use_ext_intra_mode[0] =
+      ext_intra_mode_info.use_ext_intra_mode[0];
+  if (ext_intra_mode_info.use_ext_intra_mode[0])
+    mic->mbmi.ext_intra_mode_info.ext_intra_mode[0] =
+        ext_intra_mode_info.ext_intra_mode[0];
+#endif  // CONFIG_EXT_INTRA
 
   return best_rd;
 }
@@ -1266,6 +1362,9 @@ static int64_t rd_pick_intra_sbuv_mode(VP10_COMP *cpi, MACROBLOCK *x,
   int this_rate_tokenonly, this_rate, s;
   int64_t this_distortion, this_sse;
 
+#if CONFIG_EXT_INTRA
+  xd->mi[0]->mbmi.ext_intra_mode_info.use_ext_intra_mode[1] = 0;
+#endif  // CONFIG_EXT_INTRA
   memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
   for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
     if (!(cpi->sf.intra_uv_mode_mask[max_tx_size] & (1 << mode)))
@@ -3303,6 +3402,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     mbmi->uv_mode = DC_PRED;
     mbmi->ref_frame[0] = ref_frame;
     mbmi->ref_frame[1] = second_ref_frame;
+#if CONFIG_EXT_INTRA
+    mbmi->ext_intra_mode_info.use_ext_intra_mode[0] = 0;
+    mbmi->ext_intra_mode_info.use_ext_intra_mode[1] = 0;
+#endif  // CONFIG_EXT_INTRA
     // Evaluate all sub-pel filters irrespective of whether we can use
     // them for this frame.
     mbmi->interp_filter = cm->interp_filter == SWITCHABLE ? EIGHTTAP
@@ -3666,6 +3769,10 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
 
   assert(segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP));
 
+#if CONFIG_EXT_INTRA
+  mbmi->ext_intra_mode_info.use_ext_intra_mode[0] = 0;
+  mbmi->ext_intra_mode_info.use_ext_intra_mode[1] = 0;
+#endif  // CONFIG_EXT_INTRA
   mbmi->mode = ZEROMV;
   mbmi->uv_mode = DC_PRED;
   mbmi->ref_frame[0] = LAST_FRAME;
@@ -3779,6 +3886,11 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
 
   memset(x->zcoeff_blk[TX_4X4], 0, 4);
   vp10_zero(best_mbmode);
+
+#if CONFIG_EXT_INTRA
+  mbmi->ext_intra_mode_info.use_ext_intra_mode[0] = 0;
+  mbmi->ext_intra_mode_info.use_ext_intra_mode[1] = 0;
+#endif  // CONFIG_EXT_INTRA
 
   for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
     filter_cache[i] = INT64_MAX;

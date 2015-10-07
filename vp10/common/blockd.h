@@ -12,6 +12,8 @@
 #ifndef VP10_COMMON_BLOCKD_H_
 #define VP10_COMMON_BLOCKD_H_
 
+#include <stdio.h>
+
 #include "./vpx_config.h"
 
 #include "vpx_dsp/vpx_dsp_common.h"
@@ -68,6 +70,13 @@ typedef struct {
 #define MAX_REF_FRAMES  4
 typedef int8_t MV_REFERENCE_FRAME;
 
+#if CONFIG_EXT_INTRA
+typedef struct {
+  int use_ext_intra_mode[2];
+  EXT_INTRA_MODE ext_intra_mode[2];
+} EXT_INTRA_MODE_INFO;
+#endif  // CONFIG_EXT_INTRA
+
 // This structure now relates to 8x8 block regions.
 typedef struct {
   // Common for both INTER and INTRA blocks
@@ -90,6 +99,10 @@ typedef struct {
 #if CONFIG_EXT_TX
   TX_TYPE tx_type;
 #endif  // CONFIG_EXT_TX
+
+#if CONFIG_EXT_INTRA
+  EXT_INTRA_MODE_INFO ext_intra_mode_info;
+#endif  // CONFIG_EXT_INTRA
 
   // TODO(slavarnway): Delete and use bmi[3].as_mv[] instead.
   int_mv mv[2];
@@ -209,6 +222,10 @@ typedef struct macroblockd {
   int corrupted;
 
   struct vpx_internal_error_info *error_info;
+
+#if 1
+  int flag;
+#endif
 } MACROBLOCKD;
 
 static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,
@@ -234,6 +251,38 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
                                   int block_idx, TX_SIZE tx_size) {
   const MODE_INFO *const mi = xd->mi[0];
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
+
+#if CONFIG_EXT_INTRA
+  if (!is_inter_block(mbmi) && mbmi->sb_type < BLOCK_8X8 &&
+      mbmi->ext_intra_mode_info.use_ext_intra_mode[plane_type]) {
+    FILE *fp;
+    printf("error get_tx_type\n");
+    fp = fopen("error.txt", "a");
+    fprintf(fp, "error get_tx_type, bsize is less than 8x8\n");
+    fclose(fp);
+  }
+
+  // TODO(huisu): make it work with ext-tx
+  if (tx_size <= TX_16X16 && !is_inter_block(mbmi) &&
+      mbmi->sb_type >= BLOCK_8X8 &&
+      mbmi->ext_intra_mode_info.use_ext_intra_mode[plane_type]) {
+    switch (mbmi->ext_intra_mode_info.ext_intra_mode[plane_type]) {
+      case D76_PRED:
+        return ADST_DCT;
+      case D104_PRED:
+        return ADST_DCT;
+      case D166_PRED:
+        return DCT_ADST;
+      case D194_PRED:
+        return DCT_ADST;
+      default:
+        printf("error get_tx_type %d\n",
+               mbmi->ext_intra_mode_info.ext_intra_mode[plane_type]);
+        assert(0);
+        return DCT_DCT;
+    }
+  }
+#endif  // CONFIG_EXT_INTRA
 
 #if CONFIG_EXT_TX
   if (xd->lossless || tx_size >= TX_32X32)
