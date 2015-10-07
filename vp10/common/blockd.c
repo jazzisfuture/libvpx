@@ -10,6 +10,33 @@
 
 #include "vp10/common/blockd.h"
 
+#if CONFIG_EXT_INTRA
+#if 0
+//24
+const uint8_t vp10_ext_intra_angles[EXT_INTRA_ANGLES] = {
+    15, 25, 35, 51, 57, 70, 76, 83,
+    97, 104, 110, 125, 144, 160, 166, 173,
+    187, 194, 200, 213, 219, 225, 235, 245,
+};
+#endif
+
+/*
+const uint8_t vp10_ext_intra_angles[EXT_INTRA_ANGLES] = {
+    //19
+    15, 20, 25, 30, 35, 38, 41, 48, 51, 54, 57, 60, 66, 70, 73, 76, 80, 83, 86,
+    //19
+    93, 97, 100, 104, 107, 110, 113, 121, 125, 128, 131, 139, 144, 148, 160,
+    166, 160, 173, 176,
+    //17
+    184, 187, 190, 194, 197, 200, 203, 210, 213, 216, 219, 222, 225, 230, 235,
+    240, 245,
+};*/
+
+const uint8_t vp10_ext_intra_angles[EXT_INTRA_ANGLES] = {
+    76, 104, 166, 194,
+};
+#endif  // CONFIG_EXT_INTRA
+
 PREDICTION_MODE vp10_left_block_mode(const MODE_INFO *cur_mi,
                                     const MODE_INFO *left_mi, int b) {
   if (b == 0 || b == 2) {

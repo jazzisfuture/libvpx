@@ -2350,7 +2350,7 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     read_mv_probs(nmvc, cm->allow_high_precision_mv, &r);
 #if CONFIG_EXT_TX
     read_ext_tx_probs(fc, &r);
-#endif
+#endif  // CONFIG_EXT_TX
   }
 
   return vpx_reader_has_error(&r);
