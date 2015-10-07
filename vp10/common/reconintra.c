@@ -96,6 +96,120 @@ static void vp10_init_intra_predictors_internal(void) {
 #undef intra_pred_allsizes
 }
 
+#if CONFIG_EXT_INTRA
+#define AVG3(a, b, c) (((a) + 2 * (b) + (c) + 2) >> 2)
+
+static INLINE void d76_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                 const uint8_t *above, const uint8_t *left) {
+  int r, c, i;
+  uint8_t buf[4][48];
+  (void)left;
+
+  for (c = 0; c < bs + bs / 4; ++c) {
+    buf[0][c] = AVG3(above[c], above[c], above[c + 1]);
+    buf[1][c] = AVG3(above[c + 1], above[c], above[c + 1]);
+    buf[2][c] = AVG3(above[c], above[c + 1], above[c + 1]);
+    buf[3][c] = above[c + 1];
+  }
+
+  for (r = 0; r < bs; r += 4) {
+    for (i = 0; i < 4; ++i) {
+      memcpy(dst + i * stride, buf[i] + (r >> 2), bs * sizeof(*dst));
+    }
+    dst += 4 * stride;
+  }
+}
+
+static INLINE void d104_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                  const uint8_t *above, const uint8_t *left) {
+  int r, c;
+
+  // first 4 rows
+  for (c = 0; c < bs; c++) {
+    dst[c] = AVG3(above[c - 1], above[c], above[c]);
+    dst[c + stride] = AVG3(above[c - 1], above[c], above[c - 1]);
+    dst[c + 2 * stride] = AVG3(above[c - 1], above[c - 1], above[c]);
+    dst[c + 3 * stride] = above[c - 1];
+  }
+  if (bs <= 4)
+    return;
+  dst += 4 * stride;
+
+  // the rest of first col
+  for (r = 4; r < bs; ++r)
+    dst[(r - 4) * stride] = left[r - 4];
+
+  // the rest of the block
+  for (r = 4; r < bs; ++r) {
+    for (c = 1; c < bs; c++)
+      dst[c] = dst[-4 * stride + c - 1];
+    dst += stride;
+  }
+}
+
+static INLINE void d166_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                  const uint8_t *above, const uint8_t *left) {
+  int r, c;
+
+  // first 4 columns
+  dst[0] = AVG3(above[-1], left[0], left[0]);
+  dst[1] = AVG3(above[-1], left[0], above[-1]);
+  dst[2] = AVG3(above[-1], above[-1], left[0]);
+  dst[3] = above[-1];
+  for (r = 1; r < bs; ++r) {
+    dst[r * stride] = AVG3(left[r], left[r], left[r - 1]);
+    dst[r * stride + 1] = AVG3(left[r - 1], left[r], left[r - 1]);
+    dst[r * stride + 2] = AVG3(left[r], left[r - 1], left[r - 1]);
+    dst[r * stride + 3] = left[r - 1];
+  }
+  if (bs <= 4)
+    return;
+  dst += 4;
+
+  // the rest of first row
+  for (c = 4; c < bs; ++c)
+    dst[c - 4] = above[c - 4];
+  dst += stride;
+
+  // the rest of the block
+  for (r = 1; r < bs; ++r) {
+    for (c = 0; c < bs - 4; ++c)
+      dst[c] = dst[-stride + c - 4];
+    dst += stride;
+  }
+}
+
+static INLINE void d194_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                  const uint8_t *above, const uint8_t *left) {
+  int r, c;
+  (void) above;
+
+  // first 4 columns
+  for (r = 0; r < bs - 1; ++r) {
+    dst[r * stride] = AVG3(left[r], left[r], left[r + 1]);
+    dst[r * stride + 1] = AVG3(left[r + 1], left[r], left[r + 1]);
+    dst[r * stride + 2] = AVG3(left[r], left[r + 1], left[r + 1]);
+    dst[r * stride + 3] = left[r + 1];
+  }
+  dst[(bs - 1) * stride] = left[bs - 1];
+  dst[(bs - 1) * stride + 1] = left[bs - 1];
+  dst[(bs - 1) * stride + 2] = left[bs - 1];
+  dst[(bs - 1) * stride + 3] = left[bs - 1];
+  if (bs <= 4)
+    return;
+  dst += 4;
+
+  // rest of last row
+  for (c = 0; c < bs - 4; ++c)
+    dst[(bs - 1) * stride + c] = left[bs - 1];
+
+  // the rest of the block
+  for (r = bs - 2; r >= 0; --r)
+    for (c = 0; c < bs - 4; ++c)
+      dst[r * stride + c] = dst[(r + 1) * stride + c - 4];
+}
+#endif  // CONFIG_EXT_INTRA
+
 #if CONFIG_VP9_HIGHBITDEPTH
 static void build_intra_predictors_high(const MACROBLOCKD *xd,
                                         const uint8_t *ref8,
@@ -240,9 +354,36 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
   uint8_t *above_row = above_data + 16;
   const uint8_t *const_above_row = above_row;
   const int bs = 4 << tx_size;
+  int need_left = extend_modes[mode] & NEED_LEFT;
+  int need_above = extend_modes[mode] & NEED_ABOVE;
+  int need_aboveright = extend_modes[mode] & NEED_ABOVERIGHT;
   int frame_width, frame_height;
   int x0, y0;
   const struct macroblockd_plane *const pd = &xd->plane[plane];
+
+#if CONFIG_EXT_INTRA
+  if (xd->mi[0]->mbmi.ext_intra_mode_info.use_ext_intra_mode[plane != 0]) {
+    switch (xd->mi[0]->mbmi.ext_intra_mode_info.ext_intra_mode[plane != 0]) {
+      case D76_PRED:
+        need_aboveright = 1;
+        break;
+      case D104_PRED:
+        need_left = 1;
+        need_above = 1;
+        break;
+      case D166_PRED:
+        need_left = 1;
+        need_above = 1;
+        break;
+      case D194_PRED:
+        need_left = 1;
+        break;
+      default:
+        assert(0);
+        break;
+    }
+  }
+#endif  // CONFIG_EXT_INTRA
 
   // 127 127 127 .. 127 127 127 127 127 127
   // 129  A   B  ..  Y   Z
@@ -265,7 +406,7 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
   y0 = (-xd->mb_to_top_edge >> (3 + pd->subsampling_y)) + y;
 
   // NEED_LEFT
-  if (extend_modes[mode] & NEED_LEFT) {
+  if (need_left) {
     if (left_available) {
       if (xd->mb_to_bottom_edge < 0) {
         /* slower path if the block needs border extension */
@@ -290,7 +431,7 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
   }
 
   // NEED_ABOVE
-  if (extend_modes[mode] & NEED_ABOVE) {
+  if (need_above) {
     if (up_available) {
       const uint8_t *above_ref = ref - ref_stride;
       if (xd->mb_to_right_edge < 0) {
@@ -318,7 +459,7 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
   }
 
   // NEED_ABOVERIGHT
-  if (extend_modes[mode] & NEED_ABOVERIGHT) {
+  if (need_aboveright) {
     if (up_available) {
       const uint8_t *above_ref = ref - ref_stride;
       if (xd->mb_to_right_edge < 0) {
@@ -362,6 +503,57 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
       above_row[-1] = 127;
     }
   }
+
+#if 0
+  {
+    if (bs == 8 && mode == D117_PRED &&
+        (left_col[bs - 1] - left_col[0] > 8)) {
+      int r, c;
+      d194_predictor(dst, dst_stride, bs, const_above_row, left_col);
+
+      for (r = -1; r < bs; ++r)
+        printf("%3d ", const_above_row[r]);
+      printf("\n");
+
+      for (r = 0; r < bs; ++r) {
+        printf("%3d ", left_col[r]);
+        for (c = 0; c < bs; ++c) {
+          printf("%3d ", dst[r * dst_stride + c]);
+        }
+        printf("\n");
+      }
+      printf("\n");
+    }
+  }
+#endif
+
+#if CONFIG_EXT_INTRA
+  if (xd->mi[0]->mbmi.ext_intra_mode_info.use_ext_intra_mode[plane != 0]) {
+    switch (xd->mi[0]->mbmi.ext_intra_mode_info.ext_intra_mode[plane != 0]) {
+      case D76_PRED:
+        d76_predictor(dst, dst_stride, bs,
+                      const_above_row, left_col);
+        break;
+      case D104_PRED:
+        d104_predictor(dst, dst_stride, bs,
+                       const_above_row, left_col);
+        break;
+      case D166_PRED:
+        d166_predictor(dst, dst_stride, bs,
+                       const_above_row, left_col);
+        break;
+      case D194_PRED:
+        d194_predictor(dst, dst_stride, bs,
+                       const_above_row, left_col);
+        break;
+      default:
+        assert(0);
+        break;
+    }
+
+    return;
+  }
+#endif  // CONFIG_EXT_INTRA
 
   // predict
   if (mode == DC_PRED) {
