@@ -9,7 +9,6 @@ void fdct4(const int32_t *input, int32_t *output, const int8_t* cos_bit, const i
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -54,7 +53,6 @@ void fdct8(const int32_t *input, int32_t *output, const int8_t* cos_bit, const i
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -141,7 +139,6 @@ void fdct16(const int32_t *input, int32_t *output, const int8_t* cos_bit, const 
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -314,7 +311,6 @@ void fdct32(const int32_t *input, int32_t *output, const int8_t* cos_bit, const 
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -677,7 +673,6 @@ void fadst4(const int32_t *input, int32_t *output, const int8_t* cos_bit, const 
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -744,7 +739,6 @@ void fadst8(const int32_t *input, int32_t *output, const int8_t* cos_bit, const 
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -861,7 +855,6 @@ void fadst16(const int32_t *input, int32_t *output, const int8_t* cos_bit, const
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -1080,7 +1073,6 @@ void fadst32(const int32_t *input, int32_t *output, const int8_t* cos_bit, const
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -1521,7 +1513,6 @@ void idct4(const int32_t *input, int32_t *output, const int8_t* cos_bit, const i
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -1566,7 +1557,6 @@ void idct8(const int32_t *input, int32_t *output, const int8_t* cos_bit, const i
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -1653,7 +1643,6 @@ void idct16(const int32_t *input, int32_t *output, const int8_t* cos_bit, const 
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -1826,7 +1815,6 @@ void idct32(const int32_t *input, int32_t *output, const int8_t* cos_bit, const 
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -2189,7 +2177,6 @@ void iadst4(const int32_t *input, int32_t *output, const int8_t* cos_bit, const 
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -2256,7 +2243,6 @@ void iadst8(const int32_t *input, int32_t *output, const int8_t* cos_bit, const 
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -2373,7 +2359,6 @@ void iadst16(const int32_t *input, int32_t *output, const int8_t* cos_bit, const
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;
@@ -2592,7 +2577,6 @@ void iadst32(const int32_t *input, int32_t *output, const int8_t* cos_bit, const
   int32_t step[32];
 
   // stage 0;
-  stage_idx++;
   range_check_32(input, size, stage_range[stage_idx]);
 
   // stage 1;

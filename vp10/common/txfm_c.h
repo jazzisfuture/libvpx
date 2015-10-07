@@ -103,32 +103,12 @@ static inline void show(const int32_t *buf, const int size) {
   printf("\n");
 }
 
-static inline void range_check_16(const int16_t *input, const int size,
-                                  const int bit) {
-#if CONFIG_COEFFICIENT_RANGE_CHECKING
-  int i;
-  for (i = 0; i < size; ++i) {
-    assert(abs(input[i]) < (1 << bit));
-  }
-#else
-  (void)input;
-  (void)size;
-  (void)bit;
-#endif
-}
-
 static inline void range_check_32(const int32_t *input, const int size,
                                   const int bit) {
-#if CONFIG_COEFFICIENT_RANGE_CHECKING
   int i;
   for (i = 0; i < size; ++i) {
     assert(abs(input[i]) < (1 << bit));
   }
-#else
-  (void)input;
-  (void)size;
-  (void)bit;
-#endif
 }
 
 typedef void (*TxfmFunc)(const int32_t *input, int32_t *output,
