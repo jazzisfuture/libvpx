@@ -313,18 +313,37 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                           int mi_row, int mi_col, BLOCK_SIZE bs,
                           PICK_MODE_CONTEXT *ctx) {
   int motion_magnitude = 0;
-  VP9_DENOISER_DECISION decision = FILTER_BLOCK;
+  VP9_DENOISER_DECISION decision = COPY_BLOCK;
   YV12_BUFFER_CONFIG avg = denoiser->running_avg_y[INTRA_FRAME];
   YV12_BUFFER_CONFIG mc_avg = denoiser->mc_running_avg_y;
   uint8_t *avg_start = block_start(avg.y_buffer, avg.y_stride, mi_row, mi_col);
   uint8_t *mc_avg_start = block_start(mc_avg.y_buffer, mc_avg.y_stride,
                                           mi_row, mi_col);
   struct buf_2d src = mb->plane[0].src;
+  int is_skin = 0;
 
-  decision = perform_motion_compensation(denoiser, mb, bs,
-                                         denoiser->increase_denoising,
-                                         mi_row, mi_col, ctx,
-                                         &motion_magnitude);
+  if (bs <= BLOCK_16X16) {
+    // Take center pixel in block to determine is_skin.
+    const int y_width_shift = (4 << b_width_log2_lookup[bs]) >> 1;
+    const int y_height_shift = (4 << b_height_log2_lookup[bs]) >> 1;
+    const int uv_width_shift = y_width_shift >> 1;
+    const int uv_height_shift = y_height_shift >> 1;
+    const int stride = mb->plane[0].src.stride;
+    const int strideuv = mb->plane[1].src.stride;
+    const uint8_t ysource =
+      mb->plane[0].src.buf[y_height_shift * stride + y_width_shift];
+    const uint8_t usource =
+      mb->plane[1].src.buf[uv_height_shift * strideuv + uv_width_shift];
+    const uint8_t vsource =
+      mb->plane[2].src.buf[uv_height_shift * strideuv + uv_width_shift];
+    is_skin = vp9_skin_pixel(ysource, usource, vsource);
+  }
+
+  if (!is_skin)
+    decision = perform_motion_compensation(denoiser, mb, bs,
+                                           denoiser->increase_denoising,
+                                           mi_row, mi_col, ctx,
+                                           &motion_magnitude);
 
   if (decision == FILTER_BLOCK) {
     decision = vp9_denoiser_filter(src.buf, src.stride,
