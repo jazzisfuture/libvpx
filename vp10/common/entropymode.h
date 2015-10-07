@@ -56,11 +56,14 @@ typedef struct frame_contexts {
   struct tx_probs tx_probs;
   vpx_prob skip_probs[SKIP_CONTEXTS];
   nmv_context nmvc;
+  int initialized;
 #if CONFIG_EXT_TX
   vpx_prob inter_tx_type_prob[EXT_TX_SIZES][TX_TYPES - 1];
   vpx_prob intra_tx_type_prob[EXT_TX_SIZES][INTRA_MODES][TX_TYPES - 1];
 #endif  // CONFIG_EXT_TX
-  int initialized;
+#if CONFIG_EXT_INTRA
+  vpx_prob ext_intra_probs[PLANE_TYPES];
+#endif  // CONFIG_EXT_INTRA
 } FRAME_CONTEXT;
 
 typedef struct FRAME_COUNTS {
@@ -84,6 +87,9 @@ typedef struct FRAME_COUNTS {
   unsigned int inter_tx_type[EXT_TX_SIZES][TX_TYPES];
   unsigned int intra_tx_type[EXT_TX_SIZES][INTRA_MODES][TX_TYPES];
 #endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_INTRA
+  unsigned int ext_intra[PLANE_TYPES][2];
+#endif  // CONFIG_EXT_INTRA
 } FRAME_COUNTS;
 
 extern const vpx_prob vp10_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
