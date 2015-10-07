@@ -412,6 +412,27 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   }
 }
 
+#if CONFIG_EXT_INTRA
+static void write_ext_intra_mode_info(const VP10_COMMON *const cm,
+                                      const MB_MODE_INFO *const mbmi,
+                                      vpx_writer *w) {
+  if (mbmi->mode == DC_PRED) {
+    vpx_write(w, mbmi->ext_intra_mode_info.use_ext_intra_mode[0],
+              cm->fc->ext_intra_probs[0]);
+    if (mbmi->ext_intra_mode_info.use_ext_intra_mode[0])
+      write_uniform(w, EXT_INTRA_MODES,
+                    mbmi->ext_intra_mode_info.ext_intra_mode[0]);
+  }
+  if (mbmi->uv_mode == DC_PRED) {
+    vpx_write(w, mbmi->ext_intra_mode_info.use_ext_intra_mode[1],
+              cm->fc->ext_intra_probs[1]);
+    if (mbmi->ext_intra_mode_info.use_ext_intra_mode[1])
+      write_uniform(w, EXT_INTRA_MODES,
+                    mbmi->ext_intra_mode_info.ext_intra_mode[1]);
+  }
+}
+#endif  // CONFIG_EXT_INTRA
+
 static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
                                 vpx_writer *w) {
   VP10_COMMON *const cm = &cpi->common;
@@ -487,6 +508,10 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       }
     }
     write_intra_mode(w, mbmi->uv_mode, cm->fc->uv_mode_prob[mode]);
+#if CONFIG_EXT_INTRA
+    if (bsize >= BLOCK_8X8)
+      write_ext_intra_mode_info(cm, mbmi, w);
+#endif  // CONFIG_EXT_INTRA
   } else {
     const int mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
     const vpx_prob *const inter_probs = cm->fc->inter_mode_probs[mode_ctx];
@@ -637,6 +662,11 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                      &tx_type_encodings[mbmi->tx_type]);
   }
 #endif  // CONFIG_EXT_TX
+
+#if CONFIG_EXT_INTRA
+  if (bsize >= BLOCK_8X8)
+      write_ext_intra_mode_info(cm, mbmi, w);
+#endif  // CONFIG_EXT_INTRA
 }
 
 static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
@@ -1615,7 +1645,7 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
                         &counts->mv);
 #if CONFIG_EXT_TX
     update_ext_tx_probs(cm, &header_bc);
-#endif
+#endif  // CONFIG_EXT_TX
   }
 
   vpx_stop_encode(&header_bc);

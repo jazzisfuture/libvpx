@@ -151,6 +151,16 @@ typedef enum {
   PALETTE_COLORS
 } PALETTE_COLOR;
 
+#if CONFIG_EXT_INTRA
+typedef enum {
+  D76_PRED  = 0,
+  D104_PRED = 1,
+  D166_PRED = 2,
+  D194_PRED = 3,
+  EXT_INTRA_MODES
+} EXT_INTRA_MODE;
+#endif  // CONFIG_EXT_INTRA
+
 #define DC_PRED    0       // Average of above and left pixels
 #define V_PRED     1       // Vertical
 #define H_PRED     2       // Horizontal
