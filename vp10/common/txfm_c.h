@@ -8,6 +8,7 @@
 
 typedef int int32_t;
 typedef short int16_t;
+typedef unsigned short uint16_t;
 typedef signed char int8_t;
 
 static const int cos_bit_min = 10;
@@ -103,12 +104,13 @@ static inline void show(const int32_t *buf, const int size) {
   printf("\n");
 }
 
-static inline void range_check_32(const int32_t *input, const int size,
-                                  const int bit) {
-  int i;
-  for (i = 0; i < size; ++i) {
-    assert(abs(input[i]) < (1 << bit));
+static int get_max_bit(int x) {
+  int max_bit = -1;
+  while (x) {
+    x = x >> 1;
+    max_bit++;
   }
+  return max_bit;
 }
 
 typedef void (*TxfmFunc)(const int32_t *input, int32_t *output,

@@ -358,7 +358,7 @@ void vp10_highbd_iht16x16_256_add_c(const tran_low_t *input, uint8_t *dest8,
   }
 }
 
-#define OLD_DCT 1
+#define OLD_DCT 0
 // idct
 void vp10_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd) {

@@ -8,7 +8,7 @@ extern "C" {
 
 void vp10_fdct_2d_c(const int16_t *input, int32_t *output, int stride,
                     const TXFM_2D_CFG *cfg);
-void vp10_idct_2d_add_c(const int32_t *input, int16_t *output, int stride,
+void vp10_idct_2d_add_c(const int32_t *input, uint16_t *output, int stride,
                         const TXFM_2D_CFG *cfg);
 #ifdef __cplusplus
 }

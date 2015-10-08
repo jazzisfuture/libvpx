@@ -313,7 +313,7 @@ static INLINE void fdct32x32(int rd_transform,
     vpx_fdct32x32(src, dst, src_stride);
 }
 
-#define OLD_DCT (1)
+#define OLD_DCT (0)
 #if CONFIG_VP9_HIGHBITDEPTH
 static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
                                     tran_low_t *dst, int src_stride) {
