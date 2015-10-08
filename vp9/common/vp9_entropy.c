@@ -743,7 +743,7 @@ static const vp9_coeff_probs_model default_coef_probs_32x32[PLANE_TYPES] = {
 };
 
 static void extend_to_full_distribution(vpx_prob *probs, vpx_prob p) {
-  memcpy(probs, vp9_pareto8_full[p = 0 ? 0 : p - 1],
+  memcpy(probs, vp9_pareto8_full[(p - 1) & 0xFF],
          MODEL_NODES * sizeof(vpx_prob));
 }
 
