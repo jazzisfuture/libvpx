@@ -743,14 +743,16 @@ static const vp9_coeff_probs_model default_coef_probs_32x32[PLANE_TYPES] = {
 };
 
 static void extend_to_full_distribution(vpx_prob *probs, vpx_prob p) {
-  memcpy(probs, vp9_pareto8_full[p = 0 ? 0 : p - 1],
-         MODEL_NODES * sizeof(vpx_prob));
+  memcpy(probs, vp9_pareto8_full[p - 1], MODEL_NODES * sizeof(vpx_prob));
 }
 
 void vp9_model_to_full_probs(const vpx_prob *model, vpx_prob *full) {
   if (full != model)
     memcpy(full, model, sizeof(vpx_prob) * UNCONSTRAINED_NODES);
-  extend_to_full_distribution(&full[UNCONSTRAINED_NODES], model[PIVOT_NODE]);
+  // TODO(aconverse): model[PIVOT_NODE] should never be zero.
+  // https://code.google.com/p/webm/issues/detail?id=1089
+  if (model[PIVOT_NODE] != 0)
+    extend_to_full_distribution(&full[UNCONSTRAINED_NODES], model[PIVOT_NODE]);
 }
 
 void vp9_default_coef_probs(VP9_COMMON *cm) {
