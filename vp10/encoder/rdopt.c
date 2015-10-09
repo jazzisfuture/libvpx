@@ -339,6 +339,9 @@ static const int16_t band_counts[TX_SIZES][8] = {
 static int cost_coeffs(MACROBLOCK *x,
                        int plane, int block,
                        ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L,
+#if CONFIG_VAR_TX
+                       int coeff_ctx,
+#endif
                        TX_SIZE tx_size,
                        const int16_t *scan, const int16_t *nb,
                        int use_fast_coef_costing) {
@@ -353,7 +356,7 @@ static int cost_coeffs(MACROBLOCK *x,
   unsigned int (*token_costs)[2][COEFF_CONTEXTS][ENTROPY_TOKENS] =
                    x->token_costs[tx_size][type][is_inter_block(mbmi)];
   uint8_t token_cache[32 * 32];
-  int pt = combine_entropy_contexts(*A, *L);
+  int pt = coeff_ctx;
   int c, cost;
 #if CONFIG_VP9_HIGHBITDEPTH
   const int16_t *cat6_high_cost = vp10_get_high_cost_table(xd->bd);
@@ -361,9 +364,11 @@ static int cost_coeffs(MACROBLOCK *x,
   const int16_t *cat6_high_cost = vp10_get_high_cost_table(8);
 #endif
 
+#if !CONFIG_VAR_TX
   // Check for consistency of tx_size with mode info
   assert(type == PLANE_TYPE_Y ? mbmi->tx_size == tx_size
                               : get_uv_tx_size(mbmi, pd) == tx_size);
+#endif
 
   if (eob == 0) {
     // single eob token
@@ -446,9 +451,16 @@ static void dist_block(MACROBLOCK *x, int plane, int block, TX_SIZE tx_size,
 
 static int rate_block(int plane, int block, int blk_row, int blk_col,
                       TX_SIZE tx_size, struct rdcost_block_args* args) {
+#if CONFIG_VAR_TX
+  int coeff_ctx = combine_entropy_contexts(*(args->t_above + blk_col),
+                                           *(args->t_left + blk_row));
+#endif
   return cost_coeffs(args->x, plane, block, args->t_above + blk_col,
-                     args->t_left + blk_row, tx_size,
-                     args->so->scan, args->so->neighbors,
+                     args->t_left + blk_row,
+#if CONFIG_VAR_TX
+                     coeff_ctx,
+#endif
+                     tx_size, args->so->scan, args->so->neighbors,
                      args->use_fast_coef_costing);
 }
 
@@ -1017,9 +1029,17 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
         if (xd->lossless) {
           TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
           const scan_order *so = get_scan(TX_4X4, tx_type, 0);
+#if CONFIG_VAR_TX
+          int coeff_ctx = combine_entropy_contexts(*(tempa + idx),
+                                                   *(templ + idy));
+#endif
           vp10_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT, 1);
           vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-          ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
+          ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy,
+#if CONFIG_VAR_TX
+                               coeff_ctx,
+#endif
+                               TX_4X4,
                                so->scan, so->neighbors,
                                cpi->sf.use_fast_coef_costing);
           if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
@@ -1030,9 +1050,17 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
           int64_t unused;
           TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
           const scan_order *so = get_scan(TX_4X4, tx_type, 0);
+#if CONFIG_VAR_TX
+          int coeff_ctx = combine_entropy_contexts(*(tempa + idx),
+                                                   *(templ + idy));
+#endif
           vp10_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, 0);
           vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-          ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
+          ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy,
+#if CONFIG_VAR_TX
+                               coeff_ctx,
+#endif
+                               TX_4X4,
                              so->scan, so->neighbors,
                              cpi->sf.use_fast_coef_costing);
           distortion += vp10_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, block),
@@ -1222,6 +1250,7 @@ static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
   const scan_order *const scan_order =
       get_scan(tx_size, tx_type, is_inter_block(&xd->mi[0]->mbmi));
   int i;
+  int coeff_ctx;
 
   vp10_xform_quant(x, plane, block, blk_row, blk_col,
                    plane_bsize, tx_size);
@@ -1255,7 +1284,8 @@ static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
       break;
   }
 
-  *rate += cost_coeffs(x, plane, block, ta, tl, tx_size,
+  coeff_ctx = combine_entropy_contexts(ta[0], tl[0]);
+  *rate += cost_coeffs(x, plane, block, ta, tl, coeff_ctx, tx_size,
                        scan_order->scan, scan_order->neighbors, 0);
 
   for (i = 0; i < (1 << tx_size); ++i) {
@@ -1263,6 +1293,160 @@ static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
     tl[i] = tl[0];
   }
   *skip &= (p->eobs[block] == 0);
+}
+
+
+static void select_tx_block(const VP10_COMP *cpi, MACROBLOCK *x,
+                            int blk_row, int blk_col, int plane, int block,
+                            TX_SIZE tx_size, BLOCK_SIZE plane_bsize,
+                            BLOCK_SIZE txb_bsize,
+                            ENTROPY_CONTEXT *ta, ENTROPY_CONTEXT *tl,
+                            int *rate, int64_t *dist,
+                            int64_t *bsse, int *skip) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  int tx_idx = (blk_row >> (1 - pd->subsampling_y)) * 8 +
+               (blk_col >> (1 - pd->subsampling_x));
+  int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
+  int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
+  int64_t this_rd = INT64_MAX;
+  ENTROPY_CONTEXT ctxa[16], ctxl[16];
+  ENTROPY_CONTEXT *pta = ta + (blk_col >> pd->subsampling_x);
+  ENTROPY_CONTEXT *ptl = tl + (blk_row >> pd->subsampling_y);
+
+  memcpy(ctxa, ta, sizeof(ENTROPY_CONTEXT) * max_blocks_wide);
+  memcpy(ctxl, tl, sizeof(ENTROPY_CONTEXT) * max_blocks_high);
+
+  if (xd->mb_to_bottom_edge < 0)
+    max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
+  if (xd->mb_to_right_edge < 0)
+    max_blocks_wide += xd->mb_to_right_edge >> (5 + pd->subsampling_x);
+
+  *rate = 0;
+  *dist = 0;
+  *bsse = 0;
+  *skip = 1;
+
+  if (blk_row >= max_blocks_high || blk_col >= max_blocks_wide)
+    return;
+
+  mbmi->inter_tx_size[tx_idx] = tx_size;
+  mbmi->tx_size = tx_size;
+
+  if (cpi->common.tx_mode == TX_MODE_SELECT || tx_size == TX_4X4) {
+    tx_block_rd_b(x, tx_size, blk_row, blk_col, plane, block,
+                  plane_bsize, ta, tl, rate, dist, bsse, skip);
+    if (tx_size > TX_4X4)
+      *rate += vp10_cost_bit(128, 0);
+    this_rd = RDCOST(x->rdmult, x->rddiv, *rate, *dist);
+  }
+
+  if (tx_size > TX_4X4) {
+    BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
+    int bh = num_4x4_blocks_high_lookup[bsize];
+    int sub_step = 1 << (2 * (tx_size - 1));
+    int i;
+    int this_rate, sum_rate = vp10_cost_bit(128, 1);
+    int64_t this_dist, sum_dist = 0;
+    int64_t this_bsse, sum_bsse = 0;
+    int this_skip, all_skip = 1;
+    int64_t sum_rd;
+    for (i = 0; i < 4; ++i) {
+      int offsetr = (i >> 1) * bh / 2;
+      int offsetc = (i & 0x01) * bh / 2;
+      select_tx_block(cpi, x, blk_row + offsetr, blk_col + offsetc,
+                      plane, block + i * sub_step, tx_size - 1,
+                      plane_bsize, txsize_to_bsize[tx_size - 1],
+                      ctxa, ctxl, &this_rate, &this_dist,
+                      &this_bsse, &this_skip);
+      sum_rate += this_rate;
+      sum_dist += this_dist;
+      sum_bsse += this_bsse;
+      all_skip &= this_skip;
+    }
+    sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
+
+    if (this_rd < sum_rd) {
+      int idx, idy;
+      for (idy = blk_row; idy < blk_row + bh; idy += 2)
+        for (idx = blk_col; idx < blk_col + bh; idx += 2)
+          mbmi->inter_tx_size[(idy / 2) * 8 + (idx / 2)] = tx_size;
+      mbmi->tx_size = tx_size;
+    } else {
+      *rate = sum_rate;
+      *dist = sum_dist;
+      *bsse = sum_bsse;
+      *skip = all_skip;
+
+      memcpy(pta, ctxa + (blk_col >> pd->subsampling_x),
+          sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide_lookup[txb_bsize]);
+      memcpy(ptl, ctxl + (blk_row >> pd->subsampling_y),
+          sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high_lookup[txb_bsize]);
+    }
+  }
+}
+
+static void inter_block_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
+                            int *rate, int64_t *distortion, int *skippable,
+                            int64_t *sse, BLOCK_SIZE bsize,
+                            int64_t ref_best_rd) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  int is_cost_valid = 1;
+  int64_t this_rd;
+
+  if (ref_best_rd < 0)
+    is_cost_valid = 0;
+
+  *rate = 0;
+  *distortion = 0;
+  *sse = 0;
+  *skippable = 1;
+
+  if (is_cost_valid) {
+    const struct macroblockd_plane *const pd = &xd->plane[0];
+    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
+    const int mi_width = num_4x4_blocks_wide_lookup[plane_bsize];
+    const int mi_height = num_4x4_blocks_high_lookup[plane_bsize];
+    BLOCK_SIZE txb_size = txsize_to_bsize[max_txsize_lookup[plane_bsize]];
+    int bh = num_4x4_blocks_wide_lookup[txb_size];
+    int idx, idy;
+    int block = 0;
+    int step = 1 << (max_txsize_lookup[plane_bsize] * 2);
+    ENTROPY_CONTEXT ctxa[16], ctxl[16];
+
+    int pnrate = 0, pnskip = 1;
+    int64_t pndist = 0, pnsse = 0;
+
+    vp10_get_entropy_contexts(bsize, TX_4X4, pd, ctxa, ctxl);
+
+    for (idy = 0; idy < mi_height; idy += bh) {
+      for (idx = 0; idx < mi_width; idx += bh) {
+        select_tx_block(cpi, x, idy, idx, 0, block,
+                        max_txsize_lookup[plane_bsize], plane_bsize, txb_size,
+                        ctxa, ctxl, &pnrate, &pndist, &pnsse, &pnskip);
+        *rate += pnrate;
+        *distortion += pndist;
+        *sse += pnsse;
+        *skippable &= pnskip;
+
+        block += step;
+      }
+    }
+  }
+
+  this_rd = VPXMIN(RDCOST(x->rdmult, x->rddiv, *rate, *distortion),
+                   RDCOST(x->rdmult, x->rddiv, 0, *sse));
+  if (this_rd > ref_best_rd)
+    is_cost_valid = 0;
+
+  if (!is_cost_valid) {
+    // reset cost value
+    *rate = INT_MAX;
+    *distortion = INT64_MAX;
+    *sse = INT64_MAX;
+    *skippable = 0;
+  }
 }
 
 static void tx_block_rd(const VP10_COMP *cpi, MACROBLOCK *x,
@@ -1273,10 +1457,12 @@ static void tx_block_rd(const VP10_COMP *cpi, MACROBLOCK *x,
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
   struct macroblockd_plane *const pd = &xd->plane[plane];
+  BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
   int tx_idx = (blk_row >> (1 - pd->subsampling_y)) * 8 +
                (blk_col >> (1 - pd->subsampling_x));
   TX_SIZE plane_tx_size = plane ?
-      get_uv_tx_size_impl(mbmi->inter_tx_size[tx_idx], plane_bsize, 0, 0) :
+      get_uv_tx_size_impl(mbmi->inter_tx_size[tx_idx], bsize,
+                          pd->subsampling_x, pd->subsampling_y) :
       mbmi->inter_tx_size[tx_idx];
 
   int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
@@ -1294,7 +1480,6 @@ static void tx_block_rd(const VP10_COMP *cpi, MACROBLOCK *x,
     tx_block_rd_b(x, tx_size, blk_row, blk_col, plane, block,
                   plane_bsize, above_ctx, left_ctx, rate, dist, bsse, skip);
   } else {
-    BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
     int bsl = b_width_log2_lookup[bsize];
     int step = 1 << (2 * (tx_size - 1));
     int i;
@@ -1650,8 +1835,14 @@ static int64_t encode_inter_mb_segment(VP10_COMP *cpi,
     for (idx = 0; idx < width / 4; ++idx) {
       int64_t ssz, rd, rd1, rd2;
       tran_low_t* coeff;
-
+#if CONFIG_VAR_TX
+      int coeff_ctx;
+#endif
       k += (idy * 2 + idx);
+#if CONFIG_VAR_TX
+      coeff_ctx = combine_entropy_contexts(*(ta + (k & 1)),
+                                           *(tl + (k >> 1)));
+#endif
       coeff = BLOCK_OFFSET(p->coeff, k);
       fwd_txm4x4(vp10_raster_block_offset_int16(BLOCK_8X8, k, p->src_diff),
                  coeff, 8);
@@ -1670,7 +1861,11 @@ static int64_t encode_inter_mb_segment(VP10_COMP *cpi,
                                         16, &ssz);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       thissse += ssz;
-      thisrate += cost_coeffs(x, 0, k, ta + (k & 1), tl + (k >> 1), TX_4X4,
+      thisrate += cost_coeffs(x, 0, k, ta + (k & 1), tl + (k >> 1),
+#if CONFIG_VAR_TX
+                              coeff_ctx,
+#endif
+                              TX_4X4,
                               so->scan, so->neighbors,
                               cpi->sf.use_fast_coef_costing);
       rd1 = RDCOST(x->rdmult, x->rddiv, thisrate, thisdistortion >> 2);
@@ -2970,13 +3165,19 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
     // Y cost and distortion
     vp10_subtract_plane(x, bsize, 0);
-
+#if CONFIG_VAR_TX
+    if (cm->tx_mode == TX_MODE_SELECT) {
+      inter_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
+                      bsize, ref_best_rd);
+    } else {
+      super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
+                      bsize, ref_best_rd);
+      for (i = 0; i < 64; ++i)
+        mbmi->inter_tx_size[i] = mbmi->tx_size;
+    }
+#else
     super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                     bsize, ref_best_rd);
-
-#if CONFIG_VAR_TX
-    for (i = 0; i < 64; ++i)
-      mbmi->inter_tx_size[i] = mbmi->tx_size;
 #endif
 
     if (*rate_y == INT_MAX) {
