@@ -2848,7 +2848,7 @@ void vp10_encode_frame(VP10_COMP *cpi) {
       }
     }
 
-    if (cm->tx_mode == TX_MODE_SELECT) {
+    if (cm->tx_mode == TX_MODE_SELECT && 0) {
       int count4x4 = 0;
       int count8x8_lp = 0, count8x8_8x8p = 0;
       int count16x16_16x16p = 0, count16x16_lp = 0;
@@ -2974,8 +2974,18 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     if (cm->tx_mode == TX_MODE_SELECT &&
         mbmi->sb_type >= BLOCK_8X8  &&
         !(is_inter_block(mbmi) && (mbmi->skip || seg_skip))) {
+#if CONFIG_VAR_TX && 0
+      int tx_size_ctx = get_tx_size_context(xd);
+      if (is_inter_block(mbmi))
+        inter_block_tx_count_update(cm, xd, mbmi, bsize,
+                                    tx_size_ctx, &td->counts->tx);
+      else
+        ++get_tx_counts(max_txsize_lookup[bsize], get_tx_size_context(xd),
+                        &td->counts->tx)[mbmi->tx_size];
+#else
       ++get_tx_counts(max_txsize_lookup[bsize], get_tx_size_context(xd),
                       &td->counts->tx)[mbmi->tx_size];
+#endif
     } else {
       int x, y;
       TX_SIZE tx_size;

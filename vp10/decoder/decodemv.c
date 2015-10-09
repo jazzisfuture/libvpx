@@ -668,6 +668,8 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
                            idy, idx, r);
     if (xd->counts) {
       const int ctx = get_tx_size_context(xd);
+//      inter_block_tx_count_update(cm, xd, mbmi, bsize,
+//                                  ctx, &xd->counts->tx);
       ++get_tx_counts(max_tx_size, ctx, &xd->counts->tx)[mbmi->tx_size];
     }
   } else {
@@ -731,7 +733,6 @@ void vp10_read_mode_info(VP10Decoder *const pbi, MACROBLOCKD *xd,
     read_intra_frame_mode_info(cm, xd, mi_row, mi_col, r);
   } else {
     read_inter_frame_mode_info(pbi, xd, mi_row, mi_col, r);
-
     for (h = 0; h < y_mis; ++h) {
       MV_REF *const frame_mv = frame_mvs + h * cm->mi_cols;
       for (w = 0; w < x_mis; ++w) {
