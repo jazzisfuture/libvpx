@@ -3232,6 +3232,7 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
     // update_base_skip_probs(cpi);
 
     vpx_clear_system_state();
+    cpi->dummy_writing = 0;
 
     // Dummy pack of the bitstream using up to date stats to get an
     // accurate estimate of output frame size to determine if we need
@@ -3640,6 +3641,7 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   loopfilter_frame(cpi, cm);
 
   // build the bitstream
+  cpi->dummy_writing = 0;
   vp10_pack_bitstream(cpi, dest, size);
 
   if (cm->seg.update_map)

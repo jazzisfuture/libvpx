@@ -556,6 +556,13 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
     write_mb_modes_kf(cm, xd, xd->mi, w);
   } else {
     pack_inter_mode_mvs(cpi, m, w);
+
+    if (cpi->dummy_writing == 0) {
+      FILE *pf = fopen("enc_modes.txt", "a");
+      fprintf(pf, "frame %d, pos (%d, %d), range %d\n",
+              cm->current_video_frame, mi_row, mi_col, w->range);
+      fclose(pf);
+    }
   }
 
   assert(*tok < tok_end);

@@ -492,6 +492,8 @@ typedef struct VP10_COMP {
   VPxWorker *workers;
   struct EncWorkerData *tile_thr_data;
   VP9LfSync lf_row_sync;
+
+  int dummy_writing;
 } VP10_COMP;
 
 void vp10_initialize_enc(void);

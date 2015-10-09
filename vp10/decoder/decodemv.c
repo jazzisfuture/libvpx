@@ -668,7 +668,9 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
                            idy, idx, r);
     if (xd->counts) {
       const int ctx = get_tx_size_context(xd);
-      ++get_tx_counts(max_tx_size, ctx, &xd->counts->tx)[mbmi->tx_size];
+      inter_block_tx_count_update(cm, xd, mbmi, bsize,
+                                  ctx, &xd->counts->tx);
+//      ++get_tx_counts(max_tx_size, ctx, &xd->counts->tx)[mbmi->tx_size];
     }
   } else {
     mbmi->tx_size = read_tx_size(cm, xd, !mbmi->skip || !inter_block, r);
@@ -731,6 +733,14 @@ void vp10_read_mode_info(VP10Decoder *const pbi, MACROBLOCKD *xd,
     read_intra_frame_mode_info(cm, xd, mi_row, mi_col, r);
   } else {
     read_inter_frame_mode_info(pbi, xd, mi_row, mi_col, r);
+
+    {
+      FILE *pf = fopen("dec_modes.txt", "a");
+      fprintf(pf, "frame %d, pos (%d, %d), range %d\n",
+              cm->current_video_frame, mi_row, mi_col, r->range);
+      fclose(pf);
+    }
+
 
     for (h = 0; h < y_mis; ++h) {
       MV_REF *const frame_mv = frame_mvs + h * cm->mi_cols;
