@@ -32,11 +32,6 @@ extern "C" {
 
 #define MAX_MB_PLANE 3
 
-#if CONFIG_EXT_TX
-#define GET_TX_TYPES(tx_size) \
-    ((tx_size) >= TX_32X32 ? 1 : TX_TYPES)
-#endif  // CONFIG_EXT_TX
-
 typedef enum {
   KEY_FRAME = 0,
   INTER_FRAME = 1,
@@ -228,6 +223,79 @@ static const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
   ADST_DCT,   // D63
   ADST_ADST,  // TM
 };
+
+#if CONFIG_EXT_TX
+static INLINE int get_ext_tx_types(TX_SIZE tx_size, BLOCK_SIZE bs,
+                                   int is_inter) {
+  (void) bs;
+  (void) is_inter;
+  if (tx_size >= TX_32X32 || bs < BLOCK_8X8) return 1;
+  else return (int)TX_TYPES;
+}
+
+static INLINE int use_ext_tx(TX_SIZE tx_size, BLOCK_SIZE bs) {
+  return (get_ext_tx_types(tx_size, bs, 0) > 1 ||
+          get_ext_tx_types(tx_size, bs, 1) > 1);
+}
+
+static const int use_intra_ext_tx_type_for_tx[TX_SIZES] = {
+  1, 1, 1, 0,
+};
+
+static const int use_inter_ext_tx_type_for_tx[TX_SIZES] = {
+  1, 1, 1, 0,
+};
+
+static const int use_inter_ext_tx_type2_for_tx[TX_SIZES] = {
+  1, 1, 1, 0,
+};
+
+static const int use_inter_ext_tx_type10_for_tx[TX_SIZES] = {
+  1, 1, 1, 0,
+};
+
+static const TX_TYPE ext_tx_types1[] = {
+  DCT_DCT,
+};
+
+static const TX_TYPE ext_tx_types2[] = {
+  DCT_DCT,
+  IDTX
+};
+
+static const TX_TYPE ext_tx_types10[] = {
+  DCT_DCT,
+  ADST_DCT,
+  DCT_ADST,
+  ADST_ADST,
+  FLIPADST_DCT,
+  DCT_FLIPADST,
+  FLIPADST_FLIPADST,
+  ADST_FLIPADST,
+  FLIPADST_ADST,
+  IDTX
+};
+
+static const TX_TYPE ext_tx_types[] = {
+  DCT_DCT,
+  ADST_DCT,
+  DCT_ADST,
+  ADST_ADST,
+  FLIPADST_DCT,
+  DCT_FLIPADST,
+  FLIPADST_FLIPADST,
+  ADST_FLIPADST,
+  FLIPADST_ADST,
+  DST_DCT,
+  DCT_DST,
+  DST_ADST,
+  ADST_DST,
+  DST_FLIPADST,
+  FLIPADST_DST,
+  DST_DST,
+  IDTX
+};
+#endif  // CONFIG_EXT_TX
 
 static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
                                   const MACROBLOCKD *xd,
