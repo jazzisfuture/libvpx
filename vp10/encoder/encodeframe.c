@@ -2989,13 +2989,22 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     ++td->counts->tx.tx_totals[mbmi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mbmi, &xd->plane[1])];
 #if CONFIG_EXT_TX
-    if (mbmi->tx_size <= TX_16X16 && cm->base_qindex > 0 &&
-        bsize >= BLOCK_8X8 && !mbmi->skip &&
+    if (use_ext_tx(mbmi->tx_size, bsize) &&
+        cm->base_qindex > 0 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      if (is_inter_block(mbmi))
-        ++td->counts->inter_tx_type[mbmi->tx_size][mbmi->tx_type];
-      else
-        ++td->counts->intra_tx_type[mbmi->tx_size][mbmi->mode][mbmi->tx_type];
+      int num_tx_types = get_ext_tx_types(mbmi->tx_size, bsize,
+                                          is_inter_block(mbmi));
+      if (is_inter_block(mbmi)) {
+        if (num_tx_types == TX_TYPES)
+          ++td->counts->inter_tx_type[mbmi->tx_size][mbmi->tx_type];
+        else if (num_tx_types == 10)
+          ++td->counts->inter_tx_type10[mbmi->tx_size][mbmi->tx_type];
+        else if (num_tx_types == 2)
+          ++td->counts->inter_tx_type2[mbmi->tx_size][mbmi->tx_type];
+      } else {
+        if (num_tx_types == TX_TYPES)
+          ++td->counts->intra_tx_type[mbmi->tx_size][mbmi->mode][mbmi->tx_type];
+      }
     }
 #endif  // CONFIG_EXT_TX
   }
