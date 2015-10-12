@@ -1357,6 +1357,37 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
   }
 }
 
+static void get_training_data(int plane, int block, int blk_row, int blk_col,
+                              BLOCK_SIZE plane_bsize,
+                              TX_SIZE tx_size, void *arg) {
+  struct encode_b_args *const args = arg;
+  MACROBLOCK *const x = args->x;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  struct macroblock_plane *const p = &x->plane[plane];
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
+  TX_TYPE tx_type = get_tx_type(plane_type, xd, block, tx_size);
+
+  uint8_t *dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
+  const int dst_stride = pd->dst.stride;
+  const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+  const int16_t *src_diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
+
+  switch (tx_size) {
+    case TX_4X4:
+      printf("4x4   TX_TYPE %d, plane %d\n", tx_type, plane_type);
+      break;
+    case TX_8X8:
+      printf("8x8   TX_TYPE %d, plane %d\n", tx_type, plane_type);
+      break;
+    case TX_16X16:
+      printf("16x16 TX_TYPE %d, plane %d\n", tx_type, plane_type);
+      break;
+    default:
+      break;
+  }
+}
+
 static void encode_block(int plane, int block, int blk_row, int blk_col,
                          BLOCK_SIZE plane_bsize,
                          TX_SIZE tx_size, void *arg) {
@@ -1613,6 +1644,33 @@ void vp10_encode_sby_pass1(MACROBLOCK *x, BLOCK_SIZE bsize) {
   vp10_subtract_plane(x, bsize, 0);
   vp10_foreach_transformed_block_in_plane(&x->e_mbd, bsize, 0,
                                           encode_block_pass1, x);
+}
+
+void vp10_get_training_data(MACROBLOCK *x, BLOCK_SIZE bsize) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  struct optimize_ctx ctx;
+  MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
+  struct encode_b_args arg = {x, &ctx, &mbmi->skip};
+  int plane;
+
+  mbmi->skip = 1;
+
+  if (x->skip)
+    return;
+
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    struct macroblock_plane *const p = &x->plane[plane];
+    const struct macroblockd_plane *const pd = &x->e_mbd.plane[plane];
+    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
+    const int bw = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+    const int bh = 4 * num_4x4_blocks_high_lookup[plane_bsize];
+
+    if (!x->skip_recode)
+      vp10_subtract_plane(x, bsize, plane);
+
+    vp10_foreach_transformed_block_in_plane(xd, bsize, plane,
+                                            get_training_data, &arg);
+  }
 }
 
 void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {

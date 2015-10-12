@@ -51,6 +51,8 @@ void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
                               int diff_stride, TX_TYPE tx_type, int lossless);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+void vp10_get_training_data(MACROBLOCK *x, BLOCK_SIZE bsize);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
