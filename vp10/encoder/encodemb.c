@@ -709,6 +709,9 @@ static void fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
     case DCT_DCT:
       fdct32x32(rd_transform, src_diff, coeff, diff_stride);
       break;
+    case IDTX:
+      fwd_idtx_c(src_diff, coeff, diff_stride, 32);
+      break;
     case ADST_DCT:
     case DCT_ADST:
     case ADST_ADST:
@@ -726,6 +729,9 @@ static void fwd_txfm_32x32_1(const int16_t *src_diff,
   switch (tx_type) {
     case DCT_DCT:
       vpx_fdct32x32_1(src_diff, coeff, diff_stride);
+      break;
+    case IDTX:
+      fwd_idtx_c(src_diff, coeff, diff_stride, 32);
       break;
     case ADST_DCT:
     case DCT_ADST:
@@ -1056,6 +1062,9 @@ static void highbd_fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
     case DCT_DCT:
       highbd_fdct32x32(rd_transform, src_diff, coeff, diff_stride);
       break;
+    case IDTX:
+      fwd_idtx_c(src_diff, coeff, diff_stride, 32);
+      break;
     case ADST_DCT:
     case DCT_ADST:
     case ADST_ADST:
@@ -1073,6 +1082,9 @@ static void highbd_fwd_txfm_32x32_1(const int16_t *src_diff,
   switch (tx_type) {
     case DCT_DCT:
       vpx_highbd_fdct32x32_1(src_diff, coeff, diff_stride);
+      break;
+    case IDTX:
+      fwd_idtx_c(src_diff, coeff, diff_stride, 32);
       break;
     case ADST_DCT:
     case DCT_ADST:
