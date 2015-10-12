@@ -358,11 +358,14 @@ void vp10_highbd_iht16x16_256_add_c(const tran_low_t *input, uint8_t *dest8,
   }
 }
 
-#define OLD_DCT 0
+#define OLD_DCT_32 0
+#define OLD_DCT_16 0
+#define OLD_DCT_8 0
+#define OLD_DCT_4 0
 // idct
 void vp10_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd) {
-#if OLD_DCT
+#if OLD_DCT_4
   if (eob > 1)
     vpx_highbd_idct4x4_16_add(input, dest, stride, bd);
   else
@@ -384,7 +387,7 @@ void vp10_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
 
 void vp10_highbd_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd) {
-#if OLD_DCT
+#if OLD_DCT_8
   // If dc is 1, then input[0] is the reconstructed value, do not need
   // dequantization. Also, when dc is 1, dc is counted in eobs, namely eobs >=1.
 
@@ -408,7 +411,7 @@ void vp10_highbd_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
 
 void vp10_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
                               int stride, int eob, int bd) {
-#if OLD_DCT
+#if OLD_DCT_16
   // The calculation can be simplified if there are not many non-zero dct
   // coefficients. Use eobs to separate different cases.
   // DC only DCT coefficient.
@@ -427,7 +430,7 @@ void vp10_highbd_idct16x16_add(const tran_low_t *input, uint8_t *dest,
 
 void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
                               int stride, int eob, int bd) {
-#if OLD_DCT
+#if OLD_DCT_32 
   // Non-zero coeff only in upper-left 8x8
   if (eob == 1) {
     vpx_highbd_idct32x32_1_add(input, dest, stride, bd);
