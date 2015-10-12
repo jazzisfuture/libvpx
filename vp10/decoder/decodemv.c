@@ -246,12 +246,14 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
   mbmi->uv_mode = read_intra_mode(r, vp10_kf_uv_mode_prob[mbmi->mode]);
 
 #if CONFIG_EXT_TX
-    if (mbmi->tx_size <= TX_16X16 && cm->base_qindex > 0 &&
-        mbmi->sb_type >= BLOCK_8X8 && !mbmi->skip &&
+    if (use_ext_tx(mbmi->tx_size, mbmi->sb_type) &&
+        cm->base_qindex > 0 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      mbmi->tx_type =
-          vpx_read_tree(r, vp10_tx_type_tree,
-                        cm->fc->intra_tx_type_prob[mbmi->tx_size][mbmi->mode]);
+      int num_tx_types = get_ext_tx_types(mbmi->tx_size, mbmi->sb_type, 0);
+      if (num_tx_types == TX_TYPES)
+        mbmi->tx_type =
+            vpx_read_tree(r, vp10_tx_type_tree,
+                          cm->fc->intra_tx_type_prob[mbmi->tx_size][mbmi->mode]);
     } else {
       mbmi->tx_type = DCT_DCT;
     }
@@ -614,25 +616,44 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
     read_intra_block_mode_info(cm, xd, mi, r);
 
 #if CONFIG_EXT_TX
-    if (mbmi->tx_size <= TX_16X16 && cm->base_qindex > 0 &&
-        mbmi->sb_type >= BLOCK_8X8 && !mbmi->skip &&
+    if (use_ext_tx(mbmi->tx_size, mbmi->sb_type) &&
+        cm->base_qindex > 0 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+      int num_tx_types = get_ext_tx_types(mbmi->tx_size, mbmi->sb_type,
+                                          inter_block);
       FRAME_COUNTS *counts = xd->counts;
 
-      if (inter_block)
-        mbmi->tx_type =
-            vpx_read_tree(r, vp10_tx_type_tree,
-                          cm->fc->inter_tx_type_prob[mbmi->tx_size]);
-      else
-        mbmi->tx_type = vpx_read_tree(r, vp10_tx_type_tree,
-                                      cm->fc->intra_tx_type_prob
-                                      [mbmi->tx_size][mbmi->mode]);
-
-      if (counts) {
-        if (inter_block)
-          ++counts->inter_tx_type[mbmi->tx_size][mbmi->tx_type];
-        else
-          ++counts->intra_tx_type[mbmi->tx_size][mbmi->mode][mbmi->tx_type];
+      if (inter_block) {
+        if (num_tx_types == TX_TYPES) {
+          mbmi->tx_type =
+              vpx_read_tree(r, vp10_tx_type_tree,
+                            cm->fc->inter_tx_type_prob[mbmi->tx_size]);
+          if (counts)
+            ++counts->inter_tx_type[mbmi->tx_size][mbmi->tx_type];
+        } else if (num_tx_types == 10) {
+          mbmi->tx_type =
+              vpx_read_tree(r, vp10_tx_type10_tree,
+                            cm->fc->inter_tx_type10_prob[mbmi->tx_size]);
+          if (counts)
+            ++counts->inter_tx_type10[mbmi->tx_size][mbmi->tx_type];
+        } else if (num_tx_types == 2) {
+          mbmi->tx_type =
+              vpx_read_tree(r, vp10_tx_type2_tree,
+                            cm->fc->inter_tx_type2_prob[mbmi->tx_size]);
+          if (mbmi->tx_type != DCT_DCT)
+            printf("Frame %d/%d: [%d %d]: tx_type %d\n",
+                   cm->current_video_frame, cm->show_frame, mi_row, mi_col, mbmi->tx_type);
+          if (counts)
+            ++counts->inter_tx_type2[mbmi->tx_size][mbmi->tx_type];
+        }
+      } else {
+        if (num_tx_types == TX_TYPES) {
+          mbmi->tx_type = vpx_read_tree(r, vp10_tx_type_tree,
+                                        cm->fc->intra_tx_type_prob
+                                        [mbmi->tx_size][mbmi->mode]);
+          if (counts)
+            ++counts->intra_tx_type[mbmi->tx_size][mbmi->mode][mbmi->tx_type];
+        }
       }
     } else {
       mbmi->tx_type = DCT_DCT;

@@ -32,11 +32,6 @@ extern "C" {
 
 #define MAX_MB_PLANE 3
 
-#if CONFIG_EXT_TX
-#define GET_TX_TYPES(tx_size) \
-    ((tx_size) >= TX_32X32 ? 1 : TX_TYPES)
-#endif  // CONFIG_EXT_TX
-
 typedef enum {
   KEY_FRAME = 0,
   INTER_FRAME = 1,
@@ -229,6 +224,57 @@ static const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
   ADST_ADST,  // TM
 };
 
+#if CONFIG_EXT_TX
+#define USE_IDTX_FOR_32X32 1
+static INLINE int get_ext_tx_types(TX_SIZE tx_size, BLOCK_SIZE bs,
+                                   int is_inter) {
+  if (tx_size > TX_32X32 || bs < BLOCK_8X8) return 1;
+  if (tx_size == TX_32X32) return 1 + USE_IDTX_FOR_32X32 * is_inter;
+  return TX_TYPES;
+}
+
+static INLINE int use_ext_tx(TX_SIZE tx_size, BLOCK_SIZE bs) {
+  return (get_ext_tx_types(tx_size, bs, 0) > 1 ||
+          get_ext_tx_types(tx_size, bs, 1) > 1);
+}
+
+static const int use_intra_ext_tx_type_for_tx[TX_SIZES] = {
+  1, 1, 1, 0,
+};
+
+static const int use_inter_ext_tx_type_for_tx[TX_SIZES] = {
+  1, 1, 1, 0,
+};
+
+static const int use_inter_ext_tx_type2_for_tx[TX_SIZES] = {
+  0, 0, 0, USE_IDTX_FOR_32X32,
+};
+
+static const int use_inter_ext_tx_type10_for_tx[TX_SIZES] = {
+  0, 0, 0, 0,
+};
+
+static const int ext_tx_type1_used[TX_TYPES] = {
+  1, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 1
+};
+
+static const int ext_tx_type2_used[TX_TYPES] = {
+  1, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 1
+};
+
+static const int ext_tx_type10_used[TX_TYPES] = {
+  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 0, 0, 0, 0, 0, 0, 0, 1
+};
+
+static const int ext_tx_type_used[TX_TYPES] = {
+  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 1
+};
+#endif  // CONFIG_EXT_TX
+
 static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
                                   const MACROBLOCKD *xd,
                                   int block_idx, TX_SIZE tx_size) {
@@ -236,16 +282,27 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
 
 #if CONFIG_EXT_TX
+#if USE_IDTX_FOR_32X32
+  if (xd->lossless || tx_size > TX_32X32 ||
+      (tx_size >= TX_32X32 && !is_inter_block(mbmi)))
+
+#else
   if (xd->lossless || tx_size >= TX_32X32)
+#endif
     return DCT_DCT;
   if (mbmi->sb_type >= BLOCK_8X8) {
-    if (plane_type == PLANE_TYPE_Y || is_inter_block(mbmi))
+    if (plane_type == PLANE_TYPE_Y)
       return mbmi->tx_type;
+    if (is_inter_block(mbmi)) {
+      // UV Inter only
+      return (mbmi->tx_type != IDTX ? mbmi->tx_type : DCT_DCT);
+    }
   }
 
-  if (is_inter_block(mbmi))
+  // Sub8x8-Inter/Intra OR UV-Intra
+  if (is_inter_block(mbmi))  // Sub8x8-Inter
     return DCT_DCT;
-  else
+  else  // Sub8x8 Intra OR UV-Intra
     return intra_mode_to_tx_type_lookup[plane_type == PLANE_TYPE_Y ?
         get_y_mode(mi, block_idx) : mbmi->uv_mode];
 #else

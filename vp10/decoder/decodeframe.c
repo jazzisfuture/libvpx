@@ -2072,16 +2072,34 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
 static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
   int i, j, k;
   if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
-    for (i = TX_4X4; i <= TX_16X16; ++i)
+    for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+      if (!use_inter_ext_tx_type_for_tx[i]) continue;
       for (j = 0; j < TX_TYPES - 1; ++j)
         vp10_diff_update_prob(r, &fc->inter_tx_type_prob[i][j]);
+    }
+  }
+  if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+    for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+      if (!use_inter_ext_tx_type10_for_tx[i]) continue;
+      for (j = 0; j < TX_TYPES_10 - 1; ++j)
+        vp10_diff_update_prob(r, &fc->inter_tx_type10_prob[i][j]);
+    }
+  }
+  if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+    for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+      if (!use_inter_ext_tx_type2_for_tx[i]) continue;
+      for (j = 0; j < TX_TYPES_2 - 1; ++j)
+        vp10_diff_update_prob(r, &fc->inter_tx_type2_prob[i][j]);
+    }
   }
 
   if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
-    for (i = TX_4X4; i <= TX_16X16; ++i)
+    for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+      if (!use_intra_ext_tx_type_for_tx[i]) continue;
       for (j = 0; j < INTRA_MODES; ++j)
         for (k = 0; k < TX_TYPES - 1; ++k)
           vp10_diff_update_prob(r, &fc->intra_tx_type_prob[i][j][k]);
+    }
   }
 }
 #endif  // CONFIG_EXT_TX
@@ -2183,8 +2201,14 @@ static void debug_check_frame_counts(const VP10_COMMON *const cm) {
   assert(!memcmp(cm->counts.skip, zero_counts.skip, sizeof(cm->counts.skip)));
   assert(!memcmp(&cm->counts.mv, &zero_counts.mv, sizeof(cm->counts.mv)));
 #if CONFIG_EXT_TX
-  assert(!memcmp(cm->counts.ext_tx, zero_counts.ext_tx,
-                 sizeof(cm->counts.ext_tx)));
+  assert(!memcmp(cm->counts.inter_tx_type, zero_counts.inter_tx_type,
+                 sizeof(cm->counts.inter_tx_type)));
+  assert(!memcmp(cm->counts.inter_tx_type2, zero_counts.inter_tx_type2,
+                 sizeof(cm->counts.inter_tx_type2)));
+  assert(!memcmp(cm->counts.inter_tx_type10, zero_counts.inter_tx_type10,
+                 sizeof(cm->counts.inter_tx_type10)));
+  assert(!memcmp(cm->counts.intra_tx_type, zero_counts.intra_tx_type,
+                 sizeof(cm->counts.intra_tx_type)));
 #endif  // CONFIG_EXT_TX
 }
 #endif  // NDEBUG
