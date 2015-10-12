@@ -2960,6 +2960,11 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
 
     vp10_build_inter_predictors_sbuv(xd, mi_row, mi_col,
                                      VPXMAX(bsize, BLOCK_8X8));
+#ifdef GET_TRAINING_DATA
+    if (output_enabled && cm->show_frame) {
+      vp10_get_training_data(x, VPXMAX(bsize, BLOCK_8X8));
+    }
+#endif
 
     vp10_encode_sb(x, VPXMAX(bsize, BLOCK_8X8));
 #if CONFIG_VAR_TX
