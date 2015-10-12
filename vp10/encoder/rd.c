@@ -85,12 +85,21 @@ static void fill_mode_costs(VP10_COMP *cpi) {
     vp10_cost_tokens(cpi->switchable_interp_costs[i],
                     fc->switchable_interp_prob[i], vp10_switchable_interp_tree);
 #if CONFIG_EXT_TX
-  for (i = TX_4X4; i <= TX_16X16; ++i) {
-    vp10_cost_tokens(cpi->inter_tx_type_costs[i], fc->inter_tx_type_prob[i],
-                     vp10_tx_type_tree);
-    for (j = 0; j < INTRA_MODES; ++j)
-      vp10_cost_tokens(cpi->intra_tx_type_costs[i][j],
-                       fc->intra_tx_type_prob[i][j], vp10_tx_type_tree);
+  for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+    if (use_inter_ext_tx_type_for_tx[i])
+      vp10_cost_tokens(cpi->inter_tx_type_costs[i], fc->inter_tx_type_prob[i],
+                       vp10_tx_type_tree);
+    if (use_inter_ext_tx_type10_for_tx[i])
+      vp10_cost_tokens(cpi->inter_tx_type10_costs[i], fc->inter_tx_type10_prob[i],
+                       vp10_tx_type10_tree);
+    if (use_inter_ext_tx_type2_for_tx[i])
+      vp10_cost_tokens(cpi->inter_tx_type2_costs[i], fc->inter_tx_type2_prob[i],
+                       vp10_tx_type2_tree);
+    if (use_intra_ext_tx_type_for_tx[i]) {
+      for (j = 0; j < INTRA_MODES; ++j)
+        vp10_cost_tokens(cpi->intra_tx_type_costs[i][j],
+                         fc->intra_tx_type_prob[i][j], vp10_tx_type_tree);
+    }
   }
 #endif  // CONFIG_EXT_TX
 }

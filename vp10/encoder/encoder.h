@@ -460,6 +460,8 @@ typedef struct VP10_COMP {
   int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
 #if CONFIG_EXT_TX
   int inter_tx_type_costs[EXT_TX_SIZES][TX_TYPES];
+  int inter_tx_type10_costs[EXT_TX_SIZES][TX_TYPES];
+  int inter_tx_type2_costs[EXT_TX_SIZES][TX_TYPES];
   int intra_tx_type_costs[EXT_TX_SIZES][INTRA_MODES][TX_TYPES];
 #endif  // CONFIG_EXT_TX
 
