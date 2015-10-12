@@ -102,3 +102,5 @@ cglobal fwht4x4, 3, 4, 8, input, output, stride
 %endif
 
   RET
+
+END

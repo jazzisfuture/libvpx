@@ -299,3 +299,5 @@ cglobal idct8x8_12_add, 3, 5, 13, input, output, stride
   RET
 
 %endif
+
+END

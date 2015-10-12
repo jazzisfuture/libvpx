@@ -222,6 +222,11 @@
 ; REP_RET:
 ; Use this instead of RET if it's a branch target.
 
+; END:
+; Use this as the last statement in a source file. This will set function
+; symbol sizes on ELF targets, which enables more precise profiling with tools
+; like perf and callgrind.
+
 ; registers:
 ; rN and rNq are the native-size register holding function argument N
 ; rNd, rNw, rNb are dword, word, and byte size
@@ -760,6 +765,7 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
     cglobal_internal 0, %1 %+ SUFFIX, %2
 %endmacro
 %macro cglobal_internal 2-3+
+    end_current_function
     %if %1
         %xdefine %%FUNCTION_PREFIX private_prefix
         ; libvpx explicitly sets visibility in shared object builds. Avoid
@@ -780,6 +786,7 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
         CAT_XDEFINE cglobaled_, %2, 1
     %endif
     %xdefine current_function %2
+    %xdefine current_function_sect __SECT__
     %ifidn __OUTPUT_FORMAT__,elf32
         global %2:function %%VISIBILITY
     %elifidn __OUTPUT_FORMAT__,elf64
@@ -835,6 +842,37 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
         global %1
     %endif
     %1: %2
+%endmacro
+
+%macro END 0
+    end_current_function
+%endmacro
+
+; Clear up the previous function definition
+%macro end_current_function 0
+  %ifdef current_function
+    %ifndef current_function_sect
+      %error current_function is defined but current_function_sect is not
+    %endif
+
+    ; Change to the section that the current function was declared in.
+    current_function_sect
+
+    ; Macro local 'End of Current Function' label
+    %%ecf:
+
+    ; Set the size of the function symbol on ELF targets.
+    %ifidn __OUTPUT_FORMAT__,elf32
+      size current_function %%ecf - current_function
+    %elifidn __OUTPUT_FORMAT__,elf64
+      size current_function %%ecf - current_function
+    %endif
+
+    ; Change back to whatever section we were in.
+    __SECT__
+    %undef current_function
+    %undef current_function_sect
+  %endif
 %endmacro
 
 ; This is needed for ELF, otherwise the GNU linker assumes the stack is

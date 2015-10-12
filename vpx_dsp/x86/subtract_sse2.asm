@@ -125,3 +125,5 @@ INIT_MMX
   sub                rowsd, 2
   jg .loop_4
   RET
+
+END

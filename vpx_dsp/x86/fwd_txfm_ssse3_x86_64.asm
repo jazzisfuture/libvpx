@@ -181,3 +181,5 @@ cglobal fdct8x8, 3, 5, 13, input, output, stride
 
   RET
 %endif
+
+END

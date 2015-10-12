@@ -101,3 +101,5 @@ cglobal iwht4x4_16_add, 3, 3, 7, input, output, stride
   ADD_STORE_4P_2X  2, 3, 5, 6, 4
 
   RET
+
+END

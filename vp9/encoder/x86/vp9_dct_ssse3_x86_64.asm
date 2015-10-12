@@ -119,3 +119,5 @@ cglobal hadamard_8x8, 3, 5, 10, input, stride, output
 
   RET
 %endif
+
+END

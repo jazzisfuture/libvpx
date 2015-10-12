@@ -265,3 +265,5 @@ SAD4XN  8 ; sad4x8_sse
 SAD4XN  4 ; sad4x4_sse
 SAD4XN  8, 1 ; sad4x8_avg_sse
 SAD4XN  4, 1 ; sad4x4_avg_sse
+
+END

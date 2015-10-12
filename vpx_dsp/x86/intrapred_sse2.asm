@@ -665,3 +665,5 @@ cglobal tm_predictor_32x32, 4, 4, 10, dst, stride, above, left
   jnz .loop
   REP_RET
 %endif
+
+END

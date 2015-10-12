@@ -199,3 +199,5 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
 INIT_XMM ssse3
 QUANTIZE_FP fp, 7
 QUANTIZE_FP fp_32x32, 7
+
+END

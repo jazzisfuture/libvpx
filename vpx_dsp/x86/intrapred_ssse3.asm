@@ -1034,3 +1034,5 @@ cglobal d207_predictor_32x32, 4, 5, 8, dst, stride, stride3, left, goffset
   ; done!
   RESTORE_GOT
   RET
+
+END

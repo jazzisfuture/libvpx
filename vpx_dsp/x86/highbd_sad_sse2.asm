@@ -361,3 +361,5 @@ HIGH_SAD8XN  4 ; highbd_sad8x4_sse2
 HIGH_SAD8XN 16, 1 ; highbd_sad8x16_avg_sse2
 HIGH_SAD8XN  8, 1 ; highbd_sad8x8_avg_sse2
 HIGH_SAD8XN  4, 1 ; highbd_sad8x4_avg_sse2
+
+END

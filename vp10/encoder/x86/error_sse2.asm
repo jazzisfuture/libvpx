@@ -120,3 +120,5 @@ cglobal block_error_fp, 3, 3, 6, uqc, dqc, size
   movd    edx, m5
 %endif
   RET
+
+END

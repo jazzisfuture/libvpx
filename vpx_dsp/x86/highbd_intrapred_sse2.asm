@@ -474,3 +474,5 @@ cglobal highbd_tm_predictor_32x32, 5, 6, 12, dst, stride, above, left, bps, one
   jnz .loop
   REP_RET
 %endif
+
+END
