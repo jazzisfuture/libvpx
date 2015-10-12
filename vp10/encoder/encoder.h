@@ -46,6 +46,8 @@
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx_util/vpx_thread.h"
 
+#define GET_TRAINING_DATA
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -492,6 +494,8 @@ typedef struct VP10_COMP {
   VPxWorker *workers;
   struct EncWorkerData *tile_thr_data;
   VP9LfSync lf_row_sync;
+
+  FILE *training_fp[3];
 } VP10_COMP;
 
 void vp10_initialize_enc(void);
