@@ -1355,7 +1355,12 @@ void vp10_pack_bitstream(VP10_COMP *const cpi, uint8_t *dest, size_t *size) {
   struct vpx_write_bit_buffer saved_wb;
   unsigned int max_tile, data_sz;
   const int n_log2_tiles = cm->log2_tile_rows + cm->log2_tile_cols;
+#if CONFIG_MISC_FIXES
   const int have_tiles = n_log2_tiles > 0;
+#else
+  const int have_tiles = 0;  // we have tiles, but we don't want to write a
+                             // tile size marker in the header
+#endif
 
   write_uncompressed_header(cpi, &wb);
   saved_wb = wb;
