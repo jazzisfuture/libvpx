@@ -728,8 +728,18 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
     %rep %0
         %macro %1 1-2 %1
             %2 %1
-            %%branch_instr:
-            %xdefine last_branch_adr %%branch_instr
+            ; Only emit these macro local symbols on affected processor
+            ; architectures, as it pollutes the symbol table, and yasm
+            ; generates debug info that associates instructions in the code
+            ; to this symbol, rather than the containing function, which
+            ; is confusing for profilers and other tools.
+            %ifndef cpuflags
+                %%branch_instr:
+                %xdefine last_branch_adr %%branch_instr
+            %elif notcpuflag(ssse3)
+                %%branch_instr:
+                %xdefine last_branch_adr %%branch_instr
+            %endif
         %endmacro
         %rotate 1
     %endrep
