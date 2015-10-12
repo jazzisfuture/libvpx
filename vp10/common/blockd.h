@@ -12,6 +12,7 @@
 #ifndef VP10_COMMON_BLOCKD_H_
 #define VP10_COMMON_BLOCKD_H_
 
+#include <stdio.h>
 #include "./vpx_config.h"
 
 #include "vpx_dsp/vpx_dsp_common.h"
@@ -352,6 +353,7 @@ typedef struct macroblockd {
   int corrupted;
 
   struct vpx_internal_error_info *error_info;
+  FILE *training_fp[3];
 } MACROBLOCKD;
 
 static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,

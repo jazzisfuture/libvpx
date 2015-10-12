@@ -445,6 +445,23 @@ static void dealloc_compressor_data(VP10_COMP *cpi) {
     vpx_free(cpi->source_diff_var);
     cpi->source_diff_var = NULL;
   }
+#ifdef GET_TRAINING_DATA
+  if (cpi->training_fp[0]) {
+    fclose(cpi->training_fp[0]);
+    printf("File closed 0.\n");
+    cpi->training_fp[0] = NULL;
+  }
+  if (cpi->training_fp[1]) {
+    fclose(cpi->training_fp[1]);
+    printf("File closed 1.\n");
+    cpi->training_fp[1] = NULL;
+  }
+  if (cpi->training_fp[2]) {
+    fclose(cpi->training_fp[2]);
+    printf("File closed 2.\n");
+    cpi->training_fp[2] = NULL;
+  }
+#endif
 }
 
 static void save_coding_context(VP10_COMP *cpi) {
@@ -854,6 +871,31 @@ static void init_config(struct VP10_COMP *cpi, VP10EncoderConfig *oxcf) {
 
   cpi->oxcf = *oxcf;
   cpi->framerate = oxcf->init_framerate;
+#ifdef GET_TRAINING_DATA
+  if (cpi->training_fp[0]) {
+    fclose(cpi->training_fp[0]);
+    printf("File closed 0.\n");
+  }
+  cpi->training_fp[0] = fopen("training4x4.dat", "wb");
+  if (cpi->training_fp[0] != NULL)
+    printf("File opened 0.\n");
+
+  if (cpi->training_fp[1]) {
+    fclose(cpi->training_fp[1]);
+    printf("File closed 1.\n");
+  }
+  cpi->training_fp[1] = fopen("training8x8.dat", "wb");
+  if (cpi->training_fp[1] != NULL)
+    printf("File opened 1.\n");
+
+  if (cpi->training_fp[2]) {
+    fclose(cpi->training_fp[2]);
+    printf("File closed 2.\n");
+  }
+  cpi->training_fp[2] = fopen("training16x16.dat", "wb");
+  if (cpi->training_fp[2] != NULL)
+    printf("File opened 2.\n");
+#endif
 
   cm->profile = oxcf->profile;
   cm->bit_depth = oxcf->bit_depth;
@@ -1922,6 +1964,11 @@ void vp10_change_config(struct VP10_COMP *cpi, const VP10EncoderConfig *oxcf) {
 #if CONFIG_VP9_HIGHBITDEPTH
   cpi->td.mb.e_mbd.bd = (int)cm->bit_depth;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+#ifdef GET_TRAINING_DATA
+  cpi->td.mb.e_mbd.training_fp[0] = cpi->training_fp[0];
+  cpi->td.mb.e_mbd.training_fp[1] = cpi->training_fp[1];
+  cpi->td.mb.e_mbd.training_fp[2] = cpi->training_fp[2];
+#endif
 
   if ((oxcf->pass == 0) && (oxcf->rc_mode == VPX_Q)) {
     rc->baseline_gf_interval = FIXED_GF_INTERVAL;
@@ -2909,6 +2956,9 @@ static int recode_loop_test(VP10_COMP *cpi,
   const int frame_is_kfgfarf = frame_is_kf_gf_arf(cpi);
   int force_recode = 0;
 
+#ifdef GET_TRAINING_DATA
+  return 0;
+#endif
   if ((rc->projected_frame_size >= rc->max_frame_bandwidth) ||
       (cpi->sf.recode_loop == ALLOW_RECODE) ||
       (frame_is_kfgfarf &&

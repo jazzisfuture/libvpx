@@ -46,6 +46,8 @@
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx_util/vpx_thread.h"
 
+#define GET_TRAINING_DATA
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -578,6 +580,8 @@ typedef struct VP10_COMP {
 #if CONFIG_ENTROPY
   SUBFRAME_STATS subframe_stats;
 #endif  // CONFIG_ENTROPY
+
+  FILE *training_fp[3];
 } VP10_COMP;
 
 void vp10_initialize_enc(void);
