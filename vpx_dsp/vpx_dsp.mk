@@ -188,6 +188,8 @@ endif  # CONFIG_VP9_ENCODER || CONFIG_VP10_ENCODER
 ifneq ($(filter yes,$(CONFIG_VP9) $(CONFIG_VP10)),)
 DSP_SRCS-yes            += inv_txfm.h
 DSP_SRCS-yes            += inv_txfm.c
+DSP_SRCS-yes            += inv_txfm_135.c
+DSP_SRCS-yes            += inv_txfm_34.c
 DSP_SRCS-$(HAVE_SSE2)   += x86/inv_txfm_sse2.h
 DSP_SRCS-$(HAVE_SSE2)   += x86/inv_txfm_sse2.c
 ifeq ($(CONFIG_USE_X86INC),yes)
