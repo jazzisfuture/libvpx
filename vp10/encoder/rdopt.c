@@ -1250,7 +1250,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
 }
 
 #if CONFIG_VAR_TX
-static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
+static void tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
                           int blk_row, int blk_col, int plane, int block,
                           int plane_bsize, int coeff_ctx,
                           int *rate, int64_t *dist, int64_t *bsse, int *skip) {
@@ -1267,7 +1267,16 @@ static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
   const scan_order *const scan_order =
       get_scan(tx_size, tx_type, is_inter_block(&xd->mi[0]->mbmi));
 
+  BLOCK_SIZE txm_bsize = txsize_to_bsize[tx_size];
+  int bh = 4 * num_4x4_blocks_wide_lookup[txm_bsize];
+  int src_stride = p->src.stride;
+  uint8_t *src = &p->src.buf[4 * blk_row * src_stride + 4 * blk_col];
+  uint8_t *dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
+  DECLARE_ALIGNED(16, uint8_t, rec_buffer[32 * 32]);
+
   vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size);
+  vpx_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
+                    NULL, 0, NULL, 0, bh, bh);
 
 #if CONFIG_VP9_HIGHBITDEPTH
   *dist += vp10_highbd_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
@@ -1352,7 +1361,7 @@ static void select_tx_block(const VP10_COMP *cpi, MACROBLOCK *x,
 
   if (cpi->common.tx_mode == TX_MODE_SELECT || tx_size == TX_4X4) {
     mbmi->inter_tx_size[tx_idx] = tx_size;
-    tx_block_rd_b(x, tx_size, blk_row, blk_col, plane, block,
+    tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
                   plane_bsize, coeff_ctx, rate, dist, bsse, skip);
     if (tx_size > TX_4X4)
       *rate += vp10_cost_bit(128, 0);
@@ -1522,7 +1531,7 @@ static void tx_block_rd(const VP10_COMP *cpi, MACROBLOCK *x,
         break;
     }
     coeff_ctx = combine_entropy_contexts(ta[0], tl[0]);
-    tx_block_rd_b(x, tx_size, blk_row, blk_col, plane, block,
+    tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
                   plane_bsize, coeff_ctx, rate, dist, bsse, skip);
     for (i = 0; i < (1 << tx_size); ++i) {
       ta[i] = !(p->eobs[block] == 0);
