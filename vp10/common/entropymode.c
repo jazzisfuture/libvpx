@@ -416,7 +416,7 @@ default_intra_tx_type_prob[EXT_TX_SIZES][INTRA_MODES][TX_TYPES - 1] = {
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_EXT_INTRA
-static  const vpx_prob default_ext_intra_probs[2] = {246, 246};
+static  const vpx_prob default_ext_intra_probs[2] = {200, 200};
 #endif  // CONFIG_EXT_INTRA
 
 static void init_mode_probs(FRAME_CONTEXT *fc) {
