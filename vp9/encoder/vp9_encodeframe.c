@@ -3897,6 +3897,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_zero(rdc->coef_counts);
   vp9_zero(rdc->comp_pred_diff);
   vp9_zero(rdc->filter_diff);
+  rdc->m_search_count = 0;   // Count of motion search hits.
+  rdc->ex_search_count = 0;  // Exhaustive mesh search hits.
+
 
   xd->lossless = cm->base_qindex == 0 &&
                  cm->y_dc_delta_q == 0 &&
