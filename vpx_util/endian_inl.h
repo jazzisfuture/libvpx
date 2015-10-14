@@ -25,14 +25,10 @@
 # define LOCAL_GCC_PREREQ(maj, min) 0
 #endif
 
-#ifdef __clang__
-# define LOCAL_CLANG_VERSION ((__clang_major__ << 8) | __clang_minor__)
-# define LOCAL_CLANG_PREREQ(maj, min) \
-    (LOCAL_CLANG_VERSION >= (((maj) << 8) | (min)))
-#else
-# define LOCAL_CLANG_VERSION 0
-# define LOCAL_CLANG_PREREQ(maj, min) 0
-#endif  // __clang__
+// handle clang compatibility
+#ifndef __has_builtin
+# define __has_builtin(x) 0
+#endif
 
 // some endian fix (e.g.: mips-gcc doesn't define __BIG_ENDIAN__)
 #if !defined(WORDS_BIGENDIAN) && \
@@ -53,13 +49,14 @@
 #define HToBE32(X) BSwap32(X)
 #endif
 
-// clang-3.3 and gcc-4.3 have builtin functions for swap32/swap64
-#if LOCAL_GCC_PREREQ(4, 3) || LOCAL_CLANG_PREREQ(3, 3)
+// compilers which support bswap32 generally support bswap64
+#if LOCAL_GCC_PREREQ(4, 3) || \
+    (__has_builtin(__builtin_bswap32) && __has_builtin(bswap64))
 #define HAVE_BUILTIN_BSWAP32
 #define HAVE_BUILTIN_BSWAP64
 #endif
-// clang-3.3 and gcc-4.8 have a builtin function for swap16
-#if LOCAL_GCC_PREREQ(4, 8) || LOCAL_CLANG_PREREQ(3, 3)
+// bswap16 support came much later
+#if LOCAL_GCC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)
 #define HAVE_BUILTIN_BSWAP16
 #endif
 
