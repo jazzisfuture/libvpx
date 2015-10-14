@@ -295,6 +295,9 @@ typedef struct VP10Common {
 
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
+#if CONFIG_VAR_TX
+  TXFM_CONTEXT *above_txfm_context;
+#endif
   int above_context_alloc_cols;
 } VP10_COMMON;
 
@@ -394,6 +397,9 @@ static INLINE void vp10_init_macroblockd(VP10_COMMON *cm, MACROBLOCKD *xd,
   }
 
   xd->above_seg_context = cm->above_seg_context;
+#if CONFIG_VAR_TX
+  xd->above_txfm_context = cm->above_txfm_context;
+#endif
   xd->mi_stride = cm->mi_stride;
   xd->error_info = &cm->error;
 
@@ -482,6 +488,32 @@ static INLINE int partition_plane_context(const MACROBLOCKD *xd,
 
   return (left * 2 + above) + bsl * PARTITION_PLOFFSET;
 }
+
+#if CONFIG_VAR_TX
+static void txfm_partition_update(const MACROBLOCKD *xd,
+                                  int blk_row, int blk_col,
+                                  TX_SIZE tx_size) {
+  TXFM_CONTEXT *above_ctx = xd->above_txfm_context + (blk_col / 2);
+  TXFM_CONTEXT *left_ctx = xd->left_txfm_context + (blk_row / 2);
+  BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
+  int bs = num_8x8_blocks_high_lookup[bsize];
+  int i;
+  for (i = 0; i < bs; ++i) {
+    above_ctx[i] = tx_size;
+    left_ctx[i] = tx_size;
+  }
+}
+
+static int txfm_partition_context(const MACROBLOCKD *xd,
+                                  int blk_row, int blk_col,
+                                  TX_SIZE tx_size) {
+  const TXFM_CONTEXT *above_ctx = xd->above_txfm_context + (blk_col / 2);
+  const TXFM_CONTEXT *left_ctx = xd->left_txfm_context + (blk_row / 2);
+  int above = *above_ctx < tx_size;
+  int left = *left_ctx < tx_size;
+  return (tx_size - 1) * 3 + above + left;
+}
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"
