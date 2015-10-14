@@ -490,6 +490,9 @@ typedef struct VP9_COMP {
   int resize_buffer_underflow;
   int resize_count;
 
+  int m_search_count;
+  int ex_search_count;
+
   // VAR_BASED_PARTITION thresholds
   // 0 - threshold_64x64; 1 - threshold_32x32;
   // 2 - threshold_16x16; 3 - vbp_threshold_8x8;
