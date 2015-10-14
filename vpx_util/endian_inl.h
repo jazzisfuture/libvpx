@@ -59,7 +59,9 @@
 #define HAVE_BUILTIN_BSWAP64
 #endif
 // clang-3.3 and gcc-4.8 have a builtin function for swap16
-#if LOCAL_GCC_PREREQ(4, 8) || LOCAL_CLANG_PREREQ(3, 3)
+// clang 4.[012] (and possibly 5) provided by XCode do not
+#if LOCAL_GCC_PREREQ(4, 8) || \
+    (LOCAL_CLANG_PREREQ(3, 3) && __has_builtin(__builtin_bswap16))
 #define HAVE_BUILTIN_BSWAP16
 #endif
 
