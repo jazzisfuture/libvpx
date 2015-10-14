@@ -42,10 +42,20 @@ static const uint8_t extend_modes[INTRA_MODES] = {
 
 #if CONFIG_EXT_INTRA
 static const uint8_t ext_intra_extend_modes[EXT_INTRA_MODES] = {
-  NEED_ABOVERIGHT,              // D76_PRED
-  NEED_LEFT | NEED_ABOVE,       // D104_PRED
-  NEED_LEFT | NEED_ABOVE,       // D166_PRED
-  NEED_LEFT,                    // D194_PRED
+  NEED_ABOVERIGHT,              // D76
+  NEED_LEFT | NEED_ABOVE,       // D104
+  NEED_LEFT | NEED_ABOVE,       // D166
+  NEED_LEFT,                    // D194
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_DC
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_V
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_H
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_D45
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_D135
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_D117
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_D153
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_D207
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_D63
+  NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_TM
 };
 #endif  // CONFIG_EXT_INTRA
 
@@ -107,6 +117,8 @@ static void vp10_init_intra_predictors_internal(void) {
 
 #if CONFIG_EXT_INTRA
 #define AVG3(a, b, c) (((a) + 2 * (b) + (c) + 2) >> 2)
+#define FILTER_INTRA_PREC_BITS 10
+#define FILTER_INTRA_ROUND_VAL 511
 
 static INLINE void d76_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                  const uint8_t *above, const uint8_t *left) {
@@ -211,6 +223,163 @@ static INLINE void d194_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     memcpy(dst + r * stride, dst + (r + 1) * stride - 4,
            (bs - 4) * sizeof(*dst));
 }
+
+static int filter_intra_taps_4[TX_SIZES][INTRA_MODES][4] = {
+    {
+        {735, 881, -537, -54},
+        {1005, 519, -488, -11},
+        {383, 990, -343, -6},
+        {442, 805, -542, 319},
+        {658, 616, -133, -116},
+        {875, 442, -141, -151},
+        {386, 741, -23, -80},
+        {390, 1027, -446, 51},
+        {679, 606, -523, 262},
+        {903, 922, -778, -23},
+    },
+    {
+        {648, 803, -444, 16},
+        {972, 620, -576, 7},
+        {561, 967, -499, -5},
+        {585, 762, -468, 144},
+        {596, 619, -182, -9},
+        {895, 459, -176, -153},
+        {557, 722, -126, -129},
+        {601, 839, -523, 105},
+        {562, 709, -499, 251},
+        {803, 872, -695, 43},
+    },
+    {
+        {423, 728, -347, 111},
+        {963, 685, -665, 23},
+        {281, 1024, -480, 216},
+        {640, 596, -437, 78},
+        {429, 669, -259, 99},
+        {740, 646, -415, 23},
+        {568, 771, -346, 40},
+        {404, 833, -486, 209},
+        {398, 712, -423, 307},
+        {939, 935, -887, 17},
+    },
+    {
+        {477, 737, -393, 150},
+        {881, 630, -546, 67},
+        {506, 984, -443, -20},
+        {114, 459, -270, 528},
+        {433, 528, 14, 3},
+        {837, 470, -301, -30},
+        {181, 777, 89, -107},
+        {-29, 716, -232, 259},
+        {589, 646, -495, 255},
+        {740, 884, -728, 77},
+    },
+};
+
+static void filter_intra_predictors_4tap(uint8_t *dst, ptrdiff_t stride, int bs,
+                                         const uint8_t *above,
+                                         const uint8_t *left,
+                                         int mode) {
+  int k, r, c;
+  int pred[33][65];
+  int mean, ipred;
+  const TX_SIZE tx_size = (bs == 32) ? TX_32X32 :
+      ((bs == 16) ? TX_16X16 : ((bs == 8) ? TX_8X8 : (TX_4X4)));
+  const int c0 = filter_intra_taps_4[tx_size][mode][0];
+  const int c1 = filter_intra_taps_4[tx_size][mode][1];
+  const int c2 = filter_intra_taps_4[tx_size][mode][2];
+  const int c3 = filter_intra_taps_4[tx_size][mode][3];
+
+  k = 0;
+  mean = 0;
+  while (k < bs) {
+    mean = mean + (int)left[k];
+    mean = mean + (int)above[k];
+    k++;
+  }
+  mean = (mean + bs) / (2 * bs);
+
+  for (r = 0; r < bs; ++r)
+    pred[r + 1][0] = (int)left[r] - mean;
+
+  for (c = 0; c < 2 * bs + 1; ++c)
+    pred[0][c] = (int)above[c - 1] - mean;
+
+  for (r = 1; r < bs + 1; ++r)
+    for (c = 1; c < 2 * bs + 1 - r; ++c) {
+      ipred = c0 * pred[r - 1][c] + c1 * pred[r][c - 1] +
+          c2 * pred[r - 1][c - 1] + c3 * pred[r - 1][c + 1];
+      pred[r][c] = ipred < 0 ?
+          -((-ipred + FILTER_INTRA_ROUND_VAL) >> FILTER_INTRA_PREC_BITS) :
+          ((ipred + FILTER_INTRA_ROUND_VAL) >> FILTER_INTRA_PREC_BITS);
+    }
+
+  for (r = 0; r < bs; ++r) {
+    for (c = 0; c < bs; ++c) {
+      ipred = pred[r + 1][c + 1] + mean;
+      dst[c] = clip_pixel(ipred);
+    }
+    dst += stride;
+  }
+}
+
+static void dc_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                               const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, DC_PRED);
+}
+
+static void v_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                               const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, V_PRED);
+}
+
+static void h_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                               const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, H_PRED);
+}
+
+static void d45_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                 const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, D45_PRED);
+}
+
+static void d135_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                  const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, D135_PRED);
+}
+
+static void d117_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                  const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, D117_PRED);
+}
+
+static void d153_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                  const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, D153_PRED);
+}
+
+static void d207_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                  const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, D207_PRED);
+}
+
+static void d63_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                 const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, D63_PRED);
+}
+
+static void tm_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                const uint8_t *above, const uint8_t *left) {
+  filter_intra_predictors_4tap(dst, stride, bs, above, left, TM_PRED);
+}
+
+static void (*ext_intra_predictors[EXT_INTRA_MODES])(uint8_t *dst,
+    ptrdiff_t stride, int bs, const uint8_t *above, const uint8_t *left) = {
+        d76_predictor, d104_predictor, d166_predictor, d194_predictor,
+        dc_filter_predictor, v_filter_predictor, h_filter_predictor,
+        d45_filter_predictor, d135_filter_predictor, d117_filter_predictor,
+        d153_filter_predictor, d207_filter_predictor, d63_filter_predictor,
+        tm_filter_predictor,
+};
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static INLINE void highbd_d76_predictor(uint16_t *dst, ptrdiff_t stride, int bs,
@@ -633,6 +802,11 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
 
 #if CONFIG_EXT_INTRA
   if (xd->mi[0]->mbmi.ext_intra_mode_info.use_ext_intra_mode[plane != 0]) {
+    const EXT_INTRA_MODE ext_intra_mode =
+        xd->mi[0]->mbmi.ext_intra_mode_info.ext_intra_mode[plane != 0];
+    ext_intra_predictors[ext_intra_mode](dst, dst_stride, bs,
+                                         const_above_row, left_col);
+    /*
     switch (xd->mi[0]->mbmi.ext_intra_mode_info.ext_intra_mode[plane != 0]) {
       case D76_PRED:
         d76_predictor(dst, dst_stride, bs,
@@ -650,10 +824,22 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
         d194_predictor(dst, dst_stride, bs,
                        const_above_row, left_col);
         break;
+      case FILTER_DC_PRED:
+        dc_filter_predictor(dst, dst_stride, bs,
+                            const_above_row, left_col);
+        break;
+      case FILTER_V_PRED:
+        v_filter_predictor(dst, dst_stride, bs,
+                           const_above_row, left_col);
+        break;
+      case FILTER_H_PRED:
+        h_filter_predictor(dst, dst_stride, bs,
+                           const_above_row, left_col);
+        break;
       default:
         assert(0);
         break;
-    }
+    }*/
 
     return;
   }

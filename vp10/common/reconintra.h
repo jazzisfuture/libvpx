@@ -25,6 +25,7 @@ void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
                              const uint8_t *ref, int ref_stride,
                              uint8_t *dst, int dst_stride,
                              int aoff, int loff, int plane);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
