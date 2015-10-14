@@ -3903,6 +3903,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
                  cm->uv_dc_delta_q == 0 &&
                  cm->uv_ac_delta_q == 0;
 
+  cpi->m_search_count = 0;   // Count of motion search hits.
+  cpi->ex_search_count = 0;  // Count of hits on the exhaustive mesh search.
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)
     x->fwd_txm4x4 = xd->lossless ? vp9_highbd_fwht4x4 : vpx_highbd_fdct4x4;
