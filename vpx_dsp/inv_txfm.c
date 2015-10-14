@@ -1196,6 +1196,9 @@ void vpx_idct32x32_1024_add_c(const tran_low_t *input, uint8_t *dest,
 
 void vpx_idct32x32_34_add_c(const tran_low_t *input, uint8_t *dest,
                             int stride) {
+#if 1
+  vpx_idct32x32_34_add_x(input, dest, stride);
+#else
   tran_low_t out[32 * 32] = {0};
   tran_low_t *outptr = out;
   int i, j;
@@ -1219,6 +1222,7 @@ void vpx_idct32x32_34_add_c(const tran_low_t *input, uint8_t *dest,
                                             ROUND_POWER_OF_TWO(temp_out[j], 6));
     }
   }
+#endif
 }
 
 void vpx_idct32x32_1_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
