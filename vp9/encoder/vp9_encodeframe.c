@@ -4155,6 +4155,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 #endif  // USE_BLOCK_BASED_GLOBAL_MOTION_COMPUTATION
           int i;
           for (i = 0; i < num; i++) {
+            //READING_HERE
             convert_model_to_params(
                 global_motion + i * get_numparams(GLOBAL_MOTION_MODEL),
                 GLOBAL_MOTION_MODEL,
