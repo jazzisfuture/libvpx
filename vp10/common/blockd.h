@@ -248,10 +248,20 @@ static const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
 
 #if CONFIG_EXT_INTRA
 static const TX_TYPE ext_intra_mode_to_tx_type_lookup[EXT_INTRA_MODES] = {
-  ADST_DCT,   // D76_PRED
-  ADST_DCT,   // D104_PRED
-  DCT_ADST,   // D166_PRED
-  DCT_ADST,   // D194_PRED
+  ADST_DCT,   // D76
+  ADST_DCT,   // D104
+  DCT_ADST,   // D166
+  DCT_ADST,   // D194
+  DCT_DCT,    // FILTER_DC
+  ADST_DCT,   // FILTER_V
+  DCT_ADST,   // FILTER_H
+  DCT_DCT,    // FILTER_D45
+  ADST_ADST,  // FILTER_D135
+  ADST_DCT,   // FILTER_D117
+  DCT_ADST,   // FILTER_D153
+  DCT_ADST,   // FILTER_D207
+  ADST_DCT,   // FILTER_D63
+  ADST_ADST,  // FILTER_TM
 };
 #endif  // CONFIG_EXT_INTRA
 
