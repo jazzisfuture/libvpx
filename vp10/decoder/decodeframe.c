@@ -2259,10 +2259,6 @@ static void debug_check_frame_counts(const VP10_COMMON *const cm) {
   assert(!memcmp(&cm->counts.tx, &zero_counts.tx, sizeof(cm->counts.tx)));
   assert(!memcmp(cm->counts.skip, zero_counts.skip, sizeof(cm->counts.skip)));
   assert(!memcmp(&cm->counts.mv, &zero_counts.mv, sizeof(cm->counts.mv)));
-#if CONFIG_EXT_TX
-  assert(!memcmp(cm->counts.ext_tx, zero_counts.ext_tx,
-                 sizeof(cm->counts.ext_tx)));
-#endif  // CONFIG_EXT_TX
 }
 #endif  // NDEBUG
 
