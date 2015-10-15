@@ -193,8 +193,32 @@ const char *const kVP9TestVectors[] = {
   "vp93-2-20-10bit-yuv422.webm", "vp93-2-20-12bit-yuv422.webm",
   "vp93-2-20-10bit-yuv440.webm", "vp93-2-20-12bit-yuv440.webm",
   "vp93-2-20-10bit-yuv444.webm", "vp93-2-20-12bit-yuv444.webm",
-#endif  // CONFIG_VP9_HIGHBITDEPTH`
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   "vp90-2-20-big_superframe-01.webm", "vp90-2-20-big_superframe-02.webm",
+  "vp90-2-02-size-320x180-05-resize-12-21-encode_speed-5.webm",
+  "vp90-2-02-size-320x180-05-resize-12-21-encode_speed-7.webm",
+  "vp90-2-02-size-320x180-05-resize-34-21-encode_speed-5.webm",
+  "vp90-2-02-size-320x180-05-resize-34-21-encode_speed-7.webm",
+  "vp90-2-02-size-320x240-05-resize-12-21-encode_speed-5.webm",
+  "vp90-2-02-size-320x240-05-resize-12-21-encode_speed-7.webm",
+  "vp90-2-02-size-320x240-05-resize-34-21-encode_speed-5.webm",
+  "vp90-2-02-size-320x240-05-resize-34-21-encode_speed-7.webm",
+  "vp90-2-02-size-640x360-05-resize-12-21-encode_speed-5.webm",
+  "vp90-2-02-size-640x360-05-resize-12-21-encode_speed-7.webm",
+  "vp90-2-02-size-640x360-05-resize-34-21-encode_speed-5.webm",
+  "vp90-2-02-size-640x360-05-resize-34-21-encode_speed-7.webm",
+  "vp90-2-02-size-640x480-05-resize-12-21-encode_speed-5.webm",
+  "vp90-2-02-size-640x480-05-resize-12-21-encode_speed-7.webm",
+  "vp90-2-02-size-640x480-05-resize-34-21-encode_speed-5.webm",
+  "vp90-2-02-size-640x480-05-resize-34-21-encode_speed-7.webm",
+  "vp90-2-02-size-1280x720-05-resize-12-21-encode_speed-5.webm",
+  "vp90-2-02-size-1280x720-05-resize-12-21-encode_speed-7.webm",
+  "vp90-2-02-size-1280x720-05-resize-34-21-encode_speed-5.webm",
+  "vp90-2-02-size-1280x720-05-resize-34-21-encode_speed-7.webm",
+  "vp90-2-02-size-1920x1080-05-resize-12-21-encode_speed-5.webm",
+  "vp90-2-02-size-1920x1080-05-resize-12-21-encode_speed-7.webm",
+  "vp90-2-02-size-1920x1080-05-resize-34-21-encode_speed-5.webm",
+  "vp90-2-02-size-1920x1080-05-resize-34-21-encode_speed-7.webm",
 };
 const int kNumVP9TestVectors = NELEMENTS(kVP9TestVectors);
 #endif  // CONFIG_VP9_DECODER
