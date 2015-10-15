@@ -10,6 +10,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <set>
 #include <string>
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "../tools_common.h"
@@ -44,6 +45,12 @@ class TestVectorTest : public ::libvpx_test::DecoderTest,
   TestVectorTest()
       : DecoderTest(GET_PARAM(0)),
         md5_file_(NULL) {
+#ifdef CONFIG_VP9_DECODER
+    resize_vector_.insert(
+      ::libvpx_test::kVP9TestVectorsResize,
+      ::libvpx_test::kVP9TestVectorsResize +
+          ::libvpx_test::kNumVP9TestVectorsResize);
+#endif
   }
 
   virtual ~TestVectorTest() {
@@ -79,6 +86,10 @@ class TestVectorTest : public ::libvpx_test::DecoderTest,
 
  private:
   FILE *md5_file_;
+#ifdef CONFIG_VP9_DECODER
+ public:
+  std::set<std::string> resize_vector_;
+#endif
 };
 
 // This test runs through the whole set of test vectors, and decodes them.
@@ -97,6 +108,13 @@ TEST_P(TestVectorTest, MD5Match) {
 
   if (mode == kFrameParallelMode) {
     flags |= VPX_CODEC_USE_FRAME_THREADING;
+#ifdef CONFIG_VP9_DECODER
+    // When decoding a segmentation enable video and the video's size changes
+    // between inter frames, frame parallel decode will have problem with deal
+    // locating and reallocating segmentation map buffer.
+    if (resize_vector_.find(filename) != resize_vector_.end())
+      return;
+#endif
   }
 
   cfg.threads = threads;
