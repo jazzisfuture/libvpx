@@ -1,0 +1,8 @@
+Code-Review+2: Marco Paniconi <marpan@google.com>
+Code-Review-1: WebM Builds <builds@webmproject.org>
+Verified+1: Marco Paniconi <marpan@google.com>
+Submitted-by: Jacky Chen <jackychen@google.com>
+Submitted-at: Thu, 15 Oct 2015 21:35:03 +0000
+Reviewed-on: https://chromium-review.googlesource.com/305797
+Project: webm/libvpx
+Branch: refs/heads/master
