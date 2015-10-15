@@ -119,41 +119,41 @@ typedef void (*TxfmFunc)(const int32_t *input, int32_t *output,
 extern "C" {
 #endif
 
-void fdct4(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-           const int8_t *stage_range);
-void fdct8(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-           const int8_t *stage_range);
-void fdct16(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-            const int8_t *stage_range);
-void fdct32(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-            const int8_t *stage_range);
+void vp10_fdct4_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                    const int8_t *stage_range);
+void vp10_fdct8_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                    const int8_t *stage_range);
+void vp10_fdct16_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                     const int8_t *stage_range);
+void vp10_fdct32_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                     const int8_t *stage_range);
 
-void fadst4(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-            const int8_t *stage_range);
-void fadst8(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-            const int8_t *stage_range);
-void fadst16(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-             const int8_t *stage_range);
-void fadst32(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-             const int8_t *stage_range);
+void vp10_fadst4_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                     const int8_t *stage_range);
+void vp10_fadst8_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                     const int8_t *stage_range);
+void vp10_fadst16_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                      const int8_t *stage_range);
+void vp10_fadst32_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                      const int8_t *stage_range);
 
-void idct4(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-           const int8_t *stage_range);
-void idct8(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-           const int8_t *stage_range);
-void idct16(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-            const int8_t *stage_range);
-void idct32(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-            const int8_t *stage_range);
+void vp10_idct4_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                    const int8_t *stage_range);
+void vp10_idct8_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                    const int8_t *stage_range);
+void vp10_idct16_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                     const int8_t *stage_range);
+void vp10_idct32_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                     const int8_t *stage_range);
 
-void iadst4(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-            const int8_t *stage_range);
-void iadst8(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-            const int8_t *stage_range);
-void iadst16(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-             const int8_t *stage_range);
-void iadst32(const int32_t *input, int32_t *output, const int8_t *cos_bit,
-             const int8_t *stage_range);
+void vp10_iadst4_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                     const int8_t *stage_range);
+void vp10_iadst8_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                     const int8_t *stage_range);
+void vp10_iadst16_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                      const int8_t *stage_range);
+void vp10_iadst32_new(const int32_t *input, int32_t *output, const int8_t *cos_bit,
+                      const int8_t *stage_range);
 
 #ifdef __cplusplus
 }
