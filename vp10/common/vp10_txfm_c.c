@@ -1,4 +1,4 @@
-#include "txfm_c.h"
+#include "vp10_txfm_c.h"
 #define range_check(stage_idx, input, buf, size, bit)                        \
 {                                                                            \
   int i, j;                                                                  \

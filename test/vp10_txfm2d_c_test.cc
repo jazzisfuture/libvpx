@@ -1,5 +1,5 @@
-#include "vp10/common/txfm2d_c.h"
-#include "vp10/common/txfm2d_cfg.h"
+#include "vp10/common/vp10_txfm2d_c.h"
+#include "vp10/common/vp10_txfm2d_cfg.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,15 +64,15 @@ TEST(txfm2d_c, round_trip) {
       for (int ni = 0; ni < sqr_txfm_size; ++ni) {
         EXPECT_LE(abs(input[ni] - ref_input[ni]), 1);
       }
-      avg_abs_error +=
-          compute_avg_abs_error<int16_t, uint16_t>(input, ref_input, sqr_txfm_size);
+      avg_abs_error += compute_avg_abs_error<int16_t, uint16_t>(
+          input, ref_input, sqr_txfm_size);
     }
 
     avg_abs_error /= count;
     // max_abs_avg_error comes from upper bound of
-     printf("avg_abs_error: %f\n", avg_abs_error);
-    //double max_abs_avg_error = 0.00005;
-    //EXPECT_LE(avg_abs_error, max_abs_avg_error);
+    // printf("avg_abs_error: %f\n", avg_abs_error);
+    double max_abs_avg_error = 0.002;
+    EXPECT_LE(avg_abs_error, max_abs_avg_error);
 
     delete[] input;
     delete[] ref_input;

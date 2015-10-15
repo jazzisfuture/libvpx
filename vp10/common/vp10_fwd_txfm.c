@@ -9,7 +9,7 @@
  */
 
 #include "vp10/common/vp10_fwd_txfm.h"
-#include "vp10/common/txfm2d_cfg.h"
+#include "vp10/common/vp10_txfm2d_cfg.h"
 
 void vp10_fdct4x4_c(const int16_t *input, tran_low_t *output, int stride) {
   // The 2D transform is done with two passes which are actually pretty

@@ -1,7 +1,7 @@
 #ifndef TXFM2D_C_H_
 #define TXFM2D_C_H_
 
-#include "txfm2d_cfg.h"
+#include "vp10_txfm2d_cfg.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

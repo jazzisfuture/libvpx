@@ -1,6 +1,6 @@
 #ifndef TXFM2D_CFG_H_
 #define TXFM2D_CFG_H_
-#include "txfm_c.h"
+#include "vp10_txfm_c.h"
 typedef struct TXFM_2D_CFG {
   int txfm_size;
   int stage_num_col;

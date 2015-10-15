@@ -1,5 +1,5 @@
-#include "txfm_c.h"
-#include "txfm2d_cfg.h"
+#include "vp10_txfm_c.h"
+#include "vp10_txfm2d_cfg.h"
 
 void *vp10_alloc(int size, int align) { return malloc(size * align); }
 void vp10_free(void *p) { free(p); }

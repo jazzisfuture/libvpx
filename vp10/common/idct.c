@@ -17,7 +17,7 @@
 #include "vpx_dsp/inv_txfm.h"
 #include "vpx_ports/mem.h"
 
-#include "vp10/common/txfm2d_cfg.h"
+#include "vp10/common/vp10_txfm2d_cfg.h"
 
 void vp10_iht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride,
                          int tx_type) {
