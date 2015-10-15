@@ -2945,6 +2945,7 @@ void vp10_encode_frame(VP10_COMP *cpi) {
       }
     }
 
+#if !CONFIG_VAR_TX
     if (cm->tx_mode == TX_MODE_SELECT) {
       int count4x4 = 0;
       int count8x8_lp = 0, count8x8_8x8p = 0;
@@ -2979,6 +2980,7 @@ void vp10_encode_frame(VP10_COMP *cpi) {
         reset_skip_tx_size(cm, TX_16X16);
       }
     }
+#endif
   } else {
     cm->reference_mode = SINGLE_REFERENCE;
     encode_frame_internal(cpi);
@@ -3206,12 +3208,13 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
         mbmi->sb_type >= BLOCK_8X8  &&
         !(is_inter_block(mbmi) && (mbmi->skip || seg_skip))) {
 #if CONFIG_VAR_TX
-      int tx_size_ctx = get_tx_size_context(xd);
+
       if (is_inter_block(mbmi)) {
+//        int tx_size_ctx = get_tx_size_context(xd);
         tx_partition_count_update(cm, xd, bsize, mi_row, mi_col,
                                   td->counts);
-        inter_block_tx_count_update(cm, xd, mbmi, bsize,
-                                    tx_size_ctx, &td->counts->tx);
+//        inter_block_tx_count_update(cm, xd, mbmi, bsize,
+//                                    tx_size_ctx, &td->counts->tx);
       } else {
         ++get_tx_counts(max_txsize_lookup[bsize], get_tx_size_context(xd),
                         &td->counts->tx)[mbmi->tx_size];
