@@ -769,3 +769,53 @@ endif  # CONFIG_ENCODE_PERF_TESTS
 
 # sort and remove duplicates
 LIBVPX_TEST_DATA-yes := $(sort $(LIBVPX_TEST_DATA-yes))
+
+# VP9 dynamic resizing test (decoder)
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x180-05-resize-12-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x180-05-resize-12-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x180-05-resize-12-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x180-05-resize-12-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x180-05-resize-34-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x180-05-resize-34-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x180-05-resize-34-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x180-05-resize-34-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x240-05-resize-12-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x240-05-resize-12-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x240-05-resize-12-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x240-05-resize-12-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x240-05-resize-34-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x240-05-resize-34-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x240-05-resize-34-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-320x240-05-resize-34-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x360-05-resize-12-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x360-05-resize-12-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x360-05-resize-12-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x360-05-resize-12-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x360-05-resize-34-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x360-05-resize-34-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x360-05-resize-34-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x360-05-resize-34-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x480-05-resize-12-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x480-05-resize-12-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x480-05-resize-12-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x480-05-resize-12-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x480-05-resize-34-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x480-05-resize-34-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x480-05-resize-34-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-640x480-05-resize-34-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1280x720-05-resize-12-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1280x720-05-resize-12-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1280x720-05-resize-12-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1280x720-05-resize-12-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1280x720-05-resize-34-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1280x720-05-resize-34-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1280x720-05-resize-34-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1280x720-05-resize-34-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1920x1080-05-resize-12-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1920x1080-05-resize-12-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1920x1080-05-resize-12-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1920x1080-05-resize-12-21-encode_speed-7.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1920x1080-05-resize-34-21-encode_speed-5.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1920x1080-05-resize-34-21-encode_speed-5.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1920x1080-05-resize-34-21-encode_speed-7.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-02-size-1920x1080-05-resize-34-21-encode_speed-7.webm.md5
