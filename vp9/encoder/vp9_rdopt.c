@@ -299,19 +299,11 @@ int64_t vp9_highbd_block_error_8bit_c(const tran_low_t *coeff,
   int i;
   int32_t c, d;
   int64_t error = 0, sqcoeff = 0;
-  int16_t diff;
-
-  const int32_t hi = 0x00007fff;
-  const int32_t lo = 0xffff8000;
+  int32_t diff;
 
   for (i = 0; i < block_size; i++) {
     c = coeff[i];
     d = dqcoeff[i];
-
-    // Saturate to 16 bits
-    c = (c > hi) ? hi : ((c < lo) ? lo : c);
-    d = (d > hi) ? hi : ((d < lo) ? lo : d);
-
     diff = d - c;
     error +=  diff * diff;
     sqcoeff += c * c;
