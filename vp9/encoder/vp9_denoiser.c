@@ -17,6 +17,7 @@
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/encoder/vp9_context_tree.h"
 #include "vp9/encoder/vp9_denoiser.h"
+#include "vp9/encoder/vp9_encoder.h"
 
 /* The VP9 denoiser is a work-in-progress. It currently is only designed to work
  * with speed 6, though it (inexplicably) seems to also work with speed 5 (one
@@ -342,11 +343,12 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
     is_skin = vp9_skin_pixel(ysource, usource, vsource);
   }
 
-  decision = perform_motion_compensation(denoiser, mb, bs,
-                                         denoiser->increase_denoising,
-                                         mi_row, mi_col, ctx,
-                                         &motion_magnitude,
-                                         is_skin);
+  if (denoiser->no_denoising == 0)
+    decision = perform_motion_compensation(denoiser, mb, bs,
+                                           denoiser->increase_denoising,
+                                           mi_row, mi_col, ctx,
+                                           &motion_magnitude,
+                                           is_skin);
 
   if (decision == FILTER_BLOCK) {
     decision = vp9_denoiser_filter(src.buf, src.stride,
@@ -504,6 +506,10 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
 #endif
   denoiser->increase_denoising = 0;
   denoiser->frame_buffer_initialized = 1;
+  denoiser->noise_estimate_count = 0;
+  denoiser->no_denoising = 0;
+  denoiser->noise_estimate = 0;
+  denoiser->thresh_noise_estimate = 100;
   return 0;
 }
 
@@ -517,6 +523,81 @@ void vp9_denoiser_free(VP9_DENOISER *denoiser) {
     vpx_free_frame_buffer(&denoiser->running_avg_y[i]);
   }
   vpx_free_frame_buffer(&denoiser->mc_running_avg_y);
+}
+
+void vp9_denoiser_update_noise_estimate(VP9_COMP *const cpi) {
+  const VP9_COMMON *const cm = &cpi->common;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  int frame_period = 8;
+  int num_frames_estimate =20;
+  int thresh_consec_zeromv = 8;
+  // Estimate of noise level every frame_period frames.
+  if (cm->current_video_frame % frame_period == 0 ||
+     cpi->Last_Source == NULL) {
+    return;
+  } else {
+    int num_samples = 0;
+    int num_samples_tot = 0;
+    uint64_t avg_variance = 0;
+    int bsize = BLOCK_16X16;
+    // Loop over 16x16 blocks of sub-sample of frame, and only for blocks that
+    // have been encoded as zero/small mv at least x consecutive frames, compute
+    // the variance and sse (of current - last_source) to get an estimate of
+    // noise in the source.
+    const uint8_t *src_y = cpi->Source->y_buffer;
+    const int src_ystride = cpi->Source->y_stride;
+    const uint8_t *last_src_y = cpi->Last_Source->y_buffer;
+    const int last_src_ystride = cpi->Last_Source->y_stride;
+    int mi_row, mi_col;
+    for (mi_row = 0; mi_row < cm->mi_rows; mi_row += 2)
+      for (mi_col = 0; mi_col < cm->mi_cols; mi_col += 2) {
+        // Ignore central half of frame.
+        if (mi_col < (cm->mi_cols >> 2) ||
+            mi_col > (3 * cm->mi_cols >> 2)) {
+          // Only consider blocks that have encoded as zero/small mv
+          // thresh_consec_zeromv frames in a row.
+          int bl_index = mi_row * cm->mi_cols + mi_col;
+          int bl_index1 = bl_index + 1;
+          int bl_index2 = bl_index + cm->mi_cols;
+          int bl_index3 = bl_index2 + 1;
+          num_samples_tot++;
+          if (cr->consec_zero_mv[bl_index] > thresh_consec_zeromv &&
+              cr->consec_zero_mv[bl_index1] > thresh_consec_zeromv &&
+              cr->consec_zero_mv[bl_index2] > thresh_consec_zeromv &&
+              cr->consec_zero_mv[bl_index3] > thresh_consec_zeromv) {
+            // Compute variance.
+            unsigned int sse;
+            unsigned int variance = cpi->fn_ptr[bsize].vf(src_y,
+                                                           src_ystride,
+                                                           last_src_y,
+                                                           last_src_ystride,
+                                                           &sse);
+            // TODO(marpan): Normalize this block variance by spatial average
+            // or spatial contrast of block.
+            avg_variance += variance;
+            num_samples++;
+          }
+          src_y += 16;
+          last_src_y += 16;
+        }
+        src_y += (src_ystride << 4) - (cm->mi_cols << 4);
+        last_src_y += (last_src_ystride << 4) - (cm->mi_cols << 4);
+      }
+    // Update noise estimate if we have at least a minimum number of samples.
+    if (num_samples > (num_samples_tot >> 2)) {
+      // Normalize.
+      avg_variance = avg_variance / num_samples;
+      // Update noise estimate.
+      cpi->denoiser.noise_estimate =  (3 * cpi->denoiser.noise_estimate +
+          avg_variance) >> 2;
+      cpi->denoiser.noise_estimate_count++;
+      if (cpi->denoiser.noise_estimate_count == num_frames_estimate) {
+        cpi->denoiser.noise_estimate_count = 0;
+        if (cpi->denoiser.noise_estimate > cpi->denoiser.thresh_noise_estimate)
+          cpi->denoiser.no_denoising = 1;
+      }
+    }
+  }
 }
 
 #ifdef OUTPUT_YUV_DENOISED

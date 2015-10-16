@@ -1284,6 +1284,13 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
     vp9_cyclic_refresh_postencode(cpi);
   }
 
+#if CONFIG_VP9_TEMPORAL_DENOISING
+    if (cpi->oxcf.noise_sensitivity > 0 &&
+        cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      vp9_denoiser_update_noise_estimate(cpi);
+    }
+#endif
+
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
