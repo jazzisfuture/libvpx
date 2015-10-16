@@ -721,17 +721,6 @@ typedef struct vpx_svc_ref_frame_config {
  *
  */
 
-
-/* These controls have been deprecated in favor of the flags parameter to
- * vpx_codec_encode(). See the definition of VP8_EFLAG_* above.
- */
-VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_ENTROPY,            int)
-#define VPX_CTRL_VP8E_UPD_ENTROPY
-VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_REFERENCE,          int)
-#define VPX_CTRL_VP8E_UPD_REFERENCE
-VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_USE_REFERENCE,          int)
-#define VPX_CTRL_VP8E_USE_REFERENCE
-
 VPX_CTRL_USE_TYPE(VP8E_SET_FRAME_FLAGS,        int)
 #define VPX_CTRL_VP8E_SET_FRAME_FLAGS
 VPX_CTRL_USE_TYPE(VP8E_SET_TEMPORAL_LAYER_ID,  int)
