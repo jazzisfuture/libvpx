@@ -1031,8 +1031,15 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
   }
 
   x->skip = ctx->skip;
+
+#if CONFIG_VAR_TX
+  for (i = 0; i < MAX_MB_PLANE; ++i)
+    memcpy(x->blk_skip[i], ctx->blk_skip[i],
+           sizeof(uint8_t) * ctx->num_4x4_blk);
+#else
   memcpy(x->zcoeff_blk[mbmi->tx_size], ctx->zcoeff_blk,
          sizeof(ctx->zcoeff_blk[0]) * ctx->num_4x4_blk);
+#endif
 
   if (!output_enabled)
     return;
@@ -2838,6 +2845,9 @@ static void encode_frame_internal(VP10_COMP *cpi) {
 
   x->quant_fp = cpi->sf.use_quant_fp;
   vp10_zero(x->skip_txfm);
+#if CONFIG_VAR_TX
+  vp10_zero(x->blk_skip);
+#endif
 
   {
     struct vpx_usec_timer emr_timer;
