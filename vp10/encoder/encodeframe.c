@@ -1124,6 +1124,9 @@ static void rd_pick_sb_modes(VP10_COMP *cpi,
   const AQ_MODE aq_mode = cpi->oxcf.aq_mode;
   int i, orig_rdmult;
 
+  //printf("%d %d\n",
+    //     mi_row, mi_col);
+
   vpx_clear_system_state();
 
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
