@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <math.h>
 #include "vp10/encoder/palette.h"
 
 static double calc_dist(const double *p1, const double *p2, int dim) {
@@ -15,7 +16,7 @@ static double calc_dist(const double *p1, const double *p2, int dim) {
   int i = 0;
 
   for (i = 0; i < dim; i++) {
-    dist = dist + (p1[i] - p2[i]) * (p1[i] - p2[i]);
+    dist = dist + (p1[i] - round(p2[i])) * (p1[i] - round(p2[i]));
   }
   return dist;
 }

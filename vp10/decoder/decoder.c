@@ -131,6 +131,15 @@ void vp10_decoder_remove(VP10Decoder *pbi) {
 
   vpx_get_worker_interface()->end(&pbi->lf_worker);
   vpx_free(pbi->lf_worker.data1);
+  if (pbi->common.allow_screen_content_tools) {
+    int i;
+    TileData *tile_data = pbi->tile_data;
+    for (i = 0; i < pbi->total_tiles; ++i) {
+      vpx_free(tile_data->color_index_map[0]);
+      vpx_free(tile_data->color_index_map[1]);
+      ++tile_data;
+    }
+  }
   vpx_free(pbi->tile_data);
   for (i = 0; i < pbi->num_tile_workers; ++i) {
     VPxWorker *const worker = &pbi->tile_workers[i];

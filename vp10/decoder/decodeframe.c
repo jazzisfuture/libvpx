@@ -1513,12 +1513,30 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
 
   if (pbi->tile_data == NULL ||
       (tile_cols * tile_rows) != pbi->total_tiles) {
+    if (pbi->tile_data != NULL && cm->allow_screen_content_tools) {
+      int i;
+      TileData *tile_data = pbi->tile_data;
+      for (i = 0; i < pbi->total_tiles; ++i) {
+        vpx_free(tile_data->color_index_map[0]);
+        vpx_free(tile_data->color_index_map[1]);
+        ++tile_data;
+      }
+    }
     vpx_free(pbi->tile_data);
     CHECK_MEM_ERROR(
         cm,
         pbi->tile_data,
         vpx_memalign(32, tile_cols * tile_rows * (sizeof(*pbi->tile_data))));
     pbi->total_tiles = tile_rows * tile_cols;
+    if (cm->allow_screen_content_tools) {
+      int i;
+      TileData *tile_data = pbi->tile_data;
+      for (i = 0; i < pbi->total_tiles; ++i) {
+        tile_data->color_index_map[0] = NULL;
+        tile_data->color_index_map[1] = NULL;
+        ++tile_data;
+      }
+    }
   }
 
   // Load all tile information into tile_data.
@@ -1538,8 +1556,21 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
                           &tile_data->bit_reader, pbi->decrypt_cb,
                           pbi->decrypt_state);
       vp10_init_macroblockd(cm, &tile_data->xd, tile_data->dqcoeff);
-      tile_data->xd.plane[0].color_index_map = tile_data->color_index_map[0];
-      tile_data->xd.plane[1].color_index_map = tile_data->color_index_map[1];
+
+      if (cm->allow_screen_content_tools) {
+        if (tile_data->color_index_map[0] == NULL) {
+          CHECK_MEM_ERROR(cm, tile_data->color_index_map[0],
+                          vpx_memalign(16,
+                            64 * 64 * sizeof(*tile_data->color_index_map[0])));
+        }
+        if (tile_data->color_index_map[1] == NULL) {
+          CHECK_MEM_ERROR(cm, tile_data->color_index_map[1],
+                          vpx_memalign(16,
+                            64 * 64 * sizeof(*tile_data->color_index_map[1])));
+        }
+        tile_data->xd.plane[0].color_index_map = tile_data->color_index_map[0];
+        tile_data->xd.plane[1].color_index_map = tile_data->color_index_map[1];
+      }
     }
   }
 
