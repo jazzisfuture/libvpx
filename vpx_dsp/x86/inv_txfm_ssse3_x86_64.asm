@@ -17,17 +17,49 @@
 SECTION_RODATA
 
 pw_11585x2: times 8 dw 23170
+
+pw_m2404x2: times 8 dw  -2404*2
+pw_m4756x2: times 8 dw  -4756*2
+pw_m5520x2: times 8 dw  -5520*2
+
+pw_16364x2: times 8 dw 16364*2
+pw_16207x2: times 8 dw 16207*2
+pw_16069x2: times 8 dw 16069*2
+pw_16305x2: times 8 dw 16305*2
+pw_15893x2: times 8 dw 15893*2
+pw_15679x2: times 8 dw 15679*2
+pw_15426x2: times 8 dw 15426*2
+pw__3981x2: times 8 dw  3981*2
+pw__3196x2: times 8 dw  3196*2
+pw__1606x2: times 8 dw  1606*2
+pw___804x2: times 8 dw   804*2
+
+
+
 pd_8192:    times 4 dd 8192
+pw_512:     times 8 dw 512
+pw_32:      times 8 dw 32
 pw_16:      times 8 dw 16
 
 %macro TRANSFORM_COEFFS 2
 pw_%1_%2:   dw  %1,  %2,  %1,  %2,  %1,  %2,  %1,  %2
 pw_m%2_%1:  dw -%2,  %1, -%2,  %1, -%2,  %1, -%2,  %1
+;
+pw_m%1_m%2: dw -%1, -%2, -%1, -%2, -%1, -%2, -%1, -%2
 %endmacro
 
 TRANSFORM_COEFFS    6270, 15137
 TRANSFORM_COEFFS    3196, 16069
 TRANSFORM_COEFFS   13623,  9102
+
+; constants for 32x32_34
+;TRANSFORM_COEFFS      804, 16364
+;TRANSFORM_COEFFS    15426,  5520
+;TRANSFORM_COEFFS     3981, 15893
+;TRANSFORM_COEFFS    16207,  2404
+;TRANSFORM_COEFFS     1606, 16305
+;TRANSFORM_COEFFS    15679,  4756
+;TRANSFORM_COEFFS    11585, 11585
 
 %macro PAIR_PP_COEFFS 2
 dpw_%1_%2:   dw  %1,  %1,  %1,  %1,  %2,  %2,  %2,  %2
@@ -51,6 +83,10 @@ PAIR_PP_COEFFS      6392,  6392
 PAIR_PP_COEFFS     32138, 32138
 PAIR_MM_COEFFS     18204, 18204
 PAIR_PP_COEFFS     27246, 27246
+
+; constants for 32x32_34
+PAIR_PP_COEFFS     11585, 11585
+PAIR_MP_COEFFS     11585, 11585
 
 SECTION .text
 
@@ -76,6 +112,15 @@ SECTION .text
   MUL_ADD_2X         %7,  %6,  %6,  %5, [pw_m%4_%3], [pw_%3_%4]
   punpcklwd          m%2, m%1
   MUL_ADD_2X         %1,  %2,  %2,  %5, [pw_m%4_%3], [pw_%3_%4]
+  packssdw           m%1, m%7
+  packssdw           m%2, m%6
+%endmacro
+
+%macro BUTTERFLY_4Xmm 7 ; dst1, dst2, coef1, coef2, round, tmp1, tmp2
+  punpckhwd          m%6, m%2, m%1
+  MUL_ADD_2X         %7,  %6,  %6,  %5, [pw_m%4_%3], [pw_m%3_m%4]
+  punpcklwd          m%2, m%1
+  MUL_ADD_2X         %1,  %2,  %2,  %5, [pw_m%4_%3], [pw_m%3_m%4]
   packssdw           m%1, m%7
   packssdw           m%2, m%6
 %endmacro
@@ -298,4 +343,393 @@ cglobal idct8x8_12_add, 3, 5, 13, input, output, stride
 
   RET
 
+%macro IDCT32X32_34 0
+  ; save input for second pass
+  mova [stp + 16 *  16], m1  ; save input[1]
+  mova [stp + 16 *  19], m7  ; save input[7]
+  mova [stp + 16 *  20], m5  ; save input[5]
+  mova [stp + 16 *  23], m3  ; save input[3]
+
+; FIRST PASS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ; STAGE 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  mova              m14, [pw_11585x2]
+
+  ; STAGE 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+;  pxor m11, m11 ; in30
+;  BUTTERFLY_4X     2,    11,   1606, 16305,  m8,  9,  10 ; stp2_8, stp2_15
+  mova             m11, m2
+  pmulhrsw          m2, [pw__1606x2] ; stp2_8
+  pmulhrsw         m11, [pw_16305x2] ; stp2_15
+
+;  pxor m12, m12 ; in26
+;  BUTTERFLY_4X    12,     6,  15679,  4756,  m8,  9,  10 ; stp2_11, stp2_12
+  mova             m12, m6
+  pmulhrsw          m6, [pw_15679x2]  ; stp2_12
+  pmulhrsw         m12, [pw_m4756x2]  ; stp2_11
+
+  ; STAGE 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+;  pxor m13, m13 ; in28
+;  BUTTERFLY_4X     4,    13,   3196, 16069,  m8,  9,  10 ; stp1_4, stp1_7
+  mova             m13, m4
+  pmulhrsw          m4, [pw__3196x2]  ; stp2_4
+  pmulhrsw         m13, [pw_16069x2]  ; stp2_7
+
+  ; STAGE 4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  pmulhrsw        m0, m14    ; stp2_0 = stp2_1
+;  pxor m14, m14 ; in16
+;  BUTTERFLY_4X    0,     14,  11585, 11585,  m8,  9,  10 ; stp2_0, stp2_1
+
+  mova m5, m11 ;save stp2_15
+  mova m1, m2  ;save stp2_8
+  BUTTERFLY_4X     11,    2,   6270, 15137,  m8,  9,  10 ; stp2_9, stp2_14
+
+
+  mova m3, m12 ;save stp2_11
+  mova m7, m6  ;save stp2_12
+  BUTTERFLY_4Xmm   6,    12,   6270, 15137,  m8,  9,  10 ; stp2_13, stp2_10
+
+  ; STAGE 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  SUM_SUB            1,    3,    9 ; stp1_8, stp1_11
+  SUM_SUB           11,   12,    9 ; stp1_9, stp1_10
+
+;  mova [stp + 16 *  8], m1   ; stp1_8
+;  mova [stp + 16 *  9], m11  ; stp1_9
+;  mova [stp + 16 * 10], m12  ; stp1_10
+;  mova [stp + 16 * 11], m3   ; stp1_11
+
+  SUM_SUB            5,   7,    9 ; stp1_15, stp1_12
+  SUM_SUB            2,   6,    9 ; stp1_14, stp1_13
+
+;  mova [stp + 16 *  12], m7  ; stp1_12
+;  mova [stp + 16 *  13], m6  ; stp1_13
+  mova [stp + 16 * 14], m2  ; stp1_14
+  mova [stp + 16 * 15], m5  ; stp1_15
+
+  mova              m5, m13 ;save stp1_7
+  mova              m2, m4  ;save stp1_4
+;  BUTTERFLY_4X    13,     4,  11585, 11585,  m8,  9,  10 ; stp1_5, stp1_6
+  SUM_SUB           13,   4,    9
+  pmulhrsw          m4, m14 ; stp1_5
+  pmulhrsw         m13, m14 ; stp1_6
+
+  ; STAGE 6 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  mova              m8, [pw_11585x2]
+  mova             m15, m0 ; stp2_3 = stp2_0
+  mova             m10, m0 ; stp2_2 = stp2_0
+  mova             m14, m0 ; stp2_1 = stp2_0
+  SUM_SUB           15,    2,    9 ; stp2_3, stp2_4
+  SUM_SUB           10,    4,    9 ; stp2_2, stp2_5
+  SUM_SUB            0,    5,    9 ; stp2_0, stp2_7
+  SUM_SUB           14,   13,    9 ; stp2_1, stp2_6
+
+;  mova [stp + 16 *  0], m0   ; stp2_0
+;  mova [stp + 16 *  1], m14  ; stp2_1
+;  mova [stp + 16 *  2], m10  ; stp2_2
+;  mova [stp + 16 *  3], m15  ; stp2_3
+;  mova [stp + 16 *  4], m2   ; stp2_4
+;  mova [stp + 16 *  5], m13  ; stp2_5
+;  mova [stp + 16 *  6], m4   ; stp2_6
+;  mova [stp + 16 *  7], m5   ; stp2_7
+
+  SUM_SUB            6,   12,    9
+  SUM_SUB            7,    3,    9
+  pmulhrsw          m6, m8 ; stp2_13
+  pmulhrsw         m12, m8 ; stp2_10
+  pmulhrsw          m3, m8 ; stp2_11
+  pmulhrsw          m7, m8 ; stp2_12
+
+;  BUTTERFLY_4X     6,     12,  11585, 11585,  m8,  9,  10 ; stp2_10, stp2_13
+;  BUTTERFLY_4X     7,      3,  11585, 11585,  m8,  9,  10 ; stp2_11, stp2_12
+
+;  mova [stp + 16 * 10], m12  ; stp1_10
+;  mova [stp + 16 * 11], m7   ; stp1_11
+;  mova [stp + 16 * 12], m3   ; stp1_12
+;  mova [stp + 16 * 13], m6   ; stp1_13
+
+  ; STAGE 7 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  SUM_SUB           15,   7,    9 ; stp1_3, stp1_12
+  mova [stp + 16 *  3], m15
+  mova [stp + 16 * 12], m7
+
+  SUM_SUB            2,    3,    9 ; stp1_4, stp1_11
+  mova [stp + 16 *  4], m2
+  mova [stp + 16 * 11], m3
+
+  SUM_SUB            4,  12,    9 ; stp1_5, stp1_10
+  mova [stp + 16 *  5], m4
+  mova [stp + 16 * 10], m12
+
+  SUM_SUB           13,  11,    9 ; stp1_6, stp1_9
+  mova [stp + 16 *  6], m13
+  mova [stp + 16 *  9], m11
+
+  SUM_SUB            5,   1,    9 ; stp1_7, stp1_8
+  mova [stp + 16 *  7], m5
+  mova [stp + 16 *  8], m1
+
+  ; TODO: move to stg6 .. saves load, store
+  mova              m3, [stp + 16 * 15]
+  SUM_SUB            0,   3,    9 ; stp1_0, stp1_15
+  mova [stp + 16 *  0], m0
+  mova [stp + 16 * 15], m3
+
+  SUM_SUB           10,    6,    9 ; stp1_2, stp1_13
+  mova [stp + 16 *  2], m10
+  mova [stp + 16 * 13], m6
+
+  ; TODO: move to stg6 .. saves load, store
+  mova              m5, [stp + 16 * 14]
+  SUM_SUB           14,   5,    9 ; stp1_1, stp1_14
+  mova [stp + 16 *  1], m14
+  mova [stp + 16 * 14], m5
+
+  mova              m8, [pd_8192]
+; FIRST PASS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+; SECOND PASS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  mova              m1, [stp + 16 *  16]  ; restore input[1]
+  mova              m7, [stp + 16 *  19]  ; restore input[7]
+  mova              m5, [stp + 16 *  20]  ; restore input[5]
+  mova              m3, [stp + 16 *  23]  ; restore input[3]
+
+  ; STAGE 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+;  pxor             m11, m11 ; in32
+;  BUTTERFLY_4X       1, 11,   804, 16364,  m8,  9, 10 ; stp1_16, stp1_31
+  mova             m11, m1
+  pmulhrsw          m1, [pw___804x2] ; stp1_16
+  pmulhrsw         m11, [pw_16364x2] ; stp1_31
+
+;  pxor             m12, m12 ; in25
+;  BUTTERFLY_4X      12,  7, 15426,  5520,  m8,  9, 10 ; stp1_19, stp1_28
+  mova             m12, m7
+  pmulhrsw         m12, [pw_m5520x2] ; stp1_19
+  pmulhrsw          m7, [pw_15426x2] ; stp1_28
+
+;  pxor             m13, m13 ; in27
+;  BUTTERFLY_4X       5, 13,  3981, 15893,  m8,  9, 10 ; stp1_20, stp1_27
+  mova             m13, m5
+  pmulhrsw          m5, [pw__3981x2] ; stp1_20
+  pmulhrsw         m13, [pw_15893x2] ; stp1_27
+
+;  pxor             m14, m14 ; in29
+;  BUTTERFLY_4X      14,  3, 16207,  2404,  m8,  9, 10 ; stp1_23, stp1_24
+  mova             m14, m3
+  pmulhrsw         m14, [pw_m2404x2] ; stp1_23
+  pmulhrsw          m3, [pw_16207x2] ; stp1_24
+
+  ; STAGE 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  mova             m15, m1         ; stp1_16
+  mova             m10, m12        ; stp1_19
+  SUM_SUB           15,  10,  9 ; STG4: stp2_16, stp2_19
+
+  mova              m6, m14 ; stp1_23
+  mova              m4, m5  ; stp1_20
+  SUM_SUB            6,   4,  9 ; STG4: stp2_23, stp2_20
+  SUM_SUB           15,   6,  9 ; STG6: stp2_16, stp2_23
+
+  mova [stp + 16 * 16], m15  ; stp2_16
+  mova [stp + 16 * 19], m10  ; stp2_19
+  mova [stp + 16 * 20], m4   ; stp2_20
+  mova [stp + 16 * 23], m6   ; stp2_23
+
+  mova             m15, m3  ; stp1_24
+  mova              m2, m13 ; stp1_27
+  SUM_SUB           15,   2,  9 ; STG4: stp2_24, stp2_27
+
+  mova             m10, [pw_11585x2]
+  mova              m0, m11     ; stp1_31
+  mova              m4, m7      ; stp1_28
+  SUM_SUB            0,   4,  9 ; STG4: stp2_31, stp2_28
+  SUM_SUB            0,  15,  9 ; STG6: stp2_31, stp2_24
+
+  SUM_SUB           15,   6,  9
+  pmulhrsw          m6, m10     ; stp1_23
+  pmulhrsw         m15, m10     ; stp1_24
+;  BUTTERFLY_4X      15,  6, 11585, 11585,  m8,  9, 10 ; STG7: stp1_23, stp1_24
+
+  ; STAGE 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  BUTTERFLY_4X      11,  1,  3196, 16069,  m8,  9, 10 ; stp1_17, stp1_30
+  BUTTERFLY_4Xmm     7, 12,  3196, 16069,  m8,  9, 10 ; stp1_29, stp1_18
+  BUTTERFLY_4X      13,  5, 13623,  9102,  m8,  9, 10 ; stp1_21, stp1_26
+  BUTTERFLY_4Xmm     3, 14, 13623,  9102,  m8,  9, 10 ; stp1_25, stp1_22
+
+  mova [stp + 16 * 23], m6   ; stp1_23
+  mova [stp + 16 * 24], m15  ; stp1_24
+  mova [stp + 16 * 27], m2   ; stp2_27
+  mova [stp + 16 * 28], m4   ; stp2_28
+  mova [stp + 16 * 31], m0   ; stp2_31
+
+  ; STAGE 4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  mova             m10, [pw_11585x2]
+  SUM_SUB           11,  12,  9 ; stp2_17, stp2_18
+  SUM_SUB           14,  13,  9 ; stp2_22, stp2_21
+  SUM_SUB            3,   5,  9 ; stp2_25, stp2_26
+  SUM_SUB            1,   7,  9 ; stp2_30, stp2_29
+
+  SUM_SUB           11,  14,  9 ; STG6: stp2_17, stp2_22
+  SUM_SUB            1,   3,  9 ; STG6: stp2_30, stp2_25
+
+  SUM_SUB            3,  14,  9
+  pmulhrsw         m14, m10     ; stp1_22
+  pmulhrsw          m3, m10     ; stp1_25
+;  BUTTERFLY_4X       3, 14, 11585, 11585,  m8,  9, 10 ; STG7: stp1_22, stp1_25
+
+  mova [stp + 16 * 17], m11  ; stp2_17
+  mova [stp + 16 * 22], m14  ; stp2_22
+  mova [stp + 16 * 25], m3   ; stp2_25
+  mova [stp + 16 * 30], m1   ; stp2_30
+
+  ; STAGE 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  mova             m14, [stp + 16 * 19]  ; stp2_19
+  mova              m0, [stp + 16 * 20]  ; stp2_20
+  mova              m1, [stp + 16 * 27]  ; stp2_27
+  mova             m15, [stp + 16 * 28]  ; stp2_28
+  BUTTERFLY_4X       7, 12,  6270, 15137,  m8,  9, 10 ; stp1_18, stp1_29
+  BUTTERFLY_4X      15, 14,  6270, 15137,  m8,  9, 10 ; stp1_19, stp1_28
+  BUTTERFLY_4Xmm     1,  0,  6270, 15137,  m8,  9, 10 ; stp1_27, stp1_20
+  BUTTERFLY_4Xmm     5, 13,  6270, 15137,  m8,  9, 10 ; stp1_26, stp1_21
+
+  ; STAGE 6 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  mova             m10, [pw_11585x2]
+  SUM_SUB            7,  13,    9 ; stp2_18, stp2_21
+  SUM_SUB           15,   0,    9 ; stp2_19, stp2_20
+  SUM_SUB           12,   5,    9 ; stp2_29, stp2_26
+  SUM_SUB           14,   1,    9 ; stp2_28, stp2_27
+  mova [stp + 16 * 18], m7   ; stp2_18
+  mova [stp + 16 * 19], m15  ; stp2_19
+  mova [stp + 16 * 28], m14  ; stp2_28
+  mova [stp + 16 * 29], m12  ; stp2_29
+
+  ; STAGE 7 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  SUM_SUB            1,   0,  9
+  pmulhrsw          m1, m10 ; stp1_27
+  pmulhrsw          m0, m10 ; stp1_20
+  SUM_SUB            5,  13,  9
+  pmulhrsw          m5, m10 ; stp1_26
+  pmulhrsw         m13, m10 ; stp1_21
+
+;  BUTTERFLY_4X     1,      0,  11585, 11585,  m8,  9,  10 ; stp1_20, stp1_27
+;  BUTTERFLY_4X     5,     13,  11585, 11585,  m8,  9,  10 ; stp1_21, stp1_26
+
+  mova [stp + 16 * 20], m0    ; stp1_20
+  mova [stp + 16 * 21], m13   ; stp1_21
+  mova [stp + 16 * 26], m5    ; stp1_26
+  mova [stp + 16 * 27], m1    ; stp1_27
+; SECOND PASS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%endmacro
+
+%macro FINAL_STAGE 0
+  mov         r3, stp
+  lea         r4, [stp + 16 * 28]
+  mov         r5, 4
+%%sum_sub_loop:
+  mova        m0, [r3 +  0]
+  mova        m2, [r3 + 16]
+  mova        m4, [r3 + 32]
+  mova        m6, [r3 + 48]
+  mova        m1, [r4 +  0]
+  mova        m3, [r4 + 16]
+  mova        m5, [r4 + 32]
+  mova        m7, [r4 + 48]
+  SUM_SUB      0, 7, 9
+  SUM_SUB      2, 5, 9
+  SUM_SUB      4, 3, 9
+  SUM_SUB      6, 1, 9
+  mova [r3 +  0], m0
+  mova [r3 + 16], m2
+  mova [r3 + 32], m4
+  mova [r3 + 48], m6
+  mova [r4 +  0], m1
+  mova [r4 + 16], m3
+  mova [r4 + 32], m5
+  mova [r4 + 48], m7
+  add         r3, 32*2
+  sub         r4, 32*2
+  dec         r5
+  jnz %%sum_sub_loop
+%endmacro
+
+
+%define LOCAL_VARS_SIZE 16*32*4
+
+%define stp r8
+
+INIT_XMM ssse3
+cglobal idct32x32_34_add, 3, 8, 16, LOCAL_VARS_SIZE, input, output, stride
+  mova             m8, [pd_8192]
+  mova             m0, [inputq +       0]
+  mova             m1, [inputq +  32 * 2]
+  mova             m2, [inputq +  64 * 2]
+  mova             m3, [inputq +  96 * 2]
+  mova             m4, [inputq + 128 * 2]
+  mova             m5, [inputq + 160 * 2]
+  mova             m6, [inputq + 192 * 2]
+  mova             m7, [inputq + 224 * 2]
+
+  TRANSPOSE8X8  0, 1, 2, 3, 4, 5, 6, 7, 9
+
+  lea             stp, [rsp + 16 * 96]
+
+  IDCT32X32_34
+  FINAL_STAGE
+
+  mov              r7, 4
+  mov          inputq, stp
+  lea             stp, [rsp + 16 * 0]
+i32x32_34_loop:
+  mova             m0, [inputq + 16 * 0]
+  mova             m1, [inputq + 16 * 1]
+  mova             m2, [inputq + 16 * 2]
+  mova             m3, [inputq + 16 * 3]
+  mova             m4, [inputq + 16 * 4]
+  mova             m5, [inputq + 16 * 5]
+  mova             m6, [inputq + 16 * 6]
+  mova             m7, [inputq + 16 * 7]
+  lea          inputq, [inputq + 16 * 8]
+
+  TRANSPOSE8X8      0, 1, 2, 3, 4, 5, 6, 7, 9
+
+  IDCT32X32_34
+  FINAL_STAGE
+
+  lea             stp, [stp + 16 * 32]
+  dec              r7
+  jnz i32x32_34_loop
+
+  mova            m12, [pw_512]
+  lea             stp, [rsp + 16 * 0]
+  mov              r6, 32
+recon_and_store:
+  mova             m0, [stp + 16 * 32 * 0]
+  mova             m1, [stp + 16 * 32 * 1]
+  mova             m2, [stp + 16 * 32 * 2]
+  mova             m3, [stp + 16 * 32 * 3]
+  pmulhrsw         m0,  m12
+  pmulhrsw         m1,  m12
+  pmulhrsw         m2,  m12
+  pmulhrsw         m3,  m12
+  add             stp, 16
+  pxor             m8, m8
+
+  movh             m4, [outputq +  0]
+  movh             m5, [outputq +  8]
+  movh             m6, [outputq + 16]
+  movh             m7, [outputq + 24]
+  punpcklbw        m4, m8
+  punpcklbw        m5, m8
+  punpcklbw        m6, m8
+  punpcklbw        m7, m8
+  paddw            m0, m4
+  paddw            m1, m5
+  paddw            m2, m6
+  paddw            m3, m7
+  packuswb         m0, m1
+  packuswb         m2, m3
+  mova [outputq +  0], m0
+  mova [outputq + 16], m2
+  lea         outputq, [outputq + strideq]
+  dec              r6
+  jnz recon_and_store
+
+  RET
 %endif
