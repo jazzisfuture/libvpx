@@ -419,12 +419,31 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
         for (idx = 0; idx < width; idx += bs)
           write_tx_size_inter(cm, xd, mbmi, max_tx_size, idy, idx, w);
     } else {
+      const int width  = num_8x8_blocks_wide_lookup[bsize];
+      const int height = num_8x8_blocks_high_lookup[bsize];
+      int idx, idy;
+      for (idy = 0; idy < height; ++idy)
+        xd->left_txfm_context[idy] = mbmi->tx_size;
+      for (idx = 0; idx < width; ++idx)
+        xd->above_txfm_context[idx] = mbmi->tx_size;
+
       write_selected_tx_size(cm, xd, w);
     }
 #else
     write_selected_tx_size(cm, xd, w);
 #endif
   }
+#if CONFIG_VAR_TX
+  else {
+    const int width  = num_8x8_blocks_wide_lookup[bsize];
+    const int height = num_8x8_blocks_high_lookup[bsize];
+    int idx, idy;
+    for (idy = 0; idy < height; ++idy)
+      xd->left_txfm_context[idy] = mbmi->tx_size;
+    for (idx = 0; idx < width; ++idx)
+      xd->above_txfm_context[idx] = mbmi->tx_size;
+  }
+#endif
 
   if (!is_inter) {
     if (bsize >= BLOCK_8X8) {
