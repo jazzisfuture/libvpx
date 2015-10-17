@@ -120,7 +120,7 @@ static int prob_diff_update_savings(const vpx_tree_index *tree,
 #if CONFIG_VAR_TX
 static void write_tx_size_inter(const VP10_COMMON *cm,
                                 const MACROBLOCKD *xd,
-                                const MB_MODE_INFO *mbmi,
+                                MB_MODE_INFO *mbmi,
                                 TX_SIZE tx_size, int blk_row, int blk_col,
                                 vpx_writer *w) {
   const int tx_idx = (blk_row >> 1) * 8 + (blk_col >> 1);
@@ -139,6 +139,14 @@ static void write_tx_size_inter(const VP10_COMMON *cm,
      return;
 
   if (tx_size == mbmi->inter_tx_size[tx_idx]) {
+    int idx, idy;
+    BLOCK_SIZE txb_size = txsize_to_bsize[tx_size];
+    int txbh = num_8x8_blocks_high_lookup[txb_size];
+    int txbw = num_8x8_blocks_wide_lookup[txb_size];
+    for (idy = 0; idy < txbh; ++idy)
+      for (idx = 0; idx < txbw; ++idx)
+        mbmi->inter_tx_size[tx_idx + idy * 8 + idx] = tx_size;
+
     vpx_write(w, 0, cm->fc->txfm_partition_prob[ctx]);
     txfm_partition_update(xd->above_txfm_context + (blk_col >> 1),
                           xd->left_txfm_context + (blk_row >> 1), tx_size);
@@ -371,14 +379,14 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   }
 }
 
-static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
+static void pack_inter_mode_mvs(VP10_COMP *cpi, MODE_INFO *mi,
                                 vpx_writer *w) {
   VP10_COMMON *const cm = &cpi->common;
   const nmv_context *nmvc = &cm->fc->nmvc;
   const MACROBLOCK *x = &cpi->td.mb;
   const MACROBLOCKD *xd = &x->e_mbd;
   const struct segmentation *const seg = &cm->seg;
-  const MB_MODE_INFO *const mbmi = &mi->mbmi;
+  MB_MODE_INFO *const mbmi = &mi->mbmi;
   const MB_MODE_INFO_EXT *const mbmi_ext = x->mbmi_ext;
   const PREDICTION_MODE mode = mbmi->mode;
   const int segment_id = mbmi->segment_id;

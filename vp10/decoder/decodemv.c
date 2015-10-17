@@ -112,6 +112,14 @@ static void read_tx_size_inter(VP10_COMMON *cm, MACROBLOCKD *xd,
                          tx_size - 1, offsetr, offsetc, r);
     }
   } else {
+    int idx, idy;
+    BLOCK_SIZE txb_size = txsize_to_bsize[tx_size];
+    int txbh = num_8x8_blocks_high_lookup[txb_size];
+    int txbw = num_8x8_blocks_wide_lookup[txb_size];
+    for (idy = 0; idy < txbh; ++idy)
+      for (idx = 0; idx < txbw; ++idx)
+        mbmi->inter_tx_size[tx_idx + idy * 8 + idx] = tx_size;
+
     mbmi->inter_tx_size[tx_idx] = tx_size;
     mbmi->tx_size = mbmi->inter_tx_size[tx_idx];
     if (counts)
