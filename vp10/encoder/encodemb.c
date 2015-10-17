@@ -21,6 +21,7 @@
 #include "vp10/common/reconinter.h"
 #include "vp10/common/reconintra.h"
 #include "vp10/common/scan.h"
+#include "vp10/common/dct_cfg.h"
 
 #include "vp10/encoder/encodemb.h"
 #include "vp10/encoder/rd.h"
@@ -313,10 +314,6 @@ static INLINE void fdct32x32(int rd_transform,
     vpx_fdct32x32(src, dst, src_stride);
 }
 
-#define OLD_DCT_32 0
-#define OLD_DCT_16 0
-#define OLD_DCT_8 0
-#define OLD_DCT_4 0
 #if CONFIG_VP9_HIGHBITDEPTH
 static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
                                     tran_low_t *dst, int src_stride) {

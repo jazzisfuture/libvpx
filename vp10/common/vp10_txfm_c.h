@@ -14,6 +14,14 @@ typedef signed char int8_t;
 static const int cos_bit_min = 10;
 static const int cos_bit_max = 16;
 
+typedef enum {
+  TYPE_DCT = 0,
+  TYPE_ADST,
+  TYPE_IDCT,
+  TYPE_IADST,
+  TYPE_LAST
+} TYPE_TXFM;
+
 // cospi_arr[i][j] = (int)round(cos(M_PI*j/128) * (1<<(cos_bit_min+i)));
 static const int32_t cospi_arr[7][64] =
 {{ 1024,  1024,  1023,  1021,  1019,  1016,  1013,  1009,
@@ -94,6 +102,14 @@ static void round_shift_array(int32_t *arr, int size, int bit) {
       arr[i] = round_shift(arr[i], bit);
     }
   }
+}
+
+static inline int32_t half_btf(int32_t w0, int32_t in0, int32_t w1, int32_t in1, int bit){
+  int64_t result_64 = (int64_t)w0 * (int64_t)in0 + (int64_t)w1 * (int64_t)in1;
+  int32_t result_32 = w0 * in0 + w1 * in1;
+  if(result_32 != result_64)
+    printf("overflow!!! result_32: %d result_64: %ld\n", result_32, result_64);
+  return round_shift(result_32, bit);
 }
 
 static inline void show(const int32_t *buf, const int size) {

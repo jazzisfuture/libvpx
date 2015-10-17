@@ -14,6 +14,7 @@
 #include "./vpx_dsp_rtcd.h"
 #include "vp10/common/blockd.h"
 #include "vp10/common/idct.h"
+#include "vp10/common/dct_cfg.h"
 #include "vpx_dsp/inv_txfm.h"
 #include "vpx_ports/mem.h"
 
@@ -358,10 +359,6 @@ void vp10_highbd_iht16x16_256_add_c(const tran_low_t *input, uint8_t *dest8,
   }
 }
 
-#define OLD_DCT_32 0
-#define OLD_DCT_16 0
-#define OLD_DCT_8 0
-#define OLD_DCT_4 0
 // idct
 void vp10_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd) {
