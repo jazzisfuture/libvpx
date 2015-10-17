@@ -1224,9 +1224,15 @@ void vp10_filter_block_plane_non420(VP10_COMMON *cm,
           !blk_row : 1;
       const int skip_this_r = skip_this && !block_edge_above;
 
+#if CONFIG_VAR_TX
+      TX_SIZE tx_size = (plane->plane_type == PLANE_TYPE_UV)
+          ? get_uv_tx_size(mbmi, plane) : mbmi->tx_size;
+#else
       const TX_SIZE tx_size = (plane->plane_type == PLANE_TYPE_UV)
-                            ? get_uv_tx_size(&mi[0].mbmi, plane)
-                            : mi[0].mbmi.tx_size;
+                            ? get_uv_tx_size(mbmi, plane)
+                            : mbmi->tx_size;
+#endif
+
       const int skip_border_4x4_c = ss_x && mi_col + c == cm->mi_cols - 1;
       const int skip_border_4x4_r = ss_y && mi_row + r == cm->mi_rows - 1;
 
@@ -1234,6 +1240,14 @@ void vp10_filter_block_plane_non420(VP10_COMMON *cm,
       if (!(lfl[(r << 3) + (c >> ss_x)] =
             get_filter_level(&cm->lf_info, mbmi)))
         continue;
+
+#if CONFIG_VAR_TX
+      if (is_inter_block(mbmi) && !mbmi->skip)
+        tx_size = (plane->plane_type == PLANE_TYPE_UV) ?
+            get_uv_tx_size_impl(mbmi->inter_tx_size[blk_row * 8 + blk_col],
+                                mbmi->sb_type, ss_x, ss_y) :
+            mbmi->inter_tx_size[blk_row * 8 + blk_col];
+#endif
 
       // Build masks based on the transform size of each block
       if (tx_size == TX_32X32) {
