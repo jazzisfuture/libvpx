@@ -67,7 +67,7 @@ static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
 
 static int search_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
                                int partial_frame) {
-  const VP10_COMMON *const cm = &cpi->common;
+  VP10_COMMON *const cm = &cpi->common;
   const struct loopfilter *const lf = &cm->lf;
   const int min_filter_level = 0;
   const int max_filter_level = get_max_filter_level(cpi);
