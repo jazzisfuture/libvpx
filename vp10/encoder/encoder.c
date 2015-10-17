@@ -2662,6 +2662,9 @@ static void loopfilter_frame(VP10_COMP *cpi, VP10_COMMON *cm) {
   }
 
   if (lf->filter_level > 0) {
+#if CONFIG_VAR_TX
+    vp10_loop_filter_frame(cm->frame_to_show, cm, xd, lf->filter_level, 0, 0);
+#else
     if (cpi->num_workers > 1)
       vp10_loop_filter_frame_mt(cm->frame_to_show, cm, xd->plane,
                                lf->filter_level, 0, 0,
@@ -2669,6 +2672,7 @@ static void loopfilter_frame(VP10_COMP *cpi, VP10_COMMON *cm) {
                                &cpi->lf_row_sync);
     else
       vp10_loop_filter_frame(cm->frame_to_show, cm, xd, lf->filter_level, 0, 0);
+#endif
   }
 
   vpx_extend_frame_inner_borders(cm->frame_to_show);

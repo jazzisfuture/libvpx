@@ -502,6 +502,8 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
     int src_stride = x->plane[plane].src.stride;
     int dst_stride = xd->plane[plane].dst.stride;
     unsigned int tmp_sse;
+    PREDICTION_MODE mode = (plane == 0) ?
+        get_y_mode(xd->mi[0], block) : mbmi->uv_mode;
 
 #if CONFIG_VP9_HIGHBITDEPTH
     vp10_encode_block_intra(plane, block, blk_row, blk_col,
@@ -510,6 +512,11 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
 #else
     src = &x->plane[plane].src.buf[4 * (blk_row * src_stride + blk_col)];
     dst = &xd->plane[plane].dst.buf[4 * (blk_row * dst_stride + blk_col)];
+
+    vp10_predict_intra_block(xd, b_width_log2_lookup[plane_bsize],
+                             tx_size, mode, dst, dst_stride,
+                             dst, dst_stride, blk_col, blk_row, plane);
+
     args->cpi->fn_ptr[txsize_to_bsize[tx_size]].vf(src, src_stride,
                                                    dst, dst_stride, &tmp_sse);
     sse = (int64_t)tmp_sse * 16;
