@@ -154,7 +154,7 @@ static int prob_diff_update_savings(const vpx_tree_index *tree,
 #if CONFIG_VAR_TX
 static void write_tx_size_inter(const VP10_COMMON *cm,
                                 const MACROBLOCKD *xd,
-                                const MB_MODE_INFO *mbmi,
+                                MB_MODE_INFO *mbmi,
                                 TX_SIZE tx_size, int blk_row, int blk_col,
                                 vpx_writer *w) {
   const int tx_idx = (blk_row >> 1) * 8 + (blk_col >> 1);
@@ -511,7 +511,7 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   }
 }
 
-static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
+static void pack_inter_mode_mvs(VP10_COMP *cpi, MODE_INFO *mi,
                                 vpx_writer *w) {
   VP10_COMMON *const cm = &cpi->common;
   const nmv_context *nmvc = &cm->fc->nmvc;
@@ -523,7 +523,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #else
   const struct segmentation_probs *const segp = &cm->segp;
 #endif
-  const MB_MODE_INFO *const mbmi = &mi->mbmi;
+  MB_MODE_INFO *const mbmi = &mi->mbmi;
   const MB_MODE_INFO_EXT *const mbmi_ext = x->mbmi_ext;
   const PREDICTION_MODE mode = mbmi->mode;
   const int segment_id = mbmi->segment_id;
