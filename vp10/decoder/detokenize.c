@@ -14,6 +14,7 @@
 #include "vp10/common/blockd.h"
 #include "vp10/common/common.h"
 #include "vp10/common/entropy.h"
+#include "vp10/common/dct_cfg.h"
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
 #include "vp10/common/idct.h"
 #endif
@@ -62,7 +63,11 @@ static int decode_coefs(const MACROBLOCKD *xd,
   unsigned int (*eob_branch_count)[COEFF_CONTEXTS];
   uint8_t token_cache[32 * 32];
   const uint8_t *band_translate = get_band_translate(tx_size);
+#if OLD_QUANT
   const int dq_shift = (tx_size == TX_32X32);
+#else
+  const int dq_shift = 0;
+#endif
   int v, token;
   int16_t dqv = dq[0];
   const uint8_t *cat1_prob;
@@ -185,7 +190,11 @@ static int decode_coefs(const MACROBLOCKD *xd,
           break;
       }
     }
+#if OLD_QUANT
     v = (val * dqv) >> dq_shift;
+#else
+    v = (val * dqv);
+#endif
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
 #if CONFIG_VP9_HIGHBITDEPTH
     dqcoeff[scan[c]] = highbd_check_range((vpx_read_bit(r) ? -v : v),
