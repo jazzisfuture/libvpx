@@ -646,7 +646,7 @@ int vp10_has_high_freq_in_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   return result;
 }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
 void tokenize_tx(ThreadData *td, TOKENEXTRA **t,
                  int dry_run, TX_SIZE tx_size, BLOCK_SIZE plane_bsize,
                  int blk_row, int blk_col, int block, int plane,

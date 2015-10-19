@@ -43,7 +43,7 @@ static INLINE const scan_order *get_intra_scan(TX_SIZE tx_size,
   return &vp10_intra_scan_orders[tx_size][tx_type];
 }
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 extern const scan_order vp10_inter_scan_orders[TX_SIZES][TX_TYPES];
 
 static INLINE const scan_order *get_inter_scan(TX_SIZE tx_size,
@@ -55,7 +55,7 @@ static INLINE const scan_order *get_inter_scan(TX_SIZE tx_size,
 static INLINE const scan_order *get_scan(TX_SIZE tx_size,
                                          TX_TYPE tx_type,
                                          int is_inter) {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   return
       is_inter ? &vp10_inter_scan_orders[tx_size][tx_type] :
                  &vp10_intra_scan_orders[tx_size][tx_type];
