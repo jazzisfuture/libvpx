@@ -94,7 +94,7 @@ typedef enum {
   ADST_DCT  = 1,                      // ADST in vertical, DCT in horizontal
   DCT_ADST  = 2,                      // DCT  in vertical, ADST in horizontal
   ADST_ADST = 3,                      // ADST in both directions
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   FLIPADST_DCT = 4,
   DCT_FLIPADST = 5,
   FLIPADST_FLIPADST = 6,
@@ -112,7 +112,7 @@ typedef enum {
   TX_TYPES,
 } TX_TYPE;
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 #define EXT_TX_SIZES   3  // number of sizes that use extended transforms
 #endif  // CONFIG_EXT_TX
 
