@@ -69,7 +69,7 @@ typedef struct frame_contexts {
   struct tx_probs tx_probs;
   vpx_prob skip_probs[SKIP_CONTEXTS];
   nmv_context nmvc;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   vpx_prob inter_tx_type_prob[EXT_TX_SIZES][TX_TYPES - 1];
   vpx_prob intra_tx_type_prob[EXT_TX_SIZES][INTRA_MODES][TX_TYPES - 1];
 #endif  // CONFIG_EXT_TX
@@ -97,7 +97,7 @@ typedef struct FRAME_COUNTS {
   struct tx_counts tx;
   unsigned int skip[SKIP_CONTEXTS][2];
   nmv_context_counts mv;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   unsigned int inter_tx_type[EXT_TX_SIZES][TX_TYPES];
   unsigned int intra_tx_type[EXT_TX_SIZES][INTRA_MODES][TX_TYPES];
 #endif  // CONFIG_EXT_TX
@@ -146,7 +146,7 @@ void vp10_tx_counts_to_branch_counts_16x16(const unsigned int *tx_count_16x16p,
 void vp10_tx_counts_to_branch_counts_8x8(const unsigned int *tx_count_8x8p,
                                     unsigned int (*ct_8x8p)[2]);
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 extern const vpx_tree_index vp10_tx_type_tree[TREE_SIZE(TX_TYPES)];
 #endif  // CONFIG_EXT_TX
 
