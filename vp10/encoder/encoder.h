@@ -458,7 +458,7 @@ typedef struct VP10_COMP {
   int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
   int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
   int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int inter_tx_type_costs[EXT_TX_SIZES][TX_TYPES];
   int intra_tx_type_costs[EXT_TX_SIZES][INTRA_MODES][TX_TYPES];
 #endif  // CONFIG_EXT_TX
@@ -576,8 +576,8 @@ static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
   // 32x32 transform crossing a boundary at a multiple of 16.
   // mb_rows, cols are in units of 16 pixels. We assume 3 planes all at full
   // resolution. We assume up to 1 token per pixel, and then allow
-  // a head room of 4.
-  return mb_rows * mb_cols * (16 * 16 * 3 + 4);
+  // a head room of 1 EOSB token per 8x8 block per plane.
+  return mb_rows * mb_cols * (16 * 16 + 4) * 3;
 }
 
 // Get the allocated token size for a tile. It does the same calculation as in

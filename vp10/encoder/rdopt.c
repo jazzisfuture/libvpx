@@ -54,7 +54,7 @@
 #define MIN_EARLY_TERM_INDEX    3
 #define NEW_MV_DISCOUNT_FACTOR  8
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX11
 const double ext_tx_th = 0.98;
 #endif
 
@@ -338,7 +338,7 @@ static const int16_t band_counts[TX_SIZES][8] = {
 };
 static int cost_coeffs(MACROBLOCK *x,
                        int plane, int block,
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
                        int coeff_ctx,
 #else
                        ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L,
@@ -357,7 +357,7 @@ static int cost_coeffs(MACROBLOCK *x,
   unsigned int (*token_costs)[2][COEFF_CONTEXTS][ENTROPY_TOKENS] =
                    x->token_costs[tx_size][type][is_inter_block(mbmi)];
   uint8_t token_cache[32 * 32];
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
   int pt = coeff_ctx;
 #else
   int pt = combine_entropy_contexts(*A, *L);
@@ -458,7 +458,7 @@ static void dist_block(MACROBLOCK *x, int plane, int block, TX_SIZE tx_size,
 
 static int rate_block(int plane, int block, int blk_row, int blk_col,
                       TX_SIZE tx_size, struct rdcost_block_args* args) {
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
   int coeff_ctx = combine_entropy_contexts(*(args->t_above + blk_col),
                                            *(args->t_left + blk_row));
   int coeff_cost = cost_coeffs(args->x, plane, block, coeff_ctx,
@@ -615,7 +615,7 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
   const TX_SIZE largest_tx_size = tx_mode_to_biggest_tx_size[cm->tx_mode];
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int tx_type, best_tx_type = DCT_DCT;
   int r, s;
   int64_t d, psse, this_rd, best_rd = INT64_MAX;
@@ -625,7 +625,7 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_EXT_TX
 
   mbmi->tx_size = VPXMIN(max_tx_size, largest_tx_size);
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   if (is_inter_block(mbmi) && bs >= BLOCK_8X8 && !xd->lossless) {
     for (tx_type = DCT_DCT; tx_type < TX_TYPES - 1; ++tx_type) {
       if (mbmi->tx_type >= DST_ADST && mbmi->tx_type < IDTX &&
@@ -672,7 +672,7 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
                    sse, ref_best_rd, 0, bs,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   if (bs >= BLOCK_8X8 && mbmi->tx_size <= TX_16X16 &&
       !xd->lossless && *rate != INT_MAX) {
     if (is_inter_block(mbmi))
@@ -705,7 +705,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   TX_SIZE best_tx = max_tx_size;
   int start_tx, end_tx;
   const int tx_select = cm->tx_mode == TX_MODE_SELECT;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int tx_type, best_tx_type = DCT_DCT;
   int start_tx_type, end_tx_type;
 #endif  // CONFIG_EXT_TX
@@ -730,7 +730,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   *skip       = 0;
   *psse       = INT64_MAX;
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   start_tx_type = DCT_DCT;
   if (bs >= BLOCK_8X8 && !xd->lossless)
     end_tx_type = TX_TYPES - 1;
@@ -749,7 +749,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
     for (n = start_tx; n >= end_tx; --n) {
       int r_tx_size = 0;
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
       if (mbmi->tx_type >= GET_TX_TYPES(n))
         continue;
 #endif  // CONFIG_EXT_TX
@@ -764,7 +764,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       txfm_rd_in_plane(x, &r, &d, &s,
                        &sse, ref_best_rd, 0, bs, n,
                        cpi->sf.use_fast_coef_costing);
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
       if (bs >= BLOCK_8X8 && !xd->lossless && r != INT_MAX && n < TX_32X32) {
         if (is_inter_block(mbmi))
           r += cpi->inter_tx_type_costs[n][mbmi->tx_type];
@@ -798,11 +798,11 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       if (cpi->sf.tx_size_search_breakout &&
           (rd== INT64_MAX ||
               (n < (int) max_tx_size && rd > last_rd) ||
-              s == 1))
+              s == 1) && 0)
         break;
 
       last_rd = rd;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
       if (rd <
           (is_inter_block(mbmi) && best_tx_type == DCT_DCT ? ext_tx_th : 1) *
           best_rd) {
@@ -815,17 +815,17 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
         *rate       = r;
         *skip       = s;
         *psse       = sse;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
         best_tx_type = mbmi->tx_type;
 #endif  // CONFIG_EXT_TX
       }
     }
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   }
 #endif  // CONFIG_EXT_TX
 
   mbmi->tx_size = best_tx;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   mbmi->tx_type = best_tx_type;
   txfm_rd_in_plane(x, &r, &d, &s,
                    &sse, ref_best_rd, 0, bs, best_tx,
@@ -1042,13 +1042,13 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
         if (xd->lossless) {
           TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
           const scan_order *so = get_scan(TX_4X4, tx_type, 0);
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
           int coeff_ctx = combine_entropy_contexts(*(tempa + idx),
                                                    *(templ + idy));
 #endif
           vp10_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT, 1);
           vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
           ratey += cost_coeffs(x, 0, block, coeff_ctx, TX_4X4, so->scan,
                                so->neighbors, cpi->sf.use_fast_coef_costing);
           *(tempa + idx) = !(p->eobs[block] == 0);
@@ -1067,13 +1067,13 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
           int64_t unused;
           TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
           const scan_order *so = get_scan(TX_4X4, tx_type, 0);
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
           int coeff_ctx = combine_entropy_contexts(*(tempa + idx),
                                                    *(templ + idy));
 #endif
           vp10_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, 0);
           vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
           ratey += cost_coeffs(x, 0, block, coeff_ctx, TX_4X4, so->scan,
                                so->neighbors, cpi->sf.use_fast_coef_costing);
           *(tempa + idx) = !(p->eobs[block] == 0);
@@ -1202,7 +1202,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   int this_rate, this_rate_tokenonly, s;
   int64_t this_distortion, this_rd;
   TX_SIZE best_tx = TX_4X4;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   TX_TYPE best_tx_type = DCT_DCT;
 #endif  // CONFIG_EXT_TX
   int *bmode_costs;
@@ -1230,7 +1230,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
       mode_selected   = mode;
       best_rd         = this_rd;
       best_tx         = mic->mbmi.tx_size;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
       best_tx_type    = mic->mbmi.tx_type;
 #endif  // CONFIG_EXT_TX
       *rate           = this_rate;
@@ -1242,14 +1242,14 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
   mic->mbmi.mode = mode_selected;
   mic->mbmi.tx_size = best_tx;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   mic->mbmi.tx_type = best_tx_type;
 #endif  // CONFIG_EXT_TX
 
   return best_rd;
 }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
 static void tx_block_rd_b(MACROBLOCK *x, TX_SIZE tx_size,
                           int blk_row, int blk_col, int plane, int block,
                           int plane_bsize, int coeff_ctx,
@@ -1884,11 +1884,11 @@ static int64_t encode_inter_mb_segment(VP10_COMP *cpi,
     for (idx = 0; idx < width / 4; ++idx) {
       int64_t ssz, rd, rd1, rd2;
       tran_low_t* coeff;
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
       int coeff_ctx;
 #endif
       k += (idy * 2 + idx);
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
       coeff_ctx = combine_entropy_contexts(*(ta + (k & 1)),
                                            *(tl + (k >> 1)));
 #endif
@@ -1910,7 +1910,7 @@ static int64_t encode_inter_mb_segment(VP10_COMP *cpi,
                                         16, &ssz);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       thissse += ssz;
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
       thisrate += cost_coeffs(x, 0, k, coeff_ctx,
                               TX_4X4,
                               so->scan, so->neighbors,
@@ -3220,7 +3220,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
     // Y cost and distortion
     vp10_subtract_plane(x, bsize, 0);
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
     if (cm->tx_mode == TX_MODE_SELECT) {
       inter_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                       bsize, ref_best_rd);
@@ -3248,7 +3248,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     rdcosty = RDCOST(x->rdmult, x->rddiv, *rate2, *distortion);
     rdcosty = VPXMIN(rdcosty, RDCOST(x->rdmult, x->rddiv, 0, *psse));
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
     if (!inter_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv,
                           &sseuv, bsize, ref_best_rd - rdcosty)) {
 #else
@@ -4391,7 +4391,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
         xd->plane[i].pre[1] = yv12_mb[second_ref_frame][i];
     }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
     for (i = 0; i < 64; ++i)
       mbmi->inter_tx_size[i] = mbmi->tx_size;
 #endif
@@ -4566,7 +4566,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
         vp10_build_inter_predictors_sbuv(&x->e_mbd, mi_row, mi_col,
                                         BLOCK_8X8);
         memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
         if (!inter_block_uvrd(cpi, x, &rate_uv, &distortion_uv, &uv_skippable,
                               &uv_sse, BLOCK_8X8, tmp_best_rdu))
           continue;
