@@ -458,7 +458,7 @@ typedef struct VP10_COMP {
   int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
   int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
   int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int inter_tx_type_costs[EXT_TX_SIZES][TX_TYPES];
   int intra_tx_type_costs[EXT_TX_SIZES][INTRA_MODES][TX_TYPES];
 #endif  // CONFIG_EXT_TX

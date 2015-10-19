@@ -84,7 +84,7 @@ static void fill_mode_costs(VP10_COMP *cpi) {
   for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
     vp10_cost_tokens(cpi->switchable_interp_costs[i],
                     fc->switchable_interp_prob[i], vp10_switchable_interp_tree);
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   for (i = TX_4X4; i <= TX_16X16; ++i) {
     vp10_cost_tokens(cpi->inter_tx_type_costs[i], fc->inter_tx_type_prob[i],
                      vp10_tx_type_tree);
