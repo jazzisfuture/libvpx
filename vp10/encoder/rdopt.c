@@ -1428,7 +1428,7 @@ static int rd_pick_ext_intra_sby(VP10_COMP *cpi, MACROBLOCK *x,
 
   mbmi->ext_intra_mode_info.use_ext_intra_mode[0] = 1;
   mbmi->mode = DC_PRED;
-  for (mode = D76_PRED; mode < EXT_INTRA_MODES; ++mode) {
+  for (mode = 0; mode < EXT_INTRA_MODES; ++mode) {
     mbmi->ext_intra_mode_info.ext_intra_mode[0] = mode;
     super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
                     &s, NULL, bsize, *best_rd);
@@ -2056,7 +2056,7 @@ static int rd_pick_ext_intra_sbuv(VP10_COMP *cpi, MACROBLOCK *x,
 
   mbmi->ext_intra_mode_info.use_ext_intra_mode[1] = 1;
   mbmi->uv_mode = DC_PRED;
-  for (mode = D76_PRED; mode < EXT_INTRA_MODES; ++mode) {
+  for (mode = 0; mode < EXT_INTRA_MODES; ++mode) {
     mbmi->ext_intra_mode_info.ext_intra_mode[1] = mode;
     if (!super_block_uvrd(cpi, x, &this_rate_tokenonly,
                           &this_distortion, &s, &this_sse, bsize, *best_rd))

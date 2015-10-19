@@ -8,6 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#if CONFIG_EXT_INTRA
+#include <math.h>
+#endif  // CONFIG_EXT_INTRA
+
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 
@@ -191,11 +195,15 @@ static int vp10_has_bottom(BLOCK_SIZE bsize, int mi_row, int mi_col,
 #endif
 
 #if CONFIG_EXT_INTRA
+#define PI 3.14159265
+
 static const uint8_t ext_intra_extend_modes[EXT_INTRA_MODES] = {
-  NEED_ABOVERIGHT,              // D76
+  /*
+    NEED_ABOVERIGHT,              // D76
   NEED_LEFT | NEED_ABOVE,       // D104
   NEED_LEFT | NEED_ABOVE,       // D166
   NEED_LEFT,                    // D194
+  */
   NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_DC
   NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_V
   NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_H
@@ -206,6 +214,33 @@ static const uint8_t ext_intra_extend_modes[EXT_INTRA_MODES] = {
   NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_D207
   NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_D63
   NEED_LEFT | NEED_ABOVERIGHT,  // FILTER_TM
+
+  NEED_ABOVERIGHT,
+  NEED_ABOVERIGHT,
+  NEED_ABOVERIGHT,
+  NEED_ABOVERIGHT,
+  NEED_ABOVERIGHT,
+  NEED_ABOVERIGHT,
+  NEED_ABOVERIGHT,
+  NEED_ABOVERIGHT,
+
+  NEED_LEFT | NEED_ABOVE,
+  NEED_LEFT | NEED_ABOVE,
+  NEED_LEFT | NEED_ABOVE,
+  NEED_LEFT | NEED_ABOVE,
+  NEED_LEFT | NEED_ABOVE,
+  NEED_LEFT | NEED_ABOVE,
+  NEED_LEFT | NEED_ABOVE,
+  NEED_LEFT | NEED_ABOVE,
+
+  NEED_LEFT,
+  NEED_LEFT,
+  NEED_LEFT,
+  NEED_LEFT,
+  NEED_LEFT,
+  NEED_LEFT,
+  NEED_LEFT,
+  NEED_LEFT,
 };
 #endif  // CONFIG_EXT_INTRA
 
@@ -292,11 +327,156 @@ static inline void memset16(uint16_t *dst, int val, int n) {
 #define FILTER_INTRA_PREC_BITS 10
 #define FILTER_INTRA_ROUND_VAL 511
 
+static void dr_prediction_z1(uint8_t *dst, ptrdiff_t stride, int bs,
+                             const uint8_t *above, const uint8_t *left,
+                             int dx, int dy) {
+  int r, c, x, y, base, shift, val;
+
+  (void)left;
+  (void)dy;
+  assert(dy == 1);
+  assert(dx < 0);
+
+  for (r = 0; r < bs; ++r) {
+    y = r + 1;
+    for (c = 0; c < bs; ++c) {
+      x = c * 256 - y * dx;
+      base = x >> 8;
+      shift = x - base * 256;
+      if (base < 2 * bs - 1) {
+        val =
+            (above[base] * (256 - shift) + above[base + 1] * shift + 128) >> 8;
+        dst[c] = clip_pixel(val);
+      } else {
+        dst[c] = above[2 * bs - 1];
+      }
+    }
+    dst += stride;
+  }
+}
+
+static void dr_prediction_z2(uint8_t *dst, ptrdiff_t stride, int bs,
+                             const uint8_t *above, const uint8_t *left,
+                             int dx, int dy) {
+  int r, c, x, y, val1, val2, shift, val, base;
+
+  assert(dx > 0);
+  assert(dy > 0);
+
+  for (r = 0; r < bs; ++r) {
+    for (c = 0; c < bs; ++c) {
+      y = r + 1;
+      x = c * 256 - y * dx;
+      if (x >= -256) {
+        if (x <= 0) {
+          val1 = above[-1];
+          val2 = above[0];
+          shift = x + 256;
+        } else {
+          base = x >> 8;
+          val1 = above[base];
+          val2 = above[base + 1];
+          shift = x - base * 256;
+        }
+      } else {
+        x = c + 1;
+        y = r * 256 - x * dy;
+        base = y >> 8;
+        if (base >= 0) {
+          val1 = left[base];
+          val2 = left[base + 1];
+          shift = y - base * 256;
+        } else {
+          val1 = val2 = left[0];
+          shift = 0;
+        }
+      }
+      val = (val1 * (256 - shift) + val2 * shift + 128) >> 8;
+      dst[c] = clip_pixel(val);
+    }
+    dst += stride;
+  }
+}
+
+static void dr_prediction_z3(uint8_t *dst, ptrdiff_t stride, int bs,
+                             const uint8_t *above, const uint8_t *left,
+                             int dx, int dy) {
+  int r, c, x, y, base, shift, val;
+
+  (void)above;
+  (void)dx;
+  assert(dx == 1);
+  assert(dy < 0);
+
+  for (r = 0; r < bs; ++r) {
+    for (c = 0; c < bs; ++c) {
+      x = c + 1;
+      y = r * 256 - x * dy;
+      base = y >> 8;
+      shift = y - base * 256;
+      if (base < bs - 1) {
+        val =
+            (left[base] * (256 - shift) + left[base + 1] * shift + 128) >> 8;
+        dst[c] = clip_pixel(val);
+      } else {
+        dst[c] = left[bs - 1];
+      }
+    }
+    dst += stride;
+  }
+}
+
+static void dr_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                         const uint8_t *above, const uint8_t *left, int angle) {
+  double t = tan( angle * PI / 180.0);
+  int dx, dy;
+
+  if (angle > 0 && angle < 90) {
+    dx = -((int)(256 / t));
+    dy = 1;
+    dr_prediction_z1(dst, stride, bs, above, left, dx, dy);
+  } else if (angle > 90 && angle < 180) {
+    t = -t;
+    dx = (int)(256 / t);
+    dy = (int)(256 * t);
+    dr_prediction_z2(dst, stride, bs, above, left, dx, dy);
+  } else if (angle > 180 && angle < 270) {
+    dx = 1;
+    dy = -((int)(256 * t));
+    dr_prediction_z3(dst, stride, bs, above, left, dx, dy);
+  }
+}
+
 static INLINE void d76_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                  const uint8_t *above, const uint8_t *left) {
+#if 1
+  dr_predictor(dst, stride, bs, above, left, 76);
+#else
   int r, c, i;
   uint8_t buf[4][48];
   (void)left;
+#if 0
+  uint8_t *dst_ori = dst;
+
+  dr_predictor(dst, stride, bs, above, left, 76);
+
+  if (bs == 8) {
+    printf("new\n");
+    for (c = -1; c < bs * 2; ++c) {
+      printf("%3d ", above[c]);
+    }
+    printf("\n");
+
+    for (r = 0; r < bs; ++r) {
+      printf("%3d ", left[r]);
+      for (c = 0; c < bs; ++c) {
+        printf("%3d ", dst_ori[r * stride + c]);
+      }
+      printf("\n");
+    }
+    printf("\n");
+  }
+#endif
 
   for (c = 0; c < bs + bs / 4; ++c) {
     buf[0][c] = AVG3(above[c], above[c], above[c + 1]);
@@ -310,10 +490,33 @@ static INLINE void d76_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
       memcpy(dst + i * stride, buf[i] + (r >> 2), bs * sizeof(*dst));
     dst += 4 * stride;
   }
+
+#if 0
+  if (bs == 8) {
+    printf("old\n");
+    for (c = -1; c < bs * 2; ++c) {
+      printf("%3d ", above[c]);
+    }
+    printf("\n");
+
+    for (r = 0; r < bs; ++r) {
+      printf("%3d ", left[r]);
+      for (c = 0; c < bs; ++c) {
+        printf("%3d ", dst_ori[r * stride + c]);
+      }
+      printf("\n");
+    }
+    printf("\n");
+  }
+#endif
+#endif
 }
 
 static INLINE void d104_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                   const uint8_t *above, const uint8_t *left) {
+#if 1
+  dr_predictor(dst, stride, bs, above, left, 104);
+#else
   int r, c;
 
   // first 4 rows
@@ -337,10 +540,14 @@ static INLINE void d104_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     memcpy(dst + 1, dst - 4 * stride, (bs - 1) * sizeof(*dst));
     dst += stride;
   }
+#endif
 }
 
 static INLINE void d166_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                   const uint8_t *above, const uint8_t *left) {
+#if 1
+  dr_predictor(dst, stride, bs, above, left, 166);
+#else
   int r;
 
   // first 4 columns
@@ -368,10 +575,14 @@ static INLINE void d166_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
     memcpy(dst, dst - stride - 4, (bs - 4) * sizeof(*dst));
     dst += stride;
   }
+#endif
 }
 
 static INLINE void d194_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                   const uint8_t *above, const uint8_t *left) {
+#if 1
+  dr_predictor(dst, stride, bs, above, left, 194);
+#else
   int r;
   (void) above;
 
@@ -394,6 +605,7 @@ static INLINE void d194_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
   for (r = bs - 2; r >= 0; --r)
     memcpy(dst + r * stride, dst + (r + 1) * stride - 4,
            (bs - 4) * sizeof(*dst));
+#endif
 }
 
 static int filter_intra_taps_4[TX_SIZES][INTRA_MODES][4] = {
@@ -546,7 +758,7 @@ static void tm_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
 
 static void (*ext_intra_predictors[EXT_INTRA_MODES])(uint8_t *dst,
     ptrdiff_t stride, int bs, const uint8_t *above, const uint8_t *left) = {
-        d76_predictor, d104_predictor, d166_predictor, d194_predictor,
+        //d76_predictor, d104_predictor, d166_predictor, d194_predictor,
         dc_filter_predictor, v_filter_predictor, h_filter_predictor,
         d45_filter_predictor, d135_filter_predictor, d117_filter_predictor,
         d153_filter_predictor, d207_filter_predictor, d63_filter_predictor,
@@ -1219,8 +1431,12 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
   if (xd->mi[0]->mbmi.ext_intra_mode_info.use_ext_intra_mode[plane != 0]) {
     const EXT_INTRA_MODE ext_intra_mode =
         xd->mi[0]->mbmi.ext_intra_mode_info.ext_intra_mode[plane != 0];
-    ext_intra_predictors[ext_intra_mode](dst, dst_stride, bs,
-                                         const_above_row, left_col);
+    if (ext_intra_mode <= FILTER_TM_PRED)
+      ext_intra_predictors[ext_intra_mode](dst, dst_stride, bs,
+                                           const_above_row, left_col);
+    else
+      dr_predictor(dst, dst_stride, bs, const_above_row, left_col,
+                   vp10_ext_intra_angles[ext_intra_mode - D15_PRED]);
     return;
   }
 #endif  // CONFIG_EXT_INTRA

@@ -87,7 +87,11 @@ typedef struct {
   // 1: an ext intra mode is used; 0: otherwise.
   uint8_t use_ext_intra_mode[PLANE_TYPES];
   EXT_INTRA_MODE ext_intra_mode[PLANE_TYPES];
+  uint8_t ext_intra_angle[PLANE_TYPES];
 } EXT_INTRA_MODE_INFO;
+
+#define EXT_INTRA_ANGLES 24
+extern const uint8_t vp10_ext_intra_angles[EXT_INTRA_ANGLES];
 #endif  // CONFIG_EXT_INTRA
 
 // This structure now relates to 8x8 block regions.
@@ -264,10 +268,13 @@ static const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
 
 #if CONFIG_EXT_INTRA
 static const TX_TYPE ext_intra_mode_to_tx_type_lookup[EXT_INTRA_MODES] = {
-  ADST_DCT,   // D76
+  /*
+    ADST_DCT,   // D76
   ADST_DCT,   // D104
   DCT_ADST,   // D166
   DCT_ADST,   // D194
+  */
+
   DCT_DCT,    // FILTER_DC
   ADST_DCT,   // FILTER_V
   DCT_ADST,   // FILTER_H
@@ -278,6 +285,33 @@ static const TX_TYPE ext_intra_mode_to_tx_type_lookup[EXT_INTRA_MODES] = {
   DCT_ADST,   // FILTER_D207
   ADST_DCT,   // FILTER_D63
   ADST_ADST,  // FILTER_TM
+
+  DCT_DCT,
+  DCT_DCT,
+  DCT_DCT,
+  ADST_DCT,
+  ADST_DCT,
+  ADST_DCT,
+  ADST_DCT,
+  ADST_DCT,
+
+  ADST_DCT,
+  ADST_DCT,
+  ADST_DCT,
+  ADST_DCT,
+  DCT_ADST,
+  DCT_ADST,
+  DCT_ADST,
+  DCT_ADST,
+
+  DCT_ADST,
+  DCT_ADST,
+  DCT_ADST,
+  DCT_ADST,
+  DCT_ADST,
+  DCT_ADST,
+  DCT_DCT,
+  DCT_DCT,
 };
 #endif  // CONFIG_EXT_INTRA
 
