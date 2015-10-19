@@ -3012,7 +3012,7 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
                                      VPXMAX(bsize, BLOCK_8X8));
 
     vp10_encode_sb(x, VPXMAX(bsize, BLOCK_8X8));
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
     vp10_tokenize_sb_inter(cpi, td, t, !output_enabled,
                            mi_row, mi_col, VPXMAX(bsize, BLOCK_8X8));
 #else
@@ -3024,7 +3024,7 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     if (cm->tx_mode == TX_MODE_SELECT &&
         mbmi->sb_type >= BLOCK_8X8  &&
         !(is_inter_block(mbmi) && (mbmi->skip || seg_skip))) {
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
       int tx_size_ctx = get_tx_size_context(xd);
       if (is_inter_block(mbmi))
         inter_block_tx_count_update(cm, xd, mbmi, bsize,
@@ -3054,7 +3054,7 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     }
     ++td->counts->tx.tx_totals[mbmi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mbmi, &xd->plane[1])];
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     if (mbmi->tx_size <= TX_16X16 && cm->base_qindex > 0 &&
         bsize >= BLOCK_8X8 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {

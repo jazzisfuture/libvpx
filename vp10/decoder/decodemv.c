@@ -78,7 +78,7 @@ static int read_segment_id(vpx_reader *r,
   return vpx_read_tree(r, vp10_segment_tree, segp->tree_probs);
 }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
 static void read_tx_size_inter(VP10_COMMON *cm, MACROBLOCKD *xd,
                                MB_MODE_INFO *mbmi,
                                TX_SIZE tx_size, int blk_row, int blk_col,
@@ -377,7 +377,7 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
     read_palette_mode_info(cm, xd, r);
   
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     if (mbmi->tx_size <= TX_16X16 && cm->base_qindex > 0 &&
         mbmi->sb_type >= BLOCK_8X8 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
@@ -735,7 +735,7 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   MODE_INFO *const mi = xd->mi[0];
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   int inter_block;
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
   BLOCK_SIZE bsize = mbmi->sb_type;
 #endif
 
@@ -745,7 +745,7 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
   inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !mbmi->skip && inter_block) {
     const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
@@ -785,7 +785,7 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   else
     read_intra_block_mode_info(cm, xd, mi, r);
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     if (mbmi->tx_size <= TX_16X16 && cm->base_qindex > 0 &&
         mbmi->sb_type >= BLOCK_8X8 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
