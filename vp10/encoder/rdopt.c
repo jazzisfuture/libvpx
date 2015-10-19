@@ -794,21 +794,12 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       if (is_inter_block(mbmi) && !xd->lossless && !s)
         rd = VPXMIN(rd, RDCOST(x->rdmult, x->rddiv, s1, sse));
 
-      // Early termination in transform size search.
-      if (cpi->sf.tx_size_search_breakout &&
-          (rd== INT64_MAX ||
-              (n < (int) max_tx_size && rd > last_rd) ||
-              s == 1))
-        break;
-
       last_rd = rd;
-#if CONFIG_EXT_TX
       if (rd <
+#if CONFIG_EXT_TX
           (is_inter_block(mbmi) && best_tx_type == DCT_DCT ? ext_tx_th : 1) *
-          best_rd) {
-#else
-      if (rd < best_rd) {
 #endif  // CONFIG_EXT_TX
+          best_rd) {
         best_tx = n;
         best_rd = rd;
         *distortion = d;
@@ -819,6 +810,12 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
         best_tx_type = mbmi->tx_type;
 #endif  // CONFIG_EXT_TX
       }
+      // Early termination in transform size search.
+      if (cpi->sf.tx_size_search_breakout &&
+          (rd== INT64_MAX ||
+              (n < (int) max_tx_size && rd > last_rd) ||
+              s == 1))
+        break;
     }
 #if CONFIG_EXT_TX
   }
