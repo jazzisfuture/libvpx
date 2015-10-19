@@ -34,7 +34,7 @@ static INLINE void range_check(const tran_low_t *input, const int size,
 #endif
 }
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 void fdst4(const tran_low_t *input, tran_low_t *output) {
   // {sin(pi/5), sin(pi*2/5)} * sqrt(2/5) * sqrt(2)
   static const int32_t sinvalue_lookup[] = {
@@ -204,7 +204,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   tran_low_t step[4];
 
   // stage 0
-  range_check(input, 4, 14);
+  range_check(input, 4, 11);
 
   // stage 1
   output[0] = input[0] + input[3];
@@ -212,7 +212,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   output[2] = input[1] - input[2];
   output[3] = input[0] - input[3];
 
-  range_check(output, 4, 15);
+  range_check(output, 4, 12);
 
   // stage 2
   temp = output[0] * cospi_16_64 + output[1] * cospi_16_64;
@@ -224,7 +224,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   temp = output[3] * cospi_24_64 + output[2] * -cospi_8_64;
   step[3] = (tran_low_t)fdct_round_shift(temp);
 
-  range_check(step, 4, 16);
+  range_check(step, 4, 13);
 
   // stage 3
   output[0] = step[0];
@@ -232,7 +232,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   output[2] = step[1];
   output[3] = step[3];
 
-  range_check(output, 4, 16);
+  range_check(output, 4, 13);
 }
 
 static void fdct8(const tran_low_t *input, tran_low_t *output) {
@@ -240,7 +240,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   tran_low_t step[8];
 
   // stage 0
-  range_check(input, 8, 13);
+  range_check(input, 8, 12);
 
   // stage 1
   output[0] = input[0] + input[7];
@@ -252,7 +252,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   output[6] = input[1] - input[6];
   output[7] = input[0] - input[7];
 
-  range_check(output, 8, 14);
+  range_check(output, 8, 13);
 
   // stage 2
   step[0] = output[0] + output[3];
@@ -266,7 +266,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   step[6] = (tran_low_t)fdct_round_shift(temp);
   step[7] = output[7];
 
-  range_check(step, 8, 15);
+  range_check(step, 8, 14);
 
   // stage 3
   temp = step[0] * cospi_16_64 + step[1] * cospi_16_64;
@@ -282,7 +282,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   output[6] = step[7] - step[6];
   output[7] = step[7] + step[6];
 
-  range_check(output, 8, 16);
+  range_check(output, 8, 14);
 
   // stage 4
   step[0] = output[0];
@@ -298,7 +298,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   temp = output[7] * cospi_28_64 + output[4] * -cospi_4_64;
   step[7] = (tran_low_t)fdct_round_shift(temp);
 
-  range_check(step, 8, 16);
+  range_check(step, 8, 14);
 
   // stage 5
   output[0] = step[0];
@@ -310,7 +310,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   output[6] = step[3];
   output[7] = step[7];
 
-  range_check(output, 8, 16);
+  range_check(output, 8, 14);
 }
 
 static void fdct16(const tran_low_t *input, tran_low_t *output) {
@@ -1166,7 +1166,7 @@ static const transform_2d FHT_4[] = {
   { fadst4, fdct4  },  // ADST_DCT = 1
   { fdct4,  fadst4 },  // DCT_ADST = 2
   { fadst4, fadst4 },  // ADST_ADST = 3
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   { fadst4, fdct4  },  // FLIPADST_DCT = 4
   { fdct4,  fadst4 },  // DCT_FLIPADST = 5
   { fadst4, fadst4 },  // FLIPADST_FLIPADST = 6
@@ -1187,7 +1187,7 @@ static const transform_2d FHT_8[] = {
   { fadst8, fdct8  },  // ADST_DCT = 1
   { fdct8,  fadst8 },  // DCT_ADST = 2
   { fadst8, fadst8 },  // ADST_ADST = 3
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   { fadst8, fdct8  },  // FLIPADST_DCT = 4
   { fdct8,  fadst8 },  // DCT_FLIPADST = 5
   { fadst8, fadst8 },  // FLIPADST_FLIPADST = 6
@@ -1208,7 +1208,7 @@ static const transform_2d FHT_16[] = {
   { fadst16, fdct16  },  // ADST_DCT = 1
   { fdct16,  fadst16 },  // DCT_ADST = 2
   { fadst16, fadst16 },  // ADST_ADST = 3
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   { fadst16, fdct16  },  // FLIPADST_DCT = 4
   { fdct16,  fadst16 },  // DCT_FLIPADST = 5
   { fadst16, fadst16 },  // FLIPADST_FLIPADST = 6

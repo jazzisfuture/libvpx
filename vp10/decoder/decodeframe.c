@@ -76,19 +76,6 @@ static int read_is_valid(const uint8_t *start, size_t len, const uint8_t *end) {
   return len != 0 && len <= (size_t)(end - start);
 }
 
-
-static int read_inv_signed_literal(struct vpx_read_bit_buffer *rb,
-                                   int bits) {
-#if CONFIG_MISC_FIXES
-  const int nbits = sizeof(unsigned) * 8 - bits - 1;
-  const unsigned value = vpx_rb_read_literal(rb, bits + 1) << nbits;
-  return ((int) value) >> nbits;
-#else
-  return vpx_rb_read_signed_literal(rb, bits);
-#endif
-}
-
-
 static int decode_unsigned_max(struct vpx_read_bit_buffer *rb, int max) {
   const int data = vpx_rb_read_literal(rb, get_unsigned_bits(max));
   return data > max ? max : data;
@@ -389,7 +376,7 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
   }
 }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
 static void decode_reconstruct_tx(MACROBLOCKD *const xd, vpx_reader *r,
                                   MB_MODE_INFO *const mbmi,
                                   int plane, BLOCK_SIZE plane_bsize,
@@ -941,7 +928,7 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         const int num_4x4_w = pd->n4_w;
         const int num_4x4_h = pd->n4_h;
         int row, col;
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
         // TODO(jingning): This can be simplified for decoder performance.
         const BLOCK_SIZE plane_bsize =
             get_plane_block_size(VPXMAX(bsize, BLOCK_8X8), pd);
@@ -2219,7 +2206,7 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   return sz;
 }
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
   int i, j, k;
   if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
@@ -2318,7 +2305,7 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
 #endif
 
     read_mv_probs(nmvc, cm->allow_high_precision_mv, &r);
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     read_ext_tx_probs(fc, &r);
 #endif
   }
@@ -2362,7 +2349,7 @@ static void debug_check_frame_counts(const VP10_COMMON *const cm) {
   assert(!memcmp(cm->counts.skip, zero_counts.skip, sizeof(cm->counts.skip)));
   assert(!memcmp(&cm->counts.mv, &zero_counts.mv, sizeof(cm->counts.mv)));
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   assert(!memcmp(cm->counts.inter_tx_type,
                  zero_counts.inter_tx_type, sizeof(cm->counts.inter_tx_type)));
   assert(!memcmp(cm->counts.intra_tx_type,

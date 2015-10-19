@@ -32,7 +32,7 @@ extern "C" {
 
 #define MAX_MB_PLANE 3
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 #define GET_TX_TYPES(tx_size) \
     ((tx_size) >= TX_32X32 ? 1 : TX_TYPES)
 #endif  // CONFIG_EXT_TX
@@ -88,7 +88,7 @@ typedef struct {
   BLOCK_SIZE sb_type;
   PREDICTION_MODE mode;
   TX_SIZE tx_size;
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
   // TODO(jingning): This effectively assigned 64 entries for each 8x8 block.
   // Apparently it takes much more space than needed.
   TX_SIZE inter_tx_size[64];
@@ -107,7 +107,7 @@ typedef struct {
   // Only for INTER blocks
   INTERP_FILTER interp_filter;
   MV_REFERENCE_FRAME ref_frame[2];
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   TX_TYPE tx_type;
 #endif  // CONFIG_EXT_TX
 
@@ -199,8 +199,6 @@ typedef struct macroblockd {
   int up_available;
   int left_available;
 
-  const vpx_prob (*partition_probs)[PARTITION_TYPES - 1];
-
   /* Distance of MB away from frame edges */
   int mb_to_left_edge;
   int mb_to_right_edge;
@@ -256,7 +254,7 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
   const MODE_INFO *const mi = xd->mi[0];
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   if (xd->lossless || tx_size >= TX_32X32)
     return DCT_DCT;
   if (mbmi->sb_type >= BLOCK_8X8) {
