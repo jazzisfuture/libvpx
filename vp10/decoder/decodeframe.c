@@ -2144,7 +2144,7 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   return sz;
 }
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
   int i, j, k;
   if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
@@ -2216,7 +2216,7 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
         vp10_diff_update_prob(&r, &fc->partition_prob[j][i]);
 
     read_mv_probs(nmvc, cm->allow_high_precision_mv, &r);
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     read_ext_tx_probs(fc, &r);
 #endif
   }
@@ -2260,7 +2260,7 @@ static void debug_check_frame_counts(const VP10_COMMON *const cm) {
   assert(!memcmp(cm->counts.skip, zero_counts.skip, sizeof(cm->counts.skip)));
   assert(!memcmp(&cm->counts.mv, &zero_counts.mv, sizeof(cm->counts.mv)));
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   assert(!memcmp(cm->counts.inter_tx_type,
                  zero_counts.inter_tx_type, sizeof(cm->counts.inter_tx_type)));
   assert(!memcmp(cm->counts.intra_tx_type,

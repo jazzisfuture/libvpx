@@ -2426,7 +2426,7 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
   }
 
   if (bsize == BLOCK_64X64) {
-    assert(tp_orig < *tp);
+    assert(tp_orig < *tp || (tp_orig == *tp && xd->mi[0]->mbmi.skip));
     assert(best_rdc.rate < INT_MAX);
     assert(best_rdc.dist < INT64_MAX);
   } else {
@@ -3004,7 +3004,7 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     }
     ++td->counts->tx.tx_totals[mbmi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mbmi, &xd->plane[1])];
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     if (mbmi->tx_size <= TX_16X16 && cm->base_qindex > 0 &&
         bsize >= BLOCK_8X8 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
