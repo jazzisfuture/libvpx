@@ -362,6 +362,10 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
     if (plane == 0)
       mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
 
+#if 1
+  xd->flag = 0;
+#endif
+
   vp10_predict_intra_block(xd, pd->n4_wl, pd->n4_hl, tx_size, mode,
                           dst, pd->dst.stride, dst, pd->dst.stride,
                           col, row, plane);

@@ -260,6 +260,10 @@ static void read_palette_mode_info(VP10_COMMON *const cm,
     palette_ctx += (above_mi->mbmi.palette_mode_info.palette_size[0] > 0);
   if (left_mi)
     palette_ctx += (left_mi->mbmi.palette_mode_info.palette_size[0] > 0);
+
+  //if (palette_ctx > 0 && !frame_is_intra_only(cm))
+    //printf("read_palette_mode_info\n");
+
   if (vpx_read(r, vp10_default_palette_y_mode_prob[bsize - BLOCK_8X8]
                                                    [palette_ctx])) {
     int n;
@@ -496,8 +500,11 @@ static void read_intra_block_mode_info(VP10_COMMON *const cm,
 
   mbmi->uv_mode = read_intra_mode_uv(cm, xd, r, mbmi->mode);
 
-  mbmi->palette_mode_info.palette_size[0] = 0;
-  mbmi->palette_mode_info.palette_size[1] = 0;
+#if PTEST
+  if (bsize >= BLOCK_8X8 && cm->allow_screen_content_tools &&
+      mbmi->mode == DC_PRED)
+    read_palette_mode_info(cm, xd, r);
+#endif
 }
 
 static INLINE int is_mv_valid(const MV *mv) {
@@ -686,6 +693,8 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
   inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
   mbmi->tx_size = read_tx_size(cm, xd, !mbmi->skip || !inter_block, r);
+  mbmi->palette_mode_info.palette_size[0] = 0;
+  mbmi->palette_mode_info.palette_size[1] = 0;
 
   if (inter_block)
     read_inter_block_mode_info(pbi, xd, mi, mi_row, mi_col, r);

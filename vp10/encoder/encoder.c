@@ -1436,6 +1436,7 @@ void vp10_change_config(struct VP10_COMP *cpi, const VP10EncoderConfig *oxcf) {
   cm->reset_frame_context = RESET_FRAME_CONTEXT_NONE;
 
   cm->allow_screen_content_tools = (cpi->oxcf.content == VP9E_CONTENT_SCREEN);
+  cm->allow_screen_content_tools = 1;
   if (cm->allow_screen_content_tools) {
     MACROBLOCK *x = &cpi->td.mb;
     if (x->palette_buffer == 0) {

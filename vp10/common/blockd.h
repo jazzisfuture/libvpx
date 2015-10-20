@@ -30,6 +30,8 @@
 extern "C" {
 #endif
 
+#define PTEST 1
+
 #define MAX_MB_PLANE 3
 
 typedef enum {
@@ -215,6 +217,10 @@ typedef struct macroblockd {
   int corrupted;
 
   struct vpx_internal_error_info *error_info;
+
+#if 1
+  int flag;
+#endif
 } MACROBLOCKD;
 
 static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,

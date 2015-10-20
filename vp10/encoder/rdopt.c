@@ -478,6 +478,9 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
 
   if (!is_inter_block(mbmi)) {
     struct encode_b_args arg = {x, NULL, &mbmi->skip};
+#if 1
+    xd->flag = 0;
+#endif
     vp10_encode_block_intra(plane, block, plane_bsize, tx_size, &arg);
     dist_block(x, plane, block, tx_size, &dist, &sse);
   } else if (max_txsize_lookup[plane_bsize] == tx_size) {
@@ -3632,6 +3635,112 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       break;
   }
 
+#if PTEST1
+  if (cpi->common.allow_screen_content_tools &&
+      (!is_inter_mode(best_mbmode.mode) || 0)) {
+    PREDICTION_MODE mode_selected = DC_PRED;
+    int rate2 = 0, rate_y = 0;
+    int64_t distortion2 = 0, distortion_y = 0, dummy_rd = best_rd, this_rd;
+    int skippable = 0;
+    TX_SIZE best_tx_size = TX_4X4, uv_tx;
+    PALETTE_MODE_INFO palette_mode_info;
+    uint8_t *best_palette_color_map = cpi->common.allow_screen_content_tools ?
+        x->palette_buffer->best_palette_color_map : NULL;
+    int rows = 4 * num_4x4_blocks_high_lookup[bsize];
+    int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
+    int palette_ctx = 0;
+    struct macroblockd_plane *const pd = &xd->plane[1];
+    const MODE_INFO *above_mi = xd->above_mi;
+    const MODE_INFO *left_mi = xd->left_mi;
+
+    mbmi->mode = DC_PRED;
+    mbmi->uv_mode = DC_PRED;
+    mbmi->ref_frame[0] = INTRA_FRAME;
+    mbmi->ref_frame[1] = NONE;
+    memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
+    palette_mode_info.palette_size[0] = 0;
+    if (above_mi)
+      palette_ctx += (above_mi->mbmi.palette_mode_info.palette_size[0] > 0);
+    if (left_mi)
+      palette_ctx += (left_mi->mbmi.palette_mode_info.palette_size[0] > 0);
+    rd_pick_palette_intra_sby(cpi, x, bsize, palette_ctx,
+                              cpi->mbmode_cost[DC_PRED],
+                              &palette_mode_info, best_palette_color_map,
+                              &best_tx_size, &mode_selected, &dummy_rd);
+    if (palette_mode_info.palette_size[0] == 0) {
+      //printf("marker 1\n");
+      goto PALETTE_EXIT;
+    } else {
+      //printf("marker 2\n");
+    }
+
+    mbmi->mode = mode_selected;
+    mbmi->tx_size = best_tx_size;
+    mbmi->palette_mode_info.palette_size[0] =
+        palette_mode_info.palette_size[0];
+    if (palette_mode_info.palette_size[0] > 0) {
+      memcpy(mbmi->palette_mode_info.palette_colors,
+             palette_mode_info.palette_colors,
+             PALETTE_MAX_SIZE * sizeof(palette_mode_info.palette_colors[0]));
+      memcpy(xd->plane[0].color_index_map, best_palette_color_map,
+             rows * cols * sizeof(best_palette_color_map[0]));
+    }
+    super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
+                    NULL, bsize, best_rd);
+    if (rate_y == INT_MAX)
+      goto PALETTE_EXIT;
+
+    uv_tx = get_uv_tx_size_impl(mbmi->tx_size, bsize, pd->subsampling_x,
+                                pd->subsampling_y);
+    if (rate_uv_intra[uv_tx] == INT_MAX) {
+      choose_intra_uv_mode(cpi, x, ctx, bsize, uv_tx,
+                           &rate_uv_intra[uv_tx], &rate_uv_tokenonly[uv_tx],
+                           &dist_uv[uv_tx], &skip_uv[uv_tx], &mode_uv[uv_tx]);
+    }
+    mbmi->uv_mode = mode_uv[uv_tx];
+    skippable = skippable && skip_uv[uv_tx];
+    distortion2 = distortion_y + dist_uv[uv_tx];
+    rate2 = rate_y + cpi->mbmode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
+    rate2 += ref_costs_single[INTRA_FRAME];
+    if (skippable) {
+      rate2 -= (rate_y + rate_uv_tokenonly[uv_tx]);
+      rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1);
+    } else {
+      rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 0);
+    }
+    this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
+
+    if (this_rd < best_rd && 1) {
+#if 0
+      printf("bestrd was %lld, is %lld\n",
+             best_rd, this_rd);
+#endif
+
+
+      int max_plane = MAX_MB_PLANE;
+      best_mode_index = 3;
+      mbmi->mv[0].as_int = 0;
+      max_plane = 1;
+      rd_cost->rate = rate2;
+      rd_cost->dist = distortion2;
+      rd_cost->rdcost = this_rd;
+      best_rd = this_rd;
+      best_mbmode = *mbmi;
+      best_skip2 = 0;
+      best_mode_skippable = skippable;
+
+      if (!x->select_tx_size)
+        swap_block_ptr(x, ctx, 1, 0, 0, max_plane);
+      memcpy(ctx->zcoeff_blk, x->zcoeff_blk[mbmi->tx_size],
+             sizeof(ctx->zcoeff_blk[0]) * ctx->num_4x4_blk);
+      //printf("marker 3\n");
+    } else {
+      //printf("marker 4\n");
+    }
+  }
+  PALETTE_EXIT:
+#endif
+
   // The inter modes' rate costs are not calculated precisely in some cases.
   // Therefore, sometimes, NEWMV is chosen instead of NEARESTMV, NEARMV, and
   // ZEROMV. Here, checks are added for those cases, and the mode decisions
@@ -3734,6 +3843,237 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
   store_coding_context(x, ctx, best_mode_index, best_pred_diff,
                        best_filter_diff, best_mode_skippable);
+
+#if 1
+  if (bsize >= BLOCK_8X8 && cpi->common.allow_screen_content_tools &&
+      !is_inter_block(mbmi)) {
+    int colors;
+    int rows = 4 * num_4x4_blocks_high_lookup[bsize];
+    int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
+    int src_stride = x->plane[0].src.stride;
+    int palette_selected = 0;
+    uint8_t *src = x->plane[0].src.buf;
+    MB_MODE_INFO mbmi_copy = *mbmi;
+
+    PALETTE_MODE_INFO *pmi = &mbmi->palette_mode_info;
+    const MODE_INFO *const above_mi = xd->above_mi;
+    const MODE_INFO *const left_mi = xd->left_mi;
+    PALETTE_MODE_INFO palette_mode_info;
+    uint8_t *best_palette_color_map = cpi->common.allow_screen_content_tools ?
+        x->palette_buffer->best_palette_color_map : NULL;
+    int palette_ctx;
+
+    pmi->palette_size[0] = 0;
+    pmi->palette_size[1] = 0;
+    palette_mode_info.palette_size[0] = 0;
+    palette_mode_info.palette_size[1] = 0;
+    palette_ctx = 0;
+    if (above_mi)
+      palette_ctx += (above_mi->mbmi.palette_mode_info.palette_size[0] > 0);
+    if (left_mi)
+      palette_ctx += (left_mi->mbmi.palette_mode_info.palette_size[0] > 0);
+
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (cpi->common.use_highbitdepth)
+      colors = vp10_count_colors_highbd(src, src_stride, rows, cols,
+                                        cpi->common.bit_depth);
+    else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+      colors = vp10_count_colors(src, src_stride, rows, cols);
+    if (colors > 1 && colors <= 64) {
+      int n, r, c, i, j, k, max_itr = 50;
+      int64_t this_rd, this_rd_y, best_rd_y = INT64_MAX;
+      int rate2 = 0, rate_y = 0, rate_uv = 0;
+      int total_rate_y, best_total_rate_y = INT_MAX;
+      int best_token_rate_y = INT_MAX;
+      int64_t distortion2 = 0, distortion_y = 0, distortion_uv = 0;
+      int64_t best_distortion_y = INT64_MAX;
+      int skippable = 0, skip_y = 0;
+      int color_ctx, color_idx = 0;
+      int color_order[PALETTE_MAX_SIZE];
+
+      double *data = x->palette_buffer->kmeans_data_buf;
+      uint8_t *indices = x->palette_buffer->kmeans_indices_buf;
+      uint8_t *pre_indices = x->palette_buffer->kmeans_pre_indices_buf;
+
+      //int *indices = vpx_calloc(rows * cols, sizeof(*indices));
+      uint8_t *color_map;
+      //double *data = vpx_calloc(rows * cols, sizeof(*data));
+      double centroids[PALETTE_MAX_SIZE];
+      double lb, ub, val;
+      TX_SIZE best_tx = TX_4X4;;
+#if CONFIG_VP9_HIGHBITDEPTH
+      uint16_t *src16 = CONVERT_TO_SHORTPTR(src);
+      if (cpi->common.use_highbitdepth) {
+        lb = src16[0];
+        ub = src16[0];
+      } else {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+        lb = src[0];
+        ub = src[0];
+#if CONFIG_VP9_HIGHBITDEPTH
+      }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+      mbmi->ref_frame[0] = INTRA_FRAME;
+      mbmi->mode = DC_PRED;
+      for (r = 0; r < rows; r++) {
+        for (c = 0; c < cols; c++) {
+#if CONFIG_VP9_HIGHBITDEPTH
+          if (cpi->common.use_highbitdepth)
+            val = src16[r * src_stride + c];
+          else
+#endif
+            val = src[r * src_stride + c];
+          data[r * cols + c] = val;
+          if (val < lb)
+            lb = val;
+          else if (val > ub)
+            ub = val;
+        }
+      }
+
+      for (n = colors > PALETTE_MAX_SIZE ? PALETTE_MAX_SIZE : colors;
+          n >= 2; n--) {
+        for (i = 0; i < n; ++i)
+          centroids[i] = lb + (2 * i + 1) * (ub - lb) / n / 2;
+        vp10_k_means(data, centroids, indices, pre_indices, rows * cols,
+                     n, 1, max_itr);
+        //vp10_k_means(data, centroids, indices, rows * cols, n, 1, max_itr);
+        vp10_insertion_sort(centroids, n);
+
+        // remove duplicates
+        i = 1;
+        k = n;
+        while (i < k) {
+          if (centroids[i] == centroids[i - 1]) {
+            j = i;
+            while (j < k - 1) {
+              centroids[j] = centroids[j + 1];
+              ++j;
+            }
+            --k;
+          } else {
+            ++i;
+          }
+        }
+
+#if CONFIG_VP9_HIGHBITDEPTH
+        if (cpi->common.use_highbitdepth)
+          for (i = 0; i < k; ++i)
+            pmi->palette_colors[i] =
+                clip_pixel_highbd(round(centroids[i]), cpi->common.bit_depth);
+        else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+          for (i = 0; i < k; ++i)
+            pmi->palette_colors[i] = clip_pixel(round(centroids[i]));
+        pmi->palette_size[0] = k;
+
+        vp10_calc_indices(data, centroids, indices, rows * cols, k, 1);
+        for (r = 0; r < rows; ++r)
+          for (c = 0; c < cols; ++c)
+            xd->plane[0].color_index_map[r * cols + c] = indices[r * cols + c];
+        memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
+        x->skip = 0;
+        super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
+                        NULL, bsize, best_rd);
+        if (rate_y == INT_MAX)
+          continue;
+
+        total_rate_y = rate_y + cpi->mbmode_cost[mbmi->mode] +
+            cpi->common.bit_depth * k * vp10_cost_bit(128, 0) +
+            cpi->palette_y_size_cost[bsize - BLOCK_8X8][k - 2];
+        total_rate_y +=
+            vp10_cost_bit(vp10_default_palette_y_mode_prob[bsize - BLOCK_8X8]
+                                             [palette_ctx], 1);
+        color_map = xd->plane[0].color_index_map;
+        total_rate_y +=  vp10_ceil_log2(k) * vp10_cost_bit(128, 0);
+        for (i = 0; i < rows; ++i) {
+          for (j = (i == 0 ? 1 : 0); j < cols; ++j) {
+            color_ctx = vp10_get_palette_color_context(color_map, cols, i, j,
+                                                       k, color_order);
+            for (r = 0; r < k; ++r)
+              if (color_map[i * cols + j] == color_order[r]) {
+                color_idx = r;
+                break;
+              }
+            total_rate_y +=
+                cpi->palette_y_color_cost[k - 2][color_ctx][color_idx];
+          }
+        }
+        this_rd_y = RDCOST(x->rdmult, x->rddiv, total_rate_y, distortion_y);
+        if (this_rd_y < best_rd_y) {
+          best_rd_y = this_rd_y;
+          skip_y = skippable;
+          best_distortion_y = distortion_y;
+          best_total_rate_y = total_rate_y;
+          best_token_rate_y = rate_y;
+          palette_mode_info = *pmi;
+          memcpy(best_palette_color_map, xd->plane[0].color_index_map,
+                 rows * cols * sizeof(best_palette_color_map[0]));
+          best_tx = mbmi->tx_size;
+        }
+      }
+
+      if (best_rd_y < best_rd) {
+        TX_SIZE uv_tx;
+        memcpy(xd->plane[0].color_index_map, best_palette_color_map,
+               rows * cols * sizeof(best_palette_color_map[0]));
+        *pmi = palette_mode_info;
+        mbmi->tx_size = best_tx;
+        rate_y = best_token_rate_y;
+        uv_tx = get_uv_tx_size_impl(mbmi->tx_size, bsize,
+                                    xd->plane[1].subsampling_x,
+                                    xd->plane[1].subsampling_y);
+        if (rate_uv_intra[uv_tx] == INT_MAX) {
+          choose_intra_uv_mode(cpi, x, ctx, bsize, uv_tx,
+                               &rate_uv_intra[uv_tx], &rate_uv_tokenonly[uv_tx],
+                               &dist_uv[uv_tx], &skip_uv[uv_tx],
+                               &mode_uv[uv_tx]);
+        }
+        rate_uv = rate_uv_tokenonly[uv_tx];
+        distortion_uv = dist_uv[uv_tx];
+        skippable = skip_y && skip_uv[uv_tx];
+        mbmi->uv_mode = mode_uv[uv_tx];
+
+        rate2 = best_total_rate_y + rate_uv_intra[uv_tx];
+        distortion2 = best_distortion_y + distortion_uv;
+        // x->skip = skippable;
+
+        if (skippable) {
+          rate2 -= (rate_y + rate_uv);
+          rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1);
+        } else {
+          rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 0);
+        }
+        this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
+
+        if (this_rd < best_rd) {
+          palette_selected = 1;
+          best_mode_skippable = skippable;
+          x->skip = skippable;
+          best_mode_index = 3;
+          rd_cost->rate = rate2;
+          rd_cost->dist = distortion2;
+          rd_cost->rdcost = this_rd;
+
+          if (!x->select_tx_size)
+            swap_block_ptr(x, ctx, 1, 0, 0, 1);
+          memcpy(ctx->zcoeff_blk, x->zcoeff_blk[mbmi->tx_size],
+                 sizeof(ctx->zcoeff_blk[0]) * ctx->num_4x4_blk);
+
+          store_coding_context(x, ctx, best_mode_index, best_pred_diff,
+                               best_filter_diff, best_mode_skippable);
+        }
+      }
+
+      if (!palette_selected)
+        *mbmi = mbmi_copy;
+      //else
+        //printf("marker\n");
+    }
+  }
+#endif
 }
 
 void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,

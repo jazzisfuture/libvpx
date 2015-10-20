@@ -2977,12 +2977,49 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
   if (!is_inter_block(mbmi)) {
     int plane;
     mbmi->skip = 1;
+
+    xd->flag = 0;
+#if 0
+    xd->flag = output_enabled;
+    if (output_enabled && !frame_is_intra_only(cm)) {
+      if (mbmi->palette_mode_info.palette_size[0] > 0) {
+        int rows = 4 * num_4x4_blocks_high_lookup[bsize];
+        int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
+        int src_stride = x->plane[0].src.stride;
+        uint8_t *src = x->plane[0].src.buf;
+        int r, c;
+
+        for (r = 0; r < rows; ++r) {
+          for (c = 0; c < cols; ++c) {
+            printf("%3d ", src[r * src_stride + c]);
+          }
+          printf("\n");
+        }
+        printf("\n");
+
+      }
+    }
+#endif
+
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp10_encode_intra_block_plane(x, VPXMAX(bsize, BLOCK_8X8), plane);
+
+#if 0
+    if (output_enabled && !frame_is_intra_only(cm)) {
+      if (mbmi->palette_mode_info.palette_size[0] > 0) {
+        int i;
+
+        for (i = 0; i < mbmi->palette_mode_info.palette_size[0]; ++i)
+          printf("%3d \n", mbmi->palette_mode_info.palette_colors[i]);
+        printf("\n");
+        scanf("%d", &i);
+      }
+    }
+#endif
+
     if (output_enabled)
       sum_intra_stats(td->counts, mi, xd->above_mi, xd->left_mi,
                       frame_is_intra_only(cm));
-
     if (bsize >= BLOCK_8X8 && output_enabled) {
       if (mbmi->palette_mode_info.palette_size[0] > 0) {
         mbmi->palette_mode_info.palette_first_color_idx[0] =
