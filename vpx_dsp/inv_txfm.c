@@ -788,8 +788,8 @@ void vpx_idct16x16_1_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
   }
 }
 
-void idct32_c(const tran_low_t *input, tran_low_t *output) {
-  tran_low_t step1[32], step2[32];
+static void idct32_pass1_c(const tran_low_t *input, tran_low_t *step1) {
+  tran_low_t step2[32];
   tran_high_t temp1, temp2;
 
   // stage 1
@@ -810,6 +810,154 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step1[14] = input[14];
   step1[15] = input[30];
 
+  // stage 2
+  step2[0] = step1[0];
+  step2[1] = step1[1];
+  step2[2] = step1[2];
+  step2[3] = step1[3];
+  step2[4] = step1[4];
+  step2[5] = step1[5];
+  step2[6] = step1[6];
+  step2[7] = step1[7];
+
+  temp1 = step1[8] * cospi_30_64 - step1[15] * cospi_2_64;
+  temp2 = step1[8] * cospi_2_64 + step1[15] * cospi_30_64;
+  step2[8] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[15] = WRAPLOW(dct_const_round_shift(temp2), 8);
+
+  temp1 = step1[9] * cospi_14_64 - step1[14] * cospi_18_64;
+  temp2 = step1[9] * cospi_18_64 + step1[14] * cospi_14_64;
+  step2[9] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[14] = WRAPLOW(dct_const_round_shift(temp2), 8);
+
+  temp1 = step1[10] * cospi_22_64 - step1[13] * cospi_10_64;
+  temp2 = step1[10] * cospi_10_64 + step1[13] * cospi_22_64;
+  step2[10] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[13] = WRAPLOW(dct_const_round_shift(temp2), 8);
+
+  temp1 = step1[11] * cospi_6_64 - step1[12] * cospi_26_64;
+  temp2 = step1[11] * cospi_26_64 + step1[12] * cospi_6_64;
+  step2[11] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[12] = WRAPLOW(dct_const_round_shift(temp2), 8);
+
+  // stage 3
+  step1[0] = step2[0];
+  step1[1] = step2[1];
+  step1[2] = step2[2];
+  step1[3] = step2[3];
+
+  temp1 = step2[4] * cospi_28_64 - step2[7] * cospi_4_64;
+  temp2 = step2[4] * cospi_4_64 + step2[7] * cospi_28_64;
+  step1[4] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step1[7] = WRAPLOW(dct_const_round_shift(temp2), 8);
+  temp1 = step2[5] * cospi_12_64 - step2[6] * cospi_20_64;
+  temp2 = step2[5] * cospi_20_64 + step2[6] * cospi_12_64;
+  step1[5] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step1[6] = WRAPLOW(dct_const_round_shift(temp2), 8);
+
+  step1[8] = WRAPLOW(step2[8] + step2[9], 8);
+  step1[9] = WRAPLOW(step2[8] - step2[9], 8);
+  step1[10] = WRAPLOW(-step2[10] + step2[11], 8);
+  step1[11] = WRAPLOW(step2[10] + step2[11], 8);
+  step1[12] = WRAPLOW(step2[12] + step2[13], 8);
+  step1[13] = WRAPLOW(step2[12] - step2[13], 8);
+  step1[14] = WRAPLOW(-step2[14] + step2[15], 8);
+  step1[15] = WRAPLOW(step2[14] + step2[15], 8);
+
+  // stage 4
+  temp1 = (step1[0] + step1[1]) * cospi_16_64;
+  temp2 = (step1[0] - step1[1]) * cospi_16_64;
+  step2[0] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[1] = WRAPLOW(dct_const_round_shift(temp2), 8);
+  temp1 = step1[2] * cospi_24_64 - step1[3] * cospi_8_64;
+  temp2 = step1[2] * cospi_8_64 + step1[3] * cospi_24_64;
+  step2[2] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[3] = WRAPLOW(dct_const_round_shift(temp2), 8);
+  step2[4] = WRAPLOW(step1[4] + step1[5], 8);
+  step2[5] = WRAPLOW(step1[4] - step1[5], 8);
+  step2[6] = WRAPLOW(-step1[6] + step1[7], 8);
+  step2[7] = WRAPLOW(step1[6] + step1[7], 8);
+
+  step2[8] = step1[8];
+  step2[15] = step1[15];
+  temp1 = -step1[9] * cospi_8_64 + step1[14] * cospi_24_64;
+  temp2 = step1[9] * cospi_24_64 + step1[14] * cospi_8_64;
+  step2[9] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[14] = WRAPLOW(dct_const_round_shift(temp2), 8);
+  temp1 = -step1[10] * cospi_24_64 - step1[13] * cospi_8_64;
+  temp2 = -step1[10] * cospi_8_64 + step1[13] * cospi_24_64;
+  step2[10] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[13] = WRAPLOW(dct_const_round_shift(temp2), 8);
+  step2[11] = step1[11];
+  step2[12] = step1[12];
+
+  // stage 5
+  step1[0] = WRAPLOW(step2[0] + step2[3], 8);
+  step1[1] = WRAPLOW(step2[1] + step2[2], 8);
+  step1[2] = WRAPLOW(step2[1] - step2[2], 8);
+  step1[3] = WRAPLOW(step2[0] - step2[3], 8);
+  step1[4] = step2[4];
+  temp1 = (step2[6] - step2[5]) * cospi_16_64;
+  temp2 = (step2[5] + step2[6]) * cospi_16_64;
+  step1[5] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step1[6] = WRAPLOW(dct_const_round_shift(temp2), 8);
+  step1[7] = step2[7];
+
+  step1[8] = WRAPLOW(step2[8] + step2[11], 8);
+  step1[9] = WRAPLOW(step2[9] + step2[10], 8);
+  step1[10] = WRAPLOW(step2[9] - step2[10], 8);
+  step1[11] = WRAPLOW(step2[8] - step2[11], 8);
+  step1[12] = WRAPLOW(-step2[12] + step2[15], 8);
+  step1[13] = WRAPLOW(-step2[13] + step2[14], 8);
+  step1[14] = WRAPLOW(step2[13] + step2[14], 8);
+  step1[15] = WRAPLOW(step2[12] + step2[15], 8);
+
+  // stage 6
+  step2[0] = WRAPLOW(step1[0] + step1[7], 8);
+  step2[1] = WRAPLOW(step1[1] + step1[6], 8);
+  step2[2] = WRAPLOW(step1[2] + step1[5], 8);
+  step2[3] = WRAPLOW(step1[3] + step1[4], 8);
+  step2[4] = WRAPLOW(step1[3] - step1[4], 8);
+  step2[5] = WRAPLOW(step1[2] - step1[5], 8);
+  step2[6] = WRAPLOW(step1[1] - step1[6], 8);
+  step2[7] = WRAPLOW(step1[0] - step1[7], 8);
+  step2[8] = step1[8];
+  step2[9] = step1[9];
+  temp1 = (-step1[10] + step1[13]) * cospi_16_64;
+  temp2 = (step1[10] + step1[13]) * cospi_16_64;
+  step2[10] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[13] = WRAPLOW(dct_const_round_shift(temp2), 8);
+  temp1 = (-step1[11] + step1[12]) * cospi_16_64;
+  temp2 = (step1[11] + step1[12]) * cospi_16_64;
+  step2[11] = WRAPLOW(dct_const_round_shift(temp1), 8);
+  step2[12] = WRAPLOW(dct_const_round_shift(temp2), 8);
+  step2[14] = step1[14];
+  step2[15] = step1[15];
+
+  // stage 7
+  step1[0] = WRAPLOW(step2[0] + step2[15], 8);
+  step1[1] = WRAPLOW(step2[1] + step2[14], 8);
+  step1[2] = WRAPLOW(step2[2] + step2[13], 8);
+  step1[3] = WRAPLOW(step2[3] + step2[12], 8);
+  step1[4] = WRAPLOW(step2[4] + step2[11], 8);
+  step1[5] = WRAPLOW(step2[5] + step2[10], 8);
+  step1[6] = WRAPLOW(step2[6] + step2[9], 8);
+  step1[7] = WRAPLOW(step2[7] + step2[8], 8);
+  step1[8] = WRAPLOW(step2[7] - step2[8], 8);
+  step1[9] = WRAPLOW(step2[6] - step2[9], 8);
+  step1[10] = WRAPLOW(step2[5] - step2[10], 8);
+  step1[11] = WRAPLOW(step2[4] - step2[11], 8);
+  step1[12] = WRAPLOW(step2[3] - step2[12], 8);
+  step1[13] = WRAPLOW(step2[2] - step2[13], 8);
+  step1[14] = WRAPLOW(step2[1] - step2[14], 8);
+  step1[15] = WRAPLOW(step2[0] - step2[15], 8);
+}
+
+static void idct32_pass2_c(const tran_low_t *input, tran_low_t *step1) {
+  tran_low_t step2[32];
+  tran_high_t temp1, temp2;
+
+  // stage 1
   temp1 = input[1] * cospi_31_64 - input[31] * cospi_1_64;
   temp2 = input[1] * cospi_1_64 + input[31] * cospi_31_64;
   step1[16] = WRAPLOW(dct_const_round_shift(temp1), 8);
@@ -851,35 +999,6 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step1[24] = WRAPLOW(dct_const_round_shift(temp2), 8);
 
   // stage 2
-  step2[0] = step1[0];
-  step2[1] = step1[1];
-  step2[2] = step1[2];
-  step2[3] = step1[3];
-  step2[4] = step1[4];
-  step2[5] = step1[5];
-  step2[6] = step1[6];
-  step2[7] = step1[7];
-
-  temp1 = step1[8] * cospi_30_64 - step1[15] * cospi_2_64;
-  temp2 = step1[8] * cospi_2_64 + step1[15] * cospi_30_64;
-  step2[8] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[15] = WRAPLOW(dct_const_round_shift(temp2), 8);
-
-  temp1 = step1[9] * cospi_14_64 - step1[14] * cospi_18_64;
-  temp2 = step1[9] * cospi_18_64 + step1[14] * cospi_14_64;
-  step2[9] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[14] = WRAPLOW(dct_const_round_shift(temp2), 8);
-
-  temp1 = step1[10] * cospi_22_64 - step1[13] * cospi_10_64;
-  temp2 = step1[10] * cospi_10_64 + step1[13] * cospi_22_64;
-  step2[10] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[13] = WRAPLOW(dct_const_round_shift(temp2), 8);
-
-  temp1 = step1[11] * cospi_6_64 - step1[12] * cospi_26_64;
-  temp2 = step1[11] * cospi_26_64 + step1[12] * cospi_6_64;
-  step2[11] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[12] = WRAPLOW(dct_const_round_shift(temp2), 8);
-
   step2[16] = WRAPLOW(step1[16] + step1[17], 8);
   step2[17] = WRAPLOW(step1[16] - step1[17], 8);
   step2[18] = WRAPLOW(-step1[18] + step1[19], 8);
@@ -898,29 +1017,6 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step2[31] = WRAPLOW(step1[30] + step1[31], 8);
 
   // stage 3
-  step1[0] = step2[0];
-  step1[1] = step2[1];
-  step1[2] = step2[2];
-  step1[3] = step2[3];
-
-  temp1 = step2[4] * cospi_28_64 - step2[7] * cospi_4_64;
-  temp2 = step2[4] * cospi_4_64 + step2[7] * cospi_28_64;
-  step1[4] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step1[7] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  temp1 = step2[5] * cospi_12_64 - step2[6] * cospi_20_64;
-  temp2 = step2[5] * cospi_20_64 + step2[6] * cospi_12_64;
-  step1[5] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step1[6] = WRAPLOW(dct_const_round_shift(temp2), 8);
-
-  step1[8] = WRAPLOW(step2[8] + step2[9], 8);
-  step1[9] = WRAPLOW(step2[8] - step2[9], 8);
-  step1[10] = WRAPLOW(-step2[10] + step2[11], 8);
-  step1[11] = WRAPLOW(step2[10] + step2[11], 8);
-  step1[12] = WRAPLOW(step2[12] + step2[13], 8);
-  step1[13] = WRAPLOW(step2[12] - step2[13], 8);
-  step1[14] = WRAPLOW(-step2[14] + step2[15], 8);
-  step1[15] = WRAPLOW(step2[14] + step2[15], 8);
-
   step1[16] = step2[16];
   step1[31] = step2[31];
   temp1 = -step2[17] * cospi_4_64 + step2[30] * cospi_28_64;
@@ -947,32 +1043,6 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step1[28] = step2[28];
 
   // stage 4
-  temp1 = (step1[0] + step1[1]) * cospi_16_64;
-  temp2 = (step1[0] - step1[1]) * cospi_16_64;
-  step2[0] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[1] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  temp1 = step1[2] * cospi_24_64 - step1[3] * cospi_8_64;
-  temp2 = step1[2] * cospi_8_64 + step1[3] * cospi_24_64;
-  step2[2] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[3] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  step2[4] = WRAPLOW(step1[4] + step1[5], 8);
-  step2[5] = WRAPLOW(step1[4] - step1[5], 8);
-  step2[6] = WRAPLOW(-step1[6] + step1[7], 8);
-  step2[7] = WRAPLOW(step1[6] + step1[7], 8);
-
-  step2[8] = step1[8];
-  step2[15] = step1[15];
-  temp1 = -step1[9] * cospi_8_64 + step1[14] * cospi_24_64;
-  temp2 = step1[9] * cospi_24_64 + step1[14] * cospi_8_64;
-  step2[9] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[14] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  temp1 = -step1[10] * cospi_24_64 - step1[13] * cospi_8_64;
-  temp2 = -step1[10] * cospi_8_64 + step1[13] * cospi_24_64;
-  step2[10] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[13] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  step2[11] = step1[11];
-  step2[12] = step1[12];
-
   step2[16] = WRAPLOW(step1[16] + step1[19], 8);
   step2[17] = WRAPLOW(step1[17] + step1[18], 8);
   step2[18] = WRAPLOW(step1[17] - step1[18], 8);
@@ -992,26 +1062,6 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step2[31] = WRAPLOW(step1[28] + step1[31], 8);
 
   // stage 5
-  step1[0] = WRAPLOW(step2[0] + step2[3], 8);
-  step1[1] = WRAPLOW(step2[1] + step2[2], 8);
-  step1[2] = WRAPLOW(step2[1] - step2[2], 8);
-  step1[3] = WRAPLOW(step2[0] - step2[3], 8);
-  step1[4] = step2[4];
-  temp1 = (step2[6] - step2[5]) * cospi_16_64;
-  temp2 = (step2[5] + step2[6]) * cospi_16_64;
-  step1[5] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step1[6] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  step1[7] = step2[7];
-
-  step1[8] = WRAPLOW(step2[8] + step2[11], 8);
-  step1[9] = WRAPLOW(step2[9] + step2[10], 8);
-  step1[10] = WRAPLOW(step2[9] - step2[10], 8);
-  step1[11] = WRAPLOW(step2[8] - step2[11], 8);
-  step1[12] = WRAPLOW(-step2[12] + step2[15], 8);
-  step1[13] = WRAPLOW(-step2[13] + step2[14], 8);
-  step1[14] = WRAPLOW(step2[13] + step2[14], 8);
-  step1[15] = WRAPLOW(step2[12] + step2[15], 8);
-
   step1[16] = step2[16];
   step1[17] = step2[17];
   temp1 = -step2[18] * cospi_8_64 + step2[29] * cospi_24_64;
@@ -1038,27 +1088,6 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step1[31] = step2[31];
 
   // stage 6
-  step2[0] = WRAPLOW(step1[0] + step1[7], 8);
-  step2[1] = WRAPLOW(step1[1] + step1[6], 8);
-  step2[2] = WRAPLOW(step1[2] + step1[5], 8);
-  step2[3] = WRAPLOW(step1[3] + step1[4], 8);
-  step2[4] = WRAPLOW(step1[3] - step1[4], 8);
-  step2[5] = WRAPLOW(step1[2] - step1[5], 8);
-  step2[6] = WRAPLOW(step1[1] - step1[6], 8);
-  step2[7] = WRAPLOW(step1[0] - step1[7], 8);
-  step2[8] = step1[8];
-  step2[9] = step1[9];
-  temp1 = (-step1[10] + step1[13]) * cospi_16_64;
-  temp2 = (step1[10] + step1[13]) * cospi_16_64;
-  step2[10] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[13] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  temp1 = (-step1[11] + step1[12]) * cospi_16_64;
-  temp2 = (step1[11] + step1[12]) * cospi_16_64;
-  step2[11] = WRAPLOW(dct_const_round_shift(temp1), 8);
-  step2[12] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  step2[14] = step1[14];
-  step2[15] = step1[15];
-
   step2[16] = WRAPLOW(step1[16] + step1[23], 8);
   step2[17] = WRAPLOW(step1[17] + step1[22], 8);
   step2[18] = WRAPLOW(step1[18] + step1[21], 8);
@@ -1078,23 +1107,6 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step2[31] = WRAPLOW(step1[24] + step1[31], 8);
 
   // stage 7
-  step1[0] = WRAPLOW(step2[0] + step2[15], 8);
-  step1[1] = WRAPLOW(step2[1] + step2[14], 8);
-  step1[2] = WRAPLOW(step2[2] + step2[13], 8);
-  step1[3] = WRAPLOW(step2[3] + step2[12], 8);
-  step1[4] = WRAPLOW(step2[4] + step2[11], 8);
-  step1[5] = WRAPLOW(step2[5] + step2[10], 8);
-  step1[6] = WRAPLOW(step2[6] + step2[9], 8);
-  step1[7] = WRAPLOW(step2[7] + step2[8], 8);
-  step1[8] = WRAPLOW(step2[7] - step2[8], 8);
-  step1[9] = WRAPLOW(step2[6] - step2[9], 8);
-  step1[10] = WRAPLOW(step2[5] - step2[10], 8);
-  step1[11] = WRAPLOW(step2[4] - step2[11], 8);
-  step1[12] = WRAPLOW(step2[3] - step2[12], 8);
-  step1[13] = WRAPLOW(step2[2] - step2[13], 8);
-  step1[14] = WRAPLOW(step2[1] - step2[14], 8);
-  step1[15] = WRAPLOW(step2[0] - step2[15], 8);
-
   step1[16] = step2[16];
   step1[17] = step2[17];
   step1[18] = step2[18];
@@ -1119,8 +1131,15 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step1[29] = step2[29];
   step1[30] = step2[30];
   step1[31] = step2[31];
+}
 
-  // final stage
+void idct32_c(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t step1[32];
+
+  idct32_pass1_c(input, step1);
+  idct32_pass2_c(input, step1);
+
+  // final stage ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output[0] = WRAPLOW(step1[0] + step1[31], 8);
   output[1] = WRAPLOW(step1[1] + step1[30], 8);
   output[2] = WRAPLOW(step1[2] + step1[29], 8);
@@ -1196,6 +1215,9 @@ void vpx_idct32x32_1024_add_c(const tran_low_t *input, uint8_t *dest,
 
 void vpx_idct32x32_34_add_c(const tran_low_t *input, uint8_t *dest,
                             int stride) {
+#if 1
+  vpx_idct32x32_34_add_x(input, dest, stride);
+#else
   tran_low_t out[32 * 32] = {0};
   tran_low_t *outptr = out;
   int i, j;
@@ -1219,6 +1241,7 @@ void vpx_idct32x32_34_add_c(const tran_low_t *input, uint8_t *dest,
                                             ROUND_POWER_OF_TWO(temp_out[j], 6));
     }
   }
+#endif
 }
 
 void vpx_idct32x32_1_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
