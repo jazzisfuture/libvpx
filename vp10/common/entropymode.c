@@ -127,21 +127,6 @@ const vpx_prob vp10_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = 
   }
 };
 
-#if !CONFIG_MISC_FIXES
-const vpx_prob vp10_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1] = {
-  { 144,  11,  54, 157, 195, 130,  46,  58, 108 },  // y = dc
-  { 118,  15, 123, 148, 131, 101,  44,  93, 131 },  // y = v
-  { 113,  12,  23, 188, 226, 142,  26,  32, 125 },  // y = h
-  { 120,  11,  50, 123, 163, 135,  64,  77, 103 },  // y = d45
-  { 113,   9,  36, 155, 111, 157,  32,  44, 161 },  // y = d135
-  { 116,   9,  55, 176,  76,  96,  37,  61, 149 },  // y = d117
-  { 115,   9,  28, 141, 161, 167,  21,  25, 193 },  // y = d153
-  { 120,  12,  32, 145, 195, 142,  32,  38,  86 },  // y = d207
-  { 116,  12,  64, 120, 140, 125,  49, 115, 121 },  // y = d63
-  { 102,  19,  66, 162, 182, 122,  35,  59, 128 }   // y = tm
-};
-#endif
-
 static const vpx_prob default_if_y_probs[BLOCK_SIZE_GROUPS][INTRA_MODES - 1] = {
   {  65,  32,  18, 144, 162, 194,  41,  51,  98 },  // block_size < 8x8
   { 132,  68,  18, 165, 217, 196,  45,  40,  78 },  // block_size < 16x16
@@ -161,32 +146,6 @@ static const vpx_prob default_uv_probs[INTRA_MODES][INTRA_MODES - 1] = {
   {  77,   7,  64, 116, 132, 122,  37, 126, 120 },  // y = d63
   { 101,  21, 107, 181, 192, 103,  19,  67, 125 }   // y = tm
 };
-
-#if !CONFIG_MISC_FIXES
-const vpx_prob vp10_kf_partition_probs[PARTITION_CONTEXTS]
-                                     [PARTITION_TYPES - 1] = {
-  // 8x8 -> 4x4
-  { 158,  97,  94 },  // a/l both not split
-  {  93,  24,  99 },  // a split, l not split
-  {  85, 119,  44 },  // l split, a not split
-  {  62,  59,  67 },  // a/l both split
-  // 16x16 -> 8x8
-  { 149,  53,  53 },  // a/l both not split
-  {  94,  20,  48 },  // a split, l not split
-  {  83,  53,  24 },  // l split, a not split
-  {  52,  18,  18 },  // a/l both split
-  // 32x32 -> 16x16
-  { 150,  40,  39 },  // a/l both not split
-  {  78,  12,  26 },  // a split, l not split
-  {  67,  33,  11 },  // l split, a not split
-  {  24,   7,   5 },  // a/l both split
-  // 64x64 -> 32x32
-  { 174,  35,  49 },  // a/l both not split
-  {  68,  11,  27 },  // a split, l not split
-  {  57,  15,   9 },  // l split, a not split
-  {  12,   3,   3 },  // a/l both split
-};
-#endif
 
 static const vpx_prob default_partition_probs[PARTITION_CONTEXTS]
                                              [PARTITION_TYPES - 1] = {
@@ -750,13 +709,11 @@ static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
   { 149, 144, },
 };
 
-#if CONFIG_MISC_FIXES
 // FIXME(someone) need real defaults here
 static const struct segmentation_probs default_seg_probs = {
   { 128, 128, 128, 128, 128, 128, 128 },
   { 128, 128, 128 },
 };
-#endif
 
 static void init_mode_probs(FRAME_CONTEXT *fc) {
   vp10_copy(fc->uv_mode_prob, default_uv_probs);
@@ -770,10 +727,8 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
   fc->tx_probs = default_tx_probs;
   vp10_copy(fc->skip_probs, default_skip_probs);
   vp10_copy(fc->inter_mode_probs, default_inter_mode_probs);
-#if CONFIG_MISC_FIXES
   vp10_copy(fc->seg.tree_probs, default_seg_probs.tree_probs);
   vp10_copy(fc->seg.pred_probs, default_seg_probs.pred_probs);
-#endif
 }
 
 const vpx_tree_index vp10_switchable_interp_tree
@@ -809,16 +764,6 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
   for (i = 0; i < BLOCK_SIZE_GROUPS; i++)
     vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->y_mode_prob[i],
                 counts->y_mode[i], fc->y_mode_prob[i]);
-
-#if !CONFIG_MISC_FIXES
-  for (i = 0; i < INTRA_MODES; ++i)
-    vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->uv_mode_prob[i],
-                         counts->uv_mode[i], fc->uv_mode_prob[i]);
-
-  for (i = 0; i < PARTITION_CONTEXTS; i++)
-    vpx_tree_merge_probs(vp10_partition_tree, pre_fc->partition_prob[i],
-                         counts->partition[i], fc->partition_prob[i]);
-#endif
 
   if (cm->interp_filter == SWITCHABLE) {
     for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
@@ -863,7 +808,6 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
     fc->skip_probs[i] = mode_mv_merge_probs(
         pre_fc->skip_probs[i], counts->skip[i]);
 
-#if CONFIG_MISC_FIXES
   if (cm->seg.temporal_update) {
     for (i = 0; i < PREDICTION_PROBS; i++)
       fc->seg.pred_probs[i] = mode_mv_merge_probs(pre_fc->seg.pred_probs[i],
@@ -883,7 +827,6 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
   for (i = 0; i < PARTITION_CONTEXTS; i++)
     vpx_tree_merge_probs(vp10_partition_tree, pre_fc->partition_prob[i],
                          counts->partition[i], fc->partition_prob[i]);
-#endif
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {
