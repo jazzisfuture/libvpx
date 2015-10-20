@@ -1360,11 +1360,11 @@ static void tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-  *dist += vp10_highbd_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
+  *dist = vp10_highbd_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
                                    &this_sse, xd->bd) >> shift;
-  *bsse += this_sse >> shift;
+  *bsse = this_sse >> shift;
 #else
-  *bsse += (int64_t)tmp_sse * 16;
+  *bsse = (int64_t)tmp_sse * 16;
 
   if (p->eobs[block] > 0) {
     // TODO(jingning): integrate multiple transform type experiment
@@ -1412,12 +1412,12 @@ static void tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
                                 rec_buffer, 32, &tmp_sse);
     }
   }
-  *dist += (int64_t)tmp_sse * 16;
+  *dist = (int64_t)tmp_sse * 16;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-  *rate += cost_coeffs(x, plane, block, coeff_ctx, tx_size,
+  *rate = cost_coeffs(x, plane, block, coeff_ctx, tx_size,
                        scan_order->scan, scan_order->neighbors, 0);
-  *skip &= (p->eobs[block] == 0);
+  *skip = (p->eobs[block] == 0);
 }
 
 static void select_tx_block(const VP10_COMP *cpi, MACROBLOCK *x,
@@ -1507,10 +1507,6 @@ static void select_tx_block(const VP10_COMP *cpi, MACROBLOCK *x,
       *skip = 1;
       x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = 1;
       p->eobs[block] = 0;
-//        for (i = 0; i < (1 << tx_size); ++i) {
-//          pta[i] = 0;
-//          ptl[i] = 0;
-//        }
     } else {
       x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = 0;
       *skip = 0;
@@ -1674,6 +1670,10 @@ static void tx_block_rd(const VP10_COMP *cpi, MACROBLOCK *x,
     int coeff_ctx, i;
     ENTROPY_CONTEXT *ta = above_ctx + blk_col;
     ENTROPY_CONTEXT *tl = left_ctx  + blk_row;
+    int this_rate, this_skip;
+    int64_t this_dist, this_bsse;
+    int zero_blk_rate;
+
     switch (tx_size) {
       case TX_4X4:
         break;
@@ -1694,8 +1694,31 @@ static void tx_block_rd(const VP10_COMP *cpi, MACROBLOCK *x,
         break;
     }
     coeff_ctx = combine_entropy_contexts(ta[0], tl[0]);
+
+    zero_blk_rate =
+        x->token_costs[tx_size][pd->plane_type][1][0][0][coeff_ctx][EOB_TOKEN];
+
     tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
-                  plane_bsize, coeff_ctx, rate, dist, bsse, skip);
+                  plane_bsize, coeff_ctx, &this_rate, &this_dist,
+                  &this_bsse, &this_skip);
+
+    if (RDCOST(x->rdmult, x->rddiv, this_rate, this_dist) >
+        RDCOST(x->rdmult, x->rddiv, zero_blk_rate, this_bsse) &&
+        !xd->lossless) {
+      this_rate = zero_blk_rate;
+      this_dist = this_bsse;
+      this_skip = 1;
+      x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = 1;
+      p->eobs[block] = 0;
+    } else {
+      x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = 0;
+    }
+
+    *rate += this_rate;
+    *dist += this_dist;
+    *bsse += this_bsse;
+    *skip &= this_skip;
+
     for (i = 0; i < (1 << tx_size); ++i) {
       ta[i] = !(p->eobs[block] == 0);
       tl[i] = !(p->eobs[block] == 0);
