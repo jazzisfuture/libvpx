@@ -373,16 +373,15 @@ static INLINE void read_mv(vpx_reader *r, MV *mv, const MV *ref,
                            nmv_context_counts *counts, int allow_hp) {
   const MV_JOINT_TYPE joint_type =
       (MV_JOINT_TYPE)vpx_read_tree(r, vp10_mv_joint_tree, ctx->joints);
-  const int use_hp = allow_hp && vp10_use_mv_hp(ref);
   MV diff = {0, 0};
 
   if (mv_joint_vertical(joint_type))
-    diff.row = read_mv_component(r, &ctx->comps[0], use_hp);
+    diff.row = read_mv_component(r, &ctx->comps[0], allow_hp);
 
   if (mv_joint_horizontal(joint_type))
-    diff.col = read_mv_component(r, &ctx->comps[1], use_hp);
+    diff.col = read_mv_component(r, &ctx->comps[1], allow_hp);
 
-  vp10_inc_mv(&diff, counts, use_hp);
+  vp10_inc_mv(&diff, counts);
 
   mv->row = ref->row + diff.row;
   mv->col = ref->col + diff.col;
