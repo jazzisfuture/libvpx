@@ -3212,12 +3212,20 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
 #endif
   }
 
+#if CONFIG_VAR_TX
+  if (cm->frame_type == KEY_FRAME) {
+    int i;
+    for (i = 0; i < 64; ++i)
+      mbmi->inter_tx_size[i] = mbmi->tx_size;
+  }
+#endif
+
   if (output_enabled) {
     if (cm->tx_mode == TX_MODE_SELECT &&
         mbmi->sb_type >= BLOCK_8X8  &&
         !(is_inter_block(mbmi) && (mbmi->skip || seg_skip))) {
 #if CONFIG_VAR_TX
-      if (is_inter_block(mbmi))
+      if (is_inter_block(mbmi) || 1)
         tx_partition_count_update(cm, xd, bsize, mi_row, mi_col,
                                   td->counts);
 #endif
@@ -3254,7 +3262,7 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
 
 #if CONFIG_VAR_TX
   if (cm->tx_mode == TX_MODE_SELECT && mbmi->sb_type >= BLOCK_8X8 &&
-      is_inter_block(mbmi) && !(mbmi->skip || seg_skip)) {
+      !(is_inter_block(mbmi) && (mbmi->skip || seg_skip))) {
     if (!output_enabled)
       tx_partition_set_contexts(cm, xd, bsize, mi_row, mi_col);
   } else {

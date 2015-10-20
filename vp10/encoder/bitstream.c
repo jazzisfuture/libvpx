@@ -416,7 +416,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, MODE_INFO *mi,
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !(is_inter && skip)) {
 #if CONFIG_VAR_TX
-    if (is_inter) {  // This implies skip flag is 0.
+    if (!is_inter || !skip) {  // This implies skip flag is 0.
       const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
       const int txb_size = txsize_to_bsize[max_tx_size];
       const int bs = num_4x4_blocks_wide_lookup[txb_size];

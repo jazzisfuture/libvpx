@@ -681,7 +681,7 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   xd->left_txfm_context = xd->left_txfm_context_buffer + (mi_row & 0x07);
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
-      !mbmi->skip && inter_block) {
+      !(mbmi->skip && inter_block)) {
     const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
     const BLOCK_SIZE txb_size = txsize_to_bsize[max_tx_size];
     const int bs = num_4x4_blocks_wide_lookup[txb_size];

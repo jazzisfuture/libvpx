@@ -3980,6 +3980,11 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       if (this_mode != DC_PRED && this_mode != TM_PRED)
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
+#if CONFIG_VAR_TX
+      // set inter_tx_size array
+      for (i = 0; i < 64; ++i)
+        mbmi->inter_tx_size[i] = mbmi->tx_size;
+#endif
     } else {
       this_rd = handle_inter_mode(cpi, x, bsize,
                                   &rate2, &distortion2, &skippable,
