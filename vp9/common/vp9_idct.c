@@ -174,6 +174,10 @@ void vp9_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
   else if (eob <= 34)
     // non-zero coeff only in upper-left 8x8
     vpx_idct32x32_34_add(input, dest, stride);
+//    vpx_idct32x32_34_add_x(input, dest, stride);
+  else if (eob <= 135)
+    vpx_idct32x32_135_add_sse2(input, dest, stride);
+  //vpx_idct32x32_135_add_c(input, dest, stride);
   else
     vpx_idct32x32_1024_add(input, dest, stride);
 }

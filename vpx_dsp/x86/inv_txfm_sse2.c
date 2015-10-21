@@ -2401,7 +2401,14 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
     input += 8; \
   }  \
 
-#define IDCT32_34 \
+#define SUM_SUB(val1, val2) do { \
+  const __m128i v1 = _mm_add_epi16(val1, val2); \
+  const __m128i v2 = _mm_sub_epi16(val1, val2); \
+  val1 = v1; \
+  val2 = v2; \
+} while (0)
+
+#define IDCT32_34_PASS2 \
 /* Stage1 */ \
 { \
   const __m128i zero = _mm_setzero_si128();\
@@ -2429,37 +2436,11 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
 \
 /* Stage2 */ \
 { \
-  const __m128i zero = _mm_setzero_si128();\
-  const __m128i lo_2_30 = _mm_unpacklo_epi16(in[2], zero); \
-  const __m128i hi_2_30 = _mm_unpackhi_epi16(in[2], zero); \
-  \
-  const __m128i lo_26_6 = _mm_unpacklo_epi16(zero, in[6]); \
-  const __m128i hi_26_6 = _mm_unpackhi_epi16(zero, in[6]); \
-  \
-  MULTIPLICATION_AND_ADD_2(lo_2_30, hi_2_30, stg2_0, \
-                         stg2_1, stp2_8, stp2_15); \
-  MULTIPLICATION_AND_ADD_2(lo_26_6, hi_26_6, stg2_6, \
-                         stg2_7, stp2_11, stp2_12); \
-  \
-  stp2_16 = stp1_16; \
-  stp2_19 = stp1_19; \
-  \
-  stp2_20 = stp1_20; \
-  stp2_23 = stp1_23; \
-  \
-  stp2_24 = stp1_24; \
-  stp2_27 = stp1_27; \
-  \
-  stp2_28 = stp1_28; \
-  stp2_31 = stp1_31; \
+\
 } \
 \
 /* Stage3 */ \
 { \
-  const __m128i zero = _mm_setzero_si128();\
-  const __m128i lo_4_28 = _mm_unpacklo_epi16(in[4], zero); \
-  const __m128i hi_4_28 = _mm_unpackhi_epi16(in[4], zero); \
-  \
   const __m128i lo_17_30 = _mm_unpacklo_epi16(stp1_16, stp1_31); \
   const __m128i hi_17_30 = _mm_unpackhi_epi16(stp1_16, stp1_31); \
   const __m128i lo_18_29 = _mm_unpacklo_epi16(stp1_19, stp1_28); \
@@ -2468,15 +2449,7 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
   const __m128i lo_21_26 = _mm_unpacklo_epi16(stp1_20, stp1_27); \
   const __m128i hi_21_26 = _mm_unpackhi_epi16(stp1_20, stp1_27); \
   const __m128i lo_22_25 = _mm_unpacklo_epi16(stp1_23, stp1_24); \
-  const __m128i hi_22_25 = _mm_unpackhi_epi16(stp1_23, stp2_24); \
-  \
-  MULTIPLICATION_AND_ADD_2(lo_4_28, hi_4_28, stg3_0, \
-                         stg3_1, stp1_4, stp1_7); \
-  \
-  stp1_8 = stp2_8; \
-  stp1_11 = stp2_11; \
-  stp1_12 = stp2_12; \
-  stp1_15 = stp2_15; \
+  const __m128i hi_22_25 = _mm_unpackhi_epi16(stp1_23, stp1_24); \
   \
   MULTIPLICATION_AND_ADD(lo_17_30, hi_17_30, lo_18_29, hi_18_29, stg3_4, \
                          stg3_5, stg3_6, stg3_4, stp1_17, stp1_30, \
@@ -2484,15 +2457,101 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
   MULTIPLICATION_AND_ADD(lo_21_26, hi_21_26, lo_22_25, hi_22_25, stg3_8, \
                          stg3_9, stg3_10, stg3_8, stp1_21, stp1_26, \
                          stp1_22, stp1_25) \
+} \
+\
+/* Stage4 */ \
+{ \
+  SUM_SUB(stp1_16, stp1_19); \
+  SUM_SUB(stp1_17, stp1_18); \
+  SUM_SUB(stp1_23, stp1_20); \
+  SUM_SUB(stp1_22, stp1_21); \
   \
-  stp1_16 = stp2_16; \
-  stp1_31 = stp2_31; \
-  stp1_19 = stp2_19; \
-  stp1_20 = stp2_20; \
-  stp1_23 = stp2_23; \
-  stp1_24 = stp2_24; \
-  stp1_27 = stp2_27; \
-  stp1_28 = stp2_28; \
+  SUM_SUB(stp1_24, stp1_27); \
+  SUM_SUB(stp1_25, stp1_26); \
+  SUM_SUB(stp1_31, stp1_28); \
+  SUM_SUB(stp1_30, stp1_29); \
+} \
+\
+/* Stage5 */ \
+{ \
+  const __m128i lo_18_29 = _mm_unpacklo_epi16(stp1_18, stp1_29); \
+  const __m128i hi_18_29 = _mm_unpackhi_epi16(stp1_18, stp1_29); \
+  \
+  const __m128i lo_19_28 = _mm_unpacklo_epi16(stp1_19, stp1_28); \
+  const __m128i hi_19_28 = _mm_unpackhi_epi16(stp1_19, stp1_28); \
+  const __m128i lo_20_27 = _mm_unpacklo_epi16(stp1_20, stp1_27); \
+  const __m128i hi_20_27 = _mm_unpackhi_epi16(stp1_20, stp1_27); \
+  \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp1_21, stp1_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp1_21, stp1_26); \
+  \
+  MULTIPLICATION_AND_ADD(lo_18_29, hi_18_29, lo_19_28, hi_19_28, stg4_4, \
+                         stg4_5, stg4_4, stg4_5, stp1_18, stp1_29, \
+                         stp1_19, stp1_28) \
+  MULTIPLICATION_AND_ADD(lo_20_27, hi_20_27, lo_21_26, hi_21_26, stg4_6, \
+                         stg4_4, stg4_6, stg4_4, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+} \
+\
+/* Stage6 */ \
+{ \
+  SUM_SUB(stp1_16, stp1_23); \
+  SUM_SUB(stp1_17, stp1_22); \
+  SUM_SUB(stp1_18, stp1_21); \
+  SUM_SUB(stp1_19, stp1_20); \
+  \
+  SUM_SUB(stp1_31, stp1_24); \
+  SUM_SUB(stp1_30, stp1_25); \
+  SUM_SUB(stp1_29, stp1_26); \
+  SUM_SUB(stp1_28, stp1_27); \
+} \
+\
+/* Stage7 */ \
+{ \
+  const __m128i lo_20_27 = _mm_unpacklo_epi16(stp1_20, stp1_27); \
+  const __m128i hi_20_27 = _mm_unpackhi_epi16(stp1_20, stp1_27); \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp1_21, stp1_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp1_21, stp1_26); \
+  \
+  const __m128i lo_22_25 = _mm_unpacklo_epi16(stp1_22, stp1_25); \
+  const __m128i hi_22_25 = _mm_unpackhi_epi16(stp1_22, stp1_25); \
+  const __m128i lo_23_24 = _mm_unpacklo_epi16(stp1_23, stp1_24); \
+  const __m128i hi_23_24 = _mm_unpackhi_epi16(stp1_23, stp1_24); \
+  \
+  MULTIPLICATION_AND_ADD(lo_20_27, hi_20_27, lo_21_26, hi_21_26, stg6_0, \
+                         stg4_0, stg6_0, stg4_0, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+  MULTIPLICATION_AND_ADD(lo_22_25, hi_22_25, lo_23_24, hi_23_24, stg6_0, \
+                         stg4_0, stg6_0, stg4_0, stp1_22, stp1_25, \
+                         stp1_23, stp1_24) \
+}
+
+#define IDCT32_34_PASS1 \
+/* Stage1 */ \
+\
+/* Stage2 */ \
+{ \
+  const __m128i zero = _mm_setzero_si128();\
+  const __m128i lo_2_30 = _mm_unpacklo_epi16(in[2], zero); \
+  const __m128i hi_2_30 = _mm_unpackhi_epi16(in[2], zero); \
+  \
+  const __m128i lo_26_6 = _mm_unpacklo_epi16(zero, in[6]); \
+  const __m128i hi_26_6 = _mm_unpackhi_epi16(zero, in[6]); \
+  \
+  MULTIPLICATION_AND_ADD_2(lo_2_30, hi_2_30, stg2_0, \
+                         stg2_1, stp1_8, stp1_15); \
+  MULTIPLICATION_AND_ADD_2(lo_26_6, hi_26_6, stg2_6, \
+                         stg2_7, stp1_11, stp1_12); \
+} \
+\
+/* Stage3 */ \
+{ \
+  const __m128i zero = _mm_setzero_si128();\
+  const __m128i lo_4_28 = _mm_unpacklo_epi16(in[4], zero); \
+  const __m128i hi_4_28 = _mm_unpackhi_epi16(in[4], zero); \
+  \
+  MULTIPLICATION_AND_ADD_2(lo_4_28, hi_4_28, stg3_0, \
+                         stg3_1, stp1_4, stp1_7); \
 } \
 \
 /* Stage4 */ \
@@ -2501,18 +2560,150 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
   const __m128i lo_0_16 = _mm_unpacklo_epi16(in[0], zero); \
   const __m128i hi_0_16 = _mm_unpackhi_epi16(in[0], zero); \
   \
-  const __m128i lo_9_14 = _mm_unpacklo_epi16(stp2_8, stp2_15); \
-  const __m128i hi_9_14 = _mm_unpackhi_epi16(stp2_8, stp2_15); \
-  const __m128i lo_10_13 = _mm_unpacklo_epi16(stp2_11, stp2_12); \
-  const __m128i hi_10_13 = _mm_unpackhi_epi16(stp2_11, stp2_12); \
+  const __m128i lo_9_14 = _mm_unpacklo_epi16(stp1_8, stp1_15); \
+  const __m128i hi_9_14 = _mm_unpackhi_epi16(stp1_8, stp1_15); \
+  const __m128i lo_10_13 = _mm_unpacklo_epi16(stp1_11, stp1_12); \
+  const __m128i hi_10_13 = _mm_unpackhi_epi16(stp1_11, stp1_12); \
   \
   MULTIPLICATION_AND_ADD_2(lo_0_16, hi_0_16, stg4_0, \
-                         stg4_1, stp2_0, stp2_1); \
+                         stg4_1, stp1_0, stp1_1); \
   \
-  stp2_4 = stp1_4; \
-  stp2_5 = stp1_4; \
-  stp2_6 = stp1_7; \
-  stp2_7 = stp1_7; \
+  stp1_5 = stp1_4; \
+  stp1_6 = stp1_7; \
+  \
+  MULTIPLICATION_AND_ADD(lo_9_14, hi_9_14, lo_10_13, hi_10_13, stg4_4, \
+                         stg4_5, stg4_6, stg4_4, stp1_9, stp1_14, \
+                         stp1_10, stp1_13) \
+} \
+\
+/* Stage5 */ \
+{ \
+  const __m128i lo_6_5 = _mm_unpacklo_epi16(stp1_6, stp1_5); \
+  const __m128i hi_6_5 = _mm_unpackhi_epi16(stp1_6, stp1_5); \
+  stp1_2 = stp1_1; \
+  stp1_3 = stp1_0; \
+  \
+  tmp0 = _mm_madd_epi16(lo_6_5, stg4_1); \
+  tmp1 = _mm_madd_epi16(hi_6_5, stg4_1); \
+  tmp2 = _mm_madd_epi16(lo_6_5, stg4_0); \
+  tmp3 = _mm_madd_epi16(hi_6_5, stg4_0); \
+  \
+  tmp0 = _mm_add_epi32(tmp0, rounding); \
+  tmp1 = _mm_add_epi32(tmp1, rounding); \
+  tmp2 = _mm_add_epi32(tmp2, rounding); \
+  tmp3 = _mm_add_epi32(tmp3, rounding); \
+  \
+  tmp0 = _mm_srai_epi32(tmp0, DCT_CONST_BITS); \
+  tmp1 = _mm_srai_epi32(tmp1, DCT_CONST_BITS); \
+  tmp2 = _mm_srai_epi32(tmp2, DCT_CONST_BITS); \
+  tmp3 = _mm_srai_epi32(tmp3, DCT_CONST_BITS); \
+  \
+  stp1_5 = _mm_packs_epi32(tmp0, tmp1); \
+  stp1_6 = _mm_packs_epi32(tmp2, tmp3); \
+  \
+  SUM_SUB(stp1_8, stp1_11); \
+  SUM_SUB(stp1_9, stp1_10); \
+  SUM_SUB(stp1_15, stp1_12); \
+  SUM_SUB(stp1_14, stp1_13); \
+} \
+\
+/* Stage6 */ \
+{ \
+  const __m128i lo_10_13 = _mm_unpacklo_epi16(stp1_10, stp1_13); \
+  const __m128i hi_10_13 = _mm_unpackhi_epi16(stp1_10, stp1_13); \
+  const __m128i lo_11_12 = _mm_unpacklo_epi16(stp1_11, stp1_12); \
+  const __m128i hi_11_12 = _mm_unpackhi_epi16(stp1_11, stp1_12); \
+  \
+  SUM_SUB(stp1_0, stp1_7); \
+  SUM_SUB(stp1_1, stp1_6); \
+  SUM_SUB(stp1_2, stp1_5); \
+  SUM_SUB(stp1_3, stp1_4); \
+  \
+  MULTIPLICATION_AND_ADD(lo_10_13, hi_10_13, lo_11_12, hi_11_12, \
+                         stg6_0, stg4_0, stg6_0, stg4_0, stp1_10, \
+                         stp1_13, stp1_11, stp1_12) \
+} \
+\
+/* Stage7 */ \
+{ \
+  SUM_SUB(stp1_0, stp1_15); \
+  SUM_SUB(stp1_1, stp1_14); \
+  SUM_SUB(stp1_2, stp1_13); \
+  SUM_SUB(stp1_3, stp1_12); \
+  SUM_SUB(stp1_4, stp1_11); \
+  SUM_SUB(stp1_5, stp1_10); \
+  SUM_SUB(stp1_6, stp1_9); \
+  SUM_SUB(stp1_7, stp1_8); \
+}
+
+#define IDCT32_135_PASS1 \
+/* Stage1 */ \
+{ \
+} \
+\
+/* Stage2 */ \
+{ \
+  const __m128i zero = _mm_setzero_si128();\
+  const __m128i lo_2_30 = _mm_unpacklo_epi16(in[2], zero); \
+  const __m128i hi_2_30 = _mm_unpackhi_epi16(in[2], zero); \
+  const __m128i lo_18_14 = _mm_unpacklo_epi16(zero, in[14]); \
+  const __m128i hi_18_14 = _mm_unpackhi_epi16(zero, in[14]); \
+  \
+  const __m128i lo_10_22 = _mm_unpacklo_epi16(in[10], zero); \
+  const __m128i hi_10_22 = _mm_unpackhi_epi16(in[10], zero); \
+  const __m128i lo_26_6 = _mm_unpacklo_epi16(zero, in[6]); \
+  const __m128i hi_26_6 = _mm_unpackhi_epi16(zero, in[6]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_2_30, hi_2_30, lo_18_14, hi_18_14, stg2_0, \
+                         stg2_1, stg2_2, stg2_3, stp2_8, stp2_15, stp2_9, \
+                         stp2_14) \
+  MULTIPLICATION_AND_ADD(lo_10_22, hi_10_22, lo_26_6, hi_26_6, stg2_4, \
+                         stg2_5, stg2_6, stg2_7, stp2_10, stp2_13, \
+                         stp2_11, stp2_12) \
+} \
+/* Stage3 */ \
+{ \
+  const __m128i zero = _mm_setzero_si128();\
+  const __m128i lo_4_28 = _mm_unpacklo_epi16(in[4], zero); \
+  const __m128i hi_4_28 = _mm_unpackhi_epi16(in[4], zero); \
+  const __m128i lo_20_12 = _mm_unpacklo_epi16(zero, in[12]); \
+  const __m128i hi_20_12 = _mm_unpackhi_epi16(zero, in[12]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_4_28, hi_4_28, lo_20_12, hi_20_12, stg3_0, \
+                         stg3_1, stg3_2, stg3_3, stp1_4, stp1_7, stp1_5, \
+                         stp1_6) \
+  \
+  stp1_8 = _mm_add_epi16(stp2_8, stp2_9); \
+  stp1_9 = _mm_sub_epi16(stp2_8, stp2_9); \
+  stp1_10 = _mm_sub_epi16(stp2_11, stp2_10); \
+  stp1_11 = _mm_add_epi16(stp2_11, stp2_10); \
+  stp1_12 = _mm_add_epi16(stp2_12, stp2_13); \
+  stp1_13 = _mm_sub_epi16(stp2_12, stp2_13); \
+  stp1_14 = _mm_sub_epi16(stp2_15, stp2_14); \
+  stp1_15 = _mm_add_epi16(stp2_15, stp2_14); \
+} \
+\
+/* Stage4 */ \
+{ \
+  const __m128i zero = _mm_setzero_si128();\
+  const __m128i lo_0_16 = _mm_unpacklo_epi16(in[0], zero); \
+  const __m128i hi_0_16 = _mm_unpackhi_epi16(in[0], zero); \
+  const __m128i lo_8_24 = _mm_unpacklo_epi16(in[8], zero); \
+  const __m128i hi_8_24 = _mm_unpackhi_epi16(in[8], zero); \
+  \
+  const __m128i lo_9_14 = _mm_unpacklo_epi16(stp1_9, stp1_14); \
+  const __m128i hi_9_14 = _mm_unpackhi_epi16(stp1_9, stp1_14); \
+  const __m128i lo_10_13 = _mm_unpacklo_epi16(stp1_10, stp1_13); \
+  const __m128i hi_10_13 = _mm_unpackhi_epi16(stp1_10, stp1_13); \
+  \
+  MULTIPLICATION_AND_ADD(lo_0_16, hi_0_16, lo_8_24, hi_8_24, stg4_0, \
+                         stg4_1, stg4_2, stg4_3, stp2_0, stp2_1, \
+                         stp2_2, stp2_3) \
+  \
+  stp2_4 = _mm_add_epi16(stp1_4, stp1_5); \
+  stp2_5 = _mm_sub_epi16(stp1_4, stp1_5); \
+  stp2_6 = _mm_sub_epi16(stp1_7, stp1_6); \
+  stp2_7 = _mm_add_epi16(stp1_7, stp1_6); \
   \
   MULTIPLICATION_AND_ADD(lo_9_14, hi_9_14, lo_10_13, hi_10_13, stg4_4, \
                          stg4_5, stg4_6, stg4_4, stp2_9, stp2_14, \
@@ -2522,45 +2713,17 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
   stp2_15 = stp1_15; \
   stp2_11 = stp1_11; \
   stp2_12 = stp1_12; \
-  \
-  stp2_16 = _mm_add_epi16(stp1_16, stp1_19); \
-  stp2_17 = _mm_add_epi16(stp1_17, stp1_18); \
-  stp2_18 = _mm_sub_epi16(stp1_17, stp1_18); \
-  stp2_19 = _mm_sub_epi16(stp1_16, stp1_19); \
-  stp2_20 = _mm_sub_epi16(stp1_23, stp1_20); \
-  stp2_21 = _mm_sub_epi16(stp1_22, stp1_21); \
-  stp2_22 = _mm_add_epi16(stp1_22, stp1_21); \
-  stp2_23 = _mm_add_epi16(stp1_23, stp1_20); \
-  \
-  stp2_24 = _mm_add_epi16(stp1_24, stp1_27); \
-  stp2_25 = _mm_add_epi16(stp1_25, stp1_26); \
-  stp2_26 = _mm_sub_epi16(stp1_25, stp1_26); \
-  stp2_27 = _mm_sub_epi16(stp1_24, stp1_27); \
-  stp2_28 = _mm_sub_epi16(stp1_31, stp1_28); \
-  stp2_29 = _mm_sub_epi16(stp1_30, stp1_29); \
-  stp2_30 = _mm_add_epi16(stp1_29, stp1_30); \
-  stp2_31 = _mm_add_epi16(stp1_28, stp1_31); \
 } \
 \
 /* Stage5 */ \
 { \
   const __m128i lo_6_5 = _mm_unpacklo_epi16(stp2_6, stp2_5); \
   const __m128i hi_6_5 = _mm_unpackhi_epi16(stp2_6, stp2_5); \
-  const __m128i lo_18_29 = _mm_unpacklo_epi16(stp2_18, stp2_29); \
-  const __m128i hi_18_29 = _mm_unpackhi_epi16(stp2_18, stp2_29); \
   \
-  const __m128i lo_19_28 = _mm_unpacklo_epi16(stp2_19, stp2_28); \
-  const __m128i hi_19_28 = _mm_unpackhi_epi16(stp2_19, stp2_28); \
-  const __m128i lo_20_27 = _mm_unpacklo_epi16(stp2_20, stp2_27); \
-  const __m128i hi_20_27 = _mm_unpackhi_epi16(stp2_20, stp2_27); \
-  \
-  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp2_21, stp2_26); \
-  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp2_21, stp2_26); \
-  \
-  stp1_0 = stp2_0; \
-  stp1_1 = stp2_1; \
-  stp1_2 = stp2_1; \
-  stp1_3 = stp2_0; \
+  stp1_0 = _mm_add_epi16(stp2_0, stp2_3); \
+  stp1_1 = _mm_add_epi16(stp2_1, stp2_2); \
+  stp1_2 = _mm_sub_epi16(stp2_1, stp2_2); \
+  stp1_3 = _mm_sub_epi16(stp2_0, stp2_3); \
   \
   tmp0 = _mm_madd_epi16(lo_6_5, stg4_1); \
   tmp1 = _mm_madd_epi16(hi_6_5, stg4_1); \
@@ -2591,23 +2754,6 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
   stp1_13 = _mm_sub_epi16(stp2_14, stp2_13); \
   stp1_14 = _mm_add_epi16(stp2_14, stp2_13); \
   stp1_15 = _mm_add_epi16(stp2_15, stp2_12); \
-  \
-  stp1_16 = stp2_16; \
-  stp1_17 = stp2_17; \
-  \
-  MULTIPLICATION_AND_ADD(lo_18_29, hi_18_29, lo_19_28, hi_19_28, stg4_4, \
-                         stg4_5, stg4_4, stg4_5, stp1_18, stp1_29, \
-                         stp1_19, stp1_28) \
-  MULTIPLICATION_AND_ADD(lo_20_27, hi_20_27, lo_21_26, hi_21_26, stg4_6, \
-                         stg4_4, stg4_6, stg4_4, stp1_20, stp1_27, \
-                         stp1_21, stp1_26) \
-  \
-  stp1_22 = stp2_22; \
-  stp1_23 = stp2_23; \
-  stp1_24 = stp2_24; \
-  stp1_25 = stp2_25; \
-  stp1_30 = stp2_30; \
-  stp1_31 = stp2_31; \
 } \
 \
 /* Stage6 */ \
@@ -2634,7 +2780,172 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
   MULTIPLICATION_AND_ADD(lo_10_13, hi_10_13, lo_11_12, hi_11_12, \
                          stg6_0, stg4_0, stg6_0, stg4_0, stp2_10, \
                          stp2_13, stp2_11, stp2_12) \
+} \
+\
+/* Stage7 */ \
+{ \
+  stp1_0 = _mm_add_epi16(stp2_0, stp2_15); \
+  stp1_1 = _mm_add_epi16(stp2_1, stp2_14); \
+  stp1_2 = _mm_add_epi16(stp2_2, stp2_13); \
+  stp1_3 = _mm_add_epi16(stp2_3, stp2_12); \
+  stp1_4 = _mm_add_epi16(stp2_4, stp2_11); \
+  stp1_5 = _mm_add_epi16(stp2_5, stp2_10); \
+  stp1_6 = _mm_add_epi16(stp2_6, stp2_9); \
+  stp1_7 = _mm_add_epi16(stp2_7, stp2_8); \
+  stp1_8 = _mm_sub_epi16(stp2_7, stp2_8); \
+  stp1_9 = _mm_sub_epi16(stp2_6, stp2_9); \
+  stp1_10 = _mm_sub_epi16(stp2_5, stp2_10); \
+  stp1_11 = _mm_sub_epi16(stp2_4, stp2_11); \
+  stp1_12 = _mm_sub_epi16(stp2_3, stp2_12); \
+  stp1_13 = _mm_sub_epi16(stp2_2, stp2_13); \
+  stp1_14 = _mm_sub_epi16(stp2_1, stp2_14); \
+  stp1_15 = _mm_sub_epi16(stp2_0, stp2_15); \
+}
+
+#define IDCT32_135_PASS2 \
+/* Stage1 */ \
+{ \
+  const __m128i zero = _mm_setzero_si128();\
+  const __m128i lo_1_31 = _mm_unpacklo_epi16(in[1], zero); \
+  const __m128i hi_1_31 = _mm_unpackhi_epi16(in[1], zero); \
+  const __m128i lo_17_15 = _mm_unpacklo_epi16(zero, in[15]); \
+  const __m128i hi_17_15 = _mm_unpackhi_epi16(zero, in[15]); \
   \
+  const __m128i lo_9_23 = _mm_unpacklo_epi16(in[9], zero); \
+  const __m128i hi_9_23 = _mm_unpackhi_epi16(in[9], zero); \
+  const __m128i lo_25_7= _mm_unpacklo_epi16(zero, in[7]); \
+  const __m128i hi_25_7 = _mm_unpackhi_epi16(zero, in[7]); \
+  \
+  const __m128i lo_5_27 = _mm_unpacklo_epi16(in[5], zero); \
+  const __m128i hi_5_27 = _mm_unpackhi_epi16(in[5], zero); \
+  const __m128i lo_21_11 = _mm_unpacklo_epi16(zero, in[11]); \
+  const __m128i hi_21_11 = _mm_unpackhi_epi16(zero, in[11]); \
+  \
+  const __m128i lo_13_19 = _mm_unpacklo_epi16(in[13], zero); \
+  const __m128i hi_13_19 = _mm_unpackhi_epi16(in[13], zero); \
+  const __m128i lo_29_3 = _mm_unpacklo_epi16(zero, in[3]); \
+  const __m128i hi_29_3 = _mm_unpackhi_epi16(zero, in[3]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_1_31, hi_1_31, lo_17_15, hi_17_15, stg1_0, \
+                         stg1_1, stg1_2, stg1_3, stp1_16, stp1_31, \
+                         stp1_17, stp1_30) \
+  MULTIPLICATION_AND_ADD(lo_9_23, hi_9_23, lo_25_7, hi_25_7, stg1_4, \
+                         stg1_5, stg1_6, stg1_7, stp1_18, stp1_29, \
+                         stp1_19, stp1_28) \
+  MULTIPLICATION_AND_ADD(lo_5_27, hi_5_27, lo_21_11, hi_21_11, stg1_8, \
+                         stg1_9, stg1_10, stg1_11, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+  MULTIPLICATION_AND_ADD(lo_13_19, hi_13_19, lo_29_3, hi_29_3, stg1_12, \
+                         stg1_13, stg1_14, stg1_15, stp1_22, stp1_25, \
+                         stp1_23, stp1_24) \
+} \
+\
+/* Stage2 */ \
+{ \
+  stp2_16 = _mm_add_epi16(stp1_16, stp1_17); \
+  stp2_17 = _mm_sub_epi16(stp1_16, stp1_17); \
+  stp2_18 = _mm_sub_epi16(stp1_19, stp1_18); \
+  stp2_19 = _mm_add_epi16(stp1_19, stp1_18); \
+  \
+  stp2_20 = _mm_add_epi16(stp1_20, stp1_21); \
+  stp2_21 = _mm_sub_epi16(stp1_20, stp1_21); \
+  stp2_22 = _mm_sub_epi16(stp1_23, stp1_22); \
+  stp2_23 = _mm_add_epi16(stp1_23, stp1_22); \
+  \
+  stp2_24 = _mm_add_epi16(stp1_24, stp1_25); \
+  stp2_25 = _mm_sub_epi16(stp1_24, stp1_25); \
+  stp2_26 = _mm_sub_epi16(stp1_27, stp1_26); \
+  stp2_27 = _mm_add_epi16(stp1_27, stp1_26); \
+  \
+  stp2_28 = _mm_add_epi16(stp1_28, stp1_29); \
+  stp2_29 = _mm_sub_epi16(stp1_28, stp1_29); \
+  stp2_30 = _mm_sub_epi16(stp1_31, stp1_30); \
+  stp2_31 = _mm_add_epi16(stp1_31, stp1_30); \
+} \
+\
+/* Stage3 */ \
+{ \
+  const __m128i lo_17_30 = _mm_unpacklo_epi16(stp2_17, stp2_30); \
+  const __m128i hi_17_30 = _mm_unpackhi_epi16(stp2_17, stp2_30); \
+  const __m128i lo_18_29 = _mm_unpacklo_epi16(stp2_18, stp2_29); \
+  const __m128i hi_18_29 = _mm_unpackhi_epi16(stp2_18, stp2_29); \
+  \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp2_21, stp2_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp2_21, stp2_26); \
+  const __m128i lo_22_25 = _mm_unpacklo_epi16(stp2_22, stp2_25); \
+  const __m128i hi_22_25 = _mm_unpackhi_epi16(stp2_22, stp2_25); \
+  \
+  MULTIPLICATION_AND_ADD(lo_17_30, hi_17_30, lo_18_29, hi_18_29, stg3_4, \
+                         stg3_5, stg3_6, stg3_4, stp1_17, stp1_30, \
+                         stp1_18, stp1_29) \
+  MULTIPLICATION_AND_ADD(lo_21_26, hi_21_26, lo_22_25, hi_22_25, stg3_8, \
+                         stg3_9, stg3_10, stg3_8, stp1_21, stp1_26, \
+                         stp1_22, stp1_25) \
+  \
+  stp1_16 = stp2_16; \
+  stp1_31 = stp2_31; \
+  stp1_19 = stp2_19; \
+  stp1_20 = stp2_20; \
+  stp1_23 = stp2_23; \
+  stp1_24 = stp2_24; \
+  stp1_27 = stp2_27; \
+  stp1_28 = stp2_28; \
+} \
+\
+/* Stage4 */ \
+{ \
+  stp2_16 = _mm_add_epi16(stp1_16, stp1_19); \
+  stp2_17 = _mm_add_epi16(stp1_17, stp1_18); \
+  stp2_18 = _mm_sub_epi16(stp1_17, stp1_18); \
+  stp2_19 = _mm_sub_epi16(stp1_16, stp1_19); \
+  stp2_20 = _mm_sub_epi16(stp1_23, stp1_20); \
+  stp2_21 = _mm_sub_epi16(stp1_22, stp1_21); \
+  stp2_22 = _mm_add_epi16(stp1_22, stp1_21); \
+  stp2_23 = _mm_add_epi16(stp1_23, stp1_20); \
+  \
+  stp2_24 = _mm_add_epi16(stp1_24, stp1_27); \
+  stp2_25 = _mm_add_epi16(stp1_25, stp1_26); \
+  stp2_26 = _mm_sub_epi16(stp1_25, stp1_26); \
+  stp2_27 = _mm_sub_epi16(stp1_24, stp1_27); \
+  stp2_28 = _mm_sub_epi16(stp1_31, stp1_28); \
+  stp2_29 = _mm_sub_epi16(stp1_30, stp1_29); \
+  stp2_30 = _mm_add_epi16(stp1_29, stp1_30); \
+  stp2_31 = _mm_add_epi16(stp1_28, stp1_31); \
+} \
+\
+/* Stage5 */ \
+{ \
+  const __m128i lo_18_29 = _mm_unpacklo_epi16(stp2_18, stp2_29); \
+  const __m128i hi_18_29 = _mm_unpackhi_epi16(stp2_18, stp2_29); \
+  \
+  const __m128i lo_19_28 = _mm_unpacklo_epi16(stp2_19, stp2_28); \
+  const __m128i hi_19_28 = _mm_unpackhi_epi16(stp2_19, stp2_28); \
+  const __m128i lo_20_27 = _mm_unpacklo_epi16(stp2_20, stp2_27); \
+  const __m128i hi_20_27 = _mm_unpackhi_epi16(stp2_20, stp2_27); \
+  \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp2_21, stp2_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp2_21, stp2_26); \
+  \
+  stp1_16 = stp2_16; \
+  stp1_17 = stp2_17; \
+  \
+  MULTIPLICATION_AND_ADD(lo_18_29, hi_18_29, lo_19_28, hi_19_28, stg4_4, \
+                         stg4_5, stg4_4, stg4_5, stp1_18, stp1_29, \
+                         stp1_19, stp1_28) \
+  MULTIPLICATION_AND_ADD(lo_20_27, hi_20_27, lo_21_26, hi_21_26, stg4_6, \
+                         stg4_4, stg4_6, stg4_4, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+  \
+  stp1_22 = stp2_22; \
+  stp1_23 = stp2_23; \
+  stp1_24 = stp2_24; \
+  stp1_25 = stp2_25; \
+  stp1_30 = stp2_30; \
+  stp1_31 = stp2_31; \
+} \
+\
+/* Stage6 */ \
+{ \
   stp2_16 = _mm_add_epi16(stp1_16, stp1_23); \
   stp2_17 = _mm_add_epi16(stp1_17, stp1_22); \
   stp2_18 = _mm_add_epi16(stp1_18, stp1_21); \
@@ -2666,23 +2977,6 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
   const __m128i lo_23_24 = _mm_unpacklo_epi16(stp2_23, stp2_24); \
   const __m128i hi_23_24 = _mm_unpackhi_epi16(stp2_23, stp2_24); \
   \
-  stp1_0 = _mm_add_epi16(stp2_0, stp2_15); \
-  stp1_1 = _mm_add_epi16(stp2_1, stp2_14); \
-  stp1_2 = _mm_add_epi16(stp2_2, stp2_13); \
-  stp1_3 = _mm_add_epi16(stp2_3, stp2_12); \
-  stp1_4 = _mm_add_epi16(stp2_4, stp2_11); \
-  stp1_5 = _mm_add_epi16(stp2_5, stp2_10); \
-  stp1_6 = _mm_add_epi16(stp2_6, stp2_9); \
-  stp1_7 = _mm_add_epi16(stp2_7, stp2_8); \
-  stp1_8 = _mm_sub_epi16(stp2_7, stp2_8); \
-  stp1_9 = _mm_sub_epi16(stp2_6, stp2_9); \
-  stp1_10 = _mm_sub_epi16(stp2_5, stp2_10); \
-  stp1_11 = _mm_sub_epi16(stp2_4, stp2_11); \
-  stp1_12 = _mm_sub_epi16(stp2_3, stp2_12); \
-  stp1_13 = _mm_sub_epi16(stp2_2, stp2_13); \
-  stp1_14 = _mm_sub_epi16(stp2_1, stp2_14); \
-  stp1_15 = _mm_sub_epi16(stp2_0, stp2_15); \
-  \
   stp1_16 = stp2_16; \
   stp1_17 = stp2_17; \
   stp1_18 = stp2_18; \
@@ -2700,7 +2994,6 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
   stp1_30 = stp2_30; \
   stp1_31 = stp2_31; \
 }
-
 
 #define IDCT32 \
 /* Stage1 */ \
@@ -3034,6 +3327,813 @@ void vpx_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest,
   stp1_31 = stp2_31; \
 }
 
+#define IDCT32_PASS1 \
+/* Stage1 */ \
+{ \
+} \
+\
+/* Stage2 */ \
+{ \
+  const __m128i lo_2_30 = _mm_unpacklo_epi16(in[2], in[30]); \
+  const __m128i hi_2_30 = _mm_unpackhi_epi16(in[2], in[30]); \
+  const __m128i lo_18_14 = _mm_unpacklo_epi16(in[18], in[14]); \
+  const __m128i hi_18_14 = _mm_unpackhi_epi16(in[18], in[14]); \
+  \
+  const __m128i lo_10_22 = _mm_unpacklo_epi16(in[10], in[22]); \
+  const __m128i hi_10_22 = _mm_unpackhi_epi16(in[10], in[22]); \
+  const __m128i lo_26_6 = _mm_unpacklo_epi16(in[26], in[6]); \
+  const __m128i hi_26_6 = _mm_unpackhi_epi16(in[26], in[6]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_2_30, hi_2_30, lo_18_14, hi_18_14, stg2_0, \
+                         stg2_1, stg2_2, stg2_3, stp2_8, stp2_15, stp2_9, \
+                         stp2_14) \
+  MULTIPLICATION_AND_ADD(lo_10_22, hi_10_22, lo_26_6, hi_26_6, stg2_4, \
+                         stg2_5, stg2_6, stg2_7, stp2_10, stp2_13, \
+                         stp2_11, stp2_12) \
+} \
+\
+/* Stage3 */ \
+{ \
+  const __m128i lo_4_28 = _mm_unpacklo_epi16(in[4], in[28]); \
+  const __m128i hi_4_28 = _mm_unpackhi_epi16(in[4], in[28]); \
+  const __m128i lo_20_12 = _mm_unpacklo_epi16(in[20], in[12]); \
+  const __m128i hi_20_12 = _mm_unpackhi_epi16(in[20], in[12]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_4_28, hi_4_28, lo_20_12, hi_20_12, stg3_0, \
+                         stg3_1, stg3_2, stg3_3, stp1_4, stp1_7, stp1_5, \
+                         stp1_6) \
+  \
+  stp1_8 = _mm_add_epi16(stp2_8, stp2_9); \
+  stp1_9 = _mm_sub_epi16(stp2_8, stp2_9); \
+  stp1_10 = _mm_sub_epi16(stp2_11, stp2_10); \
+  stp1_11 = _mm_add_epi16(stp2_11, stp2_10); \
+  stp1_12 = _mm_add_epi16(stp2_12, stp2_13); \
+  stp1_13 = _mm_sub_epi16(stp2_12, stp2_13); \
+  stp1_14 = _mm_sub_epi16(stp2_15, stp2_14); \
+  stp1_15 = _mm_add_epi16(stp2_15, stp2_14); \
+} \
+\
+/* Stage4 */ \
+{ \
+  const __m128i lo_0_16 = _mm_unpacklo_epi16(in[0], in[16]); \
+  const __m128i hi_0_16 = _mm_unpackhi_epi16(in[0], in[16]); \
+  const __m128i lo_8_24 = _mm_unpacklo_epi16(in[8], in[24]); \
+  const __m128i hi_8_24 = _mm_unpackhi_epi16(in[8], in[24]); \
+  \
+  const __m128i lo_9_14 = _mm_unpacklo_epi16(stp1_9, stp1_14); \
+  const __m128i hi_9_14 = _mm_unpackhi_epi16(stp1_9, stp1_14); \
+  const __m128i lo_10_13 = _mm_unpacklo_epi16(stp1_10, stp1_13); \
+  const __m128i hi_10_13 = _mm_unpackhi_epi16(stp1_10, stp1_13); \
+  \
+  MULTIPLICATION_AND_ADD(lo_0_16, hi_0_16, lo_8_24, hi_8_24, stg4_0, \
+                         stg4_1, stg4_2, stg4_3, stp2_0, stp2_1, \
+                         stp2_2, stp2_3) \
+  \
+  stp2_4 = _mm_add_epi16(stp1_4, stp1_5); \
+  stp2_5 = _mm_sub_epi16(stp1_4, stp1_5); \
+  stp2_6 = _mm_sub_epi16(stp1_7, stp1_6); \
+  stp2_7 = _mm_add_epi16(stp1_7, stp1_6); \
+  \
+  MULTIPLICATION_AND_ADD(lo_9_14, hi_9_14, lo_10_13, hi_10_13, stg4_4, \
+                         stg4_5, stg4_6, stg4_4, stp2_9, stp2_14, \
+                         stp2_10, stp2_13) \
+  \
+  stp2_8 = stp1_8; \
+  stp2_15 = stp1_15; \
+  stp2_11 = stp1_11; \
+  stp2_12 = stp1_12; \
+} \
+\
+/* Stage5 */ \
+{ \
+  const __m128i lo_6_5 = _mm_unpacklo_epi16(stp2_6, stp2_5); \
+  const __m128i hi_6_5 = _mm_unpackhi_epi16(stp2_6, stp2_5); \
+  \
+  stp1_0 = _mm_add_epi16(stp2_0, stp2_3); \
+  stp1_1 = _mm_add_epi16(stp2_1, stp2_2); \
+  stp1_2 = _mm_sub_epi16(stp2_1, stp2_2); \
+  stp1_3 = _mm_sub_epi16(stp2_0, stp2_3); \
+  \
+  tmp0 = _mm_madd_epi16(lo_6_5, stg4_1); \
+  tmp1 = _mm_madd_epi16(hi_6_5, stg4_1); \
+  tmp2 = _mm_madd_epi16(lo_6_5, stg4_0); \
+  tmp3 = _mm_madd_epi16(hi_6_5, stg4_0); \
+  \
+  tmp0 = _mm_add_epi32(tmp0, rounding); \
+  tmp1 = _mm_add_epi32(tmp1, rounding); \
+  tmp2 = _mm_add_epi32(tmp2, rounding); \
+  tmp3 = _mm_add_epi32(tmp3, rounding); \
+  \
+  tmp0 = _mm_srai_epi32(tmp0, DCT_CONST_BITS); \
+  tmp1 = _mm_srai_epi32(tmp1, DCT_CONST_BITS); \
+  tmp2 = _mm_srai_epi32(tmp2, DCT_CONST_BITS); \
+  tmp3 = _mm_srai_epi32(tmp3, DCT_CONST_BITS); \
+  \
+  stp1_5 = _mm_packs_epi32(tmp0, tmp1); \
+  stp1_6 = _mm_packs_epi32(tmp2, tmp3); \
+  \
+  stp1_4 = stp2_4; \
+  stp1_7 = stp2_7; \
+  \
+  stp1_8 = _mm_add_epi16(stp2_8, stp2_11); \
+  stp1_9 = _mm_add_epi16(stp2_9, stp2_10); \
+  stp1_10 = _mm_sub_epi16(stp2_9, stp2_10); \
+  stp1_11 = _mm_sub_epi16(stp2_8, stp2_11); \
+  stp1_12 = _mm_sub_epi16(stp2_15, stp2_12); \
+  stp1_13 = _mm_sub_epi16(stp2_14, stp2_13); \
+  stp1_14 = _mm_add_epi16(stp2_14, stp2_13); \
+  stp1_15 = _mm_add_epi16(stp2_15, stp2_12); \
+} \
+\
+/* Stage6 */ \
+{ \
+  const __m128i lo_10_13 = _mm_unpacklo_epi16(stp1_10, stp1_13); \
+  const __m128i hi_10_13 = _mm_unpackhi_epi16(stp1_10, stp1_13); \
+  const __m128i lo_11_12 = _mm_unpacklo_epi16(stp1_11, stp1_12); \
+  const __m128i hi_11_12 = _mm_unpackhi_epi16(stp1_11, stp1_12); \
+  \
+  stp2_0 = _mm_add_epi16(stp1_0, stp1_7); \
+  stp2_1 = _mm_add_epi16(stp1_1, stp1_6); \
+  stp2_2 = _mm_add_epi16(stp1_2, stp1_5); \
+  stp2_3 = _mm_add_epi16(stp1_3, stp1_4); \
+  stp2_4 = _mm_sub_epi16(stp1_3, stp1_4); \
+  stp2_5 = _mm_sub_epi16(stp1_2, stp1_5); \
+  stp2_6 = _mm_sub_epi16(stp1_1, stp1_6); \
+  stp2_7 = _mm_sub_epi16(stp1_0, stp1_7); \
+  \
+  stp2_8 = stp1_8; \
+  stp2_9 = stp1_9; \
+  stp2_14 = stp1_14; \
+  stp2_15 = stp1_15; \
+  \
+  MULTIPLICATION_AND_ADD(lo_10_13, hi_10_13, lo_11_12, hi_11_12, \
+                         stg6_0, stg4_0, stg6_0, stg4_0, stp2_10, \
+                         stp2_13, stp2_11, stp2_12) \
+} \
+\
+/* Stage7 */ \
+{ \
+  stp1_0 = _mm_add_epi16(stp2_0, stp2_15); \
+  stp1_1 = _mm_add_epi16(stp2_1, stp2_14); \
+  stp1_2 = _mm_add_epi16(stp2_2, stp2_13); \
+  stp1_3 = _mm_add_epi16(stp2_3, stp2_12); \
+  stp1_4 = _mm_add_epi16(stp2_4, stp2_11); \
+  stp1_5 = _mm_add_epi16(stp2_5, stp2_10); \
+  stp1_6 = _mm_add_epi16(stp2_6, stp2_9); \
+  stp1_7 = _mm_add_epi16(stp2_7, stp2_8); \
+  stp1_8 = _mm_sub_epi16(stp2_7, stp2_8); \
+  stp1_9 = _mm_sub_epi16(stp2_6, stp2_9); \
+  stp1_10 = _mm_sub_epi16(stp2_5, stp2_10); \
+  stp1_11 = _mm_sub_epi16(stp2_4, stp2_11); \
+  stp1_12 = _mm_sub_epi16(stp2_3, stp2_12); \
+  stp1_13 = _mm_sub_epi16(stp2_2, stp2_13); \
+  stp1_14 = _mm_sub_epi16(stp2_1, stp2_14); \
+  stp1_15 = _mm_sub_epi16(stp2_0, stp2_15); \
+  \
+}
+
+#define IDCT32_PASS2 \
+/* Stage1 */ \
+{ \
+  const __m128i lo_1_31 = _mm_unpacklo_epi16(in[1], in[31]); \
+  const __m128i hi_1_31 = _mm_unpackhi_epi16(in[1], in[31]); \
+  const __m128i lo_17_15 = _mm_unpacklo_epi16(in[17], in[15]); \
+  const __m128i hi_17_15 = _mm_unpackhi_epi16(in[17], in[15]); \
+  \
+  const __m128i lo_9_23 = _mm_unpacklo_epi16(in[9], in[23]); \
+  const __m128i hi_9_23 = _mm_unpackhi_epi16(in[9], in[23]); \
+  const __m128i lo_25_7= _mm_unpacklo_epi16(in[25], in[7]); \
+  const __m128i hi_25_7 = _mm_unpackhi_epi16(in[25], in[7]); \
+  \
+  const __m128i lo_5_27 = _mm_unpacklo_epi16(in[5], in[27]); \
+  const __m128i hi_5_27 = _mm_unpackhi_epi16(in[5], in[27]); \
+  const __m128i lo_21_11 = _mm_unpacklo_epi16(in[21], in[11]); \
+  const __m128i hi_21_11 = _mm_unpackhi_epi16(in[21], in[11]); \
+  \
+  const __m128i lo_13_19 = _mm_unpacklo_epi16(in[13], in[19]); \
+  const __m128i hi_13_19 = _mm_unpackhi_epi16(in[13], in[19]); \
+  const __m128i lo_29_3 = _mm_unpacklo_epi16(in[29], in[3]); \
+  const __m128i hi_29_3 = _mm_unpackhi_epi16(in[29], in[3]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_1_31, hi_1_31, lo_17_15, hi_17_15, stg1_0, \
+                         stg1_1, stg1_2, stg1_3, stp1_16, stp1_31, \
+                         stp1_17, stp1_30) \
+  MULTIPLICATION_AND_ADD(lo_9_23, hi_9_23, lo_25_7, hi_25_7, stg1_4, \
+                         stg1_5, stg1_6, stg1_7, stp1_18, stp1_29, \
+                         stp1_19, stp1_28) \
+  MULTIPLICATION_AND_ADD(lo_5_27, hi_5_27, lo_21_11, hi_21_11, stg1_8, \
+                         stg1_9, stg1_10, stg1_11, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+  MULTIPLICATION_AND_ADD(lo_13_19, hi_13_19, lo_29_3, hi_29_3, stg1_12, \
+                         stg1_13, stg1_14, stg1_15, stp1_22, stp1_25, \
+                         stp1_23, stp1_24) \
+} \
+\
+/* Stage2 */ \
+{ \
+  stp2_16 = _mm_add_epi16(stp1_16, stp1_17); \
+  stp2_17 = _mm_sub_epi16(stp1_16, stp1_17); \
+  stp2_18 = _mm_sub_epi16(stp1_19, stp1_18); \
+  stp2_19 = _mm_add_epi16(stp1_19, stp1_18); \
+  \
+  stp2_20 = _mm_add_epi16(stp1_20, stp1_21); \
+  stp2_21 = _mm_sub_epi16(stp1_20, stp1_21); \
+  stp2_22 = _mm_sub_epi16(stp1_23, stp1_22); \
+  stp2_23 = _mm_add_epi16(stp1_23, stp1_22); \
+  \
+  stp2_24 = _mm_add_epi16(stp1_24, stp1_25); \
+  stp2_25 = _mm_sub_epi16(stp1_24, stp1_25); \
+  stp2_26 = _mm_sub_epi16(stp1_27, stp1_26); \
+  stp2_27 = _mm_add_epi16(stp1_27, stp1_26); \
+  \
+  stp2_28 = _mm_add_epi16(stp1_28, stp1_29); \
+  stp2_29 = _mm_sub_epi16(stp1_28, stp1_29); \
+  stp2_30 = _mm_sub_epi16(stp1_31, stp1_30); \
+  stp2_31 = _mm_add_epi16(stp1_31, stp1_30); \
+} \
+\
+/* Stage3 */ \
+{ \
+  const __m128i lo_17_30 = _mm_unpacklo_epi16(stp2_17, stp2_30); \
+  const __m128i hi_17_30 = _mm_unpackhi_epi16(stp2_17, stp2_30); \
+  const __m128i lo_18_29 = _mm_unpacklo_epi16(stp2_18, stp2_29); \
+  const __m128i hi_18_29 = _mm_unpackhi_epi16(stp2_18, stp2_29); \
+  \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp2_21, stp2_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp2_21, stp2_26); \
+  const __m128i lo_22_25 = _mm_unpacklo_epi16(stp2_22, stp2_25); \
+  const __m128i hi_22_25 = _mm_unpackhi_epi16(stp2_22, stp2_25); \
+  \
+  MULTIPLICATION_AND_ADD(lo_17_30, hi_17_30, lo_18_29, hi_18_29, stg3_4, \
+                         stg3_5, stg3_6, stg3_4, stp1_17, stp1_30, \
+                         stp1_18, stp1_29) \
+  MULTIPLICATION_AND_ADD(lo_21_26, hi_21_26, lo_22_25, hi_22_25, stg3_8, \
+                         stg3_9, stg3_10, stg3_8, stp1_21, stp1_26, \
+                         stp1_22, stp1_25) \
+  \
+  stp1_16 = stp2_16; \
+  stp1_31 = stp2_31; \
+  stp1_19 = stp2_19; \
+  stp1_20 = stp2_20; \
+  stp1_23 = stp2_23; \
+  stp1_24 = stp2_24; \
+  stp1_27 = stp2_27; \
+  stp1_28 = stp2_28; \
+} \
+\
+/* Stage4 */ \
+{ \
+  stp2_16 = _mm_add_epi16(stp1_16, stp1_19); \
+  stp2_17 = _mm_add_epi16(stp1_17, stp1_18); \
+  stp2_18 = _mm_sub_epi16(stp1_17, stp1_18); \
+  stp2_19 = _mm_sub_epi16(stp1_16, stp1_19); \
+  stp2_20 = _mm_sub_epi16(stp1_23, stp1_20); \
+  stp2_21 = _mm_sub_epi16(stp1_22, stp1_21); \
+  stp2_22 = _mm_add_epi16(stp1_22, stp1_21); \
+  stp2_23 = _mm_add_epi16(stp1_23, stp1_20); \
+  \
+  stp2_24 = _mm_add_epi16(stp1_24, stp1_27); \
+  stp2_25 = _mm_add_epi16(stp1_25, stp1_26); \
+  stp2_26 = _mm_sub_epi16(stp1_25, stp1_26); \
+  stp2_27 = _mm_sub_epi16(stp1_24, stp1_27); \
+  stp2_28 = _mm_sub_epi16(stp1_31, stp1_28); \
+  stp2_29 = _mm_sub_epi16(stp1_30, stp1_29); \
+  stp2_30 = _mm_add_epi16(stp1_29, stp1_30); \
+  stp2_31 = _mm_add_epi16(stp1_28, stp1_31); \
+} \
+\
+/* Stage5 */ \
+{ \
+  const __m128i lo_18_29 = _mm_unpacklo_epi16(stp2_18, stp2_29); \
+  const __m128i hi_18_29 = _mm_unpackhi_epi16(stp2_18, stp2_29); \
+  \
+  const __m128i lo_19_28 = _mm_unpacklo_epi16(stp2_19, stp2_28); \
+  const __m128i hi_19_28 = _mm_unpackhi_epi16(stp2_19, stp2_28); \
+  const __m128i lo_20_27 = _mm_unpacklo_epi16(stp2_20, stp2_27); \
+  const __m128i hi_20_27 = _mm_unpackhi_epi16(stp2_20, stp2_27); \
+  \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp2_21, stp2_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp2_21, stp2_26); \
+  \
+  stp1_16 = stp2_16; \
+  stp1_17 = stp2_17; \
+  \
+  MULTIPLICATION_AND_ADD(lo_18_29, hi_18_29, lo_19_28, hi_19_28, stg4_4, \
+                         stg4_5, stg4_4, stg4_5, stp1_18, stp1_29, \
+                         stp1_19, stp1_28) \
+  MULTIPLICATION_AND_ADD(lo_20_27, hi_20_27, lo_21_26, hi_21_26, stg4_6, \
+                         stg4_4, stg4_6, stg4_4, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+  \
+  stp1_22 = stp2_22; \
+  stp1_23 = stp2_23; \
+  stp1_24 = stp2_24; \
+  stp1_25 = stp2_25; \
+  stp1_30 = stp2_30; \
+  stp1_31 = stp2_31; \
+} \
+\
+/* Stage6 */ \
+{ \
+  stp2_16 = _mm_add_epi16(stp1_16, stp1_23); \
+  stp2_17 = _mm_add_epi16(stp1_17, stp1_22); \
+  stp2_18 = _mm_add_epi16(stp1_18, stp1_21); \
+  stp2_19 = _mm_add_epi16(stp1_19, stp1_20); \
+  stp2_20 = _mm_sub_epi16(stp1_19, stp1_20); \
+  stp2_21 = _mm_sub_epi16(stp1_18, stp1_21); \
+  stp2_22 = _mm_sub_epi16(stp1_17, stp1_22); \
+  stp2_23 = _mm_sub_epi16(stp1_16, stp1_23); \
+  \
+  stp2_24 = _mm_sub_epi16(stp1_31, stp1_24); \
+  stp2_25 = _mm_sub_epi16(stp1_30, stp1_25); \
+  stp2_26 = _mm_sub_epi16(stp1_29, stp1_26); \
+  stp2_27 = _mm_sub_epi16(stp1_28, stp1_27); \
+  stp2_28 = _mm_add_epi16(stp1_27, stp1_28); \
+  stp2_29 = _mm_add_epi16(stp1_26, stp1_29); \
+  stp2_30 = _mm_add_epi16(stp1_25, stp1_30); \
+  stp2_31 = _mm_add_epi16(stp1_24, stp1_31); \
+} \
+\
+/* Stage7 */ \
+{ \
+  const __m128i lo_20_27 = _mm_unpacklo_epi16(stp2_20, stp2_27); \
+  const __m128i hi_20_27 = _mm_unpackhi_epi16(stp2_20, stp2_27); \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp2_21, stp2_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp2_21, stp2_26); \
+  \
+  const __m128i lo_22_25 = _mm_unpacklo_epi16(stp2_22, stp2_25); \
+  const __m128i hi_22_25 = _mm_unpackhi_epi16(stp2_22, stp2_25); \
+  const __m128i lo_23_24 = _mm_unpacklo_epi16(stp2_23, stp2_24); \
+  const __m128i hi_23_24 = _mm_unpackhi_epi16(stp2_23, stp2_24); \
+  \
+  stp1_16 = stp2_16; \
+  stp1_17 = stp2_17; \
+  stp1_18 = stp2_18; \
+  stp1_19 = stp2_19; \
+  \
+  MULTIPLICATION_AND_ADD(lo_20_27, hi_20_27, lo_21_26, hi_21_26, stg6_0, \
+                         stg4_0, stg6_0, stg4_0, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+  MULTIPLICATION_AND_ADD(lo_22_25, hi_22_25, lo_23_24, hi_23_24, stg6_0, \
+                         stg4_0, stg6_0, stg4_0, stp1_22, stp1_25, \
+                         stp1_23, stp1_24) \
+  \
+  stp1_28 = stp2_28; \
+  stp1_29 = stp2_29; \
+  stp1_30 = stp2_30; \
+  stp1_31 = stp2_31; \
+}
+
+
+
+#define IDCT32_BLOCK_A \
+/* Stage1 */ \
+{ \
+  const __m128i lo_1_31 = _mm_unpacklo_epi16(in[1], in[31]); \
+  const __m128i hi_1_31 = _mm_unpackhi_epi16(in[1], in[31]); \
+  const __m128i lo_17_15 = _mm_unpacklo_epi16(in[17], in[15]); \
+  const __m128i hi_17_15 = _mm_unpackhi_epi16(in[17], in[15]); \
+  \
+  const __m128i lo_9_23 = _mm_unpacklo_epi16(in[9], in[23]); \
+  const __m128i hi_9_23 = _mm_unpackhi_epi16(in[9], in[23]); \
+  const __m128i lo_25_7= _mm_unpacklo_epi16(in[25], in[7]); \
+  const __m128i hi_25_7 = _mm_unpackhi_epi16(in[25], in[7]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_1_31, hi_1_31, lo_17_15, hi_17_15, stg1_0, \
+                         stg1_1, stg1_2, stg1_3, stp1_16, stp1_31, \
+                         stp1_17, stp1_30) \
+  MULTIPLICATION_AND_ADD(lo_9_23, hi_9_23, lo_25_7, hi_25_7, stg1_4, \
+                         stg1_5, stg1_6, stg1_7, stp1_18, stp1_29, \
+                         stp1_19, stp1_28) \
+} \
+\
+/* Stage2 */ \
+{ \
+  stp2_16 = _mm_add_epi16(stp1_16, stp1_17); \
+  stp2_17 = _mm_sub_epi16(stp1_16, stp1_17); \
+  stp2_18 = _mm_sub_epi16(stp1_19, stp1_18); \
+  stp2_19 = _mm_add_epi16(stp1_19, stp1_18); \
+  \
+  stp2_28 = _mm_add_epi16(stp1_28, stp1_29); \
+  stp2_29 = _mm_sub_epi16(stp1_28, stp1_29); \
+  stp2_30 = _mm_sub_epi16(stp1_31, stp1_30); \
+  stp2_31 = _mm_add_epi16(stp1_31, stp1_30); \
+} \
+\
+/* Stage3 */ \
+{ \
+  const __m128i lo_17_30 = _mm_unpacklo_epi16(stp2_17, stp2_30); \
+  const __m128i hi_17_30 = _mm_unpackhi_epi16(stp2_17, stp2_30); \
+  const __m128i lo_18_29 = _mm_unpacklo_epi16(stp2_18, stp2_29); \
+  const __m128i hi_18_29 = _mm_unpackhi_epi16(stp2_18, stp2_29); \
+  \
+  MULTIPLICATION_AND_ADD(lo_17_30, hi_17_30, lo_18_29, hi_18_29, stg3_4, \
+                         stg3_5, stg3_6, stg3_4, stp1_17, stp1_30, \
+                         stp1_18, stp1_29) \
+  \
+  stp1_16 = stp2_16; \
+  stp1_31 = stp2_31; \
+  stp1_19 = stp2_19; \
+  stp1_28 = stp2_28; \
+} \
+\
+/* Stage4 */ \
+{ \
+  stp2_16 = _mm_add_epi16(stp1_16, stp1_19); \
+  stp2_17 = _mm_add_epi16(stp1_17, stp1_18); \
+  stp2_18 = _mm_sub_epi16(stp1_17, stp1_18); \
+  stp2_19 = _mm_sub_epi16(stp1_16, stp1_19); \
+  \
+  stp2_28 = _mm_sub_epi16(stp1_31, stp1_28); \
+  stp2_29 = _mm_sub_epi16(stp1_30, stp1_29); \
+  stp2_30 = _mm_add_epi16(stp1_29, stp1_30); \
+  stp2_31 = _mm_add_epi16(stp1_28, stp1_31); \
+} \
+\
+/* Stage5 */ \
+{ \
+  const __m128i lo_18_29 = _mm_unpacklo_epi16(stp2_18, stp2_29); \
+  const __m128i hi_18_29 = _mm_unpackhi_epi16(stp2_18, stp2_29); \
+  \
+  const __m128i lo_19_28 = _mm_unpacklo_epi16(stp2_19, stp2_28); \
+  const __m128i hi_19_28 = _mm_unpackhi_epi16(stp2_19, stp2_28); \
+  \
+  stp1_16 = stp2_16; \
+  stp1_17 = stp2_17; \
+  \
+  MULTIPLICATION_AND_ADD(lo_18_29, hi_18_29, lo_19_28, hi_19_28, stg4_4, \
+                         stg4_5, stg4_4, stg4_5, stp1_18, stp1_29, \
+                         stp1_19, stp1_28) \
+  \
+  stp1_30 = stp2_30; \
+  stp1_31 = stp2_31; \
+} \
+\
+/* Stage6 */ \
+{ \
+} \
+\
+/* Stage7 */ \
+{ \
+}
+
+#define IDCT32_BLOCK_B \
+/* Stage1 */ \
+{ \
+  const __m128i lo_5_27 = _mm_unpacklo_epi16(in[5], in[27]); \
+  const __m128i hi_5_27 = _mm_unpackhi_epi16(in[5], in[27]); \
+  const __m128i lo_21_11 = _mm_unpacklo_epi16(in[21], in[11]); \
+  const __m128i hi_21_11 = _mm_unpackhi_epi16(in[21], in[11]); \
+  \
+  const __m128i lo_13_19 = _mm_unpacklo_epi16(in[13], in[19]); \
+  const __m128i hi_13_19 = _mm_unpackhi_epi16(in[13], in[19]); \
+  const __m128i lo_29_3 = _mm_unpacklo_epi16(in[29], in[3]); \
+  const __m128i hi_29_3 = _mm_unpackhi_epi16(in[29], in[3]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_5_27, hi_5_27, lo_21_11, hi_21_11, stg1_8, \
+                         stg1_9, stg1_10, stg1_11, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+  MULTIPLICATION_AND_ADD(lo_13_19, hi_13_19, lo_29_3, hi_29_3, stg1_12, \
+                         stg1_13, stg1_14, stg1_15, stp1_22, stp1_25, \
+                         stp1_23, stp1_24) \
+} \
+\
+/* Stage2 */ \
+{ \
+  stp2_20 = _mm_add_epi16(stp1_20, stp1_21); \
+  stp2_21 = _mm_sub_epi16(stp1_20, stp1_21); \
+  stp2_22 = _mm_sub_epi16(stp1_23, stp1_22); \
+  stp2_23 = _mm_add_epi16(stp1_23, stp1_22); \
+  \
+  stp2_24 = _mm_add_epi16(stp1_24, stp1_25); \
+  stp2_25 = _mm_sub_epi16(stp1_24, stp1_25); \
+  stp2_26 = _mm_sub_epi16(stp1_27, stp1_26); \
+  stp2_27 = _mm_add_epi16(stp1_27, stp1_26); \
+} \
+\
+/* Stage3 */ \
+{ \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp2_21, stp2_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp2_21, stp2_26); \
+  const __m128i lo_22_25 = _mm_unpacklo_epi16(stp2_22, stp2_25); \
+  const __m128i hi_22_25 = _mm_unpackhi_epi16(stp2_22, stp2_25); \
+  \
+  MULTIPLICATION_AND_ADD(lo_21_26, hi_21_26, lo_22_25, hi_22_25, stg3_8, \
+                         stg3_9, stg3_10, stg3_8, stp1_21, stp1_26, \
+                         stp1_22, stp1_25) \
+  \
+  stp1_20 = stp2_20; \
+  stp1_23 = stp2_23; \
+  stp1_24 = stp2_24; \
+  stp1_27 = stp2_27; \
+} \
+\
+/* Stage4 */ \
+{ \
+  stp2_20 = _mm_sub_epi16(stp1_23, stp1_20); \
+  stp2_21 = _mm_sub_epi16(stp1_22, stp1_21); \
+  stp2_22 = _mm_add_epi16(stp1_22, stp1_21); \
+  stp2_23 = _mm_add_epi16(stp1_23, stp1_20); \
+  \
+  stp2_24 = _mm_add_epi16(stp1_24, stp1_27); \
+  stp2_25 = _mm_add_epi16(stp1_25, stp1_26); \
+  stp2_26 = _mm_sub_epi16(stp1_25, stp1_26); \
+  stp2_27 = _mm_sub_epi16(stp1_24, stp1_27); \
+} \
+\
+/* Stage5 */ \
+{ \
+  const __m128i lo_20_27 = _mm_unpacklo_epi16(stp2_20, stp2_27); \
+  const __m128i hi_20_27 = _mm_unpackhi_epi16(stp2_20, stp2_27); \
+  \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp2_21, stp2_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp2_21, stp2_26); \
+  \
+  MULTIPLICATION_AND_ADD(lo_20_27, hi_20_27, lo_21_26, hi_21_26, stg4_6, \
+                         stg4_4, stg4_6, stg4_4, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+  \
+  stp1_22 = stp2_22; \
+  stp1_23 = stp2_23; \
+  stp1_24 = stp2_24; \
+  stp1_25 = stp2_25; \
+} \
+\
+/* Stage6 */ \
+{ \
+  /* step1 16-19 from block a */ \
+  stp2_16 = _mm_add_epi16(stp1_16, stp1_23); \
+  stp2_17 = _mm_add_epi16(stp1_17, stp1_22); \
+  stp2_18 = _mm_add_epi16(stp1_18, stp1_21); \
+  stp2_19 = _mm_add_epi16(stp1_19, stp1_20); \
+  \
+  stp2_20 = _mm_sub_epi16(stp1_19, stp1_20); \
+  stp2_21 = _mm_sub_epi16(stp1_18, stp1_21); \
+  stp2_22 = _mm_sub_epi16(stp1_17, stp1_22); \
+  stp2_23 = _mm_sub_epi16(stp1_16, stp1_23); \
+  \
+  stp2_24 = _mm_sub_epi16(stp1_31, stp1_24); \
+  stp2_25 = _mm_sub_epi16(stp1_30, stp1_25); \
+  stp2_26 = _mm_sub_epi16(stp1_29, stp1_26); \
+  stp2_27 = _mm_sub_epi16(stp1_28, stp1_27); \
+  \
+  /* step1 28-31 from block a */ \
+  stp2_28 = _mm_add_epi16(stp1_27, stp1_28); \
+  stp2_29 = _mm_add_epi16(stp1_26, stp1_29); \
+  stp2_30 = _mm_add_epi16(stp1_25, stp1_30); \
+  stp2_31 = _mm_add_epi16(stp1_24, stp1_31); \
+} \
+\
+/* Stage7 */ \
+{ \
+  const __m128i lo_20_27 = _mm_unpacklo_epi16(stp2_20, stp2_27); \
+  const __m128i hi_20_27 = _mm_unpackhi_epi16(stp2_20, stp2_27); \
+  const __m128i lo_21_26 = _mm_unpacklo_epi16(stp2_21, stp2_26); \
+  const __m128i hi_21_26 = _mm_unpackhi_epi16(stp2_21, stp2_26); \
+  \
+  const __m128i lo_22_25 = _mm_unpacklo_epi16(stp2_22, stp2_25); \
+  const __m128i hi_22_25 = _mm_unpackhi_epi16(stp2_22, stp2_25); \
+  const __m128i lo_23_24 = _mm_unpacklo_epi16(stp2_23, stp2_24); \
+  const __m128i hi_23_24 = _mm_unpackhi_epi16(stp2_23, stp2_24); \
+  \
+  MULTIPLICATION_AND_ADD(lo_20_27, hi_20_27, lo_21_26, hi_21_26, stg6_0, \
+                         stg4_0, stg6_0, stg4_0, stp1_20, stp1_27, \
+                         stp1_21, stp1_26) \
+  MULTIPLICATION_AND_ADD(lo_22_25, hi_22_25, lo_23_24, hi_23_24, stg6_0, \
+                         stg4_0, stg6_0, stg4_0, stp1_22, stp1_25, \
+                         stp1_23, stp1_24) \
+  \
+  stp1_16 = stp2_16; \
+  stp1_17 = stp2_17; \
+  stp1_18 = stp2_18; \
+  stp1_19 = stp2_19; \
+  stp1_28 = stp2_28; \
+  stp1_29 = stp2_29; \
+  stp1_30 = stp2_30; \
+  stp1_31 = stp2_31; \
+}
+
+#define IDCT32_BLOCK_C \
+/* Stage1 */ \
+{ \
+} \
+\
+/* Stage2 */ \
+{ \
+  const __m128i lo_2_30 = _mm_unpacklo_epi16(in[2], in[30]); \
+  const __m128i hi_2_30 = _mm_unpackhi_epi16(in[2], in[30]); \
+  const __m128i lo_18_14 = _mm_unpacklo_epi16(in[18], in[14]); \
+  const __m128i hi_18_14 = _mm_unpackhi_epi16(in[18], in[14]); \
+  \
+  const __m128i lo_10_22 = _mm_unpacklo_epi16(in[10], in[22]); \
+  const __m128i hi_10_22 = _mm_unpackhi_epi16(in[10], in[22]); \
+  const __m128i lo_26_6 = _mm_unpacklo_epi16(in[26], in[6]); \
+  const __m128i hi_26_6 = _mm_unpackhi_epi16(in[26], in[6]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_2_30, hi_2_30, lo_18_14, hi_18_14, stg2_0, \
+                         stg2_1, stg2_2, stg2_3, stp2_8, stp2_15, stp2_9, \
+                         stp2_14) \
+  MULTIPLICATION_AND_ADD(lo_10_22, hi_10_22, lo_26_6, hi_26_6, stg2_4, \
+                         stg2_5, stg2_6, stg2_7, stp2_10, stp2_13, \
+                         stp2_11, stp2_12) \
+} \
+\
+/* Stage3 */ \
+{ \
+  stp1_8 = _mm_add_epi16(stp2_8, stp2_9); \
+  stp1_9 = _mm_sub_epi16(stp2_8, stp2_9); \
+  stp1_10 = _mm_sub_epi16(stp2_11, stp2_10); \
+  stp1_11 = _mm_add_epi16(stp2_11, stp2_10); \
+  stp1_12 = _mm_add_epi16(stp2_12, stp2_13); \
+  stp1_13 = _mm_sub_epi16(stp2_12, stp2_13); \
+  stp1_14 = _mm_sub_epi16(stp2_15, stp2_14); \
+  stp1_15 = _mm_add_epi16(stp2_15, stp2_14); \
+} \
+\
+/* Stage4 */ \
+{ \
+  const __m128i lo_9_14 = _mm_unpacklo_epi16(stp1_9, stp1_14); \
+  const __m128i hi_9_14 = _mm_unpackhi_epi16(stp1_9, stp1_14); \
+  const __m128i lo_10_13 = _mm_unpacklo_epi16(stp1_10, stp1_13); \
+  const __m128i hi_10_13 = _mm_unpackhi_epi16(stp1_10, stp1_13); \
+  \
+  \
+  MULTIPLICATION_AND_ADD(lo_9_14, hi_9_14, lo_10_13, hi_10_13, stg4_4, \
+                         stg4_5, stg4_6, stg4_4, stp2_9, stp2_14, \
+                         stp2_10, stp2_13) \
+  \
+  stp2_8 = stp1_8; \
+  stp2_15 = stp1_15; \
+  stp2_11 = stp1_11; \
+  stp2_12 = stp1_12; \
+} \
+\
+/* Stage5 */ \
+{ \
+  stp1_8 = _mm_add_epi16(stp2_8, stp2_11); \
+  stp1_9 = _mm_add_epi16(stp2_9, stp2_10); \
+  stp1_10 = _mm_sub_epi16(stp2_9, stp2_10); \
+  stp1_11 = _mm_sub_epi16(stp2_8, stp2_11); \
+  stp1_12 = _mm_sub_epi16(stp2_15, stp2_12); \
+  stp1_13 = _mm_sub_epi16(stp2_14, stp2_13); \
+  stp1_14 = _mm_add_epi16(stp2_14, stp2_13); \
+  stp1_15 = _mm_add_epi16(stp2_15, stp2_12); \
+} \
+\
+/* Stage6 */ \
+{ \
+  const __m128i lo_10_13 = _mm_unpacklo_epi16(stp1_10, stp1_13); \
+  const __m128i hi_10_13 = _mm_unpackhi_epi16(stp1_10, stp1_13); \
+  const __m128i lo_11_12 = _mm_unpacklo_epi16(stp1_11, stp1_12); \
+  const __m128i hi_11_12 = _mm_unpackhi_epi16(stp1_11, stp1_12); \
+  \
+  stp2_8 = stp1_8; \
+  stp2_9 = stp1_9; \
+  stp2_14 = stp1_14; \
+  stp2_15 = stp1_15; \
+  \
+  MULTIPLICATION_AND_ADD(lo_10_13, hi_10_13, lo_11_12, hi_11_12, \
+                         stg6_0, stg4_0, stg6_0, stg4_0, stp2_10, \
+                         stp2_13, stp2_11, stp2_12) \
+} \
+\
+/* Stage7 -- used by block d*/ \
+{ \
+  stp1_8 = stp2_8; \
+  stp1_9 = stp2_9; \
+  stp1_10 = stp2_10; \
+  stp1_11 = stp2_11; \
+  stp1_12 = stp2_12; \
+  stp1_13 = stp2_13; \
+  stp1_14 = stp2_14; \
+  stp1_15 = stp2_15; \
+  \
+}
+
+#define IDCT32_BLOCK_D \
+/* Stage1 */ \
+{ \
+} \
+\
+/* Stage2 */ \
+{ \
+} \
+\
+/* Stage3 */ \
+{ \
+  const __m128i lo_4_28 = _mm_unpacklo_epi16(in[4], in[28]); \
+  const __m128i hi_4_28 = _mm_unpackhi_epi16(in[4], in[28]); \
+  const __m128i lo_20_12 = _mm_unpacklo_epi16(in[20], in[12]); \
+  const __m128i hi_20_12 = _mm_unpackhi_epi16(in[20], in[12]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_4_28, hi_4_28, lo_20_12, hi_20_12, stg3_0, \
+                         stg3_1, stg3_2, stg3_3, stp1_4, stp1_7, stp1_5, \
+                         stp1_6) \
+} \
+\
+/* Stage4 */ \
+{ \
+  const __m128i lo_0_16 = _mm_unpacklo_epi16(in[0], in[16]); \
+  const __m128i hi_0_16 = _mm_unpackhi_epi16(in[0], in[16]); \
+  const __m128i lo_8_24 = _mm_unpacklo_epi16(in[8], in[24]); \
+  const __m128i hi_8_24 = _mm_unpackhi_epi16(in[8], in[24]); \
+  \
+  MULTIPLICATION_AND_ADD(lo_0_16, hi_0_16, lo_8_24, hi_8_24, stg4_0, \
+                         stg4_1, stg4_2, stg4_3, stp2_0, stp2_1, \
+                         stp2_2, stp2_3) \
+  \
+  stp2_4 = _mm_add_epi16(stp1_4, stp1_5); \
+  stp2_5 = _mm_sub_epi16(stp1_4, stp1_5); \
+  stp2_6 = _mm_sub_epi16(stp1_7, stp1_6); \
+  stp2_7 = _mm_add_epi16(stp1_7, stp1_6); \
+  \
+} \
+\
+/* Stage5 */ \
+{ \
+  const __m128i lo_6_5 = _mm_unpacklo_epi16(stp2_6, stp2_5); \
+  const __m128i hi_6_5 = _mm_unpackhi_epi16(stp2_6, stp2_5); \
+  \
+  stp1_0 = _mm_add_epi16(stp2_0, stp2_3); \
+  stp1_1 = _mm_add_epi16(stp2_1, stp2_2); \
+  stp1_2 = _mm_sub_epi16(stp2_1, stp2_2); \
+  stp1_3 = _mm_sub_epi16(stp2_0, stp2_3); \
+  \
+  tmp0 = _mm_madd_epi16(lo_6_5, stg4_1); \
+  tmp1 = _mm_madd_epi16(hi_6_5, stg4_1); \
+  tmp2 = _mm_madd_epi16(lo_6_5, stg4_0); \
+  tmp3 = _mm_madd_epi16(hi_6_5, stg4_0); \
+  \
+  tmp0 = _mm_add_epi32(tmp0, rounding); \
+  tmp1 = _mm_add_epi32(tmp1, rounding); \
+  tmp2 = _mm_add_epi32(tmp2, rounding); \
+  tmp3 = _mm_add_epi32(tmp3, rounding); \
+  \
+  tmp0 = _mm_srai_epi32(tmp0, DCT_CONST_BITS); \
+  tmp1 = _mm_srai_epi32(tmp1, DCT_CONST_BITS); \
+  tmp2 = _mm_srai_epi32(tmp2, DCT_CONST_BITS); \
+  tmp3 = _mm_srai_epi32(tmp3, DCT_CONST_BITS); \
+  \
+  stp1_5 = _mm_packs_epi32(tmp0, tmp1); \
+  stp1_6 = _mm_packs_epi32(tmp2, tmp3); \
+  \
+  stp1_4 = stp2_4; \
+  stp1_7 = stp2_7; \
+  \
+} \
+\
+/* Stage6 */ \
+{ \
+  stp2_0 = _mm_add_epi16(stp1_0, stp1_7); \
+  stp2_1 = _mm_add_epi16(stp1_1, stp1_6); \
+  stp2_2 = _mm_add_epi16(stp1_2, stp1_5); \
+  stp2_3 = _mm_add_epi16(stp1_3, stp1_4); \
+  stp2_4 = _mm_sub_epi16(stp1_3, stp1_4); \
+  stp2_5 = _mm_sub_epi16(stp1_2, stp1_5); \
+  stp2_6 = _mm_sub_epi16(stp1_1, stp1_6); \
+  stp2_7 = _mm_sub_epi16(stp1_0, stp1_7); \
+  \
+} \
+\
+/* Stage7 -- step1 8-15 from block c */ \
+{ \
+  stp2_8 = stp1_8; \
+  stp2_9 = stp1_9; \
+  stp2_10 = stp1_10; \
+  stp2_11 = stp1_11; \
+  stp2_12 = stp1_12; \
+  stp2_13 = stp1_13; \
+  stp2_14 = stp1_14; \
+  stp2_15 = stp1_15; \
+} \
+{ \
+  stp1_0 = _mm_add_epi16(stp2_0, stp2_15); \
+  stp1_1 = _mm_add_epi16(stp2_1, stp2_14); \
+  stp1_2 = _mm_add_epi16(stp2_2, stp2_13); \
+  stp1_3 = _mm_add_epi16(stp2_3, stp2_12); \
+  stp1_4 = _mm_add_epi16(stp2_4, stp2_11); \
+  stp1_5 = _mm_add_epi16(stp2_5, stp2_10); \
+  stp1_6 = _mm_add_epi16(stp2_6, stp2_9); \
+  stp1_7 = _mm_add_epi16(stp2_7, stp2_8); \
+\
+  stp1_8 = _mm_sub_epi16(stp2_7, stp2_8); \
+  stp1_9 = _mm_sub_epi16(stp2_6, stp2_9); \
+  stp1_10 = _mm_sub_epi16(stp2_5, stp2_10); \
+  stp1_11 = _mm_sub_epi16(stp2_4, stp2_11); \
+  stp1_12 = _mm_sub_epi16(stp2_3, stp2_12); \
+  stp1_13 = _mm_sub_epi16(stp2_2, stp2_13); \
+  stp1_14 = _mm_sub_epi16(stp2_1, stp2_14); \
+  stp1_15 = _mm_sub_epi16(stp2_0, stp2_15); \
+}
+
+
+
+#define IDCT32_BLOCKS_ABCD \
+  IDCT32_BLOCK_A \
+  IDCT32_BLOCK_B \
+  IDCT32_BLOCK_C \
+  IDCT32_BLOCK_D
+
 // Only upper-left 8x8 has non-zero coeff
 void vpx_idct32x32_34_add_sse2(const tran_low_t *input, uint8_t *dest,
                                int stride) {
@@ -3078,11 +4178,6 @@ void vpx_idct32x32_34_add_sse2(const tran_low_t *input, uint8_t *dest,
           stp1_16, stp1_17, stp1_18, stp1_19, stp1_20, stp1_21, stp1_22,
           stp1_23, stp1_24, stp1_25, stp1_26, stp1_27, stp1_28, stp1_29,
           stp1_30, stp1_31;
-  __m128i stp2_0, stp2_1, stp2_2, stp2_3, stp2_4, stp2_5, stp2_6, stp2_7,
-          stp2_8, stp2_9, stp2_10, stp2_11, stp2_12, stp2_13, stp2_14, stp2_15,
-          stp2_16, stp2_17, stp2_18, stp2_19, stp2_20, stp2_21, stp2_22,
-          stp2_23, stp2_24, stp2_25, stp2_26, stp2_27, stp2_28, stp2_29,
-          stp2_30, stp2_31;
   __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   int i;
 
@@ -3096,18 +4191,10 @@ void vpx_idct32x32_34_add_sse2(const tran_low_t *input, uint8_t *dest,
   in[6] = load_input_data(input + 192);
   in[7] = load_input_data(input + 224);
 
-  for (i = 8; i < 32; ++i) {
-    in[i] = _mm_setzero_si128();
-  }
-
   array_transpose_8x8(in, in);
-  // TODO(hkuang): Following transposes are unnecessary. But remove them will
-  // lead to performance drop on some devices.
-  array_transpose_8x8(in + 8, in + 8);
-  array_transpose_8x8(in + 16, in + 16);
-  array_transpose_8x8(in + 24, in + 24);
 
-  IDCT32_34
+  IDCT32_34_PASS1
+  IDCT32_34_PASS2
 
   // 1_D: Store 32 intermediate results for each 8x32 block.
   col[0] = _mm_add_epi16(stp1_0, stp1_31);
@@ -3142,12 +4229,251 @@ void vpx_idct32x32_34_add_sse2(const tran_low_t *input, uint8_t *dest,
   col[29] = _mm_sub_epi16(stp1_2, stp1_29);
   col[30] = _mm_sub_epi16(stp1_1, stp1_30);
   col[31] = _mm_sub_epi16(stp1_0, stp1_31);
+
   for (i = 0; i < 4; i++) {
-    int j;
     const __m128i zero = _mm_setzero_si128();
+    int j;
     // Transpose 32x8 block to 8x32 block
     array_transpose_8x8(col + i * 8, in);
-    IDCT32_34
+
+    IDCT32_34_PASS1
+    IDCT32_34_PASS2
+
+    // 2_D: Calculate the results and store them to destination.
+    in[0] = _mm_add_epi16(stp1_0, stp1_31);
+    in[1] = _mm_add_epi16(stp1_1, stp1_30);
+    in[2] = _mm_add_epi16(stp1_2, stp1_29);
+    in[3] = _mm_add_epi16(stp1_3, stp1_28);
+    in[4] = _mm_add_epi16(stp1_4, stp1_27);
+    in[5] = _mm_add_epi16(stp1_5, stp1_26);
+    in[6] = _mm_add_epi16(stp1_6, stp1_25);
+    in[7] = _mm_add_epi16(stp1_7, stp1_24);
+    in[8] = _mm_add_epi16(stp1_8, stp1_23);
+    in[9] = _mm_add_epi16(stp1_9, stp1_22);
+    in[10] = _mm_add_epi16(stp1_10, stp1_21);
+    in[11] = _mm_add_epi16(stp1_11, stp1_20);
+    in[12] = _mm_add_epi16(stp1_12, stp1_19);
+    in[13] = _mm_add_epi16(stp1_13, stp1_18);
+    in[14] = _mm_add_epi16(stp1_14, stp1_17);
+    in[15] = _mm_add_epi16(stp1_15, stp1_16);
+    in[16] = _mm_sub_epi16(stp1_15, stp1_16);
+    in[17] = _mm_sub_epi16(stp1_14, stp1_17);
+    in[18] = _mm_sub_epi16(stp1_13, stp1_18);
+    in[19] = _mm_sub_epi16(stp1_12, stp1_19);
+    in[20] = _mm_sub_epi16(stp1_11, stp1_20);
+    in[21] = _mm_sub_epi16(stp1_10, stp1_21);
+    in[22] = _mm_sub_epi16(stp1_9, stp1_22);
+    in[23] = _mm_sub_epi16(stp1_8, stp1_23);
+    in[24] = _mm_sub_epi16(stp1_7, stp1_24);
+    in[25] = _mm_sub_epi16(stp1_6, stp1_25);
+    in[26] = _mm_sub_epi16(stp1_5, stp1_26);
+    in[27] = _mm_sub_epi16(stp1_4, stp1_27);
+    in[28] = _mm_sub_epi16(stp1_3, stp1_28);
+    in[29] = _mm_sub_epi16(stp1_2, stp1_29);
+    in[30] = _mm_sub_epi16(stp1_1, stp1_30);
+    in[31] = _mm_sub_epi16(stp1_0, stp1_31);
+
+    for (j = 0; j < 32; ++j) {
+      // Final rounding and shift
+      in[j] = _mm_adds_epi16(in[j], final_rounding);
+      in[j] = _mm_srai_epi16(in[j], 6);
+      RECON_AND_STORE(dest + j * stride, in[j]);
+    }
+
+    dest += 8;
+  }
+}
+
+void vpx_idct32x32_135_add_sse2(const int16_t *input, uint8_t *dest,
+                                 int stride) {
+  const __m128i rounding = _mm_set1_epi32(DCT_CONST_ROUNDING);
+  const __m128i final_rounding = _mm_set1_epi16(1 << 5);
+  const __m128i zero = _mm_setzero_si128();
+
+  // idct constants for each stage
+  const __m128i stg1_0 = pair_set_epi16(cospi_31_64, -cospi_1_64);
+  const __m128i stg1_1 = pair_set_epi16(cospi_1_64, cospi_31_64);
+  const __m128i stg1_2 = pair_set_epi16(cospi_15_64, -cospi_17_64);
+  const __m128i stg1_3 = pair_set_epi16(cospi_17_64, cospi_15_64);
+  const __m128i stg1_4 = pair_set_epi16(cospi_23_64, -cospi_9_64);
+  const __m128i stg1_5 = pair_set_epi16(cospi_9_64, cospi_23_64);
+  const __m128i stg1_6 = pair_set_epi16(cospi_7_64, -cospi_25_64);
+  const __m128i stg1_7 = pair_set_epi16(cospi_25_64, cospi_7_64);
+  const __m128i stg1_8 = pair_set_epi16(cospi_27_64, -cospi_5_64);
+  const __m128i stg1_9 = pair_set_epi16(cospi_5_64, cospi_27_64);
+  const __m128i stg1_10 = pair_set_epi16(cospi_11_64, -cospi_21_64);
+  const __m128i stg1_11 = pair_set_epi16(cospi_21_64, cospi_11_64);
+  const __m128i stg1_12 = pair_set_epi16(cospi_19_64, -cospi_13_64);
+  const __m128i stg1_13 = pair_set_epi16(cospi_13_64, cospi_19_64);
+  const __m128i stg1_14 = pair_set_epi16(cospi_3_64, -cospi_29_64);
+  const __m128i stg1_15 = pair_set_epi16(cospi_29_64, cospi_3_64);
+
+  const __m128i stg2_0 = pair_set_epi16(cospi_30_64, -cospi_2_64);
+  const __m128i stg2_1 = pair_set_epi16(cospi_2_64, cospi_30_64);
+  const __m128i stg2_2 = pair_set_epi16(cospi_14_64, -cospi_18_64);
+  const __m128i stg2_3 = pair_set_epi16(cospi_18_64, cospi_14_64);
+  const __m128i stg2_4 = pair_set_epi16(cospi_22_64, -cospi_10_64);
+  const __m128i stg2_5 = pair_set_epi16(cospi_10_64, cospi_22_64);
+  const __m128i stg2_6 = pair_set_epi16(cospi_6_64, -cospi_26_64);
+  const __m128i stg2_7 = pair_set_epi16(cospi_26_64, cospi_6_64);
+
+  const __m128i stg3_0 = pair_set_epi16(cospi_28_64, -cospi_4_64);
+  const __m128i stg3_1 = pair_set_epi16(cospi_4_64, cospi_28_64);
+  const __m128i stg3_2 = pair_set_epi16(cospi_12_64, -cospi_20_64);
+  const __m128i stg3_3 = pair_set_epi16(cospi_20_64, cospi_12_64);
+  const __m128i stg3_4 = pair_set_epi16(-cospi_4_64, cospi_28_64);
+  const __m128i stg3_5 = pair_set_epi16(cospi_28_64, cospi_4_64);
+  const __m128i stg3_6 = pair_set_epi16(-cospi_28_64, -cospi_4_64);
+  const __m128i stg3_8 = pair_set_epi16(-cospi_20_64, cospi_12_64);
+  const __m128i stg3_9 = pair_set_epi16(cospi_12_64, cospi_20_64);
+  const __m128i stg3_10 = pair_set_epi16(-cospi_12_64, -cospi_20_64);
+
+  const __m128i stg4_0 = pair_set_epi16(cospi_16_64, cospi_16_64);
+  const __m128i stg4_1 = pair_set_epi16(cospi_16_64, -cospi_16_64);
+  const __m128i stg4_2 = pair_set_epi16(cospi_24_64, -cospi_8_64);
+  const __m128i stg4_3 = pair_set_epi16(cospi_8_64, cospi_24_64);
+  const __m128i stg4_4 = pair_set_epi16(-cospi_8_64, cospi_24_64);
+  const __m128i stg4_5 = pair_set_epi16(cospi_24_64, cospi_8_64);
+  const __m128i stg4_6 = pair_set_epi16(-cospi_24_64, -cospi_8_64);
+
+  const __m128i stg6_0 = pair_set_epi16(-cospi_16_64, cospi_16_64);
+
+  __m128i in[32], col[128];
+  __m128i stp1_0, stp1_1, stp1_2, stp1_3, stp1_4, stp1_5, stp1_6, stp1_7,
+          stp1_8, stp1_9, stp1_10, stp1_11, stp1_12, stp1_13, stp1_14, stp1_15,
+          stp1_16, stp1_17, stp1_18, stp1_19, stp1_20, stp1_21, stp1_22,
+          stp1_23, stp1_24, stp1_25, stp1_26, stp1_27, stp1_28, stp1_29,
+          stp1_30, stp1_31;
+  __m128i stp2_0, stp2_1, stp2_2, stp2_3, stp2_4, stp2_5, stp2_6, stp2_7,
+          stp2_8, stp2_9, stp2_10, stp2_11, stp2_12, stp2_13, stp2_14, stp2_15,
+          stp2_16, stp2_17, stp2_18, stp2_19, stp2_20, stp2_21, stp2_22,
+          stp2_23, stp2_24, stp2_25, stp2_26, stp2_27, stp2_28, stp2_29,
+          stp2_30, stp2_31;
+  __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
+  int i, j, i32;
+
+  for (i = 0; i < 2; i++) {
+    i32 = (i << 5);
+    // First 1-D idct
+    // Load input data.
+    in[0] = _mm_load_si128((const __m128i *)(input + ( 0 * 8)));
+    in[8] = _mm_load_si128((const __m128i *)(input + ( 1 * 8)));
+
+    in[1] = _mm_load_si128((const __m128i *)(input + ( 4 * 8)));
+    in[9] = _mm_load_si128((const __m128i *)(input + ( 5 * 8)));
+
+    in[2] = _mm_load_si128((const __m128i *)(input + ( 8 * 8)));
+    in[10] = _mm_load_si128((const __m128i *)(input + ( 9 * 8)));
+
+    in[3] = _mm_load_si128((const __m128i *)(input + (12 * 8)));
+    in[11] = _mm_load_si128((const __m128i *)(input + (13 * 8)));
+
+    in[4] = _mm_load_si128((const __m128i *)(input + (16 * 8)));
+    in[12] = _mm_load_si128((const __m128i *)(input + (17 * 8)));
+
+    in[5] = _mm_load_si128((const __m128i *)(input + (20 * 8)));
+    in[13] = _mm_load_si128((const __m128i *)(input + (21 * 8)));
+
+    in[6] = _mm_load_si128((const __m128i *)(input + (24 * 8)));
+    in[14] = _mm_load_si128((const __m128i *)(input + (25 * 8)));
+
+    in[7] = _mm_load_si128((const __m128i *)(input + (28 * 8)));
+    in[15] = _mm_load_si128((const __m128i *)(input + (29 * 8)));
+
+    input += 32 * 8;
+
+    // Transpose 32x8 block to 8x32 block
+    array_transpose_8x8(in, in);
+    array_transpose_8x8(in + 8, in + 8);
+
+//    IDCT32_135
+    IDCT32_135_PASS1
+    IDCT32_135_PASS2
+
+    // 1_D: Store 32 intermediate results for each 8x32 block.
+    col[i32 + 0] = _mm_add_epi16(stp1_0, stp1_31);
+    col[i32 + 1] = _mm_add_epi16(stp1_1, stp1_30);
+    col[i32 + 2] = _mm_add_epi16(stp1_2, stp1_29);
+    col[i32 + 3] = _mm_add_epi16(stp1_3, stp1_28);
+    col[i32 + 4] = _mm_add_epi16(stp1_4, stp1_27);
+    col[i32 + 5] = _mm_add_epi16(stp1_5, stp1_26);
+    col[i32 + 6] = _mm_add_epi16(stp1_6, stp1_25);
+    col[i32 + 7] = _mm_add_epi16(stp1_7, stp1_24);
+    col[i32 + 8] = _mm_add_epi16(stp1_8, stp1_23);
+    col[i32 + 9] = _mm_add_epi16(stp1_9, stp1_22);
+    col[i32 + 10] = _mm_add_epi16(stp1_10, stp1_21);
+    col[i32 + 11] = _mm_add_epi16(stp1_11, stp1_20);
+    col[i32 + 12] = _mm_add_epi16(stp1_12, stp1_19);
+    col[i32 + 13] = _mm_add_epi16(stp1_13, stp1_18);
+    col[i32 + 14] = _mm_add_epi16(stp1_14, stp1_17);
+    col[i32 + 15] = _mm_add_epi16(stp1_15, stp1_16);
+    col[i32 + 16] = _mm_sub_epi16(stp1_15, stp1_16);
+    col[i32 + 17] = _mm_sub_epi16(stp1_14, stp1_17);
+    col[i32 + 18] = _mm_sub_epi16(stp1_13, stp1_18);
+    col[i32 + 19] = _mm_sub_epi16(stp1_12, stp1_19);
+    col[i32 + 20] = _mm_sub_epi16(stp1_11, stp1_20);
+    col[i32 + 21] = _mm_sub_epi16(stp1_10, stp1_21);
+    col[i32 + 22] = _mm_sub_epi16(stp1_9, stp1_22);
+    col[i32 + 23] = _mm_sub_epi16(stp1_8, stp1_23);
+    col[i32 + 24] = _mm_sub_epi16(stp1_7, stp1_24);
+    col[i32 + 25] = _mm_sub_epi16(stp1_6, stp1_25);
+    col[i32 + 26] = _mm_sub_epi16(stp1_5, stp1_26);
+    col[i32 + 27] = _mm_sub_epi16(stp1_4, stp1_27);
+    col[i32 + 28] = _mm_sub_epi16(stp1_3, stp1_28);
+    col[i32 + 29] = _mm_sub_epi16(stp1_2, stp1_29);
+    col[i32 + 30] = _mm_sub_epi16(stp1_1, stp1_30);
+    col[i32 + 31] = _mm_sub_epi16(stp1_0, stp1_31);
+  }
+if(0)
+  for (; i < 4; i++) {
+    i32 = (i << 5);
+    col[i32 + 0] = _mm_setzero_si128();
+    col[i32 + 1] = _mm_setzero_si128();
+    col[i32 + 2] = _mm_setzero_si128();
+    col[i32 + 3] = _mm_setzero_si128();
+    col[i32 + 4] = _mm_setzero_si128();
+    col[i32 + 5] = _mm_setzero_si128();
+    col[i32 + 6] = _mm_setzero_si128();
+    col[i32 + 7] = _mm_setzero_si128();
+    col[i32 + 8] = _mm_setzero_si128();
+    col[i32 + 9] = _mm_setzero_si128();
+    col[i32 + 10] = _mm_setzero_si128();
+    col[i32 + 11] = _mm_setzero_si128();
+    col[i32 + 12] = _mm_setzero_si128();
+    col[i32 + 13] = _mm_setzero_si128();
+    col[i32 + 14] = _mm_setzero_si128();
+    col[i32 + 15] = _mm_setzero_si128();
+    col[i32 + 16] = _mm_setzero_si128();
+    col[i32 + 17] = _mm_setzero_si128();
+    col[i32 + 18] = _mm_setzero_si128();
+    col[i32 + 19] = _mm_setzero_si128();
+    col[i32 + 20] = _mm_setzero_si128();
+    col[i32 + 21] = _mm_setzero_si128();
+    col[i32 + 22] = _mm_setzero_si128();
+    col[i32 + 23] = _mm_setzero_si128();
+    col[i32 + 24] = _mm_setzero_si128();
+    col[i32 + 25] = _mm_setzero_si128();
+    col[i32 + 26] = _mm_setzero_si128();
+    col[i32 + 27] = _mm_setzero_si128();
+    col[i32 + 28] = _mm_setzero_si128();
+    col[i32 + 29] = _mm_setzero_si128();
+    col[i32 + 30] = _mm_setzero_si128();
+    col[i32 + 31] = _mm_setzero_si128();
+  }
+
+  for (i = 0; i < 4; i++) {
+    // Second 1-D idct
+    j = i << 3;
+
+    // Transpose 32x8 block to 8x32 block
+    array_transpose_8x8(col + j, in);
+    array_transpose_8x8(col + j + 32, in + 8);
+//    array_transpose_8x8(col + j + 64, in + 16);
+  //  array_transpose_8x8(col + j + 96, in + 24);
+
+//    IDCT32_135
+    IDCT32_135_PASS1
+    IDCT32_135_PASS2
 
     // 2_D: Calculate the results and store them to destination.
     in[0] = _mm_add_epi16(stp1_0, stp1_31);
@@ -3377,7 +4703,12 @@ void vpx_idct32x32_1024_add_sse2(const tran_low_t *input, uint8_t *dest,
     array_transpose_8x8(in + 16, in + 16);
     array_transpose_8x8(in + 24, in + 24);
 
-    IDCT32
+//    IDCT32
+
+//    IDCT32_PASS1
+//    IDCT32_PASS2
+
+    IDCT32_BLOCKS_ABCD
 
     // 1_D: Store 32 intermediate results for each 8x32 block.
     col[i32 + 0] = _mm_add_epi16(stp1_0, stp1_31);
@@ -3423,7 +4754,12 @@ void vpx_idct32x32_1024_add_sse2(const tran_low_t *input, uint8_t *dest,
     array_transpose_8x8(col + j + 64, in + 16);
     array_transpose_8x8(col + j + 96, in + 24);
 
-    IDCT32
+//    IDCT32
+
+//    IDCT32_PASS1
+//    IDCT32_PASS2
+
+    IDCT32_BLOCKS_ABCD
 
     // 2_D: Calculate the results and store them to destination.
     in[0] = _mm_add_epi16(stp1_0, stp1_31);
