@@ -399,8 +399,6 @@ static void decode_reconstruct_intra_tx(MACROBLOCKD *const xd, vpx_reader *r,
   int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
 
-  assert(mbmi->inter_tx_size[tx_idx] == mbmi->tx_size);
-
   if (xd->mb_to_bottom_edge < 0)
     max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
   if (xd->mb_to_right_edge < 0)

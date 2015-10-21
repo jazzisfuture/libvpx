@@ -502,6 +502,8 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
     int src_stride = x->plane[plane].src.stride;
     int dst_stride = xd->plane[plane].dst.stride;
     unsigned int tmp_sse;
+    PREDICTION_MODE mode = (plane == 0) ?
+        get_y_mode(xd->mi[0], block) : mbmi->uv_mode;
 
 #if CONFIG_VP9_HIGHBITDEPTH
     vp10_encode_block_intra(plane, block, blk_row, blk_col,
@@ -510,6 +512,9 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
 #else
     src = &x->plane[plane].src.buf[4 * (blk_row * src_stride + blk_col)];
     dst = &xd->plane[plane].dst.buf[4 * (blk_row * dst_stride + blk_col)];
+    vp10_predict_intra_block(xd, b_width_log2_lookup[plane_bsize],
+                             tx_size, mode, dst, dst_stride,
+                             dst, dst_stride, blk_col, blk_row, plane);
     args->cpi->fn_ptr[txsize_to_bsize[tx_size]].vf(src, src_stride,
                                                    dst, dst_stride, &tmp_sse);
     sse = (int64_t)tmp_sse * 16;
@@ -1300,6 +1305,73 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
 }
 
 #if CONFIG_VAR_TX
+static void tx_block_intra_rd_b(const VP10_COMP *cpi, MACROBLOCK *x,
+                                TX_SIZE tx_size,
+                                int blk_row, int blk_col, int plane, int block,
+                                int plane_bsize, int coeff_ctx,
+                                int *rate, int64_t *dist,
+                                int64_t *bsse, int *skip) {
+  MACROBLOCKD *xd = &x->e_mbd;
+  const struct macroblock_plane *const p = &x->plane[plane];
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+#if CONFIG_VP9_HIGHBITDEPTH
+  const int ss_txfrm_size = tx_size << 1;
+  int64_t this_sse;
+  int shift = tx_size == TX_32X32 ? 0 : 2;
+  tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
+#endif
+  unsigned int tmp_sse = 0;
+  PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
+  TX_TYPE tx_type = get_tx_type(plane_type, xd, block, tx_size);
+  const scan_order *const scan_order =
+      get_scan(tx_size, tx_type, is_inter_block(&xd->mi[0]->mbmi));
+
+  int src_stride = p->src.stride;
+  int dst_stride = pd->dst.stride;
+  uint8_t *src = &p->src.buf[4 * blk_row * src_stride + 4 * blk_col];
+  uint8_t *dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
+  PREDICTION_MODE mode;
+
+  struct encode_b_args arg = {x, NULL, &xd->mi[0]->mbmi.skip};
+
+  int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
+  int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
+
+  if (xd->mb_to_bottom_edge < 0)
+    max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
+  if (xd->mb_to_right_edge < 0)
+    max_blocks_wide += xd->mb_to_right_edge >> (5 + pd->subsampling_x);
+
+  if (blk_row >= max_blocks_high || blk_col >= max_blocks_wide)
+    return;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  vp10_encode_block_intra(plane, block, blk_row, blk_col,
+                          plane_bsize, tx_size, &arg);
+  dist_block(x, plane, block, tx_size, &dist, &sse);
+#else
+  mode = plane == 0 ? get_y_mode(xd->mi[0], block) :
+      xd->mi[0]->mbmi.uv_mode;
+
+  vp10_predict_intra_block(xd, b_width_log2_lookup[plane_bsize], tx_size,
+                           mode, dst, dst_stride,
+                           dst, dst_stride, blk_col, blk_row, plane);
+
+  cpi->fn_ptr[txsize_to_bsize[tx_size]].vf(src, src_stride,
+                                           dst, dst_stride, &tmp_sse);
+  *bsse += (int64_t)tmp_sse * 16;
+  vp10_encode_block_intra(plane, block, blk_row, blk_col,
+                          plane_bsize, tx_size, &arg);
+  cpi->fn_ptr[txsize_to_bsize[tx_size]].vf(src, src_stride,
+                                           dst, dst_stride, &tmp_sse);
+  *dist += (int64_t)tmp_sse * 16;
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  *rate += cost_coeffs(x, plane, block, coeff_ctx, tx_size,
+                       scan_order->scan, scan_order->neighbors, 0);
+  *skip &= (p->eobs[block] == 0);
+}
+
 static void tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
                           int blk_row, int blk_col, int plane, int block,
                           int plane_bsize, int coeff_ctx,
@@ -1493,27 +1565,30 @@ static void select_tx_block(const VP10_COMP *cpi, MACROBLOCK *x,
     return;
 
   zero_blk_rate =
-      x->token_costs[tx_size][pd->plane_type][1][0][0][coeff_ctx][EOB_TOKEN];
+      x->token_costs[tx_size][pd->plane_type][is_inter_block(mbmi)]
+                    [0][0][coeff_ctx][EOB_TOKEN];
 
   if (cpi->common.tx_mode == TX_MODE_SELECT || tx_size == TX_4X4) {
     mbmi->inter_tx_size[tx_idx] = tx_size;
-    tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
-                  plane_bsize, coeff_ctx, rate, dist, bsse, skip);
+
+    if (is_inter_block(mbmi))
+      tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
+                    plane_bsize, coeff_ctx, rate, dist, bsse, skip);
+    else
+      tx_block_intra_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
+                          plane_bsize, coeff_ctx, rate, dist, bsse, skip);
 
     if (RDCOST(x->rdmult, x->rddiv, *rate, *dist) >=
-        RDCOST(x->rdmult, x->rddiv, zero_blk_rate, *bsse) && !xd->lossless) {
+        RDCOST(x->rdmult, x->rddiv, zero_blk_rate, *bsse) &&
+        !xd->lossless && is_inter_block(mbmi)) {
       *rate = zero_blk_rate;
       *dist = *bsse;
       *skip = 1;
       x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = 1;
       p->eobs[block] = 0;
-//        for (i = 0; i < (1 << tx_size); ++i) {
-//          pta[i] = 0;
-//          ptl[i] = 0;
-//        }
     } else {
       x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = 0;
-      *skip = 0;
+      assert(*skip == 0);
     }
 
     if (tx_size > TX_4X4)
@@ -1564,6 +1639,12 @@ static void select_tx_block(const VP10_COMP *cpi, MACROBLOCK *x,
     mbmi->inter_tx_size[tx_idx] = tx_size;
     mbmi->tx_size = tx_size;
     x->blk_skip[plane][blk_row * max_blocks_wide + blk_col] = *skip;
+    if (!is_inter_block(mbmi)) {
+      // TODO(jingning): Clean this part up.
+      struct encode_b_args arg = {x, NULL, &xd->mi[0]->mbmi.skip};
+      vp10_encode_block_intra(plane, block, blk_row, blk_col,
+                              plane_bsize, tx_size, &arg);
+    }
   } else {
     *rate = sum_rate;
     *dist = sum_dist;
@@ -1694,8 +1775,13 @@ static void tx_block_rd(const VP10_COMP *cpi, MACROBLOCK *x,
         break;
     }
     coeff_ctx = combine_entropy_contexts(ta[0], tl[0]);
-    tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
-                  plane_bsize, coeff_ctx, rate, dist, bsse, skip);
+    if (is_inter_block(mbmi))
+      tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
+                    plane_bsize, coeff_ctx, rate, dist, bsse, skip);
+    else
+      tx_block_intra_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
+                          plane_bsize, coeff_ctx, rate, dist, bsse, skip);
+
     for (i = 0; i < (1 << tx_size); ++i) {
       ta[i] = !(p->eobs[block] == 0);
       tl[i] = !(p->eobs[block] == 0);
@@ -1876,8 +1962,14 @@ static int64_t rd_pick_intra_sbuv_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
     xd->mi[0]->mbmi.uv_mode = mode;
 
+#if CONFIG_VAR_TX
+    if (!inter_block_uvrd(cpi, x, &this_rate_tokenonly,
+                          &this_distortion, &s,
+                          &this_sse, bsize, best_rd))
+#else
     if (!super_block_uvrd(cpi, x, &this_rate_tokenonly,
                           &this_distortion, &s, &this_sse, bsize, best_rd))
+#endif
       continue;
     this_rate = this_rate_tokenonly +
                 cpi->intra_uv_mode_cost[cpi->common.frame_type][mode];
@@ -3468,6 +3560,12 @@ void vp10_rd_pick_intra_mode_sb(VP10_COMP *cpi, MACROBLOCK *x,
   int y_skip = 0, uv_skip = 0;
   int64_t dist_y = 0, dist_uv = 0;
   TX_SIZE max_uv_tx_size;
+
+#if CONFIG_VAR_TX
+  int i;
+  MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
+#endif
+
   ctx->skip = 0;
   xd->mi[0]->mbmi.ref_frame[0] = INTRA_FRAME;
   xd->mi[0]->mbmi.ref_frame[1] = NONE;
@@ -3487,6 +3585,13 @@ void vp10_rd_pick_intra_mode_sb(VP10_COMP *cpi, MACROBLOCK *x,
       return;
     }
   }
+
+#if CONFIG_VAR_TX
+  // set inter_tx_size array
+  for (i = 0; i < 64; ++i)
+    mbmi->inter_tx_size[i] = mbmi->tx_size;
+#endif
+
   max_uv_tx_size = get_uv_tx_size_impl(xd->mi[0]->mbmi.tx_size, bsize,
                                        pd[1].subsampling_x,
                                        pd[1].subsampling_y);
@@ -3958,8 +4063,21 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       TX_SIZE uv_tx;
       struct macroblockd_plane *const pd = &xd->plane[1];
       memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
+#if CONFIG_VAR_TX
+      if (cm->tx_mode == TX_MODE_SELECT) {
+        int64_t dummy_sse;
+        inter_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
+                        &dummy_sse, bsize, best_rd);
+      } else {
+        super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
+                        NULL, bsize, best_rd);
+        for (i = 0; i < 64; ++i)
+          mbmi->inter_tx_size[i] = mbmi->tx_size;
+      }
+#else
       super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
                       NULL, bsize, best_rd);
+#endif
       if (rate_y == INT_MAX)
         continue;
 
@@ -3980,11 +4098,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       if (this_mode != DC_PRED && this_mode != TM_PRED)
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
-#if CONFIG_VAR_TX
-      // set inter_tx_size array
-      for (i = 0; i < 64; ++i)
-        mbmi->inter_tx_size[i] = mbmi->tx_size;
-#endif
     } else {
       this_rd = handle_inter_mode(cpi, x, bsize,
                                   &rate2, &distortion2, &skippable,
