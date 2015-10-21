@@ -285,6 +285,11 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
   mbmi->ref_frame[0] = INTRA_FRAME;
   mbmi->ref_frame[1] = NONE;
 
+#if CONFIG_VAR_TX
+  for (i = 0; i < 64; ++i)
+    mbmi->inter_tx_size[i] = mbmi->tx_size;
+#endif
+
   switch (bsize) {
     case BLOCK_4X4:
       for (i = 0; i < 4; ++i)
@@ -702,7 +707,8 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
     int idx, idy;
 
     mbmi->tx_size = read_tx_size(cm, xd, !mbmi->skip || !inter_block, r);
-    if (inter_block) {
+
+    {
       const BLOCK_SIZE txb_size = txsize_to_bsize[mbmi->tx_size];
       const int bs = num_8x8_blocks_wide_lookup[txb_size];
 

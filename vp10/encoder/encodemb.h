@@ -24,6 +24,9 @@ struct encode_b_args {
   int8_t *skip;
 };
 void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize);
+#if CONFIG_VAR_TX
+void vp10_encode_intra(MACROBLOCK *x, BLOCK_SIZE bsize);
+#endif
 void vp10_encode_sby_pass1(MACROBLOCK *x, BLOCK_SIZE bsize);
 void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
                          int blk_row, int blk_col,

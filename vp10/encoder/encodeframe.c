@@ -3177,14 +3177,33 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
   ctx->is_coded = 1;
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
 
+#if CONFIG_VAR_TX
+  if (cm->frame_type == KEY_FRAME) {
+    int i;
+    for (i = 0; i < 64; ++i)
+      mbmi->inter_tx_size[i] = mbmi->tx_size;
+  }
+#endif
+
   if (!is_inter_block(mbmi)) {
+#if !CONFIG_VAR_TX
     int plane;
+#endif
     mbmi->skip = 1;
+#if CONFIG_VAR_TX
+    vp10_encode_intra(x, VPXMAX(bsize, BLOCK_8X8));
+#else
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp10_encode_intra_block_plane(x, VPXMAX(bsize, BLOCK_8X8), plane);
+#endif
     if (output_enabled)
       sum_intra_stats(td->counts, mi);
+#if CONFIG_VAR_TX
+    vp10_tokenize_sb_inter(cpi, td, t, !output_enabled,
+                           mi_row, mi_col, VPXMAX(bsize, BLOCK_8X8));
+#else
     vp10_tokenize_sb(cpi, td, t, !output_enabled, VPXMAX(bsize, BLOCK_8X8));
+#endif
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);
@@ -3211,14 +3230,6 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     vp10_tokenize_sb(cpi, td, t, !output_enabled, VPXMAX(bsize, BLOCK_8X8));
 #endif
   }
-
-#if CONFIG_VAR_TX
-  if (cm->frame_type == KEY_FRAME) {
-    int i;
-    for (i = 0; i < 64; ++i)
-      mbmi->inter_tx_size[i] = mbmi->tx_size;
-  }
-#endif
 
   if (output_enabled) {
     if (cm->tx_mode == TX_MODE_SELECT &&

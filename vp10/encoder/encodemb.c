@@ -1712,8 +1712,9 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
   src_diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
 
   mode = plane == 0 ? get_y_mode(xd->mi[0], block) : mbmi->uv_mode;
+
   vp10_predict_intra_block(xd, bwl, tx_size, mode, dst, dst_stride,
-                          dst, dst_stride, blk_col, blk_row, plane);
+                           dst, dst_stride, blk_col, blk_row, plane);
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -1858,10 +1859,90 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
     *(args->skip) = 0;
 }
 
-void vp10_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
+#if CONFIG_VAR_TX
+static void encode_block_intra(int plane, int block,
+                               int blk_row, int blk_col,
+                               BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+                               void *arg) {
+  struct encode_b_args *const args = arg;
+  MACROBLOCK *const x = args->x;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+  const BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
+  const struct macroblockd_plane *const pd = &xd->plane[plane];
+  int blk_idx = (blk_row >> (1 - pd->subsampling_y)) * 8 +
+                (blk_col >> (1 - pd->subsampling_x));
+  TX_SIZE plane_tx_size = plane ?
+      get_uv_tx_size_impl(mbmi->inter_tx_size[blk_idx], bsize,
+                          0, 0) :
+      mbmi->inter_tx_size[blk_idx];
+
+  int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
+  int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
+
+  if (xd->mb_to_bottom_edge < 0)
+    max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
+  if (xd->mb_to_right_edge < 0)
+    max_blocks_wide += xd->mb_to_right_edge >> (5 + pd->subsampling_x);
+
+  if (blk_row >= max_blocks_high || blk_col >= max_blocks_wide)
+    return;
+
+  if (tx_size == plane_tx_size) {
+    vp10_encode_block_intra(plane, block, blk_row, blk_col, plane_bsize,
+                            tx_size, arg);
+  } else {
+    int bsl = b_width_log2_lookup[bsize];
+    int i;
+
+    assert(bsl > 0);
+    --bsl;
+
+    for (i = 0; i < 4; ++i) {
+      const int offsetr = blk_row + ((i >> 1) << bsl);
+      const int offsetc = blk_col + ((i & 0x01) << bsl);
+      int step = 1 << (2 * (tx_size - 1));
+
+      if (offsetr >= max_blocks_high || offsetc >= max_blocks_wide)
+        continue;
+
+      encode_block_intra(plane, block + i * step, offsetr, offsetc,
+                         plane_bsize, tx_size - 1, arg);
+    }
+  }
+}
+
+void vp10_encode_intra(MACROBLOCK *x, BLOCK_SIZE bsize) {
+  int plane;
   const MACROBLOCKD *const xd = &x->e_mbd;
   struct encode_b_args arg = {x, NULL, &xd->mi[0]->mbmi.skip};
 
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    const struct macroblockd_plane *const pd = &xd->plane[plane];
+    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
+    const int mi_width = num_4x4_blocks_wide_lookup[plane_bsize];
+    const int mi_height = num_4x4_blocks_high_lookup[plane_bsize];
+    const TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
+    const BLOCK_SIZE txb_size = txsize_to_bsize[max_tx_size];
+    const int bh = num_4x4_blocks_wide_lookup[txb_size];
+    int idx, idy;
+    int block = 0;
+    int step = 1 << (max_tx_size * 2);
+
+    for (idy = 0; idy < mi_height; idy += bh) {
+      for (idx = 0; idx < mi_width; idx += bh) {
+        encode_block_intra(plane, block, idy, idx,
+                           plane_bsize, max_tx_size, &arg);
+        block += step;
+      }
+    }
+  }
+}
+#endif
+
+void vp10_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
+  const MACROBLOCKD *const xd = &x->e_mbd;
+  struct encode_b_args arg = {x, NULL, &xd->mi[0]->mbmi.skip};
   vp10_foreach_transformed_block_in_plane(xd, bsize, plane,
                                           vp10_encode_block_intra, &arg);
 }

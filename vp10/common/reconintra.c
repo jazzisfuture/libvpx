@@ -381,7 +381,12 @@ void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
   const int txw = (1 << tx_size);
   const int have_top = loff || xd->up_available;
   const int have_left = aoff || xd->left_available;
+#if CONFIG_VAR_TX
+  // TODO(jingning): turn off top-right reference pixels temporarily.
+  const int have_right = 0 && ((aoff + txw) < bw);
+#else
   const int have_right = (aoff + txw) < bw;
+#endif
   const int x = aoff * 4;
   const int y = loff * 4;
 
