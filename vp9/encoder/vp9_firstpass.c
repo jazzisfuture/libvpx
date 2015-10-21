@@ -1183,10 +1183,14 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
                                      double group_weight_factor) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  int target_rate;
 
   inactive_zone = fclamp(inactive_zone, 0.0, 1.0);
 
-  if (section_target_bandwidth <= 0) {
+  // Clamp the target rate to VBR min / max limts.
+  target_rate = vp9_rc_clamp_pframe_target_size(cpi, section_target_bandwidth);
+
+  if (target_rate <= 0) {
     return rc->worst_quality;  // Highest value allowed
   } else {
     const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE)
@@ -1195,7 +1199,7 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
     const double av_err_per_mb = section_err / active_mbs;
     const double speed_term = 1.0 + 0.04 * oxcf->speed;
     const double ediv_size_correction = (double)num_mbs / EDIV_SIZE_FACTOR;
-    const int target_norm_bits_per_mb = ((uint64_t)section_target_bandwidth <<
+    const int target_norm_bits_per_mb = ((uint64_t)target_rate <<
                                          BPER_MB_NORMBITS) / active_mbs;
 
     int q;
@@ -2093,6 +2097,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     int tmp_q;
     // rc factor is a weight factor that corrects for local rate control drift.
     double rc_factor = 1.0;
+
     if (rc->rate_error_estimate > 0) {
       rc_factor = VPXMAX(RC_FACTOR_MIN,
                          (double)(100 - rc->rate_error_estimate) / 100.0);
@@ -2737,11 +2742,6 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   }
 
   target_rate = gf_group->bit_allocation[gf_group->index];
-  if (cpi->common.frame_type == KEY_FRAME)
-    target_rate = vp9_rc_clamp_iframe_target_size(cpi, target_rate);
-  else
-    target_rate = vp9_rc_clamp_pframe_target_size(cpi, target_rate);
-
   rc->base_frame_target = target_rate;
 
   {
