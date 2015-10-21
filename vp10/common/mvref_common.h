@@ -119,26 +119,13 @@ static const int idx_n_column_to_subblock[4][2] = {
 };
 
 // clamp_mv_ref
-#if CONFIG_MISC_FIXES
 #define MV_BORDER (8 << 3)  // Allow 8 pels in 1/8th pel units
-#else
-#define MV_BORDER (16 << 3)  // Allow 16 pels in 1/8th pel units
-#endif
 
 static INLINE void clamp_mv_ref(MV *mv, int bw, int bh, const MACROBLOCKD *xd) {
-#if CONFIG_MISC_FIXES
   clamp_mv(mv, xd->mb_to_left_edge - bw * 8 - MV_BORDER,
                xd->mb_to_right_edge + bw * 8 + MV_BORDER,
                xd->mb_to_top_edge - bh * 8 - MV_BORDER,
                xd->mb_to_bottom_edge + bh * 8 + MV_BORDER);
-#else
-  (void) bw;
-  (void) bh;
-  clamp_mv(mv, xd->mb_to_left_edge - MV_BORDER,
-               xd->mb_to_right_edge + MV_BORDER,
-               xd->mb_to_top_edge - MV_BORDER,
-               xd->mb_to_bottom_edge + MV_BORDER);
-#endif
 }
 
 // This function returns either the appropriate sub block or block's mv
@@ -164,19 +151,13 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
   return mv;
 }
 
-#if CONFIG_MISC_FIXES
-#define CLIP_IN_ADD(mv, bw, bh, xd) clamp_mv_ref(mv, bw, bh, xd)
-#else
-#define CLIP_IN_ADD(mv, bw, bh, xd) do {} while (0)
-#endif
-
 // This macro is used to add a motion vector mv_ref list if it isn't
 // already in the list.  If it's the second motion vector it will also
 // skip all additional processing and jump to done!
 #define ADD_MV_REF_LIST(mv, refmv_count, mv_ref_list, bw, bh, xd, Done) \
   do { \
     (mv_ref_list)[(refmv_count)] = (mv); \
-    CLIP_IN_ADD(&(mv_ref_list)[(refmv_count)].as_mv, (bw), (bh), (xd)); \
+    clamp_mv_ref(&(mv_ref_list)[(refmv_count)].as_mv, (bw), (bh), (xd)); \
     if (refmv_count && (mv_ref_list)[1].as_int != (mv_ref_list)[0].as_int) { \
         (refmv_count) = 2; \
         goto Done; \
@@ -193,10 +174,7 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
       if ((mbmi)->ref_frame[0] != ref_frame) \
         ADD_MV_REF_LIST(scale_mv((mbmi), 0, ref_frame, ref_sign_bias), \
                         refmv_count, mv_ref_list, bw, bh, xd, Done); \
-      if (has_second_ref(mbmi) && \
-          (CONFIG_MISC_FIXES || \
-           (mbmi)->mv[1].as_int != (mbmi)->mv[0].as_int) && \
-          (mbmi)->ref_frame[1] != ref_frame) \
+      if (has_second_ref(mbmi) && (mbmi)->ref_frame[1] != ref_frame) \
         ADD_MV_REF_LIST(scale_mv((mbmi), 1, ref_frame, ref_sign_bias), \
                         refmv_count, mv_ref_list, bw, bh, xd, Done); \
     } \

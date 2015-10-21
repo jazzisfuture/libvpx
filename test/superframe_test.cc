@@ -94,7 +94,7 @@ class VP9SuperframeTest : public SuperframeTest {
 
 class VP10SuperframeTest : public SuperframeTest {
   virtual void InitializeExpHeaderSize() {
-    is_vp10_style_superframe_ = CONFIG_MISC_FIXES;
+    is_vp10_style_superframe_ = 1;
   }
 };
 
