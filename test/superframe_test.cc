@@ -22,8 +22,10 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
   SuperframeTest() : EncoderTest(GET_PARAM(0)), modified_buf_(NULL),
       last_sf_pts_(0) {}
   virtual ~SuperframeTest() {}
+  virtual void InitializeExpHeaderSize() {}
 
   virtual void SetUp() {
+    InitializeExpHeaderSize();
     InitializeConfig();
     SetMode(GET_PARAM(1));
     sf_count_ = 0;
@@ -50,7 +52,7 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
     const uint8_t marker = buffer[pkt->data.frame.sz - 1];
     const int frames = (marker & 0x7) + 1;
     const int mag = ((marker >> 3) & 3) + 1;
-    const unsigned int index_sz = 2 + mag  * frames;
+    const unsigned int index_sz = 2 + mag * (frames - is_vp10_);
     if ((marker & 0xe0) == 0xc0 &&
         pkt->data.frame.sz >= index_sz &&
         buffer[pkt->data.frame.sz - index_sz] == marker) {
@@ -75,6 +77,7 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
     return pkt;
   }
 
+  int is_vp10_;
   int sf_count_;
   int sf_count_max_;
   vpx_codec_cx_pkt_t modified_pkt_;
@@ -82,7 +85,19 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
   vpx_codec_pts_t last_sf_pts_;
 };
 
-TEST_P(SuperframeTest, TestSuperframeIndexIsOptional) {
+class VP9SuperframeTest : public SuperframeTest {
+  virtual void InitializeExpHeaderSize() {
+    is_vp10_ = 0;
+  }
+};
+
+class VP10SuperframeTest : public SuperframeTest {
+  virtual void InitializeExpHeaderSize() {
+    is_vp10_ = 1;
+  }
+};
+
+TEST_P(VP9SuperframeTest, TestSuperframeIndexIsOptional) {
   sf_count_max_ = 0;  // early exit on successful test.
   cfg_.g_lag_in_frames = 25;
 
@@ -92,9 +107,19 @@ TEST_P(SuperframeTest, TestSuperframeIndexIsOptional) {
   EXPECT_EQ(sf_count_, 1);
 }
 
-VP9_INSTANTIATE_TEST_CASE(SuperframeTest, ::testing::Values(
+TEST_P(VP10SuperframeTest, TestSuperframeIndexIsOptional) {
+  sf_count_max_ = 0;  // early exit on successful test.
+  cfg_.g_lag_in_frames = 25;
+
+  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       30, 1, 0, 40);
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  EXPECT_EQ(sf_count_, 1);
+}
+
+VP9_INSTANTIATE_TEST_CASE(VP9SuperframeTest, ::testing::Values(
     ::libvpx_test::kTwoPassGood));
 
-VP10_INSTANTIATE_TEST_CASE(SuperframeTest, ::testing::Values(
+VP10_INSTANTIATE_TEST_CASE(VP10SuperframeTest, ::testing::Values(
     ::libvpx_test::kTwoPassGood));
 }  // namespace
