@@ -795,10 +795,12 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
         rd = VPXMIN(rd, RDCOST(x->rdmult, x->rddiv, s1, sse));
 
       // Early termination in transform size search.
+      // TODO(huisu): temporally disable early termination to fix a
+      // Jenkins build error.
       if (cpi->sf.tx_size_search_breakout &&
           (rd== INT64_MAX ||
               (n < (int) max_tx_size && rd > last_rd) ||
-              s == 1))
+              s == 1) && 0)
         break;
 
       last_rd = rd;
