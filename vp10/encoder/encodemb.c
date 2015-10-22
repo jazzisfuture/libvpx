@@ -1373,6 +1373,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
 #if CONFIG_VAR_TX
   int i;
 #endif
+
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
   a = &ctx->ta[plane][blk_col];
   l = &ctx->tl[plane][blk_row];
