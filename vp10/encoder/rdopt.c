@@ -437,11 +437,15 @@ static void dist_block(MACROBLOCK *x, int plane, int block, TX_SIZE tx_size,
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
   int64_t this_sse;
-  int shift = tx_size == TX_32X32 ? 0 : 2;
+
   tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+  int shift = 0;
 #if CONFIG_VP9_HIGHBITDEPTH
   const int bd = (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ? xd->bd : 8;
+  //  TODO(angiebird): remove this flag if we unify highbd and lowbd
+  if(xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+    shift = tx_size == TX_32X32 ? 0 : 2;
   *out_dist = vp10_highbd_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
                                      &this_sse, bd) >> shift;
 #else
@@ -500,10 +504,15 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
         int64_t dc_correct = orig_sse - resd_sse * resd_sse;
 #if CONFIG_VP9_HIGHBITDEPTH
         dc_correct >>= ((xd->bd - 8) * 2);
-#endif
+        //  TODO(angiebird): remove this flag if we unify highbd and lowbd
+        if((xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) == 0){
+          if (tx_size != TX_32X32)
+            dc_correct >>= 2;
+        }
+#else
         if (tx_size != TX_32X32)
           dc_correct >>= 2;
-
+#endif
         dist = VPXMAX(0, sse - dc_correct);
       }
     } else {

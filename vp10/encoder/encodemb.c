@@ -101,7 +101,6 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   const int eob = p->eobs[block];
   const PLANE_TYPE type = pd->plane_type;
   const int default_eob = 16 << (tx_size << 1);
-  const int mul = 1 + (tx_size == TX_32X32);
   const int16_t *dequant_ptr = pd->dequant;
   const uint8_t *const band_translate = get_band_translate(tx_size);
   TX_TYPE tx_type = get_tx_type(type, xd, block);
@@ -120,6 +119,18 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
 #else
   const int16_t *cat6_high_cost = vp10_get_high_cost_table(8);
 #endif
+
+  int mul;
+#if CONFIG_VP9_HIGHBITDEPTH
+  // TODO(angiebird): remove this flag if we unify highbd and lowbd
+  if(xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+    mul = 1;
+  else
+    mul = 1 + (tx_size == TX_32X32);
+#else
+  mul = 1 + (tx_size == TX_32X32);
+#endif
+
 
   assert((!type && !plane) || (type && plane));
   assert(eob <= default_eob);
@@ -346,11 +357,10 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
     switch (tx_size) {
       case TX_32X32:
         highbd_fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
-        vp10_highbd_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin,
-                                     p->round_fp, p->quant_fp, p->quant_shift,
-                                     qcoeff, dqcoeff, pd->dequant,
-                                     eob, scan_order->scan,
-                                     scan_order->iscan);
+        vp10_highbd_quantize_fp(coeff, 1024, x->skip_block, p->zbin, p->round_fp,
+                               p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                               pd->dequant, eob,
+                               scan_order->scan, scan_order->iscan);
         break;
       case TX_16X16:
         vpx_highbd_fdct16x16(src_diff, coeff, diff_stride);
@@ -444,9 +454,9 @@ void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
     switch (tx_size) {
       case TX_32X32:
         vpx_highbd_fdct32x32_1(src_diff, coeff, diff_stride);
-        vpx_highbd_quantize_dc_32x32(coeff, x->skip_block, p->round,
-                                     p->quant_fp[0], qcoeff, dqcoeff,
-                                     pd->dequant[0], eob);
+        vpx_highbd_quantize_dc(coeff, 1024, x->skip_block, p->round,
+                               p->quant_fp[0], qcoeff, dqcoeff,
+                               pd->dequant[0], eob);
         break;
       case TX_16X16:
         vpx_highbd_fdct16x16_1(src_diff, coeff, diff_stride);
@@ -681,10 +691,10 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
       case TX_32X32:
         highbd_fwd_txfm_32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride,
                          tx_type);
-        vpx_highbd_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin,
-                                    p->round, p->quant, p->quant_shift, qcoeff,
-                                    dqcoeff, pd->dequant, eob,
-                                    scan_order->scan, scan_order->iscan);
+        vpx_highbd_quantize_b(coeff, 1024, x->skip_block, p->zbin, p->round,
+                              p->quant, p->quant_shift, qcoeff, dqcoeff,
+                              pd->dequant, eob,
+                              scan_order->scan, scan_order->iscan);
         break;
       case TX_16X16:
         highbd_fwd_txfm_16x16(src_diff, coeff, diff_stride, tx_type);
@@ -990,10 +1000,10 @@ void vp10_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                     src, src_stride, dst, dst_stride, xd->bd);
           highbd_fwd_txfm_32x32(x->use_lp32x32fdct, src_diff, coeff,
                                 diff_stride, tx_type);
-          vpx_highbd_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin,
-                                      p->round, p->quant, p->quant_shift,
-                                      qcoeff, dqcoeff, pd->dequant, eob,
-                                      scan_order->scan, scan_order->iscan);
+          vpx_highbd_quantize_b(coeff, 1024, x->skip_block, p->zbin, p->round,
+                                p->quant, p->quant_shift, qcoeff, dqcoeff,
+                                pd->dequant, eob,
+                                scan_order->scan, scan_order->iscan);
         }
         if (*eob)
           vp10_highbd_inv_txfm_add_32x32(dqcoeff, dst, dst_stride, *eob, xd->bd,

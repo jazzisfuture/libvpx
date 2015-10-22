@@ -62,7 +62,6 @@ static int decode_coefs(const MACROBLOCKD *xd,
   unsigned int (*eob_branch_count)[COEFF_CONTEXTS];
   uint8_t token_cache[32 * 32];
   const uint8_t *band_translate = get_band_translate(tx_size);
-  const int dq_shift = (tx_size == TX_32X32);
   int v, token;
   int16_t dqv = dq[0];
   const uint8_t *cat1_prob;
@@ -71,6 +70,16 @@ static int decode_coefs(const MACROBLOCKD *xd,
   const uint8_t *cat4_prob;
   const uint8_t *cat5_prob;
   const uint8_t *cat6_prob;
+#if CONFIG_VP9_HIGHBITDEPTH
+  int dq_shift;
+  //  TODO(angiebird): remove this flag if we unify highbd and lowbd
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+    dq_shift = 0;
+  else
+    dq_shift = (tx_size == TX_32X32);
+#else
+  const int dq_shift = (tx_size == TX_32X32);
+#endif
 
   if (counts) {
     coef_counts = counts->coef[tx_size][type][ref];
