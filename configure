@@ -267,8 +267,11 @@ EXPERIMENT_LIST="
     var_tx
     ext_tx
     misc_fixes
+<<<<<<< HEAD   (5a27b3 Fix merge defects)
     ext_intra
     universal_hp
+=======
+>>>>>>> BRANCH (f4af1a Merge "vp10: merge ext_ipred_bltr experiment into misc_fixes)
 "
 CONFIG_LIST="
     dependency_tracking
