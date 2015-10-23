@@ -144,7 +144,7 @@ static int prob_diff_update_savings(const vpx_tree_index *tree,
   return savings;
 }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
 static void write_tx_size_inter(const VP10_COMMON *cm,
                                 const MACROBLOCKD *xd,
                                 const MB_MODE_INFO *mbmi,
@@ -453,7 +453,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !(is_inter && skip)) {
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
     if (is_inter) {  // This implies skip flag is 0.
       const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
       const int txb_size = txsize_to_bsize[max_tx_size];
