@@ -750,6 +750,11 @@ void vp10_tokenize_sb_inter(VP10_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
         block += step;
       }
     }
+
+    if (!dry_run) {
+      (*t)->token = EOSB_TOKEN;
+      (*t)++;
+    }
   }
 }
 #endif
