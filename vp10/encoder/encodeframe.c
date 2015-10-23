@@ -2073,11 +2073,19 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
                                bsize >= BLOCK_8X8;
   int partition_vert_allowed = !force_horz_split && xss <= yss &&
                                bsize >= BLOCK_8X8;
-  (void) *tp_orig;
+
+  int64_t dist_breakout_thr = cpi->sf.partition_search_breakout_dist_thr;
+  int rate_breakout_thr = cpi->sf.partition_search_breakout_rate_thr;
+
+  (void)*tp_orig;
 
   assert(num_8x8_blocks_wide_lookup[bsize] ==
              num_8x8_blocks_high_lookup[bsize]);
 
+  // Adjust dist breakout threshold according to the partition size.
+  dist_breakout_thr >>= 8 - (b_width_log2_lookup[bsize] +
+      b_height_log2_lookup[bsize]);
+  rate_breakout_thr *= num_pels_log2_lookup[bsize];
   vp10_rd_cost_init(&this_rdc);
   vp10_rd_cost_init(&sum_rdc);
   vp10_rd_cost_reset(&best_rdc);
@@ -2106,9 +2114,11 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
                                 force_vert_split);
     do_split &= bsize > min_size;
   }
-  if (cpi->sf.use_square_partition_only) {
-    partition_horz_allowed &= force_horz_split;
-    partition_vert_allowed &= force_vert_split;
+
+  if (cpi->sf.use_square_partition_only &&
+      bsize > cpi->sf.use_square_only_threshold) {
+      partition_horz_allowed &= force_horz_split;
+      partition_vert_allowed &= force_vert_split;
   }
 
   save_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -2185,27 +2195,17 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
       }
 
       if (this_rdc.rdcost < best_rdc.rdcost) {
-        int64_t dist_breakout_thr = cpi->sf.partition_search_breakout_dist_thr;
-        int rate_breakout_thr = cpi->sf.partition_search_breakout_rate_thr;
-
         best_rdc = this_rdc;
         if (bsize >= BLOCK_8X8)
           pc_tree->partitioning = PARTITION_NONE;
 
-        // Adjust dist breakout threshold according to the partition size.
-        dist_breakout_thr >>= 8 - (b_width_log2_lookup[bsize] +
-            b_height_log2_lookup[bsize]);
-
-        rate_breakout_thr *= num_pels_log2_lookup[bsize];
-
         // If all y, u, v transform blocks in this partition are skippable, and
         // the dist & rate are within the thresholds, the partition search is
         // terminated for current branch of the partition search tree.
-        // The dist & rate thresholds are set to 0 at speed 0 to disable the
-        // early termination at that speed.
-        if (!x->e_mbd.lossless[xd->mi[0]->mbmi.segment_id] &&
-            (ctx->skippable && best_rdc.dist < dist_breakout_thr &&
-            best_rdc.rate < rate_breakout_thr)) {
+        if (!x->e_mbd.lossless && ctx->skippable  &&
+            ((best_rdc.dist < (dist_breakout_thr >> 2)) ||
+             (best_rdc.dist < dist_breakout_thr &&
+              best_rdc.rate < rate_breakout_thr))) {
           do_split = 0;
           do_rect = 0;
         }
@@ -2315,11 +2315,21 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
       if (sum_rdc.rdcost < best_rdc.rdcost) {
         best_rdc = sum_rdc;
         pc_tree->partitioning = PARTITION_SPLIT;
+
+        // Rate and distortion based partition search termination clause.
+        if (!x->e_mbd.lossless &&
+            ((best_rdc.dist < (dist_breakout_thr >> 2)) ||
+             (best_rdc.dist < dist_breakout_thr &&
+              best_rdc.rate < rate_breakout_thr))) {
+          do_rect = 0;
+        }
       }
     } else {
       // skip rectangular partition test when larger block size
       // gives better rd cost
-      if (cpi->sf.less_rectangular_check)
+      if ((cpi->sf.less_rectangular_check) &&
+          ((bsize > cpi->sf.use_square_only_threshold) ||
+           (best_rdc.dist < dist_breakout_thr)))
         do_rect &= !partition_none_allowed;
     }
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -2369,6 +2379,10 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
       if (sum_rdc.rdcost < best_rdc.rdcost) {
         best_rdc = sum_rdc;
         pc_tree->partitioning = PARTITION_HORZ;
+
+        if ((cpi->sf.less_rectangular_check) &&
+            (bsize > cpi->sf.use_square_only_threshold))
+          do_rect = 0;
       }
     }
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -2376,7 +2390,7 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
   // PARTITION_VERT
   if (partition_vert_allowed &&
       (do_rect || vp10_active_v_edge(cpi, mi_col, mi_step))) {
-      subsize = get_subsize(bsize, PARTITION_VERT);
+    subsize = get_subsize(bsize, PARTITION_VERT);
 
     if (cpi->sf.adaptive_motion_search)
       load_pred_mv(x, ctx);
