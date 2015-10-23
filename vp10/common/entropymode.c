@@ -754,7 +754,7 @@ static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
   { 149, 144, },
 };
 
-#if CONFIG_EXT_TX1
+#if CONFIG_EXT_TX
 const vpx_tree_index vp10_tx_type_tree[TREE_SIZE(TX_TYPES)] = {
   -IDTX, 2,
   -DCT_DCT, 4,
@@ -874,7 +874,7 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
   fc->tx_probs = default_tx_probs;
   vp10_copy(fc->skip_probs, default_skip_probs);
   vp10_copy(fc->inter_mode_probs, default_inter_mode_probs);
-#if CONFIG_EXT_TX1
+#if CONFIG_EXT_TX
   vp10_copy(fc->inter_tx_type_prob, default_inter_tx_type_prob);
   vp10_copy(fc->intra_tx_type_prob, default_intra_tx_type_prob);
 #endif  // CONFIG_EXT_TX
@@ -971,7 +971,7 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
     fc->skip_probs[i] = mode_mv_merge_probs(
         pre_fc->skip_probs[i], counts->skip[i]);
 
-#if CONFIG_EXT_TX1
+#if CONFIG_EXT_TX
   for (i = TX_4X4; i <= TX_16X16; ++i) {
     int j;
     vpx_tree_merge_probs(vp10_tx_type_tree, pre_fc->inter_tx_type_prob[i],

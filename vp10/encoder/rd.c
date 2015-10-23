@@ -101,7 +101,7 @@ static void fill_mode_costs(VP10_COMP *cpi) {
                        vp10_default_palette_uv_color_prob[i][j],
                        vp10_palette_color_tree[i]);
     }
-#if CONFIG_EXT_TX1
+#if CONFIG_EXT_TX
   for (i = TX_4X4; i <= TX_16X16; ++i) {
     vp10_cost_tokens(cpi->inter_tx_type_costs[i], fc->inter_tx_type_prob[i],
                      vp10_tx_type_tree);
