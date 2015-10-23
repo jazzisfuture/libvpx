@@ -165,7 +165,7 @@ static INLINE unsigned int *get_tx_counts(TX_SIZE max_tx_size, int ctx,
   }
 }
 
-#if CONFIG_VAR_TX1
+#if CONFIG_VAR_TX
 static void update_tx_counts(VP10_COMMON *cm, MACROBLOCKD *xd,
                              MB_MODE_INFO *mbmi, BLOCK_SIZE plane_bsize,
                              TX_SIZE tx_size, int blk_row, int blk_col,
