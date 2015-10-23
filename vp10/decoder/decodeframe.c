@@ -391,7 +391,7 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
   }
 }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
 static void decode_reconstruct_tx(MACROBLOCKD *const xd, vpx_reader *r,
                                   MB_MODE_INFO *const mbmi,
                                   int plane, BLOCK_SIZE plane_bsize,
@@ -943,7 +943,7 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         const int num_4x4_w = pd->n4_w;
         const int num_4x4_h = pd->n4_h;
         int row, col;
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
         // TODO(jingning): This can be simplified for decoder performance.
         const BLOCK_SIZE plane_bsize =
             get_plane_block_size(VPXMAX(bsize, BLOCK_8X8), pd);

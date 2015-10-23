@@ -1371,7 +1371,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   uint8_t *dst;
   ENTROPY_CONTEXT *a, *l;
   TX_TYPE tx_type = get_tx_type(pd->plane_type, xd, block, tx_size);
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
   int i;
 #endif
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
@@ -1426,7 +1426,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
 
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
     int ctx;
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
     switch (tx_size) {
       case TX_4X4:
         break;
@@ -1453,7 +1453,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
     *a = *l = p->eobs[block] > 0;
   }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
   for (i = 0; i < (1 << tx_size); ++i) {
     a[i] = a[0];
     l[i] = l[0];
@@ -1523,7 +1523,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   }
 }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
 static void encode_block_inter(int plane, int block, int blk_row, int blk_col,
                                BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
                                void *arg) {
@@ -1629,7 +1629,7 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
     return;
 
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
     // TODO(jingning): Clean this up.
     const struct macroblockd_plane *const pd = &xd->plane[plane];
     const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
@@ -1646,7 +1646,7 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
       vp10_subtract_plane(x, bsize, plane);
 
     if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
       vp10_get_entropy_contexts(bsize, TX_4X4, pd,
                                 ctx.ta[plane], ctx.tl[plane]);
 #else
@@ -1657,7 +1657,7 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
 #endif
     }
 
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX1
     for (idy = 0; idy < mi_height; idy += bh) {
       for (idx = 0; idx < mi_width; idx += bh) {
         encode_block_inter(plane, block, idy, idx, plane_bsize,
