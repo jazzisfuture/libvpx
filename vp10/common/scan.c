@@ -702,7 +702,7 @@ const scan_order vp10_default_scan_orders[TX_SIZES] = {
   {default_scan_32x32, vp10_default_iscan_32x32, default_scan_32x32_neighbors},
 };
 
-#if CONFIG_EXT_TX1
+#if CONFIG_EXT_TX
 const scan_order vp10_intra_scan_orders[TX_SIZES][TX_TYPES] = {
   {  // TX_4X4
     {default_scan_4x4, vp10_default_iscan_4x4, default_scan_4x4_neighbors},
