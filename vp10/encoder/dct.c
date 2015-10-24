@@ -34,7 +34,7 @@ static INLINE void range_check(const tran_low_t *input, const int size,
 #endif
 }
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 void fdst4(const tran_low_t *input, tran_low_t *output) {
   // {sin(pi/5), sin(pi*2/5)} * sqrt(2/5) * sqrt(2)
   static const int32_t sinvalue_lookup[] = {
@@ -1166,7 +1166,7 @@ static const transform_2d FHT_4[] = {
   { fadst4, fdct4  },  // ADST_DCT = 1
   { fdct4,  fadst4 },  // DCT_ADST = 2
   { fadst4, fadst4 },  // ADST_ADST = 3
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   { fadst4, fdct4  },  // FLIPADST_DCT = 4
   { fdct4,  fadst4 },  // DCT_FLIPADST = 5
   { fadst4, fadst4 },  // FLIPADST_FLIPADST = 6
@@ -1187,7 +1187,7 @@ static const transform_2d FHT_8[] = {
   { fadst8, fdct8  },  // ADST_DCT = 1
   { fdct8,  fadst8 },  // DCT_ADST = 2
   { fadst8, fadst8 },  // ADST_ADST = 3
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   { fadst8, fdct8  },  // FLIPADST_DCT = 4
   { fdct8,  fadst8 },  // DCT_FLIPADST = 5
   { fadst8, fadst8 },  // FLIPADST_FLIPADST = 6
@@ -1208,7 +1208,7 @@ static const transform_2d FHT_16[] = {
   { fadst16, fdct16  },  // ADST_DCT = 1
   { fdct16,  fadst16 },  // DCT_ADST = 2
   { fadst16, fadst16 },  // ADST_ADST = 3
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   { fadst16, fdct16  },  // FLIPADST_DCT = 4
   { fdct16,  fadst16 },  // DCT_FLIPADST = 5
   { fadst16, fadst16 },  // FLIPADST_FLIPADST = 6
