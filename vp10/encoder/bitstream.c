@@ -72,12 +72,12 @@ static INLINE void write_uniform(vpx_writer *w, int n, int v) {
   }
 }
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 static struct vp10_token tx_type_encodings[TX_TYPES];
 #endif  // CONFIG_EXT_TX
 
 void vp10_encode_token_init() {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   vp10_tokens_from_tree(tx_type_encodings, vp10_tx_type_tree);
 #endif  // CONFIG_EXT_TX
 }
@@ -226,7 +226,7 @@ static void update_switchable_interp_probs(VP10_COMMON *cm, vpx_writer *w,
                      counts->switchable_interp[j], SWITCHABLE_FILTERS, w);
 }
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 static void update_ext_tx_probs(VP10_COMMON *cm, vpx_writer *w) {
   const int savings_thresh = vp10_cost_one(GROUP_DIFF_UPDATE_PROB) -
                              vp10_cost_zero(GROUP_DIFF_UPDATE_PROB);
@@ -536,7 +536,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
     }
   }
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   if (mbmi->tx_size <= TX_16X16 && cm->base_qindex > 0 &&
       bsize >= BLOCK_8X8 && !mbmi->skip &&
       !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
@@ -628,7 +628,7 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
     write_palette_mode_info(cm, xd, mi, w);
 
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   if (mbmi->tx_size <= TX_16X16 && cm->base_qindex > 0 &&
       bsize >= BLOCK_8X8 && !mbmi->skip &&
       !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
@@ -1613,7 +1613,7 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
 
     vp10_write_nmv_probs(cm, cm->allow_high_precision_mv, &header_bc,
                         &counts->mv);
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     update_ext_tx_probs(cm, &header_bc);
 #endif
   }
