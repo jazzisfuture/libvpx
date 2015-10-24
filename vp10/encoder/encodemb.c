@@ -325,7 +325,7 @@ static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
 static void copy_block(const int16_t *src, int src_stride, int l,
                        int16_t *dest, int dest_stride) {
   int i;
@@ -406,7 +406,7 @@ void vp10_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
   if (lossless) {
     vp10_fwht4x4(src_diff, coeff, diff_stride);
   } else {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[16];
 #endif  // CONFIG_EXT_TX
   switch (tx_type) {
@@ -418,7 +418,7 @@ void vp10_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
     case ADST_ADST:
       vp10_fht4x4(src_diff, coeff, diff_stride, tx_type);
       break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 4, src_diff2, 4);
       vp10_fht4x4(src_diff2, coeff, 4, ADST_DCT);
@@ -468,7 +468,7 @@ void vp10_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
 
 static void fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
                          int diff_stride, TX_TYPE tx_type) {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[64];
 #endif  // CONFIG_EXT_TX
   switch (tx_type) {
@@ -478,7 +478,7 @@ static void fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
     case ADST_ADST:
       vp10_fht8x8(src_diff, coeff, diff_stride, tx_type);
       break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 8, src_diff2, 8);
       vp10_fht8x8(src_diff2, coeff, 8, ADST_DCT);
@@ -527,7 +527,7 @@ static void fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
 
 static void fwd_txfm_8x8_1(const int16_t *src_diff, tran_low_t *coeff,
                            int diff_stride, TX_TYPE tx_type) {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[64];
 #endif  // CONFIG_EXT_TX
   switch (tx_type) {
@@ -537,7 +537,7 @@ static void fwd_txfm_8x8_1(const int16_t *src_diff, tran_low_t *coeff,
     case ADST_ADST:
       vpx_fdct8x8_1(src_diff, coeff, diff_stride);
       break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 8, src_diff2, 8);
       vp10_fht8x8(src_diff2, coeff, 8, ADST_DCT);
@@ -586,7 +586,7 @@ static void fwd_txfm_8x8_1(const int16_t *src_diff, tran_low_t *coeff,
 
 static void fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
                            int diff_stride, TX_TYPE tx_type) {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[256];
 #endif  // CONFIG_EXT_TX
   switch (tx_type) {
@@ -596,7 +596,7 @@ static void fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
     case ADST_ADST:
       vp10_fht16x16(src_diff, coeff, diff_stride, tx_type);
       break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 16, src_diff2, 16);
       vp10_fht16x16(src_diff2, coeff, 16, ADST_DCT);
@@ -645,7 +645,7 @@ static void fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
 
 static void fwd_txfm_16x16_1(const int16_t *src_diff, tran_low_t *coeff,
                              int diff_stride, TX_TYPE tx_type) {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[256];
 #endif  // CONFIG_EXT_TX
   switch (tx_type) {
@@ -655,7 +655,7 @@ static void fwd_txfm_16x16_1(const int16_t *src_diff, tran_low_t *coeff,
     case ADST_ADST:
       vpx_fdct16x16_1(src_diff, coeff, diff_stride);
       break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 16, src_diff2, 16);
       vp10_fht16x16(src_diff2, coeff, 16, ADST_DCT);
@@ -745,7 +745,7 @@ void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
     assert(tx_type == DCT_DCT);
     vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
   } else {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[16];
 #endif  // CONFIG_EXT_TX
     switch (tx_type) {
@@ -757,7 +757,7 @@ void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
       case ADST_ADST:
         vp10_highbd_fht4x4(src_diff, coeff, diff_stride, tx_type);
         break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 4, src_diff2, 4);
       vp10_highbd_fht4x4(src_diff2, coeff, 4, ADST_DCT);
@@ -807,7 +807,7 @@ void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
 
 static void highbd_fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
                                 int diff_stride, TX_TYPE tx_type) {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[64];
 #endif  // CONFIG_EXT_TX
   switch (tx_type) {
@@ -819,7 +819,7 @@ static void highbd_fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
     case ADST_ADST:
       vp10_highbd_fht8x8(src_diff, coeff, diff_stride, tx_type);
       break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 8, src_diff2, 8);
       vp10_highbd_fht8x8(src_diff2, coeff, 8, ADST_DCT);
@@ -868,7 +868,7 @@ static void highbd_fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
 
 static void highbd_fwd_txfm_8x8_1(const int16_t *src_diff, tran_low_t *coeff,
                                   int diff_stride, TX_TYPE tx_type) {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[64];
 #endif  // CONFIG_EXT_TX
   switch (tx_type) {
@@ -880,7 +880,7 @@ static void highbd_fwd_txfm_8x8_1(const int16_t *src_diff, tran_low_t *coeff,
     case ADST_ADST:
       vp10_highbd_fht8x8(src_diff, coeff, diff_stride, tx_type);
       break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 8, src_diff2, 8);
       vp10_highbd_fht8x8(src_diff2, coeff, 8, ADST_DCT);
@@ -929,7 +929,7 @@ static void highbd_fwd_txfm_8x8_1(const int16_t *src_diff, tran_low_t *coeff,
 
 static void highbd_fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
                                   int diff_stride, TX_TYPE tx_type) {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[256];
 #endif  // CONFIG_EXT_TX
   switch (tx_type) {
@@ -941,7 +941,7 @@ static void highbd_fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
     case ADST_ADST:
       vp10_highbd_fht16x16(src_diff, coeff, diff_stride, tx_type);
       break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 16, src_diff2, 16);
       vp10_highbd_fht16x16(src_diff2, coeff, 16, ADST_DCT);
@@ -990,7 +990,7 @@ static void highbd_fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
 
 static void highbd_fwd_txfm_16x16_1(const int16_t *src_diff, tran_low_t *coeff,
                                     int diff_stride, TX_TYPE tx_type) {
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
   int16_t src_diff2[256];
 #endif  // CONFIG_EXT_TX
   switch (tx_type) {
@@ -1002,7 +1002,7 @@ static void highbd_fwd_txfm_16x16_1(const int16_t *src_diff, tran_low_t *coeff,
     case ADST_ADST:
       vp10_highbd_fht16x16(src_diff, coeff, diff_stride, tx_type);
       break;
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX1
     case FLIPADST_DCT:
       copy_flipud(src_diff, diff_stride, 16, src_diff2, 16);
       vp10_highbd_fht16x16(src_diff2, coeff, 16, ADST_DCT);
