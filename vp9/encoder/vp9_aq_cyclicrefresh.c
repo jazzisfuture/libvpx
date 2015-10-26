@@ -490,6 +490,13 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->rate_ratio_qdelta = 3.0;
   else
     cr->rate_ratio_qdelta = 2.0;
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  if (cpi->oxcf.noise_sensitivity > 0 &&
+      cpi->denoiser.denoising_on &&
+      cpi->denoiser.noise_estimate > cpi->denoiser.thresh_noise_estimate)
+    // Reduce the delta-qp if the estimated source noise is above threshold.
+    cr->rate_ratio_qdelta = 1.5;
+#endif
   // Adjust some parameters for low resolutions at low bitrates.
   if (cm->width <= 352 &&
       cm->height <= 288 &&

@@ -480,8 +480,8 @@ static int set_vt_partitioning(VP9_COMP *cpi,
 static void set_vbp_thresholds(VP9_COMP *cpi, int64_t thresholds[], int q) {
   VP9_COMMON *const cm = &cpi->common;
   const int is_key_frame = (cm->frame_type == KEY_FRAME);
-  const int threshold_multiplier = is_key_frame ? 20 : 1;
-  const int64_t threshold_base = (int64_t)(threshold_multiplier *
+  int threshold_multiplier = is_key_frame ? 20 : 1;
+  int64_t threshold_base = (int64_t)(threshold_multiplier *
       cpi->y_dequant[q][1]);
   if (is_key_frame) {
     thresholds[0] = threshold_base;
@@ -489,6 +489,17 @@ static void set_vbp_thresholds(VP9_COMP *cpi, int64_t thresholds[], int q) {
     thresholds[2] = threshold_base >> 2;
     thresholds[3] = threshold_base << 2;
   } else {
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  if (cpi->oxcf.noise_sensitivity > 0 &&
+      cpi->denoiser.denoising_on) {
+    // Increase base variance threshold is estimated noise level is high.
+    if (cpi->denoiser.noise_estimate >
+        cpi->denoiser.thresh_noise_estimate << 1)
+      threshold_base = threshold_base << 2;
+    else
+      threshold_base = threshold_base << 1;
+  }
+#endif
     thresholds[1] = threshold_base;
     if (cm->width <= 352 && cm->height <= 288) {
       thresholds[0] = threshold_base >> 2;
