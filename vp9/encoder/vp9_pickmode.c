@@ -1068,6 +1068,23 @@ static const REF_MODE ref_mode_set_svc[RT_INTER_MODES] = {
     {GOLDEN_FRAME, NEWMV}
 };
 
+int set_reduction_factor_intra(const VP9_COMP *const cpi, BLOCK_SIZE bsize) {
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  if (cpi->oxcf.noise_sensitivity > 0 &&
+      cpi->denoiser.denoising_on &&
+      cpi->denoiser.noise_estimate > cpi->denoiser.thresh_noise_estimate << 1) {
+     // Don't reduce intra cost penalty if estimated noise level is high.
+     return 0;
+  } else {
+    // Reduce the intra cost penalty for small blocks (<=16x16).
+    return (bsize <= BLOCK_16X16) ? ((bsize <= BLOCK_8X8) ? 4 : 2) : 0;
+  }
+#else
+  // Reduce the intra cost penalty for small blocks (<=16x16).
+  return (bsize <= BLOCK_16X16) ? ((bsize <= BLOCK_8X8) ? 4 : 2) : 0;
+#endif
+}
+
 // TODO(jingning) placeholder for inter-frame non-RD mode decision.
 // this needs various further optimizations. to be continued..
 void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
@@ -1094,9 +1111,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   // var_y and sse_y are saved to be used in skipping checking
   unsigned int var_y = UINT_MAX;
   unsigned int sse_y = UINT_MAX;
-  // Reduce the intra cost penalty for small blocks (<=16x16).
-  const int reduction_fac = (bsize <= BLOCK_16X16) ?
-      ((bsize <= BLOCK_8X8) ? 4 : 2) : 0;
+  const int reduction_fac = set_reduction_factor_intra(cpi, bsize);
   const int intra_cost_penalty = vp9_get_intra_cost_penalty(
       cm->base_qindex, cm->y_dc_delta_q, cm->bit_depth) >> reduction_fac;
   const int64_t inter_mode_thresh = RDCOST(x->rdmult, x->rddiv,
