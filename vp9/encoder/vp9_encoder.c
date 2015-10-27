@@ -3797,6 +3797,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 
   // For 1 pass CBR, check if we are dropping this frame.
+  // For spatial layers, we only check for dropping on first spatial layer,
+  // and if we decide to drop, whole superframe is dropped.
   // Never drop on key frame.
   if (oxcf->pass == 0 &&
       oxcf->rc_mode == VPX_CBR &&
@@ -3805,6 +3807,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       vp9_rc_postencode_update_drop_frame(cpi);
       ++cm->current_video_frame;
       cpi->ext_refresh_frame_flags_pending = 0;
+      cpi->svc.rc_drop_superframe = 1;
       return;
     }
   }
