@@ -31,6 +31,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->spatial_layer_id = 0;
   svc->temporal_layer_id = 0;
   svc->first_spatial_layer_to_encode = 0;
+  svc->rc_drop_superframe = 0;
 
   if (cpi->oxcf.error_resilient_mode == 0 && cpi->oxcf.pass == 2) {
     if (vpx_realloc_frame_buffer(&cpi->svc.empty_frame.img,
@@ -540,7 +541,6 @@ static void set_flags_and_fb_idx_for_temporal_mode_noLayering(
 int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   int width = 0, height = 0;
   LAYER_CONTEXT *lc = NULL;
-
   if (cpi->svc.temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_0212) {
     set_flags_and_fb_idx_for_temporal_mode3(cpi);
   } else if (cpi->svc.temporal_layering_mode ==
@@ -566,6 +566,8 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
       cpi->gld_fb_idx = cpi->svc.ext_gld_fb_idx[sl];
       cpi->alt_fb_idx = cpi->svc.ext_alt_fb_idx[sl];
     }
+    if (cpi->svc.spatial_layer_id == cpi->svc.first_spatial_layer_to_encode)
+      cpi->svc.rc_drop_superframe = 0;
   }
 
   lc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id *
