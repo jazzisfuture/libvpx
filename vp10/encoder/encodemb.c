@@ -325,6 +325,7 @@ static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+<<<<<<< HEAD   (236623 Fix early termination flag in recursive transform block sear)
 #if CONFIG_EXT_TX
 static void copy_block(const int16_t *src, int src_stride, int l,
                        int16_t *dest, int dest_stride) {
@@ -332,9 +333,108 @@ static void copy_block(const int16_t *src, int src_stride, int l,
   for (i = 0; i < l; ++i) {
     memcpy(dest + dest_stride * i, src + src_stride * i,
            l * sizeof(int16_t));
+=======
+void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
+                         int blk_row, int blk_col,
+                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  const struct macroblock_plane *const p = &x->plane[plane];
+  const struct macroblockd_plane *const pd = &xd->plane[plane];
+  PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
+  TX_TYPE tx_type = get_tx_type(plane_type, xd, block);
+  const scan_order *const scan_order = get_scan(tx_size, tx_type);
+  tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
+  tran_low_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
+  tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+  uint16_t *const eob = &p->eobs[block];
+  const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+  const int16_t *src_diff;
+  src_diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    switch (tx_size) {
+      case TX_32X32:
+        highbd_fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+        vp10_highbd_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin,
+                                     p->round_fp, p->quant_fp, p->quant_shift,
+                                     qcoeff, dqcoeff, pd->dequant,
+                                     eob, scan_order->scan,
+                                     scan_order->iscan);
+        break;
+      case TX_16X16:
+        vpx_highbd_fdct16x16(src_diff, coeff, diff_stride);
+        vp10_highbd_quantize_fp(coeff, 256, x->skip_block, p->zbin, p->round_fp,
+                               p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                               pd->dequant, eob,
+                               scan_order->scan, scan_order->iscan);
+        break;
+      case TX_8X8:
+        vpx_highbd_fdct8x8(src_diff, coeff, diff_stride);
+        vp10_highbd_quantize_fp(coeff, 64, x->skip_block, p->zbin, p->round_fp,
+                               p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                               pd->dequant, eob,
+                               scan_order->scan, scan_order->iscan);
+        break;
+      case TX_4X4:
+        if (xd->lossless[xd->mi[0]->mbmi.segment_id]) {
+          vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
+        } else {
+          vpx_highbd_fdct4x4(src_diff, coeff, diff_stride);
+        }
+        vp10_highbd_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
+                               p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                               pd->dequant, eob,
+                               scan_order->scan, scan_order->iscan);
+        break;
+      default:
+        assert(0);
+    }
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  switch (tx_size) {
+    case TX_32X32:
+      fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+      vp10_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin, p->round_fp,
+                            p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                            pd->dequant, eob, scan_order->scan,
+                            scan_order->iscan);
+      break;
+    case TX_16X16:
+      vpx_fdct16x16(src_diff, coeff, diff_stride);
+      vp10_quantize_fp(coeff, 256, x->skip_block, p->zbin, p->round_fp,
+                      p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                      pd->dequant, eob,
+                      scan_order->scan, scan_order->iscan);
+      break;
+    case TX_8X8:
+      vp10_fdct8x8_quant(src_diff, diff_stride, coeff, 64,
+                        x->skip_block, p->zbin, p->round_fp,
+                        p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                        pd->dequant, eob,
+                        scan_order->scan, scan_order->iscan);
+      break;
+    case TX_4X4:
+      if (xd->lossless[xd->mi[0]->mbmi.segment_id]) {
+        vp10_fwht4x4(src_diff, coeff, diff_stride);
+      } else {
+        vpx_fdct4x4(src_diff, coeff, diff_stride);
+      }
+      vp10_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
+                      p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                      pd->dequant, eob,
+                      scan_order->scan, scan_order->iscan);
+      break;
+    default:
+      assert(0);
+      break;
+>>>>>>> BRANCH (dc9d36 Merge "Code cleanup for vp9-denoiser.")
   }
 }
 
+<<<<<<< HEAD   (236623 Fix early termination flag in recursive transform block sear)
 static void fliplr(int16_t *dest, int stride, int l) {
   int i, j;
   for (i = 0; i < l; ++i) {
@@ -342,6 +442,55 @@ static void fliplr(int16_t *dest, int stride, int l) {
       const int16_t tmp = dest[i * stride + j];
       dest[i * stride + j] = dest[i * stride + l - 1 - j];
       dest[i * stride + l - 1 - j] = tmp;
+=======
+void vp10_xform_quant_dc(MACROBLOCK *x, int plane, int block,
+                         int blk_row, int blk_col,
+                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  const struct macroblock_plane *const p = &x->plane[plane];
+  const struct macroblockd_plane *const pd = &xd->plane[plane];
+  tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
+  tran_low_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
+  tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+  uint16_t *const eob = &p->eobs[block];
+  const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+  const int16_t *src_diff;
+  src_diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    switch (tx_size) {
+      case TX_32X32:
+        vpx_highbd_fdct32x32_1(src_diff, coeff, diff_stride);
+        vpx_highbd_quantize_dc_32x32(coeff, x->skip_block, p->round,
+                                     p->quant_fp[0], qcoeff, dqcoeff,
+                                     pd->dequant[0], eob);
+        break;
+      case TX_16X16:
+        vpx_highbd_fdct16x16_1(src_diff, coeff, diff_stride);
+        vpx_highbd_quantize_dc(coeff, 256, x->skip_block, p->round,
+                               p->quant_fp[0], qcoeff, dqcoeff,
+                               pd->dequant[0], eob);
+        break;
+      case TX_8X8:
+        vpx_highbd_fdct8x8_1(src_diff, coeff, diff_stride);
+        vpx_highbd_quantize_dc(coeff, 64, x->skip_block, p->round,
+                               p->quant_fp[0], qcoeff, dqcoeff,
+                               pd->dequant[0], eob);
+        break;
+      case TX_4X4:
+        if (xd->lossless[xd->mi[0]->mbmi.segment_id]) {
+          vp10_highbd_fwht4x4(src_diff, coeff, diff_stride);
+        } else {
+          vpx_highbd_fdct4x4(src_diff, coeff, diff_stride);
+        }
+        vpx_highbd_quantize_dc(coeff, 16, x->skip_block, p->round,
+                               p->quant_fp[0], qcoeff, dqcoeff,
+                               pd->dequant[0], eob);
+        break;
+      default:
+        assert(0);
+>>>>>>> BRANCH (dc9d36 Merge "Code cleanup for vp9-denoiser.")
     }
   }
 }
@@ -1086,9 +1235,15 @@ static void highbd_fwd_txfm_32x32_1(const int16_t *src_diff,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+<<<<<<< HEAD   (236623 Fix early termination flag in recursive transform block sear)
 void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
                          int blk_row, int blk_col,
                          BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+=======
+void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
+                      int blk_row, int blk_col,
+                      BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+>>>>>>> BRANCH (dc9d36 Merge "Code cleanup for vp9-denoiser.")
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
@@ -1103,6 +1258,7 @@ void vp10_xform_quant_fp(MACROBLOCK *x, int plane, int block,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int16_t *src_diff;
   src_diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
+<<<<<<< HEAD   (236623 Fix early termination flag in recursive transform block sear)
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -1281,6 +1437,8 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int16_t *src_diff;
   src_diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
+=======
+>>>>>>> BRANCH (dc9d36 Merge "Code cleanup for vp9-denoiser.")
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -1370,10 +1528,14 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   uint8_t *dst;
   ENTROPY_CONTEXT *a, *l;
+<<<<<<< HEAD   (236623 Fix early termination flag in recursive transform block sear)
   TX_TYPE tx_type = get_tx_type(pd->plane_type, xd, block, tx_size);
 #if CONFIG_VAR_TX
   int i;
 #endif
+=======
+  TX_TYPE tx_type = get_tx_type(pd->plane_type, xd, block);
+>>>>>>> BRANCH (dc9d36 Merge "Code cleanup for vp9-denoiser.")
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
   a = &ctx->ta[plane][blk_col];
   l = &ctx->tl[plane][blk_row];
@@ -1523,6 +1685,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   }
 }
 
+<<<<<<< HEAD   (236623 Fix early termination flag in recursive transform block sear)
 #if CONFIG_VAR_TX
 static void encode_block_inter(int plane, int block, int blk_row, int blk_col,
                                BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
@@ -1576,6 +1739,8 @@ static void encode_block_inter(int plane, int block, int blk_row, int blk_col,
 }
 #endif
 
+=======
+>>>>>>> BRANCH (dc9d36 Merge "Code cleanup for vp9-denoiser.")
 static void encode_block_pass1(int plane, int block, int blk_row, int blk_col,
                                BLOCK_SIZE plane_bsize,
                                TX_SIZE tx_size, void *arg) {
@@ -1702,7 +1867,11 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
 
   mode = plane == 0 ? get_y_mode(xd->mi[0], block) : mbmi->uv_mode;
   vp10_predict_intra_block(xd, bwl, bhl, tx_size, mode, dst, dst_stride,
+<<<<<<< HEAD   (236623 Fix early termination flag in recursive transform block sear)
                            dst, dst_stride, blk_col, blk_row, plane);
+=======
+                          dst, dst_stride, blk_col, blk_row, plane);
+>>>>>>> BRANCH (dc9d36 Merge "Code cleanup for vp9-denoiser.")
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {

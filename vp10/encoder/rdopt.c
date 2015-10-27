@@ -469,6 +469,7 @@ static void dist_block(MACROBLOCK *x, int plane, int block, TX_SIZE tx_size,
 
 static int rate_block(int plane, int block, int blk_row, int blk_col,
                       TX_SIZE tx_size, struct rdcost_block_args* args) {
+<<<<<<< HEAD   (236623 Fix early termination flag in recursive transform block sear)
 #if CONFIG_VAR_TX
   int coeff_ctx = combine_entropy_contexts(*(args->t_above + blk_col),
                                            *(args->t_left + blk_row));
@@ -484,6 +485,11 @@ static int rate_block(int plane, int block, int blk_row, int blk_col,
                      args->t_above + blk_col,
                      args->t_left + blk_row,
                      tx_size, args->so->scan, args->so->neighbors,
+=======
+  return cost_coeffs(args->x, plane, block, args->t_above + blk_col,
+                     args->t_left + blk_row, tx_size,
+                     args->so->scan, args->so->neighbors,
+>>>>>>> BRANCH (dc9d36 Merge "Code cleanup for vp9-denoiser.")
                      args->use_fast_coef_costing);
 #endif
 }
@@ -512,7 +518,12 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
     if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] ==
         SKIP_TXFM_NONE) {
       // full forward transform and quantization
+<<<<<<< HEAD   (236623 Fix early termination flag in recursive transform block sear)
       vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size);
+=======
+      vp10_xform_quant(x, plane, block, blk_row, blk_col,
+                       plane_bsize, tx_size);
+>>>>>>> BRANCH (dc9d36 Merge "Code cleanup for vp9-denoiser.")
       dist_block(x, plane, block, tx_size, &dist, &sse);
     } else if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] ==
                SKIP_TXFM_AC_ONLY) {
