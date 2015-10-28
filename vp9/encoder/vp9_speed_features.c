@@ -527,8 +527,36 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
     set_good_speed_feature(cpi, cm, sf, oxcf->speed);
 
   cpi->full_search_sad = vp9_full_search_sad;
-  cpi->diamond_search_sad = oxcf->mode == BEST ? vp9_full_range_search
-                                               : vp9_diamond_search_sad;
+
+  if (oxcf->mode == BEST) {
+    cpi->diamond_search_sad = vp9_full_range_search;
+  } else {
+    // Check the simplifying assumptions that the vectorized version of
+    // vp9_diamond_search_sad makes and fall back on the C version if they
+    // do not hold. (See vp9_diamond_search_sad_avx for details).
+
+    int ii;
+
+    cpi->diamond_search_sad = vp9_diamond_search_sad;
+
+    for (ii = 2; ii < MV_JOINTS ; ii++) {
+      // Check equality
+      if (cpi->td.mb.nmvjointsadcost[ii] != cpi->td.mb.nmvjointsadcost[1]) {
+        cpi->diamond_search_sad = vp9_diamond_search_sad_c;
+        break;
+      }
+    }
+
+    for (ii = 0 ; ii <= MV_MAX ; ii++) {
+      // Check evenness and equality
+      if (cpi->td.mb.nmvsadcost[0][ii] != cpi->td.mb.nmvsadcost[0][-ii] ||
+          cpi->td.mb.nmvsadcost[1][ii] != cpi->td.mb.nmvsadcost[1][-ii] ||
+          cpi->td.mb.nmvsadcost[0][ii] != cpi->td.mb.nmvsadcost[1][ii]) {
+        cpi->diamond_search_sad = vp9_diamond_search_sad_c;
+        break;
+      }
+    }
+  }
 
   // Slow quant, dct and trellis not worthwhile for first pass
   // so make sure they are always turned off.
