@@ -635,13 +635,13 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
   int  s0 = vp10_cost_bit(skip_prob, 0);
   int  s1 = vp10_cost_bit(skip_prob, 1);
   int ext_tx_set;
-#endif  // CONFIG_EXT_TX
   const int is_inter = is_inter_block(mbmi);
+#endif  // CONFIG_EXT_TX
 
   mbmi->tx_size = VPXMIN(max_tx_size, largest_tx_size);
 
 #if CONFIG_EXT_TX
-  ext_tx_set = get_ext_tx_set(mbmi->tx_size, bs, is_inter_block(mbmi));
+  ext_tx_set = get_ext_tx_set(mbmi->tx_size, bs, is_inter);
 
   if (is_inter &&
       use_ext_tx(mbmi->tx_size, bs) && !xd->lossless) {
@@ -704,7 +704,7 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_TX
   if (use_ext_tx(mbmi->tx_size, bs) &&
       !xd->lossless && *rate != INT_MAX) {
-    int ext_tx_set = get_ext_tx_set(mbmi->tx_size, bs, is_inter_block(mbmi));
+    int ext_tx_set = get_ext_tx_set(mbmi->tx_size, bs, is_inter);
     if (is_inter)
       *rate += cpi->inter_tx_type_costs[ext_tx_set][mbmi->tx_size]
                                        [mbmi->tx_type];
@@ -790,7 +790,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       }
 
 #if CONFIG_EXT_TX
-      ext_tx_set = get_ext_tx_set(n, bs, is_inter_block(mbmi));
+      ext_tx_set = get_ext_tx_set(n, bs, is_inter);
       if (is_inter) {
         if (!ext_tx_used_inter[ext_tx_set][tx_type])
           continue;
@@ -843,9 +843,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       if (tx_select && !(s && is_inter))
         r += r_tx_size;
 
-      if (is_inter_block(mbmi) &&
-          !xd->lossless[xd->mi[0]->mbmi.segment_id] &&
-          !s)
+      if (is_inter && !xd->lossless[xd->mi[0]->mbmi.segment_id] && !s)
         rd = VPXMIN(rd, RDCOST(x->rdmult, x->rddiv, s1, sse));
 
       // Early termination in transform size search.
