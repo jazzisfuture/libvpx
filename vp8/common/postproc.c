@@ -383,7 +383,6 @@ void vp8_deblock(VP8_COMMON                 *cm,
         vp8_yv12_copy_frame(source, post);
     }
 }
-#endif
 
 void vp8_de_noise(VP8_COMMON                 *cm,
                   YV12_BUFFER_CONFIG         *source,
@@ -426,6 +425,7 @@ void vp8_de_noise(VP8_COMMON                 *cm,
         }
     }
 }
+#endif
 
 static double gaussian(double sigma, double mu, double x)
 {
