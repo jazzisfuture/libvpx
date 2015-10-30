@@ -185,10 +185,14 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
 #endif  // CONFIG_ALPHA
 
     uint8_t *buf = NULL;
+    // No memset by default to save cycle.
+    int init_buffer = 0;
 
     if (cb != NULL) {
       const int align_addr_extra_size = 31;
       const uint64_t external_frame_size = frame_size + align_addr_extra_size;
+      // Memset when new buffer size is larger.
+      const int init_buffer = external_frame_size > fb->size ? 1 : 0;
 
       assert(fb != NULL);
 
@@ -203,6 +207,12 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
         return -1;
 
       ybf->buffer_alloc = (uint8_t *)yv12_align_addr(fb->data, 32);
+
+      // This memset is needed for fixing valgrind error from C loop filter
+      // due to access uninitialized memory in frame border. It could be
+      // removed if border is totally removed.
+      if (init_buffer)
+        memset(ybf->buffer_alloc, 0, (int)frame_size);
     } else if (frame_size > (size_t)ybf->buffer_alloc_sz) {
       // Allocation to hold larger frame, or first allocation.
       vpx_free(ybf->buffer_alloc);
