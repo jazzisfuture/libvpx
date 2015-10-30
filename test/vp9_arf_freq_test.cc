@@ -64,6 +64,15 @@ const TestEncodeParam kEncodeVectors[] = {
   {::libvpx_test::kRealTime, 5},
 };
 
+const TestEncodeParam kEncodeVectorsVP10[] = {
+  {::libvpx_test::kOnePassGood, 2},
+  {::libvpx_test::kOnePassGood, 5},
+  {::libvpx_test::kTwoPassGood, 1},
+  {::libvpx_test::kTwoPassGood, 2},
+  {::libvpx_test::kTwoPassGood, 5},
+  {::libvpx_test::kRealTime, 5},
+};
+
 const int kMinArfVectors[] = {
   // NOTE: 0 refers to the default built-in logic in:
   //       vp9_rc_get_default_min_gf_interval(...)
@@ -239,14 +248,14 @@ INSTANTIATE_TEST_CASE_P(
         ::testing::Values(static_cast<const libvpx_test::CodecFactory *>(
             &libvpx_test::kVP10)),
         ::testing::ValuesIn(kTestVectors),
-        ::testing::ValuesIn(kEncodeVectors),
+        ::testing::ValuesIn(kEncodeVectorsVP10),
         ::testing::ValuesIn(kMinArfVectors)));
 #endif  // CONFIG_VP10_ENCODER
 #else
 VP10_INSTANTIATE_TEST_CASE(
     ArfFreqTestLarge,
     ::testing::ValuesIn(kTestVectors),
-    ::testing::ValuesIn(kEncodeVectors),
+    ::testing::ValuesIn(kEncodeVectorsVP10),
     ::testing::ValuesIn(kMinArfVectors));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace
