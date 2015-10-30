@@ -28,6 +28,12 @@ extern "C" {
 // Maximum rate target ratio for setting segment delta-qp.
 #define CR_MAX_RATE_TARGET_RATIO 4.0
 
+typedef enum vp9_noise_level {
+  kLow,
+  kMedium,
+  kHigh
+} VP9_NOISE_LEVEL;
+
 struct CYCLIC_REFRESH {
   // Percentage of blocks per frame that are targeted as candidates
   // for cyclic refresh.
@@ -67,6 +73,10 @@ struct CYCLIC_REFRESH {
   double low_content_avg;
   int qindex_delta[3];
   int reduce_refresh;
+  VP9_NOISE_LEVEL noise_level;
+  int noise_estimate;
+  int thresh_noise_estimate;
+  int noise_estimate_count;
 };
 
 struct VP9_COMP;
@@ -122,6 +132,10 @@ void vp9_cyclic_refresh_setup(struct VP9_COMP *const cpi);
 int vp9_cyclic_refresh_get_rdmult(const CYCLIC_REFRESH *cr);
 
 void vp9_cyclic_refresh_reset_resize(struct VP9_COMP *const cpi);
+
+void vp9_cyclic_refresh_update_noise_estimate(struct VP9_COMP *const cpi);
+
+void vp9_cyclic_refresh_init_noise_estimate(struct VP9_COMP *const cpi);
 
 static INLINE int cyclic_refresh_segment_id_boosted(int segment_id) {
   return segment_id == CR_SEGMENT_ID_BOOST1 ||
