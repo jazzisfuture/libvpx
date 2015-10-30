@@ -1480,6 +1480,17 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     this_rdc.rate += ref_frame_cost[ref_frame];
     this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, this_rdc.rate, this_rdc.dist);
 
+    // Bias against non-zero (large/above some threshold) motion vector mode
+    // for large block sizes.
+    if (cpi->oxcf.speed >= 5 &&
+        bsize > BLOCK_32X32 &&
+        (frame_mv[this_mode][ref_frame].as_mv.row > 32 ||
+        frame_mv[this_mode][ref_frame].as_mv.row < -32 ||
+        frame_mv[this_mode][ref_frame].as_mv.col > 32 ||
+        frame_mv[this_mode][ref_frame].as_mv.col < -32)) {
+      this_rdc.rdcost = this_rdc.rdcost << 1;
+    }
+
     // Skipping checking: test to see if this block can be reconstructed by
     // prediction only.
     if (cpi->allow_encode_breakout) {
