@@ -185,10 +185,13 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
 #endif  // CONFIG_ALPHA
 
     uint8_t *buf = NULL;
+    // No memset by default to save cycle.
+    int init_buffer = 0;
 
     if (cb != NULL) {
       const int align_addr_extra_size = 31;
       const uint64_t external_frame_size = frame_size + align_addr_extra_size;
+      init_buffer = external_frame_size > fb->size ? 1 : 0;
 
       assert(fb != NULL);
 
@@ -207,6 +210,7 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
       // Allocation to hold larger frame, or first allocation.
       vpx_free(ybf->buffer_alloc);
       ybf->buffer_alloc = NULL;
+      init_buffer = 1;
 
       if (frame_size != (size_t)frame_size)
         return -1;
@@ -214,14 +218,14 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
       ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, (size_t)frame_size);
       if (!ybf->buffer_alloc)
         return -1;
-
-      ybf->buffer_alloc_sz = (int)frame_size;
-
-      // This memset is needed for fixing valgrind error from C loop filter
-      // due to access uninitialized memory in frame border. It could be
-      // removed if border is totally removed.
-      memset(ybf->buffer_alloc, 0, ybf->buffer_alloc_sz);
     }
+
+    ybf->buffer_alloc_sz = (int)frame_size;
+    // This memset is needed for fixing valgrind error from C loop filter
+    // due to access uninitialized memory in frame border. It could be
+    // removed if border is totally removed.
+    if (init_buffer)
+      memset(ybf->buffer_alloc, 0, ybf->buffer_alloc_sz);
 
     /* Only support allocating buffers that have a border that's a multiple
      * of 32. The border restriction is required to get 16-byte alignment of
