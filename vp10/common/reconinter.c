@@ -64,9 +64,9 @@ void vp10_build_inter_predictor(const uint8_t *src, int src_stride,
 }
 
 void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
-                                   int bw, int bh,
-                                   int x, int y, int w, int h,
-                                   int mi_x, int mi_y) {
+                            int bw, int bh,
+                            int x, int y, int w, int h,
+                            int mi_x, int mi_y) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const MODE_INFO *mi = xd->mi[0];
   const int is_compound = has_second_ref(&mi->mbmi);
@@ -264,3 +264,45 @@ void vp10_setup_pre_planes(MACROBLOCKD *xd, int idx,
     }
   }
 }
+
+#if 0 //CONFIG_EXT_INTERP
+int vp10_is_interp_needed(MACROBLOCKD *const xd) {
+  MODE_INFO *const mi = xd->mi[0];
+  MB_MODE_INFO *const mbmi = &mi->mbmi;
+  const BLOCK_SIZE bsize = mbmi->sb_type;
+  const int is_compound = has_second_ref(mbmi);
+  int intpel_mv = 0;
+  if (vp10_is_scaled(&xd->block_refs[0]->sf))
+    return 0;
+  if (is_compound && vp10_is_scaled(&xd->block_refs[1]->sf))
+    return 0;
+  if (bsize < BLOCK_8X8) {
+    intpel_mv = ((mi->bmi[0].as_mv[0].as_mv.row & 15) == 0) &&
+                ((mi->bmi[1].as_mv[0].as_mv.row & 15) == 0) &&
+                ((mi->bmi[2].as_mv[0].as_mv.row & 15) == 0) &&
+                ((mi->bmi[3].as_mv[0].as_mv.row & 15) == 0) &&
+                ((mi->bmi[0].as_mv[0].as_mv.col & 15) == 0) &&
+                ((mi->bmi[1].as_mv[0].as_mv.col & 15) == 0) &&
+                ((mi->bmi[2].as_mv[0].as_mv.col & 15) == 0) &&
+                ((mi->bmi[3].as_mv[0].as_mv.col & 15) == 0);
+    if (is_compound && intpel_mv) {
+      intpel_mv &= ((mi->bmi[0].as_mv[1].as_mv.row & 15) == 0) &&
+                   ((mi->bmi[1].as_mv[1].as_mv.row & 15) == 0) &&
+                   ((mi->bmi[2].as_mv[1].as_mv.row & 15) == 0) &&
+                   ((mi->bmi[3].as_mv[1].as_mv.row & 15) == 0) &&
+                   ((mi->bmi[0].as_mv[1].as_mv.col & 15) == 0) &&
+                   ((mi->bmi[1].as_mv[1].as_mv.col & 15) == 0) &&
+                   ((mi->bmi[2].as_mv[1].as_mv.col & 15) == 0) &&
+                   ((mi->bmi[3].as_mv[1].as_mv.col & 15) == 0);
+    }
+  } else {
+    intpel_mv = ((mbmi->mv[0].as_mv.row & 15) == 0) &&
+        ((mbmi->mv[0].as_mv.col & 15) == 0);
+    if (is_compound && intpel_mv) {
+      intpel_mv &= ((mbmi->mv[1].as_mv.row & 15) == 0) &&
+          ((mbmi->mv[1].as_mv.col & 15) == 0);
+    }
+  }
+  return intpel_mv;
+}
+#endif  // CONFIG_EXT_INTERP

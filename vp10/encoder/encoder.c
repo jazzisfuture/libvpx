@@ -2555,6 +2555,7 @@ static int recode_loop_test(VP10_COMP *cpi,
   const VP10EncoderConfig *const oxcf = &cpi->oxcf;
   const int frame_is_kfgfarf = frame_is_kf_gf_arf(cpi);
   int force_recode = 0;
+  return 0;
 
   if ((rc->projected_frame_size >= rc->max_frame_bandwidth) ||
       (cpi->sf.recode_loop == ALLOW_RECODE) ||
