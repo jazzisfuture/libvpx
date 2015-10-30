@@ -38,8 +38,13 @@
 static const struct vp10_token intra_mode_encodings[INTRA_MODES] = {
   {0, 1}, {6, 3}, {28, 5}, {30, 5}, {58, 6}, {59, 6}, {126, 7}, {127, 7},
   {62, 6}, {2, 2}};
+#if CONFIG_NEW_INTERP
+static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
+  {{0, 1}, {4, 3}, {3, 2}, {5, 3}};
+#else
 static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
   {{0, 1}, {2, 2}, {3, 2}};
+#endif
 static const struct vp10_token partition_encodings[PARTITION_TYPES] =
   {{0, 1}, {2, 2}, {6, 3}, {7, 3}};
 static const struct vp10_token inter_mode_encodings[INTER_MODES] =
@@ -1331,7 +1336,7 @@ static void write_interp_filter(INTERP_FILTER filter,
                                 struct vpx_write_bit_buffer *wb) {
   vpx_wb_write_bit(wb, filter == SWITCHABLE);
   if (filter != SWITCHABLE)
-    vpx_wb_write_literal(wb, filter, 2);
+    vpx_wb_write_literal(wb, filter, 2 + CONFIG_NEW_INTERP);
 }
 
 static void fix_interp_filter(VP10_COMMON *cm, FRAME_COUNTS *counts) {

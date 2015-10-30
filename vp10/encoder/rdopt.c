@@ -2561,11 +2561,11 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
   // frame we must use a unit scaling factor during mode selection.
 #if CONFIG_VP9_HIGHBITDEPTH
   vp10_setup_scale_factors_for_frame(&sf, cm->width, cm->height,
-                                    cm->width, cm->height,
-                                    cm->use_highbitdepth);
+                                     cm->width, cm->height,
+                                     cm->use_highbitdepth);
 #else
   vp10_setup_scale_factors_for_frame(&sf, cm->width, cm->height,
-                                    cm->width, cm->height);
+                                     cm->width, cm->height);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   // Allow joint search multiple times iteratively for each reference frame
@@ -3565,7 +3565,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         rs = vp10_get_switchable_rate(cpi, xd);
         rs_rd = RDCOST(x->rdmult, x->rddiv, rs, 0);
 
-        if (i > 0 && intpel_mv) {
+        if (i > 0 && intpel_mv && IsInterpolatingFilter(i)) {
           rd = RDCOST(x->rdmult, x->rddiv, tmp_rate_sum, tmp_dist_sum);
           filter_cache[i] = rd;
           filter_cache[SWITCHABLE_FILTERS] =
@@ -3587,7 +3587,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
                (!i || best_needs_copy)) ||
               (cm->interp_filter != SWITCHABLE &&
                (cm->interp_filter == mbmi->interp_filter ||
-                (i == 0 && intpel_mv)))) {
+                (i == 0 && intpel_mv && IsInterpolatingFilter(i))))) {
             restore_dst_buf(xd, orig_dst, orig_dst_stride);
           } else {
             for (j = 0; j < MAX_MB_PLANE; j++) {
@@ -3607,7 +3607,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
             rd += rs_rd;
           *mask_filter = VPXMAX(*mask_filter, rd);
 
-          if (i == 0 && intpel_mv) {
+          if (i == 0 && intpel_mv && IsInterpolatingFilter(i)) {
             tmp_rate_sum = rate_sum;
             tmp_dist_sum = dist_sum;
           }
@@ -3624,7 +3624,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         if (newbest) {
           best_rd = rd;
           best_filter = mbmi->interp_filter;
-          if (cm->interp_filter == SWITCHABLE && i && !intpel_mv)
+          if (cm->interp_filter == SWITCHABLE && i &&
+              !(intpel_mv && IsInterpolatingFilter(i)))
             best_needs_copy = !best_needs_copy;
         }
 

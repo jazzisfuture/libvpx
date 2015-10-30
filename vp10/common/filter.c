@@ -95,10 +95,34 @@ DECLARE_ALIGNED(256, static const InterpKernel,
   { 0, -3,  1,  38, 64, 32, -1, -3}
 };
 
+#if CONFIG_NEW_INTERP
+DECLARE_ALIGNED(256, static const InterpKernel,
+                sub_pel_filters_8ni[SUBPEL_SHIFTS]) = {
+  {3, -10,  20, 102,  20, -10,   3, 0},
+  {2,  -9,  15, 102,  27, -12,   3, 0},
+  {2,  -8,   9, 100,  34, -12,   3, 0},
+  {2,  -6,   4,  98,  40, -13,   3, 0},
+  {2,  -5,   0,  95,  48, -14,   2, 0},
+  {1,  -3,  -4,  91,  55, -14,   2, 0},
+  {1,  -2,  -7,  86,  61, -13,   2, 0},
+  {1,  -1,  -9,  81,  68, -13,   1, 0},
+  {1,   0, -11,  74,  74, -11,   0, 1},
+  {0,   1, -13,  68,  81,  -9,  -1, 1},
+  {0,   2, -13,  61,  86,  -7,  -2, 1},
+  {0,   2, -14,  55,  91,  -4,  -3, 1},
+  {0,   2, -14,  48,  95,   0,  -5, 2},
+  {0,   3, -13,  40,  98,   4,  -6, 2},
+  {0,   3, -12,  34, 100,   9,  -8, 2},
+  {0,   3, -12,  27, 102,  15,  -9, 2},
+};
+#endif  // CONFIG_NEW_INTERP
 
-const InterpKernel *vp10_filter_kernels[4] = {
+const InterpKernel *vp10_filter_kernels[SWITCHABLE_FILTERS + 1] = {
   sub_pel_filters_8,
   sub_pel_filters_8lp,
   sub_pel_filters_8s,
+#if CONFIG_NEW_INTERP
+  sub_pel_filters_8ni,
+#endif
   bilinear_filters
 };
