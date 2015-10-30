@@ -64,6 +64,15 @@ const TestEncodeParam kEncodeVectors[] = {
   {::libvpx_test::kRealTime, 5},
 };
 
+const TestEncodeParam kEncodeVectorsVP10[] = {
+  {::libvpx_test::kOnePassGood, 2},
+  {::libvpx_test::kOnePassGood, 5},
+  {::libvpx_test::kTwoPassGood, 1},
+  {::libvpx_test::kTwoPassGood, 2},
+  {::libvpx_test::kTwoPassGood, 5},
+  {::libvpx_test::kRealTime, 5},
+};
+
 const int kMinArfVectors[] = {
   // NOTE: 0 refers to the default built-in logic in:
   //       vp9_rc_get_default_min_gf_interval(...)
@@ -231,7 +240,7 @@ VP9_INSTANTIATE_TEST_CASE(
     ::testing::ValuesIn(kMinArfVectors));
 
 #if CONFIG_VP9_HIGHBITDEPTH
-# if CONFIG_VP10_ENCODER
+#if CONFIG_VP10_ENCODER
 // TODO(angiebird): 25-29 fail in high bitdepth mode.
 INSTANTIATE_TEST_CASE_P(
     DISABLED_VP10, ArfFreqTest,
@@ -239,14 +248,14 @@ INSTANTIATE_TEST_CASE_P(
         ::testing::Values(static_cast<const libvpx_test::CodecFactory *>(
             &libvpx_test::kVP10)),
         ::testing::ValuesIn(kTestVectors),
-        ::testing::ValuesIn(kEncodeVectors),
+        ::testing::ValuesIn(kEncodeVectorsVP10),
         ::testing::ValuesIn(kMinArfVectors)));
-# endif  // CONFIG_VP10_ENCODER
+#endif  // CONFIG_VP10_ENCODER
 #else
 VP10_INSTANTIATE_TEST_CASE(
     ArfFreqTest,
     ::testing::ValuesIn(kTestVectors),
-    ::testing::ValuesIn(kEncodeVectors),
+    ::testing::ValuesIn(kEncodeVectorsVP10),
     ::testing::ValuesIn(kMinArfVectors));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace
