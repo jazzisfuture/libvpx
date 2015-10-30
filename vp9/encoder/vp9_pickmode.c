@@ -1497,6 +1497,20 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     (void)ctx;
 #endif
 
+    // Bias against non-zero (above some threshold) motion for large blocks.
+    // This is temporary fix to avoid selection of large mv for big blocks.
+    if (cpi->oxcf.speed > 5 &&
+        cpi->oxcf.content != VP9E_CONTENT_SCREEN &&
+        (frame_mv[this_mode][ref_frame].as_mv.row > 64 ||
+        frame_mv[this_mode][ref_frame].as_mv.row < -64 ||
+        frame_mv[this_mode][ref_frame].as_mv.col > 64 ||
+        frame_mv[this_mode][ref_frame].as_mv.col < -64)) {
+      if (bsize == BLOCK_64X64)
+        this_rdc.rdcost = this_rdc.rdcost << 1;
+      else if (bsize >= BLOCK_32X32)
+        this_rdc.rdcost = 3 * this_rdc.rdcost >> 1;
+    }
+
     if (this_rdc.rdcost < best_rdc.rdcost || x->skip) {
       best_rdc = this_rdc;
       best_mode = this_mode;
