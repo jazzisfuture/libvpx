@@ -490,12 +490,9 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->rate_ratio_qdelta = 3.0;
   } else {
     cr->rate_ratio_qdelta = 2.0;
-#if CONFIG_VP9_TEMPORAL_DENOISING
-  if (cpi->oxcf.noise_sensitivity > 0 &&
-      cpi->denoiser.denoising_level >= kMedium)
-    // Reduce the delta-qp if the estimated source noise is above threshold.
-    cr->rate_ratio_qdelta = 1.5;
-#endif
+    if (cr->noise_level >= kMedium)
+      // Reduce the delta-qp if the estimated source noise is above threshold.
+      cr->rate_ratio_qdelta = 1.5;
   }
   // Adjust some parameters for low resolutions at low bitrates.
   if (cm->width <= 352 &&
@@ -520,8 +517,10 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   struct segmentation *const seg = &cm->seg;
   const int apply_cyclic_refresh  = apply_cyclic_refresh_bitrate(cm, rc);
-  if (cm->current_video_frame == 0)
+  if (cm->current_video_frame == 0) {
     cr->low_content_avg = 0.0;
+    vp9_cyclic_refresh_init_noise_estimate(cpi);
+  }
   // Don't apply refresh on key frame or temporal enhancement layer frames.
   if (!apply_cyclic_refresh ||
       (cm->frame_type == KEY_FRAME) ||
@@ -612,4 +611,165 @@ void vp9_cyclic_refresh_reset_resize(VP9_COMP *const cpi) {
   memset(cr->consec_zero_mv, 0, cm->mi_rows * cm->mi_cols);
   cr->sb_index = 0;
   cpi->refresh_golden_frame = 1;
+  vp9_cyclic_refresh_init_noise_estimate(cpi);
+}
+
+static void copy_frame(YV12_BUFFER_CONFIG * const dest,
+                       const YV12_BUFFER_CONFIG * const src) {
+  int r;
+  const uint8_t *srcbuf = src->y_buffer;
+  uint8_t *destbuf = dest->y_buffer;
+
+  assert(dest->y_width == src->y_width);
+  assert(dest->y_height == src->y_height);
+
+  for (r = 0; r < dest->y_height; ++r) {
+    memcpy(destbuf, srcbuf, dest->y_width);
+    destbuf += dest->y_stride;
+    srcbuf += src->y_stride;
+  }
+}
+
+void vp9_cyclic_refresh_update_noise_estimate(VP9_COMP *const cpi) {
+  const VP9_COMMON *const cm = &cpi->common;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  int frame_period = 10;
+  int thresh_consec_zeromv = 8;
+  unsigned int thresh_sum_diff = 128;
+  int num_frames_estimate = 20;
+  int min_blocks_estimate = cm->mi_rows * cm->mi_cols >> 7;
+  // Estimate of noise level every frame_period frames.
+  // Estimate is between current source and last source.
+  YV12_BUFFER_CONFIG *last_source = cpi->Last_Source;
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  if (cpi->oxcf.noise_sensitivity > 0)
+    last_source = &cpi->denoiser.last_source;
+#endif
+  if (cm->current_video_frame % frame_period != 0 ||
+      last_source == NULL) {
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  if (cpi->oxcf.noise_sensitivity > 0)
+    copy_frame(&cpi->denoiser.last_source, cpi->Source);
+#endif
+    return;
+  } else {
+    int num_samples = 0;
+    uint64_t avg_est = 0;
+    int bsize = BLOCK_16X16;
+    static const unsigned char const_source[16] = {
+         128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+         128, 128};
+    // Loop over sub-sample of 16x16 blocks of frame, and for blocks that have
+    // been encoded as zero/small mv at least x consecutive frames, compute
+    // the variance to update estimate of noise in the source.
+    const uint8_t *src_y = cpi->Source->y_buffer;
+    const int src_ystride = cpi->Source->y_stride;
+    const uint8_t *last_src_y = last_source->y_buffer;
+    const int last_src_ystride = last_source->y_stride;
+    const uint8_t *src_u = cpi->Source->u_buffer;
+    const uint8_t *src_v = cpi->Source->v_buffer;
+    const int src_uvstride = cpi->Source->uv_stride;
+    const int y_width_shift = (4 << b_width_log2_lookup[bsize]) >> 1;
+    const int y_height_shift = (4 << b_height_log2_lookup[bsize]) >> 1;
+    const int uv_width_shift = y_width_shift >> 1;
+    const int uv_height_shift = y_height_shift >> 1;
+    int mi_row, mi_col;
+    for (mi_row = 0; mi_row < cm->mi_rows; mi_row ++) {
+      for (mi_col = 0; mi_col < cm->mi_cols; mi_col ++) {
+        // 16x16 blocks, 1/4 sample of frame.
+        if (mi_row % 4 == 0 && mi_col % 4 == 0) {
+          int bl_index = mi_row * cm->mi_cols + mi_col;
+          int bl_index1 = bl_index + 1;
+          int bl_index2 = bl_index + cm->mi_cols;
+          int bl_index3 = bl_index2 + 1;
+          // Only consider blocks that are likely steady background. i.e, have
+          // been encoded as zero/low motion x (= thresh_consec_zeromv) frames
+          // in a row. consec_zero_mv[] defined for 8x8 blocks, so consider all
+          // 4 sub-blocks for 16x16 block. Also, avoid skin blocks.
+          const uint8_t ysource =
+            src_y[y_height_shift * src_ystride + y_width_shift];
+          const uint8_t usource =
+            src_u[uv_height_shift * src_uvstride + uv_width_shift];
+          const uint8_t vsource =
+            src_v[uv_height_shift * src_uvstride + uv_width_shift];
+          int is_skin = vp9_skin_pixel(ysource, usource, vsource);
+          if (cr->consec_zero_mv[bl_index] > thresh_consec_zeromv &&
+              cr->consec_zero_mv[bl_index1] > thresh_consec_zeromv &&
+              cr->consec_zero_mv[bl_index2] > thresh_consec_zeromv &&
+              cr->consec_zero_mv[bl_index3] > thresh_consec_zeromv &&
+              !is_skin) {
+             // Compute variance.
+            unsigned int sse;
+            unsigned int variance = cpi->fn_ptr[bsize].vf(src_y,
+                                                          src_ystride,
+                                                          last_src_y,
+                                                          last_src_ystride,
+                                                          &sse);
+            // Only consider this block as valid for noise measurement if the
+            // average term (sse - variance = N * avg^{2}, N = 16X16) of the
+            // temporal residual is small (avoid effects from lighting change).
+            if ((sse - variance) < thresh_sum_diff) {
+              unsigned int sse2;
+              const unsigned int spatial_variance =
+                  cpi->fn_ptr[bsize].vf(src_y, src_ystride, const_source,
+                                        0, &sse2);
+              avg_est += variance / (10 + spatial_variance);
+              num_samples++;
+            }
+          }
+        }
+        src_y += 8;
+        last_src_y += 8;
+        src_u += 4;
+        src_v += 4;
+      }
+      src_y += (src_ystride << 3) - (cm->mi_cols << 3);
+      last_src_y += (last_src_ystride << 3) - (cm->mi_cols << 3);
+      src_u += (src_uvstride << 2) - (cm->mi_cols << 2);
+      src_v += (src_uvstride << 2) - (cm->mi_cols << 2);
+    }
+    // Update noise estimate if we have at a minimum number of block samples,
+    // and avg_est > 0 (avg_est == 0 can happen if the application inputs
+    // duplicate frames).
+    if (num_samples > min_blocks_estimate && avg_est > 0) {
+      // Normalize.
+      avg_est = (avg_est << 8) / num_samples;
+      // Update noise estimate.
+      cr->noise_estimate = (3 * cr->noise_estimate + avg_est) >> 2;
+      cr->noise_estimate_count++;
+      if (cr->noise_estimate_count == num_frames_estimate) {
+        // Reset counter and check noise level condition.
+        cr->noise_estimate_count = 0;
+        if (cr->noise_estimate > (cr->thresh_noise_estimate << 1))
+          cr->noise_level = kHigh;
+        else
+          if (cr->noise_estimate > cr->thresh_noise_estimate)
+            cr->noise_level = kMedium;
+          else
+            cr->noise_level = kLow;
+      }
+    }
+  }
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  if (cpi->oxcf.noise_sensitivity > 0) {
+    copy_frame(&cpi->denoiser.last_source, cpi->Source);
+    vp9_denoiser_set_noise_level(&cpi->denoiser, cr->noise_level);
+  }
+#endif
+}
+
+void vp9_cyclic_refresh_init_noise_estimate(VP9_COMP *const cpi) {
+  const VP9_COMMON *const cm = &cpi->common;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  int width = cm->width;
+  int height = cm->height;
+  cr->noise_level = kLow;
+  cr->noise_estimate = 0;
+  cr->noise_estimate_count = 0;
+  cr->thresh_noise_estimate = 20;
+  if (width * height >= 1920 * 1080) {
+    cr->thresh_noise_estimate = 70;
+  } else if (width * height >= 1280 * 720) {
+    cr->thresh_noise_estimate = 40;
+  }
 }

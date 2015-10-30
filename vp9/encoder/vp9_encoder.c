@@ -3244,18 +3244,12 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   // or if partition_search_type == SOURCE_VAR_BASED_PARTITION.
   if (cpi->unscaled_last_source != NULL &&
       (cpi->oxcf.content == VP9E_CONTENT_SCREEN ||
-      cpi->sf.partition_search_type == SOURCE_VAR_BASED_PARTITION))
+      cpi->sf.partition_search_type == SOURCE_VAR_BASED_PARTITION ||
+      cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ))
     cpi->Last_Source = vp9_scale_if_required(cm,
                                              cpi->unscaled_last_source,
                                              &cpi->scaled_last_source,
                                              (cpi->oxcf.pass == 0));
-
-#if CONFIG_VP9_TEMPORAL_DENOISING
-  if (cpi->oxcf.noise_sensitivity > 0 &&
-      cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
-    vp9_denoiser_update_noise_estimate(cpi);
-  }
-#endif
 
   if (cpi->oxcf.pass == 0 &&
       cpi->oxcf.rc_mode == VPX_CBR &&
@@ -3284,6 +3278,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
     vp9_setup_in_frame_q_adj(cpi);
   } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    vp9_cyclic_refresh_update_noise_estimate(cpi);
     vp9_cyclic_refresh_setup(cpi);
   }
   apply_active_map(cpi);
