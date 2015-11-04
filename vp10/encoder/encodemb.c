@@ -1391,10 +1391,8 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   uint8_t *dst;
   ENTROPY_CONTEXT *a, *l;
   TX_TYPE tx_type = get_tx_type(pd->plane_type, xd, block, tx_size);
-#if CONFIG_VAR_TX
   int i;
   const int bwl = b_width_log2_lookup[plane_bsize];
-#endif
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
   a = &ctx->ta[plane][blk_col];
   l = &ctx->tl[plane][blk_row];
@@ -1409,12 +1407,8 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
 //    return;
 //  }
 
-#if CONFIG_VAR_TX
   if (!x->skip_recode &&
       x->blk_skip[plane][(blk_row << bwl) + blk_col] == 0) {
-#else
-  if (!x->skip_recode) {
-#endif
     if (x->quant_fp) {
       // Encoding process for rtc mode
       if (x->skip_txfm[0] == SKIP_TXFM_AC_DC && plane == 0) {
@@ -1441,26 +1435,19 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
           // skip forward transform
           p->eobs[block] = 0;
           *a = *l = 0;
-#if !CONFIG_VAR_TX
-          return;
-#endif
         }
       } else {
         vp10_xform_quant(x, plane, block, blk_row, blk_col,
                          plane_bsize, tx_size);
       }
     }
-  }
-#if CONFIG_VAR_TX
-  else {
+  } else {
     if (!x->skip_recode)
       p->eobs[block] = 0;
   }
-#endif
 
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
     int ctx;
-#if CONFIG_VAR_TX
     switch (tx_size) {
       case TX_4X4:
         break;
@@ -1480,19 +1467,16 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
         assert(0 && "Invalid transform size.");
         break;
     }
-#endif
     ctx = combine_entropy_contexts(*a, *l);
     *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
   } else {
     *a = *l = p->eobs[block] > 0;
   }
 
-#if CONFIG_VAR_TX
   for (i = 0; i < (1 << tx_size); ++i) {
     a[i] = a[0];
     l[i] = l[0];
   }
-#endif
 
   if (p->eobs[block])
     *(args->skip) = 0;
@@ -1557,7 +1541,6 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   }
 }
 
-#if CONFIG_VAR_TX
 static void encode_block_inter(int plane, int block, int blk_row, int blk_col,
                                BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
                                void *arg) {
@@ -1608,7 +1591,6 @@ static void encode_block_inter(int plane, int block, int blk_row, int blk_col,
     }
   }
 }
-#endif
 
 static void encode_block_pass1(int plane, int block, int blk_row, int blk_col,
                                BLOCK_SIZE plane_bsize,
@@ -1663,7 +1645,6 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
     return;
 
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-#if CONFIG_VAR_TX
     // TODO(jingning): Clean this up.
     const struct macroblockd_plane *const pd = &xd->plane[plane];
     const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
@@ -1675,23 +1656,14 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
     int idx, idy;
     int block = 0;
     int step = 1 << (max_tx_size * 2);
-#endif
+
     if (!x->skip_recode)
       vp10_subtract_plane(x, bsize, plane);
 
-    if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
-#if CONFIG_VAR_TX
+    if (x->optimize && (!x->skip_recode || !x->skip_optimize))
       vp10_get_entropy_contexts(bsize, TX_4X4, pd,
                                 ctx.ta[plane], ctx.tl[plane]);
-#else
-      const struct macroblockd_plane* const pd = &xd->plane[plane];
-      const TX_SIZE tx_size = plane ? get_uv_tx_size(mbmi, pd) : mbmi->tx_size;
-      vp10_get_entropy_contexts(bsize, tx_size, pd,
-                                ctx.ta[plane], ctx.tl[plane]);
-#endif
-    }
 
-#if CONFIG_VAR_TX
     for (idy = 0; idy < mi_height; idy += bh) {
       for (idx = 0; idx < mi_width; idx += bh) {
         encode_block_inter(plane, block, idy, idx, plane_bsize,
@@ -1699,10 +1671,6 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
         block += step;
       }
     }
-#else
-    vp10_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block,
-                                            &arg);
-#endif
   }
 }
 

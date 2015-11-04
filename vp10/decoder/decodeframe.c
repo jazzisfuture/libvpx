@@ -391,7 +391,6 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
   }
 }
 
-#if CONFIG_VAR_TX
 static void decode_reconstruct_tx(MACROBLOCKD *const xd, vpx_reader *r,
                                   MB_MODE_INFO *const mbmi,
                                   int plane, BLOCK_SIZE plane_bsize,
@@ -446,7 +445,6 @@ static void decode_reconstruct_tx(MACROBLOCKD *const xd, vpx_reader *r,
     }
   }
 }
-#endif
 
 static int reconstruct_inter_block(MACROBLOCKD *const xd, vpx_reader *r,
                                    MB_MODE_INFO *const mbmi, int plane,
@@ -869,10 +867,7 @@ static MB_MODE_INFO *set_offsets(VP10_COMMON *const cm, MACROBLOCKD *const xd,
 
   set_skip_context(xd, mi_row, mi_col);
 
-
-#if CONFIG_VAR_TX
   xd->max_tx_size = max_txsize_lookup[bsize];
-#endif
 
   // Distance of Mb to the various image edges. These are specified to 8th pel
   // as they are always compared to values that are in 1/8th pel units
@@ -948,7 +943,6 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         const int num_4x4_w = pd->n4_w;
         const int num_4x4_h = pd->n4_h;
         int row, col;
-#if CONFIG_VAR_TX
         // TODO(jingning): This can be simplified for decoder performance.
         const BLOCK_SIZE plane_bsize =
             get_plane_block_size(VPXMAX(bsize, BLOCK_8X8), pd);
@@ -965,21 +959,6 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
             block += step;
           }
         }
-#else
-        const TX_SIZE tx_size =
-            plane ? dec_get_uv_tx_size(mbmi, pd->n4_wl, pd->n4_hl)
-                    : mbmi->tx_size;
-        const int step = (1 << tx_size);
-        const int max_blocks_wide = num_4x4_w + (xd->mb_to_right_edge >= 0 ?
-            0 : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
-        const int max_blocks_high = num_4x4_h + (xd->mb_to_bottom_edge >= 0 ?
-            0 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
-
-        for (row = 0; row < max_blocks_high; row += step)
-          for (col = 0; col < max_blocks_wide; col += step)
-            eobtotal += reconstruct_inter_block(xd, r, mbmi, plane, row, col,
-                                                tx_size);
-#endif
       }
 
       if (!less8x8 && eobtotal == 0)
@@ -1624,10 +1603,8 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
   memset(cm->above_seg_context, 0,
          sizeof(*cm->above_seg_context) * aligned_cols);
 
-#if CONFIG_VAR_TX
   memset(cm->above_txfm_context, 0,
          sizeof(*cm->above_txfm_context) * aligned_cols);
-#endif
 
   get_tile_buffers(pbi, data, data_end, tile_cols, tile_rows, tile_buffers);
 
@@ -1675,9 +1652,8 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
         vp10_tile_set_col(&tile, tile_data->cm, col);
         vp10_zero(tile_data->xd.left_context);
         vp10_zero(tile_data->xd.left_seg_context);
-#if CONFIG_VAR_TX
         vp10_zero(tile_data->xd.left_txfm_context_buffer);
-#endif
+
         for (mi_col = tile.mi_col_start; mi_col < tile.mi_col_end;
              mi_col += MI_BLOCK_SIZE) {
           decode_partition(pbi, &tile_data->xd, mi_row,
@@ -1688,50 +1664,11 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
             vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                                "Failed to decode tile data");
       }
-#if !CONFIG_VAR_TX
-      // Loopfilter one row.
-      if (cm->lf.filter_level && !cm->skip_loop_filter) {
-        const int lf_start = mi_row - MI_BLOCK_SIZE;
-        LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-
-        // delay the loopfilter by 1 macroblock row.
-        if (lf_start < 0) continue;
-
-        // decoding has completed: finish up the loop filter in this thread.
-        if (mi_row + MI_BLOCK_SIZE >= cm->mi_rows) continue;
-
-        winterface->sync(&pbi->lf_worker);
-        lf_data->start = lf_start;
-        lf_data->stop = mi_row;
-        if (pbi->max_threads > 1) {
-          winterface->launch(&pbi->lf_worker);
-        } else {
-          winterface->execute(&pbi->lf_worker);
-        }
-      }
-      // After loopfiltering, the last 7 row pixels in each superblock row may
-      // still be changed by the longest loopfilter of the next superblock
-      // row.
-      if (cm->frame_parallel_decode)
-        vp10_frameworker_broadcast(pbi->cur_buf,
-                                  mi_row << MI_BLOCK_SIZE_LOG2);
-#endif
     }
   }
 
-  // Loopfilter remaining rows in the frame.
-#if CONFIG_VAR_TX
   vp10_loop_filter_frame(get_frame_new_buffer(cm), cm, &pbi->mb,
                          cm->lf.filter_level, 0, 0);
-#else
-  if (cm->lf.filter_level && !cm->skip_loop_filter) {
-    LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-    winterface->sync(&pbi->lf_worker);
-    lf_data->start = lf_data->stop;
-    lf_data->stop = cm->mi_rows;
-    winterface->execute(&pbi->lf_worker);
-  }
-#endif
 
   // Get last tile data.
   tile_data = pbi->tile_data + tile_cols * tile_rows - 1;
@@ -1758,9 +1695,8 @@ static int tile_worker_hook(TileWorkerData *const tile_data,
        mi_row += MI_BLOCK_SIZE) {
     vp10_zero(tile_data->xd.left_context);
     vp10_zero(tile_data->xd.left_seg_context);
-#if CONFIG_VAR_TX
     vp10_zero(tile_data->xd.left_txfm_context_buffer);
-#endif
+
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
          mi_col += MI_BLOCK_SIZE) {
       decode_partition(tile_data->pbi, &tile_data->xd,
@@ -1838,10 +1774,8 @@ static const uint8_t *decode_tiles_mt(VP10Decoder *pbi,
          sizeof(*cm->above_context) * MAX_MB_PLANE * 2 * aligned_mi_cols);
   memset(cm->above_seg_context, 0,
          sizeof(*cm->above_seg_context) * aligned_mi_cols);
-#if CONFIG_VAR_TX
   memset(cm->above_txfm_context, 0,
          sizeof(*cm->above_txfm_context) * aligned_mi_cols);
-#endif
   // Load tile data into tile_buffers
   get_tile_buffers(pbi, data, data_end, tile_cols, tile_rows, tile_buffers);
 
@@ -2296,10 +2230,8 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     read_tx_mode_probs(&fc->tx_probs, &r);
   read_coef_probs(fc, cm->tx_mode, &r);
 
-#if CONFIG_VAR_TX
   for (k = 0; k < TXFM_PARTITION_CONTEXTS; ++k)
     vp10_diff_update_prob(&r, &fc->txfm_partition_prob[k]);
-#endif
 
   for (k = 0; k < SKIP_CONTEXTS; ++k)
     vp10_diff_update_prob(&r, &fc->skip_probs[k]);

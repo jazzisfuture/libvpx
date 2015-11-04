@@ -301,10 +301,8 @@ typedef struct VP10Common {
 
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
-#if CONFIG_VAR_TX
   TXFM_CONTEXT *above_txfm_context;
   TXFM_CONTEXT left_txfm_context[8];
-#endif
   int above_context_alloc_cols;
 
   // scratch memory for intraonly/keyframe forward updates from default tables
@@ -401,9 +399,7 @@ static INLINE void vp10_init_macroblockd(VP10_COMMON *cm, MACROBLOCKD *xd,
   }
 
   xd->above_seg_context = cm->above_seg_context;
-#if CONFIG_VAR_TX
   xd->above_txfm_context = cm->above_txfm_context;
-#endif
   xd->mi_stride = cm->mi_stride;
   xd->error_info = &cm->error;
 }
@@ -454,10 +450,8 @@ static INLINE void set_mi_row_col(MACROBLOCKD *xd, const TileInfo *const tile,
     xd->left_mbmi = NULL;
   }
 
-#if CONFIG_VAR_TX
   xd->n8_h = bh;
   xd->n8_w = bw;
-#endif
 }
 
 static INLINE const vpx_prob *get_y_mode_probs(const VP10_COMMON *cm,
@@ -501,7 +495,6 @@ static INLINE int partition_plane_context(const MACROBLOCKD *xd,
   return (left * 2 + above) + bsl * PARTITION_PLOFFSET;
 }
 
-#if CONFIG_VAR_TX
 static INLINE void set_txfm_ctx(TXFM_CONTEXT *txfm_ctx,
                                 TX_SIZE tx_size,
                                 int len) {
@@ -529,7 +522,6 @@ static INLINE int txfm_partition_context(TXFM_CONTEXT *above_ctx,
   int left = *left_ctx < tx_size;
   return (tx_size - 1) * 3 + above + left;
 }
-#endif
 
 #ifdef __cplusplus
 }  // extern "C"
