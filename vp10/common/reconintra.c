@@ -275,6 +275,16 @@ static inline void memset16(uint16_t *dst, int val, int n) {
 #define FILTER_INTRA_PREC_BITS 10
 #define FILTER_INTRA_ROUND_VAL 511
 
+static const uint8_t new_extend_modes[NEW_INTRA_MODES] = {
+  NEED_ABOVE | NEED_LEFT,       // DC
+  NEED_ABOVE,                   // V
+  NEED_LEFT,                    // H
+  NEED_ABOVERIGHT,              // D45
+  NEED_LEFT | NEED_ABOVE,       // D135
+  NEED_LEFT,                    // D225
+  NEED_LEFT | NEED_ABOVE,       // TM
+};
+
 #if CONFIG_MISC_FIXES
 static const uint8_t ext_intra_extend_modes[FILTER_INTRA_MODES] = {
   NEED_LEFT | NEED_ABOVE,      // FILTER_DC
@@ -423,6 +433,18 @@ static INLINE void h_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
 
   for (r = 0; r < bs; r++) {
     memset(dst, left[r], bs);
+    dst += stride;
+  }
+}
+
+static INLINE void tm_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                const uint8_t *above, const uint8_t *left) {
+  int r, c;
+  int ytop_left = above[-1];
+
+  for (r = 0; r < bs; r++) {
+    for (c = 0; c < bs; c++)
+      dst[c] = clip_pixel(left[r] + above[c] - ytop_left);
     dst += stride;
   }
 }
@@ -1246,10 +1268,46 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
       ext_intra_mode_info->ext_intra_mode[plane != 0];
   const int angle =
       prediction_angle_map(ext_intra_mode_info->ext_intra_angle[plane != 0]);
+  int p_angle = 0;
+
+  if (mode > NEW_TM_PRED) {
+    printf("mode %d overflow plane %d, block size %d\n",
+           mode, plane, xd->mi[0]->mbmi.sb_type);
+  }
+
+  if (mode == DC_PRED || mode == NEW_TM_PRED) {
+    need_left = new_extend_modes[mode] & NEED_LEFT;
+    need_above = new_extend_modes[mode] & NEED_ABOVE;
+    need_aboveright = new_extend_modes[mode] & NEED_ABOVERIGHT;
+  } else {
+    p_angle = mode_to_angle_map[mode];
+    if (xd->mi[0]->mbmi.sb_type >= BLOCK_8X8)
+      p_angle += xd->mi[0]->mbmi.angle_delta[plane != 0] * ANGLE_STEP;
+#if CONFIG_MISC_FIXES
+    if (p_angle <= 90)
+      need_above = 1, need_left = 0;
+    else if (p_angle < 180)
+      need_above = 1, need_left = 1;
+    else
+      need_above = 0, need_left = 1;
+#else
+    if (p_angle < 90)
+      need_above = 0, need_aboveright = 1, need_left = 0;
+    else if (p_angle == 90)
+      need_above = 1, need_aboveright = 0, need_left = 0;
+    else if (p_angle < 180)
+      need_above = 1, need_aboveright = 0, need_left = 1;
+    else
+      need_above = 0, need_aboveright = 0, need_left = 1;
+  }
+#endif  // CONFIG_MISC_FIXES
 
   if (ext_intra_mode_info->use_ext_intra_mode[plane != 0]) {
     EXT_INTRA_MODE ext_intra_mode =
         ext_intra_mode_info->ext_intra_mode[plane != 0];
+
+    printf("error\n");
+
     if (ext_intra_mode <= FILTER_TM_PRED) {
       need_left = ext_intra_extend_modes[ext_intra_mode] & NEED_LEFT;
       need_above = ext_intra_extend_modes[ext_intra_mode] & NEED_ABOVE;
@@ -1490,6 +1548,20 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
       dr_predictor(dst, dst_stride, bs, const_above_row, left_col, angle);
     return;
   }
+
+  if (mode == DC_PRED)
+#if CONFIG_MISC_FIXES
+    dc_pred[n_left_px > 0][n_top_px > 0][tx_size](dst, dst_stride,
+                                                  const_above_row, left_col);
+#else
+    dc_pred[left_available][up_available][tx_size](dst, dst_stride,
+        const_above_row, left_col);
+#endif
+  else if (mode == NEW_TM_PRED)
+    pred[TM_PRED][tx_size](dst, dst_stride, const_above_row, left_col);
+  else
+    dr_predictor(dst, dst_stride, bs, const_above_row, left_col, p_angle);
+  return;
 #endif  // CONFIG_EXT_INTRA
 
   // predict

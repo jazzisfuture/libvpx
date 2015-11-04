@@ -310,7 +310,16 @@ typedef struct VP10Common {
   // scratch memory for intraonly/keyframe forward updates from default tables
   // - this is intentionally not placed in FRAME_CONTEXT since it's reset upon
   // each keyframe and not used afterwards
+#if CONFIG_EXT_INTRA
+#if 1
+  int stats[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES];
+  int stats_uv[NEW_INTRA_MODES][NEW_INTRA_MODES];
+  int stats_intery[BLOCK_SIZE_GROUPS][NEW_INTRA_MODES];
+#endif
+  vpx_prob kf_y_prob[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES - 1];
+#else
   vpx_prob kf_y_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1];
+#endif
 } VP10_COMMON;
 
 // TODO(hkuang): Don't need to lock the whole pool after implementing atomic

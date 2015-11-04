@@ -322,6 +322,15 @@ void vp10_accumulate_frame_counts(VP10_COMMON *cm, FRAME_COUNTS *counts,
                                  int is_dec) {
   int i, j, k, l, m;
 
+#if CONFIG_EXT_INTRA
+  for (i = 0; i < BLOCK_SIZE_GROUPS; i++)
+    for (j = 0; j < NEW_INTRA_MODES; j++)
+      cm->counts.y_mode[i][j] += counts->y_mode[i][j];
+
+  for (i = 0; i < NEW_INTRA_MODES; i++)
+    for (j = 0; j < NEW_INTRA_MODES; j++)
+      cm->counts.uv_mode[i][j] += counts->uv_mode[i][j];
+#else
   for (i = 0; i < BLOCK_SIZE_GROUPS; i++)
     for (j = 0; j < INTRA_MODES; j++)
       cm->counts.y_mode[i][j] += counts->y_mode[i][j];
@@ -329,6 +338,7 @@ void vp10_accumulate_frame_counts(VP10_COMMON *cm, FRAME_COUNTS *counts,
   for (i = 0; i < INTRA_MODES; i++)
     for (j = 0; j < INTRA_MODES; j++)
       cm->counts.uv_mode[i][j] += counts->uv_mode[i][j];
+#endif
 
   for (i = 0; i < PARTITION_CONTEXTS; i++)
     for (j = 0; j < PARTITION_TYPES; j++)
@@ -475,7 +485,11 @@ void vp10_accumulate_frame_counts(VP10_COMMON *cm, FRAME_COUNTS *counts,
 
 #if CONFIG_EXT_INTRA
   for (i = 0; i < PLANE_TYPES; ++i)
-    for (j = 0; j < 2; j++)
+    for (j = 0; j < 2; ++j)
       cm->counts.ext_intra[i][j] += counts->ext_intra[i][j];
+
+  for (i = 0; i < PLANE_TYPES; ++i)
+    for (j = 0; j < 2; ++j)
+      cm->counts.fine_angle[i][j] += counts->fine_angle[i][j];
 #endif  // CONFIG_EXT_INTRA
 }

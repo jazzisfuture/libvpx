@@ -117,6 +117,7 @@ typedef struct {
 
 #if CONFIG_EXT_INTRA
   EXT_INTRA_MODE_INFO ext_intra_mode_info;
+  int8_t angle_delta[2];
 #endif  // CONFIG_EXT_INTRA
 
   // TODO(slavarnway): Delete and use bmi[3].as_mv[] instead.
@@ -322,13 +323,17 @@ static const int ext_tx_used_inter[EXT_TX_SETS_INTER][TX_TYPES] = {
 
 #if CONFIG_EXT_INTRA
 // 0: use both directional and filter modes; 1: use directional modes only.
-#define DR_ONLY 0
+#define DR_ONLY 1
 // 0: use slow exhaustive search; 1: use fast sub-optimal search.
 #define ANGLE_FAST_SEARCH 1
 // A parameter to adjust early termination in the fast search of angles.
 #define RD_ADJUSTER 1.4
 // Number of different angles that are supported
 #define EXT_INTRA_ANGLES 128
+
+#define ANGLE_STEP 3
+#define MAX_ANGLE_DELTAS 7
+#define INTER_ANGLE_Y 1
 
 static const TX_TYPE filter_intra_mode_to_tx_type_lookup[FILTER_INTRA_MODES] = {
   DCT_DCT,    // FILTER_DC
@@ -349,6 +354,10 @@ static const TX_TYPE filter_intra_mode_to_tx_type_lookup[FILTER_INTRA_MODES] = {
 static INLINE int prediction_angle_map(int angle_in) {
   return (10 + 2 * angle_in);
 }
+
+static uint8_t mode_to_angle_map[NEW_INTRA_MODES] = {
+    0, 90, 180, 45, 135, 225, 0,
+};
 #endif  // CONFIG_EXT_INTRA
 
 static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
@@ -383,6 +392,33 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
       } else {
         return filter_intra_mode_to_tx_type_lookup[ext_intra_mode];
       }
+    }
+  }
+
+  if (!is_inter_block(mbmi)) {
+    PREDICTION_MODE mode = (plane_type == PLANE_TYPE_Y) ?
+        get_y_mode(mi, block_idx) : mbmi->uv_mode;
+
+    if (xd->lossless[mbmi->segment_id] || tx_size >= TX_32X32)
+      return DCT_DCT;
+
+    if (mode == DC_PRED) {
+      return DCT_DCT;
+    } else if (mode == NEW_TM_PRED) {
+      return ADST_ADST;
+    } else {
+      int angle = mode_to_angle_map[mode];
+      if (mbmi->sb_type >= BLOCK_8X8)
+        angle += mbmi->angle_delta[plane_type] * ANGLE_STEP;
+      assert(angle > 0 && angle < 270);
+      if (angle == 135)
+        return ADST_ADST;
+      else if (angle < 45 || angle > 225)
+        return DCT_DCT;
+      else if (angle < 135)
+        return ADST_DCT;
+      else
+        return DCT_ADST;
     }
   }
 #endif  // CONFIG_EXT_INTRA

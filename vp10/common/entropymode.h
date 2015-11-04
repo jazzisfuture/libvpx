@@ -59,8 +59,13 @@ struct seg_counts {
 };
 
 typedef struct frame_contexts {
+#if CONFIG_EXT_INTRA
+  vpx_prob y_mode_prob[BLOCK_SIZE_GROUPS][NEW_INTRA_MODES - 1];
+  vpx_prob uv_mode_prob[NEW_INTRA_MODES][NEW_INTRA_MODES - 1];
+#else
   vpx_prob y_mode_prob[BLOCK_SIZE_GROUPS][INTRA_MODES - 1];
   vpx_prob uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
+#endif  // CONFIG_EXT_INTRA
   vpx_prob partition_prob[PARTITION_CONTEXTS][PARTITION_TYPES - 1];
   vp10_coeff_probs_model coef_probs[TX_SIZES][PLANE_TYPES];
   vpx_prob switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
@@ -87,13 +92,20 @@ typedef struct frame_contexts {
 #endif
 #if CONFIG_EXT_INTRA
   vpx_prob ext_intra_probs[PLANE_TYPES];
+  vpx_prob fine_angle_probs[PLANE_TYPES];
 #endif  // CONFIG_EXT_INTRA
 } FRAME_CONTEXT;
 
 typedef struct FRAME_COUNTS {
+#if CONFIG_EXT_INTRA
+  unsigned int kf_y_mode[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES];
+  unsigned int y_mode[BLOCK_SIZE_GROUPS][NEW_INTRA_MODES];
+  unsigned int uv_mode[NEW_INTRA_MODES][NEW_INTRA_MODES];
+#else
   unsigned int kf_y_mode[INTRA_MODES][INTRA_MODES][INTRA_MODES];
   unsigned int y_mode[BLOCK_SIZE_GROUPS][INTRA_MODES];
   unsigned int uv_mode[INTRA_MODES][INTRA_MODES];
+#endif  // CONFIG_EXT_INTRA
   unsigned int partition[PARTITION_CONTEXTS][PARTITION_TYPES];
   vp10_coeff_count_model coef[TX_SIZES][PLANE_TYPES];
   unsigned int eob_branch[TX_SIZES][PLANE_TYPES][REF_TYPES]
@@ -121,11 +133,18 @@ typedef struct FRAME_COUNTS {
 #endif
 #if CONFIG_EXT_INTRA
   unsigned int ext_intra[PLANE_TYPES][2];
+  unsigned int fine_angle[PLANE_TYPES][2];
 #endif  // CONFIG_EXT_INTRA
 } FRAME_COUNTS;
 
+#if CONFIG_EXT_INTRA
+extern const vpx_prob
+vp10_kf_y_mode_prob[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES - 1];
+#else
 extern const vpx_prob vp10_kf_y_mode_prob[INTRA_MODES][INTRA_MODES]
                                         [INTRA_MODES - 1];
+#endif  // CONFIG_EXT_INTRA
+
 #if !CONFIG_MISC_FIXES
 extern const vpx_prob vp10_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
 extern const vpx_prob vp10_kf_partition_probs[PARTITION_CONTEXTS]
@@ -142,7 +161,11 @@ extern const vpx_prob vp10_default_palette_y_color_prob
 extern const vpx_prob vp10_default_palette_uv_color_prob
 [PALETTE_MAX_SIZE - 1][PALETTE_COLOR_CONTEXTS][PALETTE_COLORS - 1];
 
+#if CONFIG_EXT_INTRA
+extern const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(NEW_INTRA_MODES)];
+#else
 extern const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(INTRA_MODES)];
+#endif
 extern const vpx_tree_index vp10_inter_mode_tree[TREE_SIZE(INTER_MODES)];
 extern const vpx_tree_index vp10_partition_tree[TREE_SIZE(PARTITION_TYPES)];
 extern const vpx_tree_index vp10_switchable_interp_tree

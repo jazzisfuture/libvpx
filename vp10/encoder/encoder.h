@@ -454,10 +454,20 @@ typedef struct VP10_COMP {
 
   search_site_config ss_cfg;
 
+#if CONFIG_EXT_INTRA
+  int mbmode_cost[BLOCK_SIZE_GROUPS][NEW_INTRA_MODES];
+  int y_mode_costs[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES];
+  int intra_uv_mode_cost[NEW_INTRA_MODES][NEW_INTRA_MODES];
+#else
   int mbmode_cost[INTRA_MODES];
-  unsigned int inter_mode_cost[INTER_MODE_CONTEXTS][INTER_MODES];
-  int intra_uv_mode_cost[INTRA_MODES];
   int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
+  int intra_uv_mode_cost[INTRA_MODES];
+#endif
+  unsigned int inter_mode_cost[INTER_MODE_CONTEXTS][INTER_MODES];
+
+#if CONFIG_EXT_INTRA
+  //int new_intra_uv_mode_cost[NEW_INTRA_MODES][NEW_INTRA_MODES];
+#endif  // CONFIG_EXT_INTRA
   int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
   int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
   int palette_y_size_cost[PALETTE_BLOCK_SIZES][PALETTE_SIZES];

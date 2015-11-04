@@ -48,14 +48,20 @@ static PREDICTION_MODE read_intra_mode_y(VP10_COMMON *cm, MACROBLOCKD *xd,
   FRAME_COUNTS *counts = xd->counts;
   if (counts)
     ++counts->y_mode[size_group][y_mode];
+#if CONFIG_EXT_INTRA
+#if 1
+  ++cm->stats_intery[size_group][y_mode];
+  //printf("%d\n", y_mode);
+#endif
+#endif
   return y_mode;
 }
 
 static PREDICTION_MODE read_intra_mode_uv(VP10_COMMON *cm, MACROBLOCKD *xd,
                                           vpx_reader *r,
                                           PREDICTION_MODE y_mode) {
-  const PREDICTION_MODE uv_mode = read_intra_mode(r,
-                                         cm->fc->uv_mode_prob[y_mode]);
+  const PREDICTION_MODE uv_mode =
+      read_intra_mode(r, cm->fc->uv_mode_prob[y_mode]);
   FRAME_COUNTS *counts = xd->counts;
   if (counts)
     ++counts->uv_mode[y_mode][uv_mode];
@@ -346,6 +352,7 @@ static void read_ext_intra_mode_info(VP10_COMMON *const cm,
   MODE_INFO *const mi = xd->mi[0];
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   FRAME_COUNTS *counts = xd->counts;
+  return;
   if (mbmi->mode == DC_PRED) {
     mbmi->ext_intra_mode_info.use_ext_intra_mode[0] =
         vpx_read(r, cm->fc->ext_intra_probs[0]);
@@ -424,11 +431,32 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
           read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 2));
       break;
     default:
-      mbmi->mode = read_intra_mode(r,
-          get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
+      mbmi->mode =
+          read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
+#if CONFIG_EXT_INTRA
+      if (mbmi->mode != DC_PRED && mbmi->mode != NEW_TM_PRED)
+        mbmi->angle_delta[0] =
+            read_uniform(r, 2 * MAX_ANGLE_DELTAS + 1) - MAX_ANGLE_DELTAS;
+#if 1
+      {
+        int above = vp10_above_block_mode(mi, above_mi, 0);
+        int left = vp10_left_block_mode(mi, left_mi, 0);
+        ++cm->stats[above][left][mbmi->mode];
+      }
+#endif
+#endif  // CONFIG_EXT_INTRA
   }
 
   mbmi->uv_mode = read_intra_mode_uv(cm, xd, r, mbmi->mode);
+#if CONFIG_EXT_INTRA
+  if (mbmi->uv_mode != DC_PRED && mbmi->uv_mode != NEW_TM_PRED &&
+      bsize >= BLOCK_8X8)
+    mbmi->angle_delta[1] =
+        read_uniform(r, 2 * MAX_ANGLE_DELTAS + 1) - MAX_ANGLE_DELTAS;
+#if 1
+  ++cm->stats_uv[mbmi->mode][mbmi->uv_mode];
+#endif
+#endif
 
   mbmi->palette_mode_info.palette_size[0] = 0;
   mbmi->palette_mode_info.palette_size[1] = 0;
@@ -621,9 +649,24 @@ static void read_intra_block_mode_info(VP10_COMMON *const cm,
       break;
     default:
       mbmi->mode = read_intra_mode_y(cm, xd, r, size_group_lookup[bsize]);
+#if CONFIG_EXT_INTRA
+      mbmi->angle_delta[0] = 0;
+      if (mbmi->mode != DC_PRED && mbmi->mode != NEW_TM_PRED && INTER_ANGLE_Y) {
+        if (vpx_read(r, cm->fc->fine_angle_probs[0]))
+          mbmi->angle_delta[0] =
+              read_uniform(r, 2 * MAX_ANGLE_DELTAS + 1) - MAX_ANGLE_DELTAS;
+        ++xd->counts->fine_angle[0][mbmi->angle_delta[0] != 0];
+      }
+#endif  // CONFIG_EXT_INTRA
   }
 
   mbmi->uv_mode = read_intra_mode_uv(cm, xd, r, mbmi->mode);
+#if CONFIG_EXT_INTRA
+  if (mbmi->uv_mode != DC_PRED && mbmi->uv_mode != NEW_TM_PRED &&
+      bsize >= BLOCK_8X8)
+    mbmi->angle_delta[1] =
+        read_uniform(r, 2 * MAX_ANGLE_DELTAS + 1) - MAX_ANGLE_DELTAS;
+#endif  // CONFIG_EXT_INTRA
   mbmi->palette_mode_info.palette_size[0] = 0;
   mbmi->palette_mode_info.palette_size[1] = 0;
 #if CONFIG_EXT_INTRA

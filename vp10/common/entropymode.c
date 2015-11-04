@@ -13,6 +13,76 @@
 #include "vp10/common/onyxc_int.h"
 #include "vp10/common/seg_common.h"
 
+#if CONFIG_EXT_INTRA
+static const vpx_prob default_ext_intra_probs[2] = {200, 200};
+static const vpx_prob default_fine_angle_probs[2] = {128, 128};
+const vpx_prob
+vp10_kf_y_mode_prob[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES - 1] = {
+    {  // above 0
+        { 132,  57,  84, 166, 100, 138,  },
+        {  99,  50, 143, 136,  83, 152,  },
+        {  65,  31,  37, 212,  97, 125,  },
+        { 100,  31,  81, 144, 101, 108,  },
+        {  90,  18,  68,  81,  29, 233,  },
+        {  97,  19,  70, 149,  89,  84,  },
+        {  80,  94,  76, 193,  94, 116,  },
+    },
+    {  // above 1
+        {  62,  26, 174, 135,  94, 133,  },
+        {  44,  27, 209, 110, 104, 113,  },
+        {  51,  13, 113, 183, 105,  78,  },
+        {  61,  16, 150, 109, 106,  89,  },
+        {  53,   9, 145,  80,  58, 204,  },
+        {  64,  10, 135, 126,  99,  78,  },
+        {  42,  34, 185, 137, 125,  91,  },
+    },
+    {  // above 2
+        { 105,  51,  48, 195, 100, 125,  },
+        {  81,  52,  95, 161,  99, 128,  },
+        {  54,  25,  19, 223, 113,  95,  },
+        {  78,  31,  48, 168, 104,  94,  },
+        {  81,  23,  52, 128,  54, 211,  },
+        {  80,  18,  38, 166,  96,  62,  },
+        {  67,  77,  50, 203, 115, 109,  },
+    },
+    {  // above 3
+        {  95,  18,  82, 126, 133,  88,  },
+        {  75,  19, 116,  86, 146,  90,  },
+        {  66,   8,  47, 173, 138,  66,  },
+        {  81,  15,  68,  93, 139,  50,  },
+        {  71,   8,  79,  87,  97, 176,  },
+        {  83,   8,  64, 106, 131,  43,  },
+        {  63,  16,  86,  96, 171,  55,  },
+    },
+    {  // above 4
+        {  84,  16,  62,  81,  23, 229,  },
+        {  74,  21,  97,  80,  40, 209,  },
+        {  60,  11,  41, 154,  49, 194,  },
+        {  79,  15,  71, 100,  55, 174,  },
+        {  49,   5,  33,  27,   8, 249,  },
+        {  81,   9,  63, 106,  59, 160,  },
+        {  69,  30,  69, 117,  53, 203,  },
+    },
+    {  // above 5
+        { 100,  33,  78, 143, 106, 102,  },
+        {  77,  36, 121, 113, 113, 109,  },
+        {  65,  17,  41, 180, 124,  70,  },
+        {  85,  26,  67, 115, 117,  73,  },
+        {  74,  17,  83, 102,  77, 185,  },
+        {  86,  13,  57, 116, 111,  55,  },
+        {  74,  45,  80, 145, 120,  81,  },
+    },
+    {  // above 6
+        {  83, 100, 116, 165, 109, 120,  },
+        {  62,  69, 161, 139,  94,  97,  },
+        {  51,  42,  43, 216,  96,  83,  },
+        {  72,  40,  86, 137, 102,  66,  },
+        {  71,  38, 105, 106,  60, 197,  },
+        {  69,  29,  61, 151,  81,  46,  },
+        {  59, 105,  93, 171, 106,  62,  },
+    },
+};
+#else
 const vpx_prob vp10_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
   {  // above = dc
     { 137,  30,  42, 148, 151, 207,  70,  52,  91 },  // left = dc
@@ -126,6 +196,7 @@ const vpx_prob vp10_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = 
     {  43,  81,  53, 140, 169, 204,  68,  84,  72 }   // left = tm
   }
 };
+#endif  // CONFIG_EXT_INTRA
 
 #if !CONFIG_MISC_FIXES
 const vpx_prob vp10_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1] = {
@@ -142,6 +213,25 @@ const vpx_prob vp10_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1] = {
 };
 #endif
 
+#if CONFIG_EXT_INTRA
+static const vpx_prob
+default_if_y_probs[BLOCK_SIZE_GROUPS][NEW_INTRA_MODES - 1] = {
+    {  29,  58, 108, 183,  58, 172, },
+    {  77,  69, 105, 156,  97, 126, },
+    { 128,  38,  85, 200, 129,  89, },
+    { 173,  36,  30, 238, 153, 123, },
+};
+
+static const vpx_prob default_uv_probs[NEW_INTRA_MODES][NEW_INTRA_MODES - 1] = {
+    { 229,  35,  90, 160,  74, 160, },
+    { 177,  45, 217, 104,  64, 199, },
+    { 183,  31,  17, 234,  55, 167, },
+    { 193,  25,  67,  69, 175,  88, },
+    { 194,  12,  48,  59,   3, 251, },
+    { 195,  28,  53, 111,  73,  52, },
+    { 201, 158, 115, 197,  49, 191, },
+};
+#else
 static const vpx_prob default_if_y_probs[BLOCK_SIZE_GROUPS][INTRA_MODES - 1] = {
   {  65,  32,  18, 144, 162, 194,  41,  51,  98 },  // block_size < 8x8
   { 132,  68,  18, 165, 217, 196,  45,  40,  78 },  // block_size < 16x16
@@ -161,6 +251,7 @@ static const vpx_prob default_uv_probs[INTRA_MODES][INTRA_MODES - 1] = {
   {  77,   7,  64, 116, 132, 122,  37, 126, 120 },  // y = d63
   { 101,  21, 107, 181, 192, 103,  19,  67, 125 }   // y = tm
 };
+#endif  // CONFIG_EXT_INTRA
 
 #if !CONFIG_MISC_FIXES
 const vpx_prob vp10_kf_partition_probs[PARTITION_CONTEXTS]
@@ -224,6 +315,16 @@ static const vpx_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
 };
 
 /* Array indices are identical to previously-existing INTRAMODECONTEXTNODES. */
+#if CONFIG_EXT_INTRA
+const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(NEW_INTRA_MODES)] = {
+  -DC_PRED, 2,
+  -NEW_TM_PRED, 4,
+  -V_PRED, 6,
+  -H_PRED, 8,
+  -D45_PRED, 10,
+  -D135_PRED, -D225_PRED,
+};
+#else
 const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {
   -DC_PRED, 2,                      /* 0 = DC_NODE */
   -TM_PRED, 4,                      /* 1 = TM_NODE */
@@ -235,6 +336,7 @@ const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {
   -D63_PRED, 16,                    /* 7 = D63_NODE */
   -D153_PRED, -D207_PRED             /* 8 = D153_NODE */
 };
+#endif
 
 const vpx_tree_index vp10_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
   -INTER_OFFSET(ZEROMV), 2,
@@ -955,10 +1057,6 @@ static const struct segmentation_probs default_seg_probs = {
 };
 #endif
 
-#if CONFIG_EXT_INTRA
-static  const vpx_prob default_ext_intra_probs[2] = {200, 200};
-#endif  // CONFIG_EXT_INTRA
-
 static void init_mode_probs(FRAME_CONTEXT *fc) {
   vp10_copy(fc->uv_mode_prob, default_uv_probs);
   vp10_copy(fc->y_mode_prob, default_if_y_probs);
@@ -984,6 +1082,7 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
 #endif
 #if CONFIG_EXT_INTRA
   vp10_copy(fc->ext_intra_probs, default_ext_intra_probs);
+  vp10_copy(fc->fine_angle_probs, default_fine_angle_probs);
 #endif  // CONFIG_EXT_INTRA
 }
 
@@ -1022,9 +1121,15 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
                 counts->y_mode[i], fc->y_mode_prob[i]);
 
 #if !CONFIG_MISC_FIXES
+#if CONFIG_EXT_INTRA
+    for (i = 0; i < NEW_INTRA_MODES; ++i)
+      vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->uv_mode_prob[i],
+                           counts->uv_mode[i], fc->uv_mode_prob[i]);
+#else
   for (i = 0; i < INTRA_MODES; ++i)
     vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->uv_mode_prob[i],
                          counts->uv_mode[i], fc->uv_mode_prob[i]);
+#endif
 
   for (i = 0; i < PARTITION_CONTEXTS; i++)
     vpx_tree_merge_probs(vp10_partition_tree, pre_fc->partition_prob[i],
@@ -1118,9 +1223,15 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
                          counts->seg.tree_total, fc->seg.tree_probs);
   }
 
+#if CONFIG_EXT_INTRA
+  for (i = 0; i < NEW_INTRA_MODES; ++i)
+    vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->uv_mode_prob[i],
+                         counts->uv_mode[i], fc->uv_mode_prob[i]);
+#else
   for (i = 0; i < INTRA_MODES; ++i)
     vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->uv_mode_prob[i],
                          counts->uv_mode[i], fc->uv_mode_prob[i]);
+#endif
 
   for (i = 0; i < PARTITION_CONTEXTS; i++)
     vpx_tree_merge_probs(vp10_partition_tree, pre_fc->partition_prob[i],
@@ -1131,6 +1242,11 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
     fc->ext_intra_probs[i] = mode_mv_merge_probs(
               pre_fc->ext_intra_probs[i], counts->ext_intra[i]);
   }
+
+  for (i = 0; i < PLANE_TYPES; ++i) {
+    fc->fine_angle_probs[i] = mode_mv_merge_probs(
+        pre_fc->fine_angle_probs[i], counts->fine_angle[i]);
+  }/**/
 #endif  // CONFIG_EXT_INTRA
 }
 

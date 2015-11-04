@@ -173,6 +173,10 @@ typedef enum {
 } EXT_INTRA_MODE;
 
 #define FILTER_INTRA_MODES (FILTER_TM_PRED + 1)
+
+#define D225_PRED 5
+#define NEW_TM_PRED 6
+#define NEW_INTRA_MODES NEW_TM_PRED + 1
 #endif  // CONFIG_EXT_INTRA
 
 #define DC_PRED    0       // Average of above and left pixels
