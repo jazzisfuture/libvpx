@@ -87,6 +87,7 @@ typedef struct frame_contexts {
 #endif
 #if CONFIG_EXT_INTRA
   vpx_prob ext_intra_probs[PLANE_TYPES];
+  vpx_prob new_uv_mode_prob[NEW_INTRA_MODES][NEW_INTRA_MODES - 1];
 #endif  // CONFIG_EXT_INTRA
 } FRAME_CONTEXT;
 
@@ -121,11 +122,20 @@ typedef struct FRAME_COUNTS {
 #endif
 #if CONFIG_EXT_INTRA
   unsigned int ext_intra[PLANE_TYPES][2];
+  unsigned int new_uv_mode[NEW_INTRA_MODES][NEW_INTRA_MODES];
 #endif  // CONFIG_EXT_INTRA
 } FRAME_COUNTS;
 
 extern const vpx_prob vp10_kf_y_mode_prob[INTRA_MODES][INTRA_MODES]
                                         [INTRA_MODES - 1];
+#if CONFIG_EXT_INTRA
+extern const vpx_prob
+vp10_new_kf_y_mode_prob[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES - 1];
+extern const vpx_tree_index
+vp10_new_intra_mode_tree[TREE_SIZE(NEW_INTRA_MODES)];
+extern const vpx_tree_index
+vp10_new_intra_mode_cost_tree[TREE_SIZE(NEW_INTRA_MODES)];
+#endif  // CONFIG_EXT_INTRA
 #if !CONFIG_MISC_FIXES
 extern const vpx_prob vp10_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
 extern const vpx_prob vp10_kf_partition_probs[PARTITION_CONTEXTS]

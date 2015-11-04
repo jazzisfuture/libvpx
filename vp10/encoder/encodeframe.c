@@ -3058,7 +3058,14 @@ static void sum_intra_stats(FRAME_COUNTS *counts, const MODE_INFO *mi,
     }
   }
 
+#if CONFIG_EXT_INTRA
+  if (bsize >= BLOCK_8X8)
+    ++counts->new_uv_mode[y_mode][uv_mode];
+  else
+    ++counts->uv_mode[y_mode][uv_mode];
+#else
   ++counts->uv_mode[y_mode][uv_mode];
+#endif  // CONFIG_EXT_INTRA
 }
 
 #if CONFIG_VAR_TX

@@ -41,6 +41,23 @@ static PREDICTION_MODE read_intra_mode(vpx_reader *r, const vpx_prob *p) {
   return (PREDICTION_MODE)vpx_read_tree(r, vp10_intra_mode_tree, p);
 }
 
+#if CONFIG_EXT_INTRA
+static PREDICTION_MODE read_new_intra_mode(vpx_reader *r, const vpx_prob *p) {
+  return (PREDICTION_MODE)vpx_read_tree(r, vp10_new_intra_mode_tree, p);
+}
+
+static PREDICTION_MODE read_new_intra_mode_uv(VP10_COMMON *cm, MACROBLOCKD *xd,
+                                              vpx_reader *r,
+                                              PREDICTION_MODE y_mode) {
+  const PREDICTION_MODE uv_mode =
+      read_new_intra_mode(r, cm->fc->new_uv_mode_prob[y_mode]);
+  FRAME_COUNTS *counts = xd->counts;
+  if (counts)
+    ++counts->new_uv_mode[y_mode][uv_mode];
+  return uv_mode;
+}
+#endif  // CONFIG_EXT_INTRA
+
 static PREDICTION_MODE read_intra_mode_y(VP10_COMMON *cm, MACROBLOCKD *xd,
                                          vpx_reader *r, int size_group) {
   const PREDICTION_MODE y_mode =
@@ -346,6 +363,7 @@ static void read_ext_intra_mode_info(VP10_COMMON *const cm,
   MODE_INFO *const mi = xd->mi[0];
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   FRAME_COUNTS *counts = xd->counts;
+  return;
   if (mbmi->mode == DC_PRED) {
     mbmi->ext_intra_mode_info.use_ext_intra_mode[0] =
         vpx_read(r, cm->fc->ext_intra_probs[0]);
@@ -407,28 +425,80 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
   switch (bsize) {
     case BLOCK_4X4:
       for (i = 0; i < 4; ++i)
+#if CONFIG_EXT_INTRA
+        mi->bmi[i].as_mode =
+            read_new_intra_mode(r,
+                                get_y_mode_probs(cm, mi, above_mi, left_mi, i));
+#else
         mi->bmi[i].as_mode =
             read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, i));
+#endif  // CONFIG_EXT_INTRA
       mbmi->mode = mi->bmi[3].as_mode;
       break;
     case BLOCK_4X8:
+#if CONFIG_EXT_INTRA
+      mi->bmi[0].as_mode = mi->bmi[2].as_mode =
+          read_new_intra_mode(r,
+                              get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
+      mi->bmi[1].as_mode = mi->bmi[3].as_mode = mbmi->mode =
+          read_new_intra_mode(r,
+                              get_y_mode_probs(cm, mi, above_mi, left_mi, 1));
+#else
       mi->bmi[0].as_mode = mi->bmi[2].as_mode =
           read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
       mi->bmi[1].as_mode = mi->bmi[3].as_mode = mbmi->mode =
           read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 1));
+#endif  // CONFIG_EXT_INTRA
       break;
     case BLOCK_8X4:
+#if CONFIG_EXT_INTRA
+      mi->bmi[0].as_mode = mi->bmi[1].as_mode =
+          read_new_intra_mode(r,
+                              get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
+      mi->bmi[2].as_mode = mi->bmi[3].as_mode = mbmi->mode =
+          read_new_intra_mode(r,
+                              get_y_mode_probs(cm, mi, above_mi, left_mi, 2));
+#else
       mi->bmi[0].as_mode = mi->bmi[1].as_mode =
           read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
       mi->bmi[2].as_mode = mi->bmi[3].as_mode = mbmi->mode =
           read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 2));
+#endif  // CONFIG_EXT_INTRA
       break;
     default:
+#if CONFIG_EXT_INTRA
+      mbmi->mode = read_new_intra_mode(r,
+          get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
+      if (mbmi->mode != DC_PRED && mbmi->mode != NEW_TM_PRED)
+        mbmi->angle_delta[0] =
+            read_uniform(r, 2 * MAX_ANGLE_DELTAS + 1) - MAX_ANGLE_DELTAS;
+
+#if 1
+      {
+        int above = vp10_above_block_mode(mi, above_mi, 0);
+        int left = vp10_left_block_mode(mi, left_mi, 0);
+        ++cm->stats[above][left][mbmi->mode];
+      }
+#endif
+
+#else
       mbmi->mode = read_intra_mode(r,
           get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
+#endif  // CONFIG_EXT_INTRA
   }
 
+#if CONFIG_EXT_INTRA
+  mbmi->uv_mode = read_new_intra_mode_uv(cm, xd, r, mbmi->mode);
+#if 1
+  ++cm->stats_uv[mbmi->mode][mbmi->uv_mode];
+#endif
+  if (mbmi->uv_mode != DC_PRED && mbmi->uv_mode != NEW_TM_PRED &&
+      (bsize >= BLOCK_8X8))
+    mbmi->angle_delta[1] =
+        read_uniform(r, 2 * MAX_ANGLE_DELTAS + 1) - MAX_ANGLE_DELTAS;
+#else
   mbmi->uv_mode = read_intra_mode_uv(cm, xd, r, mbmi->mode);
+#endif
 
   mbmi->palette_mode_info.palette_size[0] = 0;
   mbmi->palette_mode_info.palette_size[1] = 0;

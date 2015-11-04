@@ -1641,6 +1641,21 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
     pbi->total_tiles = tile_rows * tile_cols;
   }
 
+#if 1
+  if (cm->current_video_frame % 100 == 0) {
+    int i1, i2, i3;
+
+    for (i1 = 0; i1 < NEW_INTRA_MODES; i1++)
+      for (i2 = 0; i2 < NEW_INTRA_MODES; i2++)
+        for (i3 = 0; i3 < NEW_INTRA_MODES; i3++)
+          cm->stats[i1][i2][i3] = 0;
+
+    for (i1 = 0; i1 < NEW_INTRA_MODES; i1++)
+      for (i2 = 0; i2 < NEW_INTRA_MODES; i2++)
+        cm->stats_uv[i1][i2] = 0;
+  }
+#endif
+
   // Load all tile information into tile_data.
   for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
     for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
@@ -1718,6 +1733,34 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
 #endif
     }
   }
+
+#if 0
+  if (cm->current_video_frame % 100 == 99) {
+    FILE *fp;
+    int i1, i2, i3, i4, i5;
+
+    fp = fopen("stats.txt", "a");
+    for (i1 = 0; i1 < NEW_INTRA_MODES; i1++)
+      for (i2 = 0; i2 < NEW_INTRA_MODES; i2++) {
+        for (i3 = 0; i3 < NEW_INTRA_MODES; i3++)
+            fprintf(fp, "%10d ", cm->stats[i1][i2][i3]);
+        fprintf(fp, "\n");
+      }
+
+    fprintf(fp, "\n \n");
+    fclose(fp);
+
+    fp = fopen("stats_uv.txt", "a");
+    for (i1 = 0; i1 < NEW_INTRA_MODES; i1++) {
+      for (i2 = 0; i2 < NEW_INTRA_MODES; i2++)
+        fprintf(fp, "%10d ", cm->stats_uv[i1][i2]);
+      fprintf(fp, "\n");
+    }
+
+    fprintf(fp, "\n \n");
+    fclose(fp);
+  }
+#endif
 
   // Loopfilter remaining rows in the frame.
 #if CONFIG_VAR_TX
@@ -2318,6 +2361,12 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     for (i = 0; i < INTRA_MODES - 1; ++i)
       vp10_diff_update_prob(&r, &fc->uv_mode_prob[j][i]);
 
+#if CONFIG_EXT_INTRA
+  for (j = 0; j < NEW_INTRA_MODES; j++)
+    for (i = 0; i < NEW_INTRA_MODES - 1; ++i)
+      vp10_diff_update_prob(&r, &fc->new_uv_mode_prob[j][i]);
+#endif  // CONFIG_EXT_INTRA
+
   for (j = 0; j < PARTITION_CONTEXTS; ++j)
     for (i = 0; i < PARTITION_TYPES - 1; ++i)
       vp10_diff_update_prob(&r, &fc->partition_prob[j][i]);
@@ -2325,6 +2374,9 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
 
   if (frame_is_intra_only(cm)) {
     vp10_copy(cm->kf_y_prob, vp10_kf_y_mode_prob);
+#if CONFIG_EXT_INTRA
+    vp10_copy(cm->new_kf_y_prob, vp10_new_kf_y_mode_prob);
+#endif  // CONFIG_EXT_INTRA
 #if CONFIG_MISC_FIXES
     for (k = 0; k < INTRA_MODES; k++)
       for (j = 0; j < INTRA_MODES; j++)

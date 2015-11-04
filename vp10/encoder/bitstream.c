@@ -38,6 +38,11 @@
 static const struct vp10_token intra_mode_encodings[INTRA_MODES] = {
   {0, 1}, {6, 3}, {28, 5}, {30, 5}, {58, 6}, {59, 6}, {126, 7}, {127, 7},
   {62, 6}, {2, 2}};
+#if CONFIG_EXT_INTRA
+static const struct vp10_token new_intra_mode_encodings[NEW_INTRA_MODES] = {
+    {0, 1}, {6, 3}, {14, 4}, {30, 5}, {62, 6}, {63, 6}, {2, 2},
+};
+#endif  // CONFIG_EXT_INTRA
 static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
   {{0, 1}, {2, 2}, {3, 2}};
 static const struct vp10_token partition_encodings[PARTITION_TYPES] =
@@ -93,6 +98,14 @@ static void write_intra_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {
   vp10_write_token(w, vp10_intra_mode_tree, probs, &intra_mode_encodings[mode]);
 }
+
+#if CONFIG_EXT_INTRA
+static void write_new_intra_mode(vpx_writer *w, PREDICTION_MODE mode,
+                                 const vpx_prob *probs) {
+  vp10_write_token(w, vp10_new_intra_mode_tree, probs,
+                   &new_intra_mode_encodings[mode]);
+}
+#endif
 
 static void write_inter_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {
@@ -515,6 +528,7 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 static void write_ext_intra_mode_info(const VP10_COMMON *const cm,
                                       const MB_MODE_INFO *const mbmi,
                                       vpx_writer *w) {
+  return;
   if (mbmi->mode == DC_PRED) {
     vpx_write(w, mbmi->ext_intra_mode_info.use_ext_intra_mode[0],
               cm->fc->ext_intra_probs[0]);
@@ -756,8 +770,18 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
     write_selected_tx_size(cm, xd, w);
 
   if (bsize >= BLOCK_8X8) {
+#if CONFIG_EXT_INTRA
+    if (mbmi->mode > NEW_TM_PRED)
+      printf("Error %d /n", mbmi->mode);
+    write_new_intra_mode(w, mbmi->mode,
+                         get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
+    if (mbmi->mode != DC_PRED && mbmi->mode != NEW_TM_PRED)
+      write_uniform(w, 2 * MAX_ANGLE_DELTAS + 1,
+                    MAX_ANGLE_DELTAS + mbmi->angle_delta[0]);
+#else
     write_intra_mode(w, mbmi->mode,
                      get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
+#endif  // CONFIG_EXT_INTRA
   } else {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
     const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
@@ -766,18 +790,34 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
     for (idy = 0; idy < 2; idy += num_4x4_h) {
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         const int block = idy * 2 + idx;
+#if CONFIG_EXT_INTRA
+        write_new_intra_mode(w, mi->bmi[block].as_mode,
+                             get_y_mode_probs(cm, mi, above_mi,
+                                              left_mi, block));
+#else
         write_intra_mode(w, mi->bmi[block].as_mode,
                          get_y_mode_probs(cm, mi, above_mi, left_mi, block));
+#endif  // CONFIG_EXT_INTRA
       }
     }
   }
 
+#if CONFIG_EXT_INTRA
+  if (mbmi->uv_mode > NEW_TM_PRED)
+    printf("Error %d\n", mbmi->uv_mode);
+  write_new_intra_mode(w, mbmi->uv_mode,
+                       cm->fc->new_uv_mode_prob[mbmi->mode]);
+  if (mbmi->uv_mode != DC_PRED && mbmi->uv_mode != NEW_TM_PRED &&
+      bsize >= BLOCK_8X8)
+    write_uniform(w, 2 * MAX_ANGLE_DELTAS + 1,
+                  MAX_ANGLE_DELTAS + mbmi->angle_delta[1]);
+#else
   write_intra_mode(w, mbmi->uv_mode, cm->fc->uv_mode_prob[mbmi->mode]);
+#endif  // CONFIG_EXT_INTRA
 
   if (bsize >= BLOCK_8X8 && cm->allow_screen_content_tools &&
       mbmi->mode == DC_PRED)
     write_palette_mode_info(cm, xd, mi, w);
-
 
 #if CONFIG_EXT_TX
   if (get_ext_tx_types(mbmi->tx_size, bsize, 0) > 1 &&
@@ -1752,6 +1792,12 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
     prob_diff_update(vp10_intra_mode_tree, fc->uv_mode_prob[i],
                      counts->uv_mode[i], INTRA_MODES, &header_bc);
 
+#if CONFIG_EXT_INTRA
+  for (i = 0; i < NEW_INTRA_MODES; ++i)
+    prob_diff_update(vp10_new_intra_mode_tree, fc->new_uv_mode_prob[i],
+                     counts->uv_mode[i], NEW_INTRA_MODES, &header_bc);
+#endif  // CONFIG_EXT_INTRA
+
   for (i = 0; i < PARTITION_CONTEXTS; ++i)
     prob_diff_update(vp10_partition_tree, fc->partition_prob[i],
                      counts->partition[i], PARTITION_TYPES, &header_bc);
@@ -1759,6 +1805,9 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
 
   if (frame_is_intra_only(cm)) {
     vp10_copy(cm->kf_y_prob, vp10_kf_y_mode_prob);
+#if CONFIG_EXT_INTRA
+    vp10_copy(cm->new_kf_y_prob, vp10_new_kf_y_mode_prob);
+#endif  // CONFIG_EXT_INTRA
 #if CONFIG_MISC_FIXES
     for (i = 0; i < INTRA_MODES; ++i)
       for (j = 0; j < INTRA_MODES; ++j)

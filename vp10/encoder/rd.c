@@ -75,6 +75,30 @@ static void fill_mode_costs(VP10_COMP *cpi) {
       vp10_cost_tokens(cpi->y_mode_costs[i][j], vp10_kf_y_mode_prob[i][j],
                       vp10_intra_mode_tree);
 
+#if CONFIG_EXT_INTRA
+  for (i = 0; i < NEW_INTRA_MODES; ++i)
+    for (j = 0; j < NEW_INTRA_MODES; ++j)
+      vp10_cost_tokens(cpi->new_y_mode_costs[i][j],
+                       vp10_new_kf_y_mode_prob[i][j],
+                       vp10_new_intra_mode_tree);
+
+  for (i = 0; i < NEW_INTRA_MODES; ++i)
+    vp10_cost_tokens(cpi->new_intra_uv_mode_cost[i],
+                     fc->new_uv_mode_prob[i], vp10_new_intra_mode_tree);
+
+#if 0
+  for (i = 0; i < NEW_INTRA_MODES; ++i) {
+    for (j = 0; j < NEW_INTRA_MODES; ++j) {
+      int k;
+      printf("%d %d\n", i, j);
+      for (k = 0; k < NEW_INTRA_MODES; ++k)
+        printf("%7d ", cpi->new_y_mode_costs[i][j][k]);
+      printf("\n");
+    }
+  }
+#endif
+#endif  // CONFIG_EXT_INTRA
+
   vp10_cost_tokens(cpi->mbmode_cost, fc->y_mode_prob[1], vp10_intra_mode_tree);
   vp10_cost_tokens(cpi->intra_uv_mode_cost,
                   fc->uv_mode_prob[TM_PRED], vp10_intra_mode_tree);

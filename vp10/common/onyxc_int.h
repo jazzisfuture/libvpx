@@ -311,6 +311,13 @@ typedef struct VP10Common {
   // - this is intentionally not placed in FRAME_CONTEXT since it's reset upon
   // each keyframe and not used afterwards
   vpx_prob kf_y_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1];
+#if CONFIG_EXT_INTRA
+  vpx_prob new_kf_y_prob[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES - 1];
+#endif  // CONFIG_EXT_INTRA
+#if 1
+  int stats[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES];
+  int stats_uv[NEW_INTRA_MODES][NEW_INTRA_MODES];
+#endif
 } VP10_COMMON;
 
 // TODO(hkuang): Don't need to lock the whole pool after implementing atomic
@@ -467,6 +474,17 @@ static INLINE const vpx_prob *get_y_mode_probs(const VP10_COMMON *cm,
                                                int block) {
   const PREDICTION_MODE above = vp10_above_block_mode(mi, above_mi, block);
   const PREDICTION_MODE left = vp10_left_block_mode(mi, left_mi, block);
+#if CONFIG_EXT_INTRA && NEW_INTRA_TREE
+  const MB_MODE_INFO *const mbmi = &mi->mbmi;
+
+  if (mbmi->sb_type >= BLOCK_8X8 || 1) {
+    //return cm->new_kf_y_prob[0][0];
+    if (above > NEW_TM_PRED || left > NEW_TM_PRED)
+      printf("error get_y_mode_probs\n");
+    return cm->new_kf_y_prob[above > NEW_TM_PRED ? DC_PRED : above]
+        [left > NEW_TM_PRED ? DC_PRED : left];
+  }
+#endif
   return cm->kf_y_prob[above][left];
 }
 

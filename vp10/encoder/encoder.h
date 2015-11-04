@@ -458,6 +458,10 @@ typedef struct VP10_COMP {
   unsigned int inter_mode_cost[INTER_MODE_CONTEXTS][INTER_MODES];
   int intra_uv_mode_cost[INTRA_MODES];
   int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
+#if CONFIG_EXT_INTRA
+  int new_y_mode_costs[NEW_INTRA_MODES][NEW_INTRA_MODES][NEW_INTRA_MODES];
+  int new_intra_uv_mode_cost[NEW_INTRA_MODES][NEW_INTRA_MODES];
+#endif  // CONFIG_EXT_INTRA
   int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
   int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
   int palette_y_size_cost[PALETTE_BLOCK_SIZES][PALETTE_SIZES];
