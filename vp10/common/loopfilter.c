@@ -1223,15 +1223,8 @@ void vp10_filter_block_plane_non420(VP10_COMMON *cm,
       const int block_edge_above = (num_4x4_blocks_high_lookup[sb_type] > 1) ?
           !blk_row : 1;
       const int skip_this_r = skip_this && !block_edge_above;
-
-#if CONFIG_VAR_TX
       TX_SIZE tx_size = (plane->plane_type == PLANE_TYPE_UV)
           ? get_uv_tx_size(mbmi, plane) : mbmi->tx_size;
-#else
-      const TX_SIZE tx_size = (plane->plane_type == PLANE_TYPE_UV)
-                            ? get_uv_tx_size(mbmi, plane)
-                            : mbmi->tx_size;
-#endif
 
       const int skip_border_4x4_c = ss_x && mi_col + c == cm->mi_cols - 1;
       const int skip_border_4x4_r = ss_y && mi_row + r == cm->mi_rows - 1;
@@ -1252,7 +1245,6 @@ void vp10_filter_block_plane_non420(VP10_COMMON *cm,
       else
         tx_size_mask = 0;
 
-#if CONFIG_VAR_TX
       if (is_inter_block(mbmi) && !mbmi->skip)
         tx_size = (plane->plane_type == PLANE_TYPE_UV) ?
             get_uv_tx_size_impl(mbmi->inter_tx_size[blk_row * 8 + blk_col],
@@ -1264,7 +1256,6 @@ void vp10_filter_block_plane_non420(VP10_COMMON *cm,
 
       cm->above_txfm_context[mi_col + c] = tx_size;
       cm->left_txfm_context[(mi_row + r) & 0x07] = tx_size;
-#endif
 
       // Build masks based on the transform size of each block
       // handle vertical mask
@@ -1615,63 +1606,29 @@ void vp10_filter_block_plane_ss11(VP10_COMMON *const cm,
   }
 }
 
+// TODO(jingning): Temporarily disable mask based loop filter optimization
+// during the development, so as to only maintain single loop filter
+// implementation. This affects the encoding speed when one needs to search
+// through the loop filter levels. Need to bring this back later.
 void vp10_loop_filter_rows(YV12_BUFFER_CONFIG *frame_buffer,
                            VP10_COMMON *cm,
                            struct macroblockd_plane planes[MAX_MB_PLANE],
                            int start, int stop, int y_only) {
   const int num_planes = y_only ? 1 : MAX_MB_PLANE;
   int mi_row, mi_col;
-#if !CONFIG_VAR_TX
-  enum lf_path path;
-  LOOP_FILTER_MASK lfm;
 
-  if (y_only)
-    path = LF_PATH_444;
-  else if (planes[1].subsampling_y == 1 && planes[1].subsampling_x == 1)
-    path = LF_PATH_420;
-  else if (planes[1].subsampling_y == 0 && planes[1].subsampling_x == 0)
-    path = LF_PATH_444;
-  else
-    path = LF_PATH_SLOW;
-#endif
-
-#if CONFIG_VAR_TX
   memset(cm->above_txfm_context, TX_SIZES, cm->mi_cols);
-#endif
   for (mi_row = start; mi_row < stop; mi_row += MI_BLOCK_SIZE) {
     MODE_INFO **mi = cm->mi_grid_visible + mi_row * cm->mi_stride;
-#if CONFIG_VAR_TX
     memset(cm->left_txfm_context, TX_SIZES, 8);
-#endif
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
       int plane;
 
       vp10_setup_dst_planes(planes, frame_buffer, mi_row, mi_col);
 
-#if CONFIG_VAR_TX
       for (plane = 0; plane < num_planes; ++plane)
         vp10_filter_block_plane_non420(cm, &planes[plane], mi + mi_col,
                                        mi_row, mi_col);
-#else
-      // TODO(JBB): Make setup_mask work for non 420.
-      vp10_setup_mask(cm, mi_row, mi_col, mi + mi_col, cm->mi_stride,
-                     &lfm);
-      vp10_filter_block_plane_ss00(cm, &planes[0], mi_row, &lfm);
-      for (plane = 1; plane < num_planes; ++plane) {
-        switch (path) {
-          case LF_PATH_420:
-            vp10_filter_block_plane_ss11(cm, &planes[plane], mi_row, &lfm);
-            break;
-          case LF_PATH_444:
-            vp10_filter_block_plane_ss00(cm, &planes[plane], mi_row, &lfm);
-            break;
-          case LF_PATH_SLOW:
-            vp10_filter_block_plane_non420(cm, &planes[plane], mi + mi_col,
-                                          mi_row, mi_col);
-            break;
-        }
-      }
-#endif
     }
   }
 }

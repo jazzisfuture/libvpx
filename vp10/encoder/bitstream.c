@@ -151,7 +151,6 @@ static int prob_diff_update_savings(const vpx_tree_index *tree,
   return savings;
 }
 
-#if CONFIG_VAR_TX
 static void write_tx_size_inter(const VP10_COMMON *cm,
                                 const MACROBLOCKD *xd,
                                 const MB_MODE_INFO *mbmi,
@@ -205,7 +204,6 @@ static void update_txfm_partition_probs(VP10_COMMON *cm, vpx_writer *w,
     vp10_cond_prob_diff_update(w, &cm->fc->txfm_partition_prob[k],
                                counts->txfm_partition[k]);
 }
-#endif
 
 static void write_selected_tx_size(const VP10_COMMON *cm,
                                    const MACROBLOCKD *xd, vpx_writer *w) {
@@ -324,10 +322,8 @@ static void pack_mb_tokens(vpx_writer *w,
                            TOKENEXTRA **tp, const TOKENEXTRA *const stop,
                            vpx_bit_depth_t bit_depth, const TX_SIZE tx) {
   TOKENEXTRA *p = *tp;
-#if CONFIG_VAR_TX
   int count = 0;
   const int seg_eob = 16 << (tx << 1);
-#endif
 #if !CONFIG_MISC_FIXES
   (void) tx;
 #endif
@@ -407,17 +403,14 @@ static void pack_mb_tokens(vpx_writer *w,
     }
     ++p;
 
-#if CONFIG_VAR_TX
     ++count;
     if (t == EOB_TOKEN || count == seg_eob)
       break;
-#endif
   }
 
   *tp = p;
 }
 
-#if CONFIG_VAR_TX
 static void pack_txb_tokens(vpx_writer *w,
                            TOKENEXTRA **tp, const TOKENEXTRA *const tok_end,
                            MACROBLOCKD *xd, MB_MODE_INFO *mbmi, int plane,
@@ -466,7 +459,6 @@ static void pack_txb_tokens(vpx_writer *w,
     }
   }
 }
-#endif
 
 static void write_segment_id(vpx_writer *w, const struct segmentation *seg,
                              const struct segmentation_probs *segp,
@@ -552,7 +544,6 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !(is_inter && skip)) {
-#if CONFIG_VAR_TX
     if (is_inter) {  // This implies skip flag is 0.
       const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
       const int txb_size = txsize_to_bsize[max_tx_size];
@@ -572,9 +563,6 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
   } else {
     set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
     set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
-#else
-  write_selected_tx_size(cm, xd, w);
-#endif
   }
 
   if (!is_inter) {
@@ -773,10 +761,8 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
   if (frame_is_intra_only(cm)) {
     write_mb_modes_kf(cm, xd, xd->mi, w);
   } else {
-#if CONFIG_VAR_TX
     xd->above_txfm_context = cm->above_txfm_context + mi_col;
     xd->left_txfm_context = xd->left_txfm_context_buffer + (mi_row & 0x07);
-#endif
     pack_inter_mode_mvs(cpi, m, w);
   }
 
@@ -790,7 +776,6 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
   if (!m->mbmi.skip) {
     assert(*tok < tok_end);
     for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-#if CONFIG_VAR_TX
       const struct macroblockd_plane *const pd = &xd->plane[plane];
       MB_MODE_INFO *mbmi = &m->mbmi;
       BLOCK_SIZE bsize = mbmi->sb_type;
@@ -824,11 +809,6 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
           for (col = 0; col < num_4x4_w; col += bw)
             pack_mb_tokens(w, tok, tok_end, cm->bit_depth, tx);
       }
-#else
-      TX_SIZE tx = plane ? get_uv_tx_size(&m->mbmi, &xd->plane[plane])
-                         : m->mbmi.tx_size;
-      pack_mb_tokens(w, tok, tok_end, cm->bit_depth, tx);
-#endif
       assert(*tok < tok_end && (*tok)->token == EOSB_TOKEN);
       (*tok)++;
     }
@@ -924,9 +904,7 @@ static void write_modes(VP10_COMP *cpi,
   for (mi_row = tile->mi_row_start; mi_row < tile->mi_row_end;
        mi_row += MI_BLOCK_SIZE) {
     vp10_zero(xd->left_seg_context);
-#if CONFIG_VAR_TX
     vp10_zero(xd->left_txfm_context_buffer);
-#endif
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
          mi_col += MI_BLOCK_SIZE)
       write_modes_sb(cpi, tile, w, tok, tok_end, mi_row, mi_col,
@@ -1415,10 +1393,8 @@ static size_t encode_tiles(VP10_COMP *cpi, uint8_t *data_ptr,
 
   memset(cm->above_seg_context, 0,
          sizeof(*cm->above_seg_context) * mi_cols_aligned_to_sb(cm->mi_cols));
-#if CONFIG_VAR_TX
   memset(cm->above_txfm_context, 0,
          sizeof(*cm->above_txfm_context) * mi_cols_aligned_to_sb(cm->mi_cols));
-#endif
 
   for (tile_row = 0; tile_row < tile_rows; tile_row++) {
     for (tile_col = 0; tile_col < tile_cols; tile_col++) {
@@ -1694,9 +1670,7 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
 #endif
   update_coef_probs(cpi, &header_bc);
 
-#if CONFIG_VAR_TX
   update_txfm_partition_probs(cm, &header_bc, counts);
-#endif
 
   update_skip_probs(cm, &header_bc, counts);
 #if CONFIG_MISC_FIXES

@@ -78,7 +78,6 @@ static int read_segment_id(vpx_reader *r,
   return vpx_read_tree(r, vp10_segment_tree, segp->tree_probs);
 }
 
-#if CONFIG_VAR_TX
 static void read_tx_size_inter(VP10_COMMON *cm, MACROBLOCKD *xd,
                                MB_MODE_INFO *mbmi, FRAME_COUNTS *counts,
                                TX_SIZE tx_size, int blk_row, int blk_col,
@@ -138,7 +137,6 @@ static void read_tx_size_inter(VP10_COMMON *cm, MACROBLOCKD *xd,
                           xd->left_txfm_context + (blk_row >> 1), tx_size);
   }
 }
-#endif
 
 static TX_SIZE read_selected_tx_size(VP10_COMMON *cm, MACROBLOCKD *xd,
                                      TX_SIZE max_tx_size, vpx_reader *r) {
@@ -760,9 +758,7 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   MODE_INFO *const mi = xd->mi[0];
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   int inter_block;
-#if CONFIG_VAR_TX
   BLOCK_SIZE bsize = mbmi->sb_type;
-#endif
 
   mbmi->mv[0].as_int = 0;
   mbmi->mv[1].as_int = 0;
@@ -770,7 +766,6 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
   inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
 
-#if CONFIG_VAR_TX
   xd->above_txfm_context = cm->above_txfm_context + mi_col;
   xd->left_txfm_context = xd->left_txfm_context_buffer + (mi_row & 0x07);
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
@@ -803,9 +798,6 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
     set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
     set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
   }
-#else
-  mbmi->tx_size = read_tx_size(cm, xd, !mbmi->skip || !inter_block, r);
-#endif
 
   if (inter_block)
     read_inter_block_mode_info(pbi, xd, mi, mi_row, mi_col, r);

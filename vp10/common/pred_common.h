@@ -165,7 +165,6 @@ static INLINE unsigned int *get_tx_counts(TX_SIZE max_tx_size, int ctx,
   }
 }
 
-#if CONFIG_VAR_TX
 static void update_tx_counts(VP10_COMMON *cm, MACROBLOCKD *xd,
                              MB_MODE_INFO *mbmi, BLOCK_SIZE plane_bsize,
                              TX_SIZE tx_size, int blk_row, int blk_col,
@@ -228,7 +227,6 @@ static INLINE void inter_block_tx_count_update(VP10_COMMON *cm,
       update_tx_counts(cm, xd, mbmi, plane_bsize, max_tx_size, idy, idx,
                        max_tx_size, ctx, tx_counts);
 }
-#endif
 
 #ifdef __cplusplus
 }  // extern "C"
