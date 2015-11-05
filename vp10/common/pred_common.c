@@ -186,6 +186,75 @@ int vp10_get_pred_context_comp_ref_p(const VP10_COMMON *cm,
   return pred_context;
 }
 
+#if CONFIG_REF_MV && CONFIG_VAR_TX
+int vp10_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
+  const int has_above = xd->up_available;
+  const int has_left = xd->left_available;
+  int pred_context = 2;
+  int ctx_count[2] = { 0, 0 };
+  int idx;
+
+  if (has_above && has_left) {  // both edges available
+    MODE_INFO **ref_mi = &xd->mi[-xd->mi_stride];
+    for (idx = 0; idx < xd->n8_w; ++idx) {
+      const MB_MODE_INFO *const above_mbmi = &ref_mi[idx]->mbmi;
+      const int above_intra = !is_inter_block(above_mbmi);
+      if (!above_intra)
+        ++ctx_count[(above_mbmi->ref_frame[0] == LAST_FRAME)];
+    }
+
+    if (ctx_count[1] > ctx_count[0])
+      pred_context += 1;
+    else if (ctx_count[1] < ctx_count[0])
+      pred_context -= 1;
+
+    ctx_count[0] = ctx_count[1] = 0;
+    ref_mi = &xd->mi[-1];
+    for (idx = 0; idx < xd->n8_h; ++idx) {
+      const MB_MODE_INFO *const left_mbmi = &ref_mi[idx * xd->mi_stride]->mbmi;
+      const int left_intra = !is_inter_block(left_mbmi);
+      if (!left_intra)
+        ++ctx_count[(left_mbmi->ref_frame[0] == LAST_FRAME)];
+    }
+
+    if (ctx_count[1] > ctx_count[0])
+      pred_context += 1;
+    else if (ctx_count[1] < ctx_count[0])
+      pred_context -= 1;
+  } else if (has_above) {  // one edge available
+    MODE_INFO **const ref_mi = &xd->mi[-xd->mi_stride];
+    for (idx = 0; idx < xd->n8_w; ++idx) {
+      const MB_MODE_INFO *const above_mbmi = &ref_mi[idx]->mbmi;
+      const int above_intra = !is_inter_block(above_mbmi);
+      if (!above_intra)
+        ++ctx_count[(above_mbmi->ref_frame[0] == LAST_FRAME)];
+    }
+
+    if (ctx_count[1] > ctx_count[0])
+      pred_context += 2;
+    else if (ctx_count[1] < ctx_count[0])
+      pred_context -= 2;
+  } else if (has_left) {
+    MODE_INFO **const ref_mi = &xd->mi[-1];
+    for (idx = 0; idx < xd->n8_h; ++idx) {
+      const MB_MODE_INFO *const left_mbmi = &ref_mi[idx * xd->mi_stride]->mbmi;
+      const int left_intra = !is_inter_block(left_mbmi);
+      if (!left_intra)
+        ++ctx_count[(left_mbmi->ref_frame[0] == LAST_FRAME)];
+    }
+
+    if (ctx_count[1] > ctx_count[0])
+      pred_context += 2;
+    else if (ctx_count[1] < ctx_count[0])
+      pred_context -= 2;
+  } else {  // no edges available
+    pred_context = 2;
+  }
+
+  assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
+  return pred_context;
+}
+#else
 int vp10_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
   int pred_context;
   const MB_MODE_INFO *const above_mbmi = xd->above_mbmi;
@@ -251,6 +320,7 @@ int vp10_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
   assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
   return pred_context;
 }
+#endif
 
 int vp10_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
   int pred_context;
