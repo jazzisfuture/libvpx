@@ -173,6 +173,200 @@ static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
   }
 }
 
+#if CONFIG_EXT_TX
+static double get_hor_correlation(int16_t *diff, int stride,
+                                  int w, int h) {
+  // Returns hor correlation coefficient
+  const int num = h * (w - 1);
+  const double num_r = 1.0 / num;
+  int i, j;
+  int64_t xy_sum = 0;
+  int64_t x_sum = 0, y_sum = 0;
+  int64_t x2_sum = 0, y2_sum = 0;
+  double corr = 1.0;
+  double x_var_n, y_var_n, xy_var_n;
+
+  for (i = 0; i < h; ++i) {
+    for (j = 1; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      const int16_t y = diff[i * stride + j - 1];
+      xy_sum += x * y;
+      x_sum += x;
+      y_sum += y;
+      x2_sum += x * x;
+      y2_sum += y * y;
+    }
+  }
+  x_var_n =  x2_sum - (x_sum * x_sum) * num_r;
+  y_var_n =  y2_sum - (y_sum * y_sum) * num_r;
+  xy_var_n = xy_sum - (x_sum * y_sum) * num_r;
+  if (x_var_n > 0 && y_var_n > 0) {
+    corr = xy_var_n / sqrt(x_var_n * y_var_n);
+  }
+  return corr;
+}
+
+static double get_ver_correlation(int16_t *diff, int stride,
+                                  int w, int h) {
+  // Returns ver correlation coefficient
+  const int num = w * (h - 1);
+  const double num_r = 1.0 / num;
+  int i, j;
+  int64_t xy_sum = 0;
+  int64_t x_sum = 0, y_sum = 0;
+  int64_t x2_sum = 0, y2_sum = 0;
+  double corr = 1.0;
+  double x_var_n, y_var_n, xy_var_n;
+
+  for (i = 1; i < h; ++i) {
+    for (j = 0; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      const int16_t y = diff[(i - 1) * stride + j];
+      xy_sum += x * y;
+      x_sum += x;
+      y_sum += y;
+      x2_sum += x * x;
+      y2_sum += y * y;
+    }
+  }
+  x_var_n =  x2_sum - (x_sum * x_sum) * num_r;
+  y_var_n =  y2_sum - (y_sum * y_sum) * num_r;
+  xy_var_n = xy_sum - (x_sum * y_sum) * num_r;
+  if (x_var_n > 0 && y_var_n > 0) {
+    corr = xy_var_n / sqrt(x_var_n * y_var_n);
+  }
+  return corr;
+}
+
+static void get_energy_distribution(int16_t *diff, int stride,
+                                    int w, int h,
+                                    double *hordist, double *verdist) {
+  // Returns hor and ver energy distributions
+  // *hordist returns the fraction of the energy in the first hor half
+  // *verdist returns the fraction of the energy in the first ver half
+  int64_t esq[4] = {0, 0, 0, 0};
+  double e_recip;
+  for (i = 0; i < h / 2; ++i) {
+    for (j = 0; j < w / 2; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[0] += x * x;
+    }
+  }
+  for (i = 0; i < h / 2; ++i) {
+    for (j = w / 2; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[1] += x * x;
+    }
+  }
+  for (i = h / 2; i < h; ++i) {
+    for (j = 0; j < w / 2; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[2] += x * x;
+    }
+  }
+  for (i = h / 2; i < h; ++i) {
+    for (j = w / 2; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[3] += x * x;
+    }
+  }
+  e_recip = 1.0 / (esq[0] + esq[1] + esq[2] + esq[3]);
+  hordist[0] = (esq[0] + esq[2]) * e_recip;
+  verdist[0] = (esq[0] + esq[1]) * e_recip;
+}
+
+typedef enum {
+  DCT_1D,
+  ADST_1D,
+  FLIPADST_1D,
+  DST_1D,
+} TX_TYPE_1D;
+
+static const TX_TYPE merge_tx_type_1d[4][4] = {
+  {DCT_DCT, DCT_ADST, DCT_FLIPADST, DCT_DST},
+  {ADST_DCT, ADST_ADST, ADST_FLIPADST, ADST_DST},
+  {FLIPADST_DCT, FLIPADST_ADST, FLIPADST_FLIPADST, FLIPADST_DST},
+  {DST_DCT, DST_ADST, DST_FLIPADST, DST_DST},
+}
+
+static TX_TYPE_1D guess_tx_type_1d(double corr, double edst) {
+  static const double dct_thresh = 0.4;
+  int i, j;
+
+  if (corr > dct_thresh && corr < 1 - dct_thresh &&
+      edst > dct_thresh && edst < 1 - dct_thresh)
+    return DCT_1D;
+
+  // NOTES:
+  // Correlation close to 1 indicates DCT
+  // Correlation close to 0 indicates DST
+  // Energy distribution concentrated on the first half indicates FLIPADST
+  // Energy distribution concentrated on the second half indicates ADST
+  if (corr > 0.5) {
+    // DCT preferred over DST
+    if (edst < 0.5) {
+      // ADST preferred over FLIPADST
+      if (corr + edst > 1.0)
+        return DCT_1D;
+      else
+        return ADST_1D
+    } else {
+      // FLIPADST preferred over ADST
+      if (corr > edst)
+        return DCT_1D;
+      else
+        return FLIPADST_1D;
+    }
+  } else {
+    // DST preferred over DCT
+    if (edst < 0.5) {
+      // ADST preferred over FLIPADST
+      if (corr < edst)
+        return DST_1D;
+      else
+        return ADST_1D;
+    } else {
+      // FLIPADST preferred over ADST
+      if (corr + edst < 1.0)
+        return DST_1D;
+      else
+        return FLIPADST_1D;
+    }
+  }
+}
+
+static TX_TYPE guess_tx_type_for_sby(BLOCK_SIZE bsize,
+                              MACROBLOCK *x, MACROBLOCKD *xd) {
+  int16_t diff[64 * 64];
+  struct macroblock_plane *const p = &x->plane[0];
+  struct macroblockd_plane *const pd = &xd->plane[0];
+  const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+  int bw = 1 << (b_width_log2_lookup[bs]);
+  int bh = 1 << (b_height_log2_lookup[bs]);
+  uint8_t *src = p->src.buf;
+  uint8_t *dst = pd->dst.buf;
+  double hdist, vdist;
+  double hcorr, vcorr;
+  TX_TYPE_1D hor_tx_type, ver_tx_type;
+  int i, j;
+  for (i = 0; i < h; ++i)
+    for (j = 0; j < w; ++j)
+      diff[i * 64 + j] = (int16_t)src[i * p->src.stride + j] -
+                         (int16_t)dst[i * pd->dst.stride + j];
+
+  // Find vert and hor energy distribution
+  get_energy_distribution(diff, 64, bw, bh, &hdist, &vdist);
+
+  // Find vert and hor correlations
+  hcorr = get_hor_correlation(diff, 64, bw, bh);
+  vcorr = get_ver_correlation(diff, 64, bw, bh);
+
+  hor_tx_type = guess_tx_type_1d(hcorr, hdist);
+  ver_tx_type = guess_tx_type_1d(vcorr, vdist);
+  return merge_tx_type_1d[ver_tx_type][hor_tx_type];
+}
+#endif  // CONFIG_EXT_TX
+
 static void model_rd_for_sb(VP10_COMP *cpi, BLOCK_SIZE bsize,
                             MACROBLOCK *x, MACROBLOCKD *xd,
                             int *out_rate_sum, int64_t *out_dist_sum,
