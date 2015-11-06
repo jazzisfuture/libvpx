@@ -21,16 +21,16 @@ extern "C" {
 
 #define MOTION_MAGNITUDE_THRESHOLD (8 * 3)
 
+typedef enum noise_level {
+  kNoiseLow,
+  kNoiseMedium,
+  kNoiseHigh
+} NOISE_LEVEL;
+
 typedef enum vp9_denoiser_decision {
   COPY_BLOCK,
   FILTER_BLOCK
 } VP9_DENOISER_DECISION;
-
-typedef enum vp9_denoiser_level {
-  kDenLow,
-  kDenMedium,
-  kDenHigh
-} VP9_DENOISER_LEVEL;
 
 typedef struct vp9_denoiser {
   YV12_BUFFER_CONFIG running_avg_y[MAX_REF_FRAMES];
@@ -38,7 +38,7 @@ typedef struct vp9_denoiser {
   YV12_BUFFER_CONFIG last_source;
   int increase_denoising;
   int frame_buffer_initialized;
-  VP9_DENOISER_LEVEL denoising_level;
+  NOISE_LEVEL denoising_level;
 } VP9_DENOISER;
 
 struct VP9_COMP;

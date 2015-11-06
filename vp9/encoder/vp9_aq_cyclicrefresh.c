@@ -490,7 +490,7 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->rate_ratio_qdelta = 3.0;
   } else {
     cr->rate_ratio_qdelta = 2.0;
-  if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium)
+  if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kNoiseMedium)
     // Reduce the delta-qp if the estimated source noise is above threshold.
     cr->rate_ratio_qdelta = 1.5;
   }
