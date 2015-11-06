@@ -24,9 +24,9 @@ extern "C" {
 #endif
 
 typedef enum noise_level {
-  kLow,
-  kMedium,
-  kHigh
+  kNoiseLow,
+  kNoiseMedium,
+  kNoiseHigh
 } NOISE_LEVEL;
 
 typedef struct noise_estimate {

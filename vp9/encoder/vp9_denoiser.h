@@ -12,6 +12,7 @@
 #define VP9_ENCODER_DENOISER_H_
 
 #include "vp9/encoder/vp9_block.h"
+#include "vp9/encoder/vp9_noise_estimation.h"
 #include "vp9/encoder/vp9_skin_detection.h"
 #include "vpx_scale/yv12config.h"
 
@@ -26,19 +27,13 @@ typedef enum vp9_denoiser_decision {
   FILTER_BLOCK
 } VP9_DENOISER_DECISION;
 
-typedef enum vp9_denoiser_level {
-  kDenLow,
-  kDenMedium,
-  kDenHigh
-} VP9_DENOISER_LEVEL;
-
 typedef struct vp9_denoiser {
   YV12_BUFFER_CONFIG running_avg_y[MAX_REF_FRAMES];
   YV12_BUFFER_CONFIG mc_running_avg_y;
   YV12_BUFFER_CONFIG last_source;
   int increase_denoising;
   int frame_buffer_initialized;
-  VP9_DENOISER_LEVEL denoising_level;
+  NOISE_LEVEL denoising_level;
 } VP9_DENOISER;
 
 struct VP9_COMP;

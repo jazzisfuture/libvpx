@@ -25,7 +25,7 @@ void vp9_noise_estimate_init(NOISE_ESTIMATE *const ne,
                              int width,
                              int height) {
   ne->enabled = 0;
-  ne->level = kLow;
+  ne->level = kNoiseLow;
   ne->value = 0;
   ne->count = 0;
   ne->thresh = 90;
@@ -198,12 +198,12 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
         // Reset counter and check noise level condition.
         ne->count = 0;
         if (ne->value > (ne->thresh << 1))
-          ne->level = kHigh;
+          ne->level = kNoiseHigh;
         else
           if (ne->value > ne->thresh)
-            ne->level = kMedium;
+            ne->level = kNoiseMedium;
           else
-            ne->level = kLow;
+            ne->level = kNoiseLow;
       }
     }
   }
