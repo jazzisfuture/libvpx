@@ -8,35 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdlib.h>
 #include "vp10/common/vp10_inv_txfm1d.h"
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
-#define range_check(stage, input, buf, size, bit)                         \
-  {                                                                       \
-    int i, j;                                                             \
-    for (i = 0; i < size; ++i) {                                          \
-      int buf_bit = get_max_bit(abs(buf[i])) + 1;                         \
-      if (buf_bit > bit) {                                                \
-        printf("======== %s overflow ========\n", __func__);              \
-        printf("stage: %d node: %d\n", stage, i);                         \
-        printf("bit: %d buf_bit: %d buf[i]: %d\n", bit, buf_bit, buf[i]); \
-        printf("input:\n");                                               \
-        for (j = 0; j < size; j++) {                                      \
-          printf("%d,", input[j]);                                        \
-        }                                                                 \
-        printf("\n");                                                     \
-        assert(0, "vp10_inv_txfm1d.c: range_check overflow");             \
-      }                                                                   \
-    }                                                                     \
+#define range_check(stage, input, buf, size, bit)             \
+  {                                                           \
+    int i;                                                    \
+    for (i = 0; i < size; ++i) {                              \
+      int buf_bit = get_max_bit(abs(buf[i])) + 1;             \
+      assert(buf_bit <= bit);                                 \
+    }                                                         \
   }
 #else
-#define range_check(stage, input, buf, size, bit) \
-  {                                               \
-    (void) stage;                                 \
-    (void) input;                                 \
-    (void) buf;                                   \
-    (void) size;                                  \
-    (void) bit;                                   \
-  }
+#define range_check(stage, input, buf, size, bit) {}
 #endif
 
 void vp10_idct4_new(const int32_t *input, int32_t *output,
@@ -733,7 +717,6 @@ void vp10_iadst4_new(const int32_t *input, int32_t *output,
 
   // stage 3
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[2];
@@ -806,7 +789,6 @@ void vp10_iadst8_new(const int32_t *input, int32_t *output,
 
   // stage 3
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[2];
@@ -836,7 +818,6 @@ void vp10_iadst8_new(const int32_t *input, int32_t *output,
 
   // stage 5
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[4];
@@ -937,7 +918,6 @@ void vp10_iadst16_new(const int32_t *input, int32_t *output,
 
   // stage 3
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[2];
@@ -983,7 +963,6 @@ void vp10_iadst16_new(const int32_t *input, int32_t *output,
 
   // stage 5
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[4];
@@ -1029,7 +1008,6 @@ void vp10_iadst16_new(const int32_t *input, int32_t *output,
 
   // stage 7
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[8];
@@ -1186,7 +1164,6 @@ void vp10_iadst32_new(const int32_t *input, int32_t *output,
 
   // stage 3
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[2];
@@ -1264,7 +1241,6 @@ void vp10_iadst32_new(const int32_t *input, int32_t *output,
 
   // stage 5
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[4];
@@ -1342,7 +1318,6 @@ void vp10_iadst32_new(const int32_t *input, int32_t *output,
 
   // stage 7
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[8];
@@ -1420,7 +1395,6 @@ void vp10_iadst32_new(const int32_t *input, int32_t *output,
 
   // stage 9
   stage++;
-  cospi = cospi_arr[cos_bit[stage] - cos_bit_min];
   bf0 = step;
   bf1 = output;
   bf1[0] = bf0[0] + bf0[16];
