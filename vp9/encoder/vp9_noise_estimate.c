@@ -36,13 +36,15 @@ void vp9_noise_estimate_init(NOISE_ESTIMATE *const ne,
   }
 }
 
-int enable_noise_estimation(VP9_COMP *const cpi) {
+void vp9_check_enable_noise_estimation(VP9_COMP *const cpi) {
+  NOISE_ESTIMATE *const ne = &cpi->noise_estimate;
   // Enable noise estimation if denoising is on (and cyclic refresh, since
   // noise estimate is currently using a struct defined in cyclic refresh).
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0 &&
       cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
-    return 1;
+    ne->enabled = 1;
+  return;
 #endif
   // Only allow noise estimate under certain encoding mode.
   // Enabled for 1 pass CBR, speed >=5, and if resolution is same as original.
@@ -57,9 +59,9 @@ int enable_noise_estimation(VP9_COMP *const cpi) {
       cpi->oxcf.content != VP9E_CONTENT_SCREEN &&
       cpi->common.width >= 640 &&
       cpi->common.height >= 480)
-    return 1;
+    ne->enabled = 1;
   else
-    return 0;
+    ne->enabled = 0;
 }
 
 static void copy_frame(YV12_BUFFER_CONFIG * const dest,
@@ -96,7 +98,6 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
   if (cpi->oxcf.noise_sensitivity > 0)
     last_source = &cpi->denoiser.last_source;
 #endif
-  ne->enabled = enable_noise_estimation(cpi);
   if (!ne->enabled ||
       cm->current_video_frame % frame_period != 0 ||
       last_source == NULL) {
