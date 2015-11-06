@@ -53,6 +53,7 @@ int enable_noise_estimation(VP9_COMP *const cpi) {
       cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
       cpi->oxcf.speed >= 5 &&
       cpi->resize_state == ORIG &&
+      cpi->resize_pending == 0 &&
       !cpi->use_svc &&
       cpi->oxcf.content != VP9E_CONTENT_SCREEN &&
       cpi->common.width >= 640 &&
@@ -203,6 +204,7 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
             ne->level = kMedium;
           else
             ne->level = kLow;
+        printf("NOISE ESTIMATE %d %d %d \n",cm->current_video_frame, ne->level, ne->value);
       }
     }
   }
