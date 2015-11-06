@@ -3268,6 +3268,8 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
 
   set_frame_size(cpi);
 
+  vp9_check_enable_noise_estimation(cpi);
+
   cpi->Source = vp9_scale_if_required(cm,
                                       cpi->un_scaled_source,
                                       &cpi->scaled_source,
