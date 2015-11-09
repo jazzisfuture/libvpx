@@ -173,6 +173,201 @@ static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
   }
 }
 
+#if CONFIG_EXT_TX
+#define FAST_EXT_TX_INTER_SEARCH  1
+#if FAST_EXT_TX_INTER_SEARCH
+static double get_hor_correlation(int16_t *diff, int stride,
+                                  int w, int h) {
+  // Returns hor correlation coefficient
+  const int num = h * (w - 1);
+  double num_r;
+  int i, j;
+  int64_t xy_sum = 0;
+  int64_t x_sum = 0, y_sum = 0;
+  int64_t x2_sum = 0, y2_sum = 0;
+  double corr = 1.0;
+  double x_var_n, y_var_n, xy_var_n;
+
+  assert(num > 0);
+  num_r = 1.0 / num;
+  for (i = 0; i < h; ++i) {
+    for (j = 1; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      const int16_t y = diff[i * stride + j - 1];
+      xy_sum += x * y;
+      x_sum += x;
+      y_sum += y;
+      x2_sum += x * x;
+      y2_sum += y * y;
+    }
+  }
+  x_var_n =  x2_sum - (x_sum * x_sum) * num_r;
+  y_var_n =  y2_sum - (y_sum * y_sum) * num_r;
+  xy_var_n = xy_sum - (x_sum * y_sum) * num_r;
+  if (x_var_n > 0 && y_var_n > 0) {
+    corr = xy_var_n / sqrt(x_var_n * y_var_n);
+  }
+  return corr;
+}
+
+static double get_ver_correlation(int16_t *diff, int stride,
+                                  int w, int h) {
+  // Returns ver correlation coefficient
+  const int num = w * (h - 1);
+  double num_r;
+  int i, j;
+  int64_t xy_sum = 0;
+  int64_t x_sum = 0, y_sum = 0;
+  int64_t x2_sum = 0, y2_sum = 0;
+  double corr = 1.0;
+  double x_var_n, y_var_n, xy_var_n;
+
+  assert(num > 0);
+  num_r = 1.0 / num;
+  for (i = 1; i < h; ++i) {
+    for (j = 0; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      const int16_t y = diff[(i - 1) * stride + j];
+      xy_sum += x * y;
+      x_sum += x;
+      y_sum += y;
+      x2_sum += x * x;
+      y2_sum += y * y;
+    }
+  }
+  x_var_n =  x2_sum - (x_sum * x_sum) * num_r;
+  y_var_n =  y2_sum - (y_sum * y_sum) * num_r;
+  xy_var_n = xy_sum - (x_sum * y_sum) * num_r;
+  if (x_var_n > 0 && y_var_n > 0) {
+    corr = xy_var_n / sqrt(x_var_n * y_var_n);
+  }
+  return corr;
+}
+
+static void get_energy_distribution(int16_t *diff, int stride,
+                                    int w, int h,
+                                    double *hordist, double *verdist) {
+  // Returns hor and ver energy distributions
+  // *hordist returns the fraction of the energy in the first hor half
+  // *verdist returns the fraction of the energy in the first ver half
+  int64_t esq[4] = {0, 0, 0, 0};
+  double e_recip;
+  int i, j;
+  for (i = 0; i < h / 2; ++i) {
+    for (j = 0; j < w / 2; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[0] += x * x;
+    }
+  }
+  for (i = 0; i < h / 2; ++i) {
+    for (j = w / 2; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[1] += x * x;
+    }
+  }
+  for (i = h / 2; i < h; ++i) {
+    for (j = 0; j < w / 2; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[2] += x * x;
+    }
+  }
+  for (i = h / 2; i < h; ++i) {
+    for (j = w / 2; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[3] += x * x;
+    }
+  }
+  hordist[0] = verdist[0] = 0.5;
+  if (esq[0] + esq[1] + esq[2] + esq[3] > 0) {
+    e_recip = 1.0 / (esq[0] + esq[1] + esq[2] + esq[3]);
+    hordist[0] = (esq[0] + esq[2]) * e_recip;
+    verdist[0] = (esq[0] + esq[1]) * e_recip;
+  }
+}
+
+typedef enum {
+  DCT_1D,
+  ADST_1D,
+  FLIPADST_1D,
+  DST_1D,
+} TX_TYPE_1D;
+
+static const TX_TYPE merge_tx_type_1d[4][4] = {
+  {DCT_DCT, DCT_ADST, DCT_FLIPADST, DCT_DST},
+  {ADST_DCT, ADST_ADST, ADST_FLIPADST, ADST_DST},
+  {FLIPADST_DCT, FLIPADST_ADST, FLIPADST_FLIPADST, FLIPADST_DST},
+  {DST_DCT, DST_ADST, DST_FLIPADST, DST_DST},
+};
+
+#define DCT_CENTER_THRESHOLD 0.4
+static TX_TYPE_1D guess_tx_type_1d(double corr, double edst) {
+  if (corr > DCT_CENTER_THRESHOLD && corr < 1 - DCT_CENTER_THRESHOLD &&
+      edst > DCT_CENTER_THRESHOLD && edst < 1 - DCT_CENTER_THRESHOLD)
+    return DCT_1D;
+  // NOTES:
+  // Correlation close to 1 indicates DCT
+  // Correlation close to 0 indicates DST
+  // Energy distribution concentrated on the first half indicates FLIPADST
+  // Energy distribution concentrated on the second half indicates ADST
+  if (corr > 0.5) {
+    // DCT preferred over DST
+    if (edst < 0.5) {
+      // ADST preferred over FLIPADST
+      if (corr + edst > 1.0)
+        return DCT_1D;
+      else
+        return ADST_1D;
+    } else {
+      // FLIPADST preferred over ADST
+      if (corr > edst)
+        return DCT_1D;
+      else
+        return FLIPADST_1D;
+    }
+  } else {
+    // DST preferred over DCT
+    if (edst < 0.5) {
+      // ADST preferred over FLIPADST
+      if (corr < edst)
+        return DST_1D;
+      else
+        return ADST_1D;
+    } else {
+      // FLIPADST preferred over ADST
+      if (corr + edst < 1.0)
+        return DST_1D;
+      else
+        return FLIPADST_1D;
+    }
+  }
+}
+
+static TX_TYPE guess_inter_tx_type_for_sby(BLOCK_SIZE bsize,
+                                           MACROBLOCK *x, MACROBLOCKD *xd) {
+  struct macroblock_plane *const p = &x->plane[0];
+  struct macroblockd_plane *const pd = &xd->plane[0];
+  const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+  int bw = 1 << (b_width_log2_lookup[bs]);
+  int bh = 1 << (b_height_log2_lookup[bs]);
+  double hdist, vdist;
+  double hcorr, vcorr;
+  TX_TYPE_1D hor_tx_type, ver_tx_type;
+  vp10_subtract_plane(x, bsize, 0);
+
+  // Find vert and hor energy distribution
+  get_energy_distribution(p->src_diff, 64, bw, bh, &hdist, &vdist);
+
+  // Find vert and hor correlations
+  hcorr = get_hor_correlation(p->src_diff, 64, bw, bh);
+  vcorr = get_ver_correlation(p->src_diff, 64, bw, bh);
+
+  hor_tx_type = guess_tx_type_1d(hcorr, hdist);
+  ver_tx_type = guess_tx_type_1d(vcorr, vdist);
+  return merge_tx_type_1d[ver_tx_type][hor_tx_type];
+}
+#endif  // FAST_EXT_TX_INTER_SEARCH
+#endif  // CONFIG_EXT_TX
+
 static void model_rd_for_sb(VP10_COMP *cpi, BLOCK_SIZE bsize,
                             MACROBLOCK *x, MACROBLOCKD *xd,
                             int *out_rate_sum, int64_t *out_dist_sum,
@@ -676,6 +871,10 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
   int  s1 = vp10_cost_bit(skip_prob, 1);
   int ext_tx_set;
   const int is_inter = is_inter_block(mbmi);
+#if FAST_EXT_TX_INTER_SEARCH
+  TX_TYPE guessed_inter_tx_type =
+      is_inter ? guess_inter_tx_type_for_sby(bs, x, xd) : DCT_DCT;
+#endif  // FAST_EXT_TX_INTER_SEARCH
 #endif  // CONFIG_EXT_TX
 
   mbmi->tx_size = VPXMIN(max_tx_size, largest_tx_size);
@@ -690,18 +889,31 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
       if (is_inter) {
         if (!ext_tx_used_inter[ext_tx_set][tx_type])
           continue;
+#if FAST_EXT_TX_INTER_SEARCH
+        if (tx_type != DCT_DCT &&
+            tx_type != guessed_inter_tx_type &&
+            tx_type != IDTX)
+          continue;
+#else
+        if (ext_tx_set == 1 &&
+            tx_type >= DST_ADST && tx_type < IDTX &&
+            best_tx_type == DCT_DCT) {
+          tx_type = IDTX - 1;
+          continue;
+        }
+#endif  // FAST_EXT_TX_INTER_SEARCH
       } else {
         if (!ext_tx_used_intra[ext_tx_set][tx_type])
           continue;
+        if (ext_tx_set == 1 &&
+            tx_type >= DST_ADST && tx_type < IDTX &&
+            best_tx_type == DCT_DCT) {
+          tx_type = IDTX - 1;
+          continue;
+        }
       }
 
       mbmi->tx_type = tx_type;
-      if (ext_tx_set == 1 &&
-          mbmi->tx_type >= DST_ADST && mbmi->tx_type < IDTX &&
-          best_tx_type == DCT_DCT) {
-        tx_type = IDTX - 1;
-        continue;
-      }
 
       txfm_rd_in_plane(x,
 #if CONFIG_VAR_TX
@@ -804,11 +1016,15 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   TX_SIZE best_tx = max_tx_size;
   int start_tx, end_tx;
   const int tx_select = cm->tx_mode == TX_MODE_SELECT;
+  const int is_inter = is_inter_block(mbmi);
 #if CONFIG_EXT_TX
   TX_TYPE tx_type, best_tx_type = DCT_DCT;
   int ext_tx_set;
+#if FAST_EXT_TX_INTER_SEARCH
+  TX_TYPE guessed_inter_tx_type =
+      is_inter ? guess_inter_tx_type_for_sby(bs, x, xd) : DCT_DCT;
+#endif  // FAST_EXT_TX_INTER_SEARCH
 #endif  // CONFIG_EXT_TX
-  const int is_inter = is_inter_block(mbmi);
 
   const vpx_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
   assert(skip_prob > 0);
@@ -848,17 +1064,30 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       if (is_inter) {
         if (!ext_tx_used_inter[ext_tx_set][tx_type])
           continue;
+#if FAST_EXT_TX_INTER_SEARCH
+        if (tx_type != DCT_DCT &&
+            tx_type != guessed_inter_tx_type &&
+            tx_type != IDTX)
+          continue;
+#else
+        if (ext_tx_set == 1 &&
+            tx_type >= DST_ADST && tx_type < IDTX &&
+            best_tx_type == DCT_DCT) {
+          tx_type = IDTX - 1;
+          break;
+        }
+#endif  // FAST_EXT_TX_INTER_SEARCH
       } else {
         if (!ext_tx_used_intra[ext_tx_set][tx_type])
           continue;
+        if (ext_tx_set == 1 &&
+            tx_type >= DST_ADST && tx_type < IDTX &&
+            best_tx_type == DCT_DCT) {
+          tx_type = IDTX - 1;
+          break;
+        }
       }
       mbmi->tx_type = tx_type;
-      if (ext_tx_set == 1 &&
-          mbmi->tx_type >= DST_ADST && mbmi->tx_type < IDTX &&
-          best_tx_type == DCT_DCT) {
-        tx_type = IDTX - 1;
-        break;
-      }
       txfm_rd_in_plane(x,
 #if CONFIG_VAR_TX
                        cpi,
@@ -2157,6 +2386,10 @@ static void select_tx_type_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
   uint8_t best_blk_skip[256];
   const int n4 = 1 << (num_pels_log2_lookup[bsize] - 4);
   int idx, idy;
+#if FAST_EXT_TX_INTER_SEARCH
+  TX_TYPE guessed_inter_tx_type =
+      is_inter ? guess_inter_tx_type_for_sby(bs, x, xd) : DCT_DCT;
+#endif  // FAST_EXT_TX_INTER_SEARCH
 
   *distortion = INT64_MAX;
   *rate       = INT_MAX;
@@ -2174,19 +2407,31 @@ static void select_tx_type_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
     if (is_inter) {
       if (!ext_tx_used_inter[ext_tx_set][tx_type])
         continue;
+#if FAST_EXT_TX_INTER_SEARCH
+      if (tx_type != DCT_DCT &&
+          tx_type != guessed_inter_tx_type &&
+          tx_type != IDTX)
+        continue;
+#else
+      if (ext_tx_set == 1 &&
+          tx_type >= DST_ADST && tx_type < IDTX &&
+          best_tx_type == DCT_DCT) {
+        tx_type = IDTX - 1;
+        break;
+      }
+#endif  // FAST_EXT_TX_INTER_SEARCH
     } else {
       if (!ext_tx_used_intra[ext_tx_set][tx_type])
         continue;
+      if (ext_tx_set == 1 &&
+          tx_type >= DST_ADST && tx_type < IDTX &&
+          best_tx_type == DCT_DCT) {
+        tx_type = IDTX - 1;
+        break;
+      }
     }
 
     mbmi->tx_type = tx_type;
-
-    if (ext_tx_set == 1 &&
-        mbmi->tx_type >= DST_ADST && mbmi->tx_type < IDTX &&
-        best_tx_type == DCT_DCT) {
-      tx_type = IDTX - 1;
-      break;
-    }
 
     inter_block_yrd(cpi, x, &this_rate, &this_dist, &this_skip, &this_sse,
                     bsize, ref_best_rd);
