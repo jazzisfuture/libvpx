@@ -1621,7 +1621,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
       this_rdc.rate = args.rate;
       this_rdc.dist = args.dist;
-      this_rdc.rate += cpi->mbmode_cost[this_mode];
+      this_rdc.rate += cpi->mbmode_cost[size_group_lookup[bsize]][this_mode];
       this_rdc.rate += ref_frame_cost[INTRA_FRAME];
       this_rdc.rate += intra_cost_penalty;
       this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,

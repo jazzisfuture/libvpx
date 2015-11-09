@@ -1014,7 +1014,7 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
   int tot_rate_y = 0;
   int64_t total_rd = 0;
   ENTROPY_CONTEXT t_above[4], t_left[4];
-  const int *bmode_costs = cpi->mbmode_cost;
+  const int *bmode_costs;
 
   memcpy(t_above, xd->plane[0].above_context, sizeof(t_above));
   memcpy(t_left, xd->plane[0].left_context, sizeof(t_left));
@@ -3332,7 +3332,8 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
       skippable = skippable && skip_uv[uv_tx];
       mbmi->uv_mode = mode_uv[uv_tx];
 
-      rate2 = rate_y + cpi->mbmode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
+      rate2 = rate_y + cpi->mbmode_cost[size_group_lookup[bsize]][mbmi->mode] +\
+          rate_uv_intra[uv_tx];
       if (this_mode != DC_PRED && this_mode != TM_PRED)
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;

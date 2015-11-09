@@ -75,7 +75,10 @@ static void fill_mode_costs(VP9_COMP *cpi) {
       vp9_cost_tokens(cpi->y_mode_costs[i][j], vp9_kf_y_mode_prob[i][j],
                       vp9_intra_mode_tree);
 
-  vp9_cost_tokens(cpi->mbmode_cost, fc->y_mode_prob[1], vp9_intra_mode_tree);
+  for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
+      vp9_cost_tokens(cpi->mbmode_cost[i], fc->y_mode_prob[i],
+                       vp9_intra_mode_tree);
+
   for (i = 0; i < INTRA_MODES; ++i) {
     vp9_cost_tokens(cpi->intra_uv_mode_cost[KEY_FRAME][i],
                     vp9_kf_uv_mode_prob[i], vp9_intra_mode_tree);
