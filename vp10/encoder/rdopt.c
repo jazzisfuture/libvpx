@@ -2635,11 +2635,16 @@ static int64_t rd_pick_intra_sbuv_mode(VP10_COMP *cpi, MACROBLOCK *x,
     if (!super_block_uvrd(cpi, x, &this_rate_tokenonly,
                           &this_distortion, &s, &this_sse, bsize, best_rd))
       continue;
+<<<<<<< HEAD   (bc54f9 Merge "Resolve conficts caused by master branch merging" int)
     this_rate = this_rate_tokenonly + cpi->intra_uv_mode_cost[mode];
 #if CONFIG_EXT_INTRA
     if (mode == DC_PRED)
       this_rate += vp10_cost_bit(cpi->common.fc->ext_intra_probs[1], 0);
 #endif  // CONFIG_EXT_INTRA
+=======
+    this_rate = this_rate_tokenonly +
+        cpi->intra_uv_mode_cost[xd->mi[0]->mbmi.mode][mode];
+>>>>>>> BRANCH (420e8d Merge changes I8c83b86d,Ic53b2ed5,I4acc8a84)
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
     if (this_rd < best_rd) {
@@ -2683,7 +2688,8 @@ static int64_t rd_sbuv_dcpred(const VP10_COMP *cpi, MACROBLOCK *x,
   memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
   super_block_uvrd(cpi, x, rate_tokenonly, distortion,
                    skippable, &unused, bsize, INT64_MAX);
-  *rate = *rate_tokenonly + cpi->intra_uv_mode_cost[DC_PRED];
+  *rate = *rate_tokenonly +
+      cpi->intra_uv_mode_cost[x->e_mbd.mi[0]->mbmi.mode][DC_PRED];
   return RDCOST(x->rdmult, x->rddiv, *rate, *distortion);
 }
 
