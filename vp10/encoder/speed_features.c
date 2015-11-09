@@ -75,6 +75,7 @@ static void set_good_speed_feature_framesize_dependent(VP10_COMP *cpi,
       sf->disable_split_mask = DISABLE_COMPOUND_SPLIT;
       sf->partition_search_breakout_dist_thr = (1 << 21);
     }
+    sf->ext_tx_search_type = PRUNE_ONE;
   }
 
   if (speed >= 2) {
@@ -90,6 +91,7 @@ static void set_good_speed_feature_framesize_dependent(VP10_COMP *cpi,
       sf->partition_search_breakout_rate_thr = 100;
     }
     sf->rd_auto_partition_min_limit = set_partition_min_limit(cm);
+    sf->ext_tx_search_type = PRUNE_TWO;
   }
 
   if (speed >= 3) {
@@ -105,6 +107,7 @@ static void set_good_speed_feature_framesize_dependent(VP10_COMP *cpi,
       sf->partition_search_breakout_dist_thr = (1 << 23);
       sf->partition_search_breakout_rate_thr = 120;
     }
+    sf->ext_tx_search_type = PRUNE_THREE;
   }
 
   // If this is a two pass clip that fits the criteria for animated or
