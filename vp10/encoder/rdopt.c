@@ -173,6 +173,198 @@ static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
   }
 }
 
+#if CONFIG_EXT_TX
+static double get_hor_correlation(int16_t *diff, int stride,
+                                  int w, int h) {
+  // Returns hor correlation coefficient
+  const int num = h * (w - 1);
+  double num_r;
+  int i, j;
+  int64_t xy_sum = 0;
+  int64_t x_sum = 0, y_sum = 0;
+  int64_t x2_sum = 0, y2_sum = 0;
+  double corr = 1.0;
+  double x_var_n, y_var_n, xy_var_n;
+
+  assert(num > 0);
+  num_r = 1.0 / num;
+  for (i = 0; i < h; ++i) {
+    for (j = 1; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      const int16_t y = diff[i * stride + j - 1];
+      xy_sum += x * y;
+      x_sum += x;
+      y_sum += y;
+      x2_sum += x * x;
+      y2_sum += y * y;
+    }
+  }
+  x_var_n =  x2_sum - (x_sum * x_sum) * num_r;
+  y_var_n =  y2_sum - (y_sum * y_sum) * num_r;
+  xy_var_n = xy_sum - (x_sum * y_sum) * num_r;
+  if (x_var_n > 0 && y_var_n > 0) {
+    corr = xy_var_n / sqrt(x_var_n * y_var_n);
+  }
+  return corr;
+}
+
+static double get_ver_correlation(int16_t *diff, int stride,
+                                  int w, int h) {
+  // Returns ver correlation coefficient
+  const int num = w * (h - 1);
+  double num_r;
+  int i, j;
+  int64_t xy_sum = 0;
+  int64_t x_sum = 0, y_sum = 0;
+  int64_t x2_sum = 0, y2_sum = 0;
+  double corr = 1.0;
+  double x_var_n, y_var_n, xy_var_n;
+
+  assert(num > 0);
+  num_r = 1.0 / num;
+  for (i = 1; i < h; ++i) {
+    for (j = 0; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      const int16_t y = diff[(i - 1) * stride + j];
+      xy_sum += x * y;
+      x_sum += x;
+      y_sum += y;
+      x2_sum += x * x;
+      y2_sum += y * y;
+    }
+  }
+  x_var_n =  x2_sum - (x_sum * x_sum) * num_r;
+  y_var_n =  y2_sum - (y_sum * y_sum) * num_r;
+  xy_var_n = xy_sum - (x_sum * y_sum) * num_r;
+  if (x_var_n > 0 && y_var_n > 0) {
+    corr = xy_var_n / sqrt(x_var_n * y_var_n);
+  }
+  return corr;
+}
+
+static void get_energy_distribution(int16_t *diff, int stride,
+                                    int w, int h,
+                                    double *hordist, double *verdist) {
+  // Returns hor and ver energy distributions
+  // *hordist returns the fraction of the energy in the first hor half
+  // *verdist returns the fraction of the energy in the first ver half
+  int64_t esq[4] = {0, 0, 0, 0};
+  double e_recip;
+  int i, j;
+  for (i = 0; i < h / 2; ++i) {
+    for (j = 0; j < w / 2; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[0] += x * x;
+    }
+  }
+  for (i = 0; i < h / 2; ++i) {
+    for (j = w / 2; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[1] += x * x;
+    }
+  }
+  for (i = h / 2; i < h; ++i) {
+    for (j = 0; j < w / 2; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[2] += x * x;
+    }
+  }
+  for (i = h / 2; i < h; ++i) {
+    for (j = w / 2; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      esq[3] += x * x;
+    }
+  }
+  hordist[0] = verdist[0] = 0.5;
+  if (esq[0] + esq[1] + esq[2] + esq[3] > 0) {
+    e_recip = 1.0 / (esq[0] + esq[1] + esq[2] + esq[3]);
+    hordist[0] = (esq[0] + esq[2]) * e_recip;
+    verdist[0] = (esq[0] + esq[1]) * e_recip;
+  }
+}
+
+typedef enum {
+  DCT_1D,
+  ADST_1D,
+  FLIPADST_1D,
+  DST_1D,
+} TX_TYPE_1D;
+
+static const TX_TYPE merge_tx_type_1d[4][4] = {
+  {DCT_DCT, DCT_ADST, DCT_FLIPADST, DCT_DST},
+  {ADST_DCT, ADST_ADST, ADST_FLIPADST, ADST_DST},
+  {FLIPADST_DCT, FLIPADST_ADST, FLIPADST_FLIPADST, FLIPADST_DST},
+  {DST_DCT, DST_ADST, DST_FLIPADST, DST_DST},
+};
+
+#define DCT_CENTER_THRESHOLD 0.4
+static TX_TYPE_1D guess_tx_type_1d(double corr, double edst) {
+  if (corr > DCT_CENTER_THRESHOLD && corr < 1 - DCT_CENTER_THRESHOLD &&
+      edst > DCT_CENTER_THRESHOLD && edst < 1 - DCT_CENTER_THRESHOLD)
+    return DCT_1D;
+  // NOTES:
+  // Correlation close to 1 indicates DCT
+  // Correlation close to 0 indicates DST
+  // Energy distribution concentrated on the first half indicates FLIPADST
+  // Energy distribution concentrated on the second half indicates ADST
+  if (corr > 0.5) {
+    // DCT preferred over DST
+    if (edst < 0.5) {
+      // ADST preferred over FLIPADST
+      if (corr + edst > 1.0)
+        return DCT_1D;
+      else
+        return ADST_1D;
+    } else {
+      // FLIPADST preferred over ADST
+      if (corr > edst)
+        return DCT_1D;
+      else
+        return FLIPADST_1D;
+    }
+  } else {
+    // DST preferred over DCT
+    if (edst < 0.5) {
+      // ADST preferred over FLIPADST
+      if (corr < edst)
+        return DST_1D;
+      else
+        return ADST_1D;
+    } else {
+      // FLIPADST preferred over ADST
+      if (corr + edst < 1.0)
+        return DST_1D;
+      else
+        return FLIPADST_1D;
+    }
+  }
+}
+
+static TX_TYPE guess_inter_tx_type_for_sby(BLOCK_SIZE bsize,
+                                           MACROBLOCK *x, MACROBLOCKD *xd) {
+  struct macroblock_plane *const p = &x->plane[0];
+  struct macroblockd_plane *const pd = &xd->plane[0];
+  const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+  int bw = 1 << (b_width_log2_lookup[bs]);
+  int bh = 1 << (b_height_log2_lookup[bs]);
+  double hdist, vdist;
+  double hcorr, vcorr;
+  TX_TYPE_1D hor_tx_type, ver_tx_type;
+  vp10_subtract_plane(x, bsize, 0);
+
+  // Find vert and hor energy distribution
+  get_energy_distribution(p->src_diff, 64, bw, bh, &hdist, &vdist);
+
+  // Find vert and hor correlations
+  hcorr = get_hor_correlation(p->src_diff, 64, bw, bh);
+  vcorr = get_ver_correlation(p->src_diff, 64, bw, bh);
+
+  hor_tx_type = guess_tx_type_1d(hcorr, hdist);
+  ver_tx_type = guess_tx_type_1d(vcorr, vdist);
+  return merge_tx_type_1d[ver_tx_type][hor_tx_type];
+}
+#endif  // CONFIG_EXT_TX
+
 static void model_rd_for_sb(VP10_COMP *cpi, BLOCK_SIZE bsize,
                             MACROBLOCK *x, MACROBLOCKD *xd,
                             int *out_rate_sum, int64_t *out_dist_sum,
@@ -807,6 +999,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_TX
   TX_TYPE tx_type, best_tx_type = DCT_DCT;
   int ext_tx_set;
+  TX_TYPE guess_inter_tx_type == DCT_DCT;
 #endif  // CONFIG_EXT_TX
   const int is_inter = is_inter_block(mbmi);
 
@@ -831,6 +1024,8 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   *psse       = INT64_MAX;
 
 #if CONFIG_EXT_TX
+  if (is_inter)
+    guess_inter_tx_type = guess_inter_tx_type_for_sby(bs, x, xd);
   for (tx_type = DCT_DCT; tx_type < TX_TYPES; ++tx_type) {
 #endif  // CONFIG_EXT_TX
     last_rd = INT64_MAX;
@@ -847,6 +1042,8 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       ext_tx_set = get_ext_tx_set(n, bs, is_inter);
       if (is_inter) {
         if (!ext_tx_used_inter[ext_tx_set][tx_type])
+          continue;
+        if (tx_type != DCT_DCT && tx_type != guess_inter_tx_type)
           continue;
       } else {
         if (!ext_tx_used_intra[ext_tx_set][tx_type])
@@ -2489,7 +2686,7 @@ static int rd_pick_ext_intra_sbuv(VP10_COMP *cpi, MACROBLOCK *x,
       this_rate = this_rate_tokenonly +
           vp10_cost_bit(cpi->common.fc->ext_intra_probs[1], 1) +
           vp10_cost_bit(DR_EXT_INTRA_PROB, 0) +
-          cpi->intra_uv_mode_cost[mbmi->mode][mbmi->uv_mode] +
+          cpi->intra_uv_mode_cost[mbmi->uv_mode] +
           write_uniform_cost(FILTER_INTRA_MODES, mode);
       this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
       if (this_rd < *best_rd) {
@@ -2533,7 +2730,7 @@ static int rd_pick_ext_intra_sbuv(VP10_COMP *cpi, MACROBLOCK *x,
         this_rate = this_rate_tokenonly +
             vp10_cost_bit(cpi->common.fc->ext_intra_probs[1], 1) +
             (DR_ONLY ? 0: vp10_cost_bit(DR_EXT_INTRA_PROB, 1)) +
-            cpi->intra_uv_mode_cost[mbmi->mode][mbmi->uv_mode] +
+            cpi->intra_uv_mode_cost[mbmi->uv_mode] +
             write_uniform_cost(EXT_INTRA_ANGLES, angle);
         this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
         if (this_rd < *best_rd) {
@@ -2573,7 +2770,7 @@ static int rd_pick_ext_intra_sbuv(VP10_COMP *cpi, MACROBLOCK *x,
       this_rate = this_rate_tokenonly +
           vp10_cost_bit(cpi->common.fc->ext_intra_probs[1], 1) +
           (DR_ONLY ? 0: vp10_cost_bit(DR_EXT_INTRA_PROB, 1)) +
-          cpi->intra_uv_mode_cost[mbmi->mode][mbmi->uv_mode] +
+          cpi->intra_uv_mode_cost[mbmi->uv_mode] +
           write_uniform_cost(EXT_INTRA_ANGLES, angle);
       this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
       if (this_rd < *best_rd) {
@@ -2635,8 +2832,7 @@ static int64_t rd_pick_intra_sbuv_mode(VP10_COMP *cpi, MACROBLOCK *x,
     if (!super_block_uvrd(cpi, x, &this_rate_tokenonly,
                           &this_distortion, &s, &this_sse, bsize, best_rd))
       continue;
-    this_rate = this_rate_tokenonly +
-        cpi->intra_uv_mode_cost[xd->mi[0]->mbmi.mode][mode];
+    this_rate = this_rate_tokenonly + cpi->intra_uv_mode_cost[mode];
 #if CONFIG_EXT_INTRA
     if (mode == DC_PRED)
       this_rate += vp10_cost_bit(cpi->common.fc->ext_intra_probs[1], 0);
@@ -2684,8 +2880,7 @@ static int64_t rd_sbuv_dcpred(const VP10_COMP *cpi, MACROBLOCK *x,
   memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
   super_block_uvrd(cpi, x, rate_tokenonly, distortion,
                    skippable, &unused, bsize, INT64_MAX);
-  *rate = *rate_tokenonly +
-      cpi->intra_uv_mode_cost[x->e_mbd.mi[0]->mbmi.mode][DC_PRED];
+  *rate = *rate_tokenonly + cpi->intra_uv_mode_cost[DC_PRED];
   return RDCOST(x->rdmult, x->rddiv, *rate, *distortion);
 }
 
@@ -2947,6 +3142,10 @@ static INLINE void mi_buf_restore(MACROBLOCK *x, struct buf_2d orig_src,
     x->e_mbd.plane[0].pre[1] = orig_pre[1];
 }
 
+static INLINE int mv_has_subpel(const MV *mv) {
+  return (mv->row & 0x0F) || (mv->col & 0x0F);
+}
+
 // Check if NEARESTMV/NEARMV/ZEROMV is the cheapest way encode zero motion.
 // TODO(aconverse): Find out if this is still productive then clean up or remove
 static int check_best_zero_mv(
@@ -3039,11 +3238,11 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
   // frame we must use a unit scaling factor during mode selection.
 #if CONFIG_VP9_HIGHBITDEPTH
   vp10_setup_scale_factors_for_frame(&sf, cm->width, cm->height,
-                                     cm->width, cm->height,
-                                     cm->use_highbitdepth);
+                                    cm->width, cm->height,
+                                    cm->use_highbitdepth);
 #else
   vp10_setup_scale_factors_for_frame(&sf, cm->width, cm->height,
-                                     cm->width, cm->height);
+                                    cm->width, cm->height);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   // Allow joint search multiple times iteratively for each reference frame
@@ -4028,10 +4227,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   if (cm->interp_filter != BILINEAR) {
     if (x->source_variance < cpi->sf.disable_filter_search_var_thresh) {
       best_filter = EIGHTTAP;
-#if CONFIG_EXT_INTERP
-    } else if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE) {
-      best_filter = EIGHTTAP;
-#endif
     } else if (best_filter == SWITCHABLE) {
       int newbest;
       int tmp_rate_sum = 0;
@@ -4047,7 +4242,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         rs = vp10_get_switchable_rate(cpi, xd);
         rs_rd = RDCOST(x->rdmult, x->rddiv, rs, 0);
 
-        if (i > 0 && intpel_mv && IsInterpolatingFilter(i)) {
+        if (i > 0 && intpel_mv) {
           rd = RDCOST(x->rdmult, x->rddiv, tmp_rate_sum, tmp_dist_sum);
           filter_cache[i] = rd;
           filter_cache[SWITCHABLE_FILTERS] =
@@ -4069,7 +4264,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
                (!i || best_needs_copy)) ||
               (cm->interp_filter != SWITCHABLE &&
                (cm->interp_filter == mbmi->interp_filter ||
-                (i == 0 && intpel_mv && IsInterpolatingFilter(i))))) {
+                (i == 0 && intpel_mv)))) {
             restore_dst_buf(xd, orig_dst, orig_dst_stride);
           } else {
             for (j = 0; j < MAX_MB_PLANE; j++) {
@@ -4089,7 +4284,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
             rd += rs_rd;
           *mask_filter = VPXMAX(*mask_filter, rd);
 
-          if (i == 0 && intpel_mv && IsInterpolatingFilter(i)) {
+          if (i == 0 && intpel_mv) {
             tmp_rate_sum = rate_sum;
             tmp_dist_sum = dist_sum;
           }
@@ -4106,8 +4301,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         if (newbest) {
           best_rd = rd;
           best_filter = mbmi->interp_filter;
-          if (cm->interp_filter == SWITCHABLE && i &&
-              !(intpel_mv && IsInterpolatingFilter(i)))
+          if (cm->interp_filter == SWITCHABLE && i && !intpel_mv)
             best_needs_copy = !best_needs_copy;
         }
 
@@ -4126,7 +4320,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       restore_dst_buf(xd, orig_dst, orig_dst_stride);
     }
   }
-
   // Set the appropriate filter
   mbmi->interp_filter = cm->interp_filter != SWITCHABLE ?
       cm->interp_filter : best_filter;
@@ -4844,7 +5037,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
                                   single_newmv, single_inter_filter,
                                   single_skippable, &total_sse, best_rd,
                                   &mask_filter, filter_cache);
-
       if (this_rd == INT64_MAX)
         continue;
 
@@ -4869,7 +5061,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
         // Cost the skip mb case
         rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1);
-
       } else if (ref_frame != INTRA_FRAME && !xd->lossless[mbmi->segment_id]) {
         if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
             RDCOST(x->rdmult, x->rddiv, 0, total_sse)) {
@@ -5181,9 +5372,6 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
   if (cm->interp_filter != BILINEAR) {
     best_filter = EIGHTTAP;
     if (cm->interp_filter == SWITCHABLE &&
-#if CONFIG_EXT_INTERP
-        vp10_is_interp_needed(xd) &&
-#endif  // CONFIG_EXT_INTERP
         x->source_variance >= cpi->sf.disable_filter_search_var_thresh) {
       int rs;
       int best_rs = INT_MAX;
@@ -5525,11 +5713,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
                                               (int) this_rd_thresh, seg_mvs,
                                               bsi, switchable_filter_index,
                                               mi_row, mi_col);
-#if CONFIG_EXT_INTERP
-            if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
-                mbmi->interp_filter != EIGHTTAP)  // invalid configuration
-              continue;
-#endif  // CONFIG_EXT_INTERP
+
             if (tmp_rd == INT64_MAX)
               continue;
             rs = vp10_get_switchable_rate(cpi, xd);
@@ -5583,30 +5767,15 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
 
       mbmi->interp_filter = (cm->interp_filter == SWITCHABLE ?
                              tmp_best_filter : cm->interp_filter);
-
-
       if (!pred_exists) {
         // Handles the special case when a filter that is not in the
-        // switchable list (bilinear) is indicated at the frame level
+        // switchable list (bilinear, 6-tap) is indicated at the frame level
         tmp_rd = rd_pick_best_sub8x8_mode(cpi, x,
                                           &x->mbmi_ext->ref_mvs[ref_frame][0],
                                           second_ref, best_yrd, &rate, &rate_y,
                                           &distortion, &skippable, &total_sse,
                                           (int) this_rd_thresh, seg_mvs, bsi, 0,
                                           mi_row, mi_col);
-#if CONFIG_EXT_INTERP
-        if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
-            mbmi->interp_filter != EIGHTTAP) {
-          mbmi->interp_filter = EIGHTTAP;
-          tmp_rd = rd_pick_best_sub8x8_mode(
-              cpi, x,
-              &x->mbmi_ext->ref_mvs[ref_frame][0],
-              second_ref, best_yrd, &rate, &rate_y,
-              &distortion, &skippable, &total_sse,
-              (int) this_rd_thresh, seg_mvs, bsi, 0,
-              mi_row, mi_col);
-        }
-#endif  // CONFIG_EXT_INTERP
         if (tmp_rd == INT64_MAX)
           continue;
       } else {
