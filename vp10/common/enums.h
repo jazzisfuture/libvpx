@@ -182,6 +182,9 @@ typedef uint8_t PREDICTION_MODE;
 
 /* Segment Feature Masks */
 #define MAX_MV_REF_CANDIDATES 2
+#if CONFIG_REF_MV
+#define MAX_REF_MV_STACK_SIZE 32
+#endif
 
 #define INTRA_INTER_CONTEXTS 4
 #define COMP_INTER_CONTEXTS 5

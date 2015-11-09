@@ -193,10 +193,17 @@ int vp10_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
   int pred_context = 2;
   int ctx_count[2] = { 0, 0 };
   int idx;
+  int mi_height = xd->n8_h;
+  int mi_width  = xd->n8_w;
+
+  if (xd->mb_to_bottom_edge < 0)
+    mi_height += (xd->mb_to_bottom_edge >> 6);
+  if (xd->mb_to_right_edge < 0)
+    mi_width += (xd->mb_to_right_edge >> 6);
 
   if (has_above && has_left) {  // both edges available
     MODE_INFO **ref_mi = &xd->mi[-xd->mi_stride];
-    for (idx = 0; idx < xd->n8_w; ++idx) {
+    for (idx = 0; idx < mi_width; ++idx) {
       const MB_MODE_INFO *const above_mbmi = &ref_mi[idx]->mbmi;
       const int above_intra = !is_inter_block(above_mbmi);
       if (!above_intra)
@@ -210,7 +217,7 @@ int vp10_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
 
     ctx_count[0] = ctx_count[1] = 0;
     ref_mi = &xd->mi[-1];
-    for (idx = 0; idx < xd->n8_h; ++idx) {
+    for (idx = 0; idx < mi_height; ++idx) {
       const MB_MODE_INFO *const left_mbmi = &ref_mi[idx * xd->mi_stride]->mbmi;
       const int left_intra = !is_inter_block(left_mbmi);
       if (!left_intra)
@@ -223,7 +230,7 @@ int vp10_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
       pred_context -= 1;
   } else if (has_above) {  // one edge available
     MODE_INFO **const ref_mi = &xd->mi[-xd->mi_stride];
-    for (idx = 0; idx < xd->n8_w; ++idx) {
+    for (idx = 0; idx < mi_width; ++idx) {
       const MB_MODE_INFO *const above_mbmi = &ref_mi[idx]->mbmi;
       const int above_intra = !is_inter_block(above_mbmi);
       if (!above_intra)
@@ -236,11 +243,98 @@ int vp10_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
       pred_context -= 2;
   } else if (has_left) {
     MODE_INFO **const ref_mi = &xd->mi[-1];
-    for (idx = 0; idx < xd->n8_h; ++idx) {
+    for (idx = 0; idx < mi_height; ++idx) {
       const MB_MODE_INFO *const left_mbmi = &ref_mi[idx * xd->mi_stride]->mbmi;
       const int left_intra = !is_inter_block(left_mbmi);
       if (!left_intra)
         ++ctx_count[(left_mbmi->ref_frame[0] == LAST_FRAME)];
+    }
+
+    if (ctx_count[1] > ctx_count[0])
+      pred_context += 2;
+    else if (ctx_count[1] < ctx_count[0])
+      pred_context -= 2;
+  } else {  // no edges available
+    pred_context = 2;
+  }
+
+  assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
+  return pred_context;
+}
+
+int vp10_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
+  const int has_above = xd->up_available;
+  const int has_left = xd->left_available;
+  int pred_context = 2;
+  int ctx_count[2] = { 0, 0 };
+  int idx;
+  int mi_height = xd->n8_h;
+  int mi_width  = xd->n8_w;
+
+  if (xd->mb_to_bottom_edge < 0)
+    mi_height += (xd->mb_to_bottom_edge >> 6);
+  if (xd->mb_to_right_edge < 0)
+    mi_width += (xd->mb_to_right_edge >> 6);
+
+  if (has_above && has_left) {  // both edges available
+    MODE_INFO **ref_mi = &xd->mi[-xd->mi_stride];
+    for (idx = 0; idx < mi_width; ++idx) {
+      const MB_MODE_INFO *const above_mbmi = &ref_mi[idx]->mbmi;
+      if (has_second_ref(above_mbmi)) {
+        if (above_mbmi->ref_frame[0] != GOLDEN_FRAME)
+          ++ctx_count[0];
+      } else if (above_mbmi->ref_frame[0] > LAST_FRAME) {
+        ++ctx_count[above_mbmi->ref_frame[0] == GOLDEN_FRAME];
+      }
+    }
+
+    if (ctx_count[1] > ctx_count[0])
+      pred_context += 1;
+    else if (ctx_count[1] < ctx_count[0])
+      pred_context -= 1;
+
+    ctx_count[0] = ctx_count[1] = 0;
+    ref_mi = &xd->mi[-1];
+    for (idx = 0; idx < mi_height; ++idx) {
+      const MB_MODE_INFO *const left_mbmi = &ref_mi[idx * xd->mi_stride]->mbmi;
+      if (has_second_ref(left_mbmi)) {
+        if (left_mbmi->ref_frame[0] != GOLDEN_FRAME)
+          ++ctx_count[0];
+      } else if (left_mbmi->ref_frame[0] > LAST_FRAME) {
+        ++ctx_count[left_mbmi->ref_frame[0] == GOLDEN_FRAME];
+      }
+    }
+
+    if (ctx_count[1] > ctx_count[0])
+      pred_context += 1;
+    else if (ctx_count[1] < ctx_count[0])
+      pred_context -= 1;
+  } else if (has_above) {  // one edge available
+    MODE_INFO **const ref_mi = &xd->mi[-xd->mi_stride];
+    for (idx = 0; idx < mi_width; ++idx) {
+      const MB_MODE_INFO *const above_mbmi = &ref_mi[idx]->mbmi;
+      if (has_second_ref(above_mbmi)) {
+        if (above_mbmi->ref_frame[0] != GOLDEN_FRAME)
+          ++ctx_count[0];
+      } else if (above_mbmi->ref_frame[0] > LAST_FRAME) {
+        ++ctx_count[above_mbmi->ref_frame[0] == GOLDEN_FRAME];
+      }
+    }
+
+    if (ctx_count[1] > ctx_count[0])
+      pred_context += 2;
+    else if (ctx_count[1] < ctx_count[0])
+      pred_context -= 2;
+  } else if (has_left) {
+    MODE_INFO **const ref_mi = &xd->mi[-1];
+    for (idx = 0; idx < mi_height; ++idx) {
+      const MB_MODE_INFO *const left_mbmi = &ref_mi[idx * xd->mi_stride]->mbmi;
+      if (has_second_ref(left_mbmi)) {
+        if (left_mbmi->ref_frame[0] != GOLDEN_FRAME)
+          ++ctx_count[0];
+      } else if (left_mbmi->ref_frame[0] > LAST_FRAME) {
+        ++ctx_count[left_mbmi->ref_frame[0] == GOLDEN_FRAME];
+      }
     }
 
     if (ctx_count[1] > ctx_count[0])
@@ -320,7 +414,6 @@ int vp10_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
   assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
   return pred_context;
 }
-#endif
 
 int vp10_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
   int pred_context;
@@ -407,3 +500,4 @@ int vp10_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
   assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
   return pred_context;
 }
+#endif
