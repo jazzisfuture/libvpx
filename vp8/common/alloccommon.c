@@ -72,11 +72,6 @@ int vp8_alloc_frame_buffers(VP8_COMMON *oci, int width, int height)
     oci->gld_fb_idx = 2;
     oci->alt_fb_idx = 3;
 
-    oci->fb_idx_ref_cnt[0] = 1;
-    oci->fb_idx_ref_cnt[1] = 1;
-    oci->fb_idx_ref_cnt[2] = 1;
-    oci->fb_idx_ref_cnt[3] = 1;
-
     if (vp8_yv12_alloc_frame_buffer(&oci->temp_scale_frame,   width, 16, VP8BORDERINPIXELS) < 0)
         goto allocation_fail;
 
