@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (7155f7 Merge "VP9 dynamic resize: enable resize unit test(DownUp).")
 /*
  *  Copyright (c) 2015 The WebM project authors. All Rights Reserved.
  *
@@ -192,3 +193,5 @@ int vp10_count_colors_highbd(const uint8_t *src8, int stride, int rows,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 
+=======
+>>>>>>> BRANCH (cbecf5 Release v1.5.0)

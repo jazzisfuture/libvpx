@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (7155f7 Merge "VP9 dynamic resize: enable resize unit test(DownUp).")
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -213,3 +214,5 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
 #endif
 
 #endif  // VP10_COMMON_ENTROPY_H_
+=======
+>>>>>>> BRANCH (cbecf5 Release v1.5.0)

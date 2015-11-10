@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (7155f7 Merge "VP9 dynamic resize: enable resize unit test(DownUp).")
 /*
   Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -77,3 +78,5 @@ void vp10_diff_update_prob(vpx_reader *r, vpx_prob* p) {
     *p = (vpx_prob)inv_remap_prob(delp, *p);
   }
 }
+=======
+>>>>>>> BRANCH (cbecf5 Release v1.5.0)

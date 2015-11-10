@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (7155f7 Merge "VP9 dynamic resize: enable resize unit test(DownUp).")
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -816,3 +817,5 @@ void vp10_adapt_coef_probs(VP10_COMMON *cm) {
   for (t = TX_4X4; t <= TX_32X32; t++)
     adapt_coef_probs(cm, t, count_sat, update_factor);
 }
+=======
+>>>>>>> BRANCH (cbecf5 Release v1.5.0)

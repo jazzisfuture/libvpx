@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (7155f7 Merge "VP9 dynamic resize: enable resize unit test(DownUp).")
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -678,3 +679,5 @@ int vp10_get_intra_cost_penalty(int qindex, int qdelta,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
+=======
+>>>>>>> BRANCH (cbecf5 Release v1.5.0)

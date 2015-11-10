@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (7155f7 Merge "VP9 dynamic resize: enable resize unit test(DownUp).")
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -648,3 +649,5 @@ void vp10_new_framerate(VP10_COMP *cpi, double framerate);
 #endif
 
 #endif  // VP10_ENCODER_ENCODER_H_
+=======
+>>>>>>> BRANCH (cbecf5 Release v1.5.0)

@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (7155f7 Merge "VP9 dynamic resize: enable resize unit test(DownUp).")
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -825,3 +826,5 @@ void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in, int bhl_in,
 void vp10_init_intra_predictors(void) {
   once(vp10_init_intra_predictors_internal);
 }
+=======
+>>>>>>> BRANCH (cbecf5 Release v1.5.0)

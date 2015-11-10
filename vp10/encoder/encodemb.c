@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (7155f7 Merge "VP9 dynamic resize: enable resize unit test(DownUp).")
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -1131,3 +1132,5 @@ void vp10_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   vp10_foreach_transformed_block_in_plane(xd, bsize, plane,
                                           vp10_encode_block_intra, &arg);
 }
+=======
+>>>>>>> BRANCH (cbecf5 Release v1.5.0)
