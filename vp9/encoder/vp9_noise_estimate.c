@@ -108,6 +108,7 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0)
     copy_frame(&cpi->denoiser.last_source, cpi->Source);
+    vp9_denoiser_set_noise_level(&cpi->denoiser, ne->level);
 #endif
     if (last_source != NULL) {
       ne->last_w = cm->width;
@@ -212,8 +213,10 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
         else
           if (ne->value > ne->thresh)
             ne->level = kMedium;
-          else
+          else if (ne->value > (ne->thresh >> 1))
             ne->level = kLow;
+          else
+            ne->level = kLowLow;
       }
     }
   }
