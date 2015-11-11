@@ -27,7 +27,6 @@ typedef enum vp9_denoiser_decision {
 } VP9_DENOISER_DECISION;
 
 typedef enum vp9_denoiser_level {
-  kDenLowLow,
   kDenLow,
   kDenMedium,
   kDenHigh
