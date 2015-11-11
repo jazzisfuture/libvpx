@@ -924,6 +924,7 @@ static int main_loop(int argc, const char **argv_) {
     got_data = 0;
     if ((img = vpx_codec_get_frame(&decoder, &iter))) {
       ++frame_out;
+      printf("----------get image width %d height %d ---\r\n", img->d_w, img->d_h);
       got_data = 1;
     }
 

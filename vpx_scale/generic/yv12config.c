@@ -102,6 +102,7 @@ int vp8_yv12_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     ybf->corrupted = 0; /* assume not currupted by errors */
     return 0;
   }
+
   return -2;
 }
 
