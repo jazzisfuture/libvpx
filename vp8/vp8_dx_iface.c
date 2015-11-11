@@ -43,6 +43,34 @@ typedef enum
 } mem_seg_id_t;
 #define NELEMENTS(x) ((int)(sizeof(x)/sizeof(x[0])))
 
+static int get_free_fb (VP8_COMMON *cm)
+{
+    int i;
+    int width = cm->Width;
+    int height = cm->Height;
+
+    if ((width & 0xf) != 0)
+        width += 16 - (width & 0xf);
+
+    if ((height & 0xf) != 0)
+        height += 16 - (height & 0xf);
+
+    for (i = 0; i < NUM_YV12_BUFFERS; i++)
+        if (cm->fb_idx_ref_cnt[i] == 0)
+            break;
+
+    assert(i < NUM_YV12_BUFFERS);
+    cm->fb_idx_ref_cnt[i] = 1;
+
+    cm->yv12_fb[i].flags = 0;
+
+    if (vp8_yv12_alloc_frame_buffer(&cm->yv12_fb[i], width, height, VP8BORDERINPIXELS) < 0) {
+      printf("---------allocation fail ");
+    }
+    return i;
+}
+
+
 struct vpx_codec_alg_priv
 {
     vpx_codec_priv_t        base;
@@ -390,6 +418,12 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
       ctx->yv12_frame_buffers.pbi[0]->decrypt_state = ctx->decrypt_state;
     }
 
+    VP8D_COMP *pbi = ctx->yv12_frame_buffers.pbi[0];
+    VP8_COMMON *const pc = & pbi->common;
+    pc->Width = ctx->si.w;
+    pc->Height = ctx->si.h;
+   // pc->new_fb_idx = get_free_fb (pc);
+
     if (!res)
     {
         VP8D_COMP *pbi = ctx->yv12_frame_buffers.pbi[0];
@@ -486,7 +520,9 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
 
             /* required to get past the first get_free_fb() call */
             pbi->common.fb_idx_ref_cnt[0] = 0;
-        }
+        } //else {
+         // pc->new_fb_idx = get_free_fb (pc);
+       // }
 
         /* update the pbi fragment data */
         pbi->fragments = ctx->fragments;

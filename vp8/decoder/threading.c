@@ -317,7 +317,7 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd, int start_mb_row)
     unsigned char *dst_buffer[3];
     int i;
     int ref_fb_corrupted[MAX_REF_FRAMES];
-
+    getchar();
     ref_fb_corrupted[INTRA_FRAME] = 0;
 
     for(i = 1; i < MAX_REF_FRAMES; i++)

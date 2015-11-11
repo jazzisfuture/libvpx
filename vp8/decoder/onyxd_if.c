@@ -198,12 +198,25 @@ vpx_codec_err_t vp8dx_set_reference(VP8D_COMP *pbi, enum vpx_ref_frame_type ref_
 static int get_free_fb (VP8_COMMON *cm)
 {
     int i;
+    int width = cm->Width;
+    int height = cm->Height;
+
+    if ((width & 0xf) != 0)
+        width += 16 - (width & 0xf);
+
+    if ((height & 0xf) != 0)
+        height += 16 - (height & 0xf);
+
     for (i = 0; i < NUM_YV12_BUFFERS; i++)
         if (cm->fb_idx_ref_cnt[i] == 0)
             break;
 
     assert(i < NUM_YV12_BUFFERS);
     cm->fb_idx_ref_cnt[i] = 1;
+
+    cm->yv12_fb[i].flags = 0;
+    if (vp8_yv12_alloc_frame_buffer(&cm->yv12_fb[i], width, height, VP8BORDERINPIXELS) < 0)
+      printf("---------allocation fail ");
     return i;
 }
 

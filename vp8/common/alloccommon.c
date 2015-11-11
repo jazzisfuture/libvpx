@@ -21,7 +21,7 @@
 void vp8_de_alloc_frame_buffers(VP8_COMMON *oci)
 {
     int i;
-    for (i = 0; i < NUM_YV12_BUFFERS; i++)
+    for (i = 1; i < NUM_YV12_BUFFERS; i++)
         vp8_yv12_de_alloc_frame_buffer(&oci->yv12_fb[i]);
 
     vp8_yv12_de_alloc_frame_buffer(&oci->temp_scale_frame);
@@ -59,7 +59,7 @@ int vp8_alloc_frame_buffers(VP8_COMMON *oci, int width, int height)
         height += 16 - (height & 0xf);
 
 
-    for (i = 0; i < NUM_YV12_BUFFERS; i++)
+  for (i = 0; i < NUM_YV12_BUFFERS; i++)
     {
         oci->fb_idx_ref_cnt[i] = 0;
         oci->yv12_fb[i].flags = 0;
