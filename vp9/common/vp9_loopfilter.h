@@ -26,7 +26,12 @@ extern "C" {
 
 #define SIMD_WIDTH 16
 
+#if CONFIG_EXT_REFS
+#define MAX_REF_LF_DELTAS       7
+#else
 #define MAX_REF_LF_DELTAS       4
+#endif  // CONFIG_EXT_REFS
+
 #define MAX_MODE_LF_DELTAS      2
 
 enum lf_path {
@@ -76,7 +81,8 @@ struct loopfilter {
   uint8_t mode_ref_delta_enabled;
   uint8_t mode_ref_delta_update;
 
-  // 0 = Intra, Last, GF, ARF
+  // 0 = Intra, Last, Last2+Last3+LAST4(CONFIG_EXT_REFS),
+  // GF, ARF
   signed char ref_deltas[MAX_REF_LF_DELTAS];
   signed char last_ref_deltas[MAX_REF_LF_DELTAS];
 

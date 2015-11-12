@@ -32,7 +32,11 @@
 extern "C" {
 #endif
 
+#if CONFIG_EXT_REFS
+#define REFS_PER_FRAME 6
+#else
 #define REFS_PER_FRAME 3
+#endif  // CONFIG_EXT_REFS
 
 #define REF_FRAMES_LOG2 3
 #define REF_FRAMES (1 << REF_FRAMES_LOG2)
@@ -156,6 +160,12 @@ typedef struct VP9Common {
 #endif
 
   FRAME_TYPE last_frame_type;  /* last frame's frame type for motion search.*/
+#if CONFIG_EXT_REFS
+  // frame type of the frame before last frame
+  FRAME_TYPE last2_frame_type;
+  // frame type of the frame two frames before last frame
+  FRAME_TYPE last3_frame_type;
+#endif  // CONFIG_EXT_REFS
   FRAME_TYPE frame_type;
 
   int show_frame;
@@ -242,7 +252,7 @@ typedef struct VP9Common {
 
   // Context probabilities for reference frame prediction
   MV_REFERENCE_FRAME comp_fixed_ref;
-  MV_REFERENCE_FRAME comp_var_ref[2];
+  MV_REFERENCE_FRAME comp_var_ref[COMP_REFS];
   REFERENCE_MODE reference_mode;
 
   FRAME_CONTEXT *fc;  /* this frame entropy */

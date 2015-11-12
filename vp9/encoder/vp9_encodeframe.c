@@ -1311,14 +1311,51 @@ static void update_stats(VP9_COMMON *cm, ThreadData *td) {
                             [has_second_ref(mbmi)]++;
 
         if (has_second_ref(mbmi)) {
-          counts->comp_ref[vp9_get_pred_context_comp_ref_p(cm, xd)]
+#if CONFIG_EXT_REFS
+          const int bit = (ref0 == GOLDEN_FRAME || ref0 == LAST3_FRAME ||
+                           ref0 == LAST4_FRAME);
+          counts->comp_ref[vp9_get_pred_context_comp_ref_p(cm, xd)][0][bit]++;
+          if (!bit) {
+            counts->comp_ref[vp9_get_pred_context_comp_ref_p1(cm, xd)][1]
+                            [ref0 == LAST_FRAME]++;
+          } else {
+            counts->comp_ref[vp9_get_pred_context_comp_ref_p2(cm, xd)][2]
+                            [ref0 == GOLDEN_FRAME]++;
+            if (ref0 != GOLDEN_FRAME) {
+              counts->comp_ref[vp9_get_pred_context_comp_ref_p3(cm, xd)][3]
+                              [ref0 == LAST3_FRAME]++;
+            }
+          }
+#else
+          counts->comp_ref[vp9_get_pred_context_comp_ref_p(cm, xd)][0]
                           [ref0 == GOLDEN_FRAME]++;
+#endif  // CONFIG_EXT_REFS
         } else {
+#if CONFIG_EXT_REFS
+          const int bit = (ref0 == ALTREF_FRAME || ref0 == GOLDEN_FRAME);
+          counts->single_ref[vp9_get_pred_context_single_ref_p1(xd)][0][bit]++;
+          if (bit) {
+            counts->single_ref[vp9_get_pred_context_single_ref_p2(xd)][1]
+                              [ref0 != GOLDEN_FRAME]++;
+          } else {
+            const int bit1 = !(ref0 == LAST2_FRAME || ref0 == LAST_FRAME);
+            counts->single_ref[vp9_get_pred_context_single_ref_p3(xd)][2]
+                              [bit1]++;
+            if (!bit1) {
+              counts->single_ref[vp9_get_pred_context_single_ref_p4(xd)][3]
+                                [ref0 != LAST_FRAME]++;
+            } else {
+              counts->single_ref[vp9_get_pred_context_single_ref_p5(xd)][4]
+                                [ref0 != LAST3_FRAME]++;
+            }
+          }
+#else
           counts->single_ref[vp9_get_pred_context_single_ref_p1(xd)][0]
                             [ref0 != LAST_FRAME]++;
           if (ref0 != LAST_FRAME)
             counts->single_ref[vp9_get_pred_context_single_ref_p2(xd)][1]
                               [ref0 != GOLDEN_FRAME]++;
+#endif  // CONFIG_EXT_REFS
         }
       }
     }
@@ -2886,8 +2923,14 @@ static int check_dual_ref_flags(VP9_COMP *cpi) {
   if (segfeature_active(&cpi->common.seg, 1, SEG_LVL_REF_FRAME)) {
     return 0;
   } else {
-    return (!!(ref_flags & VP9_GOLD_FLAG) + !!(ref_flags & VP9_LAST_FLAG)
-        + !!(ref_flags & VP9_ALT_FLAG)) >= 2;
+    return (!!(ref_flags & VP9_GOLD_FLAG) +
+            !!(ref_flags & VP9_LAST_FLAG) +
+#if CONFIG_EXT_REFS
+            !!(ref_flags & VP9_LAST2_FLAG) +
+            !!(ref_flags & VP9_LAST3_FLAG) +
+            !!(ref_flags & VP9_LAST4_FLAG) +
+#endif  // CONFIG_EXT_REFS
+            !!(ref_flags & VP9_ALT_FLAG)) >= 2;
   }
 }
 
@@ -4026,7 +4069,14 @@ void vp9_encode_frame(VP9_COMP *cpi) {
       cpi->allow_comp_inter_inter = 1;
       cm->comp_fixed_ref = ALTREF_FRAME;
       cm->comp_var_ref[0] = LAST_FRAME;
+#if CONFIG_EXT_REFS
+      cm->comp_var_ref[1] = LAST2_FRAME;
+      cm->comp_var_ref[2] = LAST3_FRAME;
+      cm->comp_var_ref[3] = LAST4_FRAME;
+      cm->comp_var_ref[4] = GOLDEN_FRAME;
+#else
       cm->comp_var_ref[1] = GOLDEN_FRAME;
+#endif  // CONFIG_EXT_REFS
     }
   }
 
