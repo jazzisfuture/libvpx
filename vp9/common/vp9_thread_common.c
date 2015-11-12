@@ -377,13 +377,14 @@ void vp9_accumulate_frame_counts(FRAME_COUNTS *accum,
       accum->comp_inter[i][j] += counts->comp_inter[i][j];
 
   for (i = 0; i < REF_CONTEXTS; i++)
-    for (j = 0; j < 2; j++)
+    for (j = 0; j < (SINGLE_REFS - 1); j++)
       for (k = 0; k < 2; k++)
-      accum->single_ref[i][j][k] += counts->single_ref[i][j][k];
+        accum->single_ref[i][j][k] += counts->single_ref[i][j][k];
 
   for (i = 0; i < REF_CONTEXTS; i++)
-    for (j = 0; j < 2; j++)
-      accum->comp_ref[i][j] += counts->comp_ref[i][j];
+    for (j = 0; j < (COMP_REFS - 1); j++)
+      for (k = 0; k < 2; k++)
+        accum->comp_ref[i][j][k] += counts->comp_ref[i][j][k];
 
   for (i = 0; i < TX_SIZE_CONTEXTS; i++) {
     for (j = 0; j < TX_SIZES; j++)
