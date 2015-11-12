@@ -2036,6 +2036,10 @@ void vp9_decode_frame(VP9Decoder *pbi,
 #if CONFIG_INTERNAL_STATS
   // Reset internal stats
   if (cm->current_video_frame == 0) {
+    int i;
+    for (i = 0; i < BR_MOVING_AVERAGE_SIZE; ++i)
+      pbi->br_data.bit_rate[i] = 0;
+    pbi->br_data.index = 0;
     pbi->total_block_in_8x8 = 0;
     pbi->subpel_mc_block_in_4x4_h = 0;
     pbi->subpel_mc_block_in_4x4_v = 0;
