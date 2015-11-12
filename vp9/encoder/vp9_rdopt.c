@@ -2136,7 +2136,7 @@ static void estimate_ref_frame_costs(const VP9_COMMON *cm,
         base_cost += vp9_cost_bit(comp_inter_p, 0);
 
       ref_costs_single[LAST_FRAME] = ref_costs_single[GOLDEN_FRAME] =
-          ref_costs_single[ALTREF_FRAME] = base_cost;
+         ref_costs_single[ALTREF_FRAME] = base_cost;
       ref_costs_single[LAST_FRAME]   += vp9_cost_bit(ref_single_p1, 0);
       ref_costs_single[GOLDEN_FRAME] += vp9_cost_bit(ref_single_p1, 1);
       ref_costs_single[ALTREF_FRAME] += vp9_cost_bit(ref_single_p1, 1);
@@ -2147,6 +2147,7 @@ static void estimate_ref_frame_costs(const VP9_COMMON *cm,
       ref_costs_single[GOLDEN_FRAME] = 512;
       ref_costs_single[ALTREF_FRAME] = 512;
     }
+
     if (cm->reference_mode != SINGLE_REFERENCE) {
       vpx_prob ref_comp_p = vp9_get_pred_prob_comp_ref_p(cm, xd);
       unsigned int base_cost = vp9_cost_bit(intra_inter_p, 1);
@@ -3986,7 +3987,7 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
           rd_opt->threshes[segment_id][bsize][THR_LAST] :
           rd_opt->threshes[segment_id][bsize][THR_ALTR];
       this_rd_thresh = (ref_frame == GOLDEN_FRAME) ?
-      rd_opt->threshes[segment_id][bsize][THR_GOLD] : this_rd_thresh;
+          rd_opt->threshes[segment_id][bsize][THR_GOLD] : this_rd_thresh;
       for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
         filter_cache[i] = INT64_MAX;
 
@@ -4008,6 +4009,7 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
             int64_t rs_rd;
             MB_MODE_INFO_EXT *mbmi_ext = x->mbmi_ext;
             mbmi->interp_filter = switchable_filter_index;
+
             tmp_rd = rd_pick_best_sub8x8_mode(cpi, x,
                                               &mbmi_ext->ref_mvs[ref_frame][0],
                                               second_ref, best_yrd, &rate,

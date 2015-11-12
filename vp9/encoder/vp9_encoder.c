@@ -2777,6 +2777,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   if (cpi->refresh_last_frame) {
     ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
+
     if (!cpi->rc.is_src_frame_alt_ref)
       memcpy(cpi->interp_filter_selected[LAST_FRAME],
              cpi->interp_filter_selected[0],
