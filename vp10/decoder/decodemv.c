@@ -660,6 +660,10 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   const int allow_hp = cm->allow_high_precision_mv;
   int_mv nearestmv[2], nearmv[2];
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
+#if CONFIG_REF_MV
+  int ref_mv_count;
+  CANDIDATE_MV ref_mv_stack[MAX_REF_MV_STACK_SIZE];
+#endif
   int ref, is_compound;
   uint8_t inter_mode_ctx[MAX_REF_FRAMES];
 
@@ -676,8 +680,13 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
                          "Reference frame has invalid dimensions");
     vp10_setup_pre_planes(xd, ref, ref_buf->buf, mi_row, mi_col,
                          &ref_buf->sf);
-    vp10_find_mv_refs(cm, xd, mi, frame, ref_mvs[frame],
-                     mi_row, mi_col, fpm_sync, (void *)pbi, inter_mode_ctx);
+    vp10_find_mv_refs(cm, xd, mi, frame,
+#if CONFIG_REF_MV
+                      &ref_mv_count,
+                      ref_mv_stack,
+#endif
+                      ref_mvs[frame],
+                      mi_row, mi_col, fpm_sync, (void *)pbi, inter_mode_ctx);
   }
 
   if (segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {

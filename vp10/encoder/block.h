@@ -13,6 +13,7 @@
 
 #include "vp10/common/entropymv.h"
 #include "vp10/common/entropy.h"
+#include "vp10/common/mvref_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +49,10 @@ typedef unsigned int vp10_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][2]
                                    [COEFF_CONTEXTS][ENTROPY_TOKENS];
 
 typedef struct {
+#if CONFIG_REF_MV
+  int ref_mv_count[MAX_REF_FRAMES];
+  CANDIDATE_MV ref_mv_stack[MAX_REF_FRAMES][MAX_REF_MV_STACK_SIZE];
+#endif
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
   uint8_t mode_context[MAX_REF_FRAMES];
 } MB_MODE_INFO_EXT;

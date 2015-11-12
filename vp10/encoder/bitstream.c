@@ -635,8 +635,8 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       if (mode == NEWMV) {
         for (ref = 0; ref < 1 + is_compound; ++ref)
           vp10_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
-                        &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
-                        allow_hp);
+                         &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv,
+                         nmvc, allow_hp);
       }
     }
   }
