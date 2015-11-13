@@ -1682,6 +1682,53 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  if (cpi->oxcf.noise_sensitivity > 0 &&
+      cpi->resize_pending == 0) {
+    VP9_DENOISER_DECISION decision = COPY_BLOCK;
+    vp9_denoiser_denoise(&cpi->denoiser, x, mi_row, mi_col,
+                         VPXMAX(BLOCK_8X8, bsize), ctx, &decision);
+    // If intra mode was selected, re-evaluate ZEROMV on denoised result.
+    // TODO(marpan/jacky): We may want to re-evaluate for golden reference too.
+    if (best_ref_frame == INTRA_FRAME &&
+        decision == FILTER_BLOCK &&
+        cpi->noise_estimate.enabled &&
+        cpi->noise_estimate.level >= kLow &&
+        !reuse_inter_pred) {
+      // Check if we should pick ZEROMV on denoised signal.
+      int rate = 0;
+      int64_t dist = 0;
+      xd->mi[0]->mbmi.mode = ZEROMV;
+      xd->mi[0]->mbmi.uv_mode = ZEROMV;
+      xd->mi[0]->mbmi.ref_frame[0] = LAST_FRAME;
+      xd->mi[0]->mbmi.ref_frame[1] = NONE;
+      xd->mi[0]->mbmi.mv[0].as_int = 0;
+      xd->mi[0]->mbmi.mv[0].as_mv.row = 0;
+      xd->mi[0]->mbmi.mv[0].as_mv.col = 0;
+      xd->mi[0]->mbmi.interp_filter = EIGHTTAP;
+      vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+      model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist, &var_y, &sse_y);
+      this_rdc.rate = rate + ref_frame_cost[LAST_FRAME];
+      this_rdc.dist = dist;
+      this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, rate, dist);
+      // If ZEROMV cost on denoised source is higher, go back to selected mode.
+      if (this_rdc.rdcost > best_rdc.rdcost) {
+        this_rdc = best_rdc;
+        xd->mi[0]->mbmi.mode = best_mode;
+        xd->mi[0]->mbmi.uv_mode = best_mode;
+        xd->mi[0]->mbmi.ref_frame[0] = best_ref_frame;
+        xd->mi[0]->mbmi.mv[0].as_int = INVALID_MV;
+        xd->mi[0]->mbmi.tx_size = best_tx_size;
+        x->skip_txfm[0] = best_mode_skip_txfm;
+        xd->mi[0]->mbmi.interp_filter = best_pred_filter;
+      } else {
+        best_ref_frame = LAST_FRAME;
+        best_rdc = this_rdc;
+      }
+    }
+  }
+ #endif
+
   if (cpi->sf.adaptive_rd_thresh) {
     THR_MODES best_mode_idx = mode_idx[best_ref_frame][mode_offset(mbmi->mode)];
 
