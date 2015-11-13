@@ -212,6 +212,46 @@ static const vpx_prob default_partition_probs[PARTITION_CONTEXTS]
   {  10,   7,   6 },  // a/l both split
 };
 
+#if CONFIG_REF_MV
+static const vpx_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
+                                              [INTER_MODES - 1] = {
+  { 10,  30,   30 },
+  { 10, 120,  120 },
+  { 10, 180,  180 },
+
+  { 10,  30,   30 },
+  { 10, 120,  120 },
+  { 10, 180,  180 },
+
+  { 10,  30,   30 },
+  { 10, 120,  120 },
+  { 10, 180,  180 },
+
+  { 10,  30,    1 },
+  { 10, 120,    1 },
+  { 10, 180,    1 },
+
+  { 10,  30,    1 },
+  { 10, 120,    1 },
+  { 10, 180,    1 },
+
+  { 10,  30,    1 },
+  { 10, 120,    1 },
+  { 10, 180,    1 },
+
+  { 10,   1,   30 },
+  { 10,   1,  120 },
+  { 10,   1,  180 },
+
+  { 10,   1,   30 },
+  { 10,   1,  120 },
+  { 10,   1,  180 },
+
+  { 10,   1,   30 },
+  { 10,   1,  120 },
+  { 10,   1,  180 },
+};
+#else
 static const vpx_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
                                               [INTER_MODES - 1] = {
   {2,       173,   34},  // 0 = both zero mv
@@ -222,6 +262,7 @@ static const vpx_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
   {17,      81,    31},  // 5 = one intra neighbour + x
   {25,      29,    30},  // 6 = two intra neighbours
 };
+#endif
 
 /* Array indices are identical to previously-existing INTRAMODECONTEXTNODES. */
 const vpx_tree_index vp10_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {

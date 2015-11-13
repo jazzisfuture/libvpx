@@ -28,6 +28,7 @@ typedef struct position {
 typedef struct candidate_mv {
   int_mv this_mv;
   int weight;
+  int offset[2];
 } CANDIDATE_MV;
 #endif
 
@@ -238,7 +239,8 @@ void vp10_find_mv_refs(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 void vp10_find_best_ref_mvs(int allow_hp,
                            int_mv *mvlist, int_mv *nearest_mv, int_mv *near_mv);
 
-void vp10_append_sub8x8_mvs_for_idx(VP10_COMMON *cm, MACROBLOCKD *xd,
+void vp10_append_sub8x8_mvs_for_idx(const VP10_COMMON *const cm,
+                                    const MACROBLOCKD *const xd,
                                    int block, int ref, int mi_row, int mi_col,
                                    int_mv *nearest_mv, int_mv *near_mv,
                                    uint8_t *mode_context);

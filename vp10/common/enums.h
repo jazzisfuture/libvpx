@@ -178,7 +178,11 @@ typedef uint8_t PREDICTION_MODE;
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
 
 #define SKIP_CONTEXTS 3
+#if CONFIG_REF_MV
+#define INTER_MODE_CONTEXTS 27
+#else
 #define INTER_MODE_CONTEXTS 7
+#endif
 
 /* Segment Feature Masks */
 #define MAX_MV_REF_CANDIDATES 2

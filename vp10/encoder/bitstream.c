@@ -512,6 +512,9 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 }
 
 static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
+#if CONFIG_REF_MV
+                                int mi_row, int mi_col,
+#endif
                                 vpx_writer *w) {
   VP10_COMMON *const cm = &cpi->common;
   const nmv_context *nmvc = &cm->fc->nmvc;
@@ -622,7 +625,21 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
         for (idx = 0; idx < 2; idx += num_4x4_w) {
           const int j = idy * 2 + idx;
           const PREDICTION_MODE b_mode = mi->bmi[j].as_mode;
+#if CONFIG_REF_MV
+          int_mv nearest_sub8x8[2], near_sub8x8[2];
+          uint8_t inter_mode_ctx[MAX_REF_FRAMES];
+          vpx_prob *inter_probs_sub8x8;
+          for (ref = 0; ref < 1 + is_compound; ++ref)
+            vp10_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,
+                                           &nearest_sub8x8[ref],
+                                           &near_sub8x8[ref],
+                                           inter_mode_ctx);
+          inter_probs_sub8x8 =
+              cm->fc->inter_mode_probs[inter_mode_ctx[mbmi->ref_frame[0]]];
+          write_inter_mode(w, b_mode, inter_probs_sub8x8);
+#else
           write_inter_mode(w, b_mode, inter_probs);
+#endif
           if (b_mode == NEWMV) {
             for (ref = 0; ref < 1 + is_compound; ++ref)
               vp10_encode_mv(cpi, w, &mi->bmi[j].as_mv[ref].as_mv,
@@ -633,10 +650,16 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       }
     } else {
       if (mode == NEWMV) {
-        for (ref = 0; ref < 1 + is_compound; ++ref)
+        for (ref = 0; ref < 1 + is_compound; ++ref) {
+          MV ref_mv = mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv;
+#if CONFIG_REF_MV && 0
+          vp10_encode_motion_vector(cpi, w, &mbmi->mv[ref].as_mv,
+                                    &ref_mv, nmvc, allow_hp);
+#else
           vp10_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
-                         &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv,
-                         nmvc, allow_hp);
+                         &ref_mv, nmvc, allow_hp);
+#endif
+        }
       }
     }
   }
@@ -777,7 +800,11 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
     xd->above_txfm_context = cm->above_txfm_context + mi_col;
     xd->left_txfm_context = xd->left_txfm_context_buffer + (mi_row & 0x07);
 #endif
-    pack_inter_mode_mvs(cpi, m, w);
+    pack_inter_mode_mvs(cpi, m,
+#if CONFIG_REF_MV
+                        mi_row, mi_col,
+#endif
+                        w);
   }
 
   if (m->mbmi.palette_mode_info.palette_size[0] > 0) {

@@ -1253,7 +1253,8 @@ static void rd_pick_sb_modes(VP10_COMP *cpi,
   ctx->dist = rd_cost->dist;
 }
 
-static void update_stats(VP10_COMMON *cm, ThreadData *td) {
+static void update_stats(VP10_COMMON *cm, ThreadData *td,
+                         int mi_row, int mi_col) {
   const MACROBLOCK *x = &td->mb;
   const MACROBLOCKD *const xd = &x->e_mbd;
   const MODE_INFO *const mi = xd->mi[0];
@@ -1303,7 +1304,23 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td) {
           for (idx = 0; idx < 2; idx += num_4x4_w) {
             const int j = idy * 2 + idx;
             const PREDICTION_MODE b_mode = mi->bmi[j].as_mode;
+#if CONFIG_REF_MV
+            int_mv nearest_sub8x8[2], near_sub8x8[2];
+            uint8_t inter_mode_ctx[MAX_REF_FRAMES];
+            int ref;
+            int is_compound = has_second_ref(mbmi);
+            for (ref = 0; ref < 1 + is_compound; ++ref)
+              vp10_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,
+                                             &nearest_sub8x8[ref],
+                                             &near_sub8x8[ref],
+                                             inter_mode_ctx);
+            ++counts->inter_mode[inter_mode_ctx[mbmi->ref_frame[0]]]
+                                [INTER_OFFSET(b_mode)];
+#else
             ++counts->inter_mode[mode_ctx][INTER_OFFSET(b_mode)];
+            (void) mi_row;
+            (void) mi_col;
+#endif
           }
         }
       }
@@ -1402,7 +1419,7 @@ static void encode_b(VP10_COMP *cpi, const TileInfo *const tile,
   encode_superblock(cpi, td, tp, output_enabled, mi_row, mi_col, bsize, ctx);
 
   if (output_enabled) {
-    update_stats(&cpi->common, td);
+    update_stats(&cpi->common, td, mi_row, mi_col);
   }
 }
 

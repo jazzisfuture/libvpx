@@ -205,6 +205,34 @@ void vp10_write_nmv_probs(VP10_COMMON *cm, int usehp, vpx_writer *w,
   }
 }
 
+#if CONFIG_REF_MV
+void vp10_encode_motion_vector(VP10_COMP* cpi, vpx_writer* w,
+                               const MV* mv, const MV* ref,
+                               const nmv_context* mvctx, int usehp) {
+  const MV diff = {mv->row - ref->row,
+                   mv->col - ref->col};
+
+  usehp = usehp && vp10_use_mv_hp(ref);
+
+  vpx_write_bit(w, diff.row != 0);
+  vpx_write_bit(w, diff.col != 0);
+
+  // Encode if each component is zero
+  if (diff.row)
+    encode_mv_component(w, diff.row, &mvctx->comps[0], usehp);
+
+  if (diff.col)
+    encode_mv_component(w, diff.col, &mvctx->comps[1], usehp);
+
+  // If auto_mv_step_size is enabled then keep track of the largest
+  // motion vector component used.
+  if (cpi->sf.mv.auto_mv_step_size) {
+    unsigned int maxv = VPXMAX(abs(mv->row), abs(mv->col)) >> 3;
+    cpi->max_mv_magnitude = VPXMAX(maxv, cpi->max_mv_magnitude);
+  }
+}
+#endif
+
 void vp10_encode_mv(VP10_COMP* cpi, vpx_writer* w,
                    const MV* mv, const MV* ref,
                    const nmv_context* mvctx, int usehp) {

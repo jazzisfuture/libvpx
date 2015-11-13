@@ -449,6 +449,29 @@ static int read_mv_component(vpx_reader *r,
   return sign ? -mag : mag;
 }
 
+#if CONFIG_REF_MV
+static INLINE void decode_motion_vector(vpx_reader *r, MV *mv, const MV *ref,
+                                        const nmv_context *ctx,
+                                        nmv_context_counts *counts,
+                                        int allow_hp) {
+  const int use_hp = allow_hp && vp10_use_mv_hp(ref);
+  MV diff = {0, 0};
+  int decode_row = vpx_read_bit(r);
+  int decode_col = vpx_read_bit(r);
+
+  if (decode_row)
+    diff.row = read_mv_component(r, &ctx->comps[0], use_hp);
+
+  if (decode_col)
+    diff.col = read_mv_component(r, &ctx->comps[1], use_hp);
+
+  vp10_inc_mv(&diff, counts, use_hp);
+
+  mv->row = ref->row + diff.row;
+  mv->col = ref->col + diff.col;
+}
+#endif
+
 static INLINE void read_mv(vpx_reader *r, MV *mv, const MV *ref,
                            const nmv_context *ctx,
                            nmv_context_counts *counts, int allow_hp) {
@@ -599,8 +622,18 @@ static INLINE int assign_mv(VP10_COMMON *cm, MACROBLOCKD *xd,
       FRAME_COUNTS *counts = xd->counts;
       nmv_context_counts *const mv_counts = counts ? &counts->mv : NULL;
       for (i = 0; i < 1 + is_compound; ++i) {
+#if CONFIG_REF_MV && 0
+        if (xd->mi[0]->mbmi.sb_type >= BLOCK_8X8)
+          decode_motion_vector(r, &mv[i].as_mv,
+                               &ref_mv[i].as_mv,
+                               &cm->fc->nmvc, mv_counts, allow_hp);
+        else
+          read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc, mv_counts,
+                  allow_hp);
+#else
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc, mv_counts,
                 allow_hp);
+#endif
         ret = ret && is_mv_valid(&mv[i].as_mv);
       }
       break;
@@ -723,16 +756,14 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         int_mv block[2];
         const int j = idy * 2 + idx;
-        b_mode = read_inter_mode(cm, xd, r, inter_mode_ctx[mbmi->ref_frame[0]]);
+        for (ref = 0; ref < 1 + is_compound; ++ref)
+          vp10_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,
+                                         &nearest_sub8x8[ref],
+                                         &near_sub8x8[ref],
+                                         inter_mode_ctx);
 
-        if (b_mode == NEARESTMV || b_mode == NEARMV) {
-          uint8_t dummy_mode_ctx[MAX_REF_FRAMES];
-          for (ref = 0; ref < 1 + is_compound; ++ref)
-            vp10_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,
-                                          &nearest_sub8x8[ref],
-                                          &near_sub8x8[ref],
-                                          dummy_mode_ctx);
-        }
+        b_mode = read_inter_mode(cm, xd, r, inter_mode_ctx[mbmi->ref_frame[0]]);
+        mi->bmi[j].as_mode = b_mode;
 
         if (!assign_mv(cm, xd, b_mode, block, nearestmv,
                        nearest_sub8x8, near_sub8x8,
