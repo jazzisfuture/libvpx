@@ -30,25 +30,50 @@ sh_b89abcdef: db 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0
 sh_bfedcba9876543210: db 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 sh_b1233: db 1, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b2333: db 2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-
+sh_b4567000000000000: db  4,  5, 6,  7, 0,  0, 0,  0, 0,  0, 0,  0, 0,  0, 0,  0
+sh_b0x1x2x3x0x1x2x3x: db  0, 15, 1, 15, 2, 15, 3, 15, 0, 15, 1, 15, 2, 15, 3, 15
+sh_b0x0x0x0x0x0x0x0x: db  0, 15, 0, 15, 0, 15, 0, 15, 0, 15, 0, 15, 0, 15, 0, 15
+sh_b0x0x0x0x1x1x1x1x: db  0, 15, 0, 15, 0, 15, 0, 15, 1, 15, 1, 15, 1, 15, 1, 15
+sh_b2x2x2x2x3x3x3x3x: db  2, 15, 2, 15, 2, 15, 2, 15, 3, 15, 3, 15, 3, 15, 3, 15
+sh_b0000111122223333: db  0,  0, 0,  0, 1,  1, 1,  1, 2,  2, 2,  2, 3,  3, 3,  3
+ 
 SECTION .text
 
 INIT_MMX ssse3
+cglobal tm_predictor_4x4, 4, 4, 4, dst, stride, above, left
+  movd                  xmm2, [aboveq]
+  pshufb                xmm0, xmm2, [GLOBAL(sh_b0x1x2x3x0x1x2x3x)]  
+  movd                  xmm2, [aboveq-1]
+  pshufb                xmm1, xmm2, [GLOBAL(sh_b0x0x0x0x0x0x0x0x)]  
+  psubw                 xmm0, xmm1
+  movd                  xmm2, [leftq]
+  pshufb                xmm1, xmm2, [GLOBAL(sh_b0x0x0x0x1x1x1x1x)]  
+  paddw                 xmm1, xmm0
+  packuswb              xmm1, xmm1
+  pshufb                xmm3, xmm1, [GLOBAL(sh_b4567000000000000)]
+  movd        [dstq        ], xmm1
+  movd        [dstq+strideq], xmm3
+  lea                   dstq, [dstq+strideq*2]
+  pshufb                xmm1, xmm2, [GLOBAL(sh_b2x2x2x2x3x3x3x3x)]  
+  paddw                 xmm1, xmm0
+  packuswb              xmm1, xmm1
+  pshufb                xmm3, xmm1, [GLOBAL(sh_b4567000000000000)]
+  movd        [dstq        ], xmm1
+  movd        [dstq+strideq], xmm3
+  REP_RET
+
+INIT_MMX ssse3
 cglobal h_predictor_4x4, 2, 4, 3, dst, stride, line, left
-  movifnidn          leftq, leftmp
-  add                leftq, 4
-  mov                lineq, -2
-  pxor                  m0, m0
-.loop:
-  movd                  m1, [leftq+lineq*2  ]
-  movd                  m2, [leftq+lineq*2+1]
-  pshufb                m1, m0
-  pshufb                m2, m0
-  movd      [dstq        ], m1
-  movd      [dstq+strideq], m2
-  lea                 dstq, [dstq+strideq*2]
-  inc                lineq
-  jnz .loop
+  movd                  xmm2, [leftq]
+  pshufb                xmm0, xmm2, [GLOBAL(sh_b0000111122223333)]  
+  movd        [dstq        ], xmm0
+  psrldq                xmm0, 4
+  movd        [dstq+strideq], xmm0
+  lea                   dstq, [dstq+strideq*2]
+  psrldq                xmm0, 4
+  movd        [dstq        ], xmm0
+  psrldq                xmm0, 4
+  movd        [dstq+strideq], xmm0
   REP_RET
 
 INIT_MMX ssse3
