@@ -515,36 +515,6 @@ cglobal v_predictor_32x32, 3, 4, 2, dst, stride, above
   jnz .loop
   REP_RET
 
-INIT_MMX sse
-cglobal tm_predictor_4x4, 4, 4, 4, dst, stride, above, left
-  pxor                  m1, m1
-  movd                  m2, [aboveq-1]
-  movd                  m0, [aboveq]
-  punpcklbw             m2, m1
-  punpcklbw             m0, m1
-  pshufw                m2, m2, 0x0
-  DEFINE_ARGS dst, stride, line, left
-  mov                lineq, -2
-  add                leftq, 4
-  psubw                 m0, m2
-.loop:
-  movd                  m2, [leftq+lineq*2]
-  movd                  m3, [leftq+lineq*2+1]
-  punpcklbw             m2, m1
-  punpcklbw             m3, m1
-  pshufw                m2, m2, 0x0
-  pshufw                m3, m3, 0x0
-  paddw                 m2, m0
-  paddw                 m3, m0
-  packuswb              m2, m2
-  packuswb              m3, m3
-  movd      [dstq        ], m2
-  movd      [dstq+strideq], m3
-  lea                 dstq, [dstq+strideq*2]
-  inc                lineq
-  jnz .loop
-  REP_RET
-
 INIT_XMM sse2
 cglobal tm_predictor_8x8, 4, 4, 4, dst, stride, above, left
   pxor                  m1, m1
