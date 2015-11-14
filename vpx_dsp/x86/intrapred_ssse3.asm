@@ -30,8 +30,36 @@ sh_b89abcdef: db 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0
 sh_bfedcba9876543210: db 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 sh_b1233: db 1, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b2333: db 2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-
+sh_b4567000000000000: db  4,  5, 6,  7, 0,  0, 0,  0, 0,  0, 0,  0, 0,  0, 0,  0
+sh_b0x1x2x3x0x1x2x3x: db  0, 15, 1, 15, 2, 15, 3, 15, 0, 15, 1, 15, 2, 15, 3, 15
+sh_b0x0x0x0x0x0x0x0x: db  0, 15, 0, 15, 0, 15, 0, 15, 0, 15, 0, 15, 0, 15, 0, 15
+sh_b0x0x0x0x1x1x1x1x: db  0, 15, 0, 15, 0, 15, 0, 15, 1, 15, 1, 15, 1, 15, 1, 15
+sh_b2x2x2x2x3x3x3x3x: db  2, 15, 2, 15, 2, 15, 2, 15, 3, 15, 3, 15, 3, 15, 3, 15
+ 
 SECTION .text
+
+INIT_XMM ssse3
+cglobal tm_predictor_4x4, 4, 4, 4, dst, stride, above, left
+  movd                  m2, [aboveq]
+  pshufb                m0, m2, [GLOBAL(sh_b0x1x2x3x0x1x2x3x)]
+  movd                  m2, [aboveq-1]
+  pshufb                m1, m2, [GLOBAL(sh_b0x0x0x0x0x0x0x0x)]
+  psubw                 m0, m1
+  movd                  m2, [leftq]
+  pshufb                m1, m2, [GLOBAL(sh_b0x0x0x0x1x1x1x1x)]
+  paddw                 m1, m0
+  packuswb              m1, m1
+  pshufb                m3, m1, [GLOBAL(sh_b4567000000000000)]
+  movd        [dstq        ], m1
+  movd        [dstq+strideq], m3
+  lea                   dstq, [dstq+strideq*2]
+  pshufb                m1, m2, [GLOBAL(sh_b2x2x2x2x3x3x3x3x)]
+  paddw                 m1, m0
+  packuswb              m1, m1
+  pshufb                m3, m1, [GLOBAL(sh_b4567000000000000)]
+  movd        [dstq        ], m1
+  movd        [dstq+strideq], m3
+  REP_RET
 
 INIT_MMX ssse3
 cglobal h_predictor_4x4, 2, 4, 3, dst, stride, line, left
