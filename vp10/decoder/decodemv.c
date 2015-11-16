@@ -695,6 +695,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
 #if CONFIG_REF_MV
   int ref_mv_count;
+  int nearest_ref_mv_count;
   CANDIDATE_MV ref_mv_stack[MAX_REF_MV_STACK_SIZE];
 #endif
   int ref, is_compound;
@@ -716,6 +717,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
     vp10_find_mv_refs(cm, xd, mi, frame,
 #if CONFIG_REF_MV
                       &ref_mv_count,
+                      &nearest_ref_mv_count,
                       ref_mv_stack,
 #endif
                       ref_mvs[frame],

@@ -51,6 +51,8 @@ typedef unsigned int vp10_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][2]
 typedef struct {
 #if CONFIG_REF_MV
   int ref_mv_count[MAX_REF_FRAMES];
+  int nearest_ref_mv_count[MAX_REF_FRAMES];
+  int ref_mv_mode;
   CANDIDATE_MV ref_mv_stack[MAX_REF_FRAMES][MAX_REF_MV_STACK_SIZE];
 #endif
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];

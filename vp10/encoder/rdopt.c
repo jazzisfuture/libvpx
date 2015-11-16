@@ -3284,6 +3284,7 @@ static void setup_buffer_inter(VP10_COMP *cpi, MACROBLOCK *x,
   vp10_find_mv_refs(cm, xd, mi, ref_frame,
 #if CONFIG_REF_MV
                     &x->mbmi_ext->ref_mv_count[ref_frame],
+                    &x->mbmi_ext->nearest_ref_mv_count[ref_frame],
                     x->mbmi_ext->ref_mv_stack[ref_frame],
 #endif
                     candidates, mi_row, mi_col,
@@ -4405,7 +4406,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
                                   &disable_skip, frame_mv,
                                   mi_row, mi_col,
                                   single_newmv, single_inter_filter,
-                                  single_skippable, &total_sse, best_rd,
+                                  single_skippable, &total_sse,
+                                  best_rd,
                                   &mask_filter, filter_cache);
       if (this_rd == INT64_MAX)
         continue;
