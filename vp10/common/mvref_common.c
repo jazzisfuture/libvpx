@@ -265,6 +265,7 @@ static void setup_ref_mv_list(const VP10_COMMON *const cm,
   // Scan the first left column mode info.
   scan_col_mbmi(cm, xd, mi_row, mi_col, block, ref_frame,
                 -1, ref_mv_stack, refmv_count);
+
   if (*nearest_refmv_count < *refmv_count)
     ++mode_context[ref_frame];
   *nearest_refmv_count = *refmv_count;
@@ -518,7 +519,7 @@ void vp10_find_mv_refs(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                     ref_mv_count, nearest_ref_mv_count,
                     ref_mv_stack, mv_ref_list, -1,
                     mi_row, mi_col, mode_context);
-  mode_context[ref_frame] += (ref_frame - LAST_FRAME) * 3;
+//  mode_context[ref_frame] += (ref_frame - LAST_FRAME) * 3;
 
   if (is_second_rect) {
     if (bw < bh) {
@@ -611,9 +612,9 @@ void vp10_append_sub8x8_mvs_for_idx(const VP10_COMMON *const cm,
             break;
 
         if (n == VPXMIN(2, ref_mv_count))
-          mode_context[mi->mbmi.ref_frame[ref]] = 2;
-        else
           mode_context[mi->mbmi.ref_frame[ref]] = 1;
+        else
+          mode_context[mi->mbmi.ref_frame[ref]] = 2;
       }
 #endif
       break;
@@ -631,12 +632,8 @@ void vp10_append_sub8x8_mvs_for_idx(const VP10_COMMON *const cm,
           break;
         }
 #if CONFIG_REF_MV
-      if (0 && (bmi[1].as_mode == NEWMV || bmi[2].as_mode == NEWMV)) {
-        mode_context[mi->mbmi.ref_frame[ref]] = 2;
-      } else {
-        if (mode_context[mi->mbmi.ref_frame[ref]] < 2)
-          ++mode_context[mi->mbmi.ref_frame[ref]];
-      }
+      if (mode_context[mi->mbmi.ref_frame[ref]] < 2)
+        ++mode_context[mi->mbmi.ref_frame[ref]];
 #endif
       break;
     }
@@ -645,8 +642,8 @@ void vp10_append_sub8x8_mvs_for_idx(const VP10_COMMON *const cm,
   }
 
 #if CONFIG_REF_MV
-  mode_context[mi->mbmi.ref_frame[ref]] +=
-      (mi->mbmi.ref_frame[ref] - LAST_FRAME) * 3;
+//  mode_context[mi->mbmi.ref_frame[ref]] +=
+//      (mi->mbmi.ref_frame[ref] - LAST_FRAME) * 3;
 
   if (is_second_rect)
     mode_context[mi->mbmi.ref_frame[ref]] += 18;
