@@ -849,6 +849,10 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
         if (!ext_tx_used_inter[ext_tx_set][tx_type])
           continue;
       } else {
+        if (!ALLOW_INTRA_EXT_TX && bs >= BLOCK_8X8) {
+          if (tx_type != intra_mode_to_tx_type_lookup[mbmi->mode])
+            continue;
+        }
         if (!ext_tx_used_intra[ext_tx_set][tx_type])
           continue;
       }
