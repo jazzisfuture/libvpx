@@ -1,0 +1,42 @@
+#ifndef VP10_ENCODER_HYBRID_FWD_TXFM_H_
+#define VP10_ENCODER_HYBRID_FWD_TXFM_H_
+
+#include "./vpx_config.h"
+
+typedef enum FWD_TXFM_OPT {
+  FWD_TXFM_OPT_NORMAL,
+  FWD_TXFM_OPT_DC
+} FWD_TXFM_OPT;
+
+typedef struct FWD_TXFM_PARAM{
+  TX_TYPE tx_type;
+  TX_SIZE tx_size;
+  FWD_TXFM_OPT fwd_txfm_opt;
+  int rd_transform;
+  int lossless;
+} FWD_TXFM_PARAM;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void fwd_txfm(const int16_t *src_diff, tran_low_t *coeff,
+              int diff_stride, FWD_TXFM_PARAM* fwd_txfm_param);
+void vp10_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
+                       int diff_stride, TX_TYPE tx_type, int lossless);
+
+INLINE int get_tx1d_size(TX_SIZE tx_size);
+
+#if CONFIG_VP9_HIGHBITDEPTH
+void highbd_fwd_txfm(const int16_t *src_diff, tran_low_t *coeff,
+                     int diff_stride, FWD_TXFM_PARAM* fwd_txfm_param);
+void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
+                              int diff_stride, TX_TYPE tx_type, int lossless);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+
+#endif  // VP10_ENCODER_HYBRID_FWD_TXFM_H_
