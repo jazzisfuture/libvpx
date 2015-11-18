@@ -251,6 +251,8 @@ static void setup_ref_mv_list(const VP10_COMMON *const cm,
 
   CANDIDATE_MV tmp_mv;
   int len, nr_len;
+  int cover_row = 0, sum_r = 0;
+  int cover_col = 0, sum_c = 0;
 
   *refmv_count = 0;
   mode_context[ref_frame] = 0;
@@ -259,16 +261,40 @@ static void setup_ref_mv_list(const VP10_COMMON *const cm,
   scan_row_mbmi(cm, xd, mi_row, mi_col, block, ref_frame,
                 -1, ref_mv_stack, refmv_count);
   *nearest_refmv_count = *refmv_count;
-  if (*nearest_refmv_count)
+  if (*nearest_refmv_count) {
+    for (idx = 0; idx < *nearest_refmv_count; ++idx)
+      sum_r += ref_mv_stack[idx].weight;
+    if (sum_r == xd->n8_w)
+      cover_row = 1;
     ++mode_context[ref_frame];
+  }
 
   // Scan the first left column mode info.
   scan_col_mbmi(cm, xd, mi_row, mi_col, block, ref_frame,
                 -1, ref_mv_stack, refmv_count);
 
-  if (*nearest_refmv_count < *refmv_count)
+  if (*nearest_refmv_count < *refmv_count) {
+    for (idx = 0; idx < *refmv_count; ++idx)
+      sum_c += ref_mv_stack[idx].weight;
+    if (sum_c - sum_r == xd->n8_h)
+      cover_col = 1;
     ++mode_context[ref_frame];
+  }
   *nearest_refmv_count = *refmv_count;
+
+  if (mode_context[ref_frame] == 2) {
+    if (cover_row && cover_col)
+      mode_context[ref_frame] = 4;
+    else
+      mode_context[ref_frame] = 3;
+  }
+
+  if (mode_context[ref_frame] == 1) {
+    if (cover_row || cover_col)
+      mode_context[ref_frame] = 2;
+    else
+      mode_context[ref_frame] = 1;
+  }
 
   // Analyze the top-left corner block mode info.
 //  scan_blk_mbmi(cm, xd, mi_row, mi_col, block, ref_frame,
@@ -279,10 +305,6 @@ static void setup_ref_mv_list(const VP10_COMMON *const cm,
                 -2, ref_mv_stack, refmv_count);
   scan_col_mbmi(cm, xd, mi_row, mi_col, block, ref_frame,
                 -2, ref_mv_stack, refmv_count);
-//  scan_blk_mbmi(cm, xd, mi_row, mi_col, block, ref_frame,
-//                -1, -2, ref_mv_stack, refmv_count);
-//  scan_blk_mbmi(cm, xd, mi_row, mi_col, block, ref_frame,
-//                -2, -1, ref_mv_stack, refmv_count);
 
   // Scan the third outer area.
   scan_row_mbmi(cm, xd, mi_row, mi_col, block, ref_frame,
@@ -519,19 +541,18 @@ void vp10_find_mv_refs(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                     ref_mv_count, nearest_ref_mv_count,
                     ref_mv_stack, mv_ref_list, -1,
                     mi_row, mi_col, mode_context);
-//  mode_context[ref_frame] += (ref_frame - LAST_FRAME) * 3;
 
   if (is_second_rect) {
     if (bw < bh) {
       if (ref_mv_stack[0].offset[0] == 0 &&
           ref_mv_stack[0].offset[1] == 1)
-        mode_context[ref_frame] += 18;
+        mode_context[ref_frame] += 10;
       else
-        mode_context[ref_frame] += 9;
+        mode_context[ref_frame] += 5;
     }
 
     if (bw > bh)
-      mode_context[ref_frame] += 18;
+      mode_context[ref_frame] += 10;
   }
 #endif
 }
@@ -600,7 +621,7 @@ void vp10_append_sub8x8_mvs_for_idx(const VP10_COMMON *const cm,
       if (block == 1) {
         if (ref_mv_stack[0].offset[0] == 1 &&
             ref_mv_stack[0].offset[1] == 0 && ref_mv_count > 0)
-          mode_context[mi->mbmi.ref_frame[ref]] = 2;
+          mode_context[mi->mbmi.ref_frame[ref]] = 3;
         else
           mode_context[mi->mbmi.ref_frame[ref]] = 1;
       }
@@ -614,7 +635,7 @@ void vp10_append_sub8x8_mvs_for_idx(const VP10_COMMON *const cm,
         if (n == VPXMIN(2, ref_mv_count))
           mode_context[mi->mbmi.ref_frame[ref]] = 1;
         else
-          mode_context[mi->mbmi.ref_frame[ref]] = 2;
+          mode_context[mi->mbmi.ref_frame[ref]] = 3;
       }
 #endif
       break;
@@ -642,10 +663,7 @@ void vp10_append_sub8x8_mvs_for_idx(const VP10_COMMON *const cm,
   }
 
 #if CONFIG_REF_MV
-//  mode_context[mi->mbmi.ref_frame[ref]] +=
-//      (mi->mbmi.ref_frame[ref] - LAST_FRAME) * 3;
-
   if (is_second_rect)
-    mode_context[mi->mbmi.ref_frame[ref]] += 18;
+    mode_context[mi->mbmi.ref_frame[ref]] += 10;
 #endif
 }

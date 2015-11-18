@@ -179,7 +179,7 @@ typedef uint8_t PREDICTION_MODE;
 
 #define SKIP_CONTEXTS 3
 #if CONFIG_REF_MV
-#define INTER_MODE_CONTEXTS 27
+#define INTER_MODE_CONTEXTS 15
 #else
 #define INTER_MODE_CONTEXTS 7
 #endif

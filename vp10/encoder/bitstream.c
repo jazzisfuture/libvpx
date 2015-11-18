@@ -603,39 +603,6 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
     // If segment skip is not enabled code the mode.
     if (!segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
       if (bsize >= BLOCK_8X8) {
-
-//        int idx;
-//        fprintf(stderr, "pos (%d, %d), bsize %d, ref frame %d, ref_mv_count %d, near count %d, mode %d\n",
-//                mi_row, mi_col,
-//                mbmi->sb_type,
-//                mbmi->ref_frame[0],
-//                mbmi_ext->ref_mv_count[mbmi->ref_frame[0]],
-//                mbmi_ext->nearest_ref_mv_count[mbmi->ref_frame[0]],
-//                mode);
-//        for (idx = 0; idx < mbmi_ext->ref_mv_count[mbmi->ref_frame[0]]; ++idx)
-//          fprintf(stderr, "mv (%d, %d), weight %d\n",
-//                  mbmi_ext->ref_mv_stack[mbmi->ref_frame[0]][idx].this_mv.as_mv.row,
-//                  mbmi_ext->ref_mv_stack[mbmi->ref_frame[0]][idx].this_mv.as_mv.col,
-//                  mbmi_ext->ref_mv_stack[mbmi->ref_frame[0]][idx].weight);
-//        fprintf(stderr, "\n");
-
-//        static int count = 0;
-//        static int near_mv = 0;
-//
-//        if (// mbmi_ext->nearest_ref_mv_count[mbmi->ref_frame[0]] == 2 &&
-//            mbmi_ext->mode_context[mbmi->ref_frame[0]] % 3 == 0 &&
-//            mbmi_ext->mode_context[mbmi->ref_frame[0]] < 9) {
-//          ++count;
-//          if (mode == NEWMV)
-//            ++near_mv;
-//        }
-//
-//        if (count == 1000) {
-//          fprintf(stderr, "near_mv %d\n", near_mv);
-//          near_mv = 0;
-//          count = 0;
-//        }
-
         write_inter_mode(w, mode, inter_probs);
       }
     }
