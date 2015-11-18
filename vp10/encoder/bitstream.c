@@ -265,7 +265,7 @@ static void update_ext_tx_probs(VP10_COMMON *cm, vpx_writer *w) {
     int savings = 0;
     int do_update = 0;
     for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
-      if (!use_inter_ext_tx_for_tx[s][i]) continue;
+      if (!use_inter_ext_tx_for_txsize[s][i]) continue;
       savings += prob_diff_update_savings(
           vp10_ext_tx_inter_tree[s], cm->fc->inter_ext_tx_prob[s][i],
           cm->counts.inter_ext_tx[s][i], num_ext_tx_set_inter[s]);
@@ -274,7 +274,7 @@ static void update_ext_tx_probs(VP10_COMMON *cm, vpx_writer *w) {
     vpx_write(w, do_update, GROUP_DIFF_UPDATE_PROB);
     if (do_update) {
       for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
-        if (!use_inter_ext_tx_for_tx[s][i]) continue;
+        if (!use_inter_ext_tx_for_txsize[s][i]) continue;
         prob_diff_update(vp10_ext_tx_inter_tree[s],
                          cm->fc->inter_ext_tx_prob[s][i],
                          cm->counts.inter_ext_tx[s][i],
@@ -287,7 +287,7 @@ static void update_ext_tx_probs(VP10_COMMON *cm, vpx_writer *w) {
     int savings = 0;
     int do_update = 0;
     for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
-      if (!use_intra_ext_tx_for_tx[s][i]) continue;
+      if (!use_intra_ext_tx_for_txsize[s][i]) continue;
       for (j = 0; j < INTRA_MODES; ++j)
         savings += prob_diff_update_savings(
             vp10_ext_tx_intra_tree[s], cm->fc->intra_ext_tx_prob[s][i][j],
@@ -297,7 +297,7 @@ static void update_ext_tx_probs(VP10_COMMON *cm, vpx_writer *w) {
     vpx_write(w, do_update, GROUP_DIFF_UPDATE_PROB);
     if (do_update) {
       for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
-        if (!use_intra_ext_tx_for_tx[s][i]) continue;
+        if (!use_intra_ext_tx_for_txsize[s][i]) continue;
         for (j = 0; j < INTRA_MODES; ++j)
           prob_diff_update(vp10_ext_tx_intra_tree[s],
                            cm->fc->intra_ext_tx_prob[s][i][j],
