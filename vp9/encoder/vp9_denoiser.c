@@ -224,11 +224,14 @@ static VP9_DENOISER_DECISION perform_motion_compensation(VP9_DENOISER *denoiser,
   } else {
     // Otherwise, use the zero reference frame.
     frame = ctx->best_zeromv_reference_frame;
-
-    mbmi->ref_frame[0] = ctx->best_zeromv_reference_frame;
+    // Bias to last reference.
+    if (frame == GOLDEN_FRAME &&
+        ((ctx->zeromv_sse > (3 * ctx->zeromv_lastref_sse) >> 2) ||
+         denoiser->denoising_level >= kDenHigh))
+      frame = LAST_FRAME;
+    mbmi->ref_frame[0] = frame;
     mbmi->mode = ZEROMV;
     mbmi->mv[0].as_int = 0;
-
     ctx->best_sse_inter_mode = ZEROMV;
     ctx->best_sse_mv.as_int = 0;
     ctx->newmv_sse = ctx->zeromv_sse;
@@ -462,6 +465,8 @@ void vp9_denoiser_update_frame_stats(MB_MODE_INFO *mbmi, unsigned int sse,
   if (mbmi->mv[0].as_int == 0 && sse < ctx->zeromv_sse) {
     ctx->zeromv_sse = sse;
     ctx->best_zeromv_reference_frame = mbmi->ref_frame[0];
+    if (mbmi->ref_frame[0] == LAST_FRAME)
+      ctx->zeromv_lastref_sse = sse;
   }
 
   if (mbmi->mv[0].as_int != 0 && sse < ctx->newmv_sse) {
