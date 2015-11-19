@@ -2125,7 +2125,7 @@ void vp9_decode_frame(VP9Decoder *pbi,
 
 #if CONFIG_INTERNAL_STATS
   vp9_clear_system_state();
-  {
+  if (cm->current_video_frame == 119 || cm->current_video_frame == 239 || cm->current_video_frame == 479 || 1) {
     FILE *pf = fopen("frame_level_stats.stt", "a");
     int i;
     double subpel_mc_h = (double)pbi->subpel_mc_block_in_4x4_h /
