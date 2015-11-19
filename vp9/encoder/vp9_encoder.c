@@ -2712,7 +2712,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     } else {
       if (cpi->lst_fb_idx == 0)
         cpi->lst_fb_idx = 3;
-      else if (cpi->lst_fb_idx == 7)
+      else if (cpi->lst_fb_idx == BUF_NUM - 1)
         cpi->lst_fb_idx = 0;
       else
         ++cpi->lst_fb_idx;
@@ -3072,9 +3072,9 @@ static void set_frame_size(VP9_COMP *cpi) {
 
 #if CONFIG_INTERNAL_RESIZE
   if (oxcf->pass == 2 && oxcf->resize_mode == RESIZE_DYNAMIC) {
-    if ((cm->current_video_frame % 15) == 3) {
+    if ((cm->current_video_frame % RESIZE_DIST) == 3) {
       cpi->resize_pending = 1;
-      cpi->rc.frame_size_selector = (cm->current_video_frame / 15) & 0x01;
+      cpi->rc.frame_size_selector = (cm->current_video_frame / RESIZE_DIST) & 0x01;
     } else {
       cpi->resize_pending = 0;
     }
@@ -3093,8 +3093,9 @@ static void set_frame_size(VP9_COMP *cpi) {
                          oxcf->scaled_frame_height);
   }
 
-#if CONFIG_INTERNAL_RESIZE
-  fprintf(stderr, "%d %d\n", oxcf->scaled_frame_width,
+#if CONFIG_INTERNAL_RESIZE1
+  fprintf(stderr, "frame %d, size %d %d\n",
+          cm->current_video_frame, oxcf->scaled_frame_width,
           oxcf->scaled_frame_height);
 #endif
 
@@ -3472,6 +3473,12 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         q = clamp(q, q_low, q_high);
 
         loop = (q != last_q);
+#if CONFIG_INTERNAL_RESIZE
+        if (loop_count > 5) {
+          loop = 0;
+          q = last_q;
+        }
+#endif
       } else {
         loop = 0;
       }
@@ -4271,7 +4278,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       } else {
         if (cpi->lst_fb_idx == 0)
           cpi->lst_fb_idx = 3;
-        else if (cpi->lst_fb_idx == 7)
+        else if (cpi->lst_fb_idx == BUF_NUM - 1)
           cpi->lst_fb_idx = 0;
         else
           ++cpi->lst_fb_idx;

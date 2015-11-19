@@ -1807,7 +1807,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
   // below, forcing the use of context 0 for those frame types.
   cm->frame_context_idx = vp9_rb_read_literal(rb, FRAME_CONTEXTS_LOG2);
 
-#if CONFIG_FULL_BUFFER_TEST
+#if CONFIG_FULL_BUFFER_TEST1
   {
     int k;
     fprintf(stderr, "\nDecode frame index %d, is_show_frame %d, new_fb_idx %d\n",
@@ -2152,12 +2152,23 @@ void vp9_decode_frame(VP9Decoder *pbi,
     average_bit_rate /= BR_MOVING_AVERAGE_SIZE;
     if ((int64_t)average_bit_rate > pbi->peak_average_br)
       pbi->peak_average_br = (int64_t)average_bit_rate;
+#if 0
+    if (cm->current_video_frame == 119 || cm->current_video_frame == 239 || cm->current_video_frame == 479) {
+      fprintf(pf, "frame index %d, sub-pel mc (%7.3f, %7.3f)\tintra mode%7.3f\tcompound inter block%7.3f\t",
+              cm->current_video_frame, 25 * subpel_mc_h, 25 * subpel_mc_v, 100 * intra_mode,
+              100 * compound_block);
+      fprintf(pf, "sub8x8 inter %7.3f intra %7.3f average-br %7.3f peak-average-br %7.3f\n",
+              100 * sub8x8_inter, 100 * sub8x8_intra, average_bit_rate, (double)pbi->peak_average_br * 8 / 1000);
+    }
+#else
+    if (cm->current_video_frame >= 90 &&
+        (cm->current_video_frame % 30 == 29)) {
+      fprintf(pf, "frame index %d, %7.3f \t %7.3f \t %7.3f \t %7.3f \t %7.3f \t %7.3f \t %7.3f\n",
+              cm->current_video_frame, 25 * subpel_mc_h, 25 * subpel_mc_v, 100 * intra_mode,
+              100 * compound_block, 100 * sub8x8_inter, 100 * sub8x8_intra, (double)pbi->peak_average_br * 8 / 1000);
+    }
+#endif
 
-    fprintf(pf, "frame index %d, sub-pel mc (%7.3f, %7.3f)\tintra mode%7.3f\tcompound inter block%7.3f\t",
-            cm->current_video_frame, 25 * subpel_mc_h, 25 * subpel_mc_v, 100 * intra_mode,
-            100 * compound_block);
-    fprintf(pf, "sub8x8 inter %7.3f intra %7.3f average-br %7.3f peak-average-br %7.3f\n",
-            100 * sub8x8_inter, 100 * sub8x8_intra, average_bit_rate, (double)pbi->peak_average_br / 1000);
     fclose(pf);
   }
 #endif
