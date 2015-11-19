@@ -151,6 +151,17 @@ static int prob_diff_update_savings(const vpx_tree_index *tree,
   return savings;
 }
 
+#if CONFIG_REF_MV
+static void update_refmv_probs(VP10_COMMON *cm, vpx_writer *w,
+                               FRAME_COUNTS *counts) {
+  int j, k;
+  for (j = 0; j < 2; ++j)
+    for (k = 0; k < REFMV_CONTEXTS; ++k)
+      vp10_cond_prob_diff_update(w, &cm->fc->refmv_prob[j][k],
+                                 counts->refmv[j][k]);
+}
+#endif
+
 #if CONFIG_VAR_TX
 static void write_tx_size_inter(const VP10_COMMON *cm,
                                 const MACROBLOCKD *xd,
@@ -641,10 +652,25 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
           write_inter_mode(w, b_mode, inter_probs);
 #endif
           if (b_mode == NEWMV) {
+#if CONFIG_REF_MV
+            for (ref = 0; ref < 1 + is_compound; ++ref) {
+              MV ref_mv = mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv;
+              vpx_prob mv_row_prob =
+                  cm->fc->refmv_prob[0][inter_mode_ctx[mbmi->ref_frame[ref]]];
+              vpx_prob mv_col_prob =
+                  cm->fc->refmv_prob[1][inter_mode_ctx[mbmi->ref_frame[ref]]];
+              vp10_encode_motion_vector(cpi, w, &mi->bmi[j].as_mv[ref].as_mv,
+                                        &ref_mv,
+                                        mv_row_prob,
+                                        mv_col_prob,
+                                        nmvc, allow_hp);
+            }
+#else
             for (ref = 0; ref < 1 + is_compound; ++ref)
               vp10_encode_mv(cpi, w, &mi->bmi[j].as_mv[ref].as_mv,
                             &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv,
                             nmvc, allow_hp);
+#endif
           }
         }
       }
@@ -652,9 +678,17 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       if (mode == NEWMV) {
         for (ref = 0; ref < 1 + is_compound; ++ref) {
           MV ref_mv = mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv;
-#if CONFIG_REF_MV && 0
+#if CONFIG_REF_MV
+          vpx_prob mv_row_prob =
+              cm->fc->refmv_prob[0][mbmi_ext->mode_context[mbmi->ref_frame[ref]]];
+          vpx_prob mv_col_prob =
+              cm->fc->refmv_prob[1][mbmi_ext->mode_context[mbmi->ref_frame[ref]]];
+
           vp10_encode_motion_vector(cpi, w, &mbmi->mv[ref].as_mv,
-                                    &ref_mv, nmvc, allow_hp);
+                                    &ref_mv,
+                                    mv_row_prob,
+                                    mv_col_prob,
+                                    nmvc, allow_hp);
 #else
           vp10_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
                          &ref_mv, nmvc, allow_hp);
@@ -1720,6 +1754,10 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
   update_txfm_probs(cm, &header_bc, counts);
 #endif
   update_coef_probs(cpi, &header_bc);
+
+#if CONFIG_REF_MV
+  update_refmv_probs(cm, &header_bc, counts);
+#endif
 
 #if CONFIG_VAR_TX
   update_txfm_partition_probs(cm, &header_bc, counts);

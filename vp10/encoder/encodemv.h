@@ -26,6 +26,8 @@ void vp10_write_nmv_probs(VP10_COMMON *cm, int usehp, vpx_writer *w,
 #if CONFIG_REF_MV
 void vp10_encode_motion_vector(VP10_COMP* cpi, vpx_writer* w,
                                const MV* mv, const MV* ref,
+                               vpx_prob mv_row_prob,
+                               vpx_prob mv_col_prob,
                                const nmv_context* mvctx, int usehp);
 #endif
 

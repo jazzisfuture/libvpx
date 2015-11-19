@@ -69,8 +69,17 @@ int vp10_init_search_range(int size) {
 
 static INLINE int mv_cost(const MV *mv,
                           const int *joint_cost, int *const comp_cost[2]) {
+#if CONFIG_REF_MV
+  int zero_mv_cost = 0;
+  zero_mv_cost += (mv->row == 0) ? joint_cost[1] : joint_cost[0];
+  zero_mv_cost += (mv->col == 0) ? joint_cost[3] : joint_cost[2];
+
+  return zero_mv_cost +
+             comp_cost[0][mv->row] + comp_cost[1][mv->col];
+#else
   return joint_cost[vp10_get_mv_joint(mv)] +
              comp_cost[0][mv->row] + comp_cost[1][mv->col];
+#endif
 }
 
 int vp10_mv_bit_cost(const MV *mv, const MV *ref,

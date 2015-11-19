@@ -2296,6 +2296,12 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     read_tx_mode_probs(&fc->tx_probs, &r);
   read_coef_probs(fc, cm->tx_mode, &r);
 
+#if CONFIG_REF_MV
+  for (j = 0; j < 2; ++j)
+    for (k = 0; k < REFMV_CONTEXTS; ++k)
+      vp10_diff_update_prob(&r, &fc->refmv_prob[j][k]);
+#endif
+
 #if CONFIG_VAR_TX
   for (k = 0; k < TXFM_PARTITION_CONTEXTS; ++k)
     vp10_diff_update_prob(&r, &fc->txfm_partition_prob[k]);

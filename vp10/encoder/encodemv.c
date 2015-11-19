@@ -208,14 +208,16 @@ void vp10_write_nmv_probs(VP10_COMMON *cm, int usehp, vpx_writer *w,
 #if CONFIG_REF_MV
 void vp10_encode_motion_vector(VP10_COMP* cpi, vpx_writer* w,
                                const MV* mv, const MV* ref,
+                               vpx_prob mv_row_prob,
+                               vpx_prob mv_col_prob,
                                const nmv_context* mvctx, int usehp) {
   const MV diff = {mv->row - ref->row,
                    mv->col - ref->col};
 
   usehp = usehp && vp10_use_mv_hp(ref);
 
-  vpx_write_bit(w, diff.row != 0);
-  vpx_write_bit(w, diff.col != 0);
+  vpx_write(w, diff.row == 0, mv_row_prob);
+  vpx_write(w, diff.col == 0, mv_col_prob);
 
   // Encode if each component is zero
   if (diff.row)

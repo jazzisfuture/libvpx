@@ -27,6 +27,7 @@
 #include "vp10/common/reconinter.h"  // vp10_setup_dst_planes()
 #include "vp10/encoder/aq_variance.h"
 #include "vp10/encoder/block.h"
+#include "vp10/encoder/cost.h"
 #include "vp10/encoder/encodeframe.h"
 #include "vp10/encoder/encodemb.h"
 #include "vp10/encoder/encodemv.h"
@@ -567,6 +568,13 @@ void vp10_first_pass(VP10_COMP *cpi, const struct lookahead_entry *source) {
 
   vp10_init_mv_probs(cm);
   vp10_initialize_rd_consts(cpi);
+
+#if CONFIG_REF_MV
+  for (i = 0; i < 2; ++i) {
+    x->nmvjointcost[i * 2] = vp10_cost_bit(cm->fc->refmv_prob[i][2], 0);
+    x->nmvjointcost[i * 2 + 1] = vp10_cost_bit(cm->fc->refmv_prob[i][2], 1);
+  }
+#endif
 
   // Tiling is ignored in the first pass.
   vp10_tile_init(&tile, cm, 0, 0);

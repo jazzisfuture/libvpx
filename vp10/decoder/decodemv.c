@@ -451,18 +451,23 @@ static int read_mv_component(vpx_reader *r,
 
 #if CONFIG_REF_MV
 static INLINE void decode_motion_vector(vpx_reader *r, MV *mv, const MV *ref,
+                                        vpx_prob mv_row_prob,
+                                        vpx_prob mv_col_prob,
                                         const nmv_context *ctx,
                                         nmv_context_counts *counts,
                                         int allow_hp) {
   const int use_hp = allow_hp && vp10_use_mv_hp(ref);
   MV diff = {0, 0};
-  int decode_row = vpx_read_bit(r);
-  int decode_col = vpx_read_bit(r);
 
-  if (decode_row)
+  int zero_row = vpx_read(r, mv_row_prob);
+  int zero_col = vpx_read(r, mv_col_prob);
+//  int decode_row = vpx_read_bit(r);
+//  int decode_col = vpx_read_bit(r);
+
+  if (!zero_row)
     diff.row = read_mv_component(r, &ctx->comps[0], use_hp);
 
-  if (decode_col)
+  if (!zero_col)
     diff.col = read_mv_component(r, &ctx->comps[1], use_hp);
 
   vp10_inc_mv(&diff, counts, use_hp);
@@ -613,7 +618,12 @@ static INLINE int assign_mv(VP10_COMMON *cm, MACROBLOCKD *xd,
                             PREDICTION_MODE mode,
                             int_mv mv[2], int_mv ref_mv[2],
                             int_mv nearest_mv[2], int_mv near_mv[2],
-                            int is_compound, int allow_hp, vpx_reader *r) {
+                            int is_compound,
+#if CONFIG_REF_MV
+                            vpx_prob zero_mv_row[2],
+                            vpx_prob zero_mv_col[2],
+#endif
+                            int allow_hp, vpx_reader *r) {
   int i;
   int ret = 1;
 
@@ -622,14 +632,12 @@ static INLINE int assign_mv(VP10_COMMON *cm, MACROBLOCKD *xd,
       FRAME_COUNTS *counts = xd->counts;
       nmv_context_counts *const mv_counts = counts ? &counts->mv : NULL;
       for (i = 0; i < 1 + is_compound; ++i) {
-#if CONFIG_REF_MV && 0
-        if (xd->mi[0]->mbmi.sb_type >= BLOCK_8X8)
-          decode_motion_vector(r, &mv[i].as_mv,
-                               &ref_mv[i].as_mv,
-                               &cm->fc->nmvc, mv_counts, allow_hp);
-        else
-          read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc, mv_counts,
-                  allow_hp);
+#if CONFIG_REF_MV
+        decode_motion_vector(r, &mv[i].as_mv,
+                             &ref_mv[i].as_mv,
+                             zero_mv_row[i],
+                             zero_mv_col[i],
+                             &cm->fc->nmvc, mv_counts, allow_hp);
 #else
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc, mv_counts,
                 allow_hp);
@@ -697,6 +705,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   int ref_mv_count;
   int nearest_ref_mv_count;
   CANDIDATE_MV ref_mv_stack[MAX_REF_MV_STACK_SIZE];
+  FRAME_COUNTS *counts = xd->counts;
 #endif
   int ref, is_compound;
   uint8_t inter_mode_ctx[MAX_REF_FRAMES];
@@ -758,6 +767,9 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         int_mv block[2];
         const int j = idy * 2 + idx;
+#if CONFIG_REF_MV
+        vpx_prob zero_mv_prob[2][2];
+#endif
         for (ref = 0; ref < 1 + is_compound; ++ref)
           vp10_append_sub8x8_mvs_for_idx(cm, xd, j, ref, mi_row, mi_col,
                                          &nearest_sub8x8[ref],
@@ -766,13 +778,42 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
 
         b_mode = read_inter_mode(cm, xd, r, inter_mode_ctx[mbmi->ref_frame[0]]);
         mi->bmi[j].as_mode = b_mode;
+#if CONFIG_REF_MV
+        zero_mv_prob[0][0] =
+            cm->fc->refmv_prob[0][inter_mode_ctx[mbmi->ref_frame[0]]];
+        zero_mv_prob[1][0] =
+            cm->fc->refmv_prob[1][inter_mode_ctx[mbmi->ref_frame[0]]];
 
+        if (is_compound) {
+          zero_mv_prob[0][1] =
+              cm->fc->refmv_prob[0][inter_mode_ctx[mbmi->ref_frame[1]]];
+          zero_mv_prob[1][1] =
+              cm->fc->refmv_prob[1][inter_mode_ctx[mbmi->ref_frame[1]]];
+        }
+#endif
         if (!assign_mv(cm, xd, b_mode, block, nearestmv,
                        nearest_sub8x8, near_sub8x8,
-                       is_compound, allow_hp, r)) {
+                       is_compound,
+#if CONFIG_REF_MV
+                       zero_mv_prob[0],
+                       zero_mv_prob[1],
+#endif
+                       allow_hp, r)) {
           xd->corrupted |= 1;
           break;
         };
+
+#if CONFIG_REF_MV
+        if (b_mode == NEWMV && counts) {
+          int ref;
+          for (ref = 0; ref < 1 + is_compound; ++ref) {
+            MV refmv = nearestmv[ref].as_mv;
+            int mode_ctx = inter_mode_ctx[mbmi->ref_frame[ref]];
+            ++counts->refmv[0][mode_ctx][refmv.row == block[ref].as_mv.row];
+            ++counts->refmv[1][mode_ctx][refmv.col == block[ref].as_mv.col];
+          }
+        }
+#endif
 
         mi->bmi[j].as_mv[0].as_int = block[0].as_int;
         if (is_compound)
@@ -790,8 +831,39 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
     mbmi->mv[0].as_int = mi->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
   } else {
+#if CONFIG_REF_MV
+    vpx_prob zero_mv_prob[2][2];
+    zero_mv_prob[0][0] =
+        cm->fc->refmv_prob[0][inter_mode_ctx[mbmi->ref_frame[0]]];
+    zero_mv_prob[1][0] =
+        cm->fc->refmv_prob[1][inter_mode_ctx[mbmi->ref_frame[0]]];
+
+    if (is_compound) {
+      zero_mv_prob[0][1] =
+          cm->fc->refmv_prob[0][inter_mode_ctx[mbmi->ref_frame[1]]];
+      zero_mv_prob[1][1] =
+          cm->fc->refmv_prob[1][inter_mode_ctx[mbmi->ref_frame[1]]];
+    }
+#endif
     xd->corrupted |= !assign_mv(cm, xd, mbmi->mode, mbmi->mv, nearestmv,
-                                nearestmv, nearmv, is_compound, allow_hp, r);
+                                nearestmv, nearmv, is_compound,
+#if CONFIG_REF_MV
+                                zero_mv_prob[0],
+                                zero_mv_prob[1],
+#endif
+                                allow_hp, r);
+
+#if CONFIG_REF_MV
+    if (mbmi->mode == NEWMV && counts) {
+      int ref;
+      for (ref = 0; ref < 1 + is_compound; ++ref) {
+        MV refmv = nearestmv[ref].as_mv;
+        int mode_ctx = inter_mode_ctx[mbmi->ref_frame[ref]];
+        ++counts->refmv[0][mode_ctx][refmv.row == mbmi->mv[ref].as_mv.row];
+        ++counts->refmv[1][mode_ctx][refmv.col == mbmi->mv[ref].as_mv.col];
+      }
+    }
+#endif
   }
 }
 

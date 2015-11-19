@@ -1292,10 +1292,21 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td,
     }
     if (inter_block &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      const int mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
+      int mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
       if (bsize >= BLOCK_8X8) {
         const PREDICTION_MODE mode = mbmi->mode;
         ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];
+#if CONFIG_REF_MV
+        if (mode == NEWMV) {
+          int ref;
+          for (ref = 0; ref < 1 + has_second_ref(mbmi); ++ref) {
+            MV refmv = mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv;
+            mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[ref]];
+            ++counts->refmv[0][mode_ctx][refmv.row == mbmi->mv[ref].as_mv.row];
+            ++counts->refmv[1][mode_ctx][refmv.col == mbmi->mv[ref].as_mv.col];
+          }
+        }
+#endif
       } else {
         const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
         const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
@@ -1316,6 +1327,17 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td,
                                              inter_mode_ctx);
             ++counts->inter_mode[inter_mode_ctx[mbmi->ref_frame[0]]]
                                 [INTER_OFFSET(b_mode)];
+
+        if (b_mode == NEWMV) {
+          int ref;
+          for (ref = 0; ref < 1 + has_second_ref(mbmi); ++ref) {
+            MV refmv = mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv;
+            mode_ctx = inter_mode_ctx[mbmi->ref_frame[ref]];
+            ++counts->refmv[0][mode_ctx][refmv.row == mi->bmi[j].as_mv[ref].as_mv.row];
+            ++counts->refmv[1][mode_ctx][refmv.col == mi->bmi[j].as_mv[ref].as_mv.col];
+          }
+        }
+
 #else
             ++counts->inter_mode[mode_ctx][INTER_OFFSET(b_mode)];
             (void) mi_row;

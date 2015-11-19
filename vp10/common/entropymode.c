@@ -765,6 +765,13 @@ void vp10_tx_counts_to_branch_counts_8x8(const unsigned int *tx_count_8x8p,
   ct_8x8p[0][1] = tx_count_8x8p[TX_8X8];
 }
 
+#if CONFIG_REF_MV
+static const vpx_prob default_refmv_probs[2][REFMV_CONTEXTS] = {
+    { 192, 160, 128, 96, 64 },
+    { 192, 160, 128, 96, 64 },
+};
+#endif
+
 #if CONFIG_VAR_TX
 static const vpx_prob default_txfm_partition_probs[TXFM_PARTITION_CONTEXTS] = {
     192, 128, 64, 192, 128, 64, 192, 128, 64,
@@ -988,6 +995,9 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
   vp10_copy(fc->comp_ref_prob, default_comp_ref_p);
   vp10_copy(fc->single_ref_prob, default_single_ref_p);
   fc->tx_probs = default_tx_probs;
+#if CONFIG_REF_MV
+  vp10_copy(fc->refmv_prob, default_refmv_probs);
+#endif
 #if CONFIG_VAR_TX
   vp10_copy(fc->txfm_partition_prob, default_txfm_partition_probs);
 #endif
@@ -1014,6 +1024,20 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
   FRAME_CONTEXT *fc = cm->fc;
   const FRAME_CONTEXT *pre_fc = &cm->frame_contexts[cm->frame_context_idx];
   const FRAME_COUNTS *counts = &cm->counts;
+
+#if CONFIG_REF_MV
+  for (j = 0; j < 2; ++j)
+    for (i = 0; i < REFMV_CONTEXTS; ++i)
+      fc->refmv_prob[j][i] = mode_mv_merge_probs(pre_fc->refmv_prob[j][i],
+                                                 counts->refmv[j][i]);
+#endif
+
+  fprintf(stderr, "\n");
+  for (j = 0; j < 2; ++j) {
+    for (i = 0; i < REFMV_CONTEXTS; ++i)
+      fprintf(stderr, "%d ", fc->refmv_prob[j][i]);
+    fprintf(stderr, "\n");
+  }
 
   for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
     fc->intra_inter_prob[i] = mode_mv_merge_probs(pre_fc->intra_inter_prob[i],

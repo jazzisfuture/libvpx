@@ -2733,6 +2733,18 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
     tmp_mv.col >>= 3;
     tmp_mv.row >>= 3;
 
+#if CONFIG_REF_MV
+    {
+      int i;
+      int mode_ctx = x->mbmi_ext->mode_context[refs[id]];
+      for (i = 0; i < 2; ++i) {
+        x->nmvjointcost[i * 2] = vp10_cost_bit(cm->fc->refmv_prob[i][mode_ctx], 0);
+        x->nmvjointcost[i * 2 + 1] = vp10_cost_bit(cm->fc->refmv_prob[i][mode_ctx], 1);
+      }
+    }
+#endif
+
+
     // Small-range full-pixel motion search.
     bestsme = vp10_refining_search_8p_c(x, &tmp_mv, sadpb,
                                        search_range,
@@ -2784,6 +2796,17 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
       for (i = 0; i < MAX_MB_PLANE; i++)
         xd->plane[i].pre[ref] = backup_yv12[ref][i];
     }
+
+#if CONFIG_REF_MV
+    {
+      int i;
+      int mode_ctx = x->mbmi_ext->mode_context[refs[ref]];
+      for (i = 0; i < 2; ++i) {
+        x->nmvjointcost[i * 2] = vp10_cost_bit(cm->fc->refmv_prob[i][mode_ctx], 0);
+        x->nmvjointcost[i * 2 + 1] = vp10_cost_bit(cm->fc->refmv_prob[i][mode_ctx], 1);
+      }
+    }
+#endif
 
     *rate_mv += vp10_mv_bit_cost(&frame_mv[refs[ref]].as_mv,
                                 &x->mbmi_ext->ref_mvs[refs[ref]][0].as_mv,
@@ -2941,6 +2964,17 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
           mi_buf_shift(x, i);
 
           vp10_set_mv_search_range(x, &bsi->ref_mv[0]->as_mv);
+
+#if CONFIG_REF_MV
+          {
+            int mode_ctx = x->mbmi_ext->mode_context[mbmi->ref_frame[0]];
+            int i;
+            for (i = 0; i < 2; ++i) {
+              x->nmvjointcost[i * 2] = vp10_cost_bit(cm->fc->refmv_prob[i][mode_ctx], 0);
+              x->nmvjointcost[i * 2 + 1] = vp10_cost_bit(cm->fc->refmv_prob[i][mode_ctx], 1);
+            }
+          }
+#endif
 
           bestsme = vp10_full_pixel_search(
               cpi, x, bsize, &mvp_full, step_param, sadpb,
@@ -3328,6 +3362,16 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
                                                                         ref);
 
   MV pred_mv[3];
+
+#if CONFIG_REF_MV
+  int i;
+  int mode_ctx = x->mbmi_ext->mode_context[ref];
+  for (i = 0; i < 2; ++i) {
+    x->nmvjointcost[i * 2] = vp10_cost_bit(cm->fc->refmv_prob[i][mode_ctx], 0);
+    x->nmvjointcost[i * 2 + 1] = vp10_cost_bit(cm->fc->refmv_prob[i][mode_ctx], 1);
+  }
+#endif
+
   pred_mv[0] = x->mbmi_ext->ref_mvs[ref][0].as_mv;
   pred_mv[1] = x->mbmi_ext->ref_mvs[ref][1].as_mv;
   pred_mv[2] = x->pred_mv[ref];
