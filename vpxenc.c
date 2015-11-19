@@ -2206,20 +2206,37 @@ int main(int argc, const char **argv_) {
     if (stream_cnt > 1)
       fprintf(stderr, "\n");
 
+#if 0
+    if (!global.quiet) {
+          FOREACH_STREAM(fprintf(stderr,
+              "Pass %d/%d frame %4d/%-4d %7"PRId64"B %7"PRId64"b/f %7"PRId64"kb/s"
+              " %7"PRId64" %s (%.2f fps)\033[K\n",
+              pass + 1,
+              global.passes, frames_in, stream->frames_out, (int64_t)stream->nbytes,
+              seen_frames ? (int64_t)(stream->nbytes * 8 / seen_frames) : 0,
+              seen_frames ? (int64_t)stream->nbytes * 8 *
+                  (int64_t)global.framerate.num / global.framerate.den /
+                  seen_frames / 1000 : 0,
+              stream->cx_time > 9999999 ? stream->cx_time / 1000 : stream->cx_time,
+              stream->cx_time > 9999999 ? "ms" : "us",
+              usec_to_fps(stream->cx_time, seen_frames)));
+        }
+#else
     if (!global.quiet) {
       FOREACH_STREAM(fprintf(stderr,
-          "\rPass %d/%d frame %4d/%-4d %7"PRId64"B %7"PRId64"b/f %7"PRId64"b/s"
+          "\rPass %d/%d frame %4d/%-4d %7"PRId64"B %7"PRId64"b/f %7"PRId64"kb/s"
           " %7"PRId64" %s (%.2f fps)\033[K\n",
           pass + 1,
           global.passes, frames_in, stream->frames_out, (int64_t)stream->nbytes,
           seen_frames ? (int64_t)(stream->nbytes * 8 / seen_frames) : 0,
           seen_frames ? (int64_t)stream->nbytes * 8 *
               (int64_t)global.framerate.num / global.framerate.den /
-              seen_frames : 0,
+              seen_frames / 1000 : 0,
           stream->cx_time > 9999999 ? stream->cx_time / 1000 : stream->cx_time,
           stream->cx_time > 9999999 ? "ms" : "us",
           usec_to_fps(stream->cx_time, seen_frames)));
     }
+#endif
 
     if (global.show_psnr) {
       if (global.codec->fourcc == VP9_FOURCC) {

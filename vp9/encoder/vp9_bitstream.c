@@ -905,7 +905,7 @@ static int get_refresh_mask(VP9_COMP *cpi) {
   } else {
     if (cpi->lst_fb_idx == 0)
       lst_fb_idx = 3;
-    else if (cpi->lst_fb_idx == 7)
+    else if (cpi->lst_fb_idx == BUF_NUM - 1)
       lst_fb_idx = 0;
     else
       lst_fb_idx = cpi->lst_fb_idx + 1;

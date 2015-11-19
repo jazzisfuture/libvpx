@@ -1033,6 +1033,7 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
       this_rd = rd_pick_intra4x4block(cpi, mb, i, &best_mode, bmode_costs,
                                       t_above + idx, t_left + idy, &r, &ry, &d,
                                       bsize, best_rd - total_rd);
+
       if (this_rd >= best_rd - total_rd)
         return INT64_MAX;
 
@@ -1376,23 +1377,23 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
                                   y_stride, sf);
     }
 #if CONFIG_VP9_HIGHBITDEPTH
-  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    vp9_highbd_build_inter_predictor(pre, y_stride,
-                                     dst, pd->dst.stride,
-                                     &mi->bmi[i].as_mv[ref].as_mv,
-                                     &xd->block_refs[ref]->sf, width, height,
-                                     ref, kernel, MV_PRECISION_Q3,
-                                     mi_col * MI_SIZE + 4 * (i % 2),
-                                     mi_row * MI_SIZE + 4 * (i / 2), xd->bd);
-  } else {
-    vp9_build_inter_predictor(pre, y_stride,
-                              dst, pd->dst.stride,
-                              &mi->bmi[i].as_mv[ref].as_mv,
-                              &xd->block_refs[ref]->sf, width, height, ref,
-                              kernel, MV_PRECISION_Q3,
-                              mi_col * MI_SIZE + 4 * (i % 2),
-                              mi_row * MI_SIZE + 4 * (i / 2));
-  }
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      vp9_highbd_build_inter_predictor(pre, y_stride,
+                                       dst, pd->dst.stride,
+                                       &mi->bmi[i].as_mv[ref].as_mv,
+                                       &xd->block_refs[ref]->sf, width, height,
+                                       ref, kernel, MV_PRECISION_Q3,
+                                       mi_col * MI_SIZE + 4 * (i % 2),
+                                       mi_row * MI_SIZE + 4 * (i / 2), xd->bd);
+    } else {
+      vp9_build_inter_predictor(pre, y_stride,
+                                dst, pd->dst.stride,
+                                &mi->bmi[i].as_mv[ref].as_mv,
+                                &xd->block_refs[ref]->sf, width, height, ref,
+                                kernel, MV_PRECISION_Q3,
+                                mi_col * MI_SIZE + 4 * (i % 2),
+                                mi_row * MI_SIZE + 4 * (i / 2));
+    }
 #else
     vp9_build_inter_predictor(pre, y_stride,
                               dst, pd->dst.stride,
@@ -3766,6 +3767,14 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
   int64_t mask_filter = 0;
   int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
 
+#if SUB8X8_BIAS
+  if (best_rd_so_far < INT64_MAX) {
+    best_rd_so_far *= 1.1;
+    best_rd *= 1.1;
+    best_yrd *= 1.1;
+  }
+#endif
+
   x->skip_encode = sf->skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
   memset(x->zcoeff_blk[TX_4X4], 0, 4);
   vp9_zero(best_mbmode);
@@ -4176,6 +4185,14 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
       for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
         best_filter_rd[i] = MIN(best_filter_rd[i], this_rd);
     }
+
+#if SUB8X8_BIAS
+    if (this_rd < INT64_MAX) {
+      this_rd *= 0.9;
+      rate2 *= 0.9;
+      distortion2 *= 0.9;
+    }
+#endif
 
     // Did this mode help.. i.e. is it the new best mode
     if (this_rd < best_rd || x->skip) {
