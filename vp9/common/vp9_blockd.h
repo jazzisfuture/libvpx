@@ -30,6 +30,8 @@ extern "C" {
 
 #define MAX_MB_PLANE 3
 
+#define SUB8X8_BIAS 1
+
 typedef enum {
   KEY_FRAME = 0,
   INTER_FRAME = 1,

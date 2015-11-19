@@ -1013,6 +1013,12 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
   ENTROPY_CONTEXT t_above[4], t_left[4];
   const int *bmode_costs = cpi->mbmode_cost;
 
+#if SUB8X8_BIAS
+  if (best_rd < INT64_MAX) {
+    best_rd *= 1.33;
+  }
+#endif
+
   memcpy(t_above, xd->plane[0].above_context, sizeof(t_above));
   memcpy(t_left, xd->plane[0].left_context, sizeof(t_left));
 
@@ -1033,6 +1039,11 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
       this_rd = rd_pick_intra4x4block(cpi, mb, i, &best_mode, bmode_costs,
                                       t_above + idx, t_left + idy, &r, &ry, &d,
                                       bsize, best_rd - total_rd);
+#if SUB8X8_BIAS
+      if (best_rd < INT64_MAX) {
+        best_rd *= 0.75;
+      }
+#endif
       if (this_rd >= best_rd - total_rd)
         return INT64_MAX;
 
@@ -1057,7 +1068,11 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
   *distortion = total_distortion;
   mic->mbmi.mode = mic->bmi[3].as_mode;
 
+#if SUB8X8_BIAS
+  return RDCOST(mb->rdmult, mb->rddiv, cost, total_distortion) * 0.75;
+#else
   return RDCOST(mb->rdmult, mb->rddiv, cost, total_distortion);
+#endif
 }
 
 // This function is used only for intra_only frames
@@ -3752,6 +3767,14 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
   int64_t mask_filter = 0;
   int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
 
+#if SUB8X8_BIAS
+  if (best_rd_so_far < INT64_MAX) {
+    best_rd_so_far *= 1.33;
+    best_rd *= 1.33;
+    best_yrd *= 1.33;
+  }
+#endif
+
   x->skip_encode = sf->skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
   memset(x->zcoeff_blk[TX_4X4], 0, 4);
   vp9_zero(best_mbmode);
@@ -4162,6 +4185,12 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
       for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
         best_filter_rd[i] = MIN(best_filter_rd[i], this_rd);
     }
+
+#if SUB8X8_BIAS
+    if (this_rd < INT64_MAX) {
+      this_rd *= 0.75;
+    }
+#endif
 
     // Did this mode help.. i.e. is it the new best mode
     if (this_rd < best_rd || x->skip) {
