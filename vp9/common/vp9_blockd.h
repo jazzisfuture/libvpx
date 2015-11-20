@@ -565,6 +565,11 @@ static INLINE int is_dst_used(TX_TYPE tx_type) {
           tx_type == DST_FLIPADST || tx_type == FLIPADST_DST);
 }
 
+static INLINE int is_gbt_used(TX_TYPE tx_type) {
+  return (tx_type == GBT0_DCT || tx_type == GBT1_DCT || tx_type == GBT2_DCT || tx_type == GBT3_DCT ||
+      tx_type == DCT_GBT0 || tx_type == DCT_GBT1 || tx_type == DCT_GBT2 || tx_type == DCT_GBT3);
+}
+
 #if CONFIG_WAVELETS
 static TX_TYPE ext_tx_to_txtype_large[EXT_TX_TYPES_LARGE] = {
   DCT_DCT,

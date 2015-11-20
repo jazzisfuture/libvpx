@@ -155,6 +155,14 @@ typedef enum {
   ADST_DST = 13,
   DST_FLIPADST = 14,
   FLIPADST_DST = 15,
+  GBT0_DCT = 16,  // GBT0 in vertical, DCT in horizontal
+  GBT1_DCT = 17,
+  GBT2_DCT = 18,
+  GBT3_DCT = 19,
+  DCT_GBT0 = 20,
+  DCT_GBT1 = 21,
+  DCT_GBT2 = 22,
+  DCT_GBT3 = 23,
 #if CONFIG_WAVELETS
   WAVELET1_DCT_DCT,
 #endif  // CONFIG_WAVELETS
