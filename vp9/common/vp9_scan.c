@@ -4683,10 +4683,26 @@ const scan_order vp9_inter_scan_orders[TX_SIZES][TOTAL_TX_TYPES] = {
     {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
     {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
     {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
+    {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
+    {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
+    {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
+    {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
+    {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
+    {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
+    {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
+    {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
 #if CONFIG_WAVELETS
     {default_scan_4x4, vp9_default_iscan_4x4, default_scan_4x4_neighbors},
 #endif  // CONFIG_WAVELETS
   }, {  // TX_8X8
+    {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
+    {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
+    {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
+    {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
+    {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
+    {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
+    {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
+    {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
     {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
     {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
     {default_scan_8x8, vp9_default_iscan_8x8, default_scan_8x8_neighbors},
@@ -4723,10 +4739,26 @@ const scan_order vp9_inter_scan_orders[TX_SIZES][TOTAL_TX_TYPES] = {
     {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
     {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
     {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
+    {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
+    {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
+    {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
+    {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
+    {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
+    {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
+    {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
+    {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
 #if CONFIG_WAVELETS
     {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors}
 #endif  // CONFIG_WAVELETS
   }, {  // TX_32X32
+    {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
+    {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
+    {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
+    {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
+    {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
+    {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
+    {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
+    {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
     {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
     {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
     {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
@@ -4748,6 +4780,14 @@ const scan_order vp9_inter_scan_orders[TX_SIZES][TOTAL_TX_TYPES] = {
 #endif  // CONFIG_WAVELETS
 #if CONFIG_TX64X64
   }, {  // TX_64X64
+    {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
+    {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
+    {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
+    {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
+    {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
+    {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
+    {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
+    {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
     {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
     {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
     {default_scan_64x64, vp9_default_iscan_64x64, default_scan_64x64_neighbors},
