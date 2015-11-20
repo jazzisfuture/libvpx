@@ -268,6 +268,7 @@ EXPERIMENT_LIST="
     emulate_hardware
     var_tx
     ref_mv
+    int_txfm
     ext_tx
     misc_fixes
     ext_intra

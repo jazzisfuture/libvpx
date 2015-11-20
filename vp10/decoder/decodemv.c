@@ -419,7 +419,8 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
       mbmi->mode == DC_PRED)
     read_palette_mode_info(cm, xd, r);
 
-#if CONFIG_EXT_TX
+  mbmi->tx_type = TX_TYPES;
+#if CONFIG_EXT_TX && !CONFIG_INT_TXFM
     if (get_ext_tx_types(mbmi->tx_size, mbmi->sb_type, 0) > 1 &&
         cm->base_qindex > 0 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
@@ -871,7 +872,7 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   else
     read_intra_block_mode_info(cm, xd, mi, r);
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX && !CONFIG_INT_TXFM
     if (get_ext_tx_types(mbmi->tx_size, mbmi->sb_type, inter_block) > 1 &&
         cm->base_qindex > 0 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {

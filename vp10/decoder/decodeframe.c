@@ -342,10 +342,22 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
                           col, row, plane);
 
   if (!mbmi->skip) {
+#if !(CONFIG_INT_TXFM && CONFIG_VAR_TX)
     TX_TYPE tx_type = get_tx_type(plane_type, xd, block_idx, tx_size);
     const scan_order *sc = get_scan(tx_size, tx_type, 0);
-    const int eob = vp10_decode_block_tokens(xd, plane, sc, col, row, tx_size,
+
+    const int eob = vp10_decode_block_tokens(xd, plane,
+                                             sc,
+                                             col, row, tx_size,
                                              r, mbmi->segment_id);
+#else
+    const int eob = vp10_decode_block_tokens(xd, plane,
+                                             block_idx,
+                                             col, row, tx_size,
+                                             r, mbmi->segment_id);
+    TX_TYPE tx_type = get_tx_type(plane_type, xd, block_idx, tx_size);
+#endif
+
     inverse_transform_block_intra(xd, plane, tx_type, tx_size,
                                   dst, pd->dst.stride, eob);
   }
@@ -376,10 +388,17 @@ static void decode_reconstruct_tx(MACROBLOCKD *const xd, vpx_reader *r,
     return;
 
   if (tx_size == plane_tx_size) {
+#if !(CONFIG_INT_TXFM && CONFIG_VAR_TX)
     PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
     TX_TYPE tx_type = get_tx_type(plane_type, xd, block, tx_size);
     const scan_order *sc = get_scan(tx_size, tx_type, 1);
-    const int eob = vp10_decode_block_tokens(xd, plane, sc,
+#endif
+    const int eob = vp10_decode_block_tokens(xd, plane,
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+                                             block,
+#else
+                                             sc,
+#endif
                                              blk_col, blk_row, tx_size,
                                              r, mbmi->segment_id);
     inverse_transform_block_inter(xd, plane, tx_size,
@@ -406,8 +425,7 @@ static void decode_reconstruct_tx(MACROBLOCKD *const xd, vpx_reader *r,
     }
   }
 }
-#endif
-
+#else
 static int reconstruct_inter_block(MACROBLOCKD *const xd, vpx_reader *r,
                                    MB_MODE_INFO *const mbmi, int plane,
                                    int row, int col, TX_SIZE tx_size) {
@@ -416,14 +434,15 @@ static int reconstruct_inter_block(MACROBLOCKD *const xd, vpx_reader *r,
   int block_idx = (row << 1) + col;
   TX_TYPE tx_type = get_tx_type(plane_type, xd, block_idx, tx_size);
   const scan_order *sc = get_scan(tx_size, tx_type, 1);
-  const int eob = vp10_decode_block_tokens(xd, plane, sc, col, row, tx_size, r,
-                                          mbmi->segment_id);
+  const int eob = vp10_decode_block_tokens(xd, plane, sc, col, row, tx_size,
+                                           r, mbmi->segment_id);
 
   inverse_transform_block_inter(xd, plane, tx_size,
                             &pd->dst.buf[4 * row * pd->dst.stride + 4 * col],
                             pd->dst.stride, eob, block_idx);
   return eob;
 }
+#endif
 
 static void build_mc_border(const uint8_t *src, int src_stride,
                             uint8_t *dst, int dst_stride,

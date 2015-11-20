@@ -314,6 +314,9 @@ static void pack_palette_tokens(vpx_writer *w, TOKENEXTRA **tp,
 }
 
 static void pack_mb_tokens(vpx_writer *w,
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+                           MACROBLOCKD *xd,
+#endif
                            TOKENEXTRA **tp, const TOKENEXTRA *const stop,
                            vpx_bit_depth_t bit_depth, const TX_SIZE tx) {
   TOKENEXTRA *p = *tp;
@@ -325,7 +328,6 @@ static void pack_mb_tokens(vpx_writer *w,
   while (p < stop && p->token != EOSB_TOKEN) {
     const int t = p->token;
     const struct vp10_token *const a = &vp10_coef_encodings[t];
-    int i = 0;
     int v = a->value;
     int n = a->len;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -342,28 +344,50 @@ static void pack_mb_tokens(vpx_writer *w,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
     /* skip one or two nodes */
-    if (p->skip_eob_node) {
+    if (p->skip_eob_node)
       n -= p->skip_eob_node;
-      i = 2 * p->skip_eob_node;
+
+    if (!p->skip_eob_node)
+      vpx_write(w, t != EOB_TOKEN, p->context_tree[0]);
+
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+    if (count == 0 && t != EOB_TOKEN) {
+      const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+      BLOCK_SIZE bsize = mbmi->sb_type;
+      int is_inter = is_inter_block(mbmi);
+
+      if (get_ext_tx_types(mbmi->tx_size, bsize, is_inter) > 1 &&
+          !xd->lossless[mbmi->segment_id]) {
+        int eset = get_ext_tx_set(mbmi->tx_size, bsize, is_inter);
+        if (is_inter) {
+          if (eset > 0)
+            vp10_write_token(w, vp10_ext_tx_inter_tree[eset],
+                             xd->fc->inter_ext_tx_prob[eset][mbmi->tx_size],
+                             &ext_tx_inter_encodings[eset][mbmi->tx_type]);
+        } else {
+          if (eset > 0)
+            vp10_write_token(
+                w, vp10_ext_tx_intra_tree[eset],
+                xd->fc->intra_ext_tx_prob[eset][mbmi->tx_size][mbmi->mode],
+                &ext_tx_intra_encodings[eset][mbmi->tx_type]);
+        }
+      }
     }
+#endif
 
-    // TODO(jbb): expanding this can lead to big gains.  It allows
-    // much better branch prediction and would enable us to avoid numerous
-    // lookups and compares.
+    if (t != EOB_TOKEN) {
+      vpx_write(w, t != ZERO_TOKEN, p->context_tree[1]);
 
-    // If we have a token that's in the constrained set, the coefficient tree
-    // is split into two treed writes.  The first treed write takes care of the
-    // unconstrained nodes.  The second treed write takes care of the
-    // constrained nodes.
-    if (t >= TWO_TOKEN && t < EOB_TOKEN) {
-      int len = UNCONSTRAINED_NODES - p->skip_eob_node;
-      int bits = v >> (n - len);
-      vp10_write_tree(w, vp10_coef_tree, p->context_tree, bits, len, i);
-      vp10_write_tree(w, vp10_coef_con_tree,
-                     vp10_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
-                     v, n - len, 0);
-    } else {
-      vp10_write_tree(w, vp10_coef_tree, p->context_tree, v, n, i);
+      if (t != ZERO_TOKEN) {
+        vpx_write(w, t != ONE_TOKEN, p->context_tree[2]);
+
+        if (t != ONE_TOKEN) {
+          int len = UNCONSTRAINED_NODES - p->skip_eob_node;
+          vp10_write_tree(w, vp10_coef_con_tree,
+                          vp10_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
+                          v, n - len, 0);
+        }
+      }
     }
 
     if (b->base_val) {
@@ -430,7 +454,11 @@ static void pack_txb_tokens(vpx_writer *w,
     return;
 
   if (tx_size == plane_tx_size) {
-    pack_mb_tokens(w, tp, tok_end, bit_depth, tx_size);
+    pack_mb_tokens(w,
+#if CONFIG_INT_TXFM
+                   xd,
+#endif
+                   tp, tok_end, bit_depth, tx_size);
   } else {
     int bsl = b_width_log2_lookup[bsize];
     int i;
@@ -683,7 +711,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #endif  // CONFIG_EXT_INTERP
   }
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX && !CONFIG_INT_TXFM
   if (get_ext_tx_types(mbmi->tx_size, bsize, is_inter) > 1 &&
       cm->base_qindex > 0 && !mbmi->skip &&
       !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
@@ -787,7 +815,7 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
     write_palette_mode_info(cm, xd, mi, w);
 
 
-#if CONFIG_EXT_TX
+#if CONFIG_EXT_TX && !CONFIG_INT_TXFM
   if (get_ext_tx_types(mbmi->tx_size, bsize, 0) > 1 &&
       cm->base_qindex > 0 && !mbmi->skip &&
       !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
@@ -876,7 +904,11 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
 
         for (row = 0; row < num_4x4_h; row += bw)
           for (col = 0; col < num_4x4_w; col += bw)
-            pack_mb_tokens(w, tok, tok_end, cm->bit_depth, tx);
+            pack_mb_tokens(w,
+#if CONFIG_INT_TXFM
+                           xd,
+#endif
+                           tok, tok_end, cm->bit_depth, tx);
       }
 #else
       TX_SIZE tx = plane ? get_uv_tx_size(&m->mbmi, &xd->plane[plane])

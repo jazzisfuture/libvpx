@@ -23,10 +23,16 @@ extern "C" {
 void vp10_decode_palette_tokens(MACROBLOCKD *const xd, int plane,
                                 vpx_reader *r);
 int vp10_decode_block_tokens(MACROBLOCKD *xd,
-                            int plane, const scan_order *sc,
-                            int x, int y,
-                            TX_SIZE tx_size, vpx_reader *r,
-                            int seg_id);
+                             int plane,
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+                             int block,
+#else
+                             const scan_order *sc,
+#endif
+                             int x, int y,
+                             TX_SIZE tx_size,
+                             vpx_reader *r,
+                             int seg_id);
 
 #ifdef __cplusplus
 }  // extern "C"

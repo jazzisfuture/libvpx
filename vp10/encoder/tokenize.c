@@ -554,6 +554,23 @@ static void tokenize_b(int plane, int block, int blk_row, int blk_col,
   const int seg_eob = get_tx_eob(&cpi->common.seg, segment_id, tx_size);
   int16_t token;
   EXTRABIT extra;
+
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+  BLOCK_SIZE bsize = mbmi->sb_type;
+
+  if (get_ext_tx_types(mbmi->tx_size, bsize, ref) > 1 &&
+      !xd->lossless[mbmi->segment_id] && !mbmi->skip && eob > 0) {
+    int eset = get_ext_tx_set(mbmi->tx_size, bsize, ref);
+
+    if (eset > 0) {
+      if (is_inter_block(mbmi))
+        ++td->counts->inter_ext_tx[eset][mbmi->tx_size][mbmi->tx_type];
+      else
+        ++td->counts->intra_ext_tx[eset][mbmi->tx_size][mbmi->mode][mbmi->tx_type];
+    }
+  }
+#endif
+
   pt = get_entropy_context(tx_size, pd->above_context + blk_col,
                            pd->left_context + blk_row);
   scan = so->scan;

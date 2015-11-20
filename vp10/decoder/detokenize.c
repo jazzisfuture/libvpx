@@ -45,15 +45,21 @@ static INLINE int read_coeff(const vpx_prob *probs, int n, vpx_reader *r) {
   return val;
 }
 
-static int decode_coefs(const MACROBLOCKD *xd,
+static int decode_coefs(MACROBLOCKD *xd,
                         PLANE_TYPE type,
                         tran_low_t *dqcoeff, TX_SIZE tx_size, const int16_t *dq,
-                        int ctx, const int16_t *scan, const int16_t *nb,
+                        int ctx,
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+                        int block,
+#else
+                        const int16_t *scan, const int16_t *nb,
+#endif
                         vpx_reader *r) {
   FRAME_COUNTS *counts = xd->counts;
+  MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
   const int max_eob = 16 << (tx_size << 1);
   const FRAME_CONTEXT *const fc = xd->fc;
-  const int ref = is_inter_block(&xd->mi[0]->mbmi);
+  const int ref = is_inter_block(mbmi);
   int band, c = 0;
   const vpx_prob (*coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
       fc->coef_probs[tx_size][type][ref];
@@ -71,6 +77,10 @@ static int decode_coefs(const MACROBLOCKD *xd,
   const uint8_t *cat4_prob;
   const uint8_t *cat5_prob;
   const uint8_t *cat6_prob;
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+  const int16_t *scan = NULL;
+  const int16_t *nb = NULL;
+#endif
 
   if (counts) {
     coef_counts = counts->coef[tx_size][type][ref];
@@ -121,6 +131,45 @@ static int decode_coefs(const MACROBLOCKD *xd,
       INCREMENT_COUNT(EOB_MODEL_TOKEN);
       break;
     }
+
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+    if (c == 0) {
+      TX_TYPE tx_type;
+      const scan_order *sc;
+      int is_inter = is_inter_block(mbmi);
+
+      mbmi->tx_type = DCT_DCT;
+      if (get_ext_tx_types(mbmi->tx_size, mbmi->sb_type, is_inter) > 1 &&
+          !xd->lossless[mbmi->segment_id]) {
+        FRAME_COUNTS *counts = xd->counts;
+        int eset = get_ext_tx_set(mbmi->tx_size, mbmi->sb_type, is_inter);
+        if (is_inter) {
+          if (eset > 0) {
+            mbmi->tx_type =
+                vpx_read_tree(r, vp10_ext_tx_inter_tree[eset],
+                              fc->inter_ext_tx_prob[eset][mbmi->tx_size]);
+            if (counts)
+              ++counts->inter_ext_tx[eset][mbmi->tx_size][mbmi->tx_type];
+          }
+        } else {
+          if (eset > 0) {
+            mbmi->tx_type =
+                vpx_read_tree(r, vp10_ext_tx_intra_tree[eset],
+                              fc->intra_ext_tx_prob[eset]
+                                                   [mbmi->tx_size][mbmi->mode]);
+            if (counts)
+              ++counts->intra_ext_tx[eset][mbmi->tx_size]
+                                    [mbmi->mode][mbmi->tx_type];
+          }
+        }
+      }
+
+      tx_type = get_tx_type(type, xd, block, tx_size);
+      sc = get_scan(tx_size, tx_type, ref);
+      scan = sc->scan;
+      nb = sc->neighbors;
+    }
+#endif
 
     while (!vpx_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
@@ -281,17 +330,29 @@ void vp10_decode_palette_tokens(MACROBLOCKD *const xd, int plane,
 }
 
 int vp10_decode_block_tokens(MACROBLOCKD *xd,
-                            int plane, const scan_order *sc,
-                            int x, int y,
-                            TX_SIZE tx_size, vpx_reader *r,
-                            int seg_id) {
+                             int plane,
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+                             int block,
+#else
+                             const scan_order *sc,
+#endif
+                             int x, int y,
+                             TX_SIZE tx_size,
+                             vpx_reader *r,
+                             int seg_id) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const int16_t *const dequant = pd->seg_dequant[seg_id];
   const int ctx = get_entropy_context(tx_size, pd->above_context + x,
                                                pd->left_context + y);
   const int eob = decode_coefs(xd, pd->plane_type,
                                pd->dqcoeff, tx_size,
-                               dequant, ctx, sc->scan, sc->neighbors, r);
+                               dequant, ctx,
+#if CONFIG_INT_TXFM && CONFIG_VAR_TX
+                               block,
+#else
+                               sc->scan, sc->neighbors,
+#endif
+                               r);
   dec_set_contexts(xd, pd, tx_size, eob > 0, x, y);
   return eob;
 }
