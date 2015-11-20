@@ -211,6 +211,11 @@ typedef uint8_t PREDICTION_MODE;
 typedef TX_SIZE TXFM_CONTEXT;
 #endif
 
+#if CONFIG_SUPERTX
+#define PARTITION_SUPERTX_CONTEXTS 2
+#define MAX_SUPERTX_BLOCK_SIZE BLOCK_32X32
+#endif  // CONFIG_SUPERTX
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

@@ -82,6 +82,9 @@ typedef struct frame_contexts {
   vpx_prob intra_ext_tx_prob[EXT_TX_SETS_INTRA][EXT_TX_SIZES][INTRA_MODES]
                             [TX_TYPES - 1];
 #endif  // CONFIG_EXT_TX
+#if CONFIG_SUPERTX
+  vpx_prob supertx_prob[PARTITION_SUPERTX_CONTEXTS][TX_SIZES];
+#endif  // CONFIG_SUPERTX
 #if CONFIG_MISC_FIXES
   struct segmentation_probs seg;
 #endif
@@ -116,6 +119,10 @@ typedef struct FRAME_COUNTS {
   unsigned int intra_ext_tx[EXT_TX_SETS_INTRA][EXT_TX_SIZES][INTRA_MODES]
                            [TX_TYPES];
 #endif  // CONFIG_EXT_TX
+#if CONFIG_SUPERTX
+  unsigned int supertx[PARTITION_SUPERTX_CONTEXTS][TX_SIZES][2];
+  unsigned int supertx_size[BLOCK_SIZES];
+#endif  // CONFIG_SUPERTX
 #if CONFIG_MISC_FIXES
   struct seg_counts seg;
 #endif
