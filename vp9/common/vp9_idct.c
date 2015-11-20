@@ -32,15 +32,28 @@ static void maybe_flip_strides(uint8_t **dst, int *dstride,
     case ADST_DCT:
     case DCT_ADST:
     case ADST_ADST:
+    case GBT0_DCT:
+    case GBT2_DCT:
+    case DCT_GBT0:
+    case DCT_GBT2:
+    // TODO(yongzhe): use this to flip the output for the following GBTs
+    case GBT1_DCT:
+    case GBT3_DCT:
+    case DCT_GBT1:
+    case DCT_GBT3:
       break;
     case FLIPADST_DCT:
     case FLIPADST_ADST:
-      // flip UD
+    // case GBT1_DCT:
+    // case GBT3_DCT:
+    // flip UD
       FLIPUD_PTR(*dst, *dstride, size);
       break;
     case DCT_FLIPADST:
     case ADST_FLIPADST:
-      // flip LR
+    // case DCT_GBT1:
+    // case DCT_GBT3:
+    // flip LR
       FLIPUD_PTR(*src, *sstride, size);
       break;
     case FLIPADST_FLIPADST:
@@ -67,6 +80,135 @@ static void maybe_flip_strides(uint8_t **dst, int *dstride,
       assert(0);
       break;
   }
+}
+
+// TODO(yongzhe): remove this by using maybe*()
+void flip(const tran_low_t *input, tran_low_t *output, int size) {
+  int i;
+  for (i = 0; i < size; i++) output[i] = input[size - 1 - i];
+}
+
+// TODO(yongzhe): remove this, too.
+static INLINE tran_high_t fdct_round_shift(tran_high_t input) {
+  tran_high_t rv = ROUND_POWER_OF_TWO(input, DCT_CONST_BITS);
+  // TODO(debargha, peter.derivaz): Find new bounds for this assert
+  // and make the bounds consts.
+  // assert(INT16_MIN <= rv && rv <= INT16_MAX);
+  return rv;
+}
+
+// version 0, w 1 1
+void igbt4_0(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[4];
+  int i, j;
+  for (i = 0; i < 4; i++) temp[i] = 0;
+  for (i = 0; i < 4; i++)
+    for (j = 0; j < 4; j++) {
+      temp[i] += input[j] * t4_0[j][i];
+    }
+  for (i = 0; i < 4; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 1, 1 1 w
+void igbt4_1(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t output_flip[4];
+  igbt4_0(input, output_flip);
+  flip(output_flip, output, 4);
+}
+
+// version 2, w w 1
+void igbt4_2(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[4];
+  int i, j;
+  for (i = 0; i < 4; i++) temp[i] = 0;
+  for (i = 0; i < 4; i++)
+    for (j = 0; j < 4; j++) {
+      temp[i] += input[j] * t4_2[j][i];
+    }
+  for (i = 0; i < 4; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 3, 1 w w
+void igbt4_3(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t output_flip[4];
+  igbt4_2(input, output_flip);
+  flip(output_flip, output, 4);
+}
+
+// version 0, w w 1 ...
+void igbt8_0(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[8];
+  int i, j;
+  for (i = 0; i < 8; i++) temp[i] = 0;
+  for (i = 0; i < 8; i++)
+    for (j = 0; j < 8; j++) {
+      temp[i] += input[j] * t8_0[j][i];
+    }
+  for (i = 0; i < 8; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 1, 1 1 .. w w
+void igbt8_1(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t output_flip[8];
+  igbt8_0(input, output_flip);
+  flip(output_flip, output, 8);
+}
+
+// version 2, 1 w w 1 ..
+void igbt8_2(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[8];
+  int i, j;
+  for (i = 0; i < 8; i++) temp[i] = 0;
+  for (i = 0; i < 8; i++)
+    for (j = 0; j < 8; j++) {
+      temp[i] += input[j] * t8_2[j][i];
+    }
+  for (i = 0; i < 8; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 3, .. 1 1 w w 1
+void igbt8_3(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t output_flip[8];
+  igbt8_2(input, output_flip);
+  flip(output_flip, output, 8);
+}
+
+// version 0, w w 1 ...
+void igbt16_0(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[16];
+  int i, j;
+  for (i = 0; i < 16; i++) temp[i] = 0;
+  for (i = 0; i < 16; i++)
+    for (j = 0; j < 16; j++) {
+      temp[i] += input[j] * t16_0[j][i];
+    }
+  for (i = 0; i < 16; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 1, 1 1 .. w w
+void igbt16_1(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t output_flip[16];
+  igbt16_0(input, output_flip);
+  flip(output_flip, output, 16);
+}
+
+// version 2, 1 w w 1 ..
+void igbt16_2(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[16];
+  int i, j;
+  for (i = 0; i < 16; i++) temp[i] = 0;
+  for (i = 0; i < 16; i++)
+    for (j = 0; j < 16; j++) {
+      temp[i] += input[j] * t16_2[j][i];
+    }
+  for (i = 0; i < 16; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 3, .. 1 1 w w 1
+void igbt16_3(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t output_flip[16];
+  igbt16_2(input, output_flip);
+  flip(output_flip, output, 16);
 }
 
 void idst4(const tran_low_t *input, tran_low_t *output) {
@@ -677,13 +819,21 @@ void vp9_iht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride,
     { iadst4, iadst4 },  // FLIPADST_FLIPADST = 6
     { iadst4, iadst4 },  // ADST_FLIPADST = 7
     { iadst4, iadst4 },  // FLIPADST_ADST = 8
-    { idst4,  idst4  },   // DST_DST = 9
-    { idst4,  idct4  },   // DST_DCT = 10
-    { idct4,  idst4  },   // DCT_DST = 11
-    { idst4,  iadst4 },   // DST_ADST = 12
-    { iadst4, idst4  },   // ADST_DST = 13
-    { idst4,  iadst4 },   // DST_FLIPADST = 14
-    { iadst4, idst4  },   // FLIPADST_DST = 15
+    { idst4,  idst4  },  // DST_DST = 9
+    { idst4,  idct4  },  // DST_DCT = 10
+    { idct4,  idst4  },  // DCT_DST = 11
+    { idst4,  iadst4 },  // DST_ADST = 12
+    { iadst4, idst4  },  // ADST_DST = 13
+    { idst4,  iadst4 },  // DST_FLIPADST = 14
+    { iadst4, idst4  },  // FLIPADST_DST = 15
+    { igbt4_0, idct4 },  // GBT0_DCT = 16
+    { igbt4_1, idct4 },  // GBT1_DCT = 17
+    { igbt4_2, idct4 },  // GBT2_DCT = 18
+    { igbt4_3, idct4 },  // GBT3_DCT = 19
+    { idct4, igbt4_0 },  // DCT_GBT0 = 20
+    { idct4, igbt4_1 },  // DCT_GBT1 = 21
+    { idct4, igbt4_2 },  // DCT_GBT2 = 22
+    { idct4, igbt4_3 },  // DCT_GBT3 = 23
 #endif  // CONFIG_EXT_TX
   };
 
@@ -822,6 +972,14 @@ static const transform_2d IHT_8[] = {
   { iadst8, idst8  },  // ADST_DST = 13
   { idst8,  iadst8 },  // DST_FLIPADST = 14
   { iadst8, idst8  },  // FLIPADST_DST = 15
+  { igbt8_0, idct8 },  // GBT0_DCT = 16
+  { igbt8_1, idct8 },  // GBT1_DCT = 17
+  { igbt8_2, idct8 },  // GBT2_DCT = 18
+  { igbt8_3, idct8 },  // GBT3_DCT = 19
+  { idct8, igbt8_0 },  // DCT_GBT0 = 20
+  { idct8, igbt8_1 },  // DCT_GBT1 = 21
+  { idct8, igbt8_2 },  // DCT_GBT2 = 22
+  { idct8, igbt8_3 },  // DCT_GBT3 = 23
 #endif  // CONFIG_EXT_TX
 };
 
@@ -1301,6 +1459,14 @@ static const transform_2d IHT_16[] = {
   { iadst16, idst16  },  // ADST_DST = 13
   { idst16,  iadst16 },  // DST_FLIPADST = 14
   { iadst16, idst16  },  // FLIPADST_DST = 15
+  { igbt16_0, idct16 },  // GBT0_DCT = 16
+  { igbt16_1, idct16 },  // GBT1_DCT = 17
+  { igbt16_2, idct16 },  // GBT2_DCT = 18
+  { igbt16_3, idct16 },  // GBT3_DCT = 19
+  { idct16, igbt16_0 },  // DCT_GBT0 = 20
+  { idct16, igbt16_1 },  // DCT_GBT1 = 21
+  { idct16, igbt16_2 },  // DCT_GBT2 = 22
+  { idct16, igbt16_3 },  // DCT_GBT3 = 23
 #endif  // CONFIG_EXT_TX
 };
 
@@ -1940,7 +2106,7 @@ void vp9_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
   if (tx_type == DCT_DCT) {
     vp9_idct4x4_add(input, dest, stride, eob);
 #if CONFIG_EXT_TX
-  } else if (is_dst_used(tx_type)) {
+  } else if (is_dst_used(tx_type) || is_gbt_used(tx_type)) {
     vp9_iht4x4_16_add_c(input, dest, stride, tx_type);
 #endif  // CONFIG_EXT_TX
   } else {
@@ -1953,7 +2119,7 @@ void vp9_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
   if (tx_type == DCT_DCT) {
     vp9_idct8x8_add(input, dest, stride, eob);
 #if CONFIG_EXT_TX
-  } else if (is_dst_used(tx_type)) {
+  } else if (is_dst_used(tx_type) || is_gbt_used(tx_type)) {
     vp9_iht8x8_64_add_c(input, dest, stride, tx_type);
 #endif  // CONFIG_EXT_TX
   } else {
@@ -1966,7 +2132,7 @@ void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
   if (tx_type == DCT_DCT) {
     vp9_idct16x16_add(input, dest, stride, eob);
 #if CONFIG_EXT_TX
-  } else if (is_dst_used(tx_type)) {
+  } else if (is_dst_used(tx_type) || is_gbt_used(tx_type)) {
     vp9_iht16x16_256_add_c(input, dest, stride, tx_type);
 #endif  // CONFIG_EXT_TX
   } else {

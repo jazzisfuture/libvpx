@@ -28,6 +28,243 @@ static INLINE tran_high_t fdct_round_shift(tran_high_t input) {
 }
 
 #if CONFIG_EXT_TX
+// TODO(yongzhe): use maybe*() instead of this. Remove afterwards.
+static inline void flip(const tran_low_t *input, tran_low_t *output, int size) {
+  int i;
+  for (i = 0; i < size; i++) output[i] = input[size - 1 - i];
+}
+
+// size 4, version 0, 0.001 1 1
+// sqrt(2) * 2^14 * coeff
+const tran_high_t t4_0[4][4] = {
+    {11585, 11585, 11585, 11585},
+    {20066, -6674, -6692, -6701},
+    {16, -16388, -8, 16380},
+    {-3, 9463, -18918, 9458},
+};
+
+// size 4, version 2, 0.001 0.001 1
+// sqrt(2) * 2^14 * coeff
+const tran_high_t t4_2[4][4] = {
+    {11585, 11585, 11585, 11585},
+    {16813, 4723, -10764, -10772},
+    {-10953, 19503, -4269, -4281},
+    {0, 8, -16388, 16380},
+};
+
+// size 8, version 0, 0.001 0.001 1 1 ...
+// 2 * 2^14 * coeff
+const tran_high_t t8_0[8][8] = {
+    {11585, 11585, 11585, 11585, 11585, 11585, 11585, 11585},
+    {25699, 12863, -6398, -6414, -6426, -6436, -6443, -6446},
+    {-16706, 27822, -1807, -1832, -1852, -1867, -1877, -1882},
+    {0, 69, -18277, -13392, -4915, 4881, 13367, 18267},
+    {0, 16, -16390, -12, 16378, 16386, 4, -16382},
+    {0, 7, -13383, 13372, 13381, -13374, -13379, 13376},
+    {0, -3, 9463, -18918, 9456, 9461, -18918, 9459},
+    {0, 1, -4899, 13379, -18274, 18273, -13377, 4896},
+};
+
+// size 8, version 2, 1 0.001 0.001 1 1 ...
+// 2 * 2^14 * coeff
+const tran_high_t t8_2[8][8] = {
+    {11585, 11585, 11585, 11585, 11585, 11585, 11585, 11585},
+    {18369, 18363, 5928, -8515, -8526, -8535, -8541, -8544},
+    {-8093, -8074, 30073, -2742, -2768, -2788, -2801, -2808},
+    {0, 0, -52, 19714, 12196, 16, -12170, -19704},
+    {0, 0, -12, 16773, -6394, -20723, -6408, 16764},
+    {-23165, 23176, -12, 0, 0, 0, 0, 0},
+    {0, 0, 5, -12186, 19708, 4, -19710, 12180},
+    {0, 0, -2, 6407, -16767, 20724, -16765, 6404},
+};
+
+// size 16, version 0, 0.001 0.001 1 1 ...
+// 2 * sqrt(2) * 2^14 * coeff
+const tran_high_t t16_0[16][16] = {
+    {11585, 11585, 11585, 11585, 11585, 11585, 11585, 11585, 11585, 11585,
+     11585, 11585, 11585, 11585, 11585, 11585},
+    {37857, 21507, -4132, -4156, -4178, -4199, -4217, -4234, -4249, -4261,
+     -4273, -4282, -4289, -4295, -4299, -4300},
+    {-24085, 39377, -917, -955, -990, -1023, -1053, -1081, -1105, -1126, -1145,
+     -1161, -1173, -1182, -1189, -1192},
+    {-7, 360, -17400, -16543, -14854, -12418, -9357, -5826, -2002, 1923, 5751,
+     9290, 12362, 14812, 16517, 17392},
+    {0, 87, -17081, -13713, -7627, -29, 7575, 13677, 17068, 17077, 13701, 7609,
+     10, -7592, -13689, -17073},
+    {0, 38, -16539, -9337, 1940, 12371, 17402, 14837, 5797, -5773, -14824,
+     -17405, -12389, -1965, 9316, 16531},
+    {0, 21, -15788, -3913, 10908, 17514, 10930, -3887, -15776, -15784, -3904,
+     10915, 17514, 10923, -3895, -15780},
+    {0, 13, -14837, 1949, 16528, 12392, -5776, -17404, -9325, 9313, 17405, 5789,
+     -12382, -16533, -1963, 14830},
+    {0, 9, -13700, 7591, 17078, 8, -17074, -7605, 13690, 13697, -7596, -17076,
+     -3, 17075, 7600, -13693},
+    {0, 6, -12391, 12379, 12390, -12380, -12389, 12381, 12388, -12382, -12387,
+     12383, 12386, -12384, -12386, 12385},
+    {0, 4, -10926, 15778, 3903, -17515, 3893, 15782, -10917, -10923, 15779,
+     3900, -17515, 3896, 15781, -10920},
+    {0, 3, -9323, 17404, -5781, -12388, 16531, -1958, -14832, 14829, 1963,
+     -16533, 12384, 5786, -17405, 9318},
+    {0, 2, -7603, 17077, -13692, -3, 13696, -17075, 7597, 7601, -17076, 13693,
+     1, -13694, 17076, -7599},
+    {0, 2, -5788, 14832, -17405, 12383, -1959, -9320, 16533, -16532, 9318, 1962,
+     -12386, 17405, -14830, 5785},
+    {0, -1, 3899, -10922, 15781, -17515, 15780, -10920, 3896, 3898, -10921,
+     15781, -17515, 15780, -10920, 3897},
+    {0, 0, -1962, 5786, -9319, 12386, -14831, 16532, -17405, 17405, -16532,
+     14830, -12385, 9318, -5785, 1961},
+};
+
+// size 16, version 2, 1 0.001 0.001 1 1 ...
+// 2 * sqrt(2) * 2^14 * coeff
+const tran_high_t t16_2[16][16] = {
+    {11585, 11585, 11585, 11585, 11585, 11585, 11585, 11585, 11585, 11585,
+     11585, 11585, 11585, 11585, 11585, 11585},
+    {-28268, -28260, -13241, 5295, 5312, 5328, 5342, 5355, 5367, 5377, 5385,
+     5393, 5398, 5403, 5406, 5407},
+    {-11875, -11847, 42870, -1298, -1339, -1377, -1412, -1444, -1472, -1497,
+     -1518, -1536, -1551, -1562, -1569, -1573},
+    {-3, -3, 321, -18040, -17007, -14983, -12086, -8485, -4389, -38, 4316, 8418,
+     12029, 14940, 16980, 18031},
+    {0, 0, -78, 17654, 13625, 6472, -2164, -10304, -16082, -18173, -16099,
+     -10334, -2200, 6438, 13600, 17645},
+    {0, 0, -34, 17002, 8465, -4331, -14948, -18044, -12063, -12, 12045, 18041,
+     14961, 4354, -8444, -16994},
+    {0, 0, -19, 16101, 2206, -13595, -17650, -6456, 10317, 18176, 10331, -6440,
+     -17646, -13607, 2189, 16093},
+    {0, 0, -12, 14966, -4338, -18042, -8455, 12046, 16997, 7, -16993, -12056,
+     8444, 18044, 4351, -14958},
+    {0, 0, -8, 13611, -10318, -16098, 6438, 17649, -2185, -18176, -2195, 17647,
+     6448, -16093, -10326, 13605},
+    {-32760, 32776, -16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, -5, 12059, -14955, -8453, 16993, 4355, -18043, -4, 18044, -4347,
+     -16996, 8445, 14959, -12053},
+    {0, 0, -4, 10330, -17647, 2186, 16096, -13602, -6449, 18176, -6443, -13606,
+     16093, 2192, -17648, 10325},
+    {0, 0, -3, 8451, -18044, 12050, 4353, -16996, 14957, 2, -14960, 16994,
+     -4349, -12054, 18044, -8447},
+    {0, 0, -2, 6448, -16096, 17647, -10323, -2193, 13606, -18176, 13604, -2190,
+     -10326, 17648, -16094, 6445},
+    {0, 0, 1, -4352, 12055, -16996, 18044, -14958, 8446, 1, -8448, 14959,
+     -18044, 16995, -12053, 4350},
+    {0, 0, -1, 2192, -6446, 10326, -13606, 16095, -17648, 18176, -17648, 16094,
+     -13605, 10325, -6445, 2191},
+};
+
+// version 0, 0.001-1-1
+void fgbt4_0(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[4];
+  int i, j;
+  for (i = 0; i < 4; i++) temp[i] = 0;
+  for (i = 0; i < 4; i++)
+    for (j = 0; j < 4; j++) {
+      temp[i] += input[j] * t4_0[i][j];
+    }
+  for (i = 0; i < 4; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 1, 1-1-0.001, implemented by flipping the input
+void fgbt4_1(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t input_flip[4];
+  flip(input, input_flip, 4);
+  fgbt4_0(input, output);
+}
+
+// version 2, 0.001-0.001-1
+void fgbt4_2(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[4];
+  int i, j;
+  for (i = 0; i < 4; i++) temp[i] = 0;
+  for (i = 0; i < 4; i++)
+    for (j = 0; j < 4; j++) {
+      temp[i] += input[j] * t4_2[i][j];
+    }
+  for (i = 0; i < 4; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 3, 1-0.001-0.001
+void fgbt4_3(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t input_flip[4];
+  flip(input, input_flip, 4);
+  fgbt4_2(input, output);
+}
+
+// version 0, ridge, 0.001-0.001-1-1-...
+void fgbt8_0(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[8];
+  int i, j;
+  for (i = 0; i < 8; i++) temp[i] = 0;
+  for (i = 0; i < 8; i++)
+    for (j = 0; j < 8; j++) {
+      temp[i] += input[j] * t8_0[i][j];
+    }
+  for (i = 0; i < 8; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 1, ridge, ...-1-0.001-0.001
+void fgbt8_1(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t input_flip[8];
+  flip(input, input_flip, 8);
+  fgbt8_0(input, output);
+}
+
+// version 2, ridge, 1-0.001-0.001-1-1-...
+void fgbt8_2(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[8];
+  int i, j;
+  for (i = 0; i < 8; i++) temp[i] = 0;
+  for (i = 0; i < 8; i++)
+    for (j = 0; j < 8; j++) {
+      temp[i] += input[j] * t8_2[i][j];
+    }
+  for (i = 0; i < 8; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 3, ridge, ...-1-0.001-0.001-1
+void fgbt8_3(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t input_flip[8];
+  flip(input, input_flip, 8);
+  fgbt8_2(input, output);
+}
+
+// version 0, ridge, 0.001-0.001-1-1-...
+void fgbt16_0(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[16];
+  int i, j;
+  for (i = 0; i < 16; i++) temp[i] = 0;
+  for (i = 0; i < 16; i++)
+    for (j = 0; j < 16; j++) {
+      temp[i] += input[j] * t16_0[i][j];
+    }
+  for (i = 0; i < 16; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 1, ridge, ...-1-0.001-0.001
+void fgbt16_1(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t input_flip[16];
+  flip(input, input_flip, 16);
+  fgbt16_0(input, output);
+}
+
+// version 2, ridge, 1-0.001-0.001-1-1-...
+void fgbt16_2(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t temp[16];
+  int i, j;
+  for (i = 0; i < 16; i++) temp[i] = 0;
+  for (i = 0; i < 16; i++)
+    for (j = 0; j < 16; j++) {
+      temp[i] += input[j] * t16_2[i][j];
+    }
+  for (i = 0; i < 16; i++) output[i] = (tran_low_t)fdct_round_shift(temp[i]);
+}
+
+// version 3, ridge, ...-1-0.001-0.001-1
+void fgbt16_3(const tran_low_t *input, tran_low_t *output) {
+  tran_low_t input_flip[16];
+  flip(input, input_flip, 16);
+  fgbt16_2(input, output);
+}
+
 void vp9_fdst4(const tran_low_t *input, tran_low_t *output) {
   // {sin(pi/5), sin(pi*2/5)} * sqrt(2/5) * sqrt(2)
   static const int32_t sinvalue_lookup[] = {
@@ -397,15 +634,28 @@ static void maybe_flip_input(const int16_t **src, int *src_stride, int l,
     case ADST_DCT:
     case DCT_ADST:
     case ADST_ADST:
+    case GBT0_DCT:
+    case GBT2_DCT:
+    case DCT_GBT0:
+    case DCT_GBT2:
+    // TODO(yongzhe): use this function for flipping the source.
+    case GBT1_DCT:
+    case GBT3_DCT:
+    case DCT_GBT1:
+    case DCT_GBT3:
       break;
     case FLIPADST_DCT:
     case FLIPADST_ADST:
+    // case GBT1_DCT:
+    // case GBT3_DCT:
       copy_flipud(*src, *src_stride, l, buff, l);
       *src = buff;
       *src_stride = l;
       break;
     case DCT_FLIPADST:
     case ADST_FLIPADST:
+    // case DCT_GBT1:
+    // case DCT_GBT3:
       copy_fliplr(*src, *src_stride, l, buff, l);
       *src = buff;
       *src_stride = l;
