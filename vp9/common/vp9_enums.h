@@ -155,6 +155,14 @@ typedef enum {
   ADST_DST = 13,
   DST_FLIPADST = 14,
   FLIPADST_DST = 15,
+  GBT0_DCT = 16,  // GBT0 in vertical, DCT in horizontal
+  GBT1_DCT = 17,
+  GBT2_DCT = 18,
+  GBT3_DCT = 19,
+  DCT_GBT0 = 20,
+  DCT_GBT1 = 21,
+  DCT_GBT2 = 22,
+  DCT_GBT3 = 23,
 #if CONFIG_WAVELETS
   WAVELET1_DCT_DCT,
 #endif  // CONFIG_WAVELETS
@@ -163,6 +171,8 @@ typedef enum {
 } TX_TYPE;
 
 #if CONFIG_EXT_TX
+#define USE_DCTGBT_FOR_EXT_TX 1
+
 typedef enum {
   NORM = 0,
   ALT1 = 1,
@@ -176,6 +186,7 @@ typedef enum {
   ALT6 = 6,
   ALT7 = 7,
   ALT8 = 8,
+#if !USE_DCTGBT_FOR_EXT_TX
   ALT9 = 9,
   ALT10 = 10,
   ALT11 = 11,
@@ -183,8 +194,10 @@ typedef enum {
   ALT13 = 13,
   ALT14 = 14,
   ALT15 = 15,
+#endif  // !USE_DCTGBT_FOR_EXT_TX
   EXT_TX_TYPES
 } EXT_TX_TYPE;
+
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_PALETTE

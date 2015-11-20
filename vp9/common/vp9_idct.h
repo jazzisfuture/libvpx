@@ -83,6 +83,13 @@ static const tran_high_t sinpi_3_9 = 13377;
 static const tran_high_t sinpi_4_9 = 15212;
 
 #if CONFIG_EXT_TX
+extern const tran_high_t t4_0[4][4];
+extern const tran_high_t t4_2[4][4];
+extern const tran_high_t t8_0[8][8];
+extern const tran_high_t t8_2[8][8];
+extern const tran_high_t t16_0[16][16];
+extern const tran_high_t t16_2[16][16];
+
 static const int32_t dst_lookup4[] = {
   // {sin(pi/5), sin(pi*2/5)} * sqrt(2/5) * sqrt(2)
   // at precision of 2 * DCT_CONST_BITS bits
