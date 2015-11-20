@@ -37,6 +37,18 @@ void vp9_fdct32(const tran_high_t *input, tran_high_t *output, int round);
 void vp9_fdst4(const tran_low_t *input, tran_low_t *output);
 void vp9_fdst8(const tran_low_t *input, tran_low_t *output);
 void vp9_fdst16(const tran_low_t *input, tran_low_t *output);
+void fgbt4_0(const tran_low_t *input, tran_low_t *output);
+void fgbt4_1(const tran_low_t *input, tran_low_t *output);
+void fgbt4_2(const tran_low_t *input, tran_low_t *output);
+void fgbt4_3(const tran_low_t *input, tran_low_t *output);
+void fgbt8_0(const tran_low_t *input, tran_low_t *output);
+void fgbt8_1(const tran_low_t *input, tran_low_t *output);
+void fgbt8_2(const tran_low_t *input, tran_low_t *output);
+void fgbt8_3(const tran_low_t *input, tran_low_t *output);
+void fgbt16_0(const tran_low_t *input, tran_low_t *output);
+void fgbt16_1(const tran_low_t *input, tran_low_t *output);
+void fgbt16_2(const tran_low_t *input, tran_low_t *output);
+void fgbt16_3(const tran_low_t *input, tran_low_t *output);
 #endif  // CONFIG_EXT_TX
 
 static const transform_2d FHT_4[] = {
@@ -57,6 +69,14 @@ static const transform_2d FHT_4[] = {
   { vp9_fadst4, vp9_fdst4  },  // ADST_DST = 13
   { vp9_fdst4,  vp9_fadst4 },  // DST_FLIPADST = 14
   { vp9_fadst4, vp9_fdst4  },  // FLIPADST_DST = 15
+  { fgbt4_0,    vp9_fdct4  },  // GBT0_DCT = 16
+  { fgbt4_1,    vp9_fdct4  },  // GBT1_DCT = 17
+  { fgbt4_2,    vp9_fdct4  },  // GBT2_DCT = 18
+  { fgbt4_3,    vp9_fdct4  },  // GBT3_DCT = 19
+  { vp9_fdct4,  fgbt4_0    },  // DCT_GBT0 = 20
+  { vp9_fdct4,  fgbt4_1    },  // DCT_GBT1 = 21
+  { vp9_fdct4,  fgbt4_2    },  // DCT_GBT2 = 22
+  { vp9_fdct4,  fgbt4_3    },  // DCT_GBT3 = 23
 #endif  // CONFIG_EXT_TX
 };
 
@@ -78,6 +98,14 @@ static const transform_2d FHT_8[] = {
   { vp9_fadst8, vp9_fdst8  },  // ADST_DST = 13
   { vp9_fdst8,  vp9_fadst8 },  // DST_FLIPADST = 14
   { vp9_fadst8, vp9_fdst8  },  // FLIPADST_DST = 15
+  { fgbt8_0,    vp9_fdct8  },  // GBT0_DCT = 16
+  { fgbt8_1,    vp9_fdct8  },  // GBT1_DCT = 17
+  { fgbt8_2,    vp9_fdct8  },  // GBT2_DCT = 18
+  { fgbt8_3,    vp9_fdct8  },  // GBT3_DCT = 19
+  { vp9_fdct8,  fgbt8_0    },  // DCT_GBT0 = 20
+  { vp9_fdct8,  fgbt8_1    },  // DCT_GBT1 = 21
+  { vp9_fdct8,  fgbt8_2    },  // DCT_GBT2 = 22
+  { vp9_fdct8,  fgbt8_3    },  // DCT_GBT3 = 23
 #endif  // CONFIG_EXT_TX
 };
 
@@ -99,6 +127,14 @@ static const transform_2d FHT_16[] = {
   { vp9_fadst16, vp9_fdst16  },  // ADST_DST = 13
   { vp9_fdst16,  vp9_fadst16 },  // DST_FLIPADST = 14
   { vp9_fadst16, vp9_fdst16  },  // FLIPADST_DST = 15
+  { fgbt16_0,    vp9_fdct16  },  // GBT0_DCT = 16
+  { fgbt16_1,    vp9_fdct16  },  // GBT1_DCT = 17
+  { fgbt16_2,    vp9_fdct16  },  // GBT2_DCT = 18
+  { fgbt16_3,    vp9_fdct16  },  // GBT3_DCT = 19
+  { vp9_fdct16,  fgbt16_0    },  // DCT_GBT0 = 20
+  { vp9_fdct16,  fgbt16_1    },  // DCT_GBT1 = 21
+  { vp9_fdct16,  fgbt16_2    },  // DCT_GBT2 = 22
+  { vp9_fdct16,  fgbt16_3    },  // DCT_GBT3 = 23
 #endif  // CONFIG_EXT_TX
 };
 
