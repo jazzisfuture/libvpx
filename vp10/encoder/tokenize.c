@@ -789,3 +789,33 @@ void vp10_tokenize_sb(VP10_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
     vp10_foreach_transformed_block(xd, bsize, set_entropy_context_b, &arg);
   }
 }
+
+#if CONFIG_SUPERTX
+void vp10_tokenize_sb_supertx(VP10_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
+                              int dry_run, BLOCK_SIZE bsize) {
+  VP10_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *const xd = &td->mb.e_mbd;
+  MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+  TOKENEXTRA *t_backup = *t;
+  const int ctx = vp10_get_skip_context(xd);
+  const int skip_inc = !segfeature_active(&cm->seg, mbmi->segment_id,
+                                          SEG_LVL_SKIP);
+  struct tokenize_b_args arg = {cpi, td, t};
+  if (mbmi->skip) {
+    if (!dry_run)
+      td->counts->skip[ctx][1] += skip_inc;
+    reset_skip_context(xd, bsize);
+    if (dry_run)
+      *t = t_backup;
+    return;
+  }
+
+  if (!dry_run) {
+    td->counts->skip[ctx][0] += skip_inc;
+    vp10_foreach_transformed_block(xd, bsize, tokenize_b, &arg);
+  } else {
+    vp10_foreach_transformed_block(xd, bsize, set_entropy_context_b, &arg);
+    *t = t_backup;
+  }
+}
+#endif  // CONFIG_SUPERTX
