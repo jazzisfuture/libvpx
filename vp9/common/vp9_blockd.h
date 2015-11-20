@@ -539,6 +539,19 @@ static INLINE int supertx_enabled(const MB_MODE_INFO *mbmi) {
     ((tx_size) >= TX_32X32 ? NULL : ext_tx_encodings)
 #endif  // CONFIG_WAVELETS
 
+#if USE_DCTGBT_FOR_EXT_TX
+static TX_TYPE ext_tx_to_txtype[EXT_TX_TYPES] = {
+  DCT_DCT,
+  GBT0_DCT,
+  GBT1_DCT,
+  GBT2_DCT,
+  GBT3_DCT,
+  DCT_GBT0,
+  DCT_GBT1,
+  DCT_GBT2,
+  DCT_GBT3,
+};
+#else
 static TX_TYPE ext_tx_to_txtype[EXT_TX_TYPES] = {
   DCT_DCT,
   ADST_DCT,
@@ -557,12 +570,20 @@ static TX_TYPE ext_tx_to_txtype[EXT_TX_TYPES] = {
   DST_FLIPADST,
   FLIPADST_DST,
 };
+#endif  // USE_DCTGBT_FOR_EXT_TX
 
 static INLINE int is_dst_used(TX_TYPE tx_type) {
   return (tx_type == DST_DST ||
           tx_type == DST_DCT || tx_type == DCT_DST ||
           tx_type == DST_ADST || tx_type == ADST_DST ||
           tx_type == DST_FLIPADST || tx_type == FLIPADST_DST);
+}
+
+static INLINE int is_gbt_used(TX_TYPE tx_type) {
+  return (tx_type == GBT0_DCT || tx_type == GBT1_DCT ||
+          tx_type == GBT2_DCT || tx_type == GBT3_DCT ||
+          tx_type == DCT_GBT0 || tx_type == DCT_GBT1 ||
+          tx_type == DCT_GBT2 || tx_type == DCT_GBT3);
 }
 
 #if CONFIG_WAVELETS
