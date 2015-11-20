@@ -19,6 +19,9 @@
 extern "C" {
 #endif
 
+#define SI_FLOOR_POWER_OF_TWO(value, n) \
+  ((value) + (int)(((value) >> 31) & ((1 << (n)) - 1))) >> (n)
+
 #define FILTER_BITS 7
 #define FILTER_WEIGHT 128
 
