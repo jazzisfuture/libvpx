@@ -59,6 +59,10 @@ void vp10_tokenize_sb_inter(struct VP10_COMP *cpi, struct ThreadData *td,
 
 void vp10_tokenize_sb(struct VP10_COMP *cpi, struct ThreadData *td,
                      TOKENEXTRA **t, int dry_run, BLOCK_SIZE bsize);
+#if CONFIG_SUPERTX
+void vp10_tokenize_sb_supertx(struct VP10_COMP *cpi, struct ThreadData *td,
+                              TOKENEXTRA **t, int dry_run, BLOCK_SIZE bsize);
+#endif
 
 extern const int16_t *vp10_dct_value_cost_ptr;
 /* TODO: The Token field should be broken out into a separate char array to
