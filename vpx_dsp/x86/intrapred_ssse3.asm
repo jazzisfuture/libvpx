@@ -30,6 +30,7 @@ sh_b89abcdef: db 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0
 sh_bfedcba9876543210: db 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 sh_b1233: db 1, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b2333: db 2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+pb_01: db 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1
 
 SECTION .text
 
@@ -51,22 +52,29 @@ cglobal h_predictor_4x4, 2, 4, 3, dst, stride, line, left
   jnz .loop
   REP_RET
 
-INIT_MMX ssse3
-cglobal h_predictor_8x8, 2, 4, 3, dst, stride, line, left
-  movifnidn          leftq, leftmp
-  add                leftq, 8
-  mov                lineq, -4
-  pxor                  m0, m0
+INIT_XMM ssse3
+cglobal h_predictor_8x8, 4, 5, 3, dst, stride, line, left, goffset
+  GET_GOT     goffsetq
+
+  mov                lineq, -2
+  movdqu                m0, [GLOBAL(pb_01) ]
+  DEFINE_ARGS  dst, stride, line, left, stride3
+  lea             stride3q, [strideq*3]
 .loop:
-  movd                  m1, [leftq+lineq*2  ]
-  movd                  m2, [leftq+lineq*2+1]
+  movd                  m1, [leftq         ]
   pshufb                m1, m0
-  pshufb                m2, m0
   movq      [dstq        ], m1
-  movq      [dstq+strideq], m2
-  lea                 dstq, [dstq+strideq*2]
+  movhps    [dstq+strideq], m1
+  movd                  m1, [leftq+2       ]
+  pshufb                m1, m0
+  movq    [dstq+strideq*2], m1
+  movhps  [dstq+stride3q ], m1
+  lea                 dstq, [dstq+strideq*4]
+  lea                leftq, [leftq+4       ]
   inc                lineq
   jnz .loop
+
+  RESTORE_GOT
   REP_RET
 
 INIT_XMM ssse3
