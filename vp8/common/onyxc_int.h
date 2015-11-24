@@ -84,6 +84,13 @@ typedef struct VP8Common
     int fb_idx_ref_cnt[NUM_YV12_BUFFERS];
     int new_fb_idx, lst_fb_idx, gld_fb_idx, alt_fb_idx;
 
+    // Four ref buffers plus post_proc_buffer(_int) and temp_scale_frame.
+    vpx_codec_frame_buffer_t raw_frame_buffer[NUM_YV12_BUFFERS+3];
+    // Private data associated with the frame buffer callbacks.
+    void *cb_priv;
+    vpx_get_frame_buffer_cb_fn_t get_fb_cb;
+    vpx_release_frame_buffer_cb_fn_t release_fb_cb;
+
     YV12_BUFFER_CONFIG temp_scale_frame;
 
 #if CONFIG_POSTPROC
