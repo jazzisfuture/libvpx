@@ -486,6 +486,11 @@ TEST_F(ExternalFrameBufferTest, SetAfterDecode) {
 }
 #endif  // CONFIG_WEBM_IO
 
+VP8_INSTANTIATE_TEST_CASE(ExternalFrameBufferMD5Test,
+                          ::testing::ValuesIn(libvpx_test::kVP8TestVectors,
+                                              libvpx_test::kVP8TestVectors +
+                                              libvpx_test::kNumVP8TestVectors));
+
 VP9_INSTANTIATE_TEST_CASE(ExternalFrameBufferMD5Test,
                           ::testing::ValuesIn(libvpx_test::kVP9TestVectors,
                                               libvpx_test::kVP9TestVectors +

@@ -65,6 +65,11 @@ struct vpx_codec_alg_priv
     struct frame_buffers    yv12_frame_buffers;
     void                    *user_priv;
     FRAGMENT_DATA           fragments;
+
+    /* External frame buffer info to save for VP8 common. */
+    void *ext_priv;  /* Private data associated with the external frame buffers. */
+    vpx_get_frame_buffer_cb_fn_t get_ext_fb_cb;
+    vpx_release_frame_buffer_cb_fn_t release_ext_fb_cb;
 };
 
 static int vp8_init_ctx(vpx_codec_ctx_t *ctx)
@@ -432,6 +437,14 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
                                        "Invalid frame height");
                 }
 
+                // Only set once.
+                if (pc->get_fb_cb == NULL)
+                {
+                    pc->get_fb_cb = ctx->get_ext_fb_cb;
+                    pc->release_fb_cb = ctx->release_ext_fb_cb;
+                    pc->cb_priv = ctx->ext_priv;
+                }
+
                 if (vp8_alloc_frame_buffers(pc, pc->Width, pc->Height))
                     vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
                                        "Failed to allocate frame buffers");
@@ -553,6 +566,28 @@ static vpx_image_t *vp8_get_frame(vpx_codec_alg_priv_t  *ctx,
     }
 
     return img;
+}
+
+static vpx_codec_err_t vp8_set_fb_fn(
+    vpx_codec_alg_priv_t *ctx,
+    vpx_get_frame_buffer_cb_fn_t cb_get,
+    vpx_release_frame_buffer_cb_fn_t cb_release, void *cb_priv)
+{
+    if (cb_get == NULL || cb_release == NULL)
+    {
+        return VPX_CODEC_INVALID_PARAM;
+    }
+    else if (ctx->get_ext_fb_cb == NULL)
+    {
+        /* If the decoder has already been initialized, do not accept changes
+           to the frame buffer functions. */
+        ctx->get_ext_fb_cb = cb_get;
+        ctx->release_ext_fb_cb = cb_release;
+        ctx->ext_priv = cb_priv;
+        return VPX_CODEC_OK;
+    }
+
+    return VPX_CODEC_ERROR;
 }
 
 static vpx_codec_err_t image2yuvconfig(const vpx_image_t   *img,
@@ -799,7 +834,7 @@ CODEC_INTERFACE(vpx_codec_vp8_dx) =
     "WebM Project VP8 Decoder" VERSION_STRING,
     VPX_CODEC_INTERNAL_ABI_VERSION,
     VPX_CODEC_CAP_DECODER | VP8_CAP_POSTPROC | VP8_CAP_ERROR_CONCEALMENT |
-    VPX_CODEC_CAP_INPUT_FRAGMENTS,
+    VPX_CODEC_CAP_INPUT_FRAGMENTS | VPX_CODEC_CAP_EXTERNAL_FRAME_BUFFER,
     /* vpx_codec_caps_t          caps; */
     vp8_init,         /* vpx_codec_init_fn_t       init; */
     vp8_destroy,      /* vpx_codec_destroy_fn_t    destroy; */
@@ -809,7 +844,7 @@ CODEC_INTERFACE(vpx_codec_vp8_dx) =
         vp8_get_si,       /* vpx_codec_get_si_fn_t     get_si; */
         vp8_decode,       /* vpx_codec_decode_fn_t     decode; */
         vp8_get_frame,    /* vpx_codec_frame_get_fn_t  frame_get; */
-        NULL,
+        vp8_set_fb_fn,    /* vpx_codec_set_fb_fn_t     set_fb_fn; */
     },
     { /* encoder functions */
         0,

@@ -756,7 +756,9 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
             int height = (oci->Height + 15) & ~15;
 
             if (vp8_yv12_alloc_frame_buffer(&oci->post_proc_buffer_int,
-                                            width, height, VP8BORDERINPIXELS))
+                                            width, height, VP8BORDERINPIXELS,
+                                            &oci->raw_frame_buffer[POSTPROC_INT_BUF_IDX],
+                                            oci->get_fb_cb, oci->cb_priv))
                 vpx_internal_error(&oci->error, VPX_CODEC_MEM_ERROR,
                                    "Failed to allocate MFQE framebuffer");
 

@@ -38,6 +38,12 @@ extern "C" {
 
 #define MAX_PARTITIONS 9
 
+#if CONFIG_POSTPROC
+#define NUM_POSTPROC_BUFS 2
+#else
+#define NUM_POSTPROC_BUFS 0
+#endif
+
 typedef struct frame_contexts
 {
     vp8_prob bmode_prob [VP8_BINTRAMODES-1];
@@ -83,6 +89,14 @@ typedef struct VP8Common
     YV12_BUFFER_CONFIG yv12_fb[NUM_YV12_BUFFERS];
     int fb_idx_ref_cnt[NUM_YV12_BUFFERS];
     int new_fb_idx, lst_fb_idx, gld_fb_idx, alt_fb_idx;
+
+    /* Four ref buffers plus post_proc_buffer, post_proc_buffer_int and
+       temp_scale_frame. */
+    vpx_codec_frame_buffer_t raw_frame_buffer[NUM_YV12_BUFFERS+NUM_POSTPROC_BUFS+1];
+    /* Private data associated with the frame buffer callbacks. */
+    void *cb_priv;
+    vpx_get_frame_buffer_cb_fn_t get_fb_cb;
+    vpx_release_frame_buffer_cb_fn_t release_fb_cb;
 
     YV12_BUFFER_CONFIG temp_scale_frame;
 

@@ -34,7 +34,8 @@ class VpxScaleBase {
     height_ = height;
     memset(&img_, 0, sizeof(img_));
     ASSERT_EQ(0, vp8_yv12_alloc_frame_buffer(&img_, width_, height_,
-                                             VP8BORDERINPIXELS));
+                                             VP8BORDERINPIXELS, NULL, NULL,
+                                             NULL));
     memset(img_.buffer_alloc, kBufFiller, img_.frame_size);
     FillPlane(img_.y_buffer, img_.y_crop_width, img_.y_crop_height,
               img_.y_stride);
@@ -45,12 +46,14 @@ class VpxScaleBase {
 
     memset(&ref_img_, 0, sizeof(ref_img_));
     ASSERT_EQ(0, vp8_yv12_alloc_frame_buffer(&ref_img_, width_, height_,
-                                             VP8BORDERINPIXELS));
+                                             VP8BORDERINPIXELS, NULL, NULL,
+                                             NULL));
     memset(ref_img_.buffer_alloc, kBufFiller, ref_img_.frame_size);
 
     memset(&cpy_img_, 0, sizeof(cpy_img_));
     ASSERT_EQ(0, vp8_yv12_alloc_frame_buffer(&cpy_img_, width_, height_,
-                                             VP8BORDERINPIXELS));
+                                             VP8BORDERINPIXELS, NULL, NULL,
+                                             NULL));
     memset(cpy_img_.buffer_alloc, kBufFiller, cpy_img_.frame_size);
     ReferenceCopyFrame();
   }
