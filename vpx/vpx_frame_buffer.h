@@ -32,6 +32,24 @@ extern "C" {
  */
 #define VP9_MAXIMUM_REF_BUFFERS 8
 
+/*!\brief The number of buffers that a VP8 decoder may use.
+ */
+#define NUM_YV12_BUFFERS 4
+
+/*!\brief The number of post-proc buffers that a VP8 decoder may use.
+ */
+#if CONFIG_POSTPROC
+#define NUM_POSTPROC_BUFS 2
+#else
+#define NUM_POSTPROC_BUFS 0
+#endif
+
+/*!\brief The total number of buffers that a VP8 decoder may use:
+ * four ref buffers plus post_proc_buffer, post_proc_buffer_int and
+ * temp_scale_frame.
+ */
+#define NUM_FRAME_BUFS (NUM_YV12_BUFFERS + NUM_POSTPROC_BUFS + 1)
+
 /*!\brief External frame buffer
  *
  * This structure holds allocated frame buffers used by the decoder.

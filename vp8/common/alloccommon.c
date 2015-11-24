@@ -24,6 +24,12 @@ void vp8_de_alloc_frame_buffers(VP8_COMMON *oci)
     for (i = 0; i < NUM_YV12_BUFFERS; i++)
         vp8_yv12_de_alloc_frame_buffer(&oci->yv12_fb[i]);
 
+    for (i = 0; i < NUM_FRAME_BUFS; i++)
+    {
+        if (oci->raw_frame_buffer[i].data != NULL)
+            oci->release_fb_cb(oci->cb_priv, &oci->raw_frame_buffer[i]);
+    }
+
     vp8_yv12_de_alloc_frame_buffer(&oci->temp_scale_frame);
 #if CONFIG_POSTPROC
     vp8_yv12_de_alloc_frame_buffer(&oci->post_proc_buffer);
@@ -63,8 +69,11 @@ int vp8_alloc_frame_buffers(VP8_COMMON *oci, int width, int height)
     {
         oci->fb_idx_ref_cnt[i] = 0;
         oci->yv12_fb[i].flags = 0;
-        if (vp8_yv12_alloc_frame_buffer(&oci->yv12_fb[i], width, height, VP8BORDERINPIXELS) < 0)
-            goto allocation_fail;
+        if (vp8_yv12_alloc_frame_buffer(&oci->yv12_fb[i],
+                                        width, height, VP8BORDERINPIXELS,
+                                        &oci->raw_frame_buffer[i],
+                                        oci->get_fb_cb, oci->cb_priv) < 0)
+          goto allocation_fail;
     }
 
     oci->new_fb_idx = 0;
@@ -77,7 +86,10 @@ int vp8_alloc_frame_buffers(VP8_COMMON *oci, int width, int height)
     oci->fb_idx_ref_cnt[2] = 1;
     oci->fb_idx_ref_cnt[3] = 1;
 
-    if (vp8_yv12_alloc_frame_buffer(&oci->temp_scale_frame,   width, 16, VP8BORDERINPIXELS) < 0)
+    if (vp8_yv12_alloc_frame_buffer(&oci->temp_scale_frame,
+                                    width, 16, VP8BORDERINPIXELS,
+                                    &oci->raw_frame_buffer[TEMP_SCALE_BUF_IDX],
+                                    oci->get_fb_cb, oci->cb_priv) < 0)
         goto allocation_fail;
 
     oci->mb_rows = height >> 4;
@@ -100,7 +112,10 @@ int vp8_alloc_frame_buffers(VP8_COMMON *oci, int width, int height)
         goto allocation_fail;
 
 #if CONFIG_POSTPROC
-    if (vp8_yv12_alloc_frame_buffer(&oci->post_proc_buffer, width, height, VP8BORDERINPIXELS) < 0)
+    if (vp8_yv12_alloc_frame_buffer(&oci->post_proc_buffer,
+                                    width, height, VP8BORDERINPIXELS,
+                                    &oci->raw_frame_buffer[POSTPROC_BUF_IDX],
+                                    oci->get_fb_cb, oci->cb_priv) < 0)
         goto allocation_fail;
 
     oci->post_proc_buffer_int_used = 0;
@@ -187,4 +202,5 @@ void vp8_create_common(VP8_COMMON *oci)
 void vp8_remove_common(VP8_COMMON *oci)
 {
     vp8_de_alloc_frame_buffers(oci);
+    vp8_free_internal_frame_buffers(&oci->int_frame_buffers);
 }

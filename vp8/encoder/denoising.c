@@ -408,9 +408,9 @@ int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height,
     {
         denoiser->yv12_running_avg[i].flags = 0;
 
-        if (vp8_yv12_alloc_frame_buffer(&(denoiser->yv12_running_avg[i]), width,
-                                        height, VP8BORDERINPIXELS)
-            < 0)
+        if (vp8_yv12_alloc_frame_buffer(&(denoiser->yv12_running_avg[i]),
+                                        width, height, VP8BORDERINPIXELS,
+                                        NULL, NULL, NULL) < 0)
         {
             vp8_denoiser_free(denoiser);
             return 1;
@@ -421,8 +421,9 @@ int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height,
     }
     denoiser->yv12_mc_running_avg.flags = 0;
 
-    if (vp8_yv12_alloc_frame_buffer(&(denoiser->yv12_mc_running_avg), width,
-                                   height, VP8BORDERINPIXELS) < 0)
+    if (vp8_yv12_alloc_frame_buffer(&(denoiser->yv12_mc_running_avg),
+                                    width, height, VP8BORDERINPIXELS,
+                                    NULL, NULL, NULL) < 0)
     {
         vp8_denoiser_free(denoiser);
         return 1;
@@ -431,8 +432,9 @@ int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height,
     memset(denoiser->yv12_mc_running_avg.buffer_alloc, 0,
            denoiser->yv12_mc_running_avg.frame_size);
 
-    if (vp8_yv12_alloc_frame_buffer(&denoiser->yv12_last_source, width,
-                                    height, VP8BORDERINPIXELS) < 0) {
+    if (vp8_yv12_alloc_frame_buffer(&denoiser->yv12_last_source,
+                                    width, height, VP8BORDERINPIXELS,
+                                    NULL, NULL, NULL) < 0) {
       vp8_denoiser_free(denoiser);
       return 1;
     }
