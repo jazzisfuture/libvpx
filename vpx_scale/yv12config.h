@@ -67,9 +67,15 @@ typedef struct yv12_buffer_config {
 #define YV12_FLAG_HIGHBITDEPTH 8
 
 int vp8_yv12_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
-                                int width, int height, int border);
+                                int width, int height, int border,
+                                vpx_codec_frame_buffer_t *fb,
+                                vpx_get_frame_buffer_cb_fn_t cb,
+                                void *cb_priv);
 int vp8_yv12_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
-                                  int width, int height, int border);
+                                  int width, int height, int border,
+                                  vpx_codec_frame_buffer_t *fb,
+                                  vpx_get_frame_buffer_cb_fn_t cb,
+                                  void *cb_priv);
 int vp8_yv12_de_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf);
 
 int vpx_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
