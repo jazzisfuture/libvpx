@@ -45,7 +45,10 @@ vp8_yv12_de_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf) {
 }
 
 int vp8_yv12_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
-                                  int width, int height, int border) {
+                                  int width, int height, int border,
+                                  vpx_codec_frame_buffer_t *fb,
+                                  vpx_get_frame_buffer_cb_fn_t cb,
+                                  void *cb_priv) {
   if (ybf) {
     int aligned_width = (width + 15) & ~15;
     int aligned_height = (height + 15) & ~15;
@@ -60,11 +63,27 @@ int vp8_yv12_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     const int frame_size = yplane_size + 2 * uvplane_size;
 
     if (!ybf->buffer_alloc) {
-      ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, frame_size);
-      ybf->buffer_alloc_sz = frame_size;
+      if (cb != NULL) {
+        const int align_addr_extra_size = 31;
+        const int external_frame_size = frame_size + align_addr_extra_size;
+
+        assert(fb != NULL);
+
+        // Allocation to hold larger frame, or first allocation.
+        if (cb(cb_priv, (size_t)external_frame_size, fb) < 0)
+          return -1;
+
+        if (fb->data == NULL || fb->size < external_frame_size)
+          return -1;
+
+        ybf->buffer_alloc = (uint8_t *)yv12_align_addr(fb->data, 32);
+      } else {
+        ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, frame_size);
+        ybf->buffer_alloc_sz = frame_size;
+      }
     }
 
-    if (!ybf->buffer_alloc || ybf->buffer_alloc_sz < frame_size)
+    if (!ybf->buffer_alloc)
       return -1;
 
     /* Only support allocating buffers that have a border that's a multiple
@@ -106,10 +125,14 @@ int vp8_yv12_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
 }
 
 int vp8_yv12_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
-                                int width, int height, int border) {
+                                int width, int height, int border,
+                                vpx_codec_frame_buffer_t *fb,
+                                vpx_get_frame_buffer_cb_fn_t cb,
+                                void *cb_priv) {
   if (ybf) {
     vp8_yv12_de_alloc_frame_buffer(ybf);
-    return vp8_yv12_realloc_frame_buffer(ybf, width, height, border);
+    return vp8_yv12_realloc_frame_buffer(ybf, width, height, border, fb, cb,
+                                         cb_priv);
   }
   return -2;
 }
