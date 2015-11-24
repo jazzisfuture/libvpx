@@ -13,6 +13,9 @@
 #define VP8_COMMON_POSTPROC_H_
 
 #include "vpx_ports/mem.h"
+
+#define POSTPROC_INT_BUF_IDX 6
+
 struct postproc_state
 {
     int           last_q;

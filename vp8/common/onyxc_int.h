@@ -14,6 +14,7 @@
 
 #include "vpx_config.h"
 #include "vp8_rtcd.h"
+#include "vp8/common/frame_buffers.h"
 #include "vpx/internal/vpx_codec_internal.h"
 #include "loopfilter.h"
 #include "entropymv.h"
@@ -33,8 +34,6 @@ extern "C" {
 #define MINQ 0
 #define MAXQ 127
 #define QINDEX_RANGE (MAXQ + 1)
-
-#define NUM_YV12_BUFFERS 4
 
 #define MAX_PARTITIONS 9
 
@@ -83,6 +82,16 @@ typedef struct VP8Common
     YV12_BUFFER_CONFIG yv12_fb[NUM_YV12_BUFFERS];
     int fb_idx_ref_cnt[NUM_YV12_BUFFERS];
     int new_fb_idx, lst_fb_idx, gld_fb_idx, alt_fb_idx;
+
+    vpx_codec_frame_buffer_t raw_frame_buffer[NUM_FRAME_BUFS];
+
+    /* Private data associated with the frame buffer callbacks. */
+    void *cb_priv;
+    vpx_get_frame_buffer_cb_fn_t get_fb_cb;
+    vpx_release_frame_buffer_cb_fn_t release_fb_cb;
+
+    // Handles memory for the codec.
+    InternalFrameBufferList int_frame_buffers;
 
     YV12_BUFFER_CONFIG temp_scale_frame;
 

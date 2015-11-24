@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+#define TEMP_SCALE_BUF_IDX 4
+#define POSTPROC_BUF_IDX 5
+
 void vp8_create_common(VP8_COMMON *oci);
 void vp8_remove_common(VP8_COMMON *oci);
 void vp8_de_alloc_frame_buffers(VP8_COMMON *oci);
