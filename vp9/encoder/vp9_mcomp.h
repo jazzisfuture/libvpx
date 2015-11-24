@@ -33,8 +33,8 @@ extern "C" {
 
 typedef struct search_site_config {
   // motion search sites
-  MV  ss_mv[8 * MAX_MVSEARCH_STEPS];        // Motion vector
-  intptr_t ss_os[8 * MAX_MVSEARCH_STEPS];   // Offset
+  MV  ss_mv[8 * MAX_MVSEARCH_STEPS + 1];        // Motion vector
+  intptr_t ss_os[8 * MAX_MVSEARCH_STEPS + 1];   // Offset
   int searches_per_step;
   int total_steps;
 } search_site_config;
