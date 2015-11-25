@@ -248,15 +248,16 @@ INTRA_PRED_TEST(SSE, TestIntraPred8, vpx_dc_predictor_8x8_sse,
 #endif  // HAVE_SSE && CONFIG_USE_X86INC
 
 #if HAVE_SSE2 && CONFIG_USE_X86INC
-INTRA_PRED_TEST(SSE2, TestIntraPred8, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                NULL, NULL, NULL, NULL, NULL, vpx_tm_predictor_8x8_sse2)
+INTRA_PRED_TEST(SSE2, TestIntraPred8, NULL, NULL, NULL, NULL, NULL,
+                vpx_h_predictor_8x8_sse2, NULL, NULL, NULL, NULL, NULL, NULL,
+                vpx_tm_predictor_8x8_sse2)
 #endif  // HAVE_SSE2 && CONFIG_USE_X86INC
 
 #if HAVE_SSSE3 && CONFIG_USE_X86INC
 INTRA_PRED_TEST(SSSE3, TestIntraPred8, NULL, NULL, NULL, NULL, NULL,
-                vpx_h_predictor_8x8_ssse3, vpx_d45_predictor_8x8_ssse3, NULL,
-                NULL, vpx_d153_predictor_8x8_ssse3,
-                vpx_d207_predictor_8x8_ssse3, vpx_d63_predictor_8x8_ssse3, NULL)
+                NULL, vpx_d45_predictor_8x8_ssse3, NULL, NULL,
+                vpx_d153_predictor_8x8_ssse3, vpx_d207_predictor_8x8_ssse3,
+                vpx_d63_predictor_8x8_ssse3, NULL)
 #endif  // HAVE_SSSE3 && CONFIG_USE_X86INC
 
 #if HAVE_DSPR2
