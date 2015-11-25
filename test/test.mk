@@ -95,7 +95,6 @@ ifeq ($(CONFIG_SHARED),)
 LIBVPX_TEST_SRCS-$(CONFIG_VP9)         += lpf_8_test.cc
 
 ## VP8
-ifneq ($(CONFIG_VP8_ENCODER)$(CONFIG_VP8_DECODER),)
 
 # These tests require both the encoder and decoder to be built.
 ifeq ($(CONFIG_VP8_ENCODER)$(CONFIG_VP8_DECODER),yesyes)
@@ -110,18 +109,17 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += variance_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += vp8_fdct4x4_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += quantize_test.cc
 
-LIBVPX_TEST_SRCS-yes                   += idct_test.cc
-LIBVPX_TEST_SRCS-yes                   += sixtap_predict_test.cc
-LIBVPX_TEST_SRCS-yes                   += vpx_scale_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP8)         += idct_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP8)         += sixtap_predict_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP8)         += vpx_scale_test.cc
 
 ifeq ($(CONFIG_VP8_ENCODER)$(CONFIG_TEMPORAL_DENOISING),yesyes)
 LIBVPX_TEST_SRCS-$(HAVE_SSE2) += vp8_denoiser_sse2_test.cc
 endif
 
-endif # VP8
+## end VP8
 
 ## VP9
-ifneq ($(CONFIG_VP9_ENCODER)$(CONFIG_VP9_DECODER),)
 
 # These tests require both the encoder and decoder to be built.
 ifeq ($(CONFIG_VP9_ENCODER)$(CONFIG_VP9_DECODER),yesyes)
@@ -160,7 +158,7 @@ LIBVPX_TEST_SRCS-$(HAVE_SSE2) += vp9_denoiser_sse2_test.cc
 endif
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_arf_freq_test.cc
 
-endif # VP9
+## end VP9
 
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += sad_test.cc
 
@@ -168,8 +166,11 @@ TEST_INTRA_PRED_SPEED_SRCS-$(CONFIG_VP9) := test_intra_pred_speed.cc
 TEST_INTRA_PRED_SPEED_SRCS-$(CONFIG_VP9) += ../md5_utils.h ../md5_utils.c
 
 ## VP10
+
 LIBVPX_TEST_SRCS-$(CONFIG_VP10_ENCODER) += vp10_dct_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP10) += vp10_inv_txfm_test.cc
+
+## end VP10
 
 endif # CONFIG_SHARED
 
