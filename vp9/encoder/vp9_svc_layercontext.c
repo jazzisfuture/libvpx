@@ -279,7 +279,8 @@ void vp9_restore_layer_context(VP9_COMP *const cpi) {
   // Reset the frames_since_key and frames_to_key counters to their values
   // before the layer restore. Keep these defined for the stream (not layer).
   if (cpi->svc.number_temporal_layers > 1 ||
-      cpi->svc.number_spatial_layers > 1) {
+      (cpi->svc.number_spatial_layers > 1 &&
+       cpi->svc.number_temporal_layers == 1)) {
     cpi->rc.frames_since_key = old_frame_since_key;
     cpi->rc.frames_to_key = old_frame_to_key;
   }
