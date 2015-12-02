@@ -46,15 +46,15 @@ static inline double PYTHAG(double a, double b) {
   }
 }
 
-inline int IMIN(int a, int b) {
+int IMIN(int a, int b) {
   return (((a) < (b)) ? (a) : (b));
 }
 
-inline int IMAX(int a, int b) {
+int IMAX(int a, int b) {
   return (((a) < (b)) ? (b) : (a));
 }
 
-static void MultiplyMat(double *m1, double *m2, double *res,
+void MultiplyMat(double *m1, double *m2, double *res,
                         const int M1, const int N1, const int N2) {
   int timesInner = N1;
   int timesRows = M1;
