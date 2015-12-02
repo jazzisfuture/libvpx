@@ -783,6 +783,7 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                        tmp_dst, (mi_x >> pd->subsampling_x) + x,
                        (mi_y >> pd->subsampling_y) + y, w, h, CODING_UNIT_SIZE,
                        pd->subsampling_x, pd->subsampling_y, xs, ys);
+        printf("w: %d, h: %d, s: %d\n", pre_buf->width, pre_buf->height, pre_buf->stride);
       } else {
 #endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_VP9_HIGHBITDEPTH
