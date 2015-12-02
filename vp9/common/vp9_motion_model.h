@@ -49,8 +49,6 @@ static INLINE int get_numparams(TransformationType type) {
   }
 }
 
-INLINE projectPointsType get_projectPointsType(TransformationType type);
-
 void projectPointsHomography(double *mat, double *points, double *proj,
                              const int n, const int stride_points,
                              const int stride_proj);
@@ -63,6 +61,23 @@ void projectPointsRotZoom(double *mat, double *points, double *proj,
 void projectPointsTranslation(double *mat, double *points, double *proj,
                               const int n, const int stride_points,
                               const int stride_proj);
+
+INLINE projectPointsType get_projectPointsType(TransformationType type) {
+  switch (type) {
+    case HOMOGRAPHY:
+      return projectPointsHomography;
+    case AFFINE:
+      return projectPointsAffine;
+    case ROTZOOM:
+      return projectPointsRotZoom;
+    case TRANSLATION:
+      return projectPointsTranslation;
+    default:
+      assert(0);
+      return NULL;
+  }
+}
+
 
 void vp9_convert_params_to_rotzoom(Global_Motion_Params *model, double *H);
 
@@ -91,6 +106,18 @@ double vp9_warp_erroradv_unq(TransformationType type, double *H,
                              int p_width, int p_height, int p_stride,
                              int subsampling_col, int subsampling_row,
                              int x_scale, int y_scale);
+
+double compute_warp_and_error(TransformationType type,
+                                unsigned char *ref,
+                                unsigned char *frm,
+                                int width, int height, int stride,
+                                double *H);
+
+
+
+unsigned char interpolate(unsigned char *ref, double x, double y,
+                              int width, int height, int stride);
+
 
 int_mv vp9_get_global_sb_center_mv(int col, int row, int bw, int bh,
                                    Global_Motion_Params *model);
