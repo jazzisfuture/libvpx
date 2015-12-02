@@ -92,6 +92,18 @@ double vp9_warp_erroradv_unq(TransformationType type, double *H,
                              int subsampling_col, int subsampling_row,
                              int x_scale, int y_scale);
 
+double compute_warp_and_error(TransformationType type,
+                                unsigned char *ref,
+                                unsigned char *frm,
+                                int width, int height, int stride,
+                                double *H);
+
+
+
+unsigned char interpolate(unsigned char *ref, double x, double y,
+                              int width, int height, int stride);
+
+
 int_mv vp9_get_global_sb_center_mv(int col, int row, int bw, int bh,
                                    Global_Motion_Params *model);
 int_mv vp9_get_global_sub8x8_center_mv(int col, int row, int block,
