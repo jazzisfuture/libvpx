@@ -59,6 +59,7 @@
 #define MV_ZBIN_BOOST        0
 #define SPLIT_MV_ZBIN_BOOST  0
 #define INTRA_ZBIN_BOOST     0
+//#define USE_FEATURE_BASED_GLOBAL_MOTION_COMPUTATION
 
 static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
                               int mi_row, int mi_col, BLOCK_SIZE bsize,
@@ -4191,7 +4192,6 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   xd->mi = cm->mi;
   xd->mi[0].src_mi = &xd->mi[0];
-
   vp9_zero(cm->counts);
   vp9_zero(cpi->coef_counts);
   vp9_zero(rd_opt->comp_pred_diff);
@@ -4217,6 +4217,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     YV12_BUFFER_CONFIG *ref_buf;
     int num, frame;
     double global_motion[9 * MAX_GLOBAL_MOTION_MODELS];
+
     for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
       ref_buf = get_ref_frame_buffer(cpi, frame);
       if (ref_buf) {
@@ -4225,11 +4226,15 @@ static void encode_frame_internal(VP9_COMP *cpi) {
              vp9_compute_global_motion_multiple_block_based(
                  cpi, GLOBAL_MOTION_MODEL, cpi->Source, ref_buf,
                  BLOCK_16X16, MAX_GLOBAL_MOTION_MODELS, 0.5, global_motion))) {
-#else
+#elif defined(USE_FEATURE_BASED_GLOBAL_MOTION_COMPUTATION)
              vp9_compute_global_motion_multiple_feature_based(
                  cpi, GLOBAL_MOTION_MODEL, cpi->Source, ref_buf,
                  MAX_GLOBAL_MOTION_MODELS, 0.5, global_motion))) {
-#endif  // USE_BLOCK_BASED_GLOBAL_MOTION_COMPUTATION
+#else
+             vp9_compute_global_motion_multiple_optical_flow(
+                 cpi, GLOBAL_MOTION_MODEL, cpi->Source, ref_buf,
+                 MAX_GLOBAL_MOTION_MODELS, 0.5, global_motion))) {
+#endif
           int i;
           for (i = 0; i < num; i++) {
             convert_model_to_params(
@@ -4292,6 +4297,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       }
     }
   }
+
 #endif  // CONFIG_GLOBAL_MOTION
 
 #if CONFIG_VP9_HIGHBITDEPTH

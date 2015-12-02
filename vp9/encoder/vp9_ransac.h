@@ -35,4 +35,7 @@ int ransacTranslation(double *matched_points, int npoints,
                       int *number_of_inliers, int *best_inlier_indices,
                       double *bestH);
 
+void MultiplyMat(double *m1, double *m2, double *res,
+                 const int M1, const int N1, const int N2);
+
 #endif  // VP9_ENCODER_VP9_RANSAC_H
