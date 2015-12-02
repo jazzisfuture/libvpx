@@ -7408,6 +7408,11 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       mbmi->ext_txfrm = NORM;
 #endif
 
+      if (get_gmtype(&cm->global_motion[ref_frame][0]) != GLOBAL_ZERO && this_mode ==ZEROMV && !comp_pred &&
+          cm->current_video_frame == 2 && cm->show_frame && mi_row == 17 && mi_col == 6) {
+        printf("Debug %d [%d %d -> %d]\n",
+               cm->current_video_frame, mi_row, mi_col, bsize);
+      }
       this_rd = handle_inter_mode(cpi, x, bsize,
                                   tx_cache,
                                   &rate2, &distortion2, &skippable,
