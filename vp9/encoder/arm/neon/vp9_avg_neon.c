@@ -24,6 +24,17 @@ static INLINE unsigned int horizontal_add_u16x8(const uint16x8_t v_16x8) {
   return vget_lane_u32(c, 0);
 }
 
+unsigned int vp9_avg_4x4_neon(const uint8_t *s, int p) {
+  const uint8x8_t v_s0 = vld1_u8(s);
+  const uint8x8_t v_s1 = vld1_u8(s + p - 4);
+  const uint8x8_t v_s2 = vld1_u8(s + 2 * p);
+  const uint8x8_t v_s3 = vld1_u8(s + 3 * p - 4);
+  const uint8x8_t v_d0 = vext_u8(v_s0, v_s1, 4);
+  const uint8x8_t v_d1 = vext_u8(v_s2, v_s3, 4);
+  uint16x8_t v_sum = vaddl_u8(v_d0, v_d1);
+  return (horizontal_add_u16x8(v_sum) + 8) >> 4;
+}
+
 unsigned int vp9_avg_8x8_neon(const uint8_t *s, int p) {
   uint8x8_t v_s0 = vld1_u8(s);
   const uint8x8_t v_s1 = vld1_u8(s + p);
