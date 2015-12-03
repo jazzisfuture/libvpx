@@ -103,19 +103,28 @@ class AverageTest
 
  protected:
   void CheckAverages() {
+    int num_loops = 200000;
     unsigned int expected = 0;
+    unsigned int actual = 0;
     if (GET_PARAM(3) == 8) {
-      expected = ReferenceAverage8x8(source_data_+ GET_PARAM(2),
-                                     source_stride_);
+      num_loops >>= 6;
+      for (int i = 0; i < num_loops; ++i) {
+        expected = ReferenceAverage8x8(source_data_+ GET_PARAM(2),
+                                       source_stride_);
+      }
     } else  if (GET_PARAM(3) == 4) {
-      expected = ReferenceAverage4x4(source_data_+ GET_PARAM(2),
-                                     source_stride_);
+      num_loops >>= 4;
+      for (int i = 0; i < num_loops; ++i) {
+        expected = ReferenceAverage4x4(source_data_+ GET_PARAM(2),
+                                       source_stride_);
+      }
     }
 
     ASM_REGISTER_STATE_CHECK(GET_PARAM(4)(source_data_+ GET_PARAM(2),
                                           source_stride_));
-    unsigned int actual = GET_PARAM(4)(source_data_+ GET_PARAM(2),
-                                       source_stride_);
+    for (int i = 0; i < num_loops; ++i) {
+      actual = GET_PARAM(4)(source_data_+ GET_PARAM(2), source_stride_);
+    }
 
     EXPECT_EQ(expected, actual);
   }
@@ -372,7 +381,10 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::Values(
         make_tuple(16, 16, 0, 8, &vp9_avg_8x8_neon),
         make_tuple(16, 16, 5, 8, &vp9_avg_8x8_neon),
-        make_tuple(32, 32, 15, 8, &vp9_avg_8x8_neon)));
+        make_tuple(32, 32, 15, 8, &vp9_avg_8x8_neon),
+        make_tuple(16, 16, 0, 4, &vp9_avg_4x4_neon),
+        make_tuple(16, 16, 5, 4, &vp9_avg_4x4_neon),
+        make_tuple(32, 32, 15, 4, &vp9_avg_4x4_neon)));
 
 INSTANTIATE_TEST_CASE_P(
     NEON, IntProRowTest, ::testing::Values(
