@@ -187,15 +187,10 @@ INTRA_PRED_TEST(C, TestIntraPred4, vpx_dc_predictor_4x4_c,
                 vpx_d153_predictor_4x4_c, vpx_d207_predictor_4x4_c,
                 vpx_d63_predictor_4x4_c, vpx_tm_predictor_4x4_c)
 
-#if HAVE_SSE && CONFIG_USE_X86INC
-INTRA_PRED_TEST(SSE, TestIntraPred4, vpx_dc_predictor_4x4_sse,
-                vpx_dc_left_predictor_4x4_sse, vpx_dc_top_predictor_4x4_sse,
-                vpx_dc_128_predictor_4x4_sse, vpx_v_predictor_4x4_sse, NULL,
-                NULL, NULL, NULL, NULL, NULL, NULL, NULL)
-#endif  // HAVE_SSE && CONFIG_USE_X86INC
-
 #if HAVE_SSE2 && CONFIG_USE_X86INC
-INTRA_PRED_TEST(SSE2, TestIntraPred4, NULL, NULL, NULL, NULL, NULL,
+INTRA_PRED_TEST(SSE2, TestIntraPred4, vpx_dc_predictor_4x4_sse2,
+                vpx_dc_left_predictor_4x4_sse2, vpx_dc_top_predictor_4x4_sse2,
+                vpx_dc_128_predictor_4x4_sse2, vpx_v_predictor_4x4_sse2,
                 vpx_h_predictor_4x4_sse2, NULL, NULL, NULL, NULL, NULL, NULL,
                 vpx_tm_predictor_4x4_sse2)
 #endif  // HAVE_SSE2 && CONFIG_USE_X86INC
@@ -241,16 +236,11 @@ INTRA_PRED_TEST(C, TestIntraPred8, vpx_dc_predictor_8x8_c,
                 vpx_d153_predictor_8x8_c, vpx_d207_predictor_8x8_c,
                 vpx_d63_predictor_8x8_c, vpx_tm_predictor_8x8_c)
 
-#if HAVE_SSE && CONFIG_USE_X86INC
-INTRA_PRED_TEST(SSE, TestIntraPred8, vpx_dc_predictor_8x8_sse,
-                vpx_dc_left_predictor_8x8_sse, vpx_dc_top_predictor_8x8_sse,
-                vpx_dc_128_predictor_8x8_sse, vpx_v_predictor_8x8_sse, NULL,
-                NULL, NULL, NULL, NULL, NULL, NULL, NULL)
-#endif  // HAVE_SSE && CONFIG_USE_X86INC
-
 #if HAVE_SSE2 && CONFIG_USE_X86INC
-INTRA_PRED_TEST(SSE2, TestIntraPred8, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                NULL, NULL, NULL, NULL, NULL, vpx_tm_predictor_8x8_sse2)
+INTRA_PRED_TEST(SSE2, TestIntraPred8, vpx_dc_predictor_8x8_sse2,
+                vpx_dc_left_predictor_8x8_sse2, vpx_dc_top_predictor_8x8_sse2,
+                vpx_dc_128_predictor_8x8_sse2, vpx_v_predictor_8x8_sse2, NULL,
+                NULL, NULL, NULL, NULL, NULL, NULL, vpx_tm_predictor_8x8_sse2)
 #endif  // HAVE_SSE2 && CONFIG_USE_X86INC
 
 #if HAVE_SSSE3 && CONFIG_USE_X86INC
