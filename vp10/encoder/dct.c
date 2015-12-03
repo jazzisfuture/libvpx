@@ -39,7 +39,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   tran_low_t step[4];
 
   // stage 0
-  range_check(input, 4, 11);
+  // range_check(input, 4, 14);
 
   // stage 1
   output[0] = input[0] + input[3];
@@ -47,7 +47,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   output[2] = input[1] - input[2];
   output[3] = input[0] - input[3];
 
-  range_check(output, 4, 12);
+  // range_check(output, 4, 15);
 
   // stage 2
   temp = output[0] * cospi_16_64 + output[1] * cospi_16_64;
@@ -59,7 +59,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   temp = output[3] * cospi_24_64 + output[2] * -cospi_8_64;
   step[3] = (tran_low_t)fdct_round_shift(temp);
 
-  range_check(step, 4, 13);
+  // range_check(step, 4, 16);
 
   // stage 3
   output[0] = step[0];
@@ -67,7 +67,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   output[2] = step[1];
   output[3] = step[3];
 
-  range_check(output, 4, 13);
+  // range_check(output, 4, 16);
 }
 
 static void fdct8(const tran_low_t *input, tran_low_t *output) {
@@ -75,7 +75,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   tran_low_t step[8];
 
   // stage 0
-  range_check(input, 8, 12);
+  // range_check(input, 8, 13);
 
   // stage 1
   output[0] = input[0] + input[7];
@@ -87,7 +87,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   output[6] = input[1] - input[6];
   output[7] = input[0] - input[7];
 
-  range_check(output, 8, 13);
+  // range_check(output, 8, 14);
 
   // stage 2
   step[0] = output[0] + output[3];
@@ -101,7 +101,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   step[6] = (tran_low_t)fdct_round_shift(temp);
   step[7] = output[7];
 
-  range_check(step, 8, 14);
+  // range_check(step, 8, 15);
 
   // stage 3
   temp = step[0] * cospi_16_64 + step[1] * cospi_16_64;
@@ -117,7 +117,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   output[6] = step[7] - step[6];
   output[7] = step[7] + step[6];
 
-  range_check(output, 8, 14);
+  // range_check(output, 8, 16);
 
   // stage 4
   step[0] = output[0];
@@ -133,7 +133,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   temp = output[7] * cospi_28_64 + output[4] * -cospi_4_64;
   step[7] = (tran_low_t)fdct_round_shift(temp);
 
-  range_check(step, 8, 14);
+  // range_check(step, 8, 16);
 
   // stage 5
   output[0] = step[0];
@@ -145,7 +145,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   output[6] = step[3];
   output[7] = step[7];
 
-  range_check(output, 8, 14);
+  // range_check(output, 8, 16);
 }
 
 static void fdct16(const tran_low_t *input, tran_low_t *output) {
@@ -153,7 +153,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   tran_low_t step[16];
 
   // stage 0
-  range_check(input, 16, 13);
+  // range_check(input, 16, 13);
 
   // stage 1
   output[0] = input[0] + input[15];
@@ -173,7 +173,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   output[14] = input[1] - input[14];
   output[15] = input[0] - input[15];
 
-  range_check(output, 16, 14);
+  // range_check(output, 16, 14);
 
   // stage 2
   step[0] = output[0] + output[7];
@@ -197,7 +197,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   step[14] = output[14];
   step[15] = output[15];
 
-  range_check(step, 16, 15);
+  // range_check(step, 16, 15);
 
   // stage 3
   output[0] = step[0] + step[3];
@@ -219,7 +219,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   output[14] = step[14] + step[13];
   output[15] = step[15] + step[12];
 
-  range_check(output, 16, 16);
+  // range_check(output, 16, 16);
 
   // stage 4
   temp = output[0] * cospi_16_64 + output[1] * cospi_16_64;
@@ -247,7 +247,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   step[14] = (tran_low_t)fdct_round_shift(temp);
   step[15] = output[15];
 
-  range_check(step, 16, 16);
+  // range_check(step, 16, 16);
 
   // stage 5
   output[0] = step[0];
@@ -271,7 +271,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   output[14] = step[15] - step[14];
   output[15] = step[15] + step[14];
 
-  range_check(output, 16, 16);
+  // range_check(output, 16, 16);
 
   // stage 6
   step[0] = output[0];
@@ -299,7 +299,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   temp = output[15] * cospi_30_64 + output[8] * -cospi_2_64;
   step[15] = (tran_low_t)fdct_round_shift(temp);
 
-  range_check(step, 16, 16);
+  // range_check(step, 16, 16);
 
   // stage 7
   output[0] = step[0];
@@ -319,7 +319,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   output[14] = step[7];
   output[15] = step[15];
 
-  range_check(output, 16, 16);
+  // range_check(output, 16, 16);
 }
 
 /* #TODO(angiebird): Unify this with vp10_fwd_txfm.c: vp10_fdct32
