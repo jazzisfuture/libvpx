@@ -5129,6 +5129,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       continue;
 
 #if CONFIG_EXT_REFS
+    // TODO(zoeliu): To verify following code can be removed.
+    /*
     if (cm->last_frame_type == KEY_FRAME && ref_frame == LAST2_FRAME)
       continue;
 
@@ -5140,6 +5142,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
          cm->last2_frame_type == KEY_FRAME ||
          cm->last_frame_type == KEY_FRAME) && ref_frame == LAST4_FRAME)
       continue;
+    */
 #endif  // CONFIG_EXT_REFS
 
     // Test best rd so far against threshold for trying this mode.
@@ -5879,6 +5882,8 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
     second_ref_frame = vp10_ref_order[ref_index].ref_frame[1];
 
 #if CONFIG_EXT_REFS
+    // TODO(zoeliu): To verify following code can be removed.
+    /*
     if (cm->last_frame_type == KEY_FRAME && ref_frame == LAST2_FRAME)
       continue;
 
@@ -5890,6 +5895,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
          cm->last2_frame_type == KEY_FRAME ||
          cm->last_frame_type == KEY_FRAME) && ref_frame == LAST4_FRAME)
       continue;
+    */
 #endif  // CONFIG_EXT_REFS
 
     // Look at the reference frame of the best mode so far and set the
