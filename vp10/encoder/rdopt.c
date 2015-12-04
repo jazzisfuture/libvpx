@@ -2082,6 +2082,7 @@ static void tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
 
   int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
+  INV_TXFM_PARAM inv_txfm_param;
 
   if (xd->mb_to_bottom_edge < 0)
     max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
@@ -2120,28 +2121,13 @@ static void tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   *bsse += (int64_t)tmp_sse * 16;
 
   if (p->eobs[block] > 0) {
-    switch (tx_size) {
-      case TX_32X32:
-        vp10_inv_txfm_add_32x32(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                tx_type);
-        break;
-      case TX_16X16:
-        vp10_inv_txfm_add_16x16(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                tx_type);
-        break;
-      case TX_8X8:
-        vp10_inv_txfm_add_8x8(dqcoeff, rec_buffer, 32, p->eobs[block],
-                              tx_type);
-        break;
-      case TX_4X4:
-        vp10_inv_txfm_add_4x4(dqcoeff, rec_buffer, 32, p->eobs[block],
-                              tx_type,
-                              xd->lossless[xd->mi[0]->mbmi.segment_id]);
-        break;
-      default:
-        assert(0 && "Invalid transform size");
-        break;
-    }
+    // inverse transform parameters
+    inv_txfm_param.tx_type = tx_type;
+    inv_txfm_param.tx_size = tx_size;
+    inv_txfm_param.eob = p->eobs[block];
+    inv_txfm_param.lossless = xd->lossless[xd->mi[0]->mbmi.segment_id];
+
+    inv_txfm_add(dqcoeff, rec_buffer, pd->dst.stride, &inv_txfm_param);
 
     if ((bh >> 2) + blk_col > max_blocks_wide ||
         (bh >> 2) + blk_row > max_blocks_high) {

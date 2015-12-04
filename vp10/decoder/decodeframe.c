@@ -208,51 +208,24 @@ static void inverse_transform_block_inter(MACROBLOCKD* xd, int plane,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   TX_TYPE tx_type = get_tx_type(pd->plane_type, xd, block, tx_size);
   const int seg_id = xd->mi[0]->mbmi.segment_id;
+  INV_TXFM_PARAM inv_txfm_param;
   if (eob > 0) {
     tran_low_t *const dqcoeff = pd->dqcoeff;
+
+    // inverse transform
+    inv_txfm_param.tx_type = tx_type;
+    inv_txfm_param.tx_size = tx_size;
+    inv_txfm_param.eob = eob;
+    inv_txfm_param.lossless = xd->lossless[seg_id];
 #if CONFIG_VP9_HIGHBITDEPTH
+    inv_txfm_param.bd = xd->bd;
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-      switch (tx_size) {
-        case TX_4X4:
-          vp10_highbd_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, xd->bd,
-                                       tx_type, xd->lossless[seg_id]);
-          break;
-        case TX_8X8:
-          vp10_highbd_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, xd->bd,
-                                       tx_type);
-          break;
-        case TX_16X16:
-          vp10_highbd_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, xd->bd,
-                                         tx_type);
-          break;
-        case TX_32X32:
-          vp10_highbd_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, xd->bd,
-                                         tx_type);
-          break;
-        default:
-          assert(0 && "Invalid transform size");
-          return;
-      }
+      highbd_inv_txfm_add(dqcoeff, dst, stride, &inv_txfm_param);
     } else {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-      switch (tx_size) {
-        case TX_4X4:
-          vp10_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, tx_type,
-                                xd->lossless[seg_id]);
-          break;
-        case TX_8X8:
-          vp10_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, tx_type);
-          break;
-        case TX_16X16:
-          vp10_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, tx_type);
-          break;
-        case TX_32X32:
-          vp10_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, tx_type);
-          break;
-        default:
-          assert(0 && "Invalid transform size");
-          return;
-      }
+
+      inv_txfm_add(dqcoeff, dst, stride, &inv_txfm_param);
+
 #if CONFIG_VP9_HIGHBITDEPTH
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -277,51 +250,24 @@ static void inverse_transform_block_intra(MACROBLOCKD* xd, int plane,
                                           int eob) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const int seg_id = xd->mi[0]->mbmi.segment_id;
+  INV_TXFM_PARAM inv_txfm_param;
   if (eob > 0) {
     tran_low_t *const dqcoeff = pd->dqcoeff;
+
+    // inverse transform
+    inv_txfm_param.tx_type = tx_type;
+    inv_txfm_param.tx_size = tx_size;
+    inv_txfm_param.eob = eob;
+    inv_txfm_param.lossless = xd->lossless[seg_id];
 #if CONFIG_VP9_HIGHBITDEPTH
+    inv_txfm_param.bd = xd->bd;
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-      switch (tx_size) {
-        case TX_4X4:
-          vp10_highbd_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, xd->bd,
-                                       tx_type, xd->lossless[seg_id]);
-          break;
-        case TX_8X8:
-          vp10_highbd_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, xd->bd,
-                                       tx_type);
-          break;
-        case TX_16X16:
-          vp10_highbd_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, xd->bd,
-                                         tx_type);
-          break;
-        case TX_32X32:
-          vp10_highbd_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, xd->bd,
-                                         tx_type);
-          break;
-        default:
-          assert(0 && "Invalid transform size");
-          return;
-      }
+      highbd_inv_txfm_add(dqcoeff, dst, stride, &inv_txfm_param);
     } else {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-      switch (tx_size) {
-        case TX_4X4:
-          vp10_inv_txfm_add_4x4(dqcoeff, dst, stride, eob, tx_type,
-                                xd->lossless[seg_id]);
-          break;
-        case TX_8X8:
-          vp10_inv_txfm_add_8x8(dqcoeff, dst, stride, eob, tx_type);
-          break;
-        case TX_16X16:
-          vp10_inv_txfm_add_16x16(dqcoeff, dst, stride, eob, tx_type);
-          break;
-        case TX_32X32:
-          vp10_inv_txfm_add_32x32(dqcoeff, dst, stride, eob, tx_type);
-          break;
-        default:
-          assert(0 && "Invalid transform size");
-          return;
-      }
+
+      inv_txfm_add(dqcoeff, dst, stride, &inv_txfm_param);
+
 #if CONFIG_VP9_HIGHBITDEPTH
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
