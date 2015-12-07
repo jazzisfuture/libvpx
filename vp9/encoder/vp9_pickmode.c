@@ -1094,6 +1094,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                          BLOCK_SIZE bsize, PICK_MODE_CONTEXT *ctx) {
   VP9_COMMON *const cm = &cpi->common;
   SPEED_FEATURES *const sf = &cpi->sf;
+  const SVC *const svc = &cpi->svc;
   TileInfo *const tile_info = &tile_data->tile_info;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
@@ -1250,6 +1251,20 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     ref_frame = ref_mode_set[idx].ref_frame;
     if (cpi->use_svc)
       ref_frame = ref_mode_set_svc[idx].ref_frame;
+
+    // For SVC 1pass mode: if the reference is temporally aligned with current
+    // superframe (e.g., spatial reference within superframe), constrain the
+    // motion mode: for now disallow NEWMV.
+    if (is_one_pass_cbr_svc(cpi)) {
+      if (this_mode == NEWMV &&
+          ((ref_frame == LAST_FRAME &&
+          svc->ref_frame_index[cpi->lst_fb_idx] == svc->current_superframe) ||
+          (ref_frame == GOLDEN_FRAME &&
+          svc->ref_frame_index[cpi->gld_fb_idx] == svc->current_superframe))) {
+        continue;
+      }
+    }
+
     if (!(cpi->ref_frame_flags & flag_list[ref_frame]))
       continue;
     if (const_motion[ref_frame] && this_mode == NEARMV)
