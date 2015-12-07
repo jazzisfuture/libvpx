@@ -213,6 +213,11 @@ typedef enum {
 
 #define NEWMV_CTX_MASK ((1 << ZEROMV_OFFSET) - 1)
 #define ZEROMV_CTX_MASK ((1 << (REFMV_OFFSET - ZEROMV_OFFSET)) - 1)
+#define REFMV_CTX_MASK ((1 << (8 - REFMV_OFFSET)) - 1)
+
+#define ALL_ZERO_FLAG_OFFSET   8
+#define SKIP_NEARESTMV_OFFSET  9
+#define SKIP_NEARMV_OFFSET    10
 #endif
 
 #define INTER_MODE_CONTEXTS 7
