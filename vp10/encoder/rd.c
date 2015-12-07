@@ -83,6 +83,7 @@ static void fill_mode_costs(VP10_COMP *cpi) {
   for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
     vp10_cost_tokens(cpi->switchable_interp_costs[i],
                     fc->switchable_interp_prob[i], vp10_switchable_interp_tree);
+<<<<<<< HEAD   (f5bed8 Merge "Extend reference motion vector candidate range" into )
 
   for (i = 0; i < PALETTE_BLOCK_SIZES; ++i) {
     vp10_cost_tokens(cpi->palette_y_size_cost[i],
@@ -122,6 +123,8 @@ static void fill_mode_costs(VP10_COMP *cpi) {
     }
   }
 #endif  // CONFIG_EXT_TX
+=======
+>>>>>>> BRANCH (9d85ce Fix bug when overlaying middle arfs in multi-arf groups.)
 }
 
 static void fill_token_costs(vp10_coeff_cost *c,

@@ -51,6 +51,7 @@ int vp10_has_high_freq_in_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane);
 struct VP10_COMP;
 struct ThreadData;
 
+<<<<<<< HEAD   (f5bed8 Merge "Extend reference motion vector candidate range" into )
 #if CONFIG_VAR_TX
 void vp10_tokenize_sb_inter(struct VP10_COMP *cpi, struct ThreadData *td,
                             TOKENEXTRA **t, int dry_run, int mi_row, int mi_col,
@@ -60,6 +61,8 @@ void vp10_tokenize_sb_inter(struct VP10_COMP *cpi, struct ThreadData *td,
 void vp10_tokenize_palette_sb(struct ThreadData *const td,
                               BLOCK_SIZE bsize, int plane,
                               TOKENEXTRA **t);
+=======
+>>>>>>> BRANCH (9d85ce Fix bug when overlaying middle arfs in multi-arf groups.)
 void vp10_tokenize_sb(struct VP10_COMP *cpi, struct ThreadData *td,
                      TOKENEXTRA **t, int dry_run, BLOCK_SIZE bsize);
 

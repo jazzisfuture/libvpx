@@ -1169,6 +1169,7 @@ void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in, int bhl_in,
   int yd =
       (xd->mb_to_bottom_edge >> (3 + pd->subsampling_y)) + (hpx - y - txpx);
 
+<<<<<<< HEAD   (f5bed8 Merge "Extend reference motion vector candidate range" into )
   if (xd->mi[0]->mbmi.palette_mode_info.palette_size[plane != 0] > 0) {
     const int bs = 4 * (1 << tx_size);
     const int stride = 4 * (1 << bwl_in);
@@ -1203,6 +1204,9 @@ void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in, int bhl_in,
     return;
   }
 
+=======
+#if CONFIG_MISC_FIXES
+>>>>>>> BRANCH (9d85ce Fix bug when overlaying middle arfs in multi-arf groups.)
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     build_intra_predictors_high(xd, ref, ref_stride, dst, dst_stride, mode,

@@ -79,6 +79,7 @@ typedef struct {
 #endif  // CONFIG_EXT_REFS
 typedef int8_t MV_REFERENCE_FRAME;
 
+<<<<<<< HEAD   (f5bed8 Merge "Extend reference motion vector candidate range" into )
 typedef struct {
   // Number of base colors for Y (0) and UV (1)
   uint8_t palette_size[2];
@@ -101,6 +102,8 @@ typedef struct {
 } EXT_INTRA_MODE_INFO;
 #endif  // CONFIG_EXT_INTRA
 
+=======
+>>>>>>> BRANCH (9d85ce Fix bug when overlaying middle arfs in multi-arf groups.)
 // This structure now relates to 8x8 block regions.
 typedef struct {
   // Common for both INTER and INTRA blocks
@@ -119,7 +122,6 @@ typedef struct {
 
   // Only for INTRA blocks
   PREDICTION_MODE uv_mode;
-  PALETTE_MODE_INFO palette_mode_info;
 
   // Only for INTER blocks
   INTERP_FILTER interp_filter;

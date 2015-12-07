@@ -288,6 +288,7 @@ static int read_skip(VP10_COMMON *cm, const MACROBLOCKD *xd,
   }
 }
 
+<<<<<<< HEAD   (f5bed8 Merge "Extend reference motion vector candidate range" into )
 static void read_palette_mode_info(VP10_COMMON *const cm,
                                    MACROBLOCKD *const xd,
                                    vpx_reader *r) {
@@ -353,6 +354,8 @@ static void read_ext_intra_mode_info(VP10_COMMON *const cm,
 }
 #endif  // CONFIG_EXT_INTRA
 
+=======
+>>>>>>> BRANCH (9d85ce Fix bug when overlaying middle arfs in multi-arf groups.)
 static void read_intra_frame_mode_info(VP10_COMMON *const cm,
                                        MACROBLOCKD *const xd,
                                        int mi_row, int mi_col, vpx_reader *r) {
@@ -406,6 +409,7 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
   }
 
   mbmi->uv_mode = read_intra_mode_uv(cm, xd, r, mbmi->mode);
+<<<<<<< HEAD   (f5bed8 Merge "Extend reference motion vector candidate range" into )
 #if CONFIG_EXT_INTRA
   if (mbmi->uv_mode != DC_PRED && mbmi->uv_mode != TM_PRED &&
       bsize >= BLOCK_8X8)
@@ -445,6 +449,8 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
     if (bsize >= BLOCK_8X8)
       read_ext_intra_mode_info(cm, xd, r);
 #endif  // CONFIG_EXT_INTRA
+=======
+>>>>>>> BRANCH (9d85ce Fix bug when overlaying middle arfs in multi-arf groups.)
 }
 
 static int read_mv_component(vpx_reader *r,
@@ -674,6 +680,7 @@ static void read_intra_block_mode_info(VP10_COMMON *const cm,
   }
 
   mbmi->uv_mode = read_intra_mode_uv(cm, xd, r, mbmi->mode);
+<<<<<<< HEAD   (f5bed8 Merge "Extend reference motion vector candidate range" into )
 #if CONFIG_EXT_INTRA
   if (mbmi->uv_mode != DC_PRED && mbmi->uv_mode != TM_PRED &&
       bsize >= BLOCK_8X8)
@@ -689,6 +696,8 @@ static void read_intra_block_mode_info(VP10_COMMON *const cm,
   if (bsize >= BLOCK_8X8)
     read_ext_intra_mode_info(cm, xd, r);
 #endif  // CONFIG_EXT_INTRA
+=======
+>>>>>>> BRANCH (9d85ce Fix bug when overlaying middle arfs in multi-arf groups.)
 }
 
 static INLINE int is_mv_valid(const MV *mv) {
