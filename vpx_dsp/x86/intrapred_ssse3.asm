@@ -30,6 +30,9 @@ sh_b89abcdef: db 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0
 sh_bfedcba9876543210: db 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 sh_b1233: db 1, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b2333: db 2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+sh_b01231234: db 0, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 7
+sh_b2345abcd: db 2, 3, 4, 5, 6, 7, 7, 7, 10, 11, 12, 13, 14, 15, 15, 15
+sh_b12349abc: db 1, 2, 3, 4, 5, 6, 7, 7, 9,  10, 11, 12, 13, 14, 15, 15
 
 SECTION .text
 
@@ -80,15 +83,17 @@ cglobal d45_predictor_4x4, 3, 4, 4, dst, stride, above, goffset
   RESTORE_GOT
   RET
 
-INIT_MMX ssse3
-cglobal d45_predictor_8x8, 3, 4, 4, dst, stride, above, goffset
+INIT_XMM ssse3
+cglobal d45_predictor_8x8, 3, 4, 5, dst, stride, above, goffset
   GET_GOT     goffsetq
 
   movq                m0, [aboveq]
-  mova                m1, [GLOBAL(sh_b12345677)]
+  mova                m1, [GLOBAL(sh_b12349abc)]
+  pshufb              m0, [GLOBAL(sh_b01231234)]
+  mova                m4, [GLOBAL(sh_b2345abcd)]
   DEFINE_ARGS dst, stride, stride3
+  pshufb              m2, m0, m4
   lea           stride3q, [strideq*3]
-  pshufb              m2, m0, [GLOBAL(sh_b23456777)]
   pavgb               m3, m2, m0
   pxor                m2, m0
   pshufb              m0, m1
@@ -96,25 +101,21 @@ cglobal d45_predictor_8x8, 3, 4, 4, dst, stride, above, goffset
   psubb               m3, m2
   pavgb               m0, m3
 
-  ; store 4 lines
-  movq  [dstq          ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq  ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq*2], m0
-  pshufb              m0, m1
-  movq  [dstq+stride3q ], m0
-  pshufb              m0, m1
-  lea               dstq, [dstq+strideq*4]
+ ; store 4 lines
+  movhps  [dstq+strideq  ], m0
+  movq    [dstq          ], m0
+  pshufb                m0, m4
+  movhps  [dstq+stride3q ], m0
+  movq    [dstq+strideq*2], m0
+  pshufb                m0, m4
+  lea                 dstq, [dstq+strideq*4]
 
   ; store next 4 lines
-  movq  [dstq          ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq  ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq*2], m0
-  pshufb              m0, m1
-  movq  [dstq+stride3q ], m0
+  movhps  [dstq+strideq  ], m0
+  movq    [dstq          ], m0
+  pshufb                m0, m4
+  movhps  [dstq+stride3q ], m0
+  movq    [dstq+strideq*2], m0
 
   RESTORE_GOT
   RET
