@@ -937,10 +937,9 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
         mbmi->tx_type = vpx_read_tree(r, vp10_ext_tx_intra_tree[eset],
                                       cm->fc->intra_ext_tx_prob[eset]
                                         [mbmi->tx_size][mbmi->mode]);
-          if (counts)
-            ++counts->intra_ext_tx[eset][mbmi->tx_size]
-                                  [mbmi->mode][mbmi->tx_type];
-        }
+        if (counts)
+          ++counts->intra_ext_tx[eset][mbmi->tx_size]
+                                [mbmi->mode][mbmi->tx_type];
       }
     }
   } else {
