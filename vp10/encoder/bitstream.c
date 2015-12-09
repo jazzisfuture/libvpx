@@ -121,8 +121,15 @@ static void write_inter_mode(VP10_COMMON *cm,
     vpx_write(w, mode != ZEROMV, zeromv_prob);
 
     if (mode != ZEROMV) {
-      const int16_t refmv_ctx = (mode_ctx >> REFMV_OFFSET) & REFMV_CTX_MASK;
-      const vpx_prob refmv_prob = cm->fc->refmv_prob[refmv_ctx];
+      int16_t refmv_ctx = (mode_ctx >> REFMV_OFFSET) & REFMV_CTX_MASK;
+      vpx_prob refmv_prob;
+
+      if (mode_ctx & (1 << SKIP_NEARESTMV_OFFSET))
+        refmv_ctx = 6;
+      if (mode_ctx & (1 << SKIP_NEARMV_OFFSET))
+        refmv_ctx = 7;
+
+      refmv_prob = cm->fc->refmv_prob[refmv_ctx];
       vpx_write(w, mode != NEARESTMV, refmv_prob);
     }
   }
@@ -724,10 +731,8 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
     write_ref_frames(cm, xd, w);
 
 #if CONFIG_REF_MV
-    if (mbmi->ref_frame[1] > NONE)
-      mode_ctx &= (mbmi_ext->mode_context[mbmi->ref_frame[1]] | 0x00ff);
-    if (bsize < BLOCK_8X8)
-      mode_ctx &= 0x00ff;
+    mode_ctx = vp10_mode_context_analyzer(mbmi_ext->mode_context,
+                                          mbmi->ref_frame, bsize);
 #endif
 
     // If segment skip is not enabled code the mode.

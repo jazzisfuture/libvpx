@@ -3032,6 +3032,12 @@ static int cost_mv_ref(const VP10_COMP *cpi, PREDICTION_MODE mode,
     } else {
       mode_cost += cpi->zeromv_mode_cost[mode_ctx][1];
       mode_ctx = (mode_context >> REFMV_OFFSET) & REFMV_CTX_MASK;
+
+      if (mode_context & (1 << SKIP_NEARESTMV_OFFSET))
+        mode_ctx = 6;
+      if (mode_context & (1 << SKIP_NEARMV_OFFSET))
+        mode_ctx = 7;
+
       mode_cost += cpi->refmv_mode_cost[mode_ctx][mode != NEARESTMV];
       return mode_cost;
     }
@@ -3096,7 +3102,8 @@ static int set_and_cost_bmi_mvs(VP10_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
       memmove(&mic->bmi[i + idy * 2 + idx], &mic->bmi[i], sizeof(mic->bmi[i]));
 
 #if CONFIG_REF_MV
-  mode_ctx &= 0x00ff;
+  mode_ctx = vp10_mode_context_analyzer(mbmi_ext->mode_context,
+                                        mbmi->ref_frame, mbmi->sb_type);
 #endif
   return cost_mv_ref(cpi, mode, mode_ctx) + thismvcost;
 }
@@ -3287,8 +3294,8 @@ static int check_best_zero_mv(
       (ref_frames[1] == NONE ||
        frame_mv[this_mode][ref_frames[1]].as_int == 0)) {
 #if CONFIG_REF_MV
-    int16_t rfc = (ref_frames[1] == NONE) ? mode_context[ref_frames[0]] :
-        mode_context[ref_frames[0]] & (mode_context[ref_frames[1]] | 0x00ff);
+    int16_t rfc = vp10_mode_context_analyzer(mode_context,
+                                             ref_frames, BLOCK_8X8);
 #else
     int16_t rfc = mode_context[ref_frames[0]];
 #endif
@@ -4215,8 +4222,6 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
   }
 }
 
-
-
 static INLINE void restore_dst_buf(MACROBLOCKD *xd,
                                    uint8_t *orig_dst[MAX_MB_PLANE],
                                    int orig_dst_stride[MAX_MB_PLANE]) {
@@ -4314,8 +4319,11 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   int16_t mode_ctx = mbmi_ext->mode_context[refs[0]];
 
 #if CONFIG_REF_MV
-  if (refs[1] > NONE)
-    mode_ctx &= (mbmi_ext->mode_context[refs[1]] | 0x00ff);
+// if (refs[1] > NONE)
+//   mode_ctx &= (mbmi_ext->mode_context[refs[1]] | 0x00ff);
+
+  mode_ctx = vp10_mode_context_analyzer(mbmi_ext->mode_context,
+                                        mbmi->ref_frame, bsize);
 #endif
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -4957,6 +4965,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     x->pred_mv_sad[ref_frame] = INT_MAX;
+    x->mbmi_ext->mode_context[ref_frame] = 0;
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
       assert(get_ref_frame_buffer(cpi, ref_frame) != NULL);
       setup_buffer_inter(cpi, x, ref_frame, bsize, mi_row, mi_col,
@@ -5860,6 +5869,7 @@ void vp10_rd_pick_inter_mode_sub8x8(VP10_COMP *cpi,
   rd_cost->rate = INT_MAX;
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ref_frame++) {
+    x->mbmi_ext->mode_context[ref_frame] = 0;
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
       setup_buffer_inter(cpi, x, ref_frame, bsize, mi_row, mi_col,
                          frame_mv[NEARESTMV], frame_mv[NEARMV],
