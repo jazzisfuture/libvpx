@@ -496,6 +496,8 @@ static void set_vbp_thresholds(VP9_COMP *cpi, int64_t thresholds[], int q) {
         threshold_base = 3 * threshold_base;
       else if (noise_level == kMedium)
         threshold_base = threshold_base << 1;
+      else if (noise_level < kLow)
+        threshold_base = (3 * threshold_base) >> 2;
     }
     if (cm->width <= 352 && cm->height <= 288) {
       thresholds[0] = threshold_base >> 3;
@@ -668,6 +670,7 @@ static int choose_partitioning(VP9_COMP *cpi,
   v64x64 vt;
   v16x16 vt2[16];
   int force_split[21];
+  int avg_32x32;
   uint8_t *s;
   const uint8_t *d;
   int sp;
@@ -845,7 +848,7 @@ static int choose_partitioning(VP9_COMP *cpi,
           force_split[0] = 1;
         } else if (cpi->oxcf.speed < 8 &&
                    vt.split[i].split[j].part_variances.none.variance >
-                   thresholds[1] &&
+                   (thresholds[1] >> 1) &&
                    !cyclic_refresh_segment_id_boosted(segment_id)) {
           // We have some nominal amount of 16x16 variance (based on average),
           // compute the minmax over the 8x8 sub-blocks, and if above threshold,
@@ -888,6 +891,7 @@ static int choose_partitioning(VP9_COMP *cpi,
   }
 
   // Fill the rest of the variance tree by summing split partition values.
+  avg_32x32 = 0;
   for (i = 0; i < 4; i++) {
     const int i2 = i << 2;
     for (j = 0; j < 4; j++) {
@@ -916,11 +920,16 @@ static int choose_partitioning(VP9_COMP *cpi,
         force_split[i + 1] = 1;
         force_split[0] = 1;
       }
+      avg_32x32 += vt.split[i].part_variances.none.variance;
     }
   }
   if (!force_split[0]) {
     fill_variance_tree(&vt, BLOCK_64X64);
     get_variance(&vt.part_variances.none);
+    // If variance of 64x64 is somewhat higher than average of 32x32 variances,
+    // then force split for this 64x64.
+    if (vt.part_variances.none.variance > (3 * avg_32x32) >> 3)
+      force_split[0] = 1;
   }
 
   // Now go through the entire structure, splitting every block size until
