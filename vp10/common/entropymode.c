@@ -181,7 +181,7 @@ static const vpx_prob default_zeromv_prob[ZEROMV_MODE_CONTEXTS] = {
 };
 
 static const vpx_prob default_refmv_prob[REFMV_MODE_CONTEXTS] = {
-    220, 220, 200, 200, 180, 128, 1, 250,
+    220, 220, 200, 200, 180, 128, 5, 252,
 };
 #endif
 
@@ -1261,6 +1261,12 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
   for (i = 0; i < REFMV_MODE_CONTEXTS; ++i)
     fc->refmv_prob[i] = mode_mv_merge_probs(pre_fc->refmv_prob[i],
                                             counts->refmv_mode[i]);
+
+//  fprintf(stderr, "\n");
+//  for (i = 0; i < REFMV_MODE_CONTEXTS; ++i)
+//    fprintf(stderr, "%d ", fc->refmv_prob[i]);
+//  fprintf(stderr, "\n");
+
 #else
   for (i = 0; i < INTER_MODE_CONTEXTS; i++)
     vpx_tree_merge_probs(vp10_inter_mode_tree, pre_fc->inter_mode_probs[i],
