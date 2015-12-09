@@ -28,11 +28,10 @@ sh_b65432108: db 6, 5, 4, 3, 2, 1, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b54321089: db 5, 4, 3, 2, 1, 0, 8, 9, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b89abcdef: db 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0
 sh_bfedcba9876543210: db 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
-sh_b1233: db 1, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-sh_b2333: db 2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b01231234: db 0, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 7
 sh_b2345abcd: db 2, 3, 4, 5, 6, 7, 7, 7, 10, 11, 12, 13, 14, 15, 15, 15
 sh_b12349abc: db 1, 2, 3, 4, 5, 6, 7, 7, 9,  10, 11, 12, 13, 14, 15, 15
+sh_b0123123323333333: db 0, 1, 2, 3, 1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3
 
 SECTION .text
 
@@ -736,25 +735,27 @@ cglobal d153_predictor_32x32, 4, 5, 8, dst, stride, above, left, goffset
   RESTORE_GOT
   RET
 
-INIT_MMX ssse3
-cglobal d207_predictor_4x4, 4, 5, 4, dst, stride, unused, left, goffset
+INIT_XMM ssse3
+cglobal d207_predictor_4x4, 2, 5, 5, dst, stride, unused, left, goffset
   GET_GOT     goffsetq
-  movd                m0, [leftq]                ; abcd [byte]
-  pshufb              m1, m0, [GLOBAL(sh_b1233)] ; bcdd [byte]
-  pshufb              m3, m0, [GLOBAL(sh_b2333)] ; cddd
+  movifnidn        leftq, leftmp
+  movd                m0, [leftq]
+  pshufb              m0, [GLOBAL(sh_b0123123323333333)] ; abcd bcdd cddd dddd
+  pshufd              m1, m0, 0xf9                       ; bcdd cddd dddd dddd
+  pshufd              m3, m0, 0xfe                       ; cddd dddd dddd dddd
+                                                ; lo 8 bytes for output
+  X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m1, m3, m2  ; a2bc b2cd c3d d b2cd c3d d d
+  pavgb               m1, m0                    ; ab,bc,cd,d, bc,cd,d,d
 
-  X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m1, m3, m2
-  pavgb               m1, m0             ; ab, bc, cd, d [byte]
-
-  punpcklbw           m1, m2             ; ab, a2bc, bc, b2cd, cd, c3d, d, d
-  movd    [dstq        ], m1
-  psrlq               m1, 16             ; bc, b2cd, cd, c3d, d, d
-  movd    [dstq+strideq], m1
+  punpcklbw           m1, m2               ; ab, a2bc, bc, b2cd, cd, c3d, d, d
+  movhlps             m3, m1               ; bc, b2cd, cd, c3d,  d,  d  , d, d
+  movd    [dstq        ], m1               ; ab, a2bc, bc, b2cd,
+  movd    [dstq+strideq], m3               ; bc, b2cd, cd, c3d,
+  psrldq              m1, 4
+  psrldq              m3, 4                ; bc, b2cd, cd, c3d, d, d
   lea               dstq, [dstq+strideq*2]
-  psrlq               m1, 16             ; cd, c3d, d, d
-  movd    [dstq        ], m1
-  pshufw              m1, m1, q1111      ; d, d, d, d
-  movd    [dstq+strideq], m1
+  movd    [dstq        ], m1               ; cd, c3d, d, d
+  movd    [dstq+strideq], m3               ;  d,   d, d, d
   RESTORE_GOT
   RET
 
