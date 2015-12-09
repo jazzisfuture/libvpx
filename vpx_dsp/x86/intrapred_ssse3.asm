@@ -55,7 +55,7 @@ cglobal h_predictor_32x32, 2, 4, 3, dst, stride, line, left
   jnz .loop
   REP_RET
 
-INIT_MMX ssse3
+INIT_XMM ssse3
 cglobal d45_predictor_4x4, 3, 4, 4, dst, stride, above, goffset
   GET_GOT     goffsetq
 
