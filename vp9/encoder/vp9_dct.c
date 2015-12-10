@@ -28,7 +28,22 @@ static INLINE tran_high_t fdct_round_shift(tran_high_t input) {
 }
 
 #if CONFIG_EXT_TX
+void vp9_fklt4(const tran_low_t *input, tran_low_t *output) {
+  vp9_fgentx4(input, output, Tx4);
+}
+
+void vp9_fklt8(const tran_low_t *input, tran_low_t *output) {
+  vp9_fgentx8(input, output, Tx8);
+}
+
+void vp9_fklt16(const tran_low_t *input, tran_low_t *output) {
+  vp9_fgentx16(input, output, Tx16);
+}
+
 void vp9_fdst4(const tran_low_t *input, tran_low_t *output) {
+#if USE_DST2
+  vp9_fgentx4(input, output, Tx4);
+#else
   // {sin(pi/5), sin(pi*2/5)} * sqrt(2/5) * sqrt(2)
   static const int32_t sinvalue_lookup[] = {
     141124871, 228344838,
@@ -46,9 +61,13 @@ void vp9_fdst4(const tran_low_t *input, tran_low_t *output) {
   output[2] = ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS));
   sum = d03 * sinvalue_lookup[0] - d12 * sinvalue_lookup[1];
   output[3] = ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS));
+#endif
 }
 
 void vp9_fdst8(const tran_low_t *input, tran_low_t *output) {
+#if USE_DST2
+  vp9_fgentx8(input, output, Tx8);
+#else
   // {sin(pi/9), sin(pi*2/9), ..., sin(pi*4/9)} * sqrt(2/9) * 2
   static const int sinvalue_lookup[] = {
     86559612, 162678858, 219176632, 249238470
@@ -84,9 +103,13 @@ void vp9_fdst8(const tran_low_t *input, tran_low_t *output) {
   sum = d07 * sinvalue_lookup[0] - d16 * sinvalue_lookup[1] +
         d25 * sinvalue_lookup[2] - d34 * sinvalue_lookup[3];
   output[7] = ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS));
+#endif
 }
 
 void vp9_fdst16(const tran_low_t *input, tran_low_t *output) {
+#if USE_DST2
+  vp9_fgentx16(input, output, Tx16);
+#else
   // {sin(pi/17), sin(pi*2/17, ..., sin(pi*8/17)} * sqrt(2/17) * 2 * sqrt(2)
   static const int sinvalue_lookup[] = {
     47852167, 94074787, 137093803, 175444254,
@@ -189,6 +212,7 @@ void vp9_fdst16(const tran_low_t *input, tran_low_t *output) {
         d411 * sinvalue_lookup[4] - d510 * sinvalue_lookup[5] +
         d69  * sinvalue_lookup[6] - d78  * sinvalue_lookup[7];
   output[15] = ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS));
+#endif
 }
 #endif  // CONFIG_EXT_TX
 
