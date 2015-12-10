@@ -2834,7 +2834,6 @@ void vp9_scale_references(VP9_COMP *cpi) {
         if (cm->new_fb_idx == INVALID_IDX)
           return;
         new_fb_ptr = &pool->frame_bufs[new_fb];
-        cm->cur_frame = &pool->frame_bufs[new_fb];
         vp9_realloc_frame_buffer(&pool->frame_bufs[new_fb].buf,
                                  cm->width, cm->height,
                                  cm->subsampling_x, cm->subsampling_y,
