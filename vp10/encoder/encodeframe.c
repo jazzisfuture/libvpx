@@ -2579,7 +2579,7 @@ static MV_REFERENCE_FRAME get_frame_type(const VP10_COMP *cpi) {
 }
 
 static TX_MODE select_tx_mode(const VP10_COMP *cpi, MACROBLOCKD *const xd) {
-  if (!cpi->common.seg.enabled && xd->lossless[0])
+  if (xd->lossless[0])
     return ONLY_4X4;
   if (cpi->sf.tx_size_search_method == USE_LARGESTALL)
     return ALLOW_32X32;
@@ -2696,21 +2696,17 @@ static void encode_frame_internal(VP10_COMP *cpi) {
   vp10_zero(rdc->comp_pred_diff);
   vp10_zero(rdc->filter_diff);
 
-  for (i = 0; i < (cm->seg.enabled ? MAX_SEGMENTS : 1); ++i) {
-#if CONFIG_MISC_FIXES
-    const int qindex = vp10_get_qindex(&cm->seg, i, cm->base_qindex);
-#endif
-    xd->lossless[i] = cm->y_dc_delta_q == 0 &&
-#if CONFIG_MISC_FIXES
-                      qindex == 0 &&
-#else
-                      cm->base_qindex == 0 &&
-#endif
+  for (i = 0; i < MAX_SEGMENTS; ++i) {
+    const int qindex = CONFIG_MISC_FIXES && cm->seg.enabled ?
+                       vp10_get_qindex(&cm->seg, i, cm->base_qindex) :
+					   cm->base_qindex;
+    xd->lossless[i] = qindex == 0 &&
+                      cm->y_dc_delta_q == 0 &&
                       cm->uv_dc_delta_q == 0 &&
                       cm->uv_ac_delta_q == 0;
   }
 
-  if (!cm->seg.enabled && xd->lossless[0])
+  if (xd->lossless[0])
     x->optimize = 0;
 
   cm->tx_mode = select_tx_mode(cpi, xd);
