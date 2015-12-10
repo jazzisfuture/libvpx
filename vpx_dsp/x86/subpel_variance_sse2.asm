@@ -140,6 +140,7 @@ SECTION .text
 
       ;Store bilin_filter and pw_8 location in stack
       GET_GOT eax
+      add esp, 4                ; restore esp
 
       lea ecx, [GLOBAL(bilin_filter_m)]
       mov g_bilin_filterm, ecx
@@ -147,7 +148,6 @@ SECTION .text
       lea ecx, [GLOBAL(pw_8)]
       mov g_pw_8m, ecx
 
-      RESTORE_GOT               ; restore esp
       LOAD_IF_USED 0, 1         ; load eax, ecx back
     %else
       cglobal sub_pixel_variance%1xh, 7, 7, 13, src, src_stride, x_offset, \
@@ -157,6 +157,7 @@ SECTION .text
 
       ;Store bilin_filter and pw_8 location in stack
       GET_GOT eax
+      add esp, 4                ; restore esp
 
       lea ecx, [GLOBAL(bilin_filter_m)]
       mov g_bilin_filterm, ecx
@@ -164,7 +165,6 @@ SECTION .text
       lea ecx, [GLOBAL(pw_8)]
       mov g_pw_8m, ecx
 
-      RESTORE_GOT               ; restore esp
       LOAD_IF_USED 0, 1         ; load eax, ecx back
     %endif
   %else
