@@ -120,7 +120,22 @@ static void maybe_flip_strides16(uint16_t **dst, int *dstride,
 }
 #endif
 
+void iklt4(const tran_low_t *input, tran_low_t *output) {
+  vp9_igentx4(input, output, Tx4);
+}
+
+void iklt8(const tran_low_t *input, tran_low_t *output) {
+  vp9_igentx8(input, output, Tx8);
+}
+
+void iklt16(const tran_low_t *input, tran_low_t *output) {
+  vp9_igentx16(input, output, Tx16);
+}
+
 void idst4(const tran_low_t *input, tran_low_t *output) {
+#if USE_DST2
+  vp9_igentx4(input, output, Tx4);
+#else
   // {sin(pi/5), sin(pi*2/5)} * sqrt(2/5) * sqrt(2)
   static const int32_t sinvalue_lookup[] = {
     141124871, 228344838,
@@ -138,9 +153,13 @@ void idst4(const tran_low_t *input, tran_low_t *output) {
   output[2] = WRAPLOW(ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS)), 8);
   sum = d03 * sinvalue_lookup[0] - d12 * sinvalue_lookup[1];
   output[3] = WRAPLOW(ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS)), 8);
+#endif
 }
 
 void idst8(const tran_low_t *input, tran_low_t *output) {
+#if USE_DST2
+  vp9_igentx8(input, output, Tx8);
+#else
   // {sin(pi/9), sin(pi*2/9), ..., sin(pi*4/9)} * sqrt(2/9) * 2
   static const int32_t sinvalue_lookup[] = {
     86559612, 162678858, 219176632, 249238470
@@ -176,9 +195,13 @@ void idst8(const tran_low_t *input, tran_low_t *output) {
   sum = d07 * sinvalue_lookup[0] - d16 * sinvalue_lookup[1] +
         d25 * sinvalue_lookup[2] - d34 * sinvalue_lookup[3];
   output[7] = WRAPLOW(ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS)), 8);
+#endif
 }
 
 void idst16(const tran_low_t *input, tran_low_t *output) {
+#if USE_DST2
+  vp9_igentx16(input, output, Tx16);
+#else
   // {sin(pi/17), sin(pi*2/17, ..., sin(pi*8/17)} * sqrt(2/17) * 2 * sqrt(2)
   static const int32_t sinvalue_lookup[] = {
     47852167, 94074787, 137093803, 175444254,
@@ -281,10 +304,14 @@ void idst16(const tran_low_t *input, tran_low_t *output) {
         d411 * sinvalue_lookup[4] - d510 * sinvalue_lookup[5] +
         d69  * sinvalue_lookup[6] - d78  * sinvalue_lookup[7];
   output[15] = WRAPLOW(ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS)), 8);
+#endif
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void highbd_idst4(const tran_low_t *input, tran_low_t *output, int bd) {
+#if USE_DST2
+  vp9_highbd_igentx4(input, output, bd, Tx4);
+#else
   // {sin(pi/5), sin(pi*2/5)} * sqrt(2/5) * sqrt(2)
   static const int32_t sinvalue_lookup[] = {
     141124871, 228344838,
@@ -304,9 +331,13 @@ void highbd_idst4(const tran_low_t *input, tran_low_t *output, int bd) {
   output[2] = WRAPLOW(ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS)), bd);
   sum = d03 * sinvalue_lookup[0] - d12 * sinvalue_lookup[1];
   output[3] = WRAPLOW(ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS)), bd);
+#endif
 }
 
 void highbd_idst8(const tran_low_t *input, tran_low_t *output, int bd) {
+#if USE_DST2
+  vp9_highbd_igentx8(input, output, bd, Tx8);
+#else
   // {sin(pi/9), sin(pi*2/9), ..., sin(pi*4/9)} * sqrt(2/9) * 2
   static const int32_t sinvalue_lookup[] = {
     86559612, 162678858, 219176632, 249238470
@@ -344,9 +375,13 @@ void highbd_idst8(const tran_low_t *input, tran_low_t *output, int bd) {
   sum = d07 * sinvalue_lookup[0] - d16 * sinvalue_lookup[1] +
         d25 * sinvalue_lookup[2] - d34 * sinvalue_lookup[3];
   output[7] = WRAPLOW(ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS)), bd);
+#endif
 }
 
 void highbd_idst16(const tran_low_t *input, tran_low_t *output, int bd) {
+#if USE_DST2
+  vp9_highbd_igentx16(input, output, bd, Tx16);
+#else
   // {sin(pi/17), sin(pi*2/17, ..., sin(pi*8/17)} * sqrt(2/17) * 2 * sqrt(2)
   static const int32_t sinvalue_lookup[] = {
     47852167, 94074787, 137093803, 175444254,
@@ -451,6 +486,7 @@ void highbd_idst16(const tran_low_t *input, tran_low_t *output, int bd) {
         d411 * sinvalue_lookup[4] - d510 * sinvalue_lookup[5] +
         d69  * sinvalue_lookup[6] - d78  * sinvalue_lookup[7];
   output[15] = WRAPLOW(ROUND_POWER_OF_TWO(sum, (2 * DCT_CONST_BITS)), bd);
+#endif
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_EXT_TX
@@ -459,35 +495,35 @@ void vp9_iwht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
   /* 4-point reversible, orthonormal inverse Walsh-Hadamard in 3.5 adds,
      0.5 shifts per pixel. */
   int i;
-    tran_low_t output[16];
-    tran_high_t a1, b1, c1, d1, e1;
-    const tran_low_t *ip = input;
-    tran_low_t *op = output;
+  tran_low_t output[16];
+  tran_high_t a1, b1, c1, d1, e1;
+  const tran_low_t *ip = input;
+  tran_low_t *op = output;
 
-    for (i = 0; i < 4; i++) {
-      a1 = ip[0] >> UNIT_QUANT_SHIFT;
-      c1 = ip[1] >> UNIT_QUANT_SHIFT;
-      d1 = ip[2] >> UNIT_QUANT_SHIFT;
-      b1 = ip[3] >> UNIT_QUANT_SHIFT;
-      a1 += c1;
-      d1 -= b1;
-      e1 = (a1 - d1) >> 1;
-      b1 = e1 - b1;
-      c1 = e1 - c1;
-      a1 -= b1;
-      d1 += c1;
-      op[0] = WRAPLOW(a1, 8);
-      op[1] = WRAPLOW(b1, 8);
-      op[2] = WRAPLOW(c1, 8);
-      op[3] = WRAPLOW(d1, 8);
-      ip += 4;
-      op += 4;
-    }
+  for (i = 0; i < 4; i++) {
+    a1 = ip[0] >> UNIT_QUANT_SHIFT;
+    c1 = ip[1] >> UNIT_QUANT_SHIFT;
+    d1 = ip[2] >> UNIT_QUANT_SHIFT;
+    b1 = ip[3] >> UNIT_QUANT_SHIFT;
+    a1 += c1;
+    d1 -= b1;
+    e1 = (a1 - d1) >> 1;
+    b1 = e1 - b1;
+    c1 = e1 - c1;
+    a1 -= b1;
+    d1 += c1;
+    op[0] = WRAPLOW(a1, 8);
+    op[1] = WRAPLOW(b1, 8);
+    op[2] = WRAPLOW(c1, 8);
+    op[3] = WRAPLOW(d1, 8);
+    ip += 4;
+    op += 4;
+  }
 
-    ip = output;
-    for (i = 0; i < 4; i++) {
-      a1 = ip[4 * 0];
-      c1 = ip[4 * 1];
+  ip = output;
+  for (i = 0; i < 4; i++) {
+    a1 = ip[4 * 0];
+    c1 = ip[4 * 1];
     d1 = ip[4 * 2];
     b1 = ip[4 * 3];
     a1 += c1;
@@ -2808,13 +2844,13 @@ void vp9_highbd_iht4x4_16_add_c(const tran_low_t *input, uint8_t *dest8,
     { highbd_iadst4, highbd_iadst4 },  // FLIPADST_FLIPADST = 6
     { highbd_iadst4, highbd_iadst4 },  // ADST_FLIPADST = 7
     { highbd_iadst4, highbd_iadst4 },  // FLIPADST_ADST = 8
-    { highbd_idst4,  highbd_idst4  },   // DST_DST = 9
-    { highbd_idst4,  vp9_highbd_idct4  },   // DST_DCT = 10
-    { vp9_highbd_idct4,  highbd_idst4  },   // DCT_DST = 11
-    { highbd_idst4,  highbd_iadst4 },   // DST_ADST = 12
-    { highbd_iadst4, highbd_idst4  },   // ADST_DST = 13
-    { highbd_idst4,  highbd_iadst4 },   // DST_FLIPADST = 14
-    { highbd_iadst4, highbd_idst4  },   // FLIPADST_DST = 15
+    { HIGHBD_idst4,  HIGHBD_idst4  },   // DST_DST = 9
+    { HIGHBD_idst4,  vp9_highbd_idct4  },   // DST_DCT = 10
+    { vp9_highbd_idct4,  HIGHBD_idst4  },   // DCT_DST = 11
+    { HIGHBD_idst4,  highbd_iadst4 },   // DST_ADST = 12
+    { highbd_iadst4, HIGHBD_idst4  },   // ADST_DST = 13
+    { HIGHBD_idst4,  highbd_iadst4 },   // DST_FLIPADST = 14
+    { highbd_iadst4, HIGHBD_idst4  },   // FLIPADST_DST = 15
 #endif  // CONFIG_EXT_TX
   };
   uint16_t *dest = CONVERT_TO_SHORTPTR(dest8);
@@ -2948,13 +2984,13 @@ static const highbd_transform_2d HIGH_IHT_8[] = {
   { highbd_iadst8, highbd_iadst8 },  // FLIPADST_FLIPADST = 6
   { highbd_iadst8, highbd_iadst8 },  // ADST_FLIPADST = 7
   { highbd_iadst8, highbd_iadst8 },  // FLIPADST_ADST = 8
-  { highbd_idst8,  highbd_idst8  },   // DST_DST = 9
-  { highbd_idst8,  vp9_highbd_idct8  },   // DST_DCT = 10
-  { vp9_highbd_idct8,  highbd_idst8  },   // DCT_DST = 11
-  { highbd_idst8,  highbd_iadst8 },   // DST_ADST = 12
-  { highbd_iadst8, highbd_idst8  },   // ADST_DST = 13
-  { highbd_idst8,  highbd_iadst8 },   // DST_FLIPADST = 14
-  { highbd_iadst8, highbd_idst8  },   // FLIPADST_DST = 15
+  { HIGHBD_idst8,  HIGHBD_idst8  },   // DST_DST = 9
+  { HIGHBD_idst8,  vp9_highbd_idct8  },   // DST_DCT = 10
+  { vp9_highbd_idct8,  HIGHBD_idst8  },   // DCT_DST = 11
+  { HIGHBD_idst8,  highbd_iadst8 },   // DST_ADST = 12
+  { highbd_iadst8, HIGHBD_idst8  },   // ADST_DST = 13
+  { HIGHBD_idst8,  highbd_iadst8 },   // DST_FLIPADST = 14
+  { highbd_iadst8, HIGHBD_idst8  },   // FLIPADST_DST = 15
 #endif  // CONFIG_EXT_TX
 };
 
@@ -3405,13 +3441,13 @@ static const highbd_transform_2d HIGH_IHT_16[] = {
   { highbd_iadst16, highbd_iadst16 },   // FLIPADST_FLIPADST = 6
   { highbd_iadst16, highbd_iadst16 },   // ADST_FLIPADST = 7
   { highbd_iadst16, highbd_iadst16 },   // FLIPADST_ADST = 8
-  { highbd_idst16,  highbd_idst16  },   // DST_DST = 9
-  { highbd_idst16,  vp9_highbd_idct16  },   // DST_DCT = 10
-  { vp9_highbd_idct16,  highbd_idst16  },   // DCT_DST = 11
-  { highbd_idst16,  highbd_iadst16 },   // DST_ADST = 12
-  { highbd_iadst16, highbd_idst16  },   // ADST_DST = 13
-  { highbd_idst16,  highbd_iadst16 },   // DST_FLIPADST = 14
-  { highbd_iadst16, highbd_idst16  },   // FLIPADST_DST = 15
+  { HIGHBD_idst16,  HIGHBD_idst16  },   // DST_DST = 9
+  { HIGHBD_idst16,  vp9_highbd_idct16  },   // DST_DCT = 10
+  { vp9_highbd_idct16,  HIGHBD_idst16  },   // DCT_DST = 11
+  { HIGHBD_idst16,  highbd_iadst16 },   // DST_ADST = 12
+  { highbd_iadst16, HIGHBD_idst16  },   // ADST_DST = 13
+  { HIGHBD_idst16,  highbd_iadst16 },   // DST_FLIPADST = 14
+  { highbd_iadst16, HIGHBD_idst16  },   // FLIPADST_DST = 15
 #endif  // CONFIG_EXT_TX
 };
 
