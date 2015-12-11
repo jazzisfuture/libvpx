@@ -1976,7 +1976,7 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
 // TODO(marpan): Superblock sad is computed again in variance partition for
 // non-rd mode (but based on last reconstructed frame). Should try to reuse
 // these computations.
-void vp9_avg_source_sad(VP9_COMP *cpi) {
+void vpx_avg_source_sad(VP9_COMP *cpi) {
   VP9_COMMON * const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   rc->high_source_sad = 0;
