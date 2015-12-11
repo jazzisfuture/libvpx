@@ -462,7 +462,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
         if (x->skip_txfm[txfm_blk_index] == SKIP_TXFM_NONE) {
           // full forward transform and quantization
           vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
-                           tx_size, VP10_XFORM_QUANT_B);
+                           tx_size, VP10_XFORM_QUANT_FP);
         } else if (x->skip_txfm[txfm_blk_index] == SKIP_TXFM_AC_ONLY) {
           // fast path forward transform and quantization
           vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
@@ -477,7 +477,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
         }
       } else {
         vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
-                         tx_size, VP10_XFORM_QUANT_B);
+                         tx_size, VP10_XFORM_QUANT_FP);
       }
     }
   }
@@ -611,7 +611,7 @@ static void encode_block_pass1(int plane, int block, int blk_row, int blk_col,
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
 
   vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
-                   tx_size, VP10_XFORM_QUANT_B);
+                   tx_size, VP10_XFORM_QUANT_FP);
 
   if (p->eobs[block] > 0) {
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -744,7 +744,7 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
 
   if (!x->skip_recode)
     vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
-                     VP10_XFORM_QUANT_B);
+                     VP10_XFORM_QUANT_FP);
   else
     vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
                      VP10_XFORM_QUANT_SKIP_QUANT);

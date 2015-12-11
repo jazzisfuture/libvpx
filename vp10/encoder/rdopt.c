@@ -621,7 +621,7 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
         SKIP_TXFM_NONE) {
       // full forward transform and quantization
       vp10_xform_quant(x, plane, block, blk_row, blk_col,
-                       plane_bsize, tx_size, VP10_XFORM_QUANT_B);
+                       plane_bsize, tx_size, VP10_XFORM_QUANT_FP);
       dist_block(x, plane, block, tx_size, &dist, &sse);
     } else if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] ==
                SKIP_TXFM_AC_ONLY) {
@@ -654,7 +654,7 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
   } else {
     // full forward transform and quantization
     vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
-                     VP10_XFORM_QUANT_B);
+                     VP10_XFORM_QUANT_FP);
     dist_block(x, plane, block, tx_size, &dist, &sse);
   }
 
@@ -1316,7 +1316,7 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                                                            *(templ + idy));
 #endif
             vp10_highbd_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT, 1);
-            vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
+            vp10_regular_quantize_fp_4x4(x, 0, block, so->scan, so->iscan);
             ratey += cost_coeffs(x, 0, block,
 #if CONFIG_VAR_TX
                                  coeff_ctx,
@@ -1340,7 +1340,7 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                                                            *(templ + idy));
 #endif
             vp10_highbd_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, 0);
-            vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
+            vp10_regular_quantize_fp_4x4(x, 0, block, so->scan, so->iscan);
             ratey += cost_coeffs(x, 0, block,
 #if CONFIG_VAR_TX
                                  coeff_ctx,
@@ -1435,7 +1435,7 @@ next_highbd:
                                                    *(templ + idy));
 #endif
           vp10_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT, 1);
-          vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
+          vp10_regular_quantize_fp_4x4(x, 0, block, so->scan, so->iscan);
 #if CONFIG_VAR_TX
           ratey += cost_coeffs(x, 0, block, coeff_ctx, TX_4X4, so->scan,
                                so->neighbors, cpi->sf.use_fast_coef_costing);
@@ -1460,7 +1460,7 @@ next_highbd:
                                                    *(templ + idy));
 #endif
           vp10_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, 0);
-          vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
+          vp10_regular_quantize_fp_4x4(x, 0, block, so->scan, so->iscan);
 #if CONFIG_VAR_TX
           ratey += cost_coeffs(x, 0, block, coeff_ctx, TX_4X4, so->scan,
                                so->neighbors, cpi->sf.use_fast_coef_costing);
@@ -1963,7 +1963,7 @@ static void tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
     max_blocks_wide += xd->mb_to_right_edge >> (5 + pd->subsampling_x);
 
   vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
-                   VP10_XFORM_QUANT_B);
+                   VP10_XFORM_QUANT_FP);
 
   vpx_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
                     NULL, 0, NULL, 0, bh, bh);
@@ -3019,7 +3019,7 @@ static int64_t encode_inter_mb_segment(VP10_COMP *cpi,
       coeff = BLOCK_OFFSET(p->coeff, k);
       fwd_txm4x4(vp10_raster_block_offset_int16(BLOCK_8X8, k, p->src_diff),
                  coeff, 8);
-      vp10_regular_quantize_b_4x4(x, 0, k, so->scan, so->iscan);
+      vp10_regular_quantize_fp_4x4(x, 0, k, so->scan, so->iscan);
 #if CONFIG_VP9_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
         thisdistortion += vp10_highbd_block_error(coeff,
