@@ -225,6 +225,10 @@ static void vp10_init_intra_predictors_internal(void) {
 #undef intra_pred_allsizes
 }
 
+<<<<<<< HEAD   (104636 Some fixes from merging MISC_FIXES config)
+=======
+#if CONFIG_MISC_FIXES
+>>>>>>> BRANCH (ecb8df Merge "dc_left_pred[48]: fix pic builds")
 static INLINE void memset16(uint16_t *dst, int val, int n) {
   while (n--)
     *dst++ = val;

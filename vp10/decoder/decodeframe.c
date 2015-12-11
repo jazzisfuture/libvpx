@@ -1230,10 +1230,19 @@ static void setup_quantization(VP10_COMMON *const cm, MACROBLOCKD *const xd,
   cm->uv_dc_delta_q = read_delta_q(rb);
   cm->uv_ac_delta_q = read_delta_q(rb);
   cm->dequant_bit_depth = cm->bit_depth;
+<<<<<<< HEAD   (104636 Some fixes from merging MISC_FIXES config)
   for (i = 0; i < (cm->seg.enabled ? MAX_SEGMENTS : 1); ++i) {
     const int qindex = vp10_get_qindex(&cm->seg, i, cm->base_qindex);
     xd->lossless[i] = cm->y_dc_delta_q == 0 &&
                       qindex == 0 &&
+=======
+  for (i = 0; i < MAX_SEGMENTS; ++i) {
+    const int qindex = CONFIG_MISC_FIXES && cm->seg.enabled ?
+                       vp10_get_qindex(&cm->seg, i, cm->base_qindex) :
+                       cm->base_qindex;
+    xd->lossless[i] = qindex == 0 &&
+                      cm->y_dc_delta_q == 0 &&
+>>>>>>> BRANCH (ecb8df Merge "dc_left_pred[48]: fix pic builds")
                       cm->uv_dc_delta_q == 0 &&
                       cm->uv_ac_delta_q == 0;
   }
