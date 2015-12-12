@@ -1302,63 +1302,48 @@ static int64_t rd_pick_intra4x4block(VP10_COMP *cpi, MACROBLOCK *x,
                                                                    block,
                                                                    p->src_diff);
           tran_low_t *const coeff = BLOCK_OFFSET(x->plane[0].coeff, block);
+          const int lossless_flag = xd->lossless[xd->mi[0]->mbmi.segment_id];
+          const scan_order *so;
+#if CONFIG_VAR_TX
+          const int coeff_ctx;
+#endif
+          TX_TYPE tx_type;
+
           xd->mi[0]->bmi[block].as_mode = mode;
           vp10_predict_intra_block(xd, 1, 1, TX_4X4, mode, dst, dst_stride,
                                   dst, dst_stride,
                                   col + idx, row + idy, 0);
           vpx_highbd_subtract_block(4, 4, src_diff, 8, src, src_stride,
                                     dst, dst_stride, xd->bd);
-          if (xd->lossless[xd->mi[0]->mbmi.segment_id]) {
-            TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
-            const scan_order *so = get_scan(TX_4X4, tx_type, 0);
+          tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
+          so = get_scan(TX_4X4, tx_type, 0);
 #if CONFIG_VAR_TX
-            const int coeff_ctx = combine_entropy_contexts(*(tempa + idx),
-                                                           *(templ + idy));
+          coeff_ctx = combine_entropy_contexts(*(tempa + idx),
+                                               *(templ + idy));
 #endif
-            vp10_highbd_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT, 1);
-            vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-            ratey += cost_coeffs(x, 0, block,
+          vp10_highbd_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, lossless_flag);
+          vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
+          ratey += cost_coeffs(x, 0, block,
 #if CONFIG_VAR_TX
-                                 coeff_ctx,
+                               coeff_ctx,
 #else
-                                 tempa + idx, templ + idy,
+                               tempa + idx, templ + idy,
 #endif
-                                 TX_4X4,
-                                 so->scan, so->neighbors,
-                                 cpi->sf.use_fast_coef_costing);
-            if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
-              goto next_highbd;
-            vp10_highbd_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
-                                         dst, dst_stride, p->eobs[block],
-                                         xd->bd, DCT_DCT, 1);
-          } else {
+                               TX_4X4,
+                               so->scan, so->neighbors,
+                               cpi->sf.use_fast_coef_costing);
+          if (lossless_flag == 0) {
             int64_t unused;
-            TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
-            const scan_order *so = get_scan(TX_4X4, tx_type, 0);
-#if CONFIG_VAR_TX
-            const int coeff_ctx = combine_entropy_contexts(*(tempa + idx),
-                                                           *(templ + idy));
-#endif
-            vp10_highbd_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, 0);
-            vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-            ratey += cost_coeffs(x, 0, block,
-#if CONFIG_VAR_TX
-                                 coeff_ctx,
-#else
-                                 tempa + idx, templ + idy,
-#endif
-                                 TX_4X4,
-                                 so->scan, so->neighbors,
-                                 cpi->sf.use_fast_coef_costing);
             distortion += vp10_highbd_block_error(
                 coeff, BLOCK_OFFSET(pd->dqcoeff, block),
                 16, &unused, xd->bd) >> 2;
-            if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
-              goto next_highbd;
-            vp10_highbd_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
-                                         dst, dst_stride, p->eobs[block],
-                                         xd->bd, tx_type, 0);
           }
+
+          if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
+            goto next_highbd;
+          vp10_highbd_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
+                                       dst, dst_stride, p->eobs[block],
+                                       xd->bd, tx_type, lossless_flag);
         }
       }
 
@@ -1422,62 +1407,45 @@ next_highbd:
         int16_t *const src_diff =
             vp10_raster_block_offset_int16(BLOCK_8X8, block, p->src_diff);
         tran_low_t *const coeff = BLOCK_OFFSET(x->plane[0].coeff, block);
+        const int lossless_flag = xd->lossless[xd->mi[0]->mbmi.segment_id];
+        TX_TYPE tx_type;
+        const scan_order* so;
+#if CONFIG_VAR_TX
+        int coeff_ctx;
+#endif
+
         xd->mi[0]->bmi[block].as_mode = mode;
         vp10_predict_intra_block(xd, 1, 1, TX_4X4, mode, dst, dst_stride,
                                 dst, dst_stride, col + idx, row + idy, 0);
         vpx_subtract_block(4, 4, src_diff, 8, src, src_stride, dst, dst_stride);
 
-        if (xd->lossless[xd->mi[0]->mbmi.segment_id]) {
-          TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
-          const scan_order *so = get_scan(TX_4X4, tx_type, 0);
+        tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
+        so = get_scan(TX_4X4, tx_type, 0);
 #if CONFIG_VAR_TX
-          int coeff_ctx = combine_entropy_contexts(*(tempa + idx),
-                                                   *(templ + idy));
+        coeff_ctx = combine_entropy_contexts(*(tempa + idx),
+                                             *(templ + idy));
 #endif
-          vp10_fwd_txfm_4x4(src_diff, coeff, 8, DCT_DCT, 1);
-          vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
+        vp10_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, lossless_flag);
+        vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
 #if CONFIG_VAR_TX
-          ratey += cost_coeffs(x, 0, block, coeff_ctx, TX_4X4, so->scan,
-                               so->neighbors, cpi->sf.use_fast_coef_costing);
-          *(tempa + idx) = !(p->eobs[block] == 0);
-          *(templ + idy) = !(p->eobs[block] == 0);
+        ratey += cost_coeffs(x, 0, block, coeff_ctx, TX_4X4, so->scan,
+                             so->neighbors, cpi->sf.use_fast_coef_costing);
+        *(tempa + idx) = !(p->eobs[block] == 0);
+        *(templ + idy) = !(p->eobs[block] == 0);
 #else
-          ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy,
-                               TX_4X4,
-                               so->scan, so->neighbors,
-                               cpi->sf.use_fast_coef_costing);
+        ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy,
+                             TX_4X4, so->scan, so->neighbors,
+                             cpi->sf.use_fast_coef_costing);
 #endif
-          if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
-            goto next;
-          vp10_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
-                                dst, dst_stride, p->eobs[block], DCT_DCT, 1);
-        } else {
+        if (lossless_flag == 0) {
           int64_t unused;
-          TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);
-          const scan_order *so = get_scan(TX_4X4, tx_type, 0);
-#if CONFIG_VAR_TX
-          int coeff_ctx = combine_entropy_contexts(*(tempa + idx),
-                                                   *(templ + idy));
-#endif
-          vp10_fwd_txfm_4x4(src_diff, coeff, 8, tx_type, 0);
-          vp10_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
-#if CONFIG_VAR_TX
-          ratey += cost_coeffs(x, 0, block, coeff_ctx, TX_4X4, so->scan,
-                               so->neighbors, cpi->sf.use_fast_coef_costing);
-          *(tempa + idx) = !(p->eobs[block] == 0);
-          *(templ + idy) = !(p->eobs[block] == 0);
-#else
-          ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy,
-                               TX_4X4, so->scan, so->neighbors,
-                               cpi->sf.use_fast_coef_costing);
-#endif
           distortion += vp10_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, block),
-                                        16, &unused) >> 2;
-          if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
-            goto next;
-          vp10_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
-                                dst, dst_stride, p->eobs[block], tx_type, 0);
+                                         16, &unused) >> 2;
         }
+        if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
+          goto next;
+        vp10_inv_txfm_add_4x4(BLOCK_OFFSET(pd->dqcoeff, block),
+                              dst, dst_stride, p->eobs[block], tx_type, lossless_flag);
       }
     }
 
