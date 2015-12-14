@@ -892,7 +892,6 @@ static int choose_partitioning(VP9_COMP *cpi,
       }
     }
   }
-
   // Fill the rest of the variance tree by summing split partition values.
   avg_32x32 = 0;
   for (i = 0; i < 4; i++) {
@@ -923,7 +922,8 @@ static int choose_partitioning(VP9_COMP *cpi,
       get_variance(&vt.split[i].part_variances.none);
       if (vt.split[i].part_variances.none.variance > thresholds[1] ||
           (!is_key_frame &&
-          vt.split[i].part_variances.none.variance > (3 * avg_16x16[i]) >> 2)) {
+          vt.split[i].part_variances.none.variance > (thresholds[1] >> 1) &&
+          vt.split[i].part_variances.none.variance > (avg_16x16[i] >> 1))) {
         force_split[i + 1] = 1;
         force_split[0] = 1;
       }
