@@ -79,17 +79,10 @@ SECTION .text
 
 %macro INC_SRC_BY_SRC_STRIDE  0
 %if ARCH_X86=1 && CONFIG_PIC=1
-  lea                srcq, [srcq + src_stridemp*2]
+  add                srcq, src_stridemp
+  add                srcq, src_stridemp
 %else
   lea                srcq, [srcq + src_strideq*2]
-%endif
-%endmacro
-
-%macro INC_SRC_BY_SRC_2STRIDE  0
-%if ARCH_X86=1 && CONFIG_PIC=1
-  lea                srcq, [srcq + src_stridemp*4]
-%else
-  lea                srcq, [srcq + src_strideq*4]
 %endif
 %endmacro
 
@@ -114,13 +107,23 @@ SECTION .text
 %else
   %if ARCH_X86=1 && CONFIG_PIC=1
     %if %2 == 1 ; avg
-      cglobal highbd_sub_pixel_avg_variance%1xh, 7, 7, 13, src, src_stride, \
+      cglobal highbd_sub_pixel_avg_variance%1xh, 10, 12, 13, src, src_stride, \
                                   x_offset, y_offset, \
                                   dst, dst_stride, \
                                   sec, sec_stride, \
                                   height, sse, g_bilin_filter, g_pw_8
       %define block_height dword heightm
       %define sec_str sec_stridemp
+
+      ; The cglobal macro ends up storing the local variables
+      ; at stack locations that collide with the caller's local variables.
+      ;
+      ; We redefine the variables to use space below the stack pointer
+      ; (This is only allowed because this is a leaf function)
+      %undef g_bilin_filterm
+      %undef g_pw_8m
+      %define g_bilin_filterm [rstk - 4]
+      %define g_pw_8m [rstk - 8]
 
       ; Store bilin_filter and pw_8 location in stack
       %if GET_GOT_DEFINED == 1
@@ -136,10 +139,15 @@ SECTION .text
 
       LOAD_IF_USED 0, 1         ; load eax, ecx back
     %else
-      cglobal highbd_sub_pixel_variance%1xh, 7, 7, 13, src, src_stride, \
+      cglobal highbd_sub_pixel_variance%1xh, 8, 10, 13, src, src_stride, \
                                 x_offset, y_offset, dst, dst_stride, height, \
                                 sse, g_bilin_filter, g_pw_8
       %define block_height heightd
+
+      %undef g_bilin_filterm
+      %undef g_pw_8m
+      %define g_bilin_filterm [rstk - 4]
+      %define g_pw_8m [rstk - 8]
 
       ; Store bilin_filter and pw_8 location in stack
       %if GET_GOT_DEFINED == 1
@@ -984,8 +992,9 @@ SECTION .text
 .x_other_y_other_loop:
   movu                 m2, [srcq]
   movu                 m4, [srcq+2]
-  movu                 m3, [srcq+src_strideq*2]
-  movu                 m5, [srcq+src_strideq*2+2]
+  INC_SRC_BY_SRC_STRIDE
+  movu                 m3, [srcq]
+  movu                 m5, [srcq+2]
   pmullw               m2, filter_x_a
   pmullw               m4, filter_x_b
   paddw                m2, filter_rnd
@@ -1018,7 +1027,7 @@ SECTION .text
   SUM_SSE              m0, m2, m4, m3, m6, m7
   mova                 m0, m5
 
-  INC_SRC_BY_SRC_2STRIDE
+  INC_SRC_BY_SRC_STRIDE
   lea                dstq, [dstq + dst_strideq * 4]
 %if %2 == 1 ; avg
   add                secq, sec_str
