@@ -1145,22 +1145,11 @@ static INLINE int read_delta_q(struct vpx_read_bit_buffer *rb) {
 
 static void setup_quantization(VP10_COMMON *const cm, MACROBLOCKD *const xd,
                                struct vpx_read_bit_buffer *rb) {
-  int i;
-
   cm->base_qindex = vpx_rb_read_literal(rb, QINDEX_BITS);
   cm->y_dc_delta_q = read_delta_q(rb);
   cm->uv_dc_delta_q = read_delta_q(rb);
   cm->uv_ac_delta_q = read_delta_q(rb);
   cm->dequant_bit_depth = cm->bit_depth;
-  for (i = 0; i < MAX_SEGMENTS; ++i) {
-    const int qindex = CONFIG_MISC_FIXES && cm->seg.enabled ?
-                       vp10_get_qindex(&cm->seg, i, cm->base_qindex) :
-                       cm->base_qindex;
-    xd->lossless[i] = qindex == 0 &&
-                      cm->y_dc_delta_q == 0 &&
-                      cm->uv_dc_delta_q == 0 &&
-                      cm->uv_ac_delta_q == 0;
-  }
 
 #if CONFIG_VP9_HIGHBITDEPTH
   xd->bd = (int)cm->bit_depth;
@@ -2106,10 +2095,24 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   setup_loopfilter(&cm->lf, rb);
   setup_quantization(cm, &pbi->mb, rb);
   setup_segmentation(cm, rb);
+
+  {
+    int i;
+    for (i = 0; i < MAX_SEGMENTS; ++i) {
+      const int qindex = CONFIG_MISC_FIXES && cm->seg.enabled ?
+          vp10_get_qindex(&cm->seg, i, cm->base_qindex) :
+          cm->base_qindex;
+      xd->lossless[i] = qindex == 0 &&
+          cm->y_dc_delta_q == 0 &&
+          cm->uv_dc_delta_q == 0 &&
+          cm->uv_ac_delta_q == 0;
+    }
+  }
+
   setup_segmentation_dequant(cm);
 #if CONFIG_MISC_FIXES
-  cm->tx_mode = (!cm->seg.enabled && xd->lossless[0]) ? ONLY_4X4
-                                                      : read_tx_mode(rb);
+  cm->tx_mode = (xd->lossless[0]) ? ONLY_4X4
+                                  : read_tx_mode(rb);
   cm->reference_mode = read_frame_reference_mode(cm, rb);
 #endif
 
