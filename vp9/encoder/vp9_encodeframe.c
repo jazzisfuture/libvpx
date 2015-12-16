@@ -868,9 +868,7 @@ static int choose_partitioning(VP9_COMP *cpi,
           }
         }
       }
-      // TODO(marpan): There is an issue with variance based on 4x4 average in
-      // svc mode, don't allow it for now.
-      if (is_key_frame || (low_res && !cpi->use_svc &&
+      if (is_key_frame || (low_res &&
           vt.split[i].split[j].part_variances.none.variance >
           (thresholds[1] << 1))) {
         force_split[split_index] = 0;
