@@ -321,8 +321,6 @@ static VP10_QUANT_FACADE
     quant_func_list[VP10_XFORM_QUANT_LAST][QUANT_FUNC_LAST] = {
         {vp10_quantize_fp_facade, vp10_quantize_fp_32x32_facade,
          vp10_highbd_quantize_fp_facade, vp10_highbd_quantize_fp_32x32_facade},
-        {vp10_quantize_b_facade, vp10_quantize_b_32x32_facade,
-         vp10_highbd_quantize_b_facade, vp10_highbd_quantize_b_32x32_facade},
         {vp10_quantize_dc_facade, vp10_quantize_dc_32x32_facade,
          vp10_highbd_quantize_dc_facade, vp10_highbd_quantize_dc_32x32_facade},
         {NULL, NULL, NULL, NULL}};
@@ -337,13 +335,12 @@ typedef enum QUANT_FUNC {
 static VP10_QUANT_FACADE
     quant_func_list[VP10_XFORM_QUANT_LAST][QUANT_FUNC_LAST] = {
         {vp10_quantize_fp_facade, vp10_quantize_fp_32x32_facade},
-        {vp10_quantize_b_facade, vp10_quantize_b_32x32_facade},
         {vp10_quantize_dc_facade, vp10_quantize_dc_32x32_facade},
         {NULL, NULL}};
 #endif
 
 static FWD_TXFM_OPT fwd_txfm_opt_list[VP10_XFORM_QUANT_LAST] = {
-    FWD_TXFM_OPT_NORMAL, FWD_TXFM_OPT_NORMAL, FWD_TXFM_OPT_DC,
+    FWD_TXFM_OPT_NORMAL, FWD_TXFM_OPT_DC,
     FWD_TXFM_OPT_NORMAL};
 
 void vp10_xform_quant(MACROBLOCK *x, int plane, int block, int blk_row,
