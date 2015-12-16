@@ -34,10 +34,7 @@ typedef struct macroblock_plane {
   // Quantizer setings
   int16_t *quant_fp;
   int16_t *round_fp;
-  int16_t *quant;
-  int16_t *quant_shift;
   int16_t *zbin;
-  int16_t *round;
 
   int64_t quant_thred[2];
 } MACROBLOCK_PLANE;
