@@ -1658,6 +1658,7 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO *mbmi = &mic->mbmi;
   int this_rate, this_rate_tokenonly, s;
   int angle_delta, best_angle_delta = 0;
+  int *angle_cost;
   const double rd_adjust = 1.2;
   int64_t this_distortion, this_rd, sse_dummy;
   TX_SIZE best_tx_size = mic->mbmi.tx_size;
@@ -1665,11 +1666,24 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
   TX_TYPE best_tx_type = mbmi->tx_type;
 #endif  // CONFIG_EXT_TX
 
+  if (frame_is_intra_only(&cpi->common))
+    angle_cost = cpi->angle_delta_costs[mbmi->mode];
+  else
+    angle_cost = cpi->angle_delta_costs_inter[mbmi->mode];
+
   if (ANGLE_FAST_SEARCH) {
+
     int deltas_level1[3] = {0, -2, 2};
     int deltas_level2[3][2] = {
         {-1, 1}, {-3, -1}, {1, 3},
     };
+    /**/
+    /*
+    int deltas_level1[3] = {0, -2, 3};
+    int deltas_level2[3][2] = {
+        {-1, 1}, {-3, -1}, {2, 4},
+    };
+    */
     const int level1 = 3, level2 = 2;
     int i, j, best_i = -1;
 
@@ -1686,6 +1700,21 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
           continue;
       }
       this_rate = this_rate_tokenonly + rate_overhead;
+
+      if (0) {
+        int i, j;
+        for (i = 0; i < 10; ++i) {
+          for (j = 0; j < 8; ++j) {
+            printf("%6d ", cpi->angle_delta_costs[i][j]);
+          }
+          printf("\n");
+        }
+        printf("\n");
+      }
+
+#if ENTROPY_CODING
+      this_rate += angle_cost[mic->mbmi.angle_delta[0] + MAX_ANGLE_DELTAS];
+#endif
       this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
       if (i == 0 && best_rd < INT64_MAX && this_rd > best_rd * rd_adjust)
         break;
@@ -1954,8 +1983,12 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
     if (is_directional_mode && directional_mode_skip_mask[mode])
       continue;
     if (is_directional_mode) {
+#if ENTROPY_CODING
+      rate_overhead = bmode_costs[mode];
+#else
       rate_overhead = bmode_costs[mode] +
           write_uniform_cost(2 * MAX_ANGLE_DELTAS + 1, 0);
+#endif
       this_rate_tokenonly = INT_MAX;
       this_rd =
           rd_pick_intra_angle_sby(cpi, x, &this_rate, &this_rate_tokenonly,
@@ -1982,9 +2015,15 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
     if (mode == DC_PRED && ALLOW_FILTER_INTRA_MODES)
       this_rate += vp10_cost_bit(cpi->common.fc->ext_intra_probs[0], 0);
     if (is_directional_mode)
+#if ENTROPY_CODING
+      this_rate +=
+          cpi->angle_delta_costs[mode]
+                                 [mic->mbmi.angle_delta[0] + MAX_ANGLE_DELTAS];
+#else
       this_rate += write_uniform_cost(2 * MAX_ANGLE_DELTAS + 1,
                                       MAX_ANGLE_DELTAS +
                                       mic->mbmi.angle_delta[0]);
+#endif
 #endif  // CONFIG_EXT_INTRA
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
@@ -2817,10 +2856,18 @@ static int rd_pick_intra_angle_sbuv(VP10_COMP *cpi, MACROBLOCK *x,
   (void)ctx;
   *rate_tokenonly = INT_MAX;
   if (ANGLE_FAST_SEARCH) {
+
     int deltas_level1[3] = {0, -2, 2};
     int deltas_level2[3][2] = {
         {-1, 1}, {-3, -1}, {1, 3},
     };
+     /**/
+    /*
+    int deltas_level1[3] = {0, -2, 3};
+    int deltas_level2[3][2] = {
+        {-1, 1}, {-3, -1}, {2, 4},
+    };
+    */
     const int level1 = 3, level2 = 2;
     int i, j, best_i = -1;
 
@@ -5272,8 +5319,12 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         }
         if (directional_mode_skip_mask[mbmi->mode])
           continue;
+#if ENTROPY_CODING
+        rate_overhead = cpi->mbmode_cost[mbmi->mode];
+#else
         rate_overhead = write_uniform_cost(2 * MAX_ANGLE_DELTAS + 1, 0) +
             cpi->mbmode_cost[mbmi->mode];
+#endif
         rate_y = INT_MAX;
         this_rd =
             rd_pick_intra_angle_sby(cpi, x, &rate_dummy, &rate_y, &distortion_y,
@@ -5339,10 +5390,17 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
       rate2 = rate_y + cpi->mbmode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
 #if CONFIG_EXT_INTRA
-      if (is_directional_mode)
+      if (is_directional_mode) {
+#if ENTROPY_CODING
+        rate2 +=
+            cpi->angle_delta_costs_inter[mbmi->mode] [mbmi->angle_delta[0] +
+                                                      MAX_ANGLE_DELTAS];
+#else
         rate2 += write_uniform_cost(2 * MAX_ANGLE_DELTAS + 1,
                                     MAX_ANGLE_DELTAS +
                                     mbmi->angle_delta[0]);
+#endif
+      }
 
       if (mbmi->mode == DC_PRED && ALLOW_FILTER_INTRA_MODES) {
         rate2 += vp10_cost_bit(cm->fc->ext_intra_probs[0],

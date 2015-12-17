@@ -490,5 +490,9 @@ void vp10_accumulate_frame_counts(VP10_COMMON *cm, FRAME_COUNTS *counts,
   for (i = 0; i < PLANE_TYPES; ++i)
     for (j = 0; j < 2; j++)
       cm->counts.ext_intra[i][j] += counts->ext_intra[i][j];
+
+  for (i = 0; i < INTRA_MODES; ++i)
+    for (j = 0; j < ANGLE_DELTAS; ++j)
+      cm->counts.angle_delta[i][j] += counts->angle_delta[i][j];
 #endif  // CONFIG_EXT_INTRA
 }

@@ -87,6 +87,8 @@ typedef struct frame_contexts {
   struct segmentation_probs seg;
 #if CONFIG_EXT_INTRA
   vpx_prob ext_intra_probs[PLANE_TYPES];
+  vpx_prob angle_delta_probs[INTRA_MODES][ANGLE_DELTAS - 1];
+  vpx_prob angle_delta_probs_inter[INTRA_MODES][ANGLE_DELTAS - 1];
 #endif  // CONFIG_EXT_INTRA
 } FRAME_CONTEXT;
 
@@ -125,6 +127,8 @@ typedef struct FRAME_COUNTS {
   struct seg_counts seg;
 #if CONFIG_EXT_INTRA
   unsigned int ext_intra[PLANE_TYPES][2];
+  unsigned int angle_delta[INTRA_MODES][ANGLE_DELTAS];
+  unsigned int angle_delta_inter[INTRA_MODES][ANGLE_DELTAS];
 #endif  // CONFIG_EXT_INTRA
 } FRAME_COUNTS;
 
@@ -149,6 +153,9 @@ extern const vpx_tree_index vp10_switchable_interp_tree
 extern const vpx_tree_index vp10_palette_size_tree[TREE_SIZE(PALETTE_SIZES)];
 extern const vpx_tree_index
 vp10_palette_color_tree[PALETTE_MAX_SIZE - 1][TREE_SIZE(PALETTE_COLORS)];
+#if CONFIG_EXT_INTRA
+extern const vpx_tree_index vp10_angle_delta_tree[TREE_SIZE(ANGLE_DELTAS)];
+#endif  // CONFIG_EXT_INTRA
 
 
 void vp10_setup_past_independence(struct VP10Common *cm);

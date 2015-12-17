@@ -65,6 +65,17 @@ palette_color_encodings[PALETTE_MAX_SIZE - 1][PALETTE_MAX_SIZE] = {
     {{0, 1}, {2, 2}, {6, 3}, {14, 4},
         {30, 5}, {62, 6}, {126, 7}, {127, 7}},  // 8 colors
 };
+#if CONFIG_EXT_INTRA
+/*
+static const struct vp10_token angle_delta_encodings[] = {
+    {0, 1}, {2, 2}, {6, 3}, {14, 4}, {30, 5}, {62, 6}, {126, 7}, {127, 7},
+};
+*/
+
+static const struct vp10_token angle_delta_encodings[] = {
+    {0, 1}, {2, 2}, {6, 3}, {14, 4}, {30, 5}, {62, 6}, {63, 6},
+};
+#endif  //CONFIG_EXT_INTRA
 
 static INLINE void write_uniform(vpx_writer *w, int n, int v) {
   int l = get_unsigned_bits(n);
@@ -694,8 +705,15 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       write_intra_mode(w, mode, cm->fc->y_mode_prob[size_group_lookup[bsize]]);
 #if CONFIG_EXT_INTRA
       if (mode != DC_PRED && mode != TM_PRED) {
+#if ENTROPY_CODING
+        vp10_write_token(w, vp10_angle_delta_tree,
+                         cm->fc->angle_delta_probs_inter[mbmi->mode],
+                         &angle_delta_encodings[MAX_ANGLE_DELTAS +
+                                                mbmi->angle_delta[0]]);
+#else
         write_uniform(w, 2 * MAX_ANGLE_DELTAS + 1,
                       MAX_ANGLE_DELTAS + mbmi->angle_delta[0]);
+#endif
       }
 #endif  // CONFIG_EXT_INTRA
     } else {
@@ -845,8 +863,15 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                      get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
 #if CONFIG_EXT_INTRA
     if (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED)
+#if ENTROPY_CODING
+    vp10_write_token(w, vp10_angle_delta_tree,
+                     cm->fc->angle_delta_probs[mbmi->mode],
+                     &angle_delta_encodings[MAX_ANGLE_DELTAS +
+                                            mbmi->angle_delta[0]]);
+#else
       write_uniform(w, 2 * MAX_ANGLE_DELTAS + 1,
                     MAX_ANGLE_DELTAS + mbmi->angle_delta[0]);
+#endif
 #endif  // CONFIG_EXT_INTRA
   } else {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
@@ -1850,6 +1875,19 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
 #if CONFIG_EXT_TX
     update_ext_tx_probs(cm, &header_bc);
 #endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_INTRA && ENTROPY_CODING
+    if (frame_is_intra_only(cm)) {
+      for (i = 0; i < INTRA_MODES; ++i)
+        prob_diff_update(vp10_angle_delta_tree,
+                         cm->fc->angle_delta_probs[i],
+                         counts->angle_delta[i], ANGLE_DELTAS, &header_bc);
+    }
+
+    for (i = 0; i < INTRA_MODES; ++i)
+      prob_diff_update(vp10_angle_delta_tree,
+                       cm->fc->angle_delta_probs_inter[i],
+                       counts->angle_delta_inter[i], ANGLE_DELTAS, &header_bc);
+#endif  // CONFIG_EXT_INTRA
   }
 
   vpx_stop_encode(&header_bc);

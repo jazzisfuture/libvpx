@@ -1228,10 +1228,6 @@ static void setup_quantization(VP10_COMMON *const cm,
   cm->uv_dc_delta_q = read_delta_q(rb);
   cm->uv_ac_delta_q = read_delta_q(rb);
   cm->dequant_bit_depth = cm->bit_depth;
-
-#if CONFIG_VP9_HIGHBITDEPTH
-  xd->bd = (int)cm->bit_depth;
-#endif
 }
 
 static void setup_segmentation_dequant(VP10_COMMON *const cm) {
@@ -2206,6 +2202,10 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
 
   setup_loopfilter(&cm->lf, rb);
   setup_quantization(cm, rb);
+#if CONFIG_VP9_HIGHBITDEPTH
+  xd->bd = (int)cm->bit_depth;
+#endif
+
   setup_segmentation(cm, rb);
 
   {
@@ -2332,7 +2332,18 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     read_mv_probs(nmvc, cm->allow_high_precision_mv, &r);
 #if CONFIG_EXT_TX
     read_ext_tx_probs(fc, &r);
-#endif
+#endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_INTRA && ENTROPY_CODING
+    if (frame_is_intra_only(cm)) {
+      for (j = 0; j < INTRA_MODES; j++)
+        for (i = 0; i < ANGLE_DELTAS - 1; ++i)
+          vp10_diff_update_prob(&r, &fc->angle_delta_probs[j][i]);
+    }
+
+    for (j = 0; j < INTRA_MODES; j++)
+      for (i = 0; i < ANGLE_DELTAS - 1; ++i)
+        vp10_diff_update_prob(&r, &fc->angle_delta_probs_inter[j][i]);
+#endif  // CONFIG_EXT_INTRA
   }
 
   return vpx_reader_has_error(&r);
@@ -2497,6 +2508,20 @@ void vp10_decode_frame(VP10Decoder *pbi,
     vp10_frameworker_unlock_stats(worker);
   }
 
+
+#if 1
+  if (cm->current_video_frame % 100 == 0) {
+    int i1, i2;
+
+    for (i1 = 0; i1 < INTRA_MODES; i1++){
+      for (i2 = 0; i2 < 8; i2++) {
+        cm->stats[i1][i2] = 0;
+        cm->stats_inter[i1][i2] = 0;
+      }
+    }
+  }
+#endif
+
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1) {
     // Multi-threaded tile decoder
     *p_data_end = decode_tiles_mt(pbi, data + first_partition_size, data_end);
@@ -2516,6 +2541,40 @@ void vp10_decode_frame(VP10Decoder *pbi,
   } else {
     *p_data_end = decode_tiles(pbi, data + first_partition_size, data_end);
   }
+
+#if 0
+  if (cm->current_video_frame % 100 == 99) {
+    FILE *fp;
+    int i1, i2;
+
+    fp = fopen("angle_stats.txt", "a");
+    for (i1 = 0; i1 < INTRA_MODES; i1++){
+      for (i2 = 0; i2 < 8; i2++) {
+        fprintf(fp, "%10d ", cm->stats[i1][i2]);
+      }
+      fprintf(fp, "\n");
+    }
+
+    fprintf(fp, "\n \n");
+    fclose(fp);
+  }
+
+  if (cm->current_video_frame % 100 == 99) {
+    FILE *fp;
+    int i1, i2;
+
+    fp = fopen("angle_stats_inter.txt", "a");
+    for (i1 = 0; i1 < INTRA_MODES; i1++){
+      for (i2 = 0; i2 < 8; i2++) {
+        fprintf(fp, "%10d ", cm->stats_inter[i1][i2]);
+      }
+      fprintf(fp, "\n");
+    }
+
+    fprintf(fp, "\n \n");
+    fclose(fp);
+  }
+#endif
 
   if (!xd->corrupted) {
     if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {

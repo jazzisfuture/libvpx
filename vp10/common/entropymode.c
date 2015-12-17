@@ -1181,7 +1181,97 @@ static const struct segmentation_probs default_seg_probs = {
 };
 
 #if CONFIG_EXT_INTRA
-static  const vpx_prob default_ext_intra_probs[2] = {230, 230};
+static const vpx_prob default_ext_intra_probs[2] = {230, 230};
+
+const vpx_tree_index vp10_angle_delta_tree[TREE_SIZE(ANGLE_DELTAS)] = {
+    -ANGLE_DELTA_0, 2,
+    -ANGLE_DELTA_1, 4,
+    -ANGLE_DELTA_2, 6,
+    -ANGLE_DELTA_3, 8,
+    -ANGLE_DELTA_4, 10,
+    -ANGLE_DELTA_5, -ANGLE_DELTA_6,
+};
+
+static const
+/*
+vpx_prob default_angle_delta_probs[INTRA_MODES][ANGLE_DELTAS - 1] = {
+    { 128, 128, 128, 128, 128, 128, 128,  },
+    {  23,  27,  58,  90, 103,  94, 134,  },
+    {  20,  32,  66,  91,  96,  90, 135,  },
+    {  29,  26,  49,  28,  52, 106, 119,  },
+    {  37,  34,  59, 108,  75, 104, 133,  },
+    {  15,  54,  72,  74,  88,  56, 122,  },
+    {  16,  20,  22,  33,  35,  51, 110,  },
+    {  30,  45,  68,  70,  60,  85, 106,  },
+    {  21,  25,  30,  47,  59,  83, 100,  },
+    { 128, 128, 128, 128, 128, 128, 128,  },
+};
+*/
+/*
+vpx_prob default_angle_delta_probs[INTRA_MODES][ANGLE_DELTAS - 1] = {
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+};
+*/
+vpx_prob default_angle_delta_probs[INTRA_MODES][ANGLE_DELTAS - 1] = {
+    /*
+    { 128, 128, 128, 128, 128, 128, },
+    {  21,  36,  43, 101, 109, 169, },
+    {  17,  43,  48, 104, 104, 169, },
+    {  25,  36,  44,  42,  78, 142, },
+    {  39,  42,  49, 119,  92, 135, },
+    {  56,  72,  68,  99, 124,  97, },
+    {  22,  31,  22,  53,  66, 131, },
+    {  33,  60,  54,  90,  74, 150, },
+    {  21,  35,  26,  64,  79, 154, },
+    { 128, 128, 128, 128, 128, 128, },
+    */
+    
+    { 128, 128, 128, 128, 128, 128, },
+    {  24,  39,  45,  98, 107, 166, },
+    {  24,  49,  47,  89,  94, 166, },
+    {  26,  52,  43,  57,  71, 157, },
+    {  33,  34,  44, 109,  94, 134, },
+    {  27,  76,  56, 110, 118, 128, },
+    {  22,  35,  25,  67,  82, 199, },
+    {  22,  62,  46,  96,  67, 159, },
+    {  19,  41,  28,  82,  78, 190, },
+    { 128, 128, 128, 128, 128, 128, },
+    
+    /*
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    {  36,  42,  52,  64,  86, 128, },
+    */
+};
+
+vpx_prob default_angle_delta_probs_inter[INTRA_MODES][ANGLE_DELTAS - 1] = {
+    { 128, 128, 128, 128, 128, 128, },
+    {  24,  36,  43, 103, 111, 169, },
+    {  19,  41,  48, 108, 109, 170, },
+    {  29,  31,  46,  37,  81, 137, },
+    {  47,  43,  51, 122,  96, 140, },
+    {  71,  69,  70,  97, 124,  91, },
+    {  25,  31,  21,  47,  63, 110, },
+    {  45,  60,  58,  89,  76, 145, },
+    {  25,  34,  27,  61,  79, 149, },
+    { 128, 128, 128, 128, 128, 128, },
+};
 #endif  // CONFIG_EXT_INTRA
 
 static void init_mode_probs(FRAME_CONTEXT *fc) {
@@ -1212,6 +1302,8 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
   vp10_copy(fc->seg.pred_probs, default_seg_probs.pred_probs);
 #if CONFIG_EXT_INTRA
   vp10_copy(fc->ext_intra_probs, default_ext_intra_probs);
+  vp10_copy(fc->angle_delta_probs, default_angle_delta_probs);
+  vp10_copy(fc->angle_delta_probs_inter, default_angle_delta_probs_inter);
 #endif  // CONFIG_EXT_INTRA
 }
 
@@ -1271,6 +1363,21 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
     vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->y_mode_prob[i],
                 counts->y_mode[i], fc->y_mode_prob[i]);
 
+#if ENTROPY_CODING
+  /*
+  for (i = 0; i < INTRA_MODES; ++i) {
+    vpx_tree_merge_probs(vp10_angle_delta_tree, pre_fc->angle_delta_probs[i],
+                         counts->angle_delta[i], fc->angle_delta_probs[i]);
+  }*/
+
+  for (i = 0; i < INTRA_MODES; ++i) {
+    vpx_tree_merge_probs(vp10_angle_delta_tree,
+                         pre_fc->angle_delta_probs_inter[i],
+                         counts->angle_delta_inter[i],
+                         fc->angle_delta_probs_inter[i]);
+  }
+#endif
+
   if (cm->interp_filter == SWITCHABLE) {
     for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
       vpx_tree_merge_probs(vp10_switchable_interp_tree,
@@ -1281,13 +1388,12 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
 }
 
 void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
-  int i;
+  int i, j;
   FRAME_CONTEXT *fc = cm->fc;
   const FRAME_CONTEXT *pre_fc = &cm->frame_contexts[cm->frame_context_idx];
   const FRAME_COUNTS *counts = &cm->counts;
 
   if (cm->tx_mode == TX_MODE_SELECT) {
-    int j;
     unsigned int branch_ct_8x8p[TX_SIZES - 3][2];
     unsigned int branch_ct_16x16p[TX_SIZES - 2][2];
     unsigned int branch_ct_32x32p[TX_SIZES - 1][2];

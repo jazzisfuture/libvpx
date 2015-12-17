@@ -491,6 +491,11 @@ typedef struct VP10_COMP {
                                                           [TX_TYPES];
 #endif  // CONFIG_EXT_TX
 
+#if CONFIG_EXT_INTRA
+  int angle_delta_costs[INTRA_MODES][ANGLE_DELTAS];
+  int angle_delta_costs_inter[INTRA_MODES][ANGLE_DELTAS];
+#endif  // CONFIG_EXT_INTRA
+
   int multi_arf_allowed;
   int multi_arf_enabled;
   int multi_arf_last_grp_enabled;

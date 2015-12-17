@@ -3421,6 +3421,14 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
       if (mbmi->uv_mode == DC_PRED)
         ++td->counts->ext_intra[1]
                               [mbmi->ext_intra_mode_info.use_ext_intra_mode[1]];
+      if (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED) {
+        if (frame_is_intra_only(cm))
+          ++td->counts->angle_delta[mbmi->mode][MAX_ANGLE_DELTAS +
+                                                mbmi->angle_delta[0]];
+        else
+          ++td->counts->angle_delta_inter[mbmi->mode][MAX_ANGLE_DELTAS +
+                                                      mbmi->angle_delta[0]];
+      }
     }
 #endif  // CONFIG_EXT_INTRA
   }

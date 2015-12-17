@@ -122,6 +122,16 @@ static void fill_mode_costs(VP10_COMP *cpi) {
     }
   }
 #endif  // CONFIG_EXT_TX
+#if CONFIG_EXT_INTRA
+  for (i = 0; i < INTRA_MODES; ++i) {
+    vp10_cost_tokens(cpi->angle_delta_costs[i],
+                     fc->angle_delta_probs[i],
+                     vp10_angle_delta_tree);
+    vp10_cost_tokens(cpi->angle_delta_costs_inter[i],
+                     fc->angle_delta_probs_inter[i],
+                     vp10_angle_delta_tree);
+  }
+#endif  // CONFIG_EXT_INTRA
 }
 
 static void fill_token_costs(vp10_coeff_cost *c,

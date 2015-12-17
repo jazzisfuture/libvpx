@@ -444,9 +444,23 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
       mbmi->mode = read_intra_mode(r,
           get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
 #if CONFIG_EXT_INTRA
-      if (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED)
+      if (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED) {
+#if ENTROPY_CODING
+        mbmi->angle_delta[0] =
+            vpx_read_tree(r, vp10_angle_delta_tree,
+                          cm->fc->angle_delta_probs[mbmi->mode])-
+                          MAX_ANGLE_DELTAS;
+        if (xd->counts)
+          ++xd->counts->angle_delta[mbmi->mode] [MAX_ANGLE_DELTAS +
+                                                 mbmi->angle_delta[0]];
+#else
         mbmi->angle_delta[0] =
             read_uniform(r, 2 * MAX_ANGLE_DELTAS + 1) - MAX_ANGLE_DELTAS;
+#endif
+#if 1
+        ++cm->stats[mbmi->mode][mbmi->angle_delta[0] + MAX_ANGLE_DELTAS];
+#endif
+      }
 #endif  // CONFIG_EXT_INTRA
   }
 
@@ -712,9 +726,23 @@ static void read_intra_block_mode_info(VP10_COMMON *const cm,
       mbmi->mode = read_intra_mode_y(cm, xd, r, size_group_lookup[bsize]);
 #if CONFIG_EXT_INTRA
       mbmi->angle_delta[0] = 0;
-      if (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED)
+      if (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED) {
+#if ENTROPY_CODING
+        mbmi->angle_delta[0] =
+            vpx_read_tree(r, vp10_angle_delta_tree,
+                          cm->fc->angle_delta_probs_inter[mbmi->mode]) -
+                          MAX_ANGLE_DELTAS;
+        if (xd->counts)
+          ++xd->counts->angle_delta_inter[mbmi->mode][MAX_ANGLE_DELTAS +
+                                                      mbmi->angle_delta[0]];
+#else
         mbmi->angle_delta[0] =
             read_uniform(r, 2 * MAX_ANGLE_DELTAS + 1) - MAX_ANGLE_DELTAS;
+#endif
+#if 1
+        ++cm->stats_inter[mbmi->mode][mbmi->angle_delta[0] + MAX_ANGLE_DELTAS];
+#endif
+      }
 #endif  // CONFIG_EXT_INTRA
   }
 
