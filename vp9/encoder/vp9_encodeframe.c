@@ -1044,8 +1044,7 @@ static void update_state(VP9_COMP *cpi, ThreadData *td,
     // and then update the quantizer.
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
       vp9_cyclic_refresh_update_segment(cpi, &xd->mi[0]->mbmi, mi_row,
-                                        mi_col, bsize, ctx->rate, ctx->dist,
-                                        x->skip);
+                                        mi_col, bsize, ctx->rate, ctx->dist, x);
     }
   }
 
