@@ -90,6 +90,8 @@ void vp9_setup_pre_planes(MACROBLOCKD *xd, int idx,
                           const struct scale_factors *sf);
 
 #if CONFIG_WEDGE_PARTITION
+void vp9_init_wedge_masks();
+
 void vp9_generate_masked_weight(int wedge_index, BLOCK_SIZE sb_type,
                                 int h, int w, uint8_t *mask, int stride);
 void vp9_generate_hard_mask(int wedge_index, BLOCK_SIZE sb_type,
