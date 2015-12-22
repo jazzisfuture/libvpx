@@ -5850,8 +5850,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         int j;
         mbmi->interintra_wedge_index = best_wedge_index;
         mbmi->interintra_uv_wedge_index = best_wedge_index;
-        vp9_generate_masked_weight_interintra(best_wedge_index, bsize,
-                                              bh, bw, mask, bw);
+        vp9_generate_masked_weight(best_wedge_index, bsize,
+                                   bh, bw, mask, bw);
         for (i = 0; i < bh; ++i)
             for (j = 0; j < bw; ++j)
               mask[i * bw + j] = 64 - mask[i * bw + j];
