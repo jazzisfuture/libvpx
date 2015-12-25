@@ -188,6 +188,10 @@
 %ifdef PIC
     default rel
 %endif
+
+%ifndef GET_GOT_DEFINED
+    %define GET_GOT_DEFINED 0
+%endif
 ; Done with PIC macros
 
 ; Macros to eliminate most code duplication between x86_32 and x86_64:
