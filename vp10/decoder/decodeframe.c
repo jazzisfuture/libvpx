@@ -1635,6 +1635,9 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
           decode_partition(pbi, &tile_data->xd, mi_row,
                            mi_col, &tile_data->bit_reader, BLOCK_64X64, 4);
         }
+#if CONFIG_SUBFRAME_STATS
+        vp10_adapt_sub_frame_probs(cm, mi_row, mi_col);
+#endif  // CONFIG_SUBFRAME_STATS
         pbi->mb.corrupted |= tile_data->xd.corrupted;
         if (pbi->mb.corrupted)
             vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
@@ -2247,20 +2250,29 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
       vp10_diff_update_prob(&r, &cm->fc->seg.tree_probs[k]);
   }
 
+#if CONFIG_SUBFRAME_STATS && UV_MODE
+#else
   for (j = 0; j < INTRA_MODES; j++)
     for (i = 0; i < INTRA_MODES - 1; ++i)
       vp10_diff_update_prob(&r, &fc->uv_mode_prob[j][i]);
+#endif  // CONFIG_SUBFRAME_STATS
 
+#if CONFIG_SUBFRAME_STATS && PARTITION
+#else
   for (j = 0; j < PARTITION_CONTEXTS; ++j)
     for (i = 0; i < PARTITION_TYPES - 1; ++i)
       vp10_diff_update_prob(&r, &fc->partition_prob[j][i]);
+#endif  // CONFIG_SUBFRAME_STATS
 
   if (frame_is_intra_only(cm)) {
+#if CONFIG_SUBFRAME_STATS && KEY_Y_MODE
+#else
     vp10_copy(cm->kf_y_prob, vp10_kf_y_mode_prob);
     for (k = 0; k < INTRA_MODES; k++)
       for (j = 0; j < INTRA_MODES; j++)
         for (i = 0; i < INTRA_MODES - 1; ++i)
           vp10_diff_update_prob(&r, &cm->kf_y_prob[k][j][i]);
+#endif  // CONFIG_SUBFRAME_STATS
   } else {
     nmv_context *const nmvc = &fc->nmvc;
 
@@ -2269,16 +2281,22 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     if (cm->interp_filter == SWITCHABLE)
       read_switchable_interp_probs(fc, &r);
 
+#if CONFIG_SUBFRAME_STATS && INTER_INTRA
+#else
     for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
       vp10_diff_update_prob(&r, &fc->intra_inter_prob[i]);
+#endif
 
     if (cm->reference_mode != SINGLE_REFERENCE)
       setup_compound_reference_mode(cm);
     read_frame_reference_mode_probs(cm, &r);
 
+#if CONFIG_SUBFRAME_STATS && Y_MODE
+#else
     for (j = 0; j < BLOCK_SIZE_GROUPS; j++)
       for (i = 0; i < INTRA_MODES - 1; ++i)
         vp10_diff_update_prob(&r, &fc->y_mode_prob[j][i]);
+#endif  // CONFIG_SUBFRAME_STATS
 
     read_mv_probs(nmvc, cm->allow_high_precision_mv, &r);
 #if CONFIG_EXT_TX

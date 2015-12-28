@@ -54,6 +54,9 @@ struct seg_counts {
 };
 
 typedef struct frame_contexts {
+#if CONFIG_SUBFRAME_STATS
+  vpx_prob key_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1];
+#endif  // CONFIG_SUBFRAME_STATS
   vpx_prob y_mode_prob[BLOCK_SIZE_GROUPS][INTRA_MODES - 1];
   vpx_prob uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
   vpx_prob partition_prob[PARTITION_CONTEXTS][PARTITION_TYPES - 1];
@@ -155,6 +158,9 @@ void vp10_setup_past_independence(struct VP10Common *cm);
 
 void vp10_adapt_intra_frame_probs(struct VP10Common *cm);
 void vp10_adapt_inter_frame_probs(struct VP10Common *cm);
+#if CONFIG_SUBFRAME_STATS
+void vp10_adapt_sub_frame_probs(struct VP10Common *cm, int mi_row, int mi_col);
+#endif  // CONFIG_SUBFRAME_STATS
 
 void vp10_tx_counts_to_branch_counts_32x32(const unsigned int *tx_count_32x32p,
                                       unsigned int (*ct_32x32p)[2]);
