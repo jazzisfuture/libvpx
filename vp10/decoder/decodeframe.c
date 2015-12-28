@@ -1635,6 +1635,9 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
           decode_partition(pbi, &tile_data->xd, mi_row,
                            mi_col, &tile_data->bit_reader, BLOCK_64X64, 4);
         }
+#if CONFIG_SUBFRAME_STATS
+        vp10_adapt_sub_frame_probs(cm, mi_row, mi_col);
+#endif  // CONFIG_SUBFRAME_STATS
         pbi->mb.corrupted |= tile_data->xd.corrupted;
         if (pbi->mb.corrupted)
             vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,

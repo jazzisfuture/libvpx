@@ -895,6 +895,44 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 #endif  // CONFIG_EXT_INTRA
 }
 
+#if CONFIG_SUBFRAME_STATS
+static void sum_intra_stats(FRAME_COUNTS *counts, const MODE_INFO *mi,
+                            const MODE_INFO *above_mi, const MODE_INFO *left_mi,
+                            const int intraonly) {
+  const PREDICTION_MODE y_mode = mi->mbmi.mode;
+  const PREDICTION_MODE uv_mode = mi->mbmi.uv_mode;
+  const BLOCK_SIZE bsize = mi->mbmi.sb_type;
+
+  if (bsize < BLOCK_8X8) {
+    int idx, idy;
+    const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
+    const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
+    for (idy = 0; idy < 2; idy += num_4x4_h)
+      for (idx = 0; idx < 2; idx += num_4x4_w) {
+        const int bidx = idy * 2 + idx;
+        const PREDICTION_MODE bmode = mi->bmi[bidx].as_mode;
+        if (intraonly) {
+          const PREDICTION_MODE a = vp10_above_block_mode(mi, above_mi, bidx);
+          const PREDICTION_MODE l = vp10_left_block_mode(mi, left_mi, bidx);
+          ++counts->kf_y_mode[a][l][bmode];
+        } else {
+          ++counts->y_mode[0][bmode];
+        }
+      }
+  } else {
+    if (intraonly) {
+      const PREDICTION_MODE above = vp10_above_block_mode(mi, above_mi, 0);
+      const PREDICTION_MODE left = vp10_left_block_mode(mi, left_mi, 0);
+      ++counts->kf_y_mode[above][left][y_mode];
+    } else {
+      ++counts->y_mode[size_group_lookup[bsize]][y_mode];
+    }
+  }
+
+  ++counts->uv_mode[y_mode][uv_mode];
+}
+#endif  // CONFIG_SUBFRAME_STATS
+
 static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
                           vpx_writer *w, TOKENEXTRA **tok,
                           const TOKENEXTRA *const tok_end,
@@ -976,6 +1014,12 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
       (*tok)++;
     }
   }
+
+#if CONFIG_SUBFRAME_STATS
+  if (!is_inter_block(&m->mbmi))
+    sum_intra_stats(&cm->counts, m, xd->above_mi, xd->left_mi,
+                    frame_is_intra_only(cm));
+#endif  // CONFIG_SUBFRAME_STATS
 }
 
 static void write_partition(const VP10_COMMON *const cm,
@@ -1071,9 +1115,13 @@ static void write_modes(VP10_COMP *cpi,
     vp10_zero(xd->left_txfm_context_buffer);
 #endif
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
-         mi_col += MI_BLOCK_SIZE)
+        mi_col += MI_BLOCK_SIZE) {
       write_modes_sb(cpi, tile, w, tok, tok_end, mi_row, mi_col,
                      BLOCK_64X64);
+    }
+#if CONFIG_SUBFRAME_STATS
+    vp10_adapt_sub_frame_probs(&cpi->common, mi_row, mi_col);
+#endif  // CONFIG_SUBFRAME_STATS
   }
 }
 
@@ -1900,6 +1948,16 @@ void vp10_pack_bitstream(VP10_COMP *const cpi, uint8_t *dest, size_t *size) {
   VP10_COMMON *const cm = &cpi->common;
   const int n_log2_tiles = cm->log2_tile_rows + cm->log2_tile_cols;
   const int have_tiles = n_log2_tiles > 0;
+
+#if CONFIG_SUBFRAME_STATS
+  *cm->fc = cm->starting_fc;
+  {
+    FRAME_COUNTS *counts = &cm->counts;
+    vp10_zero(counts->y_mode);
+    vp10_zero(counts->uv_mode);
+    vp10_zero(counts->kf_y_mode);
+  }
+#endif  // CONFIG_SUBFRAME_STATS
 
   write_uncompressed_header(cpi, &wb);
   saved_wb = wb;

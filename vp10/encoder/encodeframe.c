@@ -2714,6 +2714,29 @@ static void encode_rd_sb_row(VP10_COMP *cpi,
                         &dummy_rdc, INT64_MAX, td->pc_root);
     }
   }
+#if CONFIG_SUBFRAME_STATS
+  {
+    const FRAME_CONTEXT *const fc = cpi->common.fc;
+    int i, j;
+
+    vp10_adapt_sub_frame_probs(cm, mi_row, mi_col);
+
+#if 0
+    for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
+      vp10_cost_tokens(cpi->mbmode_cost[i], fc->y_mode_prob[i],
+                       vp10_intra_mode_tree);
+
+    for (i = 0; i < INTRA_MODES; ++i)
+      vp10_cost_tokens(cpi->intra_uv_mode_cost[i],
+                       fc->uv_mode_prob[i], vp10_intra_mode_tree);
+
+    for (i = 0; i < INTRA_MODES; ++i)
+      for (j = 0; j < INTRA_MODES; ++j)
+        vp10_cost_tokens(cpi->y_mode_costs[i][j], fc->key_y_mode_prob[i][j],
+                         vp10_intra_mode_tree);
+#endif
+  }
+#endif  // CONFIG_SUBFRAME_STATS
 }
 
 static void init_encode_frame_mb_context(VP10_COMP *cpi) {
