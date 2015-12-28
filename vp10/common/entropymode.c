@@ -1185,6 +1185,9 @@ static  const vpx_prob default_ext_intra_probs[2] = {230, 230};
 #endif  // CONFIG_EXT_INTRA
 
 static void init_mode_probs(FRAME_CONTEXT *fc) {
+#if CONFIG_SUBFRAME_STATS
+  vp10_copy(fc->key_y_mode_prob, vp10_kf_y_mode_prob);
+#endif  // CONFIG_SUBFRAME_STATS
   vp10_copy(fc->uv_mode_prob, default_uv_probs);
   vp10_copy(fc->y_mode_prob, default_if_y_probs);
   vp10_copy(fc->switchable_interp_prob, default_switchable_interp_prob);
@@ -1235,10 +1238,26 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
   FRAME_CONTEXT *fc = cm->fc;
   const FRAME_CONTEXT *pre_fc = &cm->frame_contexts[cm->frame_context_idx];
   const FRAME_COUNTS *counts = &cm->counts;
+#if CONFIG_SUBFRAME_STATS
+  FRAME_CONTEXT fc_copy = *fc;
+#endif  // CONFIG_SUBFRAME_STATS
 
+#if CONFIG_SUBFRAME_STATS
+  if (INTER_INTRA) {
+    for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
+      fc->intra_inter_prob[i] = mode_mv_merge_probs(fc_copy.intra_inter_prob[i],
+                                                    counts->intra_inter[i]);
+  } else {
+    for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
+      fc->intra_inter_prob[i] = mode_mv_merge_probs(pre_fc->intra_inter_prob[i],
+                                                    counts->intra_inter[i]);
+  }
+#else
   for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
     fc->intra_inter_prob[i] = mode_mv_merge_probs(pre_fc->intra_inter_prob[i],
                                                   counts->intra_inter[i]);
+#endif  // CONFIG_SUBFRAME_STATS
+
   for (i = 0; i < COMP_INTER_CONTEXTS; i++)
     fc->comp_inter_prob[i] = mode_mv_merge_probs(pre_fc->comp_inter_prob[i],
                                                  counts->comp_inter[i]);
@@ -1267,9 +1286,21 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
                 counts->inter_mode[i], fc->inter_mode_probs[i]);
 #endif
 
+#if CONFIG_SUBFRAME_STATS
+  if (Y_MODE) {
+    for (i = 0; i < BLOCK_SIZE_GROUPS; i++)
+      vpx_tree_merge_probs(vp10_intra_mode_tree, fc_copy.y_mode_prob[i],
+                           counts->y_mode[i], fc->y_mode_prob[i]);
+  } else {
+    for (i = 0; i < BLOCK_SIZE_GROUPS; i++)
+      vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->y_mode_prob[i],
+                           counts->y_mode[i], fc->y_mode_prob[i]);
+  }
+#else
   for (i = 0; i < BLOCK_SIZE_GROUPS; i++)
     vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->y_mode_prob[i],
                 counts->y_mode[i], fc->y_mode_prob[i]);
+#endif  // CONFIG_SUBFRAME_STATS
 
   if (cm->interp_filter == SWITCHABLE) {
     for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
@@ -1285,6 +1316,10 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
   FRAME_CONTEXT *fc = cm->fc;
   const FRAME_CONTEXT *pre_fc = &cm->frame_contexts[cm->frame_context_idx];
   const FRAME_COUNTS *counts = &cm->counts;
+#if CONFIG_SUBFRAME_STATS
+  FRAME_CONTEXT fc_copy = *fc;
+#endif  // CONFIG_SUBFRAME_STATS
+  //printf("whole %d\n", cm->frame_context_idx);
 
   if (cm->tx_mode == TX_MODE_SELECT) {
     int j;
@@ -1358,6 +1393,27 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
                          counts->seg.tree_total, fc->seg.tree_probs);
   }
 
+#if CONFIG_SUBFRAME_STATS
+  if (PARTITION) {
+    for (i = 0; i < PARTITION_CONTEXTS; i++)
+      vpx_tree_merge_probs(vp10_partition_tree, fc_copy.partition_prob[i],
+                           counts->partition[i], fc->partition_prob[i]);
+  } else {
+    for (i = 0; i < PARTITION_CONTEXTS; i++)
+      vpx_tree_merge_probs(vp10_partition_tree, pre_fc->partition_prob[i],
+                           counts->partition[i], fc->partition_prob[i]);
+  }
+
+  if (UV_MODE) {
+    for (i = 0; i < INTRA_MODES; ++i)
+      vpx_tree_merge_probs(vp10_intra_mode_tree, fc_copy.uv_mode_prob[i],
+                           counts->uv_mode[i], fc->uv_mode_prob[i]);
+  } else {
+    for (i = 0; i < INTRA_MODES; ++i)
+      vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->uv_mode_prob[i],
+                           counts->uv_mode[i], fc->uv_mode_prob[i]);
+  }
+#else
   for (i = 0; i < INTRA_MODES; ++i)
     vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->uv_mode_prob[i],
                          counts->uv_mode[i], fc->uv_mode_prob[i]);
@@ -1365,6 +1421,7 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
   for (i = 0; i < PARTITION_CONTEXTS; i++)
     vpx_tree_merge_probs(vp10_partition_tree, pre_fc->partition_prob[i],
                          counts->partition[i], fc->partition_prob[i]);
+#endif  // CONFIG_SUBFRAME_STATS
 
 #if CONFIG_EXT_INTRA
   for (i = 0; i < PLANE_TYPES; ++i) {
@@ -1373,6 +1430,128 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
   }
 #endif  // CONFIG_EXT_INTRA
 }
+
+#if CONFIG_SUBFRAME_STATS
+void vp10_adapt_sub_frame_probs(VP10_COMMON *cm, int mi_row, int mi_col) {
+  int i, j;
+  int row_step = (cm->mi_rows >> 4) << 3;
+  FRAME_CONTEXT *fc = cm->fc;
+  const FRAME_CONTEXT *pre_fc = &cm->frame_contexts[cm->frame_context_idx];
+  FRAME_COUNTS *counts = &cm->counts;
+
+  FRAME_CONTEXT fc_copy = *fc;
+  pre_fc = &fc_copy;
+
+  //printf("sub %d\n", cm->frame_context_idx);
+
+  (void)i;
+  (void)j;
+  (void)mi_row;
+  (void)mi_col;
+
+  //row_step = (cm->mi_rows >> 3) << 3;
+  //printf("%d\n", row_step);
+
+  //if (mi_row == 0 || mi_row % row_step != 0)
+    //return;
+
+  //printf("%d\n", mi_row);
+
+  if (UV_MODE) {
+    for (i = 0; i < INTRA_MODES; ++i)
+      vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->uv_mode_prob[i],
+                           counts->uv_mode[i], fc->uv_mode_prob[i]);
+    vp10_zero(counts->uv_mode);
+  }
+
+  if (KEY_Y_MODE) {
+    if (frame_is_intra_only(cm)) {
+      for (i = 0; i < INTRA_MODES; ++i)
+        for (j = 0; j < INTRA_MODES; ++j)
+          vpx_tree_merge_probs(vp10_intra_mode_tree,
+                               pre_fc->key_y_mode_prob[i][j],
+                               counts->kf_y_mode[i][j],
+                               fc->key_y_mode_prob[i][j]);
+      vp10_zero(counts->kf_y_mode);
+    }
+  }
+
+  if (PARTITION) {
+#if 0
+    {
+      int i, j;
+      printf("counts \n");
+      for (i = 0; i < PARTITION_CONTEXTS; ++i) {
+        for (j = 0; j < PARTITION_TYPES; ++j) {
+          printf("%6d ", counts->partition[i][j]);
+        }
+        printf("\n");
+      }
+      printf("\n");
+    }
+#endif
+
+#if 0
+    {
+      int i, j;
+      printf("pre prob\n");
+      for (i = 0; i < 1; ++i) {
+        for (j = 0; j < PARTITION_TYPES - 1; ++j) {
+          printf("%6d ", fc->partition_prob[i][j]);
+        }
+        printf("\n");
+      }
+      printf("\n");
+    }
+#endif
+
+    for (i = 0; i < PARTITION_CONTEXTS; i++) {
+      int total = 0;
+      for (j = 0; j < PARTITION_TYPES; ++j)
+        total += counts->partition[i][j];
+      if (total > 2 * PARTITION_TYPES || 1) {
+        vpx_tree_merge_probs(vp10_partition_tree, pre_fc->partition_prob[i],
+                             counts->partition[i], fc->partition_prob[i]);
+        //memset(&counts->partition[i][0], 0,
+          //     PARTITION_TYPES * sizeof(counts->partition[i][0]));
+      }
+    }
+
+    vp10_zero(counts->partition);
+
+#if 0
+    {
+      int i, j;
+      printf("post prob\n");
+      for (i = 0; i < 1; ++i) {
+        for (j = 0; j < PARTITION_TYPES - 1; ++j) {
+          printf("%6d ", fc->partition_prob[i][j]);
+        }
+        printf("\n");
+      }
+      printf("\n");
+    }
+#endif
+  }
+
+  if (!frame_is_intra_only(cm)) {
+    if (INTER_INTRA) {
+      for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
+        fc->intra_inter_prob[i] =
+            mode_mv_merge_probs_small(pre_fc->intra_inter_prob[i],
+                                      counts->intra_inter[i]);
+      vp10_zero(counts->intra_inter);
+    }
+
+    if (Y_MODE) {
+      for (i = 0; i < BLOCK_SIZE_GROUPS; i++)
+        vpx_tree_merge_probs(vp10_intra_mode_tree, pre_fc->y_mode_prob[i],
+                             counts->y_mode[i], fc->y_mode_prob[i]);
+      vp10_zero(counts->y_mode);
+    }
+  }
+}
+#endif  // CONFIG_SUBFRAME_STATS
 
 static void set_default_lf_deltas(struct loopfilter *lf) {
   lf->mode_ref_delta_enabled = 1;

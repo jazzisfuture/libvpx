@@ -273,6 +273,11 @@ typedef struct VP10Common {
   FRAME_CONTEXT *frame_contexts;   // FRAME_CONTEXTS
   unsigned int  frame_context_idx; /* Context to use/update */
   FRAME_COUNTS counts;
+#if CONFIG_SUBFRAME_STATS
+  FRAME_CONTEXT sb_row_starting_fc;
+  // Used only by encoder
+  FRAME_CONTEXT starting_fc;
+#endif  // CONFIG_SUBFRAME_STATS
 
   unsigned int current_video_frame;
   BITSTREAM_PROFILE profile;
@@ -479,7 +484,11 @@ static INLINE const vpx_prob *get_y_mode_probs(const VP10_COMMON *cm,
                                                int block) {
   const PREDICTION_MODE above = vp10_above_block_mode(mi, above_mi, block);
   const PREDICTION_MODE left = vp10_left_block_mode(mi, left_mi, block);
+#if CONFIG_SUBFRAME_STATS
+  return cm->fc->key_y_mode_prob[above][left];
+#else
   return cm->kf_y_prob[above][left];
+#endif  // CONFIG_SUBFRAME_STATS
 }
 
 static INLINE void update_partition_context(MACROBLOCKD *xd,

@@ -2660,6 +2660,32 @@ static void encode_rd_sb_row(VP10_COMP *cpi,
     const int idx_str = cm->mi_stride * mi_row + mi_col;
     MODE_INFO **mi = cm->mi_grid_visible + idx_str;
 
+#if CONFIG_SUBFRAME_STATS1
+    *cm->fc = cm->sb_row_starting_fc;
+    {
+      const FRAME_CONTEXT *const fc = cpi->common.fc;
+      int i, j;
+      for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
+        vp10_cost_tokens(cpi->mbmode_cost[i], fc->y_mode_prob[i],
+                         vp10_intra_mode_tree);
+
+      for (i = 0; i < INTRA_MODES; ++i)
+        vp10_cost_tokens(cpi->intra_uv_mode_cost[i],
+                         fc->uv_mode_prob[i], vp10_intra_mode_tree);
+
+      if (frame_is_intra_only(cm)) {
+        for (i = 0; i < INTRA_MODES; ++i)
+          for (j = 0; j < INTRA_MODES; ++j)
+            vp10_cost_tokens(cpi->y_mode_costs[i][j], fc->key_y_mode_prob[i][j],
+                             vp10_intra_mode_tree);
+      }
+
+      for (i = 0; i < PARTITION_CONTEXTS; ++i)
+        vp10_cost_tokens(cpi->partition_cost[i], cm->fc->partition_prob[i],
+                         vp10_partition_tree);
+    }
+#endif  // CONFIG_SUBFRAME_STATS
+
     if (sf->adaptive_pred_interp_filter) {
       for (i = 0; i < 64; ++i)
         td->leaf_tree[i].pred_interp_filter = SWITCHABLE;
@@ -2713,6 +2739,37 @@ static void encode_rd_sb_row(VP10_COMP *cpi,
       rd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col, BLOCK_64X64,
                         &dummy_rdc, INT64_MAX, td->pc_root);
     }
+#if CONFIG_SUBFRAME_STATS
+    if (mi_col + MI_BLOCK_SIZE >= tile_info->mi_col_end || 1) {
+      const FRAME_CONTEXT *const fc = cpi->common.fc;
+      int i, j;
+
+      vp10_adapt_sub_frame_probs(cm, mi_row, mi_col);
+
+      for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
+        vp10_cost_tokens(cpi->mbmode_cost[i], fc->y_mode_prob[i],
+                         vp10_intra_mode_tree);
+
+      for (i = 0; i < INTRA_MODES; ++i)
+        vp10_cost_tokens(cpi->intra_uv_mode_cost[i],
+                         fc->uv_mode_prob[i], vp10_intra_mode_tree);
+
+      if (frame_is_intra_only(cm)) {
+        for (i = 0; i < INTRA_MODES; ++i)
+          for (j = 0; j < INTRA_MODES; ++j)
+            vp10_cost_tokens(cpi->y_mode_costs[i][j], fc->key_y_mode_prob[i][j],
+                             vp10_intra_mode_tree);
+      }
+
+      for (i = 0; i < PARTITION_CONTEXTS; ++i)
+        vp10_cost_tokens(cpi->partition_cost[i], cm->fc->partition_prob[i],
+                         vp10_partition_tree);
+    }
+
+    if (mi_col == tile_info->mi_col_start) {
+      cm->sb_row_starting_fc = *cm->fc;
+    }
+#endif  // CONFIG_SUBFRAME_STATS
   }
 }
 

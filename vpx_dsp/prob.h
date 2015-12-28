@@ -90,6 +90,22 @@ static INLINE vpx_prob mode_mv_merge_probs(vpx_prob pre_prob,
   }
 }
 
+#if CONFIG_SUBFRAME_STATS
+static INLINE vpx_prob mode_mv_merge_probs_small(vpx_prob pre_prob,
+                                                 const unsigned int ct[2]) {
+  const unsigned int den = ct[0] + ct[1];
+  if (den == 0) {
+    return pre_prob;
+  } else {
+    const unsigned int count = VPXMIN(den, MODE_MV_COUNT_SAT);
+    const unsigned int factor = count_to_update_factor[count];
+    const vpx_prob prob =
+        clip_prob(((int64_t)(ct[0]) * 256 + (den >> 1)) / den);
+    return weighted_prob(pre_prob, prob, factor);
+  }
+}
+#endif  // CONFIG_SUBFRAME_STATS
+
 void vpx_tree_merge_probs(const vpx_tree_index *tree, const vpx_prob *pre_probs,
                           const unsigned int *counts, vpx_prob *probs);
 

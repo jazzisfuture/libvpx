@@ -659,8 +659,13 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 
   skip = write_skip(cm, xd, segment_id, mi, w);
 
-  if (!segfeature_active(seg, segment_id, SEG_LVL_REF_FRAME))
+  if (!segfeature_active(seg, segment_id, SEG_LVL_REF_FRAME)) {
     vpx_write(w, is_inter, vp10_get_intra_inter_prob(cm, xd));
+#if CONFIG_SUBFRAME_STATS
+    if (INTER_INTRA)
+      cm->counts.intra_inter[vp10_get_intra_inter_context(xd)][is_inter]++;
+#endif  // CONFIG_SUBFRAME_STATS
+  }
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !(is_inter && skip)) {
@@ -895,6 +900,50 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 #endif  // CONFIG_EXT_INTRA
 }
 
+#if CONFIG_SUBFRAME_STATS
+static void sum_intra_stats(FRAME_COUNTS *counts, const MODE_INFO *mi,
+                            const MODE_INFO *above_mi, const MODE_INFO *left_mi,
+                            const int intraonly) {
+  const PREDICTION_MODE y_mode = mi->mbmi.mode;
+  const PREDICTION_MODE uv_mode = mi->mbmi.uv_mode;
+  const BLOCK_SIZE bsize = mi->mbmi.sb_type;
+
+  if (bsize < BLOCK_8X8) {
+    int idx, idy;
+    const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
+    const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
+    for (idy = 0; idy < 2; idy += num_4x4_h)
+      for (idx = 0; idx < 2; idx += num_4x4_w) {
+        const int bidx = idy * 2 + idx;
+        const PREDICTION_MODE bmode = mi->bmi[bidx].as_mode;
+        if (intraonly) {
+          const PREDICTION_MODE a = vp10_above_block_mode(mi, above_mi, bidx);
+          const PREDICTION_MODE l = vp10_left_block_mode(mi, left_mi, bidx);
+          if (KEY_Y_MODE)
+            ++counts->kf_y_mode[a][l][bmode];
+        } else {
+          if (Y_MODE)
+            ++counts->y_mode[0][bmode];
+        }
+      }
+  } else {
+    if (intraonly) {
+      const PREDICTION_MODE above = vp10_above_block_mode(mi, above_mi, 0);
+      const PREDICTION_MODE left = vp10_left_block_mode(mi, left_mi, 0);
+      if (KEY_Y_MODE)
+        ++counts->kf_y_mode[above][left][y_mode];
+    } else {
+      if (Y_MODE)
+        ++counts->y_mode[size_group_lookup[bsize]][y_mode];
+    }
+  }
+
+  if (UV_MODE)
+    ++counts->uv_mode[y_mode][uv_mode];
+  //printf("\n mark %d %d\n", y_mode, uv_mode);
+}
+#endif  // CONFIG_SUBFRAME_STATS
+
 static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
                           vpx_writer *w, TOKENEXTRA **tok,
                           const TOKENEXTRA *const tok_end,
@@ -929,6 +978,12 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
                         m->mbmi.palette_mode_info.palette_size[0]);
     assert(*tok < tok_end);
   }
+
+#if CONFIG_SUBFRAME_STATS
+  if (!is_inter_block(&m->mbmi))
+    sum_intra_stats(&cm->counts, m, xd->above_mi, xd->left_mi,
+                    frame_is_intra_only(cm));
+#endif  // CONFIG_SUBFRAME_STATS
 
   if (!m->mbmi.skip) {
     assert(*tok < tok_end);
@@ -978,7 +1033,12 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
   }
 }
 
-static void write_partition(const VP10_COMMON *const cm,
+static void write_partition(
+#if CONFIG_SUBFRAME_STATS
+                            VP10_COMMON *cm,
+#else
+                            const VP10_COMMON *const cm,
+#endif  // CONFIG_SUBFRAME_STATS
                             const MACROBLOCKD *const xd,
                             int hbs, int mi_row, int mi_col,
                             PARTITION_TYPE p, BLOCK_SIZE bsize, vpx_writer *w) {
@@ -998,6 +1058,10 @@ static void write_partition(const VP10_COMMON *const cm,
   } else {
     assert(p == PARTITION_SPLIT);
   }
+#if CONFIG_SUBFRAME_STATS
+  if (PARTITION)
+    ++cm->counts.partition[ctx][p];
+#endif  // CONFIG_SUBFRAME_STATS
 }
 
 static void write_modes_sb(VP10_COMP *cpi,
@@ -1070,10 +1134,21 @@ static void write_modes(VP10_COMP *cpi,
 #if CONFIG_VAR_TX
     vp10_zero(xd->left_txfm_context_buffer);
 #endif
+#if CONFIG_SUBFRAME_STATS
+    //*cpi->common.fc = cpi->common.sb_row_starting_fc;
+#endif  // CONFIG_SUBFRAME_STATS
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
-         mi_col += MI_BLOCK_SIZE)
+        mi_col += MI_BLOCK_SIZE) {
       write_modes_sb(cpi, tile, w, tok, tok_end, mi_row, mi_col,
                      BLOCK_64X64);
+#if CONFIG_SUBFRAME_STATS
+      if (mi_col + MI_BLOCK_SIZE >= tile->mi_col_end || 1)
+        vp10_adapt_sub_frame_probs(&cpi->common, mi_row, mi_col);
+      if (mi_col == tile->mi_col_start) {
+        cpi->common.sb_row_starting_fc = *cpi->common.fc;
+      }
+#endif  // CONFIG_SUBFRAME_STATS
+    }
   }
 }
 
@@ -1778,20 +1853,29 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
   update_skip_probs(cm, &header_bc, counts);
   update_seg_probs(cpi, &header_bc);
 
+#if CONFIG_SUBFRAME_STATS && UV_MODE || FORCE_FWD
+#else
   for (i = 0; i < INTRA_MODES; ++i)
     prob_diff_update(vp10_intra_mode_tree, fc->uv_mode_prob[i],
                      counts->uv_mode[i], INTRA_MODES, &header_bc);
+#endif  // CONFIG_SUBFRAME_STATS
 
+#if CONFIG_SUBFRAME_STATS && PARTITION || FORCE_FWD
+#else
   for (i = 0; i < PARTITION_CONTEXTS; ++i)
     prob_diff_update(vp10_partition_tree, fc->partition_prob[i],
                      counts->partition[i], PARTITION_TYPES, &header_bc);
+#endif  // CONFIG_SUBFRAME_STATS
 
   if (frame_is_intra_only(cm)) {
+#if CONFIG_SUBFRAME_STATS && KEY_Y_MODE || FORCE_FWD
+#else
     vp10_copy(cm->kf_y_prob, vp10_kf_y_mode_prob);
     for (i = 0; i < INTRA_MODES; ++i)
       for (j = 0; j < INTRA_MODES; ++j)
         prob_diff_update(vp10_intra_mode_tree, cm->kf_y_prob[i][j],
                          counts->kf_y_mode[i][j], INTRA_MODES, &header_bc);
+#endif  // CONFIG_SUBFRAME_STATS
   } else {
 #if CONFIG_REF_MV
     update_inter_mode_probs(cm, &header_bc, counts);
@@ -1804,9 +1888,12 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
     if (cm->interp_filter == SWITCHABLE)
       update_switchable_interp_probs(cm, &header_bc, counts);
 
+#if CONFIG_SUBFRAME_STATS && INTER_INTRA || FORCE_FWD
+#else
     for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
       vp10_cond_prob_diff_update(&header_bc, &fc->intra_inter_prob[i],
                                 counts->intra_inter[i]);
+#endif
 
     if (cpi->allow_comp_inter_inter) {
       const int use_hybrid_pred = cm->reference_mode == REFERENCE_MODE_SELECT;
@@ -1834,9 +1921,12 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
       }
     }
 
+#if CONFIG_SUBFRAME_STATS && Y_MODE || FORCE_FWD
+#else
     for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
       prob_diff_update(vp10_intra_mode_tree, cm->fc->y_mode_prob[i],
                        counts->y_mode[i], INTRA_MODES, &header_bc);
+#endif  // CONFIG_SUBFRAME_STATS
 
     vp10_write_nmv_probs(cm, cm->allow_high_precision_mv, &header_bc,
                         &counts->mv);
@@ -1901,6 +1991,23 @@ void vp10_pack_bitstream(VP10_COMP *const cpi, uint8_t *dest, size_t *size) {
   const int n_log2_tiles = cm->log2_tile_rows + cm->log2_tile_cols;
   const int have_tiles = n_log2_tiles > 0;
 
+#if CONFIG_SUBFRAME_STATS
+  *cm->fc = cm->starting_fc;
+  {
+    FRAME_COUNTS *counts = &cm->counts;
+    if (Y_MODE)
+      vp10_zero(counts->y_mode);
+    if (UV_MODE)
+      vp10_zero(counts->uv_mode);
+    if (KEY_Y_MODE)
+      vp10_zero(counts->kf_y_mode);
+    if (PARTITION)
+      vp10_zero(counts->partition);
+    if (INTER_INTRA)
+      vp10_zero(counts->intra_inter);
+  }
+#endif  // CONFIG_SUBFRAME_STATS
+
   write_uncompressed_header(cpi, &wb);
   saved_wb = wb;
   // don't know in advance first part. size
@@ -1913,6 +2020,10 @@ void vp10_pack_bitstream(VP10_COMP *const cpi, uint8_t *dest, size_t *size) {
 
   first_part_size = write_compressed_header(cpi, data);
   data += first_part_size;
+
+#if CONFIG_SUBFRAME_STATS
+  cm->sb_row_starting_fc = *cm->fc;
+#endif  // CONFIG_SUBFRAME_STATS
 
   data_sz = encode_tiles(cpi, data, &max_tile);
   if (max_tile > 0) {
