@@ -3324,6 +3324,15 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
     if (loop_count == 0)
       setup_frame(cpi);
 
+#if CONFIG_SUBFRAME_STATS
+    if (loop_count == 0) {
+      cm->starting_fc = *cm->fc;
+    } else {
+      *cm->fc = cm->starting_fc;
+    }
+    cm->sb_row_starting_fc = *cm->fc;
+#endif  // CONFIG_SUBFRAME_STATS
+
     // Variance adaptive and in frame q adjustment experiments are mutually
     // exclusive.
     if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
@@ -3334,6 +3343,10 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
 
     // transform / motion compensation build reconstruction frame
     vp10_encode_frame(cpi);
+
+#if CONFIG_SUBFRAME_STATS1
+    vp10_adapt_sub_frame_probs(cm, (cm->mi_rows >> 3) << 3, 0);
+#endif  // CONFIG_SUBFRAME_STATS
 
     // Update the skip mb flag probabilities based on the distribution
     // seen in the last encoder iteration.

@@ -32,6 +32,16 @@ extern "C" {
 
 #define MAX_MB_PLANE 3
 
+#if CONFIG_SUBFRAME_STATS
+#define Y_MODE 0
+#define UV_MODE 0
+#define PARTITION 1
+#define KEY_Y_MODE 0
+#define INTER_INTRA 0
+
+#define FORCE_FWD 1
+#endif  // CONFIG_SUBFRAME_STATS
+
 typedef enum {
   KEY_FRAME = 0,
   INTER_FRAME = 1,
