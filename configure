@@ -282,6 +282,7 @@ EXPERIMENT_LIST="
     ext_refs
     supertx
     ans
+    prev_mvref
 "
 CONFIG_LIST="
     dependency_tracking
