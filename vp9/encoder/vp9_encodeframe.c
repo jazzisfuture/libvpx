@@ -731,7 +731,9 @@ static int choose_partitioning(VP9_COMP *cpi,
 
     if (!(is_one_pass_cbr_svc(cpi) && cpi->svc.spatial_layer_id)) {
       // For now, GOLDEN will not be used for non-zero spatial layers, since
-      // it may not be a temporal reference.
+      // it may not be a temporal reference. Also note that for 1 pass CBR SVC,
+      // the golden reference frame is not at the same spatial scale here (since
+      // we only use ZEROMV on golden we avoid the frame-level upsampling).
       yv12_g = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
     }
 
@@ -1756,7 +1758,9 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
     }
   }
 
-  if (cm->use_prev_frame_mvs) {
+  if (cm->use_prev_frame_mvs ||
+      (cpi->svc.use_base_mv && cpi->svc.number_spatial_layers > 1
+        && cpi->svc.spatial_layer_id != cpi->svc.number_spatial_layers - 1)) {
     MV_REF *const frame_mvs =
         cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;
     int w, h;
