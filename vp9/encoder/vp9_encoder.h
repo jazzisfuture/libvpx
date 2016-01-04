@@ -662,6 +662,8 @@ void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 
 #define LAYER_IDS_TO_IDX(sl, tl, num_tl) ((sl) * (num_tl) + (tl))
 
+#define USE_BASE_MV 1
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
