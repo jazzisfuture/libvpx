@@ -435,7 +435,6 @@ void vp10_accumulate_frame_counts(VP10_COMMON *cm, FRAME_COUNTS *counts,
       comps->fp[i] += comps_t->fp[i];
   }
 
-#if CONFIG_MISC_FIXES
   for (i = 0; i < PREDICTION_PROBS; i++)
     for (j = 0; j < 2; j++)
       cm->counts.seg.pred[i][j] += counts->seg.pred[i][j];
@@ -444,5 +443,4 @@ void vp10_accumulate_frame_counts(VP10_COMMON *cm, FRAME_COUNTS *counts,
     cm->counts.seg.tree_total[i] += counts->seg.tree_total[i];
     cm->counts.seg.tree_mispred[i] += counts->seg.tree_mispred[i];
   }
-#endif
 }

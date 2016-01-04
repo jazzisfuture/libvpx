@@ -2702,12 +2702,10 @@ static void encode_frame_internal(VP10_COMP *cpi) {
   rdc->m_search_count = 0;   // Count of motion search hits.
   rdc->ex_search_count = 0;  // Exhaustive mesh search hits.
 
-  for (i = 0; i < MAX_SEGMENTS; ++i) {
-    const int qindex = CONFIG_MISC_FIXES && cm->seg.enabled ?
-                       vp10_get_qindex(&cm->seg, i, cm->base_qindex) :
-                       cm->base_qindex;
-    xd->lossless[i] = qindex == 0 &&
-                      cm->y_dc_delta_q == 0 &&
+  for (i = 0; i < (cm->seg.enabled ? MAX_SEGMENTS : 1); ++i) {
+    const int qindex = vp10_get_qindex(&cm->seg, i, cm->base_qindex);
+    xd->lossless[i] = cm->y_dc_delta_q == 0 &&
+                      qindex == 0 &&
                       cm->uv_dc_delta_q == 0 &&
                       cm->uv_ac_delta_q == 0;
   }

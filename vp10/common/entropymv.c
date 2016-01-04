@@ -127,18 +127,8 @@ MV_CLASS_TYPE vp10_get_mv_class(int z, int *offset) {
   return c;
 }
 
-int vp10_use_mv_hp(const MV *ref) {
-#if CONFIG_MISC_FIXES
-  (void) ref;
-  return 1;
-#else
-  return (abs(ref->row) >> 3) < COMPANDED_MVREF_THRESH &&
-         (abs(ref->col) >> 3) < COMPANDED_MVREF_THRESH;
-#endif
-}
-
 static void inc_mv_component(int v, nmv_component_counts *comp_counts,
-                             int incr, int usehp) {
+                             int incr) {
   int s, z, c, o, d, e, f;
   assert(v != 0);            /* should not be zero */
   s = v < 0;
@@ -155,30 +145,28 @@ static void inc_mv_component(int v, nmv_component_counts *comp_counts,
   if (c == MV_CLASS_0) {
     comp_counts->class0[d] += incr;
     comp_counts->class0_fp[d][f] += incr;
-    comp_counts->class0_hp[e] += usehp * incr;
+    comp_counts->class0_hp[e] += incr;
   } else {
     int i;
     int b = c + CLASS0_BITS - 1;  // number of bits
     for (i = 0; i < b; ++i)
       comp_counts->bits[i][((d >> i) & 1)] += incr;
     comp_counts->fp[f] += incr;
-    comp_counts->hp[e] += usehp * incr;
+    comp_counts->hp[e] += incr;
   }
 }
 
-void vp10_inc_mv(const MV *mv, nmv_context_counts *counts, const int usehp) {
+void vp10_inc_mv(const MV *mv, nmv_context_counts *counts) {
   if (counts != NULL) {
     const MV_JOINT_TYPE j = vp10_get_mv_joint(mv);
     ++counts->joints[j];
 
     if (mv_joint_vertical(j)) {
-      inc_mv_component(mv->row, &counts->comps[0], 1,
-                       !CONFIG_MISC_FIXES || usehp);
+      inc_mv_component(mv->row, &counts->comps[0], 1);
     }
 
     if (mv_joint_horizontal(j)) {
-      inc_mv_component(mv->col, &counts->comps[1], 1,
-                       !CONFIG_MISC_FIXES || usehp);
+      inc_mv_component(mv->col, &counts->comps[1], 1);
     }
   }
 }

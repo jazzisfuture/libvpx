@@ -137,19 +137,8 @@ static void build_nmv_component_cost_table(int *mvcost,
 
 static void update_mv(vpx_writer *w, const unsigned int ct[2], vpx_prob *cur_p,
                       vpx_prob upd_p) {
-#if CONFIG_MISC_FIXES
   (void) upd_p;
   vp10_cond_prob_diff_update(w, cur_p, ct);
-#else
-  const vpx_prob new_p = get_binary_prob(ct[0], ct[1]) | 1;
-  const int update = cost_branch256(ct, *cur_p) + vp10_cost_zero(upd_p) >
-                     cost_branch256(ct, new_p) + vp10_cost_one(upd_p) + 7 * 256;
-  vpx_write(w, update, upd_p);
-  if (update) {
-    *cur_p = new_p;
-    vpx_write_literal(w, new_p >> 1, 7);
-  }
-#endif
 }
 
 static void write_mv_update(const vpx_tree_index *tree,
@@ -211,7 +200,6 @@ void vp10_encode_mv(VP10_COMP* cpi, vpx_writer* w,
   const MV diff = {mv->row - ref->row,
                    mv->col - ref->col};
   const MV_JOINT_TYPE j = vp10_get_mv_joint(&diff);
-  usehp = usehp && vp10_use_mv_hp(ref);
 
   vp10_write_token(w, vp10_mv_joint_tree, mvctx->joints, &mv_joint_encodings[j]);
   if (mv_joint_vertical(j))
@@ -244,7 +232,7 @@ static void inc_mvs(const MB_MODE_INFO *mbmi, const MB_MODE_INFO_EXT *mbmi_ext,
     const MV *ref = &mbmi_ext->ref_mvs[mbmi->ref_frame[i]][0].as_mv;
     const MV diff = {mvs[i].as_mv.row - ref->row,
                      mvs[i].as_mv.col - ref->col};
-    vp10_inc_mv(&diff, counts, vp10_use_mv_hp(ref));
+    vp10_inc_mv(&diff, counts);
   }
 }
 

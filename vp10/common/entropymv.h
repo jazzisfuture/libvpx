@@ -27,7 +27,6 @@ struct VP10Common;
 void vp10_init_mv_probs(struct VP10Common *cm);
 
 void vp10_adapt_mv_probs(struct VP10Common *cm, int usehp);
-int vp10_use_mv_hp(const MV *ref);
 
 #define MV_UPDATE_PROB 252
 
@@ -124,7 +123,7 @@ typedef struct {
   nmv_component_counts comps[2];
 } nmv_context_counts;
 
-void vp10_inc_mv(const MV *mv, nmv_context_counts *mvctx, const int usehp);
+void vp10_inc_mv(const MV *mv, nmv_context_counts *mvctx);
 
 #ifdef __cplusplus
 }  // extern "C"
