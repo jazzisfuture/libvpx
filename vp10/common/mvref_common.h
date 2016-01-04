@@ -183,6 +183,37 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
     } \
   } while (0)
 
+#if CONFIG_PREV_MVREF
+// Check whether smooth translational motion exist cross adjacent frames
+// through forward prediciton
+#define HAVE_SMOOTH_FORWARD_PREDICTION(cm, prev_ref_frame, curr_ref_frame) \
+  (((prev_ref_frame) >= LAST_FRAME) && \
+  ((prev_ref_frame) <= ALTREF_FRAME) && \
+  ((cm)->frame_refs[(curr_ref_frame)-LAST_FRAME].idx == \
+    (cm)->prev_new_fb_idx) && \
+  ((cm)->prev_ref_buf_idx[(prev_ref_frame)-LAST_FRAME] == \
+    (cm)->prev2_new_fb_idx) && \
+  ((cm)->ref_frame_sign_bias[curr_ref_frame] == \
+    (cm)->ref_frame_sign_bias[LAST_FRAME]) && \
+  ((cm)->prev_ref_sign_bias[prev_ref_frame] == \
+    (cm)->prev_ref_sign_bias[LAST_FRAME]))
+#endif  // CONFIG_PREV_MVREF
+
+#if CONFIG_PREV_MVREF
+// Check whether the two reference frames are indeed identical and
+// both provide a backward prediction
+#define ARE_IDENTICAL_BACKWARD_REFS(cm, prev_ref_frame, curr_ref_frame) \
+  (ARE_IDENTICAL_REF_FRAMES(cm, prev_ref_frame, curr_ref_frame) && \
+  ((cm)->ref_frame_sign_bias[curr_ref_frame] == \
+    (cm)->ref_frame_sign_bias[ALTREF_FRAME]))
+#endif  // CONFIG_PREV_MVREF
+
+#if CONFIG_PREV_MVREF
+// Check whether the two reference frames are indeed identical
+#define ARE_IDENTICAL_REF_FRAMES(cm, prev_ref_frame, curr_ref_frame) \
+  ((cm)->frame_refs[(curr_ref_frame)-LAST_FRAME].idx == \
+  (cm)->prev_ref_buf_idx[(prev_ref_frame)-LAST_FRAME])
+#endif  // CONFIG_PREV_MVREF
 
 // Checks that the given mi_row, mi_col and search point
 // are inside the borders of the tile.
