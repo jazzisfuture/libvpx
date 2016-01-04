@@ -2016,6 +2016,9 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
     for (i = 0; i < REFS_PER_FRAME; ++i) {
       cm->frame_refs[i].idx = INVALID_IDX;
       cm->frame_refs[i].buf = NULL;
+#if CONFIG_PREV_MVREF
+      cm->prev_frame_ref_idx[i] = INVALID_IDX;
+#endif  // CONFIG_PREV_MVREF
     }
 
     setup_frame_size(cm, rb);
@@ -2092,6 +2095,7 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
       }
     }
   }
+
 #if CONFIG_VP9_HIGHBITDEPTH
   get_frame_new_buffer(cm)->bit_depth = cm->bit_depth;
 #endif

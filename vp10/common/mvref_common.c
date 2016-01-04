@@ -514,10 +514,11 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       sync(data, mi_row);
     }
 
-    if (prev_frame_mvs->ref_frame[0] == ref_frame) {
+    if (ARE_IDENTICAL_REF_FRAMES(cm, prev_frame_mvs->ref_frame[0], ref_frame)) {
       ADD_MV_REF_LIST(prev_frame_mvs->mv[0], refmv_count, mv_ref_list,
                       bw, bh, xd, Done);
-    } else if (prev_frame_mvs->ref_frame[1] == ref_frame) {
+    } else if (ARE_IDENTICAL_REF_FRAMES(cm, prev_frame_mvs->ref_frame[1],
+                                        ref_frame)) {
       ADD_MV_REF_LIST(prev_frame_mvs->mv[1], refmv_count, mv_ref_list,
                       bw, bh, xd, Done);
     }
@@ -542,8 +543,8 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 
   // Since we still don't have a candidate we'll try the last frame.
   if (cm->use_prev_frame_mvs) {
-    if (prev_frame_mvs->ref_frame[0] != ref_frame &&
-        prev_frame_mvs->ref_frame[0] > INTRA_FRAME) {
+    if (!ARE_IDENTICAL_REF_FRAMES(
+        cm, prev_frame_mvs->ref_frame[0], ref_frame)) {
       int_mv mv = prev_frame_mvs->mv[0];
       if (ref_sign_bias[prev_frame_mvs->ref_frame[0]] !=
           ref_sign_bias[ref_frame]) {
@@ -553,8 +554,8 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       ADD_MV_REF_LIST(mv, refmv_count, mv_ref_list, bw, bh, xd, Done);
     }
 
-    if (prev_frame_mvs->ref_frame[1] > INTRA_FRAME &&
-        prev_frame_mvs->ref_frame[1] != ref_frame) {
+    if (!ARE_IDENTICAL_REF_FRAMES(
+        cm, prev_frame_mvs->ref_frame[1], ref_frame)) {
       int_mv mv = prev_frame_mvs->mv[1];
       if (ref_sign_bias[prev_frame_mvs->ref_frame[1]] !=
           ref_sign_bias[ref_frame]) {

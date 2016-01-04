@@ -183,6 +183,19 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
     } \
   } while (0)
 
+// Check whether the two reference frames are indeed identical
+#if CONFIG_PREV_MVREF
+#define ARE_IDENTICAL_REF_FRAMES(cm, prev_ref_frame, curr_ref_frame) \
+  (((prev_ref_frame) >= LAST_FRAME) && \
+   ((prev_ref_frame) <= ALTREF_FRAME) && \
+   ((cm)->prev_frame_ref_idx[(prev_ref_frame)-LAST_FRAME] == \
+    (cm)->frame_refs[(curr_ref_frame)-LAST_FRAME].idx))
+#else
+#define ARE_IDENTICAL_REF_FRAMES(cm, prev_ref_frame, curr_ref_frame) \
+  (((prev_ref_frame) >= LAST_FRAME) && \
+   ((prev_ref_frame) <= ALTREF_FRAME) && \
+   ((prev_ref_frame) == (curr_ref_frame)))
+#endif  // CONFIG_PREV_MVREF
 
 // Checks that the given mi_row, mi_col and search point
 // are inside the borders of the tile.

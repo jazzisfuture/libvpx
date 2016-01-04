@@ -3161,6 +3161,12 @@ static void set_frame_size(VP10_COMP *cpi) {
     RefBuffer *const ref_buf = &cm->frame_refs[ref_frame - LAST_FRAME];
     const int buf_idx = get_ref_frame_buf_idx(cpi, ref_frame);
 
+#if CONFIG_PREV_MVREF
+    if (cm->frame_type == KEY_FRAME)
+      cm->prev_frame_ref_idx[ref_frame - LAST_FRAME] = INVALID_IDX;
+    else
+      cm->prev_frame_ref_idx[ref_frame - LAST_FRAME] = ref_buf->idx;
+#endif  // CONFIG_PREV_MVREF
     ref_buf->idx = buf_idx;
 
     if (buf_idx != INVALID_IDX) {

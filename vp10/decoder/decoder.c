@@ -281,8 +281,12 @@ static void swap_frame_buffers(VP10Decoder *pbi) {
   }
 
   // Invalidate these references until the next frame starts.
-  for (ref_index = 0; ref_index < REFS_PER_FRAME; ref_index++)
+  for (ref_index = 0; ref_index < REFS_PER_FRAME; ref_index++) {
+#if CONFIG_PREV_MVREF
+    cm->prev_frame_ref_idx[ref_index] = cm->frame_refs[ref_index].idx;
+#endif  // CONFIG_PREV_MVREF
     cm->frame_refs[ref_index].idx = -1;
+  }
 }
 
 int vp10_receive_compressed_data(VP10Decoder *pbi,
