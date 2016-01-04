@@ -1744,7 +1744,9 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
     }
   }
 
-  if (cm->use_prev_frame_mvs) {
+  if (cm->use_prev_frame_mvs ||
+      (cpi->svc.use_base_mv && cpi->svc.number_spatial_layers > 1
+        && cpi->svc.spatial_layer_id != cpi->svc.number_spatial_layers - 1)) {
     MV_REF *const frame_mvs =
         cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;
     int w, h;
@@ -2985,7 +2987,7 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi,
   else if (segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP))
     set_mode_info_seg_skip(x, cm->tx_mode, rd_cost, bsize);
   else if (bsize >= BLOCK_8X8)
-    vp9_pick_inter_mode(cpi, x, tile_data, mi_row, mi_col,
+      vp9_pick_inter_mode(cpi, x, tile_data, mi_row, mi_col,
                         rd_cost, bsize, ctx);
   else
     vp9_pick_inter_mode_sub8x8(cpi, x, mi_row, mi_col,

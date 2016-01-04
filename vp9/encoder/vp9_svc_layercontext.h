@@ -86,6 +86,9 @@ typedef struct {
   int ref_frame_index[REF_FRAMES];
   int force_zero_mode_spatial_ref;
   int current_superframe;
+  // Flag indicating whether to use base layer motion vector.
+  // Set to 1 by default for encoding with more than one spatial layer.
+  int use_base_mv;
 } SVC;
 
 struct VP9_COMP;
