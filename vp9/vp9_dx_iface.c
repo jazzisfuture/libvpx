@@ -31,6 +31,9 @@
 
 #define VP9_CAP_POSTPROC (CONFIG_VP9_POSTPROC ? VPX_CODEC_CAP_POSTPROC : 0)
 
+// Hack to specify up to which spatial layer to decode.
+unsigned int spatial_layer = 2;
+
 static vpx_codec_err_t decoder_init(vpx_codec_ctx_t *ctx,
                                     vpx_codec_priv_enc_mr_cfg_t *data) {
   // This function only allocates space for the vpx_codec_alg_priv_t
@@ -561,6 +564,11 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
                                    ctx->decrypt_cb, ctx->decrypt_state);
   if (res != VPX_CODEC_OK)
     return res;
+
+  // Hack to decode up to "spatial_layer": should be passed in.
+  //if (spatial_layer < (unsigned int)frame_count-1)
+  //  frame_count = spatial_layer + 1;
+
 
   if (ctx->frame_parallel_decode) {
     // Decode in frame parallel mode. When decoding in this mode, the frame

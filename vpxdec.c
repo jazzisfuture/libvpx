@@ -89,6 +89,8 @@ static const arg_def_t fb_arg = ARG_DEF(
     NULL, "frame-buffers", 1, "Number of frame buffers to use");
 static const arg_def_t md5arg = ARG_DEF(
     NULL, "md5", 0, "Compute the MD5 sum of the decoded frame");
+static const arg_def_t slarg = ARG_DEF(
+    "sl", "spatial-layer", 1, "spatial layer to decode");
 #if CONFIG_VP9_HIGHBITDEPTH
 static const arg_def_t outbitdeptharg = ARG_DEF(
     NULL, "output-bit-depth", 1, "Output bit-depth for decoded frames");
@@ -98,7 +100,7 @@ static const arg_def_t *all_args[] = {
   &codecarg, &use_yv12, &use_i420, &flipuvarg, &rawvideo, &noblitarg,
   &progressarg, &limitarg, &skiparg, &postprocarg, &summaryarg, &outputfile,
   &threadsarg, &frameparallelarg, &verbosearg, &scalearg, &fb_arg,
-  &md5arg, &error_concealment, &continuearg,
+  &md5arg, &error_concealment, &continuearg, &slarg,
 #if CONFIG_VP9_HIGHBITDEPTH
   &outbitdeptharg,
 #endif
@@ -132,6 +134,7 @@ static const arg_def_t *vp8_pp_args[] = {
   NULL
 };
 #endif
+extern unsigned int spatial_layer;
 
 #if CONFIG_LIBYUV
 static INLINE int libyuv_scale(vpx_image_t *src, vpx_image_t *dst,
@@ -641,6 +644,8 @@ static int main_loop(int argc, const char **argv_) {
       summary = 1;
     else if (arg_match(&arg, &threadsarg, argi))
       cfg.threads = arg_parse_uint(&arg);
+    else if (arg_match(&arg, &slarg, argi))
+           spatial_layer = arg_parse_uint(&arg);
 #if CONFIG_VP9_DECODER || CONFIG_VP10_DECODER
     else if (arg_match(&arg, &frameparallelarg, argi))
       frame_parallel = 1;
