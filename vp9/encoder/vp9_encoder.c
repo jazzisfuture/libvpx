@@ -3448,7 +3448,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
                                                &cpi->scaled_last_source,
                                                (cpi->oxcf.pass == 0));
 
-    if (frame_is_intra_only(cm) == 0) {
+    if (frame_is_intra_only(cm) == 0 && !is_one_pass_cbr_svc(cpi)) {
       if (loop_count > 0) {
         release_scaled_references(cpi);
       }
