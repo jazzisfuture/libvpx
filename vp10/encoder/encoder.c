@@ -3161,6 +3161,12 @@ static void set_frame_size(VP10_COMP *cpi) {
     RefBuffer *const ref_buf = &cm->frame_refs[ref_frame - LAST_FRAME];
     const int buf_idx = get_ref_frame_buf_idx(cpi, ref_frame);
 
+#if CONFIG_PREV_MVREF
+    if (cm->frame_type == KEY_FRAME)
+      cm->prev_ref_buf_idx[ref_frame-LAST_FRAME] = INVALID_IDX;
+    else
+      cm->prev_ref_buf_idx[ref_frame-LAST_FRAME] = ref_buf->idx;
+#endif  // CONFIG_PREV_MVREF
     ref_buf->idx = buf_idx;
 
     if (buf_idx != INVALID_IDX) {
@@ -3659,6 +3665,9 @@ static void set_arf_sign_bias(VP10_COMP *cpi) {
       (cpi->rc.source_alt_ref_active && !cpi->refresh_alt_ref_frame);
   }
   cm->ref_frame_sign_bias[ALTREF_FRAME] = arf_sign_bias;
+#if CONFIG_PREV_MVREF
+  cm->prev_ref_sign_bias[ALTREF_FRAME] = arf_sign_bias;
+#endif  // CONFIG_PREV_MVREF
 }
 
 static int setup_interp_filter_search_mask(VP10_COMP *cpi) {
@@ -3926,6 +3935,9 @@ static void init_ref_frame_bufs(VP10_COMMON *cm) {
   int i;
   BufferPool *const pool = cm->buffer_pool;
   cm->new_fb_idx = INVALID_IDX;
+#if CONFIG_PREV_MVREF
+  cm->prev_new_fb_idx = cm->prev2_new_fb_idx = INVALID_IDX;
+#endif  // CONFIG_PREV_MVREF
   for (i = 0; i < REF_FRAMES; ++i) {
     cm->ref_frame_map[i] = INVALID_IDX;
     pool->frame_bufs[i].ref_count = 0;
@@ -4280,6 +4292,10 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
   if (cm->new_fb_idx != INVALID_IDX) {
     --pool->frame_bufs[cm->new_fb_idx].ref_count;
   }
+#if CONFIG_PREV_MVREF
+  cm->prev2_new_fb_idx = cm->prev_new_fb_idx;
+  cm->prev_new_fb_idx = cm->new_fb_idx;
+#endif  // CONFIG_PREV_MVREF
   cm->new_fb_idx = get_free_fb(cm);
 
   if (cm->new_fb_idx == INVALID_IDX)
