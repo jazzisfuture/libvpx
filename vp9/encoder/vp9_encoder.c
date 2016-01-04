@@ -3317,7 +3317,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
       cpi->oxcf.content == VP9E_CONTENT_SCREEN)
     vp9_avg_source_sad(cpi);
 
-  if (frame_is_intra_only(cm) == 0) {
+  if (frame_is_intra_only(cm) == 0 && !is_one_pass_cbr_svc(cpi)) {
     vp9_scale_references(cpi);
   }
 
