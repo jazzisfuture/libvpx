@@ -287,6 +287,9 @@ static void init_buffer_callbacks(vpx_codec_alg_priv_t *ctx) {
     BufferPool *const pool = cm->buffer_pool;
 
     cm->new_fb_idx = INVALID_IDX;
+#if CONFIG_PREV_MVREF
+    cm->prev_new_fb_idx = cm->prev_prev_new_fb_idx = INVALID_IDX;
+#endif  // CONFIG_PREV_MVREF
     cm->byte_alignment = ctx->byte_alignment;
     cm->skip_loop_filter = ctx->skip_loop_filter;
 

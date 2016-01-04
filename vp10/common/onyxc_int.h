@@ -315,6 +315,13 @@ typedef struct VP10Common {
   // - this is intentionally not placed in FRAME_CONTEXT since it's reset upon
   // each keyframe and not used afterwards
   vpx_prob kf_y_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1];
+
+#if CONFIG_PREV_MVREF
+  int prev_ref_buf_idx[REFS_PER_FRAME];
+  int prev_new_fb_idx;
+  int prev_prev_new_fb_idx;
+  int prev_ref_sign_bias[REFS_PER_FRAME];
+#endif  // CONFIG_PREV_MVREF
 } VP10_COMMON;
 
 // TODO(hkuang): Don't need to lock the whole pool after implementing atomic

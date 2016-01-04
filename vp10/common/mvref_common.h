@@ -183,6 +183,48 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
     } \
   } while (0)
 
+#if CONFIG_PREV_MVREF
+// Check whether a ref frame is within the range
+static INLINE int is_valid_ref_frame(MV_REFERENCE_FRAME ref_frame) {
+  return ref_frame >= LAST_FRAME && ref_frame <= ALTREF_FRAME;
+}
+
+// Check whether smooth translational motion exist cross adjacent frames
+// through forward prediciton
+static INLINE int is_smooth_forward_prediction(
+    const VP10_COMMON *cm,
+    MV_REFERENCE_FRAME prev_ref_frame,
+    MV_REFERENCE_FRAME curr_ref_frame) {
+  return (cm->frame_refs[curr_ref_frame-LAST_FRAME].idx ==
+          cm->prev_new_fb_idx) &&
+         (cm->prev_ref_buf_idx[prev_ref_frame-LAST_FRAME] ==
+          cm->prev_prev_new_fb_idx) &&
+         (cm->ref_frame_sign_bias[curr_ref_frame] ==
+          cm->ref_frame_sign_bias[LAST_FRAME]) &&
+         (cm->prev_ref_sign_bias[prev_ref_frame] ==
+          cm->prev_ref_sign_bias[LAST_FRAME]);
+}
+
+// Check whether the two reference frames are indeed identical
+static INLINE int are_identical_ref_frames(
+    const VP10_COMMON *cm,
+    MV_REFERENCE_FRAME prev_ref_frame,
+    MV_REFERENCE_FRAME curr_ref_frame) {
+  return cm->frame_refs[curr_ref_frame-LAST_FRAME].idx ==
+      cm->prev_ref_buf_idx[prev_ref_frame-LAST_FRAME];
+}
+
+// Check whether the two reference frames are indeed identical and
+// both provide a backward prediction
+static INLINE int are_identical_backward_refs(
+    const VP10_COMMON *cm,
+    MV_REFERENCE_FRAME prev_ref_frame,
+    MV_REFERENCE_FRAME curr_ref_frame) {
+  return are_identical_ref_frames(cm, prev_ref_frame, curr_ref_frame) &&
+      (cm->ref_frame_sign_bias[curr_ref_frame] ==
+       cm->ref_frame_sign_bias[ALTREF_FRAME]);
+}
+#endif  // CONFIG_PREV_MVREF
 
 // Checks that the given mi_row, mi_col and search point
 // are inside the borders of the tile.

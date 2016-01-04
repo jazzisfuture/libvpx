@@ -3706,6 +3706,9 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   const VP10EncoderConfig *const oxcf = &cpi->oxcf;
   struct segmentation *const seg = &cm->seg;
   TX_SIZE t;
+#if CONFIG_PREV_MVREF
+  int ref_idx;
+#endif  // CONFIG_PREV_MVREF
 
   set_ext_overrides(cpi);
   vpx_clear_system_state();
@@ -3834,6 +3837,14 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   }
   vp10_update_reference_frames(cpi);
 
+#if CONFIG_PREV_MVREF
+  for (ref_idx = 0; ref_idx < REFS_PER_FRAME; ++ref_idx) {
+    MV_REFERENCE_FRAME ref_frame = ref_idx + LAST_FRAME;
+    cm->prev_ref_buf_idx[ref_idx] = cm->frame_refs[ref_idx].idx;
+    cm->prev_ref_sign_bias[ref_frame] = cm->ref_frame_sign_bias[ref_frame];
+  }
+#endif  // CONFIG_PREV_MVREF
+
   for (t = TX_4X4; t <= TX_32X32; t++)
     full_to_model_counts(cpi->td.counts->coef[t],
                          cpi->td.rd_counts.coef_counts[t]);
@@ -3926,6 +3937,9 @@ static void init_ref_frame_bufs(VP10_COMMON *cm) {
   int i;
   BufferPool *const pool = cm->buffer_pool;
   cm->new_fb_idx = INVALID_IDX;
+#if CONFIG_PREV_MVREF
+  cm->prev_new_fb_idx = cm->prev_prev_new_fb_idx = INVALID_IDX;
+#endif  // CONFIG_PREV_MVREF
   for (i = 0; i < REF_FRAMES; ++i) {
     cm->ref_frame_map[i] = INVALID_IDX;
     pool->frame_bufs[i].ref_count = 0;
@@ -4280,6 +4294,10 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
   if (cm->new_fb_idx != INVALID_IDX) {
     --pool->frame_bufs[cm->new_fb_idx].ref_count;
   }
+#if CONFIG_PREV_MVREF
+  cm->prev_prev_new_fb_idx = cm->prev_new_fb_idx;
+  cm->prev_new_fb_idx = cm->new_fb_idx;
+#endif  // CONFIG_PREV_MVREF
   cm->new_fb_idx = get_free_fb(cm);
 
   if (cm->new_fb_idx == INVALID_IDX)

@@ -2930,6 +2930,10 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
                          frame_to_show);
     }
 
+#if CONFIG_PREV_MVREF
+    cm->prev_prev_new_fb_idx = cm->prev_new_fb_idx;
+    cm->prev_new_fb_idx = cm->new_fb_idx;
+#endif  // CONFIG_PREV_MVREF
     ref_cnt_fb(frame_bufs, &cm->new_fb_idx, frame_to_show);
     unlock_buffer_pool(pool);
     pbi->refresh_frame_flags = 0;
@@ -2958,6 +2962,10 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
     for (i = 0; i < REFS_PER_FRAME; ++i) {
       cm->frame_refs[i].idx = INVALID_IDX;
       cm->frame_refs[i].buf = NULL;
+#if CONFIG_PREV_MVREF
+      cm->prev_ref_buf_idx[i] = INVALID_IDX;
+      cm->prev_ref_sign_bias[i] = INVALID_IDX;
+#endif  // CONFIG_PREV_MVREF
     }
 
     setup_frame_size(cm, rb);
@@ -3009,6 +3017,10 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
         RefBuffer *const ref_frame = &cm->frame_refs[i];
         ref_frame->idx = idx;
         ref_frame->buf = &frame_bufs[idx].buf;
+#if CONFIG_PREV_MVREF
+        cm->prev_ref_sign_bias[LAST_FRAME + i] =
+            cm->ref_frame_sign_bias[LAST_FRAME + i];
+#endif  // CONFIG_PREV_MVREF
         cm->ref_frame_sign_bias[LAST_FRAME + i] = vpx_rb_read_bit(rb);
       }
 
@@ -3034,6 +3046,7 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
       }
     }
   }
+
 #if CONFIG_VP9_HIGHBITDEPTH
   get_frame_new_buffer(cm)->bit_depth = cm->bit_depth;
 #endif

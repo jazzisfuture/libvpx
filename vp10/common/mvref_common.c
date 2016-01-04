@@ -490,6 +490,9 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   int i, refmv_count = 0;
   const POSITION *const mv_ref_search = mv_ref_blocks[mi->mbmi.sb_type];
   int different_ref_found = 0;
+#if CONFIG_PREV_MVREF
+  int prev_mvref_found[2] = { 0, 0 };
+#endif  // CONFIG_PREV_MVREF
   int context_counter = 0;
   const MV_REF *const  prev_frame_mvs = cm->use_prev_frame_mvs ?
       cm->prev_frame->mvs + mi_row * cm->mi_cols + mi_col : NULL;
@@ -543,9 +546,9 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   // is 0. But after removing it, there will be hang in the unit test on windows
   // due to several threads waiting for a thread's signal.
 #if defined(_WIN32) && !HAVE_PTHREAD_H
-    if (cm->frame_parallel_decode && sync != NULL) {
-      sync(data, mi_row);
-    }
+  if (cm->frame_parallel_decode && sync != NULL) {
+    sync(data, mi_row);
+  }
 #endif
 
   // Check the last frame's mode and mv info.
@@ -555,6 +558,45 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       sync(data, mi_row);
     }
 
+#if CONFIG_PREV_MVREF
+    if (is_valid_ref_frame(prev_frame_mvs->ref_frame[0]) &&
+        is_smooth_forward_prediction(cm, prev_frame_mvs->ref_frame[0],
+                                     ref_frame)) {
+      prev_mvref_found[0] = 1;
+      ADD_MV_REF_LIST(prev_frame_mvs->mv[0], refmv_count, mv_ref_list,
+                      bw, bh, xd, Done);
+    } else if (is_valid_ref_frame(prev_frame_mvs->ref_frame[1]) &&
+               is_smooth_forward_prediction(cm, prev_frame_mvs->ref_frame[1],
+                                            ref_frame)) {
+      prev_mvref_found[1] = 1;
+      ADD_MV_REF_LIST(prev_frame_mvs->mv[1], refmv_count, mv_ref_list,
+                      bw, bh, xd, Done);
+    } else if (is_valid_ref_frame(prev_frame_mvs->ref_frame[0]) &&
+               are_identical_backward_refs(cm, prev_frame_mvs->ref_frame[0],
+                                           ref_frame)) {
+      prev_mvref_found[0] = 1;
+      ADD_MV_REF_LIST(prev_frame_mvs->mv[0], refmv_count, mv_ref_list,
+                      bw, bh, xd, Done);
+    } else if (is_valid_ref_frame(prev_frame_mvs->ref_frame[1]) &&
+               are_identical_backward_refs(cm, prev_frame_mvs->ref_frame[1],
+                                           ref_frame)) {
+      prev_mvref_found[1] = 1;
+      ADD_MV_REF_LIST(prev_frame_mvs->mv[1], refmv_count, mv_ref_list,
+                      bw, bh, xd, Done);
+    } else if (is_valid_ref_frame(prev_frame_mvs->ref_frame[0]) &&
+               are_identical_ref_frames(cm, prev_frame_mvs->ref_frame[0],
+                                        ref_frame)) {
+      prev_mvref_found[0] = 1;
+      ADD_MV_REF_LIST(prev_frame_mvs->mv[0], refmv_count, mv_ref_list,
+                      bw, bh, xd, Done);
+    } else if (is_valid_ref_frame(prev_frame_mvs->ref_frame[1]) &&
+               are_identical_ref_frames(cm, prev_frame_mvs->ref_frame[1],
+                                        ref_frame)) {
+      prev_mvref_found[1] = 1;
+      ADD_MV_REF_LIST(prev_frame_mvs->mv[1], refmv_count, mv_ref_list,
+                      bw, bh, xd, Done);
+    }
+#else
     if (prev_frame_mvs->ref_frame[0] == ref_frame) {
       ADD_MV_REF_LIST(prev_frame_mvs->mv[0], refmv_count, mv_ref_list,
                       bw, bh, xd, Done);
@@ -562,6 +604,7 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       ADD_MV_REF_LIST(prev_frame_mvs->mv[1], refmv_count, mv_ref_list,
                       bw, bh, xd, Done);
     }
+#endif  // CONFIG_PREV_MVREF
   }
 
   // Since we couldn't find 2 mvs from the same reference frame
@@ -583,26 +626,22 @@ static void find_mv_refs_idx(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 
   // Since we still don't have a candidate we'll try the last frame.
   if (cm->use_prev_frame_mvs) {
-    if (prev_frame_mvs->ref_frame[0] != ref_frame &&
-        prev_frame_mvs->ref_frame[0] > INTRA_FRAME) {
-      int_mv mv = prev_frame_mvs->mv[0];
-      if (ref_sign_bias[prev_frame_mvs->ref_frame[0]] !=
-          ref_sign_bias[ref_frame]) {
-        mv.as_mv.row *= -1;
-        mv.as_mv.col *= -1;
+    for (i = 0; i < 2; ++i) {
+#if CONFIG_PREV_MVREF
+      if (!prev_mvref_found[i] &&
+          is_valid_ref_frame(prev_frame_mvs->ref_frame[i])) {
+#else
+      if (prev_frame_mvs->ref_frame[i] != ref_frame &&
+          prev_frame_mvs->ref_frame[i] > INTRA_FRAME) {
+#endif  // CONFIG_PREV_MVREF
+        int_mv mv = prev_frame_mvs->mv[i];
+        if (ref_sign_bias[prev_frame_mvs->ref_frame[i]] !=
+            ref_sign_bias[ref_frame]) {
+          mv.as_mv.row *= -1;
+          mv.as_mv.col *= -1;
+        }
+        ADD_MV_REF_LIST(mv, refmv_count, mv_ref_list, bw, bh, xd, Done);
       }
-      ADD_MV_REF_LIST(mv, refmv_count, mv_ref_list, bw, bh, xd, Done);
-    }
-
-    if (prev_frame_mvs->ref_frame[1] > INTRA_FRAME &&
-        prev_frame_mvs->ref_frame[1] != ref_frame) {
-      int_mv mv = prev_frame_mvs->mv[1];
-      if (ref_sign_bias[prev_frame_mvs->ref_frame[1]] !=
-          ref_sign_bias[ref_frame]) {
-        mv.as_mv.row *= -1;
-        mv.as_mv.col *= -1;
-      }
-      ADD_MV_REF_LIST(mv, refmv_count, mv_ref_list, bw, bh, xd, Done);
     }
   }
 
