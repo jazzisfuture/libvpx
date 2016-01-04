@@ -1744,7 +1744,14 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
     }
   }
 
+#if USE_BASE_MV
+  if (cm->use_prev_frame_mvs ||
+      (is_one_pass_cbr_svc(cpi) && cpi->svc.number_spatial_layers > 1
+        && cpi->svc.spatial_layer_id != cpi->svc.number_spatial_layers - 1)) {
+#else
   if (cm->use_prev_frame_mvs) {
+#endif
+
     MV_REF *const frame_mvs =
         cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;
     int w, h;
@@ -2984,9 +2991,16 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi,
     hybrid_intra_mode_search(cpi, x, rd_cost, bsize, ctx);
   else if (segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP))
     set_mode_info_seg_skip(x, cm->tx_mode, rd_cost, bsize);
-  else if (bsize >= BLOCK_8X8)
-    vp9_pick_inter_mode(cpi, x, tile_data, mi_row, mi_col,
+  else if (bsize >= BLOCK_8X8) {
+#if USE_BASE_MV
+    if (is_one_pass_cbr_svc(cpi) && cpi->svc.spatial_layer_id)
+      vp9_pick_inter_mode_svc(cpi, x, tile_data, mi_row, mi_col,
+                              rd_cost, bsize, ctx);
+    else
+#endif
+      vp9_pick_inter_mode(cpi, x, tile_data, mi_row, mi_col,
                         rd_cost, bsize, ctx);
+  }
   else
     vp9_pick_inter_mode_sub8x8(cpi, x, mi_row, mi_col,
                                rd_cost, bsize, ctx);
