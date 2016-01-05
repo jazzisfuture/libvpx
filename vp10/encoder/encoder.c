@@ -3324,6 +3324,14 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
     if (loop_count == 0)
       setup_frame(cpi);
 
+#if CONFIG_SUBFRAME_STATS
+    if (loop_count == 0) {
+      cm->starting_fc = *cm->fc;
+    } else {
+      *cm->fc = cm->starting_fc;
+    }
+#endif  // CONFIG_SUBFRAME_STATS
+
     // Variance adaptive and in frame q adjustment experiments are mutually
     // exclusive.
     if (cpi->oxcf.aq_mode == VARIANCE_AQ) {

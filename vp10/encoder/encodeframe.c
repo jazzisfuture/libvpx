@@ -3588,6 +3588,28 @@ static void encode_rd_sb_row(VP10_COMP *cpi,
     const int idx_str = cm->mi_stride * mi_row + mi_col;
     MODE_INFO **mi = cm->mi_grid_visible + idx_str;
 
+#if 0
+    if (mi_col == tile_info->mi_col_start) {
+      FILE *fp;
+      int i1, i2, i3;
+      FRAME_CONTEXT *fc = cm->fc;
+      char address[100] = {'\0'};
+
+      sprintf(address, "./debug/encode/%d_%d_%d.txt",
+              cm->current_video_frame, mi_row, mi_col);
+      fp = fopen(address, "w");
+      for (i1 = 0; i1 < PARTITION_CONTEXTS; ++i1) {
+        for (i2 = 0; i2 < PARTITION_TYPES - 1; ++i2) {
+          fprintf(fp, "%6d ", fc->partition_prob[i1][i2]);
+        }
+        fprintf(fp, "\n");
+      }
+
+      fprintf(fp, "\n \n");
+      fclose(fp);
+    }
+#endif
+
     if (sf->adaptive_pred_interp_filter) {
       for (i = 0; i < 64; ++i)
         td->leaf_tree[i].pred_interp_filter = SWITCHABLE;
@@ -3657,6 +3679,36 @@ static void encode_rd_sb_row(VP10_COMP *cpi,
 #endif  // CONFIG_SUPERTX
                         INT64_MAX, td->pc_root);
     }
+#if CONFIG_SUBFRAME_STATS
+    if (mi_col + MI_BLOCK_SIZE >= tile_info->mi_col_end) {
+      int i, j;
+      const FRAME_CONTEXT *const fc = cpi->common.fc;
+      (void)j;
+
+      vp10_adapt_sub_frame_probs(cm, mi_row, mi_col);
+
+      if (frame_is_intra_only(cm)) {
+        for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
+          vp10_cost_tokens(cpi->mbmode_cost[i], fc->y_mode_prob[i],
+                           vp10_intra_mode_tree);
+      } else {
+        for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
+          vp10_cost_tokens((int *)cpi->inter_mode_cost[i],
+                           fc->inter_mode_probs[i], vp10_inter_mode_tree);
+      }
+
+      for (i = 0; i < PARTITION_CONTEXTS; ++i)
+        vp10_cost_tokens(cpi->partition_cost[i], fc->partition_prob[i],
+                         vp10_partition_tree);
+
+
+/*
+      for (i = 0; i < INTRA_MODES; ++i)
+        vp10_cost_tokens(cpi->intra_uv_mode_cost[i],
+                         fc->uv_mode_prob[i], vp10_intra_mode_tree);
+                         */
+    }
+#endif  // CONFIG_SUBFRAME_STATS
   }
 }
 

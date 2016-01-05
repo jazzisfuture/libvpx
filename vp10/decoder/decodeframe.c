@@ -2343,6 +2343,10 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
   int mi_row, mi_col;
   TileData *tile_data = NULL;
 
+#if CONFIG_SUBFRAME_STATS
+  cm->starting_fc = *cm->fc;
+#endif  // CONFIG_SUBFRAME_STATS
+
   if (cm->lf.filter_level && !cm->skip_loop_filter &&
       pbi->lf_worker.data1 == NULL) {
     CHECK_MEM_ERROR(cm, pbi->lf_worker.data1,
@@ -2435,6 +2439,10 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
 #endif
                            mi_row, mi_col, &tile_data->bit_reader,
                            BLOCK_64X64, 4);
+#if CONFIG_SUBFRAME_STATS
+          if (mi_col + MI_BLOCK_SIZE >= tile.mi_col_end)
+            vp10_adapt_sub_frame_probs(cm, mi_row, mi_col);
+#endif  // CONFIG_SUBFRAME_STATS
         }
         pbi->mb.corrupted |= tile_data->xd.corrupted;
         if (pbi->mb.corrupted)
@@ -3067,16 +3075,24 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
       vp10_diff_update_prob(&r, &cm->fc->seg.tree_probs[k]);
   }
 
+#if CONFIG_SUBFRAME_STATS1
+  if (!UV_MODE)
+#endif  // CONFIG_SUBFRAME_STATS
   for (j = 0; j < INTRA_MODES; j++)
     for (i = 0; i < INTRA_MODES - 1; ++i)
       vp10_diff_update_prob(&r, &fc->uv_mode_prob[j][i]);
 
+#if !CONFIG_SUBFRAME_STATS
   for (j = 0; j < PARTITION_CONTEXTS; ++j)
     for (i = 0; i < PARTITION_TYPES - 1; ++i)
       vp10_diff_update_prob(&r, &fc->partition_prob[j][i]);
+#endif  // CONFIG_SUBFRAME_STATS
 
   if (frame_is_intra_only(cm)) {
     vp10_copy(cm->kf_y_prob, vp10_kf_y_mode_prob);
+#if CONFIG_SUBFRAME_STATS
+    if (!KEY_Y_MODE)
+#endif  // CONFIG_SUBFRAME_STATS
     for (k = 0; k < INTRA_MODES; k++)
       for (j = 0; j < INTRA_MODES; j++)
         for (i = 0; i < INTRA_MODES - 1; ++i)
@@ -3084,11 +3100,17 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
   } else {
     nmv_context *const nmvc = &fc->nmvc;
 
+#if CONFIG_SUBFRAME_STATS
+    if (!INTER_MODE)
+#endif  // CONFIG_SUBFRAME_STATS
     read_inter_mode_probs(fc, &r);
 
     if (cm->interp_filter == SWITCHABLE)
       read_switchable_interp_probs(fc, &r);
 
+#if CONFIG_SUBFRAME_STATS
+    if (!INTER_INTRA)
+#endif  // CONFIG_SUBFRAME_STATS
     for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
       vp10_diff_update_prob(&r, &fc->intra_inter_prob[i]);
 
@@ -3096,6 +3118,9 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
       setup_compound_reference_mode(cm);
     read_frame_reference_mode_probs(cm, &r);
 
+#if CONFIG_SUBFRAME_STATS1
+    if (!Y_MODE)
+#endif  // CONFIG_SUBFRAME_STATS
     for (j = 0; j < BLOCK_SIZE_GROUPS; j++)
       for (i = 0; i < INTRA_MODES - 1; ++i)
         vp10_diff_update_prob(&r, &fc->y_mode_prob[j][i]);

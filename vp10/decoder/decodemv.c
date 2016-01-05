@@ -425,9 +425,18 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
 
   switch (bsize) {
     case BLOCK_4X4:
-      for (i = 0; i < 4; ++i)
+      for (i = 0; i < 4; ++i) {
         mi->bmi[i].as_mode =
             read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, i));
+#if CONFIG_SUBFRAME_STATS
+        {
+          const PREDICTION_MODE a = vp10_above_block_mode(mi, above_mi, i);
+          const PREDICTION_MODE l = vp10_left_block_mode(mi, left_mi, i);
+          FRAME_COUNTS *counts = xd->counts;
+          ++counts->kf_y_mode[a][l][mi->bmi[i].as_mode];
+        }
+#endif  // CONFIG_SUBFRAME_STATS
+      }
       mbmi->mode = mi->bmi[3].as_mode;
       break;
     case BLOCK_4X8:
@@ -435,16 +444,54 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
           read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
       mi->bmi[1].as_mode = mi->bmi[3].as_mode = mbmi->mode =
           read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 1));
+#if CONFIG_SUBFRAME_STATS
+      {
+        PREDICTION_MODE a;
+        PREDICTION_MODE l;
+        FRAME_COUNTS *counts = xd->counts;
+
+        a = vp10_above_block_mode(mi, above_mi, 0);
+        l = vp10_left_block_mode(mi, left_mi, 0);
+        ++counts->kf_y_mode[a][l][mi->bmi[0].as_mode];
+
+        a = vp10_above_block_mode(mi, above_mi, 1);
+        l = vp10_left_block_mode(mi, left_mi, 1);
+        ++counts->kf_y_mode[a][l][mi->bmi[1].as_mode];
+      }
+#endif  // CONFIG_SUBFRAME_STATS
       break;
     case BLOCK_8X4:
       mi->bmi[0].as_mode = mi->bmi[1].as_mode =
           read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
       mi->bmi[2].as_mode = mi->bmi[3].as_mode = mbmi->mode =
           read_intra_mode(r, get_y_mode_probs(cm, mi, above_mi, left_mi, 2));
+#if CONFIG_SUBFRAME_STATS
+      {
+        PREDICTION_MODE a;
+        PREDICTION_MODE l;
+        FRAME_COUNTS *counts = xd->counts;
+
+        a = vp10_above_block_mode(mi, above_mi, 0);
+        l = vp10_left_block_mode(mi, left_mi, 0);
+        ++counts->kf_y_mode[a][l][mi->bmi[0].as_mode];
+
+        a = vp10_above_block_mode(mi, above_mi, 2);
+        l = vp10_left_block_mode(mi, left_mi, 2);
+        ++counts->kf_y_mode[a][l][mi->bmi[2].as_mode];
+      }
+#endif  // CONFIG_SUBFRAME_STATS
       break;
     default:
       mbmi->mode = read_intra_mode(r,
           get_y_mode_probs(cm, mi, above_mi, left_mi, 0));
+#if CONFIG_SUBFRAME_STATS
+      {
+        const PREDICTION_MODE above = vp10_above_block_mode(mi, above_mi, 0);
+        const PREDICTION_MODE left = vp10_left_block_mode(mi, left_mi, 0);
+        FRAME_COUNTS *counts = xd->counts;
+        ++counts->kf_y_mode[above][left][mbmi->mode];
+      }
+#endif  // CONFIG_SUBFRAME_STATS
 #if CONFIG_EXT_INTRA
       if (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED)
         mbmi->angle_delta[0] =

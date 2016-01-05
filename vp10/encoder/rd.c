@@ -72,8 +72,13 @@ static void fill_mode_costs(VP10_COMP *cpi) {
 
   for (i = 0; i < INTRA_MODES; ++i)
     for (j = 0; j < INTRA_MODES; ++j)
+#if CONFIG_SUBFRAME_STATS
+      vp10_cost_tokens(cpi->y_mode_costs[i][j], fc->key_y_mode_prob[i][j],
+                       vp10_intra_mode_tree);
+#else
       vp10_cost_tokens(cpi->y_mode_costs[i][j], vp10_kf_y_mode_prob[i][j],
                       vp10_intra_mode_tree);
+#endif  // CONFIG_SUBFRAME_STATS
 
   for (i = 0; i < BLOCK_SIZE_GROUPS; ++i)
     vp10_cost_tokens(cpi->mbmode_cost[i], fc->y_mode_prob[i],

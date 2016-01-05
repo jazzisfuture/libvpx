@@ -54,6 +54,9 @@ struct seg_counts {
 };
 
 typedef struct frame_contexts {
+#if CONFIG_SUBFRAME_STATS
+  vpx_prob key_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1];
+#endif  // CONFIG_SUBFRAME_STATS
   vpx_prob y_mode_prob[BLOCK_SIZE_GROUPS][INTRA_MODES - 1];
   vpx_prob uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
   vpx_prob partition_prob[PARTITION_CONTEXTS][PARTITION_TYPES - 1];
