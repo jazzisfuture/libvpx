@@ -186,11 +186,16 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     int xs, ys, subpel_x, subpel_y;
     const int is_scaled = vp9_is_scaled(sf);
 
-    if (is_scaled) {
 #if CONFIG_BETTER_HW_COMPATIBILITY
+    if (is_scaled) {
       assert(xd->mi[0]->mbmi.sb_type != BLOCK_4X8 &&
              xd->mi[0]->mbmi.sb_type != BLOCK_8X4);
+      assert(mv_q4.row == mv.row * (1 << (1 - pd->subsampling_y)) &&
+             mv_q4.col == mv.col * (1 << (1 - pd->subsampling_x)));
+    }
 #endif
+
+    if (is_scaled) {
       // Co-ordinate of containing block to pixel precision.
       const int x_start = (-xd->mb_to_left_edge >> (3 + pd->subsampling_x));
       const int y_start = (-xd->mb_to_top_edge >> (3 + pd->subsampling_y));
