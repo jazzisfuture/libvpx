@@ -2173,8 +2173,14 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   }
 
   setup_segmentation_dequant(cm);
+<<<<<<< HEAD   (717be7 Merge "Use precise rate cost for intra modes in inter frames)
   cm->tx_mode = (xd->lossless[0]) ? ONLY_4X4
                                   : read_tx_mode(rb);
+=======
+#if CONFIG_MISC_FIXES
+  cm->tx_mode = (!cm->seg.enabled && xd->lossless[0]) ? ONLY_4X4
+                                                      : read_tx_mode(rb);
+>>>>>>> BRANCH (ef77ce Merge "vp10: only assume ONLY_4X4 if segmentation is disable)
   cm->reference_mode = read_frame_reference_mode(cm, rb);
 
   setup_tile_info(cm, rb);
