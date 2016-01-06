@@ -3024,5 +3024,14 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     }
     ++td->counts->tx.tx_totals[mbmi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mbmi, &xd->plane[1])];
+#if CONFIG_EXT_TX
+    if (mbmi->tx_size < TX_32X32 && !is_inter_block(mbmi) &&
+        cm->base_qindex > 0 && !mbmi->skip &&
+        !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+      ++td->counts->intra_ext_tx[mbmi->tx_size]
+                                [intra_mode_to_tx_type_lookup[mbmi->mode]]
+                                [mbmi->tx_type];
+    }
+#endif  // CONFIG_EXT_TX
   }
 }
