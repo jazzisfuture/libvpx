@@ -820,8 +820,7 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_TX
   ext_tx_set = get_ext_tx_set(mbmi->tx_size, bs, is_inter);
 
-  if (is_inter &&
-      get_ext_tx_types(mbmi->tx_size, bs, is_inter) > 1 &&
+  if (get_ext_tx_types(mbmi->tx_size, bs, is_inter) > 1 &&
       !xd->lossless[mbmi->segment_id]) {
     for (tx_type = 0; tx_type < TX_TYPES; ++tx_type) {
       if (is_inter) {
@@ -870,7 +869,7 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
         this_rd = RDCOST(x->rdmult, x->rddiv, s1, psse);
       else
         this_rd = RDCOST(x->rdmult, x->rddiv, r + s0, d);
-      if (is_inter_block(mbmi) && !xd->lossless[mbmi->segment_id] && !s)
+      if (is_inter && !xd->lossless[mbmi->segment_id] && !s)
         this_rd = VPXMIN(this_rd, RDCOST(x->rdmult, x->rddiv, s1, psse));
 
       if (this_rd < ((best_tx_type == DCT_DCT) ? ext_tx_th : 1) * best_rd) {
@@ -931,12 +930,12 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
     if (is_inter) {
       if (ext_tx_set > 0)
         *rate += cpi->inter_tx_type_costs[ext_tx_set][mbmi->tx_size]
-                                                      [mbmi->tx_type];
+                                                     [mbmi->tx_type];
     } else {
       if (ext_tx_set > 0 && ALLOW_INTRA_EXT_TX)
         *rate +=
             cpi->intra_tx_type_costs[ext_tx_set][mbmi->tx_size]
-                                                 [mbmi->mode][mbmi->tx_type];
+                                                [mbmi->mode][mbmi->tx_type];
     }
   }
 #else
@@ -1062,10 +1061,10 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
         if (is_inter) {
           if (ext_tx_set > 0)
             r += cpi->inter_tx_type_costs[ext_tx_set]
-                                         [mbmi->tx_size][mbmi->tx_type];
+                                         [n][mbmi->tx_type];
         } else {
           if (ext_tx_set > 0 && ALLOW_INTRA_EXT_TX)
-            r += cpi->intra_tx_type_costs[ext_tx_set][mbmi->tx_size]
+            r += cpi->intra_tx_type_costs[ext_tx_set][n]
                                          [mbmi->mode][mbmi->tx_type];
         }
       }
