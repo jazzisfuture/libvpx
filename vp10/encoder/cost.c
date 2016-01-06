@@ -57,7 +57,7 @@ static void cost(int *costs, vpx_tree tree, const vpx_prob *probs,
 
 #if CONFIG_ANS
 void vp10_cost_tokens_ans(int *costs, const vpx_prob *tree_probs,
-                          const vpx_prob *token_probs, int skip_eob) {
+                          const AnsP10 *token_probs, int skip_eob) {
   int c_tree = 0;  // Cost of the "tree" nodes EOB and ZERO.
   int i;
   costs[EOB_TOKEN] = vp10_cost_bit(tree_probs[0], 0);
@@ -66,7 +66,7 @@ void vp10_cost_tokens_ans(int *costs, const vpx_prob *tree_probs,
   costs[ZERO_TOKEN] = c_tree + vp10_cost_bit(tree_probs[1], 0);
   c_tree += vp10_cost_bit(tree_probs[1], 1);
   for (i = ONE_TOKEN; i <= CATEGORY6_TOKEN; ++i) {
-    costs[i] = c_tree + vp10_cost_bit(token_probs[i - ONE_TOKEN], 0);
+    costs[i] = c_tree + vp10_cost_bit(token_probs[i - ONE_TOKEN] >> 2, 0);
   }
 }
 #endif  // CONFIG_ANS

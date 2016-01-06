@@ -147,22 +147,25 @@ bool check_vpxbool(const PvVec &pv_vec, uint8_t *buf) {
 }
 
 const rans_sym rans_sym_tab[] = {
-    {70, 186}, {70, 116}, {100, 16}, {16, 0},
+  { 70 * 4,  186 * 4 },
+  { 70 * 4,  116 * 4 },
+  { 100 * 4,  16 * 4 },
+  { 16 * 4,    0 * 4 },
 };
 const int kDistinctSyms = sizeof(rans_sym_tab) / sizeof(rans_sym_tab[0]);
 
 std::vector<int> ans_encode_build_vals(const rans_sym *tab, int iters) {
   std::vector<int> p_to_sym;
   int i = 0;
-  while (p_to_sym.size() < 256) {
+  while (p_to_sym.size() < rans_precision) {
     p_to_sym.insert(p_to_sym.end(), tab[i].prob, i);
     ++i;
   }
-  assert(p_to_sym.size() == 256);
+  assert(p_to_sym.size() == rans_precision);
   std::vector<int> ret;
   libvpx_test::ACMRandom gen(18543637);
   for (int i = 0; i < iters; ++i) {
-    int sym = p_to_sym[gen.Rand8()];
+    int sym = p_to_sym[gen.Rand8()*4];
     ret.push_back(sym);
   }
   return ret;
@@ -172,7 +175,7 @@ void rans_build_dec_tab(const struct rans_sym sym_tab[],
                         rans_dec_lut dec_tab) {
   int val = 0;
   int i;
-  for (i = ans_p8_precision - 1; i >= 0; --i) {
+  for (i = rans_precision - 1; i >= 0; --i) {
     dec_tab[i].val = val;
     dec_tab[i].prob = sym_tab[val].prob;
     dec_tab[i].cum_prob = sym_tab[val].cum_prob;

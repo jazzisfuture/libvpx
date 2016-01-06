@@ -674,7 +674,7 @@ static void pack_mb_tokens_ans(struct AnsCoder *const ans,
       {
         struct rans_sym s;
         int j;
-        const vpx_prob *token_probs =
+        const AnsP10 *token_probs =
             vp10_pareto8_token_probs[p->context_tree[PIVOT_NODE] - 1];
         s.cum_prob = 0;
         for (j = ONE_TOKEN; j < t; ++j) {
