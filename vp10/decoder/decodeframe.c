@@ -2977,8 +2977,14 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   }
 
   setup_segmentation_dequant(cm);
+<<<<<<< HEAD   (3787b1 Super transform - ported from nextgen branch)
   cm->tx_mode = (xd->lossless[0]) ? ONLY_4X4
                                   : read_tx_mode(rb);
+=======
+#if CONFIG_MISC_FIXES
+  cm->tx_mode = (!cm->seg.enabled && xd->lossless[0]) ? ONLY_4X4
+                                                      : read_tx_mode(rb);
+>>>>>>> BRANCH (2bd4f4 Assert no mv clamping for scaled references)
   cm->reference_mode = read_frame_reference_mode(cm, rb);
 
   setup_tile_info(cm, rb);

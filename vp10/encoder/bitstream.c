@@ -712,6 +712,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       vpx_write(w, is_inter, vp10_get_intra_inter_prob(cm, xd));
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
+<<<<<<< HEAD   (3787b1 Super transform - ported from nextgen branch)
 #if CONFIG_SUPERTX
       !supertx_enabled &&
 #endif  // CONFIG_SUPERTX
@@ -739,6 +740,10 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #else
   write_selected_tx_size(cm, xd, w);
 #endif
+=======
+      !(is_inter && skip) && !xd->lossless[segment_id]) {
+    write_selected_tx_size(cm, xd, w);
+>>>>>>> BRANCH (2bd4f4 Assert no mv clamping for scaled references)
   }
 
   if (!is_inter) {
@@ -889,7 +894,8 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
 
   write_skip(cm, xd, mbmi->segment_id, mi, w);
 
-  if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT)
+  if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
+      !xd->lossless[mbmi->segment_id])
     write_selected_tx_size(cm, xd, w);
 
   if (bsize >= BLOCK_8X8) {
@@ -1900,7 +1906,12 @@ static void write_uncompressed_header(VP10_COMP *cpi,
   encode_loopfilter(&cm->lf, wb);
   encode_quantization(cm, wb);
   encode_segmentation(cm, xd, wb);
+<<<<<<< HEAD   (3787b1 Super transform - ported from nextgen branch)
   if (xd->lossless[0])
+=======
+#if CONFIG_MISC_FIXES
+  if (!cm->seg.enabled && xd->lossless[0])
+>>>>>>> BRANCH (2bd4f4 Assert no mv clamping for scaled references)
     cm->tx_mode = TX_4X4;
   else
     write_txfm_mode(cm->tx_mode, wb);
