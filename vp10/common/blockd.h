@@ -82,6 +82,9 @@ typedef struct {
   // Only for INTER blocks
   INTERP_FILTER interp_filter;
   MV_REFERENCE_FRAME ref_frame[2];
+#if CONFIG_EXT_TX
+  TX_TYPE tx_type;
+#endif  // CONFIG_EXT_TX
 
   // TODO(slavarnway): Delete and use bmi[3].as_mv[] instead.
   int_mv mv[2];
@@ -229,7 +232,12 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type, const MACROBLOCKD *xd,
       is_inter_block(mbmi) || mbmi->tx_size >= TX_32X32)
     return DCT_DCT;
 
+#if CONFIG_EXT_TX
+  (void) block_idx;
+  return mbmi->tx_type;
+#else
   return intra_mode_to_tx_type_lookup[get_y_mode(mi, block_idx)];
+#endif  // CONFIG_EXT_TX
 }
 
 void vp10_setup_block_planes(MACROBLOCKD *xd, int ss_x, int ss_y);
