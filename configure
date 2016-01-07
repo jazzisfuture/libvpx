@@ -285,6 +285,7 @@ EXPERIMENT_LIST="
     ext_tile
     obmc
     affine_motion
+    subframe_stats
 "
 CONFIG_LIST="
     dependency_tracking
