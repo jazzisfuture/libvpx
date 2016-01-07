@@ -1408,10 +1408,39 @@ static void update_coef_probs_common(vpx_writer* const bc, VP10_COMP *cpi,
   }
 }
 
+#if CONFIG_SUBFRAME_STATS
+  static void full_to_model_count(unsigned int *model_count,
+                                  unsigned int *full_count) {
+    int n;
+    model_count[ZERO_TOKEN] = full_count[ZERO_TOKEN];
+    model_count[ONE_TOKEN] = full_count[ONE_TOKEN];
+    model_count[TWO_TOKEN] = full_count[TWO_TOKEN];
+    for (n = THREE_TOKEN; n < EOB_TOKEN; ++n)
+      model_count[TWO_TOKEN] += full_count[n];
+    model_count[EOB_MODEL_TOKEN] = full_count[EOB_TOKEN];
+  }
+
+  static void full_to_model_counts(vp10_coeff_count_model *model_count,
+                                   vp10_coeff_count *full_count) {
+    int i, j, k, l;
+
+    for (i = 0; i < PLANE_TYPES; ++i)
+      for (j = 0; j < REF_TYPES; ++j)
+        for (k = 0; k < COEF_BANDS; ++k)
+          for (l = 0; l < BAND_COEFF_CONTEXTS(k); ++l)
+            full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
+  }
+#endif  // CONFIG_SUBFRAME_STATS
+
 static void update_coef_probs(VP10_COMP *cpi, vpx_writer* w) {
   const TX_MODE tx_mode = cpi->common.tx_mode;
   const TX_SIZE max_tx_size = tx_mode_to_biggest_tx_size[tx_mode];
   TX_SIZE tx_size;
+
+#if CONFIG_SUBFRAME_STATS
+  vp10_copy(cpi->common.fc->coef_probs, cpi->common.enc_starting_fc.coef_probs);
+#endif  // CONFIG_SUBFRAME_STATS
+
   for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size) {
     vp10_coeff_stats frame_branch_ct[PLANE_TYPES];
     vp10_coeff_probs_model frame_coef_probs[PLANE_TYPES];
@@ -1425,6 +1454,33 @@ static void update_coef_probs(VP10_COMP *cpi, vpx_writer* w) {
                                frame_coef_probs);
     }
   }
+
+#if CONFIG_SUBFRAME_STATS
+    {
+      VP10_COMMON *cm = &cpi->common;
+      int i;
+
+      cm->starting_fc = *cm->fc;
+      vp10_copy(cpi->td.coef_probs_buf[0], cm->fc->coef_probs);
+      vp10_copy(cpi->td.eob_counts_buf[0], cm->counts.eob_branch);
+
+      for (i = 1; i < cm->coef_probs_buf_idx; ++i) {
+        for (tx_size = TX_4X4; tx_size <= TX_32X32; ++tx_size)
+          full_to_model_counts(cm->counts.coef[tx_size],
+                               cpi->td.coef_counts_buf[i][tx_size]);
+
+        vp10_copy(cm->counts.eob_branch, cpi->td.eob_counts_buf[i]);
+
+        if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
+          vp10_partial_adapt_probs(cm, 0, 0);
+        }
+        vp10_copy(cpi->td.coef_probs_buf[i], cm->fc->coef_probs);
+      }
+
+      vp10_copy(cm->fc->coef_probs, cpi->td.coef_probs_buf[0]);
+      vp10_copy(cm->counts.eob_branch, cpi->td.eob_counts_buf[0]);
+    }
+#endif  // CONFIG_SUBFRAME_STATS
 }
 
 static void encode_loopfilter(struct loopfilter *lf,

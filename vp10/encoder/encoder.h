@@ -258,6 +258,15 @@ typedef struct ThreadData {
   PICK_MODE_CONTEXT *leaf_tree;
   PC_TREE *pc_tree;
   PC_TREE *pc_root;
+#if CONFIG_SUBFRAME_STATS
+  vp10_coeff_probs_model
+  coef_probs_buf[MAX_COEF_PROBS_BUFS][TX_SIZES][PLANE_TYPES];
+  vp10_coeff_count
+  coef_counts_buf[MAX_COEF_PROBS_BUFS][TX_SIZES][PLANE_TYPES];
+  unsigned int
+  eob_counts_buf[MAX_COEF_PROBS_BUFS]
+                 [TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS];
+#endif  // CONFIG_SUBFRAME_STATS
 } ThreadData;
 
 struct EncWorkerData;

@@ -3324,6 +3324,24 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
     if (loop_count == 0)
       setup_frame(cpi);
 
+#if CONFIG_SUBFRAME_STATS
+    if (loop_count == 0) {
+      cm->starting_fc = *cm->fc;
+      cm->enc_starting_fc = *cm->fc;
+    } else {
+      *cm->fc = cm->enc_starting_fc;
+      cm->starting_fc = cm->enc_starting_fc;
+    }
+
+    {
+      int i;
+      cpi->common.coef_probs_buf_idx = 0;
+      for (i = 0; i < MAX_COEF_PROBS_BUFS; ++i) {
+        vp10_copy(cpi->td.coef_probs_buf[i], cm->fc->coef_probs);
+      }
+    }
+#endif  // CONFIG_SUBFRAME_STATS
+
     // Variance adaptive and in frame q adjustment experiments are mutually
     // exclusive.
     if (cpi->oxcf.aq_mode == VARIANCE_AQ) {

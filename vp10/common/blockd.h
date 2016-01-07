@@ -81,6 +81,10 @@ typedef struct {
 #define MAX_REF_FRAMES  4
 #endif  // CONFIG_EXT_REFS
 
+#if CONFIG_SUBFRAME_STATS
+#define MAX_COEF_PROBS_BUFS 128
+#endif  // CONFIG_SUBFRAME_STATS
+
 typedef int8_t MV_REFERENCE_FRAME;
 
 typedef struct {

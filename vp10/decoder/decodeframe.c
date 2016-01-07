@@ -1934,6 +1934,7 @@ static void read_coef_probs(FRAME_CONTEXT *fc, TX_MODE tx_mode,
                             vpx_reader *r) {
     const TX_SIZE max_tx_size = tx_mode_to_biggest_tx_size[tx_mode];
     TX_SIZE tx_size;
+
     for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size)
       read_coef_probs_common(fc->coef_probs[tx_size], r);
 }
@@ -2435,6 +2436,11 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
 #endif
                            mi_row, mi_col, &tile_data->bit_reader,
                            BLOCK_64X64, 4);
+#if CONFIG_SUBFRAME_STATS
+          if (mi_col + MI_BLOCK_SIZE >= tile.mi_col_end || (mi_row == 0 && 0)) {
+            vp10_partial_adapt_probs(cm, mi_row, mi_col);
+          }
+#endif  // CONFIG_SUBFRAME_STATS
         }
         pbi->mb.corrupted |= tile_data->xd.corrupted;
         if (pbi->mb.corrupted)
@@ -3271,6 +3277,11 @@ void vp10_decode_frame(VP10Decoder *pbi,
     vp10_frameworker_signal_stats(worker);
     vp10_frameworker_unlock_stats(worker);
   }
+
+#if CONFIG_SUBFRAME_STATS
+  cm->coef_probs_buf_idx = 0;
+  cm->starting_fc = *cm->fc;
+#endif  // CONFIG_SUBFRAME_STATS
 
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1) {
     // Multi-threaded tile decoder
