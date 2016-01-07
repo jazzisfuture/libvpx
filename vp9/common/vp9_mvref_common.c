@@ -156,16 +156,6 @@ void vp9_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                    mi_row, mi_col, sync, data, mode_context);
 }
 
-static void lower_mv_precision(MV *mv, int allow_hp) {
-  const int use_hp = allow_hp && vp9_use_mv_hp(mv);
-  if (!use_hp) {
-    if (mv->row & 1)
-      mv->row += (mv->row > 0 ? -1 : 1);
-    if (mv->col & 1)
-      mv->col += (mv->col > 0 ? -1 : 1);
-  }
-}
-
 void vp9_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
                            int_mv *mvlist, int_mv *nearest_mv,
                            int_mv *near_mv) {
