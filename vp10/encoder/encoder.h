@@ -286,6 +286,19 @@ typedef struct IMAGE_STAT {
   double worst;
 } ImageStat;
 
+#if CONFIG_SUBFRAME_STATS
+typedef struct SUBFRAME_STATS {
+  vp10_coeff_probs_model
+  coef_probs_buf[COEF_PROBS_BUFS][TX_SIZES][PLANE_TYPES];
+  vp10_coeff_count
+  coef_counts_buf[COEF_PROBS_BUFS][TX_SIZES][PLANE_TYPES];
+  unsigned int
+  eob_counts_buf[COEF_PROBS_BUFS]
+                 [TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS];
+  vp10_coeff_probs_model enc_starting_coef_probs[TX_SIZES][PLANE_TYPES];
+} SUBFRAME_STATS;
+#endif  // CONFIG_SUBFRAME_STATS
+
 typedef struct VP10_COMP {
   QUANTS quants;
   ThreadData td;
@@ -543,6 +556,9 @@ typedef struct VP10_COMP {
   VPxWorker *workers;
   struct EncWorkerData *tile_thr_data;
   VP9LfSync lf_row_sync;
+#if CONFIG_SUBFRAME_STATS
+  SUBFRAME_STATS subframe_stats;
+#endif  // CONFIG_SUBFRAME_STATS
 } VP10_COMP;
 
 void vp10_initialize_enc(void);
@@ -589,6 +605,11 @@ int vp10_set_size_literal(VP10_COMP *cpi, unsigned int width,
                          unsigned int height);
 
 int vp10_get_quantizer(struct VP10_COMP *cpi);
+
+#if CONFIG_SUBFRAME_STATS
+void full_to_model_counts(vp10_coeff_count_model *model_count,
+                          vp10_coeff_count *full_count);
+#endif  // CONFIG_SUBFRAME_STATS
 
 static INLINE int frame_is_kf_gf_arf(const VP10_COMP *cpi) {
   return frame_is_intra_only(&cpi->common) ||

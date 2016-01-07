@@ -2789,6 +2789,11 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
   int mi_row, mi_col;
   TileData *tile_data = NULL;
 
+#if CONFIG_SUBFRAME_STATS
+  cm->use_subframe_update =
+      cm->log2_tile_cols == 0 && cm->log2_tile_rows == 0;
+#endif  // CONFIG_SUBFRAME_STATS
+
   if (cm->lf.filter_level && !cm->skip_loop_filter &&
       pbi->lf_worker.data1 == NULL) {
     CHECK_MEM_ERROR(cm, pbi->lf_worker.data1,
@@ -2897,6 +2902,17 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
                            &tile_data->token_ans,
 #endif  // CONFIG_ANS
                            BLOCK_64X64, 4);
+#if CONFIG_SUBFRAME_STATS
+          if (cm->use_subframe_update) {
+            if (mi_col + MI_BLOCK_SIZE >= tile.mi_col_end &&
+                ((mi_row + MI_SIZE) % (MI_SIZE *
+                    VPXMAX(cm->mi_rows / MI_SIZE / COEF_PROBS_BUFS, 1)) == 0) &&
+                cm->coef_probs_buf_idx < COEF_PROBS_BUFS - 1) {
+              vp10_partial_adapt_probs(cm, mi_row, mi_col);
+              ++cm->coef_probs_buf_idx;
+            }
+          }
+#endif  // CONFIG_SUBFRAME_STATS
         }
         pbi->mb.corrupted |= tile_data->xd.corrupted;
         if (pbi->mb.corrupted)
@@ -3808,6 +3824,11 @@ void vp10_decode_frame(VP10Decoder *pbi,
     vp10_frameworker_unlock_stats(worker);
   }
 
+#if CONFIG_SUBFRAME_STATS
+  vp10_copy(cm->starting_coef_probs, cm->fc->coef_probs);
+  cm->coef_probs_buf_idx = 0;
+#endif  // CONFIG_SUBFRAME_STATS
+
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1) {
     // Multi-threaded tile decoder
     *p_data_end = decode_tiles_mt(pbi, data + first_partition_size, data_end);
@@ -3838,6 +3859,9 @@ void vp10_decode_frame(VP10Decoder *pbi,
 
   if (!xd->corrupted) {
     if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
+#if CONFIG_SUBFRAME_STATS
+      cm->partial_prob_update = 0;
+#endif  // CONFIG_SUBFRAME_STATS
       vp10_adapt_coef_probs(cm);
       vp10_adapt_intra_frame_probs(cm);
 

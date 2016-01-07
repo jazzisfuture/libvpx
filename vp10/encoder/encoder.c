@@ -2775,8 +2775,13 @@ static void full_to_model_count(unsigned int *model_count,
   model_count[EOB_MODEL_TOKEN] = full_count[EOB_TOKEN];
 }
 
+#if CONFIG_SUBFRAME_STATS
+void full_to_model_counts(vp10_coeff_count_model *model_count,
+                                 vp10_coeff_count *full_count) {
+#else
 static void full_to_model_counts(vp10_coeff_count_model *model_count,
                                  vp10_coeff_count *full_count) {
+#endif  // CONFIG_SUBFRAME_STATS
   int i, j, k, l;
 
   for (i = 0; i < PLANE_TYPES; ++i)
@@ -3175,6 +3180,27 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
 
     if (loop_count == 0)
       setup_frame(cpi);
+
+#if CONFIG_SUBFRAME_STATS
+    cm->use_subframe_update =
+        cm->log2_tile_cols == 0 && cm->log2_tile_rows == 0;
+    if (loop_count == 0) {
+      vp10_copy(cm->starting_coef_probs, cm->fc->coef_probs);
+      vp10_copy(cpi->subframe_stats.enc_starting_coef_probs,
+                cm->fc->coef_probs);
+    } else {
+      if (cm->use_subframe_update) {
+        vp10_copy(cm->fc->coef_probs,
+                  cpi->subframe_stats.enc_starting_coef_probs);
+        vp10_copy(cm->starting_coef_probs,
+                  cpi->subframe_stats.enc_starting_coef_probs);
+        vp10_zero(cpi->subframe_stats.coef_counts_buf);
+        vp10_zero(cpi->subframe_stats.eob_counts_buf);
+      }
+    }
+    cm->coef_probs_buf_idx = 0;
+    vp10_copy(cpi->subframe_stats.coef_probs_buf[0], cm->fc->coef_probs);
+#endif  // CONFIG_SUBFRAME_STATS
 
     // Variance adaptive and in frame q adjustment experiments are mutually
     // exclusive.
@@ -3691,6 +3717,9 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
                          cpi->td.rd_counts.coef_counts[t]);
 
   if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
+#if CONFIG_SUBFRAME_STATS
+    cm->partial_prob_update = 0;
+#endif  // CONFIG_SUBFRAME_STATS
     vp10_adapt_coef_probs(cm);
     vp10_adapt_intra_frame_probs(cm);
   }
