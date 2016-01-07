@@ -176,7 +176,21 @@ typedef enum {
 #define NEARMV    11
 #define ZEROMV    12
 #define NEWMV     13
+#if CONFIG_EXT_INTER
+#define NEW2MV            14
+#define NEAREST_NEARESTMV 15
+#define NEAREST_NEARMV    16
+#define NEAR_NEARESTMV    17
+#define NEAREST_NEWMV     18
+#define NEW_NEARESTMV     19
+#define NEAR_NEWMV        20
+#define NEW_NEARMV        21
+#define ZERO_ZEROMV       22
+#define NEW_NEWMV         23
+#define MB_MODE_COUNT     24
+#else
 #define MB_MODE_COUNT 14
+#endif
 typedef uint8_t PREDICTION_MODE;
 
 #define INTRA_MODES (TM_PRED + 1)
@@ -200,7 +214,15 @@ typedef enum {
 #define DIRECTIONAL_MODES (INTRA_MODES - 2)
 #endif  // CONFIG_EXT_INTRA
 
+#if CONFIG_EXT_INTER
+#define INTER_MODES (1 + NEW2MV - NEARESTMV)
+#else
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
+#endif  // CONFIG_EXT_INTER
+
+#if CONFIG_EXT_INTER
+#define INTER_COMPOUND_MODES (1 + NEW_NEWMV - NEAREST_NEARESTMV)
+#endif  // CONFIG_EXT_INTER
 
 #define SKIP_CONTEXTS 3
 

@@ -1783,6 +1783,11 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td
           mode_ctx &= (mbmi_ext->mode_context[mbmi->ref_frame[1]] | 0x00ff);
         update_inter_mode_stats(counts, mode, mode_ctx);
 #else
+#if CONFIG_EXT_INTER
+        if (is_inter_compound_mode(mode))
+          ++counts->inter_compound_mode[mode_ctx][INTER_COMPOUND_OFFSET(mode)];
+        else
+#endif  // CONFIG_EXT_INTER
         ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];
 #endif
       } else {
@@ -1797,6 +1802,12 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td
             mode_ctx &= 0x00ff;
             update_inter_mode_stats(counts, b_mode, mode_ctx);
 #else
+#if CONFIG_EXT_INTER
+            if (is_inter_compound_mode(b_mode))
+              ++counts->inter_compound_mode[mode_ctx]
+                                           [INTER_COMPOUND_OFFSET(b_mode)];
+            else
+#endif  // CONFIG_EXT_INTER
             ++counts->inter_mode[mode_ctx][INTER_OFFSET(b_mode)];
 #endif
           }
