@@ -3349,6 +3349,28 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
     if (loop_count == 0)
       setup_frame(cpi);
 
+#if CONFIG_SUBFRAME_STATS
+    if (loop_count == 0) {
+      vp10_copy(cm->starting_coef_probs, cm->fc->coef_probs);
+      vp10_copy(cpi->enc_starting_coef_probs, cm->fc->coef_probs);
+    } else {
+      if (frame_is_intra_only(cm) || 1) {
+        vp10_copy(cm->fc->coef_probs, cpi->enc_starting_coef_probs);
+        vp10_copy(cm->starting_coef_probs, cpi->enc_starting_coef_probs);
+      }
+    }
+
+    {
+      int i;
+      cm->coef_probs_buf_idx = 0;
+      for (i = 0; i < COEF_PROBS_BUFS; ++i) {
+        vp10_copy(cpi->td.coef_probs_buf[i], cm->fc->coef_probs);
+      }
+      vp10_zero(cpi->td.coef_counts_buf);
+      vp10_zero(cpi->td.eob_counts_buf);
+    }
+#endif  // CONFIG_SUBFRAME_STATS
+
     // Variance adaptive and in frame q adjustment experiments are mutually
     // exclusive.
     if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
@@ -3864,6 +3886,9 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
                          cpi->td.rd_counts.coef_counts[t]);
 
   if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
+#if CONFIG_SUBFRAME_STATS
+    cm->partial_prob_update = 0;
+#endif  // CONFIG_SUBFRAME_STATS
     vp10_adapt_coef_probs(cm);
     vp10_adapt_intra_frame_probs(cm);
   }

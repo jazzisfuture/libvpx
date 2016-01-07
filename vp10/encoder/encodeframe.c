@@ -3596,6 +3596,50 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
   }
 }
 
+#if CONFIG_SUBFRAME_STATS
+  static void fill_token_costs(vp10_coeff_cost *c,
+                               vp10_coeff_probs_model (*p)[PLANE_TYPES]) {
+    int i, j, k, l;
+    TX_SIZE t;
+    for (t = TX_4X4; t <= TX_32X32; ++t)
+      for (i = 0; i < PLANE_TYPES; ++i)
+        for (j = 0; j < REF_TYPES; ++j)
+          for (k = 0; k < COEF_BANDS; ++k)
+            for (l = 0; l < BAND_COEFF_CONTEXTS(k); ++l) {
+              vpx_prob probs[ENTROPY_NODES];
+              vp10_model_to_full_probs(p[t][i][j][k][l], probs);
+              vp10_cost_tokens((int *)c[t][i][j][k][0][l], probs,
+                               vp10_coef_tree);
+              vp10_cost_tokens_skip((int *)c[t][i][j][k][1][l], probs,
+                                    vp10_coef_tree);
+              assert(c[t][i][j][k][0][l][EOB_TOKEN] ==
+                  c[t][i][j][k][1][l][EOB_TOKEN]);
+            }
+  }
+
+  static void full_to_model_count(unsigned int *model_count,
+                                  unsigned int *full_count) {
+    int n;
+    model_count[ZERO_TOKEN] = full_count[ZERO_TOKEN];
+    model_count[ONE_TOKEN] = full_count[ONE_TOKEN];
+    model_count[TWO_TOKEN] = full_count[TWO_TOKEN];
+    for (n = THREE_TOKEN; n < EOB_TOKEN; ++n)
+      model_count[TWO_TOKEN] += full_count[n];
+    model_count[EOB_MODEL_TOKEN] = full_count[EOB_TOKEN];
+  }
+
+  static void full_to_model_counts(vp10_coeff_count_model *model_count,
+                                   vp10_coeff_count *full_count) {
+    int i, j, k, l;
+
+    for (i = 0; i < PLANE_TYPES; ++i)
+      for (j = 0; j < REF_TYPES; ++j)
+        for (k = 0; k < COEF_BANDS; ++k)
+          for (l = 0; l < BAND_COEFF_CONTEXTS(k); ++l)
+            full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
+  }
+#endif  // CONFIG_SUBFRAME_STATS
+
 static void encode_rd_sb_row(VP10_COMP *cpi,
                              ThreadData *td,
                              TileDataEnc *tile_data,
@@ -3700,6 +3744,35 @@ static void encode_rd_sb_row(VP10_COMP *cpi,
 #endif  // CONFIG_SUPERTX
                         INT64_MAX, td->pc_root);
     }
+#if CONFIG_SUBFRAME_STATS
+    if (frame_is_intra_only(cm) || 1) {
+      if ((mi_col + MI_BLOCK_SIZE >= tile_info->mi_col_end) &&
+          ((mi_row + 8) %
+              (8 * VPXMAX(cm->mi_rows / 8 / COEF_PROBS_BUFS, 1)) == 0) &&
+          cm->coef_probs_buf_idx < COEF_PROBS_BUFS - 1) {
+        TX_SIZE t;
+
+        for (t = TX_4X4; t <= TX_32X32; ++t)
+          full_to_model_counts(cpi->td.counts->coef[t],
+                               cpi->td.rd_counts.coef_counts[t]);
+
+        vp10_partial_adapt_probs(cm, mi_row, mi_col);
+
+        ++cm->coef_probs_buf_idx;
+
+        vp10_copy(td->coef_probs_buf[cm->coef_probs_buf_idx],
+                  cm->fc->coef_probs);
+
+        vp10_copy(td->coef_counts_buf[cm->coef_probs_buf_idx],
+                  cpi->td.rd_counts.coef_counts);
+
+        vp10_copy(td->eob_counts_buf[cm->coef_probs_buf_idx],
+                  cm->counts.eob_branch);
+
+        fill_token_costs(x->token_costs, cm->fc->coef_probs);
+      }
+    }
+#endif  // CONFIG_SUBFRAME_STATS
   }
 }
 

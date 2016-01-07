@@ -258,6 +258,15 @@ typedef struct ThreadData {
   PICK_MODE_CONTEXT *leaf_tree;
   PC_TREE *pc_tree;
   PC_TREE *pc_root;
+#if CONFIG_SUBFRAME_STATS
+  vp10_coeff_probs_model
+  coef_probs_buf[COEF_PROBS_BUFS][TX_SIZES][PLANE_TYPES];
+  vp10_coeff_count
+  coef_counts_buf[COEF_PROBS_BUFS][TX_SIZES][PLANE_TYPES];
+  unsigned int
+  eob_counts_buf[COEF_PROBS_BUFS]
+                [TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS];
+#endif  // CONFIG_SUBFRAME_STATS
 } ThreadData;
 
 struct EncWorkerData;
@@ -533,6 +542,9 @@ typedef struct VP10_COMP {
   VPxWorker *workers;
   struct EncWorkerData *tile_thr_data;
   VP9LfSync lf_row_sync;
+#if CONFIG_SUBFRAME_STATS
+  vp10_coeff_probs_model enc_starting_coef_probs[TX_SIZES][PLANE_TYPES];
+#endif  // CONFIG_SUBFRAME_STATS
 } VP10_COMP;
 
 void vp10_initialize_enc(void);
