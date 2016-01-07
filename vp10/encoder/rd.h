@@ -34,9 +34,17 @@ extern "C" {
 #define INVALID_MV 0x80008000
 
 #if CONFIG_EXT_REFS
+#if CONFIG_EXT_INTER
+#define MAX_MODES 85
+#else
 #define MAX_MODES 54
+#endif  // CONFIG_EXT_INTER
+#else
+#if CONFIG_EXT_INTER
+#define MAX_MODES 33
 #else
 #define MAX_MODES 30
+#endif  // CONFIG_EXT_INTER
 #endif  // CONFIG_EXT_REFS
 
 #if CONFIG_EXT_REFS
@@ -79,6 +87,17 @@ typedef enum {
 #endif  // CONFIG_EXT_REFS
   THR_NEARA,
   THR_NEARG,
+
+#if CONFIG_EXT_INTER
+  THR_NEW2MV,
+#if CONFIG_EXT_REF
+  THR_NEW2L2,
+  THR_NEW2L3,
+  THR_NEW2L4,
+#endif  // CONFIG_EXT_REF
+  THR_NEW2A,
+  THR_NEW2G,
+#endif  // CONFIG_EXT_INTER
 
   THR_ZEROMV,
 #if CONFIG_EXT_REFS
