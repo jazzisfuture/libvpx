@@ -11,7 +11,7 @@
 
 #include "vp9/common/vp9_mvref_common.h"
 
-// This function searches the neighbourhood of a given MB/SB
+// This function searches the neighborhood of a given MB/SB
 // to try and find candidate reference vectors.
 static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                              MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
@@ -71,7 +71,7 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   }
 
   // TODO(hkuang): Remove this sync after fixing pthread_cond_broadcast
-  // on windows platform. The sync here is unncessary if use_perv_frame_mvs
+  // on windows platform. The sync here is unnecessary if use_prev_frame_mvs
   // is 0. But after removing it, there will be hang in the unit test on windows
   // due to several threads waiting for a thread's signal.
 #if defined(_WIN32) && !HAVE_PTHREAD_H
@@ -154,16 +154,6 @@ void vp9_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                       uint8_t *mode_context) {
   find_mv_refs_idx(cm, xd, mi, ref_frame, mv_ref_list, -1,
                    mi_row, mi_col, sync, data, mode_context);
-}
-
-static void lower_mv_precision(MV *mv, int allow_hp) {
-  const int use_hp = allow_hp && vp9_use_mv_hp(mv);
-  if (!use_hp) {
-    if (mv->row & 1)
-      mv->row += (mv->row > 0 ? -1 : 1);
-    if (mv->col & 1)
-      mv->col += (mv->col > 0 ? -1 : 1);
-  }
 }
 
 void vp9_find_best_ref_mvs(MACROBLOCKD *xd, int allow_hp,
