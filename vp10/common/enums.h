@@ -119,6 +119,8 @@ typedef enum {
 #define EXT_TX_SETS_INTRA  3  // Sets of transform selections for INTRA
 #endif  // CONFIG_EXT_TX
 
+#define EXT_TX_SIZES       3  // number of sizes that use extended transforms
+
 typedef enum {
   VP9_LAST_FLAG = 1 << 0,
 #if CONFIG_EXT_REFS

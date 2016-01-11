@@ -87,6 +87,7 @@ static void fill_mode_costs(VP10_COMP *cpi) {
     vp10_cost_tokens(cpi->switchable_interp_costs[i],
                     fc->switchable_interp_prob[i], vp10_switchable_interp_tree);
 
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
   for (i = 0; i < PALETTE_BLOCK_SIZES; ++i) {
     vp10_cost_tokens(cpi->palette_y_size_cost[i],
                      vp10_default_palette_y_size_prob[i],
@@ -125,6 +126,19 @@ static void fill_mode_costs(VP10_COMP *cpi) {
     }
   }
 #endif  // CONFIG_EXT_TX
+=======
+  for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+    for (j = 0; j < TX_TYPES; ++j)
+      vp10_cost_tokens(cpi->intra_tx_type_costs[i][j],
+                       fc->intra_ext_tx_prob[i][j],
+                       vp10_ext_tx_tree);
+  }
+  for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+    vp10_cost_tokens(cpi->inter_tx_type_costs[i],
+                     fc->inter_ext_tx_prob[i],
+                     vp10_ext_tx_tree);
+  }
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 }
 
 static void fill_token_costs(vp10_coeff_cost *c,
