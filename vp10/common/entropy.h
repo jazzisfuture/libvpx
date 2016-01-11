@@ -21,8 +21,13 @@
 extern "C" {
 #endif
 
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #define DIFF_UPDATE_PROB 252
 #define GROUP_DIFF_UPDATE_PROB 252
+=======
+#define DIFF_UPDATE_PROB        252
+#define GROUP_DIFF_UPDATE_PROB  252
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 
 // Coefficient token alphabet
 #define ZERO_TOKEN      0   // 0     Extra Bits 0+0
