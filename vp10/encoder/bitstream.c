@@ -82,17 +82,20 @@ static INLINE void write_uniform(vpx_writer *w, int n, int v) {
 #if CONFIG_EXT_TX
 static struct vp10_token ext_tx_inter_encodings[EXT_TX_SETS_INTER][TX_TYPES];
 static struct vp10_token ext_tx_intra_encodings[EXT_TX_SETS_INTRA][TX_TYPES];
+#else
+static struct vp10_token ext_tx_encodings[TX_TYPES];
 #endif  // CONFIG_EXT_TX
 
 void vp10_encode_token_init() {
 #if CONFIG_EXT_TX
   int s;
   for (s = 1; s < EXT_TX_SETS_INTER; ++s) {
-    vp10_tokens_from_tree(ext_tx_inter_encodings[s], vp10_ext_tx_inter_tree[s]);
   }
   for (s = 1; s < EXT_TX_SETS_INTRA; ++s) {
     vp10_tokens_from_tree(ext_tx_intra_encodings[s], vp10_ext_tx_intra_tree[s]);
   }
+#else
+  vp10_tokens_from_tree(ext_tx_encodings, vp10_ext_tx_tree);
 #endif  // CONFIG_EXT_TX
 }
 
@@ -171,6 +174,24 @@ static void prob_diff_update(const vpx_tree_index *tree,
   vp10_tree_probs_from_distribution(tree, branch_ct, counts);
   for (i = 0; i < n - 1; ++i)
     vp10_cond_prob_diff_update(w, &probs[i], branch_ct[i]);
+}
+
+static int prob_diff_update_savings(const vpx_tree_index *tree,
+                                    vpx_prob probs[/*n - 1*/],
+                                    const unsigned int counts[/*n - 1*/],
+                                    int n) {
+  int i;
+  unsigned int branch_ct[32][2];
+  int savings = 0;
+
+  // Assuming max number of probabilities <= 32
+  assert(n <= 32);
+  vp10_tree_probs_from_distribution(tree, branch_ct, counts);
+  for (i = 0; i < n - 1; ++i) {
+    savings += vp10_cond_prob_diff_update_savings(&probs[i],
+                                                  branch_ct[i]);
+  }
+  return savings;
 }
 
 static int prob_diff_update_savings(const vpx_tree_index *tree,
@@ -304,6 +325,49 @@ static void update_switchable_interp_probs(VP10_COMMON *cm, vpx_writer *w,
     prob_diff_update(vp10_switchable_interp_tree,
                      cm->fc->switchable_interp_prob[j],
                      counts->switchable_interp[j], SWITCHABLE_FILTERS, w);
+}
+
+static void update_ext_tx_probs(VP10_COMMON *cm, vpx_writer *w) {
+  const int savings_thresh = vp10_cost_one(GROUP_DIFF_UPDATE_PROB) -
+                             vp10_cost_zero(GROUP_DIFF_UPDATE_PROB);
+  int i, j;
+
+  int savings = 0;
+  int do_update = 0;
+  for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+    for (j = 0; j < TX_TYPES; ++j)
+      savings += prob_diff_update_savings(
+          vp10_ext_tx_tree, cm->fc->intra_ext_tx_prob[i][j],
+          cm->counts.intra_ext_tx[i][j], TX_TYPES);
+  }
+  do_update = savings > savings_thresh;
+  vpx_write(w, do_update, GROUP_DIFF_UPDATE_PROB);
+  if (do_update) {
+    for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+      for (j = 0; j < TX_TYPES; ++j)
+        prob_diff_update(vp10_ext_tx_tree,
+                         cm->fc->intra_ext_tx_prob[i][j],
+                         cm->counts.intra_ext_tx[i][j],
+                         TX_TYPES, w);
+    }
+  }
+  savings = 0;
+  do_update = 0;
+  for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+    savings += prob_diff_update_savings(
+        vp10_ext_tx_tree, cm->fc->inter_ext_tx_prob[i],
+        cm->counts.inter_ext_tx[i], TX_TYPES);
+  }
+  do_update = savings > savings_thresh;
+  vpx_write(w, do_update, GROUP_DIFF_UPDATE_PROB);
+  if (do_update) {
+    for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+      prob_diff_update(vp10_ext_tx_tree,
+                       cm->fc->inter_ext_tx_prob[i],
+                       cm->counts.inter_ext_tx[i],
+                       TX_TYPES, w);
+    }
+  }
 }
 
 #if CONFIG_EXT_TX
@@ -855,6 +919,26 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
             &ext_tx_intra_encodings[eset][mbmi->tx_type]);
     }
   }
+#else
+  if (mbmi->tx_size < TX_32X32 &&
+      cm->base_qindex > 0 && !mbmi->skip &&
+      !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+    if (is_inter) {
+      vp10_write_token(
+          w, vp10_ext_tx_tree,
+          cm->fc->inter_ext_tx_prob[mbmi->tx_size],
+          &ext_tx_encodings[mbmi->tx_type]);
+    } else {
+      vp10_write_token(
+          w, vp10_ext_tx_tree,
+          cm->fc->intra_ext_tx_prob[mbmi->tx_size]
+                                   [intra_mode_to_tx_type_context[mbmi->mode]],
+          &ext_tx_encodings[mbmi->tx_type]);
+    }
+  } else {
+    if (!mbmi->skip)
+      assert(mbmi->tx_type == DCT_DCT);
+  }
 #endif  // CONFIG_EXT_TX
 }
 
@@ -953,6 +1037,16 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
           w, vp10_ext_tx_intra_tree[eset],
           cm->fc->intra_ext_tx_prob[eset][mbmi->tx_size][mbmi->mode],
           &ext_tx_intra_encodings[eset][mbmi->tx_type]);
+  }
+#else
+  if (mbmi->tx_size < TX_32X32 &&
+      cm->base_qindex > 0 && !mbmi->skip &&
+      !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+    vp10_write_token(
+        w, vp10_ext_tx_tree,
+        cm->fc->intra_ext_tx_prob[mbmi->tx_size]
+                                 [intra_mode_to_tx_type_context[mbmi->mode]],
+        &ext_tx_encodings[mbmi->tx_type]);
   }
 #endif  // CONFIG_EXT_TX
 
