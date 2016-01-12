@@ -461,6 +461,7 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
   }
 
   mbmi->uv_mode = read_intra_mode_uv(cm, xd, r, mbmi->mode);
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_INTRA
   if (mbmi->uv_mode != DC_PRED && mbmi->uv_mode != TM_PRED &&
       bsize >= BLOCK_8X8)
@@ -500,6 +501,22 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
     if (bsize >= BLOCK_8X8)
       read_ext_intra_mode_info(cm, xd, r);
 #endif  // CONFIG_EXT_INTRA
+=======
+
+  if (mbmi->tx_size < TX_32X32 &&
+      cm->base_qindex > 0 && !mbmi->skip &&
+      !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+    FRAME_COUNTS *counts = xd->counts;
+    TX_TYPE tx_type_nom = intra_mode_to_tx_type_context[mbmi->mode];
+    mbmi->tx_type = vpx_read_tree(
+        r, vp10_ext_tx_tree,
+        cm->fc->intra_ext_tx_prob[mbmi->tx_size][tx_type_nom]);
+    if (counts)
+      ++counts->intra_ext_tx[mbmi->tx_size][tx_type_nom][mbmi->tx_type];
+  } else {
+    mbmi->tx_type = DCT_DCT;
+  }
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 }
 
 static int read_mv_component(vpx_reader *r,
@@ -1015,6 +1032,7 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
   else
     read_intra_block_mode_info(cm, xd, mi, r);
 
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
   if (get_ext_tx_types(mbmi->tx_size, mbmi->sb_type, inter_block) > 1 &&
       cm->base_qindex > 0 && !mbmi->skip &&
@@ -1048,6 +1066,29 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
     mbmi->tx_type = DCT_DCT;
   }
 #endif  // CONFIG_EXT_TX
+=======
+  if (mbmi->tx_size < TX_32X32 &&
+      cm->base_qindex > 0 && !mbmi->skip &&
+      !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+    FRAME_COUNTS *counts = xd->counts;
+    if (inter_block) {
+      mbmi->tx_type = vpx_read_tree(
+          r, vp10_ext_tx_tree,
+          cm->fc->inter_ext_tx_prob[mbmi->tx_size]);
+      if (counts)
+        ++counts->inter_ext_tx[mbmi->tx_size][mbmi->tx_type];
+    } else {
+      const TX_TYPE tx_type_nom = intra_mode_to_tx_type_context[mbmi->mode];
+      mbmi->tx_type = vpx_read_tree(
+          r, vp10_ext_tx_tree,
+          cm->fc->intra_ext_tx_prob[mbmi->tx_size][tx_type_nom]);
+      if (counts)
+        ++counts->intra_ext_tx[mbmi->tx_size][tx_type_nom][mbmi->tx_type];
+    }
+  } else {
+    mbmi->tx_type = DCT_DCT;
+  }
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 }
 
 void vp10_read_mode_info(VP10Decoder *const pbi, MACROBLOCKD *xd,
