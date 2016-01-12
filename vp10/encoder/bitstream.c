@@ -903,7 +903,7 @@ static void encode_segmentation(VP10_COMMON *cm, MACROBLOCKD *xd,
     return;
 
   // Segmentation map
-  if (!frame_is_intra_only(cm) && !cm->error_resilient_mode) {
+  if (!frame_is_intra_only(cm)) {
     vpx_wb_write_bit(wb, seg->update_map);
   } else {
     assert(seg->update_map == 1);
@@ -923,7 +923,7 @@ static void encode_segmentation(VP10_COMMON *cm, MACROBLOCKD *xd,
 #endif
 
     // Write out the chosen coding method.
-    if (!frame_is_intra_only(cm) && !cm->error_resilient_mode) {
+    if (!frame_is_intra_only(cm)) {
       vpx_wb_write_bit(wb, seg->temporal_update);
     } else {
       assert(seg->temporal_update == 0);

@@ -1061,7 +1061,7 @@ static void setup_segmentation(VP10_COMMON *const cm,
     return;
 
   // Segmentation map update
-  if (frame_is_intra_only(cm) || cm->error_resilient_mode) {
+  if (frame_is_intra_only(cm)) {
     seg->update_map = 1;
   } else {
     seg->update_map = vpx_rb_read_bit(rb);
@@ -1072,7 +1072,7 @@ static void setup_segmentation(VP10_COMMON *const cm,
       segp->tree_probs[i] = vpx_rb_read_bit(rb) ? vpx_rb_read_literal(rb, 8)
                                                 : MAX_PROB;
 #endif
-    if (frame_is_intra_only(cm) || cm->error_resilient_mode) {
+    if (frame_is_intra_only(cm)) {
       seg->temporal_update = 0;
     } else {
       seg->temporal_update = vpx_rb_read_bit(rb);
