@@ -4366,6 +4366,7 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     }
     ++td->counts->tx.tx_totals[mbmi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mbmi, &xd->plane[1])];
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
     if (get_ext_tx_types(mbmi->tx_size, bsize, is_inter_block(mbmi)) > 1 &&
         cm->base_qindex > 0 && !mbmi->skip &&
@@ -4509,6 +4510,19 @@ static int check_supertx_sb(BLOCK_SIZE bsize, TX_SIZE supertx_size,
     default:
       assert(0);
       return 0;
+=======
+    if (mbmi->tx_size < TX_32X32 &&
+        cm->base_qindex > 0 && !mbmi->skip &&
+        !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+      if (is_inter_block(mbmi)) {
+        ++td->counts->inter_ext_tx[mbmi->tx_size][mbmi->tx_type];
+      } else {
+        ++td->counts->intra_ext_tx[mbmi->tx_size]
+                                  [intra_mode_to_tx_type_context[mbmi->mode]]
+                                  [mbmi->tx_type];
+      }
+    }
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
   }
 }
 
