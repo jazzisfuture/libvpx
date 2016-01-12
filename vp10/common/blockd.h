@@ -128,9 +128,13 @@ typedef struct {
   // Only for INTER blocks
   INTERP_FILTER interp_filter;
   MV_REFERENCE_FRAME ref_frame[2];
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
   TX_TYPE tx_type;
 #endif  // CONFIG_EXT_TX
+=======
+  TX_TYPE tx_type;
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 
 #if CONFIG_EXT_INTRA
   EXT_INTRA_MODE_INFO ext_intra_mode_info;
@@ -280,7 +284,7 @@ static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,
   return subsize_lookup[partition][bsize];
 }
 
-static const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
+static const TX_TYPE intra_mode_to_tx_type_context[INTRA_MODES] = {
   DCT_DCT,    // DC
   ADST_DCT,   // V
   DCT_ADST,   // H
@@ -390,6 +394,7 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
   const MODE_INFO *const mi = xd->mi[0];
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
 
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_INTRA
   if (!is_inter_block(mbmi)) {
     const int use_ext_intra_mode_info =
@@ -398,7 +403,14 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
         mbmi->ext_intra_mode_info.ext_intra_mode[plane_type];
     const PREDICTION_MODE mode = (plane_type == PLANE_TYPE_Y) ?
         get_y_mode(mi, block_idx) : mbmi->uv_mode;
+=======
+  (void) block_idx;
+  if (plane_type != PLANE_TYPE_Y || xd->lossless[mbmi->segment_id] ||
+      mbmi->tx_size >= TX_32X32)
+    return DCT_DCT;
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
     if (xd->lossless[mbmi->segment_id] || tx_size >= TX_32X32)
       return DCT_DCT;
 
@@ -463,6 +475,9 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
     return DCT_DCT;
   return intra_mode_to_tx_type_lookup[get_y_mode(mi, block_idx)];
 #endif  // CONFIG_EXT_TX
+=======
+  return mbmi->tx_type;
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 }
 
 void vp10_setup_block_planes(MACROBLOCKD *xd, int ss_x, int ss_y);
