@@ -299,7 +299,7 @@ void vp10_choose_segmap_coding_method(VP10_COMMON *cm, MACROBLOCKD *xd) {
   }
 
   // Now choose which coding method to use.
-  if (t_pred_cost < no_pred_cost) {
+  if (t_pred_cost < no_pred_cost && !cm->error_resilient_mode) {
     seg->temporal_update = 1;
 #if !CONFIG_MISC_FIXES
     memcpy(segp->tree_probs, t_pred_tree, sizeof(t_pred_tree));
