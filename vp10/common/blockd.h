@@ -163,6 +163,8 @@ typedef struct {
 #if CONFIG_EXT_INTRA
   EXT_INTRA_MODE_INFO ext_intra_mode_info;
   int8_t angle_delta[2];
+  // To-Do (huisu): this may be replaced by interp_filter
+  INTRA_FILTER intra_filter;
 #endif  // CONFIG_EXT_INTRA
 
   int_mv mv[2];
