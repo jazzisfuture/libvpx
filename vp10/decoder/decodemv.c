@@ -886,6 +886,25 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
       mbmi->mode != ZEROMV) {
     uint8_t ref_frame_type = vp10_ref_frame_type(mbmi->ref_frame);
 
+    if (xd->ref_mv_count[ref_frame_type] == 1) {
+      int i;
+      nearestmv[0] = xd->ref_mv_stack[ref_frame_type][0].this_mv;
+      nearestmv[1] = xd->ref_mv_stack[ref_frame_type][0].comp_mv;
+
+      if (nearestmv[0].as_int !=
+          xd->ref_mv_stack[ref_frame_type][0].this_mv.as_int ||
+          nearestmv[1].as_int !=
+          xd->ref_mv_stack[ref_frame_type][0].comp_mv.as_int) {
+        nearmv[0] = nearestmv[0];
+        nearmv[1] = nearestmv[0];
+      }
+
+      for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i) {
+        lower_mv_precision(&nearestmv[i].as_mv, allow_hp);
+        lower_mv_precision(&nearmv[i].as_mv, allow_hp);
+      }
+    }
+
     if (xd->ref_mv_count[ref_frame_type] > 1) {
       int i;
       nearestmv[0] = xd->ref_mv_stack[ref_frame_type][0].this_mv;
@@ -956,6 +975,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
     xd->corrupted |= !assign_mv(cm, xd, mbmi->mode, mbmi->mv, nearestmv,
                                 nearestmv, nearmv, is_compound, allow_hp, r);
   }
+
 #if CONFIG_EXT_INTERP
   mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
                         ? read_switchable_interp_filter(cm, xd, r)
