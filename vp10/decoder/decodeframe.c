@@ -270,7 +270,7 @@ static void inverse_transform_block_inter(MACROBLOCKD* xd, int plane,
     if (eob == 1) {
       dqcoeff[0] = 0;
     } else {
-      if (tx_size <= TX_16X16 && eob <= 10)
+      if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
         memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
       else if (tx_size == TX_32X32 && eob <= 34)
         memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
@@ -2991,6 +2991,7 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   return sz;
 }
 
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
 static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
   int i, j, k;
@@ -3030,6 +3031,24 @@ static void read_supertx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
   }
 }
 #endif  // CONFIG_SUPERTX
+=======
+static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
+  int i, j, k;
+  if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+    for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+      for (j = 0; j < TX_TYPES; ++j)
+        for (k = 0; k < TX_TYPES - 1; ++k)
+          vp10_diff_update_prob(r, &fc->intra_ext_tx_prob[i][j][k]);
+    }
+  }
+  if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+    for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
+      for (k = 0; k < TX_TYPES - 1; ++k)
+        vp10_diff_update_prob(r, &fc->inter_ext_tx_prob[i][k]);
+    }
+  }
+}
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 
 static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
                                   size_t partition_size) {
@@ -3101,6 +3120,7 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
         vp10_diff_update_prob(&r, &fc->y_mode_prob[j][i]);
 
     read_mv_probs(nmvc, cm->allow_high_precision_mv, &r);
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
     read_ext_tx_probs(fc, &r);
 #endif
@@ -3108,6 +3128,9 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     if (!xd->lossless[0])
       read_supertx_probs(fc, &r);
 #endif
+=======
+    read_ext_tx_probs(fc, &r);
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
   }
 
   return vpx_reader_has_error(&r);
@@ -3148,6 +3171,7 @@ static void debug_check_frame_counts(const VP10_COMMON *const cm) {
   assert(!memcmp(&cm->counts.tx, &zero_counts.tx, sizeof(cm->counts.tx)));
   assert(!memcmp(cm->counts.skip, zero_counts.skip, sizeof(cm->counts.skip)));
   assert(!memcmp(&cm->counts.mv, &zero_counts.mv, sizeof(cm->counts.mv)));
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 
 #if CONFIG_EXT_TX
   assert(!memcmp(cm->counts.inter_ext_tx, zero_counts.inter_ext_tx,
@@ -3155,6 +3179,12 @@ static void debug_check_frame_counts(const VP10_COMMON *const cm) {
   assert(!memcmp(cm->counts.intra_ext_tx, zero_counts.intra_ext_tx,
                  sizeof(cm->counts.intra_ext_tx)));
 #endif  // CONFIG_EXT_TX
+=======
+  assert(!memcmp(cm->counts.intra_ext_tx, zero_counts.intra_ext_tx,
+                 sizeof(cm->counts.intra_ext_tx)));
+  assert(!memcmp(cm->counts.inter_ext_tx, zero_counts.inter_ext_tx,
+                 sizeof(cm->counts.inter_ext_tx)));
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 }
 #endif  // NDEBUG
 

@@ -85,6 +85,8 @@
 const double ext_tx_th = 0.98;
 #endif
 
+const double ext_tx_th = 0.99;
+
 typedef struct {
   PREDICTION_MODE mode;
   MV_REFERENCE_FRAME ref_frame[2];
@@ -801,8 +803,15 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
   const int is_inter = is_inter_block(mbmi);
 #endif  // CONFIG_EXT_TX
 
-  mbmi->tx_size = VPXMIN(max_tx_size, largest_tx_size);
+  TX_TYPE tx_type, best_tx_type = DCT_DCT;
+  int r, s;
+  int64_t d, psse, this_rd, best_rd = INT64_MAX;
+  vpx_prob skip_prob = vp10_get_skip_prob(cm, xd);
+  int  s0 = vp10_cost_bit(skip_prob, 0);
+  int  s1 = vp10_cost_bit(skip_prob, 1);
+  const int is_inter = is_inter_block(mbmi);
 
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
   ext_tx_set = get_ext_tx_set(mbmi->tx_size, bs, is_inter);
 
@@ -874,8 +883,42 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
                    cpi,
 #endif
                    rate, distortion, skip,
+=======
+  mbmi->tx_size = VPXMIN(max_tx_size, largest_tx_size);
+  if (mbmi->tx_size < TX_32X32 &&
+      !xd->lossless[mbmi->segment_id]) {
+    for (tx_type = 0; tx_type < TX_TYPES; ++tx_type) {
+      mbmi->tx_type = tx_type;
+      txfm_rd_in_plane(x, &r, &d, &s,
+                       &psse, ref_best_rd, 0, bs, mbmi->tx_size,
+                       cpi->sf.use_fast_coef_costing);
+      if (r == INT_MAX)
+        continue;
+      if (is_inter)
+        r += cpi->inter_tx_type_costs[mbmi->tx_size][mbmi->tx_type];
+      else
+        r += cpi->intra_tx_type_costs[mbmi->tx_size]
+                                     [intra_mode_to_tx_type_context[mbmi->mode]]
+                                     [mbmi->tx_type];
+      if (s)
+        this_rd = RDCOST(x->rdmult, x->rddiv, s1, psse);
+      else
+        this_rd = RDCOST(x->rdmult, x->rddiv, r + s0, d);
+      if (is_inter && !xd->lossless[mbmi->segment_id] && !s)
+        this_rd = VPXMIN(this_rd, RDCOST(x->rdmult, x->rddiv, s1, psse));
+
+      if (this_rd < ((best_tx_type == DCT_DCT) ? ext_tx_th : 1) * best_rd) {
+        best_rd = this_rd;
+        best_tx_type = mbmi->tx_type;
+      }
+    }
+  }
+  mbmi->tx_type = best_tx_type;
+  txfm_rd_in_plane(x, rate, distortion, skip,
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
                    sse, ref_best_rd, 0, bs,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 
 #if CONFIG_EXT_TX
   if (get_ext_tx_types(mbmi->tx_size, bs, is_inter) > 1 &&
@@ -893,6 +936,17 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
     }
   }
 #endif  // CONFIG_EXT_TX
+=======
+  if (mbmi->tx_size < TX_32X32 && !xd->lossless[mbmi->segment_id] &&
+      *rate != INT_MAX) {
+    if (is_inter)
+      *rate += cpi->inter_tx_type_costs[mbmi->tx_size][mbmi->tx_type];
+    else
+      *rate += cpi->intra_tx_type_costs[mbmi->tx_size]
+          [intra_mode_to_tx_type_context[mbmi->mode]]
+          [mbmi->tx_type];
+  }
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 }
 
 static void choose_smallest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
@@ -935,10 +989,14 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   TX_SIZE best_tx = max_tx_size;
   int start_tx, end_tx;
   const int tx_select = cm->tx_mode == TX_MODE_SELECT;
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
   TX_TYPE tx_type, best_tx_type = DCT_DCT;
   int ext_tx_set;
 #endif  // CONFIG_EXT_TX
+=======
+  TX_TYPE tx_type, best_tx_type = DCT_DCT;
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
   const int is_inter = is_inter_block(mbmi);
 
   const vpx_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
@@ -961,9 +1019,13 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   *skip       = 0;
   *psse       = INT64_MAX;
 
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
   for (tx_type = DCT_DCT; tx_type < TX_TYPES; ++tx_type) {
 #endif  // CONFIG_EXT_TX
+=======
+  for (tx_type = DCT_DCT; tx_type < TX_TYPES; ++tx_type) {
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
     last_rd = INT64_MAX;
     for (n = start_tx; n >= end_tx; --n) {
       int r_tx_size = 0;
@@ -974,6 +1036,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
           r_tx_size += vp10_cost_one(tx_probs[m]);
       }
 
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
       ext_tx_set = get_ext_tx_set(n, bs, is_inter);
       if (is_inter) {
@@ -1023,6 +1086,25 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
                        &sse, ref_best_rd, 0, bs, n,
                        cpi->sf.use_fast_coef_costing);
 #endif  // CONFIG_EXT_TX
+=======
+      if (n >= TX_32X32 && tx_type != DCT_DCT) {
+        continue;
+      }
+      mbmi->tx_type = tx_type;
+      txfm_rd_in_plane(x, &r, &d, &s,
+                       &sse, ref_best_rd, 0, bs, n,
+                       cpi->sf.use_fast_coef_costing);
+      if (n < TX_32X32 &&
+          !xd->lossless[xd->mi[0]->mbmi.segment_id] &&
+          r != INT_MAX) {
+        if (is_inter)
+          r += cpi->inter_tx_type_costs[mbmi->tx_size][mbmi->tx_type];
+        else
+          r += cpi->intra_tx_type_costs[mbmi->tx_size]
+              [intra_mode_to_tx_type_context[mbmi->mode]]
+              [mbmi->tx_type];
+      }
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 
       if (r == INT_MAX)
         continue;
@@ -1046,6 +1128,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       // Early termination in transform size search.
       if (cpi->sf.tx_size_search_breakout &&
           (rd == INT64_MAX ||
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
            (s == 1 && tx_type != DCT_DCT && n < start_tx) ||
 #else
@@ -1069,13 +1152,34 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_TX
         best_tx_type = mbmi->tx_type;
 #endif  // CONFIG_EXT_TX
+=======
+           (s == 1 && tx_type != DCT_DCT && n < start_tx) ||
+           (n < (int) max_tx_size && rd > last_rd)))
+        break;
+
+      last_rd = rd;
+      if (rd <
+          (is_inter && best_tx_type == DCT_DCT ? ext_tx_th : 1) *
+          best_rd) {
+        best_tx = n;
+        best_rd = rd;
+        *distortion = d;
+        *rate       = r;
+        *skip       = s;
+        *psse       = sse;
+        best_tx_type = mbmi->tx_type;
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
       }
     }
 #if CONFIG_EXT_TX
   }
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #endif  // CONFIG_EXT_TX
+=======
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 
   mbmi->tx_size = best_tx;
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_TX
   mbmi->tx_type = best_tx_type;
   txfm_rd_in_plane(x,
@@ -1086,6 +1190,14 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
                    &sse, ref_best_rd, 0, bs, best_tx,
                    cpi->sf.use_fast_coef_costing);
 #endif  // CONFIG_EXT_TX
+=======
+  mbmi->tx_type = best_tx_type;
+  if (mbmi->tx_size >= TX_32X32)
+    assert(mbmi->tx_type == DCT_DCT);
+  txfm_rd_in_plane(x, &r, &d, &s,
+                   &sse, ref_best_rd, 0, bs, best_tx,
+                   cpi->sf.use_fast_coef_costing);
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 }
 
 static void super_block_yrd(VP10_COMP *cpi, MACROBLOCK *x, int *rate,
@@ -1930,6 +2042,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   int this_rate, this_rate_tokenonly, s;
   int64_t this_distortion, this_rd;
   TX_SIZE best_tx = TX_4X4;
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_INTRA
   EXT_INTRA_MODE_INFO ext_intra_mode_info;
   int is_directional_mode, rate_overhead, best_angle_delta = 0;
@@ -1941,6 +2054,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_TX
   TX_TYPE best_tx_type = DCT_DCT;
 #endif  // CONFIG_EXT_TX
+=======
+  TX_TYPE best_tx_type = DCT_DCT;
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
   int *bmode_costs;
   PALETTE_MODE_INFO palette_mode_info;
   uint8_t *best_palette_color_map = cpi->common.allow_screen_content_tools ?
@@ -2040,12 +2156,16 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
       mode_selected   = mode;
       best_rd         = this_rd;
       best_tx         = mic->mbmi.tx_size;
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_INTRA
       best_angle_delta = mic->mbmi.angle_delta[0];
 #endif  // CONFIG_EXT_INTRA
 #if CONFIG_EXT_TX
       best_tx_type    = mic->mbmi.tx_type;
 #endif  // CONFIG_EXT_TX
+=======
+      best_tx_type    = mic->mbmi.tx_type;
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
       *rate           = this_rate;
       *rate_tokenonly = this_rate_tokenonly;
       *distortion     = this_distortion;
@@ -2082,6 +2202,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
   mic->mbmi.mode = mode_selected;
   mic->mbmi.tx_size = best_tx;
+<<<<<<< HEAD   (387a10 Enable context analyzer for inter mode entropy coding)
 #if CONFIG_EXT_INTRA
   mic->mbmi.angle_delta[0] = best_angle_delta;
 #endif  // CONFIG_EXT_INTRA
@@ -2097,6 +2218,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
     memcpy(xd->plane[0].color_index_map, best_palette_color_map,
            rows * cols * sizeof(best_palette_color_map[0]));
   }
+=======
+  mic->mbmi.tx_type = best_tx_type;
+>>>>>>> BRANCH (a0900f Remove experimental flag for ext_tx)
 
   return best_rd;
 }
