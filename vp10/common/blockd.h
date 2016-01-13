@@ -163,6 +163,8 @@ typedef struct {
 #if CONFIG_EXT_INTRA
   EXT_INTRA_MODE_INFO ext_intra_mode_info;
   int8_t angle_delta[2];
+  // To-Do (huisu): this may be replaced by interp_filter
+  INTRA_FILTER intra_filter;
 #endif  // CONFIG_EXT_INTRA
 
   int_mv mv[2];
@@ -396,6 +398,8 @@ static const int ext_tx_used_inter[EXT_TX_SETS_INTER][TX_TYPES] = {
 #define MAX_ANGLE_DELTAS 3
 #define ANGLE_FAST_SEARCH 1
 #define ANGLE_SKIP_THRESH 0.10
+
+#define HP_INTRA 1
 
 static uint8_t mode_to_angle_map[INTRA_MODES] = {
     0, 90, 180, 45, 135, 111, 157, 203, 67, 0,
