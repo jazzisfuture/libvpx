@@ -87,9 +87,11 @@ typedef struct VP9Common {
   DECLARE_ALIGNED(16, int16_t, uv_dequant_pxd[QINDEX_RANGE][8]);
 #if CONFIG_NEW_QUANT
   DECLARE_ALIGNED(16, dequant_val_type_nuq,
-                  y_dequant_val_nuq_pxd[QUANT_PROFILES][QINDEX_RANGE][COEF_BANDS]);
+                  y_dequant_val_nuq_pxd[QUANT_PROFILES][QINDEX_RANGE]
+                                       [COEF_BANDS]);
   DECLARE_ALIGNED(16, dequant_val_type_nuq,
-                  uv_dequant_val_nuq_pxd[QUANT_PROFILES][QINDEX_RANGE][COEF_BANDS]);
+                  uv_dequant_val_nuq_pxd[QUANT_PROFILES][QINDEX_RANGE]
+                                        [COEF_BANDS]);
 #endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX_SKIP
 

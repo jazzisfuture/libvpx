@@ -1991,7 +1991,7 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
     }
 
 #if CONFIG_NEW_QUANT
-    for (dq = 0; dq < QUANT_PROFILES; dq ++){
+    for (dq = 0; dq < QUANT_PROFILES; dq ++) {
       for (i = 0; i < COEF_BANDS; i++) {
         const int quant = cm->y_dequant[q][i != 0];
         const int uvquant = cm->uv_dequant[q][i != 0];
@@ -2044,7 +2044,7 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
     }
 
 #if CONFIG_NEW_QUANT
-    for (dq = 0; dq < QUANT_PROFILES; dq ++){
+    for (dq = 0; dq < QUANT_PROFILES; dq ++) {
       for (i = 0; i < COEF_BANDS; i++) {
         const int quant = cm->y_dequant_pxd[q][i != 0];
         const int uvquant = cm->uv_dequant_pxd[q][i != 0];

@@ -254,7 +254,7 @@ static void setup_plane_dequants(VP9_COMMON *cm, MACROBLOCKD *xd, int q_index) {
     xd->plane[i].dequant_pxd = cm->uv_dequant_pxd[q_index];
 // #if CONFIG_NEW_QUANT
 //     xd->plane[i].dequant_val_nuq_pxd =
-//         (const dequant_val_type_nuq *)cm->uv_dequant_val_nuq_pxd[dq][q_index];
+//       (const dequant_val_type_nuq *)cm->uv_dequant_val_nuq_pxd[dq][q_index];
 // #endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX_SKIP
   }
@@ -3525,7 +3525,7 @@ void vp9_init_dequantizer(VP9_COMMON *cm) {
     cm->uv_dequant[q][1] = vp9_ac_quant(q, cm->uv_ac_delta_q, cm->bit_depth);
 
 #if CONFIG_NEW_QUANT
-    for (dq = 0; dq < QUANT_PROFILES; dq ++){
+    for (dq = 0; dq < QUANT_PROFILES; dq ++) {
       for (b = 0; b < COEF_BANDS; ++b) {
         vp9_get_dequant_val_nuq(
             cm->y_dequant[q][b != 0], q == 0, b, cm->bit_depth,
@@ -3544,7 +3544,7 @@ void vp9_init_dequantizer(VP9_COMMON *cm) {
     cm->uv_dequant_pxd[q][0] = cm->uv_dequant[q][PXD_QUANT_INDEX];
     cm->uv_dequant_pxd[q][1] = cm->uv_dequant[q][PXD_QUANT_INDEX];
 #if CONFIG_NEW_QUANT
-    for (dq = 0; dq < QUANT_PROFILES; dq ++){
+    for (dq = 0; dq < QUANT_PROFILES; dq ++) {
       for (b = 0; b < COEF_BANDS; ++b) {
         vp9_get_dequant_val_nuq(
             cm->y_dequant_pxd[q][b != 0], q == 0, b, cm->bit_depth,

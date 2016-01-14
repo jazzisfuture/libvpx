@@ -91,12 +91,10 @@ static INLINE int16_t quant_to_doff_fixed(int16_t quant, int lossless,
   // const int shift = bd - 8;
   if (lossless)
     return vp9_nuq_doff_lossless[band];
-  // else
-  //   return vp9_nuq_doff_mid[band];
   else if (!dq_off_index) // dq_off_index == 0
     return vp9_nuq_doff_mid[band];
   else if (dq_off_index == 1)
-    return vp9_nuq_doff_low[band] ;
+    return vp9_nuq_doff_low[band];
   else  // dq_off_index == 2
     return vp9_nuq_doff_high[band];
 }
