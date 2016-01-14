@@ -299,6 +299,9 @@ typedef struct {
   uint8_t palette_literal_colors[PALETTE_MAX_SIZE];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_PALETTE
+#if CONFIG_NEW_QUANT
+  int dq_off_index;
+#endif  // CONFIG_NEW_QUANT
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
