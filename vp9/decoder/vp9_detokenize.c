@@ -447,6 +447,22 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                                                pd->left_context + y);
   const scan_order *so = get_scan(xd, tx_size, pd->plane_type, block);
   int eob;
+#if CONFIG_NEW_QUANT
+  int dq;
+  int q_index;
+#endif  // CONFIG_NEW_QUANT
+
+#if CONFIG_NEW_QUANT
+  dq = xd->mi->mbmi.dq_off_index;
+  q_index = cm->base_qindex;
+
+  pd->dequant_val_nuq =
+      (const dequant_val_type_nuq *)cm->y_dequant_val_nuq[dq][q_index];
+#if CONFIG_TX_SKIP
+  pd->dequant_val_nuq_pxd =
+      (const dequant_val_type_nuq *)cm->y_dequant_val_nuq_pxd[dq][q_index];
+#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_NEW_QUANT
 
 #if CONFIG_TX_SKIP
   if (xd->mi->src_mi->mbmi.tx_skip[plane != 0] && FOR_SCREEN_CONTENT)
@@ -485,5 +501,3 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
   vp9_set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, x, y);
   return eob;
 }
-
-
