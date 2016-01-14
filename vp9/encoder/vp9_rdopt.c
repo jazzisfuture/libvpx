@@ -6066,6 +6066,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
 #endif  // CONFIG_EXT_TX
 
+#if CONFIG_NEW_QUANT
+    // Choose the best dq_index
+#endif  // CONFIG_NEW_QUANT
+
     // Y cost and distortion
     super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                     bsize, txfm_cache, ref_best_rd);
