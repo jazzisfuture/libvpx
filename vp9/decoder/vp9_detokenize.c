@@ -454,7 +454,7 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                            BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
                            pd->dequant_pxd,
 #if CONFIG_NEW_QUANT
-                           pd->dequant_val_nuq_pxd,
+                           pd->dequant_val_nuq_pxd[DEFAULT_DQ],
 #endif  // CONFIG_NEW_QUANT
                            ctx, so->scan,
                            so->neighbors, r);
@@ -471,9 +471,10 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
 #if CONFIG_NEW_QUANT
 #if CONFIG_TX_SKIP
                        xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
-                           pd->dequant_val_nuq_pxd : pd->dequant_val_nuq,
+                           pd->dequant_val_nuq_pxd[DEFAULT_DQ] :
+                           pd->dequant_val_nuq[DEFAULT_DQ],
 #else
-                       pd->dequant_val_nuq,
+                       pd->dequant_val_nuq[DEFAULT_DQ],
 #endif  // CONFIG_TX_SKIP
 #endif  // CONFIG_NEW_QUANT
                        ctx, so->scan,
@@ -485,5 +486,3 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
   vp9_set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, x, y);
   return eob;
 }
-
-
