@@ -553,7 +553,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   neutral_count = 0.0;
 
   set_first_pass_params(cpi);
-  vp9_set_quantizer(cm, find_fp_qindex(cm->bit_depth));
+  vp9_set_quantizer(cpi, find_fp_qindex(cm->bit_depth));
 
   if (lc != NULL) {
     twopass = &lc->twopass;
