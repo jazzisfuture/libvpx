@@ -678,13 +678,13 @@ static void adjust_arnr_filter(VP9_COMP *cpi,
   }
 
   // Adjust number of frames in filter and strength based on gf boost level.
-  if (frames > group_boost / 150) {
-    frames = group_boost / 150;
+  if (frames > group_boost / (MIN_ARF_GF_BOOST >> 1)) {
+    frames = group_boost / (MIN_ARF_GF_BOOST >> 1);
     frames += !(frames & 1);
   }
 
-  if (strength > group_boost / 300) {
-    strength = group_boost / 300;
+  if (strength > group_boost / MIN_ARF_GF_BOOST) {
+    strength = group_boost / MIN_ARF_GF_BOOST;
   }
 
   // Adjustments for second level arf in multi arf case.
