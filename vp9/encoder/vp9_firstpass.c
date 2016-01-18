@@ -52,7 +52,6 @@
 #define GF_MAX_BOOST        96.0
 #define INTRA_MODE_PENALTY  1024
 #define KF_MAX_BOOST        128.0
-#define MIN_ARF_GF_BOOST    240
 #define MIN_DECAY_FACTOR    0.01
 #define MIN_KF_BOOST        300
 #define NEW_MV_MODE_PENALTY 32

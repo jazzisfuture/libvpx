@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#define MIN_ARF_GF_BOOST    240
+
 #if CONFIG_FP_MB_STATS
 
 #define FPMB_DCINTRA_MASK 0x01

@@ -662,7 +662,7 @@ static void adjust_arnr_filter(VP9_COMP *cpi,
   // Set the baseline active filter size.
   frames = frames_bwd + 1 + frames_fwd;
 
-  // Adjust the strength based on active max q.
+  // Adjust the strength based on q.
   if (cpi->common.current_video_frame > 1)
     q = ((int)vp9_convert_qindex_to_q(
         cpi->rc.avg_frame_qindex[INTER_FRAME], cpi->common.bit_depth));
@@ -673,26 +673,27 @@ static void adjust_arnr_filter(VP9_COMP *cpi,
     strength = oxcf->arnr_strength;
   } else {
     strength = oxcf->arnr_strength - ((16 - q) / 2);
-    if (strength < 0)
-      strength = 0;
+    if (strength < 1)
+      strength = (oxcf->arnr_strength > 0);
   }
 
-  // Adjust number of frames in filter and strength based on gf boost level.
-  if (frames > group_boost / 150) {
-    frames = group_boost / 150;
-    frames += !(frames & 1);
-  }
-
-  if (strength > group_boost / 300) {
-    strength = group_boost / 300;
+  // Adjust strength based on boost level of the arf.
+  if (strength > group_boost / MIN_ARF_GF_BOOST) {
+    strength = group_boost / MIN_ARF_GF_BOOST;
   }
 
   // Adjustments for second level arf in multi arf case.
-  if (cpi->oxcf.pass == 2 && cpi->multi_arf_allowed) {
+  if (cpi->oxcf.pass == 2 && cpi->multi_arf_allowed && (strength > 1)) {
     const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
     if (gf_group->rf_level[gf_group->index] != GF_ARF_STD) {
       strength >>= 1;
     }
+  }
+
+  // Adjust number of frames in filter and strength based on gf boost level.
+  if (frames > group_boost / (MIN_ARF_GF_BOOST >> 1)) {
+    frames = group_boost / (MIN_ARF_GF_BOOST >> 1);
+    frames += !(frames & 1);
   }
 
   *arnr_frames = frames;
