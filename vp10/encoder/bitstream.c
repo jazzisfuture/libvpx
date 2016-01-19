@@ -922,9 +922,9 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 
       write_selected_tx_size(cm, xd, w);
     }
-  } else {
-    set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
-    set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
+  } else if (!supertx_enabled) {
+      set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
+      set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
 #else
   write_selected_tx_size(cm, xd, w);
 #endif
