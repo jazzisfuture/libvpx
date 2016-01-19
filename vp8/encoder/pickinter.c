@@ -1433,7 +1433,9 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         vp8_denoiser_denoise_mb(&cpi->denoiser, x, best_sse, zero_mv_sse,
                                 recon_yoffset, recon_uvoffset,
                                 &cpi->common.lf_info, mb_row, mb_col,
-                                block_index);
+                                block_index,
+                                cpi->consec_zero_last_mvbias[block_index],
+                                cpi->oxcf.number_of_layers);
 
         // Reevaluate ZEROMV after denoising: for large noise content
         // (i.e., cpi->mse_source_denoised is above threshold), do this for all
