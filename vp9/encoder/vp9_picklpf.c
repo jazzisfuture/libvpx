@@ -99,10 +99,7 @@ static int search_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
     const int filt_low = VPXMAX(filt_mid - filter_step, min_filter_level);
 
     // Bias against raising loop filter in favor of lowering it.
-    int64_t bias = (best_err >> (15 - (filt_mid / 8))) * filter_step;
-
-    if ((cpi->oxcf.pass == 2) && (cpi->twopass.section_intra_rating < 20))
-      bias = (bias * cpi->twopass.section_intra_rating) / 20;
+    int64_t bias = (best_err >> (12 - (filt_mid >> 4)));
 
     // yx, bias less for large block size
     if (cm->tx_mode != ONLY_4X4)
