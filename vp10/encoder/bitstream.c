@@ -922,12 +922,16 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 
       write_selected_tx_size(cm, xd, w);
     }
+#if CONFIG_SUPERTX
+  } else if (!supertx_enabled) {
+#else
   } else {
+#endif  // CONFIG_SUPERTX
     set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
     set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
 #else
-  write_selected_tx_size(cm, xd, w);
-#endif
+    write_selected_tx_size(cm, xd, w);
+#endif  // CONFIG_VAR_TX
   }
 
   if (!is_inter) {
