@@ -2608,6 +2608,7 @@ static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
   vpx_extend_frame_borders(dst);
 }
 
+#if !defined(OPTIMIZED_1TO2_SCALING) || CONFIG_VP9_HIGHBITDEPTH
 #if CONFIG_VP9_HIGHBITDEPTH
 static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
                                    YV12_BUFFER_CONFIG *dst, int bd) {
@@ -2662,6 +2663,10 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
 
   vpx_extend_frame_borders(dst);
 }
+#else
+extern void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
+                                   YV12_BUFFER_CONFIG *dst);
+#endif
 
 static int scale_down(VP9_COMP *cpi, int q) {
   RATE_CONTROL *const rc = &cpi->rc;
@@ -3289,7 +3294,6 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   vpx_clear_system_state();
 
   set_frame_size(cpi);
-
   cpi->Source = vp9_scale_if_required(cm,
                                       cpi->un_scaled_source,
                                       &cpi->scaled_source,
@@ -3307,7 +3311,6 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
                                              cpi->unscaled_last_source,
                                              &cpi->scaled_last_source,
                                              (cpi->oxcf.pass == 0));
-
   vp9_update_noise_estimate(cpi);
 
   if (cpi->oxcf.pass == 0 &&
