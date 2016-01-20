@@ -18,6 +18,10 @@
 extern "C" {
 #endif
 
+#if HAVE_SSSE3
+#define OPTIMIZED_1TO2_SCALING
+#endif
+
 #define FILTER_BITS 7
 
 #define SUBPEL_BITS 4
