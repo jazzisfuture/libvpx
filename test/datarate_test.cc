@@ -947,6 +947,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc3SpatialLayers) {
   svc_params_.scaling_factor_num[2] = 288;
   svc_params_.scaling_factor_den[2] = 288;
   cfg_.rc_dropframe_thresh = 10;
+  cfg_.kf_max_dist = 9999;
   ::libvpx_test::I420VideoSource video("niklas_1280_720_30.y4m", 1280, 720,
                                        30, 1, 0, 300);
   cfg_.rc_target_bitrate = 800;
@@ -984,6 +985,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc2SpatialLayers4threads) {
   svc_params_.scaling_factor_num[1] = 288;
   svc_params_.scaling_factor_den[1] = 288;
   cfg_.rc_dropframe_thresh = 10;
+  cfg_.kf_max_dist = 9999;
   ::libvpx_test::I420VideoSource video("niklas_1280_720_30.y4m", 1280, 720,
                                        30, 1, 0, 300);
   cfg_.rc_target_bitrate = 800;
@@ -1023,6 +1025,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc3SpatialLayers4threads) {
   svc_params_.scaling_factor_num[2] = 288;
   svc_params_.scaling_factor_den[2] = 288;
   cfg_.rc_dropframe_thresh = 10;
+  cfg_.kf_max_dist = 9999;
   ::libvpx_test::I420VideoSource video("niklas_1280_720_30.y4m", 1280, 720,
                                        30, 1, 0, 300);
   cfg_.rc_target_bitrate = 800;
