@@ -739,6 +739,8 @@ static int choose_partitioning(VP9_COMP *cpi,
       yv12_g = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
     }
 
+    set_ref_ptrs(cm, xd, mi->ref_frame[0], mi->ref_frame[1]);
+
     if (yv12_g && yv12_g != yv12 &&
        (cpi->ref_frame_flags & VP9_GOLD_FLAG)) {
       vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
