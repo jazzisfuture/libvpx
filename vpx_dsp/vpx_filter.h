@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#define OPTIMIZED_1TO2_SCALING
+
 #define FILTER_BITS 7
 
 #define SUBPEL_BITS 4
