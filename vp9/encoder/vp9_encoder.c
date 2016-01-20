@@ -3373,12 +3373,10 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
       cpi->oxcf.content == VP9E_CONTENT_SCREEN)
     vp9_avg_source_sad(cpi);
 
-  // TODO(wonkap/marpan): For 1 pass SVC, since only ZERMOV is allowed for
-  // upsampled reference frame (i.e, svc->force_zero_mode_spatial_ref = 0),
-  // we should be able to avoid this frame-level upsampling.
-  // Keeping it for now as there is an asan error in the multi-threaded SVC
-  // rate control test if this upsampling is removed.
-  if (frame_is_intra_only(cm) == 0) {
+  if (frame_is_intra_only(cm) == 0 && !is_one_pass_cbr_svc(cpi)) {
+  // For 1 pass SVC, since only ZERMOV is allowed for upsampled reference
+  // frame (i.e, svc->force_zero_mode_spatial_ref = 0), we can avoid this
+  // frame-level upsampling.
     vp9_scale_references(cpi);
   }
 
