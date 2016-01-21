@@ -12,6 +12,7 @@
 #include "vp10/common/filter.h"
 #include "vp10/common/scale.h"
 #include "vpx_dsp/vpx_filter.h"
+#include "vpx_dsp/vpx_convolve.h"
 
 static INLINE int scaled_x(int val, const struct scale_factors *sf) {
   return (int)((int64_t)val * sf->x_scale_fp >> REF_SCALE_SHIFT);
@@ -127,8 +128,8 @@ void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
     }
   }
   // 2D subpel motion always gets filtered in both directions
-  sf->predict[1][1][0] = vpx_convolve8;
-  sf->predict[1][1][1] = vpx_convolve8_avg;
+  sf->predict[1][1][0] = vpx_convolve8_c2;
+  sf->predict[1][1][1] = vpx_convolve8_avg_c2;
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (use_highbd) {

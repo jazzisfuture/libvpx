@@ -25,8 +25,94 @@
 #include "vpx_dsp/vpx_filter.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
+#include "vpx_dsp/vpx_convolve.h"
 
 namespace {
+
+#define VP9_FILTER_WEIGHT 128
+#define VP9_FILTER_SHIFT 7
+uint8_t clip_pixel(int x) {
+  return x < 0 ? 0 :
+         x > 255 ? 255 :
+         x;
+}
+
+TEST(ConvolveTest, vpx_convolve8_c2) {
+  uint8_t src[64];
+  ptrdiff_t src_stride = 8;
+  uint8_t dst[1] = {0};
+  const int16_t* filter = vp9_filter_kernels[0][3];
+  int step = 16;
+  int w = 1;
+  int h = 1;
+
+  for(int i = 0; i < src_stride * src_stride; i++) {
+    src[i] = rand() % (1<<8);
+  }
+
+  vpx_convolve8_c2(src + src_stride * 3 + 3 , src_stride,
+                   dst, 1,
+                   filter, step,
+                   filter, step,
+                   w, h);
+
+  int temp[8];
+  int dst_ref = 0;
+  for(int r = 0; r < src_stride; r++) {
+    temp[r] = 0;
+    for(int c = 0; c < src_stride; c++) {
+      temp[r] += filter[c] * src[r*src_stride + c];
+    }
+    dst_ref += temp[r] * filter[r];
+  }
+  dst_ref = clip_pixel(ROUND_POWER_OF_TWO(dst_ref, VP9_FILTER_SHIFT*2));
+  EXPECT_EQ(dst[0], dst_ref);
+}
+
+TEST(ConvolveTest, vpx_convolve8_avg_c2) {
+  uint8_t src0[64];
+  uint8_t src1[64];
+  ptrdiff_t src_stride = 8;
+  uint8_t dst0[1] = {0};
+  uint8_t dst1[1] = {0};
+  uint8_t dst[1] = {0};
+  const int16_t* filter = vp9_filter_kernels[0][3];
+  int step = 16;
+  int w = 1;
+  int h = 1;
+
+  for(int i = 0; i < src_stride * src_stride; i++) {
+    src0[i] = rand() % (1<<8);
+    src1[i] = rand() % (1<<8);
+  }
+
+  vpx_convolve8_c2(src0 + src_stride * 3 + 3 , src_stride,
+                   dst0, 1,
+                   filter, step,
+                   filter, step,
+                   w, h);
+
+  vpx_convolve8_c2(src1 + src_stride * 3 + 3 , src_stride,
+                   dst1, 1,
+                   filter, step,
+                   filter, step,
+                   w, h);
+
+  vpx_convolve8_c2(src0 + src_stride * 3 + 3 , src_stride,
+                   dst, 1,
+                   filter, step,
+                   filter, step,
+                   w, h);
+
+  vpx_convolve8_avg_c2(src1 + src_stride * 3 + 3 , src_stride,
+                       dst, 1,
+                       filter, step,
+                       filter, step,
+                       w, h);
+
+  EXPECT_EQ(dst[0], ROUND_POWER_OF_TWO(dst0[0] + dst1[0], 1));
+
+}
 
 static const unsigned int kMaxDimension = 64;
 
@@ -70,13 +156,6 @@ struct ConvolveFunctions {
 typedef std::tr1::tuple<int, int, const ConvolveFunctions *> ConvolveParam;
 
 // Reference 8-tap subpixel filter, slightly modified to fit into this test.
-#define VP9_FILTER_WEIGHT 128
-#define VP9_FILTER_SHIFT 7
-uint8_t clip_pixel(int x) {
-  return x < 0 ? 0 :
-         x > 255 ? 255 :
-         x;
-}
 
 void filter_block2d_8_c(const uint8_t *src_ptr,
                         const unsigned int src_stride,
