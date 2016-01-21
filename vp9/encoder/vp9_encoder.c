@@ -2626,16 +2626,43 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   const InterpKernel *const kernel = vp9_filter_kernels[EIGHTTAP];
   int x, y, i;
 
-  for (y = 0; y < dst_h; y += 16) {
-    for (x = 0; x < dst_w; x += 16) {
-      for (i = 0; i < MAX_MB_PLANE; ++i) {
-        const int factor = (i == 0 || i == 3 ? 1 : 2);
+#if !CONFIG_VP9_HIGHBITDEPTH && OPTIMIZED_1TO2_SCALING && \
+  OPTIMIZED_1TO2_SCALING_FRAME_BASED
+  extern void downsample_2_to_1_ssse3(const uint8_t *src, ptrdiff_t src_stride,
+                                      uint8_t *dst, ptrdiff_t dst_stride,
+                                      int w, int h);
+  extern void upsample_1_to_2_ssse3(const uint8_t *src, ptrdiff_t src_stride,
+                                    uint8_t *dst, ptrdiff_t dst_stride,
+                                    int dst_w, int dst_h);
+
+//  printf("OPTIMIZED_1TO2_SCALING_FRAME_BASED sw: %d dw: %d\n", src_w, dst_w);
+  if (dst_w*2 == src_w && dst_h*2 == src_h) {
+    downsample_2_to_1_ssse3(src->y_buffer, src->y_stride,
+                            dst->y_buffer, dst->y_stride, dst_w, dst_h);
+    downsample_2_to_1_ssse3(src->u_buffer, src->uv_stride,
+                            dst->u_buffer, dst->uv_stride, dst_w/2, dst_h/2);
+    downsample_2_to_1_ssse3(src->v_buffer, src->uv_stride,
+                            dst->v_buffer, dst->uv_stride, dst_w/2, dst_h/2);
+  } else if (dst_w == src_w*2 && dst_h == src_h*2) {
+    printf("up \n");
+    upsample_1_to_2_ssse3(src->y_buffer, src->y_stride,
+                          dst->y_buffer, dst->y_stride, dst_w, dst_h);
+    upsample_1_to_2_ssse3(src->u_buffer, src->uv_stride,
+                          dst->u_buffer, dst->uv_stride, dst_w/2, dst_h/2);
+    upsample_1_to_2_ssse3(src->v_buffer, src->uv_stride,
+                          dst->v_buffer, dst->uv_stride, dst_w/2, dst_h/2);
+  } else
+#endif
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    const int factor = (i == 0 || i == 3 ? 1 : 2);
+    const int src_stride = src_strides[i];
+    const int dst_stride = dst_strides[i];
+    for (y = 0; y < dst_h; y += 16) {
+      const int y_q4 = y * (16 / factor) * src_h / dst_h;
+      for (x = 0; x < dst_w; x += 16) {
         const int x_q4 = x * (16 / factor) * src_w / dst_w;
-        const int y_q4 = y * (16 / factor) * src_h / dst_h;
-        const int src_stride = src_strides[i];
-        const int dst_stride = dst_strides[i];
         const uint8_t *src_ptr = srcs[i] + (y / factor) * src_h / dst_h *
-                                     src_stride + (x / factor) * src_w / dst_w;
+                                   src_stride + (x / factor) * src_w / dst_w;
         uint8_t *dst_ptr = dsts[i] + (y / factor) * dst_stride + (x / factor);
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -3289,7 +3316,6 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   vpx_clear_system_state();
 
   set_frame_size(cpi);
-
   cpi->Source = vp9_scale_if_required(cm,
                                       cpi->un_scaled_source,
                                       &cpi->scaled_source,
@@ -3307,7 +3333,6 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
                                              cpi->unscaled_last_source,
                                              &cpi->scaled_last_source,
                                              (cpi->oxcf.pass == 0));
-
   vp9_update_noise_estimate(cpi);
 
   if (cpi->oxcf.pass == 0 &&

@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+#if HAVE_SSSE3 && CONFIG_VP9_ENCODER
+#define OPTIMIZED_1TO2_SCALING 1
+#define OPTIMIZED_1TO2_SCALING_FRAME_BASED 0
+#endif
+
 #define FILTER_BITS 7
 
 #define SUBPEL_BITS 4
