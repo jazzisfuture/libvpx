@@ -64,15 +64,6 @@ VP10_COMMON_SRCS-yes += common/scan.h
 VP10_COMMON_SRCS-yes += common/vp10_fwd_txfm.h
 VP10_COMMON_SRCS-yes += common/vp10_fwd_txfm.c
 
-VP10_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/postproc.h
-VP10_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/postproc.c
-VP10_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/mfqe.h
-VP10_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/mfqe.c
-ifeq ($(CONFIG_VP9_POSTPROC),yes)
-VP10_COMMON_SRCS-$(HAVE_SSE2) += common/x86/mfqe_sse2.asm
-VP10_COMMON_SRCS-$(HAVE_SSE2) += common/x86/postproc_sse2.asm
-endif
-
 ifneq ($(CONFIG_VPX_HIGHBITDEPTH),yes)
 VP10_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/itrans4_dspr2.c
 VP10_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/itrans8_dspr2.c
@@ -83,10 +74,6 @@ endif
 VP10_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/idct4x4_msa.c
 VP10_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/idct8x8_msa.c
 VP10_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/idct16x16_msa.c
-
-ifeq ($(CONFIG_VP9_POSTPROC),yes)
-VP10_COMMON_SRCS-$(HAVE_MSA) += common/mips/msa/mfqe_msa.c
-endif
 
 VP10_COMMON_SRCS-$(HAVE_SSE2) += common/x86/idct_intrin_sse2.c
 VP10_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp10_fwd_txfm_sse2.c

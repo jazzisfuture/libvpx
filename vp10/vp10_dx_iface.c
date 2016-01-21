@@ -29,7 +29,7 @@
 
 #include "vp10/vp10_iface_common.h"
 
-#define VP9_CAP_POSTPROC (CONFIG_VP9_POSTPROC ? VPX_CODEC_CAP_POSTPROC : 0)
+#define VP9_CAP_POSTPROC 0
 
 typedef vpx_codec_stream_info_t vp10_stream_info_t;
 
@@ -119,9 +119,6 @@ static vpx_codec_err_t decoder_destroy(vpx_codec_alg_priv_t *ctx) {
           (FrameWorkerData *)worker->data1;
       vpx_get_worker_interface()->end(worker);
       vp10_remove_common(&frame_worker_data->pbi->common);
-#if CONFIG_VP9_POSTPROC
-      vp10_free_postproc_buffers(&frame_worker_data->pbi->common);
-#endif
       vp10_decoder_remove(frame_worker_data->pbi);
       vpx_free(frame_worker_data->scratch_buffer);
 #if CONFIG_MULTITHREAD
@@ -878,21 +875,9 @@ static vpx_codec_err_t ctrl_get_reference(vpx_codec_alg_priv_t *ctx,
 
 static vpx_codec_err_t ctrl_set_postproc(vpx_codec_alg_priv_t *ctx,
                                          va_list args) {
-#if CONFIG_VP9_POSTPROC
-  vp8_postproc_cfg_t *data = va_arg(args, vp8_postproc_cfg_t *);
-
-  if (data) {
-    ctx->postproc_cfg_set = 1;
-    ctx->postproc_cfg = *((vp8_postproc_cfg_t *)data);
-    return VPX_CODEC_OK;
-  } else {
-    return VPX_CODEC_INVALID_PARAM;
-  }
-#else
   (void)ctx;
   (void)args;
   return VPX_CODEC_INCAPABLE;
-#endif
 }
 
 static vpx_codec_err_t ctrl_set_dbg_options(vpx_codec_alg_priv_t *ctx,
