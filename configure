@@ -294,6 +294,7 @@ EXPERIMENT_LIST="
     global_motion
     palette
     new_quant
+    switchable_dq
     intrabc
     loop_postfilter
     row_tile
