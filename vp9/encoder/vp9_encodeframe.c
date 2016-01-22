@@ -1104,7 +1104,11 @@ static void update_state(VP9_COMP *cpi, ThreadData *td,
       THR_D63_PRED  /*D63_PRED*/,
       THR_TM        /*TM_PRED*/,
     };
+<<<<<<< HEAD   (ade60d Merge "Fixes for var_tx when ext_tx is not enabled" into nex)
     ++cpi->mode_chosen_counts[kf_mode_index[xdmi->mode]];
+=======
+    ++cpi->mode_chosen_counts[kf_mode_index[mi->mode]];
+>>>>>>> BRANCH (732242 Merge "vp9 pickmode: Fix the shift on negative value.")
   } else {
     // Note how often each mode chosen as best
     ++cpi->mode_chosen_counts[ctx->best_mode_index];
@@ -1754,7 +1758,9 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
     }
   }
 
-  if (cm->use_prev_frame_mvs) {
+  if (cm->use_prev_frame_mvs ||
+      (cpi->svc.use_base_mv && cpi->svc.number_spatial_layers > 1
+        && cpi->svc.spatial_layer_id != cpi->svc.number_spatial_layers - 1)) {
     MV_REF *const frame_mvs =
         cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;
     int w, h;
