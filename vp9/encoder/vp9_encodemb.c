@@ -50,9 +50,7 @@ void vp9_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
                      pd->dst.buf, pd->dst.stride);
 }
 
-#define RDTRUNC(RM, DM, R, D)                        \
-  (((1 << (VP9_PROB_COST_SHIFT - 1)) + (R) * (RM)) & \
-   ((1 << VP9_PROB_COST_SHIFT) - 1))
+#define RDTRUNC(RM, DM, R, D) ((128 + (R) * (RM)) & 0xFF)
 
 typedef struct vp9_token_state {
   int           rate;
