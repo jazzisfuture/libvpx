@@ -42,7 +42,7 @@ static const uint8_t vp9_nuq_knots_lossless[COEF_BANDS][NUQ_KNOTS] = {
 };
 
 static const uint8_t vp9_nuq_knots_mid[COEF_BANDS][NUQ_KNOTS] = {
-  {84, 124, 128},  // dc, band 0
+  {64, 124, 128},  // dc, band 0
   {84, 124, 128},  // band 1
   {84, 124, 128},  // band 2
   {86, 124, 128},  // band 3
@@ -58,7 +58,7 @@ static const uint8_t vp9_nuq_doff_lossless[COEF_BANDS] = { 0, 0, 0, 0, 0, 0
     , 0
 #endif  // CONFIG_TX_SKIP
 };
-static const uint8_t vp9_nuq_doff_low[COEF_BANDS] =  { 5, 13, 14, 19, 20, 21
+static const uint8_t vp9_nuq_doff_low[COEF_BANDS] =  { 6, 12, 13, 16, 17, 18
 #if CONFIG_TX_SKIP
     , 8
 #endif  // CONFIG_TX_SKIP
@@ -68,7 +68,7 @@ static const uint8_t vp9_nuq_doff_mid[COEF_BANDS] =  { 8, 16, 17, 22, 23, 24
     , 8
 #endif  // CONFIG_TX_SKIP
 };
-static const uint8_t vp9_nuq_doff_high[COEF_BANDS] = { 41, 49, 50, 55, 56, 57
+static const uint8_t vp9_nuq_doff_high[COEF_BANDS] = { 10, 18, 21, 27, 28, 29
 #if CONFIG_TX_SKIP
     , 8
 #endif  // CONFIG_TX_SKIP
