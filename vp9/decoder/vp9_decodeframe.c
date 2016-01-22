@@ -136,6 +136,14 @@ static void read_switchable_interp_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
       vp9_diff_update_prob(r, &fc->switchable_interp_prob[j][i]);
 }
 
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+static void read_dq_profile_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
+  int i;
+  for (i = 0; i < QUANT_PROFILES - 1; ++i)
+    vp9_diff_update_prob(r, &fc->dq_profile_prob[i]);
+}
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+
 static void read_inter_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
   int i, j;
   for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
@@ -3481,6 +3489,10 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
 #if CONFIG_NEW_INTER
     read_inter_compound_mode_probs(fc, &r);
 #endif  // CONFIG_NEW_INTER
+
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+    read_dq_profile_probs(fc, &r);
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
 
     if (cm->interp_filter == SWITCHABLE)
       read_switchable_interp_probs(fc, &r);
