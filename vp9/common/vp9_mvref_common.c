@@ -180,7 +180,7 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
           break;
         }
       break;
-    case 3: {
+    case 3:
       int_mv candidates[2 + MAX_MV_REF_CANDIDATES];
       candidates[0] = bmi[1].as_mv[ref];
       candidates[1] = bmi[0].as_mv[ref];
@@ -194,7 +194,6 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
           break;
         }
       break;
-    }
     default:
       assert(0 && "Invalid block index.");
   }
