@@ -78,7 +78,15 @@ extern "C" {
 
 #if CONFIG_NEW_QUANT
 #define QUANT_PROFILES 3
-#define DEFAULT_DQ 0
+
+static INLINE int switchable_dq_profile_used(BLOCK_SIZE bsize) {
+#if CONFIG_SWITCHABLE_DQ
+  return bsize >= BLOCK_16X16;
+#else  // CONFIG_SWITCHABLE_DQ
+  (void) bsize;
+  return 0;
+#endif  // CONFIG_SWITCHABLE_DQ
+}
 #endif  // CONFIG_NEW_QUANT
 
 typedef enum {

@@ -58,7 +58,7 @@ static const uint8_t vp9_nuq_doff_lossless[COEF_BANDS] = { 0, 0, 0, 0, 0, 0
     , 0
 #endif  // CONFIG_TX_SKIP
 };
-static const uint8_t vp9_nuq_doff_low[COEF_BANDS] =  { 5, 13, 14, 19, 20, 21
+static const uint8_t vp9_nuq_doff_low[COEF_BANDS] =  { 12, 24, 26, 33, 35, 36
 #if CONFIG_TX_SKIP
     , 8
 #endif  // CONFIG_TX_SKIP
@@ -68,7 +68,7 @@ static const uint8_t vp9_nuq_doff_mid[COEF_BANDS] =  { 8, 16, 17, 22, 23, 24
     , 8
 #endif  // CONFIG_TX_SKIP
 };
-static const uint8_t vp9_nuq_doff_high[COEF_BANDS] = { 41, 49, 50, 55, 56, 57
+static const uint8_t vp9_nuq_doff_high[COEF_BANDS] = { 16, 32, 34, 44, 46, 48
 #if CONFIG_TX_SKIP
     , 8
 #endif  // CONFIG_TX_SKIP
