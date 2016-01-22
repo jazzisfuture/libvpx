@@ -812,7 +812,7 @@ static void encode_breakout_test(VP9_COMP *cpi, MACROBLOCK *x,
       mi->mv[0].as_mv.col > 64 ||
       mi->mv[0].as_mv.col < -64)
     motion_low = 0;
-  if (x->encode_breakout > 0 && motion_low == 1) {
+  if (x->encode_breakout > 0 && motion_low == 1 && !x->sb_is_skin) {
     // Set a maximum for threshold to avoid big PSNR loss in low bit rate
     // case. Use extreme low threshold for static frames to limit
     // skipping.
