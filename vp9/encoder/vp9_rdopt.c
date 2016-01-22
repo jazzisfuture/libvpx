@@ -6066,6 +6066,35 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
 #endif  // CONFIG_EXT_TX
 
+#if CONFIG_NEW_QUANT
+    // Choose the best dq_index
+    if (xd->lossless || !switchable_dq_profile_used(bsize)) {
+      mbmi->dq_off_index = 0;
+    } else {
+      int64_t rdcost_dq;
+      int rate_y_dq;
+      int64_t distortion_y_dq;
+      int dummy;
+      int64_t best_rdcost_dq = INT64_MAX;
+      int best_dq = -1;
+      for (i = 0; i < QUANT_PROFILES; i++) {
+        mbmi->dq_off_index = i;
+        super_block_yrd(cpi, x, &rate_y_dq, &distortion_y_dq, &dummy, psse,
+                        bsize, txfm_cache, INT64_MAX);
+        assert(rate_y_dq != INT_MAX);
+        assert(rate_y_dq >= 0);
+        rdcost_dq = RDCOST(x->rdmult, x->rddiv, rate_y_dq, distortion_y_dq);
+        rdcost_dq = MIN(rdcost_dq, RDCOST(x->rdmult, x->rddiv, 0, *psse));
+        assert(rdcost_dq >= 0);
+        if (rdcost_dq < best_rdcost_dq) {
+          best_dq = i;
+          best_rdcost_dq = rdcost_dq;
+        }
+      }
+      mbmi->dq_off_index = best_dq;
+    }
+#endif  // CONFIG_NEW_QUANT
+
     // Y cost and distortion
     super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                     bsize, txfm_cache, ref_best_rd);

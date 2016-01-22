@@ -944,6 +944,17 @@ const vp9_tree_index vp9_copy_mode_tree[TREE_SIZE(COPY_MODE_COUNT - 1)] = {
 };
 #endif  // CONFIG_COPY_MODE
 
+#if CONFIG_NEW_QUANT
+const vp9_tree_index vp9_dq_profile_tree[TREE_SIZE(QUANT_PROFILES)] = {
+  -0, 2,
+  -1, -2
+};
+
+static const vp9_prob default_dq_profile_prob[QUANT_PROFILES - 1] = {
+  192, 128
+};
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_TX64X64
 void tx_counts_to_branch_counts_64x64(const unsigned int *tx_count_64x64p,
                                       unsigned int (*ct_64x64p)[2]) {
@@ -1096,6 +1107,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
 #if CONFIG_WEDGE_PARTITION
   vp9_copy(fc->wedge_interinter_prob, default_wedge_interinter_prob);
 #endif  // CONFIG_WEDGE_PARTITION
+#if CONFIG_NEW_QUANT
+  vp9_copy(fc->dq_profile_prob, default_dq_profile_prob);
+#endif
 }
 
 const vp9_tree_index vp9_switchable_interp_tree
@@ -1323,6 +1337,11 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
         adapt_prob(pre_fc->palette_uv_enabled_prob[i],
                    counts->uv_palette_enabled[i]);
 #endif  // CONFIG_PALETTE
+
+#if CONFIG_NEW_QUANT
+  adapt_probs(vp9_dq_profile_tree, pre_fc->dq_profile_prob,
+              counts->dq_profile, fc->dq_profile_prob);
+#endif
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {
