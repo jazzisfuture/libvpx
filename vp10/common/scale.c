@@ -181,8 +181,8 @@ void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
       }
     }
     // 2D subpel motion always gets filtered in both directions.
-    sf->highbd_predict[1][1][0] = vpx_highbd_convolve8;
-    sf->highbd_predict[1][1][1] = vpx_highbd_convolve8_avg;
+    sf->highbd_predict[1][1][0] = vpx_highbd_convolve8_c2;
+    sf->highbd_predict[1][1][1] = vpx_highbd_convolve8_avg_c2;
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }

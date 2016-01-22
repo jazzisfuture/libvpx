@@ -37,6 +37,18 @@ uint8_t clip_pixel(int x) {
          x;
 }
 
+static INLINE uint16_t clip_pixel_highbd(int val, int bd) {
+  switch (bd) {
+    case 8:
+    default:
+      return (uint16_t)clamp(val, 0, 255);
+    case 10:
+      return (uint16_t)clamp(val, 0, 1023);
+    case 12:
+      return (uint16_t)clamp(val, 0, 4095);
+  }
+}
+
 TEST(ConvolveTest, vpx_convolve8_c2) {
   uint8_t src[64];
   ptrdiff_t src_stride = 8;
@@ -113,6 +125,88 @@ TEST(ConvolveTest, vpx_convolve8_avg_c2) {
   EXPECT_EQ(dst[0], ROUND_POWER_OF_TWO(dst0[0] + dst1[0], 1));
 
 }
+
+#if CONFIG_VP9_HIGHBITDEPTH
+TEST(ConvolveTest, vpx_highbd_convolve8_c2) {
+  uint16_t src[64];
+  ptrdiff_t src_stride = 8;
+  uint16_t dst[1] = {0};
+  const int16_t* filter = vp9_filter_kernels[0][3];
+  int step = 16;
+  int w = 1;
+  int h = 1;
+  int bd = 10;
+
+  for(int i = 0; i < src_stride * src_stride; i++) {
+    src[i] = rand() % (1<<8);
+  }
+
+  vpx_highbd_convolve8_c2(CONVERT_TO_BYTEPTR(src) + src_stride * 3 + 3 , src_stride,
+                   CONVERT_TO_BYTEPTR(dst), 1,
+                   filter, step,
+                   filter, step,
+                   w, h, bd);
+
+  int temp[8];
+  int dst_ref = 0;
+  for(int r = 0; r < src_stride; r++) {
+    temp[r] = 0;
+    for(int c = 0; c < src_stride; c++) {
+      temp[r] += filter[c] * src[r*src_stride + c];
+    }
+    dst_ref += temp[r] * filter[r];
+  }
+  dst_ref = clip_pixel_highbd(ROUND_POWER_OF_TWO(dst_ref, VP9_FILTER_SHIFT*2), bd);
+  EXPECT_EQ(dst[0], dst_ref);
+}
+
+
+TEST(ConvolveTest, vpx_highbd_convolve8_avg_c2) {
+  uint16_t src0[64];
+  uint16_t src1[64];
+  ptrdiff_t src_stride = 8;
+  uint16_t dst0[1] = {0};
+  uint16_t dst1[1] = {0};
+  uint16_t dst[1] = {0};
+  const int16_t* filter = vp9_filter_kernels[0][3];
+  int step = 16;
+  int w = 1;
+  int h = 1;
+  int bd = 10;
+
+  for(int i = 0; i < src_stride * src_stride; i++) {
+    src0[i] = rand() % (1<<8);
+    src1[i] = rand() % (1<<8);
+  }
+
+  vpx_highbd_convolve8_c2(CONVERT_TO_BYTEPTR(src0) + src_stride * 3 + 3 , src_stride,
+                   CONVERT_TO_BYTEPTR(dst0), 1,
+                   filter, step,
+                   filter, step,
+                   w, h, bd);
+
+  vpx_highbd_convolve8_c2(CONVERT_TO_BYTEPTR(src1) + src_stride * 3 + 3 , src_stride,
+                   CONVERT_TO_BYTEPTR(dst1), 1,
+                   filter, step,
+                   filter, step,
+                   w, h, bd);
+
+  vpx_highbd_convolve8_c2(CONVERT_TO_BYTEPTR(src0) + src_stride * 3 + 3 , src_stride,
+                   CONVERT_TO_BYTEPTR(dst), 1,
+                   filter, step,
+                   filter, step,
+                   w, h, bd);
+
+  vpx_highbd_convolve8_avg_c2(CONVERT_TO_BYTEPTR(src1) + src_stride * 3 + 3 , src_stride,
+                       CONVERT_TO_BYTEPTR(dst), 1,
+                       filter, step,
+                       filter, step,
+                       w, h, bd);
+
+  EXPECT_EQ(dst[0], ROUND_POWER_OF_TWO(dst0[0] + dst1[0], 1));
+
+}
+#endif
 
 static const unsigned int kMaxDimension = 64;
 
