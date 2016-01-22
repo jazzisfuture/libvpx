@@ -65,6 +65,8 @@ typedef struct frame_contexts {
   vpx_prob newmv_prob[NEWMV_MODE_CONTEXTS];
   vpx_prob zeromv_prob[ZEROMV_MODE_CONTEXTS];
   vpx_prob refmv_prob[REFMV_MODE_CONTEXTS];
+  vpx_prob drl_prob0[DRL_MODE_CONTEXTS];
+  vpx_prob drl_prob1[DRL_MODE_CONTEXTS];
 #endif
 
   vpx_prob inter_mode_probs[INTER_MODE_CONTEXTS][INTER_MODES - 1];
@@ -107,6 +109,8 @@ typedef struct FRAME_COUNTS {
   unsigned int newmv_mode[NEWMV_MODE_CONTEXTS][2];
   unsigned int zeromv_mode[ZEROMV_MODE_CONTEXTS][2];
   unsigned int refmv_mode[REFMV_MODE_CONTEXTS][2];
+  unsigned int drl_mode0[DRL_MODE_CONTEXTS][2];
+  unsigned int drl_mode1[DRL_MODE_CONTEXTS][2];
 #endif
 
   unsigned int inter_mode[INTER_MODE_CONTEXTS][INTER_MODES];

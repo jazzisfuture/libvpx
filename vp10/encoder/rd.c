@@ -356,6 +356,16 @@ void vp10_initialize_rd_consts(VP10_COMP *cpi) {
       cpi->refmv_mode_cost[i][0] = vp10_cost_bit(cm->fc->refmv_prob[i], 0);
       cpi->refmv_mode_cost[i][1] = vp10_cost_bit(cm->fc->refmv_prob[i], 1);
     }
+
+    for (i = 0; i < DRL_MODE_CONTEXTS; ++i) {
+      cpi->drl_mode_cost0[i][0] = vp10_cost_bit(cm->fc->drl_prob0[i], 0);
+      cpi->drl_mode_cost0[i][1] = vp10_cost_bit(cm->fc->drl_prob0[i], 1);
+    }
+
+    for (i = 0; i < DRL_MODE_CONTEXTS; ++i) {
+      cpi->drl_mode_cost1[i][0] = vp10_cost_bit(cm->fc->drl_prob1[i], 0);
+      cpi->drl_mode_cost1[i][1] = vp10_cost_bit(cm->fc->drl_prob1[i], 1);
+    }
 #else
     for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
       vp10_cost_tokens((int *)cpi->inter_mode_cost[i],

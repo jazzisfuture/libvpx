@@ -473,6 +473,8 @@ typedef struct VP10_COMP {
   int newmv_mode_cost[NEWMV_MODE_CONTEXTS][2];
   int zeromv_mode_cost[ZEROMV_MODE_CONTEXTS][2];
   int refmv_mode_cost[REFMV_MODE_CONTEXTS][2];
+  int drl_mode_cost0[DRL_MODE_CONTEXTS][2];
+  int drl_mode_cost1[DRL_MODE_CONTEXTS][2];
 #endif
 
   unsigned int inter_mode_cost[INTER_MODE_CONTEXTS][INTER_MODES];
