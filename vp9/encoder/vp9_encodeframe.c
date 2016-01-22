@@ -942,6 +942,34 @@ static int choose_partitioning(VP9_COMP *cpi,
         vt.part_variances.none.variance > (5 * avg_32x32) >> 4)
       force_split[0] = 1;
   }
+  // Check if most of the superblock is skin content, and if so, force a split
+  // to 32x32.
+  if (!force_split[0]) {
+    int num_16x16_skin = 0;
+    uint8_t *ysignal = x->plane[0].src.buf;
+    uint8_t *usignal = x->plane[1].src.buf;
+    uint8_t *vsignal = x->plane[2].src.buf;
+    int spuv = x->plane[1].src.stride;
+    for (i = 0; i < 4; i++) {
+      for (j = 0; j < 4; j++) {
+        int is_skin = vp9_compute_skin_block(ysignal,
+                                             usignal,
+                                             vsignal,
+                                             sp,
+                                             spuv,
+                                             BLOCK_16X16);
+        num_16x16_skin += is_skin;
+        ysignal += 16;
+        usignal += 8;
+        vsignal += 8;
+      }
+      ysignal += (sp << 4) - 64;
+      usignal += (spuv << 3) - 32;
+      ysignal += (spuv << 3) - 32;
+    }
+    if (num_16x16_skin > 12)
+      force_split[0] = 1;
+  }
 
   // Now go through the entire structure, splitting every block size until
   // we get to one that's got a variance lower than our threshold.
