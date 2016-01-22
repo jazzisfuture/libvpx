@@ -49,6 +49,8 @@
 #include "vp9/encoder/vp9_temporal_filter.h"
 #include "vp9/encoder/vp9_resize.h"
 
+extern int enable_debug;
+
 void vp9_coef_tree_initialize();
 
 #define SHARP_FILTER_QTHRESH 0          /* Q threshold for 8-tap sharp filter */
@@ -2880,7 +2882,8 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 
     vpx_usec_timer_start(&timer);
 
-    vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.lpf_pick);
+    // vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.lpf_pick);
+    lf->filter_level = 0;
 
     vpx_usec_timer_mark(&timer);
     cpi->time_pick_lpf += vpx_usec_timer_elapsed(&timer);
@@ -3704,6 +3707,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   // printf("Bilateral level: %d\n", cm->lf.bilateral_level);
 
+  enable_debug = 1;
   // build the bitstream
 #if CONFIG_ROW_TILE
   if (vp9_pack_bitstream(cpi, dest, size, 1) < 0) {
@@ -3717,6 +3721,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #else
   vp9_pack_bitstream(cpi, dest, size);
 #endif
+  enable_debug = 0;
 
 #if CONFIG_PALETTE
   vp9_free_palette_map(cm);

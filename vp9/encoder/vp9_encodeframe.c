@@ -4712,10 +4712,6 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
-#if CONFIG_NEW_QUANT
-  mbmi->dq_off_index = DEFAULT_DQ;
-#endif  // CONFIG_NEW_QUANT
-
   x->skip_recode = !x->select_tx_size && mbmi->sb_type >= BLOCK_8X8 &&
                    cpi->oxcf.aq_mode != COMPLEXITY_AQ &&
                    cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ &&
@@ -4729,6 +4725,13 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
   x->skip_encode = (!output_enabled && cpi->sf.skip_encode_frame &&
                     x->q_index < QIDX_SKIP_THRESH);
+
+  if (output_enabled &&
+      cm->current_video_frame == 1 && cm->show_frame &&
+      mi_row == 20 && mi_col == 10) {
+    printf("E [%d %d] sb_type = %d dq = [%d] compound [%d]\n",
+           mi_row, mi_col, mbmi->sb_type, mbmi->dq_off_index, has_second_ref(mbmi));
+  }
 
   if (x->skip_encode)
     return;
@@ -4874,6 +4877,14 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       ++cm->counts.ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
     }
 #endif  // CONFIG_EXT_TX
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+    if (switchable_dq_profile_used(bsize) &&
+        cm->base_qindex > 0 &&
+        !mbmi->skip &&
+        !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+      ++cm->counts.dq_profile[mbmi->dq_off_index];
+    }
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
 #if CONFIG_TX_SKIP
     if (bsize >= BLOCK_8X8) {
       int q_idx = vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex);

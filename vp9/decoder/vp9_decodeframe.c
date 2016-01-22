@@ -136,6 +136,14 @@ static void read_switchable_interp_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
       vp9_diff_update_prob(r, &fc->switchable_interp_prob[j][i]);
 }
 
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+static void read_dq_profile_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
+  int i;
+  for (i = 0; i < QUANT_PROFILES - 1; ++i)
+    vp9_diff_update_prob(r, &fc->dq_profile_prob[i]);
+}
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+
 static void read_inter_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
   int i, j;
   for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
@@ -1669,6 +1677,10 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                      mi_row, mi_col, r);
 #else
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
+  if (cm->current_video_frame == 1 && cm->show_frame &&
+      mi_row == 20 && mi_col == 10) {
+    printf("Reading modes\n");
+  }
   vp9_read_mode_info(cm, xd, tile,
 #if CONFIG_COPY_MODE
 #if CONFIG_EXT_PARTITION
@@ -1695,6 +1707,12 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
       setup_plane_dequants(cm, xd, vp9_get_qindex(&cm->seg, mbmi->segment_id,
                                                   cm->base_qindex));
     }
+  }
+
+  if (cm->current_video_frame == 1 && cm->show_frame &&
+      mi_row == 20 && mi_col == 10) {
+    printf("D [%d %d] sb_type = %d dq = [%d] compound [%d]\n",
+           mi_row, mi_col, mbmi->sb_type, mbmi->dq_off_index, has_second_ref(mbmi));
   }
 
   if (!is_inter_block(mbmi)
@@ -3481,6 +3499,10 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
 #if CONFIG_NEW_INTER
     read_inter_compound_mode_probs(fc, &r);
 #endif  // CONFIG_NEW_INTER
+
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+    read_dq_profile_probs(fc, &r);
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
 
     if (cm->interp_filter == SWITCHABLE)
       read_switchable_interp_probs(fc, &r);
