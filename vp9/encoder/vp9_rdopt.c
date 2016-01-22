@@ -6066,6 +6066,38 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
 #endif  // CONFIG_EXT_TX
 
+#if CONFIG_NEW_QUANT
+    // Choose the best dq_index
+    if (xd->lossless || !switchable_dq_profile_used(bsize)) {
+      mbmi->dq_off_index = 0;
+      printf("\ninter dq_profile = 3\n");
+    } else {
+      int64_t rdcost_dq;
+      int rate_y_dq;
+      int64_t distortion_y_dq;
+      int dummy;
+      int64_t best_rdcost_dq = INT64_MAX;
+      int best_dq = -1;
+      for (i = 0; i < QUANT_PROFILES; i++) {
+        mbmi->dq_off_index = i;
+        super_block_yrd(cpi, x, &rate_y_dq, &distortion_y_dq, &dummy, psse,
+                        bsize, txfm_cache, INT64_MAX);
+        assert(rate_y_dq != INT_MAX);
+        assert(rate_y_dq >= 0);
+        rate_y_dq += cpi->dq_profile_costs[i];
+        rdcost_dq = RDCOST(x->rdmult, x->rddiv, rate_y_dq, distortion_y_dq);
+        rdcost_dq = MIN(rdcost_dq, RDCOST(x->rdmult, x->rddiv, 0, *psse));
+        assert(rdcost_dq >= 0);
+        if (rdcost_dq < best_rdcost_dq) {
+          best_dq = i;
+          best_rdcost_dq = rdcost_dq;
+        }
+      }
+      printf("\ninter dq_profile = %d\n", best_dq);
+      mbmi->dq_off_index = best_dq;
+    }
+#endif  // CONFIG_NEW_QUANT
+
     // Y cost and distortion
     super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                     bsize, txfm_cache, ref_best_rd);
@@ -6514,6 +6546,7 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                PICK_MODE_CONTEXT *ctx, int64_t best_rd) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
   struct macroblockd_plane *const pd = xd->plane;
   int rate_y = 0, rate_uv = 0, rate_y_tokenonly = 0, rate_uv_tokenonly = 0;
   int y_skip = 0, uv_skip = 0;
@@ -6615,6 +6648,40 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                 &(ctx->mic.mbmi));
   }
 #endif  // CONFIG_PALETTE
+
+#if CONFIG_NEW_QUANT
+  if (xd->lossless || !switchable_dq_profile_used(bsize)) {
+    mbmi->dq_off_index = 0;
+    printf("\nintra dq_profile = 3\n");
+  } else {
+    int64_t rdcost_dq;
+    int rate_y_dq;
+    int64_t distortion_y_dq;
+    int dummy;
+    int64_t best_rdcost_dq = INT64_MAX;
+    int64_t total_sse = INT64_MAX;
+    int rate2 = rate_y + cpi->mbmode_cost[mbmi->mode];
+    int i;
+    int best_dq = -1;
+    for (i = 0; i < QUANT_PROFILES; i++) {
+      mbmi->dq_off_index = i;
+      super_block_yrd(cpi, x, &rate_y_dq, &distortion_y_dq, &dummy,
+                      (int64_t *)&rate2, bsize, &total_sse, INT64_MAX);
+      assert(rate_y_dq != INT_MAX);
+      assert(rate_y_dq >= 0);
+      rate_y_dq += cpi->dq_profile_costs[i];
+      rdcost_dq = RDCOST(x->rdmult, x->rddiv, rate_y_dq, distortion_y_dq);
+      rdcost_dq = MIN(rdcost_dq, RDCOST(x->rdmult, x->rddiv, 0, rate2));
+      assert(rdcost_dq >= 0);
+      if (rdcost_dq < best_rdcost_dq) {
+        best_dq = i;
+        best_rdcost_dq = rdcost_dq;
+      }
+    }
+    printf("\nintra dq_profile = %d\n", best_dq);
+    mbmi->dq_off_index = best_dq;
+  }
+#endif  // CONFIG_NEW_QUANT
 }
 
 static void update_rd_thresh_fact(VP9_COMP *cpi, int bsize,
@@ -7244,6 +7311,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_WEDGE_PARTITION
     mbmi->use_wedge_interinter = 0;
 #endif  // CONFIG_WEDGE_PARTITION
+// #if CONFIG_NEW_QUANT
+//     mbmi->dq_off_index = 0;
+// #endif  // CONFIG_NEW_QUANT
 
     if (ref_frame == INTRA_FRAME) {
       TX_SIZE uv_tx;
@@ -7388,6 +7458,37 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       if (this_mode != DC_PRED && this_mode != TM_PRED)
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
+
+#if CONFIG_NEW_QUANT
+      if (xd->lossless || !switchable_dq_profile_used(bsize)) {
+        mbmi->dq_off_index = 0;
+        printf("\ninter dq_profile = 3\n");
+      } else {
+        int64_t rdcost_dq;
+        int rate_y_dq;
+        int64_t distortion_y_dq;
+        int dummy;
+        int64_t best_rdcost_dq = INT64_MAX;
+        int best_dq = -1;
+        for (i = 0; i < QUANT_PROFILES; i++) {
+          mbmi->dq_off_index = i;
+          super_block_yrd(cpi, x, &rate_y_dq, &distortion_y_dq, &dummy,
+                          (int64_t *)&rate2, bsize, &total_sse, INT64_MAX);
+          assert(rate_y_dq != INT_MAX);
+          assert(rate_y_dq >= 0);
+          rate_y_dq += cpi->dq_profile_costs[i];
+          rdcost_dq = RDCOST(x->rdmult, x->rddiv, rate_y_dq, distortion_y_dq);
+          rdcost_dq = MIN(rdcost_dq, RDCOST(x->rdmult, x->rddiv, 0, rate2));
+          assert(rdcost_dq >= 0);
+          if (rdcost_dq < best_rdcost_dq) {
+            best_dq = i;
+            best_rdcost_dq = rdcost_dq;
+          }
+        }
+        printf("\ninter dq_profile = %d\n", best_dq);
+        mbmi->dq_off_index = best_dq;
+      }
+#endif  // CONFIG_NEW_QUANT
     } else {
 #if CONFIG_INTERINTRA
       if (second_ref_frame == INTRA_FRAME) {
