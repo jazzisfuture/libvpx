@@ -2710,8 +2710,10 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   int plane;
 
   mbmi->skip = 1;
-  if (x->skip)
+  if (x->skip) {
+    mbmi->tx_size = max_txsize_lookup[bsize];
     return;
+  }
 
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
     if (!x->skip_recode)
