@@ -66,6 +66,17 @@ static PREDICTION_MODE read_inter_compound_mode(VP9_COMMON *cm, vp9_reader *r,
 }
 #endif  // CONFIG_NEW_INTER
 
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+static int read_dq_profile(VP9_COMMON *cm, vp9_reader *r) {
+  const int dq_profile = vp9_read_tree(r, vp9_dq_profile_tree,
+                                       cm->fc.dq_profile_prob);
+  if (!cm->frame_parallel_decoding_mode) {
+    ++cm->counts.dq_profile[dq_profile];
+  }
+  return dq_profile;
+}
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+
 static PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, vp9_reader *r,
                                        int ctx) {
   const int mode = vp9_read_tree(r, vp9_inter_mode_tree,
@@ -78,7 +89,7 @@ static PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, vp9_reader *r,
 #if CONFIG_COPY_MODE
 static COPY_MODE read_copy_mode(VP9_COMMON *cm, vp9_reader *r,
                                 int num_candidate, int ctx) {
-  COPY_MODE mode;
+  COPY_MODE mode = 0;
 
   switch (num_candidate) {
     case 0:
@@ -310,10 +321,6 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
   int_mv dv_ref;
 #endif  // CONFIG_INTRABC
 
-#if CONFIG_NEW_QUANT
-  mbmi->dq_off_index = DEFAULT_DQ;
-#endif  // CONFIG_NEW_QUANT
-
   mbmi->segment_id = read_intra_segment_id(cm, xd, mi_row, mi_col, r);
 #if CONFIG_MISC_ENTROPY
   mbmi->skip = 0;
@@ -509,7 +516,18 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
 #else  // CONFIG_SR_MODE
   mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, bsize, 1, r);
 #endif  // CONFIG_SR_MODE
-#endif
+#endif  // CONFIG_PALETTE
+
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+  if (cm->base_qindex > 0 && switchable_dq_profile_used(mbmi->sb_type) &&
+      !mbmi->skip &&
+      !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+    mbmi->dq_off_index = read_dq_profile(cm, r);
+  } else {
+    mbmi->dq_off_index = 0;
+  }
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+
   mbmi->ref_frame[0] = INTRA_FRAME;
   mbmi->ref_frame[1] = NONE;
 
@@ -1464,10 +1482,6 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
   (void) supertx_enabled;
 #endif
 
-#if CONFIG_NEW_QUANT
-  mbmi->dq_off_index = DEFAULT_DQ;
-#endif  // CONFIG_NEW_QUANT
-
   mbmi->mv[0].as_int = 0;
   mbmi->mv[1].as_int = 0;
 
@@ -1706,8 +1720,21 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 #endif  // CONFIG_SR_MODE
 #endif  // CONFIG_PALETTE
 
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+    if (cm->base_qindex > 0 && switchable_dq_profile_used(mbmi->sb_type) &&
+        !mbmi->skip &&
+        !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+#if CONFIG_COPY_MODE
+      if (mbmi->copy_mode == NOREF)
+#endif  // CONFIG_COPY_MODE
+        mbmi->dq_off_index = read_dq_profile(cm, r);
+    } else {
+      mbmi->dq_off_index = 0;
+    }
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+
 #if CONFIG_EXT_TX
-    if (inter_block &&
+  if (inter_block &&
 #if !CONFIG_WAVELETS
         mbmi->tx_size <= TX_16X16 &&
 #endif
