@@ -1761,9 +1761,7 @@ static int rd_pick_ext_intra_sby(VP10_COMP *cpi, MACROBLOCK *x,
   EXT_INTRA_MODE mode;
   TX_SIZE best_tx_size = TX_4X4;
   EXT_INTRA_MODE_INFO ext_intra_mode_info;
-#if CONFIG_EXT_TX
   TX_TYPE best_tx_type;
-#endif  // CONFIG_EXT_TX
 
   vp10_zero(ext_intra_mode_info);
   mbmi->ext_intra_mode_info.use_ext_intra_mode[0] = 1;
@@ -1785,9 +1783,7 @@ static int rd_pick_ext_intra_sby(VP10_COMP *cpi, MACROBLOCK *x,
       *best_rd            = this_rd;
       best_tx_size        = mic->mbmi.tx_size;
       ext_intra_mode_info = mbmi->ext_intra_mode_info;
-#if CONFIG_EXT_TX
       best_tx_type        = mic->mbmi.tx_type;
-#endif  // CONFIG_EXT_TX
       *rate               = this_rate;
       *rate_tokenonly     = this_rate_tokenonly;
       *distortion         = this_distortion;
@@ -1803,9 +1799,7 @@ static int rd_pick_ext_intra_sby(VP10_COMP *cpi, MACROBLOCK *x,
         ext_intra_mode_info.use_ext_intra_mode[0];
     mbmi->ext_intra_mode_info.ext_intra_mode[0] =
         ext_intra_mode_info.ext_intra_mode[0];
-#if CONFIG_EXT_TX
     mbmi->tx_type = best_tx_type;
-#endif  // CONFIG_EXT_TX
     return 1;
   } else {
     return 0;
@@ -1825,9 +1819,7 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
   const double rd_adjust = 1.2;
   int64_t this_distortion, this_rd, sse_dummy;
   TX_SIZE best_tx_size = mic->mbmi.tx_size;
-#if CONFIG_EXT_TX
   TX_TYPE best_tx_type = mbmi->tx_type;
-#endif  // CONFIG_EXT_TX
 
   if (ANGLE_FAST_SEARCH) {
     int deltas_level1[3] = {0, -2, 2};
@@ -1858,9 +1850,7 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
         best_rd             = this_rd;
         best_angle_delta    = mbmi->angle_delta[0];
         best_tx_size        = mbmi->tx_size;
-#if CONFIG_EXT_TX
         best_tx_type        = mbmi->tx_type;
-#endif  // CONFIG_EXT_TX
         *rate               = this_rate;
         *rate_tokenonly     = this_rate_tokenonly;
         *distortion         = this_distortion;
@@ -1881,9 +1871,7 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
           best_rd             = this_rd;
           best_angle_delta    = mbmi->angle_delta[0];
           best_tx_size        = mbmi->tx_size;
-#if CONFIG_EXT_TX
           best_tx_type        = mbmi->tx_type;
-#endif  // CONFIG_EXT_TX
           *rate               = this_rate;
           *rate_tokenonly     = this_rate_tokenonly;
           *distortion         = this_distortion;
@@ -1908,9 +1896,7 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
         best_rd             = this_rd;
         best_angle_delta    = mbmi->angle_delta[0];
         best_tx_size        = mbmi->tx_size;
-#if CONFIG_EXT_TX
         best_tx_type        = mbmi->tx_type;
-#endif  // CONFIG_EXT_TX
         *rate               = this_rate;
         *rate_tokenonly     = this_rate_tokenonly;
         *distortion         = this_distortion;
@@ -1921,9 +1907,7 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
 
   mbmi->tx_size = best_tx_size;
   mbmi->angle_delta[0] = best_angle_delta;
-#if CONFIG_EXT_TX
   mbmi->tx_type = best_tx_type;
-#endif  // CONFIG_EXT_TX
 
   if (*rate_tokenonly < INT_MAX) {
     txfm_rd_in_plane(x,
