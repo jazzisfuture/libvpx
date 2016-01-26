@@ -942,6 +942,17 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   const int is_inter = is_inter_block(mbmi);
 
   const vpx_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
+
+#if CONFIG_REF_MV
+  if (is_inter) {
+    uint8_t rf_type = vp10_ref_frame_type(mbmi->ref_frame);
+    int8_t ref_skip =
+        vp10_get_inter_skip_ctx(mbmi, x->mbmi_ext->ref_mv_count[rf_type],
+                                x->mbmi_ext->ref_mv_stack[rf_type]);
+    skip_prob = vp10_get_inter_skip_prob(cm, xd, ref_skip);
+  }
+#endif
+
   assert(skip_prob > 0);
   s0 = vp10_cost_bit(skip_prob, 0);
   s1 = vp10_cost_bit(skip_prob, 1);
@@ -4750,11 +4761,22 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     *distortion += distortion_uv;
     *skippable = skippable_y && skippable_uv;
   } else {
+#if CONFIG_REF_MV
+    uint8_t rf_type = vp10_ref_frame_type(mbmi->ref_frame);
+    int8_t ref_skip =
+        vp10_get_inter_skip_ctx(mbmi, x->mbmi_ext->ref_mv_count[rf_type],
+                                x->mbmi_ext->ref_mv_stack[rf_type]);
+    vpx_prob skip_prob = vp10_get_inter_skip_prob(cm, xd, ref_skip);
+    *rate2 += vp10_cost_bit(skip_prob, 1);
+#endif
+
     x->skip = 1;
     *disable_skip = 1;
 
+#if !CONFIG_REF_MV
     // The cost of skip bit needs to be added.
     *rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1);
+#endif
 
     *distortion = skip_sse_sb;
   }
@@ -5201,7 +5223,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     int64_t total_sse = INT64_MAX;
     int early_term = 0;
 #if CONFIG_REF_MV
-    uint8_t ref_frame_type;
+    uint8_t ref_frame_type = 0;
 #endif
 
     this_mode = vp10_mode_order[mode_index].mode;
@@ -5495,21 +5517,29 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         int64_t tmp_ref_rd = this_rd;
         int ref_idx;
         int ref_set = VPXMIN(2, mbmi_ext->ref_mv_count[ref_frame_type] - 2);
-
         uint8_t drl0_ctx =
             vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 0);
+
+        int8_t ref_skip =
+            vp10_get_inter_skip_ctx(mbmi,
+                                    mbmi_ext->ref_mv_count[ref_frame_type],
+                                    mbmi_ext->ref_mv_stack[ref_frame_type]);
+        vpx_prob skip_prob = vp10_get_inter_skip_prob(cm, xd, ref_skip);
+
         rate2 += cpi->drl_mode_cost0[drl0_ctx][0];
 
         if (this_rd < INT64_MAX) {
-          if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
-              RDCOST(x->rdmult, x->rddiv, 0, total_sse))
+          if (RDCOST(x->rdmult, x->rddiv,
+                     rate_y + rate_uv + vp10_cost_bit(skip_prob, 0),
+                     distortion2) <
+              RDCOST(x->rdmult, x->rddiv,
+                     vp10_cost_bit(skip_prob, 1), total_sse))
             tmp_ref_rd = RDCOST(x->rdmult, x->rddiv,
-                rate2 + vp10_cost_bit(vp10_get_skip_prob(cm, xd), 0),
+                rate2 + vp10_cost_bit(skip_prob, 0),
                 distortion2);
           else
             tmp_ref_rd = RDCOST(x->rdmult, x->rddiv,
-                rate2 + vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1) -
-                rate_y - rate_uv,
+                rate2 + vp10_cost_bit(skip_prob, 1) - rate_y - rate_uv,
                 total_sse);
         }
 
@@ -5557,16 +5587,24 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
           }
 
           if (tmp_alt_rd < INT64_MAX) {
+            ref_skip =
+                vp10_get_inter_skip_ctx(mbmi,
+                                        mbmi_ext->ref_mv_count[ref_frame_type],
+                                        mbmi_ext->ref_mv_stack[ref_frame_type]);
+            skip_prob = vp10_get_inter_skip_prob(cm, xd, ref_skip);
+
             if (RDCOST(x->rdmult, x->rddiv,
-                       tmp_rate_y + tmp_rate_uv, tmp_dist) <
-                RDCOST(x->rdmult, x->rddiv, 0, tmp_sse))
+                       tmp_rate_y + tmp_rate_uv + vp10_cost_bit(skip_prob, 0),
+                       tmp_dist) <
+                RDCOST(x->rdmult, x->rddiv,
+                       vp10_cost_bit(skip_prob, 1), tmp_sse))
               tmp_alt_rd = RDCOST(x->rdmult, x->rddiv,
-                  tmp_rate + vp10_cost_bit(vp10_get_skip_prob(cm, xd), 0),
+                  tmp_rate + vp10_cost_bit(skip_prob, 0),
                   tmp_dist);
             else
               tmp_alt_rd = RDCOST(x->rdmult, x->rddiv,
-                  tmp_rate + vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1) -
-                  tmp_rate_y - tmp_rate_uv,
+                  tmp_rate - tmp_rate_y - tmp_rate_uv +
+                  vp10_cost_bit(skip_prob, 1),
                   tmp_sse);
           }
 
@@ -5609,22 +5647,33 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     }
 
     if (!disable_skip) {
+#if CONFIG_REF_MV
+      int8_t ref_skip =
+          vp10_get_inter_skip_ctx(mbmi, mbmi_ext->ref_mv_count[ref_frame_type],
+                                  mbmi_ext->ref_mv_stack[ref_frame_type]);
+      vpx_prob skip_prob = vp10_get_inter_skip_prob(cm, xd, ref_skip);
+#else
+      vpx_prob skip_prob = vp10_get_skip_prob(cm, xd);
+#endif
       if (skippable) {
         // Back out the coefficient coding costs
         rate2 -= (rate_y + rate_uv);
         rate_y = 0;
         rate_uv = 0;
         // Cost the skip mb case
-        rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1);
+        rate2 += vp10_cost_bit(skip_prob, 1);
 
       } else if (ref_frame != INTRA_FRAME && !xd->lossless[mbmi->segment_id]) {
-        if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
-            RDCOST(x->rdmult, x->rddiv, 0, total_sse)) {
+        if (RDCOST(x->rdmult, x->rddiv,
+                   rate_y + rate_uv + vp10_cost_bit(skip_prob, 0),
+                   distortion2) <
+            RDCOST(x->rdmult, x->rddiv,
+                   vp10_cost_bit(skip_prob, 1), total_sse)) {
           // Add in the cost of the no skip flag.
-          rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 0);
+          rate2 += vp10_cost_bit(skip_prob, mbmi->skip);
         } else {
           // FIXME(rbultje) make this work for splitmv also
-          rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1);
+          rate2 += vp10_cost_bit(skip_prob, 1);
           distortion2 = total_sse;
           assert(total_sse >= 0);
           rate2 -= (rate_y + rate_uv);
@@ -5634,7 +5683,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         }
       } else {
         // Add in the cost of the no skip flag.
-        rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 0);
+        rate2 += vp10_cost_bit(skip_prob, 0);
       }
 
       // Calculate the final RD estimate for this mode.

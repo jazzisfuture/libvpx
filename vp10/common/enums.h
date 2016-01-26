@@ -202,7 +202,11 @@ typedef enum {
 
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
 
+#if CONFIG_REF_MV
+#define SKIP_CONTEXTS 9
+#else
 #define SKIP_CONTEXTS 3
+#endif
 
 #if CONFIG_REF_MV
 #define NEWMV_MODE_CONTEXTS  7
@@ -229,7 +233,7 @@ typedef enum {
 #define MAX_MV_REF_CANDIDATES 2
 #if CONFIG_REF_MV
 #define MAX_REF_MV_STACK_SIZE 16
-#define REF_CAT_LEVEL  128
+#define REF_CAT_LEVEL  160
 #endif
 
 #define INTRA_INTER_CONTEXTS 4

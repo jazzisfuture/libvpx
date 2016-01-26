@@ -14,6 +14,9 @@
 #include "vpx/vpx_integer.h"
 
 #include "vp10/common/common.h"
+#if CONFIG_REF_MV
+#include "vp10/common/filter.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +42,8 @@ typedef struct candidate_mv {
   int_mv this_mv;
   int_mv comp_mv;
   int weight;
+  INTERP_FILTER pred_filter;
+  int8_t skip;
 } CANDIDATE_MV;
 #endif
 

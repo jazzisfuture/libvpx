@@ -39,6 +39,8 @@ static uint8_t add_ref_mv_candidate(const MODE_INFO *const candidate_mi,
         if (index == *refmv_count) {
           ref_mv_stack[index].this_mv = this_refmv;
           ref_mv_stack[index].weight = 2 * weight;
+          ref_mv_stack[index].pred_filter = candidate->interp_filter;
+          ref_mv_stack[index].skip = candidate->skip;
           ++(*refmv_count);
 
           if (candidate->mode == NEWMV)
@@ -89,6 +91,8 @@ static uint8_t add_ref_mv_candidate(const MODE_INFO *const candidate_mi,
       if (index == *refmv_count) {
         ref_mv_stack[index].this_mv = this_refmv[0];
         ref_mv_stack[index].comp_mv = this_refmv[1];
+        ref_mv_stack[index].pred_filter = candidate->interp_filter;
+        ref_mv_stack[index].skip = candidate->skip;
         ref_mv_stack[index].weight = 2 * weight;
         ++(*refmv_count);
 
@@ -347,6 +351,8 @@ static void setup_ref_mv_list(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                 *refmv_count < MAX_REF_MV_STACK_SIZE) {
               ref_mv_stack[idx].this_mv.as_int = prev_frame_mvs->mv[ref].as_int;
               ref_mv_stack[idx].weight = 2;
+              ref_mv_stack[idx].skip = 0;
+              ref_mv_stack[idx].pred_filter = 0;
               ++(*refmv_count);
 
               if (abs(ref_mv_stack[idx].this_mv.as_mv.row) >= 8 ||
