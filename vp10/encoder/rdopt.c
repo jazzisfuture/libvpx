@@ -1761,7 +1761,9 @@ static int rd_pick_ext_intra_sby(VP10_COMP *cpi, MACROBLOCK *x,
   EXT_INTRA_MODE mode;
   TX_SIZE best_tx_size = TX_4X4;
   EXT_INTRA_MODE_INFO ext_intra_mode_info;
+#if CONFIG_EXT_TX
   TX_TYPE best_tx_type;
+#endif  // CONFIG_EXT_TX
 
   vp10_zero(ext_intra_mode_info);
   mbmi->ext_intra_mode_info.use_ext_intra_mode[0] = 1;
@@ -1783,7 +1785,9 @@ static int rd_pick_ext_intra_sby(VP10_COMP *cpi, MACROBLOCK *x,
       *best_rd            = this_rd;
       best_tx_size        = mic->mbmi.tx_size;
       ext_intra_mode_info = mbmi->ext_intra_mode_info;
+#if CONFIG_EXT_TX
       best_tx_type        = mic->mbmi.tx_type;
+#endif  // CONFIG_EXT_TX
       *rate               = this_rate;
       *rate_tokenonly     = this_rate_tokenonly;
       *distortion         = this_distortion;
@@ -1799,7 +1803,9 @@ static int rd_pick_ext_intra_sby(VP10_COMP *cpi, MACROBLOCK *x,
         ext_intra_mode_info.use_ext_intra_mode[0];
     mbmi->ext_intra_mode_info.ext_intra_mode[0] =
         ext_intra_mode_info.ext_intra_mode[0];
+#if CONFIG_EXT_TX
     mbmi->tx_type = best_tx_type;
+#endif  // CONFIG_EXT_TX
     return 1;
   } else {
     return 0;
@@ -1819,7 +1825,9 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
   const double rd_adjust = 1.2;
   int64_t this_distortion, this_rd, sse_dummy;
   TX_SIZE best_tx_size = mic->mbmi.tx_size;
+#if CONFIG_EXT_TX
   TX_TYPE best_tx_type = mbmi->tx_type;
+#endif  // CONFIG_EXT_TX
 
   if (ANGLE_FAST_SEARCH) {
     int deltas_level1[3] = {0, -2, 2};
@@ -1850,7 +1858,9 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
         best_rd             = this_rd;
         best_angle_delta    = mbmi->angle_delta[0];
         best_tx_size        = mbmi->tx_size;
+#if CONFIG_EXT_TX
         best_tx_type        = mbmi->tx_type;
+#endif  // CONFIG_EXT_TX
         *rate               = this_rate;
         *rate_tokenonly     = this_rate_tokenonly;
         *distortion         = this_distortion;
@@ -1871,7 +1881,9 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
           best_rd             = this_rd;
           best_angle_delta    = mbmi->angle_delta[0];
           best_tx_size        = mbmi->tx_size;
+#if CONFIG_EXT_TX
           best_tx_type        = mbmi->tx_type;
+#endif  // CONFIG_EXT_TX
           *rate               = this_rate;
           *rate_tokenonly     = this_rate_tokenonly;
           *distortion         = this_distortion;
@@ -1896,7 +1908,9 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
         best_rd             = this_rd;
         best_angle_delta    = mbmi->angle_delta[0];
         best_tx_size        = mbmi->tx_size;
+#if CONFIG_EXT_TX
         best_tx_type        = mbmi->tx_type;
+#endif  // CONFIG_EXT_TX
         *rate               = this_rate;
         *rate_tokenonly     = this_rate_tokenonly;
         *distortion         = this_distortion;
@@ -1907,7 +1921,9 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
 
   mbmi->tx_size = best_tx_size;
   mbmi->angle_delta[0] = best_angle_delta;
+#if CONFIG_EXT_TX
   mbmi->tx_type = best_tx_type;
+#endif  // CONFIG_EXT_TX
 
   if (*rate_tokenonly < INT_MAX) {
     txfm_rd_in_plane(x,
@@ -5424,13 +5440,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     vp10_subtract_plane(x, bsize, 0);
 #if CONFIG_VAR_TX
     if (cm->tx_mode == TX_MODE_SELECT || xd->lossless[mbmi->segment_id]) {
-#if CONFIG_EXT_TX
       select_tx_type_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                          bsize, ref_best_rd);
-#else
-      inter_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
-                      bsize, ref_best_rd);
-#endif  // CONFIG_EXT_TX
     } else {
       int idx, idy;
       super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
@@ -5442,7 +5453,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 #else
     super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                     bsize, ref_best_rd);
-#endif  // CONFIG_VAR_TX
+#endif
 
     if (*rate_y == INT_MAX) {
       *rate2 = INT_MAX;
@@ -5463,7 +5474,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 #else
     if (!super_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv,
                           &sseuv, bsize, ref_best_rd - rdcosty)) {
-#endif  // CONFIG_VAR_TX
+#endif
       *rate2 = INT_MAX;
       *distortion = INT64_MAX;
       restore_dst_buf(xd, orig_dst, orig_dst_stride);
