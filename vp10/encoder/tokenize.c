@@ -762,10 +762,21 @@ void vp10_tokenize_sb(VP10_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
   MACROBLOCK *const x = &td->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
-  const int ctx = vp10_get_skip_context(xd);
+  int ctx = vp10_get_skip_context(xd);
   const int skip_inc = !segfeature_active(&cm->seg, mbmi->segment_id,
                                           SEG_LVL_SKIP);
   struct tokenize_b_args arg = {cpi, td, t};
+
+#if CONFIG_REF_MV
+  int8_t ref_skip = 0;
+  uint8_t rf_type = vp10_ref_frame_type(mbmi->ref_frame);
+  MB_MODE_INFO_EXT *const mbmi_ext = x->mbmi_ext;
+
+  ref_skip = vp10_get_inter_skip_ctx(mbmi, mbmi_ext->ref_mv_count[rf_type],
+                                     mbmi_ext->ref_mv_stack[rf_type]);
+  ctx += ref_skip * 3;
+#endif
+
   if (mbmi->skip) {
     if (!dry_run)
       td->counts->skip[ctx][1] += skip_inc;
