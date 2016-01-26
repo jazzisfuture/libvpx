@@ -108,6 +108,7 @@ VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_highbd_error_sse2.asm
 VP9_CX_SRCS-$(HAVE_AVX) += encoder/x86/vp9_highbd_error_avx.asm
 else
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_error_sse2.asm
+VP9_CX_SRCS-$(HAVE_SSSE3) += encoder/x86/vp9_frame_scale_ssse3.c
 endif
 endif
 
