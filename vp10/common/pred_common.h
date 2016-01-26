@@ -61,6 +61,43 @@ static INLINE int vp10_get_skip_context(const MACROBLOCKD *xd) {
   return above_skip + left_skip;
 }
 
+#if CONFIG_REF_MV
+static INLINE int8_t vp10_get_inter_skip_ctx(const MB_MODE_INFO *mbmi,
+                                             const uint8_t ref_mv_count,
+                                             const CANDIDATE_MV *ref_mv_stack) {
+  int8_t ref_skip_ctx = 0;
+
+  if ((mbmi->mode == NEARESTMV || mbmi->mode == NEARMV) &&
+      mbmi->sb_type >= BLOCK_8X8) {
+    if (ref_mv_count > 0 && mbmi->mode == NEARESTMV &&
+        ref_mv_stack[0].weight > REF_CAT_LEVEL)
+      ref_skip_ctx = ref_mv_stack[0].skip;
+
+    if (mbmi->mode == NEARMV) {
+      if (ref_mv_count == 2 && ref_mv_stack[1].weight > REF_CAT_LEVEL)
+        ref_skip_ctx = ref_mv_stack[1].skip;
+
+      if (ref_mv_count > 2 &&
+          ref_mv_stack[mbmi->ref_mv_idx + 1].weight > REF_CAT_LEVEL)
+        ref_skip_ctx = ref_mv_stack[mbmi->ref_mv_idx + 1].skip;
+    }
+    ref_skip_ctx += 1;
+  }
+
+  assert(ref_skip_ctx >= 0);
+  assert(ref_skip_ctx <= 2);
+  return ref_skip_ctx;
+}
+
+static INLINE vpx_prob vp10_get_inter_skip_prob(const VP10_COMMON *cm,
+                                                const MACROBLOCKD *xd,
+                                                const int8_t ref_skip) {
+  int8_t skip_ctx = vp10_get_skip_context(xd);
+  skip_ctx += ref_skip * 3;
+  return cm->fc->skip_probs[skip_ctx];
+}
+#endif
+
 static INLINE vpx_prob vp10_get_skip_prob(const VP10_COMMON *cm,
                                          const MACROBLOCKD *xd) {
   return cm->fc->skip_probs[vp10_get_skip_context(xd)];

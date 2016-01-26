@@ -344,6 +344,23 @@ static void update_inter_mode_probs(VP10_COMMON *cm, vpx_writer *w,
   vp10_cond_prob_diff_update(w, &cm->fc->new2mv_prob, counts->new2mv_mode);
 #endif  // CONFIG_EXT_INTER
 }
+
+static int write_inter_skip(const VP10_COMMON *cm, const MACROBLOCKD *xd,
+                            int segment_id, const MODE_INFO *mi,
+                            const MB_MODE_INFO_EXT *mbmi_ext,
+                            vpx_writer *w) {
+  if (segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP)) {
+    return 1;
+  } else {
+    const int skip = mi->mbmi.skip;
+    uint8_t rf_type = vp10_ref_frame_type(mi->mbmi.ref_frame);
+    int8_t ref_skip =
+        vp10_get_inter_skip_ctx(&mi->mbmi, mbmi_ext->ref_mv_count[rf_type],
+                                mbmi_ext->ref_mv_stack[rf_type]);
+    vpx_write(w, skip, vp10_get_inter_skip_prob(cm, xd, ref_skip));
+    return skip;
+  }
+}
 #endif
 
 #if CONFIG_EXT_INTER
@@ -909,6 +926,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
     }
   }
 
+#if !CONFIG_REF_MV
 #if CONFIG_SUPERTX
   if (supertx_enabled)
     skip = mbmi->skip;
@@ -917,6 +935,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #else
   skip = write_skip(cm, xd, segment_id, mi, w);
 #endif  // CONFIG_SUPERTX
+#endif
 
 #if CONFIG_SUPERTX
   if (!supertx_enabled)
@@ -924,36 +943,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
     if (!segfeature_active(seg, segment_id, SEG_LVL_REF_FRAME))
       vpx_write(w, is_inter, vp10_get_intra_inter_prob(cm, xd));
 
-  if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
-#if CONFIG_SUPERTX
-      !supertx_enabled &&
-#endif  // CONFIG_SUPERTX
-      !(is_inter && skip) && !xd->lossless[segment_id]) {
-#if CONFIG_VAR_TX
-    if (is_inter) {  // This implies skip flag is 0.
-      const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
-      const int txb_size = txsize_to_bsize[max_tx_size];
-      const int bs = num_4x4_blocks_wide_lookup[txb_size];
-      const int width  = num_4x4_blocks_wide_lookup[bsize];
-      const int height = num_4x4_blocks_high_lookup[bsize];
-      int idx, idy;
-      for (idy = 0; idy < height; idy += bs)
-        for (idx = 0; idx < width; idx += bs)
-          write_tx_size_inter(cm, xd, mbmi, max_tx_size, idy, idx, w);
-    } else {
-      set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
-      set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
-
-      write_selected_tx_size(cm, xd, w);
-    }
-  } else {
-    set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
-    set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
-#else
-  write_selected_tx_size(cm, xd, w);
-#endif
-  }
-
+#if CONFIG_REF_MV
   if (!is_inter) {
     if (bsize >= BLOCK_8X8) {
       write_intra_mode(w, mode, cm->fc->y_mode_prob[size_group_lookup[bsize]]);
@@ -1120,6 +1110,217 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #endif  // CONFIG_EXT_INTERP
   }
 
+#if CONFIG_SUPERTX
+  if (supertx_enabled)
+    skip = mbmi->skip;
+  else
+    skip = write_skip(cm, xd, segment_id, mi, w);
+#else
+  if (is_inter)
+    skip = write_inter_skip(cm, xd, segment_id, mi, mbmi_ext, w);
+  else
+    skip = write_skip(cm, xd, segment_id, mi, w);
+#endif  // CONFIG_SUPERTX
+#endif
+
+  if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
+#if CONFIG_SUPERTX
+      !supertx_enabled &&
+#endif  // CONFIG_SUPERTX
+      !(is_inter && skip) && !xd->lossless[segment_id]) {
+#if CONFIG_VAR_TX
+    if (is_inter) {  // This implies skip flag is 0.
+      const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
+      const int txb_size = txsize_to_bsize[max_tx_size];
+      const int bs = num_4x4_blocks_wide_lookup[txb_size];
+      const int width  = num_4x4_blocks_wide_lookup[bsize];
+      const int height = num_4x4_blocks_high_lookup[bsize];
+      int idx, idy;
+      for (idy = 0; idy < height; idy += bs)
+        for (idx = 0; idx < width; idx += bs)
+          write_tx_size_inter(cm, xd, mbmi, max_tx_size, idy, idx, w);
+    } else {
+      set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
+      set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
+
+      write_selected_tx_size(cm, xd, w);
+    }
+  } else {
+    set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
+    set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
+#else
+  write_selected_tx_size(cm, xd, w);
+#endif
+  }
+
+#if !CONFIG_REF_MV
+  if (!is_inter) {
+    if (bsize >= BLOCK_8X8) {
+      write_intra_mode(w, mode, cm->fc->y_mode_prob[size_group_lookup[bsize]]);
+#if CONFIG_EXT_INTRA
+      if (mode != DC_PRED && mode != TM_PRED) {
+        int p_angle;
+        const int intra_filter_ctx = vp10_get_pred_context_intra_interp(xd);
+        write_uniform(w, 2 * MAX_ANGLE_DELTAS + 1,
+                      MAX_ANGLE_DELTAS + mbmi->angle_delta[0]);
+        p_angle = mode_to_angle_map[mode] + mbmi->angle_delta[0] * ANGLE_STEP;
+        if (pick_intra_filter(p_angle)) {
+          vp10_write_token(w, vp10_intra_filter_tree,
+                           cm->fc->intra_filter_probs[intra_filter_ctx],
+                           &intra_filter_encodings[mbmi->intra_filter]);
+        }
+      }
+#endif  // CONFIG_EXT_INTRA
+    } else {
+      int idx, idy;
+      const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
+      const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
+      for (idy = 0; idy < 2; idy += num_4x4_h) {
+        for (idx = 0; idx < 2; idx += num_4x4_w) {
+          const PREDICTION_MODE b_mode = mi->bmi[idy * 2 + idx].as_mode;
+          write_intra_mode(w, b_mode, cm->fc->y_mode_prob[0]);
+        }
+      }
+    }
+    write_intra_mode(w, mbmi->uv_mode, cm->fc->uv_mode_prob[mode]);
+#if CONFIG_EXT_INTRA
+    if (mbmi->uv_mode != DC_PRED && mbmi->uv_mode != TM_PRED &&
+        bsize >= BLOCK_8X8)
+      write_uniform(w, 2 * MAX_ANGLE_DELTAS + 1,
+                    MAX_ANGLE_DELTAS + mbmi->angle_delta[1]);
+
+    if (bsize >= BLOCK_8X8)
+      write_ext_intra_mode_info(cm, mbmi, w);
+#endif  // CONFIG_EXT_INTRA
+  } else {
+    int16_t mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
+    write_ref_frames(cm, xd, w);
+
+#if CONFIG_REF_MV
+#if CONFIG_EXT_INTER
+    if (is_compound)
+      mode_ctx = mbmi_ext->compound_mode_context[mbmi->ref_frame[0]];
+    else
+#endif  // CONFIG_EXT_INTER
+    mode_ctx = vp10_mode_context_analyzer(mbmi_ext->mode_context,
+                                          mbmi->ref_frame, bsize, -1);
+#endif
+
+    // If segment skip is not enabled code the mode.
+    if (!segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
+      if (bsize >= BLOCK_8X8) {
+#if CONFIG_EXT_INTER
+        if (is_inter_compound_mode(mode))
+          write_inter_compound_mode(cm, w, mode, mode_ctx);
+        else if (is_inter_singleref_mode(mode))
+#endif  // CONFIG_EXT_INTER
+        write_inter_mode(cm, w, mode,
+#if CONFIG_REF_MV && CONFIG_EXT_INTER
+                         has_second_ref(mbmi),
+#endif  // CONFIG_REF_MV && CONFIG_EXT_INTER
+                         mode_ctx);
+
+#if CONFIG_REF_MV
+        if (mode == NEARMV)
+          write_drl_idx(cm, mbmi, mbmi_ext, w);
+#endif
+      }
+    }
+
+#if !CONFIG_EXT_INTERP
+    write_switchable_interp_filter(cpi, xd, w);
+#endif  // !CONFIG_EXT_INTERP
+
+    if (bsize < BLOCK_8X8) {
+      const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
+      const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
+      int idx, idy;
+      for (idy = 0; idy < 2; idy += num_4x4_h) {
+        for (idx = 0; idx < 2; idx += num_4x4_w) {
+          const int j = idy * 2 + idx;
+          const PREDICTION_MODE b_mode = mi->bmi[j].as_mode;
+#if CONFIG_REF_MV
+#if CONFIG_EXT_INTER
+          if (!is_compound)
+#endif  // CONFIG_EXT_INTER
+          mode_ctx = vp10_mode_context_analyzer(mbmi_ext->mode_context,
+                                                mbmi->ref_frame, bsize, j);
+#endif
+#if CONFIG_EXT_INTER
+          if (is_inter_compound_mode(b_mode))
+            write_inter_compound_mode(cm, w, b_mode, mode_ctx);
+          else if (is_inter_singleref_mode(b_mode))
+#endif  // CONFIG_EXT_INTER
+          write_inter_mode(cm, w, b_mode,
+#if CONFIG_REF_MV && CONFIG_EXT_INTER
+                           has_second_ref(mbmi),
+#endif  // CONFIG_REF_MV && CONFIG_EXT_INTER
+                           mode_ctx);
+
+#if CONFIG_EXT_INTER
+          if (b_mode == NEWMV || b_mode == NEWFROMNEARMV ||
+              b_mode == NEW_NEWMV) {
+#else
+          if (b_mode == NEWMV) {
+#endif  // CONFIG_EXT_INTER
+            for (ref = 0; ref < 1 + is_compound; ++ref)
+              vp10_encode_mv(cpi, w, &mi->bmi[j].as_mv[ref].as_mv,
+#if CONFIG_EXT_INTER
+                             &mi->bmi[j].ref_mv[ref].as_mv,
+#else
+                             &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv,
+#endif  // CONFIG_EXT_INTER
+                            nmvc, allow_hp);
+          }
+#if CONFIG_EXT_INTER
+          else if (b_mode == NEAREST_NEWMV || b_mode == NEAR_NEWMV) {
+            vp10_encode_mv(cpi, w, &mi->bmi[j].as_mv[1].as_mv,
+                           &mi->bmi[j].ref_mv[1].as_mv, nmvc, allow_hp);
+          } else if (b_mode == NEW_NEARESTMV || b_mode == NEW_NEARMV) {
+            vp10_encode_mv(cpi, w, &mi->bmi[j].as_mv[0].as_mv,
+                           &mi->bmi[j].ref_mv[0].as_mv, nmvc, allow_hp);
+          }
+#endif  // CONFIG_EXT_INTER
+        }
+      }
+    } else {
+#if CONFIG_EXT_INTER
+      if (mode == NEWMV || mode == NEWFROMNEARMV || mode == NEW_NEWMV) {
+#else
+      if (mode == NEWMV) {
+#endif  // CONFIG_EXT_INTER
+        for (ref = 0; ref < 1 + is_compound; ++ref)
+#if CONFIG_EXT_INTER
+        {
+          if (mode == NEWFROMNEARMV)
+            vp10_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
+                           &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][1].as_mv,
+                           nmvc, allow_hp);
+          else
+#endif  // CONFIG_EXT_INTER
+          vp10_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
+                        &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
+                        allow_hp);
+#if CONFIG_EXT_INTER
+        }
+      } else if (mode == NEAREST_NEWMV || mode == NEAR_NEWMV) {
+        vp10_encode_mv(cpi, w, &mbmi->mv[1].as_mv,
+                       &mbmi_ext->ref_mvs[mbmi->ref_frame[1]][0].as_mv, nmvc,
+                       allow_hp);
+      } else if (mode == NEW_NEARESTMV || mode == NEW_NEARMV) {
+        vp10_encode_mv(cpi, w, &mbmi->mv[0].as_mv,
+                       &mbmi_ext->ref_mvs[mbmi->ref_frame[0]][0].as_mv, nmvc,
+                       allow_hp);
+#endif  // CONFIG_EXT_INTER
+      }
+    }
+
+#if CONFIG_EXT_INTERP
+    write_switchable_interp_filter(cpi, xd, w);
+#endif  // CONFIG_EXT_INTERP
+  }
+#endif
+
 #if CONFIG_EXT_TX
   if (get_ext_tx_types(mbmi->tx_size, bsize, is_inter) > 1 &&
       cm->base_qindex > 0 && !mbmi->skip &&
@@ -1214,11 +1415,13 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
   if (seg->update_map)
     write_segment_id(w, seg, segp, mbmi->segment_id);
 
+#if !CONFIG_REF_MV
   write_skip(cm, xd, mbmi->segment_id, mi, w);
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !xd->lossless[mbmi->segment_id])
     write_selected_tx_size(cm, xd, w);
+#endif
 
   if (bsize >= BLOCK_8X8) {
     write_intra_mode(w, mbmi->mode,
@@ -1264,6 +1467,13 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       mbmi->mode == DC_PRED)
     write_palette_mode_info(cm, xd, mi, w);
 
+#if CONFIG_REF_MV
+  write_skip(cm, xd, mbmi->segment_id, mi, w);
+
+  if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
+      !xd->lossless[mbmi->segment_id])
+    write_selected_tx_size(cm, xd, w);
+#endif
 
 #if CONFIG_EXT_TX
   if (get_ext_tx_types(mbmi->tx_size, bsize, 0) > 1 &&

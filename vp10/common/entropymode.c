@@ -791,7 +791,11 @@ static const vpx_prob default_txfm_partition_probs[TXFM_PARTITION_CONTEXTS] = {
 #endif
 
 static const vpx_prob default_skip_probs[SKIP_CONTEXTS] = {
-  192, 128, 64
+#if CONFIG_REF_MV
+    192, 128, 64, 192, 128, 64, 192, 128, 64,
+#else
+    192, 128, 64
+#endif
 };
 
 #if CONFIG_EXT_INTERP && SWITCHABLE_FILTERS == 4

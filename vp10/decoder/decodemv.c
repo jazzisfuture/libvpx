@@ -410,9 +410,17 @@ static int read_skip(VP10_COMMON *cm, const MACROBLOCKD *xd,
   if (segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP)) {
     return 1;
   } else {
-    const int ctx = vp10_get_skip_context(xd);
-    const int skip = vpx_read(r, cm->fc->skip_probs[ctx]);
+    int ctx = vp10_get_skip_context(xd);
+    int skip;
     FRAME_COUNTS *counts = xd->counts;
+#if CONFIG_REF_MV
+    uint8_t rf_type = vp10_ref_frame_type(xd->mi[0]->mbmi.ref_frame);
+    int8_t ref_skip = vp10_get_inter_skip_ctx(&xd->mi[0]->mbmi,
+                                              xd->ref_mv_count[rf_type],
+                                              xd->ref_mv_stack[rf_type]);
+    ctx += 3 * ref_skip;
+#endif
+    skip = vpx_read(r, cm->fc->skip_probs[ctx]);
     if (counts)
       ++counts->skip[ctx][skip];
     return skip;
@@ -502,8 +510,11 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
   const int y_mis = VPXMIN(cm->mi_rows - mi_row, bh);
 
   mbmi->segment_id = read_intra_segment_id(cm, xd, mi_offset, x_mis, y_mis, r);
+
+#if !CONFIG_REF_MV
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
   mbmi->tx_size = read_tx_size(cm, xd, 1, r);
+#endif
   mbmi->ref_frame[0] = INTRA_FRAME;
   mbmi->ref_frame[1] = NONE;
 
@@ -563,6 +574,11 @@ static void read_intra_frame_mode_info(VP10_COMMON *const cm,
   if (bsize >= BLOCK_8X8 && cm->allow_screen_content_tools &&
       mbmi->mode == DC_PRED)
     read_palette_mode_info(cm, xd, r);
+
+#if CONFIG_REF_MV
+  mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
+  mbmi->tx_size = read_tx_size(cm, xd, 1, r);
+#endif
 
 #if CONFIG_EXT_TX
     if (get_ext_tx_types(mbmi->tx_size, mbmi->sb_type, 0) > 1 &&
@@ -1319,8 +1335,21 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
 #if CONFIG_SUPERTX
   if (!supertx_enabled) {
 #endif  // CONFIG_SUPERTX
+
+#if !CONFIG_REF_MV
     mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
+#endif
     inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
+
+#if CONFIG_REF_MV
+    if (inter_block)
+      read_inter_block_mode_info(pbi, xd,
+                                 mi, mi_row, mi_col, r);
+    else
+      read_intra_block_mode_info(cm, xd, mi, r);
+
+    mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
+#endif
 
 #if CONFIG_VAR_TX
     xd->above_txfm_context = cm->above_txfm_context + mi_col;
@@ -1373,11 +1402,13 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
 #endif  // CONFIG_VAR_TX
 #endif  // CONFIG_SUPERTX
 
+#if !CONFIG_REF_MV
   if (inter_block)
     read_inter_block_mode_info(pbi, xd,
                                mi, mi_row, mi_col, r);
   else
     read_intra_block_mode_info(cm, xd, mi, r);
+#endif
 
 #if CONFIG_EXT_TX
   if (get_ext_tx_types(mbmi->tx_size, mbmi->sb_type, inter_block) > 1 &&

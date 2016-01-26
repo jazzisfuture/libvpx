@@ -225,7 +225,11 @@ typedef enum {
 #define INTER_COMPOUND_MODES (1 + NEW_NEWMV - NEAREST_NEARESTMV)
 #endif  // CONFIG_EXT_INTER
 
+#if CONFIG_REF_MV
+#define SKIP_CONTEXTS 9
+#else
 #define SKIP_CONTEXTS 3
+#endif
 
 #if CONFIG_REF_MV
 #define NEWMV_MODE_CONTEXTS  7
