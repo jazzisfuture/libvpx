@@ -791,7 +791,11 @@ static const vpx_prob default_txfm_partition_probs[TXFM_PARTITION_CONTEXTS] = {
 #endif
 
 static const vpx_prob default_skip_probs[SKIP_CONTEXTS] = {
-  192, 128, 64
+#if CONFIG_REF_MV
+    192, 128, 64, 192, 128, 64, 192, 128, 64,
+#else
+    192, 128, 64
+#endif
 };
 
 #if CONFIG_EXT_INTERP && SWITCHABLE_FILTERS == 4
@@ -1455,6 +1459,17 @@ void vp10_adapt_intra_frame_probs(VP10_COMMON *cm) {
   for (i = 0; i < SKIP_CONTEXTS; ++i)
     fc->skip_probs[i] = mode_mv_merge_probs(
         pre_fc->skip_probs[i], counts->skip[i]);
+
+//  fprintf(stderr, "\n");
+//  for (i = 0; i < SKIP_CONTEXTS; ++i)
+//    fprintf(stderr, "%d  ", fc->skip_probs[i]);
+//  fprintf(stderr, "\n");
+//  for (i = 0; i < SKIP_CONTEXTS; ++i)
+//    fprintf(stderr, "%d  ", counts->skip[i][0]);
+//  fprintf(stderr, "\n");
+//  for (i = 0; i < SKIP_CONTEXTS; ++i)
+//    fprintf(stderr, "%d  ", counts->skip[i][1]);
+//  fprintf(stderr, "\n\n");
 
 #if CONFIG_EXT_TX
   for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
