@@ -1274,8 +1274,15 @@ static void update_state_supertx(VP10_COMP *cpi, ThreadData *td,
   }
 
   x->skip = ctx->skip;
+
+#if CONFIG_VAR_TX
+  for (i = 0; i < MAX_MB_PLANE; ++i)
+    memcpy(x->blk_skip[i], ctx->blk_skip[i],
+           sizeof(uint8_t) * ctx->num_4x4_blk);
+#else
   memcpy(x->zcoeff_blk[mbmi->tx_size], ctx->zcoeff_blk,
          sizeof(uint8_t) * ctx->num_4x4_blk);
+#endif  // CONFIG_VAR_TX
 
   if (!output_enabled)
     return;
