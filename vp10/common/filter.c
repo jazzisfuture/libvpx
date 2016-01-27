@@ -11,7 +11,28 @@
 #include <assert.h>
 
 #include "vp10/common/filter.h"
+#if CONFIG_INTERPOLATION_FILTER_12
+DECLARE_ALIGNED(512, static const InterpKernel,
+                bilinear_filters_12[SUBPEL_SHIFTS]) = {
+  { 0, 0, 0, 0, 0, 128,   0, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0, 120,   8, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0, 112,  16, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0, 104,  24, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  96,  32, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  88,  40, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  80,  48, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  72,  56, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  64,  64, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  56,  72, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  48,  80, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  40,  88, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  32,  96, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  24, 104, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,  16, 112, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0,   8, 120, 0, 0, 0, 0, 0 }
+};
 
+#else
 DECLARE_ALIGNED(256, static const InterpKernel,
                 bilinear_filters[SUBPEL_SHIFTS]) = {
   { 0, 0, 0, 128,   0, 0, 0, 0 },
@@ -31,7 +52,30 @@ DECLARE_ALIGNED(256, static const InterpKernel,
   { 0, 0, 0,  16, 112, 0, 0, 0 },
   { 0, 0, 0,   8, 120, 0, 0, 0 }
 };
+#endif //CONFIG_INTERPOLATION_FILTER_12
 
+#if CONFIG_INTERPOLATION_FILTER_12
+DECLARE_ALIGNED(512, static const InterpKernel,
+                sub_pel_filters_12[SUBPEL_SHIFTS]) = {
+  // intfilt 0.575
+  {0,   0,   0,   0,   0, 128,   0,   0,   0,   0,   0, 0},
+  {0,   0,  -1,   2,  -6, 126,   9,  -3,   1,   0,   0, 0},
+  {0,   0,  -1,   4, -11, 123,  18,  -7,   3,  -1,   0, 0},
+  {0,   1,  -2,   5, -15, 119,  28, -10,   4,  -2,   0, 0},
+  {0,   1,  -2,   7, -19, 113,  38, -13,   5,  -2,   0, 0},
+  {0,   1,  -3,   8, -21, 106,  48, -16,   7,  -3,   1, 0},
+  {0,   1,  -3,   8, -22,  98,  59, -18,   7,  -3,   1, 0},
+  {0,   1,  -3,   8, -22,  89,  69, -20,   8,  -3,   1, 0},
+  {0,   1,  -3,   9, -22,  79,  79, -22,   9,  -3,   1, 0},
+  {0,   1,  -3,   8, -20,  69,  89, -22,   8,  -3,   1, 0},
+  {0,   1,  -3,   7, -18,  59,  98, -22,   8,  -3,   1, 0},
+  {0,   1,  -3,   7, -16,  48, 106, -21,   8,  -3,   1, 0},
+  {0,   0,  -2,   5, -13,  38, 113, -19,   7,  -2,   1, 0},
+  {0,   0,  -2,   4, -10,  28, 119, -15,   5,  -2,   1, 0},
+  {0,   0,  -1,   3,  -7,  18, 123, -11,   4,  -1,   0, 0},
+  {0,   0,   0,   1,  -3,   9, 126,  -6,   2,  -1,   0, 0},
+};
+#else
 DECLARE_ALIGNED(256, static const InterpKernel,
                 sub_pel_filters_8[SUBPEL_SHIFTS]) = {
 #if CONFIG_EXT_INTERP
@@ -72,7 +116,30 @@ DECLARE_ALIGNED(256, static const InterpKernel,
   { 0,   1,  -3,   8, 126,  -5,   1,  0}
 #endif  // CONFIG_EXT_INTERP
 };
+#endif //CONFIG_INTERPOLATION_FILTER_12
 
+#if CONFIG_INTERPOLATION_FILTER_12
+DECLARE_ALIGNED(512, static const InterpKernel,
+                sub_pel_filters_12sharp[SUBPEL_SHIFTS]) = {
+  // intfilt 0.8
+  {0,   0,   0,   0,   0, 128,   0,   0,   0,   0,   0, 0},
+  {0,   1,  -1,   3,  -7, 127,   8,  -4,   2,  -1,   0, 0},
+  {0,   1,  -3,   5, -12, 124,  18,  -8,   4,  -2,   1, 0},
+  {-1,   2,  -4,   8, -17, 120,  28, -11,   6,  -3,   1, -1},
+  {-1,   2,  -4,  10, -21, 114,  38, -15,   8,  -4,   2, -1},
+  {-1,   3,  -5,  11, -23, 107,  49, -18,   9,  -5,   2, -1},
+  {-1,   3,  -6,  12, -25,  99,  60, -21,  11,  -6,   3, -1},
+  {-1,   3,  -6,  12, -25,  90,  70, -23,  12,  -6,   3, -1},
+  {-1,   3,  -6,  12, -24,  80,  80, -24,  12,  -6,   3, -1},
+  {-1,   3,  -6,  12, -23,  70,  90, -25,  12,  -6,   3, -1},
+  {-1,   3,  -6,  11, -21,  60,  99, -25,  12,  -6,   3, -1},
+  {-1,   2,  -5,   9, -18,  49, 107, -23,  11,  -5,   3, -1},
+  {-1,   2,  -4,   8, -15,  38, 114, -21,  10,  -4,   2, -1},
+  {-1,   1,  -3,   6, -11,  28, 120, -17,   8,  -4,   2, -1},
+  {0,   1,  -2,   4,  -8,  18, 124, -12,   5,  -3,   1, 0},
+  {0,   0,  -1,   2,  -4,   8, 127,  -7,   3,  -1,   1, 0},
+};
+#else
 DECLARE_ALIGNED(256, static const InterpKernel,
                 sub_pel_filters_8sharp[SUBPEL_SHIFTS]) = {
 #if CONFIG_EXT_INTERP
@@ -113,7 +180,29 @@ DECLARE_ALIGNED(256, static const InterpKernel,
   {0,   1,  -3,   8, 127,  -7,   3, -1}
 #endif  // CONFIG_EXT_INTERP
 };
+#endif //CONFIG_INTERPOLATION_FILTER_12
 
+#if CONFIG_INTERPOLATION_FILTER_12
+DECLARE_ALIGNED(512, static const InterpKernel,
+                sub_pel_filters_12smooth[SUBPEL_SHIFTS]) = {
+{0,   0,   0,   0,   0, 128,   0,   0,   0,   0,   0, 0},
+{1,  0, -7, -1, 35, 64, 41,  2, -8,  0,  1, 0},
+{1,  1, -6, -3, 33, 64, 43,  3, -8, -1,  1, 0},
+{1,  1, -6, -4, 30, 63, 46,  5, -8, -1,  1, 0},
+{1,  1, -5, -5, 27, 62, 48,  7, -8, -1,  1, 0},
+{1,  1, -5, -6, 25, 61, 51,  9, -8, -2,  1, 0},
+{1,  1, -5, -7, 22, 60, 53, 12, -8, -2,  1, 0},
+{1,  1, -4, -7, 19, 58, 55, 14, -8, -3,  1, 1},
+{0,  1, -3, -8, 17, 57, 57, 17, -8, -3,  1, 0},
+{1,  1, -3, -8, 14, 55, 58, 19, -7, -4,  1, 1},
+{0,  1, -2, -8, 12, 53, 60, 22, -7, -5,  1, 1},
+{0,  1, -2, -8,  9, 51, 61, 25, -6, -5,  1, 1},
+{0,  1, -1, -8,  7, 48, 62, 27, -5, -5,  1, 1},
+{0,  1, -1, -8,  5, 46, 63, 30, -4, -6,  1, 1},
+{0,  1, -1, -8,  3, 43, 64, 33, -3, -6,  1, 1},
+{0,  1,  0, -8,  2, 41, 64, 35, -1, -7,  0, 1},
+};
+#else
 #if CONFIG_EXT_INTERP && SWITCHABLE_FILTERS == 4
 
 DECLARE_ALIGNED(256, static const InterpKernel,
@@ -182,7 +271,16 @@ DECLARE_ALIGNED(256, static const InterpKernel,
 };
 
 #endif  // CONFIG_EXT_INTERP
+#endif //CONFIG_INTERPOLATION_FILTER_12
 
+#if CONFIG_INTERPOLATION_FILTER_12
+const InterpKernel *vp10_filter_kernels[SWITCHABLE_FILTERS + 1] = {
+  sub_pel_filters_12,
+  sub_pel_filters_12smooth,
+  sub_pel_filters_12sharp,
+  bilinear_filters_12,
+};
+#else
 const InterpKernel *vp10_filter_kernels[SWITCHABLE_FILTERS + 1] = {
   sub_pel_filters_8,
   sub_pel_filters_8smooth,
@@ -192,3 +290,4 @@ const InterpKernel *vp10_filter_kernels[SWITCHABLE_FILTERS + 1] = {
 #endif
   bilinear_filters
 };
+#endif //CONFIG_INTERPOLATION_FILTER_12

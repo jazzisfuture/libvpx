@@ -282,6 +282,7 @@ EXPERIMENT_LIST="
     ans
     loop_restoration
     ext_partition
+    interpolation_filter_12
 "
 CONFIG_LIST="
     dependency_tracking

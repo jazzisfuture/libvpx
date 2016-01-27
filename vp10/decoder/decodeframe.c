@@ -766,7 +766,7 @@ static void dec_build_inter_predictors(VP10Decoder *const pbi, MACROBLOCKD *xd,
       const uint8_t *const buf_ptr1 = ref_frame + y0 * buf_stride + x0;
       const int b_w = x1 - x0 + 1;
       const int b_h = y1 - y0 + 1;
-      const int border_offset = y_pad * 3 * b_w + x_pad * 3;
+      const int border_offset = y_pad * (VP9_INTERP_EXTEND - 1) * b_w + x_pad * (VP9_INTERP_EXTEND - 1);
 
       extend_and_predict(buf_ptr1, buf_stride, x0, y0, b_w, b_h,
                          frame_width, frame_height, border_offset,

@@ -89,6 +89,16 @@ void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
   sf->predict_ni[1][1][0] = vpx_convolve8;
   sf->predict_ni[1][1][1] = vpx_convolve8_avg;
 #endif  // CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
+#if CONFIG_INTERPOLATION_FILTER_12
+  sf->predict[0][0][0] = vpx_convolve12_c;
+  sf->predict[0][0][1] = vpx_convolve12_avg_c;
+  sf->predict[0][1][0] = vpx_convolve12_c;
+  sf->predict[0][1][1] = vpx_convolve12_avg_c;
+  sf->predict[1][0][0] = vpx_convolve12_c;
+  sf->predict[1][0][1] = vpx_convolve12_avg_c;
+  sf->predict[1][1][0] = vpx_convolve12_c;
+  sf->predict[1][1][1] = vpx_convolve12_avg_c;
+#else
   if (sf->x_step_q4 == 16) {
     if (sf->y_step_q4 == 16) {
       // No scaling in either direction.
@@ -129,6 +139,7 @@ void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
   // 2D subpel motion always gets filtered in both directions
   sf->predict[1][1][0] = vpx_convolve8;
   sf->predict[1][1][1] = vpx_convolve8_avg;
+#endif
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (use_highbd) {
@@ -142,6 +153,16 @@ void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
     sf->highbd_predict_ni[1][1][0] = vpx_highbd_convolve8;
     sf->highbd_predict_ni[1][1][1] = vpx_highbd_convolve8_avg;
 #endif  // CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
+#if CONFIG_INTERPOLATION_FILTER_12
+  sf->highbd_predict[0][0][0] = vpx_highbd_convolve12_c;
+  sf->highbd_predict[0][0][1] = vpx_highbd_convolve12_avg_c;
+  sf->highbd_predict[0][1][0] = vpx_highbd_convolve12_c;
+  sf->highbd_predict[0][1][1] = vpx_highbd_convolve12_avg_c;
+  sf->highbd_predict[1][0][0] = vpx_highbd_convolve12_c;
+  sf->highbd_predict[1][0][1] = vpx_highbd_convolve12_avg_c;
+  sf->highbd_predict[1][1][0] = vpx_highbd_convolve12_c;
+  sf->highbd_predict[1][1][1] = vpx_highbd_convolve12_avg_c;
+#else
     if (sf->x_step_q4 == 16) {
       if (sf->y_step_q4 == 16) {
         // No scaling in either direction.
@@ -182,6 +203,7 @@ void vp10_setup_scale_factors_for_frame(struct scale_factors *sf,
     // 2D subpel motion always gets filtered in both directions.
     sf->highbd_predict[1][1][0] = vpx_highbd_convolve8;
     sf->highbd_predict[1][1][1] = vpx_highbd_convolve8_avg;
+#endif
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }

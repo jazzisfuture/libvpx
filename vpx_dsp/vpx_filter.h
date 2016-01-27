@@ -23,7 +23,12 @@ extern "C" {
 #define SUBPEL_BITS 4
 #define SUBPEL_MASK ((1 << SUBPEL_BITS) - 1)
 #define SUBPEL_SHIFTS (1 << SUBPEL_BITS)
+
+#if CONFIG_INTERPOLATION_FILTER_12
+#define SUBPEL_TAPS 12
+#else
 #define SUBPEL_TAPS 8
+#endif
 
 typedef int16_t InterpKernel[SUBPEL_TAPS];
 

@@ -130,7 +130,7 @@ static void convolve(const uint8_t *src, ptrdiff_t src_stride,
   // --Must round-up because block may be located at sub-pixel position.
   // --Require an additional SUBPEL_TAPS rows for the 8-tap filter tails.
   // --((64 - 1) * 32 + 15) >> 4 + 8 = 135.
-  uint8_t temp[135 * 64];
+  uint8_t temp[(135+4) * 64]; // +4 if for 12-tap
   int intermediate_height =
           (((h - 1) * y_step_q4 + y0_q4) >> SUBPEL_BITS) + SUBPEL_TAPS;
 
@@ -145,6 +145,18 @@ static void convolve(const uint8_t *src, ptrdiff_t src_stride,
                 y_filters, y0_q4, y_step_q4, w, h);
 }
 
+#if CONFIG_INTERPOLATION_FILTER_12
+static const InterpKernel *get_filter_base(const int16_t *filter) {
+  // NOTE: This assumes that the filter table is 256-byte aligned.
+  // TODO(agrange) Modify to make independent of table alignment.
+  return (const InterpKernel *)(((intptr_t)filter) & ~((intptr_t)0x1FF));
+}
+
+static int get_filter_offset(const int16_t *f, const InterpKernel *base) {
+  int offset = (int)((const InterpKernel *)(intptr_t)f - base);
+  return offset;
+}
+#else
 static const InterpKernel *get_filter_base(const int16_t *filter) {
   // NOTE: This assumes that the filter table is 256-byte aligned.
   // TODO(agrange) Modify to make independent of table alignment.
@@ -154,6 +166,7 @@ static const InterpKernel *get_filter_base(const int16_t *filter) {
 static int get_filter_offset(const int16_t *f, const InterpKernel *base) {
   return (int)((const InterpKernel *)(intptr_t)f - base);
 }
+#endif
 
 void vpx_convolve8_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                            uint8_t *dst, ptrdiff_t dst_stride,
@@ -459,7 +472,7 @@ static void highbd_convolve(const uint8_t *src, ptrdiff_t src_stride,
   // --Must round-up because block may be located at sub-pixel position.
   // --Require an additional SUBPEL_TAPS rows for the 8-tap filter tails.
   // --((64 - 1) * 32 + 15) >> 4 + 8 = 135.
-  uint16_t temp[64 * 135];
+  uint16_t temp[64 * (135+4)]; // +4 is for 12-tap
   int intermediate_height =
           (((h - 1) * y_step_q4 + y0_q4) >> SUBPEL_BITS) + SUBPEL_TAPS;
 
@@ -565,7 +578,6 @@ void vpx_highbd_convolve8_avg_c(const uint8_t *src, ptrdiff_t src_stride,
   vpx_highbd_convolve_avg_c(CONVERT_TO_BYTEPTR(temp), 64, dst, dst_stride,
                             NULL, 0, NULL, 0, w, h, bd);
 }
-
 void vpx_highbd_convolve_copy_c(const uint8_t *src8, ptrdiff_t src_stride,
                                 uint8_t *dst8, ptrdiff_t dst_stride,
                                 const int16_t *filter_x, int filter_x_stride,
@@ -609,4 +621,71 @@ void vpx_highbd_convolve_avg_c(const uint8_t *src8, ptrdiff_t src_stride,
     dst += dst_stride;
   }
 }
+
+#endif
+
+#if CONFIG_INTERPOLATION_FILTER_12
+void vpx_convolve12_c(const uint8_t *src, ptrdiff_t src_stride,
+                            uint8_t *dst, ptrdiff_t dst_stride,
+                            const int16_t *filter_x, int x_step_q4,
+                            const int16_t *filter_y, int y_step_q4,
+                            int w, int h) {
+  const InterpKernel *const filters_x = get_filter_base(filter_x);
+  const int x0_q4 = get_filter_offset(filter_x, filters_x);
+
+  const InterpKernel *const filters_y = get_filter_base(filter_y);
+  const int y0_q4 = get_filter_offset(filter_y, filters_y);
+  convolve(src, src_stride, dst, dst_stride,
+           filters_x, x0_q4, x_step_q4,
+           filters_y, y0_q4, y_step_q4, w, h);
+}
+
+void vpx_convolve12_avg_c(const uint8_t *src, ptrdiff_t src_stride,
+                                uint8_t *dst, ptrdiff_t dst_stride,
+                                const int16_t *filter_x, int x_step_q4,
+                                const int16_t *filter_y, int y_step_q4,
+                                int w, int h) {
+  /* Fixed size intermediate buffer places limits on parameters. */
+  DECLARE_ALIGNED(16, uint8_t, temp[64 * 64]);
+  assert(w <= 64);
+  assert(h <= 64);
+
+  vpx_convolve12_c(src, src_stride, temp, 64,
+                   filter_x, x_step_q4, filter_y, y_step_q4, w, h);
+  vpx_convolve_avg_c(temp, 64, dst, dst_stride, NULL, 0, NULL, 0, w, h);
+}
+
+#if CONFIG_VP9_HIGHBITDEPTH
+void vpx_highbd_convolve12_c(const uint8_t *src, ptrdiff_t src_stride,
+                            uint8_t *dst, ptrdiff_t dst_stride,
+                            const int16_t *filter_x, int x_step_q4,
+                            const int16_t *filter_y, int y_step_q4,
+                            int w, int h, int bd) {
+  const InterpKernel *const filters_x = get_filter_base(filter_x);
+  const int x0_q4 = get_filter_offset(filter_x, filters_x);
+
+  const InterpKernel *const filters_y = get_filter_base(filter_y);
+  const int y0_q4 = get_filter_offset(filter_y, filters_y);
+
+  highbd_convolve(src, src_stride, dst, dst_stride,
+                  filters_x, x0_q4, x_step_q4,
+                  filters_y, y0_q4, y_step_q4, w, h, bd);
+}
+
+void vpx_highbd_convolve12_avg_c(const uint8_t *src, ptrdiff_t src_stride,
+                                uint8_t *dst, ptrdiff_t dst_stride,
+                                const int16_t *filter_x, int x_step_q4,
+                                const int16_t *filter_y, int y_step_q4,
+                                int w, int h, int bd) {
+  // Fixed size intermediate buffer places limits on parameters.
+  DECLARE_ALIGNED(16, uint16_t, temp[64 * 64]);
+  assert(w <= 64);
+  assert(h <= 64);
+
+  vpx_highbd_convolve12_c(src, src_stride, CONVERT_TO_BYTEPTR(temp), 64,
+                         filter_x, x_step_q4, filter_y, y_step_q4, w, h, bd);
+  vpx_highbd_convolve_avg_c(CONVERT_TO_BYTEPTR(temp), 64, dst, dst_stride,
+                            NULL, 0, NULL, 0, w, h, bd);
+}
+#endif
 #endif
