@@ -24,7 +24,11 @@
 
 #define FILTER_BITS               7
 
+#if CONFIG_INTERPOLATION_FILTER_12
+#define INTERP_TAPS               12
+#else
 #define INTERP_TAPS               8
+#endif
 #define SUBPEL_BITS               5
 #define SUBPEL_MASK               ((1 << SUBPEL_BITS) - 1)
 #define INTERP_PRECISION_BITS     32

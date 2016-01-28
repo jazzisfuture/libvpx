@@ -19,18 +19,19 @@ extern "C" {
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_frame_buffer.h"
 #include "vpx/vpx_integer.h"
+#include "vpx_dsp/vpx_filter.h"
 
 #define VP8BORDERINPIXELS           32
 #define VP9INNERBORDERINPIXELS      96
 
 #if CONFIG_INTERPOLATION_FILTER_12
-  #define VP9_INTERP_EXTEND           6
+  #define VP9_INTERP_EXTEND           4
 #else
   #define VP9_INTERP_EXTEND           4
 #endif
 
-#define VP9_ENC_BORDER_IN_PIXELS    160
-#define VP9_DEC_BORDER_IN_PIXELS    32
+#define VP9_ENC_BORDER_IN_PIXELS    320
+#define VP9_DEC_BORDER_IN_PIXELS    64
 
 typedef struct yv12_buffer_config {
   int   y_width;
