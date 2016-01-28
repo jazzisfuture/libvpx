@@ -149,6 +149,8 @@ static INLINE uint8_t clip_pixel_add(uint8_t dest, tran_high_t trans) {
 }
 
 #if CONFIG_EXT_TX
+void ispacialdctv32x32(const tran_low_t *input, tran_low_t *dest, int stride);
+void ispacialdcth32x32(const tran_low_t *input, tran_low_t *dest, int stride);
 #define USE_DST2 1
 
 #if USE_DST2

@@ -37,6 +37,8 @@ void vp9_fdct32(const tran_high_t *input, tran_high_t *output, int round);
 void vp9_fdst4(const tran_low_t *input, tran_low_t *output);
 void vp9_fdst8(const tran_low_t *input, tran_low_t *output);
 void vp9_fdst16(const tran_low_t *input, tran_low_t *output);
+void fspacialdctv32x32(const int16_t *input, tran_low_t *out, int in_stride);
+void fspacialdcth32x32(const int16_t *input, tran_low_t *out, int in_stride);
 #endif  // CONFIG_EXT_TX
 
 static const transform_2d FHT_4[] = {

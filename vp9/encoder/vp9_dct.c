@@ -28,6 +28,80 @@ static INLINE tran_high_t fdct_round_shift(tran_high_t input) {
 }
 
 #if CONFIG_EXT_TX
+void fspacialdctv32x32(const int16_t *input, tran_low_t *out, int in_stride) {
+  int i, j;
+  tran_high_t output[32 * 32];
+
+  // Columns
+  for (i = 0; i < 8; ++i)
+    for (j = 0; j < 32; ++j)
+      output[j * 32 + i] = input[j * in_stride + i] << 2;
+  for (i = 8; i < 24; ++i) {
+    tran_high_t temp_in[32], temp_out[32];
+    for (j = 0; j < 32; ++j) temp_in[j] = input[j * in_stride + i] << 2;
+    vp9_fdct32(temp_in, temp_out, 0);
+    for (j = 0; j < 32; ++j)
+      output[j * 32 + i] = (temp_out[j] + 1 + (temp_out[j] < 0)) >> 2;
+  }
+  for (i = 24; i < 32; ++i) {
+    for (j = 0; j < 32; ++j)
+      output[j * 32 + i] = input[j * in_stride + i] << 2;
+  }
+
+  // Rows
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 8; ++j)
+      output[i * 32 + j] = output[i * 32 + j] * 2 * sqrt(2);
+    tran_low_t temp_in[16], temp_out[16];
+    for (j = 8; j < 24; ++j) temp_in[j - 8] = output[j + i * 32];
+    vp9_fdct16(temp_in, temp_out);
+    for (j = 8; j < 24; ++j) output[j + i * 32] = temp_out[j - 8];
+    for (j = 24; j < 32; ++j)
+      output[i * 32 + j] = output[i * 32 + j] * 2 * sqrt(2);
+  }
+
+  for (i = 0; i < 32; ++i)
+    for (j = 0; j < 32; ++j)
+      out[j + i * 32] = (tran_low_t)(output[j + i * 32]);
+}
+
+void fspacialdcth32x32(const int16_t *input, tran_low_t *out,
+                        int in_stride) {
+  int i, j;
+  tran_high_t output[32 * 32];
+
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 8; ++j)
+      output[j * 32 + i] = input[j * in_stride + i];
+    tran_low_t temp_in[16], temp_out[16];
+    for (j = 8; j < 24; ++j) temp_in[j - 8] = input[j * in_stride + i] << 2;
+    vp9_fdct16(temp_in, temp_out);
+    for (j = 8; j < 24; ++j) output[j * 32 + i] = temp_out[j - 8] >> 2;
+    for (j = 24; j < 32; ++j)
+      output[j * 32 + i] = input[j * in_stride + i];
+  }
+
+  // Rows
+  for (i = 0; i < 8; ++i)
+    for (j = 0; j < 32; ++j)
+      output[i * 32 + j] = output[i * 32 + j] * 8 * sqrt(2);
+  for (i = 8; i < 24; ++i) {
+    tran_high_t temp_in[32], temp_out[32];
+    for (j = 0; j < 32; ++j) temp_in[j] = output[i * 32 + j];
+    vp9_fdct32(temp_in, temp_out, 0);
+    for (j = 0; j < 32; ++j) output[i * 32 + j] = temp_out[j];
+  }
+  for (i = 24; i < 32; ++i)
+    for (j = 0; j < 32; ++j)
+      output[i * 32 + j] = output[i * 32 + j] * 8 * sqrt(2);
+
+  for (i = 0; i < 32; ++i)
+    for (j = 0; j < 32; ++j)
+      out[j + i * 32] = (tran_low_t)(output[j + i * 32]);
+
+}
+
 void vp9_fklt4(const tran_low_t *input, tran_low_t *output) {
   vp9_fgentx4(input, output, Tx4);
 }

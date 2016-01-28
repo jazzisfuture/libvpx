@@ -2361,6 +2361,70 @@ void vp9_idct32x32_noscale_c(const tran_low_t *input, int16_t *dest,
 }
 #endif  // CONFIG_WAVELETS
 
+#if CONFIG_EXT_TX
+void ispacialdctv32x32(const tran_low_t *input, tran_low_t *dest, int stride) {
+  tran_low_t out[32 * 32];
+  tran_low_t *outptr = out;
+  int i, j;
+  tran_low_t temp_in[32], temp_out[32];
+
+  // Rows
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 8; ++j) outptr[j] = input[j] * 2 * sqrt(2);
+    idct16(input + 8, outptr + 8);
+    for (j = 24; j < 32; ++j) outptr[j] = input[j] * 2 * sqrt(2);
+    for (j = 0; j < 32; ++j) outptr[j] = ROUND_POWER_OF_TWO(outptr[j], 3);
+    input += 32;
+    outptr += 32;
+  }
+
+  // Columns
+  for (i = 0; i < 8; ++i)
+    for (j = 0; j < 32; ++j)
+      dest[j * stride + i] = ROUND_POWER_OF_TWO(out[j * 32 + i], 2);
+  for (i = 8; i < 24; ++i) {
+    for (j = 0; j < 32; ++j) temp_in[j] = out[j * 32 + i];
+    idct32(temp_in, temp_out);
+    for (j = 0; j < 32; ++j)
+      dest[j * stride + i] = ROUND_POWER_OF_TWO(temp_out[j], 4);
+  }
+  for (i = 24; i < 32; ++i)
+    for (j = 0; j < 32; ++j)
+      dest[j * stride + i] = ROUND_POWER_OF_TWO(out[j * 32 + i], 2);
+}
+
+void ispacialdcth32x32(const tran_low_t *input, tran_low_t *dest, int stride) {
+  tran_low_t out[32 * 32];
+  tran_low_t *outptr = out;
+  int i, j;
+  tran_low_t temp_in[32], temp_out[32];
+
+  // Rows
+  for (i = 0; i < 8; ++i)
+    for (j = 0; j < 32; ++j) out[i * 32 + j] = input[i * 32 + j] << 2;
+  for (i = 8; i < 24; ++i)
+    idct32(input + i * 32, outptr + i * 32);
+  for (i = 24; i < 32; ++i)
+    for (j = 0; j < 32; ++j) out[i * 32 + j] = input[i * 32 + j] << 2;
+  for (i = 0; i < 32; ++i)
+    for (j = 0; j < 32; ++j)
+      out[i * 32 + j] = ROUND_POWER_OF_TWO(out[i * 32 + j], 4);
+
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 8; ++j)
+      dest[j * stride + i] = out[j * 32 + i] * 2 * sqrt(2);
+    for (j = 8; j < 24; ++j) temp_in[j - 8] = out[j * 32 + i];
+    idct16(temp_in, temp_out);
+    for (j = 8; j < 24; ++j) dest[j * stride + i] = temp_out[j - 8];
+    for (j = 24; j < 32; ++j)
+      dest[j * stride + i] = out[j * 32 + i] * 2 * sqrt(2);
+    for (j = 0; j < 32; ++j)
+      dest[j * stride + i] = ROUND_POWER_OF_TWO(dest[j * stride + i], 3);
+  }
+}
+#endif
+
 void vp9_idct32x32_34_add_c(const tran_low_t *input, uint8_t *dest,
                             int stride) {
   tran_low_t out[32 * 32] = {0};
