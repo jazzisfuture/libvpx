@@ -544,14 +544,26 @@ static void tokenize_b(int plane, int block, int blk_row, int blk_col,
   const int ref = is_inter_block(mbmi);
   unsigned int (*const counts)[COEFF_CONTEXTS][ENTROPY_TOKENS] =
       td->rd_counts.coef_counts[tx_size][type][ref];
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
   vpx_prob (*coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
       cpi->subframe_stats.coef_probs_buf[cpi->common.coef_probs_buf_idx]
                                         [tx_size][type][ref];
+  if (0) {
+    int i, j, k;
+    printf("buf idx is %d\n", cpi->common.coef_probs_buf_idx);
+    for (i = 0; i < COEF_BANDS; ++i) {
+      for (j = 0; j < COEFF_CONTEXTS; ++j) {
+        for (k = 0; k < UNCONSTRAINED_NODES; ++k) {
+          printf("%3d vs %3d \n", coef_probs[i][j][k],
+                 cpi->common.fc->coef_probs[tx_size][type][ref][i][j][k]);
+        }
+      }
+    }
+  }
 #else
   vpx_prob (*const coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
       cpi->common.fc->coef_probs[tx_size][type][ref];
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
   unsigned int (*const eob_branch)[COEFF_CONTEXTS] =
       td->counts->eob_branch[tx_size][type][ref];
   const uint8_t *const band = get_band_translate(tx_size);
