@@ -1047,19 +1047,19 @@ void vp10_default_coef_probs(VP10_COMMON *cm) {
 #define COEF_COUNT_SAT_AFTER_KEY 24
 #define COEF_MAX_UPDATE_FACTOR_AFTER_KEY 128
 
-static void adapt_coef_probs(VP10_COMMON *cm, TX_SIZE tx_size,
+static void adapt_coef_probs(const VP10_COMMON *cm, TX_SIZE tx_size,
                              unsigned int count_sat,
                              unsigned int update_factor) {
   const FRAME_CONTEXT *pre_fc = &cm->frame_contexts[cm->frame_context_idx];
   vp10_coeff_probs_model *const probs = cm->fc->coef_probs[tx_size];
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
   const vp10_coeff_probs_model *const pre_probs = cm->partial_prob_update ?
       cm->starting_coef_probs[tx_size] : pre_fc->coef_probs[tx_size];
 #else
   const vp10_coeff_probs_model *const pre_probs = pre_fc->coef_probs[tx_size];
-#endif  // CONFIG_SUBFRAME_STATS
-  vp10_coeff_count_model *counts = cm->counts.coef[tx_size];
-  unsigned int (*eob_counts)[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS] =
+#endif  // CONFIG_SUBFRAME_STATS || 1
+  const vp10_coeff_count_model *counts = cm->counts.coef[tx_size];
+  const unsigned int (*eob_counts)[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS] =
       cm->counts.eob_branch[tx_size];
   int i, j, k, l, m;
 
@@ -1097,16 +1097,16 @@ void vp10_adapt_coef_probs(VP10_COMMON *cm) {
     update_factor = COEF_MAX_UPDATE_FACTOR;
     count_sat = COEF_COUNT_SAT;
   }
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
   if (cm->partial_prob_update == 1) {
     update_factor = COEF_MAX_UPDATE_FACTOR;
   }
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
   for (t = TX_4X4; t <= TX_32X32; t++)
     adapt_coef_probs(cm, t, count_sat, update_factor);
 }
 
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
 void vp10_partial_adapt_probs(VP10_COMMON *cm, int mi_row, int mi_col) {
   (void)mi_row;
   (void)mi_col;
@@ -1116,4 +1116,4 @@ void vp10_partial_adapt_probs(VP10_COMMON *cm, int mi_row, int mi_col) {
     vp10_adapt_coef_probs(cm);
   }
 }
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1

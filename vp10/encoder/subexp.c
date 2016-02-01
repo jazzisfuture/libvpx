@@ -180,8 +180,8 @@ int vp10_prob_diff_update_savings_search_model(const unsigned int *ct,
   return bestsavings;
 }
 
-#if CONFIG_SUBFRAME_STATS
-static int cal_cost(const unsigned int ct[][2], vpx_prob p, int n) {
+#if CONFIG_SUBFRAME_STATS || 1
+static int cal_cost(unsigned int ct[][2], vpx_prob p, int n) {
   int i, p0 = p;
   unsigned int total_ct[2] = {0 , 0};
   int cost = 0;
@@ -197,7 +197,7 @@ static int cal_cost(const unsigned int ct[][2], vpx_prob p, int n) {
   return cost;
 }
 
-int vp10_prob_update_search_subframe(const unsigned int ct[][2],
+int vp10_prob_update_search_subframe(unsigned int ct[][2],
                                      vpx_prob oldp, vpx_prob *bestp,
                                      vpx_prob upd, int n) {
   const int old_b = cal_cost(ct, oldp, n);
@@ -218,9 +218,8 @@ int vp10_prob_update_search_subframe(const unsigned int ct[][2],
   return bestsavings;
 }
 
-int vp10_prob_update_search_model_subframe(const unsigned int
-                                           ct[ENTROPY_NODES]
-                                              [COEF_PROBS_BUFS][2],
+int vp10_prob_update_search_model_subframe(unsigned int ct[ENTROPY_NODES]
+                                                          [COEF_PROBS_BUFS][2],
                                            const vpx_prob *oldp,
                                            vpx_prob *bestp, vpx_prob upd,
                                            int stepsize, int n) {
@@ -261,7 +260,7 @@ int vp10_prob_update_search_model_subframe(const unsigned int
   *bestp = bestnewp;
   return bestsavings;
 }
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
 
 void vp10_cond_prob_diff_update(vpx_writer *w, vpx_prob *oldp,
                                const unsigned int ct[2]) {

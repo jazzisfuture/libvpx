@@ -1843,7 +1843,7 @@ static void update_coef_probs_common(vpx_writer* const bc, VP10_COMP *cpi,
   }
 }
 
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
 static void get_coef_counts_diff(VP10_COMP *cpi, int index,
                                  vp10_coeff_count
                                  coef_counts[TX_SIZES][PLANE_TYPES],
@@ -2059,13 +2059,13 @@ static void update_coef_probs_subframe(vpx_writer* const bc, VP10_COMP *cpi,
       assert(0);
   }
 }
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
 
 static void update_coef_probs(VP10_COMP *cpi, vpx_writer* w) {
   const TX_MODE tx_mode = cpi->common.tx_mode;
   const TX_SIZE max_tx_size = tx_mode_to_biggest_tx_size[tx_mode];
   TX_SIZE tx_size;
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
   VP10_COMMON *cm = &cpi->common;
   SUBFRAME_STATS *subframe_stats = &cpi->subframe_stats;
   unsigned int eob_counts_copy[TX_SIZES][PLANE_TYPES][REF_TYPES]
@@ -2075,7 +2075,7 @@ static void update_coef_probs(VP10_COMP *cpi, vpx_writer* w) {
   if (cm->use_subframe_update)
     vp10_copy(cpi->common.fc->coef_probs,
               subframe_stats->enc_starting_coef_probs);
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
 
   for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size) {
     vp10_coeff_stats frame_branch_ct[PLANE_TYPES];
@@ -2084,7 +2084,7 @@ static void update_coef_probs(VP10_COMP *cpi, vpx_writer* w) {
         (tx_size >= TX_16X16 && cpi->sf.tx_size_search_method == USE_TX_8X8)) {
       vpx_write_bit(w, 0);
     } else {
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
       if (cm->use_subframe_update) {
         vp10_coeff_probs_model dummy_frame_coef_probs[PLANE_TYPES];
         unsigned int eob_counts_copy[PLANE_TYPES][REF_TYPES]
@@ -2117,18 +2117,18 @@ static void update_coef_probs(VP10_COMP *cpi, vpx_writer* w) {
         update_coef_probs_subframe(w, cpi, tx_size, branch_ct,
                                    frame_coef_probs);
       } else {
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
         build_tree_distribution(cpi, tx_size, frame_branch_ct,
                                 frame_coef_probs);
         update_coef_probs_common(w, cpi, tx_size, frame_branch_ct,
                                  frame_coef_probs);
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
       }
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
     }
   }
 
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
   if (cm->use_subframe_update) {
     vp10_copy(cm->starting_coef_probs, cm->fc->coef_probs);
     vp10_copy(subframe_stats->coef_probs_buf[0], cm->fc->coef_probs);
@@ -2146,7 +2146,7 @@ static void update_coef_probs(VP10_COMP *cpi, vpx_writer* w) {
     vp10_copy(cm->fc->coef_probs, subframe_stats->coef_probs_buf[0]);
     vp10_copy(cm->counts.eob_branch, eob_counts_copy);
   }
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
 }
 
 #if CONFIG_LOOP_RESTORATION

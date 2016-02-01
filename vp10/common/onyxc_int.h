@@ -283,12 +283,12 @@ typedef struct VP10Common {
   unsigned int  frame_context_idx; /* Context to use/update */
   FRAME_COUNTS counts;
 
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
   vp10_coeff_probs_model starting_coef_probs[TX_SIZES][PLANE_TYPES];
   uint8_t coef_probs_buf_idx;
   uint8_t partial_prob_update;
   uint8_t use_subframe_update;
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
 
   unsigned int current_video_frame;
   BITSTREAM_PROFILE profile;

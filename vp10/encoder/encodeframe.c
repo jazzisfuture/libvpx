@@ -3758,7 +3758,7 @@ static void encode_rd_sb_row(VP10_COMP *cpi,
 #endif  // CONFIG_SUPERTX
                         INT64_MAX, td->pc_root);
     }
-#if CONFIG_SUBFRAME_STATS
+#if CONFIG_SUBFRAME_STATS || 1
     if (cm->use_subframe_update) {
       if ((mi_col + MI_BLOCK_SIZE >= tile_info->mi_col_end) &&
           ((mi_row + MI_SIZE) % (MI_SIZE *
@@ -3781,7 +3781,7 @@ static void encode_rd_sb_row(VP10_COMP *cpi,
         fill_token_costs(x->token_costs, cm->fc->coef_probs);
       }
     }
-#endif  // CONFIG_SUBFRAME_STATS
+#endif  // CONFIG_SUBFRAME_STATS || 1
   }
 }
 
