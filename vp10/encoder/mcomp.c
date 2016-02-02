@@ -86,8 +86,8 @@ static int mv_err_cost(const MV *mv, const MV *ref,
   if (mvcost) {
     const MV diff = { mv->row - ref->row,
                       mv->col - ref->col };
-    return ROUND_POWER_OF_TWO(mv_cost(&diff, mvjcost, mvcost) *
-                                  error_per_bit, 13);
+    return ROUND_POWER_OF_TWO((unsigned)mv_cost(&diff, mvjcost, mvcost) *
+                              error_per_bit, 13);
   }
   return 0;
 }
@@ -96,8 +96,8 @@ static int mvsad_err_cost(const MACROBLOCK *x, const MV *mv, const MV *ref,
                           int error_per_bit) {
   const MV diff = { mv->row - ref->row,
                     mv->col - ref->col };
-  return ROUND_POWER_OF_TWO(mv_cost(&diff, x->nmvjointsadcost,
-                                    x->nmvsadcost) * error_per_bit, 8);
+  return ROUND_POWER_OF_TWO((unsigned)mv_cost(&diff, x->nmvjointsadcost,
+                             x->nmvsadcost) * error_per_bit, 8);
 }
 
 void vp10_init_dsmotion_compensation(search_site_config *cfg, int stride) {
@@ -156,11 +156,11 @@ void vp10_init3smotion_compensation(search_site_config *cfg, int stride) {
  */
 
 /* estimated cost of a motion vector (r,c) */
-#define MVC(r, c)                                       \
-    (mvcost ?                                           \
-     ((mvjcost[((r) != rr) * 2 + ((c) != rc)] +         \
-       mvcost[0][((r) - rr)] + mvcost[1][((c) - rc)]) * \
-      error_per_bit + 4096) >> 13 : 0)
+#define MVC(r, c)                                              \
+    (mvcost ?                                                  \
+     ((unsigned)(mvjcost[((r) != rr) * 2 + ((c) != rc)] +      \
+       mvcost[0][((r) - rr)] + mvcost[1][((c) - rc)]) *        \
+         error_per_bit + 4096) >> 13 : 0)
 
 
 // convert motion vector component to offset for sv[a]f calc
