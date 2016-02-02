@@ -46,7 +46,7 @@ int vp8_denoiser_filter_sse2(unsigned char *mc_running_avg_y,
     unsigned char *sig_start = sig;
     unsigned int sum_diff_thresh;
     int r;
-    int shift_inc  = (increase_denoising &&
+    int shift_inc  = ((increase_denoising == 2) &&
         motion_magnitude <= MOTION_MAGNITUDE_THRESHOLD) ? 1 : 0;
     __m128i acc_diff = _mm_setzero_si128();
     const __m128i k_0 = _mm_setzero_si128();
@@ -117,8 +117,11 @@ int vp8_denoiser_filter_sse2(unsigned char *mc_running_avg_y,
     {
         /* Compute the sum of all pixel differences of this MB. */
         unsigned int abs_sum_diff = abs_sum_diff_16x1(acc_diff);
-        sum_diff_thresh = SUM_DIFF_THRESHOLD;
-        if (increase_denoising) sum_diff_thresh = SUM_DIFF_THRESHOLD_HIGH;
+        sum_diff_thresh = SUM_DIFF_THRESHOLD_LOW;
+        if (increase_denoising == 2)
+          sum_diff_thresh = SUM_DIFF_THRESHOLD_HIGH;
+        else if (increase_denoising == 1)
+          sum_diff_thresh = SUM_DIFF_THRESHOLD;
         if (abs_sum_diff > sum_diff_thresh) {
           // Before returning to copy the block (i.e., apply no denoising),
           // check if we can still apply some (weaker) temporal filtering to
@@ -193,7 +196,7 @@ int vp8_denoiser_filter_uv_sse2(unsigned char *mc_running_avg,
     unsigned char *sig_start = sig;
     unsigned int sum_diff_thresh;
     int r;
-    int shift_inc  = (increase_denoising &&
+    int shift_inc  = ((increase_denoising == 2) &&
         motion_magnitude <= MOTION_MAGNITUDE_THRESHOLD_UV) ? 1 : 0;
     __m128i acc_diff = _mm_setzero_si128();
     const __m128i k_0 = _mm_setzero_si128();
@@ -298,8 +301,11 @@ int vp8_denoiser_filter_uv_sse2(unsigned char *mc_running_avg,
 
     {
         unsigned int abs_sum_diff = abs_sum_diff_16x1(acc_diff);
-        sum_diff_thresh = SUM_DIFF_THRESHOLD_UV;
-        if (increase_denoising) sum_diff_thresh = SUM_DIFF_THRESHOLD_HIGH_UV;
+        sum_diff_thresh = SUM_DIFF_THRESHOLD_LOW_UV;
+        if (increase_denoising == 2)
+          sum_diff_thresh = SUM_DIFF_THRESHOLD_HIGH_UV;
+        else if (increase_denoising == 1)
+          sum_diff_thresh = SUM_DIFF_THRESHOLD_UV;
         if (abs_sum_diff > sum_diff_thresh) {
           // Before returning to copy the block (i.e., apply no denoising),
           // check if we can still apply some (weaker) temporal filtering to
