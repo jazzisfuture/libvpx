@@ -1443,14 +1443,14 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
           if (cpi->mse_source_denoised > 1000)
             is_noisy = 1;
         }
-        x->increase_denoising = 0;
+        x->increase_denoising = 1;
         if (!x->is_skin &&
             x->best_sse_inter_mode == ZEROMV &&
             (x->best_reference_frame == LAST_FRAME ||
             x->best_reference_frame == cpi->closest_reference_frame) &&
             cpi->consec_zero_last[block_index] >= 20 &&
             is_noisy) {
-            x->increase_denoising = 1;
+            x->increase_denoising = 2;
         }
         x->denoise_zeromv = 0;
         vp8_denoiser_denoise_mb(&cpi->denoiser, x, best_sse, zero_mv_sse,
