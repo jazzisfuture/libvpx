@@ -86,8 +86,8 @@ static int mv_err_cost(const MV *mv, const MV *ref,
   if (mvcost) {
     const MV diff = { mv->row - ref->row,
                       mv->col - ref->col };
-    return ROUND_POWER_OF_TWO(mv_cost(&diff, mvjcost, mvcost) *
-                                  error_per_bit, 13);
+    return ROUND_POWER_OF_TWO((unsigned int)mv_cost(&diff, mvjcost, mvcost) *
+                              (unsigned int)error_per_bit, 13);
   }
   return 0;
 }
@@ -96,8 +96,8 @@ static int mvsad_err_cost(const MACROBLOCK *x, const MV *mv, const MV *ref,
                           int error_per_bit) {
   const MV diff = { mv->row - ref->row,
                     mv->col - ref->col };
-  return ROUND_POWER_OF_TWO(mv_cost(&diff, x->nmvjointsadcost,
-                                    x->nmvsadcost) * error_per_bit, 8);
+  return ROUND_POWER_OF_TWO((unsigned int)mv_cost(&diff, x->nmvjointsadcost,
+                            x->nmvsadcost) * (unsigned int)error_per_bit, 8);
 }
 
 void vp9_init_dsmotion_compensation(search_site_config *cfg, int stride) {
@@ -150,11 +150,11 @@ void vp9_init3smotion_compensation(search_site_config *cfg, int stride) {
  */
 
 /* estimated cost of a motion vector (r,c) */
-#define MVC(r, c)                                       \
-    (mvcost ?                                           \
-     ((mvjcost[((r) != rr) * 2 + ((c) != rc)] +         \
-       mvcost[0][((r) - rr)] + mvcost[1][((c) - rc)]) * \
-      error_per_bit + 4096) >> 13 : 0)
+#define MVC(r, c)                                              \
+    (mvcost ?                                                  \
+     ((unsigned int)(mvjcost[((r) != rr) * 2 + ((c) != rc)] +  \
+       mvcost[0][((r) - rr)] + mvcost[1][((c) - rc)]) *        \
+       (unsigned int)error_per_bit + 4096) >> 13 : 0)
 
 
 // convert motion vector component to offset for sv[a]f calc
@@ -846,9 +846,9 @@ static INLINE void calc_int_cost_list(const MACROBLOCK *x,
       cost_list[i + 1] = fn_ptr->vf(what->buf, what->stride,
                                     get_buf_from_mv(in_what, &this_mv),
                                     in_what->stride, &sse) +
-          // mvsad_err_cost(x, &this_mv, &fcenter_mv, sadpb);
-          mv_err_cost(&this_mv, &fcenter_mv, x->nmvjointcost, x->mvcost,
-                      x->errorperbit);
+                                    mv_err_cost(&this_mv, &fcenter_mv,
+                                                x->nmvjointcost, x->mvcost,
+                                                x->errorperbit);
     }
   } else {
     for (i = 0; i < 4; i++) {
@@ -860,9 +860,9 @@ static INLINE void calc_int_cost_list(const MACROBLOCK *x,
         cost_list[i + 1] = fn_ptr->vf(what->buf, what->stride,
                                       get_buf_from_mv(in_what, &this_mv),
                                       in_what->stride, &sse) +
-            // mvsad_err_cost(x, &this_mv, &fcenter_mv, sadpb);
-            mv_err_cost(&this_mv, &fcenter_mv, x->nmvjointcost, x->mvcost,
-                        x->errorperbit);
+                                      mv_err_cost(&this_mv, &fcenter_mv,
+                                                  x->nmvjointcost, x->mvcost,
+                                                  x->errorperbit);
     }
   }
 }
