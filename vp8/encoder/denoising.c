@@ -77,7 +77,7 @@ int vp8_denoiser_filter_c(unsigned char *mc_running_avg_y, int mc_avg_y_stride,
      * blocks that are labeled for increase denoising. */
     if (motion_magnitude <= MOTION_MAGNITUDE_THRESHOLD)
     {
-      if (increase_denoising) {
+      if (increase_denoising == 2) {
         shift_inc1 = 1;
         shift_inc2 = 2;
       }
@@ -157,8 +157,11 @@ int vp8_denoiser_filter_c(unsigned char *mc_running_avg_y, int mc_avg_y_stride,
       sum_diff += col_sum[c];
     }
 
-    sum_diff_thresh= SUM_DIFF_THRESHOLD;
-    if (increase_denoising) sum_diff_thresh = SUM_DIFF_THRESHOLD_HIGH;
+    sum_diff_thresh= SUM_DIFF_THRESHOLD_LOW;
+    if (increase_denoising == 2)
+      sum_diff_thresh = SUM_DIFF_THRESHOLD_HIGH;
+    else if (increase_denoising == 1)
+      sum_diff_thresh = SUM_DIFF_THRESHOLD;
     if (abs(sum_diff) > sum_diff_thresh) {
       // Before returning to copy the block (i.e., apply no denoising), check
       // if we can still apply some (weaker) temporal filtering to this block,
@@ -244,7 +247,7 @@ int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg_uv,
      * increasing the adjustment for each level. Add another increment for
      * blocks that are labeled for increase denoising. */
     if (motion_magnitude <= MOTION_MAGNITUDE_THRESHOLD_UV) {
-      if (increase_denoising) {
+      if (increase_denoising == 2) {
         shift_inc1 = 1;
         shift_inc2 = 2;
       }
@@ -307,8 +310,11 @@ int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg_uv,
       running_avg_uv += avg_uv_stride;
     }
 
-    sum_diff_thresh= SUM_DIFF_THRESHOLD_UV;
-    if (increase_denoising) sum_diff_thresh = SUM_DIFF_THRESHOLD_HIGH_UV;
+    sum_diff_thresh= SUM_DIFF_THRESHOLD_LOW_UV;
+    if (increase_denoising == 2)
+      sum_diff_thresh = SUM_DIFF_THRESHOLD_HIGH_UV;
+    else if (increase_denoising == 1)
+      sum_diff_thresh = SUM_DIFF_THRESHOLD_UV;
     if (abs(sum_diff) > sum_diff_thresh) {
       // Before returning to copy the block (i.e., apply no denoising), check
       // if we can still apply some (weaker) temporal filtering to this block,
@@ -604,16 +610,18 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
         NOISE_MOTION_THRESHOLD;
 
     // If block is considered to be skin area, lower the motion threshold.
-    // In current version set threshold = 0, so only denoise zero mv on skin.
-    if (x->is_skin)
-        motion_threshold = 0;
+    // and use lower denoising strength (lower sum_diff_thresh).
+    if (x->is_skin) {
+      motion_threshold = 0;
+      x->increase_denoising = 0;
+    }
 
     if (motion_magnitude2 <
         denoiser->denoise_pars.scale_increase_filter * NOISE_MOTION_THRESHOLD)
-      x->increase_denoising = 1;
+      x->increase_denoising = 2;
 
     sse_thresh = denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD;
-    if (x->increase_denoising)
+    if (x->increase_denoising == 2)
       sse_thresh = denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD_HIGH;
 
     if (best_sse > sse_thresh || motion_magnitude2 > motion_threshold)
