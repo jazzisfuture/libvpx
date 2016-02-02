@@ -277,6 +277,7 @@ EXPERIMENT_LIST="
     ext_intra
     ext_inter
     ext_interp
+    convolve_12
     ext_refs
     supertx
     ans
