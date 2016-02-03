@@ -78,19 +78,6 @@ palette_color_encodings[PALETTE_MAX_SIZE - 1][PALETTE_MAX_SIZE] = {
         {30, 5}, {62, 6}, {126, 7}, {127, 7}},  // 8 colors
 };
 
-static INLINE void write_uniform(vpx_writer *w, int n, int v) {
-  int l = get_unsigned_bits(n);
-  int m = (1 << l) - n;
-  if (l == 0)
-    return;
-  if (v < m) {
-    vpx_write_literal(w, v, l - 1);
-  } else {
-    vpx_write_literal(w, m + ((v - m) >> 1), l - 1);
-    vpx_write_literal(w, (v - m) & 1, 1);
-  }
-}
-
 #if CONFIG_EXT_TX
 static struct vp10_token ext_tx_inter_encodings[EXT_TX_SETS_INTER][TX_TYPES];
 static struct vp10_token ext_tx_intra_encodings[EXT_TX_SETS_INTRA][TX_TYPES];
