@@ -297,6 +297,9 @@ typedef struct IMAGE_STAT {
   double worst;
 } ImageStat;
 
+// Kf noise filtering currently disabled by default in build.
+// #define ENABLE_KF_DENOISE 1
+
 typedef struct VP9_COMP {
   QUANTS quants;
   ThreadData td;
@@ -314,6 +317,11 @@ typedef struct VP9_COMP {
   YV12_BUFFER_CONFIG scaled_source;
   YV12_BUFFER_CONFIG *unscaled_last_source;
   YV12_BUFFER_CONFIG scaled_last_source;
+#ifdef ENABLE_KF_DENOISE
+  YV12_BUFFER_CONFIG raw_unscaled_source;
+  YV12_BUFFER_CONFIG raw_scaled_source;
+#endif
+  YV12_BUFFER_CONFIG *raw_source_frame;
 
   TileDataEnc *tile_data;
   int allocated_tiles;  // Keep track of memory allocated for tiles.
