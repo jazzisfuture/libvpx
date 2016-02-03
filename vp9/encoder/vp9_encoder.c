@@ -3774,6 +3774,76 @@ static int setup_interp_filter_search_mask(VP9_COMP *cpi) {
   return mask;
 }
 
+static INLINE void add_denoise_point(uint8_t centre_val, uint8_t data_val,
+                                    int thresh, int point_weight,
+                                    int *sum_val, int *sum_weight) {
+   if(abs(centre_val - data_val) <= thresh) {
+     *sum_weight += point_weight;
+     *sum_val += data_val;
+   }
+}
+
+static void spatial_denoise_point(uint8_t *src_ptr, const int stride,
+                                  const int strength) {
+  int sum_weight = 0;
+  int sum_val = 0;
+  int thresh = strength;  //TODO(paulwilkins) refine relationship to strength.
+  int centre_weight = 4;  //TODO(paulwilkins) refine relationship to strength.
+  uint8_t *tmp_ptr = src_ptr - stride - 1;
+
+  sum_val = *src_ptr * centre_weight;
+  sum_weight += centre_weight;
+
+  add_denoise_point(*src_ptr, tmp_ptr[0], thresh, 1, &sum_val, &sum_weight);
+  add_denoise_point(*src_ptr, tmp_ptr[1], thresh, 1, &sum_val, &sum_weight);
+  add_denoise_point(*src_ptr, tmp_ptr[2], thresh, 1, &sum_val, &sum_weight);
+  tmp_ptr = src_ptr - 1;
+  add_denoise_point(*src_ptr, tmp_ptr[0], thresh, 1, &sum_val, &sum_weight);
+  add_denoise_point(*src_ptr, tmp_ptr[2], thresh, 1, &sum_val, &sum_weight);
+  tmp_ptr = src_ptr + stride - 1;
+  add_denoise_point(*src_ptr, tmp_ptr[0], thresh, 1, &sum_val, &sum_weight);
+  add_denoise_point(*src_ptr, tmp_ptr[1], thresh, 1, &sum_val, &sum_weight);
+  add_denoise_point(*src_ptr, tmp_ptr[2], thresh, 1, &sum_val, &sum_weight);
+
+  // Update the source value with the filtered value
+  *src_ptr = (sum_val + (sum_weight >> 1)) / sum_weight;
+
+}
+
+// Apply thresholded spatial noise supression to a given buffer.
+static void spatial_denoise_buffer(uint8_t * buffer, const int stride,
+                                   const int width, const int height,
+                                   const int strength) {
+  uint8_t * src_ptr = buffer;
+  int row;
+  int col;
+
+  for (row = 0; row < height; ++row) {
+    for (col = 0; col < width; ++col) {
+     spatial_denoise_point(&src_ptr[col], stride, strength);
+    }
+    src_ptr +=  stride;
+  }
+};
+
+// Apply thresholded spatial noise supression to source.
+static void spatial_denoise_frame(VP9_COMP *cpi) {
+  YV12_BUFFER_CONFIG *src = cpi->Source;
+
+  // TODO(paulwilkins) adaptive value - e.g. set by 2 pass code or from Q.
+  int strength = 8;
+
+  // Denoise each of Y,U and V buffers.
+  spatial_denoise_buffer(src->y_buffer, src->y_stride,
+                         src->y_width, src->y_height, strength);
+
+  spatial_denoise_buffer(src->u_buffer, src->uv_stride,
+                         src->uv_width, src->uv_height, strength);
+
+  spatial_denoise_buffer(src->v_buffer, src->uv_stride,
+                         src->uv_width, src->uv_height, strength);
+}
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       size_t *size,
                                       uint8_t *dest,
@@ -3785,6 +3855,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   set_ext_overrides(cpi);
   vpx_clear_system_state();
+
+  // TODO(paulwilkins) temp test filtering code. May call only for some frame
+  // types such as key frame and also not for lossless.
+  spatial_denoise_frame(cpi);
 
   // Set the arf sign bias for this frame.
   set_arf_sign_bias(cpi);
