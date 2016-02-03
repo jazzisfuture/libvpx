@@ -5160,7 +5160,7 @@ static void rd_supertx_sb(VP10_COMP *cpi, ThreadData *td,
   // to reuse distortion values from the RD estimation, so we reset these
   // flags here before evaluating RD for supertx coding.
   for (plane = 0 ; plane < MAX_MB_PLANE ; plane++)
-    x->skip_txfm[plane << 2] = SKIP_TXFM_NONE;
+    x->skip_txfm[plane][0] = SKIP_TXFM_NONE;
 
   set_offsets(cpi, tile, x, mi_row, mi_col, bsize);
   *best_tx = DCT_DCT;
