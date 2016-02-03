@@ -78,6 +78,7 @@ palette_color_encodings[PALETTE_MAX_SIZE - 1][PALETTE_MAX_SIZE] = {
         {30, 5}, {62, 6}, {126, 7}, {127, 7}},  // 8 colors
 };
 
+<<<<<<< HEAD   (331b02 Merge "Fixing a issue of calculating tx cost for SUPERTX+VAR)
 static INLINE void write_uniform(vpx_writer *w, int n, int v) {
   int l = get_unsigned_bits(n);
   int m = (1 << l) - n;
@@ -95,6 +96,8 @@ static INLINE void write_uniform(vpx_writer *w, int n, int v) {
 static struct vp10_token ext_tx_inter_encodings[EXT_TX_SETS_INTER][TX_TYPES];
 static struct vp10_token ext_tx_intra_encodings[EXT_TX_SETS_INTRA][TX_TYPES];
 #else
+=======
+>>>>>>> BRANCH (f22a0b Merge "Add high bit depth args to arg list")
 static struct vp10_token ext_tx_encodings[TX_TYPES];
 #endif  // CONFIG_EXT_TX
 
