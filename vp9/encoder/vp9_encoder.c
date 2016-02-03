@@ -45,6 +45,7 @@
 #include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemv.h"
 #include "vp9/encoder/vp9_encoder.h"
+#include "vp9/encoder/vp9_extend.h"
 #include "vp9/encoder/vp9_ethread.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mbgraph.h"
@@ -87,6 +88,22 @@ FILE *framepsnr;
 FILE *kf_list;
 FILE *keyfile;
 #endif
+
+// Test condition for spatial denoise of source.
+static int is_spatial_denoise_enabled(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+
+  return (oxcf->pass != 1) && !is_lossless_requested(&cpi->oxcf) &&
+         frame_is_intra_only(cm);
+}
+// Test for whether to calculate metrics for the frame.
+static int is_psnr_calc_enabled(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+
+  return cpi->b_calculate_psnr && (oxcf->pass != 1) && cm->show_frame;
+}
 
 static INLINE void Scale2Ratio(VPX_SCALING mode, int *hr, int *hs) {
   switch (mode) {
@@ -387,6 +404,9 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vpx_free_frame_buffer(&cpi->scaled_source);
   vpx_free_frame_buffer(&cpi->scaled_last_source);
   vpx_free_frame_buffer(&cpi->alt_ref_buffer);
+  vpx_free_frame_buffer(&cpi->raw_unscaled_source);
+  vpx_free_frame_buffer(&cpi->raw_scaled_source);
+
   vp9_lookahead_destroy(cpi->lookahead);
 
   vpx_free(cpi->tile_tok[0][0]);
@@ -677,6 +697,28 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
                                NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled last source buffer");
+
+  if (vpx_realloc_frame_buffer(&cpi->raw_unscaled_source,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               cm->use_highbitdepth,
+#endif
+                               VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                               NULL, NULL, NULL))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to allocate unscaled raw source frame buffer");
+
+  if (vpx_realloc_frame_buffer(&cpi->raw_scaled_source,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               cm->use_highbitdepth,
+#endif
+                               VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                               NULL, NULL, NULL))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to allocate scaled raw source frame buffer");
 }
 
 
@@ -2400,10 +2442,10 @@ static void generate_psnr_packet(VP9_COMP *cpi) {
   int i;
   PSNR_STATS psnr;
 #if CONFIG_VP9_HIGHBITDEPTH
-  calc_highbd_psnr(cpi->Source, cpi->common.frame_to_show, &psnr,
+  calc_highbd_psnr(cpi->raw_source_frame, cpi->common.frame_to_show, &psnr,
                    cpi->td.mb.e_mbd.bd, cpi->oxcf.input_bit_depth);
 #else
-  calc_psnr(cpi->Source, cpi->common.frame_to_show, &psnr);
+  calc_psnr(cpi->raw_source_frame, cpi->common.frame_to_show, &psnr);
 #endif
 
   for (i = 0; i < 4; ++i) {
@@ -3296,6 +3338,19 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
                                       &cpi->scaled_source,
                                       (cpi->oxcf.pass == 0));
 
+  // Unfiltered raw source used in metrics calculation if the source
+  // has been filtered.
+  if (is_psnr_calc_enabled(cpi)) {
+    if (is_spatial_denoise_enabled(cpi)) {
+      cpi->raw_source_frame =
+          vp9_scale_if_required(cm, &cpi->raw_unscaled_source,
+                                &cpi->raw_scaled_source,
+                                (cpi->oxcf.pass == 0));
+    } else {
+      cpi->raw_source_frame = cpi->Source;
+    }
+  }
+
   // Avoid scaling last_source unless its needed.
   // Last source is currently only used for screen-content mode,
   // if partition_search_type == SOURCE_VAR_BASED_PARTITION, or if noise
@@ -3450,6 +3505,19 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
                                       &cpi->scaled_source,
                                       (cpi->oxcf.pass == 0));
+
+    // Unfiltered raw source used in metrics calculation if the source
+    // has been filtered.
+    if (is_psnr_calc_enabled(cpi)) {
+      if (is_spatial_denoise_enabled(cpi)) {
+        cpi->raw_source_frame =
+            vp9_scale_if_required(cm, &cpi->raw_unscaled_source,
+                                  &cpi->raw_scaled_source,
+                                  (cpi->oxcf.pass == 0));
+      } else {
+        cpi->raw_source_frame = cpi->Source;
+      }
+    }
 
     if (cpi->unscaled_last_source != NULL)
       cpi->Last_Source = vp9_scale_if_required(cm, cpi->unscaled_last_source,
@@ -3774,6 +3842,109 @@ static int setup_interp_filter_search_mask(VP9_COMP *cpi) {
   return mask;
 }
 
+
+// Baseline Kernal weights for denoise
+static uint8_t dn_kernal_3[9] =
+   {1, 2, 1,
+    2, 4, 2,
+    1, 2, 1};
+static uint8_t dn_kernal_5[25] =
+   {1, 1, 1, 1, 1,
+    1, 1, 2, 1, 1,
+    1, 2, 4, 2, 1,
+    1, 1, 2, 1, 1,
+    1, 1, 1, 1, 1};
+
+static INLINE void add_denoise_point(uint8_t centre_val, uint8_t data_val,
+                                    int thresh, uint8_t point_weight,
+                                    int *sum_val, int *sum_weight) {
+   if(abs(centre_val - data_val) <= thresh) {
+     *sum_weight += point_weight;
+     *sum_val += (int)data_val * (int)point_weight;
+   }
+}
+
+static void spatial_denoise_point(uint8_t *src_ptr, const int stride,
+                                  const int strength) {
+  int sum_weight = 0;
+  int sum_val = 0;
+  int thresh = strength;  //TODO(paulwilkins) refine relationship to strength.
+  int kernal_size = 5;
+  int i, j;
+  int max_diff = 0;
+  uint8_t *tmp_ptr = src_ptr - stride - 1;
+  uint8_t *kernal_ptr;
+
+  // Find the maximum deviation from the source point in the locale.
+  for (i = 0; i < kernal_size + 2; ++i) {
+    for (j = 0; j < kernal_size + 2; ++j) {
+      max_diff = VPXMAX(max_diff, abs((int)*src_ptr - (int)tmp_ptr[j]));
+    }
+    tmp_ptr += stride;
+  }
+
+  // TODO(paulwilkins) Select the kernal size.
+  if (max_diff > (strength + (strength >> 1))) {
+    kernal_size = 3;
+    thresh = thresh >> 1;
+  }
+  kernal_ptr = (kernal_size == 3) ? dn_kernal_3 : dn_kernal_5;
+
+  // Apply the kernal
+  tmp_ptr = src_ptr - stride - 1;
+  for (i = 0; i < kernal_size; ++i) {
+    for (j = 0; j < kernal_size; ++j) {
+      add_denoise_point(*src_ptr, tmp_ptr[j], thresh,
+                        *kernal_ptr, &sum_val, &sum_weight);
+      ++kernal_ptr;
+    }
+    tmp_ptr += stride;
+  }
+
+  // Update the source value with the new filtered value
+  *src_ptr = (sum_val + (sum_weight >> 1)) / sum_weight;
+
+}
+
+// Apply thresholded spatial noise supression to a given buffer.
+static void spatial_denoise_buffer(uint8_t * buffer, const int stride,
+                                   const int width, const int height,
+                                   const int strength) {
+  uint8_t * src_ptr = buffer;
+  int row;
+  int col;
+
+  for (row = 0; row < height; ++row) {
+    for (col = 0; col < width; ++col) {
+     spatial_denoise_point(&src_ptr[col], stride, strength);
+    }
+    src_ptr +=  stride;
+  }
+};
+
+// Apply thresholded spatial noise supression to source.
+static void spatial_denoise_frame(VP9_COMP *cpi) {
+  YV12_BUFFER_CONFIG *src = cpi->Source;
+  TWO_PASS *const twopass = &cpi->twopass;
+  VP9_COMMON *const cm = &cpi->common;
+
+  // Base the filter strength on the current active max Q.
+  const int q = (int)(vp9_convert_qindex_to_q(twopass->active_worst_quality,
+                                              cm->bit_depth));
+  int strength = VPXMAX(4, VPXMIN(8, (q >> 3)));
+
+  // Denoise each of Y,U and V buffers.
+  spatial_denoise_buffer(src->y_buffer, src->y_stride,
+                         src->y_width, src->y_height, strength);
+
+  strength = VPXMIN(8, (q << 1));
+  spatial_denoise_buffer(src->u_buffer, src->uv_stride,
+                         src->uv_width, src->uv_height, strength << 1);
+
+  spatial_denoise_buffer(src->v_buffer, src->uv_stride,
+                         src->uv_width, src->uv_height, strength << 1);
+}
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       size_t *size,
                                       uint8_t *dest,
@@ -3785,6 +3956,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   set_ext_overrides(cpi);
   vpx_clear_system_state();
+
+  // Spatial denoise of key frame.
+  if (is_spatial_denoise_enabled(cpi))
+    spatial_denoise_frame(cpi);
 
   // Set the arf sign bias for this frame.
   set_arf_sign_bias(cpi);
@@ -4370,6 +4545,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->un_scaled_source = cpi->Source = force_src_buffer ? force_src_buffer
                                                            : &source->img;
 
+    // Copy of raw source for metrics calculation.
+    if (is_psnr_calc_enabled(cpi))
+      vp9_copy_and_extend_frame(cpi->Source, &cpi->raw_unscaled_source);
+
     cpi->unscaled_last_source = last_source != NULL ? &last_source->img : NULL;
 
     *time_stamp = source->ts_start;
@@ -4494,7 +4673,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   vpx_usec_timer_mark(&cmptimer);
   cpi->time_compress_data += vpx_usec_timer_elapsed(&cmptimer);
 
-  if (cpi->b_calculate_psnr && oxcf->pass != 1 && cm->show_frame)
+  // Should we calculate metrics for the frame.
+  if (is_psnr_calc_enabled(cpi))
     generate_psnr_packet(cpi);
 
 #if CONFIG_INTERNAL_STATS
@@ -4507,7 +4687,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->count++;
 
       if (cpi->b_calculate_psnr) {
-        YV12_BUFFER_CONFIG *orig = cpi->Source;
+        YV12_BUFFER_CONFIG *orig = cpi->raw_source_frame;
         YV12_BUFFER_CONFIG *recon = cpi->common.frame_to_show;
         YV12_BUFFER_CONFIG *pp = &cm->post_proc_buffer;
         PSNR_STATS psnr;
