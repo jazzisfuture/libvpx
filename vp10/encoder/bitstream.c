@@ -755,8 +755,11 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       const int bit = (mbmi->ref_frame[0] == GOLDEN_FRAME ||
                        mbmi->ref_frame[0] == LAST3_FRAME ||
                        mbmi->ref_frame[0] == LAST4_FRAME);
-#else
+#else  // CONFIG_EXT_REFS
       const int bit = mbmi->ref_frame[0] == GOLDEN_FRAME;
+#if CONFIG_BIDIR_PRED
+      const int bit_bwd = mbmi->ref_frame[1] == ALTREF_FRAME;
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
       vpx_write(w, bit, vp10_get_pred_prob_comp_ref_p(cm, xd));
 
@@ -772,6 +775,10 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
           vpx_write(w, bit3, vp10_get_pred_prob_comp_ref_p3(cm, xd));
         }
       }
+#else  // CONFIG_EXT_REFS
+#if CONFIG_BIDIR_PRED
+      vpx_write(w, bit_bwd, vp10_get_pred_prob_comp_bwdref_p(cm, xd));
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
     } else {
 #if CONFIG_EXT_REFS
@@ -795,12 +802,18 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
           vpx_write(w, bit4, vp10_get_pred_prob_single_ref_p5(cm, xd));
         }
       }
-#else
+#else  // CONFIG_EXT_REFS
       const int bit0 = mbmi->ref_frame[0] != LAST_FRAME;
       vpx_write(w, bit0, vp10_get_pred_prob_single_ref_p1(cm, xd));
       if (bit0) {
         const int bit1 = mbmi->ref_frame[0] != GOLDEN_FRAME;
         vpx_write(w, bit1, vp10_get_pred_prob_single_ref_p2(cm, xd));
+#if CONFIG_BIDIR_PRED
+        if (bit1) {
+          const int bit2 = mbmi->ref_frame[0] != BWDREF_FRAME;
+          vpx_write(w, bit2, vp10_get_pred_prob_single_ref_p3(cm, xd));
+        }
+#endif  // CONFIG_BIDIR_PRED
       }
 #endif  // CONFIG_EXT_REFS
     }
@@ -1288,6 +1301,13 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
     xd->above_txfm_context = cm->above_txfm_context + mi_col;
     xd->left_txfm_context = xd->left_txfm_context_buffer + (mi_row & 0x07);
 #endif
+    /*
+    if (cm->current_video_frame == 1 &&
+        mi_row == 0 && mi_col == 0) {
+      printf("Frame=%d, (mi_row,mi_col)=(%d,%d), ref0=%d, ref1=%d\n",
+             cm->current_video_frame, mi_row, mi_col,
+             m->mbmi.ref_frame[0], m->mbmi.ref_frame[1]);
+    }*/
     pack_inter_mode_mvs(cpi, m,
 #if CONFIG_SUPERTX
                         supertx_enabled,
@@ -1992,6 +2012,10 @@ static int get_refresh_mask(VP10_COMP *cpi) {
   refresh_mask = cpi->refresh_last_frame << cpi->lst_fb_idx;
 #endif  // CONFIG_EXT_REFS
 
+#if CONFIG_BIDIR_PRED
+  refresh_mask |= (cpi->refresh_bwd_ref_frame << cpi->bwd_fb_idx);
+#endif  // CONFIG_BIDIR_PRED
+
   if (vp10_preserve_existing_gf(cpi)) {
     // We have decided to preserve the previously existing golden frame as our
     // new ARF frame. However, in the short term we leave it in the GF slot and,
@@ -2196,7 +2220,29 @@ static void write_uncompressed_header(VP10_COMP *cpi,
 
   write_profile(cm->profile, wb);
 
-  vpx_wb_write_bit(wb, 0);  // show_existing_frame
+#if CONFIG_BIDIR_PRED
+  if (cm->show_existing_frame) {
+    MV_REFERENCE_FRAME ref_frame;
+
+    vpx_wb_write_bit(wb, 1);  // show_existing_frame
+    vpx_wb_write_literal(wb, cm->existing_fb_idx_to_show, 3);
+
+    vpx_wb_write_literal(wb, get_refresh_mask(cpi), REF_FRAMES);
+    for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
+      assert(get_ref_frame_map_idx(cpi, ref_frame) != INVALID_IDX);
+      vpx_wb_write_literal(wb, get_ref_frame_map_idx(cpi, ref_frame),
+                           REF_FRAMES_LOG2);
+      // (zoeliu) vpx_wb_write_bit(wb, cm->ref_frame_sign_bias[ref_frame]);
+    }
+
+    return;
+  } else {
+#endif  // CONFIG_BIDIR_PRED
+    vpx_wb_write_bit(wb, 0);  // show_existing_frame
+#if CONFIG_BIDIR_PRED
+  }
+#endif  // CONFIG_BIDIR_PRED
+
   vpx_wb_write_bit(wb, cm->frame_type);
   vpx_wb_write_bit(wb, cm->show_frame);
   vpx_wb_write_bit(wb, cm->error_resilient_mode);
@@ -2266,6 +2312,7 @@ static void write_uncompressed_header(VP10_COMP *cpi,
     cm->tx_mode = TX_4X4;
   else
     write_txfm_mode(cm->tx_mode, wb);
+
   if (cpi->allow_comp_inter_inter) {
     const int use_hybrid_pred = cm->reference_mode == REFERENCE_MODE_SELECT;
     const int use_compound_pred = cm->reference_mode != SINGLE_REFERENCE;
@@ -2352,10 +2399,21 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
 
     if (cm->reference_mode != SINGLE_REFERENCE) {
       for (i = 0; i < REF_CONTEXTS; i++) {
-        for (j = 0; j < (COMP_REFS - 1); j ++) {
+#if CONFIG_BIDIR_PRED
+        for (j = 0; j < (FWD_REFS - 1); j++) {
           vp10_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i][j],
                                      counts->comp_ref[i][j]);
         }
+        for (j = 0; j < (BWD_REFS - 1); j++) {
+          vp10_cond_prob_diff_update(&header_bc, &fc->comp_bwdref_prob[i][j],
+                                     counts->comp_bwdref[i][j]);
+        }
+#else
+        for (j = 0; j < (COMP_REFS - 1); j++) {
+          vp10_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i][j],
+                                     counts->comp_ref[i][j]);
+        }
+#endif  // CONFIG_BIDIR_PRED
       }
     }
 
@@ -2428,7 +2486,23 @@ void vp10_pack_bitstream(VP10_COMP *const cpi, uint8_t *dest, size_t *size) {
   const int n_log2_tiles = cm->log2_tile_rows + cm->log2_tile_cols;
   const int have_tiles = n_log2_tiles > 0;
 
+  // zoeliu: for debug
+  /*
+  printf("\n\n=========================ENCODER===========================\n");
+  printf("vp10_pack_bitstream(): "
+         "Frame=%d, frame_type=%d, show_existing_frame=%d\n",
+         cm->current_video_frame, cm->frame_type, cm->show_existing_frame);*/
+
   write_uncompressed_header(cpi, &wb);
+
+#if CONFIG_BIDIR_PRED
+  // TODO(zoeliu): To re-evaluable the following first flag
+  if (cm->show_existing_frame) {
+    *size = vpx_wb_bytes_written(&wb);
+    return;
+  }
+#endif  // CONFIG_BIDIR_PRED
+
   saved_wb = wb;
   // don't know in advance first part. size
   vpx_wb_write_literal(&wb, 0, 16 + have_tiles * 2);
