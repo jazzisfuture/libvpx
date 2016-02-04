@@ -189,6 +189,9 @@ typedef struct VP10Common {
   int show_frame;
   int last_show_frame;
   int show_existing_frame;
+#if CONFIG_BIDIR_PRED
+  int existing_fb_idx_to_show;
+#endif  // CONFIG_BIDIR_PRED
 
   // Flag signaling that the frame is encoded using only INTRA modes.
   uint8_t intra_only;
@@ -272,8 +275,13 @@ typedef struct VP10Common {
   int frame_parallel_decode;  // frame-based threading.
 
   // Context probabilities for reference frame prediction
+#if CONFIG_BIDIR_PRED
+  MV_REFERENCE_FRAME comp_fwd_ref[FWD_REFS];
+  MV_REFERENCE_FRAME comp_bwd_ref[BWD_REFS];
+#else
   MV_REFERENCE_FRAME comp_fixed_ref;
   MV_REFERENCE_FRAME comp_var_ref[COMP_REFS];
+#endif  // CONFIG_BIDIR_PRED
   REFERENCE_MODE reference_mode;
 
   FRAME_CONTEXT *fc;  /* this frame entropy */
