@@ -409,10 +409,22 @@ void vp10_accumulate_frame_counts(VP10_COMMON *cm, FRAME_COUNTS *counts,
       for (k = 0; k < 2; k++)
         cm->counts.single_ref[i][j][k] += counts->single_ref[i][j][k];
 
+#if CONFIG_BIDIR_PRED
+  for (i = 0; i < REF_CONTEXTS; i++)
+    for (j = 0; j < (FWD_REFS - 1); j++)
+      for (k = 0; k < 2; k++)
+        cm->counts.comp_ref[i][j][k] += counts->comp_ref[i][j][k];
+
+  for (i = 0; i < REF_CONTEXTS; i++)
+    for (j = 0; j < (BWD_REFS - 1); j++)
+      for (k = 0; k < 2; k++)
+        cm->counts.comp_bwdref[i][j][k] += counts->comp_bwdref[i][j][k];
+#else
   for (i = 0; i < REF_CONTEXTS; i++)
     for (j = 0; j < (COMP_REFS - 1); j++)
       for (k = 0; k < 2; k++)
         cm->counts.comp_ref[i][j][k] += counts->comp_ref[i][j][k];
+#endif  // CONFIG_BIDIR_PRED
 
   for (i = 0; i < TX_SIZE_CONTEXTS; i++) {
     for (j = 0; j < TX_SIZES; j++)

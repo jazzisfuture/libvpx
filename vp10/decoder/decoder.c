@@ -213,11 +213,18 @@ vpx_codec_err_t vp10_set_reference_dec(VP10_COMMON *cm,
     ref_buf = &cm->frame_refs[4];
   } else if (ref_frame_flag == VP9_ALT_FLAG) {
     ref_buf = &cm->frame_refs[5];
-#else
+#else  // CONFIG_EXT_REFS
   } else if (ref_frame_flag == VP9_GOLD_FLAG) {
     ref_buf = &cm->frame_refs[1];
+#if CONFIG_BIDIR_PRED
+  } else if (ref_frame_flag == VP9_BWD_FLAG) {
+    ref_buf = &cm->frame_refs[2];
+  } else if (ref_frame_flag == VP9_ALT_FLAG) {
+    ref_buf = &cm->frame_refs[3];
+#else  // CONFIG_BIDIR_PRED
   } else if (ref_frame_flag == VP9_ALT_FLAG) {
     ref_buf = &cm->frame_refs[2];
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
   } else {
     vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
@@ -271,15 +278,25 @@ static void swap_frame_buffers(VP10Decoder *pbi) {
   }
 
   // Current thread releases the holding of reference frame.
+#if CONFIG_BIDIR_PRED
+  for (; ref_index < REF_FRAMES; ++ref_index) {
+    const int old_idx = cm->ref_frame_map[ref_index];
+    decrease_ref_count(old_idx, frame_bufs, pool);
+    cm->ref_frame_map[ref_index] = cm->next_ref_frame_map[ref_index];
+  }
+#else
   for (; ref_index < REF_FRAMES && !cm->show_existing_frame; ++ref_index) {
     const int old_idx = cm->ref_frame_map[ref_index];
     decrease_ref_count(old_idx, frame_bufs, pool);
     cm->ref_frame_map[ref_index] = cm->next_ref_frame_map[ref_index];
   }
+#endif  // CONFIG_BIDIR_PRED
   unlock_buffer_pool(pool);
   pbi->hold_ref_buf = 0;
   cm->frame_to_show = get_frame_new_buffer(cm);
 
+  // TODO(zoeliu): To fix the ref frame buffer update for the scenario of
+  //               cm->frame_parellel_decode == 1
   if (!cm->frame_parallel_decode || !cm->show_frame) {
     lock_buffer_pool(pool);
     --frame_bufs[cm->new_fb_idx].ref_count;
@@ -287,8 +304,13 @@ static void swap_frame_buffers(VP10Decoder *pbi) {
   }
 
   // Invalidate these references until the next frame starts.
-  for (ref_index = 0; ref_index < REFS_PER_FRAME; ref_index++)
-    cm->frame_refs[ref_index].idx = -1;
+  for (ref_index = 0; ref_index < REFS_PER_FRAME; ref_index++) {
+#if CONFIG_BIDIR_PRED
+    cm->prev_frame_refs[ref_index].idx = cm->frame_refs[ref_index].idx;
+    cm->prev_frame_refs[ref_index].buf = cm->frame_refs[ref_index].buf;
+#endif  // CONFIG_BIDIR_PRED
+    cm->frame_refs[ref_index].idx = INVALID_IDX;
+  }
 }
 
 int vp10_receive_compressed_data(VP10Decoder *pbi,
@@ -299,6 +321,14 @@ int vp10_receive_compressed_data(VP10Decoder *pbi,
   const uint8_t *source = *psource;
   int retcode = 0;
   cm->error.error_code = VPX_CODEC_OK;
+
+#if 0
+  // NOTE(zoeliu): To check on the coding size of each decoded frame
+  printf("\n=========================DECODER===========================\n");
+  printf("vp10_receive_compressed_data(): "
+         "Frame=%d, frame_type=%d, size=%d\n",
+         cm->current_video_frame, cm->frame_type, (int)size);
+#endif  // 0
 
   if (size == 0) {
     // This is used to signal that we are missing frames.
@@ -323,6 +353,7 @@ int vp10_receive_compressed_data(VP10Decoder *pbi,
       && frame_bufs[cm->new_fb_idx].ref_count == 0)
     pool->release_fb_cb(pool->cb_priv,
                         &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
+
   // Find a free frame buffer. Return error if can not find any.
   cm->new_fb_idx = get_free_fb(cm);
   if (cm->new_fb_idx == INVALID_IDX)
@@ -376,10 +407,17 @@ int vp10_receive_compressed_data(VP10Decoder *pbi,
       }
 
       // Current thread releases the holding of reference frame.
+#if CONFIG_BIDIR_PRED
+      for (; ref_index < REF_FRAMES; ++ref_index) {
+        const int old_idx = cm->ref_frame_map[ref_index];
+        decrease_ref_count(old_idx, frame_bufs, pool);
+      }
+#else
       for (; ref_index < REF_FRAMES && !cm->show_existing_frame; ++ref_index) {
         const int old_idx = cm->ref_frame_map[ref_index];
         decrease_ref_count(old_idx, frame_bufs, pool);
       }
+#endif  // CONFIG_BIDIR_PRED
       pbi->hold_ref_buf = 0;
     }
     // Release current frame.
@@ -393,6 +431,8 @@ int vp10_receive_compressed_data(VP10Decoder *pbi,
   cm->error.setjmp = 1;
   vp10_decode_frame(pbi, source, source + size, psource);
 
+  // TODO(zoeliu): Check the ref frame buffer update for the scenario of
+  //               cm->show_existing_frame == 1
   swap_frame_buffers(pbi);
 
   vpx_clear_system_state();
