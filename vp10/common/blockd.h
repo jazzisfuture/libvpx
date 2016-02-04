@@ -406,7 +406,7 @@ static const int ext_tx_used_inter[EXT_TX_SETS_INTER][TX_TYPES] = {
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_EXT_INTRA
-#define ALLOW_FILTER_INTRA_MODES 1
+#define ALLOW_FILTER_INTRA_MODES 0
 #define ANGLE_STEP 3
 #define MAX_ANGLE_DELTAS 3
 #define ANGLE_FAST_SEARCH 1
@@ -433,7 +433,7 @@ static const TX_TYPE filter_intra_mode_to_tx_type_lookup[FILTER_INTRA_MODES] = {
 int pick_intra_filter(int angle);
 #endif  // CONFIG_EXT_INTRA
 
-#define FIXED_TX_TYPE 0
+#define FIXED_TX_TYPE 1
 
 static INLINE TX_TYPE get_default_tx_type(PLANE_TYPE plane_type,
                                           const MACROBLOCKD *xd,
