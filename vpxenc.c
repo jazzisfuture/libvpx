@@ -791,6 +791,13 @@ static int compare_img(const vpx_image_t *const img1,
     match &= (memcmp(img1->planes[VPX_PLANE_V] + i * img1->stride[VPX_PLANE_V],
                      img2->planes[VPX_PLANE_V] + i * img2->stride[VPX_PLANE_V],
                      c_w) == 0);
+#if 0
+  if (match)
+    fprintf(stdout, "\ncompare_img() ... Matched :-)\n");
+  else
+    fprintf(stdout, "\ncompare_img() ... Not Matched! :-(\n");
+  fflush(stdout);
+#endif  // 0
 
   return match;
 }

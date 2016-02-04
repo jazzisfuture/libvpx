@@ -914,6 +914,23 @@ static vpx_codec_err_t ctrl_get_reference(vpx_codec_alg_priv_t *ctx,
     FrameWorkerData *const frame_worker_data = (FrameWorkerData *)worker->data1;
     fb = get_ref_frame(&frame_worker_data->pbi->common, data->idx);
     if (fb == NULL) return VPX_CODEC_ERROR;
+
+#if 0
+    fprintf(stdout, "\n\n=== DECODER === ctrl_get_reference(): "
+            "Frame=%d, data->idx=%d, ref_frame_map=%d\n",
+            frame_worker_data->pbi->common.current_video_frame, data->idx,
+            frame_worker_data->pbi->common.ref_frame_map[data->idx]);
+    {
+      int ref_idx;
+      fprintf(stdout, "ref_frame_map:");
+      for (ref_idx = 0; ref_idx < REF_FRAMES; ++ref_idx)
+        fprintf(stdout, " [%d]=%d", ref_idx,
+                frame_worker_data->pbi->common.ref_frame_map[ref_idx]);
+      fprintf(stdout, "\n");
+    }
+    fflush(stdout);
+#endif  // 0
+
     yuvconfig2image(&data->img, fb, NULL);
     return VPX_CODEC_OK;
   } else {
