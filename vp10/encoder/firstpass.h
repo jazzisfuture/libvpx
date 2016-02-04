@@ -72,7 +72,13 @@ typedef enum {
   GF_UPDATE = 2,
   ARF_UPDATE = 3,
   OVERLAY_UPDATE = 4,
+#if CONFIG_BIDIR_PRED
+  BRF_UPDATE = 5,  // Backward Reference Frame
+  LASTNRF_UPDATE = 6,  // Last Non-Reference Frame
+  FRAME_UPDATE_TYPES = 7
+#else
   FRAME_UPDATE_TYPES = 5
+#endif  // CONFIG_BIDIR_PRED
 } FRAME_UPDATE_TYPE;
 
 #define FC_ANIMATION_THRESH 0.15
@@ -89,6 +95,9 @@ typedef struct {
   unsigned char arf_src_offset[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char arf_update_idx[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char arf_ref_idx[(MAX_LAG_BUFFERS * 2) + 1];
+#if CONFIG_BIDIR_PRED
+  unsigned char brf_src_offset[(MAX_LAG_BUFFERS * 2) + 1];
+#endif  // CONFIG_BIDIR_PRED
   int bit_allocation[(MAX_LAG_BUFFERS * 2) + 1];
 } GF_GROUP;
 

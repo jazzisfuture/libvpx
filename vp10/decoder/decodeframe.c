@@ -57,6 +57,12 @@ static int is_compound_reference_allowed(const VP10_COMMON *cm) {
 }
 
 static void setup_compound_reference_mode(VP10_COMMON *cm) {
+#if CONFIG_BIDIR_PRED
+  cm->comp_fwd_ref[0] = LAST_FRAME;
+  cm->comp_fwd_ref[1] = GOLDEN_FRAME;
+  cm->comp_bwd_ref[0] = BWDREF_FRAME;
+  cm->comp_bwd_ref[1] = ALTREF_FRAME;
+#else  // CONFIG_BIDIR_PRED
   if (cm->ref_frame_sign_bias[LAST_FRAME] ==
           cm->ref_frame_sign_bias[GOLDEN_FRAME]) {
     cm->comp_fixed_ref = ALTREF_FRAME;
@@ -66,7 +72,7 @@ static void setup_compound_reference_mode(VP10_COMMON *cm) {
     cm->comp_var_ref[2] = LAST3_FRAME;
     cm->comp_var_ref[3] = LAST4_FRAME;
     cm->comp_var_ref[4] = GOLDEN_FRAME;
-#else
+#else  // CONFIG_EXT_REFS
     cm->comp_var_ref[1] = GOLDEN_FRAME;
 #endif  // CONFIG_EXT_REFS
   } else if (cm->ref_frame_sign_bias[LAST_FRAME] ==
@@ -85,6 +91,7 @@ static void setup_compound_reference_mode(VP10_COMMON *cm) {
     cm->comp_var_ref[0] = GOLDEN_FRAME;
     cm->comp_var_ref[1] = ALTREF_FRAME;
   }
+#endif  // CONFIG_BIDIR_PRED
 }
 
 static int read_is_valid(const uint8_t *start, size_t len, const uint8_t *end) {
