@@ -277,6 +277,15 @@ static const vpx_prob default_comp_inter_p[COMP_INTER_CONTEXTS] = {
   239, 183, 119,  96,  41
 };
 
+#if CONFIG_BIDIR_PRED
+static const vpx_prob default_comp_ref_p[REF_CONTEXTS][FWD_REFS - 1] = {
+//  { 50 }, { 126 }, { 123 }, { 221 }, { 226 }
+  { 33 }, { 77 }, { 142 }, { 172 }, { 238 }
+};
+static const vpx_prob default_comp_bwdref_p[REF_CONTEXTS][BWD_REFS - 1] = {
+  { 16 }, { 74 }, { 142 }, { 170 }, { 247 }
+};
+#else  // CONFIG_BIDIR_PRED
 static const vpx_prob default_comp_ref_p[REF_CONTEXTS][COMP_REFS - 1] = {
 #if CONFIG_EXT_REFS
   // TODO(zoeliu): To adjust the initial prob values.
@@ -285,10 +294,11 @@ static const vpx_prob default_comp_ref_p[REF_CONTEXTS][COMP_REFS - 1] = {
   { 142, 142, 142, 142 },
   { 172, 170, 170, 170 },
   { 238, 247, 247, 247 }
-#else
+#else  // CONFIG_EXT_REFS
   { 50 }, { 126 }, { 123 }, { 221 }, { 226 }
 #endif  // CONFIG_EXT_REFS
 };
+#endif  // CONFIG_BIDIR_PRED
 
 static const vpx_prob default_single_ref_p[REF_CONTEXTS][SINGLE_REFS - 1] = {
 #if CONFIG_EXT_REFS
@@ -297,12 +307,20 @@ static const vpx_prob default_single_ref_p[REF_CONTEXTS][SINGLE_REFS - 1] = {
   { 142, 142, 142, 142, 142 },
   { 172, 170, 170, 170, 170 },
   { 238, 247, 247, 247, 247 }
-#else
+#else  // CONFIG_EXT_REFS
+#if CONFIG_BIDIR_PRED
+  {  33,  16,  16 },
+  {  77,  74,  74 },
+  { 142, 142, 142 },
+  { 172, 170, 170 },
+  { 238, 247, 247 }
+#else  // CONFIG_BIDIR_PRED
   {  33,  16 },
   {  77,  74 },
   { 142, 142 },
   { 172, 170 },
   { 238, 247 }
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
 };
 
@@ -1270,6 +1288,9 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
   vp10_copy(fc->intra_inter_prob, default_intra_inter_p);
   vp10_copy(fc->comp_inter_prob, default_comp_inter_p);
   vp10_copy(fc->comp_ref_prob, default_comp_ref_p);
+#if CONFIG_BIDIR_PRED
+  vp10_copy(fc->comp_bwdref_prob, default_comp_bwdref_p);
+#endif  // CONFIG_BIDIR_PRED
   vp10_copy(fc->single_ref_prob, default_single_ref_p);
   fc->tx_probs = default_tx_probs;
 #if CONFIG_VAR_TX
@@ -1327,10 +1348,22 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
   for (i = 0; i < COMP_INTER_CONTEXTS; i++)
     fc->comp_inter_prob[i] = mode_mv_merge_probs(pre_fc->comp_inter_prob[i],
                                                  counts->comp_inter[i]);
+#if CONFIG_BIDIR_PRED
+  for (i = 0; i < REF_CONTEXTS; i++)
+    for (j = 0; j < (FWD_REFS - 1); j++)
+      fc->comp_ref_prob[i][j] = mode_mv_merge_probs(
+          pre_fc->comp_ref_prob[i][j], counts->comp_ref[i][j]);
+  for (i = 0; i < REF_CONTEXTS; i++)
+    for (j = 0; j < (BWD_REFS - 1); j++)
+      fc->comp_bwdref_prob[i][j] = mode_mv_merge_probs(
+          pre_fc->comp_bwdref_prob[i][j], counts->comp_bwdref[i][j]);
+#else
   for (i = 0; i < REF_CONTEXTS; i++)
     for (j = 0; j < (COMP_REFS - 1); j++)
       fc->comp_ref_prob[i][j] = mode_mv_merge_probs(pre_fc->comp_ref_prob[i][j],
                                                     counts->comp_ref[i][j]);
+#endif  // CONFIG_BIDIR_PRED
+
   for (i = 0; i < REF_CONTEXTS; i++)
     for (j = 0; j < (SINGLE_REFS - 1); j++)
       fc->single_ref_prob[i][j] = mode_mv_merge_probs(

@@ -24,6 +24,9 @@
 struct vp10_extracfg {
   int                         cpu_used;  // available cpu percentage in 1/16
   unsigned int                enable_auto_alt_ref;
+#if CONFIG_BIDIR_PRED
+  unsigned int                enable_auto_bwd_ref;
+#endif  // CONFIG_BIDIR_PRED
   unsigned int                noise_sensitivity;
   unsigned int                sharpness;
   unsigned int                static_thresh;
@@ -53,6 +56,9 @@ struct vp10_extracfg {
 static struct vp10_extracfg default_extra_cfg = {
   0,                          // cpu_used
   1,                          // enable_auto_alt_ref
+#if CONFIG_BIDIR_PRED
+  0,                          // enable_auto_bwd_ref
+#endif  // CONFIG_BIDIR_PRED
   0,                          // noise_sensitivity
   0,                          // sharpness
   0,                          // static_thresh
@@ -204,6 +210,9 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
           "or kf_max_dist instead.");
 
   RANGE_CHECK(extra_cfg, enable_auto_alt_ref, 0, 2);
+#if CONFIG_BIDIR_PRED
+  RANGE_CHECK(extra_cfg, enable_auto_bwd_ref, 0, 2);
+#endif  // CONFIG_BIDIR_PRED
   RANGE_CHECK(extra_cfg, cpu_used, -8, 8);
   RANGE_CHECK_HI(extra_cfg, noise_sensitivity, 6);
   RANGE_CHECK(extra_cfg, tile_columns, 0, 6);
@@ -394,6 +403,9 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->speed                  =  abs(extra_cfg->cpu_used);
   oxcf->encode_breakout        =  extra_cfg->static_thresh;
   oxcf->enable_auto_arf        =  extra_cfg->enable_auto_alt_ref;
+#if CONFIG_BIDIR_PRED
+  oxcf->enable_auto_brf        =  extra_cfg->enable_auto_bwd_ref;
+#endif  // CONFIG_BIDIR_PRED
   oxcf->noise_sensitivity      =  extra_cfg->noise_sensitivity;
   oxcf->sharpness              =  extra_cfg->sharpness;
 
@@ -539,6 +551,15 @@ static vpx_codec_err_t ctrl_set_enable_auto_alt_ref(vpx_codec_alg_priv_t *ctx,
   extra_cfg.enable_auto_alt_ref = CAST(VP8E_SET_ENABLEAUTOALTREF, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
+
+#if CONFIG_BIDIR_PRED
+static vpx_codec_err_t ctrl_set_enable_auto_bwd_ref(vpx_codec_alg_priv_t *ctx,
+                                                    va_list args) {
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
+  extra_cfg.enable_auto_bwd_ref = CAST(VP8E_SET_ENABLEAUTOBWDREF, args);
+  return update_extra_cfg(ctx, &extra_cfg);
+}
+#endif  // CONFIG_BIDIR_PRED
 
 static vpx_codec_err_t ctrl_set_noise_sensitivity(vpx_codec_alg_priv_t *ctx,
                                                   va_list args) {
@@ -1237,6 +1258,9 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP8E_SET_SCALEMODE,                ctrl_set_scale_mode},
   {VP8E_SET_CPUUSED,                  ctrl_set_cpuused},
   {VP8E_SET_ENABLEAUTOALTREF,         ctrl_set_enable_auto_alt_ref},
+#if CONFIG_BIDIR_PRED
+  {VP8E_SET_ENABLEAUTOBWDREF,         ctrl_set_enable_auto_bwd_ref},
+#endif  // CONFIG_BIDIR_PRED
   {VP8E_SET_SHARPNESS,                ctrl_set_sharpness},
   {VP8E_SET_STATIC_THRESHOLD,         ctrl_set_static_thresh},
   {VP9E_SET_TILE_COLUMNS,             ctrl_set_tile_columns},

@@ -757,6 +757,9 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                        mbmi->ref_frame[0] == LAST4_FRAME);
 #else
       const int bit = mbmi->ref_frame[0] == GOLDEN_FRAME;
+#if CONFIG_BIDIR_PRED
+      const int bit1 = mbmi->ref_frame[1] == ALTREF_FRAME;
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
       vpx_write(w, bit, vp10_get_pred_prob_comp_ref_p(cm, xd));
 
@@ -772,6 +775,10 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
           vpx_write(w, bit3, vp10_get_pred_prob_comp_ref_p3(cm, xd));
         }
       }
+#else  // CONFIG_EXT_REFS
+#if CONFIG_BIDIR_PRED
+      vpx_write(w, bit1, vp10_get_pred_prob_comp_bwdref_p(cm, xd));
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
     } else {
 #if CONFIG_EXT_REFS
@@ -801,6 +808,12 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       if (bit0) {
         const int bit1 = mbmi->ref_frame[0] != GOLDEN_FRAME;
         vpx_write(w, bit1, vp10_get_pred_prob_single_ref_p2(cm, xd));
+#if CONFIG_BIDIR_PRED
+        if (bit1) {
+          const int bit2 = mbmi->ref_frame[0] != BWDREF_FRAME;
+          vpx_write(w, bit2, vp10_get_pred_prob_single_ref_p3(cm, xd));
+        }
+#endif  // CONFIG_BIDIR_PRED
       }
 #endif  // CONFIG_EXT_REFS
     }
@@ -1992,6 +2005,10 @@ static int get_refresh_mask(VP10_COMP *cpi) {
   refresh_mask = cpi->refresh_last_frame << cpi->lst_fb_idx;
 #endif  // CONFIG_EXT_REFS
 
+#if CONFIG_BIDIR_PRED
+  refresh_mask |= (cpi->refresh_bwd_ref_frame << cpi->bwd_fb_idx);
+#endif  // CONFIG_BIDIR_PRED
+
   if (vp10_preserve_existing_gf(cpi)) {
     // We have decided to preserve the previously existing golden frame as our
     // new ARF frame. However, in the short term we leave it in the GF slot and,
@@ -2352,10 +2369,21 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
 
     if (cm->reference_mode != SINGLE_REFERENCE) {
       for (i = 0; i < REF_CONTEXTS; i++) {
-        for (j = 0; j < (COMP_REFS - 1); j ++) {
+#if CONFIG_BIDIR_PRED
+        for (j = 0; j < (FWD_REFS - 1); j++) {
           vp10_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i][j],
                                      counts->comp_ref[i][j]);
         }
+        for (j = 0; j < (BWD_REFS - 1); j++) {
+          vp10_cond_prob_diff_update(&header_bc, &fc->comp_bwdref_prob[i][j],
+                                     counts->comp_bwdref[i][j]);
+        }
+#else
+        for (j = 0; j < (COMP_REFS - 1); j++) {
+          vp10_cond_prob_diff_update(&header_bc, &fc->comp_ref_prob[i][j],
+                                     counts->comp_ref[i][j]);
+        }
+#endif  // CONFIG_BIDIR_PRED
       }
     }
 

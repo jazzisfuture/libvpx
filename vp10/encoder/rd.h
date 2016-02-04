@@ -40,21 +40,40 @@ extern "C" {
 #if CONFIG_EXT_REFS
 #if CONFIG_EXT_INTER
 #define MAX_MODES 85
-#else
+#else  // CONFIG_EXT_INTER
 #define MAX_MODES 54
 #endif  // CONFIG_EXT_INTER
-#else
+
+#else  // CONFIG_EXT_REFS
+
+#if CONFIG_BIDIR_PRED
+
+#if CONFIG_EXT_INTER
+#define MAX_MODES 66
+#else  // CONFIG_EXT_INTER
+#define MAX_MODES 42
+#endif  // CONFIG_EXT_INTER
+
+#else  // CONFIG_BIDIR_PRED
+
 #if CONFIG_EXT_INTER
 #define MAX_MODES 43
-#else
+#else  // CONFIG_EXT_INTER
 #define MAX_MODES 30
 #endif  // CONFIG_EXT_INTER
+
+#endif  // CONFIG_BIDIR_PRED
+
 #endif  // CONFIG_EXT_REFS
 
 #if CONFIG_EXT_REFS
 #define MAX_REFS  12
-#else
+#else  // CONFIG_EXT_REFS
+#if CONFIG_BIDIR_PRED
+#define MAX_REFS  9
+#else  // CONFIG_BIDIR_PRED
 #define MAX_REFS  6
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
 
 #define RD_THRESH_MAX_FACT 64

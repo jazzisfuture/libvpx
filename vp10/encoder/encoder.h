@@ -65,6 +65,9 @@ typedef struct {
   FRAME_CONTEXT fc;
 } CODING_CONTEXT;
 
+#if CONFIG_BIDIR_PRED
+#define BIDIR_PRED_PERIOD  2
+#endif  // CONFIG_BIDIR_PRED
 
 typedef enum {
   // encode_breakout is disabled.
@@ -102,6 +105,9 @@ typedef enum {
   FRAMEFLAGS_KEY    = 1 << 0,
   FRAMEFLAGS_GOLDEN = 1 << 1,
   FRAMEFLAGS_ALTREF = 1 << 2,
+#if CONFIG_BIDIR_PRED
+  FRAMEFLAGS_BWDREF = 1 << 3,
+#endif  // CONFIG_BIDIR_PRED
 } FRAMETYPE_FLAGS;
 
 typedef enum {
@@ -187,6 +193,9 @@ typedef struct VP10EncoderConfig {
   // ----------------------------------------------------------------
 
   int enable_auto_arf;
+#if CONFIG_BIDIR_PRED
+  int enable_auto_brf;  // (b)ackward (r)ef (f)rame
+#endif  // CONFIG_BIDIR_PRED
 
   int encode_breakout;  // early breakout : for video conf recommend 800
 
@@ -290,6 +299,9 @@ typedef struct VP10_COMP {
   VP10EncoderConfig oxcf;
   struct lookahead_ctx    *lookahead;
   struct lookahead_entry  *alt_ref_source;
+#if CONFIG_BIDIR_PRED
+  struct lookahead_entry  *bwd_ref_source;
+#endif  // CONFIG_BIDIR_PRED
 
   YV12_BUFFER_CONFIG *Source;
   YV12_BUFFER_CONFIG *Last_Source;  // NULL for first frame and alt_ref frames
@@ -311,10 +323,13 @@ typedef struct VP10_COMP {
   int scaled_ref_idx[MAX_REF_FRAMES];
 #if CONFIG_EXT_REFS
   int lst_fb_idxes[LAST_REF_FRAMES];
-#else
+#else  // CONFIG_EXT_REFS
   int lst_fb_idx;
 #endif  // CONFIG_EXT_REFS
   int gld_fb_idx;
+#if CONFIG_BIDIR_PRED
+  int bwd_fb_idx;  // BWD_REF_FRAME
+#endif  // CONFIG_BIDIR_PRED
   int alt_fb_idx;
 
 #if CONFIG_EXT_REFS
@@ -324,6 +339,9 @@ typedef struct VP10_COMP {
 #endif  // CONFIG_EXT_REFS
   int refresh_golden_frame;
   int refresh_alt_ref_frame;
+#if CONFIG_BIDIR_PRED
+  int refresh_bwd_ref_frame;
+#endif  // CONFIG_BIDIR_PRED
 
   int ext_refresh_frame_flags_pending;
 #if CONFIG_EXT_REFS
@@ -586,6 +604,12 @@ static INLINE int frame_is_kf_gf_arf(const VP10_COMP *cpi) {
          (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref);
 }
 
+#if CONFIG_BIDIR_PRED
+static INLINE int frame_is_kf_gf_arf_brf(const VP10_COMP *cpi) {
+  return frame_is_kf_gf_arf(cpi) || cpi->refresh_bwd_ref_frame;
+}
+#endif  // CONFIG_BIDIR_PRED
+
 static INLINE int get_ref_frame_map_idx(const VP10_COMP *cpi,
                                         MV_REFERENCE_FRAME ref_frame) {
 #if CONFIG_EXT_REFS
@@ -597,6 +621,10 @@ static INLINE int get_ref_frame_map_idx(const VP10_COMP *cpi,
 #endif  // CONFIG_EXT_REFS
   else if (ref_frame == GOLDEN_FRAME)
     return cpi->gld_fb_idx;
+#if CONFIG_BIDIR_PRED
+  else if (ref_frame == BWDREF_FRAME)
+    return cpi->bwd_fb_idx;
+#endif  // CONFIG_BIDIR_PRED
   else
     return cpi->alt_fb_idx;
 }
@@ -662,6 +690,15 @@ static INLINE int is_altref_enabled(const VP10_COMP *const cpi) {
   return cpi->oxcf.mode != REALTIME && cpi->oxcf.lag_in_frames > 0 &&
          cpi->oxcf.enable_auto_arf;
 }
+
+#if CONFIG_BIDIR_PRED
+static INLINE int is_bwdref_enabled(const VP10_COMP *const cpi) {
+  // NOTE(zoeliu): The enabling of backward prediction depends on the alt_ref
+  // period, and will be off when the alt_ref period is not sufficiently large.
+  return cpi->oxcf.mode != REALTIME && cpi->oxcf.lag_in_frames > 0 &&
+         cpi->oxcf.enable_auto_brf && cpi->rc.bidir_pred_enabled;
+}
+#endif  // CONFIG_BIDIR_PRED
 
 static INLINE void set_ref_ptrs(VP10_COMMON *cm, MACROBLOCKD *xd,
                                 MV_REFERENCE_FRAME ref0,

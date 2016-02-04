@@ -698,6 +698,13 @@ static void adjust_arnr_filter(VP10_COMP *cpi,
 
   *arnr_frames = frames;
   *arnr_strength = strength;
+
+  // zoeliu: ALTREF - BIDIR debug
+  *arnr_strength = 0;
+  printf("\n=========================ENCODER===========================\n");
+  printf("Frame=%d, pass=%d, multi_arf_allowed=%d, arnr_strength=%d\n",
+         cpi->common.current_video_frame, cpi->oxcf.pass,
+         cpi->multi_arf_allowed, *arnr_strength);
 }
 
 void vp10_temporal_filter(VP10_COMP *cpi, int distance) {
