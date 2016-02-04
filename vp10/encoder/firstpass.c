@@ -1619,7 +1619,7 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
   GF_GROUP *const gf_group = &twopass->gf_group;
   FIRSTPASS_STATS frame_stats;
   int i;
-  int frame_index = 1;
+  int frame_index = 0;
   int target_frame_size;
   int key_frame;
   const int max_bits = frame_max_bits(&cpi->rc, &cpi->oxcf);
@@ -1629,6 +1629,9 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
   int mid_boost_bits = 0;
   int mid_frame_idx;
   unsigned char arf_buffer_indices[MAX_ACTIVE_ARFS];
+#if CONFIG_BIDIR_PRED
+  int bwd_ref_frame_index = 0;
+#endif  // CONFIG_BIDIR_PRED
 
   key_frame = cpi->common.frame_type == KEY_FRAME;
 
@@ -1638,26 +1641,29 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
   // is also the golden frame.
   if (!key_frame) {
     if (rc->source_alt_ref_active) {
-      gf_group->update_type[0] = OVERLAY_UPDATE;
-      gf_group->rf_level[0] = INTER_NORMAL;
-      gf_group->bit_allocation[0] = 0;
+      gf_group->update_type[frame_index] = OVERLAY_UPDATE;
+      gf_group->rf_level[frame_index] = INTER_NORMAL;
+      gf_group->bit_allocation[frame_index] = 0;
     } else {
-      gf_group->update_type[0] = GF_UPDATE;
-      gf_group->rf_level[0] = GF_ARF_STD;
-      gf_group->bit_allocation[0] = gf_arf_bits;
+      gf_group->update_type[frame_index] = GF_UPDATE;
+      gf_group->rf_level[frame_index] = GF_ARF_STD;
+      gf_group->bit_allocation[frame_index] = gf_arf_bits;
     }
-    gf_group->arf_update_idx[0] = arf_buffer_indices[0];
-    gf_group->arf_ref_idx[0] = arf_buffer_indices[0];
+    gf_group->arf_update_idx[frame_index] = arf_buffer_indices[0];
+    gf_group->arf_ref_idx[frame_index] = arf_buffer_indices[0];
 
     // Step over the golden frame / overlay frame
     if (EOF == input_stats(twopass, &frame_stats))
       return;
   }
 
+
   // Deduct the boost bits for arf (or gf if it is not a key frame)
   // from the group total.
   if (rc->source_alt_ref_pending || !key_frame)
     total_group_bits -= gf_arf_bits;
+
+  frame_index++;
 
   // Store the bits to spend on the ARF if there is one.
   if (rc->source_alt_ref_pending) {
@@ -1689,6 +1695,11 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
   // Define middle frame
   mid_frame_idx = frame_index + (rc->baseline_gf_interval >> 1) - 1;
 
+#if CONFIG_BIDIR_PRED
+  if (rc->bidir_pred_enabled)
+    bwd_ref_frame_index = rc->frame_index_since_kf_or_arf;
+#endif  // CONFIG_BIDIR_PRED
+
   // Allocate bits to the other frames in the group.
   for (i = 0; i < rc->baseline_gf_interval - rc->source_alt_ref_pending; ++i) {
     int arf_idx = 0;
@@ -1717,10 +1728,29 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
     target_frame_size = clamp(target_frame_size, 0,
                               VPXMIN(max_bits, (int)total_group_bits));
 
-    gf_group->update_type[frame_index] = LF_UPDATE;
-    gf_group->rf_level[frame_index] = INTER_NORMAL;
+#if CONFIG_BIDIR_PRED
+    if (rc->bidir_pred_enabled) {
+      // TODO(zoeliu): Currently only support BIDIR_PRED_PERIOD = 2
+      assert(BIDIR_PRED_PERIOD == 2);
+      if (bwd_ref_frame_index == 1) {
+        gf_group->update_type[frame_index] = BRF_UPDATE;
+        gf_group->brf_src_offset[frame_index] = BIDIR_PRED_PERIOD -
+            bwd_ref_frame_index % BIDIR_PRED_PERIOD;
+      } else if (bwd_ref_frame_index == BIDIR_PRED_PERIOD) {
+        gf_group->update_type[frame_index] = LASTNRF_UPDATE;
+        bwd_ref_frame_index = 0;
+      }
+      bwd_ref_frame_index++;
+    } else {
+#endif  // CONFIG_BIDIR_PRED
+      gf_group->update_type[frame_index] = LF_UPDATE;
+#if CONFIG_BIDIR_PRED
+    }
+#endif  // CONFIG_BIDIR_PRED
 
+    gf_group->rf_level[frame_index] = INTER_NORMAL;
     gf_group->bit_allocation[frame_index] = target_frame_size;
+
     ++frame_index;
   }
 
@@ -1749,6 +1779,16 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
 
   // Note whether multi-arf was enabled this group for next time.
   cpi->multi_arf_last_grp_enabled = cpi->multi_arf_enabled;
+
+  // zoeliu: BIDIR debug
+  printf("\n=========================ENCODER===========================\n");
+  printf("allocate_gf_group_bits(): "
+         "Frame=%d, key_frame=%d, baseline_gf_interval=%d, "
+         "source_alt_ref_pending=%d, source_alt_ref_active=%d, "
+         "frame_index=%d, mid_frame_idx=%d, update_type=%d\n",
+         cpi->common.current_video_frame, key_frame, rc->baseline_gf_interval,
+         rc->source_alt_ref_pending, rc->source_alt_ref_active,
+         frame_index, mid_frame_idx, gf_group->update_type[frame_index]);
 }
 
 // Analyse and define a gf/arf group.
@@ -1836,6 +1876,7 @@ static void define_gf_group(VP10_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     int int_lbq =
       (int)(vp10_convert_qindex_to_q(rc->last_boosted_qindex,
                                      cpi->common.bit_depth));
+
     active_min_gf_interval = rc->min_gf_interval + VPXMIN(2, int_max_q / 200);
     if (active_min_gf_interval > rc->max_gf_interval)
       active_min_gf_interval = rc->max_gf_interval;
@@ -2020,6 +2061,15 @@ static void define_gf_group(VP10_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     gf_group_error_left = gf_group_err;
   }
 
+#if CONFIG_BIDIR_PRED
+  // NOTE: BIDIR_PRED is only enabled when its specified interval is strictly
+  //       less than the GOLDEN_FRAME group interval.
+  if (BIDIR_PRED_PERIOD < rc->baseline_gf_interval)
+    rc->bidir_pred_enabled = 1;
+  else
+    rc->bidir_pred_enabled = 0;
+#endif  // CONFIG_BIDIR_PRED
+
   // Allocate bits to each of the frames in the GF group.
   allocate_gf_group_bits(cpi, gf_group_bits, gf_group_error_left, gf_arf_bits);
 
@@ -2177,6 +2227,12 @@ static void find_next_key_frame(VP10_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Reset the GF group data structures.
   vp10_zero(*gf_group);
+
+#if CONFIG_BIDIR_PRED
+  // Reset the BIDIR_PRED parameters at every KEY_FRAME
+  rc->bidir_pred_enabled = 0;
+  rc->frame_index_since_kf_or_arf = 0;
+#endif  // CONFIG_BIDIR_PRED
 
   // Is this a forced key frame by interval.
   rc->this_key_frame_forced = rc->next_key_frame_forced;
@@ -2392,6 +2448,10 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
   TWO_PASS *const twopass = &cpi->twopass;
 
   cpi->rc.is_src_frame_alt_ref = 0;
+#if CONFIG_BIDIR_PRED
+  cpi->rc.is_last_nonref_frame = 0;
+#endif  // CONFIG_BIDIR_PRED
+
   switch (twopass->gf_group.update_type[twopass->gf_group.index]) {
     case KF_UPDATE:
 #if CONFIG_EXT_REFS
@@ -2400,8 +2460,12 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
       cpi->refresh_last_frame = 1;
 #endif  // CONFIG_EXT_REFS
       cpi->refresh_golden_frame = 1;
+#if CONFIG_BIDIR_PRED
+      cpi->refresh_bwd_ref_frame = 1;
+#endif  // CONFIG_BIDIR_PRED
       cpi->refresh_alt_ref_frame = 1;
       break;
+
     case LF_UPDATE:
 #if CONFIG_EXT_REFS
       cpi->refresh_last_frames[LAST_FRAME - LAST_FRAME] = 1;
@@ -2409,8 +2473,12 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
       cpi->refresh_last_frame = 1;
 #endif  // CONFIG_EXT_REFS
       cpi->refresh_golden_frame = 0;
+#if CONFIG_BIDIR_PRED
+      cpi->refresh_bwd_ref_frame = 0;
+#endif  // CONFIG_BIDIR_PRED
       cpi->refresh_alt_ref_frame = 0;
       break;
+
     case GF_UPDATE:
 #if CONFIG_EXT_REFS
       cpi->refresh_last_frames[LAST_FRAME - LAST_FRAME] = 1;
@@ -2418,8 +2486,12 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
       cpi->refresh_last_frame = 1;
 #endif  // CONFIG_EXT_REFS
       cpi->refresh_golden_frame = 1;
+#if CONFIG_BIDIR_PRED
+      cpi->refresh_bwd_ref_frame = 0;
+#endif  // CONFIG_BIDIR_PRED
       cpi->refresh_alt_ref_frame = 0;
       break;
+
     case OVERLAY_UPDATE:
 #if CONFIG_EXT_REFS
       cpi->refresh_last_frames[LAST_FRAME - LAST_FRAME] = 0;
@@ -2427,9 +2499,13 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
       cpi->refresh_last_frame = 0;
 #endif  // CONFIG_EXT_REFS
       cpi->refresh_golden_frame = 1;
+#if CONFIG_BIDIR_PRED
+      cpi->refresh_bwd_ref_frame = 0;
+#endif  // CONFIG_BIDIR_PRED
       cpi->refresh_alt_ref_frame = 0;
       cpi->rc.is_src_frame_alt_ref = 1;
       break;
+
     case ARF_UPDATE:
 #if CONFIG_EXT_REFS
       cpi->refresh_last_frames[LAST_FRAME - LAST_FRAME] = 0;
@@ -2437,8 +2513,30 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
       cpi->refresh_last_frame = 0;
 #endif  // CONFIG_EXT_REFS
       cpi->refresh_golden_frame = 0;
+#if CONFIG_BIDIR_PRED
+      cpi->refresh_bwd_ref_frame = 0;
+#endif  // CONFIG_BIDIR_PRED
       cpi->refresh_alt_ref_frame = 1;
       break;
+
+#if CONFIG_BIDIR_PRED
+      // TODO(zoeliu): To have bidir_pred to work with ext_refs
+    case BRF_UPDATE:
+      cpi->refresh_last_frame = 0;
+      cpi->refresh_golden_frame = 0;
+      cpi->refresh_bwd_ref_frame = 1;
+      cpi->refresh_alt_ref_frame = 0;
+      break;
+
+    case LASTNRF_UPDATE:
+      cpi->refresh_last_frame = 1;
+      cpi->refresh_golden_frame = 0;
+      cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt_ref_frame = 0;
+      cpi->rc.is_last_nonref_frame = 1;
+      break;
+#endif  // CONFIG_BIDIR_PRED
+
     default:
       assert(0);
       break;
@@ -2528,6 +2626,7 @@ void vp10_rc_get_second_pass_params(VP10_COMP *cpi) {
     rc->last_q[KEY_FRAME] = (tmp_q + cpi->oxcf.best_allowed_q) / 2;
     rc->avg_frame_qindex[KEY_FRAME] = rc->last_q[KEY_FRAME];
   }
+
   vp10_zero(this_frame);
   if (EOF == input_stats(twopass, &this_frame))
     return;

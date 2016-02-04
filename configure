@@ -282,6 +282,7 @@ EXPERIMENT_LIST="
     ans
     loop_restoration
     ext_partition
+    bidir_pred
 "
 CONFIG_LIST="
     dependency_tracking
