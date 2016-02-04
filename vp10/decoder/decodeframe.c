@@ -57,6 +57,14 @@ static int is_compound_reference_allowed(const VP10_COMMON *cm) {
 }
 
 static void setup_compound_reference_mode(VP10_COMMON *cm) {
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+  cm->comp_fwd_ref[0] = LAST_FRAME;
+  cm->comp_fwd_ref[1] = GOLDEN_FRAME;
+  cm->comp_bwd_ref[0] = BWDREF_FRAME;
+  cm->comp_bwd_ref[1] = ALTREF_FRAME;
+
+#else  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+
   if (cm->ref_frame_sign_bias[LAST_FRAME] ==
           cm->ref_frame_sign_bias[GOLDEN_FRAME]) {
     cm->comp_fixed_ref = ALTREF_FRAME;
@@ -66,7 +74,7 @@ static void setup_compound_reference_mode(VP10_COMMON *cm) {
     cm->comp_var_ref[2] = LAST3_FRAME;
     cm->comp_var_ref[3] = LAST4_FRAME;
     cm->comp_var_ref[4] = GOLDEN_FRAME;
-#else
+#else  // CONFIG_EXT_REFS
     cm->comp_var_ref[1] = GOLDEN_FRAME;
 #endif  // CONFIG_EXT_REFS
   } else if (cm->ref_frame_sign_bias[LAST_FRAME] ==
@@ -85,6 +93,7 @@ static void setup_compound_reference_mode(VP10_COMMON *cm) {
     cm->comp_var_ref[0] = GOLDEN_FRAME;
     cm->comp_var_ref[1] = ALTREF_FRAME;
   }
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
 }
 
 static int read_is_valid(const uint8_t *start, size_t len, const uint8_t *end) {
@@ -171,9 +180,15 @@ static void read_frame_reference_mode_probs(VP10_COMMON *cm, vp10_reader *r) {
 
   if (cm->reference_mode != SINGLE_REFERENCE) {
     for (i = 0; i < REF_CONTEXTS; ++i) {
-      for (j = 0; j < (COMP_REFS - 1); ++j) {
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+      for (j = 0; j < (FWD_REFS - 1); ++j)
         vp10_diff_update_prob(r, &fc->comp_ref_prob[i][j]);
-      }
+      for (j = 0; j < (BWD_REFS - 1); ++j)
+        vp10_diff_update_prob(r, &fc->comp_bwdref_prob[i][j]);
+#else
+      for (j = 0; j < (COMP_REFS - 1); ++j)
+        vp10_diff_update_prob(r, &fc->comp_ref_prob[i][j]);
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
     }
   }
 }
@@ -3591,6 +3606,11 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   cm->last_frame_type = cm->frame_type;
   cm->last_intra_only = cm->intra_only;
 
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+  // NOTE: By default all coded frames to be used as a reference
+  cm->is_reference_frame = 1;
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+
   if (vpx_rb_read_literal(rb, 2) != VP9_FRAME_MARKER)
       vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                          "Invalid frame marker");
@@ -3607,9 +3627,11 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
 #endif
 
   cm->show_existing_frame = vpx_rb_read_bit(rb);
+
   if (cm->show_existing_frame) {
     // Show an existing frame directly.
     const int frame_to_show = cm->ref_frame_map[vpx_rb_read_literal(rb, 3)];
+
     lock_buffer_pool(pool);
     if (frame_to_show < 0 || frame_bufs[frame_to_show].ref_count < 1) {
       unlock_buffer_pool(pool);
@@ -3617,17 +3639,89 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
                          "Buffer %d does not contain a decoded frame",
                          frame_to_show);
     }
-
     ref_cnt_fb(frame_bufs, &cm->new_fb_idx, frame_to_show);
     unlock_buffer_pool(pool);
-    pbi->refresh_frame_flags = 0;
+
     cm->lf.filter_level = 0;
     cm->show_frame = 1;
 
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+    // NOTE: The existing frame to show can be adopted as a reference frame.
+    // TODO(zoeliu): To re-evaluate the bit cost on the following info and
+    //               explore an alternative scheme to avoid it.
+    // TODO(zoeliu): To check whether pbi->refresh_frame_flags could be
+    // zero-valued, if yes, then no need to write/read the following bits.
+    // Change should be made to coordinate with the changes at the encoder.
+    pbi->refresh_frame_flags = vpx_rb_read_literal(rb, REF_FRAMES);
+    if (pbi->refresh_frame_flags) {
+      for (i = 0; i < REFS_PER_FRAME; ++i) {
+        const int ref = vpx_rb_read_literal(rb, REF_FRAMES_LOG2);
+        const int idx = cm->ref_frame_map[ref];
+        RefBuffer *const ref_frame = &cm->frame_refs[i];
+        ref_frame->idx = idx;
+        ref_frame->buf = &frame_bufs[idx].buf;
+        // (zoeliu) cm->ref_frame_sign_bias[LAST_FRAME + i] =
+        // vpx_rb_read_bit(rb);
+      }
+    } else {
+      for (i = 0; i < REFS_PER_FRAME; ++i) {
+        RefBuffer *const ref_frame = &cm->frame_refs[i];
+        RefBuffer *const prev_ref_frame = &cm->prev_frame_refs[i];
+        ref_frame->idx = prev_ref_frame->idx;
+        ref_frame->buf = prev_ref_frame->buf;
+      }
+    }
+
+    for (i = 0; i < REFS_PER_FRAME; ++i) {
+      RefBuffer *const ref_buf = &cm->frame_refs[i];
+#if CONFIG_VP9_HIGHBITDEPTH
+      vp10_setup_scale_factors_for_frame(&ref_buf->sf,
+                                         ref_buf->buf->y_crop_width,
+                                         ref_buf->buf->y_crop_height,
+                                         cm->width, cm->height,
+                                         cm->use_highbitdepth);
+#else  // CONFIG_VP9_HIGHBITDEPTH
+      vp10_setup_scale_factors_for_frame(&ref_buf->sf,
+                                         ref_buf->buf->y_crop_width,
+                                         ref_buf->buf->y_crop_height,
+                                         cm->width, cm->height);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    }
+
+    // Generate next_ref_frame_map.
+    lock_buffer_pool(pool);
+    for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
+      if (mask & 1) {
+        cm->next_ref_frame_map[ref_index] = cm->new_fb_idx;
+        ++frame_bufs[cm->new_fb_idx].ref_count;
+      } else {
+        cm->next_ref_frame_map[ref_index] = cm->ref_frame_map[ref_index];
+      }
+      // Current thread holds the reference frame.
+      if (cm->ref_frame_map[ref_index] >= 0)
+        ++frame_bufs[cm->ref_frame_map[ref_index]].ref_count;
+      ++ref_index;
+    }
+
+    for (; ref_index < REF_FRAMES; ++ref_index) {
+      cm->next_ref_frame_map[ref_index] = cm->ref_frame_map[ref_index];
+
+      // Current thread holds the reference frame.
+      if (cm->ref_frame_map[ref_index] >= 0)
+        ++frame_bufs[cm->ref_frame_map[ref_index]].ref_count;
+    }
+    unlock_buffer_pool(pool);
+    pbi->hold_ref_buf = 1;
+
+#else
+
+    pbi->refresh_frame_flags = 0;
     if (cm->frame_parallel_decode) {
       for (i = 0; i < REF_FRAMES; ++i)
         cm->next_ref_frame_map[i] = cm->ref_frame_map[i];
     }
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+
     return 0;
   }
 
@@ -3646,6 +3740,10 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
     for (i = 0; i < REFS_PER_FRAME; ++i) {
       cm->frame_refs[i].idx = INVALID_IDX;
       cm->frame_refs[i].buf = NULL;
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+      cm->prev_frame_refs[i].idx = INVALID_IDX;
+      cm->prev_frame_refs[i].buf = NULL;
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
     }
 
     setup_frame_size(cm, rb);
@@ -3691,14 +3789,31 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
       }
     } else if (pbi->need_resync != 1) {  /* Skip if need resync */
       pbi->refresh_frame_flags = vpx_rb_read_literal(rb, REF_FRAMES);
-      for (i = 0; i < REFS_PER_FRAME; ++i) {
-        const int ref = vpx_rb_read_literal(rb, REF_FRAMES_LOG2);
-        const int idx = cm->ref_frame_map[ref];
-        RefBuffer *const ref_frame = &cm->frame_refs[i];
-        ref_frame->idx = idx;
-        ref_frame->buf = &frame_bufs[idx].buf;
-        cm->ref_frame_sign_bias[LAST_FRAME + i] = vpx_rb_read_bit(rb);
+
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+      if (pbi->refresh_frame_flags) {
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+        for (i = 0; i < REFS_PER_FRAME; ++i) {
+          const int ref = vpx_rb_read_literal(rb, REF_FRAMES_LOG2);
+          const int idx = cm->ref_frame_map[ref];
+          RefBuffer *const ref_frame = &cm->frame_refs[i];
+          ref_frame->idx = idx;
+          ref_frame->buf = &frame_bufs[idx].buf;
+          cm->ref_frame_sign_bias[LAST_FRAME + i] = vpx_rb_read_bit(rb);
+        }
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+      } else {
+        // NOTE: "pbi->refresh_frame_flags == 0" indicates that the coded frame
+        //       will not be used as a reference
+        cm->is_reference_frame = 0;
+        for (i = 0; i < REFS_PER_FRAME; ++i) {
+          RefBuffer *const ref_frame = &cm->frame_refs[i];
+          RefBuffer *const prev_ref_frame = &cm->prev_frame_refs[i];
+          ref_frame->idx = prev_ref_frame->idx;
+          ref_frame->buf = prev_ref_frame->buf;
+        }
       }
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
 
       setup_frame_size_with_refs(cm, rb);
 
@@ -4017,7 +4132,10 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
 
     if (cm->reference_mode != SINGLE_REFERENCE)
       setup_compound_reference_mode(cm);
+#if 1
+    // zoeliu: for debug - forward prob update
     read_frame_reference_mode_probs(cm, &r);
+#endif
 
     for (j = 0; j < BLOCK_SIZE_GROUPS; j++)
       for (i = 0; i < INTRA_MODES - 1; ++i)
@@ -4088,6 +4206,10 @@ static void debug_check_frame_counts(const VP10_COMMON *const cm) {
                  sizeof(cm->counts.comp_ref)));
   assert(!memcmp(&cm->counts.tx_size, &zero_counts.tx_size,
                  sizeof(cm->counts.tx_size)));
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+  assert(!memcmp(cm->counts.comp_bwdref, zero_counts.comp_bwdref,
+                 sizeof(cm->counts.comp_bwdref)));
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
   assert(!memcmp(cm->counts.skip, zero_counts.skip, sizeof(cm->counts.skip)));
 #if CONFIG_REF_MV
   assert(!memcmp(&cm->counts.mv[0], &zero_counts.mv[0],
@@ -4162,7 +4284,13 @@ void vp10_decode_frame(VP10Decoder *pbi,
 
   if (!first_partition_size) {
     // showing a frame directly
-    *p_data_end = data + (cm->profile <= PROFILE_2 ? 1 : 2);
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+    if (cm->show_existing_frame)
+      *p_data_end = data + vpx_rb_bytes_read(&rb);
+    else
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+      *p_data_end = data + (cm->profile <= PROFILE_2 ? 1 : 2);
+
     return;
   }
 
@@ -4177,6 +4305,10 @@ void vp10_decode_frame(VP10Decoder *pbi,
                            !cm->last_intra_only &&
                            cm->last_show_frame &&
                            (cm->last_frame_type != KEY_FRAME);
+#if 0
+  // zoeliu: for debug
+  cm->use_prev_frame_mvs = 0;
+#endif  // 0
 
   vp10_setup_block_planes(xd, cm->subsampling_x, cm->subsampling_y);
 
