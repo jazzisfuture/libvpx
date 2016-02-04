@@ -504,11 +504,11 @@ void vp10_set_speed_features_framesize_independent(VP10_COMP *cpi) {
   sf->disable_filter_search_var_thresh = 0;
   sf->adaptive_interp_filter_search = 0;
   sf->allow_partition_search_skip = 0;
-#if CONFIG_EXT_REFS || CONFIG_EXT_TILE
+#if CONFIG_EXT_REFS || CONFIG_EXT_TILE || CONFIG_BIDIR_PRED
   sf->use_upsampled_references = 0;
 #else
   sf->use_upsampled_references = 1;
-#endif
+#endif  // CONFIG_EXT_REFS || CONFIG_EXT_TILE || CONFIG_BIDIR_PRED
 
   for (i = 0; i < TX_SIZES; i++) {
     sf->intra_y_mode_mask[i] = INTRA_ALL;
