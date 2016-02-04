@@ -607,9 +607,9 @@ static void alloc_raw_frame_buffers(VP10_COMP *cpi) {
     cpi->lookahead = vp10_lookahead_init(oxcf->width, oxcf->height,
                                         cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
-                                      cm->use_highbitdepth,
+                                        cm->use_highbitdepth,
 #endif
-                                      oxcf->lag_in_frames);
+                                        oxcf->lag_in_frames);
   if (!cpi->lookahead)
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate lag buffers");
@@ -2701,6 +2701,16 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
                cpi->interp_filter_selected[ALTREF_FRAME],
                sizeof(cpi->interp_filter_selected[ALTREF_FRAME]));
     }
+
+#if CONFIG_BIDIR_PRED
+    if (cpi->refresh_bwd_ref_frame) {
+      ref_cnt_fb(pool->frame_bufs,
+                 &cm->ref_frame_map[cpi->bwd_fb_idx], cm->new_fb_idx);
+      memcpy(cpi->interp_filter_selected[BWDREF_FRAME],
+             cpi->interp_filter_selected[0],
+             sizeof(cpi->interp_filter_selected[0]));
+    }
+#endif  // CONFIG_BIDIR_PRED
   }
 
 #if CONFIG_EXT_REFS
@@ -3139,7 +3149,7 @@ static void set_frame_size(VP10_COMP *cpi) {
 
     // There has been a change in frame size.
     vp10_set_size_literal(cpi, oxcf->scaled_frame_width,
-                         oxcf->scaled_frame_height);
+                          oxcf->scaled_frame_height);
   }
 
   if (oxcf->pass == 0 &&
@@ -3334,7 +3344,7 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
     }
 
     cpi->Source = vp10_scale_if_required(cm, cpi->un_scaled_source,
-                                      &cpi->scaled_source);
+                                         &cpi->scaled_source);
 
     if (cpi->unscaled_last_source != NULL)
       cpi->Last_Source = vp10_scale_if_required(cm, cpi->unscaled_last_source,
@@ -3740,6 +3750,9 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
 
   // Set the arf sign bias for this frame.
   set_arf_sign_bias(cpi);
+#if CONFIG_BIDIR_PRED
+  cm->ref_frame_sign_bias[BWDREF_FRAME] = 1;
+#endif  // CONFIG_BIDIR_PRED
 
   // Set default state for segment based loop filter update flags.
   cm->lf.mode_ref_delta_update = 0;
@@ -3762,6 +3775,10 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
 
     // The alternate reference frame cannot be active for a key frame.
     cpi->rc.source_alt_ref_active = 0;
+#if CONFIG_BIDIR_PRED
+    // TODO(zoeliu): To check whether such a flag is needed for BWD_REF_FRAME as
+    // well.
+#endif  // CONFIG_BIDIR_PRED
 
     cm->error_resilient_mode = oxcf->error_resilient_mode;
 
@@ -3806,13 +3823,14 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
     vp10_write_yuv_frame_420(&cpi->denoiser.running_avg_y[INTRA_FRAME],
                             yuv_denoised_file);
   }
-#endif
-#endif
+#endif  // OUTPUT_YUV_DENOISED
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
+
 #ifdef OUTPUT_YUV_SKINMAP
   if (cpi->common.current_video_frame > 1) {
     vp10_compute_skin_map(cpi, yuv_skinmap_file);
   }
-#endif
+#endif  // OUTPUT_YUV_SKINMAP
 
   // Special case code to reduce pulsing when key frames are forced at a
   // fixed interval. Note the reconstruction error if it is the frame before
@@ -3851,7 +3869,7 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   // Pick the loop filter level for the frame.
   loopfilter_frame(cpi, cm);
 
-  // build the bitstream
+  // Build the bitstream
   vp10_pack_bitstream(cpi, dest, size);
 
   if (cm->seg.update_map)
@@ -3860,6 +3878,8 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   if (frame_is_intra_only(cm) == 0) {
     release_scaled_references(cpi);
   }
+
+  // zoeliu: Need to revisit the reference frame update routine for bidir-pred
   vp10_update_reference_frames(cpi);
 
   for (t = TX_4X4; t <= TX_32X32; t++)
@@ -3887,6 +3907,13 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
     cpi->frame_flags |= FRAMEFLAGS_ALTREF;
   else
     cpi->frame_flags &= ~FRAMEFLAGS_ALTREF;
+
+#if CONFIG_BIDIR_PRED
+  if (cpi->refresh_bwd_ref_frame == 1)
+    cpi->frame_flags |= FRAMEFLAGS_BWDREF;
+  else
+    cpi->frame_flags &= ~FRAMEFLAGS_BWDREF;
+#endif  // CONFIG_BIDIR_PRED
 
   cpi->ref_frame_flags = get_ref_frame_flags(cpi);
 
@@ -4135,6 +4162,25 @@ static int get_arf_src_index(VP10_COMP *cpi) {
   return arf_src_index;
 }
 
+#if CONFIG_BIDIR_PRED
+static int get_bwd_pred_index(VP10_COMP *cpi) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  int brf_src_index = 0;
+  if (is_bwdref_enabled(cpi)) {
+    if (cpi->oxcf.pass == 2) {
+      const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+      if (gf_group->update_type[gf_group->index] == BRF_UPDATE)
+        brf_src_index = gf_group->brf_src_offset[gf_group->index];
+    } else {
+      // TODO(zoeliu): To revisit the setup for this scenario
+      brf_src_index = BIDIR_PRED_PERIOD -
+          rc->frame_index_since_kf_or_arf % BIDIR_PRED_PERIOD;
+    }
+  }
+  return brf_src_index;
+}
+#endif  // CONFIG_BIDIR_PRED
+
 static void check_src_altref(VP10_COMP *cpi,
                              const struct lookahead_entry *source) {
   RATE_CONTROL *const rc = &cpi->rc;
@@ -4194,6 +4240,9 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
   struct lookahead_entry *last_source = NULL;
   struct lookahead_entry *source = NULL;
   int arf_src_index;
+#if CONFIG_BIDIR_PRED
+  int brf_src_index;
+#endif  // CONFIG_BIDIR_PRED
   int i;
 
   vpx_usec_timer_start(&cmptimer);
@@ -4226,9 +4275,15 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
 #endif  // CONFIG_EXT_REFS
   cpi->refresh_golden_frame = 0;
   cpi->refresh_alt_ref_frame = 0;
+#if CONFIG_BIDIR_PRED
+  cpi->refresh_bwd_ref_frame = 0;
+#endif  // CONFIG_BIDIR_PRED
 
   // Should we encode an arf frame.
   arf_src_index = get_arf_src_index(cpi);
+  if (oxcf->pass == 2) {
+    printf("vp10_get_compressed_data(): This is 2nd pass.\n");
+  }
 
   if (arf_src_index) {
     assert(arf_src_index <= rc->frames_to_key);
@@ -4257,6 +4312,27 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
     }
     rc->source_alt_ref_pending = 0;
   }
+
+#if CONFIG_BIDIR_PRED
+  brf_src_index = get_bwd_pred_index(cpi);
+  if (brf_src_index) {
+    if (arf_src_index <= rc->frames_to_key) {
+      if ((source = vp10_lookahead_peek(cpi->lookahead, brf_src_index))
+          != NULL) {
+        cpi->bwd_ref_source = source;
+        cm->show_frame = 1;
+        cm->intra_only = 0;
+        cpi->refresh_bwd_ref_frame = 1;
+        cpi->refresh_last_frame = 0;
+        cpi->refresh_golden_frame = 0;
+        cpi->refresh_alt_ref_frame = 0;
+      }
+      rc->bidir_pred_enabled = 1;
+    } else {
+      rc->bidir_pred_enabled = 0;
+    }
+  }
+#endif  // CONFIG_BIDIR_PRED
 
   if (!source) {
     // Get last frame source.
