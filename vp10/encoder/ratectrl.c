@@ -310,6 +310,11 @@ void vp10_rc_init(const VP10EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->source_alt_ref_pending = 0;
   rc->source_alt_ref_active = 0;
 
+#if CONFIG_BIDIR_PRED
+  rc->bidir_pred_enabled = 0;
+  rc->frame_index_since_kf_or_arf = 0;
+#endif  // CONFIG_BIDIR_PRED
+
   rc->frames_till_gf_update_due = 0;
   rc->ni_av_qi = oxcf->worst_allowed_q;
   rc->ni_tot_qi = 0;
@@ -1282,7 +1287,7 @@ void vp10_rc_postencode_update(VP10_COMP *cpi, uint64_t bytes_used) {
     }
   }
 
-  // Keep record of last boosted (KF/KF/ARF) Q value.
+  // Keep record of last boosted (KF/GF/ARF) Q value.
   // If the current frame is coded at a lower Q then we also update it.
   // If all mbs in this group are skipped only update if the Q value is
   // better than that already stored.

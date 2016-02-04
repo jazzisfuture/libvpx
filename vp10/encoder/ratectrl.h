@@ -90,6 +90,15 @@ typedef struct {
   int source_alt_ref_active;
   int is_src_frame_alt_ref;
 
+#if CONFIG_BIDIR_PRED
+  // TODO(zoeliu): To check the necessity for the following 2 variables
+  int source_bwd_ref_pending;
+  int source_bwd_ref_active;
+  int bidir_pred_enabled;
+  // TODO(zoeliu): To be updated in postencode_update()
+  int frame_index_since_kf_or_arf;
+#endif  // CONFIG_BIDIR_PRED
+
   int avg_frame_bandwidth;  // Average frame size target for clip
   int min_frame_bandwidth;  // Minimum allocation used for any frame
   int max_frame_bandwidth;  // Maximum burst rate allowed for a frame.
