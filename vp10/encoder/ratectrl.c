@@ -1282,7 +1282,7 @@ void vp10_rc_postencode_update(VP10_COMP *cpi, uint64_t bytes_used) {
     }
   }
 
-  // Keep record of last boosted (KF/KF/ARF) Q value.
+  // Keep record of last boosted (KF/GF/ARF) Q value.
   // If the current frame is coded at a lower Q then we also update it.
   // If all mbs in this group are skipped only update if the Q value is
   // better than that already stored.
