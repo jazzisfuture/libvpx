@@ -638,11 +638,27 @@ static void read_ref_frames(VP10_COMMON *const cm, MACROBLOCKD *const xd,
     const REFERENCE_MODE mode = read_block_reference_mode(cm, xd, r);
     // FIXME(rbultje) I'm pretty sure this breaks segmentation ref frame coding
     if (mode == COMPOUND_REFERENCE) {
+#if CONFIG_BIDIR_PRED
+      const int idx = cm->ref_frame_sign_bias[cm->comp_bwd_ref[0]];
+#else
       const int idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
+#endif  // CONFIG_BIDIR_PRED
       const int ctx = vp10_get_pred_context_comp_ref_p(cm, xd);
       const int bit = vpx_read(r, fc->comp_ref_prob[ctx][0]);
       if (counts)
         ++counts->comp_ref[ctx][0][bit];
+#if CONFIG_BIDIR_PRED
+      ref_frame[!idx] = cm->comp_fwd_ref[bit];
+
+      {
+        const int ctx1 = vp10_get_pred_context_comp_bwdref_p(cm, xd);
+        const int bit1 = vpx_read(r, fc->comp_bwdref_prob[ctx1][0]);
+        if (counts)
+          ++counts->comp_bwdref[ctx1][0][bit1];
+        ref_frame[idx] = cm->comp_bwd_ref[bit1];
+      }
+#else  // CONFIG_BIDIR_PRED
+
       ref_frame[idx] = cm->comp_fixed_ref;
 
 #if CONFIG_EXT_REFS
@@ -667,9 +683,10 @@ static void read_ref_frames(VP10_COMMON *const cm, MACROBLOCKD *const xd,
           ref_frame[!idx] = cm->comp_var_ref[4];
         }
       }
-#else
+#else  // CONFIG_EXT_REFS
       ref_frame[!idx] = cm->comp_var_ref[bit];
 #endif  // CONFIG_EXT_REFS
+#endif  // CONFIG_BIDIR_PRED
     } else if (mode == SINGLE_REFERENCE) {
 #if CONFIG_EXT_REFS
       const int ctx0 = vp10_get_pred_context_single_ref_p1(xd);
@@ -701,7 +718,7 @@ static void read_ref_frames(VP10_COMMON *const cm, MACROBLOCKD *const xd,
           ref_frame[0] = bit3 ? LAST2_FRAME : LAST_FRAME;
         }
       }
-#else
+#else  // CONFIG_EXT_REFS
       const int ctx0 = vp10_get_pred_context_single_ref_p1(xd);
       const int bit0 = vpx_read(r, fc->single_ref_prob[ctx0][0]);
       if (counts)
@@ -711,7 +728,19 @@ static void read_ref_frames(VP10_COMMON *const cm, MACROBLOCKD *const xd,
         const int bit1 = vpx_read(r, fc->single_ref_prob[ctx1][1]);
         if (counts)
           ++counts->single_ref[ctx1][1][bit1];
+#if CONFIG_BIDIR_PRED
+        if (bit1) {
+          const int ctx2 = vp10_get_pred_context_single_ref_p3(xd);
+          const int bit2 = vpx_read(r, fc->single_ref_prob[ctx2][2]);
+          if (counts)
+            ++counts->single_ref[ctx2][2][bit2];
+          ref_frame[0] = bit2 ? ALTREF_FRAME : BWDREF_FRAME;
+        } else {
+          ref_frame[0] = GOLDEN_FRAME;
+        }
+#else  // CONFIG_BIDIR_PRED
         ref_frame[0] = bit1 ? ALTREF_FRAME : GOLDEN_FRAME;
+#endif  // CONFIG_BIDIR_PRED
       } else {
         ref_frame[0] = LAST_FRAME;
       }
@@ -969,6 +998,13 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
 
   read_ref_frames(cm, xd, r, mbmi->segment_id, mbmi->ref_frame);
   is_compound = has_second_ref(mbmi);
+
+  // zoeliu: for debug
+  /*
+  if (cm->current_video_frame == 1 && mi_row == 0 && mi_col == 0)
+    printf("Frame=%d, (mi_row,mi_col)=(%d,%d), ref0=%d, ref1=%d\n",
+           cm->current_video_frame, mi_row, mi_col,
+           mbmi->ref_frame[0], mbmi->ref_frame[1]);*/
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
     MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
