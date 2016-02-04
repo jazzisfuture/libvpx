@@ -27,7 +27,7 @@ struct RD_COST;
 
 void vp10_rd_pick_intra_mode_sb(struct VP10_COMP *cpi, struct macroblock *x,
                                struct RD_COST *rd_cost, BLOCK_SIZE bsize,
-                               PICK_MODE_CONTEXT *ctx, int64_t best_rd);
+                               PICK_MODE_CONTEXT *ctx);
 
 unsigned int vp10_get_sby_perpixel_variance(VP10_COMP *cpi,
                                            const struct buf_2d *ref,

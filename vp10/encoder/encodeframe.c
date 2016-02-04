@@ -1629,7 +1629,7 @@ static void rd_pick_sb_modes(VP10_COMP *cpi,
   // Find best coding mode & reconstruct the MB so it is available
   // as a predictor for MBs that follow in the SB
   if (frame_is_intra_only(cm)) {
-    vp10_rd_pick_intra_mode_sb(cpi, x, rd_cost, bsize, ctx, best_rd);
+    vp10_rd_pick_intra_mode_sb(cpi, x, rd_cost, bsize, ctx);
 #if CONFIG_SUPERTX
     *totalrate_nocoef = 0;
 #endif  // CONFIG_SUPERTX
