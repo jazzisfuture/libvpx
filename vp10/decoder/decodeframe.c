@@ -57,6 +57,12 @@ static int is_compound_reference_allowed(const VP10_COMMON *cm) {
 }
 
 static void setup_compound_reference_mode(VP10_COMMON *cm) {
+#if CONFIG_BIDIR_PRED
+  cm->comp_fwd_ref[0] = LAST_FRAME;
+  cm->comp_fwd_ref[1] = GOLDEN_FRAME;
+  cm->comp_bwd_ref[0] = BWDREF_FRAME;
+  cm->comp_bwd_ref[1] = ALTREF_FRAME;
+#else  // CONFIG_BIDIR_PRED
   if (cm->ref_frame_sign_bias[LAST_FRAME] ==
           cm->ref_frame_sign_bias[GOLDEN_FRAME]) {
     cm->comp_fixed_ref = ALTREF_FRAME;
@@ -66,7 +72,7 @@ static void setup_compound_reference_mode(VP10_COMMON *cm) {
     cm->comp_var_ref[2] = LAST3_FRAME;
     cm->comp_var_ref[3] = LAST4_FRAME;
     cm->comp_var_ref[4] = GOLDEN_FRAME;
-#else
+#else  // CONFIG_EXT_REFS
     cm->comp_var_ref[1] = GOLDEN_FRAME;
 #endif  // CONFIG_EXT_REFS
   } else if (cm->ref_frame_sign_bias[LAST_FRAME] ==
@@ -85,6 +91,7 @@ static void setup_compound_reference_mode(VP10_COMMON *cm) {
     cm->comp_var_ref[0] = GOLDEN_FRAME;
     cm->comp_var_ref[1] = ALTREF_FRAME;
   }
+#endif  // CONFIG_BIDIR_PRED
 }
 
 static int read_is_valid(const uint8_t *start, size_t len, const uint8_t *end) {
@@ -185,9 +192,18 @@ static void read_frame_reference_mode_probs(VP10_COMMON *cm, vpx_reader *r) {
 
   if (cm->reference_mode != SINGLE_REFERENCE) {
     for (i = 0; i < REF_CONTEXTS; ++i) {
+#if CONFIG_BIDIR_PRED
+      for (j = 0; j < (FWD_REFS - 1); ++j) {
+        vp10_diff_update_prob(r, &fc->comp_ref_prob[i][j]);
+      }
+      for (j = 0; j < (BWD_REFS - 1); ++j) {
+        vp10_diff_update_prob(r, &fc->comp_bwdref_prob[i][j]);
+      }
+#else
       for (j = 0; j < (COMP_REFS - 1); ++j) {
         vp10_diff_update_prob(r, &fc->comp_ref_prob[i][j]);
       }
+#endif  // CONFIG_BIDIR_PRED
     }
   }
 }
@@ -2927,6 +2943,14 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
   int i, mask, ref_index = 0;
   size_t sz;
 
+  // zoeliu
+  if (cm->current_video_frame == 1) {
+    printf("\n=========================DECODER===========================\n");
+    printf("read_uncompressed_header(): "
+           "Frame=%d, frame_type=%d, show_existing_frame=%d\n",
+           cm->current_video_frame, cm->frame_type, cm->show_existing_frame);
+  }
+
 #if CONFIG_EXT_REFS
   cm->last3_frame_type = cm->last2_frame_type;
   cm->last2_frame_type = cm->last_frame_type;
@@ -2950,9 +2974,13 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
 #endif
 
   cm->show_existing_frame = vpx_rb_read_bit(rb);
+  printf("read_uncompressed_header(): "
+         "show_existing_frame=%d\n", cm->show_existing_frame);
+
   if (cm->show_existing_frame) {
     // Show an existing frame directly.
     const int frame_to_show = cm->ref_frame_map[vpx_rb_read_literal(rb, 3)];
+
     lock_buffer_pool(pool);
     if (frame_to_show < 0 || frame_bufs[frame_to_show].ref_count < 1) {
       unlock_buffer_pool(pool);
@@ -2960,17 +2988,76 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
                          "Buffer %d does not contain a decoded frame",
                          frame_to_show);
     }
-
     ref_cnt_fb(frame_bufs, &cm->new_fb_idx, frame_to_show);
     unlock_buffer_pool(pool);
-    pbi->refresh_frame_flags = 0;
+
     cm->lf.filter_level = 0;
     cm->show_frame = 1;
 
+#if CONFIG_BIDIR_PRED
+    // NOTE: The existing frame to show can be adopted as a reference frame.
+    // TODO(zoeliu): To re-evaluate the bit cost on the following info and
+    //               explore an alternative scheme to avoid it.
+    pbi->refresh_frame_flags = vpx_rb_read_literal(rb, REF_FRAMES);
+    for (i = 0; i < REFS_PER_FRAME; ++i) {
+      const int ref = vpx_rb_read_literal(rb, REF_FRAMES_LOG2);
+      const int idx = cm->ref_frame_map[ref];
+      RefBuffer *const ref_frame = &cm->frame_refs[i];
+      ref_frame->idx = idx;
+      ref_frame->buf = &frame_bufs[idx].buf;
+      cm->ref_frame_sign_bias[LAST_FRAME + i] = vpx_rb_read_bit(rb);
+    }
+
+    for (i = 0; i < REFS_PER_FRAME; ++i) {
+      RefBuffer *const ref_buf = &cm->frame_refs[i];
+#if CONFIG_VP9_HIGHBITDEPTH
+      vp10_setup_scale_factors_for_frame(&ref_buf->sf,
+                                         ref_buf->buf->y_crop_width,
+                                         ref_buf->buf->y_crop_height,
+                                         cm->width, cm->height,
+                                         cm->use_highbitdepth);
+#else  // CONFIG_VP9_HIGHBITDEPTH
+      vp10_setup_scale_factors_for_frame(&ref_buf->sf,
+                                         ref_buf->buf->y_crop_width,
+                                         ref_buf->buf->y_crop_height,
+                                         cm->width, cm->height);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    }
+
+    // Generate next_ref_frame_map.
+    lock_buffer_pool(pool);
+    for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
+      if (mask & 1) {
+        cm->next_ref_frame_map[ref_index] = cm->new_fb_idx;
+        ++frame_bufs[cm->new_fb_idx].ref_count;
+      } else {
+        cm->next_ref_frame_map[ref_index] = cm->ref_frame_map[ref_index];
+      }
+      // Current thread holds the reference frame.
+      if (cm->ref_frame_map[ref_index] >= 0)
+        ++frame_bufs[cm->ref_frame_map[ref_index]].ref_count;
+      ++ref_index;
+    }
+
+    for (; ref_index < REF_FRAMES; ++ref_index) {
+      cm->next_ref_frame_map[ref_index] = cm->ref_frame_map[ref_index];
+
+      // Current thread holds the reference frame.
+      if (cm->ref_frame_map[ref_index] >= 0)
+        ++frame_bufs[cm->ref_frame_map[ref_index]].ref_count;
+    }
+    unlock_buffer_pool(pool);
+    pbi->hold_ref_buf = 1;
+
+#else  // CONFIG_BIDIR_PRED
+
+    pbi->refresh_frame_flags = 0;
     if (cm->frame_parallel_decode) {
       for (i = 0; i < REF_FRAMES; ++i)
         cm->next_ref_frame_map[i] = cm->ref_frame_map[i];
     }
+#endif  // CONFIG_BIDIR_PRED
+
     return 0;
   }
 
@@ -3157,6 +3244,10 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Invalid header size");
 
+  printf("read_uncompressed_header() (after uncompressed header read): "
+         "Frame=%d, frame_type=%d\n",
+         cm->current_video_frame, cm->frame_type);
+
   return sz;
 }
 
@@ -3340,6 +3431,10 @@ static void debug_check_frame_counts(const VP10_COMMON *const cm) {
                  sizeof(cm->counts.single_ref)));
   assert(!memcmp(cm->counts.comp_ref, zero_counts.comp_ref,
                  sizeof(cm->counts.comp_ref)));
+#if CONFIG_BIDIR_PRED
+  assert(!memcmp(cm->counts.comp_bwdref, zero_counts.comp_bwdref,
+                 sizeof(cm->counts.comp_bwdref)));
+#endif  // CONFIG_BIDIR_PRED
   assert(!memcmp(&cm->counts.tx, &zero_counts.tx, sizeof(cm->counts.tx)));
   assert(!memcmp(cm->counts.skip, zero_counts.skip, sizeof(cm->counts.skip)));
   assert(!memcmp(&cm->counts.mv, &zero_counts.mv, sizeof(cm->counts.mv)));
@@ -3407,6 +3502,10 @@ void vp10_decode_frame(VP10Decoder *pbi,
   const int tile_cols = 1 << cm->log2_tile_cols;
   YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
   xd->cur_buf = new_fb;
+
+  if (cm->current_video_frame == 1) {
+    printf("vp10_decode_frame(): some syntax error ...\n");
+  }
 
   if (!first_partition_size) {
     // showing a frame directly
@@ -3493,13 +3592,15 @@ void vp10_decode_frame(VP10Decoder *pbi,
 
   if (!xd->corrupted) {
     if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
+      // zoeliu: Turning off backward prob update for debug
+      /*
       vp10_adapt_coef_probs(cm);
       vp10_adapt_intra_frame_probs(cm);
 
       if (!frame_is_intra_only(cm)) {
         vp10_adapt_inter_frame_probs(cm);
         vp10_adapt_mv_probs(cm, cm->allow_high_precision_mv);
-      }
+      }*/
     } else {
       debug_check_frame_counts(cm);
     }
