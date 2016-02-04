@@ -5503,14 +5503,14 @@ void vp10_rd_pick_intra_mode_sb(VP10_COMP *cpi, MACROBLOCK *x,
   if (bsize >= BLOCK_8X8) {
     if (rd_pick_intra_sby_mode(cpi, x, &rate_y, &rate_y_tokenonly,
                                &dist_y, &y_skip, bsize,
-                               best_rd) >= best_rd) {
+                               INT64_MAX) >= INT64_MAX) {
       rd_cost->rate = INT_MAX;
       return;
     }
   } else {
     y_skip = 0;
     if (rd_pick_intra_sub_8x8_y_mode(cpi, x, &rate_y, &rate_y_tokenonly,
-                                     &dist_y, best_rd) >= best_rd) {
+                                     &dist_y, INT64_MAX) >= INT64_MAX) {
       rd_cost->rate = INT_MAX;
       return;
     }
