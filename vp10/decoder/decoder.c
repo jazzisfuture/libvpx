@@ -213,11 +213,18 @@ vpx_codec_err_t vp10_set_reference_dec(VP10_COMMON *cm,
     ref_buf = &cm->frame_refs[4];
   } else if (ref_frame_flag == VP9_ALT_FLAG) {
     ref_buf = &cm->frame_refs[5];
-#else
+#else  // CONFIG_EXT_REFS
   } else if (ref_frame_flag == VP9_GOLD_FLAG) {
     ref_buf = &cm->frame_refs[1];
+#if CONFIG_BIDIR_PRED
+  } else if (ref_frame_flag == VP9_BWD_FLAG) {
+    ref_buf = &cm->frame_refs[2];
+  } else if (ref_frame_flag == VP9_ALT_FLAG) {
+    ref_buf = &cm->frame_refs[3];
+#else  // CONFIG_BIDIR_PRED
   } else if (ref_frame_flag == VP9_ALT_FLAG) {
     ref_buf = &cm->frame_refs[2];
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
   } else {
     vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
