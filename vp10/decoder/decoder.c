@@ -213,11 +213,18 @@ vpx_codec_err_t vp10_set_reference_dec(VP10_COMMON *cm,
     ref_buf = &cm->frame_refs[4];
   } else if (ref_frame_flag == VP9_ALT_FLAG) {
     ref_buf = &cm->frame_refs[5];
-#else
+#else  // CONFIG_EXT_REFS
   } else if (ref_frame_flag == VP9_GOLD_FLAG) {
     ref_buf = &cm->frame_refs[1];
+#if CONFIG_BIDIR_PRED
+  } else if (ref_frame_flag == VP9_BWD_FLAG) {
+    ref_buf = &cm->frame_refs[2];
+  } else if (ref_frame_flag == VP9_ALT_FLAG) {
+    ref_buf = &cm->frame_refs[3];
+#else  // CONFIG_BIDIR_PRED
   } else if (ref_frame_flag == VP9_ALT_FLAG) {
     ref_buf = &cm->frame_refs[2];
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
   } else {
     vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
@@ -300,6 +307,13 @@ int vp10_receive_compressed_data(VP10Decoder *pbi,
   int retcode = 0;
   cm->error.error_code = VPX_CODEC_OK;
 
+  // zoeliu: for debug
+  /*
+  printf("\n=========================DECODER===========================\n");
+  printf("vp10_receive_compressed_data(): "
+         "Frame=%d, frame_type=%d, size=%d\n",
+         cm->current_video_frame, cm->frame_type, (int)size);*/
+
   if (size == 0) {
     // This is used to signal that we are missing frames.
     // We do not know if the missing frame(s) was supposed to update
@@ -323,6 +337,7 @@ int vp10_receive_compressed_data(VP10Decoder *pbi,
       && frame_bufs[cm->new_fb_idx].ref_count == 0)
     pool->release_fb_cb(pool->cb_priv,
                         &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
+
   // Find a free frame buffer. Return error if can not find any.
   cm->new_fb_idx = get_free_fb(cm);
   if (cm->new_fb_idx == INVALID_IDX)
@@ -393,6 +408,8 @@ int vp10_receive_compressed_data(VP10Decoder *pbi,
   cm->error.setjmp = 1;
   vp10_decode_frame(pbi, source, source + size, psource);
 
+  // TODO(zoeliu): Check the ref frame buffer update for the scenario of
+  //               cm->show_existing_frame == 1
   swap_frame_buffers(pbi);
 
   vpx_clear_system_state();
