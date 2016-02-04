@@ -5518,7 +5518,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         int ref_idx;
         int ref_set = VPXMIN(2, mbmi_ext->ref_mv_count[ref_frame_type] - 2);
         uint8_t drl0_ctx =
-            vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 0);
+            vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 1);
 
         int8_t ref_skip =
             vp10_get_inter_skip_ctx(mbmi,
@@ -5582,7 +5582,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
           if (mbmi_ext->ref_mv_count[ref_frame_type] > 3) {
             uint8_t drl1_ctx =
-                vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 1);
+                vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 2);
             tmp_rate += cpi->drl_mode_cost1[drl1_ctx][ref_idx];
           }
 
