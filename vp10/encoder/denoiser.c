@@ -389,8 +389,11 @@ void vp10_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                                     FRAME_TYPE frame_type,
 #if CONFIG_EXT_REFS
                                     int refresh_last_frames[LAST_REF_FRAMES],
-#else
+#else  // CONFIG_EXT_REFS
                                     int refresh_last_frame,
+#if CONFIG_BIDIR_PRED
+                                    int refresh_bwd_ref_frame,
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
                                     int refresh_alt_ref_frame,
                                     int refresh_golden_frame) {
@@ -422,11 +425,17 @@ void vp10_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                         &denoiser->running_avg_y[INTRA_FRAME]);
     }
   }
-#else
+#else  // CONFIG_EXT_REFS
   if (refresh_last_frame) {
     swap_frame_buffer(&denoiser->running_avg_y[LAST_FRAME],
                       &denoiser->running_avg_y[INTRA_FRAME]);
   }
+#if CONFIG_BIDIR_PRED
+  if (refresh_bwd_ref_frame) {
+    swap_frame_buffer(&denoiser->running_avg_y[BWDREF_FRAME],
+                      &denoiser->running_avg_y[INTRA_FRAME]);
+  }
+#endif  // CONFIG_BIDIR_PRED
 #endif  // CONFIG_EXT_REFS
 }
 
