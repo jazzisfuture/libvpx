@@ -55,6 +55,17 @@ typedef enum {
 extern const InterpKernel *vp10_intra_filter_kernels[INTRA_FILTERS];
 #endif  // CONFIG_EXT_INTRA
 
+typedef struct InterpFilterSet {
+  const int16_t* filter_ptr;
+  uint16_t tap;
+  uint16_t subpel_shifts;
+} InterpFilterSet;
+
+InterpFilterSet vp10_get_interp_filter_set(const INTERP_FILTER interp_filter);
+static INLINE const int16_t* vp10_get_interp_filter(
+    const InterpFilterSet filter_set, const int subpel) {
+  return filter_set.filter_ptr + filter_set.tap * subpel;
+}
 #ifdef __cplusplus
 }  // extern "C"
 #endif
