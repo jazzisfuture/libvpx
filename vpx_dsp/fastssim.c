@@ -25,7 +25,12 @@ typedef struct fs_ctx fs_ctx;
 
 #define SSIM_C1 (255 * 255 * 0.01 * 0.01)
 #define SSIM_C2 (255 * 255 * 0.03 * 0.03)
-
+#if CONFIG_VP9_HIGHBITDEPTH
+#define SSIM_C1_10 (1023 * 1023 * 0.01 * 0.01)
+#define SSIM_C1_12 (4095 * 4095 * 0.01 * 0.01)
+#define SSIM_C2_10 (1023 * 1023 * 0.03 * 0.03)
+#define SSIM_C2_12 (4095 * 4095 * 0.03 * 0.03)
+#endif
 #define FS_MINI(_a, _b) ((_a) < (_b) ? (_a) : (_b))
 #define FS_MAXI(_a, _b) ((_a) > (_b) ? (_a) : (_b))
 
@@ -166,8 +171,42 @@ static void fs_downsample_level0(fs_ctx *_ctx, const unsigned char *_src1,
     }
   }
 }
+#if CONFIG_VP9_HIGHBITDEPTH
+static void hbd_fs_downsample_level0(fs_ctx *_ctx, const uint16_t *_src1,
+                                     int _s1ystride, const uint16_t *_src2,
+                                     int _s2ystride, int _w, int _h) {
+  uint16_t *dst1;
+  uint16_t *dst2;
+  int w;
+  int h;
+  int i;
+  int j;
+  w = _ctx->level[0].w;
+  h = _ctx->level[0].h;
+  dst1 = _ctx->level[0].im1;
+  dst2 = _ctx->level[0].im2;
+  for (j = 0; j < h; j++) {
+    int j0;
+    int j1;
+    j0 = 2 * j;
+    j1 = FS_MINI(j0 + 1, _h);
+    for (i = 0; i < w; i++) {
+      int i0;
+      int i1;
+      i0 = 2 * i;
+      i1 = FS_MINI(i0 + 1, _w);
+      dst1[j * w + i] = _src1[j0 * _s1ystride + i0]
+          + _src1[j0 * _s1ystride + i1] + _src1[j1 * _s1ystride + i0]
+          + _src1[j1 * _s1ystride + i1];
+      dst2[j * w + i] = _src2[j0 * _s2ystride + i0]
+          + _src2[j0 * _s2ystride + i1] + _src2[j1 * _s2ystride + i0]
+          + _src2[j1 * _s2ystride + i1];
+    }
+  }
+}
+#endif
 
-static void fs_apply_luminance(fs_ctx *_ctx, int _l) {
+static void fs_apply_luminance(fs_ctx *_ctx, int _l, int bit_depth) {
   unsigned *col_sums_x;
   unsigned *col_sums_y;
   uint16_t *im1;
@@ -180,6 +219,15 @@ static void fs_apply_luminance(fs_ctx *_ctx, int _l) {
   int j1offs;
   int i;
   int j;
+  double ssim_c1 = SSIM_C1;
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (bit_depth == 10)
+    ssim_c1 = SSIM_C1_10;
+  if (bit_depth == 12)
+    ssim_c1 = SSIM_C1_12;
+#else
+  assert(bit_depth == 8);
+#endif
   w = _ctx->level[_l].w;
   h = _ctx->level[_l].h;
   col_sums_x = _ctx->col_buf;
@@ -198,7 +246,7 @@ static void fs_apply_luminance(fs_ctx *_ctx, int _l) {
       col_sums_y[i] += im2[j1offs + i];
   }
   ssim = _ctx->level[_l].ssim;
-  c1 = (double) (SSIM_C1 * 4096 * (1 << 4 * _l));
+  c1 = (double) (ssim_c1 * 4096 * (1 << 4 * _l));
   for (j = 0; j < h; j++) {
     unsigned mux;
     unsigned muy;
@@ -296,7 +344,7 @@ static void fs_apply_luminance(fs_ctx *_ctx, int _l) {
   } \
   while (0)
 
-static void fs_calc_structure(fs_ctx *_ctx, int _l) {
+static void fs_calc_structure(fs_ctx *_ctx, int _l, int bit_depth) {
   uint16_t *im1;
   uint16_t *im2;
   unsigned *gx_buf;
@@ -311,6 +359,16 @@ static void fs_calc_structure(fs_ctx *_ctx, int _l) {
   int h;
   int i;
   int j;
+  double ssim_c2 = SSIM_C2;
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (bit_depth == 10)
+    ssim_c2 = SSIM_C2_10;
+  if (bit_depth == 12)
+    ssim_c2 = SSIM_C2_12;
+#else
+  assert(bit_depth == 8);
+#endif
+
   w = _ctx->level[_l].w;
   h = _ctx->level[_l].h;
   im1 = _ctx->level[_l].im1;
@@ -320,7 +378,7 @@ static void fs_calc_structure(fs_ctx *_ctx, int _l) {
   stride = w + 8;
   gy_buf = gx_buf + 8 * stride;
   memset(gx_buf, 0, 2 * 8 * stride * sizeof(*gx_buf));
-  c2 = SSIM_C2 * (1 << 4 * _l) * 16 * 104;
+  c2 = ssim_c2 * (1 << 4 * _l) * 16 * 104;
   for (j = 0; j < h + 4; j++) {
     if (j < h - 1) {
       for (i = 0; i < w - 1; i++) {
@@ -423,6 +481,13 @@ static double fs_average(fs_ctx *_ctx, int _l) {
   return pow(ret / (w * h), FS_WEIGHTS[_l]);
 }
 
+static double convert_ssim_db(double _ssim, double _weight) {
+  assert(_weight >= _ssim);
+  if ((_weight - _ssim) < 1e-10)
+    return MAX_SSIM_DB;
+  return 10 * (log10(_weight) - log10(_weight - _ssim));
+}
+
 static double calc_ssim(const unsigned char *_src, int _systride,
                  const unsigned char *_dst, int _dystride, int _w, int _h) {
   fs_ctx ctx;
@@ -432,22 +497,15 @@ static double calc_ssim(const unsigned char *_src, int _systride,
   fs_ctx_init(&ctx, _w, _h, FS_NLEVELS);
   fs_downsample_level0(&ctx, _src, _systride, _dst, _dystride, _w, _h);
   for (l = 0; l < FS_NLEVELS - 1; l++) {
-    fs_calc_structure(&ctx, l);
+    fs_calc_structure(&ctx, l, 8);
     ret *= fs_average(&ctx, l);
     fs_downsample_level(&ctx, l + 1);
   }
-  fs_calc_structure(&ctx, l);
-  fs_apply_luminance(&ctx, l);
+  fs_calc_structure(&ctx, l, 8);
+  fs_apply_luminance(&ctx, l, 8);
   ret *= fs_average(&ctx, l);
   fs_ctx_clear(&ctx);
   return ret;
-}
-
-static double convert_ssim_db(double _ssim, double _weight) {
-  assert(_weight >= _ssim);
-  if ((_weight - _ssim) < 1e-10)
-    return MAX_SSIM_DB;
-  return 10 * (log10(_weight) - log10(_weight - _ssim));
 }
 
 double vpx_calc_fastssim(const YV12_BUFFER_CONFIG *source,
@@ -455,15 +513,12 @@ double vpx_calc_fastssim(const YV12_BUFFER_CONFIG *source,
                          double *ssim_y, double *ssim_u, double *ssim_v) {
   double ssimv;
   vpx_clear_system_state();
-
   *ssim_y = calc_ssim(source->y_buffer, source->y_stride, dest->y_buffer,
                       dest->y_stride, source->y_crop_width,
                       source->y_crop_height);
-
   *ssim_u = calc_ssim(source->u_buffer, source->uv_stride, dest->u_buffer,
                       dest->uv_stride, source->uv_crop_width,
                       source->uv_crop_height);
-
   *ssim_v = calc_ssim(source->v_buffer, source->uv_stride, dest->v_buffer,
                       dest->uv_stride, source->uv_crop_width,
                       source->uv_crop_height);
@@ -471,3 +526,47 @@ double vpx_calc_fastssim(const YV12_BUFFER_CONFIG *source,
 
   return convert_ssim_db(ssimv, 1.0);
 }
+#if CONFIG_VP9_HIGHBITDEPTH
+static double calc_hbd_ssim(const unsigned char *_src, int _systride,
+                            const unsigned char *_dst, int _dystride,
+                            int _w, int _h, int bit_depth) {
+  fs_ctx ctx;
+  double ret;
+  int l;
+  ret = 1;
+  fs_ctx_init(&ctx, _w, _h, FS_NLEVELS);
+  hbd_fs_downsample_level0(&ctx,
+                           CONVERT_TO_SHORTPTR(_src), _systride,
+                           CONVERT_TO_SHORTPTR(_dst), _dystride,
+                           _w, _h);
+  for (l = 0; l < FS_NLEVELS - 1; l++) {
+    fs_calc_structure(&ctx, l, bit_depth);
+    ret *= fs_average(&ctx, l);
+    fs_downsample_level(&ctx, l + 1);
+  }
+  fs_calc_structure(&ctx, l, bit_depth);
+  fs_apply_luminance(&ctx, l, bit_depth);
+  ret *= fs_average(&ctx, l);
+  fs_ctx_clear(&ctx);
+  return ret;
+}
+double vpx_calc_hbd_fastssim(const YV12_BUFFER_CONFIG *source,
+                             const YV12_BUFFER_CONFIG *dest,
+                             double *ssim_y, double *ssim_u, double *ssim_v,
+                             int bit_depth) {
+  double ssimv;
+  vpx_clear_system_state();
+  *ssim_y = calc_hbd_ssim(source->y_buffer, source->y_stride, dest->y_buffer,
+                          dest->y_stride, source->y_crop_width,
+                          source->y_crop_height, bit_depth);
+  *ssim_u = calc_hbd_ssim(source->u_buffer, source->uv_stride, dest->u_buffer,
+                          dest->uv_stride, source->uv_crop_width,
+                          source->uv_crop_height, bit_depth);
+  *ssim_v = calc_hbd_ssim(source->v_buffer, source->uv_stride, dest->v_buffer,
+                          dest->uv_stride, source->uv_crop_width,
+                          source->uv_crop_height, bit_depth);
+  ssimv = (*ssim_y) * .8 + .1 * ((*ssim_u) + (*ssim_v));
+
+  return convert_ssim_db(ssimv, 1.0);
+}
+#endif

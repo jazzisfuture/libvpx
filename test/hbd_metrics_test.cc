@@ -27,11 +27,40 @@ using libvpx_test::ACMRandom;
 namespace {
 
 typedef double (*LBDMetricFunc)(const YV12_BUFFER_CONFIG *source,
-                                const YV12_BUFFER_CONFIG *dest,
-                                double *weight);
+                                const YV12_BUFFER_CONFIG *dest);
 typedef double (*HBDMetricFunc)(const YV12_BUFFER_CONFIG *source,
                                 const YV12_BUFFER_CONFIG *dest,
-                                double *weight, unsigned int bd);
+                                uint32_t bd);
+
+double compute_hbd_fastssim(const YV12_BUFFER_CONFIG *source,
+                            const YV12_BUFFER_CONFIG *dest,
+                            uint32_t bit_depth) {
+  double tempy, tempu, tempv;
+  return vpx_calc_hbd_fastssim(source, dest,
+                               &tempy, &tempu, &tempv, bit_depth);
+}
+
+double compute_fastssim(const YV12_BUFFER_CONFIG *source,
+                        const YV12_BUFFER_CONFIG *dest) {
+  double tempy, tempu, tempv;
+  return vpx_calc_fastssim(source, dest,
+                           &tempy, &tempu, &tempv);
+}
+
+double compute_hbd_vpxssim(const YV12_BUFFER_CONFIG *source,
+                           const YV12_BUFFER_CONFIG *dest,
+                            uint32_t bit_depth) {
+  double ssim, weight;
+  ssim = vpx_highbd_calc_ssim(source, dest, &weight, bit_depth);
+  return 100 * pow(ssim / weight, 8.0);
+}
+
+double compute_vpxssim(const YV12_BUFFER_CONFIG *source,
+  const YV12_BUFFER_CONFIG *dest) {
+  double ssim, weight;
+  ssim = vpx_calc_ssim(source, dest, &weight);
+  return 100 * pow(ssim / weight, 8.0);
+}
 
 class HBDMetricsTestBase {
  public:
@@ -46,7 +75,7 @@ class HBDMetricsTestBase {
     YV12_BUFFER_CONFIG lbd_src, lbd_dst;
     YV12_BUFFER_CONFIG hbd_src, hbd_dst;
     ACMRandom rnd(ACMRandom::DeterministicSeed());
-    double lbd_score, hbd_score, lbd_db, hbd_db, lbd_w, hbd_w;
+    double lbd_db, hbd_db;
 
     memset(&lbd_src, 0, sizeof(lbd_src));
     memset(&lbd_dst, 0, sizeof(lbd_dst));
@@ -69,11 +98,8 @@ class HBDMetricsTestBase {
       i++;
     }
 
-    lbd_score = lbd_metric_(&lbd_src, &lbd_dst, &lbd_w);
-    hbd_score = hbd_metric_(&hbd_src, &hbd_dst, &hbd_w, bit_depth_);
-
-    lbd_db = 100 * pow(lbd_score / lbd_w, 8.0);
-    hbd_db = 100 * pow(hbd_score / hbd_w, 8.0);
+    lbd_db = lbd_metric_(&lbd_src, &lbd_dst);
+    hbd_db = hbd_metric_(&hbd_src, &hbd_dst, bit_depth_);
 
     vpx_free_frame_buffer(&lbd_src);
     vpx_free_frame_buffer(&lbd_dst);
@@ -106,9 +132,17 @@ TEST_P(HBDMetricsTest, RunAccuracyCheck) {
 }
 
 INSTANTIATE_TEST_CASE_P(
-    C, HBDMetricsTest,
+    VPXSSIM, HBDMetricsTest,
     ::testing::Values(
-        MetricTestTParam(&vpx_calc_ssim, &vpx_highbd_calc_ssim, 10),
-        MetricTestTParam(&vpx_calc_ssim, &vpx_highbd_calc_ssim, 12)));
+        MetricTestTParam(&compute_vpxssim, &compute_hbd_vpxssim, 10),
+        MetricTestTParam(&compute_vpxssim, &compute_hbd_vpxssim, 12)));
+
+#if 0
+INSTANTIATE_TEST_CASE_P(
+    FASTSSIM, HBDMetricsTest,
+    ::testing::Values(
+        MetricTestTParam(&compute_fastssim, &compute_hbd_fastssim, 10),
+        MetricTestTParam(&compute_fastssim, &compute_hbd_fastssim, 12)));
+#endif
 }  // namespace
 

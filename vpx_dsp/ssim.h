@@ -79,6 +79,11 @@ double vpx_psnrhvs(const YV12_BUFFER_CONFIG *source,
                    double *ssim_y, double *ssim_u, double *ssim_v);
 
 #if CONFIG_VP9_HIGHBITDEPTH
+double vpx_calc_hbd_fastssim(const YV12_BUFFER_CONFIG *source,
+                            const YV12_BUFFER_CONFIG *dest,
+                            double *ssim_y, double *ssim_u, double *ssim_v,
+                            int bit_depth);
+
 double vpx_highbd_calc_ssim(const YV12_BUFFER_CONFIG *source,
                             const YV12_BUFFER_CONFIG *dest,
                             double *weight,
