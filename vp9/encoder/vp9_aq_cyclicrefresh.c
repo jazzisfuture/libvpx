@@ -59,7 +59,10 @@ void vp9_cyclic_refresh_free(CYCLIC_REFRESH *cr) {
   vpx_free(cr);
 }
 
+#if 0
 // Check if we should turn off cyclic refresh based on bitrate condition.
+// TODO(marpan): Look into whether we should reduce the amount/delta-qp
+// instead of completely shutting off at low bitrates. For now keep it on.
 static int apply_cyclic_refresh_bitrate(const VP9_COMMON *cm,
                                         const RATE_CONTROL *rc) {
   // Turn off cyclic refresh if bits available per frame is not sufficiently
@@ -79,6 +82,7 @@ static int apply_cyclic_refresh_bitrate(const VP9_COMMON *cm,
   else
     return 1;
 }
+#endif
 
 // Check if this coding block, of size bsize, should be considered for refresh
 // (lower-qp coding). Decision can be based on various factors, such as
