@@ -3755,7 +3755,7 @@ static int check_dual_ref_flags(VP10_COMP *cpi) {
   }
 }
 
-static void reset_skip_tx_size(VP10_COMMON *cm, TX_SIZE max_tx_size) {
+static INLINE void reset_skip_tx_size(VP10_COMMON *cm, TX_SIZE max_tx_size) {
   int mi_row, mi_col;
   const int mis = cm->mi_stride;
   MODE_INFO **mi_ptr = cm->mi_grid_visible;
