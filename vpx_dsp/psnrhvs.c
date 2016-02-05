@@ -234,3 +234,173 @@ double vpx_psnrhvs(const YV12_BUFFER_CONFIG *source,
 
   return convert_score_db(psnrhvs, 1.0);
 }
+
+#if CONFIG_VP9_HIGHBITDEPTH
+static void hbd_od_bin_fdct8x8(tran_low_t *y, int ystride, const int16_t *x,
+                           int xstride) {
+  int i, j;
+  (void) xstride;
+  vpx_highbd_fdct8x8(x, y, ystride);
+  for (i = 0; i < 8; i++)
+    for (j = 0; j< 8; j++)
+      *(y + ystride*i + j) = (*(y + ystride*i + j) + 4) >> 3;
+}
+
+static double convert_hbd_score_db(double _score, double _weight,
+                                   int bit_depth) {
+  int16_t pix_max;
+  assert(_score * _weight >= 0.0);
+  if (bit_depth == 10)
+    pix_max = 1023;
+  else if (bit_depth == 12)
+    pix_max = 4095;
+  else
+    assert(0);
+
+  if (_weight * _score < pix_max * pix_max * 1e-10)
+    return MAX_PSNR;
+  return 10 * (log10(pix_max * pix_max) - log10(_weight * _score));
+}
+
+static double calc_hbd_psnrhvs(const unsigned char *src, int _systride,
+                               const unsigned char *dst, int _dystride,
+                               double _par, int _w, int _h, int _step,
+                               const float _csf[8][8], int bit_depth) {
+  float ret;
+  const uint16_t *_src = CONVERT_TO_SHORTPTR(src);
+  const uint16_t *_dst = CONVERT_TO_SHORTPTR(dst);
+  int16_t dct_s[8 * 8], dct_d[8 * 8];
+  tran_low_t dct_s_coef[8 * 8], dct_d_coef[8 * 8];
+  float mask[8][8];
+  int pixels;
+  int x;
+  int y;
+  (void) _par;
+  ret = pixels = 0;
+
+  /*In the PSNR-HVS-M paper[1] the authors describe the construction of
+   their masking table as "we have used the quantization table for the
+   color component Y of JPEG [6] that has been also obtained on the
+   basis of CSF. Note that the values in quantization table JPEG have
+   been normalized and then squared." Their CSF matrix (from PSNR-HVS)
+   was also constructed from the JPEG matrices. I can not find any obvious
+   scheme of normalizing to produce their table, but if I multiply their
+   CSF by 0.38857 and square the result I get their masking table.
+   I have no idea where this constant comes from, but deviating from it
+   too greatly hurts MOS agreement.
+
+   [1] Nikolay Ponomarenko, Flavia Silvestri, Karen Egiazarian, Marco Carli,
+   Jaakko Astola, Vladimir Lukin, "On between-coefficient contrast masking
+   of DCT basis functions", CD-ROM Proceedings of the Third
+   International Workshop on Video Processing and Quality Metrics for Consumer
+   Electronics VPQM-07, Scottsdale, Arizona, USA, 25-26 January, 2007, 4 p.*/
+  for (x = 0; x < 8; x++)
+    for (y = 0; y < 8; y++)
+      mask[x][y] = (_csf[x][y] * 0.3885746225901003)
+          * (_csf[x][y] * 0.3885746225901003);
+  for (y = 0; y < _h - 7; y += _step) {
+    for (x = 0; x < _w - 7; x += _step) {
+      int i;
+      int j;
+      float s_means[4];
+      float d_means[4];
+      float s_vars[4];
+      float d_vars[4];
+      float s_gmean = 0;
+      float d_gmean = 0;
+      float s_gvar = 0;
+      float d_gvar = 0;
+      float s_mask = 0;
+      float d_mask = 0;
+      for (i = 0; i < 4; i++)
+        s_means[i] = d_means[i] = s_vars[i] = d_vars[i] = 0;
+      for (i = 0; i < 8; i++) {
+        for (j = 0; j < 8; j++) {
+          int sub = ((i & 12) >> 2) + ((j & 12) >> 1);
+          dct_s[i * 8 + j] = _src[(y + i) * _systride + (j + x)];
+          dct_d[i * 8 + j] = _dst[(y + i) * _dystride + (j + x)];
+          s_gmean += dct_s[i * 8 + j];
+          d_gmean += dct_d[i * 8 + j];
+          s_means[sub] += dct_s[i * 8 + j];
+          d_means[sub] += dct_d[i * 8 + j];
+        }
+      }
+      s_gmean /= 64.f;
+      d_gmean /= 64.f;
+      for (i = 0; i < 4; i++)
+        s_means[i] /= 16.f;
+      for (i = 0; i < 4; i++)
+        d_means[i] /= 16.f;
+      for (i = 0; i < 8; i++) {
+        for (j = 0; j < 8; j++) {
+          int sub = ((i & 12) >> 2) + ((j & 12) >> 1);
+          s_gvar += (dct_s[i * 8 + j] - s_gmean) * (dct_s[i * 8 + j] - s_gmean);
+          d_gvar += (dct_d[i * 8 + j] - d_gmean) * (dct_d[i * 8 + j] - d_gmean);
+          s_vars[sub] += (dct_s[i * 8 + j] - s_means[sub])
+              * (dct_s[i * 8 + j] - s_means[sub]);
+          d_vars[sub] += (dct_d[i * 8 + j] - d_means[sub])
+              * (dct_d[i * 8 + j] - d_means[sub]);
+        }
+      }
+      s_gvar *= 1 / 63.f * 64;
+      d_gvar *= 1 / 63.f * 64;
+      for (i = 0; i < 4; i++)
+        s_vars[i] *= 1 / 15.f * 16;
+      for (i = 0; i < 4; i++)
+        d_vars[i] *= 1 / 15.f * 16;
+      if (s_gvar > 0)
+        s_gvar = (s_vars[0] + s_vars[1] + s_vars[2] + s_vars[3]) / s_gvar;
+      if (d_gvar > 0)
+        d_gvar = (d_vars[0] + d_vars[1] + d_vars[2] + d_vars[3]) / d_gvar;
+      hbd_od_bin_fdct8x8(dct_s_coef, 8, dct_s, 8);
+      hbd_od_bin_fdct8x8(dct_d_coef, 8, dct_d, 8);
+      for (i = 0; i < 8; i++)
+        for (j = (i == 0); j < 8; j++)
+          s_mask += dct_s_coef[i * 8 + j] * dct_s_coef[i * 8 + j] * mask[i][j];
+      for (i = 0; i < 8; i++)
+        for (j = (i == 0); j < 8; j++)
+          d_mask += dct_d_coef[i * 8 + j] * dct_d_coef[i * 8 + j] * mask[i][j];
+      s_mask = sqrt(s_mask * s_gvar) / 32.f;
+      d_mask = sqrt(d_mask * d_gvar) / 32.f;
+      if (d_mask > s_mask)
+        s_mask = d_mask;
+      for (i = 0; i < 8; i++) {
+        for (j = 0; j < 8; j++) {
+          float err;
+          err = fabs((float)(dct_s_coef[i * 8 + j] - dct_d_coef[i * 8 + j]));
+          if (i != 0 || j != 0)
+            err = err < s_mask / mask[i][j] ? 0 : err - s_mask / mask[i][j];
+          ret += (err * _csf[i][j]) * (err * _csf[i][j]);
+          pixels++;
+        }
+      }
+    }
+  }
+  ret /= pixels;
+  return ret;
+}
+double vpx_hbd_psnrhvs(const YV12_BUFFER_CONFIG *source,
+                       const YV12_BUFFER_CONFIG *dest, double *y_psnrhvs,
+                       double *u_psnrhvs, double *v_psnrhvs, int bit_depth) {
+  double psnrhvs;
+  const double par = 1.0;
+  const int step = 7;
+  vpx_clear_system_state();
+  assert(bit_depth > 8);
+  *y_psnrhvs = calc_hbd_psnrhvs(source->y_buffer, source->y_stride,
+                                dest->y_buffer, dest->y_stride, par,
+                                source->y_crop_width, source->y_crop_height,
+                                step, csf_y, bit_depth);
+  *u_psnrhvs = calc_hbd_psnrhvs(source->u_buffer, source->uv_stride,
+                                dest->u_buffer, dest->uv_stride, par,
+                                source->uv_crop_width, source->uv_crop_height,
+                                step, csf_cb420, bit_depth);
+  *v_psnrhvs = calc_hbd_psnrhvs(source->v_buffer, source->uv_stride,
+                                dest->v_buffer, dest->uv_stride, par,
+                                source->uv_crop_width, source->uv_crop_height,
+                                step, csf_cr420, bit_depth);
+
+  psnrhvs = (*y_psnrhvs) * .8 + .1 * ((*u_psnrhvs) + (*v_psnrhvs));
+  return convert_hbd_score_db(psnrhvs, 1.0, bit_depth);
+}
+#endif
