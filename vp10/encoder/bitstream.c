@@ -159,6 +159,25 @@ static void write_drl_idx(const VP10_COMMON *cm,
                           const MB_MODE_INFO_EXT *mbmi_ext,
                           vpx_writer *w) {
   uint8_t ref_frame_type = vp10_ref_frame_type(mbmi->ref_frame);
+
+  assert(mbmi->ref_mv_idx < 3);
+
+  if (mbmi_ext->ref_mv_count[ref_frame_type] > 1 && mbmi->mode == NEWMV) {
+    vpx_write_bit(w, mbmi->ref_mv_idx != 0);
+    if (mbmi->ref_mv_idx == 0)
+      return;
+
+    if (mbmi_ext->ref_mv_count[ref_frame_type] > 2) {
+      vpx_write_bit(w, mbmi->ref_mv_idx != 1);
+      if (mbmi->ref_mv_idx == 1)
+        return;
+
+//      if (mbmi_ext->ref_mv_count[ref_frame_type] > 3)
+//        vpx_write_bit(w, mbmi->ref_mv_idx != 2);
+    }
+    return;
+  }
+
   if (mbmi_ext->ref_mv_count[ref_frame_type] > 2) {
     uint8_t drl0_ctx =
         vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 1);
@@ -812,7 +831,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       if (bsize >= BLOCK_8X8) {
         write_inter_mode(cm, w, mode, mode_ctx);
 #if CONFIG_REF_MV
-        if (mode == NEARMV)
+        if (mode == NEARMV || mode == NEWMV)
           write_drl_idx(cm, mbmi, mbmi_ext, w);
 #endif
       }
@@ -845,10 +864,27 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       }
     } else {
       if (mode == NEWMV) {
-        for (ref = 0; ref < 1 + is_compound; ++ref)
+        int_mv ref_mv;
+#if CONFIG_REF_MV
+        uint8_t ref_frame_type = vp10_ref_frame_type(mbmi->ref_frame);
+#endif
+        for (ref = 0; ref < 1 + is_compound; ++ref) {
+          ref_mv = mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0];
+#if CONFIG_REF_MV
+          if (mbmi_ext->ref_mv_count[ref_frame_type] > 1) {
+            ref_mv = (ref == 0) ?
+                mbmi_ext->ref_mv_stack[ref_frame_type]
+                                      [mbmi->ref_mv_idx].this_mv :
+                mbmi_ext->ref_mv_stack[ref_frame_type]
+                                      [mbmi->ref_mv_idx].comp_mv;
+            clamp_mv_ref(&ref_mv.as_mv, xd->n8_w << 3, xd->n8_h << 3, xd);
+            lower_mv_precision(&ref_mv.as_mv, allow_hp);
+          }
+#endif
+
           vp10_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
-                        &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
-                        allow_hp);
+                         &ref_mv.as_mv, nmvc, allow_hp);
+        }
       }
     }
 #if CONFIG_EXT_INTERP
