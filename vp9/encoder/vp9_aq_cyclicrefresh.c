@@ -60,10 +60,11 @@ void vp9_cyclic_refresh_free(CYCLIC_REFRESH *cr) {
 }
 
 // Check if we should turn off cyclic refresh based on bitrate condition.
-// TODO(marpan): May be better in some cases to just reduce the amount/delta-qp
-// instead of completely shutting off.
 static int apply_cyclic_refresh_bitrate(const VP9_COMMON *cm,
                                         const RATE_CONTROL *rc) {
+  // TODO(marpan): Look into whether we should reduce the amount/delta-qp
+  // instead of completely shutting off at low bitrates. For now keep it on.
+  return 1;
   // Turn off cyclic refresh if bits available per frame is not sufficiently
   // larger than bit cost of segmentation. Segment map bit cost should scale
   // with number of seg blocks, so compare available bits to number of blocks.
