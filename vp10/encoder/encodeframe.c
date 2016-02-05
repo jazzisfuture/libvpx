@@ -3754,7 +3754,7 @@ static int check_dual_ref_flags(VP10_COMP *cpi) {
             !!(ref_flags & VP9_ALT_FLAG)) >= 2;
   }
 }
-
+#if !CONFIG_VAR_TX
 static void reset_skip_tx_size(VP10_COMMON *cm, TX_SIZE max_tx_size) {
   int mi_row, mi_col;
   const int mis = cm->mi_stride;
@@ -3767,7 +3767,7 @@ static void reset_skip_tx_size(VP10_COMMON *cm, TX_SIZE max_tx_size) {
     }
   }
 }
-
+#endif
 static MV_REFERENCE_FRAME get_frame_type(const VP10_COMP *cpi) {
   if (frame_is_intra_only(&cpi->common))
     return INTRA_FRAME;
