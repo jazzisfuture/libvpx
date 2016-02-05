@@ -5565,7 +5565,24 @@ void vp10_rd_pick_intra_mode_sb(VP10_COMP *cpi, MACROBLOCK *x,
                           max_uv_tx_size);
 
   if (y_skip && uv_skip) {
+    int rate_tx_size = 0;
+    if (bsize >= BLOCK_8X8) {
+      // rate_y_tokenonly includes the cost of the transform size, but for
+      // intra blocks that is coded even if the transform is skipped
+      // (prediction granularity), so we recompute the cost here and add
+      // it back again.
+      const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
+      const vpx_prob *tx_probs =
+          get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
+      const TX_SIZE tx_size = xd->mi[0]->mbmi.tx_size;
+      int ii;
+      for (ii = 0; ii < tx_size; ++ii) {
+        rate_tx_size += vp10_cost_one(tx_probs[ii]);
+      }
+      rate_tx_size += vp10_cost_zero(tx_probs[tx_size]);
+    }
     rd_cost->rate = rate_y + rate_uv - rate_y_tokenonly - rate_uv_tokenonly +
+                    rate_tx_size +
                     vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1);
     rd_cost->dist = dist_y + dist_uv;
   } else {
