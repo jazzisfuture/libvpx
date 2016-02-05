@@ -43,6 +43,17 @@ typedef uint8_t INTERP_FILTER;
 
 extern const InterpKernel *vp10_filter_kernels[SWITCHABLE_FILTERS + 1];
 
+typedef struct InterpFilterSet {
+  int16_t* filter_ptr;
+  uint16_t tap;
+  uint16_t subpel_shifts;
+} InterpFilterSet;
+
+InterpFilterSet vp10_get_interp_filter_set(const INTERP_FILTER interp_filter);
+static INLINE int16_t* vp10_get_interp_filter(const InterpFilterSet filter_set,
+                                       const int subpel) {
+  return filter_set.filter_ptr + filter_set.tap * subpel;
+}
 #ifdef __cplusplus
 }  // extern "C"
 #endif
