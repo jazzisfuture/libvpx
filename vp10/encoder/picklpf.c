@@ -35,41 +35,6 @@ static int get_max_filter_level(const VP10_COMP *cpi) {
 }
 
 
-static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
-                                VP10_COMP *const cpi,
-                                int filt_level, int partial_frame) {
-  VP10_COMMON *const cm = &cpi->common;
-  int64_t filt_err;
-
-#if CONFIG_VAR_TX
-  vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
-                         1, partial_frame);
-#else
-  if (cpi->num_workers > 1)
-    vp10_loop_filter_frame_mt(cm->frame_to_show, cm, cpi->td.mb.e_mbd.plane,
-                              filt_level, 1, partial_frame,
-                              cpi->workers, cpi->num_workers,
-                              &cpi->lf_row_sync);
-  else
-    vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
-                           1, partial_frame);
-#endif
-
-#if CONFIG_VP9_HIGHBITDEPTH
-  if (cm->use_highbitdepth) {
-    filt_err = vp10_highbd_get_y_sse(sd, cm->frame_to_show);
-  } else {
-    filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
-  }
-#else
-  filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-
-  // Re-instate the unfiltered frame
-  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
-
-  return filt_err;
-}
 
 #if CONFIG_LOOP_RESTORATION
 #define JOINT_FILTER_RESTORATION_SEARCH
@@ -242,6 +207,44 @@ static int search_filter_restoration_level(const YV12_BUFFER_CONFIG *sd,
 #endif  // JOINT_FILTER_RESTORATION_SEARCH
 #endif  // CONFIG_LOOP_RESTORATION
 
+#if !CONFIG_LOOP_RESTORATION
+#if !JOINT_FILTER_RESTORATION_SEARCH
+static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
+                                VP10_COMP *const cpi,
+                                int filt_level, int partial_frame) {
+  VP10_COMMON *const cm = &cpi->common;
+  int64_t filt_err;
+
+#if CONFIG_VAR_TX
+  vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
+                         1, partial_frame);
+#else
+  if (cpi->num_workers > 1)
+    vp10_loop_filter_frame_mt(cm->frame_to_show, cm, cpi->td.mb.e_mbd.plane,
+                              filt_level, 1, partial_frame,
+                              cpi->workers, cpi->num_workers,
+                              &cpi->lf_row_sync);
+  else
+    vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
+                           1, partial_frame);
+#endif
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (cm->use_highbitdepth) {
+    filt_err = vp10_highbd_get_y_sse(sd, cm->frame_to_show);
+  } else {
+    filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
+  }
+#else
+  filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  // Re-instate the unfiltered frame
+  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+
+  return filt_err;
+}
+
 static int search_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
                                int partial_frame) {
   const VP10_COMMON *const cm = &cpi->common;
@@ -323,6 +326,8 @@ static int search_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
 
   return filt_best;
 }
+#endif
+#endif
 
 void vp10_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
                            LPF_PICK_METHOD method) {

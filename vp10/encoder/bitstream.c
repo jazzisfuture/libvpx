@@ -118,7 +118,7 @@ void vp10_encode_token_init() {
 #endif  // CONFIG_EXT_INTRA
 }
 
-#if CONFIG_SUPERTX
+#if CONFIG_SUPERTX && 0
 static int vp10_check_supertx(VP10_COMMON *cm, int mi_row, int mi_col,
                               BLOCK_SIZE bsize) {
   MODE_INFO *mi;
