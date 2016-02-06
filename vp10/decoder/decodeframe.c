@@ -863,6 +863,7 @@ static void dec_build_inter_predictors_sb(VP10Decoder *const pbi,
   }
 }
 
+#if CONFIG_SUPERTX
 static void dec_build_inter_predictors_sb_sub8x8(VP10Decoder *const pbi,
                                                  MACROBLOCKD *xd,
                                                  int mi_row, int mi_col,
@@ -905,6 +906,7 @@ static void dec_build_inter_predictors_sb_sub8x8(VP10Decoder *const pbi,
     }
   }
 }
+#endif  // CONFIG_SUPERTX
 
 static INLINE TX_SIZE dec_get_uv_tx_size(const MB_MODE_INFO *mbmi,
                                          int n4_wl, int n4_hl) {
