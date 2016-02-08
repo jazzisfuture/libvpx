@@ -1747,6 +1747,13 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP10_COMP *cpi, MACROBLOCK *mb,
     }
   }
 
+  // Add in the cost of the transform type
+  if (!xd->lossless[xd->mi[0]->mbmi.segment_id]) {
+    tot_rate_y += cpi->intra_tx_type_costs[xd->mi[0]->mbmi.tx_size]
+          [intra_mode_to_tx_type_context[xd->mi[0]->mbmi.mode]]
+          [xd->mi[0]->mbmi.tx_type];
+  }
+
   *rate = cost;
   *rate_y = tot_rate_y;
   *distortion = total_distortion;
