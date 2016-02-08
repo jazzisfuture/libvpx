@@ -745,9 +745,7 @@ static INLINE INTERP_FILTER read_switchable_interp_filter(
   const int ctx = vp10_get_pred_context_switchable_interp(xd);
   FRAME_COUNTS *counts = xd->counts;
   INTERP_FILTER type;
-#if CONFIG_EXT_INTERP
   if (!vp10_is_interp_needed(xd)) return EIGHTTAP;
-#endif
   type = (INTERP_FILTER)vpx_read_tree(r, vp10_switchable_interp_tree,
                                       cm->fc->switchable_interp_prob[ctx]);
   if (counts)
@@ -1152,12 +1150,6 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   }
 #endif
 
-#if !CONFIG_EXT_INTERP
-  mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
-                        ? read_switchable_interp_filter(cm, xd, r)
-                        : cm->interp_filter;
-#endif  // !CONFIG_EXT_INTERP
-
   if (bsize < BLOCK_8X8) {
     const int num_4x4_w = 1 << xd->bmode_blocks_wl;
     const int num_4x4_h = 1 << xd->bmode_blocks_hl;
@@ -1257,11 +1249,9 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
 #endif  // CONFIG_EXT_INTER
                                 nearestmv, nearmv, is_compound, allow_hp, r);
   }
-#if CONFIG_EXT_INTERP
   mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
                         ? read_switchable_interp_filter(cm, xd, r)
                         : cm->interp_filter;
-#endif  // CONFIG_EXT_INTERP
 }
 
 static void read_inter_frame_mode_info(VP10Decoder *const pbi,

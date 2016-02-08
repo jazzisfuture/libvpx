@@ -1179,9 +1179,7 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
     if (is_inter_block(mbmi)) {
       vp10_update_mv_count(td);
       if (cm->interp_filter == SWITCHABLE
-#if CONFIG_EXT_INTERP
           && vp10_is_interp_needed(xd)
-#endif
           ) {
         const int ctx = vp10_get_pred_context_switchable_interp(xd);
         ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
@@ -1298,9 +1296,7 @@ static void update_state_supertx(VP10_COMP *cpi, ThreadData *td,
     vp10_update_mv_count(td);
 
     if (cm->interp_filter == SWITCHABLE
-#if CONFIG_EXT_INTERP
         && vp10_is_interp_needed(xd)
-#endif
         ) {
       const int ctx = vp10_get_pred_context_switchable_interp(xd);
       ++td->counts->switchable_interp[ctx][mbmi->interp_filter];

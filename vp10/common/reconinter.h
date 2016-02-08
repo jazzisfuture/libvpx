@@ -258,7 +258,6 @@ void vp10_setup_pre_planes(MACROBLOCKD *xd, int idx,
                           const YV12_BUFFER_CONFIG *src, int mi_row, int mi_col,
                           const struct scale_factors *sf);
 
-#if CONFIG_EXT_INTERP
 static INLINE int vp10_is_interp_needed(const MACROBLOCKD *const xd) {
   MODE_INFO *const mi = xd->mi[0];
   MB_MODE_INFO *const mbmi = &mi->mbmi;
@@ -285,7 +284,7 @@ static INLINE int vp10_is_interp_needed(const MACROBLOCKD *const xd) {
     return 1;
 
   if (bsize == BLOCK_4X4) {
-    for (plane = 0; plane < 2; ++plane) {
+    for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
       const struct macroblockd_plane *const pd = &xd->plane[plane];
       MV mv0 = average_split_mvs(pd, mi, 0, 0);
       MV mv1 = average_split_mvs(pd, mi, 0, 1);
@@ -310,7 +309,7 @@ static INLINE int vp10_is_interp_needed(const MACROBLOCKD *const xd) {
       if (!intpel_mv) break;
     }
   } else if (bsize == BLOCK_4X8) {
-    for (plane = 0; plane < 2; ++plane) {
+    for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
       const struct macroblockd_plane *const pd = &xd->plane[plane];
       MV mv0 = average_split_mvs(pd, mi, 0, 0);
       MV mv1 = average_split_mvs(pd, mi, 0, 1);
@@ -327,7 +326,7 @@ static INLINE int vp10_is_interp_needed(const MACROBLOCKD *const xd) {
       if (!intpel_mv) break;
     }
   } else if (bsize == BLOCK_8X4) {
-    for (plane = 0; plane < 2; ++plane) {
+    for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
       const struct macroblockd_plane *const pd = &xd->plane[plane];
       MV mv0 = average_split_mvs(pd, mi, 0, 0);
       MV mv1 = average_split_mvs(pd, mi, 0, 2);
@@ -351,7 +350,6 @@ static INLINE int vp10_is_interp_needed(const MACROBLOCKD *const xd) {
   }
   return !intpel_mv;
 }
-#endif  // CONFIG_EXT_INTERP
 #ifdef __cplusplus
 }  // extern "C"
 #endif

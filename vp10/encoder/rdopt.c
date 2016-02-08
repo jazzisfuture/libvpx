@@ -5285,10 +5285,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   if (cm->interp_filter != BILINEAR) {
     if (x->source_variance < cpi->sf.disable_filter_search_var_thresh) {
       best_filter = EIGHTTAP;
-#if CONFIG_EXT_INTERP
     } else if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE) {
       best_filter = EIGHTTAP;
-#endif
     } else if (best_filter == SWITCHABLE) {
       int newbest;
       int tmp_rate_sum = 0;
@@ -6937,9 +6935,7 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
   if (cm->interp_filter != BILINEAR) {
     best_filter = EIGHTTAP;
     if (cm->interp_filter == SWITCHABLE &&
-#if CONFIG_EXT_INTERP
         vp10_is_interp_needed(xd) &&
-#endif  // CONFIG_EXT_INTERP
         x->source_variance >= cpi->sf.disable_filter_search_var_thresh) {
       int rs;
       int best_rs = INT_MAX;
@@ -7383,11 +7379,9 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
 #endif  // CONFIG_EXT_INTER
                                               bsi, switchable_filter_index,
                                               mi_row, mi_col);
-#if CONFIG_EXT_INTERP
             if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
                 mbmi->interp_filter != EIGHTTAP)  // invalid configuration
               continue;
-#endif  // CONFIG_EXT_INTERP
             if (tmp_rd == INT64_MAX)
               continue;
             rs = vp10_get_switchable_rate(cpi, xd);
@@ -7455,7 +7449,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
 #endif  // CONFIG_EXT_INTER
                                           bsi, 0,
                                           mi_row, mi_col);
-#if CONFIG_EXT_INTERP
         if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
             mbmi->interp_filter != EIGHTTAP) {
           mbmi->interp_filter = EIGHTTAP;
@@ -7470,7 +7463,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
                    bsi, 0,
                    mi_row, mi_col);
         }
-#endif  // CONFIG_EXT_INTERP
         if (tmp_rd == INT64_MAX)
           continue;
       } else {
