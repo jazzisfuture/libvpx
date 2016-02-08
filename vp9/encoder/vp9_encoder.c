@@ -1525,6 +1525,8 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   if (last_w != cpi->oxcf.width || last_h != cpi->oxcf.height) {
     cm->width = cpi->oxcf.width;
     cm->height = cpi->oxcf.height;
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
+      vp9_cyclic_refresh_reset_resize(cpi);
   }
 
   if (cpi->initial_width) {

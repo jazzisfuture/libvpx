@@ -101,6 +101,24 @@ unsigned int ScaleForFrameNumber(unsigned int frame, unsigned int val) {
     return val / 4;
   if (frame < 50)
     return val * 7 / 8;
+  if (frame < 60)
+    return val;
+  if (frame < 70)
+    return val * 3 / 4;
+  if (frame < 80)
+    return val / 2;
+  if (frame < 90)
+    return val * 3 / 4;
+  if (frame < 100)
+    return val;
+  if (frame < 120)
+    return val * 3 / 4;
+  if (frame < 140)
+    return val / 2;
+  if (frame < 160)
+    return val * 3 / 4;
+  if (frame < 180)
+    return val;
   return val;
 }
 
@@ -108,7 +126,7 @@ class ResizingVideoSource : public ::libvpx_test::DummyVideoSource {
  public:
   ResizingVideoSource() {
     SetSize(kInitialWidth, kInitialHeight);
-    limit_ = 60;
+    limit_ = 200;
   }
 
   virtual ~ResizingVideoSource() {}
