@@ -1240,14 +1240,14 @@ void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in, int bhl_in,
           dst16[r * dst_stride + c] =
               palette[map[(r + y) * stride + c + x]];
     } else {
-#endif  // CONFIG_VP9_HIGHBITDEPTH
       for (r = 0; r < bs; ++r)
         for (c = 0; c < bs; ++c)
           dst[r * dst_stride + c] = palette[map[(r + y) * stride + c + x]];
-#if CONFIG_VP9_HIGHBITDEPTH
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-
+    for (r = 0; r < bs; ++r)
+      for (c = 0; c < bs; ++c)
+        dst[r * dst_stride + c] = palette[map[(r + y) * stride + c + x]];
     return;
   }
 
