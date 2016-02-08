@@ -1747,6 +1747,15 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP10_COMP *cpi, MACROBLOCK *mb,
     }
   }
 
+  // Add in the cost of the transform type
+  if (!xd->lossless[xd->mi[0]->mbmi.segment_id]) {
+    const int rate_tx_type = cpi->intra_tx_type_costs[xd->mi[0]->mbmi.tx_size]
+          [intra_mode_to_tx_type_context[xd->mi[0]->mbmi.mode]]
+          [xd->mi[0]->mbmi.tx_type];
+    cost += rate_tx_type;
+    tot_rate_y += rate_tx_type;
+  }
+
   *rate = cost;
   *rate_y = tot_rate_y;
   *distortion = total_distortion;
@@ -7504,6 +7513,14 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
         *mbmi = tmp_best_mbmode;
         for (i = 0; i < 4; i++)
           xd->mi[0]->bmi[i] = tmp_best_bmodes[i];
+      }
+
+      // Add in the cost of the transform type
+      if (!xd->lossless[mbmi->segment_id]) {
+        const int rate_tx_type =
+            cpi->inter_tx_type_costs[mbmi->tx_size][xd->mi[0]->mbmi.tx_type];
+        rate += rate_tx_type;
+        rate_y += rate_tx_type;
       }
 
       rate2 += rate;
