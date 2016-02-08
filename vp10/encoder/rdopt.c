@@ -5864,6 +5864,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   const int mode_search_skip_flags = sf->mode_search_skip_flags;
   int64_t mask_filter = 0;
   int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
+  const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
+  const vpx_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
 
   vp10_zero(best_mbmode);
 
@@ -6351,6 +6353,15 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #endif  // CONFIG_EXT_INTRA
 
       rate2 = rate_y + intra_mode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
+
+      if (!xd->lossless[0]) {
+        // super_block_yrd above includes the cost of the tx_size in the
+        // tokenonly rate, but for intra blocks, tx_size is always coded
+        // (prediction granularity), so we account for it in the full rate,
+        // not the tokenonly rate.
+        rate_y -= vp10_cost_tx_size(mbmi->tx_size, max_tx_size, tx_probs);
+      }
+
 #if CONFIG_EXT_INTRA
       if (is_directional_mode) {
         int p_angle;
