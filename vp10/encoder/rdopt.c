@@ -1028,6 +1028,21 @@ static void choose_smallest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
 }
 
+static INLINE int vp10_cost_tx_size(TX_SIZE tx_size, TX_SIZE max_tx_size,
+                                    const vpx_prob *tx_probs) {
+  int ii;
+  int r_tx_size = 0;
+
+  for (ii = 0; ii <= tx_size - (tx_size == max_tx_size); ++ii) {
+    if (ii == tx_size)
+      r_tx_size += vp10_cost_zero(tx_probs[ii]);
+    else
+      r_tx_size += vp10_cost_one(tx_probs[ii]);
+  }
+
+  return r_tx_size;
+}
+
 static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
                                    int *rate,
                                    int64_t *distortion,
@@ -1078,13 +1093,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   for (tx_type = DCT_DCT; tx_type < TX_TYPES; ++tx_type) {
     last_rd = INT64_MAX;
     for (n = start_tx; n >= end_tx; --n) {
-      int r_tx_size = 0;
-      for (m = 0; m <= n - (n == (int) max_tx_size); ++m) {
-        if (m == n)
-          r_tx_size += vp10_cost_zero(tx_probs[m]);
-        else
-          r_tx_size += vp10_cost_one(tx_probs[m]);
-      }
+      const int r_tx_size = vp10_cost_tx_size(n, max_tx_size, tx_probs);
 
 #if CONFIG_EXT_TX
       ext_tx_set = get_ext_tx_set(n, bs, is_inter);
@@ -1737,6 +1746,15 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP10_COMP *cpi, MACROBLOCK *mb,
         return INT64_MAX;
     }
   }
+  // Add in the cost of the transform type
+  if (!xd->lossless[mic->mbmi.segment_id]) {
+    const int rate_tx_type = cpi->intra_tx_type_costs[TX_4X4]
+        [intra_mode_to_tx_type_context[mic->mbmi.mode]]
+        [mic->mbmi.tx_type];
+    assert(mic->mbmi.tx_size == TX_4X4);
+    cost += rate_tx_type;
+    tot_rate_y += rate_tx_type;
+  }
 
   *rate = cost;
   *rate_y = tot_rate_y;
@@ -2117,6 +2135,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   const MODE_INFO *left_mi = xd->left_mi;
   const PREDICTION_MODE A = vp10_above_block_mode(mic, above_mi, 0);
   const PREDICTION_MODE L = vp10_left_block_mode(mic, left_mi, 0);
+  const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
+  const vpx_prob *tx_probs = get_tx_probs2(max_tx_size, xd,
+                                           &cpi->common.fc->tx_probs);
   bmode_costs = cpi->y_mode_costs[A][L];
 
 #if CONFIG_EXT_INTRA
@@ -2187,6 +2208,14 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
       continue;
 
     this_rate = this_rate_tokenonly + bmode_costs[mode];
+    if (!xd->lossless[0]) {
+      // super_block_yrd above includes the cost of the tx_size in the
+      // tokenonly rate, but for intra blocks, tx_size is always coded
+      // (prediction granularity), so we account for it in the full rate,
+      // not the tokenonly rate.
+      this_rate_tokenonly -= vp10_cost_tx_size(mic->mbmi.tx_size, max_tx_size,
+                                               tx_probs);
+    }
     if (cpi->common.allow_screen_content_tools && mode == DC_PRED)
       this_rate +=
           vp10_cost_bit(vp10_default_palette_y_mode_prob[bsize - BLOCK_8X8]
@@ -5831,6 +5860,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   const int mode_search_skip_flags = sf->mode_search_skip_flags;
   int64_t mask_filter = 0;
   int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
+  const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
+  const vpx_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
 
   vp10_zero(best_mbmode);
 
@@ -6318,6 +6349,13 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #endif  // CONFIG_EXT_INTRA
 
       rate2 = rate_y + intra_mode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
+      if (!xd->lossless[0]) {
+        // super_block_yrd above includes the cost of the tx_size in the
+        // tokenonly rate, but for intra blocks, tx_size is always coded
+        // (prediction granularity), so we account for it in the full rate,
+        // not the tokenonly rate.
+        rate_y -= vp10_cost_tx_size(mbmi->tx_size, max_tx_size, tx_probs);
+      }
 #if CONFIG_EXT_INTRA
       if (is_directional_mode) {
         int p_angle;
@@ -7482,6 +7520,13 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
         *mbmi = tmp_best_mbmode;
         for (i = 0; i < 4; i++)
           xd->mi[0]->bmi[i] = tmp_best_bmodes[i];
+      }
+      // Add in the cost of the transform type
+      if (!xd->lossless[mbmi->segment_id]) {
+        const int rate_tx_type =
+            cpi->inter_tx_type_costs[mbmi->tx_size][mbmi->tx_type];
+        rate += rate_tx_type;
+        rate_y += rate_tx_type;
       }
 
       rate2 += rate;
