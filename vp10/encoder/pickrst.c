@@ -17,44 +17,22 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
 
-#include "vp10/common/loopfilter.h"
 #include "vp10/common/onyxc_int.h"
 #include "vp10/common/quant_common.h"
 
 #include "vp10/encoder/encoder.h"
-#include "vp10/encoder/picklpf.h"
 #include "vp10/encoder/quantize.h"
+#include "vp10/encoder/picklpf.h"
+#include "vp10/encoder/pickrst.h"
 
-int vp10_get_max_filter_level(const VP10_COMP *cpi) {
-  if (cpi->oxcf.pass == 2) {
-    return cpi->twopass.section_intra_rating > 8 ? MAX_LOOP_FILTER * 3 / 4
-                                                 : MAX_LOOP_FILTER;
-  } else {
-    return MAX_LOOP_FILTER;
-  }
-}
-
-#if !CONFIG_LOOP_RESTORATION || !JOINT_FILTER_RESTORATION_SEARCH
-static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
-                                VP10_COMP *const cpi,
-                                int filt_level, int partial_frame) {
+static int try_restoration_frame(const YV12_BUFFER_CONFIG *sd,
+                                 VP10_COMP *const cpi,
+                                 int restoration_level,
+                                 int partial_frame) {
   VP10_COMMON *const cm = &cpi->common;
-  int64_t filt_err;
-
-#if CONFIG_VAR_TX
-  vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
-                         1, partial_frame);
-#else
-  if (cpi->num_workers > 1)
-    vp10_loop_filter_frame_mt(cm->frame_to_show, cm, cpi->td.mb.e_mbd.plane,
-                              filt_level, 1, partial_frame,
-                              cpi->workers, cpi->num_workers,
-                              &cpi->lf_row_sync);
-  else
-    vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
-                           1, partial_frame);
-#endif
-
+  int filt_err;
+  vp10_loop_restoration_frame(cm->frame_to_show, cm,
+                              restoration_level, 1, partial_frame);
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
     filt_err = vp10_highbd_get_y_sse(sd, cm->frame_to_show);
@@ -66,36 +44,79 @@ static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   // Re-instate the unfiltered frame
-  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
-
+  vpx_yv12_copy_y(&cpi->last_frame_db, cm->frame_to_show);
   return filt_err;
 }
 
-int vp10_search_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
-                             int partial_frame) {
+int vp10_search_restoration_level(const YV12_BUFFER_CONFIG *sd,
+                                  VP10_COMP *cpi,
+                                  int filter_level, int partial_frame,
+                                  double *best_cost_ret) {
+  VP10_COMMON *const cm = &cpi->common;
+  int i, restoration_best, err;
+  double best_cost;
+  double cost;
+  const int restoration_level_bits = vp10_restoration_level_bits(&cpi->common);
+  const int restoration_levels = 1 << restoration_level_bits;
+  MACROBLOCK *x = &cpi->td.mb;
+  int bits;
+
+  //  Make a copy of the unfiltered / processed recon buffer
+  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
+  vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filter_level,
+                         1, partial_frame);
+  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_db);
+
+  restoration_best = -1;
+  err = try_restoration_frame(sd, cpi, restoration_best, partial_frame);
+  bits = 0;
+  best_cost = RDCOST_DBL(x->rdmult, x->rddiv, (bits << 2), err);
+  for (i = 0; i < restoration_levels; ++i) {
+    err = try_restoration_frame(sd, cpi, i, partial_frame);
+    // Normally the rate is rate in bits * 256 and dist is sum sq err * 64
+    // when RDCOST is used.  However below we just scale both in the correct
+    // ratios appropriately but not exactly by these values.
+    bits = restoration_level_bits;
+    cost = RDCOST_DBL(x->rdmult, x->rddiv, (bits << 2), err);
+    if (cost < best_cost) {
+      restoration_best = i;
+      best_cost = cost;
+    }
+  }
+  if (best_cost_ret) *best_cost_ret = best_cost;
+  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+  return restoration_best;
+}
+
+#if JOINT_FILTER_RESTORATION_SEARCH
+int vp10_search_filter_restoration_level(const YV12_BUFFER_CONFIG *sd,
+                                         VP10_COMP *cpi,
+                                         int partial_frame,
+                                         int *restoration_level) {
   const VP10_COMMON *const cm = &cpi->common;
   const struct loopfilter *const lf = &cm->lf;
   const int min_filter_level = 0;
   const int max_filter_level = vp10_get_max_filter_level(cpi);
   int filt_direction = 0;
-  int64_t best_err;
-  int filt_best;
+  int filt_best, restoration_best;
+  double best_err;
+  int i;
+  int rest_lev;
 
   // Start the search at the previous frame filter level unless it is now out of
   // range.
   int filt_mid = clamp(lf->filter_level, min_filter_level, max_filter_level);
   int filter_step = filt_mid < 16 ? 4 : filt_mid / 4;
-  // Sum squared error at each filter level
-  int64_t ss_err[MAX_LOOP_FILTER + 1];
+  double ss_err[MAX_LOOP_FILTER + 1];
 
   // Set each entry to -1
-  memset(ss_err, 0xFF, sizeof(ss_err));
+  for (i = 0; i <= MAX_LOOP_FILTER; ++i)
+    ss_err[i] = -1.0;
 
-  //  Make a copy of the unfiltered / processed recon buffer
-  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
-
-  best_err = try_filter_frame(sd, cpi, filt_mid, partial_frame);
+  rest_lev = vp10_search_restoration_level(sd, cpi, filt_mid,
+                                           partial_frame, &best_err);
   filt_best = filt_mid;
+  restoration_best = rest_lev;
   ss_err[filt_mid] = best_err;
 
   while (filter_step > 0) {
@@ -103,40 +124,46 @@ int vp10_search_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
     const int filt_low = VPXMAX(filt_mid - filter_step, min_filter_level);
 
     // Bias against raising loop filter in favor of lowering it.
-    int64_t bias = (best_err >> (15 - (filt_mid / 8))) * filter_step;
+    double bias = (best_err / (1 << (15 - (filt_mid / 8)))) * filter_step;
 
     if ((cpi->oxcf.pass == 2) && (cpi->twopass.section_intra_rating < 20))
       bias = (bias * cpi->twopass.section_intra_rating) / 20;
 
     // yx, bias less for large block size
     if (cm->tx_mode != ONLY_4X4)
-      bias >>= 1;
+      bias /= 2;
 
     if (filt_direction <= 0 && filt_low != filt_mid) {
       // Get Low filter error score
       if (ss_err[filt_low] < 0) {
-        ss_err[filt_low] = try_filter_frame(sd, cpi, filt_low, partial_frame);
+        rest_lev = vp10_search_restoration_level(sd, cpi, filt_low,
+                                                 partial_frame,
+                                                 &ss_err[filt_low]);
       }
       // If value is close to the best so far then bias towards a lower loop
       // filter value.
       if ((ss_err[filt_low] - bias) < best_err) {
         // Was it actually better than the previous best?
-        if (ss_err[filt_low] < best_err)
+        if (ss_err[filt_low] < best_err) {
           best_err = ss_err[filt_low];
+        }
 
         filt_best = filt_low;
+        restoration_best = rest_lev;
       }
     }
 
     // Now look at filt_high
     if (filt_direction >= 0 && filt_high != filt_mid) {
       if (ss_err[filt_high] < 0) {
-        ss_err[filt_high] = try_filter_frame(sd, cpi, filt_high, partial_frame);
+        rest_lev = vp10_search_restoration_level(
+            sd, cpi, filt_high, partial_frame, &ss_err[filt_high]);
       }
       // Was it better than the previous best?
       if (ss_err[filt_high] < (best_err - bias)) {
         best_err = ss_err[filt_high];
         filt_best = filt_high;
+        restoration_best = rest_lev;
       }
     }
 
@@ -149,12 +176,13 @@ int vp10_search_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
       filt_mid = filt_best;
     }
   }
-
+  *restoration_level = restoration_best;
   return filt_best;
 }
+#endif  // JOINT_FILTER_RESTORATION_SEARCH
 
-void vp10_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
-                           LPF_PICK_METHOD method) {
+void vp10_pick_filter_restoration_level(
+    const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi, LPF_PICK_METHOD method) {
   VP10_COMMON *const cm = &cpi->common;
   struct loopfilter *const lf = &cm->lf;
 
@@ -192,9 +220,18 @@ void vp10_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
     if (cm->frame_type == KEY_FRAME)
       filt_guess -= 4;
     lf->filter_level = clamp(filt_guess, min_filter_level, max_filter_level);
+    cm->rst_info.restoration_level = vp10_search_restoration_level(
+        sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE, NULL);
   } else {
+#if JOINT_FILTER_RESTORATION_SEARCH
+    lf->filter_level = vp10_search_filter_restoration_level(
+        sd, cpi, method == LPF_PICK_FROM_SUBIMAGE,
+        &cm->rst_info.restoration_level);
+#else
     lf->filter_level = vp10_search_filter_level(
         sd, cpi, method == LPF_PICK_FROM_SUBIMAGE);
+    cm->rst_info.restoration_level = vp10_search_restoration_level(
+        sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE, NULL);
+#endif  // JOINT_FILTER_RESTORATION_SEARCH
   }
 }
-#endif  // !CONFIG_LOOP_RESTORATION || !JOINT_FILTER_RESTORATION_SEARCH
