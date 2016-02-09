@@ -1779,6 +1779,9 @@ static void encode_loopfilter(VP10_COMMON *cm,
                               struct vpx_write_bit_buffer *wb) {
   int i;
   struct loopfilter *lf = &cm->lf;
+#if CONFIG_LOOP_RESTORATION
+  restoration_info_n *rst = &cm->rst_info;
+#endif
 
   // Encode the loop filter level and type
   vpx_wb_write_literal(wb, lf->filter_level, 6);
@@ -1813,10 +1816,10 @@ static void encode_loopfilter(VP10_COMMON *cm,
     }
   }
 #if CONFIG_LOOP_RESTORATION
-  vpx_wb_write_bit(wb, lf->restoration_level != lf->last_restoration_level);
-  if (lf->restoration_level != lf->last_restoration_level) {
-    int level = lf->restoration_level -
-                (lf->restoration_level > lf->last_restoration_level);
+  vpx_wb_write_bit(wb, rst->restoration_level != rst->last_restoration_level);
+  if (rst->restoration_level != rst->last_restoration_level) {
+    int level = rst->restoration_level + 1 -
+                (rst->restoration_level > rst->last_restoration_level);
     vpx_wb_write_literal(wb, level,
                          vp10_restoration_level_bits(cm));
   }
