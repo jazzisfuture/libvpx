@@ -120,6 +120,10 @@ endif
 
 endif # VP8
 
+ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+LIBVPX_TEST_SRCS-yes                   += hbd_metrics_test.cc
+endif
+
 ## VP9
 ifeq ($(CONFIG_VP9),yes)
 
