@@ -20,9 +20,11 @@ extern "C" {
 
 struct yv12_buffer_config;
 struct VP10_COMP;
-
+int vp10_get_max_filter_level(const VP10_COMP *cpi);
+int vp10_search_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
+                             int partial_frame);
 void vp10_pick_filter_level(const struct yv12_buffer_config *sd,
-                           struct VP10_COMP *cpi, LPF_PICK_METHOD method);
+                            struct VP10_COMP *cpi, LPF_PICK_METHOD method);
 #ifdef __cplusplus
 }  // extern "C"
 #endif
