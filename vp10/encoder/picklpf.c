@@ -121,22 +121,23 @@ static int search_restoration_level(const YV12_BUFFER_CONFIG *sd,
                          1, partial_frame);
   vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_db);
 
-  restoration_best = 0;
-  err = try_restoration_frame(sd, cpi, 0, partial_frame);
+  restoration_best = -1;
+  err = try_restoration_frame(sd, cpi, restoration_best, partial_frame);
 #ifdef USE_RD_LOOP_POSTFILTER_SEARCH
-  bits = cm->lf.last_restoration_level == 0 ? 0 : restoration_level_bits;
+  bits = cm->rst_info.last_restoration_level == restoration_best ?
+         0 : restoration_level_bits;
   cost = RDCOST_DBL(x->rdmult, x->rddiv, (bits << 2), err);
 #else
   cost = (double)err;
 #endif  // USE_RD_LOOP_POSTFILTER_SEARCH
   best_cost = cost;
-  for (i = 1; i <= restoration_levels; ++i) {
+  for (i = 0; i < restoration_levels; ++i) {
     err = try_restoration_frame(sd, cpi, i, partial_frame);
 #ifdef USE_RD_LOOP_POSTFILTER_SEARCH
     // Normally the rate is rate in bits * 256 and dist is sum sq err * 64
     // when RDCOST is used.  However below we just scale both in the correct
     // ratios appropriately but not exactly by these values.
-    bits = cm->lf.last_restoration_level == i ? 0 : restoration_level_bits;
+    bits = cm->rst_info.last_restoration_level == i ? 0 : restoration_level_bits;
     cost = RDCOST_DBL(x->rdmult, x->rddiv, (bits << 2), err);
 #else
     cost = (double)err;
@@ -164,22 +165,22 @@ static int search_filter_restoration_level(const YV12_BUFFER_CONFIG *sd,
   int filt_best, restoration_best;
   double best_err;
   int i;
+  int rest_lev;
 
   // Start the search at the previous frame filter level unless it is now out of
   // range.
   int filt_mid = clamp(lf->filter_level, min_filter_level, max_filter_level);
   int filter_step = filt_mid < 16 ? 4 : filt_mid / 4;
   double ss_err[MAX_LOOP_FILTER + 1];
-  int bilateral;
 
   // Set each entry to -1
   for (i = 0; i <= MAX_LOOP_FILTER; ++i)
     ss_err[i] = -1.0;
 
-  bilateral = search_restoration_level(sd, cpi, filt_mid,
-                                       partial_frame, &best_err);
+  rest_lev = search_restoration_level(sd, cpi, filt_mid,
+                                      partial_frame, &best_err);
   filt_best = filt_mid;
-  restoration_best = bilateral;
+  restoration_best = rest_lev;
   ss_err[filt_mid] = best_err;
 
   while (filter_step > 0) {
@@ -199,9 +200,9 @@ static int search_filter_restoration_level(const YV12_BUFFER_CONFIG *sd,
     if (filt_direction <= 0 && filt_low != filt_mid) {
       // Get Low filter error score
       if (ss_err[filt_low] < 0) {
-        bilateral = search_restoration_level(sd, cpi, filt_low,
-                                             partial_frame,
-                                             &ss_err[filt_low]);
+        rest_lev = search_restoration_level(sd, cpi, filt_low,
+                                            partial_frame,
+                                            &ss_err[filt_low]);
       }
       // If value is close to the best so far then bias towards a lower loop
       // filter value.
@@ -212,21 +213,21 @@ static int search_filter_restoration_level(const YV12_BUFFER_CONFIG *sd,
         }
 
         filt_best = filt_low;
-        restoration_best = bilateral;
+        restoration_best = rest_lev;
       }
     }
 
     // Now look at filt_high
     if (filt_direction >= 0 && filt_high != filt_mid) {
       if (ss_err[filt_high] < 0) {
-        bilateral = search_restoration_level(sd, cpi, filt_high, partial_frame,
+        rest_lev = search_restoration_level(sd, cpi, filt_high, partial_frame,
                                              &ss_err[filt_high]);
       }
       // Was it better than the previous best?
       if (ss_err[filt_high] < (best_err - bias)) {
         best_err = ss_err[filt_high];
         filt_best = filt_high;
-        restoration_best = bilateral;
+        restoration_best = rest_lev;
       }
     }
 
@@ -371,18 +372,19 @@ void vp10_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
       filt_guess -= 4;
     lf->filter_level = clamp(filt_guess, min_filter_level, max_filter_level);
 #if CONFIG_LOOP_RESTORATION
-    lf->restoration_level = search_restoration_level(
+    cm->rst_info.restoration_level = search_restoration_level(
         sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE, NULL);
 #endif  // CONFIG_LOOP_RESTORATION
   } else {
 #if CONFIG_LOOP_RESTORATION
 #ifdef JOINT_FILTER_RESTORATION_SEARCH
     lf->filter_level = search_filter_restoration_level(
-        sd, cpi, method == LPF_PICK_FROM_SUBIMAGE, &lf->restoration_level);
+        sd, cpi, method == LPF_PICK_FROM_SUBIMAGE,
+        &cm->rst_info.restoration_level);
 #else
     lf->filter_level = search_filter_level(
         sd, cpi, method == LPF_PICK_FROM_SUBIMAGE);
-    lf->restoration_level = search_restoration_level(
+    cm->rst_info.restoration_level = search_restoration_level(
         sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE, NULL);
 #endif  // JOINT_FILTER_RESTORATION_SEARCH
 #else
