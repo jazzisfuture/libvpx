@@ -2129,6 +2129,9 @@ static void setup_segmentation(VP10_COMMON *const cm,
 static void setup_loopfilter(VP10_COMMON *cm,
                              struct vpx_read_bit_buffer *rb) {
   struct loopfilter *lf = &cm->lf;
+#if CONFIG_LOOP_RESTORATION
+  restoration_info_n *rst = &cm->rst_info;
+#endif  // CONFIG_LOOP_RESTORATION
   lf->filter_level = vpx_rb_read_literal(rb, 6);
   lf->sharpness_level = vpx_rb_read_literal(rb, 3);
 
@@ -2152,17 +2155,13 @@ static void setup_loopfilter(VP10_COMMON *cm,
     }
   }
 #if CONFIG_LOOP_RESTORATION
-  lf->restoration_level = vpx_rb_read_bit(rb);
-  if (lf->restoration_level) {
-    int level = vpx_rb_read_literal(rb, vp10_restoration_level_bits(cm));
-    lf->restoration_level = level + (level >= lf->last_restoration_level);
+  if (vpx_rb_read_bit(rb)) {
+    rst->restoration_type = RESTORE_BILATERAL;
+    rst->restoration_level =
+        vpx_rb_read_literal(rb, vp10_restoration_level_bits(cm));
   } else {
-    lf->restoration_level = lf->last_restoration_level;
+    rst->restoration_type = RESTORE_NONE;
   }
-  if (cm->frame_type != KEY_FRAME)
-    cm->lf.last_restoration_level = cm->lf.restoration_level;
-  else
-    cm->lf.last_restoration_level = 0;
 #endif  // CONFIG_LOOP_RESTORATION
 }
 
@@ -3499,9 +3498,10 @@ void vp10_decode_frame(VP10Decoder *pbi,
     *p_data_end = decode_tiles(pbi, data + first_partition_size, data_end);
   }
 #if CONFIG_LOOP_RESTORATION
-  vp10_loop_restoration_init(&cm->rst_info, cm->lf.restoration_level,
-                             cm->frame_type == KEY_FRAME);
-  if (cm->rst_info.restoration_used) {
+  if (cm->rst_info.restoration_type != RESTORE_NONE) {
+    vp10_loop_restoration_init(&cm->rst_internal,
+                               &cm->rst_info,
+                               cm->frame_type == KEY_FRAME);
     vp10_loop_restoration_rows(new_fb, cm, 0, cm->mi_rows, 0);
   }
 #endif  // CONFIG_LOOP_RESTORATION
