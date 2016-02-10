@@ -1335,7 +1335,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         ref_frame == LAST_FRAME)) {
       i = (ref_frame == LAST_FRAME) ? GOLDEN_FRAME : LAST_FRAME;
       if ((cpi->ref_frame_flags & flag_list[i]) && sf->reference_masking)
-        if (x->pred_mv_sad[ref_frame] > (x->pred_mv_sad[i] << 1))
+        if (x->pred_mv_sad[i] < INT_MAX &&
+            x->pred_mv_sad[ref_frame] > (x->pred_mv_sad[i] << 1))
           ref_frame_skip_mask |= (1 << ref_frame);
     }
     if (ref_frame_skip_mask & (1 << ref_frame))
