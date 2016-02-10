@@ -1531,6 +1531,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
     int new_mi_size = 0;
     vp9_set_mb_mi(cm, cm->width, cm->height);
     new_mi_size = cm->mi_stride * calc_mi_size(cm->mi_rows);
+    cm->lf.lfm_stride = (cm->mi_cols + (MI_BLOCK_SIZE - 1)) >> 3;
     if (cm->mi_alloc_size < new_mi_size) {
       vp9_free_context_buffers(cm);
       alloc_compressor_data(cpi);
