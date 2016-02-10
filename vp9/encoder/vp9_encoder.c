@@ -298,6 +298,7 @@ static void vp9_enc_free_mi(VP9_COMMON *cm) {
   cm->mi_grid_base = NULL;
   vpx_free(cm->prev_mi_grid_base);
   cm->prev_mi_grid_base = NULL;
+  cm->mi_alloc_size = 0;
 }
 
 static void vp9_swap_mi_and_prev_mi(VP9_COMMON *cm) {
@@ -1531,7 +1532,9 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
     int new_mi_size = 0;
     vp9_set_mb_mi(cm, cm->width, cm->height);
     new_mi_size = cm->mi_stride * calc_mi_size(cm->mi_rows);
-    if (cm->mi_alloc_size < new_mi_size) {
+    if (cm->mi_alloc_size < new_mi_size ||
+        (cm->mi_alloc_size == new_mi_size && (cm->width != cpi->initial_width ||
+         cm->height != cpi->initial_height))) {
       vp9_free_context_buffers(cm);
       alloc_compressor_data(cpi);
       realloc_segmentation_maps(cpi);
