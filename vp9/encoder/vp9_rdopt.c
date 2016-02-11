@@ -788,8 +788,11 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x,
   uint16_t best_dst16[8 * 8];
 #endif
 
-  memcpy(ta, a, sizeof(ta));
-  memcpy(tl, l, sizeof(tl));
+  for (idx = 0; idx < num_4x4_blocks_wide; ++idx)
+    ta[idx] = a[idx];
+  for (idy = 0; idy < num_4x4_blocks_high; ++idy)
+    tl[idy] = l[idy];
+
   xd->mi[0]->tx_size = TX_4X4;
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -810,8 +813,10 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x,
             continue;
       }
 
-      memcpy(tempa, ta, sizeof(ta));
-      memcpy(templ, tl, sizeof(tl));
+      for (idx = 0; idx < num_4x4_blocks_wide; ++idx)
+        tempa[idx] = ta[idx];
+      for (idy = 0; idy < num_4x4_blocks_high; ++idy)
+        templ[idy] = tl[idy];
 
       for (idy = 0; idy < num_4x4_blocks_high; ++idy) {
         for (idx = 0; idx < num_4x4_blocks_wide; ++idx) {
@@ -869,13 +874,18 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x,
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
 
       if (this_rd < best_rd) {
+        int i;
+        for (i = 0; i < num_4x4_blocks_wide; ++i)
+          a[i] = tempa[i];
+        for (i = 0; i < num_4x4_blocks_high; ++i)
+          l[i] = templ[i];
+
         *bestrate = rate;
         *bestratey = ratey;
         *bestdistortion = distortion;
         best_rd = this_rd;
         *best_mode = mode;
-        memcpy(a, tempa, sizeof(tempa));
-        memcpy(l, templ, sizeof(templ));
+
         for (idy = 0; idy < num_4x4_blocks_high * 4; ++idy) {
           memcpy(best_dst16 + idy * 8,
                  CONVERT_TO_SHORTPTR(dst_init + idy * dst_stride),
@@ -914,8 +924,10 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x,
           continue;
     }
 
-    memcpy(tempa, ta, sizeof(ta));
-    memcpy(templ, tl, sizeof(tl));
+    for (idx = 0; idx < num_4x4_blocks_wide; ++idx)
+      tempa[idx] = ta[idx];
+    for (idy = 0; idy < num_4x4_blocks_high; ++idy)
+      templ[idy] = tl[idy];
 
     for (idy = 0; idy < num_4x4_blocks_high; ++idy) {
       for (idx = 0; idx < num_4x4_blocks_wide; ++idx) {
@@ -971,13 +983,18 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x,
     this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
 
     if (this_rd < best_rd) {
+      int i;
+      for (i = 0; i < num_4x4_blocks_wide; ++i)
+        a[i] = tempa[i];
+      for (i = 0; i < num_4x4_blocks_high; ++i)
+        l[i] = templ[i];
+
       *bestrate = rate;
       *bestratey = ratey;
       *bestdistortion = distortion;
       best_rd = this_rd;
       *best_mode = mode;
-      memcpy(a, tempa, sizeof(tempa));
-      memcpy(l, templ, sizeof(templ));
+
       for (idy = 0; idy < num_4x4_blocks_high * 4; ++idy)
         memcpy(best_dst + idy * 8, dst_init + idy * dst_stride,
                num_4x4_blocks_wide * 4);
@@ -1013,7 +1030,7 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
   int64_t total_distortion = 0;
   int tot_rate_y = 0;
   int64_t total_rd = 0;
-  ENTROPY_CONTEXT t_above[4], t_left[4];
+  ENTROPY_CONTEXT t_above[2], t_left[2];
   const int *bmode_costs = cpi->mbmode_cost;
 
   memcpy(t_above, xd->plane[0].above_context, sizeof(t_above));
