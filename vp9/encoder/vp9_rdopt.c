@@ -1013,7 +1013,7 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
   int64_t total_distortion = 0;
   int tot_rate_y = 0;
   int64_t total_rd = 0;
-  ENTROPY_CONTEXT t_above[4], t_left[4];
+  ENTROPY_CONTEXT t_above[2], t_left[2];
   const int *bmode_costs = cpi->mbmode_cost;
 
   memcpy(t_above, xd->plane[0].above_context, sizeof(t_above));
