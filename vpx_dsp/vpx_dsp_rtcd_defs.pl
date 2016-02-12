@@ -955,6 +955,13 @@ add_proto qw/void vpx_subtract_block/, "int rows, int cols, int16_t *diff_ptr, p
 specialize qw/vpx_subtract_block neon msa/, "$sse2_x86inc";
 
 #
+# Sum of Squares
+#
+
+add_proto qw/uint64_t vpx_sum_squares_2d_i16/, "const int16_t *src, int stride, int size";
+specialize qw/vpx_sum_squares_2d_i16 sse2/;
+
+#
 # Single block SAD
 #
 add_proto qw/unsigned int vpx_sad64x64/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
