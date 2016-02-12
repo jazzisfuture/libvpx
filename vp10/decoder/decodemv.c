@@ -376,11 +376,13 @@ static int read_skip(VP10_COMMON *cm, const MACROBLOCKD *xd,
     int ctx = vp10_get_skip_context(xd);
     int skip;
     FRAME_COUNTS *counts = xd->counts;
+#if CONFIG_REF_MV
     uint8_t rf_type = vp10_ref_frame_type(xd->mi[0]->mbmi.ref_frame);
     int8_t ref_skip = vp10_get_inter_skip_ctx(&xd->mi[0]->mbmi,
                                               xd->ref_mv_count[rf_type],
                                               xd->ref_mv_stack[rf_type]);
     ctx += 3 * ref_skip;
+#endif
     skip = vpx_read(r, cm->fc->skip_probs[ctx]);
     if (counts)
       ++counts->skip[ctx][skip];
