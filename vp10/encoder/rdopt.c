@@ -4784,6 +4784,20 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   if (!is_comp_pred)
     single_skippable[this_mode][refs[0]] = *skippable;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    x->recon_variance =
+      vp10_high_get_sby_perpixel_variance(cpi, &xd->plane[0].dst,
+                                          bsize, xd->bd);
+  } else {
+    x->recon_variance =
+      vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
+  }
+#else
+  x->recon_variance =
+    vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
   restore_dst_buf(xd, orig_dst, orig_dst_stride);
   return 0;  // The rate-distortion cost will be re-calculated by caller.
 }
@@ -4851,7 +4865,7 @@ static void rd_variance_adjustment(VP10_COMP *cpi,
                                    MV_REFERENCE_FRAME ref_frame,
                                    unsigned int source_variance) {
   MACROBLOCKD *const xd = &x->e_mbd;
-  unsigned int recon_variance;
+  unsigned int recon_variance = x->recon_variance;
   unsigned int absvar_diff = 0;
   int64_t var_error = 0;
   int64_t var_factor = 0;
@@ -4859,18 +4873,21 @@ static void rd_variance_adjustment(VP10_COMP *cpi,
   if (*this_rd == INT64_MAX)
     return;
 
+  if (ref_frame == INTRA_FRAME) {
 #if CONFIG_VP9_HIGHBITDEPTH
-  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    recon_variance =
-      vp10_high_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize, xd->bd);
-  } else {
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      recon_variance =
+        vp10_high_get_sby_perpixel_variance(cpi, &xd->plane[0].dst,
+                                            bsize, xd->bd);
+    } else {
+      recon_variance =
+        vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
+    }
+#else
     recon_variance =
       vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
-  }
-#else
-  recon_variance =
-    vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+  }
 
   if ((source_variance + recon_variance) > LOW_VAR_THRESH) {
     absvar_diff = (source_variance > recon_variance)
