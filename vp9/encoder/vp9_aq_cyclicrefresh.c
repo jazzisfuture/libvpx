@@ -198,6 +198,9 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
       refresh_this_block = 1;
   }
 
+  if (cpi->oxcf.rc_mode == VPX_VBR && mi->ref_frame[0] == GOLDEN_FRAME)
+    refresh_this_block = 0;
+
   // If this block is labeled for refresh, check if we should reset the
   // segment_id.
   if (cyclic_refresh_segment_id_boosted(mi->segment_id)) {
@@ -301,10 +304,14 @@ void vp9_cyclic_refresh_set_golden_update(VP9_COMP *const cpi) {
   // Set minimum gf_interval for GF update to a multiple of the refresh period,
   // with some max limit. Depending on past encoding stats, GF flag may be
   // reset and update may not occur until next baseline_gf_interval.
-  if (cr->percent_refresh > 0)
-    rc->baseline_gf_interval = VPXMIN(4 * (100 / cr->percent_refresh), 40);
-  else
-    rc->baseline_gf_interval = 40;
+  if (cpi->oxcf.rc_mode == VPX_CBR) {
+    if (cr->percent_refresh > 0)
+      rc->baseline_gf_interval = VPXMIN(4 * (100 / cr->percent_refresh), 40);
+    else
+      rc->baseline_gf_interval = 40;
+  } else if (cpi->oxcf.rc_mode == VPX_VBR) {
+    rc->baseline_gf_interval = 20;
+  }
 }
 
 // Update some encoding stats (from the just encoded frame). If this frame's
@@ -480,29 +487,42 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   // Use larger delta-qp (increase rate_ratio_qdelta) for first few (~4)
   // periods of the refresh cycle, after a key frame.
   // Account for larger interval on base layer for temporal layers.
-  if (cr->percent_refresh > 0 &&
-      rc->frames_since_key <  (4 * cpi->svc.number_temporal_layers) *
-      (100 / cr->percent_refresh)) {
-    cr->rate_ratio_qdelta = 3.0;
-  } else {
-    cr->rate_ratio_qdelta = 2.0;
-  if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium)
-    // Reduce the delta-qp if the estimated source noise is above threshold.
+  if (cpi->oxcf.rc_mode == VPX_CBR) {
+    if (cr->percent_refresh > 0 &&
+        rc->frames_since_key <  (4 * cpi->svc.number_temporal_layers) *
+        (100 / cr->percent_refresh)) {
+      cr->rate_ratio_qdelta = 3.0;
+    } else {
+      cr->rate_ratio_qdelta = 2.0;
+    if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium)
+      // Reduce the delta-qp if the estimated source noise is above threshold.
+      cr->rate_ratio_qdelta = 1.5;
+    }
+    // Adjust some parameters for low resolutions at low bitrates.
+    if (cm->width <= 352 &&
+        cm->height <= 288 &&
+        rc->avg_frame_bandwidth < 3400) {
+      cr->motion_thresh = 4;
+      cr->rate_boost_fac = 10;
+    } else {
+      cr->motion_thresh = 32;
+      cr->rate_boost_fac = 15;
+    }
+    if (cpi->svc.spatial_layer_id > 0) {
+      cr->motion_thresh = 4;
+      cr->rate_boost_fac = 12;
+    }
+  } else if (cpi->oxcf.rc_mode == VPX_VBR) {
+    // To be adjusted for VBR mode, e.g., based on gf period and boost.
+    // For now use smaller qp-delta (than CBR), no second boosted seg, and
+    // turn-off (no refresh) on golden refresh (since its already boosted).
+    cr->percent_refresh = 10;
     cr->rate_ratio_qdelta = 1.5;
-  }
-  // Adjust some parameters for low resolutions at low bitrates.
-  if (cm->width <= 352 &&
-      cm->height <= 288 &&
-      rc->avg_frame_bandwidth < 3400) {
-    cr->motion_thresh = 4;
     cr->rate_boost_fac = 10;
-  } else {
-    cr->motion_thresh = 32;
-    cr->rate_boost_fac = 15;
-  }
-  if (cpi->svc.spatial_layer_id > 0) {
-    cr->motion_thresh = 4;
-    cr->rate_boost_fac = 12;
+    if (cpi->refresh_golden_frame == 1) {
+      cr->percent_refresh = 0;
+      cr->rate_ratio_qdelta = 1.0;
+    }
   }
 }
 
