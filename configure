@@ -281,6 +281,10 @@ EXPERIMENT_LIST="
     ext_interp
     ext_refs
     supertx
+    ans
+    loop_restoration
+    ext_partition
+    obmc
 "
 CONFIG_LIST="
     dependency_tracking
