@@ -1487,6 +1487,10 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
   else
     target = calc_pframe_target_size_one_pass_vbr(cpi);
   vp9_rc_set_frame_target(cpi, target);
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+      cpi->oxcf.pass == 0 &&
+      cpi->oxcf.mode == REALTIME)
+    vp9_cyclic_refresh_update_parameters(cpi);
 }
 
 static int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
