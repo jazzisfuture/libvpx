@@ -4784,6 +4784,20 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   if (!is_comp_pred)
     single_skippable[this_mode][refs[0]] = *skippable;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    x->recon_variance =
+      vp10_high_get_sby_perpixel_variance(cpi, &xd->plane[0].dst,
+                                          bsize, xd->bd);
+  } else {
+    x->recon_variance =
+      vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
+  }
+#else
+  x->recon_variance =
+    vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
   restore_dst_buf(xd, orig_dst, orig_dst_stride);
   return 0;  // The rate-distortion cost will be re-calculated by caller.
 }
@@ -4851,7 +4865,7 @@ static void rd_variance_adjustment(VP10_COMP *cpi,
                                    MV_REFERENCE_FRAME ref_frame,
                                    unsigned int source_variance) {
   MACROBLOCKD *const xd = &x->e_mbd;
-  unsigned int recon_variance;
+  unsigned int recon_variance = x->recon_variance;
   unsigned int absvar_diff = 0;
   int64_t var_error = 0;
   int64_t var_factor = 0;
@@ -4859,18 +4873,21 @@ static void rd_variance_adjustment(VP10_COMP *cpi,
   if (*this_rd == INT64_MAX)
     return;
 
+  if (ref_frame == INTRA_FRAME) {
 #if CONFIG_VP9_HIGHBITDEPTH
-  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    recon_variance =
-      vp10_high_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize, xd->bd);
-  } else {
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      recon_variance =
+        vp10_high_get_sby_perpixel_variance(cpi, &xd->plane[0].dst,
+                                            bsize, xd->bd);
+    } else {
+      recon_variance =
+        vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
+    }
+#else
     recon_variance =
       vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
-  }
-#else
-  recon_variance =
-    vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+  }
 
   if ((source_variance + recon_variance) > LOW_VAR_THRESH) {
     absvar_diff = (source_variance > recon_variance)
@@ -5493,6 +5510,11 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       distortion2 = distortion_y + distortion_uv;
     } else {
 #if CONFIG_REF_MV
+      int_mv backup_ref_mv[2];
+      backup_ref_mv[0] = mbmi_ext->ref_mvs[ref_frame][0];
+      if (comp_pred)
+        backup_ref_mv[1] = mbmi_ext->ref_mvs[second_ref_frame][0];
+
       mbmi->ref_mv_idx = 0;
       ref_frame_type = vp10_ref_frame_type(mbmi->ref_frame);
 #endif
@@ -5508,17 +5530,22 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #if CONFIG_REF_MV
       // TODO(jingning): This needs some refactoring to improve code quality
       // and reduce redundant steps.
-      if (mbmi->mode == NEARMV &&
-          mbmi_ext->ref_mv_count[ref_frame_type] > 2) {
-        int_mv backup_mv = frame_mv[NEARMV][ref_frame];
-        int_mv cur_mv = mbmi_ext->ref_mv_stack[ref_frame][2].this_mv;
+      if ((mbmi->mode == NEARMV &&
+           mbmi_ext->ref_mv_count[ref_frame_type] > 2) ||
+          (mbmi->mode == NEWMV && 0 &&
+           mbmi_ext->ref_mv_count[ref_frame_type] > 1)) {
+        int_mv backup_mv = frame_mv[this_mode][ref_frame];
         MB_MODE_INFO backup_mbmi = *mbmi;
 
         int64_t tmp_ref_rd = this_rd;
         int ref_idx;
-        int ref_set = VPXMIN(2, mbmi_ext->ref_mv_count[ref_frame_type] - 2);
+
+        int idx_offset = (mbmi->mode == NEARMV) ? 1 : 0;
+
+        int ref_set = VPXMIN(2,
+                mbmi_ext->ref_mv_count[ref_frame_type] - 1 - idx_offset);
         uint8_t drl0_ctx =
-            vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 1);
+            vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], idx_offset);
 
         int8_t ref_skip =
             vp10_get_inter_skip_ctx(mbmi,
@@ -5526,6 +5553,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
                                     mbmi_ext->ref_mv_stack[ref_frame_type]);
         vpx_prob skip_prob = vp10_get_inter_skip_prob(cm, xd, ref_skip);
 
+        if (this_mode == NEARMV)
         rate2 += cpi->drl_mode_cost0[drl0_ctx][0];
 
         if (this_rd < INT64_MAX) {
@@ -5548,8 +5576,24 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
           int tmp_rate = 0, tmp_rate_y = 0, tmp_rate_uv = 0;
           int tmp_skip = 1;
           int64_t tmp_dist = 0, tmp_sse = 0;
+          int ref;
+          int_mv cur_mv;
 
-          cur_mv = mbmi_ext->ref_mv_stack[ref_frame][2 + ref_idx].this_mv;
+          mbmi->ref_mv_idx = 1 + ref_idx;
+
+          for (ref = 0; ref < 1 + comp_pred; ++ref) {
+            int_mv this_mv = (ref == 0) ?
+                mbmi_ext->ref_mv_stack[ref_frame_type]
+                                      [mbmi->ref_mv_idx].this_mv :
+                mbmi_ext->ref_mv_stack[ref_frame_type]
+                                      [mbmi->ref_mv_idx].comp_mv;
+            clamp_mv_ref(&this_mv.as_mv, xd->n8_w << 3, xd->n8_h << 3, xd);
+            lower_mv_precision(&this_mv.as_mv, cm->allow_high_precision_mv);
+            mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0] = this_mv;
+          }
+
+          cur_mv = mbmi_ext->ref_mv_stack[ref_frame]
+                                 [mbmi->ref_mv_idx + idx_offset].this_mv;
           lower_mv_precision(&cur_mv.as_mv, cm->allow_high_precision_mv);
           clamp_mv2(&cur_mv.as_mv, xd);
 
@@ -5558,17 +5602,18 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
             INTERP_FILTER dummy_single_inter_filter[MB_MODE_COUNT]
                                                    [MAX_REF_FRAMES];
             int dummy_single_skippable[MB_MODE_COUNT][MAX_REF_FRAMES];
+            int_mv dummy_frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
             int dummy_disable_skip = 0;
             int64_t dummy_mask_filter = 0;
             int_mv dummy_single_newmv[MAX_REF_FRAMES] = { { 0 } };
 
-            mbmi->ref_mv_idx = 1 + ref_idx;
-
-            frame_mv[NEARMV][ref_frame] = cur_mv;
+            frame_mv[this_mode][ref_frame] = cur_mv;
             tmp_alt_rd = handle_inter_mode(cpi, x, bsize,
                                            &tmp_rate, &tmp_dist, &tmp_skip,
                                            &tmp_rate_y, &tmp_rate_uv,
-                                           &dummy_disable_skip, frame_mv,
+                                           &dummy_disable_skip,
+                                           this_mode == NEARMV ? frame_mv :
+                                               dummy_frame_mv,
                                            mi_row, mi_col,
                                            dummy_single_newmv,
                                            dummy_single_inter_filter,
@@ -5582,7 +5627,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
           if (mbmi_ext->ref_mv_count[ref_frame_type] > 3) {
             uint8_t drl1_ctx =
-                vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 2);
+                vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type],
+                             idx_offset + 1);
             tmp_rate += cpi->drl_mode_cost1[drl1_ctx][ref_idx];
           }
 
@@ -5608,7 +5654,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
                   tmp_sse);
           }
 
-          if (tmp_ref_rd > tmp_alt_rd) {
+          if (tmp_ref_rd > tmp_alt_rd && mbmi->mode == NEARMV) {
             rate2 = tmp_rate;
             distortion2 = tmp_dist;
             skippable = tmp_skip;
@@ -5625,7 +5671,12 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
           }
         }
 
-        frame_mv[NEARMV][ref_frame] = backup_mv;
+        *mbmi = backup_mbmi;
+        frame_mv[this_mode][ref_frame] = backup_mv;
+
+        mbmi_ext->ref_mvs[ref_frame][0] = backup_ref_mv[0];
+        if (comp_pred)
+          mbmi_ext->ref_mvs[second_ref_frame][0] = backup_ref_mv[1];
       }
 #endif
 
