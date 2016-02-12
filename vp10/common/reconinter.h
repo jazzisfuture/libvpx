@@ -32,22 +32,9 @@ static INLINE void inter_predictor(const uint8_t *src, int src_stride,
       vp10_get_interp_filter_params(interp_filter);
   if (interp_filter_params.tap == SUBPEL_TAPS) {
     const InterpKernel *kernel = vp10_filter_kernels[interp_filter];
-#if CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
-    if (IsInterpolatingFilter(interp_filter)) {
-      // Interpolating filter
-      sf->predict[subpel_x != 0][subpel_y != 0][ref](
-          src, src_stride, dst, dst_stride,
-          kernel[subpel_x], xs, kernel[subpel_y], ys, w, h);
-    } else {
-      sf->predict_ni[subpel_x != 0][subpel_y != 0][ref](
-          src, src_stride, dst, dst_stride,
-          kernel[subpel_x], xs, kernel[subpel_y], ys, w, h);
-    }
-#else
     sf->predict[subpel_x != 0][subpel_y != 0][ref](
         src, src_stride, dst, dst_stride,
         kernel[subpel_x], xs, kernel[subpel_y], ys, w, h);
-#endif  // CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
   } else {
     // ref > 0 means this is the second reference frame
     // first reference frame's prediction result is already in dst
@@ -71,22 +58,9 @@ static INLINE void high_inter_predictor(const uint8_t *src, int src_stride,
       vp10_get_interp_filter_params(interp_filter);
   if (interp_filter_params.tap == SUBPEL_TAPS) {
     const InterpKernel *kernel = vp10_filter_kernels[interp_filter];
-#if CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
-    if (IsInterpolatingFilter(interp_filter)) {
-      // Interpolating filter
-      sf->highbd_predict[subpel_x != 0][subpel_y != 0][ref](
-          src, src_stride, dst, dst_stride,
-          kernel[subpel_x], xs, kernel[subpel_y], ys, w, h, bd);
-    } else {
-      sf->highbd_predict_ni[subpel_x != 0][subpel_y != 0][ref](
-          src, src_stride, dst, dst_stride,
-          kernel[subpel_x], xs, kernel[subpel_y], ys, w, h, bd);
-    }
-#else
     sf->highbd_predict[subpel_x != 0][subpel_y != 0][ref](
         src, src_stride, dst, dst_stride,
         kernel[subpel_x], xs, kernel[subpel_y], ys, w, h, bd);
-#endif  // CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
   } else {
     // ref > 0 means this is the second reference frame
     // first reference frame's prediction result is already in dst
@@ -266,17 +240,6 @@ static INLINE int vp10_is_interp_needed(const MACROBLOCKD *const xd) {
   const int is_compound = has_second_ref(mbmi);
   int intpel_mv;
   int plane;
-
-#if SUPPORT_NONINTERPOLATING_FILTERS
-  // TODO(debargha): This is is currently only for experimentation
-  // with non-interpolating filters. Remove later.
-  // If any of the filters are non-interpolating, then indicate the
-  // interpolation filter always.
-  int i;
-  for (i = 0; i < SWITCHABLE_FILTERS; ++i) {
-    if (!IsInterpolatingFilter(i)) return 1;
-  }
-#endif
 
   // For scaled references, interpolation filter is indicated all the time.
   if (vp10_is_scaled(&xd->block_refs[0]->sf))

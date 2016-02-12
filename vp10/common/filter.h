@@ -26,7 +26,6 @@ extern "C" {
 #define EIGHTTAP_SHARP      2
 
 #if CONFIG_EXT_INTERP
-#define SUPPORT_NONINTERPOLATING_FILTERS 0  /* turn it on for experimentation */
 #define EIGHTTAP_SMOOTH2    3
 #define SWITCHABLE_FILTERS  4 /* Number of switchable filters */
 #else
