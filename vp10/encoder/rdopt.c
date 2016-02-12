@@ -4935,9 +4935,6 @@ static INLINE void clamp_mv2(MV *mv, const MACROBLOCKD *xd) {
 
 static INTERP_FILTER predict_interp_filter(const VP10_COMP *cpi,
                                            const MACROBLOCK *x,
-                                           const BLOCK_SIZE bsize,
-                                           const int mi_row,
-                                           const int mi_col,
                                            INTERP_FILTER
                                            (*single_filter)[MAX_REF_FRAMES]
                                            ) {
@@ -4945,31 +4942,12 @@ static INTERP_FILTER predict_interp_filter(const VP10_COMP *cpi,
 
   const VP10_COMMON *cm = &cpi->common;
   const MACROBLOCKD *xd = &x->e_mbd;
-  int bsl = mi_width_log2_lookup[bsize];
-  int pred_filter_search = cpi->sf.cb_pred_filter_search ?
-      (((mi_row + mi_col) >> bsl) +
-       get_chessboard_index(cm->current_video_frame)) & 0x1 : 0;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
   const int is_comp_pred = has_second_ref(mbmi);
   const int this_mode = mbmi->mode;
   int refs[2] = { mbmi->ref_frame[0],
     (mbmi->ref_frame[1] < 0 ? 0 : mbmi->ref_frame[1]) };
 
-  if (pred_filter_search) {
-    INTERP_FILTER af = SWITCHABLE, lf = SWITCHABLE;
-    if (xd->up_available)
-      af = xd->mi[-xd->mi_stride]->mbmi.interp_filter;
-    if (xd->left_available)
-      lf = xd->mi[-1]->mbmi.interp_filter;
-
-#if CONFIG_EXT_INTER
-    if ((this_mode != NEWMV && this_mode != NEWFROMNEARMV &&
-        this_mode != NEW_NEWMV) || (af == lf))
-#else
-    if ((this_mode != NEWMV) || (af == lf))
-#endif  // CONFIG_EXT_INTER
-      best_filter = af;
-  }
   if (is_comp_pred) {
     if (cpi->sf.adaptive_mode_search) {
 #if CONFIG_EXT_INTER
@@ -5371,8 +5349,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
     filter_cache[i] = INT64_MAX;
 
-  best_filter = predict_interp_filter(cpi, x, bsize, mi_row, mi_col,
-                                      single_filter);
+  best_filter = predict_interp_filter(cpi, x, single_filter);
   if (cm->interp_filter != BILINEAR && best_filter == SWITCHABLE) {
     int newbest;
     int tmp_rate_sum = 0;
@@ -5399,13 +5376,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       } else {
         int rate_sum = 0;
         int64_t dist_sum = 0;
-        if (i > 0 && cpi->sf.adaptive_interp_filter_search &&
-            (cpi->sf.interp_filter_search_mask & (1 << i))) {
-          rate_sum = INT_MAX;
-          dist_sum = INT64_MAX;
-          continue;
-        }
-
         if ((cm->interp_filter == SWITCHABLE &&
              (!i || best_needs_copy)) ||
             (cm->interp_filter != SWITCHABLE &&
@@ -5436,12 +5406,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         }
       }
 
-      if (i == 0 && cpi->sf.use_rd_breakout && ref_best_rd < INT64_MAX) {
-        if (rd / 2 > ref_best_rd) {
-          restore_dst_buf(xd, orig_dst, orig_dst_stride);
-          return INT64_MAX;
-        }
-      }
       newbest = i == 0 || rd < best_rd;
 
       if (newbest) {
