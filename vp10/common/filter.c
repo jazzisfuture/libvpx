@@ -12,8 +12,6 @@
 
 #include "vp10/common/filter.h"
 
-#define USE_12_SHARP_FILTER 0
-
 DECLARE_ALIGNED(256, static const InterpKernel,
                 bilinear_filters[SUBPEL_SHIFTS]) = {
   { 0, 0, 0, 128,   0, 0, 0, 0 },
@@ -75,7 +73,7 @@ DECLARE_ALIGNED(256, static const InterpKernel,
 #endif  // CONFIG_EXT_INTERP
 };
 
-#if USE_12_SHARP_FILTER
+#if CONFIG_EXT_INTERP
 DECLARE_ALIGNED(16, static const int16_t,
                 sub_pel_filters_12sharp[16][12]) = {
   // intfilt 0.8
@@ -96,7 +94,7 @@ DECLARE_ALIGNED(16, static const int16_t,
   {0,   1,  -2,   4,  -8,  18, 124, -12,   5,  -3,   1, 0},
   {0,   0,  -1,   2,  -4,   8, 127,  -7,   3,  -1,   1, 0},
 };
-#endif  // USE_12_SHARP_FILTER
+#endif  // CONFIG_EXT_INTERP
 
 DECLARE_ALIGNED(256, static const InterpKernel,
                 sub_pel_filters_8sharp[SUBPEL_SHIFTS]) = {
@@ -231,11 +229,11 @@ static const InterpFilterParams
 vp10_interp_filter_params_list[SWITCHABLE_FILTERS + 1] = {
   {(const int16_t*)sub_pel_filters_8, SUBPEL_TAPS, SUBPEL_SHIFTS},
   {(const int16_t*)sub_pel_filters_8smooth, SUBPEL_TAPS, SUBPEL_SHIFTS},
-#if USE_12_SHARP_FILTER
+#if CONFIG_EXT_INTERP
   {(const int16_t*)sub_pel_filters_12sharp, 12, SUBPEL_SHIFTS},
-#else  // USE_12_SHARP_FILTER
+#else  // CONFIG_EXT_INTERP
   {(const int16_t*)sub_pel_filters_8sharp, SUBPEL_TAPS, SUBPEL_SHIFTS},
-#endif  // USE_12_SHARP_FILTER
+#endif  // CONFIG_EXT_INTERP
 #if CONFIG_EXT_INTERP && SWITCHABLE_FILTERS == 4
   {(const int16_t*)sub_pel_filters_8smooth2, SUBPEL_TAPS, SUBPEL_SHIFTS},
 #endif
