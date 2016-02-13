@@ -1230,7 +1230,9 @@ default_intra_ext_tx_prob[EXT_TX_SETS_INTRA][EXT_TX_SIZES]
     },
   },
 };
+
 #else
+
 const vpx_tree_index vp10_ext_tx_tree[TREE_SIZE(TX_TYPES)] = {
   -DCT_DCT, 2,
   -ADST_ADST, 4,
