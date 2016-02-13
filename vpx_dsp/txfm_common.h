@@ -63,4 +63,6 @@ static const tran_high_t sinpi_2_9 = 9929;
 static const tran_high_t sinpi_3_9 = 13377;
 static const tran_high_t sinpi_4_9 = 15212;
 
+static const tran_high_t Sqrt2 = 23170;
+
 #endif  // VPX_DSP_TXFM_COMMON_H_
