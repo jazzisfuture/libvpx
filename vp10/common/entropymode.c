@@ -941,7 +941,7 @@ default_inter_ext_tx_prob[EXT_TX_SETS_INTER][EXT_TX_SIZES][TX_TYPES - 1] = {
     { 12, 112, 16, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
       128 },
 #if EXT_TX_SIZES == 4
-    { 12, 112, 16, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+    { 12, 160, 16, 144, 160, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
       128 },
 #endif
   }, {
@@ -949,7 +949,7 @@ default_inter_ext_tx_prob[EXT_TX_SETS_INTER][EXT_TX_SIZES][TX_TYPES - 1] = {
     { 12, 112, 128, 128, 128, 128, 128, 128, 128 },
     { 12, 112, 128, 128, 128, 128, 128, 128, 128 },
 #if EXT_TX_SIZES == 4
-    { 12, 112, 128, 128, 128, 128, 128, 128, 128 },
+    { 12, 160, 128, 128, 128, 128, 128, 128, 128 },
 #endif
   }, {
     { 12, },
@@ -1230,7 +1230,9 @@ default_intra_ext_tx_prob[EXT_TX_SETS_INTRA][EXT_TX_SIZES]
     },
   },
 };
+
 #else
+
 const vpx_tree_index vp10_ext_tx_tree[TREE_SIZE(TX_TYPES)] = {
   -DCT_DCT, 2,
   -ADST_ADST, 4,
