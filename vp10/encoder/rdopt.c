@@ -2312,7 +2312,6 @@ void vp10_tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   MACROBLOCKD *xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  unsigned int tmp_sse = 0;
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
   TX_TYPE tx_type = get_tx_type(plane_type, xd, block, tx_size);
@@ -2331,6 +2330,8 @@ void vp10_tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   DECLARE_ALIGNED(16, uint8_t, rec_buffer[32 * 32]);
 #endif
 
+  int off_edge;
+
   int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
 
@@ -2342,121 +2343,127 @@ void vp10_tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
                    VP10_XFORM_QUANT_B);
 
-#if CONFIG_VP9_HIGHBITDEPTH
-  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    rec_buffer = CONVERT_TO_BYTEPTR(rec_buffer_alloc_16);
-    vpx_highbd_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
-                             NULL, 0, NULL, 0, bh, bh, xd->bd);
-  } else {
-    rec_buffer = (uint8_t *)rec_buffer_alloc_16;
-    vpx_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
-                      NULL, 0, NULL, 0, bh, bh);
-  }
-#else
-  vpx_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
-                    NULL, 0, NULL, 0, bh, bh);
-#endif
-
-  if (blk_row + (bh >> 2) > max_blocks_high ||
-      blk_col + (bh >> 2) > max_blocks_wide) {
-    int idx, idy;
-    unsigned int this_sse;
-    int blocks_height = VPXMIN(bh >> 2, max_blocks_high - blk_row);
-    int blocks_width  = VPXMIN(bh >> 2, max_blocks_wide - blk_col);
-    for (idy = 0; idy < blocks_height; idy += 2) {
-      for (idx = 0; idx < blocks_width; idx += 2) {
-        cpi->fn_ptr[BLOCK_8X8].vf(src + 4 * idy * src_stride + 4 * idx,
-                                  src_stride,
-                                  rec_buffer + 4 * idy * 32 + 4 * idx,
-                                  32, &this_sse);
-        tmp_sse += this_sse;
-      }
-    }
-  } else {
-    cpi->fn_ptr[txm_bsize].vf(src, src_stride, rec_buffer, 32, &tmp_sse);
-  }
-
-  *bsse += (int64_t)tmp_sse * 16;
-
-  if (p->eobs[block] > 0) {
-    const int lossless = xd->lossless[xd->mi[0]->mbmi.segment_id];
-#if CONFIG_VP9_HIGHBITDEPTH
-    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-      const int bd = xd->bd;
-      switch (tx_size) {
-        case TX_32X32:
-          vp10_highbd_inv_txfm_add_32x32(dqcoeff, rec_buffer, 32,
-                                         p->eobs[block], bd, tx_type);
-          break;
-        case TX_16X16:
-          vp10_highbd_inv_txfm_add_16x16(dqcoeff, rec_buffer, 32,
-                                         p->eobs[block], bd, tx_type);
-          break;
-        case TX_8X8:
-          vp10_highbd_inv_txfm_add_8x8(dqcoeff, rec_buffer, 32,
-                                       p->eobs[block], bd, tx_type);
-          break;
-        case TX_4X4:
-          vp10_highbd_inv_txfm_add_4x4(dqcoeff, rec_buffer, 32,
-                                       p->eobs[block], bd, tx_type, lossless);
-          break;
-        default:
-          assert(0 && "Invalid transform size");
-          break;
-      }
-    } else {
-#else
-    {
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-      switch (tx_size) {
-        case TX_32X32:
-          vp10_inv_txfm_add_32x32(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                  tx_type);
-          break;
-        case TX_16X16:
-          vp10_inv_txfm_add_16x16(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                  tx_type);
-          break;
-        case TX_8X8:
-          vp10_inv_txfm_add_8x8(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                tx_type);
-          break;
-        case TX_4X4:
-          vp10_inv_txfm_add_4x4(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                tx_type, lossless);
-          break;
-        default:
-          assert(0 && "Invalid transform size");
-          break;
-      }
-    }
-
-    if ((bh >> 2) + blk_col > max_blocks_wide ||
-        (bh >> 2) + blk_row > max_blocks_high) {
-      int idx, idy;
-      unsigned int this_sse;
-      int blocks_height = VPXMIN(bh >> 2, max_blocks_high - blk_row);
-      int blocks_width  = VPXMIN(bh >> 2, max_blocks_wide - blk_col);
-      tmp_sse = 0;
-      for (idy = 0; idy < blocks_height; idy += 2) {
-        for (idx = 0; idx < blocks_width; idx += 2) {
-          cpi->fn_ptr[BLOCK_8X8].vf(src + 4 * idy * src_stride + 4 * idx,
-                                    src_stride,
-                                    rec_buffer + 4 * idy * 32 + 4 * idx,
-                                    32, &this_sse);
-          tmp_sse += this_sse;
-        }
-      }
-    } else {
-      cpi->fn_ptr[txm_bsize].vf(src, src_stride,
-                                rec_buffer, 32, &tmp_sse);
-    }
-  }
-  *dist += (int64_t)tmp_sse * 16;
 
   *rate += cost_coeffs(x, plane, block, coeff_ctx, tx_size,
                        scan_order->scan, scan_order->neighbors, 0);
   *skip &= (p->eobs[block] == 0);
+
+  off_edge = blk_row + (bh >> 2) > max_blocks_high ||
+             blk_col + (bh >> 2) > max_blocks_wide;
+
+  // Change this condition to 0 to always use the transform domain,
+  // or to  1, to always use the image domain distortion metric.
+  if (off_edge) {
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      rec_buffer = CONVERT_TO_BYTEPTR(rec_buffer_alloc_16);
+      vpx_highbd_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
+                               NULL, 0, NULL, 0, bh, bh, xd->bd);
+    } else {
+      rec_buffer = (uint8_t *)rec_buffer_alloc_16;
+      vpx_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
+                        NULL, 0, NULL, 0, bh, bh);
+    }
+#else
+    vpx_convolve_copy(dst, pd->dst.stride, rec_buffer, 32,
+                      NULL, 0, NULL, 0, bh, bh);
+#endif
+
+    if (p->eobs[block] > 0) {
+      const int lossless = xd->lossless[xd->mi[0]->mbmi.segment_id];
+  #if CONFIG_VP9_HIGHBITDEPTH
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+        const int bd = xd->bd;
+        switch (tx_size) {
+          case TX_32X32:
+            vp10_highbd_inv_txfm_add_32x32(dqcoeff, rec_buffer, 32,
+                                           p->eobs[block], bd, tx_type);
+            break;
+          case TX_16X16:
+            vp10_highbd_inv_txfm_add_16x16(dqcoeff, rec_buffer, 32,
+                                           p->eobs[block], bd, tx_type);
+            break;
+          case TX_8X8:
+            vp10_highbd_inv_txfm_add_8x8(dqcoeff, rec_buffer, 32,
+                                         p->eobs[block], bd, tx_type);
+            break;
+          case TX_4X4:
+            vp10_highbd_inv_txfm_add_4x4(dqcoeff, rec_buffer, 32,
+                                         p->eobs[block], bd, tx_type, lossless);
+            break;
+          default:
+            assert(0 && "Invalid transform size");
+            break;
+        }
+      } else {
+  #else
+      {
+  #endif  // CONFIG_VP9_HIGHBITDEPTH
+        switch (tx_size) {
+          case TX_32X32:
+            vp10_inv_txfm_add_32x32(dqcoeff, rec_buffer, 32, p->eobs[block],
+                                    tx_type);
+            break;
+          case TX_16X16:
+            vp10_inv_txfm_add_16x16(dqcoeff, rec_buffer, 32, p->eobs[block],
+                                    tx_type);
+            break;
+          case TX_8X8:
+            vp10_inv_txfm_add_8x8(dqcoeff, rec_buffer, 32, p->eobs[block],
+                                  tx_type);
+            break;
+          case TX_4X4:
+            vp10_inv_txfm_add_4x4(dqcoeff, rec_buffer, 32, p->eobs[block],
+                                  tx_type, lossless);
+            break;
+          default:
+            assert(0 && "Invalid transform size");
+            break;
+        }
+      }
+    }
+
+    if (off_edge) {
+      unsigned int tmp_sse = 0;
+      unsigned int tmp_dist = 0;
+      int idx, idy;
+      unsigned int tmp;
+      int blocks_height = VPXMIN(bh >> 2, max_blocks_high - blk_row);
+      int blocks_width  = VPXMIN(bh >> 2, max_blocks_wide - blk_col);
+      for (idy = 0; idy < blocks_height; idy += 2) {
+        for (idx = 0; idx < blocks_width; idx += 2) {
+          const int16_t *d = diff + 4 * idy * diff_stride + 4 * idx;
+          tmp_sse += vpx_sum_squares_2d_i16(d, diff_stride, 8);
+          if (p->eobs[block] > 0) {
+            cpi->fn_ptr[BLOCK_8X8].vf(src + 4 * idy * src_stride + 4 * idx,
+                                      src_stride,
+                                      rec_buffer + 4 * idy * 32 + 4 * idx,
+                                      32, &tmp);
+            tmp_dist += tmp;
+          }
+        }
+      }
+      if (p->eobs[block] > 0) {
+        *bsse += (int64_t)tmp_sse * 16;
+        *dist += (int64_t)tmp_sse * 16;
+      } else {
+        *bsse += (int64_t)tmp_sse * 16;
+        *dist += (int64_t)tmp_dist * 16;
+      }
+    } else {
+      unsigned int tmp = 0;
+      *bsse += (int64_t)vpx_sum_squares_2d_i16(diff, diff_stride, bh) * 16;
+      cpi->fn_ptr[txm_bsize].vf(src, src_stride, rec_buffer, 32, &tmp);
+      *dist += (int64_t)tmp * 16;
+    }
+  } else {
+    int64_t ts;
+    int64_t td;
+    dist_block(x, plane, block, tx_size, &td, &ts);
+    *bsse += ts;
+    *dist += td;
+  }
+
 }
 
 static void select_tx_block(const VP10_COMP *cpi, MACROBLOCK *x,
