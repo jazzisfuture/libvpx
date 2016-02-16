@@ -4032,6 +4032,36 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
     if (bestsme < INT_MAX) {
       int dis; /* TODO: use dis in distortion calculation later. */
       unsigned int sse;
+#if CONFIG_AFFINE_MOTION
+      // Use up-sampled reference frames.
+      struct buf_2d backup_pred[MAX_MB_PLANE] = {{0, 0}};
+      const YV12_BUFFER_CONFIG *upsampled_ref;
+      int i;
+
+      upsampled_ref = get_upsampled_ref(cpi, refs[id]);
+
+      for (i = 0; i < MAX_MB_PLANE; i++)
+        backup_pred[i] = xd->plane[i].pre[0];
+
+      vp10_setup_pre_planes(xd, 0, upsampled_ref, (mi_row << 3), (mi_col << 3),
+                            NULL);
+
+      bestsme = cpi->find_fractional_mv_step(
+          x, &tmp_mv,
+          &ref_mv[id].as_mv,
+          cpi->common.allow_high_precision_mv,
+          x->errorperbit,
+          &cpi->fn_ptr[bsize],
+          0, cpi->sf.mv.subpel_iters_per_step,
+          NULL,
+          x->nmvjointcost, x->mvcost,
+          &dis, &sse, second_pred,
+          pw, ph, 1);
+
+      // Restore the reference frames.
+      for (i = 0; i < MAX_MB_PLANE; i++)
+        xd->plane[i].pre[0] = backup_pred[i];
+#else
       bestsme = cpi->find_fractional_mv_step(
           x, &tmp_mv,
           &ref_mv[id].as_mv,
@@ -4043,6 +4073,7 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
           x->nmvjointcost, x->mvcost,
           &dis, &sse, second_pred,
           pw, ph);
+#endif
     }
 
     // Restore the pointer to the first (possibly scaled) prediction buffer.
@@ -4323,6 +4354,42 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
           if (bestsme < INT_MAX) {
             int distortion;
+#if CONFIG_AFFINE_MOTION
+            const int pw = 4 * num_4x4_blocks_wide_lookup[bsize];
+            const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
+            struct buf_2d backup_pred[MAX_MB_PLANE] = {{0, 0}};
+            const YV12_BUFFER_CONFIG *upsampled_ref;
+            int j;
+
+            upsampled_ref = get_upsampled_ref(cpi, mbmi->ref_frame[0]);
+
+            for (j = 0; j < MAX_MB_PLANE; j++)
+              backup_pred[j] = xd->plane[j].pre[0];
+
+            vp10_setup_pre_planes(xd, 0, upsampled_ref, (mi_row << 3),
+                                  (mi_col << 3), NULL);
+
+            // adjust pred pointer for this block
+            xd->plane[0].pre[0].buf += (vp10_raster_block_offset(BLOCK_8X8,
+                i, xd->plane[0].pre[0].stride) << 3);
+
+            cpi->find_fractional_mv_step(
+                x,
+                new_mv,
+                &bsi->ref_mv[0]->as_mv,
+                cm->allow_high_precision_mv,
+                x->errorperbit, &cpi->fn_ptr[bsize],
+                cpi->sf.mv.subpel_force_stop,
+                cpi->sf.mv.subpel_iters_per_step,
+                cond_cost_list(cpi, cost_list),
+                x->nmvjointcost, x->mvcost,
+                &distortion,
+                &x->pred_sse[mbmi->ref_frame[0]],
+                NULL, pw, ph, 1);
+
+            for (j = 0; j < MAX_MB_PLANE; j++)
+              xd->plane[j].pre[0] = backup_pred[j];
+#else
             cpi->find_fractional_mv_step(
                 x,
                 new_mv,
@@ -4336,6 +4403,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
                 &distortion,
                 &x->pred_sse[mbmi->ref_frame[0]],
                 NULL, 0, 0);
+#endif
 
             // save motion search result for use in compound prediction
 #if CONFIG_EXT_INTER
@@ -4931,6 +4999,35 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
 
   if (bestsme < INT_MAX) {
     int dis;  /* TODO: use dis in distortion calculation later. */
+#if CONFIG_AFFINE_MOTION
+    const int pw = 4 * num_4x4_blocks_wide_lookup[bsize];
+    const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
+    struct buf_2d backup_pred[MAX_MB_PLANE] = {{0, 0}};
+    const YV12_BUFFER_CONFIG *upsampled_ref;
+    int i;
+
+    upsampled_ref = get_upsampled_ref(cpi, ref);
+
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      backup_pred[i] = xd->plane[i].pre[0];
+
+    vp10_setup_pre_planes(xd, 0, upsampled_ref, (mi_row << 3), (mi_col << 3),
+                          NULL);
+
+    bestsme = cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv,
+                                              cm->allow_high_precision_mv,
+                                              x->errorperbit,
+                                              &cpi->fn_ptr[bsize],
+                                              cpi->sf.mv.subpel_force_stop,
+                                              cpi->sf.mv.subpel_iters_per_step,
+                                              cond_cost_list(cpi, cost_list),
+                                              x->nmvjointcost, x->mvcost,
+                                              &dis, &x->pred_sse[ref], NULL,
+                                              pw, ph, 1);
+
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      xd->plane[i].pre[0] = backup_pred[i];
+#else
     cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv,
                                  cm->allow_high_precision_mv,
                                  x->errorperbit,
@@ -4940,6 +5037,7 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
                                  cond_cost_list(cpi, cost_list),
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &x->pred_sse[ref], NULL, 0, 0);
+#endif
   }
   *rate_mv = vp10_mv_bit_cost(&tmp_mv->as_mv, &ref_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
