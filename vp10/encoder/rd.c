@@ -155,6 +155,9 @@ static void fill_token_costs(vp10_coeff_cost *c,
 #if CONFIG_ANS
             const vpx_prob *const tree_probs = p[t][i][j][k][l];
             vpx_prob pivot = tree_probs[PIVOT_NODE];
+            // Pivot never should be zero.
+            // See: http://bugs.chromium.org/p/webm/issues/detail?id=1089
+            if (pivot == 0) pivot = 1;
             vp10_cost_tokens_ans((int *)c[t][i][j][k][0][l], tree_probs,
                                  vp10_pareto8_token_probs[pivot - 1], 0);
             vp10_cost_tokens_ans((int *)c[t][i][j][k][1][l], tree_probs,
