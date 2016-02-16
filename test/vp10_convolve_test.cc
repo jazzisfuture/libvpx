@@ -60,38 +60,42 @@ TEST(VP10ConvolveTest, vp10_convolve) {
   int dst_stride = 1;
   int x_step_q4 = 16;
   int y_step_q4 = 16;
-  int subpel_x_q4 = 3;
-  int subpel_y_q4 = 2;
   int avg = 0;
-
   int w = 1;
   int h = 1;
+
+  int subpel_x_q4;
+  int subpel_y_q4;
 
   for (int i = 0; i < filter_size * filter_size; i++) {
     src[i] = rnd.Rand16() % (1 << 8);
   }
 
-  vp10_convolve(src + src_stride * filter_center + filter_center, src_stride,
-                dst, dst_stride, w, h, filter_params, subpel_x_q4, x_step_q4,
-                subpel_y_q4, y_step_q4, avg);
+  for (subpel_x_q4 = 0; subpel_x_q4 < 16; subpel_x_q4++) {
+    for (subpel_y_q4 = 0; subpel_y_q4 < 16; subpel_y_q4++) {
+      vp10_convolve(src + src_stride * filter_center + filter_center,
+                    src_stride, dst, dst_stride, w, h, filter_params,
+                    subpel_x_q4, x_step_q4, subpel_y_q4, y_step_q4, avg);
 
-  const int16_t* x_filter =
-      vp10_get_interp_filter_kernel(filter_params, subpel_x_q4);
-  const int16_t* y_filter =
-      vp10_get_interp_filter_kernel(filter_params, subpel_y_q4);
+      const int16_t* x_filter =
+          vp10_get_interp_filter_kernel(filter_params, subpel_x_q4);
+      const int16_t* y_filter =
+          vp10_get_interp_filter_kernel(filter_params, subpel_y_q4);
 
-  int temp[12];
-  int dst_ref = 0;
-  for (int r = 0; r < filter_size; r++) {
-    temp[r] = 0;
-    for (int c = 0; c < filter_size; c++) {
-      temp[r] += x_filter[c] * src[r * filter_size + c];
+      int temp[12];
+      int dst_ref = 0;
+      for (int r = 0; r < filter_size; r++) {
+        temp[r] = 0;
+        for (int c = 0; c < filter_size; c++) {
+          temp[r] += x_filter[c] * src[r * filter_size + c];
+        }
+        temp[r] = clip_pixel(ROUND_POWER_OF_TWO(temp[r], FILTER_BITS));
+        dst_ref += temp[r] * y_filter[r];
+      }
+      dst_ref = clip_pixel(ROUND_POWER_OF_TWO(dst_ref, FILTER_BITS));
+      EXPECT_EQ(dst[0], dst_ref);
     }
-    temp[r] = clip_pixel(ROUND_POWER_OF_TWO(temp[r], FILTER_BITS));
-    dst_ref += temp[r] * y_filter[r];
   }
-  dst_ref = clip_pixel(ROUND_POWER_OF_TWO(dst_ref, FILTER_BITS));
-  EXPECT_EQ(dst[0], dst_ref);
 }
 
 TEST(VP10ConvolveTest, vp10_convolve_avg) {
@@ -157,40 +161,45 @@ TEST(VP10ConvolveTest, vp10_highbd_convolve) {
   int dst_stride = 1;
   int x_step_q4 = 16;
   int y_step_q4 = 16;
-  int subpel_x_q4 = 8;
-  int subpel_y_q4 = 6;
   int avg = 0;
   int bd = 10;
-
   int w = 1;
   int h = 1;
+
+  int subpel_x_q4;
+  int subpel_y_q4;
 
   for (int i = 0; i < filter_size * filter_size; i++) {
     src[i] = rnd.Rand16() % (1 << bd);
   }
 
-  vp10_highbd_convolve(
-      CONVERT_TO_BYTEPTR(src + src_stride * filter_center + filter_center),
-      src_stride, CONVERT_TO_BYTEPTR(dst), dst_stride, w, h, filter_params,
-      subpel_x_q4, x_step_q4, subpel_y_q4, y_step_q4, avg, bd);
+  for (subpel_x_q4 = 0; subpel_x_q4 < 16; subpel_x_q4++) {
+    for (subpel_y_q4 = 0; subpel_y_q4 < 16; subpel_y_q4++) {
+      vp10_highbd_convolve(
+          CONVERT_TO_BYTEPTR(src + src_stride * filter_center + filter_center),
+          src_stride, CONVERT_TO_BYTEPTR(dst), dst_stride, w, h, filter_params,
+          subpel_x_q4, x_step_q4, subpel_y_q4, y_step_q4, avg, bd);
 
-  const int16_t* x_filter =
-      vp10_get_interp_filter_kernel(filter_params, subpel_x_q4);
-  const int16_t* y_filter =
-      vp10_get_interp_filter_kernel(filter_params, subpel_y_q4);
+      const int16_t* x_filter =
+          vp10_get_interp_filter_kernel(filter_params, subpel_x_q4);
+      const int16_t* y_filter =
+          vp10_get_interp_filter_kernel(filter_params, subpel_y_q4);
 
-  int temp[12];
-  int dst_ref = 0;
-  for (int r = 0; r < filter_size; r++) {
-    temp[r] = 0;
-    for (int c = 0; c < filter_size; c++) {
-      temp[r] += x_filter[c] * src[r * filter_size + c];
+      int temp[12];
+      int dst_ref = 0;
+      for (int r = 0; r < filter_size; r++) {
+        temp[r] = 0;
+        for (int c = 0; c < filter_size; c++) {
+          temp[r] += x_filter[c] * src[r * filter_size + c];
+        }
+        temp[r] =
+            clip_pixel_highbd(ROUND_POWER_OF_TWO(temp[r], FILTER_BITS), bd);
+        dst_ref += temp[r] * y_filter[r];
+      }
+      dst_ref = clip_pixel_highbd(ROUND_POWER_OF_TWO(dst_ref, FILTER_BITS), bd);
+      EXPECT_EQ(dst[0], dst_ref);
     }
-    temp[r] = clip_pixel_highbd(ROUND_POWER_OF_TWO(temp[r], FILTER_BITS), bd);
-    dst_ref += temp[r] * y_filter[r];
   }
-  dst_ref = clip_pixel_highbd(ROUND_POWER_OF_TWO(dst_ref, FILTER_BITS), bd);
-  EXPECT_EQ(dst[0], dst_ref);
 }
 
 TEST(VP10ConvolveTest, vp10_highbd_convolve_avg) {
