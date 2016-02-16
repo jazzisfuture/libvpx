@@ -510,6 +510,8 @@ void vp10_set_speed_features_framesize_independent(VP10_COMP *cpi) {
   sf->partition_search_breakout_dist_thr = 0;
   sf->partition_search_breakout_rate_thr = 0;
   sf->simple_model_rd_from_var = 0;
+  // TODO(any): Set this at the appropriate speed levels
+  sf->use_transform_domain_distortion = 0;
 
   if (oxcf->mode == REALTIME)
     set_rt_speed_feature(cpi, sf, oxcf->speed, oxcf->content);
