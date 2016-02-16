@@ -561,6 +561,9 @@ void vp10_set_speed_features_framesize_independent(VP10_COMP *cpi) {
 
   if (sf->mv.subpel_search_method == SUBPEL_TREE) {
     cpi->find_fractional_mv_step = vp10_find_best_sub_pixel_tree;
+#if CONFIG_AFFINE_MOTION
+    cpi->find_fractional_mv_step_hp = vp10_find_best_sub_pixel_tree_hp;
+#endif
   } else if (sf->mv.subpel_search_method == SUBPEL_TREE_PRUNED) {
     cpi->find_fractional_mv_step = vp10_find_best_sub_pixel_tree_pruned;
   } else if (sf->mv.subpel_search_method == SUBPEL_TREE_PRUNED_MORE) {

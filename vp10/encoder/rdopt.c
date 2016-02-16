@@ -3972,6 +3972,45 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
     if (bestsme < INT_MAX) {
       int dis; /* TODO: use dis in distortion calculation later. */
       unsigned int sse;
+#if CONFIG_AFFINE_MOTION
+      // Use up-sampled reference frames.
+      struct buf_2d backup_pred[MAX_MB_PLANE] = {{0, 0}};
+      const YV12_BUFFER_CONFIG *upsampled_ref;
+      int ref_idx = 0;
+      int i;
+
+      if (refs[id] == LAST_FRAME)
+        ref_idx = cpi->lst_fb_idx;
+      else if (refs[id] == GOLDEN_FRAME)
+        ref_idx = cpi->gld_fb_idx;
+      else if (refs[id] == ALTREF_FRAME)
+        ref_idx = cpi->alt_fb_idx;
+
+      upsampled_ref = &cpi->upsampled_ref_bufs[cpi->upsampled_ref_idx[ref_idx]].
+          buf;
+
+      for (i = 0; i < MAX_MB_PLANE; i++)
+        backup_pred[i] = xd->plane[i].pre[0];
+
+      vp10_setup_pre_planes(xd, 0, upsampled_ref, (mi_row << 3), (mi_col << 3),
+                            NULL);
+
+      bestsme = cpi->find_fractional_mv_step_hp(
+          x, &tmp_mv,
+          &ref_mv[id].as_mv,
+          cpi->common.allow_high_precision_mv,
+          x->errorperbit,
+          &cpi->fn_ptr[bsize],
+          0, cpi->sf.mv.subpel_iters_per_step,
+          NULL,
+          x->nmvjointcost, x->mvcost,
+          &dis, &sse, second_pred,
+          pw, ph);
+
+      // Restore the reference frames.
+      for (i = 0; i < MAX_MB_PLANE; i++)
+        xd->plane[i].pre[0] = backup_pred[i];
+#else
       bestsme = cpi->find_fractional_mv_step(
           x, &tmp_mv,
           &ref_mv[id].as_mv,
@@ -3983,6 +4022,7 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
           x->nmvjointcost, x->mvcost,
           &dis, &sse, second_pred,
           pw, ph);
+#endif
     }
 
     // Restore the pointer to the first (possibly scaled) prediction buffer.
@@ -4864,6 +4904,45 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
 
   if (bestsme < INT_MAX) {
     int dis;  /* TODO: use dis in distortion calculation later. */
+#if CONFIG_AFFINE_MOTION
+    const int pw = 4 * num_4x4_blocks_wide_lookup[bsize];
+    const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
+    struct buf_2d backup_pred[MAX_MB_PLANE] = {{0, 0}};
+    const YV12_BUFFER_CONFIG *upsampled_ref;
+    int ref_idx = 0;
+    int i;
+
+    // Use up-sampled reference frames.
+    if (ref == LAST_FRAME)
+      ref_idx = cpi->lst_fb_idx;
+    else if (ref == GOLDEN_FRAME)
+      ref_idx = cpi->gld_fb_idx;
+    else if (ref == ALTREF_FRAME)
+      ref_idx = cpi->alt_fb_idx;
+
+    upsampled_ref = &cpi->upsampled_ref_bufs[cpi->upsampled_ref_idx[ref_idx]].
+        buf;
+
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      backup_pred[i] = xd->plane[i].pre[0];
+
+    vp10_setup_pre_planes(xd, 0, upsampled_ref, (mi_row << 3), (mi_col << 3),
+                          NULL);
+
+    bestsme = cpi->find_fractional_mv_step_hp(x, &tmp_mv->as_mv, &ref_mv,
+                                              cm->allow_high_precision_mv,
+                                              x->errorperbit,
+                                              &cpi->fn_ptr[bsize],
+                                              cpi->sf.mv.subpel_force_stop,
+                                              cpi->sf.mv.subpel_iters_per_step,
+                                              cond_cost_list(cpi, cost_list),
+                                              x->nmvjointcost, x->mvcost,
+                                              &dis, &x->pred_sse[ref], NULL,
+                                              pw, ph);
+
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      xd->plane[i].pre[0] = backup_pred[i];
+#else
     cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv,
                                  cm->allow_high_precision_mv,
                                  x->errorperbit,
@@ -4873,6 +4952,7 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
                                  cond_cost_list(cpi, cost_list),
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &x->pred_sse[ref], NULL, 0, 0);
+#endif
   }
   *rate_mv = vp10_mv_bit_cost(&tmp_mv->as_mv, &ref_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
