@@ -280,6 +280,13 @@ typedef struct IMAGE_STAT {
   double worst;
 } ImageStat;
 
+#if CONFIG_AFFINE_MOTION
+typedef struct {
+  int ref_count;
+  YV12_BUFFER_CONFIG buf;
+} EncRefCntBuffer;
+#endif
+
 typedef struct VP10_COMP {
   QUANTS quants;
   ThreadData td;
@@ -297,6 +304,11 @@ typedef struct VP10_COMP {
   YV12_BUFFER_CONFIG scaled_source;
   YV12_BUFFER_CONFIG *unscaled_last_source;
   YV12_BUFFER_CONFIG scaled_last_source;
+
+#if CONFIG_AFFINE_MOTION
+  EncRefCntBuffer upsampled_ref_bufs[MAX_REF_FRAMES];
+  int upsampled_ref_idx[MAX_REF_FRAMES];
+#endif
 
   TileDataEnc *tile_data;
   int allocated_tiles;  // Keep track of memory allocated for tiles.
@@ -377,6 +389,9 @@ typedef struct VP10_COMP {
   ActiveMap active_map;
 
   fractional_mv_step_fp *find_fractional_mv_step;
+#if CONFIG_AFFINE_MOTION
+  fractional_mv_step_fp *find_fractional_mv_step_hp;
+#endif
   vp10_full_search_fn_t full_search_sad;
   vp10_diamond_search_fn_t diamond_search_sad;
   vp9_variance_fn_ptr_t fn_ptr[BLOCK_SIZES];

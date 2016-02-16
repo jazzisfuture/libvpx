@@ -278,6 +278,52 @@ static INLINE const uint8_t *pre(const uint8_t *buf, int stride, int r, int c) {
     }                                                   \
   }
 
+#if CONFIG_AFFINE_MOTION
+static INLINE const uint8_t *pre1(const uint8_t *buf, int stride,
+                                  int r, int c) {
+  return &buf[(r) * stride + (c)];
+}
+
+/* checks if (r, c) has better score than previous best */
+#define CHECK_BETTER1(v, r, c) \
+  if (c >= minc && c <= maxc && r >= minr && r <= maxr) {              \
+    if (second_pred == NULL)                                           \
+      get_pred_without_second_pred(pre1(y, y_stride, r, c), y_stride,  \
+                                   pred_buf, h, w);                    \
+    else                                                               \
+      get_pred_with_second_pred(pre1(y, y_stride, r, c), y_stride,     \
+                                pred_buf, h, w, second_pred);          \
+    thismse = vfp->vf(pred_buf, w, z, src_stride, &sse);               \
+    if ((v = MVC(r, c) + thismse) < besterr) {                         \
+      besterr = v;                                                     \
+      br = r;                                                          \
+      bc = c;                                                          \
+      *distortion = thismse;                                           \
+      *sse1 = sse;                                                     \
+    }                                                                  \
+  } else {                                                             \
+    v = INT_MAX;                                                       \
+  }
+
+#define SECOND_LEVEL_CHECKS_BEST1                       \
+  {                                                     \
+    unsigned int second;                                \
+    int br0 = br;                                       \
+    int bc0 = bc;                                       \
+    assert(tr == br || tc == bc);                       \
+    if (tr == br && tc != bc) {                         \
+      kc = bc - tc;                                     \
+    } else if (tr != br && tc == bc) {                  \
+      kr = br - tr;                                     \
+    }                                                   \
+    CHECK_BETTER1(second, br0 + kr, bc0);               \
+    CHECK_BETTER1(second, br0, bc0 + kc);               \
+    if (br0 != br || bc0 != bc) {                       \
+      CHECK_BETTER1(second, br0 + kr, bc0 + kc);        \
+    }                                                   \
+  }
+#endif
+
 #define SETUP_SUBPEL_SEARCH                                                \
   const uint8_t *const z = x->plane[0].src.buf;                            \
   const int src_stride = x->plane[0].src.stride;                           \
@@ -350,11 +396,105 @@ static unsigned int setup_center_error(const MACROBLOCKD *xd,
   } else {
     besterr = vfp->vf(y + offset, y_stride, src, src_stride, sse1);
   }
+
   *distortion = besterr;
   besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   return besterr;
 }
+
+#if CONFIG_AFFINE_MOTION
+void get_pred_with_second_pred(const uint8_t *pred,
+                                             int pre_stride,
+                                             uint8_t *dst, int bh, int bw,
+                                             const uint8_t *second_pred) {
+    int r, c, tc;
+
+    for (r = 0; r < bh; r++) {
+      for (c = 0, tc = 0; c < bw; c++, tc += 8) {
+        const int tmp = pred[tc] + second_pred[c];
+        dst[c] = ROUND_POWER_OF_TWO(tmp, 1);
+      }
+      dst += bw;
+      second_pred += bw;
+      pred += pre_stride * 8;
+    }
+}
+
+void get_pred_without_second_pred(const uint8_t *pred,
+                                                int pre_stride,
+                                                uint8_t *dst, int bh, int bw) {
+    int r, c, tc;
+
+    for (r = 0; r < bh; r++) {
+      for (c = 0, tc = 0; c < bw; c++, tc += 8) {
+        dst[c] = pred[tc];
+      }
+      dst += bw;
+      pred += pre_stride * 8;
+    }
+}
+
+static unsigned int setup_center_error1(const MACROBLOCKD *xd,
+                                       const MV *bestmv,
+                                       const MV *ref_mv,
+                                       int error_per_bit,
+                                       const vp9_variance_fn_ptr_t *vfp,
+                                       const uint8_t *const src,
+                                       const int src_stride,
+                                       const uint8_t *const y,
+                                       int y_stride,
+                                       const uint8_t *second_pred,
+                                       int w, int h, int offset,
+                                       int *mvjcost, int *mvcost[3],
+                                       unsigned int *sse1,
+                                       int *distortion) {
+  unsigned int besterr;
+#if CONFIG_VP9_HIGHBITDEPTH
+//  ////////////// need to modify
+//  if (second_pred != NULL) {
+//    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+//      DECLARE_ALIGNED(16, uint16_t, comp_pred16[64 * 64]);
+//      vpx_highbd_comp_avg_pred(comp_pred16, second_pred, w, h, y + offset,
+//                               y_stride);
+//      besterr = vfp->vf(CONVERT_TO_BYTEPTR(comp_pred16), w, src, src_stride,
+//                        sse1);
+//    } else {
+//      DECLARE_ALIGNED(16, uint8_t, comp_pred[64 * 64]);
+//      vpx_comp_avg_pred(comp_pred, second_pred, w, h, y + offset, y_stride);
+//      besterr = vfp->vf(comp_pred, w, src, src_stride, sse1);
+//    }
+//  } else {
+//    besterr = vfp->vf(y + offset, y_stride, src, src_stride, sse1);
+//  }
+//  *distortion = besterr;
+//  besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
+#else
+  (void) xd;
+//  if (second_pred != NULL) {
+//    DECLARE_ALIGNED(16, uint8_t, comp_pred[64 * 64]);
+//    vpx_comp_avg_pred(comp_pred, second_pred, w, h, y + offset, y_stride);
+//    besterr = vfp->vf(comp_pred, w, src, src_stride, sse1);
+//  } else {
+//    besterr = vfp->vf(y + offset, y_stride, src, src_stride, sse1);
+//  }
+  {
+  DECLARE_ALIGNED(16, uint8_t, comp_pred[64 * 64]);
+  if (second_pred != NULL)
+    get_pred_with_second_pred(y + offset, y_stride, comp_pred, h, w,
+                              second_pred);
+  else
+    get_pred_without_second_pred(y + offset, y_stride, comp_pred, h, w);
+
+  besterr = vfp->vf(comp_pred, w, src, src_stride, sse1);
+  }
+
+  *distortion = besterr;
+  besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  return besterr;
+}
+#endif
 
 static INLINE int divide_and_round(const int n, const int d) {
   return ((n < 0) ^ (d < 0)) ? ((n - d / 2) / d) : ((n + d / 2) / d);
@@ -788,6 +928,183 @@ int vp10_find_best_sub_pixel_tree(const MACROBLOCK *x,
 
   return besterr;
 }
+
+#if CONFIG_AFFINE_MOTION
+int vp10_find_best_sub_pixel_tree_hp(const MACROBLOCK *x,
+                                 MV *bestmv, const MV *ref_mv,
+                                 int allow_hp,
+                                 int error_per_bit,
+                                 const vp9_variance_fn_ptr_t *vfp,
+                                 int forced_stop,
+                                 int iters_per_step,
+                                 int *cost_list,
+                                 int *mvjcost, int *mvcost[3],
+                                 int *distortion,
+                                 unsigned int *sse1,
+                                 const uint8_t *second_pred,
+                                 int w, int h) {
+  const uint8_t *const z = x->plane[0].src.buf;
+  const uint8_t *const src_address = z;
+  const int src_stride = x->plane[0].src.stride;
+  const MACROBLOCKD *xd = &x->e_mbd;
+  unsigned int besterr = INT_MAX;
+  unsigned int sse;
+  int thismse;
+  int y_stride;    // = xd->plane[0].pre[0].stride;
+  int offset;      // = bestmv->row * y_stride + bestmv->col;
+  uint8_t *y;      // = xd->plane[0].pre[0].buf;
+
+  int rr = ref_mv->row;
+  int rc = ref_mv->col;
+  int br = bestmv->row * 8;
+  int bc = bestmv->col * 8;
+  int hstep = 4;
+  int iter, round = 3 - forced_stop;
+  const int minc = VPXMAX(x->mv_col_min * 8, ref_mv->col - MV_MAX);
+  const int maxc = VPXMIN(x->mv_col_max * 8, ref_mv->col + MV_MAX);
+  const int minr = VPXMAX(x->mv_row_min * 8, ref_mv->row - MV_MAX);
+  const int maxr = VPXMIN(x->mv_row_max * 8, ref_mv->row + MV_MAX);
+  int tr = br;
+  int tc = bc;
+  const MV *search_step = search_step_table;
+  int idx, best_idx = -1;
+  unsigned int cost_array[5];
+  int kr, kc;
+
+  ///////////////
+  DECLARE_ALIGNED(16, uint8_t, pred_buf[64 * 64]);
+
+  y = xd->plane[0].pre[0].buf;
+  y_stride = xd->plane[0].pre[0].stride;
+  offset = br * y_stride + bc;
+  /////////////////////////
+
+  if (!(allow_hp && vp10_use_mv_hp(ref_mv)))
+    if (round == 3)
+      round = 2;
+
+  bestmv->row *= 8;
+  bestmv->col *= 8;
+
+  besterr = setup_center_error1(xd, bestmv, ref_mv, error_per_bit, vfp,
+                               z, src_stride, y, y_stride, second_pred,
+                               w, h, offset, mvjcost, mvcost,
+                               sse1, distortion);
+
+  (void) cost_list;  // to silence compiler warning
+
+  for (iter = 0; iter < round; ++iter) {
+    // Check vertical and horizontal sub-pixel positions.
+    for (idx = 0; idx < 4; ++idx) {
+      tr = br + search_step[idx].row;
+      tc = bc + search_step[idx].col;
+      if (tc >= minc && tc <= maxc && tr >= minr && tr <= maxr) {
+        // const uint8_t *const pre_address = y + (tr >> 3) * y_stride +
+        // (tc >> 3);
+        const uint8_t *const pre_address = y + tr * y_stride + tc;
+        MV this_mv;
+        this_mv.row = tr;
+        this_mv.col = tc;
+        if (second_pred == NULL)
+//          thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr),
+//                             src_address, src_stride, &sse);
+
+          get_pred_without_second_pred(pre_address, y_stride, pred_buf, h, w);
+        else
+//          thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr),
+//                              src_address, src_stride, &sse, second_pred);
+          get_pred_with_second_pred(pre_address, y_stride, pred_buf, h, w,
+                                    second_pred);
+
+        thismse = vfp->vf(pred_buf, w, src_address, src_stride, &sse);
+
+        cost_array[idx] = thismse +
+            mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost, error_per_bit);
+
+        if (cost_array[idx] < besterr) {
+          best_idx = idx;
+          besterr = cost_array[idx];
+          *distortion = thismse;
+          *sse1 = sse;
+        }
+      } else {
+        cost_array[idx] = INT_MAX;
+      }
+    }
+
+    // Check diagonal sub-pixel position
+    kc = (cost_array[0] <= cost_array[1] ? -hstep : hstep);
+    kr = (cost_array[2] <= cost_array[3] ? -hstep : hstep);
+
+    tc = bc + kc;
+    tr = br + kr;
+    if (tc >= minc && tc <= maxc && tr >= minr && tr <= maxr) {
+      // const uint8_t *const pre_address = y + (tr >> 3) * y_stride +
+      // (tc >> 3);
+      const uint8_t *const pre_address = y + tr * y_stride + tc;
+      MV this_mv = {tr, tc};
+      if (second_pred == NULL)
+//        thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr),
+//                           src_address, src_stride, &sse);
+        get_pred_without_second_pred(pre_address, y_stride, pred_buf, h, w);
+      else
+//        thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr),
+//                            src_address, src_stride, &sse, second_pred);
+        get_pred_with_second_pred(pre_address, y_stride, pred_buf, h, w,
+                                  second_pred);
+
+      thismse = vfp->vf(pred_buf, w, src_address, src_stride, &sse);
+
+      cost_array[4] = thismse +
+          mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost, error_per_bit);
+
+      if (cost_array[4] < besterr) {
+        best_idx = 4;
+        besterr = cost_array[4];
+        *distortion = thismse;
+        *sse1 = sse;
+      }
+    } else {
+      cost_array[idx] = INT_MAX;
+    }
+
+    if (best_idx < 4 && best_idx >= 0) {
+      br += search_step[best_idx].row;
+      bc += search_step[best_idx].col;
+    } else if (best_idx == 4) {
+      br = tr;
+      bc = tc;
+    }
+
+    if (iters_per_step > 1 && best_idx != -1)
+      SECOND_LEVEL_CHECKS_BEST1;
+
+    tr = br;
+    tc = bc;
+
+    search_step += 4;
+    hstep >>= 1;
+    best_idx = -1;
+  }
+
+  // Each subsequent iteration checks at least one point in common with
+  // the last iteration could be 2 ( if diag selected) 1/4 pel
+
+  // These lines insure static analysis doesn't warn that
+  // tr and tc aren't used after the above point.
+  (void) tr;
+  (void) tc;
+
+  bestmv->row = br;
+  bestmv->col = bc;
+
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+    return INT_MAX;
+
+  return besterr;
+}
+#endif
 
 #undef MVC
 #undef PRE

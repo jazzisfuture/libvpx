@@ -118,6 +118,9 @@ typedef int (fractional_mv_step_fp) (
     const uint8_t *second_pred,
     int w, int h);
 
+#if CONFIG_AFFINE_MOTION
+extern fractional_mv_step_fp vp10_find_best_sub_pixel_tree_hp;
+#endif
 extern fractional_mv_step_fp vp10_find_best_sub_pixel_tree;
 extern fractional_mv_step_fp vp10_find_best_sub_pixel_tree_pruned;
 extern fractional_mv_step_fp vp10_find_best_sub_pixel_tree_pruned_more;
