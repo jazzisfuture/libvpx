@@ -56,12 +56,12 @@ static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
-    filt_err = vp10_highbd_get_y_sse(sd, cm->frame_to_show);
+    filt_err = vpx_highbd_get_y_sse(sd, cm->frame_to_show);
   } else {
-    filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
+    filt_err = vpx_get_y_sse(sd, cm->frame_to_show);
   }
 #else
-  filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
+  filt_err = vpx_get_y_sse(sd, cm->frame_to_show);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   // Re-instate the unfiltered frame

@@ -36,12 +36,12 @@ static int try_restoration_frame(const YV12_BUFFER_CONFIG *sd,
                               rsi, 1, partial_frame);
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
-    filt_err = vp10_highbd_get_y_sse(sd, cm->frame_to_show);
+    filt_err = vpx_highbd_get_y_sse(sd, cm->frame_to_show);
   } else {
-    filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
+    filt_err = vpx_get_y_sse(sd, cm->frame_to_show);
   }
 #else
-  filt_err = vp10_get_y_sse(sd, cm->frame_to_show);
+  filt_err = vpx_get_y_sse(sd, cm->frame_to_show);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   // Re-instate the unfiltered frame
