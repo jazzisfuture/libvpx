@@ -3502,7 +3502,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
       cpi->resize_state == 0 &&
       cm->frame_type != KEY_FRAME &&
       cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
-      cpi->rc.high_source_sad == 1) {
+      cpi->rc.high_source_sad[0] == 1) {
     int frame_size = 0;
     // Get an estimate of the encoded frame size.
     save_coding_context(cpi);
