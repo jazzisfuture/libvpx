@@ -339,6 +339,11 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->total_target_vs_actual = 0;
   rc->avg_intersize_gfint = 0;
   rc->avg_frame_low_motion = 0;
+  rc->count_last_scene_change = 0;
+  for (i = 0; i < MAX_LAG_BUFFERS; ++i) {
+    rc->high_source_sad[i] = 0;
+    rc->avg_source_sad[i] = 0;
+  }
 
   rc->frames_since_key = 8;  // Sensible default for first frame.
   rc->this_key_frame_forced = 0;
@@ -2075,6 +2080,61 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
   return resize_action;
 }
 
+static void avg_source_sad_lag(VP9_COMP *cpi) {
+  VP9_COMMON * const cm = &cpi->common;
+  RATE_CONTROL *const rc = &cpi->rc;
+  int frames_to_check = (cm->current_video_frame == 1) ?
+      cpi->oxcf.lag_in_frames - 2: 2;
+  int frame = 0;
+  int start_frame = cpi->oxcf.lag_in_frames - 2;
+  YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = {NULL};
+  for (frame = 0; frame < frames_to_check; ++frame) {
+    const int lagframe_idx = start_frame - frame;
+    struct lookahead_entry *buf = vp9_lookahead_peek(cpi->lookahead,
+                                                      lagframe_idx);
+    frames[frame] = &buf->img;
+  }
+  for (frame = 0; frame < frames_to_check; ++frame) {
+    if (frames[frame] != NULL && frames[frame + 1] != NULL) {
+      const int lagframe_idx = start_frame - frame;
+      // TODD: remove this duplicate code....
+      const uint8_t *src_y = frames[frame]->y_buffer;
+      const int src_ystride = frames[frame]->y_stride;
+      const uint8_t *last_src_y = frames[frame + 1]->y_buffer;
+      const int last_src_ystride = frames[frame + 1]->y_stride;
+      int sbi_row, sbi_col;
+      const BLOCK_SIZE bsize = BLOCK_64X64;
+      // Loop over sub-sample of frame, compute average sad over 64x64 blocks.
+      uint64_t avg_sad = 0;
+      int num_samples = 0;
+      int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+      int sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+      for (sbi_row = 0; sbi_row < sb_rows; sbi_row ++) {
+        for (sbi_col = 0; sbi_col < sb_cols; sbi_col ++) {
+          // Checker-board pattern, ignore boundary.
+          if ((sbi_row > 0 && sbi_col > 0) &&
+              (sbi_row < sb_rows - 1 && sbi_col < sb_cols - 1) &&
+              ((sbi_row % 2 == 0 && sbi_col % 2 == 0) ||
+              (sbi_row % 2 != 0 && sbi_col % 2 != 0))) {
+            num_samples++;
+            avg_sad += cpi->fn_ptr[bsize].sdf(src_y,
+                                              src_ystride,
+                                              last_src_y,
+                                              last_src_ystride);
+          }
+          src_y += 64;
+          last_src_y += 64;
+        }
+        src_y += (src_ystride << 6) - (sb_cols << 6);
+        last_src_y += (last_src_ystride << 6) - (sb_cols << 6);
+      }
+      // Keep track of avg_sad of the frames.
+      rc->avg_source_sad[lagframe_idx] = avg_sad;
+    }
+  }
+  // TDOD: Update scene cuts and average sad level over list of frames.
+}
+
 // Compute average source sad (temporal sad: between current source and
 // previous source) over a subset of superblocks. Use this is detect big changes
 // in content and allow rate control to react.
@@ -2084,7 +2144,11 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
 void vp9_avg_source_sad(VP9_COMP *cpi) {
   VP9_COMMON * const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
-  rc->high_source_sad = 0;
+  rc->high_source_sad[0] = 0;
+  if (cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.rc_mode == VPX_VBR) {
+    avg_source_sad_lag(cpi);
+    return;
+  }
   if (cpi->Last_Source != NULL &&
       cpi->Last_Source->y_width == cpi->Source->y_width &&
       cpi->Last_Source->y_height == cpi->Source->y_height) {
@@ -2131,16 +2195,16 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
       thresh = 2.1f;
     }
     if (avg_sad >
-        VPXMAX(min_thresh, (unsigned int)(rc->avg_source_sad  * thresh)) &&
+        VPXMAX(min_thresh, (unsigned int)(rc->avg_source_sad[0]  * thresh)) &&
         rc->frames_since_key > 1)
-      rc->high_source_sad = 1;
+      rc->high_source_sad[0] = 1;
     else
-      rc->high_source_sad = 0;
+      rc->high_source_sad[0] = 0;
     if (avg_sad > 0 || cpi->oxcf.rc_mode == VPX_CBR)
-      rc->avg_source_sad = (3 * rc->avg_source_sad + avg_sad) >> 2;
+      rc->avg_source_sad[0] = (3 * rc->avg_source_sad[0] + avg_sad) >> 2;
     // For VBR, under scene change/high content change, force golden refresh.
     if (cpi->oxcf.rc_mode == VPX_VBR &&
-        rc->high_source_sad &&
+        rc->high_source_sad[0] &&
         rc->frames_to_key > 3 &&
         rc->count_last_scene_change > 4 &&
         cpi->ext_refresh_frame_flags_pending == 0) {

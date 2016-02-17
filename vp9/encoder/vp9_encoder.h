@@ -648,6 +648,7 @@ static INLINE int is_one_pass_cbr_svc(const struct VP9_COMP *const cpi) {
 
 static INLINE int is_altref_enabled(const VP9_COMP *const cpi) {
   return cpi->oxcf.mode != REALTIME && cpi->oxcf.lag_in_frames > 0 &&
+         cpi->oxcf.lag_in_frames > 0 &&
          (cpi->oxcf.enable_auto_arf &&
           (!is_two_pass_svc(cpi) ||
            cpi->oxcf.ss_enable_auto_arf[cpi->svc.spatial_layer_id]));

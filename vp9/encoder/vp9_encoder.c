@@ -1692,9 +1692,6 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   cpi->use_skin_detection = 0;
   cpi->common.buffer_pool = pool;
 
-  cpi->rc.high_source_sad = 0;
-  cpi->rc.count_last_scene_change = 0;
-
   init_config(cpi, oxcf);
   vp9_rc_init(&cpi->oxcf, oxcf->pass, &cpi->rc);
 
@@ -3505,7 +3502,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
       cpi->resize_state == 0 &&
       cm->frame_type != KEY_FRAME &&
       cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
-      cpi->rc.high_source_sad == 1) {
+      cpi->rc.high_source_sad[0] == 1) {
     int frame_size = 0;
     // Get an estimate of the encoded frame size.
     save_coding_context(cpi);
@@ -3977,6 +3974,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     cpi->rc.source_alt_ref_active = 0;
 
     cm->error_resilient_mode = oxcf->error_resilient_mode;
+
+    // Hack for now to make this work: only works for error_resilience on.
+    if (oxcf->pass == 0 && oxcf->rc_mode == VPX_VBR &&
+        cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.enable_auto_arf)
+      cm->error_resilient_mode = 1;
+
     cm->frame_parallel_decoding_mode = oxcf->frame_parallel_decoding_mode;
 
     // By default, encoder assumes decoder can use prev_mi.
@@ -4552,6 +4555,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       // Check to see if the frame should be encoded as an arf overlay.
       check_src_altref(cpi, source);
     }
+
   }
 
   if (source) {
@@ -4559,6 +4563,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                                                            : &source->img;
 
     cpi->unscaled_last_source = last_source != NULL ? &last_source->img : NULL;
+
 
     *time_stamp = source->ts_start;
     *time_end = source->ts_end;
