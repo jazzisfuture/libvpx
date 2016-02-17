@@ -961,10 +961,11 @@ static void estimate_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   args->dist += dist;
 }
 
-static const THR_MODES mode_idx[MAX_REF_FRAMES - 1][4] = {
+static const THR_MODES mode_idx[MAX_REF_FRAMES][4] = {
   {THR_DC, THR_V_PRED, THR_H_PRED, THR_TM},
   {THR_NEARESTMV, THR_NEARMV, THR_ZEROMV, THR_NEWMV},
   {THR_NEARESTG, THR_NEARG, THR_ZEROG, THR_NEWG},
+  {THR_NEARESTA, THR_NEARA, THR_ZEROA, THR_NEWA},
 };
 
 static const PREDICTION_MODE intra_mode_list[] = {
@@ -1079,7 +1080,7 @@ typedef struct {
   PREDICTION_MODE pred_mode;
 } REF_MODE;
 
-#define RT_INTER_MODES 8
+#define RT_INTER_MODES 11
 static const REF_MODE ref_mode_set[RT_INTER_MODES] = {
     {LAST_FRAME, ZEROMV},
     {LAST_FRAME, NEARESTMV},
@@ -1088,7 +1089,10 @@ static const REF_MODE ref_mode_set[RT_INTER_MODES] = {
     {LAST_FRAME, NEWMV},
     {GOLDEN_FRAME, NEARESTMV},
     {GOLDEN_FRAME, NEARMV},
-    {GOLDEN_FRAME, NEWMV}
+    {GOLDEN_FRAME, NEWMV},
+    {ALTREF_FRAME, ZEROMV},
+    {ALTREF_FRAME, NEARESTMV},
+    {ALTREF_FRAME, NEWMV}
 };
 static const REF_MODE ref_mode_set_svc[RT_INTER_MODES] = {
     {LAST_FRAME, ZEROMV},
@@ -1278,6 +1282,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   } else {
     usable_ref_frame = GOLDEN_FRAME;
   }
+  if (cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.enable_auto_arf)
+    usable_ref_frame = ALTREF_FRAME;
 
   // If the reference is temporally aligned with current superframe
   // (e.g., spatial reference within superframe), constrain the inter mode:
@@ -1316,6 +1322,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       continue;
 
     ref_frame = ref_mode_set[idx].ref_frame;
+    if (ref_frame > usable_ref_frame)
+      continue;
+
     if (cpi->use_svc) {
       ref_frame = ref_mode_set_svc[idx].ref_frame;
     }
@@ -1879,7 +1888,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                 best_mode_idx, intra_mode_list[i]);
       }
     } else {
-      for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ++ref_frame) {
+      for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
         PREDICTION_MODE this_mode;
         if (best_ref_frame != ref_frame) continue;
         for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {

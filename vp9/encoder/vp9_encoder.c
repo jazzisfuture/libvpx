@@ -3879,6 +3879,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     cpi->rc.source_alt_ref_active = 0;
 
     cm->error_resilient_mode = oxcf->error_resilient_mode;
+
+    // Hack for now to make this work: only works for error_resilience on.
+    if (oxcf->pass == 0 && oxcf->rc_mode == VPX_VBR &&
+        cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.enable_auto_arf)
+      cm->error_resilient_mode = 1;
+
     cm->frame_parallel_decoding_mode = oxcf->frame_parallel_decoding_mode;
 
     // By default, encoder assumes decoder can use prev_mi.

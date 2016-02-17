@@ -1069,7 +1069,7 @@ static struct stream_state *new_stream(struct VpxEncoderConfig *global,
     /* Allows removal of the application version from the EBML tags */
     stream->ebml.debug = global->debug;
 
-    /* Default lag_in_frames is 0 in realtime mode */
+    /* Default lag_in_frames is 0 in realtime mode CBR mode*/
     if (global->deadline == VPX_DL_REALTIME)
       stream->config.cfg.g_lag_in_frames = 0;
   }
@@ -1169,11 +1169,14 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
       validate_positive_rational(arg.name, &config->cfg.g_timebase);
     } else if (arg_match(&arg, &error_resilient, argi)) {
       config->cfg.g_error_resilient = arg_parse_uint(&arg);
+    } else if (arg_match(&arg, &end_usage, argi)) {
+      config->cfg.rc_end_usage = arg_parse_enum_or_int(&arg);
     } else if (arg_match(&arg, &lag_in_frames, argi)) {
       config->cfg.g_lag_in_frames = arg_parse_uint(&arg);
       if (global->deadline == VPX_DL_REALTIME &&
-          config->cfg.g_lag_in_frames != 0) {
-        warn("non-zero %s option ignored in realtime mode.\n", arg.name);
+         config->cfg.rc_end_usage == VPX_CBR &&
+         config->cfg.g_lag_in_frames != 0) {
+        warn("non-zero %s option ignored in realtime CBR mode.\n", arg.name);
         config->cfg.g_lag_in_frames = 0;
       }
     } else if (arg_match(&arg, &dropframe_thresh, argi)) {
