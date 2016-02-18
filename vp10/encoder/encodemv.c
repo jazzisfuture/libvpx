@@ -157,9 +157,49 @@ static void write_mv_update(const vpx_tree_index *tree,
 }
 
 void vp10_write_nmv_probs(VP10_COMMON *cm, int usehp, vpx_writer *w,
-                         nmv_context_counts *const counts) {
+                          nmv_context_counts *const nmv_counts) {
   int i, j;
+#if CONFIG_REF_MV
+  int nmv_ctx = 0;
+  for (nmv_ctx = 0; nmv_ctx < 2; ++nmv_ctx) {
+    nmv_context *const mvc = &cm->fc->nmvc[nmv_ctx];
+    nmv_context_counts *const counts = &nmv_counts[nmv_ctx];
+    write_mv_update(vp10_mv_joint_tree, mvc->joints, counts->joints,
+                    MV_JOINTS, w);
+
+    for (i = 0; i < 2; ++i) {
+      nmv_component *comp = &mvc->comps[i];
+      nmv_component_counts *comp_counts = &counts->comps[i];
+
+      update_mv(w, comp_counts->sign, &comp->sign, MV_UPDATE_PROB);
+      write_mv_update(vp10_mv_class_tree, comp->classes, comp_counts->classes,
+                      MV_CLASSES, w);
+      write_mv_update(vp10_mv_class0_tree, comp->class0, comp_counts->class0,
+                      CLASS0_SIZE, w);
+      for (j = 0; j < MV_OFFSET_BITS; ++j)
+        update_mv(w, comp_counts->bits[j], &comp->bits[j], MV_UPDATE_PROB);
+    }
+
+    for (i = 0; i < 2; ++i) {
+      for (j = 0; j < CLASS0_SIZE; ++j)
+        write_mv_update(vp10_mv_fp_tree, mvc->comps[i].class0_fp[j],
+                        counts->comps[i].class0_fp[j], MV_FP_SIZE, w);
+
+      write_mv_update(vp10_mv_fp_tree, mvc->comps[i].fp, counts->comps[i].fp,
+                      MV_FP_SIZE, w);
+    }
+
+    if (usehp) {
+      for (i = 0; i < 2; ++i) {
+        update_mv(w, counts->comps[i].class0_hp, &mvc->comps[i].class0_hp,
+                  MV_UPDATE_PROB);
+        update_mv(w, counts->comps[i].hp, &mvc->comps[i].hp, MV_UPDATE_PROB);
+      }
+    }
+  }
+#else
   nmv_context *const mvc = &cm->fc->nmvc;
+  nmv_context_counts *const counts = nmv_counts;
 
   write_mv_update(vp10_mv_joint_tree, mvc->joints, counts->joints, MV_JOINTS, w);
 
@@ -192,6 +232,7 @@ void vp10_write_nmv_probs(VP10_COMMON *cm, int usehp, vpx_writer *w,
       update_mv(w, counts->comps[i].hp, &mvc->comps[i].hp, MV_UPDATE_PROB);
     }
   }
+#endif
 }
 
 void vp10_encode_mv(VP10_COMP* cpi, vpx_writer* w,
@@ -281,10 +322,18 @@ static void inc_mvs_sub8x8(const MODE_INFO *mi,
 #else
 static void inc_mvs(const MB_MODE_INFO *mbmi, const MB_MODE_INFO_EXT *mbmi_ext,
                     const int_mv mvs[2],
-                    nmv_context_counts *counts) {
+                    nmv_context_counts *nmv_counts) {
   int i;
+#if !CONFIG_REF_MV
+  nmv_context_counts *counts = nmv_counts;
+#endif
 
   for (i = 0; i < 1 + has_second_ref(mbmi); ++i) {
+#if CONFIG_REF_MV
+    int nmv_ctx = vp10_nmv_ctx(mbmi_ext->ref_mv_count[mbmi->ref_frame[i]],
+                               mbmi_ext->ref_mv_stack[mbmi->ref_frame[i]]);
+    nmv_context_counts *counts = &nmv_counts[nmv_ctx];
+#endif
     const MV *ref = &mbmi_ext->ref_mvs[mbmi->ref_frame[i]][0].as_mv;
     const MV diff = {mvs[i].as_mv.row - ref->row,
                      mvs[i].as_mv.col - ref->col};
@@ -313,7 +362,13 @@ void vp10_update_mv_count(ThreadData *td) {
           inc_mvs_sub8x8(mi, i, mi->bmi[i].as_mv, &td->counts->mv);
 #else
         if (mi->bmi[i].as_mode == NEWMV)
-          inc_mvs(mbmi, mbmi_ext, mi->bmi[i].as_mv, &td->counts->mv);
+          inc_mvs(mbmi, mbmi_ext, mi->bmi[i].as_mv,
+#if CONFIG_REF_MV
+                  td->counts->mv
+#else
+                  &td->counts->mv
+#endif
+                  );
 #endif  // CONFIG_EXT_INTER
       }
     }
@@ -323,7 +378,13 @@ void vp10_update_mv_count(ThreadData *td) {
 #else
     if (mbmi->mode == NEWMV)
 #endif  // CONFIG_EXT_INTER
-      inc_mvs(mbmi, mbmi_ext, mbmi->mv, &td->counts->mv);
+      inc_mvs(mbmi, mbmi_ext, mbmi->mv,
+#if CONFIG_REF_MV
+              td->counts->mv
+#else
+              &td->counts->mv
+#endif
+      );
   }
 }
 
