@@ -912,10 +912,20 @@ static INLINE int assign_mv(VP10_COMMON *cm, MACROBLOCKD *xd,
 #endif  // CONFIG_EXT_INTER
     case NEWMV: {
       FRAME_COUNTS *counts = xd->counts;
+#if !CONFIG_REF_MV
       nmv_context_counts *const mv_counts = counts ? &counts->mv : NULL;
+#endif
       for (i = 0; i < 1 + is_compound; ++i) {
+#if CONFIG_REF_MV
+        int nmv_ctx = 0;
+        nmv_context_counts *const mv_counts =
+            counts ? &counts->mv[nmv_ctx] : NULL;
+        read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc[nmv_ctx],
+                mv_counts, allow_hp);
+#else
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc, mv_counts,
                 allow_hp);
+#endif
         ret = ret && is_mv_valid(&mv[i].as_mv);
 
 #if CONFIG_REF_MV

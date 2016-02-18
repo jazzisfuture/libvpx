@@ -882,7 +882,12 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #endif
                                 vpx_writer *w) {
   VP10_COMMON *const cm = &cpi->common;
+#if CONFIG_REF_MV
+  int nmv_ctx = 0;
+  const nmv_context *nmvc = &cm->fc->nmvc[nmv_ctx];
+#else
   const nmv_context *nmvc = &cm->fc->nmvc;
+#endif
   const MACROBLOCK *x = &cpi->td.mb;
   const MACROBLOCKD *xd = &x->e_mbd;
   const struct segmentation *const seg = &cm->seg;
@@ -2449,7 +2454,7 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
                        counts->y_mode[i], INTRA_MODES, &header_bc);
 
     vp10_write_nmv_probs(cm, cm->allow_high_precision_mv, &header_bc,
-                        &counts->mv);
+                         &counts->mv);
     update_ext_tx_probs(cm, &header_bc);
 #if CONFIG_SUPERTX
     if (!xd->lossless[0])
