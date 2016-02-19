@@ -172,6 +172,7 @@ static void fadst4_sse2(__m128i *in) {
   transpose_4x4(in);
 }
 
+#if CONFIG_EXT_TX
 static void fdst4_sse2(__m128i *in) {
   const __m128i k__cospi_p16_p16 = _mm_set1_epi16((int16_t) cospi_16_64);
   const __m128i k__cospi_p16_m16 = pair_set_epi16(cospi_16_64, -cospi_16_64);
@@ -205,6 +206,7 @@ static void fdst4_sse2(__m128i *in) {
   in[1] = _mm_packs_epi32(u[1], u[3]);
   transpose_4x4(in);
 }
+#endif // CONFIG_EXT_TX
 
 void vp10_fht4x4_sse2(const int16_t *input, tran_low_t *output,
                      int stride, int tx_type) {
