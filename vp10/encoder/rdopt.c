@@ -81,8 +81,27 @@
 #define MIN_EARLY_TERM_INDEX    3
 #define NEW_MV_DISCOUNT_FACTOR  8
 
+#define ADST_FLIP_DIM 4
+const double ADST_FLIP_SVM[8] = {-7.3283, -3.0450, -3.2450, 3.6403,  // vert
+                                 -9.4204, -3.1821, -4.6851, 4.1469};  // horz
 #if CONFIG_EXT_TX
 const double ext_tx_th = 0.98;
+
+// SVM feature n dimensions
+#define DCT_ADST_DIM 5
+#define DCT_FLIP_DIM 5
+#define ADST_DST_DIM 5
+#define FLIP_DST_DIM 5
+
+// SVM parameters
+const double DCT_ADST_SVM[10] = {-0.6176, 6.5642, -0.8307, 0.3277, -1.0525,
+                                 2.7093, 8.964, -0.7404, 0.4874, -4.0371};
+const double DCT_FLIP_SVM[10] = {-0.5488, -6.7574, -6.1961, -7.3105, 5.8176,
+                                 2.4928, -8.3095, -7.97, -8.9214, 4.6622};
+const double ADST_DST_SVM[10] = {2.8389, -4.6077, -5.9212, -6.6161, 2.6088,
+                                 4.6765, -4.9064, -6.9104, -8.0259, 1.7341};
+const double FLIP_DST_SVM[10] = {2.7055, 4.4828, -1.8271, -1.4, -1.8292,
+                                 4.4344, 4.9271, -2.9161, -2.3314, -2.82};
 #else
 const double ext_tx_th = 0.99;
 #endif
@@ -316,6 +335,574 @@ static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
     ctx->dqcoeff_pbuf[i][n] = pd->dqcoeff;
     ctx->eobs_pbuf[i][n]    = p->eobs;
   }
+}
+
+
+// gets energy distribution in quarters of the image
+static void get_energy_distribution_fine(const VP10_COMP *cpi,
+                                         BLOCK_SIZE bsize,
+                                         uint8_t *src, int src_stride,
+                                         uint8_t *dst, int dst_stride,
+                                         double *hordist, double *verdist) {
+  int bw = 4 << (b_width_log2_lookup[bsize]);
+  int bh = 4 << (b_height_log2_lookup[bsize]);
+  unsigned int esq[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  unsigned int var[16];
+  double total = 0;
+  const int f_index = bsize - 6;
+  if (f_index < 0) {
+    int i, j, index;
+    int w_shift = bw == 8 ? 1 : 2;
+    int h_shift = bh == 8 ? 1 : 2;
+    for (i = 0; i < bh; ++i)
+      for (j = 0; j < bw; ++j) {
+        index = (j >> w_shift) + ((i >> h_shift) << 2);
+        esq[index] += (src[j + i * src_stride] - dst[j + i * dst_stride]) *
+                      (src[j + i * src_stride] - dst[j + i * dst_stride]);
+      }
+  } else {
+    var[0] = cpi->fn_ptr[f_index].vf(src, src_stride,
+                                     dst, dst_stride, &esq[0]);
+    var[1] = cpi->fn_ptr[f_index].vf(src + bw / 4, src_stride,
+                                     dst + bw / 4, dst_stride, &esq[1]);
+    var[2] = cpi->fn_ptr[f_index].vf(src + bw / 2, src_stride,
+                                     dst + bw / 2, dst_stride, &esq[2]);
+    var[3] = cpi->fn_ptr[f_index].vf(src + 3 * bw / 4, src_stride,
+                                     dst + 3 * bw / 4, dst_stride, &esq[3]);
+    src += bh / 4 * src_stride;
+    dst += bh / 4 * dst_stride;
+
+    var[4] = cpi->fn_ptr[f_index].vf(src, src_stride,
+                                     dst, dst_stride, &esq[4]);
+    var[5] = cpi->fn_ptr[f_index].vf(src + bw / 4, src_stride,
+                                     dst + bw / 4, dst_stride, &esq[5]);
+    var[6] = cpi->fn_ptr[f_index].vf(src + bw / 2, src_stride,
+                                     dst + bw / 2, dst_stride, &esq[6]);
+    var[7] = cpi->fn_ptr[f_index].vf(src + 3 * bw / 4, src_stride,
+                                     dst + 3 * bw / 4, dst_stride, &esq[7]);
+    src += bh / 4 * src_stride;
+    dst += bh / 4 * dst_stride;
+
+    var[8] = cpi->fn_ptr[f_index].vf(src, src_stride,
+                                     dst, dst_stride, &esq[8]);
+    var[9] = cpi->fn_ptr[f_index].vf(src + bw / 4, src_stride,
+                                     dst + bw / 4, dst_stride, &esq[9]);
+    var[10] = cpi->fn_ptr[f_index].vf(src + bw / 2, src_stride,
+                                      dst + bw / 2, dst_stride, &esq[10]);
+    var[11] = cpi->fn_ptr[f_index].vf(src + 3 * bw / 4, src_stride,
+                                      dst + 3 * bw / 4, dst_stride, &esq[11]);
+    src += bh / 4 * src_stride;
+    dst += bh / 4 * dst_stride;
+
+    var[12] = cpi->fn_ptr[f_index].vf(src, src_stride,
+                                      dst, dst_stride, &esq[12]);
+    var[13] = cpi->fn_ptr[f_index].vf(src + bw / 4, src_stride,
+                                      dst + bw / 4, dst_stride, &esq[13]);
+    var[14] = cpi->fn_ptr[f_index].vf(src + bw / 2, src_stride,
+                                      dst + bw / 2, dst_stride, &esq[14]);
+    var[15] = cpi->fn_ptr[f_index].vf(src + 3 * bw / 4, src_stride,
+                                      dst + 3 * bw / 4, dst_stride, &esq[15]);
+  }
+
+  total = esq[0] + esq[1] + esq[2] + esq[3] +
+          esq[4] + esq[5] + esq[6] + esq[7] +
+          esq[8] + esq[9] + esq[10] + esq[11] +
+          esq[12] + esq[13] + esq[14] + esq[15];
+  if (total > 0) {
+    const double e_recip = 1.0 / total;
+    hordist[0] = ((double)esq[0] + (double)esq[4] + (double)esq[8] +
+                  (double)esq[12]) * e_recip;
+    hordist[1] = ((double)esq[1] + (double)esq[5] + (double)esq[9] +
+                  (double)esq[13]) * e_recip;
+    hordist[2] = ((double)esq[2] + (double)esq[6] + (double)esq[10] +
+                  (double)esq[14]) * e_recip;
+    verdist[0] = ((double)esq[0] + (double)esq[1] + (double)esq[2] +
+                  (double)esq[3]) * e_recip;
+    verdist[1] = ((double)esq[4] + (double)esq[5] + (double)esq[6] +
+                  (double)esq[7]) * e_recip;
+    verdist[2] = ((double)esq[8] + (double)esq[9] + (double)esq[10] +
+                  (double)esq[11]) * e_recip;
+  } else {
+    hordist[0] = verdist[0] = 0.25;
+    hordist[1] = verdist[1] = 0.25;
+    hordist[2] = verdist[2] = 0.25;
+  }
+  (void) var[0];
+  (void) var[1];
+  (void) var[2];
+  (void) var[3];
+  (void) var[4];
+  (void) var[5];
+  (void) var[6];
+  (void) var[7];
+  (void) var[8];
+  (void) var[9];
+  (void) var[10];
+  (void) var[11];
+  (void) var[12];
+  (void) var[13];
+  (void) var[14];
+  (void) var[15];
+}
+
+typedef enum {
+  DCT_1D,
+  ADST_1D,
+  FLIPADST_1D,
+  DST_1D,
+  UNKNOWN_TX_1D,
+} TX_TYPE_1D;
+
+#if CONFIG_EXT_TX
+static void get_energy_distribution(const VP10_COMP *cpi,
+                                    BLOCK_SIZE bsize,
+                                    uint8_t *src, int src_stride,
+                                    uint8_t *dst, int dst_stride,
+                                    double *hordist, double *verdist) {
+  int bw = 4 << (b_width_log2_lookup[bsize]);
+  int bh = 4 << (b_height_log2_lookup[bsize]);
+  unsigned int esq[4] = {0, 0, 0, 0};
+  unsigned int var[4];
+  var[0] = cpi->fn_ptr[bsize - 3].vf(src, src_stride,
+                                     dst, dst_stride, &esq[0]);
+  var[1] = cpi->fn_ptr[bsize - 3].vf(src + bw / 2, src_stride,
+                                     dst + bw / 2, dst_stride, &esq[1]);
+  src += bh / 2 * src_stride;
+  dst += bh / 2 * dst_stride;
+  var[2] = cpi->fn_ptr[bsize - 3].vf(src, src_stride,
+                                     dst, dst_stride, &esq[2]);
+  var[3] = cpi->fn_ptr[bsize - 3].vf(src + bw / 2, src_stride,
+                                     dst + bw / 2, dst_stride, &esq[3]);
+  if (esq[0] + esq[1] + esq[2] + esq[3] > 0) {
+    const double e_recip = 1.0 / (esq[0] + esq[1] + esq[2] + esq[3]);
+    hordist[0] = ((double)esq[0] + (double)esq[2]) * e_recip;
+    verdist[0] = ((double)esq[0] + (double)esq[1]) * e_recip;
+  } else {
+    hordist[0] = verdist[0] = 0.5;
+  }
+  (void) var[0];
+  (void) var[1];
+  (void) var[2];
+  (void) var[3];
+}
+
+static void get_horver_correlation(int16_t *diff, int stride,
+                                   int w, int h,
+                                   double *hcorr, double *vcorr) {
+  // Returns hor/ver correlation coefficient
+  const int num = (h - 1) * (w - 1);
+  double num_r;
+  int i, j;
+  int64_t xy_sum = 0, xz_sum = 0;
+  int64_t x_sum = 0, y_sum = 0, z_sum = 0;
+  int64_t x2_sum = 0, y2_sum = 0, z2_sum = 0;
+  double x_var_n, y_var_n, z_var_n, xy_var_n, xz_var_n;
+  *hcorr = *vcorr = 1;
+
+  assert(num > 0);
+  num_r = 1.0 / num;
+  for (i = 1; i < h; ++i) {
+    for (j = 1; j < w; ++j) {
+      const int16_t x = diff[i * stride + j];
+      const int16_t y = diff[i * stride + j - 1];
+      const int16_t z = diff[(i - 1) * stride + j];
+      xy_sum += x * y;
+      xz_sum += x * z;
+      x_sum += x;
+      y_sum += y;
+      z_sum += z;
+      x2_sum += x * x;
+      y2_sum += y * y;
+      z2_sum += z * z;
+    }
+  }
+  x_var_n =  x2_sum - (x_sum * x_sum) * num_r;
+  y_var_n =  y2_sum - (y_sum * y_sum) * num_r;
+  z_var_n =  z2_sum - (z_sum * z_sum) * num_r;
+  xy_var_n = xy_sum - (x_sum * y_sum) * num_r;
+  xz_var_n = xz_sum - (x_sum * z_sum) * num_r;
+  if (x_var_n > 0 && y_var_n > 0) {
+    *hcorr = xy_var_n / sqrt(x_var_n * y_var_n);
+    *hcorr = *hcorr < 0 ? 0 : *hcorr;
+  }
+  if (x_var_n > 0 && z_var_n > 0) {
+    *vcorr = xz_var_n / sqrt(x_var_n * z_var_n);
+    *vcorr = *vcorr < 0 ? 0 : *vcorr;
+  }
+}
+
+#define FAST_EXT_TX_CORR_MID 0.50
+#define FAST_EXT_TX_EDST_MID 0.50
+#define FAST_EXT_TX_THRESH   0.20
+#define FAST_EXT_TX_MARGIN   0.05
+/*
+// baseline experiment that prunes 3 transforms based on correlation and
+// energy distribution
+static TX_TYPE_1D guess_tx_type_1d(double corr, double edst) {
+  if ((corr > 0.5 - FAST_EXT_TX_THRESH && corr < 0.5 + FAST_EXT_TX_THRESH) &&
+      (edst > 0.5 - FAST_EXT_TX_THRESH && edst < 0.5 + FAST_EXT_TX_THRESH))
+    return DCT_1D;
+  // NOTES:
+  // Correlation close to 1 indicates DCT
+  // Correlation close to -1 indicates DST
+  // Energy distribution concentrated on the first half indicates FLIPADST
+  // Energy distribution concentrated on the second half indicates ADST
+  if (corr > FAST_EXT_TX_CORR_MID + FAST_EXT_TX_MARGIN) {
+    // DCT preferred over DST
+    if (edst < FAST_EXT_TX_EDST_MID - FAST_EXT_TX_MARGIN) {
+      // ADST preferred over FLIPADST
+      if (corr + edst > 1.0 + FAST_EXT_TX_MARGIN)
+        return DCT_1D;
+      else if (corr + edst < 1.0 - FAST_EXT_TX_MARGIN)
+        return ADST_1D;
+      else
+        return UNKNOWN_TX_1D;
+    } else  if (edst > FAST_EXT_TX_EDST_MID + FAST_EXT_TX_MARGIN) {
+      // FLIPADST preferred over ADST
+      if (corr > edst + FAST_EXT_TX_MARGIN)
+        return DCT_1D;
+      else if (corr < edst - FAST_EXT_TX_MARGIN)
+        return FLIPADST_1D;
+      else
+        return UNKNOWN_TX_1D;
+    } else {
+      return UNKNOWN_TX_1D;
+    }
+  } else if (corr < FAST_EXT_TX_CORR_MID - FAST_EXT_TX_MARGIN) {
+    // DST preferred over DCT
+    if (edst < FAST_EXT_TX_EDST_MID - FAST_EXT_TX_MARGIN) {
+      // ADST preferred over FLIPADST
+      if (corr < edst - FAST_EXT_TX_MARGIN)
+        return DST_1D;
+      else if (corr > edst + FAST_EXT_TX_MARGIN)
+        return ADST_1D;
+      else
+        return UNKNOWN_TX_1D;
+    } else if (edst > FAST_EXT_TX_EDST_MID + FAST_EXT_TX_MARGIN) {
+      // FLIPADST preferred over ADST
+      if (corr + edst < 1.0 - FAST_EXT_TX_MARGIN)
+        return DST_1D;
+      else if (corr + edst > 1.0 + FAST_EXT_TX_MARGIN)
+        return FLIPADST_1D;
+      else
+        return UNKNOWN_TX_1D;
+    } else {
+      return UNKNOWN_TX_1D;
+    }
+  } else {
+    return UNKNOWN_TX_1D;
+  }
+}
+*/
+
+// baseline experiment that prunes 3 transforms based on correlation and
+// energy distribution
+// This function is temporary
+static int guess_tx_type_1d(double corr, double edst,
+                            TX_TYPE_1D *tx_pruned) {
+  if ((corr > 0.5 - FAST_EXT_TX_THRESH && corr < 0.5 + FAST_EXT_TX_THRESH) &&
+      (edst > 0.5 - FAST_EXT_TX_THRESH && edst < 0.5 + FAST_EXT_TX_THRESH)) {
+    tx_pruned[0] = DST_1D;
+    tx_pruned[1] = ADST_1D;
+    tx_pruned[2] = FLIPADST_1D;
+    return 3;
+  }
+  // NOTES:
+  // Correlation close to 1 indicates DCT
+  // Correlation close to -1 indicates DST
+  // Energy distribution concentrated on the first half indicates FLIPADST
+  // Energy distribution concentrated on the second half indicates ADST
+  if (corr > FAST_EXT_TX_CORR_MID + FAST_EXT_TX_MARGIN) {
+    // DCT preferred over DST
+    if (edst < FAST_EXT_TX_EDST_MID - FAST_EXT_TX_MARGIN) {
+      // ADST preferred over FLIPADST
+      if (corr + edst > 1.0 + FAST_EXT_TX_MARGIN) {
+        tx_pruned[0] = DST_1D;
+        tx_pruned[1] = ADST_1D;
+        tx_pruned[2] = FLIPADST_1D;
+        return 3;
+      } else if (corr + edst < 1.0 - FAST_EXT_TX_MARGIN) {
+        tx_pruned[0] = DST_1D;
+        tx_pruned[1] = DCT_1D;
+        tx_pruned[2] = FLIPADST_1D;
+        return 3;
+      } else
+        return 0;
+    } else if (edst > FAST_EXT_TX_EDST_MID + FAST_EXT_TX_MARGIN) {
+      // FLIPADST preferred over ADST
+      if (corr > edst + FAST_EXT_TX_MARGIN) {
+        tx_pruned[0] = DST_1D;
+        tx_pruned[1] = ADST_1D;
+        tx_pruned[2] = FLIPADST_1D;
+        return 3;
+      } else if (corr < edst - FAST_EXT_TX_MARGIN) {
+        tx_pruned[0] = DST_1D;
+        tx_pruned[1] = DCT_1D;
+        tx_pruned[2] = ADST_1D;
+        return 3;
+      } else
+        return 0;
+    } else {
+      return 0;
+    }
+  } else if (corr < FAST_EXT_TX_CORR_MID - FAST_EXT_TX_MARGIN) {
+    // DST preferred over DCT
+    if (edst < FAST_EXT_TX_EDST_MID - FAST_EXT_TX_MARGIN) {
+      // ADST preferred over FLIPADST
+      if (corr < edst - FAST_EXT_TX_MARGIN) {
+        tx_pruned[0] = FLIPADST_1D;
+        tx_pruned[1] = DCT_1D;
+        tx_pruned[2] = ADST_1D;
+        return 3;
+      } else if (corr > edst + FAST_EXT_TX_MARGIN) {
+        tx_pruned[0] = FLIPADST_1D;
+        tx_pruned[1] = DCT_1D;
+        tx_pruned[2] = DST_1D;
+        return 3;
+      } else
+        return 0;
+    } else if (edst > FAST_EXT_TX_EDST_MID + FAST_EXT_TX_MARGIN) {
+      // FLIPADST preferred over ADST
+      if (corr + edst < 1.0 - FAST_EXT_TX_MARGIN) {
+        tx_pruned[0] = FLIPADST_1D;
+        tx_pruned[1] = DCT_1D;
+        tx_pruned[2] = ADST_1D;
+        return 3;
+      } else if (corr + edst > 1.0 + FAST_EXT_TX_MARGIN) {
+        tx_pruned[0] = DST_1D;
+        tx_pruned[1] = DCT_1D;
+        tx_pruned[2] = ADST_1D;
+        return 3;
+      } else
+        return 0;
+    } else {
+      return 0;
+    }
+  } else {
+    return 0;
+  }
+}
+
+// prune three
+static void guess_inter_tx_type_for_sby(const VP10_COMP *cpi,
+                                        BLOCK_SIZE bsize,
+                                        MACROBLOCK *x,
+                                        MACROBLOCKD *xd,
+                                        TX_TYPE_1D *hor_tx_type,
+                                        TX_TYPE_1D *ver_tx_type,
+                                        int *n_prune_v, int *n_prune_h) {
+  struct macroblock_plane *const p = &x->plane[0];
+  struct macroblockd_plane *const pd = &xd->plane[0];
+  const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+  const int bw = 4 << (b_width_log2_lookup[bs]);
+  const int bh = 4 << (b_height_log2_lookup[bs]);
+  double hdist, vdist;
+  double hcorr, vcorr;
+  vp10_subtract_plane(x, bsize, 0);
+
+  // Find vert and hor energy distribution
+  get_energy_distribution(cpi, bsize, p->src.buf, p->src.stride,
+                          pd->dst.buf, pd->dst.stride,
+                          &hdist, &vdist);
+
+  // Find vert and hor correlations
+  get_horver_correlation(p->src_diff, bw, bw, bh, &hcorr, &vcorr);
+
+  *n_prune_v = guess_tx_type_1d(vcorr, vdist, ver_tx_type);
+  *n_prune_h = guess_tx_type_1d(hcorr, hdist, hor_tx_type);
+}
+
+// prune two, work in progress
+static void prune_two_for_sby(const VP10_COMP *cpi,
+                              BLOCK_SIZE bsize,
+                              MACROBLOCK *x,
+                              MACROBLOCKD *xd,
+                              TX_TYPE_1D *hor_prune_tx_type,
+                              TX_TYPE_1D *ver_prune_tx_type,
+                              int *n_prune_v, int *n_prune_h) {
+  // Energy distribution concentrated on the first half indicates FLIPADST
+  // Energy distribution concentrated on the second half indicates ADST
+  struct macroblock_plane *const p = &x->plane[0];
+  struct macroblockd_plane *const pd = &xd->plane[0];
+  const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+  const int bw = 4 << (b_width_log2_lookup[bs]);
+  const int bh = 4 << (b_height_log2_lookup[bs]);
+  double proj_vdist = 0, proj_hdist = 0;
+  double hdist[3] = {0, 0, 0}, vdist[3] = {0, 0, 0};
+  double hcorr, vcorr;
+  vp10_subtract_plane(x, bsize, 0);
+  // Find vert and hor energy distribution
+  get_energy_distribution_fine(cpi, bsize, p->src.buf,
+                               p->src.stride,
+                               pd->dst.buf, pd->dst.stride,
+                               hdist, vdist);
+  // Find vert and hor correlation
+  get_horver_correlation(p->src_diff, bw, bw, bh, &hcorr, &vcorr);
+
+  // these are weights and bias obtained from a trained linear SVM
+  proj_vdist = vdist[0] * ADST_FLIP_SVM[0] +
+               vdist[1] * ADST_FLIP_SVM[1] +
+               vdist[2] * ADST_FLIP_SVM[2] + ADST_FLIP_SVM[3];
+  proj_hdist = hdist[0] * ADST_FLIP_SVM[4] +
+               hdist[1] * ADST_FLIP_SVM[5] +
+               hdist[2] * ADST_FLIP_SVM[6] + ADST_FLIP_SVM[7];
+
+  // TODO(sarahparker) the decision boundary and margin should
+  // be impemented as macros. They also still need to be tuned.
+  // prune out vertical FLIPADST or ADST based on SVM classification
+  if (proj_vdist > 0.1) ver_prune_tx_type[(*n_prune_v)++] = FLIPADST_1D;
+  else if (proj_vdist < 0.1) ver_prune_tx_type[(*n_prune_v)++] = ADST_1D;
+
+  // prune out horizontal FLIPADST or ADST based on SVM classification
+  if (proj_hdist > 0.1) hor_prune_tx_type[(*n_prune_h)++] = FLIPADST_1D;
+  else if (proj_hdist < 0.1) hor_prune_tx_type[(*n_prune_h)++] = ADST_1D;
+
+  // prune out vertical DCT or DST based on SVM classification
+  if (vcorr > 0) ver_prune_tx_type[(*n_prune_v)++] = DST_1D;
+  else if (vcorr < 0) ver_prune_tx_type[(*n_prune_v)++] = DCT_1D;
+
+  // prune out horizontal DCT or DST based on SVM classification
+  if (hcorr > 0) hor_prune_tx_type[(*n_prune_h)++] = DST_1D;
+  else if (hcorr < 0) hor_prune_tx_type[(*n_prune_h)++] = DCT_1D;
+}
+#endif  // CONFIG_EXT_TX
+
+// prune one
+static void prune_adst_flipadst_for_sby(const VP10_COMP *cpi,
+                                        BLOCK_SIZE bsize,
+                                        MACROBLOCK *x,
+                                        MACROBLOCKD *xd,
+                                        TX_TYPE_1D *hor_prune_tx_type,
+                                        TX_TYPE_1D *ver_prune_tx_type,
+                                        int *n_prune_v, int *n_prune_h) {
+  // Energy distribution concentrated on the first half indicates FLIPADST
+  // Energy distribution concentrated on the second half indicates ADST
+  struct macroblock_plane *const p = &x->plane[0];
+  struct macroblockd_plane *const pd = &xd->plane[0];
+  double hdist[3] = {0, 0, 0}, vdist[3] = {0, 0, 0};
+  double proj_vdist = 0, proj_hdist = 0;
+  vp10_subtract_plane(x, bsize, 0);
+  get_energy_distribution_fine(cpi, bsize, p->src.buf,
+                               p->src.stride,
+                               pd->dst.buf, pd->dst.stride,
+                               hdist, vdist);
+  // these are weights and bias obtained from a trained linear SVM
+  proj_vdist = vdist[0] * ADST_FLIP_SVM[0] +
+               vdist[1] * ADST_FLIP_SVM[1] +
+               vdist[2] * ADST_FLIP_SVM[2] + ADST_FLIP_SVM[3];
+  proj_hdist = hdist[0] * ADST_FLIP_SVM[4] +
+               hdist[1] * ADST_FLIP_SVM[5] +
+               hdist[2] * ADST_FLIP_SVM[6] + ADST_FLIP_SVM[7];
+
+  // prune out vertical FLIPADST or ADST based on SVM classification
+  if (proj_vdist > 0.1) ver_prune_tx_type[(*n_prune_v)++] = FLIPADST_1D;
+  else if (proj_vdist < 0.1) ver_prune_tx_type[(*n_prune_v)++] = ADST_1D;
+
+  // prune out horizontal FLIPADST or ADST based on SVM classification
+  if (proj_hdist > 0.1) hor_prune_tx_type[(*n_prune_h)++] = FLIPADST_1D;
+  else if (proj_hdist < 0.1) hor_prune_tx_type[(*n_prune_h)++] = ADST_1D;
+}
+
+static void prune_tx_types(const VP10_COMP *cpi,
+                          BLOCK_SIZE bsize,
+                          MACROBLOCK *x,
+                          MACROBLOCKD *xd,
+                          TX_TYPE_1D *pruned_vtx_types,
+                          TX_TYPE_1D *pruned_htx_types,
+                          int *n_prune_v, int *n_prune_h) {
+
+  *n_prune_v = 0;
+  *n_prune_h = 0;
+  switch (cpi->sf.tx_type_search) {
+    case NO_PRUNE:
+      break;
+    case PRUNE_ONE :
+      prune_adst_flipadst_for_sby(cpi, bsize, x, xd, pruned_vtx_types,
+                                  pruned_htx_types, n_prune_v, n_prune_h);
+      break;
+    #if CONFIG_EXT_TX
+    case PRUNE_TWO :
+      prune_two_for_sby(cpi, bsize, x, xd, pruned_vtx_types,
+                        pruned_htx_types, n_prune_v, n_prune_h);
+      break;
+    case PRUNE_THREE :
+      guess_inter_tx_type_for_sby(cpi, bsize, x, xd, pruned_vtx_types,
+                                  pruned_htx_types, n_prune_v, n_prune_h);
+      break;
+    #endif
+  }
+}
+
+static int do_tx_type_search(TX_TYPE tx_type, TX_TYPE_1D *pruned_vtx_types,
+                             TX_TYPE_1D *pruned_htx_types, int n_pruned_v,
+                             int n_pruned_h) {
+  int i;
+  static TX_TYPE_1D vtx_tab[TX_TYPES] = {
+    DCT_1D,
+    ADST_1D,
+    DCT_1D,
+    ADST_1D,
+  #if CONFIG_EXT_TX
+    FLIPADST_1D,
+    DCT_1D,
+    FLIPADST_1D,
+    ADST_1D,
+    FLIPADST_1D,
+    DST_1D,
+    DCT_1D,
+    DST_1D,
+    ADST_1D,
+    DST_1D,
+    FLIPADST_1D,
+    DST_1D,
+    UNKNOWN_TX_1D
+  #endif  // CONFIG_EXT_TX
+  };
+
+  static TX_TYPE_1D htx_tab[TX_TYPES] = {
+    DCT_1D,
+    DCT_1D,
+    ADST_1D,
+    ADST_1D,
+  #if CONFIG_EXT_TX
+    DCT_1D,
+    FLIPADST_1D,
+    FLIPADST_1D,
+    FLIPADST_1D,
+    ADST_1D,
+    DCT_1D,
+    DST_1D,
+    ADST_1D,
+    DST_1D,
+    FLIPADST_1D,
+    DST_1D,
+    DST_1D,
+    UNKNOWN_TX_1D
+  #endif  // CONFIG_EXT_TX
+  };
+
+  // TODO(sarahparker) implement for use outside of ext tx type
+#if CONFIG_EXT_TX
+  for (i = 0; i < n_pruned_v; ++i) {
+    if (vtx_tab[tx_type] == pruned_vtx_types[i])
+      return 0;
+  }
+  for (i = 0; i < n_pruned_h; ++i) {
+    if (htx_tab[tx_type] == pruned_htx_types[i])
+      return 0;
+  }
+#else
+  // temporary to avoid compiler warnings
+  (void) i;
+  (void) vtx_tab;
+  (void) htx_tab;
+  (void) tx_type;
+  (void) pruned_vtx_types;
+  (void) pruned_htx_types;
+  (void) n_pruned_v;
+  (void) n_pruned_h;
+#endif
+  return 1;
 }
 
 static void model_rd_for_sb(VP10_COMP *cpi, BLOCK_SIZE bsize,
@@ -881,8 +1468,15 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
   vpx_prob skip_prob = vp10_get_skip_prob(cm, xd);
   int  s0 = vp10_cost_bit(skip_prob, 0);
   int  s1 = vp10_cost_bit(skip_prob, 1);
+  int n_pruned_v = 0;
+  int n_pruned_h = 0;
 #if CONFIG_EXT_TX
   int ext_tx_set;
+  TX_TYPE_1D prune_vtx_type[3] = {DCT_1D, DCT_1D, DCT_1D},
+             prune_htx_type[3] = {DCT_1D, DCT_1D, DCT_1D};
+#else
+  TX_TYPE_1D prune_vtx_type[1] = {DCT_1D},
+             prune_htx_type[1] = {DCT_1D};
 #endif  // CONFIG_EXT_TX
   const int is_inter = is_inter_block(mbmi);
 
@@ -897,6 +1491,19 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
       if (is_inter) {
         if (!ext_tx_used_inter[ext_tx_set][tx_type])
           continue;
+        if (cpi->sf.tx_type_search > 0) {
+          prune_tx_types(cpi, bs, x, xd, prune_vtx_type, prune_htx_type,
+                         &n_pruned_v, &n_pruned_h);
+          if (n_pruned_v + n_pruned_h > 0 &&
+              !do_tx_type_search(tx_type, prune_vtx_type, prune_htx_type,
+                                 n_pruned_v, n_pruned_h))
+            continue;
+        } else if (ext_tx_set == 1 &&
+                   tx_type >= DST_ADST && tx_type < IDTX &&
+                   best_tx_type == DCT_DCT) {
+            tx_type = IDTX - 1;
+            continue;
+          }
       } else {
         if (!ALLOW_INTRA_EXT_TX && bs >= BLOCK_8X8) {
           if (tx_type != intra_mode_to_tx_type_context[mbmi->mode])
@@ -964,9 +1571,17 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
                        cpi->sf.use_fast_coef_costing);
       if (r == INT_MAX)
         continue;
-      if (is_inter)
+      if (is_inter) {
         r += cpi->inter_tx_type_costs[mbmi->tx_size][mbmi->tx_type];
-      else
+        if (cpi->sf.tx_type_search > 0) {
+          prune_tx_types(cpi, bs, x, xd, prune_vtx_type, prune_htx_type,
+                         &n_pruned_v, &n_pruned_h);
+          if (n_pruned_v + n_pruned_h > 0 &&
+              !do_tx_type_search(tx_type, prune_vtx_type, prune_htx_type,
+                                 n_pruned_v, n_pruned_h))
+            continue;
+        }
+      } else
         r += cpi->intra_tx_type_costs[mbmi->tx_size]
                                      [intra_mode_to_tx_type_context[mbmi->mode]]
                                      [mbmi->tx_type];
@@ -1080,8 +1695,15 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   const int tx_select = cm->tx_mode == TX_MODE_SELECT;
   TX_TYPE tx_type, best_tx_type = DCT_DCT;
   const int is_inter = is_inter_block(mbmi);
+  int n_pruned_v = 0;
+  int n_pruned_h = 0;
 #if CONFIG_EXT_TX
   int ext_tx_set;
+  TX_TYPE_1D prune_vtx_type[3] = {DCT_1D, DCT_1D, DCT_1D},
+             prune_htx_type[3] = {DCT_1D, DCT_1D, DCT_1D};
+#else
+  TX_TYPE_1D prune_vtx_type[1] = {DCT_1D},
+             prune_htx_type[1] = {DCT_1D};
 #endif  // CONFIG_EXT_TX
 
   const vpx_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
@@ -1115,6 +1737,19 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       if (is_inter) {
         if (!ext_tx_used_inter[ext_tx_set][tx_type])
           continue;
+        if (cpi->sf.tx_type_search > 0) {
+          prune_tx_types(cpi, bs, x, xd, prune_vtx_type, prune_htx_type,
+                         &n_pruned_v, &n_pruned_h);
+          if (n_pruned_v + n_pruned_h > 0 &&
+              !do_tx_type_search(tx_type, prune_vtx_type, prune_htx_type,
+                                 n_pruned_v, n_pruned_h))
+            continue;
+        } else if (ext_tx_set == 1 &&
+                   tx_type >= DST_ADST && tx_type < IDTX &&
+                   best_tx_type == DCT_DCT) {
+            tx_type = IDTX - 1;
+            continue;
+          }
       } else {
         if (!ALLOW_INTRA_EXT_TX && bs >= BLOCK_8X8) {
           if (tx_type != intra_mode_to_tx_type_context[mbmi->mode])
@@ -1165,9 +1800,17 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       if (n < TX_32X32 &&
           !xd->lossless[xd->mi[0]->mbmi.segment_id] &&
           r != INT_MAX && !FIXED_TX_TYPE) {
-        if (is_inter)
+        if (is_inter) {
           r += cpi->inter_tx_type_costs[mbmi->tx_size][mbmi->tx_type];
-        else
+          if (cpi->sf.tx_type_search > 0) {
+            prune_tx_types(cpi, bs, x, xd, prune_vtx_type, prune_htx_type,
+                           &n_pruned_v, &n_pruned_h);
+            if (n_pruned_v + n_pruned_h > 0 &&
+                !do_tx_type_search(tx_type, prune_vtx_type, prune_htx_type,
+                                   n_pruned_v, n_pruned_h))
+              continue;
+          }
+        } else
           r += cpi->intra_tx_type_costs[mbmi->tx_size]
               [intra_mode_to_tx_type_context[mbmi->mode]]
               [mbmi->tx_type];
@@ -2733,8 +3376,15 @@ static void select_tx_type_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
   uint8_t best_blk_skip[256];
   const int n4 = 1 << (num_pels_log2_lookup[bsize] - 4);
   int idx, idy;
+  int n_pruned_v = 0;
+  int n_pruned_h = 0;
 #if CONFIG_EXT_TX
   int ext_tx_set = get_ext_tx_set(max_tx_size, bsize, is_inter);
+  TX_TYPE_1D prune_vtx_type[3] = {DCT_1D, DCT_1D, DCT_1D},
+             prune_htx_type[3] = {DCT_1D, DCT_1D, DCT_1D};
+#else
+  TX_TYPE_1D prune_vtx_type[1] = {DCT_1D},
+             prune_htx_type[1] = {DCT_1D};
 #endif
 
   *distortion = INT64_MAX;
@@ -2751,6 +3401,19 @@ static void select_tx_type_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
     if (is_inter) {
       if (!ext_tx_used_inter[ext_tx_set][tx_type])
         continue;
+      if (cpi->sf.tx_type_search > 0) {
+        prune_tx_types(cpi, bsize, x, xd, prune_vtx_type, prune_htx_type,
+                       &n_pruned_v, &n_pruned_h);
+        if (n_pruned_v + n_pruned_h > 0 &&
+            !do_tx_type_search(tx_type, prune_vtx_type, prune_htx_type,
+                               n_pruned_v, n_pruned_h))
+          continue;
+      } else if (ext_tx_set == 1 &&
+                 tx_type >= DST_ADST && tx_type < IDTX &&
+                 best_tx_type == DCT_DCT) {
+            tx_type = IDTX - 1;
+            continue;
+        }
     } else {
       if (!ALLOW_INTRA_EXT_TX && bsize >= BLOCK_8X8) {
         if (tx_type != intra_mode_to_tx_type_context[mbmi->mode])
@@ -2797,9 +3460,17 @@ static void select_tx_type_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
       if (max_tx_size < TX_32X32 &&
           !xd->lossless[xd->mi[0]->mbmi.segment_id] &&
           this_rate != INT_MAX) {
-        if (is_inter)
+        if (is_inter) {
           this_rate += cpi->inter_tx_type_costs[max_tx_size][mbmi->tx_type];
-        else
+          if (cpi->sf.tx_type_search > 0) {
+            prune_tx_types(cpi, bs, x, xd, prune_vtx_type, prune_htx_type,
+                           &n_pruned_v, &n_pruned_h);
+            if (n_pruned_v + n_pruned_h > 0 &&
+                !do_tx_type_search(tx_type, prune_vtx_type, prune_htx_type,
+                                   n_pruned_v, n_pruned_h))
+              continue;
+          }
+        } else
           this_rate += cpi->intra_tx_type_costs[max_tx_size]
               [intra_mode_to_tx_type_context[mbmi->mode]]
               [mbmi->tx_type];
@@ -6301,7 +6972,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   for (i = LAST_NEW_MV_INDEX + 1; i < MAX_MODES; ++i)
     mode_threshold[i] = ((int64_t)rd_threshes[i] * rd_thresh_freq_fact[i]) >> 5;
 
-  midx =  sf->schedule_mode_search ? mode_skip_start : 0;
+  midx = sf->schedule_mode_search ? mode_skip_start : 0;
   while (midx > 4) {
     uint8_t end_pos = 0;
     for (i = 5; i < midx; ++i) {
