@@ -159,6 +159,7 @@ static void set_good_speed_feature(VP10_COMP *cpi, VP10_COMMON *cm,
 
     sf->tx_size_search_breakout = 1;
     sf->partition_search_breakout_rate_thr = 80;
+    sf->ext_tx_search_type = PRUNE_ONE;
   }
 
   if (speed >= 2) {
@@ -174,6 +175,7 @@ static void set_good_speed_feature(VP10_COMP *cpi, VP10_COMMON *cm,
     sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
     sf->auto_min_max_partition_size = RELAXED_NEIGHBORING_MIN_MAX;
     sf->allow_partition_search_skip = 1;
+    sf->ext_tx_search_type = PRUNE_TWO;
   }
 
   if (speed >= 3) {
@@ -192,6 +194,7 @@ static void set_good_speed_feature(VP10_COMP *cpi, VP10_COMMON *cm,
     sf->intra_y_mode_mask[TX_32X32] = INTRA_DC;
     sf->intra_uv_mode_mask[TX_32X32] = INTRA_DC;
     sf->adaptive_interp_filter_search = 1;
+    sf->ext_tx_search_type = PRUNE_THREE;
   }
 
   if (speed >= 4) {
@@ -465,6 +468,7 @@ void vp10_set_speed_features_framesize_independent(VP10_COMP *cpi) {
   sf->cb_partition_search = 0;
   sf->alt_ref_search_fp = 0;
   sf->use_quant_fp = 0;
+  sf->ext_tx_search_type = 0;
   sf->partition_search_type = SEARCH_PARTITION;
   sf->less_rectangular_check = 0;
   sf->use_square_partition_only = 0;
