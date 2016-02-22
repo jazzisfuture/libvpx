@@ -170,6 +170,11 @@ typedef struct {
   INTRA_FILTER intra_filter;
 #endif  // CONFIG_EXT_INTRA
 
+#if CONFIG_EXT_INTER
+  PREDICTION_MODE interintra_mode;
+  PREDICTION_MODE interintra_uv_mode;
+#endif  // CONFIG_EXT_INTER
+
 #if CONFIG_OBMC
   int8_t obmc;
 #endif  // CONFIG_OBMC
@@ -601,6 +606,17 @@ void vp10_foreach_transformed_block(
 void vp10_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
                       BLOCK_SIZE plane_bsize, TX_SIZE tx_size, int has_eob,
                       int aoff, int loff);
+
+#if CONFIG_EXT_INTER
+static INLINE int is_interintra_allowed(BLOCK_SIZE sb_type) {
+  return ((sb_type >= BLOCK_8X8) && (sb_type < BLOCK_64X64));
+}
+
+static INLINE int is_interintra_pred(const MB_MODE_INFO *mbmi) {
+  return (mbmi->ref_frame[1] == INTRA_FRAME) &&
+           is_interintra_allowed(mbmi->sb_type);
+}
+#endif  // CONFIG_EXT_INTER
 
 #ifdef __cplusplus
 }  // extern "C"
