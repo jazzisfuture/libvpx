@@ -751,6 +751,7 @@ static int choose_partitioning(VP9_COMP *cpi,
       y_sad_g = UINT_MAX;
     }
 
+    set_ref_ptrs(cm, xd, mi->ref_frame[0], mi->ref_frame[1]);
     vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
                          &cm->frame_refs[LAST_FRAME - 1].sf);
     mi->ref_frame[0] = LAST_FRAME;
