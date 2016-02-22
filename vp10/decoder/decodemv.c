@@ -1133,7 +1133,7 @@ static void fpm_sync(void *const data, int mi_row) {
 static void read_inter_block_mode_info(VP10Decoder *const pbi,
                                        MACROBLOCKD *const xd,
                                        MODE_INFO *const mi,
-#if CONFIG_OBMC && CONFIG_SUPERTX
+#if (CONFIG_OBMC || CONFIG_EXT_INTER) && CONFIG_SUPERTX
                                        int mi_row, int mi_col, vpx_reader *r,
                                        int supertx_enabled) {
 #else
@@ -1318,6 +1318,25 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
                         ? read_switchable_interp_filter(cm, xd, r)
                         : cm->interp_filter;
 #endif  // !CONFIG_EXT_INTERP
+
+#if CONFIG_EXT_INTER
+  if (cm->reference_mode != COMPOUND_REFERENCE &&
+      is_interintra_allowed(bsize) &&
+      is_inter_mode(mbmi->mode) &&
+#if CONFIG_SUPERTX
+      !supertx_enabled &&
+#endif
+      mbmi->ref_frame[1] <= INTRA_FRAME) {
+    mbmi->ref_frame[1] = vpx_read(r, cm->fc->interintra_prob[bsize]) ?
+                         INTRA_FRAME : NONE;
+    cm->counts.interintra[bsize][mbmi->ref_frame[1] == INTRA_FRAME]++;
+    if (mbmi->ref_frame[1] == INTRA_FRAME) {
+      mbmi->interintra_mode =
+          read_intra_mode_y(cm, xd, r, size_group_lookup[bsize]);
+      mbmi->interintra_uv_mode = mbmi->interintra_mode;
+    }
+  }
+#endif  // CONFIG_EXT_INTER
 
   if (bsize < BLOCK_8X8) {
     const int num_4x4_w = 1 << xd->bmode_blocks_wl;
@@ -1514,7 +1533,8 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
 
   if (inter_block)
     read_inter_block_mode_info(pbi, xd,
-#if CONFIG_OBMC && CONFIG_SUPERTX
+#if (CONFIG_OBMC || CONFIG_EXT_INTER) && CONFIG_SUPERTX
+
                                mi, mi_row, mi_col, r, supertx_enabled);
 #else
                                mi, mi_row, mi_col, r);
