@@ -759,6 +759,7 @@ static int choose_partitioning(VP9_COMP *cpi,
     mi->mv[0].as_int = 0;
     mi->interp_filter = BILINEAR;
 
+    set_ref_ptrs(cm, xd, mi->ref_frame[0], mi->ref_frame[1]);
     y_sad = vp9_int_pro_motion_estimation(cpi, x, bsize, mi_row, mi_col);
     if (y_sad_g < y_sad) {
       vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
