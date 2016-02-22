@@ -5,6 +5,7 @@
 #include "vp10/common/filter.h"
 #include "vp10/common/vp10_convolve.h"
 #include "vpx_dsp/vpx_dsp_common.h"
+#include "vpx_ports/mem.h"
 
 using libvpx_test::ACMRandom;
 
@@ -245,6 +246,82 @@ TEST(VP10ConvolveTest, vp10_highbd_convolve_avg) {
                        subpel_x_q4, x_step_q4, subpel_y_q4, y_step_q4, avg, bd);
 
   EXPECT_EQ(dst[0], ROUND_POWER_OF_TWO(dst0[0] + dst1[0], 1));
+}
+
+TEST(VP10ConvolveTest, convolve_speed_h) {
+  ACMRandom rnd(ACMRandom::DeterministicSeed());
+  INTERP_FILTER interp_filter = EIGHTTAP;
+  InterpFilterParams filter_params =
+      vp10_get_interp_filter_params(interp_filter);
+  ptrdiff_t filter_size = filter_params.tap;
+  int filter_center = filter_size / 2 - 1;
+  DECLARE_ALIGNED(16, uint16_t, src[71 * 71]) = {0};
+  int src_stride = 71;
+  DECLARE_ALIGNED(16, uint16_t, dst[64 * 64]) = {0};
+  int dst_stride = 64;
+  int x_step_q4 = 16;
+  int y_step_q4 = 16;
+  int subpel_x_q4 = 8;
+  int subpel_y_q4 = 6;
+  int bd = 10;
+
+  int w = 64;
+  int h = 64;
+
+  const int16_t* filter_x = vp10_get_interp_filter_kernel(filter_params, subpel_x_q4);
+  const int16_t* filter_y = vp10_get_interp_filter_kernel(filter_params, subpel_y_q4);
+
+  for (int i = 0; i < src_stride * src_stride; i++) {
+    src[i] = rnd.Rand16() % (1 << bd);
+  }
+
+  int offset = filter_center*src_stride + filter_center;
+
+  for(int i = 0; i < 100000; i++) {
+    vpx_highbd_convolve8_sse2(CONVERT_TO_BYTEPTR(src+offset), src_stride,
+                                 CONVERT_TO_BYTEPTR(dst), dst_stride,
+                                 filter_x, x_step_q4,
+                                 filter_y, y_step_q4,
+                                 w, h, bd);
+  }
+}
+
+TEST(VP10ConvolveTest, convolve_speed_l) {
+  ACMRandom rnd(ACMRandom::DeterministicSeed());
+  INTERP_FILTER interp_filter = EIGHTTAP;
+  InterpFilterParams filter_params =
+      vp10_get_interp_filter_params(interp_filter);
+  ptrdiff_t filter_size = filter_params.tap;
+  int filter_center = filter_size / 2 - 1;
+  DECLARE_ALIGNED(16, uint8_t, src[71 * 71]);
+  int src_stride = 71;
+  DECLARE_ALIGNED(16, uint8_t, dst[64 * 64]);
+  int dst_stride = 64;
+  int x_step_q4 = 16;
+  int y_step_q4 = 16;
+  int subpel_x_q4 = 8;
+  int subpel_y_q4 = 6;
+  int bd = 8;
+
+  int w = 64;
+  int h = 64;
+
+  const int16_t* filter_x = vp10_get_interp_filter_kernel(filter_params, subpel_x_q4);
+  const int16_t* filter_y = vp10_get_interp_filter_kernel(filter_params, subpel_y_q4);
+
+  for (int i = 0; i < src_stride * src_stride; i++) {
+    src[i] = rnd.Rand16() % (1 << bd);
+  }
+
+  int offset = filter_center*src_stride + filter_center;
+
+  for(int i = 0; i < 100000; i++) {
+    vpx_convolve8_sse2(src+offset, src_stride,
+                                 dst, dst_stride,
+                                 filter_x, x_step_q4,
+                                 filter_y, y_step_q4,
+                                 w, h);
+  }
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace
