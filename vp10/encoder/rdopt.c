@@ -5069,12 +5069,9 @@ static INTERP_FILTER predict_interp_filter(const VP10_COMP *cpi,
     }
   }
   if (cm->interp_filter != BILINEAR) {
-    if (x->source_variance < cpi->sf.disable_filter_search_var_thresh) {
-      best_filter = EIGHTTAP;
-    }
 #if CONFIG_EXT_INTERP
-    else if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE) {
-      best_filter = EIGHTTAP;
+    if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE) {
+      best_filter = vp10_get_interp_filter(cm, xd);
     }
 #endif
   }
@@ -7299,7 +7296,7 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
   x->skip = 1;
 
   if (cm->interp_filter != BILINEAR) {
-    best_filter = EIGHTTAP;
+    best_filter = vp10_get_interp_filter(cm, xd);
     if (cm->interp_filter == SWITCHABLE &&
 #if CONFIG_EXT_INTERP
         vp10_is_interp_needed(xd) &&
@@ -7755,8 +7752,7 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
                                               bsi, switchable_filter_index,
                                               mi_row, mi_col);
 #if CONFIG_EXT_INTERP
-            if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
-                mbmi->interp_filter != EIGHTTAP)  // invalid configuration
+            if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE)  // invalid configuration
               continue;
 #endif  // CONFIG_EXT_INTERP
             if (tmp_rd == INT64_MAX)
@@ -7827,9 +7823,8 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
                                           bsi, 0,
                                           mi_row, mi_col);
 #if CONFIG_EXT_INTERP
-        if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
-            mbmi->interp_filter != EIGHTTAP) {
-          mbmi->interp_filter = EIGHTTAP;
+        if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE) {
+          mbmi->interp_filter = vp10_get_interp_filter(cm, xd);
           tmp_rd = rd_pick_best_sub8x8_mode(cpi, x,
                    &x->mbmi_ext->ref_mvs[ref_frame][0],
                    second_ref, best_yrd, &rate, &rate_y,

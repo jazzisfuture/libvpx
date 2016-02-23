@@ -15,6 +15,7 @@
 #include "vp10/common/onyxc_int.h"
 #include "vp10/common/vp10_convolve.h"
 #include "vpx/vpx_integer.h"
+#include "vp10/encoder/rd.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -263,6 +264,21 @@ void vp10_setup_pre_planes(MACROBLOCKD *xd, int idx,
                           const struct scale_factors *sf);
 
 #if CONFIG_EXT_INTERP
+static int vp10_get_interp_filter(const VP10_COMMON *const cm,
+                                     const MACROBLOCKD *const xd) {
+  int best_filter = -1;
+  double best_prob = -1;
+  int i;
+  for (i = 0; i < SWITCHABLE_FILTERS; ++i) {
+    double prob = vp10_get_switchable_prob(cm, xd, i);
+    if(best_prob < prob) {
+      best_prob = prob;
+      best_filter = i;
+    }
+  }
+  return best_filter;
+}
+
 static INLINE int vp10_is_interp_needed(const MACROBLOCKD *const xd) {
   MODE_INFO *const mi = xd->mi[0];
   MB_MODE_INFO *const mbmi = &mi->mbmi;

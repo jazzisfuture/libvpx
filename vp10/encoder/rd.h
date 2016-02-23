@@ -281,6 +281,9 @@ void vp10_model_rd_from_var_lapndz(unsigned int var, unsigned int n,
 int vp10_get_switchable_rate(const struct VP10_COMP *cpi,
                             const MACROBLOCKD *const xd);
 
+double vp10_get_switchable_prob(const VP10_COMMON *const cm,
+                           const MACROBLOCKD *const xd, int filter_idx);
+
 int vp10_raster_block_offset(BLOCK_SIZE plane_bsize,
                             int raster_block, int stride);
 
