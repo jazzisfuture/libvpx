@@ -70,6 +70,33 @@ const libvpx_test::TestMode kEncodingModeVectors[] = {
 // Speed settings tested
 const int kCpuUsedVectors[] = {1, 2, 3, 5, 6};
 
+const int kTuneContentVecotrs[] = {0};
+/*
+const TestVideoParam kSCTestVectors[] = {
+  {"park_joy_90p_8_420.y4m", 8, VPX_IMG_FMT_I420, VPX_BITS_8, 0},
+  {"park_joy_90p_8_422.y4m", 8, VPX_IMG_FMT_I422, VPX_BITS_8, 1},
+  {"park_joy_90p_8_444.y4m", 8, VPX_IMG_FMT_I444, VPX_BITS_8, 1},
+  {"park_joy_90p_8_440.yuv", 8, VPX_IMG_FMT_I440, VPX_BITS_8, 1},
+#if CONFIG_VP9_HIGHBITDEPTH
+  {"park_joy_90p_10_420.y4m", 10, VPX_IMG_FMT_I42016, VPX_BITS_10, 2},
+  {"park_joy_90p_10_422.y4m", 10, VPX_IMG_FMT_I42216, VPX_BITS_10, 3},
+  {"park_joy_90p_10_444.y4m", 10, VPX_IMG_FMT_I44416, VPX_BITS_10, 3},
+  {"park_joy_90p_10_440.yuv", 10, VPX_IMG_FMT_I44016, VPX_BITS_10, 3},
+  {"park_joy_90p_12_420.y4m", 12, VPX_IMG_FMT_I42016, VPX_BITS_12, 2},
+  {"park_joy_90p_12_422.y4m", 12, VPX_IMG_FMT_I42216, VPX_BITS_12, 3},
+  {"park_joy_90p_12_444.y4m", 12, VPX_IMG_FMT_I44416, VPX_BITS_12, 3},
+  {"park_joy_90p_12_440.yuv", 12, VPX_IMG_FMT_I44016, VPX_BITS_12, 3},
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+};
+// Encoding modes tested
+const libvpx_test::TestMode kSCEncodingModeVectors[] = {
+  ::libvpx_test::kTwoPassGood,
+};
+// Speed settings tested
+const int kSCCpuUsedVectors[] = {0};
+const int kSCTuneContentVecotrs[] = {1};
+*/
+
 int is_extension_y4m(const char *filename) {
   const char *dot = strrchr(filename, '.');
   if (!dot || dot == filename)
@@ -80,8 +107,8 @@ int is_extension_y4m(const char *filename) {
 
 class EndToEndTestLarge
     : public ::libvpx_test::EncoderTest,
-      public ::libvpx_test::CodecTestWith3Params<libvpx_test::TestMode, \
-                                                 TestVideoParam, int> {
+      public ::libvpx_test::CodecTestWith4Params<libvpx_test::TestMode, \
+                                                 TestVideoParam, int, int> {
  protected:
   EndToEndTestLarge()
       : EncoderTest(GET_PARAM(0)),
@@ -89,7 +116,8 @@ class EndToEndTestLarge
         cpu_used_(GET_PARAM(3)),
         psnr_(0.0),
         nframes_(0),
-        encoding_mode_(GET_PARAM(1)) {
+        encoding_mode_(GET_PARAM(1)),
+        tune_content_(GET_PARAM(4)) {
   }
 
   virtual ~EndToEndTestLarge() {}
@@ -126,6 +154,11 @@ class EndToEndTestLarge
       encoder->Control(VP9E_SET_FRAME_PARALLEL_DECODING, 1);
       encoder->Control(VP9E_SET_TILE_COLUMNS, 4);
       encoder->Control(VP8E_SET_CPUUSED, cpu_used_);
+      //encoder->Control(VP9E_SET_TUNE_CONTENT, tune_content_);
+      if (cpu_used_ == 1 && encoding_mode_ == ::libvpx_test::kTwoPassGood)
+        encoder->Control(VP9E_SET_TUNE_CONTENT, VP9E_CONTENT_SCREEN);
+      else
+        encoder->Control(VP9E_SET_TUNE_CONTENT, VP9E_CONTENT_DEFAULT);
       if (encoding_mode_ != ::libvpx_test::kRealTime) {
         encoder->Control(VP8E_SET_ENABLEAUTOALTREF, 1);
         encoder->Control(VP8E_SET_ARNR_MAXFRAMES, 7);
@@ -152,6 +185,7 @@ class EndToEndTestLarge
   double psnr_;
   unsigned int nframes_;
   libvpx_test::TestMode encoding_mode_;
+  int tune_content_;
 };
 
 TEST_P(EndToEndTestLarge, EndtoEndPSNRTest) {
@@ -185,7 +219,8 @@ VP9_INSTANTIATE_TEST_CASE(
     EndToEndTestLarge,
     ::testing::ValuesIn(kEncodingModeVectors),
     ::testing::ValuesIn(kTestVectors),
-    ::testing::ValuesIn(kCpuUsedVectors));
+    ::testing::ValuesIn(kCpuUsedVectors),
+    ::testing::ValuesIn(kTuneContentVecotrs));
 
 #if CONFIG_VP9_HIGHBITDEPTH
 # if CONFIG_VP10_ENCODER
@@ -204,6 +239,7 @@ VP10_INSTANTIATE_TEST_CASE(
     EndToEndTestLarge,
     ::testing::ValuesIn(kEncodingModeVectors),
     ::testing::ValuesIn(kTestVectors),
-    ::testing::ValuesIn(kCpuUsedVectors));
+    ::testing::ValuesIn(kCpuUsedVectors),
+    ::testing::ValuesIn(kTuneContentVecotrs));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace

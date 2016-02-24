@@ -1314,6 +1314,8 @@ static void write_mb_modes_kf(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       mbmi->mode == DC_PRED)
     write_palette_mode_info(cm, xd, mi, w);
 
+  //if (cm->allow_screen_content_tools) printf("tested\n");
+
   if (!FIXED_TX_TYPE) {
 #if CONFIG_EXT_TX
     if (get_ext_tx_types(mbmi->tx_size, bsize, 0) > 1 &&
