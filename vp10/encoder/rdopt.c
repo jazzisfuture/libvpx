@@ -768,8 +768,8 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
 
       sse = vpx_sum_squares_2d_i16(diff, diff_stride, bs);
 #if CONFIG_VP9_HIGHBITDEPTH
-      if ((xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) && (xd->bd > 8))
-        sse = ROUND_POWER_OF_TWO(sse, (xd->bd - 8) * 2);
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+        sse = ROUNDZ_POWER_OF_TWO(sse, (xd->bd - 8) * 2);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       sse = (int64_t)sse * 16;
 
@@ -2393,7 +2393,7 @@ void vp10_tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   MACROBLOCKD *xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  unsigned int tmp;
+  unsigned int tmp_sse = 0;
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
   TX_TYPE tx_type = get_tx_type(plane_type, xd, block, tx_size);
@@ -2446,22 +2446,22 @@ void vp10_tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
     int idx, idy;
     int blocks_height = VPXMIN(bh >> 2, max_blocks_high - blk_row);
     int blocks_width  = VPXMIN(bh >> 2, max_blocks_wide - blk_col);
-    tmp = 0;
+    tmp_sse = 0;
     for (idy = 0; idy < blocks_height; idy += 2) {
       for (idx = 0; idx < blocks_width; idx += 2) {
         const int16_t *d = diff + 4 * idy * diff_stride + 4 * idx;
-        tmp += vpx_sum_squares_2d_i16(d, diff_stride, 8);
+        tmp_sse += vpx_sum_squares_2d_i16(d, diff_stride, 8);
       }
     }
   } else {
-    tmp = vpx_sum_squares_2d_i16(diff, diff_stride, bh);
+    tmp_sse = vpx_sum_squares_2d_i16(diff, diff_stride, bh);
   }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-  if ((xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) && (xd->bd > 8))
-    tmp = ROUND_POWER_OF_TWO(tmp, (xd->bd - 8) * 2);
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+    tmp_sse = ROUNDZ_POWER_OF_TWO(tmp_sse, (xd->bd - 8) * 2);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-  *bsse += (int64_t)tmp * 16;
+  *bsse += (int64_t)tmp_sse * 16;
 
   if (p->eobs[block] > 0) {
     const int lossless = xd->lossless[xd->mi[0]->mbmi.segment_id];
@@ -2522,22 +2522,22 @@ void vp10_tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
       unsigned int this_dist;
       int blocks_height = VPXMIN(bh >> 2, max_blocks_high - blk_row);
       int blocks_width  = VPXMIN(bh >> 2, max_blocks_wide - blk_col);
-      tmp = 0;
+      tmp_sse = 0;
       for (idy = 0; idy < blocks_height; idy += 2) {
         for (idx = 0; idx < blocks_width; idx += 2) {
           cpi->fn_ptr[BLOCK_8X8].vf(src + 4 * idy * src_stride + 4 * idx,
                                     src_stride,
                                     rec_buffer + 4 * idy * 32 + 4 * idx,
                                     32, &this_dist);
-          tmp += this_dist;
+          tmp_sse += this_dist;
         }
       }
     } else {
       cpi->fn_ptr[txm_bsize].vf(src, src_stride,
-                                rec_buffer, 32, &tmp);
+                                rec_buffer, 32, &tmp_sse);
     }
   }
-  *dist += (int64_t)tmp * 16;
+  *dist += (int64_t)tmp_sse * 16;
 
   *rate += cost_coeffs(x, plane, block, coeff_ctx, tx_size,
                        scan_order->scan, scan_order->neighbors, 0);
