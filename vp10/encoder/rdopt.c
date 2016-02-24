@@ -2393,7 +2393,7 @@ void vp10_tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   MACROBLOCKD *xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  unsigned int tmp;
+  unsigned int tmp = 0;
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
   TX_TYPE tx_type = get_tx_type(plane_type, xd, block, tx_size);
