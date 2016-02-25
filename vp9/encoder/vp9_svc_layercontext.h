@@ -134,6 +134,13 @@ int vp9_one_pass_cbr_svc_start_layer(struct VP9_COMP *const cpi);
 
 void vp9_free_svc_cyclic_refresh(struct VP9_COMP *const cpi);
 
+YV12_BUFFER_CONFIG *vp9_svc_scale_if_required(VP9_COMMON *cm,
+                                              YV12_BUFFER_CONFIG *unscaled,
+                                              YV12_BUFFER_CONFIG *scaled,
+                                              YV12_BUFFER_CONFIG *scaled_temp);
+
+int vp9_do_twostage_downsampling(struct VP9_COMP *const cpi);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

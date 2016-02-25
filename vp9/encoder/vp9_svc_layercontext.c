@@ -43,6 +43,26 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     cpi->svc.ext_alt_fb_idx[sl] = 2;
   }
 
+  if (is_one_pass_cbr_svc(cpi) && oxcf->ss_number_layers == 3) {
+    if (vpx_realloc_frame_buffer(&cpi->svc.scaled_frames[0],
+                                 cpi->common.width >> 1,
+                                 cpi->common.height >> 1,
+                                 cpi->common.subsampling_x,
+                                 cpi->common.subsampling_y,
+   #if CONFIG_VP9_HIGHBITDEPTH
+                                 cpi->common.use_highbitdepth,
+   #endif
+                                 VP9_ENC_BORDER_IN_PIXELS,
+                                 cpi->common.byte_alignment,
+                                 NULL, NULL, NULL))
+         vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
+                            "Failed to allocate scaled_frame for svc ");
+
+       memset(cpi->svc.scaled_frames[0].buffer_alloc, 0x80,
+              cpi->svc.scaled_frames[0].buffer_alloc_sz);
+  }
+
+
   if (cpi->oxcf.error_resilient_mode == 0 && cpi->oxcf.pass == 2) {
     if (vpx_realloc_frame_buffer(&cpi->svc.empty_frame.img,
                                  SMALL_FRAME_WIDTH, SMALL_FRAME_HEIGHT,
@@ -795,4 +815,38 @@ void vp9_free_svc_cyclic_refresh(VP9_COMP *const cpi) {
           vpx_free(lc->consec_zero_mv);
     }
   }
+}
+
+YV12_BUFFER_CONFIG *vp9_svc_scale_if_required(VP9_COMMON *cm,
+                                              YV12_BUFFER_CONFIG *unscaled,
+                                              YV12_BUFFER_CONFIG *scaled,
+                                              YV12_BUFFER_CONFIG *scaled_temp) {
+  if (cm->mi_cols * MI_SIZE != unscaled->y_width ||
+      cm->mi_rows * MI_SIZE != unscaled->y_height) {
+#if CONFIG_VP9_HIGHBITDEPTH
+      scale_and_extend_frame(unscaled, scaled, (int)cm->bit_depth);
+#else
+      if (unscaled->y_width == (scaled->y_width << 2) &&
+          unscaled->y_height == (scaled->y_height << 2)) {
+        vp9_scale_and_extend_frame(unscaled, scaled_temp);
+        vp9_scale_and_extend_frame(scaled_temp, scaled);
+      }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    return scaled;
+  } else {
+    return unscaled;
+  }
+}
+
+int vp9_do_twostage_downsampling(VP9_COMP *const cpi) {
+  if (is_one_pass_cbr_svc(cpi) &&
+      cpi->oxcf.ss_number_layers == 3 &&
+      cpi->svc.spatial_layer_id == 0 &&
+      (cpi->svc.layer_context[0].scaling_factor_num ==
+       cpi->svc.layer_context[0].scaling_factor_den >> 1) &&
+      (cpi->svc.layer_context[1].scaling_factor_num ==
+       cpi->svc.layer_context[1].scaling_factor_den >> 1)) {
+      return 1;
+    }
+  return 0;
 }
