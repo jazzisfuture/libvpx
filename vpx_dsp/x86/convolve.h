@@ -33,7 +33,7 @@ typedef void filter8_1dfunction (
                                     int w, int h) { \
   assert(filter[3] != 128); \
   assert(step_q4 == 16); \
-  if (filter[0] || filter[1] || filter[2]) { \
+  if (filter[0] | filter[1] | filter[2]) { \
     while (w >= 16) { \
       vpx_filter_block1d16_##dir##8_##avg##opt(src_start, \
                                                src_stride, \
@@ -161,7 +161,7 @@ typedef void highbd_filter8_1dfunction (
   if (step_q4 == 16 && filter[3] != 128) { \
     uint16_t *src = CONVERT_TO_SHORTPTR(src8); \
     uint16_t *dst = CONVERT_TO_SHORTPTR(dst8); \
-    if (filter[0] || filter[1] || filter[2]) { \
+    if (filter[0] | filter[1] | filter[2]) { \
       while (w >= 16) { \
         vpx_highbd_filter_block1d16_##dir##8_##avg##opt(src_start, \
                                                         src_stride, \
