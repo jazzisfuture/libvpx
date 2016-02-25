@@ -1356,7 +1356,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       continue;
 
     if (this_mode == NEWMV) {
-      if (ref_frame > LAST_FRAME && !cpi->use_svc) {
+      if (ref_frame > LAST_FRAME &&
+          !cpi->use_svc &&
+          cpi->oxcf.rc_mode == VPX_CBR) {
         int tmp_sad;
         int dis, cost_list[5];
 
@@ -1471,8 +1473,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     if ((this_mode == NEWMV || filter_ref == SWITCHABLE) && pred_filter_search
         && (ref_frame == LAST_FRAME ||
-            (ref_frame == GOLDEN_FRAME && cpi->use_svc))
-        && (((mi->mv[0].as_mv.row | mi->mv[0].as_mv.col) & 0x07) != 0)) {
+            (ref_frame == GOLDEN_FRAME &&
+            (cpi->use_svc || cpi->oxcf.rc_mode == VPX_VBR))) &&
+            (((mi->mv[0].as_mv.row | mi->mv[0].as_mv.col) & 0x07) != 0)) {
       int pf_rate[3];
       int64_t pf_dist[3];
       unsigned int pf_var[3];
@@ -1591,7 +1594,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     this_rdc.rate += ref_frame_cost[ref_frame];
     this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, this_rdc.rate, this_rdc.dist);
 
-    if (cpi->oxcf.speed >= 5 &&
+    if (cpi->oxcf.rc_mode == VPX_CBR &&
+        cpi->oxcf.speed >= 5 &&
         cpi->oxcf.content != VP9E_CONTENT_SCREEN &&
         !x->sb_is_skin) {
       // Bias against non-zero (above some threshold) motion for large blocks.
