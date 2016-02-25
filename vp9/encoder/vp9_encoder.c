@@ -3357,10 +3357,21 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   vpx_clear_system_state();
 
   set_frame_size(cpi);
-  cpi->Source = vp9_scale_if_required(cm,
-                                      cpi->un_scaled_source,
-                                      &cpi->scaled_source,
-                                      (cpi->oxcf.pass == 0));
+
+  if (cpi->use_svc &&
+      vp9_do_twostage_downsampling(cpi) &&
+      cpi->un_scaled_source->y_width == cpi->scaled_source.y_width << 2 &&
+      cpi->un_scaled_source->y_height == cpi->scaled_source.y_height << 2) {
+    cpi->Source = vp9_svc_twostage_scale(cm,
+                                         cpi->un_scaled_source,
+                                         &cpi->scaled_source,
+                                         &cpi->svc.scaled_frames[0]);
+  } else {
+    cpi->Source = vp9_scale_if_required(cm,
+                                       cpi->un_scaled_source,
+                                       &cpi->scaled_source,
+                                       (cpi->oxcf.pass == 0));
+  }
 
   // Avoid scaling last_source unless its needed.
   // Last source is needed if vp9_avg_source_sad() is used, or if
