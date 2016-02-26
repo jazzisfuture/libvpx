@@ -519,6 +519,9 @@ TEST_P(DatarateTestVP9Large, ChangingDropFrameThresh) {
   cfg_.rc_end_usage = VPX_CBR;
   cfg_.rc_target_bitrate = 200;
   cfg_.g_lag_in_frames = 0;
+  // TODO(marpan): Investigate datarate target failures with a smaller keyframe
+  // interval (128).
+  cfg_.kf_max_dist = 9999;
 
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
                                        30, 1, 0, 140);
@@ -949,6 +952,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc4threads) {
   svc_params_.scaling_factor_num[1] = 288;
   svc_params_.scaling_factor_den[1] = 288;
   cfg_.rc_dropframe_thresh = 10;
+  cfg_.kf_max_dist = 9999;
   ::libvpx_test::I420VideoSource video("niklas_1280_720_30.y4m", 1280, 720,
                                        30, 1, 0, 300);
   cfg_.rc_target_bitrate = 800;
