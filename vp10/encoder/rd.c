@@ -690,9 +690,13 @@ int vp10_get_switchable_rate(const VP10_COMP *cpi,
                              const MACROBLOCKD *const xd) {
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
   const int ctx = vp10_get_pred_context_switchable_interp(xd);
+   const BLOCK_SIZE bsize = mbmi->sb_type;
 #if CONFIG_EXT_INTERP
   if (!vp10_is_interp_needed(xd)) return 0;
 #endif  // CONFIG_EXT_INTERP
+  if(bsize < BLOCK_8X8) {
+      return 0;
+  }
   return SWITCHABLE_INTERP_RATE_FACTOR *
       cpi->switchable_interp_costs[ctx][mbmi->interp_filter];
 }

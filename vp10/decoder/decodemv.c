@@ -804,9 +804,14 @@ static INLINE INTERP_FILTER read_switchable_interp_filter(
   const int ctx = vp10_get_pred_context_switchable_interp(xd);
   FRAME_COUNTS *counts = xd->counts;
   INTERP_FILTER type;
+  MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+  const BLOCK_SIZE bsize = mbmi->sb_type;
 #if CONFIG_EXT_INTERP
   if (!vp10_is_interp_needed(xd)) return EIGHTTAP;
 #endif
+  if(bsize < BLOCK_8X8) {
+    return EIGHTTAP;
+  }
   type = (INTERP_FILTER)vpx_read_tree(r, vp10_switchable_interp_tree,
                                       cm->fc->switchable_interp_prob[ctx]);
   if (counts)

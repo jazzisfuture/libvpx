@@ -1183,8 +1183,10 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
           && vp10_is_interp_needed(xd)
 #endif
           ) {
-        const int ctx = vp10_get_pred_context_switchable_interp(xd);
-        ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
+        if(bsize > BLOCK_8X8) {
+          const int ctx = vp10_get_pred_context_switchable_interp(xd);
+          ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
+        }
       }
     }
 
@@ -1302,8 +1304,10 @@ static void update_state_supertx(VP10_COMP *cpi, ThreadData *td,
         && vp10_is_interp_needed(xd)
 #endif
         ) {
-      const int ctx = vp10_get_pred_context_switchable_interp(xd);
-      ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
+      if(bsize > BLOCK_8X8) {
+        const int ctx = vp10_get_pred_context_switchable_interp(xd);
+        ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
+      }
     }
 
     rdc->comp_pred_diff[SINGLE_REFERENCE] += ctx->single_pred_diff;

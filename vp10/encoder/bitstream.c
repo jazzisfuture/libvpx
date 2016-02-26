@@ -864,6 +864,7 @@ static void write_switchable_interp_filter(VP10_COMP *cpi,
                                            vpx_writer *w) {
   VP10_COMMON *const cm = &cpi->common;
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+  const BLOCK_SIZE bsize = mbmi->sb_type;
   if (cm->interp_filter == SWITCHABLE) {
     const int ctx = vp10_get_pred_context_switchable_interp(xd);
 #if CONFIG_EXT_INTERP
@@ -872,6 +873,9 @@ static void write_switchable_interp_filter(VP10_COMP *cpi,
       return;
     }
 #endif
+    if(bsize < BLOCK_8X8) {
+      return;
+    }
     vp10_write_token(w, vp10_switchable_interp_tree,
                      cm->fc->switchable_interp_prob[ctx],
                      &switchable_interp_encodings[mbmi->interp_filter]);
