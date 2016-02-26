@@ -316,6 +316,69 @@ static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
   }
 }
 
+#if CONFIG_EXT_TX
+static void prune_one_for_sby(const VP10_COMP *cpi,
+                          BLOCK_SIZE bsize,
+                          MACROBLOCK *x,
+                          MACROBLOCKD *xd,
+                          int *prune_v, int *prune_h) {
+  (void) cpi;
+  (void) bsize;
+  (void) x;
+  (void) xd;
+  *prune_v = 1;
+  *prune_h = 1;
+}
+
+static void prune_two_for_sby(const VP10_COMP *cpi,
+                          BLOCK_SIZE bsize,
+                          MACROBLOCK *x,
+                          MACROBLOCKD *xd,
+                          int *prune_v, int *prune_h) {
+  (void) cpi;
+  (void) bsize;
+  (void) x;
+  (void) xd;
+  *prune_v = 2;
+  *prune_h = 2;
+}
+
+static void prune_three_for_sby(const VP10_COMP *cpi,
+                          BLOCK_SIZE bsize,
+                          MACROBLOCK *x,
+                          MACROBLOCKD *xd,
+                          int *prune_v, int *prune_h) {
+  (void) cpi;
+  (void) bsize;
+  (void) x;
+  (void) xd;
+  *prune_v = 3;
+  *prune_h = 3;
+}
+
+static void prune_tx_types(const VP10_COMP *cpi,
+                          BLOCK_SIZE bsize,
+                          MACROBLOCK *x,
+                          MACROBLOCKD *xd,
+                          int *prune_v, int *prune_h) {
+  switch (cpi->sf.tx_type_search) {
+    case NO_PRUNE:
+      break;
+    case PRUNE_ONE :
+      prune_one_for_sby(cpi, bsize, x, xd, prune_v, prune_h);
+      break;
+    //  #if CONFIG_EXT_TX
+    case PRUNE_TWO :
+      prune_two_for_sby(cpi, bsize, x, xd, prune_v, prune_h);
+      break;
+    case PRUNE_THREE :
+      prune_three_for_sby(cpi, bsize, x, xd, prune_v, prune_h);
+      break;
+    //  #endif
+  }
+}
+#endif  // CONFIG_EXT_TX
+
 static void model_rd_for_sb(VP10_COMP *cpi, BLOCK_SIZE bsize,
                             MACROBLOCK *x, MACROBLOCKD *xd,
                             int *out_rate_sum, int64_t *out_dist_sum,
@@ -950,10 +1013,13 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
   vpx_prob skip_prob = vp10_get_skip_prob(cm, xd);
   int  s0 = vp10_cost_bit(skip_prob, 0);
   int  s1 = vp10_cost_bit(skip_prob, 1);
+  const int is_inter = is_inter_block(mbmi);
 #if CONFIG_EXT_TX
   int ext_tx_set;
+  int prune_v = 0, prune_h = 0;
+  if (is_inter && cpi->sf.tx_type_search > 0)
+    prune_tx_types(cpi, bs, x, xd, &prune_v, &prune_h);
 #endif  // CONFIG_EXT_TX
-  const int is_inter = is_inter_block(mbmi);
 
   mbmi->tx_size = VPXMIN(max_tx_size, largest_tx_size);
 
@@ -1141,11 +1207,14 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   const int tx_select = cm->tx_mode == TX_MODE_SELECT;
   TX_TYPE tx_type, best_tx_type = DCT_DCT;
   const int is_inter = is_inter_block(mbmi);
+  const vpx_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
 #if CONFIG_EXT_TX
   int ext_tx_set;
+  int prune_v = 0, prune_h = 0;
+  if (is_inter && cpi->sf.tx_type_search > 0)
+    prune_tx_types(cpi, bs, x, xd, &prune_v, &prune_h);
 #endif  // CONFIG_EXT_TX
 
-  const vpx_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
   assert(skip_prob > 0);
   s0 = vp10_cost_bit(skip_prob, 0);
   s1 = vp10_cost_bit(skip_prob, 1);
@@ -2794,6 +2863,9 @@ static void select_tx_type_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
   int idx, idy;
 #if CONFIG_EXT_TX
   int ext_tx_set = get_ext_tx_set(max_tx_size, bsize, is_inter);
+  int prune_v = 0, prune_h = 0;
+  if (is_inter && cpi->sf.tx_type_search > 0)
+    prune_tx_types(cpi, bsize, x, xd, &prune_v, &prune_h);
 #endif
 
   *distortion = INT64_MAX;
