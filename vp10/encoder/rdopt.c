@@ -8004,84 +8004,74 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
 
       if (cm->interp_filter != BILINEAR) {
         tmp_best_filter = EIGHTTAP;
-        if (x->source_variance < sf->disable_filter_search_var_thresh) {
-          tmp_best_filter = EIGHTTAP;
-        } else if (sf->adaptive_pred_interp_filter == 1 &&
-                   ctx->pred_interp_filter < SWITCHABLE) {
-          tmp_best_filter = ctx->pred_interp_filter;
-        } else if (sf->adaptive_pred_interp_filter == 2) {
-          tmp_best_filter = ctx->pred_interp_filter < SWITCHABLE ?
-                              ctx->pred_interp_filter : 0;
-        } else {
-          for (switchable_filter_index = 0;
-               switchable_filter_index < SWITCHABLE_FILTERS;
-               ++switchable_filter_index) {
-            int newbest, rs;
-            int64_t rs_rd;
-            MB_MODE_INFO_EXT *mbmi_ext = x->mbmi_ext;
-            mbmi->interp_filter = switchable_filter_index;
-            tmp_rd = rd_pick_best_sub8x8_mode(cpi, x,
-                                              &mbmi_ext->ref_mvs[ref_frame][0],
-                                              second_ref, best_yrd, &rate,
-                                              &rate_y, &distortion,
-                                              &skippable, &total_sse,
-                                              (int) this_rd_thresh, seg_mvs,
+        for (switchable_filter_index = 0;
+             switchable_filter_index < SWITCHABLE_FILTERS;
+             ++switchable_filter_index) {
+          int newbest, rs;
+          int64_t rs_rd;
+          MB_MODE_INFO_EXT *mbmi_ext = x->mbmi_ext;
+          mbmi->interp_filter = switchable_filter_index;
+          tmp_rd = rd_pick_best_sub8x8_mode(cpi, x,
+                                            &mbmi_ext->ref_mvs[ref_frame][0],
+                                            second_ref, best_yrd, &rate,
+                                            &rate_y, &distortion,
+                                            &skippable, &total_sse,
+                                            (int) this_rd_thresh, seg_mvs,
 #if CONFIG_EXT_INTER
                                               compound_seg_newmvs,
 #endif  // CONFIG_EXT_INTER
                                               bsi, switchable_filter_index,
                                               mi_row, mi_col);
 #if CONFIG_EXT_INTERP
-            if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
-                mbmi->interp_filter != EIGHTTAP)  // invalid configuration
-              continue;
+          if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
+              mbmi->interp_filter != EIGHTTAP)  // invalid configuration
+            continue;
 #endif  // CONFIG_EXT_INTERP
-            if (tmp_rd == INT64_MAX)
-              continue;
-            rs = vp10_get_switchable_rate(cpi, xd);
-            rs_rd = RDCOST(x->rdmult, x->rddiv, rs, 0);
-            filter_cache[switchable_filter_index] = tmp_rd;
-            filter_cache[SWITCHABLE_FILTERS] =
-                VPXMIN(filter_cache[SWITCHABLE_FILTERS], tmp_rd + rs_rd);
-            if (cm->interp_filter == SWITCHABLE)
-              tmp_rd += rs_rd;
+          if (tmp_rd == INT64_MAX)
+            continue;
+          rs = vp10_get_switchable_rate(cpi, xd);
+          rs_rd = RDCOST(x->rdmult, x->rddiv, rs, 0);
+          filter_cache[switchable_filter_index] = tmp_rd;
+          filter_cache[SWITCHABLE_FILTERS] =
+              VPXMIN(filter_cache[SWITCHABLE_FILTERS], tmp_rd + rs_rd);
+          if (cm->interp_filter == SWITCHABLE)
+            tmp_rd += rs_rd;
 
-            mask_filter = VPXMAX(mask_filter, tmp_rd);
+          mask_filter = VPXMAX(mask_filter, tmp_rd);
 
-            newbest = (tmp_rd < tmp_best_rd);
-            if (newbest) {
-              tmp_best_filter = mbmi->interp_filter;
-              tmp_best_rd = tmp_rd;
+          newbest = (tmp_rd < tmp_best_rd);
+          if (newbest) {
+            tmp_best_filter = mbmi->interp_filter;
+            tmp_best_rd = tmp_rd;
+          }
+          if ((newbest && cm->interp_filter == SWITCHABLE) ||
+              (mbmi->interp_filter == cm->interp_filter &&
+               cm->interp_filter != SWITCHABLE)) {
+            tmp_best_rdu = tmp_rd;
+            tmp_best_rate = rate;
+            tmp_best_ratey = rate_y;
+            tmp_best_distortion = distortion;
+            tmp_best_sse = total_sse;
+            tmp_best_skippable = skippable;
+            tmp_best_mbmode = *mbmi;
+            for (i = 0; i < 4; i++) {
+              tmp_best_bmodes[i] = xd->mi[0]->bmi[i];
+              x->zcoeff_blk[TX_4X4][i] = !x->plane[0].eobs[i];
             }
-            if ((newbest && cm->interp_filter == SWITCHABLE) ||
-                (mbmi->interp_filter == cm->interp_filter &&
-                 cm->interp_filter != SWITCHABLE)) {
-              tmp_best_rdu = tmp_rd;
-              tmp_best_rate = rate;
-              tmp_best_ratey = rate_y;
-              tmp_best_distortion = distortion;
-              tmp_best_sse = total_sse;
-              tmp_best_skippable = skippable;
-              tmp_best_mbmode = *mbmi;
-              for (i = 0; i < 4; i++) {
-                tmp_best_bmodes[i] = xd->mi[0]->bmi[i];
-                x->zcoeff_blk[TX_4X4][i] = !x->plane[0].eobs[i];
-              }
-              pred_exists = 1;
-              if (switchable_filter_index == 0 &&
-                  sf->use_rd_breakout &&
-                  best_rd < INT64_MAX) {
-                if (tmp_best_rdu / 2 > best_rd) {
-                  // skip searching the other filters if the first is
-                  // already substantially larger than the best so far
-                  tmp_best_filter = mbmi->interp_filter;
-                  tmp_best_rdu = INT64_MAX;
-                  break;
-                }
+            pred_exists = 1;
+            if (switchable_filter_index == 0 &&
+                sf->use_rd_breakout &&
+                best_rd < INT64_MAX) {
+              if (tmp_best_rdu / 2 > best_rd) {
+                // skip searching the other filters if the first is
+                // already substantially larger than the best so far
+                tmp_best_filter = mbmi->interp_filter;
+                tmp_best_rdu = INT64_MAX;
+                break;
               }
             }
-          }  // switchable_filter_index loop
-        }
+          }
+        }  // switchable_filter_index loop
       }
 
       if (tmp_best_rdu == INT64_MAX && pred_exists)
