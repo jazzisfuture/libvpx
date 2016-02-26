@@ -300,6 +300,7 @@ static INLINE uint8_t vp10_drl_ctx(const CANDIDATE_MV *ref_mv_stack,
       ref_mv_stack[ref_idx + 1].weight < REF_CAT_LEVEL)
     return 2;
 
+  printf("assert\n");
   assert(0);
   return 0;
 }
