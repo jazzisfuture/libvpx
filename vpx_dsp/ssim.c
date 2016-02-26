@@ -77,7 +77,7 @@ static double similarity(uint32_t sum_s, uint32_t sum_r,
                          uint32_t sum_sxr, int count,
                          uint32_t bd) {
   int64_t ssim_n, ssim_d;
-  int64_t c1, c2;
+  int64_t c1 = 0, c2 = 0;
   if (bd == 8) {
     // scale the constants by number of pixels
     c1 = (cc1 * count * count) >> 12;
