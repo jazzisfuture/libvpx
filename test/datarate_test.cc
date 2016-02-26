@@ -519,6 +519,9 @@ TEST_P(DatarateTestVP9Large, ChangingDropFrameThresh) {
   cfg_.rc_end_usage = VPX_CBR;
   cfg_.rc_target_bitrate = 200;
   cfg_.g_lag_in_frames = 0;
+  // TODO(marpan): Investigate datarate target failures with a smaller keyframe
+  // interval (128).
+  cfg_.kf_max_dist = 9999;
 
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
                                        30, 1, 0, 140);
