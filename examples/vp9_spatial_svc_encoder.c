@@ -25,7 +25,6 @@
 #include "../tools_common.h"
 #include "../video_writer.h"
 
-#include "../vpx_ports/vpx_timer.h"
 #include "vpx/svc_context.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
@@ -627,10 +626,9 @@ int main(int argc, const char **argv) {
   double sum_bitrate2 = 0.0;
   double framerate  = 30.0;
 #endif
-  struct vpx_usec_timer timer;
-  int64_t cx_time = 0;
   memset(&svc_ctx, 0, sizeof(svc_ctx));
   svc_ctx.log_print = 1;
+  svc_ctx.encode_time = 0;
   exec_name = argv[0];
   parse_command_line(argc, argv, &app_input, &svc_ctx, &enc_cfg);
 
@@ -742,12 +740,9 @@ int main(int argc, const char **argv) {
       }
     }
 
-    vpx_usec_timer_start(&timer);
     res = vpx_svc_encode(&svc_ctx, &codec, (end_of_stream ? NULL : &raw),
                          pts, frame_duration, svc_ctx.speed >= 5 ?
                          VPX_DL_REALTIME : VPX_DL_GOOD_QUALITY);
-    vpx_usec_timer_mark(&timer);
-    cx_time += vpx_usec_timer_elapsed(&timer);
 
     printf("%s", vpx_svc_get_message(&svc_ctx));
     fflush(stdout);
@@ -909,8 +904,8 @@ int main(int argc, const char **argv) {
 #endif
   printf("Frame cnt and encoding time/FPS stats for encoding: %d %f %f \n",
          frame_cnt,
-         1000 * (float)cx_time / (double)(frame_cnt * 1000000),
-         1000000 * (double)frame_cnt / (double)cx_time);
+         1000 * (float)svc_ctx.encode_time / (double)(frame_cnt * 1000000),
+         1000000 * (double)frame_cnt / (double)svc_ctx.encode_time);
   vpx_img_free(&raw);
   // display average size, psnr
   printf("%s", vpx_svc_dump_statistics(&svc_ctx));

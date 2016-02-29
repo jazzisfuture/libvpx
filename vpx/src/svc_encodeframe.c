@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #define VPX_DISABLE_CTRL_TYPECHECKS 1
+#include "vpx_ports/vpx_timer.h"
 #include "./vpx_config.h"
 #include "vpx/svc_context.h"
 #include "vpx/vp8cx.h"
@@ -521,6 +522,7 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx,
                                int64_t duration, int deadline) {
   vpx_codec_err_t res;
   vpx_codec_iter_t iter;
+  struct vpx_usec_timer timer;
   const vpx_codec_cx_pkt_t *cx_pkt;
   SvcInternal_t *const si = get_svc_internal(svc_ctx);
   if (svc_ctx == NULL || codec_ctx == NULL || si == NULL) {
@@ -529,11 +531,16 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx,
 
   svc_log_reset(svc_ctx);
 
+  vpx_usec_timer_start(&timer);
   res = vpx_codec_encode(codec_ctx, rawimg, pts, (uint32_t)duration, 0,
                          deadline);
+  vpx_usec_timer_mark(&timer);
+  svc_ctx->encode_time += vpx_usec_timer_elapsed(&timer);
+
   if (res != VPX_CODEC_OK) {
     return res;
   }
+
   // save compressed data
   iter = NULL;
   while ((cx_pkt = vpx_codec_get_cx_data(codec_ctx, &iter))) {
