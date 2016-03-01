@@ -182,6 +182,18 @@ typedef enum {
 } INTERP_FILTER_MASK;
 
 typedef enum {
+  NO_PRUNE = 0,
+  // eliminates one tx type in vertical and horizontal direction
+  PRUNE_ONE = 1,
+#if CONFIG_EXT_TX
+  // eliminates two tx types in each direction
+  PRUNE_TWO = 2,
+  // eliminates three tx types in each direction
+  PRUNE_THREE = 3,
+#endif
+} TX_TYPE_SEARCH;
+
+typedef enum {
   // Search partitions using RD criterion
   SEARCH_PARTITION,
 
@@ -295,6 +307,8 @@ typedef struct SPEED_FEATURES {
   // checking modes for reference frames that don't match the reference frame
   // of the best so far.
   int mode_skip_start;
+
+  TX_TYPE_SEARCH tx_type_search;
 
   PARTITION_SEARCH_TYPE partition_search_type;
 
