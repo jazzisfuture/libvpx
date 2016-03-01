@@ -182,6 +182,16 @@ typedef enum {
 } INTERP_FILTER_MASK;
 
 typedef enum {
+  NO_PRUNE = 0,
+  // eliminates one tx type in vertical and horizontal direction
+  PRUNE_ONE = 1,
+  // eliminates two tx types in each direction
+  PRUNE_TWO = 2,
+  // eliminates three tx types in each direction
+  PRUNE_THREE = 3,
+} TX_TYPE_SEARCH;
+
+typedef enum {
   // Search partitions using RD criterion
   SEARCH_PARTITION,
 
