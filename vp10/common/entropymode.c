@@ -190,8 +190,8 @@ static const vpx_prob default_drl_prob[DRL_MODE_CONTEXTS] = {
 
 #if CONFIG_EXT_INTER
 static const vpx_prob default_new2mv_prob = 180;
-#endif
-#endif
+#endif  // CONFIG_EXT_INTER
+#endif  // CONFIG_REF_MV
 
 static const vpx_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
                                               [INTER_MODES - 1] = {
