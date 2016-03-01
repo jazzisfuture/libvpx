@@ -181,6 +181,18 @@ typedef enum {
   FLAG_SKIP_MULTITAP_SHARP = 1 << MULTITAP_SHARP,
 } INTERP_FILTER_MASK;
 
+#if CONFIG_EXT_TX
+typedef enum {
+  NO_PRUNE = 0,
+  // eliminates one tx type in vertical and horizontal direction
+  PRUNE_ONE = 1,
+  // eliminates two tx types in each direction
+  PRUNE_TWO = 2,
+  // eliminates three tx types in each direction
+  PRUNE_THREE = 3,
+} TX_TYPE_SEARCH;
+#endif
+
 typedef enum {
   // Search partitions using RD criterion
   SEARCH_PARTITION,
@@ -295,6 +307,10 @@ typedef struct SPEED_FEATURES {
   // checking modes for reference frames that don't match the reference frame
   // of the best so far.
   int mode_skip_start;
+
+#if CONFIG_EXT_TX
+  TX_TYPE_SEARCH tx_type_search;
+#endif
 
   PARTITION_SEARCH_TYPE partition_search_type;
 
