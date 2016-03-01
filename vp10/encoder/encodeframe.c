@@ -61,6 +61,9 @@ static int check_intra_sb(VP10_COMP *cpi, const TileInfo *const tile,
                           int mi_row, int mi_col, BLOCK_SIZE bsize,
                           PC_TREE *pc_tree);
 static void predict_superblock(VP10_COMP *cpi, ThreadData *td,
+#if CONFIG_EXT_INTER
+                               int mi_row_ori, int mi_col_ori,
+#endif  // CONFIG_EXT_INTER
                                int mi_row_pred, int mi_col_pred,
                                BLOCK_SIZE bsize_pred, int b_sub8x8, int block);
 static int check_supertx_sb(BLOCK_SIZE bsize, TX_SIZE supertx_size,
@@ -1290,6 +1293,10 @@ static void update_state_supertx(VP10_COMP *cpi, ThreadData *td,
         mbmi->inter_tx_size[(idy << 3) + idx] = mbmi->tx_size;
   }
 #endif  // CONFIG_VAR_TX
+#if CONFIG_OBMC
+  // Turn OBMC off for supertx
+  mbmi->obmc = 0;
+#endif  // CONFIG_OBMC
 
   if (!output_enabled)
     return;
@@ -1805,8 +1812,8 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td
 #if CONFIG_SUPERTX
         if (!supertx_enabled)
 #endif  // CONFIG_SUPERTX
-        if (is_obmc_allowed(mbmi))
-          counts->obmc[mbmi->sb_type][mbmi->obmc]++;
+          if (is_obmc_allowed(mbmi))
+            counts->obmc[mbmi->sb_type][mbmi->obmc]++;
 #endif  // CONFIG_OBMC
       }
     }
@@ -1820,9 +1827,23 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td
       if (mbmi->ref_frame[1] == INTRA_FRAME) {
         counts->y_mode[size_group_lookup[bsize]][mbmi->interintra_mode]++;
         counts->interintra[bsize][1]++;
+        if (get_wedge_bits(bsize)
+#if CONFIG_OBMC
+            && !(is_obmc_allowed(mbmi) && mbmi->obmc)
+#endif
+            )
+          counts->wedge_interintra[bsize][mbmi->use_wedge_interintra]++;
       } else {
         counts->interintra[bsize][0]++;
       }
+    }
+    if (cm->reference_mode != SINGLE_REFERENCE &&
+        is_inter_compound_mode(mbmi->mode) &&
+#if CONFIG_OBMC
+        !(is_obmc_allowed(mbmi) && mbmi->obmc) &&
+#endif  // CONFIG_OBMC
+        get_wedge_bits(bsize)) {
+      counts->wedge_interinter[bsize][mbmi->use_wedge_interinter]++;
     }
 #endif  // CONFIG_EXT_INTER
 
@@ -4692,6 +4713,9 @@ static int check_supertx_sb(BLOCK_SIZE bsize, TX_SIZE supertx_size,
 }
 
 static void predict_superblock(VP10_COMP *cpi, ThreadData *td,
+#if CONFIG_EXT_INTER
+                               int mi_row_ori, int mi_col_ori,
+#endif  // CONFIG_EXT_INTER
                                int mi_row_pred, int mi_col_pred,
                                BLOCK_SIZE bsize_pred, int b_sub8x8, int block) {
   // Used in supertx
@@ -4715,11 +4739,21 @@ static void predict_superblock(VP10_COMP *cpi, ThreadData *td,
                          &xd->block_refs[ref]->sf);
   }
 
+#if CONFIG_EXT_INTER
+  if (!b_sub8x8)
+    vp10_build_inter_predictors_sb_extend(xd, mi_row_ori, mi_col_ori,
+                                          mi_row_pred, mi_col_pred, bsize_pred);
+  else
+    vp10_build_inter_predictors_sb_sub8x8_extend(
+                xd, mi_row_ori, mi_col_ori,
+                mi_row_pred, mi_col_pred, bsize_pred, block);
+#else
   if (!b_sub8x8)
     vp10_build_inter_predictors_sb(xd, mi_row_pred, mi_col_pred, bsize_pred);
   else
     vp10_build_inter_predictors_sb_sub8x8(xd, mi_row_pred, mi_col_pred,
                                           bsize_pred, block);
+#endif  // CONFIG_EXT_INTER
 }
 
 static void predict_b_extend(VP10_COMP *cpi, ThreadData *td,
@@ -4770,6 +4804,9 @@ static void predict_b_extend(VP10_COMP *cpi, ThreadData *td,
                          (c >> xd->plane[2].subsampling_x);
 
   predict_superblock(cpi, td,
+#if CONFIG_EXT_INTER
+                     mi_row_ori, mi_col_ori,
+#endif  // CONFIG_EXT_INTER
                      mi_row_pred, mi_col_pred, bsize_pred,
                      b_sub8x8, block);
 
