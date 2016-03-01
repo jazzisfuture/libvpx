@@ -4239,6 +4239,9 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
       int_mv ref_mvs_sub8x8[2][2];
 #endif  // CONFIG_EXT_INTER
 
+      for (ref = 0; ref < MAX_REF_FRAMES; ++ref)
+        frame_mv[NEWMV][ref].as_int = INT32_MAX;
+
       for (ref = 0; ref < 1 + has_second_rf; ++ref) {
         const MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
 #if CONFIG_EXT_INTER
@@ -4460,6 +4463,8 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
             seg_mvs[i][mv_idx][mbmi->ref_frame[0]].as_mv = *new_mv;
 #else
             seg_mvs[i][mbmi->ref_frame[0]].as_mv = *new_mv;
+            frame_mv[this_mode][mbmi->ref_frame[0]].as_int =
+                seg_mvs[i][mbmi->ref_frame[0]].as_int;
 #endif  // CONFIG_EXT_INTER
           }
 
@@ -4511,6 +4516,11 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
                 frame_mv[this_mode][mbmi->ref_frame[0]].as_int;
             seg_mvs[i][mbmi->ref_frame[1]].as_int =
                 frame_mv[this_mode][mbmi->ref_frame[1]].as_int;
+
+            frame_mv[this_mode][mbmi->ref_frame[0]].as_int =
+                seg_mvs[i][mbmi->ref_frame[0]].as_int;
+            frame_mv[this_mode][mbmi->ref_frame[1]].as_int =
+                seg_mvs[i][mbmi->ref_frame[1]].as_int;
 #endif  // CONFIG_EXT_INTER
           }
           // restore src pointers
@@ -4651,6 +4661,23 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
         bsi->segment_rd = INT64_MAX;
         return INT64_MAX;
       }
+
+#if CONFIG_REF_MV
+      if (mode_selected == NEWMV && i == 0) {
+        if (!has_second_rf) {
+          frame_mv[NEWMV][mbmi->ref_frame[0]].as_int =
+              seg_mvs[i][mbmi->ref_frame[0]].as_int;
+          if (frame_mv[NEWMV][mbmi->ref_frame[0]].as_int ==
+              frame_mv[NEARESTMV][mbmi->ref_frame[0]].as_int)
+            mode_selected = NEARESTMV;
+          if (frame_mv[NEWMV][mbmi->ref_frame[0]].as_int ==
+              frame_mv[NEARMV][mbmi->ref_frame[0]].as_int)
+            mode_selected = NEARMV;
+          if (frame_mv[NEWMV][mbmi->ref_frame[0]].as_int == 0)
+            mode_selected = ZEROMV;
+        }
+      }
+#endif
 
       mode_idx = INTER_OFFSET(mode_selected);
       memcpy(t_above, bsi->rdstat[i][mode_idx].ta, sizeof(t_above));
@@ -4909,6 +4936,7 @@ static void setup_buffer_inter(
   // Gets an initial list of candidate vectors from neighbours and orders them
   vp10_find_mv_refs(cm, xd, mi, ref_frame,
 #if CONFIG_REF_MV
+                    mi->mbmi.sb_type,
                     &mbmi_ext->ref_mv_count[ref_frame],
                     mbmi_ext->ref_mv_stack[ref_frame],
 #if CONFIG_EXT_INTER
@@ -6648,6 +6676,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     x->mbmi_ext->mode_context[ref_frame] = 0;
     vp10_find_mv_refs(cm, xd, mi, ref_frame,
 #if CONFIG_REF_MV
+                      bsize,
                       &mbmi_ext->ref_mv_count[ref_frame],
                       mbmi_ext->ref_mv_stack[ref_frame],
 #if CONFIG_EXT_INTER

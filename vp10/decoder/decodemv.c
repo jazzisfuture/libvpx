@@ -923,6 +923,12 @@ static INLINE int assign_mv(VP10_COMMON *cm, MACROBLOCKD *xd,
             counts ? &counts->mv[nmv_ctx] : NULL;
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc[nmv_ctx],
                 mv_counts, allow_hp);
+
+        if (!is_compound && block == 0)
+          if ((mv[0].as_mv.row - ref_mv[0].as_mv.row == 0) &&
+              (mv[0].as_mv.col - ref_mv[0].as_mv.col == 0))
+            assert(0);
+
 #else
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc, mv_counts,
                 allow_hp);
@@ -1174,6 +1180,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   for (ref_frame = LAST_FRAME; ref_frame < MODE_CTX_REF_FRAMES; ++ref_frame) {
     vp10_find_mv_refs(cm, xd, mi, ref_frame,
 #if CONFIG_REF_MV
+                      bsize,
                       &xd->ref_mv_count[ref_frame],
                       xd->ref_mv_stack[ref_frame],
 #if CONFIG_EXT_INTER

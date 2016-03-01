@@ -309,6 +309,7 @@ typedef void (*find_mv_refs_sync)(void *const data, int mi_row);
 void vp10_find_mv_refs(const VP10_COMMON *cm, const MACROBLOCKD *xd,
                        MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
 #if CONFIG_REF_MV
+                       BLOCK_SIZE bsize,
                        uint8_t *ref_mv_count,
                        CANDIDATE_MV *ref_mv_stack,
 #if CONFIG_EXT_INTER
