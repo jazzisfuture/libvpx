@@ -44,10 +44,6 @@
 #include "vp10/encoder/rdopt.h"
 #include "vp10/encoder/aq_variance.h"
 
-// TODO(geza.lore) Update this when the extended coding unit size experiment
-// have been ported.
-#define CU_SIZE 64
-
 #if CONFIG_EXT_REFS
 
 #define LAST_FRAME_MODE_MASK    ((1 << GOLDEN_FRAME) | (1 << ALTREF_FRAME) | \
@@ -4151,8 +4147,8 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
     if (bsize >= BLOCK_8X8)
 #endif  // CONFIG_EXT_INTER
     *rate_mv += vp10_mv_bit_cost(&frame_mv[refs[ref]].as_mv,
-                                &x->mbmi_ext->ref_mvs[refs[ref]][0].as_mv,
-                                x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+                                 &x->mbmi_ext->ref_mvs[refs[ref]][0].as_mv,
+                                 x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
 #if CONFIG_EXT_INTER
     else
       *rate_mv += vp10_mv_bit_cost(&frame_mv[refs[ref]].as_mv,
@@ -4953,6 +4949,7 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
 #else
   int ref = mbmi->ref_frame[0];
   MV ref_mv = x->mbmi_ext->ref_mvs[ref][0].as_mv;
+  int ref_idx = 0;
 #endif  // CONFIG_EXT_INTER
 
   int tmp_col_min = x->mv_col_min;
@@ -4979,9 +4976,9 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
     // match the resolution of the current frame, allowing the existing
     // motion search code to be used without additional modifications.
     for (i = 0; i < MAX_MB_PLANE; i++)
-      backup_yv12[i] = xd->plane[i].pre[0];
+      backup_yv12[i] = xd->plane[i].pre[ref_idx];
 
-    vp10_setup_pre_planes(xd, 0, scaled_ref_frame, mi_row, mi_col, NULL);
+    vp10_setup_pre_planes(xd, ref_idx, scaled_ref_frame, mi_row, mi_col, NULL);
   }
 
   vp10_set_mv_search_range(x, &ref_mv);
@@ -5025,7 +5022,7 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
           if (scaled_ref_frame) {
             int i;
             for (i = 0; i < MAX_MB_PLANE; ++i)
-              xd->plane[i].pre[0] = backup_yv12[i];
+              xd->plane[i].pre[ref_idx] = backup_yv12[i];
           }
           return;
         }
@@ -5039,8 +5036,8 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
   mvp_full.row >>= 3;
 
   bestsme = vp10_full_pixel_search(cpi, x, bsize, &mvp_full, step_param, sadpb,
-                                  cond_cost_list(cpi, cost_list),
-                                  &ref_mv, &tmp_mv->as_mv, INT_MAX, 1);
+                                   cond_cost_list(cpi, cost_list),
+                                   &ref_mv, &tmp_mv->as_mv, INT_MAX, 1);
 
   x->mv_col_min = tmp_col_min;
   x->mv_col_max = tmp_col_max;
@@ -5054,11 +5051,11 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
     const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
     // Use up-sampled reference frames.
     struct macroblockd_plane *const pd = &xd->plane[0];
-    struct buf_2d backup_pred = pd->pre[0];
+    struct buf_2d backup_pred = pd->pre[ref_idx];
     const YV12_BUFFER_CONFIG *upsampled_ref = get_upsampled_ref(cpi, ref);
 
     // Set pred for Y plane
-    setup_pred_plane(&pd->pre[0], upsampled_ref->y_buffer,
+    setup_pred_plane(&pd->pre[ref_idx], upsampled_ref->y_buffer,
                      upsampled_ref->y_stride, (mi_row << 3), (mi_col << 3),
                      NULL, pd->subsampling_x, pd->subsampling_y);
 
@@ -5074,7 +5071,7 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
                                            pw, ph, 1);
 
     // Restore the reference frames.
-    pd->pre[0] = backup_pred;
+    pd->pre[ref_idx] = backup_pred;
 #else
     cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv,
                                  cm->allow_high_precision_mv,
@@ -5096,7 +5093,7 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
   if (scaled_ref_frame) {
     int i;
     for (i = 0; i < MAX_MB_PLANE; i++)
-      xd->plane[i].pre[0] = backup_yv12[i];
+      xd->plane[i].pre[ref_idx] = backup_yv12[i];
   }
 }
 
@@ -5109,6 +5106,176 @@ static INLINE void restore_dst_buf(MACROBLOCKD *xd,
     xd->plane[i].dst.stride = orig_dst_stride[i];
   }
 }
+
+#if CONFIG_EXT_INTER
+static void do_masked_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
+                                    const uint8_t *mask, int mask_stride,
+                                    BLOCK_SIZE bsize,
+                                    int mi_row, int mi_col,
+                                    int_mv *tmp_mv, int *rate_mv,
+                                    int ref_idx,
+                                    int mv_idx) {
+  MACROBLOCKD *xd = &x->e_mbd;
+  const VP10_COMMON *cm = &cpi->common;
+  MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
+  struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0, 0}};
+  int bestsme = INT_MAX;
+  int step_param;
+  int sadpb = x->sadperbit16;
+  MV mvp_full;
+  int ref = mbmi->ref_frame[ref_idx];
+  MV ref_mv = x->mbmi_ext->ref_mvs[ref][mv_idx].as_mv;
+
+  int tmp_col_min = x->mv_col_min;
+  int tmp_col_max = x->mv_col_max;
+  int tmp_row_min = x->mv_row_min;
+  int tmp_row_max = x->mv_row_max;
+
+  const YV12_BUFFER_CONFIG *scaled_ref_frame =
+      vp10_get_scaled_ref_frame(cpi, ref);
+
+  MV pred_mv[3];
+  pred_mv[0] = x->mbmi_ext->ref_mvs[ref][0].as_mv;
+  pred_mv[1] = x->mbmi_ext->ref_mvs[ref][1].as_mv;
+  pred_mv[2] = x->pred_mv[ref];
+
+#if CONFIG_REF_MV
+  vp10_set_mvcost(x, ref);
+#endif
+
+  if (scaled_ref_frame) {
+    int i;
+    // Swap out the reference frame for a version that's been scaled to
+    // match the resolution of the current frame, allowing the existing
+    // motion search code to be used without additional modifications.
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      backup_yv12[i] = xd->plane[i].pre[ref_idx];
+
+    vp10_setup_pre_planes(xd, ref_idx, scaled_ref_frame, mi_row, mi_col, NULL);
+  }
+
+  vp10_set_mv_search_range(x, &ref_mv);
+
+  // Work out the size of the first step in the mv step search.
+  // 0 here is maximum length first step. 1 is MAX >> 1 etc.
+  if (cpi->sf.mv.auto_mv_step_size && cm->show_frame) {
+    // Take wtd average of the step_params based on the last frame's
+    // max mv magnitude and that based on the best ref mvs of the current
+    // block for the given reference.
+    step_param = (vp10_init_search_range(x->max_mv_context[ref]) +
+                  cpi->mv_step_param) / 2;
+  } else {
+    step_param = cpi->mv_step_param;
+  }
+
+  // TODO(debargha): is show_frame needed here?
+  if (cpi->sf.adaptive_motion_search && bsize < BLOCK_LARGEST &&
+      cm->show_frame) {
+    int boffset = 2 * (b_width_log2_lookup[BLOCK_LARGEST] -
+          VPXMIN(b_height_log2_lookup[bsize], b_width_log2_lookup[bsize]));
+    step_param = VPXMAX(step_param, boffset);
+  }
+
+  if (cpi->sf.adaptive_motion_search) {
+    int bwl = b_width_log2_lookup[bsize];
+    int bhl = b_height_log2_lookup[bsize];
+    int tlevel = x->pred_mv_sad[ref] >> (bwl + bhl + 4);
+
+    if (tlevel < 5)
+      step_param += 2;
+
+    // prev_mv_sad is not setup for dynamically scaled frames.
+    if (cpi->oxcf.resize_mode != RESIZE_DYNAMIC) {
+      int i;
+      for (i = LAST_FRAME; i <= ALTREF_FRAME && cm->show_frame; ++i) {
+        if ((x->pred_mv_sad[ref] >> 3) > x->pred_mv_sad[i]) {
+          x->pred_mv[ref].row = 0;
+          x->pred_mv[ref].col = 0;
+          tmp_mv->as_int = INVALID_MV;
+
+          if (scaled_ref_frame) {
+            int i;
+            for (i = 0; i < MAX_MB_PLANE; ++i)
+              xd->plane[i].pre[ref_idx] = backup_yv12[i];
+          }
+          return;
+        }
+      }
+    }
+  }
+
+  mvp_full = pred_mv[x->mv_best_ref_index[ref]];
+
+  mvp_full.col >>= 3;
+  mvp_full.row >>= 3;
+
+  bestsme = vp10_masked_full_pixel_diamond(cpi, x, mask, mask_stride,
+                                           &mvp_full, step_param, sadpb,
+                                           MAX_MVSEARCH_STEPS - 1 - step_param,
+                                           1, &cpi->fn_ptr[bsize],
+                                           &ref_mv, &tmp_mv->as_mv, ref_idx);
+
+  x->mv_col_min = tmp_col_min;
+  x->mv_col_max = tmp_col_max;
+  x->mv_row_min = tmp_row_min;
+  x->mv_row_max = tmp_row_max;
+
+  if (bestsme < INT_MAX) {
+    int dis;  /* TODO: use dis in distortion calculation later. */
+    vp10_find_best_masked_sub_pixel_tree(x, mask, mask_stride,
+                                         &tmp_mv->as_mv, &ref_mv,
+                                         cm->allow_high_precision_mv,
+                                         x->errorperbit,
+                                         &cpi->fn_ptr[bsize],
+                                         cpi->sf.mv.subpel_force_stop,
+                                         cpi->sf.mv.subpel_iters_per_step,
+                                         x->nmvjointcost, x->mvcost,
+                                         &dis, &x->pred_sse[ref], ref_idx);
+  }
+  *rate_mv = vp10_mv_bit_cost(&tmp_mv->as_mv, &ref_mv,
+                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+
+  if (cpi->sf.adaptive_motion_search && cm->show_frame)
+    x->pred_mv[ref] = tmp_mv->as_mv;
+
+  if (scaled_ref_frame) {
+    int i;
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      xd->plane[i].pre[ref_idx] = backup_yv12[i];
+  }
+}
+
+static void do_masked_motion_search_indexed(VP10_COMP *cpi, MACROBLOCK *x,
+                                            int wedge_index,
+                                            BLOCK_SIZE bsize,
+                                            int mi_row, int mi_col,
+                                            int_mv *tmp_mv, int *rate_mv,
+                                            int mv_idx[2],
+                                            int which) {
+  // NOTE: which values: 0 - 0 only, 1 - 1 only, 2 - both
+  MACROBLOCKD *xd = &x->e_mbd;
+  MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
+  BLOCK_SIZE sb_type = mbmi->sb_type;
+  int w = (4 << b_width_log2_lookup[sb_type]);
+  int h = (4 << b_height_log2_lookup[sb_type]);
+  const uint8_t *mask;
+  const int mask_stride = MASK_MASTER_STRIDE;
+  mask = vp10_get_soft_mask(wedge_index, sb_type, h, w);
+
+  if (which == 0 || which == 2)
+    do_masked_motion_search(cpi, x, mask, mask_stride, bsize,
+                            mi_row, mi_col, &tmp_mv[0], &rate_mv[0],
+                            0, mv_idx[0]);
+
+  if (which == 1 || which == 2) {
+    // get the negative mask
+    mask = vp10_get_soft_mask(wedge_index ^ 1, sb_type, h, w);
+    do_masked_motion_search(cpi, x, mask, mask_stride, bsize,
+                            mi_row, mi_col, &tmp_mv[1], &rate_mv[1],
+                            1, mv_idx[1]);
+  }
+}
+#endif  // CONFIG_EXT_INTER
 
 // In some situations we want to discount tha pparent cost of a new motion
 // vector. Where there is a subtle motion field and especially where there is

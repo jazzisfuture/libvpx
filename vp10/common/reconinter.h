@@ -376,6 +376,32 @@ void vp10_build_obmc_inter_prediction(VP10_COMMON *cm,
 #endif  // CONFIG_OBMC
 
 #if CONFIG_EXT_INTER
+#define WEDGE_BITS_SML    3
+#define WEDGE_BITS_MED    4
+#define WEDGE_BITS_BIG    5
+#define WEDGE_NONE       -1
+#define WEDGE_WEIGHT_BITS 6
+
+static INLINE int get_wedge_bits(BLOCK_SIZE sb_type) {
+  if (sb_type < BLOCK_8X8)
+    return 0;
+  if (sb_type <= BLOCK_8X8)
+    return WEDGE_BITS_SML;
+  else if (sb_type <= BLOCK_32X32)
+    return WEDGE_BITS_MED;
+  else
+    return WEDGE_BITS_BIG;
+}
+
+#define MASK_MASTER_SIZE   (2 * CU_SIZE)
+#define MASK_MASTER_STRIDE (2 * CU_SIZE)
+
+void vp10_init_wedge_masks();
+
+const uint8_t *vp10_get_soft_mask(int wedge_index,
+                                  BLOCK_SIZE sb_type,
+                                  int h, int w);
+
 void vp10_build_interintra_predictors(MACROBLOCKD *xd,
                                       uint8_t *ypred,
                                       uint8_t *upred,

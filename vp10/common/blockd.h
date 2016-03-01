@@ -45,6 +45,7 @@ typedef enum {
 #endif  // CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
 
 #define MAXTXLEN 32
+#define CU_SIZE  64
 
 static INLINE int is_inter_mode(PREDICTION_MODE mode) {
 #if CONFIG_EXT_INTER
