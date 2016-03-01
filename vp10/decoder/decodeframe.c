@@ -464,7 +464,7 @@ static void decode_reconstruct_tx(MACROBLOCKD *const xd, vpx_reader *r,
     }
   }
 }
-#endif  // CONFIG_VAR_TX
+#else  // CONFIG_VAR_TX
 
 static int reconstruct_inter_block(MACROBLOCKD *const xd,
 #if CONFIG_ANS
@@ -492,6 +492,7 @@ static int reconstruct_inter_block(MACROBLOCKD *const xd,
                             pd->dst.stride, eob, block_idx);
   return eob;
 }
+#endif  // CONFIG_VAR_TX
 
 #if (CONFIG_SUPERTX || CONFIG_OBMC)
 static void build_mc_border(const uint8_t *src, int src_stride,
