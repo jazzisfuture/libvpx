@@ -1004,8 +1004,8 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #if CONFIG_SUPERTX
     if (!supertx_enabled)
 #endif  // CONFIG_SUPERTX
-    if (is_obmc_allowed(mbmi))
-      vpx_write(w, mbmi->obmc, cm->fc->obmc_prob[bsize]);
+      if (is_obmc_allowed(mbmi))
+        vpx_write(w, mbmi->obmc, cm->fc->obmc_prob[bsize]);
 #endif  // CONFIG_OBMC
 
 #if CONFIG_REF_MV
@@ -1165,6 +1165,9 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 
 #if CONFIG_EXT_INTER
     if (cpi->common.reference_mode != COMPOUND_REFERENCE &&
+#if CONFIG_OBMC
+        !(is_obmc_allowed(mbmi) && mbmi->obmc) &&
+#endif  // CONFIG_OBMC
 #if CONFIG_SUPERTX
         !supertx_enabled &&
 #endif  // CONFIG_SUPERTX
@@ -1175,7 +1178,27 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
         write_intra_mode(w, mbmi->interintra_mode,
                          cm->fc->y_mode_prob[size_group_lookup[bsize]]);
         assert(mbmi->interintra_mode == mbmi->interintra_uv_mode);
+        if (get_wedge_bits(bsize)) {
+          vpx_write(w, mbmi->use_wedge_interintra,
+                    cm->fc->wedge_interintra_prob[bsize]);
+          if (mbmi->use_wedge_interintra) {
+            vpx_write_literal(w, mbmi->interintra_wedge_index,
+                              get_wedge_bits(bsize));
+          }
+        }
       }
+    }
+    if (cpi->common.reference_mode != SINGLE_REFERENCE &&
+        is_inter_compound_mode(mbmi->mode) &&
+#if CONFIG_OBMC
+        !(is_obmc_allowed(mbmi) && mbmi->obmc) &&
+#endif  // CONFIG_OBMC
+        get_wedge_bits(bsize)) {
+      vpx_write(w, mbmi->use_wedge_interinter,
+                cm->fc->wedge_interinter_prob[bsize]);
+      if (mbmi->use_wedge_interinter)
+        vpx_write_literal(w, mbmi->interinter_wedge_index,
+                          get_wedge_bits(bsize));
     }
 #endif  // CONFIG_EXT_INTER
 
@@ -2469,6 +2492,19 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
                                      cm->counts.interintra[i]);
         }
       }
+      for (i = 0; i < BLOCK_SIZES; i++) {
+        if (is_interintra_allowed_bsize(i) && get_wedge_bits(i))
+          vp10_cond_prob_diff_update(&header_bc,
+                                     &fc->wedge_interintra_prob[i],
+                                     cm->counts.wedge_interintra[i]);
+      }
+    }
+    if (cm->reference_mode != SINGLE_REFERENCE) {
+      for (i = 0; i < BLOCK_SIZES; i++)
+        if (get_wedge_bits(i))
+          vp10_cond_prob_diff_update(&header_bc,
+                                     &fc->wedge_interinter_prob[i],
+                                     cm->counts.wedge_interinter[i]);
     }
 #endif  // CONFIG_EXT_INTER
 
