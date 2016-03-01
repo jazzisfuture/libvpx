@@ -45,6 +45,7 @@ typedef enum {
 #endif  // CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
 
 #define MAXTXLEN 32
+#define CU_SIZE  64
 
 static INLINE int is_inter_mode(PREDICTION_MODE mode) {
 #if CONFIG_EXT_INTER
@@ -172,6 +173,12 @@ typedef struct {
 #if CONFIG_EXT_INTER
   PREDICTION_MODE interintra_mode;
   PREDICTION_MODE interintra_uv_mode;
+  // TODO(debargha): Consolidate these flags
+  int use_wedge_interintra;
+  int interintra_wedge_index;
+  int interintra_uv_wedge_index;
+  int use_wedge_interinter;
+  int interinter_wedge_index;
 #endif  // CONFIG_EXT_INTER
 
 #if CONFIG_OBMC
