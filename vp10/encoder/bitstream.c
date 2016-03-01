@@ -2469,6 +2469,19 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
                                      cm->counts.interintra[i]);
         }
       }
+      for (i = 0; i < BLOCK_SIZES; i++) {
+        if (is_interintra_allowed_bsize(i) && get_wedge_bits(i))
+          vp10_cond_prob_diff_update(&header_bc,
+                                     &fc->wedge_interintra_prob[i],
+                                     cm->counts.wedge_interintra[i]);
+      }
+    }
+    if (cm->reference_mode != SINGLE_REFERENCE) {
+      for (i = 0; i < BLOCK_SIZES; i++)
+        if (get_wedge_bits(i))
+          vp10_cond_prob_diff_update(&header_bc,
+                                     &fc->wedge_interinter_prob[i],
+                                     cm->counts.wedge_interinter[i]);
     }
 #endif  // CONFIG_EXT_INTER
 
