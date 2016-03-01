@@ -20,6 +20,91 @@
 extern "C" {
 #endif
 
+// Convenience macros. Can be converted to INLINE functions.
+#if CONFIG_VP9_HIGHBITDEPTH
+#define MAKE_INTER_PREDICTOR(pre, pre_stride, dst, dst_stride, ref) { \
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)                    \
+    highbd_inter_predictor((pre), (pre_stride), (dst), (dst_stride),  \
+                           subpel_x, subpel_y, sf, w, h, (ref),       \
+                           interp_filter, xs, ys, xd->bd);            \
+  else                                                                \
+    inter_predictor((pre), (pre_stride), (dst), (dst_stride),         \
+                    subpel_x, subpel_y, sf, w, h, (ref),              \
+                    interp_filter, xs, ys);                           \
+}
+#else
+#define MAKE_INTER_PREDICTOR(pre, pre_stride, dst, dst_stride, ref) { \
+  inter_predictor((pre), (pre_stride), (dst), (dst_stride),           \
+                  subpel_x, subpel_y, sf, w, h, (ref),                \
+                  interp_filter, xs, ys);                             \
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+#if CONFIG_EXT_INTER
+#if CONFIG_SUPERTX
+#if CONFIG_VP9_HIGHBITDEPTH
+#define MAKE_MASKED_INTER_PREDICTOR(pre, pre_stride, dst, dst_stride) { \
+  uint8_t tmp_dst_[2 * CU_SIZE * CU_SIZE];                            \
+  uint8_t *tmp_dst =                                                  \
+      (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ?                 \
+      CONVERT_TO_BYTEPTR(tmp_dst_) : tmp_dst_;                        \
+  MAKE_INTER_PREDICTOR((pre), (pre_stride), tmp_dst, CU_SIZE, 0);     \
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)                    \
+    build_masked_compound_extend_highbd(                              \
+        (dst), (dst_stride0, tmp_dst, CU_SIZE, plane,                 \
+        mi->mbmi.interinter_wedge_index,                              \
+        mi->mbmi.sb_type,                                             \
+        wedge_offset_y, wedge_offset_x, h, w);                        \
+  else                                                                \
+    build_masked_compound_extend(                                     \
+        (dst), (dst_stride), tmp_dst, CU_SIZE, plane,                 \
+        mi->mbmi.interinter_wedge_index,                              \
+        mi->mbmi.sb_type,                                             \
+        wedge_offset_y, wedge_offset_x, h, w);                        \
+}
+#else
+#define MAKE_MASKED_INTER_PREDICTOR(pre, pre_stride, dst, dst_stride) { \
+  uint8_t tmp_dst[CU_SIZE * CU_SIZE];                                 \
+  MAKE_INTER_PREDICTOR((pre), (pre_stride), tmp_dst, CU_SIZE, 0);     \
+  build_masked_compound_extend(                                       \
+      (dst), (dst_stride), tmp_dst, CU_SIZE, plane,                   \
+      mi->mbmi.interinter_wedge_index,                                \
+      mi->mbmi.sb_type,                                               \
+      wedge_offset_y, wedge_offset_x, h, w);                          \
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+#else   // CONFIG_SUPERTX
+#if CONFIG_VP9_HIGHBITDEPTH
+#define MAKE_MASKED_INTER_PREDICTOR(pre, pre_stride, dst, dst_stride) { \
+  uint8_t tmp_dst_[2 * CU_SIZE * CU_SIZE];                            \
+  uint8_t *tmp_dst =                                                  \
+      (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ?                 \
+      CONVERT_TO_BYTEPTR(tmp_dst_) : tmp_dst_;                        \
+  MAKE_INTER_PREDICTOR((pre), (pre_stride), tmp_dst, CU_SIZE, 0);     \
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)                    \
+    build_masked_compound_highbd(                                     \
+        (dst), (dst_stride), tmp_dst, CU_SIZE,                        \
+        mi->mbmi.interinter_wedge_index,                              \
+        mi->mbmi.sb_type, h, w);                                      \
+  else                                                                \
+    build_masked_compound(                                            \
+        (dst), (dst_stride), tmp_dst, CU_SIZE,                        \
+        mi->mbmi.interinter_wedge_index,                              \
+        mi->mbmi.sb_type, h, w);                                      \
+}
+#else
+#define MAKE_MASKED_INTER_PREDICTOR(pre, pre_stride, dst, dst_stride) { \
+  uint8_t tmp_dst[CU_SIZE * CU_SIZE];                                 \
+  MAKE_INTER_PREDICTOR((pre), (pre_stride), tmp_dst, CU_SIZE, 0);     \
+  build_masked_compound(                                              \
+      (dst), (dst_stride), tmp_dst, CU_SIZE,                          \
+      mi->mbmi.interinter_wedge_index,                                \
+      mi->mbmi.sb_type, h, w);                                        \
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_SUPERTX
+#endif  // CONFIG_EXT_INTER
+
 static INLINE void inter_predictor(const uint8_t *src, int src_stride,
                                    uint8_t *dst, int dst_stride,
                                    const int subpel_x,
@@ -62,14 +147,14 @@ static INLINE void inter_predictor(const uint8_t *src, int src_stride,
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-static INLINE void high_inter_predictor(const uint8_t *src, int src_stride,
-                                        uint8_t *dst, int dst_stride,
-                                        const int subpel_x,
-                                        const int subpel_y,
-                                        const struct scale_factors *sf,
-                                        int w, int h, int ref,
-                                        const INTERP_FILTER interp_filter,
-                                        int xs, int ys, int bd) {
+static INLINE void highbd_inter_predictor(const uint8_t *src, int src_stride,
+                                          uint8_t *dst, int dst_stride,
+                                          const int subpel_x,
+                                          const int subpel_y,
+                                          const struct scale_factors *sf,
+                                          int w, int h, int ref,
+                                          const INTERP_FILTER interp_filter,
+                                          int xs, int ys, int bd) {
   InterpFilterParams interp_filter_params =
       vp10_get_interp_filter_params(interp_filter);
   if (interp_filter_params.taps == SUBPEL_TAPS) {
@@ -114,10 +199,10 @@ static MV mi_mv_pred_q4(const MODE_INFO *mi, int idx) {
                               mi->bmi[1].as_mv[idx].as_mv.row +
                               mi->bmi[2].as_mv[idx].as_mv.row +
                               mi->bmi[3].as_mv[idx].as_mv.row),
-             round_mv_comp_q4(mi->bmi[0].as_mv[idx].as_mv.col +
-                              mi->bmi[1].as_mv[idx].as_mv.col +
-                              mi->bmi[2].as_mv[idx].as_mv.col +
-                              mi->bmi[3].as_mv[idx].as_mv.col) };
+     round_mv_comp_q4(mi->bmi[0].as_mv[idx].as_mv.col +
+                      mi->bmi[1].as_mv[idx].as_mv.col +
+                      mi->bmi[2].as_mv[idx].as_mv.col +
+                      mi->bmi[3].as_mv[idx].as_mv.col) };
   return res;
 }
 
@@ -376,6 +461,32 @@ void vp10_build_obmc_inter_prediction(VP10_COMMON *cm,
 #endif  // CONFIG_OBMC
 
 #if CONFIG_EXT_INTER
+#define WEDGE_BITS_SML    3
+#define WEDGE_BITS_MED    4
+#define WEDGE_BITS_BIG    5
+#define WEDGE_NONE       -1
+#define WEDGE_WEIGHT_BITS 6
+
+static INLINE int get_wedge_bits(BLOCK_SIZE sb_type) {
+  if (sb_type < BLOCK_8X8)
+    return 0;
+  if (sb_type <= BLOCK_8X8)
+    return WEDGE_BITS_SML;
+  else if (sb_type <= BLOCK_32X32)
+    return WEDGE_BITS_MED;
+  else
+    return WEDGE_BITS_BIG;
+}
+
+#define MASK_MASTER_SIZE   (2 * CU_SIZE)
+#define MASK_MASTER_STRIDE (2 * CU_SIZE)
+
+void vp10_init_wedge_masks();
+
+const uint8_t *vp10_get_soft_mask(int wedge_index,
+                                  BLOCK_SIZE sb_type,
+                                  int h, int w);
+
 void vp10_build_interintra_predictors(MACROBLOCKD *xd,
                                       uint8_t *ypred,
                                       uint8_t *upred,
@@ -398,6 +509,17 @@ void vp10_build_interintra_predictors_sbuv(MACROBLOCKD *xd,
                                            uint8_t *vpred,
                                            int ustride, int vstride,
                                            BLOCK_SIZE bsize);
+
+// Encoder only
+void vp10_build_inter_predictors_for_planes_single_buf(
+    MACROBLOCKD *xd, BLOCK_SIZE bsize,
+    int mi_row, int mi_col, int ref,
+                uint8_t *ext_dst[3], int ext_dst_stride[3]);
+void vp10_build_wedge_inter_predictor_from_buf(
+    MACROBLOCKD *xd, BLOCK_SIZE bsize,
+    int mi_row, int mi_col,
+    uint8_t *ext_dst0[3], int ext_dst_stride0[3],
+    uint8_t *ext_dst1[3], int ext_dst_stride1[3]);
 #endif  // CONFIG_EXT_INTER
 
 #ifdef __cplusplus
