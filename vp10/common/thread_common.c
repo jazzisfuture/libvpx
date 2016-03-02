@@ -456,6 +456,9 @@ void vp10_accumulate_frame_counts(VP10_COMMON *cm, FRAME_COUNTS *counts,
     for (i = 0; i < MV_JOINTS; i++)
       cm->counts.mv[m].joints[i] += counts->mv[m].joints[i];
 
+    for (i = 0; i < MV_JOINTS; ++i)
+      cm->counts.mv[m].srf_joints[i] += counts->mv[m].srf_joints[i];
+
     for (k = 0; k < 2; k++) {
       nmv_component_counts *comps = &cm->counts.mv[m].comps[k];
       nmv_component_counts *comps_t = &counts->mv[m].comps[k];

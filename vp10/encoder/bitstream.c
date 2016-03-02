@@ -1088,7 +1088,11 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #else
                              &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv,
 #endif  // CONFIG_EXT_INTER
-                             nmvc, allow_hp);
+                             nmvc,
+#if CONFIG_REF_MV
+                             is_compound || j,
+#endif
+                             allow_hp);
             }
           }
 #if CONFIG_EXT_INTER
@@ -1136,6 +1140,9 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #endif  // CONFIG_EXT_INTER
           vp10_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
                         &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
+#if CONFIG_REF_MV
+                        is_compound,
+#endif
                         allow_hp);
         }
 #if CONFIG_EXT_INTER

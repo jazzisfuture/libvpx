@@ -207,6 +207,8 @@ static void read_mv_probs(nmv_context *ctx, int allow_hp, vpx_reader *r) {
 
   update_mv_probs(ctx->joints, MV_JOINTS - 1, r);
 
+  update_mv_probs(ctx->srf_joints, MV_JOINTS - 1, r);
+
   for (i = 0; i < 2; ++i) {
     nmv_component *const comp_ctx = &ctx->comps[i];
     update_mv_probs(&comp_ctx->sign, 1, r);

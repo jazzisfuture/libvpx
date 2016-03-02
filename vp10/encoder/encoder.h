@@ -56,7 +56,9 @@ typedef struct {
   int nmvcosts_hp[2][MV_VALS];
 
 #if CONFIG_REF_MV
+  int nmvjointcost_srf[MV_JOINTS];
   int nmv_vec_cost[NMV_CONTEXTS][MV_JOINTS];
+  int nmv_vec_cost_srf[NMV_CONTEXTS][MV_JOINTS];
   int nmv_costs[NMV_CONTEXTS][2][MV_VALS];
   int nmv_costs_hp[NMV_CONTEXTS][2][MV_VALS];
 #endif

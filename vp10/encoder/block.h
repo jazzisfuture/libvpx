@@ -113,6 +113,7 @@ struct macroblock {
 #if CONFIG_REF_MV
   int *nmvjointcost;
   int nmv_vec_cost[NMV_CONTEXTS][MV_JOINTS];
+  int nmv_vec_cost_srf[NMV_CONTEXTS][MV_JOINTS];
   int *nmvcost[NMV_CONTEXTS][2];
   int *nmvcost_hp[NMV_CONTEXTS][2];
   int **mv_cost_stack[NMV_CONTEXTS];

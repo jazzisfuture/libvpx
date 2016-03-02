@@ -20,12 +20,18 @@
 #include "vpx_dsp/vpx_dsp_common.h"
 
 static struct vp10_token mv_joint_encodings[MV_JOINTS];
+#if CONFIG_REF_MV
+static struct vp10_token mv_joint_encodings_srf[MV_JOINTS];
+#endif
 static struct vp10_token mv_class_encodings[MV_CLASSES];
 static struct vp10_token mv_fp_encodings[MV_FP_SIZE];
 static struct vp10_token mv_class0_encodings[CLASS0_SIZE];
 
 void vp10_entropy_mv_init(void) {
   vp10_tokens_from_tree(mv_joint_encodings, vp10_mv_joint_tree);
+#if CONFIG_REF_MV
+  vp10_tokens_from_tree(mv_joint_encodings_srf, vp10_mv_jsrf_tree);
+#endif
   vp10_tokens_from_tree(mv_class_encodings, vp10_mv_class_tree);
   vp10_tokens_from_tree(mv_class0_encodings, vp10_mv_class0_tree);
   vp10_tokens_from_tree(mv_fp_encodings, vp10_mv_fp_tree);
@@ -48,7 +54,7 @@ static void encode_mv_component(vpx_writer* w, int comp,
 
   // Class
   vp10_write_token(w, vp10_mv_class_tree, mvcomp->classes,
-                  &mv_class_encodings[mv_class]);
+                   &mv_class_encodings[mv_class]);
 
   // Integer bits
   if (mv_class == MV_CLASS_0) {
@@ -166,6 +172,8 @@ void vp10_write_nmv_probs(VP10_COMMON *cm, int usehp, vpx_writer *w,
     nmv_context_counts *const counts = &nmv_counts[nmv_ctx];
     write_mv_update(vp10_mv_joint_tree, mvc->joints, counts->joints,
                     MV_JOINTS, w);
+    write_mv_update(vp10_mv_jsrf_tree, mvc->srf_joints, counts->srf_joints,
+                    MV_JOINTS, w);
 
     for (i = 0; i < 2; ++i) {
       nmv_component *comp = &mvc->comps[i];
@@ -237,13 +245,29 @@ void vp10_write_nmv_probs(VP10_COMMON *cm, int usehp, vpx_writer *w,
 
 void vp10_encode_mv(VP10_COMP* cpi, vpx_writer* w,
                    const MV* mv, const MV* ref,
-                   const nmv_context* mvctx, int usehp) {
+                   const nmv_context* mvctx,
+#if CONFIG_REF_MV
+                   const int is_compound,
+#endif
+                   int usehp) {
   const MV diff = {mv->row - ref->row,
                    mv->col - ref->col};
   const MV_JOINT_TYPE j = vp10_get_mv_joint(&diff);
   usehp = usehp && vp10_use_mv_hp(ref);
 
+#if CONFIG_REF_MV
+  if (!is_compound)
+    assert(j != MV_JOINT_ZERO);
+
+  if (is_compound)
+    vp10_write_token(w, vp10_mv_joint_tree, mvctx->joints,
+                     &mv_joint_encodings[j]);
+  else
+    vp10_write_token(w, vp10_mv_jsrf_tree, mvctx->srf_joints,
+                     &mv_joint_encodings_srf[j]);
+#else
   vp10_write_token(w, vp10_mv_joint_tree, mvctx->joints, &mv_joint_encodings[j]);
+#endif
   if (mv_joint_vertical(j))
     encode_mv_component(w, diff.row, &mvctx->comps[0], usehp);
 
@@ -258,9 +282,17 @@ void vp10_encode_mv(VP10_COMP* cpi, vpx_writer* w,
   }
 }
 
-void vp10_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
-                              const nmv_context* ctx, int usehp) {
+void vp10_build_nmv_cost_table(int *mvjoint,
+#if CONFIG_REF_MV
+                               int *mvjoint_srf,
+#endif
+                               int *mvcost[2],
+                               const nmv_context* ctx, int usehp) {
   vp10_cost_tokens(mvjoint, ctx->joints, vp10_mv_joint_tree);
+#if CONFIG_REF_MV
+  mvjoint_srf[0] = mvjoint[0];
+  vp10_cost_tokens(&mvjoint_srf[1], ctx->srf_joints, vp10_mv_jsrf_tree);
+#endif
   build_nmv_component_cost_table(mvcost[0], &ctx->comps[0], usehp);
   build_nmv_component_cost_table(mvcost[1], &ctx->comps[1], usehp);
 }
@@ -363,6 +395,9 @@ static void inc_mvs_sub8x8(const MODE_INFO *mi,
 #else
 static void inc_mvs(const MB_MODE_INFO *mbmi, const MB_MODE_INFO_EXT *mbmi_ext,
                     const int_mv mvs[2],
+#if CONFIG_REF_MV
+                    const int block,
+#endif
                     nmv_context_counts *nmv_counts) {
   int i;
 #if !CONFIG_REF_MV
@@ -378,7 +413,11 @@ static void inc_mvs(const MB_MODE_INFO *mbmi, const MB_MODE_INFO_EXT *mbmi_ext,
     const MV *ref = &mbmi_ext->ref_mvs[mbmi->ref_frame[i]][0].as_mv;
     const MV diff = {mvs[i].as_mv.row - ref->row,
                      mvs[i].as_mv.col - ref->col};
-    vp10_inc_mv(&diff, counts, vp10_use_mv_hp(ref));
+    vp10_inc_mv(&diff, counts,
+#if CONFIG_REF_MV
+                has_second_ref(mbmi) || block,
+#endif
+                vp10_use_mv_hp(ref));
   }
 }
 #endif  // CONFIG_EXT_INTER
@@ -411,6 +450,7 @@ void vp10_update_mv_count(ThreadData *td) {
         if (mi->bmi[i].as_mode == NEWMV)
           inc_mvs(mbmi, mbmi_ext, mi->bmi[i].as_mv,
 #if CONFIG_REF_MV
+                  i,
                   td->counts->mv);
 #else
                   &td->counts->mv);
@@ -426,6 +466,7 @@ void vp10_update_mv_count(ThreadData *td) {
 #endif  // CONFIG_EXT_INTER
       inc_mvs(mbmi, mbmi_ext, mbmi->mv,
 #if CONFIG_REF_MV
+              0,
               td->counts->mv);
 #else
               &td->counts->mv);

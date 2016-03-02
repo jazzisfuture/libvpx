@@ -33,6 +33,11 @@ int vp10_use_mv_hp(const MV *ref);
 
 /* Symbols for coding which components are zero jointly */
 #define MV_JOINTS     4
+
+#if CONFIG_REF_MV
+#define MV_JSRFS      3
+#endif
+
 typedef enum {
   MV_JOINT_ZERO = 0,             /* Zero vector */
   MV_JOINT_HNZVZ = 1,            /* Vert zero, hor nonzero */
@@ -78,6 +83,9 @@ typedef enum {
 #define MV_LOW   (-(1 << MV_IN_USE_BITS))
 
 extern const vpx_tree_index vp10_mv_joint_tree[];
+#if CONFIG_REF_MV
+extern const vpx_tree_index vp10_mv_jsrf_tree[];
+#endif
 extern const vpx_tree_index vp10_mv_class_tree[];
 extern const vpx_tree_index vp10_mv_class0_tree[];
 extern const vpx_tree_index vp10_mv_fp_tree[];
@@ -95,6 +103,9 @@ typedef struct {
 
 typedef struct {
   vpx_prob joints[MV_JOINTS - 1];
+#if CONFIG_REF_MV
+  vpx_prob srf_joints[MV_JOINTS - 1];
+#endif
   nmv_component comps[2];
 } nmv_context;
 
@@ -121,10 +132,17 @@ typedef struct {
 
 typedef struct {
   unsigned int joints[MV_JOINTS];
+#if CONFIG_REF_MV
+  unsigned int srf_joints[MV_JOINTS];
+#endif
   nmv_component_counts comps[2];
 } nmv_context_counts;
 
-void vp10_inc_mv(const MV *mv, nmv_context_counts *mvctx, const int usehp);
+void vp10_inc_mv(const MV *mv, nmv_context_counts *mvctx,
+#if CONFIG_REF_MV
+                 const int is_compound,
+#endif
+                 const int usehp);
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -465,6 +465,7 @@ static void save_coding_context(VP10_COMP *cpi) {
 #if CONFIG_REF_MV
   for (i = 0; i < NMV_CONTEXTS; ++i) {
     vp10_copy(cc->nmv_vec_cost[i], cpi->td.mb.nmv_vec_cost[i]);
+    vp10_copy(cc->nmv_vec_cost_srf[i], cpi->td.mb.nmv_vec_cost_srf[i]);
     memcpy(cc->nmv_costs[i][0], cpi->nmv_costs[i][0],
            MV_VALS * sizeof(*cpi->nmv_costs[i][0]));
     memcpy(cc->nmv_costs[i][1], cpi->nmv_costs[i][1],
@@ -508,6 +509,7 @@ static void restore_coding_context(VP10_COMP *cpi) {
 #if CONFIG_REF_MV
   for (i = 0; i < NMV_CONTEXTS; ++i) {
     vp10_copy(cpi->td.mb.nmv_vec_cost[i], cc->nmv_vec_cost[i]);
+    vp10_copy(cpi->td.mb.nmv_vec_cost_srf[i], cc->nmv_vec_cost_srf[i]);
     memcpy(cpi->nmv_costs[i][0], cc->nmv_costs[i][0],
            MV_VALS * sizeof(*cc->nmv_costs[i][0]));
     memcpy(cpi->nmv_costs[i][1], cc->nmv_costs[i][1],
