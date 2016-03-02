@@ -337,11 +337,11 @@ filter8_1dfunction vpx_filter_block1d4_h2_avg_ssse3;
 //                                   const int16_t *filter_x, int x_step_q4,
 //                                   const int16_t *filter_y, int y_step_q4,
 //                                   int w, int h);
-FUN_CONV_1D(horiz, x_step_q4, filter_x, h, src, , ssse3);
-FUN_CONV_1D(vert, y_step_q4, filter_y, v, src - src_stride * 3, , ssse3);
-FUN_CONV_1D(avg_horiz, x_step_q4, filter_x, h, src, avg_, ssse3);
-FUN_CONV_1D(avg_vert, y_step_q4, filter_y, v, src - src_stride * 3, avg_,
-            ssse3);
+FUN_CONV_1Dx(horiz, x_step_q4, filter_x, h, src, , ssse3);
+FUN_CONV_1Dx(vert, y_step_q4, filter_y, v, src - src_stride * 3, , ssse3);
+FUN_CONV_1Dx(avg_horiz, x_step_q4, filter_x, h, src, avg_, ssse3);
+FUN_CONV_1Dx(avg_vert, y_step_q4, filter_y, v, src - src_stride * 3, avg_,
+             ssse3);
 
 #define TRANSPOSE_8X8(in0, in1, in2, in3, in4, in5, in6, in7,           \
                       out0, out1, out2, out3, out4, out5, out6, out7) { \

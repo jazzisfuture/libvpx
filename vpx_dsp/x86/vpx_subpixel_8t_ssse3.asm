@@ -26,17 +26,18 @@ SECTION .text
 %if ARCH_X86_64
   %define LOCAL_VARS_SIZE 16*4
 %else
-  %define LOCAL_VARS_SIZE 16*6
+  %define LOCAL_VARS_SIZE 16*10
 %endif
 
 %macro SETUP_LOCAL_VARS 0
     ; TODO(slavarnway): using xmm registers for these on ARCH_X86_64 +
     ; pmaddubsw has a higher latency on some platforms, this might be eased by
     ; interleaving the instructions.
-    %define    k0k1  [rsp + 16*0]
-    %define    k2k3  [rsp + 16*1]
-    %define    k4k5  [rsp + 16*2]
-    %define    k6k7  [rsp + 16*3]
+    %define     k0k1  [rsp + 16*0]
+    %define     k2k3  [rsp + 16*1]
+    %define     k4k5  [rsp + 16*2]
+    %define     k6k7  [rsp + 16*3]
+
     packsswb     m4, m4
     ; TODO(slavarnway): multiple pshufb instructions had a higher latency on
     ; some platforms.
@@ -57,8 +58,12 @@ SECTION .text
     %define     tmp  m13
     mova        krd, [GLOBAL(pw_64)]
 %else
-    %define     tmp  [rsp + 16*4]
-    %define     krd  [rsp + 16*5]
+    %define     _dst  [rsp + 16*4]
+    %define     _src  [rsp + 16*5]
+    %define   _width  [rsp + 16*6]
+    %define _dstride  [rsp + 16*7]
+    %define      tmp  [rsp + 16*8]
+    %define      krd  [rsp + 16*9]
 %if CONFIG_PIC=0
     mova         m6, [GLOBAL(pw_64)]
 %else
@@ -345,13 +350,28 @@ cglobal filter_block1d8_%1, 6, 6+(ARCH_X86_64*1), 14, LOCAL_VARS_SIZE, \
 
 ;-------------------------------------------------------------------------------
 %macro SUBPIX_HFILTER16 1
-cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*0), 14, LOCAL_VARS_SIZE, \
-                             src, sstride, dst, dstride, height, filter
+cglobal filter_block1d16_%1, 6, 7+(ARCH_X86_64*3), 14, 0 - LOCAL_VARS_SIZE, \
+                             src, sstride, dst, dstride, height, filter, width
     mova          m4, [filterq]
     SETUP_LOCAL_VARS
+%if ARCH_X86_64
+    %define _width r7d
+    %define   _dst r8
+    %define   _src r9
+%endif
+    mov       widthd, heightd
+    shr       widthd, 16
+    and      heightd, 0xff
+    mov       _width, widthd
+
 .loop:
+    mov         _dst, dstq
+    mov         _src, srcq
+    mov       widthd, _width
+
     prefetcht0        [srcq + 2 * sstrideq -3]
 
+.wloop:
     movh          m0, [srcq -  3]
     movh          m4, [srcq +  5]
     movh          m6, [srcq + 13]
@@ -403,12 +423,25 @@ cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*0), 14, LOCAL_VARS_SIZE, \
 %ifidn %1, h8_avg
     pavgb         m0, m1
 %endif
-    lea         srcq, [srcq + sstrideq]
+    lea         srcq, [srcq + 16]
     mova      [dstq], m0
+    lea         dstq, [dstq + 16]
+    sub       widthd, 16
+    jnz        .wloop
+
+    mov         dstq, _dst
+    mov         srcq, _src
+    lea         srcq, [srcq + sstrideq]
     lea         dstq, [dstq + dstrideq]
     dec      heightd
     jnz        .loop
+
     RET
+%if ARCH_X86_64
+    %undef _width
+    %undef   _dst
+    %undef   _src
+%endif
 %endm
 
 INIT_XMM ssse3
@@ -540,25 +573,40 @@ cglobal filter_block1d%2_%1, 6, 6+(ARCH_X86_64*3), 14, LOCAL_VARS_SIZE, \
 
 ;-------------------------------------------------------------------------------
 %macro SUBPIX_VFILTER16 1
-cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*3), 14, LOCAL_VARS_SIZE, \
-                             src, sstride, dst, dstride, height, filter
+cglobal filter_block1d16_%1, 6, 7+(ARCH_X86_64*5), 14, 0 - LOCAL_VARS_SIZE, \
+                             src, sstride, dst, dstride, height, filter, width
     mova          m4, [filterq]
     SETUP_LOCAL_VARS
 %if ARCH_X86_64
     %define      src1q r7
     %define  sstride6q r8
     %define dst_stride dstrideq
+    %define     _width r9d
+    %define       _dst r10
+    %define       _src r11
 %else
     %define      src1q filterq
     %define  sstride6q dstrideq
-    %define dst_stride dstridemp
+    %define dst_stride _dstride
+    mov    dst_stride, dstrided
 %endif
+
+    mov       widthd, heightd
+    and      heightd, 0xff
+    shr       widthd, 16
+    mov       _width, widthd
+
+.loop:
+    mov         _dst, dstq
+    mov         _src, srcq
+    mov       widthd, _width
+
     mov        src1q, srcq
     add        src1q, sstrideq
     lea    sstride6q, [sstrideq + sstrideq * 4]
     add    sstride6q, sstrideq                   ;pitch * 6
 
-.loop:
+.wloop:
     movh          m0, [srcq                ]     ;A
     movh          m1, [srcq + sstrideq     ]     ;B
     movh          m2, [srcq + sstrideq * 2 ]     ;C
@@ -608,16 +656,32 @@ cglobal filter_block1d16_%1, 6, 6+(ARCH_X86_64*3), 14, LOCAL_VARS_SIZE, \
     psraw         m3, 7
     packuswb      m0, m3
 
-    add         srcq, sstrideq
-    add        src1q, sstrideq
+    add         srcq, 16
+    add        src1q, 16
 %ifidn %1, v8_avg
     pavgb         m0, m4
 %endif
     mova      [dstq], m0
+    add         dstq, 16
+    sub       widthd, 16
+    jnz        .wloop
+
+    mov         dstq, _dst
+    mov         srcq, _src
+    add         srcq, sstrideq
     add         dstq, dst_stride
     dec      heightd
-    jnz        .loop
+    jnz     .loop
     RET
+
+%if ARCH_X86_64
+    %undef     _width
+    %undef       _dst
+    %undef       _src
+%endif
+    %undef      src1q
+    %undef  sstride6q
+    %undef dst_stride
 %endm
 
 INIT_XMM ssse3
