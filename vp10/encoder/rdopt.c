@@ -1576,7 +1576,8 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
                                 int_mv *frame_mv,
                                 int mi_row, int mi_col,
                                 int_mv single_newmv[MAX_REF_FRAMES],
-                                int *rate_mv) {
+                                int *rate_mv,
+                                const int block) {
   const VP10_COMMON *const cm = &cpi->common;
   const int pw = 4 * num_4x4_blocks_wide_lookup[bsize];
   const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
@@ -1714,17 +1715,52 @@ static void joint_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
     if (bestsme < INT_MAX) {
       int dis; /* TODO: use dis in distortion calculation later. */
       unsigned int sse;
-      bestsme = cpi->find_fractional_mv_step(
-          x, &tmp_mv,
-          &ref_mv[id].as_mv,
-          cpi->common.allow_high_precision_mv,
-          x->errorperbit,
-          &cpi->fn_ptr[bsize],
-          0, cpi->sf.mv.subpel_iters_per_step,
-          NULL,
-          x->nmvjointcost, x->mvcost,
-          &dis, &sse, second_pred,
-          pw, ph);
+      if (cpi->sf.use_upsampled_references) {
+        // Use up-sampled reference frames.
+        struct macroblockd_plane *const pd = &xd->plane[0];
+        struct buf_2d backup_pred = pd->pre[0];
+        const YV12_BUFFER_CONFIG *upsampled_ref =
+            get_upsampled_ref(cpi, refs[id]);
+
+        // Set pred for Y plane
+        setup_pred_plane(&pd->pre[0], upsampled_ref->y_buffer,
+                         upsampled_ref->y_stride, (mi_row << 3), (mi_col << 3),
+                         NULL, pd->subsampling_x, pd->subsampling_y);
+
+        // If bsize < BLOCK_8X8, adjust pred pointer for this block
+        if (bsize < BLOCK_8X8)
+          pd->pre[0].buf =
+              &pd->pre[0].buf[(vp10_raster_block_offset(BLOCK_8X8, block,
+              pd->pre[0].stride)) << 3];
+
+        bestsme = cpi->find_fractional_mv_step(
+            x, &tmp_mv,
+            &ref_mv[id].as_mv,
+            cpi->common.allow_high_precision_mv,
+            x->errorperbit,
+            &cpi->fn_ptr[bsize],
+            0, cpi->sf.mv.subpel_iters_per_step,
+            NULL,
+            x->nmvjointcost, x->mvcost,
+            &dis, &sse, second_pred,
+            pw, ph, 1);
+
+        // Restore the reference frames.
+        pd->pre[0] = backup_pred;
+      } else {
+        (void) block;
+        bestsme = cpi->find_fractional_mv_step(
+            x, &tmp_mv,
+            &ref_mv[id].as_mv,
+            cpi->common.allow_high_precision_mv,
+            x->errorperbit,
+            &cpi->fn_ptr[bsize],
+            0, cpi->sf.mv.subpel_iters_per_step,
+            NULL,
+            x->nmvjointcost, x->mvcost,
+            &dis, &sse, second_pred,
+            pw, ph, 0);
+        }
     }
 
     // Restore the pointer to the first (possibly scaled) prediction buffer.
@@ -1914,19 +1950,57 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
           if (bestsme < INT_MAX) {
             int distortion;
-            cpi->find_fractional_mv_step(
-                x,
-                new_mv,
-                &bsi->ref_mv[0]->as_mv,
-                cm->allow_high_precision_mv,
-                x->errorperbit, &cpi->fn_ptr[bsize],
-                cpi->sf.mv.subpel_force_stop,
-                cpi->sf.mv.subpel_iters_per_step,
-                cond_cost_list(cpi, cost_list),
-                x->nmvjointcost, x->mvcost,
-                &distortion,
-                &x->pred_sse[mbmi->ref_frame[0]],
-                NULL, 0, 0);
+            if (cpi->sf.use_upsampled_references) {
+              const int pw = 4 * num_4x4_blocks_wide_lookup[bsize];
+              const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
+              // Use up-sampled reference frames.
+              struct macroblockd_plane *const pd = &xd->plane[0];
+              struct buf_2d backup_pred = pd->pre[0];
+              const YV12_BUFFER_CONFIG *upsampled_ref =
+                  get_upsampled_ref(cpi, mbmi->ref_frame[0]);
+
+              // Set pred for Y plane
+              setup_pred_plane(&pd->pre[0], upsampled_ref->y_buffer,
+                               upsampled_ref->y_stride,
+                               (mi_row << 3), (mi_col << 3),
+                               NULL, pd->subsampling_x, pd->subsampling_y);
+
+              // adjust pred pointer for this block
+              pd->pre[0].buf =
+                  &pd->pre[0].buf[(vp10_raster_block_offset(BLOCK_8X8, i,
+                  pd->pre[0].stride)) << 3];
+
+              cpi->find_fractional_mv_step(
+                  x,
+                  new_mv,
+                  &bsi->ref_mv[0]->as_mv,
+                  cm->allow_high_precision_mv,
+                  x->errorperbit, &cpi->fn_ptr[bsize],
+                  cpi->sf.mv.subpel_force_stop,
+                  cpi->sf.mv.subpel_iters_per_step,
+                  cond_cost_list(cpi, cost_list),
+                  x->nmvjointcost, x->mvcost,
+                  &distortion,
+                  &x->pred_sse[mbmi->ref_frame[0]],
+                  NULL, pw, ph, 1);
+
+              // Restore the reference frames.
+              pd->pre[0] = backup_pred;
+            } else {
+              cpi->find_fractional_mv_step(
+                  x,
+                  new_mv,
+                  &bsi->ref_mv[0]->as_mv,
+                  cm->allow_high_precision_mv,
+                  x->errorperbit, &cpi->fn_ptr[bsize],
+                  cpi->sf.mv.subpel_force_stop,
+                  cpi->sf.mv.subpel_iters_per_step,
+                  cond_cost_list(cpi, cost_list),
+                  x->nmvjointcost, x->mvcost,
+                  &distortion,
+                  &x->pred_sse[mbmi->ref_frame[0]],
+                  NULL, 0, 0, 0);
+            }
 
             // save motion search result for use in compound prediction
             seg_mvs[i][mbmi->ref_frame[0]].as_mv = *new_mv;
@@ -1953,7 +2027,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
             int rate_mv;
             joint_motion_search(cpi, x, bsize, frame_mv[this_mode],
                                 mi_row, mi_col, seg_mvs[i],
-                                &rate_mv);
+                                &rate_mv, i);
             seg_mvs[i][mbmi->ref_frame[0]].as_int =
                 frame_mv[this_mode][mbmi->ref_frame[0]].as_int;
             seg_mvs[i][mbmi->ref_frame[1]].as_int =
@@ -2345,15 +2419,43 @@ static void single_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
 
   if (bestsme < INT_MAX) {
     int dis;  /* TODO: use dis in distortion calculation later. */
-    cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv,
-                                 cm->allow_high_precision_mv,
-                                 x->errorperbit,
-                                 &cpi->fn_ptr[bsize],
-                                 cpi->sf.mv.subpel_force_stop,
-                                 cpi->sf.mv.subpel_iters_per_step,
-                                 cond_cost_list(cpi, cost_list),
-                                 x->nmvjointcost, x->mvcost,
-                                 &dis, &x->pred_sse[ref], NULL, 0, 0);
+    if (cpi->sf.use_upsampled_references) {
+      const int pw = 4 * num_4x4_blocks_wide_lookup[bsize];
+      const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
+      // Use up-sampled reference frames.
+      struct macroblockd_plane *const pd = &xd->plane[0];
+      struct buf_2d backup_pred = pd->pre[0];
+      const YV12_BUFFER_CONFIG *upsampled_ref = get_upsampled_ref(cpi, ref);
+
+      // Set pred for Y plane
+      setup_pred_plane(&pd->pre[0], upsampled_ref->y_buffer,
+                       upsampled_ref->y_stride, (mi_row << 3), (mi_col << 3),
+                       NULL, pd->subsampling_x, pd->subsampling_y);
+
+      bestsme = cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv,
+                                             cm->allow_high_precision_mv,
+                                             x->errorperbit,
+                                             &cpi->fn_ptr[bsize],
+                                             cpi->sf.mv.subpel_force_stop,
+                                             cpi->sf.mv.subpel_iters_per_step,
+                                             cond_cost_list(cpi, cost_list),
+                                             x->nmvjointcost, x->mvcost,
+                                             &dis, &x->pred_sse[ref], NULL,
+                                             pw, ph, 1);
+
+      // Restore the reference frames.
+      pd->pre[0] = backup_pred;
+    } else {
+      cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv,
+                                   cm->allow_high_precision_mv,
+                                   x->errorperbit,
+                                   &cpi->fn_ptr[bsize],
+                                   cpi->sf.mv.subpel_force_stop,
+                                   cpi->sf.mv.subpel_iters_per_step,
+                                   cond_cost_list(cpi, cost_list),
+                                   x->nmvjointcost, x->mvcost,
+                                   &dis, &x->pred_sse[ref], NULL, 0, 0, 0);
+    }
   }
   *rate_mv = vp10_mv_bit_cost(&tmp_mv->as_mv, &ref_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
@@ -2505,7 +2607,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
       if (cpi->sf.comp_inter_joint_search_thresh <= bsize) {
         joint_motion_search(cpi, x, bsize, frame_mv,
-                            mi_row, mi_col, single_newmv, &rate_mv);
+                            mi_row, mi_col,
+                            single_newmv, &rate_mv, 0);
       } else {
         rate_mv  = vp10_mv_bit_cost(&frame_mv[refs[0]].as_mv,
                                    &x->mbmi_ext->ref_mvs[refs[0]][0].as_mv,
