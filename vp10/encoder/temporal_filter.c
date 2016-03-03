@@ -259,7 +259,7 @@ static int temporal_filter_find_matching_mb_c(VP10_COMP *cpi,
                                          0, mv_sf->subpel_iters_per_step,
                                          cond_cost_list(cpi, cost_list),
                                          NULL, NULL,
-                                         &distortion, &sse, NULL, 0, 0);
+                                         &distortion, &sse, NULL, 0, 0, 0);
 
   // Restore input state
   x->plane[0].src = src;
