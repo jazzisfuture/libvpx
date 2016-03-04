@@ -158,6 +158,8 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->adaptive_pred_interp_filter = 1;
 
     sf->recode_loop = ALLOW_RECODE_KFARFGF;
+    // sf->recode_loop = ALLOW_RECODE;
+
     sf->intra_y_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_y_mode_mask[TX_16X16] = INTRA_DC_H_V;

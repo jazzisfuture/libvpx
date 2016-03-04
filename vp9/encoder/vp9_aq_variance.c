@@ -29,6 +29,9 @@
 
 static const double rate_ratio[MAX_SEGMENTS] =
   {2.5, 2.0, 1.5, 1.0, 0.75, 1.0, 1.0, 1.0};
+  //{3.5, 2.5, 1.5, 1.0, 0.75, 1.0, 1.0, 1.0};  // B mid 10
+  //{4.0, 2.0, 1.5, 1.0, 0.75, 1.0, 1.0, 1.0};  // c mid 10
+  //{8.0, 2.0, 1.5, 1.0, 0.75, 1.0, 1.0, 1.0};  // d mid 10
 static const int segment_id[ENERGY_SPAN] = {0, 1, 1, 2, 3, 4};
 
 #define SEGMENT_ID(i) segment_id[(i) - ENERGY_MIN]
@@ -200,6 +203,7 @@ int vp9_block_energy(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
   double energy;
   double energy_midpoint;
   vpx_clear_system_state();
+  // energy_midpoint = DEFAULT_E_MIDPOINT;
   energy_midpoint =
     (cpi->oxcf.pass == 2) ? cpi->twopass.mb_av_energy : DEFAULT_E_MIDPOINT;
   energy = vp9_log_block_var(cpi, x, bs) - energy_midpoint;
