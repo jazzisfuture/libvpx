@@ -109,6 +109,46 @@ static INLINE int vpx_read(vpx_reader *r, int prob) {
 
   return bit;
 }
+#define VPX_READ_VARS(r) \
+  BD_VALUE bigsplit; \
+  BD_VALUE value = r->value; \
+  int count = r->count; \
+  unsigned int range = r->range; \
+  unsigned int split;
+
+#define VPX_READ_BIT(r, prob) \
+  split = (range * prob + (256 - prob)) >> CHAR_BIT; \
+  if (count < 0) { \
+    r->value = value; \
+    r->count = count; \
+    vpx_reader_fill(r); \
+    value = r->value; \
+    count = r->count; \
+  } \
+  bigsplit = (BD_VALUE)split << (BD_VALUE_SIZE - CHAR_BIT);
+
+#define VPX_READ_SET (value >= bigsplit)
+
+#define VPX_READ_NORMALIZE \
+  { \
+    register unsigned int shift = vpx_norm[range]; \
+    range <<= shift; \
+    value <<= shift; \
+    count -= shift; \
+  }
+#define VPX_READ_STORE(r) \
+  r->value = value; \
+  r->count = count; \
+  r->range = range;
+
+#define VPX_READ_ADJUST_FOR_ONE(r) \
+  range = range - split; \
+  value = value - bigsplit; \
+  VPX_READ_NORMALIZE
+
+#define VPX_READ_ADJUST_FOR_ZERO \
+  range = split; \
+  VPX_READ_NORMALIZE
 
 static INLINE int vpx_read_bit(vpx_reader *r) {
   return vpx_read(r, 128);  // vpx_prob_half
