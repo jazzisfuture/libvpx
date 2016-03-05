@@ -240,6 +240,10 @@ static void inverse_transform_block_inter(MACROBLOCKD* xd, int plane,
   const int seg_id = xd->mi[0]->mbmi.segment_id;
   if (eob > 0) {
     tran_low_t *const dqcoeff = pd->dqcoeff;
+
+//    if (tx_type == V_DCT || tx_type == H_DCT)
+//      exit(0);
+
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       switch (tx_size) {
