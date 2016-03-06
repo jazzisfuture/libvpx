@@ -227,6 +227,9 @@ static void setup_plane_dequants(VP9_COMMON *cm, MACROBLOCKD *xd, int q_index) {
 #if CONFIG_NEW_QUANT
   int dq;
 #endif  // CONFIG_NEW_QUANT
+#if CONFIG_SR_MODE
+  int q_index_sr = MAX(q_index - SR_QINDEX_DELTA, 0);
+#endif  // CONFIG_SR_MODE
   xd->plane[0].dequant = cm->y_dequant[q_index];
 #if CONFIG_NEW_QUANT
   for (dq = 0; dq < QUANT_PROFILES; dq ++) {
@@ -261,6 +264,45 @@ static void setup_plane_dequants(VP9_COMMON *cm, MACROBLOCKD *xd, int q_index) {
 #endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX_SKIP
   }
+
+
+#if CONFIG_SR_MODE
+  xd->plane[0].dequant_sr = cm->y_dequant[q_index_sr];
+#if CONFIG_NEW_QUANT
+  for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+    xd->plane[0].dequant_val_nuq_sr[dq] =
+        (const dequant_val_type_nuq *)cm->y_dequant_val_nuq[dq][q_index_sr];
+  }
+#endif  // CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+  xd->plane[0].dequant_pxd_sr = cm->y_dequant_pxd[q_index_sr];
+#if CONFIG_NEW_QUANT
+  for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+    xd->plane[0].dequant_val_nuq_pxd_sr[dq] =
+        (const dequant_val_type_nuq *)cm->y_dequant_val_nuq_pxd[dq][q_index_sr];
+  }
+#endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_TX_SKIP
+  for (i = 1; i < MAX_MB_PLANE; i++) {
+    xd->plane[i].dequant_sr = cm->uv_dequant[q_index_sr];
+#if CONFIG_NEW_QUANT
+    for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+      xd->plane[i].dequant_val_nuq_sr[dq] =
+          (const dequant_val_type_nuq *)cm->uv_dequant_val_nuq[dq][q_index_sr];
+    }
+#endif  // CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+    xd->plane[i].dequant_pxd_sr = cm->uv_dequant_pxd[q_index_sr];
+#if CONFIG_NEW_QUANT
+    for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+      xd->plane[i].dequant_val_nuq_pxd_sr[dq] =
+          (const dequant_val_type_nuq *)
+          cm->uv_dequant_val_nuq_pxd[dq][q_index_sr];
+    }
+#endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_TX_SKIP
+  }
+#endif  // CONFIG_SR_MODE
 }
 
 #if CONFIG_TX_SKIP
@@ -425,6 +467,7 @@ static void inverse_transform_block_sr(
   // only perform inverse transform but don't add
   struct macroblockd_plane *const pd = &xd->plane[plane];
   int bs = (4 << (tx_size + 1));
+  assert(bs <= 64 && bs > 0);
 
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
@@ -670,8 +713,6 @@ static int dec_sr_trfm_quant(VP9_COMMON *cm, MACROBLOCKD *xd, int plane,
   int f_ver = idx_to_v(f_idx);
 #endif  // SR_USE_MULTI_F
 
-  if (plane == 0)
-    assert(bs == 32 || bs == 16);
   tx_size--;
   eob = vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize,
                                 x, y, tx_size, r);
@@ -680,6 +721,7 @@ static int dec_sr_trfm_quant(VP9_COMMON *cm, MACROBLOCKD *xd, int plane,
 
   inverse_transform_block_sr(xd, plane, block, tx_size,
                              tmp_buf, tmp_stride, eob);
+
 #if SR_USE_MULTI_F
   sr_recon(tmp_buf, tmp_stride, dst, dst_stride, bs, bs, f_hor, f_ver);
 #else  // SR_USE_MULTI_F
@@ -729,16 +771,15 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
 
   if (!mi->mbmi.skip) {
 #if CONFIG_SR_MODE
-    if (mi->mbmi.sr && plane == 0) {
-    // if (mi->mbmi.sr) {
+    if (mi->mbmi.sr) {
       eob = dec_sr_trfm_quant(cm, xd, plane, block, plane_bsize,
                               x, y, tx_size, args->r,
                               dst, pd->dst.stride);
     } else {
 #endif  // CONFIG_SR_MODE
       eob = vp9_decode_block_tokens(cm, xd, plane, block,
-                                            plane_bsize, x, y, tx_size,
-                                            args->r);
+                                    plane_bsize, x, y, tx_size,
+                                    args->r);
       inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
                               eob);
 #if CONFIG_SR_MODE
@@ -797,15 +838,14 @@ static void reconstruct_inter_block(int plane, int block,
   int x, y, eob;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
 #if CONFIG_SR_MODE
-  if (xd->mi[0].src_mi->mbmi.sr && plane == 0) {
-  // if (xd->mi[0].src_mi->mbmi.sr) {
+  if (xd->mi[0].src_mi->mbmi.sr) {
     eob = dec_sr_trfm_quant(
         cm, xd, plane, block, plane_bsize, x, y, tx_size, args->r,
         &pd->dst.buf[4 * y * pd->dst.stride + 4 * x], pd->dst.stride);
   } else {
 #endif  // CONFIG_SR_MODE
     eob = vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize, x, y,
-                                tx_size, args->r);
+                                  tx_size, args->r);
     inverse_transform_block(xd, plane, block, tx_size,
                             &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
                             pd->dst.stride, eob);
