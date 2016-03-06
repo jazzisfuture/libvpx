@@ -259,8 +259,7 @@ static void set_entropy_context_b(int plane, int block, BLOCK_SIZE plane_bsize,
   int aoff, loff;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &aoff, &loff);
 #if CONFIG_SR_MODE
-  if (xd->mi[0].src_mi->mbmi.sr && plane == 0)
-  // if (xd->mi[0].src_mi->mbmi.sr)
+  if (xd->mi[0].src_mi->mbmi.sr)
     tx_size--;
 #endif  // CONFIG_SR_MODE
   vp9_set_contexts(xd, pd, plane_bsize, tx_size, p->eobs[block] > 0,
@@ -318,8 +317,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   const scan_order *so;
   const int ref = is_inter_block(mbmi);
 #if CONFIG_SR_MODE
-  int new_tx_size = (mbmi->sr && plane == 0) ? (tx_size - 1) : tx_size;
-  // int new_tx_size = (mbmi->sr) ? (tx_size - 1) : tx_size;
+  int new_tx_size = (mbmi->sr) ? (tx_size - 1) : tx_size;
   unsigned int (*const counts)[COEFF_CONTEXTS][ENTROPY_TOKENS] =
       cpi->coef_counts[new_tx_size][type][ref];
   vp9_prob (*const coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
@@ -353,8 +351,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   int aoff, loff;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &aoff, &loff);
 #if CONFIG_SR_MODE
-  if (mbmi->sr && plane == 0)
-  // if (mbmi->sr)
+  if (mbmi->sr)
     tx_size--;
 #endif  // CONFIG_SR_MODE
   pt = get_entropy_context(tx_size, pd->above_context + aoff,

@@ -1773,7 +1773,7 @@ static void test_decode(struct stream_state  *stream,
       find_mismatch_high(&enc_img, &dec_img, y, u, v);
     else
 #endif
-      find_mismatch(&enc_img, &dec_img, y, u, v);
+    find_mismatch(&enc_img, &dec_img, y, u, v);
     stream->decoder.err = 1;
     warn_or_exit_on_error(&stream->decoder, fatal == TEST_DECODE_FATAL,
                           "Stream %d: Encode/decode mismatch on frame %d at"
@@ -2221,6 +2221,7 @@ int main(int argc, const char **argv_) {
   if (allocated_raw_shift)
     vpx_img_free(&raw_shift);
 #endif
+
   vpx_img_free(&raw);
   free(argv);
   free(streams);
