@@ -34,8 +34,8 @@ extern "C" {
 #if CONFIG_SR_MODE
 #define SR_CONTEXTS 3  // number of enalbed tx_size for sr mode
 
-#define USE_POST_F 0  // 1: use post filters
-#define SR_USE_MULTI_F 0  // 1: choose from multiple post filters
+#define USE_POST_F 1  // 1: use post filters
+#define SR_USE_MULTI_F 1  // 1: choose from multiple post filters
 
 // SR_USFILTER_NUM_D: Number of 1D filters to choose in the post filter family
 // SR_USFILTER_NUM: Number of combined 2D filters to choose
@@ -384,6 +384,19 @@ struct macroblockd_plane {
 #endif  // CONFIG_TX_SKIP
   ENTROPY_CONTEXT *above_context;
   ENTROPY_CONTEXT *left_context;
+
+#if CONFIG_SR_MODE
+  const int16_t *dequant_sr;
+#if CONFIG_NEW_QUANT
+  const dequant_val_type_nuq* dequant_val_nuq_sr[QUANT_PROFILES];
+#endif  // CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+  const int16_t *dequant_pxd_sr;
+#if CONFIG_NEW_QUANT
+  const dequant_val_type_nuq* dequant_val_nuq_pxd_sr[QUANT_PROFILES];
+#endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_TX_SKIP
+#endif
 #if CONFIG_PALETTE
   uint8_t *color_index_map;
 #endif

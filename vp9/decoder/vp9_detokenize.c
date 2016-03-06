@@ -463,8 +463,33 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                            so->neighbors, r);
   else
 #endif  // CONFIG_TX_SKIP
+#if CONFIG_SR_MODE
+  int b_sr = xd->mi[0].src_mi->mbmi.sr;
+  int use_sr = b_sr;
+#endif
     eob = decode_coefs(cm, xd, pd->plane_type,
                        BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
+#if CONFIG_SR_MODE
+#if CONFIG_TX_SKIP
+                       xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
+                           (use_sr ? pd->dequant_pxd_sr : pd->dequant_pxd) :
+                           (use_sr ? pd->dequant_sr : pd->dequant),
+#else
+                       use_sr ? pd->dequant_sr : pd->dequant,
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+                       xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
+                           (use_sr ? pd->dequant_val_nuq_pxd_sr[dq] :
+                           pd->dequant_val_nuq_pxd[dq]) :
+                           (use_sr ? pd->dequant_val_nuq_sr[dq] :
+                           pd->dequant_val_nuq[dq]),
+#else
+                       use_sr ? pd->dequant_val_nuq_sr[dq] :
+                       pd->dequant_val_nuq[dq],
+#endif  // CONFIG_TX_SKIP
+#endif  // CONFIG_NEW_QUANT
+#else  // CONFIG_SR_MODE
 #if CONFIG_TX_SKIP
                        xd->mi->src_mi->mbmi.tx_skip[plane != 0] ?
                            pd->dequant_pxd : pd->dequant,
@@ -480,9 +505,9 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                        pd->dequant_val_nuq[dq],
 #endif  // CONFIG_TX_SKIP
 #endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_SR_MODE
                        ctx, so->scan,
                        so->neighbors, r);
-
 #if CONFIG_TX64X64
   if (plane > 0) assert(tx_size != TX_64X64);
 #endif  // CONFIG_TX64X64

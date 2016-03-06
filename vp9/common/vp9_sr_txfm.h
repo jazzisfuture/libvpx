@@ -15,9 +15,9 @@
 #include "vp9/common/vp9_entropymode.h"
 
 #if CONFIG_SR_MODE
-#define MIN_SR_TX_SIZE 2
+#define MIN_SR_TX_SIZE 3
 
-#if CONFIG_TX_64X64
+#if CONFIG_TX64X64
 #define MAX_SR_TX_SIZE 4
 #else
 #define MAX_SR_TX_SIZE 3
@@ -25,6 +25,8 @@
 
 #define UPSCALE_FILTER_TAPS 10
 #define UPSCALE_FILTER_SHIFT 7
+#define SR_QINDEX_DELTA 2       // tweak the qindex for sr mode
+
 void sr_lowpass(int16_t *src, int src_stride, int16_t *dst, int dst_stride,
                 int w, int h);
 #if SR_USE_MULTI_F

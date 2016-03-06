@@ -1162,5 +1162,6 @@ int main(int argc, const char **argv_) {
   free(argv);
   for (i = 0; !error && i < loops; i++)
     error = main_loop(argc, argv_);
+
   return error;
 }
