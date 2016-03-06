@@ -18,6 +18,9 @@
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/encoder/vp9_rd.h"
+#if CONFIG_SR_MODE
+#include "vp9/common/vp9_sr_txfm.h"
+#endif  // CONFIG_SR_MODE
 
 void vp9_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
                      const int16_t *round_ptr, const int16_t quant,
@@ -2072,6 +2075,9 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
   #if CONFIG_NEW_QUANT
   int dq;
   #endif  // CONFIG_NEW_QUANT
+#if CONFIG_SR_MODE
+  int qindex_sr = MAX(qindex - SR_QINDEX_DELTA, 0);
+#endif
 
   // Y
   x->plane[0].quant = quants->y_quant[qindex];
@@ -2146,6 +2152,86 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
     x->plane[i].quant_thred[0] = x->plane[i].zbin[0] * x->plane[i].zbin[0];
     x->plane[i].quant_thred[1] = x->plane[i].zbin[1] * x->plane[i].zbin[1];
   }
+
+#if CONFIG_SR_MODE
+  // Y
+  x->plane[0].quant_sr = quants->y_quant[qindex_sr];
+  x->plane[0].quant_fp_sr = quants->y_quant_fp[qindex_sr];
+  x->plane[0].round_fp_sr = quants->y_round_fp[qindex_sr];
+  x->plane[0].quant_shift_sr = quants->y_quant_shift[qindex_sr];
+  x->plane[0].zbin_sr = quants->y_zbin[qindex_sr];
+  x->plane[0].round_sr = quants->y_round[qindex_sr];
+  xd->plane[0].dequant_sr = cm->y_dequant[qindex_sr];
+#if CONFIG_NEW_QUANT
+  // TODO: see how did these newly defined var used
+  x->plane[0].cumbins_nuq_sr = quants->y_cumbins_nuq[qindex_sr];
+  for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+    xd->plane[0].dequant_val_nuq_sr[dq] =
+        cm->y_dequant_val_nuq[dq][qindex_sr];
+  }
+
+#endif  // CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+  // TODO: see how did these newly defined var used
+  x->plane[0].quant_pxd_sr = quants->y_quant_pxd[qindex_sr];
+  x->plane[0].quant_pxd_fp_sr = quants->y_quant_pxd_fp[qindex_sr];
+  x->plane[0].round_pxd_fp_sr = quants->y_round_pxd_fp[qindex_sr];
+  x->plane[0].quant_shift_pxd_sr = quants->y_quant_shift_pxd[qindex_sr];
+  x->plane[0].zbin_pxd_sr = quants->y_zbin_pxd[qindex_sr];
+  x->plane[0].round_pxd_sr = quants->y_round_pxd[qindex_sr];
+  xd->plane[0].dequant_pxd_sr = cm->y_dequant_pxd[qindex_sr];
+#if CONFIG_NEW_QUANT
+  x->plane[0].cumbins_nuq_pxd_sr = quants->y_cumbins_nuq_pxd[qindex_sr];
+  for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+    xd->plane[0].dequant_val_nuq_pxd_sr[dq] =
+        cm->y_dequant_val_nuq_pxd[dq][qindex_sr];
+  }
+
+#endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_TX_SKIP
+
+  x->plane[0].quant_thred_sr[0] = x->plane[0].zbin_sr[0] * x->plane[0].zbin_sr[0];
+  x->plane[0].quant_thred_sr[1] = x->plane[0].zbin_sr[1] * x->plane[0].zbin_sr[1];
+
+  // UV
+  for (i = 1; i < 3; i++) {
+    x->plane[i].quant_sr = quants->uv_quant[qindex_sr];
+    x->plane[i].quant_fp_sr = quants->uv_quant_fp[qindex_sr];
+    x->plane[i].round_fp_sr = quants->uv_round_fp[qindex_sr];
+    x->plane[i].quant_shift_sr = quants->uv_quant_shift[qindex_sr];
+    x->plane[i].zbin_sr = quants->uv_zbin[qindex_sr];
+    x->plane[i].round_sr = quants->uv_round[qindex_sr];
+    xd->plane[i].dequant_sr = cm->uv_dequant[qindex_sr];
+#if CONFIG_NEW_QUANT
+    // TODO: see how did these newly defined var used
+    x->plane[i].cumbins_nuq_sr = quants->uv_cumbins_nuq[qindex_sr];
+    for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+      xd->plane[i].dequant_val_nuq_sr[dq] =
+          cm->uv_dequant_val_nuq[dq][qindex_sr];
+    }
+#endif  // CONFIG_NEW_QUANT
+#if CONFIG_TX_SKIP
+    // TODO: see how did these newly defined var used
+    x->plane[i].quant_pxd_sr = quants->uv_quant_pxd[qindex_sr];
+    x->plane[i].quant_pxd_fp_sr = quants->uv_quant_pxd_fp[qindex_sr];
+    x->plane[i].round_pxd_fp_sr = quants->uv_round_pxd_fp[qindex_sr];
+    x->plane[i].quant_shift_pxd_sr = quants->uv_quant_shift_pxd[qindex_sr];
+    x->plane[i].zbin_pxd_sr = quants->uv_zbin_pxd[qindex_sr];
+    x->plane[i].round_pxd_sr = quants->uv_round_pxd[qindex_sr];
+    xd->plane[i].dequant_pxd_sr = cm->uv_dequant_pxd[qindex_sr];
+#if CONFIG_NEW_QUANT
+    x->plane[i].cumbins_nuq_pxd_sr = quants->uv_cumbins_nuq_pxd[qindex_sr];
+    for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+      xd->plane[i].dequant_val_nuq_pxd_sr[dq] =
+          cm->uv_dequant_val_nuq_pxd[dq][qindex_sr];
+    }
+#endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_TX_SKIP
+
+    x->plane[i].quant_thred_sr[0] = x->plane[i].zbin_sr[0] * x->plane[i].zbin_sr[0];
+    x->plane[i].quant_thred_sr[1] = x->plane[i].zbin_sr[1] * x->plane[i].zbin_sr[1];
+  }
+#endif  // CONFIG_SR_MODE
 
   x->skip_block = vp9_segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP);
   x->q_index = qindex;
