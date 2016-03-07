@@ -1876,8 +1876,8 @@ static void write_modes(VP10_COMP *cpi, const TileInfo *const tile,
     vp10_zero_left_context(xd);
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
          mi_col += MI_BLOCK_SIZE)
-      write_modes_sb_wrapper(cpi, tile, w, ans, tok, tok_end, 0, mi_row, mi_col,
-                             BLOCK_64X64);
+      write_modes_sb_wrapper(cpi, tile, w, ans, tok, tok_end, 0,
+                             mi_row, mi_col, BLOCK_LARGEST);
   }
 }
 
