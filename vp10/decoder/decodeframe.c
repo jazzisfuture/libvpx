@@ -100,22 +100,6 @@ static TX_MODE read_tx_mode(struct vpx_read_bit_buffer *rb) {
   return vpx_rb_read_bit(rb) ? TX_MODE_SELECT : vpx_rb_read_literal(rb, 2);
 }
 
-static void read_tx_mode_probs(struct tx_probs *tx_probs, vpx_reader *r) {
-  int i, j;
-
-  for (i = 0; i < TX_SIZE_CONTEXTS; ++i)
-    for (j = 0; j < TX_SIZES - 3; ++j)
-      vp10_diff_update_prob(r, &tx_probs->p8x8[i][j]);
-
-  for (i = 0; i < TX_SIZE_CONTEXTS; ++i)
-    for (j = 0; j < TX_SIZES - 2; ++j)
-      vp10_diff_update_prob(r, &tx_probs->p16x16[i][j]);
-
-  for (i = 0; i < TX_SIZE_CONTEXTS; ++i)
-    for (j = 0; j < TX_SIZES - 1; ++j)
-      vp10_diff_update_prob(r, &tx_probs->p32x32[i][j]);
-}
-
 static void read_switchable_interp_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
   int i, j;
   for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j)
@@ -3541,8 +3525,13 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder 0");
 
-  if (cm->tx_mode == TX_MODE_SELECT)
-    read_tx_mode_probs(&fc->tx_probs, &r);
+  if (cm->tx_mode == TX_MODE_SELECT) {
+    for (i = 0; i < TX_SIZES - 1; ++i)
+      for (j = 0; j < TX_SIZE_CONTEXTS; ++j)
+        for (k = 0; k < i + 1; ++k)
+          vp10_diff_update_prob(&r, &fc->tx_size_probs[i][j][k]);
+  }
+
   read_coef_probs(fc, cm->tx_mode, &r);
 
 #if CONFIG_VAR_TX
@@ -3810,6 +3799,12 @@ void vp10_decode_frame(VP10Decoder *pbi,
     vp10_frameworker_unlock_stats(worker);
   }
 
+#if 1
+  if (cm->current_video_frame == 0) {
+    vp10_zero(cm->stats);
+  }
+#endif
+
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1) {
     // Multi-threaded tile decoder
     *p_data_end = decode_tiles_mt(pbi, data + first_partition_size, data_end);
@@ -3837,6 +3832,24 @@ void vp10_decode_frame(VP10Decoder *pbi,
     vp10_loop_restoration_rows(new_fb, cm, 0, cm->mi_rows, 0);
   }
 #endif  // CONFIG_LOOP_RESTORATION
+
+#if 0
+  if (cm->current_video_frame == 100) {
+    FILE *fp;
+    int i1, i2, i3;
+
+    fp = fopen("tx_size_stats.txt", "a");
+    for (i1 = 0; i1 < TX_SIZES - 1; i1++)
+      for (i2 = 0; i2 < TX_SIZE_CONTEXTS; i2++) {
+        for (i3 = 0; i3 < TX_SIZES; i3++) {
+          fprintf(fp, "%10d ", cm->stats[i1][i2][i3]);
+        }
+        fprintf(fp, "\n");
+      }
+    fprintf(fp, "\n");
+    fclose(fp);
+  }
+#endif
 
   if (!xd->corrupted) {
     if (cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
