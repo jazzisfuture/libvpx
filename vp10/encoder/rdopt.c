@@ -391,6 +391,7 @@ static int prune_one_for_sby(const VP10_COMP *cpi,
                              BLOCK_SIZE bsize,
                              MACROBLOCK *x,
                              MACROBLOCKD *xd) {
+  // TODO(sarahparker) fill in this function
   (void) cpi;
   (void) bsize;
   (void) x;
