@@ -1825,7 +1825,7 @@ static void write_modes(VP10_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_SUPERTX
                      0,
 #endif
-                     mi_row, mi_col, BLOCK_64X64);
+                     mi_row, mi_col, BLOCK_LARGEST);
   }
 }
 

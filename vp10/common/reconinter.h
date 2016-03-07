@@ -433,8 +433,8 @@ void vp10_build_obmc_inter_prediction(VP10_COMMON *cm,
 #endif  // CONFIG_OBMC
 
 #if CONFIG_EXT_INTER
-#define MASK_MASTER_SIZE   (2 * CU_SIZE)
-#define MASK_MASTER_STRIDE (2 * CU_SIZE)
+#define MASK_MASTER_SIZE   (2 * MAX_CU_SIZE)
+#define MASK_MASTER_STRIDE (2 * MAX_CU_SIZE)
 
 void vp10_init_wedge_masks();
 
