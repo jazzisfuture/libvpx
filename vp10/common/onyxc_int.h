@@ -327,6 +327,9 @@ typedef struct VP10Common {
 #if CONFIG_ANS
   rans_dec_lut token_tab[COEFF_PROB_MODELS];
 #endif  // CONFIG_ANS
+#if 1
+  unsigned int stats[TX_SIZES - 1][TX_SIZE_CONTEXTS][TX_SIZES];
+#endif
 } VP10_COMMON;
 
 // TODO(hkuang): Don't need to lock the whole pool after implementing atomic
