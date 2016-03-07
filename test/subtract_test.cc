@@ -10,13 +10,16 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
-#include "./vp9_rtcd.h"
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
+#if CONFIG_VP10
+#include "vp10/common/blockd.h"
+#elif CONFIG_VP9
 #include "vp9/common/vp9_blockd.h"
+#endif
 #include "vpx_mem/vpx_mem.h"
 
 typedef void (*SubtractFunc)(int rows, int cols,
@@ -24,7 +27,7 @@ typedef void (*SubtractFunc)(int rows, int cols,
                              const uint8_t *src_ptr, ptrdiff_t src_stride,
                              const uint8_t *pred_ptr, ptrdiff_t pred_stride);
 
-namespace vp9 {
+namespace {
 
 class VP9SubtractBlockTest : public ::testing::TestWithParam<SubtractFunc> {
  public:
@@ -49,6 +52,8 @@ TEST_P(VP9SubtractBlockTest, SimpleSubtract) {
         vpx_memalign(16, block_width * block_height * 2));
     uint8_t *src  = reinterpret_cast<uint8_t *>(
         vpx_memalign(16, block_width * block_height * 2));
+
+    printf("BSIZE=%dx%d\n", block_width, block_height);
 
     for (int n = 0; n < 100; n++) {
       for (int r = 0; r < block_height; ++r) {
@@ -105,5 +110,4 @@ INSTANTIATE_TEST_CASE_P(NEON, VP9SubtractBlockTest,
 INSTANTIATE_TEST_CASE_P(MSA, VP9SubtractBlockTest,
                         ::testing::Values(vpx_subtract_block_msa));
 #endif
-
-}  // namespace vp9
+}  // namespace
