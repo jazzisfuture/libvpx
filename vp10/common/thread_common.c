@@ -97,6 +97,11 @@ void thread_loop_filter_rows(const YV12_BUFFER_CONFIG *const frame_buffer,
   const int sb_cols = mi_cols_aligned_to_sb(cm->mi_cols) >> MI_BLOCK_SIZE_LOG2;
   int mi_row, mi_col;
   enum lf_path path;
+#if CONFIG_EXT_PARTITION
+      printf("STOPPING: This code has not been modified to work with the "
+             "extended coding unit size experiment");
+      exit(EXIT_FAILURE);
+#endif  // CONFIG_EXT_PARTITION
   if (y_only)
     path = LF_PATH_444;
   else if (planes[1].subsampling_y == 1 && planes[1].subsampling_x == 1)
@@ -168,6 +173,12 @@ static void loop_filter_rows_mt(YV12_BUFFER_CONFIG *frame,
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int num_workers = VPXMIN(nworkers, tile_cols);
   int i;
+
+#if CONFIG_EXT_PARTITION
+      printf("STOPPING: This code has not been modified to work with the "
+             "extended coding unit size experiment");
+      exit(EXIT_FAILURE);
+#endif  // CONFIG_EXT_PARTITION
 
   if (!lf_sync->sync_range || sb_rows != lf_sync->rows ||
       num_workers > lf_sync->num_workers) {
