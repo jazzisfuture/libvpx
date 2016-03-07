@@ -3147,7 +3147,7 @@ static void loopfilter_frame(VP10_COMP *cpi, VP10_COMMON *cm) {
   }
 
   if (lf->filter_level > 0) {
-#if CONFIG_VAR_TX
+#if CONFIG_VAR_TX || CONFIG_EXT_PARTITION
     vp10_loop_filter_frame(cm->frame_to_show, cm, xd, lf->filter_level, 0, 0);
 #else
     if (cpi->num_workers > 1)
