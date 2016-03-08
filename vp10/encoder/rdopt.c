@@ -2149,8 +2149,8 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
         mic->mbmi.intra_filter = filter;
         super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
                         &s, NULL, bsize,
-                        (i == 0 && filter == INTRA_FILTER_LINEAR &&
-                         best_rd < INT64_MAX) ? best_rd * rd_adjust : best_rd);
+                        (int64_t)((i == 0 && filter == INTRA_FILTER_LINEAR &&
+                        best_rd < INT64_MAX) ? best_rd * rd_adjust : best_rd));
         if (this_rate_tokenonly == INT_MAX) {
           if (i == 0 && filter == INTRA_FILTER_LINEAR)
             return best_rd;
@@ -2255,7 +2255,7 @@ static int64_t rd_pick_intra_angle_sby(VP10_COMP *cpi, MACROBLOCK *x,
   return best_rd;
 }
 
-static inline int get_angle_index(double angle) {
+static INLINE int get_angle_index(double angle) {
   const double step = 22.5, base = 45;
   return (int)round((angle - base) / step);
 }
@@ -3400,8 +3400,8 @@ static int rd_pick_intra_angle_sbuv(VP10_COMP *cpi, MACROBLOCK *x,
       mbmi->angle_delta[1] = deltas_level1[i];
       if (!super_block_uvrd(cpi, x, &this_rate_tokenonly,
                             &this_distortion, &s, &this_sse, bsize,
-                            (i == 0 && best_rd < INT64_MAX) ?
-                                best_rd * rd_adjust : best_rd)) {
+                            (int64_t)((i == 0 && best_rd < INT64_MAX) ?
+                            best_rd * rd_adjust : best_rd))) {
         if (i == 0)
           break;
         else
