@@ -1984,6 +1984,15 @@ static void save_context(MACROBLOCK *const x, int mi_row, int mi_col,
 #endif
 }
 
+#ifdef DUMP
+static void dump_block(VP10_COMMON *const cm, MB_MODE_INFO *mbmi, int mi_row, int mi_col, int bsize) {
+  if(cm->current_video_frame == 1 && cm->show_frame == 0 && is_inter_block(mbmi)){
+    printf("fid: %d mi_row: %d mi_col: %d filter: %d bsize: %d\n",
+           cm->current_video_frame, mi_row, mi_col, mbmi->interp_filter, bsize);
+  }
+}
+#endif
+
 static void encode_b(VP10_COMP *cpi, const TileInfo *const tile,
                      ThreadData *td,
                      TOKENEXTRA **tp, int mi_row, int mi_col,
@@ -1995,6 +2004,13 @@ static void encode_b(VP10_COMP *cpi, const TileInfo *const tile,
   encode_superblock(cpi, td, tp, output_enabled, mi_row, mi_col, bsize, ctx);
 
   if (output_enabled) {
+#ifdef DUMP
+    MACROBLOCKD *const xd = &x->e_mbd;
+    MODE_INFO **mi_8x8 = xd->mi;
+    MODE_INFO *mi = mi_8x8[0];
+    MB_MODE_INFO *mbmi = &mi->mbmi;
+    dump_block(&cpi->common, mbmi, mi_row, mi_col, bsize);
+#endif
 #if CONFIG_SUPERTX
     update_stats(&cpi->common, td, 0);
 #else
@@ -3920,6 +3936,19 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 }
 #endif
 
+#ifdef DUMP
+static void dump_tree_prob(const VP10_COMMON *const cm) {
+  int i, j;
+  printf("\nENC %s fid %d show %d\n", __FUNCTION__, cm->current_video_frame, cm->show_frame);
+  for(i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i) {
+    for (j = 0; j < SWITCHABLE_FILTERS; ++j) {
+      printf("%d ", cm->fc->switchable_interp_prob[i][j]);
+    }
+    printf("\n");
+  }
+}
+#endif
+
 static void encode_frame_internal(VP10_COMP *cpi) {
   ThreadData *const td = &cpi->td;
   MACROBLOCK *const x = &td->mb;
@@ -3983,6 +4012,11 @@ static void encode_frame_internal(VP10_COMP *cpi) {
                      &cpi->twopass.this_frame_mb_stats);
   }
 #endif
+    memcpy(cm->prev_frame_switchable_interp_prob, cm->fc->switchable_interp_prob, sizeof(cm->fc->switchable_interp_prob));
+    //int fid = cm->current_video_frame;
+    //printf("\n%s %d\n", __FUNCTION__, fid);
+    //if(fid == 1)
+    //  dump_tree_prob(cm);
 
     // If allowed, encoding tiles in parallel with one thread handling one tile.
     if (VPXMIN(cpi->oxcf.max_threads, 1 << cm->log2_tile_cols) > 1)

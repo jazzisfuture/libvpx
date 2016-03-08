@@ -679,11 +679,11 @@ double vp10_get_prob(const vpx_tree_index* tree, vpx_prob* tree_prob, struct vp1
   while(len > 0) {
     int bit = (value >> (len-1)) & 0x1;
     if(bit == 0) {
-      double branch_prob = tree_prob[i >> 1] / 255.;
+      double branch_prob = tree_prob[i >> 1] / 256.;
       prob *= branch_prob;
       i = tree[i];
     } else {
-      double branch_prob = 1 - tree_prob[i >> 1] / 255.;
+      double branch_prob = 1 - tree_prob[i >> 1] / 256.;
       prob *= branch_prob;
       i = tree[i+1];
     }
@@ -698,7 +698,7 @@ double vp10_get_switchable_prob(const VP10_COMMON *const cm,
   //const int ctx = EIGHTTAP;
   struct vp10_token token = switchable_interp_encodings[filter_idx];
   const vpx_tree_index* tree = (const vpx_tree_index*) vp10_switchable_interp_tree;
-  vpx_prob* tree_prob = cm->fc->switchable_interp_prob[ctx];
+  vpx_prob* tree_prob = cm->prev_frame_switchable_interp_prob[ctx];
   return vp10_get_prob(tree, tree_prob, token);
 }
 

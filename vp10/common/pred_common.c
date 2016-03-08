@@ -36,6 +36,31 @@ int vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd) {
     return SWITCHABLE_FILTERS;
 }
 
+MB_MODE_INFO* vp10_get_pred_context_mbmi(const MACROBLOCKD *xd) {
+  // Note:
+  // The mode info data structure has a one element border above and to the
+  // left of the entries corresponding to real macroblocks.
+  // The prediction flags in these dummy entries are initialized to 0.
+  const MB_MODE_INFO *const left_mbmi = xd->left_mbmi;
+  const int left_type = xd->left_available && is_inter_block(left_mbmi) ?
+      left_mbmi->interp_filter : SWITCHABLE_FILTERS;
+  const MB_MODE_INFO *const above_mbmi = xd->above_mbmi;
+  const int above_type = xd->up_available && is_inter_block(above_mbmi) ?
+      above_mbmi->interp_filter : SWITCHABLE_FILTERS;
+
+  MB_MODE_INFO *ctx_mbmi;
+  if (left_type == above_type) {
+    ctx_mbmi = left_mbmi;
+  } else if (left_type == SWITCHABLE_FILTERS && above_type != SWITCHABLE_FILTERS) {
+    ctx_mbmi = above_mbmi;
+  } else if (left_type != SWITCHABLE_FILTERS && above_type == SWITCHABLE_FILTERS) {
+    ctx_mbmi = left_mbmi;
+  } else {
+    ctx_mbmi = NULL;
+  }
+  return ctx_mbmi;
+}
+
 #if CONFIG_EXT_INTRA
 int vp10_get_pred_context_intra_interp(const MACROBLOCKD *xd) {
   const MB_MODE_INFO *const left_mbmi = xd->left_mbmi;

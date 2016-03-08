@@ -1763,6 +1763,16 @@ static void dec_predict_sb_complex(VP10Decoder *const pbi,
 }
 #endif  // CONFIG_SUPERTX
 
+
+#ifdef DUMP
+static void dump_block(VP10_COMMON *const cm, MB_MODE_INFO *mbmi, int mi_row, int mi_col, int bsize) {
+  if(cm->current_video_frame == 1 && cm->show_frame == 0 && is_inter_block(mbmi)){
+    printf("fid: %d mi_row: %d mi_col: %d filter: %d bsize: %d\n",
+           cm->current_video_frame, mi_row, mi_col, mbmi->interp_filter, bsize);
+  }
+}
+#endif
+
 static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
 #if CONFIG_SUPERTX
                          int supertx_enabled,
@@ -1797,6 +1807,8 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
                                    bw, bh, x_mis, y_mis, bwl, bhl);
   vp10_read_mode_info(pbi, xd, mi_row, mi_col, r, x_mis, y_mis);
 #endif  // CONFIG_SUPERTX
+
+  //dump_block(cm, mbmi, mi_row, mi_col, bsize);
 
   if (bsize >= BLOCK_8X8 && (cm->subsampling_x || cm->subsampling_y)) {
     const BLOCK_SIZE uv_subsize =
@@ -3500,6 +3512,19 @@ static void read_supertx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
 }
 #endif  // CONFIG_SUPERTX
 
+#ifdef DUMP
+static void dump_tree_prob(const VP10_COMMON *const cm) {
+  int i, j;
+  printf("\nDEC %s fid %d show %d\n", __FUNCTION__, cm->current_video_frame, cm->show_frame);
+  for(i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i) {
+    for (j = 0; j < SWITCHABLE_FILTERS; ++j) {
+      printf("%d ", cm->fc->switchable_interp_prob[i][j]);
+    }
+    printf("\n");
+  }
+}
+#endif
+
 static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
                                   size_t partition_size) {
   VP10_COMMON *const cm = &pbi->common;
@@ -3729,7 +3754,16 @@ void vp10_decode_frame(VP10Decoder *pbi,
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Uninitialized entropy context.");
 
+#ifdef DUMP
+  int fid = cm->current_video_frame;
+  if(fid == 1)
+    dump_tree_prob(cm);
+#endif
+  vpx_prob switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
+                                 [SWITCHABLE_FILTERS - 1];
+  memcpy(switchable_interp_prob, cm->fc->switchable_interp_prob, sizeof(cm->fc->switchable_interp_prob));
   vp10_zero(cm->counts);
+  memcpy(cm->prev_frame_switchable_interp_prob, switchable_interp_prob, sizeof(switchable_interp_prob));
 
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);

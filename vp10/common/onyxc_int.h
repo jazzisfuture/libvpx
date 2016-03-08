@@ -255,6 +255,8 @@ typedef struct VP10Common {
   int seg_map_alloc_size;
 
   INTERP_FILTER interp_filter;
+  vpx_prob prev_frame_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
+                                            [SWITCHABLE_FILTERS - 1];
 
   loop_filter_info_n lf_info;
 #if CONFIG_LOOP_RESTORATION

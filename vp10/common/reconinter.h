@@ -263,6 +263,33 @@ void vp10_setup_pre_planes(MACROBLOCKD *xd, int idx,
                           const YV12_BUFFER_CONFIG *src, int mi_row, int mi_col,
                           const struct scale_factors *sf);
 
+#ifdef DUMP
+static void dump_tree_prob(const VP10_COMMON *const cm) {
+  int i, j;
+  printf("%s\n", __FUNCTION__);
+  for(i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i) {
+    for (j = 0; j < SWITCHABLE_FILTERS; ++j) {
+      printf("%d ", cm->fc->switchable_interp_prob[i][j]);
+    }
+    printf("\n");
+  }
+}
+#endif
+
+
+#ifdef DUMP
+static void dump_context_prob(const VP10_COMMON *const cm,
+                              const MACROBLOCKD *const xd) {
+  int i;
+  printf("%s\n", __FUNCTION__);
+  for(i = 0; i < SWITCHABLE_FILTERS; ++i) {
+    double prob = vp10_get_switchable_prob(cm, xd, i);
+    printf(" %f", prob);
+  }
+  printf("\n");
+}
+#endif
+
 #if CONFIG_EXT_INTERP
 static int vp10_get_interp_filter(const VP10_COMMON *const cm,
                                      const MACROBLOCKD *const xd) {
@@ -276,6 +303,15 @@ static int vp10_get_interp_filter(const VP10_COMMON *const cm,
       best_filter = i;
     }
   }
+#ifdef DUMP
+  static int fid = -1;
+  if(fid != cm->current_video_frame) {
+    fid = cm->current_video_frame;
+    dump_tree_prob(cm);
+    dump_context_prob(cm, xd);
+    printf("fid: %d best_filter %d\n", fid, best_filter);
+  }
+#endif
   return best_filter;
 }
 
