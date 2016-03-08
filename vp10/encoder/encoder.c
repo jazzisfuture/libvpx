@@ -3030,6 +3030,11 @@ static void encode_with_recode_loop(VP10_COMP *cpi,
   int q = 0, q_low = 0, q_high = 0;
 
   set_size_independent_vars(cpi);
+#ifdef DUMP
+  if(cm->current_video_frame == 1) {
+    printf("\n============= Angie show_frame: %d\n", cm->show_frame);
+  }
+#endif
 
   do {
     vpx_clear_system_state();

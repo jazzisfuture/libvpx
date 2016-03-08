@@ -868,7 +868,6 @@ static void write_switchable_interp_filter(VP10_COMP *cpi,
     const int ctx = vp10_get_pred_context_switchable_interp(xd);
 #if CONFIG_EXT_INTERP
     if (!vp10_is_interp_needed(xd)) {
-      assert(mbmi->interp_filter == EIGHTTAP);
       return;
     }
 #endif
@@ -2354,6 +2353,31 @@ static void write_uncompressed_header(VP10_COMP *cpi,
   write_tile_info(cm, wb);
 }
 
+#ifdef DUMP
+static void dump_tree_prob(const VP10_COMMON *const cm) {
+  int i, j;
+  printf("\nPACK %s fid %d show %d\n", __FUNCTION__, cm->current_video_frame, cm->show_frame);
+  for(i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i) {
+    for (j = 0; j < SWITCHABLE_FILTERS; ++j) {
+      printf("%d ", cm->fc->switchable_interp_prob[i][j]);
+    }
+    printf("\n");
+  }
+}
+
+
+static void dump_count(FRAME_COUNTS *counts) {
+  int i, j;
+  printf("%s\n", __FUNCTION__);
+  for(i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i) {
+    for (j = 0; j < SWITCHABLE_FILTERS; ++j) {
+      printf("%d ", counts->switchable_interp[i][j]);
+    }
+    printf("\n");
+  }
+}
+#endif
+
 static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
   VP10_COMMON *const cm = &cpi->common;
 #if CONFIG_SUPERTX
@@ -2414,8 +2438,10 @@ static size_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
                                  counts->obmc[i]);
 #endif  // CONFIG_OBMC
 
+    // Angie
     if (cm->interp_filter == SWITCHABLE)
       update_switchable_interp_probs(cm, &header_bc, counts);
+    //dump_count(counts);
 
     for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
       vp10_cond_prob_diff_update(&header_bc, &fc->intra_inter_prob[i],
@@ -2527,6 +2553,11 @@ void vp10_pack_bitstream(VP10_COMP *const cpi, uint8_t *dest, size_t *size) {
   vpx_clear_system_state();
 
   first_part_size = write_compressed_header(cpi, data);
+#ifdef DUMP
+  if(cm->current_video_frame == 1)
+    dump_tree_prob(cm);
+#endif
+
   data += first_part_size;
 
   data_sz = encode_tiles(cpi, data, &max_tile);

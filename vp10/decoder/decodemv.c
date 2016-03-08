@@ -798,6 +798,22 @@ static int read_is_obmc_block(VP10_COMMON *const cm, MACROBLOCKD *const xd,
 }
 #endif  // CONFIG_OBMC
 
+static int mv_diff(MV mv0, MV mv1) {
+  return abs(mv0.col - mv1.col) + abs(mv0.row - mv1.row);
+}
+
+static void dump_ctx(MACROBLOCKD *const xd, int ctx_type, int curr_type) {
+  MODE_INFO *const mi = xd->mi[0];
+  MB_MODE_INFO *const mbmi = &mi->mbmi;
+  MB_MODE_INFO* ctx_mbmi = vp10_get_pred_context_mbmi(xd);
+
+  if(!has_second_ref(mbmi) && ctx_mbmi && !has_second_ref(ctx_mbmi)) {
+    if(ctx_mbmi->ref_frame[0] == mbmi->ref_frame[0]) {
+      printf("%d %d %d\n", mv_diff(ctx_mbmi->mv[0].as_mv, mbmi->mv[0].as_mv), ctx_type, curr_type);
+    }
+  }
+}
+
 static INLINE INTERP_FILTER read_switchable_interp_filter(
     VP10_COMMON *const cm, MACROBLOCKD *const xd,
     vpx_reader *r) {
@@ -809,6 +825,8 @@ static INLINE INTERP_FILTER read_switchable_interp_filter(
 #endif
   type = (INTERP_FILTER)vpx_read_tree(r, vp10_switchable_interp_tree,
                                       cm->fc->switchable_interp_prob[ctx]);
+
+  dump_ctx(xd, ctx, type);
   if (counts)
     ++counts->switchable_interp[ctx][type];
   return type;
