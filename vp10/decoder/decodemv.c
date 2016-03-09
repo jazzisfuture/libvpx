@@ -804,8 +804,11 @@ static INLINE INTERP_FILTER read_switchable_interp_filter(
 #endif
   type = (INTERP_FILTER)vpx_read_tree(r, vp10_switchable_interp_tree,
                                       cm->fc->switchable_interp_prob[ctx]);
-  if (counts)
-    ++counts->switchable_interp[ctx][type];
+  if (counts) {
+    if(ctx != SWITCHABLE_FILTERS)
+      ++counts->switchable_interp[ctx][type];
+    ++counts->switchable_interp[SWITCHABLE_FILTERS][type];
+  }
   return type;
 }
 

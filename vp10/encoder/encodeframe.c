@@ -1184,7 +1184,9 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
 #endif
           ) {
         const int ctx = vp10_get_pred_context_switchable_interp(xd);
-        ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
+        if(ctx != SWITCHABLE_FILTERS)
+          ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
+        ++td->counts->switchable_interp[SWITCHABLE_FILTERS][mbmi->interp_filter];
       }
     }
 
