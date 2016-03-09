@@ -1182,6 +1182,17 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
       const int r_tx_size = vp10_cost_tx_size(n, max_tx_size, tx_probs);
       if (FIXED_TX_TYPE && tx_type != get_default_tx_type(0, xd, 0, n))
           continue;
+
+//      if (is_inter)
+//        if (tx_type != DCT_DCT &&
+//            tx_type != V_DCT && tx_type != H_DCT)
+//          continue;
+//
+//      if (!is_inter)
+//        if (tx_type != DCT_DCT && tx_type != ADST_DCT &&
+//            tx_type != DCT_ADST && tx_type != ADST_ADST)
+//          continue;
+
 #if CONFIG_EXT_TX
       ext_tx_set = get_ext_tx_set(n, bs, is_inter);
       if (is_inter) {
@@ -1285,8 +1296,8 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
 
   mbmi->tx_size = best_tx;
   mbmi->tx_type = best_tx_type;
-  if (mbmi->tx_size >= TX_32X32)
-    assert(mbmi->tx_type == DCT_DCT);
+//  if (mbmi->tx_size >= TX_32X32)
+//    assert(mbmi->tx_type == DCT_DCT);
   txfm_rd_in_plane(x,
                    cpi,
                    &r, &d, &s,
