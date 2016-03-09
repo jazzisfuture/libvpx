@@ -172,19 +172,12 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
           // Only consider blocks that are likely steady background. i.e, have
           // been encoded as zero/low motion x (= thresh_consec_zeromv) frames
           // in a row. consec_zero_mv[] defined for 8x8 blocks, so consider all
-          // 4 sub-blocks for 16x16 block. Also, avoid skin blocks.
-          int is_skin = vp9_compute_skin_block(src_y,
-                                               src_u,
-                                               src_v,
-                                               src_ystride,
-                                               src_uvstride,
-                                               bsize);
+          // 4 sub-blocks for 16x16 block.
           if (frame_low_motion &&
               cr->consec_zero_mv[bl_index] > thresh_consec_zeromv &&
               cr->consec_zero_mv[bl_index1] > thresh_consec_zeromv &&
               cr->consec_zero_mv[bl_index2] > thresh_consec_zeromv &&
-              cr->consec_zero_mv[bl_index3] > thresh_consec_zeromv &&
-              !is_skin) {
+              cr->consec_zero_mv[bl_index3] > thresh_consec_zeromv) {
             // Compute variance.
             unsigned int sse;
             unsigned int variance = cpi->fn_ptr[bsize].vf(src_y,
