@@ -299,6 +299,10 @@ InterpFilterParams vp10_get_interp_filter_params(
   if (interp_filter == TEMPORALFILTER_12TAP)
     return vp10_interp_temporalfilter_12tap;
 #endif  // USE_TEMPORALFILTER_12TAP
+#if CONFIG_EXT_INTERP
+  if (interp_filter == SWITCHABLE_FILTERS)
+    return vp10_interp_filter_params_list[EIGHTTAP_REGULAR];
+#endif
   return vp10_interp_filter_params_list[interp_filter];
 }
 

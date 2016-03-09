@@ -269,6 +269,9 @@ void vp10_setup_pre_planes(MACROBLOCKD *xd, int idx,
                           const struct scale_factors *sf);
 
 #if CONFIG_EXT_INTERP
+static int vp10_get_interp_filter() {
+  return SWITCHABLE_FILTERS;
+}
 static INLINE int vp10_is_interp_needed(const MACROBLOCKD *const xd) {
   MODE_INFO *const mi = xd->mi[0];
   MB_MODE_INFO *const mbmi = &mi->mbmi;

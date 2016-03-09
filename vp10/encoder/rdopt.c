@@ -5390,12 +5390,9 @@ static INTERP_FILTER predict_interp_filter(const VP10_COMP *cpi,
     }
   }
   if (cm->interp_filter != BILINEAR) {
-    if (x->source_variance < cpi->sf.disable_filter_search_var_thresh) {
-      best_filter = EIGHTTAP_REGULAR;
-    }
 #if CONFIG_EXT_INTERP
-    else if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE) {
-      best_filter = EIGHTTAP_REGULAR;
+    if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE) {
+      best_filter = vp10_get_interp_filter();
     }
 #endif
   }
@@ -7982,7 +7979,14 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
   }
   // Set the appropriate filter
   if (cm->interp_filter == SWITCHABLE) {
+#if CONFIG_EXT_INTERP
+    if (vp10_is_interp_needed(xd))
+      mbmi->interp_filter = best_filter;
+    else
+      mbmi->interp_filter = vp10_get_interp_filter();
+#else
     mbmi->interp_filter = best_filter;
+#endif
     rate2 += vp10_get_switchable_rate(cpi, xd);
   } else {
     mbmi->interp_filter = cm->interp_filter;
@@ -8479,12 +8483,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
 #endif  // CONFIG_EXT_INTER
                                           bsi, 0,
                                           mi_row, mi_col);
-#if CONFIG_EXT_INTERP
-        if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
-            mbmi->interp_filter != EIGHTTAP_REGULAR) {
-          mbmi->interp_filter = EIGHTTAP_REGULAR;
-        }
-#endif  // CONFIG_EXT_INTERP
         if (tmp_rd == INT64_MAX)
           continue;
       } else {
@@ -8497,6 +8495,12 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
         for (i = 0; i < 4; i++)
           xd->mi[0]->bmi[i] = tmp_best_bmodes[i];
       }
+
+#if CONFIG_EXT_INTERP
+      if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE) {
+        mbmi->interp_filter = vp10_get_interp_filter();
+      }
+#endif  // CONFIG_EXT_INTERP
       // Add in the cost of the transform type
       if (!xd->lossless[mbmi->segment_id]) {
         int rate_tx_type = 0;
