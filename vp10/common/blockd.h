@@ -569,11 +569,12 @@ void vp10_setup_block_planes(MACROBLOCKD *xd, int ss_x, int ss_y);
 
 static INLINE TX_SIZE get_uv_tx_size_impl(TX_SIZE y_tx_size, BLOCK_SIZE bsize,
                                           int xss, int yss) {
+  (void)y_tx_size;
   if (bsize < BLOCK_8X8) {
     return TX_4X4;
   } else {
     const BLOCK_SIZE plane_bsize = ss_size_lookup[bsize][xss][yss];
-    return VPXMIN(y_tx_size, max_txsize_lookup[plane_bsize]);
+    return max_txsize_lookup[plane_bsize];
   }
 }
 
