@@ -89,6 +89,7 @@ typedef struct {
   int force_zero_mode_spatial_ref;
   int current_superframe;
   int use_base_mv;
+  int prev_lst_fb_idx[VPX_MAX_LAYERS];
 } SVC;
 
 struct VP9_COMP;

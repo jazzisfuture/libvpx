@@ -419,6 +419,16 @@ static void get_layer_resolution(const int width_org, const int height_org,
   *height_out = h;
 }
 
+// Check if lst_fb_idx is not invalid. This can happen for dropped superframes
+// (dropped due to buffer-underflow). If invalid, take the index from the last
+// encoded (non-dropped) frame.
+static void check_fb_idx_reset(VP9_COMP *const cpi) {
+  if (cpi->svc.current_superframe > 0) {
+    if (cpi->common.ref_frame_map[cpi->lst_fb_idx] == -1)
+      cpi->lst_fb_idx = cpi->svc.prev_lst_fb_idx[cpi->svc.spatial_layer_id];
+  }
+}
+
 // The function sets proper ref_frame_flags, buffer indices, and buffer update
 // variables for temporal layering mode 3 - that does 0-2-1-2 temporal layering
 // scheme.
@@ -518,6 +528,7 @@ static void set_flags_and_fb_idx_for_temporal_mode3(VP9_COMP *const cpi) {
     cpi->gld_fb_idx = cpi->svc.number_spatial_layers + spatial_id - 1;
     cpi->alt_fb_idx = cpi->svc.number_spatial_layers + spatial_id;
   }
+  check_fb_idx_reset(cpi);
 }
 
 // The function sets proper ref_frame_flags, buffer indices, and buffer update
@@ -572,6 +583,7 @@ static void set_flags_and_fb_idx_for_temporal_mode2(VP9_COMP *const cpi) {
     cpi->gld_fb_idx = cpi->svc.number_spatial_layers + spatial_id - 1;
     cpi->alt_fb_idx = cpi->svc.number_spatial_layers + spatial_id;
   }
+  check_fb_idx_reset(cpi);
 }
 
 // The function sets proper ref_frame_flags, buffer indices, and buffer update
@@ -604,6 +616,7 @@ static void set_flags_and_fb_idx_for_temporal_mode_noLayering(
   } else {
     cpi->gld_fb_idx = 0;
   }
+  check_fb_idx_reset(cpi);
 }
 
 int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {

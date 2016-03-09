@@ -4002,6 +4002,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       if (cpi->use_svc)
         vp9_inc_frame_in_layer(cpi);
       return;
+    } else {
+      if (cpi->use_svc)
+        cpi->svc.prev_lst_fb_idx[cpi->svc.spatial_layer_id] = cpi->lst_fb_idx;
     }
   }
 
