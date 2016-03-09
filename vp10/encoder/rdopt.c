@@ -6672,13 +6672,13 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   int64_t best_intra_rd = INT64_MAX;
   unsigned int best_pred_sse = UINT_MAX;
   PREDICTION_MODE best_intra_mode = DC_PRED;
-  int rate_uv_intra[TX_SIZES], rate_uv_tokenonly[TX_SIZES];
-  int64_t dist_uv[TX_SIZES];
-  int skip_uv[TX_SIZES];
-  PREDICTION_MODE mode_uv[TX_SIZES];
+  int rate_uv_intra = INT_MAX, rate_uv_tokenonly = INT_MAX;
+  int64_t dist_uv;
+  int skip_uv;
+  PREDICTION_MODE mode_uv;
 #if CONFIG_EXT_INTRA
-  EXT_INTRA_MODE_INFO ext_intra_mode_info_uv[TX_SIZES];
-  int8_t uv_angle_delta[TX_SIZES];
+  EXT_INTRA_MODE_INFO ext_intra_mode_info_uv;
+  int8_t uv_angle_delta;
   int is_directional_mode, angle_stats_ready = 0;
   int rate_overhead, rate_dummy;
   uint8_t directional_mode_skip_mask[INTRA_MODES];
@@ -6754,8 +6754,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     best_pred_rd[i] = INT64_MAX;
   for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
     best_filter_rd[i] = INT64_MAX;
-  for (i = 0; i < TX_SIZES; i++)
-    rate_uv_intra[i] = INT_MAX;
   for (i = 0; i < MAX_REF_FRAMES; ++i)
     x->pred_sse[i] = INT_MAX;
   for (i = 0; i < MB_MODE_COUNT; ++i) {
@@ -7228,31 +7226,31 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         continue;
       uv_tx = get_uv_tx_size_impl(mbmi->tx_size, bsize, pd->subsampling_x,
                                   pd->subsampling_y);
-      if (rate_uv_intra[uv_tx] == INT_MAX) {
+      if (rate_uv_intra == INT_MAX) {
         choose_intra_uv_mode(cpi, x, ctx, bsize, uv_tx,
-                             &rate_uv_intra[uv_tx], &rate_uv_tokenonly[uv_tx],
-                             &dist_uv[uv_tx], &skip_uv[uv_tx], &mode_uv[uv_tx]);
+                             &rate_uv_intra, &rate_uv_tokenonly,
+                             &dist_uv, &skip_uv, &mode_uv);
 #if CONFIG_EXT_INTRA
-        ext_intra_mode_info_uv[uv_tx] = mbmi->ext_intra_mode_info;
-        uv_angle_delta[uv_tx] = mbmi->angle_delta[1];
+        ext_intra_mode_info_uv = mbmi->ext_intra_mode_info;
+        uv_angle_delta = mbmi->angle_delta[1];
 #endif  // CONFIG_EXT_INTRA
       }
 
-      rate_uv = rate_uv_tokenonly[uv_tx];
-      distortion_uv = dist_uv[uv_tx];
-      skippable = skippable && skip_uv[uv_tx];
-      mbmi->uv_mode = mode_uv[uv_tx];
+      rate_uv = rate_uv_tokenonly;
+      distortion_uv = dist_uv;
+      skippable = skippable && skip_uv;
+      mbmi->uv_mode = mode_uv;
 #if CONFIG_EXT_INTRA
-      mbmi->angle_delta[1] = uv_angle_delta[uv_tx];
+      mbmi->angle_delta[1] = uv_angle_delta;
       mbmi->ext_intra_mode_info.use_ext_intra_mode[1] =
-          ext_intra_mode_info_uv[uv_tx].use_ext_intra_mode[1];
-      if (ext_intra_mode_info_uv[uv_tx].use_ext_intra_mode[1]) {
+          ext_intra_mode_info_uv.use_ext_intra_mode[1];
+      if (ext_intra_mode_info_uv.use_ext_intra_mode[1]) {
         mbmi->ext_intra_mode_info.ext_intra_mode[1] =
-            ext_intra_mode_info_uv[uv_tx].ext_intra_mode[1];
+            ext_intra_mode_info_uv.ext_intra_mode[1];
       }
 #endif  // CONFIG_EXT_INTRA
 
-      rate2 = rate_y + intra_mode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
+      rate2 = rate_y + intra_mode_cost[mbmi->mode] + rate_uv_intra;
 
       if (!xd->lossless[mbmi->segment_id]) {
         // super_block_yrd above includes the cost of the tx_size in the
@@ -7836,10 +7834,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       TX_SIZE uv_tx_size;
       *mbmi = best_mbmode;
       uv_tx_size = get_uv_tx_size(mbmi, &xd->plane[1]);
-      rd_pick_intra_sbuv_mode(cpi, x, ctx, &rate_uv_intra[uv_tx_size],
-                              &rate_uv_tokenonly[uv_tx_size],
-                              &dist_uv[uv_tx_size],
-                              &skip_uv[uv_tx_size],
+      rd_pick_intra_sbuv_mode(cpi, x, ctx, &rate_uv_intra,
+                              &rate_uv_tokenonly, &dist_uv, &skip_uv,
                               bsize < BLOCK_8X8 ? BLOCK_8X8 : bsize,
                               uv_tx_size);
     }

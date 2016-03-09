@@ -1129,8 +1129,10 @@ static void dec_build_prediction_by_left_preds(VP10Decoder *const pbi,
 static INLINE TX_SIZE dec_get_uv_tx_size(const MB_MODE_INFO *mbmi,
                                          int n4_wl, int n4_hl) {
   // get minimum log2 num4x4s dimension
-  const int x = VPXMIN(n4_wl, n4_hl);
-  return VPXMIN(mbmi->tx_size,  x);
+  //const int x = VPXMIN(n4_wl, n4_hl);
+  (void)mbmi;
+  //return VPXMIN(mbmi->tx_size,  x);
+  return VPXMIN(n4_wl, n4_hl);
 }
 
 static INLINE void dec_reset_skip_context(MACROBLOCKD *xd) {
