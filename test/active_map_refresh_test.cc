@@ -126,7 +126,12 @@ VP9_INSTANTIATE_TEST_CASE(ActiveMapRefreshTest,
                           ::testing::Range(5, 6));
 #if CONFIG_VP10
 INSTANTIATE_TEST_CASE_P(
-    DISABLED_VP10, ActiveMapRefreshTest,
+#if CONFIG_EXT_PARTITION
+    DISABLED_VP10,
+#else
+    VP10,
+#endif
+    ActiveMapRefreshTest,
     ::testing::Combine(
         ::testing::Values(static_cast<const libvpx_test::CodecFactory *>(
             &libvpx_test::kVP10)),
