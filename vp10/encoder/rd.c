@@ -703,6 +703,55 @@ int vp10_get_switchable_rate(const VP10_COMP *cpi,
       cpi->switchable_interp_costs[ctx][mbmi->interp_filter];
 }
 
+struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
+  {{0, 1}, {4, 3}, {6, 3}, {5, 3}, {7, 3}};
+
+static double vp10_get_prob(const vpx_tree_index* tree, const vpx_prob* tree_prob, struct vp10_token token) {
+  double prob = 1;
+  int value = token.value;
+  int len = token.len;
+  int i = 0;
+  while(len > 0) {
+    int bit = (value >> (len-1)) & 0x1;
+    if(bit == 0) {
+      double branch_prob = tree_prob[i >> 1] / 256.;
+      prob *= branch_prob;
+      i = tree[i];
+    } else {
+      double branch_prob = 1 - tree_prob[i >> 1] / 256.;
+      prob *= branch_prob;
+      i = tree[i+1];
+    }
+    len--;
+  }
+  return prob;
+}
+
+static double vp10_get_switchable_prob(const VP10_COMMON *const cm,
+                             const MACROBLOCKD *const xd, int filter_idx) {
+  const int ctx = vp10_get_pred_context_switchable_interp(xd);
+  struct vp10_token token = switchable_interp_encodings[filter_idx];
+  const vpx_tree_index* tree = (const vpx_tree_index*) vp10_switchable_interp_tree;
+  const vpx_prob* tree_prob = cm->prev_frame_switchable_interp_prob[ctx];
+  return vp10_get_prob(tree, tree_prob, token);
+}
+
+int vp10_predict_full_pixel_interp_filter(const VP10_COMMON *const cm,
+                                          const MACROBLOCKD *const xd) {
+  int best_filter = -1;
+  double best_prob = -1;
+  int i;
+  for (i = 0; i < SWITCHABLE_FILTERS; ++i) {
+    double prob = vp10_get_switchable_prob(cm, xd, i);
+    if(best_prob < prob) {
+      best_prob = prob;
+      best_filter = i;
+    }
+  }
+  return best_filter;
+}
+
+
 void vp10_set_rd_speed_thresholds(VP10_COMP *cpi) {
   int i;
   RD_OPT *const rd = &cpi->rd;

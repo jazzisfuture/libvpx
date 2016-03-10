@@ -4002,6 +4002,8 @@ static void encode_frame_internal(VP10_COMP *cpi) {
                      &cpi->twopass.this_frame_mb_stats);
   }
 #endif
+  memcpy(cm->prev_frame_switchable_interp_prob, cm->fc->switchable_interp_prob,
+         sizeof(cm->fc->switchable_interp_prob));
 
     // If allowed, encoding tiles in parallel with one thread handling one tile.
     if (VPXMIN(cpi->oxcf.max_threads, 1 << cm->log2_tile_cols) > 1)

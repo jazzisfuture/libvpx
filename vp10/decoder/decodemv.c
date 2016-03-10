@@ -21,6 +21,7 @@
 
 #include "vp10/decoder/decodemv.h"
 #include "vp10/decoder/decodeframe.h"
+#include "vp10/encoder/rd.h"
 
 #include "vpx_dsp/vpx_dsp_common.h"
 
@@ -800,7 +801,8 @@ static INLINE INTERP_FILTER read_switchable_interp_filter(
   FRAME_COUNTS *counts = xd->counts;
   INTERP_FILTER type;
 #if CONFIG_EXT_INTERP
-  if (!vp10_is_interp_needed(xd)) return EIGHTTAP_REGULAR;
+  if (!vp10_is_interp_needed(xd))
+    return vp10_predict_full_pixel_interp_filter(cm, xd);
 #endif
   type = (INTERP_FILTER)vpx_read_tree(r, vp10_switchable_interp_tree,
                                       cm->fc->switchable_interp_prob[ctx]);
