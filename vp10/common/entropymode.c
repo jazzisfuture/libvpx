@@ -804,14 +804,24 @@ static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
   { 149, 160, 128},
 };
 #elif CONFIG_EXT_INTERP && SWITCHABLE_FILTERS == 5
-static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
+static const vpx_prob default_switchable_interp_prob[FRAME_MV_CONTEXTS][SWITCHABLE_FILTER_CONTEXTS]
                                                     [SWITCHABLE_FILTERS - 1] = {
-  { 235, 192, 128, 128},
-  { 36, 243, 208, 128},
-  { 34, 16, 128, 128},
-  { 36, 243, 48, 128},
-  { 34, 16, 128, 128},
-  { 149, 160, 128, 128},
+  {
+    { 235, 192, 128, 128},
+    { 36, 243, 208, 128},
+    { 34, 16, 128, 128},
+    { 36, 243, 48, 128},
+    { 34, 16, 128, 128},
+    { 149, 160, 128, 128},
+  },
+  {
+    { 235, 192, 128, 128},
+    { 36, 243, 208, 128},
+    { 34, 16, 128, 128},
+    { 36, 243, 48, 128},
+    { 34, 16, 128, 128},
+    { 149, 160, 128, 128},
+  },
 };
 #else  // CONFIG_EXT_INTERP
 static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
@@ -1448,11 +1458,13 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
                 counts->y_mode[i], fc->y_mode_prob[i]);
 
   if (cm->interp_filter == SWITCHABLE) {
-    for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
-      vpx_tree_merge_probs(vp10_switchable_interp_tree,
-                           pre_fc->switchable_interp_prob[i],
-                           counts->switchable_interp[i],
-                           fc->switchable_interp_prob[i]);
+    for(j = 0; j < FRAME_MV_CONTEXTS; j++) {
+      for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
+        vpx_tree_merge_probs(vp10_switchable_interp_tree,
+                             pre_fc->switchable_interp_prob[j][i],
+                             counts->switchable_interp[j][i],
+                             fc->switchable_interp_prob[j][i]);
+    }
   }
 }
 

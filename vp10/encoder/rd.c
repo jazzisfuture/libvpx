@@ -82,9 +82,10 @@ static void fill_mode_costs(VP10_COMP *cpi) {
     vp10_cost_tokens(cpi->intra_uv_mode_cost[i],
                      fc->uv_mode_prob[i], vp10_intra_mode_tree);
 
-  for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
-    vp10_cost_tokens(cpi->switchable_interp_costs[i],
-                    fc->switchable_interp_prob[i], vp10_switchable_interp_tree);
+  for (j = 0; j < FRAME_MV_CONTEXTS; ++j)
+    for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
+      vp10_cost_tokens(cpi->switchable_interp_costs[j][i],
+                      fc->switchable_interp_prob[j][i], vp10_switchable_interp_tree);
 
   for (i = 0; i < PALETTE_BLOCK_SIZES; ++i) {
     vp10_cost_tokens(cpi->palette_y_size_cost[i],
@@ -695,12 +696,14 @@ YV12_BUFFER_CONFIG *vp10_get_scaled_ref_frame(const VP10_COMP *cpi,
 int vp10_get_switchable_rate(const VP10_COMP *cpi,
                              const MACROBLOCKD *const xd) {
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
-  const int ctx = vp10_get_pred_context_switchable_interp(xd);
+  int ctx_filter;
+  int ctx_frame_mv;
+  vp10_get_pred_context_switchable_interp(xd, &ctx_frame_mv, &ctx_filter);
 #if CONFIG_EXT_INTERP
   if (!vp10_is_interp_needed(xd)) return 0;
 #endif  // CONFIG_EXT_INTERP
   return SWITCHABLE_INTERP_RATE_FACTOR *
-      cpi->switchable_interp_costs[ctx][mbmi->interp_filter];
+      cpi->switchable_interp_costs[ctx_frame_mv][ctx_filter][mbmi->interp_filter];
 }
 
 struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
@@ -729,10 +732,13 @@ static double vp10_get_prob(const vpx_tree_index* tree, const vpx_prob* tree_pro
 
 static double vp10_get_switchable_prob(const VP10_COMMON *const cm,
                              const MACROBLOCKD *const xd, int filter_idx) {
-  const int ctx = vp10_get_pred_context_switchable_interp(xd);
   struct vp10_token token = switchable_interp_encodings[filter_idx];
   const vpx_tree_index* tree = (const vpx_tree_index*) vp10_switchable_interp_tree;
-  const vpx_prob* tree_prob = cm->prev_frame_switchable_interp_prob[ctx];
+  int ctx_frame_mv;
+  int ctx_filter;
+  const vpx_prob* tree_prob;
+  vp10_get_pred_context_switchable_interp(xd, &ctx_frame_mv, &ctx_filter);
+  tree_prob = cm->prev_frame_switchable_interp_prob[ctx_frame_mv][ctx_filter];
   return vp10_get_prob(tree, tree_prob, token);
 }
 

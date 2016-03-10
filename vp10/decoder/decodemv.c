@@ -797,17 +797,19 @@ static int read_is_obmc_block(VP10_COMMON *const cm, MACROBLOCKD *const xd,
 static INLINE INTERP_FILTER read_switchable_interp_filter(
     VP10_COMMON *const cm, MACROBLOCKD *const xd,
     vpx_reader *r) {
-  const int ctx = vp10_get_pred_context_switchable_interp(xd);
   FRAME_COUNTS *counts = xd->counts;
   INTERP_FILTER type;
+  int ctx_filter;
+  int ctx_frame_mv;
+  vp10_get_pred_context_switchable_interp(xd, &ctx_frame_mv, &ctx_filter);
 #if CONFIG_EXT_INTERP
   if (!vp10_is_interp_needed(xd))
     return vp10_predict_full_pixel_interp_filter(cm, xd);
 #endif
   type = (INTERP_FILTER)vpx_read_tree(r, vp10_switchable_interp_tree,
-                                      cm->fc->switchable_interp_prob[ctx]);
+                                      cm->fc->switchable_interp_prob[ctx_frame_mv][ctx_filter]);
   if (counts)
-    ++counts->switchable_interp[ctx][type];
+    ++counts->switchable_interp[ctx_frame_mv][ctx_filter][type];
   return type;
 }
 
