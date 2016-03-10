@@ -793,6 +793,38 @@ static int read_is_obmc_block(VP10_COMMON *const cm, MACROBLOCKD *const xd,
 }
 #endif  // CONFIG_OBMC
 
+static const MB_MODE_INFO* get_ctx_mbmi(const MACROBLOCKD *xd) {
+  const MB_MODE_INFO *const left_mbmi = xd->left_mbmi;
+  const int left_type = xd->left_available && is_inter_block(left_mbmi) ?
+      left_mbmi->interp_filter : SWITCHABLE_FILTERS;
+  const MB_MODE_INFO *const above_mbmi = xd->above_mbmi;
+  const int above_type = xd->up_available && is_inter_block(above_mbmi) ?
+      above_mbmi->interp_filter : SWITCHABLE_FILTERS;
+
+  if (left_type == above_type)
+    return left_mbmi;
+  else if (left_type == SWITCHABLE_FILTERS && above_type != SWITCHABLE_FILTERS)
+    return above_mbmi;
+  else if (left_type != SWITCHABLE_FILTERS && above_type == SWITCHABLE_FILTERS)
+    return left_mbmi;
+  else
+    return NULL;
+}
+
+static int mv_diff(MV mv0, MV mv1) {
+  return abs(mv0.col - mv1.col) + abs(mv0.row - mv1.row);
+}
+
+static void dump_ctx(MACROBLOCKD *const xd, int ctx_type, int type) {
+  const MB_MODE_INFO* mbmi = &xd->mi[0]->mbmi;
+  const MB_MODE_INFO* ctx_mbmi = get_ctx_mbmi(xd);
+  if(!has_second_ref(mbmi) && ctx_mbmi != NULL && !has_second_ref(ctx_mbmi)) {
+    if(mbmi->ref_frame[0] == ctx_mbmi->ref_frame[0]) {
+      printf("%d %d\n", mv_diff(mbmi->mv[0].as_mv, ctx_mbmi->mv[0].as_mv), ctx_type == type);
+    }
+  }
+}
+
 static INLINE INTERP_FILTER read_switchable_interp_filter(
     VP10_COMMON *const cm, MACROBLOCKD *const xd,
     vpx_reader *r) {
@@ -804,6 +836,7 @@ static INLINE INTERP_FILTER read_switchable_interp_filter(
 #endif
   type = (INTERP_FILTER)vpx_read_tree(r, vp10_switchable_interp_tree,
                                       cm->fc->switchable_interp_prob[ctx]);
+  dump_ctx(xd, ctx, type);
   if (counts)
     ++counts->switchable_interp[ctx][type];
   return type;
