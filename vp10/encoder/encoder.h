@@ -508,7 +508,7 @@ typedef struct VP10_COMP {
 #endif  // CONFIG_OBMC
   int intra_uv_mode_cost[INTRA_MODES][INTRA_MODES];
   int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
-  int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
+  int switchable_interp_costs[FRAME_MV_CONTEXTS][SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
   int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
   int palette_y_size_cost[PALETTE_BLOCK_SIZES][PALETTE_SIZES];
   int palette_uv_size_cost[PALETTE_BLOCK_SIZES][PALETTE_SIZES];

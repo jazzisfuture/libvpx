@@ -401,11 +401,12 @@ static void update_skip_probs(VP10_COMMON *cm, vpx_writer *w,
 
 static void update_switchable_interp_probs(VP10_COMMON *cm, vpx_writer *w,
                                            FRAME_COUNTS *counts) {
-  int j;
-  for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j)
-    prob_diff_update(vp10_switchable_interp_tree,
-                     cm->fc->switchable_interp_prob[j],
-                     counts->switchable_interp[j], SWITCHABLE_FILTERS, w);
+  int i, j;
+  for (i = 0; i < FRAME_MV_CONTEXTS; ++i)
+    for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j)
+      prob_diff_update(vp10_switchable_interp_tree,
+                       cm->fc->switchable_interp_prob[i][j],
+                       counts->switchable_interp[i][j], SWITCHABLE_FILTERS, w);
 }
 
 
@@ -867,15 +868,16 @@ static void write_switchable_interp_filter(VP10_COMP *cpi,
   VP10_COMMON *const cm = &cpi->common;
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
   if (cm->interp_filter == SWITCHABLE) {
-    const int ctx = vp10_get_pred_context_switchable_interp(xd);
+    int ctx_filter;
+    int ctx_frame_mv;
+    vp10_get_pred_context_switchable_interp(xd, &ctx_frame_mv, &ctx_filter);
 #if CONFIG_EXT_INTERP
     if (!vp10_is_interp_needed(xd)) {
-      assert(mbmi->interp_filter == EIGHTTAP_REGULAR);
       return;
     }
 #endif
     vp10_write_token(w, vp10_switchable_interp_tree,
-                     cm->fc->switchable_interp_prob[ctx],
+                     cm->fc->switchable_interp_prob[ctx_frame_mv][ctx_filter],
                      &switchable_interp_encodings[mbmi->interp_filter]);
     ++cpi->interp_filter_selected[0][mbmi->interp_filter];
   }
@@ -2052,11 +2054,14 @@ static void fix_interp_filter(VP10_COMMON *cm, FRAME_COUNTS *counts) {
   if (cm->interp_filter == SWITCHABLE) {
     // Check to see if only one of the filters is actually used
     int count[SWITCHABLE_FILTERS];
-    int i, j, c = 0;
+    int i, j, k, c = 0;
     for (i = 0; i < SWITCHABLE_FILTERS; ++i) {
       count[i] = 0;
-      for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j)
-        count[i] += counts->switchable_interp[j][i];
+      for(k = 0; k < FRAME_MV_CONTEXTS; ++k) {
+        for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j){
+          count[i] += counts->switchable_interp[k][j][i];
+        }
+      }
       c += (count[i] > 0);
     }
     if (c == 1) {

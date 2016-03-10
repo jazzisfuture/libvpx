@@ -13,8 +13,30 @@
 #include "vp10/common/pred_common.h"
 #include "vp10/common/seg_common.h"
 
+static int get_mv_diff(MV mv0, MV mv1) {
+  return abs(mv0.col - mv1.col) + abs(mv0.row - mv1.row);
+}
+
+static double get_frame_mv_context_score(const MB_MODE_INFO *mbmi, const MB_MODE_INFO *ctx_mbmi) {
+  int i, j;
+  double mv_diff = 0;
+  double mv_count = 0;
+  for(i = 0; i < 1 + has_second_ref(mbmi); i++) {
+    for(j = 0; j < 1 + has_second_ref(ctx_mbmi); j++) {
+      if(mbmi->ref_frame[i] == ctx_mbmi->ref_frame[j]) {
+        mv_diff += get_mv_diff(mbmi->mv[i].as_mv, ctx_mbmi->mv[j].as_mv);
+        mv_count += 1;
+      } else {
+        mv_diff += 20;
+        mv_count += 2;
+      }
+    }
+  }
+  return mv_diff/mv_count;
+}
+
 // Returns a context number for the given MB prediction signal
-int vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd) {
+void vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd, int* ctx_frame_mv, int* ctx_filter) {
   // Note:
   // The mode info data structure has a one element border above and to the
   // left of the entries corresponding to real macroblocks.
@@ -25,15 +47,43 @@ int vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd) {
   const MB_MODE_INFO *const above_mbmi = xd->above_mbmi;
   const int above_type = xd->up_available && is_inter_block(above_mbmi) ?
       above_mbmi->interp_filter : SWITCHABLE_FILTERS;
+  double left_score = 100, above_score = 100;
+  const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+
+  *ctx_frame_mv = 0;
 
   if (left_type == above_type)
-    return left_type;
+    *ctx_filter = left_type;
   else if (left_type == SWITCHABLE_FILTERS && above_type != SWITCHABLE_FILTERS)
-    return above_type;
+    *ctx_filter = above_type;
   else if (left_type != SWITCHABLE_FILTERS && above_type == SWITCHABLE_FILTERS)
-    return left_type;
+    *ctx_filter = left_type;
   else
-    return SWITCHABLE_FILTERS;
+    *ctx_filter = SWITCHABLE_FILTERS;
+
+  if(left_type != SWITCHABLE_FILTERS) {
+    left_score = get_frame_mv_context_score(mbmi, left_mbmi);
+    if(left_score < 0.1) {
+      *ctx_frame_mv = 1;
+      *ctx_filter = left_type;
+    }
+  }
+
+  if(above_type != SWITCHABLE_FILTERS) {
+    above_score = get_frame_mv_context_score(mbmi, above_mbmi);
+    if(above_score < 0.1 && left_score < 0.1) {
+      if(left_type == above_type) {
+        *ctx_frame_mv = 1;
+        *ctx_filter = above_type;
+      } else {
+        *ctx_frame_mv = 0;
+        *ctx_filter = SWITCHABLE_FILTERS;
+      }
+    } else if (above_score < 0.1) {
+      *ctx_frame_mv = 1;
+      *ctx_filter = above_type;
+    }
+  }
 }
 
 #if CONFIG_EXT_INTRA

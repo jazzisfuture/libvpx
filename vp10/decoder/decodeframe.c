@@ -101,10 +101,11 @@ static TX_MODE read_tx_mode(struct vpx_read_bit_buffer *rb) {
 }
 
 static void read_switchable_interp_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
-  int i, j;
-  for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j)
-    for (i = 0; i < SWITCHABLE_FILTERS - 1; ++i)
-      vp10_diff_update_prob(r, &fc->switchable_interp_prob[j][i]);
+  int i, j, k;
+  for (k = 0; k < FRAME_MV_CONTEXTS; ++k)
+    for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j)
+      for (i = 0; i < SWITCHABLE_FILTERS - 1; ++i)
+        vp10_diff_update_prob(r, &fc->switchable_interp_prob[k][j][i]);
 }
 
 static void read_inter_mode_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
@@ -3741,8 +3742,6 @@ void vp10_decode_frame(VP10Decoder *pbi,
       init_read_bit_buffer(pbi, &rb, data, data_end, clear_data));
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int tile_cols = 1 << cm->log2_tile_cols;
-  vpx_prob switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
-                                 [SWITCHABLE_FILTERS - 1];
   YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
   xd->cur_buf = new_fb;
 
@@ -3771,11 +3770,10 @@ void vp10_decode_frame(VP10Decoder *pbi,
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Uninitialized entropy context.");
 
-  memcpy(switchable_interp_prob, cm->fc->switchable_interp_prob, sizeof(cm->fc->switchable_interp_prob));
-
   vp10_zero(cm->counts);
 
-  memcpy(cm->prev_frame_switchable_interp_prob, switchable_interp_prob, sizeof(switchable_interp_prob));
+  memcpy(cm->prev_frame_switchable_interp_prob, cm->fc->switchable_interp_prob,
+         sizeof(cm->fc->switchable_interp_prob));
 
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
