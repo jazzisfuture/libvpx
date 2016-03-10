@@ -362,9 +362,10 @@ void vp10_accumulate_frame_counts(VP10_COMMON *cm, FRAME_COUNTS *counts,
                 //       counts->coef[i][j][k][l][m][n];
   }
 
-  for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
-    for (j = 0; j < SWITCHABLE_FILTERS; j++)
-      cm->counts.switchable_interp[i][j] += counts->switchable_interp[i][j];
+  for(k = 0; k < FRAME_MV_CONTEXTS; k++) 
+    for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
+      for (j = 0; j < SWITCHABLE_FILTERS; j++)
+        cm->counts.switchable_interp[k][i][j] += counts->switchable_interp[k][i][j];
 #if CONFIG_OBMC
   for (i = 0; i < BLOCK_SIZES; i++)
     for (j = 0; j < 2; j++)

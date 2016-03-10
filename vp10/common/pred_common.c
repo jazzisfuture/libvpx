@@ -14,7 +14,7 @@
 #include "vp10/common/seg_common.h"
 
 // Returns a context number for the given MB prediction signal
-int vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd) {
+void vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd, int* ctx_frame_mv, int* ctx_filter) {
   // Note:
   // The mode info data structure has a one element border above and to the
   // left of the entries corresponding to real macroblocks.
@@ -25,15 +25,16 @@ int vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd) {
   const MB_MODE_INFO *const above_mbmi = xd->above_mbmi;
   const int above_type = xd->up_available && is_inter_block(above_mbmi) ?
       above_mbmi->interp_filter : SWITCHABLE_FILTERS;
+  *ctx_frame_mv = 0;
 
   if (left_type == above_type)
-    return left_type;
+    *ctx_filter = left_type;
   else if (left_type == SWITCHABLE_FILTERS && above_type != SWITCHABLE_FILTERS)
-    return above_type;
+    *ctx_filter = above_type;
   else if (left_type != SWITCHABLE_FILTERS && above_type == SWITCHABLE_FILTERS)
-    return left_type;
+    *ctx_filter = left_type;
   else
-    return SWITCHABLE_FILTERS;
+    *ctx_filter = SWITCHABLE_FILTERS;
 }
 
 #if CONFIG_EXT_INTRA

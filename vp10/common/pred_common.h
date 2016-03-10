@@ -66,7 +66,7 @@ static INLINE vpx_prob vp10_get_skip_prob(const VP10_COMMON *cm,
   return cm->fc->skip_probs[vp10_get_skip_context(xd)];
 }
 
-int vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd);
+void vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd, int* ctx_frame_mv, int* ctx_filter);
 
 #if CONFIG_EXT_INTRA
 int vp10_get_pred_context_intra_interp(const MACROBLOCKD *xd);

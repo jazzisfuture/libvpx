@@ -48,7 +48,7 @@ typedef struct frame_contexts {
   vpx_prob uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
   vpx_prob partition_prob[PARTITION_CONTEXTS][PARTITION_TYPES - 1];
   vp10_coeff_probs_model coef_probs[TX_SIZES][PLANE_TYPES];
-  vpx_prob switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
+  vpx_prob switchable_interp_prob[FRAME_MV_CONTEXTS][SWITCHABLE_FILTER_CONTEXTS]
                                  [SWITCHABLE_FILTERS - 1];
 
 #if CONFIG_REF_MV
@@ -113,7 +113,7 @@ typedef struct FRAME_COUNTS {
   vp10_coeff_count_model coef[TX_SIZES][PLANE_TYPES];
   unsigned int eob_branch[TX_SIZES][PLANE_TYPES][REF_TYPES]
                          [COEF_BANDS][COEFF_CONTEXTS];
-  unsigned int switchable_interp[SWITCHABLE_FILTER_CONTEXTS]
+  unsigned int switchable_interp[FRAME_MV_CONTEXTS][SWITCHABLE_FILTER_CONTEXTS]
                                 [SWITCHABLE_FILTERS];
 #if CONFIG_REF_MV
   unsigned int newmv_mode[NEWMV_MODE_CONTEXTS][2];
