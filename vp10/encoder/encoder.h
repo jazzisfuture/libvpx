@@ -291,6 +291,11 @@ typedef struct {
   YV12_BUFFER_CONFIG buf;
 } EncRefCntBuffer;
 
+typedef struct TileBufferEnc {
+  uint8_t *data;
+  size_t size;
+} TileBufferEnc;
+
 typedef struct VP10_COMP {
   QUANTS quants;
   ThreadData td;
@@ -312,9 +317,6 @@ typedef struct VP10_COMP {
   // Up-sampled reference buffers
   EncRefCntBuffer upsampled_ref_bufs[MAX_REF_FRAMES];
   int upsampled_ref_idx[MAX_REF_FRAMES];
-
-  TileDataEnc *tile_data;
-  int allocated_tiles;  // Keep track of memory allocated for tiles.
 
   // For a still frame, this flag is set to 1 to skip partition search.
   int partition_search_skippable_frame;
@@ -356,9 +358,6 @@ typedef struct VP10_COMP {
 #if CONFIG_LOOP_RESTORATION
   YV12_BUFFER_CONFIG last_frame_db;
 #endif  // CONFIG_LOOP_RESTORATION
-
-  TOKENEXTRA *tile_tok[4][1 << 6];
-  unsigned int tok_count[4][1 << 6];
 
   // Ambient reconstruction err target for force key frames
   int64_t ambient_err;
@@ -431,7 +430,6 @@ typedef struct VP10_COMP {
   TWO_PASS twopass;
 
   YV12_BUFFER_CONFIG alt_ref_buffer;
-
 
 #if CONFIG_INTERNAL_STATS
   unsigned int mode_chosen_counts[MAX_MODES];
@@ -528,6 +526,15 @@ typedef struct VP10_COMP {
   int multi_arf_allowed;
   int multi_arf_enabled;
   int multi_arf_last_grp_enabled;
+
+  TileDataEnc *tile_data;
+  int allocated_tiles;  // Keep track of memory allocated for tiles.
+
+  TOKENEXTRA *tile_tok[MAX_TILE_ROWS][MAX_TILE_COLS];
+  unsigned int tok_count[MAX_TILE_ROWS][MAX_TILE_COLS];
+
+  TileBufferEnc tile_buffers[MAX_TILE_ROWS][MAX_TILE_COLS];
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
 #endif
@@ -636,7 +643,7 @@ static INLINE YV12_BUFFER_CONFIG *get_ref_frame_buffer(
       buf_idx != INVALID_IDX ? &cm->buffer_pool->frame_bufs[buf_idx].buf : NULL;
 }
 
-static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
+static INLINE unsigned int get_token_alloc(int mb_rows, int mb_cols) {
   // TODO(JBB): double check we can't exceed this token count if we have a
   // 32x32 transform crossing a boundary at a multiple of 16.
   // mb_rows, cols are in units of 16 pixels. We assume 3 planes all at full
@@ -647,7 +654,7 @@ static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
 
 // Get the allocated token size for a tile. It does the same calculation as in
 // the frame token allocation.
-static INLINE int allocated_tokens(TileInfo tile) {
+static INLINE unsigned int allocated_tokens(TileInfo tile) {
   int tile_mb_rows = (tile.mi_row_end - tile.mi_row_start + 1) >> 1;
   int tile_mb_cols = (tile.mi_col_end - tile.mi_col_start + 1) >> 1;
 
