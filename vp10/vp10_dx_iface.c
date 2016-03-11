@@ -436,6 +436,11 @@ static vpx_codec_err_t init_decoder(vpx_codec_alg_priv_t *ctx) {
     frame_worker_data->pbi->max_threads =
         (ctx->frame_parallel_decode == 0) ? ctx->cfg.threads : 0;
 
+#if CONFIG_EXT_TILE
+    frame_worker_data->pbi->dec_tile_row = ctx->cfg.tile_row;
+    frame_worker_data->pbi->dec_tile_col = ctx->cfg.tile_col;
+#endif  // CONFIG_EXT_TILE
+
     frame_worker_data->pbi->inv_tile_order = ctx->invert_tile_order;
     frame_worker_data->pbi->common.frame_parallel_decode =
         ctx->frame_parallel_decode;
