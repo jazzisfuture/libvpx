@@ -5452,7 +5452,6 @@ static void estimate_ref_frame_costs(const VP10_COMMON *cm,
 static void store_coding_context(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
                          int mode_index,
                          int64_t comp_pred_diff[REFERENCE_MODES],
-                         int64_t best_filter_diff[SWITCHABLE_FILTER_CONTEXTS],
                          int skippable) {
   MACROBLOCKD *const xd = &x->e_mbd;
 
@@ -5466,9 +5465,6 @@ static void store_coding_context(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
   ctx->single_pred_diff = (int)comp_pred_diff[SINGLE_REFERENCE];
   ctx->comp_pred_diff   = (int)comp_pred_diff[COMPOUND_REFERENCE];
   ctx->hybrid_pred_diff = (int)comp_pred_diff[REFERENCE_MODE_SELECT];
-
-  memcpy(ctx->best_filter_diff, best_filter_diff,
-         sizeof(*best_filter_diff) * SWITCHABLE_FILTER_CONTEXTS);
 }
 
 static void setup_buffer_inter(
@@ -6036,9 +6032,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                  INTERP_FILTER (*single_filter)[MAX_REF_FRAMES],
                                  int (*single_skippable)[MAX_REF_FRAMES],
                                  int64_t *psse,
-                                 const int64_t ref_best_rd,
-                                 int64_t *mask_filter,
-                                 int64_t filter_cache[]) {
+                                 const int64_t ref_best_rd) {
   VP10_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
@@ -6419,11 +6413,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   if (is_comp_pred)
     intpel_mv &= !mv_has_subpel(&mbmi->mv[1].as_mv);
 
-  // Search for best switchable filter by checking the variance of
-  // pred error irrespective of whether the filter will be used
-  for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
-    filter_cache[i] = INT64_MAX;
-
   best_filter = predict_interp_filter(cpi, x, bsize, mi_row, mi_col,
                                       single_filter);
   if (cm->interp_filter != BILINEAR && best_filter == SWITCHABLE) {
@@ -6452,9 +6441,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
       if (i > 0 && intpel_mv && IsInterpolatingFilter(i)) {
         rd = RDCOST(x->rdmult, x->rddiv, tmp_rate_sum, tmp_dist_sum);
-        filter_cache[i] = rd;
-        filter_cache[SWITCHABLE_FILTERS] =
-            VPXMIN(filter_cache[SWITCHABLE_FILTERS], rd + rs_rd);
         if (cm->interp_filter == SWITCHABLE)
           rd += rs_rd;
 #if CONFIG_OBMC
@@ -6464,7 +6450,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
                        cpi->obmc_cost[bsize][obmc_flag], 0);
         }
 #endif  // CONFIG_OBMC
-        *mask_filter = VPXMAX(*mask_filter, rd);
       } else {
         int rate_sum = 0;
         int64_t dist_sum = 0;
@@ -6535,12 +6520,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
           }
         }
 #endif  // CONFIG_OBMC
-        filter_cache[i] = rd;
-        filter_cache[SWITCHABLE_FILTERS] =
-            VPXMIN(filter_cache[SWITCHABLE_FILTERS], rd + rs_rd);
         if (cm->interp_filter == SWITCHABLE)
           rd += rs_rd;
-        *mask_filter = VPXMAX(*mask_filter, rd);
 
         if (i == 0 && intpel_mv && IsInterpolatingFilter(i)) {
           tmp_rate_sum = rate_sum;
@@ -7590,8 +7571,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   int64_t best_rd = best_rd_so_far;
   int64_t best_pred_diff[REFERENCE_MODES];
   int64_t best_pred_rd[REFERENCE_MODES];
-  int64_t best_filter_rd[SWITCHABLE_FILTER_CONTEXTS];
-  int64_t best_filter_diff[SWITCHABLE_FILTER_CONTEXTS];
   MB_MODE_INFO best_mbmode;
   int best_mode_skippable = 0;
   int midx, best_mode_index = -1;
@@ -7629,8 +7608,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   int64_t mode_threshold[MAX_MODES];
   int *mode_map = tile_data->mode_map[bsize];
   const int mode_search_skip_flags = sf->mode_search_skip_flags;
-  int64_t mask_filter = 0;
-  int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
   const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
   int palette_ctx = 0;
   const int rows = 4 * num_4x4_blocks_high_lookup[bsize];
@@ -7686,16 +7663,11 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
          sizeof(directional_mode_skip_mask[0]) * INTRA_MODES);
 #endif  // CONFIG_EXT_INTRA
 
-  for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
-    filter_cache[i] = INT64_MAX;
-
   estimate_ref_frame_costs(cm, xd, segment_id, ref_costs_single, ref_costs_comp,
                            &comp_mode_p);
 
   for (i = 0; i < REFERENCE_MODES; ++i)
     best_pred_rd[i] = INT64_MAX;
-  for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
-    best_filter_rd[i] = INT64_MAX;
   for (i = 0; i < TX_SIZES; i++)
     rate_uv_intra[i] = INT_MAX;
   for (i = 0; i < MAX_REF_FRAMES; ++i)
@@ -8280,8 +8252,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #endif  // CONFIG_EXT_INTER
                                   single_inter_filter,
                                   single_skippable,
-                                  &total_sse, best_rd,
-                                  &mask_filter, filter_cache);
+                                  &total_sse, best_rd);
 
 #if CONFIG_REF_MV
       // TODO(jingning): This needs some refactoring to improve code quality
@@ -8329,12 +8300,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
           clamp_mv2(&cur_mv.as_mv, xd);
 
           if (!mv_check_bounds(x, &cur_mv.as_mv)) {
-            int64_t dummy_filter_cache[SWITCHABLE_FILTER_CONTEXTS];
             INTERP_FILTER dummy_single_inter_filter[MB_MODE_COUNT]
                                                    [MAX_REF_FRAMES];
             int dummy_single_skippable[MB_MODE_COUNT][MAX_REF_FRAMES];
             int dummy_disable_skip = 0;
-            int64_t dummy_mask_filter = 0;
 #if CONFIG_EXT_INTER
             int_mv dummy_single_newmvs[2][MAX_REF_FRAMES] =
                                           { { { 0 } },  { { 0 } } };
@@ -8367,9 +8336,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #endif
                                            dummy_single_inter_filter,
                                            dummy_single_skippable,
-                                           &tmp_sse, best_rd,
-                                           &dummy_mask_filter,
-                                           dummy_filter_cache);
+                                           &tmp_sse, best_rd);
           }
 
           tmp_rate += cpi->drl_mode_cost0[drl0_ctx][1];
@@ -8511,8 +8478,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     if (!disable_skip && ref_frame == INTRA_FRAME) {
       for (i = 0; i < REFERENCE_MODES; ++i)
         best_pred_rd[i] = VPXMIN(best_pred_rd[i], this_rd);
-      for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
-        best_filter_rd[i] = VPXMIN(best_filter_rd[i], this_rd);
     }
 
     // Did this mode help.. i.e. is it the new best mode
@@ -8611,29 +8576,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       }
       if (hybrid_rd < best_pred_rd[REFERENCE_MODE_SELECT])
         best_pred_rd[REFERENCE_MODE_SELECT] = hybrid_rd;
-
-      /* keep record of best filter type */
-      if (!mode_excluded && cm->interp_filter != BILINEAR) {
-        int64_t ref = filter_cache[cm->interp_filter == SWITCHABLE ?
-                              SWITCHABLE_FILTERS : cm->interp_filter];
-
-        for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++) {
-          int64_t adj_rd;
-          if (ref == INT64_MAX)
-            adj_rd = 0;
-          else if (filter_cache[i] == INT64_MAX)
-            // when early termination is triggered, the encoder does not have
-            // access to the rate-distortion cost. it only knows that the cost
-            // should be above the maximum valid value. hence it takes the known
-            // maximum plus an arbitrary constant as the rate-distortion cost.
-            adj_rd = mask_filter - ref + 10;
-          else
-            adj_rd = filter_cache[i] - ref;
-
-          adj_rd += this_rd;
-          best_filter_rd[i] = VPXMIN(best_filter_rd[i], adj_rd);
-        }
-      }
     }
 
     if (early_term)
@@ -8928,21 +8870,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       best_pred_diff[i] = best_rd - best_pred_rd[i];
   }
 
-  if (!x->skip) {
-    for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++) {
-      if (best_filter_rd[i] == INT64_MAX)
-        best_filter_diff[i] = 0;
-      else
-        best_filter_diff[i] = best_rd - best_filter_rd[i];
-    }
-    if (cm->interp_filter == SWITCHABLE)
-      assert(best_filter_diff[SWITCHABLE_FILTERS] == 0);
-  } else {
-    vp10_zero(best_filter_diff);
-  }
-
-  // TODO(yunqingwang): Moving this line in front of the above best_filter_diff
-  // updating code causes PSNR loss. Need to figure out the confliction.
   x->skip |= best_mode_skippable;
 
   if (!x->skip && !x->select_tx_size) {
@@ -8966,7 +8893,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   assert(best_mode_index >= 0);
 
   store_coding_context(x, ctx, best_mode_index, best_pred_diff,
-                       best_filter_diff, best_mode_skippable);
+                       best_mode_skippable);
 
   if (cm->allow_screen_content_tools && pmi->palette_size[1] > 0) {
     restore_uv_color_map(cpi, x);
@@ -8987,7 +8914,6 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
   const int comp_pred = 0;
   int i;
   int64_t best_pred_diff[REFERENCE_MODES];
-  int64_t best_filter_diff[SWITCHABLE_FILTER_CONTEXTS];
   unsigned int ref_costs_single[MAX_REF_FRAMES], ref_costs_comp[MAX_REF_FRAMES];
   vpx_prob comp_mode_p;
   INTERP_FILTER best_filter = SWITCHABLE;
@@ -9072,12 +8998,11 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi,
                             cpi->sf.adaptive_rd_thresh, bsize, THR_ZEROMV);
 
   vp10_zero(best_pred_diff);
-  vp10_zero(best_filter_diff);
 
   if (!x->select_tx_size)
     swap_block_ptr(x, ctx, 1, 0, 0, MAX_MB_PLANE);
   store_coding_context(x, ctx, THR_ZEROMV,
-                       best_pred_diff, best_filter_diff, 0);
+                       best_pred_diff, 0);
 }
 
 void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
@@ -9117,8 +9042,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
   int64_t best_yrd = best_rd_so_far;  // FIXME(rbultje) more precise
   int64_t best_pred_diff[REFERENCE_MODES];
   int64_t best_pred_rd[REFERENCE_MODES];
-  int64_t best_filter_rd[SWITCHABLE_FILTER_CONTEXTS];
-  int64_t best_filter_diff[SWITCHABLE_FILTER_CONTEXTS];
   MB_MODE_INFO best_mbmode;
   int ref_index, best_ref_index = 0;
   unsigned int ref_costs_single[MAX_REF_FRAMES], ref_costs_comp[MAX_REF_FRAMES];
@@ -9138,8 +9061,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
   b_mode_info best_bmodes[4];
   int best_skip2 = 0;
   int ref_frame_skip_mask[2] = { 0 };
-  int64_t mask_filter = 0;
-  int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
   int internal_active_edge =
     vp10_active_edge_sb(cpi, mi_row, mi_col) && vp10_internal_image_edge(cpi);
 
@@ -9163,9 +9084,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
   mbmi->use_wedge_interintra = 0;
 #endif  // CONFIG_EXT_INTER
 
-  for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
-    filter_cache[i] = INT64_MAX;
-
   for (i = 0; i < 4; i++) {
     int j;
 #if CONFIG_EXT_INTER
@@ -9185,8 +9103,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
 
   for (i = 0; i < REFERENCE_MODES; ++i)
     best_pred_rd[i] = INT64_MAX;
-  for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
-    best_filter_rd[i] = INT64_MAX;
   rate_uv_intra = INT_MAX;
 
   rd_cost->rate = INT_MAX;
@@ -9444,8 +9360,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
 #endif  // CONFIG_EXT_REFS
       this_rd_thresh = (ref_frame == GOLDEN_FRAME) ?
           rd_opt->threshes[segment_id][bsize][THR_GOLD] : this_rd_thresh;
-      for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
-        filter_cache[i] = INT64_MAX;
 
       // TODO(any): Add search of the tx_type to improve rd performance at the
       // expense of speed.
@@ -9489,13 +9403,8 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
               continue;
             rs = vp10_get_switchable_rate(cpi, xd);
             rs_rd = RDCOST(x->rdmult, x->rddiv, rs, 0);
-            filter_cache[switchable_filter_index] = tmp_rd;
-            filter_cache[SWITCHABLE_FILTERS] =
-                VPXMIN(filter_cache[SWITCHABLE_FILTERS], tmp_rd + rs_rd);
             if (cm->interp_filter == SWITCHABLE)
               tmp_rd += rs_rd;
-
-            mask_filter = VPXMAX(mask_filter, tmp_rd);
 
             newbest = (tmp_rd < tmp_best_rd);
             if (newbest) {
@@ -9678,8 +9587,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
     if (!disable_skip && ref_frame == INTRA_FRAME) {
       for (i = 0; i < REFERENCE_MODES; ++i)
         best_pred_rd[i] = VPXMIN(best_pred_rd[i], this_rd);
-      for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
-        best_filter_rd[i] = VPXMIN(best_filter_rd[i], this_rd);
     }
 
     // Did this mode help.. i.e. is it the new best mode
@@ -9774,29 +9681,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
         best_pred_rd[REFERENCE_MODE_SELECT] = hybrid_rd;
     }
 
-    /* keep record of best filter type */
-    if (!mode_excluded && !disable_skip && ref_frame != INTRA_FRAME &&
-        cm->interp_filter != BILINEAR) {
-      int64_t ref = filter_cache[cm->interp_filter == SWITCHABLE ?
-                              SWITCHABLE_FILTERS : cm->interp_filter];
-      int64_t adj_rd;
-      for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++) {
-        if (ref == INT64_MAX)
-          adj_rd = 0;
-        else if (filter_cache[i] == INT64_MAX)
-          // when early termination is triggered, the encoder does not have
-          // access to the rate-distortion cost. it only knows that the cost
-          // should be above the maximum valid value. hence it takes the known
-          // maximum plus an arbitrary constant as the rate-distortion cost.
-          adj_rd = mask_filter - ref + 10;
-        else
-          adj_rd = filter_cache[i] - ref;
-
-        adj_rd += this_rd;
-        best_filter_rd[i] = VPXMIN(best_filter_rd[i], adj_rd);
-      }
-    }
-
     if (early_term)
       break;
 
@@ -9868,21 +9752,8 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
       best_pred_diff[i] = best_rd - best_pred_rd[i];
   }
 
-  if (!x->skip) {
-    for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++) {
-      if (best_filter_rd[i] == INT64_MAX)
-        best_filter_diff[i] = 0;
-      else
-        best_filter_diff[i] = best_rd - best_filter_rd[i];
-    }
-    if (cm->interp_filter == SWITCHABLE)
-      assert(best_filter_diff[SWITCHABLE_FILTERS] == 0);
-  } else {
-    vp10_zero(best_filter_diff);
-  }
-
   store_coding_context(x, ctx, best_ref_index,
-                       best_pred_diff, best_filter_diff, 0);
+                       best_pred_diff, 0);
 }
 
 #if CONFIG_OBMC
