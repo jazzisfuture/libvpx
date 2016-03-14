@@ -1279,14 +1279,21 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     usable_ref_frame = GOLDEN_FRAME;
   }
 
-  // If the reference is temporally aligned with current superframe
-  // (e.g., spatial reference within superframe), constrain the inter mode:
-  // for now only test zero motion.
-  if (cpi->use_svc && svc ->force_zero_mode_spatial_ref) {
-    if (svc->ref_frame_index[cpi->lst_fb_idx] == svc->current_superframe)
-      svc_force_zero_mode[LAST_FRAME - 1] = 1;
-    if (svc->ref_frame_index[cpi->gld_fb_idx] == svc->current_superframe)
-      svc_force_zero_mode[GOLDEN_FRAME - 1] = 1;
+  // For svc mode, on spatial_layer_id > 0: if the reference has different scale
+  // constrain the inter mode to only test zero motion.
+  if (cpi->use_svc &&
+      svc ->force_zero_mode_spatial_ref &&
+      cpi->svc.spatial_layer_id > 0) {
+    if (cpi->ref_frame_flags & flag_list[LAST_FRAME]) {
+      struct scale_factors *const sf = &cm->frame_refs[LAST_FRAME - 1].sf;
+      if (vp9_is_scaled(sf))
+        svc_force_zero_mode[LAST_FRAME - 1] = 1;
+    }
+    if (cpi->ref_frame_flags & flag_list[GOLDEN_FRAME]) {
+      struct scale_factors *const sf = &cm->frame_refs[GOLDEN_FRAME - 1].sf;
+      if (vp9_is_scaled(sf))
+        svc_force_zero_mode[GOLDEN_FRAME - 1] = 1;
+    }
   }
 
   for (ref_frame = LAST_FRAME; ref_frame <= usable_ref_frame; ++ref_frame) {
@@ -1356,7 +1363,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       continue;
 
     if (this_mode == NEWMV) {
-      if (ref_frame > LAST_FRAME && !cpi->use_svc) {
+      if (ref_frame > LAST_FRAME &&
+          !cpi->use_svc &&
+          cpi->oxcf.rc_mode == VPX_CBR) {
         int tmp_sad;
         int dis, cost_list[5];
 
@@ -1591,7 +1600,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     this_rdc.rate += ref_frame_cost[ref_frame];
     this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, this_rdc.rate, this_rdc.dist);
 
-    if (cpi->oxcf.speed >= 5 &&
+    if (cpi->oxcf.rc_mode == VPX_CBR &&
+        cpi->oxcf.speed >= 5 &&
         cpi->oxcf.content != VP9E_CONTENT_SCREEN &&
         !x->sb_is_skin) {
       // Bias against non-zero (above some threshold) motion for large blocks.
