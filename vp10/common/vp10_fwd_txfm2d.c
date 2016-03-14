@@ -31,19 +31,16 @@ static INLINE void fwd_txfm2d_c(const int16_t *input, int32_t *output,
 
   // Columns
   for (i = 0; i < txfm_size; ++i) {
-    for (j = 0; j < txfm_size; ++j)
-      temp_in[j] = input[j * stride + i];
+    for (j = 0; j < txfm_size; ++j) temp_in[j] = input[j * stride + i];
     round_shift_array(temp_in, txfm_size, -shift[0]);
     txfm_func_col(temp_in, temp_out, cos_bit_col, stage_range_col);
     round_shift_array(temp_out, txfm_size, -shift[1]);
-    for (j = 0; j < txfm_size; ++j)
-      buf[j * txfm_size + i] = temp_out[j];
+    for (j = 0; j < txfm_size; ++j) buf[j * txfm_size + i] = temp_out[j];
   }
 
   // Rows
   for (i = 0; i < txfm_size; ++i) {
-    for (j = 0; j < txfm_size; ++j)
-      temp_in[j] = buf[j + i * txfm_size];
+    for (j = 0; j < txfm_size; ++j) temp_in[j] = buf[j + i * txfm_size];
     txfm_func_row(temp_in, temp_out, cos_bit_row, stage_range_row);
     round_shift_array(temp_out, txfm_size, -shift[2]);
     for (j = 0; j < txfm_size; ++j)
@@ -79,6 +76,14 @@ void vp10_fwd_txfm2d_32x32(const int16_t *input, int32_t *output,
                            const int stride, const TXFM_2D_CFG *cfg,
                            const int bd) {
   int txfm_buf[32 * 32 + 32 + 32];
+  (void)bd;
+  fwd_txfm2d_c(input, output, stride, cfg, txfm_buf);
+}
+
+void vp10_fwd_txfm2d_64x64(const int16_t *input, int32_t *output,
+                           const int stride, const TXFM_2D_CFG *cfg,
+                           const int bd) {
+  int txfm_buf[64 * 64 + 64 + 64];
   (void)bd;
   fwd_txfm2d_c(input, output, stride, cfg, txfm_buf);
 }
