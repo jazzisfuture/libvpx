@@ -95,6 +95,29 @@ static const TXFM_2D_CFG fwd_txfm_2d_cfg_dct_dct_32 = {
     vp10_fdct32_new,                 // .txfm_func_col
     vp10_fdct32_new};                // .txfm_func_row;
 
+//  ---------------- config fwd_dct_dct_32 ----------------
+static const int8_t fwd_shift_dct_dct_64[3] = {3, -3, 0};
+static const int8_t fwd_stage_range_col_dct_dct_64[12] = {32, 32, 32, 32, 32, 32,
+                                                          32, 32, 32, 32, 32, 32};
+static const int8_t fwd_stage_range_row_dct_dct_64[12] = {32, 32, 32, 32, 32, 32,
+                                                          32, 32, 32, 32, 32, 32};
+static const int8_t fwd_cos_bit_col_dct_dct_64[12] = {13, 13, 13, 13, 13, 13,
+                                                      13, 13, 13, 13, 13, 13};
+static const int8_t fwd_cos_bit_row_dct_dct_64[12] = {12, 12, 12, 12, 12, 12,
+                                                      12, 12, 12, 12, 12, 12};
+
+static const TXFM_2D_CFG fwd_txfm_2d_cfg_dct_dct_64 = {
+    64,                              // .txfm_size
+    12,                              // .stage_num_col
+    12,                              // .stage_num_row
+    fwd_shift_dct_dct_64,            // .shift
+    fwd_stage_range_col_dct_dct_64,  // .stage_range_col
+    fwd_stage_range_row_dct_dct_64,  // .stage_range_row
+    fwd_cos_bit_col_dct_dct_64,      // .cos_bit_col
+    fwd_cos_bit_row_dct_dct_64,      // .cos_bit_row
+    vp10_fdct64_new,                 // .txfm_func_col
+    vp10_fdct64_new};                // .txfm_func_row;
+
 //  ---------------- config fwd_dct_adst_4 ----------------
 static const int8_t fwd_shift_dct_adst_4[3] = {5, -2, -1};
 static const int8_t fwd_stage_range_col_dct_adst_4[4] = {16, 17, 18, 18};
