@@ -107,7 +107,7 @@ typedef void (*Fwd_Txfm2d_Func)(const int16_t*, int32_t*, const int,
 typedef void (*Inv_Txfm2d_Func)(const int32_t*, uint16_t*, const int,
                                 const TXFM_2D_CFG*, const int);
 
-static const int bd = 10;
+static const int bd = 8;
 static const int base = (1 << bd);
 
 #endif  // VP10_TXFM_TEST_H_
