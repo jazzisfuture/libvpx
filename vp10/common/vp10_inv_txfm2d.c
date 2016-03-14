@@ -40,12 +40,10 @@ static INLINE void inv_txfm2d_add_c(const int32_t *input, int16_t *output,
 
   // Columns
   for (i = 0; i < txfm_size; ++i) {
-    for (j = 0; j < txfm_size; ++j)
-      temp_in[j] = buf[j * txfm_size + i];
+    for (j = 0; j < txfm_size; ++j) temp_in[j] = buf[j * txfm_size + i];
     txfm_func_col(temp_in, temp_out, cos_bit_col, stage_range_col);
     round_shift_array(temp_out, txfm_size, -shift[1]);
-    for (j = 0; j < txfm_size; ++j)
-      output[j * stride + i] += temp_out[j];
+    for (j = 0; j < txfm_size; ++j) output[j * stride + i] += temp_out[j];
   }
 }
 
@@ -95,4 +93,16 @@ void vp10_inv_txfm2d_add_32x32(const int32_t *input, uint16_t *output,
   // int16_t*
   inv_txfm2d_add_c(input, (int16_t *)output, stride, cfg, txfm_buf);
   clamp_block((int16_t *)output, 32, stride, 0, (1 << bd) - 1);
+}
+
+void vp10_inv_txfm2d_add_64x64(const int32_t *input, uint16_t *output,
+                               const int stride, const TXFM_2D_CFG *cfg,
+                               const int bd) {
+  int txfm_buf[64 * 64 + 64 + 64];
+  // output contains the prediction signal which is always positive and smaller
+  // than (1 << bd) - 1
+  // since bd < 16-1, therefore we can treat the uint16_t* output buffer as an
+  // int16_t*
+  inv_txfm2d_add_c(input, (int16_t *)output, stride, cfg, txfm_buf);
+  clamp_block((int16_t *)output, 64, stride, 0, (1 << bd) - 1);
 }
