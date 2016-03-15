@@ -54,6 +54,8 @@ void vp10_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
+    case DCT_DST:
+    case DST_DCT:
       vp10_fht4x4(src_diff, coeff, diff_stride, tx_type);
       break;
     case V_DCT:
@@ -93,6 +95,8 @@ static void fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
+    case DCT_DST:
+    case DST_DCT:
       vp10_fht8x8(src_diff, coeff, diff_stride, tx_type);
       break;
     case V_DCT:
@@ -132,6 +136,8 @@ static void fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
+    case DCT_DST:
+    case DST_DCT:
       vp10_fht16x16(src_diff, coeff, diff_stride, tx_type);
       break;
     case V_DCT:
@@ -171,6 +177,8 @@ static void fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
+    case DCT_DST:
+    case DST_DCT:
       vp10_fht32x32_c(src_diff, coeff, diff_stride, tx_type);
       break;
     case V_DCT:
@@ -215,6 +223,8 @@ void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_ADST:
       vp10_highbd_fht4x4(src_diff, coeff, diff_stride, tx_type);
       break;
+    case DCT_DST:
+    case DST_DCT:
     case V_DCT:
     case H_DCT:
     case V_ADST:
@@ -255,6 +265,8 @@ static void highbd_fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_ADST:
       vp10_highbd_fht8x8(src_diff, coeff, diff_stride, tx_type);
       break;
+    case DCT_DST:
+    case DST_DCT:
     case V_DCT:
     case H_DCT:
     case V_ADST:
@@ -296,6 +308,8 @@ static void highbd_fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_ADST:
       vp10_highbd_fht16x16(src_diff, coeff, diff_stride, tx_type);
       break;
+    case DCT_DST:
+    case DST_DCT:
     case V_DCT:
     case H_DCT:
     case V_ADST:
@@ -334,6 +348,8 @@ static void highbd_fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
+    case DCT_DST:
+    case DST_DCT:
     case V_DCT:
     case H_DCT:
     case V_ADST:

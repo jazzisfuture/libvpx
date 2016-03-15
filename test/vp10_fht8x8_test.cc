@@ -102,6 +102,10 @@ INSTANTIATE_TEST_CASE_P(
       make_tuple(&vp10_fht8x8_sse2, &vp10_iht8x8_64_add_sse2, 7,
                  VPX_BITS_8, 64),
       make_tuple(&vp10_fht8x8_sse2, &vp10_iht8x8_64_add_sse2, 8,
+                 VPX_BITS_8, 64),
+      make_tuple(&vp10_fht8x8_sse2, &vp10_iht8x8_64_add_sse2, 9,
+                 VPX_BITS_8, 64),
+      make_tuple(&vp10_fht8x8_sse2, &vp10_iht8x8_64_add_sse2, 10,
                  VPX_BITS_8, 64)));
 #endif  // !CONFIG_EXT_TX
 #endif  // HAVE_SSE2

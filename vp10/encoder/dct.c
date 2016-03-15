@@ -36,6 +36,211 @@ static INLINE void range_check(const tran_low_t *input, const int size,
 #endif
 }
 
+#if CONFIG_EXT_TX
+void fdst4(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t step[4];
+  tran_high_t temp1, temp2;
+
+  step[0] = input[0] - input[3];
+  step[1] = -input[1] + input[2];
+  step[2] = -input[1] - input[2];
+  step[3] = input[0] + input[3];
+
+  temp1 = (step[0] + step[1]) * cospi_16_64;
+  temp2 = (step[0] - step[1]) * cospi_16_64;
+  output[3] = fdct_round_shift(temp1);
+  output[1] = fdct_round_shift(temp2);
+  temp1 = step[2] * cospi_24_64 + step[3] * cospi_8_64;
+  temp2 = -step[2] * cospi_8_64 + step[3] * cospi_24_64;
+  output[2] = fdct_round_shift(temp1);
+  output[0] = fdct_round_shift(temp2);
+}
+
+void fdst8(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t s0, s1, s2, s3, s4, s5, s6, s7;  // canbe16
+  tran_high_t t0, t1, t2, t3;                  // needs32
+  tran_high_t x0, x1, x2, x3;                  // canbe16
+
+  // Stage 1
+  s0 = input[0] - input[7];
+  s1 = -input[1] + input[6];
+  s2 = input[2] - input[5];
+  s3 = -input[3] + input[4];
+  s4 = -input[3] - input[4];
+  s5 = input[2] + input[5];
+  s6 = -input[1] - input[6];
+  s7 = input[0] + input[7];
+
+  x0 = s0 + s3;
+  x1 = s1 + s2;
+  x2 = s1 - s2;
+  x3 = s0 - s3;
+  t0 = (x0 + x1) * cospi_16_64;
+  t1 = (x0 - x1) * cospi_16_64;
+  t2 =  x2 * cospi_24_64 + x3 *  cospi_8_64;
+  t3 = -x2 * cospi_8_64  + x3 * cospi_24_64;
+  output[7] = fdct_round_shift(t0);
+  output[5] = fdct_round_shift(t2);
+  output[3] = fdct_round_shift(t1);
+  output[1] = fdct_round_shift(t3);
+
+  // Stage 2
+  t0 = (s6 - s5) * cospi_16_64;
+  t1 = (s6 + s5) * cospi_16_64;
+  t2 = fdct_round_shift(t0);
+  t3 = fdct_round_shift(t1);
+
+  // Stage 3
+  x0 = s4 + t2;
+  x1 = s4 - t2;
+  x2 = s7 - t3;
+  x3 = s7 + t3;
+
+  // Stage 4
+  t0 = x0 * cospi_28_64 + x3 *   cospi_4_64;
+  t1 = x1 * cospi_12_64 + x2 *  cospi_20_64;
+  t2 = x2 * cospi_12_64 + x1 * -cospi_20_64;
+  t3 = x3 * cospi_28_64 + x0 *  -cospi_4_64;
+  output[6] = fdct_round_shift(t0);
+  output[4] = fdct_round_shift(t2);
+  output[2] = fdct_round_shift(t1);
+  output[0] = fdct_round_shift(t3);
+}
+
+void fdst16(const tran_low_t *input, tran_low_t *output) {
+  tran_high_t step1[8];      // canbe16
+  tran_high_t step2[8];      // canbe16
+  tran_high_t step3[8];      // canbe16
+  tran_high_t in[8];         // canbe16
+  tran_high_t temp1, temp2;  // needs32
+
+  // Stage 1
+  in[0] = input[0] - input[15];
+  in[1] = -input[1] + input[14];
+  in[2] = input[2] - input[13];
+  in[3] = -input[3] + input[12];
+  in[4] = input[4] - input[11];
+  in[5] = -input[5] + input[10];
+  in[6] = input[6] - input[ 9];
+  in[7] = -input[7] + input[ 8];
+
+  step1[0] = -input[7] - input[ 8];
+  step1[1] = input[6] + input[ 9];
+  step1[2] = -input[5] - input[10];
+  step1[3] = input[4] + input[11];
+  step1[4] = -input[3] - input[12];
+  step1[5] = input[2] + input[13];
+  step1[6] = -input[1] - input[14];
+  step1[7] = input[0] + input[15];
+
+  // fdct8(step, step);
+  {
+    tran_high_t s0, s1, s2, s3, s4, s5, s6, s7;  // canbe16
+    tran_high_t t0, t1, t2, t3;                  // needs32
+    tran_high_t x0, x1, x2, x3;                  // canbe16
+    s0 = in[0] + in[7];
+    s1 = in[1] + in[6];
+    s2 = in[2] + in[5];
+    s3 = in[3] + in[4];
+    s4 = in[3] - in[4];
+    s5 = in[2] - in[5];
+    s6 = in[1] - in[6];
+    s7 = in[0] - in[7];
+
+    x0 = s0 + s3;
+    x1 = s1 + s2;
+    x2 = s1 - s2;
+    x3 = s0 - s3;
+    t0 = (x0 + x1) * cospi_16_64;
+    t1 = (x0 - x1) * cospi_16_64;
+    t2 = x3 * cospi_8_64  + x2 * cospi_24_64;
+    t3 = x3 * cospi_24_64 - x2 * cospi_8_64;
+    output[15] = fdct_round_shift(t0);
+    output[11] = fdct_round_shift(t2);
+    output[7] = fdct_round_shift(t1);
+    output[3] = fdct_round_shift(t3);
+    t0 = (s6 - s5) * cospi_16_64;
+    t1 = (s6 + s5) * cospi_16_64;
+    t2 = fdct_round_shift(t0);
+    t3 = fdct_round_shift(t1);
+    x0 = s4 + t2;
+    x1 = s4 - t2;
+    x2 = s7 - t3;
+    x3 = s7 + t3;
+
+    t0 = x0 * cospi_28_64 + x3 *   cospi_4_64;
+    t1 = x1 * cospi_12_64 + x2 *  cospi_20_64;
+    t2 = x2 * cospi_12_64 + x1 * -cospi_20_64;
+    t3 = x3 * cospi_28_64 + x0 *  -cospi_4_64;
+    output[13] = fdct_round_shift(t0);
+    output[9] = fdct_round_shift(t2);
+    output[5] = fdct_round_shift(t1);
+    output[1] = fdct_round_shift(t3);
+  }
+
+  // Stage 2
+  temp1 = (step1[5] - step1[2]) * cospi_16_64;
+  temp2 = (step1[4] - step1[3]) * cospi_16_64;
+  step2[2] = fdct_round_shift(temp1);
+  step2[3] = fdct_round_shift(temp2);
+  temp1 = (step1[4] + step1[3]) * cospi_16_64;
+  temp2 = (step1[5] + step1[2]) * cospi_16_64;
+  step2[4] = fdct_round_shift(temp1);
+  step2[5] = fdct_round_shift(temp2);
+
+  // Stage 3
+  step3[0] = step1[0] + step2[3];
+  step3[1] = step1[1] + step2[2];
+  step3[2] = step1[1] - step2[2];
+  step3[3] = step1[0] - step2[3];
+  step3[4] = step1[7] - step2[4];
+  step3[5] = step1[6] - step2[5];
+  step3[6] = step1[6] + step2[5];
+  step3[7] = step1[7] + step2[4];
+
+  // Stage 4
+  temp1 = step3[1] *  -cospi_8_64 + step3[6] * cospi_24_64;
+  temp2 = step3[2] * cospi_24_64 + step3[5] *  cospi_8_64;
+  step2[1] = fdct_round_shift(temp1);
+  step2[2] = fdct_round_shift(temp2);
+  temp1 = step3[2] * cospi_8_64 - step3[5] * cospi_24_64;
+  temp2 = step3[1] * cospi_24_64 + step3[6] *  cospi_8_64;
+  step2[5] = fdct_round_shift(temp1);
+  step2[6] = fdct_round_shift(temp2);
+
+  // Stage 5
+  step1[0] = step3[0] + step2[1];
+  step1[1] = step3[0] - step2[1];
+  step1[2] = step3[3] + step2[2];
+  step1[3] = step3[3] - step2[2];
+  step1[4] = step3[4] - step2[5];
+  step1[5] = step3[4] + step2[5];
+  step1[6] = step3[7] - step2[6];
+  step1[7] = step3[7] + step2[6];
+
+  // Stage 6
+  temp1 = step1[0] * cospi_30_64 + step1[7] *  cospi_2_64;
+  temp2 = step1[1] * cospi_14_64 + step1[6] * cospi_18_64;
+  output[14] = fdct_round_shift(temp1);
+  output[6] = fdct_round_shift(temp2);
+
+  temp1 = step1[2] * cospi_22_64 + step1[5] * cospi_10_64;
+  temp2 = step1[3] *  cospi_6_64 + step1[4] * cospi_26_64;
+  output[10] = fdct_round_shift(temp1);
+  output[2] = fdct_round_shift(temp2);
+
+  temp1 = step1[3] * -cospi_26_64 + step1[4] *  cospi_6_64;
+  temp2 = step1[2] * -cospi_10_64 + step1[5] * cospi_22_64;
+  output[12] = fdct_round_shift(temp1);
+  output[4] = fdct_round_shift(temp2);
+
+  temp1 = step1[1] * -cospi_18_64 + step1[6] * cospi_14_64;
+  temp2 = step1[0] *  -cospi_2_64 + step1[7] * cospi_30_64;
+  output[8] = fdct_round_shift(temp1);
+  output[0] = fdct_round_shift(temp2);
+}
+#endif  // CONFIG_EXT_TX
+
 static void fdct4(const tran_low_t *input, tran_low_t *output) {
   tran_high_t temp;
   tran_low_t step[4];
@@ -1023,6 +1228,52 @@ static void fidtx32(const tran_low_t *input, tran_low_t *output) {
     output[i] = input[i] * 4;
 }
 
+// For use in lieu of DST
+static void fhalfcenter8(const tran_low_t *input, tran_low_t *output) {
+  int i;
+  tran_low_t inputhalf[4];
+  for (i = 0; i < 2; ++i) {
+    output[4 + i] = (input[i] * 2);
+    output[6 + i] = (input[6 + i] * 2);
+  }
+  // Multiply input by sqrt(2)
+  for (i = 0; i < 4; ++i) {
+    inputhalf[i] = (tran_low_t)fdct_round_shift(input[i + 2] * Sqrt2);
+  }
+  fdct4(inputhalf, output);
+  // Note overall scaling factor is 4 times orthogonal
+}
+
+static void fhalfcenter16(const tran_low_t *input, tran_low_t *output) {
+  int i;
+  tran_low_t inputhalf[8];
+  for (i = 0; i < 4; ++i) {
+    output[8 + i] = fdct_round_shift(input[i] * 2 * Sqrt2);
+    output[12 + i] = fdct_round_shift(input[12 + i] * 2 * Sqrt2);
+  }
+  // Multiply input by sqrt(2)
+  for (i = 0; i < 8; ++i) {
+    inputhalf[i] = (tran_low_t)fdct_round_shift(input[i + 4] * Sqrt2);
+  }
+  fdct8(inputhalf, output);
+  // Note overall scaling factor is 4 times orthogonal
+}
+
+static void fhalfcenter32(const tran_low_t *input, tran_low_t *output) {
+  int i;
+  tran_low_t inputhalf[16];
+  for (i = 0; i < 8; ++i) {
+    output[16 + i] = input[i] * 4;
+    output[24 + i] = input[24 + i] * 4;
+  }
+  // Multiply input by sqrt(2)
+  for (i = 0; i < 16; ++i) {
+    inputhalf[i] = (tran_low_t)fdct_round_shift(input[i + 8] * Sqrt2);
+  }
+  fdct16(inputhalf, output);
+  // Note overall scaling factor is 4 times orthogonal
+}
+
 // For use in lieu of ADST
 static void fhalfright32(const tran_low_t *input, tran_low_t *output) {
   int i;
@@ -1105,6 +1356,8 @@ static void maybe_flip_input(const int16_t **src, int *src_stride, int l,
     case ADST_DCT:
     case DCT_ADST:
     case ADST_ADST:
+    case DCT_DST:
+    case DST_DCT:
     case IDTX:
     case V_DCT:
     case H_DCT:
@@ -1148,6 +1401,8 @@ static const transform_2d FHT_4[] = {
   { fadst4, fadst4 },  // FLIPADST_FLIPADST
   { fadst4, fadst4 },  // ADST_FLIPADST
   { fadst4, fadst4 },  // FLIPADST_ADST
+  { fdst4,  fdct4  },  // DST_DCT
+  { fdct4,  fdst4  },  // DCT_DST
   { fidtx4, fidtx4 },  // IDTX
   { fdct4,  fidtx4 },  // V_DCT
   { fidtx4, fdct4  },  // H_DCT
@@ -1169,6 +1424,8 @@ static const transform_2d FHT_8[] = {
   { fadst8, fadst8 },  // FLIPADST_FLIPADST
   { fadst8, fadst8 },  // ADST_FLIPADST
   { fadst8, fadst8 },  // FLIPADST_ADST
+  { fhalfcenter8,  fdct8  },         // DST_DCT
+  { fdct8,  fhalfcenter8  },         // DCT_DST
   { fidtx8, fidtx8 },  // IDTX
   { fdct8,  fidtx8 },  // V_DCT
   { fidtx8, fdct8  },  // H_DCT
@@ -1190,6 +1447,8 @@ static const transform_2d FHT_16[] = {
   { fadst16, fadst16 },  // FLIPADST_FLIPADST
   { fadst16, fadst16 },  // ADST_FLIPADST
   { fadst16, fadst16 },  // FLIPADST_ADST
+  { fhalfcenter16,  fdct16  },         // DST_DCT
+  { fdct16,  fhalfcenter16  },         // DCT_DST
   { fidtx16, fidtx16 },  // IDTX
   { fdct16,  fidtx16 },  // V_DCT
   { fidtx16, fdct16  },  // H_DCT
@@ -1211,6 +1470,8 @@ static const transform_2d FHT_32[] = {
   { fhalfright32, fhalfright32 },      // FLIPADST_FLIPADST
   { fhalfright32, fhalfright32 },      // ADST_FLIPADST
   { fhalfright32, fhalfright32 },      // FLIPADST_ADST
+  { fhalfcenter32,  fdct32  },         // DST_DCT
+  { fdct32,  fhalfcenter32  },         // DCT_DST
   { fidtx32, fidtx32 },                // IDTX
   { fdct32,  fidtx32 },                // V_DCT
   { fidtx32, fdct32  },                // H_DCT
