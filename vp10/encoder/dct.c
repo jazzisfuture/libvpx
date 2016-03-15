@@ -1340,12 +1340,17 @@ static void maybe_flip_input(const int16_t **src, int *src_stride, int l,
     case DST_ADST:
     case ADST_DST:
     case IDTX:
-    case H_DCT:
     case V_DCT:
+    case H_DCT:
+    case V_ADST:
+    case H_ADST:
+    case V_DST:
+    case H_DST:
       break;
     case FLIPADST_DCT:
     case FLIPADST_ADST:
     case FLIPADST_DST:
+    case V_FLIPADST:
       copy_flipud(*src, *src_stride, l, buff, l);
       *src = buff;
       *src_stride = l;
@@ -1353,6 +1358,7 @@ static void maybe_flip_input(const int16_t **src, int *src_stride, int l,
     case DCT_FLIPADST:
     case ADST_FLIPADST:
     case DST_FLIPADST:
+    case H_FLIPADST:
       copy_fliplr(*src, *src_stride, l, buff, l);
       *src = buff;
       *src_stride = l;
@@ -1390,6 +1396,12 @@ static const transform_2d FHT_4[] = {
   { fidtx4, fidtx4 },  // IDTX              = 16
   { fdct4,  fidtx4 },  // V_DCT             = 17
   { fidtx4, fdct4  },  // H_DCT             = 18
+  { fadst4, fidtx4 },  // V_ADST            = 19
+  { fidtx4, fadst4 },  // H_ADST            = 20
+  { fadst4, fidtx4 },  // V_FLIPADST        = 21
+  { fidtx4, fadst4 },  // H_FLIPADST        = 22
+  { fdst4,  fidtx4 },  // V_DST             = 23
+  { fidtx4, fdst4  },  // H_DST             = 24
 #endif  // CONFIG_EXT_TX
 };
 
@@ -1414,6 +1426,12 @@ static const transform_2d FHT_8[] = {
   { fidtx8, fidtx8 },  // IDTX              = 16
   { fdct8,  fidtx8 },  // V_DCT             = 17
   { fidtx8, fdct8  },  // H_DCT             = 18
+  { fadst8, fidtx8 },  // V_ADST            = 19
+  { fidtx8, fadst8 },  // H_ADST            = 20
+  { fadst8, fidtx8 },  // V_FLIPADST        = 21
+  { fidtx8, fadst8 },  // H_FLIPADST        = 22
+  { fdst8,  fidtx8 },  // V_DST             = 23
+  { fidtx8, fdst8  },  // H_DST             = 24
 #endif  // CONFIG_EXT_TX
 };
 
@@ -1438,6 +1456,12 @@ static const transform_2d FHT_16[] = {
   { fidtx16, fidtx16 },  // IDTX              = 16
   { fdct16,  fidtx16 },  // V_DCT             = 17
   { fidtx16, fdct16  },  // H_DCT             = 18
+  { fadst16, fidtx16 },  // V_ADST            = 19
+  { fidtx16, fadst16 },  // H_ADST            = 20
+  { fadst16, fidtx16 },  // V_FLIPADST        = 21
+  { fidtx16, fadst16 },  // H_FLIPADST        = 22
+  { fdst16,  fidtx16 },  // V_DST             = 23
+  { fidtx16, fdst16  },  // H_DST             = 24
 #endif  // CONFIG_EXT_TX
 };
 
@@ -1462,6 +1486,12 @@ static const transform_2d FHT_32[] = {
   { fidtx32, fidtx32 },                // IDTX              = 16
   { fdct32,  fidtx32 },                // V_DCT             = 17
   { fidtx32, fdct32  },                // H_DCT             = 18
+  { fhalfright32, fidtx32 },           // V_ADST            = 19
+  { fidtx32, fhalfright32 },           // H_ADST            = 20
+  { fhalfright32, fidtx32 },           // V_FLIPADST        = 21
+  { fidtx32, fhalfright32 },           // H_FLIPADST        = 22
+  { fhalfcenter32,  fidtx32 },         // V_DST             = 23
+  { fidtx32, fhalfcenter32  },         // H_DST             = 24
 };
 #endif  // CONFIG_EXT_TX
 

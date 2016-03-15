@@ -121,6 +121,12 @@ typedef enum {
   IDTX = 16,
   V_DCT = 17,
   H_DCT = 18,
+  V_ADST = 19,
+  H_ADST = 20,
+  V_FLIPADST = 21,
+  H_FLIPADST = 22,
+  V_DST = 23,
+  H_DST = 24,
 #endif  // CONFIG_EXT_TX
   TX_TYPES,
 } TX_TYPE;
