@@ -34,6 +34,10 @@ typedef struct INV_TXFM_PARAM {
 #endif
 } INV_TXFM_PARAM;
 
+#if CONFIG_EXT_TX
+#define TX2ROWS_1D    0   // Number of rows of 2nd transform for 1D transforms
+#endif  // CONFIG_EXT_TX
+
 typedef void (*transform_1d)(const tran_low_t*, tran_low_t*);
 
 typedef struct {

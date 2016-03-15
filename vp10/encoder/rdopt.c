@@ -1363,11 +1363,6 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
         if (cpi->sf.tx_type_search > 0) {
           if (!do_tx_type_search(tx_type, prune))
             continue;
-        } else if (ext_tx_set == 1 &&
-                   tx_type >= DST_ADST && tx_type < IDTX &&
-                   best_tx_type == DCT_DCT) {
-          tx_type = IDTX - 1;
-          continue;
         }
       } else {
         if (!ALLOW_INTRA_EXT_TX && bs >= BLOCK_8X8) {
@@ -1376,12 +1371,6 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
         }
         if (!ext_tx_used_intra[ext_tx_set][tx_type])
           continue;
-        if (ext_tx_set == 1 &&
-            tx_type >= DST_ADST && tx_type < IDTX &&
-            best_tx_type == DCT_DCT) {
-          tx_type = IDTX - 1;
-          continue;
-        }
       }
 
       mbmi->tx_type = tx_type;
@@ -1547,11 +1536,6 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
         if (cpi->sf.tx_type_search > 0) {
           if (!do_tx_type_search(tx_type, prune))
             continue;
-        } else if (ext_tx_set == 1 &&
-                   tx_type >= DST_ADST && tx_type < IDTX &&
-                   best_tx_type == DCT_DCT) {
-          tx_type = IDTX - 1;
-          continue;
         }
       } else {
         if (!ALLOW_INTRA_EXT_TX && bs >= BLOCK_8X8) {
@@ -1560,12 +1544,6 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
         }
         if (!ext_tx_used_intra[ext_tx_set][tx_type])
           continue;
-        if (ext_tx_set == 1 &&
-            tx_type >= DST_ADST && tx_type < IDTX &&
-            best_tx_type == DCT_DCT) {
-          tx_type = IDTX - 1;
-          break;
-        }
       }
       mbmi->tx_type = tx_type;
       txfm_rd_in_plane(x,
@@ -3182,11 +3160,6 @@ static void select_tx_type_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
       if (cpi->sf.tx_type_search > 0) {
         if (!do_tx_type_search(tx_type, prune))
           continue;
-      } else if (ext_tx_set == 1 &&
-                 tx_type >= DST_ADST && tx_type < IDTX &&
-                 best_tx_type == DCT_DCT) {
-        tx_type = IDTX - 1;
-        continue;
       }
     } else {
       if (!ALLOW_INTRA_EXT_TX && bsize >= BLOCK_8X8) {
@@ -3195,12 +3168,6 @@ static void select_tx_type_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
       }
       if (!ext_tx_used_intra[ext_tx_set][tx_type])
         continue;
-      if (ext_tx_set == 1 &&
-          tx_type >= DST_ADST && tx_type < IDTX &&
-          best_tx_type == DCT_DCT) {
-        tx_type = IDTX - 1;
-        break;
-      }
     }
 
     mbmi->tx_type = tx_type;

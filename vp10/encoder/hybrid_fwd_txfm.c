@@ -54,18 +54,17 @@ void vp10_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
-    case DST_DST:
-    case DCT_DST:
-    case DST_DCT:
-    case DST_ADST:
-    case ADST_DST:
-    case DST_FLIPADST:
-    case FLIPADST_DST:
       vp10_fht4x4(src_diff, coeff, diff_stride, tx_type);
       break;
-    case H_DCT:
     case V_DCT:
-      vp10_fht4x4_c(src_diff, coeff, diff_stride, tx_type);
+    case V_ADST:
+    case V_FLIPADST:
+      vp10_f1dt4x4_c(src_diff, coeff, diff_stride, tx_type);
+      break;
+    case H_DCT:
+    case H_ADST:
+    case H_FLIPADST:
+      vp10_f1dt4x4_c(src_diff, coeff, diff_stride, tx_type);
       break;
     case IDTX:
       vp10_fwd_idtx_c(src_diff, coeff, diff_stride, 4, tx_type);
@@ -96,18 +95,17 @@ static void fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
-    case DST_DST:
-    case DCT_DST:
-    case DST_DCT:
-    case DST_ADST:
-    case ADST_DST:
-    case DST_FLIPADST:
-    case FLIPADST_DST:
       vp10_fht8x8(src_diff, coeff, diff_stride, tx_type);
       break;
-    case H_DCT:
     case V_DCT:
-      vp10_fht8x8_c(src_diff, coeff, diff_stride, tx_type);
+    case V_ADST:
+    case V_FLIPADST:
+      vp10_f1dt8x8_c(src_diff, coeff, diff_stride, tx_type);
+      break;
+    case H_DCT:
+    case H_ADST:
+    case H_FLIPADST:
+      vp10_f1dt8x8_c(src_diff, coeff, diff_stride, tx_type);
       break;
     case IDTX:
       vp10_fwd_idtx_c(src_diff, coeff, diff_stride, 8, tx_type);
@@ -138,18 +136,17 @@ static void fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
-    case DST_DST:
-    case DCT_DST:
-    case DST_DCT:
-    case DST_ADST:
-    case ADST_DST:
-    case DST_FLIPADST:
-    case FLIPADST_DST:
       vp10_fht16x16(src_diff, coeff, diff_stride, tx_type);
       break;
-    case H_DCT:
     case V_DCT:
-      vp10_fht16x16_c(src_diff, coeff, diff_stride, tx_type);
+    case V_ADST:
+    case V_FLIPADST:
+      vp10_f1dt16x16_c(src_diff, coeff, diff_stride, tx_type);
+      break;
+    case H_DCT:
+    case H_ADST:
+    case H_FLIPADST:
+      vp10_f1dt16x16_c(src_diff, coeff, diff_stride, tx_type);
       break;
     case IDTX:
       vp10_fwd_idtx_c(src_diff, coeff, diff_stride, 16, tx_type);
@@ -180,18 +177,15 @@ static void fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
-    case DST_DST:
-    case DCT_DST:
-    case DST_DCT:
-    case DST_ADST:
-    case ADST_DST:
-    case DST_FLIPADST:
-    case FLIPADST_DST:
       vp10_fht32x32_c(src_diff, coeff, diff_stride, tx_type);
       break;
-    case H_DCT:
     case V_DCT:
-      vp10_fht32x32_c(src_diff, coeff, diff_stride, tx_type);
+    case V_ADST:
+    case V_FLIPADST:
+    case H_DCT:
+    case H_ADST:
+    case H_FLIPADST:
+      vp10_f1dt32x32_c(src_diff, coeff, diff_stride, tx_type);
       break;
     case IDTX:
       vp10_fwd_idtx_c(src_diff, coeff, diff_stride, 32, tx_type);
@@ -227,16 +221,13 @@ void vp10_highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_ADST:
       vp10_highbd_fht4x4(src_diff, coeff, diff_stride, tx_type);
       break;
-    case DST_DST:
-    case DCT_DST:
-    case DST_DCT:
-    case DST_ADST:
-    case ADST_DST:
-    case DST_FLIPADST:
-    case FLIPADST_DST:
-    case H_DCT:
     case V_DCT:
-      vp10_highbd_fht4x4_c(src_diff, coeff, diff_stride, tx_type);
+    case H_DCT:
+    case V_ADST:
+    case H_ADST:
+    case V_FLIPADST:
+    case H_FLIPADST:
+      vp10_highbd_f1dt4x4_c(src_diff, coeff, diff_stride, tx_type);
       break;
     case IDTX:
       vp10_fwd_idtx_c(src_diff, coeff, diff_stride, 4, tx_type);
@@ -270,17 +261,13 @@ static void highbd_fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_ADST:
       vp10_highbd_fht8x8(src_diff, coeff, diff_stride, tx_type);
       break;
-    case DST_DST:
-    case DCT_DST:
-    case DST_DCT:
-    case DST_ADST:
-    case ADST_DST:
-    case DST_FLIPADST:
-    case FLIPADST_DST:
-    case H_DCT:
     case V_DCT:
-      // Use C version since DST exists only in C
-      vp10_highbd_fht8x8_c(src_diff, coeff, diff_stride, tx_type);
+    case H_DCT:
+    case V_ADST:
+    case H_ADST:
+    case V_FLIPADST:
+    case H_FLIPADST:
+      vp10_highbd_f1dt8x8_c(src_diff, coeff, diff_stride, tx_type);
       break;
     case IDTX:
       vp10_fwd_idtx_c(src_diff, coeff, diff_stride, 8, tx_type);
@@ -314,17 +301,13 @@ static void highbd_fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
     case FLIPADST_ADST:
       vp10_highbd_fht16x16(src_diff, coeff, diff_stride, tx_type);
       break;
-    case DST_DST:
-    case DCT_DST:
-    case DST_DCT:
-    case DST_ADST:
-    case ADST_DST:
-    case DST_FLIPADST:
-    case FLIPADST_DST:
-    case H_DCT:
     case V_DCT:
-      // Use C version since DST exists only in C
-      vp10_highbd_fht16x16_c(src_diff, coeff, diff_stride, tx_type);
+    case H_DCT:
+    case V_ADST:
+    case H_ADST:
+    case V_FLIPADST:
+    case H_FLIPADST:
+      vp10_highbd_f1dt16x16_c(src_diff, coeff, diff_stride, tx_type);
       break;
     case IDTX:
       vp10_fwd_idtx_c(src_diff, coeff, diff_stride, 16, tx_type);
@@ -355,16 +338,15 @@ static void highbd_fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
     case FLIPADST_FLIPADST:
     case ADST_FLIPADST:
     case FLIPADST_ADST:
-    case DST_DST:
-    case DCT_DST:
-    case DST_DCT:
-    case DST_ADST:
-    case ADST_DST:
-    case DST_FLIPADST:
-    case FLIPADST_DST:
-    case H_DCT:
-    case V_DCT:
       vp10_highbd_fht32x32_c(src_diff, coeff, diff_stride, tx_type);
+      break;
+    case V_DCT:
+    case H_DCT:
+    case V_ADST:
+    case H_ADST:
+    case V_FLIPADST:
+    case H_FLIPADST:
+      vp10_highbd_f1dt32x32_c(src_diff, coeff, diff_stride, tx_type);
       break;
     case IDTX:
       vp10_fwd_idtx_c(src_diff, coeff, diff_stride, 32, tx_type);
