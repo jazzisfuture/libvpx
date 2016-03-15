@@ -8333,17 +8333,21 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
         rd_cost->rate = rate2;
 #if CONFIG_SUPERTX
-        *returnrate_nocoef = rate2 - rate_y - rate_uv;
-        if (!disable_skip) {
-          *returnrate_nocoef -= vp10_cost_bit(vp10_get_skip_prob(cm, xd),
-                                              skippable || this_skip2);
-        }
-        *returnrate_nocoef -= vp10_cost_bit(vp10_get_intra_inter_prob(cm, xd),
+        if (!x->skip) {
+          *returnrate_nocoef = rate2 - rate_y - rate_uv;
+          if (!disable_skip) {
+            *returnrate_nocoef -= vp10_cost_bit(vp10_get_skip_prob(cm, xd),
+                                                skippable || this_skip2);
+          }
+          *returnrate_nocoef -= vp10_cost_bit(vp10_get_intra_inter_prob(cm, xd),
                                             mbmi->ref_frame[0] != INTRA_FRAME);
 #if CONFIG_OBMC
-        if (is_inter_block(mbmi) && is_obmc_allowed(mbmi))
-          *returnrate_nocoef -= cpi->obmc_cost[bsize][mbmi->obmc];
+          if (is_inter_block(mbmi) && is_obmc_allowed(mbmi))
+            *returnrate_nocoef -= cpi->obmc_cost[bsize][mbmi->obmc];
 #endif  // CONFIG_OBMC
+        } else {
+          *returnrate_nocoef = 0;
+        }
 #endif  // CONFIG_SUPERTX
         rd_cost->dist = distortion2;
         rd_cost->rdcost = this_rd;
