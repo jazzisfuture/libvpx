@@ -2846,56 +2846,19 @@ void vp10_tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   *bsse += tmp * 16;
 
   if (p->eobs[block] > 0) {
-    const int lossless = xd->lossless[xd->mi[0]->mbmi.segment_id];
+    INV_TXFM_PARAM inv_txfm_param;
+    inv_txfm_param.tx_type = tx_type;
+    inv_txfm_param.tx_size = tx_size;
+    inv_txfm_param.eob = p->eobs[block];
+    inv_txfm_param.lossless = xd->lossless[xd->mi[0]->mbmi.segment_id];
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-      const int bd = xd->bd;
-      switch (tx_size) {
-        case TX_32X32:
-          vp10_highbd_inv_txfm_add_32x32(dqcoeff, rec_buffer, 32,
-                                         p->eobs[block], bd, tx_type);
-          break;
-        case TX_16X16:
-          vp10_highbd_inv_txfm_add_16x16(dqcoeff, rec_buffer, 32,
-                                         p->eobs[block], bd, tx_type);
-          break;
-        case TX_8X8:
-          vp10_highbd_inv_txfm_add_8x8(dqcoeff, rec_buffer, 32,
-                                       p->eobs[block], bd, tx_type);
-          break;
-        case TX_4X4:
-          vp10_highbd_inv_txfm_add_4x4(dqcoeff, rec_buffer, 32,
-                                       p->eobs[block], bd, tx_type, lossless);
-          break;
-        default:
-          assert(0 && "Invalid transform size");
-          break;
-      }
-    } else {
-#else
-    {
+      inv_txfm_param.bd = xd->bd;
+      highbd_inv_txfm_add(dqcoeff, rec_buffer, 32, &inv_txfm_param);
+    } else
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-      switch (tx_size) {
-        case TX_32X32:
-          vp10_inv_txfm_add_32x32(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                  tx_type);
-          break;
-        case TX_16X16:
-          vp10_inv_txfm_add_16x16(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                  tx_type);
-          break;
-        case TX_8X8:
-          vp10_inv_txfm_add_8x8(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                tx_type);
-          break;
-        case TX_4X4:
-          vp10_inv_txfm_add_4x4(dqcoeff, rec_buffer, 32, p->eobs[block],
-                                tx_type, lossless);
-          break;
-        default:
-          assert(0 && "Invalid transform size");
-          break;
-      }
+    {
+      inv_txfm_add(dqcoeff, rec_buffer, 32, &inv_txfm_param);
     }
 
     if ((bh >> 2) + blk_col > max_blocks_wide ||
