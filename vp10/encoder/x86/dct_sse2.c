@@ -265,12 +265,6 @@ void vp10_fht4x4_sse2(const int16_t *input, tran_low_t *output,
       fadst4_sse2(in);
       write_buffer_4x4(output, in);
       break;
-    case DST_DST:
-      load_buffer_4x4(input, in, stride, 0, 0);
-      fdst4_sse2(in);
-      fdst4_sse2(in);
-      write_buffer_4x4(output, in);
-      break;
     case DCT_DST:
       load_buffer_4x4(input, in, stride, 0, 0);
       fdct4_sse2(in);
@@ -281,30 +275,6 @@ void vp10_fht4x4_sse2(const int16_t *input, tran_low_t *output,
       load_buffer_4x4(input, in, stride, 0, 0);
       fdst4_sse2(in);
       fdct4_sse2(in);
-      write_buffer_4x4(output, in);
-      break;
-    case DST_ADST:
-      load_buffer_4x4(input, in, stride, 0, 0);
-      fdst4_sse2(in);
-      fadst4_sse2(in);
-      write_buffer_4x4(output, in);
-      break;
-    case ADST_DST:
-      load_buffer_4x4(input, in, stride, 0, 0);
-      fadst4_sse2(in);
-      fdst4_sse2(in);
-      write_buffer_4x4(output, in);
-      break;
-    case DST_FLIPADST:
-      load_buffer_4x4(input, in, stride, 0, 1);
-      fdst4_sse2(in);
-      fadst4_sse2(in);
-      write_buffer_4x4(output, in);
-      break;
-    case FLIPADST_DST:
-      load_buffer_4x4(input, in, stride, 1, 0);
-      fadst4_sse2(in);
-      fdst4_sse2(in);
       write_buffer_4x4(output, in);
       break;
 #endif  // CONFIG_EXT_TX
@@ -1502,13 +1472,6 @@ void vp10_fht8x8_sse2(const int16_t *input, tran_low_t *output,
       right_shift_8x8(in, 1);
       write_buffer_8x8(output, in, 8);
       break;
-    case DST_DST:
-      load_buffer_8x8(input, in, stride, 0, 0);
-      fdst8_sse2(in);
-      fdst8_sse2(in);
-      right_shift_8x8(in, 1);
-      write_buffer_8x8(output, in, 8);
-      break;
     case DCT_DST:
       load_buffer_8x8(input, in, stride, 0, 0);
       fdct8_sse2(in);
@@ -1520,34 +1483,6 @@ void vp10_fht8x8_sse2(const int16_t *input, tran_low_t *output,
       load_buffer_8x8(input, in, stride, 0, 0);
       fdst8_sse2(in);
       fdct8_sse2(in);
-      right_shift_8x8(in, 1);
-      write_buffer_8x8(output, in, 8);
-      break;
-    case DST_ADST:
-      load_buffer_8x8(input, in, stride, 0, 0);
-      fdst8_sse2(in);
-      fadst8_sse2(in);
-      right_shift_8x8(in, 1);
-      write_buffer_8x8(output, in, 8);
-      break;
-    case ADST_DST:
-      load_buffer_8x8(input, in, stride, 0, 0);
-      fadst8_sse2(in);
-      fdst8_sse2(in);
-      right_shift_8x8(in, 1);
-      write_buffer_8x8(output, in, 8);
-      break;
-    case DST_FLIPADST:
-      load_buffer_8x8(input, in, stride, 0, 1);
-      fdst8_sse2(in);
-      fadst8_sse2(in);
-      right_shift_8x8(in, 1);
-      write_buffer_8x8(output, in, 8);
-      break;
-    case FLIPADST_DST:
-      load_buffer_8x8(input, in, stride, 1, 0);
-      fadst8_sse2(in);
-      fdst8_sse2(in);
       right_shift_8x8(in, 1);
       write_buffer_8x8(output, in, 8);
       break;
@@ -2850,13 +2785,6 @@ void vp10_fht16x16_sse2(const int16_t *input, tran_low_t *output,
       fadst16_sse2(in0, in1);
       write_buffer_16x16(output, in0, in1, 16);
       break;
-    case DST_DST:
-      load_buffer_16x16(input, in0, in1, stride, 0, 0);
-      fdst16_sse2(in0, in1);
-      right_shift_16x16(in0, in1);
-      fdst16_sse2(in0, in1);
-      write_buffer_16x16(output, in0, in1, 16);
-      break;
     case DCT_DST:
       load_buffer_16x16(input, in0, in1, stride, 0, 0);
       fdct16_sse2(in0, in1);
@@ -2869,34 +2797,6 @@ void vp10_fht16x16_sse2(const int16_t *input, tran_low_t *output,
       fdst16_sse2(in0, in1);
       right_shift_16x16(in0, in1);
       fdct16_sse2(in0, in1);
-      write_buffer_16x16(output, in0, in1, 16);
-      break;
-    case DST_ADST:
-      load_buffer_16x16(input, in0, in1, stride, 0, 0);
-      fdst16_sse2(in0, in1);
-      right_shift_16x16(in0, in1);
-      fadst16_sse2(in0, in1);
-      write_buffer_16x16(output, in0, in1, 16);
-      break;
-    case ADST_DST:
-      load_buffer_16x16(input, in0, in1, stride, 0, 0);
-      fadst16_sse2(in0, in1);
-      right_shift_16x16(in0, in1);
-      fdst16_sse2(in0, in1);
-      write_buffer_16x16(output, in0, in1, 16);
-      break;
-    case DST_FLIPADST:
-      load_buffer_16x16(input, in0, in1, stride, 0, 1);
-      fdst16_sse2(in0, in1);
-      right_shift_16x16(in0, in1);
-      fadst16_sse2(in0, in1);
-      write_buffer_16x16(output, in0, in1, 16);
-      break;
-    case FLIPADST_DST:
-      load_buffer_16x16(input, in0, in1, stride, 1, 0);
-      fadst16_sse2(in0, in1);
-      right_shift_16x16(in0, in1);
-      fdst16_sse2(in0, in1);
       write_buffer_16x16(output, in0, in1, 16);
       break;
 #endif  // CONFIG_EXT_TX
