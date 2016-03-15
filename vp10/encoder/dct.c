@@ -1334,25 +1334,24 @@ static void maybe_flip_input(const int16_t **src, int *src_stride, int l,
     case ADST_DCT:
     case DCT_ADST:
     case ADST_ADST:
-    case DST_DST:
     case DCT_DST:
     case DST_DCT:
-    case DST_ADST:
-    case ADST_DST:
     case IDTX:
-    case H_DCT:
     case V_DCT:
+    case H_DCT:
+    case V_ADST:
+    case H_ADST:
       break;
     case FLIPADST_DCT:
     case FLIPADST_ADST:
-    case FLIPADST_DST:
+    case V_FLIPADST:
       copy_flipud(*src, *src_stride, l, buff, l);
       *src = buff;
       *src_stride = l;
       break;
     case DCT_FLIPADST:
     case ADST_FLIPADST:
-    case DST_FLIPADST:
+    case H_FLIPADST:
       copy_fliplr(*src, *src_stride, l, buff, l);
       *src = buff;
       *src_stride = l;
@@ -1370,98 +1369,94 @@ static void maybe_flip_input(const int16_t **src, int *src_stride, int l,
 #endif  // CONFIG_EXT_TX
 
 static const transform_2d FHT_4[] = {
-  { fdct4,  fdct4  },  // DCT_DCT           = 0,
-  { fadst4, fdct4  },  // ADST_DCT          = 1,
-  { fdct4,  fadst4 },  // DCT_ADST          = 2,
-  { fadst4, fadst4 },  // ADST_ADST         = 3,
+  { fdct4,  fdct4  },  // DCT_DCT
+  { fadst4, fdct4  },  // ADST_DCT
+  { fdct4,  fadst4 },  // DCT_ADST
+  { fadst4, fadst4 },  // ADST_ADST
 #if CONFIG_EXT_TX
-  { fadst4, fdct4  },  // FLIPADST_DCT      = 4,
-  { fdct4,  fadst4 },  // DCT_FLIPADST      = 5,
-  { fadst4, fadst4 },  // FLIPADST_FLIPADST = 6,
-  { fadst4, fadst4 },  // ADST_FLIPADST     = 7,
-  { fadst4, fadst4 },  // FLIPADST_ADST     = 8,
-  { fdst4,  fdct4  },  // DST_DCT           = 9,
-  { fdct4,  fdst4  },  // DCT_DST           = 10,
-  { fdst4,  fadst4 },  // DST_ADST          = 11,
-  { fadst4, fdst4  },  // ADST_DST          = 12,
-  { fdst4,  fadst4 },  // DST_FLIPADST      = 13,
-  { fadst4, fdst4  },  // FLIPADST_DST      = 14,
-  { fdst4,  fdst4  },  // DST_DST           = 15
-  { fidtx4, fidtx4 },  // IDTX              = 16
-  { fdct4,  fidtx4 },  // V_DCT             = 17
-  { fidtx4, fdct4  },  // H_DCT             = 18
+  { fadst4, fdct4  },  // FLIPADST_DCT
+  { fdct4,  fadst4 },  // DCT_FLIPADST
+  { fadst4, fadst4 },  // FLIPADST_FLIPADST
+  { fadst4, fadst4 },  // ADST_FLIPADST
+  { fadst4, fadst4 },  // FLIPADST_ADST
+  { fdst4,  fdct4  },  // DST_DCT
+  { fdct4,  fdst4  },  // DCT_DST
+  { fidtx4, fidtx4 },  // IDTX
+  { fdct4,  fidtx4 },  // V_DCT
+  { fidtx4, fdct4  },  // H_DCT
+  { fadst4, fidtx4 },  // V_ADST
+  { fidtx4, fadst4 },  // H_ADST
+  { fadst4, fidtx4 },  // V_FLIPADST
+  { fidtx4, fadst4 },  // H_FLIPADST
 #endif  // CONFIG_EXT_TX
 };
 
 static const transform_2d FHT_8[] = {
-  { fdct8,  fdct8  },  // DCT_DCT           = 0,
-  { fadst8, fdct8  },  // ADST_DCT          = 1,
-  { fdct8,  fadst8 },  // DCT_ADST          = 2,
-  { fadst8, fadst8 },  // ADST_ADST         = 3,
+  { fdct8,  fdct8  },  // DCT_DCT
+  { fadst8, fdct8  },  // ADST_DCT
+  { fdct8,  fadst8 },  // DCT_ADST
+  { fadst8, fadst8 },  // ADST_ADST
 #if CONFIG_EXT_TX
-  { fadst8, fdct8  },  // FLIPADST_DCT      = 4,
-  { fdct8,  fadst8 },  // DCT_FLIPADST      = 5,
-  { fadst8, fadst8 },  // FLIPADST_FLIPADST = 6,
-  { fadst8, fadst8 },  // ADST_FLIPADST     = 7,
-  { fadst8, fadst8 },  // FLIPADST_ADST     = 8,
-  { fdst8,  fdct8  },  // DST_DCT           = 9,
-  { fdct8,  fdst8  },  // DCT_DST           = 10,
-  { fdst8,  fadst8 },  // DST_ADST          = 11,
-  { fadst8, fdst8  },  // ADST_DST          = 12,
-  { fdst8,  fadst8 },  // DST_FLIPADST      = 13,
-  { fadst8, fdst8  },  // FLIPADST_DST      = 14,
-  { fdst8,  fdst8  },  // DST_DST           = 15
-  { fidtx8, fidtx8 },  // IDTX              = 16
-  { fdct8,  fidtx8 },  // V_DCT             = 17
-  { fidtx8, fdct8  },  // H_DCT             = 18
+  { fadst8, fdct8  },  // FLIPADST_DCT
+  { fdct8,  fadst8 },  // DCT_FLIPADST
+  { fadst8, fadst8 },  // FLIPADST_FLIPADST
+  { fadst8, fadst8 },  // ADST_FLIPADST
+  { fadst8, fadst8 },  // FLIPADST_ADST
+  { fdst8,  fdct8  },  // DST_DCT
+  { fdct8,  fdst8  },  // DCT_DST
+  { fidtx8, fidtx8 },  // IDTX
+  { fdct8,  fidtx8 },  // V_DCT
+  { fidtx8, fdct8  },  // H_DCT
+  { fadst8, fidtx8 },  // V_ADST
+  { fidtx8, fadst8 },  // H_ADST
+  { fadst8, fidtx8 },  // V_FLIPADST
+  { fidtx8, fadst8 },  // H_FLIPADST
 #endif  // CONFIG_EXT_TX
 };
 
 static const transform_2d FHT_16[] = {
-  { fdct16,  fdct16  },  // DCT_DCT           = 0,
-  { fadst16, fdct16  },  // ADST_DCT          = 1,
-  { fdct16,  fadst16 },  // DCT_ADST          = 2,
-  { fadst16, fadst16 },  // ADST_ADST         = 3,
+  { fdct16,  fdct16  },  // DCT_DCT
+  { fadst16, fdct16  },  // ADST_DCT
+  { fdct16,  fadst16 },  // DCT_ADST
+  { fadst16, fadst16 },  // ADST_ADST
 #if CONFIG_EXT_TX
-  { fadst16, fdct16  },  // FLIPADST_DCT      = 4,
-  { fdct16,  fadst16 },  // DCT_FLIPADST      = 5,
-  { fadst16, fadst16 },  // FLIPADST_FLIPADST = 6,
-  { fadst16, fadst16 },  // ADST_FLIPADST     = 7,
-  { fadst16, fadst16 },  // FLIPADST_ADST     = 8,
-  { fdst16,  fdct16  },  // DST_DCT           = 9,
-  { fdct16,  fdst16  },  // DCT_DST           = 10,
-  { fdst16,  fadst16 },  // DST_ADST          = 11,
-  { fadst16, fdst16  },  // ADST_DST          = 12,
-  { fdst16,  fadst16 },  // DST_FLIPADST      = 13,
-  { fadst16, fdst16  },  // FLIPADST_DST      = 14,
-  { fdst16,  fdst16  },  // DST_DST           = 15
-  { fidtx16, fidtx16 },  // IDTX              = 16
-  { fdct16,  fidtx16 },  // V_DCT             = 17
-  { fidtx16, fdct16  },  // H_DCT             = 18
+  { fadst16, fdct16  },  // FLIPADST_DCT
+  { fdct16,  fadst16 },  // DCT_FLIPADST
+  { fadst16, fadst16 },  // FLIPADST_FLIPADST
+  { fadst16, fadst16 },  // ADST_FLIPADST
+  { fadst16, fadst16 },  // FLIPADST_ADST
+  { fdst16,  fdct16  },  // DST_DCT
+  { fdct16,  fdst16  },  // DCT_DST
+  { fidtx16, fidtx16 },  // IDTX
+  { fdct16,  fidtx16 },  // V_DCT
+  { fidtx16, fdct16  },  // H_DCT
+  { fadst16, fidtx16 },  // V_ADST
+  { fidtx16, fadst16 },  // H_ADST
+  { fadst16, fidtx16 },  // V_FLIPADST
+  { fidtx16, fadst16 },  // H_FLIPADST
 #endif  // CONFIG_EXT_TX
 };
 
 #if CONFIG_EXT_TX
 static const transform_2d FHT_32[] = {
-  { fdct32,  fdct32  },                // DCT_DCT           = 0,
-  { fhalfright32, fdct32  },           // ADST_DCT          = 1,
-  { fdct32,  fhalfright32 },           // DCT_ADST          = 2,
-  { fhalfright32, fhalfright32 },      // ADST_ADST         = 3,
-  { fhalfright32, fdct32  },           // FLIPADST_DCT      = 4,
-  { fdct32,  fhalfright32 },           // DCT_FLIPADST      = 5,
-  { fhalfright32, fhalfright32 },      // FLIPADST_FLIPADST = 6,
-  { fhalfright32, fhalfright32 },      // ADST_FLIPADST     = 7,
-  { fhalfright32, fhalfright32 },      // FLIPADST_ADST     = 8,
-  { fhalfcenter32,  fdct32  },         // DST_DCT           = 9,
-  { fdct32,  fhalfcenter32  },         // DCT_DST           = 10,
-  { fhalfcenter32,  fhalfright32 },    // DST_ADST          = 11,
-  { fhalfright32, fhalfcenter32  },    // ADST_DST          = 12,
-  { fhalfcenter32,  fhalfright32 },    // DST_FLIPADST      = 13,
-  { fhalfright32, fhalfcenter32  },    // FLIPADST_DST      = 14,
-  { fhalfcenter32,  fhalfcenter32  },  // DST_DST           = 15
-  { fidtx32, fidtx32 },                // IDTX              = 16
-  { fdct32,  fidtx32 },                // V_DCT             = 17
-  { fidtx32, fdct32  },                // H_DCT             = 18
+  { fdct32,  fdct32  },                // DCT_DCT
+  { fhalfright32, fdct32  },           // ADST_DCT
+  { fdct32,  fhalfright32 },           // DCT_ADST
+  { fhalfright32, fhalfright32 },      // ADST_ADST
+  { fhalfright32, fdct32  },           // FLIPADST_DCT
+  { fdct32,  fhalfright32 },           // DCT_FLIPADST
+  { fhalfright32, fhalfright32 },      // FLIPADST_FLIPADST
+  { fhalfright32, fhalfright32 },      // ADST_FLIPADST
+  { fhalfright32, fhalfright32 },      // FLIPADST_ADST
+  { fhalfcenter32,  fdct32  },         // DST_DCT
+  { fdct32,  fhalfcenter32  },         // DCT_DST
+  { fidtx32, fidtx32 },                // IDTX
+  { fdct32,  fidtx32 },                // V_DCT
+  { fidtx32, fdct32  },                // H_DCT
+  { fhalfright32, fidtx32 },           // V_ADST
+  { fidtx32, fhalfright32 },           // H_ADST
+  { fhalfright32, fidtx32 },           // V_FLIPADST
+  { fidtx32, fhalfright32 },           // H_FLIPADST
 };
 #endif  // CONFIG_EXT_TX
 
