@@ -37,6 +37,12 @@ static INLINE int read_coeff(const vpx_prob *probs, int n, vpx_reader *r) {
   return val;
 }
 
+
+//static INLINE const uint8_t *get_band_translate(TX_SIZE tx_size) {
+//  return tx_size == TX_4X4 ? vp9_coefband_trans_4x4
+//                           : vp9_coefband_trans_8x8plus;
+//}
+
 static int decode_coefs(const MACROBLOCKD *xd,
                         PLANE_TYPE type,
                         tran_low_t *dqcoeff, TX_SIZE tx_size, const int16_t *dq,
@@ -152,10 +158,9 @@ static int decode_coefs(const MACROBLOCKD *xd,
   return c;
 }
 
-// TODO(slavarnway): Decode version of vp9_set_context.  Modify vp9_set_context
-// after testing is complete, then delete this version.
+#if 0
 static
-void dec_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
+void dec_fix_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
                       TX_SIZE tx_size, int has_eob,
                       int aoff, int loff) {
   ENTROPY_CONTEXT *const a = pd->above_context + aoff;
@@ -165,35 +170,82 @@ void dec_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
   // above
   if (has_eob && xd->mb_to_right_edge < 0) {
     int i;
+// NOTE: this calc is done in decode_block()
     const int blocks_wide = pd->n4_w +
                             (xd->mb_to_right_edge >> (5 + pd->subsampling_x));
     int above_contexts = tx_size_in_blocks;
-    if (above_contexts + aoff > blocks_wide)
+    if (tx_size_in_blocks + aoff > blocks_wide)
       above_contexts = blocks_wide - aoff;
 
-    for (i = 0; i < above_contexts; ++i)
-      a[i] = has_eob;
     for (i = above_contexts; i < tx_size_in_blocks; ++i)
       a[i] = 0;
-  } else {
-    memset(a, has_eob, sizeof(ENTROPY_CONTEXT) * tx_size_in_blocks);
+// printf("(has_eob && xd->mb_to_right_edge < 0) %d %d %d %d\n",
+  //  above_contexts, tx_size_in_blocks, blocks_wide, xd->mb_to_right_edge);
   }
-
   // left
   if (has_eob && xd->mb_to_bottom_edge < 0) {
     int i;
+// NOTE: this calc is done in decode_block()
     const int blocks_high = pd->n4_h +
                             (xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
     int left_contexts = tx_size_in_blocks;
-    if (left_contexts + loff > blocks_high)
+    if (tx_size_in_blocks + loff > blocks_high)
       left_contexts = blocks_high - loff;
 
-    for (i = 0; i < left_contexts; ++i)
-      l[i] = has_eob;
     for (i = left_contexts; i < tx_size_in_blocks; ++i)
       l[i] = 0;
-  } else {
-    memset(l, has_eob, sizeof(ENTROPY_CONTEXT) * tx_size_in_blocks);
+// printf("(has_eob && xd->mb_to_bottom_edge < 0) %d %d %d %d\n",
+  //  left_contexts, tx_size_in_blocks, blocks_high, xd->mb_to_bottom_edge);
+  }
+}
+#endif
+
+#if 0
+
+static INLINE int combine_entropy_contexts(ENTROPY_CONTEXT a,
+                                           ENTROPY_CONTEXT b) {
+  return (a != 0) + (b != 0);
+}
+
+static INLINE int dget_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
+                                      const ENTROPY_CONTEXT *l) {
+  ENTROPY_CONTEXT above_ec = 0, left_ec = 0;
+
+  switch (tx_size) {
+    case TX_4X4:
+      above_ec = a[0] != 0;
+      left_ec = l[0] != 0;
+      break;
+    case TX_8X8:
+      above_ec = !!*(const uint16_t *)a;
+      left_ec  = !!*(const uint16_t *)l;
+      break;
+    case TX_16X16:
+      above_ec = !!*(const uint32_t *)a;
+      left_ec  = !!*(const uint32_t *)l;
+      break;
+    case TX_32X32:
+      above_ec = !!*(const uint64_t *)a;
+      left_ec  = !!*(const uint64_t *)l;
+      break;
+    default:
+      assert(0 && "Invalid transform size.");
+      break;
+  }
+
+  return combine_entropy_contexts(above_ec, left_ec);
+}
+#endif
+
+static void get_ctx_shift(MACROBLOCKD *xd, int *ctx_shift_a, int *ctx_shift_l,
+                          int x, int y, unsigned int tx_size_in_blocks) {
+  if (xd->max_blocks_wide) {
+    if (tx_size_in_blocks + x > xd->max_blocks_wide)
+      *ctx_shift_a = (tx_size_in_blocks - (xd->max_blocks_wide - x)) * 8;
+  }
+  if (xd->max_blocks_high) {
+    if (tx_size_in_blocks + y > xd->max_blocks_high)
+      *ctx_shift_l = (tx_size_in_blocks - (xd->max_blocks_high - y)) * 8;
   }
 }
 
@@ -204,12 +256,74 @@ int vp9_decode_block_tokens(MACROBLOCKD *xd,
                             int seg_id) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const int16_t *const dequant = pd->seg_dequant[seg_id];
-  const int ctx = get_entropy_context(tx_size, pd->above_context + x,
-                                               pd->left_context + y);
-  const int eob = decode_coefs(xd, get_plane_type(plane),
-                               pd->dqcoeff, tx_size,
-                               dequant, ctx, sc->scan, sc->neighbors, r);
-  dec_set_contexts(xd, pd, tx_size, eob > 0, x, y);
+
+  int eob;
+  ENTROPY_CONTEXT *a = pd->above_context + x;
+  ENTROPY_CONTEXT *l = pd->left_context + y;
+  int ctx;
+  int ctx_shift_a = 0;
+  int ctx_shift_l = 0;
+//  const int ctx = dget_entropy_context(tx_size, pd->above_context + x,
+//                                               pd->left_context + y);
+#if 0
+  if (1) {
+    const unsigned int tx_size_in_blocks = 1 << tx_size;
+
+    if (xd->max_blocks_wide) {
+      if (tx_size_in_blocks + x > xd->max_blocks_wide)
+        ctx_shift_a = (tx_size_in_blocks - (xd->max_blocks_wide - x)) * 8;
+    }
+    if (xd->max_blocks_high) {
+      if (tx_size_in_blocks + y > xd->max_blocks_high)
+        ctx_shift_l = (tx_size_in_blocks - (xd->max_blocks_high - y)) * 8;
+    }
+  }
+#else
+//  get_ctx_shift(xd, &ctx_shift_a, &ctx_shift_l, x, y, tx_size);
+#endif
+
+  switch (tx_size) {
+    case TX_4X4:
+      ctx  = a[0] != 0;
+      ctx += l[0] != 0;
+      eob = decode_coefs(xd, get_plane_type(plane), pd->dqcoeff, tx_size,
+                         dequant, ctx, sc->scan, sc->neighbors, r);
+      a[0] = l[0] = (eob > 0);
+      break;
+    case TX_8X8:
+      get_ctx_shift(xd, &ctx_shift_a, &ctx_shift_l, x, y, 1 << TX_8X8);
+      ctx  = !!*(const uint16_t *)a;
+      ctx += !!*(const uint16_t *)l;
+      eob = decode_coefs(xd, get_plane_type(plane), pd->dqcoeff, tx_size,
+                         dequant, ctx, sc->scan, sc->neighbors, r);
+      *(uint16_t *)a = ((eob > 0) * 0x0101) >> ctx_shift_a;
+      *(uint16_t *)l = ((eob > 0) * 0x0101) >> ctx_shift_l;
+      break;
+    case TX_16X16:
+      get_ctx_shift(xd, &ctx_shift_a, &ctx_shift_l, x, y, 1 << TX_16X16);
+      ctx  = !!*(const uint32_t *)a;
+      ctx += !!*(const uint32_t *)l;
+      eob = decode_coefs(xd, get_plane_type(plane), pd->dqcoeff, tx_size,
+                         dequant, ctx, sc->scan, sc->neighbors, r);
+      *(uint32_t *)a = ((eob > 0) * 0x01010101) >> ctx_shift_a;
+      *(uint32_t *)l = ((eob > 0) * 0x01010101) >> ctx_shift_l;
+      break;
+    case TX_32X32:
+      get_ctx_shift(xd, &ctx_shift_a, &ctx_shift_l, x, y, 1 << TX_32X32);
+      ctx  = !!*(const uint64_t *)a;
+      ctx += !!*(const uint64_t *)l;
+      eob = decode_coefs(xd, get_plane_type(plane), pd->dqcoeff, tx_size,
+                         dequant, ctx, sc->scan, sc->neighbors, r);
+      *(uint64_t *)a = ((eob > 0) * 0x0101010101010101) >> ctx_shift_a;
+      *(uint64_t *)l = ((eob > 0) * 0x0101010101010101) >> ctx_shift_l;
+      break;
+    default:
+      assert(0 && "Invalid transform size.");
+      eob = 0;
+      break;
+  }
+
+//  dec_fix_contexts(xd, pd, tx_size, eob > 0, x, y);
   return eob;
 }
 
