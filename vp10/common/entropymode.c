@@ -705,6 +705,14 @@ const vpx_tree_index vp10_tx_size_tree[TX_SIZES - 1][TREE_SIZE(TX_SIZES)] = {
         -TX_8X8, 4,
         -TX_16X16, -TX_32X32,
     },
+#if CONFIG_TX64
+    {  // Max tx_size is 64X64
+        -TX_4X4, 2,
+        -TX_8X8, 4,
+        -TX_16X16, 6,
+        -TX_32X32, -TX_64X64,
+    },
+#endif  // CONFIG_TX64
 };
 
 static const vpx_prob

@@ -88,7 +88,12 @@ typedef uint8_t TX_SIZE;
 #define TX_8X8   ((TX_SIZE)1)   // 8x8 transform
 #define TX_16X16 ((TX_SIZE)2)   // 16x16 transform
 #define TX_32X32 ((TX_SIZE)3)   // 32x32 transform
+#if CONFIG_TX64
+#define TX_64X64 ((TX_SIZE)4)   // 32x32 transform
+#define TX_SIZES ((TX_SIZE)5)
+#else
 #define TX_SIZES ((TX_SIZE)4)
+#endif  //CONFIG_TX64
 
 // frame transform mode
 typedef enum {

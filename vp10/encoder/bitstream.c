@@ -86,6 +86,9 @@ tx_size_encodings[TX_SIZES - 1][TX_SIZES] = {
     {{0, 1}, {1, 1}},  // Max tx_size is 8X8
     {{0, 1}, {2, 2}, {3, 2}},  // Max tx_size is 16X16
     {{0, 1}, {2, 2}, {6, 3}, {7, 3}},  // Max tx_size is 32X32
+#if CONFIG_TX64
+    {{0, 1}, {2, 2}, {6, 3}, {14, 4}, {15, 4}},  // Max tx_size is 64X64
+#endif  // CONFIG_TX64
 };
 
 static INLINE void write_uniform(vpx_writer *w, int n, int v) {

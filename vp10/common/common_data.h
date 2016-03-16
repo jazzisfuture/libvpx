@@ -112,7 +112,12 @@ static const TX_SIZE max_txsize_lookup[BLOCK_SIZES] = {
   TX_4X4,   TX_4X4,   TX_4X4,
   TX_8X8,   TX_8X8,   TX_8X8,
   TX_16X16, TX_16X16, TX_16X16,
-  TX_32X32, TX_32X32, TX_32X32, TX_32X32
+  TX_32X32, TX_32X32, TX_32X32,
+#if CONFIG_TX64
+  TX_64X64
+#else
+  TX_32X32
+#endif
 };
 
 static const BLOCK_SIZE txsize_to_bsize[TX_SIZES] = {
@@ -120,6 +125,9 @@ static const BLOCK_SIZE txsize_to_bsize[TX_SIZES] = {
     BLOCK_8X8,  // TX_8X8
     BLOCK_16X16,  // TX_16X16
     BLOCK_32X32,  // TX_32X32
+#if CONFIG_TX64
+    BLOCK_64X64,  // TX_32X32
+#endif  // CONFIG_TX64
 };
 
 static const TX_SIZE tx_mode_to_biggest_tx_size[TX_MODES] = {

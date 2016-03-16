@@ -13,6 +13,8 @@
 #include "./vpx_dsp_rtcd.h"
 
 #include "vp10/common/idct.h"
+#include "vp10/common/vp10_fwd_txfm2d.h"
+#include "vp10/common/vp10_fwd_txfm2d_cfg.h"
 #include "vp10/encoder/hybrid_fwd_txfm.h"
 
 static INLINE void fdct32x32(int rd_transform, const int16_t *src,
@@ -377,6 +379,32 @@ static void highbd_fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_TX64
+static void fwd_txfm_64x64(const int16_t *src_diff,
+                           tran_low_t *coeff, int diff_stride, TX_TYPE tx_type,
+                           FWD_TXFM_OPT fwd_txfm_opt) {
+  (void)src_diff;
+  (void)coeff;
+  (void)diff_stride;
+  (void)tx_type;
+  (void)fwd_txfm_opt;
+}
+
+#if CONFIG_VP9_HIGHBITDEPTH
+static void highbd_fwd_txfm_64x64(int rd_transform, const int16_t *src_diff,
+                                  tran_low_t *coeff, int diff_stride,
+                                  TX_TYPE tx_type, FWD_TXFM_OPT fwd_txfm_opt) {
+  (void)rd_transform;
+  (void)src_diff;
+  (void)coeff;
+  (void)diff_stride;
+  (void)tx_type;
+  (void)fwd_txfm_opt;
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_TX64
+
+
 void fwd_txfm(const int16_t *src_diff, tran_low_t *coeff, int diff_stride,
               FWD_TXFM_PARAM *fwd_txfm_param) {
   const int fwd_txfm_opt = fwd_txfm_param->fwd_txfm_opt;
@@ -385,6 +413,12 @@ void fwd_txfm(const int16_t *src_diff, tran_low_t *coeff, int diff_stride,
   const int rd_transform = fwd_txfm_param->rd_transform;
   const int lossless = fwd_txfm_param->lossless;
   switch (tx_size) {
+#if CONFIG_TX64
+    case TX_64X64:
+      fwd_txfm_64x64(src_diff, coeff, diff_stride, tx_type,
+                     fwd_txfm_opt);
+      break;
+#endif  // CONFIG_TX64
     case TX_32X32:
       fwd_txfm_32x32(rd_transform, src_diff, coeff, diff_stride, tx_type,
                      fwd_txfm_opt);
@@ -413,6 +447,12 @@ void highbd_fwd_txfm(const int16_t *src_diff, tran_low_t *coeff,
   const int rd_transform = fwd_txfm_param->rd_transform;
   const int lossless = fwd_txfm_param->lossless;
   switch (tx_size) {
+#if CONFIG_TX64
+    case TX_64X64:
+      highbd_fwd_txfm_64x64(rd_transform, src_diff, coeff, diff_stride, tx_type,
+                            fwd_txfm_opt);
+      break;
+#endif  // CONFIG_TX64
     case TX_32X32:
       highbd_fwd_txfm_32x32(rd_transform, src_diff, coeff, diff_stride, tx_type,
                             fwd_txfm_opt);

@@ -1746,6 +1746,30 @@ void vp10_highbd_inv_txfm_add_32x32(const tran_low_t *input, uint8_t *dest,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_TX64
+void vp10_inv_txfm_add_64x64(const tran_low_t *input, uint8_t *dest,
+                             int stride, int eob, TX_TYPE tx_type) {
+  (void)input;
+  (void)dest;
+  (void)stride;
+  (void)eob;
+  (void)tx_type;
+}
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp10_highbd_inv_txfm_add_64x64(const tran_low_t *input, uint8_t *dest,
+                                    int stride, int eob, int bd,
+                                    TX_TYPE tx_type) {
+  (void)input;
+  (void)dest;
+  (void)stride;
+  (void)eob;
+  (void)bd;
+  (void)tx_type;
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_TX64
+
+
 void inv_txfm_add(const tran_low_t *input, uint8_t *dest, int stride,
                   INV_TXFM_PARAM *inv_txfm_param) {
   const TX_TYPE tx_type = inv_txfm_param->tx_type;
@@ -1754,6 +1778,11 @@ void inv_txfm_add(const tran_low_t *input, uint8_t *dest, int stride,
   const int lossless = inv_txfm_param->lossless;
 
   switch (tx_size) {
+#if CONFIG_TX64
+    case TX_64X64:
+      vp10_inv_txfm_add_64x64(input, dest, stride, eob, tx_type);
+      break;
+#endif  // CONFIG_TX64
     case TX_32X32:
       vp10_inv_txfm_add_32x32(input, dest, stride, eob, tx_type);
       break;
@@ -1786,6 +1815,11 @@ void highbd_inv_txfm_add(const tran_low_t *input, uint8_t *dest, int stride,
   const int lossless = inv_txfm_param->lossless;
 
   switch (tx_size) {
+#if CONFIG_TX64
+    case TX_64X64:
+      vp10_highbd_inv_txfm_add_64x64(input, dest, stride, eob, bd, tx_type);
+      break;
+#endif  // CONFIG_TX64
     case TX_32X32:
       vp10_highbd_inv_txfm_add_32x32(input, dest, stride, eob, bd, tx_type);
       break;
