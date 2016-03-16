@@ -1694,7 +1694,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     perform_intra_pred =
         cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame ||
         (!cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame
-            && svc_force_zero_mode[best_ref_frame]);
+            && svc_force_zero_mode[best_ref_frame - 1]);
     inter_mode_thresh = (inter_mode_thresh << 1) + inter_mode_thresh;
   }
   // Perform intra prediction search, if the best SAD is above a certain
