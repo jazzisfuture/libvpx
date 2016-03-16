@@ -8092,6 +8092,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         int_mv backup_mv = frame_mv[NEARMV][ref_frame];
         int_mv cur_mv = mbmi_ext->ref_mv_stack[ref_frame][2].this_mv;
         MB_MODE_INFO backup_mbmi = *mbmi;
+        int backup_skip = x->skip;
 
         int64_t tmp_ref_rd = this_rd;
         int ref_idx;
@@ -8124,6 +8125,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
           int tmp_rate = 0, tmp_rate_y = 0, tmp_rate_uv = 0;
           int tmp_skip = 1;
           int64_t tmp_dist = 0, tmp_sse = 0;
+          int dummy_disable_skip = 0;
 
           cur_mv = mbmi_ext->ref_mv_stack[ref_frame][2 + ref_idx].this_mv;
           lower_mv_precision(&cur_mv.as_mv, cm->allow_high_precision_mv);
@@ -8134,7 +8136,6 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
             INTERP_FILTER dummy_single_inter_filter[MB_MODE_COUNT]
                                                    [MAX_REF_FRAMES];
             int dummy_single_skippable[MB_MODE_COUNT][MAX_REF_FRAMES];
-            int dummy_disable_skip = 0;
             int64_t dummy_mask_filter = 0;
 #if CONFIG_EXT_INTER
             int_mv dummy_single_newmvs[2][MAX_REF_FRAMES] =
@@ -8201,6 +8202,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
           if (tmp_ref_rd > tmp_alt_rd) {
             rate2 = tmp_rate;
+            disable_skip = dummy_disable_skip;
             distortion2 = tmp_dist;
             skippable = tmp_skip;
             rate_y = tmp_rate_y;
@@ -8209,6 +8211,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
             this_rd = tmp_alt_rd;
             tmp_ref_rd = tmp_alt_rd;
             backup_mbmi = *mbmi;
+            backup_skip = x->skip;
 #if CONFIG_VAR_TX
             for (i = 0; i < MAX_MB_PLANE; ++i)
               memcpy(x->blk_skip_drl[i], x->blk_skip[i],
@@ -8216,6 +8219,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #endif
           } else {
             *mbmi = backup_mbmi;
+            x->skip = backup_skip;
           }
         }
 
