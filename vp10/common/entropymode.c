@@ -186,7 +186,7 @@ static const vpx_prob default_refmv_prob[REFMV_MODE_CONTEXTS] = {
 };
 
 static const vpx_prob default_drl_prob[DRL_MODE_CONTEXTS] = {
-    128, 128, 128,
+    128, 160, 180, 128,
 };
 
 #if CONFIG_EXT_INTER
