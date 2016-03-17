@@ -1903,9 +1903,9 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td
               uint8_t drl1_ctx =
                   vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 2);
               if (mbmi->ref_mv_idx == 1)
-                ++counts->drl_mode1[drl1_ctx][0];
+                ++counts->drl_mode0[drl1_ctx][0];
               else
-                ++counts->drl_mode1[drl1_ctx][1];
+                ++counts->drl_mode0[drl1_ctx][1];
             }
           }
         }

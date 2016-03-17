@@ -187,17 +187,17 @@ static void read_drl_idx(const VP10_COMMON *cm,
       if (xd->ref_mv_count[ref_frame_type] > 3) {
         uint8_t drl1_ctx =
             vp10_drl_ctx(xd->ref_mv_stack[ref_frame_type], 2);
-        vpx_prob drl1_prob = cm->fc->drl_prob1[drl1_ctx];
+        vpx_prob drl1_prob = cm->fc->drl_prob0[drl1_ctx];
         if (vpx_read(r, drl1_prob)) {
           mbmi->ref_mv_idx = 2;
           if (xd->counts)
-            ++xd->counts->drl_mode1[drl1_ctx][1];
+            ++xd->counts->drl_mode0[drl1_ctx][1];
 
           return;
         }
 
         if (xd->counts)
-          ++xd->counts->drl_mode1[drl1_ctx][0];
+          ++xd->counts->drl_mode0[drl1_ctx][0];
       }
       return;
     }
