@@ -226,7 +226,7 @@ static void write_drl_idx(const VP10_COMMON *cm,
         mbmi->ref_mv_idx > 0) {
       uint8_t drl1_ctx =
           vp10_drl_ctx(mbmi_ext->ref_mv_stack[ref_frame_type], 2);
-      vpx_prob drl1_prob = cm->fc->drl_prob1[drl1_ctx];
+      vpx_prob drl1_prob = cm->fc->drl_prob0[drl1_ctx];
       vpx_write(w, mbmi->ref_mv_idx != 1, drl1_prob);
     }
   }
@@ -369,9 +369,6 @@ static void update_inter_mode_probs(VP10_COMMON *cm, vpx_writer *w,
   for (i = 0; i < DRL_MODE_CONTEXTS; ++i)
     vp10_cond_prob_diff_update(w, &cm->fc->drl_prob0[i],
                                counts->drl_mode0[i]);
-  for (i = 0; i < DRL_MODE_CONTEXTS; ++i)
-    vp10_cond_prob_diff_update(w, &cm->fc->drl_prob1[i],
-                               counts->drl_mode1[i]);
 #if CONFIG_EXT_INTER
   vp10_cond_prob_diff_update(w, &cm->fc->new2mv_prob, counts->new2mv_mode);
 #endif  // CONFIG_EXT_INTER
