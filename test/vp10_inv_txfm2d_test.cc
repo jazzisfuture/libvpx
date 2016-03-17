@@ -12,13 +12,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
-
+#include "./vp10_rtcd.h"
 #include "test/acm_random.h"
 #include "test/vp10_txfm_test.h"
-#include "vp10/common/vp10_fwd_txfm2d.h"
 #include "vp10/common/vp10_fwd_txfm2d_cfg.h"
-#include "vp10/common/vp10_inv_txfm2d.h"
 #include "vp10/common/vp10_inv_txfm2d_cfg.h"
 
 using libvpx_test::ACMRandom;
@@ -50,11 +47,12 @@ const TXFM_2D_CFG* inv_txfm_cfg_ls[5][4] = {
     {&inv_txfm_2d_cfg_dct_dct_64, NULL, NULL, NULL}};
 
 const Fwd_Txfm2d_Func fwd_txfm_func_ls[5] = {
-    vp10_fwd_txfm2d_4x4, vp10_fwd_txfm2d_8x8, vp10_fwd_txfm2d_16x16,
-    vp10_fwd_txfm2d_32x32, vp10_fwd_txfm2d_64x64};
+    vp10_fwd_txfm2d_4x4_c, vp10_fwd_txfm2d_8x8_c, vp10_fwd_txfm2d_16x16_c,
+    vp10_fwd_txfm2d_32x32_c, vp10_fwd_txfm2d_64x64_c};
 const Inv_Txfm2d_Func inv_txfm_func_ls[5] = {
-    vp10_inv_txfm2d_add_4x4, vp10_inv_txfm2d_add_8x8, vp10_inv_txfm2d_add_16x16,
-    vp10_inv_txfm2d_add_32x32, vp10_inv_txfm2d_add_64x64};
+    vp10_inv_txfm2d_add_4x4_c, vp10_inv_txfm2d_add_8x8_c,
+    vp10_inv_txfm2d_add_16x16_c, vp10_inv_txfm2d_add_32x32_c,
+    vp10_inv_txfm2d_add_64x64_c};
 
 const int txfm_type_num = 4;
 
