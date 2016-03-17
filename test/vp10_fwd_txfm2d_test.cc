@@ -16,8 +16,8 @@
 
 #include "test/acm_random.h"
 #include "test/vp10_txfm_test.h"
-#include "vp10/common/vp10_fwd_txfm2d.h"
 #include "vp10/common/vp10_fwd_txfm2d_cfg.h"
+#include "./vp10_rtcd.h"
 
 using libvpx_test::ACMRandom;
 
