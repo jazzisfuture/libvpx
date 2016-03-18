@@ -1230,6 +1230,48 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
 #endif
                       ref_mvs[ref_frame],
                       mi_row, mi_col, fpm_sync, (void *)pbi, inter_mode_ctx);
+
+#if CONFIG_REF_MV
+    if (ref_frame > ALTREF_FRAME) {
+      uint8_t comp_count = xd->ref_mv_count[ref_frame];
+      MV_REFERENCE_FRAME rf[2];
+      int i, k;
+      vp10_set_ref_frame(rf, ref_frame);
+
+      for (i = 0; i < xd->ref_mv_count[rf[0]] && comp_count <= 4; ++i) {
+        for (k = 0; k < xd->ref_mv_count[rf[1]] && comp_count <= 4; ++k) {
+          int_mv this_mv = xd->ref_mv_stack[rf[0]][i].this_mv;
+          int_mv comp_mv = xd->ref_mv_stack[rf[1]][k].this_mv;
+          int idx;
+          for (idx = 0; idx < comp_count; ++idx)
+            if (this_mv.as_int ==
+                xd->ref_mv_stack[ref_frame][idx].this_mv.as_int &&
+                comp_mv.as_int ==
+                xd->ref_mv_stack[ref_frame][idx].comp_mv.as_int)
+              break;
+
+          if (idx == comp_count) {
+            xd->ref_mv_stack[ref_frame][idx].this_mv = this_mv;
+            xd->ref_mv_stack[ref_frame][idx].comp_mv = comp_mv;
+
+
+            xd->ref_mv_stack[ref_frame][idx].weight =
+                VPXMIN(xd->ref_mv_stack[rf[0]][i].weight,
+                       xd->ref_mv_stack[rf[1]][k].weight);
+
+            // ranking the candidate according to their categories.
+            if (idx > 0)
+              xd->ref_mv_stack[ref_frame][idx].weight =
+                  VPXMIN(xd->ref_mv_stack[ref_frame][idx].weight,
+                         xd->ref_mv_stack[ref_frame][idx - 1].weight);
+
+            ++xd->ref_mv_count[ref_frame];
+            ++comp_count;
+          }
+        }
+      }
+    }
+#endif
   }
 
 #if CONFIG_OBMC
