@@ -597,6 +597,7 @@ static int prune_three_for_sby(const VP10_COMP *cpi,
 
 #endif  // CONFIG_EXT_TX
 
+#if !CONFIG_VP9_HIGHBITDEPTH
 // Performance drop: 0.3%, Speed improvement: 5%
 static int prune_one_for_sby(const VP10_COMP *cpi,
                              BLOCK_SIZE bsize,
@@ -609,11 +610,19 @@ static int prune_one_for_sby(const VP10_COMP *cpi,
   return adst_vs_flipadst(cpi, bsize, p->src.buf, p->src.stride, pd->dst.buf,
                           pd->dst.stride, hdist, vdist);
 }
+#endif
 
 static int prune_tx_types(const VP10_COMP *cpi,
                           BLOCK_SIZE bsize,
                           MACROBLOCK *x,
                           MACROBLOCKD *xd) {
+#if CONFIG_VP9_HIGHBITDEPTH
+  (void)cpi;
+  (void)bsize;
+  (void)x;
+  (void)xd;
+  return 0;
+#else
   switch (cpi->sf.tx_type_search) {
     case NO_PRUNE:
       return 0;
@@ -632,6 +641,7 @@ static int prune_tx_types(const VP10_COMP *cpi,
   }
   assert(0);
   return 0;
+#endif
 }
 
 static int do_tx_type_search(TX_TYPE tx_type,
