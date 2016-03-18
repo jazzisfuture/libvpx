@@ -7509,6 +7509,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   for (; ref_frame < MODE_CTX_REF_FRAMES; ++ref_frame) {
     MODE_INFO *const mi = xd->mi[0];
     int_mv *const candidates = x->mbmi_ext->ref_mvs[ref_frame];
+    MV_REFERENCE_FRAME rf[2];
+    uint8_t comp_count = 0;
+
+    vp10_set_ref_frame(rf, ref_frame);
     x->mbmi_ext->mode_context[ref_frame] = 0;
     vp10_find_mv_refs(cm, xd, mi, ref_frame,
                       &mbmi_ext->ref_mv_count[ref_frame],
@@ -7518,6 +7522,43 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #endif  // CONFIG_EXT_INTER
                       candidates, mi_row, mi_col,
                       NULL, NULL, mbmi_ext->mode_context);
+
+    // This stage must be done after the reference motion vector candidate
+    // lists for single reference frame have been constructed.
+    comp_count = mbmi_ext->ref_mv_count[ref_frame];
+
+    for (i = 0; i < mbmi_ext->ref_mv_count[rf[0]] && comp_count <= 4; ++i) {
+      for (k = 0; k < mbmi_ext->ref_mv_count[rf[1]] && comp_count <= 4; ++k) {
+        int_mv this_mv = mbmi_ext->ref_mv_stack[rf[0]][i].this_mv;
+        int_mv comp_mv = mbmi_ext->ref_mv_stack[rf[1]][k].this_mv;
+        int idx;
+        for (idx = 0; idx < comp_count; ++idx)
+          if (this_mv.as_int ==
+              mbmi_ext->ref_mv_stack[ref_frame][idx].this_mv.as_int &&
+              comp_mv.as_int ==
+              mbmi_ext->ref_mv_stack[ref_frame][idx].comp_mv.as_int)
+            break;
+
+        if (idx == comp_count) {
+          mbmi_ext->ref_mv_stack[ref_frame][idx].this_mv = this_mv;
+          mbmi_ext->ref_mv_stack[ref_frame][idx].comp_mv = comp_mv;
+
+
+          mbmi_ext->ref_mv_stack[ref_frame][idx].weight =
+              VPXMIN(mbmi_ext->ref_mv_stack[rf[0]][i].weight,
+                     mbmi_ext->ref_mv_stack[rf[1]][k].weight);
+
+          // ranking the candidate according to their categories.
+          if (idx > 0)
+            mbmi_ext->ref_mv_stack[ref_frame][idx].weight =
+                VPXMIN(mbmi_ext->ref_mv_stack[ref_frame][idx].weight,
+                       mbmi_ext->ref_mv_stack[ref_frame][idx - 1].weight);
+
+          ++mbmi_ext->ref_mv_count[ref_frame];
+          ++comp_count;
+        }
+      }
+    }
   }
 #endif  // CONFIG_REF_MV
 
