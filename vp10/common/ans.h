@@ -230,6 +230,15 @@ static INLINE int uabs_read_bit(struct AnsDecoder *ans) {
   return s;
 }
 
+static INLINE int uabs_read_literal(struct AnsDecoder *ans, int bits) {
+  int literal = 0, bit;
+
+  for (bit = bits - 1; bit >= 0; bit--)
+    literal |= uabs_read_bit(ans) << bit;
+
+  return literal;
+}
+
 struct rans_sym {
   AnsP8 prob;
   AnsP8 cum_prob;  // not-inclusive
@@ -326,6 +335,10 @@ static INLINE int ans_read_init(struct AnsDecoder *const ans,
 
 static INLINE int ans_read_end(struct AnsDecoder *const ans) {
   return ans->state == l_base;
+}
+
+static INLINE int ans_reader_has_error(const struct AnsDecoder *const ans) {
+  return ans->state < l_base && ans->buf_offset == 0;
 }
 #undef ANS_DIVREM
 #ifdef __cplusplus
