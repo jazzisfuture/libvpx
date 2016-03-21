@@ -1469,6 +1469,7 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     cm->frame_type = INTER_FRAME;
   }
   if (rc->frames_till_gf_update_due == 0) {
+    rc->gfu_boost = DEFAULT_GF_BOOST;
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi->oxcf.pass == 0) {
       vp9_cyclic_refresh_set_golden_update(cpi);
     } else {
@@ -1485,7 +1486,6 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     }
     cpi->refresh_golden_frame = 1;
     rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
-    rc->gfu_boost = DEFAULT_GF_BOOST;
   }
   if (cm->frame_type == KEY_FRAME)
     target = calc_iframe_target_size_one_pass_vbr(cpi);

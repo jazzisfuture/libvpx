@@ -21,6 +21,8 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
+#define DEFAULT_GF_BOOST 2000
+
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   size_t last_coded_q_map_size;
   size_t consec_zero_mv_size;
@@ -301,6 +303,7 @@ void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
 
 // Set golden frame update interval, for non-svc 1 pass CBR mode.
 void vp9_cyclic_refresh_set_golden_update(VP9_COMP *const cpi) {
+  VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   // Set minimum gf_interval for GF update to a multiple of the refresh period,
@@ -310,8 +313,16 @@ void vp9_cyclic_refresh_set_golden_update(VP9_COMP *const cpi) {
     rc->baseline_gf_interval = VPXMIN(4 * (100 / cr->percent_refresh), 40);
   else
     rc->baseline_gf_interval = 40;
-  if (cpi->oxcf.rc_mode == VPX_VBR)
-    rc->baseline_gf_interval = 20;
+  if (cpi->oxcf.rc_mode == VPX_VBR) {
+    // TODO(marpan): Adjust the interval and boost based on QP.
+    rc->baseline_gf_interval = (rc->min_gf_interval + rc->max_gf_interval) / 2;
+    // Use lower boost for this aq-mode.
+    rc->gfu_boost = DEFAULT_GF_BOOST >> 1;
+    // Increase the gf interval at higher QP.
+    if (cm->current_video_frame > 20 &&
+        rc->avg_frame_qindex[INTER_FRAME] > 3 * rc->worst_quality >> 2)
+      rc->baseline_gf_interval = rc->baseline_gf_interval << 1;
+  }
 }
 
 // Update some encoding stats (from the just encoded frame). If this frame's
@@ -513,7 +524,7 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     // For now use smaller qp-delta (than CBR), no second boosted seg, and
     // turn-off (no refresh) on golden refresh (since it's already boosted).
     cr->percent_refresh = 10;
-    cr->rate_ratio_qdelta = 1.5;
+    cr->rate_ratio_qdelta = 1.3;
     cr->rate_boost_fac = 10;
     if (cpi->refresh_golden_frame == 1) {
       cr->percent_refresh = 0;
