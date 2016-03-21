@@ -4171,15 +4171,13 @@ static int set_and_cost_bmi_mvs(VP10_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
 
 #if CONFIG_REF_MV
   if (mode == NEWMV) {
-    mic->bmi[i].pred_mv[0].as_int =
-        mbmi_ext->ref_mvs[mbmi->ref_frame[0]][0].as_int;
+    mic->bmi[i].pred_mv_s8[0].as_int = best_ref_mv[0]->as_int;
     if (is_compound)
-      mic->bmi[i].pred_mv[1].as_int =
-          mbmi_ext->ref_mvs[mbmi->ref_frame[1]][0].as_int;
+      mic->bmi[i].pred_mv_s8[1].as_int = best_ref_mv[1]->as_int;
   } else {
-    mic->bmi[i].pred_mv[0].as_int = this_mv[0].as_int;
+    mic->bmi[i].pred_mv_s8[0].as_int = this_mv[0].as_int;
     if (is_compound)
-      mic->bmi[i].pred_mv[1].as_int = this_mv[1].as_int;
+      mic->bmi[i].pred_mv_s8[1].as_int = this_mv[1].as_int;
   }
 #endif
 
@@ -4319,6 +4317,9 @@ typedef struct {
   int64_t bsse;
   int64_t brdcost;
   int_mv mvs[2];
+#if CONFIG_REF_MV
+  int_mv pred_mv[2];
+#endif
 #if CONFIG_EXT_INTER
   int_mv ref_mv[2];
 #endif  // CONFIG_EXT_INTER
@@ -5102,6 +5103,16 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
           if (num_4x4_blocks_high > 1)
             bsi->rdstat[i + 2][mode_idx].mvs[ref].as_int =
                 mode_mv[this_mode][ref].as_int;
+#if CONFIG_REF_MV
+          bsi->rdstat[i][mode_idx].pred_mv[ref].as_int =
+              mi->bmi[i].pred_mv_s8[ref].as_int;
+          if (num_4x4_blocks_wide > 1)
+            bsi->rdstat[i + 1][mode_idx].pred_mv[ref].as_int =
+                mi->bmi[i].pred_mv_s8[ref].as_int;
+          if (num_4x4_blocks_high > 1)
+            bsi->rdstat[i + 2][mode_idx].pred_mv[ref].as_int =
+                mi->bmi[i].pred_mv_s8[ref].as_int;
+#endif
 #if CONFIG_EXT_INTER
           bsi->rdstat[i][mode_idx].ref_mv[ref].as_int =
             bsi->ref_mv[ref]->as_int;
@@ -5276,6 +5287,11 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
     mi->bmi[i].as_mv[0].as_int = bsi->rdstat[i][mode_idx].mvs[0].as_int;
     if (has_second_ref(mbmi))
       mi->bmi[i].as_mv[1].as_int = bsi->rdstat[i][mode_idx].mvs[1].as_int;
+#if CONFIG_REF_MV
+    mi->bmi[i].pred_mv_s8[0] = bsi->rdstat[i][mode_idx].pred_mv[0];
+    if (has_second_ref(mbmi))
+      mi->bmi[i].pred_mv_s8[1] = bsi->rdstat[i][mode_idx].pred_mv[1];
+#endif
 #if CONFIG_EXT_INTER
     mi->bmi[i].ref_mv[0].as_int = bsi->rdstat[i][mode_idx].ref_mv[0].as_int;
     if (has_second_rf)
@@ -9591,8 +9607,8 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
     mbmi->mv[0].as_int = xd->mi[0]->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = xd->mi[0]->bmi[3].as_mv[1].as_int;
 #if CONFIG_REF_MV
-    mbmi->pred_mv[0].as_int = xd->mi[0]->bmi[3].pred_mv[0].as_int;
-    mbmi->pred_mv[1].as_int = xd->mi[0]->bmi[3].pred_mv[1].as_int;
+    mbmi->pred_mv[0].as_int = xd->mi[0]->bmi[3].pred_mv_s8[0].as_int;
+    mbmi->pred_mv[1].as_int = xd->mi[0]->bmi[3].pred_mv_s8[1].as_int;
 #endif
   }
 
