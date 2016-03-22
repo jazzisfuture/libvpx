@@ -4122,6 +4122,22 @@ static int set_and_cost_bmi_mvs(VP10_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
 #endif  // CONFIG_EXT_INTER
       thismvcost += vp10_mv_bit_cost(&this_mv[0].as_mv, &best_ref_mv[0]->as_mv,
                                     mvjcost, mvcost, MV_COST_WEIGHT_SUB);
+
+#if CONFIG_REF_MV
+      if ((this_mv[0].as_mv.row & 0x01) == 1 ||
+          (this_mv[0].as_mv.col & 0x01) == 1)
+        if (abs(best_ref_mv[0]->as_mv.row) >= 64 ||
+            abs(best_ref_mv[0]->as_mv.col) >= 64)
+          assert(0);
+
+      if (is_compound)
+        if ((this_mv[1].as_mv.row & 0x01) == 1 ||
+            (this_mv[1].as_mv.col & 0x01) == 1)
+          if (abs(best_ref_mv[1]->as_mv.row) >= 64 ||
+              abs(best_ref_mv[1]->as_mv.col) >= 64)
+            assert(0);
+#endif
+
 #if !CONFIG_EXT_INTER
       if (is_compound) {
         this_mv[1].as_int = seg_mvs[mbmi->ref_frame[1]].as_int;
@@ -4772,8 +4788,10 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_EXT_INTER
                                         BEST_SEG_INFO *bsi_buf, int filter_idx,
                                         int mi_row, int mi_col) {
-  int i;
   BEST_SEG_INFO *bsi = bsi_buf + filter_idx;
+#if CONFIG_REF_MV
+  int_mv tmp_ref_mv[2];
+#endif
   MACROBLOCKD *xd = &x->e_mbd;
   MODE_INFO *mi = xd->mi[0];
   MB_MODE_INFO *mbmi = &mi->mbmi;
@@ -4805,8 +4823,18 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
   bsi->mvp.as_int = best_ref_mv->as_int;
   bsi->mvthresh = mvthresh;
 
-  for (i = 0; i < 4; i++)
-    bsi->modes[i] = ZEROMV;
+  for (idx = 0; idx < 4; ++idx)
+    bsi->modes[idx] = ZEROMV;
+
+  for (idx = 0; idx < 4; ++idx) {
+    for (k = NEARESTMV; k <= NEWMV; ++k) {
+      bsi->rdstat[idx][INTER_OFFSET(k)].pred_mv[0].as_int = INVALID_MV;
+      bsi->rdstat[idx][INTER_OFFSET(k)].pred_mv[1].as_int = INVALID_MV;
+
+      bsi->rdstat[idx][INTER_OFFSET(k)].mvs[0].as_int = INVALID_MV;
+      bsi->rdstat[idx][INTER_OFFSET(k)].mvs[1].as_int = INVALID_MV;
+    }
+  }
 
   memcpy(t_above, pd->above_context, sizeof(t_above));
   memcpy(t_left, pd->left_context, sizeof(t_left));
@@ -4856,6 +4884,13 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                       &frame_mv[NEARESTMV][frame],
                                       &frame_mv[NEARMV][frame]);
 
+#if CONFIG_REF_MV
+        tmp_ref_mv[ref] = frame_mv[NEARESTMV][mbmi->ref_frame[ref]];
+        lower_mv_precision(&tmp_ref_mv[ref].as_mv, cm->allow_high_precision_mv);
+        bsi->ref_mv[ref] = &tmp_ref_mv[ref];
+        mbmi_ext->ref_mvs[frame][0] = tmp_ref_mv[ref];
+#endif
+
 #if CONFIG_EXT_INTER
         mv_ref_list[0].as_int = frame_mv[NEARESTMV][frame].as_int;
         mv_ref_list[1].as_int = frame_mv[NEARMV][frame].as_int;
@@ -4900,6 +4935,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_EXT_INTER
         const struct buf_2d orig_src = x->plane[0].src;
         struct buf_2d orig_pre[2];
+        int run_rd_check = 0;
 
         mode_idx = INTER_OFFSET(this_mode);
 #if CONFIG_EXT_INTER
@@ -4911,6 +4947,53 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
         bsi->rdstat[i][mode_idx].brdcost = INT64_MAX;
         if (!(inter_mode_mask & (1 << this_mode)))
           continue;
+
+#if CONFIG_REF_MV
+        run_rd_check = 2;
+        if (filter_idx > 0) {
+          BEST_SEG_INFO* ref_bsi = bsi_buf;
+          if (seg_mvs[i][mbmi->ref_frame[0]].as_int ==
+              ref_bsi->rdstat[i][mode_idx].mvs[0].as_int &&
+              ref_bsi->rdstat[i][mode_idx].mvs[0].as_int != INVALID_MV)
+            if (bsi->ref_mv[0]->as_int ==
+                ref_bsi->rdstat[i][mode_idx].pred_mv[0].as_int)
+              --run_rd_check;
+
+          if (!has_second_rf) {
+            --run_rd_check;
+          } else {
+            if (seg_mvs[i][mbmi->ref_frame[1]].as_int ==
+                ref_bsi->rdstat[i][mode_idx].mvs[1].as_int &&
+                ref_bsi->rdstat[i][mode_idx].mvs[1].as_int != INVALID_MV)
+              if (bsi->ref_mv[1]->as_int ==
+                  ref_bsi->rdstat[i][mode_idx].pred_mv[1].as_int)
+                --run_rd_check;
+          }
+
+          if (run_rd_check != 0 && filter_idx > 1) {
+            ref_bsi = bsi_buf + 1;
+            run_rd_check = 2;
+
+            if (seg_mvs[i][mbmi->ref_frame[0]].as_int ==
+                ref_bsi->rdstat[i][mode_idx].mvs[0].as_int &&
+                ref_bsi->rdstat[i][mode_idx].mvs[0].as_int != INVALID_MV)
+              if (bsi->ref_mv[0]->as_int ==
+                  ref_bsi->rdstat[i][mode_idx].pred_mv[0].as_int)
+                --run_rd_check;
+
+            if (!has_second_rf) {
+              --run_rd_check;
+            } else {
+              if (seg_mvs[i][mbmi->ref_frame[1]].as_int ==
+                  ref_bsi->rdstat[i][mode_idx].mvs[1].as_int &&
+                  ref_bsi->rdstat[i][mode_idx].mvs[1].as_int != INVALID_MV)
+                if (bsi->ref_mv[1]->as_int ==
+                    ref_bsi->rdstat[i][mode_idx].pred_mv[1].as_int)
+                  --run_rd_check;
+            }
+          }
+        }
+#endif
 
         if (!check_best_zero_mv(cpi, mbmi_ext->mode_context,
 #if CONFIG_REF_MV && CONFIG_EXT_INTER
@@ -4933,7 +5016,8 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
             seg_mvs[i][mv_idx][mbmi->ref_frame[0]].as_int == INVALID_MV
 #else
             this_mode == NEWMV &&
-            seg_mvs[i][mbmi->ref_frame[0]].as_int == INVALID_MV
+            (seg_mvs[i][mbmi->ref_frame[0]].as_int == INVALID_MV ||
+                run_rd_check)
 #endif  // CONFIG_EXT_INTER
             ) {
 #if CONFIG_EXT_INTER
@@ -4958,11 +5042,13 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
             bsi->mvp.as_int = bsi->ref_mv[0]->as_int;
 #else
             // use previous block's result as next block's MV predictor.
+#if !CONFIG_REF_MV
             if (i > 0) {
               bsi->mvp.as_int = mi->bmi[i - 1].as_mv[0].as_int;
               if (i == 2)
                 bsi->mvp.as_int = mi->bmi[i - 2].as_mv[0].as_int;
             }
+#endif
 #endif  // CONFIG_EXT_INTER
           }
           if (i == 0)
@@ -4981,8 +5067,13 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
             step_param = cpi->mv_step_param;
           }
 
+#if CONFIG_REF_MV
+          mvp_full.row = best_ref_mv->as_mv.row >> 3;
+          mvp_full.col = best_ref_mv->as_mv.col >> 3;
+#else
           mvp_full.row = bsi->mvp.as_mv.row >> 3;
           mvp_full.col = bsi->mvp.as_mv.col >> 3;
+#endif
 
           if (cpi->sf.adaptive_motion_search) {
             mvp_full.row = x->pred_mv[mbmi->ref_frame[0]].row >> 3;
@@ -5058,6 +5149,19 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
                   NULL, 0, 0, 0);
             }
 
+
+            if (filter_idx > 0) {
+              if ((bsi_buf + filter_idx - 1)->rdstat[i][mode_idx].pred_mv[0].as_int ==
+                  bsi->ref_mv[0]->as_int &&
+                  (bsi_buf + filter_idx - 1)->rdstat[i][mode_idx].pred_mv[0].as_int != INVALID_MV &&
+                  seg_mvs[i][mbmi->ref_frame[0]].as_int != INVALID_MV)
+                if (new_mv->row !=
+                    seg_mvs[i][mbmi->ref_frame[0]].as_mv.row ||
+                    new_mv->col !=
+                    seg_mvs[i][mbmi->ref_frame[0]].as_mv.col)
+                  assert(0);
+            }
+
             // save motion search result for use in compound prediction
 #if CONFIG_EXT_INTER
             seg_mvs[i][mv_idx][mbmi->ref_frame[0]].as_mv = *new_mv;
@@ -5090,7 +5194,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
 #else
             this_mode == NEWMV &&
 #endif  // CONFIG_EXT_INTER
-            mbmi->interp_filter == EIGHTTAP_REGULAR) {
+            (mbmi->interp_filter == EIGHTTAP_REGULAR || run_rd_check)) {
           // adjust src pointers
           mi_buf_shift(x, i);
           if (cpi->sf.comp_inter_joint_search_thresh <= bsize) {
@@ -5210,6 +5314,15 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
               ref_bsi->rdstat[i][mode_idx].brdcost < INT64_MAX) {
             memcpy(&bsi->rdstat[i][mode_idx], &ref_bsi->rdstat[i][mode_idx],
                    sizeof(SEG_RDSTAT));
+#if CONFIG_REF_MV
+            if (run_rd_check && this_mode == NEWMV) {
+              bsi->rdstat[i][mode_idx].pred_mv[0].as_int =
+                  bsi->ref_mv[0]->as_int;
+              if (has_second_rf)
+                bsi->rdstat[i][mode_idx].pred_mv[1].as_int =
+                    bsi->ref_mv[1]->as_int;
+            }
+#endif
             if (num_4x4_blocks_wide > 1)
               bsi->rdstat[i + 1][mode_idx].eobs =
                   ref_bsi->rdstat[i + 1][mode_idx].eobs;
@@ -5320,23 +5433,23 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
   if (bsi->segment_rd > best_rd)
     return INT64_MAX;
   /* set it to the best */
-  for (i = 0; i < 4; i++) {
-    mode_idx = INTER_OFFSET(bsi->modes[i]);
-    mi->bmi[i].as_mv[0].as_int = bsi->rdstat[i][mode_idx].mvs[0].as_int;
+  for (idx = 0; idx < 4; idx++) {
+    mode_idx = INTER_OFFSET(bsi->modes[idx]);
+    mi->bmi[idx].as_mv[0].as_int = bsi->rdstat[idx][mode_idx].mvs[0].as_int;
     if (has_second_ref(mbmi))
-      mi->bmi[i].as_mv[1].as_int = bsi->rdstat[i][mode_idx].mvs[1].as_int;
+      mi->bmi[idx].as_mv[1].as_int = bsi->rdstat[idx][mode_idx].mvs[1].as_int;
 #if CONFIG_REF_MV
-    mi->bmi[i].pred_mv_s8[0] = bsi->rdstat[i][mode_idx].pred_mv[0];
+    mi->bmi[idx].pred_mv_s8[0] = bsi->rdstat[idx][mode_idx].pred_mv[0];
     if (has_second_ref(mbmi))
-      mi->bmi[i].pred_mv_s8[1] = bsi->rdstat[i][mode_idx].pred_mv[1];
+      mi->bmi[idx].pred_mv_s8[1] = bsi->rdstat[idx][mode_idx].pred_mv[1];
 #endif
 #if CONFIG_EXT_INTER
     mi->bmi[i].ref_mv[0].as_int = bsi->rdstat[i][mode_idx].ref_mv[0].as_int;
     if (has_second_rf)
       mi->bmi[i].ref_mv[1].as_int = bsi->rdstat[i][mode_idx].ref_mv[1].as_int;
 #endif  // CONFIG_EXT_INTER
-    x->plane[0].eobs[i] = bsi->rdstat[i][mode_idx].eobs;
-    mi->bmi[i].as_mode = bsi->modes[i];
+    x->plane[0].eobs[idx] = bsi->rdstat[idx][mode_idx].eobs;
+    mi->bmi[idx].as_mode = bsi->modes[idx];
   }
 
   /*
