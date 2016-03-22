@@ -2512,6 +2512,7 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
 #endif  // CONFIG_EXT_PARTITION_TYPES
 }
 
+#if !CONFIG_ANS
 static void setup_bool_decoder(const uint8_t *data,
                                const uint8_t *data_end,
                                const size_t read_size,
@@ -2530,7 +2531,7 @@ static void setup_bool_decoder(const uint8_t *data,
     vpx_internal_error(error_info, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder %d", 1);
 }
-#if CONFIG_ANS
+#else
 static void setup_token_decoder(const uint8_t *data,
                                 const uint8_t *data_end,
                                 const size_t read_size,
@@ -3237,14 +3238,18 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
               &cm->counts : NULL;
       vp10_zero(td->dqcoeff);
       vp10_tile_init(&td->xd.tile, td->cm, tile_row, tile_col);
+#if !CONFIG_ANS
       setup_bool_decoder(buf->data, data_end, buf->size, &cm->error,
-                         &td->bit_reader,
-                         pbi->decrypt_cb, pbi->decrypt_state);
-#if CONFIG_ANS
+                         &td->bit_reader, pbi->decrypt_cb,
+                         pbi->decrypt_state);
+#else
+      if (buf->size < 3 || !read_is_valid(buf->data, buf->size, data_end))
+        vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                           "Truncated packet or corrupt tile length");
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
-                          &td->token_ans,
-                          pbi->decrypt_cb, pbi->decrypt_state);
-#endif  // CONFIG_ANS
+                          &td->bit_reader, pbi->decrypt_cb,
+                          pbi->decrypt_state);
+#endif
       vp10_init_macroblockd(cm, &td->xd, td->dqcoeff);
       td->xd.plane[0].color_index_map = td->color_index_map[0];
       td->xd.plane[1].color_index_map = td->color_index_map[1];
@@ -3279,7 +3284,7 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
 #endif  // CONFIG_SUPERTX
                            mi_row, mi_col, &td->bit_reader,
 #if CONFIG_ANS
-                           &td->token_ans,
+                           &td->bit_reader,
 #endif  // CONFIG_ANS
                            BLOCK_64X64, 4);
         }
@@ -3394,7 +3399,7 @@ static int tile_worker_hook(TileWorkerData *const tile_data,
 #endif
                        mi_row, mi_col, &tile_data->bit_reader,
 #if CONFIG_ANS
-                       &tile_data->token_ans,
+                       &tile_data->bit_reader,
 #endif  // CONFIG_ANS
                        BLOCK_64X64, 4);
     }
@@ -3535,12 +3540,13 @@ static const uint8_t *decode_tiles_mt(VP10Decoder *pbi,
         vp10_zero(twd->dqcoeff);
         vp10_tile_init(tile_info, cm, tile_row, buf->col);
         vp10_tile_init(&twd->xd.tile, cm, tile_row, buf->col);
+#if !CONFIG_ANS
         setup_bool_decoder(buf->data, data_end, buf->size, &cm->error,
                            &twd->bit_reader,
                            pbi->decrypt_cb, pbi->decrypt_state);
-#if CONFIG_ANS
+#else
         setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
-                            &twd->token_ans, pbi->decrypt_cb,
+                            &twd->bit_reader, pbi->decrypt_cb,
                             pbi->decrypt_state);
 #endif  // CONFIG_ANS
         vp10_init_macroblockd(cm, &twd->xd, twd->dqcoeff);
@@ -3966,10 +3972,16 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
   vpx_reader r;
   int k, i, j;
 
+#if !CONFIG_ANS
   if (vpx_reader_init(&r, data, partition_size, pbi->decrypt_cb,
                       pbi->decrypt_state))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder 0");
+#else
+  if (ans_read_init(&r, data, partition_size))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to allocate compressed header ANS decoder");
+#endif  // !CONFIG_ANS
 
   if (cm->tx_mode == TX_MODE_SELECT) {
     for (i = 0; i < TX_SIZES - 1; ++i)

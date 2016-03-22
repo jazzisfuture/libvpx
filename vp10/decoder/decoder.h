@@ -18,9 +18,6 @@
 #include "vpx_scale/yv12config.h"
 #include "vpx_util/vpx_thread.h"
 
-#if CONFIG_ANS
-#include "vp10/common/ans.h"
-#endif
 #include "vp10/common/thread_common.h"
 #include "vp10/common/onyxc_int.h"
 #include "vp10/common/ppflags.h"
@@ -34,9 +31,6 @@ extern "C" {
 typedef struct TileData {
   VP10_COMMON *cm;
   vpx_reader bit_reader;
-#if CONFIG_ANS
-  struct AnsDecoder token_ans;
-#endif  // CONFIG_ANS
   DECLARE_ALIGNED(16, MACROBLOCKD, xd);
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
@@ -46,9 +40,6 @@ typedef struct TileData {
 typedef struct TileWorkerData {
   struct VP10Decoder *pbi;
   vpx_reader bit_reader;
-#if CONFIG_ANS
-  struct AnsDecoder token_ans;
-#endif  // CONFIG_ANS
   FRAME_COUNTS counts;
   DECLARE_ALIGNED(16, MACROBLOCKD, xd);
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
