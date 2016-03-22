@@ -360,10 +360,15 @@ static void highbd_fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
   (void)bd;
   switch (tx_type) {
     case DCT_DCT:
-      if (fwd_txfm_opt == FWD_TXFM_OPT_NORMAL)
-        highbd_fdct32x32(rd_transform, src_diff, coeff, diff_stride);
-      else  // FWD_TXFM_OPT_DC
-        vpx_highbd_fdct32x32_1(src_diff, coeff, diff_stride);
+      if (bd == 10) {
+        vp10_fwd_txfm2d_32x32(src_diff, coeff, diff_stride,
+                              &fwd_txfm_2d_cfg_dct_dct_32, bd);
+      } else {
+        if (fwd_txfm_opt == FWD_TXFM_OPT_NORMAL)
+          highbd_fdct32x32(rd_transform, src_diff, coeff, diff_stride);
+        else  // FWD_TXFM_OPT_DC
+          vpx_highbd_fdct32x32_1(src_diff, coeff, diff_stride);
+      }
       break;
 #if CONFIG_EXT_TX
     case ADST_DCT:
