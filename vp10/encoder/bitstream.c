@@ -1616,7 +1616,8 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
 static void write_partition(const VP10_COMMON *const cm,
                             const MACROBLOCKD *const xd,
                             int hbs, int mi_row, int mi_col,
-                            PARTITION_TYPE p, BLOCK_SIZE bsize, vpx_writer *w) {
+                            PARTITION_TYPE p, BLOCK_SIZE bsize,
+                            vpx_writer *w) {
   const int ctx = partition_plane_context(xd, mi_row, mi_col, bsize);
   const vpx_prob *const probs = cm->fc->partition_prob[ctx];
   const int has_rows = (mi_row + hbs) < cm->mi_rows;
@@ -2697,7 +2698,6 @@ static uint32_t write_tiles(VP10_COMP *const cpi,
   vpx_writer mode_bc;
 #if CONFIG_ANS
   struct AnsCoder token_ans;
-  struct BufAnsCoder buffered_ans;
 #endif  // CONFIG_ANS
   int tile_row, tile_col;
   TOKENEXTRA *(*const tok_buffers)[MAX_TILE_COLS] = cpi->tile_tok;
@@ -2738,6 +2738,7 @@ static uint32_t write_tiles(VP10_COMP *const cpi,
       unsigned int tile_size;
       const TOKENEXTRA *tok = tok_buffers[tile_row][tile_col];
       const TOKENEXTRA *tok_end = tok + cpi->tok_count[tile_row][tile_col];
+      const int data_offset = have_tiles ? 4 : 0;
 
       vp10_tile_set_row(&tile_info, cm, tile_row);
 
@@ -2745,28 +2746,20 @@ static uint32_t write_tiles(VP10_COMP *const cpi,
 
       // Is CONFIG_EXT_TILE = 1, every tile in the row has a header,
       // even for the last one, unless no tiling is used at all.
-      if (have_tiles) {
-        total_size += 4;
-        vpx_start_encode(&mode_bc, buf->data + 4);
-      } else {
-        vpx_start_encode(&mode_bc, buf->data);
-      }
-
+      total_size += data_offset;
 #if !CONFIG_ANS
+      vpx_start_encode(&mode_bc, buf->data + data_offset);
       write_modes(cpi, &tile_info, &mode_bc, &tok, tok_end);
       assert(tok == tok_end);
       vpx_stop_encode(&mode_bc);
       tile_size = mode_bc.pos;
 #else
-      buf_ans_write_init(&buffered_ans, uco_ans_buf, ans_window_size);
-      write_modes(cpi, &tile_info, &mode_bc, &buffered_ans, &tok, tok_end);
+      buf_ans_write_init(&mode_bc, uco_ans_buf, ans_window_size);
+      write_modes(cpi, &tile_info, &mode_bc, &mode_bc, &tok, tok_end);
       assert(tok == tok_end);
-      vpx_stop_encode(&mode_bc);
-      tile_size = mode_bc.pos;
-
-      ans_write_init(&token_ans, dst + total_size + tile_size);
-      buf_ans_flush(&buffered_ans, &token_ans);
-      tile_size += ans_write_end(&token_ans);
+      ans_write_init(&token_ans, buf->data + data_offset);
+      buf_ans_flush(&mode_bc, &token_ans);
+      tile_size = ans_write_end(&token_ans);
 #endif  // !CONFIG_ANS
 
       buf->size = tile_size;
@@ -2830,23 +2823,19 @@ static uint32_t write_tiles(VP10_COMP *const cpi,
       if (!is_last_tile)
         total_size += 4;
 
-      vpx_start_encode(&mode_bc, dst + total_size);
-
 #if !CONFIG_ANS
+      vpx_start_encode(&mode_bc, dst + total_size);
       write_modes(cpi, &tile_info, &mode_bc, &tok, tok_end);
       assert(tok == tok_end);
       vpx_stop_encode(&mode_bc);
       tile_size = mode_bc.pos;
 #else
-      buf_ans_write_init(&buffered_ans, uco_ans_buf, ans_window_size);
-      write_modes(cpi, &tile_info, &mode_bc, &buffered_ans, &tok, tok_end);
+      buf_ans_write_init(&mode_bc, uco_ans_buf, ans_window_size);
+      write_modes(cpi, &tile_info, &mode_bc, &mode_bc, &tok, tok_end);
       assert(tok == tok_end);
-      vpx_stop_encode(&mode_bc);
-      tile_size = mode_bc.pos;
-
-      ans_write_init(&token_ans, dst + total_size + tile_size);
-      buf_ans_flush(&buffered_ans, &token_ans);
-      tile_size += ans_write_end(&token_ans);
+      ans_write_init(&token_ans, dst + total_size);
+      buf_ans_flush(&mode_bc, &token_ans);
+      tile_size = ans_write_end(&token_ans);
 #endif  // !CONFIG_ANS
 
       assert(tile_size > 0);
@@ -3071,7 +3060,17 @@ static uint32_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
   vpx_writer header_bc;
   int i, j;
 
+#if CONFIG_ANS
+  struct AnsCoder header_ans;
+  struct buffered_ans_symbol *uco_ans_buf;
+  const int ans_window_size = 50000;  // TODO(aconverse): revisit window size
+  int header_size;
+  CHECK_MEM_ERROR(cm, uco_ans_buf,
+                  vpx_malloc(ans_window_size * sizeof(*uco_ans_buf)));
+  buf_ans_write_init(&header_bc, uco_ans_buf, ans_window_size);
+#else
   vpx_start_encode(&header_bc, data);
+#endif
   update_txfm_probs(cm, &header_bc, counts);
   update_coef_probs(cpi, &header_bc);
 
@@ -3209,10 +3208,18 @@ static uint32_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
 #endif  // CONFIG_SUPERTX
   }
 
+#if CONFIG_ANS
+  ans_write_init(&header_ans, data);
+  buf_ans_flush(&header_bc, &header_ans);
+  vpx_free(uco_ans_buf);
+  header_size = ans_write_end(&header_ans);
+  assert(header_size <= 0xffff);
+  return header_size;
+#else
   vpx_stop_encode(&header_bc);
   assert(header_bc.pos <= 0xffff);
-
   return header_bc.pos;
+#endif  // CONFIG_ANS
 }
 
 static int choose_size_bytes(uint32_t size, int spare_msbs) {
