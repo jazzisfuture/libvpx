@@ -394,6 +394,12 @@ $(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)vpx_config.asm
 $(shell $(SRC_PATH_BARE)/build/make/version.sh "$(SRC_PATH_BARE)" $(BUILD_PFX)vpx_version.h)
 CLEAN-OBJS += $(BUILD_PFX)vpx_version.h
 
+#
+# Add include path for libwebm sources.
+# 
+ifeq ($(CONFIG_WEBM_IO),yes)
+  CXXFLAGS += -I$(SRC_PATH_BARE)/third_party/libwebm
+endif
 
 ##
 ## libvpx test directives
