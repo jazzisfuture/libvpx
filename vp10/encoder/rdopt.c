@@ -4774,6 +4774,9 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                         int mi_row, int mi_col) {
   int i;
   BEST_SEG_INFO *bsi = bsi_buf + filter_idx;
+#if CONFIG_REF_MV
+  int_mv tmp_ref_mv[2];
+#endif
   MACROBLOCKD *xd = &x->e_mbd;
   MODE_INFO *mi = xd->mi[0];
   MB_MODE_INFO *mbmi = &mi->mbmi;
@@ -4857,8 +4860,10 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                       &frame_mv[NEARMV][frame]);
 
 #if CONFIG_REF_MV
-        if (ref_mv_count[ref] > 0)
-          bsi->ref_mv[ref] = &ref_mv_stack[ref][0].this_mv;
+        tmp_ref_mv[ref] = frame_mv[NEARESTMV][mbmi->ref_frame[ref]];
+        lower_mv_precision(&tmp_ref_mv[ref].as_mv, cm->allow_high_precision_mv);
+        bsi->ref_mv[ref] = &tmp_ref_mv[ref];
+        mbmi_ext->ref_mvs[frame][0] = tmp_ref_mv[ref];
 #endif
 
 #if CONFIG_EXT_INTER
@@ -4938,7 +4943,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
             seg_mvs[i][mv_idx][mbmi->ref_frame[0]].as_int == INVALID_MV
 #else
             this_mode == NEWMV &&
-            seg_mvs[i][mbmi->ref_frame[0]].as_int == INVALID_MV
+            (seg_mvs[i][mbmi->ref_frame[0]].as_int == INVALID_MV || 1)
 #endif  // CONFIG_EXT_INTER
             ) {
 #if CONFIG_EXT_INTER
@@ -5095,7 +5100,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
 #else
             this_mode == NEWMV &&
 #endif  // CONFIG_EXT_INTER
-            mbmi->interp_filter == EIGHTTAP_REGULAR) {
+            (mbmi->interp_filter == EIGHTTAP_REGULAR || 1)) {
           // adjust src pointers
           mi_buf_shift(x, i);
           if (cpi->sf.comp_inter_joint_search_thresh <= bsize) {
@@ -5211,7 +5216,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
                   ref_bsi->rdstat[i][mode_idx].mvs[ref].as_int;
           }
 
-          if (!subpelmv && have_ref &&
+          if (!subpelmv && have_ref && 0 &&
               ref_bsi->rdstat[i][mode_idx].brdcost < INT64_MAX) {
             memcpy(&bsi->rdstat[i][mode_idx], &ref_bsi->rdstat[i][mode_idx],
                    sizeof(SEG_RDSTAT));
