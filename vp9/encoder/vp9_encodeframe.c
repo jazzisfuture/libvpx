@@ -772,30 +772,47 @@ static int choose_partitioning(VP9_COMP *cpi,
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
 
     // Check if most of the superblock is skin content, and if so, force split
-    // to 32x32. Avoid checking superblocks on/near boundary and avoid low
-    // resolutons for now.
+    // to 32x32, and set the sb_is_skin for use in mode selection.
+    // Avoid checking superblocks on/near boundary and avoid low resolutions.
     // Note superblock may still pick 64X64 if y_sad is very small
     // (i.e., y_sad < cpi->vbp_threshold_sad) below. For now leave this as is.
     x->sb_is_skin = 0;
 #if !CONFIG_VP9_HIGHBITDEPTH
     if (cpi->use_skin_detection && !low_res && (mi_col >= 8 &&
         mi_col + 8 < cm->mi_cols && mi_row >= 8 && mi_row + 8 < cm->mi_rows)) {
+      CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+      int bl_index1, bl_index2, bl_index3;
       int num_16x16_skin = 0;
       int num_16x16_nonskin = 0;
+      int is_skin = 0;
+      int consec_zeromv = 0;
       uint8_t *ysignal = x->plane[0].src.buf;
       uint8_t *usignal = x->plane[1].src.buf;
       uint8_t *vsignal = x->plane[2].src.buf;
       int spuv = x->plane[1].src.stride;
+      int bl_indexref = mi_row * cm->mi_cols + mi_col;
+      // Loop through the 16x16 subblocks.
       for (i = 0; i < 4; i++) {
+        int bl_index = bl_indexref + (i << 1) * cm->mi_cols;
         for (j = 0; j < 4; j++) {
-          int is_skin = vp9_compute_skin_block(ysignal,
-                                               usignal,
-                                               vsignal,
-                                               sp,
-                                               spuv,
-                                               BLOCK_16X16,
-                                               0,
-                                               0);
+          bl_index += (j << 1);
+          // consec_zero_mv[] defined for 8x8 blocks, so consider all
+          // 4 sub-blocks for 16x16 block.
+          bl_index1 = bl_index + 1;
+          bl_index2 = bl_index + cm->mi_cols;
+          bl_index3 = bl_index2 + 1;
+          consec_zeromv = VPXMIN(cr->consec_zero_mv[bl_index],
+                                 VPXMIN(cr->consec_zero_mv[bl_index1],
+                                 VPXMIN(cr->consec_zero_mv[bl_index2],
+                                 cr->consec_zero_mv[bl_index3])));
+          is_skin = vp9_compute_skin_block(ysignal,
+                                           usignal,
+                                           vsignal,
+                                           sp,
+                                           spuv,
+                                           BLOCK_16X16,
+                                           consec_zeromv,
+                                           0);
           num_16x16_skin += is_skin;
           num_16x16_nonskin += (1 - is_skin);
           if (num_16x16_nonskin > 3) {
