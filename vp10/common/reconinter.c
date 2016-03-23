@@ -1251,6 +1251,28 @@ void vp10_build_obmc_inter_prediction(VP10_COMMON *cm,
 #if CONFIG_VP9_HIGHBITDEPTH
   int is_hbd = (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ? 1 : 0;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_HIGHBITDEPTH
+  DECLARE_ALIGNED(16, uint8_t, tmp_buf_left[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
+#else
+  DECLARE_ALIGNED(16, uint8_t, tmp_buf_left[MAX_MB_PLANE * MAX_SB_SQUARE]);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  uint8_t *dst_buf_left[MAX_MB_PLANE];
+  int left_updated = 0;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (is_hbd) {
+    int len = sizeof(uint16_t);
+    dst_buf_left[0] = tmp_buf_left;
+    dst_buf_left[1] = tmp_buf_left + MAX_SB_SQUARE * len;
+    dst_buf_left[2] = tmp_buf_left + 2 * MAX_SB_SQUARE * len;
+  } else {
+#endif
+  dst_buf_left[0] = tmp_buf_left;
+  dst_buf_left[1] = tmp_buf_left + MAX_SB_SQUARE;
+  dst_buf_left[2] = tmp_buf_left + 2 * MAX_SB_SQUARE;
+#if CONFIG_VP9_HIGHBITDEPTH
+  }
+#endif
 
   if (use_tmp_dst_buf) {
     for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
@@ -1274,6 +1296,28 @@ void vp10_build_obmc_inter_prediction(VP10_COMMON *cm,
       }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     }
+  }
+
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    const struct macroblockd_plane *pd = &xd->plane[plane];
+    int bw = (xd->n8_w * 8) >> pd->subsampling_x;
+    int bh = (xd->n8_h * 8) >> pd->subsampling_y;
+    int row;
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (is_hbd) {
+      uint16_t *dst_buf_left16 = CONVERT_TO_SHORTPTR(dst_buf_left[plane]);
+      uint16_t *bmc_buf16 = CONVERT_TO_SHORTPTR(pd->dst.buf);
+      for (row = 0; row < bh; ++row)
+        memcpy(dst_buf_left16 + row * MAX_SB_SIZE,
+               bmc_buf16 + row * pd->dst.stride, bw * sizeof(uint16_t));
+    } else {
+#endif
+    for (row = 0; row < bh; ++row)
+      memcpy(dst_buf_left[plane] + row * MAX_SB_SIZE,
+             pd->dst.buf + row * pd->dst.stride, bw);
+#if CONFIG_VP9_HIGHBITDEPTH
+    }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   }
 
   // handle above row
@@ -1359,6 +1403,8 @@ void vp10_build_obmc_inter_prediction(VP10_COMMON *cm,
     if (!is_neighbor_overlappable(left_mbmi))
       continue;
 
+    left_updated = 1;
+
     overlap = (left_mbmi->skip) ?
               num_4x4_blocks_wide_lookup[bsize] << 1 :
               VPXMIN(num_4x4_blocks_wide_lookup[bsize],
@@ -1369,10 +1415,9 @@ void vp10_build_obmc_inter_prediction(VP10_COMMON *cm,
       int bw = overlap >> pd->subsampling_x;
       int bh = (mi_step * MI_SIZE) >> pd->subsampling_y;
       int row, col;
-      int dst_stride = use_tmp_dst_buf ? final_stride[plane] : pd->dst.stride;
-      uint8_t *dst = use_tmp_dst_buf ?
-          &final_buf[plane][(i * MI_SIZE * dst_stride) >> pd->subsampling_y] :
-          &pd->dst.buf[(i * MI_SIZE * dst_stride) >> pd->subsampling_y];
+      int dst_stride = MAX_SB_SIZE;
+      uint8_t *dst = &dst_buf_left[plane]
+                     [(i * 8 * dst_stride) >> pd->subsampling_y];
       int tmp_stride = tmp_stride2[plane];
       uint8_t *tmp = &tmp_buf2[plane]
                               [(i * MI_SIZE * tmp_stride) >> pd->subsampling_y];
@@ -1406,6 +1451,54 @@ void vp10_build_obmc_inter_prediction(VP10_COMMON *cm,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     }
   }  // each mi in the left column
+
+  if (left_updated) {
+    for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+      const struct macroblockd_plane *pd = &xd->plane[plane];
+      int bw = (xd->n8_w * 4) >> pd->subsampling_x;
+      int bh = (xd->n8_h * 4) >> pd->subsampling_y;
+      int row, col;
+      int dst_stride = use_tmp_dst_buf ? final_stride[plane] : pd->dst.stride;
+      uint8_t *dst = use_tmp_dst_buf ? final_buf[plane] : pd->dst.buf;
+      int tmp_stride = MAX_SB_SIZE;
+      uint8_t *tmp = dst_buf_left[plane];
+
+#if CONFIG_VP9_HIGHBITDEPTH
+      if (is_hbd) {
+        uint16_t *dst16 = CONVERT_TO_SHORTPTR(dst);
+        uint16_t *tmp16 = CONVERT_TO_SHORTPTR(tmp);
+
+        for (row = 0; row < bh; ++row) {
+          for (col = 0; col < bw; ++col)
+            dst16[col] = (dst16[col] + tmp16[col] + 1) >> 1;
+          dst16 += dst_stride;
+          tmp16 += tmp_stride;
+        }
+
+        for (row = bh; row < 2 * bh; ++row) {
+          memcpy(dst16, tmp16, bw * sizeof(uint16_t));
+          dst16 += dst_stride;
+          tmp16 += tmp_stride;
+        }
+      } else {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+      for (row = 0; row < bh; ++row) {
+        for (col = 0; col < bw; ++col)
+          dst[col] = (dst[col] + tmp[col] + 1) >> 1;
+        dst += dst_stride;
+        tmp += tmp_stride;
+      }
+
+      for (row = bh; row < 2 * bh; ++row) {
+        memcpy(dst, tmp, bw * sizeof(uint8_t));
+        dst += dst_stride;
+        tmp += tmp_stride;
+      }
+#if CONFIG_VP9_HIGHBITDEPTH
+      }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    }
+  }
 }
 
 void vp10_build_prediction_by_above_preds(VP10_COMMON *cm,
