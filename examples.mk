@@ -36,21 +36,26 @@ LIBYUV_SRCS +=  third_party/libyuv/include/libyuv/basic_types.h  \
                 third_party/libyuv/source/scale_neon64.cc \
                 third_party/libyuv/source/scale_win.cc \
 
-LIBWEBM_COMMON_SRCS += third_party/libwebm/webmids.hpp
+LIBWEBM_COMMON_SRCS += third_party/libwebm/common/webmids.h
 
-LIBWEBM_MUXER_SRCS += third_party/libwebm/mkvmuxer.cpp \
-                      third_party/libwebm/mkvmuxerutil.cpp \
-                      third_party/libwebm/mkvwriter.cpp \
-                      third_party/libwebm/mkvmuxer.hpp \
-                      third_party/libwebm/mkvmuxertypes.hpp \
-                      third_party/libwebm/mkvmuxerutil.hpp \
-                      third_party/libwebm/mkvparser.hpp \
-                      third_party/libwebm/mkvwriter.hpp
+LIBWEBM_MUXER_SRCS += third_party/libwebm/mkvmuxer/mkvmuxer.cc \
+                      third_party/libwebm/mkvmuxer/mkvmuxerutil.cc \
+                      third_party/libwebm/mkvmuxer/mkvwriter.cc \
+                      third_party/libwebm/mkvmuxer/mkvmuxer.h \
+                      third_party/libwebm/mkvmuxer/mkvmuxertypes.h \
+                      third_party/libwebm/mkvmuxer/mkvmuxerutil.h \
+                      third_party/libwebm/mkvparser/mkvparser.h \
+                      third_party/libwebm/mkvmuxer/mkvwriter.h
 
-LIBWEBM_PARSER_SRCS = third_party/libwebm/mkvparser.cpp \
-                      third_party/libwebm/mkvreader.cpp \
-                      third_party/libwebm/mkvparser.hpp \
-                      third_party/libwebm/mkvreader.hpp
+LIBWEBM_PARSER_SRCS = third_party/libwebm/mkvparser/mkvparser.cc \
+                      third_party/libwebm/mkvparser/mkvreader.cc \
+                      third_party/libwebm/mkvparser/mkvparser.h \
+                      third_party/libwebm/mkvparser/mkvreader.h
+
+# Add include path for libwebm sources.
+ifeq ($(CONFIG_WEBM_IO),yes)
+  CXXFLAGS += -I$(SRC_PATH_BARE)/third_party/libwebm
+endif
 
 # List of examples to build. UTILS are tools meant for distribution
 # while EXAMPLES demonstrate specific portions of the API.
