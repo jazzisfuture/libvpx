@@ -260,8 +260,14 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
       assert(0 && "Invalid transform size.");
       break;
   }
-
   return combine_entropy_contexts(above_ec, left_ec);
+}
+
+static INLINE int get_entropy_context_sb(const MACROBLOCKD *xd,
+                                         BLOCK_SIZE bsize) {
+  const struct macroblockd_plane *pd = &xd->plane[0];
+  const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
+  return get_entropy_context(max_tx_size, pd->above_context, pd->left_context);
 }
 
 static INLINE const scan_order *get_scan(const MACROBLOCKD *xd, TX_SIZE tx_size,
