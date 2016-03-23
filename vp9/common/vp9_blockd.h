@@ -78,15 +78,15 @@ extern "C" {
 
 #if CONFIG_NEW_QUANT
 #define QUANT_PROFILES 3
-#define Q_CTX_BASED_PROFILES 1
 
 #if QUANT_PROFILES > 1
 
-#define Q_THRESHOLD_MIN 0
-#define Q_THRESHOLD_MAX 1000
-
 static INLINE int switchable_dq_profile_used(int q_ctx, BLOCK_SIZE bsize) {
   return ((bsize >= BLOCK_32X32) * q_ctx);
+}
+
+static INLINE int get_dq_profile_from_ctx(int q_ctx) {
+  return ((3 - q_ctx) % 3);
 }
 #endif  // QUANT_PROFILES > 1
 #endif  // CONFIG_NEW_QUANT
@@ -314,10 +314,6 @@ typedef struct {
   uint8_t palette_literal_colors[PALETTE_MAX_SIZE];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_PALETTE
-#if CONFIG_NEW_QUANT
-  int dq_off_index;
-  int send_dq_bit;
-#endif  // CONFIG_NEW_QUANT
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {

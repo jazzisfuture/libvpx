@@ -104,10 +104,6 @@ static void fill_mode_costs(VP9_COMP *cpi) {
       vp9_cost_tokens(cpi->palette_uv_color_costs[i][j],
                       fc->palette_uv_color_prob[i][j], vp9_palette_color_tree);
 #endif  // CONFIG_PALETTE
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-  vp9_cost_tokens(cpi->dq_profile_costs, fc->dq_profile_prob,
-                  vp9_dq_profile_tree);
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 }
 
 static void fill_token_costs(vp9_coeff_cost *c,
@@ -483,17 +479,22 @@ void vp9_model_rd_from_var_lapndz(unsigned int var, unsigned int n,
   }
 }
 
-void vp9_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
-                              const struct macroblockd_plane *pd,
-                              ENTROPY_CONTEXT t_above[(CODING_UNIT_SIZE >> 2)],
-                              ENTROPY_CONTEXT t_left[(CODING_UNIT_SIZE >> 2)]) {
-  const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
-  const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
-  const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+void vp9_get_entropy_contexts_plane(
+    BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+    const struct macroblockd_plane *pd,
+    ENTROPY_CONTEXT t_above[(CODING_UNIT_SIZE >> 2)],
+    ENTROPY_CONTEXT t_left[(CODING_UNIT_SIZE >> 2)]) {
+  int num_4x4_w;
+  int num_4x4_h;
+  int i;
   const ENTROPY_CONTEXT *const above = pd->above_context;
   const ENTROPY_CONTEXT *const left = pd->left_context;
 
-  int i;
+  assert(plane_bsize != BLOCK_INVALID);
+
+  num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
+  num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+
   switch (tx_size) {
     case TX_4X4:
       vpx_memcpy(t_above, above, sizeof(ENTROPY_CONTEXT) * num_4x4_w);
@@ -529,6 +530,14 @@ void vp9_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
       assert(0 && "Invalid transform size.");
       break;
   }
+}
+
+void vp9_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
+                              const struct macroblockd_plane *pd,
+                              ENTROPY_CONTEXT t_above[(CODING_UNIT_SIZE >> 2)],
+                              ENTROPY_CONTEXT t_left[(CODING_UNIT_SIZE >> 2)]) {
+  const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
+  vp9_get_entropy_contexts_plane(plane_bsize, tx_size, pd, t_above, t_left);
 }
 
 void vp9_mv_pred(VP9_COMP *cpi, MACROBLOCK *x,
