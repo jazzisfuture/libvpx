@@ -31,13 +31,14 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                      BLOCK_SIZE plane_bsize, TX_SIZE tx_size);
 #if CONFIG_NEW_QUANT
 void vp9_xform_quant_nuq(MACROBLOCK *x, int plane, int block,
-                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size);
+                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size, int ctx);
 void vp9_xform_quant_dc_nuq(MACROBLOCK *x, int plane, int block,
-                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size);
+                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size, int ctx);
 void vp9_xform_quant_fp_nuq(MACROBLOCK *x, int plane, int block,
-                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size);
+                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size, int ctx);
 void vp9_xform_quant_dc_fp_nuq(MACROBLOCK *x, int plane, int block,
-                               BLOCK_SIZE plane_bsize, TX_SIZE tx_size);
+                               BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+                               int ctx);
 #endif
 
 void vp9_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane);
