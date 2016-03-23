@@ -31,7 +31,7 @@ static int8_t cos_bit[12] = {14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14};
 static int8_t range_bit[12] = {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32};
 
 TEST(vp10_fwd_txfm1d, round_shift) {
-  EXPECT_EQ(round_shift(7, 1), 3);
+  EXPECT_EQ(round_shift(7, 1), 4);
   EXPECT_EQ(round_shift(-7, 1), -3);
 
   EXPECT_EQ(round_shift(7, 2), 2);
