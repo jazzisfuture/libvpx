@@ -95,9 +95,6 @@ static void rd_supertx_sb(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                           EXT_TX_TYPE *best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                          int *dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                           PC_TREE *pc_tree);
 #endif  // CONFIG_SUPERTX
 
@@ -1199,9 +1196,6 @@ static void update_supertx_param(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 #if CONFIG_EXT_TX
                                  int best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                 int dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                                  TX_SIZE supertx_size) {
   MACROBLOCK *const x = &cpi->mb;
 
@@ -1212,9 +1206,6 @@ static void update_supertx_param(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 #if CONFIG_EXT_TX
   ctx->mic.mbmi.ext_txfrm = best_tx;
 #endif  // CONFIG_EXT_TX
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-  ctx->mic.mbmi.dq_off_index = dq_index;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
 #if CONFIG_TX_SKIP
   ctx->mic.mbmi.tx_skip[0] = 0;
   ctx->mic.mbmi.tx_skip[1] = 0;
@@ -1226,9 +1217,6 @@ static void update_supertx_param_sb(VP9_COMP *cpi, int mi_row, int mi_col,
 #if CONFIG_EXT_TX
                                     int best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                    int dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                                     TX_SIZE supertx_size, PC_TREE *pc_tree) {
   VP9_COMMON *const cm = &cpi->common;
   int bsl = b_width_log2_lookup[bsize], hbs = (1 << bsl) / 4;
@@ -1247,9 +1235,6 @@ static void update_supertx_param_sb(VP9_COMP *cpi, int mi_row, int mi_col,
 #if CONFIG_EXT_TX
                            best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                           dq_index,
-#endif
                            supertx_size);
       break;
     case PARTITION_VERT:
@@ -1257,17 +1242,11 @@ static void update_supertx_param_sb(VP9_COMP *cpi, int mi_row, int mi_col,
 #if CONFIG_EXT_TX
                            best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                           dq_index,
-#endif
                            supertx_size);
       if (mi_col + hbs < cm->mi_cols && bsize > BLOCK_8X8)
         update_supertx_param(cpi, &pc_tree->vertical[1],
 #if CONFIG_EXT_TX
                              best_tx,
-#endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                             dq_index,
 #endif
                              supertx_size);
       break;
@@ -1276,17 +1255,11 @@ static void update_supertx_param_sb(VP9_COMP *cpi, int mi_row, int mi_col,
 #if CONFIG_EXT_TX
                            best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                           dq_index,
-#endif
                            supertx_size);
       if (mi_row + hbs < cm->mi_rows && bsize > BLOCK_8X8)
         update_supertx_param(cpi, &pc_tree->horizontal[1],
 #if CONFIG_EXT_TX
                              best_tx,
-#endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                             dq_index,
 #endif
                              supertx_size);
       break;
@@ -1296,41 +1269,26 @@ static void update_supertx_param_sb(VP9_COMP *cpi, int mi_row, int mi_col,
 #if CONFIG_EXT_TX
                              best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                             dq_index,
-#endif
                              supertx_size);
       } else {
         update_supertx_param_sb(cpi, mi_row, mi_col, subsize,
 #if CONFIG_EXT_TX
                                 best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                dq_index,
-#endif
                                 supertx_size, pc_tree->split[0]);
         update_supertx_param_sb(cpi, mi_row, mi_col + hbs, subsize,
 #if CONFIG_EXT_TX
                                 best_tx,
-#endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                dq_index,
 #endif
                                 supertx_size, pc_tree->split[1]);
         update_supertx_param_sb(cpi, mi_row + hbs, mi_col, subsize,
 #if CONFIG_EXT_TX
                                 best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                dq_index,
-#endif
                                 supertx_size, pc_tree->split[2]);
         update_supertx_param_sb(cpi, mi_row + hbs, mi_col + hbs, subsize,
 #if CONFIG_EXT_TX
                                 best_tx,
-#endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                dq_index,
 #endif
                                 supertx_size, pc_tree->split[3]);
       }
@@ -1342,9 +1300,6 @@ static void update_supertx_param_sb(VP9_COMP *cpi, int mi_row, int mi_col,
 #if CONFIG_EXT_TX
                             best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                            dq_index,
-#endif
                             supertx_size);
       break;
     case PARTITION_HORZ_B:
@@ -1352,9 +1307,6 @@ static void update_supertx_param_sb(VP9_COMP *cpi, int mi_row, int mi_col,
         update_supertx_param(cpi, &pc_tree->horizontalb[i],
 #if CONFIG_EXT_TX
                             best_tx,
-#endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                            dq_index,
 #endif
                             supertx_size);
       break;
@@ -1364,9 +1316,6 @@ static void update_supertx_param_sb(VP9_COMP *cpi, int mi_row, int mi_col,
 #if CONFIG_EXT_TX
                             best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                            dq_index,
-#endif
                             supertx_size);
       break;
     case PARTITION_VERT_B:
@@ -1374,9 +1323,6 @@ static void update_supertx_param_sb(VP9_COMP *cpi, int mi_row, int mi_col,
         update_supertx_param(cpi, &pc_tree->verticalb[i],
 #if CONFIG_EXT_TX
                             best_tx,
-#endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                            dq_index,
 #endif
                             supertx_size);
       break;
@@ -1928,16 +1874,6 @@ static void encode_sb(VP9_COMP *cpi, const TileInfo *const tile,
         cm->counts.supertx
             [partition_supertx_context_lookup[partition]][supertx_size][1]++;
         cm->counts.supertx_size[supertx_size]++;
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-        if (cm->base_qindex > Q_THRESHOLD_MIN &&
-            cm->base_qindex < Q_THRESHOLD_MAX &&
-            !xd->mi[0].mbmi.skip &&
-            xd->mi[0].mbmi.send_dq_bit &&
-            !vp9_segfeature_active(&cm->seg, xd->mi[0].mbmi.segment_id,
-                                   SEG_LVL_SKIP)) {
-          ++cm->counts.dq_profile[xd->mi[0].mbmi.dq_off_index];
-        }
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 #if CONFIG_EXT_TX
 #if CONFIG_WAVELETS
         if (!xd->mi[0].mbmi.skip)
@@ -2926,10 +2862,6 @@ static void rd_test_partition3(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
           EXT_TX_TYPE best_tx = NORM;
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-          int dq_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-
           tmp_rate = sum_rate_nocoef;
           tmp_dist = 0;
           restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -2937,9 +2869,6 @@ static void rd_test_partition3(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                         &best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                        &dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                         pc_tree);
 
           tmp_rate += vp9_cost_bit(
@@ -2955,9 +2884,6 @@ static void rd_test_partition3(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                                     best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                    dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                                     supertx_size, pc_tree);
           }
         }
@@ -3331,10 +3257,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
           EXT_TX_TYPE best_tx = NORM;
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-          int dq_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-
           tmp_rate = sum_rate_nocoef;
           tmp_dist = 0;
           restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -3342,9 +3264,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                         &best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                        &dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                         pc_tree);
 
           tmp_rate += vp9_cost_bit(
@@ -3360,9 +3279,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                                     best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                    dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                                     supertx_size, pc_tree);
           }
         }
@@ -3444,10 +3360,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
           EXT_TX_TYPE best_tx = NORM;
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-          int dq_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-
           tmp_rate = sum_rate_nocoef;
           tmp_dist = 0;
           restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -3455,9 +3367,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                         &best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                        &dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                         pc_tree);
 
           tmp_rate += vp9_cost_bit(
@@ -3473,9 +3382,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                                     best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                    dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                                     supertx_size, pc_tree);
           }
         }
@@ -3618,9 +3524,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
         EXT_TX_TYPE best_tx = NORM;
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-        int dq_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
 
         tmp_rate = sum_rate_nocoef;
         tmp_dist = 0;
@@ -3629,9 +3532,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                       &best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                      &dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
                       pc_tree);
 
         tmp_rate += vp9_cost_bit(
@@ -3647,9 +3547,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                                   best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                  dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                                   supertx_size, pc_tree);
         }
       }
@@ -3781,9 +3678,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
         EXT_TX_TYPE best_tx = NORM;
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-        int dq_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
 
         tmp_rate = sum_rate_nocoef;
         tmp_dist = 0;
@@ -3792,9 +3686,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                       &best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                      &dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                       pc_tree);
 
         tmp_rate += vp9_cost_bit(
@@ -3810,9 +3701,6 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                                   best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                                  dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                                   supertx_size, pc_tree);
         }
       }
@@ -4228,7 +4116,7 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 #define GLOBAL_MOTION_ADVANTAGE_THRESH_RZ 0.60
 #define GLOBAL_MOTION_ADVANTAGE_THRESH_TR 0.75
 // #define USE_BLOCK_BASED_GLOBAL_MOTION_COMPUTATION
-#define USE_FEATURE_BASED_GLOBAL_MOTION_COMPUTATION
+// #define USE_FEATURE_BASED_GLOBAL_MOTION_COMPUTATION
 
 static void convert_translation_to_params(
     double *H, Global_Motion_Params *model) {
@@ -4931,12 +4819,6 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     vp9_encode_sb(x, MAX(bsize, BLOCK_8X8));
     vp9_tokenize_sb(cpi, t, !output_enabled, MAX(bsize, BLOCK_8X8));
   }
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-  // This is not strictly required, but is a good practice.
-  // If you remove this, the assert in vp9_bitstream.c needs to be removed also.
-  if (mbmi->skip)
-    mbmi->dq_off_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 
 #if CONFIG_INTRABC
   if (frame_is_intra_only(cm) && output_enabled && bsize >= BLOCK_8X8) {
@@ -5003,18 +4885,6 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       ++cm->counts.ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
     }
 #endif  // CONFIG_EXT_TX
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-    if (cm->base_qindex > Q_THRESHOLD_MIN &&
-        cm->base_qindex < Q_THRESHOLD_MAX &&
-        mbmi->send_dq_bit &&
-#if CONFIG_COPY_MODE
-        (frame_is_intra_only(cm) || mbmi->copy_mode == NOREF) &&
-#endif  // CONFIG_COPY_MODE
-        !mbmi->skip &&
-        !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      ++cm->counts.dq_profile[mbmi->dq_off_index];
-    }
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 #if CONFIG_TX_SKIP
     if (bsize >= BLOCK_8X8) {
       int q_idx = vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex);
@@ -5975,9 +5845,6 @@ static void rd_supertx_sb(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_EXT_TX
                           EXT_TX_TYPE *best_tx,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                          int *dq_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                           PC_TREE *pc_tree) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
@@ -5996,9 +5863,6 @@ static void rd_supertx_sb(VP9_COMP *cpi, const TileInfo *const tile,
 #endif
 
   update_state_sb_supertx(cpi, tile, mi_row, mi_col, bsize, 0, pc_tree);
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-  xd->mi[0].mbmi.dq_off_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
   vp9_setup_dst_planes(xd->plane, get_frame_new_buffer(cm),
                        mi_row, mi_col);
   for (plane = 0; plane < MAX_MB_PLANE; plane++) {
@@ -6088,8 +5952,5 @@ static void rd_supertx_sb(VP9_COMP *cpi, const TileInfo *const tile,
   x->skip = skip_tx;
   xd->mi[0].mbmi.ext_txfrm = best_tx_nostx;
 #endif  // CONFIG_EXT_TX
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-  *dq_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 &&
 }
 #endif  // CONFIG_SUPERTX
