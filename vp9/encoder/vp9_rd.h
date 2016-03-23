@@ -369,6 +369,11 @@ void vp9_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
                               const struct macroblockd_plane *pd,
                               ENTROPY_CONTEXT t_above[(CODING_UNIT_SIZE >> 2)],
                               ENTROPY_CONTEXT t_left[(CODING_UNIT_SIZE >> 2)]);
+void vp9_get_entropy_contexts_plane(
+    BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+    const struct macroblockd_plane *pd,
+    ENTROPY_CONTEXT t_above[(CODING_UNIT_SIZE >> 2)],
+    ENTROPY_CONTEXT t_left[(CODING_UNIT_SIZE >> 2)]);
 
 void vp9_set_rd_speed_thresholds(struct VP9_COMP *cpi);
 
