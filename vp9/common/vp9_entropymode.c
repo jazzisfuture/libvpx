@@ -1116,9 +1116,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
 #if CONFIG_WEDGE_PARTITION
   vp9_copy(fc->wedge_interinter_prob, default_wedge_interinter_prob);
 #endif  // CONFIG_WEDGE_PARTITION
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
   vp9_copy(fc->dq_profile_prob, default_dq_profile_prob);
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 }
 
 const vp9_tree_index vp9_switchable_interp_tree
@@ -1347,10 +1347,10 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
                    counts->uv_palette_enabled[i]);
 #endif  // CONFIG_PALETTE
 
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
   adapt_probs(vp9_dq_profile_tree, pre_fc->dq_profile_prob,
               counts->dq_profile, fc->dq_profile_prob);
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
+#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {
