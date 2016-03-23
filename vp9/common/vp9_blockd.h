@@ -78,13 +78,16 @@ extern "C" {
 
 #if CONFIG_NEW_QUANT
 #define QUANT_PROFILES 2
+#define Q_CTX_BASED_PROFILES 1
 
 #if QUANT_PROFILES > 1
-static INLINE int switchable_dq_profile_used(BLOCK_SIZE bsize) {
-  return bsize >= BLOCK_16X16;
-}
+
 #define Q_THRESHOLD_MIN 0
 #define Q_THRESHOLD_MAX 1000
+#define Q_CTX_THRESHOLD 2
+static INLINE int switchable_dq_profile_used(int q_ctx, BLOCK_SIZE bsize) {
+  return ((bsize >= BLOCK_32X32) && (q_ctx >= Q_CTX_THRESHOLD));
+}
 #endif  // QUANT_PROFILES > 1
 #endif  // CONFIG_NEW_QUANT
 
@@ -313,6 +316,7 @@ typedef struct {
 #endif  // CONFIG_PALETTE
 #if CONFIG_NEW_QUANT
   int dq_off_index;
+  int send_dq_bit;
 #endif  // CONFIG_NEW_QUANT
 } MB_MODE_INFO;
 
