@@ -93,7 +93,7 @@ static const uint8_t vp9_nuq_doff[QUANT_PROFILES][COEF_BANDS] = {
 #endif  // CONFIG_TX_SKIP
   },
 #if QUANT_PROFILES > 1
-  { 6, 12, 13, 16, 17, 18,     // dq_off_index = 1
+  { 13, 20, 21, 27, 28, 29,     // dq_off_index = 1
 #if CONFIG_TX_SKIP
     8
 #endif  // CONFIG_TX_SKIP
