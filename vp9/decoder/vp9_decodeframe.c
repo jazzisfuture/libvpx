@@ -136,14 +136,6 @@ static void read_switchable_interp_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
       vp9_diff_update_prob(r, &fc->switchable_interp_prob[j][i]);
 }
 
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-static void read_dq_profile_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
-  int i;
-  for (i = 0; i < QUANT_PROFILES - 1; ++i)
-    vp9_diff_update_prob(r, &fc->dq_profile_prob[i]);
-}
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-
 static void read_inter_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
   int i, j;
   for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
@@ -919,9 +911,6 @@ static void set_param_topblock(VP9_COMMON *const cm,  MACROBLOCKD *const xd,
 #if CONFIG_EXT_TX
                                int txfm,
 #endif  // CONFIG_EXT_TX
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                               int dq_off_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                                int skip) {
   const int bw = num_8x8_blocks_wide_lookup[bsize];
   const int bh = num_8x8_blocks_high_lookup[bsize];
@@ -939,9 +928,6 @@ static void set_param_topblock(VP9_COMMON *const cm,  MACROBLOCKD *const xd,
 #if CONFIG_EXT_TX
       xd->mi[y * cm->mi_stride + x].mbmi.ext_txfrm = txfm;
 #endif  // CONFIG_EXT_TX
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-      xd->mi[y * cm->mi_stride + x].mbmi.dq_off_index = dq_off_index;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
     }
 }
 
@@ -1804,9 +1790,6 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #if CONFIG_EXT_TX
   int txfm = NORM;
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-  int dq_off_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
 #endif  // CONFIG_SUPERTX
 
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
@@ -1818,6 +1801,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   if (subsize >= BLOCK_8X8 && uv_subsize == BLOCK_INVALID)
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Invalid block size.");
+
 #if CONFIG_SUPERTX
   if (cm->frame_type != KEY_FRAME &&
       partition != PARTITION_NONE &&
@@ -1858,18 +1842,6 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
       }
     }
 #endif  // CONFIG_EXT_TX
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-    if (cm->base_qindex > Q_THRESHOLD_MIN &&
-        cm->base_qindex < Q_THRESHOLD_MAX &&
-        switchable_dq_profile_used(get_entropy_context_sb(xd, bsize), bsize) &&
-        !skip &&
-        !vp9_segfeature_active(
-            &cm->seg, xd->mi[0].mbmi.segment_id, SEG_LVL_SKIP)) {
-      dq_off_index = vp9_read_dq_profile(cm, r);
-    } else {
-      dq_off_index = 0;
-    }
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
   }
 #endif  // CONFIG_SUPERTX
   if (subsize < BLOCK_8X8) {
@@ -2121,9 +2093,6 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #if CONFIG_EXT_TX
       xd->mi[0].mbmi.ext_txfrm = txfm;
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-      xd->mi[0].mbmi.dq_off_index = dq_off_index;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
       vp9_foreach_transformed_block(xd, bsize, reconstruct_inter_block, &arg);
       if (!(subsize < BLOCK_8X8) && eobtotal == 0)
         skip = 1;
@@ -2132,9 +2101,6 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 #if CONFIG_EXT_TX
                        txfm,
 #endif
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1
-                       dq_off_index,
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1
                        skip);
   }
 #endif  // CONFIG_SUPERTX
@@ -3550,10 +3516,6 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
 #if CONFIG_NEW_INTER
     read_inter_compound_mode_probs(fc, &r);
 #endif  // CONFIG_NEW_INTER
-
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-    read_dq_profile_probs(fc, &r);
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 
     if (cm->interp_filter == SWITCHABLE)
       read_switchable_interp_probs(fc, &r);
