@@ -8,44 +8,44 @@
 extern "C" {
 #endif
 
-void vp10_fdct4_new_sse2(const __m128i* input, __m128i* output,
+void vp10_fdct4_new_sse4_1(const __m128i* input, __m128i* output,
                          const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_fdct8_new_sse2(const __m128i* input, __m128i* output,
+void vp10_fdct8_new_sse4_1(const __m128i* input, __m128i* output,
                          const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_fdct16_new_sse2(const __m128i* input, __m128i* output,
+void vp10_fdct16_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_fdct32_new_sse2(const __m128i* input, __m128i* output,
+void vp10_fdct32_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_fdct64_new_sse2(const __m128i* input, __m128i* output,
+void vp10_fdct64_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
 
-void vp10_fadst4_new_sse2(const __m128i* input, __m128i* output,
+void vp10_fadst4_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_fadst8_new_sse2(const __m128i* input, __m128i* output,
+void vp10_fadst8_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_fadst16_new_sse2(const __m128i* input, __m128i* output,
+void vp10_fadst16_new_sse4_1(const __m128i* input, __m128i* output,
                            const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_fadst32_new_sse2(const __m128i* input, __m128i* output,
+void vp10_fadst32_new_sse4_1(const __m128i* input, __m128i* output,
                            const int8_t* cos_bit, const int8_t* stage_range);
 
-void vp10_idct4_new_sse2(const __m128i* input, __m128i* output,
+void vp10_idct4_new_sse4_1(const __m128i* input, __m128i* output,
                          const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_idct8_new_sse2(const __m128i* input, __m128i* output,
+void vp10_idct8_new_sse4_1(const __m128i* input, __m128i* output,
                          const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_idct16_new_sse2(const __m128i* input, __m128i* output,
+void vp10_idct16_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_idct32_new_sse2(const __m128i* input, __m128i* output,
+void vp10_idct32_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_idct64_new_sse2(const __m128i* input, __m128i* output,
+void vp10_idct64_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
 
-void vp10_iadst4_new_sse2(const __m128i* input, __m128i* output,
+void vp10_iadst4_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_iadst8_new_sse2(const __m128i* input, __m128i* output,
+void vp10_iadst8_new_sse4_1(const __m128i* input, __m128i* output,
                           const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_iadst16_new_sse2(const __m128i* input, __m128i* output,
+void vp10_iadst16_new_sse4_1(const __m128i* input, __m128i* output,
                            const int8_t* cos_bit, const int8_t* stage_range);
-void vp10_iadst32_new_sse2(const __m128i* input, __m128i* output,
+void vp10_iadst32_new_sse4_1(const __m128i* input, __m128i* output,
                            const int8_t* cos_bit, const int8_t* stage_range);
 
 static INLINE void transpose_32_4x4(int stride, const __m128i* input,
@@ -89,7 +89,7 @@ static INLINE void transpose_32(int txfm_size, const __m128i* input,
                        _mm_shuffle_epi32(tmp2, _MM_SHUFFLE(0, 0, 2, 0)));     \
   })
 
-#define round_shift_32_sse2(vec, bit)       \
+#define round_shift_32_sse4_1(vec, bit)       \
   ({                                        \
     __m128i tmp, round;                     \
     round = _mm_set1_epi32(1 << (bit - 1)); \
@@ -97,12 +97,12 @@ static INLINE void transpose_32(int txfm_size, const __m128i* input,
     _mm_srai_epi32(tmp, bit);               \
   })
 
-#define round_shift_array_32_sse2(input, output, size, bit) \
+#define round_shift_array_32_sse4_1(input, output, size, bit) \
   ({                                                        \
     if (bit > 0) {                                          \
       int i;                                                \
       for (i = 0; i < size; i++) {                          \
-        output[i] = round_shift_32_sse2(input[i], bit);     \
+        output[i] = round_shift_32_sse4_1(input[i], bit);     \
       }                                                     \
     } else {                                                \
       int i;                                                \
@@ -114,7 +114,7 @@ static INLINE void transpose_32(int txfm_size, const __m128i* input,
 
 // out0 = in0*w0 + in1*w1
 // out1 = -in1*w0 + in0*w1
-#define btf_32_sse2_type0(w0, w1, in0, in1, out0, out1, bit) \
+#define btf_32_sse4_1_type0(w0, w1, in0, in1, out0, out1, bit) \
   ({                                                         \
     __m128i ww0, ww1, in0_w0, in1_w1, in0_w1, in1_w0;        \
     ww0 = _mm_set1_epi32(w0);                                \
@@ -122,16 +122,16 @@ static INLINE void transpose_32(int txfm_size, const __m128i* input,
     in0_w0 = mullo_epi32(in0, ww0);                          \
     in1_w1 = mullo_epi32(in1, ww1);                          \
     out0 = _mm_add_epi32(in0_w0, in1_w1);                    \
-    out0 = round_shift_32_sse2(out0, bit);                   \
+    out0 = round_shift_32_sse4_1(out0, bit);                   \
     in0_w1 = mullo_epi32(in0, ww1);                          \
     in1_w0 = mullo_epi32(in1, ww0);                          \
     out1 = _mm_sub_epi32(in0_w1, in1_w0);                    \
-    out1 = round_shift_32_sse2(out1, bit);                   \
+    out1 = round_shift_32_sse4_1(out1, bit);                   \
   })
 
 // out0 = in0*w0 + in1*w1
 // out1 = in1*w0 - in0*w1
-#define btf_32_sse2_type1(w0, w1, in0, in1, out0, out1, bit) \
+#define btf_32_sse4_1_type1(w0, w1, in0, in1, out0, out1, bit) \
   ({                                                         \
     __m128i ww0, ww1, in0_w0, in1_w1, in0_w1, in1_w0;        \
     ww0 = _mm_set1_epi32(w0);                                \
@@ -139,11 +139,11 @@ static INLINE void transpose_32(int txfm_size, const __m128i* input,
     in0_w0 = mullo_epi32(in0, ww0);                          \
     in1_w1 = mullo_epi32(in1, ww1);                          \
     out0 = _mm_add_epi32(in0_w0, in1_w1);                    \
-    out0 = round_shift_32_sse2(out0, bit);                   \
+    out0 = round_shift_32_sse4_1(out0, bit);                   \
     in0_w1 = mullo_epi32(in0, ww1);                          \
     in1_w0 = mullo_epi32(in1, ww0);                          \
     out1 = _mm_sub_epi32(in1_w0, in0_w1);                    \
-    out1 = round_shift_32_sse2(out1, bit);                   \
+    out1 = round_shift_32_sse4_1(out1, bit);                   \
   })
 
 #ifdef __cplusplus
