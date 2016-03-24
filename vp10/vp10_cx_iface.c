@@ -49,6 +49,7 @@ struct vp10_extracfg {
   int                         color_range;
   int                         render_width;
   int                         render_height;
+  vpx_superblock_size_t       superblock_size;
 };
 
 static struct vp10_extracfg default_extra_cfg = {
@@ -83,6 +84,7 @@ static struct vp10_extracfg default_extra_cfg = {
   0,                          // color range
   0,                          // render width
   0,                          // render height
+  VPX_SUPERBLOCK_SIZE_64X64   // superblock_size
 };
 
 struct vpx_codec_alg_priv {
@@ -203,8 +205,18 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   // TODO(any): Waring. If CONFIG_EXT_TILE is true, tile_columns really
   // means tile_width, and tile_rows really means tile_hight. The interface
   // should be sanitized.
+#if CONFIG_EXT_PARTITION
+  if (extra_cfg->superblock_size == VPX_SUPERBLOCK_SIZE_64X64) {
+    RANGE_CHECK(extra_cfg, tile_columns, 1, 64);
+    RANGE_CHECK(extra_cfg, tile_rows, 1, 64);
+  } else {
+    RANGE_CHECK(extra_cfg, tile_columns, 1, 32);
+    RANGE_CHECK(extra_cfg, tile_rows, 1, 32);
+  }
+#else
   RANGE_CHECK(extra_cfg, tile_columns, 1, 64);
   RANGE_CHECK(extra_cfg, tile_rows, 1, 64);
+#endif  // CONFIG_EXT_PARTITION
 #else
   RANGE_CHECK(extra_cfg, tile_columns, 0, 6);
   RANGE_CHECK(extra_cfg, tile_rows, 0, 2);
@@ -217,6 +229,9 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   RANGE_CHECK(cfg, g_input_bit_depth, 8, 12);
   RANGE_CHECK(extra_cfg, content,
               VP9E_CONTENT_DEFAULT, VP9E_CONTENT_INVALID - 1);
+
+  RANGE_CHECK(extra_cfg, superblock_size,
+              VPX_SUPERBLOCK_SIZE_64X64, VPX_SUPERBLOCK_SIZE_DYNAMIC);
 
   // TODO(yaowu): remove this when ssim tuning is implemented for vp9
   if (extra_cfg->tuning == VP8_TUNE_SSIM)
@@ -425,6 +440,10 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->aq_mode = extra_cfg->aq_mode;
 
   oxcf->frame_periodic_boost =  extra_cfg->frame_periodic_boost;
+
+#if CONFIG_EXT_PARTITION
+  oxcf->superblock_size = extra_cfg->superblock_size;
+#endif  // CONFIG_EXT_PARTITION
 
   /*
   printf("Current VP9 Settings: \n");
@@ -1247,6 +1266,13 @@ static vpx_codec_err_t ctrl_set_render_size(vpx_codec_alg_priv_t *ctx,
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
+static vpx_codec_err_t ctrl_set_superblock_size(vpx_codec_alg_priv_t *ctx,
+                                            va_list args) {
+  struct vp10_extracfg extra_cfg = ctx->extra_cfg;
+  extra_cfg.superblock_size = CAST(VP10E_SET_SUPERBLOCK_SIZE, args);
+  return update_extra_cfg(ctx, &extra_cfg);
+}
+
 static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP8_COPY_REFERENCE,                ctrl_copy_reference},
   {VP8E_USE_REFERENCE,                ctrl_use_reference},
@@ -1283,6 +1309,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP9E_SET_MIN_GF_INTERVAL,          ctrl_set_min_gf_interval},
   {VP9E_SET_MAX_GF_INTERVAL,          ctrl_set_max_gf_interval},
   {VP9E_SET_RENDER_SIZE,              ctrl_set_render_size},
+  {VP10E_SET_SUPERBLOCK_SIZE,         ctrl_set_superblock_size},
 
   // Getters
   {VP8E_GET_LAST_QUANTIZER,           ctrl_get_quantizer},
