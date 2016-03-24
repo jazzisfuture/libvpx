@@ -2818,11 +2818,11 @@ static void setup_tile_info(VP10Decoder *const pbi,
   VP10_COMMON *const cm = &pbi->common;
 #if CONFIG_EXT_TILE
   // Read the tile width/height
-  cm->tile_width  = vpx_rb_read_literal(rb, 6) + 1;   // in [1, 64]
-  cm->tile_height = vpx_rb_read_literal(rb, 6) + 1;   // in [1, 64]
+  cm->tile_width  = vpx_rb_read_literal(rb, MAX_TILE_SIZE_LOG2) + 1;
+  cm->tile_height = vpx_rb_read_literal(rb, MAX_TILE_SIZE_LOG2) + 1;
 
-  cm->tile_width  = cm->tile_width << MAX_MIB_SIZE_LOG2;
-  cm->tile_height = cm->tile_height << MAX_MIB_SIZE_LOG2;
+  cm->tile_width  = cm->tile_width << cm->mib_size_log2;
+  cm->tile_height = cm->tile_height << cm->mib_size_log2;
 
   cm->tile_width  = VPXMIN(cm->tile_width, cm->mi_cols);
   cm->tile_height = VPXMIN(cm->tile_height, cm->mi_rows);
@@ -2863,12 +2863,14 @@ static void setup_tile_info(VP10Decoder *const pbi,
   cm->tile_cols = 1 << cm->log2_tile_cols;
   cm->tile_rows = 1 << cm->log2_tile_rows;
 
-  cm->tile_width = (mi_cols_aligned_to_sb(cm->mi_cols) >> cm->log2_tile_cols);
-  cm->tile_height = (mi_cols_aligned_to_sb(cm->mi_rows) >> cm->log2_tile_rows);
+  cm->tile_width = ALIGN_POWER_OF_TWO(cm->mi_cols, MAX_MIB_SIZE_LOG2);
+  cm->tile_width >>= cm->log2_tile_cols;
+  cm->tile_height = ALIGN_POWER_OF_TWO(cm->mi_rows, MAX_MIB_SIZE_LOG2);
+  cm->tile_height >>= cm->log2_tile_rows;
 
-  // round to integer multiples of 8
-  cm->tile_width  = mi_cols_aligned_to_sb(cm->tile_width);
-  cm->tile_height = mi_cols_aligned_to_sb(cm->tile_height);
+  // round to integer multiples of superblock size
+  cm->tile_width  = ALIGN_POWER_OF_TWO(cm->tile_width, MAX_MIB_SIZE_LOG2);
+  cm->tile_height = ALIGN_POWER_OF_TWO(cm->tile_height, MAX_MIB_SIZE_LOG2);
 
   // tile size magnitude
   if (cm->tile_rows > 1 || cm->tile_cols > 1) {
@@ -3103,8 +3105,7 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
   int tile_row, tile_col;
 
 #if CONFIG_ENTROPY
-  cm->do_subframe_update =
-      cm->log2_tile_cols == 0 && cm->log2_tile_rows == 0;
+  cm->do_subframe_update = cm->tile_cols == 1 && cm->tile_rows == 1;
 #endif  // CONFIG_ENTROPY
 
   if (cm->lf.filter_level && !cm->skip_loop_filter &&
@@ -3188,19 +3189,19 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
       vp10_zero_above_context(cm, tile_info.mi_col_start, tile_info.mi_col_end);
 
       for (mi_row = tile_info.mi_row_start; mi_row < tile_info.mi_row_end;
-           mi_row += MAX_MIB_SIZE) {
+           mi_row += cm->mib_size) {
         int mi_col;
 
         vp10_zero_left_context(&td->xd);
 
         for (mi_col = tile_info.mi_col_start; mi_col < tile_info.mi_col_end;
-             mi_col += MAX_MIB_SIZE) {
+             mi_col += cm->mib_size) {
           decode_partition(pbi, &td->xd,
 #if CONFIG_SUPERTX
                            0,
 #endif  // CONFIG_SUPERTX
                            mi_row, mi_col, &td->bit_reader,
-                           BLOCK_LARGEST, MAX_SB_SIZE_LOG2 - 2);
+                           cm->sb_size, b_width_log2_lookup[cm->sb_size]);
         }
         pbi->mb.corrupted |= td->xd.corrupted;
         if (pbi->mb.corrupted)
@@ -3227,8 +3228,8 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
     // Loopfilter one tile row.
     if (cm->lf.filter_level && !cm->skip_loop_filter) {
       LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-      const int lf_start = VPXMAX(0, tile_info.mi_row_start - MAX_MIB_SIZE);
-      const int lf_end = tile_info.mi_row_end - MAX_MIB_SIZE;
+      const int lf_start = VPXMAX(0, tile_info.mi_row_start - cm->mib_size);
+      const int lf_end = tile_info.mi_row_end - cm->mib_size;
 
       // Delay the loopfilter if the first tile row is only
       // a single superblock high.
@@ -3252,7 +3253,7 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
     // After loopfiltering, the last 7 row pixels in each superblock row may
     // still be changed by the longest loopfilter of the next superblock row.
     if (cm->frame_parallel_decode)
-      vp10_frameworker_broadcast(pbi->cur_buf, mi_row << MAX_MIB_SIZE_LOG2);
+      vp10_frameworker_broadcast(pbi->cur_buf, mi_row << cm->mib_size_log2);
 #endif  // !CONFIG_VAR_TX
   }
 
@@ -3288,6 +3289,7 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi,
 static int tile_worker_hook(TileWorkerData *const tile_data,
                             const TileInfo *const tile) {
   VP10Decoder *const pbi = tile_data->pbi;
+  const VP10_COMMON *const cm = &pbi->common;
   int mi_row, mi_col;
 
   if (setjmp(tile_data->error_info.jmp)) {
@@ -3302,17 +3304,17 @@ static int tile_worker_hook(TileWorkerData *const tile_data,
   vp10_zero_above_context(&pbi->common, tile->mi_col_start, tile->mi_col_end);
 
   for (mi_row = tile->mi_row_start; mi_row < tile->mi_row_end;
-       mi_row += MAX_MIB_SIZE) {
+       mi_row += cm->mib_size) {
     vp10_zero_left_context(&tile_data->xd);
 
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
-         mi_col += MAX_MIB_SIZE) {
+         mi_col += cm->mib_size) {
       decode_partition(pbi, &tile_data->xd,
 #if CONFIG_SUPERTX
                        0,
 #endif
                        mi_row, mi_col, &tile_data->bit_reader,
-                       BLOCK_LARGEST, MAX_SB_SIZE_LOG2 - 2);
+                       cm->sb_size, b_width_log2_lookup[cm->sb_size]);
     }
   }
   return !tile_data->xd.corrupted;
@@ -3764,6 +3766,12 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
 
   if (frame_is_intra_only(cm) || cm->error_resilient_mode)
     vp10_setup_past_independence(cm);
+
+#if CONFIG_EXT_PARTITION
+  set_sb_size(cm, vpx_rb_read_bit(rb) ? BLOCK_128X128 : BLOCK_64X64);
+#else
+  set_sb_size(cm, BLOCK_LARGEST);
+#endif  // CONFIG_EXT_PARTITION
 
   setup_loopfilter(cm, rb);
 #if CONFIG_LOOP_RESTORATION
