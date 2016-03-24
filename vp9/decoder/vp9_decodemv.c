@@ -531,8 +531,14 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
 #endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 
 #if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-  if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize), bsize)) {
+  if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
+                                 bsize) == 2) {
     mbmi->dq_off_index = 1;
+#if QUANT_PROFILES > 2
+  } else if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
+                                        bsize) == 1) {
+    mbmi->dq_off_index = 2;
+#endif  // QUANT_PROFILES > 2
   } else {
     mbmi->dq_off_index = 0;
   }
@@ -1555,9 +1561,15 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
       mbmi->dq_off_index = 0;
 #endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 #if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-    if (switchable_dq_profile_used(get_entropy_context_sb(xd, mbmi->sb_type),
-                                   mbmi->sb_type)) {
-      mbmi->dq_off_index = 1;
+  if (switchable_dq_profile_used(get_entropy_context_sb(xd, mbmi->sb_type),
+                                 mbmi->sb_type) == 2) {
+    mbmi->dq_off_index = 1;
+#if QUANT_PROFILES > 2
+  } else if (switchable_dq_profile_used(get_entropy_context_sb(xd,
+                                                               mbmi->sb_type),
+                                        mbmi->sb_type) == 1) {
+    mbmi->dq_off_index = 2;
+#endif  // QUANT_PROFILES > 2
     } else {
       mbmi->dq_off_index = 0;
     }
@@ -1767,8 +1779,14 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 
 #if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
     if (switchable_dq_profile_used(get_entropy_context_sb(xd, mbmi->sb_type),
-                                                          mbmi->sb_type)) {
+                                   mbmi->sb_type) == 2) {
       mbmi->dq_off_index = 1;
+#if QUANT_PROFILES > 2
+    } else if (switchable_dq_profile_used(get_entropy_context_sb(xd,
+                                                                 mbmi->sb_type),
+                                          mbmi->sb_type) == 1) {
+      mbmi->dq_off_index = 2;
+  #endif  // QUANT_PROFILES > 2
     } else {
       mbmi->dq_off_index = 0;
     }
