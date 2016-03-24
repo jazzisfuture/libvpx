@@ -42,8 +42,12 @@ extern "C" {
 #define MAX_MIB_MASK_2  (MAX_MIB_SIZE * 2 - 1)
 
 #if CONFIG_EXT_TILE
+// Maximum number of tile rows and tile columns
 # define  MAX_TILE_ROWS 1024
 # define  MAX_TILE_COLS 1024
+// Maximum size of a tile in superblocks
+# define  MAX_TILE_SIZE_LOG2 6
+# define  MAX_TILE_SIZE      (1 << MAX_TILE_SIZE_LOG2)
 #else
 # define  MAX_TILE_ROWS 4
 # define  MAX_TILE_COLS 64
