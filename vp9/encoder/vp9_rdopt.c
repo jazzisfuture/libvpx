@@ -2419,8 +2419,14 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 
 #if QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-  if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize), bsize)) {
+  if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
+                                 bsize) == 2) {
     mic->mbmi.dq_off_index = 1;
+#if QUANT_PROFILES > 2
+  } else if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
+                                        bsize) == 1) {
+    mic->mbmi.dq_off_index = 2;
+#endif  // QUANT_PROFILES > 2
   } else {
     mic->mbmi.dq_off_index = 0;
   }
@@ -6141,8 +6147,14 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 
 #if QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-  if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize), bsize)) {
+  if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
+                                 bsize) == 2) {
     mbmi->dq_off_index = 1;
+#if QUANT_PROFILES > 2
+  } else if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
+                                        bsize) == 1) {
+    mbmi->dq_off_index = 2;
+#endif  // QUANT_PROFILES > 2
   } else {
     mbmi->dq_off_index = 0;
   }
@@ -7509,8 +7521,13 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
       if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
-                                     bsize)) {
+                                     bsize) == 2) {
         mbmi->dq_off_index = 1;
+#if QUANT_PROFILES > 2
+      } else if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
+                                            bsize) == 1) {
+        mbmi->dq_off_index = 2;
+#endif  // QUANT_PROFILES > 2
       } else {
         mbmi->dq_off_index = 0;
       }
