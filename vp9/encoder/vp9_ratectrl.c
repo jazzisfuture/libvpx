@@ -1474,6 +1474,11 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     } else {
       rc->baseline_gf_interval =
           (rc->min_gf_interval + rc->max_gf_interval) / 2;
+      // Increase the gf interval unless the average QP is very low.
+      if (cpi->oxcf.pass == 0 &&
+          cm->current_video_frame > 30 &&
+          rc->avg_frame_qindex[INTER_FRAME] > (rc->worst_quality >> 2))
+        rc->baseline_gf_interval = (rc->min_gf_interval + rc->max_gf_interval);
     }
     rc->frames_till_gf_update_due = rc->baseline_gf_interval;
     // NOTE: frames_till_gf_update_due must be <= frames_to_key.
@@ -1484,6 +1489,9 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
       rc->constrained_gf_group = 0;
     }
     cpi->refresh_golden_frame = 1;
+    // Don't update golden frame if key frame is coming within a few frames.
+    if (cpi->oxcf.pass == 0 && rc->frames_to_key < rc->min_gf_interval)
+      cpi->refresh_golden_frame = 0;
     rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
     rc->gfu_boost = DEFAULT_GF_BOOST;
   }
@@ -2065,7 +2073,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         cpi->ext_refresh_frame_flags_pending == 0) {
       int target;
       cpi->refresh_golden_frame = 1;
-      rc->frames_till_gf_update_due = rc->baseline_gf_interval;
+      rc->frames_till_gf_update_due = rc->baseline_gf_interval >> 1;
       if (rc->frames_till_gf_update_due > rc->frames_to_key)
         rc->frames_till_gf_update_due = rc->frames_to_key;
       rc->gfu_boost = DEFAULT_GF_BOOST;
