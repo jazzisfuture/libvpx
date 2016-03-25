@@ -2,6 +2,7 @@
 #define VP10_TXMF1D_SSE2_H_
 
 #include <emmintrin.h>
+#include <smmintrin.h>
 #include "vp10/common/vp10_txfm.h"
 
 #ifdef __cplusplus
@@ -119,12 +120,12 @@ static INLINE void transpose_32(int txfm_size, const __m128i* input,
     __m128i ww0, ww1, in0_w0, in1_w1, in0_w1, in1_w0;        \
     ww0 = _mm_set1_epi32(w0);                                \
     ww1 = _mm_set1_epi32(w1);                                \
-    in0_w0 = mullo_epi32(in0, ww0);                          \
-    in1_w1 = mullo_epi32(in1, ww1);                          \
+    in0_w0 = _mm_mullo_epi32(in0, ww0);                          \
+    in1_w1 = _mm_mullo_epi32(in1, ww1);                          \
     out0 = _mm_add_epi32(in0_w0, in1_w1);                    \
     out0 = round_shift_32_sse4_1(out0, bit);                   \
-    in0_w1 = mullo_epi32(in0, ww1);                          \
-    in1_w0 = mullo_epi32(in1, ww0);                          \
+    in0_w1 = _mm_mullo_epi32(in0, ww1);                          \
+    in1_w0 = _mm_mullo_epi32(in1, ww0);                          \
     out1 = _mm_sub_epi32(in0_w1, in1_w0);                    \
     out1 = round_shift_32_sse4_1(out1, bit);                   \
   })
@@ -136,12 +137,12 @@ static INLINE void transpose_32(int txfm_size, const __m128i* input,
     __m128i ww0, ww1, in0_w0, in1_w1, in0_w1, in1_w0;        \
     ww0 = _mm_set1_epi32(w0);                                \
     ww1 = _mm_set1_epi32(w1);                                \
-    in0_w0 = mullo_epi32(in0, ww0);                          \
-    in1_w1 = mullo_epi32(in1, ww1);                          \
+    in0_w0 = _mm_mullo_epi32(in0, ww0);                          \
+    in1_w1 = _mm_mullo_epi32(in1, ww1);                          \
     out0 = _mm_add_epi32(in0_w0, in1_w1);                    \
     out0 = round_shift_32_sse4_1(out0, bit);                   \
-    in0_w1 = mullo_epi32(in0, ww1);                          \
-    in1_w0 = mullo_epi32(in1, ww0);                          \
+    in0_w1 = _mm_mullo_epi32(in0, ww1);                          \
+    in1_w0 = _mm_mullo_epi32(in1, ww0);                          \
     out1 = _mm_sub_epi32(in1_w0, in0_w1);                    \
     out1 = round_shift_32_sse4_1(out1, bit);                   \
   })
