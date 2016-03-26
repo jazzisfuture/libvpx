@@ -957,7 +957,7 @@ static void write_palette_mode_info(const VP10_COMMON *cm,
     }
   }
 
-  if (mbmi->uv_mode == DC_PRED) {
+  if (mbmi->uv_mode == DC_PRED && 0) {
     n = pmi->palette_size[1];
     vpx_write(w, n > 0,
               vp10_default_palette_uv_mode_prob[pmi->palette_size[0] > 0]);

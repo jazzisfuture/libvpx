@@ -459,7 +459,7 @@ static void read_palette_mode_info(VP10_COMMON *const cm,
     }
   }
 
-  if (mbmi->uv_mode == DC_PRED) {
+  if (mbmi->uv_mode == DC_PRED && 0) {
     if (vpx_read(r,
                  vp10_default_palette_uv_mode_prob[pmi->palette_size[0] > 0])) {
       pmi->palette_size[1] =

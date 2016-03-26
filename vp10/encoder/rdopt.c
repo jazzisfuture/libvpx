@@ -1758,6 +1758,8 @@ static int rd_pick_palette_intra_sby(VP10_COMP *cpi, MACROBLOCK *x,
   mic->mbmi.ext_intra_mode_info.use_ext_intra_mode[0] = 0;
 #endif  // CONFIG_EXT_INTRA
 
+  //return 0;
+
   if (colors > 1 && colors <= 64 && cpi->common.allow_screen_content_tools) {
     int r, c, i, j, k;
     const int max_itr = 50;
@@ -3553,6 +3555,8 @@ static void rd_pick_palette_intra_sbuv(VP10_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_VP9_HIGHBITDEPTH
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  return;
 
   colors = colors_u > colors_v ? colors_u : colors_v;
   if (colors > 1 && colors <= 64) {
