@@ -116,6 +116,9 @@ void vp9_cyclic_refresh_set_golden_update(struct VP9_COMP *const cpi);
 // Check if we should not update golden reference, based on past refresh stats.
 void vp9_cyclic_refresh_check_golden_update(struct VP9_COMP *const cpi);
 
+// Set/update global/frame level refresh parameters, for vbr mode.
+void vp9_cyclic_refresh_update_parameters_vbr(struct VP9_COMP *const cpi);
+
 // Set/update global/frame level refresh parameters.
 void vp9_cyclic_refresh_update_parameters(struct VP9_COMP *const cpi);
 

@@ -161,6 +161,7 @@ typedef struct {
 
   uint64_t avg_source_sad;
   int high_source_sad;
+  int overshoot_pct_gfint;
 } RATE_CONTROL;
 
 struct VP9_COMP;
