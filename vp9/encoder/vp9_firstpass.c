@@ -490,6 +490,7 @@ static void set_first_pass_params(VP9_COMP *cpi) {
   cpi->rc.frames_to_key = INT_MAX;
 }
 
+#define OVERRIDE_ABOVE_LEFT 1
 #define UL_INTRA_THRESH 50
 #define INVALID_ROW -1
 void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
@@ -535,7 +536,9 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   double intra_factor;
   double brightness_factor;
   BufferPool *const pool = cm->buffer_pool;
-
+#ifdef OVERRIDE_ABOVE_LEFT
+  MODE_INFO mi_above, mi_left;
+#endif
   // First pass code requires valid last and new frame buffers.
   assert(new_yv12 != NULL);
   assert((lc != NULL) || frame_is_intra_only(cm) || (lst_yv12 != NULL));
@@ -651,6 +654,11 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
       const BLOCK_SIZE bsize = get_bsize(cm, mb_row, mb_col);
       double log_intra;
       int level_sample;
+#ifndef OVERRIDE_ABOVE_LEFT
+      const int offset = mb_row * cm->mi_stride + mb_col;
+      xd->mi = cm->mi_grid_visible + offset;
+      xd->mi[0] = &cm->mi[offset];
+#endif
 
 #if CONFIG_FP_MB_STATS
       const int mb_index = mb_row * cm->mb_cols + mb_col;
@@ -667,6 +675,27 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
                      mb_row << 1, num_8x8_blocks_high_lookup[bsize],
                      mb_col << 1, num_8x8_blocks_wide_lookup[bsize],
                      cm->mi_rows, cm->mi_cols);
+#ifdef OVERRIDE_ABOVE_LEFT
+      // Are edges available for intra prediction?
+      // Since the firstpass does not populate the mi_grid_visible,
+      // above_mi/left_mi must be overwritten with a nonzero value when edges
+      // are available.  Required by vp9_predict_intra_block().
+      xd->above_mi = (mb_row != 0) ? &mi_above : NULL;
+      xd->left_mi  = (mb_col > tile.mi_col_start) ? &mi_left : NULL;
+#else
+      {
+        int x, y;
+        const int x_mis =
+            VPXMIN(num_8x8_blocks_wide_lookup[bsize], cm->mi_cols - mb_col);
+        const int y_mis =
+            VPXMIN(num_8x8_blocks_high_lookup[bsize], cm->mi_rows - mb_row);
+
+        for (y = 0; y < y_mis; ++y)
+          for (x = !y; x < x_mis; ++x) {
+            xd->mi[y * cm->mi_stride + x] = xd->mi[0];
+          }
+      }
+#endif
 
       // Do intra 16x16 prediction.
       x->skip_encode = 0;
