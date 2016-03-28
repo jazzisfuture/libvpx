@@ -21,6 +21,8 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
+#define DEFAULT_GF_BOOST 2000
+
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   size_t last_coded_q_map_size;
   size_t consec_zero_mv_size;
@@ -200,9 +202,6 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
       refresh_this_block = 1;
   }
 
-  if (cpi->oxcf.rc_mode == VPX_VBR && mi->ref_frame[0] == GOLDEN_FRAME)
-    refresh_this_block = 0;
-
   // If this block is labeled for refresh, check if we should reset the
   // segment_id.
   if (cyclic_refresh_segment_id_boosted(mi->segment_id)) {
@@ -310,8 +309,6 @@ void vp9_cyclic_refresh_set_golden_update(VP9_COMP *const cpi) {
     rc->baseline_gf_interval = VPXMIN(4 * (100 / cr->percent_refresh), 40);
   else
     rc->baseline_gf_interval = 40;
-  if (cpi->oxcf.rc_mode == VPX_VBR)
-    rc->baseline_gf_interval = 20;
 }
 
 // Update some encoding stats (from the just encoded frame). If this frame's
@@ -471,6 +468,21 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     cr->reduce_refresh = 1;
 }
 
+void vp9_cyclic_refresh_update_parameters_vbr(VP9_COMP *const cpi) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  cr->max_qdelta_perc = 50;
+  cr->time_for_refresh = 0;
+  cr->rate_boost_fac = 10;
+  cr->motion_thresh = 64;
+  // TODO(marpan): Adjust these settings to average QP, overshoot, etc.
+  rc->gfu_boost = DEFAULT_GF_BOOST >> 1;
+  rc->baseline_gf_interval =
+      VPXMAX(20, rc->min_gf_interval + rc->max_gf_interval);
+  cr->rate_ratio_qdelta = 1.5;
+  cr->percent_refresh = 10;
+}
+
 // Set cyclic refresh parameters.
 void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   const RATE_CONTROL *const rc = &cpi->rc;
@@ -507,18 +519,6 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   if (cpi->svc.spatial_layer_id > 0) {
     cr->motion_thresh = 4;
     cr->rate_boost_fac = 12;
-  }
-  if (cpi->oxcf.rc_mode == VPX_VBR) {
-    // To be adjusted for VBR mode, e.g., based on gf period and boost.
-    // For now use smaller qp-delta (than CBR), no second boosted seg, and
-    // turn-off (no refresh) on golden refresh (since it's already boosted).
-    cr->percent_refresh = 10;
-    cr->rate_ratio_qdelta = 1.5;
-    cr->rate_boost_fac = 10;
-    if (cpi->refresh_golden_frame == 1) {
-      cr->percent_refresh = 0;
-      cr->rate_ratio_qdelta = 1.0;
-    }
   }
 }
 
