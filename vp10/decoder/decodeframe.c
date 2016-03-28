@@ -16,7 +16,7 @@
 #include "./vpx_scale_rtcd.h"
 
 #include "vpx_dsp/bitreader_buffer.h"
-#include "vpx_dsp/bitreader.h"
+#include "vp10/decoder/bitreader.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
@@ -100,14 +100,14 @@ static TX_MODE read_tx_mode(struct vpx_read_bit_buffer *rb) {
   return vpx_rb_read_bit(rb) ? TX_MODE_SELECT : vpx_rb_read_literal(rb, 2);
 }
 
-static void read_switchable_interp_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
+static void read_switchable_interp_probs(FRAME_CONTEXT *fc, vp10_reader *r) {
   int i, j;
   for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j)
     for (i = 0; i < SWITCHABLE_FILTERS - 1; ++i)
       vp10_diff_update_prob(r, &fc->switchable_interp_prob[j][i]);
 }
 
-static void read_inter_mode_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
+static void read_inter_mode_probs(FRAME_CONTEXT *fc, vp10_reader *r) {
   int i;
 #if CONFIG_REF_MV
   for (i = 0; i < NEWMV_MODE_CONTEXTS; ++i)
@@ -130,9 +130,9 @@ static void read_inter_mode_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
 }
 
 #if CONFIG_EXT_INTER
-static void read_inter_compound_mode_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
+static void read_inter_compound_mode_probs(FRAME_CONTEXT *fc, vp10_reader *r) {
   int i, j;
-  if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+  if (vp10_read(r, GROUP_DIFF_UPDATE_PROB)) {
     for (j = 0; j < INTER_MODE_CONTEXTS; ++j) {
       for (i = 0; i < INTER_COMPOUND_MODES - 1; ++i) {
         vp10_diff_update_prob(r, &fc->inter_compound_mode_probs[j][i]);
@@ -153,7 +153,7 @@ static REFERENCE_MODE read_frame_reference_mode(const VP10_COMMON *cm,
   }
 }
 
-static void read_frame_reference_mode_probs(VP10_COMMON *cm, vpx_reader *r) {
+static void read_frame_reference_mode_probs(VP10_COMMON *cm, vp10_reader *r) {
   FRAME_CONTEXT *const fc = cm->fc;
   int i, j;
 
@@ -178,13 +178,13 @@ static void read_frame_reference_mode_probs(VP10_COMMON *cm, vpx_reader *r) {
   }
 }
 
-static void update_mv_probs(vpx_prob *p, int n, vpx_reader *r) {
+static void update_mv_probs(vpx_prob *p, int n, vp10_reader *r) {
   int i;
   for (i = 0; i < n; ++i)
     vp10_diff_update_prob(r, &p[i]);
 }
 
-static void read_mv_probs(nmv_context *ctx, int allow_hp, vpx_reader *r) {
+static void read_mv_probs(nmv_context *ctx, int allow_hp, vp10_reader *r) {
   int i, j;
 
   update_mv_probs(ctx->joints, MV_JOINTS - 1, r);
@@ -262,7 +262,7 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
                                          const rans_dec_lut *const token_tab,
                                                 struct AnsDecoder *const r,
 #else
-                                                vpx_reader *r,
+                                                vp10_reader *r,
 #endif  // CONFIG_ANS
                                                 MB_MODE_INFO *const mbmi,
                                                 int plane,
@@ -298,7 +298,7 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
 }
 
 #if CONFIG_VAR_TX
-static void decode_reconstruct_tx(MACROBLOCKD *const xd, vpx_reader *r,
+static void decode_reconstruct_tx(MACROBLOCKD *const xd, vp10_reader *r,
                                   MB_MODE_INFO *const mbmi,
                                   int plane, BLOCK_SIZE plane_bsize,
                                   int block, int blk_row, int blk_col,
@@ -360,7 +360,7 @@ static int reconstruct_inter_block(MACROBLOCKD *const xd,
                                    const rans_dec_lut *const token_tab,
                                    struct AnsDecoder *const r,
 #else
-                                   vpx_reader *r,
+                                   vp10_reader *r,
 #endif
                                    MB_MODE_INFO *const mbmi, int plane,
                                    int row, int col, TX_SIZE tx_size) {
@@ -1807,7 +1807,7 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
                          int supertx_enabled,
 #endif  // CONFIG_SUPERTX
                          int mi_row, int mi_col,
-                         vpx_reader *r,
+                         vp10_reader *r,
 #if CONFIG_ANS
                          struct AnsDecoder *const tok,
 #endif  // CONFIG_ANS
@@ -2007,7 +2007,7 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
   }
 #endif  // CONFIG_SUPERTX
 
-  xd->corrupted |= vpx_reader_has_error(r);
+  xd->corrupted |= vp10_reader_has_error(r);
 }
 
 static INLINE int dec_partition_plane_context(const MACROBLOCKD *xd,
@@ -2039,7 +2039,7 @@ static INLINE void dec_update_partition_context(MACROBLOCKD *xd,
 #endif  // !CONFIG_EXT_PARTITION_TYPES
 
 static PARTITION_TYPE read_partition(VP10_COMMON *cm, MACROBLOCKD *xd,
-                                     int mi_row, int mi_col, vpx_reader *r,
+                                     int mi_row, int mi_col, vp10_reader *r,
                                      int has_rows, int has_cols,
 #if CONFIG_EXT_PARTITION_TYPES
                                      BLOCK_SIZE bsize,
@@ -2053,16 +2053,16 @@ static PARTITION_TYPE read_partition(VP10_COMMON *cm, MACROBLOCKD *xd,
   if (has_rows && has_cols)
 #if CONFIG_EXT_PARTITION_TYPES
     if (bsize <= BLOCK_8X8)
-      p = (PARTITION_TYPE)vpx_read_tree(r, vp10_partition_tree, probs);
+      p = (PARTITION_TYPE)vp10_read_tree(r, vp10_partition_tree, probs);
     else
-      p = (PARTITION_TYPE)vpx_read_tree(r, vp10_ext_partition_tree, probs);
+      p = (PARTITION_TYPE)vp10_read_tree(r, vp10_ext_partition_tree, probs);
 #else
-    p = (PARTITION_TYPE)vpx_read_tree(r, vp10_partition_tree, probs);
+    p = (PARTITION_TYPE)vp10_read_tree(r, vp10_partition_tree, probs);
 #endif  // CONFIG_EXT_PARTITION_TYPES
   else if (!has_rows && has_cols)
-    p = vpx_read(r, probs[1]) ? PARTITION_SPLIT : PARTITION_HORZ;
+    p = vp10_read(r, probs[1]) ? PARTITION_SPLIT : PARTITION_HORZ;
   else if (has_rows && !has_cols)
-    p = vpx_read(r, probs[2]) ? PARTITION_SPLIT : PARTITION_VERT;
+    p = vp10_read(r, probs[2]) ? PARTITION_SPLIT : PARTITION_VERT;
   else
     p = PARTITION_SPLIT;
 
@@ -2074,9 +2074,9 @@ static PARTITION_TYPE read_partition(VP10_COMMON *cm, MACROBLOCKD *xd,
 
 #if CONFIG_SUPERTX
 static int read_skip_without_seg(VP10_COMMON *cm, const MACROBLOCKD *xd,
-                                 vpx_reader *r) {
+                                 vp10_reader *r) {
   const int ctx = vp10_get_skip_context(xd);
-  const int skip = vpx_read(r, cm->fc->skip_probs[ctx]);
+  const int skip = vp10_read(r, cm->fc->skip_probs[ctx]);
   FRAME_COUNTS *counts = xd->counts;
   if (counts)
     ++counts->skip[ctx][skip];
@@ -2090,7 +2090,7 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
                              int supertx_enabled,
 #endif
                              int mi_row, int mi_col,
-                             vpx_reader* r,
+                             vp10_reader* r,
 #if CONFIG_ANS
                              struct AnsDecoder *const tok,
 #endif  // CONFIG_ANS
@@ -2131,7 +2131,7 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
       !xd->lossless[0]) {
     const int supertx_context =
         partition_supertx_context_lookup[partition];
-    supertx_enabled = vpx_read(
+    supertx_enabled = vp10_read(
         r, cm->fc->supertx_prob[supertx_context][supertx_size]);
     if (xd->counts)
       xd->counts->supertx[supertx_context][supertx_size][supertx_enabled]++;
@@ -2153,7 +2153,7 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
       if (get_ext_tx_types(supertx_size, bsize, 1) > 1) {
         int eset = get_ext_tx_set(supertx_size, bsize, 1);
         if (eset > 0) {
-          txfm = vpx_read_tree(r, vp10_ext_tx_inter_tree[eset],
+          txfm = vp10_read_tree(r, vp10_ext_tx_inter_tree[eset],
                                cm->fc->inter_ext_tx_prob[eset][supertx_size]);
           if (xd->counts)
             ++xd->counts->inter_ext_tx[eset][supertx_size][txfm];
@@ -2161,7 +2161,7 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
       }
 #else
       if (supertx_size < TX_32X32) {
-        txfm = vpx_read_tree(r, vp10_ext_tx_tree,
+        txfm = vp10_read_tree(r, vp10_ext_tx_tree,
                              cm->fc->inter_ext_tx_prob[supertx_size]);
         if (xd->counts)
           ++xd->counts->inter_ext_tx[supertx_size][txfm];
@@ -2516,7 +2516,7 @@ static void setup_bool_decoder(const uint8_t *data,
                                const uint8_t *data_end,
                                const size_t read_size,
                                struct vpx_internal_error_info *error_info,
-                               vpx_reader *r,
+                               vp10_reader *r,
                                vpx_decrypt_cb decrypt_cb,
                                void *decrypt_state) {
   // Validate the calculated partition length. If the buffer
@@ -2554,10 +2554,10 @@ static void setup_token_decoder(const uint8_t *data,
 #endif
 
 static void read_coef_probs_common(vp10_coeff_probs_model *coef_probs,
-                                   vpx_reader *r) {
+                                   vp10_reader *r) {
   int i, j, k, l, m;
 
-  if (vpx_read_bit(r))
+  if (vp10_read_bit(r))
     for (i = 0; i < PLANE_TYPES; ++i)
       for (j = 0; j < REF_TYPES; ++j)
         for (k = 0; k < COEF_BANDS; ++k)
@@ -2567,7 +2567,7 @@ static void read_coef_probs_common(vp10_coeff_probs_model *coef_probs,
 }
 
 static void read_coef_probs(FRAME_CONTEXT *fc, TX_MODE tx_mode,
-                            vpx_reader *r) {
+                            vp10_reader *r) {
     const TX_SIZE max_tx_size = tx_mode_to_biggest_tx_size[tx_mode];
     TX_SIZE tx_size;
     for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size)
@@ -3903,11 +3903,11 @@ static size_t read_uncompressed_header(VP10Decoder *pbi,
 }
 
 #if CONFIG_EXT_TX
-static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
+static void read_ext_tx_probs(FRAME_CONTEXT *fc, vp10_reader *r) {
   int i, j, k;
   int s;
   for (s = 1; s < EXT_TX_SETS_INTER; ++s) {
-    if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+    if (vp10_read(r, GROUP_DIFF_UPDATE_PROB)) {
       for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
         if (!use_inter_ext_tx_for_txsize[s][i]) continue;
         for (j = 0; j < num_ext_tx_set_inter[s] - 1; ++j)
@@ -3917,7 +3917,7 @@ static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
   }
 
   for (s = 1; s < EXT_TX_SETS_INTRA; ++s) {
-    if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+    if (vp10_read(r, GROUP_DIFF_UPDATE_PROB)) {
       for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
         if (!use_intra_ext_tx_for_txsize[s][i]) continue;
         for (j = 0; j < INTRA_MODES; ++j)
@@ -3930,16 +3930,16 @@ static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
 
 #else
 
-static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
+static void read_ext_tx_probs(FRAME_CONTEXT *fc, vp10_reader *r) {
   int i, j, k;
-  if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+  if (vp10_read(r, GROUP_DIFF_UPDATE_PROB)) {
     for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
       for (j = 0; j < TX_TYPES; ++j)
         for (k = 0; k < TX_TYPES - 1; ++k)
           vp10_diff_update_prob(r, &fc->intra_ext_tx_prob[i][j][k]);
     }
   }
-  if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+  if (vp10_read(r, GROUP_DIFF_UPDATE_PROB)) {
     for (i = TX_4X4; i < EXT_TX_SIZES; ++i) {
       for (k = 0; k < TX_TYPES - 1; ++k)
         vp10_diff_update_prob(r, &fc->inter_ext_tx_prob[i][k]);
@@ -3949,9 +3949,9 @@ static void read_ext_tx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_SUPERTX
-static void read_supertx_probs(FRAME_CONTEXT *fc, vpx_reader *r) {
+static void read_supertx_probs(FRAME_CONTEXT *fc, vp10_reader *r) {
   int i, j;
-  if (vpx_read(r, GROUP_DIFF_UPDATE_PROB)) {
+  if (vp10_read(r, GROUP_DIFF_UPDATE_PROB)) {
     for (i = 0; i < PARTITION_SUPERTX_CONTEXTS; ++i) {
       for (j = 1; j < TX_SIZES; ++j) {
         vp10_diff_update_prob(r, &fc->supertx_prob[i][j]);
@@ -3968,7 +3968,7 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
   MACROBLOCKD *const xd = &pbi->mb;
 #endif
   FRAME_CONTEXT *const fc = cm->fc;
-  vpx_reader r;
+  vp10_reader r;
   int k, i, j;
 
 #if !CONFIG_ANS
@@ -4098,7 +4098,7 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
 #endif
   }
 
-  return vpx_reader_has_error(&r);
+  return vp10_reader_has_error(&r);
 }
 
 #ifdef NDEBUG
