@@ -1449,6 +1449,17 @@ static int calc_iframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
   return vp9_rc_clamp_iframe_target_size(cpi, target);
 }
 
+static void set_gf_intervalboost_one_pass_vbr(VP9_COMP *const cpi) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    vp9_cyclic_refresh_update_parameters_vbr(cpi);
+  } else {
+    rc->gfu_boost = DEFAULT_GF_BOOST;
+    rc->baseline_gf_interval =
+        (rc->min_gf_interval + rc->max_gf_interval) >> 1;
+  }
+}
+
 void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
@@ -1469,12 +1480,7 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     cm->frame_type = INTER_FRAME;
   }
   if (rc->frames_till_gf_update_due == 0) {
-    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi->oxcf.pass == 0) {
-      vp9_cyclic_refresh_set_golden_update(cpi);
-    } else {
-      rc->baseline_gf_interval =
-          (rc->min_gf_interval + rc->max_gf_interval) / 2;
-    }
+    set_gf_intervalboost_one_pass_vbr(cpi);
     rc->frames_till_gf_update_due = rc->baseline_gf_interval;
     // NOTE: frames_till_gf_update_due must be <= frames_to_key.
     if (rc->frames_till_gf_update_due > rc->frames_to_key) {
@@ -1484,16 +1490,16 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
       rc->constrained_gf_group = 0;
     }
     cpi->refresh_golden_frame = 1;
+    // Don't update golden frame if key frame is coming within a few frames.
+    if (rc->frames_to_key < 4)
+      cpi->refresh_golden_frame = 0;
     rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
-    rc->gfu_boost = DEFAULT_GF_BOOST;
   }
   if (cm->frame_type == KEY_FRAME)
     target = calc_iframe_target_size_one_pass_vbr(cpi);
   else
     target = calc_pframe_target_size_one_pass_vbr(cpi);
   vp9_rc_set_frame_target(cpi, target);
-  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi->oxcf.pass == 0)
-    vp9_cyclic_refresh_update_parameters(cpi);
 }
 
 static int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
@@ -2047,7 +2053,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
     // for cases where there is small change from content that is completely
     // static.
     if (cpi->oxcf.rc_mode == VPX_VBR) {
-      min_thresh = 30000;
+      min_thresh = 40000;
       thresh = 2.0f;
     }
     if (avg_sad >
@@ -2065,7 +2071,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         cpi->ext_refresh_frame_flags_pending == 0) {
       int target;
       cpi->refresh_golden_frame = 1;
-      rc->frames_till_gf_update_due = rc->baseline_gf_interval;
+      rc->frames_till_gf_update_due = VPXMAX(10, rc->baseline_gf_interval >> 1);
       if (rc->frames_till_gf_update_due > rc->frames_to_key)
         rc->frames_till_gf_update_due = rc->frames_to_key;
       rc->gfu_boost = DEFAULT_GF_BOOST;
