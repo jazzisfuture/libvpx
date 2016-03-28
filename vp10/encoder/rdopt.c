@@ -4940,28 +4940,8 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
 #if !CONFIG_EXT_INTER
         if (filter_idx > 0) {
           BEST_SEG_INFO* ref_bsi = bsi_buf;
-          if (seg_mvs[i][mbmi->ref_frame[0]].as_int ==
-              ref_bsi->rdstat[i][mode_idx].mvs[0].as_int &&
-              ref_bsi->rdstat[i][mode_idx].mvs[0].as_int != INVALID_MV)
-            if (bsi->ref_mv[0]->as_int ==
-                ref_bsi->rdstat[i][mode_idx].pred_mv[0].as_int)
-              --run_mv_search;
 
-          if (!has_second_rf) {
-            --run_mv_search;
-          } else {
-            if (seg_mvs[i][mbmi->ref_frame[1]].as_int ==
-                ref_bsi->rdstat[i][mode_idx].mvs[1].as_int &&
-                ref_bsi->rdstat[i][mode_idx].mvs[1].as_int != INVALID_MV)
-              if (bsi->ref_mv[1]->as_int ==
-                  ref_bsi->rdstat[i][mode_idx].pred_mv[1].as_int)
-                --run_mv_search;
-          }
-
-          if (run_mv_search != 0 && filter_idx > 1) {
-            ref_bsi = bsi_buf + 1;
-            run_mv_search = 2;
-
+          if (has_second_rf) {
             if (seg_mvs[i][mbmi->ref_frame[0]].as_int ==
                 ref_bsi->rdstat[i][mode_idx].mvs[0].as_int &&
                 ref_bsi->rdstat[i][mode_idx].mvs[0].as_int != INVALID_MV)
@@ -4969,15 +4949,48 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
                   ref_bsi->rdstat[i][mode_idx].pred_mv[0].as_int)
                 --run_mv_search;
 
-            if (!has_second_rf) {
-              --run_mv_search;
-            } else {
+            if (seg_mvs[i][mbmi->ref_frame[1]].as_int ==
+                ref_bsi->rdstat[i][mode_idx].mvs[1].as_int &&
+                ref_bsi->rdstat[i][mode_idx].mvs[1].as_int != INVALID_MV)
+              if (bsi->ref_mv[1]->as_int ==
+                  ref_bsi->rdstat[i][mode_idx].pred_mv[1].as_int)
+                --run_mv_search;
+          } else {
+            if (bsi->ref_mv[0]->as_int ==
+                ref_bsi->rdstat[i][mode_idx].pred_mv[0].as_int &&
+                ref_bsi->rdstat[i][mode_idx].mvs[0].as_int != INVALID_MV) {
+              run_mv_search = 0;
+              seg_mvs[i][mbmi->ref_frame[0]].as_int =
+                  ref_bsi->rdstat[i][mode_idx].mvs[0].as_int;
+            }
+          }
+
+          if (run_mv_search != 0 && filter_idx > 1) {
+            ref_bsi = bsi_buf + 1;
+            run_mv_search = 2;
+
+            if (has_second_rf) {
+              if (seg_mvs[i][mbmi->ref_frame[0]].as_int ==
+                  ref_bsi->rdstat[i][mode_idx].mvs[0].as_int &&
+                  ref_bsi->rdstat[i][mode_idx].mvs[0].as_int != INVALID_MV)
+                if (bsi->ref_mv[0]->as_int ==
+                    ref_bsi->rdstat[i][mode_idx].pred_mv[0].as_int)
+                  --run_mv_search;
+
               if (seg_mvs[i][mbmi->ref_frame[1]].as_int ==
                   ref_bsi->rdstat[i][mode_idx].mvs[1].as_int &&
                   ref_bsi->rdstat[i][mode_idx].mvs[1].as_int != INVALID_MV)
                 if (bsi->ref_mv[1]->as_int ==
                     ref_bsi->rdstat[i][mode_idx].pred_mv[1].as_int)
                   --run_mv_search;
+            } else {
+              if (bsi->ref_mv[0]->as_int ==
+                  ref_bsi->rdstat[i][mode_idx].pred_mv[0].as_int &&
+                  ref_bsi->rdstat[i][mode_idx].mvs[0].as_int != INVALID_MV) {
+                run_mv_search = 0;
+                seg_mvs[i][mbmi->ref_frame[0]].as_int =
+                    ref_bsi->rdstat[i][mode_idx].mvs[0].as_int;
+              }
             }
           }
         }
@@ -5057,8 +5070,8 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
           }
 
 #if CONFIG_REF_MV
-          mvp_full.row = best_ref_mv->as_mv.row >> 3;
-          mvp_full.col = best_ref_mv->as_mv.col >> 3;
+          mvp_full.row = bsi->ref_mv[0]->as_mv.row >> 3;
+          mvp_full.col = bsi->ref_mv[0]->as_mv.col >> 3;
 #else
           mvp_full.row = bsi->mvp.as_mv.row >> 3;
           mvp_full.col = bsi->mvp.as_mv.col >> 3;
