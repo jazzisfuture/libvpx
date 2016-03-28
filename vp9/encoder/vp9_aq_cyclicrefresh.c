@@ -21,6 +21,8 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
+#define DEFAULT_GF_BOOST 2000
+
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   size_t last_coded_q_map_size;
   size_t consec_zero_mv_size;
@@ -200,9 +202,6 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
       refresh_this_block = 1;
   }
 
-  if (cpi->oxcf.rc_mode == VPX_VBR && mi->ref_frame[0] == GOLDEN_FRAME)
-    refresh_this_block = 0;
-
   // If this block is labeled for refresh, check if we should reset the
   // segment_id.
   if (cyclic_refresh_segment_id_boosted(mi->segment_id)) {
@@ -310,8 +309,6 @@ void vp9_cyclic_refresh_set_golden_update(VP9_COMP *const cpi) {
     rc->baseline_gf_interval = VPXMIN(4 * (100 / cr->percent_refresh), 40);
   else
     rc->baseline_gf_interval = 40;
-  if (cpi->oxcf.rc_mode == VPX_VBR)
-    rc->baseline_gf_interval = 20;
 }
 
 // Update some encoding stats (from the just encoded frame). If this frame's
@@ -471,6 +468,35 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     cr->reduce_refresh = 1;
 }
 
+void vp9_cyclic_refresh_update_parameters_vbr(VP9_COMP *const cpi) {
+  const VP9_COMMON *const cm = &cpi->common;
+  RATE_CONTROL *const rc = &cpi->rc;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  cr->max_qdelta_perc = 50;
+  cr->time_for_refresh = 0;
+  cr->rate_boost_fac = 10;
+  cr->motion_thresh = 64;
+  // Adapt these settings to average QP, overshoot stats, etc.
+  rc->baseline_gf_interval = rc->min_gf_interval + rc->max_gf_interval;
+  rc->gfu_boost = DEFAULT_GF_BOOST >> 1;
+  cr->rate_ratio_qdelta = 1.5;
+  cr->percent_refresh = 10;
+  // Use higher boost if scene-cut detected or on key frame.
+  // Else turn off delta-qp for small key frame spacing or small gf intervals.
+  // Use default settings for gf period/boost in that case.
+  if (rc->high_source_sad || cm->frame_type == KEY_FRAME) {
+    rc->baseline_gf_interval = (rc->min_gf_interval + rc->max_gf_interval) >> 1;
+    rc->gfu_boost = DEFAULT_GF_BOOST;
+    cr->rate_ratio_qdelta = 2.0;
+  } else if (cpi->oxcf.key_freq < 60 ||
+             rc->baseline_gf_interval < 20) {
+    rc->baseline_gf_interval = (rc->min_gf_interval + rc->max_gf_interval) >> 1;
+    rc->gfu_boost = DEFAULT_GF_BOOST;
+    cr->rate_ratio_qdelta = 0.0;
+    cr->percent_refresh = 0;
+  }
+}
+
 // Set cyclic refresh parameters.
 void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   const RATE_CONTROL *const rc = &cpi->rc;
@@ -508,18 +534,6 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->motion_thresh = 4;
     cr->rate_boost_fac = 12;
   }
-  if (cpi->oxcf.rc_mode == VPX_VBR) {
-    // To be adjusted for VBR mode, e.g., based on gf period and boost.
-    // For now use smaller qp-delta (than CBR), no second boosted seg, and
-    // turn-off (no refresh) on golden refresh (since it's already boosted).
-    cr->percent_refresh = 10;
-    cr->rate_ratio_qdelta = 1.5;
-    cr->rate_boost_fac = 10;
-    if (cpi->refresh_golden_frame == 1) {
-      cr->percent_refresh = 0;
-      cr->rate_ratio_qdelta = 1.0;
-    }
-  }
 }
 
 // Setup cyclic background refresh: set delta q and segmentation map.
@@ -534,10 +548,12 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
   const int apply_cyclic_refresh = 1;
   if (cm->current_video_frame == 0)
     cr->low_content_avg = 0.0;
-  // Don't apply refresh on key frame or temporal enhancement layer frames.
+  // Don't apply refresh on key frame or temporal enhancement layer frames,
+  // and turn off on boosted golden frame for vbr mode.
   if (!apply_cyclic_refresh ||
       (cm->frame_type == KEY_FRAME) ||
-      (cpi->svc.temporal_layer_id > 0)) {
+      (cpi->svc.temporal_layer_id > 0) ||
+      (cpi->oxcf.rc_mode == VPX_VBR && cpi->refresh_golden_frame)) {
     // Set segmentation map to 0 and disable.
     unsigned char *const seg_map = cpi->segmentation_map;
     memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
