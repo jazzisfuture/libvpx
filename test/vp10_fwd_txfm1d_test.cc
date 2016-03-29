@@ -11,24 +11,24 @@
 #include "vp10/common/vp10_fwd_txfm1d.h"
 #include "test/vp10_txfm_test.h"
 
-using libvpx_test::ACMRandom;
+using namespace libvpx_test;
 
 namespace {
-static int txfm_type_num = 2;
-static TYPE_TXFM txfm_type_ls[2] = {TYPE_DCT, TYPE_ADST};
+const int txfm_type_num = 2;
+const TYPE_TXFM txfm_type_ls[2] = {TYPE_DCT, TYPE_ADST};
 
-static int txfm_size_num = 5;
-static int txfm_size_ls[5] = {4, 8, 16, 32, 64};
+const int txfm_size_num = 5;
+const int txfm_size_ls[5] = {4, 8, 16, 32, 64};
 
-static TxfmFunc fwd_txfm_func_ls[2][5] = {
+const TxfmFunc fwd_txfm_func_ls[2][5] = {
     {vp10_fdct4_new, vp10_fdct8_new, vp10_fdct16_new, vp10_fdct32_new,
      vp10_fdct64_new},
     {vp10_fadst4_new, vp10_fadst8_new, vp10_fadst16_new, vp10_fadst32_new,
      NULL}};
 
 // the maximum stage number of fwd/inv 1d dct/adst txfm is 12
-static int8_t cos_bit[12] = {14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14};
-static int8_t range_bit[12] = {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32};
+const int8_t cos_bit[12] = {14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14};
+const int8_t range_bit[12] = {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32};
 
 TEST(vp10_fwd_txfm1d, round_shift) {
   EXPECT_EQ(round_shift(7, 1), 3);
@@ -131,4 +131,4 @@ TEST(vp10_fwd_txfm1d, accuracy) {
     delete[] ref_output;
   }
 }
-}  // namespace
+}  // namespace libvpx_test

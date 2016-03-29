@@ -17,7 +17,7 @@
 #include "vp10/common/vp10_fwd_txfm2d_cfg.h"
 #include "./vp10_rtcd.h"
 
-using libvpx_test::ACMRandom;
+using namespace libvpx_test;
 
 namespace {
 
@@ -106,4 +106,4 @@ TEST(vp10_fwd_txfm2d, accuracy) {
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-}  // anonymous namespace
+}  // namespace libvpx_test
