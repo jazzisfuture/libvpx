@@ -6569,8 +6569,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
           restore_dst_buf(xd, orig_dst, orig_dst_stride);
         } else {
           for (j = 0; j < MAX_MB_PLANE; j++) {
-            xd->plane[j].dst.buf = tmp_buf + j * 64 * 64;
-            xd->plane[j].dst.stride = 64;
+            xd->plane[j].dst.buf = tmp_buf + j * CU_SIZE * CU_SIZE;
+            xd->plane[j].dst.stride = CU_SIZE;
           }
         }
         vp10_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
@@ -6776,7 +6776,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   }
 
   if (is_comp_interintra_pred) {
-    PREDICTION_MODE interintra_mode, best_interintra_mode = DC_PRED;
     int64_t best_interintra_rd = INT64_MAX;
     int rmode, rate_sum;
     int64_t dist_sum;
@@ -6789,6 +6788,16 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         bh = 4 << b_height_log2_lookup[mbmi->sb_type];
     int_mv tmp_mv;
     int tmp_rate_mv = 0;
+    DECLARE_ALIGNED(16, uint8_t,
+                    intrapred_[2 * MAX_MB_PLANE * CU_SIZE * CU_SIZE]);
+    uint8_t *intrapred;
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+      intrapred = CONVERT_TO_BYTEPTR(intrapred_);
+    else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+      intrapred = intrapred_;
+
     mbmi->ref_frame[1] = NONE;
     for (j = 0; j < MAX_MB_PLANE; j++) {
       xd->plane[j].dst.buf = tmp_buf + j * tmp_buf_sz;
@@ -6798,46 +6807,31 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     restore_dst_buf(xd, orig_dst, orig_dst_stride);
     mbmi->ref_frame[1] = INTRA_FRAME;
 
-    for (interintra_mode = DC_PRED; interintra_mode <= TM_PRED;
-         ++interintra_mode) {
-      mbmi->interintra_mode = interintra_mode;
-      mbmi->interintra_uv_mode = interintra_mode;
-      rmode = intra_mode_cost[mbmi->interintra_mode];
-      vp10_build_interintra_predictors(xd,
-                                       tmp_buf,
-                                       tmp_buf + tmp_buf_sz,
-                                       tmp_buf + 2 * tmp_buf_sz,
-                                       CU_SIZE,
-                                       CU_SIZE,
-                                       CU_SIZE,
-                                       bsize);
-      model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                      &skip_txfm_sb, &skip_sse_sb);
-      rd = RDCOST(x->rdmult, x->rddiv, rate_mv + rmode + rate_sum, dist_sum);
-      if (rd < best_interintra_rd) {
-        best_interintra_rd = rd;
-        best_interintra_mode = interintra_mode;
-      }
-    }
-    mbmi->interintra_mode = best_interintra_mode;
-    mbmi->interintra_uv_mode = best_interintra_mode;
+    vp10_build_intra_predictors_for_interintra(
+        xd, bsize, 0, intrapred, CU_SIZE);
+    vp10_build_intra_predictors_for_interintra(
+        xd, bsize, 1, intrapred + CU_SIZE * CU_SIZE, CU_SIZE);
+    vp10_build_intra_predictors_for_interintra(
+        xd, bsize, 2, intrapred + 2 * CU_SIZE * CU_SIZE, CU_SIZE);
+
+    vp10_combine_interintra(xd, bsize, 0, tmp_buf, CU_SIZE,
+                            intrapred, CU_SIZE);
+    vp10_combine_interintra(xd, bsize, 1, tmp_buf + tmp_buf_sz, CU_SIZE,
+                            intrapred + CU_SIZE * CU_SIZE, CU_SIZE);
+    vp10_combine_interintra(xd, bsize, 2, tmp_buf + 2 * tmp_buf_sz, CU_SIZE,
+                            intrapred + 2 * CU_SIZE * CU_SIZE, CU_SIZE);
+    rmode = intra_mode_cost[mbmi->interintra_mode];
+    model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
+                    &skip_txfm_sb, &skip_sse_sb);
+    best_interintra_rd =
+        RDCOST(x->rdmult, x->rddiv, rate_mv + rmode + rate_sum, dist_sum);
+
     if (ref_best_rd < INT64_MAX &&
-        best_interintra_rd / 2 > ref_best_rd) {
+        best_interintra_rd > ref_best_rd * 3 / 2) {
       return INT64_MAX;
     }
     wedge_bits = get_wedge_bits(bsize);
-    rmode = intra_mode_cost[mbmi->interintra_mode];
     if (wedge_bits) {
-      vp10_build_interintra_predictors(xd,
-                                       tmp_buf,
-                                       tmp_buf + tmp_buf_sz,
-                                       tmp_buf + 2 * tmp_buf_sz,
-                                       CU_SIZE,
-                                       CU_SIZE,
-                                       CU_SIZE,
-                                       bsize);
-      model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                      &skip_txfm_sb, &skip_sse_sb);
       rwedge = vp10_cost_bit(cm->fc->wedge_interintra_prob[bsize], 0);
       rd = RDCOST(x->rdmult, x->rddiv,
                   rmode + rate_mv + rwedge + rate_sum, dist_sum);
@@ -6847,17 +6841,16 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       rwedge = wedge_bits * 256 +
           vp10_cost_bit(cm->fc->wedge_interintra_prob[bsize], 1);
       wedge_types = (1 << wedge_bits);
+
       for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
         mbmi->interintra_wedge_index = wedge_index;
         mbmi->interintra_uv_wedge_index = wedge_index;
-        vp10_build_interintra_predictors(xd,
-                                         tmp_buf,
-                                         tmp_buf + tmp_buf_sz,
-                                         tmp_buf + 2 * tmp_buf_sz,
-                                         CU_SIZE,
-                                         CU_SIZE,
-                                         CU_SIZE,
-                                         bsize);
+        vp10_combine_interintra(xd, bsize, 0, tmp_buf, CU_SIZE,
+                                intrapred, CU_SIZE);
+        vp10_combine_interintra(xd, bsize, 1, tmp_buf + tmp_buf_sz, CU_SIZE,
+                                intrapred + CU_SIZE * CU_SIZE, CU_SIZE);
+        vp10_combine_interintra(xd, bsize, 2, tmp_buf + 2 * tmp_buf_sz, CU_SIZE,
+                                intrapred + 2 * CU_SIZE * CU_SIZE, CU_SIZE);
         model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
                         &skip_txfm_sb, &skip_sse_sb);
         rd = RDCOST(x->rdmult, x->rddiv,
@@ -6937,8 +6930,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     if (best_needs_copy) {
       // again temporarily set the buffers to local memory to prevent a memcpy
       for (i = 0; i < MAX_MB_PLANE; i++) {
-        xd->plane[i].dst.buf = tmp_buf + i * 64 * 64;
-        xd->plane[i].dst.stride = 64;
+        xd->plane[i].dst.buf = tmp_buf + i * CU_SIZE * CU_SIZE;
+        xd->plane[i].dst.stride = CU_SIZE;
       }
     }
     rd = tmp_rd;
@@ -7572,33 +7565,33 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   const MODE_INFO *left_mi = xd->left_mi;
 #if CONFIG_OBMC
 #if CONFIG_VP9_HIGHBITDEPTH
-  DECLARE_ALIGNED(16, uint8_t, tmp_buf1[2 * MAX_MB_PLANE * 64 * 64]);
-  DECLARE_ALIGNED(16, uint8_t, tmp_buf2[2 * MAX_MB_PLANE * 64 * 64]);
+  DECLARE_ALIGNED(16, uint8_t, tmp_buf1[2 * MAX_MB_PLANE * CU_SIZE * CU_SIZE]);
+  DECLARE_ALIGNED(16, uint8_t, tmp_buf2[2 * MAX_MB_PLANE * CU_SIZE * CU_SIZE]);
 #else
-  DECLARE_ALIGNED(16, uint8_t, tmp_buf1[MAX_MB_PLANE * 64 * 64]);
-  DECLARE_ALIGNED(16, uint8_t, tmp_buf2[MAX_MB_PLANE * 64 * 64]);
+  DECLARE_ALIGNED(16, uint8_t, tmp_buf1[MAX_MB_PLANE * CU_SIZE * CU_SIZE]);
+  DECLARE_ALIGNED(16, uint8_t, tmp_buf2[MAX_MB_PLANE * CU_SIZE * CU_SIZE]);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   uint8_t *dst_buf1[3], *dst_buf2[3];
-  int dst_stride1[3] = {64, 64, 64};
-  int dst_stride2[3] = {64, 64, 64};
+  int dst_stride1[3] = {CU_SIZE, CU_SIZE, CU_SIZE};
+  int dst_stride2[3] = {CU_SIZE, CU_SIZE, CU_SIZE};
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     int len = sizeof(uint16_t);
     dst_buf1[0] = CONVERT_TO_BYTEPTR(tmp_buf1);
-    dst_buf1[1] = CONVERT_TO_BYTEPTR(tmp_buf1 + 4096 * len);
-    dst_buf1[2] = CONVERT_TO_BYTEPTR(tmp_buf1 + 8192 * len);
+    dst_buf1[1] = CONVERT_TO_BYTEPTR(tmp_buf1 + CU_SIZE * CU_SIZE * len);
+    dst_buf1[2] = CONVERT_TO_BYTEPTR(tmp_buf1 + CU_SIZE * CU_SIZE * 2 * len);
     dst_buf2[0] = CONVERT_TO_BYTEPTR(tmp_buf2);
-    dst_buf2[1] = CONVERT_TO_BYTEPTR(tmp_buf2 + 4096 * len);
-    dst_buf2[2] = CONVERT_TO_BYTEPTR(tmp_buf2 + 8192 * len);
+    dst_buf2[1] = CONVERT_TO_BYTEPTR(tmp_buf2 + CU_SIZE * CU_SIZE * len);
+    dst_buf2[2] = CONVERT_TO_BYTEPTR(tmp_buf2 + CU_SIZE * CU_SIZE * 2 * len);
   } else {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   dst_buf1[0] = tmp_buf1;
-  dst_buf1[1] = tmp_buf1 + 4096;
-  dst_buf1[2] = tmp_buf1 + 8192;
+  dst_buf1[1] = tmp_buf1 + CU_SIZE * CU_SIZE;
+  dst_buf1[2] = tmp_buf1 + CU_SIZE * CU_SIZE * 2;
   dst_buf2[0] = tmp_buf2;
-  dst_buf2[1] = tmp_buf2 + 4096;
-  dst_buf2[2] = tmp_buf2 + 8192;
+  dst_buf2[1] = tmp_buf2 + CU_SIZE * CU_SIZE;
+  dst_buf2[2] = tmp_buf2 + CU_SIZE * CU_SIZE * 2;
 #if CONFIG_VP9_HIGHBITDEPTH
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
