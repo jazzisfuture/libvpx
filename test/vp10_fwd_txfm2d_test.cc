@@ -19,12 +19,12 @@
 
 using libvpx_test::ACMRandom;
 
-namespace {
+namespace libvpx_test{
 
 #if CONFIG_VP9_HIGHBITDEPTH
-const int txfm_size_num = 5;
-const int txfm_size_ls[5] = {4, 8, 16, 32, 64};
-const TXFM_2D_CFG* fwd_txfm_cfg_ls[5][4] = {
+static const int txfm_size_num = 5;
+static const int txfm_size_ls[5] = {4, 8, 16, 32, 64};
+static const TXFM_2D_CFG* fwd_txfm_cfg_ls[5][4] = {
     {&fwd_txfm_2d_cfg_dct_dct_4, &fwd_txfm_2d_cfg_dct_adst_4,
      &fwd_txfm_2d_cfg_adst_adst_4, &fwd_txfm_2d_cfg_adst_dct_4},
     {&fwd_txfm_2d_cfg_dct_dct_8, &fwd_txfm_2d_cfg_dct_adst_8,
@@ -35,13 +35,13 @@ const TXFM_2D_CFG* fwd_txfm_cfg_ls[5][4] = {
      &fwd_txfm_2d_cfg_adst_adst_32, &fwd_txfm_2d_cfg_adst_dct_32},
     {&fwd_txfm_2d_cfg_dct_dct_64, NULL, NULL, NULL}};
 
-const Fwd_Txfm2d_Func fwd_txfm_func_ls[5] = {
+static const Fwd_Txfm2d_Func fwd_txfm_func_ls[5] = {
     vp10_fwd_txfm2d_4x4, vp10_fwd_txfm2d_8x8, vp10_fwd_txfm2d_16x16,
     vp10_fwd_txfm2d_32x32, vp10_fwd_txfm2d_64x64};
 
-const int txfm_type_num = 4;
-const TYPE_TXFM type_ls_0[4] = {TYPE_DCT, TYPE_DCT, TYPE_ADST, TYPE_ADST};
-const TYPE_TXFM type_ls_1[4] = {TYPE_DCT, TYPE_ADST, TYPE_ADST, TYPE_DCT};
+static const int txfm_type_num = 4;
+static const TYPE_TXFM type_ls_0[4] = {TYPE_DCT, TYPE_DCT, TYPE_ADST, TYPE_ADST};
+static const TYPE_TXFM type_ls_1[4] = {TYPE_DCT, TYPE_ADST, TYPE_ADST, TYPE_DCT};
 
 TEST(vp10_fwd_txfm2d, accuracy) {
   for (int txfm_size_idx = 0; txfm_size_idx < txfm_size_num; ++txfm_size_idx) {
@@ -106,4 +106,4 @@ TEST(vp10_fwd_txfm2d, accuracy) {
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-}  // anonymous namespace
+}  // namespace libvpx_test

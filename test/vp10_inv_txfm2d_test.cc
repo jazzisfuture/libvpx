@@ -20,12 +20,12 @@
 
 using libvpx_test::ACMRandom;
 
-namespace {
+namespace libvpx_test{
 
 #if CONFIG_VP9_HIGHBITDEPTH
-const int txfm_size_num = 5;
-const int txfm_size_ls[5] = {4, 8, 16, 32, 64};
-const TXFM_2D_CFG* fwd_txfm_cfg_ls[5][4] = {
+static const int txfm_size_num = 5;
+static const int txfm_size_ls[5] = {4, 8, 16, 32, 64};
+static const TXFM_2D_CFG* fwd_txfm_cfg_ls[5][4] = {
     {&fwd_txfm_2d_cfg_dct_dct_4, &fwd_txfm_2d_cfg_dct_adst_4,
      &fwd_txfm_2d_cfg_adst_adst_4, &fwd_txfm_2d_cfg_adst_dct_4},
     {&fwd_txfm_2d_cfg_dct_dct_8, &fwd_txfm_2d_cfg_dct_adst_8,
@@ -36,7 +36,7 @@ const TXFM_2D_CFG* fwd_txfm_cfg_ls[5][4] = {
      &fwd_txfm_2d_cfg_adst_adst_32, &fwd_txfm_2d_cfg_adst_dct_32},
     {&fwd_txfm_2d_cfg_dct_dct_64, NULL, NULL, NULL}};
 
-const TXFM_2D_CFG* inv_txfm_cfg_ls[5][4] = {
+static const TXFM_2D_CFG* inv_txfm_cfg_ls[5][4] = {
     {&inv_txfm_2d_cfg_dct_dct_4, &inv_txfm_2d_cfg_dct_adst_4,
      &inv_txfm_2d_cfg_adst_adst_4, &inv_txfm_2d_cfg_adst_dct_4},
     {&inv_txfm_2d_cfg_dct_dct_8, &inv_txfm_2d_cfg_dct_adst_8,
@@ -47,15 +47,15 @@ const TXFM_2D_CFG* inv_txfm_cfg_ls[5][4] = {
      &inv_txfm_2d_cfg_adst_adst_32, &inv_txfm_2d_cfg_adst_dct_32},
     {&inv_txfm_2d_cfg_dct_dct_64, NULL, NULL, NULL}};
 
-const Fwd_Txfm2d_Func fwd_txfm_func_ls[5] = {
+static const Fwd_Txfm2d_Func fwd_txfm_func_ls[5] = {
     vp10_fwd_txfm2d_4x4_c, vp10_fwd_txfm2d_8x8_c, vp10_fwd_txfm2d_16x16_c,
     vp10_fwd_txfm2d_32x32_c, vp10_fwd_txfm2d_64x64_c};
-const Inv_Txfm2d_Func inv_txfm_func_ls[5] = {
+static const Inv_Txfm2d_Func inv_txfm_func_ls[5] = {
     vp10_inv_txfm2d_add_4x4_c, vp10_inv_txfm2d_add_8x8_c,
     vp10_inv_txfm2d_add_16x16_c, vp10_inv_txfm2d_add_32x32_c,
     vp10_inv_txfm2d_add_64x64_c};
 
-const int txfm_type_num = 4;
+static const int txfm_type_num = 4;
 
 TEST(vp10_inv_txfm2d, round_trip) {
   for (int txfm_size_idx = 0; txfm_size_idx < txfm_size_num; ++txfm_size_idx) {
@@ -116,4 +116,4 @@ TEST(vp10_inv_txfm2d, round_trip) {
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-}  // anonymous namespace
+}  // namespace libvpx_test

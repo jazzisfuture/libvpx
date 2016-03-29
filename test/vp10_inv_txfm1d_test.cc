@@ -14,7 +14,7 @@
 
 using libvpx_test::ACMRandom;
 
-namespace {
+namespace libvpx_test{
 static int txfm_type_num = 2;
 static int txfm_size_num = 5;
 static int txfm_size_ls[5] = {4, 8, 16, 32, 64};
@@ -73,4 +73,4 @@ TEST(vp10_inv_txfm1d, round_trip) {
   }
 }
 
-}  // namespace
+}  // namespace libvpx_test

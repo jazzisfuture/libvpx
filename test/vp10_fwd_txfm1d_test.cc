@@ -13,7 +13,7 @@
 
 using libvpx_test::ACMRandom;
 
-namespace {
+namespace libvpx_test {
 static int txfm_type_num = 2;
 static TYPE_TXFM txfm_type_ls[2] = {TYPE_DCT, TYPE_ADST};
 
@@ -131,4 +131,4 @@ TEST(vp10_fwd_txfm1d, accuracy) {
     delete[] ref_output;
   }
 }
-}  // namespace
+}  // namespace libvpx_test
