@@ -1955,6 +1955,8 @@ void vp10_change_config(struct VP10_COMP *cpi, const VP10EncoderConfig *oxcf) {
       CHECK_MEM_ERROR(cm, x->palette_buffer,
                       vpx_memalign(16, sizeof(*x->palette_buffer)));
     }
+    vp10_free_pc_tree(&cpi->td);
+    vp10_setup_pc_tree(&cpi->common, &cpi->td);
   }
 
   vp10_reset_segment_features(cm);
