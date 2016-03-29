@@ -53,6 +53,14 @@ static void alloc_mode_context(VP10_COMMON *cm, int num_4x4_blk,
       ctx->eobs_pbuf[i][k]    = ctx->eobs[i][k];
     }
   }
+
+  if (cm->allow_screen_content_tools) {
+    for (i = 0;  i < 2; ++i) {
+      CHECK_MEM_ERROR(cm, ctx->color_index_map[i],
+                    vpx_memalign(32,
+                                 num_pix * sizeof(*ctx->color_index_map[i])));
+    }
+  }
 }
 
 static void free_mode_context(PICK_MODE_CONTEXT *ctx) {
