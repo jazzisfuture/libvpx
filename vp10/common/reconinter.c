@@ -1592,26 +1592,28 @@ static void combine_interintra(PREDICTION_MODE mode,
                     size == 8  ? 8 : 16);
   int i, j;
 
-  if (use_wedge_interintra && get_wedge_bits(bsize)) {
-    const uint8_t *mask = vp10_get_soft_mask(wedge_index, bsize, bh, bw);
-    for (i = 0; i < bh; ++i) {
-      for (j = 0; j < bw; ++j) {
-        int m = mask[i * MASK_MASTER_STRIDE + j];
-        comppred[i * compstride + j] =
-            (intrapred[i * intrastride + j] * m +
-             interpred[i * interstride + j] * ((1 << WEDGE_WEIGHT_BITS) - m) +
-             (1 << (WEDGE_WEIGHT_BITS - 1))) >> WEDGE_WEIGHT_BITS;
+  if (use_wedge_interintra) {
+    if (get_wedge_bits(bsize)) {
+      const uint8_t *mask = vp10_get_soft_mask(wedge_index, bsize, bh, bw);
+      for (i = 0; i < bh; ++i) {
+        for (j = 0; j < bw; ++j) {
+          int m = mask[i * MASK_MASTER_STRIDE + j];
+          comppred[i * compstride + j] =
+              (intrapred[i * intrastride + j] * m +
+               interpred[i * interstride + j] * ((1 << WEDGE_WEIGHT_BITS) - m) +
+               (1 << (WEDGE_WEIGHT_BITS - 1))) >> WEDGE_WEIGHT_BITS;
+        }
       }
     }
     return;
   }
 
-  switch (mode) {
-    case V_PRED:
-      for (i = 0; i < bh; ++i) {
-        for (j = 0; j < bw; ++j) {
-          int scale = weights1d[i * size_scale];
-          comppred[i * compstride + j] =
+    switch (mode) {
+      case V_PRED:
+        for (i = 0; i < bh; ++i) {
+          for (j = 0; j < bw; ++j) {
+            int scale = weights1d[i * size_scale];
+            comppred[i * compstride + j] =
               ((scale_max - scale) * interpred[i * interstride + j] +
                scale * intrapred[i * intrastride + j] + scale_round)
                >> scale_bits;
@@ -1867,58 +1869,106 @@ static void build_intra_predictors_for_interintra(
     vp10_predict_intra_block(xd, bwl, bhl, max_tx_size, mode,
                              ref, ref_stride, dst, dst_stride,
                              0, 0, plane);
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      uint16_t *src_216 = CONVERT_TO_SHORTPTR(src_2);
+      uint16_t *dst_216 = CONVERT_TO_SHORTPTR(dst_2);
+      memcpy(src2_16 - ref_stride, dst2_16 - dst_stride,
+             sizeof(*src2_16) * (4 << bhl));
+    } else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    {
+      memcpy(src_2 - ref_stride, dst_2 - dst_stride,
+             sizeof(*src_2) * (4 << bhl));
+    }
     vp10_predict_intra_block(xd, bwl, bhl, max_tx_size, mode,
                              src_2, ref_stride, dst_2, dst_stride,
                              0, 1 << bwl, plane);
   } else {
+    int i;
     uint8_t *src_2 = ref + (4 << bhl);
     uint8_t *dst_2 = dst + (4 << bhl);
     vp10_predict_intra_block(xd, bwl, bhl, max_tx_size, mode,
                              ref, ref_stride, dst, dst_stride,
                              0, 0, plane);
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      uint16_t *src_216 = CONVERT_TO_SHORTPTR(src_2);
+      uint16_t *dst_216 = CONVERT_TO_SHORTPTR(dst_2);
+      for (i = 0; i < (4 << bwl); ++i)
+        src_216[i * ref_stride - 1] = dst_216[i * dst_stride - 1];
+    } else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    {
+      for (i = 0; i < (4 << bwl); ++i)
+        src_2[i * ref_stride - 1] = dst_2[i * dst_stride - 1];
+    }
     vp10_predict_intra_block(xd, bwl, bhl, max_tx_size, mode,
                              src_2, ref_stride, dst_2, dst_stride,
                              1 << bhl, 0, plane);
   }
 }
 
-void vp10_build_interintra_predictors_sby(MACROBLOCKD *xd,
-                                          uint8_t *ypred,
-                                          int ystride,
-                                          BLOCK_SIZE bsize) {
-  const int bw = 4 << b_width_log2_lookup[bsize];
+void vp10_build_intra_predictors_for_interintra(
+    MACROBLOCKD *xd,
+    BLOCK_SIZE bsize, int plane,
+    uint8_t *dst, int dst_stride) {
+  build_intra_predictors_for_interintra(
+      xd, xd->plane[plane].dst.buf, xd->plane[plane].dst.stride,
+      dst, dst_stride, xd->mi[0]->mbmi.interintra_mode, bsize, plane);
+}
+
+void vp10_combine_interintra(MACROBLOCKD *xd,
+                             BLOCK_SIZE bsize, int plane,
+                             uint8_t *inter_pred, int inter_stride,
+                             uint8_t *intra_pred, int intra_stride) {
+  const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, &xd->plane[plane]);
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    DECLARE_ALIGNED(16, uint16_t,
-                    intrapredictor[CU_SIZE * CU_SIZE]);
-    build_intra_predictors_for_interintra(
-        xd, xd->plane[0].dst.buf, xd->plane[0].dst.stride,
-        CONVERT_TO_BYTEPTR(intrapredictor), bw,
-        xd->mi[0]->mbmi.interintra_mode, bsize, 0);
     combine_interintra_highbd(xd->mi[0]->mbmi.interintra_mode,
                               xd->mi[0]->mbmi.use_wedge_interintra,
                               xd->mi[0]->mbmi.interintra_wedge_index,
                               bsize,
-                              bsize,
-                              xd->plane[0].dst.buf, xd->plane[0].dst.stride,
-                              ypred, ystride,
-                              CONVERT_TO_BYTEPTR(intrapredictor), bw, xd->bd);
+                              plane_bsize,
+                              xd->plane[plane].dst.buf,
+                              xd->plane[plane].dst.stride,
+                              inter_pred, inter_stride,
+                              intra_pred, intra_stride,
+                              xd->bd);
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  combine_interintra(xd->mi[0]->mbmi.interintra_mode,
+                     xd->mi[0]->mbmi.use_wedge_interintra,
+                     xd->mi[0]->mbmi.interintra_wedge_index,
+                     bsize,
+                     plane_bsize,
+                     xd->plane[plane].dst.buf, xd->plane[plane].dst.stride,
+                     inter_pred, inter_stride,
+                     intra_pred, intra_stride);
+}
+
+void vp10_build_interintra_predictors_sby(MACROBLOCKD *xd,
+                                          uint8_t *ypred,
+                                          int ystride,
+                                          BLOCK_SIZE bsize) {
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    DECLARE_ALIGNED(16, uint16_t,
+                    intrapredictor[CU_SIZE * CU_SIZE]);
+    vp10_build_intra_predictors_for_interintra(
+        xd, bsize, 0, CONVERT_TO_BYTEPTR(intrapredictor), CU_SIZE);
+    vp10_combine_interintra(xd, bsize, 0, ypred, ystride,
+                            CONVERT_TO_BYTEPTR(intrapredictor), CU_SIZE);
     return;
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   {
     uint8_t intrapredictor[CU_SIZE * CU_SIZE];
-    build_intra_predictors_for_interintra(
-        xd, xd->plane[0].dst.buf, xd->plane[0].dst.stride,
-        intrapredictor, bw,
-        xd->mi[0]->mbmi.interintra_mode, bsize, 0);
-    combine_interintra(xd->mi[0]->mbmi.interintra_mode,
-                       xd->mi[0]->mbmi.use_wedge_interintra,
-                       xd->mi[0]->mbmi.interintra_wedge_index,
-                       bsize,
-                       bsize,
-                       xd->plane[0].dst.buf, xd->plane[0].dst.stride,
-                       ypred, ystride, intrapredictor, bw);
+    vp10_build_intra_predictors_for_interintra(
+        xd, bsize, 0, intrapredictor, CU_SIZE);
+    vp10_combine_interintra(xd, bsize, 0, ypred, ystride,
+                            intrapredictor, CU_SIZE);
   }
 }
 
@@ -1927,42 +1977,23 @@ void vp10_build_interintra_predictors_sbc(MACROBLOCKD *xd,
                                           int ustride,
                                           int plane,
                                           BLOCK_SIZE bsize) {
-  const BLOCK_SIZE uvbsize = get_plane_block_size(bsize, &xd->plane[plane]);
-  const int bw = 4 << b_width_log2_lookup[uvbsize];
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     DECLARE_ALIGNED(16, uint16_t,
                     uintrapredictor[CU_SIZE * CU_SIZE]);
-    build_intra_predictors_for_interintra(
-        xd, xd->plane[plane].dst.buf, xd->plane[plane].dst.stride,
-        CONVERT_TO_BYTEPTR(uintrapredictor), bw,
-        xd->mi[0]->mbmi.interintra_uv_mode, bsize, plane);
-    combine_interintra_highbd(xd->mi[0]->mbmi.interintra_uv_mode,
-                              xd->mi[0]->mbmi.use_wedge_interintra,
-                              xd->mi[0]->mbmi.interintra_uv_wedge_index,
-                              bsize,
-                              uvbsize,
-                              xd->plane[plane].dst.buf,
-                              xd->plane[plane].dst.stride,
-                              upred, ustride,
-                              CONVERT_TO_BYTEPTR(uintrapredictor), bw, xd->bd);
+    vp10_build_intra_predictors_for_interintra(
+        xd, bsize, plane, CONVERT_TO_BYTEPTR(uintrapredictor), CU_SIZE);
+    vp10_combine_interintra(xd, bsize, plane, upred, ustride,
+                            CONVERT_TO_BYTEPTR(uintrapredictor), CU_SIZE);
     return;
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   {
     uint8_t uintrapredictor[CU_SIZE * CU_SIZE];
-    build_intra_predictors_for_interintra(
-        xd, xd->plane[plane].dst.buf, xd->plane[plane].dst.stride,
-        uintrapredictor, bw,
-        xd->mi[0]->mbmi.interintra_uv_mode, bsize, plane);
-    combine_interintra(xd->mi[0]->mbmi.interintra_uv_mode,
-                       xd->mi[0]->mbmi.use_wedge_interintra,
-                       xd->mi[0]->mbmi.interintra_uv_wedge_index,
-                       bsize,
-                       uvbsize,
-                       xd->plane[plane].dst.buf,
-                       xd->plane[plane].dst.stride,
-                       upred, ustride, uintrapredictor, bw);
+    vp10_build_intra_predictors_for_interintra(
+        xd, bsize, plane, uintrapredictor, CU_SIZE);
+    vp10_combine_interintra(xd, bsize, plane, upred, ustride,
+                            uintrapredictor, CU_SIZE);
   }
 }
 
