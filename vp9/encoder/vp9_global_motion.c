@@ -95,51 +95,89 @@ static double compute_error_score(TransformationType type,
   return sqrt(sqerr / n);
 }
 
-void refine_param(TransformationType type, unsigned char *frm,
-                  unsigned char *ref,  double *H,
-                  int param_index, int width, int height,
-                  int stride, int n_refinements) {
-  int i;
+static int* get_gm_param(Global_Motion_Params *gm, int index) {
+  switch (index) {
+    case 0 :
+      return &gm->rotation;
+      break;
+    case 1 :
+      return &gm->zoom;
+      break;
+    case 2 :
+      return (int*) &gm->mv.as_mv.row;
+      break;
+    case 3 :
+      return (int*) &gm->mv.as_mv.col;
+      break;
+  }
+  assert(0);
+  return NULL;
+}
+
+void refine_quant_param(Global_Motion_Params *gm, TransformationType type,
+                        unsigned char *ref, int ref_width,
+                        int ref_height, int ref_stride,
+                        unsigned char *frm, int frm_width, int frm_height,
+                        int frm_stride, int n_refinements) {
+  int i = 0, p;
   double step_mse;
   double best_mse;
   double curr_mse;
-  double curr_param = H[param_index];
-  double step = 0.5;
-  double best_param = curr_param;
+  int step;
+  int *param;
+  int curr_param;
+  int best_param;
+  projectPointsType projectPoints = get_projectPointsType(type);
 
-  curr_mse = compute_warp_and_error(type, ref, frm, width, height, stride, H);
-  best_mse = curr_mse;
-  for (i = 0; i < n_refinements; i++) {
-    // look to the left
-    H[param_index] = curr_param - step;
-    step_mse = compute_warp_and_error(type, ref, frm, width, height, stride, H);
-    if (step_mse < best_mse) {
-      step /= 2;
-      best_mse = step_mse;
-      best_param = H[param_index];
-      curr_param = best_param;
-      curr_mse = step_mse;
-      continue;
+  for (p = 0; p < get_numparams(type); ++p) {
+    param = get_gm_param(gm, p);
+    // TODO(sarahparker) this value is temporary, it could be better tuned
+    step = 1 << (n_refinements + 1);
+    curr_param = *param;
+    best_param = curr_param;
+    curr_mse = compute_warp_and_error(gm, projectPoints, ref, ref_width,
+                                      ref_height, ref_stride, frm, 0, 0,
+                                      frm_width, frm_height, frm_stride,
+                                      0, 0, 16, 16);
+    best_mse = curr_mse;
+    for (i = 0; i < n_refinements; i++) {
+      // look to the left
+      *param = curr_param - step;
+      step_mse = compute_warp_and_error(gm, projectPoints, ref, ref_width,
+                                        ref_height, ref_stride, frm, 0, 0,
+                                        frm_width, frm_height, frm_stride,
+                                        0, 0, 16, 16);
+      if (step_mse < best_mse) {
+        step >>= 1;
+        best_mse = step_mse;
+        best_param = *param;
+        curr_param = best_param;
+        curr_mse = step_mse;
+        continue;
+      }
+
+      // look to the right
+      *param = curr_param + step;
+      step_mse = compute_warp_and_error(gm, projectPoints, ref, ref_width,
+                                        ref_height, ref_stride, frm, 0, 0,
+                                        frm_width, frm_height, frm_stride,
+                                        0, 0, 16, 16);
+      if (step_mse < best_mse) {
+        step >>= 1;
+        best_mse = step_mse;
+        best_param = *param;
+        curr_param = best_param;
+        curr_mse = step_mse;
+        continue;
+      }
+
+      // no improvement found-> means we're either already at a minimum or
+      // step is too wide
+      step >>= 2;
     }
 
-    // look to the right
-    H[param_index] = curr_param + step;
-    step_mse = compute_warp_and_error(type, ref, frm, width, height, stride, H);
-    if (step_mse < best_mse) {
-      step /= 2;
-      best_mse = step_mse;
-      best_param = H[param_index];
-      curr_param = best_param;
-      curr_mse = step_mse;
-      continue;
-    }
-
-    // no improvement found-> means we're either already at a minimum or
-    // step is too wide
-    step /= 4;
+    *param = best_param;
   }
-
-  H[param_index] = best_param;
 }
 
 static int compute_global_motion_single(TransformationType type,
@@ -366,16 +404,6 @@ int vp9_compute_global_motion_multiple_optical_flow(struct VP9_COMP *cpi,
                                                num_correspondences, H,
                                                max_models, inlier_prob,
                                                &num_models, inlier_map);
-#ifdef PARAM_SEARCH
-  for (j = 0; j < num_models; ++j) {
-    for (i = 0; i < get_numparams(type); ++i)
-
-      refine_param(type, frm->y_buffer, ref->y_buffer, H,
-                  i + j * get_numparams(type), frm->y_width, frm->y_height,
-                  frm->y_stride, 2);
-  }
-#endif
-
 #ifdef VERBOSE
   printf("Models = %d, Inliers = %d\n", num_models, num_inliers);
   if (num_models)
@@ -458,16 +486,6 @@ int vp9_compute_global_motion_multiple_feature_based(
                                                num_correspondences, H,
                                                max_models, inlier_prob,
                                                &num_models, inlier_map);
-#ifdef PARAM_SEARCH
-  for (j = 0; j < num_models; ++j) {
-    for (i = 0; i < get_numparams(type); ++i)
-
-      refine_param(type, frm->y_buffer, ref->y_buffer, H,
-                   i + j * get_numparams(type), frm->y_width, frm->y_height,
-                   frm->y_stride, 3);
-  }
-#endif
-
 #ifdef VERBOSE
   printf("Models = %d, Inliers = %d\n", num_models, num_inliers);
   if (num_models)
