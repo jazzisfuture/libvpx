@@ -628,8 +628,8 @@ static int calc_active_worst_quality_one_pass_vbr(const VP9_COMP *cpi) {
       active_worst_quality =  curr_frame == 1 ? rc->last_q[KEY_FRAME] * 5 / 4
                                               : rc->last_q[INTER_FRAME];
     } else {
-      active_worst_quality = curr_frame == 1 ? rc->last_q[KEY_FRAME] * 2
-                                             : rc->last_q[INTER_FRAME] * 2;
+      active_worst_quality = curr_frame == 1 ? rc->last_q[KEY_FRAME] * 2 :
+          (rc->avg_frame_qindex[INTER_FRAME] * 3  >> 1);
     }
   }
   return VPXMIN(active_worst_quality, rc->worst_quality);
@@ -662,7 +662,7 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
                    VPXMIN(rc->avg_frame_qindex[INTER_FRAME],
                           rc->avg_frame_qindex[KEY_FRAME]) :
                    rc->avg_frame_qindex[INTER_FRAME];
-  active_worst_quality = VPXMIN(rc->worst_quality, ambient_qp * 5 / 4);
+  active_worst_quality = VPXMIN(rc->worst_quality, ambient_qp * 5 >> 2);
   if (rc->buffer_level > rc->optimal_buffer_level) {
     // Adjust down.
     // Maximum limit for down adjustment, ~30%.
