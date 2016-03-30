@@ -771,7 +771,7 @@ void vpx_fdct32x32_rd_c(const int16_t *input, tran_low_t *out, int stride) {
 
 void vpx_fdct32x32_1_c(const int16_t *input, tran_low_t *output, int stride) {
   int r, c;
-  tran_low_t sum = 0;
+  int sum = 0;
   for (r = 0; r < 32; ++r)
     for (c = 0; c < 32; ++c)
       sum += input[r * stride + c];
