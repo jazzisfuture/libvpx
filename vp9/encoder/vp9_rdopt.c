@@ -3416,6 +3416,7 @@ static int get_gmbitcost(const Global_Motion_Params *gm,
     bits = (ABS_TRANSLATION_BITS + 1) * 2 +
            ABS_ZOOM_BITS + ABS_ROTATION_BITS + 2;
   }
+  //printf("gm type: %d, rot: %d, zoom: %d, row: %" PRId16 ", col: %" PRId16 "\n",gm->gmtype, gm->rotation, gm->zoom, gm->mv.as_mv.row, gm->mv.as_mv.col);
   return bits * 256 + gmtype_cost[gm->gmtype];
 }
 
