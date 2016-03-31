@@ -448,7 +448,7 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
   const scan_order *so = get_scan(xd, tx_size, pd->plane_type, block);
   int eob;
 #if CONFIG_NEW_QUANT
-  int dq = xd->mi->mbmi.dq_off_index;
+  int dq = get_dq_profile_from_ctx(ctx);
 #endif  // CONFIG_NEW_QUANT
 
 #if CONFIG_TX_SKIP
