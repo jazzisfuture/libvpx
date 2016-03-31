@@ -2555,8 +2555,9 @@ static void write_tile_info(VP10_COMMON *const cm,
   const int tile_height =
             mi_cols_aligned_to_sb(cm->tile_height) >> MI_BLOCK_SIZE_LOG2;
 
-  assert(tile_width > 0 && tile_width <= 64);
-  assert(tile_height > 0 && tile_height <= 64);
+  // The range of tile_width/tile_height is [1, 32].
+  assert(tile_width > 0 && tile_width <= 32);
+  assert(tile_height > 0 && tile_height <= 32);
 
   // Write the tile sizes
   vpx_wb_write_literal(wb, tile_width - 1, 6);

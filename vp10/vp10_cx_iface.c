@@ -58,8 +58,12 @@ static struct vp10_extracfg default_extra_cfg = {
   0,                          // sharpness
   0,                          // static_thresh
 #if CONFIG_EXT_TILE
-  64,                         // tile_columns
-  64,                         // tile_rows
+  // The tile_columns and tile_rows here are overloaded to represent
+  // tile_width and tile_height, that range from 1 to 32, in the unit
+  // of 64 pixels. For example, set both to 32 that sets the tile size
+  // to be 2048x2048 pixels.
+  32,                         // tile_width
+  32,                         // tile_height
 #else
   0,                          // tile_columns
   0,                          // tile_rows
@@ -200,11 +204,11 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   RANGE_CHECK(extra_cfg, cpu_used, -8, 8);
   RANGE_CHECK_HI(extra_cfg, noise_sensitivity, 6);
 #if CONFIG_EXT_TILE
-  // TODO(any): Waring. If CONFIG_EXT_TILE is true, tile_columns really
+  // TODO(any): Warning. If CONFIG_EXT_TILE is true, tile_columns really
   // means tile_width, and tile_rows really means tile_hight. The interface
   // should be sanitized.
-  RANGE_CHECK(extra_cfg, tile_columns, 1, 64);
-  RANGE_CHECK(extra_cfg, tile_rows, 1, 64);
+  RANGE_CHECK(extra_cfg, tile_columns, 1, 32);
+  RANGE_CHECK(extra_cfg, tile_rows, 1, 32);
 #else
   RANGE_CHECK(extra_cfg, tile_columns, 0, 6);
   RANGE_CHECK(extra_cfg, tile_rows, 0, 2);

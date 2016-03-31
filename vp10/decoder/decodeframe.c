@@ -2898,9 +2898,9 @@ static void setup_tile_info(VP10Decoder *const pbi,
                             struct vpx_read_bit_buffer *const rb) {
   VP10_COMMON *const cm = &pbi->common;
 #if CONFIG_EXT_TILE
-  // Read the tile width/height
-  cm->tile_width  = vpx_rb_read_literal(rb, 6) + 1;   // in [1, 64]
-  cm->tile_height = vpx_rb_read_literal(rb, 6) + 1;   // in [1, 64]
+  // Read the tile width/height. The range is [1, 32]
+  cm->tile_width  = vpx_rb_read_literal(rb, 6) + 1;
+  cm->tile_height = vpx_rb_read_literal(rb, 6) + 1;
 
   cm->tile_width  = cm->tile_width << MI_BLOCK_SIZE_LOG2;
   cm->tile_height = cm->tile_height << MI_BLOCK_SIZE_LOG2;
