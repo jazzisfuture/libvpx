@@ -865,17 +865,26 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
   int64_t rd1, rd2, rd;
+#if CONFIG_NEW_QUANT
+  int j;
+  int ctx;
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+#endif  // CONFIG_NEW_QUANT
 
+#if CONFIG_SR_MODE || CONFIG_NEW_QUANT
+  int i;
+#endif  // CONFIG_SR_MODE || CONFIG_NEW_QUANT
 #if CONFIG_SR_MODE
   struct macroblockd_plane *const pd = &xd->plane[plane];
   struct macroblock_plane *const p = &x->plane[plane];
   uint8_t *dst;
   uint8_t tmp_buf[64*64];
-  int xi, yj, bs = 4 << tx_size, i;
+  int xi, yj, bs = 4 << tx_size;
   int tmp_stride = 64, dst_stride = pd->dst.stride;
   int16_t *src_diff, *src_sr_diff;
   int src_diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   int src_sr_diff_stride = 64;
+
 
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &xi, &yj);
   dst = &pd->dst.buf[4 * yj * dst_stride + 4 * xi];
@@ -886,6 +895,12 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
   for (i = 0; i < bs; i++)
     vpx_memcpy(tmp_buf + i*tmp_stride, dst + i*dst_stride, bs);
 #endif  // CONFIG_SR_MODE
+
+#if CONFIG_NEW_QUANT
+  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
+  ctx = get_entropy_context(tx_size, pd->above_context + i,
+                            pd->left_context + j);
+#endif  // CONFIG_NEW_QUANT
 
   if (args->skip)
     return;
@@ -929,9 +944,9 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
       // full forward transform and quantization
 #if CONFIG_NEW_QUANT
       if (x->quant_fp)
-        vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size);
+        vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size, ctx);
       else
-        vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size);
+        vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size, ctx);
 #else
       if (x->quant_fp)
         vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
@@ -971,9 +986,9 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
 
 #if CONFIG_NEW_QUANT
       if (x->quant_fp)
-        vp9_xform_quant_dc_fp_nuq(x, plane, block, plane_bsize, tx_size);
+        vp9_xform_quant_dc_fp_nuq(x, plane, block, plane_bsize, tx_size, ctx);
       else
-        vp9_xform_quant_dc_nuq(x, plane, block, plane_bsize, tx_size);
+        vp9_xform_quant_dc_nuq(x, plane, block, plane_bsize, tx_size, ctx);
 #else
       vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
 #endif
@@ -1024,9 +1039,9 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     // full forward transform and quantization
 #if CONFIG_NEW_QUANT
     if (x->quant_fp)
-      vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size);
+      vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size, ctx);
     else
-      vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size);
+      vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size, ctx);
 #else
     if (x->quant_fp)
       vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
@@ -2261,6 +2276,9 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int sr_usfilter_selected = 0;
 #endif  // SR_USE_MULTI_F
 #endif  // CONFIG_SR_MODE
+#if CONFIG_NEW_QUANT
+  int ctx;
+#endif  // CONFIG_NEW_QUANT
   const MODE_INFO *above_mi = xd->up_available ?
       xd->mi[-xd->mi_stride].src_mi : NULL;
   const MODE_INFO *left_mi = xd->left_available ? xd->mi[-1].src_mi : NULL;
@@ -2419,17 +2437,8 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 
 #if QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-  if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
-                                 bsize) == 2) {
-    mic->mbmi.dq_off_index = 1;
-#if QUANT_PROFILES > 2
-  } else if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
-                                        bsize) == 1) {
-    mic->mbmi.dq_off_index = 2;
-#endif  // QUANT_PROFILES > 2
-  } else {
-    mic->mbmi.dq_off_index = 0;
-  }
+  ctx = switchable_dq_profile_used(get_entropy_context_sb(xd, bsize), bsize);
+  mic->mbmi.dq_off_index = get_dq_profile_from_ctx(ctx);
 #endif  // QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
 
 #endif  // CONFIG_NEW_QUANT
@@ -5265,6 +5274,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int skip_txfm_sb = 0;
   int64_t skip_sse_sb = INT64_MAX;
   int64_t distortion_y = 0, distortion_uv = 0;
+#if CONFIG_NEW_QUANT
+  int ctx;
+#endif  // CONFIG_NEW_QUANT
 
 #if CONFIG_INTERINTRA
   const int is_comp_interintra_pred = (mbmi->ref_frame[1] == INTRA_FRAME);
@@ -6147,17 +6159,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 
 #if QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-  if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
-                                 bsize) == 2) {
-    mbmi->dq_off_index = 1;
-#if QUANT_PROFILES > 2
-  } else if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
-                                        bsize) == 1) {
-    mbmi->dq_off_index = 2;
-#endif  // QUANT_PROFILES > 2
-  } else {
-    mbmi->dq_off_index = 0;
-  }
+  ctx = switchable_dq_profile_used(get_entropy_context_sb(xd, bsize), bsize);
+  mbmi->dq_off_index = get_dq_profile_from_ctx(ctx);
 #endif  // QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
 
 #endif  // CONFIG_NEW_QUANT
@@ -6799,6 +6802,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int64_t dist_uv[TX_SIZES];
   int skip_uv[TX_SIZES];
   PREDICTION_MODE mode_uv[TX_SIZES];
+#if CONFIG_NEW_QUANT
+  int q_ctx;
+#endif  // CONFIG_NEW_QUANT
 #if CONFIG_FILTERINTRA
   int fbit_uv[TX_SIZES];
 #endif  // CONFIG_FILTERINTRA
@@ -7520,17 +7526,8 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 
 #if QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-      if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
-                                     bsize) == 2) {
-        mbmi->dq_off_index = 1;
-#if QUANT_PROFILES > 2
-      } else if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
-                                            bsize) == 1) {
-        mbmi->dq_off_index = 2;
-#endif  // QUANT_PROFILES > 2
-      } else {
-        mbmi->dq_off_index = 0;
-      }
+  q_ctx = switchable_dq_profile_used(get_entropy_context_sb(xd, bsize), bsize);
+  mbmi->dq_off_index = get_dq_profile_from_ctx(q_ctx);
 #endif  // QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
 
 #endif  // CONFIG_NEW_QUANT
