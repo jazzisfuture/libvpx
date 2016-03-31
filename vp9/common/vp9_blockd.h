@@ -88,6 +88,19 @@ extern "C" {
 static INLINE int switchable_dq_profile_used(int q_ctx, BLOCK_SIZE bsize) {
   return ((bsize >= BLOCK_32X32) * q_ctx);
 }
+
+
+static INLINE int get_dq_profile_from_ctx(int q_ctx) {
+  // switch (q_ctx) {
+  // case 0:
+  //   return 0;
+  // case 2:
+  //   return 1
+  // case 1:
+  //   return 2;
+  // }
+  return ((3 - q_ctx) % 3);
+}
 #endif  // QUANT_PROFILES > 1
 #endif  // CONFIG_NEW_QUANT
 
