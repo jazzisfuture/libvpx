@@ -518,32 +518,6 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
 #endif  // CONFIG_SR_MODE
 #endif  // CONFIG_PALETTE
 
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-  if (cm->base_qindex > Q_THRESHOLD_MIN && cm->base_qindex < Q_THRESHOLD_MAX &&
-      switchable_dq_profile_used(get_entropy_context_sb(xd, mbmi->sb_type),
-                                 mbmi->sb_type) &&
-      !mbmi->skip &&
-      !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-    mbmi->dq_off_index = vp9_read_dq_profile(cm, r);
-  } else {
-    mbmi->dq_off_index = 0;
-  }
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-  if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
-                                 bsize) == 2) {
-    mbmi->dq_off_index = 1;
-#if QUANT_PROFILES > 2
-  } else if (switchable_dq_profile_used(get_entropy_context_sb(xd, bsize),
-                                        bsize) == 1) {
-    mbmi->dq_off_index = 2;
-#endif  // QUANT_PROFILES > 2
-  } else {
-    mbmi->dq_off_index = 0;
-  }
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-
   mbmi->ref_frame[0] = INTRA_FRAME;
   mbmi->ref_frame[1] = NONE;
 
@@ -1552,28 +1526,6 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
     mbmi->mode = NEARESTMV;
     mbmi->skip = skip_backup;
     mbmi->copy_mode = copy_mode_backup;
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-    if (!(cm->base_qindex > Q_THRESHOLD_MIN &&
-          cm->base_qindex < Q_THRESHOLD_MAX &&
-          switchable_dq_profile_used(get_entropy_context_sb(xd, mbmi->sb_type),
-                                     mbmi->sb_type) &&
-          !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)))
-      mbmi->dq_off_index = 0;
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
-#if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-  if (switchable_dq_profile_used(get_entropy_context_sb(xd, mbmi->sb_type),
-                                 mbmi->sb_type) == 2) {
-    mbmi->dq_off_index = 1;
-#if QUANT_PROFILES > 2
-  } else if (switchable_dq_profile_used(get_entropy_context_sb(xd,
-                                                               mbmi->sb_type),
-                                        mbmi->sb_type) == 1) {
-    mbmi->dq_off_index = 2;
-#endif  // QUANT_PROFILES > 2
-    } else {
-      mbmi->dq_off_index = 0;
-    }
-#endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
   }
 #endif  // CONFIG_COPY_MODE
 
@@ -1778,20 +1730,10 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 #endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && !Q_CTX_BASED_PROFILES
 
 #if CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-    if (switchable_dq_profile_used(get_entropy_context_sb(xd, mbmi->sb_type),
-                                   mbmi->sb_type) == 2) {
-      mbmi->dq_off_index = 1;
-#if QUANT_PROFILES > 2
-    } else if (switchable_dq_profile_used(get_entropy_context_sb(xd,
-                                                                 mbmi->sb_type),
-                                          mbmi->sb_type) == 1) {
-      mbmi->dq_off_index = 2;
-  #endif  // QUANT_PROFILES > 2
-    } else {
-      mbmi->dq_off_index = 0;
-    }
+    // ctx = switchable_dq_profile_used(get_entropy_context_sb(xd, mbmi->sb_type),
+    //                                mbmi->sb_type);
+    // mbmi->dq_off_index = get_dq_profile_from_ctx(ctx);
 #endif  // CONFIG_NEW_QUANT && QUANT_PROFILES > 1 && Q_CTX_BASED_PROFILES
-
 #if CONFIG_EXT_TX
     if (inter_block &&
 #if !CONFIG_WAVELETS
