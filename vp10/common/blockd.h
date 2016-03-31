@@ -53,6 +53,19 @@ static INLINE int is_inter_mode(PREDICTION_MODE mode) {
 }
 
 #if CONFIG_EXT_INTER
+static const int interintra_mode_list[INTERINTRA_MODES] = {
+  DC_PRED,
+  V_PRED,
+  H_PRED,
+  D45_PRED,
+  D135_PRED,
+  D117_PRED,
+  D153_PRED,
+  D207_PRED,
+  D63_PRED,
+  TM_PRED
+};
+
 #define WEDGE_BITS_SML    3
 #define WEDGE_BITS_MED    4
 #define WEDGE_BITS_BIG    5

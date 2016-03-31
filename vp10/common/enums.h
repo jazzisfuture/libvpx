@@ -252,6 +252,10 @@ typedef uint8_t PREDICTION_MODE;
 
 #define INTRA_MODES (TM_PRED + 1)
 
+#if CONFIG_EXT_INTER
+#define INTERINTRA_MODES  (INTRA_MODES)
+#endif  // CONFIG_EXT_INTER
+
 #if CONFIG_EXT_INTRA
 typedef enum {
   FILTER_DC_PRED,
