@@ -151,7 +151,8 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   const int eob = p->eobs[block];
   const PLANE_TYPE type = pd->plane_type;
 #if CONFIG_NEW_QUANT
-  int dq = xd->mi->mbmi.dq_off_index;
+  // int dq = xd->mi->mbmi.dq_off_index;
+  int dq = get_dq_profile_from_ctx(ctx);
 #endif  //  CONFIG_NEW_QUANT
 #if CONFIG_SR_MODE
   int b_sr = xd->mi[0].src_mi->mbmi.sr;
@@ -677,11 +678,13 @@ static void highbd_forw_tx4x4(MACROBLOCK *x, int plane, int block,
 
 #if CONFIG_NEW_QUANT
 void vp9_xform_quant_nuq(MACROBLOCK *x, int plane, int block,
-                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size, int ctx) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
-int dq = xd->mi->mbmi.dq_off_index;
+  // int dq = xd->mi->mbmi.dq_off_index;
+  int dq = get_dq_profile_from_ctx(ctx);
+
 #if CONFIG_TX_SKIP
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   int shift = mbmi->tx_skip_shift;
@@ -935,11 +938,12 @@ int dq = xd->mi->mbmi.dq_off_index;
 }
 
 void vp9_xform_quant_fp_nuq(MACROBLOCK *x, int plane, int block,
-                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size, int ctx) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
-int dq = xd->mi->mbmi.dq_off_index;
+// int dq = xd->mi->mbmi.dq_off_index;
+int dq = get_dq_profile_from_ctx(ctx);
 #if CONFIG_TX_SKIP
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   int shift = mbmi->tx_skip_shift;
@@ -1189,7 +1193,7 @@ int dq = xd->mi->mbmi.dq_off_index;
 }
 
 void vp9_xform_quant_dc_nuq(MACROBLOCK *x, int plane, int block,
-                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size, int ctx) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
@@ -1200,7 +1204,8 @@ void vp9_xform_quant_dc_nuq(MACROBLOCK *x, int plane, int block,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   int i, j;
   const int16_t *src_diff;
-  int dq = xd->mi->mbmi.dq_off_index;
+  // int dq = xd->mi->mbmi.dq_off_index;
+  int dq = get_dq_profile_from_ctx(ctx);
 #if CONFIG_TX_SKIP
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   int shift = mbmi->tx_skip_shift;
@@ -1411,7 +1416,8 @@ void vp9_xform_quant_dc_nuq(MACROBLOCK *x, int plane, int block,
 }
 
 void vp9_xform_quant_dc_fp_nuq(MACROBLOCK *x, int plane, int block,
-                               BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
+                               BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+                               int ctx) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
@@ -1422,7 +1428,8 @@ void vp9_xform_quant_dc_fp_nuq(MACROBLOCK *x, int plane, int block,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   int i, j;
   const int16_t *src_diff;
-  int dq = xd->mi->mbmi.dq_off_index;
+  // int dq = xd->mi->mbmi.dq_off_index;
+  int dq = get_dq_profile_from_ctx(ctx);
 #if CONFIG_TX_SKIP
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   int shift = mbmi->tx_skip_shift;
@@ -2391,6 +2398,9 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   int i, j;
   uint8_t *dst;
   ENTROPY_CONTEXT *a, *l;
+#if CONFIG_NEW_QUANT
+  int q_ctx;
+#endif  // CONFIG_NEW_QUANT
 #if CONFIG_SR_MODE
   int bs = 4 << tx_size;
   tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
@@ -2427,7 +2437,7 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     *a = *l = 0;
     return;
   }
-
+  q_ctx = combine_entropy_contexts(*a, *l);
   if (!x->skip_recode) {
 #if CONFIG_SR_MODE
     if (xd->mi[0].src_mi->mbmi.sr && plane == 0) {
@@ -2451,9 +2461,9 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
         // full forward transform and quantization
 #if CONFIG_NEW_QUANT
         if (x->quant_fp)
-          vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size);
+          vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size, q_ctx);
         else
-          vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size);
+          vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size, q_ctx);
 #else
         if (x->quant_fp)
           vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
@@ -2465,9 +2475,10 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
         // fast path forward transform and quantization
 #if CONFIG_NEW_QUANT
         if (x->quant_fp)
-          vp9_xform_quant_dc_fp_nuq(x, plane, block, plane_bsize, tx_size);
+          vp9_xform_quant_dc_fp_nuq(x, plane, block, plane_bsize, tx_size,
+                                    q_ctx);
         else
-          vp9_xform_quant_dc_nuq(x, plane, block, plane_bsize, tx_size);
+          vp9_xform_quant_dc_nuq(x, plane, block, plane_bsize, tx_size, q_ctx);
 #else
         vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
 #endif
@@ -2480,9 +2491,9 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     } else {
 #if CONFIG_NEW_QUANT
       if (x->quant_fp)
-        vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size);
+        vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size, q_ctx);
       else
-        vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size);
+        vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size, q_ctx);
 #else
       if (x->quant_fp)
         vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
@@ -2498,8 +2509,7 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
 #else
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
 #endif
-    const int ctx = combine_entropy_contexts(*a, *l);
-    *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
+    *a = *l = optimize_b(x, plane, block, tx_size, q_ctx) > 0;
   } else {
     *a = *l = p->eobs[block] > 0;
   }
@@ -2661,6 +2671,9 @@ static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   int i, j;
   uint8_t *dst;
+#if CONFIG_NEW_QUANT
+  int ctx;
+#endif  // CONFIG_NEW_QUANT
 #if CONFIG_EXT_TX
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   mbmi->ext_txfrm = NORM;
@@ -2673,10 +2686,13 @@ static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
   dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
 
 #if CONFIG_NEW_QUANT
+  // ctx = get_entropy_context(tx_size, pd->above_context + i,
+  //                           pd->left_context + j);
+  ctx = 0;
   if (x->quant_fp)
-    vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size);
+    vp9_xform_quant_fp_nuq(x, plane, block, plane_bsize, tx_size, ctx);
   else
-    vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size);
+    vp9_xform_quant_nuq(x, plane, block, plane_bsize, tx_size, ctx);
 #else
   if (x->quant_fp)
     vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
@@ -2999,7 +3015,9 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   const int dst_stride = pd->dst.stride;
   int i, j;
 #if CONFIG_NEW_QUANT
-  int dq = xd->mi->mbmi.dq_off_index;
+  // int dq = xd->mi->mbmi.dq_off_index;
+  int dq;
+  int ctx;
   const uint8_t* band = get_band_translate(tx_size);
 #endif  // CONFIG_NEW_QUANT
 #if CONFIG_SR_MODE
@@ -3017,6 +3035,13 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   dst = &pd->dst.buf[4 * (j * dst_stride + i)];
   src = &p->src.buf[4 * (j * src_stride + i)];
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+#if CONFIG_NEW_QUANT
+  // ctx = get_entropy_context(tx_size, pd->above_context + i,
+                            // pd->left_context + j);
+  ctx = 0;
+  dq = get_dq_profile_from_ctx(ctx);
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_SR_MODE
   src_sr_diff = (int16_t *)&p->src_sr_diff[4 * (j * src_sr_diff_stride + i)];
 #endif  // CONFIG_SR_MODE
@@ -3071,7 +3096,6 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       return;
     }
 
-
     if (!x->skip_recode) {
 #if CONFIG_VP9_HIGHBITDEPTH
       if (use_hbd) {
@@ -3088,7 +3112,6 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                          src, src_stride, dst, dst_stride);
       vp9_tx_identity(src_diff, coeff, diff_stride, bs, shift);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-
       if (tx_size <= TX_16X16) {
 #if CONFIG_NEW_QUANT
 #if CONFIG_VP9_HIGHBITDEPTH
