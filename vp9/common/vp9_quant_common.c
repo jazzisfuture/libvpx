@@ -55,24 +55,24 @@ static const uint8_t vp9_nuq_knots[QUANT_PROFILES][COEF_BANDS][NUQ_KNOTS] = {
   },
 #if QUANT_PROFILES > 1
   {
-    {86, 122, 128},  // dc, band 0
-    {86, 122, 128},  // band 1
-    {86, 122, 128},  // band 2
-    {88, 122, 128},  // band 3
-    {88, 122, 128},  // band 4
-    {88, 122, 128},  // band 5
+    {86, 122, 134},  // dc, band 0
+    {78, 122, 134},  // band 1
+    {78, 122, 134},  // band 2
+    {84, 122, 134},  // band 3
+    {88, 122, 134},  // band 4
+    {88, 122, 134},  // band 5
 #if CONFIG_TX_SKIP
     {86, 122, 128},  // band 6
 #endif  // CONFIG_TX_SKIP
   },
 #if QUANT_PROFILES > 2
   {
-    {86, 122, 128},  // dc, band 0
-    {86, 122, 128},  // band 1
-    {86, 122, 128},  // band 2
-    {88, 122, 128},  // band 3
-    {88, 122, 128},  // band 4
-    {88, 122, 128},  // band 5
+    {86, 122, 134},  // dc, band 0
+    {78, 122, 134},  // band 1
+    {78, 122, 134},  // band 2
+    {84, 122, 134},  // band 3
+    {88, 122, 134},  // band 4
+    {88, 122, 134},  // band 5
 #if CONFIG_TX_SKIP
     {86, 122, 128},  // band 6
 #endif  // CONFIG_TX_SKIP
@@ -102,7 +102,7 @@ static const uint8_t vp9_nuq_doff[QUANT_PROFILES][COEF_BANDS] = {
     8
 #endif  // CONFIG_TX_SKIP
   },
-  { 13, 20, 21, 27, 28, 29,     // dq_off_index = 1
+  { 6, 15, 17, 22, 23, 24,     // dq_off_index = 1
 #if CONFIG_TX_SKIP
     8
 #endif  // CONFIG_TX_SKIP
@@ -115,12 +115,12 @@ static const uint8_t vp9_nuq_doff[QUANT_PROFILES][COEF_BANDS] = {
     8
 #endif  // CONFIG_TX_SKIP
   },
-  { 13, 20, 21, 27, 28, 29,     // dq_off_index = 1
+  { 6, 15, 17, 22, 23, 24,     // dq_off_index = 1
 #if CONFIG_TX_SKIP
     8
 #endif  // CONFIG_TX_SKIP
   },
-  { 20, 0, 0, 0, 0, 0,     // dq_off_index = 2
+  { 8, 15, 16, 22, 23, 24,     // dq_off_index = 2
 #if CONFIG_TX_SKIP
     8
 #endif  // CONFIG_TX_SKIP

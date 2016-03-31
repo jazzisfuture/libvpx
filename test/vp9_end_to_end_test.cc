@@ -20,7 +20,7 @@ namespace {
 const unsigned int kWidth  = 160;
 const unsigned int kHeight = 90;
 const unsigned int kFramerate = 50;
-const unsigned int kFrames = 10;
+const unsigned int kFrames = 2;
 const int kBitrate = 500;
 const int kCpuUsed = 0;
 const double psnr_threshold = 35.0;
