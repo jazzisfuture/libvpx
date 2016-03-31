@@ -5978,15 +5978,41 @@ static void do_masked_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
 
   if (bestsme < INT_MAX) {
     int dis;  /* TODO: use dis in distortion calculation later. */
-    vp10_find_best_masked_sub_pixel_tree(x, mask, mask_stride,
-                                         &tmp_mv->as_mv, &ref_mv,
-                                         cm->allow_high_precision_mv,
-                                         x->errorperbit,
-                                         &cpi->fn_ptr[bsize],
-                                         cpi->sf.mv.subpel_force_stop,
-                                         cpi->sf.mv.subpel_iters_per_step,
-                                         x->nmvjointcost, x->mvcost,
-                                         &dis, &x->pred_sse[ref], ref_idx);
+    if (cpi->sf.use_upsampled_references) {
+      const int pw = 4 * num_4x4_blocks_wide_lookup[bsize];
+      const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
+      // Use up-sampled reference frames.
+      struct macroblockd_plane *const pd = &xd->plane[0];
+      struct buf_2d backup_pred = pd->pre[ref_idx];
+      const YV12_BUFFER_CONFIG *upsampled_ref = get_upsampled_ref(cpi, ref);
+
+      // Set pred for Y plane
+      setup_pred_plane(&pd->pre[ref_idx], upsampled_ref->y_buffer,
+                       upsampled_ref->y_stride, (mi_row << 3), (mi_col << 3),
+                       NULL, pd->subsampling_x, pd->subsampling_y);
+      vp10_find_best_masked_sub_pixel_tree_up(x, mask, mask_stride,
+                                              &tmp_mv->as_mv, &ref_mv,
+                                              cm->allow_high_precision_mv,
+                                              x->errorperbit,
+                                              &cpi->fn_ptr[bsize],
+                                              cpi->sf.mv.subpel_force_stop,
+                                              cpi->sf.mv.subpel_iters_per_step,
+                                              x->nmvjointcost, x->mvcost,
+                                              &dis, &x->pred_sse[ref],
+                                              pw, ph, ref_idx, 1);
+      // Restore the reference frames.
+      pd->pre[ref_idx] = backup_pred;
+    } else {
+      vp10_find_best_masked_sub_pixel_tree(x, mask, mask_stride,
+                                           &tmp_mv->as_mv, &ref_mv,
+                                           cm->allow_high_precision_mv,
+                                           x->errorperbit,
+                                           &cpi->fn_ptr[bsize],
+                                           cpi->sf.mv.subpel_force_stop,
+                                           cpi->sf.mv.subpel_iters_per_step,
+                                           x->nmvjointcost, x->mvcost,
+                                           &dis, &x->pred_sse[ref], ref_idx);
+    }
   }
   *rate_mv = vp10_mv_bit_cost(&tmp_mv->as_mv, &ref_mv,
                               x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
