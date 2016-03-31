@@ -5979,15 +5979,53 @@ static void do_masked_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
 
   if (bestsme < INT_MAX) {
     int dis;  /* TODO: use dis in distortion calculation later. */
-    vp10_find_best_masked_sub_pixel_tree(x, mask, mask_stride,
-                                         &tmp_mv->as_mv, &ref_mv,
-                                         cm->allow_high_precision_mv,
-                                         x->errorperbit,
-                                         &cpi->fn_ptr[bsize],
-                                         cpi->sf.mv.subpel_force_stop,
-                                         cpi->sf.mv.subpel_iters_per_step,
-                                         x->nmvjointcost, x->mvcost,
-                                         &dis, &x->pred_sse[ref], ref_idx);
+    if (cpi->sf.use_upsampled_references) {
+      const int pw = 4 * num_4x4_blocks_wide_lookup[bsize];
+      const int ph = 4 * num_4x4_blocks_high_lookup[bsize];
+      // Use up-sampled reference frames.
+      struct macroblockd_plane *const pd = &xd->plane[0];
+      struct buf_2d backup_pred = pd->pre[ref_idx];
+      const YV12_BUFFER_CONFIG *upsampled_ref = get_upsampled_ref(cpi, ref);
+
+      // Set pred for Y plane
+      setup_pred_plane(&pd->pre[ref_idx], upsampled_ref->y_buffer,
+                       upsampled_ref->y_stride, (mi_row << 3), (mi_col << 3),
+                       NULL, pd->subsampling_x, pd->subsampling_y);
+
+      /*
+      bestsme = cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv,
+                                             cm->allow_high_precision_mv,
+                                             x->errorperbit,
+                                             &cpi->fn_ptr[bsize],
+                                             cpi->sf.mv.subpel_force_stop,
+                                             cpi->sf.mv.subpel_iters_per_step,
+                                             cond_cost_list(cpi, cost_list),
+                                             x->nmvjointcost, x->mvcost,
+                                             &dis, &x->pred_sse[ref], NULL,
+                                             pw, ph, 1);
+                                             */
+      vp10_find_best_masked_sub_pixel_tree(x, mask, mask_stride,
+                                           &tmp_mv->as_mv, &ref_mv,
+                                           cm->allow_high_precision_mv,
+                                           x->errorperbit,
+                                           &cpi->fn_ptr[bsize],
+                                           cpi->sf.mv.subpel_force_stop,
+                                           cpi->sf.mv.subpel_iters_per_step,
+                                           x->nmvjointcost, x->mvcost,
+                                           &dis, &x->pred_sse[ref], ref_idx);
+      // Restore the reference frames.
+      pd->pre[ref_idx] = backup_pred;
+    } else {
+      vp10_find_best_masked_sub_pixel_tree(x, mask, mask_stride,
+                                           &tmp_mv->as_mv, &ref_mv,
+                                           cm->allow_high_precision_mv,
+                                           x->errorperbit,
+                                           &cpi->fn_ptr[bsize],
+                                           cpi->sf.mv.subpel_force_stop,
+                                           cpi->sf.mv.subpel_iters_per_step,
+                                           x->nmvjointcost, x->mvcost,
+                                           &dis, &x->pred_sse[ref], ref_idx);
+    }
   }
   *rate_mv = vp10_mv_bit_cost(&tmp_mv->as_mv, &ref_mv,
                               x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
@@ -6644,7 +6682,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   rs = cm->interp_filter == SWITCHABLE ? vp10_get_switchable_rate(cpi, xd) : 0;
 
 #if CONFIG_EXT_INTER
-  if (is_comp_pred && get_wedge_bits(bsize)) {
+  if (is_comp_pred && is_interinter_wedge_used(bsize)) {
     int wedge_index, best_wedge_index = WEDGE_NONE, rs;
     int rate_sum;
     int64_t dist_sum;
@@ -6830,6 +6868,21 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       mbmi->interintra_mode = (INTERINTRA_MODE)j;
       mbmi->interintra_uv_mode = (INTERINTRA_MODE)j;
       rmode = interintra_mode_cost[mbmi->interintra_mode];
+      vp10_build_intra_predictors_for_interintra(
+          xd, bsize, 0, intrapred, MAX_SB_SIZE);
+      vp10_combine_interintra(xd, bsize, 0, tmp_buf, MAX_SB_SIZE,
+                              intrapred, MAX_SB_SIZE);
+      vp10_build_intra_predictors_for_interintra(
+          xd, bsize, 1, intrapred + MAX_SB_SQUARE, MAX_SB_SIZE);
+      vp10_build_intra_predictors_for_interintra(
+          xd, bsize, 2, intrapred + 2 * MAX_SB_SQUARE, MAX_SB_SIZE);
+      vp10_combine_interintra(xd, bsize, 1,
+                              tmp_buf + MAX_SB_SQUARE, MAX_SB_SIZE,
+                              intrapred + MAX_SB_SQUARE, MAX_SB_SIZE);
+      vp10_combine_interintra(xd, bsize, 2,
+                              tmp_buf + 2 * MAX_SB_SQUARE, MAX_SB_SIZE,
+                              intrapred + 2 * MAX_SB_SQUARE, MAX_SB_SIZE);
+      /*
       vp10_build_interintra_predictors(xd,
                                        tmp_buf,
                                        tmp_buf + MAX_SB_SQUARE,
@@ -6838,6 +6891,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                        MAX_SB_SIZE,
                                        MAX_SB_SIZE,
                                        bsize);
+                                       */
       model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
                       &skip_txfm_sb, &skip_sse_sb);
       rd = RDCOST(x->rdmult, x->rddiv, rate_mv + rmode + rate_sum, dist_sum);
@@ -6859,9 +6913,9 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     vp10_build_intra_predictors_for_interintra(
         xd, bsize, 2, intrapred + 2 * MAX_SB_SQUARE, MAX_SB_SIZE);
 
-    wedge_bits = get_wedge_bits(bsize);
     rmode = interintra_mode_cost[mbmi->interintra_mode];
-    if (wedge_bits) {
+    if (is_interintra_wedge_used(bsize)) {
+      wedge_bits = get_wedge_bits(bsize);
       vp10_combine_interintra(xd, bsize, 0, tmp_buf, MAX_SB_SIZE,
                               intrapred, MAX_SB_SIZE);
       vp10_combine_interintra(xd, bsize, 1,
@@ -6946,9 +7000,9 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     pred_exists = 0;
     tmp_rd = best_interintra_rd;
     *compmode_interintra_cost =
-        vp10_cost_bit(cm->fc->interintra_prob[bsize], 1);
+        vp10_cost_bit(cm->fc->interintra_prob[size_group_lookup[bsize]], 1);
     *compmode_interintra_cost += interintra_mode_cost[mbmi->interintra_mode];
-    if (get_wedge_bits(bsize)) {
+    if (is_interintra_wedge_used(bsize)) {
       *compmode_interintra_cost += vp10_cost_bit(
           cm->fc->wedge_interintra_prob[bsize], mbmi->use_wedge_interintra);
       if (mbmi->use_wedge_interintra) {
@@ -6957,7 +7011,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     }
   } else if (is_interintra_allowed(mbmi)) {
     *compmode_interintra_cost =
-      vp10_cost_bit(cm->fc->interintra_prob[bsize], 0);
+      vp10_cost_bit(cm->fc->interintra_prob[size_group_lookup[bsize]], 0);
   }
 
 #if CONFIG_EXT_INTERP
