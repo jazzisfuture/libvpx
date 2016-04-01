@@ -21,10 +21,15 @@
 
 int get_tx_scale(const MACROBLOCKD *const xd, const TX_TYPE tx_type,
                  const TX_SIZE tx_size) {
-  (void) tx_type;
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    return tx_size == TX_32X32;
+    if (xd->bd == BITDEPTH_10) {
+      if(tx_type == DCT_DCT && tx_size == TX_8X8)
+        return 1;
+      return 0;
+    } else {
+      return tx_size == TX_32X32;
+    }
   }
 #else
   (void)xd;
