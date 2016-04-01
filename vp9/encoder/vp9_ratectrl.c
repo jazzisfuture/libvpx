@@ -1484,6 +1484,9 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
       rc->constrained_gf_group = 0;
     }
     cpi->refresh_golden_frame = 1;
+    // Don't update golden frame if key frame is coming soon.
+    if (rc->frames_to_key < 4)
+      cpi->refresh_golden_frame = 0;
     rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
     rc->gfu_boost = DEFAULT_GF_BOOST;
   }
@@ -2059,9 +2062,11 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
     if (avg_sad > 0 || cpi->oxcf.rc_mode == VPX_CBR)
       rc->avg_source_sad = (rc->avg_source_sad + avg_sad) >> 1;
     // For VBR, under scene change/high content change, force golden refresh.
+    // Don't force refresh if close to key frame.
     if (cpi->oxcf.rc_mode == VPX_VBR &&
         rc->high_source_sad &&
         cpi->refresh_golden_frame == 0 &&
+        rc->frames_to_key >= 4 &&
         cpi->ext_refresh_frame_flags_pending == 0) {
       int target;
       cpi->refresh_golden_frame = 1;
