@@ -32,10 +32,10 @@ static const TXFM_2D_CFG inv_txfm_2d_cfg_dct_dct_4 = {
     TXFM_TYPE_DCT4};                // .txfm_type_row
 
 //  ---------------- config inv_dct_dct_8 ----------------
-static const int8_t inv_shift_dct_dct_8[2] = {1, -6};
-static const int8_t inv_stage_range_col_dct_dct_8[6] = {20, 20, 20, 20, 19, 19};
-static const int8_t inv_stage_range_row_dct_dct_8[6] = {19, 19, 19, 19, 19, 19};
-static const int8_t inv_cos_bit_col_dct_dct_8[6] = {12, 12, 12, 12, 12, 13};
+static const int8_t inv_shift_dct_dct_8[2] = {0, -4};
+static const int8_t inv_stage_range_col_dct_dct_8[6] = {18, 18, 18, 18, 17, 17};
+static const int8_t inv_stage_range_row_dct_dct_8[6] = {18, 18, 18, 18, 18, 18};
+static const int8_t inv_cos_bit_col_dct_dct_8[6] = {13, 13, 13, 13, 13, 13};
 static const int8_t inv_cos_bit_row_dct_dct_8[6] = {13, 13, 13, 13, 13, 13};
 
 static const TXFM_2D_CFG inv_txfm_2d_cfg_dct_dct_8 = {
