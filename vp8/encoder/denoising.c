@@ -572,6 +572,32 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
             best_sse = zero_mv_sse;
         }
 
+        mv_row = x->best_sse_mv.as_mv.row;
+        mv_col = x->best_sse_mv.as_mv.col;
+        motion_magnitude2 = mv_row * mv_row + mv_col * mv_col;
+        motion_threshold = denoiser->denoise_pars.scale_motion_thresh *
+            NOISE_MOTION_THRESHOLD;
+
+        if (motion_magnitude2 <
+          denoiser->denoise_pars.scale_increase_filter * NOISE_MOTION_THRESHOLD)
+          x->increase_denoising = 1;
+
+         sse_thresh = denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD;
+         if (x->increase_denoising)
+           sse_thresh =
+               denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD_HIGH;
+
+         if (best_sse > sse_thresh || motion_magnitude2 > motion_threshold)
+           decision = COPY_BLOCK;
+
+        // If block is considered skin, don't denoise if the block
+        // (1) is selected as non-zero motion for current frame, or
+        // (2) has not been selected as ZERO_LAST mode at least x past frames
+        // in a row.
+        // TODO(marpan): Parameter "x" should be varied with framerate.
+        // In particualar, should be reduced for temporal layers (base layer/LAST).
+        if (x->is_skin && (consec_zero_last < 2 || motion_magnitude2 > 0))
+          decision = COPY_BLOCK;
         saved_pre = filter_xd->pre;
         saved_dst = filter_xd->dst;
 
@@ -601,33 +627,9 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
         filter_xd->dst = saved_dst;
         *mbmi = saved_mbmi;
 
+    } else {
+      decision = COPY_BLOCK;
     }
-
-    mv_row = x->best_sse_mv.as_mv.row;
-    mv_col = x->best_sse_mv.as_mv.col;
-    motion_magnitude2 = mv_row * mv_row + mv_col * mv_col;
-    motion_threshold = denoiser->denoise_pars.scale_motion_thresh *
-        NOISE_MOTION_THRESHOLD;
-
-    if (motion_magnitude2 <
-        denoiser->denoise_pars.scale_increase_filter * NOISE_MOTION_THRESHOLD)
-      x->increase_denoising = 1;
-
-    sse_thresh = denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD;
-    if (x->increase_denoising)
-      sse_thresh = denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD_HIGH;
-
-    if (best_sse > sse_thresh || motion_magnitude2 > motion_threshold)
-      decision = COPY_BLOCK;
-
-    // If block is considered skin, don't denoise if the block
-    // (1) is selected as non-zero motion for current frame, or
-    // (2) has not been selected as ZERO_LAST mode at least x past frames
-    // in a row.
-    // TODO(marpan): Parameter "x" should be varied with framerate.
-    // In particualar, should be reduced for temporal layers (base layer/LAST).
-    if (x->is_skin && (consec_zero_last < 2 || motion_magnitude2 > 0))
-      decision = COPY_BLOCK;
 
     if (decision == FILTER_BLOCK)
     {
