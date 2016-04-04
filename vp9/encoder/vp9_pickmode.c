@@ -1823,7 +1823,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0 &&
-      cpi->resize_pending == 0) {
+      cpi->resize_pending == 0 &&
+      cpi->denoiser.denoising_level > kDenLowLow) {
     VP9_DENOISER_DECISION decision = COPY_BLOCK;
     vp9_denoiser_denoise(cpi, x, mi_row, mi_col, VPXMAX(BLOCK_8X8, bsize),
                          ctx, &decision);
@@ -1834,6 +1835,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         (best_ref_frame == GOLDEN_FRAME && decision == FILTER_ZEROMV_BLOCK)) &&
         cpi->noise_estimate.enabled &&
         cpi->noise_estimate.level > kLow &&
+        cpi->denoiser.reset == 0 &&
         zero_last_cost_orig < (best_rdc.rdcost << 3)) {
       // Check if we should pick ZEROMV on denoised signal.
       int rate = 0;
