@@ -299,7 +299,7 @@ void VarianceTest<VarianceFunctionType>::ZeroTest() {
       unsigned int sse;
       unsigned int var;
       ASM_REGISTER_STATE_CHECK(
-          var = variance_(src_, width_, ref_, width_, &sse));
+          var = variance_(ref_, width_, src_, width_, &sse));
       EXPECT_EQ(0u, var) << "src values: " << i << " ref values: " << j;
     }
   }
@@ -309,27 +309,29 @@ template<typename VarianceFunctionType>
 void VarianceTest<VarianceFunctionType>::RefTest() {
   for (int i = 0; i < 10; ++i) {
     for (int j = 0; j < block_size_; j++) {
-    if (!use_high_bit_depth_) {
-      src_[j] = rnd_.Rand8();
-      ref_[j] = rnd_.Rand8();
+      if (!use_high_bit_depth_) {
+        src_[j] = rnd_.Rand8();
+        ref_[j] = rnd_.Rand8();
 #if CONFIG_VP9_HIGHBITDEPTH
-    } else {
-      CONVERT_TO_SHORTPTR(src_)[j] = rnd_.Rand16() && mask_;
-      CONVERT_TO_SHORTPTR(ref_)[j] = rnd_.Rand16() && mask_;
+      } else {
+        CONVERT_TO_SHORTPTR(src_)[j] = rnd_.Rand16() & mask_;
+        CONVERT_TO_SHORTPTR(ref_)[j] = rnd_.Rand16() & mask_;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-    }
+      }
     }
     unsigned int sse1, sse2;
     unsigned int var1;
     const int stride_coeff = 1;
     ASM_REGISTER_STATE_CHECK(
-        var1 = variance_(src_, width_, ref_, width_, &sse1));
+        var1 = variance_(ref_, width_, src_, width_, &sse1));
     const unsigned int var2 = variance_ref(src_, ref_, log2width_,
                                            log2height_, stride_coeff,
                                            stride_coeff, &sse2,
                                            use_high_bit_depth_, bit_depth_);
-    EXPECT_EQ(sse1, sse2);
-    EXPECT_EQ(var1, var2);
+    EXPECT_EQ(sse1, sse2)
+        << "Error at test index: " << i;
+    EXPECT_EQ(var1, var2)
+        << "Error at test index: " << i;
   }
 }
 
@@ -346,8 +348,8 @@ void VarianceTest<VarianceFunctionType>::RefStrideTest() {
         ref_[ref_ind] = rnd_.Rand8();
 #if CONFIG_VP9_HIGHBITDEPTH
       } else {
-        CONVERT_TO_SHORTPTR(src_)[src_ind] = rnd_.Rand16() && mask_;
-        CONVERT_TO_SHORTPTR(ref_)[ref_ind] = rnd_.Rand16() && mask_;
+        CONVERT_TO_SHORTPTR(src_)[src_ind] = rnd_.Rand16() & mask_;
+        CONVERT_TO_SHORTPTR(ref_)[ref_ind] = rnd_.Rand16() & mask_;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       }
     }
@@ -355,14 +357,16 @@ void VarianceTest<VarianceFunctionType>::RefStrideTest() {
     unsigned int var1;
 
     ASM_REGISTER_STATE_CHECK(
-        var1 = variance_(src_, width_ * src_stride_coeff,
-                         ref_, width_ * ref_stride_coeff, &sse1));
+        var1 = variance_(ref_, width_ * ref_stride_coeff,
+                         src_, width_ * src_stride_coeff, &sse1));
     const unsigned int var2 = variance_ref(src_, ref_, log2width_,
                                            log2height_, src_stride_coeff,
                                            ref_stride_coeff, &sse2,
                                            use_high_bit_depth_, bit_depth_);
-    EXPECT_EQ(sse1, sse2);
-    EXPECT_EQ(var1, var2);
+    EXPECT_EQ(sse1, sse2)
+        << "Error at test index: " << i;
+    EXPECT_EQ(var1, var2)
+        << "Error at test index: " << i;
   }
 }
 
@@ -383,7 +387,7 @@ void VarianceTest<VarianceFunctionType>::OneQuarterTest() {
   }
   unsigned int sse;
   unsigned int var;
-  ASM_REGISTER_STATE_CHECK(var = variance_(src_, width_, ref_, width_, &sse));
+  ASM_REGISTER_STATE_CHECK(var = variance_(ref_, width_, src_, width_, &sse));
   const unsigned int expected = block_size_ * 255 * 255 / 4;
   EXPECT_EQ(expected, var);
 }
