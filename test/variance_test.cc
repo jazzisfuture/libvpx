@@ -74,6 +74,11 @@ static unsigned int mb_ss_ref(const int16_t *src) {
   return res;
 }
 
+/* Note:
+ *  Our codebase calculates "diff" value in variance algorithm is by
+ *  (src - ref). To minimize the code change, here we do the same
+ *  subtraction.
+ */
 static uint32_t variance_ref(const uint8_t *src, const uint8_t *ref,
                              int l2w, int l2h, int src_stride_coeff,
                              int ref_stride_coeff, uint32_t *sse_ptr,
@@ -87,14 +92,14 @@ static uint32_t variance_ref(const uint8_t *src, const uint8_t *ref,
     for (int x = 0; x < w; x++) {
       int diff;
       if (!use_high_bit_depth_) {
-        diff = ref[w * y * ref_stride_coeff + x] -
-               src[w * y * src_stride_coeff + x];
+        diff = src[w * y * src_stride_coeff + x] -
+               ref[w * y * ref_stride_coeff + x];
         se += diff;
         sse += diff * diff;
 #if CONFIG_VP9_HIGHBITDEPTH
       } else {
-        diff = CONVERT_TO_SHORTPTR(ref)[w * y * ref_stride_coeff + x] -
-               CONVERT_TO_SHORTPTR(src)[w * y * src_stride_coeff + x];
+        diff = CONVERT_TO_SHORTPTR(src)[w * y * src_stride_coeff + x] -
+               CONVERT_TO_SHORTPTR(ref)[w * y * ref_stride_coeff + x];
         se += diff;
         sse += diff * diff;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -309,15 +314,15 @@ template<typename VarianceFunctionType>
 void VarianceTest<VarianceFunctionType>::RefTest() {
   for (int i = 0; i < 10; ++i) {
     for (int j = 0; j < block_size_; j++) {
-    if (!use_high_bit_depth_) {
-      src_[j] = rnd_.Rand8();
-      ref_[j] = rnd_.Rand8();
+      if (!use_high_bit_depth_) {
+        src_[j] = rnd_.Rand8();
+        ref_[j] = rnd_.Rand8();
 #if CONFIG_VP9_HIGHBITDEPTH
-    } else {
-      CONVERT_TO_SHORTPTR(src_)[j] = rnd_.Rand16() && mask_;
-      CONVERT_TO_SHORTPTR(ref_)[j] = rnd_.Rand16() && mask_;
+      } else {
+        CONVERT_TO_SHORTPTR(src_)[j] = rnd_.Rand16() & mask_;
+        CONVERT_TO_SHORTPTR(ref_)[j] = rnd_.Rand16() & mask_;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-    }
+      }
     }
     unsigned int sse1, sse2;
     unsigned int var1;
@@ -328,8 +333,10 @@ void VarianceTest<VarianceFunctionType>::RefTest() {
                                            log2height_, stride_coeff,
                                            stride_coeff, &sse2,
                                            use_high_bit_depth_, bit_depth_);
-    EXPECT_EQ(sse1, sse2);
-    EXPECT_EQ(var1, var2);
+    EXPECT_EQ(sse1, sse2)
+        << "Error at test index: " << i;
+    EXPECT_EQ(var1, var2)
+        << "Error at test index: " << i;
   }
 }
 
@@ -346,8 +353,8 @@ void VarianceTest<VarianceFunctionType>::RefStrideTest() {
         ref_[ref_ind] = rnd_.Rand8();
 #if CONFIG_VP9_HIGHBITDEPTH
       } else {
-        CONVERT_TO_SHORTPTR(src_)[src_ind] = rnd_.Rand16() && mask_;
-        CONVERT_TO_SHORTPTR(ref_)[ref_ind] = rnd_.Rand16() && mask_;
+        CONVERT_TO_SHORTPTR(src_)[src_ind] = rnd_.Rand16() & mask_;
+        CONVERT_TO_SHORTPTR(ref_)[ref_ind] = rnd_.Rand16() & mask_;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       }
     }
@@ -361,8 +368,10 @@ void VarianceTest<VarianceFunctionType>::RefStrideTest() {
                                            log2height_, src_stride_coeff,
                                            ref_stride_coeff, &sse2,
                                            use_high_bit_depth_, bit_depth_);
-    EXPECT_EQ(sse1, sse2);
-    EXPECT_EQ(var1, var2);
+    EXPECT_EQ(sse1, sse2)
+        << "Error at test index: " << i;
+    EXPECT_EQ(var1, var2)
+        << "Error at test index: " << i;
   }
 }
 
