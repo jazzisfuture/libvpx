@@ -349,6 +349,10 @@ class ResizeInternalTest : public ResizeTest {
         encoder->Control(VP8E_SET_SCALEMODE, &mode);
       }
       if (video->frame() == 1) {
+         cfg_.rc_min_quantizer = cfg_.rc_max_quantizer = new_q;
+          encoder->Config(&cfg_);
+      }
+      if (video->frame() == 2) {
         struct vpx_scaling_mode mode = {VP8E_NORMAL, VP8E_NORMAL};
         encoder->Control(VP8E_SET_SCALEMODE, &mode);
         cfg_.rc_min_quantizer = cfg_.rc_max_quantizer = new_q;
@@ -428,6 +432,7 @@ TEST_P(ResizeInternalTest, TestInternalResizeChangeConfig) {
                                        30, 1, 0, 10);
   cfg_.g_w = 352;
   cfg_.g_h = 288;
+  cfg_.g_lag_in_frames = 0;
   change_config_ = true;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
