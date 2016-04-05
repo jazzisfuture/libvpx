@@ -4909,8 +4909,8 @@ int vp9_set_internal_size(VP9_COMP *cpi,
   cm->width = (hs - 1 + cpi->oxcf.width * hr) / hs;
   cm->height = (vs - 1 + cpi->oxcf.height * vr) / vs;
   if (cm->current_video_frame) {
-    assert(cm->width <= cpi->initial_width);
-    assert(cm->height <= cpi->initial_height);
+    assert(cm->width <= cpi->oxcf.width);
+    assert(cm->height <= cpi->oxcf.height);
   }
 
   update_frame_size(cpi);
