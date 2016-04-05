@@ -758,6 +758,11 @@ static void update_frame_size(VP9_COMP *cpi) {
       vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                          "Failed to reallocate alt_ref_buffer");
   }
+  if (!cpi->initial_width) {
+    cpi->initial_width = cpi->oxcf.width;
+    cpi->initial_height = cpi->oxcf.height;
+    cpi->initial_mbs = cm->MBs;
+  }
 }
 
 static void init_buffer_indices(VP9_COMP *cpi) {
