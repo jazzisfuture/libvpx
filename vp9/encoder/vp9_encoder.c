@@ -891,6 +891,12 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   cm->height = oxcf->height;
   alloc_compressor_data(cpi);
 
+  if (cpi->oxcf.profile == 0) {
+    cpi->initial_width = cpi->oxcf.width;
+    cpi->initial_height = cpi->oxcf.height;
+    cpi->initial_mbs = cm->MBs;
+  }
+
   cpi->svc.temporal_layering_mode = oxcf->temporal_layering_mode;
 
   // Single thread case: use counts in common.
@@ -4058,9 +4064,11 @@ static void check_initial_width(VP9_COMP *cpi,
 
     init_motion_estimation(cpi);  // TODO(agrange) This can be removed.
 
-    cpi->initial_width = cm->width;
-    cpi->initial_height = cm->height;
-    cpi->initial_mbs = cm->MBs;
+    if (!cpi->initial_width) {
+      cpi->initial_width = cm->width;
+      cpi->initial_height = cm->height;
+      cpi->initial_mbs = cm->MBs;
+    }
   }
 }
 
