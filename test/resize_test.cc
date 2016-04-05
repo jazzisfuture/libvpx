@@ -341,10 +341,15 @@ class ResizeInternalTest : public ResizeTest {
     if (change_config_) {
       int new_q = 60;
       if (video->frame() == 0) {
-        struct vpx_scaling_mode mode = { VP8E_ONETWO, VP8E_ONETWO };
-        encoder->Control(VP8E_SET_SCALEMODE, &mode);
+        if (flip_video_) {
+          video->img()->d_w = cfg_.g_h;
+          video->img()->d_h = cfg_.g_w;
+        } else {
+          struct vpx_scaling_mode mode = { VP8E_ONETWO, VP8E_ONETWO };
+          encoder->Control(VP8E_SET_SCALEMODE, &mode);
+        }
       }
-      if (video->frame() == 1) {
+      if (video->frame() == 1 && !flip_video_) {
         struct vpx_scaling_mode mode = { VP8E_NORMAL, VP8E_NORMAL };
         encoder->Control(VP8E_SET_SCALEMODE, &mode);
         cfg_.rc_min_quantizer = cfg_.rc_max_quantizer = new_q;
@@ -382,6 +387,7 @@ class ResizeInternalTest : public ResizeTest {
 
   double frame0_psnr_;
   bool change_config_;
+  bool flip_video_;
 #if WRITE_COMPRESSED_STREAM
   FILE *outfile_;
   unsigned int out_frames_;
@@ -417,12 +423,30 @@ TEST_P(ResizeInternalTest, TestInternalResizeWorks) {
   }
 }
 
+// After encoder initialization for size 352x288, before encoding first frame
+// change the frame resolution down to 176x144, and then for subsequent frames
+// go back up to original size.
 TEST_P(ResizeInternalTest, TestInternalResizeChangeConfig) {
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
                                        30, 1, 0, 10);
   cfg_.g_w = 352;
   cfg_.g_h = 288;
+  cfg_.g_lag_in_frames = 0;
   change_config_ = true;
+  flip_video_ = false;
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
+
+// After encoder initialization for size 352x288, before encoding first frame
+// change the frame resolution to 288x352.
+TEST_P(ResizeInternalTest, TestInternalResizeChangeConfigFlipWidthHeight) {
+  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       30, 1, 0, 10);
+  cfg_.g_w = 352;
+  cfg_.g_h = 288;
+  cfg_.g_lag_in_frames = 0;
+  change_config_ = true;
+  flip_video_ = true;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
