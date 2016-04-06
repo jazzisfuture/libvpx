@@ -4,8 +4,10 @@ static inline void int16_array_with_stride_to_int32_array_without_stride(
     const int16_t *input, int stride, int32_t *output, int txfm1d_size) {
   int r, c;
   for (r = 0; r < txfm1d_size; r++) {
-    for (c = 0; c < txfm1d_size; c++) {
-      output[r * txfm1d_size + c] = (int32_t)input[r * stride + c];
+    for (c = 0; c < txfm1d_size; c += 4) {
+      __m128i *temp = (__m128i *)(output + r * txfm1d_size + c);
+      *temp = _mm_loadl_epi64((const __m128i *)(input + r * stride + c));
+      *temp = _mm_cvtepi16_epi32(*temp);
     }
   }
 }
