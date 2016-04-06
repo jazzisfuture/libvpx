@@ -1,11 +1,23 @@
+/*
+ *  Copyright (c) 2015 The WebM project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
 #include "vp10/common/x86/vp10_txfm1d_sse4.h"
 
-static inline void int16_array_with_stride_to_int32_array_without_stride(
+static INLINE void int16_array_with_stride_to_int32_array_without_stride(
     const int16_t *input, int stride, int32_t *output, int txfm1d_size) {
   int r, c;
   for (r = 0; r < txfm1d_size; r++) {
-    for (c = 0; c < txfm1d_size; c++) {
-      output[r * txfm1d_size + c] = (int32_t)input[r * stride + c];
+    for (c = 0; c < txfm1d_size; c += 4) {
+      __m128i *temp = (__m128i *)(output + r * txfm1d_size + c);
+      *temp = _mm_loadl_epi64((const __m128i *)(input + r * stride + c));
+      *temp = _mm_cvtepi16_epi32(*temp);
     }
   }
 }
@@ -48,7 +60,7 @@ static inline TxfmFuncSSE2 fwd_txfm_type_to_func(TXFM_TYPE txfm_type) {
   return NULL;
 }
 
-static inline void fwd_txfm2d_sse4_1(const int16_t *input, int32_t *output,
+static INLINE void fwd_txfm2d_sse4_1(const int16_t *input, int32_t *output,
                                    const int stride, const TXFM_2D_CFG *cfg,
                                    int32_t *txfm_buf) {
   const int txfm_size = cfg->txfm_size;
