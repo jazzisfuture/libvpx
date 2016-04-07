@@ -732,6 +732,107 @@ void SubpelVarianceTest<SubpixAvgVarMxNFunc>::RefTest() {
   }
 }
 
+#if HAVE_SSE4_1 && CONFIG_VP9_HIGHBITDEPTH
+typedef tuple<VarianceMxNFunc, VarianceMxNFunc, int, int, int> SpeedTestParam;
+template <typename VarianceFuncType>
+class VarianceSpeedTest : public ::testing::TestWithParam<SpeedTestParam> {
+ public:
+  virtual void SetUp() {
+    const SpeedTestParam &params = this->GetParam();
+    variance_c_ = get<0>(params);
+    variance_opt_ = get<1>(params);
+    width_ = get<2>(params);
+    height_ = get<3>(params);
+    bit_depth_ = get<4>(params);
+    block_size_ = width_ * height_;
+    src_ = CONVERT_TO_BYTEPTR(new uint16_t[block_size_]);
+    ref_ = CONVERT_TO_BYTEPTR(new uint16_t[block_size_]);
+    ASSERT_TRUE(src_ != NULL);
+    ASSERT_TRUE(ref_ != NULL);
+  }
+
+  virtual void TearDown() {
+    delete[] CONVERT_TO_SHORTPTR(src_);
+    delete[] CONVERT_TO_SHORTPTR(ref_);
+    libvpx_test::ClearSystemState();
+  }
+
+ protected:
+  void RunCTest();
+  void RunOptTest();
+
+ private:
+  VarianceFuncType variance_c_;
+  VarianceFuncType variance_opt_;
+  uint8_t *src_;
+  uint8_t *ref_;
+  int width_;
+  int height_;
+  int bit_depth_;
+  int block_size_;
+};
+
+template<typename VarianceFuncType>
+void VarianceSpeedTest<VarianceFuncType>::RunCTest() {
+  ACMRandom rnd(ACMRandom::DeterministicSeed());
+  const int num_tests = 2000000;
+  int mask = (1 << bit_depth_) - 1;
+  uint32_t sse;
+  uint32_t var;
+  int i;
+
+  for (i = 0; i < block_size_; ++i) {
+    CONVERT_TO_SHORTPTR(src_)[i] = rnd.Rand16() & mask;
+    CONVERT_TO_SHORTPTR(ref_)[i] = rnd.Rand16() & mask;
+  }
+
+  for (i = 0; i < num_tests; ++i) {
+    var = variance_c_(src_, width_, ref_, width_, &sse);
+  }
+  (void)var;
+}
+
+template<typename VarianceFuncType>
+void VarianceSpeedTest<VarianceFuncType>::RunOptTest() {
+  ACMRandom rnd(ACMRandom::DeterministicSeed());
+  const int num_tests = 2000000;
+  int mask = (1 << bit_depth_) - 1;
+  uint32_t sse;
+  uint32_t var;
+  int i;
+
+  for (i = 0; i < block_size_; ++i) {
+    CONVERT_TO_SHORTPTR(src_)[i] = rnd.Rand16() & mask;
+    CONVERT_TO_SHORTPTR(ref_)[i] = rnd.Rand16() & mask;
+  }
+
+  for (i = 0; i < num_tests; ++i) {
+    var = variance_opt_(src_, width_, ref_, width_, &sse);
+  }
+  (void)var;
+}
+
+typedef VarianceSpeedTest<VarianceMxNFunc> VpxVarianceSpeedTest;
+
+TEST_P(VpxVarianceSpeedTest, C_Version) {
+  RunCTest();
+}
+TEST_P(VpxVarianceSpeedTest, SSE4_1_Version) {
+  RunOptTest();
+}
+INSTANTIATE_TEST_CASE_P(SSE4_1, VpxVarianceSpeedTest,
+                        ::testing::Values(
+                             make_tuple(vpx_highbd_8_variance4x4_c,
+                                        vpx_highbd_8_variance4x4_sse4_1,
+                                        4, 4, 8),
+                             make_tuple(vpx_highbd_10_variance4x4_c,
+                                        vpx_highbd_10_variance4x4_sse4_1,
+                                        4, 4, 10),
+                             make_tuple(vpx_highbd_12_variance4x4_c,
+                                        vpx_highbd_12_variance4x4_sse4_1,
+                                        4, 4, 12)));
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
 typedef MseTest<Get4x4SseFunc> VpxSseTest;
 typedef MseTest<VarianceMxNFunc> VpxMseTest;
 typedef VarianceTest<VarianceMxNFunc> VpxVarianceTest;
@@ -922,6 +1023,15 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(3, 2, &vpx_highbd_8_variance8x4_c, 8),
                       make_tuple(2, 3, &vpx_highbd_8_variance4x8_c, 8),
                       make_tuple(2, 2, &vpx_highbd_8_variance4x4_c, 8)));
+
+#if HAVE_SSE4_1 && CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    SSE4_1, VpxHBDVarianceTest,
+    ::testing::Values(
+         make_tuple(2, 2, &vpx_highbd_8_variance4x4_sse4_1, 8),
+         make_tuple(2, 2, &vpx_highbd_10_variance4x4_sse4_1, 10),
+         make_tuple(2, 2, &vpx_highbd_12_variance4x4_sse4_1, 12)));
+#endif  // HAVE_SSE4_1 && CONFIG_VP9_HIGHBITDEPTH
 
 INSTANTIATE_TEST_CASE_P(
     C, VpxHBDSubpelVarianceTest,
@@ -1124,6 +1234,22 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(2, 3, &vpx_sub_pixel_avg_variance4x8_sse, 0),
         make_tuple(2, 2, &vpx_sub_pixel_avg_variance4x4_sse, 0)));
 #endif  // CONFIG_USE_X86INC
+
+#if HAVE_SSE4_1 && CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    SSE4_1, VpxSubpelVarianceTest,
+    ::testing::Values(
+         make_tuple(2, 2, &vpx_highbd_8_sub_pixel_variance4x4_sse4_1, 8),
+         make_tuple(2, 2, &vpx_highbd_10_sub_pixel_variance4x4_sse4_1, 10),
+         make_tuple(2, 2, &vpx_highbd_12_sub_pixel_variance4x4_sse4_1, 12)));
+
+INSTANTIATE_TEST_CASE_P(
+    SSE4_1, VpxSubpelAvgVarianceTest,
+    ::testing::Values(
+        make_tuple(2, 2, &vpx_highbd_8_sub_pixel_avg_variance4x4_sse4_1, 8),
+        make_tuple(2, 2, &vpx_highbd_10_sub_pixel_avg_variance4x4_sse4_1, 10),
+        make_tuple(2, 2, &vpx_highbd_12_sub_pixel_avg_variance4x4_sse4_1, 12)));
+#endif  // HAVE_SSE4_1 && CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_VP9_HIGHBITDEPTH
 /* TODO(debargha): This test does not support the highbd version
