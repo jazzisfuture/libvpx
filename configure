@@ -581,6 +581,7 @@ process_toolchain() {
         if enabled mips || [ -z "${INLINE}" ]; then
           enabled extra_warnings || check_add_cflags -Wno-unused-function
         fi
+        enabled vp9_highbitdepth || check_add_cflags -Wshorten-64-to-32
     fi
 
     if enabled icc; then
