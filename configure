@@ -586,6 +586,7 @@ process_toolchain() {
         check_add_cflags -Wdeclaration-after-statement
         check_add_cflags -Wdisabled-optimization
         check_add_cflags -Wpointer-arith
+        check_add_cflags -Wshorten-64-to-32
         check_add_cflags -Wtype-limits
         check_add_cflags -Wcast-qual
         check_add_cflags -Wvla
