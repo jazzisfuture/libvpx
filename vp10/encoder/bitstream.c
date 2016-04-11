@@ -90,7 +90,7 @@ static const struct vp10_token
 tx_size_encodings[TX_SIZES - 1][TX_SIZES] = {
     {{0, 1}, {1, 1}},  // Max tx_size is 8X8
     {{0, 1}, {2, 2}, {3, 2}},  // Max tx_size is 16X16
-    {{0, 1}, {2, 2}, {6, 3}, {7, 3}},  // Max tx_size is 32X32
+    {{0, 0}, {0, 1}, {2, 2}, {3, 2}},  // Max tx_size is 32X32
 };
 
 static INLINE void write_uniform(vp10_writer *w, int n, int v) {
@@ -364,6 +364,7 @@ static void write_selected_tx_size(const VP10_COMMON *cm,
   BLOCK_SIZE bsize = xd->mi[0]->mbmi.sb_type;
   const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
   if (max_tx_size > TX_4X4) {
+    assert(max_tx_size != TX_32X32 || tx_size != TX_4X4);
     vp10_write_token(w, vp10_tx_size_tree[max_tx_size - TX_8X8],
                      cm->fc->tx_size_probs[max_tx_size - TX_8X8]
                                           [get_tx_size_context(xd)],
@@ -2498,7 +2499,8 @@ static void update_txfm_probs(VP10_COMMON *cm, vp10_writer *w,
       for (j = 0; j < TX_SIZE_CONTEXTS; ++j)
         prob_diff_update(vp10_tx_size_tree[i],
                          cm->fc->tx_size_probs[i][j],
-                         counts->tx_size[i][j], i + 2, w);
+                         counts->tx_size[i][j],
+                         tx_sizes_from_max_tx_size[i], w);
   }
 }
 

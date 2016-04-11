@@ -798,8 +798,7 @@ const vpx_tree_index vp10_tx_size_tree[TX_SIZES - 1][TREE_SIZE(TX_SIZES)] = {
         -TX_8X8, -TX_16X16,
     },
     {  // Max tx_size is 32X32
-        -TX_4X4, 2,
-        -TX_8X8, 4,
+        -TX_8X8, 2,
         -TX_16X16, -TX_32X32,
     },
 };
@@ -813,7 +812,7 @@ default_tx_size_prob[TX_SIZES - 1][TX_SIZE_CONTEXTS][TX_SIZES - 1] = {
         { 20, 152, }, { 15, 101, },
     },
     {  // Max tx_size is 32X32
-        { 3, 136, 37 }, { 5, 52,  13 },
+        { 136, 37 }, { 52,  13, },
     },
 };
 

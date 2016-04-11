@@ -3917,7 +3917,7 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
   if (cm->tx_mode == TX_MODE_SELECT) {
     for (i = 0; i < TX_SIZES - 1; ++i)
       for (j = 0; j < TX_SIZE_CONTEXTS; ++j)
-        for (k = 0; k < i + 1; ++k)
+        for (k = 0; k < tx_sizes_from_max_tx_size[i] - 1; ++k)
           vp10_diff_update_prob(&r, &fc->tx_size_probs[i][j][k]);
   }
 

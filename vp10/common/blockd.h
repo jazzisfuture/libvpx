@@ -382,6 +382,8 @@ static const TX_TYPE intra_mode_to_tx_type_context[INTRA_MODES] = {
   ADST_ADST,  // TM
 };
 
+static const int tx_sizes_from_max_tx_size[TX_SIZES - 1] = {2, 3, 3};
+
 #if CONFIG_SUPERTX
 static INLINE int supertx_enabled(const MB_MODE_INFO *mbmi) {
   return (int)mbmi->tx_size >
