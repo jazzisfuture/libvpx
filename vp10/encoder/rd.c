@@ -152,13 +152,8 @@ static void fill_mode_costs(VP10_COMP *cpi) {
 #endif  // CONFIG_EXT_INTRA
 }
 
-#if CONFIG_ENTROPY
-void fill_token_costs(vp10_coeff_cost *c,
-                      vp10_coeff_probs_model (*p)[PLANE_TYPES]) {
-#else
 static void fill_token_costs(vp10_coeff_cost *c,
                              vp10_coeff_probs_model (*p)[PLANE_TYPES]) {
-#endif  // CONFIG_ENTROPY
   int i, j, k, l;
   TX_SIZE t;
   for (t = TX_4X4; t <= TX_32X32; ++t)
@@ -185,6 +180,13 @@ static void fill_token_costs(vp10_coeff_cost *c,
                    c[t][i][j][k][1][l][EOB_TOKEN]);
           }
 }
+
+#if CONFIG_ENTROPY
+void vp10_fill_token_costs(vp10_coeff_cost *c,
+                           vp10_coeff_probs_model (*p)[PLANE_TYPES]) {
+  fill_token_costs(c, p);
+}
+#endif  // CONFIG_ENTROPY
 
 // Values are now correlated to quantizer.
 static int sad_per_bit16lut_8[QINDEX_RANGE];

@@ -342,8 +342,8 @@ void vp10_update_rd_thresh_fact(const VP10_COMMON *const cm,
                                 int bsize, int best_mode_index);
 
 #if CONFIG_ENTROPY
-void fill_token_costs(vp10_coeff_cost *c,
-                      vp10_coeff_probs_model (*p)[PLANE_TYPES]);
+void vp10_fill_token_costs(vp10_coeff_cost *c,
+                           vp10_coeff_probs_model (*p)[PLANE_TYPES]);
 #endif  // CONFIG_ENTROPY
 
 static INLINE int rd_less_than_thresh(int64_t best_rd, int thresh,

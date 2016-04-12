@@ -3406,13 +3406,9 @@ static void full_to_model_count(unsigned int *model_count,
   model_count[EOB_MODEL_TOKEN] = full_count[EOB_TOKEN];
 }
 
-#if CONFIG_ENTROPY
-void full_to_model_counts(vp10_coeff_count_model *model_count,
-                                 vp10_coeff_count *full_count) {
-#else
+
 static void full_to_model_counts(vp10_coeff_count_model *model_count,
                                  vp10_coeff_count *full_count) {
-#endif  // CONFIG_ENTROPY
   int i, j, k, l;
 
   for (i = 0; i < PLANE_TYPES; ++i)
@@ -3421,6 +3417,13 @@ static void full_to_model_counts(vp10_coeff_count_model *model_count,
         for (l = 0; l < BAND_COEFF_CONTEXTS(k); ++l)
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
+
+#if CONFIG_ENTROPY
+void vp10_full_to_model_counts(vp10_coeff_count_model *model_count,
+                               vp10_coeff_count *full_count) {
+  full_to_model_counts(model_count, full_count);
+}
+#endif  // CONFIG_ENTROPY
 
 #if 0 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP10_COMP *cpi) {
