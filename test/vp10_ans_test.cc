@@ -220,11 +220,11 @@ void build_tree(vpx_tree_index *tree, int num_syms) {
 
 // treep are the probabilites of tree nodes like:
 //          *
-//         / \
+//         / \\
 //    -sym0  *
-//          / \
+//          / \\
 //     -sym1  *
-//           / \
+//           / \\
 //      -sym2  -sym3
 void tab2tree(const rans_sym *tab, int tab_size, vpx_prob *treep) {
   const unsigned basep = 256;
