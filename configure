@@ -287,6 +287,7 @@ EXPERIMENT_LIST="
     ext_tile
     obmc
     entropy
+    speed
 "
 CONFIG_LIST="
     dependency_tracking
