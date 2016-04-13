@@ -241,7 +241,12 @@ static void init_buffer_callbacks(vpx_codec_alg_priv_t *ctx) {
     cm->byte_alignment = ctx->byte_alignment;
     cm->skip_loop_filter = ctx->skip_loop_filter;
 
-    if (ctx->get_ext_fb_cb != NULL && ctx->release_ext_fb_cb != NULL) {
+    if (ctx->get_ext_fb_planes_cb != NULL &&
+        ctx->release_ext_fb_planes_cb != NULL) {
+      pool->get_fb_planes_cb = ctx->get_ext_fb_planes_cb;
+      pool->release_fb_planes_cb = ctx->release_ext_fb_planes_cb;
+      pool->cb_priv = ctx->ext_priv;
+    } else if (ctx->get_ext_fb_cb != NULL && ctx->release_ext_fb_cb != NULL) {
       pool->get_fb_cb = ctx->get_ext_fb_cb;
       pool->release_fb_cb = ctx->release_ext_fb_cb;
       pool->cb_priv = ctx->ext_priv;
@@ -759,6 +764,24 @@ static vpx_codec_err_t decoder_set_fb_fn(
   return VPX_CODEC_ERROR;
 }
 
+static vpx_codec_err_t decoder_set_fb_planes_fn(
+    vpx_codec_alg_priv_t *ctx,
+    vpx_get_frame_buffer_planes_cb_fn_t cb_get,
+    vpx_release_frame_buffer_planes_cb_fn_t cb_release, void *cb_priv) {
+  if (cb_get == NULL || cb_release == NULL) {
+    return VPX_CODEC_INVALID_PARAM;
+  } else if (ctx->frame_workers == NULL) {
+    // If the decoder has already been initialized, do not accept changes to
+    // the frame buffer functions.
+    ctx->get_ext_fb_planes_cb = cb_get;
+    ctx->release_ext_fb_planes_cb = cb_release;
+    ctx->ext_priv = cb_priv;
+    return VPX_CODEC_OK;
+  }
+
+  return VPX_CODEC_ERROR;
+}
+
 static vpx_codec_err_t ctrl_set_reference(vpx_codec_alg_priv_t *ctx,
                                           va_list args) {
   vpx_ref_frame_t *const data = va_arg(args, vpx_ref_frame_t *);
@@ -1070,6 +1093,7 @@ CODEC_INTERFACE(vpx_codec_vp9_dx) = {
     decoder_decode,     // vpx_codec_decode_fn_t
     decoder_get_frame,  // vpx_codec_frame_get_fn_t
     decoder_set_fb_fn,  // vpx_codec_set_fb_fn_t
+    decoder_set_fb_planes_fn,  // vpx_codec_set_fb_planes_fn_t
   },
   { // NOLINT
     0,

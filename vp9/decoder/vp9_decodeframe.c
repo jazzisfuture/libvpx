@@ -1275,6 +1275,7 @@ static void setup_frame_size(VP9_COMMON *cm, struct vpx_read_bit_buffer *rb) {
           VP9_DEC_BORDER_IN_PIXELS,
           cm->byte_alignment,
           &pool->frame_bufs[cm->new_fb_idx].raw_frame_buffer, pool->get_fb_cb,
+          pool->get_fb_planes_cb,
           pool->cb_priv)) {
     unlock_buffer_pool(pool);
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
@@ -1359,6 +1360,7 @@ static void setup_frame_size_with_refs(VP9_COMMON *cm,
           VP9_DEC_BORDER_IN_PIXELS,
           cm->byte_alignment,
           &pool->frame_bufs[cm->new_fb_idx].raw_frame_buffer, pool->get_fb_cb,
+          pool->get_fb_planes_cb,
           pool->cb_priv)) {
     unlock_buffer_pool(pool);
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
