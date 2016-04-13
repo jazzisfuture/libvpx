@@ -1492,6 +1492,7 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     rc->frames_to_key = cpi->oxcf.key_freq;
     rc->kf_boost = DEFAULT_KF_BOOST;
     rc->source_alt_ref_active = 0;
+    rc->count_last_scene_change = 0;
   } else {
     cm->frame_type = INTER_FRAME;
   }
@@ -2088,6 +2089,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
     // For VBR, under scene change/high content change, force golden refresh.
     if (cpi->oxcf.rc_mode == VPX_VBR &&
         rc->high_source_sad &&
+        rc->count_last_scene_change > 4 &&
         cpi->ext_refresh_frame_flags_pending == 0) {
       int target;
       cpi->refresh_golden_frame = 1;
@@ -2100,6 +2102,10 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
       target = calc_pframe_target_size_one_pass_vbr(cpi);
       vp9_rc_set_frame_target(cpi, target);
     }
+    if (rc->high_source_sad)
+      rc->count_last_scene_change = 0;
+    else
+      rc->count_last_scene_change++;
   }
 }
 
