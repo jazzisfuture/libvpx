@@ -95,6 +95,7 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
                              int byte_alignment,
                              vpx_codec_frame_buffer_t *fb,
                              vpx_get_frame_buffer_cb_fn_t cb,
+                             vpx_get_frame_buffer_planes_cb_fn_t planes_cb,
                              void *cb_priv);
 int vpx_free_frame_buffer(YV12_BUFFER_CONFIG *ybf);
 

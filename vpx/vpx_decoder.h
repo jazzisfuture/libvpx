@@ -370,6 +370,40 @@ extern "C" {
 
   /*!@} - end defgroup cap_external_frame_buffer */
 
+  /*!\brief Pass in external planes with specified strides, for the decoder to use.
+   *
+   * Registers functions to be called when libvpx needs a frame buffer planes
+   * to decode the current frame and a function to be called when libvpx does
+   * not internally reference the frame buffer. This set function must
+   * be called before the first call to decode or libvpx will assume the
+   * default behavior of allocating frame buffers internally.
+   * The difference with 
+   *
+   * \param[in] ctx          Pointer to this instance's context
+   * \param[in] cb_get       Pointer to the get callback function
+   * \param[in] cb_release   Pointer to the release callback function
+   * \param[in] cb_priv      Callback's private data
+   *
+   * \retval #VPX_CODEC_OK
+   *     External frame buffers will be used by libvpx.
+   * \retval #VPX_CODEC_INVALID_PARAM
+   *     One or more of the callbacks were NULL.
+   * \retval #VPX_CODEC_ERROR
+   *     Decoder context not initialized, or algorithm not capable of
+   *     using external frame buffers.
+   *
+   * \note
+   * When decoding VP9, the application may be required to pass in at least
+   * #VP9_MAXIMUM_REF_BUFFERS + #VPX_MAXIMUM_WORK_BUFFERS external frame
+   * buffers.
+   */
+  vpx_codec_err_t vpx_codec_set_frame_buffer_planes_functions(
+      vpx_codec_ctx_t *ctx,
+      vpx_get_frame_buffer_planes_cb_fn_t cb_get,
+      vpx_release_frame_buffer_planes_cb_fn_t cb_release, void *cb_priv);
+
+  /*!@} - end defgroup cap_external_frame_buffer */
+
   /*!@} - end defgroup decoder*/
 #ifdef __cplusplus
 }

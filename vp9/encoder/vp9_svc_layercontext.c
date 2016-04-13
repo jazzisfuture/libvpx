@@ -53,7 +53,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
 #endif
                                  VP9_ENC_BORDER_IN_PIXELS,
                                  cpi->common.byte_alignment,
-                                 NULL, NULL, NULL))
+                                 NULL, NULL, NULL, NULL))
       vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
                          "Failed to allocate empty frame for multiple frame "
                          "contexts");

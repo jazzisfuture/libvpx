@@ -300,9 +300,15 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   // Check if the previous frame was a frame without any references to it.
   // Release frame buffer if not decoding in frame parallel mode.
   if (!pbi->frame_parallel_decode && cm->new_fb_idx >= 0
-      && frame_bufs[cm->new_fb_idx].ref_count == 0)
-    pool->release_fb_cb(pool->cb_priv,
-                        &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
+      && frame_bufs[cm->new_fb_idx].ref_count == 0) {
+    if (pool->release_fb_planes_cb) {
+      pool->release_fb_planes_cb(pool->cb_priv,
+				 &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
+    } else {
+      pool->release_fb_cb(pool->cb_priv,
+			  &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
+    }
+  }
   // Find a free frame buffer. Return error if can not find any.
   cm->new_fb_idx = get_free_fb(cm);
   if (cm->new_fb_idx == INVALID_IDX)
