@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 
+#include "./vpx_image.h"
 #include "./vpx_integer.h"
 
 /*!\brief The maximum number of work buffers used by libvpx.
@@ -35,10 +36,16 @@ extern "C" {
 /*!\brief External frame buffer
  *
  * This structure holds allocated frame buffers used by the decoder.
+ * data might point to one big chunk of contigous memory that will
+ * be used for different planes.
  */
 typedef struct vpx_codec_frame_buffer {
   uint8_t *data;  /**< Pointer to the data buffer */
   size_t size;  /**< Size of data in bytes */
+
+  uint8_t *plane[4];  /**< Pointers for each plane buffer */
+  int stride[4]; /**< Strides for each plane */
+
   void *priv;  /**< Frame's private data */
 } vpx_codec_frame_buffer_t;
 
@@ -74,6 +81,12 @@ typedef int (*vpx_get_frame_buffer_cb_fn_t)(
  * \param[in] fb           Pointer to vpx_codec_frame_buffer_t
  */
 typedef int (*vpx_release_frame_buffer_cb_fn_t)(
+    void *priv, vpx_codec_frame_buffer_t *fb);
+
+
+typedef int (*vpx_get_frame_buffer_planes_cb_fn_t)(
+    void *priv, size_t width, size_t height, vpx_img_fmt_t fmt, vpx_codec_frame_buffer_t *fb);
+typedef int (*vpx_release_frame_buffer_planes_cb_fn_t)(
     void *priv, vpx_codec_frame_buffer_t *fb);
 
 #ifdef __cplusplus

@@ -1600,7 +1600,8 @@ CODEC_INTERFACE(vpx_codec_vp9_cx) = {
     NULL,  // vpx_codec_get_si_fn_t
     NULL,  // vpx_codec_decode_fn_t
     NULL,  // vpx_codec_frame_get_fn_t
-    NULL   // vpx_codec_set_fb_fn_t
+    NULL,  // vpx_codec_set_fb_fn_t
+    NULL   // vpx_codec_set_fb_planes_fn_t
   },
   {  // NOLINT
     1,                      // 1 cfg map

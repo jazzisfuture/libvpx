@@ -101,6 +101,15 @@ class Decoder {
         &decoder_, cb_get, cb_release, user_priv);
   }
 
+  // Passes the external frame buffer planes information to libvpx.
+  vpx_codec_err_t SetFrameBufferPlanesFunctions(
+      vpx_get_frame_buffer_planes_cb_fn_t cb_get,
+      vpx_release_frame_buffer_planes_cb_fn_t cb_release, void *user_priv) {
+    InitOnce();
+    return vpx_codec_set_frame_buffer_planes_functions(
+        &decoder_, cb_get, cb_release, user_priv);
+  }
+
   const char* GetDecoderName() const {
     return vpx_codec_iface_name(CodecInterface());
   }

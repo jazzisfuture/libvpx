@@ -195,3 +195,21 @@ vpx_codec_err_t vpx_codec_set_frame_buffer_functions(
 
   return SAVE_STATUS(ctx, res);
 }
+
+vpx_codec_err_t vpx_codec_set_frame_buffer_planes_functions(
+      vpx_codec_ctx_t *ctx,
+      vpx_get_frame_buffer_planes_cb_fn_t cb_get,
+      vpx_release_frame_buffer_planes_cb_fn_t cb_release, void *cb_priv) {
+  vpx_codec_err_t res;
+
+  if (!ctx || !cb_get || !cb_release) {
+    res = VPX_CODEC_INVALID_PARAM;
+  } else if (!ctx->iface || !ctx->priv ||
+             !(ctx->iface->caps & VPX_CODEC_CAP_EXTERNAL_FRAME_BUFFER)) {
+    res = VPX_CODEC_ERROR;
+  } else {
+    res = ctx->iface->dec.set_fb_planes_fn(get_alg_priv(ctx), cb_get, cb_release, cb_priv);
+  }
+  return SAVE_STATUS(ctx, res);
+}
+
