@@ -60,6 +60,9 @@ struct vpx_codec_alg_priv {
   void *ext_priv;  // Private data associated with the external frame buffers.
   vpx_get_frame_buffer_cb_fn_t get_ext_fb_cb;
   vpx_release_frame_buffer_cb_fn_t release_ext_fb_cb;
+
+  vpx_get_frame_buffer_planes_cb_fn_t get_ext_fb_planes_cb;
+  vpx_release_frame_buffer_planes_cb_fn_t release_ext_fb_planes_cb;
 };
 
 #endif  // VP9_VP9_DX_IFACE_H_

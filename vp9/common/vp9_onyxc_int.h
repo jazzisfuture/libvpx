@@ -103,6 +103,9 @@ typedef struct BufferPool {
   vpx_get_frame_buffer_cb_fn_t get_fb_cb;
   vpx_release_frame_buffer_cb_fn_t release_fb_cb;
 
+  vpx_get_frame_buffer_planes_cb_fn_t get_fb_planes_cb;
+  vpx_release_frame_buffer_planes_cb_fn_t release_fb_planes_cb;
+
   RefCntBuffer frame_bufs[FRAME_BUFFERS];
 
   // Frame buffers allocated internally by the codec.
