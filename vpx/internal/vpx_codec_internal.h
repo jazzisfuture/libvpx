@@ -248,6 +248,11 @@ typedef vpx_codec_err_t (*vpx_codec_set_fb_fn_t)(
     vpx_get_frame_buffer_cb_fn_t cb_get,
     vpx_release_frame_buffer_cb_fn_t cb_release, void *cb_priv);
 
+typedef vpx_codec_err_t (*vpx_codec_set_fb_planes_fn_t)(
+    vpx_codec_alg_priv_t *ctx,
+    vpx_get_frame_buffer_planes_cb_fn_t cb_get,
+    vpx_release_frame_buffer_planes_cb_fn_t cb_release, void *cb_priv);
+
 
 typedef vpx_codec_err_t (*vpx_codec_encode_fn_t)(vpx_codec_alg_priv_t  *ctx,
                                                  const vpx_image_t     *img,
@@ -303,6 +308,7 @@ struct vpx_codec_iface {
     vpx_codec_decode_fn_t     decode;      /**< \copydoc ::vpx_codec_decode_fn_t */
     vpx_codec_get_frame_fn_t  get_frame;   /**< \copydoc ::vpx_codec_get_frame_fn_t */
     vpx_codec_set_fb_fn_t     set_fb_fn;   /**< \copydoc ::vpx_codec_set_fb_fn_t */
+    vpx_codec_set_fb_planes_fn_t     set_fb_planes_fn;   /**< \copydoc ::vpx_codec_set_fb_planes_fn_t */
   } dec;
   struct vpx_codec_enc_iface {
     int                                cfg_map_count;

@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 
+#include "./vpx_image.h"
 #include "./vpx_integer.h"
 
 /*!\brief The maximum number of work buffers used by libvpx.
@@ -35,10 +36,16 @@ extern "C" {
 /*!\brief External frame buffer
  *
  * This structure holds allocated frame buffers used by the decoder.
+ * data might point to one big chunk of contigous memory that will
+ * be used for different planes.
  */
 typedef struct vpx_codec_frame_buffer {
   uint8_t *data;  /**< Pointer to the data buffer */
   size_t size;  /**< Size of data in bytes */
+
+  uint8_t *plane[4];  /**< Pointers for each plane buffer */
+  int stride[4]; /**< Strides for each plane */
+
   void *priv;  /**< Frame's private data */
 } vpx_codec_frame_buffer_t;
 
@@ -74,6 +81,45 @@ typedef int (*vpx_get_frame_buffer_cb_fn_t)(
  * \param[in] fb           Pointer to vpx_codec_frame_buffer_t
  */
 typedef int (*vpx_release_frame_buffer_cb_fn_t)(
+    void *priv, vpx_codec_frame_buffer_t *fb);
+
+/*!\brief get frame buffer planes callback prototype
+ *
+ * This callback is invoked by the decoder to retrieve buffers for the frame
+ * in order for the decode call to complete. The callback must one buffer
+ * per plane and set it in fb->plane. The callback must also set the stride
+ * for each plane in fb->stride. The number of planes can be determined
+ * from the format of the video frame specified with |fmt|.
+ * fb->stride must be a multiple of 32.
+ * fb->size and fb->data will be ignored.
+ * The callback is triggered when the decoder needs a frame buffer to
+ * decode a compressed image into. This function may be called more than once
+ * for every call to vpx_codec_decode. The application may set fb->priv to
+ * some data which will be passed back in the ximage and the release function
+ * call. |fb| is guaranteed to not be NULL. On success the callback must
+ * return 0. Any failure the callback must return a value less than 0.
+ *
+ * \param[in] priv         Callback's private data
+ * \param[in] width        Size in bytes needed by the buffer
+ * \param[in] height       Size in bytes needed by the buffer
+ * \param[in] fmt          Size in bytes needed by the buffer
+ * \param[in,out] fb       Pointer to vpx_codec_frame_buffer_t
+ */
+typedef int (*vpx_get_frame_buffer_planes_cb_fn_t)(
+    void *priv, size_t width, size_t height, vpx_img_fmt_t fmt, vpx_codec_frame_buffer_t *fb);
+
+/*!\brief release frame buffer callback prototype
+ *
+ * This callback is invoked by the decoder when the frame buffer is not
+ * referenced by any other buffers. |fb| is guaranteed to not be NULL. On
+ * success the callback must return 0. Any failure the callback must return
+ * a value less than 0.
+ * This callback will be invoked if the buffer was allocated with 
+ *
+ * \param[in] priv         Callback's private data
+ * \param[in] fb           Pointer to vpx_codec_frame_buffer_t
+ */
+typedef int (*vpx_release_frame_buffer_planes_cb_fn_t)(
     void *priv, vpx_codec_frame_buffer_t *fb);
 
 #ifdef __cplusplus

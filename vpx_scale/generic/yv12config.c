@@ -144,19 +144,85 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
                              int byte_alignment,
                              vpx_codec_frame_buffer_t *fb,
                              vpx_get_frame_buffer_cb_fn_t cb,
+                             vpx_get_frame_buffer_planes_cb_fn_t planes_cb,
                              void *cb_priv) {
   if (ybf) {
-    const int vp9_byte_align = (byte_alignment == 0) ? 1 : byte_alignment;
     const int aligned_width = (width + 7) & ~7;
     const int aligned_height = (height + 7) & ~7;
+    const int uv_width = aligned_width >> ss_x;
+    const int uv_height = aligned_height >> ss_y;
+
+    if (planes_cb) {
+      if (byte_alignment)  // shouldn't be set along with planes_cb
+        return -1;
+
+      vpx_img_fmt_t format = VPX_IMG_FMT_NONE;
+      if (!ybf->subsampling_y) {
+        if (!ybf->subsampling_x) {
+          format = VPX_IMG_FMT_I444;
+        } else {
+          format = VPX_IMG_FMT_I422;
+        }
+      } else {
+        if (!ybf->subsampling_x) {
+          format = VPX_IMG_FMT_I440;
+        } else {
+          format = VPX_IMG_FMT_I420;
+        }
+      }
+
+      planes_cb(cb_priv, aligned_width + border * 2,
+          aligned_height + border * 2, format, fb);
+      if (fb->data != NULL || fb->size != 0)
+        return -1;
+      if ((!fb->plane[0] || !fb->plane[1] || !fb->plane[2]) ||
+          (!fb->stride[0] || !fb->stride[1] || !fb->stride[2]))
+        return -1;
+
+      if (fb->plane[0] != yv12_align_addr(fb->plane[0], 32) ||
+	  fb->plane[1] != yv12_align_addr(fb->plane[1], 32) ||
+	  fb->plane[2] != yv12_align_addr(fb->plane[2], 32)) 
+	  return -1;
+
+      if ((fb->stride[0] & 0x1F) || (fb->stride[1] & 0x1F))  // buffers should be 32 bytes aligned.
+	return -1;
+
+      if (fb->stride[1] != fb->stride[2])
+        return -1;
+
+      if (border & 0x1f)
+        return -3;
+
+      ybf->y_crop_width = width;
+      ybf->y_crop_height = height;
+      ybf->y_width  = aligned_width;
+      ybf->y_height = aligned_height;
+      ybf->y_stride = fb->stride[0];
+
+      ybf->uv_crop_width = (width + ss_x) >> ss_x;
+      ybf->uv_crop_height = (height + ss_y) >> ss_y;
+      ybf->uv_width = uv_width;
+      ybf->uv_height = uv_height;
+      ybf->uv_stride = fb->stride[1];
+
+      ybf->border = border;
+      ybf->subsampling_x = ss_x;
+      ybf->subsampling_y = ss_y;
+
+      ybf->y_buffer = fb->plane[0];
+      ybf->u_buffer = fb->plane[1];
+      ybf->v_buffer = fb->plane[2];
+      ybf->corrupted = 0; /* assume not corrupted by errors */
+      return 0;
+    }
+
+    const int uv_border_w = border >> ss_x;
+    const int uv_border_h = border >> ss_y;
+    const int vp9_byte_align = (byte_alignment == 0) ? 1 : byte_alignment;
     const int y_stride = ((aligned_width + 2 * border) + 31) & ~31;
     const uint64_t yplane_size = (aligned_height + 2 * border) *
                                  (uint64_t)y_stride + byte_alignment;
-    const int uv_width = aligned_width >> ss_x;
-    const int uv_height = aligned_height >> ss_y;
     const int uv_stride = y_stride >> ss_x;
-    const int uv_border_w = border >> ss_x;
-    const int uv_border_h = border >> ss_y;
     const uint64_t uvplane_size = (uv_height + 2 * uv_border_h) *
                                   (uint64_t)uv_stride + byte_alignment;
 
@@ -280,7 +346,8 @@ int vpx_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
 #if CONFIG_VP9_HIGHBITDEPTH
                                     use_highbitdepth,
 #endif
-                                    border, byte_alignment, NULL, NULL, NULL);
+                                    border, byte_alignment,
+				    NULL, NULL, NULL, NULL);
   }
   return -2;
 }
