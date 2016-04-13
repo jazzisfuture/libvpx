@@ -279,6 +279,53 @@ static INLINE void rans_build_cdf_from_pdf(const AnsP8 token_probs[],
   }
 }
 
+static INLINE int ans_find_largest(const AnsP8 *const pdf_tab,
+                                   int num_syms) {
+  int largest_idx = -1;
+  int largest_p = -1;
+  int i;
+  for (i = 0; i < num_syms; ++i) {
+    int p = pdf_tab[i];
+    if (p > largest_p) {
+      largest_p = p;
+      largest_idx = i;
+    }
+  }
+  return largest_idx;
+}
+
+static INLINE void rans_merge_prob_pdf(AnsP8 *const out_pdf,
+                                       const AnsP8 node_prob,
+                                       const AnsP8 *const src_pdf,
+                                       int num_syms) {
+  int i;
+  int adjustment = ans_p8_precision;
+  const int round_fact = ans_p8_precision >> 1;
+  const AnsP8 p1 = ans_p8_precision - node_prob;
+  assert(src_pdf != out_pdf);
+
+  out_pdf[0] = node_prob;
+  adjustment -= node_prob;
+  for (i = 0; i < num_syms; ++i) {
+    int p = (p1 * src_pdf[i] + round_fact) >> ans_p8_shift;
+    p = VPXMIN(p, (int)ans_p8_precision - num_syms);
+    p = VPXMAX(p, 1);
+    out_pdf[i + 1] = p;
+    adjustment -= p;
+  }
+  ++num_syms;
+
+  // Adjust probabilities so they sum to the total probability
+  if (adjustment > 0) {
+    i = ans_find_largest(out_pdf, num_syms);
+    out_pdf[i] += adjustment;
+  } else while (adjustment < 0) {
+    i = ans_find_largest(out_pdf, num_syms);
+    --out_pdf[i];
+    adjustment++;
+  }
+}
+
 // rANS with normalization
 // sym->prob takes the place of l_s from the paper
 // ans_p8_precision is m
