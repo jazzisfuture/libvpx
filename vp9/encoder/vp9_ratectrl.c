@@ -2088,6 +2088,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
     // For VBR, under scene change/high content change, force golden refresh.
     if (cpi->oxcf.rc_mode == VPX_VBR &&
         rc->high_source_sad &&
+        rc->count_last_scene_change > 4 &&
         cpi->ext_refresh_frame_flags_pending == 0) {
       int target;
       cpi->refresh_golden_frame = 1;
@@ -2099,6 +2100,9 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         rc->frames_till_gf_update_due = rc->frames_to_key;
       target = calc_pframe_target_size_one_pass_vbr(cpi);
       vp9_rc_set_frame_target(cpi, target);
+      rc->count_last_scene_change = 0;
+    } else {
+      rc->count_last_scene_change++;
     }
   }
 }
