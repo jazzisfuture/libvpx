@@ -7785,9 +7785,16 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
   if (cpi->rc.is_src_frame_alt_ref) {
     if (sf->alt_ref_search_fp) {
-      mode_skip_mask[ALTREF_FRAME] = 0;
-      ref_frame_skip_mask[0] = ~(1 << ALTREF_FRAME);
-      ref_frame_skip_mask[1] = SECOND_REF_FRAME_MASK;
+#if !CONFIG_EXT_REFS
+      assert(cpi->ref_frame_flags & flag_list[ALTREF_FRAME]);
+#else
+      if (cpi->ref_frame_flags & flag_list[ALTREF_FRAME])
+#endif  // !CONFIG_EXT_REFS
+      {
+        mode_skip_mask[ALTREF_FRAME] = 0;
+        ref_frame_skip_mask[0] = ~(1 << ALTREF_FRAME);
+        ref_frame_skip_mask[1] = SECOND_REF_FRAME_MASK;
+      }
     }
   }
 
