@@ -189,6 +189,16 @@ static void read_mv_probs(nmv_context *ctx, int allow_hp, vp10_reader *r) {
 
   update_mv_probs(ctx->joints, MV_JOINTS - 1, r);
 
+#if CONFIG_REF_MV
+  vp10_diff_update_prob(r, &ctx->zero_rmv);
+#endif
+
+//  fprintf(stderr, "mvj prob: ");
+//  for (i = 0; i < 3; ++i)
+//    fprintf(stderr, "%d ", ctx->joints[i]);
+//  fprintf(stderr, "zero_rmv %d\n", ctx->zero_rmv);
+//  fprintf(stderr, "\n");
+
   for (i = 0; i < 2; ++i) {
     nmv_component *const comp_ctx = &ctx->comps[i];
     update_mv_probs(&comp_ctx->sign, 1, r);

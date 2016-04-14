@@ -685,12 +685,32 @@ static int read_mv_component(vp10_reader *r,
 }
 
 static INLINE void read_mv(vp10_reader *r, MV *mv, const MV *ref,
+#if CONFIG_REF_MV
+                           int is_compound,
+#endif
                            const nmv_context *ctx,
                            nmv_context_counts *counts, int allow_hp) {
-  const MV_JOINT_TYPE joint_type =
-      (MV_JOINT_TYPE)vp10_read_tree(r, vp10_mv_joint_tree, ctx->joints);
+  MV_JOINT_TYPE joint_type;
   const int use_hp = allow_hp && vp10_use_mv_hp(ref);
   MV diff = {0, 0};
+
+#if CONFIG_REF_MV
+  if (is_compound) {
+    int is_zero_rmv = vpx_read(r, ctx->zero_rmv);
+    if (is_zero_rmv) {
+      joint_type = MV_JOINT_ZERO;
+    } else {
+      joint_type = (MV_JOINT_TYPE)vp10_read_tree(r, vp10_mv_joint_tree,
+                                                 ctx->joints);
+    }
+  } else {
+    joint_type = (MV_JOINT_TYPE)vp10_read_tree(r, vp10_mv_joint_tree,
+                                               ctx->joints);
+  }
+#else
+  joint_type = (MV_JOINT_TYPE)vp10_read_tree(r, vp10_mv_joint_tree,
+                                             ctx->joints);
+#endif
 
   if (mv_joint_vertical(joint_type))
     diff.row = read_mv_component(r, &ctx->comps[0], use_hp);
@@ -964,8 +984,11 @@ static INLINE int assign_mv(VP10_COMMON *cm, MACROBLOCKD *xd,
                                    xd->ref_mv_stack[mbmi->ref_frame[i]]);
         nmv_context_counts *const mv_counts =
             counts ? &counts->mv[nmv_ctx] : NULL;
-        read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc[nmv_ctx],
-                mv_counts, allow_hp);
+        read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv,
+#if CONFIG_REF_MV
+                is_compound,
+#endif
+                &cm->fc->nmvc[nmv_ctx], mv_counts, allow_hp);
 #else
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc, mv_counts,
                 allow_hp);

@@ -1195,6 +1195,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #else
 #if CONFIG_REF_MV
                              &mi->bmi[j].pred_mv_s8[ref].as_mv,
+                             is_compound,
 #else
                              &mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0].as_mv,
 #endif  // CONFIG_REF_MV
@@ -1248,8 +1249,11 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
           else
 #endif  // CONFIG_EXT_INTER
           vp10_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
-                         &ref_mv.as_mv, nmvc,
-                         allow_hp);
+                         &ref_mv.as_mv,
+#if CONFIG_REF_MV
+                         is_compound,
+#endif
+                         nmvc, allow_hp);
         }
 #if CONFIG_EXT_INTER
       } else if (mode == NEAREST_NEWMV || mode == NEAR_NEWMV) {
