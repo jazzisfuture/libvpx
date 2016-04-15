@@ -1687,12 +1687,6 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   if (mbmi->tx_size >= TX_32X32)
     assert(mbmi->tx_type == DCT_DCT);
 #endif
-
-  txfm_rd_in_plane(x,
-                   cpi,
-                   &r, &d, &s,
-                   &sse, ref_best_rd, 0, bs, best_tx,
-                   cpi->sf.use_fast_coef_costing);
 }
 
 static void super_block_yrd(VP10_COMP *cpi, MACROBLOCK *x, int *rate,
@@ -8250,6 +8244,15 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       if (this_mode != DC_PRED && this_mode != TM_PRED)
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
+
+//      txfm_rd_in_plane(x,
+//                       cpi,
+//                       &dummy_rate, &dummy_dist, &dummy_skippable,
+//                       &dummy_sse, INT64_MAX, 0, bsize, mbmi->tx_size,
+//                       cpi->sf.use_fast_coef_costing);
+
+      vp10_encode_intra_block_plane(x, bsize, 0);
+
 #if CONFIG_VP9_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
         x->recon_variance =
