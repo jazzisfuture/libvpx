@@ -164,7 +164,7 @@ static void hadamard_col8_sse2(__m128i *in, int iter) {
   a6 = _mm_sub_epi16(b4, b6);
   a7 = _mm_sub_epi16(b5, b7);
 
-  if (iter == 0) {
+  if (1) {
     b0 = _mm_add_epi16(a0, a4);
     b7 = _mm_add_epi16(a1, a5);
     b3 = _mm_add_epi16(a2, a6);
