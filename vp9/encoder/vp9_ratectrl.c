@@ -948,11 +948,13 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
                              FIXED_GF_INTERVAL], cm->bit_depth);
       active_best_quality = VPXMAX(qindex + delta_qindex, rc->best_quality);
     } else {
-      // Use the lower of active_worst_quality and recent/average Q.
-      if (cm->current_video_frame > 1)
-        active_best_quality = inter_minq[rc->avg_frame_qindex[INTER_FRAME]];
-      else
+      // Use a q value slightly above the average Q as basis for active_best.
+      if (cm->current_video_frame > 1) {
+        q = (9 * rc->avg_frame_qindex[INTER_FRAME]) >> 3;
+        active_best_quality = inter_minq[q];
+      } else {
         active_best_quality = inter_minq[rc->avg_frame_qindex[KEY_FRAME]];
+      }
       // For the constrained quality mode we don't want
       // q to fall below the cq level.
       if ((oxcf->rc_mode == VPX_CQ) &&
