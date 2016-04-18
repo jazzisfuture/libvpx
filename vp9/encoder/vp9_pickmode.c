@@ -1246,11 +1246,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
   x->skip = 0;
 
-  if (xd->above_mi)
-    filter_ref = xd->above_mi->interp_filter;
-  else if (xd->left_mi)
-    filter_ref = xd->left_mi->interp_filter;
-  else
+  filter_ref = vp9_get_pred_context_switchable_interp(xd);
+  if (filter_ref == SWITCHABLE_FILTERS)
     filter_ref = cm->interp_filter;
 
   // initialize mode decisions
@@ -1804,6 +1801,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mi->uv_mode = this_mode;
         mi->mv[0].as_int = INVALID_MV;
         best_mode_skip_txfm = x->skip_txfm[0];
+        // For context purposes, set interp_filter for intra blocks to
+        // SWITCHABLE_FILTERS
+        mi->interp_filter = SWITCHABLE_FILTERS;
       }
     }
 
