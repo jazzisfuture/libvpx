@@ -131,11 +131,12 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
 
   vpx_get_worker_interface()->end(&pbi->lf_worker);
   vpx_free(pbi->lf_worker.data1);
-  vpx_free(pbi->tile_data);
+
   for (i = 0; i < pbi->num_tile_workers; ++i) {
     VPxWorker *const worker = &pbi->tile_workers[i];
     vpx_get_worker_interface()->end(worker);
   }
+
   vpx_free(pbi->tile_worker_data);
   vpx_free(pbi->tile_workers);
 
@@ -186,46 +187,47 @@ vpx_codec_err_t vp9_copy_reference_dec(VP9Decoder *pbi,
 vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
                                       VP9_REFFRAME ref_frame_flag,
                                       YV12_BUFFER_CONFIG *sd) {
-  int idx;
-  YV12_BUFFER_CONFIG *ref_buf = NULL;
+  RefBuffer *ref_buf = NULL;
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
 
   // TODO(jkoleszar): The decoder doesn't have any real knowledge of what the
   // encoder is using the frame buffers for. This is just a stub to keep the
   // vpxenc --test-decode functionality working, and will be replaced in a
   // later commit that adds VP9-specific controls for this functionality.
-
-  // (Yunqing) The set_reference control depends on the following setting in
-  // encoder.
-  // cpi->lst_fb_idx = 0;
-  // cpi->gld_fb_idx = 1;
-  // cpi->alt_fb_idx = 2;
   if (ref_frame_flag == VP9_LAST_FLAG) {
-    idx = cm->ref_frame_map[0];
+    ref_buf = &cm->frame_refs[0];
   } else if (ref_frame_flag == VP9_GOLD_FLAG) {
-    idx = cm->ref_frame_map[1];
+    ref_buf = &cm->frame_refs[1];
   } else if (ref_frame_flag == VP9_ALT_FLAG) {
-    idx = cm->ref_frame_map[2];
+    ref_buf = &cm->frame_refs[2];
   } else {
     vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                        "Invalid reference frame");
     return cm->error.error_code;
   }
 
-  if (idx < 0 || idx >= FRAME_BUFFERS) {
-    vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
-                       "Invalid reference frame map");
-    return cm->error.error_code;
-  }
-
-  // Get the destination reference buffer.
-  ref_buf = &cm->buffer_pool->frame_bufs[idx].buf;
-
-  if (!equal_dimensions(ref_buf, sd)) {
+  if (!equal_dimensions(ref_buf->buf, sd)) {
     vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                        "Incorrect buffer dimensions");
   } else {
-    // Overwrite the reference frame buffer.
-    vp8_yv12_copy_frame(sd, ref_buf);
+    int *ref_fb_ptr = &ref_buf->idx;
+
+    // Find an empty frame buffer.
+    const int free_fb = get_free_fb(cm);
+    if (cm->new_fb_idx == INVALID_IDX) {
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Unable to find free frame buffer");
+      return cm->error.error_code;
+    }
+
+    // Decrease ref_count since it will be increased again in
+    // ref_cnt_fb() below.
+    --frame_bufs[free_fb].ref_count;
+
+    // Manage the reference counters and copy image.
+    ref_cnt_fb(frame_bufs, ref_fb_ptr, free_fb);
+    ref_buf->buf = &frame_bufs[*ref_fb_ptr].buf;
+    vp8_yv12_copy_frame(sd, ref_buf->buf);
   }
 
   return cm->error.error_code;
@@ -239,16 +241,15 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
 
   lock_buffer_pool(pool);
-
   for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
     const int old_idx = cm->ref_frame_map[ref_index];
     // Current thread releases the holding of reference frame.
     decrease_ref_count(old_idx, frame_bufs, pool);
 
     // Release the reference frame in reference map.
-    if (mask & 1)
+    if (mask & 1) {
       decrease_ref_count(old_idx, frame_bufs, pool);
-
+    }
     cm->ref_frame_map[ref_index] = cm->next_ref_frame_map[ref_index];
     ++ref_index;
   }
@@ -270,7 +271,7 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
   }
 
   // Invalidate these references until the next frame starts.
-  for (ref_index = 0; ref_index < REFS_PER_FRAME; ref_index++)
+  for (ref_index = 0; ref_index < 3; ref_index++)
     cm->frame_refs[ref_index].idx = -1;
 }
 
@@ -308,8 +309,11 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
                         &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   // Find a free frame buffer. Return error if can not find any.
   cm->new_fb_idx = get_free_fb(cm);
-  if (cm->new_fb_idx == INVALID_IDX)
-    return VPX_CODEC_MEM_ERROR;
+  if (cm->new_fb_idx == INVALID_IDX) {
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Unable to find free frame buffer");
+    return cm->error.error_code;
+  }
 
   // Assign a MV array to the frame buffer.
   cm->cur_frame = &pool->frame_bufs[cm->new_fb_idx];
@@ -327,6 +331,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   } else {
     pbi->cur_buf = &frame_bufs[cm->new_fb_idx];
   }
+
 
   if (setjmp(cm->error.jmp)) {
     const VPxWorkerInterface *const winterface = vpx_get_worker_interface();
@@ -352,8 +357,9 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
         decrease_ref_count(old_idx, frame_bufs, pool);
 
         // Release the reference frame in reference map.
-        if (mask & 1)
+        if (mask & 1) {
           decrease_ref_count(old_idx, frame_bufs, pool);
+        }
         ++ref_index;
       }
 
