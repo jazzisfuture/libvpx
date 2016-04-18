@@ -515,6 +515,7 @@ DECLARE_ALIGNED(16, static const int16_t, default_scan_32x32[1024]) = {
   990, 959, 1022, 991, 1023,
 };
 
+<<<<<<< HEAD   (d72560 Merge "Fit adst/dct's stage range into 32-bit in bd12" into )
 #if CONFIG_EXT_TX
 // Scan over two rectangular vertical partitions one after the other
 DECLARE_ALIGNED(16, static const int16_t, v2_scan_32x32[1024]) = {
@@ -791,6 +792,10 @@ DECLARE_ALIGNED(16, static const int16_t, qtr_scan_32x32[1024]) = {
 // in {top, left, topleft, topright, bottomleft} order
 // for each position in raster scan order.
 // -1 indicates the neighbor does not exist.
+=======
+// Neighborhood 2-tuples for various scans and blocksizes,
+// in {top, left} order for each position in corresponding scan order.
+>>>>>>> BRANCH (2e0841 Merge "Adjustment to prediction decay.")
 DECLARE_ALIGNED(16, static const int16_t,
                 default_scan_4x4_neighbors[17 * MAX_NEIGHBORS]) = {
   0,   0,   0,   0,   4,   0,   1,   4,   4,   5,   5,   1,
