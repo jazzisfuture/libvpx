@@ -135,6 +135,20 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   if (!ref)
     rdmult = (rdmult * 9) >> 4;
 
+  if (ref) {
+    if (type == 0) {
+      rdmult = (mb->rdmult * 7) >> 1;
+    } else {
+      rdmult = (mb->rdmult * 5) >> 1;
+    }
+  } else {
+    if (type == 0) {
+      rdmult = (mb->rdmult * 9) >> 1;
+    } else {
+
+    }
+  }
+
   /* Initialize the sentinel node of the trellis. */
   tokens[eob][0].rate = 0;
   tokens[eob][0].error = 0;
