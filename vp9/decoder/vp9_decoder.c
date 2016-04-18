@@ -131,11 +131,12 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
 
   vpx_get_worker_interface()->end(&pbi->lf_worker);
   vpx_free(pbi->lf_worker.data1);
-  vpx_free(pbi->tile_data);
+
   for (i = 0; i < pbi->num_tile_workers; ++i) {
     VPxWorker *const worker = &pbi->tile_workers[i];
     vpx_get_worker_interface()->end(worker);
   }
+
   vpx_free(pbi->tile_worker_data);
   vpx_free(pbi->tile_workers);
 
@@ -224,8 +225,29 @@ vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
     vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                        "Incorrect buffer dimensions");
   } else {
+<<<<<<< HEAD   (d72560 Merge "Fit adst/dct's stage range into 32-bit in bd12" into )
     // Overwrite the reference frame buffer.
     vp8_yv12_copy_frame(sd, ref_buf);
+=======
+    int *ref_fb_ptr = &ref_buf->idx;
+
+    // Find an empty frame buffer.
+    const int free_fb = get_free_fb(cm);
+    if (cm->new_fb_idx == INVALID_IDX) {
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Unable to find free frame buffer");
+      return cm->error.error_code;
+    }
+
+    // Decrease ref_count since it will be increased again in
+    // ref_cnt_fb() below.
+    --frame_bufs[free_fb].ref_count;
+
+    // Manage the reference counters and copy image.
+    ref_cnt_fb(frame_bufs, ref_fb_ptr, free_fb);
+    ref_buf->buf = &frame_bufs[*ref_fb_ptr].buf;
+    vp8_yv12_copy_frame(sd, ref_buf->buf);
+>>>>>>> BRANCH (2e0841 Merge "Adjustment to prediction decay.")
   }
 
   return cm->error.error_code;
@@ -308,8 +330,11 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
                         &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   // Find a free frame buffer. Return error if can not find any.
   cm->new_fb_idx = get_free_fb(cm);
-  if (cm->new_fb_idx == INVALID_IDX)
-    return VPX_CODEC_MEM_ERROR;
+  if (cm->new_fb_idx == INVALID_IDX) {
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Unable to find free frame buffer");
+    return cm->error.error_code;
+  }
 
   // Assign a MV array to the frame buffer.
   cm->cur_frame = &pool->frame_bufs[cm->new_fb_idx];
