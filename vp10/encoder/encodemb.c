@@ -65,7 +65,7 @@ typedef struct vp10_token_state {
 } vp10_token_state;
 
 // TODO(jimbankoski): experiment to find optimal RD numbers.
-static const int plane_rd_mult[PLANE_TYPES] = { 4, 2 };
+static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] ={ {9, 7}, {7, 5}, };
 
 #define UPDATE_RD_COST()\
 {\
@@ -114,7 +114,8 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   const int16_t *const scan = so->scan;
   const int16_t *const nb = so->neighbors;
   int next = eob, sz = 0;
-  int64_t rdmult = mb->rdmult * plane_rd_mult[type], rddiv = mb->rddiv;
+  const int64_t rdmult = (mb->rdmult * plane_rd_mult[ref][type]) >> 1;
+  const int64_t rddiv = mb->rddiv;
   int64_t rd_cost0, rd_cost1;
   int rate0, rate1, error0, error1;
   int16_t t0, t1;
@@ -130,10 +131,26 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   assert(eob <= default_eob);
 
   mul = 1 << get_tx_scale(xd, tx_type, tx_size);
-
+#if 0
   /* Now set up a Viterbi trellis to evaluate alternative roundings. */
   if (!ref)
     rdmult = (rdmult * 9) >> 4;
+
+
+  if (ref) {
+    if (type == 0) {
+      rdmult = (mb->rdmult * 7) >> 1;
+    } else {
+      rdmult = (mb->rdmult * 5) >> 1;
+    }
+  } else {
+    if (type == 0) {
+      rdmult = (mb->rdmult * 9) >> 1;
+    } else {
+      rdmult = (mb->rdmult * 7) >> 1;
+    }
+  }
+#endif
 
   /* Initialize the sentinel node of the trellis. */
   tokens[eob][0].rate = 0;
