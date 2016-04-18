@@ -57,9 +57,9 @@ LIBWEBM_PARSER_SRCS = third_party/libwebm/mkvparser/mkvparser.cc \
 # Add compile flags and include path for libwebm sources.
 ifeq ($(CONFIG_WEBM_IO),yes)
   CXXFLAGS     += -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS
+  CXXFLAGS     += -I$(SRC_PATH_BARE)/third_party/libwebm
   INC_PATH-yes += $(SRC_PATH_BARE)/third_party/libwebm
 endif
-
 
 # List of examples to build. UTILS are tools meant for distribution
 # while EXAMPLES demonstrate specific portions of the API.
