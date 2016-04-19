@@ -517,6 +517,62 @@ int adst_vs_flipadst(const VP10_COMP *cpi,
 }
 
 #if CONFIG_EXT_TX
+static void get_horver_variance(int16_t *diff, int stride,
+                                int w, int h,
+                                double *hvar, double *vvar) {
+  // Returns hor/ver variance
+
+  // initializing at 64 because max block size is 64 x 64
+  int i, j;
+  // vmean is the mean of each row, hmean is the mean of each col
+  double vmean[64] = {0}, hmean[64] = {0};
+  // vvers is the mean of each row, hvers is the mean of each col
+  double vvers[64] = {0}, hvers[64] = {0};
+  double row_denom = 1 / w;
+  double col_denom = 1 / h;
+  int vmax = 0, hmax = 0;
+  *hvar = 0, *vvar = 0;
+  // vertical variance is variance of each row
+
+  // get max and mean of rows and cols
+  for (i = 0; i < h; ++i) {
+    for (j = 0; j < w; ++j) {
+      // sum of elements in each row and column
+      vmean[i] += diff[j + i * stride];
+      hmean[j] += diff[j + i * stride];
+      // compute max and average on last iteration
+      if (i == h - 1) {
+        hmean[j] *= col_denom;
+        if (hmean[j] > hmax)
+          hmax = hmean[j];
+      }
+      if (j == w - 1) {
+        vmean[i] *= row_denom;
+        if (vmean[i] > vmax)
+          vmax = vmean[i];
+      }
+    }
+  }
+
+  // compute normalized mean of row/col variances
+  for (i = 0; i < h; ++i) {
+    for (j = 0; j < w; ++j) {
+      vvers[i] += (diff[j + i * stride] - vmean[i]) * (diff[j + i * stride] - vmean[i]);
+      hvers[j] += (diff[j + i * stride] - hmean[j]) * (diff[j + i * stride] - hmean[j]);
+
+      if (i == h - 1) {
+        *hvar += hvers[j];
+      }
+      if (j == w - 1) {
+        *vvar += vvers[i];
+     }
+    }
+  }
+  *hvar *= ((1 / hmax) * row_denom);
+  *vvar *= ((1 / vmax) * col_denom);
+}
+
+
 static void get_horver_correlation(int16_t *diff, int stride,
                                    int w, int h,
                                    double *hcorr, double *vcorr) {
@@ -565,7 +621,8 @@ static void get_horver_correlation(int16_t *diff, int stride,
 int dct_vs_idtx(int16_t *diff, int stride, int w, int h,
                 double *hcorr, double *vcorr) {
   int prune_bitmask = 0;
-  get_horver_correlation(diff, stride, w, h, hcorr, vcorr);
+  //get_horver_correlation(diff, stride, w, h, hcorr, vcorr);
+  get_horver_variance(diff, stride, w, h, hcorr, vcorr);
 
   if (*vcorr > FAST_EXT_TX_CORR_MID + FAST_EXT_TX_CORR_MARGIN)
     prune_bitmask |= 1 << IDTX_1D;
