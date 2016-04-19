@@ -347,9 +347,9 @@ static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
 }
 
 // constants for prune 1 and prune 2 decision boundaries
-#define FAST_EXT_TX_CORR_MID 0.0
+#define FAST_EXT_TX_CORR_MID 0.5
 #define FAST_EXT_TX_EDST_MID 0.1
-#define FAST_EXT_TX_CORR_MARGIN 0.3
+#define FAST_EXT_TX_CORR_MARGIN 0.2
 #define FAST_EXT_TX_EDST_MARGIN 0.5
 
 typedef enum {
@@ -517,66 +517,62 @@ int adst_vs_flipadst(const VP10_COMP *cpi,
 }
 
 #if CONFIG_EXT_TX
-static void get_horver_correlation(int16_t *diff, int stride,
-                                   int w, int h,
-                                   double *hcorr, double *vcorr) {
-  // Returns hor/ver correlation coefficient
-  const int num = (h - 1) * (w - 1);
-  double num_r;
-  int i, j;
-  int64_t xy_sum = 0, xz_sum = 0;
-  int64_t x_sum = 0, y_sum = 0, z_sum = 0;
-  int64_t x2_sum = 0, y2_sum = 0, z2_sum = 0;
-  double x_var_n, y_var_n, z_var_n, xy_var_n, xz_var_n;
-  *hcorr = *vcorr = 1;
+static void get_horver_variance(int16_t *diff, int stride,
+                                int w, int h,
+                                double *hvar, double *vvar) {
+  // Returns hor/ver variance
 
-  assert(num > 0);
-  num_r = 1.0 / num;
-  for (i = 1; i < h; ++i) {
-    for (j = 1; j < w; ++j) {
-      const int16_t x = diff[i * stride + j];
-      const int16_t y = diff[i * stride + j - 1];
-      const int16_t z = diff[(i - 1) * stride + j];
-      xy_sum += x * y;
-      xz_sum += x * z;
-      x_sum += x;
-      y_sum += y;
-      z_sum += z;
-      x2_sum += x * x;
-      y2_sum += y * y;
-      z2_sum += z * z;
+  // initializing at 64 because max block size is 64 x 64
+  int i, j;
+  // vmean is the mean of each row, hmean is the mean of each col
+  double vmean[64] = {0}, hmean[64] = {0};
+  // vvars is the variance of each row, hvars is the variance of each col
+  double vvars[64] = {0}, hvars[64] = {0};
+  double row_denom = 1.0 / w;
+  double col_denom = 1.0 / h;
+  int vmax = 0, hmax = 0;
+  *hvar = 0, *vvar = 0;
+  // vertical variance is variance of each row
+
+  // get max and mean of rows and cols
+  for (i = 0; i < h; ++i) {
+    for (j = 0; j < w; ++j) {
+      // sum of elements in each row and column
+      vmean[i] += diff[j + i * stride];
+      hmean[j] += diff[j + i * stride];
+      // compute max and average on last iteration
+      if (i == h - 1) {
+        hmean[j] *= col_denom;
+      }
+      if (j == w - 1) {
+        vmean[i] *= row_denom;
+      }
     }
   }
-  x_var_n =  x2_sum - (x_sum * x_sum) * num_r;
-  y_var_n =  y2_sum - (y_sum * y_sum) * num_r;
-  z_var_n =  z2_sum - (z_sum * z_sum) * num_r;
-  xy_var_n = xy_sum - (x_sum * y_sum) * num_r;
-  xz_var_n = xz_sum - (x_sum * z_sum) * num_r;
-  if (x_var_n > 0 && y_var_n > 0) {
-    *hcorr = xy_var_n / sqrt(x_var_n * y_var_n);
-    *hcorr = *hcorr < 0 ? 0 : *hcorr;
+
+  // compute normalized mean of row/col variances
+  for (i = 0; i < h; ++i) {
+    for (j = 0; j < w; ++j) {
+      vvars[i] += (diff[j + i * stride] - vmean[i]) *
+                  (diff[j + i * stride] - vmean[i]);
+      hvars[j] += (diff[j + i * stride] - hmean[j]) *
+                  (diff[j + i * stride] - hmean[j]);
+
+      if (i == h - 1) {
+        *hvar += hvars[j];
+        if (hvars[j] > hmax)
+          hmax = hvars[j];
+      }
+      if (j == w - 1) {
+        *vvar += vvars[i];
+        if (vvars[i] > vmax)
+          vmax = vvars[i];
+     }
+    }
   }
-  if (x_var_n > 0 && z_var_n > 0) {
-    *vcorr = xz_var_n / sqrt(x_var_n * z_var_n);
-    *vcorr = *vcorr < 0 ? 0 : *vcorr;
-  }
-}
 
-int dct_vs_idtx(int16_t *diff, int stride, int w, int h,
-                double *hcorr, double *vcorr) {
-  int prune_bitmask = 0;
-  get_horver_correlation(diff, stride, w, h, hcorr, vcorr);
-
-  if (*vcorr > FAST_EXT_TX_CORR_MID + FAST_EXT_TX_CORR_MARGIN)
-    prune_bitmask |= 1 << IDTX_1D;
-  else if (*vcorr < FAST_EXT_TX_CORR_MID - FAST_EXT_TX_CORR_MARGIN)
-    prune_bitmask |= 1 << DCT_1D;
-
-  if (*hcorr > FAST_EXT_TX_CORR_MID + FAST_EXT_TX_CORR_MARGIN)
-    prune_bitmask |= 1 << (IDTX_1D + 8);
-  else if (*hcorr < FAST_EXT_TX_CORR_MID - FAST_EXT_TX_CORR_MARGIN)
-    prune_bitmask |= 1 << (DCT_1D + 8);
-  return prune_bitmask;
+  *hvar *= fabs(hmax) > 0.00001 ? ((1.0 / hmax) * row_denom) : 0.0;
+  *vvar *= fabs(hmax) > 0.00001 ? ((1.0 / vmax) * col_denom) : 0.0;
 }
 
 // Performance drop: 0.5%, Speed improvement: 24%
