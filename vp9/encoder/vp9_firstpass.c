@@ -39,7 +39,7 @@
 #include "vpx_dsp/variance.h"
 
 #define OUTPUT_FPF          0
-#define ARF_STATS_OUTPUT    0
+#define ARF_STATS_OUTPUT    1
 
 #define GROUP_ADAPTIVE_MAXQ 1
 
@@ -2667,6 +2667,71 @@ static int is_skippable_frame(const VP9_COMP *cpi) {
     twopass->stats_in->pcnt_inter - twopass->stats_in->pcnt_motion == 1);
 }
 
+#define BASE_SIZE 2073600.0 // 1920x1080
+#define BASE_ERR_TERM 7.0
+static double get_size_factor(VP9_COMP *cpi) {
+  const double this_size = cpi->initial_width * cpi->initial_height;
+  const double linear_size_factor = pow(BASE_SIZE / this_size, 0.5);
+  return linear_size_factor * BASE_ERR_TERM;
+}
+
+// Returns an overall prediction complexity number for a section based on
+// the first pass stats.
+static double get_section_complexity(VP9_COMP *cpi,
+                                     double section_err, double section_length) {
+
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  VP9_COMMON *const cm = &cpi->common;
+  TWO_PASS *const twopass = &cpi->twopass;
+  const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE)
+                      ? cpi->initial_mbs : cpi->common.MBs;
+  double active_area = 1.0 -
+      ((twopass->total_left_stats.inactive_zone_rows * 2) /
+       ((double)cm->mb_rows * section_length));
+
+  const double err_per_mb =
+      (section_err / section_length) / (num_mbs * active_area);
+  const double error_term = err_per_mb / get_size_factor(cpi);
+  const double power_term =
+      fclamp((double)oxcf->two_pass_vbrbias / 100, 0.1, 1.0);
+  const double clip_complexity = pow(error_term, power_term);
+
+#if ARF_STATS_OUTPUT
+    {
+      FILE *fpfile;
+      fpfile = fopen("arf.stt", "a");
+      fprintf(fpfile, "%7.2lf\n", clip_complexity);
+      fclose(fpfile);
+    }
+#endif
+  return clip_complexity;
+}
+
+// For one specialist rate control mode the rate for the clip or section is
+// adjusted from the nominal target (based on a complexity value derived
+// from the first pass stats).
+// Hard content is allocated an increased rate and easy content is allocated a
+// somewhat lower rate. This is an alternative to CQ mode where there is a
+// fixed minimum quantizer applied to normal visible frames to restrict the
+// number of bits spent on easy content.
+static double get_section_rate_adjustment(VP9_COMP *cpi, double section_err,
+                                          double section_length) {
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+
+  // TODO(paulwilkins): Add in mode based selection
+  if (oxcf->rc_mode != VPX_VBR) {
+    return 1.0;
+  } else {
+    TWO_PASS *const twopass = &cpi->twopass;
+    const double min_rate_factor = (double)oxcf->two_pass_vbrmin_section / 100;
+    const double max_rate_factor = (double)oxcf->two_pass_vbrmax_section / 100;
+    const double clip_complexity =
+        get_section_complexity(cpi, section_err, section_length);
+    return VPXMIN(VPXMAX(min_rate_factor, clip_complexity), max_rate_factor);
+  }
+}
+
+
 void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
@@ -2729,20 +2794,25 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   } else if (cm->current_video_frame == 0 ||
              (lc != NULL && lc->current_video_frame_in_layer == 0)) {
     // Special case code for first frame.
-    const int section_target_bandwidth = (int)(twopass->bits_left /
-                                               frames_left);
+    int section_target_bandwidth;
     const double section_length = twopass->total_left_stats.count;
-    const double section_error =
-      twopass->total_left_stats.coded_error / section_length;
+    const double av_frame_error =
+        twopass->total_left_stats.coded_error / section_length;
     const double section_intra_skip =
-      twopass->total_left_stats.intra_skip_pct / section_length;
+        twopass->total_left_stats.intra_skip_pct / section_length;
     const double section_inactive_zone =
-      (twopass->total_left_stats.inactive_zone_rows * 2) /
-      ((double)cm->mb_rows * section_length);
-    const int tmp_q =
-      get_twopass_worst_quality(cpi, section_error,
-                                section_intra_skip + section_inactive_zone,
-                                section_target_bandwidth, DEFAULT_GRP_WEIGHT);
+        (twopass->total_left_stats.inactive_zone_rows * 2) /
+        ((double)cm->mb_rows * section_length);
+    const double rate_factor =
+        get_section_rate_adjustment(cpi, twopass->total_left_stats.coded_error,
+                                    section_length);
+    int tmp_q;
+
+    twopass->bits_left = (int64_t)(twopass->bits_left * rate_factor);
+    section_target_bandwidth = (int)(twopass->bits_left / frames_left);
+    tmp_q = get_twopass_worst_quality(cpi, av_frame_error,
+              section_intra_skip + section_inactive_zone,
+              section_target_bandwidth, DEFAULT_GRP_WEIGHT);
 
     twopass->active_worst_quality = tmp_q;
     twopass->baseline_active_worst_quality = tmp_q;
@@ -2808,7 +2878,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
       FILE *fpfile;
       fpfile = fopen("arf.stt", "a");
       ++arf_count;
-      fprintf(fpfile, "%10d %10ld %10d %10d %10ld\n",
+      fprintf(fpfile, "%10d %10d %10d %10d %10d\n",
               cm->current_video_frame, rc->frames_till_gf_update_due,
               rc->kf_boost, arf_count, rc->gfu_boost);
 
