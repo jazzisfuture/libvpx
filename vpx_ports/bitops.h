@@ -38,6 +38,11 @@ static INLINE int get_msb(unsigned int n) {
   assert(n != 0);
   return 31 ^ __builtin_clz(n);
 }
+
+static INLINE int vpx_ctz(unsigned int n) {
+  assert(n != 0);
+  return __builtin_ctz(n);
+}
 #elif defined(USE_MSC_INTRINSICS)
 #pragma intrinsic(_BitScanReverse)
 
@@ -45,6 +50,14 @@ static INLINE int get_msb(unsigned int n) {
   unsigned long first_set_bit;
   assert(n != 0);
   _BitScanReverse(&first_set_bit, n);
+  return first_set_bit;
+}
+
+#pragma intrinsic(_BitScanForward)
+static INLINE int vpx_ctz(unsigned int n) {
+  unsigned long first_set_bit;
+  assert(n != 0);
+  _BitScanForward(&first_set_bit, n);
   return first_set_bit;
 }
 #undef USE_MSC_INTRINSICS

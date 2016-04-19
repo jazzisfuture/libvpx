@@ -14,9 +14,11 @@
 // http://arxiv.org/abs/1311.2540v2
 
 #include <assert.h>
+#include <xmmintrin.h>
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/prob.h"
+#include "vpx_ports/bitops.h"
 #include "vpx_ports/mem_ops.h"
 
 #define ANS_DIVIDE_BY_MULTIPLY 1
@@ -276,7 +278,7 @@ struct rans_dec_sym {
 
 // This is now just a boring cdf. It starts with an explicit zero.
 // TODO(aconverse): Remove starting zero.
-typedef uint16_t rans_dec_lut[16];
+typedef DECLARE_ALIGNED(16, uint16_t, rans_dec_lut[16]);
 
 static INLINE void rans_build_cdf_from_pdf(const AnsP10 token_probs[],
                                            rans_dec_lut cdf_tab) {
@@ -365,6 +367,22 @@ static INLINE void fetch_sym(struct rans_dec_sym *out, const rans_dec_lut cdf,
   out->cum_prob = (AnsP10)cdf[i - 1];
 }
 
+static INLINE void fetch_symd(struct rans_dec_sym *out, const rans_dec_lut cdf,
+                              unsigned rem) {
+  const uint16_t *pcdf = cdf;
+  __m128i cdf0 = _mm_load_si128((const __m128i*)pcdf);
+  __m128i cdf1 = _mm_load_si128((const __m128i*)(pcdf + 8));
+  __m128i val = _mm_set1_epi16(rem);
+  __m128i mask0 = _mm_cmplt_epi16(val, cdf0);
+  __m128i mask1 = _mm_cmplt_epi16(val, cdf1);
+  __m128i bmask = _mm_packs_epi16(mask0, mask1);
+  uint32_t a = _mm_movemask_epi8(bmask);
+  int32_t i = vpx_ctz(a);
+  out->val = i - 1;
+  out->prob = cdf[i] - cdf[i - 1];
+  out->cum_prob = cdf[i - 1];
+}
+
 static INLINE int rans_read(struct AnsDecoder *ans,
                             const rans_dec_lut tab) {
   unsigned rem;
@@ -375,7 +393,7 @@ static INLINE int rans_read(struct AnsDecoder *ans,
   }
   quo = ans->state / rans_precision;
   rem = ans->state % rans_precision;
-  fetch_sym(&sym, tab, rem);
+  fetch_symd(&sym, tab, rem);
   ans->state = quo * sym.prob + rem - sym.cum_prob;
   return sym.val;
 }
