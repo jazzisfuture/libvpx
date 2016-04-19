@@ -14,6 +14,7 @@
 // http://arxiv.org/abs/1311.2540v2
 
 #include <assert.h>
+#include <xmmintrin.h>
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/prob.h"
@@ -357,6 +358,22 @@ static INLINE void fetch_sym(struct rans_dec_sym *out, const rans_dec_lut cdf,
   out->cum_prob = (AnsP8)cdf[i - 1];
 }
 
+static INLINE void fetch_symd(struct rans_dec_sym *out, const rans_dec_lut cdf,
+                              AnsP8 rem) {
+  const uint16_t *pcdf = cdf;
+  __m128i cdf0 = _mm_load_si128((const __m128i*)pcdf);
+  __m128i cdf1 = _mm_load_si128((const __m128i*)(pcdf + 8));
+  __m128i val = _mm_set1_epi16(rem);
+  __m128i mask0 = _mm_cmplt_epi16(val, cdf0);
+  __m128i mask1 = _mm_cmplt_epi16(val, cdf1);
+  __m128i bmask = _mm_packs_epi16(mask0, mask1);
+  uint32_t a = _mm_movemask_epi8(bmask);
+  int32_t i = __builtin_ctz(a);
+  out->val = i - 1;
+  out->prob = (AnsP8)(cdf[i] - cdf[i - 1]);
+  out->cum_prob = (AnsP8)cdf[i - 1];
+}
+
 static INLINE int rans_read(struct AnsDecoder *ans,
                             const rans_dec_lut tab) {
   unsigned rem;
@@ -367,7 +384,7 @@ static INLINE int rans_read(struct AnsDecoder *ans,
   }
   quo = ans->state / ans_p8_precision;
   rem = ans->state % ans_p8_precision;
-  fetch_sym(&sym, tab, rem);
+  fetch_symd(&sym, tab, rem);
   ans->state = quo * sym.prob + rem - sym.cum_prob;
   return sym.val;
 }
