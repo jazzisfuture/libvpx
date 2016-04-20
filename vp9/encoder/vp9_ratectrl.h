@@ -163,6 +163,7 @@ typedef struct {
   int high_source_sad;
   int count_last_scene_change;
   int avg_intersize_gfint;
+  int cnt_zeromv_gfint;
 } RATE_CONTROL;
 
 struct VP9_COMP;
@@ -278,6 +279,8 @@ void vp9_set_target_rate(struct VP9_COMP *cpi);
 int vp9_resize_one_pass_cbr(struct VP9_COMP *cpi);
 
 void vp9_avg_source_sad(struct VP9_COMP *cpi);
+
+void vp9_compute_amount_motion(struct VP9_COMP *const cpi);
 
 int vp9_encodedframe_overshoot(struct VP9_COMP *cpi, int frame_size, int *q);
 
