@@ -4322,7 +4322,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   cm->num_global_motion[LAST_FRAME] = 1;
   cm->num_global_motion[GOLDEN_FRAME] = 1;
   cm->num_global_motion[ALTREF_FRAME] = 1;
-  if (cpi->common.frame_type == INTER_FRAME && cpi->Source) {
+  if (cpi->common.frame_type == INTER_FRAME && cpi->Source && cm->show_frame == 0) {
     YV12_BUFFER_CONFIG *ref_buf;
     int num, frame;
     double global_motion[9 * MAX_GLOBAL_MOTION_MODELS];
