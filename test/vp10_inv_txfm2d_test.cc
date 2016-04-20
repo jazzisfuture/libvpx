@@ -76,6 +76,7 @@ TEST(vp10_inv_txfm2d, round_trip) {
           fwd_txfm_cfg_ls[txfm_size_idx][txfm_type_idx];
       const TXFM_2D_CFG* inv_txfm_cfg =
           inv_txfm_cfg_ls[txfm_size_idx][txfm_type_idx];
+      int tx_type = libvpx_test::get_tx_type(fwd_txfm_cfg);
       if (fwd_txfm_cfg != NULL) {
         const Fwd_Txfm2d_Func fwd_txfm_func = fwd_txfm_func_ls[txfm_size_idx];
         const Inv_Txfm2d_Func inv_txfm_func = inv_txfm_func_ls[txfm_size_idx];
@@ -94,7 +95,7 @@ TEST(vp10_inv_txfm2d, round_trip) {
             }
           }
 
-          fwd_txfm_func(input, output, txfm_size, fwd_txfm_cfg, bd);
+          fwd_txfm_func(input, output, txfm_size, tx_type, bd);
           inv_txfm_func(output, ref_input, txfm_size, inv_txfm_cfg, bd);
 
           for (int ni = 0; ni < sqr_txfm_size; ++ni) {
