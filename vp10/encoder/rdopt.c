@@ -384,8 +384,6 @@ static const TX_TYPE_1D vtx_tab[TX_TYPES] = {
 #endif  // CONFIG_EXT_TX
 };
 
-<<<<<<< 1d2d1e752eac60eae0390c07962ee9b91b8af85d
-=======
 static const TX_TYPE_1D htx_tab[TX_TYPES] = {
   DCT_1D,
   DCT_1D,
@@ -407,7 +405,6 @@ static const TX_TYPE_1D htx_tab[TX_TYPES] = {
 #endif  // CONFIG_EXT_TX
 };
 
->>>>>>> Edit ext-tx prune so it isn't doing redundant prunes
 static void get_energy_distribution_fine(const VP10_COMP *cpi,
                                          BLOCK_SIZE bsize,
                                          uint8_t *src, int src_stride,
@@ -670,27 +667,29 @@ static int prune_tx_types(const VP10_COMP *cpi,
                           BLOCK_SIZE bsize,
                           MACROBLOCK *x,
                           MACROBLOCKD *xd, int tx_set) {
+#if CONFIG_EXT_TX
+  const int *tx_set_1D = ext_tx_used_inter_1D[tx_set];
+#else
+  const int tx_set_1D[TX_TYPES_1D] = {0};
+#endif
+
   switch (cpi->sf.tx_type_search) {
     case NO_PRUNE:
       return 0;
       break;
     case PRUNE_ONE :
-      if ((tx_set >= 0) & !(ext_tx_used_inter_1D[tx_set][FLIPADST_1D] &
-          ext_tx_used_inter_1D[tx_set][ADST_1D]))
+      if ((tx_set >= 0) & !(tx_set_1D[FLIPADST_1D] & tx_set_1D[ADST_1D]))
         return 0;
       return prune_one_for_sby(cpi, bsize, x, xd);
       break;
   #if CONFIG_EXT_TX
     case PRUNE_TWO :
-      if ((tx_set >= 0) & !(ext_tx_used_inter_1D[tx_set][FLIPADST_1D] &
-          ext_tx_used_inter_1D[tx_set][ADST_1D])) {
-        if (!(ext_tx_used_inter_1D[tx_set][DCT_1D] &
-              ext_tx_used_inter_1D[tx_set][IDTX_1D]))
+      if ((tx_set >= 0) & !(tx_set_1D[FLIPADST_1D] & tx_set_1D[ADST_1D])) {
+        if (!(tx_set_1D[DCT_1D] & tx_set_1D[IDTX_1D]))
           return 0;
         return prune_two_for_sby(cpi, bsize, x, xd, 0, 1);
       }
-      if ((tx_set >= 0) & !(ext_tx_used_inter_1D[tx_set][DCT_1D] &
-            ext_tx_used_inter_1D[tx_set][IDTX_1D]))
+      if ((tx_set >= 0) & !(tx_set_1D[DCT_1D] & tx_set_1D[IDTX_1D]))
         return prune_two_for_sby(cpi, bsize, x, xd, 1, 0);
       return prune_two_for_sby(cpi, bsize, x, xd, 1, 1);
       break;
@@ -1697,6 +1696,8 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   int prune = 0;
 
   if (is_inter && cpi->sf.tx_type_search > 0)
+    // passing -1 in for tx_type indicates that all 1D
+    // transforms should be considered for pruning
     prune = prune_tx_types(cpi, bs, x, xd, -1);
 
   *distortion = INT64_MAX;
