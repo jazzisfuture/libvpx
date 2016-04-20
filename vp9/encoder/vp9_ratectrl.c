@@ -338,6 +338,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->total_target_bits = 0;
   rc->total_target_vs_actual = 0;
   rc->avg_intersize_gfint = 0;
+  rc->cnt_zeromv_gfint = 0;
 
   rc->frames_since_key = 8;  // Sensible default for first frame.
   rc->this_key_frame_forced = 0;
@@ -1447,6 +1448,9 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
         rc->next_frame_size_selector != rc->frame_size_selector;
     rc->frame_size_selector = rc->next_frame_size_selector;
   }
+
+  if (oxcf->pass == 0 && cpi->oxcf.rc_mode == VPX_VBR)
+    vp9_compute_motion_cnt(cpi);
 }
 
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
@@ -1507,6 +1511,9 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
   if (rc->frames_till_gf_update_due == 0) {
     rc->avg_intersize_gfint =
         rc->avg_intersize_gfint / (rc->baseline_gf_interval + 1);
+    rc->cnt_zeromv_gfint =
+        rc->cnt_zeromv_gfint / (rc->baseline_gf_interval + 1);
+    rc->gfu_boost = DEFAULT_GF_BOOST;  // 2000 == gf_high.
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi->oxcf.pass == 0) {
       vp9_cyclic_refresh_set_golden_update(cpi);
     } else {
@@ -1523,6 +1530,16 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
           rc->avg_frame_qindex[INTER_FRAME] > (7 * rc->worst_quality) >> 3 &&
           rc->avg_intersize_gfint > (5 * rc->avg_frame_bandwidth) >> 1) {
           rc->baseline_gf_interval = (3 * rc->baseline_gf_interval) >> 1;
+      } else if (cm->current_video_frame > 30 &&
+                 rc->cnt_zeromv_gfint < 30) {
+        // Decrease boost and gf interval for high motion case.
+        rc->gfu_boost = gf_low - 1;
+        rc->baseline_gf_interval = VPXMIN(6, rc->baseline_gf_interval >> 1);
+      } else if (cm->current_video_frame > 30 &&
+                 rc->cnt_zeromv_gfint > 88) {
+        // Larger boost and increase gf interval for low motion case.
+        rc->gfu_boost = gf_high + 1;
+        rc->baseline_gf_interval = (3 * rc->baseline_gf_interval) >> 1;
       }
     }
     rc->frames_till_gf_update_due = rc->baseline_gf_interval;
@@ -1535,8 +1552,8 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     }
     cpi->refresh_golden_frame = 1;
     rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
-    rc->gfu_boost = DEFAULT_GF_BOOST;
     rc->avg_intersize_gfint = 0;
+    rc->cnt_zeromv_gfint = 0;
   }
   if (cm->frame_type == KEY_FRAME)
     target = calc_iframe_target_size_one_pass_vbr(cpi);
@@ -2126,10 +2143,35 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
       target = calc_pframe_target_size_one_pass_vbr(cpi);
       vp9_rc_set_frame_target(cpi, target);
       rc->count_last_scene_change = 0;
+      rc->avg_intersize_gfint = 0;
+      rc->cnt_zeromv_gfint = 0;
     } else {
       rc->count_last_scene_change++;
     }
   }
+}
+
+void vp9_compute_motion_cnt(VP9_COMP *const cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  int mi_row, mi_col;
+  MODE_INFO **mi = cm->mi_grid_visible;
+  RATE_CONTROL *const rc = &cpi->rc;
+  const int rows = cm->mi_rows, cols = cm->mi_cols;
+  int cnt_zeromv = 0;
+  for (mi_row = 0; mi_row < rows; mi_row++) {
+    for (mi_col = 0; mi_col < cols; mi_col++) {
+      int16_t abs_mvr = mi[0]->mv[0].as_mv.row >= 0 ?
+          mi[0]->mv[0].as_mv.row : -1 * mi[0]->mv[0].as_mv.row;
+      int16_t abs_mvc = mi[0]->mv[0].as_mv.col >= 0 ?
+          mi[0]->mv[0].as_mv.col : -1 * mi[0]->mv[0].as_mv.col;
+      // Calculate the zero/small motion of the background.
+      if (abs_mvr <= 16 && abs_mvc <= 16)
+        cnt_zeromv++;
+      mi++;
+    }
+    mi += 8;
+  }
+  rc->cnt_zeromv_gfint += 100 * cnt_zeromv / (rows * cols);
 }
 
 // Test if encoded frame will significantly overshoot the target bitrate, and
