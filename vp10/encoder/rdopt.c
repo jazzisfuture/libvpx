@@ -349,8 +349,8 @@ static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
 // constants for prune 1 and prune 2 decision boundaries
 #define FAST_EXT_TX_CORR_MID 0.0
 #define FAST_EXT_TX_EDST_MID 0.1
-#define FAST_EXT_TX_CORR_MARGIN 0.3
-#define FAST_EXT_TX_EDST_MARGIN 0.5
+#define FAST_EXT_TX_CORR_MARGIN 0.5
+#define FAST_EXT_TX_EDST_MARGIN 0.3
 
 typedef enum {
   DCT_1D = 0,
@@ -583,7 +583,8 @@ int dct_vs_idtx(int16_t *diff, int stride, int w, int h,
 static int prune_two_for_sby(const VP10_COMP *cpi,
                              BLOCK_SIZE bsize,
                              MACROBLOCK *x,
-                             MACROBLOCKD *xd) {
+                             MACROBLOCKD *xd, int adst_flip,
+                             int dct_idtx) {
   struct macroblock_plane *const p = &x->plane[0];
   struct macroblockd_plane *const pd = &xd->plane[0];
   const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
@@ -591,10 +592,16 @@ static int prune_two_for_sby(const VP10_COMP *cpi,
   const int bh = 4 << (b_height_log2_lookup[bs]);
   double hdist[3] = {0, 0, 0}, vdist[3] = {0, 0, 0};
   double hcorr, vcorr;
+  int prune = 0;
   vp10_subtract_plane(x, bsize, 0);
-  return adst_vs_flipadst(cpi, bsize, p->src.buf, p->src.stride, pd->dst.buf,
-                          pd->dst.stride, hdist, vdist) |
-         dct_vs_idtx(p->src_diff, bw, bw, bh, &hcorr, &vcorr);
+
+  if (adst_flip)
+    prune |= adst_vs_flipadst(cpi, bsize, p->src.buf, p->src.stride,
+                              pd->dst.buf, pd->dst.stride, hdist, vdist);
+  if (dct_idtx)
+    prune |= dct_vs_idtx(p->src_diff, bw, bw, bh, &hcorr, &vcorr);
+
+  return prune;
 }
 
 #endif  // CONFIG_EXT_TX
@@ -615,17 +622,25 @@ static int prune_one_for_sby(const VP10_COMP *cpi,
 static int prune_tx_types(const VP10_COMP *cpi,
                           BLOCK_SIZE bsize,
                           MACROBLOCK *x,
-                          MACROBLOCKD *xd) {
+                          MACROBLOCKD *xd, int tx_set) {
+  // Don't run pruning functions when tx_set is 0, which indicates
+  // that the only transform to try is DCT_DCT i.e. no pruning necessary
+  if (!tx_set)
+    return 0;
   switch (cpi->sf.tx_type_search) {
     case NO_PRUNE:
       return 0;
       break;
     case PRUNE_ONE :
+      if (tx_set == 3)
+        return 0;
       return prune_one_for_sby(cpi, bsize, x, xd);
       break;
   #if CONFIG_EXT_TX
     case PRUNE_TWO :
-      return prune_two_for_sby(cpi, bsize, x, xd);
+      if (tx_set == 3)
+        return prune_two_for_sby(cpi, bsize, x, xd, 0, 1);
+      return prune_two_for_sby(cpi, bsize, x, xd, 1, 1);
       break;
   #endif
   }
@@ -1506,13 +1521,19 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
   int ext_tx_set;
 #endif  // CONFIG_EXT_TX
 
-  if (is_inter && cpi->sf.tx_type_search > 0)
-    prune = prune_tx_types(cpi, bs, x, xd);
   mbmi->tx_size = VPXMIN(max_tx_size, largest_tx_size);
 
 #if CONFIG_EXT_TX
   ext_tx_set = get_ext_tx_set(mbmi->tx_size, bs, is_inter);
+#endif  // CONFIG_EXT_TX
 
+  if (is_inter && cpi->sf.tx_type_search > 0)
+#if CONFIG_EXT_TX
+    prune = prune_tx_types(cpi, bs, x, xd, ext_tx_set);
+#else
+    prune = prune_tx_types(cpi, bs, x, xd, 0);
+#endif
+#if CONFIG_EXT_TX
   if (get_ext_tx_types(mbmi->tx_size, bs, is_inter) > 1 &&
       !xd->lossless[mbmi->segment_id]) {
     for (tx_type = 0; tx_type < TX_TYPES; ++tx_type) {
@@ -1649,7 +1670,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
   int prune = 0;
 
   if (is_inter && cpi->sf.tx_type_search > 0)
-    prune = prune_tx_types(cpi, bs, x, xd);
+    prune = prune_tx_types(cpi, bs, x, xd, 1);
 
   *distortion = INT64_MAX;
   *rate       = INT_MAX;
@@ -3241,7 +3262,11 @@ static void select_tx_type_yrd(const VP10_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_EXT_TX
 
   if (is_inter && cpi->sf.tx_type_search > 0)
-    prune = prune_tx_types(cpi, bsize, x, xd);
+#if CONFIG_EXT_TX
+    prune = prune_tx_types(cpi, bsize, x, xd, ext_tx_set);
+#else
+    prune = prune_tx_types(cpi, bsize, x, xd, 0);
+#endif
 
   *distortion = INT64_MAX;
   *rate       = INT_MAX;
