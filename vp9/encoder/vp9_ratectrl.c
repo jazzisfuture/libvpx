@@ -1334,6 +1334,26 @@ static void update_golden_frame_stats(VP9_COMP *cpi) {
   }
 }
 
+static void update_zeromv_cnt(VP9_COMP *const cpi) {
+  const VP9_COMMON *const cm = &cpi->common;
+  MODE_INFO **mi = cm->mi_grid_visible;
+  int mi_row, mi_col;
+  for (mi_row = 0; mi_row < cm->mi_rows; mi_row++) {
+    for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
+      int block_index = mi_row * cm->mi_cols + mi_col;
+      MV mv = mi[0]->mv[0].as_mv;
+      if (is_inter_block(mi[0]) && abs(mv.row) < 8 && abs(mv.col) < 8) {
+        if (cpi->consec_zero_mv[block_index] < 255)
+          cpi->consec_zero_mv[block_index]++;
+      } else {
+        cpi->consec_zero_mv[block_index] = 0;
+      }
+      mi++;
+    }
+    mi += 8;
+  }
+}
+
 void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   const VP9_COMMON *const cm = &cpi->common;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
@@ -1447,6 +1467,9 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
         rc->next_frame_size_selector != rc->frame_size_selector;
     rc->frame_size_selector = rc->next_frame_size_selector;
   }
+
+  if (oxcf->pass == 0)
+    update_zeromv_cnt(cpi);
 }
 
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
