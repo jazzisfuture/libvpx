@@ -216,19 +216,19 @@ x86_simd_caps(void) {
 unsigned __int64 __rdtsc(void);
 #pragma intrinsic(__rdtsc)
 #endif
-static INLINE unsigned int
+static INLINE uint64_t
 x86_readtsc(void) {
 #if defined(__GNUC__) && __GNUC__
-  unsigned int tsc;
-  __asm__ __volatile__("rdtsc\n\t":"=a"(tsc):);
-  return tsc;
+  uint32_t hi, lo;
+  __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
+  return ((uint64_t)hi << 32) | lo;
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-  unsigned int tsc;
-  asm volatile("rdtsc\n\t":"=a"(tsc):);
-  return tsc;
+  uint_t hi, lo;
+  asm volatile("rdtsc" : "=a"(lo), "=d"(hi));
+  return ((uint64_t)hi << 32) | lo;
 #else
 #if ARCH_X86_64
-  return (unsigned int)__rdtsc();
+  return (uint64_t)__rdtsc();
 #else
   __asm  rdtsc;
 #endif
