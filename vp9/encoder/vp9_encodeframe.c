@@ -780,7 +780,6 @@ static int choose_partitioning(VP9_COMP *cpi,
 #if !CONFIG_VP9_HIGHBITDEPTH
     if (cpi->use_skin_detection && !low_res && (mi_col >= 8 &&
         mi_col + 8 < cm->mi_cols && mi_row >= 8 && mi_row + 8 < cm->mi_rows)) {
-      CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
       int bl_index1, bl_index2, bl_index3;
       int num_16x16_skin = 0;
       int num_16x16_nonskin = 0;
@@ -803,10 +802,10 @@ static int choose_partitioning(VP9_COMP *cpi,
           bl_index1 = bl_index + 1;
           bl_index2 = bl_index + cm->mi_cols;
           bl_index3 = bl_index2 + 1;
-          consec_zeromv = VPXMIN(cr->consec_zero_mv[bl_index],
-                                 VPXMIN(cr->consec_zero_mv[bl_index1],
-                                 VPXMIN(cr->consec_zero_mv[bl_index2],
-                                 cr->consec_zero_mv[bl_index3])));
+          consec_zeromv = VPXMIN(cpi->consec_zero_mv[bl_index],
+                                 VPXMIN(cpi->consec_zero_mv[bl_index1],
+                                 VPXMIN(cpi->consec_zero_mv[bl_index2],
+                                 cpi->consec_zero_mv[bl_index3])));
           is_skin = vp9_compute_skin_block(ysignal,
                                            usignal,
                                            vsignal,
