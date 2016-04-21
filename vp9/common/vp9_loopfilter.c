@@ -1588,6 +1588,8 @@ void vp9_loop_filter_frame(YV12_BUFFER_CONFIG *frame,
 }
 
 // Used by the encoder to build the loopfilter masks.
+// TODO(slavarnway): Do the encoder the same way the decoder does it and
+//                   build the masks in line as part of the encode process.
 void vp9_build_mask_frame(VP9_COMMON *cm, int frame_filter_level,
                           int partial_frame) {
   int start_mi_row, end_mi_row, mi_rows_to_filter;
