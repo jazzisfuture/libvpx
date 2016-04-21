@@ -269,6 +269,7 @@ void vp9_cyclic_refresh_update_sb_postencode(VP9_COMP *const cpi,
             clamp(cm->base_qindex + cr->qindex_delta[mi->segment_id],
                   0, MAXQ),
             cr->last_coded_q_map[map_offset]);
+      }
       // Update the consecutive zero/low_mv count.
       if (is_inter_block(mi) && (abs(mv.row) < 8 && abs(mv.col) < 8)) {
         if (cr->consec_zero_mv[map_offset] < 255)
@@ -277,7 +278,6 @@ void vp9_cyclic_refresh_update_sb_postencode(VP9_COMP *const cpi,
         cr->consec_zero_mv[map_offset] = 0;
       }
     }
-  }
 }
 
 // Update the actual number of blocks that were applied the segment delta q.
