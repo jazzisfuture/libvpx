@@ -18,6 +18,9 @@
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
+#if CONFIG_EXT_INTRA
+#include "vpx_ports/system_state.h"
+#endif  // CONFIG_EXT_INTRA
 #include "vpx_ports/vpx_once.h"
 
 #include "vp10/common/reconintra.h"
@@ -676,11 +679,20 @@ static void dr_predictor(uint8_t *dst, ptrdiff_t stride, TX_SIZE tx_size,
   int dx, dy;
   int bs = 4 << tx_size;
 
+  // vpx_clear_system_state() is needed before floating-point operations.
+  // To-Do (huisu): convert directional prediction into integer operations.
+  vpx_clear_system_state();
+
   if (angle != 90 && angle != 180)
     t = tan(angle * PI / 180.0);
+
   if (angle > 0 && angle < 90) {
     dx = -((int)(256 / t));
     dy = 1;
+    if (!(dx < 0)) {
+          printf("\n dx is %d, t is %f, angle is %d, tan is %f\n",
+                 dx, t, angle, tan(angle * PI / 180.0));
+        }
     dr_prediction_z1(dst, stride, bs, above, left, dx, dy, filter_type);
   } else if (angle > 90 && angle < 180) {
     t = -t;
