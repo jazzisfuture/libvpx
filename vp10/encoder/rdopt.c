@@ -5965,6 +5965,158 @@ static INLINE void restore_dst_buf(MACROBLOCKD *xd,
   }
 }
 
+#if CONFIG_OBMC
+static void single_motion_search_obmc(VP10_COMP *cpi, MACROBLOCK *x,
+                                      BLOCK_SIZE bsize, int mi_row, int mi_col,
+                                      const int* wsrc, int wsrc_stride,
+                                      const int* mask, int mask_stride,
+#if CONFIG_EXT_INTER
+                                      int ref_idx,
+                                      int mv_idx,
+#endif  // CONFIG_EXT_INTER
+                                      int_mv *tmp_mv, int_mv pred_mv,
+                                      int *rate_mv) {
+  MACROBLOCKD *xd = &x->e_mbd;
+  const VP10_COMMON *cm = &cpi->common;
+  MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
+  struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0, 0}};
+  int bestsme = INT_MAX;
+  int step_param;
+  int sadpb = x->sadperbit16;
+  MV mvp_full;
+#if CONFIG_EXT_INTER
+  int ref = mbmi->ref_frame[ref_idx];
+  MV ref_mv = x->mbmi_ext->ref_mvs[ref][mv_idx].as_mv;
+#else
+  int ref = mbmi->ref_frame[0];
+  MV ref_mv = x->mbmi_ext->ref_mvs[ref][0].as_mv;
+  int ref_idx = 0;
+#endif  // CONFIG_EXT_INTER
+
+  int tmp_col_min = x->mv_col_min;
+  int tmp_col_max = x->mv_col_max;
+  int tmp_row_min = x->mv_row_min;
+  int tmp_row_max = x->mv_row_max;
+
+  const YV12_BUFFER_CONFIG *scaled_ref_frame = vp10_get_scaled_ref_frame(cpi,
+                                                                         ref);
+
+/*  MV pred_mv[3];
+  pred_mv[0] = x->mbmi_ext->ref_mvs[ref][0].as_mv;
+  pred_mv[1] = x->mbmi_ext->ref_mvs[ref][1].as_mv;
+  pred_mv[2] = x->pred_mv[ref];*/
+
+#if CONFIG_REF_MV
+  vp10_set_mvcost(x, ref);
+#endif
+
+  if (scaled_ref_frame) {
+    int i;
+    // Swap out the reference frame for a version that's been scaled to
+    // match the resolution of the current frame, allowing the existing
+    // motion search code to be used without additional modifications.
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      backup_yv12[i] = xd->plane[i].pre[ref_idx];
+
+    vp10_setup_pre_planes(xd, ref_idx, scaled_ref_frame, mi_row, mi_col, NULL);
+  }
+
+  vp10_set_mv_search_range(x, &ref_mv);
+
+  // Work out the size of the first step in the mv step search.
+  // 0 here is maximum length first step. 1 is VPXMAX >> 1 etc.
+  if (cpi->sf.mv.auto_mv_step_size && cm->show_frame) {
+    // Take wtd average of the step_params based on the last frame's
+    // max mv magnitude and that based on the best ref mvs of the current
+    // block for the given reference.
+    step_param = (vp10_init_search_range(x->max_mv_context[ref]) +
+                    cpi->mv_step_param) / 2;
+  } else {
+    step_param = cpi->mv_step_param;
+  }
+
+  if (cpi->sf.adaptive_motion_search && bsize < cm->sb_size) {
+    int boffset =  2 * (b_width_log2_lookup[cm->sb_size] -
+         VPXMIN(b_height_log2_lookup[bsize], b_width_log2_lookup[bsize]));
+    step_param = VPXMAX(step_param, boffset);
+  }
+
+  if (cpi->sf.adaptive_motion_search) {
+    int bwl = b_width_log2_lookup[bsize];
+    int bhl = b_height_log2_lookup[bsize];
+    int tlevel = x->pred_mv_sad[ref] >> (bwl + bhl + 4);
+
+    if (tlevel < 5)
+      step_param += 2;
+
+    // prev_mv_sad is not setup for dynamically scaled frames.
+    if (cpi->oxcf.resize_mode != RESIZE_DYNAMIC) {
+      int i;
+      for (i = LAST_FRAME; i <= ALTREF_FRAME && cm->show_frame; ++i) {
+        if ((x->pred_mv_sad[ref] >> 3) > x->pred_mv_sad[i]) {
+          x->pred_mv[ref].row = 0;
+          x->pred_mv[ref].col = 0;
+          tmp_mv->as_int = INVALID_MV;
+
+          if (scaled_ref_frame) {
+            int i;
+            for (i = 0; i < MAX_MB_PLANE; ++i)
+              xd->plane[i].pre[ref_idx] = backup_yv12[i];
+          }
+          return;
+        }
+      }
+    }
+  }
+
+  //mvp_full = pred_mv[x->mv_best_ref_index[ref]];
+  mvp_full = pred_mv.as_mv;
+  mvp_full.col >>= 3;
+  mvp_full.row >>= 3;
+
+  bestsme = vp10_obmc_full_pixel_diamond(cpi, x, wsrc, wsrc_stride,
+                                         mask, mask_stride,
+                                         &mvp_full, step_param, sadpb,
+                                         MAX_MVSEARCH_STEPS - 1 - step_param,
+                                         1, &cpi->fn_ptr[bsize],
+                                         &ref_mv, &tmp_mv->as_mv, ref_idx);
+
+  x->mv_col_min = tmp_col_min;
+  x->mv_col_max = tmp_col_max;
+  x->mv_row_min = tmp_row_min;
+  x->mv_row_max = tmp_row_max;
+
+  if (bestsme < INT_MAX) {
+    int dis;
+    vp10_find_best_obmc_sub_pixel_tree_up(cpi, x,
+                                          wsrc, wsrc_stride,
+                                          mask, mask_stride,
+                                          mi_row, mi_col,
+                                          &tmp_mv->as_mv, &ref_mv,
+                                          cm->allow_high_precision_mv,
+                                          x->errorperbit,
+                                          &cpi->fn_ptr[bsize],
+                                          cpi->sf.mv.subpel_force_stop,
+                                          cpi->sf.mv.subpel_iters_per_step,
+                                          x->nmvjointcost, x->mvcost,
+                                          &dis, &x->pred_sse[ref],
+                                          ref_idx,
+                                          cpi->sf.use_upsampled_references);
+  }
+  *rate_mv = vp10_mv_bit_cost(&tmp_mv->as_mv, &ref_mv,
+                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+
+  if (cpi->sf.adaptive_motion_search)
+    x->pred_mv[ref] = tmp_mv->as_mv;
+
+  if (scaled_ref_frame) {
+    int i;
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      xd->plane[i].pre[ref_idx] = backup_yv12[i];
+  }
+}
+#endif  // CONFIG_OBMC
+
 #if CONFIG_EXT_INTER
 static void do_masked_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
                                     const uint8_t *mask, int mask_stride,
@@ -6300,6 +6452,10 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                  int dst_stride1[3],
                                  uint8_t *dst_buf2[3],
                                  int dst_stride2[3],
+                                 int *wsrc[3],
+                                 int wsrc_strides[3],
+                                 int *mask2d[3],
+                                 int mask2d_strides[3],
 #endif  // CONFIG_OBMC
 #if CONFIG_EXT_INTER
                                  int_mv single_newmvs[2][MAX_REF_FRAMES],
@@ -7225,9 +7381,29 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   best_rd = INT64_MAX;
   for (mbmi->obmc = 0; mbmi->obmc <= allow_obmc; mbmi->obmc++) {
     int64_t tmp_rd, tmp_dist;
-    int tmp_rate;
+    int tmp_rate, tmp_rate2 = rate2_nocoeff;
 
     if (mbmi->obmc) {
+      if (!is_comp_pred && mbmi->mode == NEWMV) {
+        int_mv tmp_mv;
+        int_mv pred_mv;
+        int tmp_rate_mv = 0;
+
+        pred_mv.as_int = mbmi->mv[0].as_int;
+        single_motion_search_obmc(cpi, x, bsize, mi_row, mi_col,
+                                  wsrc[0], wsrc_strides[0],
+                                  mask2d[0], mask2d_strides[0],
+#if CONFIG_EXT_INTER
+                                  0, mv_idx,
+#endif  // CONFIG_EXT_INTER
+                                  &tmp_mv, pred_mv, &tmp_rate_mv);
+        mbmi->mv[0].as_int = tmp_mv.as_int;
+        if (discount_newmv_test(cpi, this_mode, tmp_mv, mode_mv, refs[0])) {
+          tmp_rate_mv = VPXMAX((tmp_rate_mv / NEW_MV_DISCOUNT_FACTOR), 1);
+        }
+        tmp_rate2 = rate2_nocoeff - rate_mv + tmp_rate_mv;
+        vp10_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+      }
 #if CONFIG_EXT_INTER
       *mbmi = best_bmc_mbmi;
       assert(!mbmi->use_wedge_interinter);
@@ -7258,7 +7434,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_INTER
     *rate2 = mbmi->obmc ? rate2_bmc_nocoeff : rate2_nocoeff;
 #else
-    *rate2 = rate2_nocoeff;
+    *rate2 = tmp_rate2;
 #endif  // CONFIG_EXT_INTER
     if (allow_obmc)
       *rate2 += cpi->obmc_cost[bsize][mbmi->obmc];
@@ -7767,9 +7943,16 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   DECLARE_ALIGNED(16, uint8_t, tmp_buf1[MAX_MB_PLANE * MAX_SB_SQUARE]);
   DECLARE_ALIGNED(16, uint8_t, tmp_buf2[MAX_MB_PLANE * MAX_SB_SQUARE]);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+  DECLARE_ALIGNED(16, int, weighted_src_buf[MAX_MB_PLANE * MAX_SB_SQUARE]);
+  DECLARE_ALIGNED(16, int, mask2d_buf[MAX_MB_PLANE * MAX_SB_SQUARE]);
   uint8_t *dst_buf1[MAX_MB_PLANE], *dst_buf2[MAX_MB_PLANE];
   int dst_stride1[MAX_MB_PLANE] = {MAX_SB_SIZE, MAX_SB_SIZE, MAX_SB_SIZE};
   int dst_stride2[MAX_MB_PLANE] = {MAX_SB_SIZE, MAX_SB_SIZE, MAX_SB_SIZE};
+  int *weighted_src_bufs[MAX_MB_PLANE], *mask2d_bufs[MAX_MB_PLANE];
+  int weighted_src_strides[MAX_MB_PLANE] =
+                                  {MAX_SB_SIZE, MAX_SB_SIZE, MAX_SB_SIZE};
+  int mask2d_strides[MAX_MB_PLANE] =
+                                  {MAX_SB_SIZE, MAX_SB_SIZE, MAX_SB_SIZE};
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -7791,6 +7974,12 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #if CONFIG_VP9_HIGHBITDEPTH
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+  weighted_src_bufs[0] = weighted_src_buf;
+  weighted_src_bufs[1] = weighted_src_buf + MAX_SB_SQUARE;
+  weighted_src_bufs[2] = weighted_src_buf + 2 * MAX_SB_SQUARE;
+  mask2d_bufs[0] = mask2d_buf;
+  mask2d_bufs[1] = mask2d_buf + MAX_SB_SQUARE;
+  mask2d_bufs[2] = mask2d_buf + 2 * MAX_SB_SQUARE;
 #endif  // CONFIG_OBMC
 
   vp10_zero(best_mbmode);
@@ -7871,6 +8060,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   vp10_build_prediction_by_left_preds(cm, xd, mi_row, mi_col, dst_buf2,
                                       dst_stride2);
   vp10_setup_dst_planes(xd->plane, get_frame_new_buffer(cm), mi_row, mi_col);
+  calc_target_weighted_pred(cm, x, xd, mi_row, mi_col,
+                            dst_buf1, dst_stride1, dst_buf2, dst_stride2,
+                            mask2d_bufs, mask2d_strides,
+                            weighted_src_bufs, weighted_src_strides);
 #endif  // CONFIG_OBMC
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
@@ -8412,6 +8605,8 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #if CONFIG_OBMC
                                   dst_buf1, dst_stride1,
                                   dst_buf2, dst_stride2,
+                                  weighted_src_bufs, weighted_src_strides,
+                                  mask2d_bufs, mask2d_strides,
 #endif  // CONFIG_OBMC
 #if CONFIG_EXT_INTER
                                   single_newmvs,
@@ -10002,3 +10197,199 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
   store_coding_context(x, ctx, best_ref_index,
                        best_pred_diff, 0);
 }
+
+#if CONFIG_OBMC
+void calc_target_weighted_pred(VP10_COMMON *cm,
+                               MACROBLOCK *x,
+                               MACROBLOCKD *xd,
+                               int mi_row, int mi_col,
+                               uint8_t *above_buf[MAX_MB_PLANE],
+                               int above_stride[MAX_MB_PLANE],
+                               uint8_t *left_buf[MAX_MB_PLANE],
+                               int left_stride[MAX_MB_PLANE],
+                               int *mask_buf[MAX_MB_PLANE],
+                               int mask_stride[MAX_MB_PLANE],
+                               int *weighted_src_buf[MAX_MB_PLANE],
+                               int weighted_src_stride[MAX_MB_PLANE]) {
+  const TileInfo *const tile = &xd->tile;
+  BLOCK_SIZE bsize = xd->mi[0]->mbmi.sb_type;
+  int plane, row, col, i, mi_step;
+  int bw = 8 * xd->n8_w;
+  int bh = 8 * xd->n8_h;
+
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    int *dst = weighted_src_buf[plane];
+    int dst_stride = weighted_src_stride[plane];
+    int *mask2d = mask_buf[plane];
+    for (row = 0; row < bh; ++row) {
+      for (col = 0; col < bw; ++col) {
+        dst[col] = 0;
+        mask2d[col] = 64;
+      }
+      dst += dst_stride;
+      mask2d += mask_stride[plane];
+    }
+  }
+
+  // handle above row
+  if (mi_row > 0) {
+    for (i = 0; i < VPXMIN(xd->n8_w, cm->mi_cols - mi_col); i += mi_step) {
+      int mi_row_offset = -1;
+      int mi_col_offset = i;
+      MODE_INFO *above_mi = xd->mi[mi_col_offset +
+                                   mi_row_offset * xd->mi_stride];
+      MB_MODE_INFO *above_mbmi = &above_mi->mbmi;
+      int overlap = num_4x4_blocks_high_lookup[bsize] << 1;
+
+      mi_step = VPXMIN(xd->n8_w,
+                       num_8x8_blocks_wide_lookup[above_mbmi->sb_type]);
+
+      if (!is_neighbor_overlappable(above_mbmi))
+        continue;
+
+      for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+        const struct macroblockd_plane *pd = &xd->plane[plane];
+        int bw = (mi_step * MI_SIZE) >> pd->subsampling_x;
+        int bh = overlap >> pd->subsampling_y;
+        int row, col;
+        int dst_stride = weighted_src_stride[plane];
+        int *dst = weighted_src_buf[plane] +
+                       (i * MI_SIZE >> pd->subsampling_x);
+        int tmp_stride = above_stride[plane];
+        uint8_t *tmp = above_buf[plane] + (i * MI_SIZE >> pd->subsampling_x);
+        int mask2d_stride = mask_stride[plane];
+        int *mask2d = mask_buf[plane] + (i * MI_SIZE >> pd->subsampling_x);
+        const uint8_t *mask1d[2];
+
+        setup_obmc_mask(bh, mask1d);
+
+        for (row = 0; row < bh; ++row) {
+          for (col = 0; col < bw; ++col) {
+            dst[col] = mask1d[1][row] * tmp[col];
+            mask2d[col] = mask1d[0][row];
+          }
+          dst += dst_stride;
+          tmp += tmp_stride;
+          mask2d += mask2d_stride;
+        }
+      }
+    }  // each mi in the above row
+  }
+
+  //handle left column
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    int *dst = weighted_src_buf[plane];
+    int dst_stride = weighted_src_stride[plane];
+    int *mask2d = mask_buf[plane];
+    for (row = 0; row < bh; ++row) {
+      for (col = 0; col < bw; ++col) {
+        dst[col] = dst[col] << 6;
+        mask2d[col] = mask2d[col] << 6;
+      }
+      dst += dst_stride;
+      mask2d += mask_stride[plane];
+    }
+  }
+
+  if (mi_col > 0 && (mi_col - 1 >= tile->mi_col_start) &&
+      (mi_col - 1) < tile->mi_col_end) {
+    for (i = 0; i < VPXMIN(xd->n8_h, cm->mi_rows - mi_row); i += mi_step) {
+      int mi_row_offset = i;
+      int mi_col_offset = -1;
+      int overlap = num_4x4_blocks_wide_lookup[bsize] << 1;
+      MODE_INFO *left_mi = xd->mi[mi_col_offset +
+                                  mi_row_offset * xd->mi_stride];
+      MB_MODE_INFO *left_mbmi = &left_mi->mbmi;
+
+      mi_step = VPXMIN(xd->n8_h,
+                       num_8x8_blocks_high_lookup[left_mbmi->sb_type]);
+
+      if (!is_neighbor_overlappable(left_mbmi))
+        continue;
+
+      for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+        const struct macroblockd_plane *pd = &xd->plane[plane];
+        int bw = overlap >> pd->subsampling_x;
+        int bh = (mi_step * MI_SIZE) >> pd->subsampling_y;
+        int row, col;
+        int dst_stride = weighted_src_stride[plane];
+        int *dst = weighted_src_buf[plane] +
+                       (i * MI_SIZE * dst_stride >> pd->subsampling_y);
+        int tmp_stride = left_stride[plane];
+        uint8_t *tmp = left_buf[plane] +
+                       (i * MI_SIZE * tmp_stride >> pd->subsampling_y);
+        int mask2d_stride = mask_stride[plane];
+        int *mask2d = mask_buf[plane] +
+                      (i * MI_SIZE * mask2d_stride >> pd->subsampling_y);
+        const uint8_t *mask[2];
+
+        setup_obmc_mask(bw, mask);
+
+        for (row = 0; row < bh; ++row) {
+          for (col = 0; col < bw; ++col) {
+            dst[col] = (dst[col] >> 6) * mask[0][col] +
+                       (tmp[col] << 6) * mask[1][col];
+            mask2d[col] = (mask2d[col] >> 6) * mask[0][col];
+          }
+          dst += dst_stride;
+          tmp += tmp_stride;
+          mask2d += mask2d_stride;
+        }
+      }
+    }  // each mi in the left column
+  }
+
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    int *dst = weighted_src_buf[plane];
+    int dst_stride = weighted_src_stride[plane];
+    uint8_t *src = x->plane[plane].src.buf;
+    int src_stride = x->plane[plane].src.stride;
+
+    for (row = 0; row < bh; ++row) {
+      for (col = 0; col < bw; ++col)
+        dst[col] = (src[col] << 12) - dst[col];
+      dst += dst_stride;
+      src += src_stride;
+    }
+  }
+
+/*  for (row = 0; row < bh; ++row) {
+    for (col = 0; col < bw; ++col)
+      printf("%d ", weighted_src_buf[0][col + row * weighted_src_stride[0]]);
+    printf("\n");
+  }
+  printf("\n");
+  for (row = 0; row < bh; ++row) {
+    for (col = 0; col < bw; ++col)
+      printf("%d ", mask_buf[0][col + row * mask_stride[0]]);
+    printf("\n");
+  }
+  printf("\n");
+  for (row = 0; row < bh; ++row) {
+    for (col = 0; col < bw; ++col)
+      printf("%d ",
+             weighted_src_buf[0][col + row * weighted_src_stride[0]]/
+             mask_buf[0][col + row * mask_stride[0]]);
+    printf("\n");
+  }
+  printf("\n");
+  for (row = 0; row < bh; ++row) {
+    for (col = 0; col < bw; ++col)
+      printf("%d ", x->plane[0].src.buf[col + row * x->plane[0].src.stride]);
+    printf("\n");
+  }
+  printf("=============================\n");*/
+/*  for (row = 0; row < bh; ++row) {
+    for (col = 0; col < bw; ++col)
+      if (weighted_src_buf[0][col + row * weighted_src_stride[0]]/
+             mask_buf[0][col + row * mask_stride[0]] > 255)
+        printf("wrong %d %d %d %d (%d %d %d %d)\n",
+               weighted_src_buf[0][col + row * weighted_src_stride[0]],
+               mask_buf[0][col + row * mask_stride[0]],
+               weighted_src_buf[0][col + row * weighted_src_stride[0]]/
+                            mask_buf[0][col + row * mask_stride[0]],
+               x->plane[0].src.buf[col + row * x->plane[0].src.stride],
+               bw, bh, row, col);
+  }*/
+}
+#endif  // CONFIG_OBMC

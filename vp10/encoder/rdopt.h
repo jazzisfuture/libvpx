@@ -108,6 +108,21 @@ static INLINE const YV12_BUFFER_CONFIG *get_upsampled_ref(VP10_COMP *cpi,
   return &cpi->upsampled_ref_bufs[cpi->upsampled_ref_idx[ref_idx]].buf;
 }
 
+#if CONFIG_OBMC
+void calc_target_weighted_pred(VP10_COMMON *cm,
+                               MACROBLOCK *x,
+                               MACROBLOCKD *xd,
+                               int mi_row, int mi_col,
+                               uint8_t *above_buf[MAX_MB_PLANE],
+                               int above_stride[MAX_MB_PLANE],
+                               uint8_t *left_buf[MAX_MB_PLANE],
+                               int left_stride[MAX_MB_PLANE],
+                               int *mask_buf[MAX_MB_PLANE],
+                               int mask_stride[MAX_MB_PLANE],
+                               int *weighted_src_buf[MAX_MB_PLANE],
+                               int weighted_src_stride[MAX_MB_PLANE]);
+#endif  // CONFIG_OBMC
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
