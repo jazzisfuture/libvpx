@@ -47,8 +47,7 @@ int file_is_webm(struct WebmInputContext *webm_ctx,
 // Parameters:
 //      webm_ctx - WebmInputContext object
 //      buffer - pointer where the frame data will be filled.
-//      bytes_in_buffer - pointer to buffer size.
-//      buffer_size - unused TODO(vigneshv): remove this
+//      buffer_size - pointer to buffer size.
 // Return values:
 //      0 - Success
 //      1 - End of Stream
@@ -57,7 +56,6 @@ int file_is_webm(struct WebmInputContext *webm_ctx,
 // this file.
 int webm_read_frame(struct WebmInputContext *webm_ctx,
                     uint8_t **buffer,
-                    size_t *bytes_in_buffer,
                     size_t *buffer_size);
 
 // Guesses the frame rate of the input file based on the container timestamps.
