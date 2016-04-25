@@ -9,6 +9,9 @@
  */
 
 #include <math.h>
+
+#include "vpx_ports/system_state.h"
+
 #include "vp10/common/blockd.h"
 
 PREDICTION_MODE vp10_left_block_mode(const MODE_INFO *cur_mi,
@@ -146,8 +149,12 @@ int pick_intra_filter(int angle) {
   if (angle > 90 && angle < 180) {
     return 1;
   } else {
-    double t = tan(angle * PI / 180.0);
+    double t;
     double n;
+
+    vpx_clear_system_state();
+
+    t = tan(angle * PI / 180.0);
     if (angle < 90)
       t = 1 / t;
     n = floor(t);

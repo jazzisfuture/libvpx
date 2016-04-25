@@ -2527,6 +2527,8 @@ static void angle_estimation(const uint8_t *src, int src_stride,
   double angle, dx, dy;
   double temp, divisor = 0;
 
+  vpx_clear_system_state();
+
   for (i = 0; i < DIRECTIONAL_MODES; ++i)
     hist[i] = 0;
 
@@ -2571,6 +2573,8 @@ static void highbd_angle_estimation(const uint8_t *src8, int src_stride,
   double angle, dx, dy;
   double temp, divisor = 0;
   uint16_t *src = CONVERT_TO_SHORTPTR(src8);
+
+  vpx_clear_system_state();
 
   for (i = 0; i < DIRECTIONAL_MODES; ++i)
     hist[i] = 0;

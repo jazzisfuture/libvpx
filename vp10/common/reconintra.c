@@ -12,6 +12,7 @@
 
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
+#include "vpx_ports/system_state.h"
 
 #if CONFIG_VP9_HIGHBITDEPTH
 #include "vpx_dsp/vpx_dsp_common.h"
@@ -676,6 +677,8 @@ static void dr_predictor(uint8_t *dst, ptrdiff_t stride, TX_SIZE tx_size,
   int dx, dy;
   int bs = 4 << tx_size;
 
+  vpx_clear_system_state();
+
   if (angle != 90 && angle != 180)
     t = tan(angle * PI / 180.0);
   if (angle > 0 && angle < 90) {
@@ -1010,6 +1013,8 @@ static void highbd_dr_predictor(uint16_t *dst, ptrdiff_t stride, int bs,
                                 int angle, int bd, INTRA_FILTER filter) {
   double t = 0;
   int dx, dy;
+
+  vpx_clear_system_state();
 
   if (angle != 90 && angle != 180)
     t = tan(angle * PI / 180.0);
