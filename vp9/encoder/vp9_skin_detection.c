@@ -88,7 +88,7 @@ int vp9_compute_skin_block(const uint8_t *y, const uint8_t *u, const uint8_t *v,
                            int stride, int strideuv, int bsize,
                            int consec_zeromv, int curr_motion_magn) {
   // No skin if block has been zero/small motion for long consecutive time.
-  if (consec_zeromv > 80 && curr_motion_magn == 0) {
+  if (consec_zeromv > 60 && curr_motion_magn == 0) {
     return 0;
   } else {
     int motion = 1;
