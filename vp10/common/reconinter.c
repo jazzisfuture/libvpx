@@ -15,6 +15,9 @@
 
 #include "vpx/vpx_integer.h"
 
+#include "vpx_dsp/variance.h"
+#include "./vpx_dsp_rtcd.h"
+
 #include "vp10/common/blockd.h"
 #include "vp10/common/reconinter.h"
 #include "vp10/common/reconintra.h"
@@ -2340,3 +2343,117 @@ void vp10_build_wedge_inter_predictor_from_buf(
   }
 }
 #endif  // CONFIG_EXT_INTER
+
+static vpx_variance_fn_t variance_function(BLOCK_SIZE bsize) {
+  // get variance function to use for energy computation
+#if CONFIG_VP9_HIGHBITDEPTH
+  switch (bsize) {
+    case BLOCK_4X4  :
+      return vpx_highbd_8_variance4x4;
+      break;
+    case BLOCK_4X8 :
+      return vpx_highbd_8_variance4x8;
+      break;
+    case BLOCK_8X4 :
+      return vpx_highbd_8_variance8x4;
+      break;
+    case BLOCK_8X8 :
+      return vpx_highbd_8_variance8x8;
+      break;
+    case BLOCK_8X16 :
+      return vpx_highbd_8_variance8x16;
+      break;
+    case BLOCK_16X8 :
+      return vpx_highbd_8_variance16x8;
+      break;
+    case BLOCK_16X16 :
+      return vpx_highbd_8_variance16x16;
+      break;
+    case BLOCK_16X32 :
+      return vpx_highbd_8_variance16x32;
+      break;
+    case BLOCK_32X16 :
+      return vpx_highbd_8_variance32x16;
+      break;
+    case BLOCK_32X32 :
+      return vpx_highbd_8_variance32x32;
+      break;
+    case BLOCK_32X64 :
+      return vpx_highbd_8_variance32x64;
+      break;
+    case BLOCK_64X32 :
+      return vpx_highbd_8_variance64x32;
+      break;
+    case BLOCK_64X64 :
+      return vpx_highbd_8_variance64x64;
+      break;
+#if CONFIG_EXT_PARTITION
+    case BLOCK_64X128 :
+      return vpx_highbd_8_variance64x128;
+      break;
+    case BLOCK_128X64 :
+      return vpx_highbd_8_variance128x64;
+      break;
+    case BLOCK_128X128 :
+      return vpx_highbd_8_variance128x128;
+      break;
+#endif  // CONFIG_EXT_PARTITION
+  }
+#else
+  switch (bsize) {
+    case BLOCK_4X4  :
+      return vpx_variance4x4;
+      break;
+    case BLOCK_4X8 :
+      return vpx_variance4x8;
+      break;
+    case BLOCK_8X4 :
+      return vpx_variance8x4;
+      break;
+    case BLOCK_8X8 :
+      return vpx_variance8x8;
+      break;
+    case BLOCK_8X16 :
+      return vpx_variance8x16;
+      break;
+    case BLOCK_16X8 :
+      return vpx_variance16x8;
+      break;
+    case BLOCK_16X16 :
+      return vpx_variance16x16;
+      break;
+    case BLOCK_16X32 :
+      return vpx_variance16x32;
+      break;
+    case BLOCK_32X16 :
+      return vpx_variance32x16;
+      break;
+    case BLOCK_32X32 :
+      return vpx_variance32x32;
+      break;
+    case BLOCK_32X64 :
+      return vpx_variance32x64;
+      break;
+    case BLOCK_64X32 :
+      return vpx_variance64x32;
+      break;
+    case BLOCK_64X64 :
+      return vpx_variance64x64;
+      break;
+#if CONFIG_EXT_PARTITION
+    case BLOCK_64X128 :
+      return vpx_variance64x128;
+      break;
+    case BLOCK_128X64 :
+      return vpx_variance128x64;
+      break;
+    case BLOCK_128X128 :
+      return vpx_variance128x128;
+      break;
+#endif  // CONFIG_EXT_PARTITION
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  assert(0);
+  return NULL;
+}
