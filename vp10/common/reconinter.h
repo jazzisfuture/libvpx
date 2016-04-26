@@ -472,3 +472,9 @@ void vp10_build_wedge_inter_predictor_from_buf(
 #endif
 
 #endif  // VP10_COMMON_RECONINTER_H_
+
+void get_energy_distribution(const VP10_COMMON *cm, BLOCK_SIZE bsize,
+                             uint8_t *src, int src_stride, uint8_t *dst,
+                             int dst_stride, double *hordist,
+                             double *verdist);
+

@@ -15,6 +15,9 @@
 
 #include "vpx/vpx_integer.h"
 
+#include "vpx_dsp/variance.h"
+#include "./vpx_dsp_rtcd.h"
+
 #include "vp10/common/blockd.h"
 #include "vp10/common/reconinter.h"
 #include "vp10/common/reconintra.h"
@@ -2340,3 +2343,226 @@ void vp10_build_wedge_inter_predictor_from_buf(
   }
 }
 #endif  // CONFIG_EXT_INTER
+
+static vpx_variance_fn_t variance_function(BLOCK_SIZE bsize) {
+  // get variance function to use for energy computation
+#if CONFIG_VP9_HIGHBITDEPTH
+  switch (bsize) {
+    case BLOCK_4X4  :
+      return vpx_highbd_8_variance4x4;
+      break;
+    case BLOCK_4X8 :
+      return vpx_highbd_8_variance4x8;
+      break;
+    case BLOCK_8X4 :
+      return vpx_highbd_8_variance8x4;
+      break;
+    case BLOCK_8X8 :
+      return vpx_highbd_8_variance8x8;
+      break;
+    case BLOCK_8X16 :
+      return vpx_highbd_8_variance8x16;
+      break;
+    case BLOCK_16X8 :
+      return vpx_highbd_8_variance16x8;
+      break;
+    case BLOCK_16X16 :
+      return vpx_highbd_8_variance16x16;
+      break;
+    case BLOCK_16X32 :
+      return vpx_highbd_8_variance16x32;
+      break;
+    case BLOCK_32X16 :
+      return vpx_highbd_8_variance32x16;
+      break;
+    case BLOCK_32X32 :
+      return vpx_highbd_8_variance32x32;
+      break;
+    case BLOCK_32X64 :
+      return vpx_highbd_8_variance32x64;
+      break;
+    case BLOCK_64X32 :
+      return vpx_highbd_8_variance64x32;
+      break;
+    case BLOCK_64X64 :
+      return vpx_highbd_8_variance64x64;
+      break;
+#if CONFIG_EXT_PARTITION
+    case BLOCK_64X128 :
+      return vpx_highbd_8_variance64x128;
+      break;
+    case BLOCK_128X64 :
+      return vpx_highbd_8_variance128x64;
+      break;
+    case BLOCK_128X128 :
+      return vpx_highbd_8_variance128x128;
+      break;
+#endif  // CONFIG_EXT_PARTITION
+  }
+#else
+  switch (bsize) {
+    case BLOCK_4X4  :
+      return vpx_variance4x4;
+      break;
+    case BLOCK_4X8 :
+      return vpx_variance4x8;
+      break;
+    case BLOCK_8X4 :
+      return vpx_variance8x4;
+      break;
+    case BLOCK_8X8 :
+      return vpx_variance8x8;
+      break;
+    case BLOCK_8X16 :
+      return vpx_variance8x16;
+      break;
+    case BLOCK_16X8 :
+      return vpx_variance16x8;
+      break;
+    case BLOCK_16X16 :
+      return vpx_variance16x16;
+      break;
+    case BLOCK_16X32 :
+      return vpx_variance16x32;
+      break;
+    case BLOCK_32X16 :
+      return vpx_variance32x16;
+      break;
+    case BLOCK_32X32 :
+      return vpx_variance32x32;
+      break;
+    case BLOCK_32X64 :
+      return vpx_variance32x64;
+      break;
+    case BLOCK_64X32 :
+      return vpx_variance64x32;
+      break;
+    case BLOCK_64X64 :
+      return vpx_variance64x64;
+      break;
+#if CONFIG_EXT_PARTITION
+    case BLOCK_64X128 :
+      return vpx_variance64x128;
+      break;
+    case BLOCK_128X64 :
+      return vpx_variance128x64;
+      break;
+    case BLOCK_128X128 :
+      return vpx_variance128x128;
+      break;
+#endif  // CONFIG_EXT_PARTITION
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  assert(0);
+  return NULL;
+}
+
+void get_energy_distribution(const VP10_COMMON *cm, BLOCK_SIZE bsize,
+                             uint8_t *src, int src_stride, uint8_t *dst,
+                             int dst_stride, double *hordist,
+                             double *verdist) {
+  int bw = 4 << (b_width_log2_lookup[bsize]);
+  int bh = 4 << (b_height_log2_lookup[bsize]);
+  vpx_variance_fn_t vf;
+  unsigned int esq[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  double total = 0;
+
+  if (bsize - BLOCK_16X16 < 0) {
+    int i, j, index;
+    int w_shift = bw == 8 ? 1 : 2;
+    int h_shift = bh == 8 ? 1 : 2;
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (cm->use_highbitdepth) {
+      uint16_t *src16 = CONVERT_TO_SHORTPTR(src);
+      uint16_t *dst16 = CONVERT_TO_SHORTPTR(dst);
+      for (i = 0; i < bh; ++i)
+        for (j = 0; j < bw; ++j) {
+          index = (j >> w_shift) + ((i >> h_shift) << 2);
+          esq[index] += (src16[j + i * src_stride] -
+                        dst16[j + i * dst_stride]) *
+                        (src16[j + i * src_stride] -
+                        dst16[j + i * dst_stride]);
+        }
+    } else {
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+      for (i = 0; i < bh; ++i)
+        for (j = 0; j < bw; ++j) {
+          index = (j >> w_shift) + ((i >> h_shift) << 2);
+          esq[index] += (src[j + i * src_stride] - dst[j + i * dst_stride]) *
+                        (src[j + i * src_stride] - dst[j + i * dst_stride]);
+        }
+#if CONFIG_VP9_HIGHBITDEPTH
+    }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  } else {
+    vf = variance_function(bsize - BLOCK_16X16);
+    vf(src, src_stride,
+       dst, dst_stride, &esq[0]);
+    vf(src + bw / 4, src_stride,
+       dst + bw / 4, dst_stride, &esq[1]);
+    vf(src + bw / 2, src_stride,
+       dst + bw / 2, dst_stride, &esq[2]);
+    vf(src + 3 * bw / 4, src_stride,
+       dst + 3 * bw / 4, dst_stride, &esq[3]);
+    src += bh / 4 * src_stride;
+    dst += bh / 4 * dst_stride;
+
+    vf(src, src_stride,
+       dst, dst_stride, &esq[4]);
+    vf(src + bw / 4, src_stride,
+       dst + bw / 4, dst_stride, &esq[5]);
+    vf(src + bw / 2, src_stride,
+       dst + bw / 2, dst_stride, &esq[6]);
+    vf(src + 3 * bw / 4, src_stride,
+       dst + 3 * bw / 4, dst_stride, &esq[7]);
+    src += bh / 4 * src_stride;
+    dst += bh / 4 * dst_stride;
+
+    vf(src, src_stride,
+       dst, dst_stride, &esq[8]);
+    vf(src + bw / 4, src_stride,
+       dst + bw / 4, dst_stride, &esq[9]);
+    vf(src + bw / 2, src_stride,
+       dst + bw / 2, dst_stride, &esq[10]);
+    vf(src + 3 * bw / 4, src_stride,
+       dst + 3 * bw / 4, dst_stride, &esq[11]);
+    src += bh / 4 * src_stride;
+    dst += bh / 4 * dst_stride;
+
+    vf(src, src_stride,
+       dst, dst_stride, &esq[12]);
+    vf(src + bw / 4, src_stride,
+       dst + bw / 4, dst_stride, &esq[13]);
+    vf(src + bw / 2, src_stride,
+       dst + bw / 2, dst_stride, &esq[14]);
+    vf(src + 3 * bw / 4, src_stride,
+       dst + 3 * bw / 4, dst_stride, &esq[15]);
+  }
+  total = esq[0] + esq[1] + esq[2] + esq[3] +
+          esq[4] + esq[5] + esq[6] + esq[7] +
+          esq[8] + esq[9] + esq[10] + esq[11] +
+          esq[12] + esq[13] + esq[14] + esq[15];
+  if (total > 0) {
+    const double e_recip = 1.0 / total;
+    hordist[0] = ((double)esq[0] + (double)esq[4] + (double)esq[8] +
+                  (double)esq[12]) * e_recip;
+    hordist[1] = ((double)esq[1] + (double)esq[5] + (double)esq[9] +
+                  (double)esq[13]) * e_recip;
+    hordist[2] = ((double)esq[2] + (double)esq[6] + (double)esq[10] +
+                  (double)esq[14]) * e_recip;
+    verdist[0] = ((double)esq[0] + (double)esq[1] + (double)esq[2] +
+                  (double)esq[3]) * e_recip;
+    verdist[1] = ((double)esq[4] + (double)esq[5] + (double)esq[6] +
+                  (double)esq[7]) * e_recip;
+    verdist[2] = ((double)esq[8] + (double)esq[9] + (double)esq[10] +
+                  (double)esq[11]) * e_recip;
+  } else {
+    hordist[0] = verdist[0] = 0.25;
+    hordist[1] = verdist[1] = 0.25;
+    hordist[2] = verdist[2] = 0.25;
+  }
+  (void) cm;
+}
+
