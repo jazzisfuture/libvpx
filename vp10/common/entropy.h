@@ -231,6 +231,43 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
 struct frame_contexts;
 void vp10_coef_pareto_cdfs(struct frame_contexts *fc);
 #endif  // CONFIG_ANS
+
+#if CONFIG_ENTROPY
+#define COEF_COUNT_SAT_BITS                   5
+#define COEF_MAX_UPDATE_FACTOR_BITS           7
+#define COEF_COUNT_SAT_AFTER_KEY_BITS         5
+#define COEF_MAX_UPDATE_FACTOR_AFTER_KEY_BITS 7
+#define MODE_MV_COUNT_SAT_BITS                5
+#define MODE_MV_MAX_UPDATE_FACTOR_BITS        7
+
+static INLINE vpx_prob vp10_merge_probs(vpx_prob pre_prob,
+                                        const unsigned int ct[2],
+                                        unsigned int count_sat_bits,
+                                        unsigned int max_update_factor_bits) {
+  const vpx_prob prob = get_binary_prob(ct[0], ct[1]);
+  const unsigned int count =
+      VPXMIN(ct[0] + ct[1], (unsigned int)(1 << count_sat_bits));
+  const unsigned int factor =
+      count << (max_update_factor_bits - count_sat_bits);
+  return weighted_prob(pre_prob, prob, factor);
+}
+
+static INLINE vpx_prob vp10_mode_mv_merge_probs(vpx_prob pre_prob,
+                                                const unsigned int ct[2]) {
+  return vp10_merge_probs(pre_prob, ct,
+                          MODE_MV_COUNT_SAT_BITS, MODE_MV_MAX_UPDATE_FACTOR_BITS);
+  // return mode_mv_merge_probs(pre_prob, ct);
+}
+
+#else
+
+#define COEF_COUNT_SAT 24
+#define COEF_MAX_UPDATE_FACTOR 112
+#define COEF_COUNT_SAT_AFTER_KEY 24
+#define COEF_MAX_UPDATE_FACTOR_AFTER_KEY 128
+
+#endif  // CONFIG_ENTROPY
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
