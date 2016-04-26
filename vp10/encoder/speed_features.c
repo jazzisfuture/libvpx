@@ -181,6 +181,11 @@ static void set_good_speed_feature(VP10_COMP *cpi, VP10_COMMON *cm,
 #if CONFIG_EXT_TX
     sf->tx_type_search = PRUNE_TWO;
 #endif
+#if CONFIG_REF_MV
+    //TODO(geza): temporarily turn this off for ref-mv to fix tests.
+    //            Investigate and reimplement skip_recode better to enable this.
+    sf->allow_skip_recode = 0;
+#endif  // CONFIG_REF_MV
   }
 
   if (speed >= 3) {
