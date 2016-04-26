@@ -476,12 +476,9 @@ static INLINE int get_ext_tx_types(TX_SIZE tx_size, BLOCK_SIZE bs,
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_EXT_INTRA
-#define ALLOW_FILTER_INTRA_MODES 1
+#define ALLOW_FILTER_INTRA_MODES 0
 #define ANGLE_STEP 3
 #define MAX_ANGLE_DELTAS 3
-#define ANGLE_FAST_SEARCH 1
-#define ANGLE_SKIP_THRESH 0.10
-#define FILTER_FAST_SEARCH 1
 
 extern const int16_t dr_intra_derivative[270][2];
 
