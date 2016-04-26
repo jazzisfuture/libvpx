@@ -191,7 +191,13 @@ static int get_cost(unsigned int ct[][2], vpx_prob p, int n) {
     total_ct[0] += ct[i][0];
     total_ct[1] += ct[i][1];
     if (i < n)
-      p = merge_probs(p0, total_ct, 24, 112);
+#if CONFIG_ENTROPY
+      p = vp10_merge_probs(p0, total_ct,
+                           COEF_COUNT_SAT_BITS, COEF_MAX_UPDATE_FACTOR_BITS);
+#else
+      p = vp10_merge_probs(p0, total_ct,
+                           COEF_COUNT_SAT, COEF_MAX_UPDATE_FACTOR);
+#endif
   }
 
   return cost;
