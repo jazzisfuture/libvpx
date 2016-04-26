@@ -931,7 +931,7 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   xd->corrupted |= vpx_reader_has_error(r);
 
   if (cm->lf.filter_level) {
-    vp9_build_mask(cm, mi, mi_row, mi_col, bw, bh);
+    vp9_build_mask(cm, mi, mi_row, mi_col, bw, bh, 1);
   }
 }
 

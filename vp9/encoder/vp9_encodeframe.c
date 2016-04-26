@@ -1849,6 +1849,8 @@ static void encode_b_rt(VP9_COMP *cpi, ThreadData *td,
                         int output_enabled, BLOCK_SIZE bsize,
                         PICK_MODE_CONTEXT *ctx) {
   MACROBLOCK *const x = &td->mb;
+  MACROBLOCKD *const xd = &x->e_mbd;
+
   set_offsets(cpi, tile, x, mi_row, mi_col, bsize);
   update_state_rt(cpi, td, ctx, mi_row, mi_col, bsize);
 
@@ -1857,6 +1859,8 @@ static void encode_b_rt(VP9_COMP *cpi, ThreadData *td,
 
   (*tp)->token = EOSB_TOKEN;
   (*tp)++;
+
+  vp9_build_mask(&cpi->common, xd->mi[0], mi_row, mi_col, -1, -1, 0);
 }
 
 static void encode_sb_rt(VP9_COMP *cpi, ThreadData *td,
@@ -4065,6 +4069,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   x->quant_fp = cpi->sf.use_quant_fp;
   vp9_zero(x->skip_txfm);
+
+  vp9_reset_lfm(cm);
+
   if (sf->use_nonrd_pick_mode) {
     // Initialize internal buffer pointers for rtc coding, where non-RD
     // mode decision is used and hence no buffer pointer swap needed.
