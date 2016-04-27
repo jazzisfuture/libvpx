@@ -2171,7 +2171,30 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi,
   RATE_CONTROL *const rc = &cpi->rc;
   int thresh_qp = 3 * (rc->worst_quality >> 2);
   int thresh_rate = rc->avg_frame_bandwidth * 10;
-  if (cm->base_qindex < thresh_qp &&
+  if (cpi->oxcf.rc_mode == VPX_VBR) {
+    thresh_qp =  5 * rc->avg_frame_qindex[INTER_FRAME] >> 3;
+    thresh_rate = rc->avg_frame_bandwidth << 4;
+  }
+  // Allow for re-encode if the encoded frame size is much larger than
+  // avg_frame_bandwidth and current Q used is lower than the average Q.
+  if (cpi->oxcf.rc_mode == VPX_VBR) {
+    if (cm->base_qindex < thresh_qp &&
+        frame_size > thresh_rate) {
+      // Select new qp. Basis for Q on gf is rc->avg_frame_qindex, so
+      // use a larger value here for new Q.
+      int qmin = VPXMIN(cm->base_qindex + 10, rc->avg_frame_qindex[INTER_FRAME]);
+      int qbase = VPXMIN(rc->avg_frame_qindex[INTER_FRAME] << 1,
+                         rc->worst_quality);
+      *q = get_gf_active_quality(rc, qbase, cm->bit_depth);
+      *q = VPXMAX(qmin, VPXMIN(*q,
+                  (cm->base_qindex + rc->avg_frame_qindex[INTER_FRAME]) >> 1));
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+  if (cpi->oxcf.rc_mode == VPX_CBR &&
+      cm->base_qindex < thresh_qp &&
       frame_size > thresh_rate) {
     double rate_correction_factor =
         cpi->rc.rate_correction_factors[INTER_NORMAL];
