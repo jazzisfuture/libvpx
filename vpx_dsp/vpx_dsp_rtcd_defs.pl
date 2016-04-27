@@ -1170,6 +1170,14 @@ add_proto qw/void vpx_sad4x4x4d/, "const uint8_t *src_ptr, int src_stride, const
 specialize qw/vpx_sad4x4x4d msa/, "$sse2_x86inc";
 
 #
+# Post Processing
+#
+if (vpx_config("CONFIG_POSTPROC") eq "yes" || vpx_config("CONFIG_VP9_POSTPROC") eq "yes") {
+    add_proto qw/void vpx_plane_add_noise/, "uint8_t *Start, char *noise, char blackclamp[16], char whiteclamp[16], char bothclamp[16], unsigned int Width, unsigned int Height, int Pitch";
+    specialize qw/vpx_plane_add_noise mmx sse2 msa/;
+}
+
+#
 # Structured Similarity (SSIM)
 #
 if (vpx_config("CONFIG_INTERNAL_STATS") eq "yes") {
