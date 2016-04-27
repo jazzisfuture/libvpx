@@ -828,18 +828,18 @@ static void set_tile_info(VP10_COMP *cpi) {
 
 #if CONFIG_EXT_TILE
 #if CONFIG_EXT_PARTITION
-  if (cpi->oxcf.superblock_size != VPX_SUPERBLOCK_SIZE_64X64) {
-    cm->tile_width  = clamp(cpi->oxcf.tile_columns, 1, 32);
-    cm->tile_height = clamp(cpi->oxcf.tile_rows, 1, 32);
-    cm->tile_width  <<= MAX_MIB_SIZE_LOG2;
-    cm->tile_height <<= MAX_MIB_SIZE_LOG2;
-  } else
-#endif  // CONFIG_EXT_PARTITION
-  {
+  if (cpi->oxcf.superblock_size == VPX_SUPERBLOCK_SIZE_64X64) {
     cm->tile_width  = clamp(cpi->oxcf.tile_columns, 1, 64);
     cm->tile_height = clamp(cpi->oxcf.tile_rows, 1, 64);
     cm->tile_width  <<= MAX_MIB_SIZE_LOG2 - 1;
     cm->tile_height <<= MAX_MIB_SIZE_LOG2 - 1;
+  } else
+#endif  // CONFIG_EXT_PARTITION
+  {
+    cm->tile_width  = clamp(cpi->oxcf.tile_columns, 1, 32);
+    cm->tile_height = clamp(cpi->oxcf.tile_rows, 1, 32);
+    cm->tile_width  <<= MAX_MIB_SIZE_LOG2;
+    cm->tile_height <<= MAX_MIB_SIZE_LOG2;
   }
 
   cm->tile_width  = VPXMIN(cm->tile_width, cm->mi_cols);
