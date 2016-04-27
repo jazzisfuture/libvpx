@@ -6741,9 +6741,9 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     rd = RDCOST(x->rdmult, x->rddiv, rs + rate_mv + rate_sum, dist_sum);
     best_rd_nowedge = rd;
     mbmi->use_wedge_interinter = 1;
-    rs = get_wedge_bits(bsize) * 256 +
+    rs = get_wedge_bits_lookup[bsize] * 256 +
         vp10_cost_bit(cm->fc->wedge_interinter_prob[bsize], 1);
-    wedge_types = (1 << get_wedge_bits(bsize));
+    wedge_types = (1 << get_wedge_bits_lookup[bsize]);
     if (have_newmv_in_inter_mode(this_mode)) {
       int_mv tmp_mv[2];
       int rate_mvs[2], tmp_rate_mv = 0;
@@ -6862,7 +6862,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     pred_exists = 0;
     tmp_rd = VPXMIN(best_rd_wedge, best_rd_nowedge);
     if (mbmi->use_wedge_interinter)
-      *compmode_wedge_cost = get_wedge_bits(bsize) * 256 +
+      *compmode_wedge_cost = get_wedge_bits_lookup[bsize] * 256 +
           vp10_cost_bit(cm->fc->wedge_interinter_prob[bsize], 1);
     else
       *compmode_wedge_cost =
@@ -6943,7 +6943,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
     rmode = interintra_mode_cost[mbmi->interintra_mode];
     if (is_interintra_wedge_used(bsize)) {
-      wedge_bits = get_wedge_bits(bsize);
+      wedge_bits = get_wedge_bits_lookup[bsize];
       vp10_combine_interintra(xd, bsize, 0, tmp_buf, MAX_SB_SIZE,
                               intrapred, MAX_SB_SIZE);
       vp10_combine_interintra(xd, bsize, 1,
@@ -6965,7 +6965,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       wedge_types = (1 << wedge_bits);
       for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
         mbmi->interintra_wedge_index = wedge_index;
-        mbmi->interintra_uv_wedge_index = wedge_index;
         vp10_combine_interintra(xd, bsize, 0,
                                 tmp_buf, MAX_SB_SIZE,
                                 intrapred, MAX_SB_SIZE);
@@ -6990,7 +6989,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         const uint8_t* mask = vp10_get_soft_mask(
             best_wedge_index ^ 1, bsize, bh, bw);
         mbmi->interintra_wedge_index = best_wedge_index;
-        mbmi->interintra_uv_wedge_index = best_wedge_index;
         do_masked_motion_search(cpi, x, mask, MASK_MASTER_STRIDE, bsize,
                                 mi_row, mi_col, &tmp_mv, &tmp_rate_mv,
                                 0, mv_idx);
@@ -7013,7 +7011,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       if (best_interintra_rd_wedge < best_interintra_rd_nowedge) {
         mbmi->use_wedge_interintra = 1;
         mbmi->interintra_wedge_index = best_wedge_index;
-        mbmi->interintra_uv_wedge_index = best_wedge_index;
         best_interintra_rd = best_interintra_rd_wedge;
         mbmi->mv[0].as_int = tmp_mv.as_int;
         *rate2 += tmp_rate_mv - rate_mv;
@@ -7034,7 +7031,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       *compmode_interintra_cost += vp10_cost_bit(
           cm->fc->wedge_interintra_prob[bsize], mbmi->use_wedge_interintra);
       if (mbmi->use_wedge_interintra) {
-        *compmode_interintra_cost += get_wedge_bits(bsize) * 256;
+        *compmode_interintra_cost += get_wedge_bits_lookup[bsize] * 256;
       }
     }
   } else if (is_interintra_allowed(mbmi)) {

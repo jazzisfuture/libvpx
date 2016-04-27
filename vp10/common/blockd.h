@@ -59,25 +59,39 @@ static INLINE int is_inter_mode(PREDICTION_MODE mode) {
 #define WEDGE_NONE       -1
 #define WEDGE_WEIGHT_BITS 6
 
+static const int get_wedge_bits_lookup[BLOCK_SIZES] = {
+  0,
+  0,
+  0,
+  WEDGE_BITS_SML,
+  WEDGE_BITS_MED,
+  WEDGE_BITS_MED,
+  WEDGE_BITS_MED,
+  WEDGE_BITS_MED,
+  WEDGE_BITS_MED,
+  WEDGE_BITS_MED,
+  WEDGE_BITS_BIG,
+  WEDGE_BITS_BIG,
+  WEDGE_BITS_BIG,
+#if CONFIG_EXT_PARTITION
+  WEDGE_BITS_BIG,
+  WEDGE_BITS_BIG,
+  WEDGE_BITS_BIG,
+#endif  // CONFIG_EXT_PARTITION
+};
+
 static INLINE int get_wedge_bits(BLOCK_SIZE sb_type) {
-  if (sb_type < BLOCK_8X8)
-    return 0;
-  if (sb_type <= BLOCK_8X8)
-    return WEDGE_BITS_SML;
-  else if (sb_type <= BLOCK_32X32)
-    return WEDGE_BITS_MED;
-  else
-    return WEDGE_BITS_BIG;
+  return get_wedge_bits_lookup[sb_type];
 }
 
 static INLINE int is_interinter_wedge_used(BLOCK_SIZE sb_type) {
   (void) sb_type;
-  return get_wedge_bits(sb_type) > 0;
+  return get_wedge_bits_lookup[sb_type] > 0;
 }
 
 static INLINE int is_interintra_wedge_used(BLOCK_SIZE sb_type) {
   (void) sb_type;
-  return 0;  // get_wedge_bits(sb_type) > 0;
+  return 0;  // get_wedge_bits_lookup[sb_type] > 0;
 }
 
 static INLINE int is_inter_singleref_mode(PREDICTION_MODE mode) {
@@ -205,9 +219,10 @@ typedef struct {
   // TODO(debargha): Consolidate these flags
   int use_wedge_interintra;
   int interintra_wedge_index;
-  int interintra_uv_wedge_index;
+  int interintra_wedge_sign;
   int use_wedge_interinter;
   int interinter_wedge_index;
+  int interinter_wedge_sign;
 #endif  // CONFIG_EXT_INTER
 
 #if CONFIG_OBMC
