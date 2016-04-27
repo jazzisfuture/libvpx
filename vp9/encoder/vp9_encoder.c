@@ -3498,14 +3498,17 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   // transform / motion compensation build reconstruction frame
   vp9_encode_frame(cpi);
 
-  // Check if we should drop this frame because of high overshoot.
-  // Only for frames where high temporal-source sad is detected.
+  // Check if we should re-encode this frame because of high overshoot.
+  // Different conditions are used for CBR and VBR mode.
+  // CBR-screen-content case: only where high temporal-source sad is detected,
+  // VBR case: check on all golden update frames.
   if (cpi->oxcf.pass == 0 &&
-      cpi->oxcf.rc_mode == VPX_CBR &&
       cpi->resize_state == 0 &&
       cm->frame_type != KEY_FRAME &&
-      cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
-      cpi->rc.high_source_sad == 1) {
+      ((cpi->oxcf.rc_mode == VPX_CBR &&
+        cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
+        cpi->rc.high_source_sad == 1) ||
+       (cpi->oxcf.rc_mode == VPX_VBR && cpi->refresh_golden_frame))) {
     int frame_size = 0;
     // Get an estimate of the encoded frame size.
     save_coding_context(cpi);
