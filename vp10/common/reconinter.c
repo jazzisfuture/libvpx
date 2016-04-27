@@ -44,6 +44,11 @@ static int get_masked_weight(int m) {
     return smoothfn[m + SMOOTHER_LEN];
 }
 
+#define WEDGE_OBLIQUE  1
+#define WEDGE_STRAIGHT 0
+
+#define WEDGE_PARMS    6
+
 // [negative][transpose][reverse]
 DECLARE_ALIGNED(16, static uint8_t,
                 wedge_mask_obl[2][2][2][MASK_MASTER_SIZE * MASK_MASTER_SIZE]);
@@ -51,6 +56,7 @@ DECLARE_ALIGNED(16, static uint8_t,
 DECLARE_ALIGNED(16, static uint8_t,
                 wedge_mask_str[2][2][MASK_MASTER_SIZE * MASK_MASTER_SIZE]);
 
+// Equation of line: f(x, y) = a[0]*(x - a[2]*w/4) + a[1]*(y - a[3]*h/4) = 0
 void vp10_init_wedge_masks() {
   int i, j;
   const int w = MASK_MASTER_SIZE;
@@ -64,14 +70,16 @@ void vp10_init_wedge_masks() {
       int m = (a[0] * x + a[1] * y) / 2;
       wedge_mask_obl[0][0][0][i * stride + j] =
           wedge_mask_obl[0][1][0][j * stride + i] =
-          wedge_mask_obl[0][0][1][i * stride + w - 1 - j] =
-          wedge_mask_obl[0][1][1][(w - 1 - j) * stride + i] =
           get_masked_weight(m);
+      wedge_mask_obl[0][0][1][i * stride + w - 1 - j] =
+          wedge_mask_obl[0][1][1][(w - 1 - j) * stride + i] =
+          (1 << WEDGE_WEIGHT_BITS) - get_masked_weight(m);
       wedge_mask_obl[1][0][0][i * stride + j] =
           wedge_mask_obl[1][1][0][j * stride + i] =
-          wedge_mask_obl[1][0][1][i * stride + w - 1 - j] =
-          wedge_mask_obl[1][1][1][(w - 1 - j) * stride + i] =
           (1 << WEDGE_WEIGHT_BITS) - get_masked_weight(m);
+      wedge_mask_obl[1][0][1][i * stride + w - 1 - j] =
+          wedge_mask_obl[1][1][1][(w - 1 - j) * stride + i] =
+          get_masked_weight(m);
       wedge_mask_str[0][0][i * stride + j] =
           wedge_mask_str[0][1][j * stride + i] =
           get_masked_weight(x);
@@ -83,214 +91,200 @@ void vp10_init_wedge_masks() {
 
 static const uint8_t *get_wedge_mask_inplace(const int *a,
                                              int h, int w) {
-  const int woff = (a[2] * w) >> 2;
-  const int hoff = (a[3] * h) >> 2;
-  const int oblique = (abs(a[0]) + abs(a[1]) == 3);
   const uint8_t *master;
-  int transpose, reverse, negative;
-  if (oblique) {
-    negative = (a[0] < 0);
-    transpose = (abs(a[0]) == 1);
-    reverse = (a[0] < 0) ^ (a[1] < 0);
-  } else {
-    negative = (a[0] < 0 || a[1] < 0);
-    transpose = (a[0] == 0);
-    reverse = 0;
-  }
-  master = (oblique ?
-            wedge_mask_obl[negative][transpose][reverse] :
-            wedge_mask_str[negative][transpose]) +
+  const int woff = (a[4] * w) >> 2;
+  const int hoff = (a[5] * h) >> 2;
+  master = (a[0] ?
+            wedge_mask_obl[a[1]][a[2]][a[3]] :
+            wedge_mask_str[a[1]][a[2]]) +
       MASK_MASTER_STRIDE * (MASK_MASTER_SIZE / 2 - hoff) +
       MASK_MASTER_SIZE / 2 - woff;
   return master;
 }
 
-// Equation of line: f(x, y) = a[0]*(x - a[2]*w/4) + a[1]*(y - a[3]*h/4) = 0
-// The soft mask is obtained by computing f(x, y) and then calling
-// get_masked_weight(f(x, y)).
-static const int wedge_params_sml[1 << WEDGE_BITS_SML][4] = {
-  {-1,  2, 2, 2},
-  { 1, -2, 2, 2},
-  {-2,  1, 2, 2},
-  { 2, -1, 2, 2},
-  {-2, -1, 2, 2},
-  { 2,  1, 2, 2},
-  {-1, -2, 2, 2},
-  { 1,  2, 2, 2},
+static const int wedge_params_sml[1 << WEDGE_BITS_SML][WEDGE_PARMS] = {
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 2, 2},
 };
 
-static const int wedge_params_med_hgtw[1 << WEDGE_BITS_MED][4] = {
-  {-1,  2, 2, 2},
-  { 1, -2, 2, 2},
-  {-2,  1, 2, 2},
-  { 2, -1, 2, 2},
-  {-2, -1, 2, 2},
-  { 2,  1, 2, 2},
-  {-1, -2, 2, 2},
-  { 1,  2, 2, 2},
+static const int wedge_params_med_hgtw[1 << WEDGE_BITS_MED][WEDGE_PARMS] = {
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 2, 2},
 
-  {-1,  2, 2, 1},
-  { 1, -2, 2, 1},
-  {-1,  2, 2, 3},
-  { 1, -2, 2, 3},
-  {-1, -2, 2, 1},
-  { 1,  2, 2, 1},
-  {-1, -2, 2, 3},
-  { 1,  2, 2, 3},
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 1},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 1},
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 3},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 3},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 1},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 1},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 3},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 3},
 };
 
-static const int wedge_params_med_hltw[1 << WEDGE_BITS_MED][4] = {
-  {-1,  2, 2, 2},
-  { 1, -2, 2, 2},
-  {-2,  1, 2, 2},
-  { 2, -1, 2, 2},
-  {-2, -1, 2, 2},
-  { 2,  1, 2, 2},
-  {-1, -2, 2, 2},
-  { 1,  2, 2, 2},
+static const int wedge_params_med_hltw[1 << WEDGE_BITS_MED][WEDGE_PARMS] = {
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 2, 2},
 
-  {-2,  1, 1, 2},
-  { 2, -1, 1, 2},
-  {-2,  1, 3, 2},
-  { 2, -1, 3, 2},
-  {-2, -1, 1, 2},
-  { 2,  1, 1, 2},
-  {-2, -1, 3, 2},
-  { 2,  1, 3, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 1, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 1, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 3, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 3, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 1, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 1, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 3, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 3, 2},
 };
 
-static const int wedge_params_med_heqw[1 << WEDGE_BITS_MED][4] = {
-  {-1,  2, 2, 2},
-  { 1, -2, 2, 2},
-  {-2,  1, 2, 2},
-  { 2, -1, 2, 2},
-  {-2, -1, 2, 2},
-  { 2,  1, 2, 2},
-  {-1, -2, 2, 2},
-  { 1,  2, 2, 2},
+static const int wedge_params_med_heqw[1 << WEDGE_BITS_MED][WEDGE_PARMS] = {
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 2, 2},
 
-  { 0, -2, 0, 1},
-  { 0,  2, 0, 1},
-  { 0, -2, 0, 3},
-  { 0,  2, 0, 3},
-  {-2,  0, 1, 0},
-  { 2,  0, 1, 0},
-  {-2,  0, 3, 0},
-  { 2,  0, 3, 0},
+    {WEDGE_STRAIGHT, 0, 1, 0, 2, 1},
+    {WEDGE_STRAIGHT, 1, 1, 0, 2, 1},
+    {WEDGE_STRAIGHT, 0, 1, 0, 2, 3},
+    {WEDGE_STRAIGHT, 1, 1, 0, 2, 3},
+    {WEDGE_STRAIGHT, 0, 0, 0, 1, 2},
+    {WEDGE_STRAIGHT, 1, 0, 0, 1, 2},
+    {WEDGE_STRAIGHT, 0, 0, 0, 3, 2},
+    {WEDGE_STRAIGHT, 1, 0, 0, 3, 2},
 };
 
-static const int wedge_params_big_hgtw[1 << WEDGE_BITS_BIG][4] = {
-  {-1,  2, 2, 2},
-  { 1, -2, 2, 2},
-  {-2,  1, 2, 2},
-  { 2, -1, 2, 2},
-  {-2, -1, 2, 2},
-  { 2,  1, 2, 2},
-  {-1, -2, 2, 2},
-  { 1,  2, 2, 2},
+static const int wedge_params_big_hgtw[1 << WEDGE_BITS_BIG][WEDGE_PARMS] = {
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 2, 2},
 
-  {-1,  2, 2, 1},
-  { 1, -2, 2, 1},
-  {-1,  2, 2, 3},
-  { 1, -2, 2, 3},
-  {-1, -2, 2, 1},
-  { 1,  2, 2, 1},
-  {-1, -2, 2, 3},
-  { 1,  2, 2, 3},
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 1},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 1},
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 3},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 3},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 1},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 1},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 3},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 3},
 
-  {-2,  1, 1, 2},
-  { 2, -1, 1, 2},
-  {-2,  1, 3, 2},
-  { 2, -1, 3, 2},
-  {-2, -1, 1, 2},
-  { 2,  1, 1, 2},
-  {-2, -1, 3, 2},
-  { 2,  1, 3, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 1, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 1, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 3, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 3, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 1, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 1, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 3, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 3, 2},
 
-  { 0, -2, 0, 1},
-  { 0,  2, 0, 1},
-  { 0, -2, 0, 2},
-  { 0,  2, 0, 2},
-  { 0, -2, 0, 3},
-  { 0,  2, 0, 3},
-  {-2,  0, 2, 0},
-  { 2,  0, 2, 0},
+    {WEDGE_STRAIGHT, 0, 1, 0, 2, 1},
+    {WEDGE_STRAIGHT, 1, 1, 0, 2, 1},
+    {WEDGE_STRAIGHT, 0, 1, 0, 2, 2},
+    {WEDGE_STRAIGHT, 1, 1, 0, 2, 2},
+    {WEDGE_STRAIGHT, 0, 1, 0, 2, 3},
+    {WEDGE_STRAIGHT, 1, 1, 0, 2, 3},
+    {WEDGE_STRAIGHT, 0, 0, 0, 2, 2},
+    {WEDGE_STRAIGHT, 1, 0, 0, 2, 2},
 };
 
-static const int wedge_params_big_hltw[1 << WEDGE_BITS_BIG][4] = {
-  {-1,  2, 2, 2},
-  { 1, -2, 2, 2},
-  {-2,  1, 2, 2},
-  { 2, -1, 2, 2},
-  {-2, -1, 2, 2},
-  { 2,  1, 2, 2},
-  {-1, -2, 2, 2},
-  { 1,  2, 2, 2},
+static const int wedge_params_big_hltw[1 << WEDGE_BITS_BIG][WEDGE_PARMS] = {
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 2, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 2, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 2, 2},
 
-  {-1,  2, 2, 1},
-  { 1, -2, 2, 1},
-  {-1,  2, 2, 3},
-  { 1, -2, 2, 3},
-  {-1, -2, 2, 1},
-  { 1,  2, 2, 1},
-  {-1, -2, 2, 3},
-  { 1,  2, 2, 3},
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 1},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 1},
+    {WEDGE_OBLIQUE,  0, 1, 1, 2, 3},
+    {WEDGE_OBLIQUE,  1, 1, 1, 2, 3},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 1},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 1},
+    {WEDGE_OBLIQUE,  0, 1, 0, 2, 3},
+    {WEDGE_OBLIQUE,  1, 1, 0, 2, 3},
 
-  {-2,  1, 1, 2},
-  { 2, -1, 1, 2},
-  {-2,  1, 3, 2},
-  { 2, -1, 3, 2},
-  {-2, -1, 1, 2},
-  { 2,  1, 1, 2},
-  {-2, -1, 3, 2},
-  { 2,  1, 3, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 1, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 1, 2},
+    {WEDGE_OBLIQUE,  0, 0, 1, 3, 2},
+    {WEDGE_OBLIQUE,  1, 0, 1, 3, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 1, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 1, 2},
+    {WEDGE_OBLIQUE,  0, 0, 0, 3, 2},
+    {WEDGE_OBLIQUE,  1, 0, 0, 3, 2},
 
-  { 0, -2, 0, 2},
-  { 0,  2, 0, 2},
-  {-2,  0, 1, 0},
-  { 2,  0, 1, 0},
-  {-2,  0, 2, 0},
-  { 2,  0, 2, 0},
-  {-2,  0, 3, 0},
-  { 2,  0, 3, 0},
+    {WEDGE_STRAIGHT, 0, 0, 0, 1, 2},
+    {WEDGE_STRAIGHT, 1, 0, 0, 1, 2},
+    {WEDGE_STRAIGHT, 0, 0, 0, 2, 2},
+    {WEDGE_STRAIGHT, 1, 0, 0, 2, 2},
+    {WEDGE_STRAIGHT, 0, 0, 0, 3, 2},
+    {WEDGE_STRAIGHT, 1, 0, 0, 3, 2},
+    {WEDGE_STRAIGHT, 0, 1, 0, 2, 2},
+    {WEDGE_STRAIGHT, 1, 1, 0, 2, 2},
 };
 
-static const int wedge_params_big_heqw[1 << WEDGE_BITS_BIG][4] = {
-  {-1,  2, 2, 2},
-  { 1, -2, 2, 2},
-  {-2,  1, 2, 2},
-  { 2, -1, 2, 2},
-  {-2, -1, 2, 2},
-  { 2,  1, 2, 2},
-  {-1, -2, 2, 2},
-  { 1,  2, 2, 2},
+static const int wedge_params_big_heqw[1 << WEDGE_BITS_BIG][WEDGE_PARMS] = {
+                                 {WEDGE_OBLIQUE,  0, 1, 1, 2, 2},
+                                 {WEDGE_OBLIQUE,  1, 1, 1, 2, 2},
+                                 {WEDGE_OBLIQUE,  0, 1, 0, 2, 2},
+                                 {WEDGE_OBLIQUE,  1, 1, 0, 2, 2},
+                                 {WEDGE_OBLIQUE,  0, 0, 1, 2, 2},
+                                 {WEDGE_OBLIQUE,  1, 0, 1, 2, 2},
+                                 {WEDGE_OBLIQUE,  0, 0, 0, 2, 2},
+                                 {WEDGE_OBLIQUE,  1, 0, 0, 2, 2},
 
-  {-1,  2, 2, 1},
-  { 1, -2, 2, 1},
-  {-1,  2, 2, 3},
-  { 1, -2, 2, 3},
-  {-1, -2, 2, 1},
-  { 1,  2, 2, 1},
-  {-1, -2, 2, 3},
-  { 1,  2, 2, 3},
+                                 {WEDGE_OBLIQUE,  0, 1, 1, 2, 1},
+                                 {WEDGE_OBLIQUE,  1, 1, 1, 2, 1},
+                                 {WEDGE_OBLIQUE,  0, 1, 1, 2, 3},
+                                 {WEDGE_OBLIQUE,  1, 1, 1, 2, 3},
+                                 {WEDGE_OBLIQUE,  0, 1, 0, 2, 1},
+                                 {WEDGE_OBLIQUE,  1, 1, 0, 2, 1},
+                                 {WEDGE_OBLIQUE,  0, 1, 0, 2, 3},
+                                 {WEDGE_OBLIQUE,  1, 1, 0, 2, 3},
 
-  {-2,  1, 1, 2},
-  { 2, -1, 1, 2},
-  {-2,  1, 3, 2},
-  { 2, -1, 3, 2},
-  {-2, -1, 1, 2},
-  { 2,  1, 1, 2},
-  {-2, -1, 3, 2},
-  { 2,  1, 3, 2},
+                                 {WEDGE_OBLIQUE,  0, 0, 1, 1, 2},
+                                 {WEDGE_OBLIQUE,  1, 0, 1, 1, 2},
+                                 {WEDGE_OBLIQUE,  0, 0, 1, 3, 2},
+                                 {WEDGE_OBLIQUE,  1, 0, 1, 3, 2},
+                                 {WEDGE_OBLIQUE,  0, 0, 0, 1, 2},
+                                 {WEDGE_OBLIQUE,  1, 0, 0, 1, 2},
+                                 {WEDGE_OBLIQUE,  0, 0, 0, 3, 2},
+                                 {WEDGE_OBLIQUE,  1, 0, 0, 3, 2},
 
-  { 0, -2, 0, 1},
-  { 0,  2, 0, 1},
-  { 0, -2, 0, 3},
-  { 0,  2, 0, 3},
-  {-2,  0, 1, 0},
-  { 2,  0, 1, 0},
-  {-2,  0, 3, 0},
-  { 2,  0, 3, 0},
+                                 {WEDGE_STRAIGHT, 0, 1, 0, 2, 1},
+                                 {WEDGE_STRAIGHT, 1, 1, 0, 2, 1},
+                                 {WEDGE_STRAIGHT, 0, 1, 0, 2, 3},
+                                 {WEDGE_STRAIGHT, 1, 1, 0, 2, 3},
+                                 {WEDGE_STRAIGHT, 0, 0, 0, 1, 2},
+                                 {WEDGE_STRAIGHT, 1, 0, 0, 1, 2},
+                                 {WEDGE_STRAIGHT, 0, 0, 0, 3, 2},
+                                 {WEDGE_STRAIGHT, 1, 0, 0, 3, 2},
 };
 
 static const int *get_wedge_params(int wedge_index,
