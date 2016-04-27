@@ -2171,7 +2171,18 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi,
   RATE_CONTROL *const rc = &cpi->rc;
   int thresh_qp = 3 * (rc->worst_quality >> 2);
   int thresh_rate = rc->avg_frame_bandwidth * 10;
-  if (cm->base_qindex < thresh_qp &&
+  // Separate logic for VBR case.
+  if (cpi->oxcf.rc_mode == VPX_VBR) {
+    if (frame_size > thresh_rate &&
+        cm->base_qindex < (3 * rc->avg_frame_qindex[INTER_FRAME] >> 2)) {
+      *q = (cm->base_qindex + rc->avg_frame_qindex[INTER_FRAME]) >> 1;
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+  if (cpi->oxcf.rc_mode == VPX_CBR &&
+      cm->base_qindex < thresh_qp &&
       frame_size > thresh_rate) {
     double rate_correction_factor =
         cpi->rc.rate_correction_factors[INTER_NORMAL];
