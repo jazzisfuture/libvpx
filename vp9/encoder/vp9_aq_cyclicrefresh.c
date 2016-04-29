@@ -399,7 +399,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   qindex_thresh =
       cpi->oxcf.content == VP9E_CONTENT_SCREEN
       ? vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex)
-      : vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex);
+      : cm->base_qindex;
   do {
     int sum_map = 0;
     // Get the mi_row/mi_col corresponding to superblock index i.
