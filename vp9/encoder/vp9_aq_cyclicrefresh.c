@@ -399,7 +399,8 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   qindex_thresh =
       cpi->oxcf.content == VP9E_CONTENT_SCREEN
       ? vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex)
-      : vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex);
+      : VPXMAX(vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex),
+                              7 * cm->base_qindex >> 3);
   do {
     int sum_map = 0;
     // Get the mi_row/mi_col corresponding to superblock index i.
@@ -463,6 +464,8 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->percent_refresh = 5;
   cr->max_qdelta_perc = 50;
   cr->time_for_refresh = 0;
+  cr->motion_thresh = 32;
+  cr->rate_boost_fac = 15;
   // Use larger delta-qp (increase rate_ratio_qdelta) for first few (~4)
   // periods of the refresh cycle, after a key frame.
   // Account for larger interval on base layer for temporal layers.
@@ -474,7 +477,8 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->rate_ratio_qdelta = 2.0;
   if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium)
     // Reduce the delta-qp if the estimated source noise is above threshold.
-    cr->rate_ratio_qdelta = 1.5;
+    cr->rate_ratio_qdelta = 1.7;
+    cr->rate_boost_fac = 13;
   }
   // Adjust some parameters for low resolutions at low bitrates.
   if (cm->width <= 352 &&
@@ -482,9 +486,6 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
       rc->avg_frame_bandwidth < 3400) {
     cr->motion_thresh = 4;
     cr->rate_boost_fac = 10;
-  } else {
-    cr->motion_thresh = 32;
-    cr->rate_boost_fac = 15;
   }
   if (cpi->svc.spatial_layer_id > 0) {
     cr->motion_thresh = 4;
