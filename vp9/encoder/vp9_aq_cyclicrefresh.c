@@ -392,9 +392,9 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   i = cr->sb_index;
   cr->target_num_seg_blocks = 0;
   if (cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
-    consec_zero_mv_thresh = 100;
+    consec_zero_mv_thresh = 80;
    if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium)
-     consec_zero_mv_thresh = 80;
+     consec_zero_mv_thresh = 60;
   }
   qindex_thresh =
       cpi->oxcf.content == VP9E_CONTENT_SCREEN
