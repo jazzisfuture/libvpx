@@ -168,13 +168,14 @@ static void count_segs_sb(const VP10_COMMON *cm, MACROBLOCKD *xd,
 #if CONFIG_EXT_PARTITION_TYPES
   PARTITION_TYPE partition;
 #else
-  const int bw = num_8x8_blocks_wide_lookup[mi[0]->mbmi.sb_type];
-  const int bh = num_8x8_blocks_high_lookup[mi[0]->mbmi.sb_type];
+  int bw, bh;
 #endif  // CONFIG_EXT_PARTITION_TYPES
 
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
+  bw = num_8x8_blocks_wide_lookup[mi[0]->mbmi.sb_type];
+  bh = num_8x8_blocks_high_lookup[mi[0]->mbmi.sb_type];
 
 #if CONFIG_EXT_PARTITION_TYPES
   if (bsize == BLOCK_8X8)
