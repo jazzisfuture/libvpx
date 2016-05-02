@@ -722,6 +722,64 @@ YV12_BUFFER_CONFIG *vp10_get_scaled_ref_frame(const VP10_COMP *cpi,
           &cm->buffer_pool->frame_bufs[scaled_idx].buf : NULL;
 }
 
+#if CONFIG_DUAL_FILTER
+int vp10_get_switchable_rate(const VP10_COMP *cpi,
+                             const MACROBLOCKD *const xd) {
+  const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+  int inter_filter_cost = 0;
+
+  if (mbmi->sb_type >= BLOCK_8X8) {
+    if (mbmi->mv[0].as_mv.row & SUBPEL_MASK) {
+      const int ctx = vp10_get_pred_context_switchable_interp(xd, 0);
+      inter_filter_cost +=
+          cpi->switchable_interp_costs[ctx][mbmi->interp_filter[0]];
+    }
+    if (mbmi->mv[0].as_mv.col & SUBPEL_MASK) {
+      const int ctx = vp10_get_pred_context_switchable_interp(xd, 1);
+      inter_filter_cost +=
+          cpi->switchable_interp_costs[ctx][mbmi->interp_filter[1]];
+    }
+    if (mbmi->ref_frame[1] > INTRA_FRAME) {
+      if (mbmi->mv[1].as_mv.row & SUBPEL_MASK) {
+        const int ctx = vp10_get_pred_context_switchable_interp(xd, 2);
+        inter_filter_cost +=
+            cpi->switchable_interp_costs[ctx][mbmi->interp_filter[2]];
+      }
+      if (mbmi->mv[1].as_mv.col & SUBPEL_MASK) {
+        const int ctx = vp10_get_pred_context_switchable_interp(xd, 3);
+        inter_filter_cost +=
+            cpi->switchable_interp_costs[ctx][mbmi->interp_filter[3]];
+      }
+    }
+  } else {
+    if (has_subpel_mv_component(xd, 0)) {
+      const int ctx = vp10_get_pred_context_switchable_interp(xd, 0);
+      inter_filter_cost +=
+          cpi->switchable_interp_costs[ctx][mbmi->interp_filter[0]];
+    }
+    if (has_subpel_mv_component(xd, 1)) {
+      const int ctx = vp10_get_pred_context_switchable_interp(xd, 1);
+      inter_filter_cost +=
+          cpi->switchable_interp_costs[ctx][mbmi->interp_filter[1]];
+    }
+
+    if (mbmi->ref_frame[1] > INTRA_FRAME) {
+      if (has_subpel_mv_component(xd, 2)) {
+        const int ctx = vp10_get_pred_context_switchable_interp(xd, 2);
+        inter_filter_cost +=
+            cpi->switchable_interp_costs[ctx][mbmi->interp_filter[2]];
+      }
+      if (has_subpel_mv_component(xd, 3)) {
+        const int ctx = vp10_get_pred_context_switchable_interp(xd, 3);
+        inter_filter_cost +=
+            cpi->switchable_interp_costs[ctx][mbmi->interp_filter[3]];
+      }
+    }
+  }
+
+  return SWITCHABLE_INTERP_RATE_FACTOR * inter_filter_cost;
+}
+#else
 int vp10_get_switchable_rate(const VP10_COMP *cpi,
                              const MACROBLOCKD *const xd) {
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
@@ -732,6 +790,7 @@ int vp10_get_switchable_rate(const VP10_COMP *cpi,
   return SWITCHABLE_INTERP_RATE_FACTOR *
       cpi->switchable_interp_costs[ctx][mbmi->interp_filter];
 }
+#endif
 
 void vp10_set_rd_speed_thresholds(VP10_COMP *cpi) {
   int i;
