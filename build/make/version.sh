@@ -15,6 +15,7 @@ for opt in "$@"; do
     optval="${opt#*=}"
     case "$opt" in
     --bare) bare=true ;;
+    --very-bare) verybare=true ;;
     *) break ;;
     esac
     shift
@@ -57,6 +58,8 @@ done
 
 if [ ${bare} ]; then
     echo "${changelog_version}${git_version_id}" > $$.tmp
+elif [ ${verybare} ]; then
+    echo "${major_version}.${minor_version}.${patch_version}" >> $$.tmp
 else
     cat<<EOF>$$.tmp
 #define VERSION_MAJOR  $major_version
