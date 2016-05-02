@@ -30,7 +30,8 @@ static INLINE void inter_predictor(const uint8_t *src, int src_stride,
                                    int xs, int ys) {
   InterpFilterParams interp_filter_params =
       vp10_get_interp_filter_params(interp_filter);
-  if (interp_filter_params.taps == SUBPEL_TAPS) {
+  if (interp_filter_params.taps == SUBPEL_TAPS &&
+      (subpel_x == 0 || subpel_y == 0)) {
     const int16_t *kernel_x =
         vp10_get_interp_filter_subpel_kernel(interp_filter_params, subpel_x);
     const int16_t *kernel_y =

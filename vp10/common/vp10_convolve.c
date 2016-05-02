@@ -128,7 +128,8 @@ void vp10_convolve(const uint8_t *src, int src_stride, uint8_t *dst,
         (((h - 1) * y_step_q4 + subpel_y_q4) >> SUBPEL_BITS) + filter_size;
 
     convolve_horiz(src - src_stride * (filter_size / 2 - 1), src_stride, temp,
-                   temp_stride, w, intermediate_height, filter_params,
+                   temp_stride, w, intermediate_height,
+                   filter_params,
                    subpel_x_q4, x_step_q4, 0);
     convolve_vert(temp + temp_stride * (filter_size / 2 - 1), temp_stride, dst,
                   dst_stride, w, h, filter_params, subpel_y_q4, y_step_q4, avg);
