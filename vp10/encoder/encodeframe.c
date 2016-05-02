@@ -927,7 +927,12 @@ static void choose_partitioning(VP10_COMP *const cpi,
     mbmi->ref_frame[1] = NONE;
     mbmi->sb_type = cm->sb_size;
     mbmi->mv[0].as_int = 0;
+#if CONFIG_DUAL_FILTER
+    for (i = 0; i < 4; ++i)
+      mbmi->interp_filter[i] = BILINEAR;
+#else
     mbmi->interp_filter = BILINEAR;
+#endif
 
     y_sad = vp10_int_pro_motion_estimation(cpi, x, bsize, mi_row, mi_col);
 
@@ -1167,8 +1172,30 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
           && vp10_is_interp_needed(xd)
 #endif
           ) {
+#if CONFIG_DUAL_FILTER
+        if (mbmi->mv[0].as_mv.row & SUBPEL_MASK) {
+          const int ctx = vp10_get_pred_context_switchable_interp(xd, 0);
+          ++td->counts->switchable_interp[ctx][mbmi->interp_filter[0]];
+        }
+        if (mbmi->mv[0].as_mv.col & SUBPEL_MASK) {
+          const int ctx = vp10_get_pred_context_switchable_interp(xd, 1);
+          ++td->counts->switchable_interp[ctx][mbmi->interp_filter[1]];
+        }
+
+        if (mbmi->ref_frame[1] > INTRA_FRAME) {
+          if (mbmi->mv[1].as_mv.row & SUBPEL_MASK) {
+            const int ctx = vp10_get_pred_context_switchable_interp(xd, 2);
+            ++td->counts->switchable_interp[ctx][mbmi->interp_filter[2]];
+          }
+          if (mbmi->mv[1].as_mv.col & SUBPEL_MASK) {
+            const int ctx = vp10_get_pred_context_switchable_interp(xd, 3);
+            ++td->counts->switchable_interp[ctx][mbmi->interp_filter[3]];
+          }
+        }
+#else
         const int ctx = vp10_get_pred_context_switchable_interp(xd);
         ++td->counts->switchable_interp[ctx][mbmi->interp_filter];
+#endif
       }
     }
 
@@ -3563,9 +3590,15 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
     subsize = get_subsize(bsize, PARTITION_SPLIT);
     if (bsize == BLOCK_8X8) {
       i = 4;
+#if CONFIG_DUAL_FILTER
+      if (cpi->sf.adaptive_pred_interp_filter && partition_none_allowed)
+        pc_tree->leaf_split[0]->pred_interp_filter =
+            ctx->mic.mbmi.interp_filter[0];
+#else
       if (cpi->sf.adaptive_pred_interp_filter && partition_none_allowed)
         pc_tree->leaf_split[0]->pred_interp_filter =
             ctx->mic.mbmi.interp_filter;
+#endif
 #if CONFIG_SUPERTX
       rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &sum_rdc,
                        &sum_rate_nocoef,
@@ -3751,10 +3784,17 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
     subsize = get_subsize(bsize, PARTITION_HORZ);
     if (cpi->sf.adaptive_motion_search)
       load_pred_mv(x, ctx);
+#if CONFIG_DUAL_FILTER
+    if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
+        partition_none_allowed)
+      pc_tree->horizontal[0].pred_interp_filter =
+          ctx->mic.mbmi.interp_filter[0];
+#else
     if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
         partition_none_allowed)
       pc_tree->horizontal[0].pred_interp_filter =
           ctx->mic.mbmi.interp_filter;
+#endif
     rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &sum_rdc,
 #if CONFIG_SUPERTX
                      &sum_rate_nocoef,
@@ -3779,10 +3819,18 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
 
       if (cpi->sf.adaptive_motion_search)
         load_pred_mv(x, ctx);
+
+#if CONFIG_DUAL_FILTER
+      if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
+          partition_none_allowed)
+        pc_tree->horizontal[1].pred_interp_filter =
+            ctx->mic.mbmi.interp_filter[0];
+#else
       if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
           partition_none_allowed)
         pc_tree->horizontal[1].pred_interp_filter =
             ctx->mic.mbmi.interp_filter;
+#endif
 #if CONFIG_SUPERTX
       rd_pick_sb_modes(cpi, tile_data, x, mi_row + mi_step, mi_col,
                        &this_rdc, &this_rate_nocoef,
@@ -3883,10 +3931,18 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
 
     if (cpi->sf.adaptive_motion_search)
       load_pred_mv(x, ctx);
+
+#if CONFIG_DUAL_FILTER
+    if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
+        partition_none_allowed)
+      pc_tree->vertical[0].pred_interp_filter =
+          ctx->mic.mbmi.interp_filter[0];
+#else
     if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
         partition_none_allowed)
       pc_tree->vertical[0].pred_interp_filter =
           ctx->mic.mbmi.interp_filter;
+#endif
     rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &sum_rdc,
 #if CONFIG_SUPERTX
                      &sum_rate_nocoef,
@@ -3910,10 +3966,18 @@ static void rd_pick_partition(VP10_COMP *cpi, ThreadData *td,
 
       if (cpi->sf.adaptive_motion_search)
         load_pred_mv(x, ctx);
+
+#if CONFIG_DUAL_FILTER
+      if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
+          partition_none_allowed)
+        pc_tree->vertical[1].pred_interp_filter =
+            ctx->mic.mbmi.interp_filter[0];
+#else
       if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
           partition_none_allowed)
         pc_tree->vertical[1].pred_interp_filter =
             ctx->mic.mbmi.interp_filter;
+#endif
 #if CONFIG_SUPERTX
       rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col + mi_step, &this_rdc,
                        &this_rate_nocoef,
