@@ -33,7 +33,7 @@ fi
 changelog_version=""
 for p in "${source_path}" "${source_path}/.."; do
     if [ -z "$git_version_id" -a -f "${p}/CHANGELOG" ]; then
-        changelog_version=`head -n1 "${p}/CHANGELOG" | awk '{print $2}'`
+        changelog_version=`grep ' v[0-9]' "${p}/CHANGELOG" | head -n1 | awk '{print $2}'`
         changelog_version="${changelog_version}"
         break
     fi
