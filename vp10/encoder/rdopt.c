@@ -6118,11 +6118,9 @@ static void do_masked_motion_search_indexed(VP10_COMP *cpi, MACROBLOCK *x,
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
   BLOCK_SIZE sb_type = mbmi->sb_type;
-  int w = (4 << b_width_log2_lookup[sb_type]);
-  int h = (4 << b_height_log2_lookup[sb_type]);
   const uint8_t *mask;
   const int mask_stride = MASK_MASTER_STRIDE;
-  mask = vp10_get_soft_mask(wedge_index, wedge_sign, sb_type, h, w);
+  mask = vp10_get_soft_mask(wedge_index, wedge_sign, sb_type, 0, 0);
 
   if (which == 0 || which == 2)
     do_masked_motion_search(cpi, x, mask, mask_stride, bsize,
@@ -6131,7 +6129,7 @@ static void do_masked_motion_search_indexed(VP10_COMP *cpi, MACROBLOCK *x,
 
   if (which == 1 || which == 2) {
     // get the negative mask
-    mask = vp10_get_soft_mask(wedge_index, !wedge_sign, sb_type, h, w);
+    mask = vp10_get_soft_mask(wedge_index, !wedge_sign, sb_type, 0, 0);
     do_masked_motion_search(cpi, x, mask, mask_stride, bsize,
                             mi_row, mi_col, &tmp_mv[1], &rate_mv[1],
                             1, mv_idx[1]);
@@ -6940,8 +6938,6 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     int64_t best_interintra_rd_nowedge = INT64_MAX;
     int64_t best_interintra_rd_wedge = INT64_MAX;
     int rwedge;
-    int bw = 4 << b_width_log2_lookup[mbmi->sb_type],
-        bh = 4 << b_height_log2_lookup[mbmi->sb_type];
     int_mv tmp_mv;
     int tmp_rate_mv = 0;
     DECLARE_ALIGNED(16, uint8_t,
@@ -7048,7 +7044,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       if (have_newmv_in_inter_mode(this_mode)) {
         // get negative of mask
         const uint8_t* mask = vp10_get_soft_mask(
-            best_wedge_index, 1, bsize, bh, bw);
+            best_wedge_index, 1, bsize, 0, 0);
         mbmi->interintra_wedge_index = best_wedge_index;
         mbmi->interintra_wedge_sign = 0;
         do_masked_motion_search(cpi, x, mask, MASK_MASTER_STRIDE, bsize,
