@@ -866,8 +866,15 @@ static int read_is_obmc_block(VP10_COMMON *const cm, MACROBLOCKD *const xd,
 
 static INLINE INTERP_FILTER read_switchable_interp_filter(
     VP10_COMMON *const cm, MACROBLOCKD *const xd,
+#if CONFIG_DUAL_FILTER
+    int dir,
+#endif
     vp10_reader *r) {
+#if CONFIG_DUAL_FILTER
+  const int ctx = vp10_get_pred_context_switchable_interp(xd, dir);
+#else
   const int ctx = vp10_get_pred_context_switchable_interp(xd);
+#endif
   FRAME_COUNTS *counts = xd->counts;
   INTERP_FILTER type;
 #if CONFIG_EXT_INTERP
@@ -1380,7 +1387,7 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   }
 #endif
 
-#if !CONFIG_EXT_INTERP
+#if !CONFIG_EXT_INTERP && !CONFIG_DUAL_FILTER
   mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
                         ? read_switchable_interp_filter(cm, xd, r)
                         : cm->interp_filter;
@@ -1604,11 +1611,38 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   }
 #endif  // CONFIG_EXT_INTER
 
+#if CONFIG_DUAL_FILTER
+  for (ref = 0; ref < 4; ++ref)
+    mbmi->interp_filter[ref] = (cm->interp_filter == SWITCHABLE) ?
+        EIGHTTAP_REGULAR : cm->interp_filter;
+
+  if (mbmi->ref_frame[0] > INTRA_FRAME) {
+    if (mbmi->mv[0].as_mv.row & SUBPEL_MASK)
+      mbmi->interp_filter[0] = (cm->interp_filter == SWITCHABLE)
+                            ? read_switchable_interp_filter(cm, xd, 0, r)
+                            : cm->interp_filter;
+    if (mbmi->mv[0].as_mv.col & SUBPEL_MASK)
+      mbmi->interp_filter[1] = (cm->interp_filter == SWITCHABLE)
+                            ? read_switchable_interp_filter(cm, xd, 1, r)
+                            : cm->interp_filter;
+  }
+  if (mbmi->ref_frame[1] > INTRA_FRAME) {
+    if (mbmi->mv[1].as_mv.row & SUBPEL_MASK)
+      mbmi->interp_filter[2] = (cm->interp_filter == SWITCHABLE)
+                            ? read_switchable_interp_filter(cm, xd, 2, r)
+                            : cm->interp_filter;
+    if (mbmi->mv[1].as_mv.col & SUBPEL_MASK)
+      mbmi->interp_filter[3] = (cm->interp_filter == SWITCHABLE)
+                            ? read_switchable_interp_filter(cm, xd, 3, r)
+                            : cm->interp_filter;
+  }
+#else
 #if CONFIG_EXT_INTERP
   mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)
                         ? read_switchable_interp_filter(cm, xd, r)
                         : cm->interp_filter;
 #endif  // CONFIG_EXT_INTERP
+#endif  // CONFIG_DUAL_FILTER
 }
 
 static void read_inter_frame_mode_info(VP10Decoder *const pbi,
