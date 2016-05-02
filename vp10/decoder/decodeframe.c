@@ -521,7 +521,11 @@ static void extend_and_predict(const uint8_t *buf_ptr1, int pre_buf_stride,
                                int border_offset,
                                uint8_t *const dst, int dst_buf_stride,
                                int subpel_x, int subpel_y,
+#if CONFIG_DUAL_FILTER
+                               const INTERP_FILTER *interp_filter,
+#else
                                const INTERP_FILTER interp_filter,
+#endif
                                const struct scale_factors *sf,
 #if CONFIG_EXT_INTER
                                int wedge_offset_x, int wedge_offset_y,
@@ -563,7 +567,11 @@ static void dec_build_inter_predictors(VP10Decoder *const pbi,
                                        int wedge_offset_x, int wedge_offset_y,
 #endif  // CONFIG_EXT_INTER
                                        int mi_x, int mi_y,
+#if CONFIG_DUAL_FILTER
+                                       const INTERP_FILTER *interp_filter,
+#else
                                        const INTERP_FILTER interp_filter,
+#endif
                                        const struct scale_factors *sf,
                                        struct buf_2d *pre_buf,
                                        struct buf_2d *dst_buf, const MV* mv,
@@ -670,8 +678,13 @@ static void dec_build_inter_predictors(VP10Decoder *const pbi,
     int x1 = ((x0_16 + (w - 1) * xs) >> SUBPEL_BITS) + 1;
     int x_pad = 0, y_pad = 0;
 
+#if CONFIG_DUAL_FILTER
+    InterpFilterParams filter_params =
+        vp10_get_interp_filter_params(interp_filter[0]);
+#else
     InterpFilterParams filter_params =
         vp10_get_interp_filter_params(interp_filter);
+#endif
     int filter_size = filter_params.taps;
 
     if (subpel_x ||
@@ -772,7 +785,6 @@ static void dec_build_inter_predictors_sb_extend(
   const int wedge_offset_y = (mi_row_ori - mi_row) * MI_SIZE;
 #endif  // CONFIG_EXT_INTER
   const MODE_INFO *mi = xd->mi[0];
-  const INTERP_FILTER interp_filter = mi->mbmi.interp_filter;
   const BLOCK_SIZE sb_type = mi->mbmi.sb_type;
   const int is_compound = has_second_ref(&mi->mbmi);
 
@@ -819,7 +831,7 @@ static void dec_build_inter_predictors_sb_extend(
                 wedge_offset_y,
 #endif  // CONFIG_EXT_INTER
                 mi_x, mi_y,
-                interp_filter, sf, pre_buf, dst_buf,
+                mi->mbmi.interp_filter, sf, pre_buf, dst_buf,
                 &mv, ref_frame_buf, is_scaled, ref);
           }
         }
@@ -837,7 +849,7 @@ static void dec_build_inter_predictors_sb_extend(
             wedge_offset_y,
 #endif  // CONFIG_EXT_INTER
             mi_x, mi_y,
-            interp_filter, sf, pre_buf, dst_buf,
+            mi->mbmi.interp_filter, sf, pre_buf, dst_buf,
             &mv, ref_frame_buf,
             is_scaled, ref);
       }
@@ -874,7 +886,6 @@ static void dec_build_inter_predictors_sb_sub8x8_extend(
   const int wedge_offset_y = (mi_row_ori - mi_row) * MI_SIZE;
 #endif  // CONFIG_EXT_INTER
   const MODE_INFO *mi = xd->mi[0];
-  const INTERP_FILTER interp_filter = mi->mbmi.interp_filter;
   const int is_compound = has_second_ref(&mi->mbmi);
 
   // For sub8x8 uv:
@@ -910,7 +921,7 @@ static void dec_build_inter_predictors_sb_sub8x8_extend(
                                  wedge_offset_y,
 #endif  // CONFIG_EXT_INTER
                                  mi_x, mi_y,
-                                 interp_filter, sf, pre_buf, dst_buf,
+                                 mi->mbmi.interp_filter, sf, pre_buf, dst_buf,
                                  &mv, ref_frame_buf, is_scaled, ref);
     }
   }
