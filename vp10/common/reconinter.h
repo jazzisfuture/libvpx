@@ -26,10 +26,21 @@ static INLINE void inter_predictor(const uint8_t *src, int src_stride,
                                    const int subpel_y,
                                    const struct scale_factors *sf,
                                    int w, int h, int ref,
+#if CONFIG_DUAL_FILTER
+                                   const INTERP_FILTER *interp_filter,
+#else
                                    const INTERP_FILTER interp_filter,
+#endif
                                    int xs, int ys) {
+#if CONFIG_DUAL_FILTER
+  int flt_idx = ((subpel_y == 0) ? 1 : 0);
+  InterpFilterParams interp_filter_params =
+      vp10_get_interp_filter_params(interp_filter[flt_idx + 2 * ref]);
+#else
   InterpFilterParams interp_filter_params =
       vp10_get_interp_filter_params(interp_filter);
+#endif
+
   if (interp_filter_params.taps == SUBPEL_TAPS &&
       (subpel_x == 0 || subpel_y == 0)) {
     const int16_t *kernel_x =
@@ -57,7 +68,7 @@ static INLINE void inter_predictor(const uint8_t *src, int src_stride,
     // first reference frame's prediction result is already in dst
     // therefore we need to average the first and second results
     int avg = ref > 0;
-    vp10_convolve(src, src_stride, dst, dst_stride, w, h, interp_filter_params,
+    vp10_convolve(src, src_stride, dst, dst_stride, w, h, interp_filter,
                   subpel_x, xs, subpel_y, ys, avg);
   }
 }
@@ -127,7 +138,11 @@ static INLINE void vp10_make_inter_predictor(
     const int subpel_y,
     const struct scale_factors *sf,
     int w, int h, int ref,
+#if CONFIG_DUAL_FILTER
+    const INTERP_FILTER *interp_filter,
+#else
     const INTERP_FILTER interp_filter,
+#endif
     int xs, int ys,
     const MACROBLOCKD *xd) {
   (void) xd;
@@ -285,7 +300,11 @@ void vp10_build_inter_predictor(const uint8_t *src, int src_stride,
                                const MV *mv_q3,
                                const struct scale_factors *sf,
                                int w, int h, int do_avg,
+#if CONFIG_DUAL_FILTER
+                               const INTERP_FILTER *interp_filter,
+#else
                                const INTERP_FILTER interp_filter,
+#endif
                                enum mv_precision precision,
                                int x, int y);
 
