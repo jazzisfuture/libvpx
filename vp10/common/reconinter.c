@@ -557,7 +557,11 @@ void vp10_build_inter_predictor(const uint8_t *src, int src_stride,
                                const MV *src_mv,
                                const struct scale_factors *sf,
                                int w, int h, int ref,
+#if CONFIG_DUAL_FILTER
+                               const INTERP_FILTER *interp_filter,
+#else
                                const INTERP_FILTER interp_filter,
+#endif
                                enum mv_precision precision,
                                int x, int y) {
   const int is_q4 = precision == MV_PRECISION_Q4;
@@ -591,7 +595,6 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
   const MODE_INFO *mi = xd->mi[0];
 #endif  // CONFIG_OBMC
   const int is_compound = has_second_ref(&mi->mbmi);
-  const INTERP_FILTER interp_filter = mi->mbmi.interp_filter;
   int ref;
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
@@ -649,7 +652,7 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
 #endif  // CONFIG_EXT_INTER
       vp10_make_inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                                 subpel_x, subpel_y, sf, w, h, ref,
-                                interp_filter, xs, ys, xd);
+                                mi->mbmi.interp_filter, xs, ys, xd);
   }
 }
 
@@ -665,7 +668,6 @@ void vp10_build_inter_predictor_sub8x8(MACROBLOCKD *xd, int plane,
   uint8_t *const dst = &pd->dst.buf[(ir * pd->dst.stride + ic) << 2];
   int ref;
   const int is_compound = has_second_ref(&mi->mbmi);
-  const INTERP_FILTER interp_filter = mi->mbmi.interp_filter;
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
     const uint8_t *pre =
@@ -676,7 +678,8 @@ void vp10_build_inter_predictor_sub8x8(MACROBLOCKD *xd, int plane,
                                       dst, pd->dst.stride,
                                       &mi->bmi[i].as_mv[ref].as_mv,
                                       &xd->block_refs[ref]->sf, width, height,
-                                      ref, interp_filter, MV_PRECISION_Q3,
+                                      ref, mi->mbmi.interp_filter,
+                                      MV_PRECISION_Q3,
                                       mi_col * MI_SIZE + 4 * ic,
                                       mi_row * MI_SIZE + 4 * ir, xd->bd);
   } else {
@@ -684,7 +687,7 @@ void vp10_build_inter_predictor_sub8x8(MACROBLOCKD *xd, int plane,
                                dst, pd->dst.stride,
                                &mi->bmi[i].as_mv[ref].as_mv,
                                &xd->block_refs[ref]->sf, width, height, ref,
-                               interp_filter, MV_PRECISION_Q3,
+                               mi->mbmi.interp_filter, MV_PRECISION_Q3,
                                mi_col * MI_SIZE + 4 * ic,
                                mi_row * MI_SIZE + 4 * ir);
   }
@@ -693,7 +696,7 @@ void vp10_build_inter_predictor_sub8x8(MACROBLOCKD *xd, int plane,
                                dst, pd->dst.stride,
                                &mi->bmi[i].as_mv[ref].as_mv,
                                &xd->block_refs[ref]->sf, width, height, ref,
-                               interp_filter, MV_PRECISION_Q3,
+                               mi->mbmi.interp_filter, MV_PRECISION_Q3,
                                mi_col * MI_SIZE + 4 * ic,
                                mi_row * MI_SIZE + 4 * ir);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
