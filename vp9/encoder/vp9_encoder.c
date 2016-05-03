@@ -2909,7 +2909,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   }
 
   if (lf->filter_level > 0) {
-    vp9_build_mask_frame(cm, lf->filter_level, 0);
+    vp9_build_filterlevels_frame(cm, lf->filter_level, 0);
 
     if (cpi->num_workers > 1)
       vp9_loop_filter_frame_mt(cm->frame_to_show, cm, xd->plane,

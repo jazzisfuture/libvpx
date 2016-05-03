@@ -24,6 +24,19 @@
 #include "vp9/encoder/vp9_picklpf.h"
 #include "vp9/encoder/vp9_quantize.h"
 
+
+static void save_lfm(VP9_COMMON *const cm) {
+  memcpy(cm->lf.temp_lfm, cm->lf.lfm,
+         ((cm->mi_rows + (MI_BLOCK_SIZE - 1)) >> 3) * cm->lf.lfm_stride *
+          sizeof(*cm->lf.lfm));
+}
+
+static void restore_lfm(VP9_COMMON *const cm) {
+  memcpy(cm->lf.lfm, cm->lf.temp_lfm,
+         ((cm->mi_rows + (MI_BLOCK_SIZE - 1)) >> 3) * cm->lf.lfm_stride *
+          sizeof(*cm->lf.lfm));
+}
+
 static int get_max_filter_level(const VP9_COMP *cpi) {
   if (cpi->oxcf.pass == 2) {
     return cpi->twopass.section_intra_rating > 8 ? MAX_LOOP_FILTER * 3 / 4
@@ -33,14 +46,15 @@ static int get_max_filter_level(const VP9_COMP *cpi) {
   }
 }
 
-
 static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
                                 VP9_COMP *const cpi,
                                 int filt_level, int partial_frame) {
   VP9_COMMON *const cm = &cpi->common;
   int64_t filt_err;
 
-  vp9_build_mask_frame(cm, filt_level, partial_frame);
+  save_lfm(cm);
+
+  vp9_build_filterlevels_frame(cm, filt_level, partial_frame);
 
   if (cpi->num_workers > 1)
     vp9_loop_filter_frame_mt(cm->frame_to_show, cm, cpi->td.mb.e_mbd.plane,
@@ -62,6 +76,8 @@ static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
 
   // Re-instate the unfiltered frame
   vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+
+  restore_lfm(cm);
 
   return filt_err;
 }

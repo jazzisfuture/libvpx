@@ -931,7 +931,7 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   xd->corrupted |= vpx_reader_has_error(r);
 
   if (cm->lf.filter_level) {
-    vp9_build_mask(cm, mi, mi_row, mi_col, bw, bh);
+    vp9_build_mask(cm, mi, mi_row, mi_col, bw, bh, 1);
   }
 }
 
@@ -1500,7 +1500,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
   memset(cm->above_seg_context, 0,
          sizeof(*cm->above_seg_context) * aligned_cols);
 
-  vp9_reset_lfm(cm);
+  vp9_reset_lfm(cm, 0);
 
   get_tile_buffers(pbi, data, data_end, tile_cols, tile_rows, tile_buffers);
 
@@ -1701,7 +1701,7 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
   memset(cm->above_seg_context, 0,
          sizeof(*cm->above_seg_context) * aligned_mi_cols);
 
-  vp9_reset_lfm(cm);
+  vp9_reset_lfm(cm, 0);
 
   // Load tile data into tile_buffers
   get_tile_buffers(pbi, data, data_end, tile_cols, tile_rows,

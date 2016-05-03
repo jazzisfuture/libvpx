@@ -1515,6 +1515,7 @@ static void encode_b(VP9_COMP *cpi, const TileInfo *const tile,
                      int output_enabled, BLOCK_SIZE bsize,
                      PICK_MODE_CONTEXT *ctx) {
   MACROBLOCK *const x = &td->mb;
+
   set_offsets(cpi, tile, x, mi_row, mi_col, bsize);
   update_state(cpi, td, ctx, mi_row, mi_col, bsize, output_enabled);
   encode_superblock(cpi, td, tp, output_enabled, mi_row, mi_col, bsize, ctx);
@@ -1849,6 +1850,7 @@ static void encode_b_rt(VP9_COMP *cpi, ThreadData *td,
                         int output_enabled, BLOCK_SIZE bsize,
                         PICK_MODE_CONTEXT *ctx) {
   MACROBLOCK *const x = &td->mb;
+
   set_offsets(cpi, tile, x, mi_row, mi_col, bsize);
   update_state_rt(cpi, td, ctx, mi_row, mi_col, bsize);
 
@@ -3002,6 +3004,8 @@ static void reset_skip_tx_size(VP9_COMMON *cm, TX_SIZE max_tx_size) {
         mi_ptr[mi_col]->tx_size = max_tx_size;
     }
   }
+  // tx_size may have been changed, so rebuild loopfilter masks
+  vp9_build_mask_frame(cm);
 }
 
 static MV_REFERENCE_FRAME get_frame_type(const VP9_COMP *cpi) {
@@ -4065,6 +4069,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   x->quant_fp = cpi->sf.use_quant_fp;
   vp9_zero(x->skip_txfm);
+
   if (sf->use_nonrd_pick_mode) {
     // Initialize internal buffer pointers for rtc coding, where non-RD
     // mode decision is used and hence no buffer pointer swap needed.
@@ -4100,6 +4105,8 @@ static void encode_frame_internal(VP9_COMP *cpi) {
                      &cpi->twopass.this_frame_mb_stats);
   }
 #endif
+
+    vp9_reset_lfm(cm, 1);
 
     // If allowed, encoding tiles in parallel with one thread handling one tile.
     if (VPXMIN(cpi->oxcf.max_threads, 1 << cm->log2_tile_cols) > 1)
@@ -4389,5 +4396,7 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td,
       vp9_cyclic_refresh_update_sb_postencode(cpi, mi, mi_row, mi_col, bsize);
     if (cpi->oxcf.pass == 0 && cpi->svc.temporal_layer_id == 0)
       update_zeromv_cnt(cpi, mi, mi_row, mi_col, bsize);
+
+    vp9_build_mask(cm, mi, mi_row, mi_col, -1, -1, 0);
   }
 }
