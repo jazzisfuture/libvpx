@@ -694,128 +694,64 @@ static void highbd_filter_selectively_horiz(uint16_t *s, int pitch,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-// This function ors into the current lfm structure, where to do loop
-// filters for the specific mi we are looking at. It uses information
-// including the block_size_type (32x16, 32x32, etc.), the transform size,
-// whether there were any coefficients encoded, and the loop filter strength
-// block we are currently looking at. Shift is used to position the
-// 1's we produce.
-static void build_masks(const loop_filter_info_n *const lfi_n,
+static void build_lfl_y(const loop_filter_info_n *const lfi_n,
                         const MODE_INFO *mi, const int shift_y,
-                        const int shift_uv,
-                        LOOP_FILTER_MASK *lfm) {
+                        const int shift_uv, LOOP_FILTER_MASK *lfm) {
   const BLOCK_SIZE block_size = mi->sb_type;
-  const TX_SIZE tx_size_y = mi->tx_size;
-  const TX_SIZE tx_size_uv = get_uv_tx_size_impl(tx_size_y, block_size, 1, 1);
   const int filter_level = get_filter_level(lfi_n, mi);
-  uint64_t *const left_y = &lfm->left_y[tx_size_y];
-  uint64_t *const above_y = &lfm->above_y[tx_size_y];
-  uint64_t *const int_4x4_y = &lfm->int_4x4_y;
-  uint16_t *const left_uv = &lfm->left_uv[tx_size_uv];
-  uint16_t *const above_uv = &lfm->above_uv[tx_size_uv];
-  uint16_t *const int_4x4_uv = &lfm->int_4x4_uv;
+  const int w = num_8x8_blocks_wide_lookup[block_size];
+  const int h = num_8x8_blocks_high_lookup[block_size];
+  int index = shift_y;
   int i;
 
-  // If filter level is 0 we don't loop filter.
-  if (!filter_level) {
-    return;
-  } else {
-    const int w = num_8x8_blocks_wide_lookup[block_size];
-    const int h = num_8x8_blocks_high_lookup[block_size];
-    int index = shift_y;
-    for (i = 0; i < h; i++) {
-      memset(&lfm->lfl_y[index], filter_level, w);
-      index += 8;
-    }
+  // fill filter_level for given block_size
+  for (i = 0; i < h; i++) {
+    memset(&lfm->lfl_y[index], filter_level, w);
+    index += 8;
   }
 
-  // These set 1 in the current block size for the block size edges.
-  // For instance if the block size is 32x16, we'll set:
-  //    above =   1111
-  //              0000
-  //    and
-  //    left  =   1000
-  //          =   1000
-  // NOTE : In this example the low bit is left most ( 1000 ) is stored as
-  //        1,  not 8...
-  //
-  // U and V set things on a 16 bit scale.
-  //
-  *above_y |= above_prediction_mask[block_size] << shift_y;
-  *above_uv |= above_prediction_mask_uv[block_size] << shift_uv;
-  *left_y |= left_prediction_mask[block_size] << shift_y;
-  *left_uv |= left_prediction_mask_uv[block_size] << shift_uv;
-
-  // If the block has no coefficients and is not intra we skip applying
-  // the loop filter on block edges.
-  if (mi->skip && is_inter_block(mi))
-    return;
-
-  // Here we are adding a mask for the transform size. The transform
-  // size mask is set to be correct for a 64x64 prediction block size. We
-  // mask to match the size of the block we are working on and then shift it
-  // into place..
-  *above_y |= (size_mask[block_size] &
-               above_64x64_txform_mask[tx_size_y]) << shift_y;
-  *above_uv |= (size_mask_uv[block_size] &
-                above_64x64_txform_mask_uv[tx_size_uv]) << shift_uv;
-
-  *left_y |= (size_mask[block_size] &
-              left_64x64_txform_mask[tx_size_y]) << shift_y;
-  *left_uv |= (size_mask_uv[block_size] &
-               left_64x64_txform_mask_uv[tx_size_uv]) << shift_uv;
-
-  // Here we are trying to determine what to do with the internal 4x4 block
-  // boundaries.  These differ from the 4x4 boundaries on the outside edge of
-  // an 8x8 in that the internal ones can be skipped and don't depend on
-  // the prediction block size.
-  if (tx_size_y == TX_4X4)
-    *int_4x4_y |= size_mask[block_size] << shift_y;
-
-  if (tx_size_uv == TX_4X4)
-    *int_4x4_uv |= (size_mask_uv[block_size] & 0xffff) << shift_uv;
-}
-
-// This function does the same thing as the one above with the exception that
-// it only affects the y masks. It exists because for blocks < 16x16 in size,
-// we only update u and v masks on the first block.
-static void build_y_mask(const loop_filter_info_n *const lfi_n,
-                         const MODE_INFO *mi, const int shift_y,
-                         LOOP_FILTER_MASK *lfm) {
-  const BLOCK_SIZE block_size = mi->sb_type;
-  const TX_SIZE tx_size_y = mi->tx_size;
-  const int filter_level = get_filter_level(lfi_n, mi);
-  uint64_t *const left_y = &lfm->left_y[tx_size_y];
-  uint64_t *const above_y = &lfm->above_y[tx_size_y];
-  uint64_t *const int_4x4_y = &lfm->int_4x4_y;
-  int i;
-
+  // clear out mask bits for given block_size only if filter_level is zero
   if (!filter_level) {
-    return;
-  } else {
-    const int w = num_8x8_blocks_wide_lookup[block_size];
-    const int h = num_8x8_blocks_high_lookup[block_size];
-    int index = shift_y;
-    for (i = 0; i < h; i++) {
-      memset(&lfm->lfl_y[index], filter_level, w);
-      index += 8;
+    const TX_SIZE tx_size_y = mi->tx_size;
+    const TX_SIZE tx_size_uv = get_uv_tx_size_impl(tx_size_y, block_size, 1, 1);
+    uint64_t *const left_y = &lfm->left_y[tx_size_y];
+    uint64_t *const above_y = &lfm->above_y[tx_size_y];
+    uint64_t *const int_4x4_y = &lfm->int_4x4_y;
+    uint16_t *const left_uv = &lfm->left_uv[tx_size_uv];
+    uint16_t *const above_uv = &lfm->above_uv[tx_size_uv];
+    uint16_t *const int_4x4_uv = &lfm->int_4x4_uv;
+    const uint64_t flip_bits = 0xffffffffffffffffULL;
+
+    *above_y &= (above_prediction_mask[block_size] << shift_y) ^ flip_bits;
+    *left_y &= (left_prediction_mask[block_size] << shift_y) ^ flip_bits;
+
+    *above_y &= ((size_mask[block_size] &
+                 above_64x64_txform_mask[tx_size_y]) << shift_y) ^ flip_bits;
+
+    *left_y &= ((size_mask[block_size] &
+                left_64x64_txform_mask[tx_size_y]) << shift_y) ^ flip_bits;
+
+    if (tx_size_y == TX_4X4)
+      *int_4x4_y &= (size_mask[block_size] << shift_y) ^ flip_bits;
+
+    if (shift_uv >= 0) {
+      *above_uv &=
+          (above_prediction_mask_uv[block_size] << shift_uv) ^ flip_bits;
+      *left_uv &=
+          (left_prediction_mask_uv[block_size] << shift_uv) ^ flip_bits;
+
+      *above_uv &= ((size_mask_uv[block_size] &
+                    above_64x64_txform_mask_uv[tx_size_uv]) << shift_uv) ^
+                        flip_bits;
+      *left_uv &= ((size_mask_uv[block_size] &
+                   left_64x64_txform_mask_uv[tx_size_uv]) << shift_uv) ^
+                       flip_bits;
+
+      if (tx_size_uv == TX_4X4)
+        *int_4x4_uv &=
+            ((size_mask_uv[block_size] & 0xffff) << shift_uv) ^ flip_bits;
     }
   }
-
-  *above_y |= above_prediction_mask[block_size] << shift_y;
-  *left_y |= left_prediction_mask[block_size] << shift_y;
-
-  if (mi->skip && is_inter_block(mi))
-    return;
-
-  *above_y |= (size_mask[block_size] &
-               above_64x64_txform_mask[tx_size_y]) << shift_y;
-
-  *left_y |= (size_mask[block_size] &
-              left_64x64_txform_mask[tx_size_y]) << shift_y;
-
-  if (tx_size_y == TX_4X4)
-    *int_4x4_y |= size_mask[block_size] << shift_y;
 }
 
 void vp9_adjust_mask(VP9_COMMON *const cm, const int mi_row,
@@ -932,11 +868,12 @@ void vp9_adjust_mask(VP9_COMMON *const cm, const int mi_row,
   assert(!(lfm->int_4x4_uv & lfm->above_uv[TX_16X16]));
 }
 
-// This function sets up the bit masks for the entire 64x64 region represented
-// by mi_row, mi_col.
-void vp9_setup_mask(VP9_COMMON *const cm, const int mi_row, const int mi_col,
-                    MODE_INFO **mi, const int mode_info_stride,
-                    LOOP_FILTER_MASK *lfm) {
+// This function builds the filter levels for the entire 64x64 region
+// represented by mi_row, mi_col.
+static void build_filterlevels_sb(VP9_COMMON *const cm, const int mi_row,
+                                  const int mi_col, MODE_INFO **mi,
+                                  const int mode_info_stride,
+                                  LOOP_FILTER_MASK *lfm) {
   int idx_32, idx_16, idx_8;
   const loop_filter_info_n *const lfi_n = &cm->lf_info;
   MODE_INFO **mip = mi;
@@ -966,26 +903,26 @@ void vp9_setup_mask(VP9_COMMON *const cm, const int mi_row, const int mi_col,
   const int max_cols = (mi_col + MI_BLOCK_SIZE > cm->mi_cols ?
                         cm->mi_cols - mi_col : MI_BLOCK_SIZE);
 
-  vp9_zero(*lfm);
+  //vp9_zero(lfm->lfl_y);
   assert(mip[0] != NULL);
 
   switch (mip[0]->sb_type) {
     case BLOCK_64X64:
-      build_masks(lfi_n, mip[0] , 0, 0, lfm);
+      build_lfl_y(lfi_n, mip[0] , 0, 0, lfm);
       break;
     case BLOCK_64X32:
-      build_masks(lfi_n, mip[0], 0, 0, lfm);
+      build_lfl_y(lfi_n, mip[0], 0, 0, lfm);
       mip2 = mip + mode_info_stride * 4;
       if (4 >= max_rows)
         break;
-      build_masks(lfi_n, mip2[0], 32, 8, lfm);
+      build_lfl_y(lfi_n, mip2[0], 32, 8, lfm);
       break;
     case BLOCK_32X64:
-      build_masks(lfi_n, mip[0], 0, 0, lfm);
+      build_lfl_y(lfi_n, mip[0], 0, 0, lfm);
       mip2 = mip + 4;
       if (4 >= max_cols)
         break;
-      build_masks(lfi_n, mip2[0], 4, 2, lfm);
+      build_lfl_y(lfi_n, mip2[0], 4, 2, lfm);
       break;
     default:
       for (idx_32 = 0; idx_32 < 4; mip += offset_32[idx_32], ++idx_32) {
@@ -997,21 +934,21 @@ void vp9_setup_mask(VP9_COMMON *const cm, const int mi_row, const int mi_col,
           continue;
         switch (mip[0]->sb_type) {
           case BLOCK_32X32:
-            build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+            build_lfl_y(lfi_n, mip[0], shift_y, shift_uv, lfm);
             break;
           case BLOCK_32X16:
-            build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+            build_lfl_y(lfi_n, mip[0], shift_y, shift_uv, lfm);
             if (mi_32_row_offset + 2 >= max_rows)
               continue;
             mip2 = mip + mode_info_stride * 2;
-            build_masks(lfi_n, mip2[0], shift_y + 16, shift_uv + 4, lfm);
+            build_lfl_y(lfi_n, mip2[0], shift_y + 16, shift_uv + 4, lfm);
             break;
           case BLOCK_16X32:
-            build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+            build_lfl_y(lfi_n, mip[0], shift_y, shift_uv, lfm);
             if (mi_32_col_offset + 2 >= max_cols)
               continue;
             mip2 = mip + 2;
-            build_masks(lfi_n, mip2[0], shift_y + 2, shift_uv + 1, lfm);
+            build_lfl_y(lfi_n, mip2[0], shift_y + 2, shift_uv + 1, lfm);
             break;
           default:
             for (idx_16 = 0; idx_16 < 4; mip += offset_16[idx_16], ++idx_16) {
@@ -1027,27 +964,27 @@ void vp9_setup_mask(VP9_COMMON *const cm, const int mi_row, const int mi_col,
 
               switch (mip[0]->sb_type) {
                 case BLOCK_16X16:
-                  build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+                  build_lfl_y(lfi_n, mip[0], shift_y, shift_uv, lfm);
                   break;
                 case BLOCK_16X8:
-                  build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+                  build_lfl_y(lfi_n, mip[0], shift_y, shift_uv, lfm);
                   if (mi_16_row_offset + 1 >= max_rows)
                     continue;
                   mip2 = mip + mode_info_stride;
-                  build_y_mask(lfi_n, mip2[0], shift_y+8, lfm);
+                  build_lfl_y(lfi_n, mip2[0], shift_y+8, -1, lfm);
                   break;
                 case BLOCK_8X16:
-                  build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+                  build_lfl_y(lfi_n, mip[0], shift_y, shift_uv, lfm);
                   if (mi_16_col_offset +1 >= max_cols)
                     continue;
                   mip2 = mip + 1;
-                  build_y_mask(lfi_n, mip2[0], shift_y+1, lfm);
+                  build_lfl_y(lfi_n, mip2[0], shift_y+1, -1, lfm);
                   break;
                 default: {
                   const int shift_y = shift_32_y[idx_32] +
                                       shift_16_y[idx_16] +
                                       shift_8_y[0];
-                  build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+                  build_lfl_y(lfi_n, mip[0], shift_y, shift_uv, lfm);
                   mip += offset[0];
                   for (idx_8 = 1; idx_8 < 4; mip += offset[idx_8], ++idx_8) {
                     const int shift_y = shift_32_y[idx_32] +
@@ -1061,7 +998,7 @@ void vp9_setup_mask(VP9_COMMON *const cm, const int mi_row, const int mi_col,
                     if (mi_8_col_offset >= max_cols ||
                         mi_8_row_offset >= max_rows)
                       continue;
-                    build_y_mask(lfi_n, mip[0], shift_y, lfm);
+                    build_lfl_y(lfi_n, mip[0], shift_y, -1, lfm);
                   }
                   break;
                 }
@@ -1539,7 +1476,6 @@ static void loop_filter_rows(YV12_BUFFER_CONFIG *frame_buffer, VP9_COMMON *cm,
   for (mi_row = start; mi_row < stop; mi_row += MI_BLOCK_SIZE) {
     MODE_INFO **mi = cm->mi_grid_visible + mi_row * cm->mi_stride;
     LOOP_FILTER_MASK *lfm = get_lfm(&cm->lf, mi_row, 0);
-
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE, ++lfm) {
       int plane;
 
@@ -1584,14 +1520,13 @@ void vp9_loop_filter_frame(YV12_BUFFER_CONFIG *frame,
   loop_filter_rows(frame, cm, xd->plane, start_mi_row, end_mi_row, y_only);
 }
 
-// Used by the encoder to build the loopfilter masks.
-// TODO(slavarnway): Do the encoder the same way the decoder does it and
-//                   build the masks in line as part of the encode process.
-void vp9_build_mask_frame(VP9_COMMON *cm, int frame_filter_level,
-                          int partial_frame) {
+// Used by the encoder to build the loopfilter filter levels.
+void vp9_build_filterlevels_frame(VP9_COMMON *cm, int frame_filter_level,
+                                  int partial_frame) {
   int start_mi_row, end_mi_row, mi_rows_to_filter;
   int mi_col, mi_row;
-  if (!frame_filter_level) return;
+
+  if (!frame_filter_level) { return; }
   start_mi_row = 0;
   mi_rows_to_filter = cm->mi_rows;
   if (partial_frame && cm->mi_rows > 8) {
@@ -1606,9 +1541,8 @@ void vp9_build_mask_frame(VP9_COMMON *cm, int frame_filter_level,
   for (mi_row = start_mi_row; mi_row < end_mi_row; mi_row += MI_BLOCK_SIZE) {
     MODE_INFO **mi = cm->mi_grid_visible + mi_row * cm->mi_stride;
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
-      // vp9_setup_mask() zeros lfm
-      vp9_setup_mask(cm, mi_row, mi_col, mi + mi_col, cm->mi_stride,
-                     get_lfm(&cm->lf, mi_row, mi_col));
+      build_filterlevels_sb(cm, mi_row, mi_col, mi + mi_col, cm->mi_stride,
+                            get_lfm(&cm->lf, mi_row, mi_col));
     }
   }
 }
@@ -1630,11 +1564,9 @@ static const uint8_t first_block_in_16x16[8][8] = {
 // by mi_row, mi_col in a 64x64 region.
 // TODO(SJL): This function only works for yv12.
 void vp9_build_mask(VP9_COMMON *cm, const MODE_INFO *mi, int mi_row,
-                    int mi_col, int bw, int bh) {
+                    int mi_col, int bw, int bh, int build_filterlevel) {
   const BLOCK_SIZE block_size = mi->sb_type;
   const TX_SIZE tx_size_y = mi->tx_size;
-  const loop_filter_info_n *const lfi_n = &cm->lf_info;
-  const int filter_level = get_filter_level(lfi_n, mi);
   const TX_SIZE tx_size_uv = get_uv_tx_size_impl(tx_size_y, block_size, 1, 1);
   LOOP_FILTER_MASK *const lfm = get_lfm(&cm->lf, mi_row, mi_col);
   uint64_t *const left_y = &lfm->left_y[tx_size_y];
@@ -1649,14 +1581,18 @@ void vp9_build_mask(VP9_COMMON *cm, const MODE_INFO *mi, int mi_row,
   const int shift_uv = (col_in_sb >> 1) + ((row_in_sb >> 1) << 2);
   const int build_uv = first_block_in_16x16[row_in_sb][col_in_sb];
 
-  if (!filter_level) {
-    return;
-  } else {
-    int index = shift_y;
-    int i;
-    for (i = 0; i < bh; i++) {
-      memset(&lfm->lfl_y[index], filter_level, bw);
-      index += 8;
+  if (build_filterlevel) {
+    const loop_filter_info_n *const lfi_n = &cm->lf_info;
+    const int filter_level = get_filter_level(lfi_n, mi);
+    if (!filter_level) {
+      return;
+    } else {
+      int index = shift_y;
+      int i;
+      for (i = 0; i < bh; i++) {
+        memset(&lfm->lfl_y[index], filter_level, bw);
+        index += 8;
+      }
     }
   }
 
@@ -1722,8 +1658,8 @@ void vp9_loop_filter_data_reset(
   memcpy(lf_data->planes, planes, sizeof(lf_data->planes));
 }
 
-void vp9_reset_lfm(VP9_COMMON *const cm) {
-  if (cm->lf.filter_level) {
+void vp9_reset_lfm(struct VP9Common *cm, int force_reset) {
+  if (cm->lf.filter_level || force_reset) {
     memset(cm->lf.lfm, 0,
            ((cm->mi_rows + (MI_BLOCK_SIZE - 1)) >> 3) * cm->lf.lfm_stride *
             sizeof(*cm->lf.lfm));
@@ -1735,4 +1671,248 @@ int vp9_loop_filter_worker(LFWorkerData *const lf_data, void *unused) {
   loop_filter_rows(lf_data->frame_buffer, lf_data->cm, lf_data->planes,
                    lf_data->start, lf_data->stop, lf_data->y_only);
   return 1;
+}
+
+static void build_masks(const loop_filter_info_n *const lfi_n,
+                        const MODE_INFO *mi, int shift_y,
+                        const int shift_uv,
+                        LOOP_FILTER_MASK *lfm) {
+  const BLOCK_SIZE block_size = mi->sb_type;
+  const TX_SIZE tx_size_y = mi->tx_size;
+  const TX_SIZE tx_size_uv = get_uv_tx_size_impl(tx_size_y, block_size, 1, 1);
+  uint64_t *const left_y = &lfm->left_y[tx_size_y];
+  uint64_t *const above_y = &lfm->above_y[tx_size_y];
+  uint64_t *const int_4x4_y = &lfm->int_4x4_y;
+  uint16_t *const left_uv = &lfm->left_uv[tx_size_uv];
+  uint16_t *const above_uv = &lfm->above_uv[tx_size_uv];
+  uint16_t *const int_4x4_uv = &lfm->int_4x4_uv;
+  (void)lfi_n;
+  // These set 1 in the current block size for the block size edges.
+  // For instance if the block size is 32x16, we'll set:
+  //    above =   1111
+  //              0000
+  //    and
+  //    left  =   1000
+  //          =   1000
+  // NOTE : In this example the low bit is left most ( 1000 ) is stored as
+  //        1,  not 8...
+  //
+  // U and V set things on a 16 bit scale.
+  //
+  *above_y |= above_prediction_mask[block_size] << shift_y;
+  *left_y |= left_prediction_mask[block_size] << shift_y;
+  *above_uv |= above_prediction_mask_uv[block_size] << shift_uv;
+  *left_uv |= left_prediction_mask_uv[block_size] << shift_uv;
+
+  // If the block has no coefficients and is not intra we skip applying
+  // the loop filter on block edges.
+  if (mi->skip && is_inter_block(mi))
+    return;
+
+  // Here we are adding a mask for the transform size. The transform
+  // size mask is set to be correct for a 64x64 prediction block size. We
+  // mask to match the size of the block we are working on and then shift it
+  // into place..
+  *above_y |= (size_mask[block_size] &
+               above_64x64_txform_mask[tx_size_y]) << shift_y;
+  *above_uv |= (size_mask_uv[block_size] &
+                above_64x64_txform_mask_uv[tx_size_uv]) << shift_uv;
+
+  *left_y |= (size_mask[block_size] &
+              left_64x64_txform_mask[tx_size_y]) << shift_y;
+  *left_uv |= (size_mask_uv[block_size] &
+               left_64x64_txform_mask_uv[tx_size_uv]) << shift_uv;
+
+  // Here we are trying to determine what to do with the internal 4x4 block
+  // boundaries.  These differ from the 4x4 boundaries on the outside edge of
+  // an 8x8 in that the internal ones can be skipped and don't depend on
+  // the prediction block size.
+  if (tx_size_y == TX_4X4)
+    *int_4x4_y |= size_mask[block_size] << shift_y;
+
+  if (tx_size_uv == TX_4X4)
+    *int_4x4_uv |= (size_mask_uv[block_size] & 0xffff) << shift_uv;
+}
+
+// This function does the same thing as the one above with the exception that
+// it only affects the y masks. It exists because for blocks < 16x16 in size,
+// we only update u and v masks on the first block.
+static void build_y_mask(const loop_filter_info_n *const lfi_n,
+                         const MODE_INFO *mi, int shift_y,
+                         LOOP_FILTER_MASK *lfm) {
+  const BLOCK_SIZE block_size = mi->sb_type;
+  const TX_SIZE tx_size_y = mi->tx_size;
+  uint64_t *const left_y = &lfm->left_y[tx_size_y];
+  uint64_t *const above_y = &lfm->above_y[tx_size_y];
+  uint64_t *const int_4x4_y = &lfm->int_4x4_y;
+
+  (void)lfi_n;
+
+  *above_y |= above_prediction_mask[block_size] << shift_y;
+  *left_y |= left_prediction_mask[block_size] << shift_y;
+
+  if (mi->skip && is_inter_block(mi))
+    return;
+
+  *above_y |= (size_mask[block_size] &
+               above_64x64_txform_mask[tx_size_y]) << shift_y;
+
+  *left_y |= (size_mask[block_size] &
+              left_64x64_txform_mask[tx_size_y]) << shift_y;
+
+  if (tx_size_y == TX_4X4)
+    *int_4x4_y |= size_mask[block_size] << shift_y;
+}
+
+static void setup_mask(VP9_COMMON *const cm, const int mi_row, const int mi_col,
+                       MODE_INFO **mi, const int mode_info_stride,
+                       LOOP_FILTER_MASK *lfm) {
+  int idx_32, idx_16, idx_8;
+  const loop_filter_info_n *const lfi_n = &cm->lf_info;
+  MODE_INFO **mip = mi;
+  MODE_INFO **mip2 = mi;
+
+  // These are offsets to the next mi in the 64x64 block. It is what gets
+  // added to the mi ptr as we go through each loop. It helps us to avoid
+  // setting up special row and column counters for each index. The last step
+  // brings us out back to the starting position.
+  const int offset_32[] = {4, (mode_info_stride << 2) - 4, 4,
+                           -(mode_info_stride << 2) - 4};
+  const int offset_16[] = {2, (mode_info_stride << 1) - 2, 2,
+                           -(mode_info_stride << 1) - 2};
+  const int offset[] = {1, mode_info_stride - 1, 1, -mode_info_stride - 1};
+
+  // Following variables represent shifts to position the current block
+  // mask over the appropriate block. A shift of 36 to the left will move
+  // the bits for the final 32 by 32 block in the 64x64 up 4 rows and left
+  // 4 rows to the appropriate spot.
+  const int shift_32_y[] = {0, 4, 32, 36};
+  const int shift_16_y[] = {0, 2, 16, 18};
+  const int shift_8_y[] = {0, 1, 8, 9};
+  const int shift_32_uv[] = {0, 2, 8, 10};
+  const int shift_16_uv[] = {0, 1, 4, 5};
+  const int max_rows = (mi_row + MI_BLOCK_SIZE > cm->mi_rows ?
+                        cm->mi_rows - mi_row : MI_BLOCK_SIZE);
+  const int max_cols = (mi_col + MI_BLOCK_SIZE > cm->mi_cols ?
+                        cm->mi_cols - mi_col : MI_BLOCK_SIZE);
+
+  vp9_zero(*lfm);
+  assert(mip[0] != NULL);
+
+  switch (mip[0]->sb_type) {
+    case BLOCK_64X64:
+      build_masks(lfi_n, mip[0] , 0, 0, lfm);
+      break;
+    case BLOCK_64X32:
+      build_masks(lfi_n, mip[0], 0, 0, lfm);
+      mip2 = mip + mode_info_stride * 4;
+      if (4 >= max_rows)
+        break;
+      build_masks(lfi_n, mip2[0], 32, 8, lfm);
+      break;
+    case BLOCK_32X64:
+      build_masks(lfi_n, mip[0], 0, 0, lfm);
+      mip2 = mip + 4;
+      if (4 >= max_cols)
+        break;
+      build_masks(lfi_n, mip2[0], 4, 2, lfm);
+      break;
+    default:
+      for (idx_32 = 0; idx_32 < 4; mip += offset_32[idx_32], ++idx_32) {
+        const int shift_y = shift_32_y[idx_32];
+        const int shift_uv = shift_32_uv[idx_32];
+        const int mi_32_col_offset = ((idx_32 & 1) << 2);
+        const int mi_32_row_offset = ((idx_32 >> 1) << 2);
+        if (mi_32_col_offset >= max_cols || mi_32_row_offset >= max_rows)
+          continue;
+        switch (mip[0]->sb_type) {
+          case BLOCK_32X32:
+            build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+            break;
+          case BLOCK_32X16:
+            build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+            if (mi_32_row_offset + 2 >= max_rows)
+              continue;
+            mip2 = mip + mode_info_stride * 2;
+            build_masks(lfi_n, mip2[0], shift_y + 16, shift_uv + 4, lfm);
+            break;
+          case BLOCK_16X32:
+            build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+            if (mi_32_col_offset + 2 >= max_cols)
+              continue;
+            mip2 = mip + 2;
+            build_masks(lfi_n, mip2[0], shift_y + 2, shift_uv + 1, lfm);
+            break;
+          default:
+            for (idx_16 = 0; idx_16 < 4; mip += offset_16[idx_16], ++idx_16) {
+              const int shift_y = shift_32_y[idx_32] + shift_16_y[idx_16];
+              const int shift_uv = shift_32_uv[idx_32] + shift_16_uv[idx_16];
+              const int mi_16_col_offset = mi_32_col_offset +
+                  ((idx_16 & 1) << 1);
+              const int mi_16_row_offset = mi_32_row_offset +
+                  ((idx_16 >> 1) << 1);
+
+              if (mi_16_col_offset >= max_cols || mi_16_row_offset >= max_rows)
+                continue;
+
+              switch (mip[0]->sb_type) {
+                case BLOCK_16X16:
+                  build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+                  break;
+                case BLOCK_16X8:
+                  build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+                  if (mi_16_row_offset + 1 >= max_rows)
+                    continue;
+                  mip2 = mip + mode_info_stride;
+                  build_y_mask(lfi_n, mip2[0], shift_y+8, lfm);
+                  break;
+                case BLOCK_8X16:
+                  build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+                  if (mi_16_col_offset +1 >= max_cols)
+                    continue;
+                  mip2 = mip + 1;
+                  build_y_mask(lfi_n, mip2[0], shift_y+1, lfm);
+                  break;
+                default: {
+                  const int shift_y = shift_32_y[idx_32] +
+                                      shift_16_y[idx_16] +
+                                      shift_8_y[0];
+                  build_masks(lfi_n, mip[0], shift_y, shift_uv, lfm);
+                  mip += offset[0];
+                  for (idx_8 = 1; idx_8 < 4; mip += offset[idx_8], ++idx_8) {
+                    const int shift_y = shift_32_y[idx_32] +
+                                        shift_16_y[idx_16] +
+                                        shift_8_y[idx_8];
+                    const int mi_8_col_offset = mi_16_col_offset +
+                        ((idx_8 & 1));
+                    const int mi_8_row_offset = mi_16_row_offset +
+                        ((idx_8 >> 1));
+
+                    if (mi_8_col_offset >= max_cols ||
+                        mi_8_row_offset >= max_rows)
+                      continue;
+                    build_y_mask(lfi_n, mip[0], shift_y, lfm);
+                  }
+                  break;
+                }
+              }
+            }
+            break;
+        }
+      }
+      break;
+  }
+}
+
+void vp9_build_mask_frame(VP9_COMMON *cm) {
+  int mi_col, mi_row;
+
+  for (mi_row = 0; mi_row < cm->mi_rows; mi_row += MI_BLOCK_SIZE) {
+    MODE_INFO **mi = cm->mi_grid_visible + mi_row * cm->mi_stride;
+    for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
+      // setup_mask() zeros lfm
+      setup_mask(cm, mi_row, mi_col, mi + mi_col, cm->mi_stride,
+                 get_lfm(&cm->lf, mi_row, mi_col));
+    }
+  }
 }
