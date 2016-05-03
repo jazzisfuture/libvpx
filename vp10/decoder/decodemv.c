@@ -1618,48 +1618,36 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
 
   if (bsize >= BLOCK_8X8) {
     if (mbmi->ref_frame[0] > INTRA_FRAME) {
-      if (mbmi->mv[0].as_mv.row & SUBPEL_MASK)
+      if ((mbmi->mv[0].as_mv.row & SUBPEL_MASK) ||
+          (mbmi->ref_frame[1] > INTRA_FRAME &&
+              (mbmi->mv[1].as_mv.row & SUBPEL_MASK)))
         mbmi->interp_filter[0] = (cm->interp_filter == SWITCHABLE)
                               ? read_switchable_interp_filter(cm, xd, 0, r)
                               : cm->interp_filter;
-      if (mbmi->mv[0].as_mv.col & SUBPEL_MASK)
+      if ((mbmi->mv[0].as_mv.col & SUBPEL_MASK) ||
+          (mbmi->ref_frame[1] > INTRA_FRAME &&
+              (mbmi->mv[1].as_mv.col & SUBPEL_MASK)))
         mbmi->interp_filter[1] = (cm->interp_filter == SWITCHABLE)
                               ? read_switchable_interp_filter(cm, xd, 1, r)
-                              : cm->interp_filter;
-    }
-    if (mbmi->ref_frame[1] > INTRA_FRAME) {
-      if (mbmi->mv[1].as_mv.row & SUBPEL_MASK)
-        mbmi->interp_filter[2] = (cm->interp_filter == SWITCHABLE)
-                              ? read_switchable_interp_filter(cm, xd, 2, r)
-                              : cm->interp_filter;
-      if (mbmi->mv[1].as_mv.col & SUBPEL_MASK)
-        mbmi->interp_filter[3] = (cm->interp_filter == SWITCHABLE)
-                              ? read_switchable_interp_filter(cm, xd, 3, r)
                               : cm->interp_filter;
     }
   } else {
     // decode prediction filter for sub8x8 blocks
     if (mbmi->ref_frame[0] > INTRA_FRAME) {
-      if (has_subpel_mv_component(xd, 0))
+      if (has_subpel_mv_component(xd, 0) ||
+          (mbmi->ref_frame[1] > INTRA_FRAME && has_subpel_mv_component(xd, 2)))
         mbmi->interp_filter[0] = (cm->interp_filter == SWITCHABLE)
                               ? read_switchable_interp_filter(cm, xd, 0, r)
                               : cm->interp_filter;
-      if (has_subpel_mv_component(xd, 1))
+      if (has_subpel_mv_component(xd, 1) ||
+          (mbmi->ref_frame[1] > INTRA_FRAME && has_subpel_mv_component(xd, 3)))
         mbmi->interp_filter[1] = (cm->interp_filter == SWITCHABLE)
                               ? read_switchable_interp_filter(cm, xd, 1, r)
                               : cm->interp_filter;
     }
-    if (mbmi->ref_frame[1] > INTRA_FRAME) {
-      if (has_subpel_mv_component(xd, 2))
-        mbmi->interp_filter[2] = (cm->interp_filter == SWITCHABLE)
-                              ? read_switchable_interp_filter(cm, xd, 2, r)
-                              : cm->interp_filter;
-      if (has_subpel_mv_component(xd, 3))
-        mbmi->interp_filter[3] = (cm->interp_filter == SWITCHABLE)
-                              ? read_switchable_interp_filter(cm, xd, 3, r)
-                              : cm->interp_filter;
-    }
   }
+  mbmi->interp_filter[2] = mbmi->interp_filter[0];
+  mbmi->interp_filter[3] = mbmi->interp_filter[1];
 #else
 #if CONFIG_EXT_INTERP
   mbmi->interp_filter = (cm->interp_filter == SWITCHABLE)

@@ -729,51 +729,34 @@ int vp10_get_switchable_rate(const VP10_COMP *cpi,
   int inter_filter_cost = 0;
 
   if (mbmi->sb_type >= BLOCK_8X8) {
-    if (mbmi->mv[0].as_mv.row & SUBPEL_MASK) {
+    if ((mbmi->mv[0].as_mv.row & SUBPEL_MASK) ||
+        (mbmi->ref_frame[1] > INTRA_FRAME &&
+            (mbmi->mv[1].as_mv.row & SUBPEL_MASK))) {
       const int ctx = vp10_get_pred_context_switchable_interp(xd, 0);
       inter_filter_cost +=
           cpi->switchable_interp_costs[ctx][mbmi->interp_filter[0]];
     }
-    if (mbmi->mv[0].as_mv.col & SUBPEL_MASK) {
+    if ((mbmi->mv[0].as_mv.col & SUBPEL_MASK) ||
+        (mbmi->ref_frame[1] > INTRA_FRAME &&
+            (mbmi->mv[1].as_mv.col & SUBPEL_MASK))) {
       const int ctx = vp10_get_pred_context_switchable_interp(xd, 1);
       inter_filter_cost +=
           cpi->switchable_interp_costs[ctx][mbmi->interp_filter[1]];
-    }
-    if (mbmi->ref_frame[1] > INTRA_FRAME) {
-      if (mbmi->mv[1].as_mv.row & SUBPEL_MASK) {
-        const int ctx = vp10_get_pred_context_switchable_interp(xd, 2);
-        inter_filter_cost +=
-            cpi->switchable_interp_costs[ctx][mbmi->interp_filter[2]];
-      }
-      if (mbmi->mv[1].as_mv.col & SUBPEL_MASK) {
-        const int ctx = vp10_get_pred_context_switchable_interp(xd, 3);
-        inter_filter_cost +=
-            cpi->switchable_interp_costs[ctx][mbmi->interp_filter[3]];
-      }
     }
   } else {
-    if (has_subpel_mv_component(xd, 0)) {
+    if (has_subpel_mv_component(xd, 0) ||
+        (mbmi->ref_frame[1] > INTRA_FRAME &&
+            has_subpel_mv_component(xd, 2))) {
       const int ctx = vp10_get_pred_context_switchable_interp(xd, 0);
       inter_filter_cost +=
           cpi->switchable_interp_costs[ctx][mbmi->interp_filter[0]];
     }
-    if (has_subpel_mv_component(xd, 1)) {
+    if (has_subpel_mv_component(xd, 1) ||
+        (mbmi->ref_frame[1] > INTRA_FRAME &&
+            has_subpel_mv_component(xd, 3))) {
       const int ctx = vp10_get_pred_context_switchable_interp(xd, 1);
       inter_filter_cost +=
           cpi->switchable_interp_costs[ctx][mbmi->interp_filter[1]];
-    }
-
-    if (mbmi->ref_frame[1] > INTRA_FRAME) {
-      if (has_subpel_mv_component(xd, 2)) {
-        const int ctx = vp10_get_pred_context_switchable_interp(xd, 2);
-        inter_filter_cost +=
-            cpi->switchable_interp_costs[ctx][mbmi->interp_filter[2]];
-      }
-      if (has_subpel_mv_component(xd, 3)) {
-        const int ctx = vp10_get_pred_context_switchable_interp(xd, 3);
-        inter_filter_cost +=
-            cpi->switchable_interp_costs[ctx][mbmi->interp_filter[3]];
-      }
     }
   }
 

@@ -1065,38 +1065,40 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
 #if CONFIG_DUAL_FILTER
   if (mbmi->sb_type >= BLOCK_8X8) {
     if (mbmi->ref_frame[0] > INTRA_FRAME) {
-      if ((mbmi->mv[0].as_mv.row & SUBPEL_MASK) == 0)
+      if ((mbmi->mv[0].as_mv.row & SUBPEL_MASK) == 0 &&
+          (mbmi->ref_frame[1] == NONE ||
+              (mbmi->mv[1].as_mv.row & SUBPEL_MASK) == 0)) {
         mbmi->interp_filter[0] = (cm->interp_filter == SWITCHABLE) ?
             EIGHTTAP_REGULAR : cm->interp_filter;
-      if ((mbmi->mv[0].as_mv.col & SUBPEL_MASK) == 0)
+        mbmi->interp_filter[2] = mbmi->interp_filter[0];
+      }
+
+      if ((mbmi->mv[0].as_mv.col & SUBPEL_MASK) == 0 &&
+          (mbmi->ref_frame[1] == NONE ||
+              (mbmi->mv[1].as_mv.col & SUBPEL_MASK) == 0)) {
         mbmi->interp_filter[1] = (cm->interp_filter == SWITCHABLE) ?
             EIGHTTAP_REGULAR : cm->interp_filter;
-    }
-    if (mbmi->ref_frame[1] > INTRA_FRAME) {
-      if ((mbmi->mv[1].as_mv.row & SUBPEL_MASK) == 0)
-        mbmi->interp_filter[2] = (cm->interp_filter == SWITCHABLE) ?
-            EIGHTTAP_REGULAR : cm->interp_filter;
-      if ((mbmi->mv[1].as_mv.col & SUBPEL_MASK) == 0)
-        mbmi->interp_filter[3] = (cm->interp_filter == SWITCHABLE) ?
-            EIGHTTAP_REGULAR : cm->interp_filter;
+        mbmi->interp_filter[3] = mbmi->interp_filter[1];
+      }
     }
   } else {
     // scan through sub8x8 blocks
     if (mbmi->ref_frame[0] > INTRA_FRAME) {
-      if (has_subpel_mv_component(xd, 0) == 0)
+      if (has_subpel_mv_component(xd, 0) == 0 &&
+          (mbmi->ref_frame[1] == NONE ||
+              has_subpel_mv_component(xd, 2) == 0)) {
         mbmi->interp_filter[0] = (cm->interp_filter == SWITCHABLE) ?
             EIGHTTAP_REGULAR : cm->interp_filter;
-      if (has_subpel_mv_component(xd, 1) == 0)
+        mbmi->interp_filter[2] = mbmi->interp_filter[0];
+      }
+
+      if (has_subpel_mv_component(xd, 1) == 0 &&
+          (mbmi->ref_frame[1] == NONE ||
+              has_subpel_mv_component(xd, 3) == 0)) {
         mbmi->interp_filter[1] = (cm->interp_filter == SWITCHABLE) ?
             EIGHTTAP_REGULAR : cm->interp_filter;
-    }
-    if (mbmi->ref_frame[1] > INTRA_FRAME) {
-      if (has_subpel_mv_component(xd, 2) == 0)
-        mbmi->interp_filter[2] = (cm->interp_filter == SWITCHABLE) ?
-            EIGHTTAP_REGULAR : cm->interp_filter;
-      if (has_subpel_mv_component(xd, 3) == 0)
-        mbmi->interp_filter[3] = (cm->interp_filter == SWITCHABLE) ?
-            EIGHTTAP_REGULAR : cm->interp_filter;
+        mbmi->interp_filter[3] = mbmi->interp_filter[1];
+      }
     }
   }
 #endif
@@ -1213,44 +1215,30 @@ static void update_state(VP10_COMP *cpi, ThreadData *td,
           ) {
 #if CONFIG_DUAL_FILTER
         if (mbmi->sb_type >= BLOCK_8X8) {
-          if (mbmi->mv[0].as_mv.row & SUBPEL_MASK) {
+          if ((mbmi->mv[0].as_mv.row & SUBPEL_MASK) ||
+              (mbmi->ref_frame[1] > INTRA_FRAME &&
+                  (mbmi->mv[1].as_mv.row & SUBPEL_MASK))) {
             const int ctx = vp10_get_pred_context_switchable_interp(xd, 0);
             ++td->counts->switchable_interp[ctx][mbmi->interp_filter[0]];
           }
-          if (mbmi->mv[0].as_mv.col & SUBPEL_MASK) {
+          if ((mbmi->mv[0].as_mv.col & SUBPEL_MASK) ||
+              (mbmi->ref_frame[1] > INTRA_FRAME &&
+                  (mbmi->mv[1].as_mv.col & SUBPEL_MASK))) {
             const int ctx = vp10_get_pred_context_switchable_interp(xd, 1);
             ++td->counts->switchable_interp[ctx][mbmi->interp_filter[1]];
-          }
-
-          if (mbmi->ref_frame[1] > INTRA_FRAME) {
-            if (mbmi->mv[1].as_mv.row & SUBPEL_MASK) {
-              const int ctx = vp10_get_pred_context_switchable_interp(xd, 2);
-              ++td->counts->switchable_interp[ctx][mbmi->interp_filter[2]];
-            }
-            if (mbmi->mv[1].as_mv.col & SUBPEL_MASK) {
-              const int ctx = vp10_get_pred_context_switchable_interp(xd, 3);
-              ++td->counts->switchable_interp[ctx][mbmi->interp_filter[3]];
-            }
           }
         } else {
-          if (has_subpel_mv_component(xd, 0)) {
+          if (has_subpel_mv_component(xd, 0) ||
+              (mbmi->ref_frame[1] > INTRA_FRAME &&
+                  has_subpel_mv_component(xd, 2))) {
             const int ctx = vp10_get_pred_context_switchable_interp(xd, 0);
             ++td->counts->switchable_interp[ctx][mbmi->interp_filter[0]];
           }
-          if (has_subpel_mv_component(xd, 1)) {
+          if (has_subpel_mv_component(xd, 1) ||
+              (mbmi->ref_frame[1] > INTRA_FRAME &&
+                  has_subpel_mv_component(xd, 3))) {
             const int ctx = vp10_get_pred_context_switchable_interp(xd, 1);
             ++td->counts->switchable_interp[ctx][mbmi->interp_filter[1]];
-          }
-
-          if (mbmi->ref_frame[1] > INTRA_FRAME) {
-            if (has_subpel_mv_component(xd, 2)) {
-              const int ctx = vp10_get_pred_context_switchable_interp(xd, 2);
-              ++td->counts->switchable_interp[ctx][mbmi->interp_filter[2]];
-            }
-            if (has_subpel_mv_component(xd, 3)) {
-              const int ctx = vp10_get_pred_context_switchable_interp(xd, 3);
-              ++td->counts->switchable_interp[ctx][mbmi->interp_filter[3]];
-            }
           }
         }
 #else
