@@ -86,6 +86,7 @@ struct loopfilter {
   signed char last_mode_deltas[MAX_MODE_LF_DELTAS];
 
   LOOP_FILTER_MASK *lfm;
+  LOOP_FILTER_MASK *temp_lfm;
   int lfm_stride;
 };
 
@@ -93,13 +94,6 @@ struct loopfilter {
 struct VP9Common;
 struct macroblockd;
 struct VP9LfSyncData;
-
-// This function sets up the bit masks for the entire 64x64 region represented
-// by mi_row, mi_col.
-void vp9_setup_mask(struct VP9Common *const cm,
-                    const int mi_row, const int mi_col,
-                    MODE_INFO **mi_8x8, const int mode_info_stride,
-                    LOOP_FILTER_MASK *lfm);
 
 void vp9_filter_block_plane_ss00(struct VP9Common *const cm,
                                  struct macroblockd_plane *const plane,
@@ -136,12 +130,14 @@ static INLINE LOOP_FILTER_MASK *get_lfm(const struct loopfilter *lf,
 }
 
 void vp9_build_mask(struct VP9Common *cm, const MODE_INFO *mi, int mi_row,
-                    int mi_col, int bw, int bh);
+                    int mi_col, int bw, int bh, int build_filterlevel);
 void vp9_adjust_mask(struct VP9Common *const cm, const int mi_row,
                      const int mi_col, LOOP_FILTER_MASK *lfm);
-void vp9_build_mask_frame(struct VP9Common *cm, int frame_filter_level,
-                          int partial_frame);
-void vp9_reset_lfm(struct VP9Common *const cm);
+void vp9_build_filterlevels_frame(struct VP9Common *cm, int frame_filter_level,
+                                  int partial_frame);
+void vp9_reset_lfm(struct VP9Common *const cm, int force_reset);
+
+void vp9_build_mask_frame(struct VP9Common *cm);
 
 typedef struct LoopFilterWorkerData {
   YV12_BUFFER_CONFIG *frame_buffer;
