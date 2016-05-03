@@ -104,5 +104,9 @@ TEST_P(TileIndependenceTest, MD5Match) {
 
 VP9_INSTANTIATE_TEST_CASE(TileIndependenceTest, ::testing::Range(0, 2, 1));
 
+#if CONFIG_EXT_TILE
+VP10_INSTANTIATE_TEST_CASE(TileIndependenceTest, ::testing::Values(1, 2, 32));
+#else
 VP10_INSTANTIATE_TEST_CASE(TileIndependenceTest, ::testing::Range(0, 1, 1));
+#endif  // CONFIG_EXT_TILE
 }  // namespace
