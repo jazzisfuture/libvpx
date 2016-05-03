@@ -4680,11 +4680,27 @@ void vp10_encode_frame(VP10_COMP *cpi) {
     else
       cm->reference_mode = REFERENCE_MODE_SELECT;
 
-#if !CONFIG_DUAL_FILTER
     if (cm->interp_filter == SWITCHABLE) {
       cm->interp_filter = get_cm_interp_filter(cpi);
     }
+#if CONFIG_DUAL_FILTER
+    cm->interp_filter = SWITCHABLE;
 #endif
+
+//    {
+//      int i, j, k, m;
+//      fprintf(stderr, "\n");
+//      for (j = 0; j < 3; ++j)
+//        for (i = 0; i < 3; ++i)
+//          for (k = 0; k < 3; ++k) {
+//            for (m = 0; m < 3; ++m) {
+//              fprintf(stderr, "{%d, %d, %d, %d}, ",
+//                      i, j, k, m);
+//            fprintf(stderr, "\n");
+//            }
+//          }
+//      exit(0);
+//    }
 
     encode_frame_internal(cpi);
 
