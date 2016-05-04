@@ -912,6 +912,30 @@ static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
   { 149, 160, 128, 128},
 };
 #else  // CONFIG_EXT_INTERP
+#if CONFIG_DUAL_FILTER
+static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
+                                                    [SWITCHABLE_FILTERS - 1] = {
+  { 235, 162, },
+  { 36, 255, },
+  { 34, 3, },
+  { 149, 144, },
+
+  { 235, 162, },
+  { 36, 255, },
+  { 34, 3, },
+  { 10, 3, },
+
+  { 235, 162, },
+  { 36, 255, },
+  { 34, 3, },
+  { 149, 144, },
+
+  { 235, 162, },
+  { 36, 255, },
+  { 34, 3, },
+  { 10, 3, },
+};
+#else
 static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
                                                     [SWITCHABLE_FILTERS - 1] = {
   { 235, 162, },
@@ -919,6 +943,7 @@ static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
   { 34, 3, },
   { 149, 144, },
 };
+#endif
 #endif  // CONFIG_EXT_INTERP
 
 #if CONFIG_EXT_TX
