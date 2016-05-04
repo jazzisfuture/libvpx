@@ -921,6 +921,30 @@ static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
   { 149, 160, 128, 128},
 };
 #else  // CONFIG_EXT_INTERP
+#if CONFIG_DUAL_FILTER
+static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
+                                                    [SWITCHABLE_FILTERS - 1] = {
+  { 235, 162, },
+  { 36, 255, },
+  { 34, 3, },
+  { 149, 144, },
+
+  { 235, 162, },
+  { 36, 255, },
+  { 34, 3, },
+  { 10, 3, },
+
+  { 235, 162, },
+  { 36, 255, },
+  { 34, 3, },
+  { 149, 144, },
+
+  { 235, 162, },
+  { 36, 255, },
+  { 34, 3, },
+  { 10, 3, },
+};
+#else
 static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
                                                     [SWITCHABLE_FILTERS - 1] = {
   { 235, 162, },
@@ -928,6 +952,7 @@ static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
   { 34, 3, },
   { 149, 144, },
 };
+#endif
 #endif  // CONFIG_EXT_INTERP
 
 #if CONFIG_EXT_TX
@@ -1358,6 +1383,16 @@ void vp10_adapt_inter_frame_probs(VP10_COMMON *cm) {
                            pre_fc->switchable_interp_prob[i],
                            counts->switchable_interp[i],
                            fc->switchable_interp_prob[i]);
+
+//    fprintf(stderr, "\n");
+//    for (j = 0; j < SWITCHABLE_FILTER_CONTEXTS; ++j) {
+//      for (i = 0; i < 2; ++i)
+//        fprintf(stderr, "%d ", fc->switchable_interp_prob[j][i]);
+//      fprintf(stderr, "counts:");
+//      for (i = 0; i < 3; ++i)
+//        fprintf(stderr, "%d ", counts->switchable_interp[j][i]);
+//      fprintf(stderr, "\n");
+//    }
   }
 }
 

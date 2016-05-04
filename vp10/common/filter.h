@@ -51,7 +51,11 @@ extern "C" {
 
 #define BILINEAR            (SWITCHABLE_FILTERS)
 #define SWITCHABLE          (SWITCHABLE_FILTERS + 1)  /* the last one */
+#if CONFIG_DUAL_FILTER
+#define SWITCHABLE_FILTER_CONTEXTS ((SWITCHABLE_FILTERS + 1) * 4)
+#else
 #define SWITCHABLE_FILTER_CONTEXTS (SWITCHABLE_FILTERS + 1)
+#endif
 
 typedef uint8_t INTERP_FILTER;
 
