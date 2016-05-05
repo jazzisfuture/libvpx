@@ -43,7 +43,7 @@ void Encoder::InitEncoder(VideoSource *video) {
       ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
     } else
 #endif
-#if CONFIG_VP10_ENCODER
+#if CONFIG_VP10_ENCODER && !CONFIG_EXT_TILE
     if (CodecInterface() == &vpx_codec_vp10_cx_algo) {
       // Default to 1 tile column for VP10.
       const int log2_tile_columns = 0;
@@ -203,6 +203,13 @@ void EncoderTest::RunLoop(VideoSource *video) {
     if (init_flags_ & VPX_CODEC_USE_OUTPUT_PARTITION)
       dec_init_flags |= VPX_CODEC_USE_INPUT_FRAGMENTS;
     Decoder* const decoder = codec_->CreateDecoder(dec_cfg, dec_init_flags, 0);
+#if CONFIG_EXT_TILE
+  // Set dec_cfg.tile_row = -1 and dec_cfg.tile_col = -1 so that the whole
+  // frame is decoded.
+  decoder->Control(VP10_SET_DECODE_TILE_ROW, -1);
+  decoder->Control(VP10_SET_DECODE_TILE_COL, -1);
+#endif
+
     bool again;
     for (again = true; again; video->Next()) {
       again = (video->img() != NULL);
