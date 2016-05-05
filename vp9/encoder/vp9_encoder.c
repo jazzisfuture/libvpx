@@ -86,6 +86,25 @@ FILE *kf_list;
 FILE *keyfile;
 #endif
 
+const VP9_LEVEL_SPEC vp9_level_defs[VP9_LEVELS] = {
+  {LEVEL_1,   829440,      36864,    200,    400,   2, 1,  4,  8},
+  {LEVEL_1_1, 2764800,     73728,    800,    1000,  2, 1,  4,  8},
+  {LEVEL_2,   4608000,     122880,   1800,   1500,  2, 1,  4,  8},
+  {LEVEL_2_1, 9216000,     245760,   3600,   2800,  2, 2,  4,  8},
+  {LEVEL_3,   20736000,    552960,   7200,   6000,  2, 4,  4,  8},
+  {LEVEL_3_1, 36864000,    983040,   12000,  10000, 2, 4,  4,  8},
+  {LEVEL_4,   83558400,    2228224,  18000,  16000, 4, 4,  4,  8},
+  {LEVEL_4_1, 160432128,   2228224,  30000,  18000, 4, 4,  5,  6},
+  {LEVEL_5,   311951360,   8912896,  60000,  36000, 6, 8,  6,  4},
+  {LEVEL_5_1, 588251136,   8912896,  120000, 46000, 8, 8,  10, 4},
+  // TODO(huisu): update max_cpb_size for level 5_2 ~ 6_2 when
+  // they are finalized (currently TBD).
+  {LEVEL_5_2, 1176502272,  8912896,  180000, 0,     8, 8,  10, 4},
+  {LEVEL_6,   1176502272,  35651584, 180000, 0,     8, 16, 10, 4},
+  {LEVEL_6_1, 2353004544u, 35651584, 240000, 0,     8, 16, 10, 4},
+  {LEVEL_6_2, 4706009088u, 35651584, 480000, 0,     8, 16, 10, 4},
+};
+
 static INLINE void Scale2Ratio(VPX_SCALING mode, int *hr, int *hs) {
   switch (mode) {
     case NORMAL:
@@ -783,7 +802,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   cm->color_range = oxcf->color_range;
 
   cpi->target_level = oxcf->target_level;
-  cm->keep_level_stats = oxcf->target_level != LEVEL_NOT_CARE;
+  cpi->keep_level_stats = oxcf->target_level != LEVEL_MAX;
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
@@ -1476,7 +1495,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   cm->color_range = oxcf->color_range;
 
   cpi->target_level = oxcf->target_level;
-  cm->keep_level_stats = oxcf->target_level != LEVEL_NOT_CARE;
+  cpi->keep_level_stats = oxcf->target_level != LEVEL_MAX;
 
   if (cm->profile <= PROFILE_1)
     assert(cm->bit_depth == VPX_BITS_8);
@@ -1660,7 +1679,6 @@ static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
   } while (++i <= MV_MAX);
 }
 
-
 VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
                                 BufferPool *const pool) {
   unsigned int i;
@@ -1749,6 +1767,9 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   cpi->multi_arf_last_grp_enabled = 0;
 
   cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
+
+  init_level_info(&cpi->level_info);
+
 #if CONFIG_INTERNAL_STATS
   cpi->b_calculate_ssimg = 0;
   cpi->b_calculate_blockiness = 1;
@@ -2798,7 +2819,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   } else if (vp9_preserve_existing_gf(cpi)) {
     // We have decided to preserve the previously existing golden frame as our
     // new ARF frame. However, in the short term in function
-    // vp9_bitstream.c::get_refresh_mask() we left it in the GF slot and, if
+    // vp9_get_refresh_mask() we left it in the GF slot and, if
     // we're updating the GF with the current decoded frame, we save it to the
     // ARF slot instead.
     // We now have to update the ARF with the current frame and swap gld_fb_idx
@@ -4689,6 +4710,118 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   if (cpi->b_calculate_psnr && oxcf->pass != 1 && cm->show_frame)
     generate_psnr_packet(cpi);
+
+  if (cpi->keep_level_stats && oxcf->pass != 1) {
+    VP9_LEVEL_INFO *level_info = &cpi->level_info;
+    VP9_LEVEL_SPEC *level_spec = &level_info->level_spec;
+    VP9_LEVEL_STATS *level_stats = &level_info->level_stats;
+    int i, idx;
+    uint64_t luma_samples, dur_end;
+    const uint32_t luma_pic_size = cm->width * cm->height;
+    double cpb_data_size;
+
+    vpx_clear_system_state();
+
+    // update level_stats
+    level_stats->total_compressed_size += (int64_t)(*size);
+    if (cm->show_frame) {
+      level_stats->total_uncompressed_size += luma_pic_size +
+          2 * (luma_pic_size >> (cm->subsampling_x + cm->subsampling_y));
+      level_stats->time_encoded = (cpi->last_end_time_stamp_seen
+          - cpi->first_time_stamp_ever) / (double)TICKS_PER_SEC;
+    }
+
+    if (arf_src_index > 0) {
+      if (!level_stats->seen_first_altref)
+        level_stats->seen_first_altref = 1;
+      else if (level_stats->frames_since_last_altref <
+          level_spec->min_altref_distance)
+        level_spec->min_altref_distance = level_stats->frames_since_last_altref;
+      level_stats->frames_since_last_altref = 0;
+    } else {
+      ++level_stats->frames_since_last_altref;
+    }
+
+    if (level_stats->frame_window_buffer.len < FRAME_WINDOW_SIZE - 1) {
+      idx = (level_stats->frame_window_buffer.start +
+          level_stats->frame_window_buffer.len++) % FRAME_WINDOW_SIZE;
+    } else {
+      idx = level_stats->frame_window_buffer.start;
+      level_stats->frame_window_buffer.start = (idx + 1) % FRAME_WINDOW_SIZE;
+    }
+    level_stats->frame_window_buffer.buf[idx].ts = cpi->last_time_stamp_seen;
+    level_stats->frame_window_buffer.buf[idx].size = (uint32_t)(*size);
+    level_stats->frame_window_buffer.buf[idx].luma_samples = luma_pic_size;
+
+    if (cm->frame_type == KEY_FRAME) {
+      level_stats->ref_refresh_map = 0;
+    } else {
+      int count = 0;
+      level_stats->ref_refresh_map |= vp9_get_refresh_mask(cpi);
+      // Also need to consider the case where the encoder refers to a buffer
+      // that has been implicitly refreshed after encoding a keyframe.
+      if (!cm->intra_only) {
+        level_stats->ref_refresh_map |= (1 << cpi->lst_fb_idx);
+        level_stats->ref_refresh_map |= (1 << cpi->gld_fb_idx);
+        level_stats->ref_refresh_map |= (1 << cpi->alt_fb_idx);
+      }
+      for (i = 0; i < REF_FRAMES; ++i) {
+        count += (level_stats->ref_refresh_map >> i) & 1;
+      }
+      if (count > level_spec->max_ref_frame_buffers)
+        level_spec->max_ref_frame_buffers = count;
+    }
+
+    // update average_bitrate
+    level_spec->average_bitrate =
+        (double)level_stats->total_compressed_size / 125.0 /
+        level_stats->time_encoded;
+
+    // update max_luma_sample_rate
+    luma_samples = 0;
+    for (i = 0; i < level_stats->frame_window_buffer.len; ++i) {
+      idx = (level_stats->frame_window_buffer.start +
+          level_stats->frame_window_buffer.len - 1 - i) % FRAME_WINDOW_SIZE;
+      if (i == 0) {
+        dur_end = level_stats->frame_window_buffer.buf[idx].ts;
+      }
+      if (dur_end - level_stats->frame_window_buffer.buf[idx].ts >=
+          TICKS_PER_SEC)
+        break;
+      luma_samples +=
+          (uint64_t)level_stats->frame_window_buffer.buf[idx].luma_samples;
+    }
+    if (luma_samples > level_spec->max_luma_sample_rate) {
+      level_spec->max_luma_sample_rate = luma_samples;
+    }
+
+    // update max_cpb_size
+    cpb_data_size = 0;
+    for (i = 0; i < CPB_WINDOW_SIZE; ++i) {
+      if (i >= level_stats->frame_window_buffer.len)
+        break;
+      idx = (level_stats->frame_window_buffer.start +
+          level_stats->frame_window_buffer.len -
+          1 - i) % FRAME_WINDOW_SIZE;
+      cpb_data_size += (double)level_stats->frame_window_buffer.buf[idx].size;
+    }
+    cpb_data_size = cpb_data_size / (double)125;
+    if (cpb_data_size > level_spec->max_cpb_size)
+      level_spec->max_cpb_size = cpb_data_size;
+
+    // update max_luma_picture_size
+    if (luma_pic_size > level_spec->max_luma_picture_size)
+      level_spec->max_luma_picture_size = luma_pic_size;
+
+    // update compression_ratio
+    level_spec->compression_ratio =
+        (double)level_stats->total_uncompressed_size * cm->bit_depth /
+        level_stats->total_compressed_size / 8.0;
+
+    // update max_col_tiles
+    if (level_spec->max_col_tiles < (1 << cm->log2_tile_cols))
+      level_spec->max_col_tiles = (1 << cm->log2_tile_cols);
+  }
 
 #if CONFIG_INTERNAL_STATS
 
