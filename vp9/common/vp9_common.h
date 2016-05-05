@@ -67,6 +67,71 @@ static INLINE int get_unsigned_bits(unsigned int num_values) {
 
 #define VP9_FRAME_MARKER 0x2
 
+#define CPB_WINDOW 4
+#define FRAME_WINDOW_SIZE 256
+#define VP9_LEVELS 14
+
+typedef enum {
+  LEVEL_UNKNOWN = 0,
+  LEVEL_1 = 10,
+  LEVEL_1_1 = 11,
+  LEVEL_2 = 20,
+  LEVEL_2_1 = 21,
+  LEVEL_3 = 30,
+  LEVEL_3_1 = 31,
+  LEVEL_4 = 40,
+  LEVEL_4_1 = 41,
+  LEVEL_5 = 50,
+  LEVEL_5_1 = 51,
+  LEVEL_5_2 = 52,
+  LEVEL_6 = 60,
+  LEVEL_6_1 = 61,
+  LEVEL_6_2 = 62
+} VP9_LEVEL;
+
+typedef struct {
+  VP9_LEVEL level;
+  int64_t max_luma_sample_rate;
+  int max_luma_picture_size;
+  double average_bitrate;
+  double max_cpb_size;
+  double compression_ratio;
+  int max_col_tiles;
+  int min_altref_distance;
+  int max_ref_frame_buffers;
+} VP9_LEVEL_SPEC;
+
+typedef struct {
+  int64_t ts;
+  int luma_samples;
+  int size;
+  uint8_t is_altref;
+} FRAME_RECORD;
+
+typedef struct {
+  FRAME_RECORD buf[FRAME_WINDOW_SIZE];
+  uint8_t start;
+  uint8_t len;
+} FRAME_WINDOW;
+
+typedef struct {
+  uint8_t seen_first_altref;
+  int frames_since_last_altref;
+  int64_t total_compressed_size;
+  int64_t total_uncompressed_size;
+  double time_encoded;
+  FRAME_WINDOW frame_window;
+  int ref_refresh_map;
+} VP9_LEVEL_STATS;
+
+typedef struct {
+  VP9_LEVEL_STATS level_stats;
+  VP9_LEVEL_SPEC level_spec;
+} VP9_LEVEL_INFO;
+
+extern const VP9_LEVEL_SPEC vp9_level_defs[VP9_LEVELS];
+
+VP9_LEVEL get_vp9_level(VP9_LEVEL_SPEC *level_spec);
 
 #ifdef __cplusplus
 }  // extern "C"

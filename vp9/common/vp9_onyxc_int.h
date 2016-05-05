@@ -158,6 +158,8 @@ typedef struct VP9Common {
   FRAME_TYPE last_frame_type;  /* last frame's frame type for motion search.*/
   FRAME_TYPE frame_type;
 
+  VP9_LEVEL_INFO level_info;
+
   int show_frame;
   int last_show_frame;
   int show_existing_frame;
