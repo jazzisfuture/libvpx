@@ -23,7 +23,9 @@ class LevelTest
      : EncoderTest(GET_PARAM(0)),
        encoding_mode_(GET_PARAM(1)),
        set_cpu_used_(GET_PARAM(2)),
-       target_level_(0) {}
+       set_min_gf_internal_(24),
+       target_level_(0),
+       level_(0) {}
   virtual ~LevelTest() {}
 
   virtual void SetUp() {
@@ -60,6 +62,7 @@ class LevelTest
       } else {
         encoder->Control(VP9E_SET_TARGET_LEVEL, target_level_);
       }
+      encoder->Control(VP9E_SET_MIN_GF_INTERVAL, set_min_gf_internal_);
       if (encoding_mode_ != ::libvpx_test::kRealTime) {
         encoder->Control(VP8E_SET_ENABLEAUTOALTREF, 1);
         encoder->Control(VP8E_SET_ARNR_MAXFRAMES, 7);
@@ -67,20 +70,28 @@ class LevelTest
         encoder->Control(VP8E_SET_ARNR_TYPE, 3);
       }
     }
+    encoder->Control(VP9E_GET_LEVEL, &level_);
+    ASSERT_LE(level_, 62);
   }
 
   ::libvpx_test::TestMode encoding_mode_;
   int set_cpu_used_;
+  int set_min_gf_internal_;
   int target_level_;
+  int level_;
 };
 
+// Test for keeping level stats only
 TEST_P(LevelTest, TestTargetLevel0) {
   ::libvpx_test::I420VideoSource video("hantro_odd.yuv", 208, 144, 30, 1, 0,
                                        30);
   target_level_ = 0;
+  set_min_gf_internal_ = 4;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  ASSERT_EQ(level_, 11);
 }
 
+// Test for level control being turned off
 TEST_P(LevelTest, TestTargetLevel255) {
   ::libvpx_test::I420VideoSource video("hantro_odd.yuv", 208, 144, 30, 1, 0,
                                        30);
@@ -88,6 +99,7 @@ TEST_P(LevelTest, TestTargetLevel255) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
+// Test for invalid input levels
 TEST_P(LevelTest, TestInvalidTargetLevels) {
   ::libvpx_test::I420VideoSource video("hantro_odd.yuv", 208, 144, 30, 1, 0,
                                        1);

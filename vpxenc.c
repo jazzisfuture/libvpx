@@ -1683,7 +1683,6 @@ static void update_quantizer_histogram(struct stream_state *stream) {
   }
 }
 
-
 static void get_cx_data(struct stream_state *stream,
                         struct VpxEncoderConfig *global,
                         int *got_data) {
