@@ -1683,6 +1683,12 @@ static void update_quantizer_histogram(struct stream_state *stream) {
   }
 }
 
+static void update_level(struct stream_state *stream) {
+  int level;
+  vpx_codec_control(&stream->encoder, VP9E_GET_LEVEL, &level);
+  //printf("current level is %d\n", level);
+}
+
 
 static void get_cx_data(struct stream_state *stream,
                         struct VpxEncoderConfig *global,
@@ -2200,6 +2206,8 @@ int main(int argc, const char **argv_) {
         cx_time += vpx_usec_timer_elapsed(&timer);
 
         FOREACH_STREAM(update_quantizer_histogram(stream));
+
+        FOREACH_STREAM(update_level(stream));
 
         got_data = 0;
         FOREACH_STREAM(get_cx_data(stream, &global, &got_data));
