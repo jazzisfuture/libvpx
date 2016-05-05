@@ -13,6 +13,7 @@
 
 #include "./vpx_config.h"
 #include "vpx/internal/vpx_codec_internal.h"
+#include "vpx_ports/system_state.h"
 #include "vpx_util/vpx_thread.h"
 #include "./vp9_rtcd.h"
 #include "vp9/common/vp9_alloccommon.h"
@@ -167,8 +168,6 @@ typedef struct VP9Common {
   uint8_t last_intra_only;
 
   int allow_high_precision_mv;
-
-  int keep_level_stats;
 
   // Flag signaling that the frame context should be reset to default values.
   // 0 or 1 implies don't reset, 2 reset just the context specified in the
