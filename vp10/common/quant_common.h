@@ -29,6 +29,10 @@ int16_t vp10_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
 int vp10_get_qindex(const struct segmentation *seg, int segment_id,
                    int base_qindex);
 
+#if CONFIG_NEW_QUANT
+#define NUQ_KNOTS 3
+#endif  // CONFIG_NEW_QUANT
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
