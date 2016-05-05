@@ -20,6 +20,7 @@
 #include "vpx_dsp/ssim.h"
 #endif
 #include "vpx_dsp/variance.h"
+#include "vpx_ports/system_state.h"
 #include "vpx_util/vpx_thread.h"
 
 #include "vp9/common/vp9_alloccommon.h"
@@ -50,6 +51,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// vp9 uses 10,000,000 ticks/second as time stamp
+#define TICKS_PER_SEC 10000000LL
 
 typedef struct {
   int nmvjointcost[MV_JOINTS];
@@ -297,6 +301,69 @@ typedef struct IMAGE_STAT {
   double worst;
 } ImageStat;
 
+#define CPB_WINDOW_SIZE 4
+#define FRAME_WINDOW_SIZE 128
+#define SAMPLE_RATE_GRACE_P 0.015
+#define VP9_LEVELS 14
+
+typedef enum {
+  LEVEL_UNKNOWN = 0,
+  LEVEL_1 = 10,
+  LEVEL_1_1 = 11,
+  LEVEL_2 = 20,
+  LEVEL_2_1 = 21,
+  LEVEL_3 = 30,
+  LEVEL_3_1 = 31,
+  LEVEL_4 = 40,
+  LEVEL_4_1 = 41,
+  LEVEL_5 = 50,
+  LEVEL_5_1 = 51,
+  LEVEL_5_2 = 52,
+  LEVEL_6 = 60,
+  LEVEL_6_1 = 61,
+  LEVEL_6_2 = 62,
+  LEVEL_MAX = 255
+} VP9_LEVEL;
+
+typedef struct {
+  VP9_LEVEL level;
+  uint64_t max_luma_sample_rate;
+  uint32_t max_luma_picture_size;
+  double average_bitrate;  // in kilobits per second
+  double max_cpb_size;  // in kilobits
+  double compression_ratio;
+  uint8_t max_col_tiles;
+  uint32_t min_altref_distance;
+  uint8_t max_ref_frame_buffers;
+} VP9_LEVEL_SPEC;
+
+typedef struct {
+  int64_t ts;  // timestamp
+  uint32_t luma_samples;
+  uint32_t size;  // in bytes
+} FRAME_RECORD;
+
+typedef struct {
+  FRAME_RECORD buf[FRAME_WINDOW_SIZE];
+  uint8_t start;
+  uint8_t len;
+} FRAME_WINDOW_BUFFER;
+
+typedef struct {
+  uint8_t seen_first_altref;
+  uint32_t frames_since_last_altref;
+  uint64_t total_compressed_size;
+  uint64_t total_uncompressed_size;
+  double time_encoded;  // in seconds
+  FRAME_WINDOW_BUFFER frame_window_buffer;
+  int ref_refresh_map;
+} VP9_LEVEL_STATS;
+
+typedef struct {
+  VP9_LEVEL_STATS level_stats;
+  VP9_LEVEL_SPEC level_spec;
+} VP9_LEVEL_INFO;
+
 typedef struct VP9_COMP {
   QUANTS quants;
   ThreadData td;
@@ -519,6 +586,9 @@ typedef struct VP9_COMP {
   VPxWorker *workers;
   struct EncWorkerData *tile_thr_data;
   VP9LfSync lf_row_sync;
+
+  int keep_level_stats;
+  VP9_LEVEL_INFO level_info;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
@@ -672,6 +742,58 @@ static INLINE int get_chessboard_index(const int frame_index) {
 
 static INLINE int *cond_cost_list(const struct VP9_COMP *cpi, int *cost_list) {
   return cpi->sf.mv.subpel_search_method != SUBPEL_TREE ? cost_list : NULL;
+}
+
+extern const VP9_LEVEL_SPEC vp9_level_defs[VP9_LEVELS];
+
+static INLINE VP9_LEVEL get_vp9_level(const VP9_LEVEL_SPEC * const level_spec) {
+  int i;
+  const VP9_LEVEL_SPEC *this_level;
+
+  vpx_clear_system_state();
+
+  for (i = 0; i < VP9_LEVELS; ++i) {
+    this_level = &vp9_level_defs[i];
+    if ((double)level_spec->max_luma_sample_rate * (1 + SAMPLE_RATE_GRACE_P) >
+        (double)this_level->max_luma_sample_rate ||
+        level_spec->max_luma_picture_size > this_level->max_luma_picture_size ||
+        level_spec->average_bitrate > this_level->average_bitrate ||
+        level_spec->max_cpb_size > this_level->max_cpb_size ||
+        level_spec->compression_ratio < this_level->compression_ratio ||
+        level_spec->max_col_tiles > this_level->max_col_tiles ||
+        level_spec->min_altref_distance < this_level->min_altref_distance ||
+        level_spec->max_ref_frame_buffers > this_level->max_ref_frame_buffers)
+      continue;
+    else
+      break;
+  }
+  if (i == VP9_LEVELS)
+    return LEVEL_UNKNOWN;
+  return vp9_level_defs[i].level;
+}
+
+static INLINE void init_level_info(VP9_LEVEL_INFO *level_info) {
+  VP9_LEVEL_STATS *level_stats = &level_info->level_stats;
+  VP9_LEVEL_SPEC *level_spec = &level_info->level_spec;
+
+  level_stats->seen_first_altref = 0;
+  level_stats->frames_since_last_altref = 0;
+  level_stats->total_compressed_size = 0;
+  level_stats->total_uncompressed_size = 0;
+  level_stats->time_encoded = 0;
+  level_stats->ref_refresh_map = 0;
+  level_stats->frame_window_buffer.start = 0;
+  level_stats->frame_window_buffer.len = 0;
+
+  level_spec->level = LEVEL_UNKNOWN;
+  level_spec->max_luma_sample_rate = 0;
+  level_spec->max_luma_picture_size = 0;
+  level_spec->average_bitrate = 0;
+  level_spec->max_cpb_size = 0;
+  level_spec->compression_ratio = 0;
+  level_spec->max_col_tiles = 0;
+  level_spec->min_altref_distance = 2147483647;
+  level_spec->max_ref_frame_buffers = 0;
 }
 
 void vp9_new_framerate(VP9_COMP *cpi, double framerate);
