@@ -40,6 +40,7 @@ struct vp9_extracfg {
   unsigned int                rc_max_inter_bitrate_pct;
   unsigned int                gf_cbr_boost_pct;
   unsigned int                lossless;
+  unsigned int                level_stats;
   unsigned int                frame_parallel_decoding_mode;
   AQ_MODE                     aq_mode;
   unsigned int                frame_periodic_boost;
@@ -69,6 +70,7 @@ static struct vp9_extracfg default_extra_cfg = {
   0,                          // rc_max_inter_bitrate_pct
   0,                          // gf_cbr_boost_pct
   0,                          // lossless
+  0,                          // level_stats
   1,                          // frame_parallel_decoding_mode
   NO_AQ,                      // aq_mode
   0,                          // frame_periodic_delta_q
@@ -164,6 +166,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   RANGE_CHECK_HI(cfg, rc_max_quantizer,   63);
   RANGE_CHECK_HI(cfg, rc_min_quantizer,   cfg->rc_max_quantizer);
   RANGE_CHECK_BOOL(extra_cfg, lossless);
+  RANGE_CHECK_BOOL(extra_cfg, level_stats);
   RANGE_CHECK(extra_cfg, aq_mode,           0, AQ_MODE_COUNT - 1);
   RANGE_CHECK(extra_cfg, frame_periodic_boost, 0, 1);
   RANGE_CHECK_HI(cfg, g_threads,          64);
@@ -509,6 +512,8 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->temporal_layering_mode = (enum vp9e_temporal_layering_mode)
       cfg->temporal_layering_mode;
 
+  oxcf->keep_level_stats = extra_cfg->level_stats;
+
   for (sl = 0; sl < oxcf->ss_number_layers; ++sl) {
 #if CONFIG_SPATIAL_SVC
     oxcf->ss_enable_auto_arf[sl] = cfg->ss_enable_auto_alt_ref[sl];
@@ -781,6 +786,13 @@ static vpx_codec_err_t ctrl_set_frame_periodic_boost(vpx_codec_alg_priv_t *ctx,
                                                      va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.frame_periodic_boost = CAST(VP9E_SET_FRAME_PERIODIC_BOOST, args);
+  return update_extra_cfg(ctx, &extra_cfg);
+}
+
+static vpx_codec_err_t ctrl_set_level_stats(vpx_codec_alg_priv_t *ctx,
+                                            va_list args) {
+  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  extra_cfg.level_stats = CAST(VP9E_SET_LEVEL_STATS, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
@@ -1516,6 +1528,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP9E_SET_MAX_GF_INTERVAL,          ctrl_set_max_gf_interval},
   {VP9E_SET_SVC_REF_FRAME_CONFIG,     ctrl_set_svc_ref_frame_config},
   {VP9E_SET_RENDER_SIZE,              ctrl_set_render_size},
+  {VP9E_SET_LEVEL_STATS,              ctrl_set_level_stats},
 
   // Getters
   {VP8E_GET_LAST_QUANTIZER,           ctrl_get_quantizer},
