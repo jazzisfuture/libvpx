@@ -25,6 +25,9 @@
 extern "C" {
 #endif
 
+// vp9 uses 10,000,000 ticks/second as time stamp
+#define TICKS_PER_SEC 10000000LL
+
 // Only need this for fixed-size arrays, for structs just assign.
 #define vp9_copy(dest, src) {            \
     assert(sizeof(dest) == sizeof(src)); \
@@ -66,25 +69,6 @@ static INLINE int get_unsigned_bits(unsigned int num_values) {
 #define VP9_SYNC_CODE_2 0x42
 
 #define VP9_FRAME_MARKER 0x2
-
-typedef enum {
-  LEVEL_UNKNOWN = 0,
-  LEVEL_1 = 10,
-  LEVEL_1_1 = 11,
-  LEVEL_2 = 20,
-  LEVEL_2_1 = 21,
-  LEVEL_3 = 30,
-  LEVEL_3_1 = 31,
-  LEVEL_4 = 40,
-  LEVEL_4_1 = 41,
-  LEVEL_5 = 50,
-  LEVEL_5_1 = 51,
-  LEVEL_5_2 = 52,
-  LEVEL_6 = 60,
-  LEVEL_6_1 = 61,
-  LEVEL_6_2 = 62,
-  LEVEL_NOT_CARE = 255,
-} VP9_LEVEL;
 
 #ifdef __cplusplus
 }  // extern "C"
