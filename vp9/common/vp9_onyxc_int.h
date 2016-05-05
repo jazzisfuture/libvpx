@@ -13,6 +13,7 @@
 
 #include "./vpx_config.h"
 #include "vpx/internal/vpx_codec_internal.h"
+#include "vpx_ports/system_state.h"
 #include "vpx_util/vpx_thread.h"
 #include "./vp9_rtcd.h"
 #include "vp9/common/vp9_alloccommon.h"
@@ -157,6 +158,8 @@ typedef struct VP9Common {
 
   FRAME_TYPE last_frame_type;  /* last frame's frame type for motion search.*/
   FRAME_TYPE frame_type;
+
+  VP9_LEVEL_INFO level_info;
 
   int show_frame;
   int last_show_frame;
@@ -439,6 +442,60 @@ static INLINE int partition_plane_context(const MACROBLOCKD *xd,
   assert(bsl >= 0);
 
   return (left * 2 + above) + bsl * PARTITION_PLOFFSET;
+}
+
+static INLINE VP9_LEVEL get_vp9_level(VP9_COMMON *cm) {
+  int i;
+  const VP9_LEVEL_SPEC * const level_spec = &cm->level_info.level_spec;
+  const VP9_LEVEL_SPEC *this_level;
+
+  if (!cm->keep_level_stats)
+    return LEVEL_UNKNOWN;
+
+  vpx_clear_system_state();
+
+  for (i = 0; i < VP9_LEVELS; ++i) {
+    this_level = &vp9_level_defs[i];
+    if ((double)level_spec->max_luma_sample_rate * (1 + SAMPLE_RATE_GRACE_P) >
+        (double)this_level->max_luma_sample_rate ||
+        level_spec->max_luma_picture_size > this_level->max_luma_picture_size ||
+        level_spec->average_bitrate > this_level->average_bitrate ||
+        level_spec->max_cpb_size > this_level->max_cpb_size ||
+        level_spec->compression_ratio < this_level->compression_ratio ||
+        level_spec->max_col_tiles > this_level->max_col_tiles ||
+        level_spec->min_altref_distance < this_level->min_altref_distance ||
+        level_spec->max_ref_frame_buffers > this_level->max_ref_frame_buffers)
+      continue;
+    else
+      break;
+  }
+  if (i == VP9_LEVELS)
+    return LEVEL_UNKNOWN;
+  return vp9_level_defs[i].level;
+}
+
+static INLINE void init_level_info(VP9_LEVEL_INFO *level_info) {
+  VP9_LEVEL_STATS *level_stats = &level_info->level_stats;
+  VP9_LEVEL_SPEC *level_spec = &level_info->level_spec;
+
+  level_stats->seen_first_altref = 0;
+  level_stats->frames_since_last_altref = 0;
+  level_stats->total_compressed_size = 0;
+  level_stats->total_uncompressed_size = 0;
+  level_stats->time_encoded = 0;
+  level_stats->ref_refresh_map = 0;
+  level_stats->frame_window_buffer.start = 0;
+  level_stats->frame_window_buffer.len = 0;
+
+  level_spec->level = LEVEL_UNKNOWN;
+  level_spec->max_luma_sample_rate = 0;
+  level_spec->max_luma_picture_size = 0;
+  level_spec->average_bitrate = 0;
+  level_spec->max_cpb_size = 0;
+  level_spec->compression_ratio = 0;
+  level_spec->max_col_tiles = 0;
+  level_spec->min_altref_distance = 2147483647;
+  level_spec->max_ref_frame_buffers = 0;
 }
 
 #ifdef __cplusplus
