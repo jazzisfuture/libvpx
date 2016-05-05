@@ -158,6 +158,8 @@ typedef struct VP9Common {
   FRAME_TYPE last_frame_type;  /* last frame's frame type for motion search.*/
   FRAME_TYPE frame_type;
 
+  VP9_LEVEL_INFO level_info;
+
   int show_frame;
   int last_show_frame;
   int show_existing_frame;
@@ -439,6 +441,33 @@ static INLINE int partition_plane_context(const MACROBLOCKD *xd,
   assert(bsl >= 0);
 
   return (left * 2 + above) + bsl * PARTITION_PLOFFSET;
+}
+
+static INLINE VP9_LEVEL vp9_get_level(VP9_COMMON *cm) {
+  int i;
+  const VP9_LEVEL_SPEC * const level_spec = &cm->level_info.level_spec;
+  const VP9_LEVEL_SPEC *this_level;
+
+  if (!cm->keep_level_stats)
+    return LEVEL_UNKNOWN;
+
+  for (i = 0; i < VP9_LEVELS; ++i) {
+    this_level = &vp9_level_defs[i];
+    if (level_spec->max_luma_sample_rate > this_level->max_luma_sample_rate ||
+        level_spec->max_luma_picture_size > this_level->max_luma_picture_size ||
+        level_spec->average_bitrate > this_level->average_bitrate ||
+        level_spec->max_cpb_size > this_level->max_cpb_size ||
+        level_spec->compression_ratio < this_level->compression_ratio ||
+        level_spec->max_col_tiles > this_level->max_col_tiles ||
+        level_spec->min_altref_distance < this_level->min_altref_distance ||
+        level_spec->max_ref_frame_buffers > this_level->max_ref_frame_buffers)
+      continue;
+    else
+      break;
+  }
+  if (i == VP9_LEVELS)
+    return LEVEL_UNKNOWN;
+  return vp9_level_defs[i].level;
 }
 
 #ifdef __cplusplus
