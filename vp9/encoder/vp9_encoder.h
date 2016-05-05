@@ -227,6 +227,8 @@ typedef struct VP9EncoderConfig {
 
   int max_threads;
 
+  int keep_level_stats;
+
   vpx_fixed_buf_t two_pass_stats_in;
   struct vpx_codec_pkt_list *output_pkt_list;
 
