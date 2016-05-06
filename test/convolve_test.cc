@@ -106,9 +106,9 @@ void filter_block2d_8_c(const uint8_t *src_ptr,
   // This buffer is allocated to be big enough for the largest block type we
   // support.
   const int kInterp_Extend = 4;
-  const unsigned int intermediate_height =
+  const int intermediate_height =
       (kInterp_Extend - 1) + output_height + kInterp_Extend;
-  unsigned int i, j;
+  int i, j;
 
   // Size of intermediate_buffer is max_intermediate_height * filter_max_width,
   // where max_intermediate_height = (kInterp_Extend - 1) + filter_max_height
