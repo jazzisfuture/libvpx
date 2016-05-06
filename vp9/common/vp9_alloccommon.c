@@ -117,11 +117,14 @@ void vp9_free_context_buffers(VP9_COMMON *cm) {
   cm->above_seg_context = NULL;
   vpx_free(cm->lf.lfm);
   cm->lf.lfm = NULL;
+  vpx_free(cm->lf.temp_lfm);
+  cm->lf.temp_lfm = NULL;
 }
 
 
 int vp9_alloc_loop_filter(VP9_COMMON *cm) {
   vpx_free(cm->lf.lfm);
+  vpx_free(cm->lf.temp_lfm);
   // Each lfm holds bit masks for all the 8x8 blocks in a 64x64 region.  The
   // stride and rows are rounded up / truncated to a multiple of 8.
   cm->lf.lfm_stride = (cm->mi_cols + (MI_BLOCK_SIZE - 1)) >> 3;
@@ -129,6 +132,11 @@ int vp9_alloc_loop_filter(VP9_COMMON *cm) {
       ((cm->mi_rows + (MI_BLOCK_SIZE - 1)) >> 3) * cm->lf.lfm_stride,
       sizeof(*cm->lf.lfm));
   if (!cm->lf.lfm)
+    return 1;
+  cm->lf.temp_lfm = (LOOP_FILTER_MASK *)vpx_calloc(
+      ((cm->mi_rows + (MI_BLOCK_SIZE - 1)) >> 3) * cm->lf.lfm_stride,
+      sizeof(*cm->lf.temp_lfm));
+  if (!cm->lf.temp_lfm)
     return 1;
   return 0;
 }
