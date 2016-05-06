@@ -694,6 +694,110 @@ static int do_tx_type_search(TX_TYPE tx_type,
 #endif
 }
 
+static void model_rd_for_sb_nose(
+    VP10_COMP *cpi, BLOCK_SIZE bsize,
+    MACROBLOCK *x, int allplanes,
+    int *out_rate_sum, int64_t *out_dist_sum,
+    int *skip_txfm_sb, int64_t *skip_sse_sb) {
+  // Note our transform coeffs are 8 times an orthogonal transform.
+  // Hence quantizer step is also 8 times. To get effective quantizer
+  // we need to divide by 8 before sending to modeling function.
+  MACROBLOCKD *xd = &x->e_mbd;
+  int i;
+  int64_t rate_sum = 0;
+  int64_t dist_sum = 0;
+  unsigned int sse;
+  unsigned int var = 0;
+  unsigned int sum_sse = 0;
+  int64_t total_sse = 0;
+  int skip_flag = 1;
+  const int shift = 6;
+  int rate;
+  int64_t dist;
+  const int dequant_shift =
+#if CONFIG_VP9_HIGHBITDEPTH
+      (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ?
+          xd->bd - 5 :
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+          3;
+
+  for (i = 0; i < (allplanes ? MAX_MB_PLANE : 1); ++i) {
+    struct macroblock_plane *const p = &x->plane[i];
+    struct macroblockd_plane *const pd = &xd->plane[i];
+    const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+    const TX_SIZE max_tx_size = max_txsize_lookup[bs];
+    const BLOCK_SIZE unit_size = txsize_to_bsize[max_tx_size];
+    const int64_t dc_thr = p->quant_thred[0] >> shift;
+    const int64_t ac_thr = p->quant_thred[1] >> shift;
+    // The low thresholds are used to measure if the prediction errors are
+    // low enough so that we can skip the mode search.
+    const int64_t low_dc_thr = VPXMIN(50, dc_thr >> 2);
+    const int64_t low_ac_thr = VPXMIN(80, ac_thr >> 2);
+    int bw_shift = (b_width_log2_lookup[bs] - b_width_log2_lookup[unit_size]);
+    int bh_shift = (b_height_log2_lookup[bs] - b_width_log2_lookup[unit_size]);
+    int bw = 1 << bw_shift;
+    int bh = 1 << bh_shift;
+    int idx, idy;
+    int lw = b_width_log2_lookup[unit_size] + 2;
+    int lh = b_height_log2_lookup[unit_size] + 2;
+
+    sum_sse = 0;
+
+    for (idy = 0; idy < bh; ++idy) {
+      for (idx = 0; idx < bw; ++idx) {
+        uint8_t *src = p->src.buf + (idy * p->src.stride << lh) + (idx << lw);
+        uint8_t *dst = pd->dst.buf + (idy * pd->dst.stride << lh) + (idx << lh);
+        int low_err_skip = 0;
+
+        var = cpi->fn_ptr[unit_size].vf(src, p->src.stride,
+                                        dst, pd->dst.stride, &sse);
+        sum_sse += sse;
+
+        if (skip_flag) {
+          // Check if all ac coefficients can be quantized to zero.
+          if (var < ac_thr || var == 0) {
+            // Check if dc coefficient can be quantized to zero.
+            if (sse - var < dc_thr || sse == var) {
+              if (!sse || (var < low_ac_thr && sse - var < low_dc_thr))
+                low_err_skip = 1;
+            }
+          }
+          if (!low_err_skip)
+            skip_flag = 0;
+        }
+      }
+    }
+
+    total_sse += sum_sse;
+
+    // Fast approximate the modelling function.
+    if (cpi->sf.simple_model_rd_from_var) {
+      int64_t rate;
+      const int64_t square_error = sum_sse;
+      int quantizer = (pd->dequant[1] >> dequant_shift);
+
+      if (quantizer < 120)
+        rate = (square_error * (280 - quantizer)) >> (16 - VP9_PROB_COST_SHIFT);
+      else
+        rate = 0;
+      dist = (square_error * quantizer) >> 8;
+      rate_sum += rate;
+      dist_sum += dist;
+    } else {
+      vp10_model_rd_from_var_lapndz(sum_sse, num_pels_log2_lookup[bs],
+                                    pd->dequant[1] >> dequant_shift,
+                                    &rate, &dist);
+      rate_sum += rate;
+      dist_sum += dist;
+    }
+  }
+
+  *skip_txfm_sb = skip_flag;
+  *skip_sse_sb = total_sse << 4;
+  *out_rate_sum = (int)rate_sum;
+  *out_dist_sum = dist_sum << 4;
+}
+
 static void model_rd_for_sb(VP10_COMP *cpi, BLOCK_SIZE bsize,
                             MACROBLOCK *x, MACROBLOCKD *xd,
                             int *out_rate_sum, int64_t *out_dist_sum,
@@ -1399,13 +1503,15 @@ static int64_t txfm_yrd(VP10_COMP *cpi, MACROBLOCK *x,
   return rd;
 }
 
-static int64_t choose_tx_size_fix_type(VP10_COMP *cpi, MACROBLOCK *x,
+static int64_t choose_tx_size_fix_type(VP10_COMP *cpi,
+                                       BLOCK_SIZE bs,
+                                       MACROBLOCK *x,
                                        int *rate,
                                        int64_t *distortion,
                                        int *skip,
                                        int64_t *psse,
                                        int64_t ref_best_rd,
-                                       BLOCK_SIZE bs, TX_TYPE tx_type,
+                                       TX_TYPE tx_type,
                                        int prune) {
   VP10_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -1501,6 +1607,26 @@ static int64_t choose_tx_size_fix_type(VP10_COMP *cpi, MACROBLOCK *x,
          MAX_MIB_SIZE * MAX_MIB_SIZE * 4);
 
   return best_rd;
+}
+
+static int64_t estimate_yrd_for_sb(VP10_COMP *cpi,
+                                   BLOCK_SIZE bs,
+                                   MACROBLOCK *x,
+                                   int *r, int64_t *d,
+                                   int *s, int64_t *sse,
+                                   int64_t ref_best_rd) {
+  return txfm_yrd(cpi, x, r, d, s, sse, ref_best_rd, bs,
+                  DCT_DCT, max_txsize_lookup[bs]);
+}
+
+static int64_t estimate_yrd_for_sb_tx_size(VP10_COMP *cpi,
+                                           BLOCK_SIZE bs,
+                                           MACROBLOCK *x,
+                                           int *r, int64_t *d,
+                                           int *s, int64_t *sse,
+                                           int64_t ref_best_rd) {
+  return choose_tx_size_fix_type(cpi, bs, x, r, d, s, sse, ref_best_rd,
+                                 DCT_DCT, 0);
 }
 
 static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
@@ -1649,13 +1775,13 @@ static void choose_smallest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
 }
 
-static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
-                                   int *rate,
-                                   int64_t *distortion,
-                                   int *skip,
-                                   int64_t *psse,
-                                   int64_t ref_best_rd,
-                                   BLOCK_SIZE bs) {
+static void choose_tx_size_type_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
+                                        int *rate,
+                                        int64_t *distortion,
+                                        int *skip,
+                                        int64_t *psse,
+                                        int64_t ref_best_rd,
+                                        BLOCK_SIZE bs) {
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
   uint8_t zcoeff_blk[TX_SIZES][MAX_MIB_SIZE * MAX_MIB_SIZE * 4];
@@ -1681,7 +1807,7 @@ static void choose_tx_size_from_rd(VP10_COMP *cpi, MACROBLOCK *x,
     if (tx_type != DCT_DCT && is_inter && mbmi->ref_mv_idx > 0)
       continue;
 #endif
-    rd = choose_tx_size_fix_type(cpi, x, &r, &d, &s, &sse, ref_best_rd, bs,
+    rd = choose_tx_size_fix_type(cpi, bs, x, &r, &d, &s, &sse, ref_best_rd,
                                  tx_type, prune);
     if (rd < best_rd) {
       best_rd = rd;
@@ -1727,8 +1853,8 @@ static void super_block_yrd(VP10_COMP *cpi, MACROBLOCK *x, int *rate,
     choose_largest_tx_size(cpi, x, rate, distortion, skip, ret_sse, ref_best_rd,
                            bs);
   } else {
-    choose_tx_size_from_rd(cpi, x, rate, distortion, skip, ret_sse,
-                           ref_best_rd, bs);
+    choose_tx_size_type_from_rd(cpi, x, rate, distortion, skip, ret_sse,
+                                ref_best_rd, bs);
   }
 }
 
@@ -6785,9 +6911,14 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
     rs = vp10_cost_bit(cm->fc->wedge_interinter_prob[bsize], 0);
     vp10_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
-    model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                    &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
-    rd = RDCOST(x->rdmult, x->rddiv, rs + rate_mv + rate_sum, dist_sum);
+    // model_rd_for_sb_nose(cpi, bsize, x, 0, &rate_sum, &dist_sum,
+    //                      &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
+    vp10_subtract_plane(x, bsize, 0);
+    rd = estimate_yrd_for_sb_tx_size(cpi, bsize, x, &rate_sum, &dist_sum,
+                                     &tmp_skip_txfm_sb, &tmp_skip_sse_sb,
+                                     INT64_MAX);
+    if (rd != INT64_MAX)
+      rd = RDCOST(x->rdmult, x->rddiv, rs + rate_mv + rate_sum, dist_sum);
     best_rd_nowedge = rd;
     mbmi->use_wedge_interinter = 0;
 
@@ -6821,9 +6952,14 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
           vp10_build_wedge_inter_predictor_from_buf(xd, bsize, mi_row, mi_col,
                                                     preds0, strides,
                                                     preds1, strides);
-          model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                          &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
-          rd = RDCOST(x->rdmult, x->rddiv, rs + rate_mv + rate_sum, dist_sum);
+          // model_rd_for_sb_nose(cpi, bsize, x, 0, &rate_sum, &dist_sum,
+          //                      &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
+          vp10_subtract_plane(x, bsize, 0);
+          rd = estimate_yrd_for_sb_tx_size(cpi, bsize, x, &rate_sum, &dist_sum,
+                                           &tmp_skip_txfm_sb, &tmp_skip_sse_sb,
+                                           INT64_MAX);
+          if (rd != INT64_MAX)
+            rd = RDCOST(x->rdmult, x->rddiv, rs + rate_mv + rate_sum, dist_sum);
           if (rd < best_rd_wedge) {
             best_wedge_index = wedge_index;
             best_rd_wedge = rd;
@@ -6861,9 +6997,14 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
           mbmi->mv[1].as_int = tmp_mv[1].as_int;
         }
         vp10_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
-        model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                        &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
-        rd = RDCOST(x->rdmult, x->rddiv, rs + tmp_rate_mv + rate_sum, dist_sum);
+        // model_rd_for_sb_nose(cpi, bsize, x, 0, &rate_sum, &dist_sum,
+        //                      &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
+        vp10_subtract_plane(x, bsize, 0);
+        rd = estimate_yrd_for_sb_tx_size(cpi, bsize, x, &rate_sum, &dist_sum,
+                                         &tmp_skip_txfm_sb, &tmp_skip_sse_sb,
+                                         INT64_MAX);
+        if (rd != INT64_MAX)
+          rd = RDCOST(x->rdmult, x->rddiv, rs + tmp_rate_mv + rate_sum, dist_sum);
         if (rd < best_rd_wedge) {
           best_rd_wedge = rd;
         } else {
@@ -6904,9 +7045,14 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
           vp10_build_wedge_inter_predictor_from_buf(xd, bsize, mi_row, mi_col,
                                                     preds0, strides,
                                                     preds1, strides);
-          model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                          &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
-          rd = RDCOST(x->rdmult, x->rddiv, rs + rate_mv + rate_sum, dist_sum);
+          // model_rd_for_sb_nose(cpi, bsize, x, 0, &rate_sum, &dist_sum,
+          //                      &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
+          vp10_subtract_plane(x, bsize, 0);
+          rd = estimate_yrd_for_sb_tx_size(cpi, bsize, x, &rate_sum, &dist_sum,
+                                           &tmp_skip_txfm_sb, &tmp_skip_sse_sb,
+                                           INT64_MAX);
+          if (rd != INT64_MAX)
+            rd = RDCOST(x->rdmult, x->rddiv, rs + rate_mv + rate_sum, dist_sum);
           if (rd < best_rd_wedge) {
             best_wedge_index = wedge_index;
             best_rd_wedge = rd;
@@ -6948,6 +7094,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     int rwedge;
     int_mv tmp_mv;
     int tmp_rate_mv = 0;
+    int tmp_skip_txfm_sb;
+    int64_t tmp_skip_sse_sb;
     DECLARE_ALIGNED(16, uint8_t,
                     intrapred_[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
     uint8_t *intrapred;
@@ -6985,9 +7133,14 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       vp10_combine_interintra(xd, bsize, 2,
                               tmp_buf + 2 * MAX_SB_SQUARE, MAX_SB_SIZE,
                               intrapred + 2 * MAX_SB_SQUARE, MAX_SB_SIZE);
-      model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                      &skip_txfm_sb, &skip_sse_sb);
-      rd = RDCOST(x->rdmult, x->rddiv, rate_mv + rmode + rate_sum, dist_sum);
+      // model_rd_for_sb_nose(cpi, bsize, x, 0, &rate_sum, &dist_sum,
+      //                      &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
+      vp10_subtract_plane(x, bsize, 0);
+      rd = estimate_yrd_for_sb_tx_size(cpi, bsize, x, &rate_sum, &dist_sum,
+                                       &tmp_skip_txfm_sb, &tmp_skip_sse_sb,
+                                       INT64_MAX);
+      if (rd != INT64_MAX)
+        rd = RDCOST(x->rdmult, x->rddiv, rate_mv + rmode + rate_sum, dist_sum);
       if (rd < best_interintra_rd) {
         best_interintra_rd = rd;
         best_interintra_mode = mbmi->interintra_mode;
@@ -7015,11 +7168,16 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       vp10_combine_interintra(xd, bsize, 2,
                               tmp_buf + 2 * MAX_SB_SQUARE, MAX_SB_SIZE,
                               intrapred + 2 * MAX_SB_SQUARE, MAX_SB_SIZE);
-      model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                      &skip_txfm_sb, &skip_sse_sb);
       rwedge = vp10_cost_bit(cm->fc->wedge_interintra_prob[bsize], 0);
-      rd = RDCOST(x->rdmult, x->rddiv,
-                  rmode + rate_mv + rwedge + rate_sum, dist_sum);
+      // model_rd_for_sb_nose(cpi, bsize, x, 0, &rate_sum, &dist_sum,
+      //                      &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
+      vp10_subtract_plane(x, bsize, 0);
+      rd = estimate_yrd_for_sb_tx_size(cpi, bsize, x, &rate_sum, &dist_sum,
+                                       &tmp_skip_txfm_sb, &tmp_skip_sse_sb,
+                                       INT64_MAX);
+      if (rd != INT64_MAX)
+        rd = RDCOST(x->rdmult, x->rddiv,
+                    rmode + rate_mv + rwedge + rate_sum, dist_sum);
       best_interintra_rd_nowedge = rd;
 
       // Disbale wedge search if source variance is small
@@ -7041,9 +7199,14 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
           vp10_combine_interintra(xd, bsize, 2,
                                   tmp_buf + 2 * MAX_SB_SQUARE, MAX_SB_SIZE,
                                   intrapred + 2 * MAX_SB_SQUARE, MAX_SB_SIZE);
-          model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                          &skip_txfm_sb, &skip_sse_sb);
-          rd = RDCOST(x->rdmult, x->rddiv,
+          // model_rd_for_sb_nose(cpi, bsize, x, 0, &rate_sum, &dist_sum,
+          //                      &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
+          vp10_subtract_plane(x, bsize, 0);
+          rd = estimate_yrd_for_sb_tx_size(cpi, bsize, x, &rate_sum, &dist_sum,
+                                           &tmp_skip_txfm_sb, &tmp_skip_sse_sb,
+                                           INT64_MAX);
+          if (rd != INT64_MAX)
+            rd = RDCOST(x->rdmult, x->rddiv,
                       rmode + rate_mv + rwedge + rate_sum, dist_sum);
           if (rd < best_interintra_rd_wedge) {
             best_interintra_rd_wedge = rd;
@@ -7062,10 +7225,15 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
                                   0, mv_idx);
           mbmi->mv[0].as_int = tmp_mv.as_int;
           vp10_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
-          model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
-                          &skip_txfm_sb, &skip_sse_sb);
-          rd = RDCOST(x->rdmult, x->rddiv,
-                      rmode + tmp_rate_mv + rwedge + rate_sum, dist_sum);
+          model_rd_for_sb_nose(cpi, bsize, x, 0, &rate_sum, &dist_sum,
+                               &tmp_skip_txfm_sb, &tmp_skip_sse_sb);
+          vp10_subtract_plane(x, bsize, 0);
+          rd = estimate_yrd_for_sb_tx_size(cpi, bsize, x, &rate_sum, &dist_sum,
+                                           &tmp_skip_txfm_sb, &tmp_skip_sse_sb,
+                                           INT64_MAX);
+          if (rd != INT64_MAX)
+            rd = RDCOST(x->rdmult, x->rddiv,
+                        rmode + tmp_rate_mv + rwedge + rate_sum, dist_sum);
           if (rd < best_interintra_rd_wedge) {
             best_interintra_rd_wedge = rd;
           } else {
