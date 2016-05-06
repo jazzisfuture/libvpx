@@ -27,7 +27,6 @@ git_version_id=""
 if [ -e "${source_path}/.git" ]; then
     # Source Path is a git working copy. Check for local modifications.
     # Note that git submodules may have a file as .git, not a directory.
-    export GIT_DIR="${source_path}/.git"
     git_version_id=`git describe --match=v[0-9]* 2>/dev/null`
 fi
 
