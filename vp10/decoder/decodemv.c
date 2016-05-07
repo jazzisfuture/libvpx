@@ -1634,13 +1634,15 @@ static void read_inter_block_mode_info(VP10Decoder *const pbi,
   } else {
     // decode prediction filter for sub8x8 blocks
     if (mbmi->ref_frame[0] > INTRA_FRAME) {
-      if (has_subpel_mv_component(xd, 0) ||
-          (mbmi->ref_frame[1] > INTRA_FRAME && has_subpel_mv_component(xd, 2)))
+      if (has_subpel_mv_component(mi, xd, 0) ||
+          (mbmi->ref_frame[1] > INTRA_FRAME &&
+              has_subpel_mv_component(mi, xd, 2)))
         mbmi->interp_filter[0] = (cm->interp_filter == SWITCHABLE)
                               ? read_switchable_interp_filter(cm, xd, 0, r)
                               : cm->interp_filter;
-      if (has_subpel_mv_component(xd, 1) ||
-          (mbmi->ref_frame[1] > INTRA_FRAME && has_subpel_mv_component(xd, 3)))
+      if (has_subpel_mv_component(mi, xd, 1) ||
+          (mbmi->ref_frame[1] > INTRA_FRAME &&
+              has_subpel_mv_component(mi, xd, 3)))
         mbmi->interp_filter[1] = (cm->interp_filter == SWITCHABLE)
                               ? read_switchable_interp_filter(cm, xd, 1, r)
                               : cm->interp_filter;

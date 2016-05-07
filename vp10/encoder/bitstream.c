@@ -951,18 +951,18 @@ static void write_switchable_interp_filter(VP10_COMP *cpi,
         ++cpi->interp_filter_selected[0][mbmi->interp_filter[1]];
       }
     } else {
-      if (has_subpel_mv_component(xd, 0) ||
+      if (has_subpel_mv_component(xd->mi[0], xd, 0) ||
           (mbmi->ref_frame[1] > INTRA_FRAME &&
-              has_subpel_mv_component(xd, 2))) {
+              has_subpel_mv_component(xd->mi[0], xd, 2))) {
         const int ctx = vp10_get_pred_context_switchable_interp(xd, 0);
         vp10_write_token(w, vp10_switchable_interp_tree,
                          cm->fc->switchable_interp_prob[ctx],
                          &switchable_interp_encodings[mbmi->interp_filter[0]]);
         ++cpi->interp_filter_selected[0][mbmi->interp_filter[0]];
       }
-      if (has_subpel_mv_component(xd, 1) ||
+      if (has_subpel_mv_component(xd->mi[0], xd, 1) ||
           (mbmi->ref_frame[1] > INTRA_FRAME &&
-              has_subpel_mv_component(xd, 3))) {
+              has_subpel_mv_component(xd->mi[0], xd, 3))) {
         const int ctx = vp10_get_pred_context_switchable_interp(xd, 1);
         vp10_write_token(w, vp10_switchable_interp_tree,
                          cm->fc->switchable_interp_prob[ctx],

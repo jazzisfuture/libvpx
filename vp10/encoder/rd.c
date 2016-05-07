@@ -744,16 +744,16 @@ int vp10_get_switchable_rate(const VP10_COMP *cpi,
           cpi->switchable_interp_costs[ctx][mbmi->interp_filter[1]];
     }
   } else {
-    if (has_subpel_mv_component(xd, 0) ||
+    if (has_subpel_mv_component(xd->mi[0], xd, 0) ||
         (mbmi->ref_frame[1] > INTRA_FRAME &&
-            has_subpel_mv_component(xd, 2))) {
+            has_subpel_mv_component(xd->mi[0], xd, 2))) {
       const int ctx = vp10_get_pred_context_switchable_interp(xd, 0);
       inter_filter_cost +=
           cpi->switchable_interp_costs[ctx][mbmi->interp_filter[0]];
     }
-    if (has_subpel_mv_component(xd, 1) ||
+    if (has_subpel_mv_component(xd->mi[0], xd, 1) ||
         (mbmi->ref_frame[1] > INTRA_FRAME &&
-            has_subpel_mv_component(xd, 3))) {
+            has_subpel_mv_component(xd->mi[0], xd, 3))) {
       const int ctx = vp10_get_pred_context_switchable_interp(xd, 1);
       inter_filter_cost +=
           cpi->switchable_interp_costs[ctx][mbmi->interp_filter[1]];
