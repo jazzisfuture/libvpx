@@ -166,6 +166,14 @@ typedef enum {
 } TX_TYPE_1D;
 
 typedef enum {
+  DCT_1D = 0,
+  ADST_1D = 1,
+  FLIPADST_1D = 2,
+  IDTX_1D = 3,
+  TX_TYPES_1D = 4,
+} TX_TYPE_1D;
+
+typedef enum {
   DCT_DCT   = 0,                      // DCT  in both horizontal and vertical
   ADST_DCT  = 1,                      // ADST in vertical, DCT in horizontal
   DCT_ADST  = 2,                      // DCT  in vertical, ADST in horizontal

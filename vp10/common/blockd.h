@@ -488,8 +488,12 @@ static const int ext_tx_used_inter[EXT_TX_SETS_INTER][TX_TYPES] = {
   {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
 };
 
+<<<<<<< 1d2d1e752eac60eae0390c07962ee9b91b8af85d
 // 1D Transforms used in inter set, this needs to be changed if
 // ext_tx_used_inter is changed
+=======
+// 1D transform types used in each inter set
+>>>>>>> Edit ext-tx prune so it isn't doing redundant prunes
 static const int ext_tx_used_inter_1D[EXT_TX_SETS_INTER][TX_TYPES_1D] = {
   {1, 0, 0, 0},
   {1, 1, 1, 1},
