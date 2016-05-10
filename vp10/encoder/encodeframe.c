@@ -4914,6 +4914,11 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
   ctx->is_coded = 1;
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
 
+  if (output_enabled && cm->current_video_frame == 29 && cm->show_frame &&
+      mi_row == 0 && mi_col == 14) {
+    printf("Debug Encoder: %d\n", mbmi->sb_type);
+  }
+
   if (!is_inter_block(mbmi)) {
     int plane;
     mbmi->skip = 1;
