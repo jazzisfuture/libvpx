@@ -45,7 +45,7 @@ static INTERP_FILTER get_ref_filter_type(const MODE_INFO *mi,
 
 int vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd, int dir) {
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
-  const int ctx_offset = (mbmi->ref_frame[1] > INTRA_FRAME) * 4;
+  const int ctx_offset = (mbmi->ref_frame[1] > INTRA_FRAME) * (SWITCHABLE_FILTERS + 1);
   MV_REFERENCE_FRAME ref_frame = (dir < 2) ?
       mbmi->ref_frame[0] : mbmi->ref_frame[1];
   // Note:
@@ -54,7 +54,7 @@ int vp10_get_pred_context_switchable_interp(const MACROBLOCKD *xd, int dir) {
   // The prediction flags in these dummy entries are initialized to 0.
   const MB_MODE_INFO *const left_mbmi = xd->left_mbmi;
   const MB_MODE_INFO *const above_mbmi = xd->above_mbmi;
-  int filter_type_ctx = ctx_offset + (dir & 0x01) * 8;
+  int filter_type_ctx = ctx_offset + (dir & 0x01) * 2 * (SWITCHABLE_FILTERS + 1);
   int left_type = SWITCHABLE_FILTERS;
   int above_type = SWITCHABLE_FILTERS;
 

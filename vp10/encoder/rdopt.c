@@ -44,6 +44,24 @@
 #include "vp10/encoder/rdopt.h"
 #include "vp10/encoder/aq_variance.h"
 
+#if CONFIG_DUAL_FILTER
+#if CONFIG_EXT_INTERP
+static const int filter_sets[25][2] = {
+    {0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4},
+    {1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4},
+    {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4},
+    {3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 4},
+    {4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 4},
+};
+#else
+static const int filter_sets[9][2] = {
+    {0, 0}, {0, 1}, {0, 2},
+    {1, 0}, {1, 1}, {1, 2},
+    {2, 0}, {2, 1}, {2, 2},
+};
+#endif
+#endif
+
 #if CONFIG_EXT_REFS
 
 #define LAST_FRAME_MODE_MASK    ((1 << GOLDEN_FRAME) | (1 << ALTREF_FRAME) | \
@@ -5285,7 +5303,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP10_COMP *cpi, MACROBLOCK *x,
             this_mode == NEWMV &&
 #endif  // CONFIG_EXT_INTER
 #if CONFIG_DUAL_FILTER
-            1) {
+            (mbmi->interp_filter[0] == EIGHTTAP_REGULAR || run_mv_search)) {
 #else
             (mbmi->interp_filter == EIGHTTAP_REGULAR || run_mv_search)) {
 #endif
@@ -6706,12 +6724,11 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     int64_t tmp_dist_sum = 0;
 
 #if CONFIG_DUAL_FILTER
-    int filter_sets[9][2] = {
-        {0, 0}, {0, 1}, {0, 2},
-        {1, 0}, {1, 1}, {1, 2},
-        {2, 0}, {2, 1}, {2, 2},
-    };
+#if CONFIG_EXT_INTERP
+    for (i = 0; i < 10; ++i) {
+#else
     for (i = 0; i < 9; ++i) {
+#endif
 #else
     for (i = 0; i < SWITCHABLE_FILTERS; ++i) {
 #endif
@@ -6721,10 +6738,23 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       int64_t tmp_skip_sse = INT64_MAX;
 
 #if CONFIG_DUAL_FILTER
-      mbmi->interp_filter[0] = filter_sets[i][0];
-      mbmi->interp_filter[1] = filter_sets[i][1];
-      mbmi->interp_filter[2] = filter_sets[i][0];
-      mbmi->interp_filter[3] = filter_sets[i][1];
+      if (i < 5) {
+        mbmi->interp_filter[0] = i;
+        mbmi->interp_filter[1] = 0;
+        mbmi->interp_filter[2] = i;
+        mbmi->interp_filter[3] = 0;
+      } else {
+        mbmi->interp_filter[0] = best_filter[0] < SWITCHABLE ?
+            best_filter[0] : 0;
+        mbmi->interp_filter[1] = (i - 5);
+        mbmi->interp_filter[2] = best_filter[2] < SWITCHABLE ?
+            best_filter[2] : 0;
+        mbmi->interp_filter[3] = (i - 5);
+      }
+//      mbmi->interp_filter[0] = filter_sets[i][0];
+//      mbmi->interp_filter[1] = filter_sets[i][1];
+//      mbmi->interp_filter[2] = filter_sets[i][0];
+//      mbmi->interp_filter[3] = filter_sets[i][1];
 #else
       mbmi->interp_filter = i;
 #endif
@@ -9716,7 +9746,11 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
       b_mode_info tmp_best_bmodes[16];  // Should this be 4 ?
       MB_MODE_INFO tmp_best_mbmode;
 #if CONFIG_DUAL_FILTER
+#if CONFIG_EXT_INTERP
+      BEST_SEG_INFO bsi[25];
+#else
       BEST_SEG_INFO bsi[9];
+#endif
 #else
       BEST_SEG_INFO bsi[SWITCHABLE_FILTERS];
 #endif
@@ -9767,14 +9801,12 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
                               ctx->pred_interp_filter : 0;
         } else {
 #if CONFIG_DUAL_FILTER
-          int filter_sets[9][2] = {
-              {0, 0}, {0, 1}, {0, 2},
-              {1, 0}, {1, 1}, {1, 2},
-              {2, 0}, {2, 1}, {2, 2},
-          };
-
           for (switchable_filter_index = 0;
+#if CONFIG_EXT_INTERP
+               switchable_filter_index < 10;
+#else
                switchable_filter_index < 9;
+#endif
                ++switchable_filter_index) {
 #else
           for (switchable_filter_index = 0;
@@ -9785,10 +9817,24 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
             int64_t rs_rd;
             MB_MODE_INFO_EXT *mbmi_ext = x->mbmi_ext;
 #if CONFIG_DUAL_FILTER
-            mbmi->interp_filter[0] = filter_sets[switchable_filter_index][0];
-            mbmi->interp_filter[1] = filter_sets[switchable_filter_index][1];
-            mbmi->interp_filter[2] = filter_sets[switchable_filter_index][0];
-            mbmi->interp_filter[3] = filter_sets[switchable_filter_index][1];
+            if (switchable_filter_index < 5) {
+              mbmi->interp_filter[0] = switchable_filter_index;
+              mbmi->interp_filter[1] = 0;
+              mbmi->interp_filter[2] = switchable_filter_index;
+              mbmi->interp_filter[3] = 0;
+            } else {
+              mbmi->interp_filter[0] = tmp_best_filter[0] < SWITCHABLE ?
+                  tmp_best_filter[0] : 0;
+              mbmi->interp_filter[1] = (switchable_filter_index - 5);
+              mbmi->interp_filter[2] = tmp_best_filter[2] < SWITCHABLE ?
+                  tmp_best_filter[2] : 0;
+              mbmi->interp_filter[3] = (switchable_filter_index - 5);
+            }
+
+//            mbmi->interp_filter[0] = filter_sets[switchable_filter_index][0];
+//            mbmi->interp_filter[1] = filter_sets[switchable_filter_index][1];
+//            mbmi->interp_filter[2] = filter_sets[switchable_filter_index][0];
+//            mbmi->interp_filter[3] = filter_sets[switchable_filter_index][1];
 #else
             mbmi->interp_filter = switchable_filter_index;
 #endif
@@ -9804,9 +9850,16 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
                                               bsi, switchable_filter_index,
                                               mi_row, mi_col);
 #if CONFIG_EXT_INTERP
+#if CONFIG_DUAL_FILTER
+            if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
+                (mbmi->interp_filter[0] != EIGHTTAP_REGULAR ||
+                 mbmi->interp_filter[1] != EIGHTTAP_REGULAR))  // invalid config
+              continue;
+#else
             if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
                 mbmi->interp_filter != EIGHTTAP_REGULAR)  // invalid config
               continue;
+#endif
 #endif  // CONFIG_EXT_INTERP
             if (tmp_rd == INT64_MAX)
               continue;
@@ -9884,10 +9937,19 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
                                           bsi, 0,
                                           mi_row, mi_col);
 #if CONFIG_EXT_INTERP
+#if CONFIG_DUAL_FILTER
+        if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
+            (mbmi->interp_filter[0] != EIGHTTAP_REGULAR ||
+             mbmi->interp_filter[1] != EIGHTTAP_REGULAR)) {
+          mbmi->interp_filter[0] = EIGHTTAP_REGULAR;
+          mbmi->interp_filter[1] = EIGHTTAP_REGULAR;
+        }
+#else
         if (!vp10_is_interp_needed(xd) && cm->interp_filter == SWITCHABLE &&
             mbmi->interp_filter != EIGHTTAP_REGULAR) {
           mbmi->interp_filter = EIGHTTAP_REGULAR;
         }
+#endif
 #endif  // CONFIG_EXT_INTERP
         if (tmp_rd == INT64_MAX)
           continue;

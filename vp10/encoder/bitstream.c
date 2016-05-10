@@ -926,7 +926,12 @@ static void write_switchable_interp_filter(VP10_COMP *cpi,
   if (cm->interp_filter == SWITCHABLE) {
 #if CONFIG_EXT_INTERP
     if (!vp10_is_interp_needed(xd)) {
+#if CONFIG_DUAL_FILTER
+      assert(mbmi->interp_filter[0] == EIGHTTAP_REGULAR);
+      assert(mbmi->interp_filter[1] == EIGHTTAP_REGULAR);
+#else
       assert(mbmi->interp_filter == EIGHTTAP_REGULAR);
+#endif
       return;
     }
 #endif
