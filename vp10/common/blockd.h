@@ -19,6 +19,7 @@
 #include "vpx_scale/yv12config.h"
 
 #include "vp10/common/common_data.h"
+#include "vp10/common/quant_common.h"
 #include "vp10/common/entropy.h"
 #include "vp10/common/entropymode.h"
 #include "vp10/common/mv.h"
@@ -198,11 +199,7 @@ typedef struct {
   PALETTE_MODE_INFO palette_mode_info;
 
   // Only for INTER blocks
-#if CONFIG_DUAL_FILTER
-  INTERP_FILTER interp_filter[4];
-#else
   INTERP_FILTER interp_filter;
-#endif
   MV_REFERENCE_FRAME ref_frame[2];
   TX_TYPE tx_type;
 
@@ -291,6 +288,9 @@ typedef struct macroblockd_plane {
 
   // encoder
   const int16_t *dequant;
+#if CONFIG_NEW_QUANT
+  const dequant_val_type_nuq* dequant_val_nuq;
+#endif  // CONFIG_NEW_QUANT
 } MACROBLOCKD_PLANE;
 
 #define BLOCK_OFFSET(x, i) ((x) + (i) * 16)
