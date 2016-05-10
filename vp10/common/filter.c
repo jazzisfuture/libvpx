@@ -77,6 +77,26 @@ DECLARE_ALIGNED(256, static const InterpKernel,
   {0,   1,  -3,   8, 126,  -5,   1, 0},
 };
 
+DECLARE_ALIGNED(256, static const InterpKernel,
+                sub_pel_filters_6[SUBPEL_SHIFTS]) = {
+  {0, 0, 0, 128, 0, 0, 0, 0},
+  {0, 2, -6, 127, 7, -2, 0, 0},
+  {0, 3, -11, 124, 16, -4, 0, 0},
+  {0, 3, -15, 120, 25, -6, 1, 0},
+  {0, 4, -17, 114, 35, -9, 1, 0},
+  {0, 4, -18, 107, 45, -11, 1, 0},
+  {0, 4, -19, 98, 56, -13, 2, 0},
+  {0, 4, -18, 88, 67, -16, 3, 0},
+  {0, 3, -17, 78, 78, -17, 3, 0},
+  {0, 3, -16, 67, 88, -18, 4, 0},
+  {0, 2, -13, 56, 98, -19, 4, 0},
+  {0, 1, -11, 45, 107, -18, 4, 0},
+  {0, 1, -9, 35, 114, -17, 4, 0},
+  {0, 1, -6, 25, 120, -15, 3, 0},
+  {0, 0, -4, 16, 124, -11, 3, 0},
+  {0, 0, -2, 7, 127, -6, 2, 0},
+};
+
 #if CONFIG_EXT_INTRA
 DECLARE_ALIGNED(256, static const InterpKernel,
                 sub_pel_filters_8sharp[SUBPEL_SHIFTS]) = {
@@ -165,7 +185,7 @@ DECLARE_ALIGNED(256, static const InterpKernel,
 };
 #endif  // SWITCHABLE_FILTERS >= 4
 
-#if SWITCHABLE_FILTERS == 5
+#if SWITCHABLE_FILTERS == 6
 DECLARE_ALIGNED(16, static const int16_t,
                 sub_pel_filters_12sharp[SUBPEL_SHIFTS][12]) = {
   // intfilt 0.85
@@ -267,12 +287,13 @@ const InterpKernel *vp10_intra_filter_kernels[INTRA_FILTERS] = {
 static const InterpFilterParams
 vp10_interp_filter_params_list[SWITCHABLE_FILTERS + 1] = {
   {(const int16_t*)sub_pel_filters_8, SUBPEL_TAPS, SUBPEL_SHIFTS},
+  {(const int16_t*)sub_pel_filters_6, SUBPEL_TAPS, SUBPEL_SHIFTS},
   {(const int16_t*)sub_pel_filters_8smooth, SUBPEL_TAPS, SUBPEL_SHIFTS},
   {(const int16_t*)sub_pel_filters_10sharp, 10, SUBPEL_SHIFTS},
 #if SWITCHABLE_FILTERS >= 4
   {(const int16_t*)sub_pel_filters_8smooth2, SUBPEL_TAPS, SUBPEL_SHIFTS},
 #endif
-#if SWITCHABLE_FILTERS == 5
+#if SWITCHABLE_FILTERS == 6
   {(const int16_t*)sub_pel_filters_12sharp, 12, SUBPEL_SHIFTS},
 #endif
   {(const int16_t*)bilinear_filters, SUBPEL_TAPS, SUBPEL_SHIFTS}

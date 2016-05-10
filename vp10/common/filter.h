@@ -22,19 +22,20 @@ extern "C" {
 #endif
 
 #define EIGHTTAP_REGULAR    0
-#define EIGHTTAP_SMOOTH     1
-#define MULTITAP_SHARP      2
+#define SIXTAP_REGULAR      1
+#define EIGHTTAP_SMOOTH     2
+#define MULTITAP_SHARP      3
 
 #if CONFIG_EXT_INTERP
 #define MAX_SUBPEL_TAPS    12
 #define SUPPORT_NONINTERPOLATING_FILTERS 0  /* turn it on for experimentation */
-#define SWITCHABLE_FILTERS  5 /* Number of switchable filters */
+#define SWITCHABLE_FILTERS  6 /* Number of switchable filters */
 
 #if SWITCHABLE_FILTERS >= 4
-#define EIGHTTAP_SMOOTH2    3
+#define EIGHTTAP_SMOOTH2    4
 #endif
-#if SWITCHABLE_FILTERS == 5
-#define MULTITAP_SHARP2     4
+#if SWITCHABLE_FILTERS == 6
+#define MULTITAP_SHARP2     5
 #endif  // SWITCHABLE_FILTERS
 
 #else
