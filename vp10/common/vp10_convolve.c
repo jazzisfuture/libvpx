@@ -156,8 +156,8 @@ void vp10_convolve(const uint8_t *src, int src_stride, uint8_t *dst,
 #else
     InterpFilterParams filter_params =
         vp10_get_interp_filter_params(interp_filter);
-    int filter_size = filter_params.taps;
 #endif
+    // int filter_size = MAX_FILTER_TAP; // filter_params.taps;
     int intermediate_height =
         (((h - 1) * y_step_q4 + subpel_y_q4) >> SUBPEL_BITS) + filter_size;
 
