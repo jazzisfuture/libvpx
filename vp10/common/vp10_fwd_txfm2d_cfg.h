@@ -19,7 +19,7 @@ static const int8_t fwd_stage_range_row_dct_dct_4[4] = {17, 18, 18, 18};
 static const int8_t fwd_cos_bit_col_dct_dct_4[4] = {13, 13, 13, 13};
 static const int8_t fwd_cos_bit_row_dct_dct_4[4] = {13, 13, 13, 13};
 
-static const TXFM_2D_CFG fwd_txfm_2d_cfg_dct_dct_4 = {
+static TXFM_2D_CFG fwd_txfm_2d_cfg_dct_dct_4 = {
     4,  // .txfm_size
     4,  // .stage_num_col
     4,  // .stage_num_row
@@ -399,11 +399,4 @@ static const TXFM_2D_CFG fwd_txfm_2d_cfg_adst_dct_32 = {
     fwd_cos_bit_row_adst_dct_32,      // .cos_bit_row
     TXFM_TYPE_ADST32,                 // .txfm_type_col
     TXFM_TYPE_DCT32};                 // .txfm_type_row
-
-const TXFM_2D_CFG* vp10_get_txfm_4x4_cfg(int tx_type);
-const TXFM_2D_CFG* vp10_get_txfm_8x8_cfg(int tx_type);
-const TXFM_2D_CFG* vp10_get_txfm_16x16_cfg(int tx_type);
-const TXFM_2D_CFG* vp10_get_txfm_32x32_cfg(int tx_type);
-const TXFM_2D_CFG* vp10_get_txfm_64x64_cfg(int tx_type);
-
 #endif  // VP10_FWD_TXFM2D_CFG_H_
