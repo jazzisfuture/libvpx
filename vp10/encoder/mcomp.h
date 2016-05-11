@@ -216,7 +216,23 @@ int vp10_find_best_obmc_sub_pixel_tree_up(struct VP10_COMP *cpi, MACROBLOCK *x,
                                           int *mvjcost, int *mvcost[2],
                                           int *distortion, unsigned int *sse1,
                                           int is_second,
+                                          const uint8_t *second_pred,
                                           int use_upsampled_ref);
+int vp10_obmc_refining_search_8p_c(const MACROBLOCK *x,
+                                   const int *wsrc, int wsrc_stride,
+                                   const int *mask, int mask_stride,
+                                   MV *ref_mv, int error_per_bit,
+                                   int search_range,
+                                   const vp10_variance_fn_ptr_t *fn_ptr,
+                                   const MV *center_mv,
+                                   const uint8_t *second_pred);
+int vp10_get_obmc_mvpred_av_var(const MACROBLOCK *x,
+                                const int *wsrc, int wsrc_stride,
+                                const int *mask, int mask_stride,
+                                const MV *best_mv, const MV *center_mv,
+                                const uint8_t *second_pred,
+                                const vp10_variance_fn_ptr_t *vfp,
+                                int use_mvcost);
 #endif  // CONFIG_OBMC
 #ifdef __cplusplus
 }  // extern "C"
