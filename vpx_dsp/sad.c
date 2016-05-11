@@ -481,6 +481,14 @@ unsigned int vpx_obmc_sad##m##x##n##_c(const uint8_t *ref, int ref_stride,    \
                                        const int *wsrc, int wsrc_stride,      \
                                        const int *msk, int msk_stride) {      \
   return obmc_sad(ref, ref_stride, wsrc, wsrc_stride, msk, msk_stride, m, n); \
+}                                                                             \
+unsigned int vpx_obmc_sad##m##x##n##_avg_c(const uint8_t *ref, int ref_stride,\
+                                           const int *wsrc, int wsrc_stride,  \
+                                           const int *msk, int msk_stride,    \
+                                           const uint8_t *second_pred) {      \
+  uint8_t comp_pred[m * n];                                                   \
+  avg_pred(comp_pred, second_pred, m, n, ref, ref_stride);                    \
+  return obmc_sad(comp_pred, m, wsrc, wsrc_stride, msk, msk_stride, m, n);    \
 }
 
 #if CONFIG_EXT_PARTITION
