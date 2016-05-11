@@ -33,6 +33,36 @@ typedef enum {
   TYPE_LAST
 } TYPE_TXFM;
 
+static int get_txfm1d_size(TX_SIZE tx_size) {
+  return 1 << (tx_size + 2);
+}
+
+static void get_txfm1d_type(TX_TYPE txfm2d_type, TYPE_TXFM* type0, TYPE_TXFM* type1) {
+  switch (txfm2d_type) {
+    case DCT_DCT:
+      *type0 = TYPE_DCT;
+      *type1 = TYPE_DCT;
+      break;
+    case ADST_DCT:
+      *type0 = TYPE_ADST;
+      *type1 = TYPE_DCT;
+      break;
+    case DCT_ADST:
+      *type0 = TYPE_DCT;
+      *type1 = TYPE_ADST;
+      break;
+    case ADST_ADST:
+      *type0 = TYPE_ADST;
+      *type1 = TYPE_ADST;
+      break;
+    default:
+      *type0 = TYPE_DCT;
+      *type1 = TYPE_DCT;
+      assert(0);
+      break;
+  }
+}
+
 static double invSqrt2 = 1 / pow(2, 0.5);
 
 static void reference_dct_1d(const double* in, double* out, int size) {
