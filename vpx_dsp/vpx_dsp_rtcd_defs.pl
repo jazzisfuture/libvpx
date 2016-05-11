@@ -1102,6 +1102,8 @@ if (vpx_config("CONFIG_OBMC") eq "yes") {
     ($w, $h) = @$_;
     add_proto qw/unsigned int/, "vpx_obmc_sad${w}x${h}", "const uint8_t *ref_ptr, int ref_stride, const int *wsrc_ptr, int wsrc_stride, const int *mask, int mask_stride";
     specialize "vpx_obmc_sad${w}x${h}";
+    add_proto qw/unsigned int/, "vpx_obmc_sad${w}x${h}_avg", "const uint8_t *ref_ptr, int ref_stride, const int *wsrc_ptr, int wsrc_stride, const int *mask, int mask_stride, const uint8_t *second_pred_ptr";
+    specialize "vpx_obmc_sad${w}x${h}_avg";
   }
 
   if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
@@ -1109,6 +1111,8 @@ if (vpx_config("CONFIG_OBMC") eq "yes") {
       ($w, $h) = @$_;
       add_proto qw/unsigned int/, "vpx_highbd_obmc_sad${w}x${h}", "const uint8_t *ref_ptr, int ref_stride, const int *wsrc_ptr, int wsrc_stride, const int *mask, int mask_stride";
       specialize "vpx_highbd_obmc_sad${w}x${h}";
+      #add_proto qw/unsigned int/, "vpx_highbd_obmc_sad${w}x${h}_avg", "const uint8_t *ref_ptr, int ref_stride, const int *wsrc_ptr, int wsrc_stride, const int *mask, int mask_stride, const uint8_t *second_pred_ptr";
+      #specialize "vpx_highbd_obmc_sad${w}x${h}_avg";
     }
   }
 }
@@ -1391,8 +1395,10 @@ if (vpx_config("CONFIG_OBMC") eq "yes") {
     ($w, $h) = @$_;
     add_proto qw/unsigned int/, "vpx_obmc_variance${w}x${h}", "const uint8_t *pre_ptr, int pre_stride, const int *wsrc_ptr, int wsrc_stride, const int *mask, int mask_stride, unsigned int *sse";
     add_proto qw/unsigned int/, "vpx_obmc_sub_pixel_variance${w}x${h}", "const uint8_t *pre_ptr, int pre_stride, int xoffset, int  yoffset, const int *wsrc_ptr, int wsrc_stride, const int *mask, int mask_stride, unsigned int *sse";
+    add_proto qw/unsigned int/, "vpx_obmc_sub_pixel_avg_variance${w}x${h}", "const uint8_t *pre_ptr, int pre_stride, int xoffset, int  yoffset, const int *wsrc_ptr, int wsrc_stride, const int *mask, int mask_stride, unsigned int *sse, const uint8_t *second_pred";
     specialize "vpx_obmc_variance${w}x${h}";
     specialize "vpx_obmc_sub_pixel_variance${w}x${h}";
+    specialize "vpx_obmc_sub_pixel_avg_variance${w}x${h}";
   }
 
   if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {

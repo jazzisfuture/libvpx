@@ -2664,45 +2664,63 @@ VP10_COMP *vp10_create_compressor(VP10EncoderConfig *oxcf,
       vpx_sad4x4x3, vpx_sad4x4x8, vpx_sad4x4x4d)
 
 #if CONFIG_OBMC
-#define OBFP(BT, OSDF, OVF, OSVF)         \
-  cpi->fn_ptr[BT].osdf            = OSDF; \
-  cpi->fn_ptr[BT].ovf             = OVF;  \
-  cpi->fn_ptr[BT].osvf            = OSVF;
+#define OBFP(BT, OSDF, OSDAF, OVF, OSVF, OSVAF)         \
+  cpi->fn_ptr[BT].osdf            = OSDF;               \
+  cpi->fn_ptr[BT].osdaf           = OSDAF;              \
+  cpi->fn_ptr[BT].ovf             = OVF;                \
+  cpi->fn_ptr[BT].osvf            = OSVF;               \
+  cpi->fn_ptr[BT].osvaf           = OSVAF;
 
 #if CONFIG_EXT_PARTITION
-  OBFP(BLOCK_128X128, vpx_obmc_sad128x128, vpx_obmc_variance128x128,
-       vpx_obmc_sub_pixel_variance128x128)
-  OBFP(BLOCK_128X64, vpx_obmc_sad128x64, vpx_obmc_variance128x64,
-       vpx_obmc_sub_pixel_variance128x64)
-  OBFP(BLOCK_64X128, vpx_obmc_sad64x128, vpx_obmc_variance64x128,
-       vpx_obmc_sub_pixel_variance64x128)
+  OBFP(BLOCK_128X128, vpx_obmc_sad128x128, vpx_obmc_sad128x128_avg,
+       vpx_obmc_variance128x128, vpx_obmc_sub_pixel_variance128x128,
+       vpx_obmc_sub_pixel_avg_variance128x128)
+  OBFP(BLOCK_128X64, vpx_obmc_sad128x64, vpx_obmc_sad128x64_avg,
+       vpx_obmc_variance128x64, vpx_obmc_sub_pixel_variance128x64,
+       vpx_obmc_sub_pixel_avg_variance128x64)
+  OBFP(BLOCK_64X128, vpx_obmc_sad64x128, vpx_obmc_sad64x128_avg,
+       vpx_obmc_variance64x128, vpx_obmc_sub_pixel_variance64x128,
+       vpx_obmc_sub_pixel_avg_variance64x128)
 #endif  // CONFIG_EXT_PARTITION
-  OBFP(BLOCK_64X64, vpx_obmc_sad64x64, vpx_obmc_variance64x64,
-       vpx_obmc_sub_pixel_variance64x64)
-  OBFP(BLOCK_64X32, vpx_obmc_sad64x32, vpx_obmc_variance64x32,
-       vpx_obmc_sub_pixel_variance64x32)
-  OBFP(BLOCK_32X64, vpx_obmc_sad32x64, vpx_obmc_variance32x64,
-       vpx_obmc_sub_pixel_variance32x64)
-  OBFP(BLOCK_32X32, vpx_obmc_sad32x32, vpx_obmc_variance32x32,
-       vpx_obmc_sub_pixel_variance32x32)
-  OBFP(BLOCK_32X16, vpx_obmc_sad32x16, vpx_obmc_variance32x16,
-       vpx_obmc_sub_pixel_variance32x16)
-  OBFP(BLOCK_16X32, vpx_obmc_sad16x32, vpx_obmc_variance16x32,
-       vpx_obmc_sub_pixel_variance16x32)
-  OBFP(BLOCK_16X16, vpx_obmc_sad16x16, vpx_obmc_variance16x16,
-       vpx_obmc_sub_pixel_variance16x16)
-  OBFP(BLOCK_16X8, vpx_obmc_sad16x8, vpx_obmc_variance16x8,
-       vpx_obmc_sub_pixel_variance16x8)
-  OBFP(BLOCK_8X16, vpx_obmc_sad8x16, vpx_obmc_variance8x16,
-       vpx_obmc_sub_pixel_variance8x16)
-  OBFP(BLOCK_8X8, vpx_obmc_sad8x8, vpx_obmc_variance8x8,
-       vpx_obmc_sub_pixel_variance8x8)
-  OBFP(BLOCK_4X8, vpx_obmc_sad4x8, vpx_obmc_variance4x8,
-       vpx_obmc_sub_pixel_variance4x8)
-  OBFP(BLOCK_8X4, vpx_obmc_sad8x4, vpx_obmc_variance8x4,
-       vpx_obmc_sub_pixel_variance8x4)
-  OBFP(BLOCK_4X4, vpx_obmc_sad4x4, vpx_obmc_variance4x4,
-       vpx_obmc_sub_pixel_variance4x4)
+  OBFP(BLOCK_64X64, vpx_obmc_sad64x64, vpx_obmc_sad64x64_avg,
+       vpx_obmc_variance64x64, vpx_obmc_sub_pixel_variance64x64,
+       vpx_obmc_sub_pixel_avg_variance64x64)
+  OBFP(BLOCK_64X32, vpx_obmc_sad64x32, vpx_obmc_sad64x32_avg,
+       vpx_obmc_variance64x32, vpx_obmc_sub_pixel_variance64x32,
+       vpx_obmc_sub_pixel_avg_variance64x32)
+  OBFP(BLOCK_32X64, vpx_obmc_sad32x64, vpx_obmc_sad32x64_avg,
+       vpx_obmc_variance32x64, vpx_obmc_sub_pixel_variance32x64,
+       vpx_obmc_sub_pixel_avg_variance32x64)
+  OBFP(BLOCK_32X32, vpx_obmc_sad32x32, vpx_obmc_sad32x32_avg,
+       vpx_obmc_variance32x32, vpx_obmc_sub_pixel_variance32x32,
+       vpx_obmc_sub_pixel_avg_variance32x32)
+  OBFP(BLOCK_32X16, vpx_obmc_sad32x16, vpx_obmc_sad32x16_avg,
+       vpx_obmc_variance32x16, vpx_obmc_sub_pixel_variance32x16,
+       vpx_obmc_sub_pixel_avg_variance32x16)
+  OBFP(BLOCK_16X32, vpx_obmc_sad16x32, vpx_obmc_sad16x32_avg,
+       vpx_obmc_variance16x32, vpx_obmc_sub_pixel_variance16x32,
+       vpx_obmc_sub_pixel_avg_variance16x32)
+  OBFP(BLOCK_16X16, vpx_obmc_sad16x16, vpx_obmc_sad16x16_avg,
+       vpx_obmc_variance16x16, vpx_obmc_sub_pixel_variance16x16,
+       vpx_obmc_sub_pixel_avg_variance16x16)
+  OBFP(BLOCK_16X8, vpx_obmc_sad16x8, vpx_obmc_sad16x8_avg,
+       vpx_obmc_variance16x8, vpx_obmc_sub_pixel_variance16x8,
+       vpx_obmc_sub_pixel_avg_variance16x8)
+  OBFP(BLOCK_8X16, vpx_obmc_sad8x16, vpx_obmc_sad8x16_avg,
+       vpx_obmc_variance8x16, vpx_obmc_sub_pixel_variance8x16,
+       vpx_obmc_sub_pixel_avg_variance8x16)
+  OBFP(BLOCK_8X8, vpx_obmc_sad8x8, vpx_obmc_sad8x8_avg,
+       vpx_obmc_variance8x8, vpx_obmc_sub_pixel_variance8x8,
+       vpx_obmc_sub_pixel_avg_variance8x8)
+  OBFP(BLOCK_4X8, vpx_obmc_sad4x8, vpx_obmc_sad4x8_avg,
+       vpx_obmc_variance4x8, vpx_obmc_sub_pixel_variance4x8,
+       vpx_obmc_sub_pixel_avg_variance4x8)
+  OBFP(BLOCK_8X4, vpx_obmc_sad8x4, vpx_obmc_sad8x4_avg,
+       vpx_obmc_variance8x4, vpx_obmc_sub_pixel_variance8x4,
+       vpx_obmc_sub_pixel_avg_variance8x4)
+  OBFP(BLOCK_4X4, vpx_obmc_sad4x4, vpx_obmc_sad4x4_avg,
+       vpx_obmc_variance4x4, vpx_obmc_sub_pixel_variance4x4,
+       vpx_obmc_sub_pixel_avg_variance4x4)
 #endif  // CONFIG_OBMC
 
 #if CONFIG_EXT_INTER

@@ -1076,6 +1076,26 @@ unsigned int vpx_obmc_sub_pixel_variance##W##x##H##_c(                        \
                                                                               \
   return vpx_obmc_variance##W##x##H##_c(temp2, W, wsrc, wsrc_stride,          \
                                         msk, msk_stride, sse);                \
+}                                                                             \
+unsigned int vpx_obmc_sub_pixel_avg_variance##W##x##H##_c(                    \
+                                        const uint8_t *pre, int pre_stride,   \
+                                        int xoffset, int  yoffset,            \
+                                        const int *wsrc, int wsrc_stride,     \
+                                        const int *msk, int msk_stride,       \
+                                        unsigned int *sse,                    \
+                                        const uint8_t *second_pred) {         \
+  uint16_t fdata3[(H + 1) * W];                                               \
+  uint8_t temp2[H * W];                                                       \
+  DECLARE_ALIGNED(16, uint8_t, temp3[H * W]);                                 \
+                                                                              \
+  var_filter_block2d_bil_first_pass(pre, fdata3, pre_stride, 1, H + 1, W,     \
+                                    bilinear_filters_2t[xoffset]);            \
+  var_filter_block2d_bil_second_pass(fdata3, temp2, W, W, H, W,               \
+                                     bilinear_filters_2t[yoffset]);           \
+  vpx_comp_avg_pred(temp3, second_pred, W, H, temp2, W);                      \
+                                                                              \
+  return vpx_obmc_variance##W##x##H##_c(temp3, W, wsrc, wsrc_stride,          \
+                                        msk, msk_stride, sse);                \
 }
 
 OBMC_VAR(4, 4)
