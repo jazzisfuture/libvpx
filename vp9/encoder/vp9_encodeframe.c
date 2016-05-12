@@ -4288,19 +4288,19 @@ void vp9_encode_frame(VP9_COMP *cpi) {
         count16x16_lp += counts->tx.p32x32[i][TX_16X16];
         count32x32 += counts->tx.p32x32[i][TX_32X32];
       }
-      if (count4x4 == 0 && count16x16_lp == 0 && count16x16_16x16p == 0 &&
-          count32x32 == 0) {
-        cm->tx_mode = ALLOW_8X8;
-        reset_skip_tx_size(cm, TX_8X8);
-      } else if (count8x8_8x8p == 0 && count16x16_16x16p == 0 &&
-                 count8x8_lp == 0 && count16x16_lp == 0 && count32x32 == 0) {
+      if (count8x8_8x8p == 0 && count16x16_16x16p == 0 &&
+          count8x8_lp == 0 && count16x16_lp == 0 && count32x32 == 0) {
         cm->tx_mode = ONLY_4X4;
         reset_skip_tx_size(cm, TX_4X4);
-      } else if (count8x8_lp == 0 && count16x16_lp == 0 && count4x4 == 0) {
-        cm->tx_mode = ALLOW_32X32;
+      } else if (count4x4 == 0 && count16x16_lp == 0 &&
+                 count16x16_16x16p == 0 && count32x32 == 0) {
+        cm->tx_mode = ALLOW_8X8;
+        reset_skip_tx_size(cm, TX_8X8);
       } else if (count32x32 == 0 && count8x8_lp == 0 && count4x4 == 0) {
         cm->tx_mode = ALLOW_16X16;
         reset_skip_tx_size(cm, TX_16X16);
+      } else if (count8x8_lp == 0 && count16x16_lp == 0 && count4x4 == 0) {
+        cm->tx_mode = ALLOW_32X32;
       }
     }
   } else {
