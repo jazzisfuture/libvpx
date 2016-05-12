@@ -134,7 +134,29 @@ void vp10_fwd_txfm2d_64x64_c(const int16_t *input, int32_t *output,
   fwd_txfm2d_c(input, output, stride, &cfg, txfm_buf);
 }
 
-static const TXFM_2D_CFG* fwd_txfm_cfg_ls[4][TX_SIZES] = {
+#if CONFIG_EXT_TX
+static const TXFM_2D_CFG* fwd_txfm_cfg_ls[FLIPADST_ADST + 1][TX_SIZES] = {
+    {&fwd_txfm_2d_cfg_dct_dct_4  , &fwd_txfm_2d_cfg_dct_dct_8,
+     &fwd_txfm_2d_cfg_dct_dct_16  , &fwd_txfm_2d_cfg_dct_dct_32},
+    {&fwd_txfm_2d_cfg_adst_dct_4 , &fwd_txfm_2d_cfg_adst_dct_8,
+     &fwd_txfm_2d_cfg_adst_dct_16 , &fwd_txfm_2d_cfg_adst_dct_32},
+    {&fwd_txfm_2d_cfg_dct_adst_4 , &fwd_txfm_2d_cfg_dct_adst_8,
+     &fwd_txfm_2d_cfg_dct_adst_16 , &fwd_txfm_2d_cfg_dct_adst_32},
+    {&fwd_txfm_2d_cfg_adst_adst_4, &fwd_txfm_2d_cfg_adst_adst_8,
+     &fwd_txfm_2d_cfg_adst_adst_16, &fwd_txfm_2d_cfg_adst_adst_32},
+    {&fwd_txfm_2d_cfg_adst_dct_4 , &fwd_txfm_2d_cfg_adst_dct_8,
+     &fwd_txfm_2d_cfg_adst_dct_16 , &fwd_txfm_2d_cfg_adst_dct_32},
+    {&fwd_txfm_2d_cfg_dct_adst_4 , &fwd_txfm_2d_cfg_dct_adst_8,
+     &fwd_txfm_2d_cfg_dct_adst_16 , &fwd_txfm_2d_cfg_dct_adst_32},
+    {&fwd_txfm_2d_cfg_adst_adst_4, &fwd_txfm_2d_cfg_adst_adst_8,
+     &fwd_txfm_2d_cfg_adst_adst_16, &fwd_txfm_2d_cfg_adst_adst_32},
+    {&fwd_txfm_2d_cfg_adst_adst_4, &fwd_txfm_2d_cfg_adst_adst_8,
+     &fwd_txfm_2d_cfg_adst_adst_16, &fwd_txfm_2d_cfg_adst_adst_32},
+    {&fwd_txfm_2d_cfg_adst_adst_4, &fwd_txfm_2d_cfg_adst_adst_8,
+     &fwd_txfm_2d_cfg_adst_adst_16, &fwd_txfm_2d_cfg_adst_adst_32},
+};
+#else  // CONFIG_EXT_TX
+static const TXFM_2D_CFG* fwd_txfm_cfg_ls[TX_TYPES][TX_SIZES] = {
     {&fwd_txfm_2d_cfg_dct_dct_4  , &fwd_txfm_2d_cfg_dct_dct_8,
      &fwd_txfm_2d_cfg_dct_dct_16  , &fwd_txfm_2d_cfg_dct_dct_32},
     {&fwd_txfm_2d_cfg_adst_dct_4 , &fwd_txfm_2d_cfg_adst_dct_8,
@@ -144,6 +166,8 @@ static const TXFM_2D_CFG* fwd_txfm_cfg_ls[4][TX_SIZES] = {
     {&fwd_txfm_2d_cfg_adst_adst_4, &fwd_txfm_2d_cfg_adst_adst_8,
      &fwd_txfm_2d_cfg_adst_adst_16, &fwd_txfm_2d_cfg_adst_adst_32},
 };
+#endif  // CONFIG_EXT_TX
+
 
 void set_flip_cfg(int tx_type, TXFM_2D_FLIP_CFG* cfg) {
   switch (tx_type) {
@@ -154,7 +178,31 @@ void set_flip_cfg(int tx_type, TXFM_2D_FLIP_CFG* cfg) {
       cfg->ud_flip = 0;
       cfg->lr_flip = 0;
       break;
+#if CONFIG_EXT_TX
+    case FLIPADST_DCT:
+      cfg->ud_flip = 1;
+      cfg->lr_flip = 0;
+      break;
+    case DCT_FLIPADST:
+      cfg->ud_flip = 0;
+      cfg->lr_flip = 1;
+      break;
+    case FLIPADST_FLIPADST:
+      cfg->ud_flip = 1;
+      cfg->lr_flip = 1;
+      break;
+    case ADST_FLIPADST:
+      cfg->ud_flip = 0;
+      cfg->lr_flip = 1;
+      break;
+    case FLIPADST_ADST:
+      cfg->ud_flip = 1;
+      cfg->lr_flip = 0;
+      break;
+#endif  // CONFIG_EXT_TX
     default:
+      cfg->ud_flip = 0;
+      cfg->lr_flip = 0;
       assert(0);
   }
 }
@@ -178,6 +226,8 @@ TXFM_2D_FLIP_CFG vp10_get_fwd_txfm_64x64_cfg(int tx_type) {
     case DCT_ADST:
     case ADST_ADST:
     default:
+      cfg.ud_flip = 0;
+      cfg.lr_flip = 0;
       assert(0);
   }
   return cfg;
