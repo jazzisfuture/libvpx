@@ -37,7 +37,13 @@ typedef struct {
   uint8_t *mb_stats_start;
   uint8_t *mb_stats_end;
 } FIRSTPASS_MB_STATS;
-#endif
+#endif  // CONFIG_FP_MB_STATS
+
+#if CONFIG_BIDIR_PRED
+// Length of the backward reference frame group, i.e.,
+// # of frames being bi-directionally predicted + 1
+#define BRF_INTERVAL        4
+#endif  // CONFIG_BIDIR_PRED
 
 #define VLOW_MOTION_THRESHOLD 950
 
@@ -74,10 +80,8 @@ typedef enum {
   OVERLAY_UPDATE = 4,
 #if CONFIG_BIDIR_PRED
   BRF_UPDATE = 5,  // Backward Reference Frame
-  // For NRF's within a BIDIR_PRED period, if it is the last one, then it is
-  // needed to get LAST_FRAME updated; Otherwise no ref update is needed at all.
-  LASTNRF_UPDATE = 6,  // Last Non-Reference Frame
-  NRF_UPDATE = 7,  // Non-Reference Frame, but not the last one
+  LAST_BIDIR_UPDATE = 6,  // Last bi-directional predicted frame
+  BIDIR_UPDATE = 7,  // Bi-directional predicted Frame, but not the last one
   FRAME_UPDATE_TYPES = 8
 #else
   FRAME_UPDATE_TYPES = 5

@@ -2005,7 +2005,6 @@ void vp10_change_config(struct VP10_COMP *cpi, const VP10EncoderConfig *oxcf) {
   }
 #else  // CONFIG_EXT_REFS
   cpi->refresh_last_frame = 1;
-
 #if CONFIG_BIDIR_PRED
   cpi->refresh_bwd_ref_frame = 0;
 #endif  // CONFIG_BIDIR_PRED
@@ -2082,8 +2081,8 @@ void vp10_change_config(struct VP10_COMP *cpi, const VP10EncoderConfig *oxcf) {
 
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
   rc->is_bwd_ref_frame = 0;
-  rc->is_last_nonref_frame = 0;
-  rc->is_nonref_frame = 0;
+  rc->is_last_bidir_frame = 0;
+  rc->is_bidir_frame = 0;
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
 
 #if 0
@@ -3206,6 +3205,7 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
       ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->lst_fb_idx],
                  cm->ref_frame_map[cm->existing_fb_idx_to_show]);
       // NOTE(zoeliu): OVERLAY should not be the last non-reference frame.
+      // TODO(zoeliu): To have bidir-pred work with upsampled references
       assert(!cpi->rc.is_src_frame_alt_ref);
       memcpy(cpi->interp_filter_selected[LAST_FRAME],
              cpi->interp_filter_selected[BWDREF_FRAME],
@@ -4389,8 +4389,8 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
     cpi->refresh_alt_ref_frame = 0;
 
     cpi->rc.is_bwd_ref_frame = 0;
-    cpi->rc.is_last_nonref_frame = 0;
-    cpi->rc.is_nonref_frame = 0;
+    cpi->rc.is_last_bidir_frame = 0;
+    cpi->rc.is_bidir_frame = 0;
 
     cpi->frame_flags = *frame_flags;
 
@@ -4567,7 +4567,7 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
 #endif  // 0
 
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
-  if (cpi->rc.is_last_nonref_frame) {
+  if (cpi->rc.is_last_bidir_frame) {
     // NOTE(zoeliu): If the current frame is a last non-reference frame, we need
     //               next to show the BWDREF_FRAME.
     // TODO(zoeliu): An alternative scheme may be exployed down the road to
@@ -4663,7 +4663,7 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
 #if 0
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
   if ((cm->show_frame &&
-       !(cpi->rc.is_nonref_frame || cpi->rc.is_last_nonref_frame) ||
+       !(cpi->rc.is_bidir_frame || cpi->rc.is_last_bidir_frame) ||
        cpi->rc.is_bwd_ref_frame) {
     vp10_swap_mi_and_prev_mi(cm);
   }
@@ -4922,7 +4922,7 @@ static int get_brf_src_index(VP10_COMP *cpi) {
         brf_src_index = gf_group->brf_src_offset[gf_group->index];
     } else {
       // TODO(zoeliu): To re-visit the setup for this scenario
-      brf_src_index = BIDIR_PRED_PERIOD - 1;
+      brf_src_index = BRF_INTERVAL - 1;
     }
   }
 
@@ -5370,13 +5370,13 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
   vpx_clear_system_state();
 
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
-  if (cpi->rc.is_last_nonref_frame) {
+  if (cpi->rc.is_last_bidir_frame) {
     // NOTE(zoeliu): If the current frame is a last non-reference frame, we need
     //               next to show the BWDREF_FRAME.
     // TODO(zoeliu): An alternative scheme may be exployed down the road to
     //               inform the decoder to show the BWDREF_FRAME, instead of
     //               writing a new frame.
-    cpi->rc.is_last_nonref_frame = 0;
+    cpi->rc.is_last_bidir_frame = 0;
     cm->show_existing_frame = 1;
   } else {
     cm->show_existing_frame = 0;

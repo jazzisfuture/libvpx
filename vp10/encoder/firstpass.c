@@ -61,7 +61,6 @@
 #define RC_FACTOR_MIN       0.75
 #define RC_FACTOR_MAX       1.75
 
-
 #define NCOUNT_INTRA_THRESH 8192
 #define NCOUNT_INTRA_FACTOR 3
 #define NCOUNT_FRAME_II_THRESH 5.0
@@ -1740,13 +1739,12 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
                               VPXMIN(max_bits, (int)total_group_bits));
 
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
-    // TODO(zoeliu): Currently only support BIDIR_PRED_PERIOD = 2
-    assert(BIDIR_PRED_PERIOD == 2);
     // NOTE: BIDIR_PRED is only enabled when its interval is strictly
     //       less than the GOLDEN_FRAME group interval.
-    if (BIDIR_PRED_PERIOD < rc->baseline_gf_interval) {
+    if (BRF_INTERVAL <=
+        (rc->baseline_gf_interval - rc->source_alt_ref_pending)) {
       if (bidir_pred_frame_index == 1) {
-        const int curr_brf_src_offset = BIDIR_PRED_PERIOD - 1;
+        const int curr_brf_src_offset = BRF_INTERVAL - 1;
         if ((i + curr_brf_src_offset) >=
             (rc->baseline_gf_interval - rc->source_alt_ref_pending)) {
           gf_group->update_type[frame_index] = LF_UPDATE;
@@ -1757,14 +1755,15 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
           gf_group->bidir_pred_enabled[frame_index] = 1;
           gf_group->brf_src_offset[frame_index] = curr_brf_src_offset;
         }
-      } else if (bidir_pred_frame_index == BIDIR_PRED_PERIOD) {
-        gf_group->update_type[frame_index] = LASTNRF_UPDATE;
+      } else if (bidir_pred_frame_index == BRF_INTERVAL) {
+        gf_group->update_type[frame_index] = LAST_BIDIR_UPDATE;
         gf_group->bidir_pred_enabled[frame_index] = 1;
         gf_group->brf_src_offset[frame_index] = 0;
+
         // Reset the bidir_pred index.
         bidir_pred_frame_index = 0;
       } else {
-        gf_group->update_type[frame_index] = NRF_UPDATE;
+        gf_group->update_type[frame_index] = BIDIR_UPDATE;
         gf_group->bidir_pred_enabled[frame_index] = 1;
         gf_group->brf_src_offset[frame_index] = 0;
       }
@@ -1782,11 +1781,12 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
     if (gf_group->update_type[frame_index] == BRF_UPDATE) {
       // Boost up the allocated bits on BWDREF_FRAME
-      // (zoeliu)gf_group->rf_level[frame_index] = GF_ARF_LOW;
       gf_group->rf_level[frame_index] = INTER_HIGH;
       gf_group->bit_allocation[frame_index] =
           target_frame_size + (target_frame_size >> 2);
-    } else if (gf_group->update_type[frame_index] == LASTNRF_UPDATE) {
+    } else if (gf_group->update_type[frame_index] == LAST_BIDIR_UPDATE) {
+      // Press down the allocated bits on LAST_BIDIR_UPDATE frames
+      // TODO(zoeliu): To add one more value on RATE_FACTOR_LEVEL
       gf_group->rf_level[frame_index] = INTER_NORMAL;
       gf_group->bit_allocation[frame_index] =
           VPXMAX(0, target_frame_size - (target_frame_size >> 1));
@@ -2482,8 +2482,8 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
   cpi->rc.is_src_frame_alt_ref = 0;
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
   cpi->rc.is_bwd_ref_frame = 0;
-  cpi->rc.is_last_nonref_frame = 0;
-  cpi->rc.is_nonref_frame = 0;
+  cpi->rc.is_last_bidir_frame = 0;
+  cpi->rc.is_bidir_frame = 0;
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
 
   switch (twopass->gf_group.update_type[twopass->gf_group.index]) {
@@ -2562,23 +2562,20 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
       cpi->rc.is_bwd_ref_frame = 1;
       break;
 
-    // TODO(zoeliu): When BIDIR_PRED and EXT_REFS start to work together, we
-    // may take both LASTNRF and NRF as one of the last ref
-
-    case LASTNRF_UPDATE:
+    case LAST_BIDIR_UPDATE:
       cpi->refresh_last_frame = 0;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_bwd_ref_frame = 0;
       cpi->refresh_alt_ref_frame = 0;
-      cpi->rc.is_last_nonref_frame = 1;
+      cpi->rc.is_last_bidir_frame = 1;
       break;
 
-    case NRF_UPDATE:
-      cpi->refresh_last_frame = 0;
+    case BIDIR_UPDATE:
+      cpi->refresh_last_frame = 1;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_bwd_ref_frame = 0;
       cpi->refresh_alt_ref_frame = 0;
-      cpi->rc.is_nonref_frame = 1;
+      cpi->rc.is_bidir_frame = 1;
       break;
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
 
