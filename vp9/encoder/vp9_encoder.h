@@ -297,6 +297,28 @@ typedef struct IMAGE_STAT {
   double worst;
 } ImageStat;
 
+typedef enum {
+  BITRATE_TOO_LARGE = 0,
+  LUMA_PIC_SIZE_TOO_LARGE = 1,
+  LUMA_SAMPLE_RATE_TOO_LARGE = 2,
+  CPB_TOO_LARGE = 3,
+  COMPRESSION_RATIO_TOO_SMALL = 4,
+  COLUMN_TILE_TOO_MANY = 5,
+  ALTREF_DIST_TOO_SMALL = 6,
+  REF_BUFFER_TOO_MANY = 7,
+  TARGET_LEVEL_FAIL_IDS = 8,
+} TARGET_LEVEL_FAIL_ID;
+
+typedef struct {
+  int8_t level_index;
+  double max_cpb_size;  // in bits
+  int max_frame_size;  // in bits
+  int default_max_frame_size; // in bits
+  uint8_t level_achievable;
+  uint8_t enc_config_updated;
+  TARGET_LEVEL_FAIL_ID fail_id;
+} LEVEL_CONSTRAINT;
+
 typedef struct VP9_COMP {
   QUANTS quants;
   ThreadData td;
@@ -307,6 +329,7 @@ typedef struct VP9_COMP {
   VP9EncoderConfig oxcf;
   struct lookahead_ctx    *lookahead;
   struct lookahead_entry  *alt_ref_source;
+  LEVEL_CONSTRAINT level_constraint;
 
   YV12_BUFFER_CONFIG *Source;
   YV12_BUFFER_CONFIG *Last_Source;  // NULL for first frame and alt_ref frames
