@@ -2470,6 +2470,8 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   PICK_MODE_CONTEXT *ctx = &pc_tree->none;
   int i;
   const int pl = partition_plane_context(xd, mi_row, mi_col, bsize);
+  // Raw probs for forced splits
+  const vpx_prob *partition_probs = get_partition_probs(xd, pl);
   BLOCK_SIZE subsize;
   RD_COST this_rdc, sum_rdc, best_rdc;
   int do_split = bsize >= BLOCK_8X8;
@@ -2735,7 +2737,13 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     }
 
     if (sum_rdc.rdcost < best_rdc.rdcost && i == 4) {
-      sum_rdc.rate += cpi->partition_cost[pl][PARTITION_SPLIT];
+      if (!force_horz_split && !force_vert_split)
+        sum_rdc.rate += cpi->partition_cost[pl][PARTITION_SPLIT];
+      else if (!force_horz_split)
+        sum_rdc.rate += vp9_cost_bit(partition_probs[2], 1);
+      else if (!force_vert_split)
+        sum_rdc.rate += vp9_cost_bit(partition_probs[1], 1);
+
       sum_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,
                               sum_rdc.rate, sum_rdc.dist);
 
@@ -2800,7 +2808,10 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     }
 
     if (sum_rdc.rdcost < best_rdc.rdcost) {
-      sum_rdc.rate += cpi->partition_cost[pl][PARTITION_HORZ];
+      if (!force_horz_split)
+        sum_rdc.rate += cpi->partition_cost[pl][PARTITION_HORZ];
+      else
+        sum_rdc.rate += vp9_cost_bit(partition_probs[1], 0);
       sum_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
       if (sum_rdc.rdcost < best_rdc.rdcost) {
         best_rdc = sum_rdc;
@@ -2851,7 +2862,10 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     }
 
     if (sum_rdc.rdcost < best_rdc.rdcost) {
-      sum_rdc.rate += cpi->partition_cost[pl][PARTITION_VERT];
+      if (!force_vert_split)
+        sum_rdc.rate += cpi->partition_cost[pl][PARTITION_VERT];
+      else
+        sum_rdc.rate += vp9_cost_bit(partition_probs[2], 0);
       sum_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,
                               sum_rdc.rate, sum_rdc.dist);
       if (sum_rdc.rdcost < best_rdc.rdcost) {
