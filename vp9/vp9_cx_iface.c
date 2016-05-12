@@ -404,6 +404,7 @@ static vpx_codec_err_t set_encoder_config(
   const struct vp9_extracfg *extra_cfg) {
   const int is_vbr = cfg->rc_end_usage == VPX_VBR;
   int sl, tl;
+  int target_level_index = get_vp9_level_index(extra_cfg->target_level);
   oxcf->profile = cfg->g_profile;
   oxcf->max_threads = (int)cfg->g_threads;
   oxcf->width   = cfg->g_w;
@@ -547,6 +548,24 @@ static vpx_codec_err_t set_encoder_config(
   } else if (oxcf->ts_number_layers == 1) {
     oxcf->ts_rate_decimator[0] = 1;
   }
+
+  if (target_level_index != -1) {
+    vpx_clear_system_state();
+    if (oxcf->min_gf_interval <
+        (int)vp9_level_defs[target_level_index].min_altref_distance)
+      oxcf->min_gf_interval =
+          (int)vp9_level_defs[target_level_index].min_altref_distance;
+
+    while (oxcf->tile_columns > 0 &&
+           vp9_level_defs[target_level_index].max_col_tiles <
+           (1 << oxcf->tile_columns))
+      --oxcf->tile_columns;
+
+    if ((double)cfg->rc_target_bitrate >
+        vp9_level_defs[target_level_index].average_bitrate)
+      oxcf->target_bandwidth = (unsigned int)(1000 * cfg->rc_target_bitrate);
+  }
+
   /*
   printf("Current VP9 Settings: \n");
   printf("target_bandwidth: %d\n", oxcf->target_bandwidth);

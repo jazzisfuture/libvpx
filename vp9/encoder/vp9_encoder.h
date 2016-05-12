@@ -297,6 +297,13 @@ typedef struct IMAGE_STAT {
   double worst;
 } ImageStat;
 
+typedef struct {
+  int8_t level_index;
+  int max_cpb_size;  // in bits
+  int max_frame_size;  // in bits
+  uint8_t level_achievable;
+} LEVEL_CONSTRAINT;
+
 typedef struct VP9_COMP {
   QUANTS quants;
   ThreadData td;
@@ -307,6 +314,7 @@ typedef struct VP9_COMP {
   VP9EncoderConfig oxcf;
   struct lookahead_ctx    *lookahead;
   struct lookahead_entry  *alt_ref_source;
+  LEVEL_CONSTRAINT level_constraint;
 
   YV12_BUFFER_CONFIG *Source;
   YV12_BUFFER_CONFIG *Last_Source;  // NULL for first frame and alt_ref frames
