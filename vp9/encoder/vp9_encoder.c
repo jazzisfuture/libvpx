@@ -784,6 +784,8 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cpi->target_level = oxcf->target_level;
   cm->keep_level_stats = oxcf->target_level != LEVEL_MAX;
+  cpi->level_constraint.level_index = get_vp9_level_index(cpi->target_level);
+  //printf("level_index is %d\n", cpi->level_constraint.level_index);
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
@@ -1477,6 +1479,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
   cpi->target_level = oxcf->target_level;
   cm->keep_level_stats = oxcf->target_level != LEVEL_MAX;
+  cpi->level_constraint.level_index = get_vp9_level_index(cpi->target_level);
 
   if (cm->profile <= PROFILE_1)
     assert(cm->bit_depth == VPX_BITS_8);
@@ -1660,6 +1663,12 @@ static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
   } while (++i <= MV_MAX);
 }
 
+static void init_level_constraint(LEVEL_CONSTRAINT *lc) {
+  lc->level_index = -1;
+  lc->max_frame_size = UINT64_MAX;
+  lc->level_achievable = 1;
+}
+
 VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
                                 BufferPool *const pool) {
   unsigned int i;
@@ -1750,6 +1759,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
 
   init_level_info(&cpi->common.level_info);
+  init_level_constraint(&cpi->level_constraint);
 
 #if CONFIG_INTERNAL_STATS
   cpi->b_calculate_ssimg = 0;
@@ -4696,6 +4706,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     VP9_LEVEL_INFO *level_info = &cpi->common.level_info;
     VP9_LEVEL_SPEC *level_spec = &level_info->level_spec;
     VP9_LEVEL_STATS *level_stats = &level_info->level_stats;
+    LEVEL_CONSTRAINT *level_constraint = &cpi->level_constraint;
+    int8_t level_index = level_constraint->level_index;
     int i, idx;
     uint64_t luma_samples, dur_end;
     const uint32_t luma_pic_size = cm->width * cm->height;
@@ -4795,6 +4807,15 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     // update max_col_tiles
     if (level_spec->max_col_tiles < (1 << cm->log2_tile_cols))
       level_spec->max_col_tiles = (1 << cm->log2_tile_cols);
+
+    if (level_index != -1 && level_constraint->level_achievable) {
+      //printf("level_index is %d\n", level_constraint->level_index);
+      if (level_spec->max_luma_picture_size >
+          vp9_level_defs[level_index].max_luma_picture_size ||
+          (double)level_spec->max_luma_sample_rate * (1 + SAMPLE_RATE_GRACE_P) >
+          (double)vp9_level_defs[level_index].max_luma_sample_rate)
+        level_constraint->level_achievable = 0;
+    }
 
 #if 0
     printf("abr is %7.2f\n", level_spec->average_bitrate);
