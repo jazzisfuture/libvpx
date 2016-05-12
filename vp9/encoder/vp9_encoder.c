@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <limits.h>
 
+#include "./tools_common.h"
 #include "./vp9_rtcd.h"
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
@@ -85,6 +86,25 @@ FILE *framepsnr;
 FILE *kf_list;
 FILE *keyfile;
 #endif
+
+static const char *level_fail_messages[TARGET_LEVEL_FAIL_IDS] = {
+    "Failed to encode to the target level because bit-rate is too high. Try "
+    "again with a smaller target bit-rate.",
+    "Failed to encode to the target level because the picture size is "
+    "too large.",
+    "Failed to encode to the target level because the luma sample rate is too "
+    "large.",
+    "Failed to encode to the target level because the CPB size is too large. "
+    "Try again with a smaller target bit-rate.",
+    "Failed to encode to the target level because the compression ratio is "
+    "too small",
+    "Failed to encode to the target level because too many column tiles are "
+    "used.",
+    "Failed to encode to the target level because the alt-ref distance is too "
+    "small.",
+    "Failed to encode to the target level because the too many reference "
+    "buffers are used.",
+};
 
 static INLINE void Scale2Ratio(VPX_SCALING mode, int *hr, int *hs) {
   switch (mode) {
@@ -769,6 +789,14 @@ static void init_buffer_indices(VP9_COMP *cpi) {
   cpi->alt_fb_idx = 2;
 }
 
+static void set_level_constraints(LEVEL_CONSTRAINT *ls, int8_t level_index) {
+  vpx_clear_system_state();
+  ls->level_index = level_index;
+  if (level_index != -1) {
+    ls->max_cpb_size = vp9_level_defs[level_index].max_cpb_size * (double)1000;
+  }
+}
+
 static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   VP9_COMMON *const cm = &cpi->common;
 
@@ -784,6 +812,8 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cpi->target_level = oxcf->target_level;
   cm->keep_level_stats = oxcf->target_level != LEVEL_MAX;
+  set_level_constraints(&cpi->level_constraint,
+                        get_vp9_level_index(cpi->target_level));
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
@@ -1477,6 +1507,8 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
   cpi->target_level = oxcf->target_level;
   cm->keep_level_stats = oxcf->target_level != LEVEL_MAX;
+  set_level_constraints(&cpi->level_constraint,
+                        get_vp9_level_index(cpi->target_level));
 
   if (cm->profile <= PROFILE_1)
     assert(cm->bit_depth == VPX_BITS_8);
@@ -1660,6 +1692,16 @@ static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
   } while (++i <= MV_MAX);
 }
 
+static void init_level_constraint(LEVEL_CONSTRAINT *lc) {
+  lc->level_index = -1;
+  lc->max_cpb_size = INT_MAX;
+  lc->max_frame_size = INT_MAX;
+  lc->default_max_frame_size = -1;
+  lc->level_achievable = 1;
+  lc->enc_config_updated = 0;
+  lc->fail_id = BITRATE_TOO_LARGE;
+}
+
 VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
                                 BufferPool *const pool) {
   unsigned int i;
@@ -1750,6 +1792,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
 
   init_level_info(&cpi->common.level_info);
+  init_level_constraint(&cpi->level_constraint);
 
 #if CONFIG_INTERNAL_STATS
   cpi->b_calculate_ssimg = 0;
@@ -2014,6 +2057,42 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 
   cm = &cpi->common;
   if (cm->current_video_frame > 0) {
+#if 0
+    if (cm->keep_level_stats && cpi->oxcf.pass != 1) {
+      VP9_LEVEL_SPEC *level_spec = &cm->level_info.level_spec;
+      printf("abr is %7.2f\n", level_spec->average_bitrate);
+      printf("max cpb is %7.2f\n", level_spec->max_cpb_size);
+      printf("max_luma_picture_size is %7d\n",
+             level_spec->max_luma_picture_size);
+      printf("compression ratio is %7.2f\n",
+             level_spec->compression_ratio);
+      printf("max col tile is %6d\n", level_spec->max_col_tiles);
+      printf("min altref dist is %6d\n",
+             level_spec->min_altref_distance);
+      printf("max_luma_sample_rate is %lld\n",
+             level_spec->max_luma_sample_rate);
+      printf("max_ref_frame_buffers is %6d\n",
+             level_spec->max_ref_frame_buffers);
+      printf("level is %d\n", get_vp9_level(cm));
+    }
+#endif
+
+    if (cpi->level_constraint.level_index != -1 &&
+        cpi->oxcf.pass != 1) {
+      const int level = get_vp9_level(cm);
+      const int level_index = cpi->level_constraint.level_index;
+
+      if (cm->level_info.level_spec.compression_ratio <
+          vp9_level_defs[level_index].compression_ratio) {
+        cpi->level_constraint.level_achievable = 0;
+        cpi->level_constraint.fail_id = COMPRESSION_RATIO_TOO_SMALL;
+      }
+
+      if (level == LEVEL_UNKNOWN || level > cpi->target_level ||
+          cpi->level_constraint.level_achievable == 0)
+        warn(level_fail_messages[cpi->level_constraint.fail_id]);
+    }
+
 #if CONFIG_INTERNAL_STATS
     vpx_clear_system_state();
 
@@ -4633,6 +4712,28 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     set_frame_size(cpi);
   }
 
+  if (cpi->level_constraint.level_index != -1 &&
+      cpi->level_constraint.level_achievable) {
+    LEVEL_CONSTRAINT * const ls = &cpi->level_constraint;
+    double max_cpb_size;
+
+    vpx_clear_system_state();
+    max_cpb_size = ls->max_cpb_size;
+    if (ls->default_max_frame_size < 0)
+      ls->default_max_frame_size = rc->max_frame_bandwidth;
+    rc->max_frame_bandwidth =
+        VPXMIN(ls->default_max_frame_size, ls->max_frame_size);
+    if (frame_is_intra_only(cm))
+      rc->max_frame_bandwidth =
+          VPXMIN(rc->max_frame_bandwidth, (int)(max_cpb_size * 0.5));
+    else if (arf_src_index > 0)
+      rc->max_frame_bandwidth =
+          VPXMIN(rc->max_frame_bandwidth, (int)(max_cpb_size * 0.4));
+    else
+      rc->max_frame_bandwidth =
+          VPXMIN(rc->max_frame_bandwidth, (int)(max_cpb_size * 0.2));
+  }
+
   if (cpi->oxcf.pass != 0 ||
       cpi->use_svc ||
       frame_is_intra_only(cm) == 1) {
@@ -4693,9 +4794,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     generate_psnr_packet(cpi);
 
   if (cm->keep_level_stats && oxcf->pass != 1) {
-    VP9_LEVEL_INFO *level_info = &cpi->common.level_info;
-    VP9_LEVEL_SPEC *level_spec = &level_info->level_spec;
-    VP9_LEVEL_STATS *level_stats = &level_info->level_stats;
+    VP9_LEVEL_INFO * const level_info = &cpi->common.level_info;
+    VP9_LEVEL_SPEC * const level_spec = &level_info->level_spec;
+    VP9_LEVEL_STATS * const level_stats = &level_info->level_stats;
+    LEVEL_CONSTRAINT * const level_constraint = &cpi->level_constraint;
+    const int8_t level_index = level_constraint->level_index;
     int i, idx;
     uint64_t luma_samples, dur_end;
     const uint32_t luma_pic_size = cm->width * cm->height;
@@ -4779,7 +4882,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
           1 - i) % FRAME_WINDOW_SIZE;
       cpb_data_size += (double)level_stats->frame_window_buffer.buf[idx].size;
     }
-    cpb_data_size = cpb_data_size / (double)125;
+    cpb_data_size = cpb_data_size / 125.0;
     if (cpb_data_size > level_spec->max_cpb_size)
       level_spec->max_cpb_size = cpb_data_size;
 
@@ -4790,11 +4893,70 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     // update compression_ratio
     level_spec->compression_ratio =
         (double)level_stats->total_uncompressed_size * (double)cm->bit_depth /
-        (double)level_stats->total_compressed_size / (double)8;
+        (double)level_stats->total_compressed_size / 8.0;
 
     // update max_col_tiles
     if (level_spec->max_col_tiles < (1 << cm->log2_tile_cols))
       level_spec->max_col_tiles = (1 << cm->log2_tile_cols);
+
+    if (level_index != -1 && level_constraint->level_achievable) {
+      if (level_spec->max_luma_picture_size >
+          vp9_level_defs[level_index].max_luma_picture_size) {
+        level_constraint->level_achievable = 0;
+        level_constraint->fail_id = LUMA_PIC_SIZE_TOO_LARGE;
+      }
+
+      if ((double)level_spec->max_luma_sample_rate * (1 + SAMPLE_RATE_GRACE_P) >
+          (double)vp9_level_defs[level_index].max_luma_sample_rate) {
+        level_constraint->level_achievable = 0;
+        level_constraint->fail_id = LUMA_SAMPLE_RATE_TOO_LARGE;
+      }
+
+      if (level_spec->max_col_tiles >
+          vp9_level_defs[level_index].max_col_tiles) {
+        level_constraint->level_achievable = 0;
+        level_constraint->fail_id = COLUMN_TILE_TOO_MANY;
+      }
+
+      if (level_spec->min_altref_distance <
+          vp9_level_defs[level_index].min_altref_distance) {
+        level_constraint->level_achievable = 0;
+        level_constraint->fail_id = ALTREF_DIST_TOO_SMALL;
+      }
+
+      if (level_spec->max_ref_frame_buffers >
+          vp9_level_defs[level_index].max_ref_frame_buffers) {
+        level_constraint->level_achievable = 0;
+        level_constraint->fail_id = REF_BUFFER_TOO_MANY;
+      }
+
+      if (level_spec->max_cpb_size > vp9_level_defs[level_index].max_cpb_size) {
+        level_constraint->level_achievable = 0;
+        level_constraint->fail_id = CPB_TOO_LARGE;
+      }
+
+      cpb_data_size = 0;
+      for (i = 0; i < CPB_WINDOW_SIZE - 1; ++i) {
+        if (i >= level_stats->frame_window_buffer.len)
+          break;
+        idx = (level_stats->frame_window_buffer.start +
+            level_stats->frame_window_buffer.len -
+            1 - i) % FRAME_WINDOW_SIZE;
+        cpb_data_size += (double)level_stats->frame_window_buffer.buf[idx].size;
+      }
+      if (vp9_level_defs[level_index].max_cpb_size * 1000.0 >
+          cpb_data_size * 8.0) {
+        level_constraint->max_frame_size =
+            (int)(vp9_level_defs[level_index].max_cpb_size * 1000.0 -
+                cpb_data_size * 8.0);
+        if (level_stats->frame_window_buffer.len < CPB_WINDOW_SIZE)
+          level_constraint->max_frame_size >>= 1;
+      } else {
+        level_constraint->level_achievable = 0;
+        level_constraint->fail_id = CPB_TOO_LARGE;
+        rc->max_frame_bandwidth = level_constraint->default_max_frame_size;
+      }
+    }
   }
 
 #if CONFIG_INTERNAL_STATS

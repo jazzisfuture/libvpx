@@ -498,6 +498,15 @@ static INLINE void init_level_info(VP9_LEVEL_INFO *level_info) {
   level_spec->max_ref_frame_buffers = 0;
 }
 
+static INLINE int get_vp9_level_index(VP9_LEVEL level) {
+  int8_t i;
+  for (i = 0; i < VP9_LEVELS; ++i) {
+    if (level == vp9_level_defs[i].level)
+      return i;
+  }
+  return -1;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

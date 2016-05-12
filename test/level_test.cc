@@ -68,6 +68,42 @@ class LevelTest
   int level_;
 };
 
+// Test targeting for level 11
+TEST_P(LevelTest, TestTargetLevel11) {
+  if (encoding_mode_ != ::libvpx_test::kRealTime) {
+    ::libvpx_test::I420VideoSource video("hantro_odd.yuv", 208, 144, 30, 1, 0,
+                                         90);
+    target_level_ = 11;
+    cfg_.rc_target_bitrate = 150;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    ASSERT_EQ(11, level_);
+  }
+}
+
+// Test targeting for level 20
+TEST_P(LevelTest, TestTargetLevel20) {
+  if (encoding_mode_ != ::libvpx_test::kRealTime) {
+    ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv",
+                                          352, 288, 30, 1, 0, 90);
+    target_level_ = 20;
+    cfg_.rc_target_bitrate = 1200;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    ASSERT_EQ(20, level_);
+  }
+}
+
+// Test targeting for level 31
+TEST_P(LevelTest, TestTargetLevel31) {
+  if (encoding_mode_ != ::libvpx_test::kRealTime) {
+    ::libvpx_test::I420VideoSource video("niklas_1280_720_30.y4m", 1280, 720,
+                                         30, 1, 0, 60);
+    target_level_ = 31;
+    cfg_.rc_target_bitrate = 8000;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    ASSERT_EQ(31, level_);
+  }
+}
+
 // Test for keeping level stats only
 TEST_P(LevelTest, TestTargetLevel0) {
   ::libvpx_test::I420VideoSource video("hantro_odd.yuv", 208, 144, 30, 1, 0,
@@ -90,6 +126,7 @@ TEST_P(LevelTest, TestTargetLevel255) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
+// API test
 TEST_P(LevelTest, TestTargetLevelApi) {
   ::libvpx_test::I420VideoSource video("hantro_odd.yuv", 208, 144, 30, 1, 0, 1);
   static const vpx_codec_iface_t *codec = &vpx_codec_vp9_cx_algo;
