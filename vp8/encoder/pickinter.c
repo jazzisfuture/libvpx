@@ -749,6 +749,8 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     int sf_improved_mv_pred = cpi->sf.improved_mv_pred;
 
 #if CONFIG_MULTI_RES_ENCODING
+    // Flag to control usage of motion vector reuse for multi-res encoding.
+    int mv_reuse = 1;
     int dissim = INT_MAX;
     int parent_ref_frame = 0;
     int_mv parent_ref_mv;
@@ -815,7 +817,8 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     // this higher resol (|cpi->oxcf.mr_encoder_id| > 0) frame.
     // |parent_ref_valid| may be reset depending on |parent_ref_frame| for
     // the current macroblock below.
-    parent_ref_valid = cpi->oxcf.mr_encoder_id && cpi->mr_low_res_mv_avail;
+    parent_ref_valid = mv_reuse && cpi->oxcf.mr_encoder_id &&
+                       cpi->mr_low_res_mv_avail;
     if (parent_ref_valid)
     {
         int parent_ref_flag;
@@ -1140,7 +1143,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
                resol encoder does motion search without any previous knowledge.
                Also, since last frame motion info is not stored, then we can not
                use improved_mv_pred. */
-            if (cpi->oxcf.mr_encoder_id)
+            if (cpi->oxcf.mr_encoder_id && mv_reuse)
                 sf_improved_mv_pred = 0;
 
             // Only use parent MV as predictor if this candidate reference frame
