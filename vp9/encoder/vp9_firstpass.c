@@ -45,8 +45,6 @@
 
 #define BOOST_BREAKOUT      12.5
 #define BOOST_FACTOR        12.5
-#define FACTOR_PT_LOW       0.70
-#define FACTOR_PT_HIGH      0.90
 #define FIRST_PASS_Q        10.0
 #define GF_MAX_BOOST        96.0
 #define INTRA_MODE_PENALTY  1024
@@ -1247,6 +1245,8 @@ static double calc_correction_factor(double err_per_mb,
   return fclamp(pow(error_term, power_term), 0.05, 5.0);
 }
 
+#define FACTOR_PT_LOW       0.70
+#define FACTOR_PT_HIGH      0.90
 #define ERR_DIVISOR         100.0
 static int get_twopass_worst_quality(const VP9_COMP *cpi,
                                      const double section_err,
@@ -1254,6 +1254,7 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
                                      int section_target_bandwidth,
                                      double group_weight_factor) {
   const RATE_CONTROL *const rc = &cpi->rc;
+  const TWO_PASS *const twopass = &cpi->twopass;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   // Clamp the target rate to VBR min / max limts.
   const int target_rate =
@@ -1305,6 +1306,10 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
       if (bits_per_mb <= target_norm_bits_per_mb)
         break;
     }
+
+    // Apply adjustment based on prior errors.
+    q += twopass->awq_adjusment;
+    clamp(q, rc->best_quality, rc->worst_quality);
 
     // Restriction on active max q for constrained quality mode.
     if (cpi->oxcf.rc_mode == VPX_CQ)
@@ -2750,11 +2755,12 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     const double section_inactive_zone =
       (twopass->total_left_stats.inactive_zone_rows * 2) /
       ((double)cm->mb_rows * section_length);
-    const int tmp_q =
-      get_twopass_worst_quality(cpi, section_error,
-                                section_intra_skip + section_inactive_zone,
-                                section_target_bandwidth, DEFAULT_GRP_WEIGHT);
+    int tmp_q;
 
+    twopass->awq_adjusment = 0;
+    tmp_q =  get_twopass_worst_quality(cpi, section_error,
+        section_intra_skip + section_inactive_zone,
+        section_target_bandwidth, DEFAULT_GRP_WEIGHT);
     twopass->active_worst_quality = tmp_q;
     twopass->baseline_active_worst_quality = tmp_q;
     rc->ni_av_qi = tmp_q;
@@ -2915,6 +2921,18 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
       }
     }
 
+
+    if(frame_is_intra_only(cm) || cpi->refresh_alt_ref_frame ||
+       (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
+      if ((rc->rate_error_estimate > 1) &&
+          (rc->rolling_target_bits > rc->rolling_actual_bits)) {
+        twopass->awq_adjusment--;
+      } else if ((rc->rate_error_estimate < -1) &&
+                 (rc->rolling_target_bits < rc->rolling_actual_bits)) {
+        twopass->awq_adjusment++;
+      }
+    }
+
     // Undershoot.
     if (rc->rate_error_estimate > cpi->oxcf.under_shoot_pct) {
       --twopass->extend_maxq;
@@ -2931,11 +2949,33 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
           rc->projected_frame_size > (2 * rc->avg_frame_bandwidth))
         ++twopass->extend_maxq;
 
+      /*TWO_PASS *const twopass = &cpi->twopass;
+
+      if (rc->projected_frame_size > ((rc->base_frame_target * 3) / 2)) {
+        ++twopass->extend_maxq;
+        --twopass->extend_minq;
+      } else if (rc->projected_frame_size < (rc->base_frame_target / 2)) {
+        --twopass->extend_maxq;
+        ++twopass->extend_minq;
+      } else {
+        // Unwind undershoot or overshoot adjustment.
+        if (rc->rolling_target_bits < rc->rolling_actual_bits)
+          --twopass->extend_minq;
+        else if (rc->rolling_target_bits > rc->rolling_actual_bits)
+          --twopass->extend_maxq;
+      } */
+
+      /*if (rc->projected_frame_size > ((rc->base_frame_target * 5) / 4))
+        twopass->awq_adjusment++;
+      else if(rc->projected_frame_size < ((rc->base_frame_target * 3) / 4))
+        twopass->awq_adjusment--;*/
+
       // Unwind undershoot or overshoot adjustment.
       if (rc->rolling_target_bits < rc->rolling_actual_bits)
         --twopass->extend_minq;
       else if (rc->rolling_target_bits > rc->rolling_actual_bits)
         --twopass->extend_maxq;
+
     }
 
     twopass->extend_minq =

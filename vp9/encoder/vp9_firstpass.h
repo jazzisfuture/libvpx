@@ -133,6 +133,7 @@ typedef struct {
   int last_kfgroup_zeromotion_pct;
   int gf_zeromotion_pct;
   int active_worst_quality;
+  int awq_adjusment;
   int baseline_active_worst_quality;
   int extend_minq;
   int extend_maxq;
