@@ -3944,6 +3944,60 @@ static int setup_interp_filter_search_mask(VP9_COMP *cpi) {
   return mask;
 }
 
+// Check if this coded frame is equivalent to an existing frame
+static int check_show_frame(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  int mi_row, mi_col;
+  const int mis = cm->mi_stride;
+  MODE_INFO **mi_ptr = cm->mi_grid_visible;
+  int ref_frame;
+
+  if (cpi->use_svc)
+    return NONE;
+
+  if (cm->seg.enabled)
+    return NONE;
+
+  if (cm->lf.filter_level > 0)
+    return NONE;
+
+  if (frame_is_intra_only(cm))
+    return NONE;
+
+  if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)
+    return NONE;
+
+  if (!cm->show_frame)
+    return NONE;
+
+  ref_frame = mi_ptr[0]->ref_frame[0];
+  assert(ref_frame > NONE && ref_frame < MAX_REF_FRAMES);
+
+  if (ref_frame == INTRA_FRAME)
+    return NONE;
+
+  if (vp9_get_scaled_ref_frame(cpi, ref_frame) != NULL)
+    return NONE;
+
+  for (mi_row = 0; mi_row < cm->mi_rows; ++mi_row, mi_ptr += mis) {
+    for (mi_col = 0; mi_col < cm->mi_cols; ++mi_col) {
+      MODE_INFO *mi = mi_ptr[mi_col];
+      if (mi->sb_type < BLOCK_8X8)
+        return NONE;
+      if (has_second_ref(mi))
+        return NONE;
+      if (mi->ref_frame[0] != ref_frame)
+        return NONE;
+      if (mi->mv[0].as_int != 0)
+        return NONE;
+      if (!mi->skip)
+        return NONE;
+    }
+  }
+
+  return ref_frame;
+}
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       size_t *size,
                                       uint8_t *dest,
@@ -3952,6 +4006,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   struct segmentation *const seg = &cm->seg;
   TX_SIZE t;
+  int existing_frame_to_show = NONE;
 
   set_ext_overrides(cpi);
   vpx_clear_system_state();
@@ -4110,6 +4165,22 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   // Pick the loop filter level for the frame.
   loopfilter_frame(cpi, cm);
+
+  // Check if we can convert this to a show existing frame.
+#if 1
+  if (oxcf->pass == 2)
+    existing_frame_to_show = check_show_frame(cpi);
+  if (existing_frame_to_show != NONE) {
+    cpi->refresh_last_frame = 0;
+    cm->refresh_frame_context = 0;
+    cm->frame_to_show = get_ref_frame_buffer(cpi, existing_frame_to_show);
+    vp9_write_show_exisiting_frame(cpi, dest, size, existing_frame_to_show);
+    vp9_rc_postencode_update(cpi, *size);
+    ++cm->current_video_frame;
+    release_scaled_references(cpi);
+    return;
+  }
+#endif
 
   // build the bitstream
   vp9_pack_bitstream(cpi, dest, size);
@@ -4603,6 +4674,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   }
   cm->new_fb_idx = get_free_fb(cm);
 
+  assert(cm->new_fb_idx != INVALID_IDX);
   if (cm->new_fb_idx == INVALID_IDX)
     return -1;
 

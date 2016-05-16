@@ -18,6 +18,9 @@ extern "C" {
 
 #include "vp9/encoder/vp9_encoder.h"
 
+void vp9_write_show_exisiting_frame(const VP9_COMP *cpi, uint8_t *dest,
+                                    size_t *size, int ref_frame);
+
 void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size);
 
 static INLINE int vp9_preserve_existing_gf(VP9_COMP *cpi) {

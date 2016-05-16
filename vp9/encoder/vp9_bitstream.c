@@ -1219,6 +1219,18 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
   return header_bc.pos;
 }
 
+void vp9_write_show_exisiting_frame(const VP9_COMP *cpi, uint8_t *dest,
+                                    size_t *size, int ref_frame) {
+  const VP9_COMMON *const cm = &cpi->common;
+  struct vpx_write_bit_buffer wb = {dest, 0};
+  vpx_wb_write_literal(&wb, VP9_FRAME_MARKER, 2);
+  write_profile(cm->profile, &wb);
+  vpx_wb_write_bit(&wb, 1);  // show_existing_frame
+  vpx_wb_write_literal(&wb, get_ref_frame_map_idx(cpi, ref_frame),
+                       REF_FRAMES_LOG2);
+  *size = vpx_wb_bytes_written(&wb);
+}
+
 void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
   uint8_t *data = dest;
   size_t first_part_size, uncompressed_hdr_size;
