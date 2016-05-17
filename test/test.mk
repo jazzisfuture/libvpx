@@ -181,6 +181,9 @@ endif
 
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS) += sad_test.cc
 
+TEST_FWHT_SPEED_SRCS-yes := test_fwht_speed.cc
+TEST_FWHT_SPEED_SRCS-yes += ../md5_utils.h ../md5_utils.c
+
 TEST_INTRA_PRED_SPEED_SRCS-yes := test_intra_pred_speed.cc
 TEST_INTRA_PRED_SPEED_SRCS-yes += ../md5_utils.h ../md5_utils.c
 
