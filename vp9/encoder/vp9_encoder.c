@@ -4275,6 +4275,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
     cpi->unscaled_last_source = last_source != NULL ? &last_source->img : NULL;
 
+    vp9_apply_encoding_flags(cpi, source->flags);
+
     *time_stamp = source->ts_start;
     *time_end = source->ts_end;
     *frame_flags = (source->flags & VPX_EFLAG_FORCE_KF) ? FRAMEFLAGS_KEY : 0;
