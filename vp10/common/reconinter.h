@@ -154,44 +154,35 @@ static INLINE void highbd_inter_predictor(const uint8_t *src, int src_stride,
 #define WEDGE_NONE       -1
 #define WEDGE_WEIGHT_BITS 6
 
-static const int get_wedge_bits_lookup[BLOCK_SIZES] = {
-  0,
-  0,
-  0,
-  WEDGE_BITS_4,
-  WEDGE_BITS_4,
-  WEDGE_BITS_4,
-  WEDGE_BITS_4,
-  WEDGE_BITS_4,
-  WEDGE_BITS_4,
-  WEDGE_BITS_4,
-  0,
-  0,
-  0,
-#if CONFIG_EXT_PARTITION
-  0,
-  0,
-  0,
-#endif  // CONFIG_EXT_PARTITION
-};
+typedef struct {
+  int bits;
+  int *codebook;
+  int smoother;
+} wedge_params_type;
+
+extern const wedge_params_type wedge_params_lookup[BLOCK_SIZES];
+
+static INLINE int get_wedge_bits_lookup(BLOCK_SIZE sb_type) {
+  return wedge_params_lookup[sb_type].bits;
+}
 
 static INLINE int is_interinter_wedge_used(BLOCK_SIZE sb_type) {
   (void) sb_type;
-  return get_wedge_bits_lookup[sb_type] > 0;
+  return wedge_params_lookup[sb_type].bits > 0;
 }
 
 static INLINE int get_interinter_wedge_bits(BLOCK_SIZE sb_type) {
-  const int wbits = get_wedge_bits_lookup[sb_type];
+  const int wbits = wedge_params_lookup[sb_type].bits;
   return (wbits > 0) ? wbits + 1 : 0;
 }
 
 static INLINE int is_interintra_wedge_used(BLOCK_SIZE sb_type) {
   (void) sb_type;
-  return get_wedge_bits_lookup[sb_type] > 0;
+  return wedge_params_lookup[sb_type].bits > 0;
 }
 
 static INLINE int get_interintra_wedge_bits(BLOCK_SIZE sb_type) {
-  return get_wedge_bits_lookup[sb_type];
+  return wedge_params_lookup[sb_type].bits;
 }
 #endif  // CONFIG_EXT_INTER
 
