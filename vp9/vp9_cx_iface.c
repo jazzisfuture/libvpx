@@ -1048,8 +1048,6 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
   }
   cpi->common.error.setjmp = 1;
 
-  vp9_apply_encoding_flags(cpi, flags);
-
   // Handle fixed keyframe intervals
   if (ctx->cfg.kf_mode == VPX_KF_AUTO &&
       ctx->cfg.kf_min_dist == ctx->cfg.kf_max_dist) {
