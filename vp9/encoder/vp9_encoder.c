@@ -2460,10 +2460,20 @@ int vp9_use_as_reference(VP9_COMP *cpi, int ref_frame_flags) {
   return 0;
 }
 
-void vp9_update_reference(VP9_COMP *cpi, int ref_frame_flags) {
-  cpi->ext_refresh_golden_frame = (ref_frame_flags & VP9_GOLD_FLAG) != 0;
-  cpi->ext_refresh_alt_ref_frame = (ref_frame_flags & VP9_ALT_FLAG) != 0;
-  cpi->ext_refresh_last_frame = (ref_frame_flags & VP9_LAST_FLAG) != 0;
+void vp9_update_reference(VP9_COMP *cpi, int update) {
+  // These external refresh flags are set to -1, which means no updating
+  // and overwriting the refresh flags.
+  cpi->ext_refresh_golden_frame = -1;
+  cpi->ext_refresh_alt_ref_frame = -1;
+  cpi->ext_refresh_last_frame = -1;
+
+  if (!(update & VP9_GOLD_FLAG))
+    cpi->ext_refresh_golden_frame = 0;
+  if (!(update & VP9_ALT_FLAG))
+    cpi->ext_refresh_alt_ref_frame = 0;
+  if (!(update & VP9_LAST_FLAG))
+    cpi->ext_refresh_last_frame = 0;
+
   cpi->ext_refresh_frame_flags_pending = 1;
 }
 
@@ -3849,10 +3859,14 @@ static void set_ext_overrides(VP9_COMP *cpi) {
     cpi->common.refresh_frame_context = cpi->ext_refresh_frame_context;
     cpi->ext_refresh_frame_context_pending = 0;
   }
+
   if (cpi->ext_refresh_frame_flags_pending) {
-    cpi->refresh_last_frame = cpi->ext_refresh_last_frame;
-    cpi->refresh_golden_frame = cpi->ext_refresh_golden_frame;
-    cpi->refresh_alt_ref_frame = cpi->ext_refresh_alt_ref_frame;
+    if (cpi->ext_refresh_last_frame != -1)
+      cpi->refresh_last_frame = cpi->ext_refresh_last_frame;
+    if (cpi->ext_refresh_golden_frame != -1)
+      cpi->refresh_golden_frame = cpi->ext_refresh_golden_frame;
+    if (cpi->ext_refresh_alt_ref_frame != -1)
+      cpi->refresh_alt_ref_frame = cpi->ext_refresh_alt_ref_frame;
   }
 }
 
@@ -4565,7 +4579,9 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
     cpi->unscaled_last_source = last_source != NULL ? &last_source->img : NULL;
 
-    vp9_apply_encoding_flags(cpi, source->flags);
+    // The flags is already applied in is_one_pass_cbr_svc case.
+    if (!is_one_pass_cbr_svc(cpi))
+      vp9_apply_encoding_flags(cpi, source->flags);
 
     *time_stamp = source->ts_start;
     *time_end = source->ts_end;
