@@ -290,6 +290,7 @@ EXPERIMENT_LIST="
     obmc
     entropy
     bidir_pred
+    warped_motion
 "
 CONFIG_LIST="
     dependency_tracking

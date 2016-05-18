@@ -30,6 +30,9 @@
 #include "vp10/common/reconintra.h"
 #include "vp10/common/scan.h"
 #include "vp10/common/seg_common.h"
+#if CONFIG_WARPED_MOTION
+#include "vp10/common/motion_model.h"
+#endif  // CONFIG_WARPED_MOTION
 
 #include "vp10/encoder/cost.h"
 #include "vp10/encoder/encodemb.h"
@@ -6697,6 +6700,12 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_WARPED_MOTION
+  mbmi->warpnp = 0;
+  mbmi->warpsse = INT64_MAX;
+  mbmi->nowarpsse = INT64_MAX;
+#endif  // CONFIG_WARPED_MOTION
+
   if (is_comp_pred) {
     if (frame_mv[refs[0]].as_int == INVALID_MV ||
         frame_mv[refs[1]].as_int == INVALID_MV)
@@ -7608,6 +7617,57 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
 
   memcpy(x->skip_txfm, skip_txfm, sizeof(skip_txfm));
   memcpy(x->bsse, bsse, sizeof(bsse));
+
+#if CONFIG_WARPED_MOTION
+  if (!is_comp_pred) {
+    double pts[100], pts_inref[100], H[9];
+    int np = 0;
+    int i;
+
+    np = findSamples(cm, xd, mi_row, mi_col, pts, pts_inref);
+    if (np >= 6) {
+      int result = findAffine(np, pts, pts_inref, H);
+
+      if (!result) {
+        uint8_t pred[MAX_SB_SQUARE];
+        int tmp_rate, skip_txfm_sb;
+        int64_t tmp_dist, skip_sse_sb;
+        uint8_t *tmp_dst = xd->plane[0].dst.buf;
+        int tmp_stride = xd->plane[0].dst.stride;
+        int64_t oldsse, newsse;
+        int r, c;
+        double *pointer;
+
+        model_rd_for_sb(cpi, bsize, x, xd, 0, 0,
+                        &tmp_rate, &tmp_dist, &skip_txfm_sb, &skip_sse_sb);
+        oldsse = skip_sse_sb;
+
+        warpImage2(mi_row, mi_col, H,
+                   &xd->plane[0].pre[0].buf[
+                     -mi_col * 8 - mi_row * 8 * xd->plane[0].pre[0].stride],
+                   cm->mi_cols * 8, cm->mi_rows * 8,
+                   xd->plane[0].pre[0].stride,
+                   pred, 0, 0, xd->n8_w * 8, xd->n8_h * 8,
+                   64, 0, 0, 16, 16);
+
+        xd->plane[0].dst.buf = pred;
+        xd->plane[0].dst.stride = 64;
+
+        model_rd_for_sb(cpi, bsize, x, xd, 0, 0,
+                        &tmp_rate, &tmp_dist, &skip_txfm_sb, &skip_sse_sb);
+
+        newsse = skip_sse_sb;
+
+        mbmi->nowarpsse = oldsse;
+        mbmi->warpsse = newsse;
+        mbmi->warpnp = np;
+
+        xd->plane[0].dst.buf = tmp_dst;
+        xd->plane[0].dst.stride =tmp_stride;
+      }
+    }
+  }
+#endif  // CONFIG_WARPED_MOTION
 
 #if CONFIG_OBMC
   best_rd = INT64_MAX;
@@ -9821,6 +9881,12 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
   mbmi->use_wedge_interinter = 0;
   mbmi->use_wedge_interintra = 0;
 #endif  // CONFIG_EXT_INTER
+
+#if CONFIG_WARPED_MOTION
+  mbmi->warpnp = 0;
+  mbmi->warpsse = INT64_MAX;
+  mbmi->nowarpsse = INT64_MAX;
+#endif  // CONFIG_WARPED_MOTION
 
   for (i = 0; i < 4; i++) {
     int j;

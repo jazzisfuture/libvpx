@@ -1933,6 +1933,15 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td
             counts->single_ref[vp10_get_pred_context_single_ref_p2(xd)][1]
                               [ref0 != GOLDEN_FRAME]++;
 #endif  // CONFIG_EXT_REFS
+
+#if CONFIG_WARPED_MOTION
+          if (mbmi->warpnp >= 6) {
+            printf("%d %d %ld %ld %d %c\n", bsize, mbmi->ref_frame[0], mbmi->nowarpsse,
+                   mbmi->warpsse, mbmi->warpnp / 4, mbmi->nowarpsse > mbmi->warpsse ? 'w' : 'n');
+            if (mbmi->warpsse < mbmi->nowarpsse)
+              printf("haha\n");
+          }
+#endif
         }
 
 #if CONFIG_EXT_INTER

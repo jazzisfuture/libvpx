@@ -84,6 +84,8 @@ VP10_COMMON_SRCS-$(CONFIG_LOOP_RESTORATION) += common/restoration.h
 VP10_COMMON_SRCS-$(CONFIG_LOOP_RESTORATION) += common/restoration.c
 VP10_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/mfqe.h
 VP10_COMMON_SRCS-$(CONFIG_VP9_POSTPROC) += common/mfqe.c
+VP10_COMMON_SRCS-$(CONFIG_WARPED_MOTION) += common/motion_model.h
+VP10_COMMON_SRCS-$(CONFIG_WARPED_MOTION) += common/motion_model.c
 ifeq ($(CONFIG_VP9_POSTPROC),yes)
 VP10_COMMON_SRCS-$(HAVE_SSE2) += common/x86/mfqe_sse2.asm
 VP10_COMMON_SRCS-$(HAVE_SSE2) += common/x86/postproc_sse2.asm

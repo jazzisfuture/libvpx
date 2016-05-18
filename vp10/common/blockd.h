@@ -199,6 +199,10 @@ typedef struct {
 #if CONFIG_EXT_PARTITION_TYPES
   PARTITION_TYPE partition;
 #endif
+#if CONFIG_WARPED_MOTION
+  int64_t nowarpsse, warpsse;
+  int warpnp;
+#endif  // CONFIG_WARPED_MOTION
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {

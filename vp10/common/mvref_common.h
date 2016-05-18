@@ -366,6 +366,12 @@ void vp10_update_mv_context(const MACROBLOCKD *xd,
                             int16_t *mode_context);
 #endif  // CONFIG_EXT_INTER
 
+#if CONFIG_WARPED_MOTION
+int findSamples(VP10_COMMON *cm, MACROBLOCKD *xd,
+                int mi_row, int mi_col,
+                double *pts, double *pts_inref);
+#endif  // CONFIG_WARPED_MOTION
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
