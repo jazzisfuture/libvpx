@@ -2460,10 +2460,21 @@ int vp9_use_as_reference(VP9_COMP *cpi, int ref_frame_flags) {
   return 0;
 }
 
-void vp9_update_reference(VP9_COMP *cpi, int ref_frame_flags) {
-  cpi->ext_refresh_golden_frame = (ref_frame_flags & VP9_GOLD_FLAG) != 0;
-  cpi->ext_refresh_alt_ref_frame = (ref_frame_flags & VP9_ALT_FLAG) != 0;
-  cpi->ext_refresh_last_frame = (ref_frame_flags & VP9_LAST_FLAG) != 0;
+void vp9_update_reference(VP9_COMP *cpi, int update) {
+  // These external refresh flags are set to 1 by default, which means no
+  // overwriting the refresh flags. The flags are set to 0 when the
+  // corresponding bits in update is 0.
+  cpi->ext_refresh_golden_frame = 1;
+  cpi->ext_refresh_alt_ref_frame = 1;
+  cpi->ext_refresh_last_frame = 1;
+
+  if (!(update & VP9_GOLD_FLAG))
+    cpi->ext_refresh_golden_frame = 0;
+  if (!(update & VP9_ALT_FLAG))
+    cpi->ext_refresh_alt_ref_frame = 0;
+  if (!(update & VP9_LAST_FLAG))
+    cpi->ext_refresh_last_frame = 0;
+
   cpi->ext_refresh_frame_flags_pending = 1;
 }
 
@@ -3849,10 +3860,16 @@ static void set_ext_overrides(VP9_COMP *cpi) {
     cpi->common.refresh_frame_context = cpi->ext_refresh_frame_context;
     cpi->ext_refresh_frame_context_pending = 0;
   }
+
   if (cpi->ext_refresh_frame_flags_pending) {
-    cpi->refresh_last_frame = cpi->ext_refresh_last_frame;
-    cpi->refresh_golden_frame = cpi->ext_refresh_golden_frame;
-    cpi->refresh_alt_ref_frame = cpi->ext_refresh_alt_ref_frame;
+    if (!cpi->ext_refresh_last_frame)
+      cpi->refresh_last_frame = 0;
+
+    if (!cpi->ext_refresh_golden_frame)
+      cpi->refresh_golden_frame = 0;
+
+    if (!cpi->ext_refresh_alt_ref_frame)
+      cpi->refresh_alt_ref_frame = 0;
   }
 }
 
