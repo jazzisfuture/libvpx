@@ -1160,6 +1160,8 @@ static void build_intra_predictors_high(const MACROBLOCKD *xd,
   uint16_t *above_row = above_data + 16;
   const uint16_t *const_above_row = above_row;
   const int bs = 4 << tx_size;
+  const int angle_step =
+      plane ? vp10_angle_step_uv[tx_size] : vp10_angle_step_y[tx_size];
   int need_left = extend_modes[mode] & NEED_LEFT;
   int need_above = extend_modes[mode] & NEED_ABOVE;
   const uint16_t *above_ref = ref - ref_stride;
@@ -1180,7 +1182,7 @@ static void build_intra_predictors_high(const MACROBLOCKD *xd,
   if (mode != DC_PRED && mode != TM_PRED &&
       xd->mi[0]->mbmi.sb_type >= BLOCK_8X8) {
     p_angle = mode_to_angle_map[mode] +
-        xd->mi[0]->mbmi.angle_delta[plane != 0] * ANGLE_STEP;
+        xd->mi[0]->mbmi.angle_delta[plane != 0] * angle_step;
     if (p_angle <= 90)
       need_above = 1, need_left = 0;
     else if (p_angle < 180)
@@ -1325,12 +1327,14 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
       &xd->mi[0]->mbmi.ext_intra_mode_info;
   const EXT_INTRA_MODE ext_intra_mode =
       ext_intra_mode_info->ext_intra_mode[plane != 0];
+  const int angle_step =
+      plane ? vp10_angle_step_uv[tx_size] : vp10_angle_step_y[tx_size];
   int p_angle = 0;
 
   if (mode != DC_PRED && mode != TM_PRED &&
       xd->mi[0]->mbmi.sb_type >= BLOCK_8X8) {
     p_angle = mode_to_angle_map[mode] +
-        xd->mi[0]->mbmi.angle_delta[plane != 0] * ANGLE_STEP;
+        xd->mi[0]->mbmi.angle_delta[plane != 0] * angle_step;
     if (p_angle <= 90)
       need_above = 1, need_left = 0;
     else if (p_angle < 180)

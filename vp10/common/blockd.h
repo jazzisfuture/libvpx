@@ -484,8 +484,7 @@ static INLINE int get_ext_tx_types(TX_SIZE tx_size, BLOCK_SIZE bs,
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_EXT_INTRA
-#define ALLOW_FILTER_INTRA_MODES 1
-#define ANGLE_STEP 3
+#define ALLOW_FILTER_INTRA_MODES 0
 #define MAX_ANGLE_DELTAS 3
 
 extern const int16_t dr_intra_derivative[270][2];
@@ -493,6 +492,35 @@ extern const int16_t dr_intra_derivative[270][2];
 static const uint8_t mode_to_angle_map[INTRA_MODES] = {
     0, 90, 180, 45, 135, 111, 157, 203, 67, 0,
 };
+
+static const uint8_t vp10_angle_search_l1[MAX_ANGLE_DELTAS + 1] = {
+    0, 3, 2, 3,
+};
+
+static const uint8_t vp10_angle_search_l2[MAX_ANGLE_DELTAS + 1] = {
+    0, 1, 3, 3,
+};
+
+static const int8_t
+vp10_angle_fast_search_orders[MAX_ANGLE_DELTAS + 1][16] = {
+    {},
+    {0, -1, 1,},
+    {-1, -2, 0, 1, 0, 2,},
+    {0, -1, 1, -2, -3, -1, 2, 1, 3,},
+};
+
+#if 0
+static const uint8_t vp10_angle_step_y[TX_SIZES] = { 4, 4, 3, 3,};
+static const uint8_t vp10_max_angle_delta_y[TX_SIZES] = {  2, 2, 3, 3,};
+static const uint8_t vp10_angle_step_uv[TX_SIZES] = {   7, 4, 4, 4,};
+static const uint8_t vp10_max_angle_delta_uv[TX_SIZES] = {    1, 2, 2, 2,};
+#else
+static const uint8_t vp10_angle_step_y[TX_SIZES] = {3, 3, 3, 3,};
+// 2, 2, 2, 2, 1, 1, 1, 1, 3, 3, 3, 3,
+static const uint8_t vp10_max_angle_delta_y[TX_SIZES] = {1, 1, 3, 3,};
+static const uint8_t vp10_angle_step_uv[TX_SIZES] = {3, 3, 3, 3,};
+static const uint8_t vp10_max_angle_delta_uv[TX_SIZES] = {3, 3, 3, 3,};
+#endif
 
 static const TX_TYPE filter_intra_mode_to_tx_type_lookup[FILTER_INTRA_MODES] = {
   DCT_DCT,    // FILTER_DC
@@ -546,6 +574,8 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
         mbmi->ext_intra_mode_info.ext_intra_mode[plane_type];
     const PREDICTION_MODE mode = (plane_type == PLANE_TYPE_Y) ?
         get_y_mode(mi, block_idx) : mbmi->uv_mode;
+    const int angle_step =
+        plane_type ? vp10_angle_step_uv[tx_size] : vp10_angle_step_y[tx_size];
 
     if (xd->lossless[mbmi->segment_id] || tx_size >= TX_32X32)
       return DCT_DCT;
@@ -567,7 +597,7 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
     } else {
       int angle = mode_to_angle_map[mode];
       if (mbmi->sb_type >= BLOCK_8X8)
-        angle += mbmi->angle_delta[plane_type] * ANGLE_STEP;
+        angle += mbmi->angle_delta[plane_type] * angle_step;
       assert(angle > 0 && angle < 270);
       if (angle == 135)
         return ADST_ADST;

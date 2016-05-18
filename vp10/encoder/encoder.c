@@ -2870,6 +2870,25 @@ void vp10_remove_compressor(VP10_COMP *cpi) {
              (cpi->time_receive_data + cpi->time_compress_data) / 1000);
     }
 #endif
+
+#if 1
+  {
+    int i;
+    printf("intra hits are ");
+    for (i = 0; i < TX_SIZES; ++i)
+      printf("%8d ", cpi->intra_hits[i]);
+    printf("\n");
+  }
+#endif
+#if 1
+  {
+    int i;
+    printf("intra skip are ");
+    for (i = 0; i < TX_SIZES; ++i)
+      printf("%8d ", cpi->intra_skip[i]);
+    printf("\n");
+  }
+#endif
   }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING

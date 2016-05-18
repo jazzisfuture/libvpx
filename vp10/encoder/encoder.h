@@ -610,6 +610,9 @@ typedef struct VP10_COMP {
   int refresh_frame_mask;
   int existing_fb_idx_to_show;
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+
+  int intra_hits[TX_SIZES];
+  int intra_skip[TX_SIZES];
 } VP10_COMP;
 
 void vp10_initialize_enc(void);
