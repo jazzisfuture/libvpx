@@ -1856,14 +1856,38 @@ static void test_decode(struct stream_state  *stream,
     vpx_codec_control(&stream->encoder, VP8_COPY_REFERENCE, &ref_enc);
     vpx_codec_control(&stream->decoder, VP8_COPY_REFERENCE, &ref_dec);
   } else {
+    /*
     struct vp9_ref_frame ref_enc, ref_dec;
+    vpx_image_t enc_img_prev, dec_img_prev;
 
     ref_enc.idx = 0;
     ref_dec.idx = 0;
     vpx_codec_control(&stream->encoder, VP9_GET_REFERENCE, &ref_enc);
-    enc_img = ref_enc.img;
+    enc_img_prev = ref_enc.img;
     vpx_codec_control(&stream->decoder, VP9_GET_REFERENCE, &ref_dec);
-    dec_img = ref_dec.img;
+    dec_img_prev = ref_dec.img;
+    */
+
+    vpx_codec_control(&stream->encoder, VP10_GET_NEW_FRAME_IMAGE, &enc_img);
+    vpx_codec_control(&stream->decoder, VP10_GET_NEW_FRAME_IMAGE, &dec_img);
+
+    /*
+    if (compare_img(&enc_img_prev, &enc_img)) {
+      fprintf(stdout, "Encoder images match each other. :-)\n");
+      fflush(stdout);
+    } else {
+      fprintf(stdout, "Encoder images does not match each other. :-(\n");
+      fflush(stdout);
+    }
+    if (compare_img(&dec_img_prev, &dec_img)) {
+      fprintf(stdout, "Decoder images match each other. :-)\n");
+      fflush(stdout);
+    } else {
+      fprintf(stdout, "Decoder images does not match each other. :-(\n");
+      fflush(stdout);
+    }
+    */
+
 #if CONFIG_VP9_HIGHBITDEPTH
     if ((enc_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH) !=
         (dec_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH)) {
