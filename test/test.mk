@@ -181,7 +181,7 @@ LIBVPX_TEST_SRCS-$(HAVE_SSSE3) += masked_sad_test.cc
 endif
 
 ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
-LIBVPX_TEST_SRCS-$(HAVE_SSE4_1) += vp10_iht4x4_test.cc
+LIBVPX_TEST_SRCS-$(HAVE_SSE4_1) += vp10_highbd_iht_test.cc
 endif # CONFIG_VP9_HIGHBITDEPTH
 endif # VP10
 
