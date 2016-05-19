@@ -55,16 +55,16 @@ extern "C" {
 #define SWITCHABLE_FILTER_CONTEXTS (SWITCHABLE_FILTERS + 1)
 #endif
 
-typedef uint8_t INTERP_FILTER;
+typedef uint8_t InterpFilter
 
 #if CONFIG_EXT_INTRA
-typedef enum {
-  INTRA_FILTER_LINEAR,
-  INTRA_FILTER_8TAP,
-  INTRA_FILTER_8TAP_SHARP,
-  INTRA_FILTER_8TAP_SMOOTH,
-  INTRA_FILTERS,
-} INTRA_FILTER;
+    typedef enum {
+      INTRA_FILTER_LINEAR,
+      INTRA_FILTER_8TAP,
+      INTRA_FILTER_8TAP_SHARP,
+      INTRA_FILTER_8TAP_SMOOTH,
+      INTRA_FILTERS,
+    } INTRA_FILTER;
 
 extern const InterpKernel *av1_intra_filter_kernels[INTRA_FILTERS];
 #endif  // CONFIG_EXT_INTRA
@@ -76,9 +76,9 @@ typedef struct InterpFilterParams {
 } InterpFilterParams;
 
 InterpFilterParams av1_get_interp_filter_params(
-    const INTERP_FILTER interp_filter);
+    const InterpFilter interp_filter);
 
-const int16_t *av1_get_interp_filter_kernel(const INTERP_FILTER interp_filter);
+const int16_t *av1_get_interp_filter_kernel(const InterpFilter interp_filter);
 
 static INLINE const int16_t *av1_get_interp_filter_subpel_kernel(
     const InterpFilterParams filter_params, const int subpel) {
@@ -86,7 +86,7 @@ static INLINE const int16_t *av1_get_interp_filter_subpel_kernel(
 }
 
 static INLINE int av1_is_interpolating_filter(
-    const INTERP_FILTER interp_filter) {
+    const InterpFilter interp_filter) {
   const InterpFilterParams ip = av1_get_interp_filter_params(interp_filter);
   return (ip.filter_ptr[ip.taps / 2 - 1] == 128);
 }
