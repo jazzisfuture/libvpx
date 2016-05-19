@@ -497,6 +497,8 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(
     SSE2, Loop8Test6Param,
     ::testing::Values(
+        make_tuple(&vpx_lpf_horizontal_4_sse2,
+                   &vpx_lpf_horizontal_4_c, 8),
         make_tuple(&vpx_lpf_horizontal_8_sse2,
                    &vpx_lpf_horizontal_8_c, 8),
         make_tuple(&vpx_lpf_horizontal_edge_8_sse2,
