@@ -3359,11 +3359,21 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
 
   if (use_upsampled_ref) {
-    // Up-sample the current encoded frame.
-    RefCntBuffer *bufs = pool->frame_bufs;
-    const YV12_BUFFER_CONFIG *const ref = &bufs[cm->new_fb_idx].buf;
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+    if (cm->show_existing_frame) {
+      new_uidx = cpi->upsampled_ref_idx[cpi->existing_fb_idx_to_show];
+      // TODO(zoeliu): Once following is confirmed, remove it.
+      assert(cpi->upsampled_ref_bufs[new_uidx].ref_count > 0);
+    } else {
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+      // Up-sample the current encoded frame.
+      RefCntBuffer *bufs = pool->frame_bufs;
+      const YV12_BUFFER_CONFIG *const ref = &bufs[cm->new_fb_idx].buf;
 
-    new_uidx = upsample_ref_frame(cpi, ref);
+      new_uidx = upsample_ref_frame(cpi, ref);
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+    }
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
   }
 
   // At this point the new frame has been encoded.
@@ -3381,6 +3391,10 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
     if (use_upsampled_ref) {
       uref_cnt_fb(cpi->upsampled_ref_bufs,
                   &cpi->upsampled_ref_idx[cpi->gld_fb_idx], new_uidx);
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+      uref_cnt_fb(cpi->upsampled_ref_bufs,
+                  &cpi->upsampled_ref_idx[cpi->bwd_fb_idx], new_uidx);
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
       uref_cnt_fb(cpi->upsampled_ref_bufs,
                   &cpi->upsampled_ref_idx[cpi->alt_fb_idx], new_uidx);
     }
@@ -3447,7 +3461,10 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
     if (cpi->refresh_bwd_ref_frame) {
       ref_cnt_fb(pool->frame_bufs,
                  &cm->ref_frame_map[cpi->bwd_fb_idx], cm->new_fb_idx);
-      // TODO(zoeliu): To have bidir-pred work with upsampled reference frames.
+      if (use_upsampled_ref)
+        uref_cnt_fb(cpi->upsampled_ref_bufs,
+                    &cpi->upsampled_ref_idx[cpi->bwd_fb_idx], new_uidx);
+
       memcpy(cpi->interp_filter_selected[BWDREF_FRAME],
              cpi->interp_filter_selected[0],
              sizeof(cpi->interp_filter_selected[0]));
@@ -3540,7 +3557,9 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
       ref_cnt_fb(pool->frame_bufs,
                  &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
 
-      // TODO(zoeliu): To have bidir-pred work with upsampled reference frames.
+      if (use_upsampled_ref)
+        uref_cnt_fb(cpi->upsampled_ref_bufs,
+                    &cpi->upsampled_ref_idx[cpi->lst_fb_idx], new_uidx);
 
       // NOTE(zoeliu): OVERLAY should not be the last non-reference frame.
       assert(!cpi->rc.is_src_frame_alt_ref);

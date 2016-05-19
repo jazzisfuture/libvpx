@@ -102,6 +102,10 @@ static INLINE const YV12_BUFFER_CONFIG *get_upsampled_ref(VP10_COMP *cpi,
 #endif  // CONFIG_EXT_REFS
   else if (ref == GOLDEN_FRAME)
     ref_idx = cpi->gld_fb_idx;
+#if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
+  else if (ref == BWDREF_FRAME)
+    ref_idx = cpi->bwd_fb_idx;
+#endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
   else if (ref == ALTREF_FRAME)
     ref_idx = cpi->alt_fb_idx;
 
