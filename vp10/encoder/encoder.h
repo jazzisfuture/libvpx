@@ -353,6 +353,8 @@ typedef struct VP10_COMP {
   int gld_fb_idx;
   int alt_fb_idx;
 
+  int last_show_frame_buf_idx;  // last show frame buffer index
+
   int refresh_last_frame;
   int refresh_golden_frame;
   int refresh_alt_ref_frame;

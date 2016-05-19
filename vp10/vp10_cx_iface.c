@@ -1141,6 +1141,33 @@ static vpx_codec_err_t ctrl_get_reference(vpx_codec_alg_priv_t *ctx,
   }
 }
 
+static vpx_codec_err_t ctrl_get_new_frame_image(vpx_codec_alg_priv_t *ctx,
+                                                va_list args) {
+  vpx_image_t *const new_img = va_arg(args, vpx_image_t *);
+
+  if (new_img != NULL) {
+    VP10_COMMON *cm = &ctx->cpi->common;
+    YV12_BUFFER_CONFIG *new_fb =
+        &cm->buffer_pool->frame_bufs[ctx->cpi->last_show_frame_buf_idx].buf;
+    if (new_fb == NULL) return VPX_CODEC_ERROR;
+
+    fprintf(stdout, "\nENCODER***Frame=%d, show_frame=%d, frame_type=%d, "
+            "new_fb_idx=%d, last_show_frame_buf_idx=%d, "
+            "ref_frame_map[%d]=%d, ref_frame_map[%d]=%d, ref_frame_map[%d]=%d\n",
+            cm->current_video_frame, cm->show_frame, cm->frame_type,
+            cm->new_fb_idx, ctx->cpi->last_show_frame_buf_idx,
+            ctx->cpi->lst_fb_idx, cm->ref_frame_map[ctx->cpi->lst_fb_idx],
+            ctx->cpi->gld_fb_idx, cm->ref_frame_map[ctx->cpi->gld_fb_idx],
+            ctx->cpi->alt_fb_idx, cm->ref_frame_map[ctx->cpi->alt_fb_idx]);
+    fflush(stdout);
+
+    yuvconfig2image(new_img, new_fb, NULL);
+    return VPX_CODEC_OK;
+  } else {
+    return VPX_CODEC_INVALID_PARAM;
+  }
+}
+
 static vpx_codec_err_t ctrl_set_previewpp(vpx_codec_alg_priv_t *ctx,
                                           va_list args) {
 #if CONFIG_VP9_POSTPROC
@@ -1330,6 +1357,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP8E_GET_LAST_QUANTIZER_64,        ctrl_get_quantizer64},
   {VP9_GET_REFERENCE,                 ctrl_get_reference},
   {VP9E_GET_ACTIVEMAP,                ctrl_get_active_map},
+  {VP10_GET_NEW_FRAME_IMAGE,          ctrl_get_new_frame_image},
 
   { -1, NULL},
 };
