@@ -169,7 +169,7 @@ typedef enum {
   FLAG_SKIP_EIGHTTAP_REGULAR = 1 << EIGHTTAP_REGULAR,
   FLAG_SKIP_EIGHTTAP_SMOOTH = 1 << EIGHTTAP_SMOOTH,
   FLAG_SKIP_MULTITAP_SHARP = 1 << MULTITAP_SHARP,
-} INTERP_FILTER_MASK;
+} InterpFilter_MASK;
 
 typedef enum {
   NO_PRUNE = 0,
@@ -453,7 +453,7 @@ typedef struct SPEED_FEATURES {
   int encode_breakout_thresh;
 
   // default interp filter choice
-  INTERP_FILTER default_interp_filter;
+  InterpFilterdefault_interp_filter;
 
   // Early termination in transform size search, which only applies while
   // tx_size_search_method is USE_FULL_RD.
@@ -463,7 +463,7 @@ typedef struct SPEED_FEATURES {
   int adaptive_interp_filter_search;
 
   // mask for skip evaluation of certain interp_filter type.
-  INTERP_FILTER_MASK interp_filter_search_mask;
+  InterpFilterMASK interp_filter_search_mask;
 
   // Partition search early breakout thresholds.
   int64_t partition_search_breakout_dist_thr;
