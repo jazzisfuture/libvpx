@@ -14,6 +14,127 @@
 #include "vpx_ports/mem.h"
 #include "vpx_ports/emmintrin_compat.h"
 
+void vpx_lpf_horizontal_4_sse2(uint8_t *s, int p /* pitch */,
+                               const uint8_t *_blimit, const uint8_t *_limit,
+                               const uint8_t *_thresh) {
+  const __m128i zero = _mm_set1_epi16(0);
+  const __m128i limit =
+    _mm_unpacklo_epi64(_mm_loadl_epi64((const __m128i *)_blimit),
+                       _mm_loadl_epi64((const __m128i *)_limit));
+  const __m128i thresh =
+    _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *)_thresh), zero);
+  const __m128i ff = _mm_cmpeq_epi8(zero, zero);
+  __m128i q1p1, q0p0, p3p2, p2p1, p1p0, q3q2, q2q1, q1q0;
+  __m128i mask, hev;
+
+  p3p2 = _mm_loadl_epi64((__m128i *)(s - 3 * p));
+  p3p2 = _mm_castps_si128(_mm_loadh_pi(_mm_castsi128_ps(p3p2),
+                                       (__m64 *)(s - 4 * p)));
+  q1p1 = _mm_loadl_epi64((__m128i *)(s - 2 * p));
+  q0p0 = _mm_loadl_epi64((__m128i *)(s - 1 * p));
+  q0p0 = _mm_castps_si128(_mm_loadh_pi(_mm_castsi128_ps(q0p0),
+                                       (__m64 *)(s + 0 * p)));
+  q1p1 = _mm_castps_si128(_mm_loadh_pi(_mm_castsi128_ps(q1p1),
+                                       (__m64 *)(s + 1 * p)));
+  q3q2 = _mm_loadl_epi64((__m128i *)(s + 2 * p));
+  q3q2 = _mm_castps_si128(_mm_loadh_pi(_mm_castsi128_ps(q3q2),
+                                       (__m64 *)(s + 3 * p)));
+  p1p0 = _mm_unpacklo_epi64(q0p0, q1p1);
+  p2p1 = _mm_unpacklo_epi64(q1p1, p3p2);
+  q1q0 = _mm_unpackhi_epi64(q0p0, q1p1);
+  q2q1 = _mm_unpacklo_epi64(_mm_srli_si128(q1p1, 8), q3q2);
+
+  // filter_mask and hev_mask
+  {
+    // (abs(q1 - q0), abs(p1 - p0)
+    __m128i flat = _mm_or_si128(_mm_subs_epu8(q1p1, q0p0),
+                                _mm_subs_epu8(q0p0, q1p1));
+    // abs(p1 - q1), abs(p0 - q0)
+    const __m128i abs_p1q1p0q0 = _mm_or_si128(_mm_subs_epu8(p1p0, q1q0),
+                                              _mm_subs_epu8(q1q0, p1p0));
+    __m128i abs_p0q0, abs_p1q1;
+    __m128i work;
+
+    // const uint8_t hev = hev_mask(thresh, *op1, *op0, *oq0, *oq1);
+    hev = _mm_unpacklo_epi8(_mm_max_epu8(flat, _mm_srli_si128(flat, 8)), zero);
+    hev = _mm_cmpgt_epi16(hev, thresh);
+    hev = _mm_packs_epi16(hev, hev);
+
+    // const int8_t mask = filter_mask(*limit, *blimit,
+    //                 p3, p2, p1, p0, q0, q1, q2, q3);
+    abs_p0q0 = _mm_adds_epu8(abs_p1q1p0q0, abs_p1q1p0q0);  // abs(p0 - q0) * 2
+    abs_p1q1 = _mm_unpackhi_epi8(abs_p1q1p0q0, abs_p1q1p0q0);  // abs(p1 - q1)
+    abs_p1q1 = _mm_srli_epi16(abs_p1q1, 9);
+    abs_p1q1 = _mm_packs_epi16(abs_p1q1, abs_p1q1);  // abs(p1 - q1) / 2
+    // abs(p0 - q0) * 2 + abs(p1 - q1) / 2
+    mask = _mm_adds_epu8(abs_p0q0, abs_p1q1);
+    // abs(p3 - p2), abs(p2 - p1)
+    work = _mm_or_si128(_mm_subs_epu8(p3p2, p2p1), _mm_subs_epu8(p2p1, p3p2));
+    flat = _mm_max_epu8(work, flat);
+    // abs(q3 - q2), abs(q2 - q1)
+    work = _mm_or_si128(_mm_subs_epu8(q3q2, q2q1), _mm_subs_epu8(q2q1, q3q2));
+    flat = _mm_max_epu8(work, flat);
+    flat = _mm_max_epu8(flat, _mm_srli_si128(flat, 8));
+    mask = _mm_unpacklo_epi64(mask, flat);
+    mask = _mm_subs_epu8(mask, limit);
+    mask = _mm_cmpeq_epi8(mask, zero);
+    mask = _mm_and_si128(mask, _mm_srli_si128(mask, 8));
+  }
+
+  // filter4
+  {
+    const __m128i t3t4 = _mm_set_epi8(3, 3, 3, 3, 3, 3, 3, 3,
+                                      4, 4, 4, 4, 4, 4, 4, 4);
+    const __m128i t80 = _mm_set1_epi8(0x80);
+    __m128i ps1ps0 = _mm_xor_si128(p1p0, t80);  // ^ 0x80
+    __m128i qs1qs0 = _mm_xor_si128(q1q0, t80);
+    __m128i filter;
+    __m128i work;
+    __m128i filter2filter1;
+
+    // int8_t filter = signed_char_clamp(ps1 - qs1) & hev;
+    work = _mm_subs_epi8(ps1ps0, qs1qs0);
+    filter = _mm_and_si128(_mm_srli_si128(work, 8), hev);
+    // filter = signed_char_clamp(filter + 3 * (qs0 - ps0)) & mask;
+    filter = _mm_subs_epi8(filter, work);
+    filter = _mm_subs_epi8(filter, work);
+    filter = _mm_subs_epi8(filter, work);  // + 3 * (qs0 - ps0)
+    filter = _mm_and_si128(filter, mask);  // & mask
+    filter = _mm_unpacklo_epi64(filter, filter);
+
+    // filter1 = signed_char_clamp(filter + 4) >> 3;
+    // filter2 = signed_char_clamp(filter + 3) >> 3;
+    filter2filter1 = _mm_adds_epi8(filter, t3t4);  // signed_char_clamp
+    filter = _mm_unpackhi_epi8(filter2filter1, filter2filter1);
+    filter2filter1 = _mm_unpacklo_epi8(filter2filter1, filter2filter1);
+    filter2filter1 = _mm_srai_epi16(filter2filter1, 11);  // >> 3
+    filter = _mm_srai_epi16(filter, 11);  // >> 3
+    filter2filter1 = _mm_packs_epi16(filter2filter1, filter);
+
+    // filter = ROUND_POWER_OF_TWO(filter1, 1) & ~hev;
+    filter = _mm_subs_epi8(filter2filter1, ff);  // + 1
+    filter = _mm_unpacklo_epi8(filter, filter);
+    filter = _mm_srai_epi16(filter, 9);  // round
+    filter = _mm_packs_epi16(filter, filter);
+    filter = _mm_andnot_si128(hev, filter);
+
+    hev = _mm_unpackhi_epi64(filter2filter1, filter);
+    filter2filter1 = _mm_unpacklo_epi64(filter2filter1, filter);
+
+    // signed_char_clamp(qs1 - filter), signed_char_clamp(qs0 - filter1)
+    qs1qs0 = _mm_subs_epi8(qs1qs0, filter2filter1);
+    // signed_char_clamp(ps1 + filter), signed_char_clamp(ps0 + filter2)
+    ps1ps0 = _mm_adds_epi8(ps1ps0, hev);
+    qs1qs0 = _mm_xor_si128(qs1qs0, t80);  // ^ 0x80
+    ps1ps0 = _mm_xor_si128(ps1ps0, t80);  // ^ 0x80
+
+    _mm_storeh_pi((__m64 *)(s - 2 * p), _mm_castsi128_ps(ps1ps0));  // *op1
+    _mm_storel_epi64((__m128i *)(s - 1 * p), ps1ps0);  // *op0
+    _mm_storel_epi64((__m128i *)(s + 0 * p), qs1qs0);  // *oq0
+    _mm_storeh_pi((__m64 *)(s + 1 * p), _mm_castsi128_ps(qs1qs0));  // *oq1
+  }
+}
+
 static INLINE __m128i abs_diff(__m128i a, __m128i b) {
   return _mm_or_si128(_mm_subs_epu8(a, b), _mm_subs_epu8(b, a));
 }
