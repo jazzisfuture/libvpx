@@ -1126,21 +1126,25 @@ static INLINE void find_predictors(VP9_COMP *cpi, MACROBLOCK *x,
                                  TileDataEnc *tile_data,
                                  int mi_row, int mi_col,
                                  struct buf_2d yv12_mb[4][MAX_MB_PLANE],
-                                 BLOCK_SIZE bsize) {
+                                 BLOCK_SIZE bsize,
+                                 int force_zeromv_variance) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref_frame);
   TileInfo *const tile_info = &tile_data->tile_info;
-// TODO(jingning) placeholder for inter-frame non-RD mode decision.
+  // TODO(jingning) placeholder for inter-frame non-RD mode decision.
   x->pred_mv_sad[ref_frame] = INT_MAX;
   frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
   frame_mv[ZEROMV][ref_frame].as_int = 0;
-// this needs various further optimizations. to be continued..
+  // this needs various further optimizations. to be continued..
   if ((cpi->ref_frame_flags & flag_list[ref_frame]) && (yv12 != NULL)) {
     int_mv *const candidates = x->mbmi_ext->ref_mvs[ref_frame];
     const struct scale_factors *const sf = &cm->frame_refs[ref_frame - 1].sf;
     vp9_setup_pred_block(xd, yv12_mb[ref_frame], yv12, mi_row, mi_col,
                          sf, sf);
+    // Early exit for golden frame if force_zeromv_variance is set.
+    if (force_zeromv_variance && ref_frame == GOLDEN_FRAME)
+      return;
     if (cm->use_prev_frame_mvs)
       vp9_find_mv_refs(cm, xd, xd->mi[0], ref_frame,
                        candidates, mi_row, mi_col,
@@ -1323,6 +1327,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int ref_frame_cost[MAX_REF_FRAMES];
   int svc_force_zero_mode[3] = {0};
   int perform_intra_pred = 1;
+  int force_zeromv_variance = 0;
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
@@ -1409,10 +1414,27 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
+  // Set force_zeromv_variance based on the block size, only for real-time CBR mode.
+  if (cpi->oxcf.rc_mode == VPX_CBR && cpi->oxcf.speed >= 5) {
+    if (bsize == BLOCK_64X64) {
+      force_zeromv_variance = x->variance_low[0];
+    } else if (bsize == BLOCK_32X32) {
+      if (!(mi_col & 0x7) && !(mi_row & 0x7)) {
+        force_zeromv_variance = x->variance_low[1];
+      } else if ((mi_col & 0x7) && !(mi_row & 0x7)) {
+        force_zeromv_variance = x->variance_low[2];
+      } else if (!(mi_col & 0x7) && (mi_row & 0x7)) {
+        force_zeromv_variance = x->variance_low[3];
+      } else if ((mi_col & 0x7) && (mi_row & 0x7)) {
+        force_zeromv_variance = x->variance_low[4];
+      }
+    }
+  }
+
   for (ref_frame = LAST_FRAME; ref_frame <= usable_ref_frame; ++ref_frame) {
     find_predictors(cpi, x, ref_frame, frame_mv, const_motion,
                     &ref_frame_skip_mask, flag_list, tile_data, mi_row, mi_col,
-                    yv12_mb, bsize);
+                    yv12_mb, bsize, force_zeromv_variance);
   }
 
   for (idx = 0; idx < RT_INTER_MODES; ++idx) {
@@ -1439,6 +1461,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (cpi->use_svc) {
       ref_frame = ref_mode_set_svc[idx].ref_frame;
     }
+
+    // Skip nearest, near and newmv mode search for golden frame if
+    // force_zeromv_variance is set.
+    if (force_zeromv_variance && idx > 4)
+      continue;
 
     if (!(cpi->ref_frame_flags & flag_list[ref_frame]))
       continue;
@@ -1799,7 +1826,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
   // Perform intra prediction search, if the best SAD is above a certain
   // threshold.
-  if (perform_intra_pred &&
+  if (!force_zeromv_variance &&
+      perform_intra_pred &&
       ((best_rdc.rdcost == INT64_MAX ||
       (!x->skip && best_rdc.rdcost > inter_mode_thresh &&
        bsize <= cpi->sf.max_intra_bsize)))) {
