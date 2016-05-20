@@ -497,7 +497,7 @@ int vp10_is_intra_filter_switchable(int angle);
 #if CONFIG_EXT_TILE
 #define FIXED_TX_TYPE 1
 #else
-#define FIXED_TX_TYPE 0
+#define FIXED_TX_TYPE 1
 #endif
 
 static INLINE TX_TYPE get_default_tx_type(PLANE_TYPE plane_type,

@@ -34,9 +34,9 @@ static INLINE void inter_predictor(const uint8_t *src, int src_stride,
                                    int xs, int ys) {
 #if CONFIG_DUAL_FILTER
   InterpFilterParams interp_filter_params_x =
-      vp10_get_interp_filter_params(interp_filter[1 + 2 * ref_idx]);
+      vp10_get_interp_filter_params(interp_filter[1 + 2 * (ref_idx & 0x01)]);
   InterpFilterParams interp_filter_params_y =
-      vp10_get_interp_filter_params(interp_filter[0 + 2 * ref_idx]);
+      vp10_get_interp_filter_params(interp_filter[0 + 2 * (ref_idx & 0x01)]);
 #else
   InterpFilterParams interp_filter_params =
       vp10_get_interp_filter_params(interp_filter);
@@ -45,7 +45,7 @@ static INLINE void inter_predictor(const uint8_t *src, int src_stride,
 #if CONFIG_DUAL_FILTER
   if (interp_filter_params_x.taps == SUBPEL_TAPS &&
       interp_filter_params_y.taps == SUBPEL_TAPS &&
-      w > 2 && h > 2) {
+      w > 2 && h > 2 && ref_idx == 0) {
     const int16_t *kernel_x =
         vp10_get_interp_filter_subpel_kernel(interp_filter_params_x, subpel_x);
     const int16_t *kernel_y =
@@ -69,7 +69,7 @@ static INLINE void inter_predictor(const uint8_t *src, int src_stride,
           kernel_x, xs, kernel_y, ys, w, h);
     }
 #else
-    sf->predict[subpel_x != 0][subpel_y != 0][ref_idx](
+    sf->predict[subpel_x != 0][subpel_y != 0][(ref_idx & 0x01)](
         src, src_stride, dst, dst_stride,
         kernel_x, xs, kernel_y, ys, w, h);
 #endif  // CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
@@ -107,7 +107,8 @@ static INLINE void highbd_inter_predictor(const uint8_t *src, int src_stride,
 
 #if CONFIG_DUAL_FILTER
   if (interp_filter_params_x.taps == SUBPEL_TAPS &&
-      interp_filter_params_y.taps == SUBPEL_TAPS) {
+      interp_filter_params_y.taps == SUBPEL_TAPS &&
+      w > 2 && h > 2 && ref == 0) {
     const int16_t *kernel_x =
         vp10_get_interp_filter_subpel_kernel(interp_filter_params_x, subpel_x);
     const int16_t *kernel_y =
@@ -131,7 +132,7 @@ static INLINE void highbd_inter_predictor(const uint8_t *src, int src_stride,
           kernel_x, xs, kernel_y, ys, w, h, bd);
     }
 #else
-    sf->highbd_predict[subpel_x != 0][subpel_y != 0][ref](
+    sf->highbd_predict[subpel_x != 0][subpel_y != 0][(ref & 0x01)](
         src, src_stride, dst, dst_stride,
         kernel_x, xs, kernel_y, ys, w, h, bd);
 #endif  // CONFIG_EXT_INTERP && SUPPORT_NONINTERPOLATING_FILTERS
@@ -139,9 +140,8 @@ static INLINE void highbd_inter_predictor(const uint8_t *src, int src_stride,
     // ref > 0 means this is the second reference frame
     // first reference frame's prediction result is already in dst
     // therefore we need to average the first and second results
-    int avg = ref > 0;
     vp10_highbd_convolve(src, src_stride, dst, dst_stride, w, h,
-                         interp_filter, subpel_x, xs, subpel_y, ys, avg,
+                         interp_filter, subpel_x, xs, subpel_y, ys, ref,
                          bd);
   }
 }
