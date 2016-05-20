@@ -145,6 +145,10 @@ struct macroblock {
 
   uint8_t sb_is_skin;
 
+  // Used to save the status of whether a block has a low variance in
+  // choose_partitioning. 0 for 64x64, 1~4 for 32x32.
+  uint8_t variance_low[5];
+
   void (*fwd_txm4x4)(const int16_t *input, tran_low_t *output, int stride);
   void (*itxm_add)(const tran_low_t *input, uint8_t *dest, int stride, int eob);
 #if CONFIG_VP9_HIGHBITDEPTH
