@@ -11,6 +11,7 @@
 #include <assert.h>
 
 #include "./vpx_scale_rtcd.h"
+#include "./vpx_dsp_rtcd.h"
 #include "./vpx_config.h"
 
 #include "vpx/vpx_integer.h"
@@ -410,61 +411,6 @@ const uint8_t *vp10_get_soft_mask(int wedge_index,
   return mask;
 }
 
-static void build_masked_compound(uint8_t *dst, int dst_stride,
-                                  uint8_t *dst1, int dst1_stride,
-                                  uint8_t *dst2, int dst2_stride,
-                                  const uint8_t *mask,
-                                  int h, int w, int subh, int subw) {
-  int i, j;
-  if (subw == 0 && subh == 0) {
-    for (i = 0; i < h; ++i)
-      for (j = 0; j < w; ++j) {
-        int m = mask[i * MASK_MASTER_STRIDE + j];
-        dst[i * dst_stride + j] = (dst1[i * dst1_stride + j] * m +
-                                   dst2[i * dst2_stride + j] *
-                                   ((1 << WEDGE_WEIGHT_BITS) - m) +
-                                   (1 << (WEDGE_WEIGHT_BITS - 1))) >>
-            WEDGE_WEIGHT_BITS;
-
-      }
-  } else if (subw == 1 && subh == 1) {
-    for (i = 0; i < h; ++i)
-      for (j = 0; j < w; ++j) {
-        int m = (mask[(2 * i) * MASK_MASTER_STRIDE + (2 * j)] +
-                 mask[(2 * i + 1) * MASK_MASTER_STRIDE + (2 * j)] +
-                 mask[(2 * i) * MASK_MASTER_STRIDE + (2 * j + 1)] +
-                 mask[(2 * i + 1) * MASK_MASTER_STRIDE + (2 * j + 1)] + 2) >> 2;
-        dst[i * dst_stride + j] = (dst1[i * dst1_stride + j] * m +
-                                   dst2[i * dst2_stride + j] *
-                                   ((1 << WEDGE_WEIGHT_BITS) - m) +
-                                   (1 << (WEDGE_WEIGHT_BITS - 1))) >>
-            WEDGE_WEIGHT_BITS;
-      }
-  } else if (subw == 1 && subh == 0) {
-    for (i = 0; i < h; ++i)
-      for (j = 0; j < w; ++j) {
-        int m = (mask[i * MASK_MASTER_STRIDE + (2 * j)] +
-                 mask[i * MASK_MASTER_STRIDE + (2 * j + 1)] + 1) >> 1;
-        dst[i * dst_stride + j] = (dst1[i * dst1_stride + j] * m +
-                                   dst2[i * dst2_stride + j] *
-                                   ((1 << WEDGE_WEIGHT_BITS) - m) +
-                                   (1 << (WEDGE_WEIGHT_BITS - 1))) >>
-            WEDGE_WEIGHT_BITS;
-      }
-  } else {
-    for (i = 0; i < h; ++i)
-      for (j = 0; j < w; ++j) {
-        int m = (mask[(2 * i) * MASK_MASTER_STRIDE + j] +
-                 mask[(2 * i + 1) * MASK_MASTER_STRIDE + j] + 1) >> 1;
-        dst[i * dst_stride + j] = (dst1[i * dst1_stride + j] * m +
-                                   dst2[i * dst2_stride + j] *
-                                   ((1 << WEDGE_WEIGHT_BITS) - m) +
-                                   (1 << (WEDGE_WEIGHT_BITS - 1))) >>
-            WEDGE_WEIGHT_BITS;
-      }
-  }
-}
-
 #if CONFIG_VP9_HIGHBITDEPTH
 static void build_masked_compound_highbd(uint8_t *dst_8, int dst_stride,
                                          uint8_t *dst1_8, int dst1_stride,
@@ -537,9 +483,11 @@ static void build_masked_compound_wedge_extend(
   const int subw = (2 << b_width_log2_lookup[sb_type]) == w;
   const uint8_t *mask = vp10_get_soft_mask(
      wedge_index, wedge_sign, sb_type, wedge_offset_x, wedge_offset_y);
-  build_masked_compound(dst, dst_stride,
-                        dst, dst_stride, dst2, dst2_stride, mask,
-                        h, w, subh, subw);
+  vpx_blend_mask6(dst, dst_stride,
+                  dst, dst_stride,
+                  dst2, dst2_stride,
+                  mask, MASK_MASTER_STRIDE,
+                  h, w, subh, subw);
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -573,9 +521,11 @@ static void build_masked_compound_wedge(uint8_t *dst, int dst_stride,
   const int subw = (2 << b_width_log2_lookup[sb_type]) == w;
   const uint8_t *mask = vp10_get_soft_mask(wedge_index, wedge_sign,
                                            sb_type, 0, 0);
-  build_masked_compound(dst, dst_stride,
-                        dst, dst_stride, dst2, dst2_stride, mask,
-                        h, w, subh, subw);
+  vpx_blend_mask6(dst, dst_stride,
+                  dst, dst_stride,
+                  dst2, dst2_stride,
+                  mask, MASK_MASTER_STRIDE,
+                  h, w, subh, subw);
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -1872,10 +1822,11 @@ static void combine_interintra(INTERINTRA_MODE mode,
                                                bsize, 0, 0);
       const int subw = 2 * num_4x4_blocks_wide_lookup[bsize] == bw;
       const int subh = 2 * num_4x4_blocks_high_lookup[bsize] == bh;
-      build_masked_compound(comppred, compstride,
-                            intrapred, intrastride,
-                            interpred, interstride, mask,
-                            bh, bw, subh, subw);
+      vpx_blend_mask6(comppred, compstride,
+                      intrapred, intrastride,
+                      interpred, interstride,
+                      mask, MASK_MASTER_STRIDE,
+                      bh, bw, subh, subw);
     }
     return;
   }
