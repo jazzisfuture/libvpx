@@ -281,6 +281,11 @@ typedef struct VP9Common {
   // External BufferPool passed from outside.
   BufferPool *buffer_pool;
 
+  // Prevent last coded frame's frame buffer be re-assigned to other frame
+  // when this last frame isn't used as a reference frame. Store the index of
+  // the last frame.
+  int keep_last;
+
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
   int above_context_alloc_cols;
@@ -310,7 +315,7 @@ static INLINE int get_free_fb(VP9_COMMON *cm) {
 
   lock_buffer_pool(cm->buffer_pool);
   for (i = 0; i < FRAME_BUFFERS; ++i)
-    if (frame_bufs[i].ref_count == 0)
+    if (cm->keep_last != i && frame_bufs[i].ref_count == 0)
       break;
 
   if (i != FRAME_BUFFERS) {

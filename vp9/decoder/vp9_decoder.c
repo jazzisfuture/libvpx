@@ -116,6 +116,8 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
 
   vp9_loop_filter_init(cm);
 
+  cm->keep_last = -1;
+
   cm->error.setjmp = 0;
 
   vpx_get_worker_interface()->init(&pbi->lf_worker);
@@ -304,7 +306,8 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   // Check if the previous frame was a frame without any references to it.
   // Release frame buffer if not decoding in frame parallel mode.
   if (!pbi->frame_parallel_decode && cm->new_fb_idx >= 0
-      && frame_bufs[cm->new_fb_idx].ref_count == 0)
+      && frame_bufs[cm->new_fb_idx].ref_count == 0
+      && cm->keep_last != cm->new_fb_idx)
     pool->release_fb_cb(pool->cb_priv,
                         &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   // Find a free frame buffer. Return error if can not find any.
@@ -390,6 +393,19 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
     cm->prev_frame = cm->cur_frame;
     if (cm->seg.enabled && !pbi->frame_parallel_decode)
       vp9_swap_current_and_last_seg_map(cm);
+  }
+
+  if (!pbi->frame_parallel_decode) {
+    // Release last frame's kept frame buffer.
+    if (cm->keep_last > 0)
+      pool->release_fb_cb(pool->cb_priv,
+                          &frame_bufs[cm->keep_last].raw_frame_buffer);
+
+    // If current frame isn't used as a reference frame, store its index here.
+    if (!pbi->refresh_frame_flags)
+      cm->keep_last = cm->new_fb_idx;
+    else
+      cm->keep_last = -1;
   }
 
   // Update progress in frame parallel decode.
