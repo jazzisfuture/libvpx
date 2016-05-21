@@ -1989,6 +1989,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
 
   vp9_loop_filter_init(cm);
 
+  cm->keep_last = -1;
+
   cm->error.setjmp = 0;
 
   return cpi;
@@ -4206,6 +4208,14 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       vp9_inc_frame_in_layer(cpi);
   }
   cm->prev_frame = cm->cur_frame;
+
+  // If current frame won't be used as a reference frame for next frame, we
+  // still want to keep it.
+  if (!cpi->refresh_last_frame && !cpi->refresh_golden_frame &&
+      !cpi->refresh_alt_ref_frame)
+    cm->keep_last = cm->new_fb_idx;
+  else
+    cm->keep_last = -1;
 
   if (cpi->use_svc)
     cpi->svc.layer_context[cpi->svc.spatial_layer_id *
