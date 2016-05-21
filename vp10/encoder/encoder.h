@@ -587,6 +587,7 @@ typedef struct VP10_COMP {
 #if CONFIG_ANS
   struct BufAnsCoder buf_ans;
 #endif
+  int fast_tx_search;
 } VP10_COMP;
 
 void vp10_initialize_enc(void);
