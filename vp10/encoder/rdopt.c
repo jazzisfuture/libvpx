@@ -1479,6 +1479,11 @@ static int64_t choose_tx_size_fix_type(VP10_COMP *cpi,
   for (n = start_tx; n >= end_tx; --n) {
     if (FIXED_TX_TYPE && tx_type != get_default_tx_type(0, xd, 0, n))
       continue;
+#if FAST_TX_SEARCH
+    if (!is_inter && cpi->fast_tx_search &&
+        tx_type != get_default_tx_type(0, xd, 0, n))
+      continue;
+#endif  // FAST_TX_SEARCH
     if (max_tx_size == TX_32X32 && n == TX_4X4)
       continue;
 #if CONFIG_EXT_TX
@@ -2786,6 +2791,10 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   if (left_mi)
     palette_ctx += (left_mi->mbmi.palette_mode_info.palette_size[0] > 0);
 
+#if FAST_TX_SEARCH
+  cpi->fast_tx_search = 1;
+#endif  // FAST_TX_SEARCH
+
   /* Y Search for intra prediction mode */
   for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
     mic->mbmi.mode = mode;
@@ -2902,6 +2911,48 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
     memcpy(xd->plane[0].color_index_map, best_palette_color_map,
            rows * cols * sizeof(best_palette_color_map[0]));
   }
+
+#if FAST_TX_SEARCH
+  cpi->fast_tx_search = 0;
+  super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,
+                  &s, NULL, bsize, best_rd);
+
+  if (this_rate_tokenonly != INT_MAX) {
+    this_rate = this_rate_tokenonly + bmode_costs[mic->mbmi.mode];
+
+    if (!xd->lossless[xd->mi[0]->mbmi.segment_id]) {
+      this_rate_tokenonly -=
+          cpi->tx_size_cost[max_tx_size - TX_8X8][get_tx_size_context(xd)]
+                                                  [mic->mbmi.tx_size];
+    }
+    if (cpi->common.allow_screen_content_tools && mic->mbmi.mode == DC_PRED)
+      this_rate +=
+          vp10_cost_bit(vp10_default_palette_y_mode_prob[bsize - BLOCK_8X8]
+                                                         [palette_ctx], 0);
+#if CONFIG_EXT_INTRA
+    if (mode == DC_PRED && ALLOW_FILTER_INTRA_MODES)
+      this_rate += vp10_cost_bit(cpi->common.fc->ext_intra_probs[0], 0);
+    if (is_directional_mode) {
+      int p_angle;
+      this_rate += write_uniform_cost(2 * MAX_ANGLE_DELTAS + 1,
+                                      MAX_ANGLE_DELTAS +
+                                      mic->mbmi.angle_delta[0]);
+      p_angle = mode_to_angle_map[mic->mbmi.mode] +
+          mic->mbmi.angle_delta[0] * ANGLE_STEP;
+      if (vp10_is_intra_filter_switchable(p_angle))
+        this_rate +=
+            cpi->intra_filter_cost[intra_filter_ctx][mic->mbmi.intra_filter];
+    }
+#endif  // CONFIG_EXT_INTRA
+    this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
+
+    best_rd         = this_rd;
+    *rate           = this_rate;
+    *rate_tokenonly = this_rate_tokenonly;
+    *distortion     = this_distortion;
+    *skippable      = s;
+  }
+#endif  // FAST_TX_SEARCH
 
   return best_rd;
 }
@@ -8442,6 +8493,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     midx = end_pos;
   }
 
+#if FAST_TX_SEARCH
+  cpi->fast_tx_search = 1;
+#endif  // FAST_TX_SEARCH
+
   for (midx = 0; midx < MAX_MODES; ++midx) {
     int mode_index = mode_map[midx];
     int mode_excluded = 0;
@@ -9553,6 +9608,51 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     rd_cost->rdcost = INT64_MAX;
     return;
   }
+
+#if FAST_TX_SEARCH
+  if (!is_inter_mode(best_mbmode.mode)) {
+    int rate_y, skippable;
+    int64_t distortion_y;
+    TX_SIZE uv_tx;
+
+    cpi->fast_tx_search = 0;
+    *mbmi = best_mbmode;
+    super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
+                    NULL, bsize, best_rd);
+
+    uv_tx = get_uv_tx_size(mbmi, &xd->plane[1]);
+    if (rate_uv_intra[uv_tx] == INT_MAX) {
+      choose_intra_uv_mode(cpi, x, ctx, bsize, uv_tx,
+                           &rate_uv_intra[uv_tx], &rate_uv_tokenonly[uv_tx],
+                           &dist_uv[uv_tx], &skip_uv[uv_tx], &mode_uv[uv_tx]);
+      if (cm->allow_screen_content_tools)
+        pmi_uv[uv_tx] = *pmi;
+#if CONFIG_EXT_INTRA
+      ext_intra_mode_info_uv[uv_tx] = mbmi->ext_intra_mode_info;
+      uv_angle_delta[uv_tx] = mbmi->angle_delta[1];
+#endif  // CONFIG_EXT_INTRA
+    }
+
+    mbmi->uv_mode = mode_uv[uv_tx];
+    if (cm->allow_screen_content_tools) {
+      pmi->palette_size[1] = pmi_uv[uv_tx].palette_size[1];
+      memcpy(pmi->palette_colors + PALETTE_MAX_SIZE,
+             pmi_uv[uv_tx].palette_colors + PALETTE_MAX_SIZE,
+             2 * PALETTE_MAX_SIZE * sizeof(pmi->palette_colors[0]));
+    }
+#if CONFIG_EXT_INTRA
+    mbmi->angle_delta[1] = uv_angle_delta[uv_tx];
+    mbmi->ext_intra_mode_info.use_ext_intra_mode[1] =
+        ext_intra_mode_info_uv[uv_tx].use_ext_intra_mode[1];
+    if (ext_intra_mode_info_uv[uv_tx].use_ext_intra_mode[1]) {
+      mbmi->ext_intra_mode_info.ext_intra_mode[1] =
+          ext_intra_mode_info_uv[uv_tx].ext_intra_mode[1];
+    }
+#endif  // CONFIG_EXT_INTRA
+
+    best_mbmode = *mbmi;
+  }
+#endif  // FAST_TX_SEARCH
 
   // If we used an estimate for the uv intra rd in the loop above...
   if (sf->use_uv_intra_rd_estimate) {

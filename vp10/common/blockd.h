@@ -500,6 +500,8 @@ int vp10_is_intra_filter_switchable(int angle);
 #define FIXED_TX_TYPE 0
 #endif
 
+#define FAST_TX_SEARCH 1
+
 static INLINE TX_TYPE get_default_tx_type(PLANE_TYPE plane_type,
                                           const MACROBLOCKD *xd,
                                           int block_idx, TX_SIZE tx_size) {
