@@ -1576,6 +1576,11 @@ static int64_t choose_tx_size_fix_type(VP10_COMP *cpi,
   for (n = start_tx; n >= end_tx; --n) {
     if (FIXED_TX_TYPE && tx_type != get_default_tx_type(0, xd, 0, n))
       continue;
+#if FAST_TX_SEARCH
+    if (!is_inter && cpi->fast_tx_search &&
+        tx_type != get_default_tx_type(0, xd, 0, n))
+      continue;
+#endif  // FAST_TX_SEARCH
     if (max_tx_size == TX_32X32 && n == TX_4X4)
       continue;
 #if CONFIG_EXT_TX
@@ -2883,9 +2888,16 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   if (left_mi)
     palette_ctx += (left_mi->mbmi.palette_mode_info.palette_size[0] > 0);
 
+#if FAST_TX_SEARCH
+  cpi->fast_tx_search = 1;
+#endif  // FAST_TX_SEARCH
+
   /* Y Search for intra prediction mode */
   for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
     mic->mbmi.mode = mode;
+#if FAST_TX_SEARCH
+    TX_TYPE_SEARCH_LOOP: {}
+#endif  // FAST_TX_SEARCH
 #if CONFIG_EXT_INTRA
     is_directional_mode = (mode != DC_PRED && mode != TM_PRED);
     if (is_directional_mode && directional_mode_skip_mask[mode])
@@ -2910,7 +2922,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
     if (this_rate_tokenonly == INT_MAX)
       continue;
 
-    this_rate = this_rate_tokenonly + bmode_costs[mode];
+    this_rate = this_rate_tokenonly + bmode_costs[mic->mbmi.mode];
 
     if (!xd->lossless[xd->mi[0]->mbmi.segment_id]) {
       // super_block_yrd above includes the cost of the tx_size in the
@@ -2921,7 +2933,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
           cpi->tx_size_cost[max_tx_size - TX_8X8][get_tx_size_context(xd)]
                                                  [mic->mbmi.tx_size];
     }
-    if (cpi->common.allow_screen_content_tools && mode == DC_PRED)
+    if (cpi->common.allow_screen_content_tools && mic->mbmi.mode == DC_PRED)
       this_rate +=
           vp10_cost_bit(vp10_default_palette_y_mode_prob[bsize - BLOCK_8X8]
                                                          [palette_ctx], 0);
@@ -2943,7 +2955,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
     if (this_rd < best_rd) {
-      mode_selected   = mode;
+      mode_selected   = mic->mbmi.mode;
       best_rd         = this_rd;
       best_tx         = mic->mbmi.tx_size;
 #if CONFIG_EXT_INTRA
@@ -2957,6 +2969,14 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
       *skippable      = s;
     }
   }
+
+#if FAST_TX_SEARCH
+  if (cpi->fast_tx_search) {
+    cpi->fast_tx_search = 0;
+    mic->mbmi.mode = mode_selected;
+    goto TX_TYPE_SEARCH_LOOP;
+  }
+#endif  // FAST_TX_SEARCH
 
   if (cpi->common.allow_screen_content_tools)
     rd_pick_palette_intra_sby(cpi, x, bsize, palette_ctx, bmode_costs[DC_PRED],
@@ -8593,6 +8613,11 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     midx = end_pos;
   }
 
+#if FAST_TX_SEARCH
+  cpi->fast_tx_search = 1;
+  TX_TYPE_SEARCH_LOOP: {}
+#endif  // FAST_TX_SEARCH
+
   for (midx = 0; midx < MAX_MODES; ++midx) {
     int mode_index = mode_map[midx];
     int mode_excluded = 0;
@@ -8613,6 +8638,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     uint8_t ref_frame_type;
 #endif
 
+#if FAST_TX_SEARCH
+    if (!cpi->fast_tx_search)
+      mode_index = best_mode_index;
+#endif  // FAST_TX_SEARCH
     this_mode = vp10_mode_order[mode_index].mode;
     ref_frame = vp10_mode_order[mode_index].ref_frame[0];
     second_ref_frame = vp10_mode_order[mode_index].ref_frame[1];
@@ -9446,7 +9475,20 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
     if (x->skip && !comp_pred)
       break;
+
+#if FAST_TX_SEARCH
+    if (!cpi->fast_tx_search)
+      break;
+#endif  // FAST_TX_SEARCH
   }
+
+#if FAST_TX_SEARCH
+  if (!is_inter_mode(best_mbmode.mode) && cpi->fast_tx_search &&
+      best_mode_index >= 0) {
+    cpi->fast_tx_search = 0;
+    goto TX_TYPE_SEARCH_LOOP;
+  }
+#endif
 
   // Only try palette mode when the best mode so far is an intra mode.
   if (cm->allow_screen_content_tools && !is_inter_mode(best_mbmode.mode)) {
