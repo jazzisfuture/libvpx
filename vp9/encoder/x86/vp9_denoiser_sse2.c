@@ -37,8 +37,8 @@ static INLINE int sum_diff_16x1(__m128i acc_diff) {
 }
 
 // Denoise a 16x1 vector.
-static INLINE __m128i vp9_denoiser_16x1_sse2(const uint8_t *sig,
-                                             const uint8_t *mc_running_avg_y,
+static INLINE __m128i vp9_denoiser_16x1_sse2(const __m128i v_sig,
+                                             const __m128i v_mc_running_avg_y,
                                              uint8_t *running_avg_y,
                                              const __m128i *k_0,
                                              const __m128i *k_4,
@@ -47,11 +47,10 @@ static INLINE __m128i vp9_denoiser_16x1_sse2(const uint8_t *sig,
                                              const __m128i *l3,
                                              const __m128i *l32,
                                              const __m128i *l21,
-                                             __m128i acc_diff) {
+                                             __m128i acc_diff,
+                                             int avg_stride,
+                                             int block_width) {
   // Calculate differences
-  const __m128i v_sig = _mm_loadu_si128((const __m128i *)(&sig[0]));
-  const __m128i v_mc_running_avg_y =
-      _mm_loadu_si128((const __m128i *)(&mc_running_avg_y[0]));
   __m128i v_running_avg_y;
   const __m128i pdiff = _mm_subs_epu8(v_mc_running_avg_y, v_sig);
   const __m128i ndiff = _mm_subs_epu8(v_sig, v_mc_running_avg_y);
@@ -84,7 +83,14 @@ static INLINE __m128i vp9_denoiser_16x1_sse2(const uint8_t *sig,
   // Calculate filtered value.
   v_running_avg_y = _mm_adds_epu8(v_sig, padj);
   v_running_avg_y = _mm_subs_epu8(v_running_avg_y, nadj);
-  _mm_storeu_si128((__m128i *)running_avg_y, v_running_avg_y);
+  if (block_width == 16) {
+    _mm_storeu_si128((__m128i *)running_avg_y, v_running_avg_y);
+  } else if (block_width == 8) {
+    _mm_storel_pd((double *)&running_avg_y[0],
+                  _mm_castsi128_pd(v_running_avg_y));
+    _mm_storeh_pd((double *)&running_avg_y[avg_stride],
+                  _mm_castsi128_pd(v_running_avg_y));
+  }
 
   // Adjustments <=7, and each element in acc_diff can fit in signed
   // char.
@@ -95,14 +101,11 @@ static INLINE __m128i vp9_denoiser_16x1_sse2(const uint8_t *sig,
 
 // Denoise a 16x1 vector with a weaker filter.
 static INLINE __m128i vp9_denoiser_adj_16x1_sse2(
-    const uint8_t *sig, const uint8_t *mc_running_avg_y,
+    const __m128i v_sig, const __m128i v_mc_running_avg_y,
     uint8_t *running_avg_y, const __m128i k_0,
     const __m128i k_delta, __m128i acc_diff) {
   __m128i v_running_avg_y = _mm_loadu_si128((__m128i *)(&running_avg_y[0]));
   // Calculate differences.
-  const __m128i v_sig = _mm_loadu_si128((const __m128i *)(&sig[0]));
-  const __m128i v_mc_running_avg_y =
-      _mm_loadu_si128((const __m128i *)(&mc_running_avg_y[0]));
   const __m128i pdiff = _mm_subs_epu8(v_mc_running_avg_y, v_sig);
   const __m128i ndiff = _mm_subs_epu8(v_sig, v_mc_running_avg_y);
   // Obtain the sign. FF if diff is negative.
@@ -134,7 +137,7 @@ static int vp9_denoiser_NxM_sse2_small(
   const int shift_inc  = (increase_denoising &&
                           motion_magnitude <= MOTION_MAGNITUDE_THRESHOLD) ?
                          1 : 0;
-  uint8_t sig_buffer[8][16], mc_running_buffer[8][16], running_buffer[8][16];
+  uint8_t running_buffer[8][16];
   __m128i acc_diff = _mm_setzero_si128();
   const __m128i k_0 = _mm_setzero_si128();
   const __m128i k_4 = _mm_set1_epi8(4 + shift_inc);
@@ -148,20 +151,22 @@ static int vp9_denoiser_NxM_sse2_small(
   // Difference between level 2 and level 1 is 1.
   const __m128i l21 = _mm_set1_epi8(1);
   const int b_height = (4 << b_height_log2_lookup[bs]) >> 1;
+  __m128i v_sig[8], v_mc_running_avg_y[8];
 
   for (r = 0; r < b_height; ++r) {
-    memcpy(sig_buffer[r], sig, width);
-    memcpy(sig_buffer[r] + width, sig + sig_stride, width);
-    memcpy(mc_running_buffer[r], mc_running_avg_y, width);
-    memcpy(mc_running_buffer[r] + width,
-           mc_running_avg_y + mc_avg_y_stride, width);
-    memcpy(running_buffer[r], running_avg_y, width);
-    memcpy(running_buffer[r] + width, running_avg_y + avg_y_stride, width);
-    acc_diff = vp9_denoiser_16x1_sse2(sig_buffer[r],
-                                      mc_running_buffer[r],
-                                      running_buffer[r],
-                                      &k_0, &k_4, &k_8, &k_16,
-                                      &l3, &l32, &l21, acc_diff);
+    const __m128i v_sig_low = _mm_castpd_si128(
+        _mm_load_sd((const double *)(&sig[0])));
+    const __m128i v_mc_running_avg_low = _mm_castpd_si128(
+        _mm_load_sd((const double *)(&mc_running_avg_y[0])));
+    v_sig[r] = _mm_castpd_si128(_mm_loadh_pd(_mm_castsi128_pd(v_sig_low),
+                                (const double *)(&sig[sig_stride])));
+    v_mc_running_avg_y[r] = _mm_castpd_si128(
+        _mm_loadh_pd(_mm_castsi128_pd(v_mc_running_avg_low),
+                     (const double *)(&mc_running_avg_y[mc_avg_y_stride])));
+    acc_diff = vp9_denoiser_16x1_sse2(v_sig[r], v_mc_running_avg_y[r],
+                                      running_avg_y, &k_0, &k_4, &k_8, &k_16,
+                                      &l3, &l32, &l21, acc_diff, avg_y_stride,
+                                      8);
     memcpy(running_avg_y, running_buffer[r], width);
     memcpy(running_avg_y + avg_y_stride, running_buffer[r] + width, width);
     // Update pointers for next iteration.
@@ -192,7 +197,7 @@ static int vp9_denoiser_NxM_sse2_small(
         running_avg_y -= avg_y_stride * (b_height << 1);
         for (r = 0; r < b_height; ++r) {
           acc_diff = vp9_denoiser_adj_16x1_sse2(
-              sig_buffer[r], mc_running_buffer[r], running_buffer[r],
+              v_sig[r], v_mc_running_avg_y[r], running_buffer[r],
               k_0, k_delta, acc_diff);
           memcpy(running_avg_y, running_buffer[r], width);
           memcpy(running_avg_y + avg_y_stride,
@@ -248,9 +253,12 @@ static int vp9_denoiser_NxM_sse2_big(const uint8_t *sig, int sig_stride,
 
   for (r = 0; r < b_height; ++r) {
     for (c = 0; c < b_width_shift4; ++c) {
+      const __m128i v_sig = _mm_loadu_si128((const __m128i *)(&sig[0]));
+      const __m128i v_mc_running_avg_y =
+          _mm_loadu_si128((const __m128i *)(&mc_running_avg_y[0]));
       acc_diff[c][r>>4] = vp9_denoiser_16x1_sse2(
-          sig, mc_running_avg_y, running_avg_y, &k_0, &k_4,
-          &k_8, &k_16, &l3, &l32, &l21, acc_diff[c][r>>4]);
+          v_sig, v_mc_running_avg_y, running_avg_y, &k_0, &k_4, &k_8, &k_16,
+          &l3, &l32, &l21, acc_diff[c][r>>4], avg_y_stride, 16);
       // Update pointers for next iteration.
       sig += 16;
       mc_running_avg_y += 16;
@@ -284,8 +292,11 @@ static int vp9_denoiser_NxM_sse2_big(const uint8_t *sig, int sig_stride,
         sum_diff = 0;
         for (r = 0; r < b_height; ++r) {
           for (c = 0; c < b_width_shift4; ++c) {
+            const __m128i v_sig = _mm_loadu_si128((const __m128i *)(&sig[0]));
+            const __m128i v_mc_running_avg_y =
+                _mm_loadu_si128((const __m128i *)(&mc_running_avg_y[0]));
             acc_diff[c][r>>4] = vp9_denoiser_adj_16x1_sse2(
-                sig, mc_running_avg_y, running_avg_y, k_0,
+                v_sig, v_mc_running_avg_y, running_avg_y, k_0,
                 k_delta, acc_diff[c][r>>4]);
             // Update pointers for next iteration.
             sig += 16;
