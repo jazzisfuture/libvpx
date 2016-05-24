@@ -342,7 +342,7 @@ if [ "${ENABLE_SHARED}" = "yes" ]; then
 fi
 
 VERSION=$("${SCRIPT_DIR}"/version.sh --bare "${LIBVPX_SOURCE_DIR}" \
-  | sed -E 's/^v(.*)$/\1/')
+  | sed -E 's/^v([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
 if [ "$ENABLE_SHARED" = "yes" ]; then
   IOS_VERSION_OPTIONS="--enable-shared"
 else
