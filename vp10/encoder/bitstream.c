@@ -46,8 +46,13 @@ static const struct vp10_token intra_mode_encodings[INTRA_MODES] = {
 static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
   {{0, 1}, {4, 3}, {6, 3}, {5, 3}, {7, 3}};
 #else
+#if CONFIG_DUAL_FILTER
+static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
+  {{0, 1}, {2, 2}, {6, 3}, {7, 3}};
+#else
 static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
   {{0, 1}, {2, 2}, {3, 2}};
+#endif  // CONFIG_DUAL_FILTER
 #endif  // CONFIG_EXT_INTERP
 #if CONFIG_EXT_PARTITION_TYPES
 static const struct vp10_token ext_partition_encodings[EXT_PARTITION_TYPES] =

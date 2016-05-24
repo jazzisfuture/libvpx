@@ -945,25 +945,29 @@ static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
 #if CONFIG_DUAL_FILTER
 static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
                                                     [SWITCHABLE_FILTERS - 1] = {
-  { 235, 162, },
-  { 36, 255, },
-  { 34, 3, },
-  { 149, 144, },
+  { 235, 162, 180 },
+  { 36, 255, 180 },
+  { 34, 3, 180},
+  { 34, 3, 10 },
+  { 149, 144, 180},
 
-  { 235, 162, },
-  { 36, 255, },
-  { 34, 3, },
-  { 10, 3, },
+  { 235, 162, 180 },
+  { 36, 255, 180 },
+  { 34, 3, 180},
+  { 34, 3, 10 },
+  { 10, 3, 200, },
 
-  { 235, 162, },
-  { 36, 255, },
-  { 34, 3, },
-  { 149, 144, },
+  { 235, 162, 180 },
+  { 36, 255, 180 },
+  { 34, 3, 180},
+  { 34, 3, 10 },
+  { 149, 144, 180},
 
-  { 235, 162, },
-  { 36, 255, },
-  { 34, 3, },
-  { 10, 3, },
+  { 235, 162, 180 },
+  { 36, 255, 180 },
+  { 34, 3, 180},
+  { 34, 3, 10 },
+  { 10, 3, 200, },
 };
 #else
 static const vpx_prob default_switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
@@ -1294,7 +1298,8 @@ const vpx_tree_index vp10_switchable_interp_tree
 const vpx_tree_index vp10_switchable_interp_tree
 [TREE_SIZE(SWITCHABLE_FILTERS)] = {
   -EIGHTTAP_REGULAR, 2,
-  -EIGHTTAP_SMOOTH, -MULTITAP_SHARP
+  -EIGHTTAP_SMOOTH, 4,
+  -MULTITAP_SHARP, -BICUBIC,
 };
 #endif  // CONFIG_EXT_INTERP
 

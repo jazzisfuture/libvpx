@@ -24,6 +24,9 @@ extern "C" {
 #define EIGHTTAP_REGULAR    0
 #define EIGHTTAP_SMOOTH     1
 #define MULTITAP_SHARP      2
+#if CONFIG_DUAL_FILTER && !CONFIG_EXT_INTERP
+#define BICUBIC             3
+#endif
 
 #if CONFIG_EXT_INTERP
 #define EIGHTTAP_SMOOTH2    3
@@ -34,7 +37,11 @@ extern "C" {
 #define SUPPORT_NONINTERPOLATING_FILTERS 0  /* turn it on for experimentation */
 #define SWITCHABLE_FILTERS  5 /* Number of switchable filters */
 #else
+#if CONFIG_DUAL_FILTER
+#define SWITCHABLE_FILTERS  4
+#else
 #define SWITCHABLE_FILTERS  3 /* Number of switchable filters */
+#endif
 #endif  // CONFIG_EXT_INTERP
 
 #define USE_TEMPORALFILTER_12TAP 1

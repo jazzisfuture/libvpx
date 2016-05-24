@@ -184,7 +184,6 @@ DECLARE_ALIGNED(16, static const int16_t,
   {0,   1,  -1,   2,  -4,   8, 127,  -7,   3,  -2,   1, 0},
 };
 #else  // CONFIG_EXT_INTERP
-
 DECLARE_ALIGNED(256, static const InterpKernel,
                 sub_pel_filters_8[SUBPEL_SHIFTS]) = {
   // Lagrangian interpolation filter
@@ -205,6 +204,28 @@ DECLARE_ALIGNED(256, static const InterpKernel,
   { 0,   2,  -6,  18, 122, -10,   3, -1},
   { 0,   1,  -3,   8, 126,  -5,   1,  0}
 };
+
+#if CONFIG_DUAL_FILTER
+DECLARE_ALIGNED(16, static const int16_t,
+                sub_pel_filters_4[SUBPEL_SHIFTS][4]) = {
+  { 0, 128, 0, 0,  },
+  { -4, 127, 5, 0,  },
+  { -6, 123, 12, -1,  },
+  { -8, 118, 20, -2,  },
+  { -9, 111, 29, -3,  },
+  { -9, 102, 39, -4,  },
+  { -9, 93, 50, -6,  },
+  { -9, 83, 61, -7,  },
+  { -8, 72, 72, -8,  },
+  { -7, 61, 83, -9,  },
+  { -6, 50, 93, -9,  },
+  { -4, 39, 102, -9,  },
+  { -3, 29, 111, -9,  },
+  { -2, 20, 118, -8,  },
+  { -1, 12, 123, -6,  },
+  { 0, 5, 127, -4,  },
+};
+#endif
 
 DECLARE_ALIGNED(256, static const InterpKernel,
                 sub_pel_filters_8sharp[SUBPEL_SHIFTS]) = {
@@ -274,6 +295,9 @@ vp10_interp_filter_params_list[SWITCHABLE_FILTERS + 1] = {
   {(const int16_t*)sub_pel_filters_8, SUBPEL_TAPS, SUBPEL_SHIFTS},
   {(const int16_t*)sub_pel_filters_8smooth, SUBPEL_TAPS, SUBPEL_SHIFTS},
   {(const int16_t*)sub_pel_filters_8sharp, SUBPEL_TAPS, SUBPEL_SHIFTS},
+#if CONFIG_DUAL_FILTER
+  {(const int16_t*)sub_pel_filters_4, 4, SUBPEL_SHIFTS},
+#endif
   {(const int16_t*)bilinear_filters, SUBPEL_TAPS, SUBPEL_SHIFTS}
 };
 #endif  // CONFIG_EXT_INTERP

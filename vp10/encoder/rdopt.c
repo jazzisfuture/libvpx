@@ -327,10 +327,11 @@ static const REF_DEFINITION vp10_ref_order[MAX_REFS] = {
 // of prediction filter types for vertical and horizontal directions.
 // It will be replaced after we integrate the dual filter experiment with
 // the ext-interp experiment.
-static int filter_sets[9][2] = {
-    {0, 0}, {0, 1}, {0, 2},
-    {1, 0}, {1, 1}, {1, 2},
-    {2, 0}, {2, 1}, {2, 2},
+static int filter_sets[16][2] = {
+    {0, 0}, {0, 1}, {0, 2}, {0, 3},
+    {1, 0}, {1, 1}, {1, 2}, {1, 3},
+    {2, 0}, {2, 1}, {2, 2}, {2, 3},
+    {3, 0}, {3, 1}, {3, 2}, {3, 3},
 };
 #endif
 
@@ -6966,7 +6967,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
     int64_t tmp_dist_sum = 0;
 
 #if CONFIG_DUAL_FILTER
-    for (i = 0; i < 9; ++i) {
+    for (i = 0; i < 16; ++i) {
 #else
     for (i = 0; i < SWITCHABLE_FILTERS; ++i) {
 #endif
@@ -10115,7 +10116,7 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
       b_mode_info tmp_best_bmodes[16];  // Should this be 4 ?
       MB_MODE_INFO tmp_best_mbmode;
 #if CONFIG_DUAL_FILTER
-      BEST_SEG_INFO bsi[9];
+      BEST_SEG_INFO bsi[16];
 #else
       BEST_SEG_INFO bsi[SWITCHABLE_FILTERS];
 #endif
@@ -10180,7 +10181,7 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
         } else {
 #if CONFIG_DUAL_FILTER
           for (switchable_filter_index = 0;
-               switchable_filter_index < 9;
+               switchable_filter_index < 16;
                ++switchable_filter_index) {
 #else
           for (switchable_filter_index = 0;
