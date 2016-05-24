@@ -305,10 +305,20 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
 
   // Calculate variance for whole partition, and also save 8x8 blocks' variance
   // to be used in following transform skipping test.
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    hbd_block_variance(p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride,
+                       4 << bw, 4 << bh, &sse, &sum, 8, sse8x8, sum8x8, var8x8);
+  } else {
+    block_variance(p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride,
+                   4 << bw, 4 << bh, &sse, &sum, 8, sse8x8, sum8x8, var8x8);
+  }
+#else
   block_variance(p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride,
                  4 << bw, 4 << bh, &sse, &sum, 8, sse8x8, sum8x8, var8x8);
-  var = sse - (((int64_t)sum * sum) >> (bw + bh + 4));
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
+  var = sse - (((int64_t)sum * sum) >> (bw + bh + 4));
   *var_y = var;
   *sse_y = sse;
 
