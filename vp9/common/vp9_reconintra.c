@@ -203,15 +203,23 @@ static void build_intra_predictors_high(const MACROBLOCKD *xd,
           memcpy(above_row, above_ref, bs * sizeof(above_row[0]));
         }
       }
-      above_row[-1] = left_available ? above_ref[-1] : (base + 1);
+      if (plane > 0)
+        above_row[-1] = left_available ? above_ref[-1] : (128 + 1);
+      else
+        above_row[-1] = left_available ? above_ref[-1] : (base + 1);
     } else {
       vpx_memset16(above_row, base - 1, bs);
-      above_row[-1] = base - 1;
+      if (plane > 0)
+        above_row[-1] = 128 - 1;
+      else
+        above_row[-1] = base - 1;
     }
   }
 
   // NEED_ABOVERIGHT
   if (need_aboveright) {
+      if (plane > 0)
+         base = 128;
     if (up_available) {
       const uint16_t *above_ref = ref - ref_stride;
       if (xd->mb_to_right_edge < 0) {
@@ -240,7 +248,10 @@ static void build_intra_predictors_high(const MACROBLOCKD *xd,
                        x0 + 2 * bs - frame_width);
         }
         // TODO(Peter) this value should probably change for high bitdepth
-        above_row[-1] = left_available ? above_ref[-1] : (base + 1);
+        if (plane > 0)
+          above_row[-1] = left_available ? above_ref[-1] : (128 + 1);
+        else
+          above_row[-1] = left_available ? above_ref[-1] : (base + 1);
       } else {
         /* faster path if the block does not need extension */
         if (bs == 4 && right_available && left_available) {
@@ -252,13 +263,20 @@ static void build_intra_predictors_high(const MACROBLOCKD *xd,
           else
             vpx_memset16(above_row + bs, above_row[bs - 1], bs);
           // TODO(Peter): this value should probably change for high bitdepth
-          above_row[-1] = left_available ? above_ref[-1] : (base + 1);
+          if (plane > 0)
+            above_row[-1] = left_available ? above_ref[-1] : (128 + 1);
+          else
+            above_row[-1] = left_available ? above_ref[-1] : (base + 1);
         }
       }
     } else {
       vpx_memset16(above_row, base - 1, bs * 2);
       // TODO(Peter): this value should probably change for high bitdepth
-      above_row[-1] = base - 1;
+      if (plane > 0)
+        above_row[-1] = 128 - 1;
+      else
+        above_row[-1] = base - 1;
+
     }
   }
 
