@@ -30,71 +30,81 @@ sh_b89abcdef: db 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0
 sh_bfedcba9876543210: db 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 sh_b1233: db 1, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b2333: db 2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+sh_b0123456712345677: db 0, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 7
+sh_b123456779abcdeff: db 1, 2, 3, 4, 5, 6, 7, 7, 9,  10, 11, 12, 13, 14, 15, 15
+sh_b23456777abcdefff: db 2, 3, 4, 5, 6, 7, 7, 7, 10, 11, 12, 13, 14, 15, 15, 15
+sh_b0123123323333333: db 0, 1, 2, 3, 1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3
 
 SECTION .text
 
-INIT_MMX ssse3
+; ------------------------------------------
+; input: x, y, z, result
+;
+; trick from pascal
+; (x+2y+z+2)>>2 can be calculated as:
+; result = avg(x,z)
+; result -= xor(x,z) & 1
+; result = avg(result,y)
+; ------------------------------------------
+%macro X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 4
+  pavgb               %4, %1, %3
+  pxor                %3, %1
+  pand                %3, [GLOBAL(pb_1)]
+  psubb               %4, %3
+  pavgb               %4, %2
+%endmacro
+
+INIT_XMM ssse3
 cglobal d45_predictor_4x4, 3, 4, 4, dst, stride, above, goffset
   GET_GOT     goffsetq
 
-  movq                m0, [aboveq]
-  pshufb              m2, m0, [GLOBAL(sh_b23456777)]
-  pshufb              m1, m0, [GLOBAL(sh_b01234577)]
-  pshufb              m0, [GLOBAL(sh_b12345677)]
-  pavgb               m3, m2, m1
-  pxor                m2, m1
-  pand                m2, [GLOBAL(pb_1)]
-  psubb               m3, m2
-  pavgb               m0, m3
+  movq                m1, [aboveq]
+  pshufb              m2, m1, [GLOBAL(sh_b23456777)]
+  pshufb              m0, m1, [GLOBAL(sh_b01234577)]
+  pshufb              m1, [GLOBAL(sh_b12345677)]
+  X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m1, m2, m3
 
   ; store 4 lines
-  movd    [dstq        ], m0
-  psrlq               m0, 8
-  movd    [dstq+strideq], m0
+  movd    [dstq        ], m3
+  psrlq               m3, 8
+  movd    [dstq+strideq], m3
   lea               dstq, [dstq+strideq*2]
-  psrlq               m0, 8
-  movd    [dstq        ], m0
-  psrlq               m0, 8
-  movd    [dstq+strideq], m0
+  psrlq               m3, 8
+  movd    [dstq        ], m3
+  psrlq               m3, 8
+  movd    [dstq+strideq], m3
 
   RESTORE_GOT
   RET
 
-INIT_MMX ssse3
-cglobal d45_predictor_8x8, 3, 4, 4, dst, stride, above, goffset
+INIT_XMM ssse3
+cglobal d45_predictor_8x8, 3, 4, 5, dst, stride, above, goffset
   GET_GOT     goffsetq
 
   movq                m0, [aboveq]
-  mova                m1, [GLOBAL(sh_b12345677)]
+  mova                m4, [GLOBAL(sh_b23456777abcdefff)]
   DEFINE_ARGS dst, stride, stride3
   lea           stride3q, [strideq*3]
-  pshufb              m2, m0, [GLOBAL(sh_b23456777)]
-  pavgb               m3, m2, m0
-  pxor                m2, m0
-  pshufb              m0, m1
-  pand                m2, [GLOBAL(pb_1)]
-  psubb               m3, m2
-  pavgb               m0, m3
+  pshufb              m0, [GLOBAL(sh_b0123456712345677)]
+  pshufb              m1, m0, [GLOBAL(sh_b123456779abcdeff)]
+  pshufb              m2, m0, m4
+  X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m1, m2, m3
 
-  ; store 4 lines
-  movq  [dstq          ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq  ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq*2], m0
-  pshufb              m0, m1
-  movq  [dstq+stride3q ], m0
-  pshufb              m0, m1
-  lea               dstq, [dstq+strideq*4]
+ ; store 4 lines
+  movq    [dstq          ], m3
+  movhps  [dstq+strideq  ], m3
+  pshufb                m3, m4
+  movq    [dstq+strideq*2], m3
+  movhps  [dstq+stride3q ], m3
+  pshufb                m3, m4
+  lea                 dstq, [dstq+strideq*4]
 
   ; store next 4 lines
-  movq  [dstq          ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq  ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq*2], m0
-  pshufb              m0, m1
-  movq  [dstq+stride3q ], m0
+  movq    [dstq          ], m3
+  movhps  [dstq+strideq  ], m3
+  pshufb                m3, m4
+  movq    [dstq+strideq*2], m3
+  movhps  [dstq+stride3q ], m3
 
   RESTORE_GOT
   RET
@@ -227,23 +237,6 @@ cglobal d45_predictor_32x32, 3, 6, 7, dst, stride, above, dst16, line, goffset
 
   RESTORE_GOT
   RET
-
-; ------------------------------------------
-; input: x, y, z, result
-;
-; trick from pascal
-; (x+2y+z+2)>>2 can be calculated as:
-; result = avg(x,z)
-; result -= xor(x,z) & 1
-; result = avg(result,y)
-; ------------------------------------------
-%macro X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 4
-  pavgb               %4, %1, %3
-  pxor                %3, %1
-  pand                %3, [GLOBAL(pb_1)]
-  psubb               %4, %3
-  pavgb               %4, %2
-%endmacro
 
 INIT_XMM ssse3
 cglobal d63_predictor_4x4, 3, 4, 5, dst, stride, above, goffset
@@ -715,25 +708,31 @@ cglobal d153_predictor_32x32, 4, 5, 8, dst, stride, above, left, goffset
   RESTORE_GOT
   RET
 
-INIT_MMX ssse3
+INIT_XMM ssse3
 cglobal d207_predictor_4x4, 4, 5, 4, dst, stride, unused, left, goffset
   GET_GOT     goffsetq
-  movd                m0, [leftq]                ; abcd [byte]
-  pshufb              m1, m0, [GLOBAL(sh_b1233)] ; bcdd [byte]
-  pshufb              m3, m0, [GLOBAL(sh_b2333)] ; cddd
+  movd                m0, [leftq]                         ; abcd [byte]
+  pshufb              m0, [GLOBAL(sh_b0123123323333333)]  ; abcd bcdd cddd dddd
+%if 0
+  pshufd              m1, m0, 0xf9                        ; bcdd cddd dddd dddd
+  pshufd              m3, m0, 0xfe                        ; cddd dddd dddd dddd
+%else
+  psrldq              m1, m0, 4                           ; bcdd cddd dddd 0000
+  movhlps             m3, m0                              ; cddd dddd 0000 0000
+%endif
 
-  X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m1, m3, m2
-  pavgb               m1, m0             ; ab, bc, cd, d [byte]
+  X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m1, m3, m2  ; a2bc b2cd c3d d b2cd c3d d d
+  pavgb               m1, m0                    ; ab, bc, cd, d, bc, cd, d, d
 
   punpcklbw           m1, m2             ; ab, a2bc, bc, b2cd, cd, c3d, d, d
+  movhlps             m3, m1             ; bc, b2cd, cd, c3d,  d,  d  , d, d
   movd    [dstq        ], m1
-  psrlq               m1, 16             ; bc, b2cd, cd, c3d, d, d
-  movd    [dstq+strideq], m1
+  movd    [dstq+strideq], m3
+  psrldq              m1, 4              ; cd, c3d, d, d
+  psrldq              m0, 12             ; d, d, d, d
   lea               dstq, [dstq+strideq*2]
-  psrlq               m1, 16             ; cd, c3d, d, d
   movd    [dstq        ], m1
-  pshufw              m1, m1, q1111      ; d, d, d, d
-  movd    [dstq+strideq], m1
+  movd    [dstq+strideq], m0
   RESTORE_GOT
   RET
 
