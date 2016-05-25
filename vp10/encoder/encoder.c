@@ -2311,8 +2311,8 @@ void vp10_change_config(struct VP10_COMP *cpi, const VP10EncoderConfig *oxcf) {
 
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
   rc->is_bwd_ref_frame = 0;
-  rc->is_last_nonref_frame = 0;
-  rc->is_nonref_frame = 0;
+  rc->is_last_bipred_frame = 0;
+  rc->is_bipred_frame = 0;
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
 
 #if 0
@@ -3351,12 +3351,12 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
   // TODO(zoeliu): To remove the reference buffer update for the
   //               show_existing_frame==1 case.
 #if 0
-  if (cpi->rc.is_last_nonref_frame) {
-    // NOTE: After the encoding of the LAST_NONREF_FRAME, the flag of
+  if (cpi->rc.is_last_bipred_frame) {
+    // NOTE: After the encoding of the LAST_BIPRED_FRAME, the flag of
     //       show_existing_frame will be set, to notify the decoder to show the
     //       coded BWDREF_FRAME. During the handling of the show_existing_frame,
     //       no update will be conducted on the reference frame buffer.
-    //       Following is to get the BWDREF_FRAME to show to be taken as the
+    //       Following is to get the BWDREF_FRAME to show to be regarded as the
     //       LAST_FRAME, preparing for the encoding of the next BWDREF_FRAME.
     cpi->lst_fb_idx = cpi->bwd_fb_idx;
     return;
@@ -3554,7 +3554,7 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
 #if CONFIG_BIDIR_PRED
     // TODO(zoeliu): To remove the reference buffer update for the
     // show_existing_frame==1 case; Instead, we move the reference buffer update
-    // to the previous coded frame, i.e. the last-nonref-frame. In that case, no
+    // to the previous coded frame, i.e. the last-bipred-frame. In that case, no
     // bit should be set in the refresh-mask, but the visual ref-idx should be
     // updated and written to the bitstream accordingly, as the virtual ref-idx
     // for LAST_FRAME and BWDREF_FRAME should be switched, i.e. cpi->lst_fb_idx
@@ -4797,8 +4797,8 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
     cpi->refresh_alt_ref_frame = 0;
 
     cpi->rc.is_bwd_ref_frame = 0;
-    cpi->rc.is_last_nonref_frame = 0;
-    cpi->rc.is_nonref_frame = 0;
+    cpi->rc.is_last_bipred_frame = 0;
+    cpi->rc.is_bipred_frame = 0;
 
     // Build the bitstream
     vp10_pack_bitstream(cpi, dest, size);
@@ -4951,9 +4951,9 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
 #endif  // DUMP_RECON_FRAMES
 
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
-  if (cpi->rc.is_last_nonref_frame) {
-    // NOTE: If the current frame is a LAST_NONREF_FRAME, we need next to show
-    //       the BWDREF_FRAME.
+  if (cpi->rc.is_last_bipred_frame) {
+    // NOTE: If the current frame is a LAST_BIPRED_FRAME, next it is needed
+    //       to show the BWDREF_FRAME.
     cpi->existing_fb_idx_to_show = cpi->bwd_fb_idx;
   }
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
@@ -5040,15 +5040,9 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
 
 #if 0
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
-  if ((cm->show_frame &&
-       !(cpi->rc.is_nonref_frame || cpi->rc.is_last_nonref_frame) ||
+  if ((cm->show_frame && !cpi->rc.is_last_bipred_frame) ||
        cpi->rc.is_bwd_ref_frame) {
     vp10_swap_mi_and_prev_mi(cm);
-  }
-  if (cm->show_frame || cpi->rc.is_bwd_ref_frame) {
-    // Don't increment frame counters if this was an altref buffer
-    // update not a real frame
-    ++cm->current_video_frame;
   }
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
 #endif  // 0
@@ -5065,7 +5059,7 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   }
 
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
-  // NOTE: It is not supposed to ref to any frame not used as reference
+  // NOTE: Shall not refer to any frame not used as reference.
   if (cm->is_reference_frame)
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
     cm->prev_frame = cm->cur_frame;
@@ -5285,7 +5279,7 @@ static int get_brf_src_index(VP10_COMP *cpi) {
         brf_src_index = gf_group->brf_src_offset[gf_group->index];
     } else {
       // TODO(zoeliu): To re-visit the setup for this scenario
-      brf_src_index = BIDIR_PRED_PERIOD - 1;
+      brf_src_index = cpi->rc.bipred_group_interval - 1;
     }
   }
 
@@ -5706,10 +5700,10 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
   vpx_clear_system_state();
 
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
-  if (cpi->rc.is_last_nonref_frame) {
-    // NOTE(zoeliu): If the current frame is a last non-reference frame, we need
-    //               next to show the BWDREF_FRAME.
-    cpi->rc.is_last_nonref_frame = 0;
+  if (cpi->rc.is_last_bipred_frame) {
+    // NOTE(zoeliu): If the current frame is a last bi-predictive frame, it is
+    //               needed next to show the BWDREF_FRAME.
+    cpi->rc.is_last_bipred_frame = 0;
     cm->show_existing_frame = 1;
   } else {
     cm->show_existing_frame = 0;
