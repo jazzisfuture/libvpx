@@ -106,10 +106,10 @@ void idct4_c(const tran_low_t *input, tran_low_t *output) {
   step[3] = WRAPLOW(dct_const_round_shift(temp2), 8);
 
   // stage 2
-  output[0] = WRAPLOW(step[0] + step[3], 8);
-  output[1] = WRAPLOW(step[1] + step[2], 8);
-  output[2] = WRAPLOW(step[1] - step[2], 8);
-  output[3] = WRAPLOW(step[0] - step[3], 8);
+  output[0] = WRAPLOW(check_range(step[0] + step[3]), 8);
+  output[1] = WRAPLOW(check_range(step[1] + step[2]), 8);
+  output[2] = WRAPLOW(check_range(step[1] - step[2]), 8);
+  output[3] = WRAPLOW(check_range(step[0] - step[3]), 8);
 }
 
 void vpx_idct4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
@@ -198,14 +198,14 @@ void idct8_c(const tran_low_t *input, tran_low_t *output) {
   step1[7] = step2[7];
 
   // stage 4
-  output[0] = WRAPLOW(step1[0] + step1[7], 8);
-  output[1] = WRAPLOW(step1[1] + step1[6], 8);
-  output[2] = WRAPLOW(step1[2] + step1[5], 8);
-  output[3] = WRAPLOW(step1[3] + step1[4], 8);
-  output[4] = WRAPLOW(step1[3] - step1[4], 8);
-  output[5] = WRAPLOW(step1[2] - step1[5], 8);
-  output[6] = WRAPLOW(step1[1] - step1[6], 8);
-  output[7] = WRAPLOW(step1[0] - step1[7], 8);
+  output[0] = WRAPLOW(check_range(step1[0] + step1[7]), 8);
+  output[1] = WRAPLOW(check_range(step1[1] + step1[6]), 8);
+  output[2] = WRAPLOW(check_range(step1[2] + step1[5]), 8);
+  output[3] = WRAPLOW(check_range(step1[3] + step1[4]), 8);
+  output[4] = WRAPLOW(check_range(step1[3] - step1[4]), 8);
+  output[5] = WRAPLOW(check_range(step1[2] - step1[5]), 8);
+  output[6] = WRAPLOW(check_range(step1[1] - step1[6]), 8);
+  output[7] = WRAPLOW(check_range(step1[0] - step1[7]), 8);
 }
 
 void vpx_idct8x8_64_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
@@ -330,10 +330,10 @@ void iadst8_c(const tran_low_t *input, tran_low_t *output) {
   s6 = (int)(-cospi_24_64 * x6 + cospi_8_64 * x7);
   s7 = (int)(cospi_8_64 * x6 + cospi_24_64 * x7);
 
-  x0 = WRAPLOW(s0 + s2, 8);
-  x1 = WRAPLOW(s1 + s3, 8);
-  x2 = WRAPLOW(s0 - s2, 8);
-  x3 = WRAPLOW(s1 - s3, 8);
+  x0 = WRAPLOW(check_range(s0 + s2), 8);
+  x1 = WRAPLOW(check_range(s1 + s3), 8);
+  x2 = WRAPLOW(check_range(s0 - s2), 8);
+  x3 = WRAPLOW(check_range(s1 - s3), 8);
   x4 = WRAPLOW(dct_const_round_shift(s4 + s6), 8);
   x5 = WRAPLOW(dct_const_round_shift(s5 + s7), 8);
   x6 = WRAPLOW(dct_const_round_shift(s4 - s6), 8);
@@ -350,14 +350,15 @@ void iadst8_c(const tran_low_t *input, tran_low_t *output) {
   x6 = WRAPLOW(dct_const_round_shift(s6), 8);
   x7 = WRAPLOW(dct_const_round_shift(s7), 8);
 
+  // Note -ve values can be out of range
   output[0] = WRAPLOW(x0, 8);
-  output[1] = WRAPLOW(-x4, 8);
+  output[1] = WRAPLOW(check_range(-x4), 8);
   output[2] = WRAPLOW(x6, 8);
-  output[3] = WRAPLOW(-x2, 8);
+  output[3] = WRAPLOW(check_range(-x2), 8);
   output[4] = WRAPLOW(x3, 8);
-  output[5] = WRAPLOW(-x7, 8);
+  output[5] = WRAPLOW(check_range(-x7), 8);
   output[6] = WRAPLOW(x5, 8);
-  output[7] = WRAPLOW(-x1, 8);
+  output[7] = WRAPLOW(check_range(-x1), 8);
 }
 
 void vpx_idct8x8_12_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
@@ -453,14 +454,14 @@ void idct16_c(const tran_low_t *input, tran_low_t *output) {
   step1[5] = WRAPLOW(dct_const_round_shift(temp1), 8);
   step1[6] = WRAPLOW(dct_const_round_shift(temp2), 8);
 
-  step1[8] = WRAPLOW(step2[8] + step2[9], 8);
-  step1[9] = WRAPLOW(step2[8] - step2[9], 8);
-  step1[10] = WRAPLOW(-step2[10] + step2[11], 8);
-  step1[11] = WRAPLOW(step2[10] + step2[11], 8);
-  step1[12] = WRAPLOW(step2[12] + step2[13], 8);
-  step1[13] = WRAPLOW(step2[12] - step2[13], 8);
-  step1[14] = WRAPLOW(-step2[14] + step2[15], 8);
-  step1[15] = WRAPLOW(step2[14] + step2[15], 8);
+  step1[8] = WRAPLOW(check_range(step2[8] + step2[9]), 8);
+  step1[9] = WRAPLOW(check_range(step2[8] - step2[9]), 8);
+  step1[10] = WRAPLOW(check_range(-step2[10] + step2[11]), 8);
+  step1[11] = WRAPLOW(check_range(step2[10] + step2[11]), 8);
+  step1[12] = WRAPLOW(check_range(step2[12] + step2[13]), 8);
+  step1[13] = WRAPLOW(check_range(step2[12] - step2[13]), 8);
+  step1[14] = WRAPLOW(check_range(-step2[14] + step2[15]), 8);
+  step1[15] = WRAPLOW(check_range(step2[14] + step2[15]), 8);
 
   // stage 4
   temp1 = (step1[0] + step1[1]) * cospi_16_64;
@@ -471,10 +472,10 @@ void idct16_c(const tran_low_t *input, tran_low_t *output) {
   temp2 = step1[2] * cospi_8_64 + step1[3] * cospi_24_64;
   step2[2] = WRAPLOW(dct_const_round_shift(temp1), 8);
   step2[3] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  step2[4] = WRAPLOW(step1[4] + step1[5], 8);
-  step2[5] = WRAPLOW(step1[4] - step1[5], 8);
-  step2[6] = WRAPLOW(-step1[6] + step1[7], 8);
-  step2[7] = WRAPLOW(step1[6] + step1[7], 8);
+  step2[4] = WRAPLOW(check_range(step1[4] + step1[5]), 8);
+  step2[5] = WRAPLOW(check_range(step1[4] - step1[5]), 8);
+  step2[6] = WRAPLOW(check_range(-step1[6] + step1[7]), 8);
+  step2[7] = WRAPLOW(check_range(step1[6] + step1[7]), 8);
 
   step2[8] = step1[8];
   step2[15] = step1[15];
@@ -490,10 +491,10 @@ void idct16_c(const tran_low_t *input, tran_low_t *output) {
   step2[12] = step1[12];
 
   // stage 5
-  step1[0] = WRAPLOW(step2[0] + step2[3], 8);
-  step1[1] = WRAPLOW(step2[1] + step2[2], 8);
-  step1[2] = WRAPLOW(step2[1] - step2[2], 8);
-  step1[3] = WRAPLOW(step2[0] - step2[3], 8);
+  step1[0] = WRAPLOW(check_range(step2[0] + step2[3]), 8);
+  step1[1] = WRAPLOW(check_range(step2[1] + step2[2]), 8);
+  step1[2] = WRAPLOW(check_range(step2[1] - step2[2]), 8);
+  step1[3] = WRAPLOW(check_range(step2[0] - step2[3]), 8);
   step1[4] = step2[4];
   temp1 = (step2[6] - step2[5]) * cospi_16_64;
   temp2 = (step2[5] + step2[6]) * cospi_16_64;
@@ -501,24 +502,24 @@ void idct16_c(const tran_low_t *input, tran_low_t *output) {
   step1[6] = WRAPLOW(dct_const_round_shift(temp2), 8);
   step1[7] = step2[7];
 
-  step1[8] = WRAPLOW(step2[8] + step2[11], 8);
-  step1[9] = WRAPLOW(step2[9] + step2[10], 8);
-  step1[10] = WRAPLOW(step2[9] - step2[10], 8);
-  step1[11] = WRAPLOW(step2[8] - step2[11], 8);
-  step1[12] = WRAPLOW(-step2[12] + step2[15], 8);
-  step1[13] = WRAPLOW(-step2[13] + step2[14], 8);
-  step1[14] = WRAPLOW(step2[13] + step2[14], 8);
-  step1[15] = WRAPLOW(step2[12] + step2[15], 8);
+  step1[8] = WRAPLOW(check_range(step2[8] + step2[11]), 8);
+  step1[9] = WRAPLOW(check_range(step2[9] + step2[10]), 8);
+  step1[10] = WRAPLOW(check_range(step2[9] - step2[10]), 8);
+  step1[11] = WRAPLOW(check_range(step2[8] - step2[11]), 8);
+  step1[12] = WRAPLOW(check_range(-step2[12] + step2[15]), 8);
+  step1[13] = WRAPLOW(check_range(-step2[13] + step2[14]), 8);
+  step1[14] = WRAPLOW(check_range(step2[13] + step2[14]), 8);
+  step1[15] = WRAPLOW(check_range(step2[12] + step2[15]), 8);
 
   // stage 6
-  step2[0] = WRAPLOW(step1[0] + step1[7], 8);
-  step2[1] = WRAPLOW(step1[1] + step1[6], 8);
-  step2[2] = WRAPLOW(step1[2] + step1[5], 8);
-  step2[3] = WRAPLOW(step1[3] + step1[4], 8);
-  step2[4] = WRAPLOW(step1[3] - step1[4], 8);
-  step2[5] = WRAPLOW(step1[2] - step1[5], 8);
-  step2[6] = WRAPLOW(step1[1] - step1[6], 8);
-  step2[7] = WRAPLOW(step1[0] - step1[7], 8);
+  step2[0] = WRAPLOW(check_range(step1[0] + step1[7]), 8);
+  step2[1] = WRAPLOW(check_range(step1[1] + step1[6]), 8);
+  step2[2] = WRAPLOW(check_range(step1[2] + step1[5]), 8);
+  step2[3] = WRAPLOW(check_range(step1[3] + step1[4]), 8);
+  step2[4] = WRAPLOW(check_range(step1[3] - step1[4]), 8);
+  step2[5] = WRAPLOW(check_range(step1[2] - step1[5]), 8);
+  step2[6] = WRAPLOW(check_range(step1[1] - step1[6]), 8);
+  step2[7] = WRAPLOW(check_range(step1[0] - step1[7]), 8);
   step2[8] = step1[8];
   step2[9] = step1[9];
   temp1 = (-step1[10] + step1[13]) * cospi_16_64;
@@ -533,22 +534,22 @@ void idct16_c(const tran_low_t *input, tran_low_t *output) {
   step2[15] = step1[15];
 
   // stage 7
-  output[0] = WRAPLOW(step2[0] + step2[15], 8);
-  output[1] = WRAPLOW(step2[1] + step2[14], 8);
-  output[2] = WRAPLOW(step2[2] + step2[13], 8);
-  output[3] = WRAPLOW(step2[3] + step2[12], 8);
-  output[4] = WRAPLOW(step2[4] + step2[11], 8);
-  output[5] = WRAPLOW(step2[5] + step2[10], 8);
-  output[6] = WRAPLOW(step2[6] + step2[9], 8);
-  output[7] = WRAPLOW(step2[7] + step2[8], 8);
-  output[8] = WRAPLOW(step2[7] - step2[8], 8);
-  output[9] = WRAPLOW(step2[6] - step2[9], 8);
-  output[10] = WRAPLOW(step2[5] - step2[10], 8);
-  output[11] = WRAPLOW(step2[4] - step2[11], 8);
-  output[12] = WRAPLOW(step2[3] - step2[12], 8);
-  output[13] = WRAPLOW(step2[2] - step2[13], 8);
-  output[14] = WRAPLOW(step2[1] - step2[14], 8);
-  output[15] = WRAPLOW(step2[0] - step2[15], 8);
+  output[0] = WRAPLOW(check_range(step2[0] + step2[15]), 8);
+  output[1] = WRAPLOW(check_range(step2[1] + step2[14]), 8);
+  output[2] = WRAPLOW(check_range(step2[2] + step2[13]), 8);
+  output[3] = WRAPLOW(check_range(step2[3] + step2[12]), 8);
+  output[4] = WRAPLOW(check_range(step2[4] + step2[11]), 8);
+  output[5] = WRAPLOW(check_range(step2[5] + step2[10]), 8);
+  output[6] = WRAPLOW(check_range(step2[6] + step2[9]), 8);
+  output[7] = WRAPLOW(check_range(step2[7] + step2[8]), 8);
+  output[8] = WRAPLOW(check_range(step2[7] - step2[8]), 8);
+  output[9] = WRAPLOW(check_range(step2[6] - step2[9]), 8);
+  output[10] = WRAPLOW(check_range(step2[5] - step2[10]), 8);
+  output[11] = WRAPLOW(check_range(step2[4] - step2[11]), 8);
+  output[12] = WRAPLOW(check_range(step2[3] - step2[12]), 8);
+  output[13] = WRAPLOW(check_range(step2[2] - step2[13]), 8);
+  output[14] = WRAPLOW(check_range(step2[1] - step2[14]), 8);
+  output[15] = WRAPLOW(check_range(step2[0] - step2[15]), 8);
 }
 
 void vpx_idct16x16_256_add_c(const tran_low_t *input, uint8_t *dest,
@@ -660,14 +661,14 @@ void iadst16_c(const tran_low_t *input, tran_low_t *output) {
   s14 = - x14 * cospi_12_64 + x15 * cospi_20_64;
   s15 =   x14 * cospi_20_64 + x15 * cospi_12_64;
 
-  x0 = WRAPLOW(s0 + s4, 8);
-  x1 = WRAPLOW(s1 + s5, 8);
-  x2 = WRAPLOW(s2 + s6, 8);
-  x3 = WRAPLOW(s3 + s7, 8);
-  x4 = WRAPLOW(s0 - s4, 8);
-  x5 = WRAPLOW(s1 - s5, 8);
-  x6 = WRAPLOW(s2 - s6, 8);
-  x7 = WRAPLOW(s3 - s7, 8);
+  x0 = WRAPLOW(check_range(s0 + s4), 8);
+  x1 = WRAPLOW(check_range(s1 + s5), 8);
+  x2 = WRAPLOW(check_range(s2 + s6), 8);
+  x3 = WRAPLOW(check_range(s3 + s7), 8);
+  x4 = WRAPLOW(check_range(s0 - s4), 8);
+  x5 = WRAPLOW(check_range(s1 - s5), 8);
+  x6 = WRAPLOW(check_range(s2 - s6), 8);
+  x7 = WRAPLOW(check_range(s3 - s7), 8);
   x8 = WRAPLOW(dct_const_round_shift(s8 + s12), 8);
   x9 = WRAPLOW(dct_const_round_shift(s9 + s13), 8);
   x10 = WRAPLOW(dct_const_round_shift(s10 + s14), 8);
@@ -732,9 +733,9 @@ void iadst16_c(const tran_low_t *input, tran_low_t *output) {
   x15 = WRAPLOW(dct_const_round_shift(s15), 8);
 
   output[0] = WRAPLOW(x0, 8);
-  output[1] = WRAPLOW(-x8, 8);
+  output[1] = WRAPLOW(check_range(-x8), 8);
   output[2] = WRAPLOW(x12, 8);
-  output[3] = WRAPLOW(-x4, 8);
+  output[3] = WRAPLOW(check_range(-x4), 8);
   output[4] = WRAPLOW(x6, 8);
   output[5] = WRAPLOW(x14, 8);
   output[6] = WRAPLOW(x10, 8);
@@ -744,7 +745,7 @@ void iadst16_c(const tran_low_t *input, tran_low_t *output) {
   output[10] = WRAPLOW(x15, 8);
   output[11] = WRAPLOW(x7, 8);
   output[12] = WRAPLOW(x5, 8);
-  output[13] = WRAPLOW(-x13, 8);
+  output[13] = WRAPLOW(check_range(-x13), 8);
   output[14] = WRAPLOW(x9, 8);
   output[15] = WRAPLOW(-x1, 8);
 }
@@ -881,22 +882,22 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step2[11] = WRAPLOW(dct_const_round_shift(temp1), 8);
   step2[12] = WRAPLOW(dct_const_round_shift(temp2), 8);
 
-  step2[16] = WRAPLOW(step1[16] + step1[17], 8);
-  step2[17] = WRAPLOW(step1[16] - step1[17], 8);
-  step2[18] = WRAPLOW(-step1[18] + step1[19], 8);
-  step2[19] = WRAPLOW(step1[18] + step1[19], 8);
-  step2[20] = WRAPLOW(step1[20] + step1[21], 8);
-  step2[21] = WRAPLOW(step1[20] - step1[21], 8);
-  step2[22] = WRAPLOW(-step1[22] + step1[23], 8);
-  step2[23] = WRAPLOW(step1[22] + step1[23], 8);
-  step2[24] = WRAPLOW(step1[24] + step1[25], 8);
-  step2[25] = WRAPLOW(step1[24] - step1[25], 8);
-  step2[26] = WRAPLOW(-step1[26] + step1[27], 8);
-  step2[27] = WRAPLOW(step1[26] + step1[27], 8);
-  step2[28] = WRAPLOW(step1[28] + step1[29], 8);
-  step2[29] = WRAPLOW(step1[28] - step1[29], 8);
-  step2[30] = WRAPLOW(-step1[30] + step1[31], 8);
-  step2[31] = WRAPLOW(step1[30] + step1[31], 8);
+  step2[16] = WRAPLOW(check_range(step1[16] + step1[17]), 8);
+  step2[17] = WRAPLOW(check_range(step1[16] - step1[17]), 8);
+  step2[18] = WRAPLOW(check_range(-step1[18] + step1[19]), 8);
+  step2[19] = WRAPLOW(check_range(step1[18] + step1[19]), 8);
+  step2[20] = WRAPLOW(check_range(step1[20] + step1[21]), 8);
+  step2[21] = WRAPLOW(check_range(step1[20] - step1[21]), 8);
+  step2[22] = WRAPLOW(check_range(-step1[22] + step1[23]), 8);
+  step2[23] = WRAPLOW(check_range(step1[22] + step1[23]), 8);
+  step2[24] = WRAPLOW(check_range(step1[24] + step1[25]), 8);
+  step2[25] = WRAPLOW(check_range(step1[24] - step1[25]), 8);
+  step2[26] = WRAPLOW(check_range(-step1[26] + step1[27]), 8);
+  step2[27] = WRAPLOW(check_range(step1[26] + step1[27]), 8);
+  step2[28] = WRAPLOW(check_range(step1[28] + step1[29]), 8);
+  step2[29] = WRAPLOW(check_range(step1[28] - step1[29]), 8);
+  step2[30] = WRAPLOW(check_range(-step1[30] + step1[31]), 8);
+  step2[31] = WRAPLOW(check_range(step1[30] + step1[31]), 8);
 
   // stage 3
   step1[0] = step2[0];
@@ -913,14 +914,14 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step1[5] = WRAPLOW(dct_const_round_shift(temp1), 8);
   step1[6] = WRAPLOW(dct_const_round_shift(temp2), 8);
 
-  step1[8] = WRAPLOW(step2[8] + step2[9], 8);
-  step1[9] = WRAPLOW(step2[8] - step2[9], 8);
-  step1[10] = WRAPLOW(-step2[10] + step2[11], 8);
-  step1[11] = WRAPLOW(step2[10] + step2[11], 8);
-  step1[12] = WRAPLOW(step2[12] + step2[13], 8);
-  step1[13] = WRAPLOW(step2[12] - step2[13], 8);
-  step1[14] = WRAPLOW(-step2[14] + step2[15], 8);
-  step1[15] = WRAPLOW(step2[14] + step2[15], 8);
+  step1[8] = WRAPLOW(check_range(step2[8] + step2[9]), 8);
+  step1[9] = WRAPLOW(check_range(step2[8] - step2[9]), 8);
+  step1[10] = WRAPLOW(check_range(-step2[10] + step2[11]), 8);
+  step1[11] = WRAPLOW(check_range(step2[10] + step2[11]), 8);
+  step1[12] = WRAPLOW(check_range(step2[12] + step2[13]), 8);
+  step1[13] = WRAPLOW(check_range(step2[12] - step2[13]), 8);
+  step1[14] = WRAPLOW(check_range(-step2[14] + step2[15]), 8);
+  step1[15] = WRAPLOW(check_range(step2[14] + step2[15]), 8);
 
   step1[16] = step2[16];
   step1[31] = step2[31];
@@ -956,10 +957,10 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   temp2 = step1[2] * cospi_8_64 + step1[3] * cospi_24_64;
   step2[2] = WRAPLOW(dct_const_round_shift(temp1), 8);
   step2[3] = WRAPLOW(dct_const_round_shift(temp2), 8);
-  step2[4] = WRAPLOW(step1[4] + step1[5], 8);
-  step2[5] = WRAPLOW(step1[4] - step1[5], 8);
-  step2[6] = WRAPLOW(-step1[6] + step1[7], 8);
-  step2[7] = WRAPLOW(step1[6] + step1[7], 8);
+  step2[4] = WRAPLOW(check_range(step1[4] + step1[5]), 8);
+  step2[5] = WRAPLOW(check_range(step1[4] - step1[5]), 8);
+  step2[6] = WRAPLOW(check_range(-step1[6] + step1[7]), 8);
+  step2[7] = WRAPLOW(check_range(step1[6] + step1[7]), 8);
 
   step2[8] = step1[8];
   step2[15] = step1[15];
@@ -974,29 +975,29 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step2[11] = step1[11];
   step2[12] = step1[12];
 
-  step2[16] = WRAPLOW(step1[16] + step1[19], 8);
-  step2[17] = WRAPLOW(step1[17] + step1[18], 8);
-  step2[18] = WRAPLOW(step1[17] - step1[18], 8);
-  step2[19] = WRAPLOW(step1[16] - step1[19], 8);
-  step2[20] = WRAPLOW(-step1[20] + step1[23], 8);
-  step2[21] = WRAPLOW(-step1[21] + step1[22], 8);
-  step2[22] = WRAPLOW(step1[21] + step1[22], 8);
-  step2[23] = WRAPLOW(step1[20] + step1[23], 8);
+  step2[16] = WRAPLOW(check_range(step1[16] + step1[19]), 8);
+  step2[17] = WRAPLOW(check_range(step1[17] + step1[18]), 8);
+  step2[18] = WRAPLOW(check_range(step1[17] - step1[18]), 8);
+  step2[19] = WRAPLOW(check_range(step1[16] - step1[19]), 8);
+  step2[20] = WRAPLOW(check_range(-step1[20] + step1[23]), 8);
+  step2[21] = WRAPLOW(check_range(-step1[21] + step1[22]), 8);
+  step2[22] = WRAPLOW(check_range(step1[21] + step1[22]), 8);
+  step2[23] = WRAPLOW(check_range(step1[20] + step1[23]), 8);
 
-  step2[24] = WRAPLOW(step1[24] + step1[27], 8);
-  step2[25] = WRAPLOW(step1[25] + step1[26], 8);
-  step2[26] = WRAPLOW(step1[25] - step1[26], 8);
-  step2[27] = WRAPLOW(step1[24] - step1[27], 8);
-  step2[28] = WRAPLOW(-step1[28] + step1[31], 8);
-  step2[29] = WRAPLOW(-step1[29] + step1[30], 8);
-  step2[30] = WRAPLOW(step1[29] + step1[30], 8);
-  step2[31] = WRAPLOW(step1[28] + step1[31], 8);
+  step2[24] = WRAPLOW(check_range(step1[24] + step1[27]), 8);
+  step2[25] = WRAPLOW(check_range(step1[25] + step1[26]), 8);
+  step2[26] = WRAPLOW(check_range(step1[25] - step1[26]), 8);
+  step2[27] = WRAPLOW(check_range(step1[24] - step1[27]), 8);
+  step2[28] = WRAPLOW(check_range(-step1[28] + step1[31]), 8);
+  step2[29] = WRAPLOW(check_range(-step1[29] + step1[30]), 8);
+  step2[30] = WRAPLOW(check_range(step1[29] + step1[30]), 8);
+  step2[31] = WRAPLOW(check_range(step1[28] + step1[31]), 8);
 
   // stage 5
-  step1[0] = WRAPLOW(step2[0] + step2[3], 8);
-  step1[1] = WRAPLOW(step2[1] + step2[2], 8);
-  step1[2] = WRAPLOW(step2[1] - step2[2], 8);
-  step1[3] = WRAPLOW(step2[0] - step2[3], 8);
+  step1[0] = WRAPLOW(check_range(step2[0] + step2[3]), 8);
+  step1[1] = WRAPLOW(check_range(step2[1] + step2[2]), 8);
+  step1[2] = WRAPLOW(check_range(step2[1] - step2[2]), 8);
+  step1[3] = WRAPLOW(check_range(step2[0] - step2[3]), 8);
   step1[4] = step2[4];
   temp1 = (step2[6] - step2[5]) * cospi_16_64;
   temp2 = (step2[5] + step2[6]) * cospi_16_64;
@@ -1004,14 +1005,14 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step1[6] = WRAPLOW(dct_const_round_shift(temp2), 8);
   step1[7] = step2[7];
 
-  step1[8] = WRAPLOW(step2[8] + step2[11], 8);
-  step1[9] = WRAPLOW(step2[9] + step2[10], 8);
-  step1[10] = WRAPLOW(step2[9] - step2[10], 8);
-  step1[11] = WRAPLOW(step2[8] - step2[11], 8);
-  step1[12] = WRAPLOW(-step2[12] + step2[15], 8);
-  step1[13] = WRAPLOW(-step2[13] + step2[14], 8);
-  step1[14] = WRAPLOW(step2[13] + step2[14], 8);
-  step1[15] = WRAPLOW(step2[12] + step2[15], 8);
+  step1[8] = WRAPLOW(check_range(step2[8] + step2[11]), 8);
+  step1[9] = WRAPLOW(check_range(step2[9] + step2[10]), 8);
+  step1[10] = WRAPLOW(check_range(step2[9] - step2[10]), 8);
+  step1[11] = WRAPLOW(check_range(step2[8] - step2[11]), 8);
+  step1[12] = WRAPLOW(check_range(-step2[12] + step2[15]), 8);
+  step1[13] = WRAPLOW(check_range(-step2[13] + step2[14]), 8);
+  step1[14] = WRAPLOW(check_range(step2[13] + step2[14]), 8);
+  step1[15] = WRAPLOW(check_range(step2[12] + step2[15]), 8);
 
   step1[16] = step2[16];
   step1[17] = step2[17];
@@ -1039,14 +1040,14 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step1[31] = step2[31];
 
   // stage 6
-  step2[0] = WRAPLOW(step1[0] + step1[7], 8);
-  step2[1] = WRAPLOW(step1[1] + step1[6], 8);
-  step2[2] = WRAPLOW(step1[2] + step1[5], 8);
-  step2[3] = WRAPLOW(step1[3] + step1[4], 8);
-  step2[4] = WRAPLOW(step1[3] - step1[4], 8);
-  step2[5] = WRAPLOW(step1[2] - step1[5], 8);
-  step2[6] = WRAPLOW(step1[1] - step1[6], 8);
-  step2[7] = WRAPLOW(step1[0] - step1[7], 8);
+  step2[0] = WRAPLOW(check_range(step1[0] + step1[7]), 8);
+  step2[1] = WRAPLOW(check_range(step1[1] + step1[6]), 8);
+  step2[2] = WRAPLOW(check_range(step1[2] + step1[5]), 8);
+  step2[3] = WRAPLOW(check_range(step1[3] + step1[4]), 8);
+  step2[4] = WRAPLOW(check_range(step1[3] - step1[4]), 8);
+  step2[5] = WRAPLOW(check_range(step1[2] - step1[5]), 8);
+  step2[6] = WRAPLOW(check_range(step1[1] - step1[6]), 8);
+  step2[7] = WRAPLOW(check_range(step1[0] - step1[7]), 8);
   step2[8] = step1[8];
   step2[9] = step1[9];
   temp1 = (-step1[10] + step1[13]) * cospi_16_64;
@@ -1060,41 +1061,41 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step2[14] = step1[14];
   step2[15] = step1[15];
 
-  step2[16] = WRAPLOW(step1[16] + step1[23], 8);
-  step2[17] = WRAPLOW(step1[17] + step1[22], 8);
-  step2[18] = WRAPLOW(step1[18] + step1[21], 8);
-  step2[19] = WRAPLOW(step1[19] + step1[20], 8);
-  step2[20] = WRAPLOW(step1[19] - step1[20], 8);
-  step2[21] = WRAPLOW(step1[18] - step1[21], 8);
-  step2[22] = WRAPLOW(step1[17] - step1[22], 8);
-  step2[23] = WRAPLOW(step1[16] - step1[23], 8);
+  step2[16] = WRAPLOW(check_range(step1[16] + step1[23]), 8);
+  step2[17] = WRAPLOW(check_range(step1[17] + step1[22]), 8);
+  step2[18] = WRAPLOW(check_range(step1[18] + step1[21]), 8);
+  step2[19] = WRAPLOW(check_range(step1[19] + step1[20]), 8);
+  step2[20] = WRAPLOW(check_range(step1[19] - step1[20]), 8);
+  step2[21] = WRAPLOW(check_range(step1[18] - step1[21]), 8);
+  step2[22] = WRAPLOW(check_range(step1[17] - step1[22]), 8);
+  step2[23] = WRAPLOW(check_range(step1[16] - step1[23]), 8);
 
-  step2[24] = WRAPLOW(-step1[24] + step1[31], 8);
-  step2[25] = WRAPLOW(-step1[25] + step1[30], 8);
-  step2[26] = WRAPLOW(-step1[26] + step1[29], 8);
-  step2[27] = WRAPLOW(-step1[27] + step1[28], 8);
-  step2[28] = WRAPLOW(step1[27] + step1[28], 8);
-  step2[29] = WRAPLOW(step1[26] + step1[29], 8);
-  step2[30] = WRAPLOW(step1[25] + step1[30], 8);
-  step2[31] = WRAPLOW(step1[24] + step1[31], 8);
+  step2[24] = WRAPLOW(check_range(-step1[24] + step1[31]), 8);
+  step2[25] = WRAPLOW(check_range(-step1[25] + step1[30]), 8);
+  step2[26] = WRAPLOW(check_range(-step1[26] + step1[29]), 8);
+  step2[27] = WRAPLOW(check_range(-step1[27] + step1[28]), 8);
+  step2[28] = WRAPLOW(check_range(step1[27] + step1[28]), 8);
+  step2[29] = WRAPLOW(check_range(step1[26] + step1[29]), 8);
+  step2[30] = WRAPLOW(check_range(step1[25] + step1[30]), 8);
+  step2[31] = WRAPLOW(check_range(step1[24] + step1[31]), 8);
 
   // stage 7
-  step1[0] = WRAPLOW(step2[0] + step2[15], 8);
-  step1[1] = WRAPLOW(step2[1] + step2[14], 8);
-  step1[2] = WRAPLOW(step2[2] + step2[13], 8);
-  step1[3] = WRAPLOW(step2[3] + step2[12], 8);
-  step1[4] = WRAPLOW(step2[4] + step2[11], 8);
-  step1[5] = WRAPLOW(step2[5] + step2[10], 8);
-  step1[6] = WRAPLOW(step2[6] + step2[9], 8);
-  step1[7] = WRAPLOW(step2[7] + step2[8], 8);
-  step1[8] = WRAPLOW(step2[7] - step2[8], 8);
-  step1[9] = WRAPLOW(step2[6] - step2[9], 8);
-  step1[10] = WRAPLOW(step2[5] - step2[10], 8);
-  step1[11] = WRAPLOW(step2[4] - step2[11], 8);
-  step1[12] = WRAPLOW(step2[3] - step2[12], 8);
-  step1[13] = WRAPLOW(step2[2] - step2[13], 8);
-  step1[14] = WRAPLOW(step2[1] - step2[14], 8);
-  step1[15] = WRAPLOW(step2[0] - step2[15], 8);
+  step1[0] = WRAPLOW(check_range(step2[0] + step2[15]), 8);
+  step1[1] = WRAPLOW(check_range(step2[1] + step2[14]), 8);
+  step1[2] = WRAPLOW(check_range(step2[2] + step2[13]), 8);
+  step1[3] = WRAPLOW(check_range(step2[3] + step2[12]), 8);
+  step1[4] = WRAPLOW(check_range(step2[4] + step2[11]), 8);
+  step1[5] = WRAPLOW(check_range(step2[5] + step2[10]), 8);
+  step1[6] = WRAPLOW(check_range(step2[6] + step2[9]), 8);
+  step1[7] = WRAPLOW(check_range(step2[7] + step2[8]), 8);
+  step1[8] = WRAPLOW(check_range(step2[7] - step2[8]), 8);
+  step1[9] = WRAPLOW(check_range(step2[6] - step2[9]), 8);
+  step1[10] = WRAPLOW(check_range(step2[5] - step2[10]), 8);
+  step1[11] = WRAPLOW(check_range(step2[4] - step2[11]), 8);
+  step1[12] = WRAPLOW(check_range(step2[3] - step2[12]), 8);
+  step1[13] = WRAPLOW(check_range(step2[2] - step2[13]), 8);
+  step1[14] = WRAPLOW(check_range(step2[1] - step2[14]), 8);
+  step1[15] = WRAPLOW(check_range(step2[0] - step2[15]), 8);
 
   step1[16] = step2[16];
   step1[17] = step2[17];
@@ -1122,38 +1123,38 @@ void idct32_c(const tran_low_t *input, tran_low_t *output) {
   step1[31] = step2[31];
 
   // final stage
-  output[0] = WRAPLOW(step1[0] + step1[31], 8);
-  output[1] = WRAPLOW(step1[1] + step1[30], 8);
-  output[2] = WRAPLOW(step1[2] + step1[29], 8);
-  output[3] = WRAPLOW(step1[3] + step1[28], 8);
-  output[4] = WRAPLOW(step1[4] + step1[27], 8);
-  output[5] = WRAPLOW(step1[5] + step1[26], 8);
-  output[6] = WRAPLOW(step1[6] + step1[25], 8);
-  output[7] = WRAPLOW(step1[7] + step1[24], 8);
-  output[8] = WRAPLOW(step1[8] + step1[23], 8);
-  output[9] = WRAPLOW(step1[9] + step1[22], 8);
-  output[10] = WRAPLOW(step1[10] + step1[21], 8);
-  output[11] = WRAPLOW(step1[11] + step1[20], 8);
-  output[12] = WRAPLOW(step1[12] + step1[19], 8);
-  output[13] = WRAPLOW(step1[13] + step1[18], 8);
-  output[14] = WRAPLOW(step1[14] + step1[17], 8);
-  output[15] = WRAPLOW(step1[15] + step1[16], 8);
-  output[16] = WRAPLOW(step1[15] - step1[16], 8);
-  output[17] = WRAPLOW(step1[14] - step1[17], 8);
-  output[18] = WRAPLOW(step1[13] - step1[18], 8);
-  output[19] = WRAPLOW(step1[12] - step1[19], 8);
-  output[20] = WRAPLOW(step1[11] - step1[20], 8);
-  output[21] = WRAPLOW(step1[10] - step1[21], 8);
-  output[22] = WRAPLOW(step1[9] - step1[22], 8);
-  output[23] = WRAPLOW(step1[8] - step1[23], 8);
-  output[24] = WRAPLOW(step1[7] - step1[24], 8);
-  output[25] = WRAPLOW(step1[6] - step1[25], 8);
-  output[26] = WRAPLOW(step1[5] - step1[26], 8);
-  output[27] = WRAPLOW(step1[4] - step1[27], 8);
-  output[28] = WRAPLOW(step1[3] - step1[28], 8);
-  output[29] = WRAPLOW(step1[2] - step1[29], 8);
-  output[30] = WRAPLOW(step1[1] - step1[30], 8);
-  output[31] = WRAPLOW(step1[0] - step1[31], 8);
+  output[0] = WRAPLOW(check_range(step1[0] + step1[31]), 8);
+  output[1] = WRAPLOW(check_range(step1[1] + step1[30]), 8);
+  output[2] = WRAPLOW(check_range(step1[2] + step1[29]), 8);
+  output[3] = WRAPLOW(check_range(step1[3] + step1[28]), 8);
+  output[4] = WRAPLOW(check_range(step1[4] + step1[27]), 8);
+  output[5] = WRAPLOW(check_range(step1[5] + step1[26]), 8);
+  output[6] = WRAPLOW(check_range(step1[6] + step1[25]), 8);
+  output[7] = WRAPLOW(check_range(step1[7] + step1[24]), 8);
+  output[8] = WRAPLOW(check_range(step1[8] + step1[23]), 8);
+  output[9] = WRAPLOW(check_range(step1[9] + step1[22]), 8);
+  output[10] = WRAPLOW(check_range(step1[10] + step1[21]), 8);
+  output[11] = WRAPLOW(check_range(step1[11] + step1[20]), 8);
+  output[12] = WRAPLOW(check_range(step1[12] + step1[19]), 8);
+  output[13] = WRAPLOW(check_range(step1[13] + step1[18]), 8);
+  output[14] = WRAPLOW(check_range(step1[14] + step1[17]), 8);
+  output[15] = WRAPLOW(check_range(step1[15] + step1[16]), 8);
+  output[16] = WRAPLOW(check_range(step1[15] - step1[16]), 8);
+  output[17] = WRAPLOW(check_range(step1[14] - step1[17]), 8);
+  output[18] = WRAPLOW(check_range(step1[13] - step1[18]), 8);
+  output[19] = WRAPLOW(check_range(step1[12] - step1[19]), 8);
+  output[20] = WRAPLOW(check_range(step1[11] - step1[20]), 8);
+  output[21] = WRAPLOW(check_range(step1[10] - step1[21]), 8);
+  output[22] = WRAPLOW(check_range(step1[9] - step1[22]), 8);
+  output[23] = WRAPLOW(check_range(step1[8] - step1[23]), 8);
+  output[24] = WRAPLOW(check_range(step1[7] - step1[24]), 8);
+  output[25] = WRAPLOW(check_range(step1[6] - step1[25]), 8);
+  output[26] = WRAPLOW(check_range(step1[5] - step1[26]), 8);
+  output[27] = WRAPLOW(check_range(step1[4] - step1[27]), 8);
+  output[28] = WRAPLOW(check_range(step1[3] - step1[28]), 8);
+  output[29] = WRAPLOW(check_range(step1[2] - step1[29]), 8);
+  output[30] = WRAPLOW(check_range(step1[1] - step1[30]), 8);
+  output[31] = WRAPLOW(check_range(step1[0] - step1[31]), 8);
 }
 
 void vpx_idct32x32_1024_add_c(const tran_low_t *input, uint8_t *dest,
@@ -1367,10 +1368,10 @@ void vpx_highbd_idct4_c(const tran_low_t *input, tran_low_t *output, int bd) {
   step[3] = WRAPLOW(highbd_dct_const_round_shift(temp2, bd), bd);
 
   // stage 2
-  output[0] = WRAPLOW(step[0] + step[3], bd);
-  output[1] = WRAPLOW(step[1] + step[2], bd);
-  output[2] = WRAPLOW(step[1] - step[2], bd);
-  output[3] = WRAPLOW(step[0] - step[3], bd);
+  output[0] = WRAPLOW(highbd_check_range(step[0] + step[3], bd), bd);
+  output[1] = WRAPLOW(highbd_check_range(step[1] + step[2], bd), bd);
+  output[2] = WRAPLOW(highbd_check_range(step[1] - step[2], bd), bd);
+  output[3] = WRAPLOW(highbd_check_range(step[0] - step[3], bd), bd);
 }
 
 void vpx_highbd_idct4x4_16_add_c(const tran_low_t *input, uint8_t *dest8,
@@ -1441,10 +1442,10 @@ void vpx_highbd_idct8_c(const tran_low_t *input, tran_low_t *output, int bd) {
   vpx_highbd_idct4_c(step1, step1, bd);
 
   // stage 2 - odd half
-  step2[4] = WRAPLOW(step1[4] + step1[5], bd);
-  step2[5] = WRAPLOW(step1[4] - step1[5], bd);
-  step2[6] = WRAPLOW(-step1[6] + step1[7], bd);
-  step2[7] = WRAPLOW(step1[6] + step1[7], bd);
+  step2[4] = WRAPLOW(highbd_check_range(step1[4] + step1[5], bd), bd);
+  step2[5] = WRAPLOW(highbd_check_range(step1[4] - step1[5], bd), bd);
+  step2[6] = WRAPLOW(highbd_check_range(-step1[6] + step1[7], bd), bd);
+  step2[7] = WRAPLOW(highbd_check_range(step1[6] + step1[7], bd), bd);
 
   // stage 3 - odd half
   step1[4] = step2[4];
@@ -1455,14 +1456,14 @@ void vpx_highbd_idct8_c(const tran_low_t *input, tran_low_t *output, int bd) {
   step1[7] = step2[7];
 
   // stage 4
-  output[0] = WRAPLOW(step1[0] + step1[7], bd);
-  output[1] = WRAPLOW(step1[1] + step1[6], bd);
-  output[2] = WRAPLOW(step1[2] + step1[5], bd);
-  output[3] = WRAPLOW(step1[3] + step1[4], bd);
-  output[4] = WRAPLOW(step1[3] - step1[4], bd);
-  output[5] = WRAPLOW(step1[2] - step1[5], bd);
-  output[6] = WRAPLOW(step1[1] - step1[6], bd);
-  output[7] = WRAPLOW(step1[0] - step1[7], bd);
+  output[0] = WRAPLOW(highbd_check_range(step1[0] + step1[7], bd), bd);
+  output[1] = WRAPLOW(highbd_check_range(step1[1] + step1[6], bd), bd);
+  output[2] = WRAPLOW(highbd_check_range(step1[2] + step1[5], bd), bd);
+  output[3] = WRAPLOW(highbd_check_range(step1[3] + step1[4], bd), bd);
+  output[4] = WRAPLOW(highbd_check_range(step1[3] - step1[4], bd), bd);
+  output[5] = WRAPLOW(highbd_check_range(step1[2] - step1[5], bd), bd);
+  output[6] = WRAPLOW(highbd_check_range(step1[1] - step1[6], bd), bd);
+  output[7] = WRAPLOW(highbd_check_range(step1[0] - step1[7], bd), bd);
 }
 
 void vpx_highbd_idct8x8_64_add_c(const tran_low_t *input, uint8_t *dest8,
@@ -1593,10 +1594,10 @@ void vpx_highbd_iadst8_c(const tran_low_t *input, tran_low_t *output, int bd) {
   s6 = -cospi_24_64 * x6 + cospi_8_64  * x7;
   s7 =  cospi_8_64  * x6 + cospi_24_64 * x7;
 
-  x0 = WRAPLOW(s0 + s2, bd);
-  x1 = WRAPLOW(s1 + s3, bd);
-  x2 = WRAPLOW(s0 - s2, bd);
-  x3 = WRAPLOW(s1 - s3, bd);
+  x0 = WRAPLOW(highbd_check_range(s0 + s2, bd), bd);
+  x1 = WRAPLOW(highbd_check_range(s1 + s3, bd), bd);
+  x2 = WRAPLOW(highbd_check_range(s0 - s2, bd), bd);
+  x3 = WRAPLOW(highbd_check_range(s1 - s3, bd), bd);
   x4 = WRAPLOW(highbd_dct_const_round_shift(s4 + s6, bd), bd);
   x5 = WRAPLOW(highbd_dct_const_round_shift(s5 + s7, bd), bd);
   x6 = WRAPLOW(highbd_dct_const_round_shift(s4 - s6, bd), bd);
@@ -1614,13 +1615,13 @@ void vpx_highbd_iadst8_c(const tran_low_t *input, tran_low_t *output, int bd) {
   x7 = WRAPLOW(highbd_dct_const_round_shift(s7, bd), bd);
 
   output[0] = WRAPLOW(x0, bd);
-  output[1] = WRAPLOW(-x4, bd);
+  output[1] = WRAPLOW(highbd_check_range(-x4, bd), bd);
   output[2] = WRAPLOW(x6, bd);
-  output[3] = WRAPLOW(-x2, bd);
+  output[3] = WRAPLOW(highbd_check_range(-x2, bd), bd);
   output[4] = WRAPLOW(x3, bd);
-  output[5] = WRAPLOW(-x7, bd);
+  output[5] = WRAPLOW(highbd_check_range(-x7, bd), bd);
   output[6] = WRAPLOW(x5, bd);
-  output[7] = WRAPLOW(-x1, bd);
+  output[7] = WRAPLOW(highbd_check_range(-x1, bd), bd);
 }
 
 void vpx_highbd_idct8x8_10_add_c(const tran_low_t *input, uint8_t *dest8,
@@ -1718,14 +1719,14 @@ void vpx_highbd_idct16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   step1[5] = WRAPLOW(highbd_dct_const_round_shift(temp1, bd), bd);
   step1[6] = WRAPLOW(highbd_dct_const_round_shift(temp2, bd), bd);
 
-  step1[8] = WRAPLOW(step2[8] + step2[9], bd);
-  step1[9] = WRAPLOW(step2[8] - step2[9], bd);
-  step1[10] = WRAPLOW(-step2[10] + step2[11], bd);
-  step1[11] = WRAPLOW(step2[10] + step2[11], bd);
-  step1[12] = WRAPLOW(step2[12] + step2[13], bd);
-  step1[13] = WRAPLOW(step2[12] - step2[13], bd);
-  step1[14] = WRAPLOW(-step2[14] + step2[15], bd);
-  step1[15] = WRAPLOW(step2[14] + step2[15], bd);
+  step1[8] = WRAPLOW(highbd_check_range(step2[8] + step2[9], bd), bd);
+  step1[9] = WRAPLOW(highbd_check_range(step2[8] - step2[9], bd), bd);
+  step1[10] = WRAPLOW(highbd_check_range(-step2[10] + step2[11], bd), bd);
+  step1[11] = WRAPLOW(highbd_check_range(step2[10] + step2[11], bd), bd);
+  step1[12] = WRAPLOW(highbd_check_range(step2[12] + step2[13], bd), bd);
+  step1[13] = WRAPLOW(highbd_check_range(step2[12] - step2[13], bd), bd);
+  step1[14] = WRAPLOW(highbd_check_range(-step2[14] + step2[15], bd), bd);
+  step1[15] = WRAPLOW(highbd_check_range(step2[14] + step2[15], bd), bd);
 
   // stage 4
   temp1 = (step1[0] + step1[1]) * cospi_16_64;
@@ -1736,10 +1737,10 @@ void vpx_highbd_idct16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   temp2 = step1[2] * cospi_8_64 + step1[3] * cospi_24_64;
   step2[2] = WRAPLOW(highbd_dct_const_round_shift(temp1, bd), bd);
   step2[3] = WRAPLOW(highbd_dct_const_round_shift(temp2, bd), bd);
-  step2[4] = WRAPLOW(step1[4] + step1[5], bd);
-  step2[5] = WRAPLOW(step1[4] - step1[5], bd);
-  step2[6] = WRAPLOW(-step1[6] + step1[7], bd);
-  step2[7] = WRAPLOW(step1[6] + step1[7], bd);
+  step2[4] = WRAPLOW(highbd_check_range(step1[4] + step1[5], bd), bd);
+  step2[5] = WRAPLOW(highbd_check_range(step1[4] - step1[5], bd), bd);
+  step2[6] = WRAPLOW(highbd_check_range(-step1[6] + step1[7], bd), bd);
+  step2[7] = WRAPLOW(highbd_check_range(step1[6] + step1[7], bd), bd);
 
   step2[8] = step1[8];
   step2[15] = step1[15];
@@ -1755,10 +1756,10 @@ void vpx_highbd_idct16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   step2[12] = step1[12];
 
   // stage 5
-  step1[0] = WRAPLOW(step2[0] + step2[3], bd);
-  step1[1] = WRAPLOW(step2[1] + step2[2], bd);
-  step1[2] = WRAPLOW(step2[1] - step2[2], bd);
-  step1[3] = WRAPLOW(step2[0] - step2[3], bd);
+  step1[0] = WRAPLOW(highbd_check_range(step2[0] + step2[3], bd), bd);
+  step1[1] = WRAPLOW(highbd_check_range(step2[1] + step2[2], bd), bd);
+  step1[2] = WRAPLOW(highbd_check_range(step2[1] - step2[2], bd), bd);
+  step1[3] = WRAPLOW(highbd_check_range(step2[0] - step2[3], bd), bd);
   step1[4] = step2[4];
   temp1 = (step2[6] - step2[5]) * cospi_16_64;
   temp2 = (step2[5] + step2[6]) * cospi_16_64;
@@ -1766,24 +1767,24 @@ void vpx_highbd_idct16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   step1[6] = WRAPLOW(highbd_dct_const_round_shift(temp2, bd), bd);
   step1[7] = step2[7];
 
-  step1[8] = WRAPLOW(step2[8] + step2[11], bd);
-  step1[9] = WRAPLOW(step2[9] + step2[10], bd);
-  step1[10] = WRAPLOW(step2[9] - step2[10], bd);
-  step1[11] = WRAPLOW(step2[8] - step2[11], bd);
-  step1[12] = WRAPLOW(-step2[12] + step2[15], bd);
-  step1[13] = WRAPLOW(-step2[13] + step2[14], bd);
-  step1[14] = WRAPLOW(step2[13] + step2[14], bd);
-  step1[15] = WRAPLOW(step2[12] + step2[15], bd);
+  step1[8] = WRAPLOW(highbd_check_range(step2[8] + step2[11], bd), bd);
+  step1[9] = WRAPLOW(highbd_check_range(step2[9] + step2[10], bd), bd);
+  step1[10] = WRAPLOW(highbd_check_range(step2[9] - step2[10], bd), bd);
+  step1[11] = WRAPLOW(highbd_check_range(step2[8] - step2[11], bd), bd);
+  step1[12] = WRAPLOW(highbd_check_range(-step2[12] + step2[15], bd), bd);
+  step1[13] = WRAPLOW(highbd_check_range(-step2[13] + step2[14], bd), bd);
+  step1[14] = WRAPLOW(highbd_check_range(step2[13] + step2[14], bd), bd);
+  step1[15] = WRAPLOW(highbd_check_range(step2[12] + step2[15], bd), bd);
 
   // stage 6
-  step2[0] = WRAPLOW(step1[0] + step1[7], bd);
-  step2[1] = WRAPLOW(step1[1] + step1[6], bd);
-  step2[2] = WRAPLOW(step1[2] + step1[5], bd);
-  step2[3] = WRAPLOW(step1[3] + step1[4], bd);
-  step2[4] = WRAPLOW(step1[3] - step1[4], bd);
-  step2[5] = WRAPLOW(step1[2] - step1[5], bd);
-  step2[6] = WRAPLOW(step1[1] - step1[6], bd);
-  step2[7] = WRAPLOW(step1[0] - step1[7], bd);
+  step2[0] = WRAPLOW(highbd_check_range(step1[0] + step1[7], bd), bd);
+  step2[1] = WRAPLOW(highbd_check_range(step1[1] + step1[6], bd), bd);
+  step2[2] = WRAPLOW(highbd_check_range(step1[2] + step1[5], bd), bd);
+  step2[3] = WRAPLOW(highbd_check_range(step1[3] + step1[4], bd), bd);
+  step2[4] = WRAPLOW(highbd_check_range(step1[3] - step1[4], bd), bd);
+  step2[5] = WRAPLOW(highbd_check_range(step1[2] - step1[5], bd), bd);
+  step2[6] = WRAPLOW(highbd_check_range(step1[1] - step1[6], bd), bd);
+  step2[7] = WRAPLOW(highbd_check_range(step1[0] - step1[7], bd), bd);
   step2[8] = step1[8];
   step2[9] = step1[9];
   temp1 = (-step1[10] + step1[13]) * cospi_16_64;
@@ -1798,22 +1799,22 @@ void vpx_highbd_idct16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   step2[15] = step1[15];
 
   // stage 7
-  output[0] = WRAPLOW(step2[0] + step2[15], bd);
-  output[1] = WRAPLOW(step2[1] + step2[14], bd);
-  output[2] = WRAPLOW(step2[2] + step2[13], bd);
-  output[3] = WRAPLOW(step2[3] + step2[12], bd);
-  output[4] = WRAPLOW(step2[4] + step2[11], bd);
-  output[5] = WRAPLOW(step2[5] + step2[10], bd);
-  output[6] = WRAPLOW(step2[6] + step2[9], bd);
-  output[7] = WRAPLOW(step2[7] + step2[8], bd);
-  output[8] = WRAPLOW(step2[7] - step2[8], bd);
-  output[9] = WRAPLOW(step2[6] - step2[9], bd);
-  output[10] = WRAPLOW(step2[5] - step2[10], bd);
-  output[11] = WRAPLOW(step2[4] - step2[11], bd);
-  output[12] = WRAPLOW(step2[3] - step2[12], bd);
-  output[13] = WRAPLOW(step2[2] - step2[13], bd);
-  output[14] = WRAPLOW(step2[1] - step2[14], bd);
-  output[15] = WRAPLOW(step2[0] - step2[15], bd);
+  output[0] = WRAPLOW(highbd_check_range(step2[0] + step2[15], bd), bd);
+  output[1] = WRAPLOW(highbd_check_range(step2[1] + step2[14], bd), bd);
+  output[2] = WRAPLOW(highbd_check_range(step2[2] + step2[13], bd), bd);
+  output[3] = WRAPLOW(highbd_check_range(step2[3] + step2[12], bd), bd);
+  output[4] = WRAPLOW(highbd_check_range(step2[4] + step2[11], bd), bd);
+  output[5] = WRAPLOW(highbd_check_range(step2[5] + step2[10], bd), bd);
+  output[6] = WRAPLOW(highbd_check_range(step2[6] + step2[9], bd), bd);
+  output[7] = WRAPLOW(highbd_check_range(step2[7] + step2[8], bd), bd);
+  output[8] = WRAPLOW(highbd_check_range(step2[7] - step2[8], bd), bd);
+  output[9] = WRAPLOW(highbd_check_range(step2[6] - step2[9], bd), bd);
+  output[10] = WRAPLOW(highbd_check_range(step2[5] - step2[10], bd), bd);
+  output[11] = WRAPLOW(highbd_check_range(step2[4] - step2[11], bd), bd);
+  output[12] = WRAPLOW(highbd_check_range(step2[3] - step2[12], bd), bd);
+  output[13] = WRAPLOW(highbd_check_range(step2[2] - step2[13], bd), bd);
+  output[14] = WRAPLOW(highbd_check_range(step2[1] - step2[14], bd), bd);
+  output[15] = WRAPLOW(highbd_check_range(step2[0] - step2[15], bd), bd);
 }
 
 void vpx_highbd_idct16x16_256_add_c(const tran_low_t *input, uint8_t *dest8,
@@ -1924,14 +1925,14 @@ void vpx_highbd_iadst16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   s14 = -x14 * cospi_12_64 + x15 * cospi_20_64;
   s15 = x14 * cospi_20_64 + x15 * cospi_12_64;
 
-  x0 = WRAPLOW(s0 + s4, bd);
-  x1 = WRAPLOW(s1 + s5, bd);
-  x2 = WRAPLOW(s2 + s6, bd);
-  x3 = WRAPLOW(s3 + s7, bd);
-  x4 = WRAPLOW(s0 - s4, bd);
-  x5 = WRAPLOW(s1 - s5, bd);
-  x6 = WRAPLOW(s2 - s6, bd);
-  x7 = WRAPLOW(s3 - s7, bd);
+  x0 = WRAPLOW(highbd_check_range(s0 + s4, bd), bd);
+  x1 = WRAPLOW(highbd_check_range(s1 + s5, bd), bd);
+  x2 = WRAPLOW(highbd_check_range(s2 + s6, bd), bd);
+  x3 = WRAPLOW(highbd_check_range(s3 + s7, bd), bd);
+  x4 = WRAPLOW(highbd_check_range(s0 - s4, bd), bd);
+  x5 = WRAPLOW(highbd_check_range(s1 - s5, bd), bd);
+  x6 = WRAPLOW(highbd_check_range(s2 - s6, bd), bd);
+  x7 = WRAPLOW(highbd_check_range(s3 - s7, bd), bd);
   x8 = WRAPLOW(highbd_dct_const_round_shift(s8 + s12, bd), bd);
   x9 = WRAPLOW(highbd_dct_const_round_shift(s9 + s13, bd), bd);
   x10 = WRAPLOW(highbd_dct_const_round_shift(s10 + s14, bd), bd);
@@ -1959,18 +1960,18 @@ void vpx_highbd_iadst16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   s14 = -x14 * cospi_24_64 + x15 * cospi_8_64;
   s15 = x14 * cospi_8_64 + x15 * cospi_24_64;
 
-  x0 = WRAPLOW(s0 + s2, bd);
-  x1 = WRAPLOW(s1 + s3, bd);
-  x2 = WRAPLOW(s0 - s2, bd);
-  x3 = WRAPLOW(s1 - s3, bd);
+  x0 = WRAPLOW(highbd_check_range(s0 + s2, bd), bd);
+  x1 = WRAPLOW(highbd_check_range(s1 + s3, bd), bd);
+  x2 = WRAPLOW(highbd_check_range(s0 - s2, bd), bd);
+  x3 = WRAPLOW(highbd_check_range(s1 - s3, bd), bd);
   x4 = WRAPLOW(highbd_dct_const_round_shift(s4 + s6, bd), bd);
   x5 = WRAPLOW(highbd_dct_const_round_shift(s5 + s7, bd), bd);
   x6 = WRAPLOW(highbd_dct_const_round_shift(s4 - s6, bd), bd);
   x7 = WRAPLOW(highbd_dct_const_round_shift(s5 - s7, bd), bd);
-  x8 = WRAPLOW(s8 + s10, bd);
-  x9 = WRAPLOW(s9 + s11, bd);
-  x10 = WRAPLOW(s8 - s10, bd);
-  x11 = WRAPLOW(s9 - s11, bd);
+  x8 = WRAPLOW(highbd_check_range(s8 + s10, bd), bd);
+  x9 = WRAPLOW(highbd_check_range(s9 + s11, bd), bd);
+  x10 = WRAPLOW(highbd_check_range(s8 - s10, bd), bd);
+  x11 = WRAPLOW(highbd_check_range(s9 - s11, bd), bd);
   x12 = WRAPLOW(highbd_dct_const_round_shift(s12 + s14, bd), bd);
   x13 = WRAPLOW(highbd_dct_const_round_shift(s13 + s15, bd), bd);
   x14 = WRAPLOW(highbd_dct_const_round_shift(s12 - s14, bd), bd);
@@ -1996,9 +1997,9 @@ void vpx_highbd_iadst16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   x15 = WRAPLOW(highbd_dct_const_round_shift(s15, bd), bd);
 
   output[0] = WRAPLOW(x0, bd);
-  output[1] = WRAPLOW(-x8, bd);
+  output[1] = WRAPLOW(highbd_check_range(-x8, bd), bd);
   output[2] = WRAPLOW(x12, bd);
-  output[3] = WRAPLOW(-x4, bd);
+  output[3] = WRAPLOW(highbd_check_range(-x4, bd), bd);
   output[4] = WRAPLOW(x6, bd);
   output[5] = WRAPLOW(x14, bd);
   output[6] = WRAPLOW(x10, bd);
@@ -2008,9 +2009,9 @@ void vpx_highbd_iadst16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   output[10] = WRAPLOW(x15, bd);
   output[11] = WRAPLOW(x7, bd);
   output[12] = WRAPLOW(x5, bd);
-  output[13] = WRAPLOW(-x13, bd);
+  output[13] = WRAPLOW(highbd_check_range(-x13, bd), bd);
   output[14] = WRAPLOW(x9, bd);
-  output[15] = WRAPLOW(-x1, bd);
+  output[15] = WRAPLOW(highbd_check_range(-x1, bd), bd);
 }
 
 void vpx_highbd_idct16x16_10_add_c(const tran_low_t *input, uint8_t *dest8,
@@ -2152,22 +2153,22 @@ static void highbd_idct32_c(const tran_low_t *input,
   step2[11] = WRAPLOW(highbd_dct_const_round_shift(temp1, bd), bd);
   step2[12] = WRAPLOW(highbd_dct_const_round_shift(temp2, bd), bd);
 
-  step2[16] = WRAPLOW(step1[16] + step1[17], bd);
-  step2[17] = WRAPLOW(step1[16] - step1[17], bd);
-  step2[18] = WRAPLOW(-step1[18] + step1[19], bd);
-  step2[19] = WRAPLOW(step1[18] + step1[19], bd);
-  step2[20] = WRAPLOW(step1[20] + step1[21], bd);
-  step2[21] = WRAPLOW(step1[20] - step1[21], bd);
-  step2[22] = WRAPLOW(-step1[22] + step1[23], bd);
-  step2[23] = WRAPLOW(step1[22] + step1[23], bd);
-  step2[24] = WRAPLOW(step1[24] + step1[25], bd);
-  step2[25] = WRAPLOW(step1[24] - step1[25], bd);
-  step2[26] = WRAPLOW(-step1[26] + step1[27], bd);
-  step2[27] = WRAPLOW(step1[26] + step1[27], bd);
-  step2[28] = WRAPLOW(step1[28] + step1[29], bd);
-  step2[29] = WRAPLOW(step1[28] - step1[29], bd);
-  step2[30] = WRAPLOW(-step1[30] + step1[31], bd);
-  step2[31] = WRAPLOW(step1[30] + step1[31], bd);
+  step2[16] = WRAPLOW(highbd_check_range(step1[16] + step1[17], bd), bd);
+  step2[17] = WRAPLOW(highbd_check_range(step1[16] - step1[17], bd), bd);
+  step2[18] = WRAPLOW(highbd_check_range(-step1[18] + step1[19], bd), bd);
+  step2[19] = WRAPLOW(highbd_check_range(step1[18] + step1[19], bd), bd);
+  step2[20] = WRAPLOW(highbd_check_range(step1[20] + step1[21], bd), bd);
+  step2[21] = WRAPLOW(highbd_check_range(step1[20] - step1[21], bd), bd);
+  step2[22] = WRAPLOW(highbd_check_range(-step1[22] + step1[23], bd), bd);
+  step2[23] = WRAPLOW(highbd_check_range(step1[22] + step1[23], bd), bd);
+  step2[24] = WRAPLOW(highbd_check_range(step1[24] + step1[25], bd), bd);
+  step2[25] = WRAPLOW(highbd_check_range(step1[24] - step1[25], bd), bd);
+  step2[26] = WRAPLOW(highbd_check_range(-step1[26] + step1[27], bd), bd);
+  step2[27] = WRAPLOW(highbd_check_range(step1[26] + step1[27], bd), bd);
+  step2[28] = WRAPLOW(highbd_check_range(step1[28] + step1[29], bd), bd);
+  step2[29] = WRAPLOW(highbd_check_range(step1[28] - step1[29], bd), bd);
+  step2[30] = WRAPLOW(highbd_check_range(-step1[30] + step1[31], bd), bd);
+  step2[31] = WRAPLOW(highbd_check_range(step1[30] + step1[31], bd), bd);
 
   // stage 3
   step1[0] = step2[0];
@@ -2184,14 +2185,14 @@ static void highbd_idct32_c(const tran_low_t *input,
   step1[5] = WRAPLOW(highbd_dct_const_round_shift(temp1, bd), bd);
   step1[6] = WRAPLOW(highbd_dct_const_round_shift(temp2, bd), bd);
 
-  step1[8] = WRAPLOW(step2[8] + step2[9], bd);
-  step1[9] = WRAPLOW(step2[8] - step2[9], bd);
-  step1[10] = WRAPLOW(-step2[10] + step2[11], bd);
-  step1[11] = WRAPLOW(step2[10] + step2[11], bd);
-  step1[12] = WRAPLOW(step2[12] + step2[13], bd);
-  step1[13] = WRAPLOW(step2[12] - step2[13], bd);
-  step1[14] = WRAPLOW(-step2[14] + step2[15], bd);
-  step1[15] = WRAPLOW(step2[14] + step2[15], bd);
+  step1[8] = WRAPLOW(highbd_check_range(step2[8] + step2[9], bd), bd);
+  step1[9] = WRAPLOW(highbd_check_range(step2[8] - step2[9], bd), bd);
+  step1[10] = WRAPLOW(highbd_check_range(-step2[10] + step2[11], bd), bd);
+  step1[11] = WRAPLOW(highbd_check_range(step2[10] + step2[11], bd), bd);
+  step1[12] = WRAPLOW(highbd_check_range(step2[12] + step2[13], bd), bd);
+  step1[13] = WRAPLOW(highbd_check_range(step2[12] - step2[13], bd), bd);
+  step1[14] = WRAPLOW(highbd_check_range(-step2[14] + step2[15], bd), bd);
+  step1[15] = WRAPLOW(highbd_check_range(step2[14] + step2[15], bd), bd);
 
   step1[16] = step2[16];
   step1[31] = step2[31];
@@ -2227,10 +2228,10 @@ static void highbd_idct32_c(const tran_low_t *input,
   temp2 = step1[2] * cospi_8_64 + step1[3] * cospi_24_64;
   step2[2] = WRAPLOW(highbd_dct_const_round_shift(temp1, bd), bd);
   step2[3] = WRAPLOW(highbd_dct_const_round_shift(temp2, bd), bd);
-  step2[4] = WRAPLOW(step1[4] + step1[5], bd);
-  step2[5] = WRAPLOW(step1[4] - step1[5], bd);
-  step2[6] = WRAPLOW(-step1[6] + step1[7], bd);
-  step2[7] = WRAPLOW(step1[6] + step1[7], bd);
+  step2[4] = WRAPLOW(highbd_check_range(step1[4] + step1[5], bd), bd);
+  step2[5] = WRAPLOW(highbd_check_range(step1[4] - step1[5], bd), bd);
+  step2[6] = WRAPLOW(highbd_check_range(-step1[6] + step1[7], bd), bd);
+  step2[7] = WRAPLOW(highbd_check_range(step1[6] + step1[7], bd), bd);
 
   step2[8] = step1[8];
   step2[15] = step1[15];
@@ -2245,29 +2246,29 @@ static void highbd_idct32_c(const tran_low_t *input,
   step2[11] = step1[11];
   step2[12] = step1[12];
 
-  step2[16] = WRAPLOW(step1[16] + step1[19], bd);
-  step2[17] = WRAPLOW(step1[17] + step1[18], bd);
-  step2[18] = WRAPLOW(step1[17] - step1[18], bd);
-  step2[19] = WRAPLOW(step1[16] - step1[19], bd);
-  step2[20] = WRAPLOW(-step1[20] + step1[23], bd);
-  step2[21] = WRAPLOW(-step1[21] + step1[22], bd);
-  step2[22] = WRAPLOW(step1[21] + step1[22], bd);
-  step2[23] = WRAPLOW(step1[20] + step1[23], bd);
+  step2[16] = WRAPLOW(highbd_check_range(step1[16] + step1[19], bd), bd);
+  step2[17] = WRAPLOW(highbd_check_range(step1[17] + step1[18], bd), bd);
+  step2[18] = WRAPLOW(highbd_check_range(step1[17] - step1[18], bd), bd);
+  step2[19] = WRAPLOW(highbd_check_range(step1[16] - step1[19], bd), bd);
+  step2[20] = WRAPLOW(highbd_check_range(-step1[20] + step1[23], bd), bd);
+  step2[21] = WRAPLOW(highbd_check_range(-step1[21] + step1[22], bd), bd);
+  step2[22] = WRAPLOW(highbd_check_range(step1[21] + step1[22], bd), bd);
+  step2[23] = WRAPLOW(highbd_check_range(step1[20] + step1[23], bd), bd);
 
-  step2[24] = WRAPLOW(step1[24] + step1[27], bd);
-  step2[25] = WRAPLOW(step1[25] + step1[26], bd);
-  step2[26] = WRAPLOW(step1[25] - step1[26], bd);
-  step2[27] = WRAPLOW(step1[24] - step1[27], bd);
-  step2[28] = WRAPLOW(-step1[28] + step1[31], bd);
-  step2[29] = WRAPLOW(-step1[29] + step1[30], bd);
-  step2[30] = WRAPLOW(step1[29] + step1[30], bd);
-  step2[31] = WRAPLOW(step1[28] + step1[31], bd);
+  step2[24] = WRAPLOW(highbd_check_range(step1[24] + step1[27], bd), bd);
+  step2[25] = WRAPLOW(highbd_check_range(step1[25] + step1[26], bd), bd);
+  step2[26] = WRAPLOW(highbd_check_range(step1[25] - step1[26], bd), bd);
+  step2[27] = WRAPLOW(highbd_check_range(step1[24] - step1[27], bd), bd);
+  step2[28] = WRAPLOW(highbd_check_range(-step1[28] + step1[31], bd), bd);
+  step2[29] = WRAPLOW(highbd_check_range(-step1[29] + step1[30], bd), bd);
+  step2[30] = WRAPLOW(highbd_check_range(step1[29] + step1[30], bd), bd);
+  step2[31] = WRAPLOW(highbd_check_range(step1[28] + step1[31], bd), bd);
 
   // stage 5
-  step1[0] = WRAPLOW(step2[0] + step2[3], bd);
-  step1[1] = WRAPLOW(step2[1] + step2[2], bd);
-  step1[2] = WRAPLOW(step2[1] - step2[2], bd);
-  step1[3] = WRAPLOW(step2[0] - step2[3], bd);
+  step1[0] = WRAPLOW(highbd_check_range(step2[0] + step2[3], bd), bd);
+  step1[1] = WRAPLOW(highbd_check_range(step2[1] + step2[2], bd), bd);
+  step1[2] = WRAPLOW(highbd_check_range(step2[1] - step2[2], bd), bd);
+  step1[3] = WRAPLOW(highbd_check_range(step2[0] - step2[3], bd), bd);
   step1[4] = step2[4];
   temp1 = (step2[6] - step2[5]) * cospi_16_64;
   temp2 = (step2[5] + step2[6]) * cospi_16_64;
@@ -2275,14 +2276,14 @@ static void highbd_idct32_c(const tran_low_t *input,
   step1[6] = WRAPLOW(highbd_dct_const_round_shift(temp2, bd), bd);
   step1[7] = step2[7];
 
-  step1[8] = WRAPLOW(step2[8] + step2[11], bd);
-  step1[9] = WRAPLOW(step2[9] + step2[10], bd);
-  step1[10] = WRAPLOW(step2[9] - step2[10], bd);
-  step1[11] = WRAPLOW(step2[8] - step2[11], bd);
-  step1[12] = WRAPLOW(-step2[12] + step2[15], bd);
-  step1[13] = WRAPLOW(-step2[13] + step2[14], bd);
-  step1[14] = WRAPLOW(step2[13] + step2[14], bd);
-  step1[15] = WRAPLOW(step2[12] + step2[15], bd);
+  step1[8] = WRAPLOW(highbd_check_range(step2[8] + step2[11], bd), bd);
+  step1[9] = WRAPLOW(highbd_check_range(step2[9] + step2[10], bd), bd);
+  step1[10] = WRAPLOW(highbd_check_range(step2[9] - step2[10], bd), bd);
+  step1[11] = WRAPLOW(highbd_check_range(step2[8] - step2[11], bd), bd);
+  step1[12] = WRAPLOW(highbd_check_range(-step2[12] + step2[15], bd), bd);
+  step1[13] = WRAPLOW(highbd_check_range(-step2[13] + step2[14], bd), bd);
+  step1[14] = WRAPLOW(highbd_check_range(step2[13] + step2[14], bd), bd);
+  step1[15] = WRAPLOW(highbd_check_range(step2[12] + step2[15], bd), bd);
 
   step1[16] = step2[16];
   step1[17] = step2[17];
@@ -2310,14 +2311,14 @@ static void highbd_idct32_c(const tran_low_t *input,
   step1[31] = step2[31];
 
   // stage 6
-  step2[0] = WRAPLOW(step1[0] + step1[7], bd);
-  step2[1] = WRAPLOW(step1[1] + step1[6], bd);
-  step2[2] = WRAPLOW(step1[2] + step1[5], bd);
-  step2[3] = WRAPLOW(step1[3] + step1[4], bd);
-  step2[4] = WRAPLOW(step1[3] - step1[4], bd);
-  step2[5] = WRAPLOW(step1[2] - step1[5], bd);
-  step2[6] = WRAPLOW(step1[1] - step1[6], bd);
-  step2[7] = WRAPLOW(step1[0] - step1[7], bd);
+  step2[0] = WRAPLOW(highbd_check_range(step1[0] + step1[7], bd), bd);
+  step2[1] = WRAPLOW(highbd_check_range(step1[1] + step1[6], bd), bd);
+  step2[2] = WRAPLOW(highbd_check_range(step1[2] + step1[5], bd), bd);
+  step2[3] = WRAPLOW(highbd_check_range(step1[3] + step1[4], bd), bd);
+  step2[4] = WRAPLOW(highbd_check_range(step1[3] - step1[4], bd), bd);
+  step2[5] = WRAPLOW(highbd_check_range(step1[2] - step1[5], bd), bd);
+  step2[6] = WRAPLOW(highbd_check_range(step1[1] - step1[6], bd), bd);
+  step2[7] = WRAPLOW(highbd_check_range(step1[0] - step1[7], bd), bd);
   step2[8] = step1[8];
   step2[9] = step1[9];
   temp1 = (-step1[10] + step1[13]) * cospi_16_64;
@@ -2331,41 +2332,41 @@ static void highbd_idct32_c(const tran_low_t *input,
   step2[14] = step1[14];
   step2[15] = step1[15];
 
-  step2[16] = WRAPLOW(step1[16] + step1[23], bd);
-  step2[17] = WRAPLOW(step1[17] + step1[22], bd);
-  step2[18] = WRAPLOW(step1[18] + step1[21], bd);
-  step2[19] = WRAPLOW(step1[19] + step1[20], bd);
-  step2[20] = WRAPLOW(step1[19] - step1[20], bd);
-  step2[21] = WRAPLOW(step1[18] - step1[21], bd);
-  step2[22] = WRAPLOW(step1[17] - step1[22], bd);
-  step2[23] = WRAPLOW(step1[16] - step1[23], bd);
+  step2[16] = WRAPLOW(highbd_check_range(step1[16] + step1[23], bd), bd);
+  step2[17] = WRAPLOW(highbd_check_range(step1[17] + step1[22], bd), bd);
+  step2[18] = WRAPLOW(highbd_check_range(step1[18] + step1[21], bd), bd);
+  step2[19] = WRAPLOW(highbd_check_range(step1[19] + step1[20], bd), bd);
+  step2[20] = WRAPLOW(highbd_check_range(step1[19] - step1[20], bd), bd);
+  step2[21] = WRAPLOW(highbd_check_range(step1[18] - step1[21], bd), bd);
+  step2[22] = WRAPLOW(highbd_check_range(step1[17] - step1[22], bd), bd);
+  step2[23] = WRAPLOW(highbd_check_range(step1[16] - step1[23], bd), bd);
 
-  step2[24] = WRAPLOW(-step1[24] + step1[31], bd);
-  step2[25] = WRAPLOW(-step1[25] + step1[30], bd);
-  step2[26] = WRAPLOW(-step1[26] + step1[29], bd);
-  step2[27] = WRAPLOW(-step1[27] + step1[28], bd);
-  step2[28] = WRAPLOW(step1[27] + step1[28], bd);
-  step2[29] = WRAPLOW(step1[26] + step1[29], bd);
-  step2[30] = WRAPLOW(step1[25] + step1[30], bd);
-  step2[31] = WRAPLOW(step1[24] + step1[31], bd);
+  step2[24] = WRAPLOW(highbd_check_range(-step1[24] + step1[31], bd), bd);
+  step2[25] = WRAPLOW(highbd_check_range(-step1[25] + step1[30], bd), bd);
+  step2[26] = WRAPLOW(highbd_check_range(-step1[26] + step1[29], bd), bd);
+  step2[27] = WRAPLOW(highbd_check_range(-step1[27] + step1[28], bd), bd);
+  step2[28] = WRAPLOW(highbd_check_range(step1[27] + step1[28], bd), bd);
+  step2[29] = WRAPLOW(highbd_check_range(step1[26] + step1[29], bd), bd);
+  step2[30] = WRAPLOW(highbd_check_range(step1[25] + step1[30], bd), bd);
+  step2[31] = WRAPLOW(highbd_check_range(step1[24] + step1[31], bd), bd);
 
   // stage 7
-  step1[0] = WRAPLOW(step2[0] + step2[15], bd);
-  step1[1] = WRAPLOW(step2[1] + step2[14], bd);
-  step1[2] = WRAPLOW(step2[2] + step2[13], bd);
-  step1[3] = WRAPLOW(step2[3] + step2[12], bd);
-  step1[4] = WRAPLOW(step2[4] + step2[11], bd);
-  step1[5] = WRAPLOW(step2[5] + step2[10], bd);
-  step1[6] = WRAPLOW(step2[6] + step2[9], bd);
-  step1[7] = WRAPLOW(step2[7] + step2[8], bd);
-  step1[8] = WRAPLOW(step2[7] - step2[8], bd);
-  step1[9] = WRAPLOW(step2[6] - step2[9], bd);
-  step1[10] = WRAPLOW(step2[5] - step2[10], bd);
-  step1[11] = WRAPLOW(step2[4] - step2[11], bd);
-  step1[12] = WRAPLOW(step2[3] - step2[12], bd);
-  step1[13] = WRAPLOW(step2[2] - step2[13], bd);
-  step1[14] = WRAPLOW(step2[1] - step2[14], bd);
-  step1[15] = WRAPLOW(step2[0] - step2[15], bd);
+  step1[0] = WRAPLOW(highbd_check_range(step2[0] + step2[15], bd), bd);
+  step1[1] = WRAPLOW(highbd_check_range(step2[1] + step2[14], bd), bd);
+  step1[2] = WRAPLOW(highbd_check_range(step2[2] + step2[13], bd), bd);
+  step1[3] = WRAPLOW(highbd_check_range(step2[3] + step2[12], bd), bd);
+  step1[4] = WRAPLOW(highbd_check_range(step2[4] + step2[11], bd), bd);
+  step1[5] = WRAPLOW(highbd_check_range(step2[5] + step2[10], bd), bd);
+  step1[6] = WRAPLOW(highbd_check_range(step2[6] + step2[9], bd), bd);
+  step1[7] = WRAPLOW(highbd_check_range(step2[7] + step2[8], bd), bd);
+  step1[8] = WRAPLOW(highbd_check_range(step2[7] - step2[8], bd), bd);
+  step1[9] = WRAPLOW(highbd_check_range(step2[6] - step2[9], bd), bd);
+  step1[10] = WRAPLOW(highbd_check_range(step2[5] - step2[10], bd), bd);
+  step1[11] = WRAPLOW(highbd_check_range(step2[4] - step2[11], bd), bd);
+  step1[12] = WRAPLOW(highbd_check_range(step2[3] - step2[12], bd), bd);
+  step1[13] = WRAPLOW(highbd_check_range(step2[2] - step2[13], bd), bd);
+  step1[14] = WRAPLOW(highbd_check_range(step2[1] - step2[14], bd), bd);
+  step1[15] = WRAPLOW(highbd_check_range(step2[0] - step2[15], bd), bd);
 
   step1[16] = step2[16];
   step1[17] = step2[17];
@@ -2393,38 +2394,38 @@ static void highbd_idct32_c(const tran_low_t *input,
   step1[31] = step2[31];
 
   // final stage
-  output[0] = WRAPLOW(step1[0] + step1[31], bd);
-  output[1] = WRAPLOW(step1[1] + step1[30], bd);
-  output[2] = WRAPLOW(step1[2] + step1[29], bd);
-  output[3] = WRAPLOW(step1[3] + step1[28], bd);
-  output[4] = WRAPLOW(step1[4] + step1[27], bd);
-  output[5] = WRAPLOW(step1[5] + step1[26], bd);
-  output[6] = WRAPLOW(step1[6] + step1[25], bd);
-  output[7] = WRAPLOW(step1[7] + step1[24], bd);
-  output[8] = WRAPLOW(step1[8] + step1[23], bd);
-  output[9] = WRAPLOW(step1[9] + step1[22], bd);
-  output[10] = WRAPLOW(step1[10] + step1[21], bd);
-  output[11] = WRAPLOW(step1[11] + step1[20], bd);
-  output[12] = WRAPLOW(step1[12] + step1[19], bd);
-  output[13] = WRAPLOW(step1[13] + step1[18], bd);
-  output[14] = WRAPLOW(step1[14] + step1[17], bd);
-  output[15] = WRAPLOW(step1[15] + step1[16], bd);
-  output[16] = WRAPLOW(step1[15] - step1[16], bd);
-  output[17] = WRAPLOW(step1[14] - step1[17], bd);
-  output[18] = WRAPLOW(step1[13] - step1[18], bd);
-  output[19] = WRAPLOW(step1[12] - step1[19], bd);
-  output[20] = WRAPLOW(step1[11] - step1[20], bd);
-  output[21] = WRAPLOW(step1[10] - step1[21], bd);
-  output[22] = WRAPLOW(step1[9] - step1[22], bd);
-  output[23] = WRAPLOW(step1[8] - step1[23], bd);
-  output[24] = WRAPLOW(step1[7] - step1[24], bd);
-  output[25] = WRAPLOW(step1[6] - step1[25], bd);
-  output[26] = WRAPLOW(step1[5] - step1[26], bd);
-  output[27] = WRAPLOW(step1[4] - step1[27], bd);
-  output[28] = WRAPLOW(step1[3] - step1[28], bd);
-  output[29] = WRAPLOW(step1[2] - step1[29], bd);
-  output[30] = WRAPLOW(step1[1] - step1[30], bd);
-  output[31] = WRAPLOW(step1[0] - step1[31], bd);
+  output[0] = WRAPLOW(highbd_check_range(step1[0] + step1[31], bd), bd);
+  output[1] = WRAPLOW(highbd_check_range(step1[1] + step1[30], bd), bd);
+  output[2] = WRAPLOW(highbd_check_range(step1[2] + step1[29], bd), bd);
+  output[3] = WRAPLOW(highbd_check_range(step1[3] + step1[28], bd), bd);
+  output[4] = WRAPLOW(highbd_check_range(step1[4] + step1[27], bd), bd);
+  output[5] = WRAPLOW(highbd_check_range(step1[5] + step1[26], bd), bd);
+  output[6] = WRAPLOW(highbd_check_range(step1[6] + step1[25], bd), bd);
+  output[7] = WRAPLOW(highbd_check_range(step1[7] + step1[24], bd), bd);
+  output[8] = WRAPLOW(highbd_check_range(step1[8] + step1[23], bd), bd);
+  output[9] = WRAPLOW(highbd_check_range(step1[9] + step1[22], bd), bd);
+  output[10] = WRAPLOW(highbd_check_range(step1[10] + step1[21], bd), bd);
+  output[11] = WRAPLOW(highbd_check_range(step1[11] + step1[20], bd), bd);
+  output[12] = WRAPLOW(highbd_check_range(step1[12] + step1[19], bd), bd);
+  output[13] = WRAPLOW(highbd_check_range(step1[13] + step1[18], bd), bd);
+  output[14] = WRAPLOW(highbd_check_range(step1[14] + step1[17], bd), bd);
+  output[15] = WRAPLOW(highbd_check_range(step1[15] + step1[16], bd), bd);
+  output[16] = WRAPLOW(highbd_check_range(step1[15] - step1[16], bd), bd);
+  output[17] = WRAPLOW(highbd_check_range(step1[14] - step1[17], bd), bd);
+  output[18] = WRAPLOW(highbd_check_range(step1[13] - step1[18], bd), bd);
+  output[19] = WRAPLOW(highbd_check_range(step1[12] - step1[19], bd), bd);
+  output[20] = WRAPLOW(highbd_check_range(step1[11] - step1[20], bd), bd);
+  output[21] = WRAPLOW(highbd_check_range(step1[10] - step1[21], bd), bd);
+  output[22] = WRAPLOW(highbd_check_range(step1[9] - step1[22], bd), bd);
+  output[23] = WRAPLOW(highbd_check_range(step1[8] - step1[23], bd), bd);
+  output[24] = WRAPLOW(highbd_check_range(step1[7] - step1[24], bd), bd);
+  output[25] = WRAPLOW(highbd_check_range(step1[6] - step1[25], bd), bd);
+  output[26] = WRAPLOW(highbd_check_range(step1[5] - step1[26], bd), bd);
+  output[27] = WRAPLOW(highbd_check_range(step1[4] - step1[27], bd), bd);
+  output[28] = WRAPLOW(highbd_check_range(step1[3] - step1[28], bd), bd);
+  output[29] = WRAPLOW(highbd_check_range(step1[2] - step1[29], bd), bd);
+  output[30] = WRAPLOW(highbd_check_range(step1[1] - step1[30], bd), bd);
+  output[31] = WRAPLOW(highbd_check_range(step1[0] - step1[31], bd), bd);
 }
 
 void vpx_highbd_idct32x32_1024_add_c(const tran_low_t *input, uint8_t *dest8,
