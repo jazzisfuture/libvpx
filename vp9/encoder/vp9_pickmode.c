@@ -1126,7 +1126,7 @@ static INLINE void find_predictors(VP9_COMP *cpi, MACROBLOCK *x,
                                  TileDataEnc *tile_data,
                                  int mi_row, int mi_col,
                                  struct buf_2d yv12_mb[4][MAX_MB_PLANE],
-                                 BLOCK_SIZE bsize) {
+                                 BLOCK_SIZE bsize, int force_skip) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref_frame);
@@ -1153,7 +1153,7 @@ static INLINE void find_predictors(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
                           &frame_mv[NEARESTMV][ref_frame],
                           &frame_mv[NEARMV][ref_frame]);
-    if (!vp9_is_scaled(sf) && bsize >= BLOCK_8X8) {
+    if (!vp9_is_scaled(sf) && bsize >= BLOCK_8X8 && !force_skip) {
       vp9_mv_pred(cpi, x, yv12_mb[ref_frame][0].buf, yv12->y_stride,
                   ref_frame, bsize);
     }
@@ -1412,7 +1412,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   for (ref_frame = LAST_FRAME; ref_frame <= usable_ref_frame; ++ref_frame) {
     find_predictors(cpi, x, ref_frame, frame_mv, const_motion,
                     &ref_frame_skip_mask, flag_list, tile_data, mi_row, mi_col,
-                    yv12_mb, bsize);
+                    yv12_mb, bsize, svc_force_zero_mode[ref_frame - 1]);
   }
 
   for (idx = 0; idx < RT_INTER_MODES; ++idx) {
@@ -1568,7 +1568,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         x->pred_mv_sad[GOLDEN_FRAME] = best_pred_sad;
       }
     }
-
 
     if (this_mode != NEARESTMV &&
         frame_mv[this_mode][ref_frame].as_int ==
