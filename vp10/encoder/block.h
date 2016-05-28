@@ -182,6 +182,7 @@ struct macroblock {
   uint8_t color_sensitivity[2];
 
   int use_default_intra_tx_type;
+  int use_default_inter_tx_type;
 };
 
 #ifdef __cplusplus
