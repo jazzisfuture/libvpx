@@ -183,6 +183,7 @@ struct macroblock {
 
   int use_default_intra_tx_type;
   int use_default_inter_tx_type;
+  int skip_intra_angle_search;
 };
 
 #ifdef __cplusplus
