@@ -498,6 +498,7 @@ void vp10_set_speed_features_framesize_independent(VP10_COMP *cpi) {
   sf->partition_search_type = SEARCH_PARTITION;
   sf->tx_type_search.prune_mode = NO_PRUNE;
   sf->tx_type_search.fast_intra_tx_type_search = 1;
+  sf->tx_type_search.fast_inter_tx_type_search = 1;
   sf->less_rectangular_check = 0;
   sf->use_square_partition_only = 0;
   sf->auto_min_max_partition_size = NOT_IN_USE;

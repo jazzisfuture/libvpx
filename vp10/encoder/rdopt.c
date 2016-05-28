@@ -1583,6 +1583,13 @@ static int64_t choose_tx_size_fix_type(VP10_COMP *cpi,
         !is_inter && !x->use_default_intra_tx_type &&
         tx_type == get_default_tx_type(0, xd, 0, n))
       continue;
+    if (is_inter && x->use_default_inter_tx_type &&
+        tx_type != get_default_tx_type(0, xd, 0, n))
+      continue;
+    if (cpi->sf.tx_type_search.fast_inter_tx_type_search &&
+        is_inter && !x->use_default_inter_tx_type &&
+        tx_type == get_default_tx_type(0, xd, 0, n))
+      continue;
     if (max_tx_size == TX_32X32 && n == TX_4X4)
       continue;
 #if CONFIG_EXT_TX
@@ -1692,6 +1699,9 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
       !xd->lossless[mbmi->segment_id]) {
     for (tx_type = 0; tx_type < TX_TYPES; ++tx_type) {
       if (is_inter) {
+        if (x->use_default_inter_tx_type &&
+            tx_type != get_default_tx_type(0, xd, 0, mbmi->tx_size))
+          continue;
         if (!ext_tx_used_inter[ext_tx_set][tx_type])
           continue;
         if (cpi->sf.tx_type_search.prune_mode > 0) {
@@ -1751,6 +1761,9 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x,
       !xd->lossless[mbmi->segment_id]) {
     for (tx_type = 0; tx_type < TX_TYPES; ++tx_type) {
       if (!is_inter && x->use_default_intra_tx_type &&
+          tx_type != get_default_tx_type(0, xd, 0, mbmi->tx_size))
+        continue;
+      if (is_inter && x->use_default_inter_tx_type &&
           tx_type != get_default_tx_type(0, xd, 0, mbmi->tx_size))
         continue;
       mbmi->tx_type = tx_type;
@@ -8631,6 +8644,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     x->use_default_intra_tx_type = 1;
   else
     x->use_default_intra_tx_type = 0;
+  if (cpi->sf.tx_type_search.fast_inter_tx_type_search)
+    x->use_default_inter_tx_type = 1;
+  else
+    x->use_default_inter_tx_type = 0;
 
   for (midx = 0; midx <= FINAL_MODE_SEARCH; ++midx) {
     int mode_index;
@@ -8653,10 +8670,13 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #endif
 
     if (midx == FINAL_MODE_SEARCH) {
+      mode_index = best_mode_index;
       if (!is_inter_mode(best_mbmode.mode) && best_mode_index >= 0 &&
           x->use_default_intra_tx_type == 1) {
-        mode_index = best_mode_index;
         x->use_default_intra_tx_type = 0;
+      } else if (is_inter_mode(best_mbmode.mode) && best_mode_index >= 0 &&
+          x->use_default_inter_tx_type == 1) {
+        x->use_default_inter_tx_type = 0;
       } else {
         break;
       }
