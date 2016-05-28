@@ -429,8 +429,7 @@ static const int use_inter_ext_tx_for_txsize[EXT_TX_SETS_INTER][TX_SIZES] = {
 static INLINE int get_ext_tx_set(TX_SIZE tx_size, BLOCK_SIZE bs,
                                  int is_inter) {
   (void) is_inter;
-  if (tx_size > TX_32X32 || bs < BLOCK_8X8) return 0;
-  if (tx_size == TX_32X32) return 0;
+  if (tx_size >= TX_32X32 || bs < BLOCK_8X8) return 0;
 #if USE_REDUCED_TXSET_FOR_16X16
   return (tx_size == TX_16X16 ? 2 : 1);
 #else

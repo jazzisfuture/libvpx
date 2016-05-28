@@ -783,12 +783,10 @@ static int prune_tx_types(const VP10_COMP *cpi,
   switch (cpi->sf.tx_type_search.prune_mode) {
     case NO_PRUNE:
       return 0;
-      break;
-    case PRUNE_ONE :
+    case PRUNE_ONE:
       if ((tx_set >= 0) & !(tx_set_1D[FLIPADST_1D] & tx_set_1D[ADST_1D]))
         return 0;
       return prune_one_for_sby(cpi, bsize, x, xd);
-      break;
   #if CONFIG_EXT_TX
     case PRUNE_TWO :
       if ((tx_set >= 0) & !(tx_set_1D[FLIPADST_1D] & tx_set_1D[ADST_1D])) {
@@ -799,7 +797,6 @@ static int prune_tx_types(const VP10_COMP *cpi,
       if ((tx_set >= 0) & !(tx_set_1D[DCT_1D] & tx_set_1D[IDTX_1D]))
         return prune_two_for_sby(cpi, bsize, x, xd, 1, 0);
       return prune_two_for_sby(cpi, bsize, x, xd, 1, 1);
-      break;
   #endif
   }
   assert(0);
@@ -1576,7 +1573,7 @@ static int64_t choose_tx_size_fix_type(VP10_COMP *cpi,
   for (n = start_tx; n >= end_tx; --n) {
     if (FIXED_TX_TYPE && tx_type != get_default_tx_type(0, xd, 0, n))
       continue;
-    if (!is_inter && x->use_default_intra_tx_type &&
+    if ((1 || !is_inter) && x->use_default_intra_tx_type &&
         tx_type != get_default_tx_type(0, xd, 0, n))
       continue;
     if (max_tx_size == TX_32X32 && n == TX_4X4)
@@ -8648,7 +8645,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 #endif
 
     if (midx == TX_TYPE_SEARCH) {
-      if (!is_inter_mode(best_mbmode.mode) && best_mode_index >= 0) {
+      if ((1 || !is_inter_mode(best_mbmode.mode)) && best_mode_index >= 0) {
         mode_index = best_mode_index;
         x->use_default_intra_tx_type = 0;
       } else {
