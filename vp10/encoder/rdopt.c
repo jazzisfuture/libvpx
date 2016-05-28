@@ -2922,13 +2922,17 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   else
     x->use_default_intra_tx_type = 0;
 
+  x->skip_intra_angle_search = 0;
+
   /* Y Search for intra prediction mode */
   for (mode_idx = DC_PRED; mode_idx <= FINAL_MODE_SEARCH; ++mode_idx) {
     if (mode_idx == FINAL_MODE_SEARCH) {
-      if (x->use_default_intra_tx_type == 0)
+      if (x->use_default_intra_tx_type == 0 &&
+          x->skip_intra_angle_search == 0)
         break;
       mic->mbmi.mode = mode_selected;
       x->use_default_intra_tx_type = 0;
+      x->skip_intra_angle_search = 0;
     } else {
       mic->mbmi.mode = mode_idx;
     }
@@ -2937,7 +2941,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
         (mic->mbmi.mode != DC_PRED && mic->mbmi.mode != TM_PRED);
     if (is_directional_mode && directional_mode_skip_mask[mic->mbmi.mode])
       continue;
-    if (is_directional_mode) {
+  if (is_directional_mode && !x->skip_intra_angle_search) {
       rate_overhead = bmode_costs[mic->mbmi.mode] +
           write_uniform_cost(2 * MAX_ANGLE_DELTAS + 1, 0);
       this_rate_tokenonly = INT_MAX;
@@ -8648,6 +8652,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     x->use_default_inter_tx_type = 1;
   else
     x->use_default_inter_tx_type = 0;
+  x->skip_intra_angle_search = 1;
 
   for (midx = 0; midx <= FINAL_MODE_SEARCH; ++midx) {
     int mode_index;
@@ -8674,8 +8679,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         break;
       mode_index = best_mode_index;
       if (!is_inter_mode(best_mbmode.mode) &&
-          x->use_default_intra_tx_type == 1) {
+          (x->use_default_intra_tx_type == 1 ||
+           x->skip_intra_angle_search == 1)) {
         x->use_default_intra_tx_type = 0;
+        x->skip_intra_angle_search = 0;
       } else if (is_inter_mode(best_mbmode.mode) &&
           x->use_default_inter_tx_type == 1) {
         x->use_default_inter_tx_type = 0;
@@ -8956,7 +8963,9 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
       // TODO(huisu): ext-intra is turned off in lossless mode for now to
       // avoid a unit test failure
-      if (mbmi->mode == DC_PRED && !xd->lossless[mbmi->segment_id] &&
+      if (!xd->lossless[mbmi->segment_id] &&
+          //mbmi->mode == DC_PRED &&
+          !x->skip_intra_angle_search &&
           ALLOW_FILTER_INTRA_MODES) {
         MB_MODE_INFO mbmi_copy = *mbmi;
 
