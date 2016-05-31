@@ -8358,10 +8358,11 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
   PALETTE_MODE_INFO pmi_uv[TX_SIZES];
 #if CONFIG_EXT_INTRA
   EXT_INTRA_MODE_INFO ext_intra_mode_info_uv[TX_SIZES];
-  int8_t uv_angle_delta[TX_SIZES];
+  int8_t uv_angle_delta[TX_SIZES], dc_skipped = 1;
   int is_directional_mode, angle_stats_ready = 0;
   int rate_overhead, rate_dummy;
   uint8_t directional_mode_skip_mask[INTRA_MODES];
+  uint16_t filter_intra_mode_skip_mask = 0;
 #endif  // CONFIG_EXT_INTRA
   const int intra_cost_penalty = vp10_get_intra_cost_penalty(
       cm->base_qindex, cm->y_dc_delta_q, cm->bit_depth);
@@ -8917,6 +8918,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       struct macroblockd_plane *const pd = &xd->plane[1];
       memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
 #if CONFIG_EXT_INTRA
+      filter_intra_mode_skip_mask |= (1 << mbmi->mode);
       is_directional_mode = (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED);
       if (is_directional_mode) {
         if (!angle_stats_ready) {
@@ -8946,14 +8948,15 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
         mbmi->angle_delta[0] = 0;
         super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
                         NULL, bsize, best_rd);
-        if (rate_y == INT_MAX)
+        if (rate_y == INT_MAX) {
           continue;
+        }
       }
 
       // TODO(huisu): ext-intra is turned off in lossless mode for now to
       // avoid a unit test failure
       if (mbmi->mode == DC_PRED && !xd->lossless[mbmi->segment_id] &&
-          ALLOW_FILTER_INTRA_MODES) {
+          ALLOW_FILTER_INTRA_MODES && 0) {
         MB_MODE_INFO mbmi_copy = *mbmi;
 
         if (rate_y != INT_MAX) {
@@ -8976,6 +8979,13 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
 
       if (rate_y == INT_MAX)
         continue;
+
+#if CONFIG_EXT_INTRA
+      if (mbmi->mode == DC_PRED)
+        dc_skipped = 0;
+      filter_intra_mode_skip_mask ^= (1 << mbmi->mode);
+#endif  // CONFIG_EXT_INTRA
+
       uv_tx = get_uv_tx_size_impl(mbmi->tx_size, bsize, pd->subsampling_x,
                                   pd->subsampling_y);
       if (rate_uv_intra[uv_tx] == INT_MAX) {
@@ -9627,6 +9637,158 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     }
   }
   PALETTE_EXIT:
+
+  // Only try palette mode when the best mode so far is an intra mode.
+  if ((best_mode_index >= 0 || 1) && (!is_inter_mode(best_mbmode.mode) || 1) &&
+      (!dc_skipped)) {
+    int rate2 = 0, rate_y = INT_MAX;
+#if CONFIG_SUPERTX
+    int best_rate_nocoef;
+#endif
+    int64_t distortion2 = 0, distortion_y = 0, this_rd = best_rd, distortion_uv;
+    int skippable = 0, rate_uv;
+    TX_SIZE uv_tx;
+
+    mbmi->mode = DC_PRED;
+    mbmi->uv_mode = DC_PRED;
+    mbmi->ref_frame[0] = INTRA_FRAME;
+    mbmi->ref_frame[1] = NONE;
+    ref_frame = INTRA_FRAME;
+    memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
+    if (!rd_pick_ext_intra_sby(cpi, x, &rate_dummy, &rate_y, &distortion_y,
+                               &skippable, bsize,
+                               intra_mode_cost[mbmi->mode], &this_rd,
+                               filter_intra_mode_skip_mask * 0))
+      goto EXT_INTRA_EXIT;
+    if (rate_y == INT_MAX)
+      goto EXT_INTRA_EXIT;
+
+    uv_tx = get_uv_tx_size_impl(mbmi->tx_size, bsize,
+                                xd->plane[1].subsampling_x,
+                                xd->plane[1].subsampling_y);
+    if (rate_uv_intra[uv_tx] == INT_MAX) {
+      choose_intra_uv_mode(cpi, x, ctx, bsize, uv_tx,
+                           &rate_uv_intra[uv_tx], &rate_uv_tokenonly[uv_tx],
+                           &dist_uv[uv_tx], &skip_uv[uv_tx], &mode_uv[uv_tx]);
+      if (cm->allow_screen_content_tools)
+        pmi_uv[uv_tx] = *pmi;
+      ext_intra_mode_info_uv[uv_tx] = mbmi->ext_intra_mode_info;
+      uv_angle_delta[uv_tx] = mbmi->angle_delta[1];
+    }
+
+    rate_uv = rate_uv_tokenonly[uv_tx];
+    distortion_uv = dist_uv[uv_tx];
+    skippable = skippable && skip_uv[uv_tx];
+    mbmi->uv_mode = mode_uv[uv_tx];
+    if (cm->allow_screen_content_tools) {
+      pmi->palette_size[1] = pmi_uv[uv_tx].palette_size[1];
+      memcpy(pmi->palette_colors + PALETTE_MAX_SIZE,
+             pmi_uv[uv_tx].palette_colors + PALETTE_MAX_SIZE,
+             2 * PALETTE_MAX_SIZE * sizeof(pmi->palette_colors[0]));
+    }
+    mbmi->angle_delta[1] = uv_angle_delta[uv_tx];
+    mbmi->ext_intra_mode_info.use_ext_intra_mode[1] =
+        ext_intra_mode_info_uv[uv_tx].use_ext_intra_mode[1];
+    if (ext_intra_mode_info_uv[uv_tx].use_ext_intra_mode[1]) {
+      mbmi->ext_intra_mode_info.ext_intra_mode[1] =
+          ext_intra_mode_info_uv[uv_tx].ext_intra_mode[1];
+    }
+
+    rate2 = rate_y + intra_mode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
+    if (cpi->common.allow_screen_content_tools && mbmi->mode == DC_PRED)
+      rate2 +=
+          vp10_cost_bit(vp10_default_palette_y_mode_prob[bsize - BLOCK_8X8]
+                                                         [palette_ctx], 0);
+
+    if (!xd->lossless[mbmi->segment_id]) {
+      // super_block_yrd above includes the cost of the tx_size in the
+      // tokenonly rate, but for intra blocks, tx_size is always coded
+      // (prediction granularity), so we account for it in the full rate,
+      // not the tokenonly rate.
+      rate_y -=
+          cpi->tx_size_cost[max_tx_size - TX_8X8][get_tx_size_context(xd)]
+                                                  [mbmi->tx_size];
+    }
+
+    rate2 += vp10_cost_bit(cm->fc->ext_intra_probs[0],
+                           mbmi->ext_intra_mode_info.use_ext_intra_mode[0]);
+    rate2 += write_uniform_cost(FILTER_INTRA_MODES,
+                                mbmi->ext_intra_mode_info.ext_intra_mode[0]);
+    distortion2 = distortion_y + distortion_uv;
+    vp10_encode_intra_block_plane(x, bsize, 0, 0);
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      x->recon_variance =
+          vp10_high_get_sby_perpixel_variance(cpi, &xd->plane[0].dst,
+                                              bsize, xd->bd);
+    } else {
+      x->recon_variance =
+          vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
+    }
+#else
+    x->recon_variance =
+        vp10_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+    rate2 += ref_costs_single[INTRA_FRAME];
+
+    if (skippable) {
+      rate2 -= (rate_y + rate_uv);
+      rate_y = 0;
+      rate_uv = 0;
+      rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 1);
+    } else {
+      rate2 += vp10_cost_bit(vp10_get_skip_prob(cm, xd), 0);
+    }
+    this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
+#if 0
+    rd_variance_adjustment(x, &this_rd, ref_frame,
+#if CONFIG_OBMC
+                           is_inter_block(mbmi),
+#endif  // CONFIG_OBMC
+                           x->source_variance);
+#endif
+
+    if (this_rd < best_intra_rd) {
+      best_intra_rd = this_rd;
+      best_intra_mode = mbmi->mode;
+    }
+    for (i = 0; i < REFERENCE_MODES; ++i)
+      best_pred_rd[i] = VPXMIN(best_pred_rd[i], this_rd);
+
+    if (this_rd < best_rd) {
+      int max_plane = MAX_MB_PLANE;
+      best_mode_index = 3;
+      mbmi->mv[0].as_int = 0;
+      max_plane = 1;
+      rd_cost->rate = rate2;
+#if CONFIG_SUPERTX
+        if (x->skip)
+          *returnrate_nocoef = rate2;
+        else
+          *returnrate_nocoef = rate2 - rate_y - rate_uv;
+        *returnrate_nocoef -= vp10_cost_bit(vp10_get_skip_prob(cm, xd),
+            disable_skip || skippable || this_skip2);
+        *returnrate_nocoef -= vp10_cost_bit(vp10_get_intra_inter_prob(cm, xd),
+                                            mbmi->ref_frame[0] != INTRA_FRAME);
+#if CONFIG_OBMC
+        if (is_inter_block(mbmi) && is_obmc_allowed(mbmi))
+          *returnrate_nocoef -= cpi->obmc_cost[bsize][mbmi->obmc];
+#endif  // CONFIG_OBMC
+#endif  // CONFIG_SUPERTX
+      rd_cost->dist = distortion2;
+      rd_cost->rdcost = this_rd;
+      best_rd = this_rd;
+      best_mbmode = *mbmi;
+      best_skip2 = 0;
+      best_mode_skippable = skippable;
+      if (!x->select_tx_size)
+        swap_block_ptr(x, ctx, 1, 0, 0, max_plane);
+      memcpy(ctx->zcoeff_blk, x->zcoeff_blk[mbmi->tx_size],
+             sizeof(ctx->zcoeff_blk[0]) * ctx->num_4x4_blk);
+    }
+  }
+  EXT_INTRA_EXIT:
 
   // The inter modes' rate costs are not calculated precisely in some cases.
   // Therefore, sometimes, NEWMV is chosen instead of NEARESTMV, NEARMV, and
