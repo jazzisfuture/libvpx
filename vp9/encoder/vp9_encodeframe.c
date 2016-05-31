@@ -1374,8 +1374,12 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
         vp9_rd_pick_inter_mode_sb(cpi, tile_data, x, mi_row, mi_col,
                                   rd_cost, bsize, ctx, best_rd);
     } else {
-      vp9_rd_pick_inter_mode_sub8x8(cpi, tile_data, x, mi_row, mi_col,
-                                    rd_cost, bsize, ctx, best_rd);
+      if (segfeature_active(&cm->seg, mi->segment_id, SEG_LVL_SKIP)) {
+        rd_cost->rate = INT_MAX;
+      } else {
+        vp9_rd_pick_inter_mode_sub8x8(cpi, tile_data, x, mi_row, mi_col,
+                                      rd_cost, bsize, ctx, best_rd);
+      }
     }
   }
 
