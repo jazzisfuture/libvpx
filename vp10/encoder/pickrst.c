@@ -76,7 +76,8 @@ static int search_bilateral_level(const YV12_BUFFER_CONFIG *sd,
   rsi.restoration_type = RESTORE_NONE;
   err = try_restoration_frame(sd, cpi, &rsi, partial_frame);
   bits = 0;
-  best_cost = RDCOST_DBL(x->rdmult, x->rddiv, (bits << 2), err);
+  best_cost = RDCOST_DBL(x->rdmult, x->rddiv,
+                         (bits << (VP9_PROB_COST_SHIFT - 6)), err);
   for (i = 0; i < restoration_levels; ++i) {
     rsi.restoration_type = RESTORE_BILATERAL;
     rsi.restoration_level = i;
@@ -85,7 +86,8 @@ static int search_bilateral_level(const YV12_BUFFER_CONFIG *sd,
     // when RDCOST is used.  However below we just scale both in the correct
     // ratios appropriately but not exactly by these values.
     bits = restoration_level_bits;
-    cost = RDCOST_DBL(x->rdmult, x->rddiv, (bits << 2), err);
+    cost = RDCOST_DBL(x->rdmult, x->rddiv,
+                      (bits << (VP9_PROB_COST_SHIFT - 6)), err);
     if (cost < best_cost) {
       restoration_best = i;
       best_cost = cost;
@@ -321,20 +323,21 @@ static INLINE int wrap_index(int i) {
   return (i >= RESTORATION_HALFWIN1 ? RESTORATION_WIN - 1 - i : i);
 }
 
-static void normalize_copy(double *v, int n) {
-  double s = 0.0;
-  int i;
-  for (i = 0; i < n; ++i)
-    s += v[i];
-  s = 1.0 / s;
-  for (i = 0; i < n; ++i) v[i] *= s;
-}
+// static void normalize_copy(double *v, int n) {
+//   double s = 0.0;
+//   int i;
+//   for (i = 0; i < n; ++i)
+//     s += v[i];
+//   s = 1.0 / s;
+//   for (i = 0; i < n; ++i) v[i] *= s;
+// }
 
 // Fix vector b, update vector a
 static void update_a_sep_sym(double **Mc, double **Hc, double *a, double *b) {
   int i, j;
   double S[RESTORATION_WIN];
   double A[RESTORATION_WIN], B[RESTORATION_WIN2];
+  int w, w2;
   memset(A, 0, sizeof(A));
   memset(B, 0, sizeof(B));
   for (i = 0; i < RESTORATION_WIN; i ++) {
@@ -344,7 +347,6 @@ static void update_a_sep_sym(double **Mc, double **Hc, double *a, double *b) {
       A[jj] += Mc[i][j] * b[i];
     }
   }
-
   for (i = 0; i < RESTORATION_WIN; i ++) {
     for (j = 0; j < RESTORATION_WIN; j ++) {
       int k, l;
@@ -358,13 +360,31 @@ static void update_a_sep_sym(double **Mc, double **Hc, double *a, double *b) {
         }
     }
   }
-  if (linsolve(RESTORATION_HALFWIN1, B, RESTORATION_HALFWIN1, A, S)) {
-    for (i = 0; i < RESTORATION_WIN; ++i) {
-      const int ii = wrap_index(i);
-      a[i] = S[ii];
+  // Normalization enforcement in the system of equation itself
+  w = RESTORATION_WIN;
+  w2 = (w >> 1) + 1;
+  for (i = 0; i < w2 - 1; ++i)
+    A[i] -= A[w2 - 1] * 2 + B[i * w2 + w2 - 1]
+              - 2 * B[(w2 - 1) * w2 + (w2 - 1)];
+  for (i = 0; i < w2 - 1; ++i)
+    for (j = 0; j < w2 - 1; ++j)
+      B[i * w2 + j] -= 2 * (B[i * w2 + (w2 - 1)] + B[(w2 - 1) * w2 + j] -
+                            2 * B[(w2 - 1) * w2 + (w2 - 1)]);
+  if (linsolve(w2 - 1, B, w2, A, S)) {
+    S[w2 - 1] = 1.0;
+    for (i = w2; i < w; ++i) {
+      S[i] = S[w - 1 - i];
+      S[w2 - 1] -= 2 * S[i];
     }
-    normalize_copy(a, RESTORATION_WIN);
+    memcpy(a, S, w * sizeof(*a));
   }
+  // if (linsolve(RESTORATION_HALFWIN1, B, RESTORATION_HALFWIN1, A, S)) {
+  //   for (i = 0; i < RESTORATION_WIN; ++i) {
+  //     const int ii = wrap_index(i);
+  //     a[i] = S[ii];
+  //   }
+  //   normalize_copy(a, RESTORATION_WIN);
+  // }
 }
 
 // Fix vector a, update vector b
@@ -372,6 +392,7 @@ static void update_b_sep_sym(double **Mc, double **Hc, double *a, double *b) {
   int i, j;
   double S[RESTORATION_WIN];
   double A[RESTORATION_WIN], B[RESTORATION_WIN2];
+  int w, w2;
   memset(A, 0, sizeof(A));
   memset(B, 0, sizeof(B));
   for (i = 0; i < RESTORATION_WIN; i ++) {
@@ -393,13 +414,31 @@ static void update_b_sep_sym(double **Mc, double **Hc, double *a, double *b) {
               a[k] * a[l];
     }
   }
-  if (linsolve(RESTORATION_HALFWIN1, B, RESTORATION_HALFWIN1, A, S)) {
-    for (i = 0; i < RESTORATION_WIN; ++i) {
-      const int ii = wrap_index(i);
-      b[i] = S[ii];
+  // Normalization enforcement in the system of equation itself
+  w = RESTORATION_WIN;
+  w2 = RESTORATION_HALFWIN1;
+  for (i = 0; i < w2 - 1; ++i)
+    A[i] -= A[w2 - 1] * 2 + B[i * w2 + w2 - 1]
+              - 2 * B[(w2 - 1) * w2 + (w2 - 1)];
+  for (i = 0; i < w2 - 1; ++i)
+    for (j = 0; j < w2 - 1; ++j)
+      B[i * w2 + j] -= 2 * (B[i * w2 + (w2 - 1)] + B[(w2 - 1) * w2 + j] -
+                            2 * B[(w2 - 1) * w2 + (w2 - 1)]);
+  if (linsolve(w2 - 1, B, w2, A, S)) {
+    S[w2 - 1] = 1.0;
+    for (i = w2; i < w; ++i) {
+      S[i] = S[w - 1 - i];
+      S[w2 - 1] -= 2 * S[i];
     }
-    normalize_copy(b, RESTORATION_WIN);
+    memcpy(b, S, w * sizeof(*b));
   }
+  // if (linsolve(RESTORATION_HALFWIN1, B, RESTORATION_HALFWIN1, A, S)) {
+  //   for (i = 0; i < RESTORATION_WIN; ++i) {
+  //     const int ii = wrap_index(i);
+  //     b[i] = S[ii];
+  //   }
+  //   normalize_copy(b, RESTORATION_WIN);
+  // }
 }
 
 static int wiener_decompose_sep_sym(double *M, double *H,
@@ -427,6 +466,45 @@ static int wiener_decompose_sep_sym(double *M, double *H,
     iter++;
   }
   return 1;
+}
+
+// Computes the functional x'*A*x - x'*b for the learned filters, and compares
+// against identity filters; if functional value is negative, learned filters
+// are selected
+static double compute_score(double *M, double *H, int *vfilt, int *hfilt) {
+  double ab[RESTORATION_WIN * RESTORATION_WIN];
+  int i, k, l;
+  double P = 0, Q = 0;
+  double iP = 0, iQ = 0;
+  double Score, iScore;
+  int w;
+  double a[RESTORATION_WIN], b[RESTORATION_WIN];
+  w = RESTORATION_WIN;
+  a[RESTORATION_HALFWIN] = b[RESTORATION_HALFWIN] = 1.0;
+  for (i = 0; i < RESTORATION_HALFWIN; ++i) {
+    a[i] = a[RESTORATION_WIN - i - 1 ] =
+        (double) vfilt[i] / RESTORATION_FILT_STEP;
+    b[i] = b[RESTORATION_WIN - i - 1 ] =
+        (double) hfilt[i] / RESTORATION_FILT_STEP;
+    a[RESTORATION_HALFWIN] -= 2 * a[i];
+    b[RESTORATION_HALFWIN] -= 2 * b[i];
+  }
+  for (k = 0; k < w; ++k) {
+    for (l = 0; l < w; ++l) {
+      ab[k * w + l] = a[l] * b[k];
+    }
+  }
+  for (k = 0; k < w * w; ++k) {
+    P += ab[k] * M[k];
+    for (l = 0; l < w * w; ++l)
+      Q += ab[k] * H[k * w * w + l] * ab[l];
+  }
+  Score = Q - 2 * P;
+
+  iP = M[(w * w) >> 1];
+  iQ = H[((w * w) >> 1) * w * w + ((w * w) >> 1)];
+  iScore = iQ - 2 * iP;
+  return Score - iScore;
 }
 
 #define CLIP(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
@@ -478,7 +556,8 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src,
   rsi.restoration_type = RESTORE_NONE;
   err = try_restoration_frame(src, cpi, &rsi, partial_frame);
   bits = 0;
-  cost_norestore = RDCOST_DBL(x->rdmult, x->rddiv, (bits << 2), err);
+  cost_norestore = RDCOST_DBL(x->rdmult, x->rddiv,
+                              (bits << (VP9_PROB_COST_SHIFT - 6)), err);
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)
@@ -496,12 +575,22 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src,
   quantize_sym_filter(vfilterd, vfilter);
   quantize_sym_filter(hfilterd, hfilter);
 
+  // Filter score computes the value of the functional x'*A*x - x'*b for the
+  // learned filter and compares it against identity. If there is no reduction
+  // in the functional, then the filter is reverted back to identity
+  if (compute_score(M, H, vfilter, hfilter) > 0.0) {
+    int i;
+    for (i = 0; i < RESTORATION_HALFWIN; ++i)
+      vfilter[i] = hfilter[i] = 0;
+  }
+
   rsi.restoration_type = RESTORE_WIENER;
   memcpy(rsi.vfilter, vfilter, sizeof(rsi.vfilter));
   memcpy(rsi.hfilter, hfilter, sizeof(rsi.hfilter));
   err = try_restoration_frame(src, cpi, &rsi, partial_frame);
   bits = WIENER_FILT_BITS;
-  cost_wiener = RDCOST_DBL(x->rdmult, x->rddiv, (bits << 2), err);
+  cost_wiener = RDCOST_DBL(x->rdmult, x->rddiv,
+                           (bits << (VP9_PROB_COST_SHIFT - 6)), err);
 
   vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
 
