@@ -4627,7 +4627,8 @@ static int get_ref_frame_flags(const VP10_COMP *cpi) {
   int flags = VP9_REFFRAME_ALL;
 
 #if !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
-  if (!cpi->rc.is_bwd_ref_frame)
+  // Disable the use of BWDREF_FRAME for non-bipredictive frames.
+  if (!(cpi->rc.is_bipred_frame || cpi->rc.is_last_bipred_frame))
     flags &= ~VP9_BWD_FLAG;
 #endif  // !CONFIG_EXT_REFS && CONFIG_BIDIR_PRED
 
@@ -4878,6 +4879,9 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
     cpi->frame_flags &= ~FRAMEFLAGS_ALTREF;
 
     *frame_flags = cpi->frame_flags & ~FRAMEFLAGS_KEY;
+
+    // Set ref frame flags in preparation for the encoding of the next frame.
+    cpi->ref_frame_flags = get_ref_frame_flags(cpi);
 
     // Update the frame type
     cm->last_frame_type = cm->frame_type;
