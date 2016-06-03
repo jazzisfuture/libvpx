@@ -89,7 +89,7 @@ VP9_INSTANTIATE_TEST_CASE(ActiveMapTest,
 #if CONFIG_VP10
 #if CONFIG_SUPERTX
 INSTANTIATE_TEST_CASE_P(
-    DISABLED_VP10, ActiveMapTest,
+    VP10, ActiveMapTest,
     ::testing::Combine(
         ::testing::Values(static_cast<const libvpx_test::CodecFactory *>(
             &libvpx_test::kVP10)),
