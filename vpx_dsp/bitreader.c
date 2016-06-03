@@ -9,6 +9,9 @@
  */
 #include <stdlib.h>
 
+#include <assert.h>
+#include <stdio.h>
+
 #include "./vpx_config.h"
 
 #include "vpx_dsp/bitreader.h"
@@ -100,4 +103,55 @@ const uint8_t *vpx_reader_find_end(vpx_reader *r) {
     r->buffer--;
   }
   return r->buffer;
+}
+
+#define CABAC_CHECK_BUF_SIZE  (1024*1024)
+
+extern unsigned int cabac_check_stop_at;
+unsigned int cabac_check_rcount = 0;
+extern int cabac_check_ridx;
+extern int cabac_check_widx;
+extern int cabac_check_prob[CABAC_CHECK_BUF_SIZE];
+extern int cabac_check_range[CABAC_CHECK_BUF_SIZE];
+extern int cabac_check_bit[CABAC_CHECK_BUF_SIZE];
+
+void log_read_arith(int probability, int range, unsigned int bit)
+{
+  int print = 0;
+  int fail = 0;
+
+  assert(cabac_check_ridx != cabac_check_widx);
+
+  if (cabac_check_rcount == cabac_check_stop_at && cabac_check_stop_at) {
+    printf("CABAC read stop point. Sequence number: %d\n", cabac_check_rcount);
+    print = 1;
+  }
+
+  if (probability != cabac_check_prob[cabac_check_ridx] ||
+      range != cabac_check_range[cabac_check_ridx] ||
+      bit != cabac_check_bit[cabac_check_ridx]) {
+    printf("CABAC write/read mismatch. Sequence number: %d\n",
+        cabac_check_rcount);
+    print = 1;
+    fail = 1;
+  }
+
+  if (print) {
+    printf("  probability:  %3d/%3d  %s\n",
+           cabac_check_prob[cabac_check_ridx], probability,
+           cabac_check_prob[cabac_check_ridx] == probability ? "" : "MISMATCH");
+    printf("        range:  %3d/%3d  %s\n",
+           cabac_check_range[cabac_check_ridx], range,
+           cabac_check_range[cabac_check_ridx] == range ? "" : "MISMATCH");
+    printf("          bit:  %3d/%3d  %s\n",
+           cabac_check_bit[cabac_check_ridx], bit,
+           cabac_check_bit[cabac_check_ridx] == bit ? "" : "MISMATCH");
+    fflush(stdout);
+  }
+
+  assert(!fail && "CABAC read/write mismatch");
+
+  cabac_check_ridx = (cabac_check_ridx + 1) % CABAC_CHECK_BUF_SIZE;
+
+  cabac_check_rcount++;
 }

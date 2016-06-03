@@ -55,6 +55,8 @@ void vpx_reader_fill(vpx_reader *r);
 
 const uint8_t *vpx_reader_find_end(vpx_reader *r);
 
+void log_read_arith(int probability, int range, unsigned int bit);
+
 static INLINE int vpx_reader_has_error(vpx_reader *r) {
   // Check if we have reached the end of the buffer.
   //
@@ -81,6 +83,8 @@ static INLINE int vpx_read(vpx_reader *r, int prob) {
   unsigned int range;
   unsigned int split = (r->range * prob + (256 - prob)) >> CHAR_BIT;
 
+  int orig_range = r->range;
+
   if (r->count < 0)
     vpx_reader_fill(r);
 
@@ -106,6 +110,9 @@ static INLINE int vpx_read(vpx_reader *r, int prob) {
   r->value = value;
   r->count = count;
   r->range = range;
+
+  // Log values read used by decoder
+  log_read_arith(prob, orig_range, bit);
 
   return bit;
 }

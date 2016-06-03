@@ -30,12 +30,21 @@ typedef struct vpx_writer {
 void vpx_start_encode(vpx_writer *bc, uint8_t *buffer);
 void vpx_stop_encode(vpx_writer *bc);
 
+extern int dummy_pack;
+extern int in_stop_encode;
+
+void log_write_arith(int probability, unsigned int range, int bit);
+
 static INLINE void vpx_write(vpx_writer *br, int bit, int probability) {
   unsigned int split;
   int count = br->count;
   unsigned int range = br->range;
   unsigned int lowvalue = br->lowvalue;
   register int shift;
+
+  // Log values written by encoder to file
+  if (!dummy_pack && !in_stop_encode)
+    log_write_arith(probability, range, bit);
 
   split = 1 + (((range - 1) * probability) >> 8);
 

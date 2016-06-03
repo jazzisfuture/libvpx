@@ -4281,6 +4281,8 @@ static void encode_without_recode_loop(VP10_COMP *cpi) {
   vpx_clear_system_state();
 }
 
+int dummy_pack = 1;
+
 static void encode_with_recode_loop(VP10_COMP *cpi,
                                     size_t *size,
                                     uint8_t *dest) {
@@ -5001,7 +5003,9 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   loopfilter_frame(cpi, cm);
 
   // Build the bitstream
+  dummy_pack = 0;
   vp10_pack_bitstream(cpi, dest, size);
+  dummy_pack = 1;
 
 #if DUMP_RECON_FRAMES == 1
   // NOTE(zoeliu): For debug - Output the filtered reconstructed video.
