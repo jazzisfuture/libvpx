@@ -773,7 +773,7 @@ static int choose_partitioning(VP9_COMP *cpi,
     }
   }
 
-  for (i = 0; i < 9; i++) {
+  for (i = 0; i < 25; i++) {
     x->variance_low[i] = 0;
   }
 
@@ -1100,11 +1100,23 @@ static int choose_partitioning(VP9_COMP *cpi,
         if (vt.part_variances.vert[1].variance < (thresholds[0] >> 2))
           x->variance_low[4] = 1;
       } else {
-        // 32x32
         for (i = 0; i < 4; i++) {
-          if (!force_split[i + 1] &&
-              vt.split[i].part_variances.none.variance < (thresholds[1] >> 1))
-            x->variance_low[i + 5] = 1;
+          if (!force_split[i + 1]) {
+            // 32x32
+            if (vt.split[i].part_variances.none.variance <
+                (thresholds[1] >> 1))
+              x->variance_low[i + 5] = 1;
+          } else if (cpi->sf.short_circuit_low_temp_var == 2){
+            int idx[4] = {0, 4, xd->mi_stride << 2, (xd->mi_stride << 2) + 4};
+            MODE_INFO *this_mi = xd->mi[0] + idx[i];
+            if (this_mi->sb_type == BLOCK_16X16) {
+              for (j = 0; j < 4; j++) {
+                if (vt.split[i].split[j].part_variances.none.variance <
+                    (thresholds[2] >> 6))
+                  x->variance_low[(i << 2) + j + 9] = 1;
+              }
+            }
+          }
         }
       }
     }
