@@ -450,6 +450,10 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->adaptive_rd_thresh = 4;
     sf->mv.subpel_force_stop = (content == VP9E_CONTENT_SCREEN) ? 3 : 2;
     sf->lpf_pick = LPF_PICK_MINIMAL_LPF;
+    if (sf->short_circuit_low_temp_var == 1) {
+      // More aggressive short circuit for speed 8.
+      sf->short_circuit_low_temp_var = 2;
+    }
   }
 }
 
