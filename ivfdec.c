@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +26,7 @@ static void fix_framerate(int *num, int *den) {
   // timebase, like we do for webm.
   if (*den > 0 && *num > 0 && *num < 1000) {
     // Correct for the factor of 2 applied to the timebase in the encoder.
-    if (*num & 1)
+    if (*num & 1 && *den <= INT_MAX / 2)
       *den *= 2;
     else
       *num /= 2;
