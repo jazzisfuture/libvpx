@@ -429,9 +429,11 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->mv.search_method = NSTEP;
     sf->mv.reduce_first_step_size = 1;
     sf->skip_encode_sb = 0;
-    if (!cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR && cpi->oxcf.pass == 0 &&
+    if (!cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR &&
         content != VP9E_CONTENT_SCREEN) {
       // Enable short circuit for low temporal variance.
+      // Skip golden non-zeromv for bsize >= 32x32 if the temporal vairance
+      // obtained from choose_partitioning is very low.
       sf->short_circuit_low_temp_var = 1;
     }
   }
@@ -450,6 +452,19 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->adaptive_rd_thresh = 4;
     sf->mv.subpel_force_stop = (content == VP9E_CONTENT_SCREEN) ? 3 : 2;
     sf->lpf_pick = LPF_PICK_MINIMAL_LPF;
+    if (!cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR &&
+        content != VP9E_CONTENT_SCREEN) {
+      // More aggressive short circuit for speed 8.
+      // Skip golden non-zeromv and newmv-last for bsize >= 16x16 if the
+      // temporal variance obtained from choose_partitioning is very low.
+      sf->short_circuit_low_temp_var = 2;
+      // Only keep INTRA_DC mode for speed 8.
+      if (!is_keyframe) {
+        int i = 0;
+        while (i++ < BLOCK_SIZES)
+          sf->intra_y_mode_bsize_mask[i] = INTRA_DC;
+      }
+    }
   }
 }
 
