@@ -40,6 +40,14 @@ typedef struct {
   int in_use;
 } PRED_BUFFER;
 
+
+static const int pos_shift_16x16[4][4] = {
+  {9, 10, 13, 14},
+  {11, 12, 15, 16},
+  {17, 18, 21, 22},
+  {19, 20, 23, 24}
+};
+
 static int mv_refs_rt(VP9_COMP *cpi, const VP9_COMMON *cm,
                       const MACROBLOCK *x,
                       const MACROBLOCKD *xd,
@@ -1274,6 +1282,8 @@ static INLINE int set_force_skip_low_temp_var(uint8_t *variance_low,
                                               int mi_row, int mi_col,
                                               BLOCK_SIZE bsize) {
   int force_skip_low_temp_var = 0;
+  int i = (mi_row & 0x7) >> 1;
+  int j = (mi_col & 0x7) >> 1;
   // Set force_skip_low_temp_var based on the block size and block offset.
   if (bsize == BLOCK_64X64) {
     force_skip_low_temp_var = variance_low[0];
@@ -1299,6 +1309,19 @@ static INLINE int set_force_skip_low_temp_var(uint8_t *variance_low,
     } else if ((mi_col & 0x7) && (mi_row & 0x7)) {
       force_skip_low_temp_var = variance_low[8];
     }
+  } else if (bsize == BLOCK_16X16) {
+    force_skip_low_temp_var = variance_low[pos_shift_16x16[i][j]];
+  } else if (bsize == BLOCK_32X16) {
+    // The col shift index for the second 16x16 block.
+    int j2 = ((mi_col + 2) & 0x7) >> 1;
+    // Only if each 16x16 block inside has low temporal variance.
+    force_skip_low_temp_var = variance_low[pos_shift_16x16[i][j]] &&
+      variance_low[pos_shift_16x16[i][j2]];
+  } else if (bsize == BLOCK_16X32) {
+    // The row shift index for the second 16x16 block.
+    int i2 = ((mi_row + 2) & 0x7) >> 1;
+    force_skip_low_temp_var = variance_low[pos_shift_16x16[i][j]] &&
+      variance_low[pos_shift_16x16[i2][j]];
   }
   return force_skip_low_temp_var;
 }
@@ -1362,6 +1385,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int perform_intra_pred = 1;
   int use_golden_nonzeromv = 1;
   int force_skip_low_temp_var = 0;
+  int intra_mode_stop = 4;
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
@@ -1500,6 +1524,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // later.
     if (force_skip_low_temp_var && ref_frame == GOLDEN_FRAME &&
         frame_mv[this_mode][ref_frame].as_int != 0) {
+      continue;
+    }
+
+    if (force_skip_low_temp_var && ref_frame == LAST_FRAME &&
+        this_mode == NEWMV) {
       continue;
     }
 
@@ -1842,8 +1871,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     inter_mode_thresh = (inter_mode_thresh << 1) + inter_mode_thresh;
   }
   // Perform intra prediction search, if the best SAD is above a certain
-  // threshold. Skip intra prediction if force_skip_low_temp_var is set.
-  if (!force_skip_low_temp_var && perform_intra_pred &&
+  // threshold.
+  if (perform_intra_pred &&
       (best_rdc.rdcost == INT64_MAX ||
        (!x->skip && best_rdc.rdcost > inter_mode_thresh &&
         bsize <= cpi->sf.max_intra_bsize))) {
@@ -1878,7 +1907,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
     pd->dst = orig_dst;
 
-    for (i = 0; i < 4; ++i) {
+    // If force_skip_low_temp_var is set, only check DC_PRED mode.
+    intra_mode_stop = force_skip_low_temp_var ? 1 : 4;
+    for (i = 0; i < intra_mode_stop; ++i) {
       const PREDICTION_MODE this_mode = intra_mode_list[i];
       THR_MODES mode_index = mode_idx[INTRA_FRAME][mode_offset(this_mode)];
       int mode_rd_thresh = rd_threshes[mode_index];
