@@ -266,6 +266,13 @@ static void set_mode_info_offsets(VP10_COMP *const cpi,
   x->mbmi_ext = cpi->mbmi_ext_base + (mi_row * cm->mi_cols + mi_col);
 }
 
+static void set_quantizer(VP10_COMP *cpi, MACROBLOCK *const x,
+                          MB_MODE_INFO *mbmi, int segment_id) {
+  mbmi->segment_id = segment_id;
+  vp10_init_plane_quantizers(cpi, x);
+  x->encode_breakout = cpi->segment_encode_breakout[mbmi->segment_id];
+}
+
 static void set_offsets(VP10_COMP *cpi, const TileInfo *const tile,
                         MACROBLOCK *const x, int mi_row, int mi_col,
                         BLOCK_SIZE bsize) {
@@ -313,14 +320,13 @@ static void set_offsets(VP10_COMP *cpi, const TileInfo *const tile,
 
   // Setup segment ID.
   if (seg->enabled) {
+    int segment_id = mbmi->segment_id;
     if (cpi->oxcf.aq_mode != VARIANCE_AQ) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
-      mbmi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
+      segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
     }
-    vp10_init_plane_quantizers(cpi, x);
-
-    x->encode_breakout = cpi->segment_encode_breakout[mbmi->segment_id];
+    set_quantizer(cpi, x, mbmi, segment_id);
   } else {
     mbmi->segment_id = 0;
     x->encode_breakout = cpi->encode_breakout;
@@ -2246,6 +2252,10 @@ static void encode_sb(VP10_COMP *cpi, ThreadData *td,
       int x_idx, y_idx, i;
       uint8_t *dst_buf[3];
       int dst_stride[3];
+      const struct segmentation *const seg = &cm->seg;
+      const uint8_t *const map = seg->update_map ? cpi->segmentation_map
+                                                 : cm->last_frame_seg_map;
+
       set_skip_context(xd, mi_row, mi_col);
       set_mode_info_offsets(cpi, x, xd, mi_row, mi_col);
       update_state_sb_supertx(cpi, td, tile, mi_row, mi_col, bsize,
@@ -2262,6 +2272,9 @@ static void encode_sb(VP10_COMP *cpi, ThreadData *td,
                          dst_buf, dst_stride, pc_tree);
 
       set_offsets(cpi, tile, x, mi_row, mi_col, bsize);
+      if (seg->enabled)
+        set_quantizer(cpi, x, &xd->mi[0]->mbmi,
+                      get_segment_id(cm, map, bsize, mi_row, mi_col));
       if (!x->skip) {
         // TODO(geza.lore): Investigate if this can be relaxed
         x->skip_recode = 0;
