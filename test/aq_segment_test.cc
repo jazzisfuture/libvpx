@@ -27,6 +27,7 @@ class AqSegmentTest
     SetMode(GET_PARAM(1));
     set_cpu_used_ = GET_PARAM(2);
     aq_mode_ = 0;
+    limit_ = set_cpu_used_ < 3 ? 20 : 100;
   }
 
   virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
@@ -40,6 +41,7 @@ class AqSegmentTest
 
   int set_cpu_used_;
   int aq_mode_;
+  int limit_;
 };
 
 // Validate that this AQ segmentation mode (AQ=1, variance_ap)
@@ -57,7 +59,7 @@ TEST_P(AqSegmentTest, TestNoMisMatchAQ1) {
   aq_mode_ = 1;
 
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
-                                        30, 1, 0, 100);
+                                        30, 1, 0, limit_);
 
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
@@ -77,7 +79,7 @@ TEST_P(AqSegmentTest, TestNoMisMatchAQ2) {
   aq_mode_ = 2;
 
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
-                                        30, 1, 0, 100);
+                                        30, 1, 0, limit_);
 
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
@@ -97,7 +99,7 @@ TEST_P(AqSegmentTest, TestNoMisMatchAQ3) {
   aq_mode_ = 3;
 
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
-                                        30, 1, 0, 100);
+                                        30, 1, 0, limit_);
 
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
@@ -106,4 +108,9 @@ VP9_INSTANTIATE_TEST_CASE(AqSegmentTest,
                           ::testing::Values(::libvpx_test::kRealTime,
                                             ::libvpx_test::kOnePassGood),
                           ::testing::Range(3, 9));
+
+VP10_INSTANTIATE_TEST_CASE(AqSegmentTest,
+                           ::testing::Values(::libvpx_test::kRealTime,
+                                             ::libvpx_test::kOnePassGood),
+                           ::testing::Range(0, 9));
 }  // namespace
