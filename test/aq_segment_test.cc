@@ -106,4 +106,9 @@ VP9_INSTANTIATE_TEST_CASE(AqSegmentTest,
                           ::testing::Values(::libvpx_test::kRealTime,
                                             ::libvpx_test::kOnePassGood),
                           ::testing::Range(3, 9));
+
+VP10_INSTANTIATE_TEST_CASE(AqSegmentTest,
+                           ::testing::Values(::libvpx_test::kRealTime,
+                                             ::libvpx_test::kOnePassGood),
+                           ::testing::Range(3, 9));
 }  // namespace
