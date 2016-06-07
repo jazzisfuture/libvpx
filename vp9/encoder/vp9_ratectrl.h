@@ -160,6 +160,7 @@ typedef struct {
   int rf_level_maxq[RATE_FACTOR_LEVELS];
 
   uint64_t avg_source_sad;
+  uint64_t avg_source_sad_prev;
   int high_source_sad;
   int count_last_scene_change;
   int avg_frame_low_motion;

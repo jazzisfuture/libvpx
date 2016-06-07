@@ -341,6 +341,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->high_source_sad = 0;
   rc->count_last_scene_change = 0;
   rc->avg_source_sad = 0;
+  rc->avg_source_sad_prev = 0;
 
   rc->frames_since_key = 8;  // Sensible default for first frame.
   rc->this_key_frame_forced = 0;
@@ -430,6 +431,33 @@ static double get_rate_correction_factor(const VP9_COMP *cpi) {
   }
   rcf *= rcf_mult[rc->frame_size_selector];
   return fclamp(rcf, MIN_BPB_FACTOR, MAX_BPB_FACTOR);
+}
+
+static void adjust_q_one_pass_vbr(const VP9_COMP *cpi, int *q) {
+  // Adjust q based on content (source-sad) of current frame to be encoded.
+  // For now apply a reduction to big changes in q, on inter-frames.
+  const RATE_CONTROL *const rc = &cpi->rc;
+  if (!(cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
+    unsigned int sad_thresh = 60000;  // ~16 * 64 *64
+    int delta_qp_thresh_low = 15;
+    int delta_qp_thresh_high = 15;
+    if (*q - rc->last_q[INTER_FRAME] > delta_qp_thresh_low) {
+      // Big increase in Q: if the content of current frame is very low we
+      // should be able to afford lower Q, so reduce the increase.
+      if (rc->avg_source_sad < sad_thresh && cpi->rc.high_source_sad == 0) {
+        *q = rc->last_q[INTER_FRAME] +
+           ((*q - rc->last_q[INTER_FRAME]) >> 1);
+      }
+    } else if (rc->last_q[INTER_FRAME] - *q > delta_qp_thresh_high) {
+      // Big decrease in Q: if the content of current frame has increased
+      // significantly from the last frame, reduce the decrease to avoid
+      // possible big overshoot.
+      if (rc->avg_source_sad > ((5 * rc->avg_source_sad_prev) >> 2) ||
+          rc->high_source_sad == 1) {
+        *q = rc->last_q[INTER_FRAME] - ((rc->last_q[INTER_FRAME] - *q) >> 1);
+      }
+    }
+  }
 }
 
 static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
@@ -579,6 +607,11 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
       cpi->rc.q_1_frame != cpi->rc.q_2_frame) {
     q = clamp(q, VPXMIN(cpi->rc.q_1_frame, cpi->rc.q_2_frame),
               VPXMAX(cpi->rc.q_1_frame, cpi->rc.q_2_frame));
+  } else if (cpi->oxcf.pass == 0 && cpi->oxcf.rc_mode == VPX_VBR &&
+             cpi->oxcf.mode == REALTIME) {
+    // For 1 pass VBR real-time mode, frame-level source sad is pre-computed,
+    // use this to adjust q.
+    adjust_q_one_pass_vbr(cpi, &q);
   }
   return q;
 }
@@ -2106,6 +2139,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
     int num_samples = 0;
     int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
     int sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+    rc->avg_source_sad_prev = rc->avg_source_sad;
     for (sbi_row = 0; sbi_row < sb_rows; sbi_row ++) {
       for (sbi_col = 0; sbi_col < sb_cols; sbi_col ++) {
         // Checker-board pattern, ignore boundary.
