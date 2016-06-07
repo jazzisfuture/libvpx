@@ -214,6 +214,13 @@ vpx_codec_err_t  vpx_codec_encode(vpx_codec_ctx_t            *ctx,
   else {
     unsigned int num_enc = ctx->priv->enc.total_encoders;
 
+    if (deadline == VPX_DL_REALTIME && ctx->cfg.g_pass == VPX_RC_FIRST_PASS) {
+        // Override the user requested pass value because VPX_DL_REALTIME in
+        // combination with VPX_RC_FIRST_PASS is nonsense. Favor outputting
+        // frames in realtime mode instead of producing only stats.
+        ctx->cfg.g_pass = VPX_RC_ONE_PASS;
+    }
+
     /* Execute in a normalized floating point environment, if the platform
      * requires it.
      */
