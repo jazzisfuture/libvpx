@@ -125,7 +125,12 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
 
   assert((!type && !plane) || (type && plane));
   assert(eob <= default_eob);
+
+#if CONFIG_NEW_QUANT
   mul = 1 << shift;
+#else
+  mul = get_tx_scale(xd, tx_type, tx_size);
+#endif  // CONFIG_NEW_QUANT
 
   /* Now set up a Viterbi trellis to evaluate alternative roundings. */
   /* Initialize the sentinel node of the trellis. */
@@ -166,7 +171,8 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
       /* And pick the best. */
       best = rd_cost1 < rd_cost0;
       base_bits = vp10_get_cost(t0, e0, cat6_high_cost);
-      dx = mul * (dqcoeff[rc] - coeff[rc]);
+
+      dx = (dqcoeff[rc] - coeff[rc]) * (1 << mul);
 #if CONFIG_VP9_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
         dx >>= xd->bd - 8;
@@ -193,9 +199,8 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
               abs(x) - 1, dequant_ptr[rc != 0],
               dequant_val[band_translate[i]]) < abs(coeff[rc]) * mul));
 #else   // CONFIG_NEW_QUANT
-
-      if ((abs(x) * dequant_ptr[rc != 0] > abs(coeff[rc]) * mul) &&
-          (abs(x) * dequant_ptr[rc != 0] < abs(coeff[rc]) * mul +
+      if ((abs(x) * dequant_ptr[rc != 0] > (abs(coeff[rc]) << mul)) &&
+          (abs(x) * dequant_ptr[rc != 0] < (abs(coeff[rc]) << mul) +
                                                dequant_ptr[rc != 0]))
         shortcut = 1;
       else
@@ -205,6 +210,11 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
       if (shortcut) {
         sz = -(x < 0);
         x -= 2 * sz + 1;
+      } else {
+        tokens[i][1] = tokens[i][0];
+        best_index[i][1] = best_index[i][0];
+        next = i;
+        continue;
       }
 
       /* Consider both possible successor states. */
@@ -320,7 +330,8 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
     if (shift) dqcoeff[rc] = ROUND_POWER_OF_TWO(dqcoeff[rc], shift);
     if (x < 0) dqcoeff[rc] = -dqcoeff[rc];
 #else
-    dqcoeff[rc] = (x * dequant_ptr[rc != 0]) / mul;
+    dqcoeff[rc] = (abs(x * dequant_ptr[rc != 0]) >> mul);
+    if (x < 0) dqcoeff[rc] = -dqcoeff[rc];
 #endif  // CONFIG_NEW_QUANT
 
     next = tokens[i][best].next;
@@ -989,7 +1000,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   }
 #endif
 
-  if (x->optimize) {
+  if (x->optimize && p->eobs[block]) {
     int ctx;
 #if CONFIG_VAR_TX
     switch (tx_size) {
@@ -1282,7 +1293,7 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
     ENTROPY_CONTEXT *a, *l;
     a = &ctx->ta[plane][blk_col];
     l = &ctx->tl[plane][blk_row];
-    if (x->optimize) {
+    if (x->optimize && p->eobs[block]) {
       int ctx;
       ctx = combine_entropy_contexts(*a, *l);
       *a = *l = vp10_optimize_b(x, plane, block, tx_size, ctx) > 0;
