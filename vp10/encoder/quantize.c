@@ -426,7 +426,7 @@ void vp10_init_quantizer(VP10_COMP *cpi) {
     const int qrounding_factor = q == 0 ? 64 : 48;
 
     for (i = 0; i < 2; ++i) {
-      int qrounding_factor_fp = i == 0 ? 48 : 42;
+      int qrounding_factor_fp = i == 0 ? 64 : 64;
       if (q == 0)
         qrounding_factor_fp = 64;
 
