@@ -159,6 +159,7 @@ typedef struct {
   int frame_height[FRAME_SCALE_STEPS];
   int rf_level_maxq[RATE_FACTOR_LEVELS];
 
+  int fac_active_worst;
   uint64_t avg_source_sad;
   int high_source_sad;
   int count_last_scene_change;
