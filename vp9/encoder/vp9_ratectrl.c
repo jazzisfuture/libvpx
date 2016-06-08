@@ -341,6 +341,8 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->high_source_sad = 0;
   rc->count_last_scene_change = 0;
   rc->avg_source_sad = 0;
+  rc->fac_active_worst = 150;
+  rc->fac_active_best = 100;
 
   rc->frames_since_key = 8;  // Sensible default for first frame.
   rc->this_key_frame_forced = 0;
@@ -634,7 +636,7 @@ static int calc_active_worst_quality_one_pass_vbr(const VP9_COMP *cpi) {
     } else {
       active_worst_quality = curr_frame == 1 ? rc->last_q[KEY_FRAME] << 1 :
           VPXMIN(rc->last_q[INTER_FRAME] << 1,
-                (rc->avg_frame_qindex[INTER_FRAME] * 3 >> 1));
+              (rc->avg_frame_qindex[INTER_FRAME] * rc->fac_active_worst / 100));
     }
   }
   return VPXMIN(active_worst_quality, rc->worst_quality);
@@ -955,7 +957,8 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
       // Use the min of the average Q and active_worst_quality as basis for
       // active_best.
       if (cm->current_video_frame > 1) {
-        q = VPXMIN(rc->avg_frame_qindex[INTER_FRAME], active_worst_quality);
+        q = VPXMIN(rc->avg_frame_qindex[INTER_FRAME] *
+                   rc->fac_active_best / 100, active_worst_quality);
         active_best_quality = inter_minq[q];
       } else {
         active_best_quality = inter_minq[rc->avg_frame_qindex[KEY_FRAME]];
@@ -1554,6 +1557,21 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     if (rc->rolling_target_bits > 0)
       rate_err =
           (double)rc->rolling_actual_bits / (double)rc->rolling_target_bits;
+    // Adjust factor for active_worst/best setting for this/next gf interval.
+    // fac_active_worst scales the avg_frame_qindex for setting active_worst
+    // on inter-frames.
+    rc->fac_active_worst = 150;  // corresponds to 3/2 (= 150 /100).
+    rc->fac_active_best = 100;
+    if (cm->current_video_frame > 30) {
+      if (rate_err < 1.5 && rc->avg_source_sad == 0) {
+        // Lower factor if we are not overshooting too much.
+        rc->fac_active_worst = 120;
+        rc->fac_active_best = 90;
+      } else if (rate_err > 3.0 || rc->avg_source_sad == 1) {
+        // Increase factor for high overshoot.
+        rc->fac_active_worst = 170;
+      }
+    }
     // Increase gf interval at high Q and high overshoot.
     if (cm->current_video_frame > 30 &&
         rc->avg_frame_qindex[INTER_FRAME] > (7 * rc->worst_quality) >> 3 &&
