@@ -65,16 +65,12 @@ typedef struct vp10_token_state {
 } vp10_token_state;
 
 // TODO(jimbankoski): experiment to find optimal RD numbers.
-static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] ={ {9, 7}, {7, 5}, };
+static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] ={ {9, 7}, {8, 5}, };
 
 #define UPDATE_RD_COST()\
 {\
   rd_cost0 = RDCOST(rdmult, rddiv, rate0, error0);\
   rd_cost1 = RDCOST(rdmult, rddiv, rate1, error1);\
-  if (rd_cost0 == rd_cost1) {\
-    rd_cost0 = RDTRUNC(rdmult, rddiv, rate0, error0);\
-    rd_cost1 = RDTRUNC(rdmult, rddiv, rate1, error1);\
-  }\
 }
 
 // This function is a place holder for now but may ultimately need
@@ -90,8 +86,8 @@ static int trellis_get_coeff_context(const int16_t *scan,
   return pt;
 }
 
-static int optimize_b(MACROBLOCK *mb, int plane, int block,
-                      TX_SIZE tx_size, int ctx) {
+int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
+                    TX_SIZE tx_size, int ctx) {
   MACROBLOCKD *const xd = &mb->e_mbd;
   struct macroblock_plane *const p = &mb->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
@@ -457,7 +453,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
         if (x->skip_txfm[plane][blk_index] == SKIP_TXFM_NONE) {
           // full forward transform and quantization
           vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
-                           tx_size, VP10_XFORM_QUANT_B);
+                           tx_size, VP10_XFORM_QUANT_FP);
         } else if (x->skip_txfm[plane][blk_index] == SKIP_TXFM_AC_ONLY) {
           // fast path forward transform and quantization
           vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
@@ -472,7 +468,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
         }
       } else {
         vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
-                         tx_size, VP10_XFORM_QUANT_B);
+                         tx_size, VP10_XFORM_QUANT_FP);
       }
     }
   }
@@ -506,7 +502,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
     }
 #endif
     ctx = combine_entropy_contexts(*a, *l);
-    *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
+    *a = *l = vp10_optimize_b(x, plane, block, tx_size, ctx) > 0;
   } else {
     *a = *l = p->eobs[block] > 0;
   }
@@ -769,7 +765,7 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
     if (x->optimize) {
       int ctx;
       ctx = combine_entropy_contexts(*a, *l);
-      *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
+      *a = *l = vp10_optimize_b(x, plane, block, tx_size, ctx) > 0;
     } else {
       *a = *l = p->eobs[block] > 0;
     }
