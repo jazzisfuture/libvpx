@@ -495,6 +495,78 @@ specialize qw/vpx_scaled_avg_horiz/;
 add_proto qw/void vpx_scaled_avg_vert/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
 specialize qw/vpx_scaled_avg_vert/;
 
+add_proto qw/void vpx_filter_block1d4_h8/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d4_h8/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d4_h8_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d4_h8_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d8_h8/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d8_h8/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d8_h8_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d8_h8_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d16_h8/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d16_h8/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d16_h8_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d16_h8_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d4_h8_avg/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d4_h8_avg/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d4_h8_avg_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d4_h8_avg_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d8_h8_avg/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d8_h8_avg/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d8_h8_avg_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d8_h8_avg_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d16_h8_avg/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d16_h8_avg/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d16_h8_avg_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d16_h8_avg_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d4_v8/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d4_v8/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d4_v8_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d4_v8_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d8_v8/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d8_v8/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d8_v8_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d8_v8_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d16_v8/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d16_v8/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d16_v8_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d16_v8_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d4_v8_avg/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d4_v8_avg/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d4_v8_avg_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d4_v8_avg_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d8_v8_avg/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d8_v8_avg/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d8_v8_avg_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d8_v8_avg_org/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d16_v8_avg/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d16_v8_avg/, "$ssse3_x86inc";
+
+add_proto qw/void vpx_filter_block1d16_v8_avg_org/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, uint32_t h, const int16_t *filter";
+specialize qw/vpx_filter_block1d16_v8_avg_org/, "$ssse3_x86inc";
+
 if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   #
   # Sub Pixel Filters
