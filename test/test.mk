@@ -184,6 +184,9 @@ LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS) += sad_test.cc
 TEST_INTRA_PRED_SPEED_SRCS-yes := test_intra_pred_speed.cc
 TEST_INTRA_PRED_SPEED_SRCS-yes += ../md5_utils.h ../md5_utils.c
 
+TEST_SUBPIXEL_SPEED_SRCS-yes := test_subpixel_speed.cc
+TEST_SUBPIXEL_SPEED_SRCS-yes += ../md5_utils.h ../md5_utils.c
+
 endif # CONFIG_SHARED
 
 include $(SRC_PATH_BARE)/test/test-data.mk

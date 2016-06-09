@@ -428,6 +428,10 @@ TEST_INTRA_PRED_SPEED_BIN=./test_intra_pred_speed$(EXE_SFX)
 TEST_INTRA_PRED_SPEED_SRCS=$(addprefix test/,$(call enabled,TEST_INTRA_PRED_SPEED_SRCS))
 TEST_INTRA_PRED_SPEED_OBJS := $(sort $(call objs,$(TEST_INTRA_PRED_SPEED_SRCS)))
 
+TEST_SUBPIXEL_SPEED_BIN=./test_subpixel_speed$(EXE_SFX)
+TEST_SUBPIXEL_SPEED_SRCS=$(addprefix test/,$(call enabled,TEST_SUBPIXEL_SPEED_SRCS))
+TEST_SUBPIXEL_SPEED_OBJS := $(sort $(call objs,$(TEST_SUBPIXEL_SPEED_SRCS)))
+
 libvpx_test_srcs.txt:
 	@echo "    [CREATE] $@"
 	@echo $(LIBVPX_TEST_SRCS) | xargs -n1 echo | LC_ALL=C sort -u > $@
@@ -509,6 +513,24 @@ test_intra_pred_speed.$(VCPROJ_SFX): $(TEST_INTRA_PRED_SPEED_SRCS) vpx.$(VCPROJ_
             -I. -I"$(SRC_PATH_BARE)/third_party/googletest/src/include" \
             -L. -l$(CODEC_LIB) -l$(GTEST_LIB) $^
 endif  # TEST_INTRA_PRED_SPEED
+
+ifneq ($(strip $(TEST_SUBPIXEL_SPEED_OBJS)),)
+PROJECTS-$(CONFIG_MSVS) += test_subpixel_speed.$(VCPROJ_SFX)
+test_subpixel_speed.$(VCPROJ_SFX): $(TEST_SUBPIXEL_SPEED_SRCS) vpx.$(VCPROJ_SFX) gtest.$(VCPROJ_SFX)
+	@echo "    [CREATE] $@"
+	$(qexec)$(GEN_VCPROJ) \
+            --exe \
+            --target=$(TOOLCHAIN) \
+            --name=test_subpixel_speed \
+            -D_VARIADIC_MAX=10 \
+            --proj-guid=CD837F5F-52D8-4314-A370-895D614166A7 \
+            --ver=$(CONFIG_VS_VERSION) \
+            --src-path-bare="$(SRC_PATH_BARE)" \
+            $(if $(CONFIG_STATIC_MSVCRT),--static-crt) \
+            --out=$@ $(INTERNAL_CFLAGS) $(CFLAGS) \
+            -I. -I"$(SRC_PATH_BARE)/third_party/googletest/src/include" \
+            -L. -l$(CODEC_LIB) -l$(GTEST_LIB) $^
+endif  # TEST_SUBPIXEL_SPEED
 endif
 else
 
@@ -550,6 +572,17 @@ $(eval $(call linkerxx_template,$(TEST_INTRA_PRED_SPEED_BIN), \
               -L. -lvpx -lgtest $(extralibs) -lm))
 endif  # TEST_INTRA_PRED_SPEED
 
+ifneq ($(strip $(TEST_SUBPIXEL_SPEED_OBJS)),)
+$(TEST_SUBPIXEL_SPEED_OBJS) $(TEST_SUBPIXEL_SPEED_OBJS:.o=.d): CXXFLAGS += $(GTEST_INCLUDES)
+OBJS-yes += $(TEST_SUBPIXEL_SPEED_OBJS)
+BINS-yes += $(TEST_SUBPIXEL_SPEED_BIN)
+
+$(TEST_SUBPIXEL_SPEED_BIN): $(TEST_LIBS)
+$(eval $(call linkerxx_template,$(TEST_SUBPIXEL_SPEED_BIN), \
+              $(TEST_SUBPIXEL_SPEED_OBJS) \
+              -L. -lvpx -lgtest $(extralibs) -lm))
+endif  # TEST_SUBPIXEL_SPEED
+
 endif  # CONFIG_UNIT_TESTS
 
 # Install test sources only if codec source is included
@@ -557,6 +590,7 @@ INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(patsubst $(SRC_PATH_BARE)/%,%,\
     $(shell find $(SRC_PATH_BARE)/third_party/googletest -type f))
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(LIBVPX_TEST_SRCS)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(TEST_INTRA_PRED_SPEED_SRCS)
+INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(TEST_SUBPIXEL_SPEED_SRCS)
 
 define test_shard_template
 test:: test_shard.$(1)
