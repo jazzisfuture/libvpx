@@ -218,5 +218,11 @@ INSTANTIATE_TEST_CASE_P(
         ::testing::ValuesIn(kTestVectors),
         ::testing::ValuesIn(kCpuUsedVectors)));
 #endif  // CONFIG_VP10_ENCODER
+#else  // CONFIG_VP9_HIGHBITDEPTH
+VP10_INSTANTIATE_TEST_CASE(
+    EndToEndTestLarge,
+    ::testing::ValuesIn(kEncodingModeVectors),
+    ::testing::ValuesIn(kTestVectors),
+    ::testing::ValuesIn(kCpuUsedVectors));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace
