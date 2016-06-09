@@ -6442,7 +6442,7 @@ static void do_masked_motion_search_indexed(VP10_COMP *cpi, MACROBLOCK *x,
   BLOCK_SIZE sb_type = mbmi->sb_type;
   const uint8_t *mask;
   const int mask_stride = 4 * num_4x4_blocks_wide_lookup[bsize];
-  mask = vp10_get_contiguous_soft_mask(wedge_index, wedge_sign, sb_type);
+  mask = vp10_get_contiguous_soft_mask(wedge_index, wedge_sign, sb_type, 1);
 
   if (which == 0 || which == 2)
     do_masked_motion_search(cpi, x, mask, mask_stride, bsize,
@@ -6451,7 +6451,7 @@ static void do_masked_motion_search_indexed(VP10_COMP *cpi, MACROBLOCK *x,
 
   if (which == 1 || which == 2) {
     // get the negative mask
-    mask = vp10_get_contiguous_soft_mask(wedge_index, !wedge_sign, sb_type);
+    mask = vp10_get_contiguous_soft_mask(wedge_index, !wedge_sign, sb_type, 1);
     do_masked_motion_search(cpi, x, mask, mask_stride, bsize,
                             mi_row, mi_col, &tmp_mv[1], &rate_mv[1],
                             1, mv_idx[1]);
@@ -6675,6 +6675,7 @@ static INTERP_FILTER predict_interp_filter(const VP10_COMP *cpi,
 static int64_t pick_wedge(const VP10_COMP *const cpi,
                           const MACROBLOCK *const x,
                           const BLOCK_SIZE bsize,
+                          int is_inter,
                           const uint8_t *const p0,
                           const uint8_t *const p1,
                           int *const best_wedge_sign,
@@ -6689,7 +6690,7 @@ static int64_t pick_wedge(const VP10_COMP *const cpi,
   int64_t rd, best_rd = INT64_MAX;
   int wedge_index;
   int wedge_sign;
-  int wedge_types = (1 << get_wedge_bits_lookup(bsize));
+  int wedge_types = (1 << get_wedge_bits_lookup(bsize, is_inter));
   const uint8_t *mask;
   uint64_t sse;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -6730,10 +6731,11 @@ static int64_t pick_wedge(const VP10_COMP *const cpi,
   vp10_wedge_compute_delta_squares(ds, r0, r1, N);
 
   for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
-    mask = vp10_get_contiguous_soft_mask(wedge_index, 0, bsize);
+    mask = vp10_get_contiguous_soft_mask(wedge_index, 0, bsize, is_inter);
     wedge_sign = vp10_wedge_sign_from_residuals(ds, mask, N, sign_limit);
 
-    mask = vp10_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
+    mask = vp10_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize,
+                                         is_inter);
     sse = vp10_wedge_sse_from_residuals(r1, d10, mask, N);
     sse = ROUNDZ_POWER_OF_TWO(sse, bd_round);
 
@@ -6754,6 +6756,7 @@ static int64_t pick_wedge(const VP10_COMP *const cpi,
 static int64_t pick_wedge_fixed_sign(const VP10_COMP *const cpi,
                                      const MACROBLOCK *const x,
                                      const BLOCK_SIZE bsize,
+                                     int is_inter,
                                      const uint8_t *const p0,
                                      const uint8_t *const p1,
                                      const int wedge_sign,
@@ -6767,7 +6770,7 @@ static int64_t pick_wedge_fixed_sign(const VP10_COMP *const cpi,
   int64_t dist;
   int64_t rd, best_rd = INT64_MAX;
   int wedge_index;
-  int wedge_types = (1 << get_wedge_bits_lookup(bsize));
+  int wedge_types = (1 << get_wedge_bits_lookup(bsize, is_inter));
   const uint8_t *mask;
   uint64_t sse;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -6795,7 +6798,8 @@ static int64_t pick_wedge_fixed_sign(const VP10_COMP *const cpi,
   }
 
   for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
-    mask = vp10_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
+    mask = vp10_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize,
+                                         is_inter);
     sse = vp10_wedge_sse_from_residuals(r1, d10, mask, N);
     sse = ROUNDZ_POWER_OF_TWO(sse, bd_round);
 
@@ -6828,9 +6832,10 @@ static int64_t pick_interinter_wedge(const VP10_COMP *const cpi,
 
   if (cpi->sf.fast_wedge_sign_estimate) {
     wedge_sign = estimate_wedge_sign(cpi, x, bsize, p0, bw, p1, bw);
-    rd = pick_wedge_fixed_sign(cpi, x, bsize, p0, p1, wedge_sign, &wedge_index);
+    rd = pick_wedge_fixed_sign(cpi, x, bsize, 1, p0, p1,
+                               wedge_sign, &wedge_index);
   } else {
-    rd = pick_wedge(cpi, x, bsize, p0, p1, &wedge_sign, &wedge_index);
+    rd = pick_wedge(cpi, x, bsize, 1, p0, p1, &wedge_sign, &wedge_index);
   }
 
   mbmi->interinter_wedge_sign = wedge_sign;
@@ -6851,7 +6856,7 @@ static int64_t pick_interintra_wedge(const VP10_COMP *const cpi,
 
   assert(is_interintra_wedge_used(bsize));
 
-  rd = pick_wedge_fixed_sign(cpi, x, bsize, p0, p1, 0, &wedge_index);
+  rd = pick_wedge_fixed_sign(cpi, x, bsize, 0, p0, p1, 0, &wedge_index);
 
   mbmi->interintra_wedge_sign = 0;
   mbmi->interintra_wedge_index = wedge_index;
@@ -7633,7 +7638,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         if (have_newmv_in_inter_mode(this_mode)) {
           // get negative of mask
           const uint8_t* mask = vp10_get_contiguous_soft_mask(
-              mbmi->interintra_wedge_index, 1, bsize);
+              mbmi->interintra_wedge_index, 1, bsize, 0);
           do_masked_motion_search(cpi, x, mask, bw, bsize,
                                   mi_row, mi_col, &tmp_mv, &tmp_rate_mv,
                                   0, mv_idx);
