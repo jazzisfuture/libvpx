@@ -19,6 +19,143 @@
 #include "vpx_dsp/vpx_filter.h"
 #include "vpx_ports/mem.h"
 
+// faked null c functions for speed test!!!
+void vpx_filter_block1d4_h8_org_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                  uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                  uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d4_h8_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                              uint8_t *output_ptr, ptrdiff_t out_pitch,
+                              uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d8_h8_org_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                  uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                  uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d8_h8_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                              uint8_t *output_ptr, ptrdiff_t out_pitch,
+                              uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d16_h8_org_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                   uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                   uint32_t output_height,
+                                   const int16_t *filter)
+{}
+
+void vpx_filter_block1d16_h8_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                               uint8_t *output_ptr, ptrdiff_t out_pitch,
+                               uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d4_h8_avg_org_c(const uint8_t *src_ptr,
+                                      ptrdiff_t src_pitch,
+                                      uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                      uint32_t output_height,
+                                      const int16_t *filter)
+{}
+
+void vpx_filter_block1d4_h8_avg_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                  uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                  uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d8_h8_avg_org_c(const uint8_t *src_ptr,
+                                      ptrdiff_t src_pitch,
+                                      uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                      uint32_t output_height,
+                                      const int16_t *filter)
+{}
+
+void vpx_filter_block1d8_h8_avg_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                  uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                  uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d16_h8_avg_org_c(const uint8_t *src_ptr,
+                                       ptrdiff_t src_pitch,
+                                       uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                       uint32_t output_height,
+                                       const int16_t *filter)
+{}
+
+void vpx_filter_block1d16_h8_avg_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                   uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                   uint32_t output_height,
+                                   const int16_t *filter)
+{}
+
+void vpx_filter_block1d4_v8_org_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                  uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                  uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d4_v8_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                              uint8_t *output_ptr, ptrdiff_t out_pitch,
+                              uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d8_v8_org_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                  uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                  uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d8_v8_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                              uint8_t *output_ptr, ptrdiff_t out_pitch,
+                              uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d16_v8_org_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                   uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                   uint32_t output_height,
+                                   const int16_t *filter)
+{}
+
+void vpx_filter_block1d16_v8_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                               uint8_t *output_ptr, ptrdiff_t out_pitch,
+                               uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d4_v8_avg_org_c(const uint8_t *src_ptr,
+                                      ptrdiff_t src_pitch,
+                                      uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                      uint32_t output_height,
+                                      const int16_t *filter)
+{}
+
+void vpx_filter_block1d4_v8_avg_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                  uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                  uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d8_v8_avg_org_c(const uint8_t *src_ptr,
+                                      ptrdiff_t src_pitch,
+                                      uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                      uint32_t output_height,
+                                      const int16_t *filter)
+{}
+
+void vpx_filter_block1d8_v8_avg_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                  uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                  uint32_t output_height, const int16_t *filter)
+{}
+
+void vpx_filter_block1d16_v8_avg_org_c(const uint8_t *src_ptr,
+                                       ptrdiff_t src_pitch,
+                                       uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                       uint32_t output_height,
+                                       const int16_t *filter)
+{}
+
+void vpx_filter_block1d16_v8_avg_c(const uint8_t *src_ptr, ptrdiff_t src_pitch,
+                                   uint8_t *output_ptr, ptrdiff_t out_pitch,
+                                   uint32_t output_height,
+                                   const int16_t *filter)
+{}
+
 static void convolve_horiz(const uint8_t *src, ptrdiff_t src_stride,
                            uint8_t *dst, ptrdiff_t dst_stride,
                            const InterpKernel *x_filters,
