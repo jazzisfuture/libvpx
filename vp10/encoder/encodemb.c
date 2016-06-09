@@ -65,7 +65,7 @@ typedef struct vp10_token_state {
 } vp10_token_state;
 
 // TODO(jimbankoski): experiment to find optimal RD numbers.
-static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] ={ {9, 7}, {8, 5}, };
+static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] ={ {10, 6}, {8, 5}, };
 
 #define UPDATE_RD_COST()\
 {\
@@ -411,7 +411,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   struct encode_b_args *const args = arg;
   MACROBLOCK *const x = args->x;
   MACROBLOCKD *const xd = &x->e_mbd;
-  struct optimize_ctx *const ctx = args->ctx;
+//  struct optimize_ctx *const ctx = args->ctx;
   struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
@@ -423,8 +423,8 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   const int bwl = b_width_log2_lookup[plane_bsize];
 #endif
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
-  a = &ctx->ta[plane][blk_col];
-  l = &ctx->tl[plane][blk_row];
+  a = &args->ta[blk_col];
+  l = &args->tl[blk_row];
 
   // TODO(jingning): per transformed block zero forcing only enabled for
   // luma component. will integrate chroma components as well.
@@ -643,7 +643,7 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx ctx;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
-  struct encode_b_args arg = {x, &ctx, &mbmi->skip, 0};
+  struct encode_b_args arg = {x, &ctx, &mbmi->skip, NULL, NULL, 0};
   int plane;
 
   mbmi->skip = 1;
@@ -667,6 +667,9 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
 #endif
     if (!x->skip_recode)
       vp10_subtract_plane(x, bsize, plane);
+
+    arg.ta = ctx.ta[plane];
+    arg.tl = ctx.tl[plane];
 
     if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
 #if CONFIG_VAR_TX
@@ -771,17 +774,17 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
 #else
   if (!x->skip_recode)
     vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
-                     VP10_XFORM_QUANT_B);
+                     VP10_XFORM_QUANT_FP);
   else
     vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
                      VP10_XFORM_QUANT_SKIP_QUANT);
 #endif  // CONFIG_EXT_INTRA
 
-  if (args->ctx != NULL) {
-    struct optimize_ctx *const ctx = args->ctx;
+  if (args->ctx != NULL || 1) {
+//    struct optimize_ctx *const ctx = args->ctx;
     ENTROPY_CONTEXT *a, *l;
-    a = &ctx->ta[plane][blk_col];
-    l = &ctx->tl[plane][blk_row];
+    a = &args->ta[blk_col];
+    l = &args->tl[blk_row];
     if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
       int ctx;
       ctx = combine_entropy_contexts(*a, *l);
@@ -816,7 +819,10 @@ void vp10_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane,
                                    int enable_optimize_b) {
   const MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx ctx;
-  struct encode_b_args arg = {x, &ctx, &xd->mi[0]->mbmi.skip, 0};
+  ENTROPY_CONTEXT ta[2 * MAX_MIB_SIZE];
+  ENTROPY_CONTEXT tl[2 * MAX_MIB_SIZE];
+
+  struct encode_b_args arg = {x, &ctx, &xd->mi[0]->mbmi.skip, ta, tl, 0};
 
   if (enable_optimize_b && x->optimize &&
       (!x->skip_recode || !x->skip_optimize)) {
