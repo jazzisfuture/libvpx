@@ -1193,6 +1193,10 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
   MACROBLOCK *const x = args->x;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+#if CONFIG_NEW_QUANT
+  int ctx;
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+#endif  //  CONFIG_NEW_QUANT
   int64_t rd1, rd2, rd;
   int rate;
   int64_t dist;
@@ -1200,12 +1204,18 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
   ENTROPY_CONTEXT coeff_ctx = combine_entropy_contexts(
       *(args->t_above + blk_col), *(args->t_left + blk_row));
 
+#if CONFIG_NEW_QUANT
+  ctx = get_entropy_context(tx_size, pd->above_context + blk_col,
+                            pd->left_context + blk_row);
+#endif  //  CONFIG_NEW_QUANT
+
   if (args->exit_early)
     return;
 
   if (!is_inter_block(mbmi)) {
     struct encode_b_args intra_arg = {x, NULL, &mbmi->skip, args->t_above,
                                       args->t_left};
+
     vp10_encode_block_intra(plane, block, blk_row, blk_col,
                             plane_bsize, tx_size, &intra_arg);
 
@@ -1248,7 +1258,7 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
       // full forward transform and quantization
 #if CONFIG_NEW_QUANT
       vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col,
-                           plane_bsize, tx_size);
+                           plane_bsize, tx_size, ctx);
 #else
       vp10_xform_quant(x, plane, block, blk_row, blk_col,
                        plane_bsize, tx_size, VP10_XFORM_QUANT_FP);
@@ -1265,10 +1275,10 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
 #if CONFIG_NEW_QUANT
       if (x->quant_fp)
         vp10_xform_quant_dc_fp_nuq(x, plane, block, blk_row, blk_col,
-                                   plane_bsize, tx_size);
+                                   plane_bsize, tx_size, ctx);
       else
         vp10_xform_quant_dc_nuq(x, plane, block, blk_row, blk_col,
-                                plane_bsize, tx_size);
+                                plane_bsize, tx_size, ctx);
 #else
       vp10_xform_quant(x, plane, block, blk_row, blk_col,
                           plane_bsize, tx_size, VP10_XFORM_QUANT_DC);
@@ -1301,10 +1311,10 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
 #if CONFIG_NEW_QUANT
     if (x->quant_fp)
       vp10_xform_quant_fp_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                              tx_size);
+                              tx_size, ctx);
     else
       vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                           tx_size);
+                           tx_size, ctx);
 #else
     vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
                      VP10_XFORM_QUANT_FP);
