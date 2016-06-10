@@ -66,7 +66,7 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
     T *p_src0;
     T *p_src1;
 
-    switch (random.Uniform<int>(3)) {
+    switch (random.Uniform<int>(2)) {
       case 0:   // Separate sources
         p_src0 = &src0[0][0];
         p_src1 = &src1[0][0];
