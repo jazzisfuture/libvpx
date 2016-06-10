@@ -12,8 +12,8 @@
 
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
-#include "vpx_ports/mem.h"
 
+#include "test/aligned.h"
 #include "test/array_utils.h"
 #include "test/assertion_helpers.h"
 #include "test/function_equivalence_test.h"
@@ -21,6 +21,7 @@
 #include "test/register_state_check.h"
 #include "test/snapshot.h"
 
+using libvpx_test::Aligned;
 using libvpx_test::FunctionEquivalenceTest;
 using libvpx_test::Snapshot;
 using libvpx_test::Randomise;
@@ -29,7 +30,7 @@ using libvpx_test::assertion_helpers::ArraysEq;
 
 namespace {
 
-static const int16_t int13_max = (1<<12) - 1;
+static const int16_t int13_max = (1 << 12) - 1;
 
 //////////////////////////////////////////////////////////////////////////////
 // 2D version
@@ -60,7 +61,7 @@ class SumSquares2DTest : public FunctionEquivalenceTest<F2D> {
   Snapshot snapshot;
   Randomise randomise;
 
-  DECLARE_ALIGNED(16, int16_t, src[256*256]);
+  Aligned<32, int16_t[256 * 256]> src;
 };
 
 TEST_P(SumSquares2DTest, RandomValues) {
@@ -101,7 +102,7 @@ typedef uint64_t (*F1D)(const int16_t *src, uint32_t N);
 class SumSquares1DTest : public FunctionEquivalenceTest<F1D> {
  protected:
   void Common() {
-    const int N = randomise.uniform<int>(1, 256*256-1);
+    const int N = randomise.uniform<int>(1, 256 * 256 - 1);
 
     snapshot(src);
 
@@ -118,7 +119,7 @@ class SumSquares1DTest : public FunctionEquivalenceTest<F1D> {
   Snapshot snapshot;
   Randomise randomise;
 
-  DECLARE_ALIGNED(16, int16_t, src[256*256]);
+  Aligned<32, int16_t[256 * 256]> src;
 };
 
 TEST_P(SumSquares1DTest, RandomValues) {

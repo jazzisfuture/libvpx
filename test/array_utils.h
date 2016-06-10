@@ -14,6 +14,8 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "test/aligned.h"
+
 namespace libvpx_test {
 namespace array_utils {
 
@@ -27,10 +29,13 @@ void arraySet(T (&arr)[n], const V &v) {
 template<typename T, size_t n, size_t m, typename V>
 void arraySet(T (&arr)[n][m], const V &v) {
   for (size_t i = 0; i < n ; i++) {
-    for (size_t j = 0; j < m ; j++) {
-      arr[i][j] = v;
-    }
+    arraySet(arr[i], v);
   }
+}
+
+template<int A, typename T, size_t n, typename V>
+void arraySet(Aligned<A, T[n]> &a, const V &v) {  // NOLINT
+  arraySet(a.instance, v);
 }
 
 }   // namespace array_utils

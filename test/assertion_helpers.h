@@ -14,6 +14,8 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "test/aligned.h"
+
 namespace libvpx_test {
 namespace assertion_helpers {
 
@@ -270,6 +272,18 @@ template<typename E, size_t n, size_t m>
   assert(idx == n * m + cols);
 
   return ::testing::AssertionSuccess();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Specialisations to handle instances of Aligned
+//////////////////////////////////////////////////////////////////////////////
+
+// Note: Add new instances as required
+
+template<int A, typename T>
+::testing::AssertionResult ArraysEq(const Aligned<A, T> &a,
+                                    const Aligned<A, T> &b) {
+  return ArraysEq(a.instance, b.instance);
 }
 
 }   // namespace assertion_helpers
