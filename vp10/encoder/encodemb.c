@@ -58,6 +58,7 @@ typedef struct vp10_token_state {
   int           next;
   int16_t       token;
   tran_low_t    qc;
+  tran_low_t    dqc;
 } vp10_token_state;
 
 // TODO(jimbankoski): experiment to find optimal RD numbers.
@@ -99,14 +100,17 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
   const int eob = p->eobs[block];
   const PLANE_TYPE type = pd->plane_type;
   const int default_eob = 16 << (tx_size << 1);
-  int mul;
-  const int16_t *dequant_ptr = pd->dequant;
   const uint8_t *const band_translate = get_band_translate(tx_size);
   TX_TYPE tx_type = get_tx_type(type, xd, block, tx_size);
   const scan_order *const so =
       get_scan(tx_size, tx_type, is_inter_block(&xd->mi[0]->mbmi));
   const int16_t *const scan = so->scan;
   const int16_t *const nb = so->neighbors;
+
+  int mul = get_tx_scale(xd, tx_type, tx_size);
+  const int16_t *dequant_ptr = pd->dequant;
+  int dq_step[2] = { dequant_ptr[0] >> mul, dequant_ptr[1] >> mul };
+
   int next = eob, sz = 0;
   const int64_t rdmult = (mb->rdmult * plane_rd_mult[ref][type]) >> 1;
   const int64_t rddiv = mb->rddiv;
@@ -123,7 +127,6 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
 
   assert((!type && !plane) || (type && plane));
   assert(eob <= default_eob);
-  mul = get_tx_scale(xd, tx_type, tx_size);
 
   /* Now set up a Viterbi trellis to evaluate alternative roundings. */
   /* Initialize the sentinel node of the trellis. */
@@ -177,6 +180,7 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
       tokens[i][0].next = next;
       tokens[i][0].token = t0;
       tokens[i][0].qc = x;
+      tokens[i][0].dqc = dqcoeff[rc];
       best_index[i][0] = best;
 
       /* Evaluate the second possibility for this state. */
@@ -192,7 +196,7 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
 
       if (shortcut) {
         sz = -(x < 0);
-        x -= 2 * sz + 1;
+        x -= (sz << 1) + 1;
       } else {
         tokens[i][1] = tokens[i][0];
         best_index[i][1] = best_index[i][0];
@@ -248,6 +252,15 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
       tokens[i][1].next = next;
       tokens[i][1].token = best ? t1 : t0;
       tokens[i][1].qc = x;
+
+      if (x > 0)
+        tokens[i][1].dqc = dqcoeff[rc] - (dq_step[rc != 0] +
+            ((mul & x) & dequant_ptr[rc != 0]));
+      else if (x < 0)
+        tokens[i][1].dqc = dqcoeff[rc] + (dq_step[rc != 0] +
+            ((mul & x) & dequant_ptr[rc != 0]));
+      else
+        tokens[i][1].dqc = 0;
       best_index[i][1] = best;
       /* Finally, make this the new head of the trellis. */
       next = i;
@@ -286,21 +299,15 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
   rate1 += mb->token_costs[tx_size][type][ref][band][0][ctx][t1];
   UPDATE_RD_COST();
   best = rd_cost1 < rd_cost0;
+
   final_eob = -1;
-  memset(qcoeff, 0, sizeof(*qcoeff) * (16 << (tx_size * 2)));
-  memset(dqcoeff, 0, sizeof(*dqcoeff) * (16 << (tx_size * 2)));
+
   for (i = next; i < eob; i = next) {
     const int x = tokens[i][best].qc;
     const int rc = scan[i];
-    if (x) {
-      final_eob = i;
-    }
-
+    if (x) final_eob = i;
     qcoeff[rc] = x;
-    dqcoeff[rc] = (abs(x * dequant_ptr[rc != 0]) >> mul);
-    if (x < 0)
-      dqcoeff[rc] = -dqcoeff[rc];
-
+    dqcoeff[rc] = tokens[i][best].dqc;
     next = tokens[i][best].next;
     best = best_index[i][best];
   }
@@ -638,7 +645,7 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx ctx;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
-  struct encode_b_args arg = {x, &ctx, &mbmi->skip, NULL, NULL};
+  struct encode_b_args arg = {x, &mbmi->skip, NULL, NULL};
   int plane;
 
   mbmi->skip = 1;
@@ -697,7 +704,7 @@ void vp10_encode_sb_supertx(MACROBLOCK *x, BLOCK_SIZE bsize) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx ctx;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
-  struct encode_b_args arg = {x, &ctx, &mbmi->skip, NULL, NULL};
+  struct encode_b_args arg = {x, &mbmi->skip, NULL, NULL};
   int plane;
 
   mbmi->skip = 1;
@@ -803,7 +810,7 @@ void vp10_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane,
   ENTROPY_CONTEXT ta[2 * MAX_MIB_SIZE];
   ENTROPY_CONTEXT tl[2 * MAX_MIB_SIZE];
 
-  struct encode_b_args arg = {x, NULL, &xd->mi[0]->mbmi.skip, ta, tl};
+  struct encode_b_args arg = {x, &xd->mi[0]->mbmi.skip, ta, tl};
 
   if (enable_optimize_b && x->optimize) {
     const struct macroblockd_plane* const pd = &xd->plane[plane];
