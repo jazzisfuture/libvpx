@@ -589,6 +589,12 @@ void vp10_build_prediction_by_left_preds(VP10_COMMON *cm,
 
 void vp10_init_wedge_masks();
 
+static INLINE const uint8_t *get_contiguous_soft_mask(int wedge_index,
+                                                      int wedge_sign,
+                                                      BLOCK_SIZE sb_type) {
+  return wedge_params_lookup[sb_type].masks[wedge_sign][wedge_index];
+}
+
 const uint8_t *vp10_get_soft_mask(int wedge_index,
                                   int wedge_sign,
                                   BLOCK_SIZE sb_type,
@@ -646,7 +652,6 @@ void vp10_build_inter_predictors_for_planes_single_buf(
 void vp10_build_wedge_inter_predictor_from_buf(
     MACROBLOCKD *xd, BLOCK_SIZE bsize,
     int plane_from, int plane_to,
-    int mi_row, int mi_col,
     uint8_t *ext_dst0[3], int ext_dst_stride0[3],
     uint8_t *ext_dst1[3], int ext_dst_stride1[3]);
 #endif  // CONFIG_EXT_INTER

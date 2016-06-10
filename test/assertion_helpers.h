@@ -286,6 +286,14 @@ template<int A, typename T>
   return ArraysEq(a.instance, b.instance);
 }
 
+template<int A, typename T>
+::testing::AssertionResult ArraysEqWithin(const Aligned<A, T> &a,
+                                          const Aligned<A, T> &b,
+                                          const size_t lo,
+                                          const size_t hi) {
+  return ArraysEqWithin(a.instance, b.instance, lo, hi);
+}
+
 }   // namespace assertion_helpers
 }   // namespace libvpx_test
 
