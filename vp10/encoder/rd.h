@@ -436,6 +436,11 @@ void vp10_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
                               ENTROPY_CONTEXT t_above[2 * MAX_MIB_SIZE],
                               ENTROPY_CONTEXT t_left[2 * MAX_MIB_SIZE]);
 
+void vp10_get_entropy_contexts_plane(BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+                                     const struct macroblockd_plane *pd,
+                                     ENTROPY_CONTEXT t_above[2 * MAX_MIB_SIZE],
+                                     ENTROPY_CONTEXT t_left[2 * MAX_MIB_SIZE]);
+
 void vp10_set_rd_speed_thresholds(struct VP10_COMP *cpi);
 
 void vp10_set_rd_speed_thresholds_sub8x8(struct VP10_COMP *cpi);

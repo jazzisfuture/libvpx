@@ -241,6 +241,7 @@ void vp10_set_high_precision_mv(VP10_COMP *cpi, int allow_high_precision_mv) {
     }
   }
 #else
+  //sarahparker
   if (cpi->common.allow_high_precision_mv) {
     mb->mvcost = mb->nmvcost_hp;
     mb->mvsadcost = mb->nmvcost_hp;
@@ -2523,6 +2524,7 @@ VP10_COMP *vp10_create_compressor(VP10EncoderConfig *oxcf,
     cpi->td.mb.nmvcost_hp[i][1] = &cpi->nmv_costs_hp[i][1][MV_MAX];
   }
 #else
+  //sarahparker set here
   cal_nmvjointsadcost(cpi->td.mb.nmvjointsadcost);
   cpi->td.mb.nmvcost[0] = &cpi->nmvcosts[0][MV_MAX];
   cpi->td.mb.nmvcost[1] = &cpi->nmvcosts[1][MV_MAX];
