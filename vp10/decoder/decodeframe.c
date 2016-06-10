@@ -1295,6 +1295,12 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
       vpx_internal_error(xd->error_info,
                          VPX_CODEC_CORRUPT_FRAME, "Invalid block size.");
   }
+  /*
+  if (cm->current_video_frame == 1 && cm->show_frame &&
+      mi_col == 20 && mi_row == 12) {
+    printf("Debug Decoder: %d\n", mbmi->sb_type);
+  }
+  */
 
 #if CONFIG_SUPERTX
   mbmi->segment_id_supertx = MAX_SEGMENTS;
@@ -2077,7 +2083,8 @@ static void setup_segmentation_dequant(VP10_COMMON *const cm) {
   // Build y/uv dequant values based on segmentation.
 #if CONFIG_NEW_QUANT
   int b;
-#endif
+  int dq;
+#endif  //  CONFIG_NEW_QUANT
   if (cm->seg.enabled) {
     int i;
     for (i = 0; i < MAX_SEGMENTS; ++i) {
@@ -2090,15 +2097,17 @@ static void setup_segmentation_dequant(VP10_COMMON *const cm) {
       cm->uv_dequant[i][1] = vp10_ac_quant(qindex, cm->uv_ac_delta_q,
                                           cm->bit_depth);
 #if CONFIG_NEW_QUANT
-      for (b = 0; b < COEF_BANDS; ++b) {
-        get_dequant_val_nuq(
-            cm->y_dequant[i][b != 0], qindex == 0, b,
-            cm->y_dequant_nuq[i][b], NULL);
-        get_dequant_val_nuq(
-            cm->uv_dequant[i][b != 0], qindex == 0, b,
-            cm->uv_dequant_nuq[i][b], NULL);
+      for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+        for (b = 0; b < COEF_BANDS; ++b) {
+          get_dequant_val_nuq(
+              cm->y_dequant[i][b != 0], qindex == 0, b,
+              cm->y_dequant_nuq[i][dq][b], NULL, dq);
+          get_dequant_val_nuq(
+              cm->uv_dequant[i][b != 0], qindex == 0, b,
+              cm->uv_dequant_nuq[i][dq][b], NULL, dq);
+        }
       }
-#endif
+#endif  //  CONFIG_NEW_QUANT
     }
   } else {
     const int qindex = cm->base_qindex;
@@ -2111,15 +2120,17 @@ static void setup_segmentation_dequant(VP10_COMMON *const cm) {
     cm->uv_dequant[0][1] = vp10_ac_quant(qindex, cm->uv_ac_delta_q,
                                         cm->bit_depth);
 #if CONFIG_NEW_QUANT
-    for (b = 0; b < COEF_BANDS; ++b) {
-      get_dequant_val_nuq(
-          cm->y_dequant[0][b != 0], qindex == 0, b,
-          cm->y_dequant_nuq[0][b], NULL);
-      get_dequant_val_nuq(
-          cm->uv_dequant[0][b != 0], qindex == 0, b,
-          cm->uv_dequant_nuq[0][b], NULL);
+    for (dq = 0; dq < QUANT_PROFILES; dq ++) {
+      for (b = 0; b < COEF_BANDS; ++b) {
+        get_dequant_val_nuq(
+            cm->y_dequant[0][b != 0], qindex == 0, b,
+            cm->y_dequant_nuq[0][dq][b], NULL, dq);
+        get_dequant_val_nuq(
+            cm->uv_dequant[0][b != 0], qindex == 0, b,
+            cm->uv_dequant_nuq[0][dq][b], NULL, dq);
+      }
     }
-#endif
+#endif  //  CONFIG_NEW_QUANT
   }
 }
 

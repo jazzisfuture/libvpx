@@ -3655,7 +3655,8 @@ static void loopfilter_frame(VP10_COMP *cpi, VP10_COMMON *cm) {
 #if CONFIG_LOOP_RESTORATION
     vp10_pick_filter_restoration(cpi->Source, cpi, cpi->sf.lpf_pick);
 #else
-    vp10_pick_filter_level(cpi->Source, cpi, cpi->sf.lpf_pick);
+    //vp10_pick_filter_level(cpi->Source, cpi, cpi->sf.lpf_pick);
+    lf->filter_level = 0;
 #endif  // CONFIG_LOOP_RESTORATION
 
     vpx_usec_timer_mark(&timer);
