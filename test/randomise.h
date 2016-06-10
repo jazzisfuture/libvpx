@@ -18,6 +18,7 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 #include "test/acm_random.h"
+#include "test/aligned.h"
 
 namespace libvpx_test {
 
@@ -101,58 +102,48 @@ class Randomise {
     e = uniform<T, L, H>(lo, hi);
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+  // Versions to handle arrays
+  ////////////////////////////////////////////////////////////////////////////
+
   template<typename T, size_t n>
   void operator()(T (&arr)[n]) {
-    STATIC_ASSERT_INTEGER_TYPE_(T);
     for (size_t i = 0; i < n ; i++) {
-      arr[i] = uniform<T>();
+      this->operator()(arr[i]);
     }
   }
 
   template<typename T, size_t n, typename H>
   void operator()(T (&arr)[n], H hi) {
-    STATIC_ASSERT_INTEGER_TYPE_(T);
     for (size_t i = 0; i < n ; i++) {
-      arr[i] = uniform<T, H>(hi);
+      this->operator()(arr[i], hi);
     }
   }
 
   template<typename T, size_t n, typename L, typename H>
   void operator()(T (&arr)[n], L lo, H hi) {
-    STATIC_ASSERT_INTEGER_TYPE_(T);
     for (size_t i = 0; i < n ; i++) {
-      arr[i] = uniform<T, L, H>(lo, hi);
+      this->operator()(arr[i], lo, hi);
     }
   }
 
-  template<typename T, size_t n, size_t m>
-  void operator()(T (&arr)[n][m]) {
-    STATIC_ASSERT_INTEGER_TYPE_(T);
-    for (size_t i = 0; i < n ; i++) {
-      for (size_t j = 0; j < m ; j++) {
-        arr[i][j] = uniform<T>();
-      }
-    }
+  ////////////////////////////////////////////////////////////////////////////
+  // Versions to handle instances of Aligned
+  ////////////////////////////////////////////////////////////////////////////
+
+  template<int A, typename T>
+  void operator()(Aligned<A, T> &a) {   // NOLINT
+    this->operator()(a.instance);
   }
 
-  template<typename T, size_t n, size_t m, typename H>
-  void operator()(T (&arr)[n][m], H hi) {
-    STATIC_ASSERT_INTEGER_TYPE_(T);
-    for (size_t i = 0; i < n ; i++) {
-      for (size_t j = 0; j < m ; j++) {
-        arr[i][j] = uniform<T, H>(hi);
-      }
-    }
+  template<int A, typename T, typename H>
+  void operator()(Aligned<A, T> &a, H hi) { // NOLINT
+    this->operator()(a.instance, hi);
   }
 
-  template<typename T, size_t n, size_t m, typename L, typename H>
-  void operator()(T (&arr)[n][m], L lo, H hi) {
-    STATIC_ASSERT_INTEGER_TYPE_(T);
-    for (size_t i = 0; i < n ; i++) {
-      for (size_t j = 0; j < m ; j++) {
-        arr[i][j] = uniform<T, L, H>(lo, hi);
-      }
-    }
+  template<int A, typename T, typename L, typename H>
+  void operator()(Aligned<A, T> &a, L lo, H hi) { // NOLINT
+    this->operator()(a.instance, lo, hi);
   }
 
  private:
