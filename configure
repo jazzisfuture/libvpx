@@ -413,25 +413,12 @@ process_cmdline() {
 post_process_cmdline() {
     c=""
 
-    # If the codec family is disabled, disable all components of that family.
-    # If the codec family is enabled, enable all components of that family.
-    log_echo "Configuring selected codecs"
-    for c in ${CODECS}; do
-        disabled ${c%%_*} && disable_feature ${c}
-        enabled ${c%%_*} && enable_feature ${c}
-    done
-
     # Enable all detected codecs, if they haven't been disabled
     for c in ${CODECS}; do soft_enable $c; done
 
     # Enable the codec family if any component of that family is enabled
     for c in ${CODECS}; do
-        enabled $c && enable_feature ${c%_*}
-    done
-
-    # Set the {en,de}coders variable if any algorithm in that class is enabled
-    for c in ${CODECS}; do
-        enabled ${c} && enable_feature ${c##*_}s
+        enabled $c && set_all yes ${c%_*}
     done
 }
 
