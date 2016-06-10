@@ -4972,6 +4972,7 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
   ctx->is_coded = 1;
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
 
+
   if (!is_inter_block(mbmi)) {
     int plane;
     mbmi->skip = 1;
@@ -5163,6 +5164,20 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     set_txfm_ctx(xd->above_txfm_context, tx_size, xd->n8_w);
   }
 #endif
+//int i,j;
+//  if (cm->current_video_frame == 4 && cm->show_frame &&
+//    mi_row == 0 && mi_col == 0) {
+//  printf("Debug Decoder: %d\n\n\n", mbmi->sb_type);
+//  for (i=0; i < 64; ++i) {
+//    for (j=0; j < 64; ++j) {
+//      printf("%d, ", xd->plane[0].dst.buf[j + i * xd->plane[0].dst.stride]);
+//    }
+//    printf("\n");
+//  }
+//  }
+
+
+
 }
 
 #if CONFIG_SUPERTX

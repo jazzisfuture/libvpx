@@ -1209,6 +1209,10 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
   MACROBLOCK *const x = args->x;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+#if CONFIG_NEW_QUANT
+  int ctx;
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+#endif  //  CONFIG_NEW_QUANT
   int64_t rd1, rd2, rd;
   int rate;
   int64_t dist;
@@ -1218,11 +1222,30 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
       *(args->t_above + blk_col), *(args->t_left + blk_row));
 #endif
 
+#if CONFIG_NEW_QUANT
+  ctx = get_entropy_context(tx_size, pd->above_context + blk_col,
+                            pd->left_context + blk_row);
+#endif  //  CONFIG_NEW_QUANT
+
   if (args->exit_early)
     return;
 
   if (!is_inter_block(mbmi)) {
+//sarahparker verify this
+#if CONFIG_NEW_QUANT
+    const struct macroblockd_plane* const pd = &xd->plane[plane];
+    struct optimize_ctx ctx_q;
+    struct encode_b_args arg = {x, &ctx_q, &mbmi->skip};
+    memset(&ctx_q, 0, sizeof(ctx_q));
+    //sarahparker should !x->skip_optimize still be here?
+    if (x->optimize) {
+      vp10_get_entropy_contexts_plane(plane_bsize, tx_size, pd,
+                                     ctx_q.ta[plane], ctx_q.tl[plane]);
+    }
+
+#else  //  CONFIG_NEW_QUANT
     struct encode_b_args arg = {x, NULL, &mbmi->skip};
+#endif  //  CONFIG_NEW_QUANT
     vp10_encode_block_intra(plane, block, blk_row, blk_col,
                             plane_bsize, tx_size, &arg);
 
@@ -1265,7 +1288,7 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
       // full forward transform and quantization
 #if CONFIG_NEW_QUANT
       vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col,
-                           plane_bsize, tx_size);
+                           plane_bsize, tx_size, ctx);
 #else
       vp10_xform_quant(x, plane, block, blk_row, blk_col,
                        plane_bsize, tx_size, VP10_XFORM_QUANT_FP);
@@ -1281,10 +1304,10 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
 #if CONFIG_NEW_QUANT
       if (x->quant_fp)
         vp10_xform_quant_dc_fp_nuq(x, plane, block, blk_row, blk_col,
-                                   plane_bsize, tx_size);
+                                   plane_bsize, tx_size, ctx);
       else
         vp10_xform_quant_dc_nuq(x, plane, block, blk_row, blk_col,
-                                plane_bsize, tx_size);
+                                plane_bsize, tx_size, ctx);
 #else
       vp10_xform_quant(x, plane, block, blk_row, blk_col,
                           plane_bsize, tx_size, VP10_XFORM_QUANT_DC);
@@ -1317,10 +1340,10 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
 #if CONFIG_NEW_QUANT
     if (x->quant_fp)
       vp10_xform_quant_fp_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                              tx_size);
+                              tx_size, ctx);
     else
       vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                           tx_size);
+                           tx_size, ctx);
 #else
     vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
                      VP10_XFORM_QUANT_FP);
