@@ -31,6 +31,8 @@ namespace {
 
 static const int16_t int13_max = (1<<12) - 1;
 
+typedef int16_t src_buf_t[256*256];
+
 //////////////////////////////////////////////////////////////////////////////
 // 2D version
 //////////////////////////////////////////////////////////////////////////////
@@ -39,6 +41,8 @@ typedef uint64_t (*F2D)(const int16_t *src, int stride, uint32_t size);
 
 class SumSquares2DTest : public FunctionEquivalenceTest<F2D> {
  protected:
+  SumSquares2DTest() : src(aligned<src_buf_t>(16)) {}
+
   void Common() {
     const int sizelog2 = randomise.uniform<int>(2, 8);
 
@@ -60,7 +64,7 @@ class SumSquares2DTest : public FunctionEquivalenceTest<F2D> {
   Snapshot snapshot;
   Randomise randomise;
 
-  DECLARE_ALIGNED(16, int16_t, src[256*256]);
+  src_buf_t &src;
 };
 
 TEST_P(SumSquares2DTest, RandomValues) {
@@ -100,6 +104,8 @@ typedef uint64_t (*F1D)(const int16_t *src, uint32_t N);
 
 class SumSquares1DTest : public FunctionEquivalenceTest<F1D> {
  protected:
+  SumSquares1DTest() : src(aligned<src_buf_t>(16)) {}
+
   void Common() {
     const int N = randomise.uniform<int>(1, 256*256-1);
 
@@ -118,7 +124,7 @@ class SumSquares1DTest : public FunctionEquivalenceTest<F1D> {
   Snapshot snapshot;
   Randomise randomise;
 
-  DECLARE_ALIGNED(16, int16_t, src[256*256]);
+  src_buf_t &src;
 };
 
 TEST_P(SumSquares1DTest, RandomValues) {
