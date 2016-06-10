@@ -110,14 +110,16 @@ static void output_stats(FIRSTPASS_STATS *stats,
     FILE *fpfile;
     fpfile = fopen("firstpass.stt", "a");
 
-    fprintf(fpfile, "%12.0lf %12.4lf %12.0lf %12.0lf %12.0lf %12.4lf %12.4lf"
+    fprintf(fpfile, "%12.0lf %12.4lf %12.0lf %12.0lf %12.0lf %12.0lf %12.4lf"
             "%12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf"
-            "%12.4lf %12.4lf %12.4lf %12.0lf %12.0lf %12.0lf %12.4lf\n",
+            "%12.4lf %12.4lf %12.4lf %12.4lf %12.0lf %12.0lf %12.0lf %12.4lf"
+            "\n",
             stats->frame,
             stats->weight,
             stats->intra_error,
             stats->coded_error,
             stats->sr_coded_error,
+            stats->frame_noise_energy,
             stats->pcnt_inter,
             stats->pcnt_motion,
             stats->pcnt_second_ref,
@@ -158,6 +160,7 @@ static void zero_stats(FIRSTPASS_STATS *section) {
   section->intra_error = 0.0;
   section->coded_error = 0.0;
   section->sr_coded_error = 0.0;
+  section->frame_noise_energy = 0.0;
   section->pcnt_inter  = 0.0;
   section->pcnt_motion  = 0.0;
   section->pcnt_second_ref = 0.0;
@@ -187,6 +190,7 @@ static void accumulate_stats(FIRSTPASS_STATS *section,
   section->intra_error += frame->intra_error;
   section->coded_error += frame->coded_error;
   section->sr_coded_error += frame->sr_coded_error;
+  section->frame_noise_energy += frame->frame_noise_energy;
   section->pcnt_inter  += frame->pcnt_inter;
   section->pcnt_motion += frame->pcnt_motion;
   section->pcnt_second_ref += frame->pcnt_second_ref;
@@ -214,6 +218,7 @@ static void subtract_stats(FIRSTPASS_STATS *section,
   section->intra_error -= frame->intra_error;
   section->coded_error -= frame->coded_error;
   section->sr_coded_error -= frame->sr_coded_error;
+  section->frame_noise_energy -= frame->frame_noise_energy;
   section->pcnt_inter  -= frame->pcnt_inter;
   section->pcnt_motion -= frame->pcnt_motion;
   section->pcnt_second_ref -= frame->pcnt_second_ref;
@@ -548,6 +553,80 @@ static int get_smooth_intra_threshold(VP9_COMMON *cm) {
   return ret_val;
 }
 
+#define FP_DN_THRESH 8
+#define FP_MAX_DN_THRESH 16
+
+// Baseline Kernal weights for first pass noise metric
+static uint8_t fp_dn_kernal_3[9] = {
+  1, 2, 1,
+  2, 4, 2,
+  1, 2, 1};
+
+// TODO: (paulwilkins) #if CONFIG_VP9_HIGHBITDEPTH variants.
+// The code below currently is only valid for 8bit
+static int fp_estimate_point_noise(uint8_t *src_ptr, const int stride) {
+  int sum_weight = 0;
+  int sum_val = 0;
+  int kernal_size = 3;
+  int i, j;
+  int max_diff = 0;
+  int diff;
+  int dn_diff;
+  uint8_t *tmp_ptr = src_ptr - stride - 1;
+  uint8_t *kernal_ptr;
+  uint8_t dn_val;
+
+  kernal_ptr = fp_dn_kernal_3;
+
+  // Apply the kernal
+  tmp_ptr = src_ptr - stride - 1;
+  for (i = 0; i < kernal_size; ++i) {
+    for (j = 0; j < kernal_size; ++j) {
+      diff = abs((int)*src_ptr - (int)tmp_ptr[j]);
+      max_diff = VPXMAX(max_diff, diff);
+      if (diff <= FP_DN_THRESH) {
+        sum_weight += *kernal_ptr;
+        sum_val += (int)tmp_ptr[j] * (int)*kernal_ptr;
+      }
+      ++kernal_ptr;
+    }
+    tmp_ptr += stride;
+  }
+
+
+  if (max_diff < FP_MAX_DN_THRESH)
+    // Update the source value with the new filtered value
+    dn_val =  (sum_val + (sum_weight >> 1)) / sum_weight;
+  else
+    dn_val = *src_ptr;
+
+  // return the noise energy as the square of the difference between the
+  // denoised and raw value.
+  dn_diff = (int)*src_ptr - (int)dn_val;
+  return dn_diff * dn_diff;
+  // return abs(dn_diff);
+}
+
+// TODO: (paulwilkins) #if CONFIG_VP9_HIGHBITDEPTH variants.
+// The code below currently is only valid for 8bit
+static int fp_estimate_block_noise(MACROBLOCK *x, BLOCK_SIZE bsize) {
+  uint8_t *src_ptr = &x->plane[0].src.buf[0];
+  const int width = num_4x4_blocks_wide_lookup[bsize] * 4;
+  const int height = num_4x4_blocks_high_lookup[bsize] * 4;
+  int w, h;
+  int stride = x->plane[0].src.stride;
+  int block_noise = 0;
+
+  for (h = 0; h < height; ++h) {
+    for (w = 0; w < width; ++w) {
+      block_noise += fp_estimate_point_noise(src_ptr, stride);
+      ++src_ptr;
+    }
+    *src_ptr += (stride - width);
+  }
+  return block_noise;
+}
+
 #define INVALID_ROW -1
 void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   int mb_row, mb_col;
@@ -564,6 +643,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   int64_t intra_error = 0;
   int64_t coded_error = 0;
   int64_t sr_coded_error = 0;
+  int64_t frame_noise_energy = 0;
 
   int sum_mvr = 0, sum_mvc = 0;
   int sum_mvr_abs = 0, sum_mvc_abs = 0;
@@ -716,6 +796,8 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 #endif
 
       vpx_clear_system_state();
+
+      frame_noise_energy += fp_estimate_block_noise(x, bsize);
 
       xd->plane[0].dst.buf = new_yv12->y_buffer + recon_yoffset;
       xd->plane[1].dst.buf = new_yv12->u_buffer + recon_uvoffset;
@@ -1114,6 +1196,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     fps.coded_error = (double)(coded_error >> 8) + min_err;
     fps.sr_coded_error = (double)(sr_coded_error >> 8) + min_err;
     fps.intra_error = (double)(intra_error >> 8) + min_err;
+    fps.frame_noise_energy = (double)frame_noise_energy / (double)num_mbs;
     fps.count = 1.0;
     fps.pcnt_inter = (double)intercount / num_mbs;
     fps.pcnt_second_ref = (double)second_ref_count / num_mbs;
@@ -1239,9 +1322,11 @@ static double calc_correction_factor(double err_per_mb,
 }
 
 #define ERR_DIVISOR         115.0
+#define SECTION_NOISE_DIV   125.0
 static int get_twopass_worst_quality(VP9_COMP *cpi,
                                      const double section_err,
                                      double inactive_zone,
+                                     double section_noise,
                                      int section_target_bandwidth) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
@@ -1250,6 +1335,9 @@ static int get_twopass_worst_quality(VP9_COMP *cpi,
   // Clamp the target rate to VBR min / max limts.
   const int target_rate =
       vp9_rc_clamp_pframe_target_size(cpi, section_target_bandwidth);
+  const double noise_factor = 1.0;
+  //    section_noise / SECTION_NOISE_DIV;
+//      (1.0 + (section_noise / SECTION_NOISE_DIV)) / 2.0;
 
   inactive_zone = fclamp(inactive_zone, 0.0, 1.0);
 
@@ -1290,7 +1378,8 @@ static int get_twopass_worst_quality(VP9_COMP *cpi,
                                  cpi->common.bit_depth);
       const int bits_per_mb =
         vp9_rc_bits_per_mb(INTER_FRAME, q,
-                           factor * speed_term * cpi->twopass.bpm_factor,
+                           factor * speed_term * cpi->twopass.bpm_factor *
+                           noise_factor,
                            cpi->common.bit_depth);
       if (bits_per_mb <= target_norm_bits_per_mb)
         break;
@@ -1938,6 +2027,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   double old_boost_score = 0.0;
   double gf_group_err = 0.0;
   double gf_group_raw_error = 0.0;
+  double gf_group_noise = 0.0;
   double gf_group_skip_pct = 0.0;
   double gf_group_inactive_zone_rows = 0.0;
   double gf_first_frame_err = 0.0;
@@ -1988,6 +2078,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   if (arf_active_or_kf) {
     gf_group_err -= gf_first_frame_err;
     gf_group_raw_error -= this_frame->coded_error;
+    gf_group_noise -= this_frame->frame_noise_energy;
     gf_group_skip_pct -= this_frame->intra_skip_pct;
     gf_group_inactive_zone_rows -= this_frame->inactive_zone_rows;
   }
@@ -2042,6 +2133,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     mod_frame_err = calculate_modified_err(cpi, twopass, oxcf, this_frame);
     gf_group_err += mod_frame_err;
     gf_group_raw_error += this_frame->coded_error;
+    gf_group_noise += this_frame->frame_noise_energy;
     gf_group_skip_pct += this_frame->intra_skip_pct;
     gf_group_inactive_zone_rows += this_frame->inactive_zone_rows;
 
@@ -2142,6 +2234,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
         break;
       gf_group_err += calculate_modified_err(cpi, twopass, oxcf, this_frame);
       gf_group_raw_error += this_frame->coded_error;
+      gf_group_noise += this_frame->frame_noise_energy;
       gf_group_skip_pct += this_frame->intra_skip_pct;
       gf_group_inactive_zone_rows += this_frame->inactive_zone_rows;
     }
@@ -2165,6 +2258,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     const int vbr_group_bits_per_frame =
       (int)(gf_group_bits / rc->baseline_gf_interval);
     const double group_av_err = gf_group_raw_error  / rc->baseline_gf_interval;
+    const double group_av_noise = gf_group_noise  / rc->baseline_gf_interval;
     const double group_av_skip_pct =
       gf_group_skip_pct / rc->baseline_gf_interval;
     const double group_av_inactive_zone =
@@ -2173,6 +2267,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     int tmp_q =
         get_twopass_worst_quality(cpi, group_av_err,
                                   (group_av_skip_pct + group_av_inactive_zone),
+                                  group_av_noise,
                                   vbr_group_bits_per_frame);
     twopass->active_worst_quality =
         (tmp_q + (twopass->active_worst_quality * 3)) >> 2;
@@ -2705,16 +2800,19 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
                                                frames_left);
     const double section_length = twopass->total_left_stats.count;
     const double section_error =
-      twopass->total_left_stats.coded_error / section_length;
+        twopass->total_left_stats.coded_error / section_length;
     const double section_intra_skip =
-      twopass->total_left_stats.intra_skip_pct / section_length;
+        twopass->total_left_stats.intra_skip_pct / section_length;
     const double section_inactive_zone =
-      (twopass->total_left_stats.inactive_zone_rows * 2) /
-      ((double)cm->mb_rows * section_length);
+        (twopass->total_left_stats.inactive_zone_rows * 2) /
+        ((double)cm->mb_rows * section_length);
+    const double section_noise =
+        twopass->total_left_stats.frame_noise_energy / section_length;
     int tmp_q;
 
     tmp_q = get_twopass_worst_quality(cpi, section_error,
-        section_intra_skip + section_inactive_zone, section_target_bandwidth);
+        section_intra_skip + section_inactive_zone,
+        section_noise, section_target_bandwidth);
 
     twopass->active_worst_quality = tmp_q;
     twopass->baseline_active_worst_quality = tmp_q;
