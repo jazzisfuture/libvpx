@@ -20,7 +20,6 @@ extern "C" {
 
 struct encode_b_args {
   MACROBLOCK *x;
-  struct optimize_ctx *ctx;
   int8_t *skip;
   ENTROPY_CONTEXT *ta;
   ENTROPY_CONTEXT *tl;
