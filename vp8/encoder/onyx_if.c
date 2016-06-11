@@ -1786,10 +1786,10 @@ void vp8_change_config(VP8_COMP *cpi, VP8_CONFIG *oxcf)
     if (last_w != cpi->oxcf.Width || last_h != cpi->oxcf.Height)
         cpi->force_next_frame_intra = 1;
 
-    if (((cm->Width + 15) & 0xfffffff0) !=
-          cm->yv12_fb[cm->lst_fb_idx].y_width ||
-        ((cm->Height + 15) & 0xfffffff0) !=
-          cm->yv12_fb[cm->lst_fb_idx].y_height ||
+    if ((int)((cm->Width + 15) & 0xfffffff0) !=
+               cm->yv12_fb[cm->lst_fb_idx].y_width ||
+        (int)((cm->Height + 15) & 0xfffffff0) !=
+               cm->yv12_fb[cm->lst_fb_idx].y_height ||
         cm->yv12_fb[cm->lst_fb_idx].y_width == 0)
     {
         dealloc_raw_frame_buffers(cpi);
