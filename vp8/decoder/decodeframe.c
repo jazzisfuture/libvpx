@@ -1022,7 +1022,7 @@ int vp8_decode_frame(VP8D_COMP *pbi)
         const unsigned char *clear = data;
         if (pbi->decrypt_cb)
         {
-            int n = (int)VPXMIN(sizeof(clear_buffer), data_end - data);
+            int n = VPXMIN((int)sizeof(clear_buffer), data_end - data);
             pbi->decrypt_cb(pbi->decrypt_state, data, clear_buffer, n);
             clear = clear_buffer;
         }
