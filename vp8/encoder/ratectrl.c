@@ -709,7 +709,8 @@ static void calc_pframe_target_size(VP8_COMP *cpi)
                 if (Adjustment > (cpi->this_frame_target - min_frame_target))
                     Adjustment = (cpi->this_frame_target - min_frame_target);
 
-                if (cpi->frames_since_golden == (cpi->current_gf_interval >> 1))
+                if (cpi->frames_since_golden ==
+                    ((unsigned int)cpi->current_gf_interval >> 1))
                 {
                     Adjustment = (cpi->current_gf_interval - 1) * Adjustment;
                     // Limit adjustment to 10% of current target.
