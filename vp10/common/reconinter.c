@@ -714,66 +714,71 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
 
 #if CONFIG_DUAL_FILTER
   if (mi->mbmi.sb_type < BLOCK_8X8 && plane > 0) {
-    int blk_num = 1 << (pd->subsampling_x + pd->subsampling_y);
-    int chr_idx;
-    int x_base = x;
-    int y_base = y;
-    int x_step = w >> pd->subsampling_x;
-    int y_step = h >> pd->subsampling_y;
+    const int b4_w = num_4x4_blocks_wide_lookup[mi->mbmi.sb_type];
+    const int b4_h = num_4x4_blocks_high_lookup[mi->mbmi.sb_type];
+    const int b8_s = num_4x4_blocks_wide_lookup[BLOCK_8X8];
+    int idx, idy;
 
-    for (chr_idx = 0; chr_idx < blk_num; ++chr_idx) {
-      for (ref = 0; ref < 1 + is_compound; ++ref) {
-        const struct scale_factors *const sf = &xd->block_refs[ref]->sf;
-        struct buf_2d *const pre_buf = &pd->pre[ref];
-        struct buf_2d *const dst_buf = &pd->dst;
-        uint8_t *dst = dst_buf->buf;
-        const MV mv = mi->bmi[chr_idx].as_mv[ref].as_mv;
-        const MV mv_q4 = clamp_mv_to_umv_border_sb(xd, &mv, bw, bh,
-                                                   pd->subsampling_x,
-                                                   pd->subsampling_y);
-        uint8_t *pre;
-        MV32 scaled_mv;
-        int xs, ys, subpel_x, subpel_y;
-        const int is_scaled = vp10_is_scaled(sf);
+    const int x_base = x;
+    const int y_base = y;
+    const int x_step = w >> pd->subsampling_x;
+    const int y_step = h >> pd->subsampling_y;
 
-        x = x_base + (chr_idx & 0x01) * x_step;
-        y = y_base + (chr_idx >> 1) * y_step;
+    for (idy = 0; idy < b8_s; idy += b4_h) {
+      for (idx = 0; idx < b8_s; idx += b4_w) {
+        const int chr_idx = (idy * 2) + idx;
+        for (ref = 0; ref < 1 + is_compound; ++ref) {
+          const struct scale_factors *const sf = &xd->block_refs[ref]->sf;
+          struct buf_2d *const pre_buf = &pd->pre[ref];
+          struct buf_2d *const dst_buf = &pd->dst;
+          uint8_t *dst = dst_buf->buf;
+          const MV mv = mi->bmi[chr_idx].as_mv[ref].as_mv;
+          const MV mv_q4 = clamp_mv_to_umv_border_sb(
+              xd, &mv, bw, bh, pd->subsampling_x, pd->subsampling_y);
+          uint8_t *pre;
+          MV32 scaled_mv;
+          int xs, ys, subpel_x, subpel_y;
+          const int is_scaled = vp10_is_scaled(sf);
 
-        dst += dst_buf->stride * y + x;
+          x = x_base + idx * x_step;
+          y = y_base + idy * y_step;
 
-        if (is_scaled) {
-          pre = pre_buf->buf + scaled_buffer_offset(x, y, pre_buf->stride, sf);
-          scaled_mv = vp10_scale_mv(&mv_q4, mi_x + x, mi_y + y, sf);
-          xs = sf->x_step_q4;
-          ys = sf->y_step_q4;
-        } else {
-          pre = pre_buf->buf + y * pre_buf->stride + x;
-          scaled_mv.row = mv_q4.row;
-          scaled_mv.col = mv_q4.col;
-          xs = ys = 16;
+          dst += dst_buf->stride * y + x;
+
+          if (is_scaled) {
+            pre =
+                pre_buf->buf + scaled_buffer_offset(x, y, pre_buf->stride, sf);
+            scaled_mv = vp10_scale_mv(&mv_q4, mi_x + x, mi_y + y, sf);
+            xs = sf->x_step_q4;
+            ys = sf->y_step_q4;
+          } else {
+            pre = pre_buf->buf + y * pre_buf->stride + x;
+            scaled_mv.row = mv_q4.row;
+            scaled_mv.col = mv_q4.col;
+            xs = ys = 16;
+          }
+
+          subpel_x = scaled_mv.col & SUBPEL_MASK;
+          subpel_y = scaled_mv.row & SUBPEL_MASK;
+          pre += (scaled_mv.row >> SUBPEL_BITS) * pre_buf->stride +
+                 (scaled_mv.col >> SUBPEL_BITS);
+
+#if CONFIG_EXT_INTER
+          if (ref && is_interinter_wedge_used(mi->mbmi.sb_type) &&
+              mi->mbmi.use_wedge_interinter)
+            vp10_make_masked_inter_predictor(
+                pre, pre_buf->stride, dst, dst_buf->stride, subpel_x, subpel_y,
+                sf, w, h, mi->mbmi.interp_filter, xs, ys,
+#if CONFIG_SUPERTX
+                wedge_offset_x, wedge_offset_y,
+#endif  // CONFIG_SUPERTX
+                xd);
+          else
+#endif  // CONFIG_EXT_INTER
+            vp10_make_inter_predictor(
+                pre, pre_buf->stride, dst, dst_buf->stride, subpel_x, subpel_y,
+                sf, x_step, y_step, ref, mi->mbmi.interp_filter, xs, ys, xd);
         }
-
-        subpel_x = scaled_mv.col & SUBPEL_MASK;
-        subpel_y = scaled_mv.row & SUBPEL_MASK;
-        pre += (scaled_mv.row >> SUBPEL_BITS) * pre_buf->stride
-               + (scaled_mv.col >> SUBPEL_BITS);
-
-    #if CONFIG_EXT_INTER
-        if (ref && is_interinter_wedge_used(mi->mbmi.sb_type) &&
-            mi->mbmi.use_wedge_interinter)
-          vp10_make_masked_inter_predictor(
-              pre, pre_buf->stride, dst, dst_buf->stride,
-              subpel_x, subpel_y, sf, w, h,
-              mi->mbmi.interp_filter, xs, ys,
-    #if CONFIG_SUPERTX
-              wedge_offset_x, wedge_offset_y,
-    #endif  // CONFIG_SUPERTX
-              xd);
-        else
-    #endif  // CONFIG_EXT_INTER
-          vp10_make_inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
-                                    subpel_x, subpel_y, sf, x_step, y_step, ref,
-                                    mi->mbmi.interp_filter, xs, ys, xd);
       }
     }
     return;
@@ -899,16 +904,27 @@ static void build_inter_predictors_for_planes(MACROBLOCKD *xd, BLOCK_SIZE bsize,
 
     if (xd->mi[0]->mbmi.sb_type < BLOCK_8X8) {
       const PARTITION_TYPE bp = bsize - xd->mi[0]->mbmi.sb_type;
+#if CONFIG_DUAL_FILTER
+      const int have_vsplit = bp != PARTITION_HORZ;
+      const int have_hsplit = bp != PARTITION_VERT;
+      const int num_4x4_w = 2 >> (!have_vsplit);
+      const int num_4x4_h = 2 >> (!have_hsplit);
+      const int pw = 8 >> have_vsplit;
+      const int ph = 8 >> have_hsplit;
+#else
       const int have_vsplit = bp != PARTITION_HORZ;
       const int have_hsplit = bp != PARTITION_VERT;
       const int num_4x4_w = 2 >> ((!have_vsplit) | pd->subsampling_x);
       const int num_4x4_h = 2 >> ((!have_hsplit) | pd->subsampling_y);
       const int pw = 8 >> (have_vsplit | pd->subsampling_x);
       const int ph = 8 >> (have_hsplit | pd->subsampling_y);
+#endif
       int x, y;
       assert(bp != PARTITION_NONE && bp < PARTITION_TYPES);
       assert(bsize == BLOCK_8X8);
+#if !CONFIG_DUAL_FILTER
       assert(pw * num_4x4_w == bw && ph * num_4x4_h == bh);
+#endif
       for (y = 0; y < num_4x4_h; ++y)
         for (x = 0; x < num_4x4_w; ++x)
            build_inter_predictors(xd, plane,
