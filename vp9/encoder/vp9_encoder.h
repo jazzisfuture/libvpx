@@ -69,59 +69,6 @@ typedef struct {
 } CODING_CONTEXT;
 
 
-typedef enum {
-  // encode_breakout is disabled.
-  ENCODE_BREAKOUT_DISABLED = 0,
-  // encode_breakout is enabled.
-  ENCODE_BREAKOUT_ENABLED = 1,
-  // encode_breakout is enabled with small max_thresh limit.
-  ENCODE_BREAKOUT_LIMITED = 2
-} ENCODE_BREAKOUT_TYPE;
-
-typedef enum {
-  NORMAL      = 0,
-  FOURFIVE    = 1,
-  THREEFIVE   = 2,
-  ONETWO      = 3
-} VPX_SCALING;
-
-typedef enum {
-  // Good Quality Fast Encoding. The encoder balances quality with the amount of
-  // time it takes to encode the output. Speed setting controls how fast.
-  GOOD,
-
-  // The encoder places priority on the quality of the output over encoding
-  // speed. The output is compressed at the highest possible quality. This
-  // option takes the longest amount of time to encode. Speed setting ignored.
-  BEST,
-
-  // Realtime/Live Encoding. This mode is optimized for realtime encoding (for
-  // example, capturing a television signal or feed from a live camera). Speed
-  // setting controls how fast.
-  REALTIME
-} MODE;
-
-typedef enum {
-  FRAMEFLAGS_KEY    = 1 << 0,
-  FRAMEFLAGS_GOLDEN = 1 << 1,
-  FRAMEFLAGS_ALTREF = 1 << 2,
-} FRAMETYPE_FLAGS;
-
-typedef enum {
-  NO_AQ = 0,
-  VARIANCE_AQ = 1,
-  COMPLEXITY_AQ = 2,
-  CYCLIC_REFRESH_AQ = 3,
-  EQUATOR360_AQ = 4,
-  AQ_MODE_COUNT  // This should always be the last member of the enum
-} AQ_MODE;
-
-typedef enum {
-  RESIZE_NONE = 0,    // No frame resizing allowed (except for SVC).
-  RESIZE_FIXED = 1,   // All frames are coded at the specified dimension.
-  RESIZE_DYNAMIC = 2  // Coded size of each frame is determined by the codec.
-} RESIZE_TYPE;
-
 typedef struct VP9EncoderConfig {
   BITSTREAM_PROFILE profile;
   vpx_bit_depth_t bit_depth;     // Codec bit-depth.
@@ -305,6 +252,8 @@ typedef struct VP9_COMP {
   DECLARE_ALIGNED(16, int16_t, uv_dequant[QINDEX_RANGE][8]);
   VP9_COMMON common;
   VP9EncoderConfig oxcf;
+
+  // TODO(yuryg): lookahead shouldn't be pointer
   struct lookahead_ctx    *lookahead;
   struct lookahead_entry  *alt_ref_source;
 
@@ -341,7 +290,7 @@ typedef struct VP9_COMP {
   YV12_BUFFER_CONFIG last_frame_uf;
 
   TOKENEXTRA *tile_tok[4][1 << 6];
-  unsigned int tok_count[4][1 << 6];
+  uint32_t tok_count[4][1 << 6];
 
   // Ambient reconstruction err target for force key frames
   int64_t ambient_err;
@@ -373,7 +322,7 @@ typedef struct VP9_COMP {
 
   SPEED_FEATURES sf;
 
-  unsigned int max_mv_magnitude;
+  uint32_t max_mv_magnitude;
   int mv_step_param;
 
   int allow_comp_inter_inter;
@@ -385,10 +334,10 @@ typedef struct VP9_COMP {
   // clips, and 300 for < HD clips.
   int encode_breakout;
 
-  unsigned char *segmentation_map;
+  uint8_t *segmentation_map;
 
   // segment threashold for encode breakout
-  int  segment_encode_breakout[MAX_SEGMENTS];
+  int segment_encode_breakout[MAX_SEGMENTS];
 
   CYCLIC_REFRESH *cyclic_refresh;
   ActiveMap active_map;
@@ -409,12 +358,12 @@ typedef struct VP9_COMP {
   TWO_PASS twopass;
 
   YV12_BUFFER_CONFIG alt_ref_buffer;
-
+  ALT_REF_AQ alt_ref_aq;
 
 #if CONFIG_INTERNAL_STATS
   unsigned int mode_chosen_counts[MAX_MODES];
 
-  int    count;
+  int count;
   uint64_t total_sq_error;
   uint64_t total_samples;
   ImageStat psnr;
