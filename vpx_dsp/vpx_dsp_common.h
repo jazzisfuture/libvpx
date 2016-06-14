@@ -19,8 +19,24 @@
 extern "C" {
 #endif
 
+#ifndef _DEBUG
+#  define dbg_assert(expr)
+#else
+#  define dbg_assert(expr) assert(expr)
+#endif
+
 #define VPXMIN(x, y) (((x) < (y)) ? (x) : (y))
 #define VPXMAX(x, y) (((x) > (y)) ? (x) : (y))
+
+#ifndef VPX_SWAP
+#  define VPX_SWAP(type, a, b) \
+     { \
+       type temp__;  \
+       temp__ = (b); \
+       (b) = (a);    \
+       (a) = temp__; \
+     }
+#endif
 
 #if CONFIG_VP9_HIGHBITDEPTH
 // Note:

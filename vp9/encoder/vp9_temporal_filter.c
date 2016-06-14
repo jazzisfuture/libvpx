@@ -11,6 +11,7 @@
 #include <math.h>
 #include <limits.h>
 
+#include "vp9/common/vp9_matx.h"
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_quant_common.h"
@@ -331,6 +332,17 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   MACROBLOCKD *mbd = &cpi->td.mb.e_mbd;
   YV12_BUFFER_CONFIG *f = frames[alt_ref_index];
   uint8_t *dst1, *dst2;
+
+  MATX* const segmentation_map = &cpi->alt_ref_aq.segmentation_map;
+  uint8_t *segmentation_map_data;
+
+  int rows = cpi->common.mi_rows;
+  int cols = cpi->common.mi_cols;
+
+  // it should be cpi->common.mi_stride,
+  // cpi->segmentation_map doesn't respect it
+  int sstride = cpi->common.mi_cols;
+
 #if CONFIG_VP9_HIGHBITDEPTH
   DECLARE_ALIGNED(16, uint16_t,  predictor16[16 * 16 * 3]);
   DECLARE_ALIGNED(16, uint8_t,  predictor8[16 * 16 * 3]);
@@ -343,7 +355,20 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
 
   // Save input state
   uint8_t* input_buffer[MAX_MB_PLANE];
-  int i;
+  int i, j;
+
+  assert((cpi->common.mi_rows + 1)/2 == mb_rows);
+  assert((cpi->common.mi_cols + 1)/2 == mb_cols);
+  assert(frame_count <= 255);
+
+  vp9_matx_create(segmentation_map, rows, cols, sstride, 1, TYPE_8U);
+  vp9_matx_zerofill(segmentation_map);
+
+  segmentation_map_data = (uint8_t *) segmentation_map->data;
+
+  // segmentation_map[i]/denominator belongs to [0; 1]
+  cpi->alt_ref_aq.segmentation_map_denominator = frame_count;
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     predictor = CONVERT_TO_BYTEPTR(predictor16);
@@ -409,6 +434,9 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
         }
 
         if (filter_weight != 0) {
+          // Update altref segmentation_map
+          ++segmentation_map_data[2*(mb_row*sstride + mb_col)];
+
           // Construct the predictors
           temporal_filter_predictors_mb_c(mbd,
               frames[frame]->y_buffer + mb_y_offset,
@@ -663,6 +691,18 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
     }
     mb_y_offset += 16 * (f->y_stride - mb_cols);
     mb_uv_offset += mb_uv_height * f->uv_stride - mb_uv_width * mb_cols;
+  }
+
+  // fill-in segmentation map (every odd row and column)
+  for (i = 0; i < rows; ++i) {
+    int is_odd  = i&1;
+    int is_even = is_odd^1;
+
+    for (j = is_even; j < cols; j += 1 + is_even) {
+      int idx = (i - is_odd)*sstride + (j - is_even);
+      uint8_t value = segmentation_map_data[idx];
+      segmentation_map_data[i*sstride + j] = value;
+    }
   }
 
   // Restore input state
