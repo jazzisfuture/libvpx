@@ -302,3 +302,39 @@ const int16_t *vp10_get_interp_filter_kernel(
   return (const int16_t*)
       vp10_interp_filter_params_list[interp_filter].filter_ptr;
 }
+
+SubpelFilterCoeffs vp10_get_subpel_filter_signal_dir(
+    const InterpFilterParams p, int index) {
+#if CONFIG_EXT_INTERP
+  if (p.filter_ptr == (int16_t *)sub_pel_filters_12sharp) {
+    return &sub_pel_filters_12sharp_signal_dir[index][0];
+  }
+  if (p.filter_ptr == (int16_t *)sub_pel_filters_10sharp) {
+    return &sub_pel_filters_10sharp_signal_dir[index][0];
+  }
+#endif
+#if USE_TEMPORALFILTER_12TAP
+  if (p.filter_ptr == (int16_t *)sub_pel_filters_temporalfilter_12) {
+    return &sub_pel_filters_temporalfilter_12_signal_dir[index][0];
+  }
+#endif
+  return NULL;
+}
+
+SubpelFilterCoeffs vp10_get_subpel_filter_ver_signal_dir(
+    const InterpFilterParams p, int index) {
+#if CONFIG_EXT_INTERP
+  if (p.filter_ptr == (int16_t *)sub_pel_filters_12sharp) {
+    return &sub_pel_filters_12sharp_ver_signal_dir[index][0];
+  }
+  if (p.filter_ptr == (int16_t *)sub_pel_filters_10sharp) {
+    return &sub_pel_filters_10sharp_ver_signal_dir[index][0];
+  }
+#endif
+#if USE_TEMPORALFILTER_12TAP
+  if (p.filter_ptr == (int16_t *)sub_pel_filters_temporalfilter_12) {
+    return &sub_pel_filters_temporalfilter_12_ver_signal_dir[index][0];
+  }
+#endif
+  return NULL;
+}
