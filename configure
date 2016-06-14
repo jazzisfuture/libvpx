@@ -63,6 +63,7 @@ Advanced options:
                                   enable vp9 temporal denoising
   ${toggle_webm_io}               enable input from and output to WebM container
   ${toggle_libyuv}                enable libyuv
+  ${toggle_bitcode}               enable iOS bitcode
 
 Codecs:
   Codecs can be selectively enabled or disabled individually, or by family:
@@ -326,6 +327,7 @@ CONFIG_LIST="
     better_hw_compatibility
     experimental
     size_limit
+    bitcode
     ${EXPERIMENT_LIST}
 "
 CMDLINE_SELECT="
@@ -385,6 +387,7 @@ CMDLINE_SELECT="
     better_hw_compatibility
     vp9_highbitdepth
     experimental
+    bitcode
 "
 
 process_cmdline() {
