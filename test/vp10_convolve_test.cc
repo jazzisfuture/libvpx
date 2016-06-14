@@ -1,5 +1,6 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "./vp10_rtcd.h"
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
 #include "vp10/common/filter.h"
@@ -39,6 +40,8 @@ TEST(VP10ConvolveTest, vp10_convolve8) {
 
   int w = 1;
   int h = 1;
+
+  convolve_horiz = convolve_horiz_c;
 
   for (int i = 0; i < filter_size * filter_size; i++) {
     src[i] = rnd.Rand16() % (1 << 8);
