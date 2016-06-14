@@ -53,10 +53,11 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData * td,
                               int mi_row, int mi_col, BLOCK_SIZE bsize,
                               PICK_MODE_CONTEXT *ctx);
 
-// This is used as a reference when computing the source variance for the
-//  purposes of activity masking.
-// Eventually this should be replaced by custom no-reference routines,
-//  which will be faster.
+// This is used as a reference when computing
+// the source variance for the purposes of activity masking.
+//
+// Eventually this should be replaced by custom
+// no-reference routines, which will be faster.
 static const uint8_t VP9_VAR_OFFS[64] = {
     128, 128, 128, 128, 128, 128, 128, 128,
     128, 128, 128, 128, 128, 128, 128, 128,
@@ -1212,7 +1213,7 @@ static void update_state(VP9_COMP *cpi, ThreadData *td,
         xd->mi[x_idx + y * mis] = mi_addr;
       }
 
-  if (cpi->oxcf.aq_mode)
+  if (cpi->oxcf.aq_mode != NO_AQ)
     vp9_init_plane_quantizers(cpi, x);
 
   if (is_inter_block(xdmi) && xdmi->sb_type < BLOCK_8X8) {
@@ -1861,12 +1862,10 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
   *(xd->mi[0]) = ctx->mic;
   *(x->mbmi_ext) = ctx->mbmi_ext;
 
-  if (seg->enabled && cpi->oxcf.aq_mode) {
-    // For in frame complexity AQ or variance AQ, copy segment_id from
-    // segmentation_map.
-    if (cpi->oxcf.aq_mode == COMPLEXITY_AQ ||
-        cpi->oxcf.aq_mode == VARIANCE_AQ ||
-        cpi->oxcf.aq_mode == EQUATOR360_AQ) {
+  if (seg->enabled && cpi->oxcf.aq_mode != NO_AQ) {
+    // For in frame complexity AQ or variance AQ,
+    // copy segment_id from segmentation_map.
+    if (cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
       mi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
@@ -2046,7 +2045,7 @@ static void rd_use_partition(VP9_COMP *cpi,
   pc_tree->partitioning = partition;
   save_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
 
-  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode) {
+  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode != NO_AQ) {
     set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
     x->mb_energy = vp9_block_energy(cpi, x, bsize);
   }
@@ -2576,7 +2575,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
 
-  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode)
+  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode != NO_AQ)
     x->mb_energy = vp9_block_energy(cpi, x, bsize);
 
   if (cpi->sf.cb_partition_search && bsize == BLOCK_16X16) {
@@ -2956,6 +2955,10 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
   MACROBLOCK *const x = &td->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   SPEED_FEATURES *const sf = &cpi->sf;
+
+  int mi_col_start = tile_info->mi_col_start;
+  int mi_col_end = tile_info->mi_col_end;
+
   int mi_col;
 
   // Initialize the left context for the new SB row
@@ -2963,8 +2966,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
   memset(xd->left_seg_context, 0, sizeof(xd->left_seg_context));
 
   // Code each SB in the row
-  for (mi_col = tile_info->mi_col_start; mi_col < tile_info->mi_col_end;
-       mi_col += MI_BLOCK_SIZE) {
+  for (mi_col = mi_col_start; mi_col < mi_col_end; mi_col += MI_BLOCK_SIZE) {
     const struct segmentation *const seg = &cm->seg;
     int dummy_rate;
     int64_t dummy_dist;
@@ -3764,6 +3766,10 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
   TileInfo *const tile_info = &tile_data->tile_info;
   MACROBLOCK *const x = &td->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
+
+  int mi_col_start = tile_info->mi_col_start;
+  int mi_col_end = tile_info->mi_col_end;
+
   int mi_col;
 
   // Initialize the left context for the new SB row
@@ -3771,8 +3777,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
   memset(xd->left_seg_context, 0, sizeof(xd->left_seg_context));
 
   // Code each SB in the row
-  for (mi_col = tile_info->mi_col_start; mi_col < tile_info->mi_col_end;
-       mi_col += MI_BLOCK_SIZE) {
+  for (mi_col = mi_col_start; mi_col < mi_col_end; mi_col += MI_BLOCK_SIZE) {
     const struct segmentation *const seg = &cm->seg;
     RD_COST dummy_rdc;
     const int idx_str = cm->mi_stride * mi_row + mi_col;
@@ -3983,8 +3988,7 @@ static int get_skip_encode_frame(const VP9_COMMON *cm, ThreadData *const td) {
   }
 
   return (intra_count << 2) < inter_count &&
-         cm->frame_type != KEY_FRAME &&
-         cm->show_frame;
+         cm->frame_type != KEY_FRAME && cm->show_frame;
 }
 
 void vp9_init_tile_data(VP9_COMP *cpi) {
@@ -4037,14 +4041,17 @@ void vp9_encode_tile(VP9_COMP *cpi, ThreadData *td,
       &cpi->tile_data[tile_row * tile_cols + tile_col];
   const TileInfo * const tile_info = &this_tile->tile_info;
   TOKENEXTRA *tok = cpi->tile_tok[tile_row][tile_col];
+
+  int mi_row_start = tile_info->mi_row_start;
+  int mi_row_end = tile_info->mi_row_end;
+
   int mi_row;
 
   // Set up pointers to per thread motion search counters.
   td->mb.m_search_count_ptr = &td->rd_counts.m_search_count;
   td->mb.ex_search_count_ptr = &td->rd_counts.ex_search_count;
 
-  for (mi_row = tile_info->mi_row_start; mi_row < tile_info->mi_row_end;
-       mi_row += MI_BLOCK_SIZE) {
+  for (mi_row = mi_row_start; mi_row < mi_row_end; mi_row += MI_BLOCK_SIZE) {
     if (cpi->sf.use_nonrd_pick_mode)
       encode_nonrd_sb_row(cpi, td, this_tile, mi_row, &tok);
     else
@@ -4171,10 +4178,10 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     vpx_usec_timer_start(&emr_timer);
 
 #if CONFIG_FP_MB_STATS
-  if (cpi->use_fp_mb_stats) {
-    input_fpmb_stats(&cpi->twopass.firstpass_mb_stats, cm,
-                     &cpi->twopass.this_frame_mb_stats);
-  }
+    if (cpi->use_fp_mb_stats) {
+      input_fpmb_stats(&cpi->twopass.firstpass_mb_stats, cm,
+                       &cpi->twopass.this_frame_mb_stats);
+    }
 #endif
 
     // If allowed, encoding tiles in parallel with one thread handling one tile.
@@ -4271,9 +4278,9 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     // either compound, single or hybrid prediction as per whatever has
     // worked best for that type of frame in the past.
     // It also predicts whether another coding mode would have worked
-    // better that this coding mode. If that is the case, it remembers
-    // that for subsequent frames.
-    // It does the same analysis for transform size selection also.
+    // better than this coding mode. If that is the case, it remembers
+    // that for the subsequent frames.
+    // It also does the same analysis for transform size selection.
     const MV_REFERENCE_FRAME frame_type = get_frame_type(cpi);
     int64_t *const mode_thrs = rd_opt->prediction_type_threshes[frame_type];
     int64_t *const filter_thrs = rd_opt->filter_threshes[frame_type];
@@ -4361,12 +4368,13 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     encode_frame_internal(cpi);
   }
 
-  // If segmentated AQ is enabled compute the average AQ weighting.
+  // If segmented AQ is enabled compute the average AQ weighting.
   if (cm->seg.enabled && (cpi->oxcf.aq_mode != NO_AQ) &&
       (cm->seg.update_map || cm->seg.update_data)) {
     cm->seg.aq_av_offset = compute_frame_aq_offset(cpi);
   }
 }
+
 static void sum_intra_stats(FRAME_COUNTS *counts, const MODE_INFO *mi) {
   const PREDICTION_MODE y_mode = mi->mode;
   const PREDICTION_MODE uv_mode = mi->uv_mode;
@@ -4486,8 +4494,8 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td,
       } else {
         mi->tx_size = (bsize >= BLOCK_8X8) ? mi->tx_size : TX_4X4;
       }
-
     }
+
     ++td->counts->tx.tx_totals[mi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mi, &xd->plane[1])];
     if (cm->seg.enabled && cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)

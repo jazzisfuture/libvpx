@@ -117,10 +117,12 @@ static INLINE void Scale2Ratio(VPX_SCALING mode, int *hr, int *hs) {
 static void suppress_active_map(VP9_COMP *cpi) {
   unsigned char *const seg_map = cpi->segmentation_map;
   int i;
-  if (cpi->active_map.enabled || cpi->active_map.update)
+
+  if (cpi->active_map.enabled || cpi->active_map.update) {
     for (i = 0; i < cpi->common.mi_rows * cpi->common.mi_cols; ++i)
       if (seg_map[i] == AM_SEGMENT_ID_INACTIVE)
         seg_map[i] = AM_SEGMENT_ID_ACTIVE;
+  }
 }
 
 static void apply_active_map(VP9_COMP *cpi) {
@@ -343,7 +345,7 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vpx_free(cpi->tile_data);
   cpi->tile_data = NULL;
 
-  // Delete sementation map
+  // Delete segmentation map
   vpx_free(cpi->segmentation_map);
   cpi->segmentation_map = NULL;
   vpx_free(cpi->coding_context.last_frame_seg_map_copy);
@@ -3487,24 +3489,29 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   setup_frame(cpi);
 
   suppress_active_map(cpi);
-  // Variance adaptive and in frame q adjustment experiments are mutually
-  // exclusive.
-  if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-    vp9_vaq_frame_setup(cpi);
-  } else if (cpi->oxcf.aq_mode == EQUATOR360_AQ) {
-    vp9_360aq_frame_setup(cpi);
-  } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
-    vp9_setup_in_frame_q_adj(cpi);
-  } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
-    vp9_cyclic_refresh_setup(cpi);
+
+  if (cpi->alt_ref_aq.state == ALTREF_AQ_BEFORE ||
+      cpi->alt_ref_aq.state == ALTREF_AQ_AFTER) {
+    // Variance adaptive and in frame q adjustment
+    // experiments are mutually exclusive.
+    if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
+      vp9_vaq_frame_setup(cpi);
+    } else if (cpi->oxcf.aq_mode == EQUATOR360_AQ) {
+      vp9_360aq_frame_setup(cpi);
+    } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+      vp9_setup_in_frame_q_adj(cpi);
+    } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      vp9_cyclic_refresh_setup(cpi);
+    }
   }
+
   apply_active_map(cpi);
 
-  // transform / motion compensation build reconstruction frame
+  // transform/motion compensation build reconstruction frame
   vp9_encode_frame(cpi);
 
   // Check if we should drop this frame because of high overshoot.
-  // Only for frames where high temporal-source sad is detected.
+  // Only for frames where high temporal-source SAD is detected.
   if (cpi->oxcf.pass == 0 &&
       cpi->oxcf.rc_mode == VPX_CBR &&
       cpi->resize_state == 0 &&
