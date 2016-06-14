@@ -1,5 +1,6 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "./vp10_rtcd.h"
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
 #include "vp10/common/filter.h"
