@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "./vp10_rtcd.h"
 #include "vp10/common/filter.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_ports/mem.h"
@@ -10,10 +11,10 @@
 #define MAX_STEP (32)
 #define MAX_FILTER_TAP (12)
 
-static void convolve_horiz(const uint8_t *src, int src_stride, uint8_t *dst,
-                           int dst_stride, int w, int h,
-                           const InterpFilterParams filter_params,
-                           const int subpel_x_q4, int x_step_q4, int avg) {
+void convolve_horiz_c(const uint8_t *src, int src_stride, uint8_t *dst,
+                      int dst_stride, int w, int h,
+                      const InterpFilterParams filter_params,
+                      const int subpel_x_q4, int x_step_q4, int avg) {
   int x, y;
   int filter_size = filter_params.taps;
   src -= filter_size / 2 - 1;
