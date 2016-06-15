@@ -41,22 +41,23 @@ typedef enum BITSTREAM_PROFILE {
   MAX_PROFILES
 } BITSTREAM_PROFILE;
 
-#define BLOCK_4X4     0
-#define BLOCK_4X8     1
-#define BLOCK_8X4     2
-#define BLOCK_8X8     3
-#define BLOCK_8X16    4
-#define BLOCK_16X8    5
-#define BLOCK_16X16   6
-#define BLOCK_16X32   7
-#define BLOCK_32X16   8
-#define BLOCK_32X32   9
-#define BLOCK_32X64  10
-#define BLOCK_64X32  11
-#define BLOCK_64X64  12
-#define BLOCK_SIZES  13
-#define BLOCK_INVALID BLOCK_SIZES
-typedef uint8_t BLOCK_SIZE;
+typedef enum {
+  BLOCK_4X4,
+  BLOCK_4X8,
+  BLOCK_8X4,
+  BLOCK_8X8,
+  BLOCK_8X16,
+  BLOCK_16X8,
+  BLOCK_16X16,
+  BLOCK_16X32,
+  BLOCK_32X16,
+  BLOCK_32X32,
+  BLOCK_32X64,
+  BLOCK_64X32,
+  BLOCK_64X64,
+  BLOCK_SIZES,
+  BLOCK_INVALID = BLOCK_SIZES
+} BLOCK_SIZE;
 
 typedef enum PARTITION_TYPE {
   PARTITION_NONE,
@@ -139,6 +140,65 @@ typedef uint8_t PREDICTION_MODE;
 #define INTRA_INTER_CONTEXTS 4
 #define COMP_INTER_CONTEXTS 5
 #define REF_CONTEXTS 5
+
+typedef enum {
+  // encode_breakout is disabled.
+  ENCODE_BREAKOUT_DISABLED = 0,
+  // encode_breakout is enabled.
+  ENCODE_BREAKOUT_ENABLED = 1,
+  // encode_breakout is enabled with small max_thresh limit.
+  ENCODE_BREAKOUT_LIMITED = 2
+} ENCODE_BREAKOUT_TYPE;
+
+typedef enum {
+  NORMAL      = 0,
+  FOURFIVE    = 1,
+  THREEFIVE   = 2,
+  ONETWO      = 3
+} VPX_SCALING;
+
+typedef enum {
+  // Good Quality Fast Encoding. The encoder balances quality with the amount of
+  // time it takes to encode the output. Speed setting controls how fast.
+  GOOD,
+
+  // The encoder places priority on the quality of the output over encoding
+  // speed. The output is compressed at the highest possible quality. This
+  // option takes the longest amount of time to encode. Speed setting ignored.
+  BEST,
+
+  // Realtime/Live Encoding. This mode is optimized for realtime encoding (for
+  // example, capturing a television signal or feed from a live camera). Speed
+  // setting controls how fast.
+  REALTIME
+} MODE;
+
+typedef enum {
+  FRAMEFLAGS_KEY    = 1 << 0,
+  FRAMEFLAGS_GOLDEN = 1 << 1,
+  FRAMEFLAGS_ALTREF = 1 << 2,
+} FRAMETYPE_FLAGS;
+
+typedef enum {
+  NO_AQ = 0,
+  VARIANCE_AQ = 1,
+  COMPLEXITY_AQ = 2,
+  CYCLIC_REFRESH_AQ = 3,
+  EQUATOR360_AQ = 4,
+
+  // AQ based on lookahead temporal
+  // variance (only valid for altref frames)
+  LOOKAHEAD_AQ = 5,
+
+  // This should always be the last member of the enum
+  AQ_MODE_COUNT
+} AQ_MODE;
+
+typedef enum {
+  RESIZE_NONE = 0,    // No frame resizing allowed (except for SVC).
+  RESIZE_FIXED = 1,   // All frames are coded at the specified dimension.
+  RESIZE_DYNAMIC = 2  // Coded size of each frame is determined by the codec.
+} RESIZE_TYPE;
 
 #ifdef __cplusplus
 }  // extern "C"
