@@ -1,4 +1,5 @@
 LIBVPX_TEST_SRCS-yes += acm_random.h
+LIBVPX_TEST_SRCS-yes += array.h
 LIBVPX_TEST_SRCS-yes += clear_system_state.h
 LIBVPX_TEST_SRCS-yes += codec_factory.h
 LIBVPX_TEST_SRCS-yes += md5_helper.h
@@ -10,6 +11,13 @@ LIBVPX_TEST_SRCS-yes += test_vectors.h
 LIBVPX_TEST_SRCS-yes += util.h
 LIBVPX_TEST_SRCS-yes += video_source.h
 LIBVPX_TEST_SRCS-yes += transform_test_base.h
+
+##
+## Meta tests
+##
+## Meta tests test the testing utilities themselves.
+##
+LIBVPX_TEST_SRCS-yes += meta_array_test.cc
 
 ##
 ## BLACK BOX TESTS
