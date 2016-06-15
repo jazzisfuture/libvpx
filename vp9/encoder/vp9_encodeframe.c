@@ -1212,7 +1212,7 @@ static void update_state(VP9_COMP *cpi, ThreadData *td,
         xd->mi[x_idx + y * mis] = mi_addr;
       }
 
-  if (cpi->oxcf.aq_mode)
+  if (cpi->oxcf.aq_mode != NO_AQ)
     vp9_init_plane_quantizers(cpi, x);
 
   if (is_inter_block(xdmi) && xdmi->sb_type < BLOCK_8X8) {
@@ -1861,12 +1861,10 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
   *(xd->mi[0]) = ctx->mic;
   *(x->mbmi_ext) = ctx->mbmi_ext;
 
-  if (seg->enabled && cpi->oxcf.aq_mode) {
-    // For in frame complexity AQ or variance AQ, copy segment_id from
-    // segmentation_map.
-    if (cpi->oxcf.aq_mode == COMPLEXITY_AQ ||
-        cpi->oxcf.aq_mode == VARIANCE_AQ ||
-        cpi->oxcf.aq_mode == EQUATOR360_AQ) {
+  if (seg->enabled && cpi->oxcf.aq_mode != NO_AQ) {
+    // For in frame complexity AQ or variance AQ,
+    // copy segment_id from segmentation_map.
+    if (cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
       mi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
@@ -2046,7 +2044,7 @@ static void rd_use_partition(VP9_COMP *cpi,
   pc_tree->partitioning = partition;
   save_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
 
-  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode) {
+  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode != NO_AQ) {
     set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
     x->mb_energy = vp9_block_energy(cpi, x, bsize);
   }
@@ -2576,7 +2574,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
 
-  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode)
+  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode != NO_AQ)
     x->mb_energy = vp9_block_energy(cpi, x, bsize);
 
   if (cpi->sf.cb_partition_search && bsize == BLOCK_16X16) {
@@ -2769,8 +2767,8 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         sum_rdc.rdcost = INT64_MAX;
     } else {
       for (i = 0; i < 4 && sum_rdc.rdcost < best_rdc.rdcost; ++i) {
-      const int x_idx = (i & 1) * mi_step;
-      const int y_idx = (i >> 1) * mi_step;
+        const int x_idx = (i & 1) * mi_step;
+        const int y_idx = (i >> 1) * mi_step;
 
         if (mi_row + y_idx >= cm->mi_rows || mi_col + x_idx >= cm->mi_cols)
           continue;
@@ -2956,6 +2954,10 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
   MACROBLOCK *const x = &td->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   SPEED_FEATURES *const sf = &cpi->sf;
+
+  int mi_col_start = tile_info->mi_col_start;
+  int mi_col_end = tile_info->mi_col_end;
+
   int mi_col;
 
   // Initialize the left context for the new SB row
@@ -2963,8 +2965,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
   memset(xd->left_seg_context, 0, sizeof(xd->left_seg_context));
 
   // Code each SB in the row
-  for (mi_col = tile_info->mi_col_start; mi_col < tile_info->mi_col_end;
-       mi_col += MI_BLOCK_SIZE) {
+  for (mi_col = mi_col_start; mi_col < mi_col_end; mi_col += MI_BLOCK_SIZE) {
     const struct segmentation *const seg = &cm->seg;
     int dummy_rate;
     int64_t dummy_dist;
@@ -3764,6 +3765,10 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
   TileInfo *const tile_info = &tile_data->tile_info;
   MACROBLOCK *const x = &td->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
+
+  int mi_col_start = tile_info->mi_col_start;
+  int mi_col_end = tile_info->mi_col_end;
+
   int mi_col;
 
   // Initialize the left context for the new SB row
@@ -3771,8 +3776,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
   memset(xd->left_seg_context, 0, sizeof(xd->left_seg_context));
 
   // Code each SB in the row
-  for (mi_col = tile_info->mi_col_start; mi_col < tile_info->mi_col_end;
-       mi_col += MI_BLOCK_SIZE) {
+  for (mi_col = mi_col_start; mi_col < mi_col_end; mi_col += MI_BLOCK_SIZE) {
     const struct segmentation *const seg = &cm->seg;
     RD_COST dummy_rdc;
     const int idx_str = cm->mi_stride * mi_row + mi_col;
@@ -3983,8 +3987,7 @@ static int get_skip_encode_frame(const VP9_COMMON *cm, ThreadData *const td) {
   }
 
   return (intra_count << 2) < inter_count &&
-         cm->frame_type != KEY_FRAME &&
-         cm->show_frame;
+         cm->frame_type != KEY_FRAME && cm->show_frame;
 }
 
 void vp9_init_tile_data(VP9_COMP *cpi) {
@@ -4037,14 +4040,17 @@ void vp9_encode_tile(VP9_COMP *cpi, ThreadData *td,
       &cpi->tile_data[tile_row * tile_cols + tile_col];
   const TileInfo * const tile_info = &this_tile->tile_info;
   TOKENEXTRA *tok = cpi->tile_tok[tile_row][tile_col];
+
+  const int mi_row_start = tile_info->mi_row_start;
+  const int mi_row_end = tile_info->mi_row_end;
+
   int mi_row;
 
   // Set up pointers to per thread motion search counters.
   td->mb.m_search_count_ptr = &td->rd_counts.m_search_count;
   td->mb.ex_search_count_ptr = &td->rd_counts.ex_search_count;
 
-  for (mi_row = tile_info->mi_row_start; mi_row < tile_info->mi_row_end;
-       mi_row += MI_BLOCK_SIZE) {
+  for (mi_row = mi_row_start; mi_row < mi_row_end; mi_row += MI_BLOCK_SIZE) {
     if (cpi->sf.use_nonrd_pick_mode)
       encode_nonrd_sb_row(cpi, td, this_tile, mi_row, &tok);
     else
@@ -4171,10 +4177,10 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     vpx_usec_timer_start(&emr_timer);
 
 #if CONFIG_FP_MB_STATS
-  if (cpi->use_fp_mb_stats) {
-    input_fpmb_stats(&cpi->twopass.firstpass_mb_stats, cm,
-                     &cpi->twopass.this_frame_mb_stats);
-  }
+    if (cpi->use_fp_mb_stats) {
+      input_fpmb_stats(&cpi->twopass.firstpass_mb_stats, cm,
+                       &cpi->twopass.this_frame_mb_stats);
+    }
 #endif
 
     // If allowed, encoding tiles in parallel with one thread handling one tile.
@@ -4486,8 +4492,8 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td,
       } else {
         mi->tx_size = (bsize >= BLOCK_8X8) ? mi->tx_size : TX_4X4;
       }
-
     }
+
     ++td->counts->tx.tx_totals[mi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mi, &xd->plane[1])];
     if (cm->seg.enabled && cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
