@@ -638,6 +638,26 @@ show_darwin_sdk_major_version() {
   xcrun --sdk $1 --show-sdk-version 2>/dev/null | cut -d. -f1
 }
 
+# Print the Xcode version.
+show_xcode_version() {
+  xcodebuild -version | head -n1 | cut -d' ' -f2
+}
+
+# Fails when Xcode version is less than 6.3.
+check_xcode_minimum_version() {
+  xcode_major=$(show_xcode_version | cut -f1 -d.)
+  xcode_minor=$(show_xcode_version | cut -f2 -d.)
+  readonly min_major=6
+  readonly min_minor=3
+  if [ ${xcode_major} -lt ${min_major} ]; then
+    return 1
+  fi
+  if [ ${xcode_major} -eq ${min_major} ] \
+    && [ ${xcode_minor} -lt ${min_minor} ]; then
+    return 1
+  fi
+}
+
 process_common_toolchain() {
   if [ -z "$toolchain" ]; then
     gcctarget="${CHOST:-$(gcc -dumpmachine 2> /dev/null)}"
@@ -839,10 +859,10 @@ process_common_toolchain() {
       # on arm, isa versions are supersets
       case ${tgt_isa} in
         arm64|armv8)
-          soft_enable neon
+          check_xcode_minimum_version && soft_enable neon
           ;;
         armv7|armv7s)
-          soft_enable neon
+          check_xcode_minimum_version && soft_enable neon
           # Only enable neon_asm when neon is also enabled.
           enabled neon && soft_enable neon_asm
           # If someone tries to force it through, die.
