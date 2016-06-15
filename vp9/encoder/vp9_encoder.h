@@ -341,7 +341,7 @@ typedef struct VP9_COMP {
   YV12_BUFFER_CONFIG last_frame_uf;
 
   TOKENEXTRA *tile_tok[4][1 << 6];
-  unsigned int tok_count[4][1 << 6];
+  uint32_t tok_count[4][1 << 6];
 
   // Ambient reconstruction err target for force key frames
   int64_t ambient_err;
@@ -373,7 +373,7 @@ typedef struct VP9_COMP {
 
   SPEED_FEATURES sf;
 
-  unsigned int max_mv_magnitude;
+  uint32_t max_mv_magnitude;
   int mv_step_param;
 
   int allow_comp_inter_inter;
@@ -385,10 +385,10 @@ typedef struct VP9_COMP {
   // clips, and 300 for < HD clips.
   int encode_breakout;
 
-  unsigned char *segmentation_map;
+  uint8_t *segmentation_map;
 
   // segment threashold for encode breakout
-  int  segment_encode_breakout[MAX_SEGMENTS];
+  int segment_encode_breakout[MAX_SEGMENTS];
 
   CYCLIC_REFRESH *cyclic_refresh;
   ActiveMap active_map;
@@ -409,12 +409,12 @@ typedef struct VP9_COMP {
   TWO_PASS twopass;
 
   YV12_BUFFER_CONFIG alt_ref_buffer;
-
+  ALT_REF_AQ alt_ref_aq;
 
 #if CONFIG_INTERNAL_STATS
   unsigned int mode_chosen_counts[MAX_MODES];
 
-  int    count;
+  int count;
   uint64_t total_sq_error;
   uint64_t total_samples;
   ImageStat psnr;
