@@ -638,6 +638,26 @@ show_darwin_sdk_major_version() {
   xcrun --sdk $1 --show-sdk-version 2>/dev/null | cut -d. -f1
 }
 
+# Print the Xcode version.
+show_xcode_version() {
+  xcodebuild -version | head -n1 | cut -d' ' -f2
+}
+
+# Fails when Xcode version is less than 6.3.
+check_xcode_minimum_version() {
+  xcode_major=$(show_xcode_version | cut -f1 -d.)
+  xcode_minor=$(show_xcode_version | cut -f2 -d.)
+  xcode_min_major=6
+  xcode_min_minor=3
+  if [ ${xcode_major} -lt ${xcode_min_major} ]; then
+    return 1
+  fi
+  if [ ${xcode_major} -eq ${xcode_min_major} ] \
+    && [ ${xcode_minor} -lt ${xcode_min_minor} ]; then
+    return 1
+  fi
+}
+
 process_common_toolchain() {
   if [ -z "$toolchain" ]; then
     gcctarget="${CHOST:-$(gcc -dumpmachine 2> /dev/null)}"
@@ -1049,6 +1069,18 @@ EOF
             try_dir="${alt_libc}/${d}"
             [ -d "${try_dir}" ] && add_ldflags -L"${try_dir}"
           done
+
+          case ${tgt_isa} in
+            armv7|armv7s|armv8|arm64)
+              if enabled neon && ! check_xcode_minimum_version; then
+                soft_disable neon && log_echo "  neon disabled: upgrade Xcode."
+                if enabled neon_asm; then
+                  soft_disable neon_asm \
+                    && log_echo "  neon_asm disabled: upgrade Xcode."
+                fi
+              fi
+              ;;
+          esac
 
           asm_conversion_cmd="${source_path}/build/make/ads2gas_apple.pl"
 
