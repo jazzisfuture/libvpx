@@ -117,10 +117,12 @@ static INLINE void Scale2Ratio(VPX_SCALING mode, int *hr, int *hs) {
 static void suppress_active_map(VP9_COMP *cpi) {
   unsigned char *const seg_map = cpi->segmentation_map;
   int i;
-  if (cpi->active_map.enabled || cpi->active_map.update)
+
+  if (cpi->active_map.enabled || cpi->active_map.update) {
     for (i = 0; i < cpi->common.mi_rows * cpi->common.mi_cols; ++i)
       if (seg_map[i] == AM_SEGMENT_ID_INACTIVE)
         seg_map[i] = AM_SEGMENT_ID_ACTIVE;
+  }
 }
 
 static void apply_active_map(VP9_COMP *cpi) {
