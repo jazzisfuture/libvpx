@@ -256,6 +256,8 @@ typedef struct VP9_COMP {
   DECLARE_ALIGNED(16, int16_t, uv_dequant[QINDEX_RANGE][8]);
   VP9_COMMON common;
   VP9EncoderConfig oxcf;
+
+  // TODO(yuryg): lookahead shouldn't be pointer
   struct lookahead_ctx    *lookahead;
   struct lookahead_entry  *alt_ref_source;
 
