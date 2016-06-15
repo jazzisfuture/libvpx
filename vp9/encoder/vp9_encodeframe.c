@@ -829,7 +829,9 @@ static int choose_partitioning(VP9_COMP *cpi,
     mi->interp_filter = BILINEAR;
 
     y_sad = vp9_int_pro_motion_estimation(cpi, x, bsize, mi_row, mi_col);
-    if (y_sad_g < y_sad) {
+    // Pick ref frame for partitioning, bias last frame when y_sad_g and y_sad
+    // are close.
+    if (y_sad_g < (y_sad * 7) >> 3) {
       vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
                            &cm->frame_refs[GOLDEN_FRAME - 1].sf);
       mi->ref_frame[0] = GOLDEN_FRAME;
