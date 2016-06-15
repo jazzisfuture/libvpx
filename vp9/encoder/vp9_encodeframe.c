@@ -796,7 +796,7 @@ static int choose_partitioning(VP9_COMP *cpi,
     const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
 
     const YV12_BUFFER_CONFIG *yv12_g = NULL;
-    unsigned int y_sad, y_sad_g, y_sad_thr;
+    unsigned int y_sad_thr, y_sad, y_sad_g = UINT_MAX;
     const BLOCK_SIZE bsize = BLOCK_32X32
         + (mi_col + 4 < cm->mi_cols) * 2 + (mi_row + 4 < cm->mi_rows);
 
@@ -808,18 +808,6 @@ static int choose_partitioning(VP9_COMP *cpi,
       yv12_g = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
     }
 
-    if (yv12_g && yv12_g != yv12 &&
-       (cpi->ref_frame_flags & VP9_GOLD_FLAG)) {
-      vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
-                           &cm->frame_refs[GOLDEN_FRAME - 1].sf);
-      y_sad_g = cpi->fn_ptr[bsize].sdf(x->plane[0].src.buf,
-                                       x->plane[0].src.stride,
-                                       xd->plane[0].pre[0].buf,
-                                       xd->plane[0].pre[0].stride);
-    } else {
-      y_sad_g = UINT_MAX;
-    }
-
     vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
                          &cm->frame_refs[LAST_FRAME - 1].sf);
     mi->ref_frame[0] = LAST_FRAME;
@@ -827,19 +815,33 @@ static int choose_partitioning(VP9_COMP *cpi,
     mi->sb_type = BLOCK_64X64;
     mi->mv[0].as_int = 0;
     mi->interp_filter = BILINEAR;
-
     y_sad = vp9_int_pro_motion_estimation(cpi, x, bsize, mi_row, mi_col);
+
+    // If mv got from vp9_int_pro_motion_estimation is 0, no need to check sad
+    // for golden ref.
+    if (!xd->mi[0]->mv[0].as_int) {
+      if (yv12_g && yv12_g != yv12 &&
+         (cpi->ref_frame_flags & VP9_GOLD_FLAG)) {
+        vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
+                             &cm->frame_refs[GOLDEN_FRAME - 1].sf);
+        y_sad_g = cpi->fn_ptr[bsize].sdf(x->plane[0].src.buf,
+                                         x->plane[0].src.stride,
+                                         xd->plane[0].pre[0].buf,
+                                         xd->plane[0].pre[0].stride);
+      }
+    }
+
     // Pick ref frame for partitioning, bias last frame when y_sad_g and y_sad
     // are close if short_circuit_low_temp_var is on.
     y_sad_thr = cpi->sf.short_circuit_low_temp_var ? (y_sad * 7) >> 3 : y_sad;
     if (y_sad_g < y_sad_thr) {
-      vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
-                           &cm->frame_refs[GOLDEN_FRAME - 1].sf);
       mi->ref_frame[0] = GOLDEN_FRAME;
       mi->mv[0].as_int = 0;
       y_sad = y_sad_g;
       ref_frame_partition = GOLDEN_FRAME;
     } else {
+      vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
+                           &cm->frame_refs[LAST_FRAME - 1].sf);
       x->pred_mv[LAST_FRAME] = mi->mv[0].as_mv;
       ref_frame_partition = LAST_FRAME;
     }
