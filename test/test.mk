@@ -27,6 +27,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += i420_video_source.h
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += resize_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += y4m_video_source.h
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += yuv_video_source.h
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += realtime_test.cc
 
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += config_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += cq_test.cc
