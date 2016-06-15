@@ -491,8 +491,12 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
         byte = mb_y_offset;
         for (i = 0, k = 0; i < 16; i++) {
           for (j = 0; j < 16; j++, k++) {
+            // TODO(yuryg): Is this just rounding up?
+            // If so, I would add a comment
             unsigned int pval = accumulator[k] + (count[k] >> 1);
             pval *= fixed_divide[count[k]];
+
+            // TODO(yuryg): 19??
             pval >>= 19;
 
             dst1_16[byte] = (uint16_t)pval;
@@ -515,12 +519,20 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
             int m = k + 256;
 
             // U
+
+            // TODO(yuryg): Is this just rounding up?
+            // If so, I would add a comment
             unsigned int pval = accumulator[k] + (count[k] >> 1);
             pval *= fixed_divide[count[k]];
+
+            // TODO(yuryg): 19??
             pval >>= 19;
             dst1_16[byte] = (uint16_t)pval;
 
             // V
+
+            // TODO(yuryg): Is this just rounding up?
+            // If so, I would add a comment
             pval = accumulator[m] + (count[m] >> 1);
             pval *= fixed_divide[count[m]];
             pval >>= 19;
@@ -539,8 +551,12 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
         byte = mb_y_offset;
         for (i = 0, k = 0; i < 16; i++) {
           for (j = 0; j < 16; j++, k++) {
+            // TODO(yuryg): Is this just rounding up?
+            // If so, I would add a comment
             unsigned int pval = accumulator[k] + (count[k] >> 1);
             pval *= fixed_divide[count[k]];
+
+            // TODO(yuryg): 19??
             pval >>= 19;
 
             dst1[byte] = (uint8_t)pval;
@@ -560,12 +576,20 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
             int m = k + 256;
 
             // U
+
+            // TODO(yuryg): Is this just rounding up?
+            // If so, I would add a comment
             unsigned int pval = accumulator[k] + (count[k] >> 1);
             pval *= fixed_divide[count[k]];
+
+            // TODO(yuryg): 19??
             pval >>= 19;
             dst1[byte] = (uint8_t)pval;
 
             // V
+
+            // TODO(yuryg): Is this just rounding up?
+            // If so, I would add a comment
             pval = accumulator[m] + (count[m] >> 1);
             pval *= fixed_divide[count[m]];
             pval >>= 19;
@@ -584,8 +608,12 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
       byte = mb_y_offset;
       for (i = 0, k = 0; i < 16; i++) {
         for (j = 0; j < 16; j++, k++) {
+          // TODO(yuryg): Is this just rounding up?
+          // If so, I would add a comment
           unsigned int pval = accumulator[k] + (count[k] >> 1);
           pval *= fixed_divide[count[k]];
+
+          // TODO(yuryg): 19??
           pval >>= 19;
 
           dst1[byte] = (uint8_t)pval;
@@ -605,12 +633,20 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           int m = k + 256;
 
           // U
+
+          // TODO(yuryg): Is this just rounding up?
+          // If so, I would add a comment
           unsigned int pval = accumulator[k] + (count[k] >> 1);
           pval *= fixed_divide[count[k]];
+
+          // TODO(yuryg): 19??
           pval >>= 19;
           dst1[byte] = (uint8_t)pval;
 
           // V
+
+          // TODO(yuryg): Is this just rounding up?
+          // If so, I would add a comment
           pval = accumulator[m] + (count[m] >> 1);
           pval *= fixed_divide[count[m]];
           pval >>= 19;
