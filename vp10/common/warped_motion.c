@@ -202,6 +202,7 @@ static void projectPointsHomography(int *mat, int *points, int *proj,
   }
 }
 
+#if 0
 static const int16_t
 filter_4tap[WARPEDPIXEL_PREC_SHIFTS][4] = {
   {0, 128,   0, 0},
@@ -269,6 +270,7 @@ filter_4tap[WARPEDPIXEL_PREC_SHIFTS][4] = {
   {-1,   4, 127, -2},
   {0,   2, 127, -1},
 };
+#endif  // 0
 
 static const int16_t
 filter_ntap[WARPEDPIXEL_PREC_SHIFTS][WARPEDPIXEL_FILTER_TAPS] = {
