@@ -55,6 +55,9 @@ CODEC_SRCS-yes += $(addprefix vpx_util/,$(call enabled,UTIL_SRCS))
 
 ifeq ($(CONFIG_VP8),yes)
   VP8_PREFIX=vp8/
+  # Just a few remaining warnings for -Wextra from -Wclobbered.
+  # https://bugs.chromium.org/p/webm/issues/detail?id=1246
+  $(BUILD_PFX)$(VP8_PREFIX)%.c.o: CFLAGS += -Wextra -Wno-clobbered
   include $(SRC_PATH_BARE)/$(VP8_PREFIX)vp8_common.mk
 endif
 
@@ -78,6 +81,7 @@ endif
 
 ifeq ($(CONFIG_VP9),yes)
   VP9_PREFIX=vp9/
+  $(BUILD_PFX)$(VP9_PREFIX)%.c.o: CFLAGS += -Wextra
   include $(SRC_PATH_BARE)/$(VP9_PREFIX)vp9_common.mk
 endif
 
@@ -105,9 +109,6 @@ ifeq ($(CONFIG_VP9_DECODER),yes)
   CODEC_DOC_SRCS += vpx/vp8.h vpx/vp8dx.h
   CODEC_DOC_SECTIONS += vp9 vp9_decoder
 endif
-
-VP9_PREFIX=vp9/
-$(BUILD_PFX)$(VP9_PREFIX)%.c.o: CFLAGS += -Wextra
 
 ifeq ($(CONFIG_ENCODERS),yes)
   CODEC_DOC_SECTIONS += encoder
