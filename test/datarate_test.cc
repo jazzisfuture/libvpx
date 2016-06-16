@@ -93,7 +93,7 @@ class DatarateTestLarge : public ::libvpx_test::EncoderTest,
     const size_t frame_size_in_bits = pkt->data.frame.sz * 8;
 
     // Subtract from the buffer the bits associated with a played back frame.
-    bits_in_buffer_model_ -= frame_size_in_bits;
+    bits_in_buffer_model_ -= (int64_t)frame_size_in_bits;
 
     // Update the running total of bits for end of test datarate checks.
     bits_total_ += frame_size_in_bits;
