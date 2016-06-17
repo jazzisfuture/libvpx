@@ -36,7 +36,6 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
     SetMode(mode);
     sf_count_ = 0;
     sf_count_max_ = INT_MAX;
-    is_vp10_style_superframe_ = syntax;
   }
 
   virtual void TearDown() {
@@ -59,8 +58,7 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
     const uint8_t marker = buffer[pkt->data.frame.sz - 1];
     const int frames = (marker & 0x7) + 1;
     const int mag = ((marker >> 3) & 3) + 1;
-    const unsigned int index_sz =
-        2 + mag * (frames - is_vp10_style_superframe_);
+    const unsigned int index_sz = 2 + mag * frames;
     if ((marker & 0xe0) == 0xc0 &&
         pkt->data.frame.sz >= index_sz &&
         buffer[pkt->data.frame.sz - index_sz] == marker) {
@@ -85,7 +83,6 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
     return pkt;
   }
 
-  int is_vp10_style_superframe_;
   int sf_count_;
   int sf_count_max_;
   vpx_codec_cx_pkt_t modified_pkt_;
@@ -106,8 +103,4 @@ TEST_P(SuperframeTest, TestSuperframeIndexIsOptional) {
 VP9_INSTANTIATE_TEST_CASE(SuperframeTest, ::testing::Combine(
     ::testing::Values(::libvpx_test::kTwoPassGood),
     ::testing::Values(0)));
-
-VP10_INSTANTIATE_TEST_CASE(SuperframeTest, ::testing::Combine(
-    ::testing::Values(::libvpx_test::kTwoPassGood),
-    ::testing::Values(CONFIG_MISC_FIXES)));
 }  // namespace
