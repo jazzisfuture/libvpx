@@ -456,6 +456,7 @@ static void set_vt_partitioning(VP10_COMP *cpi,
                                const int64_t *const threshold,
                                const BLOCK_SIZE *const bsize_min) {
   VP10_COMMON * const cm = &cpi->common;
+  const struct segmentation *const seg = &cm->seg;
   const int hbw = num_8x8_blocks_wide_lookup[vt->bsize] / 2;
   const int hbh = num_8x8_blocks_high_lookup[vt->bsize] / 2;
   const int has_cols = mi_col + hbw < cm->mi_cols;
@@ -467,6 +468,18 @@ static void set_vt_partitioning(VP10_COMP *cpi,
   assert(vt->bsize >= BLOCK_8X8);
 
   assert(hbh == hbw);
+
+  if (seg->enabled && cm->frame_type != KEY_FRAME && vt->bsize == BLOCK_8X8) {
+    // This is possibly an 8x8 inter block. If SEG_LVL_SKIP is used, then
+    // the block size must be 8x8 for bitstream conformance.
+    const uint8_t *const map = seg->update_map ? cpi->segmentation_map
+                                               : cm->last_frame_seg_map;
+    int segment_id = get_segment_id(cm, map, BLOCK_8X8, mi_row, mi_col);
+    if (segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP)) {
+      set_block_size(cpi, x, xd, mi_row, mi_col, BLOCK_8X8);
+      return;
+    }
+  }
 
   if (vt->force_split || (!has_cols && !has_rows))
     goto split;
