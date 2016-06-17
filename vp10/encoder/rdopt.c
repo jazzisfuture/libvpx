@@ -6762,6 +6762,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       is_motvar_allowed(mbmi);
   int rate2_nocoeff, best_rate2 = INT_MAX,
       best_skippable, best_xskip, best_disable_skip = 0;
+  int best_rate_y, best_rate_uv;
 #if CONFIG_SUPERTX
   int best_rate_y, best_rate_uv;
 #endif  // CONFIG_SUPERTX
@@ -7981,6 +7982,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
       best_mbmi = *mbmi;
       best_rd = tmp_rd;
       best_rate2 = *rate2;
+      best_rate_y = *rate_y;
+      best_rate_uv = *rate_uv;
 #if CONFIG_SUPERTX
       best_rate_y = *rate_y;
       best_rate_uv = *rate_uv;
@@ -8006,6 +8009,8 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
   }
   *mbmi = best_mbmi;
   *rate2 = best_rate2;
+  *rate_y = best_rate_y;
+  *rate_uv = best_rate_uv;
 #if CONFIG_SUPERTX
   *rate_y = best_rate_y;
   *rate_uv = best_rate_uv;
@@ -9509,6 +9514,10 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
     } else {
       this_skip2 = mbmi->skip;
       this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
+      if (this_skip2) {
+        rate_y = 0;
+        rate_uv = 0;
+      }
 #endif  // CONFIG_OBMC
     }
 
