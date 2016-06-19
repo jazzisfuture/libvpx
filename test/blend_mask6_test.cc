@@ -16,7 +16,7 @@
 #include "test/register_state_check.h"
 
 #include "test/function_equivalence_test.h"
-#include "test/randomise.h"
+#include "test/random.h"
 #include "test/snapshot.h"
 
 #include "./vpx_config.h"
@@ -33,7 +33,7 @@ using libvpx_test::assertion_helpers::BuffersEqOutside;
 using libvpx_test::assertion_helpers::ArraysEq;
 using libvpx_test::FunctionEquivalenceTest;
 using libvpx_test::Snapshot;
-using libvpx_test::Randomise;
+using libvpx_test::Random;
 using std::tr1::make_tuple;
 
 namespace {
@@ -46,27 +46,27 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
   virtual void Execute(T *p_src0, T *p_src1) = 0;
 
   void Common() {
-    w = 1 << randomise.uniform<int>(2, MAX_SB_SIZE_LOG2 + 1);
-    h = 1 << randomise.uniform<int>(2, MAX_SB_SIZE_LOG2 + 1);
+    w = 1 << random.Uniform<int>(2, MAX_SB_SIZE_LOG2);
+    h = 1 << random.Uniform<int>(2, MAX_SB_SIZE_LOG2);
 
-    randomise(subx);
-    randomise(suby);
+    subx = random.Uniform<bool>();
+    suby = random.Uniform<bool>();
 
-    randomise(dst_offset, 0, 32);
-    randomise(dst_stride, w, MAX_SB_SIZE * 5 + 1);
+    dst_offset = random.Uniform<size_t>(0, 31);
+    dst_stride = random.Uniform<size_t>(w, MAX_SB_SIZE * 5);
 
-    randomise(src0_offset, 0, 32);
-    randomise(src0_stride, w, MAX_SB_SIZE * 5 + 1);
+    src0_offset = random.Uniform<size_t>(0, 31);
+    src0_stride = random.Uniform<size_t>(w, MAX_SB_SIZE * 5);
 
-    randomise(src1_offset, 0, 32);
-    randomise(src1_stride, w, MAX_SB_SIZE * 5 + 1);
+    src1_offset = random.Uniform<size_t>(0, 31);
+    src1_stride = random.Uniform<size_t>(w, MAX_SB_SIZE * 5);
 
-    randomise(mask_stride, w * (subx ? 2: 1), 2 * MAX_SB_SIZE + 1);
+    mask_stride = random.Uniform<size_t>(w * (subx ? 2: 1), 2 * MAX_SB_SIZE);
 
     T *p_src0;
     T *p_src1;
 
-    switch (randomise.uniform<int>(3)) {
+    switch (random.Uniform<int>(2)) {
       case 0:   // Separate sources
         p_src0 = &src0[0][0];
         p_src1 = &src1[0][0];
@@ -130,7 +130,7 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
   }
 
   Snapshot snapshot;
-  Randomise randomise;
+  Random random;
 
   T dst_ref[MAX_SB_SIZE][MAX_SB_SIZE * 5];
   T dst_tst[MAX_SB_SIZE][MAX_SB_SIZE * 5];
@@ -160,10 +160,10 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
 //////////////////////////////////////////////////////////////////////////////
 
 typedef void (*F8B)(uint8_t *dst, uint32_t dst_stride,
-                      uint8_t *src0, uint32_t src0_stride,
-                      uint8_t *src1, uint32_t src1_stride,
-                      const uint8_t *mask, uint32_t mask_stride,
-                      int h, int w, int suby, int subx);
+                    uint8_t *src0, uint32_t src0_stride,
+                    uint8_t *src1, uint32_t src1_stride,
+                    const uint8_t *mask, uint32_t mask_stride,
+                    int h, int w, int suby, int subx);
 
 class BlendMask6Test8B : public BlendMask6Test<F8B, uint8_t> {
  protected:
@@ -186,16 +186,16 @@ class BlendMask6Test8B : public BlendMask6Test<F8B, uint8_t> {
 TEST_P(BlendMask6Test8B, RandomValues) {
   for (int i = 0 ; i < 10000 && !HasFatalFailure(); i++) {
     //////////////////////////////////////////////////////////////////////////
-    // Randomise
+    // Randomize
     //////////////////////////////////////////////////////////////////////////
 
-    randomise(dst_ref);
-    randomise(dst_tst);
+    random.Uniform(&dst_ref);
+    random.Uniform(&dst_tst);
 
-    randomise(src0);
-    randomise(src1);
+    random.Uniform(&src0);
+    random.Uniform(&src1);
 
-    randomise(mask, 65);
+    random.Uniform(&mask, 64);
 
     Common();
   }
@@ -204,16 +204,16 @@ TEST_P(BlendMask6Test8B, RandomValues) {
 TEST_P(BlendMask6Test8B, ExtremeValues) {
   for (int i = 0 ; i < 1000 && !HasFatalFailure(); i++) {
     //////////////////////////////////////////////////////////////////////////
-    // Randomise
+    // Randomize
     //////////////////////////////////////////////////////////////////////////
 
-    randomise(dst_ref, 254, 256);
-    randomise(dst_tst, 254, 256);
+    random.Uniform(&dst_ref, 254, 255);
+    random.Uniform(&dst_tst, 254, 255);
 
-    randomise(src0, 254, 256);
-    randomise(src1, 254, 256);
+    random.Uniform(&src0, 254, 255);
+    random.Uniform(&src1, 254, 255);
 
-    randomise(mask, 63, 65);
+    random.Uniform(&mask, 63, 64);
 
     Common();
   }
@@ -231,10 +231,10 @@ INSTANTIATE_TEST_CASE_P(
 //////////////////////////////////////////////////////////////////////////////
 
 typedef void (*FHBD)(uint8_t *dst, uint32_t dst_stride,
-                       uint8_t *src0, uint32_t src0_stride,
-                       uint8_t *src1, uint32_t src1_stride,
-                       const uint8_t *mask, uint32_t mask_stride,
-                       int h, int w, int suby, int subx, int bd);
+                     uint8_t *src0, uint32_t src0_stride,
+                     uint8_t *src1, uint32_t src1_stride,
+                     const uint8_t *mask, uint32_t mask_stride,
+                     int h, int w, int suby, int subx, int bd);
 
 class BlendMask6TestHBD : public BlendMask6Test<FHBD, uint16_t> {
  protected:
@@ -259,20 +259,20 @@ class BlendMask6TestHBD : public BlendMask6Test<FHBD, uint16_t> {
 TEST_P(BlendMask6TestHBD, RandomValues) {
   for (int i = 0 ; i < 10000 && !HasFatalFailure(); i++) {
     //////////////////////////////////////////////////////////////////////////
-    // Randomise
+    // Randomize
     //////////////////////////////////////////////////////////////////////////
 
-    bit_depth = randomise.choice(8, 10, 12);
+    bit_depth = random.Choice(8, 10, 12);
 
-    const int hi = 1 << bit_depth;
+    const uint16_t hi = (1 << bit_depth) - 1;
 
-    randomise(dst_ref, hi);
-    randomise(dst_tst, hi);
+    random.Uniform(&dst_ref, hi);
+    random.Uniform(&dst_tst, hi);
 
-    randomise(src0, hi);
-    randomise(src1, hi);
+    random.Uniform(&src0, hi);
+    random.Uniform(&src1, hi);
 
-    randomise(mask, 65);
+    random.Uniform(&mask, 64);
 
     Common();
   }
@@ -281,21 +281,21 @@ TEST_P(BlendMask6TestHBD, RandomValues) {
 TEST_P(BlendMask6TestHBD, ExtremeValues) {
   for (int i = 0 ; i < 1000 && !HasFatalFailure(); i++) {
     //////////////////////////////////////////////////////////////////////////
-    // Randomise
+    // Randomize
     //////////////////////////////////////////////////////////////////////////
 
-    bit_depth = randomise.choice(8, 10, 12);
+    bit_depth = random.Choice(8, 10, 12);
 
-    const int hi = 1 << bit_depth;
-    const int lo = hi - 2;
+    const uint16_t hi = (1 << bit_depth) - 1;
+    const uint16_t lo = hi - 2;
 
-    randomise(dst_ref, lo, hi);
-    randomise(dst_tst, lo, hi);
+    random.Uniform(&dst_ref, lo, hi);
+    random.Uniform(&dst_tst, lo, hi);
 
-    randomise(src0, lo, hi);
-    randomise(src1, lo, hi);
+    random.Uniform(&src0, lo, hi);
+    random.Uniform(&src1, lo, hi);
 
-    randomise(mask, 63, 65);
+    random.Uniform(&mask, 63, 64);
 
     Common();
   }
