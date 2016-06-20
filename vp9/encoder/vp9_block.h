@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#define CONFIG_HETEROQUANTIZE 1
+
 typedef struct {
   unsigned int sse;
   int sum;
