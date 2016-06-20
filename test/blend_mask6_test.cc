@@ -114,16 +114,16 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
                                 dst_offset, dst_offset,
                                 h, w));
 
-    ASSERT_TRUE(ArraysEq(snapshot.get(src0), src0));
-    ASSERT_TRUE(ArraysEq(snapshot.get(src1), src1));
-    ASSERT_TRUE(ArraysEq(snapshot.get(mask), mask));
+    ASSERT_TRUE(ArraysEq(snapshot.Get(src0), src0));
+    ASSERT_TRUE(ArraysEq(snapshot.Get(src1), src1));
+    ASSERT_TRUE(ArraysEq(snapshot.Get(mask), mask));
 
-    ASSERT_TRUE(BuffersEqOutside(snapshot.get(dst_ref), dst_ref,
+    ASSERT_TRUE(BuffersEqOutside(snapshot.Get(dst_ref), dst_ref,
                                  dst_stride,
                                  dst_offset,
                                  h, w));
 
-    ASSERT_TRUE(BuffersEqOutside(snapshot.get(dst_tst), dst_tst,
+    ASSERT_TRUE(BuffersEqOutside(snapshot.Get(dst_tst), dst_tst,
                                  dst_stride,
                                  dst_offset,
                                  h, w));
