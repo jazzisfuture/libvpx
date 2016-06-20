@@ -87,4 +87,60 @@ INSTANTIATE_TEST_CASE_P(
     )
 );
 #endif  // HAVE_SSE2
+
+//////////////////////////////////////////////////////////////////////////////
+// 1D version
+//////////////////////////////////////////////////////////////////////////////
+
+typedef uint64_t (*F1D)(const int16_t *src, uint32_t N);
+
+class SumSquares1DTest : public FunctionEquivalenceTest<F1D> {
+ protected:
+  void Common() {
+    const int N = random.Uniform<bool>() ? random.Uniform<int>(256, 256 * 256)
+                                         : random.Uniform<int>(1, 256);
+
+    snapshot(src);
+
+    uint64_t ref_res, tst_res;
+
+    ref_res = ref_func_(src.First(), N);
+    ASM_REGISTER_STATE_CHECK(tst_res = tst_func_(src.First(), N));
+
+    ASSERT_EQ(ref_res, tst_res);
+
+    ASSERT_TRUE(ArraysEq(snapshot.Get(src), src));
+  }
+
+  Snapshot snapshot;
+  Random random;
+
+  Array<int16_t[256][256], 32> src;
+};
+
+TEST_P(SumSquares1DTest, RandomValues) {
+  for (int i = 0 ; i < 10000 && !HasFatalFailure(); i++) {
+    random.Uniform(&src, -int13_max, int13_max);
+
+    Common();
+  }
+}
+
+TEST_P(SumSquares1DTest, ExtremeValues) {
+  for (int i = 0 ; i < 10000 && !HasFatalFailure(); i++) {
+    src.Set(random.Uniform<bool>() ? int13_max : -int13_max);
+
+    Common();
+  }
+}
+using std::tr1::make_tuple;
+
+#if HAVE_SSE2
+INSTANTIATE_TEST_CASE_P(
+    SSE2, SumSquares1DTest,
+    ::testing::Values(
+        make_tuple(&vpx_sum_squares_i16_c, &vpx_sum_squares_i16_sse2)
+    )
+);
+#endif  // HAVE_SSE2
 }  // namespace
