@@ -12,6 +12,7 @@
 #include "vpx_dsp/quantize.h"
 #include "vpx_mem/vpx_mem.h"
 
+
 void vpx_quantize_dc(const tran_low_t *coeff_ptr,
                      int n_coeffs, int skip_block,
                      const int16_t *round_ptr, const int16_t quant,

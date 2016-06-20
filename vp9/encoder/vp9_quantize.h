@@ -18,6 +18,20 @@
 extern "C" {
 #endif
 
+#if CONFIG_HETEROQUANTIZE
+#define HETERODIVD 16
+#define HETEROCOEF 4
+
+void vp9_post_quantize_c(const tran_low_t *coeff_ptr,
+                      int skip_block, const int16_t *zbin_ptr,
+                      tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                      uint16_t *eob_ptr, const int16_t *scan);
+void vp9_post_quantize_32x32_c(const tran_low_t *coeff_ptr,
+                      int skip_block, const int16_t *zbin_ptr,
+                      tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                      uint16_t *eob_ptr, const int16_t *scan);
+#endif
+
 typedef struct {
   DECLARE_ALIGNED(16, int16_t, y_quant[QINDEX_RANGE][8]);
   DECLARE_ALIGNED(16, int16_t, y_quant_shift[QINDEX_RANGE][8]);

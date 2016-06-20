@@ -25,6 +25,9 @@
 #include "vp9/encoder/vp9_encodemb.h"
 #include "vp9/encoder/vp9_rd.h"
 #include "vp9/encoder/vp9_tokenize.h"
+#if CONFIG_HETEROQUANTIZE
+#include "vp9/encoder/vp9_quantize.h"
+#endif
 
 struct optimize_ctx {
   ENTROPY_CONTEXT ta[MAX_MB_PLANE][16];
@@ -568,6 +571,10 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                            p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, eob, scan_order->scan,
                            scan_order->iscan);
+#if CONFIG_HETEROQUANTIZE
+      vp9_post_quantize_32x32_c(coeff, x->skip_block, p->zbin, qcoeff, dqcoeff,
+                                eob, scan_order->scan);
+#endif
       break;
     case TX_16X16:
       vpx_fdct16x16(src_diff, coeff, diff_stride);
@@ -575,6 +582,10 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
+#if CONFIG_HETEROQUANTIZE
+      vp9_post_quantize_c(coeff, x->skip_block, p->zbin, qcoeff, dqcoeff,
+                                eob, scan_order->scan);
+#endif
       break;
     case TX_8X8:
       vpx_fdct8x8(src_diff, coeff, diff_stride);
@@ -582,6 +593,10 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
+#if CONFIG_HETEROQUANTIZE
+      vp9_post_quantize_c(coeff, x->skip_block, p->zbin, qcoeff, dqcoeff,
+                                eob, scan_order->scan);
+#endif
       break;
     case TX_4X4:
       x->fwd_txm4x4(src_diff, coeff, diff_stride);
@@ -589,6 +604,10 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
+#if CONFIG_HETEROQUANTIZE
+      vp9_post_quantize_c(coeff, x->skip_block, p->zbin, qcoeff, dqcoeff,
+                                eob, scan_order->scan);
+#endif
       break;
     default:
       assert(0);
@@ -927,6 +946,10 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, eob, scan_order->scan,
                              scan_order->iscan);
+#if CONFIG_HETEROQUANTIZE
+        vp9_post_quantize_32x32_c(coeff, x->skip_block, p->zbin, qcoeff,
+                                  dqcoeff, eob, scan_order->scan);
+#endif
       }
       if (args->ctx != NULL && !x->skip_recode) {
        *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
@@ -943,6 +966,10 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+#if CONFIG_HETEROQUANTIZE
+        vp9_post_quantize_c(coeff, x->skip_block, p->zbin, qcoeff, dqcoeff,
+                                  eob, scan_order->scan);
+#endif
       }
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
@@ -959,6 +986,10 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+#if CONFIG_HETEROQUANTIZE
+        vp9_post_quantize_c(coeff, x->skip_block, p->zbin, qcoeff, dqcoeff,
+                                  eob, scan_order->scan);
+#endif
       }
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
@@ -978,6 +1009,10 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+#if CONFIG_HETEROQUANTIZE
+        vp9_post_quantize_c(coeff, x->skip_block, p->zbin, qcoeff, dqcoeff,
+                                  eob, scan_order->scan);
+#endif
       }
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
