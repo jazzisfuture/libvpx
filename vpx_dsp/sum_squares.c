@@ -13,7 +13,7 @@
 #include "./vpx_dsp_rtcd.h"
 
 uint64_t vpx_sum_squares_2d_i16_c(const int16_t *src, int src_stride,
-                                  int size) {
+                                  uint32_t size) {
   int r, c;
   uint64_t ss = 0;
 

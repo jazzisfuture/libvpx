@@ -14,6 +14,8 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "test/array.h"
+
 namespace libvpx_test {
 namespace assertion_helpers {
 
@@ -270,6 +272,18 @@ template<typename E, size_t n, size_t m>
   assert(idx == n * m + cols);
 
   return ::testing::AssertionSuccess();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Overloads to handle instances of Array
+//////////////////////////////////////////////////////////////////////////////
+
+// Note: Add new overloads as required
+
+template<typename T, int A, int B>
+::testing::AssertionResult ArraysEq(const Array<T, A> &a,
+                                    const Array<T, B> &b) {
+  return ArraysEq(*a.AddrOf(), *b.AddrOf());
 }
 
 }   // namespace assertion_helpers
