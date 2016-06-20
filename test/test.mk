@@ -5,6 +5,7 @@ LIBVPX_TEST_SRCS-yes += codec_factory.h
 LIBVPX_TEST_SRCS-yes += md5_helper.h
 LIBVPX_TEST_SRCS-yes += random.h
 LIBVPX_TEST_SRCS-yes += register_state_check.h
+LIBVPX_TEST_SRCS-yes += snapshot.h
 LIBVPX_TEST_SRCS-yes += test.mk
 LIBVPX_TEST_SRCS-yes += test_libvpx.cc
 LIBVPX_TEST_SRCS-yes += test_vectors.cc
