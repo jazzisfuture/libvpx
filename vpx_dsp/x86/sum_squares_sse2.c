@@ -16,6 +16,10 @@
 
 #include "./vpx_dsp_rtcd.h"
 
+//////////////////////////////////////////////////////////////////////////////
+// 2D version
+//////////////////////////////////////////////////////////////////////////////
+
 static uint64_t vpx_sum_squares_2d_i16_4x4_sse2(const int16_t *src,
                                                 int stride) {
   const __m128i v_val_0_w = _mm_loadl_epi64((const __m128i*)(src+0*stride));
@@ -46,7 +50,7 @@ __attribute__((noinline))
 #endif
 static uint64_t vpx_sum_squares_2d_i16_nxn_sse2(const int16_t *src,
                                                 int stride,
-                                                int size) {
+                                                uint32_t size) {
   int r, c;
 
   const __m128i v_zext_mask_q = _mm_set_epi32(0, 0xffffffff, 0, 0xffffffff);
@@ -108,7 +112,7 @@ static uint64_t vpx_sum_squares_2d_i16_nxn_sse2(const int16_t *src,
 }
 
 uint64_t vpx_sum_squares_2d_i16_sse2(const int16_t *src, int stride,
-                                     int size) {
+                                     uint32_t size) {
   // 4 elements per row only requires half an XMM register, so this
   // must be a special case, but also note that over 75% of all calls
   // are with size == 4, so it is also the common case.
