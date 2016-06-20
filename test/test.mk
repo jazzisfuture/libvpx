@@ -21,6 +21,7 @@ LIBVPX_TEST_SRCS-yes += transform_test_base.h
 ##
 LIBVPX_TEST_SRCS-yes += meta_array_test.cc
 LIBVPX_TEST_SRCS-yes += meta_random_test.cc
+LIBVPX_TEST_SRCS-yes += meta_snapshot_test.cc
 
 ##
 ## BLACK BOX TESTS
