@@ -386,3 +386,44 @@ int vp9_qindex_to_quantizer(int qindex) {
 
   return 63;
 }
+
+#if CONFIG_HETEROQUANTIZE
+// This function eliminates isolated small nonzero high-frequency
+// AC coefficients.
+void vp9_post_quantize_c(const tran_low_t *coeff_ptr, TX_SIZE tx_size,
+                         int skip_block, const int16_t *zbin_ptr,
+                         tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                         uint16_t *eob_ptr, const int16_t *scan) {
+  const int zbins[2] =
+      {tx_size == TX_32X32 ? ROUND_POWER_OF_TWO(zbin_ptr[0], 1) : zbin_ptr[0],
+       tx_size == TX_32X32 ? ROUND_POWER_OF_TWO(zbin_ptr[1], 1) : zbin_ptr[1]};
+  const int nzbins[2] = {zbins[0] * -1, zbins[1] * -1};
+  const int hetero_zbins[2] = {(HETEROCOEF + 1) * zbins[0] / HETEROCOEF,
+                               (HETEROCOEF + 1) * zbins[1] / HETEROCOEF};
+  const int hetero_nzbins[2] = {hetero_zbins[0] * -1, hetero_zbins[1] * -1};
+  int eob = (int)(*eob_ptr), i = eob - 1, rc, tail_count = 0;
+
+  if (skip_block)
+    return;
+  if (i >= 0)
+    rc = scan[i];
+  while (i >= 0 && coeff_ptr[rc] <= hetero_zbins[rc != 0]
+        && coeff_ptr[rc] >= hetero_nzbins[rc != 0]) {
+    i--;
+    if (coeff_ptr[rc] >= zbins[rc != 0] || coeff_ptr[rc] <= nzbins[rc != 0])
+      tail_count++;
+    if (eob - 1 - i >= tail_count * zbins[1] / HETERODIVD) {
+      eob = i + 1;
+      tail_count = 0;
+    }
+    if (i >= 0)
+      rc = scan[i];
+  }
+  for (i = eob; i < (*eob_ptr); ++i) {
+    rc = scan[i];
+    qcoeff_ptr[rc] = 0;
+    dqcoeff_ptr[rc] = 0;
+  }
+  *eob_ptr = eob;
+}
+#endif
