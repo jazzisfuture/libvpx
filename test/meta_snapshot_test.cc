@@ -101,4 +101,65 @@ TYPED_TEST(METASnapshotPrimitiveTypes, NativeArray2D) {
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Snapshot instances of Array
+//////////////////////////////////////////////////////////////////////////////
+
+TYPED_TEST(METASnapshotPrimitiveTypes, Array1D) {
+  Random random, randomRef;
+  Snapshot snapshot;
+
+  for (int i = 0 ; i < this->kIterations ; ++i) {
+    Array<TypeParam[200], 64> array;
+
+    random.Uniform(&array);
+
+    snapshot(array);
+
+    for (size_t i = 0 ; i < array.Size() ; ++i)
+      array[i] = !array[i];
+
+    for (size_t i = 0 ; i < array.Size() ; ++i) {
+      ASSERT_NE(array[i], snapshot.Get(array)[i]);
+      ASSERT_EQ(randomRef.Uniform<TypeParam>(), snapshot.Get(array)[i]);
+    }
+
+    // Check alignment of snapshot
+    intptr_t mask = array.Alignment() - 1;
+    intptr_t addr = reinterpret_cast<intptr_t>(snapshot.Get(array).AddrOf());
+
+    ASSERT_EQ(0, addr & mask);
+  }
+}
+
+TYPED_TEST(METASnapshotPrimitiveTypes, Array2D) {
+  Random random, randomRef;
+  Snapshot snapshot;
+
+  for (int i = 0 ; i < this->kIterations ; ++i) {
+    Array<TypeParam[200][100], 64> array;
+
+    random.Uniform(&array);
+
+    snapshot(array);
+
+    for (size_t i = 0 ; i < array.Size(0) ; ++i)
+      for (size_t j = 0 ; j < array.Size(1); ++j)
+        array[i][j] = !array[i][j];
+
+    for (size_t i = 0 ; i < array.Size(0) ; ++i) {
+      for (size_t j = 0 ; j < array.Size(1) ; ++j) {
+        ASSERT_NE(array[i][j], snapshot.Get(array)[i][j]);
+        ASSERT_EQ(randomRef.Uniform<TypeParam>(), snapshot.Get(array)[i][j]);
+      }
+    }
+
+    // Check alignment of snapshot
+    intptr_t mask = array.Alignment() - 1;
+    intptr_t addr = reinterpret_cast<intptr_t>(snapshot.Get(array).AddrOf());
+
+    ASSERT_EQ(0, addr & mask);
+  }
+}
+
 }  // namespace
