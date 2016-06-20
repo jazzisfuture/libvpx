@@ -727,6 +727,10 @@ static void model_rd_for_sb_uv(VP9_COMP *cpi, BLOCK_SIZE plane_bsize,
   int rate;
   int64_t dist;
   int i;
+#if CONFIG_VP9_HIGHBITDEPTH
+  uint64_t tot_var = 0;
+  uint64_t tot_sse = 0;
+#endif
 
   this_rdc->rate = 0;
   this_rdc->dist = 0;
@@ -738,24 +742,25 @@ static void model_rd_for_sb_uv(VP9_COMP *cpi, BLOCK_SIZE plane_bsize,
     const uint32_t ac_quant = pd->dequant[1];
     const BLOCK_SIZE bs = plane_bsize;
     unsigned int var;
-
     if (!x->color_sensitivity[i - 1])
       continue;
 
     var = cpi->fn_ptr[bs].vf(p->src.buf, p->src.stride,
                              pd->dst.buf, pd->dst.stride, &sse);
-    *var_y += var;
-    *sse_y += sse;
-
   #if CONFIG_VP9_HIGHBITDEPTH
+    tot_var += var;
+    tot_sse += sse;
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-      vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bs],
+      int64_t diff = (int64_t)sse - var;
+      vp9_model_rd_from_var_lapndz((uint32_t)diff, num_pels_log2_lookup[bs],
                                    dc_quant >> (xd->bd - 5), &rate, &dist);
     } else {
       vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bs],
                                    dc_quant >> 3, &rate, &dist);
     }
   #else
+    *var_y += var;
+    *sse_y += sse;
     vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bs],
                                  dc_quant >> 3, &rate, &dist);
   #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -779,6 +784,10 @@ static void model_rd_for_sb_uv(VP9_COMP *cpi, BLOCK_SIZE plane_bsize,
     this_rdc->rate += rate;
     this_rdc->dist += dist << 4;
   }
+#if CONFIG_VP9_HIGHBITDEPTH
+  *var_y = tot_var > UINT32_MAX ? UINT32_MAX : (uint32_t)tot_var;
+  *sse_y = tot_sse > UINT32_MAX ? UINT32_MAX : (uint32_t)tot_sse;
+#endif
 }
 
 static int get_pred_buffer(PRED_BUFFER *p, int len) {
