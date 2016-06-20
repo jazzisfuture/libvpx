@@ -15,81 +15,71 @@
 
 namespace libvpx_test {
 
-/**
- * Allows capturing and retrieving snapshots of arbitrary blobs of memory,
- * blob size is based on compile time type information.
- *
- * Usage:
- * void example() {
- *   Snapshot snapshot;
- *
- *   int foo = 4;
- *
- *   snapshot(foo);
- *
- *   foo = 10;
- *
- *   assert(snapshot.get(foo) == 4);     // Pass
- *   assert(snapshot.get(foo) == foo);   // Fail (4 != 10)
- *
- *   char bar[10][10];
- *   memset(bar, 3, sizeof(bar));
- *
- *   snapshot(bar);
- *
- *   memset(bar, 8, sizeof(bar));
- *
- *   assert(sum(bar) == 800);                 // Pass
- *   assert(sum(snapshot.get(bar)) == 300);   // Pass
- * }
- */
+//
+// Allows capturing and retrieving snapshots of arbitrary blobs of memory,
+// blob size is based on compile time type information.
+//
+// Example:
+//   void example() {
+//     Snapshot snapshot;
+//
+//     int foo = 4;
+//
+//     snapshot(foo);
+//
+//     foo = 10;
+//
+//     assert(snapshot.Get(foo) == 4);     // Pass
+//     assert(snapshot.Get(foo) == foo);   // Fail (4 != 10)
+//
+//     char bar[10][10];
+//     memset(bar, 3, sizeof(bar));
+//
+//     snapshot(bar);
+//
+//     memset(bar, 8, sizeof(bar));
+//
+//     assert(sum(bar) == 800);                 // Pass
+//     assert(sum(snapshot.Get(bar)) == 300);   // Pass
+//   }
+//
 class Snapshot {
  public:
   virtual ~Snapshot() {
     for (snapshot_map_t::iterator it = snapshots_.begin();
-         it != snapshots_.end(); it++) {
+         it != snapshots_.end(); ++it) {
       delete[] it->second;
     }
   }
 
-  /**
-   * Take new snapshot for object
-   */
+  // Take new snapshot for object
   template<typename E>
-  void take(const E &e) {
+  void Take(const E &e) {
     const void *const key = reinterpret_cast<const void*>(&e);
-
     snapshot_map_t::iterator it = snapshots_.find(key);
 
     if (it != snapshots_.end())
       delete[] it->second;
 
-    char *const buf = new char[sizeof(E)];
-
-    memcpy(buf, &e, sizeof(E));
-
-    snapshots_[key] = buf;
+    char *const snapshot = new char[sizeof(E)];
+    memcpy(snapshot, &e, sizeof(E));
+    snapshots_[key] = snapshot;
   }
 
-  /**
-   * Same as 'take'
-   */
+  // Same as 'take'
   template<typename E>
   void operator()(const E &e) {
-    take(e);
+    Take(e);
   }
 
-  /**
-   * Retrieve last snapshot for object
-   */
+  // Retrieve last snapshot for object. Crashes if snapshot has not been
+  // taken for this object before.
   template<typename E>
-  const E& get(const E &e) const {
+  const E& Get(const E &e) const {
     const void *const key = reinterpret_cast<const void*>(&e);
-
     snapshot_map_t::const_iterator it = snapshots_.find(key);
 
     assert(it != snapshots_.end());
-
     return *reinterpret_cast<const E*>(it->second);
   }
 
