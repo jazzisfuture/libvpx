@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+#define HETERODIVD 15
+#define HETEROCOEF 4
+
 struct encode_b_args {
   MACROBLOCK *x;
   struct optimize_ctx *ctx;
