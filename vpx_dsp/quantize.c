@@ -11,6 +11,10 @@
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/quantize.h"
 #include "vpx_mem/vpx_mem.h"
+#if CONFIG_HETEROQUANTIZE
+#include "vp9/common/vp9_quant_common.h"
+#endif
+
 
 void vpx_quantize_dc(const tran_low_t *coeff_ptr,
                      int n_coeffs, int skip_block,
@@ -119,6 +123,88 @@ void vpx_highbd_quantize_dc_32x32(const tran_low_t *coeff_ptr,
 }
 #endif
 
+
+
+#if CONFIG_HETEROQUANTIZE
+void vpx_hetero_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+                      int skip_block,
+                      const int16_t *zbin_ptr, const int16_t *round_ptr,
+                      const int16_t *quant_ptr, const int16_t *quant_shift_ptr,
+                      tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                      const int16_t *dequant_ptr,
+                      uint16_t *eob_ptr,
+                      const int16_t *scan, const int16_t *iscan) {
+  int i, non_zero_count = (int)n_coeffs, eob = -1;
+  const int zbins[2] = {zbin_ptr[0], zbin_ptr[1]};
+  const int nzbins[2] = {zbins[0] * -1, zbins[1] * -1};
+  const int hetero_zbins[2] = {(HETEROCOEF + 1) * zbins[0] / HETEROCOEF,
+                               (HETEROCOEF + 1) * zbins[1] / HETEROCOEF};
+  const int hetero_nzbins[2] = {hetero_zbins[0] * -1, hetero_zbins[1] * -1};
+  int rc_tail,tail_index, tail_count = 0;
+  (void)iscan;
+
+  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+
+  if (!skip_block) {
+    // Pre-scan pass
+    for (i = (int)n_coeffs - 1; i >= 0; i--) {
+      const int rc = scan[i];
+      const int coeff = coeff_ptr[rc];
+
+      if (coeff < zbins[rc != 0] && coeff > nzbins[rc != 0])
+        non_zero_count--;
+      else
+        break;
+    }
+
+    // This is the screening process added between Pre-scan pass and
+    // Quantization pass.
+    // It eliminates isolated small nonzero high-frequency AC coefficients.
+    tail_index = non_zero_count - 1;
+    if (tail_index >= 0)
+      rc_tail = scan[tail_index];
+    while (tail_index >= 0 && coeff_ptr[rc_tail] <= hetero_zbins[rc_tail != 0]
+           && coeff_ptr[rc_tail] >= hetero_nzbins[rc_tail != 0]){
+      if (coeff_ptr[rc_tail] >= zbins[rc_tail != 0]
+         || coeff_ptr[rc_tail] <= nzbins[rc_tail != 0]){
+        tail_count++;
+      }
+      tail_index--;
+      if (non_zero_count - tail_index - 1
+          >= tail_count * zbins[1] / HETERODIVD){
+        non_zero_count = tail_index + 1;
+        tail_count = 0;
+      }
+      if (tail_index >= 0)
+        rc_tail = scan[tail_index];
+    }
+
+    // Quantization pass: All coefficients with index >= zero_flag are
+    // skippable. Note: zero_flag can be zero.
+    for (i = 0; i < non_zero_count; i++) {
+      const int rc = scan[i];
+      const int coeff = coeff_ptr[rc];
+      const int coeff_sign = (coeff >> 31);
+      const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+
+      if (abs_coeff >= zbins[rc != 0]) {
+        int tmp = clamp(abs_coeff + round_ptr[rc != 0], INT16_MIN, INT16_MAX);
+        tmp = ((((tmp * quant_ptr[rc != 0]) >> 16) + tmp) *
+                  quant_shift_ptr[rc != 0]) >> 16;  // quantization
+        qcoeff_ptr[rc]  = (tmp ^ coeff_sign) - coeff_sign;
+        dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0];
+
+        if (tmp)
+          eob = i;
+      }
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+#endif
+
+
 void vpx_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                       int skip_block,
                       const int16_t *zbin_ptr, const int16_t *round_ptr,
@@ -217,6 +303,91 @@ void vpx_highbd_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
         if (abs_qcoeff)
           eob = i;
       }
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+#endif
+
+
+#if CONFIG_HETEROQUANTIZE
+void vpx_hetero_quantize_b_32x32_c(const tran_low_t *coeff_ptr,
+                            intptr_t n_coeffs, int skip_block,
+                            const int16_t *zbin_ptr, const int16_t *round_ptr,
+                            const int16_t *quant_ptr,
+                            const int16_t *quant_shift_ptr,
+                            tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                            const int16_t *dequant_ptr,
+                            uint16_t *eob_ptr,
+                            const int16_t *scan, const int16_t *iscan) {
+  const int zbins[2] = {ROUND_POWER_OF_TWO(zbin_ptr[0], 1),
+                        ROUND_POWER_OF_TWO(zbin_ptr[1], 1)};
+  const int nzbins[2] = {zbins[0] * -1, zbins[1] * -1};
+  const int hetero_zbins[2] = {(HETEROCOEF + 1) * zbins[0] / HETEROCOEF,
+                               (HETEROCOEF + 1) * zbins[1] / HETEROCOEF};
+  const int hetero_nzbins[2] = {hetero_zbins[0] * -1, hetero_zbins[1] * -1};
+
+  int idx = 0;
+  int idx_arr[1024];
+  int i, eob = -1;
+  int tail_index, rc_tail;
+  (void)iscan;
+
+  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+
+  if (!skip_block) {
+    // Pre-scan pass
+    for (i = 0; i < n_coeffs; i++) {
+      const int rc = scan[i];
+      const int coeff = coeff_ptr[rc];
+
+      // If the coefficient is out of the base ZBIN range, keep it for
+      // quantization.
+      if (coeff >= zbins[rc != 0] || coeff <= nzbins[rc != 0])
+        idx_arr[idx++] = i;
+    }
+
+    // This is the screening process added between Pre-scan pass and
+    // Quantization pass.
+    // It eliminates isolated small nonzero high-frequency AC coefficients.
+    tail_index = idx - 1;
+    if (tail_index >= 0)
+      rc_tail = scan[idx_arr[tail_index]];
+    while (tail_index >= 0 && coeff_ptr[rc_tail] <= hetero_zbins[rc_tail != 0]
+          && coeff_ptr[rc_tail] >= hetero_nzbins[rc_tail != 0]){
+      tail_index--;
+      if (tail_index >= 0){
+        rc_tail = scan[idx_arr[tail_index]];
+        if (idx_arr[idx-1] - idx_arr[tail_index]
+           >= (idx - tail_index - 1) * zbins[1] / HETERODIVD){
+          idx = tail_index + 1;
+        }
+      } else{
+        if (idx_arr[idx-1] >= idx * zbins[1] / HETERODIVD){
+          idx = 0;
+        }
+      }
+    }
+
+    // Quantization pass: only process the coefficients selected in
+    // pre-scan pass. Note: idx can be zero.
+    for (i = 0; i < idx; i++) {
+      const int rc = scan[idx_arr[i]];
+      const int coeff = coeff_ptr[rc];
+      const int coeff_sign = (coeff >> 31);
+      int tmp;
+      int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+      abs_coeff += ROUND_POWER_OF_TWO(round_ptr[rc != 0], 1);
+      abs_coeff = clamp(abs_coeff, INT16_MIN, INT16_MAX);
+      tmp = ((((abs_coeff * quant_ptr[rc != 0]) >> 16) + abs_coeff) *
+               quant_shift_ptr[rc != 0]) >> 15;
+
+      qcoeff_ptr[rc] = (tmp ^ coeff_sign) - coeff_sign;
+      dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0] / 2;
+
+      if (tmp)
+        eob = idx_arr[i];
     }
   }
   *eob_ptr = eob + 1;
