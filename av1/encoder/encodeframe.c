@@ -859,7 +859,6 @@ static void choose_partitioning(AV1_COMP *const cpi, ThreadData *const td,
 
   if (!is_key_frame) {
     MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
-    unsigned int uv_sad;
     const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
     const YV12_BUFFER_CONFIG *yv12_g = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
     unsigned int y_sad, y_sad_g;
@@ -915,20 +914,6 @@ static void choose_partitioning(AV1_COMP *const cpi, ThreadData *const td,
     }
 
     av1_build_inter_predictors_sb(xd, mi_row, mi_col, cm->sb_size);
-
-    for (i = 1; i < MAX_MB_PLANE; ++i) {
-      struct macroblock_plane *p = &x->plane[i];
-      struct macroblockd_plane *pd = &xd->plane[i];
-      const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
-
-      if (bs == BLOCK_INVALID)
-        uv_sad = UINT_MAX;
-      else
-        uv_sad = cpi->fn_ptr[bs].sdf(p->src.buf, p->src.stride, pd->dst.buf,
-                                     pd->dst.stride);
-
-      x->color_sensitivity[i - 1] = uv_sad > (y_sad >> 2);
-    }
 
     ref = xd->plane[0].dst.buf;
     ref_stride = xd->plane[0].dst.stride;
