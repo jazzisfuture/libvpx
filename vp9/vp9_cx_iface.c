@@ -43,7 +43,7 @@ struct vp9_extracfg {
   unsigned int                target_level;
   unsigned int                frame_parallel_decoding_mode;
   AQ_MODE                     aq_mode;
-  unsigned int                alt_ref_aq;
+  int                         alt_ref_aq;
   unsigned int                frame_periodic_boost;
   vpx_bit_depth_t             bit_depth;
   vp9e_tune_content           content;
@@ -168,8 +168,8 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   RANGE_CHECK_HI(cfg, rc_max_quantizer,   63);
   RANGE_CHECK_HI(cfg, rc_min_quantizer,   cfg->rc_max_quantizer);
   RANGE_CHECK_BOOL(extra_cfg, lossless);
-  RANGE_CHECK(extra_cfg, aq_mode,           0, AQ_MODE_COUNT - 1);
-  RANGE_CHECK(extra_cfg, alt_ref_aq,        0, 101);
+  RANGE_CHECK(extra_cfg, aq_mode,           0, AQ_MODE_COUNT - 2);
+  RANGE_CHECK(extra_cfg, alt_ref_aq,       -1, 101);
   RANGE_CHECK(extra_cfg, frame_periodic_boost, 0, 1);
   RANGE_CHECK_HI(cfg, g_threads,          64);
   RANGE_CHECK_HI(cfg, g_lag_in_frames,    MAX_LAG_BUFFERS);

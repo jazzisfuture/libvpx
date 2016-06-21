@@ -224,6 +224,7 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
   // Setup segment ID.
   if (seg->enabled) {
     if (cpi->oxcf.aq_mode != VARIANCE_AQ &&
+        cpi->oxcf.aq_mode != LOOKAHEAD_AQ &&
         cpi->oxcf.aq_mode != EQUATOR360_AQ) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
@@ -1345,6 +1346,35 @@ static void set_mode_info_seg_skip(MACROBLOCK *x, TX_MODE tx_mode,
   vp9_rd_cost_init(rd_cost);
 }
 
+// very dumb and actually only proportional approximation
+static INLINE int qp2sse(int quantizer) {
+  return quantizer*quantizer;
+}
+
+// return distortion denominator for rate-distortion optimization
+// TODO(yuryg): I should improve performance later
+static int get_distortion_denominator_by_segment(const VP9_COMP* const cpi,
+                                                 int segment_id) {
+  int qbase = cpi->common.base_qindex;
+  int qdelta = vp9_get_qindex(&cpi->common.seg, segment_id, 0);
+
+  int sse_base = qp2sse(qbase);
+  int sse_base_plus_delta = (qp2sse(qbase + qdelta) + sse_base/2);
+
+  assert(sse_base_plus_delta/qp2sse(qbase) > 0);
+  return sse_base_plus_delta/qp2sse(qbase);
+}
+
+// return distortion denominator for rate-distortion optimization
+static int get_distortion_denominator(const VP9_COMP* const cpi,
+                                      int idx_y, int idx_x,
+                                      BLOCK_SIZE block_size) {
+  uint8_t *map = (uint8_t *) cpi->segmentation_map;
+  int segment_id = get_segment_id(&cpi->common, map, block_size, idx_y, idx_x);
+
+  return get_distortion_denominator_by_segment(cpi, segment_id);
+}
+
 static int set_segment_rdmult(VP9_COMP *const cpi,
                                MACROBLOCK *const x,
                                int8_t segment_id) {
@@ -1370,6 +1400,8 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
   struct macroblockd_plane *const pd = xd->plane;
   const AQ_MODE aq_mode = cpi->oxcf.aq_mode;
   int i, orig_rdmult;
+
+  int orig_dist = rd_cost->dist;
 
   vpx_clear_system_state();
 
@@ -1416,6 +1448,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
                                             : vp9_block_energy(cpi, x, bsize);
     if (cm->frame_type == KEY_FRAME ||
         cpi->refresh_alt_ref_frame ||
+        cpi->force_update_segmentation ||
         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
       mi->segment_id = vp9_vaq_segment_id(energy);
     } else {
@@ -1424,8 +1457,13 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
       mi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
     }
     x->rdmult = set_segment_rdmult(cpi, x, mi->segment_id);
+  } else if (aq_mode == LOOKAHEAD_AQ) {
+      const uint8_t *const map = cpi->segmentation_map;
+
+      // I do not change rdmult here conciously.
+      mi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
   } else if (aq_mode == EQUATOR360_AQ) {
-    if (cm->frame_type == KEY_FRAME) {
+    if (cm->frame_type == KEY_FRAME || cpi->force_update_segmentation) {
       mi->segment_id = vp9_360aq_segment_id(mi_row, cm->mi_rows);
     } else {
       const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
@@ -1468,8 +1506,15 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
       (aq_mode == COMPLEXITY_AQ) && (bsize >= BLOCK_16X16) &&
       (cm->frame_type == KEY_FRAME ||
        cpi->refresh_alt_ref_frame ||
+       cpi->force_update_segmentation ||
        (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref))) {
     vp9_caq_select_segment(cpi, x, bsize, mi_row, mi_col, rd_cost->rate);
+  }
+
+  if (aq_mode == LOOKAHEAD_AQ) {
+    int dist_den = get_distortion_denominator_by_segment(cpi, mi->segment_id);
+    rd_cost->dist = orig_dist + (rd_cost->dist - orig_dist)/dist_den;
+    rd_cost->rdcost = RDCOST(x->rdmult, x->rddiv, rd_cost->rate, rd_cost->dist);
   }
 
   x->rdmult = orig_rdmult;
@@ -2596,7 +2641,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
 
-  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode != NO_AQ)
+  if (bsize == BLOCK_16X16 &&
+      cpi->oxcf.aq_mode != NO_AQ &&
+      cpi->oxcf.aq_mode != LOOKAHEAD_AQ)
     x->mb_energy = vp9_block_energy(cpi, x, bsize);
 
   if (cpi->sf.cb_partition_search && bsize == BLOCK_16X16) {
@@ -2810,9 +2857,17 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
           sum_rdc.rdcost = INT64_MAX;
           break;
         } else {
+          if (cpi->oxcf.aq_mode == LOOKAHEAD_AQ) {
+            sum_rdc.dist += this_rdc.dist;
+          } else {
+            int den = get_distortion_denominator(cpi, mi_row + y_idx,
+                                                 mi_col + x_idx, subsize);
+            sum_rdc.dist += this_rdc.dist/den;;
+          }
+
           sum_rdc.rate += this_rdc.rate;
-          sum_rdc.dist += this_rdc.dist;
-          sum_rdc.rdcost += this_rdc.rdcost;
+          sum_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,
+                                  sum_rdc.rate, sum_rdc.dist);
         }
       }
     }
