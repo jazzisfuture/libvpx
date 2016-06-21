@@ -286,6 +286,14 @@ template<typename T, int A, int B>
   return ArraysEq(*a.AddrOf(), *b.AddrOf());
 }
 
+template<typename T, int A, int B>
+::testing::AssertionResult ArraysEqWithin(const Array<T, A> &a,
+                                          const Array<T, B> &b,
+                                          const size_t lo,
+                                          const size_t hi) {
+  return ArraysEqWithin(*a.AddrOf(), *b.AddrOf(), lo, hi);
+}
+
 }   // namespace assertion_helpers
 }   // namespace libvpx_test
 
