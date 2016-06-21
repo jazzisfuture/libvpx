@@ -11,10 +11,14 @@
 #include <math.h>
 #include <limits.h>
 
+#include "vp9/common/vp9_matx_enums.h"
+#include "vp9/common/vp9_matx.h"
+#include "vp9/common/vp9_matx_functions.h"
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_reconinter.h"
+#include "vp9/encoder/vp9_alt_ref_aq_private.h"
 #include "vp9/encoder/vp9_extend.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mcomp.h"
@@ -331,19 +335,49 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   MACROBLOCKD *mbd = &cpi->td.mb.e_mbd;
   YV12_BUFFER_CONFIG *f = frames[alt_ref_index];
   uint8_t *dst1, *dst2;
+
+  struct MATX* const segmentation_map = &cpi->alt_ref_aq->segmentation_map;
+  uint8_t *segmentation_map_data;
+
+  uint8_t* const segment_hist = cpi->alt_ref_aq->segment_hist;
+
+  int rows = cpi->common.mi_rows;
+  int cols = cpi->common.mi_cols;
+
+  // it should be cpi->common.mi_stride, but
+  // cpi->segmentation_map doesn't respect it
+  int sstride = cpi->common.mi_cols;
+
 #if CONFIG_VP9_HIGHBITDEPTH
-  DECLARE_ALIGNED(16, uint16_t,  predictor16[16 * 16 * 3]);
-  DECLARE_ALIGNED(16, uint8_t,  predictor8[16 * 16 * 3]);
+  DECLARE_ALIGNED(16, uint16_t, predictor16[16 * 16 * 3]);
+  DECLARE_ALIGNED(16, uint8_t,   predictor8[16 * 16 * 3]);
   uint8_t *predictor;
 #else
-  DECLARE_ALIGNED(16, uint8_t,  predictor[16 * 16 * 3]);
+  DECLARE_ALIGNED(16, uint8_t, predictor[16 * 16 * 3]);
 #endif
   const int mb_uv_height = 16 >> mbd->plane[1].subsampling_y;
   const int mb_uv_width  = 16 >> mbd->plane[1].subsampling_x;
 
   // Save input state
   uint8_t* input_buffer[MAX_MB_PLANE];
-  int i;
+  int i, j;
+
+  assert((cpi->common.mi_rows + 1)/2 == mb_rows);
+  assert((cpi->common.mi_cols + 1)/2 == mb_cols);
+  assert(frame_count <= 255);
+
+  vp9_matx_create(segmentation_map, rows, cols, sstride, 1, TYPE_8U);
+  vp9_matx_zerofill(segmentation_map);
+
+  memset(cpi->alt_ref_aq->segment_hist, 0,
+         sizeof(cpi->alt_ref_aq->segment_hist));
+
+  segmentation_map_data = (uint8_t *) segmentation_map->data;
+
+  cpi->alt_ref_aq->zero_level = 1;
+  cpi->alt_ref_aq->nweights = frame_count + 1;
+  cpi->alt_ref_aq->nsegments = frame_count + 1;
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     predictor = CONVERT_TO_BYTEPTR(predictor16);
@@ -406,6 +440,17 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           // is to weight all MBs equal.
           filter_weight = err < thresh_low
                           ? 2 : err < thresh_high ? 1 : 0;
+        }
+
+        // Update altref segmentation_map
+        if (filter_weight > 0) {
+          int idx = 2*(mb_row*sstride + mb_col);
+          int val = segmentation_map_data[idx];
+          segmentation_map_data[idx] = val + 1;
+
+          // I will reassign 0 to the zero bin later
+          segment_hist[val] -= 4;
+          segment_hist[val + filter_weight] += 4;
         }
 
         if (filter_weight != 0) {
@@ -628,6 +673,21 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
     mb_y_offset += 16 * (f->y_stride - mb_cols);
     mb_uv_offset += mb_uv_height * f->uv_stride - mb_uv_width * mb_cols;
   }
+
+  // fill-in segmentation map (every odd row and column)
+  for (i = 0; i < rows; ++i) {
+    int is_odd  = i&1;
+    int is_even = is_odd^1;
+
+    for (j = is_even; j < cols; j += 1 + is_even) {
+      int idx = (i - is_odd)*sstride + (j - is_even);
+      uint8_t value = segmentation_map_data[idx];
+      segmentation_map_data[i*sstride + j] = value;
+    }
+  }
+
+  // correct zero histogram bin
+  segment_hist[0] = 0;
 
   // Restore input state
   for (i = 0; i < MAX_MB_PLANE; i++)

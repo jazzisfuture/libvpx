@@ -52,6 +52,7 @@ static int enable_noise_estimation(VP9_COMP *const cpi) {
   if (cpi->oxcf.pass == 0 &&
       cpi->oxcf.rc_mode == VPX_CBR &&
       cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+      cpi->oxcf.alt_ref_aq == 0 &&
       cpi->oxcf.speed >= 5 &&
       cpi->resize_state == ORIG &&
       cpi->resize_pending == 0 &&
