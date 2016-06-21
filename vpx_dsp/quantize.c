@@ -137,6 +137,9 @@ void vpx_hetero_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   int i, non_zero_count = (int)n_coeffs, eob = -1;
   const int zbins[2] = {zbin_ptr[0], zbin_ptr[1]};
   const int nzbins[2] = {zbins[0] * -1, zbins[1] * -1};
+  const int hetero_zbins[2] = {(HETEROCOEF + 1) * zbins[0] / HETEROCOEF,
+                               (HETEROCOEF + 1) * zbins[1] / HETEROCOEF};
+  const int hetero_nzbins[2] = {hetero_zbins[0] * -1, hetero_zbins[1] * -1};
   int rc_tail,tail_index,tail_count=0;
   (void)iscan;
 
@@ -155,12 +158,14 @@ void vpx_hetero_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
         break;
     }
 
-    tail_index=non_zero_count-1;
-    if(tail_index>=0)
-      rc_tail=scan[tail_index];
-    while (tail_index >= 0
-     && coeff_ptr[rc_tail] <= (HETEROCOEF+1) * zbins[rc_tail != 0] / HETEROCOEF
-    && coeff_ptr[rc_tail] >= (HETEROCOEF+1) * nzbins[rc_tail != 0] / HETEROCOEF)
+    //This is the screening process added between Pre-scan pass and
+    //Quantization pass.
+    //It eliminates isolated small nonzero high-frequency AC coefficients.
+    tail_index = non_zero_count - 1;
+    if(tail_index >= 0)
+      rc_tail = scan[tail_index];
+    while (tail_index >= 0 && coeff_ptr[rc_tail] <= hetero_zbins[rc_tail != 0]
+           && coeff_ptr[rc_tail] >= hetero_nzbins[rc_tail != 0])
     {
       if (coeff_ptr[rc_tail] >= zbins[rc_tail != 0]
          || coeff_ptr[rc_tail] <= nzbins[rc_tail != 0])
@@ -168,13 +173,13 @@ void vpx_hetero_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
         tail_count++;
       }
       tail_index--;
-      if(non_zero_count-tail_index-1 >= tail_count * HETEROTAIL)
+      if(non_zero_count - tail_index - 1 >= tail_count * HETEROTAIL)
       {
-        non_zero_count=tail_index+1;
-        tail_count=0;
+        non_zero_count = tail_index + 1;
+        tail_count = 0;
       }
-      if(tail_index>=0)
-        rc_tail=scan[tail_index];
+      if(tail_index >= 0)
+        rc_tail = scan[tail_index];
     }
 
     // Quantization pass: All coefficients with index >= zero_flag are
@@ -308,8 +313,8 @@ void vpx_highbd_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
 
 
 #if CONFIG_HETEROQUANTIZE
-void vpx_hetero_quantize_b_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                            int skip_block,
+void vpx_hetero_quantize_b_32x32_c(const tran_low_t *coeff_ptr,
+                            intptr_t n_coeffs, int skip_block,
                             const int16_t *zbin_ptr, const int16_t *round_ptr,
                             const int16_t *quant_ptr,
                             const int16_t *quant_shift_ptr,
@@ -320,11 +325,14 @@ void vpx_hetero_quantize_b_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeff
   const int zbins[2] = {ROUND_POWER_OF_TWO(zbin_ptr[0], 1),
                         ROUND_POWER_OF_TWO(zbin_ptr[1], 1)};
   const int nzbins[2] = {zbins[0] * -1, zbins[1] * -1};
+  const int hetero_zbins[2] = {(HETEROCOEF + 1) * zbins[0] / HETEROCOEF,
+                               (HETEROCOEF + 1) * zbins[1] / HETEROCOEF};
+  const int hetero_nzbins[2] = {hetero_zbins[0] * -1, hetero_zbins[1] * -1};
 
   int idx = 0;
   int idx_arr[1024];
   int i, eob = -1;
-  int tail_index,rc_tail;
+  int tail_index, rc_tail;
   (void)iscan;
 
   memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
@@ -342,28 +350,30 @@ void vpx_hetero_quantize_b_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeff
         idx_arr[idx++] = i;
     }
 
-    tail_index=idx-1;
-    if(tail_index>=0)
-      rc_tail=scan[idx_arr[tail_index]];
-    while(tail_index>=0
-        &&coeff_ptr[rc_tail]<=(HETEROCOEF+1)*zbins[rc_tail != 0]/HETEROCOEF
-        &&coeff_ptr[rc_tail]>=(HETEROCOEF+1)*nzbins[rc_tail != 0]/HETEROCOEF)
-      //eliminate singular small nonzero AC high-frequency coefficients
+    //This is the screening process added between Pre-scan pass and
+    //Quantization pass.
+    //It eliminates isolated small nonzero high-frequency AC coefficients.
+    tail_index = idx - 1;
+    if(tail_index >= 0)
+      rc_tail = scan[idx_arr[tail_index]];
+    while(tail_index >= 0 && coeff_ptr[rc_tail] <= hetero_zbins[rc_tail != 0]
+          && coeff_ptr[rc_tail] >= hetero_nzbins[rc_tail != 0])
     {
       tail_index--;
-      if(tail_index>=0)
+      if(tail_index >= 0)
       {
-        rc_tail=scan[idx_arr[tail_index]];
-        if(idx_arr[idx-1]-idx_arr[tail_index]>=(idx-tail_index-1)*HETEROTAIL)
+        rc_tail = scan[idx_arr[tail_index]];
+        if(idx_arr[idx-1] - idx_arr[tail_index]
+        >= (idx - tail_index - 1) * HETEROTAIL)
         {
-          idx=tail_index+1;
+          idx = tail_index + 1;
         }
       }
       else
       {
-        if(idx_arr[idx-1]>=idx*HETEROTAIL)
+        if(idx_arr[idx-1] >= idx * HETEROTAIL)
         {
-          idx=0;
+          idx = 0;
         }
       }
     }

@@ -24,7 +24,7 @@ extern "C" {
 #define QINDEX_BITS 8
 
 #if CONFIG_HETEROQUANTIZE
-#define HETEROCOEF 6
+#define HETEROCOEF 4
 #define HETEROTAIL 5
 #endif
 

@@ -565,8 +565,8 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
     case TX_32X32:
       fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
 #if CONFIG_HETEROQUANTIZE
-      vpx_hetero_quantize_b_32x32_c(coeff, 1024, x->skip_block, p->zbin, p->round,
-                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+      vpx_hetero_quantize_b_32x32_c(coeff, 1024, x->skip_block, p->zbin,
+                           p->round,p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, eob, scan_order->scan,
                            scan_order->iscan);
 #else
@@ -952,9 +952,9 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                            src, src_stride, dst, dst_stride);
         fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
 #if CONFIG_HETEROQUANTIZE
-        vpx_hetero_quantize_b_32x32_c(coeff, 1024, x->skip_block, p->zbin, p->round,
-                             p->quant, p->quant_shift, qcoeff, dqcoeff,
-                             pd->dequant, eob, scan_order->scan,
+        vpx_hetero_quantize_b_32x32_c(coeff, 1024, x->skip_block, p->zbin,
+                             p->round, p->quant, p->quant_shift, qcoeff,
+                             dqcoeff, pd->dequant, eob, scan_order->scan,
                              scan_order->iscan);
 #else
         vpx_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
@@ -998,8 +998,8 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                            src, src_stride, dst, dst_stride);
         vp9_fht8x8(src_diff, coeff, diff_stride, tx_type);
 #if CONFIG_HETEROQUANTIZE
-        vpx_hetero_quantize_b_c(coeff, 64, x->skip_block, p->zbin, p->round, p->quant,
-                       p->quant_shift, qcoeff, dqcoeff,
+        vpx_hetero_quantize_b_c(coeff, 64, x->skip_block, p->zbin, p->round,
+                       p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
 #else
@@ -1024,8 +1024,8 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         else
           x->fwd_txm4x4(src_diff, coeff, diff_stride);
 #if CONFIG_HETEROQUANTIZE
-        vpx_hetero_quantize_b_c(coeff, 16, x->skip_block, p->zbin, p->round, p->quant,
-                       p->quant_shift, qcoeff, dqcoeff,
+        vpx_hetero_quantize_b_c(coeff, 16, x->skip_block, p->zbin, p->round,
+                       p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
 #else
