@@ -36,6 +36,8 @@
 #include "vp9/common/vp9_reconintra.h"
 #include "vp9/common/vp9_tile_common.h"
 
+#include "vp9/encoder/vp9_alt_ref_aq_common.h"
+#include "vp9/encoder/vp9_alt_ref_aq.h"
 #include "vp9/encoder/vp9_aq_360.h"
 #include "vp9/encoder/vp9_aq_complexity.h"
 #include "vp9/encoder/vp9_aq_cyclicrefresh.h"
@@ -1711,6 +1713,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
 
   realloc_segmentation_maps(cpi);
 
+  vp9_alt_ref_aq_init(&cpi->alt_ref_aq);
+
   CHECK_MEM_ERROR(cm, cpi->consec_zero_mv,
                   vpx_calloc(cm->mi_rows * cm->mi_cols,
                              sizeof(*cpi->consec_zero_mv)));
@@ -2129,6 +2133,8 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 
   if (cpi->num_workers > 1)
     vp9_loop_filter_dealloc(&cpi->lf_row_sync);
+
+  vp9_alt_ref_aq_deinit(&cpi->alt_ref_aq);
 
   dealloc_compressor_data(cpi);
 
@@ -3492,17 +3498,22 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   setup_frame(cpi);
 
   suppress_active_map(cpi);
-  // Variance adaptive and in frame q adjustment experiments are mutually
-  // exclusive.
-  if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-    vp9_vaq_frame_setup(cpi);
-  } else if (cpi->oxcf.aq_mode == EQUATOR360_AQ) {
-    vp9_360aq_frame_setup(cpi);
-  } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
-    vp9_setup_in_frame_q_adj(cpi);
-  } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
-    vp9_cyclic_refresh_setup(cpi);
+
+  if (cpi->alt_ref_aq.state == ALTREF_AQ_BEFORE ||
+      cpi->alt_ref_aq.state == ALTREF_AQ_AFTER) {
+    // Variance adaptive and in frame q adjustment
+    // experiments are mutually exclusive.
+    if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
+      vp9_vaq_frame_setup(cpi);
+    } else if (cpi->oxcf.aq_mode == EQUATOR360_AQ) {
+      vp9_360aq_frame_setup(cpi);
+    } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+      vp9_setup_in_frame_q_adj(cpi);
+    } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      vp9_cyclic_refresh_setup(cpi);
+    }
   }
+
   apply_active_map(cpi);
 
   vp9_encode_frame(cpi);
@@ -3538,6 +3549,9 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
       vp9_encode_frame(cpi);
     }
   }
+
+  if (cpi->alt_ref_aq.state == ALTREF_AQ_AFTER)
+    vp9_alt_ref_aq_go_to_next_state(&cpi->alt_ref_aq);
 
   // Update some stats from cyclic refresh, and check if we should not update
   // golden reference, for non-SVC 1 pass CBR.
@@ -3623,18 +3637,24 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     if (loop_count == 0)
       setup_frame(cpi);
 
-    // Variance adaptive and in frame q adjustment experiments are mutually
-    // exclusive.
-    if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-      vp9_vaq_frame_setup(cpi);
-    } else if (cpi->oxcf.aq_mode == EQUATOR360_AQ) {
-      vp9_360aq_frame_setup(cpi);
-    } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
-      vp9_setup_in_frame_q_adj(cpi);
+    if (cpi->alt_ref_aq.state == ALTREF_AQ_BEFORE ||
+        cpi->alt_ref_aq.state == ALTREF_AQ_AFTER) {
+      // Variance adaptive and in frame q adjustment
+      // experiments are mutually exclusive.
+      if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
+        vp9_vaq_frame_setup(cpi);
+      } else if (cpi->oxcf.aq_mode == EQUATOR360_AQ) {
+        vp9_360aq_frame_setup(cpi);
+      } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+        vp9_setup_in_frame_q_adj(cpi);
+      }
     }
 
     // transform / motion compensation build reconstruction frame
     vp9_encode_frame(cpi);
+
+    if (cpi->alt_ref_aq.state == ALTREF_AQ_AFTER)
+      vp9_alt_ref_aq_go_to_next_state(&cpi->alt_ref_aq);
 
     // Update the skip mb flag probabilities based on the distribution
     // seen in the last encoder iteration.
@@ -4194,6 +4214,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
   cm->prev_frame = cm->cur_frame;
 
+  if (cpi->alt_ref_aq.state == ALTREF_AQ_AT)
+    vp9_alt_ref_aq_unset(&cpi->alt_ref_aq, cpi);
+
   if (cpi->use_svc)
     cpi->svc.layer_context[cpi->svc.spatial_layer_id *
                            cpi->svc.number_temporal_layers +
@@ -4518,6 +4541,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         // Produce the filtered ARF frame.
         vp9_temporal_filter(cpi, arf_src_index);
         vpx_extend_frame_borders(&cpi->alt_ref_buffer);
+
+        if (cpi->oxcf.alt_ref_aq > 0)
+          vp9_alt_ref_aq_setup(&cpi->alt_ref_aq, cpi);
+
         force_src_buffer = &cpi->alt_ref_buffer;
       }
 
