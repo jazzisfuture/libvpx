@@ -408,6 +408,15 @@ enum vp8e_enc_control_id {
    */
   VP9E_SET_AQ_MODE,
 
+  /*!\brief Codec control function to set alt ref adaptive quantization
+   * strength.
+   *
+   * TODO(yuryg): write description
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_ALT_REF_AQ,
+
   /*!\brief Codec control function to enable/disable periodic Q boost.
    *
    * One VP9 encoder speed feature is to enable quality boost by lowering
@@ -787,6 +796,9 @@ VPX_CTRL_USE_TYPE(VP9E_SET_FRAME_PARALLEL_DECODING, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_AQ_MODE, unsigned int)
 #define VPX_CTRL_VP9E_SET_AQ_MODE
+
+VPX_CTRL_USE_TYPE(VP9E_SET_ALT_REF_AQ, unsigned int)
+#define VPX_CTRL_VP9E_SET_ALT_REF_AQ
 
 VPX_CTRL_USE_TYPE(VP9E_SET_FRAME_PERIODIC_BOOST, unsigned int)
 #define VPX_CTRL_VP9E_SET_FRAME_PERIODIC_BOOST
