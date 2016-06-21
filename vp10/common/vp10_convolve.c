@@ -40,7 +40,7 @@ void vp10_convolve_horiz_c(const uint8_t *src, int src_stride, uint8_t *dst,
   }
 }
 
-static void convolve_vert(const uint8_t *src, int src_stride, uint8_t *dst,
+void vp10_convolve_vert_c(const uint8_t *src, int src_stride, uint8_t *dst,
                           int dst_stride, int w, int h,
                           const InterpFilterParams filter_params,
                           const int subpel_y_q4, int y_step_q4, int avg) {
@@ -133,8 +133,8 @@ void vp10_convolve(const uint8_t *src, int src_stride, uint8_t *dst,
         vp10_get_interp_filter_params(interp_filter);
 #endif
     assert(filter_params.taps <= MAX_FILTER_TAP);
-    convolve_vert(src, src_stride, dst, dst_stride, w, h, filter_params,
-                  subpel_y_q4, y_step_q4, ref_idx);
+    vp10_convolve_vert(src, src_stride, dst, dst_stride, w, h, filter_params,
+                       subpel_y_q4, y_step_q4, ref_idx);
   } else {
     // temp's size is set to (maximum possible intermediate_height) *
     // MAX_BLOCK_WIDTH
@@ -175,9 +175,9 @@ void vp10_convolve(const uint8_t *src, int src_stride, uint8_t *dst,
     filter_size = filter_params.taps;
     assert(filter_params.taps <= MAX_FILTER_TAP);
 
-    convolve_vert(temp + temp_stride * (filter_size / 2 - 1), temp_stride, dst,
-                  dst_stride, w, h, filter_params,
-                  subpel_y_q4, y_step_q4, ref_idx);
+    vp10_convolve_vert(temp + temp_stride * (filter_size / 2 - 1), temp_stride,
+                       dst, dst_stride, w, h, filter_params,
+                       subpel_y_q4, y_step_q4, ref_idx);
   }
 }
 
