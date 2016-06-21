@@ -24,8 +24,8 @@ extern "C" {
 #define QINDEX_BITS 8
 
 #if CONFIG_HETEROQUANTIZE
+#define HETERODIVD 6
 #define HETEROCOEF 4
-#define HETEROTAIL 5
 #endif
 
 int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);

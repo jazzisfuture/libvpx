@@ -173,7 +173,7 @@ void vpx_hetero_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
         tail_count++;
       }
       tail_index--;
-      if(non_zero_count - tail_index - 1 >= tail_count * HETEROTAIL)
+      if(non_zero_count - tail_index - 1 >= tail_count * zbins[1] / HETERODIVD)
       {
         non_zero_count = tail_index + 1;
         tail_count = 0;
@@ -364,14 +364,14 @@ void vpx_hetero_quantize_b_32x32_c(const tran_low_t *coeff_ptr,
       {
         rc_tail = scan[idx_arr[tail_index]];
         if(idx_arr[idx-1] - idx_arr[tail_index]
-        >= (idx - tail_index - 1) * HETEROTAIL)
+           >= (idx - tail_index - 1) * zbins[1] / (2 * HETERODIVD))
         {
           idx = tail_index + 1;
         }
       }
       else
       {
-        if(idx_arr[idx-1] >= idx * HETEROTAIL)
+        if(idx_arr[idx-1] >= idx * zbins[1] / (2 * HETERODIVD))
         {
           idx = 0;
         }
