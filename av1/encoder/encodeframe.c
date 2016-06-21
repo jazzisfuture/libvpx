@@ -5019,7 +5019,6 @@ static void encode_superblock(AV1_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
-  x->skip_optimize = ctx->is_coded;
   ctx->is_coded = 1;
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
 
