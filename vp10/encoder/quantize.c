@@ -457,13 +457,27 @@ void vp10_quantize_b_facade(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   const int skip_block = 0;
 
   if (qparam->log_scale == 0) {
+#if CONFIG_HETEROQUANTIZE
+      vpx_hetero_quantize_b_c(coeff_ptr, n_coeffs, skip_block, p->zbin,
+                              p->round, p->quant, p->quant_shift, qcoeff_ptr,
+                              dqcoeff_ptr, pd->dequant,
+                              eob_ptr, sc->scan, sc->iscan);
+#else
     vpx_quantize_b(coeff_ptr, n_coeffs, skip_block, p->zbin, p->round, p->quant,
                    p->quant_shift, qcoeff_ptr, dqcoeff_ptr, pd->dequant,
                    eob_ptr, sc->scan, sc->iscan);
+#endif
   } else {
+#if CONFIG_HETEROQUANTIZE
+      vpx_hetero_quantize_b_32x32_c(coeff_ptr, n_coeffs, skip_block, p->zbin,
+                                    p->round, p->quant, p->quant_shift,
+                                    qcoeff_ptr, dqcoeff_ptr,
+                                    pd->dequant, eob_ptr, sc->scan, sc->iscan);
+#else
     vpx_quantize_b_32x32(coeff_ptr, n_coeffs, skip_block, p->zbin, p->round,
                          p->quant, p->quant_shift, qcoeff_ptr, dqcoeff_ptr,
                          pd->dequant, eob_ptr, sc->scan, sc->iscan);
+#endif
   }
 }
 
