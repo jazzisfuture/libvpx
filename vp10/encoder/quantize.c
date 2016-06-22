@@ -448,6 +448,61 @@ void vp10_quantize_fp_facade(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   }
 }
 
+#if CONFIG_HETEROQUANTIZE
+// This function eliminates isolated small nonzero high-frequency
+// AC coefficients.
+void vp10_post_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+                      int skip_block, const int16_t *zbin_ptr,
+                      tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                      uint16_t *eob_ptr, const int16_t *scan) {
+  const int zbins[2] =
+       {n_coeffs == 1024 ? ROUND_POWER_OF_TWO(zbin_ptr[0], 1) : zbin_ptr[0],
+        n_coeffs == 1024 ? ROUND_POWER_OF_TWO(zbin_ptr[1], 1) : zbin_ptr[1]};
+  const int nzbins[2] = {zbins[0] * -1, zbins[1] * -1};
+  const int hetero_zbins[2] = {(HETEROCOEF + 1) * zbins[0] / HETEROCOEF,
+                               (HETEROCOEF + 1) * zbins[1] / HETEROCOEF};
+  const int hetero_nzbins[2] = {hetero_zbins[0] * -1, hetero_zbins[1] * -1};
+  int eob = (int)(*eob_ptr), i = eob - 1, rc, tail_count = 0;
+
+  if (skip_block)
+    return;
+  if (i >= 0)
+    rc = scan[i];
+  while (i >= 0 && coeff_ptr[rc] <= hetero_zbins[rc != 0]
+        && coeff_ptr[rc] >= hetero_nzbins[rc != 0]) {
+    i--;
+    if (coeff_ptr[rc] >= zbins[rc != 0] || coeff_ptr[rc] <= nzbins[rc != 0])
+      tail_count++;
+    if (i >= 0) {
+      if (eob - 1 - i >= tail_count * zbins[1] / HETERODIVD
+          && eob - 1 - i >= tail_count * HETEROTAIL) {
+        eob = i + 1;
+        tail_count = 0;
+      }
+      rc = scan[i];
+    } else if (n_coeffs == 1024) {
+      if (eob - 1 >= tail_count * zbins[1] / HETERODIVD
+          && eob - 1 >= tail_count * HETEROTAIL) {
+        eob = 0;
+        tail_count = 0;
+      }
+    } else {
+      if (eob - 1 - i >= tail_count * zbins[1] / HETERODIVD
+          && eob - 1 - i >= tail_count * HETEROTAIL) {
+        eob = i + 1;
+        tail_count = 0;
+      }
+    }
+  }
+  for (i= eob; i < (*eob_ptr); i++) {
+    rc = scan[i];
+    qcoeff_ptr[rc] = 0;
+    dqcoeff_ptr[rc] = 0;
+  }
+  *eob_ptr = eob;
+}
+#endif
+
 void vp10_quantize_b_facade(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                             const MACROBLOCK_PLANE *p, tran_low_t *qcoeff_ptr,
                             const MACROBLOCKD_PLANE *pd,
@@ -465,6 +520,10 @@ void vp10_quantize_b_facade(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                          p->quant, p->quant_shift, qcoeff_ptr, dqcoeff_ptr,
                          pd->dequant, eob_ptr, sc->scan, sc->iscan);
   }
+#if CONFIG_HETEROQUANTIZE
+  vp10_post_quantize_b_c(coeff_ptr, n_coeffs, skip_block, p->zbin,
+                         qcoeff_ptr, dqcoeff_ptr, eob_ptr, sc->scan);
+#endif
 }
 
 void vp10_quantize_dc_facade(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
