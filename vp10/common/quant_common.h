@@ -23,6 +23,8 @@ extern "C" {
 #define QINDEX_RANGE (MAXQ - MINQ + 1)
 #define QINDEX_BITS 8
 
+
+
 int16_t vp10_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
 int16_t vp10_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
 

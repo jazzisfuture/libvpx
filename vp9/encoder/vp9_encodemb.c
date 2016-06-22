@@ -552,31 +552,59 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
   switch (tx_size) {
     case TX_32X32:
       fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+#if CONFIG_HETEROQUANTIZE
+      vpx_hetero_quantize_b_32x32_c(coeff, 1024, x->skip_block, p->zbin,
+                           p->round, p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, eob, scan_order->scan,
+                           scan_order->iscan);
+#else
       vpx_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                            p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, eob, scan_order->scan,
                            scan_order->iscan);
+#endif
       break;
     case TX_16X16:
       vpx_fdct16x16(src_diff, coeff, diff_stride);
+#if CONFIG_HETEROQUANTIZE
+      vpx_hetero_quantize_b_c(coeff, 256, x->skip_block, p->zbin, p->round,
+                     p->quant, p->quant_shift, qcoeff, dqcoeff,
+                     pd->dequant, eob,
+                     scan_order->scan, scan_order->iscan);
+#else
       vpx_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
+#endif
       break;
     case TX_8X8:
       vpx_fdct8x8(src_diff, coeff, diff_stride);
+#if CONFIG_HETEROQUANTIZE
+      vpx_hetero_quantize_b_c(coeff, 64, x->skip_block, p->zbin, p->round,
+                     p->quant, p->quant_shift, qcoeff, dqcoeff,
+                     pd->dequant, eob,
+                     scan_order->scan, scan_order->iscan);
+#else
       vpx_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
+#endif
       break;
     case TX_4X4:
       x->fwd_txm4x4(src_diff, coeff, diff_stride);
+#if CONFIG_HETEROQUANTIZE
+      vpx_hetero_quantize_b_c(coeff, 16, x->skip_block, p->zbin, p->round,
+                     p->quant, p->quant_shift, qcoeff, dqcoeff,
+                     pd->dequant, eob,
+                     scan_order->scan, scan_order->iscan);
+#else
       vpx_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
+#endif
       break;
     default:
       assert(0);
@@ -902,10 +930,17 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vpx_subtract_block(32, 32, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
         fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+#if CONFIG_HETEROQUANTIZE
+        vpx_hetero_quantize_b_32x32_c(coeff, 1024, x->skip_block, p->zbin,
+                             p->round, p->quant, p->quant_shift, qcoeff,
+                             dqcoeff, pd->dequant, eob, scan_order->scan,
+                             scan_order->iscan);
+#else
         vpx_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, eob, scan_order->scan,
                              scan_order->iscan);
+#endif
       }
       if (!x->skip_encode && *eob)
         vp9_idct32x32_add(dqcoeff, dst, dst_stride, *eob);
@@ -915,10 +950,17 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vpx_subtract_block(16, 16, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
         vp9_fht16x16(src_diff, coeff, diff_stride, tx_type);
+#if CONFIG_HETEROQUANTIZE
+        vpx_hetero_quantize_b_c(coeff, 256, x->skip_block, p->zbin, p->round,
+                       p->quant, p->quant_shift, qcoeff, dqcoeff,
+                       pd->dequant, eob, scan_order->scan,
+                       scan_order->iscan);
+#else
         vpx_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+#endif
       }
       if (!x->skip_encode && *eob)
         vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob);
@@ -928,10 +970,17 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vpx_subtract_block(8, 8, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
         vp9_fht8x8(src_diff, coeff, diff_stride, tx_type);
+#if CONFIG_HETEROQUANTIZE
+        vpx_hetero_quantize_b_c(coeff, 64, x->skip_block, p->zbin, p->round,
+                       p->quant, p->quant_shift, qcoeff, dqcoeff,
+                       pd->dequant, eob, scan_order->scan,
+                       scan_order->iscan);
+#else
         vpx_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round, p->quant,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+#endif
       }
       if (!x->skip_encode && *eob)
         vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob);
@@ -944,10 +993,17 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
           vp9_fht4x4(src_diff, coeff, diff_stride, tx_type);
         else
           x->fwd_txm4x4(src_diff, coeff, diff_stride);
+#if CONFIG_HETEROQUANTIZE
+        vpx_hetero_quantize_b_c(coeff, 16, x->skip_block, p->zbin, p->round,
+                       p->quant, p->quant_shift, qcoeff, dqcoeff,
+                       pd->dequant, eob, scan_order->scan,
+                       scan_order->iscan);
+#else
         vpx_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round, p->quant,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+#endif
       }
 
       if (!x->skip_encode && *eob) {
