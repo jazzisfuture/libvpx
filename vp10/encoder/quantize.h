@@ -19,6 +19,13 @@
 extern "C" {
 #endif
 
+
+#if CONFIG_HETEROQUANTIZE
+#define HETERODIVD 4
+#define HETEROCOEF 2
+#define HETEROTAIL 2
+#endif
+
 typedef struct QUANT_PARAM {
   int log_scale;
 } QUANT_PARAM;
