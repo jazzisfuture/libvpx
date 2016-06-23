@@ -154,6 +154,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
                         vpx_malloc(consec_zero_mv_size));
         memset(lc->consec_zero_mv, 0, consec_zero_mv_size);
        }
+      lc->speed = cpi->oxcf.speed;
     }
   }
 
@@ -207,6 +208,7 @@ void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
         lrc->max_frame_bandwidth = rc->max_frame_bandwidth;
         lrc->worst_quality = rc->worst_quality;
         lrc->best_quality = rc->best_quality;
+        lc->speed = cpi->oxcf.speed;
       }
     }
   } else {
@@ -246,6 +248,7 @@ void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
       // Update qp-related quantities.
       lrc->worst_quality = rc->worst_quality;
       lrc->best_quality = rc->best_quality;
+      lc->speed = cpi->oxcf.speed;
     }
   }
 }
@@ -318,6 +321,14 @@ void vp9_restore_layer_context(VP9_COMP *const cpi) {
     cpi->rc.frames_since_key = old_frame_since_key;
     cpi->rc.frames_to_key = old_frame_to_key;
   }
+
+  // For SVC real-time mode, for base spatial layer, if resolution is low,
+  // don't use speed > 5.
+  if (cpi->svc.spatial_layer_id == 0 && cpi->svc.number_spatial_layers > 2 &&
+      cpi->oxcf.speed > 5)
+    cpi->oxcf.speed = 5;
+  else
+    cpi->oxcf.speed = lc->speed;
 
   // For spatial-svc, allow cyclic-refresh to be applied on the spatial layers,
   // for the base temporal layer.
