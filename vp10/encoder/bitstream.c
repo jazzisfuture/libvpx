@@ -1369,9 +1369,11 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
 #if CONFIG_EXT_INTER
       if (mbmi->ref_frame[1] != INTRA_FRAME)
 #endif  // CONFIG_EXT_INTER
-      if (is_motvar_allowed(mbmi))
+      if (is_motvar_allowed(mbmi)) {
+        assert(mbmi->motion_variation < MOTION_VARIATIONS);
         vp10_write_token(w, vp10_motvar_tree, cm->fc->motvar_prob[bsize],
                          &motvar_encodings[mbmi->motion_variation]);
+      }
 #endif  // CONFIG_OBMC || CONFIG_WARPED_MOTION
 
 #if CONFIG_EXT_INTER
