@@ -3059,8 +3059,13 @@ void vp10_tx_block_rd_b(const VP10_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
   if (xd->mb_to_right_edge < 0)
     max_blocks_wide += xd->mb_to_right_edge >> (5 + pd->subsampling_x);
 
-  vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
-                   VP10_XFORM_QUANT_B);
+#if CONFIG_NEW_QUANT
+  vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col,
+                       plane_bsize, tx_size);
+#else
+  vp10_xform_quant(x, plane, block, blk_row, blk_col,
+                   plane_bsize, tx_size, VP10_XFORM_QUANT_FP);
+#endif  // CONFIG_NEW_QUANT
 
   vp10_optimize_b(x, plane, block, tx_size, coeff_ctx);
 

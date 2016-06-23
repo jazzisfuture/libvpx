@@ -513,7 +513,7 @@ void vp10_xform_quant_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
 
   fwd_txfm_param.tx_type = tx_type;
   fwd_txfm_param.tx_size = tx_size;
-  fwd_txfm_param.fwd_txfm_opt = fwd_txfm_opt_list[VP10_XFORM_QUANT_B];
+  fwd_txfm_param.fwd_txfm_opt = fwd_txfm_opt_list[VP10_XFORM_QUANT_FP];
   fwd_txfm_param.rd_transform = x->use_lp32x32fdct;
   fwd_txfm_param.lossless = xd->lossless[xd->mi[0]->mbmi.segment_id];
 
@@ -1179,7 +1179,7 @@ static void encode_block_pass1(int plane, int block, int blk_row, int blk_col,
                        tx_size);
 #else
   vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
-                   tx_size, VP10_XFORM_QUANT_B);
+                   tx_size, VP10_XFORM_QUANT_FP);
 #endif  // CONFIG_NEW_QUANT
 
   if (p->eobs[block] > 0) {
