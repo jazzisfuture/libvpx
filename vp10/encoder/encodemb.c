@@ -1053,7 +1053,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
   }
 #endif
 
-  if (x->optimize && p->eobs[block]) {
+  if (p->eobs[block]) {
     int ctx;
 #if CONFIG_VAR_TX
     switch (tx_size) {
