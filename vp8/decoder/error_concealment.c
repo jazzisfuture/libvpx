@@ -558,8 +558,7 @@ static void interpolate_mvs(MACROBLOCKD *mb,
 
 void vp8_interpolate_motion(MACROBLOCKD *mb,
                         int mb_row, int mb_col,
-                        int mb_rows, int mb_cols,
-                        int mi_stride)
+                        int mb_rows, int mb_cols)
 {
     /* Find relevant neighboring blocks */
     EC_BLOCK neighbors[NUM_NEIGHBORS];
@@ -586,7 +585,7 @@ void vp8_interpolate_motion(MACROBLOCKD *mb,
     mb->mode_info_context->mbmi.segment_id = 0;
 }
 
-void vp8_conceal_corrupt_mb(MACROBLOCKD *xd)
+void vp8_conceal_corrupt_mb()
 {
     /* This macroblock has corrupt residual, use the motion compensated
        image (predictor) for concealment */
