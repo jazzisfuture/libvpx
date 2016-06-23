@@ -513,7 +513,7 @@ void vp10_xform_quant_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
 
   fwd_txfm_param.tx_type = tx_type;
   fwd_txfm_param.tx_size = tx_size;
-  fwd_txfm_param.fwd_txfm_opt = fwd_txfm_opt_list[VP10_XFORM_QUANT_B];
+  fwd_txfm_param.fwd_txfm_opt = fwd_txfm_opt_list[VP10_XFORM_QUANT_FP];
   fwd_txfm_param.rd_transform = x->use_lp32x32fdct;
   fwd_txfm_param.lossless = xd->lossless[xd->mi[0]->mbmi.segment_id];
 
@@ -1013,8 +1013,8 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
         if (x->skip_txfm[plane][blk_index] == SKIP_TXFM_NONE) {
           // full forward transform and quantization
 #if CONFIG_NEW_QUANT
-          vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                               tx_size);
+          vp10_xform_quant_fp_nuq(x, plane, block, blk_row, blk_col,
+                                  plane_bsize, tx_size);
 #else
           vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
                            tx_size, VP10_XFORM_QUANT_FP);
@@ -1022,8 +1022,8 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
         } else if (x->skip_txfm[plane][blk_index] == SKIP_TXFM_AC_ONLY) {
           // fast path forward transform and quantization
 #if CONFIG_NEW_QUANT
-          vp10_xform_quant_dc_nuq(x, plane, block, blk_row, blk_col,
-                                  plane_bsize, tx_size);
+          vp10_xform_quant_dc_fp_nuq(x, plane, block, blk_row, blk_col,
+                                     plane_bsize, tx_size);
 #else
           vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
                            tx_size, VP10_XFORM_QUANT_DC);
@@ -1038,8 +1038,8 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
         }
       } else {
 #if CONFIG_NEW_QUANT
-        vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                             tx_size);
+        vp10_xform_quant_fp_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
+                                tx_size);
 #else
         vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
                          tx_size, VP10_XFORM_QUANT_FP);
@@ -1175,11 +1175,11 @@ static void encode_block_pass1(int plane, int block, int blk_row, int blk_col,
   dst = &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col];
 
 #if CONFIG_NEW_QUANT
-  vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                       tx_size);
+  vp10_xform_quant_fp_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
+                          tx_size);
 #else
   vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize,
-                   tx_size, VP10_XFORM_QUANT_B);
+                   tx_size, VP10_XFORM_QUANT_FP);
 #endif  // CONFIG_NEW_QUANT
 
   if (p->eobs[block] > 0) {
@@ -1334,8 +1334,8 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_NEW_QUANT
-  vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                       tx_size);
+  vp10_xform_quant_fp_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
+                          tx_size);
 #else  // CONFIG_NEW_QUANT
   vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
                    VP10_XFORM_QUANT_FP);
