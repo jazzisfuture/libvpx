@@ -37,21 +37,29 @@ CODEC_SRCS-yes += libs.mk
 include $(SRC_PATH_BARE)/vpx/vpx_codec.mk
 CODEC_SRCS-yes += $(addprefix vpx/,$(call enabled,API_SRCS))
 CODEC_DOC_SRCS += $(addprefix vpx/,$(call enabled,API_DOC_SRCS))
+$(BUILD_PFX)vpx/%.c.o: CFLAGS += -Wextra
 
 include $(SRC_PATH_BARE)/vpx_mem/vpx_mem.mk
 CODEC_SRCS-yes += $(addprefix vpx_mem/,$(call enabled,MEM_SRCS))
+$(BUILD_PFX)vpx_mem/%.c.o: CFLAGS += -Wextra
 
 include $(SRC_PATH_BARE)/vpx_scale/vpx_scale.mk
 CODEC_SRCS-yes += $(addprefix vpx_scale/,$(call enabled,SCALE_SRCS))
+$(BUILD_PFX)vpx_scale/%.c.o: CFLAGS += -Wextra
 
 include $(SRC_PATH_BARE)/vpx_ports/vpx_ports.mk
 CODEC_SRCS-yes += $(addprefix vpx_ports/,$(call enabled,PORTS_SRCS))
+$(BUILD_PFX)vpx_ports/%.c.o: CFLAGS += -Wextra
 
 include $(SRC_PATH_BARE)/vpx_dsp/vpx_dsp.mk
 CODEC_SRCS-yes += $(addprefix vpx_dsp/,$(call enabled,DSP_SRCS))
+# The convolve macros create lots of -Wunused-parameter warnings
+# https://bugs.chromium.org/p/webm/issues/detail?id=1247
+$(BUILD_PFX)vpx_dsp/%.c.o: CFLAGS += -Wextra -Wno-unused-parameter
 
 include $(SRC_PATH_BARE)/vpx_util/vpx_util.mk
 CODEC_SRCS-yes += $(addprefix vpx_util/,$(call enabled,UTIL_SRCS))
+$(BUILD_PFX)vpx_util/%.c.o: CFLAGS += -Wextra
 
 ifeq ($(CONFIG_VP8),yes)
   VP8_PREFIX=vp8/
