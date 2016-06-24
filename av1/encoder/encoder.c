@@ -86,14 +86,16 @@
 // #define OUTPUT_YUV_REC
 #ifdef OUTPUT_YUV_DENOISED
 FILE *yuv_denoised_file = NULL;
-#endif
+#endif  // OUTPUT_YUV_DENOISED
+
 #ifdef OUTPUT_YUV_SKINMAP
 FILE *yuv_skinmap_file = NULL;
-#endif
+#endif  // OUTPUT_YUV_SKINMAP
+
 #ifdef OUTPUT_YUV_REC
 FILE *yuv_rec_file;
 #define FILE_NAME_LEN 100
-#endif
+#endif  // OUTPUT_YUV_REC
 
 #if 0
 FILE *framepsnr;
@@ -2154,10 +2156,11 @@ AV1_COMP *av1_create_compressor(AV1EncoderConfig *oxcf,
 
 #ifdef OUTPUT_YUV_SKINMAP
   yuv_skinmap_file = fopen("skinmap.yuv", "ab");
-#endif
+#endif  // OUTPUT_YUV_SKINMAP
+
 #ifdef OUTPUT_YUV_REC
-  yuv_rec_file = fopen("rec.yuv", "wb");
-#endif
+  yuv_rec_file = fopen("/tmp/enc_recon.yuv", "wb");
+#endif  // OUTPUT_YUV_REC
 
 #if 0
   framepsnr = fopen("framepsnr.stt", "a");
@@ -2519,10 +2522,11 @@ void av1_remove_compressor(AV1_COMP *cpi) {
 
 #ifdef OUTPUT_YUV_SKINMAP
   fclose(yuv_skinmap_file);
-#endif
+#endif  // OUTPUT_YUV_SKINMAP
+
 #ifdef OUTPUT_YUV_REC
   fclose(yuv_rec_file);
-#endif
+#endif  // OUTPUT_YUV_REC
 
 #if 0
 
@@ -4510,6 +4514,14 @@ static void encode_frame_to_data_rate(AV1_COMP *cpi, size_t *size,
 #if DUMP_RECON_FRAMES == 1
     // NOTE(zoeliu): For debug - Output the filtered reconstructed video.
     dump_filtered_recon_frames(cpi);
+    assert(cm->frame_to_show != NULL);
+    printf(
+        "\nFrame=%5d, encode_update_type[%5d]=%1d, show_existing_frame=%d, "
+        "y_stride=%4d, uv_stride=%4d, width=%4d, height=%4d\n",
+        cm->current_video_frame, cpi->twopass.gf_group.index,
+        cpi->twopass.gf_group.update_type[cpi->twopass.gf_group.index],
+        cm->show_existing_frame, cm->frame_to_show->y_stride,
+        cm->frame_to_show->uv_stride, cm->width, cm->height);
 #endif  // DUMP_RECON_FRAMES
 
     // Update the LAST_FRAME in the reference frame buffer.
@@ -4640,6 +4652,20 @@ static void encode_frame_to_data_rate(AV1_COMP *cpi, size_t *size,
 
   // Build the bitstream
   av1_pack_bitstream(cpi, dest, size);
+
+#ifdef OUTPUT_YUV_REC
+  if (cm->show_frame) {
+    // NOTE: For debug - Output the filtered reconstructed video.
+    printf(
+        "\nFrame=%5d, encode_update_type[%5d]=%1d, show_existing_frame=%d, "
+        "y_stride=%4d, uv_stride=%4d, width=%4d, height=%4d\n",
+        cm->current_video_frame, cpi->twopass.gf_group.index,
+        cpi->twopass.gf_group.update_type[cpi->twopass.gf_group.index],
+        cm->show_existing_frame, cm->frame_to_show->y_stride,
+        cm->frame_to_show->uv_stride, cm->width, cm->height);
+    av1_write_yuv_rec_frame(cm);
+  }
+#endif  // OUTPUT_YUV_REC
 
 #if DUMP_RECON_FRAMES == 1
   // NOTE(zoeliu): For debug - Output the filtered reconstructed video.
