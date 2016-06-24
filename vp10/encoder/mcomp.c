@@ -937,17 +937,15 @@ static INLINE int is_mv_in(const MACROBLOCK *x, const MV *mv) {
 
 // Calculate and return a sad+mvcost list around an integer best pel.
 static INLINE void calc_int_cost_list(const MACROBLOCK *x,
-                                      const MV *ref_mv,
+                                      const MV *const center_mv,
                                       int sadpb,
                                       const vp10_variance_fn_ptr_t *fn_ptr,
-                                      const MV *best_mv,
-                                      int *cost_list) {
+                                      const MV *best_mv, int *cost_list) {
   static const MV neighbors[4] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
   const struct buf_2d *const what = &x->plane[0].src;
   const struct buf_2d *const in_what = &x->e_mbd.plane[0].pre[0];
-  const MV fcenter_mv = {ref_mv->row >> 3, ref_mv->col >> 3};
-  int br = best_mv->row;
-  int bc = best_mv->col;
+  const int br = best_mv->row;
+  const int bc = best_mv->col;
   MV this_mv;
   int i;
   unsigned int sse;
@@ -957,7 +955,7 @@ static INLINE void calc_int_cost_list(const MACROBLOCK *x,
   cost_list[0] = fn_ptr->vf(what->buf, what->stride,
                             get_buf_from_mv(in_what, &this_mv),
                             in_what->stride, &sse) +
-      mvsad_err_cost(x, &this_mv, &fcenter_mv, sadpb);
+      mvsad_err_cost(x, &this_mv, center_mv, sadpb);
   if (check_bounds(x, br, bc, 1)) {
     for (i = 0; i < 4; i++) {
       const MV this_mv = {br + neighbors[i].row,
@@ -965,7 +963,7 @@ static INLINE void calc_int_cost_list(const MACROBLOCK *x,
       cost_list[i + 1] = fn_ptr->vf(what->buf, what->stride,
                                     get_buf_from_mv(in_what, &this_mv),
                                     in_what->stride, &sse) +
-                                    mv_err_cost(&this_mv, &fcenter_mv,
+                                    mv_err_cost(&this_mv, center_mv,
                                                 x->nmvjointcost, x->mvcost,
                                                 x->errorperbit);
     }
@@ -979,7 +977,7 @@ static INLINE void calc_int_cost_list(const MACROBLOCK *x,
         cost_list[i + 1] = fn_ptr->vf(what->buf, what->stride,
                                       get_buf_from_mv(in_what, &this_mv),
                                       in_what->stride, &sse) +
-                                      mv_err_cost(&this_mv, &fcenter_mv,
+                                      mv_err_cost(&this_mv, center_mv,
                                                   x->nmvjointcost, x->mvcost,
                                                   x->errorperbit);
     }
