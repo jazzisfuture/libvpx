@@ -58,7 +58,8 @@ const int kAqModeCyclicRefresh = 3;
 
 class ActiveMapRefreshTest
     : public ::libvpx_test::EncoderTest,
-      public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
+      public ::libvpx_test::CodecTestWith3Params<libvpx_test::TestMode,
+                                                 int, int> {
  protected:
   ActiveMapRefreshTest() : EncoderTest(GET_PARAM(0)) {}
   virtual ~ActiveMapRefreshTest() {}
@@ -67,6 +68,7 @@ class ActiveMapRefreshTest
     InitializeConfig();
     SetMode(GET_PARAM(1));
     cpu_used_ = GET_PARAM(2);
+    vp10_ = GET_PARAM(3);
   }
 
   virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
@@ -99,6 +101,7 @@ class ActiveMapRefreshTest
   }
 
   int cpu_used_;
+  int vp10_;
   ::libvpx_test::Y4mVideoSource *y4m_holder_;
 };
 
@@ -113,8 +116,9 @@ TEST_P(ActiveMapRefreshTest, Test) {
   cfg_.rc_end_usage = VPX_CBR;
   cfg_.kf_max_dist = 90000;
 
-  ::libvpx_test::Y4mVideoSource video("desktop_credits.y4m", 0, 30);
-  ::libvpx_test::Y4mVideoSource video_holder("desktop_credits.y4m", 0, 30);
+  const int nframes = vp10_ ? 10 : 30;
+  ::libvpx_test::Y4mVideoSource video("desktop_credits.y4m", 0, nframes);
+  ::libvpx_test::Y4mVideoSource video_holder("desktop_credits.y4m", 0, nframes);
   video_holder.Begin();
   y4m_holder_ = &video_holder;
 
@@ -123,20 +127,10 @@ TEST_P(ActiveMapRefreshTest, Test) {
 
 VP9_INSTANTIATE_TEST_CASE(ActiveMapRefreshTest,
                           ::testing::Values(::libvpx_test::kRealTime),
-                          ::testing::Range(5, 6));
+                          ::testing::Range(5, 6), ::testing::Values(0));
 #if CONFIG_VP10
-#if CONFIG_EXT_PARTITION
-INSTANTIATE_TEST_CASE_P(
-    DISABLED_VP10,
-    ActiveMapRefreshTest,
-    ::testing::Combine(
-        ::testing::Values(static_cast<const libvpx_test::CodecFactory *>(
-            &libvpx_test::kVP10)),
-        ::testing::Values(::libvpx_test::kRealTime), ::testing::Range(5, 6)));
-#else
 VP10_INSTANTIATE_TEST_CASE(ActiveMapRefreshTest,
                            ::testing::Values(::libvpx_test::kRealTime),
-                           ::testing::Range(5, 6));
-#endif  // CONFIG_EXT_PARTITION
+                           ::testing::Range(5, 6), ::testing::Values(1));
 #endif  // CONFIG_VP10
 }  // namespace
