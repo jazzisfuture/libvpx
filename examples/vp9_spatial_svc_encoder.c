@@ -700,6 +700,7 @@ int main(int argc, const char **argv) {
   if (svc_ctx.speed >= 5 && svc_ctx.aqmode == 1)
     vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 3);
 
+  vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
 
   // Encode frames
   while (!end_of_stream) {
@@ -851,9 +852,11 @@ int main(int argc, const char **argv) {
 #endif
           }
 
+          /*
           printf("SVC frame: %d, kf: %d, size: %d, pts: %d\n", frames_received,
                  !!(cx_pkt->data.frame.flags & VPX_FRAME_IS_KEY),
                  (int)cx_pkt->data.frame.sz, (int)cx_pkt->data.frame.pts);
+          */
           if (enc_cfg.ss_number_layers == 1 && enc_cfg.ts_number_layers == 1)
             si->bytes_sum[0] += (int)cx_pkt->data.frame.sz;
           ++frames_received;
