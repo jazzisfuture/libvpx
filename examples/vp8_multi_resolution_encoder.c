@@ -52,6 +52,8 @@ void usage_exit(void) {
 
 /* Number of encoders (spatial resolutions) used in this test. */
 #define NUM_ENCODERS 3
+// FOR TWO SPATIAL STREAMS
+//#define NUM_ENCODERS 2
 
 /* Maximum number of temporal layers allowed for this test. */
 #define MAX_NUM_TEMPORAL_LAYERS 3
@@ -498,7 +500,7 @@ int main(int argc, char **argv)
 
     // Set the number of threads per encode/spatial layer.
     // (1, 1, 1) means no encoder threading.
-    cfg[0].g_threads = 2;
+    cfg[0].g_threads = 1;
     cfg[1].g_threads = 1;
     cfg[2].g_threads = 1;
 
@@ -535,8 +537,8 @@ int main(int argc, char **argv)
     for ( i=0; i<NUM_ENCODERS; i++)
     {
         int speed = -6;
-        /* Lower speed for the lowest resolution. */
-        if (i == NUM_ENCODERS - 1) speed = -4;
+        /* Lower speed for the lowest resolution, for 3 spatial layers */
+        if (i == NUM_ENCODERS - 1 && NUM_ENCODERS > 2) speed = -4;
         if(vpx_codec_control(&codec[i], VP8E_SET_CPUUSED, speed))
             die_codec(&codec[i], "Failed to set cpu_used");
     }
@@ -552,7 +554,9 @@ int main(int argc, char **argv)
     /* Enable denoising for the highest-resolution encoder. */
     if(vpx_codec_control(&codec[0], VP8E_SET_NOISE_SENSITIVITY, 1))
         die_codec(&codec[0], "Failed to set noise_sensitivity");
-    for ( i=1; i< NUM_ENCODERS; i++)
+    if(vpx_codec_control(&codec[1], VP8E_SET_NOISE_SENSITIVITY, 1))
+        die_codec(&codec[1], "Failed to set noise_sensitivity");
+    for ( i=2; i< NUM_ENCODERS; i++)
     {
         if(vpx_codec_control(&codec[i], VP8E_SET_NOISE_SENSITIVITY, 0))
             die_codec(&codec[i], "Failed to set noise_sensitivity");

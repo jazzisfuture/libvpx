@@ -376,6 +376,18 @@ void assign_layer_bitrates(const SvcContext *svc_ctx,
               (enc_cfg->rc_target_bitrate * alloc_ratio[i] / total);
         }
       }
+       // HACK TO SET BITRATES PER SPATIAL LAYER (ONLY FOR NO TEMPORAL LAYERS)
+        if (svc_ctx->spatial_layers == 3) {
+          enc_cfg->layer_target_bitrate[0] = 200; 
+          enc_cfg->layer_target_bitrate[1] = 500; 
+          enc_cfg->layer_target_bitrate[2] = 1000; 
+          printf("bitrates per spatia layer %d %d %d \n", enc_cfg->layer_target_bitrate[0], enc_cfg->layer_target_bitrate[1], enc_cfg->layer_target_bitrate[2]);
+        }
+        if (svc_ctx->spatial_layers == 2) {
+          enc_cfg->layer_target_bitrate[0] = 500; 
+          enc_cfg->layer_target_bitrate[1] = 1000; 
+          printf("bitrates per spatia layer %d %d \n", enc_cfg->layer_target_bitrate[0], enc_cfg->layer_target_bitrate[1]);
+        }
     }
   }
 }
@@ -424,8 +436,13 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   for (tl = 0; tl < svc_ctx->temporal_layers; ++tl) {
     for (sl = 0; sl < svc_ctx->spatial_layers; ++sl) {
       i = sl * svc_ctx->temporal_layers + tl;
-      si->svc_params.max_quantizers[i] = MAX_QUANTIZER;
-      si->svc_params.min_quantizers[i] = 0;
+      //si->svc_params.max_quantizers[i] = MAX_QUANTIZER;
+      // HACK qp per spatial layer.   
+      si->svc_params.max_quantizers[i] = 52;
+      if (sl == 0)
+        si->svc_params.max_quantizers[i] = 56;
+      si->svc_params.min_quantizers[i] = 2;
+     //
     }
   }
 
@@ -515,18 +532,22 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx,
   vpx_codec_err_t res;
   vpx_codec_iter_t iter;
   const vpx_codec_cx_pkt_t *cx_pkt;
+  /*
   SvcInternal_t *const si = get_svc_internal(svc_ctx);
   if (svc_ctx == NULL || codec_ctx == NULL || si == NULL) {
     return VPX_CODEC_INVALID_PARAM;
   }
 
   svc_log_reset(svc_ctx);
+  */
 
   res = vpx_codec_encode(codec_ctx, rawimg, pts, (uint32_t)duration, 0,
                          deadline);
   if (res != VPX_CODEC_OK) {
     return res;
   }
+
+/*
   // save compressed data
   iter = NULL;
   while ((cx_pkt = vpx_codec_get_cx_data(codec_ctx, &iter))) {
@@ -597,6 +618,9 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx,
       }
     }
   }
+
+
+ */
 
   return VPX_CODEC_OK;
 }
