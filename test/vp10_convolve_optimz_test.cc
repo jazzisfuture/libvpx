@@ -142,7 +142,9 @@ void VP10ConvolveOptimzTest::DiffFilterBuffer(const uint8_t *buf,
 }
 
 void VP10ConvolveOptimzTest::RunHorizFilterBitExactCheck() {
-  PrepFilterBuffer(src_, src_ref_, dst_, dst_ref_, width_, height_);
+  const size_t testMaxBlk = 128;
+
+  PrepFilterBuffer(src_, src_ref_, dst_, dst_ref_, testMaxBlk, testMaxBlk);
 
   InterpFilterParams filter_params = vp10_get_interp_filter_params(filter_);
 
@@ -159,7 +161,7 @@ void VP10ConvolveOptimzTest::RunHorizFilterBitExactCheck() {
   // and test again.
   int intermediate_height =
       (((height_ - 1) * 16 + subpel_) >> SUBPEL_BITS) + filter_params.taps;
-  PrepFilterBuffer(src_, src_ref_, dst_, dst_ref_, width_, height_);
+  PrepFilterBuffer(src_, src_ref_, dst_, dst_ref_, testMaxBlk, testMaxBlk);
 
   vp10_convolve_horiz_c(src_ref_, stride, dst_ref_, stride, width_,
                         intermediate_height, filter_params, subpel_, x_step_q4,
@@ -174,7 +176,9 @@ void VP10ConvolveOptimzTest::RunHorizFilterBitExactCheck() {
 }
 
 void VP10ConvolveOptimzTest::RunVertFilterBitExactCheck() {
-  PrepFilterBuffer(src_, src_ref_, dst_, dst_ref_, width_, height_);
+  const size_t testMaxBlk = 128;
+
+  PrepFilterBuffer(src_, src_ref_, dst_, dst_ref_, testMaxBlk, testMaxBlk);
 
   InterpFilterParams filter_params = vp10_get_interp_filter_params(filter_);
 
