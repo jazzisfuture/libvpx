@@ -1213,7 +1213,7 @@ void vp10_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx ctx;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
-  struct encode_b_args arg = {x, &ctx, &mbmi->skip, NULL, NULL};
+  struct encode_b_args arg = {x, &ctx, &mbmi->skip, NULL, NULL, 1};
   int plane;
 
   mbmi->skip = 1;
@@ -1263,7 +1263,7 @@ void vp10_encode_sb_supertx(MACROBLOCK *x, BLOCK_SIZE bsize) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx ctx;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
-  struct encode_b_args arg = {x, &ctx, &mbmi->skip, NULL, NULL};
+  struct encode_b_args arg = {x, &ctx, &mbmi->skip, NULL, NULL, 1};
   int plane;
 
   mbmi->skip = 1;
@@ -1333,20 +1333,28 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
                      src_stride, dst, dst_stride);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+  if (args->enable_optimize_b) {
 #if CONFIG_NEW_QUANT
-  vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                       tx_size);
+    vp10_xform_quant_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
+                         tx_size);
 #else  // CONFIG_NEW_QUANT
-  vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
-                   VP10_XFORM_QUANT_FP);
+    vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
+                     VP10_XFORM_QUANT_FP);
 #endif  // CONFIG_NEW_QUANT
-  a = &args->ta[blk_col];
-  l = &args->tl[blk_row];
-  if (p->eobs[block]) {
-    int ctx;
-    ctx = combine_entropy_contexts(*a, *l);
-    *a = *l = vp10_optimize_b(x, plane, block, tx_size, ctx) > 0;
+    a = &args->ta[blk_col];
+    l = &args->tl[blk_row];
+    if (p->eobs[block]) {
+      int ctx;
+      ctx = combine_entropy_contexts(*a, *l);
+      *a = *l = vp10_optimize_b(x, plane, block, tx_size, ctx) > 0;
+    } else {
+      *a = *l = p->eobs[block] > 0;
+    }
   } else {
+    vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
+                     VP10_XFORM_QUANT_B);
+    a = &args->ta[blk_col];
+    l = &args->tl[blk_row];
     *a = *l = p->eobs[block] > 0;
   }
 
@@ -1377,7 +1385,8 @@ void vp10_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane,
   ENTROPY_CONTEXT ta[2 * MAX_MIB_SIZE];
   ENTROPY_CONTEXT tl[2 * MAX_MIB_SIZE];
 
-  struct encode_b_args arg = {x, NULL, &xd->mi[0]->mbmi.skip, ta, tl};
+  struct encode_b_args arg = {x,  NULL, &xd->mi[0]->mbmi.skip,
+                              ta, tl, enable_optimize_b};
 
   if (enable_optimize_b) {
     const struct macroblockd_plane* const pd = &xd->plane[plane];
