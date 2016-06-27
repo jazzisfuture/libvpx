@@ -693,14 +693,232 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, VP10_COMP *cpi,
   }
 }
 
+int estimate_bits_to_encode_offsets(const int *offsets, const int nclasses,
+                                    const int offset_enc_mode) {
+  int c, zero_counter, bits_count;
+  const int enc_logM = vp10_restoration_offset_enc_param(offset_enc_mode);
+  const int enc_M = (1 << enc_logM);
+  zero_counter = bits_count = 0;
+  for (c = 0; c < nclasses; ++c) {
+    if (offsets[c] == 0) {
+      ++zero_counter;
+    } else {
+      while (zero_counter - enc_M >= 0) {
+        ++bits_count;
+        zero_counter -= enc_M;
+      }
+      bits_count += (1 + enc_logM + OFFSET_BITS);
+      zero_counter = 0;
+    }
+  }
+  if (zero_counter > 0) {
+    while (zero_counter - enc_M >= 0) {
+      ++bits_count;
+      zero_counter -= enc_M;
+    }
+    if (zero_counter > 0) bits_count += (1 + enc_logM);
+  }
+  return bits_count + CLASSIFIER_MODE_BITS + OFFSET_ENC_MODE_BITS;
+}
+
+#define BEST_K_LIST_SIZE 4
+
+static int best_k_list[BEST_K_LIST_SIZE] = { 8, 16, 32, 64 };
+
+static int compare_int64_t(const void *a, const void *b) {
+  const int64_t *ia = (const int64_t *)a;
+  const int64_t *ib = (const int64_t *)b;
+  if (*ia > *ib)
+    return 1;
+  else if (*ia < *ib)
+    return -1;
+  else
+    return 0;
+}
+
+static int search_offset_correction(const YV12_BUFFER_CONFIG *src,
+                                    VP10_COMP *cpi, int filter_level,
+                                    int partial_frame, int **offsets,
+                                    int *best_classifier_mode,
+                                    int *best_offset_enc_mode,
+                                    double *best_cost_ret) {
+  VP10_COMMON *const cm = &cpi->common;
+  RestorationInfo rsi;
+  int64_t S_x, S_y;
+  int64_t err, delta_sse, delta_sse_threshold;
+  int bits, cls_mode, enc_mode, idx, count, nclasses, pred;
+  double cost_offset, cost_norestore, best_cost;
+  MACROBLOCK *x = &cpi->td.mb;
+  const YV12_BUFFER_CONFIG *dgd = cm->frame_to_show;
+  const int width = cm->width;
+  const int height = cm->height;
+  const int src_stride = src->y_stride;
+  const int dgd_stride = dgd->y_stride;
+#if CONFIG_VP9_HIGHBITDEPTH
+  const uint16_t *src_y_buffer = CONVERT_TO_SHORTPTR(src->y_buffer);
+  const uint16_t *dgd_y_buffer = CONVERT_TO_SHORTPTR(dgd->y_buffer);
+#else
+  const uint8_t *src_y_buffer = src->y_buffer;
+  const uint8_t *dgd_y_buffer = dgd->y_buffer;
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  int *cls = NULL;
+  int *tmp_offsets = NULL;
+  int *tmp_offsets_thresholded = NULL;
+  int64_t *delta_sse_list = NULL;
+  int64_t *sorted_delta_sse_list = NULL;
+  int i, j, c;
+  cost_norestore = best_cost = DBL_MAX;
+  *offsets = NULL;
+
+  assert(width == dgd->y_crop_width);
+  assert(height == dgd->y_crop_height);
+  assert(width == src->y_crop_width);
+  assert(height == src->y_crop_height);
+
+  cls = (int *)malloc(sizeof(*cls) * width * height);
+  assert(cls != NULL);
+
+  //  Make a copy of the unfiltered / processed recon buffer
+  //  Apply loop filter and compute cost (this is before restoration)
+  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
+  vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filter_level,
+                         1, partial_frame);
+  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_db);
+
+  rsi.restoration_type = RESTORE_NONE;
+  err = try_restoration_frame(src, cpi, &rsi, partial_frame);
+  bits = 0;
+  best_cost = cost_norestore =
+      RDCOST_DBL(x->rdmult, x->rddiv, (bits << (VP9_PROB_COST_SHIFT - 4)), err);
+  // Check for all classifier modes
+  for (cls_mode = 0; cls_mode < CLASSIFIER_MODES; ++cls_mode) {
+    // Obtain classification
+    nclasses = vp10_loop_restoration_nclasses(width, height, cls_mode);
+    vp10_loop_restoration_classifier(dgd->y_buffer, width, height, dgd_stride,
+                                     cls_mode, cls);
+    // Allocate memory
+    tmp_offsets = (int *)malloc(sizeof(*tmp_offsets) * nclasses);
+    tmp_offsets_thresholded =
+        (int *)malloc(sizeof(*tmp_offsets_thresholded) * nclasses);
+    delta_sse_list = (int64_t *)malloc(sizeof(*delta_sse_list) * nclasses);
+    sorted_delta_sse_list =
+        (int64_t *)malloc(sizeof(*sorted_delta_sse_list) * nclasses);
+    assert(tmp_offsets != NULL);
+    assert(tmp_offsets_thresholded != NULL);
+    assert(delta_sse_list != NULL);
+    assert(sorted_delta_list != NULL);
+
+    // Compute offsets and evaluate their impact on sse
+    for (c = 0; c < nclasses; ++c) {
+      count = 0;
+      S_x = S_y = 0;
+      for (i = 0; i < height; ++i) {
+        for (j = 0; j < width; ++j) {
+          if (cls[i * width + j] == c) {
+            S_x += dgd_y_buffer[i * dgd_stride + j];
+            S_y += src_y_buffer[i * src_stride + j];
+            ++count;
+          }
+        }
+      }
+      if (count > 0) {
+        if (S_y > S_x)
+          tmp_offsets[c] = (S_y - S_x + count / 2) / count;
+        else if (S_y < S_x)
+          tmp_offsets[c] = (S_y - S_x - count / 2) / count;
+        else
+          tmp_offsets[c] = 0;
+      } else {
+        tmp_offsets[c] = 0;
+      }
+      // Clip offset into given range
+      tmp_offsets[c] = CLIP(tmp_offsets[c], OFFSET_MINV, OFFSET_MAXV);
+      // compute change in sse induced by each offset
+      delta_sse_list[c] = 0;
+      for (i = 0; i < height; ++i) {
+        for (j = 0; j < width; ++j) {
+          if (cls[i * width + j] == c) {
+            pred =
+                clip_pixel(dgd->y_buffer[i * dgd_stride + j] + tmp_offsets[c]);
+            delta_sse_list[c] += (dgd_y_buffer[i * dgd_stride + j] + pred -
+                                  2 * src_y_buffer[i * src_stride + j]) *
+                                 (pred - dgd_y_buffer[i * dgd_stride + j]);
+          }
+        }
+      }
+      sorted_delta_sse_list[c] = delta_sse_list[c];
+    }
+    // Sort delta_sse_list
+    qsort(sorted_delta_sse_list, nclasses, sizeof(*sorted_delta_sse_list),
+          compare_int64_t);
+    // Check for different best_k parameters
+    for (idx = 0; idx < BEST_K_LIST_SIZE; ++idx) {
+      if (best_k_list[idx] > nclasses) continue;
+      delta_sse_threshold = sorted_delta_sse_list[best_k_list[idx] - 1];
+      delta_sse = 0;
+      for (c = 0; c < best_k_list[idx]; ++c)
+        delta_sse += sorted_delta_sse_list[c];
+      for (c = 0; c < nclasses; ++c) {
+        if (delta_sse_list[c] <= delta_sse_threshold) {
+          tmp_offsets_thresholded[c] = tmp_offsets[c];
+        } else
+          tmp_offsets_thresholded[c] = 0;
+      }
+      // Check all the offset encoding modes
+      for (enc_mode = 0; enc_mode < OFFSET_ENC_MODES; ++enc_mode) {
+        bits = estimate_bits_to_encode_offsets(tmp_offsets_thresholded,
+                                               nclasses, enc_mode);
+        cost_offset =
+            RDCOST_DBL(x->rdmult, x->rddiv, (bits << (VP9_PROB_COST_SHIFT - 4)),
+                       err + delta_sse);
+        if (cost_offset < best_cost) {
+          *offsets = (int *)realloc(*offsets, sizeof(*offsets) * nclasses);
+          for (c = 0; c < nclasses; ++c)
+            (*offsets)[c] = tmp_offsets_thresholded[c];
+          if (best_classifier_mode) *best_classifier_mode = cls_mode;
+          if (best_offset_enc_mode) *best_offset_enc_mode = enc_mode;
+          best_cost = cost_offset;
+        }
+      }
+    }
+    free(tmp_offsets);
+    tmp_offsets = NULL;
+    free(tmp_offsets_thresholded);
+    tmp_offsets_thresholded = NULL;
+    free(delta_sse_list);
+    delta_sse_list = NULL;
+    free(sorted_delta_sse_list);
+    sorted_delta_sse_list = NULL;
+  }
+  free(cls);
+  cls = NULL;
+
+  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+  if (best_cost < cost_norestore) {
+    if (best_cost_ret) *best_cost_ret = best_cost;
+    return 1;
+  } else {
+    free(*offsets);
+    *offsets = NULL;
+    if (best_cost_ret) *best_cost_ret = cost_norestore;
+    return 0;
+  }
+}
+
+#define ENABLE_BILATERAL
+#define ENABLE_WIENER
+#define ENABLE_OFFSET
+
 void vp10_pick_filter_restoration(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
                                   LPF_PICK_METHOD method) {
   VP10_COMMON *const cm = &cpi->common;
   struct loopfilter *const lf = &cm->lf;
   int wiener_success = 0;
   int bilateral_success = 0;
+  int offset_success = 0;
   double cost_bilateral = DBL_MAX;
   double cost_wiener = DBL_MAX;
+  double cost_offset = DBL_MAX;
   double cost_norestore = DBL_MAX;
 
   cm->rst_info.bilateral_tiletype = BILATERAL_TILETYPE;
@@ -761,50 +979,97 @@ void vp10_pick_filter_restoration(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     if (cm->frame_type == KEY_FRAME) filt_guess -= 4;
     lf->filter_level = clamp(filt_guess, min_filter_level, max_filter_level);
+#ifdef ENABLE_BILATERAL
     bilateral_success = search_bilateral_level(
         sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE,
         cm->rst_info.bilateral_level, &cost_bilateral);
+#endif
+#ifdef ENABLE_WIENER
     wiener_success = search_wiener_filter(
         sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE,
         cm->rst_info.vfilter, cm->rst_info.hfilter,
         cm->rst_info.wiener_process_tile, &cost_wiener);
-    if (cost_bilateral < cost_wiener) {
+#endif
+#ifdef ENABLE_OFFSET
+    offset_success = search_offset_correction(
+        sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE,
+        &cm->rst_info.offsets, &cm->rst_info.classifier_mode,
+        &cm->rst_info.offset_enc_mode, &cost_offset);
+#endif
+    if (cost_bilateral < cost_wiener && cost_bilateral < cost_offset) {
       if (bilateral_success)
         cm->rst_info.restoration_type = RESTORE_BILATERAL;
       else
         cm->rst_info.restoration_type = RESTORE_NONE;
-    } else {
+    } else if (cost_wiener < cost_bilateral && cost_wiener < cost_offset) {
       if (wiener_success)
         cm->rst_info.restoration_type = RESTORE_WIENER;
       else
         cm->rst_info.restoration_type = RESTORE_NONE;
+    } else if (cost_offset < cost_bilateral && cost_offset < cost_wiener) {
+      if (offset_success) {
+        cm->rst_info.restoration_type = RESTORE_OFFSET;
+        cm->rst_info.nclasses = vp10_loop_restoration_nclasses(
+            cm->width, cm->height, cm->rst_info.classifier_mode);
+      } else {
+        cm->rst_info.restoration_type = RESTORE_NONE;
+      }
+    } else {
+      cm->rst_info.restoration_type = RESTORE_NONE;
     }
   } else {
     int blf_filter_level = -1;
+#ifdef ENABLE_BILATERAL
     bilateral_success = search_filter_bilateral_level(
         sd, cpi, method == LPF_PICK_FROM_SUBIMAGE, &blf_filter_level,
         cm->rst_info.bilateral_level, &cost_bilateral);
+#endif
     lf->filter_level = vp10_search_filter_level(
         sd, cpi, method == LPF_PICK_FROM_SUBIMAGE, &cost_norestore);
+#ifdef ENABLE_WIENER
     wiener_success = search_wiener_filter(
         sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE,
         cm->rst_info.vfilter, cm->rst_info.hfilter,
         cm->rst_info.wiener_process_tile, &cost_wiener);
-    if (cost_bilateral < cost_wiener) {
+#endif
+#ifdef ENABLE_OFFSET
+    offset_success = search_offset_correction(
+        sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE,
+        &cm->rst_info.offsets, &cm->rst_info.classifier_mode,
+        &cm->rst_info.offset_enc_mode, &cost_offset);
+#endif
+    if (cost_bilateral < cost_wiener && cost_bilateral < cost_offset) {
       lf->filter_level = blf_filter_level;
       if (bilateral_success)
         cm->rst_info.restoration_type = RESTORE_BILATERAL;
       else
         cm->rst_info.restoration_type = RESTORE_NONE;
-    } else {
+    } else if (cost_wiener < cost_bilateral && cost_wiener < cost_offset) {
       if (wiener_success)
         cm->rst_info.restoration_type = RESTORE_WIENER;
       else
         cm->rst_info.restoration_type = RESTORE_NONE;
+    } else if (cost_offset < cost_bilateral && cost_offset < cost_wiener) {
+      if (offset_success) {
+        int c, count;
+        cm->rst_info.restoration_type = RESTORE_OFFSET;
+        cm->rst_info.nclasses = vp10_loop_restoration_nclasses(
+            cm->width, cm->height, cm->rst_info.classifier_mode);
+        count = 0;
+        for (c = 0; c < cm->rst_info.nclasses; ++c) {
+          if (cm->rst_info.offsets[c] != 0) ++count;
+        }
+      } else {
+        cm->rst_info.restoration_type = RESTORE_NONE;
+      }
+    } else {
+      cm->rst_info.restoration_type = RESTORE_NONE;
     }
-    // printf("[%d] Costs %g %g (%d) %g (%d)\n", cm->rst_info.restoration_type,
+    // printf("\nFrame %d: [%d] Costs %g %g (%d) %g (%d) %g (%d)\n",
+    //        cm->current_video_frame,
+    //        cm->rst_info.restoration_type,
     //        cost_norestore, cost_bilateral, lf->filter_level, cost_wiener,
-    //        wiener_success);
+    //        wiener_success, cost_offset, offset_success);
   }
   if (cm->rst_info.restoration_type != RESTORE_BILATERAL) {
     free(cm->rst_info.bilateral_level);
@@ -817,5 +1082,9 @@ void vp10_pick_filter_restoration(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
     cm->rst_info.hfilter = NULL;
     free(cm->rst_info.wiener_process_tile);
     cm->rst_info.wiener_process_tile = NULL;
+  }
+  if (cm->rst_info.restoration_type != RESTORE_OFFSET) {
+    free(cm->rst_info.offsets);
+    cm->rst_info.offsets = NULL;
   }
 }

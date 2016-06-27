@@ -1909,8 +1909,12 @@ static void setup_segmentation(VP10_COMMON *const cm,
 static void setup_restoration(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
   int i;
   RestorationInfo *rst = &cm->rst_info;
-  if (vpx_rb_read_bit(rb)) {
-    if (vpx_rb_read_bit(rb)) {
+  int flag;
+  if (!vpx_rb_read_bit(rb)) {
+    rst->restoration_type = RESTORE_NONE;
+  } else {
+    flag = vpx_rb_read_literal(rb, 2);
+    if (flag == 0) {
       rst->restoration_type = RESTORE_BILATERAL;
       rst->bilateral_tiletype = BILATERAL_TILETYPE;
       rst->bilateral_ntiles =
@@ -1927,7 +1931,7 @@ static void setup_restoration(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
           rst->bilateral_level[i] = -1;
         }
       }
-    } else {
+    } else if (flag == 1) {
       rst->restoration_type = RESTORE_WIENER;
       rst->wiener_tiletype = WIENER_TILETYPE;
       rst->wiener_ntiles = vp10_restoration_ntiles(cm, rst->wiener_tiletype);
@@ -1961,9 +1965,43 @@ static void setup_restoration(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
           rst->hfilter[i][0] = rst->hfilter[i][1] = rst->hfilter[i][2] = 0;
         }
       }
+    } else if (flag == 2) {
+      int bit, c, bits_read, enc_logM, enc_M;
+      bits_read = 0;
+      rst->restoration_type = RESTORE_OFFSET;
+      rst->classifier_mode = vpx_rb_read_literal(rb, CLASSIFIER_MODE_BITS);
+      bits_read += CLASSIFIER_MODE_BITS;
+      rst->offset_enc_mode = vpx_rb_read_literal(rb, OFFSET_ENC_MODE_BITS);
+      bits_read += OFFSET_ENC_MODE_BITS;
+      enc_logM = vp10_restoration_offset_enc_param(rst->offset_enc_mode);
+      enc_M = (1 << enc_logM);
+      rst->nclasses = vp10_loop_restoration_nclasses(cm->width, cm->height,
+                                                     rst->classifier_mode);
+      rst->offsets = (int *)malloc(sizeof(int) * rst->nclasses);
+      assert(rst->offsets != NULL);
+      c = 0;
+      while (c < rst->nclasses) {
+        bit = vpx_rb_read_bit(rb);
+        bits_read += 1;
+        if (bit) {
+          int i, n;
+          n = vpx_rb_read_literal(rb, enc_logM);
+          bits_read += enc_logM;
+          for (i = 0; i < n; ++i) rst->offsets[c + i] = 0;
+          c += n;
+          if (c < rst->nclasses) {
+            rst->offsets[c] =
+                vpx_rb_read_literal(rb, OFFSET_BITS) + OFFSET_MINV;
+            bits_read += OFFSET_BITS;
+            c += 1;
+          }
+        } else {
+          int i;
+          for (i = 0; i < enc_M; ++i) rst->offsets[c + i] = 0;
+          c += enc_M;
+        }
+      }
     }
-  } else {
-    rst->restoration_type = RESTORE_NONE;
   }
 }
 #endif  // CONFIG_LOOP_RESTORATION
@@ -3835,8 +3873,8 @@ void vp10_decode_frame(VP10Decoder *pbi, const uint8_t *data,
   }
 #if CONFIG_LOOP_RESTORATION
   if (cm->rst_info.restoration_type != RESTORE_NONE) {
-    vp10_loop_restoration_init(&cm->rst_internal, &cm->rst_info,
-                               cm->frame_type == KEY_FRAME);
+    vp10_loop_restoration_init(cm, &cm->rst_info, cm->frame_type == KEY_FRAME,
+                               new_fb);
     vp10_loop_restoration_rows(new_fb, cm, 0, cm->mi_rows, 0);
   }
 #endif  // CONFIG_LOOP_RESTORATION

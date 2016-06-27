@@ -58,10 +58,21 @@ extern "C" {
 #define WIENER_FILT_TAP2_MAXV \
   (WIENER_FILT_TAP2_MINV - 1 + (1 << WIENER_FILT_TAP2_BITS))
 
+#define CLASSIFIER_MODE_BITS 2
+#define CLASSIFIER_MODES (1 << CLASSIFIER_MODE_BITS)
+
+#define OFFSET_BITS 6
+#define OFFSET_MINV (-(1 << (OFFSET_BITS - 1)))
+#define OFFSET_MAXV (OFFSET_MINV - 1 + (1 << OFFSET_BITS))
+
+#define OFFSET_ENC_MODE_BITS 2
+#define OFFSET_ENC_MODES (1 << OFFSET_ENC_MODE_BITS)
+
 typedef enum {
   RESTORE_NONE,
   RESTORE_BILATERAL,
   RESTORE_WIENER,
+  RESTORE_OFFSET
 } RestorationType;
 
 typedef struct {
@@ -75,6 +86,11 @@ typedef struct {
   int wiener_ntiles;
   int *wiener_process_tile;
   int (*vfilter)[RESTORATION_HALFWIN], (*hfilter)[RESTORATION_HALFWIN];
+  // Offset
+  int classifier_mode;
+  int offset_enc_mode;
+  int nclasses;
+  int *offsets;
 } RestorationInfo;
 
 typedef struct {
@@ -92,14 +108,26 @@ typedef struct {
   int wiener_ntiles;
   int *wiener_process_tile;
   int (*vfilter)[RESTORATION_WIN], (*hfilter)[RESTORATION_WIN];
+  // Offset
+  int classifier_mode;
+  int *pixel_cls;
+  int nclasses;
+  int *offsets;
 } RestorationInternal;
 
 int vp10_bilateral_level_bits(const struct VP10Common *const cm);
 int vp10_restoration_ntiles(const struct VP10Common *const cm, int tile_type);
 void vp10_restoration_tile_size(int tile_type, int *tile_width,
                                 int *tile_height);
-void vp10_loop_restoration_init(RestorationInternal *rst, RestorationInfo *rsi,
-                                int kf);
+
+int vp10_restoration_level_bits(const struct VP10Common *const cm);
+void vp10_loop_restoration_init(struct VP10Common *cm, RestorationInfo *rsi,
+                                int kf, const YV12_BUFFER_CONFIG *frame);
+int vp10_restoration_offset_enc_param(int offset_enc_mode);
+int vp10_loop_restoration_nclasses(int width, int height, int classifier_mode);
+void vp10_loop_restoration_classifier(uint8_t *img, int width, int height,
+                                      int stride, int classifier_param_set,
+                                      int *cls);
 void vp10_loop_restoration_frame(YV12_BUFFER_CONFIG *frame,
                                  struct VP10Common *cm, RestorationInfo *rsi,
                                  int y_only, int partial_frame);

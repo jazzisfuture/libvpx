@@ -2390,10 +2390,12 @@ static void encode_restoration(VP10_COMMON *cm,
                                struct vpx_write_bit_buffer *wb) {
   int i;
   RestorationInfo *rst = &cm->rst_info;
+  // printf("frame %d, restoration_type = %d\n", cm->current_video_frame,
+  // rst->restoration_type);
   vpx_wb_write_bit(wb, rst->restoration_type != RESTORE_NONE);
   if (rst->restoration_type != RESTORE_NONE) {
     if (rst->restoration_type == RESTORE_BILATERAL) {
-      vpx_wb_write_bit(wb, 1);
+      vpx_wb_write_literal(wb, 0, 2);
       for (i = 0; i < rst->bilateral_ntiles; ++i) {
         if (rst->bilateral_level[i] >= 0) {
           vpx_wb_write_bit(wb, 1);
@@ -2403,8 +2405,8 @@ static void encode_restoration(VP10_COMMON *cm,
           vpx_wb_write_bit(wb, 0);
         }
       }
-    } else {
-      vpx_wb_write_bit(wb, 0);
+    } else if (rst->restoration_type == RESTORE_WIENER) {
+      vpx_wb_write_literal(wb, 1, 2);
       for (i = 0; i < rst->wiener_ntiles; ++i) {
         if (rst->wiener_process_tile[i]) {
           vpx_wb_write_bit(wb, 1);
@@ -2424,6 +2426,54 @@ static void encode_restoration(VP10_COMMON *cm,
           vpx_wb_write_bit(wb, 0);
         }
       }
+    } else if (rst->restoration_type == RESTORE_OFFSET) {
+      int enc_logM, enc_M, c, zero_counter, bits_written = 0;
+      vpx_wb_write_literal(wb, 2, 2);
+      vpx_wb_write_literal(wb, rst->classifier_mode, CLASSIFIER_MODE_BITS);
+      bits_written += CLASSIFIER_MODE_BITS;
+      vpx_wb_write_literal(wb, rst->offset_enc_mode, OFFSET_ENC_MODE_BITS);
+      bits_written += OFFSET_ENC_MODE_BITS;
+      // Simple run length Golomb Rice coding, where run length of 0 is encoded
+      // using Golomb Rice Coding with specified parameter, followed by
+      // non-zero offset binary-coded in OFFSET_BITS bits
+      enc_logM = vp10_restoration_offset_enc_param(rst->offset_enc_mode);
+      enc_M = (1 << enc_logM);
+      zero_counter = 0;
+      bits_written = 0;
+      for (c = 0; c < rst->nclasses; ++c) {
+        if (rst->offsets[c] == 0) {
+          ++zero_counter;
+        } else {
+          while (zero_counter - enc_M >= 0) {
+            vpx_wb_write_bit(wb, 0);
+            bits_written += 1;
+            zero_counter -= enc_M;
+          }
+          vpx_wb_write_bit(wb, 1);
+          bits_written += 1;
+          vpx_wb_write_literal(wb, zero_counter, enc_logM);
+          bits_written += enc_logM;
+          vpx_wb_write_literal(wb, rst->offsets[c] - OFFSET_MINV, OFFSET_BITS);
+          bits_written += OFFSET_BITS;
+          zero_counter = 0;
+        }
+      }
+      if (zero_counter > 0) {
+        while (zero_counter - enc_M >= 0) {
+          vpx_wb_write_bit(wb, 0);
+          bits_written += 1;
+          zero_counter -= enc_M;
+        }
+        if (zero_counter > 0) {
+          vpx_wb_write_bit(wb, 1);
+          bits_written += 1;
+          vpx_wb_write_literal(wb, zero_counter, enc_logM);
+          bits_written += enc_logM;
+        }
+      }
+      // printf("\nFrame %d, encode restoration: (%d, %d), bits_written = %d\n",
+      //       cm->current_video_frame, rst->classifier_mode,
+      //       rst->nclasses, bits_written);
     }
   }
 }

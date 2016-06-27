@@ -91,6 +91,8 @@ void vp10_free_restoration_buffers(VP10_COMMON *cm) {
   cm->rst_info.hfilter = NULL;
   free(cm->rst_info.wiener_process_tile);
   cm->rst_info.wiener_process_tile = NULL;
+  free(cm->rst_info.offsets);
+  cm->rst_info.offsets = NULL;
 }
 #endif  // CONFIG_LOOP_RESTORATION
 
