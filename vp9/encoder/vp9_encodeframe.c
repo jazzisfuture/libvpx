@@ -788,6 +788,27 @@ static void set_low_temp_var_flag(VP9_COMP *cpi, MACROBLOCK *x,
   }
 }
 
+static void chroma_check(VP9_COMP *cpi, MACROBLOCK *x, int bsize,
+                         unsigned int y_sad) {
+  int i;
+  MACROBLOCKD *xd = &x->e_mbd;
+
+  for (i = 1; i <= 2; ++i) {
+    unsigned int uv_sad = UINT_MAX;
+    struct macroblock_plane  *p = &x->plane[i];
+    struct macroblockd_plane *pd = &xd->plane[i];
+    const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+
+    if (bs != BLOCK_INVALID)
+      uv_sad = cpi->fn_ptr[bs].sdf(p->src.buf, p->src.stride,
+                                   pd->dst.buf, pd->dst.stride);
+
+    // TODO(marpan): Investigate if we should lower this threshold if
+    // superblock is detected as skin.
+    x->color_sensitivity[i - 1] = uv_sad > (y_sad >> 2);
+  }
+}
+
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for down-sampled inputs.
 static int choose_partitioning(VP9_COMP *cpi,
@@ -851,7 +872,6 @@ static int choose_partitioning(VP9_COMP *cpi,
     // that the temporal reference frame will always be of type LAST_FRAME.
     // TODO(marpan): If that assumption is broken, we need to revisit this code.
     MODE_INFO *mi = xd->mi[0];
-    unsigned int uv_sad;
     const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
 
     const YV12_BUFFER_CONFIG *yv12_g = NULL;
@@ -910,25 +930,9 @@ static int choose_partitioning(VP9_COMP *cpi,
 #if !CONFIG_VP9_HIGHBITDEPTH
     if (cpi->use_skin_detection)
       x->sb_is_skin = skin_sb_split(cpi, x, low_res, mi_row, mi_col,
-                                    &force_split[0]);
+                                    force_split);
 #endif
-
-    for (i = 1; i <= 2; ++i) {
-      struct macroblock_plane  *p = &x->plane[i];
-      struct macroblockd_plane *pd = &xd->plane[i];
-      const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
-
-      if (bs == BLOCK_INVALID)
-        uv_sad = UINT_MAX;
-      else
-        uv_sad = cpi->fn_ptr[bs].sdf(p->src.buf, p->src.stride,
-                                     pd->dst.buf, pd->dst.stride);
-
-        // TODO(marpan): Investigate if we should lower this threshold if
-        // superblock is detected as skin.
-        x->color_sensitivity[i - 1] = uv_sad > (y_sad >> 2);
-    }
-
+    chroma_check(cpi, x, bsize, y_sad);
     d = xd->plane[0].dst.buf;
     dp = xd->plane[0].dst.stride;
 
