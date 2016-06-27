@@ -4039,10 +4039,16 @@ static void set_size_dependent_vars(VP10_COMP *cpi, int *q,
 }
 
 static void init_motion_estimation(VP10_COMP *cpi) {
-  int y_stride = cpi->scaled_source.y_stride;
+  const int y_stride = cpi->scaled_source.y_stride;
+  const int uv_stride = cpi->scaled_source.uv_stride;
+  const int ss_x = cpi->td.mb.e_mbd.plane[1].subsampling_x;
+  const int ss_y = cpi->td.mb.e_mbd.plane[1].subsampling_y;
+  //printf("y_stride %4d, uv_stride %4d\n",
+    //     cpi->scaled_source.y_stride, cpi->scaled_source.uv_stride);
 
   if (cpi->sf.mv.search_method == NSTEP) {
-    vp10_init3smotion_compensation(&cpi->ss_cfg, y_stride);
+    vp10_init3smotion_compensation(&cpi->ss_cfg, y_stride, uv_stride,
+                                   ss_x, ss_y);
   } else if (cpi->sf.mv.search_method == DIAMOND) {
     vp10_init_dsmotion_compensation(&cpi->ss_cfg, y_stride);
   }

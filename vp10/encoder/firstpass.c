@@ -409,7 +409,7 @@ static void first_pass_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
                                     step_param,
                                     x->sadperbit16, &num00, &v_fn_ptr, ref_mv);
   if (tmp_err < INT_MAX)
-    tmp_err = vp10_get_mvpred_var(x, &tmp_mv, ref_mv, &v_fn_ptr, 1);
+    tmp_err = vp10_get_mvpred_var(x, &tmp_mv, ref_mv, &v_fn_ptr, NULL, 1);
   if (tmp_err < INT_MAX - new_mv_mode_penalty)
     tmp_err += new_mv_mode_penalty;
 
@@ -432,7 +432,7 @@ static void first_pass_motion_search(VP10_COMP *cpi, MACROBLOCK *x,
                                         step_param + n, x->sadperbit16,
                                         &num00, &v_fn_ptr, ref_mv);
       if (tmp_err < INT_MAX)
-        tmp_err = vp10_get_mvpred_var(x, &tmp_mv, ref_mv, &v_fn_ptr, 1);
+        tmp_err = vp10_get_mvpred_var(x, &tmp_mv, ref_mv, &v_fn_ptr, NULL, 1);
       if (tmp_err < INT_MAX - new_mv_mode_penalty)
         tmp_err += new_mv_mode_penalty;
 

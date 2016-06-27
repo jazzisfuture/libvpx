@@ -35,6 +35,7 @@ extern "C" {
 typedef struct search_site {
   MV mv;
   int offset;
+  int offset_uv;
 } search_site;
 
 typedef struct search_site_config {
@@ -44,7 +45,8 @@ typedef struct search_site_config {
 } search_site_config;
 
 void vp10_init_dsmotion_compensation(search_site_config *cfg, int stride);
-void vp10_init3smotion_compensation(search_site_config *cfg,  int stride);
+void vp10_init3smotion_compensation(search_site_config *cfg,  int stride,
+                                    int uv_stride, int ss_x, int ss_y);
 
 void vp10_set_mv_search_range(MACROBLOCK *x, const MV *mv);
 int vp10_mv_bit_cost(const MV *mv, const MV *ref,
@@ -52,9 +54,10 @@ int vp10_mv_bit_cost(const MV *mv, const MV *ref,
 
 // Utility to compute variance + MV rate cost for a given MV
 int vp10_get_mvpred_var(const MACROBLOCK *x,
-                       const MV *best_mv, const MV *center_mv,
-                       const vp10_variance_fn_ptr_t *vfp,
-                       int use_mvcost);
+                        const MV *best_mv, const MV *center_mv,
+                        const vp10_variance_fn_ptr_t *vfp,
+                        const vp10_variance_fn_ptr_t *vfp_uv,
+                        int use_mvcost);
 int vp10_get_mvpred_av_var(const MACROBLOCK *x,
                           const MV *best_mv, const MV *center_mv,
                           const uint8_t *second_pred,
@@ -67,10 +70,11 @@ struct SPEED_FEATURES;
 int vp10_init_search_range(int size);
 
 int vp10_refining_search_sad(const struct macroblock *x,
-                            struct mv *ref_mv,
-                            int sad_per_bit, int distance,
-                            const vp10_variance_fn_ptr_t *fn_ptr,
-                            const struct mv *center_mv);
+                             struct mv *ref_mv,
+                             int sad_per_bit, int distance,
+                             const vp10_variance_fn_ptr_t *fn_ptr,
+                             const vp10_variance_fn_ptr_t *fn_ptr_uv,
+                             const struct mv *center_mv);
 
 // Runs sequence of diamond searches in smaller steps for RD.
 int vp10_full_pixel_diamond(const struct VP10_COMP *cpi, MACROBLOCK *x,
@@ -78,6 +82,7 @@ int vp10_full_pixel_diamond(const struct VP10_COMP *cpi, MACROBLOCK *x,
                            int sadpb, int further_steps, int do_refine,
                            int *cost_list,
                            const vp10_variance_fn_ptr_t *fn_ptr,
+                           const vp10_variance_fn_ptr_t *fn_ptr_uv,
                            const MV *ref_mv, MV *dst_mv);
 
 // Perform integral projection based motion estimation.
