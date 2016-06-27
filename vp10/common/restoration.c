@@ -160,9 +160,10 @@ int vp10_bilateral_level_bits(const VP10_COMMON *const cm) {
                                      : BILATERAL_LEVEL_BITS;
 }
 
-void vp10_loop_restoration_init(RestorationInternal *rst, RestorationInfo *rsi,
-                                int kf) {
+void vp10_loop_restoration_init(struct VP10Common *cm, RestorationInfo *rsi,
+                                int kf, const YV12_BUFFER_CONFIG *frame) {
   int i, tile_idx;
+  RestorationInternal *rst = &cm->rst_internal;
   rst->restoration_type = rsi->restoration_type;
   rst->subsampling_x = 0;
   rst->subsampling_y = 0;
@@ -210,6 +211,163 @@ void vp10_loop_restoration_init(RestorationInternal *rst, RestorationInfo *rsi,
         rst->hfilter[tile_idx][RESTORATION_HALFWIN] -=
             2 * rsi->hfilter[tile_idx][i];
       }
+    }
+  } else if (rsi->restoration_type == RESTORE_OFFSET) {
+    // int c;
+    const int width = cm->width;
+    const int height = cm->height;
+    const int stride = frame->y_stride;
+    rst->classifier_mode = rsi->classifier_mode;
+    rst->pixel_cls = (int *)malloc(sizeof(*rst->pixel_cls) * width * height);
+    assert(rst->pixel_class != NULL);
+    rst->nclasses =
+        vp10_loop_restoration_nclasses(width, height, rst->classifier_mode);
+    vp10_loop_restoration_classifier(frame->y_buffer, width, height, stride,
+                                     rst->classifier_mode, rst->pixel_cls);
+    rst->offsets = rsi->offsets;
+  }
+}
+
+typedef struct {
+  int tile_width;
+  int tile_height;
+  int num_bins;
+} ClassifierParamsType;
+
+static ClassifierParamsType classifier_params[CLASSIFIER_MODES] = {
+  //  {16, 16, 8},
+  //  {16, 16, 16},
+  //  {16, 16, 32},
+  //  {16, 16, 64},
+  //  {32, 32, 8},
+  //  {32, 32, 16},
+  //  {32, 32, 32},
+  //  {32, 32, 64},
+  { 64, 64, 8 },
+  { 64, 64, 16 },
+  //  {64, 64, 32},
+  //  {64, 64, 64},
+  { 128, 128, 8 },
+  { 128, 128, 16 },
+  //  {128, 128, 32},
+  //  {128, 128, 64},
+};
+
+static inline int min(int a, int b) { return ((a < b) ? a : b); }
+
+static int offset_enc_params[OFFSET_ENC_MODES] = { 1, 2, 3, 4 };
+
+int vp10_restoration_offset_enc_param(const int offset_enc_mode) {
+  return offset_enc_params[offset_enc_mode];
+}
+
+#define ENABLE_TILE_CLASSIFIER
+#define ENABLE_AMP_CLASSIFIER
+//#define ENABLE_EDGE_CLASSIFIER
+//#define ENABLE_VAR_CLASSIFIER
+
+int vp10_loop_restoration_nclasses(int width, int height, int classifier_mode) {
+  int nclasses;
+  ClassifierParamsType params = classifier_params[classifier_mode];
+#ifdef ENABLE_TILE_CLASSIFIER
+  const int nhtiles = width / params.tile_width;
+  const int nvtiles = height / params.tile_height;
+  const int num_tile_cls = nhtiles * nvtiles;
+#endif
+#ifdef ENABLE_AMP_CLASSIFIER
+  const int num_amp_cls = params.num_bins;
+#endif
+#ifdef ENABLE_EDGE_CLASSIFIER
+  const int num_edge_cls = 2;
+#endif
+#ifdef ENABLE_VAR_CLASSIFIER
+  const int num_var_cls = 2;
+#endif
+
+  // Compute number of classes
+  nclasses = 1;
+#ifdef ENABLE_TILE_CLASSIFIER
+  nclasses *= num_tile_cls;
+#endif
+#ifdef ENABLE_AMP_CLASSIFIER
+  nclasses *= num_amp_cls;
+#endif
+#ifdef ENABLE_EDGE_CLASSIFIER
+  nclasses *= num_edge_cls;
+#endif
+#ifdef ENABLE_VAR_CLASSIFIER
+  nclasses *= num_var_cls;
+#endif
+  return nclasses;
+}
+
+void vp10_loop_restoration_classifier(uint8_t *img, int width, int height,
+                                      int stride, int classifier_mode,
+                                      int *cls) {
+  const ClassifierParamsType params = classifier_params[classifier_mode];
+#ifdef ENABLE_TILE_CLASSIFIER
+  int i, j, it, jt, tile_cls;
+  const int nhtiles = width / params.tile_width;
+  const int nvtiles = height / params.tile_height;
+  const int num_tile_cls = nhtiles * nvtiles;
+#endif
+#ifdef ENABLE_AMP_CLASSIFIER
+  int amp_cls;
+  const int num_amp_cls = params.num_bins;
+  const int bin_size = 256 / params.num_bins;
+#endif
+#ifdef ENABLE_EDGE_CLASSIFIER
+  const int num_edge_cls = 2;
+  int Gx, Gy, edge_cls;
+#endif
+#ifdef ENABLE_VAR_CLASSIFIER
+  const int num_var_cls = 2;
+  int nbr_sum, var_cls;
+#endif
+
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      cls[i * width + j] = 0;
+#ifdef ENABLE_TILE_CLASSIFIER
+      jt = j / params.tile_width;
+      jt = (jt >= nhtiles) ? nhtiles - 1 : jt;
+      it = i / params.tile_height;
+      it = (it >= nvtiles) ? nvtiles - 1 : it;
+      tile_cls = (it * nhtiles + jt);
+      cls[i * width + j] = tile_cls + num_tile_cls * cls[i * width + j];
+#endif
+#ifdef ENABLE_AMP_CLASSIFIER
+      amp_cls = (img[i * stride + j] / bin_size);
+      cls[i * width + j] = amp_cls + num_amp_cls * cls[i * width + j];
+#endif
+#ifdef ENABLE_EDGE_CLASSIFIER
+      if (i > 0 && j > 0 && i < (height - 1) && j < (width - 1)) {
+        Gy = (img[(i + 1) * stride + j] - img[(i - 1) * stride + j]) * 2 +
+             (img[(i + 1) * stride + j + 1] - img[(i - 1) * stride + j + 1]) +
+             (img[(i + 1) * stride + j - 1] - img[(i - 1) * stride + j - 1]);
+        Gx = (img[i * stride + j + 1] - img[i * stride + j - 1]) * 2 +
+             (img[(i - 1) * stride + j + 1] - img[(i - 1) * stride + j - 1]) +
+             (img[(i + 1) * stride + j + 1] - img[(i + 1) * stride + j - 1]);
+        edge_cls = (Gx * Gx + Gy * Gy > 128 ? 1 : 0);
+      } else {
+        edge_cls = 0;
+      }
+      cls[i * width + j] = edge_cls + num_edge_cls * cls[i * width + j];
+#endif
+#ifdef ENABLE_VAR_CLASSIFIER
+      if (i > 0 && j > 0 && i < (height - 1) && j < (width - 1)) {
+        nbr_sum = img[(i - 1) * stride + j] + img[(i + 1) * stride + j];
+        nbr_sum += img[i * stride + (j - 1)] + img[i * stride + (j + 1)];
+        nbr_sum +=
+            img[(i - 1) * stride + (j - 1)] + img[(i + 1) * stride + (j + 1)];
+        nbr_sum +=
+            img[(i + 1) * stride + (j - 1)] + img[(i - 1) * stride + (j + 1)];
+        var_cls = (abs(nbr_sum - 8 * img[i * stride + j]) > 32) ? 1 : 0;
+      } else {
+        var_cls = 0;
+      }
+      cls[i * width + j] = var_cls + num_var_cls * cls[i * width + j];
+#endif
     }
   }
 }
@@ -381,6 +539,24 @@ static void loop_wiener_filter(uint8_t *data, int width, int height, int stride,
       tmpdata_p += tmpstride - (h_end - h_start);
     }
   }
+}
+
+static void loop_offset_correction(uint8_t *data, int width, int height,
+                                   int stride, RestorationInternal *rst,
+                                   uint8_t *tmpdata, int tmpstride) {
+  int i, j, c;
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      c = rst->pixel_cls[i * width + j];
+      if (rst->offsets[c] != 0) {
+        data[i * stride + j] =
+            clip_pixel(data[i * stride + j] + rst->offsets[c]);
+      }
+    }
+  }
+  // Unused variables
+  (void)(tmpdata);
+  (void)(tmpstride);
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -561,6 +737,26 @@ static void loop_wiener_filter_highbd(uint8_t *data8, int width, int height,
     }
   }
 }
+
+static void loop_offset_correction_highbd(uint8_t *data8, int width, int height,
+                                          int stride, RestorationInternal *rst,
+                                          uint8_t *tmpdata8,
+                                          int tmpstride int bit_depth) {
+  uint16_t *data = CONVERT_TO_SHORTPTR(data8);
+  int i, j, c;
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      c = rst->pixel_cls[i * width + j];
+      if (rst->offsets[c] != 0) {
+        data[i * stride + j] =
+            clip_pixel_highbd(data[i * stride + j] + rst->offsets[c]);
+      }
+    }
+  }
+  // Unused variables
+  (void)(tmpdata8);
+  (void)(tmpstride);
+}
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 void vp10_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, VP10_COMMON *cm,
@@ -573,17 +769,25 @@ void vp10_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, VP10_COMMON *cm,
   const int uvstart = ystart >> cm->subsampling_y;
   int yend = end_mi_row << MI_SIZE_LOG2;
   int uvend = yend >> cm->subsampling_y;
-  restore_func_type restore_func =
-      cm->rst_internal.restoration_type == RESTORE_BILATERAL
-          ? loop_bilateral_filter
-          : loop_wiener_filter;
-#if CONFIG_VP9_HIGHBITDEPTH
-  restore_func_highbd_type restore_func_highbd =
-      cm->rst_internal.restoration_type == RESTORE_BILATERAL
-          ? loop_bilateral_filter_highbd
-          : loop_wiener_filter_highbd;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+
   YV12_BUFFER_CONFIG *tmp_buf;
+
+  restore_func_type restore_func;
+  if (cm->rst_internal.restoration_type == RESTORE_BILATERAL)
+    restore_func = loop_bilateral_filter;
+  else if (cm->rst_internal.restoration_type == RESTORE_WIENER)
+    restore_func = loop_wiener_filter;
+  else
+    restore_func = loop_offset_correction;
+#if CONFIG_VP9_HIGHBITDEPTH
+  restore_func_highbd_type restore_func_highbd;
+  if (cm->rst_internal.restoration_type == RESTORE_BILATERAL)
+    restore_func_highbd = loop_bilateral_filter_highbd;
+  else if (cm->rst_internal.restoration_type == RESTORE_WIENER)
+    restore_func_highbd = loop_wiener_filter_highbd;
+  else
+    restore_func_highbd = loop_offset_correction_highbd;
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   yend = VPXMIN(yend, cm->height);
   uvend = VPXMIN(uvend, cm->subsampling_y ? (cm->height + 1) >> 1 : cm->height);
@@ -612,7 +816,8 @@ void vp10_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, VP10_COMMON *cm,
                  ystride, &cm->rst_internal,
                  tmp_buf->y_buffer + ystart * tmp_buf->y_stride,
                  tmp_buf->y_stride);
-  if (!y_only) {
+
+  if ((cm->rst_internal.restoration_type != RESTORE_OFFSET) && !y_only) {
     cm->rst_internal.subsampling_x = cm->subsampling_x;
     cm->rst_internal.subsampling_y = cm->subsampling_y;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -651,6 +856,10 @@ void vp10_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, VP10_COMMON *cm,
     free(cm->rst_internal.hfilter);
     cm->rst_internal.hfilter = NULL;
   }
+  if (cm->rst_internal.restoration_type == RESTORE_OFFSET) {
+    free(cm->rst_internal.pixel_cls);
+    cm->rst_internal.pixel_cls = NULL;
+  }
 }
 
 void vp10_loop_restoration_frame(YV12_BUFFER_CONFIG *frame, VP10_COMMON *cm,
@@ -666,8 +875,7 @@ void vp10_loop_restoration_frame(YV12_BUFFER_CONFIG *frame, VP10_COMMON *cm,
       mi_rows_to_filter = VPXMAX(cm->mi_rows / 8, 8);
     }
     end_mi_row = start_mi_row + mi_rows_to_filter;
-    vp10_loop_restoration_init(&cm->rst_internal, rsi,
-                               cm->frame_type == KEY_FRAME);
+    vp10_loop_restoration_init(cm, rsi, cm->frame_type == KEY_FRAME, frame);
     vp10_loop_restoration_rows(frame, cm, start_mi_row, end_mi_row, y_only);
   }
 }

@@ -3415,8 +3415,8 @@ static void loopfilter_frame(VP10_COMP *cpi, VP10_COMMON *cm) {
 #endif
 #if CONFIG_LOOP_RESTORATION
   if (cm->rst_info.restoration_type != RESTORE_NONE) {
-    vp10_loop_restoration_init(&cm->rst_internal, &cm->rst_info,
-                               cm->frame_type == KEY_FRAME);
+    vp10_loop_restoration_init(cm, &cm->rst_info, cm->frame_type == KEY_FRAME,
+                               cm->frame_to_show);
     vp10_loop_restoration_rows(cm->frame_to_show, cm, 0, cm->mi_rows, 0);
   }
 #endif  // CONFIG_LOOP_RESTORATION
