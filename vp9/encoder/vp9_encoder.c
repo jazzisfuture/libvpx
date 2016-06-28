@@ -3987,6 +3987,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
                            cpi->svc.number_temporal_layers +
                            cpi->svc.temporal_layer_id].last_frame_type =
                                cm->frame_type;
+#ifdef OUTPUT_YUV_REC
+  vp9_write_yuv_rec_frame(cm);
+#endif
 }
 
 static void SvcEncode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
