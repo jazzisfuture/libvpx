@@ -2300,14 +2300,40 @@ int vp9_update_entropy(VP9_COMP * cpi, int update) {
   return 0;
 }
 
-#if defined(OUTPUT_YUV_DENOISED) || defined(OUTPUT_YUV_SKINMAP)
-// The denoiser buffer is allocated as a YUV 440 buffer. This function writes it
-// as YUV 420. We simply use the top-left pixels of the UV buffers, since we do
-// not denoise the UV channels at this time. If ever we implement UV channel
-// denoising we will have to modify this.
-void vp9_write_yuv_frame_420(YV12_BUFFER_CONFIG *s, FILE *f) {
+#if defined(OUTPUT_YUV_DENOISED) || defined(OUTPUT_YUV_SKINMAP) || defined(OUTPUT_YUV_REC)
+void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s, FILE *f) {
   uint8_t *src = s->y_buffer;
   int h = s->y_height;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (s->flags & YV12_FLAG_HIGHBITDEPTH) {
+    uint16_t *src16 = CONVERT_TO_SHORTPTR(s->y_buffer);
+
+    do {
+      fwrite(src16, s->y_width, 2, f);
+      src16 += s->y_stride;
+    } while (--h);
+
+    src16 = CONVERT_TO_SHORTPTR(s->u_buffer);
+    h = s->uv_height;
+
+    do {
+      fwrite(src16, s->uv_width, 2, f);
+      src16 += s->uv_stride;
+    } while (--h);
+
+    src16 = CONVERT_TO_SHORTPTR(s->v_buffer);
+    h = s->uv_height;
+
+    do {
+      fwrite(src16, s->uv_width, 2, f);
+      src16 += s->uv_stride;
+    } while (--h);
+
+    fflush(f);
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   do {
     fwrite(src, s->y_width, 1, f);
@@ -2329,67 +2355,8 @@ void vp9_write_yuv_frame_420(YV12_BUFFER_CONFIG *s, FILE *f) {
     fwrite(src, s->uv_width, 1, f);
     src += s->uv_stride;
   } while (--h);
-}
-#endif
 
-#ifdef OUTPUT_YUV_REC
-void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
-  YV12_BUFFER_CONFIG *s = cm->frame_to_show;
-  uint8_t *src = s->y_buffer;
-  int h = cm->height;
-
-#if CONFIG_VP9_HIGHBITDEPTH
-  if (s->flags & YV12_FLAG_HIGHBITDEPTH) {
-    uint16_t *src16 = CONVERT_TO_SHORTPTR(s->y_buffer);
-
-    do {
-      fwrite(src16, s->y_width, 2,  yuv_rec_file);
-      src16 += s->y_stride;
-    } while (--h);
-
-    src16 = CONVERT_TO_SHORTPTR(s->u_buffer);
-    h = s->uv_height;
-
-    do {
-      fwrite(src16, s->uv_width, 2,  yuv_rec_file);
-      src16 += s->uv_stride;
-    } while (--h);
-
-    src16 = CONVERT_TO_SHORTPTR(s->v_buffer);
-    h = s->uv_height;
-
-    do {
-      fwrite(src16, s->uv_width, 2, yuv_rec_file);
-      src16 += s->uv_stride;
-    } while (--h);
-
-    fflush(yuv_rec_file);
-    return;
-  }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-
-  do {
-    fwrite(src, s->y_width, 1,  yuv_rec_file);
-    src += s->y_stride;
-  } while (--h);
-
-  src = s->u_buffer;
-  h = s->uv_height;
-
-  do {
-    fwrite(src, s->uv_width, 1,  yuv_rec_file);
-    src += s->uv_stride;
-  } while (--h);
-
-  src = s->v_buffer;
-  h = s->uv_height;
-
-  do {
-    fwrite(src, s->uv_width, 1, yuv_rec_file);
-    src += s->uv_stride;
-  } while (--h);
-
-  fflush(yuv_rec_file);
+  fflush(f);
 }
 #endif
 
@@ -3860,13 +3827,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     encode_with_recode_loop(cpi, size, dest);
   }
 
-#if CONFIG_VP9_TEMPORAL_DENOISING
-#ifdef OUTPUT_YUV_DENOISED
+#if CONFIG_VP9_TEMPORAL_DENOISING && defined(OUTPUT_YUV_DENOISED)
   if (oxcf->noise_sensitivity > 0) {
-    vp9_write_yuv_frame_420(&cpi->denoiser.running_avg_y[INTRA_FRAME],
-                            yuv_denoised_file);
+    vp9_write_yuv_frame(&cpi->denoiser.running_avg_y[INTRA_FRAME],
+                        yuv_denoised_file);
   }
-#endif
 #endif
 #ifdef OUTPUT_YUV_SKINMAP
   if (cpi->common.current_video_frame > 1) {
@@ -3988,7 +3953,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
                            cpi->svc.temporal_layer_id].last_frame_type =
                                cm->frame_type;
 #ifdef OUTPUT_YUV_REC
-  vp9_write_yuv_rec_frame(cm);
+  vp9_write_yuv_frame(cm->frame_to_show, yuv_rec_file);
 #endif
 }
 

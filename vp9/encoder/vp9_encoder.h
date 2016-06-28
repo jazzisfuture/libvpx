@@ -749,6 +749,10 @@ void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 
 #define LAYER_IDS_TO_IDX(sl, tl, num_tl) ((sl) * (num_tl) + (tl))
 
+#if defined(OUTPUT_YUV_DENOISED) || defined(OUTPUT_YUV_SKINMAP) || defined(OUTPUT_YUV_REC)
+void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s, FILE *f);
+#endif
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
