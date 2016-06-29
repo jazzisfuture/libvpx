@@ -12,6 +12,7 @@
 #include "vpx_config.h"
 #include "vpx_dsp_rtcd.h"
 #include "vp8_rtcd.h"
+#include "vpx_dsp/postproc.h"
 #include "vpx_scale_rtcd.h"
 #include "vpx_scale/yv12config.h"
 #include "postproc.h"
@@ -428,69 +429,6 @@ void vp8_de_noise(VP8_COMMON                 *cm,
     }
 }
 
-static double gaussian(double sigma, double mu, double x)
-{
-    return 1 / (sigma * sqrt(2.0 * 3.14159265)) *
-           (exp(-(x - mu) * (x - mu) / (2 * sigma * sigma)));
-}
-
-static void fillrd(struct postproc_state *state, int q, int a)
-{
-    char char_dist[300];
-
-    double sigma;
-    int i;
-
-    vp8_clear_system_state();
-
-
-    sigma = a + .5 + .6 * (63 - q) / 63.0;
-
-    /* set up a lookup table of 256 entries that matches
-     * a gaussian distribution with sigma determined by q.
-     */
-    {
-        int next, j;
-
-        next = 0;
-
-        for (i = -32; i < 32; i++)
-        {
-            const int v = (int)(.5 + 256 * gaussian(sigma, 0, i));
-
-            if (v)
-            {
-                for (j = 0; j < v; j++)
-                {
-                    char_dist[next+j] = (char) i;
-                }
-
-                next = next + j;
-            }
-
-        }
-
-        for (; next < 256; next++)
-            char_dist[next] = 0;
-
-    }
-
-    for (i = 0; i < 3072; i++)
-    {
-        state->noise[i] = char_dist[rand() & 0xff];
-    }
-
-    for (i = 0; i < 16; i++)
-    {
-        state->blackclamp[i] = -char_dist[0];
-        state->whiteclamp[i] = -char_dist[0];
-        state->bothclamp[i] = -2 * char_dist[0];
-    }
-
-    state->last_q = q;
-    state->last_noise = a;
-}
-
 /* Blend the macro block with a solid colored square.  Leave the
  * edges unblended to give distinction to macro blocks in areas
  * filled with the same color block.
@@ -778,15 +716,22 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
         if (oci->postproc_state.last_q != q
             || oci->postproc_state.last_noise != noise_level)
         {
-            fillrd(&oci->postproc_state, 63 - q, noise_level);
+            double sigma;
+            struct postproc_state *ppstate = &oci->postproc_state;
+            vp8_clear_system_state();
+            sigma = noise_level + .5 + .6 * q / 63.0;
+            oci->postproc_state.clamp = vpx_setup_noise(sizeof(ppstate->noise),
+                                                        sigma, ppstate->noise);
+            ppstate->last_q = q;
+            ppstate->last_noise = noise_level;
         }
 
         vpx_plane_add_noise
         (oci->post_proc_buffer.y_buffer,
          oci->postproc_state.noise,
-         oci->postproc_state.blackclamp,
-         oci->postproc_state.whiteclamp,
-         oci->postproc_state.bothclamp,
+         oci->postproc_state.clamp,
+         oci->postproc_state.clamp,
+         oci->postproc_state.clamp * 2,
          oci->post_proc_buffer.y_width, oci->post_proc_buffer.y_height,
          oci->post_proc_buffer.y_stride);
     }

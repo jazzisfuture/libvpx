@@ -25,6 +25,7 @@ extern "C" {
 struct postproc_state {
   int last_q;
   int last_noise;
+  int clamp;
   char noise[3072];
   int last_base_qindex;
   int last_frame_valid;
