@@ -2465,9 +2465,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   if (pred_filter_search) {
     INTERP_FILTER af = SWITCHABLE, lf = SWITCHABLE;
-    if (xd->above_mi)
+    if (xd->above_mi && is_inter_block(xd->above_mi))
       af = xd->above_mi->interp_filter;
-    if (xd->left_mi)
+    if (xd->left_mi && is_inter_block(xd->left_mi))
       lf = xd->left_mi->interp_filter;
 
     if ((this_mode != NEWMV) || (af == lf))
@@ -2794,6 +2794,9 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   ctx->skip = 0;
   xd->mi[0]->ref_frame[0] = INTRA_FRAME;
   xd->mi[0]->ref_frame[1] = NONE;
+  // Initialize interp_filter here so we do not have to check for inter block
+  // modes in get_pred_context_switchable_interp()
+  xd->mi[0]->interp_filter = SWITCHABLE_FILTERS;
 
   if (bsize >= BLOCK_8X8) {
     if (rd_pick_intra_sby_mode(cpi, x, &rate_y, &rate_y_tokenonly,
@@ -3446,6 +3449,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
           /* required for left and above block mv */
           mi->mv[0].as_int = 0;
           max_plane = 1;
+          // Initialize interp_filter here so we do not have to check for
+          // inter block modes in get_pred_context_switchable_interp()
+          mi->interp_filter = SWITCHABLE_FILTERS;
         } else {
           best_pred_sse = x->pred_sse[ref_frame];
         }
@@ -4229,6 +4235,9 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi,
           /* required for left and above block mv */
           mi->mv[0].as_int = 0;
           max_plane = 1;
+          // Initialize interp_filter here so we do not have to check for
+          // inter block modes in get_pred_context_switchable_interp()
+          mi->interp_filter = SWITCHABLE_FILTERS;
         }
 
         rd_cost->rate = rate2;

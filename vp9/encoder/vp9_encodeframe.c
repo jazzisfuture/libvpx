@@ -250,6 +250,7 @@ static void duplicate_mode_info_in_sb(VP9_COMMON *cm, MACROBLOCKD *xd,
   const int mi_stride = xd->mi_stride;
   MODE_INFO *const src_mi = xd->mi[0];
   int i, j;
+
   for (j = 0; j < block_height; ++j)
     for (i = 0; i < block_width; ++i)
       xd->mi[j * mi_stride + i] = src_mi;
@@ -1253,7 +1254,7 @@ static void update_state(VP9_COMP *cpi, ThreadData *td,
       vp9_update_mv_count(td);
 
       if (cm->interp_filter == SWITCHABLE) {
-        const int ctx = vp9_get_pred_context_switchable_interp(xd);
+        const int ctx = get_pred_context_switchable_interp(xd);
         ++td->counts->switchable_interp[ctx][xdmi->interp_filter];
       }
     }
@@ -1299,7 +1300,7 @@ static void set_mode_info_seg_skip(MACROBLOCK *x, TX_MODE tx_mode,
   MODE_INFO *const mi = xd->mi[0];
   INTERP_FILTER filter_ref;
 
-  filter_ref = vp9_get_pred_context_switchable_interp(xd);
+  filter_ref = get_pred_context_switchable_interp(xd);
   if (filter_ref == SWITCHABLE_FILTERS)
     filter_ref = EIGHTTAP;
 
@@ -1879,7 +1880,7 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
   if (is_inter_block(mi)) {
     vp9_update_mv_count(td);
     if (cm->interp_filter == SWITCHABLE) {
-      const int pred_ctx = vp9_get_pred_context_switchable_interp(xd);
+      const int pred_ctx = get_pred_context_switchable_interp(xd);
       ++td->counts->switchable_interp[pred_ctx][mi->interp_filter];
     }
 
