@@ -9,9 +9,9 @@
  */
 
 #include <assert.h>
-
+#if !GENERATE_SIMD_FILTER
 #include "vp10/common/filter.h"
-
+#endif
 DECLARE_ALIGNED(256, static const InterpKernel,
                 bilinear_filters[SUBPEL_SHIFTS]) = {
   { 0, 0, 0, 128,   0, 0, 0, 0 },
