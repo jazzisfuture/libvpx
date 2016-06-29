@@ -737,7 +737,6 @@ int vp10_find_best_sub_pixel_tree(const MACROBLOCK *x,
                                  const uint8_t *second_pred,
                                  int w, int h, int use_upsampled_ref) {
   const uint8_t *const z = x->plane[0].src.buf;
-  const uint8_t *const src_address = z;
   const int src_stride = x->plane[0].src.stride;
   const MACROBLOCKD *xd = &x->e_mbd;
   unsigned int besterr = INT_MAX;
@@ -794,7 +793,7 @@ int vp10_find_best_sub_pixel_tree(const MACROBLOCK *x,
         if (use_upsampled_ref) {
           const uint8_t *const pre_address = y + tr * y_stride + tc;
 
-          thismse = upsampled_pref_error(xd, vfp, src_address, src_stride,
+          thismse = upsampled_pref_error(xd, vfp, z, src_stride,
                                          pre_address, y_stride, second_pred,
                                          w, h, &sse);
         } else {
@@ -802,10 +801,10 @@ int vp10_find_best_sub_pixel_tree(const MACROBLOCK *x,
               (tc >> 3);
           if (second_pred == NULL)
             thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr),
-                               src_address, src_stride, &sse);
+                               z, src_stride, &sse);
           else
             thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr),
-                                src_address, src_stride, &sse, second_pred);
+                                z, src_stride, &sse, second_pred);
         }
 
         cost_array[idx] = thismse +
@@ -834,18 +833,17 @@ int vp10_find_best_sub_pixel_tree(const MACROBLOCK *x,
       if (use_upsampled_ref) {
         const uint8_t *const pre_address = y + tr * y_stride + tc;
 
-        thismse = upsampled_pref_error(xd, vfp, src_address, src_stride,
-                                       pre_address, y_stride, second_pred,
-                                       w, h, &sse);
+        thismse = upsampled_pref_error(xd, vfp, z, src_stride, pre_address,
+                                       y_stride, second_pred, w, h, &sse);
       } else {
         const uint8_t *const pre_address = y + (tr >> 3) * y_stride + (tc >> 3);
 
         if (second_pred == NULL)
           thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr),
-                             src_address, src_stride, &sse);
+                             z, src_stride, &sse);
         else
           thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr),
-                              src_address, src_stride, &sse, second_pred);
+                              z, src_stride, &sse, second_pred);
       }
 
       cost_array[4] = thismse +
@@ -877,16 +875,10 @@ int vp10_find_best_sub_pixel_tree(const MACROBLOCK *x,
       }
     }
 
-    tr = br;
-    tc = bc;
-
     search_step += 4;
     hstep >>= 1;
     best_idx = -1;
   }
-
-  // Each subsequent iteration checks at least one point in common with
-  // the last iteration could be 2 ( if diag selected) 1/4 pel
 
   // These lines insure static analysis doesn't warn that
   // tr and tc aren't used after the above point.
