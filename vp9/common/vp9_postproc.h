@@ -30,9 +30,8 @@ struct postproc_state {
   int last_frame_valid;
   MODE_INFO *prev_mip;
   MODE_INFO *prev_mi;
-  DECLARE_ALIGNED(16, char, blackclamp[16]);
-  DECLARE_ALIGNED(16, char, whiteclamp[16]);
-  DECLARE_ALIGNED(16, char, bothclamp[16]);
+  DECLARE_ALIGNED(16, char, unused[44]);
+  int clamp;
 };
 
 struct VP9Common;

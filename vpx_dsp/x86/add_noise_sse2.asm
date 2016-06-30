@@ -25,15 +25,26 @@ sym(vpx_plane_add_noise_sse2):
     GET_GOT     rbx
     push        rsi
     push        rdi
+
+    sub         rsp, 48  ; store an array on the stack 3 * 16 bytes
+    cld
+    mov rdi, rsp
+    mov rcx, 16
+    mov rax, arg(2)      ; store black clamp in first 16 bytes of array
+    rep stosb
+    mov rcx, 16
+    mov rax, arg(3)      ; store white clamp in next 16 bytes of array
+    rep stosb
+    mov rcx, 16
+    mov rax, arg(4)      ; store both clamp in next 16 bytes of array
+    rep stosb
+    sub rdi, 48
     ; end prolog
 
-    ; get the clamps in registers
-    mov     rdx, arg(2) ; blackclamp
-    movdqu  xmm3, [rdx]
-    mov     rdx, arg(3) ; whiteclamp
-    movdqu  xmm4, [rdx]
-    mov     rdx, arg(4) ; bothclamp
-    movdqu  xmm5, [rdx]
+    movdqu  xmm3, [rdi]
+    movdqu  xmm4, [rdi + 16]
+    movdqu  xmm5, [rdi + 32]
+
 
 .addnoise_loop:
     call sym(LIBVPX_RAND) WRT_PLT
@@ -67,6 +78,7 @@ sym(vpx_plane_add_noise_sse2):
     sub     dword arg(6), 1   ; Height -= 1
     jg      .addnoise_loop
 
+    add         rsp, 48
     ; begin epilog
     pop rdi
     pop rsi
