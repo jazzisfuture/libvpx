@@ -1808,13 +1808,13 @@ int vp9_compute_qdelta_by_rate(const RATE_CONTROL *rc, FRAME_TYPE frame_type,
   const int base_bits_per_mb = vp9_rc_bits_per_mb(frame_type, qindex, 1.0,
                                                   bit_depth);
 
-  // Find the target bits per mb based on the base value and given ratio.
+  // Find the target bits per mb based on the base value and given ratio
   const int target_bits_per_mb = (int)(rate_target_ratio * base_bits_per_mb);
 
   // Convert the q target to an index
   for (i = rc->best_quality; i < rc->worst_quality; ++i) {
-    if (vp9_rc_bits_per_mb(frame_type, i, 1.0, bit_depth) <=
-        target_bits_per_mb) {
+    int rc_bits_per_mb = vp9_rc_bits_per_mb(frame_type, i, 1.0, bit_depth);
+    if (rc_bits_per_mb <= target_bits_per_mb) {
       target_index = i;
       break;
     }
