@@ -60,6 +60,12 @@ void vp10_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
 
 void vp10_inv_txfm_add_4x4(const tran_low_t *input, uint8_t *dest,
                            int stride, int eob, TX_TYPE tx_type, int lossless);
+#if CONFIG_EXT_TX
+void vp10_inv_txfm_add_8x4(const tran_low_t *input, uint8_t *dest,
+                           int stride, int eob, TX_TYPE tx_type);
+void vp10_inv_txfm_add_4x8(const tran_low_t *input, uint8_t *dest,
+                           int stride, int eob, TX_TYPE tx_type);
+#endif  // CONFIG_EXT_TX
 void vp10_inv_txfm_add_8x8(const tran_low_t *input, uint8_t *dest,
                            int stride, int eob, TX_TYPE tx_type);
 void vp10_inv_txfm_add_16x16(const tran_low_t *input, uint8_t *dest,
@@ -82,6 +88,12 @@ void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
 void vp10_highbd_inv_txfm_add_4x4(const tran_low_t *input, uint8_t *dest,
                                   int stride, int eob, int bd, TX_TYPE tx_type,
                                   int lossless);
+#if CONFIG_EXT_TX
+void vp10_highbd_inv_txfm_add_4x8(const tran_low_t *input, uint8_t *dest,
+                                  int stride, int eob, int bd, TX_TYPE tx_type);
+void vp10_highbd_inv_txfm_add_8x4(const tran_low_t *input, uint8_t *dest,
+                                  int stride, int eob, int bd, TX_TYPE tx_type);
+#endif  // CONFIG_EXT_TX
 void vp10_highbd_inv_txfm_add_8x8(const tran_low_t *input, uint8_t *dest,
                                   int stride, int eob, int bd, TX_TYPE tx_type);
 void vp10_highbd_inv_txfm_add_16x16(const tran_low_t *input, uint8_t *dest,

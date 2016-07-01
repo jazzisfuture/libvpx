@@ -155,11 +155,35 @@ void vp10_partial_adapt_probs(struct VP10Common *cm, int mi_row, int mi_col);
 #define MAXBAND_INDEX 21
 
 DECLARE_ALIGNED(16, extern const uint8_t, vp10_coefband_trans_8x8plus[1024]);
+#if CONFIG_EXT_TX
+DECLARE_ALIGNED(16, extern const uint8_t, vp10_coefband_trans_8x4_4x8[32]);
+#endif  // CONFIG_EXT_TX
 DECLARE_ALIGNED(16, extern const uint8_t, vp10_coefband_trans_4x4[16]);
 
 static INLINE const uint8_t *get_band_translate(TX_SIZE tx_size) {
-  return tx_size == TX_4X4 ? vp10_coefband_trans_4x4
-                           : vp10_coefband_trans_8x8plus;
+  switch (tx_size) {
+    case TX_4X4:
+      return vp10_coefband_trans_4x4;
+#if CONFIG_EXT_TX
+    case TX_8X4:
+    case TX_4X8:
+      return vp10_coefband_trans_8x4_4x8;
+#endif  // CONFIG_EXT_TX
+    default:
+      return vp10_coefband_trans_8x8plus;
+  };
+}
+
+static INLINE TX_SIZE get_tx_size_ctx(TX_SIZE tx_size) {
+  switch (tx_size) {
+#if CONFIG_EXT_TX
+    case TX_8X4:
+    case TX_4X8:
+      return TX_8X8;
+#endif  // CONFIG_EXT_TX
+    default:
+      return tx_size;
+  };
 }
 
 // 128 lists of probabilities are stored for the following ONE node probs:
@@ -207,6 +231,16 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
       above_ec = a[0] != 0;
       left_ec = l[0] != 0;
       break;
+#if CONFIG_EXT_TX
+    case TX_8X4:
+      above_ec = a[0] != 0;
+      left_ec = !!*(const uint16_t *)l;
+      break;
+    case TX_4X8:
+      above_ec = !!*(const uint16_t *)a;
+      left_ec = l[0] != 0;
+      break;
+#endif  // CONFIG_EXT_TX
     case TX_8X8:
       above_ec = !!*(const uint16_t *)a;
       left_ec  = !!*(const uint16_t *)l;
