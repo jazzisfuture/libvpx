@@ -38,7 +38,7 @@ void highbd_fwd_txfm(const int16_t *src_diff, tran_low_t *coeff,
                      int diff_stride, FWD_TXFM_PARAM *fwd_txfm_param);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-static INLINE int get_tx1d_size(TX_SIZE tx_size) {
+static INLINE int get_tx1d_width(TX_SIZE tx_size) {
   switch (tx_size) {
     case TX_32X32:
       return 32;
@@ -46,6 +46,12 @@ static INLINE int get_tx1d_size(TX_SIZE tx_size) {
       return 16;
     case TX_8X8:
       return 8;
+#if CONFIG_EXT_TX
+    case TX_8X4:
+      return 4;
+    case TX_4X8:
+      return 8;
+#endif  // CONFIG_EXT_TX
     case TX_4X4:
       return 4;
     default:
@@ -54,6 +60,48 @@ static INLINE int get_tx1d_size(TX_SIZE tx_size) {
   }
 }
 
+static INLINE int get_tx1d_height(TX_SIZE tx_size) {
+  switch (tx_size) {
+    case TX_32X32:
+      return 32;
+    case TX_16X16:
+      return 16;
+    case TX_8X8:
+      return 8;
+#if CONFIG_EXT_TX
+    case TX_8X4:
+      return 8;
+    case TX_4X8:
+      return 4;
+#endif  // CONFIG_EXT_TX
+    case TX_4X4:
+      return 4;
+    default:
+      assert(0);
+      return -1;
+  }
+}
+
+static INLINE int get_tx2d_size(TX_SIZE tx_size) {
+  switch (tx_size) {
+    case TX_32X32:
+      return 1024;
+    case TX_16X16:
+      return 256;
+    case TX_8X8:
+      return 64;
+#if CONFIG_EXT_TX
+    case TX_8X4:
+    case TX_4X8:
+      return 32;
+#endif  // CONFIG_EXT_TX
+    case TX_4X4:
+      return 16;
+    default:
+      assert(0);
+      return -1;
+  }
+}
 #ifdef __cplusplus
 }  // extern "C"
 #endif

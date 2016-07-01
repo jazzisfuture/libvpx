@@ -422,6 +422,10 @@ static INLINE int supertx_enabled(const MB_MODE_INFO *mbmi) {
 #define USE_MSKTX_FOR_32X32         0
 #define USE_REDUCED_TXSET_FOR_16X16 1
 
+// Whether rectangular 4x8/8x4 transforms are used for sub8x8
+// based on partition type.
+#define USE_RECT_SUB8X8_INTER_TX    1
+
 static const int num_ext_tx_set_inter[EXT_TX_SETS_INTER] = {
   1, 16, 12, 2
 };
@@ -616,10 +620,11 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
 
 #if CONFIG_EXT_TX
 #if EXT_TX_SIZES == 4
-  if (xd->lossless[mbmi->segment_id] || tx_size > TX_32X32 ||
-      (tx_size >= TX_32X32 && !is_inter_block(mbmi)))
+  if (xd->lossless[mbmi->segment_id] ||
+      txsize_sqr_map[tx_size] > TX_32X32 ||
+      (txsize_sqr_map[tx_size] >= TX_32X32 && !is_inter_block(mbmi)))
 #else
-  if (xd->lossless[mbmi->segment_id] || tx_size >= TX_32X32)
+  if (xd->lossless[mbmi->segment_id] || txsize_sqr_map[tx_size] >= TX_32X32)
 #endif
     return DCT_DCT;
   if (mbmi->sb_type >= BLOCK_8X8) {
@@ -631,8 +636,8 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
     }
     if (is_inter_block(mbmi))
       // UV Inter only
-      return (mbmi->tx_type == IDTX && tx_size == TX_32X32 ?
-              DCT_DCT : mbmi->tx_type);
+      return (mbmi->tx_type == IDTX && txsize_sqr_map[tx_size] == TX_32X32) ?
+              DCT_DCT : mbmi->tx_type;
   }
 
   // Sub8x8-Inter/Intra OR UV-Intra
@@ -641,10 +646,10 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
   else  // Sub8x8 Intra OR UV-Intra
     return intra_mode_to_tx_type_context[plane_type == PLANE_TYPE_Y ?
         get_y_mode(mi, block_idx) : mbmi->uv_mode];
-#else
+#else   // CONFIG_EXT_TX
   (void) block_idx;
   if (plane_type != PLANE_TYPE_Y || xd->lossless[mbmi->segment_id] ||
-      tx_size >= TX_32X32)
+      txsize_sqr_map[tx_size] >= TX_32X32)
     return DCT_DCT;
   return mbmi->tx_type;
 #endif  // CONFIG_EXT_TX
