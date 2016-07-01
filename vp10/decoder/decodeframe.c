@@ -252,12 +252,14 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane,
         memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
 #if CONFIG_EXT_TX
       else
-        memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
+        memset(dqcoeff, 0, (num_4x4_blocks_txsize_lookup[tx_size] << 4) *
+               sizeof(dqcoeff[0]));
 #else
       else if (tx_size == TX_32X32 && eob <= 34)
         memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
       else
-        memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
+        memset(dqcoeff, 0, (num_4x4_blocks_txsize_lookup[tx_size] << 4) *
+               sizeof(dqcoeff[0]));
 #endif
     }
   }
@@ -285,8 +287,8 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
       mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
 
   vp10_predict_intra_block(xd, pd->n4_wl, pd->n4_hl, tx_size, mode,
-                          dst, pd->dst.stride, dst, pd->dst.stride,
-                          col, row, plane);
+                           dst, pd->dst.stride, dst, pd->dst.stride,
+                           col, row, plane);
 
   if (!mbmi->skip) {
     TX_TYPE tx_type = get_tx_type(plane_type, xd, block_idx, tx_size);
@@ -430,7 +432,6 @@ static MB_MODE_INFO *set_offsets(VP10_COMMON *const cm, MACROBLOCKD *const xd,
   set_plane_n4(xd, bw, bh, bwl, bhl);
 
   set_skip_context(xd, mi_row, mi_col);
-
 
 #if CONFIG_VAR_TX
   xd->max_tx_size = max_txsize_lookup[bsize];
@@ -1321,7 +1322,8 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
           : mbmi->tx_size;
       const int num_4x4_w = pd->n4_w;
       const int num_4x4_h = pd->n4_h;
-      const int step = (1 << tx_size);
+      const int stepr = num_4x4_blocks_high_txsize_lookup[tx_size];
+      const int stepc = num_4x4_blocks_wide_txsize_lookup[tx_size];
       int row, col;
       const int max_blocks_wide = num_4x4_w +
           (xd->mb_to_right_edge >= 0 ?
@@ -1330,8 +1332,8 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
           (xd->mb_to_bottom_edge >= 0 ?
            0 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
 
-      for (row = 0; row < max_blocks_high; row += step)
-        for (col = 0; col < max_blocks_wide; col += step)
+      for (row = 0; row < max_blocks_high; row += stepr)
+        for (col = 0; col < max_blocks_wide; col += stepc)
           predict_and_reconstruct_intra_block(xd,
                                               r,
                                               mbmi, plane,
@@ -1428,7 +1430,8 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         const TX_SIZE tx_size =
             plane ? dec_get_uv_tx_size(mbmi, pd->n4_wl, pd->n4_hl)
             : mbmi->tx_size;
-        const int step = (1 << tx_size);
+        const int stepr = num_4x4_blocks_high_txsize_lookup[tx_size];
+        const int stepc = num_4x4_blocks_wide_txsize_lookup[tx_size];
         const int max_blocks_wide = num_4x4_w +
             (xd->mb_to_right_edge >= 0 ?
              0 : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
@@ -1436,8 +1439,8 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
             (xd->mb_to_bottom_edge >= 0 ?
              0 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
 
-        for (row = 0; row < max_blocks_high; row += step)
-          for (col = 0; col < max_blocks_wide; col += step)
+        for (row = 0; row < max_blocks_high; row += stepr)
+          for (col = 0; col < max_blocks_wide; col += stepc)
             eobtotal += reconstruct_inter_block(xd,
                                                 r,
                                                 mbmi->segment_id,
@@ -1831,7 +1834,8 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         const TX_SIZE tx_size =
             i ? dec_get_uv_tx_size(mbmi, pd->n4_wl, pd->n4_hl)
             : mbmi->tx_size;
-        const int step = (1 << tx_size);
+        const int stepr = num_4x4_blocks_high_txsize_lookup[tx_size];
+        const int stepc = num_4x4_blocks_wide_txsize_lookup[tx_size];
         const int max_blocks_wide = num_4x4_w +
             (xd->mb_to_right_edge >= 0 ?
              0 : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
@@ -1839,8 +1843,8 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
             (xd->mb_to_bottom_edge >= 0 ?
              0 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
 
-        for (row = 0; row < max_blocks_high; row += step)
-          for (col = 0; col < max_blocks_wide; col += step)
+        for (row = 0; row < max_blocks_high; row += stepr)
+          for (col = 0; col < max_blocks_wide; col += stepc)
             eobtotal += reconstruct_inter_block(xd,
                                                 r,
                                                 mbmi->segment_id_supertx,
