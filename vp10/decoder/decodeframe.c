@@ -252,12 +252,12 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane,
         memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
 #if CONFIG_EXT_TX
       else
-        memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
+        memset(dqcoeff, 0, num_4x4_blocks_txsize_lookup[tx_size] * sizeof(dqcoeff[0]));
 #else
       else if (tx_size == TX_32X32 && eob <= 34)
         memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
       else
-        memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
+        memset(dqcoeff, 0, num_4x4_blocks_txsize_lookup[tx_size] * sizeof(dqcoeff[0]));
 #endif
     }
   }
@@ -285,8 +285,8 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
       mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
 
   vp10_predict_intra_block(xd, pd->n4_wl, pd->n4_hl, tx_size, mode,
-                          dst, pd->dst.stride, dst, pd->dst.stride,
-                          col, row, plane);
+                           dst, pd->dst.stride, dst, pd->dst.stride,
+                           col, row, plane);
 
   if (!mbmi->skip) {
     TX_TYPE tx_type = get_tx_type(plane_type, xd, block_idx, tx_size);
