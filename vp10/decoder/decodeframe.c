@@ -285,8 +285,8 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
       mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
 
   vp10_predict_intra_block(xd, pd->n4_wl, pd->n4_hl, tx_size, mode,
-                          dst, pd->dst.stride, dst, pd->dst.stride,
-                          col, row, plane);
+                           dst, pd->dst.stride, dst, pd->dst.stride,
+                           col, row, plane);
 
   if (!mbmi->skip) {
     TX_TYPE tx_type = get_tx_type(plane_type, xd, block_idx, tx_size);
