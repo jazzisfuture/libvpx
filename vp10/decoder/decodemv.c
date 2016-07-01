@@ -313,13 +313,22 @@ static TX_SIZE read_tx_size(VP10_COMMON *cm, MACROBLOCKD *xd,
                             int allow_select, vp10_reader *r) {
   TX_MODE tx_mode = cm->tx_mode;
   BLOCK_SIZE bsize = xd->mi[0]->mbmi.sb_type;
-  const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
   if (xd->lossless[xd->mi[0]->mbmi.segment_id])
     return TX_4X4;
-  if (allow_select && tx_mode == TX_MODE_SELECT && bsize >= BLOCK_8X8)
-    return read_selected_tx_size(cm, xd, max_tx_size, r);
-  else
-    return VPXMIN(max_tx_size, tx_mode_to_biggest_tx_size[tx_mode]);
+  if (bsize >= BLOCK_8X8) {
+    const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
+    if (allow_select && tx_mode == TX_MODE_SELECT) {
+      return read_selected_tx_size(cm, xd, max_tx_size, r);
+    } else {
+      return VPXMIN(max_tx_size, tx_mode_to_biggest_tx_size[tx_mode]);
+    }
+  } else {
+#if CONFIG_EXT_TX && USE_RECT_SUB8X8_INTER_TX
+    return max_txsize_rect_lookup[bsize];
+#else
+    return TX_4X4;
+#endif
+  }
 }
 
 static int dec_get_segment_id(const VP10_COMMON *cm, const uint8_t *segment_ids,

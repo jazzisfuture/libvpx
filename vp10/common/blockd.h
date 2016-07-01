@@ -422,6 +422,11 @@ static INLINE int supertx_enabled(const MB_MODE_INFO *mbmi) {
 #define USE_MSKTX_FOR_32X32         0
 #define USE_REDUCED_TXSET_FOR_16X16 1
 
+// Whether rectangular 4x8/8x4 transforms are used for sub8x8
+// based on partition type.
+// TODO(debargha): Turn on when the tool is fully functional
+#define USE_RECT_SUB8X8_INTER_TX    0
+
 static const int num_ext_tx_set_inter[EXT_TX_SETS_INTER] = {
   1, 16, 12, 2
 };

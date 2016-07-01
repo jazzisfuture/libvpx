@@ -125,6 +125,13 @@ const uint8_t vp10_coefband_trans_8x8plus[1024] = {
   5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 };
 
+#if CONFIG_EXT_TX
+const uint8_t vp10_coefband_trans_8x4_4x8[32] = {
+  0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
+  4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+};
+#endif  // CONFIG_EXT_TX
+
 const uint8_t vp10_coefband_trans_4x4[16] = {
   0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5,
 };
