@@ -50,6 +50,40 @@ static const uint8_t num_16x16_blocks_wide_lookup[BLOCK_SIZES] =
 static const uint8_t num_16x16_blocks_high_lookup[BLOCK_SIZES] =
   {1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 4, 2, 4, IF_EXT_PARTITION(8, 4, 8)};
 
+static const uint8_t num_4x4_blocks_txsize_lookup[TX_SIZES_ALL] = {
+  1, 4, 16, 64,
+#if CONFIG_EXT_TX
+  2, 2
+#endif  // CONFIG_EXT_TX
+};
+static const uint8_t num_4x4_blocks_wide_txsize_lookup[TX_SIZES_ALL] = {
+  1, 2, 4, 8,
+#if CONFIG_EXT_TX
+  1, 2
+#endif  // CONFIG_EXT_TX
+};
+static const uint8_t num_4x4_blocks_high_txsize_lookup[TX_SIZES_ALL] = {
+  1, 2, 4, 8,
+#if CONFIG_EXT_TX
+  2, 1
+#endif  // CONFIG_EXT_TX
+};
+
+static const uint8_t num_4x4_blocks_wide_txsize_log2_lookup
+    [TX_SIZES_ALL] = {
+  0, 1, 2, 3,
+#if CONFIG_EXT_TX
+  0, 1
+#endif  // CONFIG_EXT_TX
+};
+static const uint8_t num_4x4_blocks_high_txsize_log2_lookup
+    [TX_SIZES_ALL] = {
+  0, 1, 2, 3,
+#if CONFIG_EXT_TX
+  1, 0
+#endif  // CONFIG_EXT_TX
+};
+
 // VPXMIN(3, VPXMIN(b_width_log2(bsize), b_height_log2(bsize)))
 static const uint8_t size_group_lookup[BLOCK_SIZES] =
   {0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, IF_EXT_PARTITION(3, 3, 3)};

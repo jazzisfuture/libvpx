@@ -125,7 +125,7 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
   const int *cat6_high_cost = vp10_get_high_cost_table(8);
 #endif
   unsigned int (*token_costs)[2][COEFF_CONTEXTS][ENTROPY_TOKENS] =
-                   mb->token_costs[tx_size][type][ref];
+                   mb->token_costs[get_tx_size_ctx(tx_size)][type][ref];
   const int16_t *band_counts = &band_count_table[tx_size][band];
   int16_t band_left = eob - band_cum_count_table[tx_size][band] + 1;
   int shortcut = 0;
@@ -444,8 +444,7 @@ void vp10_xform_quant(MACROBLOCK *x, int plane, int block, int blk_row,
   uint16_t *const eob = &p->eobs[block];
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int16_t *src_diff;
-  const int tx1d_size = get_tx1d_size(tx_size);
-  const int tx2d_size = tx1d_size * tx1d_size;
+  const int tx2d_size = get_tx2d_size(tx_size);
 
   FWD_TXFM_PARAM fwd_txfm_param;
   QUANT_PARAM qparam;
@@ -536,25 +535,13 @@ void vp10_xform_quant_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
                                   scan_order->scan, band);
         break;
       case TX_16X16:
-        highbd_quantize_nuq(coeff, 256, x->skip_block,
-                            p->quant, p->quant_shift, pd->dequant,
-                            (const cuml_bins_type_nuq *)p->cuml_bins_nuq[dq],
-                            (const dequant_val_type_nuq *)
-                                pd->dequant_val_nuq[dq],
-                            qcoeff, dqcoeff, eob,
-                            scan_order->scan, band);
-        break;
       case TX_8X8:
-        highbd_quantize_nuq(coeff, 64, x->skip_block,
-                            p->quant, p->quant_shift, pd->dequant,
-                            (const cuml_bins_type_nuq *)p->cuml_bins_nuq[dq],
-                            (const dequant_val_type_nuq *)
-                                pd->dequant_val_nuq[dq],
-                            qcoeff, dqcoeff, eob,
-                            scan_order->scan, band);
-        break;
+#if CONFIG_EXT_TX
+      case TX_8X4:
+      case TX_4X8:
+#endif  // CONFIG_EXT_TX
       case TX_4X4:
-        highbd_quantize_nuq(coeff, 16, x->skip_block,
+        highbd_quantize_nuq(coeff, get_tx2d_size(tx_size), x->skip_block,
                             p->quant, p->quant_shift, pd->dequant,
                             (const cuml_bins_type_nuq *)p->cuml_bins_nuq[dq],
                             (const dequant_val_type_nuq *)
@@ -564,8 +551,7 @@ void vp10_xform_quant_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
         break;
       default:
         assert(0);
-    }
-    return;
+    } return;
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -581,23 +567,13 @@ void vp10_xform_quant_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
                          scan_order->scan, band);
       break;
     case TX_16X16:
-      quantize_nuq(coeff, 256, x->skip_block,
-                   p->quant, p->quant_shift, pd->dequant,
-                   (const cuml_bins_type_nuq *)p->cuml_bins_nuq[dq],
-                   (const dequant_val_type_nuq *)pd->dequant_val_nuq[dq],
-                   qcoeff, dqcoeff, eob,
-                   scan_order->scan, band);
-      break;
     case TX_8X8:
-      quantize_nuq(coeff, 64, x->skip_block,
-                   p->quant, p->quant_shift, pd->dequant,
-                   (const cuml_bins_type_nuq *)p->cuml_bins_nuq[dq],
-                   (const dequant_val_type_nuq *)pd->dequant_val_nuq[dq],
-                   qcoeff, dqcoeff, eob,
-                   scan_order->scan, band);
-      break;
+#if CONFIG_EXT_TX
+    case TX_8X4:
+    case TX_4X8:
+#endif  // CONFIG_EXT_TX
     case TX_4X4:
-      quantize_nuq(coeff, 16, x->skip_block,
+      quantize_nuq(coeff, get_tx2d_size(tx_size), x->skip_block,
                    p->quant, p->quant_shift, pd->dequant,
                    (const cuml_bins_type_nuq *)p->cuml_bins_nuq[dq],
                    (const dequant_val_type_nuq *)pd->dequant_val_nuq[dq],
@@ -657,30 +633,16 @@ void vp10_xform_quant_fp_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
                                      scan_order->scan, band);
         break;
       case TX_16X16:
-        highbd_quantize_fp_nuq(coeff, 256, x->skip_block,
-                               p->quant_fp, pd->dequant,
-                               (const cuml_bins_type_nuq *)
-                                  p->cuml_bins_nuq[dq],
-                               (const dequant_val_type_nuq *)
-                                   pd->dequant_val_nuq[dq],
-                               qcoeff, dqcoeff, eob,
-                               scan_order->scan, band);
-        break;
       case TX_8X8:
-        highbd_quantize_fp_nuq(coeff, 64, x->skip_block,
+#if CONFIG_EXT_TX
+      case TX_8X4:
+      case TX_4X8:
+#endif  // CONFIG_EXT_TX
+      case TX_4X4:
+        highbd_quantize_fp_nuq(coeff, get_tx2d_size(tx_size), x->skip_block,
                                p->quant_fp, pd->dequant,
                                (const cuml_bins_type_nuq *)
                                   p->cuml_bins_nuq[dq],
-                               (const dequant_val_type_nuq *)
-                                   pd->dequant_val_nuq[dq],
-                               qcoeff, dqcoeff, eob,
-                               scan_order->scan, band);
-        break;
-      case TX_4X4:
-        highbd_quantize_fp_nuq(coeff, 16, x->skip_block,
-                               p->quant_fp, pd->dequant,
-                               (const cuml_bins_type_nuq *)
-                                   p->cuml_bins_nuq[dq],
                                (const dequant_val_type_nuq *)
                                    pd->dequant_val_nuq[dq],
                                qcoeff, dqcoeff, eob,
@@ -706,27 +668,13 @@ void vp10_xform_quant_fp_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
                             scan_order->scan, band);
       break;
     case TX_16X16:
-      quantize_fp_nuq(coeff, 256, x->skip_block,
-                      p->quant_fp, pd->dequant,
-                      (const cuml_bins_type_nuq *)
-                          p->cuml_bins_nuq[dq],
-                      (const dequant_val_type_nuq *)
-                          pd->dequant_val_nuq[dq],
-                      qcoeff, dqcoeff, eob,
-                      scan_order->scan, band);
-      break;
     case TX_8X8:
-      quantize_fp_nuq(coeff, 64, x->skip_block,
-                      p->quant_fp, pd->dequant,
-                      (const cuml_bins_type_nuq *)
-                          p->cuml_bins_nuq[dq],
-                      (const dequant_val_type_nuq *)
-                          pd->dequant_val_nuq[dq],
-                      qcoeff, dqcoeff, eob,
-                      scan_order->scan, band);
-      break;
+#if CONFIG_EXT_TX
+    case TX_8X4:
+    case TX_4X8:
+#endif  // CONFIG_EXT_TX
     case TX_4X4:
-      quantize_fp_nuq(coeff, 16, x->skip_block,
+      quantize_fp_nuq(coeff, get_tx2d_size(tx_size), x->skip_block,
                       p->quant_fp, pd->dequant,
                       (const cuml_bins_type_nuq *)
                           p->cuml_bins_nuq[dq],
@@ -783,23 +731,13 @@ void vp10_xform_quant_dc_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
                                      qcoeff, dqcoeff, eob);
         break;
       case TX_16X16:
-        highbd_quantize_dc_nuq(coeff, 256, x->skip_block,
-                               p->quant[0], p->quant_shift[0],
-                               pd->dequant[0],
-                               p->cuml_bins_nuq[dq][0],
-                               pd->dequant_val_nuq[dq][0],
-                               qcoeff, dqcoeff, eob);
-        break;
       case TX_8X8:
-        highbd_quantize_dc_nuq(coeff, 64, x->skip_block,
-                               p->quant[0], p->quant_shift[0],
-                               pd->dequant[0],
-                               p->cuml_bins_nuq[dq][0],
-                               pd->dequant_val_nuq[dq][0],
-                               qcoeff, dqcoeff, eob);
-        break;
+#if CONFIG_EXT_TX
+      case TX_8X4:
+      case TX_4X8:
+#endif  // CONFIG_EXT_TX
       case TX_4X4:
-        highbd_quantize_dc_nuq(coeff, 16, x->skip_block,
+        highbd_quantize_dc_nuq(coeff, get_tx2d_size(tx_size), x->skip_block,
                                p->quant[0], p->quant_shift[0],
                                pd->dequant[0],
                                p->cuml_bins_nuq[dq][0],
@@ -823,21 +761,13 @@ void vp10_xform_quant_dc_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
                             qcoeff, dqcoeff, eob);
       break;
     case TX_16X16:
-      quantize_dc_nuq(coeff, 256, x->skip_block,
-                      p->quant[0], p->quant_shift[0], pd->dequant[0],
-                      p->cuml_bins_nuq[dq][0],
-                      pd->dequant_val_nuq[dq][0],
-                      qcoeff, dqcoeff, eob);
-      break;
     case TX_8X8:
-      quantize_dc_nuq(coeff, 64, x->skip_block,
-                      p->quant[0], p->quant_shift[0], pd->dequant[0],
-                      p->cuml_bins_nuq[dq][0],
-                      pd->dequant_val_nuq[dq][0],
-                      qcoeff, dqcoeff, eob);
-      break;
+#if CONFIG_EXT_TX
+    case TX_8X4:
+    case TX_4X8:
+#endif  // CONFIG_EXT_TX
     case TX_4X4:
-      quantize_dc_nuq(coeff, 16, x->skip_block,
+      quantize_dc_nuq(coeff, get_tx2d_size(tx_size), x->skip_block,
                       p->quant[0], p->quant_shift[0], pd->dequant[0],
                       p->cuml_bins_nuq[dq][0],
                       pd->dequant_val_nuq[dq][0],
@@ -891,21 +821,13 @@ void vp10_xform_quant_dc_fp_nuq(MACROBLOCK *x, int plane, int block,
                                         qcoeff, dqcoeff, eob);
         break;
       case TX_16X16:
-        highbd_quantize_dc_fp_nuq(coeff, 256, x->skip_block,
-                                  p->quant_fp[0], pd->dequant[0],
-                                  p->cuml_bins_nuq[dq][0],
-                                  pd->dequant_val_nuq[dq][0],
-                                  qcoeff, dqcoeff, eob);
-        break;
       case TX_8X8:
-        highbd_quantize_dc_fp_nuq(coeff, 64, x->skip_block,
-                                  p->quant_fp[0], pd->dequant[0],
-                                  p->cuml_bins_nuq[dq][0],
-                                  pd->dequant_val_nuq[dq][0],
-                                  qcoeff, dqcoeff, eob);
-        break;
+#if CONFIG_EXT_TX
+      case TX_8X4:
+      case TX_4X8:
+#endif  // CONFIG_EXT_TX
       case TX_4X4:
-        highbd_quantize_dc_fp_nuq(coeff, 16, x->skip_block,
+        highbd_quantize_dc_fp_nuq(coeff, get_tx2d_size(tx_size), x->skip_block,
                                   p->quant_fp[0], pd->dequant[0],
                                   p->cuml_bins_nuq[dq][0],
                                   pd->dequant_val_nuq[dq][0],
@@ -928,26 +850,18 @@ void vp10_xform_quant_dc_fp_nuq(MACROBLOCK *x, int plane, int block,
                                qcoeff, dqcoeff, eob);
       break;
     case TX_16X16:
-      quantize_dc_fp_nuq(coeff, 256, x->skip_block,
+    case TX_8X8:
+#if CONFIG_EXT_TX
+    case TX_8X4:
+    case TX_4X8:
+#endif  // CONFIG_EXT_TX
+    case TX_4X4:
+      quantize_dc_fp_nuq(coeff, get_tx2d_size(tx_size), x->skip_block,
                          p->quant_fp[0], pd->dequant[0],
                          p->cuml_bins_nuq[dq][0],
                          pd->dequant_val_nuq[dq][0],
                          qcoeff, dqcoeff, eob);
 
-      break;
-    case TX_8X8:
-      quantize_dc_fp_nuq(coeff, 64, x->skip_block,
-                         p->quant_fp[0], pd->dequant[0],
-                         p->cuml_bins_nuq[dq][0],
-                         pd->dequant_val_nuq[dq][0],
-                         qcoeff, dqcoeff, eob);
-      break;
-    case TX_4X4:
-      quantize_dc_fp_nuq(coeff, 16, x->skip_block,
-                         p->quant_fp[0], pd->dequant[0],
-                         p->cuml_bins_nuq[dq][0],
-                         pd->dequant_val_nuq[dq][0],
-                         qcoeff, dqcoeff, eob);
       break;
     default:
       assert(0);
@@ -1252,7 +1166,8 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
   uint16_t *eob = &p->eobs[block];
   const int src_stride = p->src.stride;
   const int dst_stride = pd->dst.stride;
-  const int tx1d_size = get_tx1d_size(tx_size);
+  const int tx1d_width = get_tx1d_width(tx_size);
+  const int tx1d_height = get_tx1d_height(tx_size);
   ENTROPY_CONTEXT *a = NULL, *l = NULL;
   int ctx;
 
@@ -1267,14 +1182,14 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
                            dst_stride, blk_col, blk_row, plane);
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    vpx_highbd_subtract_block(tx1d_size, tx1d_size, src_diff, diff_stride, src,
-                              src_stride, dst, dst_stride, xd->bd);
+    vpx_highbd_subtract_block(tx1d_height, tx1d_width, src_diff, diff_stride,
+                              src, src_stride, dst, dst_stride, xd->bd);
   } else {
-    vpx_subtract_block(tx1d_size, tx1d_size, src_diff, diff_stride, src,
+    vpx_subtract_block(tx1d_height, tx1d_width, src_diff, diff_stride, src,
                        src_stride, dst, dst_stride);
   }
 #else
-  vpx_subtract_block(tx1d_size, tx1d_size, src_diff, diff_stride, src,
+  vpx_subtract_block(tx1d_height, tx1d_width, src_diff, diff_stride, src,
                      src_stride, dst, dst_stride);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -1284,8 +1199,8 @@ void vp10_encode_block_intra(int plane, int block, int blk_row, int blk_col,
 
   if (args->enable_optimize_b) {
 #if CONFIG_NEW_QUANT
-  vp10_xform_quant_fp_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
-                          tx_size, ctx);
+    vp10_xform_quant_fp_nuq(x, plane, block, blk_row, blk_col, plane_bsize,
+                            tx_size, ctx);
 #else  // CONFIG_NEW_QUANT
     vp10_xform_quant(x, plane, block, blk_row, blk_col, plane_bsize, tx_size,
                      VP10_XFORM_QUANT_FP);
