@@ -375,7 +375,7 @@ static void write_selected_tx_size(const VP10_COMMON *cm,
   TX_SIZE tx_size = xd->mi[0]->mbmi.tx_size;
   BLOCK_SIZE bsize = xd->mi[0]->mbmi.sb_type;
   const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
-  if (max_tx_size > TX_4X4) {
+  if (bsize >= BLOCK_8X8) {
     vp10_write_token(w, vp10_tx_size_tree[max_tx_size - TX_8X8],
                      cm->fc->tx_size_probs[max_tx_size - TX_8X8]
                                           [get_tx_size_context(xd)],
