@@ -643,7 +643,9 @@ int vp9_post_proc_frame(struct VP9Common *cm,
   cm->postproc_state.last_base_qindex = cm->base_qindex;
   cm->postproc_state.last_frame_valid = 1;
 
-  if (flags & VP9D_ADDNOISE) {
+  // TODO(jimbankoski): Remove the following restriction by allocating space
+  // for noise on heap rather than in static member.
+  if ((flags & VP9D_ADDNOISE) && cm->width < sizeof(ppstate->noise) - 256) {
     const int noise_level = ppflags->noise_level;
     if (ppstate->last_q != q ||
         ppstate->last_noise != noise_level) {
