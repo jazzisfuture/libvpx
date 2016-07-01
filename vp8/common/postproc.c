@@ -618,6 +618,7 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
     int flags = ppflags->post_proc_flag;
     int deblock_level = ppflags->deblocking_level;
     int noise_level = ppflags->noise_level;
+    struct postproc_state *ppstate = &oci->postproc_state;
 
     if (!oci->frame_to_show)
         return -1;
@@ -633,8 +634,8 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
         dest->y_width = oci->Width;
         dest->y_height = oci->Height;
         dest->uv_height = dest->y_height / 2;
-        oci->postproc_state.last_base_qindex = oci->base_qindex;
-        oci->postproc_state.last_frame_valid = 1;
+        ppstate->last_base_qindex = oci->base_qindex;
+        ppstate->last_frame_valid = 1;
         return 0;
     }
 
@@ -664,10 +665,10 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
     vp8_clear_system_state();
 
     if ((flags & VP8D_MFQE) &&
-         oci->postproc_state.last_frame_valid &&
+         ppstate->last_frame_valid &&
          oci->current_video_frame >= 2 &&
-         oci->postproc_state.last_base_qindex < 60 &&
-         oci->base_qindex - oci->postproc_state.last_base_qindex >= 20)
+         ppstate->last_base_qindex < 60 &&
+         oci->base_qindex - ppstate->last_base_qindex >= 20)
     {
         vp8_multiframe_quality_enhance(oci);
         if (((flags & VP8D_DEBLOCK) || (flags & VP8D_DEMACROBLOCK)) &&
@@ -688,7 +689,7 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
             }
         }
         /* Move partially towards the base q of the previous frame */
-        oci->postproc_state.last_base_qindex = (3*oci->postproc_state.last_base_qindex + oci->base_qindex)>>2;
+        ppstate->last_base_qindex = (3*ppstate->last_base_qindex + oci->base_qindex)>>2;
     }
     else if (flags & VP8D_DEMACROBLOCK)
     {
@@ -696,31 +697,33 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
                                      q + (deblock_level - 5) * 10, 1, 0);
         vp8_de_mblock(&oci->post_proc_buffer, q + (deblock_level - 5) * 10);
 
-        oci->postproc_state.last_base_qindex = oci->base_qindex;
+        ppstate->last_base_qindex = oci->base_qindex;
     }
     else if (flags & VP8D_DEBLOCK)
     {
         vp8_deblock(oci, oci->frame_to_show, &oci->post_proc_buffer,
                     q, 1, 0);
-        oci->postproc_state.last_base_qindex = oci->base_qindex;
+        ppstate->last_base_qindex = oci->base_qindex;
     }
     else
     {
         vp8_yv12_copy_frame(oci->frame_to_show, &oci->post_proc_buffer);
-        oci->postproc_state.last_base_qindex = oci->base_qindex;
+        ppstate->last_base_qindex = oci->base_qindex;
     }
-    oci->postproc_state.last_frame_valid = 1;
+    ppstate->last_frame_valid = 1;
 
-    if (flags & VP8D_ADDNOISE)
+    // TODO(jimbankoski): Remove the following restriction by allocating space
+    // for noise on heap rather than in static member.
+    if ((flags & VP8D_ADDNOISE)
+        && oci->Width < (int) sizeof(ppstate->noise) - 256)
     {
-        if (oci->postproc_state.last_q != q
-            || oci->postproc_state.last_noise != noise_level)
+        if (ppstate->last_q != q
+            || ppstate->last_noise != noise_level)
         {
             double sigma;
-            struct postproc_state *ppstate = &oci->postproc_state;
             vp8_clear_system_state();
             sigma = noise_level + .5 + .6 * q / 63.0;
-            oci->postproc_state.clamp = vpx_setup_noise(sizeof(ppstate->noise),
+            ppstate->clamp = vpx_setup_noise(sizeof(ppstate->noise),
                                                         sigma, ppstate->noise);
             ppstate->last_q = q;
             ppstate->last_noise = noise_level;
@@ -728,10 +731,10 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
 
         vpx_plane_add_noise
         (oci->post_proc_buffer.y_buffer,
-         oci->postproc_state.noise,
-         oci->postproc_state.clamp,
-         oci->postproc_state.clamp,
-         oci->postproc_state.clamp * 2,
+         ppstate->noise,
+         ppstate->clamp,
+         ppstate->clamp,
+         ppstate->clamp * 2,
          oci->post_proc_buffer.y_width, oci->post_proc_buffer.y_height,
          oci->post_proc_buffer.y_stride);
     }
