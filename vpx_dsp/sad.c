@@ -456,8 +456,8 @@ HIGHBD_MASKSADMXN(4, 4)
 // b: target weighted prediction (has been *4096 to keep precision)
 // m: 2d weights (scaled by 4096)
 static INLINE unsigned int obmc_sad(const uint8_t *a, int a_stride,
-                                    const int *b, int b_stride,
-                                    const int *m, int m_stride,
+                                    const int32_t *b,
+                                    const int32_t *m,
                                     int width, int height) {
   int y, x;
   unsigned int sad = 0;
@@ -469,8 +469,8 @@ static INLINE unsigned int obmc_sad(const uint8_t *a, int a_stride,
     }
 
     a += a_stride;
-    b += b_stride;
-    m += m_stride;
+    b += width;
+    m += width;
   }
 
   return sad;
@@ -478,9 +478,9 @@ static INLINE unsigned int obmc_sad(const uint8_t *a, int a_stride,
 
 #define OBMCSADMxN(m, n)                                                      \
 unsigned int vpx_obmc_sad##m##x##n##_c(const uint8_t *ref, int ref_stride,    \
-                                       const int *wsrc, int wsrc_stride,      \
-                                       const int *msk, int msk_stride) {      \
-  return obmc_sad(ref, ref_stride, wsrc, wsrc_stride, msk, msk_stride, m, n); \
+                                       const int32_t *wsrc,                   \
+                                       const int32_t *msk) {                  \
+  return obmc_sad(ref, ref_stride, wsrc, msk, m, n);                          \
 }
 
 #if CONFIG_EXT_PARTITION
@@ -504,8 +504,8 @@ OBMCSADMxN(4, 4)
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static INLINE unsigned int highbd_obmc_sad(const uint8_t *a8, int a_stride,
-                                           const int *b, int b_stride,
-                                           const int *m, int m_stride,
+                                           const int32_t *b,
+                                           const int32_t *m,
                                            int width, int height) {
   int y, x;
   unsigned int sad = 0;
@@ -518,8 +518,8 @@ static INLINE unsigned int highbd_obmc_sad(const uint8_t *a8, int a_stride,
     }
 
     a += a_stride;
-    b += b_stride;
-    m += m_stride;
+    b += width;
+    m += width;
   }
 
   return sad;
@@ -528,12 +528,9 @@ static INLINE unsigned int highbd_obmc_sad(const uint8_t *a8, int a_stride,
 #define HIGHBD_OBMCSADMXN(m, n)                                               \
 unsigned int vpx_highbd_obmc_sad##m##x##n##_c(const uint8_t *ref,             \
                                               int ref_stride,                 \
-                                              const int *wsrc,                \
-                                              int wsrc_stride,                \
-                                              const int *msk,                 \
-                                              int msk_stride) {               \
-  return highbd_obmc_sad(ref, ref_stride, wsrc, wsrc_stride,                  \
-                         msk, msk_stride, m, n);                              \
+                                              const int32_t *wsrc,            \
+                                              const int32_t *msk) {           \
+  return highbd_obmc_sad(ref, ref_stride, wsrc, msk, m, n);                   \
 }
 
 #if CONFIG_EXT_PARTITION
