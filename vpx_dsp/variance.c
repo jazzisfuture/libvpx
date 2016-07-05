@@ -1025,10 +1025,10 @@ HIGHBD_MASK_SUBPIX_VAR(128, 128)
 #endif  // CONFIG_VP10 && CONFIG_EXT_INTER
 
 #if CONFIG_VP10 && CONFIG_OBMC
-void obmc_variance(const uint8_t *a, int  a_stride,
-                   const int32_t *b,
-                   const int32_t *m,
-                   int w, int h, unsigned int *sse, int *sum) {
+static INLINE void obmc_variance(const uint8_t *a, int  a_stride,
+                                 const int32_t *b,
+                                 const int32_t *m,
+                                 int w, int h, unsigned int *sse, int *sum) {
   int i, j;
 
   *sse = 0;
@@ -1126,9 +1126,10 @@ OBMC_SUBPIX_VAR(128, 128)
 #endif  // CONFIG_EXT_PARTITION
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void highbd_obmc_variance64(const uint8_t *a8, int  a_stride,
-                            const int32_t *b, const int32_t *m,
-                            int w, int h, uint64_t *sse, int64_t *sum) {
+static INLINE void highbd_obmc_variance64(const uint8_t *a8, int  a_stride,
+                                          const int32_t *b, const int32_t *m,
+                                          int w, int h,
+                                          uint64_t *sse, int64_t *sum) {
   int i, j;
   uint16_t *a = CONVERT_TO_SHORTPTR(a8);
 
@@ -1148,9 +1149,10 @@ void highbd_obmc_variance64(const uint8_t *a8, int  a_stride,
   }
 }
 
-void highbd_obmc_variance(const uint8_t *a8, int  a_stride,
-                          const int32_t *b, const int32_t *m,
-                          int w, int h, unsigned int *sse, int *sum) {
+static INLINE void highbd_obmc_variance(const uint8_t *a8, int  a_stride,
+                                        const int32_t *b, const int32_t *m,
+                                        int w, int h,
+                                        unsigned int *sse, int *sum) {
   int64_t sum64;
   uint64_t sse64;
   highbd_obmc_variance64(a8, a_stride, b, m, w, h, &sse64, &sum64);
@@ -1158,9 +1160,10 @@ void highbd_obmc_variance(const uint8_t *a8, int  a_stride,
   *sse = (unsigned int)sse64;
 }
 
-void highbd_10_obmc_variance(const uint8_t *a8, int  a_stride,
-                             const int32_t *b, const int32_t *m,
-                             int w, int h, unsigned int *sse, int *sum) {
+static INLINE void highbd_10_obmc_variance(const uint8_t *a8, int  a_stride,
+                                           const int32_t *b, const int32_t *m,
+                                           int w, int h,
+                                           unsigned int *sse, int *sum) {
   int64_t sum64;
   uint64_t sse64;
   highbd_obmc_variance64(a8, a_stride, b, m, w, h, &sse64, &sum64);
@@ -1168,9 +1171,10 @@ void highbd_10_obmc_variance(const uint8_t *a8, int  a_stride,
   *sse = (unsigned int)ROUND_POWER_OF_TWO(sse64, 4);
 }
 
-void highbd_12_obmc_variance(const uint8_t *a8, int  a_stride,
-                             const int32_t *b, const int32_t *m,
-                             int w, int h, unsigned int *sse, int *sum) {
+static INLINE void highbd_12_obmc_variance(const uint8_t *a8, int  a_stride,
+                                           const int32_t *b, const int32_t *m,
+                                           int w, int h,
+                                           unsigned int *sse, int *sum) {
   int64_t sum64;
   uint64_t sse64;
   highbd_obmc_variance64(a8, a_stride, b, m, w, h, &sse64, &sum64);
