@@ -378,7 +378,7 @@ void vp9_highbd_mbpost_proc_down_c(uint16_t *dst, int pitch,
   }
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-
+#if 0
 static void deblock_and_de_macro_block(YV12_BUFFER_CONFIG   *source,
                                        YV12_BUFFER_CONFIG   *post,
                                        int                   q,
@@ -488,6 +488,46 @@ void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   }
 }
+#endif
+
+static void deblock_and_de_macro_block(YV12_BUFFER_CONFIG *source,
+                                       YV12_BUFFER_CONFIG *post, int q,
+                                       int low_var_thresh, int flag) {
+  (void) low_var_thresh;
+  (void) flag;
+  vp9_deblock(source, post, q);
+  vpx_mbpost_proc_across_ip(post->y_buffer, post->y_stride, post->y_height,
+                            post->y_width, q2mbl(q));
+  vpx_mbpost_proc_down(post->y_buffer, post->y_stride, post->y_height,
+                       post->y_width, q2mbl(q));
+}
+void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
+                 int q) {
+  const double level = 6.0e-05 * q * q * q - .0067 * q * q + .306 * q + .0065;
+  const int ppl = (int) (level + .5);
+  unsigned char limits[4096];
+  int mbr;
+  const int mb_rows = src->y_height / 16;
+  const int mb_cols = src->y_width / 16;
+
+  memset(limits, (unsigned char)ppl, 16 * mb_cols);
+
+  for (mbr = 0; mbr < mb_rows; mbr++) {
+    vpx_post_proc_down_and_across_mb_row(
+        src->y_buffer + 16 * mbr * src->y_stride,
+        dst->y_buffer + 16 * mbr * dst->y_stride, src->y_stride,
+        dst->y_stride, src->y_width, limits, 16);
+    vpx_post_proc_down_and_across_mb_row(
+        src->u_buffer + 8 * mbr * src->uv_stride,
+        dst->u_buffer + 8 * mbr * dst->uv_stride, src->uv_stride,
+        dst->uv_stride, src->uv_width, limits, 8);
+    vpx_post_proc_down_and_across_mb_row(
+        src->v_buffer + 8 * mbr * src->uv_stride,
+        dst->v_buffer + 8 * mbr * dst->uv_stride, src->uv_stride,
+        dst->uv_stride, src->uv_width, limits, 8);
+  }
+}
+
 
 void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
                  int q) {
