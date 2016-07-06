@@ -54,9 +54,12 @@ endif  # CONFIG_VP9_HIGHBITDEPTH
 
 ifneq ($(filter yes,$(CONFIG_POSTPROC) $(CONFIG_VP9_POSTPROC)),)
 DSP_SRCS-yes += add_noise.c
+DSP_SRCS-yes += deblock.c
 DSP_SRCS-yes += postproc.h
 DSP_SRCS-$(HAVE_MSA) += mips/add_noise_msa.c
 DSP_SRCS-$(HAVE_SSE2) += x86/add_noise_sse2.asm
+DSP_SRCS-$(HAVE_SSE2) += x86/deblock_sse2.asm
+DSP_SRCS-$(HAVE_SSE2) += mips/deblock_msa.asm
 endif # CONFIG_POSTPROC
 
 DSP_SRCS-$(HAVE_NEON_ASM) += arm/intrapred_neon_asm$(ASM)
