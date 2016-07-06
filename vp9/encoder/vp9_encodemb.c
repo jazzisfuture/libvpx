@@ -59,7 +59,7 @@ typedef struct vp9_token_state {
   tran_low_t    dqc;
 } vp9_token_state;
 
-static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] ={ {10, 6}, {8, 7}, };
+static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] ={ {10, 6}, {8, 5}, };
 
 #define UPDATE_RD_COST()\
 {\
@@ -80,8 +80,8 @@ static int trellis_get_coeff_context(const int16_t *scan,
   return pt;
 }
 
-static int optimize_b(MACROBLOCK *mb, int plane, int block,
-                      TX_SIZE tx_size, int ctx) {
+int vp9_optimize_b(MACROBLOCK *mb, int plane, int block,
+                   TX_SIZE tx_size, int ctx) {
   MACROBLOCKD *const xd = &mb->e_mbd;
   struct macroblock_plane *const p = &mb->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
@@ -645,7 +645,7 @@ static void encode_block(int plane, int block, int row, int col,
 
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
     const int ctx = combine_entropy_contexts(*a, *l);
-    *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
+    *a = *l = vp9_optimize_b(x, plane, block, tx_size, ctx) > 0;
   } else {
     *a = *l = p->eobs[block] > 0;
   }
@@ -917,7 +917,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                              scan_order->iscan);
       }
       if (args->ctx != NULL && !x->skip_recode) {
-       *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
+       *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
       if (!x->skip_encode && *eob)
         vp9_idct32x32_add(dqcoeff, dst, dst_stride, *eob);
@@ -933,7 +933,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                        scan_order->iscan);
       }
       if (args->ctx != NULL && !x->skip_recode) {
-        *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
+        *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
       if (!x->skip_encode && *eob)
         vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob);
@@ -949,7 +949,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                        scan_order->iscan);
       }
       if (args->ctx != NULL && !x->skip_recode) {
-        *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
+        *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
       if (!x->skip_encode && *eob)
         vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob);
@@ -968,7 +968,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                        scan_order->iscan);
       }
       if (args->ctx != NULL && !x->skip_recode) {
-        *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
+        *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
       if (!x->skip_encode && *eob) {
         if (tx_type == DCT_DCT)
