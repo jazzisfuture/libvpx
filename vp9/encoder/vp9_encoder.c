@@ -3333,7 +3333,11 @@ static void set_size_dependent_vars(VP9_COMP *cpi, int *q,
         l = 150;
         break;
     }
-    vp9_denoise(cpi->Source, cpi->Source, l);
+    if (!cpi->common.postproc_state.limits) {
+      cpi->common.postproc_state.limits = vpx_calloc(
+          cpi->common.width, sizeof(*cpi->common.postproc_state.limits));
+    }
+    vp9_denoise(cpi->Source, cpi->Source, l, cpi->common.postproc_state.limits);
   }
 #endif  // CONFIG_VP9_POSTPROC
 }

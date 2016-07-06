@@ -12,6 +12,7 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "./vpx_config.h"
 #include "./vp8_rtcd.h"
+#include "./vpx_dsp_rtcd.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_mem/vpx_mem.h"
 
@@ -103,16 +104,16 @@ TEST_P(VP8PostProcessingFilterTest, FilterOutputCheck) {
 };
 
 INSTANTIATE_TEST_CASE_P(C, VP8PostProcessingFilterTest,
-    ::testing::Values(vp8_post_proc_down_and_across_mb_row_c));
+    ::testing::Values(vpx_post_proc_down_and_across_mb_row_c));
 
 #if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(SSE2, VP8PostProcessingFilterTest,
-    ::testing::Values(vp8_post_proc_down_and_across_mb_row_sse2));
+    ::testing::Values(vpx_post_proc_down_and_across_mb_row_sse2));
 #endif
 
 #if HAVE_MSA
 INSTANTIATE_TEST_CASE_P(MSA, VP8PostProcessingFilterTest,
-    ::testing::Values(vp8_post_proc_down_and_across_mb_row_msa));
+    ::testing::Values(vpx_post_proc_down_and_across_mb_row_msa));
 #endif
 
 }  // namespace
