@@ -67,6 +67,49 @@ static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] ={ {10, 6}, {8, 7}, };
   rd_cost1 = RDCOST(rdmult, rddiv, rate1, error1);\
 }
 
+static void invert_quant(int16_t *quant, int16_t *shift, int d) {
+  unsigned t;
+  int l, m;
+  t = d;
+  for (l = 0; t > 1; l++)
+    t >>= 1;
+  m = 1 + (1 << (16 + l)) / d;
+  *quant = (int16_t)(m - (1 << 16));
+  *shift = 1 << (16 - l);
+}
+
+// This function eliminates changes quantization table.
+static void post_qtable(const tran_low_t *const coeff_ptr,
+                        const TX_SIZE tx_size, tran_low_t *const qcoeff_ptr,
+                        tran_low_t *const dqcoeff_ptr,
+                        const int16_t *dequant_ptr,
+                        uint16_t *const eob_ptr, const int16_t *const scan) {
+  const int hq = dequant_ptr[1] == 4 ? 4 : (dequant_ptr[1]) * 5 / 4;
+  const int hround = hq >> 1;
+  int16_t hquant, hquant_shift, i, cureob = 9;
+  invert_quant(&hquant, &hquant_shift, hq);
+  for (i = 10; i < *eob_ptr; ++i) {
+    const int rc = scan[i];
+    const int coeff = coeff_ptr[rc];
+    const int coeff_sign = (coeff >> 31);
+    const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+
+    int tmp = clamp(abs_coeff + hround, INT16_MIN, INT16_MAX);
+    tmp = ((((tmp * hquant) >> 16) + tmp) *
+              hquant_shift) >> 16;  // quantization
+    qcoeff_ptr[rc]  = (tmp ^ coeff_sign) - coeff_sign;
+    if (tx_size == TX_32X32) {
+      dqcoeff_ptr[rc] = qcoeff_ptr[rc] * hq / 2;
+    } else {
+      dqcoeff_ptr[rc] = qcoeff_ptr[rc] * hq;
+    }
+    if (tmp)
+      cureob = i;
+  }
+  while (cureob >= 0 && qcoeff_ptr[scan[cureob]] == 0) --cureob;
+  *eob_ptr = cureob + 1;
+}
+
 // This function is a place holder for now but may ultimately need
 // to scan previous tokens to work out the correct context.
 static int trellis_get_coeff_context(const int16_t *scan,
@@ -585,6 +628,10 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block, int row, int col,
       assert(0);
       break;
   }
+  if (!x->skip_block && *eob > 0) {
+    post_qtable(coeff, tx_size, qcoeff, dqcoeff, pd->dequant, eob,
+                scan_order->scan);
+  }
 }
 
 static void encode_block(int plane, int block, int row, int col,
@@ -915,6 +962,10 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, eob, scan_order->scan,
                              scan_order->iscan);
+        if (!x->skip_block && *eob > 0) {
+          post_qtable(coeff, tx_size, qcoeff, dqcoeff, pd->dequant, eob,
+                      scan_order->scan);
+        }
       }
       if (args->ctx != NULL && !x->skip_recode) {
        *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
@@ -931,6 +982,10 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+        if (!x->skip_block && *eob > 0) {
+          post_qtable(coeff, tx_size, qcoeff, dqcoeff, pd->dequant, eob,
+                      scan_order->scan);
+        }
       }
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
@@ -947,6 +1002,10 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+        if (!x->skip_block && *eob > 0) {
+          post_qtable(coeff, tx_size, qcoeff, dqcoeff, pd->dequant, eob,
+                      scan_order->scan);
+        }
       }
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
@@ -966,6 +1025,10 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+        if (!x->skip_block && *eob > 0) {
+          post_qtable(coeff, tx_size, qcoeff, dqcoeff, pd->dequant, eob,
+                      scan_order->scan);
+        }
       }
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
