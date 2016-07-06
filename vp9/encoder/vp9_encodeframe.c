@@ -1349,6 +1349,19 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
 
   vpx_clear_system_state();
 
+#if 1
+  // Jingning,
+  // It seems that interp_filter is using leftover values.  Check for the
+  // invalid case here and set to the default value.  Eventually this should
+  // just initialize to the default.
+  if ( ctx->mic.interp_filter == SWITCHABLE_FILTERS) {
+    // Initialize to a valid value.
+    ctx->mic.interp_filter = EIGHTTAP;
+  }
+#else
+  // Initialize to a valid value.
+  ctx->mic.interp_filter = EIGHTTAP;
+#endif
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
   x->use_lp32x32fdct = 1;
 
@@ -2750,6 +2763,21 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // store estimated motion vector
   if (cpi->sf.adaptive_motion_search)
     store_pred_mv(x, ctx);
+
+#if 1
+  // Jingning,
+  // It seems that interp_filter is using leftover values.  Check for the
+  // invalid case here and set to the default value.  Eventually this should
+  // just initialize to the default.
+  if ( ctx->mic.interp_filter == SWITCHABLE_FILTERS) {
+    // Initialize to a valid value.
+    ctx->mic.interp_filter = EIGHTTAP;
+  }
+#else
+  // Initialize to a valid value.
+  ctx->mic.interp_filter = EIGHTTAP;
+#endif
+
 
   // PARTITION_SPLIT
   // TODO(jingning): use the motion vectors given by the above search as
