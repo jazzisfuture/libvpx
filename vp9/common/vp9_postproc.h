@@ -25,7 +25,7 @@ extern "C" {
 struct postproc_state {
   int last_q;
   int last_noise;
-  char noise[3072];
+  char unused2[3072];
   int last_base_qindex;
   int last_frame_valid;
   MODE_INFO *prev_mip;
@@ -33,6 +33,7 @@ struct postproc_state {
   DECLARE_ALIGNED(16, char, unused[44]);
   int clamp;
   uint8_t *limits;
+  char *generated_noise;
 };
 
 struct VP9Common;

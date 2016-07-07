@@ -32,6 +32,10 @@ void vp8_de_alloc_frame_buffers(VP8_COMMON *oci)
 
     vpx_free(oci->pp_limits_buffer);
     oci->pp_limits_buffer = NULL;
+
+    vpx_free(oci->postproc_state.generated_noise);
+    oci->postproc_state.generated_noise = 0;
+
 #endif
 
     vpx_free(oci->above_context);
@@ -115,6 +119,8 @@ int vp8_alloc_frame_buffers(VP8_COMMON *oci, int width, int height)
     oci->pp_limits_buffer = vpx_memalign(16, 24 * ((oci->mb_cols + 1) & ~1));
     if (!oci->pp_limits_buffer)
         goto allocation_fail;
+
+
 #endif
 
     return 0;
