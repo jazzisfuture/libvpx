@@ -33,27 +33,24 @@ using std::tr1::make_tuple;
 namespace {
 
 template<typename F, typename T>
-class BlendMask6Test : public FunctionEquivalenceTest<F> {
- protected:
+class Blend1DMask6Test : public FunctionEquivalenceTest<F> {
+ public:
   static const int kIterations = 10000;
   static const int kMaxWidth = MAX_SB_SIZE * 5;  // * 5 to cover longer strides
   static const int kMaxHeight = MAX_SB_SIZE;
   static const int kBufSize = kMaxWidth * kMaxHeight;
   static const int kMaxMaskWidth = 2 * MAX_SB_SIZE;
-  static const int kMaxMaskSize = kMaxMaskWidth * kMaxMaskWidth;
+  static const int kMaxMaskSize = kMaxMaskWidth;
 
-  BlendMask6Test() : rng_(ACMRandom::DeterministicSeed()) {}
+  Blend1DMask6Test() : rng_(ACMRandom::DeterministicSeed()) {}
 
-  virtual ~BlendMask6Test() {}
+  virtual ~Blend1DMask6Test() {}
 
   virtual void Execute(T *p_src0, T *p_src1) = 0;
 
   void Common() {
     w_ = 1 << (rng_(MAX_SB_SIZE_LOG2 + 1 - 1) + 1);
     h_ = 1 << (rng_(MAX_SB_SIZE_LOG2 + 1 - 1) + 1);
-
-    subx_ = rng_(2);
-    suby_ = rng_(2);
 
     dst_offset_ = rng_(33);
     dst_stride_ = rng_(kMaxWidth + 1 - w_) + w_;
@@ -63,9 +60,6 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
 
     src1_offset_ = rng_(33);
     src1_stride_ = rng_(kMaxWidth + 1 - w_) + w_;
-
-    mask_stride_ = rng_(kMaxWidth + 1 - w_ * (subx_ ? 2 : 1))
-                  + w_ * (subx_ ? 2 : 1);
 
     T *p_src0;
     T *p_src1;
@@ -117,13 +111,9 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
   size_t src1_offset_;
 
   uint8_t mask_[kMaxMaskSize];
-  size_t mask_stride_;
 
   int w_;
   int h_;
-
-  bool suby_;
-  bool subx_;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -131,29 +121,26 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
 //////////////////////////////////////////////////////////////////////////////
 
 typedef void (*F8B)(uint8_t *dst, uint32_t dst_stride,
-                      uint8_t *src0, uint32_t src0_stride,
-                      uint8_t *src1, uint32_t src1_stride,
-                      const uint8_t *mask, uint32_t mask_stride,
-                      int h, int w, int suby, int subx);
+                    uint8_t *src0, uint32_t src0_stride,
+                    uint8_t *src1, uint32_t src1_stride,
+                    const uint8_t *mask, int h, int w);
 
-class BlendMask6Test8B : public BlendMask6Test<F8B, uint8_t> {
+class Blend1DMask6Test8B : public Blend1DMask6Test<F8B, uint8_t> {
  protected:
   void Execute(uint8_t *p_src0, uint8_t *p_src1) {
     ref_func_(dst_ref_ + dst_offset_, dst_stride_,
               p_src0 + src0_offset_, src0_stride_,
               p_src1 + src1_offset_, src1_stride_,
-              mask_, kMaxMaskWidth,
-              h_, w_, suby_, subx_);
+              mask_, h_, w_);
 
     tst_func_(dst_tst_ + dst_offset_, dst_stride_,
               p_src0 + src0_offset_, src0_stride_,
               p_src1 + src1_offset_, src1_stride_,
-              mask_, kMaxMaskWidth,
-              h_, w_, suby_, subx_);
+              mask_, h_, w_);
   }
 };
 
-TEST_P(BlendMask6Test8B, RandomValues) {
+TEST_P(Blend1DMask6Test8B, RandomValues) {
   for (int iter = 0 ; iter < kIterations && !HasFatalFailure(); ++iter) {
     for (int i = 0 ; i < kBufSize ; ++i) {
       dst_ref_[i] = rng_.Rand8();
@@ -170,7 +157,7 @@ TEST_P(BlendMask6Test8B, RandomValues) {
   }
 }
 
-TEST_P(BlendMask6Test8B, ExtremeValues) {
+TEST_P(Blend1DMask6Test8B, ExtremeValues) {
   for (int iter = 0 ; iter < kIterations && !HasFatalFailure(); ++iter) {
     for (int i = 0 ; i < kBufSize ; ++i) {
       dst_ref_[i] = rng_(2) + 254;
@@ -186,10 +173,54 @@ TEST_P(BlendMask6Test8B, ExtremeValues) {
   }
 }
 
+static void blend_hmask6_ref(uint8_t *dst, uint32_t dst_stride,
+                             uint8_t *src0, uint32_t src0_stride,
+                             uint8_t *src1, uint32_t src1_stride,
+                             const uint8_t *mask, int h, int w) {
+  uint8_t mask2d[Blend1DMask6Test8B::kMaxMaskSize]
+                [Blend1DMask6Test8B::kMaxMaskSize];
+
+  for (int row = 0 ; row < h ; ++row)
+    for (int col = 0 ; col < w ; ++col)
+      mask2d[row][col] = mask[col];
+
+  vpx_blend_mask6_c(dst, dst_stride,
+                    src0, src0_stride,
+                    src1, src1_stride,
+                    &mask2d[0][0], Blend1DMask6Test8B::kMaxMaskSize,
+                    h, w, 0, 0);
+}
+
+static void blend_vmask6_ref(uint8_t *dst, uint32_t dst_stride,
+                             uint8_t *src0, uint32_t src0_stride,
+                             uint8_t *src1, uint32_t src1_stride,
+                             const uint8_t *mask, int h, int w) {
+  uint8_t mask2d[Blend1DMask6Test8B::kMaxMaskSize]
+                [Blend1DMask6Test8B::kMaxMaskSize];
+
+  for (int row = 0 ; row < h ; ++row)
+    for (int col = 0 ; col < w ; ++col)
+      mask2d[row][col] = mask[row];
+
+  vpx_blend_mask6_c(dst, dst_stride,
+                    src0, src0_stride,
+                    src1, src1_stride,
+                    &mask2d[0][0], Blend1DMask6Test8B::kMaxMaskSize,
+                    h, w, 0, 0);
+}
+
+INSTANTIATE_TEST_CASE_P(
+  C, Blend1DMask6Test8B,
+  ::testing::Values(
+    make_tuple(blend_hmask6_ref, vpx_blend_hmask6_c),
+    make_tuple(blend_vmask6_ref, vpx_blend_vmask6_c)));
+
 #if HAVE_SSE4_1
 INSTANTIATE_TEST_CASE_P(
-  SSE4_1_C_COMPARE, BlendMask6Test8B,
-  ::testing::Values(make_tuple(&vpx_blend_mask6_c, &vpx_blend_mask6_sse4_1)));
+  SSE4_1, Blend1DMask6Test8B,
+  ::testing::Values(
+    make_tuple(blend_hmask6_ref, vpx_blend_hmask6_sse4_1),
+    make_tuple(blend_vmask6_ref, vpx_blend_vmask6_sse4_1)));
 #endif  // HAVE_SSE4_1
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -198,32 +229,29 @@ INSTANTIATE_TEST_CASE_P(
 //////////////////////////////////////////////////////////////////////////////
 
 typedef void (*FHBD)(uint8_t *dst, uint32_t dst_stride,
-                       uint8_t *src0, uint32_t src0_stride,
-                       uint8_t *src1, uint32_t src1_stride,
-                       const uint8_t *mask, uint32_t mask_stride,
-                       int h, int w, int suby, int subx, int bd);
+                     uint8_t *src0, uint32_t src0_stride,
+                     uint8_t *src1, uint32_t src1_stride,
+                     const uint8_t *mask, int h, int w, int bd);
 
-class BlendMask6TestHBD : public BlendMask6Test<FHBD, uint16_t> {
+class Blend1DMask6TestHBD : public Blend1DMask6Test<FHBD, uint16_t> {
  protected:
   void Execute(uint16_t *p_src0, uint16_t *p_src1) {
     ref_func_(CONVERT_TO_BYTEPTR(dst_ref_ + dst_offset_), dst_stride_,
               CONVERT_TO_BYTEPTR(p_src0 + src0_offset_), src0_stride_,
               CONVERT_TO_BYTEPTR(p_src1 + src1_offset_), src1_stride_,
-              mask_, kMaxMaskWidth,
-              h_, w_, suby_, subx_, bit_depth_);
+              mask_, h_, w_, bit_depth_);
 
     ASM_REGISTER_STATE_CHECK(
       tst_func_(CONVERT_TO_BYTEPTR(dst_tst_ + dst_offset_), dst_stride_,
                 CONVERT_TO_BYTEPTR(p_src0 + src0_offset_), src0_stride_,
                 CONVERT_TO_BYTEPTR(p_src1 + src1_offset_), src1_stride_,
-                mask_, kMaxMaskWidth,
-                h_, w_, suby_, subx_, bit_depth_));
+                mask_, h_, w_, bit_depth_));
   }
 
   int bit_depth_;
 };
 
-TEST_P(BlendMask6TestHBD, RandomValues) {
+TEST_P(Blend1DMask6TestHBD, RandomValues) {
   for (int iter = 0 ; iter < kIterations && !HasFatalFailure(); ++iter) {
     switch (rng_(3)) {
     case 0:
@@ -253,7 +281,7 @@ TEST_P(BlendMask6TestHBD, RandomValues) {
   }
 }
 
-TEST_P(BlendMask6TestHBD, ExtremeValues) {
+TEST_P(Blend1DMask6TestHBD, ExtremeValues) {
   for (int iter = 0 ; iter < 1000 && !HasFatalFailure(); ++iter) {
     switch (rng_(3)) {
     case 0:
@@ -284,11 +312,55 @@ TEST_P(BlendMask6TestHBD, ExtremeValues) {
   }
 }
 
+static void highbd_blend_hmask6_ref(uint8_t *dst, uint32_t dst_stride,
+                                    uint8_t *src0, uint32_t src0_stride,
+                                    uint8_t *src1, uint32_t src1_stride,
+                                    const uint8_t *mask, int h, int w, int bd) {
+  uint8_t mask2d[Blend1DMask6TestHBD::kMaxMaskSize]
+                [Blend1DMask6TestHBD::kMaxMaskSize];
+
+  for (int row = 0 ; row < h ; ++row)
+    for (int col = 0 ; col < w ; ++col)
+      mask2d[row][col] = mask[col];
+
+  vpx_highbd_blend_mask6_c(dst, dst_stride,
+                           src0, src0_stride,
+                           src1, src1_stride,
+                           &mask2d[0][0], Blend1DMask6TestHBD::kMaxMaskSize,
+                           h, w, 0, 0, bd);
+}
+
+static void highbd_blend_vmask6_ref(uint8_t *dst, uint32_t dst_stride,
+                                    uint8_t *src0, uint32_t src0_stride,
+                                    uint8_t *src1, uint32_t src1_stride,
+                                    const uint8_t *mask, int h, int w, int bd) {
+  uint8_t mask2d[Blend1DMask6TestHBD::kMaxMaskSize]
+                [Blend1DMask6TestHBD::kMaxMaskSize];
+
+  for (int row = 0 ; row < h ; ++row)
+    for (int col = 0 ; col < w ; ++col)
+      mask2d[row][col] = mask[row];
+
+  vpx_highbd_blend_mask6_c(dst, dst_stride,
+                           src0, src0_stride,
+                           src1, src1_stride,
+                           &mask2d[0][0], Blend1DMask6TestHBD::kMaxMaskSize,
+                           h, w, 0, 0, bd);
+}
+
+INSTANTIATE_TEST_CASE_P(
+  C, Blend1DMask6TestHBD,
+  ::testing::Values(
+    make_tuple(highbd_blend_hmask6_ref, vpx_highbd_blend_hmask6_c),
+    make_tuple(highbd_blend_vmask6_ref, vpx_highbd_blend_vmask6_c)));
+
 #if HAVE_SSE4_1
 INSTANTIATE_TEST_CASE_P(
-  SSE4_1_C_COMPARE, BlendMask6TestHBD,
-  ::testing::Values(make_tuple(&vpx_highbd_blend_mask6_c,
-                               &vpx_highbd_blend_mask6_sse4_1)));
+  SSE4_1, Blend1DMask6TestHBD,
+  ::testing::Values(
+    make_tuple(highbd_blend_hmask6_ref, vpx_highbd_blend_hmask6_sse4_1),
+    make_tuple(highbd_blend_vmask6_ref, vpx_highbd_blend_vmask6_sse4_1)));
 #endif  // HAVE_SSE4_1
+
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace
