@@ -17,6 +17,7 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
 
+#include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_idct.h"
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
@@ -67,6 +68,51 @@ static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] ={ {10, 6}, {8, 7}, };
   rd_cost1 = RDCOST(rdmult, rddiv, rate1, error1);\
 }
 
+static void invert_quant(int16_t *quant, int16_t *shift, int d) {
+  unsigned t;
+  int l, m;
+  t = d;
+  for (l = 0; t > 1; l++)
+    t >>= 1;
+  m = 1 + (1 << (16 + l)) / d;
+  *quant = (int16_t)(m - (1 << 16));
+  *shift = 1 << (16 - l);
+}
+
+// This function changes quantization table.
+static void post_qtable(const tran_low_t *const coeff_ptr,
+                        const TX_SIZE tx_size, tran_low_t *const qcoeff_ptr,
+                        tran_low_t *const dqcoeff_ptr,
+                        const int16_t *dequant_ptr,
+                        uint16_t *const eob_ptr, const int16_t *const scan) {
+  const int hq = dequant_ptr[1] < QTABLE_THD ?
+      dequant_ptr[1] : dequant_ptr[1] + QTABLE_PLUS;
+  const int hqround_factor = dequant_ptr[1] == 4 ? 64 : 48;
+  const int hround = (hqround_factor * hq) >> 7;
+  int16_t hquant, hquant_shift, i, cureob = 9;
+  invert_quant(&hquant, &hquant_shift, hq);
+  for (i = 10; i < *eob_ptr; ++i) {
+    const int rc = scan[i];
+    const int coeff = coeff_ptr[rc];
+    const int coeff_sign = (coeff >> 31);
+    const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+
+    int tmp = clamp(abs_coeff + hround, INT16_MIN, INT16_MAX);
+    tmp = ((((tmp * hquant) >> 16) + tmp) *
+              hquant_shift) >> 16;  // quantization
+    qcoeff_ptr[rc]  = (tmp ^ coeff_sign) - coeff_sign;
+    if (tx_size == TX_32X32) {
+      dqcoeff_ptr[rc] = qcoeff_ptr[rc] * hq / 2;
+    } else {
+      dqcoeff_ptr[rc] = qcoeff_ptr[rc] * hq;
+    }
+    if (tmp)
+      cureob = i;
+  }
+  while (cureob >= 0 && qcoeff_ptr[scan[cureob]] == 0) --cureob;
+  *eob_ptr = cureob + 1;
+}
+
 // This function is a place holder for now but may ultimately need
 // to scan previous tokens to work out the correct context.
 static int trellis_get_coeff_context(const int16_t *scan,
@@ -101,7 +147,6 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   const scan_order *const so = get_scan(xd, tx_size, type, block);
   const int16_t *const scan = so->scan;
   const int16_t *const nb = so->neighbors;
-  const int dq_step[2] = { dequant_ptr[0] >> shift, dequant_ptr[1] >> shift };
   int next = eob, sz = 0;
   const int64_t rdmult = (mb->rdmult * plane_rd_mult[ref][type]) >> 1;
   const int64_t rddiv = mb->rddiv;
@@ -137,6 +182,9 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
     int base_bits, d2, dx;
     const int rc = scan[i];
     int x = qcoeff[rc];
+    const int post_dqc = i < 10 ? dequant_ptr[rc != 0] :
+        dequant_ptr[1] < QTABLE_THD ?
+        dequant_ptr[1] : dequant_ptr[1] + QTABLE_PLUS;
     /* Only add a trellis state for non-zero coefficients. */
     if (x) {
       int shortcut = 0;
@@ -178,9 +226,8 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       rate0 = tokens[next][0].rate;
       rate1 = tokens[next][1].rate;
 
-      if ((abs(x) * dequant_ptr[rc != 0] > (abs(coeff[rc]) << shift)) &&
-          (abs(x) * dequant_ptr[rc != 0] < (abs(coeff[rc]) << shift) +
-                                               dequant_ptr[rc != 0]))
+      if ((abs(x) * post_dqc > (abs(coeff[rc]) << shift)) &&
+          (abs(x) * post_dqc < (abs(coeff[rc]) << shift) + post_dqc))
         shortcut = 1;
       else
         shortcut = 0;
@@ -234,7 +281,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
           dx -= (dequant_ptr[rc != 0] + sz) ^ sz;
         }
 #else
-        dx -= (dequant_ptr[rc != 0] + sz) ^ sz;
+        dx -= (post_dqc + sz) ^ sz;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         d2 = dx * dx;
       }
@@ -245,13 +292,13 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       tokens[i][1].qc = x;
 
       if (x) {
-        tran_low_t offset = dq_step[rc != 0];
+        tran_low_t offset = post_dqc >> shift;
         // The 32x32 transform coefficient uses half quantization step size.
         // Account for the rounding difference in the dequantized coefficeint
         // value when the quantization index is dropped from an even number
         // to an odd number.
         if (shift & x)
-          offset += (dequant_ptr[rc != 0] & 0x01);
+          offset += (post_dqc & 0x01);
 
         if (sz == 0)
           tokens[i][1].dqc = dqcoeff[rc] - offset;
@@ -915,6 +962,10 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, eob, scan_order->scan,
                              scan_order->iscan);
+          if (!x->skip_block && *eob > 0) {
+            post_qtable(coeff, tx_size, qcoeff, dqcoeff, pd->dequant, eob,
+                        scan_order->scan);
+          }
       }
       if (args->ctx != NULL && !x->skip_recode) {
        *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
@@ -931,6 +982,10 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+          if (!x->skip_block && *eob > 0) {
+            post_qtable(coeff, tx_size, qcoeff, dqcoeff, pd->dequant, eob,
+                        scan_order->scan);
+          }
       }
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
@@ -947,6 +1002,10 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+          if (!x->skip_block && *eob > 0) {
+            post_qtable(coeff, tx_size, qcoeff, dqcoeff, pd->dequant, eob,
+                        scan_order->scan);
+          }
       }
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
@@ -966,6 +1025,10 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, eob, scan_order->scan,
                        scan_order->iscan);
+          if (!x->skip_block && *eob > 0) {
+            post_qtable(coeff, tx_size, qcoeff, dqcoeff, pd->dequant, eob,
+                        scan_order->scan);
+          }
       }
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;

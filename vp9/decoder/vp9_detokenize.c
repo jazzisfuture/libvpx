@@ -132,6 +132,9 @@ static int decode_coefs(const MACROBLOCKD *xd,
           break;
       }
     }
+    if (c >= 10) {
+      dqv = dq[1] < QTABLE_THD ? dq[1] : dq[1] + QTABLE_PLUS;
+    }
     v = (val * dqv) >> dq_shift;
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
 #if CONFIG_VP9_HIGHBITDEPTH

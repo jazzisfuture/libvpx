@@ -67,6 +67,9 @@ static INLINE int get_unsigned_bits(unsigned int num_values) {
 
 #define VP9_FRAME_MARKER 0x2
 
+#define QTABLE_THD 8
+#define QTABLE_PLUS 2
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
