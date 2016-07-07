@@ -1,0 +1,8 @@
+Code-Review+1: James Zern <jzern@google.com>
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebM Builds <builds@webmproject.org>
+Submitted-by: Jingning Han <jingning@google.com>
+Submitted-at: Thu, 07 Jul 2016 19:19:40 +0000
+Reviewed-on: https://chromium-review.googlesource.com/358099
+Project: webm/libvpx
+Branch: refs/heads/master
