@@ -83,7 +83,7 @@
         add         rbx,        16
 %endmacro
 
-;void vp8_post_proc_down_and_across_mb_row_sse2
+;void vpx_post_proc_down_and_across_mb_row_sse2
 ;(
 ;    unsigned char *src_ptr,
 ;    unsigned char *dst_ptr,
@@ -93,8 +93,8 @@
 ;    int *flimits,
 ;    int size
 ;)
-global sym(vp8_post_proc_down_and_across_mb_row_sse2) PRIVATE
-sym(vp8_post_proc_down_and_across_mb_row_sse2):
+global sym(vpx_post_proc_down_and_across_mb_row_sse2) PRIVATE
+sym(vpx_post_proc_down_and_across_mb_row_sse2):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 7
@@ -230,11 +230,11 @@ sym(vp8_post_proc_down_and_across_mb_row_sse2):
     ret
 %undef flimit
 
-;void vp8_mbpost_proc_down_xmm(unsigned char *dst,
+;void vpx_mbpost_proc_down_xmm(unsigned char *dst,
 ;                            int pitch, int rows, int cols,int flimit)
-extern sym(vp8_rv)
-global sym(vp8_mbpost_proc_down_xmm) PRIVATE
-sym(vp8_mbpost_proc_down_xmm):
+extern sym(vpx_rv)
+global sym(vpx_mbpost_proc_down_xmm) PRIVATE
+sym(vpx_mbpost_proc_down_xmm):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 5
@@ -257,7 +257,7 @@ sym(vp8_mbpost_proc_down_xmm):
 %define flimit4 [rsp+128]
 
 %if ABI_IS_32BIT=0
-    lea         r8,       [GLOBAL(sym(vp8_rv))]
+    lea         r8,       [GLOBAL(sym(vpx_rv))]
 %endif
 
     ;rows +=8;
@@ -403,13 +403,13 @@ sym(vp8_mbpost_proc_down_xmm):
             and         rcx,        127
 %if ABI_IS_32BIT=1 && CONFIG_PIC=1
             push        rax
-            lea         rax,        [GLOBAL(sym(vp8_rv))]
-            movdqu      xmm4,       [rax + rcx*2] ;vp8_rv[rcx*2]
+            lea         rax,        [GLOBAL(sym(vpx_rv))]
+            movdqu      xmm4,       [rax + rcx*2] ;vpx_rv[rcx*2]
             pop         rax
 %elif ABI_IS_32BIT=0
-            movdqu      xmm4,       [r8 + rcx*2] ;vp8_rv[rcx*2]
+            movdqu      xmm4,       [r8 + rcx*2] ;vpx_rv[rcx*2]
 %else
-            movdqu      xmm4,       [sym(vp8_rv) + rcx*2]
+            movdqu      xmm4,       [sym(vpx_rv) + rcx*2]
 %endif
 
             paddw       xmm1,       xmm4
@@ -462,10 +462,10 @@ sym(vp8_mbpost_proc_down_xmm):
 %undef flimit4
 
 
-;void vp8_mbpost_proc_across_ip_xmm(unsigned char *src,
+;void vpx_mbpost_proc_across_ip_xmm(unsigned char *src,
 ;                                int pitch, int rows, int cols,int flimit)
-global sym(vp8_mbpost_proc_across_ip_xmm) PRIVATE
-sym(vp8_mbpost_proc_across_ip_xmm):
+global sym(vpx_mbpost_proc_across_ip_xmm) PRIVATE
+sym(vpx_mbpost_proc_across_ip_xmm):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 5
