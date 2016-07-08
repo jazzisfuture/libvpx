@@ -28,8 +28,8 @@ void vpx_blend_mask6_c(uint8_t *dst, uint32_t dst_stride,
   assert(IMPLIES(src0 == dst, src0_stride == dst_stride));
   assert(IMPLIES(src1 == dst, src1_stride == dst_stride));
 
-  assert(h >= 4);
-  assert(w >= 4);
+  assert(h >= 1);
+  assert(w >= 1);
   assert(IS_POWER_OF_TWO(h));
   assert(IS_POWER_OF_TWO(w));
 
@@ -95,8 +95,8 @@ void vpx_highbd_blend_mask6_c(uint8_t *dst_8, uint32_t dst_stride,
   assert(IMPLIES(src0 == dst, src0_stride == dst_stride));
   assert(IMPLIES(src1 == dst, src1_stride == dst_stride));
 
-  assert(h >= 4);
-  assert(w >= 4);
+  assert(h >= 1);
+  assert(w >= 1);
   assert(IS_POWER_OF_TWO(h));
   assert(IS_POWER_OF_TWO(w));
 

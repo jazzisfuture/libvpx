@@ -522,16 +522,24 @@ void vpx_blend_mask6_sse4_1(uint8_t *dst, uint32_t dst_stride,
   assert(IMPLIES(src0 == dst, src0_stride == dst_stride));
   assert(IMPLIES(src1 == dst, src1_stride == dst_stride));
 
-  assert(h >= 4);
-  assert(w >= 4);
+  assert(h >= 1);
+  assert(w >= 1);
   assert(IS_POWER_OF_TWO(h));
   assert(IS_POWER_OF_TWO(w));
 
-  blend[(w >> 2) & 3][subx != 0][suby != 0](dst, dst_stride,
-                                            src0, src0_stride,
-                                            src1, src1_stride,
-                                            mask, mask_stride,
-                                            h, w);
+  if (UNLIKELY((h | w) & 3)) {  // if (w <= 2 || h <= 2)
+    vpx_blend_mask6_c(dst, dst_stride,
+                      src0, src0_stride,
+                      src1, src1_stride,
+                      mask, mask_stride,
+                      h, w, suby, subx);
+  } else {
+    blend[(w >> 2) & 3][subx != 0][suby != 0](dst, dst_stride,
+                                              src0, src0_stride,
+                                              src1, src1_stride,
+                                              mask, mask_stride,
+                                              h, w);
+  }
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -1065,10 +1073,6 @@ void vpx_highbd_blend_mask6_sse4_1(uint8_t *dst_8, uint32_t dst_stride,
                                    uint8_t *src1_8, uint32_t src1_stride,
                                    const uint8_t *mask, uint32_t mask_stride,
                                    int h, int w, int suby, int subx, int bd) {
-  uint16_t *const dst = CONVERT_TO_SHORTPTR(dst_8);
-  uint16_t *const src0 = CONVERT_TO_SHORTPTR(src0_8);
-  uint16_t *const src1 = CONVERT_TO_SHORTPTR(src1_8);
-
   typedef  void (*blend_fn)(uint16_t *dst, uint32_t dst_stride,
                             uint16_t *src0, uint32_t src0_stride,
                             uint16_t *src1, uint32_t src1_stride,
@@ -1096,20 +1100,31 @@ void vpx_highbd_blend_mask6_sse4_1(uint8_t *dst_8, uint32_t dst_stride,
     }
   };
 
-  assert(IMPLIES(src0 == dst, src0_stride == dst_stride));
-  assert(IMPLIES(src1 == dst, src1_stride == dst_stride));
+  assert(IMPLIES(src0_8 == dst_8, src0_stride == dst_stride));
+  assert(IMPLIES(src1_8 == dst_8, src1_stride == dst_stride));
 
-  assert(h >= 4);
-  assert(w >= 4);
+  assert(h >= 1);
+  assert(w >= 1);
   assert(IS_POWER_OF_TWO(h));
   assert(IS_POWER_OF_TWO(w));
 
   assert(bd == 8 || bd == 10 || bd == 12);
+  if (UNLIKELY((h | w) & 3)) {  // if (w <= 2 || h <= 2)
+    vpx_highbd_blend_mask6_c(dst_8, dst_stride,
+                             src0_8, src0_stride,
+                             src1_8, src1_stride,
+                             mask, mask_stride,
+                             h, w, suby, subx, bd);
+  } else {
+    uint16_t *const dst = CONVERT_TO_SHORTPTR(dst_8);
+    uint16_t *const src0 = CONVERT_TO_SHORTPTR(src0_8);
+    uint16_t *const src1 = CONVERT_TO_SHORTPTR(src1_8);
 
-  blend[bd == 12][(w >> 2) & 1][subx != 0][suby != 0](dst, dst_stride,
-                                                      src0, src0_stride,
-                                                      src1, src1_stride,
-                                                      mask, mask_stride,
-                                                      h, w);
+    blend[bd == 12][(w >> 2) & 1][subx != 0][suby != 0](dst, dst_stride,
+                                                        src0, src0_stride,
+                                                        src1, src1_stride,
+                                                        mask, mask_stride,
+                                                        h, w);
+  }
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
