@@ -118,13 +118,9 @@ int vp10_search_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
       if (ss_err[filt_low] < 0) {
         ss_err[filt_low] = try_filter_frame(sd, cpi, filt_low, partial_frame);
       }
-      // If value is close to the best so far then bias towards a lower loop
-      // filter value.
-      if ((ss_err[filt_low] - bias) < best_err) {
-        // Was it actually better than the previous best?
-        if (ss_err[filt_low] < best_err)
-          best_err = ss_err[filt_low];
-
+      // If value is better than previous best
+      if (ss_err[filt_low] < best_err) {
+        best_err = ss_err[filt_low];
         filt_best = filt_low;
       }
     }
@@ -134,7 +130,8 @@ int vp10_search_filter_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
       if (ss_err[filt_high] < 0) {
         ss_err[filt_high] = try_filter_frame(sd, cpi, filt_high, partial_frame);
       }
-      // Was it better than the previous best?
+      // If value is significantly better than previous best, bias added against
+      // raising filter value
       if (ss_err[filt_high] < (best_err - bias)) {
         best_err = ss_err[filt_high];
         filt_best = filt_high;
