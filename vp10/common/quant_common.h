@@ -31,7 +31,7 @@ int vp10_get_qindex(const struct segmentation *seg, int segment_id,
 
 #if CONFIG_NEW_QUANT
 
-#define QUANT_PROFILES 3
+#define QUANT_PROFILES 1
 #define QUANT_RANGES   2
 #define NUQ_KNOTS      3
 
