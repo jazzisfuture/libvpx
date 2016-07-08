@@ -959,6 +959,27 @@ if ((vpx_config("CONFIG_VP9_ENCODER") eq "yes") || (vpx_config("CONFIG_VP10_ENCO
   }  # CONFIG_VP9_HIGHBITDEPTH
 }  # CONFIG_VP9_ENCODER || CONFIG_VP10_ENCODER
 
+if (vpx_config("CONFIG_VP10") eq "yes") {
+  #
+  # Blending with mask
+  #
+  add_proto qw/void vpx_blend_mask6/, "uint8_t *dst, uint32_t dst_stride,  uint8_t *src0, uint32_t src0_stride, uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, uint32_t mask_stride, int h, int w, int suby, int subx";
+  add_proto qw/void vpx_blend_hmask6b/, "uint8_t *dst, uint32_t dst_stride,  uint8_t *src0, uint32_t src0_stride, uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int h, int w";
+  add_proto qw/void vpx_blend_vmask6b/, "uint8_t *dst, uint32_t dst_stride,  uint8_t *src0, uint32_t src0_stride, uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int h, int w";
+  specialize "vpx_blend_mask6", qw/sse4_1/;
+  specialize "vpx_blend_hmask6b", qw/sse4_1/;
+  specialize "vpx_blend_vmask6b", qw/sse4_1/;
+
+  if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+    add_proto qw/void vpx_highbd_blend_mask6/, "uint8_t *dst, uint32_t dst_stride,  uint8_t *src0, uint32_t src0_stride, uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, uint32_t mask_stride, int h, int w, int suby, int subx, int bd";
+    add_proto qw/void vpx_highbd_blend_hmask6b/, "uint8_t *dst, uint32_t dst_stride,  uint8_t *src0, uint32_t src0_stride, uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int h, int w, int bd";
+    add_proto qw/void vpx_highbd_blend_vmask6b/, "uint8_t *dst, uint32_t dst_stride,  uint8_t *src0, uint32_t src0_stride, uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int h, int w, int bd";
+    specialize "vpx_highbd_blend_mask6", qw/sse4_1/;
+    specialize "vpx_highbd_blend_hmask6b", qw/sse4_1/;
+    specialize "vpx_highbd_blend_vmask6b", qw/sse4_1/;
+  }
+}  # CONFIG_VP10
+
 if (vpx_config("CONFIG_ENCODERS") eq "yes") {
 #
 # Block subtraction
