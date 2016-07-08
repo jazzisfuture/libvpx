@@ -15,12 +15,11 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
 #include "vpx_dsp/vpx_dsp_common.h"
+#include "vpx_dsp/blend_mask6.h"
 
 #include "vpx_dsp/x86/synonyms.h"
 
 #include "./vpx_dsp_rtcd.h"
-
-#define MASK_BITS 6
 
 //////////////////////////////////////////////////////////////////////////////
 // Common kernels
@@ -38,7 +37,7 @@ static INLINE __m128i blend_4(uint8_t*src0, uint8_t *src1,
 
   const __m128i v_sum_w = _mm_add_epi16(v_p0_w, v_p1_w);
 
-  const __m128i v_res_w = xx_roundn_epu16(v_sum_w, MASK_BITS);
+  const __m128i v_res_w = xx_roundn_epu16(v_sum_w, MASK_BITS6);
 
   return v_res_w;
 }
@@ -55,7 +54,7 @@ static INLINE __m128i blend_8(uint8_t*src0, uint8_t *src1,
 
   const __m128i v_sum_w = _mm_add_epi16(v_p0_w, v_p1_w);
 
-  const __m128i v_res_w = xx_roundn_epu16(v_sum_w, MASK_BITS);
+  const __m128i v_res_w = xx_roundn_epu16(v_sum_w, MASK_BITS6);
 
   return v_res_w;
 }
@@ -70,7 +69,7 @@ static void blend_mask6_w4_sse4_1(
     uint8_t *src1, uint32_t src1_stride,
     const uint8_t *mask, uint32_t mask_stride,
     int h, int w) {
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   (void)w;
 
@@ -98,7 +97,7 @@ static void blend_mask6_w8_sse4_1(
     uint8_t *src1, uint32_t src1_stride,
     const uint8_t *mask, uint32_t mask_stride,
     int h, int w) {
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   (void)w;
 
@@ -126,7 +125,7 @@ static void blend_mask6_w16n_sse4_1(
     uint8_t *src1, uint32_t src1_stride,
     const uint8_t *mask, uint32_t mask_stride,
     int h, int w) {
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     int c;
@@ -166,7 +165,7 @@ static void blend_mask6_sx_w4_sse4_1(
     int h, int w) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   (void)w;
 
@@ -198,7 +197,7 @@ static void blend_mask6_sx_w8_sse4_1(
     int h, int w) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   (void)w;
 
@@ -230,7 +229,7 @@ static void blend_mask6_sx_w16n_sse4_1(
     int h, int w) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     int c;
@@ -271,7 +270,7 @@ static void blend_mask6_sy_w4_sse4_1(
     uint8_t *src1, uint32_t src1_stride,
     const uint8_t *mask, uint32_t mask_stride,
     int h, int w) {
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   (void)w;
 
@@ -302,7 +301,7 @@ static void blend_mask6_sy_w8_sse4_1(
     uint8_t *src1, uint32_t src1_stride,
     const uint8_t *mask, uint32_t mask_stride,
     int h, int w) {
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   (void)w;
 
@@ -334,7 +333,7 @@ static void blend_mask6_sy_w16n_sse4_1(
     const uint8_t *mask, uint32_t mask_stride,
     int h, int w) {
   const __m128i v_zero = _mm_setzero_si128();
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     int c;
@@ -376,7 +375,7 @@ static void blend_mask6_sx_sy_w4_sse4_1(
     int h, int w) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   (void)w;
 
@@ -413,7 +412,7 @@ static void blend_mask6_sx_sy_w8_sse4_1(
     int h, int w) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   (void)w;
 
@@ -450,7 +449,7 @@ static void blend_mask6_sx_sy_w16n_sse4_1(
     int h, int w) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     int c;
@@ -552,7 +551,7 @@ static INLINE __m128i blend_4_b10(uint16_t*src0, uint16_t *src1,
 
   const __m128i v_sum_w = _mm_add_epi16(v_p0_w, v_p1_w);
 
-  const __m128i v_res_w = xx_roundn_epu16(v_sum_w, MASK_BITS);
+  const __m128i v_res_w = xx_roundn_epu16(v_sum_w, MASK_BITS6);
 
   return v_res_w;
 }
@@ -567,7 +566,7 @@ static INLINE __m128i blend_8_b10(uint16_t*src0, uint16_t *src1,
 
   const __m128i v_sum_w = _mm_add_epi16(v_p0_w, v_p1_w);
 
-  const __m128i v_res_w = xx_roundn_epu16(v_sum_w, MASK_BITS);
+  const __m128i v_res_w = xx_roundn_epu16(v_sum_w, MASK_BITS6);
 
   return v_res_w;
 }
@@ -585,7 +584,7 @@ static INLINE __m128i blend_4_b12(uint16_t*src0, uint16_t *src1,
   const __m128i v_sum_d = _mm_madd_epi16(v_s01_w, v_m01_w);
 
   // Scale
-  const __m128i v_ssum_d = _mm_srli_epi32(v_sum_d, MASK_BITS - 1);
+  const __m128i v_ssum_d = _mm_srli_epi32(v_sum_d, MASK_BITS6 - 1);
 
   // Pack
   const __m128i v_pssum_d = _mm_packs_epi32(v_ssum_d, v_ssum_d);
@@ -612,8 +611,8 @@ static INLINE __m128i blend_8_b12(uint16_t*src0, uint16_t *src1,
   const __m128i v_sumh_d = _mm_madd_epi16(v_s01h_w, v_m01h_w);
 
   // Scale
-  const __m128i v_ssuml_d = _mm_srli_epi32(v_suml_d, MASK_BITS - 1);
-  const __m128i v_ssumh_d = _mm_srli_epi32(v_sumh_d, MASK_BITS - 1);
+  const __m128i v_ssuml_d = _mm_srli_epi32(v_suml_d, MASK_BITS6 - 1);
+  const __m128i v_ssumh_d = _mm_srli_epi32(v_sumh_d, MASK_BITS6 - 1);
 
   // Pack
   const __m128i v_pssum_d = _mm_packs_epi32(v_ssuml_d, v_ssumh_d);
@@ -634,7 +633,7 @@ static INLINE void blend_mask6_bn_w4_sse4_1(
     uint16_t *src1, uint32_t src1_stride,
     const uint8_t *mask, uint32_t mask_stride,
     int h, blend_unit_fn blend) {
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     const __m128i v_m0_b = xx_loadl_32(mask);
@@ -682,7 +681,7 @@ static inline void blend_mask6_bn_w8n_sse4_1(
     uint16_t *src1, uint32_t src1_stride,
     const uint8_t *mask, uint32_t mask_stride,
     int h, int w, blend_unit_fn blend) {
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     int c;
@@ -736,7 +735,7 @@ static INLINE void blend_mask6_bn_sx_w4_sse4_1(
     int h, blend_unit_fn blend) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     const __m128i v_r_b = xx_loadl_64(mask);
@@ -788,7 +787,7 @@ static INLINE void blend_mask6_bn_sx_w8n_sse4_1(
     int h, int w, blend_unit_fn blend) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     int c;
@@ -842,7 +841,7 @@ static INLINE void blend_mask6_bn_sy_w4_sse4_1(
     uint16_t *src1, uint32_t src1_stride,
     const uint8_t *mask, uint32_t mask_stride,
     int h, blend_unit_fn blend) {
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     const __m128i v_ra_b = xx_loadl_32(mask);
@@ -893,7 +892,7 @@ static INLINE void blend_mask6_bn_sy_w8n_sse4_1(
     uint16_t *src1, uint32_t src1_stride,
     const uint8_t *mask, uint32_t mask_stride,
     int h, int w, blend_unit_fn blend) {
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     int c;
@@ -950,7 +949,7 @@ static INLINE void blend_mask6_bn_sx_sy_w4_sse4_1(
     int h, blend_unit_fn blend) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     const __m128i v_ra_b = xx_loadl_64(mask);
@@ -1007,7 +1006,7 @@ static INLINE void blend_mask6_bn_sx_sy_w8n_sse4_1(
     int h, int w, blend_unit_fn blend) {
   const __m128i v_zmask_b = _mm_set_epi8(0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff,
                                          0, 0xff, 0, 0xff, 0, 0xff, 0, 0xff);
-  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS);
+  const __m128i v_maxval_w = _mm_set1_epi16(1 << MASK_BITS6);
 
   do {
     int c;
