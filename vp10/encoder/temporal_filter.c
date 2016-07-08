@@ -730,9 +730,21 @@ void vp10_temporal_filter(VP10_COMP *cpi, int distance) {
   int frames_to_blur_forward;
   struct scale_factors sf;
   YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = {NULL};
-
+#if CONFIG_MY_PRINT
+  static int total_count = 0;
+  static int zero_count = 0;
+#endif
   // Apply context specific adjustments to the arnr filter parameters.
   adjust_arnr_filter(cpi, distance, rc->gfu_boost, &frames_to_blur, &strength);
+#if CONFIG_STR_ZERO
+  strength = 0;
+#endif
+#if CONFIG_GF_FLAG
+  if(strength == 0)
+    cpi->arf_filter_off = 1;
+  else
+    cpi->arf_filter_off = 0;
+#endif
   frames_to_blur_backward = (frames_to_blur / 2);
   frames_to_blur_forward = ((frames_to_blur - 1) / 2);
   start_frame = distance + frames_to_blur_forward;
@@ -767,4 +779,15 @@ void vp10_temporal_filter(VP10_COMP *cpi, int distance) {
 
   temporal_filter_iterate_c(cpi, frames, frames_to_blur,
                             frames_to_blur_backward, strength, &sf);
+#if CONFIG_MY_PRINT
+  if (cpi->oxcf.pass == 2) {
+    ++total_count;
+    if (strength == 0) {
+      ++zero_count;
+    }
+    fprintf(stdout,"strength %d: ratio = %f (%d/%d)\n", strength,
+            (double)zero_count/(double)total_count,
+            zero_count,total_count);
+  }
+#endif
 }

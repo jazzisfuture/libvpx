@@ -214,6 +214,10 @@ int vp10_rc_get_default_max_gf_interval(double framerate, int min_frame_rate);
 void vp10_rc_get_one_pass_vbr_params(struct VP10_COMP *cpi);
 void vp10_rc_get_one_pass_cbr_params(struct VP10_COMP *cpi);
 
+#if CONFIG_GF_FLAG
+void vp10_rc_existing_overlay_update(struct VP10_COMP *cpi, uint64_t used);
+#endif
+
 // Post encode update of the rate control parameters based
 // on bytes used
 void vp10_rc_postencode_update(struct VP10_COMP *cpi, uint64_t bytes_used);

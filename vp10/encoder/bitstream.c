@@ -1588,9 +1588,10 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
     // write_switchable_interp_filter, which is called by pack_inter_mode_mvs.
     set_ref_ptrs(cm, xd, m->mbmi.ref_frame[0], m->mbmi.ref_frame[1]);
 #endif  // CONFIG_EXT_INTERP
-#if 0
+#if 1 && CONFIG_BUF_STATUS
     // NOTE(zoeliu): For debug
-    if (cm->current_video_frame == FRAME_TO_CHECK && cm->show_frame == 1) {
+    // if (cm->current_video_frame == FRAME_TO_CHECK && cm->show_frame == 1) {
+    if (cpi->frame_check) {
       const PREDICTION_MODE mode = m->mbmi.mode;
       const int segment_id = m->mbmi.segment_id;
       const BLOCK_SIZE bsize = m->mbmi.sb_type;
@@ -1603,8 +1604,8 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
       const int mv_y = (bsize < BLOCK_8X8) ?
           m->bmi[0].as_mv[0].as_mv.col : m->mbmi.mv[0].as_mv.col;
 
-      printf("Before pack_inter_mode_mvs(): "
-             "Frame=%d, (mi_row,mi_col)=(%d,%d), "
+      //printf("Before pack_inter_mode_mvs(): "
+      printf("Frame=%d, (mi_row,mi_col)=(%d,%d), "
              "mode=%d, segment_id=%d, bsize=%d, b_mode=%d, "
              "mv[0]=(%d, %d), ref[0]=%d, ref[1]=%d\n",
              cm->current_video_frame, mi_row, mi_col,
@@ -2671,8 +2672,10 @@ static void write_tile_info(const VP10_COMMON *const cm,
     vpx_wb_write_bit(wb, cm->log2_tile_rows != 1);
 #endif  // CONFIG_EXT_TILE
 }
-
-static int get_refresh_mask(VP10_COMP *cpi) {
+#if !CONFIG_BUF_STATUS
+static
+#endif
+int get_refresh_mask(VP10_COMP *cpi) {
   int refresh_mask = 0;
 
 #if CONFIG_EXT_REFS

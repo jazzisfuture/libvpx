@@ -2591,6 +2591,11 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
       assert(0);
       break;
   }
+#if CONFIG_BUF_STATUS
+  fprintf(stdout, "UPDATE_TYPE: %d, idx %d\n",
+          twopass->gf_group.update_type[twopass->gf_group.index],
+          twopass->gf_group.index);
+#endif
 }
 
 static int is_skippable_frame(const VP10_COMP *cpi) {
@@ -2698,6 +2703,11 @@ void vp10_rc_get_second_pass_params(VP10_COMP *cpi) {
     cm->frame_type = INTER_FRAME;
   }
 
+#if CONFIG_BUF_STATUS
+  fprintf(stdout,"check point mid %d due %d (%d:%d)\n",
+          cpi->twopass.gf_group.index, rc->frames_till_gf_update_due == 0,
+          rc->frames_till_gf_update_due, rc->baseline_gf_interval);
+#endif
   // Define a new GF/ARF group. (Should always enter here for key frames).
   if (rc->frames_till_gf_update_due == 0) {
     define_gf_group(cpi, &this_frame);
@@ -2716,6 +2726,9 @@ void vp10_rc_get_second_pass_params(VP10_COMP *cpi) {
       fclose(fpfile);
     }
 #endif
+#if CONFIG_BUF_STATUS
+    fprintf(stdout,"baseline_gf_interval %d\n",rc->baseline_gf_interval);
+#endif
   }
 
   configure_buffer_updates(cpi);
@@ -2727,12 +2740,25 @@ void vp10_rc_get_second_pass_params(VP10_COMP *cpi) {
   }
 
   target_rate = gf_group->bit_allocation[gf_group->index];
+
+#if CONFIG_RC_MONITER
+  fprintf(stdout, "bit alloc %d ( %d = (%d,%d) )\n", target_rate,
+          VPXMAX(rc->min_frame_bandwidth, rc->avg_frame_bandwidth >> 5),
+          rc->min_frame_bandwidth, rc->avg_frame_bandwidth);
+#endif
+
   if (cpi->common.frame_type == KEY_FRAME)
     target_rate = vp10_rc_clamp_iframe_target_size(cpi, target_rate);
   else
     target_rate = vp10_rc_clamp_pframe_target_size(cpi, target_rate);
 
   rc->base_frame_target = target_rate;
+
+#if CONFIG_RC_MONITER
+  fprintf(stdout, "bit alloc %d ( %d = (%d,%d) )\n", target_rate,
+          VPXMAX(rc->min_frame_bandwidth, rc->avg_frame_bandwidth >> 5),
+          rc->min_frame_bandwidth, rc->avg_frame_bandwidth);
+#endif
 
   {
     const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE)
