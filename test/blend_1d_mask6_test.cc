@@ -49,8 +49,8 @@ class Blend1DMask6Test : public FunctionEquivalenceTest<F> {
   virtual void Execute(T *p_src0, T *p_src1) = 0;
 
   void Common() {
-    w_ = 1 << (rng_(MAX_SB_SIZE_LOG2 + 1 - 2) + 2);
-    h_ = 1 << (rng_(MAX_SB_SIZE_LOG2 + 1 - 2) + 2);
+    w_ = 1 << rng_(MAX_SB_SIZE_LOG2 + 1);
+    h_ = 1 << rng_(MAX_SB_SIZE_LOG2 + 1);
 
     dst_offset_ = rng_(33);
     dst_stride_ = rng_(kMaxWidth + 1 - w_) + w_;

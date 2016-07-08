@@ -11008,18 +11008,18 @@ void calc_target_weighted_pred(VP10_COMMON *cm,
         uint8_t *tmp = above_buf + (i * MI_SIZE >> pd->subsampling_x);
         int mask2d_stride = mask_stride;
         int32_t *mask2d = mask_buf + (i * MI_SIZE >> pd->subsampling_x);
-        const uint8_t *mask1d[2];
-
-        setup_obmc_mask(bh, mask1d);
+        const uint8_t *mask = vp10_get_obmc_mask(bh);
 
 #if CONFIG_VP9_HIGHBITDEPTH
         if (is_hbd) {
           uint16_t *tmp16 = CONVERT_TO_SHORTPTR(tmp);
 
           for (row = 0; row < bh; ++row) {
+            const uint8_t m0 = mask[row];
+            const uint8_t m1 = 64 - m0;
             for (col = 0; col < bw; ++col) {
-              dst[col] = mask1d[1][row] * tmp16[col];
-              mask2d[col] = mask1d[0][row];
+              dst[col] = m1 * tmp16[col];
+              mask2d[col] = m0;
             }
             dst += dst_stride;
             tmp16 += tmp_stride;
@@ -11028,9 +11028,11 @@ void calc_target_weighted_pred(VP10_COMMON *cm,
         } else {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         for (row = 0; row < bh; ++row) {
+          const uint8_t m0 = mask[row];
+          const uint8_t m1 = 64 - m0;
           for (col = 0; col < bw; ++col) {
-            dst[col] = mask1d[1][row] * tmp[col];
-            mask2d[col] = mask1d[0][row];
+            dst[col] = m1 * tmp[col];
+            mask2d[col] = m0;
           }
           dst += dst_stride;
           tmp += tmp_stride;
@@ -11080,9 +11082,7 @@ void calc_target_weighted_pred(VP10_COMMON *cm,
         int mask2d_stride = mask_stride;
         int32_t *mask2d = mask_buf +
                           (i * MI_SIZE * mask2d_stride >> pd->subsampling_y);
-        const uint8_t *mask1d[2];
-
-        setup_obmc_mask(bw, mask1d);
+        const uint8_t *mask = vp10_get_obmc_mask(bw);
 
 #if CONFIG_VP9_HIGHBITDEPTH
         if (is_hbd) {
@@ -11090,9 +11090,10 @@ void calc_target_weighted_pred(VP10_COMMON *cm,
 
           for (row = 0; row < bh; ++row) {
             for (col = 0; col < bw; ++col) {
-              dst[col] = (dst[col] >> 6) * mask1d[0][col] +
-                         (tmp16[col] << 6) * mask1d[1][col];
-              mask2d[col] = (mask2d[col] >> 6) * mask1d[0][col];
+              const uint8_t m0 = mask[col];
+              const uint8_t m1 = 64 - m0;
+              dst[col] = (dst[col] >> 6) * m0 + (tmp16[col] << 6) * m1;
+              mask2d[col] = (mask2d[col] >> 6) * m0;
             }
             dst += dst_stride;
             tmp16 += tmp_stride;
@@ -11102,9 +11103,10 @@ void calc_target_weighted_pred(VP10_COMMON *cm,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         for (row = 0; row < bh; ++row) {
           for (col = 0; col < bw; ++col) {
-            dst[col] = (dst[col] >> 6) * mask1d[0][col] +
-                       (tmp[col] << 6) * mask1d[1][col];
-            mask2d[col] = (mask2d[col] >> 6) * mask1d[0][col];
+            const uint8_t m0 = mask[col];
+            const uint8_t m1 = 64 - m0;
+            dst[col] = (dst[col] >> 6) * m0 + (tmp[col] << 6) * m1;
+            mask2d[col] = (mask2d[col] >> 6) * m0;
           }
           dst += dst_stride;
           tmp += tmp_stride;

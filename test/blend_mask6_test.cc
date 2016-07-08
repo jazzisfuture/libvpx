@@ -49,8 +49,8 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
   virtual void Execute(T *p_src0, T *p_src1) = 0;
 
   void Common() {
-    w_ = 1 << (rng_(MAX_SB_SIZE_LOG2 + 1 - 2) + 2);
-    h_ = 1 << (rng_(MAX_SB_SIZE_LOG2 + 1 - 2) + 2);
+    w_ = 1 << rng_(MAX_SB_SIZE_LOG2 + 1);
+    h_ = 1 << rng_(MAX_SB_SIZE_LOG2 + 1);
 
     subx_ = rng_(2);
     suby_ = rng_(2);
