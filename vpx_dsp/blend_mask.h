@@ -11,7 +11,8 @@
 #ifndef VPX_DSP_BLEND_MASK_H_
 #define VPX_DSP_BLEND_MASK_H_
 
-// Use blend_mask6b() for 6 bit masks
+// Use vpx_blend_mask6b(), vpx_blend_hmask6b(), vpx_blend_vmask6b()
+// for 6 bit masks
 #define MASK_BITS6   6
 
 #endif  // VPX_DSP_BLEND_MASK_H_
