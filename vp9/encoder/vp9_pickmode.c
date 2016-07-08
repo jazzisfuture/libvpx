@@ -239,7 +239,8 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 static void block_variance(const uint8_t *src, int src_stride,
                            const uint8_t *ref, int ref_stride,
                            int w, int h, unsigned int *sse, int *sum,
-                           int block_size, vpx_bit_depth_t bd,
+                           int block_size, int use_highbitdepth,
+                           vpx_bit_depth_t bd,
                            uint32_t *sse8x8, int *sum8x8, uint32_t *var8x8) {
   int i, j, k = 0;
 
@@ -249,23 +250,30 @@ static void block_variance(const uint8_t *src, int src_stride,
   for (i = 0; i < h; i += block_size) {
     for (j = 0; j < w; j += block_size) {
 #if CONFIG_VP9_HIGHBITDEPTH
-      switch (bd) {
-        case VPX_BITS_8:
-          vpx_highbd_8_get8x8var(src + src_stride * i + j, src_stride,
-                                 ref + ref_stride * i + j, ref_stride,
-                                 &sse8x8[k], &sum8x8[k]);
+      if (use_highbitdepth) {
+        switch (bd) {
+          case VPX_BITS_8:
+            vpx_highbd_8_get8x8var(src + src_stride * i + j, src_stride,
+                                   ref + ref_stride * i + j, ref_stride,
+                                   &sse8x8[k], &sum8x8[k]);
           break;
-        case VPX_BITS_10:
-          vpx_highbd_10_get8x8var(src + src_stride * i + j, src_stride,
-                                  ref + ref_stride * i + j, ref_stride,
-                                  &sse8x8[k], &sum8x8[k]);
-          break;
-        case VPX_BITS_12:
-          vpx_highbd_12_get8x8var(src + src_stride * i + j, src_stride,
-                                  ref + ref_stride * i + j, ref_stride,
-                                  &sse8x8[k], &sum8x8[k]);
-          break;
+          case VPX_BITS_10:
+            vpx_highbd_10_get8x8var(src + src_stride * i + j, src_stride,
+                                    ref + ref_stride * i + j, ref_stride,
+                                    &sse8x8[k], &sum8x8[k]);
+            break;
+          case VPX_BITS_12:
+            vpx_highbd_12_get8x8var(src + src_stride * i + j, src_stride,
+                                    ref + ref_stride * i + j, ref_stride,
+                                    &sse8x8[k], &sum8x8[k]);
+            break;
+        }
+      } else {
+          vpx_get8x8var(src + src_stride * i + j, src_stride,
+                        ref + ref_stride * i + j, ref_stride,
+                        &sse8x8[k], &sum8x8[k]);
       }
+
 #else
       (void)bd;
       vpx_get8x8var(src + src_stride * i + j, src_stride,
@@ -337,7 +345,8 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
   // Calculate variance for whole partition, and also save 8x8 blocks' variance
   // to be used in following transform skipping test.
   block_variance(p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride,
-                 4 << bw, 4 << bh, &sse, &sum, 8, bd, sse8x8, sum8x8, var8x8);
+                 4 << bw, 4 << bh, &sse, &sum, 8, cpi->common.use_highbitdepth,
+                 bd, sse8x8, sum8x8, var8x8);
   var = sse - (((int64_t)sum * sum) >> (bw + bh + 4));
 
   *var_y = var;
