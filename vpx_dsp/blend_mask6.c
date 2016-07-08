@@ -12,11 +12,10 @@
 
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
+#include "vpx_dsp/blend_mask6.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 
 #include "./vpx_dsp_rtcd.h"
-
-#define MASK_BITS 6
 
 void vpx_blend_mask6_c(uint8_t *dst, uint32_t dst_stride,
                        uint8_t *src0, uint32_t src0_stride,
