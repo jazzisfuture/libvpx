@@ -421,6 +421,12 @@ int vp9_post_proc_frame(struct VP9Common *cm,
     }
   }
 
+  if (flags & VP9D_ADDNOISE) {
+    if (!cm->postproc_state.generated_noise) {
+      cm->postproc_state.generated_noise = vpx_calloc(
+          cm->width + 256, sizeof(*cm->postproc_state.generated_noise));
+    }
+  }
 
   if ((flags & VP9D_MFQE) && cm->current_video_frame >= 2 &&
       ppstate->last_frame_valid && cm->bit_depth == 8 &&
@@ -456,24 +462,21 @@ int vp9_post_proc_frame(struct VP9Common *cm,
   ppstate->last_base_qindex = cm->base_qindex;
   ppstate->last_frame_valid = 1;
 
-  // TODO(jimbankoski): Remove the following restriction by allocating space
-  // for noise on heap rather than in static member.
-  if ((flags & VP9D_ADDNOISE) &&
-      cm->width < (int) sizeof(ppstate->noise) - 256) {
+  if (flags & VP9D_ADDNOISE) {
     const int noise_level = ppflags->noise_level;
     if (ppstate->last_q != q ||
         ppstate->last_noise != noise_level) {
       double sigma;
       vpx_clear_system_state();
       sigma = noise_level + .5 + .6 * q / 63.0;
-      ppstate->clamp = vpx_setup_noise(sizeof(ppstate->noise), sigma,
-                                       ppstate->noise);
+      ppstate->clamp = vpx_setup_noise(cm->width + 256, sigma,
+                                       ppstate->generated_noise);
       ppstate->last_q = q;
       ppstate->last_noise = noise_level;
     }
-    vpx_plane_add_noise(ppbuf->y_buffer, ppstate->noise, ppstate->clamp,
-                        ppstate->clamp, ppstate->clamp * 2, ppbuf->y_width,
-                        ppbuf->y_height, ppbuf->y_stride);
+    vpx_plane_add_noise(ppbuf->y_buffer, ppstate->generated_noise,
+                        ppstate->clamp, ppstate->clamp, ppstate->clamp * 2,
+                        ppbuf->y_width, ppbuf->y_height, ppbuf->y_stride);
   }
 
   *dest = *ppbuf;

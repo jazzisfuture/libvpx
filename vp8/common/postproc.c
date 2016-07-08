@@ -412,6 +412,14 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
         ppstate->last_frame_valid = 1;
         return 0;
     }
+    if (flags & VP8D_ADDNOISE)
+    {
+      if (!oci->postproc_state.generated_noise)
+      {
+        oci->postproc_state.generated_noise = vpx_calloc(
+            oci->Width + 256, sizeof(*oci->postproc_state.generated_noise));
+      }
+    }
 
     /* Allocate post_proc_buffer_int if needed */
     if ((flags & VP8D_MFQE) && !oci->post_proc_buffer_int_used)
@@ -486,10 +494,7 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
     }
     ppstate->last_frame_valid = 1;
 
-    // TODO(jimbankoski): Remove the following restriction by allocating space
-    // for noise on heap rather than in static member.
-    if ((flags & VP8D_ADDNOISE)
-        && oci->Width < (int) sizeof(ppstate->noise) - 256)
+    if (flags & VP8D_ADDNOISE)
     {
         if (ppstate->last_q != q
             || ppstate->last_noise != noise_level)
@@ -497,15 +502,15 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
             double sigma;
             vp8_clear_system_state();
             sigma = noise_level + .5 + .6 * q / 63.0;
-            ppstate->clamp = vpx_setup_noise(sizeof(ppstate->noise),
-                                                        sigma, ppstate->noise);
+            ppstate->clamp = vpx_setup_noise(oci->Width + 256,
+                                             sigma, ppstate->generated_noise);
             ppstate->last_q = q;
             ppstate->last_noise = noise_level;
         }
 
         vpx_plane_add_noise
         (oci->post_proc_buffer.y_buffer,
-         ppstate->noise,
+         ppstate->generated_noise,
          ppstate->clamp,
          ppstate->clamp,
          ppstate->clamp * 2,
