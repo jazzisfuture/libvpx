@@ -7771,8 +7771,7 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         vp10_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
 #endif  // CONFIG_EXT_INTER
       }
-      vp10_build_obmc_inter_prediction(cm, xd, mi_row, mi_col, 0,
-                                       NULL, NULL,
+      vp10_build_obmc_inter_prediction(cm, xd, mi_row, mi_col,
                                        dst_buf1, dst_stride1,
                                        dst_buf2, dst_stride2);
       model_rd_for_sb(cpi, bsize, x, xd, 0, MAX_MB_PLANE - 1,
@@ -9566,7 +9565,7 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi,
       vp10_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
 #if CONFIG_OBMC
       if (mbmi->motion_variation == OBMC_CAUSAL)
-        vp10_build_obmc_inter_prediction(cm, xd, mi_row, mi_col, 0, NULL, NULL,
+        vp10_build_obmc_inter_prediction(cm, xd, mi_row, mi_col,
                                          dst_buf1, dst_stride1,
                                          dst_buf2, dst_stride2);
 #endif  // CONFIG_OBMC
