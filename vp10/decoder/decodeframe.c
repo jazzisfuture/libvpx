@@ -3437,6 +3437,63 @@ static void read_supertx_probs(FRAME_CONTEXT *fc, vp10_reader *r) {
 }
 #endif  // CONFIG_SUPERTX
 
+#if CONFIG_GLOBAL_MOTION
+static void read_global_motion_params(Global_Motion_Params *params,
+                                      vpx_prob *probs,
+                                      vp10_reader *r) {
+  GLOBAL_MOTION_TYPE gmtype = vp10_read_tree(r, vp10_global_motion_types_tree,
+                                             probs);
+  double H[9] = {0, 0, 0, 0, 0, 0, 0, 0, 1};
+  params->gmtype = gmtype;
+  switch (gmtype) {
+    case GLOBAL_ZERO:
+      break;
+    case GLOBAL_TRANSLATION:
+      H[0] =
+          (double) vp10_read_primitive_symmetric(r, GM_ABS_TRANSLATION_BITS) /
+          (1 << GM_TRANSLATION_PRECISION_BITS);
+      H[1] =
+          (double) vp10_read_primitive_symmetric(r, GM_ABS_TRANSLATION_BITS) /
+          (1 << GM_TRANSLATION_PRECISION_BITS);
+      vp10_integerize_model(H, TRANSLATION, &params->motion_params);
+      break;
+    case GLOBAL_ROTZOOM:
+    {
+      double rot, zoom;
+      H[2] =
+          (double) vp10_read_primitive_symmetric(r, GM_ABS_TRANSLATION_BITS) /
+          (1 << GM_TRANSLATION_PRECISION_BITS);
+      H[3] =
+          (double) vp10_read_primitive_symmetric(r, GM_ABS_TRANSLATION_BITS) /
+            (1 << GM_TRANSLATION_PRECISION_BITS);
+      rot = (double) vp10_read_primitive_symmetric(r, GM_ABS_ZOOM_BITS) /
+            (1 << GM_ROTATION_PRECISION_BITS);
+      zoom = (double) vp10_read_primitive_symmetric(r, GM_ABS_ROTATION_BITS) /
+            (1 << GM_ZOOM_PRECISION_BITS);
+      H[0] = (1 + zoom) * cos(rot * M_PI / 180.0);
+      H[1] = -(1 + zoom) * sin(rot * M_PI / 180.0);
+      vp10_integerize_model(H, ROTZOOM, &params->motion_params);
+      break;
+    }
+    default:
+      assert(0);
+  }
+}
+
+static void read_global_motion(VP10_COMMON *cm, vp10_reader *r) {
+  int frame, i;
+  memset(cm->num_global_motion, 0, sizeof(cm->num_global_motion));
+  memset(cm->global_motion, 0, sizeof(cm->global_motion));
+  for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
+    cm->num_global_motion[frame] = 1;
+    for (i = 0; i < cm->num_global_motion[frame]; ++i) {
+      read_global_motion_params(
+          cm->global_motion[frame], cm->fc->global_motion_types_prob, r);
+    }
+  }
+}
+#endif  // CONFIG_GLOBAL_MOTION
+
 static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
                                   size_t partition_size) {
   VP10_COMMON *const cm = &pbi->common;
@@ -3579,6 +3636,9 @@ static int read_compressed_header(VP10Decoder *pbi, const uint8_t *data,
     if (!xd->lossless[0])
       read_supertx_probs(fc, &r);
 #endif
+#if CONFIG_GLOBAL_MOTION
+    read_global_motion(cm, &r);
+#endif  // CONFIG_GLOBAL_MOTION
   }
 
   return vp10_reader_has_error(&r);
@@ -3708,6 +3768,9 @@ void vp10_decode_frame(VP10Decoder *pbi,
       init_read_bit_buffer(pbi, &rb, data, data_end, clear_data));
   YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
   xd->cur_buf = new_fb;
+#if CONFIG_GLOBAL_MOTION
+  xd->global_motion = cm->global_motion;
+#endif  // CONFIG_GLOBAL_MOTION
 
   if (!first_partition_size) {
     // showing a frame directly
