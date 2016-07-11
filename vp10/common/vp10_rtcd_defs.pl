@@ -268,14 +268,11 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
     add_proto qw/void vp10_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type";
     specialize qw/vp10_iht16x16_256_add sse2 dspr2/;
 
-if (!(vpx_config("CONFIG_VP10") eq "yes" && vpx_config("CONFIG_EXT_TX") eq "yes")) {
-    add_proto qw/void vp10_iht4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
+if (vpx_config("CONFIG_EXT_TX") eq "no") {
     specialize qw/vp10_iht4x4_16_add msa/;
 
-    add_proto qw/void vp10_iht8x8_64_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
     specialize qw/vp10_iht8x8_64_add msa/;
 
-    add_proto qw/void vp10_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type";
     specialize qw/vp10_iht16x16_256_add msa/;
 }
 
@@ -456,14 +453,11 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   add_proto qw/void vp10_fht16x16/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
   specialize qw/vp10_fht16x16 sse2/;
 
-if (!(vpx_config("CONFIG_VP10") eq "yes" && vpx_config("CONFIG_EXT_TX") eq "yes")) {
-  add_proto qw/void vp10_fht4x4/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
+if (vpx_config("CONFIG_EXT_TX") eq "no") {
   specialize qw/vp10_fht4x4 msa/;
 
-  add_proto qw/void vp10_fht8x8/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
   specialize qw/vp10_fht8x8 msa/;
 
-  add_proto qw/void vp10_fht16x16/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
   specialize qw/vp10_fht16x16 msa/;
 }
 
