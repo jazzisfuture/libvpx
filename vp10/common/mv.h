@@ -13,6 +13,9 @@
 
 #include "vp10/common/common.h"
 #include "vpx_dsp/vpx_filter.h"
+#if CONFIG_GLOBAL_MOTION
+#include "vp10/common/warped_motion.h"
+#endif  // CONFIG_GLOBAL_MOTION
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +35,30 @@ typedef struct mv32 {
   int32_t row;
   int32_t col;
 } MV32;
+
+#if CONFIG_GLOBAL_MOTION
+#define MAX_GLOBAL_MOTION_MODELS  1
+
+#define GM_TRANSLATION_PRECISION_BITS 3
+#define GM_ZOOM_PRECISION_BITS       11
+#define GM_ROTATION_PRECISION_BITS   11
+
+#define GM_ABS_ZOOM_BITS             11
+#define GM_ABS_ROTATION_BITS         11
+#define GM_ABS_TRANSLATION_BITS      11
+
+typedef enum {
+  GLOBAL_ZERO = 0,
+  GLOBAL_TRANSLATION = 1,
+  GLOBAL_ROTZOOM = 2,
+  GLOBAL_MOTION_TYPES
+} GLOBAL_MOTION_TYPE;
+
+typedef struct {
+  GLOBAL_MOTION_TYPE gmtype;
+  WarpedMotionParams motion_params;
+} Global_Motion_Params;
+#endif  // CONFIG_GLOBAL_MOTION
 
 #if CONFIG_REF_MV
 typedef struct candidate_mv {
