@@ -26,6 +26,8 @@
 #include "test/acm_random.h"
 #include "vp10/common/enums.h"
 
+#include "vpx_dsp/blend.h"
+
 using libvpx_test::ACMRandom;
 using libvpx_test::FunctionEquivalenceTest;
 using std::tr1::make_tuple;
@@ -33,7 +35,7 @@ using std::tr1::make_tuple;
 namespace {
 
 template<typename F, typename T>
-class BlendMask6Test : public FunctionEquivalenceTest<F> {
+class BlendA64MaskTest : public FunctionEquivalenceTest<F> {
  protected:
   static const int kIterations = 10000;
   static const int kMaxWidth = MAX_SB_SIZE * 5;  // * 5 to cover longer strides
@@ -42,11 +44,11 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
   static const int kMaxMaskWidth = 2 * MAX_SB_SIZE;
   static const int kMaxMaskSize = kMaxMaskWidth * kMaxMaskWidth;
 
-  BlendMask6Test() : rng_(ACMRandom::DeterministicSeed()) {}
+  BlendA64MaskTest() : rng_(ACMRandom::DeterministicSeed()) {}
 
-  virtual ~BlendMask6Test() {}
+  virtual ~BlendA64MaskTest() {}
 
-  virtual void Execute(T *p_src0, T *p_src1) = 0;
+  virtual void Execute(const T *p_src0, const T *p_src1) = 0;
 
   void Common() {
     w_ = 1 << (rng_(MAX_SB_SIZE_LOG2 + 1 - 2) + 2);
@@ -131,14 +133,14 @@ class BlendMask6Test : public FunctionEquivalenceTest<F> {
 //////////////////////////////////////////////////////////////////////////////
 
 typedef void (*F8B)(uint8_t *dst, uint32_t dst_stride,
-                      uint8_t *src0, uint32_t src0_stride,
-                      uint8_t *src1, uint32_t src1_stride,
-                      const uint8_t *mask, uint32_t mask_stride,
-                      int h, int w, int suby, int subx);
+                    const uint8_t *src0, uint32_t src0_stride,
+                    const uint8_t *src1, uint32_t src1_stride,
+                    const uint8_t *mask, uint32_t mask_stride,
+                    int h, int w, int suby, int subx);
 
-class BlendMask6Test8B : public BlendMask6Test<F8B, uint8_t> {
+class BlendA64MaskTest8B : public BlendA64MaskTest<F8B, uint8_t> {
  protected:
-  void Execute(uint8_t *p_src0, uint8_t *p_src1) {
+  void Execute(const uint8_t *p_src0, const uint8_t *p_src1) {
     ref_func_(dst_ref_ + dst_offset_, dst_stride_,
               p_src0 + src0_offset_, src0_stride_,
               p_src1 + src1_offset_, src1_stride_,
@@ -153,7 +155,7 @@ class BlendMask6Test8B : public BlendMask6Test<F8B, uint8_t> {
   }
 };
 
-TEST_P(BlendMask6Test8B, RandomValues) {
+TEST_P(BlendA64MaskTest8B, RandomValues) {
   for (int iter = 0 ; iter < kIterations && !HasFatalFailure(); ++iter) {
     for (int i = 0 ; i < kBufSize ; ++i) {
       dst_ref_[i] = rng_.Rand8();
@@ -164,13 +166,13 @@ TEST_P(BlendMask6Test8B, RandomValues) {
     }
 
     for (int i = 0 ; i < kMaxMaskSize ; ++i)
-      mask_[i] = rng_(65);
+      mask_[i] = rng_(VPX_BLEND_A64_MAX_ALPHA + 1);
 
     Common();
   }
 }
 
-TEST_P(BlendMask6Test8B, ExtremeValues) {
+TEST_P(BlendA64MaskTest8B, ExtremeValues) {
   for (int iter = 0 ; iter < kIterations && !HasFatalFailure(); ++iter) {
     for (int i = 0 ; i < kBufSize ; ++i) {
       dst_ref_[i] = rng_(2) + 254;
@@ -180,7 +182,7 @@ TEST_P(BlendMask6Test8B, ExtremeValues) {
     }
 
     for (int i = 0 ; i < kMaxMaskSize ; ++i)
-      mask_[i] = rng_(2) + 63;
+      mask_[i] = rng_(2) + VPX_BLEND_A64_MAX_ALPHA - 1;
 
     Common();
   }
@@ -188,8 +190,9 @@ TEST_P(BlendMask6Test8B, ExtremeValues) {
 
 #if HAVE_SSE4_1
 INSTANTIATE_TEST_CASE_P(
-  SSE4_1_C_COMPARE, BlendMask6Test8B,
-  ::testing::Values(make_tuple(&vpx_blend_mask6b_c, &vpx_blend_mask6b_sse4_1)));
+  SSE4_1_C_COMPARE, BlendA64MaskTest8B,
+  ::testing::Values(make_tuple(vpx_blend_a64_mask_c,
+                               vpx_blend_a64_mask_sse4_1)));
 #endif  // HAVE_SSE4_1
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -198,14 +201,14 @@ INSTANTIATE_TEST_CASE_P(
 //////////////////////////////////////////////////////////////////////////////
 
 typedef void (*FHBD)(uint8_t *dst, uint32_t dst_stride,
-                       uint8_t *src0, uint32_t src0_stride,
-                       uint8_t *src1, uint32_t src1_stride,
-                       const uint8_t *mask, uint32_t mask_stride,
-                       int h, int w, int suby, int subx, int bd);
+                     const uint8_t *src0, uint32_t src0_stride,
+                     const uint8_t *src1, uint32_t src1_stride,
+                     const uint8_t *mask, uint32_t mask_stride,
+                     int h, int w, int suby, int subx, int bd);
 
-class BlendMask6TestHBD : public BlendMask6Test<FHBD, uint16_t> {
+class BlendA64MaskTestHBD : public BlendA64MaskTest<FHBD, uint16_t> {
  protected:
-  void Execute(uint16_t *p_src0, uint16_t *p_src1) {
+  void Execute(const uint16_t *p_src0, const uint16_t *p_src1) {
     ref_func_(CONVERT_TO_BYTEPTR(dst_ref_ + dst_offset_), dst_stride_,
               CONVERT_TO_BYTEPTR(p_src0 + src0_offset_), src0_stride_,
               CONVERT_TO_BYTEPTR(p_src1 + src1_offset_), src1_stride_,
@@ -223,7 +226,7 @@ class BlendMask6TestHBD : public BlendMask6Test<FHBD, uint16_t> {
   int bit_depth_;
 };
 
-TEST_P(BlendMask6TestHBD, RandomValues) {
+TEST_P(BlendA64MaskTestHBD, RandomValues) {
   for (int iter = 0 ; iter < kIterations && !HasFatalFailure(); ++iter) {
     switch (rng_(3)) {
     case 0:
@@ -247,13 +250,13 @@ TEST_P(BlendMask6TestHBD, RandomValues) {
     }
 
     for (int i = 0 ; i < kMaxMaskSize ; ++i)
-      mask_[i] = rng_(65);
+      mask_[i] = rng_(VPX_BLEND_A64_MAX_ALPHA + 1);
 
     Common();
   }
 }
 
-TEST_P(BlendMask6TestHBD, ExtremeValues) {
+TEST_P(BlendA64MaskTestHBD, ExtremeValues) {
   for (int iter = 0 ; iter < 1000 && !HasFatalFailure(); ++iter) {
     switch (rng_(3)) {
     case 0:
@@ -278,7 +281,7 @@ TEST_P(BlendMask6TestHBD, ExtremeValues) {
     }
 
     for (int i = 0 ; i < kMaxMaskSize ; ++i)
-      mask_[i] = rng_(65);
+      mask_[i] = rng_(2) + VPX_BLEND_A64_MAX_ALPHA - 1;
 
     Common();
   }
@@ -286,9 +289,9 @@ TEST_P(BlendMask6TestHBD, ExtremeValues) {
 
 #if HAVE_SSE4_1
 INSTANTIATE_TEST_CASE_P(
-  SSE4_1_C_COMPARE, BlendMask6TestHBD,
-  ::testing::Values(make_tuple(&vpx_highbd_blend_mask6b_c,
-                               &vpx_highbd_blend_mask6b_sse4_1)));
+  SSE4_1_C_COMPARE, BlendA64MaskTestHBD,
+  ::testing::Values(make_tuple(vpx_highbd_blend_a64_mask_c,
+                               vpx_highbd_blend_a64_mask_sse4_1)));
 #endif  // HAVE_SSE4_1
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace
