@@ -1,0 +1,8 @@
+Verified+1: WebM Builds <builds@webmproject.org>
+Code-Review+2: Pascal Massimino <pascal.massimino@gmail.com>
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Submitted-by: Pascal Massimino <pascal.massimino@gmail.com>
+Submitted-at: Mon, 11 Jul 2016 16:34:20 +0000
+Reviewed-on: https://chromium-review.googlesource.com/359452
+Project: webm/libvpx
+Branch: refs/heads/nextgenv2
