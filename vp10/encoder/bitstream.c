@@ -111,6 +111,9 @@ static struct vp10_token ext_tx_intra_encodings[EXT_TX_SETS_INTRA][TX_TYPES];
 #else
 static struct vp10_token ext_tx_encodings[TX_TYPES];
 #endif  // CONFIG_EXT_TX
+#if CONFIG_GLOBAL_MOTION
+static struct vp10_token global_motion_types_encodings[GLOBAL_MOTION_TYPES];
+#endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_EXT_INTRA
 static struct vp10_token intra_filter_encodings[INTRA_FILTERS];
 #endif  // CONFIG_EXT_INTRA
@@ -142,6 +145,10 @@ void vp10_encode_token_init() {
 #if CONFIG_OBMC || CONFIG_WARPED_MOTION
   vp10_tokens_from_tree(motvar_encodings, vp10_motvar_tree);
 #endif  // CONFIG_OBMC || CONFIG_WARPED_MOTION
+#if CONFIG_GLOBAL_MOTION
+  vp10_tokens_from_tree(global_motion_types_encodings,
+                       vp10_global_motion_types_tree);
+#endif  // CONFIG_GLOBAL_MOTION
 }
 
 static void write_intra_mode(vp10_writer *w, PREDICTION_MODE mode,
@@ -3181,6 +3188,50 @@ static void write_uncompressed_header(VP10_COMP *cpi,
 
   write_tile_info(cm, wb);
 }
+#if CONFIG_GLOBAL_MOTION
+static void write_global_motion_params(Global_Motion_Params *params,
+                                       vpx_prob *probs,
+                                       vp10_writer *w) {
+  GLOBAL_MOTION_TYPE gmtype = params->gmtype;
+  vp10_write_token(w, vp10_global_motion_types_tree, probs,
+                  &global_motion_types_encodings[gmtype]);
+  switch (gmtype) {
+    case GLOBAL_ZERO:
+      break;
+    case GLOBAL_TRANSLATION:
+      vp10_write_primitive_symmetric(w, params->mv.as_mv.col,
+                                     GM_ABS_TRANSLATION_BITS);
+      vp10_write_primitive_symmetric(w, params->mv.as_mv.row,
+                                     GM_ABS_TRANSLATION_BITS);
+      break;
+    case GLOBAL_ROTZOOM:
+      vp10_write_primitive_symmetric(w, params->mv.as_mv.col,
+                                     GM_ABS_TRANSLATION_BITS);
+      vp10_write_primitive_symmetric(w, params->mv.as_mv.row,
+                                     GM_ABS_TRANSLATION_BITS);
+      vp10_write_primitive_symmetric(w, params->zoom, GM_ABS_ZOOM_BITS);
+      vp10_write_primitive_symmetric(w, params->rotation, GM_ABS_ROTATION_BITS);
+      break;
+    default:
+      assert(0);
+  }
+}
+
+static void write_global_motion(VP10_COMP *cpi, vp10_writer *w) {
+  VP10_COMMON *const cm = &cpi->common;
+  int frame, i;
+  for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
+    for (i = 0; i < cm->num_global_motion[frame]; ++i) {
+      if (!cpi->global_motion_used[frame]) {
+        memset(cm->global_motion[frame], 0,
+               MAX_GLOBAL_MOTION_MODELS * sizeof(*cm->global_motion[frame]));
+      }
+      write_global_motion_params(
+          &cm->global_motion[frame][i], cm->fc->global_motion_types_prob, w);
+    }
+  }
+}
+#endif
 
 static uint32_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
   VP10_COMMON *const cm = &cpi->common;
@@ -3349,7 +3400,9 @@ static uint32_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
       update_supertx_probs(cm, header_bc);
 #endif  // CONFIG_SUPERTX
   }
-
+#if CONFIG_GLOBAL_MOTION
+    write_global_motion(cpi, header_bc);
+#endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_ANS
   ans_write_init(&header_ans, data);
   buf_ans_flush(header_bc, &header_ans);
