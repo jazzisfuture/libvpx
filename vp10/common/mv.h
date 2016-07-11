@@ -33,6 +33,32 @@ typedef struct mv32 {
   int32_t col;
 } MV32;
 
+#if CONFIG_GLOBAL_MOTION
+#define MAX_GLOBAL_MOTION_MODELS  1
+
+#define GM_ZOOM_PRECISION_BITS       11
+#define GM_ROTATION_PRECISION_BITS   11
+
+#define GM_ABS_ZOOM_BITS             11
+#define GM_ABS_ROTATION_BITS         11
+#define GM_ABS_TRANSLATION_BITS      11
+
+typedef enum {
+  GLOBAL_ZERO = 0,
+  GLOBAL_TRANSLATION = 1,
+  GLOBAL_ROTZOOM = 2,
+  GLOBAL_MOTION_TYPES
+} GLOBAL_MOTION_TYPE;
+
+// Currently this is specialized for rotzoom model only
+typedef struct {
+  GLOBAL_MOTION_TYPE gmtype;
+  int rotation;   // positive or negative rotation angle in degrees
+  int zoom;       // this is actually the zoom multiplier minus 1
+  int_mv mv;
+} Global_Motion_Params;
+#endif  // CONFIG_GLOBAL_MOTION
+
 #if CONFIG_REF_MV
 typedef struct candidate_mv {
   int_mv this_mv;
