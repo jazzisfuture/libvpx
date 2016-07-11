@@ -13,6 +13,9 @@
 
 #include "vp10/common/common.h"
 #include "vpx_dsp/vpx_filter.h"
+#if CONFIG_GLOBAL_MOTION
+#include "vp10/common/warped_motion.h"
+#endif  // CONFIG_GLOBAL_MOTION
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +35,40 @@ typedef struct mv32 {
   int32_t row;
   int32_t col;
 } MV32;
+
+#if CONFIG_GLOBAL_MOTION
+// Alpha here refers to parameters a and b in rotzoom model:
+// | a   b|
+// |-b   a|
+
+#define GM_TRANS_PREC_BITS            3
+#define GM_ALPHA_PREC_BITS            5
+#define GM_ALPHA_STEP_BITS            2
+
+#define GM_ABS_ALPHA_BITS             5
+#define GM_ABS_TRANS_BITS             5
+
+typedef enum {
+  GLOBAL_ZERO = 0,
+  GLOBAL_TRANSLATION = 1,
+  GLOBAL_ROTZOOM = 2,
+  GLOBAL_MOTION_TYPES
+} GLOBAL_MOTION_TYPE;
+
+typedef struct {
+  GLOBAL_MOTION_TYPE gmtype;
+  WarpedMotionParams motion_params;
+} Global_Motion_Params;
+
+static INLINE GLOBAL_MOTION_TYPE get_gmtype(const Global_Motion_Params *gm) {
+  if (gm->motion_params.wmmat[2] == 0 && gm->motion_params.wmmat[3] == 0) {
+    return ((gm->motion_params.wmmat[0] | gm->motion_params.wmmat[1]) ?
+            GLOBAL_ZERO : GLOBAL_TRANSLATION);
+  } else {
+    return GLOBAL_ROTZOOM;
+  }
+}
+#endif  // CONFIG_GLOBAL_MOTION
 
 #if CONFIG_REF_MV
 typedef struct candidate_mv {
