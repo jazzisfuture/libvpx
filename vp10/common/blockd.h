@@ -303,6 +303,9 @@ typedef struct macroblockd_plane {
 #if CONFIG_NEW_QUANT
   const dequant_val_type_nuq* dequant_val_nuq[QUANT_PROFILES];
 #endif  // CONFIG_NEW_QUANT
+#if CONFIG_GLOBAL_MOTION
+  Global_Motion_Params (*global_motion)[MAX_GLOBAL_MOTION_MODELS];
+#endif  // CONFIG_GLOBAL_MOTION
 } MACROBLOCKD_PLANE;
 
 #define BLOCK_OFFSET(x, i) ((x) + (i) * 16)
