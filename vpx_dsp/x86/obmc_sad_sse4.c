@@ -50,8 +50,7 @@ static INLINE unsigned int obmc_sad_w4(const uint8_t *a, const int a_stride,
 
     n += 4;
 
-    if (n % 4 == 0)
-      a += a_step;
+    if (n % 4 == 0) a += a_step;
   } while (n < 4 * height);
 
   return xx_hsum_epi32_si32(v_sad_d);
@@ -63,7 +62,9 @@ static INLINE unsigned int obmc_sad_w8n(const uint8_t *a, const int a_stride,
   const int a_step = a_stride - width;
   int n = 0;
   __m128i v_sad_d = _mm_setzero_si128();
-  assert(width >= 8 && (width & (width - 1)) == 0);
+
+  assert(width >= 8);
+  assert(IS_POWER_OF_TWO(width));
 
   do {
     const __m128i v_a1_b = xx_loadl_32(a + n + 4);
@@ -96,8 +97,7 @@ static INLINE unsigned int obmc_sad_w8n(const uint8_t *a, const int a_stride,
 
     n += 8;
 
-    if (n % width == 0)
-      a += a_step;
+    if (n % width == 0) a += a_step;
   } while (n < width * height);
 
   return xx_hsum_epi32_si32(v_sad_d);
@@ -108,10 +108,11 @@ unsigned int vpx_obmc_sad##w##x##h##_sse4_1(const uint8_t *ref,               \
                                             int ref_stride,                   \
                                             const int32_t *wsrc,              \
                                             const int32_t *msk) {             \
-  if (w == 4)                                                                 \
+  if (w == 4) {                                                               \
     return obmc_sad_w4(ref, ref_stride, wsrc, msk, h);                        \
-  else                                                                        \
+  } else {                                                                    \
     return obmc_sad_w8n(ref, ref_stride, wsrc, msk, w, h);                    \
+  }                                                                           \
 }
 
 #if CONFIG_EXT_PARTITION
@@ -169,8 +170,7 @@ static INLINE unsigned int hbd_obmc_sad_w4(const uint8_t *a8,
 
     n += 4;
 
-    if (n % 4 == 0)
-      a += a_step;
+    if (n % 4 == 0) a += a_step;
   } while (n < 4 * height);
 
   return xx_hsum_epi32_si32(v_sad_d);
@@ -184,7 +184,9 @@ static INLINE unsigned int hbd_obmc_sad_w8n(const uint8_t *a8,
   const int a_step = a_stride - width;
   int n = 0;
   __m128i v_sad_d = _mm_setzero_si128();
-  assert(width >= 8 && (width & (width - 1)) == 0);
+
+  assert(width >= 8);
+  assert(IS_POWER_OF_TWO(width));
 
   do {
     const __m128i v_a1_w = xx_loadl_64(a + n + 4);
@@ -217,8 +219,7 @@ static INLINE unsigned int hbd_obmc_sad_w8n(const uint8_t *a8,
 
     n += 8;
 
-    if (n % width == 0)
-      a += a_step;
+    if (n % width == 0) a += a_step;
   } while (n < width * height);
 
   return xx_hsum_epi32_si32(v_sad_d);
@@ -229,10 +230,11 @@ unsigned int vpx_highbd_obmc_sad##w##x##h##_sse4_1(const uint8_t *ref,        \
                                                    int ref_stride,            \
                                                    const int32_t *wsrc,       \
                                                    const int32_t *msk) {      \
-  if (w == 4)                                                                 \
+  if (w == 4) {                                                               \
     return hbd_obmc_sad_w4(ref, ref_stride, wsrc, msk, h);                    \
-  else                                                                        \
+  } else {                                                                    \
     return hbd_obmc_sad_w8n(ref, ref_stride, wsrc, msk, w, h);                \
+  }                                                                           \
 }
 
 #if CONFIG_EXT_PARTITION
