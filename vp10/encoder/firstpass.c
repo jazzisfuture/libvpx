@@ -2507,6 +2507,9 @@ static void find_next_key_frame(VP10_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 static void configure_buffer_updates(VP10_COMP *cpi) {
   TWO_PASS *const twopass = &cpi->twopass;
 
+  // Wei-Ting: Should we move define another function to take care of
+  // cpi->rc.is_$Source_Type to make this function as it is in the comment?
+
   cpi->rc.is_src_frame_alt_ref = 0;
 #if CONFIG_EXT_REFS
   cpi->rc.is_bwd_ref_frame = 0;
@@ -2591,6 +2594,11 @@ static void configure_buffer_updates(VP10_COMP *cpi) {
       assert(0);
       break;
   }
+#if CONFIG_BUF_STATUS
+  fprintf(stdout, "UPDATE_TYPE: %d, idx %d\n",
+          twopass->gf_group.update_type[twopass->gf_group.index],
+          twopass->gf_group.index);
+#endif
 }
 
 static int is_skippable_frame(const VP10_COMP *cpi) {
@@ -2727,12 +2735,25 @@ void vp10_rc_get_second_pass_params(VP10_COMP *cpi) {
   }
 
   target_rate = gf_group->bit_allocation[gf_group->index];
+
+#if CONFIG_RC_MONITER
+  fprintf(stdout, "bit alloc %d ( %d = (%d,%d) )\n", target_rate,
+          VPXMAX(rc->min_frame_bandwidth, rc->avg_frame_bandwidth >> 5),
+          rc->min_frame_bandwidth, rc->avg_frame_bandwidth);
+#endif
+
   if (cpi->common.frame_type == KEY_FRAME)
     target_rate = vp10_rc_clamp_iframe_target_size(cpi, target_rate);
   else
     target_rate = vp10_rc_clamp_pframe_target_size(cpi, target_rate);
 
   rc->base_frame_target = target_rate;
+
+#if CONFIG_RC_MONITER
+  fprintf(stdout, "bit alloc %d ( %d = (%d,%d) )\n", target_rate,
+          VPXMAX(rc->min_frame_bandwidth, rc->avg_frame_bandwidth >> 5),
+          rc->min_frame_bandwidth, rc->avg_frame_bandwidth);
+#endif
 
   {
     const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE)
