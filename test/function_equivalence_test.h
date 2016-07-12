@@ -36,5 +36,27 @@ class FunctionEquivalenceTest :
   T tst_func_;
 };
 
+template <typename T>
+class FunctionEquivalenceHBDTest :
+  public ::testing::TestWithParam< std::tr1::tuple< T, T, int> > {
+ public:
+  virtual ~FunctionEquivalenceHBDTest() {}
+
+  virtual void SetUp() {
+    ref_func_ = std::tr1::get<0>(this->GetParam());
+    tst_func_ = std::tr1::get<1>(this->GetParam());
+    bd_ = std::tr1::get<2>(this->GetParam());
+  }
+
+  virtual void TearDown() {
+    libvpx_test::ClearSystemState();
+  }
+
+ protected:
+  T ref_func_;
+  T tst_func_;
+  int bd_;
+};
+
 }   // namespace libvpx_test
 #endif  // TEST_FUNCTION_EQUIVALENCE_TEST_H_
