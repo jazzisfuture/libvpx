@@ -12,10 +12,11 @@
 #include "./macros_msa.h"
 
 void vpx_plane_add_noise_msa(uint8_t *start_ptr, char *noise,
-                             char blackclamp[16], char whiteclamp[16],
-                             char bothclamp[16], uint32_t width,
+                             int blackclamp, int whiteclamp,
+                             int bothclamp, uint32_t width,
                              uint32_t height, int32_t pitch) {
   uint32_t i, j;
+  (void) bothclamp;
 
   for (i = 0; i < height / 2; ++i) {
     uint8_t *pos0_ptr = start_ptr + (2 * i) * pitch;
@@ -32,8 +33,8 @@ void vpx_plane_add_noise_msa(uint8_t *start_ptr, char *noise,
       ref0 = LD_UB(ref0_ptr);
       pos1 = LD_UB(pos1_ptr);
       ref1 = LD_UB(ref1_ptr);
-      black_clamp = (v16u8)__msa_fill_b(blackclamp[0]);
-      white_clamp = (v16u8)__msa_fill_b(whiteclamp[0]);
+      black_clamp = (v16u8)__msa_fill_b(blackclamp);
+      white_clamp = (v16u8)__msa_fill_b(whiteclamp);
       temp00 = (pos0 < black_clamp);
       pos0 = __msa_bmnz_v(pos0, black_clamp, temp00);
       temp01 = (pos1 < black_clamp);

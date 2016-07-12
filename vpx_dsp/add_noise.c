@@ -17,11 +17,9 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
 
-void vpx_plane_add_noise_c(uint8_t *start, char *noise,
-                           char blackclamp[16],
-                           char whiteclamp[16],
-                           char bothclamp[16],
-                           unsigned int width, unsigned int height, int pitch) {
+void vpx_plane_add_noise_c(uint8_t *start, char *noise, int blackclamp,
+                           int whiteclamp, int bothclamp, unsigned int width,
+                           unsigned int height, int pitch) {
   unsigned int i, j;
 
   for (i = 0; i < height; i++) {
@@ -31,9 +29,9 @@ void vpx_plane_add_noise_c(uint8_t *start, char *noise,
     for (j = 0; j < width; j++) {
       int v = pos[j];
 
-      v = clamp(v - blackclamp[0], 0, 255);
-      v = clamp(v + bothclamp[0], 0, 255);
-      v = clamp(v - whiteclamp[0], 0, 255);
+      v = clamp(v - blackclamp, 0, 255);
+      v = clamp(v + bothclamp, 0, 255);
+      v = clamp(v - whiteclamp, 0, 255);
 
       pos[j] = v + ref[j];
     }
@@ -41,8 +39,8 @@ void vpx_plane_add_noise_c(uint8_t *start, char *noise,
 }
 
 static double gaussian(double sigma, double mu, double x) {
-  return 1 / (sigma * sqrt(2.0 * 3.14159265))
-      * (exp(-(x - mu) * (x - mu) / (2 * sigma * sigma)));
+  return 1 / (sigma * sqrt(2.0 * 3.14159265)) *
+         (exp(-(x - mu) * (x - mu) / (2 * sigma * sigma)));
 }
 
 int vpx_setup_noise(int size, double sigma, char *noise) {
@@ -56,7 +54,7 @@ int vpx_setup_noise(int size, double sigma, char *noise) {
     int a_i = (int) (0.5 + 256 * gaussian(sigma, 0, i));
     if (a_i) {
       for (j = 0; j < a_i; j++) {
-        char_dist[next + j] = (char) (i);
+        char_dist[next + j] = (char)(i);
       }
       next = next + j;
     }
