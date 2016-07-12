@@ -85,6 +85,7 @@ FILE *yuv_skinmap_file = NULL;
 #endif
 #ifdef OUTPUT_YUV_REC
 FILE *yuv_rec_file;
+#define FILE_NAME_LEN 80
 #endif
 
 #if 0
@@ -2539,7 +2540,7 @@ VP10_COMP *vp10_create_compressor(VP10EncoderConfig *oxcf,
   yuv_skinmap_file = fopen("skinmap.yuv", "ab");
 #endif
 #ifdef OUTPUT_YUV_REC
-  yuv_rec_file = fopen("rec.yuv", "wb");
+  // yuv_rec_file = fopen("rec.yuv", "wb");
 #endif
 
 #if 0
@@ -2925,7 +2926,7 @@ void vp10_remove_compressor(VP10_COMP *cpi) {
   fclose(yuv_skinmap_file);
 #endif
 #ifdef OUTPUT_YUV_REC
-  fclose(yuv_rec_file);
+  // fclose(yuv_rec_file);
 #endif
 
 #if 0
@@ -3120,7 +3121,119 @@ void vp10_write_yuv_rec_frame(VP10_COMMON *cm) {
 
   fflush(yuv_rec_file);
 }
+
+void vp10_write_a_yuv_frame(VP10_COMMON *cm, YV12_BUFFER_CONFIG *s) {
+  uint8_t *src = s->y_buffer;
+  int h = cm->height;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (s->flags & YV12_FLAG_HIGHBITDEPTH) {
+    uint16_t *src16 = CONVERT_TO_SHORTPTR(s->y_buffer);
+
+    do {
+      fwrite(src16, s->y_width, 2,  yuv_rec_file);
+      src16 += s->y_stride;
+    } while (--h);
+
+    src16 = CONVERT_TO_SHORTPTR(s->u_buffer);
+    h = s->uv_height;
+
+    do {
+      fwrite(src16, s->uv_width, 2,  yuv_rec_file);
+      src16 += s->uv_stride;
+    } while (--h);
+
+    src16 = CONVERT_TO_SHORTPTR(s->v_buffer);
+    h = s->uv_height;
+
+    do {
+      fwrite(src16, s->uv_width, 2, yuv_rec_file);
+      src16 += s->uv_stride;
+    } while (--h);
+
+    fflush(yuv_rec_file);
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  do {
+    fwrite(src, s->y_width, 1,  yuv_rec_file);
+    src += s->y_stride;
+  } while (--h);
+
+  src = s->u_buffer;
+  h = s->uv_height;
+
+  do {
+    fwrite(src, s->uv_width, 1,  yuv_rec_file);
+    src += s->uv_stride;
+  } while (--h);
+
+  src = s->v_buffer;
+  h = s->uv_height;
+
+  do {
+    fwrite(src, s->uv_width, 1, yuv_rec_file);
+    src += s->uv_stride;
+  } while (--h);
+
+  fflush(yuv_rec_file);
+}
+
+void vp10_write_yuv_frames_in_buffer(VP10_COMP *cpi) {
+  VP10_COMMON * const cm = &cpi->common;
+  BufferPool *const pool = cm->buffer_pool;
+  RefCntBuffer *bufs = pool->frame_bufs;
+  int i;
+  for (i = LAST_FRAME; i < MAX_REF_FRAMES; ++i) {
+    char str[FILE_NAME_LEN];
+    int virtual_idx = get_ref_frame_map_idx(cpi, i);
+    int phy_idx = cm->ref_frame_map[virtual_idx];
+    YV12_BUFFER_CONFIG *frame = &bufs[phy_idx].buf;
+
+#if 1  // CONFIG_SHOW_EXISTING_ARF
+    snprintf(str, FILE_NAME_LEN, "./tmp/ref_frame%d_%d.yuv",
+             cm->current_video_frame, i);
+#else
+    snprintf(str, FILE_NAME_LEN, "./tmp/b_ref_frame%d_%d.yuv",
+            cm->current_video_frame, i);
 #endif
+    yuv_rec_file = fopen(str, "wb");
+
+    vp10_write_a_yuv_frame(cm, frame);
+
+    fclose(yuv_rec_file);
+  }
+}
+#endif  // OUTPUT_YUV_REC
+
+#if 0  // SHOW_BUF_STATUS
+static void print_ref_buf_indices_map(VP10_COMP *cpi, VP10_COMMON *cm) {
+  int tmp_mask = get_refresh_mask(cpi);
+  int i;
+
+  for (i = 0; i < REF_FRAMES; ++i) {
+    fprintf(stdout, "%d ", tmp_mask & 1);
+    tmp_mask >>= 1;
+  }
+  fprintf(stdout, " ------( rl %d, rg %d, rb %d, ra %d, new %d) "
+          "refresh mask %d\n",
+          cpi->refresh_last_frame, cpi->refresh_golden_frame,
+          cpi->refresh_bwd_ref_frame, cpi->refresh_alt_ref_frame,
+          cm->new_fb_idx, get_refresh_mask(cpi));
+
+  for (i = LAST_FRAME; i <= ALTREF_FRAME; ++i) {
+    fprintf(stdout, "%d ", get_ref_frame_map_idx(cpi, i));
+  }
+  fprintf(stdout, " ------ virtual index\n");
+
+  for (i = 0; i < ALTREF_FRAME; ++i) {
+        fprintf(stdout, "%d ", cm->ref_frame_map[i]);
+  }
+  fprintf(stdout, " ------ physical index\n");
+}
+#endif
+
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
@@ -4849,6 +4962,13 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
     // Update the frame type
     cm->last_frame_type = cm->frame_type;
 
+#if CONFIG_EXT_REFS
+    if (cpi->rc.is_src_frame_alt_ref) {
+      vp10_set_target_rate(cpi);
+      vp10_rc_postencode_update(cpi, *size);
+    }
+#endif
+
     cm->last_width = cm->width;
     cm->last_height = cm->height;
 
@@ -4980,6 +5100,8 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   if (cpi->rc.is_last_bipred_frame) {
     // NOTE: If the current frame is a LAST_BIPRED_FRAME, next it is needed
     //       to show the BWDREF_FRAME.
+    // Wei-Ting: Can we assign this index at the place where we assign
+    // cm->show_existing_frame = 1 ?
     cpi->existing_fb_idx_to_show = cpi->bwd_fb_idx;
   }
 #endif  // CONFIG_EXT_REFS
@@ -5097,11 +5219,14 @@ static void Pass0Encode(VP10_COMP *cpi, size_t *size, uint8_t *dest,
 static void Pass2Encode(VP10_COMP *cpi, size_t *size,
                         uint8_t *dest, unsigned int *frame_flags) {
   cpi->allow_encode_breakout = ENCODE_BREAKOUT_ENABLED;
+
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 
 #if CONFIG_EXT_REFS
   // Donot do the post-encoding update for show_existing_frame==1.
-  if (!cpi->common.show_existing_frame)
+  // Wei-Ting: Since we allocate a spot in gf_group for OVERLAY frame, we need
+  //           to do postencode updates
+  if (!cpi->common.show_existing_frame || cpi->rc.is_src_frame_alt_ref)
 #endif  // CONFIG_EXT_REFS
     vp10_twopass_postencode_update(cpi);
 }
@@ -5500,6 +5625,10 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
     *time_stamp = source->ts_start;
     *time_end = source->ts_end;
 
+    if (cpi->rc.is_src_frame_alt_ref) {
+      adjust_frame_rate(cpi, source);
+    }
+
     // Find a free buffer for the new frame, releasing the reference previously
     // held.
     if (cm->new_fb_idx != INVALID_IDX) {
@@ -5515,6 +5644,11 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
 
     // Start with a 0 size frame.
     *size = 0;
+
+    // We need to update the gf_group for show_existing overlay frame
+    if (cpi->rc.is_src_frame_alt_ref) {
+      vp10_rc_get_second_pass_params(cpi);
+    }
 
     Pass2Encode(cpi, size, dest, frame_flags);
 
@@ -5724,7 +5858,20 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
     cpi->rc.is_last_bipred_frame = 0;
     cm->show_existing_frame = 1;
   } else {
-    cm->show_existing_frame = 0;
+    if (cpi->oxcf.pass == 2) {
+      const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+      if (gf_group->update_type[gf_group->index] == OVERLAY_UPDATE &&
+          cpi->is_arf_filter_off) {
+        // Other parameters related to OVERLAY_UPDATE will be taken care of
+        // in vp10_rc_get_second_pass_params(cpi)
+        cm->show_existing_frame = 1;
+        cpi->rc.is_src_frame_alt_ref = 1;
+        cpi->existing_fb_idx_to_show = cpi->alt_fb_idx;
+        cpi->is_arf_filter_off = 0;
+      }
+    } else {
+      cm->show_existing_frame = 0;
+    }
   }
 #endif  // CONFIG_EXT_REFS
 
