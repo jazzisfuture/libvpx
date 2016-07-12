@@ -4576,12 +4576,15 @@ static void encode_frame_internal(VP10_COMP *cpi) {
   vp10_initialize_rd_consts(cpi);
   vp10_initialize_me_consts(cpi, x, cm->base_qindex);
   init_encode_frame_mb_context(cpi);
-
+#if CONFIG_SHOW_EXISTING_ARF
+  cm->use_prev_frame_mvs = 0;
+#else
   cm->use_prev_frame_mvs = !cm->error_resilient_mode &&
                            cm->width == cm->last_width &&
                            cm->height == cm->last_height &&
                            !cm->intra_only &&
                            cm->last_show_frame;
+#endif
 #if CONFIG_EXT_REFS
   // NOTE(zoeliu): As cm->prev_frame can take neither a frame of
   //               show_exisiting_frame=1, nor can it take a frame not used as
