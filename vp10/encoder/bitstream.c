@@ -2671,8 +2671,10 @@ static void write_tile_info(const VP10_COMMON *const cm,
     vpx_wb_write_bit(wb, cm->log2_tile_rows != 1);
 #endif  // CONFIG_EXT_TILE
 }
-
-static int get_refresh_mask(VP10_COMP *cpi) {
+#if !CONFIG_BUF_STATUS
+static
+#endif
+int get_refresh_mask(VP10_COMP *cpi) {
   int refresh_mask = 0;
 
 #if CONFIG_EXT_REFS

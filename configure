@@ -286,6 +286,8 @@ EXPERIMENT_LIST="
     warped_motion
     entropy
     bidir_pred
+    str_zero
+    show_existing_arf
 "
 CONFIG_LIST="
     dependency_tracking
