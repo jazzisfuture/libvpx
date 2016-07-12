@@ -615,6 +615,13 @@ typedef struct VP10_COMP {
   int refresh_frame_mask;
   int existing_fb_idx_to_show;
 #endif  // CONFIG_EXT_REFS
+#if CONFIG_SHOW_EXISTING_ARF
+  int is_arf_filter_off;
+  int is_gf_group_begin;
+#endif
+#if CONFIG_BUF_STATUS
+  int check_frame;
+#endif
 } VP10_COMP;
 
 void vp10_initialize_enc(void);

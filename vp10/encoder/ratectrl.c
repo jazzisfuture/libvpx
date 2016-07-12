@@ -203,7 +203,12 @@ int vp10_rc_clamp_pframe_target_size(const VP10_COMP *const cpi, int target) {
                                       rc->avg_frame_bandwidth >> 5);
   if (target < min_frame_target)
     target = min_frame_target;
+#if CONFIG_SHOW_EXISTING_ARF
+  if ((cpi->refresh_golden_frame && rc->is_src_frame_alt_ref) ||
+      cpi->is_gf_group_begin) {
+#else
   if (cpi->refresh_golden_frame && rc->is_src_frame_alt_ref) {
+#endif
     // If there is an active ARF at this location use the minimum
     // bits on this frame even if it is a constructed arf.
     // The active maximum quantizer insures that an appropriate
@@ -1232,8 +1237,13 @@ static void update_alt_ref_frame_stats(VP10_COMP *cpi) {
 static void update_golden_frame_stats(VP10_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
 
-  // Update the Golden frame usage counts.
+#if CONFIG_SHOW_EXISTING_ARF
+    // Update the Golden frame usage counts.
+  if (cpi->refresh_golden_frame || cpi->is_gf_group_begin) {
+#else
+    // Update the Golden frame usage counts.
   if (cpi->refresh_golden_frame) {
+#endif
     // this frame refreshes means next frames don't unless specified by user
     rc->frames_since_golden = 0;
 
@@ -1326,6 +1336,13 @@ void vp10_rc_postencode_update(VP10_COMP *cpi, uint64_t bytes_used) {
     rc->long_rolling_actual_bits = ROUND_POWER_OF_TWO(
         rc->long_rolling_actual_bits * 31 + rc->projected_frame_size, 5);
   }
+
+#if CONFIG_RC_MONITER
+  fprintf(stdout,"RC %d %d %d %d [%d %d]\n", rc->rolling_target_bits,
+          rc->rolling_actual_bits, rc->long_rolling_target_bits,
+          rc->long_rolling_actual_bits, rc->projected_frame_size,
+          rc->this_frame_target);
+#endif
 
   // Actual bits spent
   rc->total_actual_bits += rc->projected_frame_size;

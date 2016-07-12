@@ -3725,13 +3725,16 @@ void vp10_decode_frame(VP10Decoder *pbi,
   if (!read_is_valid(data, first_partition_size, data_end))
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Truncated packet or corrupt header length");
-
+#if CONFIG_SHOW_EXISTING_ARF
+  cm->use_prev_frame_mvs = 0;
+#else
   cm->use_prev_frame_mvs = !cm->error_resilient_mode &&
                            cm->width == cm->last_width &&
                            cm->height == cm->last_height &&
                            !cm->last_intra_only &&
                            cm->last_show_frame &&
                            (cm->last_frame_type != KEY_FRAME);
+#endif
 #if CONFIG_EXT_REFS
   // NOTE(zoeliu): As cm->prev_frame can take neither a frame of
   //               show_exisiting_frame=1, nor can it take a frame not used as
