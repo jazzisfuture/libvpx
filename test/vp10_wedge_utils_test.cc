@@ -172,11 +172,7 @@ typedef uint64_t (*FSSE)(const int16_t *r1,
 
 class WedgeUtilsSSEOptTest : public FunctionEquivalenceTest<FSSE> {
  protected:
-  WedgeUtilsSSEOptTest() : rng_(ACMRandom::DeterministicSeed()) {}
-
   static const int kIterations = 10000;
-
-  ACMRandom rng_;
 };
 
 TEST_P(WedgeUtilsSSEOptTest, RandomValues) {
@@ -238,8 +234,8 @@ TEST_P(WedgeUtilsSSEOptTest, ExtremeValues) {
 INSTANTIATE_TEST_CASE_P(
     SSE2, WedgeUtilsSSEOptTest,
     ::testing::Values(
-        make_tuple(&vp10_wedge_sse_from_residuals_c,
-                   &vp10_wedge_sse_from_residuals_sse2)
+      WedgeUtilsSSEOptTest::MakeParam(vp10_wedge_sse_from_residuals_c,
+                                      vp10_wedge_sse_from_residuals_sse2)
     )
 );
 #endif  // HAVE_SSE2
@@ -255,12 +251,8 @@ typedef int (*FSign)(const int16_t *ds,
 
 class WedgeUtilsSignOptTest : public FunctionEquivalenceTest<FSign> {
  protected:
-  WedgeUtilsSignOptTest() : rng_(ACMRandom::DeterministicSeed()) {}
-
   static const int kIterations = 10000;
   static const int kMaxSize = 8196;  // Size limited by SIMD implementation.
-
-  ACMRandom rng_;
 };
 
 TEST_P(WedgeUtilsSignOptTest, RandomValues) {
@@ -353,8 +345,8 @@ TEST_P(WedgeUtilsSignOptTest, ExtremeValues) {
 INSTANTIATE_TEST_CASE_P(
     SSE2, WedgeUtilsSignOptTest,
     ::testing::Values(
-        make_tuple(&vp10_wedge_sign_from_residuals_c,
-                   &vp10_wedge_sign_from_residuals_sse2)
+      WedgeUtilsSignOptTest::MakeParam(vp10_wedge_sign_from_residuals_c,
+                                       vp10_wedge_sign_from_residuals_sse2)
     )
 );
 #endif  // HAVE_SSE2
@@ -370,11 +362,7 @@ typedef void (*FDS)(int16_t *d,
 
 class WedgeUtilsDeltaSquaresOptTest : public FunctionEquivalenceTest<FDS> {
  protected:
-  WedgeUtilsDeltaSquaresOptTest() : rng_(ACMRandom::DeterministicSeed()) {}
-
   static const int kIterations = 10000;
-
-  ACMRandom rng_;
 };
 
 TEST_P(WedgeUtilsDeltaSquaresOptTest, RandomValues) {
@@ -406,8 +394,9 @@ TEST_P(WedgeUtilsDeltaSquaresOptTest, RandomValues) {
 INSTANTIATE_TEST_CASE_P(
     SSE2, WedgeUtilsDeltaSquaresOptTest,
     ::testing::Values(
-        make_tuple(&vp10_wedge_compute_delta_squares_c,
-                   &vp10_wedge_compute_delta_squares_sse2)
+      WedgeUtilsDeltaSquaresOptTest::MakeParam(
+          vp10_wedge_compute_delta_squares_c,
+          vp10_wedge_compute_delta_squares_sse2)
     )
 );
 #endif  // HAVE_SSE2

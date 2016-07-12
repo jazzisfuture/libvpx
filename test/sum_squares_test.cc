@@ -142,12 +142,8 @@ typedef uint64_t (*F1D)(const int16_t *src, uint32_t N);
 
 class SumSquares1DTest : public FunctionEquivalenceTest<F1D> {
  protected:
-  SumSquares1DTest() : rng_(ACMRandom::DeterministicSeed()) {}
-
   static const int kIterations = 1000;
   static const int kMaxSize = 256;
-
-  ACMRandom rng_;
 };
 
 TEST_P(SumSquares1DTest, RandomValues) {
@@ -189,13 +185,12 @@ TEST_P(SumSquares1DTest, ExtremeValues) {
   }
 }
 
-using std::tr1::make_tuple;
-
 #if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(
     SSE2, SumSquares1DTest,
     ::testing::Values(
-        make_tuple(&vpx_sum_squares_i16_c, &vpx_sum_squares_i16_sse2)
+      SumSquares1DTest::MakeParam(vpx_sum_squares_i16_c,
+                                  vpx_sum_squares_i16_sse2)
     )
 );
 #endif  // HAVE_SSE2

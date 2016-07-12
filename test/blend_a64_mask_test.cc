@@ -23,14 +23,11 @@
 
 #include "./vp10_rtcd.h"
 
-#include "test/acm_random.h"
 #include "vp10/common/enums.h"
 
 #include "vpx_dsp/blend.h"
 
-using libvpx_test::ACMRandom;
 using libvpx_test::FunctionEquivalenceTest;
-using std::tr1::make_tuple;
 
 namespace {
 
@@ -44,35 +41,33 @@ class BlendA64MaskTest : public FunctionEquivalenceTest<F> {
   static const int kMaxMaskWidth = 2 * MAX_SB_SIZE;
   static const int kMaxMaskSize = kMaxMaskWidth * kMaxMaskWidth;
 
-  BlendA64MaskTest() : rng_(ACMRandom::DeterministicSeed()) {}
-
   virtual ~BlendA64MaskTest() {}
 
   virtual void Execute(const T *p_src0, const T *p_src1) = 0;
 
   void Common() {
-    w_ = 1 << rng_(MAX_SB_SIZE_LOG2 + 1);
-    h_ = 1 << rng_(MAX_SB_SIZE_LOG2 + 1);
+    w_ = 1 << this->rng_(MAX_SB_SIZE_LOG2 + 1);
+    h_ = 1 << this->rng_(MAX_SB_SIZE_LOG2 + 1);
 
-    subx_ = rng_(2);
-    suby_ = rng_(2);
+    subx_ = this->rng_(2);
+    suby_ = this->rng_(2);
 
-    dst_offset_ = rng_(33);
-    dst_stride_ = rng_(kMaxWidth + 1 - w_) + w_;
+    dst_offset_ = this->rng_(33);
+    dst_stride_ = this->rng_(kMaxWidth + 1 - w_) + w_;
 
-    src0_offset_ = rng_(33);
-    src0_stride_ = rng_(kMaxWidth + 1 - w_) + w_;
+    src0_offset_ = this->rng_(33);
+    src0_stride_ = this->rng_(kMaxWidth + 1 - w_) + w_;
 
-    src1_offset_ = rng_(33);
-    src1_stride_ = rng_(kMaxWidth + 1 - w_) + w_;
+    src1_offset_ = this->rng_(33);
+    src1_stride_ = this->rng_(kMaxWidth + 1 - w_) + w_;
 
-    mask_stride_ = rng_(kMaxWidth + 1 - w_ * (subx_ ? 2 : 1))
-                  + w_ * (subx_ ? 2 : 1);
+    mask_stride_ = this->rng_(kMaxWidth + 1 - w_ * (subx_ ? 2 : 1))
+                   + w_ * (subx_ ? 2 : 1);
 
     T *p_src0;
     T *p_src1;
 
-    switch (rng_(3)) {
+    switch (this->rng_(3)) {
       case 0:   // Separate sources
         p_src0 = src0_;
         p_src1 = src1_;
@@ -102,8 +97,6 @@ class BlendA64MaskTest : public FunctionEquivalenceTest<F> {
       }
     }
   }
-
-  ACMRandom rng_;
 
   T dst_ref_[kBufSize];
   T dst_tst_[kBufSize];
@@ -191,8 +184,9 @@ TEST_P(BlendA64MaskTest8B, ExtremeValues) {
 #if HAVE_SSE4_1
 INSTANTIATE_TEST_CASE_P(
   SSE4_1_C_COMPARE, BlendA64MaskTest8B,
-  ::testing::Values(make_tuple(vpx_blend_a64_mask_c,
-                               vpx_blend_a64_mask_sse4_1)));
+  ::testing::Values(
+    BlendA64MaskTest8B::MakeParam(vpx_blend_a64_mask_c,
+                                  vpx_blend_a64_mask_sse4_1)));
 #endif  // HAVE_SSE4_1
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -290,8 +284,9 @@ TEST_P(BlendA64MaskTestHBD, ExtremeValues) {
 #if HAVE_SSE4_1
 INSTANTIATE_TEST_CASE_P(
   SSE4_1_C_COMPARE, BlendA64MaskTestHBD,
-  ::testing::Values(make_tuple(vpx_highbd_blend_a64_mask_c,
-                               vpx_highbd_blend_a64_mask_sse4_1)));
+  ::testing::Values(
+    BlendA64MaskTestHBD::MakeParam(vpx_highbd_blend_a64_mask_c,
+                                   vpx_highbd_blend_a64_mask_sse4_1)));
 #endif  // HAVE_SSE4_1
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace

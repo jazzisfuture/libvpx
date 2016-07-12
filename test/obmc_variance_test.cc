@@ -9,7 +9,6 @@
  */
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
-#include "test/acm_random.h"
 
 #include "test/function_equivalence_test.h"
 
@@ -19,13 +18,7 @@
 
 #define MAX_SB_SQUARE (MAX_SB_SIZE * MAX_SB_SIZE)
 
-using std::tr1::make_tuple;
-
-using libvpx_test::ACMRandom;
 using libvpx_test::FunctionEquivalenceTest;
-#if CONFIG_VP9_HIGHBITDEPTH
-using libvpx_test::FunctionEquivalenceHBDTest;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 namespace {
 
@@ -40,13 +33,7 @@ typedef unsigned int (*ObmcVarF)(const uint8_t *pre, int pre_stride,
 // 8 bit
 ////////////////////////////////////////////////////////////////////////////////
 
-class ObmcVarianceTest : public FunctionEquivalenceTest<ObmcVarF> {
- public:
-  ObmcVarianceTest() : rng_(ACMRandom::DeterministicSeed()) {}
-
- protected:
-  ACMRandom rng_;
-};
+class ObmcVarianceTest : public FunctionEquivalenceTest<ObmcVarF> {};
 
 TEST_P(ObmcVarianceTest, RandomValues) {
   DECLARE_ALIGNED(32, uint8_t, pre[MAX_SB_SQUARE]);
@@ -101,23 +88,39 @@ TEST_P(ObmcVarianceTest, ExtremeValues) {
 #if HAVE_SSE4_1
 const ObmcVarianceTest::ParamType sse4_functions[] = {
 #if CONFIG_EXT_PARTITION
-  make_tuple(vpx_obmc_variance128x128_c, vpx_obmc_variance128x128_sse4_1),
-  make_tuple(vpx_obmc_variance128x64_c, vpx_obmc_variance128x64_sse4_1),
-  make_tuple(vpx_obmc_variance64x128_c, vpx_obmc_variance64x128_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance128x128_c,
+                              vpx_obmc_variance128x128_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance128x64_c,
+                              vpx_obmc_variance128x64_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance64x128_c,
+                              vpx_obmc_variance64x128_sse4_1),
 #endif  // CONFIG_EXT_PARTITION
-  make_tuple(vpx_obmc_variance64x64_c, vpx_obmc_variance64x64_sse4_1),
-  make_tuple(vpx_obmc_variance64x32_c, vpx_obmc_variance64x32_sse4_1),
-  make_tuple(vpx_obmc_variance32x64_c, vpx_obmc_variance32x64_sse4_1),
-  make_tuple(vpx_obmc_variance32x32_c, vpx_obmc_variance32x32_sse4_1),
-  make_tuple(vpx_obmc_variance32x16_c, vpx_obmc_variance32x16_sse4_1),
-  make_tuple(vpx_obmc_variance16x32_c, vpx_obmc_variance16x32_sse4_1),
-  make_tuple(vpx_obmc_variance16x16_c, vpx_obmc_variance16x16_sse4_1),
-  make_tuple(vpx_obmc_variance16x8_c, vpx_obmc_variance16x8_sse4_1),
-  make_tuple(vpx_obmc_variance8x16_c, vpx_obmc_variance8x16_sse4_1),
-  make_tuple(vpx_obmc_variance8x8_c, vpx_obmc_variance8x8_sse4_1),
-  make_tuple(vpx_obmc_variance8x4_c, vpx_obmc_variance8x4_sse4_1),
-  make_tuple(vpx_obmc_variance4x8_c, vpx_obmc_variance4x8_sse4_1),
-  make_tuple(vpx_obmc_variance4x4_c, vpx_obmc_variance4x4_sse4_1)
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance64x64_c,
+                              vpx_obmc_variance64x64_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance64x32_c,
+                              vpx_obmc_variance64x32_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance32x64_c,
+                              vpx_obmc_variance32x64_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance32x32_c,
+                              vpx_obmc_variance32x32_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance32x16_c,
+                              vpx_obmc_variance32x16_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance16x32_c,
+                              vpx_obmc_variance16x32_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance16x16_c,
+                              vpx_obmc_variance16x16_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance16x8_c,
+                              vpx_obmc_variance16x8_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance8x16_c,
+                              vpx_obmc_variance8x16_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance8x8_c,
+                              vpx_obmc_variance8x8_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance8x4_c,
+                              vpx_obmc_variance8x4_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance4x8_c,
+                              vpx_obmc_variance4x8_sse4_1),
+  ObmcVarianceTest::MakeParam(vpx_obmc_variance4x4_c,
+                              vpx_obmc_variance4x4_sse4_1)
 };
 
 INSTANTIATE_TEST_CASE_P(SSE4_1_C_COMPARE, ObmcVarianceTest,
@@ -129,13 +132,7 @@ INSTANTIATE_TEST_CASE_P(SSE4_1_C_COMPARE, ObmcVarianceTest,
 ////////////////////////////////////////////////////////////////////////////////
 
 #if CONFIG_VP9_HIGHBITDEPTH
-class ObmcVarianceHBDTest : public FunctionEquivalenceHBDTest<ObmcVarF> {
- public:
-  ObmcVarianceHBDTest() : rng_(ACMRandom::DeterministicSeed()) {}
-
- protected:
-  ACMRandom rng_;
-};
+class ObmcVarianceHBDTest : public FunctionEquivalenceTest<ObmcVarF> {};
 
 TEST_P(ObmcVarianceHBDTest, RandomValues) {
   DECLARE_ALIGNED(32, uint16_t, pre[MAX_SB_SQUARE]);
@@ -146,8 +143,8 @@ TEST_P(ObmcVarianceHBDTest, RandomValues) {
     const int pre_stride = rng_(MAX_SB_SIZE + 1);
 
     for (int i = 0 ; i < MAX_SB_SQUARE ; ++i) {
-      pre[i] = rng_(1 << bd_);
-      wsrc[i] = rng_(1 << bd_) * rng_(kMaskMax * kMaskMax + 1);
+      pre[i] = rng_(1 << bit_depth_);
+      wsrc[i] = rng_(1 << bit_depth_) * rng_(kMaskMax * kMaskMax + 1);
       mask[i] = rng_(kMaskMax * kMaskMax + 1);
     }
 
@@ -171,8 +168,8 @@ TEST_P(ObmcVarianceHBDTest, ExtremeValues) {
     const int pre_stride = iter;
 
     for (int i = 0 ; i < MAX_SB_SQUARE ; ++i) {
-      pre[i] = (1 << bd_) - 1;
-      wsrc[i] = ((1 << bd_) - 1) * kMaskMax * kMaskMax;
+      pre[i] = (1 << bit_depth_) - 1;
+      wsrc[i] = ((1 << bit_depth_) - 1) * kMaskMax * kMaskMax;
       mask[i] = kMaskMax * kMaskMax;
     }
 
@@ -190,107 +187,107 @@ TEST_P(ObmcVarianceHBDTest, ExtremeValues) {
 #if HAVE_SSE4_1
 ObmcVarianceHBDTest::ParamType sse4_functions_hbd[] = {
 #if CONFIG_EXT_PARTITION
-  make_tuple(vpx_highbd_obmc_variance128x128_c,
-             vpx_highbd_obmc_variance128x128_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance128x64_c,
-             vpx_highbd_obmc_variance128x64_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance64x128_c,
-             vpx_highbd_obmc_variance64x128_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance128x128_c,
+                                 vpx_highbd_obmc_variance128x128_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance128x64_c,
+                                 vpx_highbd_obmc_variance128x64_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance64x128_c,
+                                 vpx_highbd_obmc_variance64x128_sse4_1, 8),
 #endif  // CONFIG_EXT_PARTITION
-  make_tuple(vpx_highbd_obmc_variance64x64_c,
-             vpx_highbd_obmc_variance64x64_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance64x32_c,
-             vpx_highbd_obmc_variance64x32_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance32x64_c,
-             vpx_highbd_obmc_variance32x64_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance32x32_c,
-             vpx_highbd_obmc_variance32x32_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance32x16_c,
-             vpx_highbd_obmc_variance32x16_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance16x32_c,
-             vpx_highbd_obmc_variance16x32_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance16x16_c,
-             vpx_highbd_obmc_variance16x16_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance16x8_c,
-             vpx_highbd_obmc_variance16x8_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance8x16_c,
-             vpx_highbd_obmc_variance8x16_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance8x8_c,
-             vpx_highbd_obmc_variance8x8_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance8x4_c,
-             vpx_highbd_obmc_variance8x4_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance4x8_c,
-             vpx_highbd_obmc_variance4x8_sse4_1, 8),
-  make_tuple(vpx_highbd_obmc_variance4x4_c,
-             vpx_highbd_obmc_variance4x4_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance64x64_c,
+                                 vpx_highbd_obmc_variance64x64_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance64x32_c,
+                                 vpx_highbd_obmc_variance64x32_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance32x64_c,
+                                 vpx_highbd_obmc_variance32x64_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance32x32_c,
+                                 vpx_highbd_obmc_variance32x32_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance32x16_c,
+                                 vpx_highbd_obmc_variance32x16_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance16x32_c,
+                                 vpx_highbd_obmc_variance16x32_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance16x16_c,
+                                 vpx_highbd_obmc_variance16x16_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance16x8_c,
+                                 vpx_highbd_obmc_variance16x8_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance8x16_c,
+                                 vpx_highbd_obmc_variance8x16_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance8x8_c,
+                                 vpx_highbd_obmc_variance8x8_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance8x4_c,
+                                 vpx_highbd_obmc_variance8x4_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance4x8_c,
+                                 vpx_highbd_obmc_variance4x8_sse4_1, 8),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_obmc_variance4x4_c,
+                                 vpx_highbd_obmc_variance4x4_sse4_1, 8),
 #if CONFIG_EXT_PARTITION
-  make_tuple(vpx_highbd_10_obmc_variance128x128_c,
-             vpx_highbd_10_obmc_variance128x128_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance128x64_c,
-             vpx_highbd_10_obmc_variance128x64_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance64x128_c,
-             vpx_highbd_10_obmc_variance64x128_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance128x128_c,
+                                 vpx_highbd_10_obmc_variance128x128_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance128x64_c,
+                                 vpx_highbd_10_obmc_variance128x64_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance64x128_c,
+                                 vpx_highbd_10_obmc_variance64x128_sse4_1, 10),
 #endif  // CONFIG_EXT_PARTITION
-  make_tuple(vpx_highbd_10_obmc_variance64x64_c,
-             vpx_highbd_10_obmc_variance64x64_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance64x32_c,
-             vpx_highbd_10_obmc_variance64x32_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance32x64_c,
-             vpx_highbd_10_obmc_variance32x64_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance32x32_c,
-             vpx_highbd_10_obmc_variance32x32_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance32x16_c,
-             vpx_highbd_10_obmc_variance32x16_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance16x32_c,
-             vpx_highbd_10_obmc_variance16x32_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance16x16_c,
-             vpx_highbd_10_obmc_variance16x16_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance16x8_c,
-             vpx_highbd_10_obmc_variance16x8_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance8x16_c,
-             vpx_highbd_10_obmc_variance8x16_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance8x8_c,
-             vpx_highbd_10_obmc_variance8x8_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance8x4_c,
-             vpx_highbd_10_obmc_variance8x4_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance4x8_c,
-             vpx_highbd_10_obmc_variance4x8_sse4_1, 10),
-  make_tuple(vpx_highbd_10_obmc_variance4x4_c,
-             vpx_highbd_10_obmc_variance4x4_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance64x64_c,
+                                 vpx_highbd_10_obmc_variance64x64_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance64x32_c,
+                                 vpx_highbd_10_obmc_variance64x32_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance32x64_c,
+                                 vpx_highbd_10_obmc_variance32x64_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance32x32_c,
+                                 vpx_highbd_10_obmc_variance32x32_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance32x16_c,
+                                 vpx_highbd_10_obmc_variance32x16_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance16x32_c,
+                                 vpx_highbd_10_obmc_variance16x32_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance16x16_c,
+                                 vpx_highbd_10_obmc_variance16x16_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance16x8_c,
+                                 vpx_highbd_10_obmc_variance16x8_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance8x16_c,
+                                 vpx_highbd_10_obmc_variance8x16_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance8x8_c,
+                                 vpx_highbd_10_obmc_variance8x8_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance8x4_c,
+                                 vpx_highbd_10_obmc_variance8x4_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance4x8_c,
+                                 vpx_highbd_10_obmc_variance4x8_sse4_1, 10),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_10_obmc_variance4x4_c,
+                                 vpx_highbd_10_obmc_variance4x4_sse4_1, 10),
 #if CONFIG_EXT_PARTITION
-  make_tuple(vpx_highbd_12_obmc_variance128x128_c,
-             vpx_highbd_12_obmc_variance128x128_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance128x64_c,
-             vpx_highbd_12_obmc_variance128x64_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance64x128_c,
-             vpx_highbd_12_obmc_variance64x128_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance128x128_c,
+                                 vpx_highbd_12_obmc_variance128x128_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance128x64_c,
+                                 vpx_highbd_12_obmc_variance128x64_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance64x128_c,
+                                 vpx_highbd_12_obmc_variance64x128_sse4_1, 12),
 #endif  // CONFIG_EXT_PARTITION
-  make_tuple(vpx_highbd_12_obmc_variance64x64_c,
-             vpx_highbd_12_obmc_variance64x64_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance64x32_c,
-             vpx_highbd_12_obmc_variance64x32_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance32x64_c,
-             vpx_highbd_12_obmc_variance32x64_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance32x32_c,
-             vpx_highbd_12_obmc_variance32x32_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance32x16_c,
-             vpx_highbd_12_obmc_variance32x16_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance16x32_c,
-             vpx_highbd_12_obmc_variance16x32_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance16x16_c,
-             vpx_highbd_12_obmc_variance16x16_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance16x8_c,
-             vpx_highbd_12_obmc_variance16x8_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance8x16_c,
-             vpx_highbd_12_obmc_variance8x16_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance8x8_c,
-             vpx_highbd_12_obmc_variance8x8_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance8x4_c,
-             vpx_highbd_12_obmc_variance8x4_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance4x8_c,
-             vpx_highbd_12_obmc_variance4x8_sse4_1, 12),
-  make_tuple(vpx_highbd_12_obmc_variance4x4_c,
-             vpx_highbd_12_obmc_variance4x4_sse4_1, 12)
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance64x64_c,
+                                 vpx_highbd_12_obmc_variance64x64_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance64x32_c,
+                                 vpx_highbd_12_obmc_variance64x32_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance32x64_c,
+                                 vpx_highbd_12_obmc_variance32x64_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance32x32_c,
+                                 vpx_highbd_12_obmc_variance32x32_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance32x16_c,
+                                 vpx_highbd_12_obmc_variance32x16_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance16x32_c,
+                                 vpx_highbd_12_obmc_variance16x32_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance16x16_c,
+                                 vpx_highbd_12_obmc_variance16x16_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance16x8_c,
+                                 vpx_highbd_12_obmc_variance16x8_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance8x16_c,
+                                 vpx_highbd_12_obmc_variance8x16_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance8x8_c,
+                                 vpx_highbd_12_obmc_variance8x8_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance8x4_c,
+                                 vpx_highbd_12_obmc_variance8x4_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance4x8_c,
+                                 vpx_highbd_12_obmc_variance4x8_sse4_1, 12),
+  ObmcVarianceHBDTest::MakeParam(vpx_highbd_12_obmc_variance4x4_c,
+                                 vpx_highbd_12_obmc_variance4x4_sse4_1, 12)
 };
 
 INSTANTIATE_TEST_CASE_P(SSE4_1_C_COMPARE, ObmcVarianceHBDTest,
