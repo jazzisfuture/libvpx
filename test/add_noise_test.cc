@@ -19,9 +19,9 @@
 namespace {
 
 // TODO(jimbankoski): make width and height integers not unsigned.
-typedef void (*AddNoiseFunc)(unsigned char *start, char *noise,
-                             char blackclamp[16], char whiteclamp[16],
-                             char bothclamp[16], unsigned int width,
+typedef void (*AddNoiseFunc)(uint8_t *start, const int8_t *noise,
+                             int blackclamp, int whiteclamp,
+                             int bothclamp, unsigned int width,
                              unsigned int height, int pitch);
 
 class AddNoiseTest
@@ -42,26 +42,18 @@ double stddev6(char a, char b, char c, char d, char e, char f) {
 }
 
 TEST_P(AddNoiseTest, CheckNoiseAdded) {
-  DECLARE_ALIGNED(16, char, blackclamp[16]);
-  DECLARE_ALIGNED(16, char, whiteclamp[16]);
-  DECLARE_ALIGNED(16, char, bothclamp[16]);
   const int width  = 64;
   const int height = 64;
   const int image_size = width * height;
-  char noise[3072];
-  const int clamp = vpx_setup_noise(4.4, sizeof(noise), noise);
+  int8_t noise[3072];
 
-  for (int i = 0; i < 16; i++) {
-    blackclamp[i] = clamp;
-    whiteclamp[i] = clamp;
-    bothclamp[i] = 2 * clamp;
-  }
+  const int clamp = vpx_setup_noise(4.4, noise, sizeof(noise));
 
   uint8_t *const s = reinterpret_cast<uint8_t *>(vpx_calloc(image_size, 1));
   memset(s, 99, image_size);
 
-  ASM_REGISTER_STATE_CHECK(GetParam()(s, noise, blackclamp, whiteclamp,
-                                      bothclamp, width, height, width));
+  ASM_REGISTER_STATE_CHECK(GetParam()(s, noise, clamp, clamp, 2 * clamp,
+                                      width, height, width));
 
   // Check to make sure we don't end up having either the same or no added
   // noise either vertically or horizontally.
@@ -79,8 +71,8 @@ TEST_P(AddNoiseTest, CheckNoiseAdded) {
   // Initialize pixels in the image to 255 and check for roll over.
   memset(s, 255, image_size);
 
-  ASM_REGISTER_STATE_CHECK(GetParam()(s, noise, blackclamp, whiteclamp,
-                                      bothclamp, width, height, width));
+  ASM_REGISTER_STATE_CHECK(GetParam()(s, noise, clamp, clamp, 2 * clamp,
+                           width, height, width));
 
   // Check to make sure don't roll over.
   for (int i = 0; i < image_size; ++i) {
@@ -90,8 +82,8 @@ TEST_P(AddNoiseTest, CheckNoiseAdded) {
   // Initialize pixels in the image to 0 and check for roll under.
   memset(s, 0, image_size);
 
-  ASM_REGISTER_STATE_CHECK(GetParam()(s, noise, blackclamp, whiteclamp,
-                                      bothclamp, width, height, width));
+  ASM_REGISTER_STATE_CHECK(GetParam()(s, noise, clamp, clamp, 2 * clamp,
+                           width, height, width));
 
   // Check to make sure don't roll under.
   for (int i = 0; i < image_size; ++i) {
@@ -102,21 +94,12 @@ TEST_P(AddNoiseTest, CheckNoiseAdded) {
 }
 
 TEST_P(AddNoiseTest, CheckCvsAssembly) {
-  DECLARE_ALIGNED(16, char, blackclamp[16]);
-  DECLARE_ALIGNED(16, char, whiteclamp[16]);
-  DECLARE_ALIGNED(16, char, bothclamp[16]);
   const int width  = 64;
   const int height = 64;
   const int image_size = width * height;
-  char noise[3072];
+  int8_t noise[3072];
 
-  const int clamp = vpx_setup_noise(4.4, sizeof(noise), noise);
-
-  for (int i = 0; i < 16; i++) {
-    blackclamp[i] = clamp;
-    whiteclamp[i] = clamp;
-    bothclamp[i] = 2 * clamp;
-  }
+  const int clamp = vpx_setup_noise(4.4, noise, sizeof(noise));
 
   uint8_t *const s = reinterpret_cast<uint8_t *>(vpx_calloc(image_size, 1));
   uint8_t *const d = reinterpret_cast<uint8_t *>(vpx_calloc(image_size, 1));
@@ -125,12 +108,12 @@ TEST_P(AddNoiseTest, CheckCvsAssembly) {
   memset(d, 99, image_size);
 
   srand(0);
-  ASM_REGISTER_STATE_CHECK(GetParam()(s, noise, blackclamp, whiteclamp,
-                                      bothclamp, width, height, width));
+  ASM_REGISTER_STATE_CHECK(
+      GetParam()(s, noise, clamp, clamp, 2 * clamp, width, height, width));
   srand(0);
-  ASM_REGISTER_STATE_CHECK(vpx_plane_add_noise_c(d, noise, blackclamp,
-                                                 whiteclamp, bothclamp,
-                                                 width, height, width));
+  ASM_REGISTER_STATE_CHECK(
+      vpx_plane_add_noise_c(d, noise, clamp, clamp, 2 * clamp, width, height,
+                            width));
 
   for (int i = 0; i < image_size; ++i) {
     EXPECT_EQ(static_cast<int>(s[i]), static_cast<int>(d[i])) << "i = " << i;
