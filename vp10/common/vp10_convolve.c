@@ -301,7 +301,7 @@ void vp10_highbd_convolve(const uint8_t *src8, int src_stride, uint8_t *dst8,
     InterpFilterParams filter_params =
         vp10_get_interp_filter_params(interp_filter);
 #endif
-    vp10_highbd_convolve_horiz(src, src_stride, dst, dst_stride, w, h,
+    vp10_highbd_convolve_horiz_c(src, src_stride, dst, dst_stride, w, h,
                                filter_params, subpel_x_q4, x_step_q4, ref_idx,
                                bd);
   } else if (ignore_horiz) {

@@ -259,6 +259,7 @@ void vp10_highbd_convolve_horiz_sse4_1(const uint16_t *src, int src_stride,
   srcPtr = src;
 
   count = 0;
+
   blkHeight = h >> 2;
   blkResidu = h & 3;
 
@@ -275,6 +276,9 @@ void vp10_highbd_convolve_horiz_sse4_1(const uint16_t *src, int src_stride,
     dst += dst_stride * 4;
     blkHeight--;
   }
+
+  if (blkResidu == 0)
+    return;
 
   for (col = 0; col < w; col += 4) {
     for (i = 0; i < 4; ++i) {
