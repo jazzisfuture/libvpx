@@ -3440,6 +3440,18 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   vpx_clear_system_state();
 }
 
+// test in two pass for the first
+static int two_pass_first_group_inter(VP9_COMP *cpi) {
+  TWO_PASS *const twopass = &cpi->twopass;
+  GF_GROUP *const gf_group = &twopass->gf_group;
+
+  if ((cpi->oxcf.pass == 2) &&
+      (gf_group->index == gf_group->first_inter_index))
+    return TRUE;
+  else
+    return FALSE;
+}
+
 static void encode_with_recode_loop(VP9_COMP *cpi,
                                     size_t *size,
                                     uint8_t *dest) {
@@ -3476,6 +3488,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       cpi->resize_pending = 0;
 
       q_low = bottom_index;
+      //top_index = rc->worst_quality;
       q_high = top_index;
 
       loop_at_this_size = 0;
@@ -3557,6 +3570,30 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
       if (frame_over_shoot_limit == 0)
         frame_over_shoot_limit = 1;
+    }
+
+    // Fast adjustment of active_worst_quality (and hence best quality as well)
+    // where we are at limiting Q but still a long way off on data rate.
+    if (! frame_is_kf_gf_arf(cpi) && two_pass_first_group_inter(cpi) ) {
+    //if (!frame_is_kf_gf_arf(cpi) &&
+    //    big_rate_miss(cpi, frame_over_shoot_limit, frame_under_shoot_limit)) {
+      if ((q == top_index) &&
+          (rc->projected_frame_size > frame_over_shoot_limit)) {
+//      if (q == top_index) {
+        cpi->twopass.bpm_factor *= 1.025;
+        cpi->twopass.active_worst_quality =
+            VPXMIN(cpi->twopass.active_worst_quality + 1, rc->worst_quality);
+        top_index = VPXMIN(top_index + 1, rc->worst_quality);
+        q_high = top_index;
+      } else if ((q == bottom_index) &&
+                 (rc->projected_frame_size < frame_under_shoot_limit)) {
+//      } else if (q == bottom_index) {
+        cpi->twopass.bpm_factor *= 0.975;
+        cpi->twopass.active_worst_quality =
+            VPXMAX(cpi->twopass.active_worst_quality - 1, rc->best_quality);
+        bottom_index = VPXMAX(bottom_index - 1, rc->best_quality);
+        q_low = bottom_index;
+      }
     }
 
     if (cpi->oxcf.rc_mode == VPX_Q) {
@@ -3705,6 +3742,20 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         loop = 0;
       }
     }
+
+    // Fast adjustment of active_worst_quality (and hence best quality as well)
+    // where we are at limiting Q but still way off on data rate.
+    /*if ((q == top_index) &&
+        (rc->projected_frame_size > frame_over_shoot_limit)) {
+      cpi->twopass.bpm_factor *= 1.025;
+      cpi->twopass.active_worst_quality =
+          VPXMIN(cpi->twopass.active_worst_quality + 1, rc->worst_quality);
+    } else if ((q == bottom_index) &&
+        (rc->projected_frame_size < frame_under_shoot_limit)) {
+      cpi->twopass.bpm_factor *= 0.975;
+      cpi->twopass.active_worst_quality =
+          VPXMAX(cpi->twopass.active_worst_quality - 1, rc->best_quality);
+    }*/
 
     // Special case for overlay frame.
     if (rc->is_src_frame_alt_ref &&

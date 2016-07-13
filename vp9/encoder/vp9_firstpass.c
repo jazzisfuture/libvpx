@@ -2050,6 +2050,9 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
     }
   }
 
+  // Note index of the first normal inter frame int eh group (not gf kf arf)
+  gf_group->first_inter_index = frame_index;
+
   // Define middle frame
   mid_frame_idx = frame_index + (rc->baseline_gf_interval >> 1) - 1;
 
@@ -2350,6 +2353,9 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Set the interval until the next gf.
   rc->baseline_gf_interval = i - (is_key_frame || rc->source_alt_ref_pending);
+
+  // Limit boost relative to lengthof the group.
+  rc->gfu_boost = VPXMIN(rc->gfu_boost, rc->baseline_gf_interval * 300);
 
   // Only encode alt reference frame in temporal base layer. So
   // baseline_gf_interval should be multiple of a temporal layer group
@@ -2880,6 +2886,10 @@ static int is_skippable_frame(const VP9_COMP *cpi) {
     == 1 &&
     twopass->stats_in->pcnt_inter - twopass->stats_in->pcnt_motion == 1);
 }
+
+/*void two_pass_group_first_inter(VP9_COMP *cpi) {
+  GF_GROUP *const gf_group = &twopass->gf_group;
+}*/
 
 void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
