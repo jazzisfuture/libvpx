@@ -798,6 +798,10 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest,
         svc_params_.max_quantizers[i] = 63;
         svc_params_.min_quantizers[i] = 0;
       }
+      svc_params_.speed_per_layer[0] = 5;
+      for (i = 1; i < VPX_SS_MAX_LAYERS; ++i) {
+        svc_params_.speed_per_layer[i] = 7;
+      }
       encoder->Control(VP9E_SET_SVC, 1);
       encoder->Control(VP9E_SET_SVC_PARAMETERS, &svc_params_);
       encoder->Control(VP8E_SET_CPUUSED, speed_setting_);
