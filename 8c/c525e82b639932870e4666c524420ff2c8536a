@@ -1,0 +1,8 @@
+Verified+1: WebM Builds <builds@webmproject.org>
+Code-Review+2: Scott LaVarnway <slavarnway@google.com>
+Code-Review+2: Frank Galligan <fgalligan@google.com>
+Submitted-by: James Zern <jzern@google.com>
+Submitted-at: Wed, 13 Jul 2016 00:08:05 +0000
+Reviewed-on: https://chromium-review.googlesource.com/358119
+Project: webm/libvpx
+Branch: refs/heads/master
