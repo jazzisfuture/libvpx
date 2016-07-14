@@ -215,7 +215,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
               vpx_codec_err_t res_dec = decoder->DecodeFrame(
                   (const uint8_t *)pkt->data.frame.buf, pkt->data.frame.sz);
 
-              if (!HandleDecodeResult(res_dec, *video, decoder.get())) break;
+              if (!HandleDecodeResult(res_dec, decoder.get())) break;
 
               has_dxdata = true;
             }
@@ -233,7 +233,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
       // Flush the decoder when there are no more fragments.
       if ((init_flags_ & VPX_CODEC_USE_OUTPUT_PARTITION) && has_dxdata) {
         const vpx_codec_err_t res_dec = decoder->DecodeFrame(NULL, 0);
-        if (!HandleDecodeResult(res_dec, *video, decoder.get())) break;
+        if (!HandleDecodeResult(res_dec, decoder.get())) break;
       }
 
       if (has_dxdata && has_cxdata) {

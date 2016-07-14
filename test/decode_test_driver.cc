@@ -85,7 +85,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
 
       vpx_codec_err_t res_dec =
           decoder->DecodeFrame(video->cxdata(), video->frame_size());
-      if (!HandleDecodeResult(res_dec, *video, decoder)) break;
+      if (!HandleDecodeResult(res_dec, decoder)) break;
     } else {
       // Signal end of the file to the decoder.
       const vpx_codec_err_t res_dec = decoder->DecodeFrame(NULL, 0);
