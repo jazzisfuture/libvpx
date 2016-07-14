@@ -53,7 +53,10 @@ typedef struct vp10_token_state {
   int           next;
   int16_t       token;
   tran_low_t    qc;
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
   tran_low_t    dqc;
+=======
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
 } vp10_token_state;
 
 // These numbers are empirically obtained.

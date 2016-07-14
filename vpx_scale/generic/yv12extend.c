@@ -218,6 +218,7 @@ void vpx_extend_frame_borders_y_c(YV12_BUFFER_CONFIG *ybf) {
   assert(ybf->y_width - ybf->y_crop_width >= 0);
 
 #if CONFIG_VP9_HIGHBITDEPTH
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
   if (ybf->flags & YV12_FLAG_HIGHBITDEPTH) {
     extend_plane_high(ybf->y_buffer, ybf->y_stride,
                       ybf->y_crop_width, ybf->y_crop_height,
@@ -236,6 +237,8 @@ void vpx_extend_frame_borders_y_c(YV12_BUFFER_CONFIG *ybf) {
 #endif  // CONFIG_VP9 || CONFIG_VP10
 
 #if CONFIG_VP9_HIGHBITDEPTH
+=======
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
 static void memcpy_short_addr(uint8_t *dst8, const uint8_t *src8, int num) {
   uint16_t *dst = CONVERT_TO_SHORTPTR(dst8);
   uint16_t *src = CONVERT_TO_SHORTPTR(src8);
