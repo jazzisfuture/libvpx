@@ -28,6 +28,7 @@ class VPxEncoderThreadTest
         encoding_mode_(GET_PARAM(1)),
         set_cpu_used_(GET_PARAM(2)) {
     init_flags_ = VPX_CODEC_USE_PSNR;
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
     vpx_codec_dec_cfg_t cfg = vpx_codec_dec_cfg_t();
     cfg.w = 1280;
     cfg.h = 720;
@@ -42,10 +43,11 @@ class VPxEncoderThreadTest
     size_enc_.clear();
     md5_dec_.clear();
     md5_enc_.clear();
+=======
+    md5_.clear();
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
   }
-  virtual ~VPxEncoderThreadTest() {
-    delete decoder_;
-  }
+  virtual ~VPxEncoderThreadTest() {}
 
   virtual void SetUp() {
     InitializeConfig();
@@ -100,6 +102,7 @@ class VPxEncoderThreadTest
     }
   }
 
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
   virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
     size_enc_.push_back(pkt->data.frame.sz);
 
@@ -115,12 +118,31 @@ class VPxEncoderThreadTest
       ASSERT_EQ(VPX_CODEC_OK, res);
     }
     const vpx_image_t *img = decoder_->GetDxData().Next();
+=======
+  virtual void DecompressedFrameHook(const vpx_image_t &img,
+                                     vpx_codec_pts_t /*pts*/) {
+    ::libvpx_test::MD5 md5_res;
+    md5_res.Add(&img);
+    md5_.push_back(md5_res.Get());
+  }
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
 
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
     if (img) {
       ::libvpx_test::MD5 md5_res;
       md5_res.Add(img);
       md5_dec_.push_back(md5_res.Get());
+=======
+  virtual bool HandleDecodeResult(const vpx_codec_err_t res,
+                                  const libvpx_test::VideoSource& /*video*/,
+                                  libvpx_test::Decoder * /*decoder*/) {
+    if (res != VPX_CODEC_OK) {
+      EXPECT_EQ(VPX_CODEC_OK, res);
+      return false;
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
     }
+
+    return true;
   }
 
   void DoTest() {
@@ -163,10 +185,14 @@ class VPxEncoderThreadTest
   bool encoder_initialized_;
   ::libvpx_test::TestMode encoding_mode_;
   int set_cpu_used_;
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
   ::libvpx_test::Decoder *decoder_;
   std::vector<size_t> size_enc_;
   std::vector<std::string> md5_enc_;
   std::vector<std::string> md5_dec_;
+=======
+  std::vector<std::string> md5_;
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
 };
 
 TEST_P(VPxEncoderThreadTest, EncoderResultTest) {
