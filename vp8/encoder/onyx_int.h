@@ -504,13 +504,11 @@ typedef struct VP8_COMP {
   int force_maxqp;
 
 #if CONFIG_MULTITHREAD
-  /* multithread data */
-  pthread_mutex_t *pmutex;
-  pthread_mutex_t mt_mutex; /* mutex for b_multi_threaded */
-  int *mt_current_mb_col;
-  int mt_sync_range;
-  int b_multi_threaded;
-  int encoding_thread_count;
+    /* multithread data */
+    int * mt_current_mb_col;
+    int mt_sync_range;
+    int b_multi_threaded;
+    int encoding_thread_count;
 
   pthread_t *h_encoding_thread;
   pthread_t h_filter_thread;
