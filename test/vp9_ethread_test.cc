@@ -43,9 +43,7 @@ class VPxEncoderThreadTest
     md5_dec_.clear();
     md5_enc_.clear();
   }
-  virtual ~VPxEncoderThreadTest() {
-    delete decoder_;
-  }
+  virtual ~VPxEncoderThreadTest() {}
 
   virtual void SetUp() {
     InitializeConfig();
@@ -111,10 +109,9 @@ class VPxEncoderThreadTest
     const vpx_codec_err_t res = decoder_->DecodeFrame(
         reinterpret_cast<uint8_t*>(pkt->data.frame.buf), pkt->data.frame.sz);
     if (res != VPX_CODEC_OK) {
-      abort_ = true;
-      ASSERT_EQ(VPX_CODEC_OK, res);
+      EXPECT_EQ(VPX_CODEC_OK, res);
+      return false;
     }
-    const vpx_image_t *img = decoder_->GetDxData().Next();
 
     if (img) {
       ::libvpx_test::MD5 md5_res;
@@ -163,7 +160,6 @@ class VPxEncoderThreadTest
   bool encoder_initialized_;
   ::libvpx_test::TestMode encoding_mode_;
   int set_cpu_used_;
-  ::libvpx_test::Decoder *decoder_;
   std::vector<size_t> size_enc_;
   std::vector<std::string> md5_enc_;
   std::vector<std::string> md5_dec_;
