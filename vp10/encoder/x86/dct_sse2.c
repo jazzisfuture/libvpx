@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
 /*
  *  Copyright (c) 2012 The WebM project authors. All Rights Reserved.
  *
@@ -2586,3 +2587,5 @@ void vp10_fht16x16_sse2(const int16_t *input, tran_low_t *output,
       break;
   }
 }
+=======
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
