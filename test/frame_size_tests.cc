@@ -26,7 +26,6 @@ class VP9FrameSizeTestsLarge : public ::libvpx_test::EncoderTest,
   }
 
   virtual bool HandleDecodeResult(const vpx_codec_err_t res_dec,
-                                  const libvpx_test::VideoSource & /*video*/,
                                   libvpx_test::Decoder *decoder) {
     EXPECT_EQ(expected_res_, res_dec) << decoder->DecodeError();
     return !::testing::Test::HasFailure();
