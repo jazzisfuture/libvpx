@@ -439,6 +439,7 @@ static INLINE int scaled_buffer_offset(int x_offset, int y_offset, int stride,
 }
 
 static INLINE void setup_pred_plane(struct buf_2d *dst,
+                                    int width, int height,
                                     uint8_t *src, int stride,
                                     int mi_row, int mi_col,
                                     const struct scale_factors *scale,
@@ -446,7 +447,10 @@ static INLINE void setup_pred_plane(struct buf_2d *dst,
   const int x = (MI_SIZE * mi_col) >> subsampling_x;
   const int y = (MI_SIZE * mi_row) >> subsampling_y;
   dst->buf = src + scaled_buffer_offset(x, y, stride, scale);
+  dst->buf0 = src;
   dst->stride = stride;
+  dst->width = width;
+  dst->height = height;
 }
 
 void vp10_setup_dst_planes(struct macroblockd_plane planes[MAX_MB_PLANE],
@@ -572,11 +576,15 @@ void vp10_build_obmc_inter_prediction(VP10_COMMON *cm,
 void vp10_build_prediction_by_above_preds(VP10_COMMON *cm,
                                           MACROBLOCKD *xd,
                                           int mi_row, int mi_col,
+                                          int tmp_width[MAX_MB_PLANE],
+                                          int tmp_height[MAX_MB_PLANE],
                                           uint8_t *tmp_buf[MAX_MB_PLANE],
                                           int tmp_stride[MAX_MB_PLANE]);
 void vp10_build_prediction_by_left_preds(VP10_COMMON *cm,
                                          MACROBLOCKD *xd,
                                          int mi_row, int mi_col,
+                                         int tmp_width[MAX_MB_PLANE],
+                                         int tmp_height[MAX_MB_PLANE],
                                          uint8_t *tmp_buf[MAX_MB_PLANE],
                                          int tmp_stride[MAX_MB_PLANE]);
 #endif  // CONFIG_OBMC
