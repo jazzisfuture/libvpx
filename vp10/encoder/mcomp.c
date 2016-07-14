@@ -151,6 +151,7 @@ void vp10_init3smotion_compensation(search_site_config *cfg, int stride) {
   cfg->searches_per_step = 8;
 }
 
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
 /*
  * To avoid the penalty for crossing cache-line read, preload the reference
  * area in a small buffer, which is aligned to make sure there won't be crossing
@@ -160,6 +161,15 @@ void vp10_init3smotion_compensation(search_site_config *cfg, int stride) {
  * 32 cols area that is enough for 16x16 macroblock. Later, for SPLITMV, we
  * could reduce the area.
  */
+=======
+/* estimated cost of a motion vector (r,c) */
+#define MVC(r, c)                                       \
+    (mvcost ?                                           \
+     ((mvjcost[((r) != rr) * 2 + ((c) != rc)] +         \
+       mvcost[0][((r) - rr)] + mvcost[1][((c) - rc)]) * \
+      error_per_bit + 4096) >> 13 : 0)
+
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
 
 // convert motion vector component to offset for sv[a]f calc
 static INLINE int sp(int x) {
@@ -900,7 +910,11 @@ int vp10_find_best_sub_pixel_tree(MACROBLOCK *x,
   return besterr;
 }
 
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
 #undef PRE
+=======
+#undef MVC
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
 #undef CHECK_BETTER
 
 static INLINE int check_bounds(const MACROBLOCK *x, int row, int col,

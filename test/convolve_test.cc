@@ -69,6 +69,7 @@ struct ConvolveFunctions {
 
 typedef std::tr1::tuple<int, int, const ConvolveFunctions *> ConvolveParam;
 
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
 #if CONFIG_VP10 && CONFIG_EXT_PARTITION
 #define ALL_SIZES(convolve_fn) \
     make_tuple(128, 64, &convolve_fn),  \
@@ -103,6 +104,22 @@ typedef std::tr1::tuple<int, int, const ConvolveFunctions *> ConvolveParam;
     make_tuple(32, 64, &convolve_fn),   \
     make_tuple(64, 64, &convolve_fn)
 #endif  // CONFIG_VP10 && CONFIG_EXT_PARTITION
+=======
+#define ALL_SIZES(convolve_fn) \
+    make_tuple(4, 4, &convolve_fn),     \
+    make_tuple(8, 4, &convolve_fn),     \
+    make_tuple(4, 8, &convolve_fn),     \
+    make_tuple(8, 8, &convolve_fn),     \
+    make_tuple(16, 8, &convolve_fn),    \
+    make_tuple(8, 16, &convolve_fn),    \
+    make_tuple(16, 16, &convolve_fn),   \
+    make_tuple(32, 16, &convolve_fn),   \
+    make_tuple(16, 32, &convolve_fn),   \
+    make_tuple(32, 32, &convolve_fn),   \
+    make_tuple(64, 32, &convolve_fn),   \
+    make_tuple(32, 64, &convolve_fn),   \
+    make_tuple(64, 64, &convolve_fn)
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
 
 // Reference 8-tap subpixel filter, slightly modified to fit into this test.
 #define VP9_FILTER_WEIGHT 128
@@ -137,8 +154,14 @@ void filter_block2d_8_c(const uint8_t *src_ptr,
   //                               = 23
   // and filter_max_width          = 16
   //
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
   uint8_t intermediate_buffer[(kMaxDimension+8) * kMaxDimension];
   const int intermediate_next_stride = 1 - intermediate_height * output_width;
+=======
+  uint8_t intermediate_buffer[71 * kMaxDimension];
+  const int intermediate_next_stride =
+      1 - static_cast<int>(intermediate_height * output_width);
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
 
   // Horizontal pass (src -> transposed intermediate).
   uint8_t *output_ptr = intermediate_buffer;
@@ -249,8 +272,14 @@ void highbd_filter_block2d_8_c(const uint16_t *src_ptr,
    *                               = 23
    * and filter_max_width = 16
    */
+<<<<<<< HEAD   (0c68db Merge "Refactor codes about motion search" into nextgenv2)
   uint16_t intermediate_buffer[(kMaxDimension+8) * kMaxDimension];
   const int intermediate_next_stride = 1 - intermediate_height * output_width;
+=======
+  uint16_t intermediate_buffer[71 * kMaxDimension];
+  const int intermediate_next_stride =
+      1 - static_cast<int>(intermediate_height * output_width);
+>>>>>>> BRANCH (243029 Merge "win: Include <intrin.h> instead of manually declaring)
 
   // Horizontal pass (src -> transposed intermediate).
   {
