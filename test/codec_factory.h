@@ -115,6 +115,8 @@ class VP8CodecFactory : public CodecFactory {
 #if CONFIG_VP8_DECODER
     return new VP8Decoder(cfg, flags);
 #else
+    (void)cfg;
+    (void)flags;
     return NULL;
 #endif
   }
@@ -126,6 +128,10 @@ class VP8CodecFactory : public CodecFactory {
 #if CONFIG_VP8_ENCODER
     return new VP8Encoder(cfg, deadline, init_flags, stats);
 #else
+    (void)cfg;
+    (void)deadline;
+    (void)init_flags;
+    (void)stats;
     return NULL;
 #endif
   }
@@ -135,6 +141,8 @@ class VP8CodecFactory : public CodecFactory {
 #if CONFIG_VP8_ENCODER
     return vpx_codec_enc_config_default(&vpx_codec_vp8_cx_algo, cfg, usage);
 #else
+    (void)cfg;
+    (void)usage;
     return VPX_CODEC_INCAPABLE;
 #endif
   }

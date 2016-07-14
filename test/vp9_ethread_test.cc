@@ -79,7 +79,6 @@ class VPxEncoderThreadTest
   }
 
   virtual bool HandleDecodeResult(const vpx_codec_err_t res,
-                                  const libvpx_test::VideoSource & /*video*/,
                                   libvpx_test::Decoder * /*decoder*/) {
     if (res != VPX_CODEC_OK) {
       EXPECT_EQ(VPX_CODEC_OK, res);

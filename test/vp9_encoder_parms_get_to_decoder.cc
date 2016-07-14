@@ -94,7 +94,6 @@ class VpxEncoderParmsGetToDecoder
   }
 
   virtual bool HandleDecodeResult(const vpx_codec_err_t res_dec,
-                                  const libvpx_test::VideoSource & /*video*/,
                                   libvpx_test::Decoder *decoder) {
     vpx_codec_ctx_t *const vp9_decoder = decoder->GetDecoder();
     vpx_codec_alg_priv_t *const priv =

@@ -51,7 +51,6 @@ class InvalidFileTest : public ::libvpx_test::DecoderTest,
 
   virtual bool HandleDecodeResult(
       const vpx_codec_err_t res_dec,
-      const libvpx_test::CompressedVideoSource &video,
       libvpx_test::Decoder *decoder) {
     EXPECT_TRUE(res_file_ != NULL);
     int expected_res_dec;

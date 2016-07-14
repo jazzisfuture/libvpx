@@ -131,7 +131,6 @@ class DecoderTest {
 
   // Hook to be called to handle decode result. Return true to continue.
   virtual bool HandleDecodeResult(const vpx_codec_err_t res_dec,
-                                  const CompressedVideoSource & /*video*/,
                                   Decoder *decoder) {
     EXPECT_EQ(VPX_CODEC_OK, res_dec) << decoder->DecodeError();
     return VPX_CODEC_OK == res_dec;
