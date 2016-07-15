@@ -79,6 +79,18 @@ typedef struct MATX MATX;
   }                                                                       \
 }
 
+// reflect index beyond edges back inside [0;length]
+static INLINE int reflect_idx(int idx, int length) {
+  while ((unsigned) idx >= (unsigned) length) {
+    if (idx < 0)
+      idx = (~idx) + 1;
+    else
+      idx = (length<<1) - idx - 1;
+  }
+
+  return idx;
+}
+
 // copy from one matx to another (reallocate if needed)
 void vp9_matx_copy_to(CONST_MATX_PTR _src, MATX_PTR _dst) {
   const MATX* const src = (const MATX*) _src;
@@ -181,6 +193,131 @@ void vp9_matx_set_to(MATX_PTR _image, int value) {
   }
 }
 
+// TODO(yuryg): I think there are bugs with large radii
+// -----------| Also, for the large max_values it make
+// -----------| sense to use pyramidal histograms
+static void vp9_mat8u_nth_element(const MATX_8U* const src,
+                                  MATX_8U* const dst,
+                                  int radius, int nth, int max_value) {
+  // vertical (2*radius + 1)-elements histograms
+  // - I reserve last chunk for the moving histogram
+  int nbins = (max_value + 1)*src->cols;
+  int nbytes = (nbins + (max_value + 1))*sizeof(int);
+
+  int hist_stride = max_value + 1;
+  int *hist_row = (int *) vpx_malloc(nbytes);
+
+  int offset, i, j, k;
+
+  assert_same_kind_of_image(src, dst);
+  assert(src->cn == 1);
+
+  assert(max_value <= 255);
+  assert(hist_row != NULL);
+
+  memset(hist_row, 0, nbins*sizeof(int));
+
+  for (i = -(radius + 1); i < radius; ++i) {
+    int offset = reflect_idx(i, src->rows)*src->stride;
+
+    for (j = 0; j < src->cols; ++j) {
+      uint8_t value = src->data[offset + j];
+      ++hist_row[j*hist_stride + value];
+    }
+  }
+
+  for (i = 0; i < src->rows; ++i) {
+    int *hist = &hist_row[nbins];
+    uint8_t *dst_row = &dst->data[i*dst->stride];
+
+    // add row above to the histograms
+    offset = reflect_idx(i + radius, src->rows)*src->stride;
+    for (j = 0; j < src->cols; ++j)
+      ++hist_row[j*hist_stride + src->data[offset + j]];
+
+    // subtract row below from the histograms
+    offset = reflect_idx(i - radius - 1, src->rows)*src->stride;
+    for (j = 0; j < src->cols; ++j)
+      --hist_row[j*hist_stride + src->data[offset + j]];
+
+    // initialize moving histogram
+    memset(hist, 0, hist_stride*sizeof(int));
+
+    for (j = -(radius + 1); j < radius; ++j) {
+      offset = reflect_idx(j, src->cols)*hist_stride;
+
+      for (k = 0; k <= max_value; ++k)
+        hist[k] += hist_row[offset + k];
+    }
+
+    // process histogram row horizontally
+    for (j = 0; j < src->cols; ++j) {
+      int limit = max_value, p;
+
+      // update moving histogram on the left
+      offset = reflect_idx(j - radius - 1, src->cols)*hist_stride;
+      for (k = 0; k <= max_value; ++k)
+        hist[k] -= hist_row[offset + k];
+
+      // update moving histogram on the right
+      offset = reflect_idx(j + radius, src->cols)*hist_stride;
+      for (k = 0; k <= max_value; ++k)
+        hist[k] += hist_row[offset + k];
+
+      // prune histogram at the top
+      for (; limit > 0 && hist[limit] == 0; --limit) {}
+
+      // find target histogram bin
+      for (k = -1, p = 0; k < limit && p <= nth; p += hist[++k]) {}
+
+      dst_row[j] = k;
+    }
+  }
+
+  vpx_free(hist_row);
+}
+
+// TODO(yuryg): Someone may want to implement other algorithms
+// -----------| and dynamic choice of the appropriate one
+void vp9_matx_nth_element(MATX_PTR _src, MATX_PTR _dst,
+                          int radius, int nth, int max_value) {
+  MATX* const src = (MATX* const) _src;
+  MATX* dst = (MATX *) _dst;
+
+  if (radius <= 0)
+    return;
+
+  if (dst == NULL) {
+    dst = vpx_malloc(sizeof(MATX));
+    vp9_matx_init(dst);
+  }
+
+  assert(src->data != dst->data);
+  assert(radius < VPXMIN(src->cols, src->rows)/2);
+
+  vp9_matx_create(dst, src->rows, src->cols,
+                  src->stride,
+                  src->cn, src->typeid);
+
+  switch (src->typeid) {
+    case TYPE_8U:
+    {
+      const MATX_8U *src8u = (const MATX_8U*) src;
+      MATX_8U *dst8u = (MATX_8U*) dst;
+
+      vp9_mat8u_nth_element(src8u, dst8u, radius, nth, max_value);
+      break; /* ----------------------------------------------- */
+    }
+    default:
+      vpx_runtime_assert(0 /* matx: inapprorpiate type */);
+  }
+
+  if (_dst == NULL) {
+    vp9_matx_copy_to(dst, src);
+    vp9_matx_destroy(dst);
+  }
+}
+
 void vp9_matx_imwrite(CONST_MATX_PTR _image, const char* filename, int maxval) {
   const MATX* const image = (const MATX*) _image;
 
@@ -223,4 +360,3 @@ void vp9_matx_imwrite(CONST_MATX_PTR _image, const char* filename, int maxval) {
 
   fclose(image_file);
 }
-
