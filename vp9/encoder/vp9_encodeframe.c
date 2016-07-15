@@ -224,6 +224,7 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
   // Setup segment ID.
   if (seg->enabled) {
     if (cpi->oxcf.aq_mode != VARIANCE_AQ &&
+        cpi->oxcf.aq_mode != LOOKAHEAD_AQ &&
         cpi->oxcf.aq_mode != EQUATOR360_AQ) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
@@ -1416,6 +1417,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
                                             : vp9_block_energy(cpi, x, bsize);
     if (cm->frame_type == KEY_FRAME ||
         cpi->refresh_alt_ref_frame ||
+        cpi->force_update_segmentation ||
         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
       mi->segment_id = vp9_vaq_segment_id(energy);
     } else {
@@ -1424,8 +1426,13 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
       mi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
     }
     x->rdmult = set_segment_rdmult(cpi, x, mi->segment_id);
+  } else if (aq_mode == LOOKAHEAD_AQ) {
+      const uint8_t *const map = cpi->segmentation_map;
+
+      // I do not change rdmult here conciously.
+      mi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
   } else if (aq_mode == EQUATOR360_AQ) {
-    if (cm->frame_type == KEY_FRAME) {
+    if (cm->frame_type == KEY_FRAME || cpi->force_update_segmentation) {
       mi->segment_id = vp9_360aq_segment_id(mi_row, cm->mi_rows);
     } else {
       const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
@@ -2596,7 +2603,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
 
-  if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode != NO_AQ)
+  if (bsize == BLOCK_16X16 &&
+      cpi->oxcf.aq_mode != NO_AQ &&
+      cpi->oxcf.aq_mode != LOOKAHEAD_AQ)
     x->mb_energy = vp9_block_energy(cpi, x, bsize);
 
   if (cpi->sf.cb_partition_search && bsize == BLOCK_16X16) {
