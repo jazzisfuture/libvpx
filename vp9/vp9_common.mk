@@ -11,6 +11,9 @@
 VP9_COMMON_SRCS-yes += vp9_common.mk
 VP9_COMMON_SRCS-yes += vp9_iface_common.h
 VP9_COMMON_SRCS-yes += common/vp9_ppflags.h
+VP9_COMMON_SRCS-yes += common/vp9_matx_enums.h
+VP9_COMMON_SRCS-yes += common/vp9_matx.h
+VP9_COMMON_SRCS-yes += common/vp9_matx.c
 VP9_COMMON_SRCS-yes += common/vp9_alloccommon.c
 VP9_COMMON_SRCS-yes += common/vp9_blockd.c
 # VP9_COMMON_SRCS-yes += common/vp9_debugmodes.c
