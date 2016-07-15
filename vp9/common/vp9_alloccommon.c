@@ -105,6 +105,8 @@ void vp9_free_postproc_buffers(VP9_COMMON *cm) {
   vpx_free_frame_buffer(&cm->post_proc_buffer_int);
   vpx_free(cm->postproc_state.limits);
   cm->postproc_state.limits = 0;
+  vpx_free(cm->postproc_state.generated_noise);
+  cm->postproc_state.generated_noise = 0;
 #else
   (void)cm;
 #endif
