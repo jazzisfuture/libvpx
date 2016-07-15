@@ -63,6 +63,22 @@ typedef struct MATX MATX;
            (const type *) (src)->data + i*(src)->stride, nbytes);         \
 }
 
+#define VP9_MATX_IMWRITE(type, image, image_file, format_string)          \
+{                                                                         \
+  int i, j;                                                               \
+                                                                          \
+  type *data = (type *) (image)->data;                                    \
+  int stride = (image)->stride;                                           \
+                                                                          \
+  for (i = 0; i < (image)->rows; ++i) {                                   \
+    for (j = 0; j < (image)->cols*(image)->cn; ++j) {                     \
+      fprintf(image_file, format_string, data[i*stride + j]);             \
+      fprintf(image_file, " ");                                           \
+  }                                                                       \
+    fprintf(image_file, "\n");                                            \
+  }                                                                       \
+}
+
 // copy from one matx to another (reallocate if needed)
 void vp9_matx_copy_to(CONST_MATX_PTR _src, MATX_PTR _dst) {
   const MATX* const src = (const MATX*) _src;
@@ -163,5 +179,48 @@ void vp9_matx_set_to(MATX_PTR _image, int value) {
     default:
       vpx_runtime_assert(0 /* matx: inapprorpiate type */);
   }
+}
+
+void vp9_matx_imwrite(CONST_MATX_PTR _image, const char* filename, int maxval) {
+  const MATX* const image = (const MATX*) _image;
+
+  FILE *const image_file = fopen(filename, "wt");
+  const char *format_string = matx_type_format_strings[image->typeid];
+
+  vpx_runtime_assert(image->data != NULL);
+  vpx_runtime_assert(image->cn == 1 || image->cn == 3);
+  vpx_runtime_assert(image->rows > 0);
+  vpx_runtime_assert(image->cols > 0);
+
+  if (!maxval)
+    maxval = 255;
+
+  fprintf(image_file, "P%d\n", image->cn/2 + 2);
+  fprintf(image_file, "%d %d %d\n", image->cols, image->rows, maxval);
+
+  switch (image->typeid) {
+    case TYPE_8U:
+      VP9_MATX_IMWRITE(uint8_t,  image, image_file, format_string);
+      break;
+    case TYPE_8S:
+      VP9_MATX_IMWRITE(int8_t,   image, image_file, format_string);
+      break;
+    case TYPE_16U:
+      VP9_MATX_IMWRITE(uint16_t, image, image_file, format_string);
+      break;
+    case TYPE_16S:
+      VP9_MATX_IMWRITE(int16_t,  image, image_file, format_string);
+      break;
+    case TYPE_32U:
+      VP9_MATX_IMWRITE(uint32_t, image, image_file, format_string);
+      break;
+    case TYPE_32S:
+      VP9_MATX_IMWRITE(int32_t,  image, image_file, format_string);
+      break;
+    default:
+      vpx_runtime_assert(0 /* matx: inapprorpiate type */);
+  }
+
+  fclose(image_file);
 }
 
