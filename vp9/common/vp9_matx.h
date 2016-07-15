@@ -214,6 +214,152 @@ void vp9_mat64f_create(MATX_PTR const self,
                       int cols,
                       int stride, int cn);
 
+/*!\brief Create a wrapper matrix around existing memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ * \param    typeid  Type of the data elements
+ */
+void vp9_matx_wrap(MATX_PTR const self,
+                   int rows,
+                   int cols,
+                   int stride,
+                   int cn,
+                   void *data,
+                   MATX_TYPE typeid);
+
+/*!\brief Create a wrapper matrix around existing uint8_t memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ */
+void vp9_mat8u_wrap(MATX_PTR const self,
+                    int rows,
+                    int cols,
+                    int stride,
+                    int cn,
+                    uint8_t* data);
+
+/*!\brief Create a wrapper matrix around existing int8_t memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ */
+void vp9_mat8s_wrap(MATX_PTR const self,
+                    int rows,
+                    int cols,
+                    int stride,
+                    int cn,
+                    int8_t* data);
+
+/*!\brief Create a wrapper matrix around existing uint16_t memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ */
+void vp9_mat16u_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     uint16_t* data);
+
+/*!\brief Create a wrapper matrix around existing int16_t memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ */
+void vp9_mat16s_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     int16_t* data);
+
+/*!\brief Create a wrapper matrix around existing uint32_t memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ */
+void vp9_mat32u_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     uint32_t* data);
+
+/*!\brief Create a wrapper matrix around existing int32_t memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ */
+void vp9_mat32s_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     int32_t* data);
+
+/*!\brief Create a wrapper matrix around existing float memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ */
+void vp9_mat32f_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     float* data);
+
+/*!\brief Create a wrapper matrix around existing double memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ */
+void vp9_mat64f_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     double* data);
+
 /*!\brief Destructor
  *
  * \param    self    Instance of the class
