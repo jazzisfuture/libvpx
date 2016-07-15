@@ -168,6 +168,111 @@ void vp9_mat64f_create(MATX_PTR const self,
   vp9_matx_create(self, rows, cols, stride, cn, TYPE_64F);
 }
 
+void vp9_matx_wrap(MATX_PTR _self,
+                   int rows,
+                   int cols,
+                   int stride,
+                   int cn,
+                   void *data,
+                   MATX_TYPE typeid) {
+  struct MATX* const self = (struct MATX*) _self;
+
+  self->rows = rows;
+  self->cols = cols;
+  self->cn = cn;
+  self->typeid = typeid;
+
+  self->stride = stride;
+  if (!self->stride)
+    self->stride = cols*cn;
+
+  vpx_runtime_assert(self->stride >= self->cols*self->cn);
+
+  // you can't wrap matrix around itself
+  vpx_runtime_assert(self->is_wrapper || self->data != data);
+
+  vp9_matx_destroy(self);
+  self->is_wrapper = 1;
+  self->data = data;
+
+  vpx_runtime_assert(self->data != NULL);
+}
+
+void vp9_mat8u_wrap(MATX_PTR const self,
+                    int rows,
+                    int cols,
+                    int stride,
+                    int cn,
+                    uint8_t* data) {
+  vp9_matx_wrap(self, rows, cols, stride, cn, data, TYPE_8U);
+}
+
+void vp9_mat8s_wrap(MATX_PTR const self,
+                    int rows,
+                    int cols,
+                    int stride,
+                    int cn,
+                    int8_t* data) {
+  vp9_matx_wrap(self, rows, cols, stride, cn, data, TYPE_8S);
+}
+
+void vp9_mat16u_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     uint16_t* data) {
+  vp9_matx_wrap(self, rows, cols, stride, cn, data, TYPE_16U);
+}
+
+void vp9_mat16s_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     int16_t* data) {
+  vp9_matx_wrap(self, rows, cols, stride, cn, data, TYPE_16S);
+}
+
+void vp9_mat32u_wrap(MATX_PTR const self,
+                    int rows,
+                    int cols,
+                    int stride,
+                    int cn,
+                    uint32_t* data) {
+  vp9_matx_wrap(self, rows, cols, stride, cn, data, TYPE_32U);
+}
+
+void vp9_mat32s_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     int32_t* data) {
+  vp9_matx_wrap(self, rows, cols, stride, cn, data, TYPE_32S);
+}
+
+void vp9_mat32f_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     float* data) {
+  vp9_matx_wrap(self, rows, cols, stride, cn, data, TYPE_32F);
+}
+
+void vp9_mat64f_wrap(MATX_PTR const self,
+                     int rows,
+                     int cols,
+                     int stride,
+                     int cn,
+                     double* data) {
+  vp9_matx_wrap(self, rows, cols, stride, cn, data, TYPE_64F);
+}
+
 void vp9_matx_destroy(MATX_PTR _self) {
-  vpx_free(((struct MATX*) _self)->data);
+  struct MATX* const self = (struct MATX*) _self;
+
+  if (!self->is_wrapper)
+    vpx_free(self->data);
 }
