@@ -501,7 +501,9 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
   const int apply_cyclic_refresh = 1;
   if (cm->current_video_frame == 0) cr->low_content_avg = 0.0;
   // Don't apply refresh on key frame or temporal enhancement layer frames.
-  if (!apply_cyclic_refresh || (cm->frame_type == KEY_FRAME) ||
+  if (!apply_cyclic_refresh ||
+      (cm->frame_type == KEY_FRAME) ||
+      (cpi->force_update_segmentation) ||
       (cpi->svc.temporal_layer_id > 0)) {
     // Set segmentation map to 0 and disable.
     unsigned char *const seg_map = cpi->segmentation_map;
