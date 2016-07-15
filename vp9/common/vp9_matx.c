@@ -112,6 +112,62 @@ void vp9_matx_create(MATX_PTR _self,
   vpx_runtime_assert(self->data != NULL);
 }
 
+void vp9_mat8u_create(MATX_PTR const self,
+                      int rows,
+                      int cols,
+                      int stride, int cn) {
+  vp9_matx_create(self, rows, cols, stride, cn, TYPE_8U);
+}
+
+void vp9_mat8s_create(MATX_PTR const self,
+                      int rows,
+                      int cols,
+                      int stride, int cn) {
+  vp9_matx_create(self, rows, cols, stride, cn, TYPE_8S);
+}
+
+void vp9_mat16u_create(MATX_PTR const self,
+                       int rows,
+                       int cols,
+                       int stride, int cn) {
+  vp9_matx_create(self, rows, cols, stride, cn, TYPE_16U);
+}
+
+void vp9_mat16s_create(MATX_PTR const self,
+                       int rows,
+                       int cols,
+                       int stride, int cn) {
+  vp9_matx_create(self, rows, cols, stride, cn, TYPE_16S);
+}
+
+void vp9_mat32u_create(MATX_PTR const self,
+                       int rows,
+                       int cols,
+                       int stride, int cn) {
+  vp9_matx_create(self, rows, cols, stride, cn, TYPE_32U);
+}
+
+void vp9_mat32s_create(MATX_PTR const self,
+                       int rows,
+                       int cols,
+                       int stride, int cn) {
+  vp9_matx_create(self, rows, cols, stride, cn, TYPE_32S);
+}
+
+void vp9_mat32f_create(MATX_PTR const self,
+                       int rows,
+                       int cols,
+                       int stride, int cn) {
+  vp9_matx_create(self, rows, cols, stride, cn, TYPE_32F);
+}
+
+void vp9_mat64f_create(MATX_PTR const self,
+                       int rows,
+                       int cols,
+                       int stride, int cn) {
+  vp9_matx_create(self, rows, cols, stride, cn, TYPE_64F);
+}
+
 void vp9_matx_destroy(MATX_PTR _self) {
   vpx_free(((struct MATX*) _self)->data);
 }
