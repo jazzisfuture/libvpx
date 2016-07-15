@@ -350,7 +350,40 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
 
   // Save input state
   uint8_t* input_buffer[MAX_MB_PLANE];
-  int i;
+  int i, j;
+
+  // TODO(yuryg): change naming
+
+  // number of non-zero weights during
+  // creation of the altref frame
+  struct MATX_8U segm_map;
+
+#if 0
+  // number of close to zero errors during
+  // creation of the altref frame
+  struct MATX_8U static_map;
+#endif
+
+  assert((cpi->common.mi_rows + 1)/2 == mb_rows);
+  assert((cpi->common.mi_cols + 1)/2 == mb_cols);
+
+  vp9_matx_init(&segm_map);
+  vp9_mat8u_create(&segm_map, cpi->common.mi_rows,
+                   cpi->common.mi_cols, 0, 1);
+
+#if 0
+  vp9_matx_init(&static_map);
+  vp9_mat8u_create(&static_map, mb_rows, mb_cols, 0, 1);
+#endif
+
+  // I want zero to be the smallest value finally
+  // (and I know it is going to be 255, but it is fine)
+  vp9_matx_set_to(&segm_map, -1);
+#if 0
+  vp9_matx_set_to(&static_map, -1);
+#endif
+
+  assert(frame_count <= ALT_REF_MAX_FRAMES);
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -416,6 +449,15 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           filter_weight = error < thresh_low
                           ? 2 : error < thresh_high ? 1 : 0;
         }
+
+#if 0
+        // Update altref segmentation_map
+        if (error < 255)
+          ++static_map.data[mb_row*static_map.stride + mb_col];
+#endif
+
+        if (filter_weight > 0)
+          ++segm_map.data[2*(mb_row*segm_map.stride + mb_col)];
 
         if (filter_weight != 0) {
           // Construct the predictors
@@ -638,12 +680,39 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
     mb_uv_offset += mb_uv_height * f->uv_stride - mb_uv_width * mb_cols;
   }
 
+#if 0
+  // we don't need better quantizer for the blocks that
+  // are almost identical among the next chunk of frames
+  for (i = 0; i < static_map.rows; ++i)
+    for (j = 0; j < static_map.cols; ++j)
+      if (static_map.data[i*static_map.stride + j] == frame_count - 1)
+        segm_map.data[2*(i*segm_map.stride + j)] = 0;
+#endif
+
+  // fill-in segmentation map (every odd row and column)
+  for (i = 0; i < segm_map.rows; ++i) {
+    int is_odd  = i&1;
+    int is_even = is_odd^1;
+
+    for (j = is_even; j < segm_map.cols; j += 1 + is_even) {
+      int idx = (i - is_odd)*segm_map.stride + (j - is_even);
+      uint8_t value = segm_map.data[idx];
+      segm_map.data[i*segm_map.stride + j] = value;
+    }
+  }
+
   vp9_alt_ref_aq_set_nsegments(cpi->alt_ref_aq, frame_count);
-  vp9_alt_ref_aq_upload_map(cpi->alt_ref_aq, NULL, 0);
+  vp9_alt_ref_aq_upload_map(cpi->alt_ref_aq, &segm_map, 0);
 
   // Restore input state
   for (i = 0; i < MAX_MB_PLANE; i++)
     mbd->plane[i].pre[0].buf = input_buffer[i];
+
+#if 0
+  vp9_matx_destroy(&static_map);
+#endif
+
+  // Note: do not destroy segm_map, since it is transferred to alt_ref_aq
 }
 
 // Apply buffer limits and context specific adjustments to arnr filter.
