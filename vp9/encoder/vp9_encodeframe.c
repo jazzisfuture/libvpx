@@ -1416,6 +1416,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
                                             : vp9_block_energy(cpi, x, bsize);
     if (cm->frame_type == KEY_FRAME ||
         cpi->refresh_alt_ref_frame ||
+        cpi->force_update_segmentation ||
         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
       mi->segment_id = vp9_vaq_segment_id(energy);
     } else {
@@ -1425,7 +1426,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
     }
     x->rdmult = set_segment_rdmult(cpi, x, mi->segment_id);
   } else if (aq_mode == EQUATOR360_AQ) {
-    if (cm->frame_type == KEY_FRAME) {
+    if (cm->frame_type == KEY_FRAME || cpi->force_update_segmentation) {
       mi->segment_id = vp9_360aq_segment_id(mi_row, cm->mi_rows);
     } else {
       const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map

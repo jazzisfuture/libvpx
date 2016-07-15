@@ -435,6 +435,8 @@ typedef struct VP9_COMP {
 
   YV12_BUFFER_CONFIG alt_ref_buffer;
 
+  uint8_t force_update_segmentation;
+
 #if CONFIG_INTERNAL_STATS
   unsigned int mode_chosen_counts[MAX_MODES];
 
