@@ -50,5 +50,7 @@ typedef  int32_t ELEMTYPE_32S;
 typedef  float ELEMTYPE_32F;
 typedef double ELEMTYPE_64F;
 
+extern const char *matx_type_format_strings[];
+
 
 #endif  // VP9_COMMON_VP9_MATX_ENUMS_H_
