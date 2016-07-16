@@ -294,7 +294,7 @@ struct TestParams {
   int block_size;
   Func func;
   vpx_bit_depth_t bit_depth;
-  int use_high_bit_depth;
+  bool use_high_bit_depth;
   uint32_t mask;
 };
 
