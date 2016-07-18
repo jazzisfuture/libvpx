@@ -11,10 +11,14 @@
 #include <math.h>
 #include <limits.h>
 
+#include "vp9/common/vp9_matx_enums.h"
+#include "vp9/common/vp9_matx.h"
+#include "vp9/common/vp9_matx_functions.h"
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_reconinter.h"
+#include "vp9/encoder/vp9_alt_ref_aq.h"
 #include "vp9/encoder/vp9_extend.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mcomp.h"
@@ -331,19 +335,42 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   MACROBLOCKD *mbd = &cpi->td.mb.e_mbd;
   YV12_BUFFER_CONFIG *f = frames[alt_ref_index];
   uint8_t *dst1, *dst2;
+
+  int error;
+
 #if CONFIG_VP9_HIGHBITDEPTH
-  DECLARE_ALIGNED(16, uint16_t,  predictor16[16 * 16 * 3]);
-  DECLARE_ALIGNED(16, uint8_t,  predictor8[16 * 16 * 3]);
+  DECLARE_ALIGNED(16, uint16_t, predictor16[16 * 16 * 3]);
+  DECLARE_ALIGNED(16, uint8_t,   predictor8[16 * 16 * 3]);
   uint8_t *predictor;
 #else
-  DECLARE_ALIGNED(16, uint8_t,  predictor[16 * 16 * 3]);
+  DECLARE_ALIGNED(16, uint8_t, predictor[16 * 16 * 3]);
 #endif
   const int mb_uv_height = 16 >> mbd->plane[1].subsampling_y;
   const int mb_uv_width  = 16 >> mbd->plane[1].subsampling_x;
 
   // Save input state
   uint8_t* input_buffer[MAX_MB_PLANE];
-  int i;
+  int i, j;
+
+  // TODO(yuryg): change naming
+
+  // number of non-zero weights during creation of the altref frame
+  struct MATX_8U* segm_map = vp9_alt_ref_aq_segm_map(cpi->alt_ref_aq);
+
+  assert((cpi->common.mi_rows + 1)/2 == mb_rows);
+  assert((cpi->common.mi_cols + 1)/2 == mb_cols);
+
+  vp9_mat8u_create(segm_map, cpi->common.mi_rows,
+                   cpi->common.mi_cols, 0, 1);
+
+  // I want zero to be the smallest value finally
+  // (and I know it is going to be 255, but it is fine)
+  vp9_matx_set_to(segm_map, -1);
+
+  assert(frame_count <= ALT_REF_MAX_FRAMES);
+
+  vp9_alt_ref_aq_set_nsegments(cpi->alt_ref_aq, frame_count);
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     predictor = CONVERT_TO_BYTEPTR(predictor16);
@@ -394,9 +421,10 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
 
         if (frame == alt_ref_index) {
           filter_weight = 2;
+          error = 0;
         } else {
           // Find best match in this frame by MC
-          int err = temporal_filter_find_matching_mb_c(cpi,
+          error = temporal_filter_find_matching_mb_c(cpi,
               frames[alt_ref_index]->y_buffer + mb_y_offset,
               frames[frame]->y_buffer + mb_y_offset,
               frames[frame]->y_stride);
@@ -404,9 +432,12 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           // Assign higher weight to matching MB if its error
           // score is lower. If not applying MC default behavior
           // is to weight all MBs equal.
-          filter_weight = err < thresh_low
-                          ? 2 : err < thresh_high ? 1 : 0;
+          filter_weight = error < thresh_low
+                          ? 2 : error < thresh_high ? 1 : 0;
         }
+
+        if (filter_weight > 0)
+          ++segm_map->data[2*(mb_row*segm_map->stride + mb_col)];
 
         if (filter_weight != 0) {
           // Construct the predictors
@@ -627,6 +658,18 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
     }
     mb_y_offset += 16 * (f->y_stride - mb_cols);
     mb_uv_offset += mb_uv_height * f->uv_stride - mb_uv_width * mb_cols;
+  }
+
+  // fill-in segmentation map (every odd row and column)
+  for (i = 0; i < segm_map->rows; ++i) {
+    int is_odd  = i&1;
+    int is_even = is_odd^1;
+
+    for (j = is_even; j < segm_map->cols; j += 1 + is_even) {
+      int idx = (i - is_odd)*segm_map->stride + (j - is_even);
+      uint8_t value = segm_map->data[idx];
+      segm_map->data[i*segm_map->stride + j] = value;
+    }
   }
 
   // Restore input state
