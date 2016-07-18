@@ -390,6 +390,9 @@ static const arg_def_t aq_mode = ARG_DEF(
     NULL, "aq-mode", 1,
     "Adaptive quantization mode (0: off (default), 1: variance 2: complexity, "
     "3: cyclic refresh, 4: equator360)");
+static const arg_def_t alt_ref_aq = ARG_DEF(
+    NULL, "alt-ref-aq", 1, "Strength of special adaptive quantization applied "
+    "the alternate reference frames. Use -1 for auto choosing.");
 static const arg_def_t frame_periodic_boost = ARG_DEF(
     NULL, "frame-boost", 1,
     "Enable frame periodic boost (0: off (default), 1: on)");
@@ -457,7 +460,7 @@ static const arg_def_t *vp9_args[] = {
   &tile_cols, &tile_rows, &arnr_maxframes, &arnr_strength, &arnr_type,
   &tune_ssim, &cq_level, &max_intra_rate_pct, &max_inter_rate_pct,
   &gf_cbr_boost_pct, &lossless,
-  &frame_parallel_decoding, &aq_mode, &frame_periodic_boost,
+  &frame_parallel_decoding, &aq_mode, &alt_ref_aq, &frame_periodic_boost,
   &noise_sens, &tune_content, &input_color_space,
   &min_gf_interval, &max_gf_interval, &target_level,
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -473,8 +476,8 @@ static const int vp9_arg_ctrl_map[] = {
   VP8E_SET_TUNING, VP8E_SET_CQ_LEVEL, VP8E_SET_MAX_INTRA_BITRATE_PCT,
   VP9E_SET_MAX_INTER_BITRATE_PCT, VP9E_SET_GF_CBR_BOOST_PCT,
   VP9E_SET_LOSSLESS, VP9E_SET_FRAME_PARALLEL_DECODING, VP9E_SET_AQ_MODE,
-  VP9E_SET_FRAME_PERIODIC_BOOST, VP9E_SET_NOISE_SENSITIVITY,
-  VP9E_SET_TUNE_CONTENT, VP9E_SET_COLOR_SPACE,
+  VP9E_SET_ALT_REF_AQ, VP9E_SET_FRAME_PERIODIC_BOOST,
+  VP9E_SET_NOISE_SENSITIVITY, VP9E_SET_TUNE_CONTENT, VP9E_SET_COLOR_SPACE,
   VP9E_SET_MIN_GF_INTERVAL, VP9E_SET_MAX_GF_INTERVAL, VP9E_SET_TARGET_LEVEL,
   0
 };
