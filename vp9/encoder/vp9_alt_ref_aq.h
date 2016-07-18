@@ -23,6 +23,9 @@
 // Where to disable segmentation
 #define ALT_REF_AQ_LOW_BITRATE_BOUNDARY 150
 
+// Swtich boundary between weights > 1 and weights > 0
+#define ALT_REF_AQ_SWITCH_WEIGHTS_BOUNDARY 10000
+
 // Last frame always has overall quality = 0,
 // so it is questionable if I can process it
 #define ALT_REF_AQ_APPLY_TO_LAST_FRAME 1
