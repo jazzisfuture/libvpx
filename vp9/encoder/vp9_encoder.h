@@ -177,7 +177,12 @@ typedef struct VP9EncoderConfig {
   int worst_allowed_q;
   int best_allowed_q;
   int cq_level;
-  AQ_MODE aq_mode;  // Adaptive Quantization mode
+
+  // Adaptive Quantization mode
+  AQ_MODE aq_mode;
+
+  // Special handling of Adaptive Quantization for AltRef frames
+  int alt_ref_aq;
 
   // Internal frame size scaling.
   RESIZE_TYPE resize_mode;
