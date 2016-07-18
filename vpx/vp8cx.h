@@ -561,7 +561,7 @@ enum vp8e_enc_control_id {
    *
    * Supported in codecs: VP9
    */
-  VP9E_SET_ALT_REF_AQ,
+  VP9E_SET_ALT_REF_AQ
 };
 
 /*!\brief vpx 1-D scaling mode
