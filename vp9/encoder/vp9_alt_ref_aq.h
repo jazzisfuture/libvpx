@@ -37,6 +37,14 @@
 // Threshold to disable segmentation
 #define ALT_REF_AQ_PROTECT_GAIN_THRESH 0.5
 
+// maximum segment area to be dropped
+// TODO(yury): May be, I need something smarter here
+#define ALT_REF_AQ_SEGMENT_MIN_AREA 0
+
+// number of segments to assign
+// nonzero delta quantizers
+#define ALT_REF_AQ_NUM_NONZERO_SEGMENTS 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
