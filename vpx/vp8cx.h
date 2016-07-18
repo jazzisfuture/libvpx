@@ -390,16 +390,6 @@ enum vp8e_enc_control_id {
    */
   VP9E_SET_AQ_MODE,
 
-  /*!\brief Codec control function to enable/disable special mode for altref
-   *        adaptive quantization. You can use it with --aq-mode concurrently.
-   *
-   * Enable special adaptive quantization for altref frames based on their
-   * expected prediction quality for the future frames.
-   *
-   * Supported in codecs: VP9
-   */
-  VP9E_SET_ALT_REF_AQ,
-
   /*!\brief Codec control function to enable/disable periodic Q boost.
    *
    * One VP9 encoder speed feature is to enable quality boost by lowering
@@ -561,7 +551,18 @@ enum vp8e_enc_control_id {
    *
    * Supported in codecs: VP9
    */
-  VP9E_GET_LEVEL
+  VP9E_GET_LEVEL,
+
+  /*!\brief Codec control function to enable/disable special mode for altref
+   *        adaptive quantization. You can use it with --aq-mode concurrently.
+   *
+   * Enable special adaptive quantization for altref frames based on their
+   * expected prediction quality for the future frames.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_ALT_REF_AQ
+
 };
 
 /*!\brief vpx 1-D scaling mode
