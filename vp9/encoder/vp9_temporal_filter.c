@@ -353,7 +353,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   int i, j;
 
   struct MATX_8U* alt_ref_segm_map;
-  struct MATX_8U segm_map, just_a_matrix;
+  struct MATX_8U segm_map;  //, just_a_matrix;
 
   vp9_matx_init(&segm_map);
   vp9_mat8u_affirm(&segm_map, mb_rows, mb_cols, 0, 1);
@@ -655,22 +655,22 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
     mb_uv_offset += mb_uv_height * f->uv_stride - mb_uv_width * mb_cols;
   }
 
-  vp9_matx_init(&just_a_matrix);
-  vp9_mat8u_nth_element(&segm_map, &just_a_matrix, 2, 7,
-                        MATX_BORDER_REFLECT, frame_count - 1);
+  /* vp9_matx_init(&just_a_matrix); */
+  /* vp9_mat8u_nth_element(&segm_map, &just_a_matrix, 2, 7, */
+  /*                       MATX_BORDER_REFLECT, frame_count - 1); */
 
-  for (i = 0; i < segm_map.rows; ++i) {
-    int idx = i*segm_map.stride;
+  /* for (i = 0; i < segm_map.rows; ++i) { */
+  /*   int idx = i*segm_map.stride; */
 
-    uint8_t *just_a_matrix_row = &just_a_matrix.data[idx];
-    uint8_t *segm_map_row = &segm_map.data[idx];
+  /*   uint8_t *just_a_matrix_row = &just_a_matrix.data[idx]; */
+  /*   uint8_t *segm_map_row = &segm_map.data[idx]; */
 
-    for (j = 0; j < segm_map.cols; ++j)
-      if (segm_map_row[j] + 2 < just_a_matrix_row[j])
-        segm_map_row[j] = just_a_matrix_row[j];
-  }
+  /*   for (j = 0; j < segm_map.cols; ++j) */
+  /*     if (segm_map_row[j] + 2 < just_a_matrix_row[j]) */
+  /*       segm_map_row[j] = just_a_matrix_row[j]; */
+  /* } */
 
-  vp9_matx_destroy(&just_a_matrix);
+  /* vp9_matx_destroy(&just_a_matrix); */
 
   // upload segmentation map
   alt_ref_segm_map = vp9_alt_ref_aq_segm_map(cpi->alt_ref_aq);
@@ -684,6 +684,8 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
     for (j = 0; j < alt_ref_segm_map->cols; ++j)
       row_data[j] = segm_map.data[i/2*segm_map.stride + j/2];
   }
+
+  vp9_matx_destroy(&segm_map);
 
   // Restore input state
   for (i = 0; i < MAX_MB_PLANE; i++)
