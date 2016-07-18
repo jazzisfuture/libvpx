@@ -22,6 +22,8 @@
 // I keep here all parameters that I tuned
 #define ALT_REF_AQ_LOW_BITRATE_BOUNDARY 150
 
+#define ALT_REF_AQ_SEGMENT_MIN_AREA 0
+#define ALT_REF_AQ_NUM_NONZERO_SEGMENTS 1
 
 #ifdef __cplusplus
 extern "C" {
