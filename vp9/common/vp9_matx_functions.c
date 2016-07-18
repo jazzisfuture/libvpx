@@ -74,7 +74,7 @@ do {                                                                      \
     for (j = 0; j < (image)->cols*(image)->cn; ++j) {                     \
       fprintf(image_file, format_string, data[i*stride + j]);             \
       fprintf(image_file, " ");                                           \
-  }                                                                       \
+    }                                                                     \
     fprintf(image_file, "\n");                                            \
   }                                                                       \
 } while (0)
