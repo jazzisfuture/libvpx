@@ -26,6 +26,9 @@
 
 #define ALT_REF_AQ_APPLY_TO_LAST_FRAME 1
 
+#define ALT_REF_AQ_SEGMENT_MIN_AREA 0
+#define ALT_REF_AQ_NUM_NONZERO_SEGMENTS 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
