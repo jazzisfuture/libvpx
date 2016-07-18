@@ -15,6 +15,7 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_reconinter.h"
+#include "vp9/encoder/vp9_alt_ref_aq.h"
 #include "vp9/encoder/vp9_extend.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mcomp.h"
@@ -281,6 +282,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   MACROBLOCKD *mbd = &cpi->td.mb.e_mbd;
   YV12_BUFFER_CONFIG *f = frames[alt_ref_index];
   uint8_t *dst1, *dst2;
+
 #if CONFIG_VP9_HIGHBITDEPTH
   DECLARE_ALIGNED(16, uint16_t, predictor16[16 * 16 * 3]);
   DECLARE_ALIGNED(16, uint8_t, predictor8[16 * 16 * 3]);
@@ -293,7 +295,54 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
 
   // Save input state
   uint8_t *input_buffer[MAX_MB_PLANE];
+
+  uint32_t filter_weight_lower_thresh = 0;
   int i;
+
+  struct MATX_8U segm_map;
+
+  segm_map.rows = 0;
+  segm_map.cols = 0;
+  segm_map.data = NULL;
+  segm_map.stride = 0;
+
+  if (cpi->oxcf.alt_ref_aq) {
+    int bitrate = cpi->rc.avg_frame_bandwidth / 40;
+    int rows = cpi->common.mi_rows;
+    int cols = cpi->common.mi_cols;
+
+    // Encoder blurs lookahead buffers together into
+    // altref frame using integer weights from the set
+    // of 0,1, and 2. Thus, the most straightforward
+    // way to estimate prediction quality of some altref
+    // block is to consider either number of any nonzero
+    // weights or just number of weights equal to 2.
+    // Second option is more conservative and I empirically
+    // found that it is better for high bitrates.
+    // -------------------------------------------------
+    // TODO(yuryg): I should change this condition
+    // to work on a per-frame basis.
+    // Also, I can consider something more continuous.
+    if (bitrate > ALT_REF_AQ_SWITCH_WEIGHTS_BOUNDARY)
+      filter_weight_lower_thresh = 0;
+    else
+      filter_weight_lower_thresh = 1;
+
+    CHECK_MEM_ERROR(&cpi->common, segm_map.data,
+                    vpx_malloc(rows * cols * sizeof(uint8_t)));
+
+    // I want zero to be the smallest value finally
+    memset(segm_map.data, 255, rows * cols * sizeof(uint8_t));
+
+    segm_map.rows = rows;
+    segm_map.cols = cols;
+    segm_map.stride = cols;
+
+    assert(frame_count <= ALT_REF_MAX_FRAMES);
+
+    vp9_alt_ref_aq_set_nsegments(cpi->alt_ref_aq, frame_count);
+  }
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     predictor = CONVERT_TO_BYTEPTR(predictor16);
@@ -355,6 +404,11 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           // is to weight all MBs equal.
           filter_weight = err < thresh_low ? 2 : err < thresh_high ? 1 : 0;
         }
+
+        if (cpi->oxcf.alt_ref_aq && filter_weight > filter_weight_lower_thresh)
+          // I fill in empty cells at the end
+          // of the function to avoid edges processing here
+          ++segm_map.data[2 * (mb_row * segm_map.stride + mb_col)];
 
         if (filter_weight != 0) {
           // Construct the predictors
@@ -560,6 +614,25 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
     }
     mb_y_offset += 16 * (f->y_stride - mb_cols);
     mb_uv_offset += mb_uv_height * f->uv_stride - mb_uv_width * mb_cols;
+  }
+
+  if (cpi->oxcf.alt_ref_aq) {
+    int j;
+
+    // fill-in segmentation map (every odd row and column)
+    for (i = 0; i < segm_map.rows; ++i) {
+      int is_odd = i & 1;
+      int is_even = is_odd ^ 1;
+
+      for (j = is_even; j < segm_map.cols; j += 1 + is_even) {
+        int idx = (i - is_odd) * segm_map.stride + (j - is_even);
+        uint8_t value = segm_map.data[idx];
+        segm_map.data[i * segm_map.stride + j] = value;
+      }
+    }
+
+    vp9_alt_ref_aq_upload_map(cpi->alt_ref_aq, &segm_map);
+    vpx_free(segm_map.data);
   }
 
   // Restore input state

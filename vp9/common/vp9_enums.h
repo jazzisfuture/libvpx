@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+// maximum number of frames to be blurred into superframe
+#define ALT_REF_MAX_FRAMES 64
+
 #define MI_SIZE_LOG2 3
 #define MI_BLOCK_SIZE_LOG2 (6 - MI_SIZE_LOG2)  // 64 = 2^6
 
