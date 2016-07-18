@@ -22,6 +22,7 @@
 
 // I keep here all parameters that I tuned
 #define ALT_REF_AQ_LOW_BITRATE_BOUNDARY 150
+#define ALT_REF_AQ_SWITCH_WEIGHTS_BOUNDARY 10000
 
 #define ALT_REF_AQ_APPLY_TO_LAST_FRAME 1
 
