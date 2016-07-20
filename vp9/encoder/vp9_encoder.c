@@ -3137,6 +3137,9 @@ static void set_size_dependent_vars(VP9_COMP *cpi, int *q,
     if (!cpi->common.postproc_state.limits) {
       cpi->common.postproc_state.limits = vpx_calloc(
           cpi->common.width, sizeof(*cpi->common.postproc_state.limits));
+      if(!cpi->common.postproc_state.limits)
+        vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate post processing buffer");
     }
     vp9_denoise(cpi->Source, cpi->Source, l, cpi->common.postproc_state.limits);
   }
@@ -4949,6 +4952,13 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                                "Failed to allocate post processing buffer");
           }
 
+          if (!cpi->common.postproc_state.limits) {
+            cpi->common.postproc_state.limits = vpx_calloc(
+                cpi->common.width, sizeof(*cpi->common.postproc_state.limits));
+            if(!cpi->common.postproc_state.limits)
+              vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                                 "Failed to allocate post processing buffer");
+          }
           vp9_deblock(cm->frame_to_show, pp,
                       cm->lf.filter_level * 10 / 6, cm->postproc_state.limits);
 #endif
