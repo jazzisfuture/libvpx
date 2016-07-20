@@ -4949,6 +4949,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                                "Failed to allocate post processing buffer");
           }
 
+          if (!cpi->common.postproc_state.limits) {
+            cpi->common.postproc_state.limits = vpx_calloc(
+                cpi->common.width, sizeof(*cpi->common.postproc_state.limits));
+          }
           vp9_deblock(cm->frame_to_show, pp,
                       cm->lf.filter_level * 10 / 6, cm->postproc_state.limits);
 #endif
