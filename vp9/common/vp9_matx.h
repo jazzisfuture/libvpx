@@ -33,6 +33,22 @@ extern "C" {
  */
 void vp9_matx_init(MATX_PTR const self);
 
+/*!\brief Create new matrix or update existing
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    typeid  Element type for the created matrix
+ */
+void vp9_matx_affirm(MATX_PTR const self,  //
+                     int rows,             //
+                     int cols,             //
+                     int stride,           //
+                     int cn,               //
+                     MATX_TYPE typeid);
+
 /*!\brief Destructor
  *
  * \param    self    Instance of the class
