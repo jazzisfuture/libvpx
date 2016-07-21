@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
-#include <limits.h>
 
 #include "./vpx_config.h"
 
