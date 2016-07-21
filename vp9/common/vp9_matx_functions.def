@@ -22,6 +22,18 @@ void MATX_DEFINE_FUNC(zerofill)(struct T_MATX_STRUCT* const image) {
   memset(image->data, 0, image->rows*image->stride*sizeof(T_MATX_ELEMTYPE));
 }
 
+void MATX_DEFINE_FUNC(set_to)(struct T_MATX_STRUCT* const image,
+                              T_MATX_ELEMTYPE value) {
+  int i, j;
+
+  for (i = 0; i < image->rows; ++i) {
+    T_MATX_ELEMTYPE *row_data = &image->data[i*image->stride];
+
+    for (j = 0; j < image->cols*image->cn; ++j)
+       row_data[j] = value;
+  }
+}
+
 void MATX_DEFINE_FUNC(copy_to)(const struct T_MATX_STRUCT* const src,
                                struct T_MATX_STRUCT* const dst) {
   int i;
