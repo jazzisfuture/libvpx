@@ -23,6 +23,8 @@ struct T_MATX_STRUCT {
   int cn;
   MATX_TYPE typeid;
 
+  uint8_t is_wrapper;
+
   T_MATX_ELEMTYPE *data;
 };
 
