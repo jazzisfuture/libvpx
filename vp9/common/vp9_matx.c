@@ -19,6 +19,16 @@
 #include "vp9/common/vp9_matx_enums.h"
 #include "vp9/common/vp9_matx.h"
 
+// clang-format off
+#define MATX_SUFFIX 8u
+#include "./vp9_matx.def"
+// clang-format on
+
+#define VP9_MATX_NBYTES(type, self) (self)->rows *(self)->stride * sizeof(type)
+
+#define VP9_MATX_REALLOC(type, self) \
+  (self)->data = vpx_realloc((self)->data, VP9_MATX_NBYTES(type, self));
+
 void vp9_matx_init(MATX_PTR const _self) {
   struct MATX *const self = (struct MATX *)_self;
 
@@ -71,7 +81,11 @@ void vp9_matx_affirm(MATX_PTR _self,  //
   assert(self->stride >= self->cols * self->cn);
 
   switch (self->typeid) {
-    default: assert(0 /* matx: inapprorpiate type */);
+    case TYPE_8U:                                //
+      VP9_MATX_REALLOC(MATX_ELEMTYPE_8U, self);  //
+      break;
+    default:  //
+      assert(0 /* matx: inapprorpiate type */);
   }
 
   assert(self->data != NULL);
