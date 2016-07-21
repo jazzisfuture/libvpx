@@ -20,5 +20,8 @@ void MATX_DEFINE_FUNC(copy_to)(const struct T_MATX_STRUCT *src,
 
 void MATX_DEFINE_FUNC(zerofill)(struct T_MATX_STRUCT *image);
 
+void MATX_DEFINE_FUNC(set_to)(struct T_MATX_STRUCT *image,
+                              T_MATX_ELEMTYPE value);
+
 #undef MATX_SUFFIX
 #endif
