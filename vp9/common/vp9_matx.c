@@ -23,6 +23,7 @@ void vp9_matx_init(MATX_PTR const _self) {
   struct MATX *const self = (struct MATX *)_self;
 
   self->data = NULL;
+  self->is_wrapper = 0;
 
   self->rows = 0;
   self->cols = 0;
@@ -62,6 +63,7 @@ void vp9_matx_affirm(MATX_PTR _self, int rows, int cols, int stride, int cn,
 
   if (reallocation_not_needed) return;
 
+  assert(!self->is_wrapper);
   assert(self->stride >= self->cols * self->cn);
 
   switch (self->typeid) {
@@ -72,6 +74,32 @@ void vp9_matx_affirm(MATX_PTR _self, int rows, int cols, int stride, int cn,
   assert(self->data != NULL);
 }
 
+void vp9_matx_wrap(MATX_PTR _self, int rows, int cols, int stride, int cn,
+                   void *data, MATX_TYPE typeid) {
+  struct MATX *const self = (struct MATX *)_self;
+
+  self->rows = rows;
+  self->cols = cols;
+  self->cn = cn;
+  self->typeid = typeid;
+
+  self->stride = stride;
+  if (!self->stride) self->stride = cols * cn;
+
+  assert(self->stride >= self->cols * self->cn);
+
+  // you can't wrap matrix around itself
+  assert(self->is_wrapper || self->data != data);
+
+  vp9_matx_destroy(self);
+  self->is_wrapper = 1;
+  self->data = data;
+
+  assert(self->data != NULL);
+}
+
 void vp9_matx_destroy(MATX_PTR _self) {
-  vpx_free(((struct MATX *)_self)->data);
+  struct MATX *const self = (struct MATX *)_self;
+
+  if (!self->is_wrapper) vpx_free(self->data);
 }
