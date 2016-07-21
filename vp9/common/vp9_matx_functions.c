@@ -46,3 +46,13 @@ void vp9_matx_zerofill(MATX_PTR const image) {
       assert(0 && "matx: inapprorpiate type");
   }
 }
+
+void vp9_matx_set_to(MATX_PTR const image, int value) {
+  switch (((struct MATX *)image)->typeid) {
+    case TYPE_8U:                      //
+      vp9_mat8u_set_to(image, value);  //
+      break;
+    default:  //
+      assert(0 && "matx: inapprorpiate type");
+  }
+}
