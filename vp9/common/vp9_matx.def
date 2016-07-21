@@ -1,0 +1,35 @@
+/*  vim:filetype=c
+ *
+ *  Copyright (c) 2016 The WebM project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed  by a BSD-style license that can be
+ *  found in the LICENSE file in the root of the source tree. An additional
+ *  intellectual property  rights grant can  be found in the  file PATENTS.
+ *  All contributing  project authors may be  found in the AUTHORS  file in
+ *  the root of the source tree.
+ */
+
+#ifdef MATX_SUFFIX
+
+#include "vp9/common/vp9_matx_enums.h"
+
+struct T_MATX_STRUCT;
+
+void MATX_DEFINE_FUNC(affirm)(struct T_MATX_STRUCT *const self,
+                              int rows,
+                              int cols,
+                              int stride, int cn) {
+  vp9_matx_affirm(self, rows, cols, stride, cn, T_MATX_TYPEID);
+}
+
+void MATX_DEFINE_FUNC(wrap)(struct T_MATX_STRUCT *const self,
+                            int rows,
+                            int cols,
+                            int stride,
+                            int cn,
+                            T_MATX_ELEMTYPE* data) {
+  vp9_matx_wrap(self, rows, cols, stride, cn, data, T_MATX_TYPEID);
+}
+
+#undef MATX_SUFFIX
+#endif
