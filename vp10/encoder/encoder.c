@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
-#include <limits.h>
 
 #include "./vpx_config.h"
 
@@ -2472,8 +2472,8 @@ void vp10_remove_compressor(VP10_COMP *cpi) {
     vpx_clear_system_state();
 
     if (cpi->oxcf.pass != 1) {
-      char headings[512] = { 0 };
-      char results[512] = { 0 };
+      char headings[512] = {0};
+      char results[512] = {0};
       FILE *f = fopen("opsnr.stt", "a");
       double time_encoded =
           (cpi->last_end_time_stamp_seen - cpi->first_time_stamp_ever) /
@@ -2818,19 +2818,18 @@ static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   // TODO(dkovalev): replace YV12_BUFFER_CONFIG with vpx_image_t
   int i;
-  const uint8_t *const srcs[3] = { src->y_buffer, src->u_buffer,
-                                   src->v_buffer };
-  const int src_strides[3] = { src->y_stride, src->uv_stride, src->uv_stride };
-  const int src_widths[3] = { src->y_crop_width, src->uv_crop_width,
-                              src->uv_crop_width };
-  const int src_heights[3] = { src->y_crop_height, src->uv_crop_height,
-                               src->uv_crop_height };
-  uint8_t *const dsts[3] = { dst->y_buffer, dst->u_buffer, dst->v_buffer };
-  const int dst_strides[3] = { dst->y_stride, dst->uv_stride, dst->uv_stride };
-  const int dst_widths[3] = { dst->y_crop_width, dst->uv_crop_width,
-                              dst->uv_crop_width };
-  const int dst_heights[3] = { dst->y_crop_height, dst->uv_crop_height,
-                               dst->uv_crop_height };
+  const uint8_t *const srcs[3] = {src->y_buffer, src->u_buffer, src->v_buffer};
+  const int src_strides[3] = {src->y_stride, src->uv_stride, src->uv_stride};
+  const int src_widths[3] = {src->y_crop_width, src->uv_crop_width,
+                             src->uv_crop_width};
+  const int src_heights[3] = {src->y_crop_height, src->uv_crop_height,
+                              src->uv_crop_height};
+  uint8_t *const dsts[3] = {dst->y_buffer, dst->u_buffer, dst->v_buffer};
+  const int dst_strides[3] = {dst->y_stride, dst->uv_stride, dst->uv_stride};
+  const int dst_widths[3] = {dst->y_crop_width, dst->uv_crop_width,
+                             dst->uv_crop_width};
+  const int dst_heights[3] = {dst->y_crop_height, dst->uv_crop_height,
+                              dst->uv_crop_height};
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -2862,11 +2861,10 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   const int src_h = src->y_crop_height;
   const int dst_w = dst->y_crop_width;
   const int dst_h = dst->y_crop_height;
-  const uint8_t *const srcs[3] = { src->y_buffer, src->u_buffer,
-                                   src->v_buffer };
-  const int src_strides[3] = { src->y_stride, src->uv_stride, src->uv_stride };
-  uint8_t *const dsts[3] = { dst->y_buffer, dst->u_buffer, dst->v_buffer };
-  const int dst_strides[3] = { dst->y_stride, dst->uv_stride, dst->uv_stride };
+  const uint8_t *const srcs[3] = {src->y_buffer, src->u_buffer, src->v_buffer};
+  const int src_strides[3] = {src->y_stride, src->uv_stride, src->uv_stride};
+  uint8_t *const dsts[3] = {dst->y_buffer, dst->u_buffer, dst->v_buffer};
+  const int dst_strides[3] = {dst->y_stride, dst->uv_stride, dst->uv_stride};
   const InterpFilterParams interp_filter_params =
       vp10_get_interp_filter_params(EIGHTTAP_REGULAR);
   const int16_t *kernel = interp_filter_params.filter_ptr;
@@ -3349,8 +3347,8 @@ static void loopfilter_frame(VP10_COMP *cpi, VP10_COMMON *cm) {
   if (is_lossless_requested(&cpi->oxcf)) {
     cm->dering_level = 0;
   } else {
-    cm->dering_level = vp10_dering_search(cm->frame_to_show, cpi->Source, cm,
-                                          xd);
+    cm->dering_level =
+        vp10_dering_search(cm->frame_to_show, cpi->Source, cm, xd);
     vp10_dering_frame(cm->frame_to_show, cm, xd, cm->dering_level);
   }
 #endif  // CONFIG_DERING
@@ -4366,7 +4364,7 @@ static void set_arf_sign_bias(VP10_COMP *cpi) {
 
 static int setup_interp_filter_search_mask(VP10_COMP *cpi) {
   INTERP_FILTER ifilter;
-  int ref_total[TOTAL_REFS_PER_FRAME] = { 0 };
+  int ref_total[TOTAL_REFS_PER_FRAME] = {0};
   MV_REFERENCE_FRAME ref;
   int mask = 0;
   if (cpi->common.last_frame_type == KEY_FRAME || cpi->refresh_alt_ref_frame)

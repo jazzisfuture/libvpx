@@ -9,8 +9,8 @@
  */
 
 #include <assert.h>
-#include <stdio.h>
 #include <limits.h>
+#include <stdio.h>
 
 #include "vpx/vpx_encoder.h"
 #include "vpx_dsp/bitwriter_buffer.h"
@@ -38,8 +38,8 @@
 #if CONFIG_ANS
 #include "vp10/encoder/buf_ans.h"
 #endif  // CONFIG_ANS
-#include "vp10/encoder/cost.h"
 #include "vp10/encoder/bitstream.h"
+#include "vp10/encoder/cost.h"
 #include "vp10/encoder/encodemv.h"
 #include "vp10/encoder/mcomp.h"
 #include "vp10/encoder/segmentation.h"
@@ -47,76 +47,60 @@
 #include "vp10/encoder/tokenize.h"
 
 static const struct vp10_token intra_mode_encodings[INTRA_MODES] = {
-  { 0, 1 },  { 6, 3 },   { 28, 5 },  { 30, 5 }, { 58, 6 },
-  { 59, 6 }, { 126, 7 }, { 127, 7 }, { 62, 6 }, { 2, 2 }
-};
+    {0, 1},  {6, 3},   {28, 5},  {30, 5}, {58, 6},
+    {59, 6}, {126, 7}, {127, 7}, {62, 6}, {2, 2}};
 #if CONFIG_EXT_INTERP
 static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
-    { { 0, 1 }, { 4, 3 }, { 6, 3 }, { 5, 3 }, { 7, 3 } };
+    {{0, 1}, {4, 3}, {6, 3}, {5, 3}, {7, 3}};
 #else
 static const struct vp10_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
-    { { 0, 1 }, { 2, 2 }, { 3, 2 } };
+    {{0, 1}, {2, 2}, {3, 2}};
 #endif  // CONFIG_EXT_INTERP
 #if CONFIG_EXT_PARTITION_TYPES
 static const struct vp10_token ext_partition_encodings[EXT_PARTITION_TYPES] = {
-  { 0, 1 },  { 4, 3 },  { 12, 4 }, { 7, 3 },
-  { 10, 4 }, { 11, 4 }, { 26, 5 }, { 27, 5 }
-};
+    {0, 1}, {4, 3}, {12, 4}, {7, 3}, {10, 4}, {11, 4}, {26, 5}, {27, 5}};
 #endif
 static const struct vp10_token partition_encodings[PARTITION_TYPES] = {
-  { 0, 1 }, { 2, 2 }, { 6, 3 }, { 7, 3 }
-};
+    {0, 1}, {2, 2}, {6, 3}, {7, 3}};
 #if !CONFIG_REF_MV
 static const struct vp10_token inter_mode_encodings[INTER_MODES] =
 #if CONFIG_EXT_INTER
-    { { 2, 2 }, { 6, 3 }, { 0, 1 }, { 14, 4 }, { 15, 4 } };
+    {{2, 2}, {6, 3}, {0, 1}, {14, 4}, {15, 4}};
 #else
-    { { 2, 2 }, { 6, 3 }, { 0, 1 }, { 7, 3 } };
+    {{2, 2}, {6, 3}, {0, 1}, {7, 3}};
 #endif  // CONFIG_EXT_INTER
 #endif
 #if CONFIG_EXT_INTER
 static const struct vp10_token
     inter_compound_mode_encodings[INTER_COMPOUND_MODES] = {
-      { 2, 2 },  { 50, 6 }, { 51, 6 }, { 24, 5 }, { 52, 6 },
-      { 53, 6 }, { 54, 6 }, { 55, 6 }, { 0, 1 },  { 7, 3 }
-    };
+        {2, 2},  {50, 6}, {51, 6}, {24, 5}, {52, 6},
+        {53, 6}, {54, 6}, {55, 6}, {0, 1},  {7, 3}};
 #endif  // CONFIG_EXT_INTER
 static const struct vp10_token palette_size_encodings[] = {
-  { 0, 1 }, { 2, 2 }, { 6, 3 }, { 14, 4 }, { 30, 5 }, { 62, 6 }, { 63, 6 },
+    {0, 1}, {2, 2}, {6, 3}, {14, 4}, {30, 5}, {62, 6}, {63, 6},
 };
-static const struct vp10_token
-    palette_color_encodings[PALETTE_MAX_SIZE - 1][PALETTE_MAX_SIZE] = {
-      { { 0, 1 }, { 1, 1 } },                                  // 2 colors
-      { { 0, 1 }, { 2, 2 }, { 3, 2 } },                        // 3 colors
-      { { 0, 1 }, { 2, 2 }, { 6, 3 }, { 7, 3 } },              // 4 colors
-      { { 0, 1 }, { 2, 2 }, { 6, 3 }, { 14, 4 }, { 15, 4 } },  // 5 colors
-      { { 0, 1 },
-        { 2, 2 },
-        { 6, 3 },
-        { 14, 4 },
-        { 30, 5 },
-        { 31, 5 } },  // 6 colors
-      { { 0, 1 },
-        { 2, 2 },
-        { 6, 3 },
-        { 14, 4 },
-        { 30, 5 },
-        { 62, 6 },
-        { 63, 6 } },  // 7 colors
-      { { 0, 1 },
-        { 2, 2 },
-        { 6, 3 },
-        { 14, 4 },
-        { 30, 5 },
-        { 62, 6 },
-        { 126, 7 },
-        { 127, 7 } },  // 8 colors
-    };
+static const struct vp10_token palette_color_encodings[PALETTE_MAX_SIZE -
+                                                       1][PALETTE_MAX_SIZE] = {
+    {{0, 1}, {1, 1}},                                              // 2 colors
+    {{0, 1}, {2, 2}, {3, 2}},                                      // 3 colors
+    {{0, 1}, {2, 2}, {6, 3}, {7, 3}},                              // 4 colors
+    {{0, 1}, {2, 2}, {6, 3}, {14, 4}, {15, 4}},                    // 5 colors
+    {{0, 1}, {2, 2}, {6, 3}, {14, 4}, {30, 5}, {31, 5}},           // 6 colors
+    {{0, 1}, {2, 2}, {6, 3}, {14, 4}, {30, 5}, {62, 6}, {63, 6}},  // 7 colors
+    {{0, 1},
+     {2, 2},
+     {6, 3},
+     {14, 4},
+     {30, 5},
+     {62, 6},
+     {126, 7},
+     {127, 7}},  // 8 colors
+};
 
 static const struct vp10_token tx_size_encodings[TX_SIZES - 1][TX_SIZES] = {
-  { { 0, 1 }, { 1, 1 } },                      // Max tx_size is 8X8
-  { { 0, 1 }, { 2, 2 }, { 3, 2 } },            // Max tx_size is 16X16
-  { { 0, 1 }, { 2, 2 }, { 6, 3 }, { 7, 3 } },  // Max tx_size is 32X32
+    {{0, 1}, {1, 1}},                  // Max tx_size is 8X8
+    {{0, 1}, {2, 2}, {3, 2}},          // Max tx_size is 16X16
+    {{0, 1}, {2, 2}, {6, 3}, {7, 3}},  // Max tx_size is 32X32
 };
 
 static INLINE void write_uniform(vp10_writer *w, int n, int v) {
@@ -1434,8 +1418,9 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       } else {
         vp10_write_token(
             w, vp10_ext_tx_tree,
-            cm->fc->intra_ext_tx_prob
-                [mbmi->tx_size][intra_mode_to_tx_type_context[mbmi->mode]],
+            cm->fc
+                ->intra_ext_tx_prob[mbmi->tx_size]
+                                   [intra_mode_to_tx_type_context[mbmi->mode]],
             &ext_tx_encodings[mbmi->tx_type]);
       }
     } else {
@@ -1817,7 +1802,8 @@ static void write_modes_sb(VP10_COMP *const cpi, const TileInfo *const tile,
                               mi_row + hbs, mi_col + hbs);
         break;
 #endif  // CONFIG_EXT_PARTITION_TYPES
-      default: assert(0);
+      default:
+        assert(0);
     }
   }
 #if CONFIG_SUPERTX
@@ -1883,7 +1869,8 @@ static void write_modes_sb(VP10_COMP *const cpi, const TileInfo *const tile,
   if (bsize == BLOCK_64X64 && cm->dering_level != 0 &&
       !sb_all_skip(cm, mi_row, mi_col)) {
     vpx_write_literal(
-        w, cm->mi_grid_visible[mi_row*cm->mi_stride + mi_col]->mbmi.dering_gain,
+        w,
+        cm->mi_grid_visible[mi_row * cm->mi_stride + mi_col]->mbmi.dering_gain,
         DERING_REFINEMENT_BITS);
   }
 #endif
@@ -1954,7 +1941,7 @@ static void update_coef_probs_common(vp10_writer *const bc, VP10_COMP *cpi,
     case TWO_LOOP: {
       /* dry run to see if there is any update at all needed */
       int savings = 0;
-      int update[2] = { 0, 0 };
+      int update[2] = {0, 0};
       for (i = 0; i < PLANE_TYPES; ++i) {
         for (j = 0; j < REF_TYPES; ++j) {
           for (k = 0; k < COEF_BANDS; ++k) {
@@ -2074,7 +2061,8 @@ static void update_coef_probs_common(vp10_writer *const bc, VP10_COMP *cpi,
       }
       return;
     }
-    default: assert(0);
+    default:
+      assert(0);
   }
 }
 
@@ -2144,7 +2132,7 @@ static void update_coef_probs_subframe(
     case TWO_LOOP: {
       /* dry run to see if there is any update at all needed */
       int savings = 0;
-      int update[2] = { 0, 0 };
+      int update[2] = {0, 0};
       for (i = 0; i < PLANE_TYPES; ++i) {
         for (j = 0; j < REF_TYPES; ++j) {
           for (k = 0; k < COEF_BANDS; ++k) {
@@ -2282,7 +2270,8 @@ static void update_coef_probs_subframe(
       }
       return;
     }
-    default: assert(0);
+    default:
+      assert(0);
   }
 }
 #endif  // CONFIG_ENTROPY
@@ -2323,8 +2312,8 @@ static void update_coef_probs(VP10_COMP *cpi, vp10_writer *w) {
 #if CONFIG_ENTROPY
       if (cm->do_subframe_update &&
           cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
-        unsigned int
-            eob_counts_copy[PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS];
+        unsigned int eob_counts_copy[PLANE_TYPES][REF_TYPES][COEF_BANDS]
+                                    [COEFF_CONTEXTS];
         vp10_coeff_count coef_counts_copy[PLANE_TYPES];
         vp10_copy(eob_counts_copy, cpi->common.counts.eob_branch[tx_size]);
         vp10_copy(coef_counts_copy, cpi->td.rd_counts.coef_counts[tx_size]);
@@ -2387,27 +2376,42 @@ static void update_coef_probs(VP10_COMP *cpi, vp10_writer *w) {
 #if CONFIG_LOOP_RESTORATION
 static void encode_restoration(VP10_COMMON *cm,
                                struct vpx_write_bit_buffer *wb) {
+  int i;
   RestorationInfo *rst = &cm->rst_info;
   vpx_wb_write_bit(wb, rst->restoration_type != RESTORE_NONE);
   if (rst->restoration_type != RESTORE_NONE) {
     if (rst->restoration_type == RESTORE_BILATERAL) {
       vpx_wb_write_bit(wb, 1);
-      vpx_wb_write_literal(wb, rst->restoration_level,
-                           vp10_restoration_level_bits(cm));
+      for (i = 0; i < rst->bilateral_ntiles; ++i) {
+        if (rst->bilateral_level[i] >= 0) {
+          vpx_wb_write_bit(wb, 1);
+          vpx_wb_write_literal(wb, rst->bilateral_level[i],
+                               vp10_bilateral_level_bits(cm));
+        } else {
+          vpx_wb_write_bit(wb, 0);
+        }
+      }
     } else {
       vpx_wb_write_bit(wb, 0);
-      vpx_wb_write_literal(wb, rst->vfilter[0] - WIENER_FILT_TAP0_MINV,
-                           WIENER_FILT_TAP0_BITS);
-      vpx_wb_write_literal(wb, rst->vfilter[1] - WIENER_FILT_TAP1_MINV,
-                           WIENER_FILT_TAP1_BITS);
-      vpx_wb_write_literal(wb, rst->vfilter[2] - WIENER_FILT_TAP2_MINV,
-                           WIENER_FILT_TAP2_BITS);
-      vpx_wb_write_literal(wb, rst->hfilter[0] - WIENER_FILT_TAP0_MINV,
-                           WIENER_FILT_TAP0_BITS);
-      vpx_wb_write_literal(wb, rst->hfilter[1] - WIENER_FILT_TAP1_MINV,
-                           WIENER_FILT_TAP1_BITS);
-      vpx_wb_write_literal(wb, rst->hfilter[2] - WIENER_FILT_TAP2_MINV,
-                           WIENER_FILT_TAP2_BITS);
+      for (i = 0; i < rst->wiener_ntiles; ++i) {
+        if (rst->wiener_process_tile[i]) {
+          vpx_wb_write_bit(wb, 1);
+          vpx_wb_write_literal(wb, rst->vfilter[i][0] - WIENER_FILT_TAP0_MINV,
+                               WIENER_FILT_TAP0_BITS);
+          vpx_wb_write_literal(wb, rst->vfilter[i][1] - WIENER_FILT_TAP1_MINV,
+                               WIENER_FILT_TAP1_BITS);
+          vpx_wb_write_literal(wb, rst->vfilter[i][2] - WIENER_FILT_TAP2_MINV,
+                               WIENER_FILT_TAP2_BITS);
+          vpx_wb_write_literal(wb, rst->hfilter[i][0] - WIENER_FILT_TAP0_MINV,
+                               WIENER_FILT_TAP0_BITS);
+          vpx_wb_write_literal(wb, rst->hfilter[i][1] - WIENER_FILT_TAP1_MINV,
+                               WIENER_FILT_TAP1_BITS);
+          vpx_wb_write_literal(wb, rst->hfilter[i][2] - WIENER_FILT_TAP2_MINV,
+                               WIENER_FILT_TAP2_BITS);
+        } else {
+          vpx_wb_write_bit(wb, 0);
+        }
+      }
     }
   }
 }
@@ -2696,7 +2700,7 @@ static int get_refresh_mask(VP10_COMP *cpi) {
 static INLINE int find_identical_tile(
     const int tile_row, const int tile_col,
     TileBufferEnc (*const tile_buffers)[1024]) {
-  const MV32 candidate_offset[1] = { { 1, 0 } };
+  const MV32 candidate_offset[1] = {{1, 0}};
   const uint8_t *const cur_tile_data =
       tile_buffers[tile_row][tile_col].data + 4;
   const unsigned int cur_tile_size = tile_buffers[tile_row][tile_col].size;
@@ -2756,7 +2760,7 @@ static uint32_t write_tiles(VP10_COMP *const cpi, uint8_t *const dst,
 #endif  // CONFIG_ANS
   int tile_row, tile_col;
   TOKENEXTRA *(*const tok_buffers)[MAX_TILE_COLS] = cpi->tile_tok;
-  TileBufferEnc (*const tile_buffers)[MAX_TILE_COLS] = cpi->tile_buffers;
+  TileBufferEnc(*const tile_buffers)[MAX_TILE_COLS] = cpi->tile_buffers;
   size_t total_size = 0;
   const int tile_cols = cm->tile_cols;
   const int tile_rows = cm->tile_rows;
@@ -2961,11 +2965,20 @@ static void write_sync_code(struct vpx_write_bit_buffer *wb) {
 static void write_profile(BITSTREAM_PROFILE profile,
                           struct vpx_write_bit_buffer *wb) {
   switch (profile) {
-    case PROFILE_0: vpx_wb_write_literal(wb, 0, 2); break;
-    case PROFILE_1: vpx_wb_write_literal(wb, 2, 2); break;
-    case PROFILE_2: vpx_wb_write_literal(wb, 1, 2); break;
-    case PROFILE_3: vpx_wb_write_literal(wb, 6, 3); break;
-    default: assert(0);
+    case PROFILE_0:
+      vpx_wb_write_literal(wb, 0, 2);
+      break;
+    case PROFILE_1:
+      vpx_wb_write_literal(wb, 2, 2);
+      break;
+    case PROFILE_2:
+      vpx_wb_write_literal(wb, 1, 2);
+      break;
+    case PROFILE_3:
+      vpx_wb_write_literal(wb, 6, 3);
+      break;
+    default:
+      assert(0);
   }
 }
 
@@ -3152,7 +3165,8 @@ static void write_global_motion_params(Global_Motion_Params *params,
   vp10_write_token(w, vp10_global_motion_types_tree, probs,
                    &global_motion_types_encodings[gmtype]);
   switch (gmtype) {
-    case GLOBAL_ZERO: break;
+    case GLOBAL_ZERO:
+      break;
     case GLOBAL_AFFINE:
       vp10_write_primitive_symmetric(
           w, params->motion_params.wmmat[4] * GM_ALPHA_ENCODE_FACTOR,
@@ -3179,7 +3193,8 @@ static void write_global_motion_params(Global_Motion_Params *params,
           w, params->motion_params.wmmat[1] * GM_TRANS_ENCODE_FACTOR,
           GM_ABS_TRANS_BITS);
       break;
-    default: assert(0);
+    default:
+      assert(0);
   }
 }
 
@@ -3395,11 +3410,21 @@ static int choose_size_bytes(uint32_t size, int spare_msbs) {
 
 static void mem_put_varsize(uint8_t *const dst, const int sz, const int val) {
   switch (sz) {
-    case 1: dst[0] = (uint8_t)(val & 0xff); break;
-    case 2: mem_put_le16(dst, val); break;
-    case 3: mem_put_le24(dst, val); break;
-    case 4: mem_put_le32(dst, val); break;
-    default: assert("Invalid size" && 0); break;
+    case 1:
+      dst[0] = (uint8_t)(val & 0xff);
+      break;
+    case 2:
+      mem_put_le16(dst, val);
+      break;
+    case 3:
+      mem_put_le24(dst, val);
+      break;
+    case 4:
+      mem_put_le32(dst, val);
+      break;
+    default:
+      assert("Invalid size" && 0);
+      break;
   }
 }
 
@@ -3506,7 +3531,7 @@ void vp10_pack_bitstream(VP10_COMP *const cpi, uint8_t *dst, size_t *size) {
   uint32_t compressed_header_size;
   uint32_t uncompressed_header_size;
   uint32_t data_size;
-  struct vpx_write_bit_buffer wb = { data, 0 };
+  struct vpx_write_bit_buffer wb = {data, 0};
   struct vpx_write_bit_buffer saved_wb;
   unsigned int max_tile_size;
   unsigned int max_tile_col_size;
