@@ -15,7 +15,8 @@
 
 struct T_MATX_STRUCT;
 
-// ...
+void MATX_DEFINE_FUNC(copy_to)(const struct T_MATX_STRUCT *src,
+                               struct T_MATX_STRUCT *dst);
 
 #undef MATX_SUFFIX
 #endif
