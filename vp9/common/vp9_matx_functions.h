@@ -43,6 +43,13 @@ void vp9_matx_copy_to(CONST_MATX_PTR src, MATX_PTR dst);
  */
 void vp9_matx_zerofill(MATX_PTR image);
 
+/*!\brief Assign all matrix elements to value
+ *
+ * \param    image    Source matrix
+ * \param    value    Value to assign
+ */
+void vp9_matx_set_to(MATX_PTR image, int value);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
