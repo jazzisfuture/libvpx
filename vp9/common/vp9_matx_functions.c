@@ -23,4 +23,13 @@
 #define MATX_SUFFIX 8u
 #include "vp9/common/vp9_matx_functions.def"
 
-// ...
+// copy from one matx to another (reallocate if needed)
+void vp9_matx_copy_to(CONST_MATX_PTR const src, MATX_PTR const dst) {
+  switch (((const struct MATX *) src)->typeid) {
+    case TYPE_8U:
+      vp9_mat8u_copy_to(src, dst);
+      break;
+    default:
+      assert(0 /* matx: inapprorpiate type */);
+  }
+}
