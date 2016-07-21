@@ -30,6 +30,16 @@ extern "C" {
 // clang-format on
 
 struct MATX;
+struct MATX_8U;
+
+#define assert_gray8_image(img) \
+  assert((img)->cn == 1 && (img)->typeid == TYPE_8U)
+
+#define assert_same_kind_of_image(img_a, img_b) \
+  assert((img_a)->rows == (img_b)->rows);       \
+  assert((img_a)->cols == (img_b)->cols);       \
+  assert((img_a)->cn == (img_b)->cn);           \
+  assert((img_a)->typeid == (img_b)->typeid)
 
 /*!\brief Copy one matx to another (reallocate if needed)
  *
