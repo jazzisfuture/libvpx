@@ -62,6 +62,12 @@ typedef void* MATX_PTR;
 typedef const void* CONST_MATX_PTR;
 
 typedef enum {
+  MATX_BORDER_REPEAT,
+  MATX_BORDER_REFLECT,
+  MATX_BORDER_NTYPES,
+} MATX_BORDER_TYPE;
+
+typedef enum {
   MATX_NO_TYPE,  // no type assigned
   TYPE_8U,       // uint8_t
   TYPE_8S,       // int8_t

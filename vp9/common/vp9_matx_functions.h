@@ -60,6 +60,25 @@ void vp9_matx_zerofill(MATX_PTR image);
  */
 void vp9_matx_set_to(MATX_PTR image, int value);
 
+/*!\brief Apply square morphological dilation
+ *
+ * \param    src         Source matrix to dilate
+ * \param    dst         Destination matrix (pass NULL to process in-place)
+ * \param    radius      Radius of the filtering square-element
+ *
+ * \param    nth         Position in the sorted neighborhood
+ *                       to extract (pass INT_MAX to extract maximum)
+ *
+ * \param    border_type Border expansion type
+ * \param    max_value   Maximum matrix value
+ */
+void vp9_mat8u_nth_element(struct MATX_8U *src,
+                           struct MATX_8U *dst,
+                           int radius,
+                           int nth,
+                           MATX_BORDER_TYPE border_type,
+                           int max_value);
+
 /*!\brief Dump the matrix in the PPM format (assuming matrix is interleaved)
  *
  * \param    image     Matrix to dump
