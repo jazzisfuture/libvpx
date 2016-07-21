@@ -31,7 +31,12 @@ extern "C" {
 
 struct MATX;
 
-// ...
+/*!\brief Copy one matx to another (reallocate if needed)
+ *
+ * \param    src    Source matrix to copy
+ * \param    dst    Destination matrix
+ */
+void vp9_matx_copy_to(CONST_MATX_PTR src, MATX_PTR dst);
 
 #ifdef __cplusplus
 }  // extern "C"
