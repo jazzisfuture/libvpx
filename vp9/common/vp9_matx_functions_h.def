@@ -17,6 +17,9 @@ struct T_MATX_STRUCT;
 
 void MATX_DEFINE_FUNC(zerofill)(struct T_MATX_STRUCT* const image);
 
+void MATX_DEFINE_FUNC(set_to)(struct T_MATX_STRUCT* const image,
+                              T_MATX_ELEMTYPE value);
+
 void MATX_DEFINE_FUNC(copy_to)(const struct T_MATX_STRUCT* const src,
                                struct T_MATX_STRUCT* const dst);
 
