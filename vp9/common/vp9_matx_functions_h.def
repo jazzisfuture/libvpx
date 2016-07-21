@@ -18,5 +18,7 @@ struct T_MATX_STRUCT;
 void MATX_DEFINE_FUNC(copy_to)(const struct T_MATX_STRUCT *src,
                                struct T_MATX_STRUCT *dst);
 
+void MATX_DEFINE_FUNC(zerofill)(struct T_MATX_STRUCT *image);
+
 #undef MATX_SUFFIX
 #endif

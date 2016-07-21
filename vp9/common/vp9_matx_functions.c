@@ -35,3 +35,14 @@ void vp9_matx_copy_to(CONST_MATX_PTR const src, MATX_PTR const dst) {
       assert(0 /* matx: inapprorpiate type */);
   }
 }
+
+// fill matrix with zeros
+void vp9_matx_zerofill(MATX_PTR const image) {
+  switch (((struct MATX *)image)->typeid) {
+    case TYPE_8U:                 //
+      vp9_mat8u_zerofill(image);  //
+      break;
+    default:  //
+      assert(0 /* matx: inapprorpiate type */);
+  }
+}
