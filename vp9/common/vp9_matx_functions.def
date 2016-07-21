@@ -18,6 +18,10 @@
 #include "vp9/common/vp9_matx_enums.h"
 #include "vp9/common/vp9_matx.h"
 
+void MATX_DEFINE_FUNC(zerofill)(struct T_MATX_STRUCT* const image) {
+  memset(image->data, 0, image->rows*image->stride*sizeof(T_MATX_ELEMTYPE));
+}
+
 void MATX_DEFINE_FUNC(copy_to)(const struct T_MATX_STRUCT* const src,
                                struct T_MATX_STRUCT* const dst) {
   int i;

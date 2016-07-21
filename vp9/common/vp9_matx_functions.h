@@ -37,6 +37,12 @@ struct MATX;
  */
 void vp9_matx_copy_to(CONST_MATX_PTR src, MATX_PTR dst);
 
+/*!\brief Fill in the matrix with zeros
+ *
+ * \param    image    Matrix to fill in
+ */
+void vp9_matx_zerofill(MATX_PTR image);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
