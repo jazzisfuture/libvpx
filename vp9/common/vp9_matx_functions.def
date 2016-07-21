@@ -18,7 +18,22 @@
 #include "vp9/common/vp9_matx_enums.h"
 #include "vp9/common/vp9_matx.h"
 
-// ...
+void MATX_DEFINE_FUNC(copy_to)(const struct T_MATX_STRUCT *const src,
+                               struct T_MATX_STRUCT *const dst) {
+  int i;
+
+  if (dst->data == src->data)  //
+    return;
+
+  MATX_APPLY_FUNC(affirm)(dst, src->rows, src->cols, src->stride, src->cn);
+
+  for (i = 0; i < src->rows; ++i) {
+    const T_MATX_ELEMTYPE *copy_from = src->data + i * src->stride;
+    T_MATX_ELEMTYPE *copy_to = dst->data + i * dst->stride;
+
+    memcpy(copy_to, copy_from, src->cols * sizeof(T_MATX_ELEMTYPE));
+  }
+}
 
 #undef MATX_SUFFIX
 #endif
