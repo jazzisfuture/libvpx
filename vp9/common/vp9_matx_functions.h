@@ -51,6 +51,14 @@ void vp9_matx_zerofill(MATX_PTR image);
  */
 void vp9_matx_set_to(MATX_PTR image, int value);
 
+/*!\brief Dump the matrix in the PPM format (assuming matrix is interleaved)
+ *
+ * \param    image     Matrix to dump
+ * \param    filename  Destination filename
+ * \param    mvalue Maximum value of the matrix elements (you can use -1)
+ */
+void vp9_matx_imwrite(CONST_MATX_PTR image, const char *filename, int mvalue);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
