@@ -45,6 +45,19 @@ void vp9_matx_init(MATX_PTR const self);
 void vp9_matx_affirm(MATX_PTR const self, int rows, int cols, int stride,
                      int cn, MATX_TYPE typeid);
 
+/*!\brief Create a wrapper matrix around existing memory
+ *
+ * \param    self    Instance of the class
+ * \param    rows    Number of rows
+ * \param    cols    Number of cols
+ * \param    stride  Stride in elements
+ * \param    cn      Number of channels
+ * \param    data    Pointer to the pixel data
+ * \param    typeid  Type of the data elements
+ */
+void vp9_matx_wrap(MATX_PTR const self, int rows, int cols, int stride, int cn,
+                   void *data, MATX_TYPE typeid);
+
 /*!\brief Destructor
  *
  * \param    self    Instance of the class
