@@ -27,6 +27,12 @@ extern "C" {
 #define MATX_SUFFIX x
 #include "./vp9_matx_struct.def"
 
+#define MATX_SUFFIX 8u
+#include "./vp9_matx_struct.def"
+
+#define MATX_SUFFIX 8u
+#include "./vp9_matx_h.def"
+
 /*!\brief Constructor
  *
  * \param    self    Instance of the class
