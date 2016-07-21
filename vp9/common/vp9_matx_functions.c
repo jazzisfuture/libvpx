@@ -56,3 +56,14 @@ void vp9_matx_set_to(MATX_PTR const image, int value) {
       assert(0 /* matx: inapprorpiate type */);
   }
 }
+
+void vp9_matx_imwrite(CONST_MATX_PTR const image, const char *filename,
+                      int max_value) {
+  switch (((const struct MATX *)image)->typeid) {
+    case TYPE_8U:                                     //
+      vp9_mat8u_imwrite(image, filename, max_value);  //
+      break;
+    default:  //
+      assert(0 /* matx: inapprorpiate type */);
+  }
+}
