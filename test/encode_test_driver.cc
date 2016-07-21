@@ -290,7 +290,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
     // NOTE: fragment decoder and partition encoder are only supported by VP8.
     if (init_flags_ & VPX_CODEC_USE_OUTPUT_PARTITION)
       dec_init_flags |= VPX_CODEC_USE_INPUT_FRAGMENTS;
-    Decoder* const decoder = codec_->CreateDecoder(dec_cfg, dec_init_flags, 0);
+    testing::internal::scoped_ptr<Decoder> decoder(
+        codec_->CreateDecoder(dec_cfg, dec_init_flags, 0));
 #if CONFIG_VP10 && CONFIG_EXT_TILE
     if (decoder->IsVP10()) {
       // Set dec_cfg.tile_row = -1 and dec_cfg.tile_col = -1 so that the whole
