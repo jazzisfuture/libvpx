@@ -9,8 +9,8 @@
  */
 
 #include <assert.h>
-#include <stdio.h>
 #include <limits.h>
+#include <stdio.h>
 
 #include "vpx/vpx_encoder.h"
 #include "vpx_dsp/bitwriter_buffer.h"
@@ -38,8 +38,8 @@
 #if CONFIG_ANS
 #include "vp10/encoder/buf_ans.h"
 #endif  // CONFIG_ANS
-#include "vp10/encoder/cost.h"
 #include "vp10/encoder/bitstream.h"
+#include "vp10/encoder/cost.h"
 #include "vp10/encoder/encodemv.h"
 #include "vp10/encoder/mcomp.h"
 #include "vp10/encoder/segmentation.h"
@@ -1434,8 +1434,9 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       } else {
         vp10_write_token(
             w, vp10_ext_tx_tree,
-            cm->fc->intra_ext_tx_prob
-                [mbmi->tx_size][intra_mode_to_tx_type_context[mbmi->mode]],
+            cm->fc
+                ->intra_ext_tx_prob[mbmi->tx_size]
+                                   [intra_mode_to_tx_type_context[mbmi->mode]],
             &ext_tx_encodings[mbmi->tx_type]);
       }
     } else {
@@ -1883,7 +1884,8 @@ static void write_modes_sb(VP10_COMP *const cpi, const TileInfo *const tile,
   if (bsize == BLOCK_64X64 && cm->dering_level != 0 &&
       !sb_all_skip(cm, mi_row, mi_col)) {
     vpx_write_literal(
-        w, cm->mi_grid_visible[mi_row*cm->mi_stride + mi_col]->mbmi.dering_gain,
+        w,
+        cm->mi_grid_visible[mi_row * cm->mi_stride + mi_col]->mbmi.dering_gain,
         DERING_REFINEMENT_BITS);
   }
 #endif
@@ -2323,8 +2325,8 @@ static void update_coef_probs(VP10_COMP *cpi, vp10_writer *w) {
 #if CONFIG_ENTROPY
       if (cm->do_subframe_update &&
           cm->refresh_frame_context == REFRESH_FRAME_CONTEXT_BACKWARD) {
-        unsigned int
-            eob_counts_copy[PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS];
+        unsigned int eob_counts_copy[PLANE_TYPES][REF_TYPES][COEF_BANDS]
+                                    [COEFF_CONTEXTS];
         vp10_coeff_count coef_counts_copy[PLANE_TYPES];
         vp10_copy(eob_counts_copy, cpi->common.counts.eob_branch[tx_size]);
         vp10_copy(coef_counts_copy, cpi->td.rd_counts.coef_counts[tx_size]);
@@ -2387,27 +2389,42 @@ static void update_coef_probs(VP10_COMP *cpi, vp10_writer *w) {
 #if CONFIG_LOOP_RESTORATION
 static void encode_restoration(VP10_COMMON *cm,
                                struct vpx_write_bit_buffer *wb) {
+  int i;
   RestorationInfo *rst = &cm->rst_info;
   vpx_wb_write_bit(wb, rst->restoration_type != RESTORE_NONE);
   if (rst->restoration_type != RESTORE_NONE) {
     if (rst->restoration_type == RESTORE_BILATERAL) {
       vpx_wb_write_bit(wb, 1);
-      vpx_wb_write_literal(wb, rst->restoration_level,
-                           vp10_restoration_level_bits(cm));
+      for (i = 0; i < rst->bilateral_ntiles; ++i) {
+        if (rst->bilateral_level[i] >= 0) {
+          vpx_wb_write_bit(wb, 1);
+          vpx_wb_write_literal(wb, rst->bilateral_level[i],
+                               vp10_bilateral_level_bits(cm));
+        } else {
+          vpx_wb_write_bit(wb, 0);
+        }
+      }
     } else {
       vpx_wb_write_bit(wb, 0);
-      vpx_wb_write_literal(wb, rst->vfilter[0] - WIENER_FILT_TAP0_MINV,
-                           WIENER_FILT_TAP0_BITS);
-      vpx_wb_write_literal(wb, rst->vfilter[1] - WIENER_FILT_TAP1_MINV,
-                           WIENER_FILT_TAP1_BITS);
-      vpx_wb_write_literal(wb, rst->vfilter[2] - WIENER_FILT_TAP2_MINV,
-                           WIENER_FILT_TAP2_BITS);
-      vpx_wb_write_literal(wb, rst->hfilter[0] - WIENER_FILT_TAP0_MINV,
-                           WIENER_FILT_TAP0_BITS);
-      vpx_wb_write_literal(wb, rst->hfilter[1] - WIENER_FILT_TAP1_MINV,
-                           WIENER_FILT_TAP1_BITS);
-      vpx_wb_write_literal(wb, rst->hfilter[2] - WIENER_FILT_TAP2_MINV,
-                           WIENER_FILT_TAP2_BITS);
+      for (i = 0; i < rst->wiener_ntiles; ++i) {
+        if (rst->wiener_process_tile[i]) {
+          vpx_wb_write_bit(wb, 1);
+          vpx_wb_write_literal(wb, rst->vfilter[i][0] - WIENER_FILT_TAP0_MINV,
+                               WIENER_FILT_TAP0_BITS);
+          vpx_wb_write_literal(wb, rst->vfilter[i][1] - WIENER_FILT_TAP1_MINV,
+                               WIENER_FILT_TAP1_BITS);
+          vpx_wb_write_literal(wb, rst->vfilter[i][2] - WIENER_FILT_TAP2_MINV,
+                               WIENER_FILT_TAP2_BITS);
+          vpx_wb_write_literal(wb, rst->hfilter[i][0] - WIENER_FILT_TAP0_MINV,
+                               WIENER_FILT_TAP0_BITS);
+          vpx_wb_write_literal(wb, rst->hfilter[i][1] - WIENER_FILT_TAP1_MINV,
+                               WIENER_FILT_TAP1_BITS);
+          vpx_wb_write_literal(wb, rst->hfilter[i][2] - WIENER_FILT_TAP2_MINV,
+                               WIENER_FILT_TAP2_BITS);
+        } else {
+          vpx_wb_write_bit(wb, 0);
+        }
+      }
     }
   }
 }
@@ -2756,7 +2773,7 @@ static uint32_t write_tiles(VP10_COMP *const cpi, uint8_t *const dst,
 #endif  // CONFIG_ANS
   int tile_row, tile_col;
   TOKENEXTRA *(*const tok_buffers)[MAX_TILE_COLS] = cpi->tile_tok;
-  TileBufferEnc (*const tile_buffers)[MAX_TILE_COLS] = cpi->tile_buffers;
+  TileBufferEnc(*const tile_buffers)[MAX_TILE_COLS] = cpi->tile_buffers;
   size_t total_size = 0;
   const int tile_cols = cm->tile_cols;
   const int tile_rows = cm->tile_rows;

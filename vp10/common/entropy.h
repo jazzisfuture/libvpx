@@ -134,10 +134,10 @@ extern const vp10_extra_bit vp10_extra_bits_high12[ENTROPY_TOKENS];
 
 // #define ENTROPY_STATS
 
-typedef unsigned int
-    vp10_coeff_count[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][ENTROPY_TOKENS];
-typedef unsigned int
-    vp10_coeff_stats[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][ENTROPY_NODES][2];
+typedef unsigned int vp10_coeff_count[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS]
+                                     [ENTROPY_TOKENS];
+typedef unsigned int vp10_coeff_stats[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS]
+                                     [ENTROPY_NODES][2];
 
 #define SUBEXP_PARAM 4   /* Subexponential code parameter */
 #define MODULUS_PARAM 13 /* Modulus parameter */
@@ -168,8 +168,7 @@ static INLINE const uint8_t *get_band_translate(TX_SIZE tx_size) {
   switch (tx_size) {
     case TX_4X4: return vp10_coefband_trans_4x4;
 #if CONFIG_EXT_TX
-    case TX_4X8:
-      return vp10_coefband_trans_4x8_8x4;
+    case TX_4X8: return vp10_coefband_trans_4x8_8x4;
 #endif  // CONFIG_EXT_TX
     default: return vp10_coefband_trans_8x8plus;
   }
@@ -189,8 +188,8 @@ static INLINE const uint8_t *get_band_translate(TX_SIZE tx_size) {
 extern const vpx_tree_index vp10_coef_con_tree[TREE_SIZE(ENTROPY_TOKENS)];
 extern const vpx_prob vp10_pareto8_full[COEFF_PROB_MODELS][MODEL_NODES];
 #if CONFIG_ANS
-extern const AnsP10
-    vp10_pareto8_token_probs[COEFF_PROB_MODELS][ENTROPY_TOKENS - 2];
+extern const AnsP10 vp10_pareto8_token_probs[COEFF_PROB_MODELS]
+                                            [ENTROPY_TOKENS - 2];
 
 typedef rans_dec_lut coeff_cdf_model[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS];
 #endif  // CONFIG_ANS
@@ -198,8 +197,9 @@ typedef rans_dec_lut coeff_cdf_model[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS];
 typedef vpx_prob vp10_coeff_probs_model[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS]
                                        [UNCONSTRAINED_NODES];
 
-typedef unsigned int vp10_coeff_count_model
-    [REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][UNCONSTRAINED_NODES + 1];
+typedef unsigned int vp10_coeff_count_model[REF_TYPES][COEF_BANDS]
+                                           [COEFF_CONTEXTS]
+                                           [UNCONSTRAINED_NODES + 1];
 
 void vp10_model_to_full_probs(const vpx_prob *model, vpx_prob *full);
 
@@ -230,19 +230,19 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
       break;
     case TX_8X16:
       above_ec = !!*(const uint16_t *)a;
-      left_ec  = !!*(const uint32_t *)l;
+      left_ec = !!*(const uint32_t *)l;
       break;
     case TX_16X8:
       above_ec = !!*(const uint32_t *)a;
-      left_ec  = !!*(const uint16_t *)l;
+      left_ec = !!*(const uint16_t *)l;
       break;
     case TX_16X32:
       above_ec = !!*(const uint32_t *)a;
-      left_ec  = !!*(const uint64_t *)l;
+      left_ec = !!*(const uint64_t *)l;
       break;
     case TX_32X16:
       above_ec = !!*(const uint64_t *)a;
-      left_ec  = !!*(const uint32_t *)l;
+      left_ec = !!*(const uint32_t *)l;
       break;
 #endif  // CONFIG_EXT_TX
     case TX_8X8:

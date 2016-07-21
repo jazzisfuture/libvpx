@@ -10,10 +10,10 @@
 
 #include "vp10/common/entropy.h"
 #include "vp10/common/blockd.h"
-#include "vp10/common/onyxc_int.h"
 #include "vp10/common/entropymode.h"
-#include "vpx_mem/vpx_mem.h"
+#include "vp10/common/onyxc_int.h"
 #include "vpx/vpx_integer.h"
+#include "vpx_mem/vpx_mem.h"
 
 // Unconstrained Node Tree
 /* clang-format off */
@@ -59,12 +59,9 @@ const uint16_t band_count_table[TX_SIZES_ALL][8] = {
   { 1, 2, 3, 4, 3, 16 - 13, 0 },   { 1, 2, 3, 4, 11, 64 - 21, 0 },
   { 1, 2, 3, 4, 11, 256 - 21, 0 }, { 1, 2, 3, 4, 11, 1024 - 21, 0 },
 #if CONFIG_EXT_TX
-  { 1, 2, 3, 4,  8,   32 - 18, 0 },
-  { 1, 2, 3, 4,  8,   32 - 18, 0 },
-  { 1, 2, 3, 4,  11, 128 - 21, 0 },
-  { 1, 2, 3, 4,  11, 128 - 21, 0 },
-  { 1, 2, 3, 4,  11, 512 - 21, 0 },
-  { 1, 2, 3, 4,  11, 512 - 21, 0 },
+  { 1, 2, 3, 4, 8, 32 - 18, 0 },   { 1, 2, 3, 4, 8, 32 - 18, 0 },
+  { 1, 2, 3, 4, 11, 128 - 21, 0 }, { 1, 2, 3, 4, 11, 128 - 21, 0 },
+  { 1, 2, 3, 4, 11, 512 - 21, 0 }, { 1, 2, 3, 4, 11, 512 - 21, 0 },
 #endif  // CONFIG_EXT_TX
 };
 
@@ -72,12 +69,9 @@ const uint16_t band_cum_count_table[TX_SIZES_ALL][8] = {
   { 0, 1, 3, 6, 10, 13, 16, 0 },  { 0, 1, 3, 6, 10, 21, 64, 0 },
   { 0, 1, 3, 6, 10, 21, 256, 0 }, { 0, 1, 3, 6, 10, 21, 1024, 0 },
 #if CONFIG_EXT_TX
-  { 0, 1, 3, 6, 10, 18, 32, 0 },
-  { 0, 1, 3, 6, 10, 18, 32, 0 },
-  { 0, 1, 3, 6, 10, 21, 128, 0 },
-  { 0, 1, 3, 6, 10, 21, 128, 0 },
-  { 0, 1, 3, 6, 10, 21, 512, 0 },
-  { 0, 1, 3, 6, 10, 21, 512, 0 },
+  { 0, 1, 3, 6, 10, 18, 32, 0 },  { 0, 1, 3, 6, 10, 18, 32, 0 },
+  { 0, 1, 3, 6, 10, 21, 128, 0 }, { 0, 1, 3, 6, 10, 21, 128, 0 },
+  { 0, 1, 3, 6, 10, 21, 512, 0 }, { 0, 1, 3, 6, 10, 21, 512, 0 },
 #endif  // CONFIG_EXT_TX
 };
 
@@ -2862,8 +2856,8 @@ static void adapt_coef_probs(VP10_COMMON *cm, TX_SIZE tx_size,
   const vp10_coeff_count_model *const counts =
       (const vp10_coeff_count_model *)cm->counts.coef[tx_size];
   const unsigned int(*eob_counts)[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS] =
-      (const unsigned int(*)[
-          REF_TYPES][COEF_BANDS][COEFF_CONTEXTS])cm->counts.eob_branch[tx_size];
+      (const unsigned int(*)[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS])
+          cm->counts.eob_branch[tx_size];
   int i, j, k, l, m;
 
   for (i = 0; i < PLANE_TYPES; ++i)

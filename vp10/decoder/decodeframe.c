@@ -12,12 +12,12 @@
 #include <stdlib.h>  // qsort()
 
 #include "./vp10_rtcd.h"
+#include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 #include "./vpx_scale_rtcd.h"
-#include "./vpx_config.h"
 
-#include "vpx_dsp/bitreader_buffer.h"
 #include "vp10/decoder/bitreader.h"
+#include "vpx_dsp/bitreader_buffer.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
@@ -36,18 +36,18 @@
 #include "vp10/common/entropy.h"
 #include "vp10/common/entropymode.h"
 #include "vp10/common/idct.h"
-#include "vp10/common/thread_common.h"
 #include "vp10/common/pred_common.h"
 #include "vp10/common/quant_common.h"
-#include "vp10/common/reconintra.h"
 #include "vp10/common/reconinter.h"
+#include "vp10/common/reconintra.h"
 #include "vp10/common/seg_common.h"
+#include "vp10/common/thread_common.h"
 #include "vp10/common/tile_common.h"
 
 #include "vp10/decoder/decodeframe.h"
-#include "vp10/decoder/detokenize.h"
 #include "vp10/decoder/decodemv.h"
 #include "vp10/decoder/decoder.h"
+#include "vp10/decoder/detokenize.h"
 #include "vp10/decoder/dsubexp.h"
 
 #define MAX_VPX_HEADER_SIZE 80
@@ -1354,8 +1354,9 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
                              : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
         const int max_blocks_high =
             num_4x4_h +
-            (xd->mb_to_bottom_edge >= 0 ? 0 : xd->mb_to_bottom_edge >>
-                                                  (5 + pd->subsampling_y));
+            (xd->mb_to_bottom_edge >= 0
+                 ? 0
+                 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
 
         for (row = 0; row < max_blocks_high; row += stepr)
           for (col = 0; col < max_blocks_wide; col += stepc)
@@ -1732,8 +1733,9 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
                              : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
         const int max_blocks_high =
             num_4x4_h +
-            (xd->mb_to_bottom_edge >= 0 ? 0 : xd->mb_to_bottom_edge >>
-                                                  (5 + pd->subsampling_y));
+            (xd->mb_to_bottom_edge >= 0
+                 ? 0
+                 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
 
         for (row = 0; row < max_blocks_high; row += stepr)
           for (col = 0; col < max_blocks_wide; col += stepc)
@@ -1783,10 +1785,11 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
 #if DERING_REFINEMENT
   if (bsize == BLOCK_64X64) {
     if (cm->dering_level != 0 && !sb_all_skip(cm, mi_row, mi_col)) {
-      cm->mi_grid_visible[mi_row*cm->mi_stride + mi_col]->mbmi.dering_gain =
+      cm->mi_grid_visible[mi_row * cm->mi_stride + mi_col]->mbmi.dering_gain =
           vpx_read_literal(r, DERING_REFINEMENT_BITS);
     } else {
-      cm->mi_grid_visible[mi_row*cm->mi_stride + mi_col]->mbmi.dering_gain = 0;
+      cm->mi_grid_visible[mi_row * cm->mi_stride + mi_col]->mbmi.dering_gain =
+          0;
     }
   }
 #endif  // DERGING_REFINEMENT
@@ -1906,26 +1909,60 @@ static void setup_segmentation(VP10_COMMON *const cm,
 
 #if CONFIG_LOOP_RESTORATION
 static void setup_restoration(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
+  int i;
   RestorationInfo *rst = &cm->rst_info;
   if (vpx_rb_read_bit(rb)) {
     if (vpx_rb_read_bit(rb)) {
       rst->restoration_type = RESTORE_BILATERAL;
-      rst->restoration_level =
-          vpx_rb_read_literal(rb, vp10_restoration_level_bits(cm));
+      rst->bilateral_tiletype = BILATERAL_TILETYPE;
+      rst->bilateral_ntiles =
+          vp10_restoration_ntiles(cm, rst->bilateral_tiletype);
+      rst->bilateral_level =
+          (int *)realloc(rst->bilateral_level,
+                         sizeof(*rst->bilateral_level) * rst->bilateral_ntiles);
+      assert(rst->bilateral_level != NULL);
+      for (i = 0; i < rst->bilateral_ntiles; ++i) {
+        if (vpx_rb_read_bit(rb)) {
+          rst->bilateral_level[i] =
+              vpx_rb_read_literal(rb, vp10_bilateral_level_bits(cm));
+        } else {
+          rst->bilateral_level[i] = -1;
+        }
+      }
     } else {
       rst->restoration_type = RESTORE_WIENER;
-      rst->vfilter[0] = vpx_rb_read_literal(rb, WIENER_FILT_TAP0_BITS) +
-                        WIENER_FILT_TAP0_MINV;
-      rst->vfilter[1] = vpx_rb_read_literal(rb, WIENER_FILT_TAP1_BITS) +
-                        WIENER_FILT_TAP1_MINV;
-      rst->vfilter[2] = vpx_rb_read_literal(rb, WIENER_FILT_TAP2_BITS) +
-                        WIENER_FILT_TAP2_MINV;
-      rst->hfilter[0] = vpx_rb_read_literal(rb, WIENER_FILT_TAP0_BITS) +
-                        WIENER_FILT_TAP0_MINV;
-      rst->hfilter[1] = vpx_rb_read_literal(rb, WIENER_FILT_TAP1_BITS) +
-                        WIENER_FILT_TAP1_MINV;
-      rst->hfilter[2] = vpx_rb_read_literal(rb, WIENER_FILT_TAP2_BITS) +
-                        WIENER_FILT_TAP2_MINV;
+      rst->wiener_tiletype = WIENER_TILETYPE;
+      rst->wiener_ntiles = vp10_restoration_ntiles(cm, rst->wiener_tiletype);
+      rst->wiener_process_tile = (int *)realloc(
+          rst->wiener_process_tile,
+          sizeof(*rst->wiener_process_tile) * rst->wiener_ntiles);
+      assert(rst->wiener_process_tile != NULL);
+      rst->vfilter = (int(*)[RESTORATION_HALFWIN])realloc(
+          rst->vfilter, sizeof(*rst->vfilter) * rst->wiener_ntiles);
+      assert(rst->vfilter != NULL);
+      rst->hfilter = (int(*)[RESTORATION_HALFWIN])realloc(
+          rst->hfilter, sizeof(*rst->hfilter) * rst->wiener_ntiles);
+      assert(rst->hfilter != NULL);
+      for (i = 0; i < rst->wiener_ntiles; ++i) {
+        rst->wiener_process_tile[i] = vpx_rb_read_bit(rb);
+        if (rst->wiener_process_tile[i]) {
+          rst->vfilter[i][0] = vpx_rb_read_literal(rb, WIENER_FILT_TAP0_BITS) +
+                               WIENER_FILT_TAP0_MINV;
+          rst->vfilter[i][1] = vpx_rb_read_literal(rb, WIENER_FILT_TAP1_BITS) +
+                               WIENER_FILT_TAP1_MINV;
+          rst->vfilter[i][2] = vpx_rb_read_literal(rb, WIENER_FILT_TAP2_BITS) +
+                               WIENER_FILT_TAP2_MINV;
+          rst->hfilter[i][0] = vpx_rb_read_literal(rb, WIENER_FILT_TAP0_BITS) +
+                               WIENER_FILT_TAP0_MINV;
+          rst->hfilter[i][1] = vpx_rb_read_literal(rb, WIENER_FILT_TAP1_BITS) +
+                               WIENER_FILT_TAP1_MINV;
+          rst->hfilter[i][2] = vpx_rb_read_literal(rb, WIENER_FILT_TAP2_BITS) +
+                               WIENER_FILT_TAP2_MINV;
+        } else {
+          rst->vfilter[i][0] = rst->vfilter[i][1] = rst->vfilter[i][2] = 0;
+          rst->hfilter[i][0] = rst->hfilter[i][1] = rst->hfilter[i][2] = 0;
+        }
+      }
     }
   } else {
     rst->restoration_type = RESTORE_NONE;
@@ -1967,7 +2004,7 @@ static void setup_clpf(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
 
 #if CONFIG_DERING
 static void setup_dering(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
-  cm->dering_level = vpx_rb_read_literal(rb,  DERING_LEVEL_BITS);
+  cm->dering_level = vpx_rb_read_literal(rb, DERING_LEVEL_BITS);
 }
 #endif  // CONFIG_DERING
 
@@ -2539,7 +2576,7 @@ static const uint8_t *decode_tiles(VP10Decoder *pbi, const uint8_t *data,
   const int tile_cols = cm->tile_cols;
   const int tile_rows = cm->tile_rows;
   const int n_tiles = tile_cols * tile_rows;
-  TileBufferDec (*const tile_buffers)[MAX_TILE_COLS] = pbi->tile_buffers;
+  TileBufferDec(*const tile_buffers)[MAX_TILE_COLS] = pbi->tile_buffers;
 #if CONFIG_EXT_TILE
   const int dec_tile_row = VPXMIN(pbi->dec_tile_row, tile_rows);
   const int single_row = pbi->dec_tile_row >= 0;
@@ -2808,7 +2845,7 @@ static const uint8_t *decode_tiles_mt(VP10Decoder *pbi, const uint8_t *data,
   const int tile_cols = cm->tile_cols;
   const int tile_rows = cm->tile_rows;
   const int num_workers = VPXMIN(pbi->max_threads & ~1, tile_cols);
-  TileBufferDec (*const tile_buffers)[MAX_TILE_COLS] = pbi->tile_buffers;
+  TileBufferDec(*const tile_buffers)[MAX_TILE_COLS] = pbi->tile_buffers;
 #if CONFIG_EXT_TILE
   const int dec_tile_row = VPXMIN(pbi->dec_tile_row, tile_rows);
   const int single_row = pbi->dec_tile_row >= 0;
@@ -3390,7 +3427,7 @@ static void read_global_motion_params(Global_Motion_Params *params,
            GM_ALPHA_DECODE_FACTOR);
       params->motion_params.wmmat[5] =
           vp10_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-          GM_ALPHA_DECODE_FACTOR +
+              GM_ALPHA_DECODE_FACTOR +
           (1 << WARPEDMODEL_PREC_BITS);
     // fallthrough intended
     case GLOBAL_ROTZOOM:
