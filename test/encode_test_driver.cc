@@ -300,6 +300,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
     }
 #endif
 
+    testing::internal::scoped_ptr<Decoder> decoder(
+        codec_->CreateDecoder(dec_cfg, dec_init_flags, 0));
     bool again;
     for (again = true; again; video->Next()) {
       again = (video->img() != NULL);
