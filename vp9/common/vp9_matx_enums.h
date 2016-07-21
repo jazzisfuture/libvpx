@@ -51,6 +51,14 @@ extern "C" {
 #define T_MATX_INTEGRAL_ELEMTYPE \
   MATX_JOIN_TOKENS(MATX_INTEGRAL_ELEMTYPE, MATX_SUFFIX_TOUPPER(MATX_SUFFIX))
 
+#define MATX_DEFINE_FUNC(funcname)            \
+  MATX_JOIN_TOKENS(                           \
+      MATX_JOIN_TOKENS(vp9_mat, MATX_SUFFIX), \
+      MATX_JOIN_TOKENS(_, funcname)           \
+  )
+
+#define MATX_APPLY_FUNC(funcname) MATX_DEFINE_FUNC(funcname)
+
 // This is little hacky but allows pointer
 // conversion to the super type without warning
 typedef void* MATX_PTR;
