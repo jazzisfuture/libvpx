@@ -25,6 +25,12 @@
 #include "header.h"
 /*#endif*/
 
+#if HAVE_CUDA_ENABLED_DEVICE
+#include <cuda_runtime.h>
+#include <cuda.h>
+#include "cuda/typedef_cuda.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -174,6 +180,14 @@ typedef struct VP8Common
   struct postproc_state postproc_state;
 #endif
   int cpu_caps;
+
+#if HAVE_CUDA_ENABLED_DEVICE
+  GPU_config_t 		GPU;				// main GPU setup variable
+  vpx_frames_GPU_t 	gpu_frame;			// main var containing frame info on the device
+  vpx_frames_CPU_t 	host_frame;			// main var containing frame info on the host
+  int				cuda_me_enabled;	// duplicate of cpi.cuda_me_enabled
+#endif
+
 } VP8_COMMON;
 
 #ifdef __cplusplus
