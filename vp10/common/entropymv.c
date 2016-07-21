@@ -121,14 +121,17 @@ static const uint8_t log_in_base_2[] = {
 };
 
 #if CONFIG_GLOBAL_MOTION
+//sarahparker fix this
 const vpx_tree_index vp10_global_motion_types_tree
           [TREE_SIZE(GLOBAL_MOTION_TYPES)] = {
           -GLOBAL_ZERO, 2,
-          -GLOBAL_TRANSLATION, -GLOBAL_ROTZOOM
+          -GLOBAL_TRANSLATION, 4,
+          -GLOBAL_ROTZOOM, -GLOBAL_AFFINE
+
 };
 
 static const vpx_prob default_global_motion_types_prob
-                 [GLOBAL_MOTION_TYPES - 1] = {224, 128};
+                 [GLOBAL_MOTION_TYPES - 1] = {224, 128, 128};
 #endif  // CONFIG_GLOBAL_MOTION
 
 static INLINE int mv_class_base(MV_CLASS_TYPE c) {
