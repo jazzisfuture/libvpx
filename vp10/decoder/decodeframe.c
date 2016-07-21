@@ -2023,26 +2023,58 @@ static void setup_segmentation(VP10_COMMON *const cm,
 #if CONFIG_LOOP_RESTORATION
 static void setup_restoration(VP10_COMMON *cm,
                               struct vpx_read_bit_buffer *rb) {
+  int i;
   RestorationInfo *rst = &cm->rst_info;
   if (vpx_rb_read_bit(rb)) {
     if (vpx_rb_read_bit(rb)) {
       rst->restoration_type = RESTORE_BILATERAL;
-      rst->restoration_level =
-          vpx_rb_read_literal(rb, vp10_restoration_level_bits(cm));
+      rst->bilateral_tiletype = BILATERAL_TILETYPE;
+      rst->bilateral_ntiles =
+          vp10_restoration_ntiles(cm, rst->bilateral_tiletype);
+      rst->bilateral_level = (int *)
+          realloc(rst->bilateral_level, sizeof(int) * rst->bilateral_ntiles);
+      for (i = 0; i < rst->bilateral_ntiles; ++i) {
+        if (vpx_rb_read_bit(rb)) {
+          rst->bilateral_level[i] =
+              vpx_rb_read_literal(rb, vp10_bilateral_level_bits(cm));
+        } else {
+          rst->bilateral_level[i] = -1;
+        }
+      }
     } else {
       rst->restoration_type = RESTORE_WIENER;
-      rst->vfilter[0] = vpx_rb_read_literal(rb, WIENER_FILT_TAP0_BITS) +
-          WIENER_FILT_TAP0_MINV;
-      rst->vfilter[1] = vpx_rb_read_literal(rb, WIENER_FILT_TAP1_BITS) +
-          WIENER_FILT_TAP1_MINV;
-      rst->vfilter[2] = vpx_rb_read_literal(rb, WIENER_FILT_TAP2_BITS) +
-          WIENER_FILT_TAP2_MINV;
-      rst->hfilter[0] = vpx_rb_read_literal(rb, WIENER_FILT_TAP0_BITS) +
-          WIENER_FILT_TAP0_MINV;
-      rst->hfilter[1] = vpx_rb_read_literal(rb, WIENER_FILT_TAP1_BITS) +
-          WIENER_FILT_TAP1_MINV;
-      rst->hfilter[2] = vpx_rb_read_literal(rb, WIENER_FILT_TAP2_BITS) +
-          WIENER_FILT_TAP2_MINV;
+      rst->wiener_tiletype = WIENER_TILETYPE;
+      rst->wiener_ntiles =
+          vp10_restoration_ntiles(cm, rst->wiener_tiletype);
+      rst->wiener_process_tile = (int *)
+          realloc(rst->wiener_process_tile, sizeof(int) * rst->wiener_ntiles);
+      assert(rst->wiener_process_tile != NULL);
+      rst->vfilter = (int (*)[RESTORATION_HALFWIN])
+          realloc(rst->vfilter, sizeof(*rst->vfilter) * rst->wiener_ntiles);
+      assert(rst->vfilter != NULL);
+      rst->hfilter = (int (*)[RESTORATION_HALFWIN])
+          realloc(rst->hfilter, sizeof(*rst->hfilter) * rst->wiener_ntiles);
+      assert(rst->hfilter != NULL);
+      for (i = 0; i < rst->wiener_ntiles; ++i) {
+        rst->wiener_process_tile[i] = vpx_rb_read_bit(rb);
+        if (rst->wiener_process_tile[i]) {
+          rst->vfilter[i][0] = vpx_rb_read_literal(rb, WIENER_FILT_TAP0_BITS) +
+              WIENER_FILT_TAP0_MINV;
+          rst->vfilter[i][1] = vpx_rb_read_literal(rb, WIENER_FILT_TAP1_BITS) +
+              WIENER_FILT_TAP1_MINV;
+          rst->vfilter[i][2] = vpx_rb_read_literal(rb, WIENER_FILT_TAP2_BITS) +
+              WIENER_FILT_TAP2_MINV;
+          rst->hfilter[i][0] = vpx_rb_read_literal(rb, WIENER_FILT_TAP0_BITS) +
+              WIENER_FILT_TAP0_MINV;
+          rst->hfilter[i][1] = vpx_rb_read_literal(rb, WIENER_FILT_TAP1_BITS) +
+              WIENER_FILT_TAP1_MINV;
+          rst->hfilter[i][2] = vpx_rb_read_literal(rb, WIENER_FILT_TAP2_BITS) +
+              WIENER_FILT_TAP2_MINV;
+        } else {
+          rst->vfilter[i][0] = rst->vfilter[i][1] = rst->vfilter[i][2] = 0;
+          rst->hfilter[i][0] = rst->hfilter[i][1] = rst->hfilter[i][2] = 0;
+        }
+      }
     }
   } else {
     rst->restoration_type = RESTORE_NONE;
