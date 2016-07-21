@@ -277,11 +277,11 @@ void EncoderTest::RunLoop(VideoSource *video) {
       cfg_.g_pass = VPX_RC_LAST_PASS;
 
     BeginPassHook(pass);
-    Encoder* const encoder = codec_->CreateEncoder(cfg_, deadline_, init_flags_,
-                                                   &stats_);
-    ASSERT_TRUE(encoder != NULL);
+    testing::internal::scoped_ptr<Encoder> encoder(
+        codec_->CreateEncoder(cfg_, deadline_, init_flags_, &stats_));
+    ASSERT_TRUE(encoder.get() != NULL);
 
-    video->Begin();
+    ASSERT_NO_FATAL_FAILURE(video->Begin());
     encoder->InitEncoder(video);
     ASSERT_FALSE(::testing::Test::HasFatalFailure());
 
@@ -300,12 +300,14 @@ void EncoderTest::RunLoop(VideoSource *video) {
     }
 #endif
 
+    testing::internal::scoped_ptr<Decoder> decoder(
+        codec_->CreateDecoder(dec_cfg, dec_init_flags, 0));
     bool again;
     for (again = true; again; video->Next()) {
       again = (video->img() != NULL);
 
       PreEncodeFrameHook(video);
-      PreEncodeFrameHook(video, encoder);
+      PreEncodeFrameHook(video, encoder.get());
       encoder->EncodeFrame(video, frame_flags_);
 
       CxDataIterator iter = encoder->GetCxData();
@@ -318,11 +320,11 @@ void EncoderTest::RunLoop(VideoSource *video) {
         switch (pkt->kind) {
           case VPX_CODEC_CX_FRAME_PKT:
             has_cxdata = true;
-            if (decoder && DoDecode()) {
+            if (decoder.get() != NULL && DoDecode()) {
               vpx_codec_err_t res_dec = decoder->DecodeFrame(
                   (const uint8_t*)pkt->data.frame.buf, pkt->data.frame.sz);
 
-              if (!HandleDecodeResult(res_dec, *video, decoder))
+              if (!HandleDecodeResult(res_dec, *video, decoder.get()))
                 break;
 
               has_dxdata = true;
@@ -344,7 +346,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
       // Flush the decoder when there are no more fragments.
       if ((init_flags_ & VPX_CODEC_USE_OUTPUT_PARTITION) && has_dxdata) {
         const vpx_codec_err_t res_dec = decoder->DecodeFrame(NULL, 0);
-        if (!HandleDecodeResult(res_dec, *video, decoder))
+        if (!HandleDecodeResult(res_dec, *video, decoder.get()))
           break;
       }
 
@@ -367,10 +369,6 @@ void EncoderTest::RunLoop(VideoSource *video) {
     }
 
     EndPassHook();
-
-    if (decoder)
-      delete decoder;
-    delete encoder;
 
     if (!Continue())
       break;
