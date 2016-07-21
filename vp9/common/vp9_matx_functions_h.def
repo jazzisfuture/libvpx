@@ -23,5 +23,8 @@ void MATX_DEFINE_FUNC(zerofill)(struct T_MATX_STRUCT *image);
 void MATX_DEFINE_FUNC(set_to)(struct T_MATX_STRUCT *image,
                               T_MATX_ELEMTYPE value);
 
+void MATX_DEFINE_FUNC(imwrite)(const struct T_MATX_STRUCT *image,
+                               const char *filename, int max_value);
+
 #undef MATX_SUFFIX
 #endif

@@ -52,5 +52,46 @@ void MATX_DEFINE_FUNC(copy_to)(const struct T_MATX_STRUCT *const src,
   }
 }
 
+void MATX_DEFINE_FUNC(imwrite)(const struct T_MATX_STRUCT *const image,
+                               const char *const filename, int max_value) {
+  int i, j;
+
+  const char *format_strings[] = {
+    "%hhu ",  // TYPE_8U
+    "%hhd ",  // TYPE_8S
+    "%hu ",   // TYPE_16U
+    "%hd ",   // TYPE_16S
+    "%u ",    // TYPE_32U
+    "%d ",    // TYPE_32S
+    "%.4f ",  // TYPE_32F
+    "%.4f "   // TYPE_64F
+  };
+
+  FILE *const image_file = fopen(filename, "wt");
+  const char *const format_string = format_strings[image->typeid];
+
+  assert(image->rows > 0 && image->cols > 0);
+  assert(image->data != NULL);
+  assert(image->cn == 1 || image->cn == 3);
+
+  assert(image->typeid != TYPE_32F /*type not supported*/);
+  assert(image->typeid != TYPE_64F /*type not supported*/);
+
+  if (max_value <= 0) max_value = 255;
+
+  fprintf(image_file, "P%d\n", image->cn / 2 + 2);
+  fprintf(image_file, "%d %d %d", image->cols, image->rows, max_value);
+
+  for (i = 0; i < image->rows; ++i) {
+    const T_MATX_ELEMTYPE *row_data = &image->data[i * image->stride];
+
+    fprintf(image_file, "\n");
+    for (j = 0; j < image->cols * image->cn; ++j)
+      fprintf(image_file, format_string, row_data[j]);
+  }
+
+  fclose(image_file);
+}
+
 #undef MATX_SUFFIX
 #endif
