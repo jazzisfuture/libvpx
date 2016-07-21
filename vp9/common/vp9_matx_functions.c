@@ -23,6 +23,10 @@
 #define MATX_SUFFIX 8u
 #include "vp9/common/vp9_matx_functions.def"
 
+
+typedef int (*MATX_BORDER_FUNC)(int idx, int size);
+
+
 // copy from one matx to another (reallocate if needed)
 void vp9_matx_copy_to(CONST_MATX_PTR const src, MATX_PTR const dst) {
   switch (((const struct MATX *) src)->typeid) {
@@ -62,5 +66,76 @@ void vp9_matx_imwrite(CONST_MATX_PTR const image,
       break;
     default:
       assert(0 /* matx: inapprorpiate type */);
+  }
+}
+
+// Reflect indices beyond edges back inside [0;size]
+static VPX_INLINE int border_reflect(int idx, int size) {
+  while ((unsigned) idx >= (unsigned) size)
+      idx = (idx < 0) ? -idx : ((size << 1) - idx - 1);
+
+  return idx;
+}
+
+// Clamp indices beyond edges to the corresponding edges [0;size]
+static VPX_INLINE int border_repeat(int idx, int size) {
+  if ((unsigned) idx < (unsigned) size)
+    return idx;
+
+  return VPXMIN(VPXMAX(idx, 0), size - 1);
+}
+
+void vp9_mat8u_nth_element(struct MATX_8U *src,
+                           struct MATX_8U *dst,
+                           int radius,
+                           int nth,
+                           MATX_BORDER_TYPE border_type,
+                           int max_value) {
+  int do_in_place = 0;
+  MATX_BORDER_FUNC expand_border = NULL;
+
+  (void) max_value;
+  (void) nth;
+
+  // vertical (2*radius + 1)-elements histograms
+  // - I reserve last chunk for the moving histogram
+  if (radius <= 0)
+    return;
+
+  if (dst == NULL) {
+    do_in_place = 1;
+    dst = vpx_malloc(sizeof(struct MATX_8U));
+    vp9_matx_init(dst);
+  }
+
+  assert(src->data != dst->data);
+  assert(radius < VPXMIN(src->cols, src->rows)/2);
+
+  vp9_mat8u_affirm(dst, src->rows, src->cols, src->stride, src->cn);
+
+  switch (border_type) {
+    case MATX_BORDER_REFLECT:
+      expand_border = &border_reflect;
+      break;
+    case MATX_BORDER_REPEAT:
+      expand_border = &border_repeat;
+      break;
+    default:
+      assert(0 /* matx-functions: unsupported border expansion*/);
+  }
+
+  (void) expand_border;
+
+  assert_same_kind_of_image(src, dst);
+  assert(src->cn == 1);
+
+  assert(max_value <= 255);
+
+  // TODO(yuryg): change to something meaninful
+  vp9_mat8u_copy_to(src, dst);
+
+  if (do_in_place == 1) {
+    vp9_mat8u_copy_to(dst, src);
+    vp9_matx_destroy(dst);
   }
 }
