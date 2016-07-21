@@ -24,8 +24,16 @@
 extern "C" {
 #endif
 
+// clang-format off
 #define MATX_SUFFIX x
 #include "./vp9_matx_struct.def"
+
+#define MATX_SUFFIX 8u
+#include "./vp9_matx_struct.def"
+
+#define MATX_SUFFIX 8u
+#include "./vp9_matx_h.def"
+// clang-format on
 
 /*!\brief Constructor
  *
