@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
-#include <limits.h>
 
 #include "./vpx_config.h"
 
@@ -3492,7 +3492,8 @@ static void loopfilter_frame(VP10_COMP *cpi, VP10_COMMON *cm) {
 #if CONFIG_LOOP_RESTORATION
   if (cm->rst_info.restoration_type != RESTORE_NONE) {
     vp10_loop_restoration_init(&cm->rst_internal, &cm->rst_info,
-                               cm->frame_type == KEY_FRAME);
+                               cm->frame_type == KEY_FRAME,
+                               cm->width, cm->height);
     vp10_loop_restoration_rows(cm->frame_to_show, cm, 0, cm->mi_rows, 0);
   }
 #endif  // CONFIG_LOOP_RESTORATION
