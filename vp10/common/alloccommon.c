@@ -84,6 +84,14 @@ void vp10_free_ref_frame_buffers(BufferPool *pool) {
 #if CONFIG_LOOP_RESTORATION
 void vp10_free_restoration_buffers(VP10_COMMON *cm) {
   vpx_free_frame_buffer(&cm->tmp_loop_buf);
+  free(cm->rst_info.bilateral_level);
+  cm->rst_info.bilateral_level = NULL;
+  free(cm->rst_info.vfilter);
+  cm->rst_info.vfilter = NULL;
+  free(cm->rst_info.hfilter);
+  cm->rst_info.hfilter = NULL;
+  free(cm->rst_info.wiener_process_tile);
+  cm->rst_info.wiener_process_tile = NULL;
 }
 #endif  // CONFIG_LOOP_RESTORATION
 

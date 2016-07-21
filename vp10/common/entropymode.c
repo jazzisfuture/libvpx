@@ -1612,7 +1612,10 @@ void vp10_setup_past_independence(VP10_COMMON *cm) {
   // To force update of the sharpness
   lf->last_sharpness_level = -1;
 #if CONFIG_LOOP_RESTORATION
-  cm->rst_info.restoration_level = -1;
+  if (cm->rst_info.bilateral_level) {
+    for (i = 0; i < cm->rst_info.bilateral_ntiles; ++i)
+      cm->rst_info.bilateral_level[i] = -1;
+  }
 #endif  // CONFIG_LOOP_RESTORATION
 
   vp10_default_coef_probs(cm);

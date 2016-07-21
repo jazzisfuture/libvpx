@@ -20,11 +20,17 @@
 extern "C" {
 #endif
 
-#define RESTORATION_LEVEL_BITS_KF 4
-#define RESTORATION_LEVELS_KF     (1 << RESTORATION_LEVEL_BITS_KF)
-#define RESTORATION_LEVEL_BITS    3
-#define RESTORATION_LEVELS        (1 << RESTORATION_LEVEL_BITS)
-#define DEF_RESTORATION_LEVEL     2
+#define BILATERAL_LEVEL_BITS_KF 4
+#define BILATERAL_LEVELS_KF     (1 << BILATERAL_LEVEL_BITS_KF)
+#define BILATERAL_LEVEL_BITS    3
+#define BILATERAL_LEVELS        (1 << BILATERAL_LEVEL_BITS)
+// #define DEF_BILATERAL_LEVEL     2
+
+#define RESTORATION_TILETYPE_BITS    1
+#define RESTORATION_TILETYPES        (1 << RESTORATION_TILETYPE_BITS)
+
+#define BILATERAL_TILETYPE        0
+#define WIENER_TILETYPE           1
 
 #define RESTORATION_HALFWIN       3
 #define RESTORATION_HALFWIN1      (RESTORATION_HALFWIN + 1)
@@ -60,18 +66,37 @@ typedef enum {
 
 typedef struct {
   RestorationType restoration_type;
-  int restoration_level;
-  int vfilter[RESTORATION_HALFWIN], hfilter[RESTORATION_HALFWIN];
+  // Bilateral filter
+  int bilateral_tiletype;
+  int bilateral_ntiles;
+  int *bilateral_level;
+  // Wiener filter
+  int wiener_tiletype;
+  int wiener_ntiles;
+  int *wiener_process_tile;
+  int (*vfilter)[RESTORATION_HALFWIN], (*hfilter)[RESTORATION_HALFWIN];
 } RestorationInfo;
 
 typedef struct {
   RestorationType restoration_type;
-  uint8_t *wx_lut[RESTORATION_WIN];
-  uint8_t *wr_lut;
-  int vfilter[RESTORATION_WIN], hfilter[RESTORATION_WIN];
+  int subsampling;
+  // Bilateral filter
+  int bilateral_tiletype;
+  int bilateral_ntiles;
+  int *bilateral_level;
+  uint8_t (**wx_lut)[RESTORATION_WIN];
+  uint8_t **wr_lut;
+  // Wiener filter
+  int wiener_tiletype;
+  int wiener_ntiles;
+  int *wiener_process_tile;
+  int (*vfilter)[RESTORATION_WIN], (*hfilter)[RESTORATION_WIN];
 } RestorationInternal;
 
-int  vp10_restoration_level_bits(const struct VP10Common *const cm);
+int  vp10_bilateral_level_bits(const struct VP10Common *const cm);
+int  vp10_restoration_ntiles(const struct VP10Common *const cm, int tile_type);
+void vp10_restoration_tile_size(int tile_type,
+                                int *tile_width, int *tile_height);
 void vp10_loop_restoration_init(RestorationInternal *rst,
                                 RestorationInfo *rsi, int kf);
 void vp10_loop_restoration_frame(YV12_BUFFER_CONFIG *frame,
