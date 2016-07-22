@@ -34,6 +34,24 @@
 #define array_zerofill(array, nelems) \
   memset((array), 0, (nelems)*sizeof((array)[0]));
 
+#ifndef NDEBUG
+/* #  define ALT_REF_DEBUG_DIR "files/maps" */
+#endif
+
+#ifdef ALT_REF_DEBUG_DIR
+
+static void vp9_alt_ref_aq_dump_debug_data(struct ALT_REF_AQ *self) {
+  char format[] = ALT_REF_DEBUG_DIR"/alt_ref_quality_map%d.ppm";
+  char filename[sizeof(format)/sizeof(format[0]) + 10];
+
+  ++self->alt_ref_number;
+
+  snprintf(filename, sizeof(filename), format, self->alt_ref_number);
+  vp9_matx_imwrite(&self->segmentation_map, filename, self->nsegments - 1);
+}
+
+#endif
+
 static void vp9_alt_ref_aq_update_number_of_segments(struct ALT_REF_AQ *self) {
   int i, j;
 
@@ -119,6 +137,7 @@ struct ALT_REF_AQ* vp9_alt_ref_aq_create() {
   struct ALT_REF_AQ* self = vpx_malloc(sizeof(struct ALT_REF_AQ));
 
   self->aq_mode = LOOKAHEAD_AQ;
+
   self->nsegments = -1;
 
   memset(self->segment_hist, 0, sizeof(self->segment_hist));
@@ -170,6 +189,10 @@ static void vp9_alt_ref_aq_process_map(struct ALT_REF_AQ* const self) {
     vp9_alt_ref_aq_setup_segment_deltas(self);
     vp9_alt_ref_aq_update_number_of_segments(self);
   }
+
+#ifdef ALT_REF_DEBUG_DIR
+  vp9_alt_ref_aq_dump_debug_data(self);
+#endif
 
   if (j == 1)
     self->nsegments = 1;
