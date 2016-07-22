@@ -45,6 +45,17 @@ struct ALT_REF_AQ {
   // because of the range compression
   int nsegments;
 
+  // the greater this number is, the lower
+  // delta quantizer between segments is
+  float DELTA_SHRINK;
+
+  // the same as DELTA_SHRINK, but for the case,
+  // when the entire frame gets same qdelta
+  float SINGLE_SEGMENT_DELTA_SHRINK;
+
+  // either DELTA_SHRINK or SINGLE_FRAME_DELTA_SHRINK
+  float delta_shrink;
+
   // number of segments to assign
   // nonzero delta quantizers
   int NUM_NONZERO_SEGMENTS;
