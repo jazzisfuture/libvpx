@@ -64,6 +64,10 @@ const uint16_t band_count_table[TX_SIZES_ALL][8] = {
 #if CONFIG_EXT_TX
   { 1, 2, 3, 4,  8,   32 - 18, 0 },
   { 1, 2, 3, 4,  8,   32 - 18, 0 },
+  { 1, 2, 3, 4,  11, 128 - 21, 0 },
+  { 1, 2, 3, 4,  11, 512 - 21, 0 },
+  { 1, 2, 3, 4,  11, 512 - 21, 0 },
+  { 1, 2, 3, 4,  11, 128 - 21, 0 },
 #endif  // CONFIG_EXT_TX
 };
 
@@ -75,6 +79,10 @@ const uint16_t band_cum_count_table[TX_SIZES_ALL][8] = {
 #if CONFIG_EXT_TX
   { 0, 1, 3, 6, 10, 18, 32, 0 },
   { 0, 1, 3, 6, 10, 18, 32, 0 },
+  { 0, 1, 3, 6, 10, 21, 128, 0 },
+  { 0, 1, 3, 6, 10, 21, 128, 0 },
+  { 0, 1, 3, 6, 10, 21, 512, 0 },
+  { 0, 1, 3, 6, 10, 21, 512, 0 },
 #endif  // CONFIG_EXT_TX
 };
 
@@ -148,7 +156,7 @@ const uint8_t vp10_coefband_trans_8x8plus[1024] = {
 };
 
 #if CONFIG_EXT_TX
-const uint8_t vp10_coefband_trans_8x4_4x8[32] = {
+const uint8_t vp10_coefband_trans_4x8_8x4[32] = {
   0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
   4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 };
