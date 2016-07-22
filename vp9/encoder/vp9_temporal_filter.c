@@ -350,10 +350,19 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
 
   // Save input state
   uint8_t* input_buffer[MAX_MB_PLANE];
+
+  uint32_t filter_weight_lower_thresh;
   int i, j;
 
   struct MATX_8U* alt_ref_segm_map;
-  struct MATX_8U segm_map, just_a_matrix;
+
+  struct MATX_8U segm_map;
+  struct MATX_8U just_a_matrix;
+
+  /* if (cpi->rc.avg_frame_bandwidth/40 > 25000) */
+  /*   filter_weight_lower_thresh = 0; */
+  /* else */
+  filter_weight_lower_thresh = 1;
 
   vp9_matx_init(&segm_map);
   vp9_mat8u_affirm(&segm_map, mb_rows, mb_cols, 0, 1);
@@ -431,7 +440,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
                           ? 2 : error < thresh_high ? 1 : 0;
         }
 
-        if (filter_weight > 0)
+        if (filter_weight > filter_weight_lower_thresh)
           ++segm_map.data[mb_row*segm_map.stride + mb_col];
 
         if (filter_weight != 0) {
@@ -656,19 +665,21 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   }
 
   vp9_matx_init(&just_a_matrix);
-  vp9_mat8u_nth_element(&segm_map, &just_a_matrix, 2, 7,
-                        MATX_BORDER_REFLECT, frame_count - 1);
+  /* vp9_mat8u_nth_element(&segm_map, &just_a_matrix, 1, 3, */
+  /*                       MATX_BORDER_REFLECT, frame_count - 1); */
+  /* vp9_mat8u_nth_element(&segm_map, &just_a_matrix, 1, 7, */
+  /*                       MATX_BORDER_REFLECT, frame_count - 1); */
 
-  for (i = 0; i < segm_map.rows; ++i) {
-    int idx = i*segm_map.stride;
+  /* for (i = 0; i < segm_map.rows; ++i) { */
+  /*   int idx = i*segm_map.stride; */
 
-    uint8_t *just_a_matrix_row = &just_a_matrix.data[idx];
-    uint8_t *segm_map_row = &segm_map.data[idx];
+  /*   uint8_t *just_a_matrix_row = &just_a_matrix.data[idx]; */
+  /*   uint8_t *segm_map_row = &segm_map.data[idx]; */
 
-    for (j = 0; j < segm_map.cols; ++j)
-      if (segm_map_row[j] + 2 < just_a_matrix_row[j])
-        segm_map_row[j] = just_a_matrix_row[j];
-  }
+  /*   for (j = 0; j < segm_map.cols; ++j) */
+  /*     if (segm_map_row[j] - 2 > just_a_matrix_row[j]) */
+  /*       segm_map_row[j] = just_a_matrix_row[j]; */
+  /* } */
 
   // upload segmentation map
   alt_ref_segm_map = vp9_alt_ref_aq_segm_map(cpi->alt_ref_aq);
