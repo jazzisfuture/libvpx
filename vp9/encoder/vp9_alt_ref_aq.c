@@ -131,7 +131,7 @@ static void vp9_alt_ref_aq_set_single_delta(struct ALT_REF_AQ* const self,
   int total_delta  = cpi->rc.avg_frame_qindex[1] - cpi->common.base_qindex;
 
   if (cpi->oxcf.alt_ref_aq == -1)
-    self->single_delta = total_delta/(float) VPXMAX(ndeltas + 1, 1);
+    self->single_delta = total_delta/(float) VPXMAX(ndeltas + 2, 1);
   else
     self->single_delta = (float) cpi->oxcf.alt_ref_aq;
 }
