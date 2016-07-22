@@ -249,16 +249,15 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane,
       dqcoeff[0] = 0;
     } else {
       if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
-        memset(dqcoeff, 0, 4 * 4 * num_4x4_blocks_wide_txsize_lookup[tx_size] *
-               sizeof(dqcoeff[0]));
+        memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
 #if CONFIG_EXT_TX
       else
-        memset(dqcoeff, 0, get_tx2d_size(tx_size) * sizeof(dqcoeff[0]));
+        memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
 #else
       else if (tx_size == TX_32X32 && eob <= 34)
         memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
       else
-        memset(dqcoeff, 0, get_tx2d_size(tx_size) * sizeof(dqcoeff[0]));
+        memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
 #endif
     }
   }
@@ -286,8 +285,8 @@ static void predict_and_reconstruct_intra_block(MACROBLOCKD *const xd,
       mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
 
   vp10_predict_intra_block(xd, pd->n4_wl, pd->n4_hl, tx_size, mode,
-                           dst, pd->dst.stride, dst, pd->dst.stride,
-                           col, row, plane);
+                          dst, pd->dst.stride, dst, pd->dst.stride,
+                          col, row, plane);
 
   if (!mbmi->skip) {
     TX_TYPE tx_type = get_tx_type(plane_type, xd, block_idx, tx_size);
@@ -324,18 +323,14 @@ static void decode_reconstruct_tx(MACROBLOCKD *const xd, vp10_reader *r,
   if (blk_row >= max_blocks_high || blk_col >= max_blocks_wide)
     return;
 
-  if (tx_size == plane_tx_size
-#if CONFIG_EXT_TX && CONFIG_RECT_TX
-      || plane_tx_size >= TX_SIZES
-#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
-      ) {
+  if (tx_size == plane_tx_size) {
     PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
-    TX_TYPE tx_type = get_tx_type(plane_type, xd, block, plane_tx_size);
-    const scan_order *sc = get_scan(plane_tx_size, tx_type, 1);
+    TX_TYPE tx_type = get_tx_type(plane_type, xd, block, tx_size);
+    const scan_order *sc = get_scan(tx_size, tx_type, 1);
     const int eob = vp10_decode_block_tokens(xd, plane, sc,
-                                             blk_col, blk_row, plane_tx_size,
+                                             blk_col, blk_row, tx_size,
                                              tx_type, r, mbmi->segment_id);
-    inverse_transform_block(xd, plane, tx_type, plane_tx_size,
+    inverse_transform_block(xd, plane, tx_type, tx_size,
         &pd->dst.buf[4 * blk_row * pd->dst.stride + 4 * blk_col],
         pd->dst.stride, eob);
     *eob_total += eob;
@@ -349,7 +344,7 @@ static void decode_reconstruct_tx(MACROBLOCKD *const xd, vp10_reader *r,
     for (i = 0; i < 4; ++i) {
       const int offsetr = blk_row + ((i >> 1) << bsl);
       const int offsetc = blk_col + ((i & 0x01) << bsl);
-      int step = num_4x4_blocks_txsize_lookup[tx_size - 1];
+      int step = 1 << (2 * (tx_size - 1));
 
       if (offsetr >= max_blocks_high || offsetc >= max_blocks_wide)
         continue;
@@ -435,6 +430,7 @@ static MB_MODE_INFO *set_offsets(VP10_COMMON *const cm, MACROBLOCKD *const xd,
   set_plane_n4(xd, bw, bh, bwl, bhl);
 
   set_skip_context(xd, mi_row, mi_col);
+
 
 #if CONFIG_VAR_TX
   xd->max_tx_size = max_txsize_lookup[bsize];
@@ -1325,8 +1321,7 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
           : mbmi->tx_size;
       const int num_4x4_w = pd->n4_w;
       const int num_4x4_h = pd->n4_h;
-      const int stepr = num_4x4_blocks_high_txsize_lookup[tx_size];
-      const int stepc = num_4x4_blocks_wide_txsize_lookup[tx_size];
+      const int step = (1 << tx_size);
       int row, col;
       const int max_blocks_wide = num_4x4_w +
           (xd->mb_to_right_edge >= 0 ?
@@ -1335,8 +1330,8 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
           (xd->mb_to_bottom_edge >= 0 ?
            0 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
 
-      for (row = 0; row < max_blocks_high; row += stepr)
-        for (col = 0; col < max_blocks_wide; col += stepc)
+      for (row = 0; row < max_blocks_high; row += step)
+        for (col = 0; col < max_blocks_wide; col += step)
           predict_and_reconstruct_intra_block(xd,
                                               r,
                                               mbmi, plane,
@@ -1414,20 +1409,15 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         int row, col;
 #if CONFIG_VAR_TX
         // TODO(jingning): This can be simplified for decoder performance.
-        const BLOCK_SIZE plane_bsize = get_plane_block_size(
-            VPXMAX(bsize, BLOCK_8X8), pd);
-#if CONFIG_EXT_TX && CONFIG_RECT_TX
-        const TX_SIZE max_tx_size = plane ?
-            max_txsize_lookup[plane_bsize] : max_txsize_rect_lookup[plane_bsize];
-#else
+        const BLOCK_SIZE plane_bsize =
+            get_plane_block_size(VPXMAX(bsize, BLOCK_8X8), pd);
         const TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
-#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
-        int bw = num_4x4_blocks_wide_txsize_lookup[max_tx_size];
-        int bh = num_4x4_blocks_high_txsize_lookup[max_tx_size];
-        const int step = num_4x4_blocks_txsize_lookup[max_tx_size];
+        const BLOCK_SIZE txb_size = txsize_to_bsize[max_tx_size];
+        int bw = num_4x4_blocks_wide_lookup[txb_size];
         int block = 0;
+        const int step = 1 << (max_tx_size << 1);
 
-        for (row = 0; row < num_4x4_h; row += bh) {
+        for (row = 0; row < num_4x4_h; row += bw) {
           for (col = 0; col < num_4x4_w; col += bw) {
             decode_reconstruct_tx(xd, r, mbmi, plane, plane_bsize,
                                   block, row, col, max_tx_size, &eobtotal);
@@ -1438,8 +1428,7 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         const TX_SIZE tx_size =
             plane ? dec_get_uv_tx_size(mbmi, pd->n4_wl, pd->n4_hl)
             : mbmi->tx_size;
-        const int stepr = num_4x4_blocks_high_txsize_lookup[tx_size];
-        const int stepc = num_4x4_blocks_wide_txsize_lookup[tx_size];
+        const int step = (1 << tx_size);
         const int max_blocks_wide = num_4x4_w +
             (xd->mb_to_right_edge >= 0 ?
              0 : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
@@ -1447,8 +1436,8 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
             (xd->mb_to_bottom_edge >= 0 ?
              0 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
 
-        for (row = 0; row < max_blocks_high; row += stepr)
-          for (col = 0; col < max_blocks_wide; col += stepc)
+        for (row = 0; row < max_blocks_high; row += step)
+          for (col = 0; col < max_blocks_wide; col += step)
             eobtotal += reconstruct_inter_block(xd,
                                                 r,
                                                 mbmi->segment_id,
@@ -1842,8 +1831,7 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         const TX_SIZE tx_size =
             i ? dec_get_uv_tx_size(mbmi, pd->n4_wl, pd->n4_hl)
             : mbmi->tx_size;
-        const int stepr = num_4x4_blocks_high_txsize_lookup[tx_size];
-        const int stepc = num_4x4_blocks_wide_txsize_lookup[tx_size];
+        const int step = (1 << tx_size);
         const int max_blocks_wide = num_4x4_w +
             (xd->mb_to_right_edge >= 0 ?
              0 : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
@@ -1851,8 +1839,8 @@ static void decode_partition(VP10Decoder *const pbi, MACROBLOCKD *const xd,
             (xd->mb_to_bottom_edge >= 0 ?
              0 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
 
-        for (row = 0; row < max_blocks_high; row += stepr)
-          for (col = 0; col < max_blocks_wide; col += stepc)
+        for (row = 0; row < max_blocks_high; row += step)
+          for (col = 0; col < max_blocks_wide; col += step)
             eobtotal += reconstruct_inter_block(xd,
                                                 r,
                                                 mbmi->segment_id_supertx,
@@ -3462,31 +3450,32 @@ static void read_global_motion_params(Global_Motion_Params *params,
   GLOBAL_MOTION_TYPE gmtype = vp10_read_tree(r, vp10_global_motion_types_tree,
                                              probs);
   params->gmtype = gmtype;
-  params->motion_params.wmtype = gm_to_trans_type(gmtype);
   switch (gmtype) {
     case GLOBAL_ZERO:
       break;
-    case GLOBAL_AFFINE:
-      params->motion_params.wmmat[4] =
-          (vp10_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-          GM_ALPHA_DECODE_FACTOR) + (1 << WARPEDMODEL_PREC_BITS);
-      params->motion_params.wmmat[5] =
-          vp10_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-          GM_ALPHA_DECODE_FACTOR;
-    case GLOBAL_ROTZOOM:
-      params->motion_params.wmmat[2] =
-          (vp10_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-          GM_ALPHA_DECODE_FACTOR) + (1 << WARPEDMODEL_PREC_BITS);
-      params->motion_params.wmmat[3] =
-          vp10_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-          GM_ALPHA_DECODE_FACTOR;
     case GLOBAL_TRANSLATION:
+      params->motion_params.wmtype = TRANSLATION;
       params->motion_params.wmmat[0] =
           vp10_read_primitive_symmetric(r, GM_ABS_TRANS_BITS) *
           GM_TRANS_DECODE_FACTOR;
       params->motion_params.wmmat[1] =
           vp10_read_primitive_symmetric(r, GM_ABS_TRANS_BITS) *
           GM_TRANS_DECODE_FACTOR;
+      break;
+    case GLOBAL_ROTZOOM:
+      params->motion_params.wmtype = ROTZOOM;
+      params->motion_params.wmmat[0] =
+          vp10_read_primitive_symmetric(r, GM_ABS_TRANS_BITS) *
+          GM_TRANS_DECODE_FACTOR;
+      params->motion_params.wmmat[1] =
+          vp10_read_primitive_symmetric(r, GM_ABS_TRANS_BITS) *
+          GM_TRANS_DECODE_FACTOR;
+      params->motion_params.wmmat[2] =
+          (vp10_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
+          GM_ALPHA_DECODE_FACTOR) + (1 << WARPEDMODEL_PREC_BITS);
+      params->motion_params.wmmat[3] =
+          vp10_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
+          GM_ALPHA_DECODE_FACTOR;
       break;
     default:
       assert(0);

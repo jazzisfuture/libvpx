@@ -29,6 +29,7 @@ typedef struct {
   const int16_t *neighbors;
 } scan_order;
 
+extern const scan_order vp10_default_scan_orders[TX_SIZES];
 extern const scan_order vp10_intra_scan_orders[TX_SIZES][TX_TYPES];
 
 static INLINE int get_coef_context(const int16_t *neighbors,
@@ -43,7 +44,7 @@ static INLINE const scan_order *get_intra_scan(TX_SIZE tx_size,
 }
 
 #if CONFIG_EXT_TX
-extern const scan_order vp10_inter_scan_orders[TX_SIZES_ALL][TX_TYPES];
+extern const scan_order vp10_inter_scan_orders[TX_SIZES][TX_TYPES];
 
 static INLINE const scan_order *get_inter_scan(TX_SIZE tx_size,
                                                TX_TYPE tx_type) {
