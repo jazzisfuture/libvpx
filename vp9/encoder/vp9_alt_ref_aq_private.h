@@ -55,6 +55,9 @@ struct ALT_REF_AQ {
   // for the frame in the case we need it
   int segment_deltas[VPXMAX(ALT_REF_MAX_FRAMES, MAX_SEGMENTS)];
 
+  // this one is just for debugging purposes
+  int alt_ref_number;
+
   // basic aq mode (I keep original
   // aq mode when encoding altref frame)
   AQ_MODE aq_mode;
