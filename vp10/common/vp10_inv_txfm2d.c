@@ -82,7 +82,7 @@ TXFM_2D_FLIP_CFG vp10_get_inv_txfm_cfg(int tx_type, int tx_size) {
 }
 
 TXFM_2D_FLIP_CFG vp10_get_inv_txfm_64x64_cfg(int tx_type) {
-  TXFM_2D_FLIP_CFG cfg = {0, 0, NULL};
+  TXFM_2D_FLIP_CFG cfg;
   switch (tx_type) {
     case DCT_DCT:
       cfg.cfg = &inv_txfm_2d_cfg_dct_dct_64;

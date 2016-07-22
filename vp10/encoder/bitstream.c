@@ -375,8 +375,7 @@ static void write_selected_tx_size(const VP10_COMMON *cm,
   TX_SIZE tx_size = xd->mi[0]->mbmi.tx_size;
   BLOCK_SIZE bsize = xd->mi[0]->mbmi.sb_type;
   const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
-  // For sub8x8 blocks the tx_size symbol does not need to be sent
-  if (bsize >= BLOCK_8X8) {
+  if (max_tx_size > TX_4X4) {
     vp10_write_token(w, vp10_tx_size_tree[max_tx_size - TX_8X8],
                      cm->fc->tx_size_probs[max_tx_size - TX_8X8]
                                           [get_tx_size_context(xd)],
@@ -802,7 +801,7 @@ static void pack_txb_tokens(vp10_writer *w,
     for (i = 0; i < 4; ++i) {
       const int offsetr = blk_row + ((i >> 1) << bsl);
       const int offsetc = blk_col + ((i & 0x01) << bsl);
-      int step = num_4x4_blocks_txsize_lookup[tx_size - 1];
+      int step = 1 << (2 * (tx_size - 1));
 
       if (offsetr >= max_blocks_high || offsetc >= max_blocks_wide)
         continue;
@@ -1663,7 +1662,7 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
         const BLOCK_SIZE txb_size = txsize_to_bsize[max_tx_size];
         int bw = num_4x4_blocks_wide_lookup[txb_size];
         int block = 0;
-        const int step = num_4x4_blocks_txsize_lookup[max_tx_size];
+        const int step = 1 << (max_tx_size << 1);
         for (row = 0; row < num_4x4_h; row += bw) {
           for (col = 0; col < num_4x4_w; col += bw) {
             pack_txb_tokens(w, tok, tok_end, xd, mbmi, plane, plane_bsize,
@@ -3188,7 +3187,6 @@ static void write_uncompressed_header(VP10_COMP *cpi,
 
   write_tile_info(cm, wb);
 }
-
 #if CONFIG_GLOBAL_MOTION
 static void write_global_motion_params(Global_Motion_Params *params,
                                        vpx_prob *probs,
@@ -3199,21 +3197,21 @@ static void write_global_motion_params(Global_Motion_Params *params,
   switch (gmtype) {
     case GLOBAL_ZERO:
       break;
-    case GLOBAL_AFFINE:
-      vp10_write_primitive_symmetric(w, params->motion_params.wmmat[4],
-                                     GM_ABS_ALPHA_BITS);
-      vp10_write_primitive_symmetric(w, params->motion_params.wmmat[5],
-                                     GM_ABS_ALPHA_BITS);
-    case GLOBAL_ROTZOOM:
-      vp10_write_primitive_symmetric(w, params->motion_params.wmmat[2],
-                                     GM_ABS_ALPHA_BITS);
-      vp10_write_primitive_symmetric(w, params->motion_params.wmmat[3],
-                                     GM_ABS_ALPHA_BITS);
     case GLOBAL_TRANSLATION:
       vp10_write_primitive_symmetric(w, params->motion_params.wmmat[0],
                                      GM_ABS_TRANS_BITS);
       vp10_write_primitive_symmetric(w, params->motion_params.wmmat[1],
                                      GM_ABS_TRANS_BITS);
+      break;
+    case GLOBAL_ROTZOOM:
+      vp10_write_primitive_symmetric(w, params->motion_params.wmmat[0],
+                                     GM_ABS_TRANS_BITS);
+      vp10_write_primitive_symmetric(w, params->motion_params.wmmat[1],
+                                     GM_ABS_TRANS_BITS);
+      vp10_write_primitive_symmetric(w, params->motion_params.wmmat[2],
+                                     GM_ABS_ALPHA_BITS);
+      vp10_write_primitive_symmetric(w, params->motion_params.wmmat[3],
+                                     GM_ABS_ALPHA_BITS);
       break;
     default:
       assert(0);
