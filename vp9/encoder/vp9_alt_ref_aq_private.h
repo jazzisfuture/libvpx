@@ -37,6 +37,9 @@ struct ALT_REF_AQ {
   // private member used for segment ids convertion
   int __segment_changes[VPXMAX(ALT_REF_MAX_FRAMES, MAX_SEGMENTS)];
 
+  // private member used to compute qdelta steps
+  int __nsteps;
+
   // number of delta-quantizer segments,
   // it can be different from nsteps
   // because of the range compression
@@ -48,6 +51,9 @@ struct ALT_REF_AQ {
   //  greater number of nonzero segments)
   int NUM_ZERO_SEGMENTS;
   int MIN_NONZERO_SEGMENTS;
+
+  // single qdelta step between segments
+  float single_delta;
 
   // qdelta[i] = (int) single_delta*segment_deltas[i];
   // ------------------------------------------------
@@ -61,6 +67,9 @@ struct ALT_REF_AQ {
   // basic aq mode (I keep original
   // aq mode when encoding altref frame)
   AQ_MODE aq_mode;
+
+  // wrapper around basic segmentation_map
+  struct MATX_8U cpi_segmentation_map;
 
   // altref segmentation
   struct MATX_8U segmentation_map;
