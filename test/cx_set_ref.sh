@@ -27,7 +27,12 @@ cx_set_ref_verify_environment() {
 # $1 is the codec name.
 vpx_set_ref() {
   local codec="$1"
-  local encoder="${LIBVPX_BIN_PATH}/${codec}cx_set_ref${VPX_TEST_EXE_SUFFIX}"
+  local encoder="${LIBVPX_BIN_PATH}/vpxcx_set_ref${VPX_TEST_EXE_SUFFIX} ${codec}"
+
+  if [ "$codec" = "vp8" ]; then
+    encoder="${LIBVPX_BIN_PATH}/vp8cx_set_ref${VPX_TEST_EXE_SUFFIX}"
+  fi
+
   local output_file="${VPX_TEST_OUTPUT_DIR}/${codec}cx_set_ref_${codec}.ivf"
   local ref_frame_num=90
 
