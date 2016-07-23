@@ -152,14 +152,14 @@ TEST_P(TestVectorTest, MD5Match) {
   delete video;
 }
 
-// Test VP8 decode in serial mode with single thread.
+// Test VP8 decode in serial mode with single thread and with 8 threads.
 // NOTE: VP8 only support serial mode.
 #if CONFIG_VP8_DECODER
 VP8_INSTANTIATE_TEST_CASE(
     TestVectorTest,
     ::testing::Combine(
         ::testing::Values(0),  // Serial Mode.
-        ::testing::Values(1),  // Single thread.
+        ::testing::Values(1, 8),  // Single thread and 8 threads.
         ::testing::ValuesIn(libvpx_test::kVP8TestVectors,
                             libvpx_test::kVP8TestVectors +
                                 libvpx_test::kNumVP8TestVectors)));
