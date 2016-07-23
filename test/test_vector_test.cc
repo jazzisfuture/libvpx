@@ -159,7 +159,7 @@ VP8_INSTANTIATE_TEST_CASE(
     TestVectorTest,
     ::testing::Combine(
         ::testing::Values(0),  // Serial Mode.
-        ::testing::Values(1),  // Single thread.
+        ::testing::Values(1,8),  // Single thread and 8 threads.
         ::testing::ValuesIn(libvpx_test::kVP8TestVectors,
                             libvpx_test::kVP8TestVectors +
                                 libvpx_test::kNumVP8TestVectors)));
