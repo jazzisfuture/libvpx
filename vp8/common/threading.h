@@ -188,6 +188,7 @@ static inline int sem_destroy(sem_t *sem) {
 #include "vpx_util/vpx_thread.h"
 
 static INLINE void mutex_lock(pthread_mutex_t *const mutex) {
+#if 0
   const int kMaxTryLocks = 4000;
   int locked = 0;
   int i;
@@ -200,6 +201,9 @@ static INLINE void mutex_lock(pthread_mutex_t *const mutex) {
   }
 
   if (!locked) pthread_mutex_lock(mutex);
+#else
+  pthread_mutex_lock(mutex);
+#endif
 }
 
 static INLINE int protected_read(pthread_mutex_t *const mutex, const int *p) {
@@ -214,7 +218,7 @@ static INLINE void sync_read(pthread_mutex_t *const mutex, int mb_col,
                              const int *last_row_current_mb_col,
                              const int nsync) {
   while (mb_col > (protected_read(mutex, last_row_current_mb_col) - nsync)) {
-    x86_pause_hint();
+/*    x86_pause_hint();*/
     thread_sleep(0);
   }
 }
