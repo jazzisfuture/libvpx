@@ -10,6 +10,7 @@ LIBVPX_TEST_SRCS-yes += test_vectors.h
 LIBVPX_TEST_SRCS-yes += util.h
 LIBVPX_TEST_SRCS-yes += video_source.h
 LIBVPX_TEST_SRCS-yes += transform_test_base.h
+LIBVPX_TEST_SRCS-yes += function_equivalence_test.h
 
 ##
 ## BLACK BOX TESTS
