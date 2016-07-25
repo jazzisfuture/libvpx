@@ -388,7 +388,7 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 #
 # Encoder functions below this point.
 #
-if (vpx_config("CONFIG_VP10_ENCODER") eq "yes") {
+if (vpx_config("CONFIG_VP10") eq "yes") {
 
 # ENCODEMB INVOKE
 
