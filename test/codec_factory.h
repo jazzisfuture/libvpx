@@ -38,14 +38,14 @@ class CodecFactory {
   virtual Decoder* CreateDecoder(vpx_codec_dec_cfg_t cfg,
                                  const vpx_codec_flags_t flags,
                                  unsigned long deadline)  // NOLINT(runtime/int)
-                                 const = 0;
+      const = 0;
 
   virtual Encoder* CreateEncoder(vpx_codec_enc_cfg_t cfg,
                                  unsigned long deadline,
                                  const unsigned long init_flags,
-                                 TwopassStatsStore *stats) const = 0;
+                                 TwopassStatsStore* stats) const = 0;
 
-  virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t *cfg,
+  virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t* cfg,
                                                int usage) const = 0;
 };
 
@@ -53,20 +53,20 @@ class CodecFactory {
  * to avoid having to include a pointer to the CodecFactory in every test
  * definition.
  */
-template<class T1>
-class CodecTestWithParam : public ::testing::TestWithParam<
-    std::tr1::tuple< const libvpx_test::CodecFactory*, T1 > > {
-};
+template <class T1>
+class CodecTestWithParam
+    : public ::testing::TestWithParam<
+          std::tr1::tuple<const libvpx_test::CodecFactory*, T1> > {};
 
-template<class T1, class T2>
-class CodecTestWith2Params : public ::testing::TestWithParam<
-    std::tr1::tuple< const libvpx_test::CodecFactory*, T1, T2 > > {
-};
+template <class T1, class T2>
+class CodecTestWith2Params
+    : public ::testing::TestWithParam<
+          std::tr1::tuple<const libvpx_test::CodecFactory*, T1, T2> > {};
 
-template<class T1, class T2, class T3>
-class CodecTestWith3Params : public ::testing::TestWithParam<
-    std::tr1::tuple< const libvpx_test::CodecFactory*, T1, T2, T3 > > {
-};
+template <class T1, class T2, class T3>
+class CodecTestWith3Params
+    : public ::testing::TestWithParam<
+          std::tr1::tuple<const libvpx_test::CodecFactory*, T1, T2, T3> > {};
 
 /*
  * VP8 Codec Definitions
@@ -94,7 +94,7 @@ class VP8Decoder : public Decoder {
 class VP8Encoder : public Encoder {
  public:
   VP8Encoder(vpx_codec_enc_cfg_t cfg, unsigned long deadline,
-             const unsigned long init_flags, TwopassStatsStore *stats)
+             const unsigned long init_flags, TwopassStatsStore* stats)
       : Encoder(cfg, deadline, init_flags, stats) {}
 
  protected:
@@ -129,7 +129,7 @@ class VP8CodecFactory : public CodecFactory {
   virtual Encoder* CreateEncoder(vpx_codec_enc_cfg_t cfg,
                                  unsigned long deadline,
                                  const unsigned long init_flags,
-                                 TwopassStatsStore *stats) const {
+                                 TwopassStatsStore* stats) const {
 #if CONFIG_VP8_ENCODER
     return new VP8Encoder(cfg, deadline, init_flags, stats);
 #else
@@ -137,7 +137,7 @@ class VP8CodecFactory : public CodecFactory {
 #endif
   }
 
-  virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t *cfg,
+  virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t* cfg,
                                                int usage) const {
 #if CONFIG_VP8_ENCODER
     return vpx_codec_enc_config_default(&vpx_codec_vp8_cx_algo, cfg, usage);
@@ -149,16 +149,16 @@ class VP8CodecFactory : public CodecFactory {
 
 const libvpx_test::VP8CodecFactory kVP8;
 
-#define VP8_INSTANTIATE_TEST_CASE(test, ...)\
-  INSTANTIATE_TEST_CASE_P(VP8, test, \
-      ::testing::Combine( \
+#define VP8_INSTANTIATE_TEST_CASE(test, ...)                               \
+  INSTANTIATE_TEST_CASE_P(                                                 \
+      VP8, test,                                                           \
+      ::testing::Combine(                                                  \
           ::testing::Values(static_cast<const libvpx_test::CodecFactory*>( \
-              &libvpx_test::kVP8)), \
+              &libvpx_test::kVP8)),                                        \
           __VA_ARGS__))
 #else
 #define VP8_INSTANTIATE_TEST_CASE(test, ...)
 #endif  // CONFIG_VP8
-
 
 /*
  * VP9 Codec Definitions
@@ -186,7 +186,7 @@ class VP9Decoder : public Decoder {
 class VP9Encoder : public Encoder {
  public:
   VP9Encoder(vpx_codec_enc_cfg_t cfg, unsigned long deadline,
-             const unsigned long init_flags, TwopassStatsStore *stats)
+             const unsigned long init_flags, TwopassStatsStore* stats)
       : Encoder(cfg, deadline, init_flags, stats) {}
 
  protected:
@@ -221,7 +221,7 @@ class VP9CodecFactory : public CodecFactory {
   virtual Encoder* CreateEncoder(vpx_codec_enc_cfg_t cfg,
                                  unsigned long deadline,
                                  const unsigned long init_flags,
-                                 TwopassStatsStore *stats) const {
+                                 TwopassStatsStore* stats) const {
 #if CONFIG_VP9_ENCODER
     return new VP9Encoder(cfg, deadline, init_flags, stats);
 #else
@@ -229,7 +229,7 @@ class VP9CodecFactory : public CodecFactory {
 #endif
   }
 
-  virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t *cfg,
+  virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t* cfg,
                                                int usage) const {
 #if CONFIG_VP9_ENCODER
     return vpx_codec_enc_config_default(&vpx_codec_vp9_cx_algo, cfg, usage);
@@ -241,11 +241,12 @@ class VP9CodecFactory : public CodecFactory {
 
 const libvpx_test::VP9CodecFactory kVP9;
 
-#define VP9_INSTANTIATE_TEST_CASE(test, ...)\
-  INSTANTIATE_TEST_CASE_P(VP9, test, \
-      ::testing::Combine( \
+#define VP9_INSTANTIATE_TEST_CASE(test, ...)                               \
+  INSTANTIATE_TEST_CASE_P(                                                 \
+      VP9, test,                                                           \
+      ::testing::Combine(                                                  \
           ::testing::Values(static_cast<const libvpx_test::CodecFactory*>( \
-               &libvpx_test::kVP9)), \
+              &libvpx_test::kVP9)),                                        \
           __VA_ARGS__))
 #else
 #define VP9_INSTANTIATE_TEST_CASE(test, ...)
