@@ -23,6 +23,10 @@
 #if CONFIG_OBMC
 #include "vp10/common/onyxc_int.h"
 #endif  // CONFIG_OBMC
+#if CONFIG_GLOBAL_MOTION
+#include "vp10/common/warped_motion.h"
+#endif  // CONFIG_GLOBAL_MOTION
+
 
 #if CONFIG_EXT_INTER
 
@@ -630,6 +634,101 @@ void vp10_make_masked_inter_predictor(
 #endif  // CONFIG_SUPERTX
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }
+
+#if CONFIG_GLOBAL_MOTION
+void vp10_make_gm_masked_inter_predictor(
+    WarpedMotionParams *wm,
+    int p_col, int p_row,
+    int subsampling_x, int subsampling_y,
+    struct buf_2d *const pre_buf,
+    uint8_t *dst,
+    int dst_stride,
+    int w, int h,
+    int xs, int ys,
+#if CONFIG_SUPERTX
+    int wedge_offset_x, int wedge_offset_y,
+#endif  // CONFIG_SUPERTX
+    const MACROBLOCKD *xd) {
+  const MODE_INFO *mi = xd->mi[0];
+  // The prediction filter types used here should be those for
+  // the second reference block.
+#if CONFIG_VP9_HIGHBITDEPTH
+  DECLARE_ALIGNED(16, uint8_t, tmp_dst_[2 * MAX_SB_SQUARE]);
+  uint8_t *tmp_dst =
+      (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ?
+      CONVERT_TO_BYTEPTR(tmp_dst_) : tmp_dst_;
+  vp10_warp_plane(wm,
+                  xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
+                  pre_buf->buf0, pre_buf->width, pre_buf->height,
+                  pre_buf->stride, dst, p_col, p_row,
+                  w, h, dst_stride,
+                  subsampling_x, subsampling_y, xs, ys);
+
+#if CONFIG_SUPERTX
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+    build_masked_compound_wedge_extend_highbd(
+        dst, dst_stride,
+        dst, dst_stride,
+        tmp_dst, MAX_SB_SIZE,
+        mi->mbmi.interinter_wedge_index,
+        mi->mbmi.interinter_wedge_sign,
+        mi->mbmi.sb_type,
+        wedge_offset_x, wedge_offset_y, h, w, xd->bd);
+  else
+    build_masked_compound_wedge_extend(
+        dst, dst_stride,
+        dst, dst_stride,
+        tmp_dst, MAX_SB_SIZE,
+        mi->mbmi.interinter_wedge_index,
+        mi->mbmi.interinter_wedge_sign,
+        mi->mbmi.sb_type,
+        wedge_offset_x, wedge_offset_y, h, w);
+#else
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+    build_masked_compound_wedge_highbd(
+        dst, dst_stride,
+        dst, dst_stride,
+        tmp_dst, MAX_SB_SIZE,
+        mi->mbmi.interinter_wedge_index,
+        mi->mbmi.interinter_wedge_sign,
+        mi->mbmi.sb_type, h, w, xd->bd);
+  else
+    build_masked_compound_wedge(
+        dst, dst_stride,
+        dst, dst_stride,
+        tmp_dst, MAX_SB_SIZE,
+        mi->mbmi.interinter_wedge_index,
+        mi->mbmi.interinter_wedge_sign,
+        mi->mbmi.sb_type, h, w);
+#endif  // CONFIG_SUPERTX
+#else   // CONFIG_VP9_HIGHBITDEPTH
+  DECLARE_ALIGNED(16, uint8_t, tmp_dst[MAX_SB_SQUARE]);
+  vp10_warp_plane(wm,
+                  pre_buf->buf0, pre_buf->width, pre_buf->height,
+                  pre_buf->stride, dst, p_col, p_row,
+                  w, h, dst_stride,
+                  subsampling_x, subsampling_y, xs, ys);
+#if CONFIG_SUPERTX
+  build_masked_compound_wedge_extend(
+      dst, dst_stride,
+      dst, dst_stride,
+      tmp_dst, MAX_SB_SIZE,
+      mi->mbmi.interinter_wedge_index,
+      mi->mbmi.interinter_wedge_sign,
+      mi->mbmi.sb_type,
+      wedge_offset_x, wedge_offset_y, h, w);
+#else
+  build_masked_compound_wedge(
+      dst, dst_stride,
+      dst, dst_stride,
+      tmp_dst, MAX_SB_SIZE,
+      mi->mbmi.interinter_wedge_index,
+      mi->mbmi.interinter_wedge_sign,
+      mi->mbmi.sb_type, h, w);
+#endif  // CONFIG_SUPERTX
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+}
+#endif  // CONFIG_GLOBAL_MOTION
 #endif  // CONFIG_EXT_INTER
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -685,6 +784,8 @@ void vp10_build_inter_predictor(const uint8_t *src, int src_stride,
                   sf, w, h, ref, interp_filter, sf->x_step_q4, sf->y_step_q4);
 }
 
+//TODO dec_inter_predictors?
+//sarahparker add gm here
 void build_inter_predictors(MACROBLOCKD *xd, int plane,
 #if CONFIG_OBMC
                             int mi_col_offset, int mi_row_offset,
@@ -704,6 +805,16 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
 #endif  // CONFIG_OBMC
   const int is_compound = has_second_ref(&mi->mbmi);
   int ref;
+#if CONFIG_GLOBAL_MOTION
+  Global_Motion_Params *gm[2];
+  int is_global[2];
+  for (ref = 0; ref < 1 + is_compound; ++ref) {
+    gm[ref] = &xd->global_motion[mi->mbmi.ref_frame[ref]];
+    is_global[ref] = (get_y_mode(mi, block) == ZEROMV &&
+                      get_gmtype(gm[ref]) > GLOBAL_ZERO);
+  }
+#endif  // CONFIG_GLOBAL_MOTION
+
 
 #if CONFIG_DUAL_FILTER
   if (mi->mbmi.sb_type < BLOCK_8X8 && plane > 0) {
@@ -828,7 +939,22 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
 
 #if CONFIG_EXT_INTER
     if (ref && is_interinter_wedge_used(mi->mbmi.sb_type) &&
-        mi->mbmi.use_wedge_interinter)
+        mi->mbmi.use_wedge_interinter) {
+#if CONFIG_GLOBAL_MOTION
+      if (is_global[ref])
+        vp10_make_gm_masked_inter_predictor(&(gm[ref]->motion_params),
+                                            (mi_x >> pd->subsampling_x) + x,
+                                            (mi_y >> pd->subsampling_y) + y,
+                                            pd->subsampling_x,
+                                            pd->subsampling_y,
+                                            pre_buf, dst, dst_buf->stride,
+                                            w, h, xs, ys,
+#if CONFIG_SUPERTX
+                                            wedge_offset_x, wedge_offset_y,
+#endif  // CONFIG_SUPERTX
+                                            xd);
+      else
+#endif  // CONFIG_GLOBAL_MOTION
       vp10_make_masked_inter_predictor(
           pre, pre_buf->stride, dst, dst_buf->stride,
           subpel_x, subpel_y, sf, w, h,
@@ -837,11 +963,27 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
           wedge_offset_x, wedge_offset_y,
 #endif  // CONFIG_SUPERTX
           xd);
-    else
+    } else {
 #endif  // CONFIG_EXT_INTER
+#if CONFIG_GLOBAL_MOTION
+      if (is_global[ref])
+        //TODO fill in here
+        vp10_warp_plane(&(gm[ref]->motion_params),
+#if CONFIG_VP9_HIGHBITDEPTH
+                        xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
+#endif // CONFIG_VP9_HIGHBITDEPTH
+                        pre_buf->buf0, pre_buf->width, pre_buf->height,
+                        pre_buf->stride, dst, (mi_x >> pd->subsampling_x) + x,
+                        (mi_y >> pd->subsampling_y) + y, w, h, dst_buf->stride,
+                        pd->subsampling_x, pd->subsampling_y, xs, ys);
+      else
+#endif  // CONFIG_GLOBAL_MOTION
       vp10_make_inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                                 subpel_x, subpel_y, sf, w, h, ref,
                                 mi->mbmi.interp_filter, xs, ys, xd);
+#if CONFIG_EXT_INTER
+    }
+#endif  // CONFIG_EXT_INTER
   }
 }
 
@@ -2195,6 +2337,10 @@ static void build_inter_predictors_single_buf(MACROBLOCKD *xd, int plane,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const MODE_INFO *mi = xd->mi[0];
 
+#if CONFIG_GLOBAL_MOTION
+  Global_Motion_Params *gm = &xd->global_motion[mi->mbmi.ref_frame[ref]];
+  int is_global;
+#endif  // CONFIG_GLOBAL_MOTION
   const struct scale_factors *const sf = &xd->block_refs[ref]->sf;
   struct buf_2d *const pre_buf = &pd->pre[ref];
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -2222,6 +2368,11 @@ static void build_inter_predictors_single_buf(MACROBLOCKD *xd, int plane,
   int xs, ys, subpel_x, subpel_y;
   const int is_scaled = vp10_is_scaled(sf);
 
+#if CONFIG_GLOBAL_MOTION
+  is_global = (get_y_mode(mi, block) == ZEROMV &&
+               get_gmtype(gm) > GLOBAL_ZERO);
+#endif  // CONFIG_GLOBAL_MOTION
+
   if (is_scaled) {
     pre = pre_buf->buf + scaled_buffer_offset(x, y, pre_buf->stride, sf);
     scaled_mv = vp10_scale_mv(&mv_q4, mi_x + x, mi_y + y, sf);
@@ -2239,6 +2390,19 @@ static void build_inter_predictors_single_buf(MACROBLOCKD *xd, int plane,
   pre += (scaled_mv.row >> SUBPEL_BITS) * pre_buf->stride
       + (scaled_mv.col >> SUBPEL_BITS);
 
+#if CONFIG_GLOBAL_MOTION
+  if (is_global)
+    vp10_warp_plane(&gm->motion_params,
+#if CONFIG_VP9_HIGHBITDEPTH
+                    xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
+#endif // CONFIG_VP9_HIGHBITDEPTH
+                    pre_buf->buf0, pre_buf->width, pre_buf->height,
+                    pre_buf->stride, dst, (mi_x >> pd->subsampling_x) + x,
+                    (mi_y >> pd->subsampling_y) + y, w, h, ext_dst_stride,
+                    pd->subsampling_x, pd->subsampling_y, xs, ys);
+
+  else
+#endif // CONFIG_GLOBAL_MOTION
   vp10_make_inter_predictor(pre, pre_buf->stride, dst, ext_dst_stride,
                             subpel_x, subpel_y, sf, w, h, 0,
                             mi->mbmi.interp_filter, xs, ys, xd);
@@ -2282,8 +2446,13 @@ void vp10_build_inter_predictors_for_planes_single_buf(
   }
 }
 
+//sarahparker add gm
 static void build_wedge_inter_predictor_from_buf(MACROBLOCKD *xd, int plane,
-                                                 int x, int y, int w, int h,
+                                                 int x, int y,
+                                                 int w, int h,
+#if CONFIG_GLOBAL_MOTION
+                                                 int block, int mi_x, int mi_y,
+#endif  // CONFIG_GLOBAL_MOTION
                                                  uint8_t *ext_dst0,
                                                  int ext_dst_stride0,
                                                  uint8_t *ext_dst1,
@@ -2293,10 +2462,45 @@ static void build_wedge_inter_predictor_from_buf(MACROBLOCKD *xd, int plane,
   MACROBLOCKD_PLANE *const pd = &xd->plane[plane];
   struct buf_2d *const dst_buf = &pd->dst;
   uint8_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
+#if CONFIG_GLOBAL_MOTION
+  const MODE_INFO *mi = xd->mi[0];
+  Global_Motion_Params *gm[2];
+  struct scale_factors *sf[2];
+  int is_scaled[2];
+  int xs[2], ys[2];
+  struct buf_2d *pre_buf[2];
+  int is_global[2];
+  int ref;
+  //sarahparker delete these
+  (void) pre_buf;
+  (void) xs;
+  (void) ys;
+  (void) is_scaled;
+  (void) sf;
+  (void) is_global;
+
+  for (ref = 0; ref < 1 + is_compound; ++ref) {
+    gm[ref] = &xd->global_motion[mi->mbmi.ref_frame[ref]];
+    is_global[ref] = (get_y_mode(mi, block) == ZEROMV &&
+                     get_gmtype(gm[ref]) == GLOBAL_ROTZOOM);
+    if (is_global[ref]) {
+      sf[ref] = &xd->block_refs[ref]->sf;
+      is_scaled[ref] = vp10_is_scaled(sf[ref]);
+      pre_buf[ref] = &pd->pre[ref];
+      if (is_scaled[ref]) {
+        xs[ref] = sf[ref]->x_step_q4;
+        ys[ref] = sf[ref]->y_step_q4;
+      } else {
+        xs[ref] = ys[ref] = 16;
+      }
+    }
+  }
+#endif  // CONFIG_GLOBAL_MOTION
 
   if (is_compound
       && is_interinter_wedge_used(mbmi->sb_type)
       && mbmi->use_wedge_interinter) {
+    // TODO(sarahparker) add warping here
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
       build_masked_compound_wedge_highbd(
@@ -2317,6 +2521,18 @@ static void build_wedge_inter_predictor_from_buf(MACROBLOCKD *xd, int plane,
           mbmi->interinter_wedge_sign,
           mbmi->sb_type, h, w);
   } else {
+#if CONFIG_GLOBAL_MOTION
+    if (is_global[0]) {
+      vp10_warp_plane(&gm[0]->motion_params,
+#if CONFIG_VP9_HIGHBITDEPTH
+                      xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
+#endif // CONFIG_VP9_HIGHBITDEPTH
+                      pre_buf[0]->buf0, pre_buf[0]->width, pre_buf[0]->height,
+                      pre_buf[0]->stride, dst, (mi_x >> pd->subsampling_x) + x,
+                      (mi_y >> pd->subsampling_y) + y, w, h, ext_dst_stride0,
+                      pd->subsampling_x, pd->subsampling_y, xs[0], ys[0]);
+    } else {
+#endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
       vpx_highbd_convolve_copy(CONVERT_TO_BYTEPTR(ext_dst0),  ext_dst_stride0,
@@ -2326,15 +2542,25 @@ static void build_wedge_inter_predictor_from_buf(MACROBLOCKD *xd, int plane,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       vpx_convolve_copy(ext_dst0, ext_dst_stride0,
                         dst, dst_buf->stride, NULL, 0, NULL, 0, w, h);
+#if CONFIG_GLOBAL_MOTION
+    }
+#endif  // CONFIG_GLOBAL_MOTION
   }
 }
 
 void vp10_build_wedge_inter_predictor_from_buf(
     MACROBLOCKD *xd, BLOCK_SIZE bsize,
+#if CONFIG_GLOBAL_MOTION
+    int mi_row, int mi_col,
+#endif // CONFIG_GLOBAL_MOTION
     int plane_from, int plane_to,
     uint8_t *ext_dst0[3], int ext_dst_stride0[3],
     uint8_t *ext_dst1[3], int ext_dst_stride1[3]) {
   int plane;
+#if CONFIG_GLOBAL_MOTION
+  const int mi_x = mi_col * MI_SIZE;
+  const int mi_y = mi_row * MI_SIZE;
+#endif  // CONFIG_GLOBAL_MOTION
   for (plane = plane_from; plane <= plane_to; ++plane) {
     const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize,
                                                         &xd->plane[plane]);
@@ -2343,11 +2569,17 @@ void vp10_build_wedge_inter_predictor_from_buf(
 
     if (xd->mi[0]->mbmi.sb_type < BLOCK_8X8) {
       int x, y;
+#if CONFIG_GLOBAL_MOTION
+      int i = 0;
+#endif  // CONFIG_GLOBAL_MOTION
       assert(bsize == BLOCK_8X8);
       for (y = 0; y < num_4x4_h; ++y)
         for (x = 0; x < num_4x4_w; ++x)
           build_wedge_inter_predictor_from_buf(xd, plane,
                                                4 * x, 4 * y, 4, 4,
+#if CONFIG_GLOBAL_MOTION
+                                               i++, mi_x, mi_y,
+#endif  // CONFIG_GLOBAL_MOTION
                                                ext_dst0[plane],
                                                ext_dst_stride0[plane],
                                                ext_dst1[plane],
@@ -2357,6 +2589,9 @@ void vp10_build_wedge_inter_predictor_from_buf(
       const int bh = 4 * num_4x4_h;
       build_wedge_inter_predictor_from_buf(xd, plane,
                                            0, 0, bw, bh,
+#if CONFIG_GLOBAL_MOTION
+                                           0, mi_x, mi_y,
+#endif  // CONFIG_GLOBAL_MOTION
                                            ext_dst0[plane],
                                            ext_dst_stride0[plane],
                                            ext_dst1[plane],

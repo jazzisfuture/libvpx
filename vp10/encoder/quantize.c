@@ -184,8 +184,8 @@ void quantize_dc_nuq(const tran_low_t *coeff_ptr,
                      tran_low_t *dqcoeff_ptr,
                      uint16_t *eob_ptr) {
   int eob = -1;
-  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
-  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+//memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+//memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
   if (!skip_block) {
     const int rc = 0;
     if (quantize_coeff_nuq(coeff_ptr[rc],
@@ -212,8 +212,8 @@ void quantize_dc_fp_nuq(const tran_low_t *coeff_ptr,
                         tran_low_t *dqcoeff_ptr,
                         uint16_t *eob_ptr) {
   int eob = -1;
-  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
-  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+//memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+//memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
   if (!skip_block) {
     const int rc = 0;
     if (quantize_coeff_fp_nuq(coeff_ptr[rc],
@@ -240,8 +240,8 @@ void quantize_dc_32x32_nuq(const tran_low_t *coeff_ptr,
                            tran_low_t *dqcoeff_ptr,
                            uint16_t *eob_ptr) {
   int eob = -1;
-  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
-  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+//memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+//memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
   if (!skip_block) {
     const int rc = 0;
     if (quantize_coeff_bigtx_nuq(coeff_ptr[rc],
@@ -269,8 +269,8 @@ void quantize_dc_32x32_fp_nuq(const tran_low_t *coeff_ptr,
                               tran_low_t *dqcoeff_ptr,
                               uint16_t *eob_ptr) {
   int eob = -1;
-  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
-  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+//memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+//memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
   if (!skip_block) {
     const int rc = 0;
     if (quantize_coeff_bigtx_fp_nuq(coeff_ptr[rc],
@@ -300,8 +300,8 @@ void quantize_nuq_c(const tran_low_t *coeff_ptr,
                     const int16_t *scan,
                     const uint8_t *band) {
   int eob = -1;
-  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
-  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+//memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+//memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
   if (!skip_block) {
     int i;
     for (i = 0; i < n_coeffs; i++) {
@@ -333,8 +333,8 @@ void quantize_fp_nuq_c(const tran_low_t *coeff_ptr,
                        const int16_t *scan,
                        const uint8_t *band) {
   int eob = -1;
-  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
-  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+//memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+//memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
   if (!skip_block) {
     int i;
     for (i = 0; i < n_coeffs; i++) {
@@ -366,8 +366,8 @@ void quantize_32x32_nuq_c(const tran_low_t *coeff_ptr,
                           const int16_t *scan,
                           const uint8_t *band) {
   int eob = -1;
-  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
-  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+//memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+//memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
   if (!skip_block) {
     int i;
     for (i = 0; i < n_coeffs; i++) {
@@ -400,8 +400,8 @@ void quantize_32x32_fp_nuq_c(const tran_low_t *coeff_ptr,
                              const int16_t *scan,
                              const uint8_t *band) {
   int eob = -1;
-  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
-  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+//memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+//memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
   if (!skip_block) {
     int i;
     for (i = 0; i < n_coeffs; i++) {
