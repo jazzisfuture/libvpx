@@ -111,6 +111,9 @@ typedef struct {
   int is_bwd_ref_frame;
   int is_last_bipred_frame;
   int is_bipred_frame;
+#if CONFIG_EXT_ARFS
+  int is_internal_overlay;
+#endif
 #endif  // CONFIG_EXT_REFS
 
   int avg_frame_bandwidth;  // Average frame size target for clip
@@ -213,6 +216,9 @@ int vp10_rc_get_default_max_gf_interval(double framerate, int min_frame_rate);
 // encode_frame_to_data_rate() function.
 void vp10_rc_get_one_pass_vbr_params(struct VP10_COMP *cpi);
 void vp10_rc_get_one_pass_cbr_params(struct VP10_COMP *cpi);
+
+// Wei-Ting: A light version of postencode update for show existing frame.
+// void vp10_post_show_existing_frame_update(struct VP10_COMP *cpi);
 
 // Post encode update of the rate control parameters based
 // on bytes used
