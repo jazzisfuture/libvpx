@@ -77,6 +77,7 @@
                                          // chosen.
 // #define OUTPUT_YUV_REC
 
+#define DUAL_ALT_ENABLE 0
 #ifdef OUTPUT_YUV_DENOISED
 FILE *yuv_denoised_file = NULL;
 #endif
@@ -904,6 +905,10 @@ static void init_buffer_indices(VP10_COMP *cpi) {
   cpi->gld_fb_idx = LAST_REF_FRAMES;
   cpi->bwd_fb_idx = LAST_REF_FRAMES + 1;
   cpi->alt_fb_idx = LAST_REF_FRAMES + 2;
+#if CONFIG_EXT_ARFS
+  for (fb_idx = 0; fb_idx < MAX_EXT_ARFS + 1; ++fb_idx)
+    cpi->arf_map[fb_idx] = LAST_REF_FRAMES + 2 + fb_idx;
+#endif
 #else
   cpi->lst_fb_idx = 0;
   cpi->gld_fb_idx = 1;
@@ -2540,7 +2545,7 @@ VP10_COMP *vp10_create_compressor(VP10EncoderConfig *oxcf,
   yuv_skinmap_file = fopen("skinmap.yuv", "ab");
 #endif
 #ifdef OUTPUT_YUV_REC
-  yuv_rec_file = fopen("rec.yuv", "wb");
+  // yuv_rec_file = fopen("rec.yuv", "wb");
 #endif
 
 #if 0
@@ -2926,7 +2931,7 @@ void vp10_remove_compressor(VP10_COMP *cpi) {
   fclose(yuv_skinmap_file);
 #endif
 #ifdef OUTPUT_YUV_REC
-  fclose(yuv_rec_file);
+  // fclose(yuv_rec_file);
 #endif
 
 #if 0
@@ -3068,6 +3073,8 @@ static void check_show_existing_frame(VP10_COMP *cpi) {
   VP10_COMMON *const cm = &cpi->common;
   const FRAME_UPDATE_TYPE next_frame_update_type =
       gf_group->update_type[gf_group->index];
+  const int which_arf = gf_group->arf_update_idx[gf_group->index];
+
 
   if (cpi->rc.is_last_bipred_frame) {
     // NOTE(zoeliu): If the current frame is a last bi-predictive frame, it is
@@ -3076,14 +3083,20 @@ static void check_show_existing_frame(VP10_COMP *cpi) {
     cpi->rc.is_last_bipred_frame = 0;
     cm->show_existing_frame = 1;
     cpi->existing_fb_idx_to_show = cpi->lst_fb_idxes[0];
-  } else if (next_frame_update_type == OVERLAY_UPDATE &&
-      cpi->is_arf_filter_off) {
+#if CONFIG_EXT_ARFS
+  } else if (cpi->is_arf_filter_off[which_arf] &&
+      (next_frame_update_type == OVERLAY_UPDATE ||
+      next_frame_update_type == INTL_OVERLAY_UPDATE)) {
+#else
+  } else if (cpi->is_arf_filter_off[which_arf] &&
+      next_frame_update_type == OVERLAY_UPDATE) {
+#endif
     // Other parameters related to OVERLAY_UPDATE will be taken care of
     // in vp10_rc_get_second_pass_params(cpi)
     cm->show_existing_frame = 1;
     cpi->rc.is_src_frame_alt_ref = 1;
     cpi->existing_fb_idx_to_show = cpi->alt_fb_idx;
-    cpi->is_arf_filter_off = 0;
+    cpi->is_arf_filter_off[which_arf] = 0;
   } else {
     cm->show_existing_frame = 0;
   }
@@ -3479,6 +3492,10 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
     cpi->alt_fb_idx = cpi->gld_fb_idx;
     cpi->gld_fb_idx = tmp;
 
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+    // We need to modify the mapping accordingly
+    cpi->arf_map[0] = cpi->alt_fb_idx;
+#endif
     // TODO(zoeliu): Do we need to copy cpi->interp_filter_selected[0] over to
     // cpi->interp_filter_selected[GOLDEN_FRAME]?
 #if CONFIG_EXT_REFS
@@ -3504,21 +3521,53 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
     }
     cpi->bwd_fb_idx = tmp;
 #endif  // CONFIG_EXT_REFS
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+  } else if (cpi->rc.is_internal_overlay && cm->show_existing_frame) {
+    // Deal with the special case for showing existing internal ALTREF_FRAME
+    // Refresh the LAST_FRAME with the ALTREF_FRAME and retire the LAST3_FRAME
+    // by updating the virtual indices.
+    const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+    int ref_frame, tmp = cpi->lst_fb_idxes[LAST_REF_FRAMES-1];
+    for (ref_frame = LAST_REF_FRAMES - 1; ref_frame > 0; --ref_frame) {
+      cpi->lst_fb_idxes[ref_frame] = cpi->lst_fb_idxes[ref_frame - 1];
+
+      memcpy(cpi->interp_filter_selected[ref_frame],
+             cpi->interp_filter_selected[ref_frame - 1],
+             sizeof(cpi->interp_filter_selected[ref_frame - 1]));
+    }
+    cpi->lst_fb_idxes[0] = cpi->alt_fb_idx;
+    memcpy(cpi->interp_filter_selected[LAST_FRAME],
+           cpi->interp_filter_selected[ALTREF_FRAME],
+           sizeof(cpi->interp_filter_selected[ALTREF_FRAME]));
+
+    cpi->alt_fb_idx = tmp;
+    // We need to modify the mapping accordingly
+    cpi->arf_map[gf_group->arf_ref_idx[gf_group->index]] = cpi->alt_fb_idx;
+    cpi->rc.is_internal_overlay = 0;
+#endif
   } else { /* For non key/golden frames */
     if (cpi->refresh_alt_ref_frame) {
       int arf_idx = cpi->alt_fb_idx;
+      int which_arf = 0;
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+      if (cpi->oxcf.pass == 2) {
+        const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+        which_arf = gf_group->arf_update_idx[gf_group->index];
+        arf_idx = cpi->arf_map[which_arf];
+      }
+#else
       if ((cpi->oxcf.pass == 2) && cpi->multi_arf_allowed) {
         const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
         arf_idx = gf_group->arf_update_idx[gf_group->index];
       }
-
+#endif
       ref_cnt_fb(pool->frame_bufs,
                  &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
       if (use_upsampled_ref)
         uref_cnt_fb(cpi->upsampled_ref_bufs,
                     &cpi->upsampled_ref_idx[cpi->alt_fb_idx], new_uidx);
 
-      memcpy(cpi->interp_filter_selected[ALTREF_FRAME],
+      memcpy(cpi->interp_filter_selected[ALTREF_FRAME + which_arf],
              cpi->interp_filter_selected[0],
              sizeof(cpi->interp_filter_selected[0]));
     }
@@ -3530,14 +3579,22 @@ void vp10_update_reference_frames(VP10_COMP *cpi) {
         uref_cnt_fb(cpi->upsampled_ref_bufs,
                     &cpi->upsampled_ref_idx[cpi->gld_fb_idx], new_uidx);
 
-      if (!cpi->rc.is_src_frame_alt_ref)
+      if (!cpi->rc.is_src_frame_alt_ref) {
         memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
                cpi->interp_filter_selected[0],
                sizeof(cpi->interp_filter_selected[0]));
-      else
+      } else {
+        int which_arf = 0;
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+        if (cpi->oxcf.pass == 2) {
+          const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+          which_arf = gf_group->arf_update_idx[gf_group->index];
+        }
+#endif
         memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
-               cpi->interp_filter_selected[ALTREF_FRAME],
-               sizeof(cpi->interp_filter_selected[ALTREF_FRAME]));
+               cpi->interp_filter_selected[ALTREF_FRAME + which_arf],
+               sizeof(cpi->interp_filter_selected[ALTREF_FRAME + which_arf]));
+      }
     }
 
 #if CONFIG_EXT_REFS
@@ -4702,7 +4759,13 @@ YV12_BUFFER_CONFIG *vp10_scale_if_required(VP10_COMMON *cm,
 static void set_arf_sign_bias(VP10_COMP *cpi) {
   VP10_COMMON *const cm = &cpi->common;
   int arf_sign_bias;
-
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+  const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+  // The arf_sign_bias will be one for internal ARFs'
+  arf_sign_bias = cpi->rc.source_alt_ref_active &&
+                  (!cpi->refresh_alt_ref_frame ||
+                  (gf_group->rf_level[gf_group->index] == GF_ARF_LOW));
+#else
   if ((cpi->oxcf.pass == 2) && cpi->multi_arf_allowed) {
     const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
     arf_sign_bias = cpi->rc.source_alt_ref_active &&
@@ -4712,6 +4775,7 @@ static void set_arf_sign_bias(VP10_COMP *cpi) {
     arf_sign_bias =
       (cpi->rc.source_alt_ref_active && !cpi->refresh_alt_ref_frame);
   }
+#endif
   cm->ref_frame_sign_bias[ALTREF_FRAME] = arf_sign_bias;
 #if CONFIG_EXT_REFS
   cm->ref_frame_sign_bias[BWDREF_FRAME] = cm->ref_frame_sign_bias[ALTREF_FRAME];
@@ -4723,6 +4787,14 @@ static int setup_interp_filter_search_mask(VP10_COMP *cpi) {
   int ref_total[MAX_REF_FRAMES] = {0};
   MV_REFERENCE_FRAME ref;
   int mask = 0;
+  int arf_idx = ALTREF_FRAME;
+
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+  // Get which arf used as ALTREF_FRAME
+  if (cpi->oxcf.pass == 2)
+    arf_idx += cpi->twopass.gf_group.arf_ref_idx[cpi->twopass.gf_group.index];
+#endif
+
   if (cpi->common.last_frame_type == KEY_FRAME ||
       cpi->refresh_alt_ref_frame)
     return mask;
@@ -4750,7 +4822,7 @@ static int setup_interp_filter_search_mask(VP10_COMP *cpi) {
            < ref_total[BWDREF_FRAME]) &&
 #endif  // CONFIG_EXT_REFS
         (ref_total[ALTREF_FRAME] == 0 ||
-         cpi->interp_filter_selected[ALTREF_FRAME][ifilter] * 50
+         cpi->interp_filter_selected[arf_idx][ifilter] * 50
            < ref_total[ALTREF_FRAME]))
       mask |= 1 << ifilter;
   }
@@ -4839,10 +4911,13 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   if (cm->show_existing_frame) {
     // NOTE(zoeliu): In BIDIR_PRED, the existing frame to show is the current
     //               BWDREF_FRAME in the reference frame buffer.
-
     cm->frame_type = INTER_FRAME;
     cm->show_frame = 1;
     cpi->frame_flags = *frame_flags;
+
+    // In the case of show_existing frame, we will not send fresh flag
+    // to decoder. Any change in the reference frame buffer can be done by
+    // switching the virtual indices.
 
     cpi->refresh_last_frame = 0;
     cpi->refresh_golden_frame = 0;
@@ -5069,7 +5144,6 @@ static void encode_frame_to_data_rate(VP10_COMP *cpi,
   cm->last_frame_type = cm->frame_type;
 
   vp10_rc_postencode_update(cpi, *size);
-
 #if 0
   output_frame_level_debug_stats(cpi);
 #endif
@@ -5347,9 +5421,15 @@ static void check_src_altref(VP10_COMP *cpi,
                              const struct lookahead_entry *source) {
   RATE_CONTROL *const rc = &cpi->rc;
 
+  // If pass == 2, the parameters set here will be reset in
+  // vp10_rc_get_second_pass_params()
+
   if (cpi->oxcf.pass == 2) {
     const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
     rc->is_src_frame_alt_ref =
+#if CONFIG_EXT_ARFS
+      (gf_group->update_type[gf_group->index] == INTL_OVERLAY_UPDATE) ||
+#endif
       (gf_group->update_type[gf_group->index] == OVERLAY_UPDATE);
   } else {
     rc->is_src_frame_alt_ref = cpi->alt_ref_source &&
@@ -5503,8 +5583,13 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
 
   // Is multi-arf enabled.
   // Note that at the moment multi_arf is only configured for 2 pass VBR
+#if DUAL_ALT_ENABLE
+  if ((oxcf->pass == 2) && (cpi->oxcf.enable_auto_arf >= 1))
+      cpi->multi_arf_allowed = 1;
+#else
   if ((oxcf->pass == 2) && (cpi->oxcf.enable_auto_arf > 1))
     cpi->multi_arf_allowed = 1;
+#endif
   else
     cpi->multi_arf_allowed = 0;
 
@@ -5530,7 +5615,6 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
       return -1;
     }
     cpi->Source = &source->img;
-
     // TODO(zoeliu): To track down to determine whether it's needed to adjust
     // the frame rate.
     *time_stamp = source->ts_start;
@@ -5700,6 +5784,13 @@ int vp10_get_compressed_data(VP10_COMP *cpi, unsigned int *frame_flags,
     return -1;
 
   cm->cur_frame = &pool->frame_bufs[cm->new_fb_idx];
+
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+  if (oxcf->pass == 2) {
+    const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+    cpi->alt_fb_idx = cpi->arf_map[gf_group->arf_ref_idx[gf_group->index]];
+  }
+#endif
 
   if (cpi->multi_arf_allowed) {
     if (cm->frame_type == KEY_FRAME) {
