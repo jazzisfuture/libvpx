@@ -1249,8 +1249,13 @@ static void update_golden_frame_stats(VP10_COMP *cpi) {
     // Update the Golden frame usage counts.
   if (cpi->refresh_golden_frame) {
 #endif
-    // this frame refreshes means next frames don't unless specified by user
-    rc->frames_since_golden = 0;
+#if CONFIG_EXT_ARFS
+    // Do not reset for the internal overlay update
+    int is_intr_overlay = rc->is_src_frame_alt_ref && cpi->refresh_last_frame;
+    if (!is_intr_overlay)
+#endif
+      // this frame refreshes means next frames don't unless specified by user
+      rc->frames_since_golden = 0;
 
     // If we are not using alt ref in the up and coming group clear the arf
     // active flag. In multi arf group case, if the index is not 0 then
