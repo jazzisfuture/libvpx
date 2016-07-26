@@ -7540,7 +7540,11 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
           mbmi->mv[0].as_int = cur_mv[0].as_int;
           mbmi->mv[1].as_int = cur_mv[1].as_int;
           tmp_rate_mv = rate_mv;
-          vp10_build_wedge_inter_predictor_from_buf(xd, bsize, 0, 0,
+          vp10_build_wedge_inter_predictor_from_buf(xd, bsize,
+#if CONFIG_GLOBAL_MOTION
+                                                    mi_row, mi_col,
+#endif  // CONFIG_GLOBAL_MOTION
+                                                    0, 0,
                                                     preds0, strides,
                                                     preds1, strides);
         }
@@ -7568,6 +7572,9 @@ static int64_t handle_inter_mode(VP10_COMP *cpi, MACROBLOCK *x,
         }
       } else {
         vp10_build_wedge_inter_predictor_from_buf(xd, bsize,
+#if CONFIG_GLOBAL_MOTION
+                                                  mi_row, mi_col,
+#endif  // CONFIG_GLOBAL_MOTION
                                                   0, 0,
                                                   preds0, strides,
                                                   preds1, strides);
