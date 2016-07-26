@@ -1961,6 +1961,7 @@ static void get_arf_buffer_indices(unsigned char *arf_buffer_indices) {
   arf_buffer_indices[1] = ARF_SLOT2;
 }
 
+#define MODIFIED_ALLOCATION 1
 static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
                                    double group_error, int gf_arf_bits) {
   RATE_CONTROL *const rc = &cpi->rc;
@@ -1975,13 +1976,19 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
   const int max_bits = frame_max_bits(&cpi->rc, &cpi->oxcf);
   int64_t total_group_bits = gf_group_bits;
   double modified_err = 0.0;
-  double err_fraction;
   int mid_boost_bits = 0;
   int mid_frame_idx;
   unsigned char arf_buffer_indices[MAX_ACTIVE_ARFS];
   int alt_frame_index = frame_index;
   int has_temporal_layers = is_two_pass_svc(cpi) &&
                             cpi->svc.number_temporal_layers > 1;
+  int normal_frames;
+#ifdef MODIFIED_ALLOCATION
+  int normal_frame_bits;
+  int last_frame_bits;
+#else
+  double err_fraction;
+#endif
 
   // Only encode alt reference frame in temporal base layer.
   if (has_temporal_layers)
@@ -2053,8 +2060,25 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
   // Define middle frame
   mid_frame_idx = frame_index + (rc->baseline_gf_interval >> 1) - 1;
 
+  normal_frames = (rc->baseline_gf_interval - rc->source_alt_ref_pending);
+#ifdef MODIFIED_ALLOCATION
+  // The last frame in the roup is used less as a predictor so reduce
+  // its allocation a little.
+  if (normal_frames > 1) {
+    int last_frame_reduction;
+    normal_frame_bits = total_group_bits / normal_frames;
+    last_frame_reduction = normal_frame_bits / 4;
+    last_frame_bits = normal_frame_bits - last_frame_reduction;
+    // Share out the saved bits
+    normal_frame_bits +=
+      last_frame_reduction / (normal_frames - 1);
+  } else {
+    normal_frame_bits = total_group_bits;
+  }
+#endif
+
   // Allocate bits to the other frames in the group.
-  for (i = 0; i < rc->baseline_gf_interval - rc->source_alt_ref_pending; ++i) {
+  for (i = 0; i < normal_frames; ++i) {
     int arf_idx = 0;
     if (EOF == input_stats(twopass, &frame_stats))
       break;
@@ -2063,6 +2087,12 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
       ++frame_index;
     }
 
+#ifdef MODIFIED_ALLOCATION
+    if ((normal_frames > 1) && (i == (normal_frames - 1)))
+      target_frame_size = last_frame_bits;
+    else
+      target_frame_size = normal_frame_bits;
+#else
     modified_err = calculate_modified_err(cpi, twopass, oxcf, &frame_stats);
 
     if (group_error > 0)
@@ -2071,6 +2101,7 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
       err_fraction = 0.0;
 
     target_frame_size = (int)((double)total_group_bits * err_fraction);
+#endif
 
     if (rc->source_alt_ref_pending && cpi->multi_arf_enabled) {
       mid_boost_bits += (target_frame_size >> 4);
