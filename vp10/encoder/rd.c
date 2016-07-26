@@ -227,6 +227,9 @@ static const int rd_frame_type_factor[FRAME_UPDATE_TYPES] = {
 #if CONFIG_EXT_REFS
   // TODO(zoeliu): To adjust further following factor values.
   128, 128, 128
+#if CONFIG_EXT_ARFS
+  , 144
+#endif
 #endif  // CONFIG_EXT_REFS
 };
 
