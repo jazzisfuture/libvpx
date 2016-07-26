@@ -366,13 +366,19 @@ typedef struct VP10_COMP {
   YV12_BUFFER_CONFIG scaled_last_source;
 
   // Up-sampled reference buffers
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+  // We need an extra space to hold the upsampled currently coded frame
+  EncRefCntBuffer upsampled_ref_bufs[REF_FRAMES + 1];
+  int upsampled_ref_idx[REF_FRAMES];
+#else
   EncRefCntBuffer upsampled_ref_bufs[MAX_REF_FRAMES];
   int upsampled_ref_idx[MAX_REF_FRAMES];
+#endif
 
+  int scaled_ref_idx[MAX_REF_FRAMES];
   // For a still frame, this flag is set to 1 to skip partition search.
   int partition_search_skippable_frame;
 
-  int scaled_ref_idx[MAX_REF_FRAMES];
 #if CONFIG_EXT_REFS
   int lst_fb_idxes[LAST_REF_FRAMES];
 #else
@@ -429,8 +435,13 @@ typedef struct VP10_COMP {
 
   RATE_CONTROL rc;
   double framerate;
-
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+  // we need an extra space to hold the statistics of currently coded frame,
+  // which is held in [0]
+  int interp_filter_selected[REF_FRAMES + 1][SWITCHABLE];
+#else
   int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE];
+#endif
 
   struct vpx_codec_pkt_list  *output_pkt_list;
 
@@ -629,7 +640,13 @@ typedef struct VP10_COMP {
 #if CONFIG_EXT_REFS
   int refresh_frame_mask;
   int existing_fb_idx_to_show;
+#if CONFIG_EXT_ARFS
+  int is_arf_filter_off[MAX_EXT_ARFS + 1];
+  int extra_arfs;
+  int arf_map[MAX_EXT_ARFS + 1];
+#else
   int is_arf_filter_off;
+#endif
 #endif  // CONFIG_EXT_REFS
 #if CONFIG_GLOBAL_MOTION
   int global_motion_used[MAX_REF_FRAMES];
