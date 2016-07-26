@@ -15,6 +15,7 @@
 #include "vpx/vpx_encoder.h"
 #include "vpx_dsp/bitwriter_buffer.h"
 #include "vpx_dsp/vpx_dsp_common.h"
+#include "vpx_util/debug_util.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem_ops.h"
 #include "vpx_ports/system_state.h"
@@ -3582,6 +3583,10 @@ void vp10_pack_bitstream(VP10_COMP *const cpi, uint8_t *dst, size_t *size) {
 
   VP10_COMMON *const cm = &cpi->common;
   const int have_tiles = cm->tile_cols * cm->tile_rows > 1;
+
+#if CONFIG_BITSTREAM_DEBUG
+  bitstream_queue_reset_write();
+#endif
 
   // Write the uncompressed header
   write_uncompressed_header(cpi, &wb);
