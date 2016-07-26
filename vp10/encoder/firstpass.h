@@ -44,6 +44,11 @@ typedef struct {
 // NOTE: Currently each BFG contains one backward ref (BWF) frame plus a certain
 //       number of bi-predictive frames.
 #define BFG_INTERVAL          2
+#if CONFIG_EXT_ARFS
+// Maximum extra number of extra ALT_REF
+#define MAX_EXT_ARFS          2
+#define MIN_EXT_ARF_INTERVAL  4
+#endif  // CONFIG_EXT_ARFS
 #endif  // CONFIG_EXT_REFS
 
 #define VLOW_MOTION_THRESHOLD 950
@@ -83,9 +88,19 @@ typedef enum {
   BRF_UPDATE = 5,  // Backward Reference Frame
   LAST_BIPRED_UPDATE = 6,  // Last Bi-predictive Frame
   BIPRED_UPDATE = 7,  // Bi-predictive Frame, but not the last one
+#if CONFIG_EXT_ARFS
+  INTL_OVERLAY_UPDATE = 8,  // Internal ALT_REF Frame
+  FRAME_UPDATE_TYPES = 9
+#else
   FRAME_UPDATE_TYPES = 8
+#endif  // CONFIG_EXT_ARFS
+#else
+#if CONFIG_EXT_ARFS
+  INTL_OVERLAY_UPDATE = 5,  // Internal ALT_REF Frame
+  FRAME_UPDATE_TYPES = 6
 #else
   FRAME_UPDATE_TYPES = 5
+#endif  // CONFIG_EXT_ARFS
 #endif  // CONFIG_EXT_REFS
 } FRAME_UPDATE_TYPE;
 
@@ -176,6 +191,17 @@ void vp10_init_subsampling(struct VP10_COMP *cpi);
 void vp10_calculate_coded_size(struct VP10_COMP *cpi,
                           int *scaled_frame_width,
                           int *scaled_frame_height);
+
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+static inline int get_number_of_extra_arfs(int interval, int arf_pending) {
+  //Currently at maximum two extra alt refs are allowed
+  if (arf_pending)
+    return interval >= MIN_EXT_ARF_INTERVAL*(MAX_EXT_ARFS+1) ? 2 :
+           interval >= MIN_EXT_ARF_INTERVAL*MAX_EXT_ARFS ? 1 : 0;
+  else
+    return 0;
+}
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

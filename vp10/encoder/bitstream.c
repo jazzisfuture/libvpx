@@ -1596,9 +1596,9 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
     // write_switchable_interp_filter, which is called by pack_inter_mode_mvs.
     set_ref_ptrs(cm, xd, m->mbmi.ref_frame[0], m->mbmi.ref_frame[1]);
 #endif  // CONFIG_EXT_INTERP
-#if 0
+#if 1
     // NOTE(zoeliu): For debug
-    if (cm->current_video_frame == FRAME_TO_CHECK && cm->show_frame == 1) {
+    if (cpi->check_frame) {
       const PREDICTION_MODE mode = m->mbmi.mode;
       const int segment_id = m->mbmi.segment_id;
       const BLOCK_SIZE bsize = m->mbmi.sb_type;
@@ -2679,7 +2679,10 @@ static void write_tile_info(const VP10_COMMON *const cm,
     vpx_wb_write_bit(wb, cm->log2_tile_rows != 1);
 #endif  // CONFIG_EXT_TILE
 }
-static int get_refresh_mask(VP10_COMP *cpi) {
+#if 0
+static
+#endif
+int get_refresh_mask(VP10_COMP *cpi) {
   int refresh_mask = 0;
 
 #if CONFIG_EXT_REFS
@@ -2713,10 +2716,18 @@ static int get_refresh_mask(VP10_COMP *cpi) {
     return refresh_mask | (cpi->refresh_golden_frame << cpi->alt_fb_idx);
   } else {
     int arf_idx = cpi->alt_fb_idx;
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+    const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+    arf_idx = cpi->arf_map[gf_group->arf_update_idx[gf_group->index]];
+    /*fprintf(stdout,"quick debugging %d %d %d\n",
+            gf_group->index, gf_group->arf_update_idx[gf_group->index],
+            cpi->arf_map[gf_group->arf_update_idx[gf_group->index]]);*/
+#else
     if ((cpi->oxcf.pass == 2) && cpi->multi_arf_allowed) {
       const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
       arf_idx = gf_group->arf_update_idx[gf_group->index];
     }
+#endif
     return refresh_mask |
            (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
            (cpi->refresh_alt_ref_frame << arf_idx);
@@ -3057,7 +3068,6 @@ static void write_uncompressed_header(VP10_COMP *cpi,
     RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
     const int frame_to_show =
         cm->ref_frame_map[cpi->existing_fb_idx_to_show];
-
     if (frame_to_show < 0 || frame_bufs[frame_to_show].ref_count < 1) {
       vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                          "Buffer %d does not contain a reconstructed frame",
