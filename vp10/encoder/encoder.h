@@ -414,8 +414,9 @@ typedef struct VP10_COMP {
 
   RATE_CONTROL rc;
   double framerate;
-
-  int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE];
+  // we need an extra space to hold the statistics of currently coded frame,
+  // which is held in [0]
+  int interp_filter_selected[REF_FRAMES + 1][SWITCHABLE];
 
   struct vpx_codec_pkt_list  *output_pkt_list;
 
@@ -614,7 +615,11 @@ typedef struct VP10_COMP {
 #if CONFIG_EXT_REFS
   int refresh_frame_mask;
   int existing_fb_idx_to_show;
-  int is_arf_filter_off;
+  int is_arf_filter_off[MAX_EXT_ARFS + 1];
+#if CONFIG_EXT_ARFS
+  int extra_arfs;
+  int arf_map[MAX_EXT_ARFS + 1];
+#endif
 #endif  // CONFIG_EXT_REFS
 #if CONFIG_GLOBAL_MOTION
   int global_motion_used[MAX_REF_FRAMES];
