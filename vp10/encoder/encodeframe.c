@@ -4421,7 +4421,11 @@ static void reset_skip_tx_size(VP10_COMMON *cm, TX_SIZE max_tx_size) {
 static MV_REFERENCE_FRAME get_frame_type(const VP10_COMP *cpi) {
   if (frame_is_intra_only(&cpi->common))
     return INTRA_FRAME;
+#if CONFIG_EXT_ARFS
+  else if (cpi->rc.is_src_frame_alt_ref)
+#else
   else if (cpi->rc.is_src_frame_alt_ref && cpi->refresh_golden_frame)
+#endif
     return ALTREF_FRAME;
   else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)
     return GOLDEN_FRAME;
@@ -4641,6 +4645,7 @@ static void encode_frame_internal(VP10_COMP *cpi) {
                            cm->height == cm->last_height &&
                            !cm->intra_only &&
                            cm->last_show_frame;
+
 #if CONFIG_EXT_REFS
   // NOTE(zoeliu): As cm->prev_frame can take neither a frame of
   //               show_exisiting_frame=1, nor can it take a frame not used as

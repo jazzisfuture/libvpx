@@ -2679,6 +2679,7 @@ static void write_tile_info(const VP10_COMMON *const cm,
     vpx_wb_write_bit(wb, cm->log2_tile_rows != 1);
 #endif  // CONFIG_EXT_TILE
 }
+
 static int get_refresh_mask(VP10_COMP *cpi) {
   int refresh_mask = 0;
 
@@ -2713,10 +2714,18 @@ static int get_refresh_mask(VP10_COMP *cpi) {
     return refresh_mask | (cpi->refresh_golden_frame << cpi->alt_fb_idx);
   } else {
     int arf_idx = cpi->alt_fb_idx;
+#if CONFIG_EXT_REFS && CONFIG_EXT_ARFS
+    const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+    arf_idx = cpi->arf_map[gf_group->arf_update_idx[gf_group->index]];
+    /*fprintf(stdout,"quick debugging %d %d %d\n",
+            gf_group->index, gf_group->arf_update_idx[gf_group->index],
+            cpi->arf_map[gf_group->arf_update_idx[gf_group->index]]);*/
+#else
     if ((cpi->oxcf.pass == 2) && cpi->multi_arf_allowed) {
       const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
       arf_idx = gf_group->arf_update_idx[gf_group->index];
     }
+#endif
     return refresh_mask |
            (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
            (cpi->refresh_alt_ref_frame << arf_idx);
@@ -3057,7 +3066,6 @@ static void write_uncompressed_header(VP10_COMP *cpi,
     RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
     const int frame_to_show =
         cm->ref_frame_map[cpi->existing_fb_idx_to_show];
-
     if (frame_to_show < 0 || frame_bufs[frame_to_show].ref_count < 1) {
       vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                          "Buffer %d does not contain a reconstructed frame",
