@@ -42,7 +42,6 @@
 #define MAX_BPB_FACTOR 50
 
 #define FRAME_OVERHEAD_BITS 200
-
 #if CONFIG_VP9_HIGHBITDEPTH
 #define ASSIGN_MINQ_TABLE(bit_depth, name)                   \
   do {                                                       \
@@ -919,8 +918,8 @@ int vp10_frame_type_qdelta(const VP10_COMP *cpi, int rf_level, int q) {
     1.50,  // INTER_HIGH
 #else
     1.00,  // INTER_HIGH
-#endif     // CONFIG_EXT_REFS
-    1.50,  // GF_ARF_LOW
+#endif  // CONFIG_EXT_REFS
+    1.25,  // GF_ARF_LOW
     2.00,  // GF_ARF_STD
     2.00,  // KF_STD
   };
@@ -1028,7 +1027,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP10_COMP *cpi,
         // Modify best quality for second level arfs. For mode VPX_Q this
         // becomes the baseline frame q.
         if (gf_group->rf_level[gf_group->index] == GF_ARF_LOW)
-          active_best_quality = (active_best_quality + cq_level + 1) / 2;
+          active_best_quality = cq_level;  //(active_best_quality + cq_level + 1) / 2;
       }
     } else {
       active_best_quality = get_gf_active_quality(rc, q, cm->bit_depth);
@@ -1185,16 +1184,20 @@ static void update_golden_frame_stats(VP10_COMP *cpi) {
 
 #if CONFIG_EXT_REFS
   // Update the Golden frame usage counts.
-  // Wei-Ting: If we use show_existing_frame for an OVERLAY frame, only the
-  //           virtual indices for the reference frame will be updated and
-  //           cpi->refresh_golden_frame will still be zero.
+  // NOTE(weitinglin): If we use show_existing_frame for an OVERLAY frame,
+  //                   only the virtual indices for the reference frame will be
+  //                   updated and cpi->refresh_golden_frame will still be zero.
   if (cpi->refresh_golden_frame || rc->is_src_frame_alt_ref) {
 #else
   // Update the Golden frame usage counts.
   if (cpi->refresh_golden_frame) {
 #endif
-    // this frame refreshes means next frames don't unless specified by user
-    rc->frames_since_golden = 0;
+#if CONFIG_EXT_ARFS
+    // We will not use internal overlay frames to replace the golden frame
+    if (!rc->is_internal_overlay)
+#endif
+      // this frame refreshes means next frames don't unless specified by user
+      rc->frames_since_golden = 0;
 
     // If we are not using alt ref in the up and coming group clear the arf
     // active flag. In multi arf group case, if the index is not 0 then
@@ -1216,7 +1219,14 @@ static void update_golden_frame_stats(VP10_COMP *cpi) {
     rc->frames_since_golden++;
   }
 }
-
+/* We need to investigate should we keep this.
+void vp10_post_show_existing_frame_update(VP10_COMP *cpi) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  update_golden_frame_stats(cpi);
+  rc->frames_since_key++;
+  rc->frames_to_key--;
+}
+*/
 void vp10_rc_postencode_update(VP10_COMP *cpi, uint64_t bytes_used) {
   const VP10_COMMON *const cm = &cpi->common;
   const VP10EncoderConfig *const oxcf = &cpi->oxcf;
