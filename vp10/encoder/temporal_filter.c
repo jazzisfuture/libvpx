@@ -730,14 +730,24 @@ void vp10_temporal_filter(VP10_COMP *cpi, int distance) {
   int frames_to_blur_forward;
   struct scale_factors sf;
   YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = {NULL};
+  const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+  // const int which_arf = gf_group->arf_update_idx[gf_group->index];
 
   // Apply context specific adjustments to the arnr filter parameters.
   adjust_arnr_filter(cpi, distance, rc->gfu_boost, &frames_to_blur, &strength);
 #if CONFIG_EXT_REFS
-  if (strength == 0 && frames_to_blur == 1)
-    cpi->is_arf_filter_off = 1;
-  else
-    cpi->is_arf_filter_off = 0;
+  if (strength == 0 && frames_to_blur == 1) {
+    cpi->is_arf_filter_off[gf_group->arf_update_idx[gf_group->index]] = 1;
+  } else {
+    cpi->is_arf_filter_off[gf_group->arf_update_idx[gf_group->index]] = 0;
+  }
+#endif
+#if 0 //CONFIG_EXT_ARFS
+  fprintf(stdout, "which arf %d is filter off %d\n",
+          gf_group->arf_update_idx[gf_group->index],
+          cpi->is_arf_filter_off[gf_group->arf_update_idx[gf_group->index]]);
+  fprintf(stdout, "src_idx %d, frame_to_blur %d\n", distance, frames_to_blur);
+  fflush(stdout);
 #endif
   frames_to_blur_backward = (frames_to_blur / 2);
   frames_to_blur_forward = ((frames_to_blur - 1) / 2);
