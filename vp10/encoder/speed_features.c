@@ -130,6 +130,9 @@ static void set_good_speed_feature(VP10_COMP *cpi, VP10_COMMON *cm,
                                    SPEED_FEATURES *sf, int speed) {
   const int boosted = frame_is_boosted(cpi);
 
+    sf->tx_type_search.fast_intra_tx_type_search = 1;
+    sf->tx_type_search.fast_inter_tx_type_search = 1;
+
   if (speed >= 1) {
     if ((cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ||
         vp10_internal_image_edge(cpi)) {
