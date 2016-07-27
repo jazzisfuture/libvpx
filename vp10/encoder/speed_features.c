@@ -129,7 +129,6 @@ static void set_good_speed_feature_framesize_dependent(VP10_COMP *cpi,
 static void set_good_speed_feature(VP10_COMP *cpi, VP10_COMMON *cm,
                                    SPEED_FEATURES *sf, int speed) {
   const int boosted = frame_is_boosted(cpi);
-
   if (speed >= 1) {
     if ((cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ||
         vp10_internal_image_edge(cpi)) {
