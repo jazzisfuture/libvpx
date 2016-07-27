@@ -83,6 +83,17 @@ typedef enum {
 } ENCODE_BREAKOUT_TYPE;
 
 typedef enum {
+  // regular inter frame
+  REGULAR_FRAME = 0,
+  // alternate reference frame
+  ARF_REF_FRAME = 1,
+  // overlay frame
+  OVERLAY_FRAME = 2,
+  // golden frame
+  GLD_FRAME = 3,
+} FRAME_CONTEXT_INDEX;
+
+typedef enum {
   NORMAL      = 0,
   FOURFIVE    = 1,
   THREEFIVE   = 2,
