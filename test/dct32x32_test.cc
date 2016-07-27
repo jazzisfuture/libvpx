@@ -14,12 +14,14 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "./vp10_rtcd.h"
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
+#include "vp10/common/entropy.h"
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
@@ -72,6 +74,10 @@ typedef std::tr1::tuple<FwdTxfmFunc, InvTxfmFunc, int, vpx_bit_depth_t>
     Trans32x32Param;
 
 #if CONFIG_VP9_HIGHBITDEPTH
+void idct32x32_8(const tran_low_t *in, uint8_t *out, int stride) {
+  vpx_highbd_idct32x32_1024_add_c(in, out, stride, 8);
+}
+
 void idct32x32_10(const tran_low_t *in, uint8_t *out, int stride) {
   vpx_highbd_idct32x32_1024_add_c(in, out, stride, 10);
 }
