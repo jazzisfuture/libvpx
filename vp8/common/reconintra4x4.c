@@ -15,6 +15,8 @@
 #include "vp8_rtcd.h"
 #include "blockd.h"
 #include "reconintra4x4.h"
+#include "vp8/common/common.h"
+#include "vpx_ports/mem.h"
 
 typedef void (*intra_pred_fn)(uint8_t *dst, ptrdiff_t stride,
                               const uint8_t *above, const uint8_t *left);
@@ -38,8 +40,15 @@ void vp8_intra4x4_predict(unsigned char *above, unsigned char *yleft,
                           int left_stride, B_PREDICTION_MODE b_mode,
                           unsigned char *dst, int dst_stride,
                           unsigned char top_left) {
-  unsigned char Left[4];
   unsigned char Aboveb[12], *Above = Aboveb + 4;
+#if HAVE_NEON && VPX_WITH_ASAN
+  // Neon intrinsics are unable to load 32 bytes, or 4 8 bit values. Instead, it
+  // over reads but does not use the extra 4 values.
+  unsigned char Left[8];
+  vp8_zero_array(Left, 8);
+#else
+  unsigned char Left[4];
+#endif
 
   Left[0] = yleft[0];
   Left[1] = yleft[left_stride];
