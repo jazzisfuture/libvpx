@@ -48,4 +48,12 @@
 #define CONVERT_TO_BYTEPTR(x) ((uint8_t *)(((uintptr_t)(x)) >> 1))
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if !defined(__has_feature)
+#define __has_feature(x) 0
+#endif  // !defined(__has_feature)
+
+#if __has_feature(address_sanitizer) || __SANITIZE_ADDRESS__
+#define VPX_WITH_ASAN
+#endif  // __has_feature(address_sanitizer) || __SANITIZE_ADDRESS
+
 #endif  // VPX_PORTS_MEM_H_
