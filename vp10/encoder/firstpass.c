@@ -1412,10 +1412,8 @@ static void accumulate_frame_motion_stats(const FIRSTPASS_STATS *stats,
     const double mvc_ratio = fabs(stats->mvc_abs) /
                                  DOUBLE_DIVIDE_CHECK(fabs(stats->MVc));
 
-    *mv_ratio_accumulator += pct * (mvr_ratio < stats->mvr_abs ?
-                                       mvr_ratio : stats->mvr_abs);
-    *mv_ratio_accumulator += pct * (mvc_ratio < stats->mvc_abs ?
-                                       mvc_ratio : stats->mvc_abs);
+    *mv_ratio_accumulator += pct * VPXMIN(mvr_ratio, stats->mvr_abs);
+    *mv_ratio_accumulator += pct * VPXMIN(mvc_ratio, stats->mvc_abs);
   }
 }
 
@@ -1427,17 +1425,17 @@ static double calc_frame_boost(VP10_COMP *cpi,
   double frame_boost;
   const double lq =
     vp10_convert_qindex_to_q(cpi->rc.avg_frame_qindex[INTER_FRAME],
-                            cpi->common.bit_depth);
+                             cpi->common.bit_depth);
   const double boost_q_correction = VPXMIN((0.5 + (lq * 0.015)), 1.5);
-  int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE)
-                ? cpi->initial_mbs : cpi->common.MBs;
+  int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE) ?
+      cpi->initial_mbs : cpi->common.MBs;
 
   // Correct for any inactive region in the image
   num_mbs = (int)VPXMAX(1, num_mbs * calculate_active_area(cpi, this_frame));
 
   // Underlying boost factor is based on inter error ratio.
   frame_boost = (BASELINE_ERR_PER_MB * num_mbs) /
-                DOUBLE_DIVIDE_CHECK(this_frame->coded_error);
+      DOUBLE_DIVIDE_CHECK(this_frame->coded_error);
   frame_boost = frame_boost * BOOST_FACTOR * boost_q_correction;
 
   // Increase boost for frames where new data coming into frame (e.g. zoom out).
@@ -1466,6 +1464,13 @@ static int calc_arf_boost(VP10_COMP *cpi, int offset,
   int arf_boost;
   int flash_detected = 0;
 
+#if 0
+  // zoeliu: For debug
+  fprintf(stdout, "calc_arf_boost(): Frame=%d, f_frames=%d, b_frames=%d\n",
+          cpi->common.current_video_frame, f_frames, b_frames);
+  fflush(stdout);
+#endif  // 0
+
   // Search forward from the proposed arf/next gf position.
   for (i = 0; i < f_frames; ++i) {
     const FIRSTPASS_STATS *this_frame = read_frame_stats(twopass, i + offset);
@@ -1486,13 +1491,20 @@ static int calc_arf_boost(VP10_COMP *cpi, int offset,
     // Accumulate the effect of prediction quality decay.
     if (!flash_detected) {
       decay_accumulator *= get_prediction_decay_rate(cpi, this_frame);
-      decay_accumulator = decay_accumulator < MIN_DECAY_FACTOR
-                          ? MIN_DECAY_FACTOR : decay_accumulator;
+      decay_accumulator = VPXMAX(decay_accumulator, MIN_DECAY_FACTOR);
     }
 
     boost_score += decay_accumulator * calc_frame_boost(cpi, this_frame,
                                                         this_frame_mv_in_out,
                                                         GF_MAX_BOOST);
+#if 0
+    fprintf(stdout, "boost_score[%d]=%.6f, this_frame_mv_in_out=%.6f, "
+            "mv_in_out_accumulator=%.6f, abs_mv_in_out_accumulator=%.6f, "
+            "mv_ratio_accumulator=%.6f, decay_accumulator=%.6f\n", i,
+            boost_score, this_frame_mv_in_out, mv_in_out_accumulator,
+            abs_mv_in_out_accumulator, mv_ratio_accumulator, decay_accumulator);
+    fflush(stdout);
+#endif  // 0
   }
 
   *f_boost = (int)boost_score;
@@ -1517,7 +1529,7 @@ static int calc_arf_boost(VP10_COMP *cpi, int offset,
                                   &abs_mv_in_out_accumulator,
                                   &mv_ratio_accumulator);
 
-    // We want to discount the the flash frame itself and the recovery
+    // We want to discount the flash frame itself and the recovery
     // frame that follows as both will have poor scores.
     flash_detected = detect_flash(twopass, i + offset) ||
                      detect_flash(twopass, i + offset + 1);
@@ -1532,6 +1544,14 @@ static int calc_arf_boost(VP10_COMP *cpi, int offset,
     boost_score += decay_accumulator * calc_frame_boost(cpi, this_frame,
                                                         this_frame_mv_in_out,
                                                         GF_MAX_BOOST);
+#if 0
+    fprintf(stdout, "boost_score[%d]=%.6f, this_frame_mv_in_out=%.6f, "
+            "mv_in_out_accumulator=%.6f, abs_mv_in_out_accumulator=%.6f, "
+            "mv_ratio_accumulator=%.6f, decay_accumulator=%.6f\n", i,
+            boost_score, this_frame_mv_in_out, mv_in_out_accumulator,
+            abs_mv_in_out_accumulator, mv_ratio_accumulator, decay_accumulator);
+    fflush(stdout);
+#endif  // 0
   }
   *b_boost = (int)boost_score;
 
@@ -1539,6 +1559,14 @@ static int calc_arf_boost(VP10_COMP *cpi, int offset,
   if (arf_boost < ((b_frames + f_frames) * 20))
     arf_boost = ((b_frames + f_frames) * 20);
   arf_boost = VPXMAX(arf_boost, MIN_ARF_GF_BOOST);
+
+#if 1
+  fprintf(stdout, "boost_score=%.6f, f_boost=%d, b_boost=%d, "
+          "b_frames=%d, f_frames=%d, arf_boost=%d, MIN_ARF_GF_BOOST=%d\n",
+          boost_score, *f_boost, *b_boost, b_frames, f_frames, arf_boost,
+          MIN_ARF_GF_BOOST);
+  fflush(stdout);
+#endif  // 1
 
   return arf_boost;
 }
@@ -1810,7 +1838,7 @@ static void allocate_gf_group_bits(VP10_COMP *cpi, int64_t gf_group_bits,
 #if CONFIG_EXT_REFS
     if (gf_group->update_type[frame_index] == BRF_UPDATE) {
       // Boost up the allocated bits on BWDREF_FRAME
-      gf_group->rf_level[frame_index] = INTER_HIGH;
+      gf_group->rf_level[frame_index] = BRF_STD;
       gf_group->bit_allocation[frame_index] =
           target_frame_size + (target_frame_size >> 2);
     } else if (gf_group->update_type[frame_index] == LAST_BIPRED_UPDATE) {
@@ -2025,17 +2053,17 @@ static void define_gf_group(VP10_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
     // Break out conditions.
     if (
-      // Break at active_max_gf_interval unless almost totally static.
-      (i >= (active_max_gf_interval + arf_active_or_kf) &&
-            zero_motion_accumulator < 0.995) ||
-      (
-        // Don't break out with a very short interval.
-        (i >= active_min_gf_interval + arf_active_or_kf) &&
-        (!flash_detected) &&
-        ((mv_ratio_accumulator > mv_ratio_accumulator_thresh) ||
-         (abs_mv_in_out_accumulator > 3.0) ||
-         (mv_in_out_accumulator < -2.0) ||
-         ((boost_score - old_boost_score) < BOOST_BREAKOUT)))) {
+        // Break at active_max_gf_interval unless almost totally static.
+        (i >= (active_max_gf_interval + arf_active_or_kf) &&
+         zero_motion_accumulator < 0.995) ||
+        (
+         // Don't break out with a very short interval.
+         (i >= active_min_gf_interval + arf_active_or_kf) &&
+         (!flash_detected) &&
+         ((mv_ratio_accumulator > mv_ratio_accumulator_thresh) ||
+          (abs_mv_in_out_accumulator > 3.0) ||
+          (mv_in_out_accumulator < -2.0) ||
+          ((boost_score - old_boost_score) < BOOST_BREAKOUT)))) {
       boost_score = old_boost_score;
       break;
     }
@@ -2051,11 +2079,11 @@ static void define_gf_group(VP10_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Should we use the alternate reference frame.
   if (allow_alt_ref &&
-    (i < cpi->oxcf.lag_in_frames) &&
-    (i >= rc->min_gf_interval)) {
+      (i < cpi->oxcf.lag_in_frames) &&
+      (i >= rc->min_gf_interval)) {
     // Calculate the boost for alt ref.
     rc->gfu_boost = calc_arf_boost(cpi, 0, (i - 1), (i - 1), &f_boost,
-      &b_boost);
+                                   &b_boost);
     rc->source_alt_ref_pending = 1;
 
     // Test to see if multi arf is appropriate.
@@ -2119,7 +2147,7 @@ static void define_gf_group(VP10_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     twopass->active_worst_quality =
       VPXMAX(tmp_q, twopass->active_worst_quality >> 1);
   }
-#endif
+#endif  // GROUP_ADAPTIVE_MAXQ
 
   // Calculate the extra bits to be used for boosted frame(s)
   gf_arf_bits = calculate_boost_bits(rc->baseline_gf_interval,
