@@ -37,6 +37,9 @@
 
 #define DEFAULT_KF_BOOST 2000
 #define DEFAULT_GF_BOOST 2000
+#if CONFIG_EXT_REFS
+#define DEFAULT_BF_BOOST 2000
+#endif  // CONFIG_EXT_REFS
 
 #define MIN_BPB_FACTOR 0.005
 #define MAX_BPB_FACTOR 50
@@ -75,6 +78,10 @@ static int kf_low_motion_minq_8[QINDEX_RANGE];
 static int kf_high_motion_minq_8[QINDEX_RANGE];
 static int arfgf_low_motion_minq_8[QINDEX_RANGE];
 static int arfgf_high_motion_minq_8[QINDEX_RANGE];
+#if CONFIG_EXT_REFS
+static int brf_low_motion_minq_8[QINDEX_RANGE];
+static int brf_high_motion_minq_8[QINDEX_RANGE];
+#endif  // CONFIG_EXT_REFS
 static int inter_minq_8[QINDEX_RANGE];
 static int rtc_minq_8[QINDEX_RANGE];
 
@@ -83,20 +90,33 @@ static int kf_low_motion_minq_10[QINDEX_RANGE];
 static int kf_high_motion_minq_10[QINDEX_RANGE];
 static int arfgf_low_motion_minq_10[QINDEX_RANGE];
 static int arfgf_high_motion_minq_10[QINDEX_RANGE];
+#if CONFIG_EXT_REFS
+static int brf_low_motion_minq_10[QINDEX_RANGE];
+static int brf_high_motion_minq_10[QINDEX_RANGE];
+#endif  // CONFIG_EXT_REFS
 static int inter_minq_10[QINDEX_RANGE];
 static int rtc_minq_10[QINDEX_RANGE];
 static int kf_low_motion_minq_12[QINDEX_RANGE];
 static int kf_high_motion_minq_12[QINDEX_RANGE];
 static int arfgf_low_motion_minq_12[QINDEX_RANGE];
 static int arfgf_high_motion_minq_12[QINDEX_RANGE];
+#if CONFIG_EXT_REFS
+static int brf_low_motion_minq_12[QINDEX_RANGE];
+static int brf_high_motion_minq_12[QINDEX_RANGE];
+#endif  // CONFIG_EXT_REFS
 static int inter_minq_12[QINDEX_RANGE];
 static int rtc_minq_12[QINDEX_RANGE];
 #endif
 
-static int gf_high = 2000;
-static int gf_low = 400;
 static int kf_high = 5000;
 static int kf_low = 400;
+static int gf_high = 2000;
+static int gf_low = 400;
+#if CONFIG_EXT_REFS
+// TODO(zoeliu): Initial numbers to be adjusted
+static int bf_high = 2000;
+static int bf_low = 400;
+#endif  // CONFIG_EXT_REFS
 
 // Functions to compute the active minq lookup table entries based on a
 // formulaic approach to facilitate easier adjustment of the Q tables.
@@ -122,6 +142,9 @@ static int get_minq_index(double maxq, double x3, double x2, double x1,
 
 static void init_minq_luts(int *kf_low_m, int *kf_high_m,
                            int *arfgf_low, int *arfgf_high,
+#if CONFIG_EXT_REFS
+                           int *brf_low, int *brf_high,
+#endif  // CONFIG_EXT_REFS
                            int *inter, int *rtc, vpx_bit_depth_t bit_depth) {
   int i;
   for (i = 0; i < QINDEX_RANGE; i++) {
@@ -130,21 +153,43 @@ static void init_minq_luts(int *kf_low_m, int *kf_high_m,
     kf_high_m[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.55, bit_depth);
     arfgf_low[i] = get_minq_index(maxq, 0.0000015, -0.0009, 0.30, bit_depth);
     arfgf_high[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.55, bit_depth);
+#if CONFIG_EXT_REFS
+    // TODO(zoeliu): To design minq_index for the following 2 types of frames:
+    // (1) cpi->rc.is_bwd_ref_frame; and (2) cpi->rc.is_last_bipred_frame.
+    brf_low[i] = arfgf_low[i];
+    brf_high[i] = arfgf_high[i];
+#endif  // CONFIG_EXT_REFS
     inter[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.90, bit_depth);
     rtc[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.70, bit_depth);
+#if 0
+    fprintf(stdout, "i=%d, maxq=%.2lf, kf_low_m=%d, kf_high_m=%d, "
+            "arfgf_low=%d, arfgf_high=%d, inter=%d, rtc=%d\n", i,
+            maxq, kf_low_m[i], kf_high_m[i], arfgf_low[i], arfgf_high[i],
+            inter[i], rtc[i]);
+    fflush(stdout);
+#endif  // 0
   }
 }
 
 void vp10_rc_init_minq_luts(void) {
   init_minq_luts(kf_low_motion_minq_8, kf_high_motion_minq_8,
                  arfgf_low_motion_minq_8, arfgf_high_motion_minq_8,
+#if CONFIG_EXT_REFS
+                 brf_low_motion_minq_8, brf_high_motion_minq_8,
+#endif  // CONFIG_EXT_REFS
                  inter_minq_8, rtc_minq_8, VPX_BITS_8);
 #if CONFIG_VP9_HIGHBITDEPTH
   init_minq_luts(kf_low_motion_minq_10, kf_high_motion_minq_10,
                  arfgf_low_motion_minq_10, arfgf_high_motion_minq_10,
+#if CONFIG_EXT_REFS
+                 brf_low_motion_minq_10, brf_high_motion_minq_10,
+#endif  // CONFIG_EXT_REFS
                  inter_minq_10, rtc_minq_10, VPX_BITS_10);
   init_minq_luts(kf_low_motion_minq_12, kf_high_motion_minq_12,
                  arfgf_low_motion_minq_12, arfgf_high_motion_minq_12,
+#if CONFIG_EXT_REFS
+                 brf_low_motion_minq_12, brf_high_motion_minq_12,
+#endif  // CONFIG_EXT_REFS
                  inter_minq_12, rtc_minq_12, VPX_BITS_12);
 #endif
 }
@@ -244,12 +289,14 @@ static void update_buffer_level(VP10_COMP *cpi, int encoded_frame_size) {
   const VP10_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
 
-  // Non-viewable frames are a special case and are treated as pure overhead.
 #if CONFIG_EXT_REFS
-  // TODO(zoeliu): To further explore whether we should treat BWDREF_FRAME
-  //               differently, since it is a no-show frame.
+  // NOTE(zoeliu): We should only treat those non-viewable frames as pure
+  // overhead when no show_existing_frame is used to show these frames.
+  // TODO(zoeliu): Alt-refs sometimes may use show_existing_frame, and we should
+  // not treat those alt-refs as pure head in that case.
   if (!cm->show_frame && !rc->is_bwd_ref_frame)
 #else
+  // Non-viewable frames are a special case and are treated as pure overhead.
   if (!cm->show_frame)
 #endif  // CONFIG_EXT_REFS
     rc->bits_off_target -= encoded_frame_size;
@@ -392,6 +439,10 @@ static double get_rate_correction_factor(const VP10_COMP *cpi) {
       cpi->twopass.gf_group.rf_level[cpi->twopass.gf_group.index];
     rcf = rc->rate_correction_factors[rf_lvl];
   } else {
+#if CONFIG_EXT_REFS
+    // TODO(zoeliu): cpi->refresh_bwd_ref_frame may need special handling for
+    //               the one-pass case.
+#endif  // CONFIG_EXT_REFS
     if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
         !rc->is_src_frame_alt_ref &&
         (cpi->oxcf.rc_mode != VPX_CBR || cpi->oxcf.gf_cbr_boost_pct > 20))
@@ -418,6 +469,10 @@ static void set_rate_correction_factor(VP10_COMP *cpi, double factor) {
       cpi->twopass.gf_group.rf_level[cpi->twopass.gf_group.index];
     rc->rate_correction_factors[rf_lvl] = factor;
   } else {
+#if CONFIG_EXT_REFS
+    // TODO(zoeliu): cpi->refresh_bwd_ref_frame may need special handling for
+    //               the one-pass case.
+#endif  // CONFIG_EXT_REFS
     if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
         !rc->is_src_frame_alt_ref &&
         (cpi->oxcf.rc_mode != VPX_CBR || cpi->oxcf.gf_cbr_boost_pct > 20))
@@ -450,10 +505,10 @@ void vp10_rc_update_rate_correction_factors(VP10_COMP *cpi) {
         vp10_cyclic_refresh_estimate_bits_at_q(cpi, rate_correction_factor);
   } else {
     projected_size_based_on_q = vp10_estimate_bits_at_q(cpi->common.frame_type,
-                                                       cm->base_qindex,
-                                                       cm->MBs,
-                                                       rate_correction_factor,
-                                                       cm->bit_depth);
+                                                        cm->base_qindex,
+                                                        cm->MBs,
+                                                        rate_correction_factor,
+                                                        cm->bit_depth);
   }
   // Work out a size correction factor.
   if (projected_size_based_on_q > FRAME_OVERHEAD_BITS)
@@ -477,16 +532,17 @@ void vp10_rc_update_rate_correction_factors(VP10_COMP *cpi) {
 
   if (correction_factor > 102) {
     // We are not already at the worst allowable quality
-    correction_factor = (int)(100 + ((correction_factor - 100) *
-                                  adjustment_limit));
+    correction_factor =
+        (int)(100 + ((correction_factor - 100) * adjustment_limit));
     rate_correction_factor = (rate_correction_factor * correction_factor) / 100;
+
     // Keep rate_correction_factor within limits
     if (rate_correction_factor > MAX_BPB_FACTOR)
       rate_correction_factor = MAX_BPB_FACTOR;
   } else if (correction_factor < 99) {
     // We are not already at the best allowable quality
-    correction_factor = (int)(100 - ((100 - correction_factor) *
-                                  adjustment_limit));
+    correction_factor =
+        (int)(100 - ((100 - correction_factor) * adjustment_limit));
     rate_correction_factor = (rate_correction_factor * correction_factor) / 100;
 
     // Keep rate_correction_factor within limits
@@ -518,9 +574,9 @@ int vp10_rc_regulate_q(const VP10_COMP *cpi, int target_bits_per_frame,
       bits_per_mb_at_this_q =
           (int)vp10_cyclic_refresh_rc_bits_per_mb(cpi, i, correction_factor);
     } else {
-      bits_per_mb_at_this_q = (int)vp10_rc_bits_per_mb(cm->frame_type, i,
-                                                      correction_factor,
-                                                      cm->bit_depth);
+      bits_per_mb_at_this_q =
+          (int)vp10_rc_bits_per_mb(cm->frame_type, i, correction_factor,
+                                   cm->bit_depth);
     }
 
     if (bits_per_mb_at_this_q <= target_bits_per_mb) {
@@ -580,6 +636,19 @@ static int get_gf_active_quality(const RATE_CONTROL *const rc, int q,
   return get_active_quality(q, rc->gfu_boost, gf_low, gf_high,
                             arfgf_low_motion_minq, arfgf_high_motion_minq);
 }
+
+#if CONFIG_EXT_REFS
+static int get_brf_active_quality(const RATE_CONTROL *const rc, int q,
+                                  vpx_bit_depth_t bit_depth) {
+  int *brf_low_motion_minq;
+  int *brf_high_motion_minq;
+  ASSIGN_MINQ_TABLE(bit_depth, brf_low_motion_minq);
+  ASSIGN_MINQ_TABLE(bit_depth, brf_high_motion_minq);
+  // TODO(zoeliu): We reused the boost score of ARF/GF here for BRF.
+  return get_active_quality(q, rc->gfu_boost, brf_low, brf_high,
+                            brf_low_motion_minq, brf_high_motion_minq);
+}
+#endif  // CONFIG_EXT_REFS
 
 static int calc_active_worst_quality_one_pass_vbr(const VP10_COMP *cpi) {
   const RATE_CONTROL *const rc = &cpi->rc;
@@ -956,24 +1025,25 @@ int vp10_frame_type_qdelta(const VP10_COMP *cpi, int rf_level, int q) {
 #if CONFIG_EXT_REFS
     0.80,  // INTER_LOW
     1.25,  // INTER_HIGH
+    1.50,  // BRF_STD
 #else
     1.00,  // INTER_HIGH
 #endif  // CONFIG_EXT_REFS
     1.50,  // GF_ARF_LOW
-    1.75,  // GF_ARF_STD
+    2.00,  // GF_ARF_STD
     2.00,  // KF_STD
   };
   static const FRAME_TYPE frame_type[RATE_FACTOR_LEVELS] =
 #if CONFIG_EXT_REFS
-      { INTER_FRAME, INTER_FRAME, INTER_FRAME,
+      { INTER_FRAME, INTER_FRAME, INTER_FRAME, INTER_FRAME,
         INTER_FRAME, INTER_FRAME, KEY_FRAME };
 #else
       {INTER_FRAME, INTER_FRAME, INTER_FRAME, INTER_FRAME, KEY_FRAME};
 #endif  // CONFIG_EXT_REFS
   const VP10_COMMON *const cm = &cpi->common;
   int qdelta = vp10_compute_qdelta_by_rate(&cpi->rc, frame_type[rf_level],
-                                          q, rate_factor_deltas[rf_level],
-                                          cm->bit_depth);
+                                           q, rate_factor_deltas[rf_level],
+                                           cm->bit_depth);
   return qdelta;
 }
 
@@ -1053,6 +1123,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP10_COMP *cpi,
     } else {
       q = active_worst_quality;
     }
+
     // For constrained quality dont allow Q less than the cq level
     if (oxcf->rc_mode == VPX_CQ) {
       if (q < cq_level)
@@ -1077,6 +1148,37 @@ static int rc_pick_q_and_bounds_two_pass(const VP10_COMP *cpi,
     } else {
       active_best_quality = get_gf_active_quality(rc, q, cm->bit_depth);
     }
+#if CONFIG_EXT_REFS
+  } else if (rc->is_bwd_ref_frame) {
+    // Use the lower of active_worst_quality and recent average Q as basis
+    // for BRF best Q limit unless last frame was a key frame.
+    if (rc->frames_since_key > 1 &&
+        rc->avg_frame_qindex[INTER_FRAME] < active_worst_quality) {
+      q = rc->avg_frame_qindex[INTER_FRAME];
+    } else {
+      q = active_worst_quality;
+    }
+
+    // For constrained quality dont allow Q less than the cq level
+    if (oxcf->rc_mode == VPX_CQ) {
+      if (q < cq_level)
+        q = cq_level;
+
+      active_best_quality = get_brf_active_quality(rc, q, cm->bit_depth);
+
+      // Constrained quality use slightly lower active best.
+      active_best_quality = active_best_quality * 15 / 16;
+
+    } else if (oxcf->rc_mode == VPX_Q) {
+      if (!cpi->refresh_bwd_ref_frame) {
+        active_best_quality = cq_level;
+      } else {
+       active_best_quality = get_brf_active_quality(rc, q, cm->bit_depth);
+      }
+    } else {
+      active_best_quality = get_brf_active_quality(rc, q, cm->bit_depth);
+    }
+#endif  // CONFIG_EXT_REFS
   } else {
     if (oxcf->rc_mode == VPX_Q) {
       active_best_quality = cq_level;
@@ -1101,6 +1203,17 @@ static int rc_pick_q_and_bounds_two_pass(const VP10_COMP *cpi,
       active_best_quality -=
         (cpi->twopass.extend_minq + cpi->twopass.extend_minq_fast);
       active_worst_quality += (cpi->twopass.extend_maxq / 2);
+#if CONFIG_EXT_REFS
+    } else if (rc->is_bwd_ref_frame) {
+      // TODO(zoeliu): Parameters to be adjusted
+      active_best_quality -=
+        (cpi->twopass.extend_minq + cpi->twopass.extend_minq_fast) * 3 / 4;
+      active_worst_quality += cpi->twopass.extend_maxq * 3 / 4;
+    } else if (rc->is_last_bipred_frame) {
+      active_best_quality -=
+        (cpi->twopass.extend_minq + cpi->twopass.extend_minq_fast) / 4;
+      active_worst_quality += cpi->twopass.extend_maxq * 5 / 4;
+#endif  // CONFIG_EXT_REFS
     } else {
       active_best_quality -=
         (cpi->twopass.extend_minq + cpi->twopass.extend_minq_fast) / 2;
@@ -1168,7 +1281,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP10_COMP *cpi,
 }
 
 int vp10_rc_pick_q_and_bounds(const VP10_COMP *cpi,
-                             int *bottom_index, int *top_index) {
+                              int *bottom_index, int *top_index) {
   int q;
   if (cpi->oxcf.pass == 0) {
     if (cpi->oxcf.rc_mode == VPX_CBR)
@@ -1183,9 +1296,9 @@ int vp10_rc_pick_q_and_bounds(const VP10_COMP *cpi,
 }
 
 void vp10_rc_compute_frame_size_bounds(const VP10_COMP *cpi,
-                                      int frame_target,
-                                      int *frame_under_shoot_limit,
-                                      int *frame_over_shoot_limit) {
+                                       int frame_target,
+                                       int *frame_under_shoot_limit,
+                                       int *frame_over_shoot_limit) {
   if (cpi->oxcf.rc_mode == VPX_Q) {
     *frame_under_shoot_limit = 0;
     *frame_over_shoot_limit  = INT_MAX;
@@ -1231,14 +1344,13 @@ static void update_alt_ref_frame_stats(VP10_COMP *cpi) {
 static void update_golden_frame_stats(VP10_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
 
-#if CONFIG_EXT_REFS
   // Update the Golden frame usage counts.
-  // Wei-Ting: If we use show_existing_frame for an OVERLAY frame, only the
-  //           virtual indices for the reference frame will be updated and
-  //           cpi->refresh_golden_frame will still be zero.
+#if CONFIG_EXT_REFS
+  // NOTE(weitinglin): If we use show_existing_frame for an OVERLAY frame, only
+  //                   the virtual indices for the reference frame will be
+  //                   updated and cpi->refresh_golden_frame will still be zero.
   if (cpi->refresh_golden_frame || rc->is_src_frame_alt_ref) {
 #else
-    // Update the Golden frame usage counts.
   if (cpi->refresh_golden_frame) {
 #endif
     // this frame refreshes means next frames don't unless specified by user
@@ -1557,7 +1669,7 @@ void vp10_rc_get_one_pass_cbr_params(VP10_COMP *cpi) {
 }
 
 int vp10_compute_qdelta(const RATE_CONTROL *rc, double qstart, double qtarget,
-                       vpx_bit_depth_t bit_depth) {
+                        vpx_bit_depth_t bit_depth) {
   int start_index = rc->worst_quality;
   int target_index = rc->worst_quality;
   int i;
@@ -1580,14 +1692,14 @@ int vp10_compute_qdelta(const RATE_CONTROL *rc, double qstart, double qtarget,
 }
 
 int vp10_compute_qdelta_by_rate(const RATE_CONTROL *rc, FRAME_TYPE frame_type,
-                               int qindex, double rate_target_ratio,
-                               vpx_bit_depth_t bit_depth) {
+                                int qindex, double rate_target_ratio,
+                                vpx_bit_depth_t bit_depth) {
   int target_index = rc->worst_quality;
   int i;
 
   // Look up the current projected bits per block for the base index
   const int base_bits_per_mb = vp10_rc_bits_per_mb(frame_type, qindex, 1.0,
-                                                  bit_depth);
+                                                   bit_depth);
 
   // Find the target bits per mb based on the base value and given ratio.
   const int target_bits_per_mb = (int)(rate_target_ratio * base_bits_per_mb);
@@ -1604,7 +1716,7 @@ int vp10_compute_qdelta_by_rate(const RATE_CONTROL *rc, FRAME_TYPE frame_type,
 }
 
 void vp10_rc_set_gf_interval_range(const VP10_COMP *const cpi,
-                                  RATE_CONTROL *const rc) {
+                                   RATE_CONTROL *const rc) {
   const VP10EncoderConfig *const oxcf = &cpi->oxcf;
 
   // Special case code for 1 pass fixed Q mode tests
