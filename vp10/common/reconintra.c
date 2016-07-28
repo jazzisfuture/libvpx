@@ -1522,6 +1522,7 @@ void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in, int bhl_in,
                               uint8_t *dst, int dst_stride,
                               int col_off, int row_off, int plane) {
   const int txw = num_4x4_blocks_wide_txsize_lookup[tx_size];
+  const int txh = num_4x4_blocks_high_txsize_lookup[tx_size];
   const int have_top = row_off || xd->up_available;
   const int have_left = col_off || xd->left_available;
   const int x = col_off * 4;
@@ -1533,19 +1534,24 @@ void vp10_predict_intra_block(const MACROBLOCKD *xd, int bwl_in, int bhl_in,
   const BLOCK_SIZE bsize = xd->mi[0]->mbmi.sb_type;
   const struct macroblockd_plane *const pd = &xd->plane[plane];
   const int right_available =
-      mi_col + (1 << mi_width_log2_lookup[bsize]) < xd->tile.mi_col_end;
+      (mi_col + ((col_off + txw) >> (1 - pd->subsampling_x))) <
+      xd->tile.mi_col_end;
+  const int bottom_available =
+      xd->mb_to_bottom_edge +
+      8 * (((1 << bhl_in) - row_off - txh) >> (1 - pd->subsampling_y)) > 0;
 #if CONFIG_EXT_PARTITION_TYPES
   const PARTITION_TYPE partition = xd->mi[0]->mbmi.partition;
 #endif
   const int have_right = vp10_has_right(bsize, mi_row, mi_col,
-                                          right_available,
+                                        right_available,
 #if CONFIG_EXT_PARTITION_TYPES
-                                          partition,
+                                        partition,
 #endif
-                                          tx_size, row_off, col_off,
-                                          pd->subsampling_x);
+                                        tx_size, row_off, col_off,
+                                        pd->subsampling_x);
   const int have_bottom = vp10_has_bottom(bsize, mi_row, mi_col,
-                                          xd->mb_to_bottom_edge > 0,
+                                          xd->mb_to_bottom_edge +
+                                          bottom_available,
                                           tx_size, row_off, col_off,
                                           pd->subsampling_y);
   const int wpx = 4 * bw;
