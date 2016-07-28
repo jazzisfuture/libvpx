@@ -33,7 +33,8 @@ typedef enum {
   INTER_NORMAL = 0,
   INTER_LOW = 1,
   INTER_HIGH = 2,
-  GF_ARF_LOW = 3,
+  BRF_STD = 3,
+  GF_ARF_LOW = 4,
   GF_ARF_STD = 5,
   KF_STD = 6,
   RATE_FACTOR_LEVELS = 7
