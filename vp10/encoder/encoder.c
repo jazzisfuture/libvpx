@@ -72,7 +72,7 @@
                                          // mv. Choose a very high value for
                                          // now so that HIGH_PRECISION is always
                                          // chosen.
-// #define OUTPUT_YUV_REC
+#define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_DENOISED
 FILE *yuv_denoised_file = NULL;
@@ -4706,7 +4706,7 @@ static int setup_interp_filter_search_mask(VP10_COMP *cpi) {
   return mask;
 }
 
-#define DUMP_RECON_FRAMES 0
+#define DUMP_RECON_FRAMES 1
 
 #if DUMP_RECON_FRAMES == 1
 // NOTE(zoeliu): For debug - Output the filtered reconstructed video.
