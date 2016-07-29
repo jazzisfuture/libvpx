@@ -47,10 +47,10 @@ DSP_SRCS-$(HAVE_SSE2) += x86/intrapred_sse2.asm
 DSP_SRCS-$(HAVE_SSSE3) += x86/intrapred_ssse3.asm
 DSP_SRCS-$(HAVE_SSSE3) += x86/vpx_subpixel_8t_ssse3.asm
 
-ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifeq ($(CONFIG_VPX_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE)  += x86/highbd_intrapred_sse2.asm
 DSP_SRCS-$(HAVE_SSE2) += x86/highbd_intrapred_sse2.asm
-endif  # CONFIG_VP9_HIGHBITDEPTH
+endif  # CONFIG_VPX_HIGHBITDEPTH
 
 ifneq ($(filter yes,$(CONFIG_POSTPROC) $(CONFIG_VP9_POSTPROC)),)
 DSP_SRCS-yes += add_noise.c
@@ -98,7 +98,7 @@ DSP_SRCS-$(HAVE_SSSE3) += x86/vpx_subpixel_8t_ssse3.asm
 DSP_SRCS-$(HAVE_SSSE3) += x86/vpx_subpixel_bilinear_ssse3.asm
 DSP_SRCS-$(HAVE_AVX2)  += x86/vpx_subpixel_8t_intrin_avx2.c
 DSP_SRCS-$(HAVE_SSSE3) += x86/vpx_subpixel_8t_intrin_ssse3.c
-ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifeq ($(CONFIG_VPX_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE2)  += x86/vpx_high_subpixel_8t_sse2.asm
 DSP_SRCS-$(HAVE_SSE2)  += x86/vpx_high_subpixel_bilinear_sse2.asm
 endif
@@ -177,9 +177,9 @@ DSP_SRCS-$(HAVE_DSPR2)  += mips/loopfilter_mb_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2)  += mips/loopfilter_mb_horiz_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2)  += mips/loopfilter_mb_vert_dspr2.c
 
-ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifeq ($(CONFIG_VPX_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_loopfilter_sse2.c
-endif  # CONFIG_VP9_HIGHBITDEPTH
+endif  # CONFIG_VPX_HIGHBITDEPTH
 
 DSP_SRCS-yes            += txfm_common.h
 DSP_SRCS-$(HAVE_SSE2)   += x86/txfm_common_sse2.h
@@ -244,14 +244,14 @@ DSP_SRCS-$(HAVE_MSA)   += mips/idct8x8_msa.c
 DSP_SRCS-$(HAVE_MSA)   += mips/idct16x16_msa.c
 DSP_SRCS-$(HAVE_MSA)   += mips/idct32x32_msa.c
 
-ifneq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifneq ($(CONFIG_VPX_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_DSPR2) += mips/inv_txfm_dspr2.h
 DSP_SRCS-$(HAVE_DSPR2) += mips/itrans4_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2) += mips/itrans8_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2) += mips/itrans16_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2) += mips/itrans32_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2) += mips/itrans32_cols_dspr2.c
-endif  # CONFIG_VP9_HIGHBITDEPTH
+endif  # CONFIG_VPX_HIGHBITDEPTH
 endif  # CONFIG_VP10
 
 # quantization
@@ -260,7 +260,7 @@ DSP_SRCS-yes            += quantize.c
 DSP_SRCS-yes            += quantize.h
 
 DSP_SRCS-$(HAVE_SSE2)   += x86/quantize_sse2.c
-ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifeq ($(CONFIG_VPX_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_quantize_intrin_sse2.c
 endif
 ifeq ($(ARCH_X86_64),yes)
@@ -279,7 +279,7 @@ DSP_SRCS-$(HAVE_SSSE3) += x86/avg_ssse3_x86_64.asm
 endif
 
 # high bit depth subtract
-ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifeq ($(CONFIG_VPX_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE2)  += x86/highbd_subtract_sse2.c
 endif
 
@@ -326,10 +326,10 @@ DSP_SRCS-$(HAVE_SSE2)   += x86/sad4d_sse2.asm
 DSP_SRCS-$(HAVE_SSE2)   += x86/sad_sse2.asm
 DSP_SRCS-$(HAVE_SSE2)   += x86/subtract_sse2.asm
 
-ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifeq ($(CONFIG_VPX_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE2) += x86/highbd_sad4d_sse2.asm
 DSP_SRCS-$(HAVE_SSE2) += x86/highbd_sad_sse2.asm
-endif  # CONFIG_VP9_HIGHBITDEPTH
+endif  # CONFIG_VPX_HIGHBITDEPTH
 
 endif  # CONFIG_ENCODERS
 
@@ -363,12 +363,12 @@ endif  # ARCH_X86_64
 DSP_SRCS-$(HAVE_SSE)    += x86/subpel_variance_sse2.asm
 DSP_SRCS-$(HAVE_SSE2)   += x86/subpel_variance_sse2.asm  # Contains SSE2 and SSSE3
 
-ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifeq ($(CONFIG_VPX_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_variance_sse2.c
 DSP_SRCS-$(HAVE_SSE4_1) += x86/highbd_variance_sse4.c
 DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_variance_impl_sse2.asm
 DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_subpel_variance_impl_sse2.asm
-endif  # CONFIG_VP9_HIGHBITDEPTH
+endif  # CONFIG_VPX_HIGHBITDEPTH
 endif  # CONFIG_ENCODERS || CONFIG_POSTPROC || CONFIG_VP9_POSTPROC
 
 DSP_SRCS-no += $(DSP_SRCS_REMOVE-yes)
