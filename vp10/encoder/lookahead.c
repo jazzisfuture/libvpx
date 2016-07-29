@@ -50,7 +50,7 @@ struct lookahead_ctx *vp10_lookahead_init(unsigned int width,
                                           unsigned int height,
                                           unsigned int subsampling_x,
                                           unsigned int subsampling_y,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VPX_HIGHBITDEPTH
                                           int use_highbitdepth,
 #endif
                                           unsigned int depth) {
@@ -74,10 +74,10 @@ struct lookahead_ctx *vp10_lookahead_init(unsigned int width,
     for (i = 0; i < depth; i++)
       if (vpx_alloc_frame_buffer(&ctx->buf[i].img,
                                  width, height, subsampling_x, subsampling_y,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VPX_HIGHBITDEPTH
                                  use_highbitdepth,
 #endif
-                                 VP9_ENC_BORDER_IN_PIXELS,
+                                 VPX_ENC_BORDER_IN_PIXELS,
                                  legacy_byte_alignment))
         goto bail;
   }
@@ -91,7 +91,7 @@ struct lookahead_ctx *vp10_lookahead_init(unsigned int width,
 
 int vp10_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
                        int64_t ts_start, int64_t ts_end,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VPX_HIGHBITDEPTH
                        int use_highbitdepth,
 #endif
                        unsigned int flags) {
@@ -174,10 +174,10 @@ int vp10_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
       memset(&new_img, 0, sizeof(new_img));
       if (vpx_alloc_frame_buffer(&new_img,
                                  width, height, subsampling_x, subsampling_y,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VPX_HIGHBITDEPTH
                                  use_highbitdepth,
 #endif
-                                 VP9_ENC_BORDER_IN_PIXELS,
+                                 VPX_ENC_BORDER_IN_PIXELS,
                                  0))
           return 1;
       vpx_free_frame_buffer(&buf->img);
