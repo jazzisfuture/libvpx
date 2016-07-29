@@ -520,7 +520,7 @@ static void warp_plane(WarpedMotionParams *wm,
   }
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VPX_HIGHBITDEPTH
 static INLINE void highbd_get_subcolumn(int taps, uint16_t *ref, int32_t *col,
                                         int stride, int x, int y_start) {
   int i;
@@ -669,7 +669,7 @@ static void highbd_warp_plane(WarpedMotionParams *wm,
     }
   }
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VPX_HIGHBITDEPTH
 
 void vp10_warp_plane(WarpedMotionParams *wm,
 #if CONFIG_VP9_HIGHBITDEPTH

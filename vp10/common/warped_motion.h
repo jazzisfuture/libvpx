@@ -55,9 +55,9 @@ typedef struct {
 } WarpedMotionParams;
 
 void vp10_warp_plane(WarpedMotionParams *wm,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VPX_HIGHBITDEPTH
                      int use_hbd, int bd,
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VPX_HIGHBITDEPTH
                      uint8_t *ref,
                      int width, int height, int stride,
                      uint8_t *pred,
