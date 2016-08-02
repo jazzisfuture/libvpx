@@ -24,7 +24,6 @@
 #include "vp9/encoder/vp9_encoder.h"
 
 #ifdef __cplusplus
-
 extern "C" {
 #endif
 
