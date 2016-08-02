@@ -27,6 +27,9 @@
 #define ALT_REF_AQ_SEGMENT_MIN_AREA 0
 #define ALT_REF_AQ_NUM_NONZERO_SEGMENTS 1
 
+#define ALT_REF_AQ_DELTA_SHRINK 2
+#define ALT_REF_AQ_SINGLE_SEGMENT_DELTA_SHRINK 1.5
+
 #ifdef __cplusplus
 extern "C" {
 #endif
