@@ -11,7 +11,7 @@
 #include <arm_neon.h>
 
 static const int16_t cospi8sqrt2minus1 = 20091;
-static const int16_t sinpi8sqrt2 = 35468;
+static const int16_t sinpi8sqrt2 = 0x8A8C; // 35468
 
 void vp8_short_idct4x4llm_neon(int16_t *input, unsigned char *pred_ptr,
                                int pred_stride, unsigned char *dst_ptr,
