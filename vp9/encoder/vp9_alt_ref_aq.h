@@ -45,6 +45,9 @@
 // nonzero delta quantizers
 #define ALT_REF_AQ_NUM_NONZERO_SEGMENTS 1
 
+#define ALT_REF_AQ_DELTA_SHRINK 2
+#define ALT_REF_AQ_SINGLE_SEGMENT_DELTA_SHRINK 1.5
+
 #ifdef __cplusplus
 extern "C" {
 #endif
