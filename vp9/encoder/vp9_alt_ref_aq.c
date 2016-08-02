@@ -10,6 +10,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <math.h>
 
 #include "vpx_ports/system_state.h"
 #include "vpx_dsp/vpx_dsp_common.h"
@@ -26,6 +27,10 @@
 #include "vp9/encoder/vp9_alt_ref_aq_private.h"
 #include "vp9/encoder/vp9_alt_ref_aq.h"
 
+/* #ifndef NDEBUG */
+/* #  define ALT_REF_DEBUG_DIR "files/maps" */
+/* #endif */
+
 #define array_zerofill(array, nelems) \
   memset((array), 0, (nelems) * sizeof((array)[0]));
 
@@ -37,6 +42,46 @@ static void vp9_mat8u_init(struct MATX_8U *self) {
 }
 
 static void vp9_mat8u_destroy(struct MATX_8U *self) { vpx_free(self->data); }
+
+#ifdef ALT_REF_DEBUG_DIR
+
+static void vp9_mat8u_imwrite(const struct MATX_8U *image, const char *filename,
+                              int max_value) {
+  int i, j;
+
+  FILE *const image_file = fopen(filename, "wt");
+
+  assert(image->rows > 0 && image->cols > 0);
+  assert(image->data != NULL);
+
+  if (max_value <= 0) max_value = 255;
+
+  fprintf(image_file, "P2\n");
+  fprintf(image_file, "%d ", image->cols);
+  fprintf(image_file, "%d ", image->rows);
+  fprintf(image_file, "%d ", max_value);
+
+  for (i = 0; i < image->rows; ++i) {
+    const uint8_t *row_data = &image->data[i * image->stride];
+
+    fprintf(image_file, "\n");
+    for (j = 0; j < image->cols; ++j) fprintf(image_file, "%hhu ", row_data[j]);
+  }
+
+  fclose(image_file);
+}
+
+static void vp9_alt_ref_aq_dump_debug_data(struct ALT_REF_AQ *self) {
+  char format[] = ALT_REF_DEBUG_DIR "/alt_ref_quality_map%d.ppm";
+  char filename[sizeof(format) / sizeof(format[0]) + 10];
+
+  ++self->alt_ref_number;
+
+  snprintf(filename, sizeof(filename), format, self->alt_ref_number);
+  vp9_mat8u_imwrite(&self->segmentation_map, filename, self->nsegments - 1);
+}
+
+#endif
 
 static void vp9_alt_ref_aq_update_number_of_segments(struct ALT_REF_AQ *self) {
   int i, j;
@@ -176,6 +221,10 @@ static void vp9_alt_ref_aq_process_map(struct ALT_REF_AQ *const self) {
 
   if (self->nsegments == 1) return;
 
+#ifdef ALT_REF_DEBUG_DIR
+  vp9_alt_ref_aq_dump_debug_data(self);
+#endif
+
   vp9_alt_ref_aq_update_segmentation_map(self);
 }
 
@@ -191,7 +240,6 @@ void vp9_alt_ref_aq_destroy(struct ALT_REF_AQ *const self) {
 struct MATX_8U *vp9_alt_ref_aq_segm_map(struct ALT_REF_AQ *const self) {
   return &self->segmentation_map;
 }
-
 void vp9_alt_ref_aq_set_nsegments(struct ALT_REF_AQ *const self,
                                   int nsegments) {
   self->nsegments = nsegments;
@@ -199,7 +247,7 @@ void vp9_alt_ref_aq_set_nsegments(struct ALT_REF_AQ *const self,
 
 void vp9_alt_ref_aq_setup_mode(struct ALT_REF_AQ *const self,
                                struct VP9_COMP *const cpi) {
-  (void)cpi;
+  VPX_SWAP(AQ_MODE, self->aq_mode, cpi->oxcf.aq_mode);
   vp9_alt_ref_aq_process_map(self);
 }
 
