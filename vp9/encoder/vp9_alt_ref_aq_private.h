@@ -38,6 +38,9 @@ struct ALT_REF_AQ {
   // private member used for segment ids convertion
   int _segment_changes[ALT_REF_MAX_FRAMES + 1];
 
+  // private member storing total number of delta steps
+  int _nsteps;
+
   // private member for storing distribution of the segment ids
   int _segment_hist[ALT_REF_MAX_FRAMES];
 
@@ -45,6 +48,17 @@ struct ALT_REF_AQ {
   // it can be different from nsteps
   // because of the range compression
   int nsegments;
+
+  // the greater this number is, the lower
+  // delta quantizer between segments is
+  float DELTA_SHRINK;
+
+  // the same as DELTA_SHRINK, but for the case,
+  // when the entire frame gets same qdelta
+  float SINGLE_SEGMENT_DELTA_SHRINK;
+
+  // either DELTA_SHRINK or SINGLE_FRAME_DELTA_SHRINK
+  float delta_shrink;
 
   // number of segments to assign
   // nonzero delta quantizers
