@@ -537,7 +537,7 @@ static INLINE int get_ext_tx_types(TX_SIZE tx_size, BLOCK_SIZE bs,
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_EXT_INTRA
-#define ALLOW_FILTER_INTRA_MODES 1
+#define ALLOW_FILTER_INTRA_MODES 0
 #define ANGLE_STEP 3
 #define MAX_ANGLE_DELTAS 3
 
