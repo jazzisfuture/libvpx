@@ -122,7 +122,7 @@ static INLINE void loop_filter_neon_16(uint8x16_t qblimit,  // blimit
   return;
 }
 
-void vpx_lpf_horizontal_4_dual_neon(
+void vpx_lpf_horizontal_4_dual_neon_org(
     uint8_t *s, int p /* pitch */, const uint8_t *blimit0,
     const uint8_t *limit0, const uint8_t *thresh0, const uint8_t *blimit1,
     const uint8_t *limit1, const uint8_t *thresh1) {

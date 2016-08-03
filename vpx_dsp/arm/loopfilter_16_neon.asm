@@ -8,7 +8,7 @@
 ;  be found in the AUTHORS file in the root of the source tree.
 ;
 
-    EXPORT  |vpx_lpf_horizontal_4_dual_neon|
+    EXPORT  |vpx_lpf_horizontal_4_dual_neon_asm|
     ARM
 
     AREA ||.text||, CODE, READONLY, ALIGN=2
@@ -29,7 +29,7 @@
 ; sp+8  const uint8_t *limit1,
 ; sp+12 const uint8_t *thresh1,
 
-|vpx_lpf_horizontal_4_dual_neon| PROC
+|vpx_lpf_horizontal_4_dual_neon_asm| PROC
     push        {lr}
 
     ldr         r12, [sp, #4]              ; load thresh0

@@ -259,7 +259,7 @@ static INLINE void mbloop_filter_neon(uint8x8_t dblimit,   // mblimit
   return;
 }
 
-void vpx_lpf_horizontal_8_neon(uint8_t *src, int pitch, const uint8_t *blimit,
+void vpx_lpf_horizontal_8_neon_org(uint8_t *src, int pitch, const uint8_t *blimit,
                                const uint8_t *limit, const uint8_t *thresh) {
   int i;
   uint8_t *s, *psrc;
@@ -311,7 +311,7 @@ void vpx_lpf_horizontal_8_neon(uint8_t *src, int pitch, const uint8_t *blimit,
   return;
 }
 
-void vpx_lpf_horizontal_8_dual_neon(
+void vpx_lpf_horizontal_8_dual_neon_org(
     uint8_t *s, int p /* pitch */, const uint8_t *blimit0,
     const uint8_t *limit0, const uint8_t *thresh0, const uint8_t *blimit1,
     const uint8_t *limit1, const uint8_t *thresh1) {
@@ -319,7 +319,7 @@ void vpx_lpf_horizontal_8_dual_neon(
   vpx_lpf_horizontal_8_neon(s + 8, p, blimit1, limit1, thresh1);
 }
 
-void vpx_lpf_vertical_8_neon(uint8_t *src, int pitch, const uint8_t *blimit,
+void vpx_lpf_vertical_8_neon_org(uint8_t *src, int pitch, const uint8_t *blimit,
                              const uint8_t *limit, const uint8_t *thresh) {
   int i;
   uint8_t *s;
@@ -436,7 +436,7 @@ void vpx_lpf_vertical_8_neon(uint8_t *src, int pitch, const uint8_t *blimit,
   return;
 }
 
-void vpx_lpf_vertical_8_dual_neon(uint8_t *s, int p, const uint8_t *blimit0,
+void vpx_lpf_vertical_8_dual_neon_org(uint8_t *s, int p, const uint8_t *blimit0,
                                   const uint8_t *limit0, const uint8_t *thresh0,
                                   const uint8_t *blimit1, const uint8_t *limit1,
                                   const uint8_t *thresh1) {
