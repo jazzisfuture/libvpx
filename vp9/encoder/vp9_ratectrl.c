@@ -1238,6 +1238,7 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi, int frame_target,
     *frame_under_shoot_limit = VPXMAX(frame_target - tol_low - 100, 0);
     *frame_over_shoot_limit =
         VPXMIN(frame_target + tol_high + 100, cpi->rc.max_frame_bandwidth);
+
   }
 }
 
@@ -2143,6 +2144,10 @@ void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi, uint64_t avg_sad_current) {
       rc->af_ratio_onepass_vbr = 5;
       rc->gfu_boost = DEFAULT_GF_BOOST >> 2;
     }
+    // Don't use alt-ref if there is a scene cut within the group.
+    if (rc->high_source_sad_lagindex > 0 &&
+        rc->high_source_sad_lagindex <= rc->frames_till_gf_update_due)
+      rc->source_alt_ref_pending = 0;
     target = calc_pframe_target_size_one_pass_vbr(cpi);
     vp9_rc_set_frame_target(cpi, target);
 #if LIMIT_QP_ONEPASS_VBR_LAG
@@ -2278,6 +2283,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         cpi->ext_refresh_frame_flags_pending == 0) {
       int target;
       cpi->refresh_golden_frame = 1;
+      rc->source_alt_ref_pending = 1;
       rc->gfu_boost = DEFAULT_GF_BOOST >> 1;
       rc->baseline_gf_interval =
           VPXMIN(20, VPXMAX(10, rc->baseline_gf_interval));
