@@ -8,10 +8,10 @@
 ;  be found in the AUTHORS file in the root of the source tree.
 ;
 
-    EXPORT  |vpx_lpf_horizontal_8_neon|
-    EXPORT  |vpx_lpf_horizontal_8_dual_neon|
-    EXPORT  |vpx_lpf_vertical_8_neon|
-    EXPORT  |vpx_lpf_vertical_8_dual_neon|
+    EXPORT  |vpx_lpf_horizontal_8_neon_asm|
+    EXPORT  |vpx_lpf_horizontal_8_dual_neon_asm|
+    EXPORT  |vpx_lpf_vertical_8_neon_asm|
+    EXPORT  |vpx_lpf_vertical_8_dual_neon_asm|
     ARM
 
     AREA ||.text||, CODE, READONLY, ALIGN=2
@@ -28,7 +28,7 @@
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh,
-|vpx_lpf_horizontal_8_neon| PROC
+|vpx_lpf_horizontal_8_neon_asm| PROC
     push        {r4-r5, lr}
 
     vld1.8      {d0[]}, [r2]               ; duplicate *blimit
@@ -82,7 +82,7 @@
 ; sp + 4  const uint8_t *blimit1,
 ; sp + 8  const uint8_t *limit1,
 ; sp + 12 const uint8_t *thresh1,
-|vpx_lpf_horizontal_8_dual_neon| PROC
+|vpx_lpf_horizontal_8_dual_neon_asm| PROC
     push        {r0-r1, lr}
     ldr         lr, [sp, #12]
     push        {lr}                       ; thresh0
@@ -109,7 +109,7 @@
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh,
-|vpx_lpf_vertical_8_neon| PROC
+|vpx_lpf_vertical_8_neon_asm| PROC
     push        {r4-r5, lr}
 
     vld1.8      {d0[]}, [r2]              ; duplicate *blimit
@@ -189,7 +189,7 @@
 ; sp + 4  const uint8_t *blimit1,
 ; sp + 8  const uint8_t *limit1,
 ; sp + 12 const uint8_t *thresh1,
-|vpx_lpf_vertical_8_dual_neon| PROC
+|vpx_lpf_vertical_8_dual_neon_asm| PROC
     push        {r0-r1, lr}
     ldr         lr, [sp, #12]
     push        {lr}                       ; thresh0
