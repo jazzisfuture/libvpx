@@ -8,10 +8,10 @@
 ;  be found in the AUTHORS file in the root of the source tree.
 ;
 
-    EXPORT  |vpx_lpf_horizontal_edge_8_neon|
-    EXPORT  |vpx_lpf_horizontal_edge_16_neon|
-    EXPORT  |vpx_lpf_vertical_16_neon|
-    EXPORT  |vpx_lpf_vertical_16_dual_neon|
+    EXPORT  |vpx_lpf_horizontal_edge_8_neon_asm|
+    EXPORT  |vpx_lpf_horizontal_edge_16_neon_asm|
+    EXPORT  |vpx_lpf_vertical_16_neon_asm|
+    EXPORT  |vpx_lpf_vertical_16_dual_neon_asm|
     ARM
 
     AREA ||.text||, CODE, READONLY, ALIGN=2
@@ -128,10 +128,10 @@ h_next
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh
-|vpx_lpf_horizontal_edge_8_neon| PROC
+|vpx_lpf_horizontal_edge_8_neon_asm| PROC
     mov r12, #1
     b mb_lpf_horizontal_edge
-    ENDP        ; |vpx_lpf_horizontal_edge_8_neon|
+    ENDP        ; |vpx_lpf_horizontal_edge_8_neon_asm|
 
 ; void vpx_lpf_horizontal_edge_16_neon(uint8_t *s, int pitch,
 ;                                      const uint8_t *blimit,
@@ -142,10 +142,10 @@ h_next
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh
-|vpx_lpf_horizontal_edge_16_neon| PROC
+|vpx_lpf_horizontal_edge_16_neon_asm| PROC
     mov r12, #2
     b mb_lpf_horizontal_edge
-    ENDP        ; |vpx_lpf_horizontal_edge_16_neon|
+    ENDP        ; |vpx_lpf_horizontal_edge_16_neon_asm|
 
 ; void mb_lpf_vertical_edge_w(uint8_t *s, int p, const uint8_t *blimit,
 ;                             const uint8_t *limit, const uint8_t *thresh,
@@ -323,10 +323,10 @@ v_next
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh
-|vpx_lpf_vertical_16_neon| PROC
+|vpx_lpf_vertical_16_neon_asm| PROC
     mov r12, #1
     b mb_lpf_vertical_edge_w
-    ENDP        ; |vpx_lpf_vertical_16_neon|
+    ENDP        ; |vpx_lpf_vertical_16_neon_asm|
 
 ; void vpx_lpf_vertical_16_dual_neon(uint8_t *s, int p, const uint8_t *blimit,
 ;                                    const uint8_t *limit,
@@ -336,10 +336,10 @@ v_next
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh
-|vpx_lpf_vertical_16_dual_neon| PROC
+|vpx_lpf_vertical_16_dual_neon_asm| PROC
     mov r12, #2
     b mb_lpf_vertical_edge_w
-    ENDP        ; |vpx_lpf_vertical_16_dual_neon|
+    ENDP        ; |vpx_lpf_vertical_16_dual_neon_asm|
 
 ; void vpx_wide_mbfilter_neon();
 ; This is a helper function for the loopfilters. The invidual functions do the
