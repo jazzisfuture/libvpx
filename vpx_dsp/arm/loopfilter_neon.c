@@ -14,10 +14,10 @@
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
 
-void vpx_lpf_vertical_4_dual_neon(uint8_t *s, int p, const uint8_t *blimit0,
+void vpx_lpf_vertical_4_dual_neon_org(uint8_t *s, int p, const uint8_t *blimit0,
                                   const uint8_t *limit0, const uint8_t *thresh0,
                                   const uint8_t *blimit1, const uint8_t *limit1,
                                   const uint8_t *thresh1) {
-  vpx_lpf_vertical_4_neon(s, p, blimit0, limit0, thresh0);
-  vpx_lpf_vertical_4_neon(s + 8 * p, p, blimit1, limit1, thresh1);
+  vpx_lpf_vertical_4_neon_org(s, p, blimit0, limit0, thresh0);
+  vpx_lpf_vertical_4_neon_org(s + 8 * p, p, blimit1, limit1, thresh1);
 }

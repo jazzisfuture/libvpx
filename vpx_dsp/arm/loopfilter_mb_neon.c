@@ -31,6 +31,15 @@ FUN_LOAD_THRESH(8, _)    // load_thresh_8
 FUN_LOAD_THRESH(16, q_)  // load_thresh_16
 #undef FUN_LOAD_THRESH
 
+static INLINE void load_thresh_8_dual(
+    const uint8_t *blimit0, const uint8_t *limit0, const uint8_t *thresh0,
+    const uint8_t *blimit1, const uint8_t *limit1, const uint8_t *thresh1,
+    uint8x16_t *blimit_vec, uint8x16_t *limit_vec, uint8x16_t *thresh_vec) {
+  *blimit_vec = vcombine_u8(vld1_dup_u8(blimit0), vld1_dup_u8(blimit1));
+  *limit_vec = vcombine_u8(vld1_dup_u8(limit0), vld1_dup_u8(limit1));
+  *thresh_vec = vcombine_u8(vld1_dup_u8(thresh0), vld1_dup_u8(thresh1));
+}
+
 // Here flat is 64-bit long, with each 8-bit (or 4-bit) chunk being a mask of a
 // pixel. When used to control filter branches, we only detect whether it is all
 // 0s or all 1s. We pairwise add flat to a 32-bit long number flat_status.
@@ -55,6 +64,39 @@ static INLINE uint32_t calc_flat_status_16(uint8x16_t flat) {
       vreinterpret_u8_s8(vshrn_n_s16(vreinterpretq_s16_u8(flat), 4));
   return calc_flat_status_8(flat_4bit);
 }
+
+#define FUN_FILTER_HEV_MASK4(w, r)                                            \
+  static INLINE uint8x##w##_t filter_hev_mask4_##w(                           \
+      const uint8x##w##_t limit, const uint8x##w##_t blimit,                  \
+      const uint8x##w##_t thresh, const uint8x##w##_t p3,                     \
+      const uint8x##w##_t p2, const uint8x##w##_t p1, const uint8x##w##_t p0, \
+      const uint8x##w##_t q0, const uint8x##w##_t q1, const uint8x##w##_t q2, \
+      const uint8x##w##_t q3, uint8x##w##_t *hev) {                           \
+    uint8x##w##_t max0, max1, t0, t1;                                         \
+                                                                              \
+    max0 = vabd##r##u8(p1, p0);                                               \
+    max1 = vabd##r##u8(p3, p2);                                               \
+    max0 = vmax##r##u8(max0, vabd##r##u8(q1, q0));                            \
+    max1 = vmax##r##u8(max1, vabd##r##u8(p2, p1));                            \
+    *hev = vcgt##r##u8(max0, thresh);                                         \
+    max0 = vmax##r##u8(max0, vabd##r##u8(q2, q1));                            \
+    max1 = vmax##r##u8(max1, vabd##r##u8(q3, q2));                            \
+    max0 = vmax##r##u8(max0, max1);                                           \
+    t0 = vabd##r##u8(p0, q0);                                                 \
+    t1 = vabd##r##u8(p1, q1);                                                 \
+    t0 = vqadd##r##u8(t0, t0);                                                \
+    t1 = vshr##r##n_u8(t1, 1);                                                \
+    t0 = vqadd##r##u8(t0, t1);                                                \
+    max0 = vcle##r##u8(max0, limit);                                          \
+    t0 = vcle##r##u8(t0, blimit);                                             \
+    max0 = vand##r##u8(max0, t0);                                             \
+                                                                              \
+    return max0;                                                              \
+  }
+
+FUN_FILTER_HEV_MASK4(8, _)    // filter_hev_mask4_8
+FUN_FILTER_HEV_MASK4(16, q_)  // filter_hev_mask4_16
+#undef FUN_FILTER_HEV_MASK4
 
 #define FUN_FILTER_FLAT_HEV_MASK(w, r)                                        \
   static INLINE uint8x##w##_t filter_flat_hev_mask_##w(                       \
@@ -420,6 +462,33 @@ FUN_FILTER4(8, _)    // filter4_8
 FUN_FILTER4(16, q_)  // filter4_16
 #undef FUN_FILTER4
 
+#define FUN_FILTER8(w)                                                         \
+  static INLINE void filter8_##w(                                              \
+      const uint8x##w##_t mask, const uint8x##w##_t flat,                      \
+      const uint32_t flat_status, const uint8x##w##_t hev,                     \
+      const uint8x##w##_t p3, const uint8x##w##_t p2, const uint8x##w##_t p1,  \
+      const uint8x##w##_t p0, const uint8x##w##_t q0, const uint8x##w##_t q1,  \
+      const uint8x##w##_t q2, const uint8x##w##_t q3, uint8x##w##_t *op2,      \
+      uint8x##w##_t *op1, uint8x##w##_t *op0, uint8x##w##_t *oq0,              \
+      uint8x##w##_t *oq1, uint8x##w##_t *oq2) {                                \
+    if (flat_status != (uint32_t)-2) {                                         \
+      filter4_##w(mask, hev, p1, p0, q0, q1, op1, op0, oq0, oq1);              \
+      *op2 = p2;                                                               \
+      *oq2 = q2;                                                               \
+      if (flat_status) {                                                       \
+        apply_7_tap_filter_##w(flat, p3, p2, p1, p0, q0, q1, q2, q3, op2, op1, \
+                               op0, oq0, oq1, oq2);                            \
+      }                                                                        \
+    } else {                                                                   \
+      calc_7_tap_filter_##w(p3, p2, p1, p0, q0, q1, q2, q3, op2, op1, op0,     \
+                            oq0, oq1, oq2);                                    \
+    }                                                                          \
+  }
+
+FUN_FILTER8(8)   // filter8_8
+FUN_FILTER8(16)  // filter8_16
+#undef FUN_FILTER8
+
 #define FUN_FILTER16(w)                                                        \
   static INLINE void filter16_##w(                                             \
       const uint8x##w##_t mask, const uint8x##w##_t flat,                      \
@@ -481,6 +550,7 @@ FUN_FILTER16(16)  // filter16_16
     *q3 = vld1##r##u8(s);                                                  \
   }
 
+FUN_LOAD8(8, _)    // load_8x8
 FUN_LOAD8(16, q_)  // load_16x8
 #undef FUN_LOAD8
 
@@ -528,6 +598,45 @@ FUN_LOAD8(16, q_)  // load_16x8
 FUN_LOAD16(8, _)    // load_8x16
 FUN_LOAD16(16, q_)  // load_16x16
 #undef FUN_LOAD16
+
+#define FUN_STORE4(w, r)                                                       \
+  static INLINE void store_##w##x4(                                            \
+      uint8_t *s, const int p, const uint8x##w##_t s0, const uint8x##w##_t s1, \
+      const uint8x##w##_t s2, const uint8x##w##_t s3) {                        \
+    vst1##r##u8(s, s0);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s1);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s2);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s3);                                                        \
+  }
+
+FUN_STORE4(8, _)    // store_8x4
+FUN_STORE4(16, q_)  // store_16x4
+#undef FUN_STORE4
+
+#define FUN_STORE6(w, r)                                                       \
+  static INLINE void store_##w##x6(                                            \
+      uint8_t *s, const int p, const uint8x##w##_t s0, const uint8x##w##_t s1, \
+      const uint8x##w##_t s2, const uint8x##w##_t s3, const uint8x##w##_t s4,  \
+      const uint8x##w##_t s5) {                                                \
+    vst1##r##u8(s, s0);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s1);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s2);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s3);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s4);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s5);                                                        \
+  }
+
+FUN_STORE6(8, _)    // store_8x6
+FUN_STORE6(16, q_)  // store_16x6
+#undef FUN_STORE6
 
 static INLINE void store_6x8(uint8_t *s, const int p, const uint8x8_t s0,
                              const uint8x8_t s1, const uint8x8_t s2,
@@ -592,69 +701,78 @@ static INLINE void store_4x8(uint8_t *s, const int p, const uint8x8_t p1,
   vst4_lane_u8(s, o, 7);
 }
 
-static INLINE void store_16x8(uint8_t *s, const int p, const uint8x16_t s0,
-                              const uint8x16_t s1, const uint8x16_t s2,
-                              const uint8x16_t s3, const uint8x16_t s4,
-                              const uint8x16_t s5, const uint8x16_t s6,
-                              const uint8x16_t s7) {
-  vst1q_u8(s, s0);
-  s += p;
-  vst1q_u8(s, s1);
-  s += p;
-  vst1q_u8(s, s2);
-  s += p;
-  vst1q_u8(s, s3);
-  s += p;
-  vst1q_u8(s, s4);
-  s += p;
-  vst1q_u8(s, s5);
-  s += p;
-  vst1q_u8(s, s6);
-  s += p;
-  vst1q_u8(s, s7);
-}
+#define FUN_STORE8(w, r)                                                       \
+  static INLINE void store_##w##x8(                                            \
+      uint8_t *s, const int p, const uint8x##w##_t s0, const uint8x##w##_t s1, \
+      const uint8x##w##_t s2, const uint8x##w##_t s3, const uint8x##w##_t s4,  \
+      const uint8x##w##_t s5, const uint8x##w##_t s6,                          \
+      const uint8x##w##_t s7) {                                                \
+    vst1##r##u8(s, s0);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s1);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s2);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s3);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s4);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s5);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s6);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s7);                                                        \
+  }
 
-static INLINE void store_16x16(uint8_t *s, const int p, const uint8x16_t s0,
-                               const uint8x16_t s1, const uint8x16_t s2,
-                               const uint8x16_t s3, const uint8x16_t s4,
-                               const uint8x16_t s5, const uint8x16_t s6,
-                               const uint8x16_t s7, const uint8x16_t s8,
-                               const uint8x16_t s9, const uint8x16_t s10,
-                               const uint8x16_t s11, const uint8x16_t s12,
-                               const uint8x16_t s13, const uint8x16_t s14,
-                               const uint8x16_t s15) {
-  vst1q_u8(s, s0);
-  s += p;
-  vst1q_u8(s, s1);
-  s += p;
-  vst1q_u8(s, s2);
-  s += p;
-  vst1q_u8(s, s3);
-  s += p;
-  vst1q_u8(s, s4);
-  s += p;
-  vst1q_u8(s, s5);
-  s += p;
-  vst1q_u8(s, s6);
-  s += p;
-  vst1q_u8(s, s7);
-  s += p;
-  vst1q_u8(s, s8);
-  s += p;
-  vst1q_u8(s, s9);
-  s += p;
-  vst1q_u8(s, s10);
-  s += p;
-  vst1q_u8(s, s11);
-  s += p;
-  vst1q_u8(s, s12);
-  s += p;
-  vst1q_u8(s, s13);
-  s += p;
-  vst1q_u8(s, s14);
-  s += p;
-  vst1q_u8(s, s15);
-}
+FUN_STORE8(8, _)    // store_8x8
+FUN_STORE8(16, q_)  // store_16x8
+#undef FUN_STORE8
+
+#define FUN_STORE16(w, r)                                                      \
+  static INLINE void store_##w##x16(                                           \
+      uint8_t *s, const int p, const uint8x##w##_t s0, const uint8x##w##_t s1, \
+      const uint8x##w##_t s2, const uint8x##w##_t s3, const uint8x##w##_t s4,  \
+      const uint8x##w##_t s5, const uint8x##w##_t s6, const uint8x##w##_t s7,  \
+      const uint8x##w##_t s8, const uint8x##w##_t s9, const uint8x##w##_t s10, \
+      const uint8x##w##_t s11, const uint8x##w##_t s12,                        \
+      const uint8x##w##_t s13, const uint8x##w##_t s14,                        \
+      const uint8x##w##_t s15) {                                               \
+    vst1##r##u8(s, s0);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s1);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s2);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s3);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s4);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s5);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s6);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s7);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s8);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s9);                                                        \
+    s += p;                                                                    \
+    vst1##r##u8(s, s10);                                                       \
+    s += p;                                                                    \
+    vst1##r##u8(s, s11);                                                       \
+    s += p;                                                                    \
+    vst1##r##u8(s, s12);                                                       \
+    s += p;                                                                    \
+    vst1##r##u8(s, s13);                                                       \
+    s += p;                                                                    \
+    vst1##r##u8(s, s14);                                                       \
+    s += p;                                                                    \
+    vst1##r##u8(s, s15);                                                       \
+  }
+
+// FUN_STORE16(8, _)    // store_8x16
+FUN_STORE16(16, q_)  // store_16x16
+#undef FUN_STORE16
 
 #define FUN_STORE14(w, r)                                                      \
   static INLINE void store_##w##x14(                                           \
@@ -687,6 +805,170 @@ static INLINE void store_16x16(uint8_t *s, const int p, const uint8x16_t s0,
 FUN_STORE14(8, _)    // store_8x14
 FUN_STORE14(16, q_)  // store_16x14
 #undef FUN_STORE14
+
+#define FUN_HOR_4_KERNEL(name, w)                                              \
+  static INLINE void lpf_horizontal_4##name##kernel(                           \
+      uint8_t *s, const int p, const uint8x##w##_t blimit,                     \
+      const uint8x##w##_t limit, const uint8x##w##_t thresh) {                 \
+    uint8x##w##_t p3, p2, p1, p0, q0, q1, q2, q3, mask, hev;                   \
+                                                                               \
+    load_##w##x8(s - 4 * p, p, &p3, &p2, &p1, &p0, &q0, &q1, &q2, &q3);        \
+    mask = filter_hev_mask4_##w(limit, blimit, thresh, p3, p2, p1, p0, q0, q1, \
+                                q2, q3, &hev);                                 \
+    filter4_##w(mask, hev, p1, p0, q0, q1, &p1, &p0, &q0, &q1);                \
+    store_##w##x4(s - 2 * p, p, p1, p0, q0, q1);                               \
+  }
+
+FUN_HOR_4_KERNEL(_, 8)        // lpf_horizontal_4_kernel
+FUN_HOR_4_KERNEL(_dual_, 16)  // lpf_horizontal_4_dual_kernel
+#undef FUN_HOR_4_KERNEL
+
+void vpx_lpf_horizontal_4_neon(uint8_t *s, int p, const uint8_t *blimit,
+                               const uint8_t *limit, const uint8_t *thresh) {
+  uint8x8_t blimit_vec, limit_vec, thresh_vec;
+  load_thresh_8(blimit, limit, thresh, &blimit_vec, &limit_vec, &thresh_vec);
+  lpf_horizontal_4_kernel(s, p, blimit_vec, limit_vec, thresh_vec);
+}
+
+void vpx_lpf_horizontal_4_dual_neon(uint8_t *s, int p, const uint8_t *blimit0,
+                                    const uint8_t *limit0,
+                                    const uint8_t *thresh0,
+                                    const uint8_t *blimit1,
+                                    const uint8_t *limit1,
+                                    const uint8_t *thresh1) {
+  const uint8x16_t blimit_vec = vcombine_u8(vld1_u8(blimit0), vld1_u8(blimit1));
+  const uint8x16_t limit_vec = vcombine_u8(vld1_u8(limit0), vld1_u8(limit1));
+  const uint8x16_t thresh_vec = vcombine_u8(vld1_u8(thresh0), vld1_u8(thresh1));
+  lpf_horizontal_4_dual_kernel(s, p, blimit_vec, limit_vec, thresh_vec);
+}
+
+void vpx_lpf_vertical_4_neon(uint8_t *s, int p, const uint8_t *blimit,
+                             const uint8_t *limit, const uint8_t *thresh) {
+  uint8x8_t blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1, q2, q3,
+      mask, hev;
+  load_thresh_8(blimit, limit, thresh, &blimit_vec, &limit_vec, &thresh_vec);
+  load_8x8(s - 4, p, &p3, &p2, &p1, &p0, &q0, &q1, &q2, &q3);
+  transpose_u8_8x8d(&p3, &p2, &p1, &p0, &q0, &q1, &q2, &q3);
+  mask = filter_hev_mask4_8(limit_vec, blimit_vec, thresh_vec, p3, p2, p1, p0,
+                            q0, q1, q2, q3, &hev);
+  filter4_8(mask, hev, p1, p0, q0, q1, &p1, &p0, &q0, &q1);
+  store_4x8(s - 2, p, p1, p0, q0, q1);
+}
+
+void vpx_lpf_vertical_4_dual_neon(uint8_t *s, int p, const uint8_t *blimit0,
+                                  const uint8_t *limit0, const uint8_t *thresh0,
+                                  const uint8_t *blimit1, const uint8_t *limit1,
+                                  const uint8_t *thresh1) {
+  uint8x16_t blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1, q2, q3,
+      mask, hev;
+  uint8x8_t s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14,
+      s15;
+
+  load_thresh_8_dual(blimit0, limit0, thresh0, blimit1, limit1, thresh1,
+                     &blimit_vec, &limit_vec, &thresh_vec);
+  load_8x16(s - 4, p, &s0, &s1, &s2, &s3, &s4, &s5, &s6, &s7, &s8, &s9, &s10,
+            &s11, &s12, &s13, &s14, &s15);
+  transpose_u8_8x16(s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13,
+                    s14, s15, &p3, &p2, &p1, &p0, &q0, &q1, &q2, &q3);
+  mask = filter_hev_mask4_16(limit_vec, blimit_vec, thresh_vec, p3, p2, p1, p0,
+                             q0, q1, q2, q3, &hev);
+  filter4_16(mask, hev, p1, p0, q0, q1, &p1, &p0, &q0, &q1);
+  s -= 2;
+  store_4x8(s, p, vget_low_u8(p1), vget_low_u8(p0), vget_low_u8(q0),
+            vget_low_u8(q1));
+  store_4x8(s + 8 * p, p, vget_high_u8(p1), vget_high_u8(p0), vget_high_u8(q0),
+            vget_high_u8(q1));
+}
+
+#define FUN_LPF_8_KERNEL(name, w)                                              \
+  static INLINE void lpf_8##name##kernel(                                      \
+      const uint8x##w##_t blimit, const uint8x##w##_t limit,                   \
+      const uint8x##w##_t thresh, const uint8x##w##_t p3,                      \
+      const uint8x##w##_t p2, const uint8x##w##_t p1, const uint8x##w##_t p0,  \
+      const uint8x##w##_t q0, const uint8x##w##_t q1, const uint8x##w##_t q2,  \
+      const uint8x##w##_t q3, uint8x##w##_t *op2, uint8x##w##_t *op1,          \
+      uint8x##w##_t *op0, uint8x##w##_t *oq0, uint8x##w##_t *oq1,              \
+      uint8x##w##_t *oq2) {                                                    \
+    uint8x##w##_t mask, flat, hev;                                             \
+    uint32_t flat_status;                                                      \
+                                                                               \
+    mask = filter_flat_hev_mask_##w(limit, blimit, thresh, p3, p2, p1, p0, q0, \
+                                    q1, q2, q3, &flat, &flat_status, &hev);    \
+    filter8_##w(mask, flat, flat_status, hev, p3, p2, p1, p0, q0, q1, q2, q3,  \
+                op2, op1, op0, oq0, oq1, oq2);                                 \
+  }
+
+FUN_LPF_8_KERNEL(_, 8)        // lpf_8_kernel
+FUN_LPF_8_KERNEL(_dual_, 16)  // lpf_8_dual_kernel
+#undef FUN_LPF_8_KERNEL
+
+void vpx_lpf_horizontal_8_neon(uint8_t *s, int p, const uint8_t *blimit,
+                               const uint8_t *limit, const uint8_t *thresh) {
+  uint8x8_t blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1, q2, q3,
+      op2, op1, op0, oq0, oq1, oq2;
+  load_thresh_8(blimit, limit, thresh, &blimit_vec, &limit_vec, &thresh_vec);
+  load_8x8(s - 4 * p, p, &p3, &p2, &p1, &p0, &q0, &q1, &q2, &q3);
+  lpf_8_kernel(blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1, q2,
+               q3, &op2, &op1, &op0, &oq0, &oq1, &oq2);
+  store_8x6(s - 3 * p, p, op2, op1, op0, oq0, oq1, oq2);
+}
+
+void vpx_lpf_horizontal_8_dual_neon(uint8_t *s, int p, const uint8_t *blimit0,
+                                    const uint8_t *limit0,
+                                    const uint8_t *thresh0,
+                                    const uint8_t *blimit1,
+                                    const uint8_t *limit1,
+                                    const uint8_t *thresh1) {
+  uint8x16_t blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1, q2, q3,
+      op2, op1, op0, oq0, oq1, oq2;
+
+  load_thresh_8_dual(blimit0, limit0, thresh0, blimit1, limit1, thresh1,
+                     &blimit_vec, &limit_vec, &thresh_vec);
+  load_16x8(s - 4 * p, p, &p3, &p2, &p1, &p0, &q0, &q1, &q2, &q3);
+  lpf_8_dual_kernel(blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1,
+                    q2, q3, &op2, &op1, &op0, &oq0, &oq1, &oq2);
+  store_16x6(s - 3 * p, p, op2, op1, op0, oq0, oq1, oq2);
+}
+
+void vpx_lpf_vertical_8_neon(uint8_t *s, int p, const uint8_t *blimit,
+                             const uint8_t *limit, const uint8_t *thresh) {
+  uint8x8_t blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1, q2, q3,
+      op2, op1, op0, oq0, oq1, oq2;
+
+  load_thresh_8(blimit, limit, thresh, &blimit_vec, &limit_vec, &thresh_vec);
+  load_8x8(s - 4, p, &p3, &p2, &p1, &p0, &q0, &q1, &q2, &q3);
+  transpose_u8_8x8d(&p3, &p2, &p1, &p0, &q0, &q1, &q2, &q3);
+  lpf_8_kernel(blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1, q2,
+               q3, &op2, &op1, &op0, &oq0, &oq1, &oq2);
+  // Note: tranpose + store_8x8() is faster than store_6x8().
+  transpose_u8_8x8d(&p3, &op2, &op1, &op0, &oq0, &oq1, &oq2, &q3);
+  store_8x8(s - 4, p, p3, op2, op1, op0, oq0, oq1, oq2, q3);
+}
+
+void vpx_lpf_vertical_8_dual_neon(uint8_t *s, int p, const uint8_t *blimit0,
+                                  const uint8_t *limit0, const uint8_t *thresh0,
+                                  const uint8_t *blimit1, const uint8_t *limit1,
+                                  const uint8_t *thresh1) {
+  uint8x16_t blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1, q2, q3,
+      op2, op1, op0, oq0, oq1, oq2;
+  uint8x8_t s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14,
+      s15;
+
+  load_thresh_8_dual(blimit0, limit0, thresh0, blimit1, limit1, thresh1,
+                     &blimit_vec, &limit_vec, &thresh_vec);
+  load_8x16(s - 4, p, &s0, &s1, &s2, &s3, &s4, &s5, &s6, &s7, &s8, &s9, &s10,
+            &s11, &s12, &s13, &s14, &s15);
+  transpose_u8_8x16(s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13,
+                    s14, s15, &p3, &p2, &p1, &p0, &q0, &q1, &q2, &q3);
+  lpf_8_dual_kernel(blimit_vec, limit_vec, thresh_vec, p3, p2, p1, p0, q0, q1,
+                    q2, q3, &op2, &op1, &op0, &oq0, &oq1, &oq2);
+  // Note: store_6x8() twice is faster than tranpose + store_8x16().
+  store_6x8(s, p, vget_low_u8(op2), vget_low_u8(op1), vget_low_u8(op0),
+            vget_low_u8(oq0), vget_low_u8(oq1), vget_low_u8(oq2));
+  store_6x8(s + 8 * p, p, vget_high_u8(op2), vget_high_u8(op1),
+            vget_high_u8(op0), vget_high_u8(oq0), vget_high_u8(oq1),
+            vget_high_u8(oq2));
+}
 
 #define FUN_LPF_16_KERNEL(name, w)                                             \
   static INLINE void lpf_16##name##kernel(                                     \
@@ -784,7 +1066,9 @@ void vpx_lpf_vertical_16_neon(uint8_t *s, int p, const uint8_t *blimit,
                         &s6, &s7);
       store_16x8(s, p, s0, s1, s2, s3, s4, s5, s6, s7);
     } else {
-      store_6x8(s + 8, p, op2, op1, op0, oq0, oq1, oq2);
+      // Note: tranpose + store_8x8() is faster than store_6x8().
+      transpose_u8_8x8d(&p3, &op2, &op1, &op0, &oq0, &oq1, &oq2, &q3);
+      store_8x8(s + 4, p, p3, op2, op1, op0, oq0, oq1, oq2, q3);
     }
   } else {
     store_4x8(s + 6, p, op1, op0, oq0, oq1);
@@ -819,6 +1103,7 @@ void vpx_lpf_vertical_16_dual_neon(uint8_t *s, int p, const uint8_t *blimit,
       store_16x16(s, p, s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
                   s13, s14, s15);
     } else {
+      // Note: store_6x8() twice is faster than tranpose + store_8x16().
       s += 8;
       store_6x8(s, p, vget_low_u8(op2), vget_low_u8(op1), vget_low_u8(op0),
                 vget_low_u8(oq0), vget_low_u8(oq1), vget_low_u8(oq2));

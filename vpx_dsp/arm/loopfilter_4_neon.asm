@@ -8,8 +8,8 @@
 ;  be found in the AUTHORS file in the root of the source tree.
 ;
 
-    EXPORT  |vpx_lpf_horizontal_4_neon|
-    EXPORT  |vpx_lpf_vertical_4_neon|
+    EXPORT  |vpx_lpf_horizontal_4_neon_asm|
+    EXPORT  |vpx_lpf_vertical_4_neon_asm|
     ARM
 
     AREA ||.text||, CODE, READONLY, ALIGN=2
@@ -28,7 +28,7 @@
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh,
-|vpx_lpf_horizontal_4_neon| PROC
+|vpx_lpf_horizontal_4_neon_asm| PROC
     push        {lr}
 
     vld1.8      {d0[]}, [r2]               ; duplicate *blimit
@@ -77,7 +77,7 @@
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh,
-|vpx_lpf_vertical_4_neon| PROC
+|vpx_lpf_vertical_4_neon_asm| PROC
     push        {lr}
 
     vld1.8      {d0[]}, [r2]              ; duplicate *blimit
