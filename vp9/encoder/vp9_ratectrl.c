@@ -333,6 +333,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->fac_active_worst_gf = 100;
   rc->force_qpmin = 0;
   for (i = 0; i < MAX_LAG_BUFFERS; ++i) rc->avg_source_sad[i] = 0;
+  rc->alt_ref_flag_onepass_vbr = 1;
   rc->frames_since_key = 8;  // Sensible default for first frame.
   rc->this_key_frame_forced = 0;
   rc->next_key_frame_forced = 0;
@@ -1427,6 +1428,8 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   if (oxcf->pass == 0) {
     if (cm->frame_type != KEY_FRAME) compute_frame_low_motion(cpi);
   }
+  if (oxcf->pass == 0 && oxcf->rc_mode == VPX_VBR && rc->is_src_frame_alt_ref)
+    rc->alt_ref_flag_onepass_vbr = 0;
 }
 
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
@@ -1536,6 +1539,10 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     cpi->refresh_golden_frame = 1;
     rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
   }
+  if (rc->alt_ref_flag_onepass_vbr == 0)
+    cpi->ref_frame_flags &= (~VP9_ALT_FLAG);
+  if (rc->is_src_frame_alt_ref)
+    cpi->refresh_last_frame = 1;
   if (cm->frame_type == KEY_FRAME)
     target = calc_iframe_target_size_one_pass_vbr(cpi);
   else
