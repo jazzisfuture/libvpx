@@ -4160,6 +4160,9 @@ static int get_arf_src_index(VP9_COMP *cpi) {
       }
     } else if (rc->source_alt_ref_pending) {
       arf_src_index = rc->frames_till_gf_update_due;
+      if (cpi->oxcf.pass == 0 && cpi->oxcf.rc_mode == VPX_VBR)
+        arf_src_index = VPXMAX(6, VPXMIN(rc->frames_till_gf_update_due,
+                               (cpi->oxcf.lag_in_frames >> 1) - 1));
     }
   }
   return arf_src_index;
@@ -4410,7 +4413,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->svc.layer_context[cpi->svc.spatial_layer_id].has_alt_frame = 1;
 #endif
 
-      if ((oxcf->arnr_max_frames > 0) && (oxcf->arnr_strength > 0)) {
+      if (cpi->oxcf.mode != REALTIME &&
+          (oxcf->arnr_max_frames > 0) && (oxcf->arnr_strength > 0)) {
         // Produce the filtered ARF frame.
         vp9_temporal_filter(cpi, arf_src_index);
         vpx_extend_frame_borders(&cpi->alt_ref_buffer);
@@ -4424,6 +4428,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->refresh_last_frame = 0;
       rc->is_src_frame_alt_ref = 0;
       rc->source_alt_ref_pending = 0;
+      rc->alt_ref_flag_onepass_vbr = 1;
     } else {
       rc->source_alt_ref_pending = 0;
     }
