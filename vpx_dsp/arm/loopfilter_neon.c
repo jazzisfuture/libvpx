@@ -39,10 +39,10 @@ void vpx_lpf_vertical_8_dual_neon(uint8_t *s, int p, const uint8_t *blimit0,
   vpx_lpf_vertical_8_neon(s + 8 * p, p, blimit1, limit1, thresh1);
 }
 
-void vpx_lpf_vertical_16_dual_neon(uint8_t *s, int p, const uint8_t *blimit,
-                                   const uint8_t *limit,
-                                   const uint8_t *thresh) {
-  vpx_lpf_vertical_16_neon(s, p, blimit, limit, thresh);
-  vpx_lpf_vertical_16_neon(s + 8 * p, p, blimit, limit, thresh);
+void vpx_lpf_vertical_16_dual_neon_asm(uint8_t *s, int p, const uint8_t *blimit,
+                                       const uint8_t *limit,
+                                       const uint8_t *thresh) {
+  vpx_lpf_vertical_16_neon_asm(s, p, blimit, limit, thresh);
+  vpx_lpf_vertical_16_neon_asm(s + 8 * p, p, blimit, limit, thresh);
 }
 #endif  // HAVE_NEON_ASM
