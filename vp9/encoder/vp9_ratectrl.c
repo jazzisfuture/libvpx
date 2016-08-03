@@ -563,6 +563,11 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
     q = clamp(q, VPXMIN(cpi->rc.q_1_frame, cpi->rc.q_2_frame),
               VPXMAX(cpi->rc.q_1_frame, cpi->rc.q_2_frame));
   }
+  if (cpi->oxcf.pass == 0 && cpi->oxcf.rc_mode == VPX_VBR &&
+      cpi->oxcf.lag_in_frames > 0 && cpi->rc.is_src_frame_alt_ref &&
+      cpi->refresh_golden_frame) {
+    q = VPXMIN(q, (q + cpi->rc.last_boosted_qindex) >> 1);
+  }
   return q;
 }
 
@@ -2120,6 +2125,8 @@ void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi, uint64_t avg_sad_current) {
                                      ? VPXMAX(10, rc->baseline_gf_interval >> 1)
                                      : VPXMAX(6, rc->baseline_gf_interval >> 1);
     }
+    if (rc->baseline_gf_interval > cpi->oxcf.lag_in_frames - 1)
+      rc->baseline_gf_interval = cpi->oxcf.lag_in_frames - 1;
     // Check for constraining gf_interval for up-coming scene/content changes,
     // or for up-coming key frame, whichever is closer.
     frame_constraint = rc->frames_to_key;
@@ -2143,6 +2150,12 @@ void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi, uint64_t avg_sad_current) {
       rc->af_ratio_onepass_vbr = 5;
       rc->gfu_boost = DEFAULT_GF_BOOST >> 2;
     }
+    // Don't use alt-ref if there is a scene cut within the group,
+    // or if content is not low.
+    if ((rc->high_source_sad_lagindex > 0 &&
+         rc->high_source_sad_lagindex <= rc->frames_till_gf_update_due) ||
+        (avg_source_sad_lag > sad_thresh1 >> 1))
+      rc->source_alt_ref_pending = 0;
     target = calc_pframe_target_size_one_pass_vbr(cpi);
     vp9_rc_set_frame_target(cpi, target);
 #if LIMIT_QP_ONEPASS_VBR_LAG
@@ -2278,6 +2291,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         cpi->ext_refresh_frame_flags_pending == 0) {
       int target;
       cpi->refresh_golden_frame = 1;
+      rc->source_alt_ref_pending = 1;
       rc->gfu_boost = DEFAULT_GF_BOOST >> 1;
       rc->baseline_gf_interval =
           VPXMIN(20, VPXMAX(10, rc->baseline_gf_interval));
