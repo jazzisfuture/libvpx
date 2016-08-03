@@ -131,7 +131,8 @@ TEST_P(Loop8Test6Param, OperationCheck) {
       if (val & 0x80) {  // 50% chance to choose a new value.
         tmp_s[j] = rnd.Rand16();
         j++;
-      } else {  // 50% chance to repeat previous value in row X times
+      } else if (val & 0x40) {
+        // 25% chance to repeat previous value in row X times
         int k = 0;
         while (k++ < ((val & 0x1f) + 1) && j < kNumCoeffs) {
           if (j < 1) {
@@ -140,6 +141,20 @@ TEST_P(Loop8Test6Param, OperationCheck) {
             tmp_s[j] = (tmp_s[j - 1] + (*limit - 1));
           } else {  // Decrement by an value within the limit
             tmp_s[j] = (tmp_s[j - 1] - (*limit - 1));
+          }
+          j++;
+        }
+      } else {  // 25% chance to repeat previous value in column X times
+        int k = 0;
+        while (k++ < ((val & 0x1f) + 1) && j < kNumCoeffs) {
+          if (j < 1) {
+            tmp_s[j] = rnd.Rand16();
+          } else if (val & 0x20) {  // Increment by an value within the limit
+            tmp_s[(j % 32) * 32 + j / 32] =
+                (tmp_s[((j - 1) % 32) * 32+(j - 1) / 32] + (*limit - 1));
+          } else {  // Decrement by an value within the limit
+            tmp_s[(j % 32) * 32 + j / 32] =
+                (tmp_s[((j - 1) % 32) * 32+(j - 1) / 32] - (*limit - 1));
           }
           j++;
         }
