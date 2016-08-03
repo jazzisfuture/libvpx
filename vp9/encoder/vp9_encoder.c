@@ -4222,6 +4222,10 @@ static int get_arf_src_index(VP9_COMP *cpi) {
       }
     } else if (rc->source_alt_ref_pending) {
       arf_src_index = rc->frames_till_gf_update_due;
+      if (cpi->oxcf.pass == 0 && cpi->oxcf.rc_mode == VPX_VBR) {
+        if (rc->frames_till_gf_update_due > cpi->oxcf.lag_in_frames - 2)
+          arf_src_index = VPXMAX(4, cpi->oxcf.lag_in_frames >> 1);
+      }
     }
   }
   return arf_src_index;
@@ -4472,7 +4476,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->svc.layer_context[cpi->svc.spatial_layer_id].has_alt_frame = 1;
 #endif
 
-      if ((oxcf->arnr_max_frames > 0) && (oxcf->arnr_strength > 0)) {
+      if ((oxcf->mode != REALTIME) && (oxcf->arnr_max_frames > 0) &&
+          (oxcf->arnr_strength > 0)) {
         int bitrate = cpi->rc.avg_frame_bandwidth / 40;
         int not_low_bitrate = bitrate > ALT_REF_AQ_LOW_BITRATE_BOUNDARY;
 
