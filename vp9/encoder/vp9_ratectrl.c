@@ -563,6 +563,9 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
     q = clamp(q, VPXMIN(cpi->rc.q_1_frame, cpi->rc.q_2_frame),
               VPXMAX(cpi->rc.q_1_frame, cpi->rc.q_2_frame));
   }
+  if (cpi->oxcf.pass == 0 && cpi->oxcf.rc_mode == VPX_VBR &&
+      cpi->oxcf.lag_in_frames > 1 && cpi->rc.is_src_frame_alt_ref)
+    q = cpi->rc.last_boosted_qindex;
   return q;
 }
 
@@ -2277,6 +2280,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         cpi->ext_refresh_frame_flags_pending == 0) {
       int target;
       cpi->refresh_golden_frame = 1;
+      rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
       rc->gfu_boost = DEFAULT_GF_BOOST >> 1;
       rc->baseline_gf_interval =
           VPXMIN(20, VPXMAX(10, rc->baseline_gf_interval));
