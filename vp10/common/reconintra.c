@@ -860,6 +860,39 @@ static void d63_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
   filter_intra_predictors_4tap(dst, stride, bs, above, left, D63_PRED);
 }
 
+static void split1_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                             const uint8_t *above, const uint8_t *left) {
+  int i, r, topleft, topright, bottomleft, bottomright;
+  int sum1 = 0, sum2 = 0, halfbs = bs >> 1;
+
+  for (i = 0; i < halfbs; i++) {
+    sum1 += above[i];
+    sum2 += left[i];
+  }
+
+  topleft = (sum1 + sum2 + halfbs) / bs;
+
+  for (i = halfbs; i < bs; i++) {
+    sum1 += left[i];
+    sum2 += above[i];
+  }
+
+  bottomleft = (sum1 + halfbs) / bs;
+  topright = (sum2 + halfbs) / bs;
+  bottomright = (sum1 + sum2 + bs) / (bs << 1);
+
+  for (r = 0; r < halfbs; r++) {
+    memset(dst, topleft, halfbs);
+    memset(dst + halfbs, topright, halfbs);
+    dst += stride;
+  }
+  for (r = halfbs; r < bs; r++) {
+    memset(dst, bottomleft, halfbs);
+    memset(dst + halfbs, bottomright, halfbs);
+    dst += stride;
+  }
+}
+
 static void tm_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
                                 const uint8_t *above, const uint8_t *left) {
   filter_intra_predictors_4tap(dst, stride, bs, above, left, TM_PRED);
@@ -870,7 +903,7 @@ static void (*filter_intra_predictors[EXT_INTRA_MODES])(uint8_t *dst,
         dc_filter_predictor, v_filter_predictor, h_filter_predictor,
         d45_filter_predictor, d135_filter_predictor, d117_filter_predictor,
         d153_filter_predictor, d207_filter_predictor, d63_filter_predictor,
-        tm_filter_predictor,
+        split1_predictor, tm_filter_predictor,
 };
 
 #if CONFIG_VP9_HIGHBITDEPTH
