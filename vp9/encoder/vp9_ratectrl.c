@@ -2277,6 +2277,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         cpi->ext_refresh_frame_flags_pending == 0) {
       int target;
       cpi->refresh_golden_frame = 1;
+      rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
       rc->gfu_boost = DEFAULT_GF_BOOST >> 1;
       rc->baseline_gf_interval =
           VPXMIN(20, VPXMAX(10, rc->baseline_gf_interval));
