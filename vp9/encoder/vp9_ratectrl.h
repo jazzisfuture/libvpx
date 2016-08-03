@@ -165,6 +165,7 @@ typedef struct {
   int avg_frame_low_motion;
   int af_ratio_onepass_vbr;
   int force_qpmin;
+  int alt_ref_flag_onepass_vbr;
 } RATE_CONTROL;
 
 struct VP9_COMP;
