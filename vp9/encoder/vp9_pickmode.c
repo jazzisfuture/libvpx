@@ -1081,12 +1081,14 @@ typedef struct {
   PREDICTION_MODE pred_mode;
 } REF_MODE;
 
-#define RT_INTER_MODES 8
+#define RT_INTER_MODES 12
 static const REF_MODE ref_mode_set[RT_INTER_MODES] = {
   { LAST_FRAME, ZEROMV },   { LAST_FRAME, NEARESTMV },
   { GOLDEN_FRAME, ZEROMV }, { LAST_FRAME, NEARMV },
   { LAST_FRAME, NEWMV },    { GOLDEN_FRAME, NEARESTMV },
-  { GOLDEN_FRAME, NEARMV }, { GOLDEN_FRAME, NEWMV }
+  { GOLDEN_FRAME, NEARMV }, { GOLDEN_FRAME, NEWMV },
+  { ALTREF_FRAME, ZEROMV }, { ALTREF_FRAME, NEARESTMV },
+  { ALTREF_FRAME, NEARMV }, { ALTREF_FRAME, NEWMV }
 };
 static const REF_MODE ref_mode_set_svc[RT_INTER_MODES] = {
   { LAST_FRAME, ZEROMV },      { GOLDEN_FRAME, ZEROMV },
@@ -1468,6 +1470,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     usable_ref_frame = GOLDEN_FRAME;
   }
 
+  if (cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.rc_mode == VPX_VBR)
+    usable_ref_frame = ALTREF_FRAME;
+
   // For svc mode, on spatial_layer_id > 0: if the reference has different scale
   // constrain the inter mode to only test zero motion.
   if (cpi->use_svc && svc->force_zero_mode_spatial_ref &&
@@ -1517,6 +1522,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     if (!(cpi->sf.inter_mode_mask[bsize] & (1 << this_mode))) continue;
 
     ref_frame = ref_mode_set[idx].ref_frame;
+
+    if (ref_frame > usable_ref_frame)
+      continue;
+
+    if (cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.rc_mode == VPX_VBR &&
+        cpi->rc.is_src_frame_alt_ref && ref_frame != ALTREF_FRAME)
+      continue;
+
     if (cpi->use_svc) {
       ref_frame = ref_mode_set_svc[idx].ref_frame;
     }
@@ -2042,7 +2055,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                                 best_mode_idx, intra_mode_list[i]);
       }
     } else {
-      for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ++ref_frame) {
+      for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
         PREDICTION_MODE this_mode;
         if (best_ref_frame != ref_frame) continue;
         for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {

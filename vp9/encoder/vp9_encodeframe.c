@@ -1832,7 +1832,7 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
     }
   }
 
-  if (cm->use_prev_frame_mvs ||
+  if (cm->use_prev_frame_mvs || !cm->error_resilient_mode ||
       (cpi->svc.use_base_mv && cpi->svc.number_spatial_layers > 1 &&
        cpi->svc.spatial_layer_id != cpi->svc.number_spatial_layers - 1)) {
     MV_REF *const frame_mvs =
@@ -1862,7 +1862,6 @@ static void encode_b_rt(VP9_COMP *cpi, ThreadData *td,
   MACROBLOCK *const x = &td->mb;
   set_offsets(cpi, tile, x, mi_row, mi_col, bsize);
   update_state_rt(cpi, td, ctx, mi_row, mi_col, bsize);
-
   encode_superblock(cpi, td, tp, output_enabled, mi_row, mi_col, bsize, ctx);
   update_stats(&cpi->common, td);
 

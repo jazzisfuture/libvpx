@@ -1529,7 +1529,7 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
       rc->gfu_boost =
           VPXMAX(500, DEFAULT_GF_BOOST * (rc->avg_frame_low_motion << 1) /
                           (rc->avg_frame_low_motion + 100));
-      rc->af_ratio_onepass_vbr = VPXMIN(15, VPXMAX(5, 3 * rc->gfu_boost / 400));
+      rc->af_ratio_onepass_vbr = VPXMIN(12, VPXMAX(5, 3 * rc->gfu_boost / 400));
     }
     adjust_gfint_frame_constraint(cpi, rc->frames_to_key);
     rc->frames_till_gf_update_due = rc->baseline_gf_interval;
@@ -2112,7 +2112,7 @@ void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi, uint64_t avg_sad_current) {
     if (low_content) {
       rc->gfu_boost = DEFAULT_GF_BOOST;
       rc->baseline_gf_interval =
-          VPXMIN(15, (3 * rc->baseline_gf_interval) >> 1);
+          VPXMIN(12, (3 * rc->baseline_gf_interval) >> 1);
     } else if (high_content) {
       rc->gfu_boost = DEFAULT_GF_BOOST >> 1;
       rc->baseline_gf_interval = (rate_err > 3.0)
