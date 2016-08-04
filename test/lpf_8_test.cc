@@ -53,6 +53,60 @@ typedef void (*dual_loop_op_t)(uint8_t *s, int p, const uint8_t *blimit0,
 typedef std::tr1::tuple<loop_op_t, loop_op_t, int> loop8_param_t;
 typedef std::tr1::tuple<dual_loop_op_t, dual_loop_op_t, int> dualloop8_param_t;
 
+static void InitInput(
+#if CONFIG_VP9_HIGHBITDEPTH
+    uint16_t *s, uint16_t *ref_s,
+#else
+    uint8_t *s, uint8_t *ref_s,
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    ACMRandom *rnd, const uint8_t limit, const int mask, const int32_t p,
+    const int i) {
+  uint16_t tmp_s[kNumCoeffs];
+  int j = 0;
+  while (j < kNumCoeffs) {
+    uint8_t val = rnd->Rand8();
+    if (val & 0x80) {  // 50% chance to choose a new value.
+      tmp_s[j] = rnd->Rand16();
+      j++;
+    } else if (val & 0x40) {
+      // 25% chance to repeat previous value in row X times.
+      int k = 0;
+      while (k++ < ((val & 0x1f) + 1) && j < kNumCoeffs) {
+        if (j < 1) {
+          tmp_s[j] = rnd->Rand16();
+        } else if (val & 0x20) {  // Increment by a value within the limit.
+          tmp_s[j] = tmp_s[j - 1] + (limit - 1);
+        } else {  // Decrement by a value within the limit.
+          tmp_s[j] = tmp_s[j - 1] - (limit - 1);
+        }
+        j++;
+      }
+    } else {  // 25% chance to repeat previous value in column X times.
+      int k = 0;
+      while (k++ < ((val & 0x1f) + 1) && j < kNumCoeffs) {
+        if (j < 1) {
+          tmp_s[j] = rnd->Rand16();
+        } else if (val & 0x20) {  // Increment by a value within the limit.
+          tmp_s[(j % 32) * 32 + j / 32] =
+              tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] + (limit - 1);
+        } else {  // Decrement by a value within the limit.
+          tmp_s[(j % 32) * 32 + j / 32] =
+              tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] - (limit - 1);
+        }
+        j++;
+      }
+    }
+  }
+  for (j = 0; j < kNumCoeffs; j++) {
+    if (i % 2) {
+      s[j] = tmp_s[j] & mask;
+    } else {
+      s[j] = tmp_s[p * (j % p) + j / p] & mask;
+    }
+    ref_s[j] = s[j];
+  }
+}
+
 class Loop8Test6Param : public ::testing::TestWithParam<loop8_param_t> {
  public:
   virtual ~Loop8Test6Param() {}
@@ -119,50 +173,7 @@ TEST_P(Loop8Test6Param, OperationCheck) {
                     thresh[16]) = { tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
                                     tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp };
     int32_t p = kNumCoeffs / 32;
-    uint16_t tmp_s[kNumCoeffs];
-    int j = 0;
-    while (j < kNumCoeffs) {
-      uint8_t val = rnd.Rand8();
-      if (val & 0x80) {  // 50% chance to choose a new value.
-        tmp_s[j] = rnd.Rand16();
-        j++;
-      } else if (val & 0x40) {
-        // 25% chance to repeat previous value in row X times.
-        int k = 0;
-        while (k++ < ((val & 0x1f) + 1) && j < kNumCoeffs) {
-          if (j < 1) {
-            tmp_s[j] = rnd.Rand16();
-          } else if (val & 0x20) {  // Increment by a value within the limit.
-            tmp_s[j] = tmp_s[j - 1] + (*limit - 1);
-          } else {  // Decrement by a value within the limit.
-            tmp_s[j] = tmp_s[j - 1] - (*limit - 1);
-          }
-          j++;
-        }
-      } else {  // 25% chance to repeat previous value in column X times.
-        int k = 0;
-        while (k++ < ((val & 0x1f) + 1) && j < kNumCoeffs) {
-          if (j < 1) {
-            tmp_s[j] = rnd.Rand16();
-          } else if (val & 0x20) {  // Increment by a value within the limit.
-            tmp_s[(j % 32) * 32 + j / 32] =
-                tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] + (*limit - 1);
-          } else {  // Decrement by a value within the limit.
-            tmp_s[(j % 32) * 32 + j / 32] =
-                tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] - (*limit - 1);
-          }
-          j++;
-        }
-      }
-    }
-    for (j = 0; j < kNumCoeffs; j++) {
-      if (i % 2) {
-        s[j] = tmp_s[j] & mask_;
-      } else {
-        s[j] = tmp_s[p * (j % p) + j / p] & mask_;
-      }
-      ref_s[j] = s[j];
-    }
+    InitInput(s, ref_s, &rnd, *limit, mask_, p, i);
 #if CONFIG_VP9_HIGHBITDEPTH
     ref_loopfilter_op_(ref_s + 8 + p * 8, p, blimit, limit, thresh, bd);
     ASM_REGISTER_STATE_CHECK(
@@ -296,51 +307,8 @@ TEST_P(Loop8Test9Param, OperationCheck) {
                     thresh1[16]) = { tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
                                      tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp };
     int32_t p = kNumCoeffs / 32;
-    uint16_t tmp_s[kNumCoeffs];
-    int j = 0;
     const uint8_t limit = *limit0 < *limit1 ? *limit0 : *limit1;
-    while (j < kNumCoeffs) {
-      uint8_t val = rnd.Rand8();
-      if (val & 0x80) {  // 50% chance to choose a new value.
-        tmp_s[j] = rnd.Rand16();
-        j++;
-      } else if (val & 0x40) {
-        // 25% chance to repeat previous value in row X times.
-        int k = 0;
-        while (k++ < ((val & 0x1f) + 1) && j < kNumCoeffs) {
-          if (j < 1) {
-            tmp_s[j] = rnd.Rand16();
-          } else if (val & 0x20) {  // Increment by a value within the limit.
-            tmp_s[j] = tmp_s[j - 1] + (limit - 1);
-          } else {  // Decrement by a value within the limit.
-            tmp_s[j] = tmp_s[j - 1] - (limit - 1);
-          }
-          j++;
-        }
-      } else {  // 25% chance to repeat previous value in column X times.
-        int k = 0;
-        while (k++ < ((val & 0x1f) + 1) && j < kNumCoeffs) {
-          if (j < 1) {
-            tmp_s[j] = rnd.Rand16();
-          } else if (val & 0x20) {  // Increment by a value within the limit.
-            tmp_s[(j % 32) * 32 + j / 32] =
-                tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] + (limit - 1);
-          } else {  // Decrement by a value within the limit.
-            tmp_s[(j % 32) * 32 + j / 32] =
-                tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] - (limit - 1);
-          }
-          j++;
-        }
-      }
-    }
-    for (j = 0; j < kNumCoeffs; j++) {
-      if (i % 2) {
-        s[j] = tmp_s[j] & mask_;
-      } else {
-        s[j] = tmp_s[p * (j % p) + j / p] & mask_;
-      }
-      ref_s[j] = s[j];
-    }
+    InitInput(s, ref_s, &rnd, limit, mask_, p, i);
 #if CONFIG_VP9_HIGHBITDEPTH
     ref_loopfilter_op_(ref_s + 8 + p * 8, p, blimit0, limit0, thresh0, blimit1,
                        limit1, thresh1, bd);
@@ -353,6 +321,7 @@ TEST_P(Loop8Test9Param, OperationCheck) {
     ASM_REGISTER_STATE_CHECK(loopfilter_op_(s + 8 + p * 8, p, blimit0, limit0,
                                             thresh0, blimit1, limit1, thresh1));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
     for (int j = 0; j < kNumCoeffs; ++j) {
       err_count += ref_s[j] != s[j];
     }
@@ -423,6 +392,7 @@ TEST_P(Loop8Test9Param, ValueCheck) {
     ASM_REGISTER_STATE_CHECK(loopfilter_op_(s + 8 + p * 8, p, blimit0, limit0,
                                             thresh0, blimit1, limit1, thresh1));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
     for (int j = 0; j < kNumCoeffs; ++j) {
       err_count += ref_s[j] != s[j];
     }
