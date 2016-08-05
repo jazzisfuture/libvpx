@@ -737,7 +737,7 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
                tx_size, &dist, &sse);
   }
 
-  rd = RDCOST(x->rdmult, x->rddiv, 0, dist);
+  rd = RDCOST(x->rdmult, x->rddiv, 0, VPXMIN(dist, sse));
   if (args->this_rd + rd > args->best_rd) {
     args->exit_early = 1;
     return;
