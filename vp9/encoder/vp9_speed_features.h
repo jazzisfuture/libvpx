@@ -453,6 +453,10 @@ typedef struct SPEED_FEATURES {
   // INTRA for bsize >= 32x32 and vert/horz INTRA for bsize 16x16, 16x32 and
   // 32x16.
   int short_circuit_low_temp_var;
+
+  // Bias to use base mv and skip 1/4 subpel search when use base mv in
+  // enhancement layer.
+  int base_mv_aggressive;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
