@@ -94,6 +94,16 @@ void vp9_mat8u_nth_element(struct MATX_8U *src,           //
   int do_in_place = 0;
   MATX_BORDER_FUNC expand_border = NULL;
 
+  // vertical (2*radius + 1)-elements histograms
+  // - I reserve last chunk for the moving histogram
+  int nbins = (max_value + 1) * src->cols;
+  int nbytes = (nbins + (max_value + 1)) * sizeof(int);
+
+  int hist_stride = max_value + 1;
+  int *hist_row = (int *)vpx_malloc(nbytes);
+
+  int offset, i, j, k;
+
   if (radius <= 0)  //
     return;
 
@@ -124,10 +134,70 @@ void vp9_mat8u_nth_element(struct MATX_8U *src,           //
   assert(max_value <= 255);
   assert(hist_row != NULL);
 
-  // change for something meaningful
-  (void) max_value;
-  (void) nth;
-  vp9_mat8u_copy_to(src, dst);
+  memset(hist_row, 0, nbins * sizeof(int));
+
+  for (i = -(radius + 1); i < radius; ++i) {
+    int offset = expand_border(i, src->rows) * src->stride;
+
+    for (j = 0; j < src->cols; ++j) {
+      uint8_t value = src->data[offset + j];
+      ++hist_row[j * hist_stride + value];
+    }
+  }
+
+  for (i = 0; i < src->rows; ++i) {
+    int *hist = &hist_row[nbins];
+    uint8_t *dst_row = &dst->data[i * dst->stride];
+
+    // add row above to the histograms
+    offset = expand_border(i + radius, src->rows) * src->stride;
+    for (j = 0; j < src->cols; ++j)
+      ++hist_row[j * hist_stride + src->data[offset + j]];
+
+    // subtract row below from the histograms
+    offset = expand_border(i - radius - 1, src->rows) * src->stride;
+    for (j = 0; j < src->cols; ++j)
+      --hist_row[j * hist_stride + src->data[offset + j]];
+
+    // initialize moving histogram
+    memset(hist, 0, hist_stride * sizeof(int));
+
+    for (j = -(radius + 1); j < radius; ++j) {
+      offset = expand_border(j, src->cols) * hist_stride;
+
+      for (k = 0; k <= max_value; ++k)  //
+        hist[k] += hist_row[offset + k];
+    }
+
+    // TODO(yuryg): I can improve performance by splitting
+    // -----------| the followint cycle to near-border and
+    // -----------| far-inside-the-image.
+
+    // process histogram row horizontally
+    for (j = 0; j < src->cols; ++j) {
+      int limit = max_value, p;
+
+      // update moving histogram on the left
+      offset = expand_border(j - radius - 1, src->cols) * hist_stride;
+      for (k = 0; k <= max_value; ++k)  //
+        hist[k] -= hist_row[offset + k];
+
+      // update moving histogram on the right
+      offset = expand_border(j + radius, src->cols) * hist_stride;
+      for (k = 0; k <= max_value; ++k)  //
+        hist[k] += hist_row[offset + k];
+
+      // prune histogram at the top
+      for (; limit > 0 && hist[limit] == 0;) --limit;
+
+      // find target histogram bin
+      for (k = -1, p = 0; k < limit && p <= nth;) p += hist[++k];
+
+      dst_row[j] = k;
+    }
+  }
+
+  vpx_free(hist_row);
 
   if (do_in_place == 1) {
     vp9_mat8u_copy_to(dst, src);
