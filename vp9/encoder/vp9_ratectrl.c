@@ -1234,9 +1234,9 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi, int frame_target,
     // For very small rate targets where the fractional adjustment
     // may be tiny make sure there is at least a minimum range.
     const int tolerance = (cpi->sf.recode_tolerance * frame_target) / 100;
-    *frame_under_shoot_limit = VPXMAX(frame_target - tolerance - 200, 0);
-    *frame_over_shoot_limit =
-        VPXMIN(frame_target + tolerance + 200, cpi->rc.max_frame_bandwidth);
+    *frame_under_shoot_limit = VPXMAX(frame_target - (tolerance / 2) - 100, 0);
+    *frame_over_shoot_limit = VPXMIN(frame_target + tolerance + 100,
+                                     cpi->rc.max_frame_bandwidth);
   }
 }
 
