@@ -126,6 +126,7 @@ static void init_minq_luts(int *kf_low_m, int *kf_high_m, int *arfgf_low,
     kf_low_m[i] = get_minq_index(maxq, 0.000001, -0.0004, 0.150, bit_depth);
     kf_high_m[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.55, bit_depth);
     arfgf_low[i] = get_minq_index(maxq, 0.0000015, -0.0009, 0.30, bit_depth);
+    arfgf_low[i] = get_minq_index(maxq, 0.0000015, -0.0009, 0.30, bit_depth);
     arfgf_high[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.55, bit_depth);
     inter[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.70, bit_depth);
     rtc[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.70, bit_depth);
@@ -1234,9 +1235,9 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi, int frame_target,
     // For very small rate targets where the fractional adjustment
     // may be tiny make sure there is at least a minimum range.
     const int tolerance = (cpi->sf.recode_tolerance * frame_target) / 100;
-    *frame_under_shoot_limit = VPXMAX(frame_target - tolerance - 200, 0);
-    *frame_over_shoot_limit =
-        VPXMIN(frame_target + tolerance + 200, cpi->rc.max_frame_bandwidth);
+    *frame_under_shoot_limit = VPXMAX(frame_target - (tolerance / 2) - 100, 0);
+    *frame_over_shoot_limit = VPXMIN(frame_target + tolerance + 100,
+                                     cpi->rc.max_frame_bandwidth);
   }
 }
 
