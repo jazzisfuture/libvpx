@@ -120,7 +120,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP10_ENCODER) += error_block_test.cc
 #LIBVPX_TEST_SRCS-$(CONFIG_VP10_ENCODER) += vp9_quantize_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP10_ENCODER) += subtract_test.cc
 
-ifeq ($(CONFIG_VP10_ENCODER),yes)
+ifeq ($(CONFIG_VP9_ENCODER),yes)
 LIBVPX_TEST_SRCS-$(CONFIG_SPATIAL_SVC) += svc_test.cc
 endif
 
