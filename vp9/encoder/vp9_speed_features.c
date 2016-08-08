@@ -175,6 +175,9 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->intra_uv_mode_mask[TX_16X16] = INTRA_DC_H_V;
     sf->txfm_domain_distortion = 1;
     sf->quant_coeff_opt = 0;
+
+    sf->recode_tolerance_low = 15;
+    sf->recode_tolerance_high = 30;
   }
 
   if (speed >= 2) {
@@ -194,6 +197,8 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
     sf->auto_min_max_partition_size = RELAXED_NEIGHBORING_MIN_MAX;
     sf->allow_partition_search_skip = 1;
+    sf->recode_tolerance_low = 15;
+    sf->recode_tolerance_high = 45;
   }
 
   if (speed >= 3) {
@@ -592,7 +597,8 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   sf->search_type_check_frequency = 50;
   sf->encode_breakout_thresh = 0;
   // Recode loop tolerance %.
-  sf->recode_tolerance = 25;
+  sf->recode_tolerance_low = 12;
+  sf->recode_tolerance_high = 25;
   sf->default_interp_filter = SWITCHABLE;
   sf->simple_model_rd_from_var = 0;
   sf->short_circuit_flat_blocks = 0;
