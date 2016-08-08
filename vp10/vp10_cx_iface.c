@@ -192,10 +192,6 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
     RANGE_CHECK(cfg, rc_scaled_height, 0, cfg->g_h);
   }
 
-  // Spatial/temporal scalability are not yet supported in VP10.
-  // Only accept the default value for range checking.
-  RANGE_CHECK(cfg, ss_number_layers, 1, 1);
-  RANGE_CHECK(cfg, ts_number_layers, 1, 1);
   // VP9 does not support a lower bound on the keyframe interval in
   // automatic keyframe placement mode.
   if (cfg->kf_mode != VPX_KF_DISABLED &&
@@ -1412,20 +1408,6 @@ static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
       VPX_KF_AUTO,        // g_kfmode
       0,                  // kf_min_dist
       9999,               // kf_max_dist
-
-      // TODO(yunqingwang): Spatial/temporal scalability are not supported
-      // in VP10. The following 10 parameters are not used, which should
-      // be removed later.
-      1,                      // ss_number_layers
-      {0},
-      {0},                    // ss_target_bitrate
-      1,                      // ts_number_layers
-      {0},                    // ts_target_bitrate
-      {0},                    // ts_rate_decimator
-      0,                      // ts_periodicity
-      {0},                    // ts_layer_id
-      {0},                  // layer_taget_bitrate
-      0                     // temporal_layering_mode
     }
   },
 };
