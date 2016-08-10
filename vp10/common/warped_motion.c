@@ -16,31 +16,6 @@
 
 #include "vp10/common/warped_motion.h"
 
-typedef void (*projectPointsType)(int *mat, int *points, int *proj, const int n,
-                                  const int stride_points,
-                                  const int stride_proj,
-                                  const int subsampling_x,
-                                  const int subsampling_y);
-
-static void projectPointsHomography(int *mat, int *points, int *proj,
-                                    const int n, const int stride_points,
-                                    const int stride_proj,
-                                    const int subsampling_x,
-                                    const int subsampling_y);
-static void projectPointsAffine(int *mat, int *points, int *proj, const int n,
-                                const int stride_points, const int stride_proj,
-                                const int subsampling_x,
-                                const int subsampling_y);
-static void projectPointsRotZoom(int *mat, int *points, int *proj, const int n,
-                                 const int stride_points, const int stride_proj,
-                                 const int subsampling_x,
-                                 const int subsampling_y);
-static void projectPointsTranslation(int *mat, int *points, int *proj,
-                                     const int n, const int stride_points,
-                                     const int stride_proj,
-                                     const int subsampling_x,
-                                     const int subsampling_y);
-
 static projectPointsType get_projectPointsType(TransformationType type) {
   switch (type) {
     case HOMOGRAPHY: return projectPointsHomography;
@@ -51,11 +26,11 @@ static projectPointsType get_projectPointsType(TransformationType type) {
   }
 }
 
-static void projectPointsTranslation(int *mat, int *points, int *proj,
-                                     const int n, const int stride_points,
-                                     const int stride_proj,
-                                     const int subsampling_x,
-                                     const int subsampling_y) {
+void projectPointsTranslation(int *mat, int *points, int *proj,
+                              const int n, const int stride_points,
+                              const int stride_proj,
+                              const int subsampling_x,
+                              const int subsampling_y) {
   int i;
   for (i = 0; i < n; ++i) {
     const int x = *(points++), y = *(points++);
@@ -105,10 +80,10 @@ void projectPointsRotZoom(int *mat, int *points, int *proj, const int n,
   }
 }
 
-static void projectPointsAffine(int *mat, int *points, int *proj, const int n,
-                                const int stride_points, const int stride_proj,
-                                const int subsampling_x,
-                                const int subsampling_y) {
+void projectPointsAffine(int *mat, int *points, int *proj, const int n,
+                         const int stride_points, const int stride_proj,
+                         const int subsampling_x,
+                         const int subsampling_y) {
   int i;
   for (i = 0; i < n; ++i) {
     const int x = *(points++), y = *(points++);
@@ -133,11 +108,11 @@ static void projectPointsAffine(int *mat, int *points, int *proj, const int n,
   }
 }
 
-static void projectPointsHomography(int *mat, int *points, int *proj,
-                                    const int n, const int stride_points,
-                                    const int stride_proj,
-                                    const int subsampling_x,
-                                    const int subsampling_y) {
+void projectPointsHomography(int *mat, int *points, int *proj,
+                             const int n, const int stride_points,
+                             const int stride_proj,
+                             const int subsampling_x,
+                             const int subsampling_y) {
   int i;
   int64_t x, y, Z;
   int64_t xp, yp;
@@ -542,6 +517,38 @@ static void highbd_warp_plane(WarpedMotionParams *wm, uint8_t *ref8, int width,
   }
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+double warp_erroradv(WarpedMotionParams *wm,
+#if CONFIG_VP9_HIGHBITDEPTH
+                     int use_hbd, int bd,
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+                     uint8_t *ref, int width, int height, int stride,
+                     uint8_t *dst, int p_col, int p_row, int p_width,
+                     int p_height, int p_stride, int subsampling_x,
+                     int subsampling_y, int x_scale, int y_scale) {
+  int gm_err= 0, no_gm_err= 0;
+  int gm_sumerr = 0, no_gm_sumerr = 0;
+  int i, j;
+  projectPointsType projectPoints = get_projectPointsType(wm->wmtype);
+  //TODO(sarahparker) add for hbd
+  for (i = p_row; i < p_row + p_height; ++i) {
+    for (j = p_col; j < p_col + p_width; ++j) {
+      int in[2], out[2];
+      in[0] = j;
+      in[1] = i;
+      projectPoints(wm->wmmat, in, out, 1, 2, 2, subsampling_x, subsampling_y);
+      out[0] = ROUND_POWER_OF_TWO_SIGNED(out[0] * x_scale, 4);
+      out[1] = ROUND_POWER_OF_TWO_SIGNED(out[1] * y_scale, 4);
+      gm_err = dst[(j - p_col) + (i - p_row) * p_stride] -
+            warp_interpolate(ref, out[0], out[1], width, height, stride);
+      no_gm_err = dst[(j - p_col) + (i - p_row) * p_stride] -
+                  ref[(j - p_col) + (i - p_row) * stride];
+      gm_sumerr += gm_err * gm_err;
+      no_gm_sumerr += no_gm_err * no_gm_err;
+    }
+  }
+  return (double)gm_sumerr / no_gm_sumerr;
+}
 
 void vp10_warp_plane(WarpedMotionParams *wm,
 #if CONFIG_VP9_HIGHBITDEPTH
