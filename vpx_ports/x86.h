@@ -154,11 +154,47 @@ static INLINE uint64_t xgetbv(void) {
 #define HAS_SSE4_1 0x20
 #define HAS_AVX 0x40
 #define HAS_AVX2 0x80
+#define HAS_SLOW_SSSE3 0x100
 #ifndef BIT
 #define BIT(n) (1 << n)
 #endif
 
+#define VENDOR_ID_INTEL_EBX 0x756e6547  // uneG
+#define VENDOR_ID_INTEL_EDX 0x49656e69  // Ieni
+#define VENDOR_ID_INTEL_ECX 0x6c65746e  // letn
+
+// Table listing display models with longer latencies for the bsr instruction
+// (ie 2 cycles vs 10/16 cycles) and some SSSE3 instructions. (ie pshufb 5
+// cycles vs 1 cycle)
+//
+// Refer to Intel 64 and IA-32 Architectures Optimization Reference Manual
+static unsigned char slow_displaymodels[] = {
+  0x37, 0x4a, 0x4d,  // Silvermont Microarchitecture
+  0x1c, 0x26, 0x27,  // Atom Microarchitecture
+  0
+};
+
+static unsigned int check_display_model(unsigned int cpu_sig) {
+  unsigned int is_slow = 0;
+  const unsigned int display_model =
+      ((cpu_sig & 0xf0000) >> 12) | ((cpu_sig >> 4) & 0xf);
+  const unsigned int display_family = (cpu_sig >> 8) & 0xf;
+
+  if (display_family == 0x06) {
+    int i = 0;
+    do {
+      if (display_model == slow_displaymodels[i]) {
+        is_slow = 1;
+        break;
+      }
+    } while (slow_displaymodels[i++]);
+  }
+
+  return is_slow;
+}
+
 static INLINE int x86_simd_caps(void) {
+  unsigned int is_intel = 0;
   unsigned int flags = 0;
   unsigned int mask = ~0;
   unsigned int max_cpuid_val, reg_eax, reg_ebx, reg_ecx, reg_edx;
@@ -179,6 +215,11 @@ static INLINE int x86_simd_caps(void) {
 
   if (max_cpuid_val < 1) return 0;
 
+  if (reg_ebx == VENDOR_ID_INTEL_EBX && reg_edx == VENDOR_ID_INTEL_EDX &&
+      reg_ecx == VENDOR_ID_INTEL_ECX) {
+    is_intel = 1;
+  }
+
   /* Get the standard feature flags */
   cpuid(1, 0, reg_eax, reg_ebx, reg_ecx, reg_edx);
 
@@ -190,7 +231,18 @@ static INLINE int x86_simd_caps(void) {
 
   if (reg_ecx & BIT(0)) flags |= HAS_SSE3;
 
-  if (reg_ecx & BIT(9)) flags |= HAS_SSSE3;
+  if (reg_ecx & BIT(9)) {
+    flags |= HAS_SSSE3;
+    if (is_intel) {
+      unsigned int has_slow_ssse3 = 0;
+      // if the mask allows ssse3, check the display_model for the slow ssse3
+      if (mask & HAS_SSSE3) {
+        has_slow_ssse3 = check_display_model(reg_eax);
+      }
+
+      if (has_slow_ssse3) flags |= HAS_SLOW_SSSE3;
+    }
+  }
 
   if (reg_ecx & BIT(19)) flags |= HAS_SSE4_1;
 
