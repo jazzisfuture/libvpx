@@ -45,6 +45,21 @@
 // nonzero delta quantizers
 #define ALT_REF_AQ_NUM_NONZERO_SEGMENTS 1
 
+// the greater this number is, the lower
+// delta quantizer between segments is
+#define ALT_REF_AQ_DELTA_SHRINK 2.0
+
+// the same as DELTA_SHRINK, but for the case,
+// when the entire frame gets same qdelta
+#define ALT_REF_AQ_SINGLE_SEGMENT_DELTA_SHRINK 1.5
+
+// We don't want to reallocate saved bitrate
+// to the altref itself, if it has low overall quality
+#define ALT_REF_AQ_OVERALL_QUALITY_THRESH 0.2
+
+// Reallocation coefficient
+#define ALT_REF_AQ_OVERALL_QUALITY_ALPHA 0.3
+
 #ifdef __cplusplus
 extern "C" {
 #endif
