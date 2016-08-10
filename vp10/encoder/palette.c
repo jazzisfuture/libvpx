@@ -116,6 +116,11 @@ void vp10_k_means(const float *data, float *centroids, uint8_t *indices, int n,
     if (!memcmp(centroids, pre_centroids, sizeof(pre_centroids[0]) * k * dim))
       break;
   }
+  // Round centroids to nearest integers.
+  // TODO(urvang): Should we round-off in 'calc_centroids()' itself?
+  for (i = 0; i < k * dim; ++i) {
+    centroids[i] = roundf(centroids[i]);
+  }
 }
 
 static int float_comparer(const void *a, const void *b) {
@@ -128,9 +133,6 @@ int vp10_remove_duplicates(float *centroids, int num_centroids) {
   int num_unique;  // number of unique centroids
   int i;
   qsort(centroids, num_centroids, sizeof(*centroids), float_comparer);
-  for (i = 0; i < num_centroids; ++i) {
-    centroids[i] = roundf(centroids[i]);
-  }
   // Remove duplicates.
   num_unique = 1;
   for (i = 1; i < num_centroids; ++i) {
