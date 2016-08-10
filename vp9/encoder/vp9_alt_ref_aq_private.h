@@ -31,6 +31,9 @@ struct ALT_REF_AQ {
   // private member used for segment ids convertion
   int segment_changes[ALT_REF_MAX_FRAMES + 1];
 
+  // private member storing total number of delta steps
+  int nsteps;
+
   // private member for storing distribution of the segment ids
   int segment_hist[ALT_REF_MAX_FRAMES];
 
@@ -38,6 +41,9 @@ struct ALT_REF_AQ {
   // it can be different from nsteps
   // because of the range compression
   int nsegments;
+
+  // either DELTA_SHRINK or SINGLE_FRAME_DELTA_SHRINK
+  float delta_shrink;
 
   // single qdelta step between segments
   float single_delta;
@@ -47,6 +53,10 @@ struct ALT_REF_AQ {
   // qdelta[0] has single delta quantizer
   // for the frame in the case we need it
   int segment_deltas[ALT_REF_MAX_FRAMES];
+
+  // overall frame quality estimate in terms
+  // of the future frame prediction power
+  float overall_quality;
 
   // this one is just for debugging purposes
   int alt_ref_number;
