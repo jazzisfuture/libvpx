@@ -296,6 +296,14 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
       tokens[i][1].qc = x;
 
       if (x) {
+#if CONFIG_NEW_QUANT
+        tokens[i][1].dqc = vp10_dequant_abscoeff_nuq(
+            abs(x), dequant_ptr[rc != 0], dequant_val[band_translate[i]]);
+        tokens[i][1].dqc =
+            shift ? ROUND_POWER_OF_TWO(tokens[i][1].dqc, shift) : 0;
+        if (sz)
+          tokens[i][1].dqc = -tokens[i][1].dqc;
+#else
         tran_low_t offset = dq_step[rc != 0];
         // The 32x32 transform coefficient uses half quantization step size.
         // Account for the rounding difference in the dequantized coefficeint
@@ -308,6 +316,7 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
           tokens[i][1].dqc = dqcoeff[rc] - offset;
         else
           tokens[i][1].dqc = dqcoeff[rc] + offset;
+#endif  // CONFIG_NEW_QUANT
       } else {
         tokens[i][1].dqc = 0;
       }
@@ -364,13 +373,6 @@ int vp10_optimize_b(MACROBLOCK *mb, int plane, int block,
     if (x) final_eob = i;
     qcoeff[rc] = x;
     dqcoeff[rc] = tokens[i][best].dqc;
-
-#if CONFIG_NEW_QUANT
-    dqcoeff[rc] = vp10_dequant_abscoeff_nuq(abs(x), dequant_ptr[rc != 0],
-                                            dequant_val[band_translate[i]]);
-    if (shift) dqcoeff[rc] = ROUND_POWER_OF_TWO(dqcoeff[rc], shift);
-    if (x < 0) dqcoeff[rc] = -dqcoeff[rc];
-#endif  // CONFIG_NEW_QUANT
 
     next = tokens[i][best].next;
     best = best_index[i][best];
