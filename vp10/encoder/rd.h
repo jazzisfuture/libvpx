@@ -394,21 +394,21 @@ void vp10_initialize_rd_consts(struct VP10_COMP *cpi);
 void vp10_initialize_me_consts(const struct VP10_COMP *cpi,
                                MACROBLOCK *x, int qindex);
 
-void vp10_model_rd_from_var_lapndz(unsigned int var, unsigned int n,
-                                  unsigned int qstep, int *rate,
-                                  int64_t *dist);
+void vp10_model_rd_from_var_lapndz(int64_t var, unsigned int n,
+                                   unsigned int qstep, int *rate,
+                                   int64_t *dist);
 
 int vp10_get_switchable_rate(const struct VP10_COMP *cpi,
-                            const MACROBLOCKD *const xd);
+                             const MACROBLOCKD *const xd);
 
 int vp10_raster_block_offset(BLOCK_SIZE plane_bsize,
-                            int raster_block, int stride);
+                             int raster_block, int stride);
 
 int16_t* vp10_raster_block_offset_int16(BLOCK_SIZE plane_bsize,
-                                       int raster_block, int16_t *base);
+                                        int raster_block, int16_t *base);
 
 YV12_BUFFER_CONFIG *vp10_get_scaled_ref_frame(const struct VP10_COMP *cpi,
-                                             int ref_frame);
+                                              int ref_frame);
 
 void vp10_init_me_luts(void);
 
