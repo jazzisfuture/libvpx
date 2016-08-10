@@ -1,3 +1,4 @@
+
 /*
  *  Copyright (c) 2016 The WebM project authors. All Rights Reserved.
  *
@@ -58,6 +59,40 @@ static void vp9_mat8u_create(struct MATX_8U *self, int rows, int cols,
 }
 
 static void vp9_mat8u_destroy(struct MATX_8U *self) { vpx_free(self->data); }
+
+static void vp9_mat8u_wrap(struct MATX_8U *self, int rows, int cols, int stride,
+                           uint8_t *data) {
+  self->rows = rows;
+  self->cols = cols;
+
+  self->stride = stride;
+
+  if (!self->stride) self->stride = cols;
+
+  self->data = data;
+
+  assert(self->stride >= self->cols);
+  assert(self->data != NULL);
+}
+
+static void vp9_mat8u_zerofill(struct MATX_8U *image) {
+  memset(image->data, 0, image->rows * image->stride * sizeof(uint8_t));
+}
+
+static void vp9_mat8u_copy_to(const struct MATX_8U *src, struct MATX_8U *dst) {
+  int i;
+
+  if (dst->data == src->data) return;
+
+  vp9_mat8u_create(dst, src->rows, src->cols, src->stride);
+
+  for (i = 0; i < src->rows; ++i) {
+    const uint8_t *copy_from = src->data + i * src->stride;
+    uint8_t *copy_to = dst->data + i * dst->stride;
+
+    memcpy(copy_to, copy_from, src->cols * sizeof(uint8_t));
+  }
+}
 
 #ifdef ALT_REF_DEBUG_DIR
 
@@ -163,6 +198,27 @@ static void vp9_alt_ref_aq_update_segmentation_map(struct ALT_REF_AQ *self) {
   }
 }
 
+static void vp9_alt_ref_aq_set_single_delta(struct ALT_REF_AQ *const self,
+                                            const struct VP9_COMP *cpi) {
+  float ndeltas = VPXMIN(self->_nsteps, MAX_SEGMENTS - 1);
+  int total_delta = cpi->rc.avg_frame_qindex[INTER_FRAME];
+  total_delta -= cpi->common.base_qindex;
+
+  // Don't ask me why it is (... + self->delta_shrink). It just works better.
+  self->single_delta = total_delta / VPXMAX(ndeltas + self->delta_shrink, 1);
+}
+
+static void vp9_alt_ref_aq_get_overall_quality(struct ALT_REF_AQ *const self) {
+  int i;
+
+  for (self->overall_quality = 0.0f, i = 1; i < self->nsegments; ++i)
+    self->overall_quality += (float)i * self->_segment_hist[i];
+
+  self->overall_quality /= (float)self->nsegments;
+  self->overall_quality /= (float)self->segmentation_map.rows;
+  self->overall_quality /= (float)self->segmentation_map.cols;
+}
+
 // set up histogram (I use it for filtering zero-area segments out)
 static void vp9_alt_ref_aq_setup_histogram(struct ALT_REF_AQ *const self) {
   struct MATX_8U segm_map;
@@ -186,13 +242,17 @@ struct ALT_REF_AQ *vp9_alt_ref_aq_create() {
   if (self == NULL) return self;
 
   self->aq_mode = LOOKAHEAD_AQ;
+
   self->nsegments = -1;
+  self->_nsteps = -1;
+  self->single_delta = -1;
 
   memset(self->_segment_hist, 0, sizeof(self->_segment_hist));
 
   // This is just initiallization, allocation
   // is going to happen on the first request
   vp9_mat8u_init(&self->segmentation_map);
+  vp9_mat8u_init(&self->cpi_segmentation_map);
 
   return self;
 }
@@ -200,12 +260,19 @@ struct ALT_REF_AQ *vp9_alt_ref_aq_create() {
 static void vp9_alt_ref_aq_process_map(struct ALT_REF_AQ *const self) {
   int i, j;
 
+  self->_nsteps = self->nsegments - 1;
+
   assert(self->nsegments > 0);
 
   vp9_alt_ref_aq_setup_histogram(self);
+  vp9_alt_ref_aq_get_overall_quality(self);
 
   // super special case, e.g., riverbed sequence
-  if (self->nsegments == 1) return;
+  if (self->nsegments == 1) {
+    self->segment_deltas[0] = 1;
+    self->delta_shrink = ALT_REF_AQ_SINGLE_SEGMENT_DELTA_SHRINK;
+    return;
+  }
 
   // special case: all blocks belong to the same segment,
   // and then we can just update frame's base_qindex
@@ -217,11 +284,13 @@ static void vp9_alt_ref_aq_process_map(struct ALT_REF_AQ *const self) {
     self->segment_deltas[0] = self->nsegments - i - 1;
 
     self->nsegments = 1;
+    self->delta_shrink = ALT_REF_AQ_SINGLE_SEGMENT_DELTA_SHRINK;
   } else {
     vp9_alt_ref_aq_compress_segment_hist(self);
     vp9_alt_ref_aq_setup_segment_deltas(self);
 
     vp9_alt_ref_aq_update_number_of_segments(self);
+    self->delta_shrink = ALT_REF_AQ_DELTA_SHRINK;
   }
 
   if (self->nsegments == 1) return;
@@ -269,6 +338,7 @@ void vp9_alt_ref_aq_upload_map(struct ALT_REF_AQ *const self,
     }
   }
 }
+
 void vp9_alt_ref_aq_set_nsegments(struct ALT_REF_AQ *const self,
                                   int nsegments) {
   self->nsegments = nsegments;
@@ -283,22 +353,86 @@ void vp9_alt_ref_aq_setup_mode(struct ALT_REF_AQ *const self,
 // set basic segmentation to the altref's one
 void vp9_alt_ref_aq_setup_map(struct ALT_REF_AQ *const self,
                               struct VP9_COMP *const cpi) {
-  (void)cpi;
-  (void)self;
+  int i, j;
+  float coef = 1.0f;
+
+  assert(self->segmentation_map.rows == cpi->common.mi_rows);
+  assert(self->segmentation_map.cols == cpi->common.mi_cols);
+
+  // set cpi segmentation to the altref's one
+  if (self->single_delta < 0) {
+    vp9_mat8u_wrap(&self->cpi_segmentation_map, cpi->common.mi_rows,
+                   cpi->common.mi_cols, cpi->common.mi_cols,
+                   cpi->segmentation_map);
+
+    // TODO(yuryg): avoid this copy
+    vp9_mat8u_copy_to(&self->segmentation_map, &self->cpi_segmentation_map);
+  }
+
+  // clear down mmx registers (only need for x86 arch)
+  vpx_clear_system_state();
+
+  // set single quantizer step between segments
+  vp9_alt_ref_aq_set_single_delta(self, cpi);
+
+  // TODO(yuryg): figure out better (may be adaptive) factor
+  if (self->overall_quality < ALT_REF_AQ_OVERALL_QUALITY_THRESH) {
+    float alpha = (float)ALT_REF_AQ_OVERALL_QUALITY_ALPHA;
+    coef -= alpha * (1.0f - sqrtf(self->overall_quality) / sqrtf(0.2f));
+  }
+
+  cpi->rc.this_frame_target = (int)(coef * cpi->rc.this_frame_target);
+
+  // TODO(yuryg): this is probably not nice for rate control,
+  if (self->nsegments == 1) {
+    float qdelta = self->single_delta * self->segment_deltas[0];
+    cpi->common.base_qindex += (int)(qdelta + 1e-2);
+    // TODO(yuryg): do I need this?
+    vp9_mat8u_zerofill(&self->cpi_segmentation_map);
+    return;
+  }
+
+  // set segment deltas
+  cpi->common.seg.abs_delta = SEGMENT_DELTADATA;
+
+  vp9_enable_segmentation(&cpi->common.seg);
+  vp9_clearall_segfeatures(&cpi->common.seg);
+
+  for (i = 1, j = 1; i < self->nsegments; ++i) {
+    int qdelta = (int)(self->single_delta * self->segment_deltas[i] + 1e-2f);
+
+    vp9_enable_segfeature(&cpi->common.seg, j, SEG_LVL_ALT_Q);
+    vp9_set_segdata(&cpi->common.seg, j++, SEG_LVL_ALT_Q, qdelta);
+  }
 }
 
 // restore cpi->aq_mode
 void vp9_alt_ref_aq_unset_all(struct ALT_REF_AQ *const self,
                               struct VP9_COMP *const cpi) {
-  (void)cpi;
-  (void)self;
+  cpi->force_update_segmentation = 1;
+
+  self->nsegments = -1;
+  self->_nsteps = -1;
+  self->single_delta = -1;
+
+  VPX_SWAP(AQ_MODE, self->aq_mode, cpi->oxcf.aq_mode);
+
+  // TODO(yuryg): may be it is better to move this to encoder.c
+  if (cpi->oxcf.aq_mode == NO_AQ) vp9_disable_segmentation(&cpi->common.seg);
 }
 
 int vp9_alt_ref_aq_disable_if(const struct ALT_REF_AQ *self,
                               int segmentation_overhead, int bandwidth) {
-  (void)bandwidth;
-  (void)self;
-  (void)segmentation_overhead;
+  float estimate;
+  float bytes_per_segment;
+  int sum, i;
 
-  return 0;
+  for (i = 1, sum = 0; i < self->nsegments; ++i) sum += self->_segment_hist[i];
+  bytes_per_segment = segmentation_overhead / (float)sum;
+
+  estimate = bytes_per_segment;
+
+  (void)bandwidth;
+
+  return estimate > ALT_REF_AQ_PROTECT_GAIN_THRESH;
 }
