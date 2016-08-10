@@ -308,6 +308,8 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
 
   if (cpi->oxcf.alt_ref_aq) {
     int bitrate = cpi->rc.avg_frame_bandwidth / 40;
+    int rows = cpi->common.mi_rows;
+    int cols = cpi->common.mi_cols;
 
     // Encoder blurs lookahead buffers together into
     // altref frame using integer weights from the set
@@ -327,14 +329,14 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
       filter_weight_lower_thresh = 1;
 
     CHECK_MEM_ERROR(&cpi->common, segm_map.data,
-                    vpx_malloc(mb_rows * mb_cols * sizeof(uint8_t)));
+                    vpx_malloc(rows * cols * sizeof(uint8_t)));
 
     // I want zero to be the smallest value finally
-    memset(segm_map.data, 255, mb_rows * mb_cols * sizeof(uint8_t));
+    memset(segm_map.data, 255, rows * cols * sizeof(uint8_t));
 
-    segm_map.rows = mb_rows;
-    segm_map.cols = mb_cols;
-    segm_map.stride = mb_cols;
+    segm_map.rows = rows;
+    segm_map.cols = cols;
+    segm_map.stride = cols;
 
     assert(frame_count <= ALT_REF_MAX_FRAMES);
 
@@ -404,7 +406,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
         }
 
         if (cpi->oxcf.alt_ref_aq && filter_weight > filter_weight_lower_thresh)
-          ++segm_map.data[mb_row * segm_map.stride + mb_col];
+          ++segm_map.data[2 * (mb_row * segm_map.stride + mb_col)];
 
         if (filter_weight != 0) {
           // Construct the predictors
