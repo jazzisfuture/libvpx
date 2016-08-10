@@ -33,6 +33,8 @@
 #include "vp10/common/seg_common.h"
 #include "vp10/common/tile_common.h"
 
+//sarahparker
+#include "vp10/encoder/ransac.h"
 #include "vp10/encoder/aq_complexity.h"
 #include "vp10/encoder/aq_cyclicrefresh.h"
 #include "vp10/encoder/aq_variance.h"
@@ -4478,10 +4480,19 @@ static void encode_frame_internal(VP10_COMP *cpi) {
     for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
       ref_buf = get_ref_frame_buffer(cpi, frame);
       if (ref_buf) {
-        if (compute_global_motion_feature_based(cpi, GLOBAL_MOTION_MODEL,
-                                                cpi->Source, ref_buf, 0.5, H))
+        // TEST STUFF /////////////////
+        WarpedMotionParams wm;
+        double Htest[9] = {5, 9, 1.0123, 0.1345, 0, 0, 0, 0, 1};
+        vp10_integerize_model(Htest, ROTZOOM, &wm);
+        vp10_warp_plane(&wm, ref_buf->y_buffer, ref_buf->y_width, ref_buf->y_height, ref_buf->y_stride, cpi->Source->y_buffer, 0, 0, cpi->Source->y_width, cpi->Source->y_height, cpi->Source->y_stride, 0,0, 16,16);
+        ///////////////////////////////
+        if (compute_global_motion_feature_based(GLOBAL_MOTION_MODEL,
+                                                cpi->Source, ref_buf, H)) {
+          //sarahparker delete for testing
+          printf("gm parms: %f %f %f %f %f %f\n\n", H[0], H[1], H[2], H[3], H[4], H[5]);
           convert_model_to_params(H, GLOBAL_MOTION_MODEL,
                                   &cm->global_motion[frame]);
+          }
       }
     }
   }

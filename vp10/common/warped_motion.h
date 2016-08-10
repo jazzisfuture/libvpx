@@ -37,6 +37,47 @@
 
 #define WARPEDDIFF_PREC_BITS (WARPEDMODEL_PREC_BITS - WARPEDPIXEL_PREC_BITS)
 
+typedef void (*projectPointsType)(int *mat,
+                                  int *points,
+                                  int *proj,
+                                  const int n,
+                                  const int stride_points,
+                                  const int stride_proj,
+                                  const int subsampling_x,
+                                  const int subsampling_y);
+void projectPointsHomography(int *mat,
+                             int *points,
+                             int *proj,
+                             const int n,
+                             const int stride_points,
+                             const int stride_proj,
+                             const int subsampling_x,
+                             const int subsampling_y);
+void projectPointsAffine(int *mat,
+                         int *points,
+                         int *proj,
+                         const int n,
+                         const int stride_points,
+                         const int stride_proj,
+                         const int subsampling_x,
+                         const int subsampling_y);
+void projectPointsRotZoom(int *mat,
+                          int *points,
+                          int *proj,
+                          const int n,
+                          const int stride_points,
+                          const int stride_proj,
+                          const int subsampling_x,
+                          const int subsampling_y);
+void projectPointsTranslation(int *mat,
+                              int *points,
+                              int *proj,
+                              const int n,
+                              const int stride_points,
+                              const int stride_proj,
+                              const int subsampling_x,
+                              const int subsampling_y);
+
 typedef enum {
   UNKNOWN_TRANSFORM = -1,
   HOMOGRAPHY,   // homography, 8-parameter
