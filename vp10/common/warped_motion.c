@@ -16,31 +16,6 @@
 
 #include "vp10/common/warped_motion.h"
 
-typedef void (*projectPointsType)(int *mat, int *points, int *proj, const int n,
-                                  const int stride_points,
-                                  const int stride_proj,
-                                  const int subsampling_x,
-                                  const int subsampling_y);
-
-static void projectPointsHomography(int *mat, int *points, int *proj,
-                                    const int n, const int stride_points,
-                                    const int stride_proj,
-                                    const int subsampling_x,
-                                    const int subsampling_y);
-static void projectPointsAffine(int *mat, int *points, int *proj, const int n,
-                                const int stride_points, const int stride_proj,
-                                const int subsampling_x,
-                                const int subsampling_y);
-static void projectPointsRotZoom(int *mat, int *points, int *proj, const int n,
-                                 const int stride_points, const int stride_proj,
-                                 const int subsampling_x,
-                                 const int subsampling_y);
-static void projectPointsTranslation(int *mat, int *points, int *proj,
-                                     const int n, const int stride_points,
-                                     const int stride_proj,
-                                     const int subsampling_x,
-                                     const int subsampling_y);
-
 static projectPointsType get_projectPointsType(TransformationType type) {
   switch (type) {
     case HOMOGRAPHY: return projectPointsHomography;
@@ -51,11 +26,11 @@ static projectPointsType get_projectPointsType(TransformationType type) {
   }
 }
 
-static void projectPointsTranslation(int *mat, int *points, int *proj,
-                                     const int n, const int stride_points,
-                                     const int stride_proj,
-                                     const int subsampling_x,
-                                     const int subsampling_y) {
+void projectPointsTranslation(int *mat, int *points, int *proj,
+                              const int n, const int stride_points,
+                              const int stride_proj,
+                              const int subsampling_x,
+                              const int subsampling_y) {
   int i;
   for (i = 0; i < n; ++i) {
     const int x = *(points++), y = *(points++);
@@ -105,10 +80,10 @@ void projectPointsRotZoom(int *mat, int *points, int *proj, const int n,
   }
 }
 
-static void projectPointsAffine(int *mat, int *points, int *proj, const int n,
-                                const int stride_points, const int stride_proj,
-                                const int subsampling_x,
-                                const int subsampling_y) {
+void projectPointsAffine(int *mat, int *points, int *proj, const int n,
+                         const int stride_points, const int stride_proj,
+                         const int subsampling_x,
+                         const int subsampling_y) {
   int i;
   for (i = 0; i < n; ++i) {
     const int x = *(points++), y = *(points++);
@@ -133,11 +108,11 @@ static void projectPointsAffine(int *mat, int *points, int *proj, const int n,
   }
 }
 
-static void projectPointsHomography(int *mat, int *points, int *proj,
-                                    const int n, const int stride_points,
-                                    const int stride_proj,
-                                    const int subsampling_x,
-                                    const int subsampling_y) {
+void projectPointsHomography(int *mat, int *points, int *proj,
+                             const int n, const int stride_points,
+                             const int stride_proj,
+                             const int subsampling_x,
+                             const int subsampling_y) {
   int i;
   int64_t x, y, Z;
   int64_t xp, yp;
