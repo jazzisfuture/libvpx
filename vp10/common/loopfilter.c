@@ -710,7 +710,7 @@ static void build_masks(const loop_filter_info_n *const lfi_n,
   const BLOCK_SIZE block_size = mbmi->sb_type;
   // TODO(debargha): Check if masks can be setup correctly when
   // rectangular transfroms are used with the EXT_TX expt.
-  const TX_SIZE tx_size_y = txsize_sqr_map[mbmi->tx_size];
+  const TX_SIZE tx_size_y = txsize_sqr_up_map[mbmi->tx_size];
   const TX_SIZE tx_size_uv =
       get_uv_tx_size_impl(mbmi->tx_size, block_size, 1, 1);
   const int filter_level = get_filter_level(lfi_n, mbmi);
@@ -791,7 +791,7 @@ static void build_y_mask(const loop_filter_info_n *const lfi_n,
 #endif  // CONFIG_SUPERTX
                          LOOP_FILTER_MASK *lfm) {
   const MB_MODE_INFO *mbmi = &mi->mbmi;
-  const TX_SIZE tx_size_y = txsize_sqr_map[mbmi->tx_size];
+  const TX_SIZE tx_size_y = txsize_sqr_up_map[mbmi->tx_size];
 #if CONFIG_SUPERTX
   const BLOCK_SIZE block_size =
       supertx_enabled ? (BLOCK_SIZE)(3 * tx_size_y) : mbmi->sb_type;
@@ -1218,13 +1218,11 @@ void vp10_filter_block_plane_non420(VP10_COMMON *cm,
       const int skip_this_r = skip_this && !block_edge_above;
 
 #if CONFIG_VAR_TX
-      TX_SIZE tx_size = (plane->plane_type == PLANE_TYPE_UV)
-                            ? get_uv_tx_size(mbmi, plane)
-                            : mbmi->tx_size;
+      TX_SIZE tx_size = (plane->plane_type == PLANE_TYPE_UV) ?
+          get_uv_tx_size(mbmi, plane) : mbmi->tx_size;
 #else
-      const TX_SIZE tx_size = (plane->plane_type == PLANE_TYPE_UV)
-                                  ? get_uv_tx_size(mbmi, plane)
-                                  : mbmi->tx_size;
+      const TX_SIZE tx_size = (plane->plane_type == PLANE_TYPE_UV) ?
+          get_uv_tx_size(mbmi, plane) : mbmi->tx_size;
 #endif
 
       const int skip_border_4x4_c = ss_x && mi_col + c == cm->mi_cols - 1;
