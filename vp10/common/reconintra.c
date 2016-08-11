@@ -811,6 +811,53 @@ void vp10_d63_filter_predictor_c(uint8_t *dst, ptrdiff_t stride, int bs,
   filter_intra_predictors_4tap(dst, stride, bs, above, left, D63_PRED);
 }
 
+
+static void adp_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                                 const uint8_t *above, const uint8_t *left) {
+  int r, c, dx, dy, sgn;
+  int pred[33][65];
+
+  for (r = 0; r < bs; ++r)
+    pred[r + 1][0] = (int)left[r];
+
+  for (c = 0; c < 2 * bs + 1; ++c)
+    pred[0][c] = (int)above[c - 1];
+
+  for (r = 1; r < bs + 1; ++r)
+    for (c = 1; c < 2 * bs + 1 - r; ++c) {
+      dx = pred[r - 1][c + 1] - pred[r - 1][c];
+      dy = pred[r][c - 1] - pred[r - 1][c - 1];
+      if (dx == 0) {
+        pred[r][c] = pred[r][c - 1];
+      } else {
+        sgn = (dx > 0) ^ (dy > 0);
+        if (sgn == 0) {
+          if (dy >= dx) {
+            pred[r][c] = pred[r - 1][c + 1];
+          } else {
+            pred[r][c] =
+                ((dx - dy) * pred[r - 1][c] + dy * pred[r - 1][c + 1]) / dx;
+          }
+        } else {
+          if (abs(dx) >= abs(dy)) {
+            pred[r][c] = ((abs(dx) - abs(dy)) * pred[r - 1][c]
+                         + abs(dy) * pred[r - 1][c - 1]) / abs(dx);
+          } else {
+            pred[r][c] = ((abs(dy) - abs(dx)) * pred[r][c - 1]
+                         + abs(dx) * pred[r - 1][c - 1]) / abs(dy);
+          }
+        }
+      }
+    }
+
+  for (r = 0; r < bs; ++r) {
+    for (c = 0; c < bs; ++c) {
+      dst[c] = clip_pixel(pred[r + 1][c + 1]);
+    }
+    dst += stride;
+  }
+}
+
 void vp10_tm_filter_predictor_c(uint8_t *dst, ptrdiff_t stride, int bs,
                                 const uint8_t *above, const uint8_t *left) {
   filter_intra_predictors_4tap(dst, stride, bs, above, left, TM_PRED);
