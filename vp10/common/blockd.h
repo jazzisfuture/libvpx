@@ -670,7 +670,7 @@ static INLINE TX_SIZE get_uv_tx_size_impl(TX_SIZE y_tx_size, BLOCK_SIZE bsize,
     return TX_4X4;
   } else {
     const BLOCK_SIZE plane_bsize = ss_size_lookup[bsize][xss][yss];
-    return VPXMIN(y_tx_size, max_txsize_lookup[plane_bsize]);
+    return VPXMIN(txsize_sqr_map[y_tx_size], max_txsize_lookup[plane_bsize]);
   }
 }
 
@@ -681,7 +681,8 @@ static INLINE TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi,
     return uvsupertx_size_lookup[mbmi->tx_size][pd->subsampling_x]
                                 [pd->subsampling_y];
 #endif  // CONFIG_SUPERTX
-  return get_uv_tx_size_impl(mbmi->tx_size, mbmi->sb_type, pd->subsampling_x,
+  return get_uv_tx_size_impl(mbmi->tx_size,
+                             mbmi->sb_type, pd->subsampling_x,
                              pd->subsampling_y);
 }
 
