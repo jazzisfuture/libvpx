@@ -5223,11 +5223,14 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
       int x, y;
       TX_SIZE tx_size;
       // The new intra coding scheme requires no change of transform size
-      if (is_inter_block(&mi->mbmi))
-        tx_size = VPXMIN(tx_mode_to_biggest_tx_size[cm->tx_mode],
-                         max_txsize_lookup[bsize]);
-      else
+      if (is_inter_block(&mi->mbmi)) {
+        tx_size = mbmi->tx_size;
+        // tx_size = VPXMIN(tx_mode_to_biggest_tx_size[cm->tx_mode],
+        //                  max_txsize_rect_lookup[bsize]);
+      } else {
         tx_size = (bsize >= BLOCK_8X8) ? mbmi->tx_size : TX_4X4;
+      }
+      assert(tx_size == mbmi->tx_size);
 
       for (y = 0; y < mi_height; y++)
         for (x = 0; x < mi_width; x++)
