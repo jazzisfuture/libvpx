@@ -673,7 +673,8 @@ static INLINE TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi,
     return uvsupertx_size_lookup[mbmi->tx_size][pd->subsampling_x]
                                 [pd->subsampling_y];
 #endif  // CONFIG_SUPERTX
-  return get_uv_tx_size_impl(mbmi->tx_size, mbmi->sb_type, pd->subsampling_x,
+  return get_uv_tx_size_impl(txsize_sqr_map[mbmi->tx_size],
+                             mbmi->sb_type, pd->subsampling_x,
                              pd->subsampling_y);
 }
 
