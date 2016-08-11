@@ -22,6 +22,9 @@
 #include "vp10/common/entropy.h"
 #include "vp10/common/entropymode.h"
 #include "vp10/common/mv.h"
+#if CONFIG_AOM_QM
+#include "vp10/common/quant_common.h"
+#endif
 #include "vp10/common/scale.h"
 #include "vp10/common/seg_common.h"
 #include "vp10/common/tile_common.h"
@@ -295,11 +298,17 @@ typedef struct macroblockd_plane {
   // log2 of n4_w, n4_h
   uint8_t n4_wl, n4_hl;
 
+#if CONFIG_AOM_QM
+  const qm_val_t *seg_iqmatrix[MAX_SEGMENTS][2][TX_SIZES];
+#endif
   // encoder
   const int16_t *dequant;
 #if CONFIG_NEW_QUANT
   const dequant_val_type_nuq *dequant_val_nuq[QUANT_PROFILES];
 #endif  // CONFIG_NEW_QUANT
+#if CONFIG_AOM_QM
+  const qm_val_t *seg_qmatrix[MAX_SEGMENTS][2][TX_SIZES];
+#endif
 } MACROBLOCKD_PLANE;
 
 #define BLOCK_OFFSET(x, i) ((x) + (i)*16)
