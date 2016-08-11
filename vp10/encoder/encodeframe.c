@@ -58,6 +58,8 @@
 # define IF_HBD(...)
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+int enc_debug = 0;
+
 static void encode_superblock(VP10_COMP *cpi, ThreadData * td,
                               TOKENEXTRA **t, int output_enabled,
                               int mi_row, int mi_col, BLOCK_SIZE bsize,
@@ -5200,13 +5202,21 @@ static void encode_superblock(VP10_COMP *cpi, ThreadData *td,
     }
 #endif  // CONFIG_OBMC
 
-    vp10_encode_sb(x, VPXMAX(bsize, BLOCK_8X8));
+    // if (output_enabled && (bsize == BLOCK_4X8 || bsize == BLOCK_8X4))
+    //   printf("bsize %d\n", bsize);
+    vp10_encode_sb(x, bsize);
 #if CONFIG_VAR_TX
-    vp10_tokenize_sb_inter(cpi, td, t, !output_enabled,
-                           mi_row, mi_col, VPXMAX(bsize, BLOCK_8X8));
+#if CONFIG_EXT_TX && CONFIG_RECT_TX
+    if (bsize == BLOCK_4X8 || bsize == BLOCK_8X4)
+      vp10_tokenize_sb(cpi, td, t, !output_enabled, VPXMAX(bsize, BLOCK_8X8));
+    else
+#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
+      vp10_tokenize_sb_inter(cpi, td, t, !output_enabled,
+                             mi_row, mi_col, VPXMAX(bsize, BLOCK_8X8));
 #else
     vp10_tokenize_sb(cpi, td, t, !output_enabled, VPXMAX(bsize, BLOCK_8X8));
 #endif
+    enc_debug = 0;
   }
 
   if (output_enabled) {

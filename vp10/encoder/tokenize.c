@@ -583,8 +583,6 @@ void tokenize_tx(ThreadData *td, TOKENEXTRA **t,
   int max_blocks_high = num_4x4_blocks_high_lookup[plane_bsize];
   int max_blocks_wide = num_4x4_blocks_wide_lookup[plane_bsize];
 
-  assert(tx_size < TX_SIZES);
-
   if (xd->mb_to_bottom_edge < 0)
     max_blocks_high += xd->mb_to_bottom_edge >> (5 + pd->subsampling_y);
   if (xd->mb_to_right_edge < 0)
@@ -596,11 +594,13 @@ void tokenize_tx(ThreadData *td, TOKENEXTRA **t,
   if (tx_size == plane_tx_size) {
     const struct macroblockd_plane *const pd = &xd->plane[plane];
     BLOCK_SIZE plane_bsize = get_plane_block_size(mbmi->sb_type, pd);
-    if (!dry_run)
-      tokenize_b(plane, block, blk_row, blk_col, plane_bsize, tx_size, arg);
-    else
+    if (!dry_run) {
+      tokenize_b(plane, block, blk_row, blk_col, plane_bsize,
+                 plane_tx_size, arg);
+    } else {
       set_entropy_context_b(plane, block, blk_row, blk_col,
-                            plane_bsize, tx_size, arg);
+                            plane_bsize, plane_tx_size, arg);
+    }
   } else {
     int bsl = b_width_log2_lookup[bsize];
     int i;
@@ -658,13 +658,13 @@ void vp10_tokenize_sb_inter(VP10_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
     const int mi_width = num_4x4_blocks_wide_lookup[plane_bsize];
     const int mi_height = num_4x4_blocks_high_lookup[plane_bsize];
     const TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
-    const BLOCK_SIZE txb_size = txsize_to_bsize[max_tx_size];
-    int bh = num_4x4_blocks_wide_lookup[txb_size];
+    int bw = num_4x4_blocks_wide_txsize_lookup[max_tx_size];
+    int bh = num_4x4_blocks_high_txsize_lookup[max_tx_size];
     int idx, idy;
     int block = 0;
     int step = num_4x4_blocks_txsize_lookup[max_tx_size];
     for (idy = 0; idy < mi_height; idy += bh) {
-      for (idx = 0; idx < mi_width; idx += bh) {
+      for (idx = 0; idx < mi_width; idx += bw) {
         tokenize_tx(td, t, dry_run, max_tx_size, plane_bsize, idy, idx,
                     block, plane, &arg);
         block += step;

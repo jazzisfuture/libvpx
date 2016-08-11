@@ -3097,10 +3097,6 @@ static void select_tx_block(const VP10_COMP *cpi, MACROBLOCK *x,
   int tmp_eob = 0;
   int zero_blk_rate;
 
-#if CONFIG_EXT_TX
-  assert(tx_size < TX_SIZES);
-#endif  // CONFIG_EXT_TX
-
   if (ref_best_rd < 0) {
     *is_cost_valid = 0;
     return;
@@ -3111,6 +3107,16 @@ static void select_tx_block(const VP10_COMP *cpi, MACROBLOCK *x,
       stxa = pta[0];
       stxl = ptl[0];
       break;
+#if CONFIG_EXT_TX
+    case TX_4X8:
+      stxa = pta[0];
+      stxl = !!*(const uint16_t *)&ptl[0];
+      break;
+    case TX_8X4:
+      stxa = !!*(const uint16_t *)&pta[0];
+      stxl = ptl[0];
+      break;
+#endif  // CONFIG_EXT_TX
     case TX_8X8:
       stxa = !!*(const uint16_t *)&pta[0];
       stxl = !!*(const uint16_t *)&ptl[0];
@@ -3491,6 +3497,14 @@ static void tx_block_rd(const VP10_COMP *cpi, MACROBLOCK *x,
     switch (tx_size) {
       case TX_4X4:
         break;
+#if CONFIG_EXT_TX
+      case TX_4X8:
+        tl[0] = !!*(const uint16_t *)&tl[0];
+        break;
+      case TX_8X4:
+        ta[0] = !!*(const uint16_t *)&ta[0];
+        break;
+#endif  // CONFIG_EXT_TX
       case TX_8X8:
         ta[0] = !!*(const uint16_t *)&ta[0];
         tl[0] = !!*(const uint16_t *)&tl[0];
@@ -4435,7 +4449,7 @@ static int64_t encode_inter_mb_segment(VP10_COMP *cpi,
                  tx_size == max_txsize_rect_lookup[mi->mbmi.sb_type]));
 #else
   assert(tx_size == TX_4X4);
-#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX && !CONFIG_VAR_TX
+#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
   assert(tx_type == DCT_DCT);
 
   vp10_build_inter_predictor_sub8x8(xd, 0, i, ir, ic, mi_row, mi_col);
@@ -4995,7 +5009,7 @@ static int64_t rd_pick_best_sub8x8_mode(
     xd->lossless[mbmi->segment_id] ? TX_4X4 : max_txsize_rect_lookup[bsize];
 #else
   mbmi->tx_size = TX_4X4;
-#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX && !CONFIG_VAR_TX
+#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
 
   vp10_zero(*bsi);
 
@@ -10548,10 +10562,6 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
         xd->plane[i].pre[1] = yv12_mb[second_ref_frame][i];
     }
 
-#if CONFIG_VAR_TX
-    mbmi->inter_tx_size[0][0] = mbmi->tx_size;
-#endif
-
     if (ref_frame == INTRA_FRAME) {
       int rate;
       if (rd_pick_intra_sub_8x8_y_mode(cpi, x, &rate, &rate_y,
@@ -10859,6 +10869,9 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
         continue;
       }
     }
+#if CONFIG_VAR_TX
+    mbmi->inter_tx_size[0][0] = mbmi->tx_size;
+#endif
 
     if (cm->reference_mode == REFERENCE_MODE_SELECT)
       rate2 += compmode_cost;
@@ -10995,6 +11008,7 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
     if (x->skip && !comp_pred)
       break;
   }
+
 
   if (best_rd >= best_rd_so_far) {
     rd_cost->rate = INT_MAX;

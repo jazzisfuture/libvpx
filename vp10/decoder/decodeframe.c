@@ -324,11 +324,7 @@ static void decode_reconstruct_tx(MACROBLOCKD *const xd, vp10_reader *r,
   if (blk_row >= max_blocks_high || blk_col >= max_blocks_wide)
     return;
 
-  if (tx_size == plane_tx_size
-#if CONFIG_EXT_TX && CONFIG_RECT_TX
-      || plane_tx_size >= TX_SIZES
-#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
-      ) {
+  if (tx_size == plane_tx_size) {
     PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
     TX_TYPE tx_type = get_tx_type(plane_type, xd, block, plane_tx_size);
     const scan_order *sc = get_scan(plane_tx_size, tx_type, 1);
@@ -361,7 +357,7 @@ static void decode_reconstruct_tx(MACROBLOCKD *const xd, vp10_reader *r,
 }
 #endif  // CONFIG_VAR_TX
 
-#if !CONFIG_VAR_TX || CONFIG_SUPERTX
+#if !CONFIG_VAR_TX || CONFIG_SUPERTX || (CONFIG_EXT_TX && CONFIG_RECT_TX)
 static int reconstruct_inter_block(MACROBLOCKD *const xd,
 #if CONFIG_ANS
                                    struct AnsDecoder *const r,
@@ -385,7 +381,8 @@ static int reconstruct_inter_block(MACROBLOCKD *const xd,
                           pd->dst.stride, eob);
   return eob;
 }
-#endif  // !CONFIG_VAR_TX || CONFIG_SUPER_TX
+#endif
+// !CONFIG_VAR_TX || CONFIG_SUPER_TX || (CONFIG_EXT_TX && CONFIG_RECT_TX)
 
 static INLINE TX_SIZE dec_get_uv_tx_size(const MB_MODE_INFO *mbmi,
                                          int n4_wl, int n4_hl) {
@@ -1413,27 +1410,48 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         const int num_4x4_h = pd->n4_h;
         int row, col;
 #if CONFIG_VAR_TX
-        // TODO(jingning): This can be simplified for decoder performance.
-        const BLOCK_SIZE plane_bsize = get_plane_block_size(
-            VPXMAX(bsize, BLOCK_8X8), pd);
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
-        const TX_SIZE max_tx_size = plane ?
-            max_txsize_lookup[plane_bsize] : max_txsize_rect_lookup[plane_bsize];
-#else
-        const TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
-#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
-        int bw = num_4x4_blocks_wide_txsize_lookup[max_tx_size];
-        int bh = num_4x4_blocks_high_txsize_lookup[max_tx_size];
-        const int step = num_4x4_blocks_txsize_lookup[max_tx_size];
-        int block = 0;
+        if (bsize == BLOCK_8X4 || bsize == BLOCK_4X8) {
+          const TX_SIZE tx_size =
+              plane ? dec_get_uv_tx_size(mbmi, pd->n4_wl, pd->n4_hl)
+              : mbmi->tx_size;
+          const int stepr = num_4x4_blocks_high_txsize_lookup[tx_size];
+          const int stepc = num_4x4_blocks_wide_txsize_lookup[tx_size];
+          const int max_blocks_wide = num_4x4_w +
+              (xd->mb_to_right_edge >= 0 ?
+               0 : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
+          const int max_blocks_high = num_4x4_h +
+              (xd->mb_to_bottom_edge >= 0 ?
+               0 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
 
-        for (row = 0; row < num_4x4_h; row += bh) {
-          for (col = 0; col < num_4x4_w; col += bw) {
-            decode_reconstruct_tx(xd, r, mbmi, plane, plane_bsize,
-                                  block, row, col, max_tx_size, &eobtotal);
-            block += step;
+          for (row = 0; row < max_blocks_high; row += stepr)
+            for (col = 0; col < max_blocks_wide; col += stepc)
+              eobtotal += reconstruct_inter_block(xd,
+                                                  r,
+                                                  mbmi->segment_id,
+                                                  plane, row, col,
+                                                  tx_size);
+        } else {
+#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
+          // TODO(jingning): This can be simplified for decoder performance.
+          const BLOCK_SIZE plane_bsize = get_plane_block_size(
+              VPXMAX(bsize, BLOCK_8X8), pd);
+          const TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
+          int bw = num_4x4_blocks_wide_txsize_lookup[max_tx_size];
+          int bh = num_4x4_blocks_high_txsize_lookup[max_tx_size];
+          const int step = num_4x4_blocks_txsize_lookup[max_tx_size];
+          int block = 0;
+
+          for (row = 0; row < num_4x4_h; row += bh) {
+            for (col = 0; col < num_4x4_w; col += bw) {
+              decode_reconstruct_tx(xd, r, mbmi, plane, plane_bsize,
+                                    block, row, col, max_tx_size, &eobtotal);
+              block += step;
+            }
           }
+#if CONFIG_EXT_TX && CONFIG_RECT_TX
         }
+#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
 #else
         const TX_SIZE tx_size =
             plane ? dec_get_uv_tx_size(mbmi, pd->n4_wl, pd->n4_hl)
@@ -1454,7 +1472,7 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
                                                 mbmi->segment_id,
                                                 plane, row, col,
                                                 tx_size);
-#endif
+#endif  // CONFIG_VAR_TX
       }
 
       if (!less8x8 && eobtotal == 0)

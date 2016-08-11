@@ -764,13 +764,13 @@ static void pack_mb_tokens(struct BufAnsCoder *ans,
 
 #if CONFIG_VAR_TX
 static void pack_txb_tokens(vp10_writer *w,
-                           const TOKENEXTRA **tp,
-                           const TOKENEXTRA *const tok_end,
-                           MACROBLOCKD *xd, MB_MODE_INFO *mbmi, int plane,
-                           BLOCK_SIZE plane_bsize,
-                           vpx_bit_depth_t bit_depth,
-                           int block,
-                           int blk_row, int blk_col, TX_SIZE tx_size) {
+                            const TOKENEXTRA **tp,
+                            const TOKENEXTRA *const tok_end,
+                            MACROBLOCKD *xd, MB_MODE_INFO *mbmi, int plane,
+                            BLOCK_SIZE plane_bsize,
+                            vpx_bit_depth_t bit_depth,
+                            int block,
+                            int blk_row, int blk_col, TX_SIZE tx_size) {
   const struct macroblockd_plane *const pd = &xd->plane[plane];
   const BLOCK_SIZE bsize = txsize_to_bsize[tx_size];
   const int tx_row = blk_row >> (1 - pd->subsampling_y);
@@ -790,7 +790,7 @@ static void pack_txb_tokens(vp10_writer *w,
     return;
 
   if (tx_size == plane_tx_size) {
-    pack_mb_tokens(w, tp, tok_end, bit_depth, tx_size);
+    pack_mb_tokens(w, tp, tok_end, bit_depth, plane_tx_size);
   } else {
     int bsl = b_width_log2_lookup[bsize];
     int i;
@@ -812,7 +812,7 @@ static void pack_txb_tokens(vp10_writer *w,
     }
   }
 }
-#endif
+#endif  // CONFIG_VAR_TX
 
 static void write_segment_id(vp10_writer *w, const struct segmentation *seg,
                              const struct segmentation_probs *segp,
@@ -1131,7 +1131,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
     set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
     set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
 #else
-  write_selected_tx_size(cm, xd, w);
+    write_selected_tx_size(cm, xd, w);
 #endif
   }
 
@@ -1647,42 +1647,50 @@ static void write_modes_b(VP10_COMP *cpi, const TileInfo *const tile,
     assert(*tok < tok_end);
     for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
 #if CONFIG_VAR_TX
-      const struct macroblockd_plane *const pd = &xd->plane[plane];
-      MB_MODE_INFO *mbmi = &m->mbmi;
-      BLOCK_SIZE bsize = mbmi->sb_type;
-      const BLOCK_SIZE plane_bsize =
-          get_plane_block_size(VPXMAX(bsize, BLOCK_8X8), pd);
-
-      const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
-      const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
-      int row, col;
-
-      if (is_inter_block(mbmi)) {
-        const TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
-        const BLOCK_SIZE txb_size = txsize_to_bsize[max_tx_size];
-        int bw = num_4x4_blocks_wide_lookup[txb_size];
-        int block = 0;
-        const int step = num_4x4_blocks_txsize_lookup[max_tx_size];
-        for (row = 0; row < num_4x4_h; row += bw) {
-          for (col = 0; col < num_4x4_w; col += bw) {
-            pack_txb_tokens(w, tok, tok_end, xd, mbmi, plane, plane_bsize,
-                            cm->bit_depth, block, row, col, max_tx_size);
-            block += step;
-          }
-        }
-      } else {
+#if CONFIG_EXT_TX && CONFIG_RECT_TX
+      if (m->mbmi.sb_type == BLOCK_8X4 || m->mbmi.sb_type == BLOCK_4X8) {
         TX_SIZE tx = plane ? get_uv_tx_size(&m->mbmi, &xd->plane[plane])
-                           : m->mbmi.tx_size;
-        BLOCK_SIZE txb_size = txsize_to_bsize[tx];
-        int bw = num_4x4_blocks_wide_lookup[txb_size];
+            : m->mbmi.tx_size;
+        pack_mb_tokens(w, tok, tok_end, cm->bit_depth, tx);
+      } else {
+#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
+        const struct macroblockd_plane *const pd = &xd->plane[plane];
+        MB_MODE_INFO *mbmi = &m->mbmi;
+        BLOCK_SIZE bsize = mbmi->sb_type;
+        const BLOCK_SIZE plane_bsize =
+            get_plane_block_size(VPXMAX(bsize, BLOCK_8X8), pd);
 
-        for (row = 0; row < num_4x4_h; row += bw)
-          for (col = 0; col < num_4x4_w; col += bw)
-            pack_mb_tokens(w, tok, tok_end, cm->bit_depth, tx);
+        const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
+        const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+        int row, col;
+
+        if (is_inter_block(mbmi)) {
+          const TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
+          const int bw = num_4x4_blocks_wide_txsize_lookup[max_tx_size];
+          const int bh = num_4x4_blocks_high_txsize_lookup[max_tx_size];
+          const int step = num_4x4_blocks_txsize_lookup[max_tx_size];
+          int block = 0;
+          for (row = 0; row < num_4x4_h; row += bh) {
+            for (col = 0; col < num_4x4_w; col += bw) {
+              pack_txb_tokens(w, tok, tok_end, xd, mbmi, plane, plane_bsize,
+                              cm->bit_depth, block, row, col, max_tx_size);
+              block += step;
+            }
+          }
+        } else {
+          TX_SIZE tx = plane ? get_uv_tx_size(&m->mbmi, &xd->plane[plane])
+              : m->mbmi.tx_size;
+          const int bw = num_4x4_blocks_wide_txsize_lookup[tx];
+          for (row = 0; row < num_4x4_h; row += bw)
+            for (col = 0; col < num_4x4_w; col += bw)
+              pack_mb_tokens(w, tok, tok_end, cm->bit_depth, tx);
+        }
+#if CONFIG_EXT_TX && CONFIG_RECT_TX
       }
+#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
 #else
       TX_SIZE tx = plane ? get_uv_tx_size(&m->mbmi, &xd->plane[plane])
-                         : m->mbmi.tx_size;
+          : m->mbmi.tx_size;
       pack_mb_tokens(w, tok, tok_end, cm->bit_depth, tx);
 #endif  // CONFIG_VAR_TX
       assert(*tok < tok_end && (*tok)->token == EOSB_TOKEN);
