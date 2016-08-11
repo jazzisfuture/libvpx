@@ -404,6 +404,7 @@ static const uint8_t ext_intra_extend_modes[FILTER_INTRA_MODES] = {
   NEED_LEFT | NEED_ABOVE,      // FILTER_D153
   NEED_LEFT | NEED_ABOVE,      // FILTER_D207
   NEED_LEFT | NEED_ABOVE,      // FILTER_D63
+  NEED_LEFT | NEED_ABOVE,      // FILTER_ADP
   NEED_LEFT | NEED_ABOVE,      // FILTER_TM
 };
 
@@ -811,6 +812,53 @@ void vp10_d63_filter_predictor_c(uint8_t *dst, ptrdiff_t stride, int bs,
   filter_intra_predictors_4tap(dst, stride, bs, above, left, D63_PRED);
 }
 
+
+void vp10_adp_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                               const uint8_t *above, const uint8_t *left) {
+  int r, c, dx, dy, sgn;
+  int pred[33][65];
+
+  for (r = 0; r < bs; ++r)
+    pred[r + 1][0] = (int)left[r];
+
+  for (c = 0; c < 2 * bs + 1; ++c)
+    pred[0][c] = (int)above[c - 1];
+
+  for (r = 1; r < bs + 1; ++r)
+    for (c = 1; c < 2 * bs + 1 - r; ++c) {
+      dx = pred[r - 1][c + 1] - pred[r - 1][c];
+      dy = pred[r][c - 1] - pred[r - 1][c - 1];
+      if (dx == 0) {
+        pred[r][c] = pred[r][c - 1];
+      } else {
+        sgn = (dx > 0) ^ (dy > 0);
+        if (sgn == 0) {
+          if (abs(dy) >= abs(dx)) {
+            pred[r][c] = pred[r - 1][c + 1];
+          } else {
+            pred[r][c] = ((abs(dx) - abs(dy)) * pred[r - 1][c]
+                         + abs(dy) * pred[r - 1][c + 1]) / abs(dx);
+          }
+        } else {
+          if (abs(dx) >= abs(dy)) {
+            pred[r][c] = ((abs(dx) - abs(dy)) * pred[r - 1][c]
+                         + abs(dy) * pred[r - 1][c - 1]) / abs(dx);
+          } else {
+            pred[r][c] = ((abs(dy) - abs(dx)) * pred[r][c - 1]
+                         + abs(dx) * pred[r - 1][c - 1]) / abs(dy);
+          }
+        }
+      }
+    }
+
+  for (r = 0; r < bs; ++r) {
+    for (c = 0; c < bs; ++c) {
+      dst[c] = clip_pixel(pred[r + 1][c + 1]);
+    }
+    dst += stride;
+  }
+}
+
 void vp10_tm_filter_predictor_c(uint8_t *dst, ptrdiff_t stride, int bs,
                                 const uint8_t *above, const uint8_t *left) {
   filter_intra_predictors_4tap(dst, stride, bs, above, left, TM_PRED);
@@ -820,34 +868,37 @@ static void filter_intra_predictors(int mode, uint8_t *dst,
                                     ptrdiff_t stride, int bs,
                                     const uint8_t *above, const uint8_t *left) {
   switch (mode) {
-    case DC_PRED:
+    case FILTER_DC_PRED:
       vp10_dc_filter_predictor(dst, stride, bs, above, left);
       break;
-    case V_PRED:
+    case FILTER_V_PRED:
       vp10_v_filter_predictor(dst, stride, bs, above, left);
       break;
-    case H_PRED:
+    case FILTER_H_PRED:
       vp10_h_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D45_PRED:
+    case FILTER_D45_PRED:
         vp10_d45_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D135_PRED:
+    case FILTER_D135_PRED:
       vp10_d135_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D117_PRED:
+    case FILTER_D117_PRED:
       vp10_d117_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D153_PRED:
+    case FILTER_D153_PRED:
         vp10_d153_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D207_PRED:
+    case FILTER_D207_PRED:
       vp10_d207_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D63_PRED:
+    case FILTER_D63_PRED:
       vp10_d63_filter_predictor(dst, stride, bs, above, left);
       break;
-    case TM_PRED:
+    case FILTER_ADP_PRED:
+      vp10_adp_filter_predictor(dst, stride, bs, above, left);
+      break;
+    case FILTER_TM_PRED:
       vp10_tm_filter_predictor(dst, stride, bs, above, left);
       break;
     default:
