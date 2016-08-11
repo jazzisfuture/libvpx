@@ -309,11 +309,11 @@ static TX_SIZE read_tx_size_inter(VP10_COMMON *cm, MACROBLOCKD *xd,
       return VPXMIN(max_tx_size, tx_mode_to_biggest_tx_size[tx_mode]);
     }
   } else {
-#if CONFIG_EXT_TX && CONFIG_RECT_TX && !CONFIG_VAR_TX
+#if CONFIG_EXT_TX && CONFIG_RECT_TX
     return max_txsize_rect_lookup[bsize];
 #else
     return TX_4X4;
-#endif  // CONFIG_EXT_TX && CONFIG_RECT_TX && !CONFIG_VAR_TX
+#endif
   }
 }
 
@@ -1635,8 +1635,7 @@ static void read_inter_frame_mode_info(VP10Decoder *const pbi,
             mbmi->inter_tx_size[idy >> 1][idx >> 1] = mbmi->tx_size;
       }
 
-      set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
-      set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
+      set_txfm_ctxs(mbmi->tx_size, xd->n8_w, xd->n8_h, xd);
     }
 #else
   if (inter_block)
