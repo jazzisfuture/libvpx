@@ -315,7 +315,7 @@ static int prob_diff_update_savings(const vpx_tree_index *tree,
 }
 
 #if CONFIG_VAR_TX
-static void write_tx_size_inter(const VP10_COMMON *cm,
+static void write_tx_size_vartx(const VP10_COMMON *cm,
                                 const MACROBLOCKD *xd,
                                 const MB_MODE_INFO *mbmi,
                                 TX_SIZE tx_size, int blk_row, int blk_col,
@@ -357,7 +357,7 @@ static void write_tx_size_inter(const VP10_COMMON *cm,
     for (i = 0; i < 4; ++i) {
       int offsetr = blk_row + ((i >> 1) << bsl);
       int offsetc = blk_col + ((i & 0x01) << bsl);
-      write_tx_size_inter(cm, xd, mbmi, tx_size - 1, offsetr, offsetc, w);
+      write_tx_size_vartx(cm, xd, mbmi, tx_size - 1, offsetr, offsetc, w);
     }
   }
 }
@@ -607,7 +607,7 @@ static void pack_mb_tokens(vp10_writer *w,
   const TOKENEXTRA *p = *tp;
 #if CONFIG_VAR_TX
   int count = 0;
-  const int seg_eob = 16 << (tx << 1);
+  const int seg_eob = get_tx2d_size(tx);
 #endif
 
   while (p < stop && p->token != EOSB_TOKEN) {
@@ -651,8 +651,8 @@ static void pack_mb_tokens(vp10_writer *w,
 
     if (b->base_val) {
       const int e = p->extra, l = b->len;
-      int skip_bits =
-          (b->base_val == CAT6_MIN_VAL) ? TX_SIZES - 1 - tx : 0;
+      int skip_bits = (b->base_val == CAT6_MIN_VAL) ?
+          TX_SIZES - 1 - txsize_sqr_up_map[tx] : 0;
 
       if (l) {
         const unsigned char *pb = b->prob;
@@ -728,7 +728,8 @@ static void pack_mb_tokens(struct BufAnsCoder *ans,
 
       if (b->base_val) {
         const int e = p->extra, l = b->len;
-        int skip_bits = (b->base_val == CAT6_MIN_VAL) ? TX_SIZES - 1 - tx : 0;
+        int skip_bits = (b->base_val == CAT6_MIN_VAL) ?
+            TX_SIZES - 1 - txsize_sqr_up_map[tx] : 0;
 
         if (l) {
           const unsigned char *pb = b->prob;
@@ -1121,7 +1122,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
       int idx, idy;
       for (idy = 0; idy < height; idy += bs)
         for (idx = 0; idx < width; idx += bs)
-          write_tx_size_inter(cm, xd, mbmi, max_tx_size, idy, idx, w);
+          write_tx_size_vartx(cm, xd, mbmi, max_tx_size, idy, idx, w);
     } else {
       set_txfm_ctx(xd->left_txfm_context, mbmi->tx_size, xd->n8_h);
       set_txfm_ctx(xd->above_txfm_context, mbmi->tx_size, xd->n8_w);
