@@ -1280,7 +1280,7 @@ void vp10_init_plane_quantizers(const VP10_COMP *cpi, MACROBLOCK *x,
   xd->plane[0].dequant = cpi->y_dequant[qindex];
 #if CONFIG_NEW_QUANT
   for (dq = 0; dq < QUANT_PROFILES; dq ++) {
-    x->plane[0].cuml_bins_nuq[dq] = (cuml_bins_type_nuq*)
+    x->plane[0].cuml_bins_nuq[dq] = (const cuml_bins_type_nuq*)
                                     quants->y_cuml_bins_nuq[dq][qindex];
     xd->plane[0].dequant_val_nuq[dq] = (const dequant_val_type_nuq*)
                                    cpi->y_dequant_val_nuq[dq][qindex];
@@ -1301,7 +1301,7 @@ void vp10_init_plane_quantizers(const VP10_COMP *cpi, MACROBLOCK *x,
     xd->plane[i].dequant = cpi->uv_dequant[qindex];
 #if CONFIG_NEW_QUANT
     for (dq = 0; dq < QUANT_PROFILES; dq ++) {
-      x->plane[i].cuml_bins_nuq[dq] = (cuml_bins_type_nuq*)
+      x->plane[i].cuml_bins_nuq[dq] = (const cuml_bins_type_nuq*)
                                       quants->uv_cuml_bins_nuq[dq][qindex];
       xd->plane[i].dequant_val_nuq[dq] = (const dequant_val_type_nuq*)
                                      cpi->uv_dequant_val_nuq[dq][qindex];
