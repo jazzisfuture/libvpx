@@ -54,8 +54,7 @@ class VP10IntraPredOptimzTest : public ::testing::TestWithParam<PredParams> {
     blockSize_ = GET_PARAM(1);
 
     alloc_ = (uint8_t *)malloc((3 * MaxBlkSize + 2) * sizeof(alloc_[0]));
-    predRef_ =
-        (uint8_t *)malloc(MaxBlkSize * MaxBlkSize * sizeof(predRef_[0]));
+    predRef_ = (uint8_t *)malloc(MaxBlkSize * MaxBlkSize * sizeof(predRef_[0]));
     pred_ = (uint8_t *)malloc(MaxBlkSize * MaxBlkSize * sizeof(pred_[0]));
   }
 
@@ -119,10 +118,9 @@ class VP10IntraPredOptimzTest : public ::testing::TestWithParam<PredParams> {
   void DiffPred(int testNum) const {
     int i = 0;
     while (i < blockSize_ * blockSize_) {
-      EXPECT_EQ(predRef_[i], pred_[i])
-          << "Error at position: " << i << " "
-          << "Block size: " << blockSize_ << " "
-          << "Test number: " << testNum;
+      EXPECT_EQ(predRef_[i], pred_[i]) << "Error at position: " << i << " "
+                                       << "Block size: " << blockSize_ << " "
+                                       << "Test number: " << testNum;
       i += 1;
     }
   }
@@ -136,18 +134,12 @@ class VP10IntraPredOptimzTest : public ::testing::TestWithParam<PredParams> {
   uint8_t *predRef_;
 };
 
-TEST_P(VP10IntraPredOptimzTest, BitExactCheck) {
-  RunTest();
-}
+TEST_P(VP10IntraPredOptimzTest, BitExactCheck) { RunTest(); }
 
 #if PREDICTORS_SPEED_TEST
-TEST_P(VP10IntraPredOptimzTest, SpeedCheckC) {
-  RunSpeedTestC();
-}
+TEST_P(VP10IntraPredOptimzTest, SpeedCheckC) { RunSpeedTestC(); }
 
-TEST_P(VP10IntraPredOptimzTest, SpeedCheckSSE) {
-  RunSpeedTestSSE();
-}
+TEST_P(VP10IntraPredOptimzTest, SpeedCheckSSE) { RunSpeedTestSSE(); }
 #endif
 
 using std::tr1::make_tuple;
@@ -155,10 +147,8 @@ using std::tr1::make_tuple;
 const PredFuncMode kPredFuncMdArray[] = {
   make_tuple(vp10_dc_filter_predictor_c, vp10_dc_filter_predictor_sse4_1,
              DC_PRED),
-  make_tuple(vp10_v_filter_predictor_c, vp10_v_filter_predictor_sse4_1,
-             V_PRED),
-  make_tuple(vp10_h_filter_predictor_c, vp10_h_filter_predictor_sse4_1,
-             H_PRED),
+  make_tuple(vp10_v_filter_predictor_c, vp10_v_filter_predictor_sse4_1, V_PRED),
+  make_tuple(vp10_h_filter_predictor_c, vp10_h_filter_predictor_sse4_1, H_PRED),
   make_tuple(vp10_d45_filter_predictor_c, vp10_d45_filter_predictor_sse4_1,
              D45_PRED),
   make_tuple(vp10_d135_filter_predictor_c, vp10_d135_filter_predictor_sse4_1,
@@ -175,12 +165,11 @@ const PredFuncMode kPredFuncMdArray[] = {
              TM_PRED),
 };
 
-const int kBlkSize[] = {4, 8, 16, 32};
+const int kBlkSize[] = { 4, 8, 16, 32 };
 
 INSTANTIATE_TEST_CASE_P(
     SSE4_1, VP10IntraPredOptimzTest,
-    ::testing::Combine(
-         ::testing::ValuesIn(kPredFuncMdArray),
-         ::testing::ValuesIn(kBlkSize)));
+    ::testing::Combine(::testing::ValuesIn(kPredFuncMdArray),
+                       ::testing::ValuesIn(kBlkSize)));
 
 }  // namespace
