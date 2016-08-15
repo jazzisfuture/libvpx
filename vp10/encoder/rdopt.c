@@ -2750,6 +2750,7 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
   const int src_stride = x->plane[0].src.stride;
   const uint8_t *src = x->plane[0].src.buf;
   int beat_best_rd = 0;
+  filter_intra_mode_skip_mask ^= (1 << FILTER_ADP_PRED);
 #endif  // CONFIG_EXT_INTRA
   TX_TYPE best_tx_type = DCT_DCT;
   int *bmode_costs;
@@ -2863,7 +2864,9 @@ static int64_t rd_pick_intra_sby_mode(VP10_COMP *cpi, MACROBLOCK *x,
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 #if CONFIG_EXT_INTRA
     if (best_rd == INT64_MAX || this_rd < (best_rd + (best_rd >> 4))) {
-      filter_intra_mode_skip_mask ^= (1 << mic->mbmi.mode);
+      if (mic->mbmi.mode != TM_PRED)
+        filter_intra_mode_skip_mask ^= (1 << mic->mbmi.mode);
+      else filter_intra_mode_skip_mask ^= (1 << FILTER_TM_PRED);
     }
 #endif  // CONFIG_EXT_INTRA
 

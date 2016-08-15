@@ -404,6 +404,7 @@ static const uint8_t ext_intra_extend_modes[FILTER_INTRA_MODES] = {
   NEED_LEFT | NEED_ABOVE,      // FILTER_D153
   NEED_LEFT | NEED_ABOVE,      // FILTER_D207
   NEED_LEFT | NEED_ABOVE,      // FILTER_D63
+  NEED_LEFT | NEED_ABOVE,      // FILTER_ADP
   NEED_LEFT | NEED_ABOVE,      // FILTER_TM
 };
 
@@ -811,6 +812,58 @@ void vp10_d63_filter_predictor_c(uint8_t *dst, ptrdiff_t stride, int bs,
   filter_intra_predictors_4tap(dst, stride, bs, above, left, D63_PRED);
 }
 
+void vp10_adp_filter_predictor(uint8_t *dst, ptrdiff_t stride, int bs,
+                               const uint8_t *above, const uint8_t *left,
+                               const uint8_t *above_second,
+                               const uint8_t *left_second) {
+  int r, c, dx, dy;
+  int pred[34][66];
+
+  for (r = 0; r < bs; ++r) {
+    pred[r + 2][0] = (int)left_second[r];
+    pred[r + 2][1] = (int)left[r];
+  }
+
+  for (c = 0; c < 2 * bs + 2; ++c) {
+    pred[0][c] = (int)above_second[c - 2];
+    pred[1][c] = (int)above[c - 2];
+  }
+
+  for (r = 2; r < bs + 2; ++r)
+    for (c = 2; c < 2 * bs + 3 - r; ++c) {
+      dx = abs(pred[r - 1][c + 1] - pred[r - 1][c])
+          + abs(pred[r - 1][c] - pred[r - 1][c - 1])
+          + abs(pred[r][c - 1] - pred[r][c - 2]);
+      dy = abs(pred[r][c - 1] - pred[r - 1][c - 1])
+          + abs(pred[r - 1][c - 1] - pred[r - 2][c - 1])
+          + abs(pred[r - 1][c] - pred[r - 2][c]);
+      if (dx - dy > 80) {
+        pred[r][c] = pred[r - 1][c];
+      } else if (dy - dx > 80) {
+        pred[r][c] = pred[r][c - 1];
+      } else {
+        pred[r][c] = ((pred[r][c - 1] + pred[r - 1][c]) >> 1)
+                     + ((pred[r - 1][c + 1] - pred[r - 1][c - 1]) >> 2);
+        if (dx - dy > 32) {
+          pred[r][c] = (pred[r][c] + pred[r - 1][c]) >> 1;
+        } else if (dx - dy > 8) {
+          pred[r][c] = (3 * pred[r][c] + pred[r - 1][c]) >> 2;
+        } else if (dy - dx > 32) {
+          pred[r][c] = (pred[r][c] + pred[r][c - 1]) >> 1;
+        } else if (dy - dx > 8) {
+          pred[r][c] = (3 * pred[r][c] + pred[r][c - 1]) >> 2;
+        }
+      }
+    }
+
+  for (r = 0; r < bs; ++r) {
+    for (c = 0; c < bs; ++c) {
+      dst[c] = clip_pixel(pred[r + 2][c + 2]);
+    }
+    dst += stride;
+  }
+}
+
 void vp10_tm_filter_predictor_c(uint8_t *dst, ptrdiff_t stride, int bs,
                                 const uint8_t *above, const uint8_t *left) {
   filter_intra_predictors_4tap(dst, stride, bs, above, left, TM_PRED);
@@ -818,36 +871,42 @@ void vp10_tm_filter_predictor_c(uint8_t *dst, ptrdiff_t stride, int bs,
 
 static void filter_intra_predictors(int mode, uint8_t *dst,
                                     ptrdiff_t stride, int bs,
-                                    const uint8_t *above, const uint8_t *left) {
+                                    const uint8_t *above, const uint8_t *left,
+                                    const uint8_t *above_second,
+                                    const uint8_t *left_second) {
   switch (mode) {
-    case DC_PRED:
+    case FILTER_DC_PRED:
       vp10_dc_filter_predictor(dst, stride, bs, above, left);
       break;
-    case V_PRED:
+    case FILTER_V_PRED:
       vp10_v_filter_predictor(dst, stride, bs, above, left);
       break;
-    case H_PRED:
+    case FILTER_H_PRED:
       vp10_h_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D45_PRED:
-        vp10_d45_filter_predictor(dst, stride, bs, above, left);
+    case FILTER_D45_PRED:
+      vp10_d45_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D135_PRED:
+    case FILTER_D135_PRED:
       vp10_d135_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D117_PRED:
+    case FILTER_D117_PRED:
       vp10_d117_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D153_PRED:
-        vp10_d153_filter_predictor(dst, stride, bs, above, left);
+    case FILTER_D153_PRED:
+      vp10_d153_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D207_PRED:
+    case FILTER_D207_PRED:
       vp10_d207_filter_predictor(dst, stride, bs, above, left);
       break;
-    case D63_PRED:
+    case FILTER_D63_PRED:
       vp10_d63_filter_predictor(dst, stride, bs, above, left);
       break;
-    case TM_PRED:
+    case FILTER_ADP_PRED:
+      vp10_adp_filter_predictor(dst, stride, bs, above, left,
+                                above_second, left_second);
+      break;
+    case FILTER_TM_PRED:
       vp10_tm_filter_predictor(dst, stride, bs, above, left);
       break;
     default:
@@ -1347,6 +1406,11 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
   int need_left = extend_modes[mode] & NEED_LEFT;
   int need_above = extend_modes[mode] & NEED_ABOVE;
 #if CONFIG_EXT_INTRA
+  const uint8_t *above_second_ref = ref - 2 * ref_stride;
+  DECLARE_ALIGNED(16, uint8_t, left_second_col[MAX_SB_SIZE]);
+  DECLARE_ALIGNED(16, uint8_t, above_second_data[MAX_SB_SIZE + 16]);
+  uint8_t *above_second_row = above_second_data + 16;
+  const uint8_t *const_above_second_row = above_second_row;
   const EXT_INTRA_MODE_INFO *ext_intra_mode_info =
       &xd->mi[0]->mbmi.ext_intra_mode_info;
   const EXT_INTRA_MODE ext_intra_mode =
@@ -1418,11 +1482,20 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
         left_col[i] = ref[i * ref_stride - 1];
       if (need_bottom && n_bottomleft_px > 0) {
         assert(i == bs);
-        for (; i < bs + n_bottomleft_px; i++)
+        for (; i < bs + n_bottomleft_px; i++) {
           left_col[i] = ref[i * ref_stride - 1];
+#if CONFIG_EXT_INTRA
+          left_second_col[i] = ref[i * ref_stride - 2];
+#endif
+        }
       }
-      if (i < (bs << need_bottom))
+      if (i < (bs << need_bottom)) {
         memset(&left_col[i], left_col[i - 1], (bs << need_bottom) - i);
+#if CONFIG_EXT_INTRA
+        memset(&left_second_col[i],
+               left_second_col[i - 1], (bs << need_bottom) - i);
+#endif
+      }
     } else {
       memset(left_col, 129, bs << need_bottom);
     }
@@ -1445,16 +1518,30 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
 #endif  // CONFIG_EXT_INTRA
     if (n_top_px > 0) {
       memcpy(above_row, above_ref, n_top_px);
+#if CONFIG_EXT_INTRA
+      memcpy(above_second_row, above_second_ref, n_top_px);
+#endif
       i = n_top_px;
       if (need_right && n_topright_px > 0) {
         assert(n_top_px == bs);
         memcpy(above_row + bs, above_ref + bs, n_topright_px);
+#if CONFIG_EXT_INTRA
+        memcpy(above_second_row + bs, above_second_ref + bs, n_topright_px);
+#endif
         i += n_topright_px;
       }
-      if (i < (bs << need_right))
+      if (i < (bs << need_right)) {
         memset(&above_row[i], above_row[i - 1], (bs << need_right) - i);
+#if CONFIG_EXT_INTRA
+        memset(&above_second_row[i],
+               above_second_row[i - 1], (bs << need_right) - i);
+#endif
+      }
     } else {
       memset(above_row, 127, bs << need_right);
+#if CONFIG_EXT_INTRA
+      memset(above_second_row, 127, bs << need_right);
+#endif
     }
   }
 
@@ -1464,6 +1551,11 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
       (mode != DC_PRED && mode != TM_PRED &&
           xd->mi[0]->mbmi.sb_type >= BLOCK_8X8)) {
     above_row[-1] = n_top_px > 0 ? (n_left_px > 0 ? above_ref[-1] : 129) : 127;
+    above_second_row[-1] =
+        n_top_px > 0 ? (n_left_px > 0 ? above_second_ref[-1] : 129) : 127;
+    above_row[-2] = n_top_px > 0 ? (n_left_px > 0 ? above_ref[-2] : 129) : 127;
+    above_second_row[-2] =
+        n_top_px > 0 ? (n_left_px > 0 ? above_second_ref[-2] : 129) : 127;
   }
 #else
   if ((extend_modes[mode] & NEED_ABOVELEFT)) {
@@ -1474,7 +1566,8 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
 #if CONFIG_EXT_INTRA
   if (ext_intra_mode_info->use_ext_intra_mode[plane != 0]) {
     filter_intra_predictors(ext_intra_mode, dst, dst_stride, bs,
-                            const_above_row, left_col);
+                            const_above_row, left_col,
+                            const_above_second_row, left_second_col);
     return;
   }
 
