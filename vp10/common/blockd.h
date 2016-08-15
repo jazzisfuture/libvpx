@@ -557,6 +557,7 @@ static const TX_TYPE filter_intra_mode_to_tx_type_lookup[FILTER_INTRA_MODES] = {
   DCT_ADST,   // FILTER_D153
   DCT_ADST,   // FILTER_D207
   ADST_DCT,   // FILTER_D63
+  ADST_ADST,  // FILTER_ADP
   ADST_ADST,  // FILTER_TM
 };
 
