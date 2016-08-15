@@ -980,14 +980,20 @@ static int mode_offset(const PREDICTION_MODE mode) {
 
 static INLINE void update_thresh_freq_fact(VP9_COMP *cpi,
                                            TileDataEnc *tile_data,
+                                           int source_variance,
                                            BLOCK_SIZE bsize,
                                            MV_REFERENCE_FRAME ref_frame,
                                            THR_MODES best_mode_idx,
-                                           PREDICTION_MODE mode) {
+                                           PREDICTION_MODE mode,
+                                           int limit_newmv) {
   THR_MODES thr_mode_idx = mode_idx[ref_frame][mode_offset(mode)];
   int *freq_fact = &tile_data->thresh_freq_fact[bsize][thr_mode_idx];
   if (thr_mode_idx == best_mode_idx)
     *freq_fact -= (*freq_fact >> 4);
+  else if (limit_newmv && mode == NEWMV && ref_frame == LAST_FRAME &&
+           source_variance < 5) {
+    *freq_fact = VPXMIN(*freq_fact + RD_THRESH_INC, 32);
+  }
   else
     *freq_fact = VPXMIN(*freq_fact + RD_THRESH_INC,
                         cpi->sf.adaptive_rd_thresh * RD_THRESH_MAX_FACT);
@@ -1388,10 +1394,21 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int perform_intra_pred = 1;
   int use_golden_nonzeromv = 1;
   int force_skip_low_temp_var = 0;
+  int limit_newmv = 0;
+  int bias_golden = 0;
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
 #endif
+
+  if (cpi->oxcf.rc_mode == VPX_CBR &&
+      cpi->oxcf.content != VP9E_CONTENT_SCREEN &&
+      cpi->oxcf.speed < 8 &&
+      cpi->oxcf.speed >= 5 &&
+      !cpi->use_svc) {
+    limit_newmv = 1;
+    bias_golden = 1;
+  }
 
   init_ref_frame_cost(cm, xd, ref_frame_cost);
 
@@ -1438,7 +1455,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   mi->tx_size =
       VPXMIN(max_txsize_lookup[bsize], tx_mode_to_biggest_tx_size[cm->tx_mode]);
 
-  if (sf->short_circuit_flat_blocks) {
+  if (sf->short_circuit_flat_blocks || limit_newmv) {
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
       x->source_variance = vp9_high_get_sby_perpixel_variance(
@@ -1558,6 +1575,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     mode_index = mode_idx[ref_frame][INTER_OFFSET(this_mode)];
     mode_rd_thresh = best_mode_skip_txfm ? rd_threshes[mode_index] << 1
                                          : rd_threshes[mode_index];
+
+    // Increase mode_rd_thresh value for GOLDEN_FRAME for improved encoding
+    // speed with little/no subjective quality loss.
+    if (bias_golden && ref_frame == GOLDEN_FRAME &&
+        cpi->rc.frames_since_golden > 4)
+        mode_rd_thresh = mode_rd_thresh << 3;
+
     if (rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
                             rd_thresh_freq_fact[mode_index]))
       continue;
@@ -2032,16 +2056,18 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       // TODO(yunqingwang): Check intra mode mask and only update freq_fact
       // for those valid modes.
       for (i = 0; i < intra_modes; i++) {
-        update_thresh_freq_fact(cpi, tile_data, bsize, INTRA_FRAME,
-                                best_mode_idx, intra_mode_list[i]);
+        update_thresh_freq_fact(cpi, tile_data, x->source_variance, bsize,
+                                INTRA_FRAME, best_mode_idx, intra_mode_list[i],
+                                limit_newmv);
       }
     } else {
       for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ++ref_frame) {
         PREDICTION_MODE this_mode;
         if (best_ref_frame != ref_frame) continue;
         for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {
-          update_thresh_freq_fact(cpi, tile_data, bsize, ref_frame,
-                                  best_mode_idx, this_mode);
+          update_thresh_freq_fact(cpi, tile_data, x->source_variance, bsize,
+                                  ref_frame, best_mode_idx, this_mode,
+                                  limit_newmv);
         }
       }
     }
