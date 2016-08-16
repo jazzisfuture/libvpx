@@ -17,27 +17,13 @@
 #include <math.h>
 #include <assert.h>
 
+#include "vp10/common/mv.h"
+
 #include "./vpx_config.h"
 #include "vpx_ports/mem.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 
-// Bits of precision used for the model
-#define WARPEDMODEL_PREC_BITS 8
-#define WARPEDMODEL_ROW3HOMO_PREC_BITS 12
-
-// Bits of subpel precision for warped interpolation
-#define WARPEDPIXEL_PREC_BITS 6
-#define WARPEDPIXEL_PREC_SHIFTS (1 << WARPEDPIXEL_PREC_BITS)
-
-// Taps for ntap filter
-#define WARPEDPIXEL_FILTER_TAPS 6
-
-// Precision of filter taps
-#define WARPEDPIXEL_FILTER_BITS 7
-
-#define WARPEDDIFF_PREC_BITS (WARPEDMODEL_PREC_BITS - WARPEDPIXEL_PREC_BITS)
-
-typedef void (*projectPointsType)(int *mat,
+typedef void (*projectPointsType)(int16_t *mat,
                                   int *points,
                                   int *proj,
                                   const int n,
@@ -45,7 +31,8 @@ typedef void (*projectPointsType)(int *mat,
                                   const int stride_proj,
                                   const int subsampling_x,
                                   const int subsampling_y);
-void projectPointsHomography(int *mat,
+
+void projectPointsHomography(int16_t *mat,
                              int *points,
                              int *proj,
                              const int n,
@@ -53,7 +40,8 @@ void projectPointsHomography(int *mat,
                              const int stride_proj,
                              const int subsampling_x,
                              const int subsampling_y);
-void projectPointsAffine(int *mat,
+
+void projectPointsAffine(int16_t *mat,
                          int *points,
                          int *proj,
                          const int n,
@@ -61,7 +49,8 @@ void projectPointsAffine(int *mat,
                          const int stride_proj,
                          const int subsampling_x,
                          const int subsampling_y);
-void projectPointsRotZoom(int *mat,
+
+void projectPointsRotZoom(int16_t *mat,
                           int *points,
                           int *proj,
                           const int n,
@@ -69,7 +58,8 @@ void projectPointsRotZoom(int *mat,
                           const int stride_proj,
                           const int subsampling_x,
                           const int subsampling_y);
-void projectPointsTranslation(int *mat,
+
+void projectPointsTranslation(int16_t *mat,
                               int *points,
                               int *proj,
                               const int n,
@@ -77,23 +67,6 @@ void projectPointsTranslation(int *mat,
                               const int stride_proj,
                               const int subsampling_x,
                               const int subsampling_y);
-
-typedef enum {
-  UNKNOWN_TRANSFORM = -1,
-  HOMOGRAPHY,   // homography, 8-parameter
-  AFFINE,       // affine, 6-parameter
-  ROTZOOM,      // simplified affine with rotation and zoom only, 4-parameter
-  TRANSLATION,  // translational motion 2-parameter
-  TRANS_TYPES
-} TransformationType;
-
-// number of parameters used by each transformation in TransformationTypes
-static const int n_trans_model_params[TRANS_TYPES] = { 9, 6, 4, 2 };
-
-typedef struct {
-  TransformationType wmtype;
-  int wmmat[8];  // For homography wmmat[9] is assumed to be 1
-} WarpedMotionParams;
 
 double warp_erroradv(WarpedMotionParams *wm,
 #if CONFIG_VP9_HIGHBITDEPTH
