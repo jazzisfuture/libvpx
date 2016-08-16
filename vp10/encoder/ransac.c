@@ -522,7 +522,8 @@ int ransac_(double *matched_points,
      }
 
     vp10_integerize_model(H, type, &wm);
-    projectPoints(wm.wmmat, corners1_int, image1_coord, npoints, 2, 2, 0, 0);
+    projectPoints((int16_t*)wm.wmmat, corners1_int,
+                  image1_coord, npoints, 2, 2, 0, 0);
 
     for( i = 0; i < npoints; ++i ) {
       double dx = (image1_coord[i*2] >> WARPEDPIXEL_PREC_BITS) - corners2[i*2];
@@ -694,8 +695,8 @@ static void denormalizeTranslation(double *H, double *T1, double *T2) {
   Ha[6] = Ha[7] = 0;
   Ha[8] = 1;
   denormalizeHomography(Ha, T1, T2);
-  H[0] = Ha[2];
-  H[1] = Ha[5];
+  H[0] = Ha[5];
+  H[1] = Ha[2];
 }
 
 static int is_collinear3(double *p1, double *p2, double *p3) {
