@@ -18,7 +18,7 @@ using libvpx_test::input_base;
 namespace {
 const int txfm_type_num = 2;
 const int txfm_size_num = 5;
-const int txfm_size_ls[5] = { 4, 8, 16, 32, 64 };
+const int txfm_size_ls[5] = { 4, 8, 16, 32 };
 
 const TxfmFunc fwd_txfm_func_ls[2][5] = {
   { vp10_fdct4_new, vp10_fdct8_new, vp10_fdct16_new, vp10_fdct32_new,
