@@ -17,6 +17,8 @@
 #include <math.h>
 #include <assert.h>
 
+#include "vp10/common/mv.h"
+
 #include "./vpx_config.h"
 #include "vpx_ports/mem.h"
 #include "vpx_dsp/vpx_dsp_common.h"
@@ -37,40 +39,27 @@
 
 #define WARPEDDIFF_PREC_BITS (WARPEDMODEL_PREC_BITS - WARPEDPIXEL_PREC_BITS)
 
-typedef void (*ProjectPointsType)(int *mat, int *points, int *proj, const int n,
-                                  const int stride_points,
+typedef void (*ProjectPointsType)(int16_t *mat, int *points, int *proj,
+                                  const int n, const int stride_points,
                                   const int stride_proj,
                                   const int subsampling_x,
                                   const int subsampling_y);
-void projectPointsHomography(int *mat, int *points, int *proj, const int n,
+
+void projectPointsHomography(int16_t *mat, int *points, int *proj, const int n,
                              const int stride_points, const int stride_proj,
                              const int subsampling_x, const int subsampling_y);
-void projectPointsAffine(int *mat, int *points, int *proj, const int n,
+
+void projectPointsAffine(int16_t *mat, int *points, int *proj, const int n,
                          const int stride_points, const int stride_proj,
                          const int subsampling_x, const int subsampling_y);
-void projectPointsRotZoom(int *mat, int *points, int *proj, const int n,
+
+void projectPointsRotZoom(int16_t *mat, int *points, int *proj, const int n,
                           const int stride_points, const int stride_proj,
                           const int subsampling_x, const int subsampling_y);
-void projectPointsTranslation(int *mat, int *points, int *proj, const int n,
+
+void projectPointsTranslation(int16_t *mat, int *points, int *proj, const int n,
                               const int stride_points, const int stride_proj,
                               const int subsampling_x, const int subsampling_y);
-
-typedef enum {
-  UNKNOWN_TRANSFORM = -1,
-  HOMOGRAPHY,   // homography, 8-parameter
-  AFFINE,       // affine, 6-parameter
-  ROTZOOM,      // simplified affine with rotation and zoom only, 4-parameter
-  TRANSLATION,  // translational motion 2-parameter
-  TRANS_TYPES
-} TransformationType;
-
-// number of parameters used by each transformation in TransformationTypes
-static const int n_trans_model_params[TRANS_TYPES] = { 9, 6, 4, 2 };
-
-typedef struct {
-  TransformationType wmtype;
-  int wmmat[8];  // For homography wmmat[9] is assumed to be 1
-} WarpedMotionParams;
 
 double vp10_warp_erroradv(WarpedMotionParams *wm,
 #if CONFIG_VP9_HIGHBITDEPTH
