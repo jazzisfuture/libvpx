@@ -41,6 +41,7 @@
 #endif
 #if CONFIG_GLOBAL_MOTION
 #include "vp10/encoder/global_motion.h"
+#include "vp10/common/warped_motion.h"
 #endif
 #include "vp10/encoder/encodeframe.h"
 #include "vp10/encoder/encodemb.h"
@@ -4410,36 +4411,115 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 #define MIN_TRANS_THRESH 8
 #define GLOBAL_MOTION_ADVANTAGE_THRESH 0.60
 #define GLOBAL_MOTION_MODEL ROTZOOM
+
+static void refine_integerized_param(WarpedMotionParams *wm,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                     int use_hbd, int bd,
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+                                    uint8_t *ref, int r_width, int r_height,
+                                    int r_stride, uint8_t *dst, int d_width,
+                                    int d_height, int d_stride,
+                                    int n_refinements) {
+
+  int i = 0, p;
+  int n_params = n_trans_model_params[wm->wmtype];
+  int16_t *param_mat = (int16_t*)wm->wmmat;
+  double step_error;
+  int step;
+  int16_t *param;
+  int16_t curr_param;
+  int16_t best_param;
+
+ double best_error = vp10_warp_erroradv(wm,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                        use_hbd, bd,
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+                                        ref, r_width, r_height, r_stride, dst,
+                                        0, 0, d_width, d_height, d_stride, 0, 0,
+                                        16, 16);
+  for (p = n_params - 1; p >= 0; --p) {
+    param = param_mat + p;
+    step = n_refinements;//1 << WARPEDMODEL_PREC_BITS;//(n_refinements + 1);
+    curr_param = *param;
+    best_param = curr_param;
+    for (i = 0; i < n_refinements; i++) {
+      // look to the left
+      *param = curr_param - step;
+      step_error = vp10_warp_erroradv(wm,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                    use_hbd, bd,
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+                                    ref, r_width, r_height, r_stride, dst,
+                                    0, 0, d_width, d_height, d_stride, 0, 0,
+                                    16, 16);
+      if (step_error < best_error) {
+        step -= 1;
+        best_error = step_error;
+        best_param = *param;
+        curr_param = best_param;
+        continue;
+      }
+
+      // look to the right
+      *param = curr_param + step;
+      step_error = vp10_warp_erroradv(wm,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                    use_hbd, bd,
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+                                    ref, r_width, r_height, r_stride, dst,
+                                    0, 0, d_width, d_height, d_stride, 0, 0,
+                                    16, 16);
+      if (step_error < best_error) {
+        step -= 1;
+        best_error = step_error;
+        best_param = *param;
+        curr_param = best_param;
+        continue;
+      }
+
+      // no improvement found-> means we're either already at a minimum or
+      // step is too wide
+      step >>= 1;
+    }
+
+    *param = best_param;
+  }
+}
+
 static void convert_to_params(double *H, TransformationType type,
-                              Global_Motion_Params *model) {
-  int i;
+                              int16_t* model) {
+  int i, is_diagonal = 0;
   int alpha_present = 0;
   int n_params = n_trans_model_params[type];
-  model->motion_params.wmmat[0] =
-      (int)floor(H[0] * (1 << GM_TRANS_PREC_BITS) + 0.5);
-  model->motion_params.wmmat[1] =
-      (int)floor(H[1] * (1 << GM_TRANS_PREC_BITS) + 0.5);
-  model->motion_params.wmmat[0] =
-      clamp(model->motion_params.wmmat[0], GM_TRANS_MIN, GM_TRANS_MAX) *
-      GM_TRANS_DECODE_FACTOR;
-  model->motion_params.wmmat[1] =
-      clamp(model->motion_params.wmmat[1], GM_TRANS_MIN, GM_TRANS_MAX) *
-      GM_TRANS_DECODE_FACTOR;
+  model[0] = (int16_t)floor(H[0] * (1 << GM_TRANS_PREC_BITS) + 0.5);
+  model[1] = (int16_t)floor(H[1] * (1 << GM_TRANS_PREC_BITS) + 0.5);
+  model[0] = (int16_t)clamp(model[0], GM_TRANS_MIN, GM_TRANS_MAX) *
+                            GM_TRANS_DECODE_FACTOR;
+  model[1] = (int16_t)clamp(model[1], GM_TRANS_MIN, GM_TRANS_MAX) *
+                            GM_TRANS_DECODE_FACTOR;
 
   for (i = 2; i < n_params; ++i) {
-    model->motion_params.wmmat[i] =
-        (int)floor(H[i] * (1 << GM_ALPHA_PREC_BITS) + 0.5);
-    model->motion_params.wmmat[i] =
-        clamp(model->motion_params.wmmat[i], GM_ALPHA_MIN, GM_ALPHA_MAX) *
-        GM_ALPHA_DECODE_FACTOR;
-    alpha_present |= (model->motion_params.wmmat[i] != 0);
+    /* if H[i] is located on the diagonal of the transformation matrix,
+       we will subtract 1 when we send it in the bitstream due to the
+       assumption that the transformation matrix will be close to
+       the identity matrix. Here, 1 is subtracted before the clamping
+       but then added back on so that the value in model[i] is the same
+       as it will be after being decoded.
+    */
+    is_diagonal = ((i == 3) || (i == 4));
+    model[i] = (int16_t)floor((H[i] - is_diagonal)  *
+                              (1 << GM_ALPHA_PREC_BITS) + 0.5);
+    model[i] = (int16_t)((clamp(model[i], GM_ALPHA_MIN, GM_ALPHA_MAX) *
+                               GM_ALPHA_DECODE_FACTOR) +
+                               (is_diagonal << WARPEDMODEL_PREC_BITS));
+    alpha_present |= (model[i] != 0);
   }
 
   if (!alpha_present) {
-    if (abs(model->motion_params.wmmat[0]) < MIN_TRANS_THRESH &&
-        abs(model->motion_params.wmmat[1]) < MIN_TRANS_THRESH) {
-      model->motion_params.wmmat[0] = 0;
-      model->motion_params.wmmat[1] = 0;
+    if (abs(model[0]) < MIN_TRANS_THRESH &&
+        abs(model[1]) < MIN_TRANS_THRESH) {
+      model[0] = 0;
+      model[1] = 0;
     }
   }
 }
@@ -4447,7 +4527,8 @@ static void convert_to_params(double *H, TransformationType type,
 static void convert_model_to_params(double *H, TransformationType type,
                                     Global_Motion_Params *model) {
   // TODO(sarahparker) implement for homography
-  if (type > HOMOGRAPHY) convert_to_params(H, type, model);
+  if (type > HOMOGRAPHY)
+    convert_to_params(H, type, (int16_t*)model->motion_params.wmmat);
   model->gmtype = get_gmtype(model);
   model->motion_params.wmtype = gm_to_trans_type(model->gmtype);
 }
@@ -4483,10 +4564,32 @@ static void encode_frame_internal(VP10_COMP *cpi) {
     for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
       ref_buf = get_ref_frame_buffer(cpi, frame);
       if (ref_buf) {
+        // TEST STUFF /////////////////
+        WarpedMotionParams wm;
+        double Htest[9] = {0, 0, 0.0923, 1.0345, 0, 0, 0, 0, 1};
+        vp10_integerize_model(Htest, ROTZOOM, &wm);
+        vp10_warp_plane(&wm, ref_buf->y_buffer, ref_buf->y_width, ref_buf->y_height, ref_buf->y_stride, cpi->Source->y_buffer, 0, 0, cpi->Source->y_width, cpi->Source->y_height, cpi->Source->y_stride, 0,0, 16,16);
+        //////////////
         if (compute_global_motion_feature_based(GLOBAL_MOTION_MODEL,
                                                 cpi->Source, ref_buf, H)) {
           convert_model_to_params(H, GLOBAL_MOTION_MODEL,
                                   &cm->global_motion[frame]);
+          refine_integerized_param(&cm->global_motion[frame].motion_params,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                   xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH,
+                                   xd->bd,
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+                                   ref_buf->y_buffer, ref_buf->y_width,
+                                   ref_buf->y_height, ref_buf->y_stride,
+                                   cpi->Source->y_buffer, cpi->Source->y_width,
+                                   cpi->Source->y_height,
+                                   cpi->Source->y_stride, 5);
+          printf("pre-refine parms: %f %f %f %f %f %f\n\n", H[0], H[1], H[2], H[3], H[4], H[5]);
+          printf("found params: %f %f %f %f\n\n",
+                                  (float)(cm->global_motion[frame].motion_params.wmmat[0].as_mv.row)/ (1 << 8),
+                                  (float)(cm->global_motion[frame].motion_params.wmmat[0].as_mv.col)/ (1 << 8),
+                                  (float)(cm->global_motion[frame].motion_params.wmmat[1].as_mv.row)/ (1 << 8),
+                                  (float)(cm->global_motion[frame].motion_params.wmmat[1].as_mv.col)/ (1 << 8));
           if (get_gmtype(&cm->global_motion[frame]) > GLOBAL_ZERO) {
             // compute the advantage of using gm parameters over 0 motion
             double erroradvantage = vp10_warp_erroradv(
@@ -4502,6 +4605,14 @@ static void encode_frame_internal(VP10_COMP *cpi) {
               // Not enough advantage in using a global model. Make 0.
               memset(&cm->global_motion[frame], 0,
                      sizeof(cm->global_motion[frame]));
+            else
+            printf("erroradv %f: %d %d %d %d\n",
+             erroradvantage,
+             cm->global_motion[frame].motion_params.wmmat[0].as_mv.row,
+             cm->global_motion[frame].motion_params.wmmat[0].as_mv.col,
+             cm->global_motion[frame].motion_params.wmmat[1].as_mv.row,
+             cm->global_motion[frame].motion_params.wmmat[1].as_mv.col);
+
           }
         }
       }
