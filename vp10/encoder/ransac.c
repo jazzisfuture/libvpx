@@ -522,7 +522,8 @@ int ransac_(double *matched_points,
      }
 
     vp10_integerize_model(H, type, &wm);
-    projectPoints(wm.wmmat, corners1_int, image1_coord, npoints, 2, 2, 0, 0);
+    projectPoints((int16_t*)wm.wmmat, corners1_int,
+                  image1_coord, npoints, 2, 2, 0, 0);
 
     for( i = 0; i < npoints; ++i ) {
       double dx = (image1_coord[i*2] >> WARPEDPIXEL_PREC_BITS) - corners2[i*2];
