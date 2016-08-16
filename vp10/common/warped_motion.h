@@ -21,6 +21,8 @@
 #include "vpx_ports/mem.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 
+#include "vp10/common/mv.h"
+
 // Bits of precision used for the model
 #define WARPEDMODEL_PREC_BITS 8
 #define WARPEDMODEL_ROW3HOMO_PREC_BITS 12
@@ -51,7 +53,7 @@ static const int n_trans_model_params[TRANS_TYPES] = { 9, 6, 4, 2 };
 
 typedef struct {
   TransformationType wmtype;
-  int wmmat[8];  // For homography wmmat[9] is assumed to be 1
+  int_mv wmmat[4];  // For homography wmmat[9] is assumed to be 1
 } WarpedMotionParams;
 
 void vp10_warp_plane(WarpedMotionParams *wm,

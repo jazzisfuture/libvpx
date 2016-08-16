@@ -569,22 +569,28 @@ void vp10_integerize_model(const double *model, TransformationType wmtype,
   switch (wmtype) {
     case HOMOGRAPHY:
       assert(fabs(model[8] - 1.0) < 1e-12);
-      wm->wmmat[7] =
-          (int)lrint(model[7] * (1 << WARPEDMODEL_ROW3HOMO_PREC_BITS));
-      wm->wmmat[6] =
-          (int)lrint(model[6] * (1 << WARPEDMODEL_ROW3HOMO_PREC_BITS));
+      wm->wmmat[3].col =
+          (int16_t)lrint(model[7] * (1 << WARPEDMODEL_ROW3HOMO_PREC_BITS));
+      wm->wmmat[3].row =
+          (int16_t)lrint(model[6] * (1 << WARPEDMODEL_ROW3HOMO_PREC_BITS));
     /* fallthrough intended */
     case AFFINE:
-      wm->wmmat[5] = (int)lrint(model[5] * (1 << WARPEDMODEL_PREC_BITS));
-      wm->wmmat[4] = (int)lrint(model[4] * (1 << WARPEDMODEL_PREC_BITS));
+      wm->wmmat[2].col =
+          (int16_t)lrint(model[5] * (1 << WARPEDMODEL_PREC_BITS));
+      wm->wmmat[2].row =
+          (int16_t)lrint(model[4] * (1 << WARPEDMODEL_PREC_BITS));
     /* fallthrough intended */
     case ROTZOOM:
-      wm->wmmat[3] = (int)lrint(model[3] * (1 << WARPEDMODEL_PREC_BITS));
-      wm->wmmat[2] = (int)lrint(model[2] * (1 << WARPEDMODEL_PREC_BITS));
+      wm->wmmat[1].col =
+          (int16_t)lrint(model[3] * (1 << WARPEDMODEL_PREC_BITS));
+      wm->wmmat[1].row =
+          (int16_t)lrint(model[2] * (1 << WARPEDMODEL_PREC_BITS));
     /* fallthrough intended */
     case TRANSLATION:
-      wm->wmmat[1] = (int)lrint(model[1] * (1 << WARPEDMODEL_PREC_BITS));
-      wm->wmmat[0] = (int)lrint(model[0] * (1 << WARPEDMODEL_PREC_BITS));
+      wm->wmmat[0].col =
+          (int16_t)lrint(model[1] * (1 << WARPEDMODEL_PREC_BITS));
+      wm->wmmat[0].row =
+          (int16_t)lrint(model[0] * (1 << WARPEDMODEL_PREC_BITS));
       break;
     default: assert(0 && "Invalid TransformationType");
   }
