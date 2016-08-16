@@ -107,7 +107,6 @@ int compute_global_motion_feature_based(TransformationType type,
                                                  frm->y_width, frm->y_height,
                                                  frm->y_stride, ref->y_stride,
                                                  correspondences);
-
   inlier_map = (int *) malloc(num_correspondences * sizeof(*inlier_map));
   num_inliers = compute_global_motion_params(type, correspondences,
                                              num_correspondences, H,
