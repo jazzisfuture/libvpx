@@ -53,4 +53,14 @@
 #define CONVERT_TO_BYTEPTR(x) ((uint8_t *)(((uintptr_t)(x)) >> 1))
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+/* From GCC document, this feature was available since GCC 2.95.3
+ * Here using __GNUC__ >= 3 is pretty safe
+ */
+#if (defined(__GNUC__) && __GNUC__ >= 3)
+#define CODE_ATTR_SECTION(name) __attribute__ ((section(name))) \
+  __attribute__ ((noinline))
+#else
+#define CODE_ATTR_SECTION(name)
+#endif
+
 #endif  // VPX_PORTS_MEM_H_
