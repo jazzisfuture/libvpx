@@ -82,7 +82,10 @@ void vp10_free_ref_frame_buffers(BufferPool *pool) {
 
 #if CONFIG_LOOP_RESTORATION
 void vp10_free_restoration_buffers(VP10_COMMON *cm) {
+  int i;
   vpx_free_frame_buffer(&cm->tmp_loop_buf);
+  for (i = 0; i < RESTORATION_HALFWIN; ++i)
+    vpx_free_frame_buffer(cm->tmp_gf_buf + i);
   free(cm->rst_info.bilateral_level);
   cm->rst_info.bilateral_level = NULL;
   free(cm->rst_info.vfilter);

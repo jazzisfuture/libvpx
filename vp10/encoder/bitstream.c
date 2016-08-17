@@ -2405,8 +2405,25 @@ static void encode_restoration(VP10_COMMON *cm,
           vpx_wb_write_bit(wb, 0);
         }
       }
-    } else if (rst->restoration_type == RESTORE_WIENER) {
+    } else if (rst->restoration_tupe == RESTORE_GRAPH) {
       vpx_wb_write_literal(wb, 1, 2);
+      for (i = 0; i < rst->graph_ntiles; ++i) {
+        if (rst->graph_process_tile[i]) {
+          vpx_wb_write_bit(wb, 1);
+          vpx_wb_write_literal(wb, rst->graph_bilateral_level[i],
+                               vp10_bilateral_level_bits(cm));
+          vpx_wb_write_literal(wb, rst->gfilter[i][0] + RESTORATION_FILT_STEP,
+                               RESTORATION_FILT_BITS + 1);
+          vpx_wb_write_literal(wb, rst->gfilter[i][1] + RESTORATION_FILT_STEP,
+                               RESTORATION_FILT_BITS + 1);
+          vpx_wb_write_literal(wb, rst->gfilter[i][2] + RESTORATION_FILT_STEP,
+                               RESTORATION_FILT_BITS + 1);
+        } else {
+          vpx_wb_write_bit(wb, 0);
+        }
+      }
+    } else if (rst->restoration_type == RESTORE_WIENER) {
+      vpx_wb_write_literal(wb, 2, 2);
       for (i = 0; i < rst->wiener_ntiles; ++i) {
         if (rst->wiener_process_tile[i]) {
           vpx_wb_write_bit(wb, 1);
@@ -2428,7 +2445,7 @@ static void encode_restoration(VP10_COMMON *cm,
       }
     } else if (rst->restoration_type == RESTORE_OFFSET) {
       int enc_logM, enc_M, c, zero_counter, bits_written = 0;
-      vpx_wb_write_literal(wb, 2, 2);
+      vpx_wb_write_literal(wb, 3, 2);
       vpx_wb_write_literal(wb, rst->classifier_mode, CLASSIFIER_MODE_BITS);
       bits_written += CLASSIFIER_MODE_BITS;
       vpx_wb_write_literal(wb, rst->offset_enc_mode, OFFSET_ENC_MODE_BITS);

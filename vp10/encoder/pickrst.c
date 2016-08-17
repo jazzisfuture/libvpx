@@ -693,6 +693,185 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, VP10_COMP *cpi,
   }
 }
 
+void formulate_least_squares_problem(uint8_t *dgd, int dgd_stride, uint8_t *src, int src_stride,
+                                     int h_start, int h_end, int v_start, int v_end, int level,
+                                     double *AtA, double *Atb) {
+  int i, j, k, l, p, size;
+  double Y[NUM_VARS];
+  uint8_t *buffer = (uint8_t *)
+      malloc(sizeof(uint8_t) * width * height * NUM_VARS);
+  if (buffer == NULL) {
+    printf("Could not allocate memory for buffer!");
+    exit(1);
+  }
+  size = width * height;
+  // Store A*x, A^2*x, A^3*x... in the buffer
+  memset(buffer, 0, sizeof(*buffer) * NUM_VARS * size);
+  A_times_x(buffer, dgd, ref, width, height, dgd_stride, dgd_stride);
+  for (p = 1; p < NUM_VARS; ++p) {
+    A_times_x(buffer + p * size, buffer + (p - 1) * size, ref,
+              width, height, dgd_stride, dgd_stride);
+  }
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      const double X = (double) src[i * src_stride + j] -
+                          (double) dgd[i * dgd_stride + j];
+      for (k = 0; k < NUM_VARS; ++k) {
+        Y[k] = (double) buffer[k * size + i * dgd_stride + j] -
+                  (double) dgd[i * dgd_stride + j];
+      }
+      for (k = 0; k < NUM_VARS; ++k) {
+        Atb[k] += Y[k] * X;
+        AtA[k * NUM_VARS + k] += Y[k] * Y[k];
+        for (l = k + 1; l < NUM_VARS; ++l) {
+          double value = Y[k] * Y[l];
+          AtA[k * NUM_VARS + l] += value;
+          AtA[l * NUM_VARS + k] += value;
+        }
+      }
+    }
+  }
+  free(buffer);
+}
+
+static int search_graph_filter(const YV12_BUFFER_CONFIG *src,
+                               VP10_COMP *cpi,
+                               int filter_level,
+                               int partial_frame,
+                               int *graph_bilateral_level,
+                               int (*gfilter)[RESTORATION_HALFWIN],
+                               double *best_cost_ret) {
+  VP10_COMMON *const cm = &cpi->common;
+  RestorationInfo rsi;
+  int64_t err;
+  int bits;
+  double cost_graph, cost_norestore;
+  MACROBLOCK *x = &cpi->td.mb;
+  double M[RESTORATION_HALFWIN];
+  double H[RESTORATION_HALFWIN * RESTORATION_HALFWIN];
+  double gfilterd[RESTORATION_HALFWIN];
+  const YV12_BUFFER_CONFIG *dgd = cm->frame_to_show;
+  const int width = cm->width;
+  const int height = cm->height;
+  const int src_stride = src->y_stride;
+  const int dgd_stride = dgd->y_stride;
+  const int bilateral_level_bits = vp10_bilateral_level_bits(&cpi->common);
+  const int bilateral_levels = 1 << bilateral_level_bits;
+  int tile_idx, htile_idx, vtile_idx, tile_width, tile_height, nhtiles, nvtiles;
+  int h_start, h_end, v_start, v_end;
+  int i, j;
+
+  const int tiletype = GRAPH_TILETYPE;
+  const int ntiles = vp10_restoration_ntiles(cm, tiletype);
+
+  assert(width == dgd->y_crop_width);
+  assert(height == dgd->y_crop_height);
+  assert(width == src->y_crop_width);
+  assert(height == src->y_crop_height);
+
+  vp10_restoration_tile_size(tiletype, &tile_width, &tile_height);
+  if (tiletype < 0) {
+    tile_width = width;
+    tile_height = height;
+  }
+  nhtiles = (width + (tile_width >> 1)) / tile_width;
+  nvtiles = (height + (tile_height >> 1)) / tile_height;
+
+  //  Make a copy of the unfiltered / processed recon buffer
+  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
+  vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filter_level,
+                         1, partial_frame);
+  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_db);
+
+  rsi.restoration_type = RESTORE_NONE;
+  err = try_restoration_frame(src, cpi, &rsi, partial_frame);
+  bits = 0;
+  cost_norestore = RDCOST_DBL(x->rdmult, x->rddiv,
+                              (bits << (VP9_PROB_COST_SHIFT - 4)), err);
+
+  rsi.restoration_type = RESTORE_GRAPH;
+  rsi.graph_tiletype = GRAPH_TILETYPE;
+  rsi.graph_ntiles = ntiles;
+  rsi.graph_bilateral_level = (int *)
+      malloc(sizeof(*rsi.graph_bilateral_level) * ntiles);
+  rsi.gfilter = (int (*)[RESTORATION_HALFWIN])
+      malloc(sizeof(*rsi.gfilter) * ntiles);
+  assert(rsi.gfilter != NULL);
+
+  // Initialize graph filters
+  for (tile_idx = 0; tile_idx < ntiles; ++tile_idx) {
+    graph_bilateral_level[tile_idx] = -1;
+    for (j = 0; j < RESTORATION_HALFWIN; ++j)
+      gfilter[tile_idx][j] = 0;
+  }
+
+  // Compute best graph filters for each tile
+  for (tile_idx = 0; tile_idx < ntiles; ++tile_idx) {
+    htile_idx = tile_idx % nhtiles;
+    vtile_idx = tile_idx / nhtiles;
+    h_start = htile_idx * tile_width +
+        ((htile_idx > 0) ? 0 : RESTORATION_HALFWIN);
+    h_end = (htile_idx < nhtiles - 1) ? ((htile_idx + 1) * tile_width) :
+                                        (width - RESTORATION_HALFWIN);
+    v_start = vtile_idx * tile_height +
+        ((vtile_idx > 0) ? 0 : RESTORATION_HALFWIN);
+    v_end = (vtile_idx < nvtiles - 1) ? ((vtile_idx + 1) * tile_height) :
+                                        (height - RESTORATION_HALFWIN);
+    for (j = 0; j < ntiles; ++j)
+      rsi.graph_bilateral_level[j] = -1;
+    best_cost = cost_norestore;
+    // Try out each configuration of graph filter
+    for (i = 0; i < bilateral_levels; ++i) {
+      rsi.graph_bilateral_level[tile_idx] = i;
+      // Obtain graph filter coefficients
+      formulate_least_squares_problem(
+          dgd->y_buffer, dgd_stride, src->y_buffer, src_stride,
+          h_start, h_end, v_start, v_end, i, AtA, Atb);
+      linsolve(RESTORATION_HALFWIN, AtA, RESTORATION_HALFWIN, Atb, gfilterd);
+      for (j = 0; j < RESTORATION_HALFWIN; ++j)
+        rsi.gfilter[tile_idx][j] = RINT(gfilterd[j] * RESTORATION_FILT_STEP);
+      // Try out filter
+      err = try_restoration_frame(sd, cpi, &rsi, partial_frame);
+      bits = 1 + bilateral_level_bits + GRAPH_FILT_BITS;
+      cost_graph = RDCOST_DBL(x->rdmult, x->rddiv,
+                              (bits << (VP9_PROB_COST_SHIFT - 4)), err);
+      if (cost_graph < best_cost) {
+        best_cost = cost_graph;
+        graph_bilateral_level[tile_idx] = i;
+        for (j = 0; j < RESTORATION_HALFWIN; ++j)
+          gfilter[tile_idx][j] = rsi.gfilter[tile_idx][j];
+      }
+    }
+  }
+  // Find cost for combined configuration
+  bits = 0;
+  for (tile_idx = 0; tile_idx < ntiles; ++tile_idx) {
+    rsi.graph_bilateral_level[tile_idx] = graph_bilateral_level[tile_idx];
+    for (j = 0; j < RESTORATION_HALFWIN; ++j)
+      rsi.gfilter[tile_idx][j] = gfilter[tile_idx][j];
+    if (rsi.graph_bilateral_level[tile_idx] >= 0) {
+      bits += (1 + bilateral_level_bits + GRAPH_FILT_BITS);
+    } else {
+      bits += 1;
+    }
+  }
+  err = try_restoration_frame(sd, cpi, &rsi, partial_frame);
+  cost_graph = RDCOST_DBL(x->rdmult, x->rddiv,
+                          (bits << (VP9_PROB_COST_SHIFT - 4)), err);
+
+  free(rsi.graph_bilateral_level);
+  free(rsi.gfilter);
+
+  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+  if (cost_graph < cost_norestore) {
+    if (best_cost_ret) *best_cost_ret = cost_graph;
+    return 1;
+  } else {
+    if (best_cost_ret) *best_cost_ret = cost_norestore;
+    return 0;
+  }
+}
+
 int estimate_bits_to_encode_offsets(const int *offsets, const int nclasses,
                                     const int offset_enc_mode) {
   int c, zero_counter, bits_count;

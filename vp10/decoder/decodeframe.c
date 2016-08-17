@@ -1932,12 +1932,42 @@ static void setup_restoration(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
         }
       }
     } else if (flag == 1) {
+      rst->restoration_type = RESTORE_GRAPH;
+      rst->graph_tiletype = GRAPH_TILETYPE;
+      rst->graph_ntiles = vp10_restoration_ntiles(cm, rst->graph_tiletype);
+      rst->graph_bilateral_level = (int *)
+          realloc(rst->graph_bilateral_level,
+                  sizeof(*rst->graph_bilateral_level) * rst->graph_ntiles);
+      assert(rst->graph_bilateral_level != NULL);
+      rst->gfilter = (int (*)[RESTORATION_HALFWIN])
+          realloc(rst->gfilter, sizeof(*rst->gfilter) *rst->graph_ntiles);
+      assert(rst->gfilter != NULL);
+      for (i = 0; i < rst->graph_ntiles; ++i) {
+        rst->graph_process_tile[i] = vpx_rb_read_bit(rb);
+        if (rst->graph_process_tile[i]) {
+          rst->graph_bilateral_level[i] =
+              vpx_rb_read_literal(rb, vp10_bilateral_level_bits(cm));
+          rst->gfilter[i][0] =
+              vpx_rb_read_literal(rb, RESTORATION_FILT_BITS + 1) -
+              RESTORATION_FILT_STEP;
+          rst->gfilter[i][1] =
+              vpx_rb_read_literal(rb, RESTORATION_FILT_BITS + 1) -
+              RESTORATION_FILT_STEP;
+          rst->gfilter[i][2] =
+              vpx_rb_read_literal(rb, RESTORATION_FILT_BITS + 1) -
+              RESTORATION_FILT_STEP;
+        } else {
+          rst->graph_bilateral_level[i] = -1;
+          rst->gfilter[i][0] = rst->gfilter[i][1] = rst->gfilter[i][2] = 0;
+        }
+      }
+    } else if (flag == 2) {
       rst->restoration_type = RESTORE_WIENER;
       rst->wiener_tiletype = WIENER_TILETYPE;
       rst->wiener_ntiles = vp10_restoration_ntiles(cm, rst->wiener_tiletype);
-      rst->wiener_process_tile = (int *)realloc(
-          rst->wiener_process_tile,
-          sizeof(*rst->wiener_process_tile) * rst->wiener_ntiles);
+      rst->wiener_process_tile = (int *)
+          realloc(rst->wiener_process_tile,
+                  sizeof(*rst->wiener_process_tile) * rst->wiener_ntiles);
       assert(rst->wiener_process_tile != NULL);
       rst->vfilter = (int(*)[RESTORATION_HALFWIN])realloc(
           rst->vfilter, sizeof(*rst->vfilter) * rst->wiener_ntiles);
@@ -1965,7 +1995,7 @@ static void setup_restoration(VP10_COMMON *cm, struct vpx_read_bit_buffer *rb) {
           rst->hfilter[i][0] = rst->hfilter[i][1] = rst->hfilter[i][2] = 0;
         }
       }
-    } else if (flag == 2) {
+    } else if (flag == 3) {
       int bit, c, bits_read, enc_logM, enc_M;
       bits_read = 0;
       rst->restoration_type = RESTORE_OFFSET;

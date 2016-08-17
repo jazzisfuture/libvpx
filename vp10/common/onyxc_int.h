@@ -170,6 +170,7 @@ typedef struct VP10Common {
 
 #if CONFIG_LOOP_RESTORATION
   YV12_BUFFER_CONFIG tmp_loop_buf;
+  YV12_BUFFER_CONFIG tmp_gf_buf[RESTORATION_HALFWIN];
 #endif  // CONFIG_LOOP_RESTORATION
 
   FRAME_TYPE last_frame_type; /* last frame's frame type for motion search.*/

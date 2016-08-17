@@ -30,7 +30,8 @@ extern "C" {
 #define RESTORATION_TILETYPES (1 << RESTORATION_TILETYPE_BITS)
 
 #define BILATERAL_TILETYPE 0
-#define WIENER_TILETYPE 1
+#define GRAPH_TILETYPE 1
+#define WIENER_TILETYPE 2
 
 #define RESTORATION_HALFWIN 3
 #define RESTORATION_HALFWIN1 (RESTORATION_HALFWIN + 1)
@@ -39,6 +40,8 @@ extern "C" {
 
 #define RESTORATION_FILT_BITS 7
 #define RESTORATION_FILT_STEP (1 << RESTORATION_FILT_BITS)
+
+#define GRAPH_FILT_BITS RESTORATION_HALFWIN *(RESTORATION_FILT_BITS + 1)
 
 #define WIENER_FILT_TAP0_MINV -5
 #define WIENER_FILT_TAP1_MINV (-23)
@@ -81,6 +84,11 @@ typedef struct {
   int bilateral_tiletype;
   int bilateral_ntiles;
   int *bilateral_level;
+  // Graph filter
+  int graph_tiletype;
+  int graph_ntiles;
+  int *graph_bilateral_level;
+  int *(gfilter)[RESTORATION_HALFWIN];
   // Wiener filter
   int wiener_tiletype;
   int wiener_ntiles;
@@ -97,12 +105,17 @@ typedef struct {
   RestorationType restoration_type;
   int subsampling_x;
   int subsampling_y;
-  // Bilateral filter
+  // Bilateral & graph filter
   int bilateral_tiletype;
   int bilateral_ntiles;
   int *bilateral_level;
   uint8_t (**wx_lut)[RESTORATION_WIN];
   uint8_t **wr_lut;
+  int graph_tiletype;
+  int graph_ntiles;
+  int *graph_bilateral_level;
+  int *(gfilter)[RESTORATION_HALFWIN + 1];
+  YV12_BUFFER_CONFIG *gf_buf[RESTORATION_HALFWIN];
   // Wiener filter
   int wiener_tiletype;
   int wiener_ntiles;
@@ -115,6 +128,7 @@ typedef struct {
   int *offsets;
 } RestorationInternal;
 
+<<<<<<< HEAD
 int vp10_bilateral_level_bits(const struct VP10Common *const cm);
 int vp10_restoration_ntiles(const struct VP10Common *const cm, int tile_type);
 void vp10_restoration_tile_size(int tile_type, int *tile_width,
@@ -127,6 +141,27 @@ int vp10_restoration_offset_enc_param(int offset_enc_mode);
 int vp10_loop_restoration_nclasses(int width, int height, int classifier_mode);
 void vp10_loop_restoration_classifier(uint8_t *img, int width, int height,
                                       int stride, int classifier_param_set,
+=======
+int vp10_bilateral_level_bits(const struct VP10Common *const cm);
+int vp10_restoration_ntiles(const struct VP10Common *const cm, int tile_type);
+void vp10_restoration_tile_size(int tile_type, int *tile_width,
+                                int *tile_height);
+void vp10_bilateral_luts(int level, const VP10_COMMON *const cm,
+                         uint8_t **wr_lut,
+                         uint8_t (**wx_lut)[RESTORATION_HALFWIN]);
+void vp10_bilateral_3x3(uint8_t *img, int img_stride, uint8_t *ref,
+                        int ref_stride, int h_start, int h_end, int v_start,
+                        int v_end, uint8_t *wr_lut,
+                        uint8_t (*wx_lut)[RESTORATION_HALFWIN], uint8_t *out,
+                        int out_stride);
+int vp10_restoration_level_bits(const struct VP10Common *const cm);
+void vp10_loop_restoration_init(struct VP10Common *cm, RestorationInfo *rsi,
+                                int kf, const YV12_BUFFER_CONFIG *frame);
+int vp10_restoration_offset_enc_param(int offset_enc_mode);
+int vp10_loop_restoration_nclasses(int width, int height, int classifier_mode);
+void vp10_loop_restoration_classifier(uint8_t *img, int width, int height,
+                                      int stride, int classifier_param_set,
+>>>>>>> 5f52369... Added graph filtering mode to loop restoration
                                       int *cls);
 void vp10_loop_restoration_frame(YV12_BUFFER_CONFIG *frame,
                                  struct VP10Common *cm, RestorationInfo *rsi,
