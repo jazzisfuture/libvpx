@@ -842,6 +842,9 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       const int bit = (mbmi->ref_frame[0] == GOLDEN_FRAME ||
                        mbmi->ref_frame[0] == LAST3_FRAME);
       const int bit_bwd = mbmi->ref_frame[1] == ALTREF_FRAME;
+#if CONFIG_COMP_REFS
+      const int fwd_ref_idx = mbmi->ref_frame[0] - LAST_FRAME;
+#endif  // CONFIG_COMP_REFS
 #else  // CONFIG_EXT_REFS
       const int bit = mbmi->ref_frame[0] == GOLDEN_FRAME;
 #endif  // CONFIG_EXT_REFS
@@ -849,6 +852,17 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       vp10_write(w, bit, vp10_get_pred_prob_comp_ref_p(cm, xd));
 
 #if CONFIG_EXT_REFS
+#if CONFIG_COMP_REFS
+      if (!bit) {
+        const int bit1 = mbmi->ref_frame[0] == LAST2_FRAME;
+        vp10_write(w, bit1, vp10_get_pred_prob_comp_ref_p1(cm, xd));
+      } else {
+        const int bit2 = mbmi->ref_frame[0] == GOLDEN_FRAME;
+        vp10_write(w, bit2, vp10_get_pred_prob_comp_ref_p2(cm, xd));
+      }
+      vp10_write(w, bit_bwd,
+                 vp10_get_pred_prob_comp_bwdref_p(cm, xd, fwd_ref_idx));
+#else  // CONFIG_COMP_REFS
       if (!bit) {
         const int bit1 = mbmi->ref_frame[0] == LAST_FRAME;
         vp10_write(w, bit1, vp10_get_pred_prob_comp_ref_p1(cm, xd));
@@ -857,6 +871,7 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
         vp10_write(w, bit2, vp10_get_pred_prob_comp_ref_p2(cm, xd));
       }
       vp10_write(w, bit_bwd, vp10_get_pred_prob_comp_bwdref_p(cm, xd));
+#endif  // CONFIG_COMP_REFS
 #endif  // CONFIG_EXT_REFS
     } else {
 #if CONFIG_EXT_REFS
