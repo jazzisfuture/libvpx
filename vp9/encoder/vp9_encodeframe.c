@@ -1336,6 +1336,20 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
   // Save rdmult before it might be changed, so it can be restored later.
   orig_rdmult = x->rdmult;
 
+  // Check block complexity as part of descision on using pixel or transform
+  // domain distortion in rd tests.
+  cpi->sf.block_tx_domain =
+      cpi->sf.allow_txfm_domain_distortion &&
+      (vp9_log_block_var(cpi, x, bsize) >= cpi->sf.tx_domain_thresh);
+  //cpi->sf.block_tx_domain = cpi->sf.allow_txfm_domain_distortion;
+
+  // Check block complexity as part of descision on using quantized coefficient
+  // optimisation inside the rd loop.
+  cpi->sf.block_qcoeff_opt =
+      cpi->sf.allow_quant_coeff_opt &&
+      (vp9_log_block_var(cpi, x, bsize) <= cpi->sf.quant_opt_thresh);
+  //cpi->sf.block_qcoeff_opt = cpi->sf.allow_quant_coeff_opt;
+
   if (aq_mode == VARIANCE_AQ) {
     const int energy =
         bsize <= BLOCK_16X16 ? x->mb_energy : vp9_block_energy(cpi, x, bsize);
