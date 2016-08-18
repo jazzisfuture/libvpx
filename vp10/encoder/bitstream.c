@@ -865,6 +865,17 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
       vp10_write(w, bit, vp10_get_pred_prob_comp_ref_p(cm, xd));
 
 #if CONFIG_EXT_REFS
+#if CONFIG_COMP_REFS
+      if (!bit) {
+        const int bit1 = mbmi->ref_frame[0] == LAST2_FRAME;
+        vp10_write(w, bit1, vp10_get_pred_prob_comp_ref_p1(cm, xd));
+      } else {
+        const int bit2 = mbmi->ref_frame[0] == GOLDEN_FRAME;
+        vp10_write(w, bit2, vp10_get_pred_prob_comp_ref_p2(cm, xd));
+      }
+      vp10_write(w, bit_bwd, vp10_get_pred_prob_comp_bwdref_p(
+          cm, xd, mbmi->ref_frame[0] - LAST_FRAME));
+#else  // CONFIG_COMP_REFS
       if (!bit) {
         const int bit1 = mbmi->ref_frame[0] == LAST_FRAME;
         vp10_write(w, bit1, vp10_get_pred_prob_comp_ref_p1(cm, xd));
@@ -873,6 +884,7 @@ static void write_ref_frames(const VP10_COMMON *cm, const MACROBLOCKD *xd,
         vp10_write(w, bit2, vp10_get_pred_prob_comp_ref_p2(cm, xd));
       }
       vp10_write(w, bit_bwd, vp10_get_pred_prob_comp_bwdref_p(cm, xd));
+#endif  // CONFIG_COMP_REFS
 #endif  // CONFIG_EXT_REFS
     } else {
 #if CONFIG_EXT_REFS
@@ -3377,11 +3389,18 @@ static uint32_t write_compressed_header(VP10_COMP *cpi, uint8_t *data) {
           vp10_cond_prob_diff_update(header_bc, &fc->comp_ref_prob[i][j],
                                      counts->comp_ref[i][j]);
         }
+#if CONFIG_COMP_REFS
+        for (j = 0; j < FWD_REFS * (BWD_REFS - 1); j++) {
+          vp10_cond_prob_diff_update(header_bc, &fc->comp_bwdref_prob[i][j],
+                                     counts->comp_bwdref[i][j]);
+        }
+#else  // CONFIG_COMP_REFS
         for (j = 0; j < (BWD_REFS - 1); j++) {
           vp10_cond_prob_diff_update(header_bc, &fc->comp_bwdref_prob[i][j],
                                      counts->comp_bwdref[i][j]);
         }
-#else
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
         for (j = 0; j < (COMP_REFS - 1); j++) {
           vp10_cond_prob_diff_update(header_bc, &fc->comp_ref_prob[i][j],
                                      counts->comp_ref[i][j]);

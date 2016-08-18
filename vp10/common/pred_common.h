@@ -122,11 +122,23 @@ static INLINE vpx_prob vp10_get_pred_prob_comp_ref_p2(const VP10_COMMON *cm,
 int vp10_get_pred_context_comp_bwdref_p(const VP10_COMMON *cm,
                                         const MACROBLOCKD *xd);
 
+#if CONFIG_COMP_REFS
+static INLINE vpx_prob vp10_get_pred_prob_comp_bwdref_p(
+    const VP10_COMMON *cm, const MACROBLOCKD *xd, int fwd_ref_idx) {
+  // NOTE: The context for the compound backward reference is dependent of the
+  //       chosen forward reference frame.
+  const int pred_context = vp10_get_pred_context_comp_bwdref_p(cm, xd);
+  return cm->fc->comp_bwdref_prob[pred_context][fwd_ref_idx];
+}
+#else  // CONFIG_COMP_REFS
 static INLINE vpx_prob vp10_get_pred_prob_comp_bwdref_p(const VP10_COMMON *cm,
                                                         const MACROBLOCKD *xd) {
+  // NOTE: The context for the compound backward reference is independent of the
+  //       previous frame ref bit values.
   const int pred_context = vp10_get_pred_context_comp_bwdref_p(cm, xd);
   return cm->fc->comp_bwdref_prob[pred_context][0];
 }
+#endif  // CONFIG_COMP_REFS
 
 #endif  // CONFIG_EXT_REFS
 

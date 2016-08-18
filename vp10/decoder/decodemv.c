@@ -771,6 +771,30 @@ static void read_ref_frames(VP10_COMMON *const cm, MACROBLOCKD *const xd,
       if (counts) ++counts->comp_ref[ctx][0][bit];
 
 #if CONFIG_EXT_REFS
+#if CONFIG_COMP_REFS
+      // Decode forward references.
+      if (!bit) {
+        const int ctx1 = vp10_get_pred_context_comp_ref_p1(cm, xd);
+        const int bit1 = vp10_read(r, fc->comp_ref_prob[ctx1][1]);
+        if (counts) ++counts->comp_ref[ctx1][1][bit1];
+        ref_frame[!idx] = cm->comp_fwd_ref[bit1 ? 1 : 0];
+      } else {
+        const int ctx2 = vp10_get_pred_context_comp_ref_p2(cm, xd);
+        const int bit2 = vp10_read(r, fc->comp_ref_prob[ctx2][2]);
+        if (counts) ++counts->comp_ref[ctx2][2][bit2];
+        ref_frame[!idx] = cm->comp_fwd_ref[bit2 ? 3 : 2];
+      }
+
+      // Decode backward references.
+      {
+        const int ctx_bwd = vp10_get_pred_context_comp_bwdref_p(cm, xd);
+        const int bit_bwd = vp10_read(
+            r, fc->comp_bwdref_prob[ctx_bwd][ref_frame[!idx]-LAST_FRAME]);
+        if (counts)
+          ++counts->comp_bwdref[ctx_bwd][ref_frame[!idx]-LAST_FRAME][bit_bwd];
+        ref_frame[idx] = cm->comp_bwd_ref[bit_bwd];
+      }
+#else  // CONFIG_COMP_REFS
       // Decode forward references.
       if (!bit) {
         const int ctx1 = vp10_get_pred_context_comp_ref_p1(cm, xd);
@@ -791,7 +815,8 @@ static void read_ref_frames(VP10_COMMON *const cm, MACROBLOCKD *const xd,
         if (counts) ++counts->comp_bwdref[ctx_bwd][0][bit_bwd];
         ref_frame[idx] = cm->comp_bwd_ref[bit_bwd];
       }
-#else
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
       ref_frame[!idx] = cm->comp_var_ref[bit];
       ref_frame[idx] = cm->comp_fixed_ref;
 #endif  // CONFIG_EXT_REFS

@@ -176,9 +176,14 @@ static void read_frame_reference_mode_probs(VP10_COMMON *cm, vp10_reader *r) {
 #if CONFIG_EXT_REFS
       for (j = 0; j < (FWD_REFS - 1); ++j)
         vp10_diff_update_prob(r, &fc->comp_ref_prob[i][j]);
+#if CONFIG_COMP_REFS
+      for (j = 0; j < FWD_REFS * (BWD_REFS - 1); ++j)
+        vp10_diff_update_prob(r, &fc->comp_bwdref_prob[i][j]);
+#else  // CONFIG_COMP_REFS
       for (j = 0; j < (BWD_REFS - 1); ++j)
         vp10_diff_update_prob(r, &fc->comp_bwdref_prob[i][j]);
-#else
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
       for (j = 0; j < (COMP_REFS - 1); ++j)
         vp10_diff_update_prob(r, &fc->comp_ref_prob[i][j]);
 #endif  // CONFIG_EXT_REFS

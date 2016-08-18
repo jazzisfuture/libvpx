@@ -437,6 +437,24 @@ static const vpx_prob default_comp_inter_p[COMP_INTER_CONTEXTS] = {
 };
 
 #if CONFIG_EXT_REFS
+#if CONFIG_COMP_REFS
+static const vpx_prob default_comp_ref_p[REF_CONTEXTS][FWD_REFS - 1] = {
+  // TODO(zoeliu): To adjust the initial prob values.
+  { 33, 50, 50 },
+  { 77, 142, 142 },
+  { 142, 205, 205 },
+  { 172, 0, 0 },
+  { 238, 0, 0 }
+};
+static const vpx_prob
+default_comp_bwdref_p[REF_CONTEXTS][FWD_REFS*(BWD_REFS - 1)] = {
+  { 55, 55, 55, 55 },
+  { 180, 180, 180, 180 },
+  { 0, 0, 0, 0 },
+  { 0, 0, 0, 0 },
+  { 0, 0, 0, 0 }
+};
+#else  // CONFIG_COMP_REFS
 static const vpx_prob default_comp_ref_p[REF_CONTEXTS][FWD_REFS - 1] = {
   // TODO(zoeliu): To adjust the initial prob values.
   { 33, 16, 16 },
@@ -448,7 +466,8 @@ static const vpx_prob default_comp_ref_p[REF_CONTEXTS][FWD_REFS - 1] = {
 static const vpx_prob default_comp_bwdref_p[REF_CONTEXTS][BWD_REFS - 1] = {
   { 16 }, { 74 }, { 142 }, { 170 }, { 247 }
 };
-#else
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
 static const vpx_prob default_comp_ref_p[REF_CONTEXTS][COMP_REFS - 1] = {
   { 50 }, { 126 }, { 123 }, { 221 }, { 226 }
 };

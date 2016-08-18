@@ -1834,6 +1834,19 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td
           const int bit = (ref0 == GOLDEN_FRAME || ref0 == LAST3_FRAME);
 
           counts->comp_ref[vp10_get_pred_context_comp_ref_p(cm, xd)][0][bit]++;
+
+#if CONFIG_COMP_REFS
+          if (!bit) {
+            counts->comp_ref[vp10_get_pred_context_comp_ref_p1(
+                cm, xd)][1][ref0 == LAST2_FRAME]++;
+          } else {
+            counts->comp_ref[vp10_get_pred_context_comp_ref_p2(
+                cm, xd)][2][ref0 == GOLDEN_FRAME]++;
+          }
+
+          counts->comp_bwdref[vp10_get_pred_context_comp_bwdref_p(
+              cm, xd)][ref0 - LAST_FRAME][ref1 == ALTREF_FRAME]++;
+#else  // CONFIG_COMP_REFS
           if (!bit) {
             counts->comp_ref[vp10_get_pred_context_comp_ref_p1(
                 cm, xd)][1][ref0 == LAST_FRAME]++;
@@ -1844,7 +1857,8 @@ static void update_stats(VP10_COMMON *cm, ThreadData *td
 
           counts->comp_bwdref[vp10_get_pred_context_comp_bwdref_p(
               cm, xd)][0][ref1 == ALTREF_FRAME]++;
-#else
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
           counts->comp_ref[vp10_get_pred_context_comp_ref_p(
               cm, xd)][0][ref0 == GOLDEN_FRAME]++;
 #endif  // CONFIG_EXT_REFS
