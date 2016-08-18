@@ -1336,6 +1336,12 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
   // Save rdmult before it might be changed, so it can be restored later.
   orig_rdmult = x->rdmult;
 
+  // Check block complexity as part of descision on using pixel or transform
+  // domain distortion in rd tests.
+  cpi->sf.block_tx_domain =
+      cpi->sf.txfm_domain_distortion ||
+      (vp9_log_block_var(cpi, x, bsize) > 8.0);
+
   if (aq_mode == VARIANCE_AQ) {
     const int energy =
         bsize <= BLOCK_16X16 ? x->mb_energy : vp9_block_energy(cpi, x, bsize);

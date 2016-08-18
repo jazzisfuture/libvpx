@@ -141,14 +141,33 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
   sf->use_square_only_threshold = BLOCK_16X16;
 
   if (speed >= 1) {
-    if ((cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ||
-        vp9_internal_image_edge(cpi)) {
-      sf->use_square_partition_only = !frame_is_boosted(cpi);
+    if (cpi->oxcf.pass == 2) {
+      TWO_PASS *const twopass = &cpi->twopass;
+      if ((twopass->fr_content_type == FC_GRAPHICS_ANIMATION) ||
+          vp9_internal_image_edge(cpi)) {
+        sf->use_square_partition_only = !frame_is_boosted(cpi);
+      } else {
+        sf->use_square_partition_only = !frame_is_intra_only(cm);
+      }
+      if (twopass->mb_smooth_pct > 0.25) {
+        sf->txfm_domain_distortion = 0;
+        sf->quant_coeff_opt = 1;
+      } else {
+        sf->txfm_domain_distortion = 1;
+        sf->quant_coeff_opt = 0;
+      }
     } else {
       sf->use_square_partition_only = !frame_is_intra_only(cm);
+      sf->txfm_domain_distortion = 1;
+      sf->quant_coeff_opt = 0;
     }
-    sf->use_square_only_threshold = BLOCK_4X4;
+    sf->txfm_domain_distortion = 0;
+    sf->block_tx_domain = 0;
+    //sf->quant_coeff_opt = 1;
+    //sf->txfm_domain_distortion = 1;
+    sf->quant_coeff_opt = 0;
 
+    sf->use_square_only_threshold = BLOCK_4X4;
     sf->less_rectangular_check = 1;
 
     sf->use_rd_breakout = 1;
@@ -164,8 +183,6 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->intra_uv_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_y_mode_mask[TX_16X16] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_16X16] = INTRA_DC_H_V;
-    sf->txfm_domain_distortion = 1;
-    sf->quant_coeff_opt = 0;
   }
 
   if (speed >= 2) {

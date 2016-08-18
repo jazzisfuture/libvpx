@@ -535,7 +535,14 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
   const struct macroblock_plane *const p = &x->plane[plane];
   const struct macroblockd_plane *const pd = &xd->plane[plane];
 
-  if (cpi->sf.txfm_domain_distortion) {
+  // Block size used in this function 4x4, 8x8, 16x16 ect can be derived as
+  // tx_sizex3 (eg TX_16X16 = 2, BLOCK_16X16 = 6)
+  //double logvar = vp9_log_block_var(cpi, x, (tx_size * 3));
+  //int high_var = vp9_log_block_var(cpi, x, (tx_size * 3)) > 8.0;
+  //int high_var = logvar > 8.0;
+
+  //if (cpi->sf.txfm_domain_distortion || high_var) {
+  if (cpi->sf.block_tx_domain) {
     const int ss_txfrm_size = tx_size << 1;
     int64_t this_sse;
     const int shift = tx_size == TX_32X32 ? 0 : 2;

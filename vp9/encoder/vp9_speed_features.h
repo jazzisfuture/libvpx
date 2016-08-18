@@ -244,6 +244,7 @@ typedef struct SPEED_FEATURES {
   // Use transform domain distortion. Use pixel domain distortion in speed 0
   // and certain situations in higher speed to improve the RD model precision.
   int txfm_domain_distortion;
+  int block_tx_domain;
 
   // The threshold is to determine how slow the motino is, it is used when
   // use_lastframe_partitioning is set to LAST_FRAME_PARTITION_LOW_MOTION
