@@ -88,8 +88,12 @@ typedef struct frame_contexts {
   vpx_prob single_ref_prob[REF_CONTEXTS][SINGLE_REFS - 1];
 #if CONFIG_EXT_REFS
   vpx_prob comp_ref_prob[REF_CONTEXTS][FWD_REFS - 1];
+#if CONFIG_COMP_REFS
+  vpx_prob comp_bwdref_prob[REF_CONTEXTS][FWD_REFS*(BWD_REFS - 1)];
+#else  // CONFIG_COMP_REFS
   vpx_prob comp_bwdref_prob[REF_CONTEXTS][BWD_REFS - 1];
-#else
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
   vpx_prob comp_ref_prob[REF_CONTEXTS][COMP_REFS - 1];
 #endif  // CONFIG_EXT_REFS
   vpx_prob tx_size_probs[TX_SIZES - 1][TX_SIZE_CONTEXTS][TX_SIZES - 1];
@@ -167,8 +171,12 @@ typedef struct FRAME_COUNTS {
   unsigned int single_ref[REF_CONTEXTS][SINGLE_REFS - 1][2];
 #if CONFIG_EXT_REFS
   unsigned int comp_ref[REF_CONTEXTS][FWD_REFS - 1][2];
+#if CONFIG_COMP_REFS
+  unsigned int comp_bwdref[REF_CONTEXTS][FWD_REFS*(BWD_REFS - 1)][2];
+#else  // CONFIG_COMP_REFS
   unsigned int comp_bwdref[REF_CONTEXTS][BWD_REFS - 1][2];
-#else
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
   unsigned int comp_ref[REF_CONTEXTS][COMP_REFS - 1][2];
 #endif  // CONFIG_EXT_REFS
   // TODO(any): tx_size_totals is only used by the encoder to decide whether

@@ -5521,7 +5521,11 @@ static void estimate_ref_frame_costs(const VP10_COMMON *cm,
   if (seg_ref_active) {
     memset(ref_costs_single, 0,
            TOTAL_REFS_PER_FRAME * sizeof(*ref_costs_single));
+#if CONFIG_EXT_REFS && CONFIG_COMP_REFS
+    memset(ref_costs_comp, 0, COMP_REFS * sizeof(*ref_costs_comp));
+#else
     memset(ref_costs_comp, 0, TOTAL_REFS_PER_FRAME * sizeof(*ref_costs_comp));
+#endif  // CONFIG_EXT_REFS && CONFIG_COMP_REFS
     *comp_mode_p = 128;
   } else {
     vpx_prob intra_inter_p = vp10_get_intra_inter_prob(cm, xd);
@@ -5600,22 +5604,63 @@ static void estimate_ref_frame_costs(const VP10_COMMON *cm,
 #if CONFIG_EXT_REFS
       vpx_prob ref_comp_p1 = vp10_get_pred_prob_comp_ref_p1(cm, xd);
       vpx_prob ref_comp_p2 = vp10_get_pred_prob_comp_ref_p2(cm, xd);
+
+#if CONFIG_COMP_REFS
+      vpx_prob ref_costs_fwd[FWD_REFS];
+      vpx_prob bwdref_comp_p[FWD_REFS * (BWD_REFS - 1)];
+      int fwd_ref_idx;
+#else  // CONFIG_COMP_REFS
       vpx_prob bwdref_comp_p = vp10_get_pred_prob_comp_bwdref_p(cm, xd);
+#endif  // CONFIG_COMP_REFS
+
 #endif  // CONFIG_EXT_REFS
 
       unsigned int base_cost = vp10_cost_bit(intra_inter_p, 1);
 
+#if CONFIG_EXT_REFS
+#if CONFIG_COMP_REFS
+      ref_costs_fwd[LAST_FRAME] =
+          ref_costs_fwd[LAST2_FRAME] = ref_costs_fwd[LAST3_FRAME] =
+          ref_costs_fwd[GOLDEN_FRAME] = base_cost;
+#else  // CONFIG_COMP_REFS
       ref_costs_comp[LAST_FRAME] =
-#if CONFIG_EXT_REFS
           ref_costs_comp[LAST2_FRAME] = ref_costs_comp[LAST3_FRAME] =
+          ref_costs_comp[GOLDEN_FRAME] = base_cost;
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
+      ref_costs_comp[LAST_FRAME] = ref_costs_comp[GOLDEN_FRAME] = base_cost;
 #endif  // CONFIG_EXT_REFS
-              ref_costs_comp[GOLDEN_FRAME] = base_cost;
 
-#if CONFIG_EXT_REFS
+#if CONFIG_EXT_REFS && !CONFIG_COMP_REFS
       ref_costs_comp[BWDREF_FRAME] = ref_costs_comp[ALTREF_FRAME] = 0;
-#endif  // CONFIG_EXT_REFS
+#endif  // CONFIG_EXT_REFS && !CONFIG_COMP_REFS
 
 #if CONFIG_EXT_REFS
+#if CONFIG_COMP_REFS
+      ref_costs_fwd[LAST_FRAME] += vp10_cost_bit(ref_comp_p, 0);
+      ref_costs_fwd[LAST2_FRAME] += vp10_cost_bit(ref_comp_p, 0);
+      ref_costs_fwd[LAST3_FRAME] += vp10_cost_bit(ref_comp_p, 1);
+      ref_costs_fwd[GOLDEN_FRAME] += vp10_cost_bit(ref_comp_p, 1);
+
+      ref_costs_fwd[LAST_FRAME] += vp10_cost_bit(ref_comp_p1, 0);
+      ref_costs_fwd[LAST2_FRAME] += vp10_cost_bit(ref_comp_p1, 1);
+
+      ref_costs_fwd[LAST3_FRAME] += vp10_cost_bit(ref_comp_p2, 0);
+      ref_costs_fwd[GOLDEN_FRAME] += vp10_cost_bit(ref_comp_p2, 1);
+
+      for (fwd_ref_idx = 0; fwd_ref_idx < FWD_REFS; ++fwd_ref_idx) {
+        bwdref_comp_p[fwd_ref_idx] =
+            vp10_get_pred_prob_comp_bwdref_p(cm, xd, fwd_ref_idx);
+
+        ref_costs_comp[fwd_ref_idx*BWD_REFS + (BWDREF_FRAME-BWDREF_FRAME)] =
+            ref_costs_fwd[fwd_ref_idx + LAST_FRAME] +
+            vp10_cost_bit(bwdref_comp_p[fwd_ref_idx], 0);
+
+        ref_costs_comp[fwd_ref_idx*BWD_REFS + (ALTREF_FRAME-BWDREF_FRAME)] =
+            ref_costs_fwd[fwd_ref_idx + LAST_FRAME] +
+            vp10_cost_bit(bwdref_comp_p[fwd_ref_idx], 1);
+      }
+#else  // CONFIG_COMP_REFS
       ref_costs_comp[LAST_FRAME] += vp10_cost_bit(ref_comp_p, 0);
       ref_costs_comp[LAST2_FRAME] += vp10_cost_bit(ref_comp_p, 0);
       ref_costs_comp[LAST3_FRAME] += vp10_cost_bit(ref_comp_p, 1);
@@ -5631,19 +5676,34 @@ static void estimate_ref_frame_costs(const VP10_COMMON *cm,
       //               more bit.
       ref_costs_comp[BWDREF_FRAME] += vp10_cost_bit(bwdref_comp_p, 0);
       ref_costs_comp[ALTREF_FRAME] += vp10_cost_bit(bwdref_comp_p, 1);
-#else
+#endif  // CONFIG_COMP_REFS
+
+#else  // CONFIG_EXT_REFS
       ref_costs_comp[LAST_FRAME] += vp10_cost_bit(ref_comp_p, 0);
       ref_costs_comp[GOLDEN_FRAME] += vp10_cost_bit(ref_comp_p, 1);
 #endif  // CONFIG_EXT_REFS
     } else {
-      ref_costs_comp[LAST_FRAME] = 512;
 #if CONFIG_EXT_REFS
+#if CONFIG_COMP_REFS
+      int fwd_ref_idx;
+      for (fwd_ref_idx = 0; fwd_ref_idx < FWD_REFS; ++fwd_ref_idx) {
+        ref_costs_comp[fwd_ref_idx * BWD_REFS + (BWDREF_FRAME-BWDREF_FRAME)]
+            = 512;
+        ref_costs_comp[fwd_ref_idx * BWD_REFS + (ALTREF_FRAME-BWDREF_FRAME)]
+            = 512;
+      }
+#else  // CONFIG_COMP_REFS
+      ref_costs_comp[LAST_FRAME] = 512;
       ref_costs_comp[LAST2_FRAME] = 512;
       ref_costs_comp[LAST3_FRAME] = 512;
+      ref_costs_comp[GOLDEN_FRAME] = 512;
       ref_costs_comp[BWDREF_FRAME] = 512;
       ref_costs_comp[ALTREF_FRAME] = 512;
-#endif  // CONFIG_EXT_REFS
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
+      ref_costs_comp[LAST_FRAME] = 512;
       ref_costs_comp[GOLDEN_FRAME] = 512;
+#endif  // CONFIG_EXT_REFS
     }
   }
 }
@@ -8152,7 +8212,11 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi, TileDataEnc *tile_data,
   int best_mode_skippable = 0;
   int midx, best_mode_index = -1;
   unsigned int ref_costs_single[TOTAL_REFS_PER_FRAME];
+#if CONFIG_EXT_REFS && CONFIG_COMP_REFS
+  unsigned int ref_costs_comp[COMP_REFS];
+#else
   unsigned int ref_costs_comp[TOTAL_REFS_PER_FRAME];
+#endif  // CONFIG_EXT_REFS && CONFIG_COMP_REFS
   vpx_prob comp_mode_p;
   int64_t best_intra_rd = INT64_MAX;
   unsigned int best_pred_sse = UINT_MAX;
@@ -9028,9 +9092,16 @@ void vp10_rd_pick_inter_mode_sb(VP10_COMP *cpi, TileDataEnc *tile_data,
     // Estimate the reference frame signaling cost and add it
     // to the rolling cost variable.
     if (comp_pred) {
-      rate2 += ref_costs_comp[ref_frame];
 #if CONFIG_EXT_REFS
+#if CONFIG_COMP_REFS
+      rate2 += ref_costs_comp[(ref_frame-LAST_FRAME)*BWD_REFS +
+          (second_ref_frame-BWDREF_FRAME)];
+#else  // CONFIG_COMP_REFS
+      rate2 += ref_costs_comp[ref_frame];
       rate2 += ref_costs_comp[second_ref_frame];
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
+      rate2 += ref_costs_comp[ref_frame];
 #endif  // CONFIG_EXT_REFS
     } else {
       rate2 += ref_costs_single[ref_frame];
@@ -9669,7 +9740,11 @@ void vp10_rd_pick_inter_mode_sb_seg_skip(VP10_COMP *cpi, TileDataEnc *tile_data,
   int i;
   int64_t best_pred_diff[REFERENCE_MODES];
   unsigned int ref_costs_single[TOTAL_REFS_PER_FRAME];
+#if CONFIG_EXT_REFS && CONFIG_COMP_REFS
+  unsigned int ref_costs_comp[COMP_REFS];
+#else
   unsigned int ref_costs_comp[TOTAL_REFS_PER_FRAME];
+#endif  // CONFIG_EXT_REFS && CONFIG_COMP_REFS
   vpx_prob comp_mode_p;
   INTERP_FILTER best_filter = SWITCHABLE;
   int64_t this_rd = INT64_MAX;
@@ -9823,7 +9898,11 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
   MB_MODE_INFO best_mbmode;
   int ref_index, best_ref_index = 0;
   unsigned int ref_costs_single[TOTAL_REFS_PER_FRAME];
+#if CONFIG_EXT_REFS && CONFIG_COMP_REFS
+  unsigned int ref_costs_comp[COMP_REFS];
+#else
   unsigned int ref_costs_comp[TOTAL_REFS_PER_FRAME];
+#endif  // CONFIG_EXT_REFS && CONFIG_COMP_REFS
   vpx_prob comp_mode_p;
 #if CONFIG_DUAL_FILTER
   INTERP_FILTER tmp_best_filter[4] = { 0 };
@@ -10384,9 +10463,16 @@ void vp10_rd_pick_inter_mode_sub8x8(struct VP10_COMP *cpi,
     // Estimate the reference frame signaling cost and add it
     // to the rolling cost variable.
     if (second_ref_frame > INTRA_FRAME) {
-      rate2 += ref_costs_comp[ref_frame];
 #if CONFIG_EXT_REFS
+#if CONFIG_COMP_REFS
+      rate2 += ref_costs_comp[(ref_frame-LAST_FRAME)*BWD_REFS +
+          (second_ref_frame-BWDREF_FRAME)];
+#else  // CONFIG_COMP_REFS
+      rate2 += ref_costs_comp[ref_frame];
       rate2 += ref_costs_comp[second_ref_frame];
+#endif  // CONFIG_COMP_REFS
+#else  // CONFIG_EXT_REFS
+      rate2 += ref_costs_comp[ref_frame];
 #endif  // CONFIG_EXT_REFS
     } else {
       rate2 += ref_costs_single[ref_frame];
