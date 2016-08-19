@@ -1608,7 +1608,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         if (frame_mv[NEWMV][ref_frame].as_int != INVALID_MV) {
           const int pre_stride = xd->plane[0].pre[0].stride;
           int base_mv_sad = INT_MAX;
-          const float base_mv_bias = sf->base_mv_aggressive ? 1.5 : 1.0;
+          const double base_mv_bias = sf->base_mv_aggressive ? 1.5 : 1.0;
           const uint8_t *const pre_buf =
               xd->plane[0].pre[0].buf +
               (frame_mv[NEWMV][ref_frame].as_mv.row >> 3) * pre_stride +
