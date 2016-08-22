@@ -8,7 +8,7 @@
 ##  in the file PATENTS.  All contributing project authors may
 ##  be found in the AUTHORS file in the root of the source tree.
 ##
-##  This file contains shell code shared by test scripts for libvpx tools.
+##  This file contains shell code shared by test scripts for libaom tools.
 
 # Use $VPX_TEST_TOOLS_COMMON_SH as a pseudo include guard.
 if [ -z "${VPX_TEST_TOOLS_COMMON_SH}" ]; then
@@ -47,7 +47,7 @@ test_end() {
 
 # Echoes the target configuration being tested.
 test_configuration_target() {
-  vpx_config_mk="${LIBVPX_CONFIG_PATH}/config.mk"
+  vpx_config_mk="${LIBAOM_CONFIG_PATH}/config.mk"
   # Find the TOOLCHAIN line, split it using ':=' as the field separator, and
   # print the last field to get the value. Then pipe the value to tr to consume
   # any leading/trailing spaces while allowing tr to echo the output to stdout.
@@ -67,10 +67,10 @@ cleanup() {
 }
 
 # Echoes the git hash portion of the VERSION_STRING variable defined in
-# $LIBVPX_CONFIG_PATH/config.mk to stdout, or the version number string when
+# $LIBAOM_CONFIG_PATH/config.mk to stdout, or the version number string when
 # no git hash is contained in VERSION_STRING.
 config_hash() {
-  vpx_config_mk="${LIBVPX_CONFIG_PATH}/config.mk"
+  vpx_config_mk="${LIBAOM_CONFIG_PATH}/config.mk"
   # Find VERSION_STRING line, split it with "-g" and print the last field to
   # output the git hash to stdout.
   vpx_version=$(awk -F -g '/VERSION_STRING/ {print $NF}' "${vpx_config_mk}")
@@ -117,21 +117,21 @@ test_env_var_dir() {
   fi
 }
 
-# This script requires that the LIBVPX_BIN_PATH, LIBVPX_CONFIG_PATH, and
-# LIBVPX_TEST_DATA_PATH variables are in the environment: Confirm that
+# This script requires that the LIBAOM_BIN_PATH, LIBAOM_CONFIG_PATH, and
+# LIBAOM_TEST_DATA_PATH variables are in the environment: Confirm that
 # the variables are set and that they all evaluate to directory paths.
 verify_vpx_test_environment() {
-  test_env_var_dir "LIBVPX_BIN_PATH" \
-    && test_env_var_dir "LIBVPX_CONFIG_PATH" \
-    && test_env_var_dir "LIBVPX_TEST_DATA_PATH"
+  test_env_var_dir "LIBAOM_BIN_PATH" \
+    && test_env_var_dir "LIBAOM_CONFIG_PATH" \
+    && test_env_var_dir "LIBAOM_TEST_DATA_PATH"
 }
 
-# Greps vpx_config.h in LIBVPX_CONFIG_PATH for positional parameter one, which
-# should be a LIBVPX preprocessor flag. Echoes yes to stdout when the feature
+# Greps vpx_config.h in LIBAOM_CONFIG_PATH for positional parameter one, which
+# should be a LIBAOM preprocessor flag. Echoes yes to stdout when the feature
 # is available.
 vpx_config_option_enabled() {
   vpx_config_option="${1}"
-  vpx_config_file="${LIBVPX_CONFIG_PATH}/vpx_config.h"
+  vpx_config_file="${LIBAOM_CONFIG_PATH}/vpx_config.h"
   config_line=$(grep "${vpx_config_option}" "${vpx_config_file}")
   if echo "${config_line}" | egrep -q '1$'; then
     echo yes
@@ -146,16 +146,16 @@ is_windows_target() {
   fi
 }
 
-# Echoes path to $1 when it's executable and exists in ${LIBVPX_BIN_PATH}, or an
+# Echoes path to $1 when it's executable and exists in ${LIBAOM_BIN_PATH}, or an
 # empty string. Caller is responsible for testing the string once the function
 # returns.
 vpx_tool_path() {
   local readonly tool_name="$1"
-  local tool_path="${LIBVPX_BIN_PATH}/${tool_name}${VPX_TEST_EXE_SUFFIX}"
+  local tool_path="${LIBAOM_BIN_PATH}/${tool_name}${VPX_TEST_EXE_SUFFIX}"
   if [ ! -x "${tool_path}" ]; then
     # Try one directory up: when running via examples.sh the tool could be in
-    # the parent directory of $LIBVPX_BIN_PATH.
-    tool_path="${LIBVPX_BIN_PATH}/../${tool_name}${VPX_TEST_EXE_SUFFIX}"
+    # the parent directory of $LIBAOM_BIN_PATH.
+    tool_path="${LIBAOM_BIN_PATH}/../${tool_name}${VPX_TEST_EXE_SUFFIX}"
   fi
 
   if [ ! -x "${tool_path}" ]; then
@@ -165,10 +165,10 @@ vpx_tool_path() {
 }
 
 # Echoes yes to stdout when the file named by positional parameter one exists
-# in LIBVPX_BIN_PATH, and is executable.
+# in LIBAOM_BIN_PATH, and is executable.
 vpx_tool_available() {
   local tool_name="$1"
-  local tool="${LIBVPX_BIN_PATH}/${tool_name}${VPX_TEST_EXE_SUFFIX}"
+  local tool="${LIBAOM_BIN_PATH}/${tool_name}${VPX_TEST_EXE_SUFFIX}"
   [ -x "${tool}" ] && echo yes
 }
 
@@ -275,12 +275,12 @@ run_tests() {
 vpx_test_usage() {
 cat << EOF
   Usage: ${0##*/} [arguments]
-    --bin-path <path to libvpx binaries directory>
-    --config-path <path to libvpx config directory>
+    --bin-path <path to libaom binaries directory>
+    --config-path <path to libaom config directory>
     --filter <filter>: User test filter. Only tests matching filter are run.
     --run-disabled-tests: Run disabled tests.
     --help: Display this message and exit.
-    --test-data-path <path to libvpx test data directory>
+    --test-data-path <path to libaom test data directory>
     --show-program-output: Shows output from all programs being tested.
     --prefix: Allows for a user specified prefix to be inserted before all test
               programs. Grants the ability, for example, to run test programs
@@ -289,22 +289,22 @@ cat << EOF
     --verbose: Verbose output.
 
     When the --bin-path option is not specified the script attempts to use
-    \$LIBVPX_BIN_PATH and then the current directory.
+    \$LIBAOM_BIN_PATH and then the current directory.
 
     When the --config-path option is not specified the script attempts to use
-    \$LIBVPX_CONFIG_PATH and then the current directory.
+    \$LIBAOM_CONFIG_PATH and then the current directory.
 
     When the -test-data-path option is not specified the script attempts to use
-    \$LIBVPX_TEST_DATA_PATH and then the current directory.
+    \$LIBAOM_TEST_DATA_PATH and then the current directory.
 EOF
 }
 
 # Returns non-zero (failure) when required environment variables are empty
 # strings.
 vpx_test_check_environment() {
-  if [ -z "${LIBVPX_BIN_PATH}" ] || \
-     [ -z "${LIBVPX_CONFIG_PATH}" ] || \
-     [ -z "${LIBVPX_TEST_DATA_PATH}" ]; then
+  if [ -z "${LIBAOM_BIN_PATH}" ] || \
+     [ -z "${LIBAOM_CONFIG_PATH}" ] || \
+     [ -z "${LIBAOM_TEST_DATA_PATH}" ]; then
     return 1
   fi
 }
@@ -313,11 +313,11 @@ vpx_test_check_environment() {
 while [ -n "$1" ]; do
   case "$1" in
     --bin-path)
-      LIBVPX_BIN_PATH="$2"
+      LIBAOM_BIN_PATH="$2"
       shift
       ;;
     --config-path)
-      LIBVPX_CONFIG_PATH="$2"
+      LIBAOM_CONFIG_PATH="$2"
       shift
       ;;
     --filter)
@@ -332,7 +332,7 @@ while [ -n "$1" ]; do
       exit
       ;;
     --test-data-path)
-      LIBVPX_TEST_DATA_PATH="$2"
+      LIBAOM_TEST_DATA_PATH="$2"
       shift
       ;;
     --prefix)
@@ -358,9 +358,9 @@ done
 
 # Handle running the tests from a build directory without arguments when running
 # the tests on *nix/macosx.
-LIBVPX_BIN_PATH="${LIBVPX_BIN_PATH:-.}"
-LIBVPX_CONFIG_PATH="${LIBVPX_CONFIG_PATH:-.}"
-LIBVPX_TEST_DATA_PATH="${LIBVPX_TEST_DATA_PATH:-.}"
+LIBAOM_BIN_PATH="${LIBAOM_BIN_PATH:-.}"
+LIBAOM_CONFIG_PATH="${LIBAOM_CONFIG_PATH:-.}"
+LIBAOM_TEST_DATA_PATH="${LIBAOM_TEST_DATA_PATH:-.}"
 
 # Create a temporary directory for output files, and a trap to clean it up.
 if [ -n "${TMPDIR}" ]; then
@@ -385,27 +385,27 @@ if [ "$(is_windows_target)" = "yes" ]; then
 fi
 
 # Variables shared by tests.
-VP8_IVF_FILE="${LIBVPX_TEST_DATA_PATH}/vp80-00-comprehensive-001.ivf"
-VP9_IVF_FILE="${LIBVPX_TEST_DATA_PATH}/vp90-2-09-subpixel-00.ivf"
+VP8_IVF_FILE="${LIBAOM_TEST_DATA_PATH}/vp80-00-comprehensive-001.ivf"
+VP9_IVF_FILE="${LIBAOM_TEST_DATA_PATH}/vp90-2-09-subpixel-00.ivf"
 
-VP9_WEBM_FILE="${LIBVPX_TEST_DATA_PATH}/vp90-2-00-quantizer-00.webm"
-VP9_FPM_WEBM_FILE="${LIBVPX_TEST_DATA_PATH}/vp90-2-07-frame_parallel-1.webm"
-VP9_LT_50_FRAMES_WEBM_FILE="${LIBVPX_TEST_DATA_PATH}/vp90-2-02-size-32x08.webm"
+VP9_WEBM_FILE="${LIBAOM_TEST_DATA_PATH}/vp90-2-00-quantizer-00.webm"
+VP9_FPM_WEBM_FILE="${LIBAOM_TEST_DATA_PATH}/vp90-2-07-frame_parallel-1.webm"
+VP9_LT_50_FRAMES_WEBM_FILE="${LIBAOM_TEST_DATA_PATH}/vp90-2-02-size-32x08.webm"
 
-YUV_RAW_INPUT="${LIBVPX_TEST_DATA_PATH}/hantro_collage_w352h288.yuv"
+YUV_RAW_INPUT="${LIBAOM_TEST_DATA_PATH}/hantro_collage_w352h288.yuv"
 YUV_RAW_INPUT_WIDTH=352
 YUV_RAW_INPUT_HEIGHT=288
 
-Y4M_NOSQ_PAR_INPUT="${LIBVPX_TEST_DATA_PATH}/park_joy_90p_8_420_a10-1.y4m"
-Y4M_720P_INPUT="${LIBVPX_TEST_DATA_PATH}/niklas_1280_720_30.y4m"
+Y4M_NOSQ_PAR_INPUT="${LIBAOM_TEST_DATA_PATH}/park_joy_90p_8_420_a10-1.y4m"
+Y4M_720P_INPUT="${LIBAOM_TEST_DATA_PATH}/niklas_1280_720_30.y4m"
 
 # Setup a trap function to clean up after tests complete.
 trap cleanup EXIT
 
 vlog "$(basename "${0%.*}") test configuration:
-  LIBVPX_BIN_PATH=${LIBVPX_BIN_PATH}
-  LIBVPX_CONFIG_PATH=${LIBVPX_CONFIG_PATH}
-  LIBVPX_TEST_DATA_PATH=${LIBVPX_TEST_DATA_PATH}
+  LIBAOM_BIN_PATH=${LIBAOM_BIN_PATH}
+  LIBAOM_CONFIG_PATH=${LIBAOM_CONFIG_PATH}
+  LIBAOM_TEST_DATA_PATH=${LIBAOM_TEST_DATA_PATH}
   VP8_IVF_FILE=${VP8_IVF_FILE}
   VP9_IVF_FILE=${VP9_IVF_FILE}
   VP9_WEBM_FILE=${VP9_WEBM_FILE}
