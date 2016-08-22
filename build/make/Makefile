@@ -432,7 +432,7 @@ INSTALL-SRCS := $(call cond_enabled,CONFIG_INSTALL_SRCS,INSTALL-SRCS)
 ifeq ($(MAKECMDGOALS),dist)
 INSTALL-SRCS += $(call cond_enabled,CONFIG_INSTALL_SRCS,DIST-SRCS)
 endif
-.install-srcs: $(addprefix $(DIST_DIR)/src/,$(INSTALL-SRCS))
+.install-srcs: $(addprefix $()/src/,$(INSTALL-SRCS))
 	@touch $@
 
 clean::
