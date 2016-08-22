@@ -211,7 +211,7 @@ ifeq ($(HAVE_GNU_STRIP),yes)
 # Older binutils strip global symbols not needed for relocation processing
 # when given --strip-unneeded. Using nm and awk to identify globals and
 # keep them caused command line length issues under mingw and segfaults in
-# test_libvpx were observed under OS/2: simply use --strip-debug.
+# test_libaom were observed under OS/2: simply use --strip-debug.
 %.a: %_g.a
 	$(if $(quiet),@echo "    [STRIP] $@ < $<")
 	$(qexec)$(STRIP) --strip-debug \
