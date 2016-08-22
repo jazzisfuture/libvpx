@@ -49,7 +49,7 @@ Next Release
 
   The VP9 encoder in this release is not feature complete. Users interested in
   the encoder are advised to use the git master branch and discuss issues on
-  libvpx mailing lists.
+  libaom mailing lists.
 
   - Upgrading:
     This release is ABI and API compatible with Duclair (v1.0.0). Users
@@ -60,7 +60,7 @@ Next Release
       Get rid of bashisms in the main build scripts
       Added usage info on command line options
       Add lossless compression mode
-      Dll build of libvpx
+      Dll build of libaom
       Add additional Mac OS X targets: 10.7, 10.8 and 10.9 (darwin11-13)
       Add option to disable documentation
       configure: add --enable-external-build support
@@ -142,10 +142,10 @@ Next Release
     is more computationally intensive than the spatial one.
 
     This release removes support for a legacy, decode only API that was
-    supported, but deprecated, at the initial release of libvpx
+    supported, but deprecated, at the initial release of libaom
     (v0.9.0). This is not expected to have any impact. If you are
     impacted, you can apply a reversion to commit 2bf8fb58 locally.
-    Please update to the latest libvpx API if you are affected.
+    Please update to the latest libaom API if you are affected.
 
   - Enhancements:
       Adds a motion compensated temporal denoiser to the encoder, which
@@ -219,9 +219,9 @@ Next Release
   v0.9.7, so all users of that release are encouraged to upgrade.
 
   - Upgrading:
-      This release is ABI incompatible with prior releases of libvpx, so the
+      This release is ABI incompatible with prior releases of libaom, so the
       "major" version number has been bumped to 1. You must recompile your
-      applications against the latest version of the libvpx headers. The
+      applications against the latest version of the libaom headers. The
       API remains compatible, and this should not require code changes in most
       applications.
 
@@ -272,7 +272,7 @@ Next Release
           Cayuga) given a frame with corrupt partition sizes.
 
           A bounded out of bounds read was discovered affecting all
-          versions of libvpx. Given an multipartition input frame that
+          versions of libaom. Given an multipartition input frame that
           is truncated between the mode/mv partition and the first
           residiual paritition (in the block of partition offsets), up
           to 3 extra bytes could have been read from the source buffer.
@@ -525,7 +525,7 @@ Next Release
       Build fixes for darwin-icc
 
   - Speed:
-      20-40% (average 28%) improvement in libvpx decoder speed,
+      20-40% (average 28%) improvement in libaom decoder speed,
       including:
         Rewrite vp8_short_walsh4x4_sse2()
         Optimizations on the loopfilters.
