@@ -8,7 +8,7 @@
 ##  in the file PATENTS.  All contributing project authors may
 ##  be found in the AUTHORS file in the root of the source tree.
 ##
-##  This file tests the libvpx decode_with_drops example. To add new tests to
+##  This file tests the libaom decode_with_drops example. To add new tests to
 ##  this file, do the following:
 ##    1. Write a shell function (this is your test).
 ##    2. Add the function to decode_with_drops_tests (on a new line).
@@ -19,7 +19,7 @@
 #   $VP8_IVF_FILE and $VP9_IVF_FILE are required.
 decode_with_drops_verify_environment() {
   if [ ! -e "${VP8_IVF_FILE}" ] || [ ! -e "${VP9_IVF_FILE}" ]; then
-    echo "Libvpx test data must exist in LIBVPX_TEST_DATA_PATH."
+    echo "Libvpx test data must exist in LIBAOM_TEST_DATA_PATH."
     return 1
   fi
 }
@@ -28,7 +28,7 @@ decode_with_drops_verify_environment() {
 # to name the output file. $3 is the drop mode, and is passed directly to
 # decode_with_drops.
 decode_with_drops() {
-  local decoder="${LIBVPX_BIN_PATH}/decode_with_drops${VPX_TEST_EXE_SUFFIX}"
+  local decoder="${LIBAOM_BIN_PATH}/decode_with_drops${VPX_TEST_EXE_SUFFIX}"
   local input_file="$1"
   local codec="$2"
   local output_file="${VPX_TEST_OUTPUT_DIR}/decode_with_drops_${codec}"
