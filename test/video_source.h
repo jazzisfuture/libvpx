@@ -20,26 +20,26 @@
 #include <cstdlib>
 #include <string>
 #include "test/acm_random.h"
-#include "vpx/vpx_encoder.h"
+#include "aom/vpx_encoder.h"
 
-namespace libvpx_test {
+namespace libaom_test {
 
-// Helper macros to ensure LIBVPX_TEST_DATA_PATH is a quoted string.
+// Helper macros to ensure LIBAOM_TEST_DATA_PATH is a quoted string.
 // These are undefined right below GetDataPath
-// NOTE: LIBVPX_TEST_DATA_PATH MUST NOT be a quoted string before
+// NOTE: LIBAOM_TEST_DATA_PATH MUST NOT be a quoted string before
 // Stringification or the GetDataPath will fail at runtime
 #define TO_STRING(S) #S
 #define STRINGIFY(S) TO_STRING(S)
 
 // A simple function to encapsulate cross platform retrieval of test data path
 static std::string GetDataPath() {
-  const char *const data_path = getenv("LIBVPX_TEST_DATA_PATH");
+  const char *const data_path = getenv("LIBAOM_TEST_DATA_PATH");
   if (data_path == NULL) {
-#ifdef LIBVPX_TEST_DATA_PATH
+#ifdef LIBAOM_TEST_DATA_PATH
     // In some environments, we cannot set environment variables
     // Instead, we set the data path by using a preprocessor symbol
     // which can be set from make files
-    return STRINGIFY(LIBVPX_TEST_DATA_PATH);
+    return STRINGIFY(LIBAOM_TEST_DATA_PATH);
 #else
     return ".";
 #endif
@@ -250,6 +250,6 @@ class CompressedVideoSource {
   virtual unsigned int frame_number() const = 0;
 };
 
-}  // namespace libvpx_test
+}  // namespace libaom_test
 
 #endif  // TEST_VIDEO_SOURCE_H_
