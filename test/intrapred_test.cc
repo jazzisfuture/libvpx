@@ -129,10 +129,13 @@ INSTANTIATE_TEST_CASE_P(
     SSE2_TO_C_8, VP9IntraPredTest,
     ::testing::Values(IntraPredFunc(&vpx_highbd_dc_predictor_32x32_sse2,
                                     &vpx_highbd_dc_predictor_32x32_c, 32, 8),
+#if !CONFIG_PAETH_PREDICTOR
                       IntraPredFunc(&vpx_highbd_tm_predictor_16x16_sse2,
                                     &vpx_highbd_tm_predictor_16x16_c, 16, 8),
                       IntraPredFunc(&vpx_highbd_tm_predictor_32x32_sse2,
                                     &vpx_highbd_tm_predictor_32x32_c, 32, 8),
+#endif  // !CONFIG_PAETH_PREDICTOR
+
                       IntraPredFunc(&vpx_highbd_dc_predictor_4x4_sse2,
                                     &vpx_highbd_dc_predictor_4x4_c, 4, 8),
                       IntraPredFunc(&vpx_highbd_dc_predictor_8x8_sse2,
@@ -146,20 +149,26 @@ INSTANTIATE_TEST_CASE_P(
                       IntraPredFunc(&vpx_highbd_v_predictor_16x16_sse2,
                                     &vpx_highbd_v_predictor_16x16_c, 16, 8),
                       IntraPredFunc(&vpx_highbd_v_predictor_32x32_sse2,
-                                    &vpx_highbd_v_predictor_32x32_c, 32, 8),
+                                    &vpx_highbd_v_predictor_32x32_c, 32, 8)
+#if !CONFIG_PAETH_PREDICTOR
+                          ,
                       IntraPredFunc(&vpx_highbd_tm_predictor_4x4_sse2,
                                     &vpx_highbd_tm_predictor_4x4_c, 4, 8),
                       IntraPredFunc(&vpx_highbd_tm_predictor_8x8_sse2,
-                                    &vpx_highbd_tm_predictor_8x8_c, 8, 8)));
+                                    &vpx_highbd_tm_predictor_8x8_c, 8, 8)
+#endif  // !CONFIG_PAETH_PREDICTOR
+                          ));
 
 INSTANTIATE_TEST_CASE_P(
     SSE2_TO_C_10, VP9IntraPredTest,
     ::testing::Values(IntraPredFunc(&vpx_highbd_dc_predictor_32x32_sse2,
                                     &vpx_highbd_dc_predictor_32x32_c, 32, 10),
+#if !CONFIG_PAETH_PREDICTOR
                       IntraPredFunc(&vpx_highbd_tm_predictor_16x16_sse2,
                                     &vpx_highbd_tm_predictor_16x16_c, 16, 10),
                       IntraPredFunc(&vpx_highbd_tm_predictor_32x32_sse2,
                                     &vpx_highbd_tm_predictor_32x32_c, 32, 10),
+#endif  // !CONFIG_PAETH_PREDICTOR
                       IntraPredFunc(&vpx_highbd_dc_predictor_4x4_sse2,
                                     &vpx_highbd_dc_predictor_4x4_c, 4, 10),
                       IntraPredFunc(&vpx_highbd_dc_predictor_8x8_sse2,
@@ -173,20 +182,26 @@ INSTANTIATE_TEST_CASE_P(
                       IntraPredFunc(&vpx_highbd_v_predictor_16x16_sse2,
                                     &vpx_highbd_v_predictor_16x16_c, 16, 10),
                       IntraPredFunc(&vpx_highbd_v_predictor_32x32_sse2,
-                                    &vpx_highbd_v_predictor_32x32_c, 32, 10),
+                                    &vpx_highbd_v_predictor_32x32_c, 32, 10)
+#if !CONFIG_PAETH_PREDICTOR
+                          ,
                       IntraPredFunc(&vpx_highbd_tm_predictor_4x4_sse2,
                                     &vpx_highbd_tm_predictor_4x4_c, 4, 10),
                       IntraPredFunc(&vpx_highbd_tm_predictor_8x8_sse2,
-                                    &vpx_highbd_tm_predictor_8x8_c, 8, 10)));
+                                    &vpx_highbd_tm_predictor_8x8_c, 8, 10)
+#endif  // !CONFIG_PAETH_PREDICTOR
+                          ));
 
 INSTANTIATE_TEST_CASE_P(
     SSE2_TO_C_12, VP9IntraPredTest,
     ::testing::Values(IntraPredFunc(&vpx_highbd_dc_predictor_32x32_sse2,
                                     &vpx_highbd_dc_predictor_32x32_c, 32, 12),
+#if !CONFIG_PAETH_PREDICTOR
                       IntraPredFunc(&vpx_highbd_tm_predictor_16x16_sse2,
                                     &vpx_highbd_tm_predictor_16x16_c, 16, 12),
                       IntraPredFunc(&vpx_highbd_tm_predictor_32x32_sse2,
                                     &vpx_highbd_tm_predictor_32x32_c, 32, 12),
+#endif  // !CONFIG_PAETH_PREDICTOR
                       IntraPredFunc(&vpx_highbd_dc_predictor_4x4_sse2,
                                     &vpx_highbd_dc_predictor_4x4_c, 4, 12),
                       IntraPredFunc(&vpx_highbd_dc_predictor_8x8_sse2,
@@ -200,11 +215,15 @@ INSTANTIATE_TEST_CASE_P(
                       IntraPredFunc(&vpx_highbd_v_predictor_16x16_sse2,
                                     &vpx_highbd_v_predictor_16x16_c, 16, 12),
                       IntraPredFunc(&vpx_highbd_v_predictor_32x32_sse2,
-                                    &vpx_highbd_v_predictor_32x32_c, 32, 12),
+                                    &vpx_highbd_v_predictor_32x32_c, 32, 12)
+#if !CONFIG_PAETH_PREDICTOR
+                          ,
                       IntraPredFunc(&vpx_highbd_tm_predictor_4x4_sse2,
                                     &vpx_highbd_tm_predictor_4x4_c, 4, 12),
                       IntraPredFunc(&vpx_highbd_tm_predictor_8x8_sse2,
-                                    &vpx_highbd_tm_predictor_8x8_c, 8, 12)));
+                                    &vpx_highbd_tm_predictor_8x8_c, 8, 12)
+#endif  // !CONFIG_PAETH_PREDICTOR
+                          ));
 
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // HAVE_SSE2
