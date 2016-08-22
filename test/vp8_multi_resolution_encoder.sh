@@ -8,7 +8,7 @@
 ##  in the file PATENTS.  All contributing project authors may
 ##  be found in the AUTHORS file in the root of the source tree.
 ##
-##  This file tests the libvpx vp8_multi_resolution_encoder example. To add new
+##  This file tests the libaom vp8_multi_resolution_encoder example. To add new
 ##  tests to this file, do the following:
 ##    1. Write a shell function (this is your test).
 ##    2. Add the function to vp8_mre_tests (on a new line).
@@ -19,12 +19,12 @@
 vp8_multi_resolution_encoder_verify_environment() {
   if [ "$(vpx_config_option_enabled CONFIG_MULTI_RES_ENCODING)" = "yes" ]; then
     if [ ! -e "${YUV_RAW_INPUT}" ]; then
-      elog "Libvpx test data must exist in LIBVPX_TEST_DATA_PATH."
+      elog "Libvpx test data must exist in LIBAOM_TEST_DATA_PATH."
       return 1
     fi
     local readonly app="vp8_multi_resolution_encoder"
     if [ -z "$(vpx_tool_path "${app}")" ]; then
-      elog "${app} not found. It must exist in LIBVPX_BIN_PATH or its parent."
+      elog "${app} not found. It must exist in LIBAOM_BIN_PATH or its parent."
       return 1
     fi
   fi

@@ -20,18 +20,18 @@ readonly TEST_FRAMES=10
 # Environment check: Make sure input is available.
 vpxenc_verify_environment() {
   if [ ! -e "${YUV_RAW_INPUT}" ]; then
-    elog "The file ${YUV_RAW_INPUT##*/} must exist in LIBVPX_TEST_DATA_PATH."
+    elog "The file ${YUV_RAW_INPUT##*/} must exist in LIBAOM_TEST_DATA_PATH."
     return 1
   fi
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ]; then
     if [ ! -e "${Y4M_NOSQ_PAR_INPUT}" ]; then
       elog "The file ${Y4M_NOSQ_PAR_INPUT##*/} must exist in"
-      elog "LIBVPX_TEST_DATA_PATH."
+      elog "LIBAOM_TEST_DATA_PATH."
       return 1
     fi
   fi
   if [ -z "$(vpx_tool_path vpxenc)" ]; then
-    elog "vpxenc not found. It must exist in LIBVPX_BIN_PATH or its parent."
+    elog "vpxenc not found. It must exist in LIBAOM_BIN_PATH or its parent."
     return 1
   fi
 }
@@ -91,7 +91,7 @@ vpxenc_rt_params() {
 }
 
 # Wrapper function for running vpxenc with pipe input. Requires that
-# LIBVPX_BIN_PATH points to the directory containing vpxenc. $1 is used as the
+# LIBAOM_BIN_PATH points to the directory containing vpxenc. $1 is used as the
 # input file path and shifted away. All remaining parameters are passed through
 # to vpxenc.
 vpxenc_pipe() {
@@ -103,7 +103,7 @@ vpxenc_pipe() {
     "$@" ${devnull}
 }
 
-# Wrapper function for running vpxenc. Requires that LIBVPX_BIN_PATH points to
+# Wrapper function for running vpxenc. Requires that LIBAOM_BIN_PATH points to
 # the directory containing vpxenc. $1 one is used as the input file path and
 # shifted away. All remaining parameters are passed through to vpxenc.
 vpxenc() {
