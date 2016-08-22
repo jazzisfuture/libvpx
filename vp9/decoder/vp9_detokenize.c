@@ -35,6 +35,19 @@ static INLINE int read_coeff(const vpx_prob *probs, int n, vpx_reader *r) {
   return val;
 }
 
+
+/* The trailing '0' is a terminator which is used inside cost_coeffs() to
+ * decide whether to include cost of a trailing EOB node or not (i.e. we
+ * can skip this if the last coefficient in this transform block, e.g. the
+ * 16th coefficient in a 4x4 block or the 64th coefficient in a 8x8 block,
+ * were non-zero). */
+static const int16_t band_counts[TX_SIZES][8] = {
+  { 1, 2, 3, 4, 3, 16 - 13, 0 },
+  { 1, 2, 3, 4, 11, 64 - 21, 0 },
+  { 1, 2, 3, 4, 11, 256 - 21, 0 },
+  { 1, 2, 3, 4, 11, 1024 - 21, 0 },
+};
+
 static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
                         tran_low_t *dqcoeff, TX_SIZE tx_size, const int16_t *dq,
                         int ctx, const int16_t *scan, const int16_t *nb,
@@ -66,6 +79,9 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
       (xd->bd == VPX_BITS_12) ? 18 : (xd->bd == VPX_BITS_10) ? 16 :
 #endif  // CONFIG_VP9_HIGHBITDEPTH
                                                              14;
+  const int16_t *band_count = &band_counts[tx_size][0];
+  int band_left = *band_count++;
+  band = 0;
 
   if (counts) {
     coef_counts = counts->coef[tx_size][type][ref];
@@ -74,7 +90,7 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
 
   while (c < max_eob) {
     int val = -1;
-    band = *band_translate++;
+//    band = *band_translate++;
     prob = coef_probs[band][ctx];
     if (counts) ++eob_branch_count[band][ctx];
     if (!vpx_read(r, prob[EOB_CONTEXT_NODE])) {
@@ -89,7 +105,11 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
       ++c;
       if (c >= max_eob) return c;  // zero tokens at the end (no eob token)
       ctx = get_coef_context(nb, token_cache, c);
-      band = *band_translate++;
+//      band = *band_translate++;
+      if (!--band_left) {
+        band_left = *band_count++;
+        ++band;
+      }
       prob = coef_probs[band][ctx];
     }
 
@@ -139,6 +159,10 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
     ++c;
     ctx = get_coef_context(nb, token_cache, c);
     dqv = dq[1];
+    if (!--band_left) {
+      band_left = *band_count++;
+      ++band;
+    }
   }
 
   return c;
