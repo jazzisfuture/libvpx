@@ -19,17 +19,17 @@ vpxdec_verify_environment() {
   if [ ! -e "${VP8_IVF_FILE}" ] || [ ! -e "${VP9_WEBM_FILE}" ] || \
     [ ! -e "${VP9_FPM_WEBM_FILE}" ] || \
     [ ! -e "${VP9_LT_50_FRAMES_WEBM_FILE}" ] ; then
-    elog "Libvpx test data must exist in LIBVPX_TEST_DATA_PATH."
+    elog "Libvpx test data must exist in LIBAOM_TEST_DATA_PATH."
     return 1
   fi
   if [ -z "$(vpx_tool_path vpxdec)" ]; then
-    elog "vpxdec not found. It must exist in LIBVPX_BIN_PATH or its parent."
+    elog "vpxdec not found. It must exist in LIBAOM_BIN_PATH or its parent."
     return 1
   fi
 }
 
 # Wrapper function for running vpxdec with pipe input. Requires that
-# LIBVPX_BIN_PATH points to the directory containing vpxdec. $1 is used as the
+# LIBAOM_BIN_PATH points to the directory containing vpxdec. $1 is used as the
 # input file path and shifted away. All remaining parameters are passed through
 # to vpxdec.
 vpxdec_pipe() {
@@ -39,7 +39,7 @@ vpxdec_pipe() {
   cat "${input}" | eval "${VPX_TEST_PREFIX}" "${decoder}" - "$@" ${devnull}
 }
 
-# Wrapper function for running vpxdec. Requires that LIBVPX_BIN_PATH points to
+# Wrapper function for running vpxdec. Requires that LIBAOM_BIN_PATH points to
 # the directory containing vpxdec. $1 one is used as the input file path and
 # shifted away. All remaining parameters are passed through to vpxdec.
 vpxdec() {

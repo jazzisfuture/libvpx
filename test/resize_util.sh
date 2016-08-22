@@ -8,7 +8,7 @@
 ##  in the file PATENTS.  All contributing project authors may
 ##  be found in the AUTHORS file in the root of the source tree.
 ##
-##  This file tests the libvpx resize_util example code. To add new tests to
+##  This file tests the libaom resize_util example code. To add new tests to
 ##  this file, do the following:
 ##    1. Write a shell function (this is your test).
 ##    2. Add the function to resize_util_tests (on a new line).
@@ -18,7 +18,7 @@
 # Environment check: $YUV_RAW_INPUT is required.
 resize_util_verify_environment() {
   if [ ! -e "${YUV_RAW_INPUT}" ]; then
-    echo "Libvpx test data must exist in LIBVPX_TEST_DATA_PATH."
+    echo "Libvpx test data must exist in LIBAOM_TEST_DATA_PATH."
     return 1
   fi
 }
@@ -26,7 +26,7 @@ resize_util_verify_environment() {
 # Resizes $YUV_RAW_INPUT using the resize_util example. $1 is the output
 # dimensions that will be passed to resize_util.
 resize_util() {
-  local resizer="${LIBVPX_BIN_PATH}/resize_util${VPX_TEST_EXE_SUFFIX}"
+  local resizer="${LIBAOM_BIN_PATH}/resize_util${VPX_TEST_EXE_SUFFIX}"
   local output_file="${VPX_TEST_OUTPUT_DIR}/resize_util.raw"
   local frames_to_resize="10"
   local target_dimensions="$1"
