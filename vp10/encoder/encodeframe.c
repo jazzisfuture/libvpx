@@ -4453,7 +4453,7 @@ static void refine_integerized_param(WarpedMotionParams *wm,
                                     0, 0, d_width, d_height, d_stride, 0, 0,
                                     16, 16);
       if (step_error < best_error) {
-        step -= 1;
+        step -= 2;
         best_error = step_error;
         best_param = *param;
         curr_param = best_param;
