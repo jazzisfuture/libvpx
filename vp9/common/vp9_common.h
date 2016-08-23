@@ -60,7 +60,7 @@ static INLINE int get_unsigned_bits(unsigned int num_values) {
   do {                                                    \
     lval = (expr);                                        \
     if (!lval)                                            \
-      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR, \
+      vpx_internal_error(&(cm)->error, VPX_CODEC_MEM_ERROR, \
                          "Failed to allocate " #lval);    \
   } while (0)
 #endif
