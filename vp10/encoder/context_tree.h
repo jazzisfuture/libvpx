@@ -30,10 +30,6 @@ typedef struct {
 #if CONFIG_VAR_TX
   uint8_t *blk_skip[MAX_MB_PLANE];
 #endif
-  tran_low_t *coeff[MAX_MB_PLANE][3];
-  tran_low_t *qcoeff[MAX_MB_PLANE][3];
-  tran_low_t *dqcoeff[MAX_MB_PLANE][3];
-  uint16_t *eobs[MAX_MB_PLANE][3];
 
   // dual buffer pointers, 0: in use, 1: best in store
   tran_low_t *coeff_pbuf[MAX_MB_PLANE][3];
