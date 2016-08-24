@@ -15,10 +15,30 @@
 #include "include/vpx_mem_intrnl.h"
 #include "vpx/vpx_integer.h"
 
+#if SIZE_MAX > (1ULL << 40)
+#define VPX_MAX_ALLOCABLE_MEMORY (1ULL << 40)
+#else
+// For 32-bit targets keep this below INT_MAX to avoid valgrind warnings.
+#define VPX_MAX_ALLOCABLE_MEMORY ((1ULL << 31) - (1 << 16))
+#endif
+
+// Returns 0 in case of overflow of nmemb * size.
+static int check_size_argument_overflow(uint64_t nmemb, uint64_t size) {
+  const uint64_t total_size = nmemb * size;
+  if (nmemb == 0) return 1;
+  if (size > VPX_MAX_ALLOCABLE_MEMORY / nmemb) return 0;
+  if (total_size != (size_t)total_size) return 0;
+
+  return 1;
+}
+
 void *vpx_memalign(size_t align, size_t size) {
+  const uint64_t total_size = (uint64_t)size + align - 1 + ADDRESS_STORAGE_SIZE;
   void *addr, *x = NULL;
 
-  addr = malloc(size + align - 1 + ADDRESS_STORAGE_SIZE);
+  if (!check_size_argument_overflow(1, total_size)) return NULL;
+
+  addr = malloc((size_t)total_size);
 
   if (addr) {
     x = align_addr((unsigned char *)addr + ADDRESS_STORAGE_SIZE, (int)align);
@@ -33,6 +53,8 @@ void *vpx_malloc(size_t size) { return vpx_memalign(DEFAULT_ALIGNMENT, size); }
 
 void *vpx_calloc(size_t num, size_t size) {
   void *x;
+
+  if (!check_size_argument_overflow(num, size)) return NULL;
 
   x = vpx_memalign(DEFAULT_ALIGNMENT, num * size);
 
@@ -58,8 +80,12 @@ void *vpx_realloc(void *memblk, size_t size) {
   else if (!size)
     vpx_free(memblk);
   else {
+    const uint64_t total_size =
+        (uint64_t)size + align - 1 + ADDRESS_STORAGE_SIZE;
     addr = (void *)(((size_t *)memblk)[-1]);
     memblk = NULL;
+
+    if (!check_size_argument_overflow(1, total_size)) return NULL;
 
     new_addr = realloc(addr, size + align + ADDRESS_STORAGE_SIZE);
 
