@@ -20,7 +20,30 @@
 #include "vpx_dsp/x86/txfm_common_sse2.h"
 #include "vpx_ports/mem.h"
 
-static INLINE void load_buffer_4x4(const int16_t *input, __m128i *in,
+static void load_buffer_4x4(const int16_t *input, __m128i *in,
+                            int stride, int flipud, int fliplr,
+                            int shift)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void fdct4x4_sse4_1(__m128i *in, int bit)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void write_buffer_4x4(__m128i *res, tran_low_t *output)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void fadst4x4_sse4_1(__m128i *in, int bit)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void load_buffer_8x8(const int16_t *input, __m128i *in,
+                            int stride, int flipud, int fliplr,
+                            int shift)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void col_txfm_8x8_rounding(__m128i *in, int shift)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void write_buffer_8x8(const __m128i *res, tran_low_t *output)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void fdct8x8_sse4_1(__m128i *in, __m128i *out, int bit)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void fadst8x8_sse4_1(__m128i *in, __m128i *out, int bit)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+
+static void load_buffer_4x4(const int16_t *input, __m128i *in,
                                    int stride, int flipud, int fliplr,
                                    int shift) {
   if (!flipud) {
@@ -113,7 +136,7 @@ static void fdct4x4_sse4_1(__m128i *in, int bit) {
   in[3] = _mm_unpackhi_epi64(v1, v3);
 }
 
-static INLINE void write_buffer_4x4(__m128i *res, tran_low_t *output) {
+static void write_buffer_4x4(__m128i *res, tran_low_t *output) {
   _mm_store_si128((__m128i *)(output + 0 * 4), res[0]);
   _mm_store_si128((__m128i *)(output + 1 * 4), res[1]);
   _mm_store_si128((__m128i *)(output + 2 * 4), res[2]);
@@ -282,7 +305,7 @@ void vp10_fwd_txfm2d_4x4_sse4_1(const int16_t *input, int32_t *coeff,
   (void)bd;
 }
 
-static INLINE void load_buffer_8x8(const int16_t *input, __m128i *in,
+static void load_buffer_8x8(const int16_t *input, __m128i *in,
                                    int stride, int flipud, int fliplr,
                                    int shift) {
   __m128i u;
@@ -368,7 +391,7 @@ static INLINE void load_buffer_8x8(const int16_t *input, __m128i *in,
   in[15] = _mm_slli_epi32(in[15], shift);
 }
 
-static INLINE void col_txfm_8x8_rounding(__m128i *in, int shift) {
+static void col_txfm_8x8_rounding(__m128i *in, int shift) {
   const __m128i rounding = _mm_set1_epi32(1 << (shift - 1));
 
   in[0] = _mm_add_epi32(in[0], rounding);
@@ -406,7 +429,7 @@ static INLINE void col_txfm_8x8_rounding(__m128i *in, int shift) {
   in[15] = _mm_srai_epi32(in[15], shift);
 }
 
-static INLINE void write_buffer_8x8(const __m128i *res, tran_low_t *output) {
+static void write_buffer_8x8(const __m128i *res, tran_low_t *output) {
   _mm_store_si128((__m128i *)(output + 0 * 4), res[0]);
   _mm_store_si128((__m128i *)(output + 1 * 4), res[1]);
   _mm_store_si128((__m128i *)(output + 2 * 4), res[2]);

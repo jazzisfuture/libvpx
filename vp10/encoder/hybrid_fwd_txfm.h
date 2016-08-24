@@ -35,7 +35,8 @@ void fwd_txfm(const int16_t *src_diff, tran_low_t *coeff, int diff_stride,
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void highbd_fwd_txfm(const int16_t *src_diff, tran_low_t *coeff,
-                     int diff_stride, FWD_TXFM_PARAM *fwd_txfm_param);
+                     int diff_stride, FWD_TXFM_PARAM *fwd_txfm_param)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #ifdef __cplusplus

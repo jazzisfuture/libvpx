@@ -80,6 +80,7 @@ void vp10_inv_txfm_add_32x32(const tran_low_t *input, uint8_t *dest, int stride,
                              int eob, TX_TYPE tx_type);
 void inv_txfm_add(const tran_low_t *input, uint8_t *dest, int stride,
                   INV_TXFM_PARAM *inv_txfm_param);
+
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp10_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                              int eob, int bd);
@@ -93,7 +94,8 @@ void vp10_highbd_idct32x32_add(const tran_low_t *input, uint8_t *dest,
                                int stride, int eob, int bd);
 void vp10_highbd_inv_txfm_add_4x4(const tran_low_t *input, uint8_t *dest,
                                   int stride, int eob, int bd, TX_TYPE tx_type,
-                                  int lossless);
+                                  int lossless)
+    CODE_ATTR_SECTION("vp10_inv_txfm");
 #if CONFIG_EXT_TX
 void vp10_highbd_inv_txfm_add_4x8(const tran_low_t *input, uint8_t *dest,
                                   int stride, int eob, int bd, TX_TYPE tx_type);
@@ -101,15 +103,19 @@ void vp10_highbd_inv_txfm_add_8x4(const tran_low_t *input, uint8_t *dest,
                                   int stride, int eob, int bd, TX_TYPE tx_type);
 #endif  // CONFIG_EXT_TX
 void vp10_highbd_inv_txfm_add_8x8(const tran_low_t *input, uint8_t *dest,
-                                  int stride, int eob, int bd, TX_TYPE tx_type);
+                                  int stride, int eob, int bd, TX_TYPE tx_type)
+    CODE_ATTR_SECTION("vp10_inv_txfm");
 void vp10_highbd_inv_txfm_add_16x16(const tran_low_t *input, uint8_t *dest,
                                     int stride, int eob, int bd,
-                                    TX_TYPE tx_type);
+                                    TX_TYPE tx_type)
+    CODE_ATTR_SECTION("vp10_inv_txfm");
 void vp10_highbd_inv_txfm_add_32x32(const tran_low_t *input, uint8_t *dest,
                                     int stride, int eob, int bd,
-                                    TX_TYPE tx_type);
+                                    TX_TYPE tx_type)
+    CODE_ATTR_SECTION("vp10_inv_txfm");
 void highbd_inv_txfm_add(const tran_low_t *input, uint8_t *dest, int stride,
-                         INV_TXFM_PARAM *inv_txfm_param);
+                         INV_TXFM_PARAM *inv_txfm_param)
+    CODE_ATTR_SECTION("vp10_inv_txfm");
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #ifdef __cplusplus
 }  // extern "C"

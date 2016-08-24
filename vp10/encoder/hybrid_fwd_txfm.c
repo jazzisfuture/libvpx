@@ -204,6 +204,24 @@ static void fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
 #if CONFIG_VP9_HIGHBITDEPTH
 static void highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
                                 int diff_stride, TX_TYPE tx_type, int lossless,
+                                const int bd)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void highbd_fwd_txfm_8x8(const int16_t *src_diff, tran_low_t *coeff,
+                                int diff_stride, TX_TYPE tx_type, FWD_TXFM_OPT opt,
+                                const int bd)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void highbd_fwd_txfm_16x16(const int16_t *src_diff, tran_low_t *coeff,
+                                  int diff_stride, TX_TYPE tx_type, FWD_TXFM_OPT opt,
+                                const int bd)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+static void highbd_fwd_txfm_32x32(int rd_transform, const int16_t *src_diff,
+                                  tran_low_t *coeff, int diff_stride,
+                                  TX_TYPE tx_type, FWD_TXFM_OPT fwd_txfm_opt,
+                                  const int bd)
+    CODE_ATTR_SECTION("vp10_fwd_txfm");
+
+static void highbd_fwd_txfm_4x4(const int16_t *src_diff, tran_low_t *coeff,
+                                int diff_stride, TX_TYPE tx_type, int lossless,
                                 const int bd) {
   if (lossless) {
     assert(tx_type == DCT_DCT);

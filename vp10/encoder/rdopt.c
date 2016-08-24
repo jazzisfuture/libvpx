@@ -1134,6 +1134,10 @@ static uint64_t sum_squares_2d(const int16_t *diff, int diff_stride,
 }
 
 static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
+                          BLOCK_SIZE plane_bsize, TX_SIZE tx_size, void *arg)
+    CODE_ATTR_SECTION("vp10_mode_rd");
+
+static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
                           BLOCK_SIZE plane_bsize, TX_SIZE tx_size, void *arg) {
   struct rdcost_block_args *args = arg;
   MACROBLOCK *const x = args->x;
