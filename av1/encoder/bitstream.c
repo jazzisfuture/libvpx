@@ -722,17 +722,14 @@ static void pack_mb_tokens(aom_writer *w, const TOKENEXTRA **tp,
   while (p < stop && p->token != EOSB_TOKEN) {
     const int token = p->token;
     aom_tree_index index = 0;
-#if !CONFIG_RANS
+#if !CONFIG_RANS && !CONFIG_DAALA_EC
     const struct av1_token *const coef_encoding = &av1_coef_encodings[token];
-#if CONFIG_DAALA_EC
-    int i = 0;
-#endif
     int coef_value = coef_encoding->value;
     int coef_length = coef_encoding->len;
 #endif  // !CONFIG_RANS
     const av1_extra_bit *const extra_bits = &extra_bits_table[token];
 
-#if CONFIG_RANS
+#if CONFIG_RANS || CONFIG_DAALA_EC
     /* skip one or two nodes */
     if (!p->skip_eob_node) aom_write(w, token != EOB_TOKEN, p->context_tree[0]);
 
@@ -745,11 +742,10 @@ static void pack_mb_tokens(aom_writer *w, const TOKENEXTRA **tp,
       }
     }
 #else
-#if CONFIG_DAALA_EC
     /* skip one or two nodes */
     if (p->skip_eob_node) {
       coef_length -= p->skip_eob_node;
-      i = 2 * p->skip_eob_node;
+      index = 2 * p->skip_eob_node;
     }
 
     // TODO(jbb): expanding this can lead to big gains.  It allows
@@ -761,39 +757,21 @@ static void pack_mb_tokens(aom_writer *w, const TOKENEXTRA **tp,
     // unconstrained nodes.  The second treed write takes care of the
     // constrained nodes.
     if (token >= TWO_TOKEN && token < EOB_TOKEN) {
-      int len = UNCONSTRAINED_NODES - p->skip_eob_node;
-      int bits = coef_value >> (coef_length - len);
-      aom_write_tree_bits(w, av1_coef_tree, p->context_tree, bits, len, i);
-      coef_value &= (1 << (coef_length - len)) - 1;
+      const int unconstrained_len = UNCONSTRAINED_NODES - p->skip_eob_node;
+      const int unconstrained_bits =
+          coef_value >> (coef_length - unconstrained_len);
+      // Unconstrained nodes.
+      aom_write_tree_bits(w, av1_coef_tree, p->context_tree, unconstrained_bits,
+                          unconstrained_len, index);
+      coef_value &= (1 << (coef_length - unconstrained_len)) - 1;
+      // Constrained nodes.
       aom_write_tree(w, av1_coef_con_tree,
                      av1_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
-                     coef_value, coef_length - len, 0);
+                     coef_value, coef_length - unconstrained_len, 0);
     } else {
       aom_write_tree_bits(w, av1_coef_tree, p->context_tree, coef_value,
-                          coef_length, i);
+                          coef_length, index);
     }
-#else
-    /* skip one or two nodes */
-    if (p->skip_eob_node)
-      coef_length -= p->skip_eob_node;
-    else
-      aom_write(w, token != EOB_TOKEN, p->context_tree[0]);
-
-    if (token != EOB_TOKEN) {
-      aom_write(w, token != ZERO_TOKEN, p->context_tree[1]);
-
-      if (token != ZERO_TOKEN) {
-        aom_write(w, token != ONE_TOKEN, p->context_tree[2]);
-
-        if (token != ONE_TOKEN) {
-          const int unconstrained_len = UNCONSTRAINED_NODES - p->skip_eob_node;
-          aom_write_tree(w, av1_coef_con_tree,
-                         av1_pareto8_full[p->context_tree[PIVOT_NODE] - 1],
-                         coef_value, coef_length - unconstrained_len, 0);
-        }
-      }
-    }
-#endif
 #endif  // CONFIG_RANS
 
     if (extra_bits->base_val) {

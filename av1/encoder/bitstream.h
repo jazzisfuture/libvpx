@@ -18,9 +18,8 @@ extern "C" {
 
 #include "av1/encoder/encoder.h"
 
+void av1_encode_token_init();
 void av1_pack_bitstream(AV1_COMP *const cpi, uint8_t *dest, size_t *size);
-
-void av1_encode_token_init(void);
 
 static INLINE int av1_preserve_existing_gf(AV1_COMP *cpi) {
 #if CONFIG_EXT_REFS
