@@ -36,18 +36,20 @@ static void alloc_mode_context(VP10_COMMON *cm, int num_4x4_blk,
     CHECK_MEM_ERROR(cm, ctx->blk_skip[i], vpx_calloc(num_blk, sizeof(uint8_t)));
 #endif
     for (k = 0; k < 3; ++k) {
-      CHECK_MEM_ERROR(cm, ctx->coeff[i][k],
-                      vpx_memalign(32, num_pix * sizeof(*ctx->coeff[i][k])));
-      CHECK_MEM_ERROR(cm, ctx->qcoeff[i][k],
-                      vpx_memalign(32, num_pix * sizeof(*ctx->qcoeff[i][k])));
-      CHECK_MEM_ERROR(cm, ctx->dqcoeff[i][k],
-                      vpx_memalign(32, num_pix * sizeof(*ctx->dqcoeff[i][k])));
-      CHECK_MEM_ERROR(cm, ctx->eobs[i][k],
-                      vpx_memalign(32, num_blk * sizeof(*ctx->eobs[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->coeff_pbuf[i][k],
+                      vpx_memalign(32, num_pix * sizeof(*ctx->coeff_pbuf[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->qcoeff_pbuf[i][k],
+                      vpx_memalign(32, num_pix * sizeof(*ctx->qcoeff_pbuf[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->dqcoeff_pbuf[i][k],
+                      vpx_memalign(32, num_pix * sizeof(*ctx->dqcoeff_pbuf[i][k])));
+      CHECK_MEM_ERROR(cm, ctx->eobs_pbuf[i][k],
+                      vpx_memalign(32, num_blk * sizeof(*ctx->eobs_pbuf[i][k])));
+#if 0
       ctx->coeff_pbuf[i][k] = ctx->coeff[i][k];
       ctx->qcoeff_pbuf[i][k] = ctx->qcoeff[i][k];
       ctx->dqcoeff_pbuf[i][k] = ctx->dqcoeff[i][k];
       ctx->eobs_pbuf[i][k] = ctx->eobs[i][k];
+#endif
     }
   }
 
@@ -68,14 +70,14 @@ static void free_mode_context(PICK_MODE_CONTEXT *ctx) {
     ctx->blk_skip[i] = 0;
 #endif
     for (k = 0; k < 3; ++k) {
-      vpx_free(ctx->coeff[i][k]);
-      ctx->coeff[i][k] = 0;
-      vpx_free(ctx->qcoeff[i][k]);
-      ctx->qcoeff[i][k] = 0;
-      vpx_free(ctx->dqcoeff[i][k]);
-      ctx->dqcoeff[i][k] = 0;
-      vpx_free(ctx->eobs[i][k]);
-      ctx->eobs[i][k] = 0;
+      vpx_free(ctx->coeff_pbuf[i][k]);
+      ctx->coeff_pbuf[i][k] = 0;
+      vpx_free(ctx->qcoeff_pbuf[i][k]);
+      ctx->qcoeff_pbuf[i][k] = 0;
+      vpx_free(ctx->dqcoeff_pbuf[i][k]);
+      ctx->dqcoeff_pbuf[i][k] = 0;
+      vpx_free(ctx->eobs_pbuf[i][k]);
+      ctx->eobs_pbuf[i][k] = 0;
     }
   }
 
