@@ -507,7 +507,7 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     unsigned char *const seg_map = cpi->segmentation_map;
     memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
     vp9_disable_segmentation(&cm->seg);
-    if (cm->frame_type == KEY_FRAME) {
+    if (cm->frame_type == KEY_FRAME || cpi->force_update_segmentation) {
       memset(cr->last_coded_q_map, MAXQ,
              cm->mi_rows * cm->mi_cols * sizeof(*cr->last_coded_q_map));
       cr->sb_index = 0;
