@@ -3299,6 +3299,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
       vp9_360aq_frame_setup(cpi);
     } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
       vp9_setup_in_frame_q_adj(cpi);
+    } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      vp9_disable_segmentation(&cpi->common.seg);
     } else if (cpi->oxcf.aq_mode == LOOKAHEAD_AQ) {
       vp9_alt_ref_aq_setup_map(cpi->alt_ref_aq, cpi);
     }
