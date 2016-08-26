@@ -1984,8 +1984,8 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
           SNPRINT2(results, "\t%7.3f", consistency);
           SNPRINT2(results, "\t%7.3f", cpi->worst_consistency);
         }
-        fprintf(f, "%s\t    Time  Rc-Err Abs Err\n", headings);
-        fprintf(f, "%s\t%8.0f %7.2f %7.2f\n", results, total_encode_time,
+        fprintf(f, "%s\t    Time\tRc-Err\tAbsErr\n", headings);
+        fprintf(f, "%s\t%8.0f\t%7.2f\t%7.2f\n", results, total_encode_time,
                 rate_err, fabs(rate_err));
       }
 
