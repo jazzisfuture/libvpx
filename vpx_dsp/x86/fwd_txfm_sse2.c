@@ -27,10 +27,8 @@ void vpx_fdct4x4_1_sse2(const int16_t *input, tran_low_t *output, int stride) {
       in0, _mm_loadl_epi64((const __m128i *)(input + 3 * stride)));
 
   tmp = _mm_add_epi16(in0, in1);
-  in0 = _mm_unpacklo_epi16(zero, tmp);
-  in1 = _mm_unpackhi_epi16(zero, tmp);
-  in0 = _mm_srai_epi32(in0, 16);
-  in1 = _mm_srai_epi32(in1, 16);
+  in0 = _mm_unpacklo_epi16(tmp, zero);
+  in1 = _mm_unpackhi_epi16(tmp, zero);
 
   tmp = _mm_add_epi32(in0, in1);
   in0 = _mm_unpacklo_epi32(tmp, zero);
@@ -68,10 +66,8 @@ void vpx_fdct8x8_1_sse2(const int16_t *input, tran_low_t *output, int stride) {
   u0 = _mm_setzero_si128();
   sum = _mm_add_epi16(sum, in2);
 
-  in0 = _mm_unpacklo_epi16(u0, sum);
-  in1 = _mm_unpackhi_epi16(u0, sum);
-  in0 = _mm_srai_epi32(in0, 16);
-  in1 = _mm_srai_epi32(in1, 16);
+  in0 = _mm_unpacklo_epi16(sum, u0);
+  in1 = _mm_unpackhi_epi16(sum, u0);
 
   sum = _mm_add_epi32(in0, in1);
   in0 = _mm_unpacklo_epi32(sum, u0);
@@ -136,10 +132,8 @@ void vpx_fdct16x16_1_sse2(const int16_t *input, tran_low_t *output,
   }
 
   u0 = _mm_setzero_si128();
-  in0 = _mm_unpacklo_epi16(u0, sum);
-  in1 = _mm_unpackhi_epi16(u0, sum);
-  in0 = _mm_srai_epi32(in0, 16);
-  in1 = _mm_srai_epi32(in1, 16);
+  in0 = _mm_unpacklo_epi16(sum, u0);
+  in1 = _mm_unpackhi_epi16(sum, u0);
 
   sum = _mm_add_epi32(in0, in1);
   in0 = _mm_unpacklo_epi32(sum, u0);
@@ -208,10 +202,8 @@ void vpx_fdct32x32_1_sse2(const int16_t *input, tran_low_t *output,
   }
 
   u0 = _mm_setzero_si128();
-  in0 = _mm_unpacklo_epi16(u0, sum);
-  in1 = _mm_unpackhi_epi16(u0, sum);
-  in0 = _mm_srai_epi32(in0, 16);
-  in1 = _mm_srai_epi32(in1, 16);
+  in0 = _mm_unpacklo_epi16(sum, u0);
+  in1 = _mm_unpackhi_epi16(sum, u0);
 
   sum = _mm_add_epi32(in0, in1);
   in0 = _mm_unpacklo_epi32(sum, u0);
