@@ -108,6 +108,7 @@ endif
 
 VP10_CX_SRCS-$(HAVE_SSE2) += encoder/x86/dct_intrin_sse2.c
 VP10_CX_SRCS-$(HAVE_SSSE3) += encoder/x86/dct_ssse3.c
+VP10_CX_SRCS-$(HAVE_AVX2) += encoder/x86/fwd_txfm_avx2.c
 ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
 VP10_CX_SRCS-$(HAVE_SSE4_1) += encoder/x86/highbd_fwd_txfm_sse4.c
 VP10_CX_SRCS-$(HAVE_SSE4_1) += common/x86/highbd_inv_txfm_sse4.c
