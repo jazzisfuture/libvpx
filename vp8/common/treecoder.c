@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if CONFIG_DEBUG
 #include <assert.h>
-#endif
 #include <stdio.h>
 
-#include "treecoder.h"
+#include "./vpx_config.h"
+#include "vp8/common/treecoder.h"
 
 static void tree2tok(struct vp8_token_struct *const p, vp8_tree t, int i, int v,
                      int L) {
