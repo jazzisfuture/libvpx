@@ -316,4 +316,178 @@ static INLINE void transpose_u8_8x16(
   *o7 = vreinterpretq_u8_u32(d3.val[1]);
 }
 
+static INLINE void transpose_u8_16x16(
+    const uint8x16_t i0, const uint8x16_t i1, const uint8x16_t i2,
+    const uint8x16_t i3, const uint8x16_t i4, const uint8x16_t i5,
+    const uint8x16_t i6, const uint8x16_t i7, const uint8x16_t i8,
+    const uint8x16_t i9, const uint8x16_t i10, const uint8x16_t i11,
+    const uint8x16_t i12, const uint8x16_t i13, const uint8x16_t i14,
+    const uint8x16_t i15, uint8x16_t *o0, uint8x16_t *o1, uint8x16_t *o2,
+    uint8x16_t *o3, uint8x16_t *o4, uint8x16_t *o5, uint8x16_t *o6,
+    uint8x16_t *o7, uint8x16_t *o8, uint8x16_t *o9, uint8x16_t *o10,
+    uint8x16_t *o11, uint8x16_t *o12, uint8x16_t *o13, uint8x16_t *o14,
+    uint8x16_t *o15) {
+  // Input:
+  // i0:  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
+  // i1:  10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F
+  // i2:  20 21 22 23 24 25 26 27  28 29 2A 2B 2C 2D 2E 2F
+  // i3:  30 31 32 33 34 35 36 37  38 39 3A 3B 3C 3D 3E 3F
+  // i4:  40 41 42 43 44 45 46 47  48 49 4A 4B 4C 4D 4E 4F
+  // i5:  50 51 52 53 54 55 56 57  58 59 5A 5B 5C 5D 5E 5F
+  // i6:  60 61 62 63 64 65 66 67  68 69 6A 6B 6C 6D 6E 6F
+  // i7:  70 71 72 73 74 75 76 77  78 79 7A 7B 7C 7D 7E 7F
+  // i8:  80 81 82 83 84 85 86 87  88 89 8A 8B 8C 8D 8E 8F
+  // i9:  90 91 92 93 94 95 96 97  98 99 9A 9B 9C 9D 9E 9F
+  // i10: A0 A1 A2 A3 A4 A5 A6 A7  A8 A9 AA AB AC AD AE AF
+  // i11: B0 B1 B2 B3 B4 B5 B6 B7  B8 B9 BA BB BC BD BE BF
+  // i12: C0 C1 C2 C3 C4 C5 C6 C7  C8 C9 CA CB CC CD CE CF
+  // i13: D0 D1 D2 D3 D4 D5 D6 D7  D8 D9 DA DB DC DD DE DF
+  // i14: E0 E1 E2 E3 E4 E5 E6 E7  E8 E9 EA EB EC ED EE EF
+  // i15: F0 F1 F2 F3 F4 F5 F6 F7  F8 F9 FA FB FC FD FE FF
+  uint8x16x2_t b0, b1, b2, b3, b4, b5, b6, b7;
+  uint16x8x2_t c0, c1, c2, c3, c4, c5, c6, c7;
+  uint32x4x2_t d0, d1, d2, d3, d4, d5, d6, d7;
+
+  // b0: 00 10 02 12 04 14 06 16  08 18 0A 1A 0C 1C 0E 1E
+  //     01 11 03 13 05 15 07 17  09 19 0B 1B 0D 1D 0F 1F
+  // b1: 20 30 22 32 24 34 26 36  28 38 2A 3A 2C 3C 2E 3E
+  //     21 31 23 33 25 35 27 37  29 39 2B 3B 2D 3D 2F 3F
+  // b2: 40 50 42 52 44 54 46 56  48 58 4A 5A 4C 5C 4E 5E
+  //     41 51 43 53 45 55 47 57  49 59 4B 5B 4D 5D 4F 5F
+  // b3: 60 70 62 72 64 74 66 76  68 78 6A 7A 6C 7C 6E 7E
+  //     61 71 63 73 65 75 67 77  69 79 6B 7B 6D 7D 6F 7F
+  // b4: 80 90 82 92 84 94 86 96  88 98 8A 9A 8C 9C 8E 9E
+  //     81 91 83 93 85 95 87 97  89 99 8B 9B 8D 9D 8F 9F
+  // b5: A0 B0 A2 B2 A4 B4 A6 B6  A8 B8 AA BA AC BC AE BE
+  //     A1 B1 A3 B3 A5 B5 A7 B7  A9 B9 AB BB AD BD AF BF
+  // b6: C0 D0 C2 D2 C4 D4 C6 D6  C8 D8 CA DA CC DC CE DE
+  //     C1 D1 C3 D3 C5 D5 C7 D7  C9 D9 CB DB CD DD CF DF
+  // b7: E0 F0 E2 F2 E4 F4 E6 F6  E8 F8 EA FA EC FC EE FE
+  //     E1 F1 E3 F3 E5 F5 E7 F7  E9 F9 EB FB ED FD EF FF
+  b0 = vtrnq_u8(i0, i1);
+  b1 = vtrnq_u8(i2, i3);
+  b2 = vtrnq_u8(i4, i5);
+  b3 = vtrnq_u8(i6, i7);
+  b4 = vtrnq_u8(i8, i9);
+  b5 = vtrnq_u8(i10, i11);
+  b6 = vtrnq_u8(i12, i13);
+  b7 = vtrnq_u8(i14, i15);
+
+  // c0: 00 10 20 30 04 14 24 34  08 18 28 38 0C 1C 2C 3C
+  //     02 12 22 32 06 16 26 36  0A 1A 2A 3A 0E 1E 2E 3E
+  // c1: 01 11 21 31 05 15 25 35  09 19 29 39 0D 1D 2D 3D
+  //     03 13 23 33 07 17 27 37  0B 1B 2B 3B 0F 1F 2F 3F
+  // c2: 40 50 60 70 44 54 64 74  48 58 68 78 4C 5C 6C 7C
+  //     42 52 62 72 46 56 66 76  4A 5A 6A 7A 4E 5E 6E 7E
+  // c3: 41 51 61 71 45 55 65 75  49 59 69 79 4D 5D 6D 7D
+  //     43 53 63 73 47 57 67 77  4B 5B 6B 7B 4F 5F 6F 7F
+  // c4: 80 90 A0 B0 84 94 A4 B4  88 98 A8 B8 8C 9C AC BC
+  //     82 92 A2 B2 86 96 A6 B6  8A 9A AA BA 8E 9E AE BE
+  // c5: 81 91 A1 B1 85 95 A5 B5  89 99 A9 B9 8D 9D AD BD
+  //     83 93 A3 B3 87 97 A7 B7  8B 9B AB BB 8F 9F AF BF
+  // c6: C0 D0 E0 F0 C4 D4 E4 F4  C8 D8 E8 F8 CC DC EC FC
+  //     C2 D2 E2 F2 C6 D6 E6 F6  CA DA EA FA CE DE EE FE
+  // c7: C1 D1 E1 F1 C5 D5 E5 F5  C9 D9 E9 F9 CD DD ED FD
+  //     C3 D3 E3 F3 C7 D7 E7 F7  CB DB EB FB CF DF EF FF
+  c0 = vtrnq_u16(vreinterpretq_u16_u8(b0.val[0]),
+                 vreinterpretq_u16_u8(b1.val[0]));
+  c1 = vtrnq_u16(vreinterpretq_u16_u8(b0.val[1]),
+                 vreinterpretq_u16_u8(b1.val[1]));
+  c2 = vtrnq_u16(vreinterpretq_u16_u8(b2.val[0]),
+                 vreinterpretq_u16_u8(b3.val[0]));
+  c3 = vtrnq_u16(vreinterpretq_u16_u8(b2.val[1]),
+                 vreinterpretq_u16_u8(b3.val[1]));
+  c4 = vtrnq_u16(vreinterpretq_u16_u8(b4.val[0]),
+                 vreinterpretq_u16_u8(b5.val[0]));
+  c5 = vtrnq_u16(vreinterpretq_u16_u8(b4.val[1]),
+                 vreinterpretq_u16_u8(b5.val[1]));
+  c6 = vtrnq_u16(vreinterpretq_u16_u8(b6.val[0]),
+                 vreinterpretq_u16_u8(b7.val[0]));
+  c7 = vtrnq_u16(vreinterpretq_u16_u8(b6.val[1]),
+                 vreinterpretq_u16_u8(b7.val[1]));
+
+  // d0: 00 10 20 30 40 50 60 70  08 18 28 38 48 58 68 78
+  //     04 14 24 34 44 54 64 74  0C 1C 2C 3C 4C 5C 6C 7C
+  // d1: 02 12 22 32 42 52 62 72  0A 1A 2A 3A 4A 5A 6A 7A
+  //     06 16 26 36 46 56 66 76  0E 1E 2E 3E 4E 5E 6E 7E
+  // d2: 01 11 21 31 41 51 61 71  09 19 29 39 49 59 69 79
+  //     05 15 25 35 45 55 65 75  0D 1D 2D 3D 4D 5D 6D 7D
+  // d3: 03 13 23 33 43 53 63 73  0B 1B 2B 3B 4B 5B 6B 7B
+  //     07 17 27 37 47 57 67 77  0F 1F 2F 3F 4F 5F 6F 7F
+  // d4: 80 90 A0 B0 C0 D0 E0 F0  88 98 A8 B8 C8 D8 E8 F8
+  //     84 94 A4 B4 C4 D4 E4 F4  8C 9C AC BC CC DC EC FC
+  // d5: 82 92 A2 B2 C2 D2 E2 F2  8A 9A AA BA CA DA EA FA
+  //     86 96 A6 B6 C6 D6 E6 F6  8E 9E AE BE CE DE EE FE
+  // d6: 81 91 A1 B1 C1 D1 E1 F1  89 99 A9 B9 C9 D9 E9 F9
+  //     85 95 A5 B5 C5 D5 E5 F5  8D 9D AD BD CD DD ED FD
+  // d7: 83 93 A3 B3 C3 D3 E3 F3  8B 9B AB BB CB DB EB FB
+  //     87 97 A7 B7 C7 D7 E7 F7  8F 9F AF BF CF DF EF FF
+  d0 = vtrnq_u32(vreinterpretq_u32_u16(c0.val[0]),
+                 vreinterpretq_u32_u16(c2.val[0]));
+  d1 = vtrnq_u32(vreinterpretq_u32_u16(c0.val[1]),
+                 vreinterpretq_u32_u16(c2.val[1]));
+  d2 = vtrnq_u32(vreinterpretq_u32_u16(c1.val[0]),
+                 vreinterpretq_u32_u16(c3.val[0]));
+  d3 = vtrnq_u32(vreinterpretq_u32_u16(c1.val[1]),
+                 vreinterpretq_u32_u16(c3.val[1]));
+  d4 = vtrnq_u32(vreinterpretq_u32_u16(c4.val[0]),
+                 vreinterpretq_u32_u16(c6.val[0]));
+  d5 = vtrnq_u32(vreinterpretq_u32_u16(c4.val[1]),
+                 vreinterpretq_u32_u16(c6.val[1]));
+  d6 = vtrnq_u32(vreinterpretq_u32_u16(c5.val[0]),
+                 vreinterpretq_u32_u16(c7.val[0]));
+  d7 = vtrnq_u32(vreinterpretq_u32_u16(c5.val[1]),
+                 vreinterpretq_u32_u16(c7.val[1]));
+
+  // Output:
+  // o0 : 00 10 20 30 40 50 60 70  80 90 A0 B0 C0 D0 E0 F0
+  // o1 : 01 11 21 31 41 51 61 71  84 94 A4 B4 C4 D4 E4 F4
+  // o2 : 02 12 22 32 42 52 62 72  82 92 A2 B2 C2 D2 E2 F2
+  // o3 : 03 13 23 33 43 53 63 73  86 96 A6 B6 C6 D6 E6 F6
+  // o4 : 04 14 24 34 44 54 64 74  81 91 A1 B1 C1 D1 E1 F1
+  // o5 : 05 15 25 35 45 55 65 75  85 95 A5 B5 C5 D5 E5 F5
+  // o6 : 06 16 26 36 46 56 66 76  83 93 A3 B3 C3 D3 E3 F3
+  // o7 : 07 17 27 37 47 57 67 77  87 97 A7 B7 C7 D7 E7 F7
+  // o8 : 08 18 28 38 48 58 68 78  88 98 A8 B8 C8 D8 E8 F8
+  // o9 : 09 19 29 39 49 59 69 79  89 99 A9 B9 C9 D9 E9 F9
+  // o10: 0A 1A 2A 3A 4A 5A 6A 7A  8A 9A AA BA CA DA EA FA
+  // o11: 0B 1B 2B 3B 4B 5B 6B 7B  8B 9B AB BB CB DB EB FB
+  // o12: 0C 1C 2C 3C 4C 5C 6C 7C  8C 9C AC BC CC DC EC FC
+  // o13: 0D 1D 2D 3D 4D 5D 6D 7D  8D 9D AD BD CD DD ED FD
+  // o14: 0E 1E 2E 3E 4E 5E 6E 7E  8E 9E AE BE CE DE EE FE
+  // o15: 0F 1F 2F 3F 4F 5F 6F 7F  8F 9F AF BF CF DF EF FF
+  *o0 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_low_u32(d0.val[0]), vget_low_u32(d4.val[0])));
+  *o1 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_low_u32(d2.val[0]), vget_low_u32(d6.val[0])));
+  *o2 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_low_u32(d1.val[0]), vget_low_u32(d5.val[0])));
+  *o3 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_low_u32(d3.val[0]), vget_low_u32(d7.val[0])));
+  *o4 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_low_u32(d0.val[1]), vget_low_u32(d4.val[1])));
+  *o5 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_low_u32(d2.val[1]), vget_low_u32(d6.val[1])));
+  *o6 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_low_u32(d1.val[1]), vget_low_u32(d5.val[1])));
+  *o7 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_low_u32(d3.val[1]), vget_low_u32(d7.val[1])));
+  *o8 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_high_u32(d0.val[0]), vget_high_u32(d4.val[0])));
+  *o9 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_high_u32(d2.val[0]), vget_high_u32(d6.val[0])));
+  *o10 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_high_u32(d1.val[0]), vget_high_u32(d5.val[0])));
+  *o11 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_high_u32(d3.val[0]), vget_high_u32(d7.val[0])));
+  *o12 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_high_u32(d0.val[1]), vget_high_u32(d4.val[1])));
+  *o13 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_high_u32(d2.val[1]), vget_high_u32(d6.val[1])));
+  *o14 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_high_u32(d1.val[1]), vget_high_u32(d5.val[1])));
+  *o15 = vreinterpretq_u8_u32(
+      vcombine_u32(vget_high_u32(d3.val[1]), vget_high_u32(d7.val[1])));
+}
+
 #endif  // VPX_DSP_ARM_TRANSPOSE_NEON_H_
