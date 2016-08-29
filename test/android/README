@@ -29,4 +29,4 @@ NOTE: Built_libs defaults to parent_dir/libs/armeabi-v7a
 adb shell
 (on device)
 cd /data/local/tmp
-LD_LIBRARY_PATH=. ./vpx_test
+LD_LIBRARY_PATH=. ./aom_test

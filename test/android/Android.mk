@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 #
-# This make file builds vpx_test app for android.
+# This make file builds aom_test app for android.
 # The test app itself runs on the command line through adb shell
 # The paths are really messed up as the libaom make file
 # expects to be made from a parent directory.

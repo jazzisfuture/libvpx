@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP10_ENCODER_GLOBAL_MOTION_H_
-#define VP10_ENCODER_GLOBAL_MOTION_H_
+#ifndef AV1_ENCODER_GLOBAL_MOTION_H_
+#define AV1_ENCODER_GLOBAL_MOTION_H_
 
-#include "aom/vpx_integer.h"
+#include "aom/aom_integer.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int compute_global_motion_feature_based(struct VP10_COMP *cpi,
+int compute_global_motion_feature_based(struct AV1_COMP *cpi,
                                         TransformationType type,
                                         YV12_BUFFER_CONFIG *frm,
                                         YV12_BUFFER_CONFIG *ref,
@@ -25,4 +25,4 @@ int compute_global_motion_feature_based(struct VP10_COMP *cpi,
 #ifdef __cplusplus
 }  // extern "C"
 #endif
-#endif  // VP10_ENCODER_GLOBAL_MOTION_H_
+#endif  // AV1_ENCODER_GLOBAL_MOTION_H_
