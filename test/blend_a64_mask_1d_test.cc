@@ -114,9 +114,9 @@ class BlendA64Mask1DTest : public FunctionEquivalenceTest<F> {
 // 8 bit version
 //////////////////////////////////////////////////////////////////////////////
 
-typedef void (*F8B)(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0,
-                    uint32_t src0_stride, const uint8_t *src1,
-                    uint32_t src1_stride, const uint8_t *mask, int h, int w);
+typedef void (*F8B)(uint8_t *dst, size_t dst_stride, const uint8_t *src0,
+                    size_t src0_stride, const uint8_t *src1,
+                    size_t src1_stride, const uint8_t *mask, int h, int w);
 typedef libvpx_test::FuncParam<F8B> TestFuncs;
 
 class BlendA64Mask1DTest8B : public BlendA64Mask1DTest<F8B, uint8_t> {
@@ -164,9 +164,9 @@ TEST_P(BlendA64Mask1DTest8B, ExtremeValues) {
   }
 }
 
-static void blend_a64_hmask_ref(uint8_t *dst, uint32_t dst_stride,
-                                const uint8_t *src0, uint32_t src0_stride,
-                                const uint8_t *src1, uint32_t src1_stride,
+static void blend_a64_hmask_ref(uint8_t *dst, size_t dst_stride,
+                                const uint8_t *src0, size_t src0_stride,
+                                const uint8_t *src1, size_t src1_stride,
                                 const uint8_t *mask, int h, int w) {
   uint8_t mask2d[BlendA64Mask1DTest8B::kMaxMaskSize]
                 [BlendA64Mask1DTest8B::kMaxMaskSize];
@@ -179,9 +179,9 @@ static void blend_a64_hmask_ref(uint8_t *dst, uint32_t dst_stride,
                        0, 0);
 }
 
-static void blend_a64_vmask_ref(uint8_t *dst, uint32_t dst_stride,
-                                const uint8_t *src0, uint32_t src0_stride,
-                                const uint8_t *src1, uint32_t src1_stride,
+static void blend_a64_vmask_ref(uint8_t *dst, size_t dst_stride,
+                                const uint8_t *src0, size_t src0_stride,
+                                const uint8_t *src1, size_t src1_stride,
                                 const uint8_t *mask, int h, int w) {
   uint8_t mask2d[BlendA64Mask1DTest8B::kMaxMaskSize]
                 [BlendA64Mask1DTest8B::kMaxMaskSize];
@@ -212,9 +212,9 @@ INSTANTIATE_TEST_CASE_P(
 // High bit-depth version
 //////////////////////////////////////////////////////////////////////////////
 
-typedef void (*FHBD)(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0,
-                     uint32_t src0_stride, const uint8_t *src1,
-                     uint32_t src1_stride, const uint8_t *mask, int h, int w,
+typedef void (*FHBD)(uint8_t *dst, size_t dst_stride, const uint8_t *src0,
+                     size_t src0_stride, const uint8_t *src1,
+                     size_t src1_stride, const uint8_t *mask, int h, int w,
                      int bd);
 typedef libvpx_test::FuncParam<FHBD> TestFuncsHBD;
 
@@ -285,8 +285,8 @@ TEST_P(BlendA64Mask1DTestHBD, ExtremeValues) {
 }
 
 static void highbd_blend_a64_hmask_ref(
-    uint8_t *dst, uint32_t dst_stride, const uint8_t *src0,
-    uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride,
+    uint8_t *dst, size_t dst_stride, const uint8_t *src0,
+    size_t src0_stride, const uint8_t *src1, size_t src1_stride,
     const uint8_t *mask, int h, int w, int bd) {
   uint8_t mask2d[BlendA64Mask1DTestHBD::kMaxMaskSize]
                 [BlendA64Mask1DTestHBD::kMaxMaskSize];
@@ -300,8 +300,8 @@ static void highbd_blend_a64_hmask_ref(
 }
 
 static void highbd_blend_a64_vmask_ref(
-    uint8_t *dst, uint32_t dst_stride, const uint8_t *src0,
-    uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride,
+    uint8_t *dst, size_t dst_stride, const uint8_t *src0,
+    size_t src0_stride, const uint8_t *src1, size_t src1_stride,
     const uint8_t *mask, int h, int w, int bd) {
   uint8_t mask2d[BlendA64Mask1DTestHBD::kMaxMaskSize]
                 [BlendA64Mask1DTestHBD::kMaxMaskSize];
