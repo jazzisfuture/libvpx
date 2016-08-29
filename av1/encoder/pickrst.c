@@ -13,11 +13,11 @@
 #include <limits.h>
 #include <math.h>
 
-#include "./vpx_scale_rtcd.h"
+#include "./aom_scale_rtcd.h"
 
 #include "aom_dsp/psnr.h"
-#include "aom_dsp/vpx_dsp_common.h"
-#include "aom_mem/vpx_mem.h"
+#include "aom_dsp/aom_dsp_common.h"
+#include "aom_mem/aom_mem.h"
 #include "aom_ports/mem.h"
 
 #include "av1/common/onyxc_int.h"
@@ -29,52 +29,52 @@
 #include "av1/encoder/pickrst.h"
 
 static int64_t try_restoration_frame(const YV12_BUFFER_CONFIG *sd,
-                                     VP10_COMP *const cpi, RestorationInfo *rsi,
+                                     AV1_COMP *const cpi, RestorationInfo *rsi,
                                      int partial_frame) {
-  VP10_COMMON *const cm = &cpi->common;
+  AV1_COMMON *const cm = &cpi->common;
   int64_t filt_err;
-  vp10_loop_restoration_frame(cm->frame_to_show, cm, rsi, 1, partial_frame);
-#if CONFIG_VP9_HIGHBITDEPTH
+  av1_loop_restoration_frame(cm->frame_to_show, cm, rsi, 1, partial_frame);
+#if CONFIG_AOM_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
-    filt_err = vpx_highbd_get_y_sse(sd, cm->frame_to_show);
+    filt_err = aom_highbd_get_y_sse(sd, cm->frame_to_show);
   } else {
-    filt_err = vpx_get_y_sse(sd, cm->frame_to_show);
+    filt_err = aom_get_y_sse(sd, cm->frame_to_show);
   }
 #else
-  filt_err = vpx_get_y_sse(sd, cm->frame_to_show);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+  filt_err = aom_get_y_sse(sd, cm->frame_to_show);
+#endif  // CONFIG_AOM_HIGHBITDEPTH
 
   // Re-instate the unfiltered frame
-  vpx_yv12_copy_y(&cpi->last_frame_db, cm->frame_to_show);
+  aom_yv12_copy_y(&cpi->last_frame_db, cm->frame_to_show);
   return filt_err;
 }
 
-static int search_bilateral_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
+static int search_bilateral_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
                                   int filter_level, int partial_frame,
                                   double *best_cost_ret) {
-  VP10_COMMON *const cm = &cpi->common;
+  AV1_COMMON *const cm = &cpi->common;
   int i, restoration_best;
   int64_t err;
   double best_cost;
   double cost;
-  const int restoration_level_bits = vp10_restoration_level_bits(&cpi->common);
+  const int restoration_level_bits = av1_restoration_level_bits(&cpi->common);
   const int restoration_levels = 1 << restoration_level_bits;
   MACROBLOCK *x = &cpi->td.mb;
   int bits;
   RestorationInfo rsi;
 
   //  Make a copy of the unfiltered / processed recon buffer
-  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
-  vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filter_level,
-                         1, partial_frame);
-  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_db);
+  aom_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
+  av1_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filter_level,
+                        1, partial_frame);
+  aom_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_db);
 
   restoration_best = -1;
   rsi.restoration_type = RESTORE_NONE;
   err = try_restoration_frame(sd, cpi, &rsi, partial_frame);
   bits = 0;
-  best_cost = RDCOST_DBL(x->rdmult, x->rddiv,
-                         (bits << (VP10_PROB_COST_SHIFT - 4)), err);
+  best_cost =
+      RDCOST_DBL(x->rdmult, x->rddiv, (bits << (AV1_PROB_COST_SHIFT - 4)), err);
   for (i = 0; i < restoration_levels; ++i) {
     rsi.restoration_type = RESTORE_BILATERAL;
     rsi.restoration_level = i;
@@ -83,7 +83,7 @@ static int search_bilateral_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
     // when RDCOST is used.  However below we just scale both in the correct
     // ratios appropriately but not exactly by these values.
     bits = restoration_level_bits;
-    cost = RDCOST_DBL(x->rdmult, x->rddiv, (bits << (VP10_PROB_COST_SHIFT - 4)),
+    cost = RDCOST_DBL(x->rdmult, x->rddiv, (bits << (AV1_PROB_COST_SHIFT - 4)),
                       err);
     if (cost < best_cost) {
       restoration_best = i;
@@ -91,18 +91,18 @@ static int search_bilateral_level(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
     }
   }
   if (best_cost_ret) *best_cost_ret = best_cost;
-  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+  aom_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
   return restoration_best;
 }
 
 static int search_filter_bilateral_level(const YV12_BUFFER_CONFIG *sd,
-                                         VP10_COMP *cpi, int partial_frame,
+                                         AV1_COMP *cpi, int partial_frame,
                                          int *restoration_level,
                                          double *best_cost_ret) {
-  const VP10_COMMON *const cm = &cpi->common;
+  const AV1_COMMON *const cm = &cpi->common;
   const struct loopfilter *const lf = &cm->lf;
   const int min_filter_level = 0;
-  const int max_filter_level = vp10_get_max_filter_level(cpi);
+  const int max_filter_level = av1_get_max_filter_level(cpi);
   int filt_direction = 0;
   int filt_best, restoration_best;
   double best_err;
@@ -125,8 +125,8 @@ static int search_filter_bilateral_level(const YV12_BUFFER_CONFIG *sd,
   ss_err[filt_mid] = best_err;
 
   while (filter_step > 0) {
-    const int filt_high = VPXMIN(filt_mid + filter_step, max_filter_level);
-    const int filt_low = VPXMAX(filt_mid - filter_step, min_filter_level);
+    const int filt_high = AOMMIN(filt_mid + filter_step, max_filter_level);
+    const int filt_low = AOMMAX(filt_mid - filter_step, min_filter_level);
 
     // Bias against raising loop filter in favor of lowering it.
     double bias = (best_err / (1 << (15 - (filt_mid / 8)))) * filter_step;
@@ -230,7 +230,7 @@ static void compute_stats(uint8_t *dgd, uint8_t *src, int width, int height,
   }
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_AOM_HIGHBITDEPTH
 static double find_average_highbd(uint16_t *src, int width, int height,
                                   int stride) {
   uint64_t sum = 0;
@@ -275,7 +275,7 @@ static void compute_stats_highbd(uint8_t *dgd8, uint8_t *src8, int width,
     }
   }
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_AOM_HIGHBITDEPTH
 
 // Solves Ax = b, where x and b are column vectors
 static int linsolve(int n, double *A, int stride, double *b, double *x) {
@@ -490,11 +490,11 @@ static void quantize_sym_filter(double *f, int *fi) {
   fi[2] = CLIP(fi[2], WIENER_FILT_TAP2_MINV, WIENER_FILT_TAP2_MAXV);
 }
 
-static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, VP10_COMP *cpi,
+static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, AV1_COMP *cpi,
                                 int filter_level, int partial_frame,
                                 int *vfilter, int *hfilter,
                                 double *best_cost_ret) {
-  VP10_COMMON *const cm = &cpi->common;
+  AV1_COMMON *const cm = &cpi->common;
   RestorationInfo rsi;
   int64_t err;
   int bits;
@@ -516,23 +516,23 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, VP10_COMP *cpi,
   assert(height == src->y_crop_height);
 
   //  Make a copy of the unfiltered / processed recon buffer
-  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
-  vp10_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filter_level,
-                         1, partial_frame);
-  vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_db);
+  aom_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
+  av1_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filter_level,
+                        1, partial_frame);
+  aom_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_db);
 
   rsi.restoration_type = RESTORE_NONE;
   err = try_restoration_frame(src, cpi, &rsi, partial_frame);
   bits = 0;
-  cost_norestore = RDCOST_DBL(x->rdmult, x->rddiv,
-                              (bits << (VP10_PROB_COST_SHIFT - 4)), err);
+  cost_norestore =
+      RDCOST_DBL(x->rdmult, x->rddiv, (bits << (AV1_PROB_COST_SHIFT - 4)), err);
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_AOM_HIGHBITDEPTH
   if (cm->use_highbitdepth)
     compute_stats_highbd(dgd->y_buffer, src->y_buffer, width, height,
                          dgd_stride, src_stride, M, H);
   else
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_AOM_HIGHBITDEPTH
     compute_stats(dgd->y_buffer, src->y_buffer, width, height, dgd_stride,
                   src_stride, M, H);
 
@@ -552,7 +552,7 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, VP10_COMP *cpi,
     for (i = 0; i < RESTORATION_HALFWIN; ++i) vfilter[i] = hfilter[i] = 0;
     rsi.restoration_type = RESTORE_NONE;
     if (best_cost_ret) *best_cost_ret = cost_norestore;
-    vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+    aom_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
     return 0;
   }
 
@@ -561,10 +561,10 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, VP10_COMP *cpi,
   memcpy(rsi.hfilter, hfilter, sizeof(rsi.hfilter));
   err = try_restoration_frame(src, cpi, &rsi, partial_frame);
   bits = WIENER_FILT_BITS;
-  cost_wiener = RDCOST_DBL(x->rdmult, x->rddiv,
-                           (bits << (VP10_PROB_COST_SHIFT - 4)), err);
+  cost_wiener =
+      RDCOST_DBL(x->rdmult, x->rddiv, (bits << (AV1_PROB_COST_SHIFT - 4)), err);
 
-  vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+  aom_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
 
   if (cost_wiener < cost_norestore) {
     if (best_cost_ret) *best_cost_ret = cost_wiener;
@@ -575,9 +575,9 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, VP10_COMP *cpi,
   }
 }
 
-void vp10_pick_filter_restoration(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
-                                  LPF_PICK_METHOD method) {
-  VP10_COMMON *const cm = &cpi->common;
+void av1_pick_filter_restoration(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
+                                 LPF_PICK_METHOD method) {
+  AV1_COMMON *const cm = &cpi->common;
   struct loopfilter *const lf = &cm->lf;
   int wiener_success = 0;
   double cost_bilateral = DBL_MAX;
@@ -591,31 +591,31 @@ void vp10_pick_filter_restoration(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
     cm->rst_info.restoration_type = RESTORE_NONE;
   } else if (method >= LPF_PICK_FROM_Q) {
     const int min_filter_level = 0;
-    const int max_filter_level = vp10_get_max_filter_level(cpi);
-    const int q = vp10_ac_quant(cm->base_qindex, 0, cm->bit_depth);
+    const int max_filter_level = av1_get_max_filter_level(cpi);
+    const int q = av1_ac_quant(cm->base_qindex, 0, cm->bit_depth);
 // These values were determined by linear fitting the result of the
 // searched level, filt_guess = q * 0.316206 + 3.87252
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_AOM_HIGHBITDEPTH
     int filt_guess;
     switch (cm->bit_depth) {
-      case VPX_BITS_8:
+      case AOM_BITS_8:
         filt_guess = ROUND_POWER_OF_TWO(q * 20723 + 1015158, 18);
         break;
-      case VPX_BITS_10:
+      case AOM_BITS_10:
         filt_guess = ROUND_POWER_OF_TWO(q * 20723 + 4060632, 20);
         break;
-      case VPX_BITS_12:
+      case AOM_BITS_12:
         filt_guess = ROUND_POWER_OF_TWO(q * 20723 + 16242526, 22);
         break;
       default:
         assert(0 &&
-               "bit_depth should be VPX_BITS_8, VPX_BITS_10 "
-               "or VPX_BITS_12");
+               "bit_depth should be AOM_BITS_8, AOM_BITS_10 "
+               "or AOM_BITS_12");
         return;
     }
 #else
     int filt_guess = ROUND_POWER_OF_TWO(q * 20723 + 1015158, 18);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_AOM_HIGHBITDEPTH
     if (cm->frame_type == KEY_FRAME) filt_guess -= 4;
     lf->filter_level = clamp(filt_guess, min_filter_level, max_filter_level);
     cm->rst_info.restoration_level = search_bilateral_level(
@@ -640,7 +640,7 @@ void vp10_pick_filter_restoration(const YV12_BUFFER_CONFIG *sd, VP10_COMP *cpi,
     blf_filter_level = search_filter_bilateral_level(
         sd, cpi, method == LPF_PICK_FROM_SUBIMAGE,
         &cm->rst_info.restoration_level, &cost_bilateral);
-    lf->filter_level = vp10_search_filter_level(
+    lf->filter_level = av1_search_filter_level(
         sd, cpi, method == LPF_PICK_FROM_SUBIMAGE, &cost_norestore);
     wiener_success = search_wiener_filter(
         sd, cpi, lf->filter_level, method == LPF_PICK_FROM_SUBIMAGE,

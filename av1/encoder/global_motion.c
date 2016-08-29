@@ -19,7 +19,7 @@
 #include "av1/encoder/segmentation.h"
 #include "av1/encoder/global_motion.h"
 
-int compute_global_motion_feature_based(struct VP10_COMP *cpi,
+int compute_global_motion_feature_based(struct AV1_COMP *cpi,
                                         TransformationType type,
                                         YV12_BUFFER_CONFIG *frm,
                                         YV12_BUFFER_CONFIG *ref,

@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP10_COMMON_RESTORATION_H_
-#define VP10_COMMON_RESTORATION_H_
+#ifndef AV1_COMMON_RESTORATION_H_
+#define AV1_COMMON_RESTORATION_H_
 
 #include "aom_ports/mem.h"
-#include "./vpx_config.h"
+#include "./aom_config.h"
 
 #include "av1/common/blockd.h"
 
@@ -71,18 +71,17 @@ typedef struct {
   int vfilter[RESTORATION_WIN], hfilter[RESTORATION_WIN];
 } RestorationInternal;
 
-int vp10_restoration_level_bits(const struct VP10Common *const cm);
-void vp10_loop_restoration_init(RestorationInternal *rst, RestorationInfo *rsi,
-                                int kf);
-void vp10_loop_restoration_frame(YV12_BUFFER_CONFIG *frame,
-                                 struct VP10Common *cm, RestorationInfo *rsi,
-                                 int y_only, int partial_frame);
-void vp10_loop_restoration_rows(YV12_BUFFER_CONFIG *frame,
-                                struct VP10Common *cm, int start_mi_row,
-                                int end_mi_row, int y_only);
-void vp10_loop_restoration_precal();
+int av1_restoration_level_bits(const struct AV1Common *const cm);
+void av1_loop_restoration_init(RestorationInternal *rst, RestorationInfo *rsi,
+                               int kf);
+void av1_loop_restoration_frame(YV12_BUFFER_CONFIG *frame, struct AV1Common *cm,
+                                RestorationInfo *rsi, int y_only,
+                                int partial_frame);
+void av1_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, struct AV1Common *cm,
+                               int start_mi_row, int end_mi_row, int y_only);
+void av1_loop_restoration_precal();
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // VP10_COMMON_RESTORATION_H_
+#endif  // AV1_COMMON_RESTORATION_H_
