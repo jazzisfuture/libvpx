@@ -12,8 +12,8 @@
 #define VP10_COMMON_COMMON_DATA_H_
 
 #include "av1/common/enums.h"
-#include "aom/vpx_integer.h"
-#include "aom_dsp/vpx_dsp_common.h"
+#include "aom/aom_integer.h"
+#include "aom_dsp/aom_dsp_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,7 +98,7 @@ static const uint8_t num_4x4_blocks_high_txsize_log2_lookup[TX_SIZES_ALL] = {
 #endif  // CONFIG_EXT_TX
 };
 
-// VPXMIN(3, VPXMIN(b_width_log2(bsize), b_height_log2(bsize)))
+// AOMMIN(3, AOMMIN(b_width_log2(bsize), b_height_log2(bsize)))
 static const uint8_t size_group_lookup[BLOCK_SIZES] = {
   0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, IF_EXT_PARTITION(3, 3, 3)
 };

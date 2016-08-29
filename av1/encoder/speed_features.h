@@ -471,7 +471,7 @@ typedef struct SPEED_FEATURES {
   // Allow skipping partition search for still image frame
   int allow_partition_search_skip;
 
-  // Fast approximation of vp10_model_rd_from_var_lapndz
+  // Fast approximation of av1_model_rd_from_var_lapndz
   int simple_model_rd_from_var;
 
   // Do sub-pixel search in up-sampled reference frames
@@ -484,8 +484,8 @@ typedef struct SPEED_FEATURES {
 
 struct VP10_COMP;
 
-void vp10_set_speed_features_framesize_independent(struct VP10_COMP *cpi);
-void vp10_set_speed_features_framesize_dependent(struct VP10_COMP *cpi);
+void av1_set_speed_features_framesize_independent(struct VP10_COMP *cpi);
+void av1_set_speed_features_framesize_dependent(struct VP10_COMP *cpi);
 
 #ifdef __cplusplus
 }  // extern "C"

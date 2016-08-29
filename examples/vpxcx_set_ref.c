@@ -24,7 +24,7 @@
 // -----
 // This example encodes a raw video. And the last argument passed in specifies
 // the frame number to update the reference frame on. For example, run
-// examples/vpx_cx_set_ref vp10 352 288 in.yuv out.ivf 4 30
+// examples/aom_cx_set_ref vp10 352 288 in.yuv out.ivf 4 30
 // The parameter is parsed as follows:
 //
 //
@@ -50,9 +50,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "aom/vp8cx.h"
-#include "aom/vpx_decoder.h"
-#include "aom/vpx_encoder.h"
+#include "aom/aomcx.h"
+#include "aom/aom_decoder.h"
+#include "aom/aom_encoder.h"
 
 #include "./tools_common.h"
 #include "./video_writer.h"
@@ -67,8 +67,8 @@ void usage_exit() {
   exit(EXIT_FAILURE);
 }
 
-static int compare_img(const vpx_image_t *const img1,
-                       const vpx_image_t *const img2) {
+static int compare_img(const aom_image_t *const img1,
+                       const aom_image_t *const img2) {
   uint32_t l_w = img1->d_w;
   uint32_t c_w = (img1->d_w + img1->x_chroma_shift) >> img1->x_chroma_shift;
   const uint32_t c_h =
@@ -81,26 +81,26 @@ static int compare_img(const vpx_image_t *const img1,
   match &= (img1->d_h == img2->d_h);
 
   for (i = 0; i < img1->d_h; ++i)
-    match &= (memcmp(img1->planes[VPX_PLANE_Y] + i * img1->stride[VPX_PLANE_Y],
-                     img2->planes[VPX_PLANE_Y] + i * img2->stride[VPX_PLANE_Y],
+    match &= (memcmp(img1->planes[AOM_PLANE_Y] + i * img1->stride[AOM_PLANE_Y],
+                     img2->planes[AOM_PLANE_Y] + i * img2->stride[AOM_PLANE_Y],
                      l_w) == 0);
 
   for (i = 0; i < c_h; ++i)
-    match &= (memcmp(img1->planes[VPX_PLANE_U] + i * img1->stride[VPX_PLANE_U],
-                     img2->planes[VPX_PLANE_U] + i * img2->stride[VPX_PLANE_U],
+    match &= (memcmp(img1->planes[AOM_PLANE_U] + i * img1->stride[AOM_PLANE_U],
+                     img2->planes[AOM_PLANE_U] + i * img2->stride[AOM_PLANE_U],
                      c_w) == 0);
 
   for (i = 0; i < c_h; ++i)
-    match &= (memcmp(img1->planes[VPX_PLANE_V] + i * img1->stride[VPX_PLANE_V],
-                     img2->planes[VPX_PLANE_V] + i * img2->stride[VPX_PLANE_V],
+    match &= (memcmp(img1->planes[AOM_PLANE_V] + i * img1->stride[AOM_PLANE_V],
+                     img2->planes[AOM_PLANE_V] + i * img2->stride[AOM_PLANE_V],
                      c_w) == 0);
 
   return match;
 }
 
 #define mmin(a, b) ((a) < (b) ? (a) : (b))
-static void find_mismatch(const vpx_image_t *const img1,
-                          const vpx_image_t *const img2, int yloc[4],
+static void find_mismatch(const aom_image_t *const img1,
+                          const aom_image_t *const img2, int yloc[4],
                           int uloc[4], int vloc[4]) {
   const uint32_t bsize = 64;
   const uint32_t bsizey = bsize >> img1->y_chroma_shift;
@@ -119,16 +119,16 @@ static void find_mismatch(const vpx_image_t *const img1,
       const int sj = mmin(j + bsize, img1->d_w) - j;
       for (k = 0; match && k < si; ++k) {
         for (l = 0; match && l < sj; ++l) {
-          if (*(img1->planes[VPX_PLANE_Y] +
-                (i + k) * img1->stride[VPX_PLANE_Y] + j + l) !=
-              *(img2->planes[VPX_PLANE_Y] +
-                (i + k) * img2->stride[VPX_PLANE_Y] + j + l)) {
+          if (*(img1->planes[AOM_PLANE_Y] +
+                (i + k) * img1->stride[AOM_PLANE_Y] + j + l) !=
+              *(img2->planes[AOM_PLANE_Y] +
+                (i + k) * img2->stride[AOM_PLANE_Y] + j + l)) {
             yloc[0] = i + k;
             yloc[1] = j + l;
-            yloc[2] = *(img1->planes[VPX_PLANE_Y] +
-                        (i + k) * img1->stride[VPX_PLANE_Y] + j + l);
-            yloc[3] = *(img2->planes[VPX_PLANE_Y] +
-                        (i + k) * img2->stride[VPX_PLANE_Y] + j + l);
+            yloc[2] = *(img1->planes[AOM_PLANE_Y] +
+                        (i + k) * img1->stride[AOM_PLANE_Y] + j + l);
+            yloc[3] = *(img2->planes[AOM_PLANE_Y] +
+                        (i + k) * img2->stride[AOM_PLANE_Y] + j + l);
             match = 0;
             break;
           }
@@ -145,16 +145,16 @@ static void find_mismatch(const vpx_image_t *const img1,
       const int sj = mmin(j + bsizex, c_w - j);
       for (k = 0; match && k < si; ++k) {
         for (l = 0; match && l < sj; ++l) {
-          if (*(img1->planes[VPX_PLANE_U] +
-                (i + k) * img1->stride[VPX_PLANE_U] + j + l) !=
-              *(img2->planes[VPX_PLANE_U] +
-                (i + k) * img2->stride[VPX_PLANE_U] + j + l)) {
+          if (*(img1->planes[AOM_PLANE_U] +
+                (i + k) * img1->stride[AOM_PLANE_U] + j + l) !=
+              *(img2->planes[AOM_PLANE_U] +
+                (i + k) * img2->stride[AOM_PLANE_U] + j + l)) {
             uloc[0] = i + k;
             uloc[1] = j + l;
-            uloc[2] = *(img1->planes[VPX_PLANE_U] +
-                        (i + k) * img1->stride[VPX_PLANE_U] + j + l);
-            uloc[3] = *(img2->planes[VPX_PLANE_U] +
-                        (i + k) * img2->stride[VPX_PLANE_U] + j + l);
+            uloc[2] = *(img1->planes[AOM_PLANE_U] +
+                        (i + k) * img1->stride[AOM_PLANE_U] + j + l);
+            uloc[3] = *(img2->planes[AOM_PLANE_U] +
+                        (i + k) * img2->stride[AOM_PLANE_U] + j + l);
             match = 0;
             break;
           }
@@ -170,16 +170,16 @@ static void find_mismatch(const vpx_image_t *const img1,
       const int sj = mmin(j + bsizex, c_w - j);
       for (k = 0; match && k < si; ++k) {
         for (l = 0; match && l < sj; ++l) {
-          if (*(img1->planes[VPX_PLANE_V] +
-                (i + k) * img1->stride[VPX_PLANE_V] + j + l) !=
-              *(img2->planes[VPX_PLANE_V] +
-                (i + k) * img2->stride[VPX_PLANE_V] + j + l)) {
+          if (*(img1->planes[AOM_PLANE_V] +
+                (i + k) * img1->stride[AOM_PLANE_V] + j + l) !=
+              *(img2->planes[AOM_PLANE_V] +
+                (i + k) * img2->stride[AOM_PLANE_V] + j + l)) {
             vloc[0] = i + k;
             vloc[1] = j + l;
-            vloc[2] = *(img1->planes[VPX_PLANE_V] +
-                        (i + k) * img1->stride[VPX_PLANE_V] + j + l);
-            vloc[3] = *(img2->planes[VPX_PLANE_V] +
-                        (i + k) * img2->stride[VPX_PLANE_V] + j + l);
+            vloc[2] = *(img1->planes[AOM_PLANE_V] +
+                        (i + k) * img1->stride[AOM_PLANE_V] + j + l);
+            vloc[3] = *(img2->planes[AOM_PLANE_V] +
+                        (i + k) * img2->stride[AOM_PLANE_V] + j + l);
             match = 0;
             break;
           }
@@ -189,20 +189,20 @@ static void find_mismatch(const vpx_image_t *const img1,
   }
 }
 
-static void testing_decode(vpx_codec_ctx_t *encoder, vpx_codec_ctx_t *decoder,
-                           vpx_codec_enc_cfg_t *cfg, unsigned int frame_out,
+static void testing_decode(aom_codec_ctx_t *encoder, aom_codec_ctx_t *decoder,
+                           aom_codec_enc_cfg_t *cfg, unsigned int frame_out,
                            int *mismatch_seen) {
-  vpx_image_t enc_img, dec_img;
-  struct vp9_ref_frame ref_enc, ref_dec;
+  aom_image_t enc_img, dec_img;
+  struct av1_ref_frame ref_enc, ref_dec;
 
   if (*mismatch_seen) return;
 
   ref_enc.idx = 0;
   ref_dec.idx = 0;
-  if (vpx_codec_control(encoder, VP9_GET_REFERENCE, &ref_enc))
+  if (aom_codec_control(encoder, AV1_GET_REFERENCE, &ref_enc))
     die_codec(encoder, "Failed to get encoder reference frame");
   enc_img = ref_enc.img;
-  if (vpx_codec_control(decoder, VP9_GET_REFERENCE, &ref_dec))
+  if (aom_codec_control(decoder, AV1_GET_REFERENCE, &ref_dec))
     die_codec(decoder, "Failed to get decoder reference frame");
   dec_img = ref_dec.img;
 
@@ -221,36 +221,36 @@ static void testing_decode(vpx_codec_ctx_t *encoder, vpx_codec_ctx_t *decoder,
         v[2], v[3]);
   }
 
-  vpx_img_free(&enc_img);
-  vpx_img_free(&dec_img);
+  aom_img_free(&enc_img);
+  aom_img_free(&dec_img);
 }
 
-static int encode_frame(vpx_codec_ctx_t *ecodec, vpx_codec_enc_cfg_t *cfg,
-                        vpx_image_t *img, unsigned int frame_in,
-                        VpxVideoWriter *writer, int test_decode,
-                        vpx_codec_ctx_t *dcodec, unsigned int *frame_out,
+static int encode_frame(aom_codec_ctx_t *ecodec, aom_codec_enc_cfg_t *cfg,
+                        aom_image_t *img, unsigned int frame_in,
+                        AvxVideoWriter *writer, int test_decode,
+                        aom_codec_ctx_t *dcodec, unsigned int *frame_out,
                         int *mismatch_seen) {
   int got_pkts = 0;
-  vpx_codec_iter_t iter = NULL;
-  const vpx_codec_cx_pkt_t *pkt = NULL;
+  aom_codec_iter_t iter = NULL;
+  const aom_codec_cx_pkt_t *pkt = NULL;
   int got_data;
-  const vpx_codec_err_t res =
-      vpx_codec_encode(ecodec, img, frame_in, 1, 0, VPX_DL_GOOD_QUALITY);
-  if (res != VPX_CODEC_OK) die_codec(ecodec, "Failed to encode frame");
+  const aom_codec_err_t res =
+      aom_codec_encode(ecodec, img, frame_in, 1, 0, AOM_DL_GOOD_QUALITY);
+  if (res != AOM_CODEC_OK) die_codec(ecodec, "Failed to encode frame");
 
   got_data = 0;
 
-  while ((pkt = vpx_codec_get_cx_data(ecodec, &iter)) != NULL) {
+  while ((pkt = aom_codec_get_cx_data(ecodec, &iter)) != NULL) {
     got_pkts = 1;
 
-    if (pkt->kind == VPX_CODEC_CX_FRAME_PKT) {
-      const int keyframe = (pkt->data.frame.flags & VPX_FRAME_IS_KEY) != 0;
+    if (pkt->kind == AOM_CODEC_CX_FRAME_PKT) {
+      const int keyframe = (pkt->data.frame.flags & AOM_FRAME_IS_KEY) != 0;
 
-      if (!(pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT)) {
+      if (!(pkt->data.frame.flags & AOM_FRAME_IS_FRAGMENT)) {
         *frame_out += 1;
       }
 
-      if (!vpx_video_writer_write_frame(writer, pkt->data.frame.buf,
+      if (!aom_video_writer_write_frame(writer, pkt->data.frame.buf,
                                         pkt->data.frame.sz,
                                         pkt->data.frame.pts)) {
         die_codec(ecodec, "Failed to write compressed frame");
@@ -261,7 +261,7 @@ static int encode_frame(vpx_codec_ctx_t *ecodec, vpx_codec_enc_cfg_t *cfg,
 
       // Decode 1 frame.
       if (test_decode) {
-        if (vpx_codec_decode(dcodec, pkt->data.frame.buf,
+        if (aom_codec_decode(dcodec, pkt->data.frame.buf,
                              (unsigned int)pkt->data.frame.sz, NULL, 0))
           die_codec(dcodec, "Failed to decode frame.");
       }
@@ -279,19 +279,19 @@ static int encode_frame(vpx_codec_ctx_t *ecodec, vpx_codec_enc_cfg_t *cfg,
 int main(int argc, char **argv) {
   FILE *infile = NULL;
   // Encoder
-  vpx_codec_ctx_t ecodec = { 0 };
-  vpx_codec_enc_cfg_t cfg = { 0 };
+  aom_codec_ctx_t ecodec = { 0 };
+  aom_codec_enc_cfg_t cfg = { 0 };
   unsigned int frame_in = 0;
-  vpx_image_t raw;
-  vpx_codec_err_t res;
-  VpxVideoInfo info = { 0 };
-  VpxVideoWriter *writer = NULL;
-  const VpxInterface *encoder = NULL;
+  aom_image_t raw;
+  aom_codec_err_t res;
+  AvxVideoInfo info = { 0 };
+  AvxVideoWriter *writer = NULL;
+  const AvxInterface *encoder = NULL;
 
   // Test encoder/decoder mismatch.
   int test_decode = 1;
   // Decoder
-  vpx_codec_ctx_t dcodec;
+  aom_codec_ctx_t dcodec;
   unsigned int frame_out = 0;
 
   // The frame number to set reference frame on
@@ -317,12 +317,12 @@ int main(int argc, char **argv) {
   infile_arg = argv[4];
   outfile_arg = argv[5];
 
-  encoder = get_vpx_encoder_by_name(codec_arg);
+  encoder = get_aom_encoder_by_name(codec_arg);
   if (!encoder) die("Unsupported codec.");
 
   update_frame_num = atoi(argv[6]);
   // In VP10, the reference buffers (cm->buffer_pool->frame_bufs[i].buf) are
-  // allocated while calling vpx_codec_encode(), thus, setting reference for
+  // allocated while calling aom_codec_encode(), thus, setting reference for
   // 1st frame isn't supported.
   if (update_frame_num <= 1) die("Couldn't parse frame number '%s'\n", argv[6]);
 
@@ -343,14 +343,14 @@ int main(int argc, char **argv) {
     die("Invalid frame size: %dx%d", info.frame_width, info.frame_height);
   }
 
-  if (!vpx_img_alloc(&raw, VPX_IMG_FMT_I420, info.frame_width,
+  if (!aom_img_alloc(&raw, AOM_IMG_FMT_I420, info.frame_width,
                      info.frame_height, 1)) {
     die("Failed to allocate image.");
   }
 
-  printf("Using %s\n", vpx_codec_iface_name(encoder->codec_interface()));
+  printf("Using %s\n", aom_codec_iface_name(encoder->codec_interface()));
 
-  res = vpx_codec_enc_config_default(encoder->codec_interface(), &cfg, 0);
+  res = aom_codec_enc_config_default(encoder->codec_interface(), &cfg, 0);
   if (res) die_codec(&ecodec, "Failed to get default codec config.");
 
   cfg.g_w = info.frame_width;
@@ -360,41 +360,41 @@ int main(int argc, char **argv) {
   cfg.rc_target_bitrate = bitrate;
   cfg.g_lag_in_frames = 3;
 
-  writer = vpx_video_writer_open(outfile_arg, kContainerIVF, &info);
+  writer = aom_video_writer_open(outfile_arg, kContainerIVF, &info);
   if (!writer) die("Failed to open %s for writing.", outfile_arg);
 
   if (!(infile = fopen(infile_arg, "rb")))
     die("Failed to open %s for reading.", infile_arg);
 
-  if (vpx_codec_enc_init(&ecodec, encoder->codec_interface(), &cfg, 0))
+  if (aom_codec_enc_init(&ecodec, encoder->codec_interface(), &cfg, 0))
     die_codec(&ecodec, "Failed to initialize encoder");
 
   // Disable alt_ref.
-  if (vpx_codec_control(&ecodec, VP8E_SET_ENABLEAUTOALTREF, 0))
+  if (aom_codec_control(&ecodec, AOME_SET_ENABLEAUTOALTREF, 0))
     die_codec(&ecodec, "Failed to set enable auto alt ref");
 
   if (test_decode) {
-    const VpxInterface *decoder = get_vpx_decoder_by_name(codec_arg);
-    if (vpx_codec_dec_init(&dcodec, decoder->codec_interface(), NULL, 0))
+    const AvxInterface *decoder = get_aom_decoder_by_name(codec_arg);
+    if (aom_codec_dec_init(&dcodec, decoder->codec_interface(), NULL, 0))
       die_codec(&dcodec, "Failed to initialize decoder.");
   }
 
   // Encode frames.
-  while (vpx_img_read(&raw, infile)) {
+  while (aom_img_read(&raw, infile)) {
     if (limit && frame_in >= limit) break;
     if (update_frame_num > 1 && frame_out + 1 == update_frame_num) {
-      vpx_ref_frame_t ref;
-      ref.frame_type = VP8_LAST_FRAME;
+      aom_ref_frame_t ref;
+      ref.frame_type = AOM_LAST_FRAME;
       ref.img = raw;
       // Set reference frame in encoder.
-      if (vpx_codec_control(&ecodec, VP8_SET_REFERENCE, &ref))
+      if (aom_codec_control(&ecodec, AOM_SET_REFERENCE, &ref))
         die_codec(&ecodec, "Failed to set reference frame");
       printf(" <SET_REF>");
 
       // If set_reference in decoder is commented out, the enc/dec mismatch
       // would be seen.
       if (test_decode) {
-        if (vpx_codec_control(&dcodec, VP8_SET_REFERENCE, &ref))
+        if (aom_codec_control(&dcodec, AOM_SET_REFERENCE, &ref))
           die_codec(&dcodec, "Failed to set reference frame");
       }
     }
@@ -423,14 +423,14 @@ int main(int argc, char **argv) {
   }
 
   if (test_decode)
-    if (vpx_codec_destroy(&dcodec))
+    if (aom_codec_destroy(&dcodec))
       die_codec(&dcodec, "Failed to destroy decoder");
 
-  vpx_img_free(&raw);
-  if (vpx_codec_destroy(&ecodec))
+  aom_img_free(&raw);
+  if (aom_codec_destroy(&ecodec))
     die_codec(&ecodec, "Failed to destroy encoder.");
 
-  vpx_video_writer_close(writer);
+  aom_video_writer_close(writer);
 
   return EXIT_SUCCESS;
 }

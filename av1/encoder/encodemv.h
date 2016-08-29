@@ -17,21 +17,21 @@
 extern "C" {
 #endif
 
-void vp10_entropy_mv_init(void);
+void av1_entropy_mv_init(void);
 
-void vp10_write_nmv_probs(VP10_COMMON *cm, int usehp, vp10_writer *w,
-                          nmv_context_counts *const counts);
+void av1_write_nmv_probs(VP10_COMMON *cm, int usehp, av1_writer *w,
+                         nmv_context_counts *const counts);
 
-void vp10_encode_mv(VP10_COMP *cpi, vp10_writer *w, const MV *mv, const MV *ref,
+void av1_encode_mv(VP10_COMP *cpi, av1_writer *w, const MV *mv, const MV *ref,
 #if CONFIG_REF_MV
-                    int is_compound,
+                   int is_compound,
 #endif
-                    const nmv_context *mvctx, int usehp);
+                   const nmv_context *mvctx, int usehp);
 
-void vp10_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
-                               const nmv_context *mvctx, int usehp);
+void av1_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
+                              const nmv_context *mvctx, int usehp);
 
-void vp10_update_mv_count(ThreadData *td);
+void av1_update_mv_count(ThreadData *td);
 
 #ifdef __cplusplus
 }  // extern "C"

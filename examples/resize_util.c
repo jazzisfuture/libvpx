@@ -16,7 +16,7 @@
 #include <string.h>
 
 #include "../tools_common.h"
-#include "../vp9/encoder/vp9_resize.h"
+#include "../av1/encoder/vp9_resize.h"
 
 static const char *exec_name = NULL;
 

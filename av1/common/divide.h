@@ -15,8 +15,8 @@
 
 #include <limits.h>
 
-#include "./vpx_config.h"
-#include "aom/vpx_integer.h"
+#include "./aom_config.h"
+#include "aom/aom_integer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,12 +27,12 @@ struct fastdiv_elem {
   unsigned shift;
 };
 
-extern const struct fastdiv_elem vp10_fastdiv_tab[256];
+extern const struct fastdiv_elem av1_fastdiv_tab[256];
 
 static INLINE unsigned fastdiv(unsigned x, int y) {
   unsigned t =
-      ((uint64_t)x * vp10_fastdiv_tab[y].mult) >> (sizeof(x) * CHAR_BIT);
-  return (t + x) >> vp10_fastdiv_tab[y].shift;
+      ((uint64_t)x * av1_fastdiv_tab[y].mult) >> (sizeof(x) * CHAR_BIT);
+  return (t + x) >> av1_fastdiv_tab[y].shift;
 }
 #ifdef __cplusplus
 }  // extern "C"

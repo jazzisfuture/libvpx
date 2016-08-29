@@ -20,11 +20,11 @@ static int inv_recenter_nonneg(int v, int m) {
   return (v & 1) ? m - ((v + 1) >> 1) : m + (v >> 1);
 }
 
-static int decode_uniform(vp10_reader *r) {
+static int decode_uniform(av1_reader *r) {
   const int l = 8;
   const int m = (1 << l) - 190;
-  const int v = vp10_read_literal(r, l - 1);
-  return v < m ? v : (v << 1) - m + vp10_read_bit(r);
+  const int v = av1_read_literal(r, l - 1);
+  return v < m ? v : (v << 1) - m + av1_read_bit(r);
 }
 
 static int inv_remap_prob(int v, int m) {
@@ -57,24 +57,24 @@ static int inv_remap_prob(int v, int m) {
   }
 }
 
-static int decode_term_subexp(vp10_reader *r) {
-  if (!vp10_read_bit(r)) return vp10_read_literal(r, 4);
-  if (!vp10_read_bit(r)) return vp10_read_literal(r, 4) + 16;
-  if (!vp10_read_bit(r)) return vp10_read_literal(r, 5) + 32;
+static int decode_term_subexp(av1_reader *r) {
+  if (!av1_read_bit(r)) return av1_read_literal(r, 4);
+  if (!av1_read_bit(r)) return av1_read_literal(r, 4) + 16;
+  if (!av1_read_bit(r)) return av1_read_literal(r, 5) + 32;
   return decode_uniform(r) + 64;
 }
 
-void vp10_diff_update_prob(vp10_reader *r, vpx_prob *p) {
-  if (vp10_read(r, DIFF_UPDATE_PROB)) {
+void av1_diff_update_prob(av1_reader *r, aom_prob *p) {
+  if (av1_read(r, DIFF_UPDATE_PROB)) {
     const int delp = decode_term_subexp(r);
-    *p = (vpx_prob)inv_remap_prob(delp, *p);
+    *p = (aom_prob)inv_remap_prob(delp, *p);
   }
 }
 
-int vp10_read_primitive_symmetric(vp10_reader *r, unsigned int mag_bits) {
-  if (vp10_read_bit(r)) {
-    int s = vp10_read_bit(r);
-    int x = vp10_read_literal(r, mag_bits) + 1;
+int av1_read_primitive_symmetric(av1_reader *r, unsigned int mag_bits) {
+  if (av1_read_bit(r)) {
+    int s = av1_read_bit(r);
+    int x = av1_read_literal(r, mag_bits) + 1;
     return (s > 0 ? -x : x);
   } else {
     return 0;

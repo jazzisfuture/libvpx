@@ -13,9 +13,9 @@
 
 #include <assert.h>
 
-#include "./vpx_config.h"
+#include "./aom_config.h"
 
-#include "aom/vpx_integer.h"
+#include "aom/aom_integer.h"
 
 #include "av1/common/enums.h"
 
@@ -50,13 +50,13 @@ typedef struct VAR_TREE {
   int ref_stride;
   int width;
   int height;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_AOM_HIGHBITDEPTH
   int highbd;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_AOM_HIGHBITDEPTH
 } VAR_TREE;
 
-void vp10_setup_var_tree(struct VP10Common *cm, struct ThreadData *td);
-void vp10_free_var_tree(struct ThreadData *td);
+void av1_setup_var_tree(struct VP10Common *cm, struct ThreadData *td);
+void av1_free_var_tree(struct ThreadData *td);
 
 // Set variance values given sum square error, sum error, count.
 static INLINE void fill_variance(int64_t s2, int64_t s, int c, var *v) {

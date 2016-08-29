@@ -98,7 +98,7 @@ distclean: clean
 	if [ -z "$(target)" ]; then \
       rm -f Makefile; \
       rm -f config.log config.mk; \
-      rm -f vpx_config.[hc] vpx_config.asm; \
+      rm -f aom_config.[hc] aom_config.asm; \
     else \
       rm -f $(target)-$(TOOLCHAIN).mk; \
     fi

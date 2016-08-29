@@ -34,52 +34,52 @@ endef
 CODEC_SRCS-yes += CHANGELOG
 CODEC_SRCS-yes += libs.mk
 
-include $(SRC_PATH_BARE)/aom/vpx_codec.mk
+include $(SRC_PATH_BARE)/aom/aom_codec.mk
 CODEC_SRCS-yes += $(addprefix aom/,$(call enabled,API_SRCS))
 CODEC_DOC_SRCS += $(addprefix aom/,$(call enabled,API_DOC_SRCS))
 
-include $(SRC_PATH_BARE)/aom_mem/vpx_mem.mk
+include $(SRC_PATH_BARE)/aom_mem/aom_mem.mk
 CODEC_SRCS-yes += $(addprefix aom_mem/,$(call enabled,MEM_SRCS))
 
-include $(SRC_PATH_BARE)/aom_scale/vpx_scale.mk
+include $(SRC_PATH_BARE)/aom_scale/aom_scale.mk
 CODEC_SRCS-yes += $(addprefix aom_scale/,$(call enabled,SCALE_SRCS))
 
-include $(SRC_PATH_BARE)/aom_ports/vpx_ports.mk
+include $(SRC_PATH_BARE)/aom_ports/aom_ports.mk
 CODEC_SRCS-yes += $(addprefix aom_ports/,$(call enabled,PORTS_SRCS))
 
-include $(SRC_PATH_BARE)/aom_dsp/vpx_dsp.mk
+include $(SRC_PATH_BARE)/aom_dsp/aom_dsp.mk
 CODEC_SRCS-yes += $(addprefix aom_dsp/,$(call enabled,DSP_SRCS))
 
-include $(SRC_PATH_BARE)/aom_util/vpx_util.mk
+include $(SRC_PATH_BARE)/aom_util/aom_util.mk
 CODEC_SRCS-yes += $(addprefix aom_util/,$(call enabled,UTIL_SRCS))
 
 #  VP10 make file
-ifeq ($(CONFIG_VP10),yes)
+ifeq ($(CONFIG_AV1),yes)
   VP10_PREFIX=av1/
-  include $(SRC_PATH_BARE)/$(VP10_PREFIX)vp10_common.mk
+  include $(SRC_PATH_BARE)/$(VP10_PREFIX)av1_common.mk
 endif
 
-ifeq ($(CONFIG_VP10_ENCODER),yes)
+ifeq ($(CONFIG_AV1_ENCODER),yes)
   VP10_PREFIX=av1/
-  include $(SRC_PATH_BARE)/$(VP10_PREFIX)vp10cx.mk
+  include $(SRC_PATH_BARE)/$(VP10_PREFIX)av1cx.mk
   CODEC_SRCS-yes += $(addprefix $(VP10_PREFIX),$(call enabled,VP10_CX_SRCS))
   CODEC_EXPORTS-yes += $(addprefix $(VP10_PREFIX),$(VP10_CX_EXPORTS))
-  CODEC_SRCS-yes += $(VP10_PREFIX)vp10cx.mk aom/vp8.h aom/vp8cx.h
-  INSTALL-LIBS-yes += include/aom/vp8.h include/aom/vp8cx.h
+  CODEC_SRCS-yes += $(VP10_PREFIX)av1cx.mk aom/aom.h aom/aomcx.h
+  INSTALL-LIBS-yes += include/aom/aom.h include/aom/aomcx.h
   INSTALL_MAPS += include/aom/% $(SRC_PATH_BARE)/$(VP10_PREFIX)/%
-  CODEC_DOC_SRCS += aom/vp8.h aom/vp8cx.h
+  CODEC_DOC_SRCS += aom/aom.h aom/aomcx.h
   CODEC_DOC_SECTIONS += vp9 vp9_encoder
 endif
 
-ifeq ($(CONFIG_VP10_DECODER),yes)
+ifeq ($(CONFIG_AV1_DECODER),yes)
   VP10_PREFIX=av1/
-  include $(SRC_PATH_BARE)/$(VP10_PREFIX)vp10dx.mk
+  include $(SRC_PATH_BARE)/$(VP10_PREFIX)av1dx.mk
   CODEC_SRCS-yes += $(addprefix $(VP10_PREFIX),$(call enabled,VP10_DX_SRCS))
   CODEC_EXPORTS-yes += $(addprefix $(VP10_PREFIX),$(VP10_DX_EXPORTS))
-  CODEC_SRCS-yes += $(VP10_PREFIX)vp10dx.mk aom/vp8.h aom/vp8dx.h
-  INSTALL-LIBS-yes += include/aom/vp8.h include/aom/vp8dx.h
+  CODEC_SRCS-yes += $(VP10_PREFIX)av1dx.mk aom/aom.h aom/aomdx.h
+  INSTALL-LIBS-yes += include/aom/aom.h include/aom/aomdx.h
   INSTALL_MAPS += include/aom/% $(SRC_PATH_BARE)/$(VP10_PREFIX)/%
-  CODEC_DOC_SRCS += aom/vp8.h aom/vp8dx.h
+  CODEC_DOC_SRCS += aom/aom.h aom/aomdx.h
   CODEC_DOC_SECTIONS += vp9 vp9_decoder
 endif
 
@@ -118,9 +118,9 @@ CODEC_SRCS-yes += build/make/rtcd.pl
 CODEC_SRCS-yes += aom_ports/emmintrin_compat.h
 CODEC_SRCS-yes += aom_ports/mem_ops.h
 CODEC_SRCS-yes += aom_ports/mem_ops_aligned.h
-CODEC_SRCS-yes += aom_ports/vpx_once.h
-CODEC_SRCS-yes += $(BUILD_PFX)vpx_config.c
-INSTALL-SRCS-no += $(BUILD_PFX)vpx_config.c
+CODEC_SRCS-yes += aom_ports/aom_once.h
+CODEC_SRCS-yes += $(BUILD_PFX)aom_config.c
+INSTALL-SRCS-no += $(BUILD_PFX)aom_config.c
 ifeq ($(ARCH_X86)$(ARCH_X86_64),yes)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += third_party/x86inc/x86inc.asm
 endif
@@ -128,12 +128,12 @@ CODEC_EXPORTS-yes += aom/exports_com
 CODEC_EXPORTS-$(CONFIG_ENCODERS) += aom/exports_enc
 CODEC_EXPORTS-$(CONFIG_DECODERS) += aom/exports_dec
 
-INSTALL-LIBS-yes += include/aom/vpx_codec.h
-INSTALL-LIBS-yes += include/aom/vpx_frame_buffer.h
-INSTALL-LIBS-yes += include/aom/vpx_image.h
-INSTALL-LIBS-yes += include/aom/vpx_integer.h
-INSTALL-LIBS-$(CONFIG_DECODERS) += include/aom/vpx_decoder.h
-INSTALL-LIBS-$(CONFIG_ENCODERS) += include/aom/vpx_encoder.h
+INSTALL-LIBS-yes += include/aom/aom_codec.h
+INSTALL-LIBS-yes += include/aom/aom_frame_buffer.h
+INSTALL-LIBS-yes += include/aom/aom_image.h
+INSTALL-LIBS-yes += include/aom/aom_integer.h
+INSTALL-LIBS-$(CONFIG_DECODERS) += include/aom/aom_decoder.h
+INSTALL-LIBS-$(CONFIG_ENCODERS) += include/aom/aom_encoder.h
 ifeq ($(CONFIG_EXTERNAL_BUILD),yes)
 ifeq ($(CONFIG_MSVS),yes)
 INSTALL-LIBS-yes                  += $(foreach p,$(VS_PLATFORMS),$(LIBSUBDIR)/$(p)/$(CODEC_LIB).lib)
@@ -173,7 +173,7 @@ CLEAN-OBJS += vpx.def
 # Filtered out to avoid Visual Studio build warnings.
 ASM_INCLUDES := \
     third_party/x86inc/x86inc.asm \
-    vpx_config.asm \
+    aom_config.asm \
     aom_ports/x86_abi_support.asm \
 
 vpx.$(VCPROJ_SFX): $(CODEC_SRCS) vpx.def
@@ -193,7 +193,7 @@ vpx.$(VCPROJ_SFX): $(CODEC_SRCS) vpx.def
 
 PROJECTS-yes += vpx.$(VCPROJ_SFX)
 
-vpx.$(VCPROJ_SFX): vpx_config.asm
+vpx.$(VCPROJ_SFX): aom_config.asm
 vpx.$(VCPROJ_SFX): $(RTCD)
 
 endif
@@ -320,29 +320,29 @@ endif
 #
 ifeq ($(ARCH_X86)$(ARCH_X86_64),yes)
 # YASM
-$(BUILD_PFX)vpx_config.asm: $(BUILD_PFX)vpx_config.h
+$(BUILD_PFX)aom_config.asm: $(BUILD_PFX)aom_config.h
 	@echo "    [CREATE] $@"
 	@egrep "#define [A-Z0-9_]+ [01]" $< \
 	    | awk '{print $$2 " equ " $$3}' > $@
 else
 ADS2GAS=$(if $(filter yes,$(CONFIG_GCC)),| $(ASM_CONVERSION))
-$(BUILD_PFX)vpx_config.asm: $(BUILD_PFX)vpx_config.h
+$(BUILD_PFX)aom_config.asm: $(BUILD_PFX)aom_config.h
 	@echo "    [CREATE] $@"
 	@egrep "#define [A-Z0-9_]+ [01]" $< \
 	    | awk '{print $$2 " EQU " $$3}' $(ADS2GAS) > $@
 	@echo "        END" $(ADS2GAS) >> $@
-CLEAN-OBJS += $(BUILD_PFX)vpx_config.asm
+CLEAN-OBJS += $(BUILD_PFX)aom_config.asm
 endif
 
 #
 # Add assembler dependencies for configuration.
 #
-$(filter %.s.o,$(OBJS-yes)):     $(BUILD_PFX)vpx_config.asm
-$(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)vpx_config.asm
+$(filter %.s.o,$(OBJS-yes)):     $(BUILD_PFX)aom_config.asm
+$(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)aom_config.asm
 
 
-$(shell $(SRC_PATH_BARE)/build/make/version.sh "$(SRC_PATH_BARE)" $(BUILD_PFX)vpx_version.h)
-CLEAN-OBJS += $(BUILD_PFX)vpx_version.h
+$(shell $(SRC_PATH_BARE)/build/make/version.sh "$(SRC_PATH_BARE)" $(BUILD_PFX)aom_version.h)
+CLEAN-OBJS += $(BUILD_PFX)aom_version.h
 
 #
 # Add include path for libwebm sources.
@@ -539,7 +539,7 @@ endif
 SRCS += $(CODEC_SRCS) $(LIBAOM_TEST_SRCS) $(GTEST_SRCS)
 
 ##
-## vpxdec/vpxenc tests.
+## aomdec/aomenc tests.
 ##
 ifeq ($(CONFIG_UNIT_TESTS),yes)
 TEST_BIN_PATH = .
@@ -552,10 +552,10 @@ ifeq ($(CONFIG_MSVS),yes)
 TEST_BIN_PATH := $(addsuffix /$(TGT_OS:win64=x64)/Release, $(TEST_BIN_PATH))
 endif
 utiltest utiltest-no-data-check:
-	$(qexec)$(SRC_PATH_BARE)/test/vpxdec.sh \
+	$(qexec)$(SRC_PATH_BARE)/test/aomdec.sh \
 		--test-data-path $(LIBAOM_TEST_DATA_PATH) \
 		--bin-path $(TEST_BIN_PATH)
-	$(qexec)$(SRC_PATH_BARE)/test/vpxenc.sh \
+	$(qexec)$(SRC_PATH_BARE)/test/aomenc.sh \
 		--test-data-path $(LIBAOM_TEST_DATA_PATH) \
 		--bin-path $(TEST_BIN_PATH)
 utiltest: testdata

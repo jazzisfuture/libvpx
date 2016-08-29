@@ -11,7 +11,7 @@
 #ifndef VP10_COMMON_QUANT_COMMON_H_
 #define VP10_COMMON_QUANT_COMMON_H_
 
-#include "aom/vpx_codec.h"
+#include "aom/aom_codec.h"
 #include "av1/common/seg_common.h"
 #include "av1/common/enums.h"
 
@@ -36,17 +36,17 @@ extern "C" {
 
 struct VP10Common;
 
-int16_t vp10_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
-int16_t vp10_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
+int16_t av1_dc_quant(int qindex, int delta, aom_bit_depth_t bit_depth);
+int16_t av1_ac_quant(int qindex, int delta, aom_bit_depth_t bit_depth);
 
-int vp10_get_qindex(const struct segmentation *seg, int segment_id,
-                    int base_qindex);
+int av1_get_qindex(const struct segmentation *seg, int segment_id,
+                   int base_qindex);
 #if CONFIG_AOM_QM
 // Reduce the large number of quantizers to a smaller number of levels for which
 // different matrices may be defined
 static inline int aom_get_qmlevel(int qindex, int first, int last) {
   int qmlevel = (qindex * (last + 1 - first) + QINDEX_RANGE / 2) / QINDEX_RANGE;
-  qmlevel = VPXMIN(qmlevel + first, NUM_QM_LEVELS - 1);
+  qmlevel = AOMMIN(qmlevel + first, NUM_QM_LEVELS - 1);
   return qmlevel;
 }
 void aom_qm_init(struct VP10Common *cm);
@@ -64,13 +64,13 @@ qm_val_t *aom_qmatrix(struct VP10Common *cm, int qindex, int comp,
 
 typedef tran_low_t dequant_val_type_nuq[NUQ_KNOTS + 1];
 typedef tran_low_t cuml_bins_type_nuq[NUQ_KNOTS];
-void vp10_get_dequant_val_nuq(int q, int qindex, int band, tran_low_t *dq,
-                              tran_low_t *cuml_bins, int dq_off_index);
-tran_low_t vp10_dequant_abscoeff_nuq(int v, int q, const tran_low_t *dq);
-tran_low_t vp10_dequant_coeff_nuq(int v, int q, const tran_low_t *dq);
+void av1_get_dequant_val_nuq(int q, int qindex, int band, tran_low_t *dq,
+                             tran_low_t *cuml_bins, int dq_off_index);
+tran_low_t av1_dequant_abscoeff_nuq(int v, int q, const tran_low_t *dq);
+tran_low_t av1_dequant_coeff_nuq(int v, int q, const tran_low_t *dq);
 
 static INLINE int get_dq_profile_from_ctx(int q_ctx) {
-  return VPXMIN(q_ctx, QUANT_PROFILES - 1);
+  return AOMMIN(q_ctx, QUANT_PROFILES - 1);
 }
 #endif  // CONFIG_NEW_QUANT
 

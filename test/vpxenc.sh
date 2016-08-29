@@ -8,7 +8,7 @@
 ##  in the file PATENTS.  All contributing project authors may
 ##  be found in the AUTHORS file in the root of the source tree.
 ##
-##  This file tests vpxenc using hantro_collage_w352h288.yuv as input. To add
+##  This file tests aomenc using hantro_collage_w352h288.yuv as input. To add
 ##  new tests to this file, do the following:
 ##    1. Write a shell function (this is your test).
 ##    2. Add the function to vpxenc_tests (on a new line).
@@ -30,8 +30,8 @@ vpxenc_verify_environment() {
       return 1
     fi
   fi
-  if [ -z "$(vpx_tool_path vpxenc)" ]; then
-    elog "vpxenc not found. It must exist in LIBAOM_BIN_PATH or its parent."
+  if [ -z "$(aom_tool_path aomenc)" ]; then
+    elog "aomenc not found. It must exist in LIBAOM_BIN_PATH or its parent."
     return 1
   fi
 }
@@ -48,7 +48,7 @@ vpxenc_can_encode_vp9() {
   fi
 }
 
-# Echo vpxenc command line parameters allowing use of
+# Echo aomenc command line parameters allowing use of
 # hantro_collage_w352h288.yuv as input.
 yuv_input_hantro_collage() {
   echo ""${YUV_RAW_INPUT}"
@@ -64,7 +64,7 @@ y4m_input_720p() {
   echo ""${Y4M_720P_INPUT}""
 }
 
-# Echo default vpxenc real time encoding params. $1 is the codec, which defaults
+# Echo default aomenc real time encoding params. $1 is the codec, which defaults
 # to vp8 if unspecified.
 vpxenc_rt_params() {
   local readonly codec="${1:-vp8}"
@@ -90,35 +90,35 @@ vpxenc_rt_params() {
     --undershoot-pct=50"
 }
 
-# Wrapper function for running vpxenc with pipe input. Requires that
-# LIBAOM_BIN_PATH points to the directory containing vpxenc. $1 is used as the
+# Wrapper function for running aomenc with pipe input. Requires that
+# LIBAOM_BIN_PATH points to the directory containing aomenc. $1 is used as the
 # input file path and shifted away. All remaining parameters are passed through
-# to vpxenc.
+# to aomenc.
 vpxenc_pipe() {
-  local readonly encoder="$(vpx_tool_path vpxenc)"
+  local readonly encoder="$(aom_tool_path aomenc)"
   local readonly input="$1"
   shift
-  cat "${input}" | eval "${VPX_TEST_PREFIX}" "${encoder}" - \
+  cat "${input}" | eval "${AOM_TEST_PREFIX}" "${encoder}" - \
     --test-decode=fatal \
     "$@" ${devnull}
 }
 
-# Wrapper function for running vpxenc. Requires that LIBAOM_BIN_PATH points to
-# the directory containing vpxenc. $1 one is used as the input file path and
-# shifted away. All remaining parameters are passed through to vpxenc.
-vpxenc() {
-  local readonly encoder="$(vpx_tool_path vpxenc)"
+# Wrapper function for running aomenc. Requires that LIBAOM_BIN_PATH points to
+# the directory containing aomenc. $1 one is used as the input file path and
+# shifted away. All remaining parameters are passed through to aomenc.
+aomenc() {
+  local readonly encoder="$(aom_tool_path aomenc)"
   local readonly input="$1"
   shift
-  eval "${VPX_TEST_PREFIX}" "${encoder}" "${input}" \
+  eval "${AOM_TEST_PREFIX}" "${encoder}" "${input}" \
     --test-decode=fatal \
     "$@" ${devnull}
 }
 
 vpxenc_vp8_ivf() {
   if [ "$(vpxenc_can_encode_vp8)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp8.ivf"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp8.ivf"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp8 \
       --limit="${TEST_FRAMES}" \
       --ivf \
@@ -134,8 +134,8 @@ vpxenc_vp8_ivf() {
 vpxenc_vp8_webm() {
   if [ "$(vpxenc_can_encode_vp8)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp8.webm"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp8.webm"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp8 \
       --limit="${TEST_FRAMES}" \
       --output="${output}"
@@ -150,8 +150,8 @@ vpxenc_vp8_webm() {
 vpxenc_vp8_webm_rt() {
   if [ "$(vpxenc_can_encode_vp8)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp8_rt.webm"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp8_rt.webm"
+    aomenc $(yuv_input_hantro_collage) \
       $(vpxenc_rt_params vp8) \
       --output="${output}"
     if [ ! -e "${output}" ]; then
@@ -164,8 +164,8 @@ vpxenc_vp8_webm_rt() {
 vpxenc_vp8_webm_2pass() {
   if [ "$(vpxenc_can_encode_vp8)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp8.webm"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp8.webm"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp8 \
       --limit="${TEST_FRAMES}" \
       --output="${output}" \
@@ -183,8 +183,8 @@ vpxenc_vp8_webm_lag10_frames20() {
      [ "$(webm_io_available)" = "yes" ]; then
     local readonly lag_total_frames=20
     local readonly lag_frames=10
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp8_lag10_frames20.webm"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp8_lag10_frames20.webm"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp8 \
       --limit="${lag_total_frames}" \
       --lag-in-frames="${lag_frames}" \
@@ -201,7 +201,7 @@ vpxenc_vp8_webm_lag10_frames20() {
 
 vpxenc_vp8_ivf_piped_input() {
   if [ "$(vpxenc_can_encode_vp8)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp8_piped_input.ivf"
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp8_piped_input.ivf"
     vpxenc_pipe $(yuv_input_hantro_collage) \
       --codec=vp8 \
       --limit="${TEST_FRAMES}" \
@@ -217,8 +217,8 @@ vpxenc_vp8_ivf_piped_input() {
 
 vpxenc_vp9_ivf() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9.ivf"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9.ivf"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp9 \
       --limit="${TEST_FRAMES}" \
       --ivf \
@@ -234,8 +234,8 @@ vpxenc_vp9_ivf() {
 vpxenc_vp9_webm() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9.webm"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9.webm"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp9 \
       --limit="${TEST_FRAMES}" \
       --output="${output}"
@@ -250,8 +250,8 @@ vpxenc_vp9_webm() {
 vpxenc_vp9_webm_rt() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_rt.webm"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9_rt.webm"
+    aomenc $(yuv_input_hantro_collage) \
       $(vpxenc_rt_params vp9) \
       --output="${output}"
 
@@ -265,7 +265,7 @@ vpxenc_vp9_webm_rt() {
 vpxenc_vp9_webm_rt_multithread_tiled() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_rt_multithread_tiled.webm"
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9_rt_multithread_tiled.webm"
     local readonly tilethread_min=2
     local readonly tilethread_max=4
     local readonly num_threads="$(seq ${tilethread_min} ${tilethread_max})"
@@ -273,7 +273,7 @@ vpxenc_vp9_webm_rt_multithread_tiled() {
 
     for threads in ${num_threads}; do
       for tile_cols in ${num_tile_cols}; do
-        vpxenc $(y4m_input_720p) \
+        aomenc $(y4m_input_720p) \
           $(vpxenc_rt_params vp9) \
           --threads=${threads} \
           --tile-columns=${tile_cols} \
@@ -293,7 +293,7 @@ vpxenc_vp9_webm_rt_multithread_tiled() {
 vpxenc_vp9_webm_rt_multithread_tiled_frameparallel() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_rt_mt_t_fp.webm"
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9_rt_mt_t_fp.webm"
     local readonly tilethread_min=2
     local readonly tilethread_max=4
     local readonly num_threads="$(seq ${tilethread_min} ${tilethread_max})"
@@ -301,7 +301,7 @@ vpxenc_vp9_webm_rt_multithread_tiled_frameparallel() {
 
     for threads in ${num_threads}; do
       for tile_cols in ${num_tile_cols}; do
-        vpxenc $(y4m_input_720p) \
+        aomenc $(y4m_input_720p) \
           $(vpxenc_rt_params vp9) \
           --threads=${threads} \
           --tile-columns=${tile_cols} \
@@ -322,8 +322,8 @@ vpxenc_vp9_webm_rt_multithread_tiled_frameparallel() {
 vpxenc_vp9_webm_2pass() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9.webm"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9.webm"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp9 \
       --limit="${TEST_FRAMES}" \
       --output="${output}" \
@@ -338,8 +338,8 @@ vpxenc_vp9_webm_2pass() {
 
 vpxenc_vp9_ivf_lossless() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_lossless.ivf"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9_lossless.ivf"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp9 \
       --limit="${TEST_FRAMES}" \
       --ivf \
@@ -355,8 +355,8 @@ vpxenc_vp9_ivf_lossless() {
 
 vpxenc_vp9_ivf_minq0_maxq0() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_lossless_minq0_maxq0.ivf"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9_lossless_minq0_maxq0.ivf"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp9 \
       --limit="${TEST_FRAMES}" \
       --ivf \
@@ -376,8 +376,8 @@ vpxenc_vp9_webm_lag10_frames20() {
      [ "$(webm_io_available)" = "yes" ]; then
     local readonly lag_total_frames=20
     local readonly lag_frames=10
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_lag10_frames20.webm"
-    vpxenc $(yuv_input_hantro_collage) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9_lag10_frames20.webm"
+    aomenc $(yuv_input_hantro_collage) \
       --codec=vp9 \
       --limit="${lag_total_frames}" \
       --lag-in-frames="${lag_frames}" \
@@ -396,8 +396,8 @@ vpxenc_vp9_webm_lag10_frames20() {
 vpxenc_vp9_webm_non_square_par() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
-    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_non_square_par.webm"
-    vpxenc $(y4m_input_non_square_par) \
+    local readonly output="${AOM_TEST_OUTPUT_DIR}/vp9_non_square_par.webm"
+    aomenc $(y4m_input_non_square_par) \
       --codec=vp9 \
       --limit="${TEST_FRAMES}" \
       --output="${output}"

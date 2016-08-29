@@ -12,7 +12,7 @@
 #define VP10_COMMON_MV_H_
 
 #include "av1/common/common.h"
-#include "aom_dsp/vpx_filter.h"
+#include "aom_dsp/aom_filter.h"
 #if CONFIG_GLOBAL_MOTION
 #include "av1/common/warped_motion.h"
 #endif  // CONFIG_GLOBAL_MOTION
