@@ -106,6 +106,10 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
 
       if (frame_size != (size_t)frame_size) return -1;
 
+      // TODO(yunqingwang): On 32 bit system, the maximum resolution supported
+      // in encoder is 4k(3840x2160). The malloc() would fail if encoding >4k
+      // video on 32 bit system. Later, may disable usage of upsampled references
+      // to allow >4k video encoding on 32 bit platforms.
       ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, (size_t)frame_size);
       if (!ybf->buffer_alloc) return -1;
 
