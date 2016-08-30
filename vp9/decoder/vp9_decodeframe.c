@@ -715,8 +715,9 @@ static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
 static INLINE TX_SIZE dec_get_uv_tx_size(const MODE_INFO *mi, int n4_wl,
                                          int n4_hl) {
   // get minimum log2 num4x4s dimension
-  const int x = VPXMIN(n4_wl, n4_hl);
-  return VPXMIN(mi->tx_size, x);
+  // const int x = VPXMIN(n4_wl, n4_hl);
+  // return VPXMIN(mi->tx_size, x);
+  return uv_txsize_n4l_lookup[mi->tx_size][n4_wl][n4_hl];
 }
 
 static INLINE void dec_reset_skip_context(MACROBLOCKD *xd) {
