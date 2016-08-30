@@ -106,15 +106,19 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
 
       if (frame_size != (size_t)frame_size) return -1;
 
+      // TODO(yunqingwang): On 32 bit systems, the maximum resolution supported
+      // in the encoder is 4k(3840x2160). The malloc() would fail if encoding
+      // >4k video on a 32 bit system. Later, maybe disable usage of up-sampled
+      // references to allow >4k video encoding on 32 bit platforms.
       ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, (size_t)frame_size);
       if (!ybf->buffer_alloc) return -1;
 
-      ybf->buffer_alloc_sz = (int)frame_size;
+      ybf->buffer_alloc_sz = (uint32_t)frame_size;
 
       // This memset is needed for fixing valgrind error from C loop filter
       // due to access uninitialized memory in frame border. It could be
       // removed if border is totally removed.
-      memset(ybf->buffer_alloc, 0, ybf->buffer_alloc_sz);
+      memset(ybf->buffer_alloc, 0, (size_t)ybf->buffer_alloc_sz);
     }
 
     /* Only support allocating buffers that have a border that's a multiple

@@ -53,7 +53,7 @@ typedef struct yv12_buffer_config {
   uint8_t *alpha_buffer;
 
   uint8_t *buffer_alloc;
-  int buffer_alloc_sz;
+  uint32_t buffer_alloc_sz;
   int border;
   int frame_size;
   int subsampling_x;
