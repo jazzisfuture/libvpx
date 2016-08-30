@@ -193,6 +193,83 @@ static inline int sem_destroy(sem_t *sem) {
 
 #include "vpx_util/vpx_thread.h"
 
+#if defined(MUTEX_PROTECTED_READS)
+static INLINE void mutex_lock(pthread_mutex_t *const mutex) {
+  const int kMaxTryLocks = 4000;
+  int locked = 0;
+  int i;
+  for (i = 0; i < kMaxTryLocks; ++i) {
+    x86_pause_hint();
+    if (!pthread_mutex_trylock(mutex)) {
+      locked = 1;
+      break;
+    }
+  }
+
+  if (!locked) pthread_mutex_lock(mutex);
+}
+
+static INLINE int protected_read(pthread_mutex_t *const mutex, const int *p) {
+  int ret;
+  mutex_lock(mutex);
+  ret = *p;
+  pthread_mutex_unlock(mutex);
+  return ret;
+}
+
+static INLINE void protected_write(pthread_mutex_t *mutex, int *p, int v) {
+  mutex_lock(mutex);
+  *p = v;
+  pthread_mutex_unlock(mutex);
+}
+#else
+static INLINE int protected_read(pthread_mutex_t *const mutex, const int *p) {
+  return *p;
+}
+
+static INLINE void protected_write(pthread_mutex_t *mutex, int *p, int v) {
+  *p = v;
+}
+#endif
+
+static INLINE int read_or_zero(pthread_mutex_t *const mutex, const int *p) {
+#if defined(MUTEX_PROTECTED_READS)
+
+  if (!pthread_mutex_trylock(mutex)) {
+    int this_val = *p;
+    pthread_mutex_unlock(mutex);
+    return this_val;
+  }
+  return 0;
+#else
+  return *p;
+#endif
+}
+
+static INLINE void sync_read(pthread_mutex_t *const mutex, int mb_col,
+                             const int *last_row_mb_col,
+                             const int nsync) {
+#if defined(PAUSE_AND_SLEEP_THREADING)
+  while (mb_col > (protected_read(mutex, last_row_mb_col) - nsync)) {
+
+    x86_pause_hint();
+    thread_sleep(0);
+  }
+#else
+  const int kTries = 10;
+  int i;
+  while (1) {
+    if (mb_col <= read_or_zero(mutex, last_row_mb_col) - nsync) return;
+    for (i = 0; i < kTries; ++i) {
+      x86_pause_hint();
+      if (mb_col <= read_or_zero(mutex, last_row_mb_col) - nsync) return;
+    }
+    thread_sleep(0);
+  }
+#endif
+}
+
+
 #endif /* CONFIG_OS_SUPPORT && CONFIG_MULTITHREAD */
 
 #ifdef __cplusplus
