@@ -1245,12 +1245,18 @@ void av1_filter_block_plane_non420(AV1_COMMON *cm,
         tx_size_mask = 0;
 
 #if CONFIG_VAR_TX
-      if (is_inter_block(mbmi) && !mbmi->skip)
-        tx_size =
-            (plane->plane_type == PLANE_TYPE_UV)
-                ? get_uv_tx_size_impl(mbmi->inter_tx_size[blk_row][blk_col],
-                                      sb_type, ss_x, ss_y)
-                : mbmi->inter_tx_size[blk_row][blk_col];
+      if (is_inter_block(mbmi) && !mbmi->skip) {
+#if CONFIG_EXT_TX && CONFIG_RECT_TX
+        TX_SIZE mb_tx_size = is_rect_tx(mbmi->tx_size)
+                                 ? mbmi->tx_size
+                                 : mbmi->inter_tx_size[blk_row][blk_col];
+#else
+        TX_SIZE mb_tx_size = mbmi->inter_tx_size[blk_row][blk_col];
+#endif
+        tx_size = (plane->plane_type == PLANE_TYPE_UV)
+                      ? get_uv_tx_size_impl(mb_tx_size, sb_type, ss_x, ss_y)
+                      : mb_tx_size;
+      }
 
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
       tx_size_r =
