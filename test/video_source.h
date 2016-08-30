@@ -20,26 +20,26 @@
 #include <cstdlib>
 #include <string>
 #include "test/acm_random.h"
-#include "aom/vpx_encoder.h"
+#include "aom/aom_encoder.h"
 
 namespace libaom_test {
 
-// Helper macros to ensure LIBVPX_TEST_DATA_PATH is a quoted string.
+// Helper macros to ensure LIBAOM_TEST_DATA_PATH is a quoted string.
 // These are undefined right below GetDataPath
-// NOTE: LIBVPX_TEST_DATA_PATH MUST NOT be a quoted string before
+// NOTE: LIBAOM_TEST_DATA_PATH MUST NOT be a quoted string before
 // Stringification or the GetDataPath will fail at runtime
 #define TO_STRING(S) #S
 #define STRINGIFY(S) TO_STRING(S)
 
 // A simple function to encapsulate cross platform retrieval of test data path
 static std::string GetDataPath() {
-  const char *const data_path = getenv("LIBVPX_TEST_DATA_PATH");
+  const char *const data_path = getenv("LIBAOM_TEST_DATA_PATH");
   if (data_path == NULL) {
-#ifdef LIBVPX_TEST_DATA_PATH
+#ifdef LIBAOM_TEST_DATA_PATH
     // In some environments, we cannot set environment variables
     // Instead, we set the data path by using a preprocessor symbol
     // which can be set from make files
-    return STRINGIFY(LIBVPX_TEST_DATA_PATH);
+    return STRINGIFY(LIBAOM_TEST_DATA_PATH);
 #else
     return ".";
 #endif
@@ -98,7 +98,7 @@ class TempOutFile {
 };
 
 // Abstract base class for test video sources, which provide a stream of
-// vpx_image_t images with associated timestamps and duration.
+// aom_image_t images with associated timestamps and duration.
 class VideoSource {
  public:
   virtual ~VideoSource() {}
@@ -110,16 +110,16 @@ class VideoSource {
   virtual void Next() = 0;
 
   // Get the current video frame, or NULL on End-Of-Stream.
-  virtual vpx_image_t *img() const = 0;
+  virtual aom_image_t *img() const = 0;
 
   // Get the presentation timestamp of the current frame.
-  virtual vpx_codec_pts_t pts() const = 0;
+  virtual aom_codec_pts_t pts() const = 0;
 
   // Get the current frame's duration
   virtual unsigned long duration() const = 0;
 
   // Get the timebase for the stream
-  virtual vpx_rational_t timebase() const = 0;
+  virtual aom_rational_t timebase() const = 0;
 
   // Get the current frame counter, starting at 0.
   virtual unsigned int frame() const = 0;
@@ -132,11 +132,11 @@ class DummyVideoSource : public VideoSource {
  public:
   DummyVideoSource()
       : img_(NULL), limit_(100), width_(80), height_(64),
-        format_(VPX_IMG_FMT_I420) {
+        format_(AOM_IMG_FMT_I420) {
     ReallocImage();
   }
 
-  virtual ~DummyVideoSource() { vpx_img_free(img_); }
+  virtual ~DummyVideoSource() { aom_img_free(img_); }
 
   virtual void Begin() {
     frame_ = 0;
@@ -148,15 +148,15 @@ class DummyVideoSource : public VideoSource {
     FillFrame();
   }
 
-  virtual vpx_image_t *img() const { return (frame_ < limit_) ? img_ : NULL; }
+  virtual aom_image_t *img() const { return (frame_ < limit_) ? img_ : NULL; }
 
   // Models a stream where Timebase = 1/FPS, so pts == frame.
-  virtual vpx_codec_pts_t pts() const { return frame_; }
+  virtual aom_codec_pts_t pts() const { return frame_; }
 
   virtual unsigned long duration() const { return 1; }
 
-  virtual vpx_rational_t timebase() const {
-    const vpx_rational_t t = { 1, 30 };
+  virtual aom_rational_t timebase() const {
+    const aom_rational_t t = { 1, 30 };
     return t;
   }
 
@@ -174,7 +174,7 @@ class DummyVideoSource : public VideoSource {
     }
   }
 
-  void SetImageFormat(vpx_img_fmt_t format) {
+  void SetImageFormat(aom_img_fmt_t format) {
     if (format_ != format) {
       format_ = format;
       ReallocImage();
@@ -187,18 +187,18 @@ class DummyVideoSource : public VideoSource {
   }
 
   void ReallocImage() {
-    vpx_img_free(img_);
-    img_ = vpx_img_alloc(NULL, format_, width_, height_, 32);
+    aom_img_free(img_);
+    img_ = aom_img_alloc(NULL, format_, width_, height_, 32);
     raw_sz_ = ((img_->w + 31) & ~31) * img_->h * img_->bps / 8;
   }
 
-  vpx_image_t *img_;
+  aom_image_t *img_;
   size_t raw_sz_;
   unsigned int limit_;
   unsigned int frame_;
   unsigned int width_;
   unsigned int height_;
-  vpx_img_fmt_t format_;
+  aom_img_fmt_t format_;
 };
 
 class RandomVideoSource : public DummyVideoSource {
