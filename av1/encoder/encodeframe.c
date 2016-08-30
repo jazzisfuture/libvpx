@@ -5094,7 +5094,7 @@ static void encode_superblock(AV1_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
       int eset = get_ext_tx_set(mbmi->tx_size, bsize, is_inter_block(mbmi));
       if (eset > 0) {
         if (is_inter_block(mbmi)) {
-          ++td->counts->inter_ext_tx[eset][txsize_sqr_map[mbmi->tx_size]]
+          ++td->counts->inter_ext_tx[eset][txsize_sqr_up_map[mbmi->tx_size]]
                                     [mbmi->tx_type];
         } else {
           ++td->counts
