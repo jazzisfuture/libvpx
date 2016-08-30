@@ -1426,7 +1426,7 @@ static void pack_inter_mode_mvs(VP10_COMP *cpi, const MODE_INFO *mi,
         if (eset > 0)
           vp10_write_token(
               w, vp10_ext_tx_inter_tree[eset],
-              cm->fc->inter_ext_tx_prob[eset][txsize_sqr_map[mbmi->tx_size]],
+              cm->fc->inter_ext_tx_prob[eset][txsize_sqr_up_map[mbmi->tx_size]],
               &ext_tx_inter_encodings[eset][mbmi->tx_type]);
       } else if (ALLOW_INTRA_EXT_TX) {
         if (eset > 0)

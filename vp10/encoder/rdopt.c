@@ -1349,7 +1349,7 @@ static int64_t txfm_yrd(VP10_COMP *cpi, MACROBLOCK *x, int *r, int64_t *d,
     if (is_inter) {
       if (ext_tx_set > 0)
         *r += cpi->inter_tx_type_costs
-                  [ext_tx_set][txsize_sqr_map[mbmi->tx_size]][mbmi->tx_type];
+                  [ext_tx_set][txsize_sqr_up_map[mbmi->tx_size]][mbmi->tx_type];
     } else {
       if (ext_tx_set > 0 && ALLOW_INTRA_EXT_TX)
         *r += cpi->intra_tx_type_costs[ext_tx_set][mbmi->tx_size][mbmi->mode]
@@ -1579,7 +1579,8 @@ static void choose_largest_tx_size(VP10_COMP *cpi, MACROBLOCK *x, int *rate,
       if (get_ext_tx_types(mbmi->tx_size, bs, is_inter) > 1) {
         if (is_inter) {
           if (ext_tx_set > 0)
-            r += cpi->inter_tx_type_costs[ext_tx_set][mbmi->tx_size]
+            r += cpi->inter_tx_type_costs[ext_tx_set]
+                                         [txsize_sqr_up_map[mbmi->tx_size]]
                                          [mbmi->tx_type];
         } else {
           if (ext_tx_set > 0 && ALLOW_INTRA_EXT_TX)
