@@ -1325,11 +1325,10 @@ static void decode_block(VP10Decoder *const pbi, MACROBLOCKD *const xd,
         const int step = num_4x4_blocks_txsize_lookup[max_tx_size];
         int block = 0;
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
-        const TX_SIZE tx_size =
-            plane ? dec_get_uv_tx_size(mbmi, pd->n4_wl, pd->n4_hl)
-                  : mbmi->tx_size;
-
-        if (tx_size >= TX_SIZES) {  // rect txsize is used
+        if (is_rect_tx(mbmi->tx_size)) {
+          const TX_SIZE tx_size =
+              plane ? dec_get_uv_tx_size(mbmi, pd->n4_wl, pd->n4_hl)
+                    : mbmi->tx_size;
           const int stepr = num_4x4_blocks_high_txsize_lookup[tx_size];
           const int stepc = num_4x4_blocks_wide_txsize_lookup[tx_size];
           const int max_blocks_wide =
