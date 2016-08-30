@@ -790,7 +790,7 @@ static void encode_block(int plane, int block, int blk_row, int blk_col,
 #endif
 
 #if CONFIG_VAR_TX
-  // Assert not magic number (uninitialised).
+  // Assert not magic number (uninitialized).
   assert(x->blk_skip[plane][(blk_row << bwl) + blk_col] != 234);
 
   if (x->blk_skip[plane][(blk_row << bwl) + blk_col] == 0) {
@@ -990,7 +990,7 @@ void av1_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
 
 #if CONFIG_VAR_TX
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
-    if (tx_size >= TX_SIZES) {
+    if (is_rect_tx(tx_size)) {
       av1_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block,
                                              &arg);
     } else {
