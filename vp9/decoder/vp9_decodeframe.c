@@ -712,11 +712,10 @@ static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
   }
 }
 
-static INLINE TX_SIZE dec_get_uv_tx_size(const MODE_INFO *mi, int n4_wl,
-                                         int n4_hl) {
-  // get minimum log2 num4x4s dimension
-  const int x = VPXMIN(n4_wl, n4_hl);
-  return VPXMIN(mi->tx_size, x);
+// This function should give the same result as get_uv_tx_size()
+static INLINE TX_SIZE dec_get_uv_tx_size(const MODE_INFO *mi,
+                                         const struct macroblockd_plane *pd) {
+  return uv_txsize_n4l_lookup[mi->tx_size][pd->n4_wl][pd->n4_hl];
 }
 
 static INLINE void dec_reset_skip_context(MACROBLOCKD *xd) {
@@ -799,8 +798,7 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
     int plane;
     for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
       const struct macroblockd_plane *const pd = &xd->plane[plane];
-      const TX_SIZE tx_size =
-          plane ? dec_get_uv_tx_size(mi, pd->n4_wl, pd->n4_hl) : mi->tx_size;
+      const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
       const int num_4x4_w = pd->n4_w;
       const int num_4x4_h = pd->n4_h;
       const int step = (1 << tx_size);
@@ -833,8 +831,7 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
 
       for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
         const struct macroblockd_plane *const pd = &xd->plane[plane];
-        const TX_SIZE tx_size =
-            plane ? dec_get_uv_tx_size(mi, pd->n4_wl, pd->n4_hl) : mi->tx_size;
+        const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
         const int num_4x4_w = pd->n4_w;
         const int num_4x4_h = pd->n4_h;
         const int step = (1 << tx_size);
