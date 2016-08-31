@@ -5996,8 +5996,8 @@ static void rd_supertx_sb(VP10_COMP *cpi, ThreadData *td,
     pnskip = 1;
 
     tx_size = max_txsize_lookup[bsize];
-    tx_size = get_uv_tx_size_impl(tx_size, bsize, cm->subsampling_x,
-                                  cm->subsampling_y);
+    tx_size = uv_txsize_lookup[bsize][tx_size]
+        [cm->subsampling_x][cm->subsampling_y];
     vp10_get_entropy_contexts(bsize, tx_size, pd, ctxa, ctxl);
     coeff_ctx = combine_entropy_contexts(ctxa[0], ctxl[0]);
 
@@ -6007,8 +6007,8 @@ static void rd_supertx_sb(VP10_COMP *cpi, ThreadData *td,
                        &this_dist, &pnsse, &pnskip);
 #else
     tx_size = max_txsize_lookup[bsize];
-    tx_size = get_uv_tx_size_impl(tx_size, bsize, cm->subsampling_x,
-                                  cm->subsampling_y);
+    tx_size = uv_txsize_lookup[bsize][tx_size]
+        [cm->subsampling_x][cm->subsampling_y];
     vp10_subtract_plane(x, bsize, plane);
     vp10_txfm_rd_in_plane_supertx(x, cpi, &this_rate, &this_dist, &pnskip,
                                   &pnsse, INT64_MAX, plane, bsize, tx_size, 0);
