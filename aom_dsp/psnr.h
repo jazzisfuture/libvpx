@@ -1,12 +1,13 @@
 /*
-*  Copyright (c) 2016 The WebM project authors. All Rights Reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
+ * Copyright (c) 2016, Alliance for Open Media. All rights reserved
+ *
+ * This source code is subject to the terms of the BSD 2 Clause License and
+ * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
+ * was not distributed with this source code in the LICENSE file, you can
+ * obtain it at www.aomedia.org/license/software. If the Alliance for Open
+ * Media Patent License 1.0 was not distributed with this source code in the
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
+ */
 
 #ifndef AOM_DSP_PSNR_H_
 #define AOM_DSP_PSNR_H_
@@ -24,8 +25,6 @@ typedef struct {
   uint64_t sse[4];      // total/y/u/v
   uint32_t samples[4];  // total/y/u/v
 } PSNR_STATS;
-
-// TODO(dkovalev) change aom_sse_to_psnr signature: double -> int64_t
 
 /*!\brief Converts SSE to PSNR
 *
@@ -56,7 +55,6 @@ void aom_calc_psnr(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b,
 double aom_psnrhvs(const YV12_BUFFER_CONFIG *source,
                    const YV12_BUFFER_CONFIG *dest, double *phvs_y,
                    double *phvs_u, double *phvs_v, uint32_t bd, uint32_t in_bd);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif
