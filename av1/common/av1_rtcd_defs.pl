@@ -524,10 +524,22 @@ if (aom_config("CONFIG_AOM_QM") eq "yes") {
 
 # fdct functions
 
-if (aom_config("CONFIG_AOM_HIGHBITDEPTH") eq "yes") {
-  add_proto qw/void av1_fht4x4/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht4x4 sse2/;
+add_proto qw/void av1_fwht4x4/, "const int16_t *input, tran_low_t *output, int stride";
+specialize qw/av1_fwht4x4/;
 
+add_proto qw/void av1_fht4x4/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
+specialize qw/av1_fht4x4 sse2/;
+
+add_proto qw/void av1_fht8x8/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
+specialize qw/av1_fht8x8 sse2/;
+
+add_proto qw/void av1_fht16x16/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
+specialize qw/av1_fht16x16 sse2/;
+
+add_proto qw/void av1_fht32x32/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
+specialize qw/av1_fht32x32/;
+
+if (aom_config("CONFIG_EXT_TX") eq "yes") {
   add_proto qw/void av1_fht4x8/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
   specialize qw/av1_fht4x8/;
 
@@ -535,67 +547,24 @@ if (aom_config("CONFIG_AOM_HIGHBITDEPTH") eq "yes") {
   specialize qw/av1_fht8x4/;
 
   add_proto qw/void av1_fht8x16/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht8x16/;
+  specialize qw/av1_fht8x16 sse2/;
 
   add_proto qw/void av1_fht16x8/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht16x8/;
+  specialize qw/av1_fht16x8 sse2/;
 
   add_proto qw/void av1_fht16x32/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
   specialize qw/av1_fht16x32/;
 
   add_proto qw/void av1_fht32x16/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
   specialize qw/av1_fht32x16/;
+}
 
-  add_proto qw/void av1_fht8x8/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht8x8 sse2/;
-
-  add_proto qw/void av1_fht16x16/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht16x16 sse2/;
-
-  add_proto qw/void av1_fht32x32/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht32x32/;
-
-  add_proto qw/void av1_fwht4x4/, "const int16_t *input, tran_low_t *output, int stride";
-  specialize qw/av1_fwht4x4/;
-} else {
-  add_proto qw/void av1_fht4x4/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht4x4 sse2/;
-
-  add_proto qw/void av1_fht4x8/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht4x8/;
-
-  add_proto qw/void av1_fht8x4/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht8x4/;
-
-  add_proto qw/void av1_fht8x16/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht8x16/;
-
-  add_proto qw/void av1_fht16x8/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht16x8/;
-
-  add_proto qw/void av1_fht16x32/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht16x32/;
-
-  add_proto qw/void av1_fht32x16/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht32x16/;
-
-  add_proto qw/void av1_fht8x8/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht8x8 sse2/;
-
-  add_proto qw/void av1_fht16x16/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht16x16 sse2/;
-
+if (aom_config("CONFIG_AOM_HIGHBITDEPTH") ne "yes") {
   if (aom_config("CONFIG_EXT_TX") ne "yes") {
     specialize qw/av1_fht4x4 msa/;
     specialize qw/av1_fht8x8 msa/;
     specialize qw/av1_fht16x16 msa/;
   }
-
-  add_proto qw/void av1_fht32x32/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-  specialize qw/av1_fht32x32/;
-
-  add_proto qw/void av1_fwht4x4/, "const int16_t *input, tran_low_t *output, int stride";
-  specialize qw/av1_fwht4x4/;
 }
 
 add_proto qw/void av1_fwd_idtx/, "const int16_t *src_diff, tran_low_t *coeff, int stride, int bs, int tx_type";
