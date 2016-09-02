@@ -209,11 +209,16 @@ static INLINE void mutex_lock(pthread_mutex_t *const mutex) {
 }
 
 static INLINE int protected_read(pthread_mutex_t *const mutex, const int *p) {
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
   int ret;
   mutex_lock(mutex);
   ret = *p;
   pthread_mutex_unlock(mutex);
   return ret;
+#endif
+#endif
+  return *p;
 }
 
 static INLINE void sync_read(pthread_mutex_t *const mutex, int mb_col,
@@ -226,9 +231,15 @@ static INLINE void sync_read(pthread_mutex_t *const mutex, int mb_col,
 }
 
 static INLINE void protected_write(pthread_mutex_t *mutex, int *p, int v) {
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
   mutex_lock(mutex);
   *p = v;
   pthread_mutex_unlock(mutex);
+  return;
+#endif
+#endif
+  *p = v;
 }
 
 #endif /* CONFIG_OS_SUPPORT && CONFIG_MULTITHREAD */
