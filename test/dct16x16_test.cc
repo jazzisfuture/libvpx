@@ -911,7 +911,9 @@ INSTANTIATE_TEST_CASE_P(
                                  3167, AOM_BITS_12)));
 INSTANTIATE_TEST_CASE_P(SSE2, PartialTrans16x16Test,
                         ::testing::Values(make_tuple(&aom_fdct16x16_1_sse2,
-                                                     AOM_BITS_8)));
+                                                     AOM_BITS_10),
+                                          make_tuple(&aom_fdct16x16_1_sse2,
+                                                     AOM_BITS_12)));
 #endif  // HAVE_SSE2 && CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
 #if HAVE_MSA && !CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
