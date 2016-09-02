@@ -1,11 +1,12 @@
 /*
- *  Copyright (c) 2013 The WebM project authors. All Rights Reserved.
+ * Copyright (c) 2016, Alliance for Open Media. All rights reserved
  *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
+ * This source code is subject to the terms of the BSD 2 Clause License and
+ * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
+ * was not distributed with this source code in the LICENSE file, you can
+ * obtain it at www.aomedia.org/license/software. If the Alliance for Open
+ * Media Patent License 1.0 was not distributed with this source code in the
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
  */
 #ifndef TEST_CODEC_FACTORY_H_
 #define TEST_CODEC_FACTORY_H_
@@ -122,6 +123,9 @@ class AV1CodecFactory : public CodecFactory {
 #if CONFIG_AV1_DECODER
     return new AV1Decoder(cfg, flags, deadline);
 #else
+    (void)cfg;
+    (void)flags;
+    (void)deadline;
     return NULL;
 #endif
   }
@@ -133,6 +137,10 @@ class AV1CodecFactory : public CodecFactory {
 #if CONFIG_AV1_ENCODER
     return new AV1Encoder(cfg, deadline, init_flags, stats);
 #else
+    (void)cfg;
+    (void)deadline;
+    (void)init_flags;
+    (void)stats;
     return NULL;
 #endif
   }
@@ -142,6 +150,8 @@ class AV1CodecFactory : public CodecFactory {
 #if CONFIG_AV1_ENCODER
     return aom_codec_enc_config_default(&aom_codec_av1_cx_algo, cfg, usage);
 #else
+    (void)cfg;
+    (void)usage;
     return AOM_CODEC_INCAPABLE;
 #endif
   }
