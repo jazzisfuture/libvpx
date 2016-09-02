@@ -56,11 +56,16 @@ static INLINE void load_buffer_4x4(const int16_t *input, __m128i *in,
 }
 
 static INLINE void write_buffer_4x4(tran_low_t *output, __m128i *res) {
-  const __m128i kOne = _mm_set1_epi16(1);
-  __m128i in01 = _mm_unpacklo_epi64(res[0], res[1]);
-  __m128i in23 = _mm_unpacklo_epi64(res[2], res[3]);
-  __m128i out01 = _mm_add_epi16(in01, kOne);
-  __m128i out23 = _mm_add_epi16(in23, kOne);
+  // Signed round by 2 bits and write out
+  const __m128i kBias = _mm_set1_epi16(2);
+  const __m128i in01 = _mm_unpacklo_epi64(res[0], res[1]);
+  const __m128i in23 = _mm_unpacklo_epi64(res[2], res[3]);
+  const __m128i sign01 = _mm_srai_epi16(in01, 15);
+  const __m128i sign23 = _mm_srai_epi16(in23, 15);
+  __m128i out01 = _mm_add_epi16(in01, kBias);
+  __m128i out23 = _mm_add_epi16(in23, kBias);
+  out01 = _mm_add_epi16(out01, sign01);
+  out23 = _mm_add_epi16(out23, sign23);
   out01 = _mm_srai_epi16(out01, 2);
   out23 = _mm_srai_epi16(out23, 2);
   store_output(&out01, (output + 0 * 8));
@@ -785,55 +790,43 @@ static INLINE void load_buffer_8x8(const int16_t *input, __m128i *in,
 
 // right shift and rounding
 static INLINE void right_shift_8x8(__m128i *res, const int bit) {
-  __m128i sign0 = _mm_srai_epi16(res[0], 15);
-  __m128i sign1 = _mm_srai_epi16(res[1], 15);
-  __m128i sign2 = _mm_srai_epi16(res[2], 15);
-  __m128i sign3 = _mm_srai_epi16(res[3], 15);
-  __m128i sign4 = _mm_srai_epi16(res[4], 15);
-  __m128i sign5 = _mm_srai_epi16(res[5], 15);
-  __m128i sign6 = _mm_srai_epi16(res[6], 15);
-  __m128i sign7 = _mm_srai_epi16(res[7], 15);
+  const __m128i const_rounding = _mm_set1_epi16((1 << bit) >> 1);
 
-  if (bit == 2) {
-    const __m128i const_rounding = _mm_set1_epi16(1);
-    res[0] = _mm_add_epi16(res[0], const_rounding);
-    res[1] = _mm_add_epi16(res[1], const_rounding);
-    res[2] = _mm_add_epi16(res[2], const_rounding);
-    res[3] = _mm_add_epi16(res[3], const_rounding);
-    res[4] = _mm_add_epi16(res[4], const_rounding);
-    res[5] = _mm_add_epi16(res[5], const_rounding);
-    res[6] = _mm_add_epi16(res[6], const_rounding);
-    res[7] = _mm_add_epi16(res[7], const_rounding);
-  }
+  const __m128i sign0 = _mm_srai_epi16(res[0], 15);
+  const __m128i sign1 = _mm_srai_epi16(res[1], 15);
+  const __m128i sign2 = _mm_srai_epi16(res[2], 15);
+  const __m128i sign3 = _mm_srai_epi16(res[3], 15);
+  const __m128i sign4 = _mm_srai_epi16(res[4], 15);
+  const __m128i sign5 = _mm_srai_epi16(res[5], 15);
+  const __m128i sign6 = _mm_srai_epi16(res[6], 15);
+  const __m128i sign7 = _mm_srai_epi16(res[7], 15);
 
-  res[0] = _mm_sub_epi16(res[0], sign0);
-  res[1] = _mm_sub_epi16(res[1], sign1);
-  res[2] = _mm_sub_epi16(res[2], sign2);
-  res[3] = _mm_sub_epi16(res[3], sign3);
-  res[4] = _mm_sub_epi16(res[4], sign4);
-  res[5] = _mm_sub_epi16(res[5], sign5);
-  res[6] = _mm_sub_epi16(res[6], sign6);
-  res[7] = _mm_sub_epi16(res[7], sign7);
+  res[0] = _mm_add_epi16(res[0], const_rounding);
+  res[1] = _mm_add_epi16(res[1], const_rounding);
+  res[2] = _mm_add_epi16(res[2], const_rounding);
+  res[3] = _mm_add_epi16(res[3], const_rounding);
+  res[4] = _mm_add_epi16(res[4], const_rounding);
+  res[5] = _mm_add_epi16(res[5], const_rounding);
+  res[6] = _mm_add_epi16(res[6], const_rounding);
+  res[7] = _mm_add_epi16(res[7], const_rounding);
 
-  if (bit == 1) {
-    res[0] = _mm_srai_epi16(res[0], 1);
-    res[1] = _mm_srai_epi16(res[1], 1);
-    res[2] = _mm_srai_epi16(res[2], 1);
-    res[3] = _mm_srai_epi16(res[3], 1);
-    res[4] = _mm_srai_epi16(res[4], 1);
-    res[5] = _mm_srai_epi16(res[5], 1);
-    res[6] = _mm_srai_epi16(res[6], 1);
-    res[7] = _mm_srai_epi16(res[7], 1);
-  } else {
-    res[0] = _mm_srai_epi16(res[0], 2);
-    res[1] = _mm_srai_epi16(res[1], 2);
-    res[2] = _mm_srai_epi16(res[2], 2);
-    res[3] = _mm_srai_epi16(res[3], 2);
-    res[4] = _mm_srai_epi16(res[4], 2);
-    res[5] = _mm_srai_epi16(res[5], 2);
-    res[6] = _mm_srai_epi16(res[6], 2);
-    res[7] = _mm_srai_epi16(res[7], 2);
-  }
+  res[0] = _mm_add_epi16(res[0], sign0);
+  res[1] = _mm_add_epi16(res[1], sign1);
+  res[2] = _mm_add_epi16(res[2], sign2);
+  res[3] = _mm_add_epi16(res[3], sign3);
+  res[4] = _mm_add_epi16(res[4], sign4);
+  res[5] = _mm_add_epi16(res[5], sign5);
+  res[6] = _mm_add_epi16(res[6], sign6);
+  res[7] = _mm_add_epi16(res[7], sign7);
+
+  res[0] = _mm_srai_epi16(res[0], bit);
+  res[1] = _mm_srai_epi16(res[1], bit);
+  res[2] = _mm_srai_epi16(res[2], bit);
+  res[3] = _mm_srai_epi16(res[3], bit);
+  res[4] = _mm_srai_epi16(res[4], bit);
+  res[5] = _mm_srai_epi16(res[5], bit);
+  res[6] = _mm_srai_epi16(res[6], bit);
+  res[7] = _mm_srai_epi16(res[7], bit);
 }
 
 // write 8x8 array
