@@ -193,6 +193,101 @@ static inline int sem_destroy(sem_t *sem) {
 
 #include "vpx_util/vpx_thread.h"
 
+#if defined(MUTEX_PROTECTED_READS)
+static INLINE void mutex_lock(pthread_mutex_t *const mutex) {
+  const int kMaxTryLocks = 4000;
+  int locked = 0;
+  int i;
+  for (i = 0; i < kMaxTryLocks; ++i) {
+//    x86_pause_hint();
+    if (!pthread_mutex_trylock(mutex)) {
+      locked = 1;
+      break;
+    }
+  }
+
+  if (!locked) pthread_mutex_lock(mutex);
+}
+
+static INLINE int protected_read(pthread_mutex_t *const mutex, const int *p) {
+#ifdef DONT_USE_ATOMICS
+  int ret;
+  mutex_lock(mutex);
+  ret = *p;
+  pthread_mutex_unlock(mutex);
+  return ret;
+#else
+  //int ret;
+  return __atomic_load_n(p, __ATOMIC_ACQUIRE);
+  //__atomic_load(p, &ret, __ATOMIC_CONSUME);//__ATOMIC_RELAXED);
+  //return ret;
+#endif
+}
+
+static INLINE void protected_write(pthread_mutex_t *mutex, int *p, int v) {
+#ifdef DONT_USE_ATOMICS
+  mutex_lock(mutex);
+  *p = v;
+  pthread_mutex_unlock(mutex);
+#else
+  //__atomic_store(p, &v, __ATOMIC_RELEASE);//__ATOMIC_RELAXED);
+  __atomic_store_n(p, v, __ATOMIC_RELEASE);
+#endif
+}
+#else
+static INLINE int protected_read(pthread_mutex_t *const mutex, const int *p) {
+  return *p;
+}
+
+static INLINE void protected_write(pthread_mutex_t *mutex, int *p, int v) {
+  *p = v;
+}
+#endif
+
+static INLINE int read_or_zero(pthread_mutex_t *const mutex, const int *p) {
+#if defined(MUTEX_PROTECTED_READS)
+#ifdef DONT_USE_ATOMICS
+  if (!pthread_mutex_trylock(mutex)) {
+    int this_val = *p;
+    pthread_mutex_unlock(mutex);
+    return this_val;
+  }
+  return 0;
+#else
+  //int ret;
+  //__atomic_load(p, &ret, __ATOMIC_RELAXED);
+  //return ret;
+  return __atomic_load_n(p, __ATOMIC_ACQUIRE);
+#endif
+#else
+  return *p;
+#endif
+}
+
+static INLINE void sync_read(pthread_mutex_t *const mutex, int mb_col,
+                             const int *last_row_mb_col,
+                             const int nsync) {
+#if defined(PAUSE_AND_SLEEP_THREADING)
+  while (mb_col > (protected_read(mutex, last_row_mb_col) - nsync)) {
+
+    x86_pause_hint();
+    thread_sleep(0);
+  }
+#else
+  const int kTries = 15;
+  int i;
+  while (1) {
+    if (mb_col <= read_or_zero(mutex, last_row_mb_col) - 2) return;
+    for (i = 0; i < kTries; ++i) {
+      x86_pause_hint();
+      if (mb_col <= read_or_zero(mutex, last_row_mb_col) - 2) return;
+    }
+    thread_sleep(0);
+  }
+#endif
+}
+
+
 #endif /* CONFIG_OS_SUPPORT && CONFIG_MULTITHREAD */
 
 #ifdef __cplusplus
