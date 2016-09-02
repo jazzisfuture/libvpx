@@ -58,7 +58,7 @@ class SixtapPredictTest : public ::testing::TestWithParam<SixtapPredictParam> {
   static const int kDstStride = 16;
   static const int kDataAlignment = 16;
   static const int kSrcSize = kSrcStride * kSrcStride + 1;
-  static const int kDstSize = kDstStride * kDstStride;
+  static const int kDstSize = kDstStride * kDstStride + 1;
 
   virtual void SetUp() {
     width_ = GET_PARAM(0);
@@ -162,14 +162,13 @@ TEST_P(SixtapPredictTest, TestWithRandomData) {
   // Run tests for all possible offsets.
   for (int xoffset = 0; xoffset < 8; ++xoffset) {
     for (int yoffset = 0; yoffset < 8; ++yoffset) {
-      // Call c reference function.
-      // Move start point to next pixel to test if the function reads
-      // unaligned data correctly.
-      vp8_sixtap_predict16x16_c(&src_[kSrcStride * 2 + 2 + 1], kSrcStride,
-                                xoffset, yoffset, dst_c_, kDstStride);
+      // Call 16x16 c reference function. Each pixel is subjected to the same
+      // transformation no matter the size of the transform. Only compare the
+      // affected area.
+      vp8_sixtap_predict16x16_c(&src_[kSrcStride * 2 + 2], kSrcStride, xoffset,
+                                yoffset, dst_c_, kDstStride);
 
-      // Run test.
-      ASM_REGISTER_STATE_CHECK(sixtap_predict_(&src_[kSrcStride * 2 + 2 + 1],
+      ASM_REGISTER_STATE_CHECK(sixtap_predict_(&src_[kSrcStride * 2 + 2],
                                                kSrcStride, xoffset, yoffset,
                                                dst_, kDstStride));
 
@@ -177,6 +176,24 @@ TEST_P(SixtapPredictTest, TestWithRandomData) {
         for (int j = 0; j < width_; ++j)
           ASSERT_EQ(dst_c_[i * kDstStride + j], dst_[i * kDstStride + j])
               << "i==" << (i * width_ + j);
+      }
+
+      // For 4x4 move start and end points to next pixel to test if the function
+      // reads unaligned data correctly.
+      if (height_ == 4 && width_ == 4) {
+        vp8_sixtap_predict16x16_c(&src_[kSrcStride * 2 + 2 + 1], kSrcStride,
+                                  xoffset, yoffset, dst_c_ + 1, kDstStride);
+
+        ASM_REGISTER_STATE_CHECK(sixtap_predict_(&src_[kSrcStride * 2 + 2 + 1],
+                                                 kSrcStride, xoffset, yoffset,
+                                                 dst_ + 1, kDstStride));
+
+        for (int i = 0; i < height_; ++i) {
+          for (int j = 0; j < width_; ++j)
+            ASSERT_EQ(dst_c_[i * kDstStride + j + 1],
+                      dst_[i * kDstStride + j + 1])
+                << "i==" << (i * width_ + j);
+        }
       }
     }
   }
@@ -195,7 +212,8 @@ INSTANTIATE_TEST_CASE_P(
     NEON, SixtapPredictTest,
     ::testing::Values(make_tuple(16, 16, &vp8_sixtap_predict16x16_neon),
                       make_tuple(8, 8, &vp8_sixtap_predict8x8_neon),
-                      make_tuple(8, 4, &vp8_sixtap_predict8x4_neon)));
+                      make_tuple(8, 4, &vp8_sixtap_predict8x4_neon),
+                      make_tuple(4, 4, &vp8_sixtap_predict4x4_neon)));
 #endif
 #if HAVE_MMX
 INSTANTIATE_TEST_CASE_P(
