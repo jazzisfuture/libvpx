@@ -1178,7 +1178,8 @@ void av1_fht4x4_c(const int16_t *input, tran_low_t *output, int stride,
     for (i = 0; i < 4; ++i) {
       for (j = 0; j < 4; ++j) temp_in[j] = out[j + i * 4];
       ht.rows(temp_in, temp_out);
-      for (j = 0; j < 4; ++j) output[j + i * 4] = (temp_out[j] + 1) >> 2;
+      for (j = 0; j < 4; ++j)
+        output[j + i * 4] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
     }
   }
 }
@@ -1226,7 +1227,8 @@ void av1_fht4x8_c(const int16_t *input, tran_low_t *output, int stride,
   for (i = 0; i < n2; ++i) {
     for (j = 0; j < n; ++j) temp_in[j] = out[j + i * n];
     ht.rows(temp_in, temp_out);
-    for (j = 0; j < n; ++j) output[j + i * n] = (temp_out[j] + 1) >> 2;
+    for (j = 0; j < n; ++j)
+      output[j + i * n] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
   }
   // Note: overall scale factor of transform is 8 times unitary
 }
@@ -1273,7 +1275,8 @@ void av1_fht8x4_c(const int16_t *input, tran_low_t *output, int stride,
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n2; ++j) temp_in[j] = out[j + i * n2];
     ht.rows(temp_in, temp_out);
-    for (j = 0; j < n2; ++j) output[j + i * n2] = (temp_out[j] + 1) >> 2;
+    for (j = 0; j < n2; ++j)
+      output[j + i * n2] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
   }
   // Note: overall scale factor of transform is 8 times unitary
 }
@@ -1320,7 +1323,8 @@ void av1_fht8x16_c(const int16_t *input, tran_low_t *output, int stride,
   for (i = 0; i < n2; ++i) {
     for (j = 0; j < n; ++j) temp_in[j] = out[j + i * n];
     ht.rows(temp_in, temp_out);
-    for (j = 0; j < n; ++j) output[j + i * n] = (temp_out[j] + 1) >> 2;
+    for (j = 0; j < n; ++j)
+      output[j + i * n] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
   }
   // Note: overall scale factor of transform is 8 times unitary
 }
@@ -1367,7 +1371,8 @@ void av1_fht16x8_c(const int16_t *input, tran_low_t *output, int stride,
   for (i = 0; i < n; ++i) {
     for (j = 0; j < n2; ++j) temp_in[j] = out[j + i * n2];
     ht.rows(temp_in, temp_out);
-    for (j = 0; j < n2; ++j) output[j + i * n2] = (temp_out[j] + 1) >> 2;
+    for (j = 0; j < n2; ++j)
+      output[j + i * n2] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
   }
   // Note: overall scale factor of transform is 8 times unitary
 }
@@ -1414,8 +1419,7 @@ void av1_fht16x32_c(const int16_t *input, tran_low_t *output, int stride,
     for (j = 0; j < n; ++j) temp_in[j] = out[j + i * n];
     ht.rows(temp_in, temp_out);
     for (j = 0; j < n; ++j)
-      output[j + i * n] =
-          (tran_low_t)((temp_out[j] + 1 + (temp_out[j] < 0)) >> 2);
+      output[j + i * n] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
   }
   // Note: overall scale factor of transform is 4 times unitary
 }
@@ -1462,8 +1466,7 @@ void av1_fht32x16_c(const int16_t *input, tran_low_t *output, int stride,
     for (j = 0; j < n2; ++j) temp_in[j] = out[j + i * n2];
     ht.rows(temp_in, temp_out);
     for (j = 0; j < n2; ++j)
-      output[j + i * n2] =
-          (tran_low_t)((temp_out[j] + 1 + (temp_out[j] < 0)) >> 2);
+      output[j + i * n2] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
   }
   // Note: overall scale factor of transform is 4 times unitary
 }
@@ -1643,7 +1646,7 @@ void av1_fht8x8_c(const int16_t *input, tran_low_t *output, int stride,
       for (j = 0; j < 8; ++j) temp_in[j] = out[j + i * 8];
       ht.rows(temp_in, temp_out);
       for (j = 0; j < 8; ++j)
-        output[j + i * 8] = (temp_out[j] + (temp_out[j] < 0)) >> 1;
+        output[j + i * 8] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 1);
     }
   }
 }
@@ -1744,7 +1747,7 @@ void av1_fht16x16_c(const int16_t *input, tran_low_t *output, int stride,
       for (j = 0; j < 16; ++j) temp_in[j] = input[j * stride + i] * 4;
       ht.cols(temp_in, temp_out);
       for (j = 0; j < 16; ++j)
-        out[j * 16 + i] = (temp_out[j] + 1 + (temp_out[j] < 0)) >> 2;
+        out[j * 16 + i] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
     }
 
     // Rows
@@ -1847,7 +1850,7 @@ void av1_fht32x32_c(const int16_t *input, tran_low_t *output, int stride,
       for (j = 0; j < 32; ++j) temp_in[j] = input[j * stride + i] * 4;
       ht.cols(temp_in, temp_out);
       for (j = 0; j < 32; ++j)
-        out[j * 32 + i] = (temp_out[j] + 1 + (temp_out[j] > 0)) >> 2;
+        out[j * 32 + i] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
     }
 
     // Rows
@@ -1855,8 +1858,7 @@ void av1_fht32x32_c(const int16_t *input, tran_low_t *output, int stride,
       for (j = 0; j < 32; ++j) temp_in[j] = out[j + i * 32];
       ht.rows(temp_in, temp_out);
       for (j = 0; j < 32; ++j)
-        output[j + i * 32] =
-            (tran_low_t)((temp_out[j] + 1 + (temp_out[j] < 0)) >> 2);
+        output[j + i * 32] = ROUND_POWER_OF_TWO_SIGNED(temp_out[j], 2);
     }
   }
 }
