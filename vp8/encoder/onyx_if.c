@@ -5248,14 +5248,6 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
 
   cpi->common.error.setjmp = 0;
 
-#if CONFIG_MULTITHREAD
-  /* wait for the lpf thread done */
-  if (cpi->b_multi_threaded && cpi->b_lpf_running) {
-    sem_wait(&cpi->h_event_end_lpf);
-    cpi->b_lpf_running = 0;
-  }
-#endif
-
   return 0;
 }
 
