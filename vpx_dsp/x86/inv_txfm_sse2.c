@@ -4020,4 +4020,52 @@ void vpx_highbd_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest8,
     }
   }
 }
+
+static INLINE __m128i clamp32_high_sse2(__m128i value, __m128i max) {
+  __m128i ubounded, retval;
+  const __m128i zero = _mm_set1_epi32(0);
+  ubounded = _mm_cmpgt_epi32(value, max);
+  retval = _mm_andnot_si128(ubounded, value);
+  ubounded = _mm_and_si128(ubounded, max);
+  retval = _mm_or_si128(retval, ubounded);
+  retval = _mm_and_si128(retval, _mm_cmpgt_epi32(retval, zero));
+  return retval;
+}
+
+static INLINE __m128i add32_clamp_high_sse2(__m128i value, __m128i dc_value,
+                                            int bd) {
+  const __m128i zero = _mm_set1_epi32(0);
+  const __m128i lo_value = _mm_unpacklo_epi16(value, zero);
+  const __m128i hi_value = _mm_unpackhi_epi16(value, zero);
+  const __m128i max_bd = _mm_set1_epi32(bd);
+  const __m128i a =
+      clamp32_high_sse2(_mm_add_epi32(lo_value, dc_value), max_bd);
+  const __m128i b =
+      clamp32_high_sse2(_mm_add_epi32(hi_value, dc_value), max_bd);
+
+  return _mm_packs_epi32(a, b);
+}
+
+void vpx_highbd_idct32x32_1_add_sse2(const tran_low_t *input, uint8_t *dest8,
+                                     int stride, int bd) {
+  __m128i dc_value, d;
+  int a, i, j;
+  uint16_t *dest = CONVERT_TO_SHORTPTR(dest8);
+  tran_low_t out;
+  const int _bd = (1 << bd) - 1;
+
+  out = highbd_dct_const_round_shift(input[0] * cospi_16_64);
+  out = highbd_dct_const_round_shift(out * cospi_16_64);
+  a = ROUND_POWER_OF_TWO(out, 6);
+
+  dc_value = _mm_set1_epi32(a);
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 4; ++j) {
+      d = _mm_loadu_si128((const __m128i *)(&dest[j * 8]));
+      d = add32_clamp_high_sse2(d, dc_value, _bd);
+      _mm_storeu_si128((__m128i *)(&dest[j * 8]), d);
+    }
+    dest += stride;
+  }
+}
 #endif  // CONFIG_VP9_HIGHBITDEPTH
