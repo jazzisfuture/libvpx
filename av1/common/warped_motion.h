@@ -44,21 +44,22 @@ typedef void (*ProjectPointsType)(int16_t *mat, int *points, int *proj,
                                   const int subsampling_x,
                                   const int subsampling_y);
 
-void projectPointsHomography(int16_t *mat, int *points, int *proj, const int n,
+void project_points_homography(int16_t *mat, int *points, int *proj, const int n,
                              const int stride_points, const int stride_proj,
                              const int subsampling_x, const int subsampling_y);
 
-void projectPointsAffine(int16_t *mat, int *points, int *proj, const int n,
+void project_points_affine(int16_t *mat, int *points, int *proj, const int n,
                          const int stride_points, const int stride_proj,
                          const int subsampling_x, const int subsampling_y);
 
-void projectPointsRotZoom(int16_t *mat, int *points, int *proj, const int n,
+void project_points_rotzoom(int16_t *mat, int *points, int *proj, const int n,
                           const int stride_points, const int stride_proj,
                           const int subsampling_x, const int subsampling_y);
 
-void projectPointsTranslation(int16_t *mat, int *points, int *proj, const int n,
-                              const int stride_points, const int stride_proj,
-                              const int subsampling_x, const int subsampling_y);
+void project_points_translation(int16_t *mat, int *points, int *proj, const int n,
+                                const int stride_points, const int stride_proj,
+                                const int subsampling_x,
+                                const int subsampling_y);
 
 double av1_warp_erroradv(WarpedMotionParams *wm,
 #if CONFIG_VP9_HIGHBITDEPTH
