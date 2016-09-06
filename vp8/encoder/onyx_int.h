@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include "vpx_config.h"
+#include "vp8/common/atomic.h"
 #include "vp8/common/onyx.h"
 #include "treewriter.h"
 #include "tokenize.h"
@@ -505,7 +506,7 @@ typedef struct VP8_COMP {
   /* multithread data */
   int *mt_current_mb_col;
   int mt_sync_range;
-  int b_multi_threaded;
+  atomic_int b_multi_threaded;
   int encoding_thread_count;
   int b_lpf_running;
 
