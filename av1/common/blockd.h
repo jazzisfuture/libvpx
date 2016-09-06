@@ -392,7 +392,7 @@ typedef struct macroblockd {
 
   struct aom_internal_error_info *error_info;
 #if CONFIG_GLOBAL_MOTION
-  Global_Motion_Params *global_motion;
+  Global_Motion_Params (*global_motion)[MAX_GLOBAL_MOTION_MODELS];
 #endif  // CONFIG_GLOBAL_MOTION
 } MACROBLOCKD;
 
