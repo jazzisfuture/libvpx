@@ -258,7 +258,6 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
   const int nsync = pbi->sync_range;
   const int first_row_no_sync_above = pc->mb_cols + nsync;
   int num_part = 1 << pbi->common.multi_token_partition;
-  int last_mb_row = start_mb_row;
 
   YV12_BUFFER_CONFIG *yv12_fb_new = pbi->dec_fb_ref[INTRA_FRAME];
   YV12_BUFFER_CONFIG *yv12_fb_lst = pbi->dec_fb_ref[LAST_FRAME];
@@ -296,8 +295,6 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
     int filter_level;
     loop_filter_info_n *lfi_n = &pc->lf_info;
 
-    /* save last row processed by this thread */
-    last_mb_row = mb_row;
     /* select bool coder for current partition */
     xd->current_bc = &pbi->mbc[mb_row % num_part];
 
@@ -557,8 +554,10 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
     xd->mode_info_context += xd->mode_info_stride * pbi->decoding_thread_count;
   }
 
-  /* signal end of frame decoding if this thread processed the last mb_row */
-  if (last_mb_row == (pc->mb_rows - 1)) sem_post(&pbi->h_event_end_decoding);
+  /* signal that this thread has completed processing its rows */
+  if (start_mb_row) {
+    sem_post(&pbi->h_event_end_decoding[start_mb_row - 1]);
+  }
 }
 
 static THREAD_FUNCTION thread_decoding_proc(void *p_data) {
@@ -606,16 +605,22 @@ void vp8_decoder_create_threads(VP8D_COMP *pbi) {
 
     CALLOC_ARRAY(pbi->h_decoding_thread, pbi->decoding_thread_count);
     CALLOC_ARRAY(pbi->h_event_start_decoding, pbi->decoding_thread_count);
+    CALLOC_ARRAY(pbi->h_event_end_decoding, pbi->decoding_thread_count);
     CALLOC_ARRAY_ALIGNED(pbi->mb_row_di, pbi->decoding_thread_count, 32);
     CALLOC_ARRAY(pbi->de_thread_data, pbi->decoding_thread_count);
 
-    if (sem_init(&pbi->h_event_end_decoding, 0, 0)) {
-      vpx_internal_error(&pbi->common.error, VPX_CODEC_MEM_ERROR,
-                         "Failed to initialize semaphore");
-    }
-
     for (ithread = 0; ithread < pbi->decoding_thread_count; ++ithread) {
-      if (sem_init(&pbi->h_event_start_decoding[ithread], 0, 0)) break;
+      if (sem_init(&pbi->h_event_start_decoding[ithread], 0, 0)) {
+        vpx_internal_error(&pbi->common.error, VPX_CODEC_MEM_ERROR,
+                           "Failed to initialize semaphore");
+        break;
+      }
+      if (sem_init(&pbi->h_event_end_decoding[ithread], 0, 0)) {
+        sem_destroy(&pbi->h_event_start_decoding[ithread]);
+        vpx_internal_error(&pbi->common.error, VPX_CODEC_MEM_ERROR,
+                           "Failed to initialize semaphore");
+        break;
+      }
 
       vp8_setup_block_dptrs(&pbi->mb_row_di[ithread].mbd);
 
@@ -626,18 +631,14 @@ void vp8_decoder_create_threads(VP8D_COMP *pbi) {
       if (pthread_create(&pbi->h_decoding_thread[ithread], 0,
                          thread_decoding_proc, &pbi->de_thread_data[ithread])) {
         sem_destroy(&pbi->h_event_start_decoding[ithread]);
+        sem_destroy(&pbi->h_event_end_decoding[ithread]);
         break;
       }
+      pbi->allocated_decoding_thread_count = ithread + 1;
     }
 
-    pbi->allocated_decoding_thread_count = ithread;
     if (pbi->allocated_decoding_thread_count !=
         (int)pbi->decoding_thread_count) {
-      /* the remainder of cleanup cases will be handled in
-       * vp8_decoder_remove_threads(). */
-      if (pbi->allocated_decoding_thread_count == 0) {
-        sem_destroy(&pbi->h_event_end_decoding);
-      }
       vpx_internal_error(&pbi->common.error, VPX_CODEC_MEM_ERROR,
                          "Failed to create threads");
     }
@@ -779,15 +780,13 @@ void vp8_decoder_remove_threads(VP8D_COMP *pbi) {
     /* allow all threads to exit */
     for (i = 0; i < pbi->allocated_decoding_thread_count; ++i) {
       sem_post(&pbi->h_event_start_decoding[i]);
+      sem_post(&pbi->h_event_end_decoding[i]);
       pthread_join(pbi->h_decoding_thread[i], NULL);
     }
 
     for (i = 0; i < pbi->allocated_decoding_thread_count; ++i) {
       sem_destroy(&pbi->h_event_start_decoding[i]);
-    }
-
-    if (pbi->allocated_decoding_thread_count) {
-      sem_destroy(&pbi->h_event_end_decoding);
+      sem_destroy(&pbi->h_event_end_decoding[i]);
     }
 
     vpx_free(pbi->h_decoding_thread);
@@ -795,6 +794,9 @@ void vp8_decoder_remove_threads(VP8D_COMP *pbi) {
 
     vpx_free(pbi->h_event_start_decoding);
     pbi->h_event_start_decoding = NULL;
+
+    vpx_free(pbi->h_event_end_decoding);
+    pbi->h_event_end_decoding = NULL;
 
     vpx_free(pbi->mb_row_di);
     pbi->mb_row_di = NULL;
@@ -854,5 +856,8 @@ void vp8mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd) {
 
   mt_decode_mb_rows(pbi, xd, 0);
 
-  sem_wait(&pbi->h_event_end_decoding); /* add back for each frame */
+  /* Wait for all the threads to finish. */
+  for (i = 0; i < pbi->decoding_thread_count; ++i) {
+    sem_wait(&pbi->h_event_end_decoding[i]);
+  }
 }

@@ -89,7 +89,7 @@ typedef struct VP8D_COMP {
 
   pthread_t *h_decoding_thread;
   sem_t *h_event_start_decoding;
-  sem_t h_event_end_decoding;
+  sem_t *h_event_end_decoding;
 /* end of threading data */
 #endif
 
