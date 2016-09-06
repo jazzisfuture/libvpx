@@ -4404,20 +4404,20 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 #define MIN_TRANS_THRESH 8
 #define GLOBAL_MOTION_ADVANTAGE_THRESH 0.60
 #define GLOBAL_MOTION_MODEL TRANSLATION
-static void convert_to_params(double *H, TransformationType type,
+static void convert_to_params(const double *params, TransformationType type,
                               int16_t *model) {
   int i;
   int alpha_present = 0;
   int n_params = n_trans_model_params[type];
-  model[0] = (int16_t)floor(H[0] * (1 << GM_TRANS_PREC_BITS) + 0.5);
-  model[1] = (int16_t)floor(H[1] * (1 << GM_TRANS_PREC_BITS) + 0.5);
+  model[0] = (int16_t)floor(params[0] * (1 << GM_TRANS_PREC_BITS) + 0.5);
+  model[1] = (int16_t)floor(params[1] * (1 << GM_TRANS_PREC_BITS) + 0.5);
   model[0] = (int16_t)clamp(model[0], GM_TRANS_MIN, GM_TRANS_MAX) *
              GM_TRANS_DECODE_FACTOR;
   model[1] = (int16_t)clamp(model[1], GM_TRANS_MIN, GM_TRANS_MAX) *
              GM_TRANS_DECODE_FACTOR;
 
   for (i = 2; i < n_params; ++i) {
-    model[i] = (int16_t)floor(H[i] * (1 << GM_ALPHA_PREC_BITS) + 0.5);
+    model[i] = (int16_t)floor(params[i] * (1 << GM_ALPHA_PREC_BITS) + 0.5);
     model[i] = (int16_t)clamp(model[i], GM_ALPHA_MIN, GM_ALPHA_MAX) *
                GM_ALPHA_DECODE_FACTOR;
     alpha_present |= (model[i] != 0);
@@ -4431,11 +4431,12 @@ static void convert_to_params(double *H, TransformationType type,
   }
 }
 
-static void convert_model_to_params(double *H, TransformationType type,
+static void convert_model_to_params(const double *params,
+                                    TransformationType type,
                                     Global_Motion_Params *model) {
   // TODO(sarahparker) implement for homography
   if (type > HOMOGRAPHY)
-    convert_to_params(H, type, (int16_t *)model->motion_params.wmmat);
+    convert_to_params(params, type, (int16_t *)model->motion_params.wmmat);
   model->gmtype = get_gmtype(model);
   model->motion_params.wmtype = gm_to_trans_type(model->gmtype);
 }
@@ -4467,13 +4468,13 @@ static void encode_frame_internal(AV1_COMP *cpi) {
   if (cpi->common.frame_type == INTER_FRAME && cpi->Source) {
     YV12_BUFFER_CONFIG *ref_buf;
     int frame;
-    double H[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    double params[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
       ref_buf = get_ref_frame_buffer(cpi, frame);
       if (ref_buf) {
         if (compute_global_motion_feature_based(GLOBAL_MOTION_MODEL,
-                                                cpi->Source, ref_buf, H)) {
-          convert_model_to_params(H, GLOBAL_MOTION_MODEL,
+                                                cpi->Source, ref_buf, params)) {
+          convert_model_to_params(params, GLOBAL_MOTION_MODEL,
                                   &cm->global_motion[frame]);
           if (get_gmtype(&cm->global_motion[frame]) > GLOBAL_ZERO) {
             // compute the advantage of using gm parameters over 0 motion
