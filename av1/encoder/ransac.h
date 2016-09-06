@@ -20,18 +20,18 @@
 
 typedef int (*RansacType)(double *matched_points, int npoints,
                           int *number_of_inliers, int *best_inlier_mask,
-                          double *bestH);
+                          double *best_params);
 
 /* Each of these functions fits a motion model from a set of
 corresponding points in 2 frames using RANSAC.*/
-int ransacHomography(double *matched_points, int npoints,
-                     int *number_of_inliers, int *best_inlier_indices,
-                     double *bestH);
-int ransacAffine(double *matched_points, int npoints, int *number_of_inliers,
-                 int *best_inlier_indices, double *bestH);
-int ransacRotZoom(double *matched_points, int npoints, int *number_of_inliers,
-                  int *best_inlier_indices, double *bestH);
-int ransacTranslation(double *matched_points, int npoints,
+int ransac_homography(double *matched_points, int npoints,
                       int *number_of_inliers, int *best_inlier_indices,
-                      double *bestH);
+                      double *best_params);
+int ransac_affine(double *matched_points, int npoints, int *number_of_inliers,
+                  int *best_inlier_indices, double *best_params);
+int ransac_rotzoom(double *matched_points, int npoints, int *number_of_inliers,
+                   int *best_inlier_indices, double *best_params);
+int ransac_translation(double *matched_points, int npoints,
+                       int *number_of_inliers, int *best_inlier_indices,
+                       double *best_params);
 #endif  // AV1_ENCODER_RANSAC_H
