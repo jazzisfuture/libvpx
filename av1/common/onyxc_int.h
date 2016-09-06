@@ -359,7 +359,8 @@ typedef struct AV1Common {
   // each keyframe and not used afterwards
   aom_prob kf_y_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1];
 #if CONFIG_GLOBAL_MOTION
-  Global_Motion_Params global_motion[TOTAL_REFS_PER_FRAME];
+  int num_global_motion[TOTAL_REFS_PER_FRAME];
+  Global_Motion_Params global_motion[TOTAL_REFS_PER_FRAME][MAX_GLOBAL_MOTION_MODELS];
 #endif
 
   BLOCK_SIZE sb_size;  // Size of the superblock used for this frame
