@@ -16,6 +16,7 @@
 #include "vp8/common/reconintra4x4.h"
 #include "vp8/common/reconinter.h"
 #include "detokenize.h"
+#include "vp8/common/atomic.h"
 #include "vp8/common/common.h"
 #include "vp8/common/invtrans.h"
 #include "vp8/common/alloccommon.h"
@@ -1199,7 +1200,8 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
   pbi->frame_corrupt_residual = 0;
 
 #if CONFIG_MULTITHREAD
-  if (pbi->b_multithreaded_rd && pc->multi_token_partition != ONE_PARTITION) {
+  if (vpx_relaxed_load_32(&pbi->b_multithreaded_rd) &&
+      pc->multi_token_partition != ONE_PARTITION) {
     unsigned int thread;
     vp8mt_decode_mb_rows(pbi, xd);
     vp8_yv12_extend_frame_borders(yv12_fb_new);
