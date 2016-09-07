@@ -4406,7 +4406,7 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 #define GLOBAL_MOTION_MODEL TRANSLATION
 static void convert_to_params(double *H, TransformationType type,
                               int16_t *model) {
-  int i;
+  int i, diag_value;
   int alpha_present = 0;
   int n_params = n_trans_model_params[type];
   model[0] = (int16_t)floor(H[0] * (1 << GM_TRANS_PREC_BITS) + 0.5);
@@ -4417,9 +4417,12 @@ static void convert_to_params(double *H, TransformationType type,
              GM_TRANS_DECODE_FACTOR;
 
   for (i = 2; i < n_params; ++i) {
+    diag_value = ((i && 1) ? (1 << GM_ALPHA_PREC_BITS) : 0);
     model[i] = (int16_t)floor(H[i] * (1 << GM_ALPHA_PREC_BITS) + 0.5);
-    model[i] = (int16_t)clamp(model[i], GM_ALPHA_MIN, GM_ALPHA_MAX) *
-               GM_ALPHA_DECODE_FACTOR;
+    model[i] =
+        (int16_t)(clamp(model[i] - diag_value, GM_ALPHA_MIN, GM_ALPHA_MAX) +
+                  diag_value) *
+        GM_ALPHA_DECODE_FACTOR;
     alpha_present |= (model[i] != 0);
   }
 
