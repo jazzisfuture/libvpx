@@ -13,6 +13,7 @@
 #include "./vpx_dsp_rtcd.h"
 #include "encodemb.h"
 #include "encodemv.h"
+#include "vp8/common/atomic.h"
 #include "vp8/common/common.h"
 #include "onyx_int.h"
 #include "vp8/common/extend.h"
@@ -344,11 +345,11 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
 
 #if CONFIG_MULTITHREAD
   const int nsync = cpi->mt_sync_range;
-  const int rightmost_col = cm->mb_cols + nsync;
-  volatile const int *last_row_current_mb_col;
-  volatile int *current_mb_col = &cpi->mt_current_mb_col[mb_row];
+  atomic_int rightmost_col = cm->mb_cols + nsync;
+  atomic_int *last_row_current_mb_col;
+  atomic_int *current_mb_col = &cpi->mt_current_mb_col[mb_row];
 
-  if ((cpi->b_multi_threaded != 0) && (mb_row != 0)) {
+  if ((vpx_relaxed_load_32(&cpi->b_multi_threaded) != 0) && (mb_row != 0)) {
     last_row_current_mb_col = &cpi->mt_current_mb_col[mb_row - 1];
   } else {
     last_row_current_mb_col = &rightmost_col;
@@ -418,11 +419,12 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
     vp8_copy_mem16x16(x->src.y_buffer, x->src.y_stride, x->thismb, 16);
 
 #if CONFIG_MULTITHREAD
-    if (cpi->b_multi_threaded != 0) {
-      *current_mb_col = mb_col - 1; /* set previous MB done */
+    if (vpx_relaxed_load_32(&cpi->b_multi_threaded) != 0) {
+      vpx_release_store_32(current_mb_col,
+                           mb_col - 1); /* set previous MB done */
 
       if ((mb_col & (nsync - 1)) == 0) {
-        while (mb_col > (*last_row_current_mb_col - nsync)) {
+        while (mb_col > vpx_acquire_load_32(last_row_current_mb_col) - nsync) {
           x86_pause_hint();
           thread_sleep(0);
         }
@@ -565,7 +567,8 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
                     xd->dst.u_buffer + 8, xd->dst.v_buffer + 8);
 
 #if CONFIG_MULTITHREAD
-  if (cpi->b_multi_threaded != 0) *current_mb_col = rightmost_col;
+  if (vpx_relaxed_load_32(&cpi->b_multi_threaded) != 0)
+    vpx_release_store_32(current_mb_col, rightmost_col);
 #endif
 
   /* this is to account for the border */
@@ -749,7 +752,7 @@ void vp8_encode_frame(VP8_COMP *cpi) {
     vpx_usec_timer_start(&emr_timer);
 
 #if CONFIG_MULTITHREAD
-    if (cpi->b_multi_threaded) {
+    if (vpx_relaxed_load_32(&cpi->b_multi_threaded)) {
       int i;
 
       vp8cx_init_mbrthread_data(cpi, x, cpi->mb_row_ei,

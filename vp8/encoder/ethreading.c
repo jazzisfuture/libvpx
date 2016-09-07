@@ -9,6 +9,7 @@
  */
 
 #include "onyx_int.h"
+#include "vp8/common/atomic.h"
 #include "vp8/common/threading.h"
 #include "vp8/common/common.h"
 #include "vp8/common/extend.h"
@@ -25,11 +26,11 @@ static THREAD_FUNCTION thread_loopfilter(void *p_data) {
   VP8_COMMON *cm = &cpi->common;
 
   while (1) {
-    if (cpi->b_multi_threaded == 0) break;
+    if (vpx_relaxed_load_32(&cpi->b_multi_threaded) == 0) break;
 
     if (sem_wait(&cpi->h_event_start_lpf) == 0) {
       /* we're shutting down */
-      if (cpi->b_multi_threaded == 0) break;
+      if (vpx_relaxed_load_32(&cpi->b_multi_threaded) == 0) break;
 
       vp8_loopfilter_frame(cpi, cm);
 
@@ -47,7 +48,7 @@ static THREAD_FUNCTION thread_encoding_proc(void *p_data) {
   ENTROPY_CONTEXT_PLANES mb_row_left_context;
 
   while (1) {
-    if (cpi->b_multi_threaded == 0) break;
+    if (vpx_relaxed_load_32(&cpi->b_multi_threaded) == 0) break;
 
     if (sem_wait(&cpi->h_event_start_encoding[ithread]) == 0) {
       const int nsync = cpi->mt_sync_range;
@@ -65,7 +66,7 @@ static THREAD_FUNCTION thread_encoding_proc(void *p_data) {
       int *totalrate = &mbri->totalrate;
 
       /* we're shutting down */
-      if (cpi->b_multi_threaded == 0) break;
+      if (vpx_relaxed_load_32(&cpi->b_multi_threaded) == 0) break;
 
       for (mb_row = ithread + 1; mb_row < cm->mb_rows;
            mb_row += (cpi->encoding_thread_count + 1)) {
@@ -76,8 +77,8 @@ static THREAD_FUNCTION thread_encoding_proc(void *p_data) {
         int recon_y_stride = cm->yv12_fb[ref_fb_idx].y_stride;
         int recon_uv_stride = cm->yv12_fb[ref_fb_idx].uv_stride;
         int map_index = (mb_row * cm->mb_cols);
-        volatile const int *last_row_current_mb_col;
-        volatile int *current_mb_col = &cpi->mt_current_mb_col[mb_row];
+        atomic_int *last_row_current_mb_col;
+        atomic_int *current_mb_col = &cpi->mt_current_mb_col[mb_row];
 
 #if (CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
         vp8_writer *w = &cpi->bc[1 + (mb_row % num_part)];
@@ -103,10 +104,11 @@ static THREAD_FUNCTION thread_encoding_proc(void *p_data) {
 
         /* for each macroblock col in image */
         for (mb_col = 0; mb_col < cm->mb_cols; ++mb_col) {
-          *current_mb_col = mb_col - 1;
+          vpx_release_store_32(current_mb_col, mb_col - 1);
 
           if ((mb_col & (nsync - 1)) == 0) {
-            while (mb_col > (*last_row_current_mb_col - nsync)) {
+            while (mb_col >
+                   (vpx_acquire_load_32(last_row_current_mb_col) - nsync)) {
               x86_pause_hint();
               thread_sleep(0);
             }
@@ -488,7 +490,7 @@ void vp8cx_init_mbrthread_data(VP8_COMP *cpi, MACROBLOCK *x,
 int vp8cx_create_encoder_threads(VP8_COMP *cpi) {
   const VP8_COMMON *cm = &cpi->common;
 
-  cpi->b_multi_threaded = 0;
+  vpx_relaxed_store_32(&cpi->b_multi_threaded, 0);
   cpi->encoding_thread_count = 0;
   cpi->b_lpf_running = 0;
 
@@ -522,7 +524,7 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi) {
     CHECK_MEM_ERROR(cpi->en_thread_data,
                     vpx_malloc(sizeof(ENCODETHREAD_DATA) * th_count));
 
-    cpi->b_multi_threaded = 1;
+    vpx_relaxed_store_32(&cpi->b_multi_threaded, 1);
     cpi->encoding_thread_count = th_count;
 
     /*
@@ -551,7 +553,7 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi) {
 
     if (rc) {
       /* shutdown other threads */
-      cpi->b_multi_threaded = 0;
+      vpx_relaxed_store_32(&cpi->b_multi_threaded, 0);
       for (--ithread; ithread >= 0; ithread--) {
         pthread_join(cpi->h_encoding_thread[ithread], 0);
         sem_destroy(&cpi->h_event_start_encoding[ithread]);
@@ -579,7 +581,7 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi) {
 
       if (rc) {
         /* shutdown other threads */
-        cpi->b_multi_threaded = 0;
+        vpx_relaxed_store_32(&cpi->b_multi_threaded, 0);
         for (--ithread; ithread >= 0; ithread--) {
           sem_post(&cpi->h_event_start_encoding[ithread]);
           sem_post(&cpi->h_event_end_encoding[ithread]);
@@ -605,9 +607,9 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi) {
 }
 
 void vp8cx_remove_encoder_threads(VP8_COMP *cpi) {
-  if (cpi->b_multi_threaded) {
+  if (vpx_relaxed_load_32(&cpi->b_multi_threaded)) {
     /* shutdown other threads */
-    cpi->b_multi_threaded = 0;
+    vpx_relaxed_store_32(&cpi->b_multi_threaded, 0);
     {
       int i;
 
