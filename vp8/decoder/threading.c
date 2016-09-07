@@ -15,6 +15,7 @@
 #endif
 #include "onyxd_int.h"
 #include "vpx_mem/vpx_mem.h"
+#include "vp8/common/atomic.h"
 #include "vp8/common/threading.h"
 
 #include "vp8/common/loopfilter.h"
@@ -83,7 +84,8 @@ static void setup_decoding_thread_data(VP8D_COMP *pbi, MACROBLOCKD *xd,
     if (pc->full_pixel) mbd->fullpixel_mask = 0xfffffff8;
   }
 
-  for (i = 0; i < pc->mb_rows; ++i) pbi->mt_current_mb_col[i] = -1;
+  for (i = 0; i < pc->mb_rows; ++i)
+    vpx_release_store_32(&pbi->mt_current_mb_col[i], -1);
 }
 
 static void mt_decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
@@ -251,12 +253,12 @@ static void mt_decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
 
 static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
                               int start_mb_row) {
-  volatile const int *last_row_current_mb_col;
-  volatile int *current_mb_col;
+  atomic_int *last_row_current_mb_col;
+  atomic_int *current_mb_col;
   int mb_row;
   VP8_COMMON *pc = &pbi->common;
   const int nsync = pbi->sync_range;
-  const int first_row_no_sync_above = pc->mb_cols + nsync;
+  atomic_int first_row_no_sync_above = pc->mb_cols + nsync;
   int num_part = 1 << pbi->common.multi_token_partition;
 
   YV12_BUFFER_CONFIG *yv12_fb_new = pbi->dec_fb_ref[INTRA_FRAME];
@@ -353,10 +355,11 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
     }
 
     for (mb_col = 0; mb_col < pc->mb_cols; mb_col++) {
-      *current_mb_col = mb_col - 1;
+      vpx_release_store_32(current_mb_col, mb_col - 1);
 
       if ((mb_col & (nsync - 1)) == 0) {
-        while (mb_col > (*last_row_current_mb_col - nsync)) {
+        while (mb_col >
+               (vpx_acquire_load_32(last_row_current_mb_col) - nsync)) {
           x86_pause_hint();
           thread_sleep(0);
         }
@@ -545,7 +548,7 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
     }
 
     /* last MB of row is ready just after extension is done */
-    *current_mb_col = mb_col + nsync;
+    vpx_release_store_32(current_mb_col, mb_col + nsync);
 
     ++xd->mode_info_context; /* skip prediction column */
     xd->up_available = 1;
@@ -567,10 +570,10 @@ static THREAD_FUNCTION thread_decoding_proc(void *p_data) {
   ENTROPY_CONTEXT_PLANES mb_row_left_context;
 
   while (1) {
-    if (pbi->b_multithreaded_rd == 0) break;
+    if (vpx_relaxed_load_32(&pbi->b_multithreaded_rd) == 0) break;
 
     if (sem_wait(&pbi->h_event_start_decoding[ithread]) == 0) {
-      if (pbi->b_multithreaded_rd == 0) {
+      if (vpx_relaxed_load_32(&pbi->b_multithreaded_rd) == 0) {
         break;
       } else {
         MACROBLOCKD *xd = &mbrd->mbd;
@@ -588,7 +591,7 @@ void vp8_decoder_create_threads(VP8D_COMP *pbi) {
   int core_count = 0;
   unsigned int ithread;
 
-  pbi->b_multithreaded_rd = 0;
+  vpx_relaxed_store_32(&pbi->b_multithreaded_rd, 0);
   pbi->allocated_decoding_thread_count = 0;
 
   /* limit decoding threads to the max number of token partitions */
@@ -600,7 +603,7 @@ void vp8_decoder_create_threads(VP8D_COMP *pbi) {
   }
 
   if (core_count > 1) {
-    pbi->b_multithreaded_rd = 1;
+    vpx_relaxed_store_32(&pbi->b_multithreaded_rd, 1);
     pbi->decoding_thread_count = core_count - 1;
 
     CALLOC_ARRAY(pbi->h_decoding_thread, pbi->decoding_thread_count);
@@ -713,7 +716,7 @@ void vp8mt_alloc_temp_buffers(VP8D_COMP *pbi, int width, int prev_mb_rows) {
   int i;
   int uv_width;
 
-  if (pbi->b_multithreaded_rd) {
+  if (vpx_relaxed_load_32(&pbi->b_multithreaded_rd)) {
     vp8mt_de_alloc_temp_buffers(pbi, prev_mb_rows);
 
     /* our internal buffers are always multiples of 16 */
@@ -773,9 +776,9 @@ void vp8mt_alloc_temp_buffers(VP8D_COMP *pbi, int width, int prev_mb_rows) {
 
 void vp8_decoder_remove_threads(VP8D_COMP *pbi) {
   /* shutdown MB Decoding thread; */
-  if (pbi->b_multithreaded_rd) {
+  if (vpx_relaxed_load_32(&pbi->b_multithreaded_rd)) {
     int i;
-    pbi->b_multithreaded_rd = 0;
+    vpx_relaxed_store_32(&pbi->b_multithreaded_rd, 0);
 
     /* allow all threads to exit */
     for (i = 0; i < pbi->allocated_decoding_thread_count; ++i) {

@@ -12,6 +12,7 @@
 #include "./vpx_scale_rtcd.h"
 #include "./vpx_dsp_rtcd.h"
 #include "./vp8_rtcd.h"
+#include "vp8/common/atomic.h"
 #include "vp8/common/onyxc_int.h"
 #include "vp8/common/blockd.h"
 #include "onyx_int.h"
@@ -3197,7 +3198,7 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
   }
 
 #if CONFIG_MULTITHREAD
-  if (cpi->b_multi_threaded) {
+  if (vpx_relaxed_load_32(&cpi->b_multi_threaded)) {
     sem_post(&cpi->h_event_end_lpf); /* signal that we have set filter_level */
   }
 #endif
@@ -4385,7 +4386,7 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
 #endif
 
 #if CONFIG_MULTITHREAD
-  if (cpi->b_multi_threaded) {
+  if (vpx_relaxed_load_32(&cpi->b_multi_threaded)) {
     /* start loopfilter in separate thread */
     sem_post(&cpi->h_event_start_lpf);
     cpi->b_lpf_running = 1;
@@ -4411,7 +4412,8 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
 #if CONFIG_MULTITHREAD
   /* wait that filter_level is picked so that we can continue with stream
    * packing */
-  if (cpi->b_multi_threaded) sem_wait(&cpi->h_event_end_lpf);
+  if (vpx_relaxed_load_32(&cpi->b_multi_threaded))
+    sem_wait(&cpi->h_event_end_lpf);
 #endif
 
   /* build the bitstream */
@@ -5255,7 +5257,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
 
 #if CONFIG_MULTITHREAD
   /* wait for the lpf thread done */
-  if (cpi->b_multi_threaded && cpi->b_lpf_running) {
+  if (vpx_relaxed_load_32(&cpi->b_multi_threaded) && cpi->b_lpf_running) {
     sem_wait(&cpi->h_event_end_lpf);
     cpi->b_lpf_running = 0;
   }
