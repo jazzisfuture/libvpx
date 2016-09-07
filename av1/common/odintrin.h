@@ -11,6 +11,10 @@
 #ifndef AV1_COMMON_ODINTRIN_H_
 #define AV1_COMMON_ODINTRIN_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "av1/common/enums.h"
 #include "aom/aom_integer.h"
 #include "aom_dsp/aom_dsp_common.h"
@@ -55,4 +59,8 @@ extern uint32_t OD_DIVU_SMALL_CONSTS[OD_DIVU_DMAX][2];
   We define a special version of the macro to use when x can be zero.*/
 #define OD_ILOG(x) ((x) ? OD_ILOG_NZ(x) : 0)
 
+#ifdef __cplusplus
+}  // extern "C"
 #endif
+
+#endif  // AV1_COMMON_ODINTRIN_H_
