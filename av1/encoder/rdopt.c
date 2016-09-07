@@ -1062,16 +1062,10 @@ static void dist_block(const AV1_COMP *cpi, MACROBLOCK *x, int plane, int block,
   }
 }
 
-static int rate_block(int plane, int block, int blk_row, int blk_col,
-                      int coeff_ctx, TX_SIZE tx_size,
+static int rate_block(int plane, int block, int coeff_ctx, TX_SIZE tx_size,
                       struct rdcost_block_args *args) {
-  int coeff_cost =
-      cost_coeffs(args->x, plane, block, coeff_ctx, tx_size, args->so->scan,
-                  args->so->neighbors, args->use_fast_coef_costing);
-  const struct macroblock_plane *p = &args->x->plane[plane];
-  *(args->t_above + blk_col) = !(p->eobs[block] == 0);
-  *(args->t_left + blk_row) = !(p->eobs[block] == 0);
-  return coeff_cost;
+  return cost_coeffs(args->x, plane, block, coeff_ctx, tx_size, args->so->scan,
+                     args->so->neighbors, args->use_fast_coef_costing);
 }
 
 static uint64_t sum_squares_2d(const int16_t *diff, int diff_stride,
@@ -1189,7 +1183,10 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
     return;
   }
 
-  rate = rate_block(plane, block, blk_row, blk_col, coeff_ctx, tx_size, args);
+  rate = rate_block(plane, block, coeff_ctx, tx_size, args);
+  args->t_above[blk_col] = !(x->plane[plane].eobs[block] == 0);
+  args->t_left[blk_row] = !(x->plane[plane].eobs[block] == 0);
+
   rd1 = RDCOST(x->rdmult, x->rddiv, rate, dist);
   rd2 = RDCOST(x->rdmult, x->rddiv, 0, sse);
 
@@ -2128,6 +2125,7 @@ static int64_t rd_pick_intra4x4block(AV1_COMP *cpi, MACROBLOCK *x, int row,
 static int64_t rd_pick_intra_sub_8x8_y_mode(AV1_COMP *cpi, MACROBLOCK *mb,
                                             int *rate, int *rate_y,
                                             int64_t *distortion,
+                                            int *y_skip,
                                             int64_t best_rd) {
   int i, j;
   const MACROBLOCKD *const xd = &mb->e_mbd;
@@ -2143,6 +2141,12 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(AV1_COMP *cpi, MACROBLOCK *mb,
   int tot_rate_y = 0;
   int64_t total_rd = 0;
   const int *bmode_costs = cpi->mbmode_cost[0];
+  ENTROPY_CONTEXT tempa[2];
+  ENTROPY_CONTEXT templ[2];
+
+  // Copy context
+  memcpy(tempa, xd->plane[0].above_context, sizeof(tempa));
+  memcpy(templ, xd->plane[0].left_context, sizeof(templ));
 
 #if CONFIG_EXT_INTRA
   mic->mbmi.ext_intra_mode_info.use_ext_intra_mode[0] = 0;
@@ -2213,6 +2217,16 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(AV1_COMP *cpi, MACROBLOCK *mb,
   *rate = cost;
   *rate_y = tot_rate_y;
   *distortion = total_distortion;
+  if (y_skip) {
+    *y_skip = (xd->plane[0].above_context[0] == 0 &&
+               xd->plane[0].above_context[1] == 0 &&
+               xd->plane[0].left_context[0] == 0 &&
+               xd->plane[0].left_context[1] == 0);
+  }
+
+  // Restore context
+  memcpy(xd->plane[0].above_context, tempa, sizeof(tempa));
+  memcpy(xd->plane[0].left_context, templ, sizeof(templ));
 
   return RDCOST(mb->rdmult, mb->rddiv, cost, total_distortion);
 }
@@ -7810,9 +7824,8 @@ void av1_rd_pick_intra_mode_sb(AV1_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
       return;
     }
   } else {
-    y_skip = 0;
     if (rd_pick_intra_sub_8x8_y_mode(cpi, x, &rate_y, &rate_y_tokenonly,
-                                     &dist_y, best_rd) >= best_rd) {
+                                     &dist_y, &y_skip, best_rd) >= best_rd) {
       rd_cost->rate = INT_MAX;
       return;
     }
@@ -10176,7 +10189,7 @@ void av1_rd_pick_inter_mode_sub8x8(struct AV1_COMP *cpi, TileDataEnc *tile_data,
     if (ref_frame == INTRA_FRAME) {
       int rate;
       if (rd_pick_intra_sub_8x8_y_mode(cpi, x, &rate, &rate_y, &distortion_y,
-                                       best_rd) >= best_rd)
+                                       NULL, best_rd) >= best_rd)
         continue;
       rate2 += rate;
       rate2 += intra_cost_penalty;
