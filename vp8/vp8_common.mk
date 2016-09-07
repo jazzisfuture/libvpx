@@ -9,6 +9,7 @@
 ##
 
 VP8_COMMON_SRCS-yes += vp8_common.mk
+VP8_COMMON_SRCS-yes += common/atomic.h
 VP8_COMMON_SRCS-yes += common/ppflags.h
 VP8_COMMON_SRCS-yes += common/onyx.h
 VP8_COMMON_SRCS-yes += common/onyxd.h
