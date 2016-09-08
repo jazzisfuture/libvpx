@@ -20,7 +20,7 @@ namespace libwebm {
 std::string GetTempFileName();
 
 // Returns size of file specified by |file_name|, or 0 upon failure.
-uint64_t GetFileSize(const std::string& file_name);
+uint64_t GetFileSize(const std::string &file_name);
 
 // Manages life of temporary file specified at time of construction. Deletes
 // file upon destruction.
@@ -29,7 +29,7 @@ class TempFileDeleter {
   TempFileDeleter();
   explicit TempFileDeleter(std::string file_name) : file_name_(file_name) {}
   ~TempFileDeleter();
-  const std::string& name() const { return file_name_; }
+  const std::string &name() const { return file_name_; }
 
  private:
   std::string file_name_;

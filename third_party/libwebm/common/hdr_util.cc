@@ -13,12 +13,11 @@
 #include "mkvparser/mkvparser.h"
 
 namespace libwebm {
-bool CopyPrimaryChromaticity(const mkvparser::PrimaryChromaticity& parser_pc,
-                             PrimaryChromaticityPtr* muxer_pc) {
+bool CopyPrimaryChromaticity(const mkvparser::PrimaryChromaticity &parser_pc,
+                             PrimaryChromaticityPtr *muxer_pc) {
   muxer_pc->reset(new (std::nothrow)
                       mkvmuxer::PrimaryChromaticity(parser_pc.x, parser_pc.y));
-  if (!muxer_pc->get())
-    return false;
+  if (!muxer_pc->get()) return false;
   return true;
 }
 
@@ -26,8 +25,8 @@ bool MasteringMetadataValuePresent(double value) {
   return value != mkvparser::MasteringMetadata::kValueNotPresent;
 }
 
-bool CopyMasteringMetadata(const mkvparser::MasteringMetadata& parser_mm,
-                           mkvmuxer::MasteringMetadata* muxer_mm) {
+bool CopyMasteringMetadata(const mkvparser::MasteringMetadata &parser_mm,
+                           mkvmuxer::MasteringMetadata *muxer_mm) {
   if (MasteringMetadataValuePresent(parser_mm.luminance_max))
     muxer_mm->luminance_max = parser_mm.luminance_max;
   if (MasteringMetadataValuePresent(parser_mm.luminance_min))
@@ -39,20 +38,16 @@ bool CopyMasteringMetadata(const mkvparser::MasteringMetadata& parser_mm,
   PrimaryChromaticityPtr wp_ptr(NULL);
 
   if (parser_mm.r) {
-    if (!CopyPrimaryChromaticity(*parser_mm.r, &r_ptr))
-      return false;
+    if (!CopyPrimaryChromaticity(*parser_mm.r, &r_ptr)) return false;
   }
   if (parser_mm.g) {
-    if (!CopyPrimaryChromaticity(*parser_mm.g, &g_ptr))
-      return false;
+    if (!CopyPrimaryChromaticity(*parser_mm.g, &g_ptr)) return false;
   }
   if (parser_mm.b) {
-    if (!CopyPrimaryChromaticity(*parser_mm.b, &b_ptr))
-      return false;
+    if (!CopyPrimaryChromaticity(*parser_mm.b, &b_ptr)) return false;
   }
   if (parser_mm.white_point) {
-    if (!CopyPrimaryChromaticity(*parser_mm.white_point, &wp_ptr))
-      return false;
+    if (!CopyPrimaryChromaticity(*parser_mm.white_point, &wp_ptr)) return false;
   }
 
   if (!muxer_mm->SetChromaticity(r_ptr.get(), g_ptr.get(), b_ptr.get(),
@@ -67,10 +62,9 @@ bool ColourValuePresent(long long value) {
   return value != mkvparser::Colour::kValueNotPresent;
 }
 
-bool CopyColour(const mkvparser::Colour& parser_colour,
-                mkvmuxer::Colour* muxer_colour) {
-  if (!muxer_colour)
-    return false;
+bool CopyColour(const mkvparser::Colour &parser_colour,
+                mkvmuxer::Colour *muxer_colour) {
+  if (!muxer_colour) return false;
 
   if (ColourValuePresent(parser_colour.matrix_coefficients))
     muxer_colour->matrix_coefficients = parser_colour.matrix_coefficients;
@@ -106,8 +100,7 @@ bool CopyColour(const mkvparser::Colour& parser_colour,
     mkvmuxer::MasteringMetadata muxer_mm;
     if (!CopyMasteringMetadata(*parser_colour.mastering_metadata, &muxer_mm))
       return false;
-    if (!muxer_colour->SetMasteringMetadata(muxer_mm))
-      return false;
+    if (!muxer_colour->SetMasteringMetadata(muxer_mm)) return false;
   }
   return true;
 }
@@ -157,8 +150,7 @@ int ParseAvxCodecPrivate(const uint8_t *private_data, int32_t length) {
   if (!private_data || length != kAvxCodecPrivateLength) return 0;
 
   const uint8_t id_byte = *private_data;
-  if (id_byte != 1)
-    return 0;
+  if (id_byte != 1) return 0;
 
   const int kAvxProfileLength = 1;
   const uint8_t length_byte = private_data[1];
@@ -167,12 +159,11 @@ int ParseAvxCodecPrivate(const uint8_t *private_data, int32_t length) {
   const int level = static_cast<int>(private_data[2]);
 
   const int kNumLevels = 14;
-  const int levels[kNumLevels] = {10, 11, 20, 21, 30, 31, 40,
-                                  41, 50, 51, 52, 60, 61, 62};
+  const int levels[kNumLevels] = { 10, 11, 20, 21, 30, 31, 40,
+                                   41, 50, 51, 52, 60, 61, 62 };
 
   for (int i = 0; i < kNumLevels; ++i) {
-    if (level == levels[i])
-      return level;
+    if (level == levels[i]) return level;
   }
 
   return 0;

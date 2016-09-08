@@ -38,7 +38,7 @@ std::string GetTempFileName() {
 #endif
 }
 
-uint64_t GetFileSize(const std::string& file_name) {
+uint64_t GetFileSize(const std::string &file_name) {
   uint64_t file_size = 0;
 #ifndef _MSC_VER
   struct stat st;
