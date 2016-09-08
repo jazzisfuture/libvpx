@@ -242,6 +242,10 @@ typedef struct {
 #endif  // CONFIG_NEW_QUANT
   /* deringing gain *per-superblock* */
   int8_t dering_gain;
+#if CONFIG_WARPED_MOTION
+  int num_proj_ref[2];
+  WarpedMotionParams wm_params[2];
+#endif  // CONFIG_WARPED_MOTION
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
@@ -774,7 +778,12 @@ static INLINE int is_motvar_allowed(const MB_MODE_INFO *mbmi) {
 #if CONFIG_EXT_INTER
   return (mbmi->sb_type >= BLOCK_8X8 && mbmi->ref_frame[1] != INTRA_FRAME);
 #else
+#if CONFIG_WARPED_MOTION
+  return (mbmi->sb_type >= BLOCK_8X8 && !has_second_ref(mbmi) &&
+          mbmi->num_proj_ref[0] >= 3);
+#else
   return (mbmi->sb_type >= BLOCK_8X8);
+#endif  // CONFIG_WARPED_MOTION
 #endif  // CONFIG_EXT_INTER
 }
 

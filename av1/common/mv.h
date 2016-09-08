@@ -36,7 +36,7 @@ typedef struct mv32 {
 
 #if CONFIG_GLOBAL_MOTION || CONFIG_WARPED_MOTION
 // Bits of precision used for the model
-#define WARPEDMODEL_PREC_BITS 8
+#define WARPEDMODEL_PREC_BITS 12
 #define WARPEDMODEL_ROW3HOMO_PREC_BITS 12
 
 // Bits of subpel precision for warped interpolation
@@ -66,6 +66,8 @@ static const int n_trans_model_params[TRANS_TYPES] = { 9, 6, 4, 2 };
 typedef struct {
   TransformationType wmtype;
   int_mv wmmat[4];  // For homography wmmat[9] is assumed to be 1
+  double H[9];
+  int HI[9];
 } WarpedMotionParams;
 #endif  // CONFIG_GLOBAL_MOTION || CONFIG_WARPED_MOTION
 

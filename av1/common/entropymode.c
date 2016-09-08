@@ -335,6 +335,7 @@ static const aom_prob default_motvar_prob[BLOCK_SIZES]
 const aom_tree_index av1_motvar_tree[TREE_SIZE(MOTION_VARIATIONS)] = {
   -SIMPLE_TRANSLATION, -WARPED_CAUSAL
 };
+
 static const aom_prob default_motvar_prob[BLOCK_SIZES]
                                          [MOTION_VARIATIONS - 1] = {
                                            { 255 }, { 255 }, { 255 }, { 151 },
