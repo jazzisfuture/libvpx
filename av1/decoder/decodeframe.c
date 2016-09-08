@@ -1902,16 +1902,17 @@ static void setup_segmentation(AV1_COMMON *const cm,
 static void setup_restoration(AV1_COMMON *cm, struct aom_read_bit_buffer *rb) {
   int i;
   RestorationInfo *rsi = &cm->rst_info;
-  int ntiles;
+  const int ntiles = av1_get_rest_ntiles(RESTORATION_TILESIZE,
+                                         cm->width, cm->height,
+                                         NULL, NULL, NULL, NULL);
   if (aom_rb_read_bit(rb)) {
     if (aom_rb_read_bit(rb)) {
       rsi->restoration_type = RESTORE_BILATERAL;
-      ntiles =
-          av1_get_restoration_ntiles(BILATERAL_TILESIZE, cm->width, cm->height);
       rsi->bilateral_level = (int *)aom_realloc(
-          rsi->bilateral_level, sizeof(*rsi->bilateral_level) * ntiles);
+          rsi->bilateral_level, sizeof(*rsi->bilateral_level) * ntiles *
+          BILATERAL_SUBTILES);
       assert(rsi->bilateral_level != NULL);
-      for (i = 0; i < ntiles; ++i) {
+      for (i = 0; i < ntiles * BILATERAL_SUBTILES; ++i) {
         if (aom_rb_read_bit(rb)) {
           rsi->bilateral_level[i] =
               aom_rb_read_literal(rb, av1_bilateral_level_bits(cm));
@@ -1921,8 +1922,6 @@ static void setup_restoration(AV1_COMMON *cm, struct aom_read_bit_buffer *rb) {
       }
     } else {
       rsi->restoration_type = RESTORE_WIENER;
-      ntiles =
-          av1_get_restoration_ntiles(WIENER_TILESIZE, cm->width, cm->height);
       rsi->wiener_level = (int *)aom_realloc(
           rsi->wiener_level, sizeof(*rsi->wiener_level) * ntiles);
       assert(rsi->wiener_level != NULL);

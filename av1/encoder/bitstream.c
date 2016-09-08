@@ -2428,7 +2428,7 @@ static void encode_restoration(AV1_COMMON *cm,
   if (rst->restoration_type != RESTORE_NONE) {
     if (rst->restoration_type == RESTORE_BILATERAL) {
       aom_wb_write_bit(wb, 1);
-      for (i = 0; i < cm->rst_internal.ntiles; ++i) {
+      for (i = 0; i < cm->rst_internal.ntiles * BILATERAL_SUBTILES; ++i) {
         if (rst->bilateral_level[i] >= 0) {
           aom_wb_write_bit(wb, 1);
           aom_wb_write_literal(wb, rst->bilateral_level[i],

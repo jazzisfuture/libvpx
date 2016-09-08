@@ -62,7 +62,8 @@ static int search_bilateral_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
   MACROBLOCK *x = &cpi->td.mb;
   RestorationInfo rsi;
   const int ntiles =
-      av1_get_restoration_ntiles(BILATERAL_TILESIZE, cm->width, cm->height);
+      av1_get_rest_ntiles(RESTORATION_TILESIZE, cm->width, cm->height,
+                          NULL, NULL, NULL, NULL) * BILATERAL_SUBTILES;
 
   //  Make a copy of the unfiltered / processed recon buffer
   aom_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
@@ -88,7 +89,8 @@ static int search_bilateral_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
 
   // Find best filter for each tile
   for (tile_idx = 0; tile_idx < ntiles; ++tile_idx) {
-    for (j = 0; j < ntiles; ++j) rsi.bilateral_level[j] = -1;
+    for (j = 0; j < ntiles; ++j)
+      rsi.bilateral_level[j] = -1;
     best_cost = cost_norestore;
     for (i = 0; i < bilateral_levels; ++i) {
       rsi.bilateral_level[tile_idx] = i;
@@ -147,7 +149,8 @@ static int search_filter_bilateral_level(const YV12_BUFFER_CONFIG *sd,
   int bilateral_success[MAX_LOOP_FILTER + 1];
 
   const int ntiles =
-      av1_get_restoration_ntiles(BILATERAL_TILESIZE, cm->width, cm->height);
+      av1_get_rest_ntiles(RESTORATION_TILESIZE, cm->width, cm->height,
+                          NULL, NULL, NULL, NULL) * BILATERAL_SUBTILES;
 
   // Start the search at the previous frame filter level unless it is now out of
   // range.
@@ -564,20 +567,19 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, AV1_COMP *cpi,
   const int src_stride = src->y_stride;
   const int dgd_stride = dgd->y_stride;
   double score;
-  int tile_idx, htile_idx, vtile_idx, tile_width, tile_height, nhtiles, nvtiles;
+  int tile_idx, tile_width, tile_height, nhtiles, nvtiles;
   int h_start, h_end, v_start, v_end;
   int i, j;
 
-  const int tilesize = WIENER_TILESIZE;
-  const int ntiles = av1_get_restoration_ntiles(tilesize, width, height);
+  const int tilesize = RESTORATION_TILESIZE;
+  const int ntiles =
+      av1_get_rest_ntiles(tilesize, width, height, &tile_width,
+                          &tile_height, &nhtiles, &nvtiles);
 
   assert(width == dgd->y_crop_width);
   assert(height == dgd->y_crop_height);
   assert(width == src->y_crop_width);
   assert(height == src->y_crop_height);
-
-  av1_get_restoration_tile_size(tilesize, width, height, &tile_width,
-                                &tile_height, &nhtiles, &nvtiles);
 
   //  Make a copy of the unfiltered / processed recon buffer
   aom_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
@@ -603,16 +605,9 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, AV1_COMP *cpi,
 
   // Compute best Wiener filters for each tile
   for (tile_idx = 0; tile_idx < ntiles; ++tile_idx) {
-    htile_idx = tile_idx % nhtiles;
-    vtile_idx = tile_idx / nhtiles;
-    h_start =
-        htile_idx * tile_width + ((htile_idx > 0) ? 0 : RESTORATION_HALFWIN);
-    h_end = (htile_idx < nhtiles - 1) ? ((htile_idx + 1) * tile_width)
-                                      : (width - RESTORATION_HALFWIN);
-    v_start =
-        vtile_idx * tile_height + ((vtile_idx > 0) ? 0 : RESTORATION_HALFWIN);
-    v_end = (vtile_idx < nvtiles - 1) ? ((vtile_idx + 1) * tile_height)
-                                      : (height - RESTORATION_HALFWIN);
+    av1_get_rest_tile_limits(
+        tile_idx, 0, 0, nhtiles, nvtiles, tile_width, tile_height,
+        width, height, 1, 1, &h_start, &h_end, &v_start, &v_end);
 
 #if CONFIG_AOM_HIGHBITDEPTH
     if (cm->use_highbitdepth)
@@ -697,13 +692,14 @@ void av1_pick_filter_restoration(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
   int ntiles;
 
   ntiles =
-      av1_get_restoration_ntiles(BILATERAL_TILESIZE, cm->width, cm->height);
+      av1_get_rest_ntiles(RESTORATION_TILESIZE, cm->width, cm->height,
+                          NULL, NULL, NULL, NULL);
   cm->rst_info.bilateral_level =
       (int *)aom_realloc(cm->rst_info.bilateral_level,
-                         sizeof(*cm->rst_info.bilateral_level) * ntiles);
+                         sizeof(*cm->rst_info.bilateral_level) * ntiles *
+                         BILATERAL_SUBTILES);
   assert(cm->rst_info.bilateral_level != NULL);
 
-  ntiles = av1_get_restoration_ntiles(WIENER_TILESIZE, cm->width, cm->height);
   cm->rst_info.wiener_level = (int *)aom_realloc(
       cm->rst_info.wiener_level, sizeof(*cm->rst_info.wiener_level) * ntiles);
   assert(cm->rst_info.wiener_level != NULL);
