@@ -139,6 +139,33 @@ void project_points_homography(int16_t *mat, int *points, int *proj,
   }
 }
 
+// 'points' are at original scale, output 'proj's are scaled up by
+// 1 << WARPEDPIXEL_PREC_BITS
+void project_points(WarpedMotionParams *wm_params, int *points, int *proj,
+                    const int n, const int stride_points, const int stride_proj,
+                    const int subsampling_x, const int subsampling_y) {
+  switch (wm_params->wmtype) {
+    case AFFINE:
+      project_points_affine((int16_t *)wm_params->wmmat, points, proj, n,
+                            stride_points, stride_proj, subsampling_x,
+                            subsampling_y);
+      break;
+    case ROTZOOM:
+      project_points_rotzoom((int16_t *)wm_params->wmmat, points, proj, n,
+                             stride_points, stride_proj, subsampling_x,
+                             subsampling_y);
+      break;
+    case HOMOGRAPHY:
+      project_points_homography((int16_t *)wm_params->wmmat, points, proj, n,
+                                stride_points, stride_proj, subsampling_x,
+                                subsampling_y);
+      break;
+    default:
+      assert("Invalid warped motion type!\n");
+      return;
+  }
+}
+
 static const int16_t filter_4tap[WARPEDPIXEL_PREC_SHIFTS][4] = {
   { 0, 128, 0, 0 },     { -1, 127, 2, 0 },    { -2, 127, 4, -1 },
   { -3, 126, 6, -1 },   { -3, 125, 8, -2 },   { -4, 124, 11, -3 },
@@ -1215,4 +1242,29 @@ int find_homography(const int np, double *pts1, double *pts2, double *mat) {
     return 1;
   }
   return 0;
+}
+
+int find_projection(const int np, double *pts1, double *pts2,
+                    WarpedMotionParams *wm_params) {
+  double H[9];
+  int result = 1;
+
+  switch (wm_params->wmtype) {
+    case AFFINE:
+      result = find_affine(np, pts1, pts2, H);
+      break;
+    case ROTZOOM:
+      result = find_rotzoom(np, pts1, pts2, H);
+      break;
+    case HOMOGRAPHY:
+      result = find_homography(np, pts1, pts2, H);
+      break;
+    default:
+      assert("Invalid warped motion type!\n");
+      return 1;
+  }
+  if (result == 0)
+    av1_integerize_model(H, wm_params->wmtype, wm_params);
+
+  return result;
 }

@@ -51,6 +51,10 @@
 #include "av1/decoder/detokenize.h"
 #include "av1/decoder/dsubexp.h"
 
+#if CONFIG_WARPED_MOTION
+#include "av1/common/warped_motion.h"
+#endif  // CONFIG_WARPED_MOTION
+
 #define MAX_AV1_HEADER_SIZE 80
 
 static int is_compound_reference_allowed(const AV1_COMMON *cm) {
@@ -1239,7 +1243,32 @@ static void decode_block(AV1Decoder *const pbi, MACROBLOCKD *const xd,
     }
   } else {
     // Prediction
-    av1_build_inter_predictors_sb(xd, mi_row, mi_col, AOMMAX(bsize, BLOCK_8X8));
+#if CONFIG_WARPED_MOTION
+    if (mbmi->motion_variation == WARPED_CAUSAL) {
+      int i;
+#if CONFIG_AOM_HIGHBITDEPTH
+      int use_hbd = xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH;
+#endif  // CONFIG_AOM_HIGHBITDEPTH
+
+      for (i = 0; i < 3; ++i) {
+        const struct macroblockd_plane *pd = &xd->plane[i];
+
+        av1_warp_plane(&mbmi->wm_params[0],
+#if CONFIG_AOM_HIGHBITDEPTH
+                       xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
+#endif  // CONFIG_AOM_HIGHBITDEPTH
+                       pd->pre[0].buf0, pd->pre[0].width, pd->pre[0].height,
+                       pd->pre[0].stride, pd->dst.buf,
+                       ((mi_col * MI_SIZE) >> pd->subsampling_x),
+                       ((mi_row * MI_SIZE) >> pd->subsampling_y),
+                       xd->n8_w * (8 >> pd->subsampling_x),
+                       xd->n8_h * (8 >> pd->subsampling_y), pd->dst.stride,
+                       pd->subsampling_x, pd->subsampling_y, 16, 16);
+      }
+    } else
+#endif  // CONFIG_WARPED_MOTION
+      av1_build_inter_predictors_sb(xd, mi_row, mi_col,
+                                    AOMMAX(bsize, BLOCK_8X8));
 #if CONFIG_OBMC
     if (mbmi->motion_variation == OBMC_CAUSAL) {
 #if CONFIG_AOM_HIGHBITDEPTH
