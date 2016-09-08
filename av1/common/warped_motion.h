@@ -22,6 +22,8 @@
 #include "aom_dsp/aom_dsp_common.h"
 #include "av1/common/mv.h"
 
+#define DEFAULT_WMTYPE AFFINE
+
 // Bits of precision used for the model
 #define WARPEDMODEL_PREC_BITS 8
 #define WARPEDMODEL_ROW3HOMO_PREC_BITS 12
@@ -37,6 +39,8 @@
 #define WARPEDPIXEL_FILTER_BITS 7
 
 #define WARPEDDIFF_PREC_BITS (WARPEDMODEL_PREC_BITS - WARPEDPIXEL_PREC_BITS)
+
+#define MAX_PARAMDIM 9
 
 typedef void (*ProjectPointsType)(int16_t *mat, int *points, int *proj,
                                   const int n, const int stride_points,
@@ -60,6 +64,10 @@ void projectPointsTranslation(int16_t *mat, int *points, int *proj, const int n,
                               const int stride_points, const int stride_proj,
                               const int subsampling_x, const int subsampling_y);
 
+void projectPoints(WarpedMotionParams *wm_params, int *points, int *proj,
+                   const int n, const int stride_points, const int stride_proj,
+                   const int subsampling_x, const int subsampling_y);
+
 double av1_warp_erroradv(WarpedMotionParams *wm,
 #if CONFIG_VP9_HIGHBITDEPTH
                           int use_hbd, int bd,
@@ -81,4 +89,13 @@ void av1_warp_plane(WarpedMotionParams *wm,
 // Integerize model into the WarpedMotionParams structure
 void av1_integerize_model(const double *model, TransformationType wmtype,
                           WarpedMotionParams *wm);
+
+// Estimate projection models from projection samples
+int findTranslation(const int np, double *pts1, double *pts2, double *mat);
+int findRotZoom(const int np, double *pts1, double *pts2, double *mat);
+int findAffine(const int np, double *pts1, double *pts2, double *mat);
+int findHomography(const int np, double *pts1, double *pts2, double *mat);
+int findHomographyScale1(const int np, double *pts1, double *pts2, double *mat);
+int findProjection(const int np, double *pts1, double *pts2,
+                   WarpedMotionParams *wm_params);
 #endif  // AV1_COMMON_WARPED_MOTION_H
