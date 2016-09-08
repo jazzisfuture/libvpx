@@ -335,12 +335,12 @@ const aom_tree_index av1_motvar_tree[TREE_SIZE(MOTION_VARIATIONS)] = {
 };
 static const aom_prob default_motvar_prob[BLOCK_SIZES][MOTION_VARIATIONS - 1] =
     {
-      { 255 }, { 255 }, { 255 }, { 151 }, { 153 }, { 144 }, { 178 },
-      { 165 }, { 160 }, { 207 }, { 195 }, { 168 }, { 244 },
+        {255}, {255}, {255}, {190}, {190}, {190}, {190},
+        {190}, {190}, {190}, {200}, {200}, {200},
 #if CONFIG_EXT_PARTITION
-      { 252 }, { 252 }, { 252 },
+        {252}, {252}, {252},
 #endif  // CONFIG_EXT_PARTITION
-    };
+};
 
 #elif CONFIG_OBMC && CONFIG_WARPED_MOTION
 
