@@ -30,18 +30,18 @@ namespace libwebm {
 
 typedef std::auto_ptr<mkvmuxer::PrimaryChromaticity> PrimaryChromaticityPtr;
 
-bool CopyPrimaryChromaticity(const mkvparser::PrimaryChromaticity& parser_pc,
-                             PrimaryChromaticityPtr* muxer_pc);
+bool CopyPrimaryChromaticity(const mkvparser::PrimaryChromaticity &parser_pc,
+                             PrimaryChromaticityPtr *muxer_pc);
 
 bool MasteringMetadataValuePresent(double value);
 
-bool CopyMasteringMetadata(const mkvparser::MasteringMetadata& parser_mm,
-                           mkvmuxer::MasteringMetadata* muxer_mm);
+bool CopyMasteringMetadata(const mkvparser::MasteringMetadata &parser_mm,
+                           mkvmuxer::MasteringMetadata *muxer_mm);
 
 bool ColourValuePresent(long long value);
 
-bool CopyColour(const mkvparser::Colour& parser_colour,
-                mkvmuxer::Colour* muxer_colour);
+bool CopyColour(const mkvparser::Colour &parser_colour,
+                mkvmuxer::Colour *muxer_colour);
 
 // Returns AV1 profile upon success or 0 upon failure.
 int ParseAvxCodecPrivate(const uint8_t *private_data, int32_t length);
