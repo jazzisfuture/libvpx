@@ -172,8 +172,8 @@ void av1_loop_restoration_init(RestorationInternal *rst, RestorationInfo *rsi,
   rst->restoration_type = rsi->restoration_type;
   rst->subsampling_x = 0;
   rst->subsampling_y = 0;
+  rst->tilesize_index = RESTORATION_TILESIZE;
   if (rsi->restoration_type == RESTORE_BILATERAL) {
-    rst->tilesize_index = BILATERAL_TILESIZE;
     rst->ntiles =
         av1_get_restoration_ntiles(rst->tilesize_index, width, height);
     av1_get_restoration_tile_size(rst->tilesize_index, width, height,
@@ -195,7 +195,6 @@ void av1_loop_restoration_init(RestorationInternal *rst, RestorationInfo *rsi,
       }
     }
   } else if (rsi->restoration_type == RESTORE_WIENER) {
-    rst->tilesize_index = WIENER_TILESIZE;
     rst->ntiles =
         av1_get_restoration_ntiles(rst->tilesize_index, width, height);
     av1_get_restoration_tile_size(rst->tilesize_index, width, height,

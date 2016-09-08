@@ -62,7 +62,7 @@ static int search_bilateral_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
   MACROBLOCK *x = &cpi->td.mb;
   RestorationInfo rsi;
   const int ntiles =
-      av1_get_restoration_ntiles(BILATERAL_TILESIZE, cm->width, cm->height);
+      av1_get_restoration_ntiles(RESTORATION_TILESIZE, cm->width, cm->height);
 
   //  Make a copy of the unfiltered / processed recon buffer
   aom_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
@@ -147,7 +147,7 @@ static int search_filter_bilateral_level(const YV12_BUFFER_CONFIG *sd,
   int bilateral_success[MAX_LOOP_FILTER + 1];
 
   const int ntiles =
-      av1_get_restoration_ntiles(BILATERAL_TILESIZE, cm->width, cm->height);
+      av1_get_restoration_ntiles(RESTORATION_TILESIZE, cm->width, cm->height);
 
   // Start the search at the previous frame filter level unless it is now out of
   // range.
@@ -568,7 +568,7 @@ static int search_wiener_filter(const YV12_BUFFER_CONFIG *src, AV1_COMP *cpi,
   int h_start, h_end, v_start, v_end;
   int i, j;
 
-  const int tilesize = WIENER_TILESIZE;
+  const int tilesize = RESTORATION_TILESIZE;
   const int ntiles = av1_get_restoration_ntiles(tilesize, width, height);
 
   assert(width == dgd->y_crop_width);
@@ -697,13 +697,12 @@ void av1_pick_filter_restoration(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
   int ntiles;
 
   ntiles =
-      av1_get_restoration_ntiles(BILATERAL_TILESIZE, cm->width, cm->height);
+      av1_get_restoration_ntiles(RESTORATION_TILESIZE, cm->width, cm->height);
   cm->rst_info.bilateral_level =
       (int *)aom_realloc(cm->rst_info.bilateral_level,
                          sizeof(*cm->rst_info.bilateral_level) * ntiles);
   assert(cm->rst_info.bilateral_level != NULL);
 
-  ntiles = av1_get_restoration_ntiles(WIENER_TILESIZE, cm->width, cm->height);
   cm->rst_info.wiener_level = (int *)aom_realloc(
       cm->rst_info.wiener_level, sizeof(*cm->rst_info.wiener_level) * ntiles);
   assert(cm->rst_info.wiener_level != NULL);
