@@ -3502,11 +3502,14 @@ static void read_global_motion_params(Global_Motion_Params *params,
 }
 
 static void read_global_motion(AV1_COMMON *cm, aom_reader *r) {
-  int frame;
+  int frame, i;
   memset(cm->global_motion, 0, sizeof(cm->global_motion));
   for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
-    read_global_motion_params(&cm->global_motion[frame],
-                              cm->fc->global_motion_types_prob, r);
+    cm->num_global_motion[frame] =
+      aom_read_primitive_symmetric(r, NUM_GM_MODELS_PREC_BITS);
+    for (i = 0; i < cm->num_global_motion[frame]; ++i) {
+      read_global_motion_params(&cm->global_motion[frame][i],
+                                cm->fc->global_motion_types_prob, r);
     /*
           printf("Dec Ref %d [%d]: %d %d %d %d\n",
                  frame, cm->current_video_frame,
@@ -3515,6 +3518,7 @@ static void read_global_motion(AV1_COMMON *cm, aom_reader *r) {
                  cm->global_motion[frame].motion_params.wmmat[1].as_mv.row,
                  cm->global_motion[frame].motion_params.wmmat[1].as_mv.col);
     */
+    }
   }
 }
 #endif  // CONFIG_GLOBAL_MOTION

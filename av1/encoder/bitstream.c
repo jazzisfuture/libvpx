@@ -3312,21 +3312,16 @@ static void write_global_motion_params(Global_Motion_Params *params,
 
 static void write_global_motion(AV1_COMP *cpi, aom_writer *w) {
   AV1_COMMON *const cm = &cpi->common;
-  int frame;
+  int frame, i;
   for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
-    if (!cpi->global_motion_used[frame]) {
+    aom_write_primitive_symmetric(
+        w, cm->num_global_motion[frame],
+        NUM_GM_MODELS_PREC_BITS);
+    if (!cpi->global_motion_used[frame])
       memset(&cm->global_motion[frame], 0, sizeof(*cm->global_motion));
-    }
-    write_global_motion_params(&cm->global_motion[frame],
-                               cm->fc->global_motion_types_prob, w);
-    /*
-          printf("Enc Ref %d [%d] (used %d): %d %d %d %d\n",
-                 frame, cm->current_video_frame, cpi->global_motion_used[frame],
-                 cm->global_motion[frame].motion_params.wmmat[0].as_mv.row,
-                 cm->global_motion[frame].motion_params.wmmat[0].as_mv.col,
-                 cm->global_motion[frame].motion_params.wmmat[1].as_mv.row,
-                 cm->global_motion[frame].motion_params.wmmat[1].as_mv.col);
-    */
+    for (i = 0; i < cm->num_global_motion[frame]; ++i)
+      write_global_motion_params(&cm->global_motion[frame][i],
+                                 cm->fc->global_motion_types_prob, w);
   }
 }
 #endif

@@ -4547,40 +4547,46 @@ static void encode_frame_internal(AV1_COMP *cpi) {
   av1_zero(cpi->global_motion_used);
   if (cpi->common.frame_type == INTER_FRAME && cpi->Source) {
     YV12_BUFFER_CONFIG *ref_buf;
-    int frame;
+    int frame, num_models, i, num_params;
     double erroradvantage = 0;
-    double params[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    double params[9 * MAX_GLOBAL_MOTION_MODELS] = {0};
     for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
       ref_buf = get_ref_frame_buffer(cpi, frame);
       if (ref_buf) {
-        if (compute_global_motion_feature_based(GLOBAL_MOTION_MODEL,
-                                                cpi->Source, ref_buf, params)) {
-          convert_model_to_params(params, GLOBAL_MOTION_MODEL,
-                                  &cm->global_motion[frame]);
-          if (get_gmtype(&cm->global_motion[frame]) > GLOBAL_ZERO) {
-            refine_integerized_param(
-                &cm->global_motion[frame].motion_params,
-#if CONFIG_AOM_HIGHBITDEPTH
-                xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
-#endif  // CONFIG_AOM_HIGHBITDEPTH
-                ref_buf->y_buffer, ref_buf->y_width, ref_buf->y_height,
-                ref_buf->y_stride, cpi->Source->y_buffer, cpi->Source->y_width,
-                cpi->Source->y_height, cpi->Source->y_stride, 3);
-            // compute the advantage of using gm parameters over 0 motion
-            erroradvantage = av1_warp_erroradv(
-                &cm->global_motion[frame].motion_params,
-#if CONFIG_AOM_HIGHBITDEPTH
-                xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
-#endif  // CONFIG_AOM_HIGHBITDEPTH
-                ref_buf->y_buffer, ref_buf->y_width, ref_buf->y_height,
-                ref_buf->y_stride, cpi->Source->y_buffer, 0, 0,
-                cpi->Source->y_width, cpi->Source->y_height,
-                cpi->Source->y_stride, 0, 0, 16, 16);
-            if (erroradvantage > GLOBAL_MOTION_ADVANTAGE_THRESH)
-              // Not enough advantage in using a global model. Make 0.
-              memset(&cm->global_motion[frame], 0,
-                     sizeof(cm->global_motion[frame]));
+        if ((num_models =
+          compute_global_motion_feature_based(GLOBAL_MOTION_MODEL,
+                                              cpi->Source, ref_buf, params))) {
+          for (i = 0; i < num_models; i++) {
+            num_params = n_trans_model_params[GLOBAL_MOTION_MODEL];
+            convert_model_to_params(params + i * num_params,
+                                    GLOBAL_MOTION_MODEL,
+                                    &cm->global_motion[frame][i]);
+            if (get_gmtype(&cm->global_motion[frame][i]) > GLOBAL_ZERO) {
+              refine_integerized_param(
+                  &cm->global_motion[frame][i].motion_params,
+  #if CONFIG_AOM_HIGHBITDEPTH
+                  xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
+  #endif  // CONFIG_AOM_HIGHBITDEPTH
+                  ref_buf->y_buffer, ref_buf->y_width, ref_buf->y_height,
+                  ref_buf->y_stride, cpi->Source->y_buffer, cpi->Source->y_width,
+                  cpi->Source->y_height, cpi->Source->y_stride, 3);
+              // compute the advantage of using gm parameters over 0 motion
+              erroradvantage = av1_warp_erroradv(
+                  &cm->global_motion[frame][i].motion_params,
+  #if CONFIG_AOM_HIGHBITDEPTH
+                  xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
+  #endif  // CONFIG_AOM_HIGHBITDEPTH
+                  ref_buf->y_buffer, ref_buf->y_width, ref_buf->y_height,
+                  ref_buf->y_stride, cpi->Source->y_buffer, 0, 0,
+                  cpi->Source->y_width, cpi->Source->y_height,
+                  cpi->Source->y_stride, 0, 0, 16, 16);
+              if (erroradvantage > GLOBAL_MOTION_ADVANTAGE_THRESH)
+                // Not enough advantage in using a global model. Make 0.
+                memset(&cm->global_motion[frame][i], 0,
+                       sizeof(cm->global_motion[frame]));
+            }
           }
+          cm->num_global_motion[frame] = num_models;
         }
       }
     }
