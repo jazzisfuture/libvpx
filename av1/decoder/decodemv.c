@@ -1010,10 +1010,10 @@ static INLINE int assign_mv(AV1_COMMON *cm, MACROBLOCKD *xd,
     case ZEROMV: {
 #if CONFIG_GLOBAL_MOTION
       mv[0].as_int =
-          cm->global_motion[ref_frame[0]].motion_params.wmmat[0].as_int;
+          cm->global_motion[ref_frame[0]][0].motion_params.wmmat[0].as_int;
       if (is_compound)
         mv[1].as_int =
-            cm->global_motion[ref_frame[1]].motion_params.wmmat[0].as_int;
+            cm->global_motion[ref_frame[1]][0].motion_params.wmmat[0].as_int;
 #else
       mv[0].as_int = 0;
       if (is_compound) mv[1].as_int = 0;
