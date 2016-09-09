@@ -141,9 +141,15 @@ class PredictTestBase : public ::testing::TestWithParam<PredictParam> {
   void TestWithRandomData(PredictFunc reference) {
     ACMRandom rnd(ACMRandom::DeterministicSeed());
 
-    // Run tests for all possible offsets.
+    // Run tests for almost all possible offsets.
     for (int xoffset = 0; xoffset < 8; ++xoffset) {
       for (int yoffset = 0; yoffset < 8; ++yoffset) {
+        if (xoffset == 0 && yoffset == 0) {
+          // This represents a copy which is not required to be handled by this
+          // module.
+          continue;
+        }
+
         for (int i = 0; i < kSrcSize; ++i) {
           src_[i] = rnd.Rand8();
         }
@@ -169,6 +175,9 @@ class PredictTestBase : public ::testing::TestWithParam<PredictParam> {
     if (width_ == 4 && height_ == 4) {
       for (int xoffset = 0; xoffset < 8; ++xoffset) {
         for (int yoffset = 0; yoffset < 8; ++yoffset) {
+          if (xoffset == 0 && yoffset == 0) {
+            continue;
+          }
           for (int i = 0; i < kSrcSize; ++i) {
             src_[i] = rnd.Rand8();
           }
