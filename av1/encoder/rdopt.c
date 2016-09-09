@@ -4116,7 +4116,7 @@ static int get_gmbitcost(const Global_Motion_Params *gm,
 #define GLOBAL_MOTION_RATE(ref)                            \
   (cpi->global_motion_used[ref] >= 2                       \
        ? 0                                                 \
-       : get_gmbitcost(&cm->global_motion[(ref)],          \
+       : get_gmbitcost(&cm->global_motion[(ref)][0],       \
                        cm->fc->global_motion_types_prob) / \
              2);
 #endif  // CONFIG_GLOBAL_MOTION
@@ -4186,12 +4186,12 @@ static int set_and_cost_bmi_mvs(AV1_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
       break;
     case ZEROMV:
 #if CONFIG_GLOBAL_MOTION
-      this_mv[0].as_int = cpi->common.global_motion[mbmi->ref_frame[0]]
+      this_mv[0].as_int = cpi->common.global_motion[mbmi->ref_frame[0]][0]
                               .motion_params.wmmat[0]
                               .as_int;
       thismvcost += GLOBAL_MOTION_RATE(mbmi->ref_frame[0]);
       if (is_compound) {
-        this_mv[1].as_int = cpi->common.global_motion[mbmi->ref_frame[1]]
+        this_mv[1].as_int = cpi->common.global_motion[mbmi->ref_frame[1]][0]
                                 .motion_params.wmmat[0]
                                 .as_int;
         thismvcost += GLOBAL_MOTION_RATE(mbmi->ref_frame[1]);
@@ -4904,7 +4904,7 @@ static int64_t rd_pick_best_sub8x8_mode(
 #endif  // CONFIG_EXT_INTER
 #if CONFIG_GLOBAL_MOTION
         frame_mv[ZEROMV][frame].as_int =
-            cm->global_motion[frame].motion_params.wmmat[0].as_int;
+            cm->global_motion[frame][0].motion_params.wmmat[0].as_int;
 #else   // CONFIG_GLOBAL_MOTION
         frame_mv[ZEROMV][frame].as_int = 0;
 #endif  // CONFIG_GLOBAL_MOTION
@@ -5044,9 +5044,10 @@ static int64_t rd_pick_best_sub8x8_mode(
 #endif  // CONFIG_REF_MV
 
 #if CONFIG_GLOBAL_MOTION
-        if (get_gmtype(&cm->global_motion[mbmi->ref_frame[0]]) == GLOBAL_ZERO &&
-            (!has_second_rf ||
-             get_gmtype(&cm->global_motion[mbmi->ref_frame[1]]) == GLOBAL_ZERO))
+        if (get_gmtype(&cm->global_motion[mbmi->ref_frame[0]][0]) ==
+             GLOBAL_ZERO && (!has_second_rf ||
+             get_gmtype(&cm->global_motion[mbmi->ref_frame[1]][0]) ==
+             GLOBAL_ZERO))
 #endif  // CONFIG_GLOBAL_MOTION
 
           if (!check_best_zero_mv(cpi, mbmi_ext->mode_context,
@@ -8359,7 +8360,7 @@ void av1_rd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
 #if CONFIG_GLOBAL_MOTION
     frame_mv[ZEROMV][ref_frame].as_int =
-        cm->global_motion[ref_frame].motion_params.wmmat[0].as_int;
+        cm->global_motion[ref_frame][0].motion_params.wmmat[0].as_int;
 #else   // CONFIG_GLOBAL_MOTION
     frame_mv[ZEROMV][ref_frame].as_int = 0;
 #endif  // CONFIG_GLOBAL_MOTION
@@ -8452,7 +8453,7 @@ void av1_rd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
       mode_skip_mask[ALTREF_FRAME] = ~INTER_NEAREST_NEAR_ZERO;
 #if CONFIG_GLOBAL_MOTION
       zeromv.as_int =
-          cm->global_motion[ALTREF_FRAME].motion_params.wmmat[0].as_int;
+          cm->global_motion[ALTREF_FRAME][0].motion_params.wmmat[0].as_int;
 #else
       zeromv.as_int = 0;
 #endif  // CONFIG_GLOBAL_MOTION
@@ -8676,10 +8677,10 @@ void av1_rd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
         }
       }
 #if CONFIG_GLOBAL_MOTION
-    } else if (get_gmtype(&cm->global_motion[ref_frame]) == GLOBAL_ZERO &&
+    } else if (get_gmtype(&cm->global_motion[ref_frame][0]) == GLOBAL_ZERO &&
                (!comp_pred ||
-                get_gmtype(&cm->global_motion[second_ref_frame]) ==
-                    GLOBAL_ZERO)) {
+                get_gmtype(&cm->global_motion[second_ref_frame][0]) ==
+                GLOBAL_ZERO)) {
 #else   // CONFIG_GLOBAL_MOTION
     } else {
 #endif  // CONFIG_GLOBAL_MOTION
@@ -9531,8 +9532,10 @@ PALETTE_EXIT:
     const uint8_t rf_type = av1_ref_frame_type(best_mbmode.ref_frame);
 #endif  // CONFIG_REF_MV
 #if CONFIG_GLOBAL_MOTION
-    zeromv[0].as_int = cm->global_motion[refs[0]].motion_params.wmmat[0].as_int;
-    zeromv[1].as_int = cm->global_motion[refs[1]].motion_params.wmmat[0].as_int;
+    zeromv[0].as_int = cm->global_motion[refs[0]][0]
+      .motion_params.wmmat[0].as_int;
+    zeromv[1].as_int = cm->global_motion[refs[1]][0]
+      .motion_params.wmmat[0].as_int;
 #else
     zeromv[0].as_int = 0;
     zeromv[1].as_int = 0;
@@ -9806,7 +9809,7 @@ void av1_rd_pick_inter_mode_sb_seg_skip(AV1_COMP *cpi, TileDataEnc *tile_data,
   mbmi->ref_frame[1] = NONE;
 #if CONFIG_GLOBAL_MOTION
   mbmi->mv[0].as_int =
-      cm->global_motion[mbmi->ref_frame[0]].motion_params.wmmat[0].as_int;
+      cm->global_motion[mbmi->ref_frame[0]][0].motion_params.wmmat[0].as_int;
 #else   // CONFIG_GLOBAL_MOTION
   mbmi->mv[0].as_int = 0;
 #endif  // CONFIG_GLOBAL_MOTION

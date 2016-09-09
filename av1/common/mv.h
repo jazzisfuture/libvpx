@@ -94,6 +94,7 @@ typedef struct {
 //
 // XX_MIN, XX_MAX are also computed to avoid repeated computation
 
+#define MAX_GLOBAL_MOTION_MODELS 1
 #define GM_TRANS_PREC_BITS 8
 #define GM_TRANS_PREC_DIFF (WARPEDMODEL_PREC_BITS - GM_TRANS_PREC_BITS)
 #define GM_TRANS_DECODE_FACTOR (1 << GM_TRANS_PREC_DIFF)

@@ -555,7 +555,7 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
   Global_Motion_Params *gm[2];
   int is_global[2];
   for (ref = 0; ref < 1 + is_compound; ++ref) {
-    gm[ref] = &xd->global_motion[mi->mbmi.ref_frame[ref]];
+    gm[ref] = &xd->global_motion[mi->mbmi.ref_frame[ref]][0];
     is_global[ref] =
         (get_y_mode(mi, block) == ZEROMV && get_gmtype(gm[ref]) > GLOBAL_ZERO);
   }
