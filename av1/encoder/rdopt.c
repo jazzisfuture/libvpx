@@ -1901,6 +1901,21 @@ static int rd_pick_palette_intra_sby(
 }
 #endif  // CONFIG_PALETTE
 
+// TODO(now): Copied from encodemb.c
+static void transpose_block(int16_t *dst, ptrdiff_t stride, int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    int j;
+    for (j = i + 1; j < width; ++j) {
+      int16_t *const dst_i_j = dst + j * stride + i;
+      int16_t *const dst_j_i = dst + i * stride + j;
+      int16_t temp = *dst_i_j;
+      *dst_i_j = *dst_j_i;
+      *dst_j_i = temp;
+    }
+  }
+}
+
 static int64_t rd_pick_intra4x4block(
     const AV1_COMP *const cpi, MACROBLOCK *x, int row, int col,
     PREDICTION_MODE *best_mode, const int *bmode_costs, ENTROPY_CONTEXT *a,
@@ -2082,11 +2097,13 @@ static int64_t rd_pick_intra4x4block(
         uint8_t *const dst = &dst_init[idx * 4 + idy * 4 * dst_stride];
         int16_t *const src_diff =
             av1_raster_block_offset_int16(BLOCK_8X8, block, p->src_diff);
+        int need_transpose;
         xd->mi[0]->bmi[block].as_mode = mode;
-        av1_predict_intra_block(xd, pd->width, pd->height, TX_4X4, mode, dst,
-                                dst_stride, dst, dst_stride, col + idx,
-                                row + idy, 0);
+        need_transpose = av1_predict_intra_block(
+            xd, pd->width, pd->height, TX_4X4, mode, dst, dst_stride, dst,
+            dst_stride, col + idx, row + idy, 0);
         aom_subtract_block(4, 4, src_diff, 8, src, src_stride, dst, dst_stride);
+        if (need_transpose) transpose_block(src_diff, 8, 4);
 
         if (xd->lossless[xd->mi[0]->mbmi.segment_id]) {
           TX_TYPE tx_type = get_tx_type(PLANE_TYPE_Y, xd, block, TX_4X4);

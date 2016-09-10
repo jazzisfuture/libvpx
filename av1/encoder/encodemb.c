@@ -45,6 +45,7 @@ void av1_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
 #endif  // CONFIG_AOM_HIGHBITDEPTH
   aom_subtract_block(bh, bw, p->src_diff, bw, p->src.buf, p->src.stride,
                      pd->dst.buf, pd->dst.stride);
+  // TODO(now): How to check if need transpose?
 }
 
 typedef struct av1_token_state {
@@ -1042,6 +1043,20 @@ void av1_encode_sb_supertx(AV1_COMMON *cm, MACROBLOCK *x, BLOCK_SIZE bsize) {
 }
 #endif  // CONFIG_SUPERTX
 
+static void transpose_block(int16_t *dst, ptrdiff_t stride, int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    int j;
+    for (j = i + 1; j < width; ++j) {
+      int16_t *const dst_i_j = dst + j * stride + i;
+      int16_t *const dst_j_i = dst + i * stride + j;
+      int16_t temp = *dst_i_j;
+      *dst_i_j = *dst_j_i;
+      *dst_j_i = temp;
+    }
+  }
+}
+
 void av1_encode_block_intra(int plane, int block, int blk_row, int blk_col,
                             BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
                             void *arg) {
@@ -1066,6 +1081,7 @@ void av1_encode_block_intra(int plane, int block, int blk_row, int blk_col,
   const int tx1d_height = tx_size_high[tx_size];
   ENTROPY_CONTEXT *a = NULL, *l = NULL;
   int ctx;
+  int need_transpose = 0;
 
   INV_TXFM_PARAM inv_txfm_param;
 
@@ -1075,8 +1091,9 @@ void av1_encode_block_intra(int plane, int block, int blk_row, int blk_col,
   src = &p->src.buf[4 * (blk_row * src_stride + blk_col)];
   src_diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
   mode = plane == 0 ? get_y_mode(xd->mi[0], block) : mbmi->uv_mode;
-  av1_predict_intra_block(xd, pd->width, pd->height, tx_size, mode, dst,
-                          dst_stride, dst, dst_stride, blk_col, blk_row, plane);
+  need_transpose = av1_predict_intra_block(xd, pd->width, pd->height, tx_size,
+                                           mode, dst, dst_stride, dst,
+                                           dst_stride, blk_col, blk_row, plane);
 #if CONFIG_AOM_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     aom_highbd_subtract_block(tx1d_height, tx1d_width, src_diff, diff_stride,
@@ -1089,6 +1106,8 @@ void av1_encode_block_intra(int plane, int block, int blk_row, int blk_col,
   aom_subtract_block(tx1d_height, tx1d_width, src_diff, diff_stride, src,
                      src_stride, dst, dst_stride);
 #endif  // CONFIG_AOM_HIGHBITDEPTH
+  // TODO(now): Does "p->src_diff" use later on work with the transposed values?
+  if (need_transpose) transpose_block(src_diff, diff_stride, tx1d_width);
 
   a = &args->ta[blk_col];
   l = &args->tl[blk_row];

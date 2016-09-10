@@ -307,8 +307,8 @@ static int av1_has_bottom(BLOCK_SIZE bsize, int mi_row, int mi_col,
   }
 }
 
-typedef void (*intra_pred_fn)(uint8_t *dst, ptrdiff_t stride,
-                              const uint8_t *above, const uint8_t *left);
+typedef int (*intra_pred_fn)(uint8_t *dst, ptrdiff_t stride,
+                             const uint8_t *above, const uint8_t *left);
 
 static intra_pred_fn pred[INTRA_MODES][TX_SIZES];
 static intra_pred_fn dc_pred[2][2][TX_SIZES];
@@ -1349,12 +1349,12 @@ static void build_intra_predictors_high(
 }
 #endif  // CONFIG_AOM_HIGHBITDEPTH
 
-static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
-                                   int ref_stride, uint8_t *dst, int dst_stride,
-                                   PREDICTION_MODE mode, TX_SIZE tx_size,
-                                   int n_top_px, int n_topright_px,
-                                   int n_left_px, int n_bottomleft_px,
-                                   int plane) {
+static int build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
+                                  int ref_stride, uint8_t *dst, int dst_stride,
+                                  PREDICTION_MODE mode, TX_SIZE tx_size,
+                                  int n_top_px, int n_topright_px,
+                                  int n_left_px, int n_bottomleft_px,
+                                  int plane) {
   int i;
   DECLARE_ALIGNED(16, uint8_t, left_col[MAX_SB_SIZE]);
   const uint8_t *above_ref = ref - ref_stride;
@@ -1414,7 +1414,7 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
       memset(dst, val, bs);
       dst += dst_stride;
     }
-    return;
+    return 0;
   }
 
   // NEED_LEFT
@@ -1500,14 +1500,14 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
 
   // predict
   if (mode == DC_PRED) {
-    dc_pred[n_left_px > 0][n_top_px > 0][tx_size](dst, dst_stride,
-                                                  const_above_row, left_col);
+    return dc_pred[n_left_px > 0][n_top_px > 0][tx_size](
+        dst, dst_stride, const_above_row, left_col);
   } else {
-    pred[mode][tx_size](dst, dst_stride, const_above_row, left_col);
+    return pred[mode][tx_size](dst, dst_stride, const_above_row, left_col);
   }
 }
 
-void av1_predict_intra_block(const MACROBLOCKD *xd, int wpx, int hpx,
+int av1_predict_intra_block(const MACROBLOCKD *xd, int wpx, int hpx,
                              TX_SIZE tx_size, PREDICTION_MODE mode,
                              const uint8_t *ref, int ref_stride, uint8_t *dst,
                              int dst_stride, int col_off, int row_off,
@@ -1580,7 +1580,7 @@ void av1_predict_intra_block(const MACROBLOCKD *xd, int wpx, int hpx,
       for (c = 0; c < bs; ++c)
         dst[r * dst_stride + c] = palette[map[(r + y) * stride + c + x]];
 #endif  // CONFIG_AOM_HIGHBITDEPTH
-    return;
+    return 0;
   }
 #endif  // CONFIG_PALETTE
 
@@ -1595,12 +1595,12 @@ void av1_predict_intra_block(const MACROBLOCKD *xd, int wpx, int hpx,
     return;
   }
 #endif
-  build_intra_predictors(xd, ref, ref_stride, dst, dst_stride, mode, tx_size,
-                         have_top ? AOMMIN(txwpx, xr + txwpx) : 0,
-                         have_top && have_right ? AOMMIN(txwpx, xr) : 0,
-                         have_left ? AOMMIN(txhpx, yd + txhpx) : 0,
-                         have_bottom && have_left ? AOMMIN(txhpx, yd) : 0,
-                         plane);
+  return build_intra_predictors(
+      xd, ref, ref_stride, dst, dst_stride, mode, tx_size,
+      have_top ? AOMMIN(txwpx, xr + txwpx) : 0,
+      have_top && have_right ? AOMMIN(txwpx, xr) : 0,
+      have_left ? AOMMIN(txhpx, yd + txhpx) : 0,
+      have_bottom && have_left ? AOMMIN(txhpx, yd) : 0, plane);
 }
 
 void av1_init_intra_predictors(void) {

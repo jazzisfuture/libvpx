@@ -296,6 +296,21 @@ static void inverse_transform_block(MACROBLOCKD *xd, int plane,
   memset(dqcoeff, 0, (scan_line + 1) * sizeof(dqcoeff[0]));
 }
 
+// TODO(now): Copied from encodemb.c and changed type to uint8_t.
+static void transpose_block(uint8_t *dst, ptrdiff_t stride, int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    int j;
+    for (j = i + 1; j < width; ++j) {
+      uint8_t *const dst_i_j = dst + j * stride + i;
+      uint8_t *const dst_j_i = dst + i * stride + j;
+      uint8_t temp = *dst_i_j;
+      *dst_i_j = *dst_j_i;
+      *dst_j_i = temp;
+    }
+  }
+}
+
 static void predict_and_reconstruct_intra_block(AV1_COMMON *cm,
                                                 MACROBLOCKD *const xd,
 #if CONFIG_ANS
@@ -311,16 +326,19 @@ static void predict_and_reconstruct_intra_block(AV1_COMMON *cm,
   PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
   uint8_t *dst;
   int block_idx = (row << 1) + col;
+  int need_transpose = 0;
   dst = &pd->dst.buf[4 * row * pd->dst.stride + 4 * col];
 
   if (mbmi->sb_type < BLOCK_8X8)
     if (plane == 0) mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
 
-  av1_predict_intra_block(xd, pd->width, pd->height, tx_size, mode, dst,
-                          pd->dst.stride, dst, pd->dst.stride, col, row, plane);
+  need_transpose = av1_predict_intra_block(xd, pd->width, pd->height, tx_size,
+                                           mode, dst, pd->dst.stride, dst,
+                                           pd->dst.stride, col, row, plane);
 
   if (!mbmi->skip) {
     TX_TYPE tx_type = get_tx_type(plane_type, xd, block_idx, tx_size);
+    const int tx1d_width = tx_size_wide_unit[tx_size] << 2;
     const SCAN_ORDER *scan_order = get_scan(cm, tx_size, tx_type, 0);
     int16_t max_scan_line = 0;
     const int eob =
@@ -329,9 +347,11 @@ static void predict_and_reconstruct_intra_block(AV1_COMMON *cm,
 #if CONFIG_ADAPT_SCAN
     av1_update_scan_count_facade(cm, tx_size, tx_type, pd->dqcoeff, eob);
 #endif
-    if (eob)
+    if (eob) {
       inverse_transform_block(xd, plane, tx_type, tx_size, dst, pd->dst.stride,
                               max_scan_line, eob);
+      if (need_transpose) transpose_block(dst, pd->dst.stride, tx1d_width);
+    }
   }
 }
 

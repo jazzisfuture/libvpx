@@ -37,7 +37,7 @@ static INLINE void range_check(const tran_low_t *input, const int size,
 #endif
 }
 
-static void fdct4(const tran_low_t *input, tran_low_t *output) {
+void fdct4(const tran_low_t *input, tran_low_t *output) {
   tran_high_t temp;
   tran_low_t step[4];
 
@@ -73,7 +73,7 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   range_check(output, 4, 16);
 }
 
-static void fdct8(const tran_low_t *input, tran_low_t *output) {
+void fdct8(const tran_low_t *input, tran_low_t *output) {
   tran_high_t temp;
   tran_low_t step[8];
 
@@ -151,7 +151,7 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   range_check(output, 8, 16);
 }
 
-static void fdct16(const tran_low_t *input, tran_low_t *output) {
+void fdct16(const tran_low_t *input, tran_low_t *output) {
   tran_high_t temp;
   tran_low_t step[16];
 
@@ -325,7 +325,7 @@ static void fdct16(const tran_low_t *input, tran_low_t *output) {
   range_check(output, 16, 16);
 }
 
-static void fdct32(const tran_low_t *input, tran_low_t *output) {
+void fdct32(const tran_low_t *input, tran_low_t *output) {
   tran_high_t temp;
   tran_low_t step[32];
 

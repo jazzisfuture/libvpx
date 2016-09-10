@@ -22,5 +22,10 @@ static INLINE tran_high_t fdct_round_shift(tran_high_t input) {
   return rv;
 }
 
+void fdct4(const tran_low_t *input, tran_low_t *output);
+void fdct8(const tran_low_t *input, tran_low_t *output);
+void fdct16(const tran_low_t *input, tran_low_t *output);
+void fdct32(const tran_low_t *input, tran_low_t *output);
+
 void aom_fdct32(const tran_high_t *input, tran_high_t *output, int round);
 #endif  // AOM_DSP_FWD_TXFM_H_
