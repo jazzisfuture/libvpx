@@ -661,19 +661,19 @@ static void encode_block(int plane, int block, int row, int col,
 
   switch (tx_size) {
     case TX_32X32:
-      vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 0);
       break;
     case TX_16X16:
-      vp9_idct16x16_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      vp9_idct16x16_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 0);
       break;
     case TX_8X8:
-      vp9_idct8x8_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      vp9_idct8x8_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 0);
       break;
     case TX_4X4:
       // this is like vp9_short_idct4x4 but has a special case around eob<=1
       // which is significant (not just an optimization) for the lossless
       // case.
-      x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 0);
       break;
     default: assert(0 && "Invalid transform size"); break;
   }
@@ -699,7 +699,7 @@ static void encode_block_pass1(int plane, int block, int row, int col,
       return;
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-    x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+    x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 0);
   }
 }
 
@@ -892,7 +892,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
         *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
       if (!x->skip_encode && *eob)
-        vp9_idct32x32_add(dqcoeff, dst, dst_stride, *eob);
+        vp9_idct32x32_add(dqcoeff, dst, dst_stride, *eob, 0);
       break;
     case TX_16X16:
       if (!x->skip_recode) {
@@ -944,7 +944,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
           // this is like vp9_short_idct4x4 but has a special case around eob<=1
           // which is significant (not just an optimization) for the lossless
           // case.
-          x->itxm_add(dqcoeff, dst, dst_stride, *eob);
+          x->itxm_add(dqcoeff, dst, dst_stride, *eob, 0);
         else
           vp9_iht4x4_16_add(dqcoeff, dst, dst_stride, tx_type);
       }
