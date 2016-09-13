@@ -106,9 +106,6 @@ ifeq ($(CONFIG_VP9_DECODER),yes)
   CODEC_DOC_SECTIONS += vp9 vp9_decoder
 endif
 
-VP9_PREFIX=vp9/
-$(BUILD_PFX)$(VP9_PREFIX)%.c.o: CFLAGS += -Wextra
-
 ifeq ($(CONFIG_ENCODERS),yes)
   CODEC_DOC_SECTIONS += encoder
 endif
@@ -116,6 +113,9 @@ ifeq ($(CONFIG_DECODERS),yes)
   CODEC_DOC_SECTIONS += decoder
 endif
 
+# Suppress -Wextra warnings in gtest and vpx_dsp
+$(BUILD_PFX)third_party/gtest/%.cc.o: CXXFLAGS += -Wno-missing-field-initializers
+$(BUILD_PFX)vpx_dsp/x86/%.c.o: CFLAGS += -Wno-unused-parameter
 
 ifeq ($(CONFIG_MSVS),yes)
 CODEC_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxmt,vpxmd)
