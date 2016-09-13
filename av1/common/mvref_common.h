@@ -282,7 +282,7 @@ static INLINE int_mv get_sub_block_pred_mv(const MODE_INFO *candidate,
   return block_idx >= 0 && candidate->mbmi.sb_type < BLOCK_8X8
              ? candidate
                    ->bmi[idx_n_column_to_subblock[block_idx][search_col == 0]]
-                   .pred_mv_s8[which_mv]
+                   .pred_mv[which_mv]
              : candidate->mbmi.pred_mv[which_mv];
 }
 #endif
@@ -354,7 +354,7 @@ static INLINE int av1_nmv_ctx(const uint8_t ref_mv_count,
 #if CONFIG_EXT_INTER
   return 0;
 #endif
-  if (ref_mv_stack[0].weight > REF_CAT_LEVEL && ref_mv_count > 0) {
+  if (ref_mv_stack[0].weight >= REF_CAT_LEVEL && ref_mv_count > 0) {
     if (abs(ref_mv_stack[0].this_mv.as_mv.row -
             ref_mv_stack[0].pred_mv.as_mv.row) <= 4 &&
         abs(ref_mv_stack[0].this_mv.as_mv.col -
@@ -404,6 +404,8 @@ static INLINE int16_t av1_mode_context_analyzer(
     const int16_t *const mode_context, const MV_REFERENCE_FRAME *const rf,
     BLOCK_SIZE bsize, int block) {
   int16_t mode_ctx = 0;
+  int8_t ref_frame_type = av1_ref_frame_type(rf);
+
   if (block >= 0) {
     mode_ctx = mode_context[rf[0]] & 0x00ff;
 
@@ -413,12 +415,7 @@ static INLINE int16_t av1_mode_context_analyzer(
     return mode_ctx;
   }
 
-  if (rf[1] > INTRA_FRAME)
-    return mode_context[rf[0]] & (mode_context[rf[1]] | 0x00ff);
-  else if (rf[0] != ALTREF_FRAME)
-    return mode_context[rf[0]] & ~(mode_context[ALTREF_FRAME] & 0xfe00);
-  else
-    return mode_context[rf[0]];
+  return mode_context[ref_frame_type];
 }
 
 static INLINE uint8_t av1_drl_ctx(const CANDIDATE_MV *ref_mv_stack,
@@ -468,10 +465,6 @@ void av1_find_best_ref_mvs(int allow_hp, int_mv *mvlist, int_mv *nearest_mv,
 
 void av1_append_sub8x8_mvs_for_idx(AV1_COMMON *cm, MACROBLOCKD *xd, int block,
                                    int ref, int mi_row, int mi_col,
-#if CONFIG_REF_MV
-                                   CANDIDATE_MV *ref_mv_stack,
-                                   uint8_t *ref_mv_count,
-#endif
 #if CONFIG_EXT_INTER
                                    int_mv *mv_list,
 #endif  // CONFIG_EXT_INTER
