@@ -575,6 +575,10 @@ process_toolchain() {
         check_add_cflags -Wimplicit-function-declaration
         check_add_cflags -Wuninitialized
         check_add_cflags -Wunused
+        # -Wextra has some tricky cases in the vpx_dsp convolve macros as well
+        # as gtest and libyuv. There are some exceptions sprinkled in the .mk
+        # files for those.
+        check_add_cflags -Wextra
         # check_add_cflags also adds to cxxflags. gtest does not do well with
         # -Wundef so add it explicitly to CFLAGS only.
         check_cflags -Wundef && add_cflags_only -Wundef
