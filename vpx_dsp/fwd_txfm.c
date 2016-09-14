@@ -766,7 +766,7 @@ void vpx_fdct32x32_1_c(const int16_t *input, tran_low_t *output, int stride) {
   output[0] = (tran_low_t)(sum >> 3);
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 void vpx_highbd_fdct4x4_c(const int16_t *input, tran_low_t *output,
                           int stride) {
   vpx_fdct4x4_c(input, output, stride);
@@ -805,4 +805,4 @@ void vpx_highbd_fdct32x32_1_c(const int16_t *input, tran_low_t *out,
                               int stride) {
   vpx_fdct32x32_1_c(input, out, stride);
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH

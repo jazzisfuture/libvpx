@@ -27,7 +27,7 @@
 using libvpx_test::ACMRandom;
 
 namespace {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 const int kNumIterations = 1000;
 
 typedef int64_t (*ErrorBlockFunc)(const tran_low_t *coeff,
@@ -195,5 +195,5 @@ INSTANTIATE_TEST_CASE_P(
         VPX_BITS_8)));
 #endif  // HAVE_AVX
 
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 }  // namespace

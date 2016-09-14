@@ -203,7 +203,7 @@ void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
   }
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 void vp9_highbd_iht4x4_16_add_c(const tran_low_t *input, uint8_t *dest8,
                                 int stride, int tx_type, int bd) {
   const highbd_transform_2d IHT_4[] = {
@@ -393,4 +393,4 @@ void vp9_highbd_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input,
     vp9_highbd_iht16x16_256_add(input, dest, stride, tx_type, bd);
   }
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH

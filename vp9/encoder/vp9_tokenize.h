@@ -22,7 +22,7 @@ extern "C" {
 
 #define EOSB_TOKEN 127  // Not signalled, encoder only
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 typedef int32_t EXTRABIT;
 #else
 typedef int16_t EXTRABIT;
@@ -62,10 +62,10 @@ typedef struct {
 
 // indexed by token value
 extern const vp9_extra_bit vp9_extra_bits[ENTROPY_TOKENS];
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 extern const vp9_extra_bit vp9_extra_bits_high10[ENTROPY_TOKENS];
 extern const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS];
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 extern const int16_t *vp9_dct_value_cost_ptr;
 /* TODO: The Token field should be broken out into a separate char array to
@@ -87,7 +87,7 @@ static INLINE int vp9_get_cost(int16_t token, EXTRABIT extrabits,
          cat6_high_table[extrabits >> 9];
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 static INLINE const int *vp9_get_high_cost_table(int bit_depth) {
   return bit_depth == 8 ? vp9_cat6_high_cost
                         : (bit_depth == 10 ? vp9_cat6_high10_high_cost
@@ -98,7 +98,7 @@ static INLINE const int *vp9_get_high_cost_table(int bit_depth) {
   (void)bit_depth;
   return vp9_cat6_high_cost;
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 static INLINE void vp9_get_token_extra(int v, int16_t *token, EXTRABIT *extra) {
   if (v >= CAT6_MIN_VAL || v <= -CAT6_MIN_VAL) {

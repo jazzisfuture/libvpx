@@ -49,9 +49,9 @@ const TestVideoParam kTestVectors[] = {
   { "hantro_collage_w352h288.yuv", 352, 288, 30, 1, 8, VPX_IMG_FMT_I420,
     VPX_BITS_8, 0 },
   { "rush_hour_444.y4m", 352, 288, 30, 1, 8, VPX_IMG_FMT_I444, VPX_BITS_8, 1 },
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 // Add list of profile 2/3 test videos here ...
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 };
 
 const TestEncodeParam kEncodeVectors[] = {

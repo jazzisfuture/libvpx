@@ -47,7 +47,7 @@
 
 #define LIMIT_QP_ONEPASS_VBR_LAG 0
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 #define ASSIGN_MINQ_TABLE(bit_depth, name)                   \
   do {                                                       \
     switch (bit_depth) {                                     \
@@ -77,7 +77,7 @@ static int arfgf_high_motion_minq_8[QINDEX_RANGE];
 static int inter_minq_8[QINDEX_RANGE];
 static int rtc_minq_8[QINDEX_RANGE];
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 static int kf_low_motion_minq_10[QINDEX_RANGE];
 static int kf_high_motion_minq_10[QINDEX_RANGE];
 static int arfgf_low_motion_minq_10[QINDEX_RANGE];
@@ -136,7 +136,7 @@ void vp9_rc_init_minq_luts(void) {
   init_minq_luts(kf_low_motion_minq_8, kf_high_motion_minq_8,
                  arfgf_low_motion_minq_8, arfgf_high_motion_minq_8,
                  inter_minq_8, rtc_minq_8, VPX_BITS_8);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   init_minq_luts(kf_low_motion_minq_10, kf_high_motion_minq_10,
                  arfgf_low_motion_minq_10, arfgf_high_motion_minq_10,
                  inter_minq_10, rtc_minq_10, VPX_BITS_10);
@@ -151,7 +151,7 @@ void vp9_rc_init_minq_luts(void) {
 // tables if and when things settle down in the experimental bitstream
 double vp9_convert_qindex_to_q(int qindex, vpx_bit_depth_t bit_depth) {
 // Convert the index to a real Q value (scaled down to match old Q values)
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   switch (bit_depth) {
     case VPX_BITS_8: return vp9_ac_quant(qindex, 0, bit_depth) / 4.0;
     case VPX_BITS_10: return vp9_ac_quant(qindex, 0, bit_depth) / 16.0;

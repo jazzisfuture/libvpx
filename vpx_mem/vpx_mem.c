@@ -115,11 +115,11 @@ void vpx_free(void *memblk) {
   }
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 void *vpx_memset16(void *dest, int val, size_t length) {
   size_t i;
   uint16_t *dest16 = (uint16_t *)dest;
   for (i = 0; i < length; i++) *dest16++ = val;
   return dest;
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH

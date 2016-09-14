@@ -48,7 +48,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     if (vpx_realloc_frame_buffer(&cpi->svc.empty_frame.img, SMALL_FRAME_WIDTH,
                                  SMALL_FRAME_HEIGHT, cpi->common.subsampling_x,
                                  cpi->common.subsampling_y,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
                                  cpi->common.use_highbitdepth,
 #endif
                                  VP9_ENC_BORDER_IN_PIXELS,

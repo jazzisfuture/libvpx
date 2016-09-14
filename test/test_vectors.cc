@@ -359,7 +359,7 @@ const char *const kVP9TestVectors[] = {
   "vp91-2-04-yuv444.webm",
   "vp91-2-04-yuv422.webm",
   "vp91-2-04-yuv440.webm",
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_DECODE_HIGHBITDEPTH
   "vp92-2-20-10bit-yuv420.webm",
   "vp92-2-20-12bit-yuv420.webm",
   "vp93-2-20-10bit-yuv422.webm",
@@ -368,7 +368,7 @@ const char *const kVP9TestVectors[] = {
   "vp93-2-20-12bit-yuv440.webm",
   "vp93-2-20-10bit-yuv444.webm",
   "vp93-2-20-12bit-yuv444.webm",
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_DECODE_HIGHBITDEPTH
   "vp90-2-20-big_superframe-01.webm",
   "vp90-2-20-big_superframe-02.webm",
   RESIZE_TEST_VECTORS

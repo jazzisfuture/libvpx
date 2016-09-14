@@ -19,7 +19,7 @@
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 void vp9_highbd_build_inter_predictor(
     const uint8_t *src, int src_stride, uint8_t *dst, int dst_stride,
     const MV *src_mv, const struct scale_factors *sf, int w, int h, int ref,
@@ -38,7 +38,7 @@ void vp9_highbd_build_inter_predictor(
                          sf, w, h, ref, kernel, sf->x_step_q4, sf->y_step_q4,
                          bd);
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride, uint8_t *dst,
                                int dst_stride, const MV *src_mv,
@@ -188,7 +188,7 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     pre += (scaled_mv.row >> SUBPEL_BITS) * pre_buf->stride +
            (scaled_mv.col >> SUBPEL_BITS);
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       highbd_inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                              subpel_x, subpel_y, sf, w, h, ref, kernel, xs, ys,
@@ -200,7 +200,7 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
 #else
     inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride, subpel_x,
                     subpel_y, sf, w, h, ref, kernel, xs, ys);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
   }
 }
 

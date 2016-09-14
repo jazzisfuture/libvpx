@@ -122,7 +122,7 @@ TEST_P(InvalidFileTest, ReturnCode) { RunTest(); }
 
 const DecodeParam kVP9InvalidFileTests[] = {
   { 1, "invalid-vp90-02-v2.webm" },
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_DECODE_HIGHBITDEPTH
   { 1, "invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.v2.ivf" },
 #endif
   { 1, "invalid-vp90-03-v3.webm" },

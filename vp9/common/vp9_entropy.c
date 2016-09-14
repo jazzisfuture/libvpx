@@ -36,7 +36,7 @@ const vpx_prob vp9_cat4_prob[] = { 176, 155, 140, 135 };
 const vpx_prob vp9_cat5_prob[] = { 180, 157, 141, 134, 130 };
 const vpx_prob vp9_cat6_prob[] = { 254, 254, 254, 252, 249, 243, 230,
                                    196, 177, 153, 140, 133, 130, 129 };
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 const vpx_prob vp9_cat6_prob_high12[] = { 255, 255, 255, 255, 254, 254,
                                           254, 252, 249, 243, 230, 196,
                                           177, 153, 140, 133, 130, 129 };

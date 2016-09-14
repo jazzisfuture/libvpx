@@ -37,14 +37,14 @@ void vp9_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   const int bw = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int bh = 4 * num_4x4_blocks_high_lookup[plane_bsize];
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (x->e_mbd.cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     vpx_highbd_subtract_block(bh, bw, p->src_diff, bw, p->src.buf,
                               p->src.stride, pd->dst.buf, pd->dst.stride,
                               x->e_mbd.bd);
     return;
   }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   vpx_subtract_block(bh, bw, p->src_diff, bw, p->src.buf, p->src.stride,
                      pd->dst.buf, pd->dst.stride);
 }
@@ -110,7 +110,7 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
   int16_t t0, t1;
   EXTRABIT e0;
   int best, band, pt, i, final_eob;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   const int *cat6_high_cost = vp9_get_high_cost_table(xd->bd);
 #else
   const int *cat6_high_cost = vp9_get_high_cost_table(8);
@@ -160,11 +160,11 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
       best = rd_cost1 < rd_cost0;
       base_bits = vp9_get_cost(t0, e0, cat6_high_cost);
       dx = (dqcoeff[rc] - coeff[rc]) * (1 << shift);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
         dx >>= xd->bd - 8;
       }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       d2 = dx * dx;
       tokens[i][0].rate = base_bits + (best ? rate1 : rate0);
       tokens[i][0].error = d2 + (best ? error1 : error0);
@@ -228,7 +228,7 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
       base_bits = vp9_get_cost(t0, e0, cat6_high_cost);
 
       if (shortcut) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
         if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
           dx -= ((dequant_ptr[rc != 0] >> (xd->bd - 8)) + sz) ^ sz;
         } else {
@@ -236,7 +236,7 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
         }
 #else
         dx -= (dequant_ptr[rc != 0] + sz) ^ sz;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
         d2 = dx * dx;
       }
       tokens[i][1].rate = base_bits + (best ? rate1 : rate0);
@@ -325,7 +325,7 @@ static INLINE void fdct32x32(int rd_transform, const int16_t *src,
     vpx_fdct32x32(src, dst, src_stride);
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
                                     tran_low_t *dst, int src_stride) {
   if (rd_transform)
@@ -333,7 +333,7 @@ static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
   else
     vpx_highbd_fdct32x32(src, dst, src_stride);
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block, int row, int col,
                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
@@ -349,7 +349,7 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block, int row, int col,
   const int16_t *src_diff;
   src_diff = &p->src_diff[4 * (row * diff_stride + col)];
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
@@ -384,7 +384,7 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block, int row, int col,
     }
     return;
   }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   switch (tx_size) {
     case TX_32X32:
@@ -428,7 +428,7 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block, int row, int col,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int16_t *src_diff;
   src_diff = &p->src_diff[4 * (row * diff_stride + col)];
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
@@ -459,7 +459,7 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block, int row, int col,
     }
     return;
   }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   switch (tx_size) {
     case TX_32X32:
@@ -500,7 +500,7 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block, int row, int col,
   const int16_t *src_diff;
   src_diff = &p->src_diff[4 * (row * diff_stride + col)];
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
@@ -535,7 +535,7 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block, int row, int col,
     }
     return;
   }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   switch (tx_size) {
     case TX_32X32:
@@ -631,7 +631,7 @@ static void encode_block(int plane, int block, int row, int col,
   if (p->eobs[block]) *(args->skip) = 0;
 
   if (x->skip_encode || p->eobs[block] == 0) return;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
@@ -657,7 +657,7 @@ static void encode_block(int plane, int block, int row, int col,
     }
     return;
   }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   switch (tx_size) {
     case TX_32X32:
@@ -693,12 +693,12 @@ static void encode_block_pass1(int plane, int block, int row, int col,
   vp9_xform_quant(x, plane, block, row, col, plane_bsize, tx_size);
 
   if (p->eobs[block] > 0) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       x->highbd_itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], xd->bd);
       return;
     }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
     x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
   }
 }
@@ -792,7 +792,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
                           x->skip_encode ? src_stride : dst_stride, dst,
                           dst_stride, col, row, plane);
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
@@ -875,7 +875,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
     if (*eob) *(args->skip) = 0;
     return;
   }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   switch (tx_size) {
     case TX_32X32:

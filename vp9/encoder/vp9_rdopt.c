@@ -171,9 +171,9 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
   int rate;
   int64_t dist;
   const int dequant_shift =
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ? xd->bd - 5 :
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
                                                     3;
 
   x->pred_sse[ref] = 0;
@@ -262,7 +262,7 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
   *out_dist_sum = dist_sum << 4;
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 int64_t vp9_highbd_block_error_c(const tran_low_t *coeff,
                                  const tran_low_t *dqcoeff, intptr_t block_size,
                                  int64_t *ssz, int bd) {
@@ -304,7 +304,7 @@ static int64_t vp9_highbd_block_error_dispatch(const tran_low_t *coeff,
     return vp9_highbd_block_error(coeff, dqcoeff, block_size, ssz, bd);
   }
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 int64_t vp9_block_error_c(const tran_low_t *coeff, const tran_low_t *dqcoeff,
                           intptr_t block_size, int64_t *ssz) {
@@ -321,7 +321,7 @@ int64_t vp9_block_error_c(const tran_low_t *coeff, const tran_low_t *dqcoeff,
   return error;
 }
 
-int64_t vp9_block_error_fp_c(const int16_t *coeff, const int16_t *dqcoeff,
+int64_t vp9_block_error_fp_c(const tran_low_t *coeff, const tran_low_t *dqcoeff,
                              int block_size) {
   int i;
   int64_t error = 0;
@@ -359,7 +359,7 @@ static int cost_coeffs(MACROBLOCK *x, int plane, int block, TX_SIZE tx_size,
       x->token_costs[tx_size][type][is_inter_block(mi)];
   uint8_t token_cache[32 * 32];
   int c, cost;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   const int *cat6_high_cost = vp9_get_high_cost_table(xd->bd);
 #else
   const int *cat6_high_cost = vp9_get_high_cost_table(8);
@@ -541,7 +541,7 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
     const int shift = tx_size == TX_32X32 ? 0 : 2;
     const tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
     const tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     const int bd = (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ? xd->bd : 8;
     *out_dist = vp9_highbd_block_error_dispatch(
                     coeff, dqcoeff, 16 << ss_txfrm_size, &this_sse, bd) >>
@@ -550,18 +550,18 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
     *out_dist =
         vp9_block_error(coeff, dqcoeff, 16 << ss_txfrm_size, &this_sse) >>
         shift;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
     *out_sse = this_sse >> shift;
 
     if (x->skip_encode && !is_inter_block(xd->mi[0])) {
       // TODO(jingning): tune the model to better capture the distortion.
       const int64_t p =
           (pd->dequant[1] * pd->dequant[1] * (1 << ss_txfrm_size)) >>
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
           (shift + 2 + (bd - 8) * 2);
 #else
           (shift + 2);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       *out_dist += (p >> 4);
       *out_sse += p;
     }
@@ -583,14 +583,14 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
     *out_sse = (int64_t)tmp * 16;
 
     if (*eob) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       DECLARE_ALIGNED(16, uint16_t, recon16[1024]);
       uint8_t *recon = (uint8_t *)recon16;
 #else
       DECLARE_ALIGNED(16, uint8_t, recon[1024]);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
         recon = CONVERT_TO_BYTEPTR(recon);
         vpx_highbd_convolve_copy(dst, dst_stride, recon, 32, NULL, 0, NULL, 0,
@@ -615,7 +615,7 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
           }
         }
       } else {
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
         vpx_convolve_copy(dst, dst_stride, recon, 32, NULL, 0, NULL, 0, bs, bs);
         switch (tx_size) {
           case TX_32X32: vp9_idct32x32_add(dqcoeff, recon, 32, *eob); break;
@@ -629,9 +629,9 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
             break;
           default: assert(0 && "Invalid transform size"); break;
         }
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
       tmp = pixel_sse(cpi, xd, pd, src, src_stride, recon, 32, blk_row, blk_col,
                       plane_bsize, tx_bsize);
@@ -683,10 +683,10 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
       unsigned int tmp;
       sse = sum_squares_visible(xd, pd, diff, diff_stride, blk_row, blk_col,
                                 plane_bsize, tx_bsize);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if ((xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) && (xd->bd > 8))
         sse = ROUND64_POWER_OF_TWO(sse, (xd->bd - 8) * 2);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       sse = sse * 16;
       tmp = pixel_sse(args->cpi, xd, pd, src, src_stride, dst, dst_stride,
                       blk_row, blk_col, plane_bsize, tx_bsize);
@@ -714,7 +714,7 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
         const int64_t orig_sse = (int64_t)coeff[0] * coeff[0];
         const int64_t resd_sse = coeff[0] - dqcoeff[0];
         int64_t dc_correct = orig_sse - resd_sse * resd_sse;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
         dc_correct >>= ((xd->bd - 8) * 2);
 #endif
         if (tx_size != TX_32X32) dc_correct >>= 2;
@@ -963,7 +963,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int row,
   const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
   int idx, idy;
   uint8_t best_dst[8 * 8];
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   uint16_t best_dst16[8 * 8];
 #endif
   memcpy(ta, a, num_4x4_blocks_wide * sizeof(a[0]));
@@ -971,7 +971,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int row,
 
   xd->mi[0]->tx_size = TX_4X4;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
       int64_t this_rd;
@@ -1072,7 +1072,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int row,
 
     return best_rd;
   }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
     int64_t this_rd;
@@ -1129,7 +1129,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int row,
           ratey += cost_coeffs(x, 0, block, TX_4X4, coeff_ctx, so->scan,
                                so->neighbors, cpi->sf.use_fast_coef_costing);
           tempa[idx] = templ[idy] = (x->plane[0].eobs[block] > 0) ? 1 : 0;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
           distortion +=
               vp9_highbd_block_error_8bit(
                   coeff, BLOCK_OFFSET(pd->dqcoeff, block), 16, &unused) >>
@@ -1358,11 +1358,11 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
   memset(x->skip_txfm, SKIP_TXFM_NONE, sizeof(x->skip_txfm));
   for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
     if (!(cpi->sf.intra_uv_mode_mask[max_tx_size] & (1 << mode))) continue;
-#if CONFIG_BETTER_HW_COMPATIBILITY && CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_BETTER_HW_COMPATIBILITY && CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if ((xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) &&
         (xd->above_mi == NULL || xd->left_mi == NULL) && need_top_left[mode])
       continue;
-#endif  // CONFIG_BETTER_HW_COMPATIBILITY && CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_BETTER_HW_COMPATIBILITY && CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
     xd->mi[0]->uv_mode = mode;
 
@@ -1523,7 +1523,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi, MACROBLOCK *x,
       pre = xd->block_refs[ref]->buf->y_buffer;
       pre += scaled_buffer_offset(x_start + w, y_start + h, y_stride, sf);
     }
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       vp9_highbd_build_inter_predictor(
           pre, y_stride, dst, pd->dst.stride, &mi->bmi[i].as_mv[ref].as_mv,
@@ -1541,10 +1541,10 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi, MACROBLOCK *x,
         pre, y_stride, dst, pd->dst.stride, &mi->bmi[i].as_mv[ref].as_mv,
         &xd->block_refs[ref]->sf, width, height, ref, kernel, MV_PRECISION_Q3,
         mi_col * MI_SIZE + 4 * (i % 2), mi_row * MI_SIZE + 4 * (i / 2));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     vpx_highbd_subtract_block(
         height, width, vp9_raster_block_offset_int16(BLOCK_8X8, i, p->src_diff),
@@ -1558,12 +1558,12 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi, MACROBLOCK *x,
   vpx_subtract_block(height, width,
                      vp9_raster_block_offset_int16(BLOCK_8X8, i, p->src_diff),
                      8, src, p->src.stride, dst, pd->dst.stride);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   k = i;
   for (idy = 0; idy < height / 4; ++idy) {
     for (idx = 0; idx < width / 4; ++idx) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       const int bd = (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ? xd->bd : 8;
 #endif
       int64_t ssz, rd, rd1, rd2;
@@ -1575,13 +1575,13 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi, MACROBLOCK *x,
       x->fwd_txm4x4(vp9_raster_block_offset_int16(BLOCK_8X8, k, p->src_diff),
                     coeff, 8);
       vp9_regular_quantize_b_4x4(x, 0, k, so->scan, so->iscan);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       thisdistortion += vp9_highbd_block_error_dispatch(
           coeff, BLOCK_OFFSET(pd->dqcoeff, k), 16, &ssz, bd);
 #else
       thisdistortion +=
           vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, k), 16, &ssz);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       thissse += ssz;
       thisrate += cost_coeffs(x, 0, k, TX_4X4, coeff_ctx, so->scan,
                               so->neighbors, cpi->sf.use_fast_coef_costing);
@@ -1724,12 +1724,12 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
   };
 
 // Prediction buffer from second frame.
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   DECLARE_ALIGNED(16, uint16_t, second_pred_alloc_16[64 * 64]);
   uint8_t *second_pred;
 #else
   DECLARE_ALIGNED(16, uint8_t, second_pred[64 * 64]);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   for (ref = 0; ref < 2; ++ref) {
     ref_mv[ref] = x->mbmi_ext->ref_mvs[refs[ref]][0];
@@ -1750,13 +1750,13 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
 
 // Since we have scaled the reference frames to match the size of the current
 // frame we must use a unit scaling factor during mode selection.
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
   vp9_setup_scale_factors_for_frame(&sf, cm->width, cm->height, cm->width,
                                     cm->height, cm->use_highbitdepth);
 #else
   vp9_setup_scale_factors_for_frame(&sf, cm->width, cm->height, cm->width,
                                     cm->height);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   // Allow joint search multiple times iteratively for each reference frame
   // and break out of the search loop if it couldn't find a better mv.
@@ -1777,7 +1777,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
     ref_yv12[1] = xd->plane[0].pre[1];
 
 // Get the prediction block from the 'other' reference frame.
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       second_pred = CONVERT_TO_BYTEPTR(second_pred_alloc_16);
       vp9_highbd_build_inter_predictor(
@@ -1796,7 +1796,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
                               second_pred, pw, &frame_mv[refs[!id]].as_mv, &sf,
                               pw, ph, 0, kernel, MV_PRECISION_Q3,
                               mi_col * MI_SIZE, mi_row * MI_SIZE);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
     // Do compound motion search on the current reference frame.
     if (id) xd->plane[0].pre[0] = ref_yv12[id];
@@ -2476,12 +2476,12 @@ static int64_t handle_inter_mode(
   int refs[2] = { mi->ref_frame[0],
                   (mi->ref_frame[1] < 0 ? 0 : mi->ref_frame[1]) };
   int_mv cur_mv[2];
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   DECLARE_ALIGNED(16, uint16_t, tmp_buf16[MAX_MB_PLANE * 64 * 64]);
   uint8_t *tmp_buf;
 #else
   DECLARE_ALIGNED(16, uint8_t, tmp_buf[MAX_MB_PLANE * 64 * 64]);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   int pred_exists = 0;
   int intpel_mv;
   int64_t rd, tmp_rd, best_rd = INT64_MAX;
@@ -2505,13 +2505,13 @@ static int64_t handle_inter_mode(
   int64_t skip_sse_sb = INT64_MAX;
   int64_t distortion_y = 0, distortion_uv = 0;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     tmp_buf = CONVERT_TO_BYTEPTR(tmp_buf16);
   } else {
     tmp_buf = (uint8_t *)tmp_buf16;
   }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   if (pred_filter_search) {
     INTERP_FILTER af = SWITCHABLE, lf = SWITCHABLE;
@@ -2885,7 +2885,7 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
 
   if (*this_rd == INT64_MAX) return;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     recon_variance = vp9_high_get_sby_perpixel_variance(cpi, &xd->plane[0].dst,
                                                         bsize, xd->bd);
@@ -2895,7 +2895,7 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   }
 #else
   recon_variance = vp9_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   if ((source_variance + recon_variance) > LOW_VAR_THRESH) {
     absvar_diff = (source_variance > recon_variance)
@@ -3474,11 +3474,11 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, TileDataEnc *tile_data,
           int qstep = xd->plane[0].dequant[1];
           // TODO(debargha): Enhance this by specializing for each mode_index
           int scale = 4;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
           if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
             qstep >>= (xd->bd - 8);
           }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
           if (x->source_variance < UINT_MAX) {
             const int var_adjust = (x->source_variance < 16);
             scale -= var_adjust;
@@ -4225,11 +4225,11 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, TileDataEnc *tile_data,
           int qstep = xd->plane[0].dequant[1];
           // TODO(debargha): Enhance this by specializing for each mode_index
           int scale = 4;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
           if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
             qstep >>= (xd->bd - 8);
           }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
           if (x->source_variance < UINT_MAX) {
             const int var_adjust = (x->source_variance < 16);
             scale -= var_adjust;

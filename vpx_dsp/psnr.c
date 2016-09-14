@@ -46,7 +46,7 @@ static void encoder_variance(const uint8_t *a, int a_stride, const uint8_t *b,
   }
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 static void encoder_highbd_variance64(const uint8_t *a8, int a_stride,
                                       const uint8_t *b8, int b_stride, int w,
                                       int h, uint64_t *sse, int64_t *sum) {
@@ -78,7 +78,7 @@ static void encoder_highbd_8_variance(const uint8_t *a8, int a_stride,
   *sse = (unsigned int)sse_long;
   *sum = (int)sum_long;
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 static int64_t get_sse(const uint8_t *a, int a_stride, const uint8_t *b,
                        int b_stride, int width, int height) {
@@ -120,7 +120,7 @@ static int64_t get_sse(const uint8_t *a, int a_stride, const uint8_t *b,
   return total_sse;
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 static int64_t highbd_get_sse_shift(const uint8_t *a8, int a_stride,
                                     const uint8_t *b8, int b_stride, int width,
                                     int height, unsigned int input_shift) {
@@ -173,7 +173,7 @@ static int64_t highbd_get_sse(const uint8_t *a, int a_stride, const uint8_t *b,
   }
   return total_sse;
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 int64_t vpx_get_y_sse(const YV12_BUFFER_CONFIG *a,
                       const YV12_BUFFER_CONFIG *b) {
@@ -184,7 +184,7 @@ int64_t vpx_get_y_sse(const YV12_BUFFER_CONFIG *a,
                  a->y_crop_width, a->y_crop_height);
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 int64_t vpx_highbd_get_y_sse(const YV12_BUFFER_CONFIG *a,
                              const YV12_BUFFER_CONFIG *b) {
   assert(a->y_crop_width == b->y_crop_width);
@@ -195,9 +195,9 @@ int64_t vpx_highbd_get_y_sse(const YV12_BUFFER_CONFIG *a,
   return highbd_get_sse(a->y_buffer, a->y_stride, b->y_buffer, b->y_stride,
                         a->y_crop_width, a->y_crop_height);
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 void vpx_calc_highbd_psnr(const YV12_BUFFER_CONFIG *a,
                           const YV12_BUFFER_CONFIG *b, PSNR_STATS *psnr,
                           uint32_t bit_depth, uint32_t in_bit_depth) {
@@ -244,7 +244,7 @@ void vpx_calc_highbd_psnr(const YV12_BUFFER_CONFIG *a,
       vpx_sse_to_psnr((double)total_samples, peak, (double)total_sse);
 }
 
-#endif  // !CONFIG_VP9_HIGHBITDEPTH
+#endif  // !CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 void vpx_calc_psnr(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b,
                    PSNR_STATS *psnr) {

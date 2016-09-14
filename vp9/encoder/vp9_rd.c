@@ -110,7 +110,7 @@ static void fill_token_costs(vp9_coeff_cost *c,
 static int sad_per_bit16lut_8[QINDEX_RANGE];
 static int sad_per_bit4lut_8[QINDEX_RANGE];
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 static int sad_per_bit16lut_10[QINDEX_RANGE];
 static int sad_per_bit4lut_10[QINDEX_RANGE];
 static int sad_per_bit16lut_12[QINDEX_RANGE];
@@ -133,7 +133,7 @@ static void init_me_luts_bd(int *bit16lut, int *bit4lut, int range,
 void vp9_init_me_luts(void) {
   init_me_luts_bd(sad_per_bit16lut_8, sad_per_bit4lut_8, QINDEX_RANGE,
                   VPX_BITS_8);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   init_me_luts_bd(sad_per_bit16lut_10, sad_per_bit4lut_10, QINDEX_RANGE,
                   VPX_BITS_10);
   init_me_luts_bd(sad_per_bit16lut_12, sad_per_bit4lut_12, QINDEX_RANGE,
@@ -148,7 +148,7 @@ static const int rd_frame_type_factor[FRAME_UPDATE_TYPES] = { 128, 144, 128,
 
 int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
   const int64_t q = vp9_dc_quant(qindex, 0, cpi->common.bit_depth);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   int64_t rdmult = 0;
   switch (cpi->common.bit_depth) {
     case VPX_BITS_8: rdmult = 88 * q * q / 24; break;
@@ -160,7 +160,7 @@ int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
   }
 #else
   int64_t rdmult = 88 * q * q / 24;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (cpi->oxcf.pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
     const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
     const FRAME_UPDATE_TYPE frame_type = gf_group->update_type[gf_group->index];
@@ -175,7 +175,7 @@ int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
 
 static int compute_rd_thresh_factor(int qindex, vpx_bit_depth_t bit_depth) {
   double q;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   switch (bit_depth) {
     case VPX_BITS_8: q = vp9_dc_quant(qindex, 0, VPX_BITS_8) / 4.0; break;
     case VPX_BITS_10: q = vp9_dc_quant(qindex, 0, VPX_BITS_10) / 16.0; break;
@@ -187,13 +187,13 @@ static int compute_rd_thresh_factor(int qindex, vpx_bit_depth_t bit_depth) {
 #else
   (void)bit_depth;
   q = vp9_dc_quant(qindex, 0, VPX_BITS_8) / 4.0;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   // TODO(debargha): Adjust the function below.
   return VPXMAX((int)(pow(q, RD_THRESH_POW) * 5.12), 8);
 }
 
 void vp9_initialize_me_consts(VP9_COMP *cpi, MACROBLOCK *x, int qindex) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   switch (cpi->common.bit_depth) {
     case VPX_BITS_8:
       x->sadperbit16 = sad_per_bit16lut_8[qindex];
@@ -214,7 +214,7 @@ void vp9_initialize_me_consts(VP9_COMP *cpi, MACROBLOCK *x, int qindex) {
   (void)cpi;
   x->sadperbit16 = sad_per_bit16lut_8[qindex];
   x->sadperbit4 = sad_per_bit4lut_8[qindex];
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 }
 
 static void set_block_thresholds(const VP9_COMMON *cm, RD_OPT *rd) {
@@ -627,7 +627,7 @@ void vp9_update_rd_thresh_fact(int (*factor_buf)[MAX_MODES], int rd_thresh,
 int vp9_get_intra_cost_penalty(int qindex, int qdelta,
                                vpx_bit_depth_t bit_depth) {
   const int q = vp9_dc_quant(qindex, qdelta, bit_depth);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   switch (bit_depth) {
     case VPX_BITS_8: return 20 * q;
     case VPX_BITS_10: return 5 * q;
@@ -638,5 +638,5 @@ int vp9_get_intra_cost_penalty(int qindex, int qdelta,
   }
 #else
   return 20 * q;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 }

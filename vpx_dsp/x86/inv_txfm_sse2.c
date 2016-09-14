@@ -3458,7 +3458,7 @@ void vpx_idct32x32_1_add_sse2(const tran_low_t *input, uint8_t *dest,
   }
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 static INLINE __m128i clamp_high_sse2(__m128i value, int bd) {
   __m128i ubounded, retval;
   const __m128i zero = _mm_set1_epi16(0);
@@ -4048,4 +4048,4 @@ void vpx_highbd_idct32x32_1_add_sse2(const tran_low_t *input, uint8_t *dest8,
     dest += stride;
   }
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH

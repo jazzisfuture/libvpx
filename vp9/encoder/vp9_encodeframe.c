@@ -64,7 +64,7 @@ static const uint8_t VP9_VAR_OFFS[64] = {
   128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128
 };
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 static const uint16_t VP9_HIGH_VAR_OFFS_8[64] = {
   128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
   128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
@@ -96,7 +96,7 @@ static const uint16_t VP9_HIGH_VAR_OFFS_12[64] = {
   128 * 16, 128 * 16, 128 * 16, 128 * 16, 128 * 16, 128 * 16, 128 * 16,
   128 * 16
 };
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 unsigned int vp9_get_sby_perpixel_variance(VP9_COMP *cpi,
                                            const struct buf_2d *ref,
@@ -107,7 +107,7 @@ unsigned int vp9_get_sby_perpixel_variance(VP9_COMP *cpi,
   return ROUND_POWER_OF_TWO(var, num_pels_log2_lookup[bs]);
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 unsigned int vp9_high_get_sby_perpixel_variance(VP9_COMP *cpi,
                                                 const struct buf_2d *ref,
                                                 BLOCK_SIZE bs, int bd) {
@@ -132,7 +132,7 @@ unsigned int vp9_high_get_sby_perpixel_variance(VP9_COMP *cpi,
   }
   return ROUND64_POWER_OF_TWO((int64_t)var, num_pels_log2_lookup[bs]);
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 static unsigned int get_sby_perpixel_diff_variance(VP9_COMP *cpi,
                                                    const struct buf_2d *ref,
@@ -533,7 +533,7 @@ void vp9_set_variance_partition_thresholds(VP9_COMP *cpi, int q) {
 // Compute the minmax over the 8x8 subblocks.
 static int compute_minmax_8x8(const uint8_t *s, int sp, const uint8_t *d,
                               int dp, int x16_idx, int y16_idx,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                               int highbd_flag,
 #endif
                               int pixels_wide, int pixels_high) {
@@ -547,7 +547,7 @@ static int compute_minmax_8x8(const uint8_t *s, int sp, const uint8_t *d,
     int min = 0;
     int max = 0;
     if (x8_idx < pixels_wide && y8_idx < pixels_high) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if (highbd_flag & YV12_FLAG_HIGHBITDEPTH) {
         vpx_highbd_minmax_8x8(s + y8_idx * sp + x8_idx, sp,
                               d + y8_idx * dp + x8_idx, dp, &min, &max);
@@ -568,7 +568,7 @@ static int compute_minmax_8x8(const uint8_t *s, int sp, const uint8_t *d,
 
 static void fill_variance_4x4avg(const uint8_t *s, int sp, const uint8_t *d,
                                  int dp, int x8_idx, int y8_idx, v8x8 *vst,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                                  int highbd_flag,
 #endif
                                  int pixels_wide, int pixels_high,
@@ -582,7 +582,7 @@ static void fill_variance_4x4avg(const uint8_t *s, int sp, const uint8_t *d,
     if (x4_idx < pixels_wide && y4_idx < pixels_high) {
       int s_avg;
       int d_avg = 128;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if (highbd_flag & YV12_FLAG_HIGHBITDEPTH) {
         s_avg = vpx_highbd_avg_4x4(s + y4_idx * sp + x4_idx, sp);
         if (!is_key_frame)
@@ -604,7 +604,7 @@ static void fill_variance_4x4avg(const uint8_t *s, int sp, const uint8_t *d,
 
 static void fill_variance_8x8avg(const uint8_t *s, int sp, const uint8_t *d,
                                  int dp, int x16_idx, int y16_idx, v16x16 *vst,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                                  int highbd_flag,
 #endif
                                  int pixels_wide, int pixels_high,
@@ -618,7 +618,7 @@ static void fill_variance_8x8avg(const uint8_t *s, int sp, const uint8_t *d,
     if (x8_idx < pixels_wide && y8_idx < pixels_high) {
       int s_avg;
       int d_avg = 128;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if (highbd_flag & YV12_FLAG_HIGHBITDEPTH) {
         s_avg = vpx_highbd_avg_8x8(s + y8_idx * sp + x8_idx, sp);
         if (!is_key_frame)
@@ -638,7 +638,7 @@ static void fill_variance_8x8avg(const uint8_t *s, int sp, const uint8_t *d,
   }
 }
 
-#if !CONFIG_VP9_HIGHBITDEPTH
+#if !CONFIG_VP9_ENCODE_HIGHBITDEPTH
 // Check if most of the superblock is skin content, and if so, force split to
 // 32x32, and set x->sb_is_skin for use in mode selection.
 static int skin_sb_split(VP9_COMP *cpi, MACROBLOCK *x, const int low_res,
@@ -899,7 +899,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
 
     x->sb_is_skin = 0;
-#if !CONFIG_VP9_HIGHBITDEPTH
+#if !CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if (cpi->use_skin_detection)
       x->sb_is_skin =
           skin_sb_split(cpi, x, low_res, mi_row, mi_col, force_split);
@@ -923,7 +923,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   } else {
     d = VP9_VAR_OFFS;
     dp = 0;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       switch (xd->bd) {
         case 10: d = CONVERT_TO_BYTEPTR(VP9_HIGH_VAR_OFFS_10); break;
@@ -932,7 +932,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
         default: d = CONVERT_TO_BYTEPTR(VP9_HIGH_VAR_OFFS_8); break;
       }
     }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   }
 
   // Fill in the entire tree of 8x8 (or 4x4 under some conditions) variances
@@ -952,7 +952,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       variance4x4downsample[i2 + j] = 0;
       if (!is_key_frame) {
         fill_variance_8x8avg(s, sp, d, dp, x16_idx, y16_idx, vst,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                              xd->cur_buf->flags,
 #endif
                              pixels_wide, pixels_high, is_key_frame);
@@ -973,7 +973,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
           // compute the minmax over the 8x8 sub-blocks, and if above threshold,
           // force split to 8x8 block for this 16x16 block.
           int minmax = compute_minmax_8x8(s, sp, d, dp, x16_idx, y16_idx,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                                           xd->cur_buf->flags,
 #endif
                                           pixels_wide, pixels_high);
@@ -995,7 +995,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
           int y8_idx = y16_idx + ((k >> 1) << 3);
           v8x8 *vst2 = is_key_frame ? &vst->split[k] : &vt2[i2 + j].split[k];
           fill_variance_4x4avg(s, sp, d, dp, x8_idx, y8_idx, vst2,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                                xd->cur_buf->flags,
 #endif
                                pixels_wide, pixels_high, is_key_frame);
@@ -1324,7 +1324,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
   // Set to zero to make sure we do not use the previous encoded frame stats
   mi->skip = 0;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     x->source_variance = vp9_high_get_sby_perpixel_variance(
         cpi, &x->plane[0].src, bsize, xd->bd);
@@ -1335,7 +1335,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
 #else
   x->source_variance =
       vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   // Save rdmult before it might be changed, so it can be restored later.
   orig_rdmult = x->rdmult;
@@ -3788,7 +3788,7 @@ static int set_var_thresh_from_histogram(VP9_COMP *cpi) {
 
   for (i = 0; i < cm->mb_rows; i++) {
     for (j = 0; j < cm->mb_cols; j++) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if (cm->use_highbitdepth) {
         switch (cm->bit_depth) {
           case VPX_BITS_8:
@@ -3816,7 +3816,7 @@ static int set_var_thresh_from_histogram(VP9_COMP *cpi) {
 #else
       vpx_get16x16var(src, src_stride, last_src, last_stride, &var16->sse,
                       &var16->sum);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       var16->var = var16->sse - (((uint32_t)var16->sum * var16->sum) >> 8);
 
       if (var16->var >= VAR_HIST_MAX_BG_VAR)
@@ -4005,7 +4005,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   xd->lossless = cm->base_qindex == 0 && cm->y_dc_delta_q == 0 &&
                  cm->uv_dc_delta_q == 0 && cm->uv_ac_delta_q == 0;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (cm->use_highbitdepth)
     x->fwd_txm4x4 = xd->lossless ? vp9_highbd_fwht4x4 : vpx_highbd_fdct4x4;
   else
@@ -4014,7 +4014,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       xd->lossless ? vp9_highbd_iwht4x4_add : vp9_highbd_idct4x4_add;
 #else
   x->fwd_txm4x4 = xd->lossless ? vp9_fwht4x4 : vpx_fdct4x4;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   x->itxm_add = xd->lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
 
   if (xd->lossless) x->optimize = 0;
@@ -4329,12 +4329,12 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
 
   if (!is_inter_block(mi)) {
     int plane;
-#if CONFIG_BETTER_HW_COMPATIBILITY && CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_BETTER_HW_COMPATIBILITY && CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if ((xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) &&
         (xd->above_mi == NULL || xd->left_mi == NULL) &&
         need_top_left[mi->uv_mode])
       assert(0);
-#endif  // CONFIG_BETTER_HW_COMPATIBILITY && CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_BETTER_HW_COMPATIBILITY && CONFIG_VP9_ENCODE_HIGHBITDEPTH
     mi->skip = 1;
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp9_encode_intra_block_plane(x, VPXMAX(bsize, BLOCK_8X8), plane, 1);
