@@ -58,7 +58,7 @@ void vp9_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   *eob_ptr = eob + 1;
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 void vp9_highbd_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t count,
                               int skip_block, const int16_t *zbin_ptr,
                               const int16_t *round_ptr,
@@ -136,7 +136,7 @@ void vp9_quantize_fp_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   *eob_ptr = eob + 1;
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 void vp9_highbd_quantize_fp_32x32_c(
     const tran_low_t *coeff_ptr, intptr_t n_coeffs, int skip_block,
     const int16_t *zbin_ptr, const int16_t *round_ptr, const int16_t *quant_ptr,
@@ -180,7 +180,7 @@ void vp9_regular_quantize_b_4x4(MACROBLOCK *x, int plane, int block,
   struct macroblock_plane *p = &x->plane[plane];
   struct macroblockd_plane *pd = &xd->plane[plane];
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     vpx_highbd_quantize_b(BLOCK_OFFSET(p->coeff, block), 16, x->skip_block,
                           p->zbin, p->round, p->quant, p->quant_shift,
@@ -209,7 +209,7 @@ static void invert_quant(int16_t *quant, int16_t *shift, int d) {
 
 static int get_qzbin_factor(int q, vpx_bit_depth_t bit_depth) {
   const int quant = vp9_dc_quant(q, 0, bit_depth);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   switch (bit_depth) {
     case VPX_BITS_8: return q == 0 ? 64 : (quant < 148 ? 84 : 80);
     case VPX_BITS_10: return q == 0 ? 64 : (quant < 592 ? 84 : 80);

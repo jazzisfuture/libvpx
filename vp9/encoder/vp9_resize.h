@@ -37,7 +37,7 @@ void vp9_resize_frame444(const uint8_t *const y, int y_stride,
                          int oy_stride, uint8_t *ou, uint8_t *ov,
                          int ouv_stride, int oheight, int owidth);
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 void vp9_highbd_resize_plane(const uint8_t *const input, int height, int width,
                              int in_stride, uint8_t *output, int height2,
                              int width2, int out_stride, int bd);
@@ -59,7 +59,7 @@ void vp9_highbd_resize_frame444(const uint8_t *const y, int y_stride,
                                 uint8_t *oy, int oy_stride, uint8_t *ou,
                                 uint8_t *ov, int ouv_stride, int oheight,
                                 int owidth, int bd);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 #ifdef __cplusplus
 }  // extern "C"

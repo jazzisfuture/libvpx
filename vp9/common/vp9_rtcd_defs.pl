@@ -45,7 +45,7 @@ specialize qw/vp9_filter_by_weight8x8 sse2 msa/;
 #
 # dct
 #
-if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+if (vpx_config("CONFIG_VP9_COMMON_HIGHBITDEPTH") eq "yes") {
   # Force C versions if CONFIG_EMULATE_HARDWARE is 1
   if (vpx_config("CONFIG_EMULATE_HARDWARE") eq "yes") {
     add_proto qw/void vp9_iht4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
@@ -90,7 +90,7 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 }
 
 # High bitdepth functions
-if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+if (vpx_config("CONFIG_VP9_COMMON_HIGHBITDEPTH") eq "yes") {
   #
   # Sub Pixel Filters
   #
@@ -162,15 +162,12 @@ if (vpx_config("CONFIG_VP9_TEMPORAL_DENOISING") eq "yes") {
   specialize qw/vp9_denoiser_filter sse2/;
 }
 
-if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+if (vpx_config("CONFIG_VP9_COMMON_HIGHBITDEPTH") eq "yes") {
   add_proto qw/int64_t vp9_block_error/, "const tran_low_t *coeff, const tran_low_t *dqcoeff, intptr_t block_size, int64_t *ssz";
   specialize qw/vp9_block_error/;
-
-  add_proto qw/int64_t vp9_highbd_block_error/, "const tran_low_t *coeff, const tran_low_t *dqcoeff, intptr_t block_size, int64_t *ssz, int bd";
-  specialize qw/vp9_highbd_block_error sse2/;
-
-  add_proto qw/int64_t vp9_highbd_block_error_8bit/, "const tran_low_t *coeff, const tran_low_t *dqcoeff, intptr_t block_size, int64_t *ssz";
-  specialize qw/vp9_highbd_block_error_8bit sse2 avx/;
+  
+  add_proto qw/int64_t vp9_block_error_fp/, "const tran_low_t *coeff, const tran_low_t *dqcoeff, int block_size";
+  specialize qw/vp9_block_error_fp/;
 
   add_proto qw/void vp9_quantize_fp/, "const tran_low_t *coeff_ptr, intptr_t n_coeffs, int skip_block, const int16_t *zbin_ptr, const int16_t *round_ptr, const int16_t *quant_ptr, const int16_t *quant_shift_ptr, tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr, uint16_t *eob_ptr, const int16_t *scan, const int16_t *iscan";
   specialize qw/vp9_quantize_fp/;
@@ -196,10 +193,17 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   add_proto qw/void vp9_fdct8x8_quant/, "const int16_t *input, int stride, tran_low_t *coeff_ptr, intptr_t n_coeffs, int skip_block, const int16_t *zbin_ptr, const int16_t *round_ptr, const int16_t *quant_ptr, const int16_t *quant_shift_ptr, tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr, uint16_t *eob_ptr, const int16_t *scan, const int16_t *iscan";
   specialize qw/vp9_fdct8x8_quant sse2 ssse3 neon/;
 }
+if (vpx_config("CONFIG_VP9_ENCODE_HIGHBITDEPTH") eq "yes") {
+  add_proto qw/int64_t vp9_highbd_block_error/, "const tran_low_t *coeff, const tran_low_t *dqcoeff, intptr_t block_size, int64_t *ssz, int bd";
+  specialize qw/vp9_highbd_block_error sse2/;
+
+  add_proto qw/int64_t vp9_highbd_block_error_8bit/, "const tran_low_t *coeff, const tran_low_t *dqcoeff, intptr_t block_size, int64_t *ssz";
+  specialize qw/vp9_highbd_block_error_8bit sse2 avx/;
+} 
 
 # fdct functions
 
-if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+if (vpx_config("CONFIG_VP9_ENCODE_HIGHBITDEPTH") eq "yes") {
   add_proto qw/void vp9_fht4x4/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
   specialize qw/vp9_fht4x4 sse2/;
 
@@ -239,7 +243,7 @@ specialize qw/vp9_diamond_search_sad avx/;
 add_proto qw/void vp9_temporal_filter_apply/, "uint8_t *frame1, unsigned int stride, uint8_t *frame2, unsigned int block_width, unsigned int block_height, int strength, int filter_weight, unsigned int *accumulator, uint16_t *count";
 specialize qw/vp9_temporal_filter_apply sse2 msa/;
 
-if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+if (vpx_config("CONFIG_VP9_ENCODE_HIGHBITDEPTH") eq "yes") {
 
   # ENCODEMB INVOKE
 
@@ -271,7 +275,7 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 #
 # frame based scale
 #
-if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+if (vpx_config("CONFIG_VP9_ENCODE_HIGHBITDEPTH") eq "yes") {
 } else {
   add_proto qw/void vp9_scale_and_extend_frame/, "const struct yv12_buffer_config *src, struct yv12_buffer_config *dst";
   specialize qw/vp9_scale_and_extend_frame ssse3/;

@@ -29,7 +29,7 @@ void *vpx_calloc(size_t num, size_t size);
 void *vpx_realloc(void *memblk, size_t size);
 void vpx_free(void *memblk);
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 void *vpx_memset16(void *dest, int val, size_t length);
 #endif
 

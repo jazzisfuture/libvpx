@@ -45,9 +45,9 @@
   (((value) + ((1 << (n)) - 1)) & ~((1 << (n)) - 1))
 
 #define CONVERT_TO_SHORTPTR(x) ((uint16_t *)(((uintptr_t)(x)) << 1))
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 #define CONVERT_TO_BYTEPTR(x) ((uint8_t *)(((uintptr_t)(x)) >> 1))
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
 #if !defined(__has_feature)
 #define __has_feature(x) 0

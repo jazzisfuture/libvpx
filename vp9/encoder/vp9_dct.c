@@ -772,7 +772,7 @@ void vp9_fht16x16_c(const int16_t *input, tran_low_t *output, int stride,
   }
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 void vp9_highbd_fht4x4_c(const int16_t *input, tran_low_t *output, int stride,
                          int tx_type) {
   vp9_fht4x4_c(input, output, stride, tx_type);
@@ -792,4 +792,4 @@ void vp9_highbd_fht16x16_c(const int16_t *input, tran_low_t *output, int stride,
                            int tx_type) {
   vp9_fht16x16_c(input, output, stride, tx_type);
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH

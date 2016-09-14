@@ -34,7 +34,7 @@ const int kNumCoeffs = 1024;
 
 const int number_of_iterations = 10000;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 typedef uint16_t Pixel;
 #define PIXEL_WIDTH 16
 
@@ -54,7 +54,7 @@ typedef void (*dual_loop_op_t)(Pixel *s, int p, const uint8_t *blimit0,
                                const uint8_t *limit0, const uint8_t *thresh0,
                                const uint8_t *blimit1, const uint8_t *limit1,
                                const uint8_t *thresh1);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
 typedef std::tr1::tuple<loop_op_t, loop_op_t, int> loop8_param_t;
 typedef std::tr1::tuple<dual_loop_op_t, dual_loop_op_t, int> dualloop8_param_t;
@@ -175,7 +175,7 @@ TEST_P(Loop8Test6Param, OperationCheck) {
                     thresh[16]) = { tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
                                     tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp };
     InitInput(s, ref_s, &rnd, *limit, mask_, p, i);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
     ref_loopfilter_op_(ref_s + 8 + p * 8, p, blimit, limit, thresh, bit_depth_);
     ASM_REGISTER_STATE_CHECK(
         loopfilter_op_(s + 8 + p * 8, p, blimit, limit, thresh, bit_depth_));
@@ -183,7 +183,7 @@ TEST_P(Loop8Test6Param, OperationCheck) {
     ref_loopfilter_op_(ref_s + 8 + p * 8, p, blimit, limit, thresh);
     ASM_REGISTER_STATE_CHECK(
         loopfilter_op_(s + 8 + p * 8, p, blimit, limit, thresh));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
     for (int j = 0; j < kNumCoeffs; ++j) {
       err_count += ref_s[j] != s[j];
@@ -238,7 +238,7 @@ TEST_P(Loop8Test6Param, ValueCheck) {
       s[j] = rnd.Rand16() & mask_;
       ref_s[j] = s[j];
     }
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
     ref_loopfilter_op_(ref_s + 8 + p * 8, p, blimit, limit, thresh, bit_depth_);
     ASM_REGISTER_STATE_CHECK(
         loopfilter_op_(s + 8 + p * 8, p, blimit, limit, thresh, bit_depth_));
@@ -246,7 +246,7 @@ TEST_P(Loop8Test6Param, ValueCheck) {
     ref_loopfilter_op_(ref_s + 8 + p * 8, p, blimit, limit, thresh);
     ASM_REGISTER_STATE_CHECK(
         loopfilter_op_(s + 8 + p * 8, p, blimit, limit, thresh));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
     for (int j = 0; j < kNumCoeffs; ++j) {
       err_count += ref_s[j] != s[j];
@@ -298,7 +298,7 @@ TEST_P(Loop8Test9Param, OperationCheck) {
     int32_t p = kNumCoeffs / 32;
     const uint8_t limit = *limit0 < *limit1 ? *limit0 : *limit1;
     InitInput(s, ref_s, &rnd, limit, mask_, p, i);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
     ref_loopfilter_op_(ref_s + 8 + p * 8, p, blimit0, limit0, thresh0, blimit1,
                        limit1, thresh1, bit_depth_);
     ASM_REGISTER_STATE_CHECK(loopfilter_op_(s + 8 + p * 8, p, blimit0, limit0,
@@ -309,7 +309,7 @@ TEST_P(Loop8Test9Param, OperationCheck) {
                        limit1, thresh1);
     ASM_REGISTER_STATE_CHECK(loopfilter_op_(s + 8 + p * 8, p, blimit0, limit0,
                                             thresh0, blimit1, limit1, thresh1));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
     for (int j = 0; j < kNumCoeffs; ++j) {
       err_count += ref_s[j] != s[j];
@@ -363,7 +363,7 @@ TEST_P(Loop8Test9Param, ValueCheck) {
       s[j] = rnd.Rand16() & mask_;
       ref_s[j] = s[j];
     }
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
     ref_loopfilter_op_(ref_s + 8 + p * 8, p, blimit0, limit0, thresh0, blimit1,
                        limit1, thresh1, bit_depth_);
     ASM_REGISTER_STATE_CHECK(loopfilter_op_(s + 8 + p * 8, p, blimit0, limit0,
@@ -374,7 +374,7 @@ TEST_P(Loop8Test9Param, ValueCheck) {
                        limit1, thresh1);
     ASM_REGISTER_STATE_CHECK(loopfilter_op_(s + 8 + p * 8, p, blimit0, limit0,
                                             thresh0, blimit1, limit1, thresh1));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
     for (int j = 0; j < kNumCoeffs; ++j) {
       err_count += ref_s[j] != s[j];
@@ -393,7 +393,7 @@ TEST_P(Loop8Test9Param, ValueCheck) {
 using std::tr1::make_tuple;
 
 #if HAVE_SSE2
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(
     SSE2, Loop8Test6Param,
     ::testing::Values(make_tuple(&vpx_highbd_lpf_horizontal_4_sse2,
@@ -459,10 +459,10 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vpx_lpf_vertical_16_sse2, &vpx_lpf_vertical_16_c, 8),
         make_tuple(&vpx_lpf_vertical_16_dual_sse2, &vpx_lpf_vertical_16_dual_c,
                    8)));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 #endif
 
-#if HAVE_AVX2 && (!CONFIG_VP9_HIGHBITDEPTH)
+#if HAVE_AVX2 && (!CONFIG_VP9_COMMON_HIGHBITDEPTH)
 INSTANTIATE_TEST_CASE_P(
     AVX2, Loop8Test6Param,
     ::testing::Values(make_tuple(&vpx_lpf_horizontal_edge_8_avx2,
@@ -472,7 +472,7 @@ INSTANTIATE_TEST_CASE_P(
 #endif
 
 #if HAVE_SSE2
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(
     SSE2, Loop8Test9Param,
     ::testing::Values(make_tuple(&vpx_highbd_lpf_horizontal_4_dual_sse2,
@@ -510,11 +510,11 @@ INSTANTIATE_TEST_CASE_P(
                                  &vpx_lpf_vertical_4_dual_c, 8),
                       make_tuple(&vpx_lpf_vertical_8_dual_sse2,
                                  &vpx_lpf_vertical_8_dual_c, 8)));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 #endif
 
 #if HAVE_NEON
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 // No neon high bitdepth functions.
 #else
 INSTANTIATE_TEST_CASE_P(
@@ -541,10 +541,10 @@ INSTANTIATE_TEST_CASE_P(
                                  &vpx_lpf_horizontal_4_dual_c, 8),
                       make_tuple(&vpx_lpf_vertical_4_dual_neon,
                                  &vpx_lpf_vertical_4_dual_c, 8)));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 #endif  // HAVE_NEON
 
-#if HAVE_DSPR2 && !CONFIG_VP9_HIGHBITDEPTH
+#if HAVE_DSPR2 && !CONFIG_VP9_COMMON_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(
     DSPR2, Loop8Test6Param,
     ::testing::Values(
@@ -568,9 +568,9 @@ INSTANTIATE_TEST_CASE_P(
                                  &vpx_lpf_vertical_4_dual_c, 8),
                       make_tuple(&vpx_lpf_vertical_8_dual_dspr2,
                                  &vpx_lpf_vertical_8_dual_c, 8)));
-#endif  // HAVE_DSPR2 && !CONFIG_VP9_HIGHBITDEPTH
+#endif  // HAVE_DSPR2 && !CONFIG_VP9_COMMON_HIGHBITDEPTH
 
-#if HAVE_MSA && (!CONFIG_VP9_HIGHBITDEPTH)
+#if HAVE_MSA && (!CONFIG_VP9_COMMON_HIGHBITDEPTH)
 INSTANTIATE_TEST_CASE_P(
     MSA, Loop8Test6Param,
     ::testing::Values(
@@ -594,6 +594,6 @@ INSTANTIATE_TEST_CASE_P(
                                  &vpx_lpf_vertical_4_dual_c, 8),
                       make_tuple(&vpx_lpf_vertical_8_dual_msa,
                                  &vpx_lpf_vertical_8_dual_c, 8)));
-#endif  // HAVE_MSA && (!CONFIG_VP9_HIGHBITDEPTH)
+#endif  // HAVE_MSA && (!CONFIG_VP9_COMMON_HIGHBITDEPTH)
 
 }  // namespace

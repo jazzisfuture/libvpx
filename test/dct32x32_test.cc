@@ -69,7 +69,7 @@ typedef void (*InvTxfmFunc)(const tran_low_t *in, uint8_t *out, int stride);
 typedef std::tr1::tuple<FwdTxfmFunc, InvTxfmFunc, int, vpx_bit_depth_t>
     Trans32x32Param;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 void idct32x32_10(const tran_low_t *in, uint8_t *out, int stride) {
   vpx_highbd_idct32x32_1024_add_c(in, out, stride, 10);
 }
@@ -77,7 +77,7 @@ void idct32x32_10(const tran_low_t *in, uint8_t *out, int stride) {
 void idct32x32_12(const tran_low_t *in, uint8_t *out, int stride) {
   vpx_highbd_idct32x32_1024_add_c(in, out, stride, 12);
 }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 class Trans32x32Test : public ::testing::TestWithParam<Trans32x32Param> {
  public:
@@ -110,7 +110,7 @@ TEST_P(Trans32x32Test, AccuracyCheck) {
   DECLARE_ALIGNED(16, tran_low_t, test_temp_block[kNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, dst[kNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, src[kNumCoeffs]);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   DECLARE_ALIGNED(16, uint16_t, dst16[kNumCoeffs]);
   DECLARE_ALIGNED(16, uint16_t, src16[kNumCoeffs]);
 #endif
@@ -122,7 +122,7 @@ TEST_P(Trans32x32Test, AccuracyCheck) {
         src[j] = rnd.Rand8();
         dst[j] = rnd.Rand8();
         test_input_block[j] = src[j] - dst[j];
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         src16[j] = rnd.Rand16() & mask_;
         dst16[j] = rnd.Rand16() & mask_;
@@ -134,7 +134,7 @@ TEST_P(Trans32x32Test, AccuracyCheck) {
     ASM_REGISTER_STATE_CHECK(fwd_txfm_(test_input_block, test_temp_block, 32));
     if (bit_depth_ == VPX_BITS_8) {
       ASM_REGISTER_STATE_CHECK(inv_txfm_(test_temp_block, dst, 32));
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     } else {
       ASM_REGISTER_STATE_CHECK(
           inv_txfm_(test_temp_block, CONVERT_TO_BYTEPTR(dst16), 32));
@@ -142,7 +142,7 @@ TEST_P(Trans32x32Test, AccuracyCheck) {
     }
 
     for (int j = 0; j < kNumCoeffs; ++j) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       const int32_t diff =
           bit_depth_ == VPX_BITS_8 ? dst[j] - src[j] : dst16[j] - src16[j];
 #else
@@ -244,7 +244,7 @@ TEST_P(Trans32x32Test, InverseAccuracy) {
   DECLARE_ALIGNED(16, tran_low_t, coeff[kNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, dst[kNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, src[kNumCoeffs]);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   DECLARE_ALIGNED(16, uint16_t, dst16[kNumCoeffs]);
   DECLARE_ALIGNED(16, uint16_t, src16[kNumCoeffs]);
 #endif
@@ -258,7 +258,7 @@ TEST_P(Trans32x32Test, InverseAccuracy) {
         src[j] = rnd.Rand8();
         dst[j] = rnd.Rand8();
         in[j] = src[j] - dst[j];
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         src16[j] = rnd.Rand16() & mask_;
         dst16[j] = rnd.Rand16() & mask_;
@@ -273,13 +273,13 @@ TEST_P(Trans32x32Test, InverseAccuracy) {
     }
     if (bit_depth_ == VPX_BITS_8) {
       ASM_REGISTER_STATE_CHECK(inv_txfm_(coeff, dst, 32));
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     } else {
       ASM_REGISTER_STATE_CHECK(inv_txfm_(coeff, CONVERT_TO_BYTEPTR(dst16), 32));
 #endif
     }
     for (int j = 0; j < kNumCoeffs; ++j) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       const int diff =
           bit_depth_ == VPX_BITS_8 ? dst[j] - src[j] : dst16[j] - src16[j];
 #else
@@ -310,7 +310,7 @@ class PartialTrans32x32Test
 };
 
 TEST_P(PartialTrans32x32Test, Extremes) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   const int16_t maxval =
       static_cast<int16_t>(clip_pixel_highbd(1 << 30, bit_depth_));
 #else
@@ -332,7 +332,7 @@ TEST_P(PartialTrans32x32Test, Extremes) {
 }
 
 TEST_P(PartialTrans32x32Test, Random) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   const int16_t maxval =
       static_cast<int16_t>(clip_pixel_highbd(1 << 30, bit_depth_));
 #else
@@ -355,7 +355,7 @@ TEST_P(PartialTrans32x32Test, Random) {
 
 using std::tr1::make_tuple;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(
     C, Trans32x32Test,
     ::testing::Values(
@@ -381,18 +381,18 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(C, PartialTrans32x32Test,
                         ::testing::Values(make_tuple(&vpx_fdct32x32_1_c,
                                                      VPX_BITS_8)));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
-#if HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#if HAVE_NEON && !CONFIG_VP9_COMMON_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
     NEON, Trans32x32Test,
     ::testing::Values(make_tuple(&vpx_fdct32x32_c, &vpx_idct32x32_1024_add_neon,
                                  0, VPX_BITS_8),
                       make_tuple(&vpx_fdct32x32_rd_c,
                                  &vpx_idct32x32_1024_add_neon, 1, VPX_BITS_8)));
-#endif  // HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#endif  // HAVE_NEON && !CONFIG_VP9_COMMON_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
-#if HAVE_SSE2 && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#if HAVE_SSE2 && !CONFIG_VP9_COMMON_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
     SSE2, Trans32x32Test,
     ::testing::Values(make_tuple(&vpx_fdct32x32_sse2,
@@ -402,9 +402,9 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(SSE2, PartialTrans32x32Test,
                         ::testing::Values(make_tuple(&vpx_fdct32x32_1_sse2,
                                                      VPX_BITS_8)));
-#endif  // HAVE_SSE2 && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#endif  // HAVE_SSE2 && !CONFIG_VP9_COMMON_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
-#if HAVE_SSE2 && CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#if HAVE_SSE2 && CONFIG_VP9_ENCODE_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
     SSE2, Trans32x32Test,
     ::testing::Values(
@@ -421,18 +421,18 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(SSE2, PartialTrans32x32Test,
                         ::testing::Values(make_tuple(&vpx_fdct32x32_1_sse2,
                                                      VPX_BITS_8)));
-#endif  // HAVE_SSE2 && CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#endif  // HAVE_SSE2 && CONFIG_VP9_ENCODE_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
-#if HAVE_AVX2 && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#if HAVE_AVX2 && !CONFIG_VP9_COMMON_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
     AVX2, Trans32x32Test,
     ::testing::Values(make_tuple(&vpx_fdct32x32_avx2,
                                  &vpx_idct32x32_1024_add_sse2, 0, VPX_BITS_8),
                       make_tuple(&vpx_fdct32x32_rd_avx2,
                                  &vpx_idct32x32_1024_add_sse2, 1, VPX_BITS_8)));
-#endif  // HAVE_AVX2 && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#endif  // HAVE_AVX2 && !CONFIG_VP9_COMMON_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
-#if HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#if HAVE_MSA && !CONFIG_VP9_COMMON_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
     MSA, Trans32x32Test,
     ::testing::Values(make_tuple(&vpx_fdct32x32_msa,
@@ -442,5 +442,5 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(MSA, PartialTrans32x32Test,
                         ::testing::Values(make_tuple(&vpx_fdct32x32_1_msa,
                                                      VPX_BITS_8)));
-#endif  // HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#endif  // HAVE_MSA && !CONFIG_VP9_COMMON_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 }  // namespace

@@ -28,7 +28,7 @@
 using libvpx_test::ACMRandom;
 
 namespace {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 const int number_of_iterations = 100;
 
 typedef void (*QuantizeFunc)(const tran_low_t *coeff, intptr_t count,
@@ -340,5 +340,5 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
                                  &vpx_highbd_quantize_b_32x32_c, VPX_BITS_12)));
 #endif  // HAVE_SSE2
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 }  // namespace

@@ -52,7 +52,7 @@ struct lookahead_ctx *vp9_lookahead_init(unsigned int width,
                                          unsigned int height,
                                          unsigned int subsampling_x,
                                          unsigned int subsampling_y,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                                          int use_highbitdepth,
 #endif
                                          unsigned int depth);
@@ -78,7 +78,7 @@ void vp9_lookahead_destroy(struct lookahead_ctx *ctx);
  */
 int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG *src,
                        int64_t ts_start, int64_t ts_end,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                        int use_highbitdepth,
 #endif
                        vpx_enc_frame_flags_t flags);

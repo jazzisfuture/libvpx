@@ -58,7 +58,7 @@ DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat4_prob[4]);
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat5_prob[5]);
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat6_prob[14]);
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat1_prob_high10[1]);
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat2_prob_high10[2]);
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat3_prob_high10[3]);
@@ -71,15 +71,15 @@ DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat3_prob_high12[3]);
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat4_prob_high12[4]);
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat5_prob_high12[5]);
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_cat6_prob_high12[18]);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
 #define EOB_MODEL_TOKEN 3
 
 #define DCT_MAX_VALUE 16384
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 #define DCT_MAX_VALUE_HIGH10 65536
 #define DCT_MAX_VALUE_HIGH12 262144
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
 /* Coefficients are predicted via a 3-dimensional probability table. */
 

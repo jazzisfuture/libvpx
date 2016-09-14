@@ -248,7 +248,7 @@ typedef struct VP9EncoderConfig {
 
   vp8e_tuning tuning;
   vp9e_tune_content content;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   int use_highbitdepth;
 #endif
   vpx_color_space_t color_space;
@@ -703,10 +703,10 @@ static INLINE int allocated_tokens(TileInfo tile) {
 }
 
 int64_t vp9_get_y_sse(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 int64_t vp9_highbd_get_y_sse(const YV12_BUFFER_CONFIG *a,
                              const YV12_BUFFER_CONFIG *b);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 void vp9_scale_references(VP9_COMP *cpi);
 

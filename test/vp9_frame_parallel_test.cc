@@ -208,7 +208,7 @@ TEST(VP9MultiThreadedFrameParallel, InvalidFileTest) {
 
 TEST(VP9MultiThreadedFrameParallel, ValidFileTest) {
   static const FileList files[] = {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_DECODE_HIGHBITDEPTH
     { "vp92-2-20-10bit-yuv420.webm", "a16b99df180c584e8db2ffeda987d293", 10 },
 #endif
     { NULL, NULL, 0 },

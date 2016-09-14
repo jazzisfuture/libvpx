@@ -156,7 +156,7 @@ static INLINE const uint8_t *pre(const uint8_t *buf, int stride, int r, int c) {
   return &buf[(r >> 3) * stride + (c >> 3)];
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 /* checks if (r, c) has better score than previous best */
 #define CHECK_BETTER(v, r, c)                                                \
   if (c >= minc && c <= maxc && r >= minr && r <= maxr) {                    \
@@ -309,7 +309,7 @@ static unsigned int setup_center_error(
     const uint8_t *const src, const int src_stride, const uint8_t *const y,
     int y_stride, const uint8_t *second_pred, int w, int h, int offset,
     int *mvjcost, int *mvcost[2], uint32_t *sse1, uint32_t *distortion) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   uint64_t besterr;
   if (second_pred != NULL) {
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -343,7 +343,7 @@ static unsigned int setup_center_error(
   *distortion = besterr;
   besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
   return besterr;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 }
 
 static INLINE int divide_and_round(const int n, const int d) {
@@ -1313,7 +1313,7 @@ int vp9_get_mvpred_var(const MACROBLOCK *x, const MV *best_mv,
   const struct buf_2d *const in_what = &xd->plane[0].pre[0];
   const MV mv = { best_mv->row * 8, best_mv->col * 8 };
   uint32_t unused;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   uint64_t err =
       vfp->vf(what->buf, what->stride, get_buf_from_mv(in_what, best_mv),
               in_what->stride, &unused);
@@ -1820,7 +1820,7 @@ unsigned int vp9_int_pro_motion_estimation(const VP9_COMP *cpi, MACROBLOCK *x,
     vp9_setup_pre_planes(xd, 0, scaled_ref_frame, mi_row, mi_col, NULL);
   }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   {
     unsigned int this_sad;
     tmp_mv->row = 0;

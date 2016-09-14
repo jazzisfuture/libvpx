@@ -99,12 +99,12 @@ VP9_CX_SRCS-yes += encoder/vp9_mbgraph.h
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_temporal_filter_apply_sse2.asm
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_quantize_sse2.c
 VP9_CX_SRCS-$(HAVE_AVX) += encoder/x86/vp9_diamond_search_sad_avx.c
-ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifeq ($(CONFIG_VP9_ENCODE_HIGHBITDEPTH),yes)
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_highbd_block_error_intrin_sse2.c
 endif
 
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_dct_sse2.asm
-ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifeq ($(CONFIG_VP9_ENCODE_HIGHBITDEPTH),yes)
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_highbd_error_sse2.asm
 VP9_CX_SRCS-$(HAVE_AVX) += encoder/x86/vp9_highbd_error_avx.asm
 else
@@ -117,7 +117,7 @@ endif
 
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_dct_intrin_sse2.c
 VP9_CX_SRCS-$(HAVE_SSSE3) += encoder/x86/vp9_dct_ssse3.c
-ifneq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifneq ($(CONFIG_VP9_ENCODE_HIGHBITDEPTH),yes)
 VP9_CX_SRCS-$(HAVE_SSSE3) += encoder/x86/vp9_frame_scale_ssse3.c
 endif
 
@@ -127,7 +127,7 @@ endif
 
 VP9_CX_SRCS-$(HAVE_AVX2) += encoder/x86/vp9_error_intrin_avx2.c
 
-ifneq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+ifneq ($(CONFIG_VP9_ENCODE_HIGHBITDEPTH),yes)
 VP9_CX_SRCS-$(HAVE_NEON) += encoder/arm/neon/vp9_dct_neon.c
 VP9_CX_SRCS-$(HAVE_NEON) += encoder/arm/neon/vp9_error_neon.c
 endif

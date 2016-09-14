@@ -135,7 +135,7 @@ int vpx_free_frame_buffer(YV12_BUFFER_CONFIG *ybf) {
 
 int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
                              int ss_x, int ss_y,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
                              int use_highbitdepth,
 #endif
                              int border, int byte_alignment,
@@ -156,12 +156,12 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
     const uint64_t uvplane_size =
         (uv_height + 2 * uv_border_h) * (uint64_t)uv_stride + byte_alignment;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
     const uint64_t frame_size =
         (1 + use_highbitdepth) * (yplane_size + 2 * uvplane_size);
 #else
     const uint64_t frame_size = yplane_size + 2 * uvplane_size;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
     uint8_t *buf = NULL;
 
@@ -231,7 +231,7 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
     ybf->subsampling_y = ss_y;
 
     buf = ybf->buffer_alloc;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
     if (use_highbitdepth) {
       // Store uint16 addresses when using 16bit framebuffers
       buf = CONVERT_TO_BYTEPTR(ybf->buffer_alloc);
@@ -239,7 +239,7 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
     } else {
       ybf->flags = 0;
     }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_COMMON_HIGHBITDEPTH
 
     ybf->y_buffer = (uint8_t *)yv12_align_addr(
         buf + (border * y_stride) + border, vp9_byte_align);
@@ -259,14 +259,14 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
 
 int vpx_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
                            int ss_x, int ss_y,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
                            int use_highbitdepth,
 #endif
                            int border, int byte_alignment) {
   if (ybf) {
     vpx_free_frame_buffer(ybf);
     return vpx_realloc_frame_buffer(ybf, width, height, ss_x, ss_y,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
                                     use_highbitdepth,
 #endif
                                     border, byte_alignment, NULL, NULL, NULL);

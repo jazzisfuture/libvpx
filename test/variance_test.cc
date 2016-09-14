@@ -88,13 +88,13 @@ static uint32_t variance_ref(const uint8_t *src, const uint8_t *ref, int l2w,
         diff = src[y * src_stride + x] - ref[y * ref_stride + x];
         se += diff;
         sse += diff * diff;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         diff = CONVERT_TO_SHORTPTR(src)[y * src_stride + x] -
                CONVERT_TO_SHORTPTR(ref)[y * ref_stride + x];
         se += diff;
         sse += diff * diff;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       }
     }
   }
@@ -136,7 +136,7 @@ static uint32_t subpel_variance_ref(const uint8_t *ref, const uint8_t *src,
         const int diff = r - src[w * y + x];
         se += diff;
         sse += diff * diff;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         uint16_t *ref16 = CONVERT_TO_SHORTPTR(ref);
         uint16_t *src16 = CONVERT_TO_SHORTPTR(src);
@@ -150,7 +150,7 @@ static uint32_t subpel_variance_ref(const uint8_t *ref, const uint8_t *src,
         const int diff = r - src16[w * y + x];
         se += diff;
         sse += diff * diff;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       }
     }
   }
@@ -189,7 +189,7 @@ static uint32_t subpel_avg_variance_ref(const uint8_t *ref, const uint8_t *src,
             ((r + second_pred[w * y + x] + 1) >> 1) - src[w * y + x];
         se += diff;
         sse += diff * diff;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         const uint16_t *ref16 = CONVERT_TO_SHORTPTR(ref);
         const uint16_t *src16 = CONVERT_TO_SHORTPTR(src);
@@ -204,7 +204,7 @@ static uint32_t subpel_avg_variance_ref(const uint8_t *ref, const uint8_t *src,
         const int diff = ((r + sec16[w * y + x] + 1) >> 1) - src16[w * y + x];
         se += diff;
         sse += diff * diff;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       }
     }
   }
@@ -309,7 +309,7 @@ class MainTestClass
     ref_ = new uint8_t[block_size() * unit];
     ASSERT_TRUE(src_ != NULL);
     ASSERT_TRUE(ref_ != NULL);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if (use_high_bit_depth()) {
       // TODO(skal): remove!
       src_ = CONVERT_TO_BYTEPTR(src_);
@@ -319,7 +319,7 @@ class MainTestClass
   }
 
   virtual void TearDown() {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if (use_high_bit_depth()) {
       // TODO(skal): remove!
       src_ = reinterpret_cast<uint8_t *>(CONVERT_TO_SHORTPTR(src_));
@@ -400,11 +400,11 @@ void MainTestClass<VarianceFunctionType>::RefTest() {
       if (!use_high_bit_depth()) {
         src_[j] = rnd_.Rand8();
         ref_[j] = rnd_.Rand8();
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         CONVERT_TO_SHORTPTR(src_)[j] = rnd_.Rand16() & mask();
         CONVERT_TO_SHORTPTR(ref_)[j] = rnd_.Rand16() & mask();
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       }
     }
     unsigned int sse1, sse2, var1, var2;
@@ -430,11 +430,11 @@ void MainTestClass<VarianceFunctionType>::RefStrideTest() {
       if (!use_high_bit_depth()) {
         src_[src_ind] = rnd_.Rand8();
         ref_[ref_ind] = rnd_.Rand8();
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         CONVERT_TO_SHORTPTR(src_)[src_ind] = rnd_.Rand16() & mask();
         CONVERT_TO_SHORTPTR(ref_)[ref_ind] = rnd_.Rand16() & mask();
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       }
     }
     unsigned int sse1, sse2;
@@ -457,12 +457,12 @@ void MainTestClass<VarianceFunctionType>::OneQuarterTest() {
     memset(src_, 255, block_size());
     memset(ref_, 255, half);
     memset(ref_ + half, 0, half);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   } else {
     vpx_memset16(CONVERT_TO_SHORTPTR(src_), 255 << byte_shift(), block_size());
     vpx_memset16(CONVERT_TO_SHORTPTR(ref_), 255 << byte_shift(), half);
     vpx_memset16(CONVERT_TO_SHORTPTR(ref_) + half, 0, half);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   }
   unsigned int sse, var, expected;
   ASM_REGISTER_STATE_CHECK(
@@ -561,7 +561,7 @@ class SubpelVarianceTest
       src_ = reinterpret_cast<uint8_t *>(vpx_memalign(16, block_size_));
       sec_ = reinterpret_cast<uint8_t *>(vpx_memalign(16, block_size_));
       ref_ = new uint8_t[block_size_ + width_ + height_ + 1];
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     } else {
       src_ = CONVERT_TO_BYTEPTR(reinterpret_cast<uint16_t *>(
           vpx_memalign(16, block_size_ * sizeof(uint16_t))));
@@ -569,7 +569,7 @@ class SubpelVarianceTest
           vpx_memalign(16, block_size_ * sizeof(uint16_t))));
       ref_ =
           CONVERT_TO_BYTEPTR(new uint16_t[block_size_ + width_ + height_ + 1]);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
     }
     ASSERT_TRUE(src_ != NULL);
     ASSERT_TRUE(sec_ != NULL);
@@ -581,12 +581,12 @@ class SubpelVarianceTest
       vpx_free(src_);
       delete[] ref_;
       vpx_free(sec_);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     } else {
       vpx_free(CONVERT_TO_SHORTPTR(src_));
       delete[] CONVERT_TO_SHORTPTR(ref_);
       vpx_free(CONVERT_TO_SHORTPTR(sec_));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
     }
     libvpx_test::ClearSystemState();
   }
@@ -618,7 +618,7 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::RefTest() {
         for (int j = 0; j < block_size_ + width_ + height_ + 1; j++) {
           ref_[j] = rnd_.Rand8();
         }
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         for (int j = 0; j < block_size_; j++) {
           CONVERT_TO_SHORTPTR(src_)[j] = rnd_.Rand16() & mask_;
@@ -626,7 +626,7 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::RefTest() {
         for (int j = 0; j < block_size_ + width_ + height_ + 1; j++) {
           CONVERT_TO_SHORTPTR(ref_)[j] = rnd_.Rand16() & mask_;
         }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       }
       unsigned int sse1, sse2;
       unsigned int var1;
@@ -654,14 +654,14 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::ExtremeRefTest() {
         memset(src_ + half, 255, half);
         memset(ref_, 255, half);
         memset(ref_ + half, 0, half + width_ + height_ + 1);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         vpx_memset16(CONVERT_TO_SHORTPTR(src_), mask_, half);
         vpx_memset16(CONVERT_TO_SHORTPTR(src_) + half, 0, half);
         vpx_memset16(CONVERT_TO_SHORTPTR(ref_), 0, half);
         vpx_memset16(CONVERT_TO_SHORTPTR(ref_) + half, mask_,
                      half + width_ + height_ + 1);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       }
       unsigned int sse1, sse2;
       unsigned int var1;
@@ -688,7 +688,7 @@ void SubpelVarianceTest<SubpixAvgVarMxNFunc>::RefTest() {
         for (int j = 0; j < block_size_ + width_ + height_ + 1; j++) {
           ref_[j] = rnd_.Rand8();
         }
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       } else {
         for (int j = 0; j < block_size_; j++) {
           CONVERT_TO_SHORTPTR(src_)[j] = rnd_.Rand16() & mask_;
@@ -697,7 +697,7 @@ void SubpelVarianceTest<SubpixAvgVarMxNFunc>::RefTest() {
         for (int j = 0; j < block_size_ + width_ + height_ + 1; j++) {
           CONVERT_TO_SHORTPTR(ref_)[j] = rnd_.Rand16() & mask_;
         }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       }
       uint32_t sse1, sse2;
       uint32_t var1, var2;
@@ -797,7 +797,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(2, 3, &vpx_sub_pixel_avg_variance4x8_c, 0),
                       make_tuple(2, 2, &vpx_sub_pixel_avg_variance4x4_c, 0)));
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 typedef MainTestClass<VarianceMxNFunc> VpxHBDMseTest;
 typedef MainTestClass<VarianceMxNFunc> VpxHBDVarianceTest;
 typedef SubpelVarianceTest<SubpixVarMxNFunc> VpxHBDSubpelVarianceTest;
@@ -957,7 +957,7 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(3, 2, &vpx_highbd_12_sub_pixel_avg_variance8x4_c, 12),
         make_tuple(2, 3, &vpx_highbd_12_sub_pixel_avg_variance4x8_c, 12),
         make_tuple(2, 2, &vpx_highbd_12_sub_pixel_avg_variance4x4_c, 12)));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
 #if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(SSE2, SumOfSquaresTest,
@@ -1018,7 +1018,7 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(2, 3, &vpx_sub_pixel_avg_variance4x8_sse2, 0),
         make_tuple(2, 2, &vpx_sub_pixel_avg_variance4x4_sse2, 0)));
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 /* TODO(debargha): This test does not support the highbd version
 INSTANTIATE_TEST_CASE_P(
     SSE2, VpxHBDMseTest,
@@ -1143,7 +1143,7 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(3, 4, &vpx_highbd_8_sub_pixel_avg_variance8x16_sse2, 8),
         make_tuple(3, 3, &vpx_highbd_8_sub_pixel_avg_variance8x8_sse2, 8),
         make_tuple(3, 2, &vpx_highbd_8_sub_pixel_avg_variance8x4_sse2, 8)));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 #endif  // HAVE_SSE2
 
 #if HAVE_SSSE3

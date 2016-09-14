@@ -42,7 +42,7 @@ MV32 vp9_scale_mv(const MV *mv, int x, int y, const struct scale_factors *sf) {
   return res;
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
 void vp9_setup_scale_factors_for_frame(struct scale_factors *sf, int other_w,
                                        int other_h, int this_w, int this_h,
                                        int use_highbd) {
@@ -124,7 +124,7 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *sf, int other_w,
     sf->predict[1][1][1] = vpx_convolve8_avg;
   }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_COMMON_HIGHBITDEPTH
   if (use_highbd) {
     if (sf->x_step_q4 == 16) {
       if (sf->y_step_q4 == 16) {

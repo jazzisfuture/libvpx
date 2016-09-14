@@ -55,16 +55,16 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
   int v, token;
   int16_t dqv = dq[0];
   const uint8_t *const cat6_prob =
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_DECODE_HIGHBITDEPTH
       (xd->bd == VPX_BITS_12)
           ? vp9_cat6_prob_high12
           : (xd->bd == VPX_BITS_10) ? vp9_cat6_prob_high12 + 2 :
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_DECODE_HIGHBITDEPTH
                                     vp9_cat6_prob;
   const int cat6_bits =
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_DECODE_HIGHBITDEPTH
       (xd->bd == VPX_BITS_12) ? 18 : (xd->bd == VPX_BITS_10) ? 16 :
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_DECODE_HIGHBITDEPTH
                                                              14;
 
   if (counts) {
@@ -127,11 +127,11 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
     }
     v = (val * dqv) >> dq_shift;
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_DECODE_HIGHBITDEPTH
     dqcoeff[scan[c]] = highbd_check_range((vpx_read_bit(r) ? -v : v), xd->bd);
 #else
     dqcoeff[scan[c]] = check_range(vpx_read_bit(r) ? -v : v);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_DECODE_HIGHBITDEPTH
 #else
     dqcoeff[scan[c]] = vpx_read_bit(r) ? -v : v;
 #endif  // CONFIG_COEFFICIENT_RANGE_CHECKING

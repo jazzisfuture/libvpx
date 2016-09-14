@@ -78,7 +78,7 @@ void vp9_denoiser_update_frame_stats(MODE_INFO *mi, unsigned int sse,
 
 int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height, int ssx,
                        int ssy,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                        int use_highbitdepth,
 #endif
                        int border);

@@ -225,7 +225,7 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 static void block_variance(const uint8_t *src, int src_stride,
                            const uint8_t *ref, int ref_stride, int w, int h,
                            unsigned int *sse, int *sum, int block_size,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                            int use_highbitdepth, vpx_bit_depth_t bd,
 #endif
                            uint32_t *sse8x8, int *sum8x8, uint32_t *var8x8) {
@@ -236,7 +236,7 @@ static void block_variance(const uint8_t *src, int src_stride,
 
   for (i = 0; i < h; i += block_size) {
     for (j = 0; j < w; j += block_size) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if (use_highbitdepth) {
         switch (bd) {
           case VPX_BITS_8:
@@ -325,14 +325,14 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
   unsigned int var8x8[64] = { 0 };
   TX_SIZE tx_size;
   int i, k;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   const vpx_bit_depth_t bd = cpi->common.bit_depth;
 #endif
   // Calculate variance for whole partition, and also save 8x8 blocks' variance
   // to be used in following transform skipping test.
   block_variance(p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride,
                  4 << bw, 4 << bh, &sse, &sum, 8,
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
                  cpi->common.use_highbitdepth, bd,
 #endif
                  sse8x8, sum8x8, var8x8);
@@ -462,13 +462,13 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
   }
 
   if (!skip_dc) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bsize],
                                  dc_quant >> (xd->bd - 5), &rate, &dist);
 #else
     vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bsize],
                                  dc_quant >> 3, &rate, &dist);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   }
 
   if (!skip_dc) {
@@ -479,13 +479,13 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
     *out_dist_sum = (sse - var) << 4;
   }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bsize],
                                ac_quant >> (xd->bd - 5), &rate, &dist);
 #else
   vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bsize], ac_quant >> 3,
                                &rate, &dist);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   *out_rate_sum += rate;
   *out_dist_sum += dist << 4;
@@ -561,13 +561,13 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
   }
 
   if (!skip_dc) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bsize],
                                  dc_quant >> (xd->bd - 5), &rate, &dist);
 #else
     vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bsize],
                                  dc_quant >> 3, &rate, &dist);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   }
 
   if (!skip_dc) {
@@ -578,19 +578,19 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
     *out_dist_sum = (sse - var) << 4;
   }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bsize],
                                ac_quant >> (xd->bd - 5), &rate, &dist);
 #else
   vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bsize], ac_quant >> 3,
                                &rate, &dist);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
   *out_rate_sum += rate;
   *out_dist_sum += dist << 4;
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
 static void block_yrd(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
                       int *skippable, int64_t *sse, BLOCK_SIZE bsize,
                       TX_SIZE tx_size) {
@@ -725,7 +725,7 @@ static void model_rd_for_sb_uv(VP9_COMP *cpi, BLOCK_SIZE plane_bsize,
   int rate;
   int64_t dist;
   int i;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   uint64_t tot_var = *var_y;
   uint64_t tot_sse = *sse_y;
 #else
@@ -751,30 +751,30 @@ static void model_rd_for_sb_uv(VP9_COMP *cpi, BLOCK_SIZE plane_bsize,
     tot_var += var;
     tot_sse += sse;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bs],
                                  dc_quant >> (xd->bd - 5), &rate, &dist);
 #else
     vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bs],
                                  dc_quant >> 3, &rate, &dist);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
     this_rdc->rate += rate >> 1;
     this_rdc->dist += dist << 3;
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bs],
                                  ac_quant >> (xd->bd - 5), &rate, &dist);
 #else
     vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bs], ac_quant >> 3,
                                  &rate, &dist);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
 
     this_rdc->rate += rate;
     this_rdc->dist += dist << 4;
   }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   *var_y = tot_var > UINT32_MAX ? UINT32_MAX : (uint32_t)tot_var;
   *sse_y = tot_sse > UINT32_MAX ? UINT32_MAX : (uint32_t)tot_sse;
 #else
@@ -826,17 +826,17 @@ static void encode_breakout_test(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
     // The encode_breakout input
     const unsigned int min_thresh =
         VPXMIN(((unsigned int)x->encode_breakout << 4), max_thresh);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     const int shift = (xd->bd << 1) - 16;
 #endif
 
     // Calculate threshold according to dequant value.
     thresh_ac = (xd->plane[0].dequant[1] * xd->plane[0].dequant[1]) >> 3;
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if ((xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) && shift > 0) {
       thresh_ac = ROUND_POWER_OF_TWO(thresh_ac, shift);
     }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
     thresh_ac = clamp(thresh_ac, min_thresh, max_thresh);
 
     // Adjust ac threshold according to partition size.
@@ -844,11 +844,11 @@ static void encode_breakout_test(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
         8 - (b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize]);
 
     thresh_dc = (xd->plane[0].dequant[0] * xd->plane[0].dequant[0] >> 6);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if ((xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) && shift > 0) {
       thresh_dc = ROUND_POWER_OF_TWO(thresh_dc, shift);
     }
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
   } else {
     thresh_ac = 0;
     thresh_dc = 0;
@@ -1376,7 +1376,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   // tmp[3] points to dst buffer, and the other 3 point to allocated buffers.
   PRED_BUFFER tmp[4];
   DECLARE_ALIGNED(16, uint8_t, pred_buf[3 * 64 * 64]);
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
   DECLARE_ALIGNED(16, uint16_t, pred_buf_16[3 * 64 * 64]);
 #endif
   struct buf_2d orig_dst = pd->dst;
@@ -1403,14 +1403,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   if (reuse_inter_pred) {
     int i;
     for (i = 0; i < 3; i++) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if (cm->use_highbitdepth)
         tmp[i].data = CONVERT_TO_BYTEPTR(&pred_buf_16[pixels_in_block * i]);
       else
         tmp[i].data = &pred_buf[pixels_in_block * i];
 #else
       tmp[i].data = &pred_buf[pixels_in_block * i];
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       tmp[i].stride = bw;
       tmp[i].in_use = 0;
     }
@@ -1444,12 +1444,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       VPXMIN(max_txsize_lookup[bsize], tx_mode_to_biggest_tx_size[cm->tx_mode]);
 
   if (sf->short_circuit_flat_blocks || sf->limit_newmv_early_exit) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
       x->source_variance = vp9_high_get_sby_perpixel_variance(
           cpi, &x->plane[0].src, bsize, xd->bd);
     else
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
       x->source_variance =
           vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
   }
@@ -1734,7 +1734,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 // TODO(jackychen): the low-bitdepth condition causes a segfault in
 // high-bitdepth builds.
 // https://bugs.chromium.org/p/webm/issues/detail?id=1250
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       const int large_block = bsize > BLOCK_32X32;
 #else
       const int large_block =
@@ -1903,7 +1903,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     if (reuse_inter_pred && best_pred != NULL) {
       if (best_pred->data == orig_dst.buf) {
         this_mode_pred = &tmp[get_pred_buffer(tmp, 3)];
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
         if (cm->use_highbitdepth)
           vpx_highbd_convolve_copy(best_pred->data, best_pred->stride,
                                    this_mode_pred->data, this_mode_pred->stride,
@@ -1916,7 +1916,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         vpx_convolve_copy(best_pred->data, best_pred->stride,
                           this_mode_pred->data, this_mode_pred->stride, NULL, 0,
                           NULL, 0, bw, bh);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
         best_pred = this_mode_pred;
       }
     }
@@ -2001,7 +2001,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
   if (reuse_inter_pred && best_pred != NULL) {
     if (best_pred->data != orig_dst.buf && is_inter_mode(mi->mode)) {
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
       if (cm->use_highbitdepth)
         vpx_highbd_convolve_copy(best_pred->data, best_pred->stride,
                                  pd->dst.buf, pd->dst.stride, NULL, 0, NULL, 0,
@@ -2012,7 +2012,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 #else
       vpx_convolve_copy(best_pred->data, best_pred->stride, pd->dst.buf,
                         pd->dst.stride, NULL, 0, NULL, 0, bw, bh);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_VP9_ENCODE_HIGHBITDEPTH
     }
   }
 
@@ -2233,7 +2233,7 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x, int mi_row,
                                           [INTER_OFFSET(this_mode)];
           }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
           if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
             vp9_highbd_build_inter_predictor(
                 pd->pre[0].buf, pd->pre[0].stride, pd->dst.buf, pd->dst.stride,
@@ -2252,7 +2252,7 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x, int mi_row,
                 mi_col * MI_SIZE + 4 * (i & 0x01),
                 mi_row * MI_SIZE + 4 * (i >> 1));
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if CONFIG_VP9_ENCODE_HIGHBITDEPTH
           }
 #endif
 
