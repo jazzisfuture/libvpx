@@ -273,6 +273,9 @@ typedef struct RD_COUNTS {
   vp9_coeff_count coef_counts[TX_SIZES][PLANE_TYPES];
   int64_t comp_pred_diff[REFERENCE_MODES];
   int64_t filter_diff[SWITCHABLE_FILTER_CONTEXTS];
+  // Some partition tree nodes get elided so the total (decode process)
+  // partition counts aren't trustworthy on the edges of the image.
+  unsigned int partition_tree_counts[PARTITION_CONTEXTS][PARTITION_TYPES - 1][2];
   int m_search_count;
   int ex_search_count;
 } RD_COUNTS;

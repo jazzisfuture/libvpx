@@ -1571,6 +1571,8 @@ static void encode_sb(VP9_COMP *cpi, ThreadData *td, const TileInfo *const tile,
   MACROBLOCKD *const xd = &x->e_mbd;
 
   const int bsl = b_width_log2_lookup[bsize], hbs = (1 << bsl) / 4;
+  const int has_rows = (mi_row + hbs) < cm->mi_rows;
+  const int has_cols = (mi_col + hbs) < cm->mi_cols;
   int ctx;
   PARTITION_TYPE partition;
   BLOCK_SIZE subsize = bsize;
@@ -1586,8 +1588,41 @@ static void encode_sb(VP9_COMP *cpi, ThreadData *td, const TileInfo *const tile,
   }
 
   partition = partition_lookup[bsl][subsize];
-  if (output_enabled && bsize != BLOCK_4X4)
-    td->counts->partition[ctx][partition]++;
+  if (output_enabled && bsize != BLOCK_4X4) {
+    ++td->counts->partition[ctx][partition];
+    if (!(has_rows && has_cols)) {
+      fprintf(stderr, "has_rows %d has_cols %d\n", has_rows, has_cols);
+    }
+    if (has_rows && has_cols) {
+      if (partition == PARTITION_NONE) {
+        ++td->rd_counts.partition_tree_counts[ctx][0][0];
+      } else if (partition == PARTITION_HORZ) {
+        ++td->rd_counts.partition_tree_counts[ctx][0][1];
+        ++td->rd_counts.partition_tree_counts[ctx][1][0];
+      } else if (partition == PARTITION_VERT) {
+        ++td->rd_counts.partition_tree_counts[ctx][0][1];
+        ++td->rd_counts.partition_tree_counts[ctx][1][1];
+        ++td->rd_counts.partition_tree_counts[ctx][2][0];
+      } else if (partition == PARTITION_SPLIT) {
+        ++td->rd_counts.partition_tree_counts[ctx][0][1];
+        ++td->rd_counts.partition_tree_counts[ctx][1][1];
+        ++td->rd_counts.partition_tree_counts[ctx][2][1];
+      } else {
+        assert(0 && "Invalid partition");
+      }
+    } else if (!has_rows && has_cols) {
+      fprintf(stderr, "ctx %d partition %d count[%d][%d]\n", ctx, partition, 1, partition == PARTITION_SPLIT);
+      assert(partition == PARTITION_SPLIT || partition == PARTITION_HORZ);
+      ++td->rd_counts.partition_tree_counts[ctx][1][partition == PARTITION_SPLIT];
+    } else if (has_rows && !has_cols) {
+      fprintf(stderr, "ctx %d partition %d count[%d][%d]\n", ctx, partition, 2, partition == PARTITION_SPLIT);
+      assert(partition == PARTITION_SPLIT || partition == PARTITION_VERT);
+      ++td->rd_counts.partition_tree_counts[ctx][2][partition == PARTITION_SPLIT];
+    } else {
+      fprintf(stderr, "ctx %d partition %d no counts\n", ctx, partition);
+      assert(partition == PARTITION_SPLIT);
+    }
+  }
 
   switch (partition) {
     case PARTITION_NONE:
@@ -3999,6 +4034,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_zero(rdc->coef_counts);
   vp9_zero(rdc->comp_pred_diff);
   vp9_zero(rdc->filter_diff);
+  vp9_zero(rdc->partition_tree_counts);
   rdc->m_search_count = 0;   // Count of motion search hits.
   rdc->ex_search_count = 0;  // Exhaustive mesh search hits.
 

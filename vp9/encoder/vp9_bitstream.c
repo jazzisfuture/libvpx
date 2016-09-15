@@ -673,6 +673,28 @@ static void update_coef_probs(VP9_COMP *cpi, vpx_writer *w) {
   }
 }
 
+static void update_partition_probs(VP9_COMP *cpi, vpx_writer *w) {
+  int ctx, i;
+  for (ctx = 0; ctx < PARTITION_CONTEXTS; ++ctx) {
+    fprintf(stderr,
+            "partition context %d counts %d %d %d %d tree counts: %d/%d %d/%d %d/%d\n",
+            ctx,
+            cpi->td.counts->partition[ctx][0],
+            cpi->td.counts->partition[ctx][1],
+            cpi->td.counts->partition[ctx][2],
+            cpi->td.counts->partition[ctx][3],
+            cpi->td.rd_counts.partition_tree_counts[ctx][0][0],
+            cpi->td.rd_counts.partition_tree_counts[ctx][0][1],
+            cpi->td.rd_counts.partition_tree_counts[ctx][1][0],
+            cpi->td.rd_counts.partition_tree_counts[ctx][1][1],
+            cpi->td.rd_counts.partition_tree_counts[ctx][2][0],
+            cpi->td.rd_counts.partition_tree_counts[ctx][2][1]);
+    for (i = 0; i < PARTITION_TYPES - 1; ++i)
+      vp9_cond_prob_diff_update(w, &cpi->common.fc->partition_prob[ctx][i],
+                                cpi->td.rd_counts.partition_tree_counts[ctx][i]);
+  }
+}
+
 static void encode_loopfilter(struct loopfilter *lf,
                               struct vpx_write_bit_buffer *wb) {
   int i;
@@ -1178,9 +1200,10 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
       prob_diff_update(vp9_intra_mode_tree, cm->fc->y_mode_prob[i],
                        counts->y_mode[i], INTRA_MODES, &header_bc);
 
-    for (i = 0; i < PARTITION_CONTEXTS; ++i)
-      prob_diff_update(vp9_partition_tree, fc->partition_prob[i],
-                       counts->partition[i], PARTITION_TYPES, &header_bc);
+    update_partition_probs(cpi, &header_bc);
+//    for (i = 0; i < PARTITION_CONTEXTS; ++i)
+//      prob_diff_update(vp9_partition_tree, fc->partition_prob[i],
+//                       counts->partition[i], PARTITION_TYPES, &header_bc);
 
     vp9_write_nmv_probs(cm, cm->allow_high_precision_mv, &header_bc,
                         &counts->mv);
