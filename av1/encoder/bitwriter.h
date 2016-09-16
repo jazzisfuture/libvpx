@@ -18,6 +18,10 @@
 #include "aom_dsp/prob.h"
 
 #if CONFIG_ANS
+// This following include is a terrible kludge to keep ANS building while
+// porting from VP10 style entropy coder abstraction to the aom/master style
+// entropy coder abstractions.
+#include "aom_dsp/bitwriter.h"
 typedef struct BufAnsCoder BufAnsCoder;
 #include "av1/encoder/buf_ans.h"
 #define aom_writer BufAnsCoder
