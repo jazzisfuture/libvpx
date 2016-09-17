@@ -24,35 +24,35 @@
 #define BILATERAL_AMP_RANGE 256
 #define BILATERAL_AMP_RANGE_SYM (2 * BILATERAL_AMP_RANGE + 1)
 
-static uint8_t bilateral_filter_coeffs_r_kf[BILATERAL_LEVELS_KF]
-                                           [BILATERAL_AMP_RANGE_SYM];
-static uint8_t bilateral_filter_coeffs_r[BILATERAL_LEVELS]
-                                        [BILATERAL_AMP_RANGE_SYM];
+static uint8_t
+    bilateral_filter_coeffs_r_kf[BILATERAL_LEVELS_KF][BILATERAL_AMP_RANGE_SYM];
+static uint8_t
+    bilateral_filter_coeffs_r[BILATERAL_LEVELS][BILATERAL_AMP_RANGE_SYM];
 static uint8_t bilateral_filter_coeffs_s_kf[BILATERAL_LEVELS_KF]
                                            [RESTORATION_WIN][RESTORATION_WIN];
 static uint8_t bilateral_filter_coeffs_s[BILATERAL_LEVELS][RESTORATION_WIN]
                                         [RESTORATION_WIN];
 
 typedef struct bilateral_params {
-  int sigma_x;  // spatial variance x
-  int sigma_y;  // spatial variance y
-  int sigma_r;  // range variance
+  int sigma_x; // spatial variance x
+  int sigma_y; // spatial variance y
+  int sigma_r; // range variance
 } BilateralParamsType;
 
 static BilateralParamsType bilateral_level_to_params_arr[BILATERAL_LEVELS] = {
-  // Values are rounded to 1/16 th precision
-  { 8, 9, 30 },   { 9, 8, 30 },   { 9, 11, 32 },  { 11, 9, 32 },
-  { 14, 14, 36 }, { 18, 18, 36 }, { 24, 24, 40 }, { 32, 32, 40 },
+    // Values are rounded to 1/16 th precision
+    {8, 9, 30},   {9, 8, 30},   {9, 11, 32},  {11, 9, 32},
+    {14, 14, 36}, {18, 18, 36}, {24, 24, 40}, {32, 32, 40},
 };
 
 static BilateralParamsType
     bilateral_level_to_params_arr_kf[BILATERAL_LEVELS_KF] = {
-      // Values are rounded to 1/16 th precision
-      { 8, 8, 30 },   { 9, 9, 32 },   { 10, 10, 32 }, { 12, 12, 32 },
-      { 14, 14, 32 }, { 18, 18, 36 }, { 24, 24, 40 }, { 30, 30, 44 },
-      { 36, 36, 48 }, { 42, 42, 48 }, { 48, 48, 48 }, { 48, 48, 56 },
-      { 56, 56, 48 }, { 56, 56, 56 }, { 56, 56, 64 }, { 64, 64, 48 },
-    };
+        // Values are rounded to 1/16 th precision
+        {8, 8, 30},   {9, 9, 32},   {10, 10, 32}, {12, 12, 32},
+        {14, 14, 32}, {18, 18, 36}, {24, 24, 40}, {30, 30, 44},
+        {36, 36, 48}, {42, 42, 48}, {48, 48, 48}, {48, 48, 56},
+        {56, 56, 48}, {56, 56, 56}, {56, 56, 64}, {64, 64, 48},
+};
 
 typedef void (*restore_func_type)(uint8_t *data8, int width, int height,
                                   int stride, RestorationInternal *rst,
@@ -62,7 +62,7 @@ typedef void (*restore_func_highbd_type)(uint8_t *data8, int width, int height,
                                          int stride, RestorationInternal *rst,
                                          uint8_t *tmpdata8, int tmpstride,
                                          int bit_depth);
-#endif  // CONFIG_AOM_HIGHBITDEPTH
+#endif // CONFIG_AOM_HIGHBITDEPTH
 
 static INLINE BilateralParamsType av1_bilateral_level_to_params(int index,
                                                                 int kf) {
@@ -91,14 +91,12 @@ void av1_loop_restoration_precal() {
     }
     for (y = -RESTORATION_HALFWIN; y <= RESTORATION_HALFWIN; y++) {
       for (x = -RESTORATION_HALFWIN; x <= RESTORATION_HALFWIN; x++) {
-        bilateral_filter_coeffs_s_kf[i][y + RESTORATION_HALFWIN]
-                                    [x + RESTORATION_HALFWIN] = (uint8_t)(
-                                        0.5 +
-                                        RESTORATION_FILT_STEP *
-                                            exp(-(x * x) / (2 * sigma_x_d *
-                                                            sigma_x_d) -
-                                                (y * y) / (2 * sigma_y_d *
-                                                           sigma_y_d)));
+        bilateral_filter_coeffs_s_kf
+            [i][y + RESTORATION_HALFWIN][x + RESTORATION_HALFWIN] =
+                (uint8_t)(0.5 +
+                          RESTORATION_FILT_STEP *
+                              exp(-(x * x) / (2 * sigma_x_d * sigma_x_d) -
+                                  (y * y) / (2 * sigma_y_d * sigma_y_d)));
       }
     }
   }
@@ -121,14 +119,13 @@ void av1_loop_restoration_precal() {
     }
     for (y = -RESTORATION_HALFWIN; y <= RESTORATION_HALFWIN; y++) {
       for (x = -RESTORATION_HALFWIN; x <= RESTORATION_HALFWIN; x++) {
-        bilateral_filter_coeffs_s[i][y + RESTORATION_HALFWIN]
-                                 [x + RESTORATION_HALFWIN] = (uint8_t)(
-                                     0.5 +
-                                     RESTORATION_FILT_STEP *
-                                         exp(-(x * x) /
-                                                 (2 * sigma_x_d * sigma_x_d) -
-                                             (y * y) /
-                                                 (2 * sigma_y_d * sigma_y_d)));
+        bilateral_filter_coeffs_s[i][y +
+                                     RESTORATION_HALFWIN][x +
+                                                          RESTORATION_HALFWIN] =
+            (uint8_t)(0.5 +
+                      RESTORATION_FILT_STEP *
+                          exp(-(x * x) / (2 * sigma_x_d * sigma_x_d) -
+                              (y * y) / (2 * sigma_y_d * sigma_y_d)));
       }
     }
   }
@@ -151,33 +148,35 @@ void av1_loop_restoration_init(RestorationInternal *rst, RestorationInfo *rsi,
                           &rst->nhtiles, &rst->nvtiles);
   if (rsi->frame_restoration_type == RESTORE_WIENER) {
     for (tile_idx = 0; tile_idx < rst->ntiles; ++tile_idx) {
-      rsi->vfilter[tile_idx][RESTORATION_HALFWIN] =
-          rsi->hfilter[tile_idx][RESTORATION_HALFWIN] = RESTORATION_FILT_STEP;
+      rsi->wiener_info[tile_idx].vfilter[RESTORATION_HALFWIN] =
+          rsi->wiener_info[tile_idx].hfilter[RESTORATION_HALFWIN] =
+              RESTORATION_FILT_STEP;
       for (i = 0; i < RESTORATION_HALFWIN; ++i) {
-        rsi->vfilter[tile_idx][RESTORATION_WIN - 1 - i] =
-            rsi->vfilter[tile_idx][i];
-        rsi->hfilter[tile_idx][RESTORATION_WIN - 1 - i] =
-            rsi->hfilter[tile_idx][i];
-        rsi->vfilter[tile_idx][RESTORATION_HALFWIN] -=
-            2 * rsi->vfilter[tile_idx][i];
-        rsi->hfilter[tile_idx][RESTORATION_HALFWIN] -=
-            2 * rsi->hfilter[tile_idx][i];
+        rsi->wiener_info[tile_idx].vfilter[RESTORATION_WIN - 1 - i] =
+            rsi->wiener_info[tile_idx].vfilter[i];
+        rsi->wiener_info[tile_idx].hfilter[RESTORATION_WIN - 1 - i] =
+            rsi->wiener_info[tile_idx].hfilter[i];
+        rsi->wiener_info[tile_idx].vfilter[RESTORATION_HALFWIN] -=
+            2 * rsi->wiener_info[tile_idx].vfilter[i];
+        rsi->wiener_info[tile_idx].hfilter[RESTORATION_HALFWIN] -=
+            2 * rsi->wiener_info[tile_idx].hfilter[i];
       }
     }
   } else if (rsi->frame_restoration_type == RESTORE_SWITCHABLE) {
     for (tile_idx = 0; tile_idx < rst->ntiles; ++tile_idx) {
       if (rsi->restoration_type[tile_idx] == RESTORE_WIENER) {
-        rsi->vfilter[tile_idx][RESTORATION_HALFWIN] =
-            rsi->hfilter[tile_idx][RESTORATION_HALFWIN] = RESTORATION_FILT_STEP;
+        rsi->wiener_info[tile_idx].vfilter[RESTORATION_HALFWIN] =
+            rsi->wiener_info[tile_idx].hfilter[RESTORATION_HALFWIN] =
+                RESTORATION_FILT_STEP;
         for (i = 0; i < RESTORATION_HALFWIN; ++i) {
-          rsi->vfilter[tile_idx][RESTORATION_WIN - 1 - i] =
-              rsi->vfilter[tile_idx][i];
-          rsi->hfilter[tile_idx][RESTORATION_WIN - 1 - i] =
-              rsi->hfilter[tile_idx][i];
-          rsi->vfilter[tile_idx][RESTORATION_HALFWIN] -=
-              2 * rsi->vfilter[tile_idx][i];
-          rsi->hfilter[tile_idx][RESTORATION_HALFWIN] -=
-              2 * rsi->hfilter[tile_idx][i];
+          rsi->wiener_info[tile_idx].vfilter[RESTORATION_WIN - 1 - i] =
+              rsi->wiener_info[tile_idx].vfilter[i];
+          rsi->wiener_info[tile_idx].hfilter[RESTORATION_WIN - 1 - i] =
+              rsi->wiener_info[tile_idx].hfilter[i];
+          rsi->wiener_info[tile_idx].vfilter[RESTORATION_HALFWIN] -=
+              2 * rsi->wiener_info[tile_idx].vfilter[i];
+          rsi->wiener_info[tile_idx].hfilter[RESTORATION_HALFWIN] -=
+              2 * rsi->wiener_info[tile_idx].hfilter[i];
         }
       }
     }
@@ -195,12 +194,12 @@ static void loop_bilateral_filter_tile(uint8_t *data, int tile_idx, int width,
 
   for (subtile_idx = 0; subtile_idx < BILATERAL_SUBTILES; ++subtile_idx) {
     uint8_t *data_p, *tmpdata_p;
-    const int level =
-        rst->rsi->bilateral_level[tile_idx * BILATERAL_SUBTILES + subtile_idx];
+    const int level = rst->rsi->bilateral_info[tile_idx].level[subtile_idx];
     uint8_t(*wx_lut)[RESTORATION_WIN];
     uint8_t *wr_lut_;
 
-    if (level < 0) continue;
+    if (level < 0)
+      continue;
     wr_lut_ = (rst->keyframe ? bilateral_filter_coeffs_r_kf[level]
                              : bilateral_filter_coeffs_r[level]) +
               BILATERAL_AMP_RANGE;
@@ -282,7 +281,8 @@ static void loop_wiener_filter_tile(uint8_t *data, int tile_idx, int width,
   int h_start, h_end, v_start, v_end;
   uint8_t *data_p, *tmpdata_p;
 
-  if (rst->rsi->wiener_level[tile_idx] == 0) return;
+  if (rst->rsi->wiener_info[tile_idx].level == 0)
+    return;
   // Filter row-wise
   av1_get_rest_tile_limits(tile_idx, 0, 0, rst->nhtiles, rst->nvtiles,
                            tile_width, tile_height, width, height, 1, 0,
@@ -291,7 +291,8 @@ static void loop_wiener_filter_tile(uint8_t *data, int tile_idx, int width,
   tmpdata_p = tmpdata + h_start + v_start * tmpstride;
   for (i = 0; i < (v_end - v_start); ++i) {
     for (j = 0; j < (h_end - h_start); ++j) {
-      *tmpdata_p++ = hor_sym_filter(data_p++, rst->rsi->hfilter[tile_idx]);
+      *tmpdata_p++ =
+          hor_sym_filter(data_p++, rst->rsi->wiener_info[tile_idx].hfilter);
     }
     data_p += stride - (h_end - h_start);
     tmpdata_p += tmpstride - (h_end - h_start);
@@ -304,8 +305,8 @@ static void loop_wiener_filter_tile(uint8_t *data, int tile_idx, int width,
   tmpdata_p = tmpdata + h_start + v_start * tmpstride;
   for (i = 0; i < (v_end - v_start); ++i) {
     for (j = 0; j < (h_end - h_start); ++j) {
-      *data_p++ =
-          ver_sym_filter(tmpdata_p++, tmpstride, rst->rsi->vfilter[tile_idx]);
+      *data_p++ = ver_sym_filter(tmpdata_p++, tmpstride,
+                                 rst->rsi->wiener_info[tile_idx].vfilter);
     }
     data_p += stride - (h_end - h_start);
     tmpdata_p += tmpstride - (h_end - h_start);
@@ -370,12 +371,12 @@ static void loop_bilateral_filter_tile_highbd(uint16_t *data, int tile_idx,
 
   for (subtile_idx = 0; subtile_idx < BILATERAL_SUBTILES; ++subtile_idx) {
     uint16_t *data_p, *tmpdata_p;
-    const int level =
-        rst->rsi->bilateral_level[tile_idx * BILATERAL_SUBTILES + subtile_idx];
+    const int level = rst->rsi->bilateral_info[tile_idx].level[subtile_idx];
     uint8_t(*wx_lut)[RESTORATION_WIN];
     uint8_t *wr_lut_;
 
-    if (level < 0) continue;
+    if (level < 0)
+      continue;
     wr_lut_ = (rst->keyframe ? bilateral_filter_coeffs_r_kf[level]
                              : bilateral_filter_coeffs_r[level]) +
               BILATERAL_AMP_RANGE;
@@ -462,7 +463,8 @@ static void loop_wiener_filter_tile_highbd(uint16_t *data, int tile_idx,
   int i, j;
   uint16_t *data_p, *tmpdata_p;
 
-  if (rst->rsi->wiener_level[tile_idx] == 0) return;
+  if (rst->rsi->wiener_info[tile_idx].level == 0)
+    return;
   // Filter row-wise
   av1_get_rest_tile_limits(tile_idx, 0, 0, rst->nhtiles, rst->nvtiles,
                            tile_width, tile_height, width, height, 1, 0,
@@ -472,7 +474,7 @@ static void loop_wiener_filter_tile_highbd(uint16_t *data, int tile_idx,
   for (i = 0; i < (v_end - v_start); ++i) {
     for (j = 0; j < (h_end - h_start); ++j) {
       *tmpdata_p++ = hor_sym_filter_highbd(
-          data_p++, rst->rsi->hfilter[tile_idx], bit_depth);
+          data_p++, rst->rsi->wiener_info[tile_idx].hfilter, bit_depth);
     }
     data_p += stride - (h_end - h_start);
     tmpdata_p += tmpstride - (h_end - h_start);
@@ -486,7 +488,8 @@ static void loop_wiener_filter_tile_highbd(uint16_t *data, int tile_idx,
   for (i = 0; i < (v_end - v_start); ++i) {
     for (j = 0; j < (h_end - h_start); ++j) {
       *data_p++ = ver_sym_filter_highbd(tmpdata_p++, tmpstride,
-                                        rst->rsi->vfilter[tile_idx], bit_depth);
+                                        rst->rsi->wiener_info[tile_idx].vfilter,
+                                        bit_depth);
     }
     data_p += stride - (h_end - h_start);
     tmpdata_p += tmpstride - (h_end - h_start);
@@ -543,7 +546,7 @@ static void loop_switchable_filter_highbd(uint8_t *data8, int width, int height,
     }
   }
 }
-#endif  // CONFIG_AOM_HIGHBITDEPTH
+#endif // CONFIG_AOM_HIGHBITDEPTH
 
 void av1_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, AV1_COMMON *cm,
                                int start_mi_row, int end_mi_row, int y_only) {
@@ -568,10 +571,11 @@ void av1_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, AV1_COMMON *cm,
           : (cm->rst_internal.rsi->frame_restoration_type == RESTORE_WIENER
                  ? loop_wiener_filter_highbd
                  : loop_switchable_filter_highbd);
-#endif  // CONFIG_AOM_HIGHBITDEPTH
+#endif // CONFIG_AOM_HIGHBITDEPTH
   YV12_BUFFER_CONFIG tmp_buf;
 
-  if (cm->rst_internal.rsi->frame_restoration_type == RESTORE_NONE) return;
+  if (cm->rst_internal.rsi->frame_restoration_type == RESTORE_NONE)
+    return;
 
   memset(&tmp_buf, 0, sizeof(YV12_BUFFER_CONFIG));
 
@@ -594,7 +598,7 @@ void av1_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, AV1_COMMON *cm,
                         tmp_buf.y_buffer + ystart * tmp_buf.y_stride,
                         tmp_buf.y_stride, cm->bit_depth);
   else
-#endif  // CONFIG_AOM_HIGHBITDEPTH
+#endif // CONFIG_AOM_HIGHBITDEPTH
     restore_func(frame->y_buffer + ystart * ystride, ywidth, yend - ystart,
                  ystride, &cm->rst_internal,
                  tmp_buf.y_buffer + ystart * tmp_buf.y_stride,
@@ -613,7 +617,7 @@ void av1_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, AV1_COMMON *cm,
                           tmp_buf.v_buffer + uvstart * tmp_buf.uv_stride,
                           tmp_buf.uv_stride, cm->bit_depth);
     } else {
-#endif  // CONFIG_AOM_HIGHBITDEPTH
+#endif // CONFIG_AOM_HIGHBITDEPTH
       restore_func(frame->u_buffer + uvstart * uvstride, uvwidth,
                    uvend - uvstart, uvstride, &cm->rst_internal,
                    tmp_buf.u_buffer + uvstart * tmp_buf.uv_stride,
@@ -624,7 +628,7 @@ void av1_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, AV1_COMMON *cm,
                    tmp_buf.uv_stride);
 #if CONFIG_AOM_HIGHBITDEPTH
     }
-#endif  // CONFIG_AOM_HIGHBITDEPTH
+#endif // CONFIG_AOM_HIGHBITDEPTH
   }
   aom_free_frame_buffer(&tmp_buf);
 }
