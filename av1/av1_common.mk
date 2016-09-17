@@ -11,7 +11,6 @@
 
 AV1_COMMON_SRCS-yes += av1_common.mk
 AV1_COMMON_SRCS-yes += av1_iface_common.h
-AV1_COMMON_SRCS-yes += common/ans.h
 AV1_COMMON_SRCS-yes += common/alloccommon.c
 AV1_COMMON_SRCS-yes += common/blockd.c
 AV1_COMMON_SRCS-yes += common/debugmodes.c
@@ -82,9 +81,6 @@ AV1_COMMON_SRCS-$(HAVE_SSE4_1) += common/x86/av1_highbd_convolve_filters_sse4.c
 endif
 AV1_COMMON_SRCS-yes += common/av1_convolve.c
 AV1_COMMON_SRCS-yes += common/av1_convolve.h
-AV1_COMMON_SRCS-$(CONFIG_ANS) += common/ans.h
-AV1_COMMON_SRCS-$(CONFIG_ANS) += common/divide.h
-AV1_COMMON_SRCS-$(CONFIG_ANS) += common/divide.c
 AV1_COMMON_SRCS-$(CONFIG_LOOP_RESTORATION) += common/restoration.h
 AV1_COMMON_SRCS-$(CONFIG_LOOP_RESTORATION) += common/restoration.c
 ifeq (yes,$(filter yes,$(CONFIG_GLOBAL_MOTION) $(CONFIG_WARPED_MOTION)))
