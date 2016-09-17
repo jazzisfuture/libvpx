@@ -47,24 +47,30 @@ extern "C" {
 #define WIENER_FILT_TAP1_BITS 5
 #define WIENER_FILT_TAP2_BITS 6
 
-#define WIENER_FILT_BITS \
+#define WIENER_FILT_BITS                                                       \
   ((WIENER_FILT_TAP0_BITS + WIENER_FILT_TAP1_BITS + WIENER_FILT_TAP2_BITS) * 2)
 
-#define WIENER_FILT_TAP0_MAXV \
+#define WIENER_FILT_TAP0_MAXV                                                  \
   (WIENER_FILT_TAP0_MINV - 1 + (1 << WIENER_FILT_TAP0_BITS))
-#define WIENER_FILT_TAP1_MAXV \
+#define WIENER_FILT_TAP1_MAXV                                                  \
   (WIENER_FILT_TAP1_MINV - 1 + (1 << WIENER_FILT_TAP1_BITS))
-#define WIENER_FILT_TAP2_MAXV \
+#define WIENER_FILT_TAP2_MAXV                                                  \
   (WIENER_FILT_TAP2_MINV - 1 + (1 << WIENER_FILT_TAP2_BITS))
+
+typedef struct { int level[BILATERAL_SUBTILES]; } BilateralInfo;
+
+typedef struct {
+  int level;
+  int vfilter[RESTORATION_WIN], hfilter[RESTORATION_WIN];
+} WienerInfo;
 
 typedef struct {
   RestorationType frame_restoration_type;
   RestorationType *restoration_type;
   // Bilateral filter
-  int *bilateral_level;
+  BilateralInfo *bilateral_info;
   // Wiener filter
-  int *wiener_level;
-  int (*vfilter)[RESTORATION_WIN], (*hfilter)[RESTORATION_WIN];
+  WienerInfo *wiener_info;
 } RestorationInfo;
 
 typedef struct {
