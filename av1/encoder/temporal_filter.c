@@ -641,7 +641,7 @@ void av1_temporal_filter(AV1_COMP *cpi, int distance) {
     strength = 0;
     frames_to_blur = 1;
   }
-#endif
+#endif  // CONFIG_EXT_REFS
 
 #if CONFIG_EXT_REFS
   if (strength == 0 && frames_to_blur == 1) {
@@ -649,7 +649,7 @@ void av1_temporal_filter(AV1_COMP *cpi, int distance) {
   } else {
     cpi->is_arf_filter_off[gf_group->arf_update_idx[gf_group->index]] = 0;
   }
-#endif
+#endif  // CONFIG_EXT_REFS
 
   frames_to_blur_backward = (frames_to_blur / 2);
   frames_to_blur_forward = ((frames_to_blur - 1) / 2);

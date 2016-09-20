@@ -776,10 +776,14 @@ static void read_ref_frames(AV1_COMMON *const cm, MACROBLOCKD *const xd,
         if (counts) ++counts->comp_ref[ctx1][1][bit1];
         ref_frame[!idx] = cm->comp_fwd_ref[bit1 ? 0 : 1];
       } else {
+#if CONFIG_NEW_REFS
+        ref_frame[!idx] = cm->comp_fwd_ref[2];
+#else  // CONFIG_NEW_REFS
         const int ctx2 = av1_get_pred_context_comp_ref_p2(cm, xd);
         const int bit2 = aom_read(r, fc->comp_ref_prob[ctx2][2]);
         if (counts) ++counts->comp_ref[ctx2][2][bit2];
         ref_frame[!idx] = cm->comp_fwd_ref[bit2 ? 3 : 2];
+#endif  // CONFIG_NEW_REFS
       }
 
       // Decode backward references.
@@ -789,7 +793,7 @@ static void read_ref_frames(AV1_COMMON *const cm, MACROBLOCKD *const xd,
         if (counts) ++counts->comp_bwdref[ctx_bwd][0][bit_bwd];
         ref_frame[idx] = cm->comp_bwd_ref[bit_bwd];
       }
-#else
+#else  // CONFIG_EXT_REFS
       ref_frame[!idx] = cm->comp_var_ref[bit];
       ref_frame[idx] = cm->comp_fixed_ref;
 #endif  // CONFIG_EXT_REFS
@@ -809,10 +813,14 @@ static void read_ref_frames(AV1_COMMON *const cm, MACROBLOCKD *const xd,
         const int bit2 = aom_read(r, fc->single_ref_prob[ctx2][2]);
         if (counts) ++counts->single_ref[ctx2][2][bit2];
         if (bit2) {
+#if CONFIG_NEW_REFS
+          ref_frame[0] = GOLDEN_FRAME;
+#else  // CONFIG_NEW_REFS
           const int ctx4 = av1_get_pred_context_single_ref_p5(xd);
           const int bit4 = aom_read(r, fc->single_ref_prob[ctx4][4]);
           if (counts) ++counts->single_ref[ctx4][4][bit4];
           ref_frame[0] = bit4 ? GOLDEN_FRAME : LAST3_FRAME;
+#endif  // CONFIG_NEW_REFS
         } else {
           const int ctx3 = av1_get_pred_context_single_ref_p4(xd);
           const int bit3 = aom_read(r, fc->single_ref_prob[ctx3][3]);
@@ -820,7 +828,7 @@ static void read_ref_frames(AV1_COMMON *const cm, MACROBLOCKD *const xd,
           ref_frame[0] = bit3 ? LAST2_FRAME : LAST_FRAME;
         }
       }
-#else
+#else  // CONFIG_EXT_REFS
       const int ctx0 = av1_get_pred_context_single_ref_p1(xd);
       const int bit0 = aom_read(r, fc->single_ref_prob[ctx0][0]);
       if (counts) ++counts->single_ref[ctx0][0][bit0];

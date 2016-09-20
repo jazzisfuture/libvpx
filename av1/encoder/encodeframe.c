@@ -1828,20 +1828,26 @@ static void update_stats(AV1_COMMON *cm, ThreadData *td
 
         if (has_second_ref(mbmi)) {
 #if CONFIG_EXT_REFS
+#if CONFIG_NEW_REFS
+          const int bit = ref0 == GOLDEN_FRAME;
+#else  // CONFIG_NEW_REFS
           const int bit = (ref0 == GOLDEN_FRAME || ref0 == LAST3_FRAME);
+#endif  // CONFIG_NEW_REFS
 
           counts->comp_ref[av1_get_pred_context_comp_ref_p(cm, xd)][0][bit]++;
           if (!bit) {
             counts->comp_ref[av1_get_pred_context_comp_ref_p1(cm, xd)][1]
                             [ref0 == LAST_FRAME]++;
+#if !CONFIG_NEW_REFS
           } else {
             counts->comp_ref[av1_get_pred_context_comp_ref_p2(cm, xd)][2]
                             [ref0 == GOLDEN_FRAME]++;
+#endif  // !CONFIG_NEW_REFS
           }
 
           counts->comp_bwdref[av1_get_pred_context_comp_bwdref_p(cm, xd)][0]
                              [ref1 == ALTREF_FRAME]++;
-#else
+#else  // CONFIG_EXT_REFS
           counts->comp_ref[av1_get_pred_context_comp_ref_p(cm, xd)][0]
                           [ref0 == GOLDEN_FRAME]++;
 #endif  // CONFIG_EXT_REFS
@@ -1860,12 +1866,14 @@ static void update_stats(AV1_COMMON *cm, ThreadData *td
             if (!bit1) {
               counts->single_ref[av1_get_pred_context_single_ref_p4(xd)][3]
                                 [ref0 != LAST_FRAME]++;
+#if !CONFIG_NEW_REFS
             } else {
               counts->single_ref[av1_get_pred_context_single_ref_p5(xd)][4]
                                 [ref0 != LAST3_FRAME]++;
+#endif  // !CONFIG_NEW_REFS
             }
           }
-#else
+#else  // CONFIG_EXT_REFS
           counts->single_ref[av1_get_pred_context_single_ref_p1(xd)][0]
                             [ref0 != LAST_FRAME]++;
           if (ref0 != LAST_FRAME) {
@@ -4262,7 +4270,10 @@ static int check_dual_ref_flags(AV1_COMP *cpi) {
   } else {
     return (!!(ref_flags & AOM_GOLD_FLAG) + !!(ref_flags & AOM_LAST_FLAG) +
 #if CONFIG_EXT_REFS
-            !!(ref_flags & AOM_LAST2_FLAG) + !!(ref_flags & AOM_LAST3_FLAG) +
+            !!(ref_flags & AOM_LAST2_FLAG) +
+#if !CONFIG_NEW_REFS
+            !!(ref_flags & AOM_LAST3_FLAG) +
+#endif  // !CONFIG_NEW_REFS
             !!(ref_flags & AOM_BWD_FLAG) +
 #endif  // CONFIG_EXT_REFS
             !!(ref_flags & AOM_ALT_FLAG)) >= 2;
@@ -4292,7 +4303,7 @@ static MV_REFERENCE_FRAME get_frame_type(const AV1_COMP *cpi) {
            cpi->rc.is_src_frame_ext_arf)
 #else
   else if (cpi->rc.is_src_frame_alt_ref && cpi->refresh_golden_frame)
-#endif
+#endif  // CONFIG_EXT_REFS
     return ALTREF_FRAME;
   else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)
     return GOLDEN_FRAME;
@@ -4691,11 +4702,15 @@ void av1_encode_frame(AV1_COMP *cpi) {
 #if CONFIG_EXT_REFS
       cm->comp_fwd_ref[0] = LAST_FRAME;
       cm->comp_fwd_ref[1] = LAST2_FRAME;
+#if CONFIG_NEW_REFS
+      cm->comp_fwd_ref[2] = GOLDEN_FRAME;
+#else  // CONFIG_NEW_REFS
       cm->comp_fwd_ref[2] = LAST3_FRAME;
       cm->comp_fwd_ref[3] = GOLDEN_FRAME;
+#endif  // CONFIG_NEW_REFS
       cm->comp_bwd_ref[0] = BWDREF_FRAME;
       cm->comp_bwd_ref[1] = ALTREF_FRAME;
-#else
+#else  // CONFIG_EXT_REFS
       cm->comp_fixed_ref = ALTREF_FRAME;
       cm->comp_var_ref[0] = LAST_FRAME;
       cm->comp_var_ref[1] = GOLDEN_FRAME;

@@ -193,7 +193,7 @@ int av1_rc_clamp_pframe_target_size(const AV1_COMP *const cpi, int target) {
   if (cpi->rc.is_src_frame_alt_ref) {
 #else
   if (cpi->refresh_golden_frame && rc->is_src_frame_alt_ref) {
-#endif
+#endif  // CONFIG_EXT_REFS
     // If there is an active ARF at this location use the minimum
     // bits on this frame even if it is a constructed arf.
     // The active maximum quantizer insures that an appropriate
@@ -916,6 +916,7 @@ int av1_frame_type_qdelta(const AV1_COMP *cpi, int rf_level, int q) {
     1.00,  // INTER_NORMAL
 #if CONFIG_EXT_REFS
     0.80,  // INTER_LOW
+    // TODO(zoeliu): To further adjust the rate factor for BWDREF_FRAME's
     1.50,  // INTER_HIGH
     1.25,  // GF_ARF_LOW
 #else
