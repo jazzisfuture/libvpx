@@ -3057,6 +3057,30 @@ static void read_bitdepth_colorspace_sampling(AV1_COMMON *cm,
   }
 }
 
+#if CONFIG_EXT_REFS && CONFIG_NEW_REFS
+static void check_duplicate_ref_frames(AV1Decoder *pbi) {
+  AV1_COMMON *const cm = &pbi->common;
+  int i, j;
+
+  for (i = 0; i < INTER_REFS_PER_FRAME; ++i) {
+    cm->frame_refs[i].is_duplicate = 0;
+    cm->frame_refs[i].dup_ref_idx = i;
+  }
+
+  for (i = 0; i < INTER_REFS_PER_FRAME; ++i) {
+    if (cm->frame_refs[i].is_duplicate) continue;
+
+    for (j = i + 1; j < INTER_REFS_PER_FRAME; ++j) {
+      if (!cm->frame_refs[j].is_duplicate &&
+          cm->frame_refs[j].idx == cm->frame_refs[i].idx) {
+        cm->frame_refs[j].is_duplicate = 1;
+        cm->frame_refs[j].dup_ref_idx = i;
+      }
+    }
+  }
+}
+#endif  // CONFIG_EXT_REFS && CONFIG_NEW_REFS
+
 static size_t read_uncompressed_header(AV1Decoder *pbi,
                                        struct aom_read_bit_buffer *rb) {
   AV1_COMMON *const cm = &pbi->common;
@@ -3197,6 +3221,10 @@ static size_t read_uncompressed_header(AV1Decoder *pbi,
         ref_frame->buf = &frame_bufs[idx].buf;
         cm->ref_frame_sign_bias[LAST_FRAME + i] = aom_rb_read_bit(rb);
       }
+
+#if CONFIG_EXT_REFS && CONFIG_NEW_REFS
+      check_duplicate_ref_frames(pbi);
+#endif  // CONFIG_EXT_REFS && CONFIG_NEW_REFS
 
       setup_frame_size_with_refs(cm, rb);
 

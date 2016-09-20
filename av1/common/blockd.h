@@ -319,6 +319,10 @@ typedef struct RefBuffer {
   int idx;
   YV12_BUFFER_CONFIG *buf;
   struct scale_factors sf;
+#if CONFIG_EXT_REFS && CONFIG_NEW_REFS
+  int is_duplicate;
+  int dup_ref_idx;
+#endif  // CONFIG_EXT_REFS && CONFIG_NEW_REFS
 } RefBuffer;
 
 typedef struct macroblockd {
