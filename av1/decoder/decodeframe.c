@@ -66,12 +66,16 @@ static void setup_compound_reference_mode(AV1_COMMON *cm) {
 #if CONFIG_EXT_REFS
   cm->comp_fwd_ref[0] = LAST_FRAME;
   cm->comp_fwd_ref[1] = LAST2_FRAME;
+#if CONFIG_NEW_REFS
+  cm->comp_fwd_ref[2] = GOLDEN_FRAME;
+#else  // CONFIG_NEW_REFS
   cm->comp_fwd_ref[2] = LAST3_FRAME;
   cm->comp_fwd_ref[3] = GOLDEN_FRAME;
+#endif  // CONFIG_NEW_REFS
 
   cm->comp_bwd_ref[0] = BWDREF_FRAME;
   cm->comp_bwd_ref[1] = ALTREF_FRAME;
-#else
+#else  // CONFIG_EXT_REFS
   if (cm->ref_frame_sign_bias[LAST_FRAME] ==
       cm->ref_frame_sign_bias[GOLDEN_FRAME]) {
     cm->comp_fixed_ref = ALTREF_FRAME;
@@ -3123,6 +3127,30 @@ static void read_bitdepth_colorspace_sampling(AV1_COMMON *cm,
   }
 }
 
+#if CONFIG_EXT_REFS && CONFIG_NEW_REFS
+static void check_duplicate_ref_frames(AV1Decoder *pbi) {
+  AV1_COMMON *const cm = &pbi->common;
+  int i, j;
+
+  for (i = 0; i < INTER_REFS_PER_FRAME; ++i) {
+    cm->frame_refs[i].is_duplicate = 0;
+    cm->frame_refs[i].dup_ref_idx = i;
+  }
+
+  for (i = 0; i < INTER_REFS_PER_FRAME; ++i) {
+    if (cm->frame_refs[i].is_duplicate) continue;
+
+    for (j = i + 1; j < INTER_REFS_PER_FRAME; ++j) {
+      if (!cm->frame_refs[j].is_duplicate &&
+          cm->frame_refs[j].idx == cm->frame_refs[i].idx) {
+        cm->frame_refs[j].is_duplicate = 1;
+        cm->frame_refs[j].dup_ref_idx = i;
+      }
+    }
+  }
+}
+#endif  // CONFIG_EXT_REFS && CONFIG_NEW_REFS
+
 static size_t read_uncompressed_header(AV1Decoder *pbi,
                                        struct aom_read_bit_buffer *rb) {
   AV1_COMMON *const cm = &pbi->common;
@@ -3131,10 +3159,6 @@ static size_t read_uncompressed_header(AV1Decoder *pbi,
   RefCntBuffer *const frame_bufs = pool->frame_bufs;
   int i, mask, ref_index = 0;
   size_t sz;
-#if CONFIG_EXT_REFS
-  cm->last3_frame_type = cm->last2_frame_type;
-  cm->last2_frame_type = cm->last_frame_type;
-#endif  // CONFIG_EXT_REFS
   cm->last_frame_type = cm->frame_type;
   cm->last_intra_only = cm->intra_only;
 
@@ -3263,6 +3287,10 @@ static size_t read_uncompressed_header(AV1Decoder *pbi,
         ref_frame->buf = &frame_bufs[idx].buf;
         cm->ref_frame_sign_bias[LAST_FRAME + i] = aom_rb_read_bit(rb);
       }
+
+#if CONFIG_EXT_REFS && CONFIG_NEW_REFS
+      check_duplicate_ref_frames(pbi);
+#endif  // CONFIG_EXT_REFS && CONFIG_NEW_REFS
 
       setup_frame_size_with_refs(cm, rb);
 

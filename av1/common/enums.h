@@ -216,12 +216,19 @@ typedef enum {
   AOM_LAST_FLAG = 1 << 0,
 #if CONFIG_EXT_REFS
   AOM_LAST2_FLAG = 1 << 1,
+#if CONFIG_NEW_REFS
+  AOM_GOLD_FLAG = 1 << 2,
+  AOM_BWD_FLAG = 1 << 3,
+  AOM_ALT_FLAG = 1 << 4,
+  AOM_REFFRAME_ALL = (1 << 5) - 1
+#else  // CONFIG_NEW_REFS
   AOM_LAST3_FLAG = 1 << 2,
   AOM_GOLD_FLAG = 1 << 3,
   AOM_BWD_FLAG = 1 << 4,
   AOM_ALT_FLAG = 1 << 5,
   AOM_REFFRAME_ALL = (1 << 6) - 1
-#else
+#endif  // CONFIG_NEW_REFS
+#else  // CONFIG_EXT_REFS
   AOM_GOLD_FLAG = 1 << 1,
   AOM_ALT_FLAG = 1 << 2,
   AOM_REFFRAME_ALL = (1 << 3) - 1
@@ -396,12 +403,19 @@ typedef TX_SIZE TXFM_CONTEXT;
 
 #if CONFIG_EXT_REFS
 #define LAST2_FRAME 2
+#if CONFIG_NEW_REFS
+#define GOLDEN_FRAME 3
+#define BWDREF_FRAME 4
+#define ALTREF_FRAME 5
+#define LAST_REF_FRAMES (LAST2_FRAME - LAST_FRAME + 1)
+#else  // CONFIG_NEW_REFS
 #define LAST3_FRAME 3
 #define GOLDEN_FRAME 4
 #define BWDREF_FRAME 5
 #define ALTREF_FRAME 6
 #define LAST_REF_FRAMES (LAST3_FRAME - LAST_FRAME + 1)
-#else
+#endif  // CONFIG_NEW_REFS
+#else  // CONFIG_EXT_REFS
 #define GOLDEN_FRAME 2
 #define ALTREF_FRAME 3
 #endif  // CONFIG_EXT_REFS

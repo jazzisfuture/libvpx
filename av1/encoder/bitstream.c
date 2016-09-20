@@ -861,8 +861,12 @@ static void write_ref_frames(const AV1_COMMON *cm, const MACROBLOCKD *xd,
 
     if (is_compound) {
 #if CONFIG_EXT_REFS
+#if CONFIG_NEW_REFS
+      const int bit = mbmi->ref_frame[0] == GOLDEN_FRAME;
+#else  // CONFIG_NEW_REFS
       const int bit = (mbmi->ref_frame[0] == GOLDEN_FRAME ||
                        mbmi->ref_frame[0] == LAST3_FRAME);
+#endif  // CONFIG_NEW_REFS
       const int bit_bwd = mbmi->ref_frame[1] == ALTREF_FRAME;
 #else  // CONFIG_EXT_REFS
       const int bit = mbmi->ref_frame[0] == GOLDEN_FRAME;
@@ -874,9 +878,11 @@ static void write_ref_frames(const AV1_COMMON *cm, const MACROBLOCKD *xd,
       if (!bit) {
         const int bit1 = mbmi->ref_frame[0] == LAST_FRAME;
         aom_write(w, bit1, av1_get_pred_prob_comp_ref_p1(cm, xd));
+#if !CONFIG_NEW_REFS
       } else {
         const int bit2 = mbmi->ref_frame[0] == GOLDEN_FRAME;
         aom_write(w, bit2, av1_get_pred_prob_comp_ref_p2(cm, xd));
+#endif  // !CONFIG_NEW_REFS
       }
       aom_write(w, bit_bwd, av1_get_pred_prob_comp_bwdref_p(cm, xd));
 #endif  // CONFIG_EXT_REFS
@@ -890,16 +896,22 @@ static void write_ref_frames(const AV1_COMMON *cm, const MACROBLOCKD *xd,
         const int bit1 = mbmi->ref_frame[0] == ALTREF_FRAME;
         aom_write(w, bit1, av1_get_pred_prob_single_ref_p2(cm, xd));
       } else {
+#if CONFIG_NEW_REFS
+        const int bit2 = mbmi->ref_frame[0] == GOLDEN_FRAME;
+#else  // CONFIG_NEW_REFS
         const int bit2 = (mbmi->ref_frame[0] == LAST3_FRAME ||
                           mbmi->ref_frame[0] == GOLDEN_FRAME);
+#endif  // CONFIG_NEW_REFS
         aom_write(w, bit2, av1_get_pred_prob_single_ref_p3(cm, xd));
 
         if (!bit2) {
           const int bit3 = mbmi->ref_frame[0] != LAST_FRAME;
           aom_write(w, bit3, av1_get_pred_prob_single_ref_p4(cm, xd));
+#if !CONFIG_NEW_REFS
         } else {
           const int bit4 = mbmi->ref_frame[0] != LAST3_FRAME;
           aom_write(w, bit4, av1_get_pred_prob_single_ref_p5(cm, xd));
+#endif  // !CONFIG_NEW_REFS
         }
       }
 #else   // CONFIG_EXT_REFS
@@ -3148,7 +3160,7 @@ static void write_uncompressed_header(AV1_COMP *cpi,
 
     return;
   } else {
-#endif                        // CONFIG_EXT_REFS
+#endif  // CONFIG_EXT_REFS
     aom_wb_write_bit(wb, 0);  // show_existing_frame
 #if CONFIG_EXT_REFS
   }
