@@ -445,16 +445,24 @@ static const aom_prob default_comp_inter_p[COMP_INTER_CONTEXTS] = {
 #if CONFIG_EXT_REFS
 static const aom_prob default_comp_ref_p[REF_CONTEXTS][FWD_REFS - 1] = {
   // TODO(zoeliu): To adjust the initial prob values.
+#if CONFIG_NEW_REFS
+  { 33, 16 },
+  { 77, 74 },
+  { 142, 142 },
+  { 172, 170 },
+  { 238, 247 }
+#else  // CONFIG_NEW_REFS
   { 33, 16, 16 },
   { 77, 74, 74 },
   { 142, 142, 142 },
   { 172, 170, 170 },
   { 238, 247, 247 }
+#endif  // CONFIG_NEW_REFS
 };
 static const aom_prob default_comp_bwdref_p[REF_CONTEXTS][BWD_REFS - 1] = {
   { 16 }, { 74 }, { 142 }, { 170 }, { 247 }
 };
-#else
+#else  // CONFIG_EXT_REFS
 static const aom_prob default_comp_ref_p[REF_CONTEXTS][COMP_REFS - 1] = {
   { 50 }, { 126 }, { 123 }, { 221 }, { 226 }
 };
@@ -462,12 +470,20 @@ static const aom_prob default_comp_ref_p[REF_CONTEXTS][COMP_REFS - 1] = {
 
 static const aom_prob default_single_ref_p[REF_CONTEXTS][SINGLE_REFS - 1] = {
 #if CONFIG_EXT_REFS
+#if CONFIG_NEW_REFS
+  { 33, 16, 16, 16 },
+  { 77, 74, 74, 74 },
+  { 142, 142, 142, 142 },
+  { 172, 170, 170, 170 },
+  { 238, 247, 247, 247 }
+#else  // CONFIG_NEW_REFS
   { 33, 16, 16, 16, 16 },
   { 77, 74, 74, 74, 74 },
   { 142, 142, 142, 142, 142 },
   { 172, 170, 170, 170, 170 },
   { 238, 247, 247, 247, 247 }
-#else
+#endif  // CONFIG_NEW_REFS
+#else  // CONFIG_EXT_REFS
   { 33, 16 }, { 77, 74 }, { 142, 142 }, { 172, 170 }, { 238, 247 }
 #endif  // CONFIG_EXT_REFS
 };
@@ -1622,7 +1638,9 @@ static void set_default_lf_deltas(struct loopfilter *lf) {
   lf->ref_deltas[LAST_FRAME] = 0;
 #if CONFIG_EXT_REFS
   lf->ref_deltas[LAST2_FRAME] = lf->ref_deltas[LAST_FRAME];
+#if !CONFIG_NEW_REFS
   lf->ref_deltas[LAST3_FRAME] = lf->ref_deltas[LAST_FRAME];
+#endif  // !CONFIG_NEW_REFS
   lf->ref_deltas[BWDREF_FRAME] = lf->ref_deltas[LAST_FRAME];
 #endif  // CONFIG_EXT_REFS
   lf->ref_deltas[GOLDEN_FRAME] = -1;
