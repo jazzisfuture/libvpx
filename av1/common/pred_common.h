@@ -110,6 +110,7 @@ static INLINE aom_prob av1_get_pred_prob_comp_ref_p1(const AV1_COMMON *cm,
   return cm->fc->comp_ref_prob[pred_context][1];
 }
 
+#if !CONFIG_NEW_REFS
 int av1_get_pred_context_comp_ref_p2(const AV1_COMMON *cm,
                                      const MACROBLOCKD *xd);
 
@@ -118,6 +119,7 @@ static INLINE aom_prob av1_get_pred_prob_comp_ref_p2(const AV1_COMMON *cm,
   const int pred_context = av1_get_pred_context_comp_ref_p2(cm, xd);
   return cm->fc->comp_ref_prob[pred_context][2];
 }
+#endif  // !CONFIG_NEW_REFS
 
 int av1_get_pred_context_comp_bwdref_p(const AV1_COMMON *cm,
                                        const MACROBLOCKD *xd);
@@ -159,12 +161,14 @@ static INLINE aom_prob av1_get_pred_prob_single_ref_p4(const AV1_COMMON *cm,
   return cm->fc->single_ref_prob[av1_get_pred_context_single_ref_p4(xd)][3];
 }
 
+#if !CONFIG_NEW_REFS
 int av1_get_pred_context_single_ref_p5(const MACROBLOCKD *xd);
 
 static INLINE aom_prob av1_get_pred_prob_single_ref_p5(const AV1_COMMON *cm,
                                                        const MACROBLOCKD *xd) {
   return cm->fc->single_ref_prob[av1_get_pred_context_single_ref_p5(xd)][4];
 }
+#endif  // !CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 
 // Returns a context number for the given MB prediction signal

@@ -270,8 +270,14 @@ int av1_get_reference_mode_context(const AV1_COMMON *cm,
 #define CHECK_LAST_OR_LAST2(ref_frame) \
   ((ref_frame == LAST_FRAME) || (ref_frame == LAST2_FRAME))
 
+#if CONFIG_NEW_REFS
+// NOTE(zoeliu): Following code is a hack just to examine whether the removal of
+//               LAST3_FRAME may help on the RD performance.
+#define CHECK_GOLDEN_OR_LAST3(ref_frame) ((ref_frame) == GOLDEN_FRAME)
+#else  // CONFIG_NEW_REFS
 #define CHECK_GOLDEN_OR_LAST3(ref_frame) \
   ((ref_frame == GOLDEN_FRAME) || (ref_frame == LAST3_FRAME))
+#endif  // CONFIG_NEW_REFS
 
 // Returns a context number for the given MB prediction signal
 // Signal the first reference frame for a compound mode be either
@@ -474,6 +480,7 @@ int av1_get_pred_context_comp_ref_p1(const AV1_COMMON *cm,
   return pred_context;
 }
 
+#if !CONFIG_NEW_REFS
 // Returns a context number for the given MB prediction signal
 // Signal the first reference frame for a compound mode be GOLDEN,
 // conditioning on that it is known either GOLDEN or LAST3.
@@ -573,6 +580,7 @@ int av1_get_pred_context_comp_ref_p2(const AV1_COMMON *cm,
 
   return pred_context;
 }
+#endif  // !CONFIG_NEW_REFS
 
 // Returns a context number for the given MB prediction signal
 int av1_get_pred_context_comp_bwdref_p(const AV1_COMMON *cm,
@@ -1134,6 +1142,7 @@ int av1_get_pred_context_single_ref_p4(const MACROBLOCKD *xd) {
   return pred_context;
 }
 
+#if !CONFIG_NEW_REFS
 // For the bit to signal whether the single reference is GOLDEN_FRAME or
 // LAST3_FRAME, knowing that it shall be either of these 2 choices.
 //
@@ -1226,6 +1235,7 @@ int av1_get_pred_context_single_ref_p5(const MACROBLOCKD *xd) {
   assert(pred_context >= 0 && pred_context < REF_CONTEXTS);
   return pred_context;
 }
+#endif  // !CONFIG_NEW_REFS
 
 #else  // CONFIG_EXT_REFS
 

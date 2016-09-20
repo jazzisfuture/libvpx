@@ -693,7 +693,7 @@ static INLINE int frame_is_kf_gf_arf(const AV1_COMP *cpi) {
 static INLINE int get_ref_frame_map_idx(const AV1_COMP *cpi,
                                         MV_REFERENCE_FRAME ref_frame) {
 #if CONFIG_EXT_REFS
-  if (ref_frame >= LAST_FRAME && ref_frame <= LAST3_FRAME)
+  if (ref_frame >= LAST_FRAME && ref_frame < (LAST_FRAME + LAST_REF_FRAMES))
     return cpi->lst_fb_idxes[ref_frame - 1];
 #else
   if (ref_frame == LAST_FRAME) return cpi->lst_fb_idx;
