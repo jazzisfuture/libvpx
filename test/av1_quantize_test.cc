@@ -179,17 +179,12 @@ class AV1QuantizeTest : public ::testing::TestWithParam<QuantizeFuncParams> {
 
  private:
   TX_SIZE getTxSize(int count) {
-    TX_SIZE txSize = 0;
-    if (16 == count) {
-      txSize = 0;
-    } else if (64 == count) {
-      txSize = 1;
-    } else if (256 == count) {
-      txSize = 2;
-    } else if (1024 == count) {
-      txSize = 3;
-    }
-    return txSize;
+    return (count == 16)
+               ? TX_4X4
+               : (count == 64)
+                     ? TX_8X8
+                     : (count == 256) ? TX_16X16
+                                      : (count == 1024) ? TX_32X32 : TX_INVALID;
   }
 
   QuantizeFuncParams params_;
