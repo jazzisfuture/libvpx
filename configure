@@ -569,7 +569,6 @@ process_toolchain() {
         check_add_cflags -Wdisabled-optimization
         check_add_cflags -Wfloat-conversion
         check_add_cflags -Wpointer-arith
-        check_add_cflags -Wshorten-64-to-32
         check_add_cflags -Wtype-limits
         check_add_cflags -Wcast-qual
         check_add_cflags -Wvla
@@ -582,6 +581,7 @@ process_toolchain() {
         if enabled mips || [ -z "${INLINE}" ]; then
           enabled extra_warnings || check_add_cflags -Wno-unused-function
         fi
+        enabled vp9_highbitdepth || check_add_cflags -Wshorten-64-to-32
     fi
 
     if enabled icc; then
