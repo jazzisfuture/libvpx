@@ -878,6 +878,12 @@ INSTANTIATE_TEST_CASE_P(SSE2, PartialTrans16x16Test,
                                                      AOM_BITS_8)));
 #endif  // HAVE_SSE2 && !CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
+#if HAVE_AVX2 && !CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+INSTANTIATE_TEST_CASE_P(AVX2, PartialTrans16x16Test,
+                        ::testing::Values(make_tuple(&aom_fdct16x16_1_avx2,
+                                                     AOM_BITS_8)));
+#endif  // HAVE_AVX2 && !CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+
 #if HAVE_SSE2 && CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
     SSE2, Trans16x16DCT,
@@ -910,6 +916,9 @@ INSTANTIATE_TEST_CASE_P(
                                  &idct16x16_10_add_12_sse2, 3167, AOM_BITS_12),
                       make_tuple(&idct16x16_12, &idct16x16_256_add_12_sse2,
                                  3167, AOM_BITS_12)));
+// TODO(luoyi):
+// For HBD test case, we should test function: aom_highbd_fdct16x16_1_sse2.
+// Fix this test when we work on this function.
 INSTANTIATE_TEST_CASE_P(SSE2, PartialTrans16x16Test,
                         ::testing::Values(make_tuple(&aom_fdct16x16_1_sse2,
                                                      AOM_BITS_8)));
