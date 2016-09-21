@@ -48,6 +48,14 @@ void highbd_fht16x16_ref(const int16_t *in, int32_t *out, int stride,
 }
 #endif  // CONFIG_AOM_HIGHBITDEPTH
 
+void dummy_inv_txfm(const tran_low_t *in, uint8_t *out, int stride,
+                    int tx_type) {
+  (void)in;
+  (void)out;
+  (void)stride;
+  (void)tx_type;
+}
+
 class AV1Trans16x16HT : public libaom_test::TransformTestBase,
                         public ::testing::TestWithParam<Ht16x16Param> {
  public:
@@ -189,6 +197,45 @@ const Ht16x16Param kArrayHt16x16Param_sse2[] = {
 INSTANTIATE_TEST_CASE_P(SSE2, AV1Trans16x16HT,
                         ::testing::ValuesIn(kArrayHt16x16Param_sse2));
 #endif  // HAVE_SSE2
+
+#if HAVE_AVX2
+const Ht16x16Param kArrayHt16x16Param_avx2[] = {
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 0, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 1, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 2, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 3, AOM_BITS_8,
+             256),
+#if CONFIG_EXT_TX
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 4, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 5, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 6, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 7, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 8, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 10, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 11, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 12, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 13, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 14, AOM_BITS_8,
+             256),
+  make_tuple(&av1_fht16x16_avx2, dummy_inv_txfm, 15, AOM_BITS_8,
+             256)
+#endif  // CONFIG_EXT_TX
+};
+INSTANTIATE_TEST_CASE_P(AVX2, AV1Trans16x16HT,
+                        ::testing::ValuesIn(kArrayHt16x16Param_avx2));
+#endif  // HAVE_AVX2
 
 #if HAVE_SSE4_1 && CONFIG_AOM_HIGHBITDEPTH
 const HighbdHt16x16Param kArrayHBDHt16x16Param_sse4_1[] = {
