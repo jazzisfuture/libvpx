@@ -1709,6 +1709,7 @@ void av1_fwht4x4_c(const int16_t *input, tran_low_t *output, int stride) {
 
 void av1_fht16x16_c(const int16_t *input, tran_low_t *output, int stride,
                     int tx_type) {
+#if 0
   if (tx_type == DCT_DCT) {
     aom_fdct16x16_c(input, output, stride);
   } else {
@@ -1732,6 +1733,28 @@ void av1_fht16x16_c(const int16_t *input, tran_low_t *output, int stride,
       { fidtx16, fadst16 },  // H_FLIPADST
 #endif                       // CONFIG_EXT_TX
     };
+#else
+    static const transform_2d FHT[] = {
+      { fdct16, fdct16 },    // DCT_DCT
+      { fadst16, fdct16 },   // ADST_DCT
+      { fdct16, fadst16 },   // DCT_ADST
+      { fadst16, fadst16 },  // ADST_ADST
+#if CONFIG_EXT_TX
+      { fadst16, fdct16 },   // FLIPADST_DCT
+      { fdct16, fadst16 },   // DCT_FLIPADST
+      { fadst16, fadst16 },  // FLIPADST_FLIPADST
+      { fadst16, fadst16 },  // ADST_FLIPADST
+      { fadst16, fadst16 },  // FLIPADST_ADST
+      { fidtx16, fidtx16 },  // IDTX
+      { fdct16, fidtx16 },   // V_DCT
+      { fidtx16, fdct16 },   // H_DCT
+      { fadst16, fidtx16 },  // V_ADST
+      { fidtx16, fadst16 },  // H_ADST
+      { fadst16, fidtx16 },  // V_FLIPADST
+      { fidtx16, fadst16 },  // H_FLIPADST
+#endif                       // CONFIG_EXT_TX
+    };
+#endif // #if 0
     const transform_2d ht = FHT[tx_type];
     tran_low_t out[256];
     int i, j;
@@ -1756,7 +1779,9 @@ void av1_fht16x16_c(const int16_t *input, tran_low_t *output, int stride,
       ht.rows(temp_in, temp_out);
       for (j = 0; j < 16; ++j) output[j + i * 16] = temp_out[j];
     }
+#if 0
   }
+#endif
 }
 
 #if CONFIG_AOM_HIGHBITDEPTH
