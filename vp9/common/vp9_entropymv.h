@@ -31,8 +31,8 @@ void vp9_adapt_mv_probs(struct VP9Common *cm, int usehp);
 #define COMPANDED_MVREF_THRESH 8
 
 static INLINE int use_mv_hp(const MV *ref) {
-  return (abs(ref->row) >> 3) < COMPANDED_MVREF_THRESH &&
-         (abs(ref->col) >> 3) < COMPANDED_MVREF_THRESH;
+  return (abs((int)ref->row) >> 3) < COMPANDED_MVREF_THRESH &&
+         (abs((int)ref->col) >> 3) < COMPANDED_MVREF_THRESH;
 }
 
 #define MV_UPDATE_PROB 252
