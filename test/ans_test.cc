@@ -329,15 +329,15 @@ class Av1AnsTest : public ::testing::Test {
 };
 std::vector<int> Av1AnsTest::sym_vec_;
 
-TEST_F(Av1AbsTest, Avxbool) { EXPECT_TRUE(check_aombool(pv_vec_, buf_)); }
-TEST_F(Av1AbsTest, Rabs) { EXPECT_TRUE(check_rabs(pv_vec_, buf_)); }
-TEST_F(Av1AbsTest, RabsAsc) { EXPECT_TRUE(check_rabs_asc(pv_vec_, buf_)); }
-TEST_F(Av1AbsTest, Uabs) { EXPECT_TRUE(check_uabs(pv_vec_, buf_)); }
+TEST_F(AbsTest, Avxbool) { EXPECT_TRUE(check_aombool(pv_vec_, buf_)); }
+TEST_F(AbsTest, Rabs) { EXPECT_TRUE(check_rabs(pv_vec_, buf_)); }
+TEST_F(AbsTest, RabsAsc) { EXPECT_TRUE(check_rabs_asc(pv_vec_, buf_)); }
+TEST_F(AbsTest, Uabs) { EXPECT_TRUE(check_uabs(pv_vec_, buf_)); }
 
-TEST_F(Av1AnsTest, Rans) {
+TEST_F(AnsTest, Rans) {
   EXPECT_TRUE(check_rans(sym_vec_, rans_sym_tab, buf_));
 }
-TEST_F(Av1AnsTest, Avxtree) {
+TEST_F(AnsTest, Avxtree) {
   EXPECT_TRUE(check_aomtree(sym_vec_, rans_sym_tab, buf_));
 }
 }  // namespace
