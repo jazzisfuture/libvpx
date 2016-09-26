@@ -13,7 +13,6 @@
 #include "vpx_ports/x86.h"
 #include "vp8/encoder/block.h"
 
-void vp8_short_fdct4x4_mmx(short *input, short *output, int pitch);
 void vp8_short_fdct8x4_mmx(short *input, short *output, int pitch) {
   vp8_short_fdct4x4_mmx(input, output, pitch);
   vp8_short_fdct4x4_mmx(input + 4, output + 16, pitch);
