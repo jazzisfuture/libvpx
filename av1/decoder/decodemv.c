@@ -971,9 +971,7 @@ static INLINE int assign_mv(AV1_COMMON *cm, MACROBLOCKD *xd,
         nmv_context_counts *const mv_counts =
             counts ? &counts->mv[nmv_ctx] : NULL;
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv,
-#if CONFIG_REF_MV
                 is_compound,
-#endif
                 &cm->fc->nmvc[nmv_ctx], mv_counts, allow_hp);
 #else
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc, mv_counts,
