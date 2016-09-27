@@ -4159,7 +4159,7 @@ static int set_and_cost_bmi_mvs(AV1_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
 #if CONFIG_REF_MV
       for (idx = 0; idx < 1 + is_compound; ++idx) {
         this_mv[idx] = seg_mvs[mbmi->ref_frame[idx]];
-        av1_set_mvcost(x, mbmi->ref_frame[idx]);
+        av1_set_mvcost(x, mbmi->ref_frame[idx], idx, mbmi->ref_mv_idx);
         thismvcost +=
             av1_mv_bit_cost(&this_mv[idx].as_mv, &best_ref_mv[idx]->as_mv,
                             x->nmvjointcost, x->mvcost, MV_COST_WEIGHT_SUB);
@@ -4703,7 +4703,7 @@ static void joint_motion_search(AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
     best_mv->row >>= 3;
 
 #if CONFIG_REF_MV
-    av1_set_mvcost(x, refs[id]);
+    av1_set_mvcost(x, refs[id], id, mbmi->ref_mv_idx);
 #endif
 
     // Small-range full-pixel motion search.
@@ -4782,7 +4782,7 @@ static void joint_motion_search(AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
         xd->plane[i].pre[ref] = backup_yv12[ref][i];
     }
 #if CONFIG_REF_MV
-    av1_set_mvcost(x, refs[ref]);
+    av1_set_mvcost(x, refs[ref], ref, mbmi->ref_mv_idx);
 #endif
 #if CONFIG_EXT_INTER
     if (bsize >= BLOCK_8X8)
@@ -5141,7 +5141,7 @@ static int64_t rd_pick_best_sub8x8_mode(
           x->best_mv.as_int = x->second_best_mv.as_int = INVALID_MV;
 
 #if CONFIG_REF_MV
-          av1_set_mvcost(x, mbmi->ref_frame[0]);
+          av1_set_mvcost(x, mbmi->ref_frame[0], 0, mbmi->ref_mv_idx);
 #endif
           bestsme = av1_full_pixel_search(
               cpi, x, bsize, &mvp_full, step_param, sadpb,
@@ -5820,10 +5820,6 @@ static void single_motion_search(AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
   pred_mv[1] = x->mbmi_ext->ref_mvs[ref][1].as_mv;
   pred_mv[2] = x->pred_mv[ref];
 
-#if CONFIG_REF_MV
-  av1_set_mvcost(x, ref);
-#endif
-
   if (scaled_ref_frame) {
     int i;
     // Swap out the reference frame for a version that's been scaled to
@@ -5834,6 +5830,12 @@ static void single_motion_search(AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
 
     av1_setup_pre_planes(xd, ref_idx, scaled_ref_frame, mi_row, mi_col, NULL);
   }
+
+  av1_set_mv_search_range(x, &ref_mv);
+
+#if CONFIG_REF_MV
+  av1_set_mvcost(x, ref, 0, mbmi->ref_mv_idx);
+#endif
 
   // Work out the size of the first step in the mv step search.
   // 0 here is maximum length first step. 1 is AOMMAX >> 1 etc.
@@ -6017,7 +6019,7 @@ static void single_motion_search_obmc(AV1_COMP *cpi, MACROBLOCK *x,
       av1_get_scaled_ref_frame(cpi, ref);
 
 #if CONFIG_REF_MV
-  av1_set_mvcost(x, ref);
+  av1_set_mvcost(x, ref, ref_idx, mbmi->ref_mv_idx);
 #endif
 
   if (scaled_ref_frame) {
@@ -6145,7 +6147,7 @@ static void do_masked_motion_search(AV1_COMP *cpi, MACROBLOCK *x,
   pred_mv[2] = x->pred_mv[ref];
 
 #if CONFIG_REF_MV
-  av1_set_mvcost(x, ref);
+  av1_set_mvcost(x, ref, ref_idx, mbmi->ref_mv_idx);
 #endif
 
   if (scaled_ref_frame) {
@@ -6791,13 +6793,13 @@ static int64_t handle_inter_mode(
                               single_newmv, &rate_mv, 0);
         } else {
 #if CONFIG_REF_MV
-          av1_set_mvcost(x, mbmi->ref_frame[0]);
+          av1_set_mvcost(x, mbmi->ref_frame[0], 0, mbmi->ref_mv_idx);
 #endif  // CONFIG_REF_MV
           rate_mv = av1_mv_bit_cost(&frame_mv[refs[0]].as_mv,
                                     &x->mbmi_ext->ref_mvs[refs[0]][0].as_mv,
                                     x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
 #if CONFIG_REF_MV
-          av1_set_mvcost(x, mbmi->ref_frame[1]);
+          av1_set_mvcost(x, mbmi->ref_frame[1], 1, mbmi->ref_mv_idx);
 #endif  // CONFIG_REF_MV
           rate_mv += av1_mv_bit_cost(
               &frame_mv[refs[1]].as_mv, &x->mbmi_ext->ref_mvs[refs[1]][0].as_mv,
@@ -6824,7 +6826,7 @@ static int64_t handle_inter_mode(
                             single_newmv, &rate_mv, 0);
       } else {
 #if CONFIG_REF_MV
-        av1_set_mvcost(x, mbmi->ref_frame[0]);
+        av1_set_mvcost(x, mbmi->ref_frame[0], 0, mbmi->ref_mv_idx);
 #endif  // CONFIG_REF_MV
         rate_mv = av1_mv_bit_cost(&frame_mv[refs[0]].as_mv,
                                   &x->mbmi_ext->ref_mvs[refs[0]][0].as_mv,
