@@ -16,6 +16,8 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
 
+#ifndef FUNC_MULTIPLY_BY_Q0
+#define FUNC_MULTIPLY_BY_Q0
 static INLINE int32x4_t MULTIPLY_BY_Q0(int16x4_t dsrc0, int16x4_t dsrc1,
                                        int16x4_t dsrc2, int16x4_t dsrc3,
                                        int16x4_t dsrc4, int16x4_t dsrc5,
@@ -37,13 +39,14 @@ static INLINE int32x4_t MULTIPLY_BY_Q0(int16x4_t dsrc0, int16x4_t dsrc1,
   qdst = vmlal_lane_s16(qdst, dsrc7, d1s16, 3);
   return qdst;
 }
+#endif
 
-void vpx_convolve8_avg_horiz_neon(const uint8_t *src, ptrdiff_t src_stride,
-                                  uint8_t *dst, ptrdiff_t dst_stride,
-                                  const int16_t *filter_x, int x_step_q4,
-                                  const int16_t *filter_y,  // unused
-                                  int y_step_q4,            // unused
-                                  int w, int h) {
+void vpx_convolve8_avg_horiz_neon_org(const uint8_t *src, ptrdiff_t src_stride,
+                                      uint8_t *dst, ptrdiff_t dst_stride,
+                                      const int16_t *filter_x, int x_step_q4,
+                                      const int16_t *filter_y,  // unused
+                                      int y_step_q4,            // unused
+                                      int w, int h) {
   int width;
   const uint8_t *s;
   uint8_t *d;
@@ -222,12 +225,12 @@ void vpx_convolve8_avg_horiz_neon(const uint8_t *src, ptrdiff_t src_stride,
   return;
 }
 
-void vpx_convolve8_avg_vert_neon(const uint8_t *src, ptrdiff_t src_stride,
-                                 uint8_t *dst, ptrdiff_t dst_stride,
-                                 const int16_t *filter_x,  // unused
-                                 int x_step_q4,            // unused
-                                 const int16_t *filter_y, int y_step_q4, int w,
-                                 int h) {
+void vpx_convolve8_avg_vert_neon_org(const uint8_t *src, ptrdiff_t src_stride,
+                                     uint8_t *dst, ptrdiff_t dst_stride,
+                                     const int16_t *filter_x,  // unused
+                                     int x_step_q4,            // unused
+                                     const int16_t *filter_y, int y_step_q4,
+                                     int w, int h) {
   int height;
   const uint8_t *s;
   uint8_t *d;

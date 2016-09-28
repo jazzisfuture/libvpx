@@ -8,14 +8,14 @@
 ;  be found in the AUTHORS file in the root of the source tree.
 ;
 
-    EXPORT  |vpx_convolve_copy_neon|
+    EXPORT  |vpx_convolve_copy_neon_asm|
     ARM
     REQUIRE8
     PRESERVE8
 
     AREA ||.text||, CODE, READONLY, ALIGN=2
 
-|vpx_convolve_copy_neon| PROC
+|vpx_convolve_copy_neon_asm| PROC
     push                {r4-r5, lr}
     ldrd                r4, r5, [sp, #28]
 
