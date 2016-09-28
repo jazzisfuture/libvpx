@@ -17,8 +17,8 @@
     ; VP9_FILTER_WEIGHT == 128
     ; VP9_FILTER_SHIFT == 7
 
-    EXPORT  |vpx_convolve8_avg_horiz_neon|
-    EXPORT  |vpx_convolve8_avg_vert_neon|
+    EXPORT  |vpx_convolve8_avg_horiz_neon_asm|
+    EXPORT  |vpx_convolve8_avg_vert_neon_asm|
     ARM
     REQUIRE8
     PRESERVE8
@@ -49,7 +49,7 @@
 ; sp[]int w
 ; sp[]int h
 
-|vpx_convolve8_avg_horiz_neon| PROC
+|vpx_convolve8_avg_horiz_neon_asm| PROC
     push            {r4-r10, lr}
 
     sub             r0, r0, #3              ; adjust for taps
@@ -177,7 +177,7 @@ vpx_convolve8_avg_loop_horiz
 
     ENDP
 
-|vpx_convolve8_avg_vert_neon| PROC
+|vpx_convolve8_avg_vert_neon_asm| PROC
     push            {r4-r8, lr}
 
     ; adjust for taps
