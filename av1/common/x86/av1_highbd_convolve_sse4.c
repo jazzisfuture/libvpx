@@ -463,3 +463,25 @@ void av1_highbd_convolve_vert_sse4_1(const uint16_t *src, int src_stride,
                                      dst_stride, avg, bd);
   }
 }
+
+#if CONFIG_AOM_HIGHBITDEPTH
+HbdSubpelFilterCoeffs av1_hbd_get_subpel_filter_ver_signal_dir(
+    const InterpFilterParams p, int index) {
+#if CONFIG_EXT_INTERP && HAVE_SSE4_1
+  if (p.filter_ptr == (const int16_t *)sub_pel_filters_12sharp) {
+    return &sub_pel_filters_12sharp_highbd_ver_signal_dir[index][0];
+  }
+  if (p.filter_ptr == (const int16_t *)sub_pel_filters_10sharp) {
+    return &sub_pel_filters_10sharp_highbd_ver_signal_dir[index][0];
+  }
+#endif
+#if USE_TEMPORALFILTER_12TAP && HAVE_SSE4_1
+  if (p.filter_ptr == (const int16_t *)sub_pel_filters_temporalfilter_12) {
+    return &sub_pel_filters_temporalfilter_12_highbd_ver_signal_dir[index][0];
+  }
+#endif
+  (void)p;
+  (void)index;
+  return NULL;
+}
+#endif

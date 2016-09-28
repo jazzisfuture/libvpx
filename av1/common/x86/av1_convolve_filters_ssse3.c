@@ -658,3 +658,43 @@ DECLARE_ALIGNED(16, const int8_t,
   },
 };
 #endif
+
+SubpelFilterCoeffs av1_get_subpel_filter_signal_dir(const InterpFilterParams p,
+                                                    int index) {
+#if CONFIG_EXT_INTERP && HAVE_SSSE3
+  if (p.filter_ptr == (const int16_t *)sub_pel_filters_12sharp) {
+    return &sub_pel_filters_12sharp_signal_dir[index][0];
+  }
+  if (p.filter_ptr == (const int16_t *)sub_pel_filters_10sharp) {
+    return &sub_pel_filters_10sharp_signal_dir[index][0];
+  }
+#endif
+#if USE_TEMPORALFILTER_12TAP && HAVE_SSSE3
+  if (p.filter_ptr == (const int16_t *)sub_pel_filters_temporalfilter_12) {
+    return &sub_pel_filters_temporalfilter_12_signal_dir[index][0];
+  }
+#endif
+  (void)p;
+  (void)index;
+  return NULL;
+}
+
+SubpelFilterCoeffs av1_get_subpel_filter_ver_signal_dir(
+    const InterpFilterParams p, int index) {
+#if CONFIG_EXT_INTERP && HAVE_SSSE3
+  if (p.filter_ptr == (const int16_t *)sub_pel_filters_12sharp) {
+    return &sub_pel_filters_12sharp_ver_signal_dir[index][0];
+  }
+  if (p.filter_ptr == (const int16_t *)sub_pel_filters_10sharp) {
+    return &sub_pel_filters_10sharp_ver_signal_dir[index][0];
+  }
+#endif
+#if USE_TEMPORALFILTER_12TAP && HAVE_SSSE3
+  if (p.filter_ptr == (const int16_t *)sub_pel_filters_temporalfilter_12) {
+    return &sub_pel_filters_temporalfilter_12_ver_signal_dir[index][0];
+  }
+#endif
+  (void)p;
+  (void)index;
+  return NULL;
+}
