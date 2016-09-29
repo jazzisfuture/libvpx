@@ -151,10 +151,10 @@ if (aom_config("CONFIG_AOM_HIGHBITDEPTH") eq "yes") {
     specialize qw/av1_iht8x4_32_add/;
 
     add_proto qw/void av1_iht8x16_128_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
-    specialize qw/av1_iht8x16_128_add/;
+    specialize qw/av1_iht8x16_128_add sse2/;
 
     add_proto qw/void av1_iht16x8_128_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
-    specialize qw/av1_iht16x8_128_add/;
+    specialize qw/av1_iht16x8_128_add sse2/;
 
     add_proto qw/void av1_iht16x32_512_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
     specialize qw/av1_iht16x32_512_add/;
