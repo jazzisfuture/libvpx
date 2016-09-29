@@ -59,22 +59,32 @@ qm_val_t *aom_qmatrix(struct AV1Common *cm, int qindex, int comp,
 
 #if CONFIG_NEW_QUANT
 
-#define QUANT_PROFILES 3
-#define QUANT_RANGES 2
+#define QUANT_PROFILES 4
 #define NUQ_KNOTS 3
 
 typedef tran_low_t dequant_val_type_nuq[NUQ_KNOTS + 1];
 typedef tran_low_t cuml_bins_type_nuq[NUQ_KNOTS];
-void av1_get_dequant_val_nuq(int q, int qindex, int band, tran_low_t *dq,
+void av1_get_dequant_val_nuq(int q, int band, tran_low_t *dq,
                              tran_low_t *cuml_bins, int dq_off_index);
 tran_low_t av1_dequant_abscoeff_nuq(int v, int q, const tran_low_t *dq);
 tran_low_t av1_dequant_coeff_nuq(int v, int q, const tran_low_t *dq);
 
-static INLINE int get_dq_profile_from_ctx(int q_ctx, int is_inter,
+static INLINE int get_dq_profile_from_ctx(int qindex, int q_ctx, int is_inter,
                                           PLANE_TYPE plane_type) {
-  if (plane_type == PLANE_TYPE_UV) return 0;
-  if (!is_inter) return QUANT_PROFILES - 1;
-  return AOMMIN(q_ctx, QUANT_PROFILES - 1);
+  // intra/inter, Y/UV, ctx, qrange
+  static const int dq_profile_lookup[2][2][3][2] = {
+    {     // intra
+      { {2, 1}, {2, 1}, {2, 1} },  // Y
+      { {3, 1}, {3, 1}, {3, 1} },  // UV
+    }, {  // inter
+      { {3, 1}, {2, 1}, {2, 1} },  // Y
+      { {3, 1}, {3, 1}, {3, 1} },  // UV
+    },
+  };
+  const int qrange = qindex < 140 ? 1 : 0;
+  if (qindex == 0) return 0;
+
+  return dq_profile_lookup[is_inter][plane_type][q_ctx][qrange];
 }
 #endif  // CONFIG_NEW_QUANT
 
