@@ -19,13 +19,6 @@ EOF
 forward_decls qw/vp8_common_forward_decls/;
 
 #
-# system state
-#
-add_proto qw/void vp8_clear_system_state/, "";
-specialize qw/vp8_clear_system_state mmx/;
-$vp8_clear_system_state_mmx=vpx_reset_mmx_state;
-
-#
 # Dequant
 #
 add_proto qw/void vp8_dequantize_b/, "struct blockd*, short *dqc";
@@ -205,15 +198,12 @@ specialize qw/vp8_fast_quantize_b sse2 ssse3 neon msa/;
 #
 add_proto qw/int vp8_block_error/, "short *coeff, short *dqcoeff";
 specialize qw/vp8_block_error mmx sse2 msa/;
-$vp8_block_error_sse2=vp8_block_error_xmm;
 
 add_proto qw/int vp8_mbblock_error/, "struct macroblock *mb, int dc";
 specialize qw/vp8_mbblock_error mmx sse2 msa/;
-$vp8_mbblock_error_sse2=vp8_mbblock_error_xmm;
 
 add_proto qw/int vp8_mbuverror/, "struct macroblock *mb";
 specialize qw/vp8_mbuverror mmx sse2 msa/;
-$vp8_mbuverror_sse2=vp8_mbuverror_xmm;
 
 #
 # Motion search
