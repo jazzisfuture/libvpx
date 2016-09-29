@@ -843,6 +843,11 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
       xd->mi[0]->mode = DC_PRED;
       xd->mi[0]->tx_size =
           use_dc_pred ? (bsize >= BLOCK_16X16 ? TX_16X16 : TX_8X8) : TX_4X4;
+
+      // Fix - zero the 16x16 block first. This ensures correct this_error for
+      // block sizes smaller than 16x16.
+      vp9_zero_array(x->plane[0].src_diff, 256);
+
       vp9_encode_intra_block_plane(x, bsize, 0, 0);
       this_error = vpx_get_mb_ss(x->plane[0].src_diff);
       this_intra_error = this_error;
