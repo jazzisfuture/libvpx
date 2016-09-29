@@ -1392,7 +1392,7 @@ static int64_t choose_tx_size_fix_type(AV1_COMP *cpi, BLOCK_SIZE bs,
 
   if (tx_select) {
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
-    evaulate_rect_tx = is_rect_tx_allowed(mbmi);
+    evaulate_rect_tx = is_rect_tx_allowed(xd, mbmi);
 #endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
     start_tx = max_tx_size;
     end_tx = 0;
@@ -1401,7 +1401,7 @@ static int64_t choose_tx_size_fix_type(AV1_COMP *cpi, BLOCK_SIZE bs,
         tx_size_from_tx_mode(bs, cm->tx_mode, is_inter);
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
     evaulate_rect_tx = is_rect_tx(chosen_tx_size);
-    assert(IMPLIES(evaulate_rect_tx, is_rect_tx_allowed(mbmi)));
+    assert(IMPLIES(evaulate_rect_tx, is_rect_tx_allowed(xd, mbmi)));
 #endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
     start_tx = chosen_tx_size;
     end_tx = chosen_tx_size;
@@ -3214,7 +3214,7 @@ static int64_t select_tx_size_fix_type(const AV1_COMP *cpi, MACROBLOCK *x,
   mbmi->tx_type = tx_type;
   inter_block_yrd(cpi, x, rate, dist, skippable, sse, bsize, ref_best_rd);
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
-  if (is_rect_tx_allowed(mbmi)) {
+  if (is_rect_tx_allowed(xd, mbmi)) {
     int rate_rect_tx, skippable_rect_tx = 0;
     int64_t dist_rect_tx, sse_rect_tx, rd, rd_rect_tx;
     int tx_size_cat = inter_tx_size_cat_lookup[bsize];
