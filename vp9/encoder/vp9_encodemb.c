@@ -903,7 +903,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
         *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
       if (!x->skip_encode && *eob)
-        vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob);
+        vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob, 0);
       break;
     case TX_8X8:
       if (!x->skip_recode) {
@@ -918,7 +918,7 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
         *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
       if (!x->skip_encode && *eob)
-        vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob);
+        vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob, 0);
       break;
     case TX_4X4:
       if (!x->skip_recode) {

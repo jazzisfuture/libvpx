@@ -1142,7 +1142,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int row,
           if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
             goto next;
           vp9_iht4x4_add(tx_type, BLOCK_OFFSET(pd->dqcoeff, block), dst,
-                         dst_stride, p->eobs[block]);
+                         dst_stride, p->eobs[block], 0);
         }
       }
     }

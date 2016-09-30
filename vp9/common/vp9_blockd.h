@@ -137,6 +137,9 @@ struct macroblockd_plane {
 typedef void (*idct_inter_fn_t)(const tran_low_t *input, uint8_t *dest,
                                 int stride, int eob, int bd);
 
+typedef void (*idct_intra_fn_t)(TX_TYPE tx_type, const tran_low_t *input,
+                                uint8_t *dest, int stride, int eob, int bd);
+
 typedef struct RefBuffer {
   // TODO(dkovalev): idx is not really required and should be removed, now it
   // is used in vp9_onyxd_if.c
@@ -196,6 +199,7 @@ typedef struct macroblockd {
   int corrupted;
 
   idct_inter_fn_t idct_inter[4];
+  idct_intra_fn_t idct_intra[4];
 
   struct vpx_internal_error_info *error_info;
 } MACROBLOCKD;

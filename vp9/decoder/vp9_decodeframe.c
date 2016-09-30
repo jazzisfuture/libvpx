@@ -212,56 +212,11 @@ static void inverse_transform_block_intra(MACROBLOCKD *xd, int plane,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   tran_low_t *const dqcoeff = pd->dqcoeff;
   assert(eob > 0);
+
 #if CONFIG_VP9_HIGHBITDEPTH
-  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    if (xd->lossless) {
-      vp9_highbd_iwht4x4_add(dqcoeff, dst, stride, eob, xd->bd);
-    } else {
-      switch (tx_size) {
-        case TX_4X4:
-          vp9_highbd_iht4x4_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
-          break;
-        case TX_8X8:
-          vp9_highbd_iht8x8_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
-          break;
-        case TX_16X16:
-          vp9_highbd_iht16x16_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
-          break;
-        case TX_32X32:
-          vp9_highbd_idct32x32_add(dqcoeff, dst, stride, eob, xd->bd);
-          break;
-        default: assert(0 && "Invalid transform size");
-      }
-    }
-  } else {
-    if (xd->lossless) {
-      vp9_iwht4x4_add(dqcoeff, dst, stride, eob, 0);
-    } else {
-      switch (tx_size) {
-        case TX_4X4: vp9_iht4x4_add(tx_type, dqcoeff, dst, stride, eob); break;
-        case TX_8X8: vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob); break;
-        case TX_16X16:
-          vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
-          break;
-        case TX_32X32: vp9_idct32x32_add(dqcoeff, dst, stride, eob, 0); break;
-        default: assert(0 && "Invalid transform size"); return;
-      }
-    }
-  }
+  xd->idct_intra[tx_size](tx_type, dqcoeff, dst, stride, eob, xd->bd);
 #else
-  if (xd->lossless) {
-    vp9_iwht4x4_add(dqcoeff, dst, stride, eob, 0);
-  } else {
-    switch (tx_size) {
-      case TX_4X4: vp9_iht4x4_add(tx_type, dqcoeff, dst, stride, eob); break;
-      case TX_8X8: vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob); break;
-      case TX_16X16:
-        vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
-        break;
-      case TX_32X32: vp9_idct32x32_add(dqcoeff, dst, stride, eob, 0); break;
-      default: assert(0 && "Invalid transform size"); return;
-    }
-  }
+  xd->idct_intra[tx_size](tx_type, dqcoeff, dst, stride, eob, 0);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   if (eob == 1) {

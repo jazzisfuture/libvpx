@@ -372,6 +372,14 @@ static INLINE void vp9_init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd,
   xd->idct_inter[2] = vp9_idct16x16_add;
   xd->idct_inter[3] = vp9_idct32x32_add;
 
+  if (xd->lossless)
+    xd->idct_intra[0] = vp9_iwht4x4_add_txtype;
+  else
+    xd->idct_intra[0] = vp9_iht4x4_add;
+  xd->idct_intra[1] = vp9_iht8x8_add;
+  xd->idct_intra[2] = vp9_iht16x16_add;
+  xd->idct_intra[3] = vp9_iht32x32_add;
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     if (xd->lossless)
@@ -381,6 +389,14 @@ static INLINE void vp9_init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd,
     xd->idct_inter[1] = vp9_highbd_idct8x8_add;
     xd->idct_inter[2] = vp9_highbd_idct16x16_add;
     xd->idct_inter[3] = vp9_highbd_idct32x32_add;
+
+    if (xd->lossless)
+      xd->idct_intra[0] = vp9_highbd_iwht4x4_add_txtype;
+    else
+      xd->idct_intra[0] = vp9_highbd_iht4x4_add;
+    xd->idct_intra[1] = vp9_highbd_iht8x8_add;
+    xd->idct_intra[2] = vp9_highbd_iht16x16_add;
+    xd->idct_intra[3] = vp9_highbd_iht32x32_add;
   }
 #endif
 

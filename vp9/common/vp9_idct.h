@@ -50,11 +50,20 @@ void vp9_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob, int bd);
 
 void vp9_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
-                    int stride, int eob);
+                    int stride, int eob, int bd);
 void vp9_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
-                    int stride, int eob);
+                    int stride, int eob, int bd);
 void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
-                      int stride, int eob);
+                      int stride, int eob, int bd);
+
+// NOTE: The following functions are copies of vp9_iwht4x4_add() and
+// vp9_idct32x32_add() but have been modified to accept a tx_type (unused)
+// parameter.  Maybe a tx_type dimension can be added to the LUT, calling the
+// various txtype ihts directly instead of checking/branching on tx_type.
+void vp9_iwht4x4_add_txtype(TX_TYPE tx_type, const tran_low_t *input,
+                            uint8_t *dest, int stride, int eob, int bd);
+void vp9_iht32x32_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+                      int stride, int eob, int bd);
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
@@ -73,6 +82,13 @@ void vp9_highbd_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input,
                            uint8_t *dest, int stride, int eob, int bd);
 void vp9_highbd_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input,
                              uint8_t *dest, int stride, int eob, int bd);
+
+// See note above
+void vp9_highbd_iwht4x4_add_txtype(TX_TYPE tx_type, const tran_low_t *input,
+                                   uint8_t *dest, int stride, int eob, int bd);
+void vp9_highbd_iht32x32_add(TX_TYPE tx_type, const tran_low_t *input,
+                             uint8_t *dest, int stride, int eob, int bd);
+
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #ifdef __cplusplus
 }  // extern "C"

@@ -134,6 +134,17 @@ void vp9_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
     vpx_iwht4x4_1_add(input, dest, stride);
 }
 
+void vp9_iwht4x4_add_txtype(TX_TYPE tx_type, const tran_low_t *input,
+    uint8_t *dest, int stride, int eob, int bd) {
+  (void)bd;
+  (void)tx_type;
+
+  if (eob > 1)
+    vpx_iwht4x4_16_add(input, dest, stride);
+  else
+    vpx_iwht4x4_1_add(input, dest, stride);
+}
+
 void vp9_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
                      int eob, int bd) {
   (void)bd;
@@ -181,7 +192,8 @@ void vp9_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
 
 // iht
 void vp9_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
-                    int stride, int eob) {
+                    int stride, int eob, int bd) {
+  (void)bd;
   if (tx_type == DCT_DCT)
     vp9_idct4x4_add(input, dest, stride, eob, 0);
   else
@@ -189,7 +201,8 @@ void vp9_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
 }
 
 void vp9_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
-                    int stride, int eob) {
+                    int stride, int eob, int bd) {
+  (void)bd;
   if (tx_type == DCT_DCT) {
     vp9_idct8x8_add(input, dest, stride, eob, 0);
   } else {
@@ -198,12 +211,30 @@ void vp9_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
 }
 
 void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
-                      int stride, int eob) {
+                      int stride, int eob, int bd) {
+  (void)bd;
   if (tx_type == DCT_DCT) {
     vp9_idct16x16_add(input, dest, stride, eob, 0);
   } else {
     vp9_iht16x16_256_add(input, dest, stride, tx_type);
   }
+}
+
+void vp9_iht32x32_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+                      int stride, int eob, int bd) {
+  (void)bd;
+  (void)tx_type;
+
+  if (eob == 1)
+    vpx_idct32x32_1_add(input, dest, stride);
+  else if (eob <= 34)
+    // non-zero coeff only in upper-left 8x8
+    vpx_idct32x32_34_add(input, dest, stride);
+  else if (eob <= 135)
+    // non-zero coeff only in upper-left 16x16
+    vpx_idct32x32_135_add(input, dest, stride);
+  else
+    vpx_idct32x32_1024_add(input, dest, stride);
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -427,4 +458,27 @@ void vp9_highbd_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input,
     vp9_highbd_iht16x16_256_add(input, dest, stride, tx_type, bd);
   }
 }
+
+void vp9_highbd_iht32x32_add(TX_TYPE tx_type, const tran_low_t *input,
+                             uint8_t *dest, int stride, int eob, int bd) {
+  (void)tx_type;
+  // Non-zero coeff only in upper-left 8x8
+  if (eob == 1) {
+    vpx_highbd_idct32x32_1_add(input, dest, stride, bd);
+  } else if (eob <= 34) {
+    vpx_highbd_idct32x32_34_add(input, dest, stride, bd);
+  } else {
+    vpx_highbd_idct32x32_1024_add(input, dest, stride, bd);
+  }
+}
+
+void vp9_highbd_iwht4x4_add_txtype(TX_TYPE tx_type, const tran_low_t *input,
+                                   uint8_t *dest, int stride, int eob, int bd) {
+  (void)tx_type;
+  if (eob > 1)
+    vpx_highbd_iwht4x4_16_add(input, dest, stride, bd);
+  else
+    vpx_highbd_iwht4x4_1_add(input, dest, stride, bd);
+}
+
 #endif  // CONFIG_VP9_HIGHBITDEPTH
