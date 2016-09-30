@@ -9,10 +9,25 @@
  */
 
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/inv_txfm.h"
+
+#if CONFIG_VP9_HIGHBITDEPTH
+// 12 signal input bits + 7 2D forward transform amplify bits + 5 1D inverse
+// transform amplify bits + 1 bit for contingency in rounding and quantizing
+#define HIGHBD_VALID_TXFM_MAGNITUDE_RANGE (1 << 25)
+
+static INLINE int detect_invalid_highbd_input(const tran_low_t *input,
+                                              int size) {
+  int i;
+  for (i = 0; i < size; ++i)
+    if (abs(input[i]) >= HIGHBD_VALID_TXFM_MAGNITUDE_RANGE) return 1;
+  return 0;
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 void vpx_iwht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
   /* 4-point reversible, orthonormal inverse Walsh-Hadamard in 3.5 adds,
@@ -1347,6 +1362,14 @@ void vpx_highbd_idct4_c(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t step[4];
   tran_high_t temp1, temp2;
   (void)bd;
+
+  if (detect_invalid_highbd_input(input, 4)) {
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
+    assert(0 && "invalid highbd txfm input");
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
+    return;
+  }
+
   // stage 1
   temp1 = (input[0] + input[2]) * cospi_16_64;
   temp2 = (input[0] - input[2]) * cospi_16_64;
@@ -1413,6 +1436,14 @@ void vpx_highbd_idct4x4_1_add_c(const tran_low_t *input, uint8_t *dest8,
 void vpx_highbd_idct8_c(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t step1[8], step2[8];
   tran_high_t temp1, temp2;
+
+  if (detect_invalid_highbd_input(input, 8)) {
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
+    assert(0 && "invalid highbd txfm input");
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
+    return;
+  }
+
   // stage 1
   step1[0] = input[0];
   step1[2] = input[4];
@@ -1498,12 +1529,18 @@ void vpx_highbd_idct8x8_1_add_c(const tran_low_t *input, uint8_t *dest8,
 
 void vpx_highbd_iadst4_c(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_high_t s0, s1, s2, s3, s4, s5, s6, s7;
-
   tran_low_t x0 = input[0];
   tran_low_t x1 = input[1];
   tran_low_t x2 = input[2];
   tran_low_t x3 = input[3];
   (void)bd;
+
+  if (detect_invalid_highbd_input(input, 4)) {
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
+    assert(0 && "invalid highbd txfm input");
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
+    return;
+  }
 
   if (!(x0 | x1 | x2 | x3)) {
     memset(output, 0, 4 * sizeof(*output));
@@ -1536,7 +1573,6 @@ void vpx_highbd_iadst4_c(const tran_low_t *input, tran_low_t *output, int bd) {
 
 void vpx_highbd_iadst8_c(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_high_t s0, s1, s2, s3, s4, s5, s6, s7;
-
   tran_low_t x0 = input[7];
   tran_low_t x1 = input[0];
   tran_low_t x2 = input[5];
@@ -1546,6 +1582,13 @@ void vpx_highbd_iadst8_c(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t x6 = input[1];
   tran_low_t x7 = input[6];
   (void)bd;
+
+  if (detect_invalid_highbd_input(input, 8)) {
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
+    assert(0 && "invalid highbd txfm input");
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
+    return;
+  }
 
   if (!(x0 | x1 | x2 | x3 | x4 | x5 | x6 | x7)) {
     memset(output, 0, 8 * sizeof(*output));
@@ -1641,6 +1684,13 @@ void vpx_highbd_idct16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t step1[16], step2[16];
   tran_high_t temp1, temp2;
   (void)bd;
+
+  if (detect_invalid_highbd_input(input, 16)) {
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
+    assert(0 && "invalid highbd txfm input");
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
+    return;
+  }
 
   // stage 1
   step1[0] = input[0 / 2];
@@ -1832,7 +1882,6 @@ void vpx_highbd_idct16x16_256_add_c(const tran_low_t *input, uint8_t *dest8,
 void vpx_highbd_iadst16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_high_t s0, s1, s2, s3, s4, s5, s6, s7, s8;
   tran_high_t s9, s10, s11, s12, s13, s14, s15;
-
   tran_low_t x0 = input[15];
   tran_low_t x1 = input[0];
   tran_low_t x2 = input[13];
@@ -1850,6 +1899,13 @@ void vpx_highbd_iadst16_c(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t x14 = input[1];
   tran_low_t x15 = input[14];
   (void)bd;
+
+  if (detect_invalid_highbd_input(input, 16)) {
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
+    assert(0 && "invalid highbd txfm input");
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
+    return;
+  }
 
   if (!(x0 | x1 | x2 | x3 | x4 | x5 | x6 | x7 | x8 | x9 | x10 | x11 | x12 |
         x13 | x14 | x15)) {
@@ -2047,6 +2103,13 @@ static void highbd_idct32_c(const tran_low_t *input, tran_low_t *output,
   tran_low_t step1[32], step2[32];
   tran_high_t temp1, temp2;
   (void)bd;
+
+  if (detect_invalid_highbd_input(input, 32)) {
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
+    assert(0 && "invalid highbd txfm input");
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
+    return;
+  }
 
   // stage 1
   step1[0] = input[0];
