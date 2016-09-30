@@ -172,13 +172,16 @@ static void inc_mv_component(int v, nmv_component_counts *comp_counts, int incr,
   }
 }
 
-void av1_inc_mv(const MV *mv, nmv_context_counts *counts, const int usehp) {
+void av1_inc_mv(const MV *mv, nmv_context_counts *counts, const int usehp,
+                const int is_compound) {
   if (counts != NULL) {
     const MV_JOINT_TYPE j = av1_get_mv_joint(mv);
 
 #if CONFIG_REF_MV
-    ++counts->zero_rmv[j == MV_JOINT_ZERO];
-    if (j == MV_JOINT_ZERO) return;
+    if (is_compound) {
+      ++counts->zero_rmv[j == MV_JOINT_ZERO];
+      if (j == MV_JOINT_ZERO) return;
+    }
 #endif
     ++counts->joints[j];
 

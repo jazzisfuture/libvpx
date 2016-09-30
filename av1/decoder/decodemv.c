@@ -722,7 +722,7 @@ static INLINE void read_mv(aom_reader *r, MV *mv, const MV *ref,
   if (mv_joint_horizontal(joint_type))
     diff.col = read_mv_component(r, &ctx->comps[1], use_hp);
 
-  av1_inc_mv(&diff, counts, use_hp);
+  av1_inc_mv(&diff, counts, use_hp, is_compound);
 
   mv->row = ref->row + diff.row;
   mv->col = ref->col + diff.col;

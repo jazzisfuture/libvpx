@@ -347,8 +347,11 @@ void av1_set_mvcost(MACROBLOCK *x, MV_REFERENCE_FRAME ref_frame, int ref,
   x->mvsadcost = x->mvcost;
   x->nmvjointsadcost = x->nmvjointcost;
 
-  x->nmv_vec_cost[nmv_ctx][MV_JOINT_ZERO] =
-      x->zero_rmv_cost[nmv_ctx][1] - x->zero_rmv_cost[nmv_ctx][0];
+  if (x->e_mbd.mi[0]->mbmi.ref_frame[1] == NONE)
+    x->nmv_vec_cost[nmv_ctx][MV_JOINT_ZERO] = 0;
+  else
+    x->nmv_vec_cost[nmv_ctx][MV_JOINT_ZERO] =
+        x->zero_rmv_cost[nmv_ctx][1] - x->zero_rmv_cost[nmv_ctx][0];
 }
 #endif
 

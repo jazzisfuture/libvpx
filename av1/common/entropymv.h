@@ -130,7 +130,8 @@ typedef struct {
   nmv_component_counts comps[2];
 } nmv_context_counts;
 
-void av1_inc_mv(const MV *mv, nmv_context_counts *mvctx, const int usehp);
+void av1_inc_mv(const MV *mv, nmv_context_counts *mvctx, const int usehp,
+                const int is_compound);
 
 #if CONFIG_GLOBAL_MOTION
 extern const aom_tree_index
