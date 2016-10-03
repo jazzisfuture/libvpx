@@ -694,25 +694,9 @@ static INLINE void read_mv(aom_reader *r, MV *mv, const MV *ref,
   MV_JOINT_TYPE joint_type;
   const int use_hp = allow_hp && av1_use_mv_hp(ref);
   MV diff = { 0, 0 };
-
-#if CONFIG_REF_MV && !CONFIG_EXT_INTER
-  if (is_compound) {
-    int is_zero_rmv = aom_read(r, ctx->zero_rmv);
-    if (is_zero_rmv) {
-      joint_type = MV_JOINT_ZERO;
-    } else {
-      joint_type =
-          (MV_JOINT_TYPE)aom_read_tree(r, av1_mv_joint_tree, ctx->joints);
-    }
-  } else {
-    joint_type =
-        (MV_JOINT_TYPE)aom_read_tree(r, av1_mv_joint_tree, ctx->joints);
-  }
-#else
   joint_type = (MV_JOINT_TYPE)aom_read_tree(r, av1_mv_joint_tree, ctx->joints);
-#endif
 
-#if CONFIG_REF_MV && CONFIG_EXT_INTER
+#if CONFIG_REF_MV
   (void)is_compound;
 #endif
 
