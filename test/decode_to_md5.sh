@@ -19,7 +19,7 @@
 #   $VP8_IVF_FILE and $AV1_IVF_FILE are required.
 decode_to_md5_verify_environment() {
   if [ ! -e "${VP8_IVF_FILE}" ] || [ ! -e "${AV1_IVF_FILE}" ]; then
-    echo "Libaom test data must exist in LIBVPX_TEST_DATA_PATH."
+    echo "Libaom test data must exist in LIBAOM_TEST_DATA_PATH."
     return 1
   fi
 }
