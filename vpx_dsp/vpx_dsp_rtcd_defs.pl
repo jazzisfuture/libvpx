@@ -1723,7 +1723,7 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 #
 if (vpx_config("CONFIG_POSTPROC") eq "yes" || vpx_config("CONFIG_VP9_POSTPROC") eq "yes") {
     add_proto qw/void vpx_plane_add_noise/, "uint8_t *start, const int8_t *noise, int blackclamp, int whiteclamp, int width, int height, int pitch";
-    specialize qw/vpx_plane_add_noise sse2 msa/;
+    specialize qw/vpx_plane_add_noise sse2/;
 
     add_proto qw/void vpx_mbpost_proc_down/, "unsigned char *dst, int pitch, int rows, int cols,int flimit";
     specialize qw/vpx_mbpost_proc_down sse2 msa/;
