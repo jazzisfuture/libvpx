@@ -12,11 +12,55 @@
 #include <assert.h>
 #include <tmmintrin.h>
 
+#include "./aom_config.h"
 #include "./av1_rtcd.h"
 #include "av1/common/filter.h"
+#include "av1/common/x86/av1_convolve_filters_ssse3.h"
 
 #define WIDTH_BOUND (16)
 #define HEIGHT_BOUND (16)
+
+typedef const int8_t (*SubpelFilterCoeffs)[16];
+
+static INLINE SubpelFilterCoeffs
+av1_get_subpel_filter_signal_dir(const InterpFilterParams p, int index) {
+#if CONFIG_EXT_INTERP
+  if (p.interp_filter == MULTITAP_SHARP2) {
+    return &sub_pel_filters_12sharp_signal_dir[index][0];
+  }
+  if (p.interp_filter == MULTITAP_SHARP) {
+    return &sub_pel_filters_10sharp_signal_dir[index][0];
+  }
+#endif
+#if USE_TEMPORALFILTER_12TAP
+  if (p.interp_filter == TEMPORALFILTER_12TAP) {
+    return &sub_pel_filters_temporalfilter_12_signal_dir[index][0];
+  }
+#endif
+  (void)p;
+  (void)index;
+  return NULL;
+}
+
+static INLINE SubpelFilterCoeffs
+av1_get_subpel_filter_ver_signal_dir(const InterpFilterParams p, int index) {
+#if CONFIG_EXT_INTERP
+  if (p.interp_filter == MULTITAP_SHARP2) {
+    return &sub_pel_filters_12sharp_ver_signal_dir[index][0];
+  }
+  if (p.interp_filter == MULTITAP_SHARP) {
+    return &sub_pel_filters_10sharp_ver_signal_dir[index][0];
+  }
+#endif
+#if USE_TEMPORALFILTER_12TAP
+  if (p.interp_filter == TEMPORALFILTER_12TAP) {
+    return &sub_pel_filters_temporalfilter_12_ver_signal_dir[index][0];
+  }
+#endif
+  (void)p;
+  (void)index;
+  return NULL;
+}
 
 static INLINE void transpose_4x8(const __m128i *in, __m128i *out) {
   __m128i t0, t1;
