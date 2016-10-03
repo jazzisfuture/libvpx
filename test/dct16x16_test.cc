@@ -280,7 +280,7 @@ void iht16x16_12(const tran_low_t *in, uint8_t *out, int stride, int tx_type) {
   vp9_highbd_iht16x16_256_add_c(in, out, stride, tx_type, 12);
 }
 
-#if HAVE_SSE2
+#if 0 //HAVE_SSE2
 void idct16x16_10_add_10_c(const tran_low_t *in, uint8_t *out, int stride) {
   vpx_highbd_idct16x16_10_add_c(in, out, stride, 10);
 }
@@ -288,7 +288,6 @@ void idct16x16_10_add_10_c(const tran_low_t *in, uint8_t *out, int stride) {
 void idct16x16_10_add_12_c(const tran_low_t *in, uint8_t *out, int stride) {
   vpx_highbd_idct16x16_10_add_c(in, out, stride, 12);
 }
-
 void idct16x16_256_add_10_sse2(const tran_low_t *in, uint8_t *out, int stride) {
   vpx_highbd_idct16x16_256_add_sse2(in, out, stride, 10);
 }
@@ -855,6 +854,7 @@ INSTANTIATE_TEST_CASE_P(C, PartialTrans16x16Test,
                                                      VPX_BITS_8)));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if 0
 #if HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
     NEON, Trans16x16DCT,
@@ -936,4 +936,5 @@ INSTANTIATE_TEST_CASE_P(MSA, PartialTrans16x16Test,
                         ::testing::Values(make_tuple(&vpx_fdct16x16_1_msa,
                                                      VPX_BITS_8)));
 #endif  // HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#endif
 }  // namespace
