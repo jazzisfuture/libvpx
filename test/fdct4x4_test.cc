@@ -438,6 +438,7 @@ INSTANTIATE_TEST_CASE_P(C, Trans4x4WHT,
                                                      VPX_BITS_8)));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if 0
 #if HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(NEON, Trans4x4DCT,
                         ::testing::Values(make_tuple(&vpx_fdct4x4_c,
@@ -509,4 +510,5 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vp9_fht4x4_msa, &vp9_iht4x4_16_add_msa, 2, VPX_BITS_8),
         make_tuple(&vp9_fht4x4_msa, &vp9_iht4x4_16_add_msa, 3, VPX_BITS_8)));
 #endif  // HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#endif
 }  // namespace

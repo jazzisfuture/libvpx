@@ -134,6 +134,9 @@ struct macroblockd_plane {
 
 #define BLOCK_OFFSET(x, i) ((x) + (i)*16)
 
+typedef void (*idct_fn_t)(const tran_low_t *input, uint8_t *dest, int stride,
+                          int eob, int bd);
+
 typedef struct RefBuffer {
   // TODO(dkovalev): idx is not really required and should be removed, now it
   // is used in vp9_onyxd_if.c
@@ -191,6 +194,8 @@ typedef struct macroblockd {
 
   int lossless;
   int corrupted;
+
+  idct_fn_t idct[TX_TYPES][TX_SIZES];
 
   struct vpx_internal_error_info *error_info;
 } MACROBLOCKD;

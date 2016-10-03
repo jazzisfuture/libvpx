@@ -58,13 +58,13 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
     specialize qw/vp9_iht16x16_256_add/;
   } else {
     add_proto qw/void vp9_iht4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
-    specialize qw/vp9_iht4x4_16_add sse2/;
+    specialize qw/vp9_iht4x4_16_add/; # sse2/;
 
     add_proto qw/void vp9_iht8x8_64_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
-    specialize qw/vp9_iht8x8_64_add sse2/;
+    specialize qw/vp9_iht8x8_64_add/; # sse2/;
 
     add_proto qw/void vp9_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type";
-    specialize qw/vp9_iht16x16_256_add sse2/;
+    specialize qw/vp9_iht16x16_256_add/; # sse2/;
   }
 } else {
   # Force C versions if CONFIG_EMULATE_HARDWARE is 1
@@ -79,13 +79,13 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
     specialize qw/vp9_iht16x16_256_add/;
   } else {
     add_proto qw/void vp9_iht4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
-    specialize qw/vp9_iht4x4_16_add sse2 neon dspr2 msa/;
+    specialize qw/vp9_iht4x4_16_add/; # sse2 neon dspr2 msa/;
 
     add_proto qw/void vp9_iht8x8_64_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
-    specialize qw/vp9_iht8x8_64_add sse2 neon dspr2 msa/;
+    specialize qw/vp9_iht8x8_64_add/; # sse2 neon dspr2 msa/;
 
     add_proto qw/void vp9_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type";
-    specialize qw/vp9_iht16x16_256_add sse2 dspr2 msa/;
+    specialize qw/vp9_iht16x16_256_add/; # sse2 dspr2 msa/;
   }
 }
 
