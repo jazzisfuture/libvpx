@@ -198,26 +198,37 @@ const InterpKernel *av1_intra_filter_kernels[INTRA_FILTERS] = {
 #if CONFIG_EXT_INTERP
 static const InterpFilterParams
     av1_interp_filter_params_list[SWITCHABLE_FILTERS + 1] = {
-      { (const int16_t *)sub_pel_filters_8, SUBPEL_TAPS, SUBPEL_SHIFTS },
-      { (const int16_t *)sub_pel_filters_8smooth, SUBPEL_TAPS, SUBPEL_SHIFTS },
-      { (const int16_t *)av1_sub_pel_filters_10sharp, 10, SUBPEL_SHIFTS },
-      { (const int16_t *)sub_pel_filters_8smooth2, SUBPEL_TAPS, SUBPEL_SHIFTS },
-      { (const int16_t *)av1_sub_pel_filters_12sharp, 12, SUBPEL_SHIFTS },
-      { (const int16_t *)bilinear_filters, SUBPEL_TAPS, SUBPEL_SHIFTS }
+      { (const int16_t *)sub_pel_filters_8, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        EIGHTTAP_REGULAR },
+      { (const int16_t *)sub_pel_filters_8smooth, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        EIGHTTAP_SMOOTH },
+      { (const int16_t *)sub_pel_filters_10sharp, 10, SUBPEL_SHIFTS,
+        MULTITAP_SHARP },
+      { (const int16_t *)sub_pel_filters_8smooth2, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        EIGHTTAP_SMOOTH2 },
+      { (const int16_t *)sub_pel_filters_12sharp, 12, SUBPEL_SHIFTS,
+        MULTITAP_SHARP2 },
+      { (const int16_t *)bilinear_filters, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        BILINEAR }
     };
 #else
 static const InterpFilterParams
     av1_interp_filter_params_list[SWITCHABLE_FILTERS + 1] = {
-      { (const int16_t *)sub_pel_filters_8, SUBPEL_TAPS, SUBPEL_SHIFTS },
-      { (const int16_t *)sub_pel_filters_8smooth, SUBPEL_TAPS, SUBPEL_SHIFTS },
-      { (const int16_t *)sub_pel_filters_8sharp, SUBPEL_TAPS, SUBPEL_SHIFTS },
-      { (const int16_t *)bilinear_filters, SUBPEL_TAPS, SUBPEL_SHIFTS }
+      { (const int16_t *)sub_pel_filters_8, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        EIGHTTAP_REGULAR },
+      { (const int16_t *)sub_pel_filters_8smooth, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        EIGHTTAP_SMOOTH },
+      { (const int16_t *)sub_pel_filters_8sharp, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        MULTITAP_SHARP },
+      { (const int16_t *)bilinear_filters, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        BILINEAR }
     };
 #endif  // CONFIG_EXT_INTERP
 
 #if USE_TEMPORALFILTER_12TAP
 static const InterpFilterParams av1_interp_temporalfilter_12tap = {
-  (const int16_t *)av1_sub_pel_filters_temporalfilter_12, 12, SUBPEL_SHIFTS
+  (const int16_t *)sub_pel_filters_temporalfilter_12, 12, SUBPEL_SHIFTS,
+  TEMPORALFILTER_12TAP
 };
 #endif  // USE_TEMPORALFILTER_12TAP
 
