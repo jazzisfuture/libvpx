@@ -618,14 +618,14 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         vpx_convolve_copy(dst, dst_stride, recon, 32, NULL, 0, NULL, 0, bs, bs);
         switch (tx_size) {
-          case TX_32X32: vp9_idct32x32_add(dqcoeff, recon, 32, *eob); break;
-          case TX_16X16: vp9_idct16x16_add(dqcoeff, recon, 32, *eob); break;
-          case TX_8X8: vp9_idct8x8_add(dqcoeff, recon, 32, *eob); break;
+          case TX_32X32: vp9_idct32x32_add(dqcoeff, recon, 32, *eob, 0); break;
+          case TX_16X16: vp9_idct16x16_add(dqcoeff, recon, 32, *eob, 0); break;
+          case TX_8X8: vp9_idct8x8_add(dqcoeff, recon, 32, *eob, 0); break;
           case TX_4X4:
             // this is like vp9_short_idct4x4 but has a special case around
             // eob<=1, which is significant (not just an optimization) for
             // the lossless case.
-            x->itxm_add(dqcoeff, recon, 32, *eob);
+            x->itxm_add(dqcoeff, recon, 32, *eob, 0);
             break;
           default: assert(0 && "Invalid transform size"); break;
         }
@@ -1117,7 +1117,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int row,
           if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
             goto next;
           vp9_iwht4x4_add(BLOCK_OFFSET(pd->dqcoeff, block), dst, dst_stride,
-                          p->eobs[block]);
+                          p->eobs[block], 0);
         } else {
           int64_t unused;
           const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
@@ -1142,7 +1142,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int row,
           if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
             goto next;
           vp9_iht4x4_add(tx_type, BLOCK_OFFSET(pd->dqcoeff, block), dst,
-                         dst_stride, p->eobs[block]);
+                         dst_stride, p->eobs[block], 0);
         }
       }
     }

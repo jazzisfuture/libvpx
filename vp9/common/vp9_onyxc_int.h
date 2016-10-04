@@ -23,6 +23,7 @@
 #include "vp9/common/vp9_frame_buffers.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_tile_common.h"
+#include "vp9/common/vp9_idct.h"
 
 #if CONFIG_VP9_POSTPROC
 #include "vp9/common/vp9_postproc.h"
@@ -362,6 +363,59 @@ static INLINE void vp9_init_macroblockd(VP9_COMMON *cm, MACROBLOCKD *xd,
     }
     xd->fc = cm->fc;
   }
+
+  if (xd->lossless) {
+    xd->idct[DCT_DCT][TX_4X4] = xd->idct[ADST_DCT][TX_4X4] =
+        xd->idct[DCT_ADST][TX_4X4] = xd->idct[ADST_ADST][TX_4X4] =
+            vp9_iwht4x4_add;
+  } else {
+    xd->idct[DCT_DCT][TX_4X4] = vp9_idct4x4_add;
+    xd->idct[ADST_DCT][TX_4X4] = vp9_iht4x4_16_add_adst_dct;
+    xd->idct[DCT_ADST][TX_4X4] = vp9_iht4x4_16_add_dct_adst;
+    xd->idct[ADST_ADST][TX_4X4] = vp9_iht4x4_16_add_adst_adst;
+  }
+
+  xd->idct[DCT_DCT][TX_8X8] = vp9_idct8x8_add;
+  xd->idct[ADST_DCT][TX_8X8] = vp9_iht8x8_64_add_adst_dct;
+  xd->idct[DCT_ADST][TX_8X8] = vp9_iht8x8_64_add_dct_adst;
+  xd->idct[ADST_ADST][TX_8X8] = vp9_iht8x8_64_add_adst_adst;
+
+  xd->idct[DCT_DCT][TX_16X16] = vp9_idct16x16_add;
+  xd->idct[ADST_DCT][TX_16X16] = vp9_iht16x16_256_add_adst_dct;
+  xd->idct[DCT_ADST][TX_16X16] = vp9_iht16x16_256_add_dct_adst;
+  xd->idct[ADST_ADST][TX_16X16] = vp9_iht16x16_256_add_adst_adst;
+
+  xd->idct[DCT_DCT][TX_32X32] = xd->idct[ADST_DCT][TX_32X32] =
+      xd->idct[DCT_ADST][TX_32X32] = xd->idct[ADST_ADST][TX_32X32] =
+          vp9_idct32x32_add;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    if (xd->lossless) {
+      xd->idct[DCT_DCT][TX_4X4] = xd->idct[ADST_DCT][TX_4X4] =
+          xd->idct[DCT_ADST][TX_4X4] = xd->idct[ADST_ADST][TX_4X4] =
+              vp9_highbd_iwht4x4_add;
+    } else {
+      xd->idct[DCT_DCT][TX_4X4] = vp9_highbd_idct4x4_add;
+      xd->idct[ADST_DCT][TX_4X4] = vp9_highbd_iht4x4_16_add_adst_dct;
+      xd->idct[DCT_ADST][TX_4X4] = vp9_highbd_iht4x4_16_add_dct_adst;
+      xd->idct[ADST_ADST][TX_4X4] = vp9_highbd_iht4x4_16_add_adst_adst;
+    }
+    xd->idct[DCT_DCT][TX_8X8] = vp9_highbd_idct8x8_add;
+    xd->idct[ADST_DCT][TX_8X8] = vp9_highbd_iht8x8_64_add_adst_dct;
+    xd->idct[DCT_ADST][TX_8X8] = vp9_highbd_iht8x8_64_add_dct_adst;
+    xd->idct[ADST_ADST][TX_8X8] = vp9_highbd_iht8x8_64_add_adst_adst;
+
+    xd->idct[DCT_DCT][TX_16X16] = vp9_highbd_idct16x16_add;
+    xd->idct[ADST_DCT][TX_16X16] = vp9_highbd_iht16x16_256_add_adst_dct;
+    xd->idct[DCT_ADST][TX_16X16] = vp9_highbd_iht16x16_256_add_dct_adst;
+    xd->idct[ADST_ADST][TX_16X16] = vp9_highbd_iht16x16_256_add_adst_adst;
+
+    xd->idct[DCT_DCT][TX_32X32] = xd->idct[ADST_DCT][TX_32X32] =
+        xd->idct[DCT_ADST][TX_32X32] = xd->idct[ADST_ADST][TX_32X32] =
+            vp9_highbd_idct32x32_add;
+  }
+#endif
 
   xd->above_seg_context = cm->above_seg_context;
   xd->mi_stride = cm->mi_stride;
