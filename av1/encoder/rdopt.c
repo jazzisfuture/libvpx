@@ -2687,6 +2687,7 @@ static int64_t rd_pick_intra_sby_mode(const AV1_COMP *const cpi, MACROBLOCK *x,
     angle_estimation(src, src_stride, rows, cols, directional_mode_skip_mask);
 #endif  // CONFIG_EXT_INTRA
 #if CONFIG_FILTER_INTRA
+  filter_intra_mode_skip_mask ^= (1 << FILTER_PLANAR_PRED);  // never skip.
   filter_intra_mode_info.use_filter_intra_mode[0] = 0;
   mic->mbmi.filter_intra_mode_info.use_filter_intra_mode[0] = 0;
 #endif  // CONFIG_FILTER_INTRA

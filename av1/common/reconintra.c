@@ -1005,6 +1005,22 @@ void av1_tm_filter_predictor_c(uint8_t *dst, ptrdiff_t stride, int bs,
   filter_intra_predictors_4tap(dst, stride, bs, above, left, TM_PRED);
 }
 
+void av1_planar_filter_predictor_c(uint8_t *dst, ptrdiff_t stride, int bs,
+                                   const uint8_t *above, const uint8_t *left) {
+  const uint8_t bottom_left = left[bs - 1];  // estimate
+  const uint8_t above_right = above[bs - 1];
+  int r;
+  for (r = 0; r < bs; ++r) {
+    int c;
+    for (c = 0; c < bs; ++c) {
+      const int pred_v = (bs - r) * above[c] + r * bottom_left;
+      const int pred_h = (bs - c) * left[r] + c * above_right;
+      dst[c] = clamp(lroundf((pred_v + pred_h) / (2.0 * bs)), 0, 255);
+    }
+    dst += stride;
+  }
+}
+
 static void filter_intra_predictors(int mode, uint8_t *dst, ptrdiff_t stride,
                                     int bs, const uint8_t *above,
                                     const uint8_t *left) {
@@ -1031,6 +1047,9 @@ static void filter_intra_predictors(int mode, uint8_t *dst, ptrdiff_t stride,
       av1_d63_filter_predictor(dst, stride, bs, above, left);
       break;
     case TM_PRED: av1_tm_filter_predictor(dst, stride, bs, above, left); break;
+    case FILTER_PLANAR_PRED:
+      av1_planar_filter_predictor(dst, stride, bs, above, left);
+      break;
     default: assert(0);
   }
 }
