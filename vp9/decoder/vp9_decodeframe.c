@@ -733,18 +733,26 @@ static void set_plane_n4(MACROBLOCKD *const xd, int bw, int bh, int bwl,
   }
 }
 
+// Convert blockwidth x blockheight to BLOCK_SIZE
+static const BLOCK_SIZE bwlxbhl_to_bsize[5][5] = {
+  { BLOCK_4X4, BLOCK_4X8, BLOCK_INVALID, BLOCK_INVALID, BLOCK_INVALID },
+  { BLOCK_8X4, BLOCK_8X8, BLOCK_8X16, BLOCK_INVALID, BLOCK_INVALID },
+  { BLOCK_INVALID, BLOCK_16X8, BLOCK_16X16, BLOCK_16X32, BLOCK_INVALID },
+  { BLOCK_INVALID, BLOCK_INVALID, BLOCK_32X16, BLOCK_32X32, BLOCK_32X64 },
+  { BLOCK_INVALID, BLOCK_INVALID, BLOCK_INVALID, BLOCK_64X32, BLOCK_64X64 }
+};
+
 static MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
-                              BLOCK_SIZE bsize, int mi_row, int mi_col, int bw,
-                              int bh, int x_mis, int y_mis, int bwl, int bhl) {
+                              int mi_row, int mi_col, int bw, int bh, int x_mis,
+                              int y_mis, int bwl, int bhl) {
   const int offset = mi_row * cm->mi_stride + mi_col;
   int x, y;
   const TileInfo *const tile = &xd->tile;
 
   xd->mi = cm->mi_grid_visible + offset;
   xd->mi[0] = &cm->mi[offset];
-  // TODO(slavarnway): Generate sb_type based on bwl and bhl, instead of
-  // passing bsize from decode_partition().
-  xd->mi[0]->sb_type = bsize;
+  xd->mi[0]->sb_type =
+      bwlxbhl_to_bsize[bwl - !xd->bmode_blocks_wl][bhl - !xd->bmode_blocks_hl];
   for (y = 0; y < y_mis; ++y)
     for (x = !y; x < x_mis; ++x) {
       xd->mi[y * cm->mi_stride + x] = xd->mi[0];
@@ -763,9 +771,8 @@ static MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 }
 
 static void decode_block(TileWorkerData *twd, VP9Decoder *const pbi, int mi_row,
-                         int mi_col, BLOCK_SIZE bsize, int bwl, int bhl) {
+                         int mi_col, int bwl, int bhl) {
   VP9_COMMON *const cm = &pbi->common;
-  const int less8x8 = bsize < BLOCK_8X8;
   const int bw = 1 << (bwl - 1);
   const int bh = 1 << (bhl - 1);
   const int x_mis = VPXMIN(bw, cm->mi_cols - mi_col);
@@ -773,12 +780,12 @@ static void decode_block(TileWorkerData *twd, VP9Decoder *const pbi, int mi_row,
   vpx_reader *r = &twd->bit_reader;
   MACROBLOCKD *const xd = &twd->xd;
 
-  MODE_INFO *mi = set_offsets(cm, xd, bsize, mi_row, mi_col, bw, bh, x_mis,
-                              y_mis, bwl, bhl);
+  MODE_INFO *mi =
+      set_offsets(cm, xd, mi_row, mi_col, bw, bh, x_mis, y_mis, bwl, bhl);
 
-  if (bsize >= BLOCK_8X8 && (cm->subsampling_x || cm->subsampling_y)) {
+  if (mi->sb_type >= BLOCK_8X8 && (cm->subsampling_x || cm->subsampling_y)) {
     const BLOCK_SIZE uv_subsize =
-        ss_size_lookup[bsize][cm->subsampling_x][cm->subsampling_y];
+        ss_size_lookup[mi->sb_type][cm->subsampling_x][cm->subsampling_y];
     if (uv_subsize == BLOCK_INVALID)
       vpx_internal_error(xd->error_info, VPX_CODEC_CORRUPT_FRAME,
                          "Invalid block size.");
@@ -822,6 +829,7 @@ static void decode_block(TileWorkerData *twd, VP9Decoder *const pbi, int mi_row,
 
     // Reconstruction
     if (!mi->skip) {
+      const int less8x8 = !(xd->bmode_blocks_wl & xd->bmode_blocks_hl);
       int eobtotal = 0;
       int plane;
 
@@ -874,17 +882,17 @@ static INLINE int dec_partition_plane_context(TileWorkerData *twd, int mi_row,
 }
 
 static INLINE void dec_update_partition_context(TileWorkerData *twd, int mi_row,
-                                                int mi_col, BLOCK_SIZE subsize,
-                                                int bw) {
+                                                int mi_col, int bw, int left_l2,
+                                                int above_l2) {
   PARTITION_CONTEXT *const above_ctx = twd->xd.above_seg_context + mi_col;
   PARTITION_CONTEXT *const left_ctx =
       twd->xd.left_seg_context + (mi_row & MI_MASK);
-
+  const uint8_t pcl[5] = { 15, 14, 12, 8, 0 };
   // update the partition context at the end notes. set partition bits
   // of block sizes larger than the current one to be one, and partition
   // bits of smaller block sizes to be zero.
-  memset(above_ctx, partition_context_lookup[subsize].above, bw);
-  memset(left_ctx, partition_context_lookup[subsize].left, bw);
+  memset(above_ctx, pcl[above_l2], bw);
+  memset(left_ctx, pcl[left_l2], bw);
 }
 
 static PARTITION_TYPE read_partition(TileWorkerData *twd, int mi_row,
@@ -910,16 +918,13 @@ static PARTITION_TYPE read_partition(TileWorkerData *twd, int mi_row,
   return p;
 }
 
-// TODO(slavarnway): eliminate bsize and subsize in future commits
 static void decode_partition(TileWorkerData *twd, VP9Decoder *const pbi,
-                             int mi_row, int mi_col, BLOCK_SIZE bsize,
-                             int n4x4_l2) {
+                             int mi_row, int mi_col, int n4x4_l2) {
   VP9_COMMON *const cm = &pbi->common;
   const int n8x8_l2 = n4x4_l2 - 1;
   const int num_8x8_wh = 1 << n8x8_l2;
   const int hbs = num_8x8_wh >> 1;
   PARTITION_TYPE partition;
-  BLOCK_SIZE subsize;
   const int has_rows = (mi_row + hbs) < cm->mi_rows;
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
   MACROBLOCKD *const xd = &twd->xd;
@@ -927,44 +932,43 @@ static void decode_partition(TileWorkerData *twd, VP9Decoder *const pbi,
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols) return;
 
   partition = read_partition(twd, mi_row, mi_col, has_rows, has_cols, n8x8_l2);
-  subsize = subsize_lookup[partition][bsize];  // get_subsize(bsize, partition);
+
+  xd->bmode_blocks_wl = xd->bmode_blocks_hl = 1;
   if (!hbs) {
     // calculate bmode block dimensions (log 2)
-    xd->bmode_blocks_wl = 1 >> !!(partition & PARTITION_VERT);
-    xd->bmode_blocks_hl = 1 >> !!(partition & PARTITION_HORZ);
-    decode_block(twd, pbi, mi_row, mi_col, subsize, 1, 1);
+    xd->bmode_blocks_wl >>= !!(partition & PARTITION_VERT);
+    xd->bmode_blocks_hl >>= !!(partition & PARTITION_HORZ);
+    decode_block(twd, pbi, mi_row, mi_col, 1, 1);
   } else {
     switch (partition) {
       case PARTITION_NONE:
-        decode_block(twd, pbi, mi_row, mi_col, subsize, n4x4_l2, n4x4_l2);
+        decode_block(twd, pbi, mi_row, mi_col, n4x4_l2, n4x4_l2);
         break;
       case PARTITION_HORZ:
-        decode_block(twd, pbi, mi_row, mi_col, subsize, n4x4_l2, n8x8_l2);
+        decode_block(twd, pbi, mi_row, mi_col, n4x4_l2, n8x8_l2);
         if (has_rows)
-          decode_block(twd, pbi, mi_row + hbs, mi_col, subsize, n4x4_l2,
-                       n8x8_l2);
+          decode_block(twd, pbi, mi_row + hbs, mi_col, n4x4_l2, n8x8_l2);
         break;
       case PARTITION_VERT:
-        decode_block(twd, pbi, mi_row, mi_col, subsize, n8x8_l2, n4x4_l2);
+        decode_block(twd, pbi, mi_row, mi_col, n8x8_l2, n4x4_l2);
         if (has_cols)
-          decode_block(twd, pbi, mi_row, mi_col + hbs, subsize, n8x8_l2,
-                       n4x4_l2);
+          decode_block(twd, pbi, mi_row, mi_col + hbs, n8x8_l2, n4x4_l2);
         break;
       case PARTITION_SPLIT:
-        decode_partition(twd, pbi, mi_row, mi_col, subsize, n8x8_l2);
-        decode_partition(twd, pbi, mi_row, mi_col + hbs, subsize, n8x8_l2);
-        decode_partition(twd, pbi, mi_row + hbs, mi_col, subsize, n8x8_l2);
-        decode_partition(twd, pbi, mi_row + hbs, mi_col + hbs, subsize,
-                         n8x8_l2);
+        decode_partition(twd, pbi, mi_row, mi_col, n8x8_l2);
+        decode_partition(twd, pbi, mi_row, mi_col + hbs, n8x8_l2);
+        decode_partition(twd, pbi, mi_row + hbs, mi_col, n8x8_l2);
+        decode_partition(twd, pbi, mi_row + hbs, mi_col + hbs, n8x8_l2);
         break;
       default: assert(0 && "Invalid partition type");
     }
   }
 
   // update partition context
-  if (bsize >= BLOCK_8X8 &&
-      (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT))
-    dec_update_partition_context(twd, mi_row, mi_col, subsize, num_8x8_wh);
+  if (!hbs || partition != PARTITION_SPLIT)
+    dec_update_partition_context(twd, mi_row, mi_col, num_8x8_wh,
+                                 n4x4_l2 - !!(partition & PARTITION_HORZ),
+                                 n4x4_l2 - !!(partition & PARTITION_VERT));
 }
 
 static void setup_token_decoder(const uint8_t *data, const uint8_t *data_end,
@@ -1447,7 +1451,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi, const uint8_t *data,
         vp9_zero(tile_data->xd.left_seg_context);
         for (mi_col = tile.mi_col_start; mi_col < tile.mi_col_end;
              mi_col += MI_BLOCK_SIZE) {
-          decode_partition(tile_data, pbi, mi_row, mi_col, BLOCK_64X64, 4);
+          decode_partition(tile_data, pbi, mi_row, mi_col, 4);
         }
         pbi->mb.corrupted |= tile_data->xd.corrupted;
         if (pbi->mb.corrupted)
@@ -1536,7 +1540,7 @@ static int tile_worker_hook(TileWorkerData *const tile_data,
       vp9_zero(tile_data->xd.left_seg_context);
       for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
            mi_col += MI_BLOCK_SIZE) {
-        decode_partition(tile_data, pbi, mi_row, mi_col, BLOCK_64X64, 4);
+        decode_partition(tile_data, pbi, mi_row, mi_col, 4);
       }
     }
 
