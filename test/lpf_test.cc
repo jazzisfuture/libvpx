@@ -514,7 +514,14 @@ INSTANTIATE_TEST_CASE_P(
 
 #if HAVE_NEON
 #if CONFIG_VP9_HIGHBITDEPTH
-// No neon high bitdepth functions.
+INSTANTIATE_TEST_CASE_P(
+    NEON, Loop8Test6Param,
+    ::testing::Values(make_tuple(&vpx_highbd_lpf_horizontal_4_neon,
+                                 &vpx_highbd_lpf_horizontal_4_c, 8)));
+INSTANTIATE_TEST_CASE_P(
+    NEON, Loop8Test9Param,
+    ::testing::Values(make_tuple(&vpx_highbd_lpf_horizontal_4_dual_neon,
+                                 &vpx_highbd_lpf_horizontal_4_dual_c, 8)));
 #else
 INSTANTIATE_TEST_CASE_P(
     NEON, Loop8Test6Param,
