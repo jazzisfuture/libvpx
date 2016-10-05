@@ -403,8 +403,10 @@ static int set_vt_partitioning(VP9_COMP *cpi, MACROBLOCK *const x,
   // variance is below threshold, otherwise split will be selected.
   // No check for vert/horiz split as too few samples for variance.
   if (bsize == bsize_min) {
-    // Variance already computed to set the force_split.
-    if (cm->frame_type == KEY_FRAME) get_variance(&vt.part_variances->none);
+    // For non-key frame and block_size > 8X8, variance is already computed
+    // to set the force_split.
+    if (cm->frame_type == KEY_FRAME || bsize_min == BLOCK_8X8)
+      get_variance(&vt.part_variances->none);
     if (mi_col + block_width / 2 < cm->mi_cols &&
         mi_row + block_height / 2 < cm->mi_rows &&
         vt.part_variances->none.variance < threshold) {
@@ -501,6 +503,9 @@ static void set_vbp_thresholds(VP9_COMP *cpi, int64_t thresholds[], int q) {
     } else {
       thresholds[1] = (5 * threshold_base) >> 1;
     }
+    // threshold[3] is only used for sub8x8 (i.e., use use_4x4_partition is set
+    // in choose_partitioning().
+    thresholds[3] = thresholds[2] << 2;
   }
 }
 
@@ -814,9 +819,11 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       (cm->frame_type == KEY_FRAME ||
        (is_one_pass_cbr_svc(cpi) &&
         cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame));
-  // Always use 4x4 partition for key frame.
-  const int use_4x4_partition = cm->frame_type == KEY_FRAME;
   const int low_res = (cm->width <= 352 && cm->height <= 288);
+  // Always use 4x4 partition for key frame.
+  // TODO (marpan): Use this to enable sub8x8 partition.
+  //const int use_4x4_partition = low_res || cm->frame_type == KEY_FRAME;
+  const int use_4x4_partition = cm->frame_type == KEY_FRAME;
   int variance4x4downsample[16];
   int segment_id;
 
@@ -984,9 +991,9 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
           }
         }
       }
-      if (is_key_frame || (low_res &&
-                           vt.split[i].split[j].part_variances.none.variance >
-                               (thresholds[1] << 1))) {
+      if (is_key_frame || use_4x4_partition || (low_res &&
+          vt.split[i].split[j].part_variances.none.variance >
+          (thresholds[1] << 1))) {
         force_split[split_index] = 0;
         // Go down to 4x4 down-sampling for variance.
         variance4x4downsample[i2 + j] = 1;
@@ -3707,10 +3714,6 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     // Set the partition type of the 64X64 block
     switch (partition_search_type) {
       case VAR_BASED_PARTITION:
-        // TODO(jingning, marpan): The mode decision and encoding process
-        // support both intra and inter sub8x8 block coding for RTC mode.
-        // Tune the thresholds accordingly to use sub8x8 block coding for
-        // coding performance improvement.
         choose_partitioning(cpi, tile_info, x, mi_row, mi_col);
         nonrd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col,
                             BLOCK_64X64, 1, &dummy_rdc, td->pc_root);
@@ -3730,8 +3733,6 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
         set_offsets(cpi, tile_info, x, mi_row, mi_col, BLOCK_64X64);
         // Use nonrd_pick_partition on scene-cut for VBR, or on qp-segment
         // if cyclic_refresh is enabled.
-        // nonrd_pick_partition does not support 4x4 partition, so avoid it
-        // on key frame for now.
         if ((cpi->oxcf.rc_mode == VPX_VBR && cpi->rc.high_source_sad &&
              cm->frame_type != KEY_FRAME) ||
             (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled &&
@@ -3742,14 +3743,15 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
           else
             x->max_partition_size = BLOCK_64X64;
           x->min_partition_size = BLOCK_8X8;
+          // TODO(marpan): nonrd_pick_partition() does not currently support
+          // sub8x8 block coding.
           nonrd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col,
                                BLOCK_64X64, &dummy_rdc, 1, INT64_MAX,
                                td->pc_root);
         } else {
           choose_partitioning(cpi, tile_info, x, mi_row, mi_col);
-          // TODO(marpan): Seems like nonrd_select_partition does not support
-          // 4x4 partition. Since 4x4 is used on key frame, use this switch
-          // for now.
+          // TODO(marpan): nonrd_select_partition() does not support sub8X8.
+          // Since 4x4 block is used on key frame, use this switch for now.
           if (cm->frame_type == KEY_FRAME)
             nonrd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col,
                                 BLOCK_64X64, 1, &dummy_rdc, td->pc_root);
