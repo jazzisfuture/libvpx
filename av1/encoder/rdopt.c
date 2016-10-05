@@ -7707,6 +7707,7 @@ static int64_t handle_inter_mode(
     } else {
       x->skip = 1;
       *disable_skip = 1;
+      mbmi->tx_size = max_txsize_lookup[bsize];
 
 // The cost of skip bit needs to be added.
 #if CONFIG_OBMC || CONFIG_WARPED_MOTION
