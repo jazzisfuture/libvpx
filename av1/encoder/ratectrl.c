@@ -193,7 +193,7 @@ int av1_rc_clamp_pframe_target_size(const AV1_COMP *const cpi, int target) {
   if (cpi->rc.is_src_frame_alt_ref) {
 #else
   if (cpi->refresh_golden_frame && rc->is_src_frame_alt_ref) {
-#endif
+#endif  // CONFIG_EXT_REFS
     // If there is an active ARF at this location use the minimum
     // bits on this frame even if it is a constructed arf.
     // The active maximum quantizer insures that an appropriate
@@ -1190,15 +1190,13 @@ static void update_golden_frame_stats(AV1_COMP *cpi) {
   //                   only the virtual indices for the reference frame will be
   //                   updated and cpi->refresh_golden_frame will still be zero.
   if (cpi->refresh_golden_frame || rc->is_src_frame_alt_ref) {
+    // We will not use internal overlay frames to replace the golden frame
+    if (!rc->is_src_frame_ext_arf)
 #else
   // Update the Golden frame usage counts.
   if (cpi->refresh_golden_frame) {
-#endif
-#if CONFIG_EXT_REFS
-    // We will not use internal overlay frames to replace the golden frame
-    if (!rc->is_src_frame_ext_arf)
-#endif
-      // this frame refreshes means next frames don't unless specified by user
+#endif  // CONFIG_EXT_REFS
+      // This frame refresh means next frames don't unless specified by user.
       rc->frames_since_golden = 0;
 
     // If we are not using alt ref in the up and coming group clear the arf
@@ -1290,6 +1288,8 @@ void av1_rc_postencode_update(AV1_COMP *cpi, uint64_t bytes_used) {
   // Actual bits spent
   rc->total_actual_bits += rc->projected_frame_size;
 #if CONFIG_EXT_REFS
+  // TODO(zoeliu): To investigate whether we should treat BWDREF_FRAME
+  //               differently here for rc->avg_frame_bandwidth.
   rc->total_target_bits +=
       (cm->show_frame || rc->is_bwd_ref_frame) ? rc->avg_frame_bandwidth : 0;
 #else
@@ -1309,6 +1309,8 @@ void av1_rc_postencode_update(AV1_COMP *cpi, uint64_t bytes_used) {
   if (cm->frame_type == KEY_FRAME) rc->frames_since_key = 0;
 
 #if CONFIG_EXT_REFS
+  // TODO(zoeliu): To investigate whether we should treat BWDREF_FRAME
+  //               differently here for rc->avg_frame_bandwidth.
   if (cm->show_frame || rc->is_bwd_ref_frame) {
 #else
   if (cm->show_frame) {
