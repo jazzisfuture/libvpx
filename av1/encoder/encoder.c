@@ -4777,10 +4777,6 @@ static void encode_frame_to_data_rate(AV1_COMP *cpi, size_t *size,
   cpi->ref_frame_flags = get_ref_frame_flags(cpi);
 #endif  // !CONFIG_EXT_REFS
 
-#if CONFIG_EXT_REFS
-  cm->last3_frame_type = cm->last2_frame_type;
-  cm->last2_frame_type = cm->last_frame_type;
-#endif  // CONFIG_EXT_REFS
   cm->last_frame_type = cm->frame_type;
 
   av1_rc_postencode_update(cpi, *size);

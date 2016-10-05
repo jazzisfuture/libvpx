@@ -1607,13 +1607,13 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
 
 #if CONFIG_EXT_REFS
   av1_zero_array(ext_arf_boost, MAX_EXT_ARFS);
-#endif
+#endif  // CONFIG_EXT_REFS
 
   key_frame = cpi->common.frame_type == KEY_FRAME;
 
 #if !CONFIG_EXT_REFS
   get_arf_buffer_indices(arf_buffer_indices);
-#endif
+#endif  // !CONFIG_EXT_REFS
 
   // For key frames the frame target rate is already set and it
   // is also the golden frame.
@@ -1633,7 +1633,7 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
 #else
     gf_group->arf_update_idx[frame_index] = arf_buffer_indices[0];
     gf_group->arf_ref_idx[frame_index] = arf_buffer_indices[0];
-#endif
+#endif  // CONFIG_EXT_REFS
     // Step over the golden frame / overlay frame
     if (EOF == input_stats(twopass, &frame_stats)) return;
   }
