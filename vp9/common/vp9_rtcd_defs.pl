@@ -51,20 +51,74 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
     add_proto qw/void vp9_iht4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
     specialize qw/vp9_iht4x4_16_add/;
 
+    add_proto qw/void vp9_iht4x4_16_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_adst_dct/;
+
+    add_proto qw/void vp9_iht4x4_16_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_dct_adst/;
+
+    add_proto qw/void vp9_iht4x4_16_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_adst_adst/;
+
     add_proto qw/void vp9_iht8x8_64_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
     specialize qw/vp9_iht8x8_64_add/;
 
+    add_proto qw/void vp9_iht8x8_64_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_adst_dct/;
+
+    add_proto qw/void vp9_iht8x8_64_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_dct_adst/;
+
+    add_proto qw/void vp9_iht8x8_64_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_adst_adst/;
+
     add_proto qw/void vp9_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type";
     specialize qw/vp9_iht16x16_256_add/;
+
+    add_proto qw/void vp9_iht16x16_256_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_adst_dct/;
+
+    add_proto qw/void vp9_iht16x16_256_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_dct_adst/;
+
+    add_proto qw/void vp9_iht16x16_256_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_adst_adst/;
   } else {
     add_proto qw/void vp9_iht4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
     specialize qw/vp9_iht4x4_16_add sse2/;
 
+    add_proto qw/void vp9_iht4x4_16_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_adst_dct sse2/;
+
+    add_proto qw/void vp9_iht4x4_16_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_dct_adst sse2/;
+
+    add_proto qw/void vp9_iht4x4_16_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_adst_adst sse2/;
+
     add_proto qw/void vp9_iht8x8_64_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
     specialize qw/vp9_iht8x8_64_add sse2/;
 
+    add_proto qw/void vp9_iht8x8_64_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_adst_dct sse2/;
+
+    add_proto qw/void vp9_iht8x8_64_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_dct_adst sse2/;
+
+    add_proto qw/void vp9_iht8x8_64_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_adst_adst sse2/;
+
     add_proto qw/void vp9_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type";
     specialize qw/vp9_iht16x16_256_add sse2/;
+
+    add_proto qw/void vp9_iht16x16_256_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_adst_dct sse2/;
+
+    add_proto qw/void vp9_iht16x16_256_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_dct_adst sse2/;
+
+    add_proto qw/void vp9_iht16x16_256_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_adst_adst sse2/;
   }
 } else {
   # Force C versions if CONFIG_EMULATE_HARDWARE is 1
@@ -72,20 +126,74 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
     add_proto qw/void vp9_iht4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
     specialize qw/vp9_iht4x4_16_add/;
 
+    add_proto qw/void vp9_iht4x4_16_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_adst_dct/;
+
+    add_proto qw/void vp9_iht4x4_16_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_dct_adst/;
+
+    add_proto qw/void vp9_iht4x4_16_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_adst_adst/;
+
     add_proto qw/void vp9_iht8x8_64_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
     specialize qw/vp9_iht8x8_64_add/;
 
+    add_proto qw/void vp9_iht8x8_64_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_adst_dct/;
+
+    add_proto qw/void vp9_iht8x8_64_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_dct_adst/;
+
+    add_proto qw/void vp9_iht8x8_64_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_adst_adst/;
+
     add_proto qw/void vp9_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type";
     specialize qw/vp9_iht16x16_256_add/;
+
+    add_proto qw/void vp9_iht16x16_256_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_adst_dct/;
+
+    add_proto qw/void vp9_iht16x16_256_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_dct_adst/;
+
+    add_proto qw/void vp9_iht16x16_256_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_adst_adst/;
   } else {
     add_proto qw/void vp9_iht4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
-    specialize qw/vp9_iht4x4_16_add sse2 neon dspr2 msa/;
+    specialize qw/vp9_iht4x4_16_add sse2/; # neon dspr2 msa/;
+
+    add_proto qw/void vp9_iht4x4_16_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_adst_dct sse2/; # dspr2 msa/;
+
+    add_proto qw/void vp9_iht4x4_16_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_dct_adst sse2/; # dspr2 msa/;
+
+    add_proto qw/void vp9_iht4x4_16_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht4x4_16_add_adst_adst sse2/; # dspr2 msa/;
 
     add_proto qw/void vp9_iht8x8_64_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type";
-    specialize qw/vp9_iht8x8_64_add sse2 neon dspr2 msa/;
+    specialize qw/vp9_iht8x8_64_add sse2/; # neon dspr2 msa/;
+
+    add_proto qw/void vp9_iht8x8_64_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_adst_dct sse2/; # dspr2 msa/;
+
+    add_proto qw/void vp9_iht8x8_64_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_dct_adst sse2/; # dspr2 msa/;
+
+    add_proto qw/void vp9_iht8x8_64_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht8x8_64_add_adst_adst sse2/; # dspr2 msa/;
 
     add_proto qw/void vp9_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type";
-    specialize qw/vp9_iht16x16_256_add sse2 dspr2 msa/;
+    specialize qw/vp9_iht16x16_256_add sse2/; # dspr2 msa/;
+
+    add_proto qw/void vp9_iht16x16_256_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_adst_dct sse2/; # dspr2 msa/;
+
+    add_proto qw/void vp9_iht16x16_256_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_dct_adst sse2/; # dspr2 msa/;
+
+    add_proto qw/void vp9_iht16x16_256_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+    specialize qw/vp9_iht16x16_256_add_adst_adst sse2/; # dspr2 msa/;
   }
 }
 
@@ -113,11 +221,38 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   add_proto qw/void vp9_highbd_iht4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type, int bd";
   specialize qw/vp9_highbd_iht4x4_16_add/;
 
+  add_proto qw/void vp9_highbd_iht4x4_16_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+  specialize qw/vp9_highbd_iht4x4_16_add_adst_dct/;
+
+  add_proto qw/void vp9_highbd_iht4x4_16_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+  specialize qw/vp9_highbd_iht4x4_16_add_dct_adst/;
+
+  add_proto qw/void vp9_highbd_iht4x4_16_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+  specialize qw/vp9_highbd_iht4x4_16_add_adst_adst/;
+
   add_proto qw/void vp9_highbd_iht8x8_64_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int tx_type, int bd";
   specialize qw/vp9_highbd_iht8x8_64_add/;
 
+  add_proto qw/void vp9_highbd_iht8x8_64_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+  specialize qw/vp9_highbd_iht8x8_64_add_adst_dct/;
+
+  add_proto qw/void vp9_highbd_iht8x8_64_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+  specialize qw/vp9_highbd_iht8x8_64_add_dct_adst/;
+
+  add_proto qw/void vp9_highbd_iht8x8_64_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+  specialize qw/vp9_highbd_iht8x8_64_add_adst_adst/;
+
   add_proto qw/void vp9_highbd_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type, int bd";
   specialize qw/vp9_highbd_iht16x16_256_add/;
+
+  add_proto qw/void vp9_highbd_iht16x16_256_add_adst_dct/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+  specialize qw/vp9_highbd_iht16x16_256_add_adst_dct/;
+
+  add_proto qw/void vp9_highbd_iht16x16_256_add_dct_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+  specialize qw/vp9_highbd_iht16x16_256_add_dct_adst/;
+
+  add_proto qw/void vp9_highbd_iht16x16_256_add_adst_adst/, "const tran_low_t *input, uint8_t *output, int pitch, int eob, int bd";
+  specialize qw/vp9_highbd_iht16x16_256_add_adst_adst/;
 }
 
 #

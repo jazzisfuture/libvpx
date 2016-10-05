@@ -103,7 +103,7 @@ void iht8x8_12(const tran_low_t *in, uint8_t *out, int stride, int tx_type) {
   vp9_highbd_iht8x8_64_add_c(in, out, stride, tx_type, 12);
 }
 
-#if HAVE_SSE2
+#if 0 // HAVE_SSE2
 
 void idct8x8_10_add_10_c(const tran_low_t *in, uint8_t *out, int stride) {
   vpx_highbd_idct8x8_10_add_c(in, out, stride, 10);
@@ -670,6 +670,7 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vp9_fht8x8_c, &vp9_iht8x8_64_add_c, 3, VPX_BITS_8)));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if 0
 #if HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(NEON, FwdTrans8x8DCT,
                         ::testing::Values(make_tuple(&vpx_fdct8x8_neon,
@@ -757,4 +758,5 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vp9_fht8x8_msa, &vp9_iht8x8_64_add_msa, 2, VPX_BITS_8),
         make_tuple(&vp9_fht8x8_msa, &vp9_iht8x8_64_add_msa, 3, VPX_BITS_8)));
 #endif  // HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+#endif
 }  // namespace
