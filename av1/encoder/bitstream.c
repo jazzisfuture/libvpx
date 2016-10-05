@@ -879,16 +879,30 @@ static void write_ref_frames(const AV1_COMMON *cm, const MACROBLOCKD *xd,
         aom_write(w, bit2, av1_get_pred_prob_comp_ref_p2(cm, xd));
       }
       aom_write(w, bit_bwd, av1_get_pred_prob_comp_bwdref_p(cm, xd));
+#if CONFIG_NEW_REFS
+      if (!bit_bwd) {
+        const int bit_bwd1 = mbmi->ref_frame[1] == ALTREF2_FRAME;
+        aom_write(w, bit_bwd1, av1_get_pred_prob_comp_bwdref_p1(cm, xd));
+      }
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
     } else {
 #if CONFIG_EXT_REFS
-      const int bit0 = (mbmi->ref_frame[0] == ALTREF_FRAME ||
-                        mbmi->ref_frame[0] == BWDREF_FRAME);
+      const int bit0 = (mbmi->ref_frame[0] <= ALTREF_FRAME &&
+                        mbmi->ref_frame[0] >= BWDREF_FRAME);
+
       aom_write(w, bit0, av1_get_pred_prob_single_ref_p1(cm, xd));
 
       if (bit0) {
         const int bit1 = mbmi->ref_frame[0] == ALTREF_FRAME;
         aom_write(w, bit1, av1_get_pred_prob_single_ref_p2(cm, xd));
+
+#if CONFIG_NEW_REFS
+        if (!bit1) {
+          const int bit5 = mbmi->ref_frame[0] != BWDREF_FRAME;
+          aom_write(w, bit5, av1_get_pred_prob_single_ref_p6(cm, xd));
+        }
+#endif  // CONFIG_NEW_REFS
       } else {
         const int bit2 = (mbmi->ref_frame[0] == LAST3_FRAME ||
                           mbmi->ref_frame[0] == GOLDEN_FRAME);
@@ -2780,13 +2794,19 @@ static int get_refresh_mask(AV1_COMP *cpi) {
   //     LAST3_FRAME.
   refresh_mask |=
       (cpi->refresh_last_frame << cpi->lst_fb_idxes[LAST_REF_FRAMES - 1]);
+
+#if CONFIG_NEW_REFS
+  refresh_mask |= (cpi->refresh_bwd_ref_frame << cpi->bwd_fb_idx);
+  refresh_mask |= (cpi->refresh_alt2_ref_frame << cpi->alt2_fb_idx);
+#else   // CONFIG_NEW_REFS
   if (cpi->rc.is_bwd_ref_frame && cpi->num_extra_arfs) {
     // We have swapped the virtual indices
     refresh_mask |= (cpi->refresh_bwd_ref_frame << cpi->arf_map[0]);
   } else {
     refresh_mask |= (cpi->refresh_bwd_ref_frame << cpi->bwd_fb_idx);
   }
-#else
+#endif  // CONFIG_NEW_REFS
+#else   // CONFIG_EXT_REFS
   refresh_mask |= (cpi->refresh_last_frame << cpi->lst_fb_idx);
 #endif  // CONFIG_EXT_REFS
 
@@ -2805,9 +2825,11 @@ static int get_refresh_mask(AV1_COMP *cpi) {
   } else {
     int arf_idx = cpi->alt_fb_idx;
 #if CONFIG_EXT_REFS
+#if !CONFIG_NEW_REFS
     const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
     arf_idx = cpi->arf_map[gf_group->arf_update_idx[gf_group->index]];
-#else
+#endif  // !CONFIG_NEW_REFS
+#else   // CONFIG_EXT_REFS
     if ((cpi->oxcf.pass == 2) && cpi->multi_arf_allowed) {
       const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
       arf_idx = gf_group->arf_update_idx[gf_group->index];
