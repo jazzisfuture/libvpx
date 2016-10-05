@@ -90,8 +90,13 @@ typedef enum {
   LAST_BIPRED_UPDATE = 6,    // Last Bi-predictive Frame
   BIPRED_UPDATE = 7,         // Bi-predictive Frame, but not the last one
   INTNL_OVERLAY_UPDATE = 8,  // Internal Overlay Frame
+#if CONFIG_NEW_REFS
+  INTNL_ARF_UPDATE = 9,  // Additional Altref Frame
+  FRAME_UPDATE_TYPES = 10
+#else   // CONFIG_NEW_REFS
   FRAME_UPDATE_TYPES = 9
-#else
+#endif  // CONFIG_NEW_REFS
+#else   // CONFIG_EXT_REFS
   FRAME_UPDATE_TYPES = 5
 #endif  // CONFIG_EXT_REFS
 } FRAME_UPDATE_TYPE;
@@ -184,16 +189,17 @@ void av1_calculate_coded_size(struct AV1_COMP *cpi, int *scaled_frame_width,
 
 #if CONFIG_EXT_REFS
 static INLINE int get_number_of_extra_arfs(int interval, int arf_pending) {
-  if (arf_pending && MAX_EXT_ARFS > 0)
+  if (arf_pending && MAX_EXT_ARFS > 0) {
     return interval >= MIN_EXT_ARF_INTERVAL * (MAX_EXT_ARFS + 1)
                ? MAX_EXT_ARFS
-               : interval >= MIN_EXT_ARF_INTERVAL * MAX_EXT_ARFS
-                     ? MAX_EXT_ARFS - 1
-                     : 0;
-  else
+               : (interval >= MIN_EXT_ARF_INTERVAL * MAX_EXT_ARFS
+                      ? MAX_EXT_ARFS - 1
+                      : 0);
+  } else {
     return 0;
+  }
 }
-#endif
+#endif  // CONFIG_EXT_REFS
 
 #ifdef __cplusplus
 }  // extern "C"
