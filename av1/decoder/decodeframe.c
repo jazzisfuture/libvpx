@@ -70,8 +70,13 @@ static void setup_compound_reference_mode(AV1_COMMON *cm) {
   cm->comp_fwd_ref[3] = GOLDEN_FRAME;
 
   cm->comp_bwd_ref[0] = BWDREF_FRAME;
+#if CONFIG_NEW_REFS
+  cm->comp_bwd_ref[1] = ALTREF2_FRAME;
+  cm->comp_bwd_ref[2] = ALTREF_FRAME;
+#else  // CONFIG_NEW_REFS
   cm->comp_bwd_ref[1] = ALTREF_FRAME;
-#else
+#endif  // CONFIG_NEW_REFS
+#else  // CONFIG_EXT_REFS
   if (cm->ref_frame_sign_bias[LAST_FRAME] ==
       cm->ref_frame_sign_bias[GOLDEN_FRAME]) {
     cm->comp_fixed_ref = ALTREF_FRAME;
@@ -3155,10 +3160,7 @@ static size_t read_uncompressed_header(AV1Decoder *pbi,
   RefCntBuffer *const frame_bufs = pool->frame_bufs;
   int i, mask, ref_index = 0;
   size_t sz;
-#if CONFIG_EXT_REFS
-  cm->last3_frame_type = cm->last2_frame_type;
-  cm->last2_frame_type = cm->last_frame_type;
-#endif  // CONFIG_EXT_REFS
+
   cm->last_frame_type = cm->frame_type;
   cm->last_intra_only = cm->intra_only;
 

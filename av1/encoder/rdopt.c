@@ -65,6 +65,39 @@ static const int filter_sets[9][2] = {
 
 #if CONFIG_EXT_REFS
 
+#if CONFIG_NEW_REFS
+
+#define LAST_FRAME_MODE_MASK                                      \
+  ((1 << INTRA_FRAME) | (1 << LAST2_FRAME) | (1 << LAST3_FRAME) | \
+   (1 << GOLDEN_FRAME) | (1 << BWDREF_FRAME) | (1 << ALTREF2_FRAME) | \
+   (1 << ALTREF_FRAME))
+#define LAST2_FRAME_MODE_MASK                                    \
+  ((1 << INTRA_FRAME) | (1 << LAST_FRAME) | (1 << LAST3_FRAME) | \
+   (1 << GOLDEN_FRAME) | (1 << BWDREF_FRAME) | (1 << ALTREF2_FRAME) | \
+   (1 << ALTREF_FRAME))
+#define LAST3_FRAME_MODE_MASK                                    \
+  ((1 << INTRA_FRAME) | (1 << LAST_FRAME) | (1 << LAST2_FRAME) | \
+   (1 << GOLDEN_FRAME) | (1 << BWDREF_FRAME) | (1 << ALTREF2_FRAME) | \
+   (1 << ALTREF_FRAME))
+#define GOLDEN_FRAME_MODE_MASK                                   \
+  ((1 << INTRA_FRAME) | (1 << LAST_FRAME) | (1 << LAST2_FRAME) | \
+   (1 << LAST3_FRAME) | (1 << BWDREF_FRAME) | (1 << ALTREF2_FRAME) | \
+   (1 << ALTREF_FRAME))
+#define BWDREF_FRAME_MODE_MASK                                   \
+  ((1 << INTRA_FRAME) | (1 << LAST_FRAME) | (1 << LAST2_FRAME) | \
+   (1 << LAST3_FRAME) | (1 << GOLDEN_FRAME) | (1 << ALTREF2_FRAME) | \
+   (1 << ALTREF_FRAME))
+#define ALTREF2_FRAME_MODE_MASK                                   \
+  ((1 << INTRA_FRAME) | (1 << LAST_FRAME) | (1 << LAST2_FRAME) | \
+   (1 << LAST3_FRAME) | (1 << GOLDEN_FRAME) | (1 << BWDREF_FRAME) | \
+   (1 << ALTREF_FRAME))
+#define ALTREF_FRAME_MODE_MASK                                   \
+  ((1 << INTRA_FRAME) | (1 << LAST_FRAME) | (1 << LAST2_FRAME) | \
+   (1 << LAST3_FRAME) | (1 << GOLDEN_FRAME) | (1 << BWDREF_FRAME) | \
+   (1 << ALTREF2_FRAME))
+
+#else  // CONFIG_NEW_REFS
+
 #define LAST_FRAME_MODE_MASK                                      \
   ((1 << INTRA_FRAME) | (1 << LAST2_FRAME) | (1 << LAST3_FRAME) | \
    (1 << GOLDEN_FRAME) | (1 << BWDREF_FRAME) | (1 << ALTREF_FRAME))
@@ -84,7 +117,9 @@ static const int filter_sets[9][2] = {
   ((1 << INTRA_FRAME) | (1 << LAST_FRAME) | (1 << LAST2_FRAME) | \
    (1 << LAST3_FRAME) | (1 << GOLDEN_FRAME) | (1 << BWDREF_FRAME))
 
-#else
+#endif  // CONFIG_NEW_REFS
+
+#else  // CONFIG_EXT_REFS
 
 #define LAST_FRAME_MODE_MASK \
   ((1 << GOLDEN_FRAME) | (1 << ALTREF_FRAME) | (1 << INTRA_FRAME))
@@ -96,9 +131,18 @@ static const int filter_sets[9][2] = {
 #endif  // CONFIG_EXT_REFS
 
 #if CONFIG_EXT_REFS
+
+#if CONFIG_NEW_REFS
+#define SECOND_REF_FRAME_MASK \
+  ((1 << ALTREF_FRAME) | (1 << ALTREF2_FRAME) | (1 << BWDREF_FRAME) | 0x01)
+#else  // CONFIG_NEW_REFS
 #define SECOND_REF_FRAME_MASK ((1 << ALTREF_FRAME) | (1 << BWDREF_FRAME) | 0x01)
-#else
+#endif  // CONFIG_NEW_REFS
+
+#else  // CONFIG_EXT_REFS
+
 #define SECOND_REF_FRAME_MASK ((1 << ALTREF_FRAME) | 0x01)
+
 #endif  // CONFIG_EXT_REFS
 
 #define MIN_EARLY_TERM_INDEX 3
@@ -143,6 +187,9 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { NEARESTMV, { LAST2_FRAME, NONE } },
   { NEARESTMV, { LAST3_FRAME, NONE } },
   { NEARESTMV, { BWDREF_FRAME, NONE } },
+#if CONFIG_NEW_REFS
+  { NEARESTMV, { ALTREF2_FRAME, NONE } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
   { NEARESTMV, { ALTREF_FRAME, NONE } },
   { NEARESTMV, { GOLDEN_FRAME, NONE } },
@@ -154,6 +201,9 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { NEWMV, { LAST2_FRAME, NONE } },
   { NEWMV, { LAST3_FRAME, NONE } },
   { NEWMV, { BWDREF_FRAME, NONE } },
+#if CONFIG_NEW_REFS
+  { NEWMV, { ALTREF2_FRAME, NONE } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
   { NEWMV, { ALTREF_FRAME, NONE } },
   { NEWMV, { GOLDEN_FRAME, NONE } },
@@ -163,6 +213,9 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { NEARMV, { LAST2_FRAME, NONE } },
   { NEARMV, { LAST3_FRAME, NONE } },
   { NEARMV, { BWDREF_FRAME, NONE } },
+#if CONFIG_NEW_REFS
+  { NEARMV, { ALTREF2_FRAME, NONE } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
   { NEARMV, { ALTREF_FRAME, NONE } },
   { NEARMV, { GOLDEN_FRAME, NONE } },
@@ -173,6 +226,9 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { NEWFROMNEARMV, { LAST2_FRAME, NONE } },
   { NEWFROMNEARMV, { LAST3_FRAME, NONE } },
   { NEWFROMNEARMV, { BWDREF_FRAME, NONE } },
+#if CONFIG_NEW_REFS
+  { NEWFROMNEARMV, { ALTREF2_FRAME, NONE } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
   { NEWFROMNEARMV, { ALTREF_FRAME, NONE } },
   { NEWFROMNEARMV, { GOLDEN_FRAME, NONE } },
@@ -183,6 +239,9 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { ZEROMV, { LAST2_FRAME, NONE } },
   { ZEROMV, { LAST3_FRAME, NONE } },
   { ZEROMV, { BWDREF_FRAME, NONE } },
+#if CONFIG_NEW_REFS
+  { ZEROMV, { ALTREF2_FRAME, NONE } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
   { ZEROMV, { GOLDEN_FRAME, NONE } },
   { ZEROMV, { ALTREF_FRAME, NONE } },
@@ -201,6 +260,12 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { NEAREST_NEARESTMV, { LAST2_FRAME, BWDREF_FRAME } },
   { NEAREST_NEARESTMV, { LAST3_FRAME, BWDREF_FRAME } },
   { NEAREST_NEARESTMV, { GOLDEN_FRAME, BWDREF_FRAME } },
+#if CONFIG_NEW_REFS
+  { NEAREST_NEARESTMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEARESTMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEARESTMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEARESTMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 
 #else  // CONFIG_EXT_INTER
@@ -216,6 +281,12 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { NEARESTMV, { LAST2_FRAME, BWDREF_FRAME } },
   { NEARESTMV, { LAST3_FRAME, BWDREF_FRAME } },
   { NEARESTMV, { GOLDEN_FRAME, BWDREF_FRAME } },
+#if CONFIG_NEW_REFS
+  { NEARESTMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEARESTMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEARESTMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEARESTMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 #endif  // CONFIG_EXT_INTER
 
@@ -304,6 +375,49 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { NEAR_NEWMV, { GOLDEN_FRAME, BWDREF_FRAME } },
   { NEW_NEWMV, { GOLDEN_FRAME, BWDREF_FRAME } },
   { ZERO_ZEROMV, { GOLDEN_FRAME, BWDREF_FRAME } },
+
+#if CONFIG_NEW_REFS
+  { NEAR_NEARESTMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEARMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEAR_NEARMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEW_NEARESTMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEWMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEW_NEARMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEAR_NEWMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEW_NEWMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { ZERO_ZEROMV, { LAST_FRAME, ALTREF2_FRAME } },
+
+  { NEAR_NEARESTMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEARMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEAR_NEARMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEW_NEARESTMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEWMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEW_NEARMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEAR_NEWMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEW_NEWMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { ZERO_ZEROMV, { LAST2_FRAME, ALTREF2_FRAME } },
+
+  { NEAR_NEARESTMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEARMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEAR_NEARMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEW_NEARESTMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEWMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEW_NEARMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEAR_NEWMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEW_NEWMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { ZERO_ZEROMV, { LAST3_FRAME, ALTREF2_FRAME } },
+
+  { NEAR_NEARESTMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEARMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+  { NEAR_NEARMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+  { NEW_NEARESTMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+  { NEAREST_NEWMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+  { NEW_NEARMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+  { NEAR_NEWMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+  { NEW_NEWMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+  { ZERO_ZEROMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+#endif  // CONFIG_NEW_REFS
+
 #endif  // CONFIG_EXT_REFS
 
 #else  // CONFIG_EXT_INTER
@@ -328,6 +442,17 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { NEWMV, { LAST3_FRAME, BWDREF_FRAME } },
   { NEARMV, { GOLDEN_FRAME, BWDREF_FRAME } },
   { NEWMV, { GOLDEN_FRAME, BWDREF_FRAME } },
+
+#if CONFIG_NEW_REFS
+  { NEARMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEWMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { NEARMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEWMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { NEARMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEWMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { NEARMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+  { NEWMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 
   { ZEROMV, { LAST_FRAME, ALTREF_FRAME } },
@@ -342,6 +467,13 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { ZEROMV, { LAST2_FRAME, BWDREF_FRAME } },
   { ZEROMV, { LAST3_FRAME, BWDREF_FRAME } },
   { ZEROMV, { GOLDEN_FRAME, BWDREF_FRAME } },
+
+#if CONFIG_NEW_REFS
+  { ZEROMV, { LAST_FRAME, ALTREF2_FRAME } },
+  { ZEROMV, { LAST2_FRAME, ALTREF2_FRAME } },
+  { ZEROMV, { LAST3_FRAME, ALTREF2_FRAME } },
+  { ZEROMV, { GOLDEN_FRAME, ALTREF2_FRAME } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 
 #endif  // CONFIG_EXT_INTER
@@ -383,6 +515,13 @@ static const MODE_DEFINITION av1_mode_order[MAX_MODES] = {
   { NEARESTMV, { BWDREF_FRAME, INTRA_FRAME } },
   { NEARMV, { BWDREF_FRAME, INTRA_FRAME } },
   { NEWMV, { BWDREF_FRAME, INTRA_FRAME } },
+
+#if CONFIG_NEW_REFS
+  { ZEROMV, { ALTREF2_FRAME, INTRA_FRAME } },
+  { NEARESTMV, { ALTREF2_FRAME, INTRA_FRAME } },
+  { NEARMV, { ALTREF2_FRAME, INTRA_FRAME } },
+  { NEWMV, { ALTREF2_FRAME, INTRA_FRAME } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 
   { ZEROMV, { ALTREF_FRAME, INTRA_FRAME } },
@@ -397,6 +536,9 @@ static const REF_DEFINITION av1_ref_order[MAX_REFS] = {
 #if CONFIG_EXT_REFS
   { { LAST2_FRAME, NONE } },          { { LAST3_FRAME, NONE } },
   { { BWDREF_FRAME, NONE } },
+#if CONFIG_NEW_REFS
+  { { ALTREF2_FRAME, NONE } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
   { { GOLDEN_FRAME, NONE } },         { { ALTREF_FRAME, NONE } },
 
@@ -409,6 +551,11 @@ static const REF_DEFINITION av1_ref_order[MAX_REFS] = {
 #if CONFIG_EXT_REFS
   { { LAST_FRAME, BWDREF_FRAME } },   { { LAST2_FRAME, BWDREF_FRAME } },
   { { LAST3_FRAME, BWDREF_FRAME } },  { { GOLDEN_FRAME, BWDREF_FRAME } },
+
+#if CONFIG_NEW_REFS
+  { { LAST_FRAME, ALTREF2_FRAME } },   { { LAST2_FRAME, ALTREF2_FRAME } },
+  { { LAST3_FRAME, ALTREF2_FRAME } },  { { GOLDEN_FRAME, ALTREF2_FRAME } },
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 
   { { INTRA_FRAME, NONE } },
@@ -5615,6 +5762,9 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
       aom_prob ref_single_p3 = av1_get_pred_prob_single_ref_p3(cm, xd);
       aom_prob ref_single_p4 = av1_get_pred_prob_single_ref_p4(cm, xd);
       aom_prob ref_single_p5 = av1_get_pred_prob_single_ref_p5(cm, xd);
+#if CONFIG_NEW_REFS
+      aom_prob ref_single_p6 = av1_get_pred_prob_single_ref_p6(cm, xd);
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 
       unsigned int base_cost = av1_cost_bit(intra_inter_p, 1);
@@ -5623,6 +5773,9 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
 #if CONFIG_EXT_REFS
           ref_costs_single[LAST2_FRAME] = ref_costs_single[LAST3_FRAME] =
               ref_costs_single[BWDREF_FRAME] =
+#if CONFIG_NEW_REFS
+              ref_costs_single[ALTREF2_FRAME] =
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
                   ref_costs_single[GOLDEN_FRAME] =
                       ref_costs_single[ALTREF_FRAME] = base_cost;
@@ -5633,6 +5786,9 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
       ref_costs_single[LAST3_FRAME] += av1_cost_bit(ref_single_p1, 0);
       ref_costs_single[GOLDEN_FRAME] += av1_cost_bit(ref_single_p1, 0);
       ref_costs_single[BWDREF_FRAME] += av1_cost_bit(ref_single_p1, 1);
+#if CONFIG_NEW_REFS
+      ref_costs_single[ALTREF2_FRAME] += av1_cost_bit(ref_single_p1, 1);
+#endif  // CONFIG_NEW_REFS
       ref_costs_single[ALTREF_FRAME] += av1_cost_bit(ref_single_p1, 1);
 
       ref_costs_single[LAST_FRAME] += av1_cost_bit(ref_single_p3, 0);
@@ -5641,6 +5797,9 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
       ref_costs_single[GOLDEN_FRAME] += av1_cost_bit(ref_single_p3, 1);
 
       ref_costs_single[BWDREF_FRAME] += av1_cost_bit(ref_single_p2, 0);
+#if CONFIG_NEW_REFS
+      ref_costs_single[ALTREF2_FRAME] += av1_cost_bit(ref_single_p2, 0);
+#endif  // CONFIG_NEW_REFS
       ref_costs_single[ALTREF_FRAME] += av1_cost_bit(ref_single_p2, 1);
 
       ref_costs_single[LAST_FRAME] += av1_cost_bit(ref_single_p4, 0);
@@ -5648,7 +5807,14 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
 
       ref_costs_single[LAST3_FRAME] += av1_cost_bit(ref_single_p5, 0);
       ref_costs_single[GOLDEN_FRAME] += av1_cost_bit(ref_single_p5, 1);
-#else
+
+#if CONFIG_NEW_REFS
+      ref_costs_single[BWDREF_FRAME] += av1_cost_bit(ref_single_p6, 0);
+      ref_costs_single[ALTREF2_FRAME] += av1_cost_bit(ref_single_p6, 1);
+#endif  // CONFIG_NEW_REFS
+
+#else  // CONFIG_EXT_REFS
+
       ref_costs_single[LAST_FRAME] += av1_cost_bit(ref_single_p1, 0);
       ref_costs_single[GOLDEN_FRAME] += av1_cost_bit(ref_single_p1, 1);
       ref_costs_single[ALTREF_FRAME] += av1_cost_bit(ref_single_p1, 1);
@@ -5662,6 +5828,9 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
       ref_costs_single[LAST2_FRAME] = 512;
       ref_costs_single[LAST3_FRAME] = 512;
       ref_costs_single[BWDREF_FRAME] = 512;
+#if CONFIG_NEW_REFS
+      ref_costs_single[ALTREF2_FRAME] = 512;
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
       ref_costs_single[GOLDEN_FRAME] = 512;
       ref_costs_single[ALTREF_FRAME] = 512;
@@ -5673,6 +5842,9 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
       aom_prob ref_comp_p1 = av1_get_pred_prob_comp_ref_p1(cm, xd);
       aom_prob ref_comp_p2 = av1_get_pred_prob_comp_ref_p2(cm, xd);
       aom_prob bwdref_comp_p = av1_get_pred_prob_comp_bwdref_p(cm, xd);
+#if CONFIG_NEW_REFS
+      aom_prob bwdref_comp_p1 = av1_get_pred_prob_comp_bwdref_p1(cm, xd);
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 
       unsigned int base_cost = av1_cost_bit(intra_inter_p, 1);
@@ -5685,6 +5857,9 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
 
 #if CONFIG_EXT_REFS
       ref_costs_comp[BWDREF_FRAME] = ref_costs_comp[ALTREF_FRAME] = 0;
+#if CONFIG_NEW_REFS
+      ref_costs_comp[ALTREF2_FRAME] = 0;
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
 
 #if CONFIG_EXT_REFS
@@ -5702,8 +5877,18 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
       // NOTE(zoeliu): BWDREF and ALTREF each add an extra cost by coding 1
       //               more bit.
       ref_costs_comp[BWDREF_FRAME] += av1_cost_bit(bwdref_comp_p, 0);
+#if CONFIG_NEW_REFS
+      ref_costs_comp[ALTREF2_FRAME] += av1_cost_bit(bwdref_comp_p, 0);
+#endif  // CONFIG_NEW_REFS
       ref_costs_comp[ALTREF_FRAME] += av1_cost_bit(bwdref_comp_p, 1);
-#else
+
+#if CONFIG_NEW_REFS
+      ref_costs_comp[BWDREF_FRAME] += av1_cost_bit(bwdref_comp_p1, 0);
+      ref_costs_comp[ALTREF2_FRAME] += av1_cost_bit(bwdref_comp_p1, 1);
+#endif  // CONFIG_NEW_REFS
+
+#else  // CONFIG_EXT_REFS
+
       ref_costs_comp[LAST_FRAME] += av1_cost_bit(ref_comp_p, 0);
       ref_costs_comp[GOLDEN_FRAME] += av1_cost_bit(ref_comp_p, 1);
 #endif  // CONFIG_EXT_REFS
@@ -5713,6 +5898,9 @@ static void estimate_ref_frame_costs(const AV1_COMMON *cm,
       ref_costs_comp[LAST2_FRAME] = 512;
       ref_costs_comp[LAST3_FRAME] = 512;
       ref_costs_comp[BWDREF_FRAME] = 512;
+#if CONFIG_NEW_REFS
+      ref_costs_comp[ALTREF2_FRAME] = 512;
+#endif  // CONFIG_NEW_REFS
       ref_costs_comp[ALTREF_FRAME] = 512;
 #endif  // CONFIG_EXT_REFS
       ref_costs_comp[GOLDEN_FRAME] = 512;
@@ -8220,6 +8408,9 @@ void av1_rd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
     AOM_GOLD_FLAG,
 #if CONFIG_EXT_REFS
     AOM_BWD_FLAG,
+#if CONFIG_NEW_REFS
+    AOM_ALT2_FLAG,
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
     AOM_ALT_FLAG
   };
@@ -8402,7 +8593,7 @@ void av1_rd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
 // modes. Note that a mode will be skipped iff both reference frames
 // are masked out.
 #if CONFIG_EXT_REFS
-      if (ref_frame == BWDREF_FRAME || ref_frame == ALTREF_FRAME) {
+      if (ref_frame >= BWDREF_FRAME || ref_frame <= ALTREF_FRAME) {
         ref_frame_skip_mask[0] |= (1 << ref_frame);
         ref_frame_skip_mask[1] |= ((1 << ref_frame) | 0x01);
       } else {
@@ -8444,6 +8635,9 @@ void av1_rd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
 #if CONFIG_EXT_REFS
                                (1 << LAST2_FRAME) | (1 << LAST3_FRAME) |
                                (1 << BWDREF_FRAME) |
+#if CONFIG_NEW_REFS
+                               (1 << ALTREF2_FRAME) |
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
                                (1 << GOLDEN_FRAME);
       ref_frame_skip_mask[1] = SECOND_REF_FRAME_MASK;
@@ -8605,6 +8799,12 @@ void av1_rd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
           ref_frame_skip_mask[0] |= BWDREF_FRAME_MODE_MASK;
           ref_frame_skip_mask[1] |= SECOND_REF_FRAME_MASK;
           break;
+#if CONFIG_NEW_REFS
+        case ALTREF2_FRAME:
+          ref_frame_skip_mask[0] |= ALTREF2_FRAME_MODE_MASK;
+          ref_frame_skip_mask[1] |= SECOND_REF_FRAME_MASK;
+          break;
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
         case ALTREF_FRAME: ref_frame_skip_mask[0] |= ALTREF_FRAME_MODE_MASK;
 #if CONFIG_EXT_REFS
@@ -9924,6 +10124,9 @@ void av1_rd_pick_inter_mode_sub8x8(struct AV1_COMP *cpi, TileDataEnc *tile_data,
     AOM_GOLD_FLAG,
 #if CONFIG_EXT_REFS
     AOM_BWD_FLAG,
+#if CONFIG_NEW_REFS
+    AOM_ALT2_FLAG,
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
     AOM_ALT_FLAG
   };
@@ -10049,6 +10252,9 @@ void av1_rd_pick_inter_mode_sub8x8(struct AV1_COMP *cpi, TileDataEnc *tile_data,
 #if CONFIG_EXT_REFS
                                       (1 << LAST2_FRAME) | (1 << LAST3_FRAME) |
                                       (1 << BWDREF_FRAME) |
+#if CONFIG_NEW_REFS
+                                      (1 << ALTREF2_FRAME) |
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
                                       (1 << ALTREF_FRAME);
             ref_frame_skip_mask[1] |= SECOND_REF_FRAME_MASK;
@@ -10057,12 +10263,18 @@ void av1_rd_pick_inter_mode_sub8x8(struct AV1_COMP *cpi, TileDataEnc *tile_data,
           case LAST2_FRAME:
             ref_frame_skip_mask[0] |= (1 << LAST_FRAME) | (1 << LAST3_FRAME) |
                                       (1 << GOLDEN_FRAME) |
+#if CONFIG_NEW_REFS
+                                      (1 << ALTREF2_FRAME) |
+#endif  // CONFIG_NEW_REFS
                                       (1 << BWDREF_FRAME) | (1 << ALTREF_FRAME);
             ref_frame_skip_mask[1] |= SECOND_REF_FRAME_MASK;
             break;
           case LAST3_FRAME:
             ref_frame_skip_mask[0] |= (1 << LAST_FRAME) | (1 << LAST2_FRAME) |
                                       (1 << GOLDEN_FRAME) |
+#if CONFIG_NEW_REFS
+                                      (1 << ALTREF2_FRAME) |
+#endif  // CONFIG_NEW_REFS
                                       (1 << BWDREF_FRAME) | (1 << ALTREF_FRAME);
             ref_frame_skip_mask[1] |= SECOND_REF_FRAME_MASK;
             break;
@@ -10072,6 +10284,9 @@ void av1_rd_pick_inter_mode_sub8x8(struct AV1_COMP *cpi, TileDataEnc *tile_data,
 #if CONFIG_EXT_REFS
                                       (1 << LAST2_FRAME) | (1 << LAST3_FRAME) |
                                       (1 << BWDREF_FRAME) |
+#if CONFIG_NEW_REFS
+                                      (1 << ALTREF2_FRAME) |
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
                                       (1 << ALTREF_FRAME);
             ref_frame_skip_mask[1] |= SECOND_REF_FRAME_MASK;
@@ -10080,19 +10295,44 @@ void av1_rd_pick_inter_mode_sub8x8(struct AV1_COMP *cpi, TileDataEnc *tile_data,
           case BWDREF_FRAME:
             ref_frame_skip_mask[0] |= (1 << LAST_FRAME) | (1 << LAST2_FRAME) |
                                       (1 << LAST3_FRAME) | (1 << GOLDEN_FRAME) |
+#if CONFIG_NEW_REFS
+                                      (1 << ALTREF2_FRAME) |
+#endif  // CONFIG_NEW_REFS
                                       (1 << ALTREF_FRAME);
+#if CONFIG_NEW_REFS
+            ref_frame_skip_mask[1] |= (1 << ALTREF2_FRAME) |
+                                      (1 << ALTREF_FRAME) | 0x01;
+#else  // CONFIG_NEW_REFS
             ref_frame_skip_mask[1] |= (1 << ALTREF_FRAME) | 0x01;
+#endif  // CONFIG_NEW_REFS
             break;
+#if CONFIG_NEW_REFS
+          case ALTREF2_FRAME:
+            ref_frame_skip_mask[0] |= (1 << LAST_FRAME) | (1 << LAST2_FRAME) |
+                                      (1 << LAST3_FRAME) | (1 << GOLDEN_FRAME) |
+                                      (1 << BWDREF_FRAME) | (1 << ALTREF_FRAME);
+            ref_frame_skip_mask[1] |= (1 << BWDREF_FRAME) |
+                                      (1 << ALTREF_FRAME) | 0x01;
+            break;
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
           case ALTREF_FRAME:
             ref_frame_skip_mask[0] |= (1 << LAST_FRAME) |
 #if CONFIG_EXT_REFS
                                       (1 << LAST2_FRAME) | (1 << LAST3_FRAME) |
                                       (1 << BWDREF_FRAME) |
+#if CONFIG_NEW_REFS
+                                      (1 << ALTREF2_FRAME) |
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
                                       (1 << GOLDEN_FRAME);
 #if CONFIG_EXT_REFS
+#if CONFIG_NEW_REFS
+            ref_frame_skip_mask[1] |= (1 << BWDREF_FRAME) |
+                                      (1 << ALTREF2_FRAME) | 0x01;
+#else  // CONFIG_NEW_REFS
             ref_frame_skip_mask[1] |= (1 << BWDREF_FRAME) | 0x01;
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
             break;
           case NONE:
@@ -10253,7 +10493,7 @@ void av1_rd_pick_inter_mode_sub8x8(struct AV1_COMP *cpi, TileDataEnc *tile_data,
                            : this_rd_thresh;
 #if CONFIG_EXT_REFS
 // TODO(zoeliu): To explore whether this_rd_thresh should consider
-//               BWDREF_FRAME and ALTREF_FRAME
+//               BWDREF_FRAME and ALTREF_FRAME (and ALTREF2_FRAME)
 #endif  // CONFIG_EXT_REFS
 
       // TODO(any): Add search of the tx_type to improve rd performance at the

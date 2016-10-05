@@ -83,7 +83,7 @@ typedef enum {
   BRF_FRAME = 4,
   // extra alternate reference frame
   EXT_ARF_FRAME = 5
-#endif
+#endif  // CONFIG_EXT_REFS
 } FRAME_CONTEXT_INDEX;
 
 typedef enum {
@@ -123,8 +123,13 @@ typedef enum {
   FRAMEFLAGS_GOLDEN = 1 << 1,
 #if CONFIG_EXT_REFS
   FRAMEFLAGS_BWDREF = 1 << 2,
+#if CONFIG_NEW_REFS
+  FRAMEFLAGS_ALTREF2 = 1 << 3,
+  FRAMEFLAGS_ALTREF = 1 << 4,
+#else  // CONFIG_NEW_REFS
   FRAMEFLAGS_ALTREF = 1 << 3,
-#else
+#endif  // CONFIG_NEW_REFS
+#else  // CONFIG_EXT_REFS
   FRAMEFLAGS_ALTREF = 1 << 2,
 #endif  // CONFIG_EXT_REFS
 } FRAMETYPE_FLAGS;
@@ -376,7 +381,10 @@ typedef struct AV1_COMP {
 #endif  // CONFIG_EXT_REFS
   int gld_fb_idx;
 #if CONFIG_EXT_REFS
-  int bwd_fb_idx;  // BWD_REF_FRAME
+  int bwd_fb_idx;  // BWDREF_FRAME
+#if CONFIG_NEW_REFS
+  int alt2_fb_idx;  // ALTREF2_FRAME
+#endif  // CONFIG_NEW_REFS
 #endif             // CONFIG_EXT_REFS
   int alt_fb_idx;
 
@@ -386,6 +394,9 @@ typedef struct AV1_COMP {
   int refresh_golden_frame;
 #if CONFIG_EXT_REFS
   int refresh_bwd_ref_frame;
+#if CONFIG_NEW_REFS
+  int refresh_alt2_ref_frame;
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
   int refresh_alt_ref_frame;
 
@@ -703,6 +714,10 @@ static INLINE int get_ref_frame_map_idx(const AV1_COMP *cpi,
 #if CONFIG_EXT_REFS
   else if (ref_frame == BWDREF_FRAME)
     return cpi->bwd_fb_idx;
+#if CONFIG_NEW_REFS
+  else if (ref_frame == ALTREF2_FRAME)
+    return cpi->alt2_fb_idx;
+#endif  // CONFIG_NEW_REFS
 #endif  // CONFIG_EXT_REFS
   else
     return cpi->alt_fb_idx;

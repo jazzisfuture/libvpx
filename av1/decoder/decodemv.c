@@ -787,9 +787,20 @@ static void read_ref_frames(AV1_COMMON *const cm, MACROBLOCKD *const xd,
         const int ctx_bwd = av1_get_pred_context_comp_bwdref_p(cm, xd);
         const int bit_bwd = aom_read(r, fc->comp_bwdref_prob[ctx_bwd][0]);
         if (counts) ++counts->comp_bwdref[ctx_bwd][0][bit_bwd];
+#if CONFIG_NEW_REFS
+        if (!bit_bwd) {
+          const int ctx_bwd1 = av1_get_pred_context_comp_bwdref_p1(cm, xd);
+          const int bit_bwd1 = aom_read(r, fc->comp_bwdref_prob[ctx_bwd1][1]);
+          if (counts) ++counts->comp_bwdref[ctx_bwd1][1][bit_bwd1];
+          ref_frame[idx] = cm->comp_bwd_ref[bit_bwd1];
+        } else {
+          ref_frame[idx] = cm->comp_bwd_ref[2];
+        }
+#else  // CONFIG_NEW_REFS
         ref_frame[idx] = cm->comp_bwd_ref[bit_bwd];
+#endif  // CONFIG_NEW_REFS
       }
-#else
+#else  // CONFIG_EXT_REFS
       ref_frame[!idx] = cm->comp_var_ref[bit];
       ref_frame[idx] = cm->comp_fixed_ref;
 #endif  // CONFIG_EXT_REFS
@@ -803,7 +814,18 @@ static void read_ref_frames(AV1_COMMON *const cm, MACROBLOCKD *const xd,
         const int ctx1 = av1_get_pred_context_single_ref_p2(xd);
         const int bit1 = aom_read(r, fc->single_ref_prob[ctx1][1]);
         if (counts) ++counts->single_ref[ctx1][1][bit1];
+#if CONFIG_NEW_REFS
+        if (bit1) {
+          ref_frame[0] = ALTREF_FRAME;
+        } else {
+          const int ctx5 = av1_get_pred_context_single_ref_p6(xd);
+          const int bit5 = aom_read(r, fc->single_ref_prob[ctx5][5]);
+          if (counts) ++counts->single_ref[ctx5][5][bit5];
+          ref_frame[0] = bit5 ? ALTREF2_FRAME : BWDREF_FRAME;
+        }
+#else  // CONFIG_NEW_REFS
         ref_frame[0] = bit1 ? ALTREF_FRAME : BWDREF_FRAME;
+#endif  // CONFIG_NEW_REFS
       } else {
         const int ctx2 = av1_get_pred_context_single_ref_p3(xd);
         const int bit2 = aom_read(r, fc->single_ref_prob[ctx2][2]);
@@ -820,7 +842,7 @@ static void read_ref_frames(AV1_COMMON *const cm, MACROBLOCKD *const xd,
           ref_frame[0] = bit3 ? LAST2_FRAME : LAST_FRAME;
         }
       }
-#else
+#else  // CONFIG_EXT_REFS
       const int ctx0 = av1_get_pred_context_single_ref_p1(xd);
       const int bit0 = aom_read(r, fc->single_ref_prob[ctx0][0]);
       if (counts) ++counts->single_ref[ctx0][0][bit0];
