@@ -645,7 +645,7 @@ int main(int argc, char **argv) {
   cfg.g_threads = (unsigned int)strtoul(argv[10], NULL, 0);
 
   // Enable error resilient mode.
-  cfg.g_error_resilient = 1;
+  cfg.g_error_resilient = 0;
   cfg.g_lag_in_frames = 0;
   cfg.kf_mode = VPX_KF_AUTO;
 

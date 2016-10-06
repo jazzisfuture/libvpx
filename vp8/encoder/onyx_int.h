@@ -501,6 +501,7 @@ typedef struct VP8_COMP {
 
   int force_maxqp;
 
+  int gf_noboost_onepass_cbr;
 #if CONFIG_MULTITHREAD
   /* multithread data */
   int *mt_current_mb_col;

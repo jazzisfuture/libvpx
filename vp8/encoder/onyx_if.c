@@ -1467,6 +1467,17 @@ void vp8_change_config(VP8_COMP *cpi, VP8_CONFIG *oxcf) {
   cpi->baseline_gf_interval =
       cpi->oxcf.alt_freq ? cpi->oxcf.alt_freq : DEFAULT_GF_INTERVAL;
 
+  cpi->gf_noboost_onepass_cbr = 0;
+  // Constrain the GF behavior for 1 pass CBR with error_resilience off.
+  if (cpi->cyclic_refresh_mode_enabled && !cpi->oxcf.error_resilient_mode &&
+      cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
+      cpi->oxcf.Mode == MODE_REALTIME) {
+    cpi->gf_noboost_onepass_cbr = 1;
+    cpi->baseline_gf_interval = cpi->cyclic_refresh_mode_max_mbs_perframe > 0 ?
+        (2 * (cpi->common.mb_rows * cpi->common.mb_cols) /
+         cpi->cyclic_refresh_mode_max_mbs_perframe) : 10;
+  }
+
 #if (CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
   cpi->oxcf.token_partitions = 3;
 #endif
@@ -1788,6 +1799,16 @@ struct VP8_COMP *vp8_create_compressor(VP8_CONFIG *oxcf) {
   if (cpi->cyclic_refresh_mode_enabled) {
     CHECK_MEM_ERROR(cpi->cyclic_refresh_map,
                     vpx_calloc((cpi->common.mb_rows * cpi->common.mb_cols), 1));
+    // Constrain the GF behavior for 1 pass CBR with error_resilience off.
+    if (!cpi->oxcf.error_resilient_mode &&
+        cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
+        cpi->oxcf.Mode <= 2) {
+      cpi->gf_noboost_onepass_cbr = 1;
+      cpi->baseline_gf_interval =
+          cpi->cyclic_refresh_mode_max_mbs_perframe > 0 ?
+          (2 * (cpi->common.mb_rows * cpi->common.mb_cols) /
+           cpi->cyclic_refresh_mode_max_mbs_perframe) : 10;
+    }
   } else {
     cpi->cyclic_refresh_map = (signed char *)NULL;
   }
