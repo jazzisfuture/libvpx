@@ -30,6 +30,17 @@ static INLINE int vp9_preserve_existing_gf(VP9_COMP *cpi) {
            cpi->oxcf.ss_enable_auto_arf[0]));
 }
 
+typedef struct EncodeTileWorkerData {
+  uint8_t *dest;
+  TOKENEXTRA *tok;
+  TOKENEXTRA *tok_end;
+  vpx_writer bit_writer;
+  int tile_idx;
+  unsigned int max_mv_magnitude;
+  int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE];
+  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
+} EncodeTileWorkerData;
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
