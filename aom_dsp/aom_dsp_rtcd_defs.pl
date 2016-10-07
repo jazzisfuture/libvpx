@@ -1023,48 +1023,6 @@ add_proto qw/uint64_t aom_sum_squares_i16/, "const int16_t *src, uint32_t N";
 specialize qw/aom_sum_squares_i16 sse2/;
 }
 
-
-# Single block SAD
-#
-add_proto qw/unsigned int aom_sad64x64/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad64x64 avx2 neon msa sse2/;
-
-add_proto qw/unsigned int aom_sad64x32/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad64x32 avx2 msa sse2/;
-
-add_proto qw/unsigned int aom_sad32x64/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad32x64 avx2 msa sse2/;
-
-add_proto qw/unsigned int aom_sad32x32/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad32x32 avx2 neon msa sse2/;
-
-add_proto qw/unsigned int aom_sad32x16/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad32x16 avx2 msa sse2/;
-
-add_proto qw/unsigned int aom_sad16x32/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad16x32 msa sse2/;
-
-add_proto qw/unsigned int aom_sad16x16/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad16x16 media neon msa sse2/;
-
-add_proto qw/unsigned int aom_sad16x8/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad16x8 neon msa sse2/;
-
-add_proto qw/unsigned int aom_sad8x16/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad8x16 neon msa sse2/;
-
-add_proto qw/unsigned int aom_sad8x8/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad8x8 neon msa sse2/;
-
-add_proto qw/unsigned int aom_sad8x4/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad8x4 msa sse2/;
-
-add_proto qw/unsigned int aom_sad4x8/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad4x8 msa sse2/;
-
-add_proto qw/unsigned int aom_sad4x4/, "const uint8_t *src_ptr, int src_stride, const uint8_t *ref_ptr, int ref_stride";
-specialize qw/aom_sad4x4 neon msa sse2/;
-
 #
 # Avg
 #
@@ -1318,48 +1276,6 @@ if (aom_config("CONFIG_INTERNAL_STATS") eq "yes") {
 if (aom_config("CONFIG_ENCODERS") eq "yes") {
 
 #
-# Variance
-#
-add_proto qw/unsigned int aom_variance64x64/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance64x64 sse2 avx2 neon msa/;
-
-add_proto qw/unsigned int aom_variance64x32/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance64x32 sse2 avx2 neon msa/;
-
-add_proto qw/unsigned int aom_variance32x64/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance32x64 sse2 neon msa/;
-
-add_proto qw/unsigned int aom_variance32x32/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance32x32 sse2 avx2 neon msa/;
-
-add_proto qw/unsigned int aom_variance32x16/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance32x16 sse2 avx2 msa/;
-
-add_proto qw/unsigned int aom_variance16x32/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance16x32 sse2 msa/;
-
-add_proto qw/unsigned int aom_variance16x16/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance16x16 sse2 avx2 media neon msa/;
-
-add_proto qw/unsigned int aom_variance16x8/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance16x8 sse2 neon msa/;
-
-add_proto qw/unsigned int aom_variance8x16/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance8x16 sse2 neon msa/;
-
-add_proto qw/unsigned int aom_variance8x8/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance8x8 sse2 media neon msa/;
-
-add_proto qw/unsigned int aom_variance8x4/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance8x4 sse2 msa/;
-
-add_proto qw/unsigned int aom_variance4x8/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance4x8 sse2 msa/;
-
-add_proto qw/unsigned int aom_variance4x4/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/aom_variance4x4 sse2 msa/;
-
-#
 # Specialty Variance
 #
 add_proto qw/void aom_get16x16var/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse, int *sum";
@@ -1544,45 +1460,6 @@ if (aom_config("CONFIG_OBMC") eq "yes") {
     }
   }
 }
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance64x64/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance64x64 avx2 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance64x32/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance64x32 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance32x64/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance32x64 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance32x32/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance32x32 avx2 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance32x16/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance32x16 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance16x32/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance16x32 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance16x16/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance16x16 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance16x8/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance16x8 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance8x16/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance8x16 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance8x8/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance8x8 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance8x4/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance8x4 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance4x8/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance4x8 msa sse2 ssse3/;
-
-add_proto qw/uint32_t aom_sub_pixel_avg_variance4x4/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
-  specialize qw/aom_sub_pixel_avg_variance4x4 msa sse2 ssse3/;
 
 #
 # Specialty Subpixel
