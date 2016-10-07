@@ -16,9 +16,10 @@
 #include "aom_dsp/x86/fwd_dct32x32_impl_avx2.h"
 #undef FDCT32x32_2D_AVX2
 #undef FDCT32x32_HIGH_PRECISION
-
+#if 0
 #define FDCT32x32_2D_AVX2 aom_fdct32x32_avx2
 #define FDCT32x32_HIGH_PRECISION 1
 #include "aom_dsp/x86/fwd_dct32x32_impl_avx2.h"  // NOLINT
 #undef FDCT32x32_2D_AVX2
 #undef FDCT32x32_HIGH_PRECISION
+#endif
