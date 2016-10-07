@@ -895,6 +895,93 @@ int vp9_get_refresh_mask(VP9_COMP *cpi) {
   }
 }
 
+static int encode_tile_worker(VP9_COMP *cpi, EncodeTileWorkerData *data) {
+  MACROBLOCKD *const xd = &data->xd;
+  vpx_start_encode(&data->bit_writer, data->dest);
+  write_modes(cpi, xd, &cpi->tile_data[data->tile_idx].tile_info,
+              &data->bit_writer, &data->tok, data->tok_end,
+              &data->max_mv_magnitude, data->interp_filter_selected);
+  assert(data->tok == data->tok_end);
+  vpx_stop_encode(&data->bit_writer);
+  return 1;
+}
+
+static size_t encode_tiles_mt(VP9_COMP *cpi, uint8_t *data_ptr) {
+  const VPxWorkerInterface *const winterface = vpx_get_worker_interface();
+  const VP9_COMMON *const cm = &cpi->common;
+  const int tile_cols = 1 << cm->log2_tile_cols;
+  const int num_workers = cpi->num_workers;
+  size_t total_size = 0;
+  int tile_col = 0;
+
+  assert(cm->log2_tile_rows == 0);
+
+  while (tile_col < tile_cols) {
+    int i, j;
+    for (i = 0; i < num_workers && tile_col < tile_cols; ++i) {
+      VPxWorker *const worker = &cpi->workers[i];
+      EncodeTileWorkerData *const data = malloc(sizeof(EncodeTileWorkerData));
+
+      data->xd = cpi->td.mb.e_mbd;
+      data->tile_idx = tile_col;
+      data->tok = cpi->tile_tok[0][tile_col];
+      data->tok_end = cpi->tile_tok[0][tile_col] + cpi->tok_count[0][tile_col];
+      data->max_mv_magnitude = cpi->max_mv_magnitude;
+      memset(data->interp_filter_selected, 0,
+             sizeof(int) * MAX_REF_FRAMES * SWITCHABLE);
+
+      // First thread can directly write into the output buffer.
+      if (i == 0) {
+        data->dest = data_ptr + total_size + 4;
+      } else {
+        data->dest = malloc(cpi->oxcf.width * cpi->oxcf.height);
+      }
+      worker->data1 = cpi;
+      worker->data2 = data;
+      worker->hook = (VPxWorkerHook)encode_tile_worker;
+
+      if (i < num_workers - 1) {
+        winterface->launch(worker);
+      } else {
+        winterface->execute(worker);
+      }
+      ++tile_col;
+    }
+    for (j = 0; j < i; ++j) {
+      VPxWorker *const worker = &cpi->workers[j];
+      EncodeTileWorkerData *const data = (EncodeTileWorkerData *)worker->data2;
+      uint32_t tile_size;
+      int k, l;
+
+      winterface->sync(worker);
+      tile_size = data->bit_writer.pos;
+
+      // Aggregate per-thread bitstream stats.
+      cpi->max_mv_magnitude = VPXMAX(cpi->max_mv_magnitude,
+                                     data->max_mv_magnitude);
+      for (k = 0; k < MAX_REF_FRAMES; ++k) {
+        for (l = 0; l < SWITCHABLE; ++l) {
+          cpi->interp_filter_selected[k][l] +=
+              data->interp_filter_selected[k][l];
+        }
+      }
+
+      // Prefix the size of the tile on all but the last.
+      if (tile_col != tile_cols || j < i - 1) {
+        mem_put_be32(data_ptr + total_size, tile_size);
+        total_size += 4;
+      }
+      if (j > 0) {
+        memcpy(data_ptr + total_size, data->dest, tile_size);
+        free(data->dest);
+      }
+      free(data);
+      total_size += tile_size;
+    }
+  }
+  return total_size;
+}
+
 static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
@@ -907,6 +994,13 @@ static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
 
   memset(cm->above_seg_context, 0,
          sizeof(*cm->above_seg_context) * mi_cols_aligned_to_sb(cm->mi_cols));
+
+  // Encoding tiles in parallel is done only for realtime mode now. In other
+  // modes the speed up is insignificant and requires further testing to ensure
+  // that it does not make the overall process worse in any case.
+  if (cpi->oxcf.mode == REALTIME && cpi->num_workers > 1) {
+    return encode_tiles_mt(cpi, data_ptr);
+  }
 
   for (tile_row = 0; tile_row < tile_rows; tile_row++) {
     for (tile_col = 0; tile_col < tile_cols; tile_col++) {
@@ -934,7 +1028,6 @@ static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
       total_size += residual_bc.pos;
     }
   }
-
   return total_size;
 }
 
