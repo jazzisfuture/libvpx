@@ -391,7 +391,7 @@ add_proto qw/void av1_fht16x16/, "const int16_t *input, tran_low_t *output, int 
 specialize qw/av1_fht16x16 sse2 avx2/;
 
 add_proto qw/void av1_fht32x32/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
-specialize qw/av1_fht32x32/;
+specialize qw/av1_fht32x32 avx2/;
 
 if (aom_config("CONFIG_EXT_TX") eq "yes") {
   add_proto qw/void av1_fht4x8/, "const int16_t *input, tran_low_t *output, int stride, int tx_type";
