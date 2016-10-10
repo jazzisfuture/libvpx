@@ -1179,7 +1179,7 @@ MAKE_MBFP_SAD_WRAPPER(aom_highbd_masked_sad4x8)
 MAKE_MBFP_SAD_WRAPPER(aom_highbd_masked_sad4x4)
 #endif  // CONFIG_EXT_INTER
 
-#if CONFIG_OBMC
+#if CONFIG_MOTION_VAR
 #define HIGHBD_OBFP(BT, OSDF, OVF, OSVF) \
   cpi->fn_ptr[BT].osdf = OSDF;           \
   cpi->fn_ptr[BT].ovf = OVF;             \
@@ -1220,7 +1220,7 @@ MAKE_OBFP_SAD_WRAPPER(aom_highbd_obmc_sad8x8)
 MAKE_OBFP_SAD_WRAPPER(aom_highbd_obmc_sad8x4)
 MAKE_OBFP_SAD_WRAPPER(aom_highbd_obmc_sad4x8)
 MAKE_OBFP_SAD_WRAPPER(aom_highbd_obmc_sad4x4)
-#endif  // CONFIG_OBMC
+#endif  // CONFIG_MOTION_VAR
 
 static void highbd_set_var_fns(AV1_COMP *const cpi) {
   AV1_COMMON *const cm = &cpi->common;
@@ -1382,7 +1382,7 @@ static void highbd_set_var_fns(AV1_COMP *const cpi) {
                     aom_highbd_masked_variance4x4,
                     aom_highbd_masked_sub_pixel_variance4x4)
 #endif  // CONFIG_EXT_INTER
-#if CONFIG_OBMC
+#if CONFIG_MOTION_VAR
 #if CONFIG_EXT_PARTITION
         HIGHBD_OBFP(BLOCK_128X128, aom_highbd_obmc_sad128x128_bits8,
                     aom_highbd_obmc_variance128x128,
@@ -1433,7 +1433,7 @@ static void highbd_set_var_fns(AV1_COMP *const cpi) {
         HIGHBD_OBFP(BLOCK_4X4, aom_highbd_obmc_sad4x4_bits8,
                     aom_highbd_obmc_variance4x4,
                     aom_highbd_obmc_sub_pixel_variance4x4)
-#endif  // CONFIG_OBMC
+#endif  // CONFIG_MOTION_VAR
         break;
 
       case AOM_BITS_10:
@@ -1596,7 +1596,7 @@ static void highbd_set_var_fns(AV1_COMP *const cpi) {
                     aom_highbd_10_masked_variance4x4,
                     aom_highbd_10_masked_sub_pixel_variance4x4)
 #endif  // CONFIG_EXT_INTER
-#if CONFIG_OBMC
+#if CONFIG_MOTION_VAR
 #if CONFIG_EXT_PARTITION
         HIGHBD_OBFP(BLOCK_128X128, aom_highbd_obmc_sad128x128_bits10,
                     aom_highbd_10_obmc_variance128x128,
@@ -1647,7 +1647,7 @@ static void highbd_set_var_fns(AV1_COMP *const cpi) {
         HIGHBD_OBFP(BLOCK_4X4, aom_highbd_obmc_sad4x4_bits10,
                     aom_highbd_10_obmc_variance4x4,
                     aom_highbd_10_obmc_sub_pixel_variance4x4)
-#endif  // CONFIG_OBMC
+#endif  // CONFIG_MOTION_VAR
         break;
 
       case AOM_BITS_12:
@@ -1811,7 +1811,7 @@ static void highbd_set_var_fns(AV1_COMP *const cpi) {
                     aom_highbd_12_masked_sub_pixel_variance4x4)
 #endif  // CONFIG_EXT_INTER
 
-#if CONFIG_OBMC
+#if CONFIG_MOTION_VAR
 #if CONFIG_EXT_PARTITION
         HIGHBD_OBFP(BLOCK_128X128, aom_highbd_obmc_sad128x128_bits12,
                     aom_highbd_12_obmc_variance128x128,
@@ -1862,7 +1862,7 @@ static void highbd_set_var_fns(AV1_COMP *const cpi) {
         HIGHBD_OBFP(BLOCK_4X4, aom_highbd_obmc_sad4x4_bits12,
                     aom_highbd_12_obmc_variance4x4,
                     aom_highbd_12_obmc_sub_pixel_variance4x4)
-#endif  // CONFIG_OBMC
+#endif  // CONFIG_MOTION_VAR
         break;
 
       default:
@@ -2354,7 +2354,7 @@ AV1_COMP *av1_create_compressor(AV1EncoderConfig *oxcf,
       aom_sub_pixel_variance4x4, aom_sub_pixel_avg_variance4x4, aom_sad4x4x3,
       aom_sad4x4x8, aom_sad4x4x4d)
 
-#if CONFIG_OBMC
+#if CONFIG_MOTION_VAR
 #define OBFP(BT, OSDF, OVF, OSVF) \
   cpi->fn_ptr[BT].osdf = OSDF;    \
   cpi->fn_ptr[BT].ovf = OVF;      \
@@ -2394,7 +2394,7 @@ AV1_COMP *av1_create_compressor(AV1EncoderConfig *oxcf,
        aom_obmc_sub_pixel_variance8x4)
   OBFP(BLOCK_4X4, aom_obmc_sad4x4, aom_obmc_variance4x4,
        aom_obmc_sub_pixel_variance4x4)
-#endif  // CONFIG_OBMC
+#endif  // CONFIG_MOTION_VAR
 
 #if CONFIG_EXT_INTER
 #define MBFP(BT, MSDF, MVF, MSVF) \
