@@ -2930,7 +2930,7 @@ int av1_masked_full_pixel_diamond(const AV1_COMP *cpi, MACROBLOCK *x,
 }
 #endif  // CONFIG_EXT_INTER
 
-#if CONFIG_OBMC
+#if CONFIG_MOTION_VAR
 /* returns subpixel variance error function */
 #define DIST(r, c) \
   vfp->osvf(pre(y, y_stride, r, c), y_stride, sp(c), sp(r), z, mask, &sse)
@@ -3031,11 +3031,13 @@ static unsigned int upsampled_setup_obmc_center_error(
 }
 
 int av1_find_best_obmc_sub_pixel_tree_up(
-    AV1_COMP *cpi, MACROBLOCK *x, const int32_t *wsrc, const int32_t *mask,
-    int mi_row, int mi_col, MV *bestmv, const MV *ref_mv, int allow_hp,
-    int error_per_bit, const aom_variance_fn_ptr_t *vfp, int forced_stop,
-    int iters_per_step, int *mvjcost, int *mvcost[2], int *distortion,
-    unsigned int *sse1, int is_second, int use_upsampled_ref) {
+    AV1_COMP *cpi, MACROBLOCK *x, int mi_row, int mi_col, MV *bestmv,
+    const MV *ref_mv, int allow_hp, int error_per_bit,
+    const aom_variance_fn_ptr_t *vfp, int forced_stop, int iters_per_step,
+    int *mvjcost, int *mvcost[2], int *distortion, unsigned int *sse1,
+    int is_second, int use_upsampled_ref) {
+  const int32_t *wsrc = x->wsrc_buf;
+  const int32_t *mask = x->mask_buf;
   const int *const z = wsrc;
   const int *const src_address = z;
   MACROBLOCKD *xd = &x->e_mbd;
@@ -3356,11 +3358,12 @@ int obmc_diamond_search_sad(const MACROBLOCK *x, const search_site_config *cfg,
 }
 
 int av1_obmc_full_pixel_diamond(const AV1_COMP *cpi, MACROBLOCK *x,
-                                const int32_t *wsrc, const int32_t *mask,
                                 MV *mvp_full, int step_param, int sadpb,
                                 int further_steps, int do_refine,
                                 const aom_variance_fn_ptr_t *fn_ptr,
                                 const MV *ref_mv, MV *dst_mv, int is_second) {
+  const int32_t *wsrc = x->wsrc_buf;
+  const int32_t *mask = x->mask_buf;
   MV temp_mv;
   int thissme, n, num00 = 0;
   int bestsme =
@@ -3414,4 +3417,4 @@ int av1_obmc_full_pixel_diamond(const AV1_COMP *cpi, MACROBLOCK *x,
   }
   return bestsme;
 }
-#endif  // CONFIG_OBMC
+#endif  // CONFIG_MOTION_VAR
