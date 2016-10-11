@@ -94,7 +94,7 @@ static void project_points_double_homography(double *mat, double *points,
 
 static int get_rand_indices(int npoints, int minpts, int *indices) {
   int i, j;
-  unsigned int seed = (unsigned int)npoints;
+  unsigned int seed = (unsigned int) *indices;
   int ptr = rand_r(&seed) % npoints;
   if (minpts > npoints) return 0;
   indices[0] = ptr;
@@ -139,7 +139,7 @@ static int ransac(double *matched_points, int npoints, int *number_of_inliers,
   WarpedMotionParams wm;
   double points1[2 * MAX_MINPTS];
   double points2[2 * MAX_MINPTS];
-  int indices[MAX_MINPTS];
+  int indices[MAX_MINPTS] = {0};
 
   double *best_inlier_set1;
   double *best_inlier_set2;
@@ -152,6 +152,7 @@ static int ransac(double *matched_points, int npoints, int *number_of_inliers,
 
   double *cnp1, *cnp2;
   double T1[9], T2[9];
+  unsigned int seed = npoints;
 
   // srand((unsigned)time(NULL)) ;
   // better to make this deterministic for a given sequence for ease of testing
