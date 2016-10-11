@@ -92,16 +92,16 @@ static void project_points_double_homography(double *mat, double *points,
   }
 }
 
-static int get_rand_indices(int npoints, int minpts, int *indices) {
+static int get_rand_indices(int npoints, int minpts, int *indices,
+                            unsigned int *seed) {
   int i, j;
-  unsigned int seed = (unsigned int)npoints;
-  int ptr = rand_r(&seed) % npoints;
+  int ptr = rand_r(seed) % npoints;
   if (minpts > npoints) return 0;
   indices[0] = ptr;
   ptr = (ptr == npoints - 1 ? 0 : ptr + 1);
   i = 1;
   while (i < minpts) {
-    int index = rand_r(&seed) % npoints;
+    int index = rand_r(seed) % npoints;
     while (index) {
       ptr = (ptr == npoints - 1 ? 0 : ptr + 1);
       for (j = 0; j < i; ++j) {
@@ -111,6 +111,7 @@ static int get_rand_indices(int npoints, int minpts, int *indices) {
     }
     indices[i++] = ptr;
   }
+  *seed = (unsigned int)indices[npoints];
   return 1;
 }
 
@@ -152,6 +153,7 @@ static int ransac(double *matched_points, int npoints, int *number_of_inliers,
 
   double *cnp1, *cnp2;
   double T1[9], T2[9];
+  unsigned int seed = npoints;
 
   // srand((unsigned)time(NULL)) ;
   // better to make this deterministic for a given sequence for ease of testing
@@ -203,7 +205,7 @@ static int ransac(double *matched_points, int npoints, int *number_of_inliers,
     int num_degenerate_iter = 0;
     while (degenerate) {
       num_degenerate_iter++;
-      if (!get_rand_indices(npoints, minpts, indices)) {
+      if (!get_rand_indices(npoints, minpts, indices, &seed)) {
         ret_val = 1;
         goto finish_ransac;
       }
