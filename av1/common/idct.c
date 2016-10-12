@@ -60,12 +60,12 @@ static void iidtx32_c(const tran_low_t *input, tran_low_t *output) {
 static void ihalfright32_c(const tran_low_t *input, tran_low_t *output) {
   int i;
   tran_low_t inputhalf[16];
-  for (i = 0; i < 16; ++i) {
-    output[i] = input[16 + i] * 4;
-  }
   // Multiply input by sqrt(2)
   for (i = 0; i < 16; ++i) {
     inputhalf[i] = (tran_low_t)dct_const_round_shift(input[i] * Sqrt2);
+  }
+  for (i = 0; i < 16; ++i) {
+    output[i] = input[16 + i] * 4;
   }
   idct16_c(inputhalf, output + 16);
   // Note overall scaling factor is 4 times orthogonal
@@ -106,13 +106,13 @@ static void highbd_ihalfright32_c(const tran_low_t *input, tran_low_t *output,
                                   int bd) {
   int i;
   tran_low_t inputhalf[16];
-  for (i = 0; i < 16; ++i) {
-    output[i] = input[16 + i] * 4;
-  }
   // Multiply input by sqrt(2)
   for (i = 0; i < 16; ++i) {
     inputhalf[i] =
         HIGHBD_WRAPLOW(highbd_dct_const_round_shift(input[i] * Sqrt2), bd);
+  }
+  for (i = 0; i < 16; ++i) {
+    output[i] = input[16 + i] * 4;
   }
   aom_highbd_idct16_c(inputhalf, output + 16, bd);
   // Note overall scaling factor is 4 times orthogonal
