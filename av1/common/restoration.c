@@ -54,6 +54,12 @@ static BilateralParamsType
       { 56, 56, 48 }, { 56, 56, 56 }, { 56, 56, 64 }, { 64, 64, 48 },
     };
 
+const sgr_params_type sgr_params[SGRPROJ_PARAMS] = {
+  // r1, eps1, r2, eps2
+  { 2, 30, 1, 2 },  { 2, 40, 1, 8 },  { 2, 50, 1, 11 }, { 2, 55, 1, 11 },
+  { 2, 60, 1, 12 }, { 2, 65, 1, 12 }, { 2, 70, 1, 13 }, { 2, 80, 1, 13 },
+};
+
 typedef void (*restore_func_type)(uint8_t *data8, int width, int height,
                                   int stride, RestorationInternal *rst,
                                   uint8_t *tmpdata8, int tmpstride);
@@ -334,11 +340,215 @@ static void loop_wiener_filter(uint8_t *data, int width, int height, int stride,
   }
 }
 
+static void boxsum(int64_t *src, int width, int height, int src_stride, int r,
+                   int sqr, int64_t *dst, int dst_stride, int64_t *tmp, int tmp_stride) {
+  // int64_t tmp[RESTORATION_TILEPELS_MAX];
+  // int tmp_stride = width;
+  int i, j;
+
+  if (sqr) {
+    for (j = 0; j < width; ++j) tmp[j] = src[j] * src[j];
+    for (j = 0; j < width; ++j)
+      for (i = 1; i < height; ++i)
+        tmp[i * tmp_stride + j] =
+            tmp[(i - 1) * tmp_stride + j] +
+            src[i * src_stride + j] * src[i * src_stride + j];
+  } else {
+    memcpy(tmp, src, sizeof(*tmp) * width);
+    for (j = 0; j < width; ++j)
+      for (i = 1; i < height; ++i)
+        tmp[i * tmp_stride + j] =
+            tmp[(i - 1) * tmp_stride + j] + src[i * src_stride + j];
+  }
+  for (i = 0; i <= r; ++i)
+    memcpy(&dst[i * dst_stride], &tmp[(i + r) * tmp_stride],
+           sizeof(*tmp) * width);
+  for (i = r + 1; i < height - r; ++i)
+    for (j = 0; j < width; ++j)
+      dst[i * dst_stride + j] =
+          tmp[(i + r) * tmp_stride + j] - tmp[(i - r - 1) * tmp_stride + j];
+  for (i = height - r; i < height; ++i)
+    for (j = 0; j < width; ++j)
+      dst[i * dst_stride + j] = tmp[(height - 1) * tmp_stride + j] -
+                                tmp[(i - r - 1) * tmp_stride + j];
+
+  for (i = 0; i < height; ++i) tmp[i * tmp_stride] = dst[i * dst_stride];
+  for (i = 0; i < height; ++i)
+    for (j = 1; j < width; ++j)
+      tmp[i * tmp_stride + j] =
+          tmp[i * tmp_stride + j - 1] + dst[i * src_stride + j];
+
+  for (j = 0; j <= r; ++j)
+    for (i = 0; i < height; ++i)
+      dst[i * dst_stride + j] = tmp[i * tmp_stride + j + r];
+  for (j = r + 1; j < width - r; ++j)
+    for (i = 0; i < height; ++i)
+      dst[i * dst_stride + j] =
+          tmp[i * tmp_stride + j + r] - tmp[i * tmp_stride + j - r - 1];
+  for (j = width - r; j < width; ++j)
+    for (i = 0; i < height; ++i)
+      dst[i * dst_stride + j] =
+          tmp[i * tmp_stride + width - 1] - tmp[i * tmp_stride + j - r - 1];
+}
+
+static void boxnum(int width, int height, int r, int8_t *num,
+                   int num_stride) {
+  int i, j;
+  for (i = 0; i <= r; ++i) {
+    for (j = 0; j <= r; ++j) {
+      num[i * num_stride + j] = (r + 1 + i) * (r + 1 + j);
+      num[i * num_stride + (width - 1 - j)] = num[i * num_stride + j];
+      num[(height - 1 - i) * num_stride + j] = num[i * num_stride + j];
+      num[(height - 1 - i) * num_stride + (width - 1 - j)] =
+          num[i * num_stride + j];
+    }
+  }
+  for (j = 0; j <= r; ++j) {
+    const int val = (2 * r + 1) * (r + 1 + j);
+    for (i = r + 1; i < height - r; ++i) {
+      num[i * num_stride + j] = val;
+      num[i * num_stride + (width - 1 - j)] = val;
+    }
+  }
+  for (i = 0; i <= r; ++i) {
+    const int val = (2 * r + 1) * (r + 1 + i);
+    for (j = r + 1; j < width - r; ++j) {
+      num[i * num_stride + j] = val;
+      num[(height - 1 - i) * num_stride + j] = val;
+    }
+  }
+  for (i = r + 1; i < height - r; ++i) {
+    for (j = r + 1; j < width - r; ++j) {
+      num[i * num_stride + j] = (2 * r + 1) * (2 * r + 1);
+    }
+  }
+}
+
+void decode_xq(int *xqd, int *xq) {
+  xq[0] = -xqd[0];
+  xq[1] = (1 << SGRPROJ_PRJ_BITS) - xq[0] - xqd[1];
+}
+
+void av1_selfguided_restoration(int64_t *dgd, int width, int height, int stride,
+                                int r, int eps, void *tmpbuf) {
+  int64_t *A = (int64_t *)tmpbuf;
+  int64_t *B = A + RESTORATION_TILEPELS_MAX;
+  int64_t *T = B + RESTORATION_TILEPELS_MAX;
+  int8_t num[RESTORATION_TILEPELS_MAX];
+  int i, j;
+
+  boxsum(dgd, width, height, stride, r, 0, B, width, T, width);
+  boxsum(dgd, width, height, stride, r, 1, A, width, T, width);
+  boxnum(width, height, r, num, width);
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      const int k = i * width + j;
+      const int n = num[k];
+      int64_t den;
+      A[k] = A[k] * n - B[k] * B[k];
+      den = A[k] + n * n * eps;
+      A[k] = ((A[k] << SGRPROJ_SGR_BITS) + (den >> 1)) / den;
+      B[k] = ((SGRPROJ_SGR - A[k]) * B[k] + (n >> 1)) / n;
+    }
+  }
+  boxsum(A, width, height, width, r, 0, A, width, T, width);
+  boxsum(B, width, height, width, r, 0, B, width, T, width);
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      const int k = i * width + j;
+      const int l = i * stride + j;
+      const int n = num[k];
+      const int64_t v =
+          (((A[k] * dgd[l] + B[k]) << SGRPROJ_RST_BITS) + (n >> 1)) / n;
+      dgd[l] = ROUND_POWER_OF_TWO(v, SGRPROJ_SGR_BITS);
+    }
+  }
+}
+
+static void apply_selfguided_restoration(int64_t *dat, int width, int height,
+                                         int stride, int eps, int *xqd, void *tmpbuf) {
+  int xq[2];
+  int64_t *flt1 = (int64_t*) tmpbuf;
+  int64_t *flt2 = flt1 + RESTORATION_TILEPELS_MAX;
+  uint8_t *tmpbuf2 = (uint8_t *)(flt2 + RESTORATION_TILEPELS_MAX);
+  int i, j;
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      assert(i * width + j < RESTORATION_TILEPELS_MAX);
+      flt1[i * width + j] = dat[i * stride + j];
+      flt2[i * width + j] = dat[i * stride + j];
+    }
+  }
+  av1_selfguided_restoration(flt1, width, height, width, sgr_params[eps].r1,
+                             sgr_params[eps].e1, tmpbuf2);
+  av1_selfguided_restoration(flt2, width, height, width, sgr_params[eps].r2,
+                             sgr_params[eps].e2, tmpbuf2);
+  decode_xq(xqd, xq);
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      const int k = i * width + j;
+      const int l = i * stride + j;
+      const int64_t u = ((int64_t)dat[l] << SGRPROJ_RST_BITS);
+      const int64_t f1 = (int64_t)flt1[k] - u;
+      const int64_t f2 = (int64_t)flt2[k] - u;
+      const int64_t v = xq[0] * f1 + xq[1] * f2 + (u << SGRPROJ_PRJ_BITS);
+      const int16_t w =
+          (int16_t)ROUND_POWER_OF_TWO(v, SGRPROJ_PRJ_BITS + SGRPROJ_RST_BITS);
+      dat[l] = w;
+    }
+  }
+}
+
+static void loop_sgrproj_filter_tile(uint8_t *data, int tile_idx, int width,
+                                     int height, int stride,
+                                     RestorationInternal *rst, void *tmpbuf) {
+  const int tile_width = rst->tile_width >> rst->subsampling_x;
+  const int tile_height = rst->tile_height >> rst->subsampling_y;
+  int i, j;
+  int h_start, h_end, v_start, v_end;
+  uint8_t *data_p;
+  int64_t dat[RESTORATION_TILEPELS_MAX];
+
+  if (rst->rsi->sgrproj_info[tile_idx].level == 0) return;
+  av1_get_rest_tile_limits(tile_idx, 0, 0, rst->nhtiles, rst->nvtiles,
+                           tile_width, tile_height, width, height, 0, 0,
+                           &h_start, &h_end, &v_start, &v_end);
+  data_p = data + h_start + v_start * stride;
+  for (i = 0; i < (v_end - v_start); ++i) {
+    for (j = 0; j < (h_end - h_start); ++j) {
+      dat[i * (h_end - h_start) + j] = data_p[i * stride + j];
+    }
+  }
+  apply_selfguided_restoration(dat, h_end - h_start, v_end - v_start,
+                               h_end - h_start,
+                               rst->rsi->sgrproj_info[tile_idx].ep,
+                               rst->rsi->sgrproj_info[tile_idx].xqd, tmpbuf);
+  for (i = 0; i < (v_end - v_start); ++i) {
+    for (j = 0; j < (h_end - h_start); ++j) {
+      data_p[i * stride + j] = clip_pixel(dat[i * (h_end - h_start) + j]);
+    }
+  }
+}
+
+static void loop_sgrproj_filter(uint8_t *data, int width, int height,
+                                int stride, RestorationInternal *rst,
+                                uint8_t *tmpdata, int tmpstride) {
+  int tile_idx;
+  uint8_t *tmpbuf = aom_malloc(SGRPROJ_TMPBUF_SIZE);
+  (void)tmpdata;
+  (void)tmpstride;
+  for (tile_idx = 0; tile_idx < rst->ntiles; ++tile_idx) {
+    loop_sgrproj_filter_tile(data, tile_idx, width, height, stride, rst, tmpbuf);
+  }
+  aom_free(tmpbuf);
+}
+
 static void loop_switchable_filter(uint8_t *data, int width, int height,
                                    int stride, RestorationInternal *rst,
                                    uint8_t *tmpdata, int tmpstride) {
   int i, tile_idx;
   uint8_t *data_p, *tmpdata_p;
+  uint8_t *tmpbuf = aom_malloc(SGRPROJ_TMPBUF_SIZE);
 
   // Initialize tmp buffer
   data_p = data;
@@ -355,8 +565,12 @@ static void loop_switchable_filter(uint8_t *data, int width, int height,
     } else if (rst->rsi->restoration_type[tile_idx] == RESTORE_WIENER) {
       loop_wiener_filter_tile(data, tile_idx, width, height, stride, rst,
                               tmpdata, tmpstride);
+    } else if (rst->rsi->restoration_type[tile_idx] == RESTORE_SGRPROJ) {
+      loop_sgrproj_filter_tile(data, tile_idx, width, height, stride, rst,
+                               tmpbuf);
     }
   }
+  aom_free(tmpbuf);
 }
 
 #if CONFIG_AOM_HIGHBITDEPTH
@@ -518,12 +732,62 @@ static void loop_wiener_filter_highbd(uint8_t *data8, int width, int height,
   }
 }
 
+static void loop_sgrproj_filter_tile_highbd(uint16_t *data, int tile_idx,
+                                            int width, int height, int stride,
+                                            RestorationInternal *rst,
+                                            int bit_depth, void *tmpbuf) {
+  const int tile_width = rst->tile_width >> rst->subsampling_x;
+  const int tile_height = rst->tile_height >> rst->subsampling_y;
+  int i, j;
+  int h_start, h_end, v_start, v_end;
+  uint16_t *data_p;
+  int64_t dat[RESTORATION_TILEPELS_MAX];
+
+  if (rst->rsi->sgrproj_info[tile_idx].level == 0) return;
+  av1_get_rest_tile_limits(tile_idx, 0, 0, rst->nhtiles, rst->nvtiles,
+                           tile_width, tile_height, width, height, 0, 0,
+                           &h_start, &h_end, &v_start, &v_end);
+  data_p = data + h_start + v_start * stride;
+  for (i = 0; i < (v_end - v_start); ++i) {
+    for (j = 0; j < (h_end - h_start); ++j) {
+      dat[i * (h_end - h_start) + j] = data_p[i * stride + j];
+    }
+  }
+  apply_selfguided_restoration(dat, h_end - h_start, v_end - v_start,
+                               h_end - h_start,
+                               rst->rsi->sgrproj_info[tile_idx].ep,
+                               rst->rsi->sgrproj_info[tile_idx].xqd, tmpbuf);
+  for (i = 0; i < (v_end - v_start); ++i) {
+    for (j = 0; j < (h_end - h_start); ++j) {
+      data_p[i * stride + j] =
+          clip_pixel_highbd(dat[i * (h_end - h_start) + j], bit_depth);
+    }
+  }
+}
+
+static void loop_sgrproj_filter_highbd(uint8_t *data8, int width, int height,
+                                       int stride, RestorationInternal *rst,
+                                       uint8_t *tmpdata8, int tmpstride,
+                                       int bit_depth) {
+  int tile_idx;
+  uint16_t *data = CONVERT_TO_SHORTPTR(data8);
+  uint8_t *tmpbuf = aom_malloc(SGRPROJ_TMPBUF_SIZE);
+  (void)tmpdata8;
+  (void)tmpstride;
+  for (tile_idx = 0; tile_idx < rst->ntiles; ++tile_idx) {
+    loop_sgrproj_filter_tile_highbd(data, tile_idx, width, height, stride, rst,
+                                    bit_depth, tmpbuf);
+  }
+  aom_free(tmpbuf);
+}
+
 static void loop_switchable_filter_highbd(uint8_t *data8, int width, int height,
                                           int stride, RestorationInternal *rst,
                                           uint8_t *tmpdata8, int tmpstride,
                                           int bit_depth) {
   uint16_t *data = CONVERT_TO_SHORTPTR(data8);
   uint16_t *tmpdata = CONVERT_TO_SHORTPTR(tmpdata8);
+  uint8_t *tmpbuf = aom_malloc(SGRPROJ_TMPBUF_SIZE);
   int i, tile_idx;
   uint16_t *data_p, *tmpdata_p;
 
@@ -542,8 +806,12 @@ static void loop_switchable_filter_highbd(uint8_t *data8, int width, int height,
     } else if (rst->rsi->restoration_type[tile_idx] == RESTORE_WIENER) {
       loop_wiener_filter_tile_highbd(data, tile_idx, width, height, stride, rst,
                                      tmpdata, tmpstride, bit_depth);
+    } else if (rst->rsi->restoration_type[tile_idx] == RESTORE_SGRPROJ) {
+      loop_sgrproj_filter_tile_highbd(data, tile_idx, width, height, stride,
+                                      rst, bit_depth, tmpbuf);
     }
   }
+  aom_free(tmpbuf);
 }
 #endif  // CONFIG_AOM_HIGHBITDEPTH
 
@@ -557,19 +825,21 @@ void av1_loop_restoration_rows(YV12_BUFFER_CONFIG *frame, AV1_COMMON *cm,
   const int uvstart = ystart >> cm->subsampling_y;
   int yend = end_mi_row << MI_SIZE_LOG2;
   int uvend = yend >> cm->subsampling_y;
+  restore_func_type restore_funcs[RESTORE_TYPES] = { NULL, loop_sgrproj_filter,
+                                                     loop_bilateral_filter,
+                                                     loop_wiener_filter,
+                                                     loop_switchable_filter };
+#if CONFIG_AOM_HIGHBITDEPTH
+  restore_func_highbd_type restore_funcs_highbd[RESTORE_TYPES] = {
+    NULL, loop_sgrproj_filter_highbd, loop_bilateral_filter_highbd,
+    loop_wiener_filter_highbd, loop_switchable_filter_highbd
+  };
+#endif  // CONFIG_AOM_HIGHBITDEPTH
   restore_func_type restore_func =
-      cm->rst_internal.rsi->frame_restoration_type == RESTORE_BILATERAL
-          ? loop_bilateral_filter
-          : (cm->rst_internal.rsi->frame_restoration_type == RESTORE_WIENER
-                 ? loop_wiener_filter
-                 : loop_switchable_filter);
+      restore_funcs[cm->rst_internal.rsi->frame_restoration_type];
 #if CONFIG_AOM_HIGHBITDEPTH
   restore_func_highbd_type restore_func_highbd =
-      cm->rst_internal.rsi->frame_restoration_type == RESTORE_BILATERAL
-          ? loop_bilateral_filter_highbd
-          : (cm->rst_internal.rsi->frame_restoration_type == RESTORE_WIENER
-                 ? loop_wiener_filter_highbd
-                 : loop_switchable_filter_highbd);
+      restore_funcs_highbd[cm->rst_internal.rsi->frame_restoration_type];
 #endif  // CONFIG_AOM_HIGHBITDEPTH
   YV12_BUFFER_CONFIG tmp_buf;
 
