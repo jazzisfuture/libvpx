@@ -60,12 +60,20 @@ static void iidtx32_c(const tran_low_t *input, tran_low_t *output) {
 static void ihalfright32_c(const tran_low_t *input, tran_low_t *output) {
   int i;
   tran_low_t inputhalf[16];
+  tran_low_t tmp[16];
+  // Temporarily save second half of input, in case output == input
+  for (i = 0; i < 16; ++i) {
+    tmp[i] = input[i];
+  }
+
+  // Generate first half of output
   for (i = 0; i < 16; ++i) {
     output[i] = input[16 + i] * 4;
   }
-  // Multiply input by sqrt(2)
+
+  // Generate second half of output
   for (i = 0; i < 16; ++i) {
-    inputhalf[i] = (tran_low_t)dct_const_round_shift(input[i] * Sqrt2);
+    inputhalf[i] = (tran_low_t)dct_const_round_shift(tmp[i] * Sqrt2);
   }
   idct16_c(inputhalf, output + 16);
   // Note overall scaling factor is 4 times orthogonal
