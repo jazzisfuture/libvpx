@@ -134,7 +134,7 @@ TEST_P(PartialIDctTest, ResultsMatch) {
   DECLARE_ALIGNED(16, tran_low_t, test_coef_block2[kMaxNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, dst1[kMaxNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, dst2[kMaxNumCoeffs]);
-  const int count_test_block = 1000;
+  const int count_test_block = last_nonzero_ + 1000;
   const int max_coeff = 32766 / 4;
   const int block_size = size * size;
   int max_error = 0;
@@ -145,15 +145,21 @@ TEST_P(PartialIDctTest, ResultsMatch) {
     memset(test_coef_block1, 0, sizeof(*test_coef_block1) * block_size);
     memset(test_coef_block2, 0, sizeof(*test_coef_block2) * block_size);
     int max_energy_leftover = max_coeff * max_coeff;
-    for (int j = 0; j < last_nonzero_; ++j) {
-      int16_t coef = static_cast<int16_t>(sqrt(1.0 * max_energy_leftover) *
-                                          (rnd.Rand16() - 32768) / 65536);
-      max_energy_leftover -= coef * coef;
-      if (max_energy_leftover < 0) {
-        max_energy_leftover = 0;
-        coef = 0;
+    if (i < last_nonzero_) {
+      // Values over 9 bits should not be valid and while the encoder should not
+      // generate them the bitstream does allow for them.
+      test_coef_block1[vp9_default_scan_orders[tx_size_].scan[i]] = INT16_MAX;
+    } else {
+      for (int j = 0; j < last_nonzero_; ++j) {
+        int16_t coef = static_cast<int16_t>(sqrt(1.0 * max_energy_leftover) *
+                                            (rnd.Rand16() - 32768) / 65536);
+        max_energy_leftover -= coef * coef;
+        if (max_energy_leftover < 0) {
+          max_energy_leftover = 0;
+          coef = 0;
+        }
+        test_coef_block1[vp9_default_scan_orders[tx_size_].scan[j]] = coef;
       }
-      test_coef_block1[vp9_default_scan_orders[tx_size_].scan[j]] = coef;
     }
 
     memcpy(test_coef_block2, test_coef_block1,
@@ -214,7 +220,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_fdct4x4_c, &vpx_idct4x4_16_add_c,
                                  &vpx_idct4x4_1_add_neon, TX_4X4, 1)));
 #else   // !CONFIG_VP9_HIGHBITDEPTH
-// 32x32_34_ 32x32_135_ are implemented using the 1024 version.
+// 32x32_135_ is implemented using the 1024 version.
 INSTANTIATE_TEST_CASE_P(
     NEON, PartialIDctTest,
     ::testing::Values(make_tuple(&vpx_fdct32x32_c, &vpx_idct32x32_1024_add_c,
@@ -222,7 +228,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_fdct32x32_c, &vpx_idct32x32_1024_add_c,
                                  &vpx_idct32x32_1024_add_neon, TX_32X32, 135),
                       make_tuple(&vpx_fdct32x32_c, &vpx_idct32x32_1024_add_c,
-                                 &vpx_idct32x32_1024_add_neon, TX_32X32, 34),
+                                 &vpx_idct32x32_34_add_neon, TX_32X32, 34),
                       make_tuple(&vpx_fdct32x32_c, &vpx_idct32x32_1024_add_c,
                                  &vpx_idct32x32_1_add_neon, TX_32X32, 1),
                       make_tuple(&vpx_fdct16x16_c, &vpx_idct16x16_256_add_c,
