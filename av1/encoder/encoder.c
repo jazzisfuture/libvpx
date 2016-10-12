@@ -3086,15 +3086,15 @@ static INLINE void shift_last_ref_frames(AV1_COMP *cpi) {
     cpi->lst_fb_idxes[ref_frame] = cpi->lst_fb_idxes[ref_frame - 1];
 
     // [0] is allocated to the current coded frame. The statistics for the
-    // reference frames start at [1].
+    // reference frames start at [LAST_FRAME], i.e. [1].
     if (!cpi->rc.is_src_frame_alt_ref) {
-      memcpy(cpi->interp_filter_selected[ref_frame + 1],
-             cpi->interp_filter_selected[ref_frame],
-             sizeof(cpi->interp_filter_selected[ref_frame]));
+      memcpy(cpi->interp_filter_selected[ref_frame + LAST_FRAME],
+             cpi->interp_filter_selected[ref_frame - 1 + LAST_FRAME],
+             sizeof(cpi->interp_filter_selected[ref_frame - 1 + LAST_FRAME]));
     }
   }
 }
-#endif
+#endif  // CONFIG_EXT_REFS
 
 void av1_update_reference_frames(AV1_COMP *cpi) {
   AV1_COMMON *const cm = &cpi->common;
@@ -3181,14 +3181,12 @@ void av1_update_reference_frames(AV1_COMP *cpi) {
     int tmp = cpi->lst_fb_idxes[LAST_REF_FRAMES - 1];
 
     shift_last_ref_frames(cpi);
-
     cpi->lst_fb_idxes[0] = cpi->bwd_fb_idx;
-    if (!cpi->rc.is_src_frame_alt_ref) {
-      memcpy(cpi->interp_filter_selected[0],
-             cpi->interp_filter_selected[BWDREF_FRAME],
-             sizeof(cpi->interp_filter_selected[BWDREF_FRAME]));
-    }
     cpi->bwd_fb_idx = tmp;
+
+    memcpy(cpi->interp_filter_selected[LAST_FRAME],
+           cpi->interp_filter_selected[BWDREF_FRAME],
+           sizeof(cpi->interp_filter_selected[BWDREF_FRAME]));
   } else if (cpi->rc.is_src_frame_ext_arf && cm->show_existing_frame) {
     // Deal with the special case for showing existing internal ALTREF_FRAME
     // Refresh the LAST_FRAME with the ALTREF_FRAME and retire the LAST3_FRAME
@@ -3198,15 +3196,15 @@ void av1_update_reference_frames(AV1_COMP *cpi) {
     int tmp = cpi->lst_fb_idxes[LAST_REF_FRAMES - 1];
 
     shift_last_ref_frames(cpi);
-
     cpi->lst_fb_idxes[0] = cpi->alt_fb_idx;
+    cpi->alt_fb_idx = tmp;
+
+    // We need to modify the mapping accordingly
+    cpi->arf_map[which_arf] = cpi->alt_fb_idx;
+
     memcpy(cpi->interp_filter_selected[LAST_FRAME],
            cpi->interp_filter_selected[ALTREF_FRAME + which_arf],
            sizeof(cpi->interp_filter_selected[ALTREF_FRAME + which_arf]));
-
-    cpi->alt_fb_idx = tmp;
-    // We need to modify the mapping accordingly
-    cpi->arf_map[which_arf] = cpi->alt_fb_idx;
 #endif     // CONFIG_EXT_REFS
   } else { /* For non key/golden frames */
     if (cpi->refresh_alt_ref_frame) {
@@ -3271,6 +3269,7 @@ void av1_update_reference_frames(AV1_COMP *cpi) {
         cpi->alt_fb_idx = cpi->bwd_fb_idx;
         cpi->bwd_fb_idx = tmp;
       }
+
       ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->bwd_fb_idx],
                  cm->new_fb_idx);
       if (use_upsampled_ref)
@@ -3354,19 +3353,33 @@ void av1_update_reference_frames(AV1_COMP *cpi) {
       tmp = cpi->lst_fb_idxes[LAST_REF_FRAMES - 1];
 
       shift_last_ref_frames(cpi);
-
       cpi->lst_fb_idxes[0] = tmp;
 
+      assert(cm->show_existing_frame == 0);
       if (!cpi->rc.is_src_frame_alt_ref) {
-        if (cm->show_existing_frame) {
-          memcpy(cpi->interp_filter_selected[LAST_FRAME],
-                 cpi->interp_filter_selected[BWDREF_FRAME],
-                 sizeof(cpi->interp_filter_selected[BWDREF_FRAME]));
-        } else {
-          memcpy(cpi->interp_filter_selected[LAST_FRAME],
-                 cpi->interp_filter_selected[0],
-                 sizeof(cpi->interp_filter_selected[0]));
+        memcpy(cpi->interp_filter_selected[LAST_FRAME],
+               cpi->interp_filter_selected[0],
+               sizeof(cpi->interp_filter_selected[0]));
+      } else {
+        // NOTE(zoeliu): When cm->show_existing_frame is not being set, it is
+        // possible that LAST_FRAME is refreshed by the just coded OVERLAY_FRAME
+        // or INTNL_OVERLAY_FRAME, if their temporal filtering strength is
+        // greather than zero. (Usually OVERLAY_FRAME often replaces the
+        // GOLDEN_FRAME, instead of LAST_FRAME. Hence many cases it is the
+        // INTNL_OVERLAY_FRAME that replaces the LAST_FRAME. For the
+        // cm->show_existing_frame == 1 scenario, cpi->refresh_last_frame is
+        // always being reset to zero, and the corresponding reference frame
+        // update handling has been handled above, instead of here.)
+        int which_arf = 0;
+
+        if (cpi->oxcf.pass == 2) {
+          const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+          which_arf = gf_group->arf_update_idx[gf_group->index];
         }
+
+        memcpy(cpi->interp_filter_selected[LAST_FRAME],
+               cpi->interp_filter_selected[ALTREF_FRAME + which_arf],
+               sizeof(cpi->interp_filter_selected[ALTREF_FRAME + which_arf]));
       }
     }
 #else
