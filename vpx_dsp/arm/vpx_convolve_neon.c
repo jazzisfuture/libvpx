@@ -29,11 +29,10 @@ void vpx_convolve8_neon(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
   assert(y_step_q4 == 16);
   assert(x_step_q4 == 16);
 
-  /* Filter starting 3 lines back. The neon implementation will ignore the
-   * given height and filter a multiple of 4 lines. Since this goes in to
-   * the temp buffer which has lots of extra room and is subsequently discarded
-   * this is safe if somewhat less than ideal.
-   */
+  /* Filter starting 3 lines back. The neon implementation will ignore the given
+   * height and filter a multiple of 4 lines. Since this goes in to the temp
+   * buffer which has lots of extra room and is subsequently discarded this is
+   * safe if somewhat less than ideal.   */
   vpx_convolve8_horiz_neon(src - src_stride * 3, src_stride, temp, w, filter_x,
                            x_step_q4, filter_y, y_step_q4, w,
                            intermediate_height);
