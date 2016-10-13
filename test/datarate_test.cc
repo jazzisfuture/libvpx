@@ -20,7 +20,7 @@ namespace {
 
 class DatarateTestLarge
     : public ::libvpx_test::EncoderTest,
-      public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
+      public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
  public:
   DatarateTestLarge() : EncoderTest(GET_PARAM(0)) {}
 
@@ -30,6 +30,7 @@ class DatarateTestLarge
   virtual void SetUp() {
     InitializeConfig();
     SetMode(GET_PARAM(1));
+    set_cpu_used_ = GET_PARAM(2);
     ResetModel();
   }
 
@@ -48,6 +49,7 @@ class DatarateTestLarge
                                   ::libvpx_test::Encoder *encoder) {
     if (video->frame() == 0) {
       encoder->Control(VP8E_SET_NOISE_SENSITIVITY, denoiser_on_);
+      encoder->Control(VP8E_SET_CPUUSED, set_cpu_used_);
     }
 
     if (denoiser_offon_test_) {
@@ -139,6 +141,7 @@ class DatarateTestLarge
   int denoiser_on_;
   int denoiser_offon_test_;
   int denoiser_offon_period_;
+  int set_cpu_used_;
 };
 
 #if CONFIG_TEMPORAL_DENOISING
@@ -1224,7 +1227,8 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc3SpatialLayers4threads) {
   EXPECT_EQ(static_cast<unsigned int>(0), GetMismatchFrames());
 }
 
-VP8_INSTANTIATE_TEST_CASE(DatarateTestLarge, ALL_TEST_MODES);
+VP8_INSTANTIATE_TEST_CASE(DatarateTestLarge, ALL_TEST_MODES,
+                          ::testing::Values(0, -6));
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9Large,
                           ::testing::Values(::libvpx_test::kOnePassGood,
                                             ::libvpx_test::kRealTime),
