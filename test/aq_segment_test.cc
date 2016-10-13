@@ -52,7 +52,7 @@ class AqSegmentTest
     cfg_.rc_buf_sz = 1000;
     cfg_.rc_target_bitrate = 300;
     ::libaom_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352,
-                                         288, 30, 1, 0, 15);
+                                         288, 30, 1, 0, 10);
     ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   }
 
