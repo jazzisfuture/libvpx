@@ -1852,8 +1852,8 @@ static void update_stats(AV1_COMMON *cm, ThreadData *td
                               [ref0 != BWDREF_FRAME]++;
           } else {
             const int bit1 = !(ref0 == LAST2_FRAME || ref0 == LAST_FRAME);
-            counts->single_ref[av1_get_pred_context_single_ref_p3(xd)][2]
-                              [bit1]++;
+            counts
+                ->single_ref[av1_get_pred_context_single_ref_p3(xd)][2][bit1]++;
             if (!bit1) {
               counts->single_ref[av1_get_pred_context_single_ref_p4(xd)][3]
                                 [ref0 != LAST_FRAME]++;
@@ -2203,8 +2203,8 @@ static void encode_sb(AV1_COMP *cpi, ThreadData *td, const TileInfo *const tile,
             !xd->mi[0]->mbmi.skip) {
           int eset = get_ext_tx_set(supertx_size, bsize, 1);
           if (eset > 0) {
-            ++td->counts->inter_ext_tx[eset][supertx_size]
-                                      [xd->mi[0]->mbmi.tx_type];
+            ++td->counts
+                  ->inter_ext_tx[eset][supertx_size][xd->mi[0]->mbmi.tx_type];
           }
         }
 #else
@@ -3615,11 +3615,10 @@ static void rd_pick_partition(AV1_COMP *cpi, ThreadData *td,
 
         pc_tree->partitioning = PARTITION_SPLIT;
 
-        sum_rdc.rate +=
-            av1_cost_bit(cm->fc->supertx_prob
-                             [partition_supertx_context_lookup[PARTITION_SPLIT]]
-                             [supertx_size],
-                         0);
+        sum_rdc.rate += av1_cost_bit(
+            cm->fc->supertx_prob[partition_supertx_context_lookup
+                                     [PARTITION_SPLIT]][supertx_size],
+            0);
         sum_rdc.rdcost =
             RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
 
@@ -3633,9 +3632,8 @@ static void rd_pick_partition(AV1_COMP *cpi, ThreadData *td,
                         &tmp_rdc.rate, &tmp_rdc.dist, &best_tx, pc_tree);
 
           tmp_rdc.rate += av1_cost_bit(
-              cm->fc->supertx_prob
-                  [partition_supertx_context_lookup[PARTITION_SPLIT]]
-                  [supertx_size],
+              cm->fc->supertx_prob[partition_supertx_context_lookup
+                                       [PARTITION_SPLIT]][supertx_size],
               1);
           tmp_rdc.rdcost =
               RDCOST(x->rdmult, x->rddiv, tmp_rdc.rate, tmp_rdc.dist);
@@ -3696,11 +3694,10 @@ static void rd_pick_partition(AV1_COMP *cpi, ThreadData *td,
 
         pc_tree->partitioning = PARTITION_SPLIT;
 
-        sum_rdc.rate +=
-            av1_cost_bit(cm->fc->supertx_prob
-                             [partition_supertx_context_lookup[PARTITION_SPLIT]]
-                             [supertx_size],
-                         0);
+        sum_rdc.rate += av1_cost_bit(
+            cm->fc->supertx_prob[partition_supertx_context_lookup
+                                     [PARTITION_SPLIT]][supertx_size],
+            0);
         sum_rdc.rdcost =
             RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
 
@@ -3714,9 +3711,8 @@ static void rd_pick_partition(AV1_COMP *cpi, ThreadData *td,
                         &tmp_rdc.rate, &tmp_rdc.dist, &best_tx, pc_tree);
 
           tmp_rdc.rate += av1_cost_bit(
-              cm->fc->supertx_prob
-                  [partition_supertx_context_lookup[PARTITION_SPLIT]]
-                  [supertx_size],
+              cm->fc->supertx_prob[partition_supertx_context_lookup
+                                       [PARTITION_SPLIT]][supertx_size],
               1);
           tmp_rdc.rdcost =
               RDCOST(x->rdmult, x->rddiv, tmp_rdc.rate, tmp_rdc.dist);
@@ -5028,21 +5024,31 @@ static void encode_superblock(AV1_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
       sum_intra_stats(td->counts, mi, xd->above_mi, xd->left_mi,
                       frame_is_intra_only(cm));
 
-#if CONFIG_EXT_INTRA
+    // TODO(huisu): move this into sum_intra_stats().
     if (!dry_run && bsize >= BLOCK_8X8) {
       FRAME_COUNTS *counts = td->counts;
+      (void)counts;
+#if CONFIG_FILTER_INTRA
       if (mbmi->mode == DC_PRED
 #if CONFIG_PALETTE
           && mbmi->palette_mode_info.palette_size[0] == 0
 #endif  // CONFIG_PALETTE
-          )
-        ++counts->ext_intra[0][mbmi->ext_intra_mode_info.use_ext_intra_mode[0]];
+          ) {
+        const int use_filter_intra_mode =
+            mbmi->filter_intra_mode_info.use_filter_intra_mode[0];
+        ++counts->filter_intra[0][use_filter_intra_mode];
+      }
       if (mbmi->uv_mode == DC_PRED
 #if CONFIG_PALETTE
           && mbmi->palette_mode_info.palette_size[1] == 0
 #endif  // CONFIG_PALETTE
-          )
-        ++counts->ext_intra[1][mbmi->ext_intra_mode_info.use_ext_intra_mode[1]];
+          ) {
+        const int use_filter_intra_mode =
+            mbmi->filter_intra_mode_info.use_filter_intra_mode[1];
+        ++counts->filter_intra[1][use_filter_intra_mode];
+      }
+#endif  // CONFIG_FILTER_INTRA
+#if CONFIG_EXT_INTRA
       if (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED) {
         int p_angle;
         const int intra_filter_ctx = av1_get_pred_context_intra_interp(xd);
@@ -5051,8 +5057,8 @@ static void encode_superblock(AV1_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
         if (av1_is_intra_filter_switchable(p_angle))
           ++counts->intra_filter[intra_filter_ctx][mbmi->intra_filter];
       }
-    }
 #endif  // CONFIG_EXT_INTRA
+    }
 
 #if CONFIG_PALETTE
     if (bsize >= BLOCK_8X8 && !dry_run) {
@@ -5210,8 +5216,8 @@ static void encode_superblock(AV1_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
           ++td->counts->inter_ext_tx[eset][txsize_sqr_map[mbmi->tx_size]]
                                     [mbmi->tx_type];
         } else {
-          ++td->counts->intra_ext_tx[eset][mbmi->tx_size][mbmi->mode]
-                                    [mbmi->tx_type];
+          ++td->counts
+                ->intra_ext_tx[eset][mbmi->tx_size][mbmi->mode][mbmi->tx_type];
         }
       }
     }
