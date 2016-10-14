@@ -124,7 +124,7 @@ static const struct av1_token tx_size_encodings[TX_SIZES - 1][TX_SIZES] = {
   { { 0, 1 }, { 2, 2 }, { 6, 3 }, { 7, 3 } },  // Max tx_size is 32X32
 };
 
-#if CONFIG_EXT_INTRA || CONFIG_PALETTE
+#if CONFIG_EXT_INTRA || CONFIG_FILTER_INTRA || CONFIG_PALETTE
 static INLINE void write_uniform(aom_writer *w, int n, int v) {
   int l = get_unsigned_bits(n);
   int m = (1 << l) - n;
@@ -136,7 +136,7 @@ static INLINE void write_uniform(aom_writer *w, int n, int v) {
     aom_write_literal(w, (v - m) & 1, 1);
   }
 }
-#endif  // CONFIG_EXT_INTRA || CONFIG_PALETTE
+#endif  // CONFIG_EXT_INTRA || CONFIG_FILTER_INTRA || CONFIG_PALETTE
 
 #if CONFIG_EXT_TX
 static struct av1_token ext_tx_inter_encodings[EXT_TX_SETS_INTER][TX_TYPES];
@@ -861,22 +861,20 @@ static void write_ref_frames(const AV1_COMMON *cm, const MACROBLOCKD *xd,
   }
 }
 
-#if CONFIG_EXT_INTRA
-static void write_ext_intra_mode_info(const AV1_COMMON *const cm,
-                                      const MB_MODE_INFO *const mbmi,
-                                      aom_writer *w) {
-#if !ALLOW_FILTER_INTRA_MODES
-  return;
-#endif
+#if CONFIG_FILTER_INTRA
+static void write_filter_intra_mode_info(const AV1_COMMON *const cm,
+                                         const MB_MODE_INFO *const mbmi,
+                                         aom_writer *w) {
   if (mbmi->mode == DC_PRED
 #if CONFIG_PALETTE
       && mbmi->palette_mode_info.palette_size[0] == 0
 #endif  // CONFIG_PALETTE
       ) {
-    aom_write(w, mbmi->ext_intra_mode_info.use_ext_intra_mode[0],
-              cm->fc->ext_intra_probs[0]);
-    if (mbmi->ext_intra_mode_info.use_ext_intra_mode[0]) {
-      EXT_INTRA_MODE mode = mbmi->ext_intra_mode_info.ext_intra_mode[0];
+    aom_write(w, mbmi->filter_intra_mode_info.use_filter_intra_mode[0],
+              cm->fc->filter_intra_probs[0]);
+    if (mbmi->filter_intra_mode_info.use_filter_intra_mode[0]) {
+      const FILTER_INTRA_MODE mode =
+          mbmi->filter_intra_mode_info.filter_intra_mode[0];
       write_uniform(w, FILTER_INTRA_MODES, mode);
     }
   }
@@ -886,15 +884,18 @@ static void write_ext_intra_mode_info(const AV1_COMMON *const cm,
       && mbmi->palette_mode_info.palette_size[1] == 0
 #endif  // CONFIG_PALETTE
       ) {
-    aom_write(w, mbmi->ext_intra_mode_info.use_ext_intra_mode[1],
-              cm->fc->ext_intra_probs[1]);
-    if (mbmi->ext_intra_mode_info.use_ext_intra_mode[1]) {
-      EXT_INTRA_MODE mode = mbmi->ext_intra_mode_info.ext_intra_mode[1];
+    aom_write(w, mbmi->filter_intra_mode_info.use_filter_intra_mode[1],
+              cm->fc->filter_intra_probs[1]);
+    if (mbmi->filter_intra_mode_info.use_filter_intra_mode[1]) {
+      const FILTER_INTRA_MODE mode =
+          mbmi->filter_intra_mode_info.filter_intra_mode[1];
       write_uniform(w, FILTER_INTRA_MODES, mode);
     }
   }
 }
+#endif  // CONFIG_FILTER_INTRA
 
+#if CONFIG_EXT_INTRA
 static void write_intra_angle_info(const AV1_COMMON *cm, const MACROBLOCKD *xd,
                                    aom_writer *w) {
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
@@ -1135,9 +1136,9 @@ static void pack_inter_mode_mvs(AV1_COMP *cpi, const MODE_INFO *mi,
     if (bsize >= BLOCK_8X8 && cm->allow_screen_content_tools)
       write_palette_mode_info(cm, xd, mi, w);
 #endif  // CONFIG_PALETTE
-#if CONFIG_EXT_INTRA
-    if (bsize >= BLOCK_8X8) write_ext_intra_mode_info(cm, mbmi, w);
-#endif  // CONFIG_EXT_INTRA
+#if CONFIG_FILTER_INTRA
+    if (bsize >= BLOCK_8X8) write_filter_intra_mode_info(cm, mbmi, w);
+#endif  // CONFIG_FILTER_INTRA
   } else {
     int16_t mode_ctx = mbmi_ext->mode_context[mbmi->ref_frame[0]];
     write_ref_frames(cm, xd, w);
@@ -1494,9 +1495,9 @@ static void write_mb_modes_kf(const AV1_COMMON *cm, const MACROBLOCKD *xd,
   if (bsize >= BLOCK_8X8 && cm->allow_screen_content_tools)
     write_palette_mode_info(cm, xd, mi, w);
 #endif  // CONFIG_PALETTE
-#if CONFIG_EXT_INTRA
-  if (bsize >= BLOCK_8X8) write_ext_intra_mode_info(cm, mbmi, w);
-#endif  // CONFIG_EXT_INTRA
+#if CONFIG_FILTER_INTRA
+  if (bsize >= BLOCK_8X8) write_filter_intra_mode_info(cm, mbmi, w);
+#endif  // CONFIG_FILTER_INTRA
 
   if (!FIXED_TX_TYPE) {
 #if CONFIG_EXT_TX
