@@ -90,6 +90,7 @@ class AV1Trans32x32HT : public libaom_test::TransformTestBase,
 };
 
 TEST_P(AV1Trans32x32HT, CoeffCheck) { RunCoeffCheck(); }
+TEST_P(AV1Trans32x32HT, MemCheck) { RunMemCheck(); }
 
 #if CONFIG_AOM_HIGHBITDEPTH
 class AV1HighbdTrans32x32HT
@@ -164,8 +165,7 @@ using std::tr1::make_tuple;
 
 #if HAVE_AVX2
 const Ht32x32Param kArrayHt32x32Param_avx2[] = {
-  // TODO(luoyi): DCT_DCT tx_type is not enabled in av1_fht32x32_c(avx2) yet.
-  // make_tuple(&av1_fht32x32_avx2, dummy_inv_txfm, 0, AOM_BITS_8, 1024),
+  make_tuple(&av1_fht32x32_avx2, dummy_inv_txfm, 0, AOM_BITS_8, 1024),
   make_tuple(&av1_fht32x32_avx2, dummy_inv_txfm, 1, AOM_BITS_8, 1024),
   make_tuple(&av1_fht32x32_avx2, dummy_inv_txfm, 2, AOM_BITS_8, 1024),
   make_tuple(&av1_fht32x32_avx2, dummy_inv_txfm, 3, AOM_BITS_8, 1024),
