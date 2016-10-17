@@ -1005,9 +1005,14 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
         cpi->current_gf_interval = cpi->frames_till_gf_update_due;
       }
     } else {
-      // Special case for 1 pass CBR: for now no boost and fixed gf period.
+      // Special case for 1 pass CBR: fixed gf period.
       // TODO(marpan): Adjust this boost/interval logic.
-      cpi->gf_noboost_onepass_cbr = 1;
+      if (cpi->oxcf.gf_cbr_boost_pct < 50)
+        cpi->gf_noboost_onepass_cbr = 1;
+      else
+        cpi->gf_noboost_onepass_cbr = 0;
+      cpi->this_frame_target =
+          (cpi->this_frame_target * (100 + cpi->oxcf.gf_cbr_boost_pct)) / 100;
       cpi->baseline_gf_interval = cpi->gf_interval_onepass_cbr;
       // Skip this update if the zero_mvcount is low.
       if (cpi->zeromv_count > (cpi->common.MBs >> 1))

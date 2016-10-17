@@ -282,8 +282,9 @@ enum vp8e_enc_control_id {
    * For example, to allow 100% more bits, i.e, 2X, in a golden frame
    * than average frame, set this to 100.
    *
-   * Supported in codecs: VP9
+   * Supported in codecs: VP8 and VP9
    */
+  VP8E_SET_GF_CBR_BOOST_PCT,
   VP9E_SET_GF_CBR_BOOST_PCT,
 
   /*!\brief Codec control function to set the temporal layer id.
@@ -768,6 +769,9 @@ VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTRA_BITRATE_PCT, unsigned int)
 #define VPX_CTRL_VP8E_SET_MAX_INTRA_BITRATE_PCT
 VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTER_BITRATE_PCT, unsigned int)
 #define VPX_CTRL_VP8E_SET_MAX_INTER_BITRATE_PCT
+
+VPX_CTRL_USE_TYPE(VP8E_SET_GF_CBR_BOOST_PCT, unsigned int)
+#define VPX_CTRL_VP8E_SET_GF_CBR_BOOST_PCT
 
 VPX_CTRL_USE_TYPE(VP8E_SET_SCREEN_CONTENT_MODE, unsigned int)
 #define VPX_CTRL_VP8E_SET_SCREEN_CONTENT_MODE
