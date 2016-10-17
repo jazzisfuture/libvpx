@@ -613,8 +613,7 @@ void tokenize_vartx(ThreadData *td, TOKENEXTRA **t, RUN_TYPE dry_run,
             : mbmi->inter_tx_size[tx_row][tx_col];
 
   if (tx_size == plane_tx_size) {
-    const struct macroblockd_plane *const pd = &xd->plane[plane];
-    BLOCK_SIZE plane_bsize = get_plane_block_size(mbmi->sb_type, pd);
+    plane_bsize = get_plane_block_size(mbmi->sb_type, pd);
     if (!dry_run)
       tokenize_b(plane, block, blk_row, blk_col, plane_bsize, tx_size, arg);
     else if (dry_run == DRY_RUN_NORMAL)
@@ -733,8 +732,9 @@ void av1_tokenize_sb(const AV1_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
 }
 
 #if CONFIG_SUPERTX
-void av1_tokenize_sb_supertx(const AV1_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
-                             RUN_TYPE dry_run, BLOCK_SIZE bsize, int *rate) {
+void av1_tokenize_sb_supertx(const AV1_COMP *cpi, ThreadData *td,
+                             TOKENEXTRA **t, RUN_TYPE dry_run, BLOCK_SIZE bsize,
+                             int *rate) {
   const AV1_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &td->mb.e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
