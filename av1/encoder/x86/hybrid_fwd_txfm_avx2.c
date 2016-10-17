@@ -198,8 +198,8 @@ static void mm256_transpose_16x16(__m256i *in) {
   in[15] = _mm256_permute2x128_si256(tr0_7, tr0_f, 0x31);
 }
 
-static void load_buffer_16x16(const int16_t *input, int stride, int flipud,
-                              int fliplr, __m256i *in) {
+static INLINE void load_buffer_16x16(const int16_t *input, int stride,
+                                     int flipud, int fliplr, __m256i *in) {
   if (!flipud) {
     in[0] = _mm256_loadu_si256((const __m256i *)(input + 0 * stride));
     in[1] = _mm256_loadu_si256((const __m256i *)(input + 1 * stride));
@@ -1668,8 +1668,9 @@ static void fhalfright32_avx2(__m256i *in0, __m256i *in1) {
   mm256_transpose_32x32(in0, in1);
 }
 
-static void load_buffer_32x32(const int16_t *input, int stride, int flipud,
-                              int fliplr, __m256i *in0, __m256i *in1) {
+static INLINE void load_buffer_32x32(const int16_t *input, int stride,
+                                     int flipud, int fliplr,
+                                     __m256i *in0, __m256i *in1) {
   // Load 4 16x16 blocks
   const int16_t *topL = input;
   const int16_t *topR = input + 16;
@@ -1711,16 +1712,7 @@ static void load_buffer_32x32(const int16_t *input, int stride, int flipud,
 #endif  // CONFIG_EXT_TX
 
 static void nr_right_shift_32x32_16col(__m256i *in) {
-  int i = 0;
-  const __m256i one = _mm256_set1_epi16(1);
-  __m256i sign;
-  while (i < 32) {
-    sign = _mm256_srai_epi16(in[i], 15);
-    in[i] = _mm256_add_epi16(in[i], one);
-    in[i] = _mm256_sub_epi16(in[i], sign);
-    in[i] = _mm256_srai_epi16(in[i], 2);
-    i += 1;
-  }
+  (void)in;
 }
 
 // Negative rounding
@@ -1730,22 +1722,18 @@ static void nr_right_shift_32x32(__m256i *in0, __m256i *in1) {
 }
 
 #if CONFIG_EXT_TX
-static void pr_right_shift_32x32_16col(__m256i *in) {
+static INLINE void pr_right_shift_32x32_16col(__m256i *in) {
   int i = 0;
-  const __m256i zero = _mm256_setzero_si256();
-  const __m256i one = _mm256_set1_epi16(1);
-  __m256i sign;
+  const __m256i rounding = _mm256_set1_epi16(1 << 3);
   while (i < 32) {
-    sign = _mm256_cmpgt_epi16(in[i], zero);
-    in[i] = _mm256_add_epi16(in[i], one);
-    in[i] = _mm256_sub_epi16(in[i], sign);
-    in[i] = _mm256_srai_epi16(in[i], 2);
+    in[i] = _mm256_add_epi16(in[i], rounding);
+    in[i] = _mm256_srai_epi16(in[i], 4);
     i += 1;
   }
 }
 
 // Positive rounding
-static void pr_right_shift_32x32(__m256i *in0, __m256i *in1) {
+static INLINE void pr_right_shift_32x32(__m256i *in0, __m256i *in1) {
   pr_right_shift_32x32_16col(in0);
   pr_right_shift_32x32_16col(in1);
 }
@@ -1765,19 +1753,14 @@ void av1_fht32x32_avx2(const int16_t *input, tran_low_t *output, int stride,
                        int tx_type) {
   __m256i in0[32];  // left 32 columns
   __m256i in1[32];  // right 32 columns
-  (void)input;
-  (void)stride;
 
   switch (tx_type) {
-// TODO(luoyi): For DCT_DCT, fwd_txfm_32x32() uses aom set. But this
-// function has better speed. The replacement must work with the
-// corresponding inverse transform.
-// case DCT_DCT:
-//   load_buffer_32x32(input, stride, 0, 0, in0, in1);
-//   fdct32_avx2(in0, in1);
-//   pr_right_shift_32x32(in0, in1);
-//   fdct32_avx2(in0, in1);
-//   break;
+    case DCT_DCT:
+      load_buffer_32x32(input, stride, 0, 0, in0, in1);
+      fdct32_avx2(in0, in1);
+      pr_right_shift_32x32(in0, in1);
+      fdct32_avx2(in0, in1);
+      break;
 #if CONFIG_EXT_TX
     case ADST_DCT:
       load_buffer_32x32(input, stride, 0, 0, in0, in1);
