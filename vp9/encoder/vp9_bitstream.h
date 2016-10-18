@@ -18,6 +18,7 @@ extern "C" {
 #include "vp9/encoder/vp9_encoder.h"
 
 typedef struct VP9BitstreamWorkerData {
+  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
   uint8_t *dest;
   int dest_size;
   TOKENEXTRA *tok;
@@ -30,7 +31,6 @@ typedef struct VP9BitstreamWorkerData {
   // is increment the very first index (index 0) for the first dimension. Hence
   // this is sufficient.
   int interp_filter_selected[1][SWITCHABLE];
-  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
 } VP9BitstreamWorkerData;
 
 int vp9_get_refresh_mask(VP9_COMP *cpi);
