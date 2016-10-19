@@ -28,8 +28,15 @@ using libvpx_test::ACMRandom;
 
 const int count_test_block = 100000;
 
-typedef void (*IntraPred)(uint16_t *dst, ptrdiff_t stride,
-                          const uint16_t *above, const uint16_t *left, int bps);
+#if CONFIG_VP9_HIGHBITDEPTH
+typedef uint16_t Pixel;
+typedef void (*IntraPred)(Pixel *dst, ptrdiff_t stride, const Pixel *above,
+                          const Pixel *left, int bps);
+#else
+typedef uint8_t Pixel;
+typedef void (*IntraPred)(Pixel *dst, ptrdiff_t stride, const Pixel *above,
+                          const Pixel *left);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 struct IntraPredFunc {
   IntraPredFunc(IntraPred pred = NULL, IntraPred ref = NULL,
@@ -45,8 +52,7 @@ struct IntraPredFunc {
 
 class VP9IntraPredTest : public ::testing::TestWithParam<IntraPredFunc> {
  public:
-  void RunTest(uint16_t *left_col, uint16_t *above_data, uint16_t *dst,
-               uint16_t *ref_dst) {
+  void RunTest(Pixel *left_col, Pixel *above_data, Pixel *dst, Pixel *ref_dst) {
     ACMRandom rnd(ACMRandom::DeterministicSeed());
     const int block_size = params_.block_size;
     above_row_ = above_data + 16;
@@ -56,12 +62,15 @@ class VP9IntraPredTest : public ::testing::TestWithParam<IntraPredFunc> {
     int error_count = 0;
     for (int i = 0; i < count_test_block; ++i) {
       // Fill edges with random data, try first with saturated values.
-      for (int x = -1; x <= block_size * 2; x++) {
+      for (int x = -1; x < block_size; x++) {
         if (i == 0) {
           above_row_[x] = mask_;
         } else {
           above_row_[x] = rnd.Rand16() & mask_;
         }
+      }
+      for (int x = block_size; x < 2 * block_size; x++) {
+        above_row_[x] = above_row_[block_size - 1];
       }
       for (int y = 0; y < block_size; y++) {
         if (i == 0) {
@@ -85,9 +94,16 @@ class VP9IntraPredTest : public ::testing::TestWithParam<IntraPredFunc> {
 
   void Predict() {
     const int bit_depth = params_.bit_depth;
+#if CONFIG_VP9_HIGHBITDEPTH
     params_.ref_fn(ref_dst_, stride_, above_row_, left_col_, bit_depth);
     ASM_REGISTER_STATE_CHECK(
         params_.pred_fn(dst_, stride_, above_row_, left_col_, bit_depth));
+#else
+    (void)bit_depth;
+    params_.ref_fn(ref_dst_, stride_, above_row_, left_col_);
+    ASM_REGISTER_STATE_CHECK(
+        params_.pred_fn(dst_, stride_, above_row_, left_col_));
+#endif
   }
 
   void CheckPrediction(int test_case_number, int *error_count) const {
@@ -104,10 +120,10 @@ class VP9IntraPredTest : public ::testing::TestWithParam<IntraPredFunc> {
     }
   }
 
-  uint16_t *above_row_;
-  uint16_t *left_col_;
-  uint16_t *dst_;
-  uint16_t *ref_dst_;
+  Pixel *above_row_;
+  Pixel *left_col_;
+  Pixel *dst_;
+  Pixel *ref_dst_;
   ptrdiff_t stride_;
   int mask_;
 
@@ -116,29 +132,34 @@ class VP9IntraPredTest : public ::testing::TestWithParam<IntraPredFunc> {
 
 TEST_P(VP9IntraPredTest, IntraPredTests) {
   // max block size is 32
-  DECLARE_ALIGNED(16, uint16_t, left_col[2 * 32]);
-  DECLARE_ALIGNED(16, uint16_t, above_data[2 * 32 + 32]);
-  DECLARE_ALIGNED(16, uint16_t, dst[3 * 32 * 32]);
-  DECLARE_ALIGNED(16, uint16_t, ref_dst[3 * 32 * 32]);
+  DECLARE_ALIGNED(16, Pixel, left_col[2 * 32]);
+  DECLARE_ALIGNED(16, Pixel, above_data[2 * 32 + 32]);
+  DECLARE_ALIGNED(16, Pixel, dst[3 * 32 * 32]);
+  DECLARE_ALIGNED(16, Pixel, ref_dst[3 * 32 * 32]);
   RunTest(left_col, above_data, dst, ref_dst);
 }
 
-#if HAVE_SSE2
 #if CONFIG_VP9_HIGHBITDEPTH
+
+#if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(
     SSE2_TO_C_8, VP9IntraPredTest,
-    ::testing::Values(IntraPredFunc(&vpx_highbd_dc_predictor_32x32_sse2,
-                                    &vpx_highbd_dc_predictor_32x32_c, 32, 8),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_16x16_sse2,
-                                    &vpx_highbd_tm_predictor_16x16_c, 16, 8),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_32x32_sse2,
-                                    &vpx_highbd_tm_predictor_32x32_c, 32, 8),
-                      IntraPredFunc(&vpx_highbd_dc_predictor_4x4_sse2,
+    ::testing::Values(IntraPredFunc(&vpx_highbd_dc_predictor_4x4_sse2,
                                     &vpx_highbd_dc_predictor_4x4_c, 4, 8),
                       IntraPredFunc(&vpx_highbd_dc_predictor_8x8_sse2,
                                     &vpx_highbd_dc_predictor_8x8_c, 8, 8),
                       IntraPredFunc(&vpx_highbd_dc_predictor_16x16_sse2,
                                     &vpx_highbd_dc_predictor_16x16_c, 16, 8),
+                      IntraPredFunc(&vpx_highbd_dc_predictor_32x32_sse2,
+                                    &vpx_highbd_dc_predictor_32x32_c, 32, 8),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_4x4_sse2,
+                                    &vpx_highbd_tm_predictor_4x4_c, 4, 8),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_8x8_sse2,
+                                    &vpx_highbd_tm_predictor_8x8_c, 8, 8),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_16x16_sse2,
+                                    &vpx_highbd_tm_predictor_16x16_c, 16, 8),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_32x32_sse2,
+                                    &vpx_highbd_tm_predictor_32x32_c, 32, 8),
                       IntraPredFunc(&vpx_highbd_v_predictor_4x4_sse2,
                                     &vpx_highbd_v_predictor_4x4_c, 4, 8),
                       IntraPredFunc(&vpx_highbd_v_predictor_8x8_sse2,
@@ -146,26 +167,26 @@ INSTANTIATE_TEST_CASE_P(
                       IntraPredFunc(&vpx_highbd_v_predictor_16x16_sse2,
                                     &vpx_highbd_v_predictor_16x16_c, 16, 8),
                       IntraPredFunc(&vpx_highbd_v_predictor_32x32_sse2,
-                                    &vpx_highbd_v_predictor_32x32_c, 32, 8),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_4x4_sse2,
-                                    &vpx_highbd_tm_predictor_4x4_c, 4, 8),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_8x8_sse2,
-                                    &vpx_highbd_tm_predictor_8x8_c, 8, 8)));
+                                    &vpx_highbd_v_predictor_32x32_c, 32, 8)));
 
 INSTANTIATE_TEST_CASE_P(
     SSE2_TO_C_10, VP9IntraPredTest,
-    ::testing::Values(IntraPredFunc(&vpx_highbd_dc_predictor_32x32_sse2,
-                                    &vpx_highbd_dc_predictor_32x32_c, 32, 10),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_16x16_sse2,
-                                    &vpx_highbd_tm_predictor_16x16_c, 16, 10),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_32x32_sse2,
-                                    &vpx_highbd_tm_predictor_32x32_c, 32, 10),
-                      IntraPredFunc(&vpx_highbd_dc_predictor_4x4_sse2,
+    ::testing::Values(IntraPredFunc(&vpx_highbd_dc_predictor_4x4_sse2,
                                     &vpx_highbd_dc_predictor_4x4_c, 4, 10),
                       IntraPredFunc(&vpx_highbd_dc_predictor_8x8_sse2,
                                     &vpx_highbd_dc_predictor_8x8_c, 8, 10),
                       IntraPredFunc(&vpx_highbd_dc_predictor_16x16_sse2,
                                     &vpx_highbd_dc_predictor_16x16_c, 16, 10),
+                      IntraPredFunc(&vpx_highbd_dc_predictor_32x32_sse2,
+                                    &vpx_highbd_dc_predictor_32x32_c, 32, 10),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_4x4_sse2,
+                                    &vpx_highbd_tm_predictor_4x4_c, 4, 10),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_8x8_sse2,
+                                    &vpx_highbd_tm_predictor_8x8_c, 8, 10),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_16x16_sse2,
+                                    &vpx_highbd_tm_predictor_16x16_c, 16, 10),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_32x32_sse2,
+                                    &vpx_highbd_tm_predictor_32x32_c, 32, 10),
                       IntraPredFunc(&vpx_highbd_v_predictor_4x4_sse2,
                                     &vpx_highbd_v_predictor_4x4_c, 4, 10),
                       IntraPredFunc(&vpx_highbd_v_predictor_8x8_sse2,
@@ -173,26 +194,26 @@ INSTANTIATE_TEST_CASE_P(
                       IntraPredFunc(&vpx_highbd_v_predictor_16x16_sse2,
                                     &vpx_highbd_v_predictor_16x16_c, 16, 10),
                       IntraPredFunc(&vpx_highbd_v_predictor_32x32_sse2,
-                                    &vpx_highbd_v_predictor_32x32_c, 32, 10),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_4x4_sse2,
-                                    &vpx_highbd_tm_predictor_4x4_c, 4, 10),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_8x8_sse2,
-                                    &vpx_highbd_tm_predictor_8x8_c, 8, 10)));
+                                    &vpx_highbd_v_predictor_32x32_c, 32, 10)));
 
 INSTANTIATE_TEST_CASE_P(
     SSE2_TO_C_12, VP9IntraPredTest,
-    ::testing::Values(IntraPredFunc(&vpx_highbd_dc_predictor_32x32_sse2,
-                                    &vpx_highbd_dc_predictor_32x32_c, 32, 12),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_16x16_sse2,
-                                    &vpx_highbd_tm_predictor_16x16_c, 16, 12),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_32x32_sse2,
-                                    &vpx_highbd_tm_predictor_32x32_c, 32, 12),
-                      IntraPredFunc(&vpx_highbd_dc_predictor_4x4_sse2,
+    ::testing::Values(IntraPredFunc(&vpx_highbd_dc_predictor_4x4_sse2,
                                     &vpx_highbd_dc_predictor_4x4_c, 4, 12),
                       IntraPredFunc(&vpx_highbd_dc_predictor_8x8_sse2,
                                     &vpx_highbd_dc_predictor_8x8_c, 8, 12),
                       IntraPredFunc(&vpx_highbd_dc_predictor_16x16_sse2,
                                     &vpx_highbd_dc_predictor_16x16_c, 16, 12),
+                      IntraPredFunc(&vpx_highbd_dc_predictor_32x32_sse2,
+                                    &vpx_highbd_dc_predictor_32x32_c, 32, 12),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_4x4_sse2,
+                                    &vpx_highbd_tm_predictor_4x4_c, 4, 12),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_8x8_sse2,
+                                    &vpx_highbd_tm_predictor_8x8_c, 8, 12),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_16x16_sse2,
+                                    &vpx_highbd_tm_predictor_16x16_c, 16, 12),
+                      IntraPredFunc(&vpx_highbd_tm_predictor_32x32_sse2,
+                                    &vpx_highbd_tm_predictor_32x32_c, 32, 12),
                       IntraPredFunc(&vpx_highbd_v_predictor_4x4_sse2,
                                     &vpx_highbd_v_predictor_4x4_c, 4, 12),
                       IntraPredFunc(&vpx_highbd_v_predictor_8x8_sse2,
@@ -200,12 +221,171 @@ INSTANTIATE_TEST_CASE_P(
                       IntraPredFunc(&vpx_highbd_v_predictor_16x16_sse2,
                                     &vpx_highbd_v_predictor_16x16_c, 16, 12),
                       IntraPredFunc(&vpx_highbd_v_predictor_32x32_sse2,
-                                    &vpx_highbd_v_predictor_32x32_c, 32, 12),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_4x4_sse2,
-                                    &vpx_highbd_tm_predictor_4x4_c, 4, 12),
-                      IntraPredFunc(&vpx_highbd_tm_predictor_8x8_sse2,
-                                    &vpx_highbd_tm_predictor_8x8_c, 8, 12)));
+                                    &vpx_highbd_v_predictor_32x32_c, 32, 12)));
+#endif  // HAVE_SSE2
+
+#else  // CONFIG_VP9_HIGHBITDEPTH
+
+#if HAVE_SSE2
+INSTANTIATE_TEST_CASE_P(
+    SSE2_TO_C_8, VP9IntraPredTest,
+    ::testing::Values(
+        IntraPredFunc(&vpx_d45_predictor_4x4_sse2, &vpx_d45_predictor_4x4_c, 4,
+                      8),
+        IntraPredFunc(&vpx_d45_predictor_8x8_sse2, &vpx_d45_predictor_8x8_c, 8,
+                      8),
+        IntraPredFunc(&vpx_d207_predictor_4x4_sse2, &vpx_d207_predictor_4x4_c,
+                      4, 8),
+        IntraPredFunc(&vpx_dc_128_predictor_4x4_sse2,
+                      &vpx_dc_128_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_dc_128_predictor_8x8_sse2,
+                      &vpx_dc_128_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_dc_128_predictor_16x16_sse2,
+                      &vpx_dc_128_predictor_16x16_c, 16, 8),
+        IntraPredFunc(&vpx_dc_128_predictor_32x32_sse2,
+                      &vpx_dc_128_predictor_32x32_c, 32, 8),
+        IntraPredFunc(&vpx_dc_left_predictor_4x4_sse2,
+                      &vpx_dc_left_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_dc_left_predictor_8x8_sse2,
+                      &vpx_dc_left_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_dc_left_predictor_16x16_sse2,
+                      &vpx_dc_left_predictor_16x16_c, 16, 8),
+        IntraPredFunc(&vpx_dc_left_predictor_32x32_sse2,
+                      &vpx_dc_left_predictor_32x32_c, 32, 8),
+        IntraPredFunc(&vpx_dc_predictor_4x4_sse2, &vpx_dc_predictor_4x4_c, 4,
+                      8),
+        IntraPredFunc(&vpx_dc_predictor_8x8_sse2, &vpx_dc_predictor_8x8_c, 8,
+                      8),
+        IntraPredFunc(&vpx_dc_predictor_16x16_sse2, &vpx_dc_predictor_16x16_c,
+                      16, 8),
+        IntraPredFunc(&vpx_dc_predictor_32x32_sse2, &vpx_dc_predictor_32x32_c,
+                      32, 8),
+        IntraPredFunc(&vpx_dc_top_predictor_4x4_sse2,
+                      &vpx_dc_top_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_dc_top_predictor_8x8_sse2,
+                      &vpx_dc_top_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_dc_top_predictor_16x16_sse2,
+                      &vpx_dc_top_predictor_16x16_c, 16, 8),
+        IntraPredFunc(&vpx_dc_top_predictor_32x32_sse2,
+                      &vpx_dc_top_predictor_32x32_c, 32, 8),
+        IntraPredFunc(&vpx_h_predictor_4x4_sse2, &vpx_h_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_h_predictor_8x8_sse2, &vpx_h_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_h_predictor_16x16_sse2, &vpx_h_predictor_16x16_c, 16,
+                      8),
+        IntraPredFunc(&vpx_h_predictor_32x32_sse2, &vpx_h_predictor_32x32_c, 32,
+                      8),
+        IntraPredFunc(&vpx_tm_predictor_4x4_sse2, &vpx_tm_predictor_4x4_c, 4,
+                      8),
+        IntraPredFunc(&vpx_tm_predictor_8x8_sse2, &vpx_tm_predictor_8x8_c, 8,
+                      8),
+        IntraPredFunc(&vpx_tm_predictor_16x16_sse2, &vpx_tm_predictor_16x16_c,
+                      16, 8),
+        IntraPredFunc(&vpx_tm_predictor_32x32_sse2, &vpx_tm_predictor_32x32_c,
+                      32, 8),
+        IntraPredFunc(&vpx_v_predictor_4x4_sse2, &vpx_v_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_v_predictor_8x8_sse2, &vpx_v_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_v_predictor_16x16_sse2, &vpx_v_predictor_16x16_c, 16,
+                      8),
+        IntraPredFunc(&vpx_v_predictor_32x32_sse2, &vpx_v_predictor_32x32_c, 32,
+                      8)));
+#endif  // HAVE_SSE2
+
+#if HAVE_SSSE3
+INSTANTIATE_TEST_CASE_P(
+    SSSE3_TO_C_8, VP9IntraPredTest,
+    ::testing::Values(IntraPredFunc(&vpx_d45_predictor_16x16_ssse3,
+                                    &vpx_d45_predictor_16x16_c, 16, 8),
+                      IntraPredFunc(&vpx_d45_predictor_32x32_ssse3,
+                                    &vpx_d45_predictor_32x32_c, 32, 8),
+                      IntraPredFunc(&vpx_d63_predictor_4x4_ssse3,
+                                    &vpx_d63_predictor_4x4_c, 4, 8),
+                      IntraPredFunc(&vpx_d63_predictor_8x8_ssse3,
+                                    &vpx_d63_predictor_8x8_c, 8, 8),
+                      IntraPredFunc(&vpx_d63_predictor_16x16_ssse3,
+                                    &vpx_d63_predictor_16x16_c, 16, 8),
+                      IntraPredFunc(&vpx_d63_predictor_32x32_ssse3,
+                                    &vpx_d63_predictor_32x32_c, 32, 8),
+                      IntraPredFunc(&vpx_d153_predictor_4x4_ssse3,
+                                    &vpx_d153_predictor_4x4_c, 4, 8),
+                      IntraPredFunc(&vpx_d153_predictor_8x8_ssse3,
+                                    &vpx_d153_predictor_8x8_c, 8, 8),
+                      IntraPredFunc(&vpx_d153_predictor_16x16_ssse3,
+                                    &vpx_d153_predictor_16x16_c, 16, 8),
+                      IntraPredFunc(&vpx_d153_predictor_32x32_ssse3,
+                                    &vpx_d153_predictor_32x32_c, 32, 8),
+                      IntraPredFunc(&vpx_d207_predictor_8x8_ssse3,
+                                    &vpx_d207_predictor_8x8_c, 8, 8),
+                      IntraPredFunc(&vpx_d207_predictor_16x16_ssse3,
+                                    &vpx_d207_predictor_16x16_c, 16, 8),
+                      IntraPredFunc(&vpx_d207_predictor_32x32_ssse3,
+                                    &vpx_d207_predictor_32x32_c, 32, 8)));
+#endif  // HAVE_SSSE3
+
+#if HAVE_NEON
+INSTANTIATE_TEST_CASE_P(
+    NEON_TO_C_8, VP9IntraPredTest,
+    ::testing::Values(
+        IntraPredFunc(&vpx_d45_predictor_4x4_neon, &vpx_d45_predictor_4x4_c, 4,
+                      8),
+        IntraPredFunc(&vpx_d45_predictor_8x8_neon, &vpx_d45_predictor_8x8_c, 8,
+                      8),
+        IntraPredFunc(&vpx_d45_predictor_16x16_neon, &vpx_d45_predictor_16x16_c,
+                      16, 8),
+        IntraPredFunc(&vpx_d135_predictor_4x4_neon, &vpx_d135_predictor_4x4_c,
+                      4, 8),
+        IntraPredFunc(&vpx_dc_128_predictor_4x4_neon,
+                      &vpx_dc_128_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_dc_128_predictor_8x8_neon,
+                      &vpx_dc_128_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_dc_128_predictor_16x16_neon,
+                      &vpx_dc_128_predictor_16x16_c, 16, 8),
+        IntraPredFunc(&vpx_dc_128_predictor_32x32_neon,
+                      &vpx_dc_128_predictor_32x32_c, 32, 8),
+        IntraPredFunc(&vpx_dc_left_predictor_4x4_neon,
+                      &vpx_dc_left_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_dc_left_predictor_8x8_neon,
+                      &vpx_dc_left_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_dc_left_predictor_16x16_neon,
+                      &vpx_dc_left_predictor_16x16_c, 16, 8),
+        IntraPredFunc(&vpx_dc_left_predictor_32x32_neon,
+                      &vpx_dc_left_predictor_32x32_c, 32, 8),
+        IntraPredFunc(&vpx_dc_predictor_4x4_neon, &vpx_dc_predictor_4x4_c, 4,
+                      8),
+        IntraPredFunc(&vpx_dc_predictor_8x8_neon, &vpx_dc_predictor_8x8_c, 8,
+                      8),
+        IntraPredFunc(&vpx_dc_predictor_16x16_neon, &vpx_dc_predictor_16x16_c,
+                      16, 8),
+        IntraPredFunc(&vpx_dc_predictor_32x32_neon, &vpx_dc_predictor_32x32_c,
+                      32, 8),
+        IntraPredFunc(&vpx_dc_top_predictor_4x4_neon,
+                      &vpx_dc_top_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_dc_top_predictor_8x8_neon,
+                      &vpx_dc_top_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_dc_top_predictor_16x16_neon,
+                      &vpx_dc_top_predictor_16x16_c, 16, 8),
+        IntraPredFunc(&vpx_dc_top_predictor_32x32_neon,
+                      &vpx_dc_top_predictor_32x32_c, 32, 8),
+        IntraPredFunc(&vpx_h_predictor_4x4_neon, &vpx_h_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_h_predictor_8x8_neon, &vpx_h_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_h_predictor_16x16_neon, &vpx_h_predictor_16x16_c, 16,
+                      8),
+        IntraPredFunc(&vpx_h_predictor_32x32_neon, &vpx_h_predictor_32x32_c, 32,
+                      8),
+        IntraPredFunc(&vpx_tm_predictor_4x4_neon, &vpx_tm_predictor_4x4_c, 4,
+                      8),
+        IntraPredFunc(&vpx_tm_predictor_8x8_neon, &vpx_tm_predictor_8x8_c, 8,
+                      8),
+        IntraPredFunc(&vpx_tm_predictor_16x16_neon, &vpx_tm_predictor_16x16_c,
+                      16, 8),
+        IntraPredFunc(&vpx_tm_predictor_32x32_neon, &vpx_tm_predictor_32x32_c,
+                      32, 8),
+        IntraPredFunc(&vpx_v_predictor_4x4_neon, &vpx_v_predictor_4x4_c, 4, 8),
+        IntraPredFunc(&vpx_v_predictor_8x8_neon, &vpx_v_predictor_8x8_c, 8, 8),
+        IntraPredFunc(&vpx_v_predictor_16x16_neon, &vpx_v_predictor_16x16_c, 16,
+                      8),
+        IntraPredFunc(&vpx_v_predictor_32x32_neon, &vpx_v_predictor_32x32_c, 32,
+                      8)));
+#endif  // HAVE_NEON
 
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-#endif  // HAVE_SSE2
 }  // namespace
