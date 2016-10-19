@@ -3213,7 +3213,7 @@ static void write_uncompressed_header(AV1_COMP *cpi,
 
     return;
   } else {
-#endif                        // CONFIG_EXT_REFS
+#endif  // CONFIG_EXT_REFS
     aom_wb_write_bit(wb, 0);  // show_existing_frame
 #if CONFIG_EXT_REFS
   }

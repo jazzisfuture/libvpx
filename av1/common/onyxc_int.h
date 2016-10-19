@@ -13,21 +13,21 @@
 #define AV1_COMMON_ONYXC_INT_H_
 
 #include "./aom_config.h"
+#include "./av1_rtcd.h"
 #include "aom/internal/aom_codec_internal.h"
 #include "aom_util/aom_thread.h"
-#include "./av1_rtcd.h"
 #include "av1/common/alloccommon.h"
-#include "av1/common/loopfilter.h"
-#include "av1/common/entropymv.h"
 #include "av1/common/entropy.h"
 #include "av1/common/entropymode.h"
-#include "av1/common/mv.h"
+#include "av1/common/entropymv.h"
 #include "av1/common/frame_buffers.h"
+#include "av1/common/loopfilter.h"
+#include "av1/common/mv.h"
 #include "av1/common/quant_common.h"
-#include "av1/common/tile_common.h"
 #if CONFIG_LOOP_RESTORATION
 #include "av1/common/restoration.h"
 #endif  // CONFIG_LOOP_RESTORATION
+#include "av1/common/tile_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -195,13 +195,6 @@ typedef struct AV1Common {
   int new_fb_idx;
 
   FRAME_TYPE last_frame_type; /* last frame's frame type for motion search.*/
-#if CONFIG_EXT_REFS
-  // frame type of the frame before last frame
-  FRAME_TYPE last2_frame_type;
-  // TODO(zoeliu): To check whether last3_frame_type is still needed.
-  // frame type of the frame two frames before last frame
-  FRAME_TYPE last3_frame_type;
-#endif  // CONFIG_EXT_REFS
   FRAME_TYPE frame_type;
 
   int show_frame;
