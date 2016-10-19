@@ -377,7 +377,7 @@ typedef struct AV1_COMP {
   int gld_fb_idx;
 #if CONFIG_EXT_REFS
   int bwd_fb_idx;  // BWD_REF_FRAME
-#endif             // CONFIG_EXT_REFS
+#endif  // CONFIG_EXT_REFS
   int alt_fb_idx;
 
   int last_show_frame_buf_idx;  // last show frame buffer index
