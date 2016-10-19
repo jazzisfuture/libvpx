@@ -344,200 +344,214 @@ void av1_quantize_fp_facade(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                             const MACROBLOCK_PLANE *p, tran_low_t *qcoeff_ptr,
                             const MACROBLOCKD_PLANE *pd,
                             tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
+<<<<<<< HEAD
                             const SCAN_ORDER *sc, const QUANT_PARAM *qparam) {
+=======
+                            const scan_order *sc, const QUANT_PARAM *qparam
 #if CONFIG_AOM_QM
                             ,
                             const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
 #endif
                             ) {
-                              // obsolete skip_block
-                              const int skip_block = 0;
+>>>>>>> Fix build issues when --enable-aom-qm
+  // obsolete skip_block
+  const int skip_block = 0;
 
-                              if (qparam->log_scale == 0) {
-                                av1_quantize_fp(
-                                    coeff_ptr, n_coeffs, skip_block, p->zbin,
-                                    p->round_fp, p->quant_fp, p->quant_shift,
-                                    qcoeff_ptr, dqcoeff_ptr, pd->dequant,
-                                    eob_ptr, sc->scan, sc->iscan
+  if (qparam->log_scale == 0) {
+    av1_quantize_fp(coeff_ptr, n_coeffs, skip_block, p->zbin, p->round_fp,
+                    p->quant_fp, p->quant_shift, qcoeff_ptr, dqcoeff_ptr,
+                    pd->dequant, eob_ptr, sc->scan, sc->iscan
 #if CONFIG_AOM_QM
-                                    ,
-                                    qm_ptr, iqm_ptr
+                    ,
+                    qm_ptr, iqm_ptr
 #endif
-                                    );
-                              } else {
-                                av1_quantize_fp_32x32(
-                                    coeff_ptr, n_coeffs, skip_block, p->zbin,
-                                    p->round_fp, p->quant_fp, p->quant_shift,
-                                    qcoeff_ptr, dqcoeff_ptr, pd->dequant,
-                                    eob_ptr, sc->scan, sc->iscan
+                    );
+  } else {
+    av1_quantize_fp_32x32(coeff_ptr, n_coeffs, skip_block, p->zbin, p->round_fp,
+                          p->quant_fp, p->quant_shift, qcoeff_ptr, dqcoeff_ptr,
+                          pd->dequant, eob_ptr, sc->scan, sc->iscan
 #if CONFIG_AOM_QM
-                                    ,
-                                    qm_ptr, iqm_ptr
+                          ,
+                          qm_ptr, iqm_ptr
 #endif
-                                    );
-                              }
-                            }
+                          );
+  }
+}
 
-                            void av1_quantize_b_facade(
-                                const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                                const MACROBLOCK_PLANE *p,
-                                tran_low_t *qcoeff_ptr,
-                                const MACROBLOCKD_PLANE *pd,
-                                tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
-                                const SCAN_ORDER *sc, const QUANT_PARAM *qparam
+void av1_quantize_b_facade(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+                           const MACROBLOCK_PLANE *p, tran_low_t *qcoeff_ptr,
+                           const MACROBLOCKD_PLANE *pd, tran_low_t *dqcoeff_ptr,
+<<<<<<< HEAD
+                           uint16_t *eob_ptr, const SCAN_ORDER *sc,
+                           const QUANT_PARAM *qparam) {
+=======
+                           uint16_t *eob_ptr, const scan_order *sc,
+                           const QUANT_PARAM *qparam
 #if CONFIG_AOM_QM
-                                ,
-                                const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
+                           ,
+                           const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
 #endif
-                                ) {
-                              // obsolete skip_block
-                              const int skip_block = 0;
+                           ) {
+>>>>>>> Fix build issues when --enable-aom-qm
+  // obsolete skip_block
+  const int skip_block = 0;
 
-                              if (qparam->log_scale == 0) {
-                                aom_quantize_b(coeff_ptr, n_coeffs, skip_block,
-                                               p->zbin, p->round, p->quant,
-                                               p->quant_shift, qcoeff_ptr,
-                                               dqcoeff_ptr, pd->dequant,
-                                               eob_ptr, sc->scan, sc->iscan
+  if (qparam->log_scale == 0) {
+    aom_quantize_b(coeff_ptr, n_coeffs, skip_block, p->zbin, p->round, p->quant,
+                   p->quant_shift, qcoeff_ptr, dqcoeff_ptr, pd->dequant,
+                   eob_ptr, sc->scan, sc->iscan
 #if CONFIG_AOM_QM
-                                               ,
-                                               qm_ptr, iqm_ptr
+                   ,
+                   qm_ptr, iqm_ptr
 #endif
-                                               );
-                              } else {
-                                aom_quantize_b_32x32(
-                                    coeff_ptr, n_coeffs, skip_block, p->zbin,
-                                    p->round, p->quant, p->quant_shift,
-                                    qcoeff_ptr, dqcoeff_ptr, pd->dequant,
-                                    eob_ptr, sc->scan, sc->iscan
+                   );
+  } else {
+    aom_quantize_b_32x32(coeff_ptr, n_coeffs, skip_block, p->zbin, p->round,
+                         p->quant, p->quant_shift, qcoeff_ptr, dqcoeff_ptr,
+                         pd->dequant, eob_ptr, sc->scan, sc->iscan
 #if CONFIG_AOM_QM
-                                    ,
-                                    qm_ptr, iqm_ptr
+                         ,
+                         qm_ptr, iqm_ptr
 #endif
-                                    );
-                              }
-                            }
+                         );
+  }
+}
 
-                            void av1_quantize_dc_facade(
-                                const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                                const MACROBLOCK_PLANE *p,
-                                tran_low_t *qcoeff_ptr,
-                                const MACROBLOCKD_PLANE *pd,
-                                tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
-                                const SCAN_ORDER *sc, const QUANT_PARAM *qparam
+void av1_quantize_dc_facade(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+                            const MACROBLOCK_PLANE *p, tran_low_t *qcoeff_ptr,
+                            const MACROBLOCKD_PLANE *pd,
+                            tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
+<<<<<<< HEAD
+                            const SCAN_ORDER *sc, const QUANT_PARAM *qparam) {
+=======
+                            const scan_order *sc, const QUANT_PARAM *qparam
 #if CONFIG_AOM_QM
-                                ,
-                                const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
+                            ,
+                            const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
 #endif
-                                ) {
-                              // obsolete skip_block
-                              const int skip_block = 0;
-                              (void)sc;
-                              if (qparam->log_scale == 0) {
-                                aom_quantize_dc(
-                                    coeff_ptr, (int)n_coeffs, skip_block,
-                                    p->round, p->quant_fp[0], qcoeff_ptr,
-                                    dqcoeff_ptr, pd->dequant[0], eob_ptr
+                            ) {
+>>>>>>> Fix build issues when --enable-aom-qm
+  // obsolete skip_block
+  const int skip_block = 0;
+  (void)sc;
+  if (qparam->log_scale == 0) {
+    aom_quantize_dc(coeff_ptr, (int)n_coeffs, skip_block, p->round,
+                    p->quant_fp[0], qcoeff_ptr, dqcoeff_ptr, pd->dequant[0],
+                    eob_ptr
 #if CONFIG_AOM_QM
-                                    ,
-                                    qm_ptr, iqm_ptr
+                    ,
+                    qm_ptr, iqm_ptr
 #endif
-                                    );
-                              } else {
-                                aom_quantize_dc_32x32(coeff_ptr, skip_block,
-                                                      p->round, p->quant_fp[0],
-                                                      qcoeff_ptr, dqcoeff_ptr,
-                                                      pd->dequant[0], eob_ptr
+                    );
+  } else {
+    aom_quantize_dc_32x32(coeff_ptr, skip_block, p->round, p->quant_fp[0],
+                          qcoeff_ptr, dqcoeff_ptr, pd->dequant[0], eob_ptr
 #if CONFIG_AOM_QM
-                                                      ,
-                                                      qm_ptr, iqm_ptr
+                          ,
+                          qm_ptr, iqm_ptr
 #endif
-                                                      );
-                              }
-                            }
+                          );
+  }
+}
 
 #if CONFIG_AOM_HIGHBITDEPTH
-                            void av1_highbd_quantize_fp_facade(
-                                const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                                const MACROBLOCK_PLANE *p,
-                                tran_low_t *qcoeff_ptr,
-                                const MACROBLOCKD_PLANE *pd,
-                                tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
-                                const scan_order *sc, const SCAN_ORDER *sc,
-                                const QUANT_PARAM *qparam
+<<<<<<< HEAD
+void av1_highbd_quantize_fp_facade(const tran_low_t *coeff_ptr,
+                                   intptr_t n_coeffs, const MACROBLOCK_PLANE *p,
+                                   tran_low_t *qcoeff_ptr,
+                                   const MACROBLOCKD_PLANE *pd,
+                                   tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
+                                   const SCAN_ORDER *sc,
+                                   const QUANT_PARAM *qparam) {
+=======
+void av1_highbd_quantize_fp_facade(
+    const tran_low_t *coeff_ptr, intptr_t n_coeffs, const MACROBLOCK_PLANE *p,
+    tran_low_t *qcoeff_ptr, const MACROBLOCKD_PLANE *pd,
+    tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr, const scan_order *sc,
+    const QUANT_PARAM *qparam
 #if CONFIG_AOM_QM
-                                ,
-                                const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
+    ,
+    const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
 #endif
-                                ) {
-                              // obsolete skip_block
-                              const int skip_block = 0;
+    ) {
+>>>>>>> Fix build issues when --enable-aom-qm
+  // obsolete skip_block
+  const int skip_block = 0;
 
-                              av1_highbd_quantize_fp(
-                                  coeff_ptr, n_coeffs, skip_block, p->zbin,
-                                  p->round_fp, p->quant_fp, p->quant_shift,
-                                  qcoeff_ptr, dqcoeff_ptr, pd->dequant, eob_ptr,
-                                  sc->scan, sc->iscan,
+  av1_highbd_quantize_fp(coeff_ptr, n_coeffs, skip_block, p->zbin, p->round_fp,
+                         p->quant_fp, p->quant_shift, qcoeff_ptr, dqcoeff_ptr,
+                         pd->dequant, eob_ptr, sc->scan, sc->iscan,
 #if CONFIG_AOM_QM
-                                  qm_ptr, iqm_ptr,
+                         qm_ptr, iqm_ptr,
 #endif
-                                  qparam->log_scale);
-                            }
+                         qparam->log_scale);
+}
 
-                            void av1_highbd_quantize_b_facade(
-                                const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                                const MACROBLOCK_PLANE *p,
-                                tran_low_t *qcoeff_ptr,
-                                const MACROBLOCKD_PLANE *pd,
-                                tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
-                                const scan_order *sc, const SCAN_ORDER *sc,
-                                const QUANT_PARAM *qparam
+<<<<<<< HEAD
+void av1_highbd_quantize_b_facade(const tran_low_t *coeff_ptr,
+                                  intptr_t n_coeffs, const MACROBLOCK_PLANE *p,
+                                  tran_low_t *qcoeff_ptr,
+                                  const MACROBLOCKD_PLANE *pd,
+                                  tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
+                                  const SCAN_ORDER *sc,
+                                  const QUANT_PARAM *qparam) {
+=======
+void av1_highbd_quantize_b_facade(
+    const tran_low_t *coeff_ptr, intptr_t n_coeffs, const MACROBLOCK_PLANE *p,
+    tran_low_t *qcoeff_ptr, const MACROBLOCKD_PLANE *pd,
+    tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr, const scan_order *sc,
+    const QUANT_PARAM *qparam
 #if CONFIG_AOM_QM
-                                ,
-                                const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
+    ,
+    const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
 #endif
-                                ) {
-                              // obsolete skip_block
-                              const int skip_block = 0;
+    ) {
+>>>>>>> Fix build issues when --enable-aom-qm
+  // obsolete skip_block
+  const int skip_block = 0;
 
-                              av1_highbd_quantize_b(
-                                  coeff_ptr, n_coeffs, skip_block, p->zbin,
-                                  p->round, p->quant, p->quant_shift,
-                                  qcoeff_ptr, dqcoeff_ptr, pd->dequant, eob_ptr,
-                                  sc->scan, sc->iscan,
+  av1_highbd_quantize_b(coeff_ptr, n_coeffs, skip_block, p->zbin, p->round,
+                        p->quant, p->quant_shift, qcoeff_ptr, dqcoeff_ptr,
+                        pd->dequant, eob_ptr, sc->scan, sc->iscan,
 #if CONFIG_AOM_QM
-                                  qm_ptr, iqm_ptr,
+                        qm_ptr, iqm_ptr,
 #endif
-                                  qparam->log_scale);
-                            }
+                        qparam->log_scale);
+}
 
-                            void av1_highbd_quantize_dc_facade(
-                                const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                                const MACROBLOCK_PLANE *p,
-                                tran_low_t *qcoeff_ptr,
-                                const MACROBLOCKD_PLANE *pd,
-                                tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
-                                const scan_order *sc, const SCAN_ORDER *sc,
-                                const QUANT_PARAM *qparam
+<<<<<<< HEAD
+void av1_highbd_quantize_dc_facade(const tran_low_t *coeff_ptr,
+                                   intptr_t n_coeffs, const MACROBLOCK_PLANE *p,
+                                   tran_low_t *qcoeff_ptr,
+                                   const MACROBLOCKD_PLANE *pd,
+                                   tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr,
+                                   const SCAN_ORDER *sc,
+                                   const QUANT_PARAM *qparam) {
+=======
+void av1_highbd_quantize_dc_facade(
+    const tran_low_t *coeff_ptr, intptr_t n_coeffs, const MACROBLOCK_PLANE *p,
+    tran_low_t *qcoeff_ptr, const MACROBLOCKD_PLANE *pd,
+    tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr, const scan_order *sc,
+    const QUANT_PARAM *qparam
 #if CONFIG_AOM_QM
-                                ,
-                                const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
+    ,
+    const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr
 #endif
-                                ) {
-                              // obsolete skip_block
-                              const int skip_block = 0;
+    ) {
+>>>>>>> Fix build issues when --enable-aom-qm
+  // obsolete skip_block
+  const int skip_block = 0;
 
-                              (void)sc;
+  (void)sc;
 
-                              av1_highbd_quantize_dc(
-                                  coeff_ptr, (int)n_coeffs, skip_block,
-                                  p->round, p->quant_fp[0], qcoeff_ptr,
-                                  dqcoeff_ptr, pd->dequant[0], eob_ptr,
+  av1_highbd_quantize_dc(coeff_ptr, (int)n_coeffs, skip_block, p->round,
+                         p->quant_fp[0], qcoeff_ptr, dqcoeff_ptr,
+                         pd->dequant[0], eob_ptr,
 #if CONFIG_AOM_QM
-                                  qm_ptr, iqm_ptr,
+                         qm_ptr, iqm_ptr,
 #endif
-                                  qparam->log_scale);
-                            }
+                         qparam->log_scale);
+}
 
 #if CONFIG_NEW_QUANT
 static INLINE int highbd_quantize_coeff_nuq(
@@ -1116,14 +1130,15 @@ void av1_highbd_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
 #endif
 
 #if CONFIG_AOM_HIGHBITDEPTH
-void av1_highbd_quantize_dc(
-    const tran_low_t *coeff_ptr, int n_coeffs, int skip_block,
-    const int16_t *round_ptr, const int16_t quant, tran_low_t *qcoeff_ptr,
-    tran_low_t *dqcoeff_ptr, const int16_t dequant_ptr, uint16_t *eob_ptr,
+void av1_highbd_quantize_dc(const tran_low_t *coeff_ptr, int n_coeffs,
+                            int skip_block, const int16_t *round_ptr,
+                            const int16_t quant, tran_low_t *qcoeff_ptr,
+                            tran_low_t *dqcoeff_ptr, const int16_t dequant_ptr,
+                            uint16_t *eob_ptr,
 #if CONFIG_AOM_QM
-    const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr,
+                            const qm_val_t *qm_ptr, const qm_val_t *iqm_ptr,
 #endif
-    const int log_scale) {
+                            const int log_scale) {
   int eob = -1;
 
   memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
