@@ -153,6 +153,10 @@ static void fill_mode_costs(AV1_COMP *cpi) {
   av1_cost_tokens(cpi->switchable_restore_cost, fc->switchable_restore_prob,
                   av1_switchable_restore_tree);
 #endif  // CONFIG_LOOP_RESTORATION
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+  av1_cost_tokens(cpi->q_profile_si_cost, fc->q_profile_si_prob,
+                  av1_q_profile_si_tree);
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
 }
 
 void av1_fill_token_costs(av1_coeff_cost *c,

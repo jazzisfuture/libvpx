@@ -757,6 +757,26 @@ static INLINE void set_sb_size(AV1_COMMON *const cm, const BLOCK_SIZE sb_size) {
   cm->mib_size_log2 = mi_width_log2_lookup[cm->sb_size];
 }
 
+#if CONFIG_NEW_QUANT
+static INLINE void set_q_profile_si(const AV1_COMMON *const cm,
+                                    int mi_row, int mi_col,
+                                    BLOCK_SIZE bsize, int index) {
+  int row, col;
+  const int mis = cm->mi_stride;
+  const int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  const int mi_height = num_8x8_blocks_high_lookup[bsize];
+  int offset = mi_row * cm->mi_stride + mi_col;
+  MODE_INFO *mi = &cm->mi[offset];
+
+  for (row = 0; row < mi_height; ++row, mi += mis) {
+    if (mi_row + row >= cm->mi_rows) break;
+    for (col = 0; col < mi_width; ++col) {
+      if (mi_col + col >= cm->mi_cols) break;
+      mi[col].mbmi.q_profile_si = index;
+    }
+  }
+}
+#endif  // CONFIG_NEW_QUANT
 #ifdef __cplusplus
 }  // extern "C"
 #endif

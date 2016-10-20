@@ -581,6 +581,9 @@ typedef struct AV1_COMP {
 #if CONFIG_LOOP_RESTORATION
   int switchable_restore_cost[RESTORE_SWITCHABLE_TYPES];
 #endif  // CONFIG_LOOP_RESTORATION
+#if CONFIG_NEW_QUANT
+  int q_profile_si_cost[NUM_Q_PROFILE_SI];
+#endif  // CONFIG_NEW_QUANT
 
   int multi_arf_allowed;
   int multi_arf_enabled;

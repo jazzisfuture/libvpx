@@ -143,6 +143,9 @@ static struct av1_token motion_mode_encodings[MOTION_MODES];
 #if CONFIG_LOOP_RESTORATION
 static struct av1_token switchable_restore_encodings[RESTORE_SWITCHABLE_TYPES];
 #endif  // CONFIG_LOOP_RESTORATION
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+static struct av1_token q_profile_si_encodings[NUM_Q_PROFILE_SI];
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
 
 void av1_encode_token_init(void) {
 #if CONFIG_EXT_TX
@@ -180,6 +183,9 @@ void av1_encode_token_init(void) {
   av1_tokens_from_tree(switchable_restore_encodings,
                        av1_switchable_restore_tree);
 #endif  // CONFIG_LOOP_RESTORATION
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+  av1_tokens_from_tree(q_profile_si_encodings, av1_q_profile_si_tree);
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
 
 #if CONFIG_DAALA_EC
   /* This hack is necessary when CONFIG_EXT_INTERP is enabled because the five
@@ -1891,19 +1897,27 @@ static void write_modes_sb(AV1_COMP *const cpi, const TileInfo *const tile,
   const int hbs = num_8x8_blocks_wide_lookup[bsize] / 2;
   const PARTITION_TYPE partition = get_partition(cm, mi_row, mi_col, bsize);
   const BLOCK_SIZE subsize = get_subsize(bsize, partition);
-#if CONFIG_SUPERTX
+#if CONFIG_SUPERTX || (CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1)
   const int mi_offset = mi_row * cm->mi_stride + mi_col;
-  MB_MODE_INFO *mbmi;
+  MB_MODE_INFO *mbmi = &cm->mi_grid_visible[mi_offset]->mbmi;
+#endif  // CONFIG_SUPERTX || (CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1)
+#if CONFIG_SUPERTX
   const int pack_token = !supertx_enabled;
   TX_SIZE supertx_size;
   int plane;
-#endif
+#endif  // CONFIG_SUPERTX
 
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols) return;
 
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+  if (bsize == cm->sb_size) {
+    av1_write_token(w, av1_q_profile_si_tree, cm->fc->q_profile_si_prob,
+                    &q_profile_si_encodings[mbmi->q_profile_si]);
+  }
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+
   write_partition(cm, xd, hbs, mi_row, mi_col, partition, bsize, w);
 #if CONFIG_SUPERTX
-  mbmi = &cm->mi_grid_visible[mi_offset]->mbmi;
   xd->mi = cm->mi_grid_visible + mi_offset;
   set_mi_row_col(xd, tile, mi_row, num_8x8_blocks_high_lookup[bsize], mi_col,
                  num_8x8_blocks_wide_lookup[bsize], cm->mi_rows, cm->mi_cols);
