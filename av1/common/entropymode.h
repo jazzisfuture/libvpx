@@ -16,6 +16,7 @@
 #include "av1/common/entropymv.h"
 #include "av1/common/filter.h"
 #include "av1/common/seg_common.h"
+#include "av1/common/quant_common.h"
 #include "aom_dsp/aom_filter.h"
 
 #ifdef __cplusplus
@@ -141,6 +142,9 @@ typedef struct frame_contexts {
 #if CONFIG_DELTA_Q
   aom_prob delta_q_prob[DELTA_Q_CONTEXTS];
 #endif
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+  aom_prob q_profile_si_prob[NUM_Q_PROFILE_SI - 1];
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
 } FRAME_CONTEXT;
 
 typedef struct FRAME_COUNTS {
@@ -229,6 +233,9 @@ typedef struct FRAME_COUNTS {
   unsigned int ext_intra[PLANE_TYPES][2];
   unsigned int intra_filter[INTRA_FILTERS + 1][INTRA_FILTERS];
 #endif  // CONFIG_EXT_INTRA
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+  unsigned int q_profile_si[NUM_Q_PROFILE_SI];
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
 } FRAME_COUNTS;
 
 extern const aom_prob av1_kf_y_mode_prob[INTRA_MODES][INTRA_MODES]
@@ -291,6 +298,10 @@ extern const aom_tree_index av1_motion_mode_tree[TREE_SIZE(MOTION_MODES)];
 extern const aom_tree_index
     av1_switchable_restore_tree[TREE_SIZE(RESTORE_SWITCHABLE_TYPES)];
 #endif  // CONFIG_LOOP_RESTORATION
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+extern const aom_tree_index
+    av1_q_profile_si_tree[TREE_SIZE(NUM_Q_PROFILE_SI)];
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
 #if CONFIG_DAALA_EC
 extern int av1_switchable_interp_ind[SWITCHABLE_FILTERS];
 extern int av1_switchable_interp_inv[SWITCHABLE_FILTERS];

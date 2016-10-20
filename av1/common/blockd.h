@@ -241,8 +241,7 @@ typedef struct {
   PARTITION_TYPE partition;
 #endif
 #if CONFIG_NEW_QUANT
-  int dq_off_index;
-  int send_dq_bit;
+  int q_profile_si;
 #endif  // CONFIG_NEW_QUANT
   /* deringing gain *per-superblock* */
   int8_t dering_gain;

@@ -375,8 +375,10 @@ int av1_decode_block_tokens(MACROBLOCKD *const xd, int plane,
       get_entropy_context(tx_size, pd->above_context + x, pd->left_context + y);
 #if CONFIG_NEW_QUANT
   const int ref = is_inter_block(&xd->mi[0]->mbmi);
+  MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
   int dq =
-      get_dq_profile_from_ctx(xd->qindex[seg_id], ctx, ref, pd->plane_type);
+      get_q_profile(xd->qindex[seg_id], mbmi->q_profile_si, ctx, ref,
+                    pd->plane_type);
 #endif  //  CONFIG_NEW_QUANT
 
 #if CONFIG_AOM_QM

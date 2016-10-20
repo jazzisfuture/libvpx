@@ -1518,6 +1518,21 @@ static void decode_partition(AV1Decoder *const pbi, MACROBLOCKD *const xd,
 
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols) return;
 
+#if CONFIG_NEW_QUANT
+  if (bsize == cm->sb_size) {
+    int offset = mi_row * cm->mi_stride + mi_col;
+    xd->mi = cm->mi_grid_visible + offset;
+    xd->mi[0] = &cm->mi[offset];
+#if NUM_Q_PROFILE_SI > 1
+    xd->mi[0]->mbmi.q_profile_si = aom_read_tree(
+        r, av1_q_profile_si_tree, cm->fc->q_profile_si_prob, ACCT_STR);
+#else
+    xd->mi[0]->mbmi.q_profile_si = 0;
+#endif  // NUM_Q_PROFILE_SI > 1
+    set_q_profile_si(cm, mi_row, mi_col, bsize, xd->mi[0]->mbmi.q_profile_si);
+  }
+#endif  // CONFIG_NEW_QUANT
+
   partition = read_partition(cm, xd, mi_row, mi_col, r, has_rows, has_cols,
 #if CONFIG_EXT_PARTITION_TYPES
                              bsize,
@@ -2208,7 +2223,6 @@ static void setup_segmentation_dequant(AV1_COMMON *const cm) {
   int maxqm = cm->max_qmlevel;
 #endif
 #if CONFIG_NEW_QUANT
-  int b;
   int dq;
 #endif  //  CONFIG_NEW_QUANT
   if (cm->seg.enabled) {
@@ -2238,6 +2252,7 @@ static void setup_segmentation_dequant(AV1_COMMON *const cm) {
 #endif  // CONFIG_AOM_QM
 #if CONFIG_NEW_QUANT
       for (dq = 0; dq < QUANT_PROFILES; dq++) {
+        int b;
         for (b = 0; b < COEF_BANDS; ++b) {
           av1_get_dequant_val_nuq(cm->y_dequant[i][b != 0], b,
                                   cm->y_dequant_nuq[i][dq][b], NULL, dq);
@@ -2273,6 +2288,7 @@ static void setup_segmentation_dequant(AV1_COMMON *const cm) {
 #endif
 #if CONFIG_NEW_QUANT
     for (dq = 0; dq < QUANT_PROFILES; dq++) {
+      int b;
       for (b = 0; b < COEF_BANDS; ++b) {
         av1_get_dequant_val_nuq(cm->y_dequant[0][b != 0], b,
                                 cm->y_dequant_nuq[0][dq][b], NULL, dq);

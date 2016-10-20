@@ -95,8 +95,9 @@ int av1_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
 #endif
   const int shift = get_tx_scale(xd, tx_type, tx_size);
 #if CONFIG_NEW_QUANT
-  int dq = get_dq_profile_from_ctx(xd->qindex[xd->mi[0]->mbmi.segment_id], ctx,
-                                   ref, plane_type);
+  int dq = get_q_profile(xd->qindex[xd->mi[0]->mbmi.segment_id],
+                         xd->mi[0]->mbmi.q_profile_si,
+                         ctx, ref, plane_type);
   const dequant_val_type_nuq *dequant_val = pd->dequant_val_nuq[dq];
 #else
   const int dq_step[2] = { dequant_ptr[0] >> shift, dequant_ptr[1] >> shift };
@@ -518,8 +519,9 @@ void av1_xform_quant_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
   tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   tran_low_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
-  int dq = get_dq_profile_from_ctx(xd->qindex[xd->mi[0]->mbmi.segment_id], ctx,
-                                   is_inter, plane_type);
+  int dq = get_q_profile(xd->qindex[xd->mi[0]->mbmi.segment_id],
+                         xd->mi[0]->mbmi.q_profile_si, ctx,
+                         is_inter, plane_type);
   uint16_t *const eob = &p->eobs[block];
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int16_t *src_diff;
@@ -588,8 +590,9 @@ void av1_xform_quant_fp_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
   PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
   TX_TYPE tx_type = get_tx_type(plane_type, xd, block, tx_size);
   const SCAN_ORDER *const scan_order = get_scan(tx_size, tx_type, is_inter);
-  int dq = get_dq_profile_from_ctx(xd->qindex[xd->mi[0]->mbmi.segment_id], ctx,
-                                   is_inter, plane_type);
+  int dq = get_q_profile(xd->qindex[xd->mi[0]->mbmi.segment_id],
+                         xd->mi[0]->mbmi.q_profile_si, ctx,
+                         is_inter, plane_type);
   tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   tran_low_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
@@ -665,8 +668,9 @@ void av1_xform_quant_dc_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int16_t *src_diff;
   const int is_inter = is_inter_block(&xd->mi[0]->mbmi);
-  int dq = get_dq_profile_from_ctx(xd->qindex[xd->mi[0]->mbmi.segment_id], ctx,
-                                   is_inter, plane_type);
+  int dq = get_q_profile(xd->qindex[xd->mi[0]->mbmi.segment_id],
+                         xd->mi[0]->mbmi.q_profile_si, ctx,
+                         is_inter, plane_type);
 
   FWD_TXFM_PARAM fwd_txfm_param;
 
@@ -730,8 +734,9 @@ void av1_xform_quant_dc_fp_nuq(MACROBLOCK *x, int plane, int block, int blk_row,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int16_t *src_diff;
   const int is_inter = is_inter_block(&xd->mi[0]->mbmi);
-  int dq = get_dq_profile_from_ctx(xd->qindex[xd->mi[0]->mbmi.segment_id], ctx,
-                                   is_inter, plane_type);
+  int dq = get_q_profile(xd->qindex[xd->mi[0]->mbmi.segment_id],
+                         xd->mi[0]->mbmi.q_profile_si, ctx,
+                         is_inter, plane_type);
 
   FWD_TXFM_PARAM fwd_txfm_param;
 
