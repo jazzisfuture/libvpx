@@ -4496,6 +4496,7 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
         cpi->av_per_frame_bandwidth - cpi->projected_frame_size;
   }
 
+
   /* Clip the buffer level to the maximum specified buffer size */
   if (cpi->bits_off_target > cpi->oxcf.maximum_buffer_size) {
     cpi->bits_off_target = cpi->oxcf.maximum_buffer_size;
