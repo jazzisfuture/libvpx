@@ -4723,6 +4723,7 @@ static void encode_frame_internal(AV1_COMP *cpi) {
       cm->use_prev_frame_mvs ? cm->prev_mip + cm->mi_stride + 1 : NULL;
 
 #if CONFIG_VAR_TX
+  x->txb_split_count = 0;
 #if CONFIG_REF_MV
   av1_zero(x->blk_skip_drl);
 #endif
@@ -4856,7 +4857,10 @@ void av1_encode_frame(AV1_COMP *cpi) {
       }
     }
 
-#if !CONFIG_VAR_TX
+#if CONFIG_VAR_TX
+    if (cm->tx_mode == TX_MODE_SELECT && cpi->td.mb.txb_split_count == 0)
+      cm->tx_mode = ALLOW_32X32;
+#else
     if (cm->tx_mode == TX_MODE_SELECT) {
       int count4x4 = 0;
       int count8x8_lp = 0, count8x8_8x8p = 0;
@@ -4959,8 +4963,9 @@ static void sum_intra_stats(FRAME_COUNTS *counts, const MODE_INFO *mi,
 }
 
 #if CONFIG_VAR_TX
-static void update_txfm_count(MACROBLOCKD *xd, FRAME_COUNTS *counts,
-                              TX_SIZE tx_size, int blk_row, int blk_col) {
+static void update_txfm_count(MACROBLOCK *x, MACROBLOCKD *xd,
+                              FRAME_COUNTS *counts, TX_SIZE tx_size,
+                              int blk_row, int blk_col) {
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
   const int tx_row = blk_row >> 1;
   const int tx_col = blk_col >> 1;
@@ -4985,6 +4990,7 @@ static void update_txfm_count(MACROBLOCKD *xd, FRAME_COUNTS *counts,
     int bh = num_4x4_blocks_high_lookup[bsize];
     int i;
     ++counts->txfm_partition[ctx][1];
+    ++x->txb_split_count;
 
     if (tx_size == TX_8X8) {
       mbmi->inter_tx_size[tx_row][tx_col] = TX_4X4;
@@ -4997,16 +5003,17 @@ static void update_txfm_count(MACROBLOCKD *xd, FRAME_COUNTS *counts,
     for (i = 0; i < 4; ++i) {
       int offsetr = (i >> 1) * bh / 2;
       int offsetc = (i & 0x01) * bh / 2;
-      update_txfm_count(xd, counts, tx_size - 1, blk_row + offsetr,
+      update_txfm_count(x, xd, counts, tx_size - 1, blk_row + offsetr,
                         blk_col + offsetc);
     }
   }
 }
 
 static void tx_partition_count_update(const AV1_COMMON *const cm,
-                                      MACROBLOCKD *xd, BLOCK_SIZE plane_bsize,
+                                      MACROBLOCK *x, BLOCK_SIZE plane_bsize,
                                       int mi_row, int mi_col,
                                       FRAME_COUNTS *td_counts) {
+  MACROBLOCKD *xd = &x->e_mbd;
   const int mi_width = num_4x4_blocks_wide_lookup[plane_bsize];
   const int mi_height = num_4x4_blocks_high_lookup[plane_bsize];
   TX_SIZE max_tx_size = max_txsize_lookup[plane_bsize];
@@ -5020,7 +5027,7 @@ static void tx_partition_count_update(const AV1_COMMON *const cm,
 
   for (idy = 0; idy < mi_height; idy += bh)
     for (idx = 0; idx < mi_width; idx += bh)
-      update_txfm_count(xd, td_counts, max_tx_size, idy, idx);
+      update_txfm_count(x, xd, td_counts, max_tx_size, idy, idx);
 }
 
 static void set_txfm_context(MACROBLOCKD *xd, TX_SIZE tx_size, int blk_row,
@@ -5261,10 +5268,12 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
       }
       if (!is_rect_tx_allowed(xd, mbmi) || !is_rect_tx(mbmi->tx_size)) {
 #endif  // CONFIG_EXT_TX && CONFIG_RECT_TX
-        if (is_inter)
-          tx_partition_count_update(cm, xd, bsize, mi_row, mi_col, td->counts);
-        else
+        if (is_inter) {
+          tx_partition_count_update(cm, x, bsize, mi_row, mi_col, td->counts);
+        } else {
           ++td->counts->tx_size[tx_size_cat][tx_size_ctx][coded_tx_size];
+          if (mbmi->tx_size != max_txsize_lookup[bsize]) ++x->txb_split_count;
+        }
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
       }
 #endif
@@ -5294,7 +5303,12 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
         for (i = 0; i < mi_width; i++)
           if (mi_col + i < cm->mi_cols && mi_row + j < cm->mi_rows)
             mi_8x8[mis * j + i]->mbmi.tx_size = tx_size;
+
+#if CONFIG_VAR_TX
+    if (mbmi->tx_size != max_txsize_lookup[bsize]) ++x->txb_split_count;
+#endif
     }
+
     ++td->counts->tx_size_totals[txsize_sqr_map[mbmi->tx_size]];
     ++td->counts
           ->tx_size_totals[txsize_sqr_map[get_uv_tx_size(mbmi, &xd->plane[1])]];
