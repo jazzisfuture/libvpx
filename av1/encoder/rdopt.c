@@ -3084,7 +3084,8 @@ static void select_tx_block(const AV1_COMP *cpi, MACROBLOCK *x, int blk_row,
   zero_blk_rate =
       x->token_costs[tx_size][pd->plane_type][1][0][0][coeff_ctx][EOB_TOKEN];
 
-  if (cpi->common.tx_mode == TX_MODE_SELECT || tx_size == TX_4X4) {
+  if ((cpi->common.tx_mode == TX_MODE_SELECT || tx_size == TX_4X4) &&
+      !(tx_size == TX_32X32 && mbmi->tx_type != DCT_DCT)) {
     inter_tx_size[0][0] = tx_size;
     av1_tx_block_rd_b(cpi, x, tx_size, blk_row, blk_col, plane, block,
                       plane_bsize, coeff_ctx, rate, dist, bsse, skip);
@@ -3395,7 +3396,6 @@ static void select_tx_type_yrd(const AV1_COMP *cpi, MACROBLOCK *x, int *rate,
       if (!ext_tx_used_intra[ext_tx_set][tx_type]) continue;
     }
 #else   // CONFIG_EXT_TX
-    if (max_tx_size >= TX_32X32 && tx_type != DCT_DCT) continue;
     if (is_inter && cpi->sf.tx_type_search.prune_mode > NO_PRUNE &&
         !do_tx_type_search(tx_type, prune))
       continue;
