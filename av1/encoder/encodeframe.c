@@ -177,6 +177,26 @@ static const uint16_t AV1_HIGH_VAR_OFFS_12[MAX_SB_SIZE] = {
 };
 #endif  // CONFIG_AOM_HIGHBITDEPTH
 
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+static int64_t get_sb_distortion(const AV1_COMP *cpi, MACROBLOCK *x,
+                                 BLOCK_SIZE bsize) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  int64_t dist = 0;
+  int plane;
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, &xd->plane[plane]);
+    const int src_stride = x->plane[plane].src.stride;
+    const int dst_stride = xd->plane[plane].dst.stride;
+    const uint8_t *src = x->plane[plane].src.buf;
+    const uint8_t *dst = xd->plane[plane].dst.buf;
+    unsigned int tmp;
+    cpi->fn_ptr[plane_bsize].vf(src, src_stride, dst, dst_stride, &tmp);
+    dist += (int64_t)tmp * 16;
+  }
+  return dist;
+}
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+
 unsigned int av1_get_sby_perpixel_variance(const AV1_COMP *cpi,
                                            const struct buf_2d *ref,
                                            BLOCK_SIZE bs) {
@@ -1045,7 +1065,9 @@ static void update_state(const AV1_COMP *const cpi, ThreadData *td,
 #if !CONFIG_SUPERTX
   assert(mi->mbmi.sb_type == bsize);
 #endif
-
+#if CONFIG_NEW_QUANT
+  mi->mbmi.q_profile_si = mbmi->q_profile_si;
+#endif  // CONFIG_NEW_QUANT
   *mi_addr = *mi;
   *x->mbmi_ext = ctx->mbmi_ext;
 
@@ -2808,10 +2830,28 @@ static void rd_use_partition(AV1_COMP *cpi, ThreadData *td,
 
   if (do_recon) {
     if (bsize == cm->sb_size) {
-      // NOTE: To get estimate for rate due to the tokens, use:
-      // int rate_coeffs = 0;
-      // encode_sb(cpi, td, tile_info, tp, mi_row, mi_col, DRY_RUN_COSTCOEFFS,
-      //           bsize, pc_tree, &rate_coeffs);
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+      int si, best_si = -1;
+      int64_t best_rdcost_si = INT64_MAX;
+      for (si = 0; si < NUM_Q_PROFILE_SI; ++si) {
+        int rate_si = cpi->q_profile_si_cost[si];
+        int64_t dist_si, rdcost_si;
+        set_q_profile_si(cm, mi_row, mi_col, bsize, si);
+        encode_sb(cpi, td, tile_info, tp, mi_row, mi_col, DRY_RUN_COSTCOEFFS,
+                  bsize, pc_tree, &rate_si);
+        dist_si = get_sb_distortion(cpi, x, bsize);
+        rdcost_si = RDCOST(x->rdmult, x->rddiv, rate_si, dist_si);
+        // printf("si %d: rdcost = %"PRId64" dist = %"PRId64" rate = %d\n",
+        //        si, rdcost_si, dist_si, rate_si);
+        if (rdcost_si < best_rdcost_si) {
+          best_rdcost_si = rdcost_si;
+          best_si = si;
+        }
+        restore_context(x, &x_ctx, mi_row, mi_col, bsize);
+      }
+      // printf("best_si(%d, %d) = %d\n", mi_row, mi_col, best_si);
+      set_q_profile_si(cm, mi_row, mi_col, bsize, best_si);
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
       encode_sb(cpi, td, tile_info, tp, mi_row, mi_col, OUTPUT_ENABLED, bsize,
                 pc_tree, NULL);
     } else {
@@ -3402,6 +3442,12 @@ static void rd_pick_partition(const AV1_COMP *const cpi, ThreadData *td,
   best_rdc.rdcost = best_rd;
 
   set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
+
+#if CONFIG_NEW_QUANT
+  if (bsize == cm->sb_size) {
+    set_q_profile_si(cm, mi_row, mi_col, bsize, 0);
+  }
+#endif  // CONFIG_NEW_QUANT
 
   if (bsize == BLOCK_16X16 && cpi->vaq_refresh)
     x->mb_energy = av1_block_energy(cpi, x, bsize);
@@ -4140,6 +4186,28 @@ static void rd_pick_partition(const AV1_COMP *const cpi, ThreadData *td,
   if (best_rdc.rate < INT_MAX && best_rdc.dist < INT64_MAX &&
       pc_tree->index != 3) {
     if (bsize == cm->sb_size) {
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+      int si, best_si = -1;
+      int64_t best_rdcost_si = INT64_MAX;
+      for (si = 0; si < NUM_Q_PROFILE_SI; ++si) {
+        int rate_si = cpi->q_profile_si_cost[si];
+        int64_t dist_si, rdcost_si;
+        set_q_profile_si(cm, mi_row, mi_col, bsize, si);
+        encode_sb(cpi, td, tile_info, tp, mi_row, mi_col, DRY_RUN_COSTCOEFFS,
+                  bsize, pc_tree, &rate_si);
+        dist_si = get_sb_distortion(cpi, x, bsize);
+        rdcost_si = RDCOST(x->rdmult, x->rddiv, rate_si, dist_si);
+        // printf("si %d: rdcost = %"PRId64" dist = %"PRId64" rate = %d\n",
+        //        si, rdcost_si, dist_si, rate_si);
+        if (rdcost_si < best_rdcost_si) {
+          best_rdcost_si = rdcost_si;
+          best_si = si;
+        }
+        restore_context(x, &x_ctx, mi_row, mi_col, bsize);
+      }
+      set_q_profile_si(cm, mi_row, mi_col, bsize, best_si);
+      // printf("best_si(%d, %d) = %d\n", mi_row, mi_col, best_si);
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
       encode_sb(cpi, td, tile_info, tp, mi_row, mi_col, OUTPUT_ENABLED, bsize,
                 pc_tree, NULL);
     } else {
@@ -4359,7 +4427,7 @@ static void reset_skip_tx_size(AV1_COMMON *cm, TX_SIZE max_tx_size) {
     }
   }
 }
-#endif
+#endif  // !CONFIG_VAR_TX
 
 static MV_REFERENCE_FRAME get_frame_type(const AV1_COMP *cpi) {
   if (frame_is_intra_only(&cpi->common)) return INTRA_FRAME;

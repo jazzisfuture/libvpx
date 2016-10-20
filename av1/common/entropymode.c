@@ -884,6 +884,24 @@ static const aom_prob
     default_switchable_restore_prob[RESTORE_SWITCHABLE_TYPES - 1] = { 32, 128 };
 #endif  // CONFIG_LOOP_RESTORATION
 
+#if CONFIG_NEW_QUANT
+#if NUM_Q_PROFILE_SI == 3
+const aom_tree_index
+    av1_q_profile_si_tree[TREE_SIZE(NUM_Q_PROFILE_SI)] = {
+      -Q_PROFILE_SI_0, 2, -Q_PROFILE_SI_1, -Q_PROFILE_SI_2
+    };
+static const aom_prob
+    default_q_profile_si_prob[NUM_Q_PROFILE_SI - 1] = { 192, 128 };
+#elif NUM_Q_PROFILE_SI == 2
+const aom_tree_index
+    av1_q_profile_si_tree[TREE_SIZE(NUM_Q_PROFILE_SI)] = {
+      -Q_PROFILE_SI_0, -Q_PROFILE_SI_1,
+    };
+static const aom_prob
+    default_q_profile_si_prob[NUM_Q_PROFILE_SI - 1] = { 192 };
+#endif  // NUM_Q_PROFILE_SI
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_EXT_TX && CONFIG_RECT_TX && CONFIG_VAR_TX
 // the probability of (0) using recursive square tx partition vs.
 // (1) biggest rect tx for 4X8-8X4/8X16-16X8/16X32-32X16 blocks
@@ -1397,6 +1415,9 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
 #if CONFIG_LOOP_RESTORATION
   av1_copy(fc->switchable_restore_prob, default_switchable_restore_prob);
 #endif  // CONFIG_LOOP_RESTORATION
+#if CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
+  av1_copy(fc->q_profile_si_prob, default_q_profile_si_prob);
+#endif  // CONFIG_NEW_QUANT && NUM_Q_PROFILE_SI > 1
 #if CONFIG_DAALA_EC
   av1_tree_to_cdf_1D(av1_switchable_interp_tree, fc->switchable_interp_prob,
                      fc->switchable_interp_cdf, SWITCHABLE_FILTER_CONTEXTS);
