@@ -1761,11 +1761,6 @@ static void read_inter_frame_mode_info(AV1Decoder *const pbi,
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
       }
 #endif
-      if (xd->counts) {
-        const int ctx = get_tx_size_context(xd);
-        ++xd->counts->tx_size[tx_size_cat][ctx]
-                             [txsize_sqr_up_map[mbmi->tx_size]];
-      }
     } else {
       if (inter_block)
         mbmi->tx_size = read_tx_size_inter(cm, xd, !mbmi->skip, r);
