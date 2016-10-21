@@ -811,6 +811,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   int pixels_wide = 64, pixels_high = 64;
   int64_t thresholds[4] = { cpi->vbp_thresholds[0], cpi->vbp_thresholds[1],
                             cpi->vbp_thresholds[2], cpi->vbp_thresholds[3] };
+  int64_t threshold_4x4avg =
+      (cpi->oxcf.speed < 8) ? thresholds[1] << 1 : thresholds[2] >> 1;
 
   // For the variance computation under SVC mode, we treat the frame as key if
   // the reference (base layer frame) is key frame (i.e., is_key_frame == 1).
@@ -999,7 +1001,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       }
       if (is_key_frame || (low_res &&
                            vt.split[i].split[j].part_variances.none.variance >
-                               (thresholds[1] << 1))) {
+                               threshold_4x4avg)) {
         force_split[split_index] = 0;
         // Go down to 4x4 down-sampling for variance.
         variance4x4downsample[i2 + j] = 1;
