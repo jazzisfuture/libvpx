@@ -5006,10 +5006,9 @@ static void update_txfm_count(MACROBLOCK *x, MACROBLOCKD *xd,
   }
 }
 
-static void tx_partition_count_update(const AV1_COMMON *const cm,
-                                      MACROBLOCK *x, BLOCK_SIZE plane_bsize,
-                                      int mi_row, int mi_col,
-                                      FRAME_COUNTS *td_counts) {
+static void tx_partition_count_update(const AV1_COMMON *const cm, MACROBLOCK *x,
+                                      BLOCK_SIZE plane_bsize, int mi_row,
+                                      int mi_col, FRAME_COUNTS *td_counts) {
   MACROBLOCKD *xd = &x->e_mbd;
   const int mi_width = num_4x4_blocks_wide_lookup[plane_bsize];
   const int mi_height = num_4x4_blocks_high_lookup[plane_bsize];
@@ -5303,7 +5302,7 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
             mi_8x8[mis * j + i]->mbmi.tx_size = tx_size;
 
 #if CONFIG_VAR_TX
-    if (mbmi->tx_size != max_txsize_lookup[bsize]) ++x->txb_split_count;
+      if (mbmi->tx_size != max_txsize_lookup[bsize]) ++x->txb_split_count;
 #endif
     }
 
