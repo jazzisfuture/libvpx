@@ -26,7 +26,7 @@ struct AV1_COMP;
 struct macroblock;
 struct RD_COST;
 
-int av1_cost_coeffs(MACROBLOCK *x, int plane, int block, int coeff_ctx,
+int av1_cost_coeffs(const AV1_COMMON *const cm, MACROBLOCK *x, int plane, int block, int coeff_ctx,
                     TX_SIZE tx_size, const int16_t *scan, const int16_t *nb,
                     int use_fast_coef_costing);
 void av1_rd_pick_intra_mode_sb(const struct AV1_COMP *cpi, struct macroblock *x,
