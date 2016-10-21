@@ -64,7 +64,6 @@ TEST_P(PartialIDctTest, RunQuantCheck) {
     default: FAIL() << "Wrong Size!"; break;
   }
   DECLARE_ALIGNED(16, tran_low_t, test_coef_block1[kMaxNumCoeffs]);
-  DECLARE_ALIGNED(16, tran_low_t, test_coef_block2[kMaxNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, dst1[kMaxNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, dst2[kMaxNumCoeffs]);
 
@@ -80,7 +79,6 @@ TEST_P(PartialIDctTest, RunQuantCheck) {
     memset(dst1, 0, sizeof(*dst1) * block_size);
     memset(dst2, 0, sizeof(*dst2) * block_size);
     memset(test_coef_block1, 0, sizeof(*test_coef_block1) * block_size);
-    memset(test_coef_block2, 0, sizeof(*test_coef_block2) * block_size);
 
     ACMRandom rnd(ACMRandom::DeterministicSeed());
 
@@ -131,7 +129,6 @@ TEST_P(PartialIDctTest, ResultsMatch) {
     default: FAIL() << "Wrong Size!"; break;
   }
   DECLARE_ALIGNED(16, tran_low_t, test_coef_block1[kMaxNumCoeffs]);
-  DECLARE_ALIGNED(16, tran_low_t, test_coef_block2[kMaxNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, dst1[kMaxNumCoeffs]);
   DECLARE_ALIGNED(16, uint8_t, dst2[kMaxNumCoeffs]);
   const int count_test_block = 1000;
@@ -143,7 +140,6 @@ TEST_P(PartialIDctTest, ResultsMatch) {
     memset(dst1, 0, sizeof(*dst1) * block_size);
     memset(dst2, 0, sizeof(*dst2) * block_size);
     memset(test_coef_block1, 0, sizeof(*test_coef_block1) * block_size);
-    memset(test_coef_block2, 0, sizeof(*test_coef_block2) * block_size);
     int max_energy_leftover = max_coeff * max_coeff;
     for (int j = 0; j < last_nonzero_; ++j) {
       int16_t coef = static_cast<int16_t>(sqrt(1.0 * max_energy_leftover) *
@@ -156,11 +152,8 @@ TEST_P(PartialIDctTest, ResultsMatch) {
       test_coef_block1[vp9_default_scan_orders[tx_size_].scan[j]] = coef;
     }
 
-    memcpy(test_coef_block2, test_coef_block1,
-           sizeof(*test_coef_block2) * block_size);
-
     ASM_REGISTER_STATE_CHECK(full_itxfm_(test_coef_block1, dst1, size));
-    ASM_REGISTER_STATE_CHECK(partial_itxfm_(test_coef_block2, dst2, size));
+    ASM_REGISTER_STATE_CHECK(partial_itxfm_(test_coef_block1, dst2, size));
 
     for (int j = 0; j < block_size; ++j) {
       const int diff = dst1[j] - dst2[j];
