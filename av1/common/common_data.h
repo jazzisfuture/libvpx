@@ -442,7 +442,21 @@ static const TX_SIZE txsize_vert_map[TX_SIZES_ALL] = {
 #endif       // CONFIG_EXT_TX
 };
 
-static const int tx_size_1d[TX_SIZES] = { 4, 8, 16, 32 };
+// Transform block width in pixels
+static const int tx_size_wide[TX_SIZES_ALL] = {
+  4, 8, 16, 32,
+#if CONFIG_EXT_TX
+  4, 8, 8,  16, 16, 32,
+#endif
+};
+
+// Transform block height in pixels
+static const int tx_size_high[TX_SIZES_ALL] = {
+  4, 8, 16, 32,
+#if CONFIG_EXT_TX
+  8, 4, 16, 8,  32, 16,
+#endif
+};
 
 static const int tx_size_2d[TX_SIZES_ALL] = {
   16, 64, 256, 1024,
