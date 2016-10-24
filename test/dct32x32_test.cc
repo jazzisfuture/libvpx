@@ -184,11 +184,11 @@ TEST_P(Trans32x32Test, CoeffCheck) {
 
     if (version_ == 0) {
       for (int j = 0; j < kNumCoeffs; ++j)
-        EXPECT_EQ(output_block[j], output_ref_block[j])
+        ASSERT_EQ(output_block[j], output_ref_block[j])
             << "Error: 32x32 FDCT versions have mismatched coefficients";
     } else {
       for (int j = 0; j < kNumCoeffs; ++j)
-        EXPECT_GE(6, abs(output_block[j] - output_ref_block[j]))
+        ASSERT_GE(6, abs(output_block[j] - output_ref_block[j]))
             << "Error: 32x32 FDCT rd has mismatched coefficients";
     }
   }
@@ -221,15 +221,15 @@ TEST_P(Trans32x32Test, MemCheck) {
     // The minimum quant value is 4.
     for (int j = 0; j < kNumCoeffs; ++j) {
       if (version_ == 0) {
-        EXPECT_EQ(output_block[j], output_ref_block[j])
+        ASSERT_EQ(output_block[j], output_ref_block[j])
             << "Error: 32x32 FDCT versions have mismatched coefficients";
       } else {
-        EXPECT_GE(6, abs(output_block[j] - output_ref_block[j]))
+        ASSERT_GE(6, abs(output_block[j] - output_ref_block[j]))
             << "Error: 32x32 FDCT rd has mismatched coefficients";
       }
-      EXPECT_GE(4 * DCT_MAX_VALUE << (bit_depth_ - 8), abs(output_ref_block[j]))
+      ASSERT_GE(4 * DCT_MAX_VALUE << (bit_depth_ - 8), abs(output_ref_block[j]))
           << "Error: 32x32 FDCT C has coefficient larger than 4*DCT_MAX_VALUE";
-      EXPECT_GE(4 * DCT_MAX_VALUE << (bit_depth_ - 8), abs(output_block[j]))
+      ASSERT_GE(4 * DCT_MAX_VALUE << (bit_depth_ - 8), abs(output_block[j]))
           << "Error: 32x32 FDCT has coefficient larger than "
           << "4*DCT_MAX_VALUE";
     }
@@ -435,6 +435,15 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&aom_fdct32x32_rd_avx2,
                                  &aom_idct32x32_1024_add_sse2, 1, AOM_BITS_8)));
 #endif  // HAVE_AVX2 && !CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+
+#if HAVE_AVX2 && CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+INSTANTIATE_TEST_CASE_P(
+    AVX2, Trans32x32Test,
+    ::testing::Values(make_tuple(&aom_fdct32x32_avx2,
+                                 &aom_idct32x32_1024_add_sse2, 0, AOM_BITS_8),
+                      make_tuple(&aom_fdct32x32_rd_avx2,
+                                 &aom_idct32x32_1024_add_sse2, 1, AOM_BITS_8)));
+#endif  // HAVE_AVX2 && CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 
 #if HAVE_MSA && !CONFIG_AOM_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
