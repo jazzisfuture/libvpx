@@ -9,11 +9,11 @@
  */
 
 #include <assert.h>
+#include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
-#include <limits.h>
 
 #include "./vpx_config.h"
 
@@ -864,8 +864,8 @@ static int main_loop(int argc, const char **argv_) {
           const char *detail = vpx_codec_error_detail(&decoder);
           warn("Failed to decode frame %d: %s", frame_in,
                vpx_codec_error(&decoder));
-
           if (detail) warn("Additional information: %s", detail);
+          frames_corrupted++;
           if (!keep_going) goto fail;
         }
 
@@ -884,6 +884,8 @@ static int main_loop(int argc, const char **argv_) {
       // Flush the decoder in frame parallel decode.
       if (vpx_codec_decode(&decoder, NULL, 0, NULL, 0)) {
         warn("Failed to flush decoder: %s", vpx_codec_error(&decoder));
+        frames_corrupted++;
+        if (!keep_going) goto fail;
       }
     }
 
