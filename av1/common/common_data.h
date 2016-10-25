@@ -480,6 +480,20 @@ static const int tx_size_high_unit[TX_SIZES_ALL] = {
 #endif
 };
 
+static const int tx_size_wide_log2[TX_SIZES_ALL] = {
+  2, 3, 4, 5,
+#if CONFIG_EXT_TX
+  2, 3, 3, 4, 4, 5,
+#endif
+};
+
+static const int tx_size_high_log2[TX_SIZES_ALL] = {
+  2, 3, 4, 5,
+#if CONFIG_EXT_TX
+  3, 2, 4, 3, 5, 4,
+#endif
+};
+
 static const int tx_size_2d[TX_SIZES_ALL] = {
   16, 64, 256, 1024,
 #if CONFIG_EXT_TX
