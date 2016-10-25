@@ -1157,7 +1157,7 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
 
       const int src_stride = p->src.stride;
       const int dst_stride = pd->dst.stride;
-      const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+      const int diff_stride = block_size_wide[plane_bsize];
 
       const uint8_t *src = &p->src.buf[4 * (blk_row * src_stride + blk_col)];
       const uint8_t *dst = &pd->dst.buf[4 * (blk_row * dst_stride + blk_col)];
