@@ -121,10 +121,10 @@ void project_points_homography(int16_t *mat, int *points, int *proj,
     Z = (mat[7] * x + mat[6] * y + (1 << (WARPEDMODEL_ROW3HOMO_PREC_BITS + 1)));
     xp = (mat[1] * x + mat[0] * y + 2 * mat[3])
          * (1 << (WARPEDPIXEL_PREC_BITS + WARPEDMODEL_ROW3HOMO_PREC_BITS -
-             WARPEDMODEL_PREC_BITS));
+                WARPEDMODEL_PREC_BITS));
     yp = (mat[2] * x + mat[5] * y + 2 * mat[4])
          * (1 << (WARPEDPIXEL_PREC_BITS + WARPEDMODEL_ROW3HOMO_PREC_BITS -
-             WARPEDMODEL_PREC_BITS));
+                WARPEDMODEL_PREC_BITS));
 
     xp = xp > 0 ? (xp + Z / 2) / Z : (xp - Z / 2) / Z;
     yp = yp > 0 ? (yp + Z / 2) / Z : (yp - Z / 2) / Z;
@@ -215,7 +215,8 @@ static int32_t do_cubic_filter(int32_t *p, int x) {
   } else if (x == (1 << WARPEDPIXEL_PREC_BITS)) {
     return p[1];
   } else {
-    const int64_t v1 = x * x * x * (3 * (p[0] - p[1]) + p[2] - p[-1]);
+    const int64_t v1 =
+        (int64_t)x * x * x * (3 * (p[0] - p[1]) + p[2] - p[-1]);
     const int64_t v2 = x * x * (2 * p[-1] - 5 * p[0] + 4 * p[1] - p[2]);
     const int64_t v3 = x * (p[1] - p[-1]);
     const int64_t v4 = 2 * p[0];
