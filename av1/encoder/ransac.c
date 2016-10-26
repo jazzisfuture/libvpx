@@ -245,7 +245,7 @@ static int ransac(double *matched_points, int npoints, int *number_of_inliers,
       }
     }
 
-    if (num_inliers >= max_inliers) {
+    if (num_inliers >= max_inliers && num_inliers > 0) {
       double mean_distance = sum_distance / ((double)num_inliers);
       double variance = sum_distance_squared / ((double)num_inliers - 1.0) -
                         mean_distance * mean_distance * ((double)num_inliers) /
