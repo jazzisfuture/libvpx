@@ -58,6 +58,9 @@ const aom_prob av1_cat6_prob_high12[] = { 255, 255, 255, 255, 254, 254,
 #endif
 
 const uint16_t band_count_table[TX_SIZES_ALL][8] = {
+#if CONFIG_CB4X4
+    {1, 2, 2, 3, 0, 0, 0,},
+#endif
   { 1, 2, 3, 4, 3, 16 - 13, 0 },   { 1, 2, 3, 4, 11, 64 - 21, 0 },
   { 1, 2, 3, 4, 11, 256 - 21, 0 }, { 1, 2, 3, 4, 11, 1024 - 21, 0 },
 #if CONFIG_EXT_TX
