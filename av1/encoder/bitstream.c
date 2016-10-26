@@ -2057,6 +2057,7 @@ static void write_modes_sb(AV1_COMP *const cpi, const TileInfo *const tile,
   if (bsize >= BLOCK_8X8 &&
       (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT))
     update_partition_context(xd, mi_row, mi_col, subsize, bsize);
+#endif  // CONFIG_EXT_PARTITION_TYPES
 
 #if CONFIG_CLPF
   if (bsize == BLOCK_64X64 && cm->clpf_blocks && cm->clpf_strength_y &&
@@ -2098,7 +2099,6 @@ static void write_modes_sb(AV1_COMP *const cpi, const TileInfo *const tile,
         DERING_REFINEMENT_BITS);
   }
 #endif
-#endif  // CONFIG_EXT_PARTITION_TYPES
 }
 
 static void write_modes(AV1_COMP *const cpi, const TileInfo *const tile,
