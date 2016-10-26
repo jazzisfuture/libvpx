@@ -50,12 +50,14 @@ class PartialIDctTest : public ::testing::TestWithParam<PartialInvTxfmParam> {
       default: FAIL() << "Wrong Size!"; break;
     }
 
+    block_size_ = size_ * size_;
+
     input_block_ = reinterpret_cast<tran_low_t *>(
-        vpx_memalign(16, sizeof(*input_block_) * size_ * size_));
+        vpx_memalign(16, sizeof(*input_block_) * block_size_));
     output_block_ = reinterpret_cast<uint8_t *>(
-        vpx_memalign(16, sizeof(*output_block_) * size_ * size_));
+        vpx_memalign(16, sizeof(*output_block_) * block_size_));
     output_block_ref_ = reinterpret_cast<uint8_t *>(
-        vpx_memalign(16, sizeof(*output_block_ref_) * size_ * size_));
+        vpx_memalign(16, sizeof(*output_block_ref_) * block_size_));
   }
 
   virtual void TearDown() {
@@ -75,6 +77,7 @@ class PartialIDctTest : public ::testing::TestWithParam<PartialInvTxfmParam> {
   uint8_t *output_block_;
   uint8_t *output_block_ref_;
   int size_;
+  int block_size_;
   FwdTxfmFunc ftxfm_;
   InvTxfmFunc full_itxfm_;
   InvTxfmFunc partial_itxfm_;
@@ -84,27 +87,26 @@ TEST_P(PartialIDctTest, RunQuantCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
 
   const int count_test_block = 1000;
-  const int block_size = size_ * size_;
 
   DECLARE_ALIGNED(16, int16_t, input_extreme_block[kMaxNumCoeffs]);
   DECLARE_ALIGNED(16, tran_low_t, output_ref_block[kMaxNumCoeffs]);
 
   for (int i = 0; i < count_test_block; ++i) {
     // clear out destination buffer
-    memset(input_block_, 0, sizeof(*input_block_) * block_size);
-    memset(output_block_, 0, sizeof(*output_block_) * block_size);
-    memset(output_block_ref_, 0, sizeof(*output_block_ref_) * block_size);
+    memset(input_block_, 0, sizeof(*input_block_) * block_size_);
+    memset(output_block_, 0, sizeof(*output_block_) * block_size_);
+    memset(output_block_ref_, 0, sizeof(*output_block_ref_) * block_size_);
 
     ACMRandom rnd(ACMRandom::DeterministicSeed());
 
     for (int i = 0; i < count_test_block; ++i) {
       // Initialize a test block with input range [-255, 255].
       if (i == 0) {
-        for (int j = 0; j < block_size; ++j) input_extreme_block[j] = 255;
+        for (int j = 0; j < block_size_; ++j) input_extreme_block[j] = 255;
       } else if (i == 1) {
-        for (int j = 0; j < block_size; ++j) input_extreme_block[j] = -255;
+        for (int j = 0; j < block_size_; ++j) input_extreme_block[j] = -255;
       } else {
-        for (int j = 0; j < block_size; ++j) {
+        for (int j = 0; j < block_size_; ++j) {
           input_extreme_block[j] = rnd.Rand8() % 2 ? 255 : -255;
         }
       }
@@ -125,7 +127,7 @@ TEST_P(PartialIDctTest, RunQuantCheck) {
         partial_itxfm_(input_block_, output_block_, size_));
 
     ASSERT_EQ(0, memcmp(output_block_ref_, output_block_,
-                        sizeof(*output_block_) * block_size))
+                        sizeof(*output_block_) * block_size_))
         << "Error: partial inverse transform produces different results";
   }
 }
@@ -134,12 +136,11 @@ TEST_P(PartialIDctTest, ResultsMatch) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   const int count_test_block = 1000;
   const int max_coeff = 32766 / 4;
-  const int block_size = size_ * size_;
   for (int i = 0; i < count_test_block; ++i) {
     // clear out destination buffer
-    memset(input_block_, 0, sizeof(tran_low_t) * block_size);
-    memset(output_block_, 0, sizeof(*output_block_) * block_size);
-    memset(output_block_ref_, 0, sizeof(*output_block_ref_) * block_size);
+    memset(input_block_, 0, sizeof(tran_low_t) * block_size_);
+    memset(output_block_, 0, sizeof(*output_block_) * block_size_);
+    memset(output_block_ref_, 0, sizeof(*output_block_ref_) * block_size_);
     int max_energy_leftover = max_coeff * max_coeff;
     for (int j = 0; j < last_nonzero_; ++j) {
       int16_t coef = static_cast<int16_t>(sqrt(1.0 * max_energy_leftover) *
@@ -158,8 +159,32 @@ TEST_P(PartialIDctTest, ResultsMatch) {
         partial_itxfm_(input_block_, output_block_, size_));
 
     ASSERT_EQ(0, memcmp(output_block_ref_, output_block_,
-                        sizeof(*output_block_) * block_size))
+                        sizeof(*output_block_) * block_size_))
         << "Error: partial inverse transform produces different results";
+  }
+}
+
+TEST_P(PartialIDctTest, AddOutputBlock) {
+  ACMRandom rnd(ACMRandom::DeterministicSeed());
+  const int count_test_block = 10;
+  for (int i = 0; i < count_test_block; ++i) {
+    memset(input_block_, 0, sizeof(tran_low_t) * block_size_);
+    for (int j = 0; j < last_nonzero_; ++j) {
+      input_block_[vp9_default_scan_orders[tx_size_].scan[j]] = 10;
+    }
+
+    for (int j = 0; j < block_size_; ++j) {
+      output_block_[j] = output_block_ref_[j] = rnd.Rand8();
+    }
+
+    ASM_REGISTER_STATE_CHECK(
+        full_itxfm_(input_block_, output_block_ref_, size_));
+    ASM_REGISTER_STATE_CHECK(
+        partial_itxfm_(input_block_, output_block_, size_));
+
+    ASSERT_EQ(0, memcmp(output_block_ref_, output_block_,
+                        sizeof(*output_block_) * block_size_))
+        << "Error: Transform results are not correctly added to output.";
   }
 }
 using std::tr1::make_tuple;
