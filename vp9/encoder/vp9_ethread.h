@@ -26,6 +26,8 @@ typedef struct EncWorkerData {
 
 void vp9_encode_tiles_mt(struct VP9_COMP *cpi);
 
+void vp9_encode_fp_tiles_mt(struct VP9_COMP *cpi);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
