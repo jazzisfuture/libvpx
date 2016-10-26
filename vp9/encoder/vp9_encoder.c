@@ -1517,6 +1517,12 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_set_var_fns(cpi);
 #endif
+
+  // Enable multi-threading for first pass.
+  cpi->newMT = 0;
+  if (((cpi->oxcf.mode == GOOD || cpi->oxcf.mode == BEST) &&
+       cpi->oxcf.pass == 1) && cpi->oxcf.newMT)
+    cpi->newMT = 1;
 }
 
 #ifndef M_LOG2_E

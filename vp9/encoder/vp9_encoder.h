@@ -256,6 +256,8 @@ typedef struct VP9EncoderConfig {
   int render_width;
   int render_height;
   VP9E_TEMPORAL_LAYERING_MODE temporal_layering_mode;
+
+  int newMT;
 } VP9EncoderConfig;
 
 static INLINE int is_lossless_requested(const VP9EncoderConfig *cfg) {
@@ -269,6 +271,9 @@ typedef struct TileDataEnc {
   int mode_map[BLOCK_SIZES][MAX_MODES];
   int m_search_count;
   int ex_search_count;
+  MV tile_start_lastmv;
+  MV tile_start_best_ref_mv;
+  FIRSTPASS_DATA fp_data;
 } TileDataEnc;
 
 typedef struct RD_COUNTS {
@@ -605,6 +610,7 @@ typedef struct VP9_COMP {
 
   int keep_level_stats;
   Vp9LevelInfo level_info;
+  int newMT;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
