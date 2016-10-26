@@ -144,7 +144,7 @@ DECLARE_ALIGNED(16, static const int16_t,
   { -1, 2, -2, 4, -8, 18, 124, -13, 6, -3, 2, -1 },
   { 0, 1, -1, 2, -4, 8, 127, -7, 3, -2, 1, 0 },
 };
-#else   // CONFIG_EXT_INTERP
+#else  // CONFIG_EXT_INTERP
 
 DECLARE_ALIGNED(256, static const InterpKernel,
                 sub_pel_filters_8[SUBPEL_SHIFTS]) = {
