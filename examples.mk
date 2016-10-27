@@ -241,6 +241,10 @@ vp8_multi_resolution_encoder.DESCRIPTION = VP8 Multiple-resolution Encoding
 endif
 endif
 
+EXAMPLES-yes            += ../tools/tiny_ssim.c
+tiny_ssim.GUID        = 3afa9b05-940b-4d68-b5aa-55157d8ed7b4
+tiny_ssim.DESCRIPTION = Generate SSIM/PSNR from raw .yuv files
+
 # Handle extra library flags depending on codec configuration
 
 # We should not link to math library (libm) on RVCT
