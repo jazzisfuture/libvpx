@@ -142,10 +142,10 @@ static aom_codec_err_t update_error_state(
     return AOM_CODEC_INVALID_PARAM; \
   } while (0)
 
-#define RANGE_CHECK(p, memb, lo, hi)                                 \
-  do {                                                               \
-    if (!(((p)->memb == lo || (p)->memb > (lo)) && (p)->memb <= hi)) \
-      ERROR(#memb " out of range [" #lo ".." #hi "]");               \
+#define RANGE_CHECK(p, memb, lo, hi)                   \
+  do {                                                 \
+    if (!((p)->memb >= (lo) && (p)->memb <= (hi)))     \
+      ERROR(#memb " out of range [" #lo ".." #hi "]"); \
   } while (0)
 
 #define RANGE_CHECK_HI(p, memb, hi)                                     \
