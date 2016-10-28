@@ -92,6 +92,9 @@ static const arg_def_t md5arg =
 static const arg_def_t outbitdeptharg =
     ARG_DEF(NULL, "output-bit-depth", 1, "Output bit-depth for decoded frames");
 #endif
+static const arg_def_t svcdecodingarg =
+    ARG_DEF(NULL, "svc-decode-layer", 1,
+            "Decode SVC stream up to spatial layer");
 
 static const arg_def_t *all_args[] = { &codecarg,
                                        &use_yv12,
@@ -116,6 +119,7 @@ static const arg_def_t *all_args[] = { &codecarg,
 #if CONFIG_VP9_HIGHBITDEPTH
                                        &outbitdeptharg,
 #endif
+                                       &svcdecodingarg,
                                        NULL };
 
 #if CONFIG_VP8_DECODER
@@ -519,6 +523,8 @@ static int main_loop(int argc, const char **argv_) {
 #if CONFIG_VP9_HIGHBITDEPTH
   unsigned int output_bit_depth = 0;
 #endif
+  int svc_decoding = 0;
+  int svc_spatial_layer = 0;
 #if CONFIG_VP8_DECODER
   vp8_postproc_cfg_t vp8_pp_cfg = { 0, 0, 0 };
 #endif
@@ -610,6 +616,10 @@ static int main_loop(int argc, const char **argv_) {
       output_bit_depth = arg_parse_uint(&arg);
     }
 #endif
+    else if (arg_match(&arg, &svcdecodingarg, argi)) {
+      svc_decoding = 1;
+      svc_spatial_layer = arg_parse_uint(&arg);
+    }
 #if CONFIG_VP8_DECODER
     else if (arg_match(&arg, &addnoise_level, argi)) {
       postproc = 1;
@@ -726,6 +736,9 @@ static int main_loop(int argc, const char **argv_) {
             vpx_codec_error(&decoder));
     goto fail2;
   }
+  if (svc_decoding)
+    vpx_codec_control(&decoder, VP9_DECODE_SVC_SPATIAL_LAYER,
+                      svc_spatial_layer);
 
   if (!quiet) fprintf(stderr, "%s\n", decoder.name);
 

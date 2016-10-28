@@ -111,7 +111,10 @@ enum vp8_dec_control_id {
    */
   VP9_SET_SKIP_LOOP_FILTER,
 
-  VP8_DECODER_CTRL_ID_MAX
+  VP8_DECODER_CTRL_ID_MAX,
+
+  VP9_DECODE_SVC_SPATIAL_LAYER
+
 };
 
 /** Decrypt n bytes of data from input -> output, using the decrypt_state
@@ -162,6 +165,8 @@ VPX_CTRL_USE_TYPE(VP9D_GET_FRAME_SIZE, int *)
 #define VPX_CTRL_VP9D_GET_FRAME_SIZE
 VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
 #define VPX_CTRL_VP9_INVERT_TILE_DECODE_ORDER
+#define VPX_CTRL_VP9_DECODE_SVC_SPATIAL_LAYER
+VPX_CTRL_USE_TYPE(VP9_DECODE_SVC_SPATIAL_LAYER, int)
 
 /*!\endcond */
 /*! @} - end defgroup vp8_decoder */
