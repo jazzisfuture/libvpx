@@ -40,6 +40,7 @@
 /examples/vp9cx_set_ref
 /examples/vp9_lossless_encoder
 /examples/vp9_spatial_scalable_encoder
+/examples/vp9_spatial_svc_encoder
 /examples/vpx_temporal_scalable_patterns
 /examples/vpx_temporal_svc_encoder
 /ivfdec
