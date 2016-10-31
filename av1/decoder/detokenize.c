@@ -65,7 +65,7 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
 #endif
 {
   FRAME_COUNTS *counts = xd->counts;
-  const int max_eob = get_tx2d_size(tx_size);
+  const int max_eob = tx_size_2d[tx_size];
   const FRAME_CONTEXT *const fc = xd->fc;
   const int ref = is_inter_block(&xd->mi[0]->mbmi);
 #if CONFIG_AOM_QM
