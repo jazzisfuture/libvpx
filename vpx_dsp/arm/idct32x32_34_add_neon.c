@@ -12,125 +12,8 @@
 
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
-#include "vpx_dsp/arm/transpose_neon.h"
+#include "vpx_dsp/arm/idct_neon.h"
 #include "vpx_dsp/txfm_common.h"
-
-// Multiply a by a_const. Saturate, shift and narrow by 14.
-static int16x8_t multiply_shift_and_narrow(const int16x8_t a,
-                                           const int16_t a_const) {
-  // Shift by 14 + rounding will be within 16 bits for well formed streams.
-  // See WRAPLOW and dct_const_round_shift for details.
-  // This instruction doubles the result and returns the high half, essentially
-  // resulting in a right shift by 15. By multiplying the constant first that
-  // becomes a right shift by 14.
-  // The largest possible value used here is
-  // vpx_dsp/txfm_common.h:cospi_1_64 = 16364 (* 2 = 32728) a which falls *just*
-  // within the range of int16_t (+32767 / -32768) even when negated.
-  return vqrdmulhq_n_s16(a, a_const * 2);
-}
-
-// Add a and b, then multiply by ab_const. Shift and narrow by 14.
-static int16x8_t add_multiply_shift_and_narrow(const int16x8_t a,
-                                               const int16x8_t b,
-                                               const int16_t ab_const) {
-  // In both add_ and its pair, sub_, the input for well-formed streams will be
-  // well within 16 bits (input to the idct is the difference between two frames
-  // and will be within -255 to 255, or 9 bits)
-  // However, for inputs over about 25,000 (valid for int16_t, but not for idct
-  // input) this function can not use vaddq_s16.
-  // In order to match existing behavior and intentionally out of range tests,
-  // expand the addition up to 32 bits to prevent truncation.
-  int32x4_t temp_low = vaddl_s16(vget_low_s16(a), vget_low_s16(b));
-  int32x4_t temp_high = vaddl_s16(vget_high_s16(a), vget_high_s16(b));
-  temp_low = vmulq_n_s32(temp_low, ab_const);
-  temp_high = vmulq_n_s32(temp_high, ab_const);
-  return vcombine_s16(vrshrn_n_s32(temp_low, 14), vrshrn_n_s32(temp_high, 14));
-}
-
-// Subtract b from a, then multiply by ab_const. Shift and narrow by 14.
-static int16x8_t sub_multiply_shift_and_narrow(const int16x8_t a,
-                                               const int16x8_t b,
-                                               const int16_t ab_const) {
-  int32x4_t temp_low = vsubl_s16(vget_low_s16(a), vget_low_s16(b));
-  int32x4_t temp_high = vsubl_s16(vget_high_s16(a), vget_high_s16(b));
-  temp_low = vmulq_n_s32(temp_low, ab_const);
-  temp_high = vmulq_n_s32(temp_high, ab_const);
-  return vcombine_s16(vrshrn_n_s32(temp_low, 14), vrshrn_n_s32(temp_high, 14));
-}
-
-// Multiply a by a_const and b by b_const, then accumulate. Shift and narrow by
-// 14.
-static int16x8_t multiply_accumulate_shift_and_narrow(const int16x8_t a,
-                                                      const int16_t a_const,
-                                                      const int16x8_t b,
-                                                      const int16_t b_const) {
-  int32x4_t temp_low = vmull_n_s16(vget_low_s16(a), a_const);
-  int32x4_t temp_high = vmull_n_s16(vget_high_s16(a), a_const);
-  temp_low = vmlal_n_s16(temp_low, vget_low_s16(b), b_const);
-  temp_high = vmlal_n_s16(temp_high, vget_high_s16(b), b_const);
-  return vcombine_s16(vrshrn_n_s32(temp_low, 14), vrshrn_n_s32(temp_high, 14));
-}
-
-// Shift the output down by 6 and add it to the destination buffer.
-static void add_and_store(const int16x8_t a0, const int16x8_t a1,
-                          const int16x8_t a2, const int16x8_t a3,
-                          const int16x8_t a4, const int16x8_t a5,
-                          const int16x8_t a6, const int16x8_t a7, uint8_t *b,
-                          const int b_stride) {
-  uint8x8_t b0, b1, b2, b3, b4, b5, b6, b7;
-  int16x8_t c0, c1, c2, c3, c4, c5, c6, c7;
-  b0 = vld1_u8(b);
-  b += b_stride;
-  b1 = vld1_u8(b);
-  b += b_stride;
-  b2 = vld1_u8(b);
-  b += b_stride;
-  b3 = vld1_u8(b);
-  b += b_stride;
-  b4 = vld1_u8(b);
-  b += b_stride;
-  b5 = vld1_u8(b);
-  b += b_stride;
-  b6 = vld1_u8(b);
-  b += b_stride;
-  b7 = vld1_u8(b);
-  b -= (7 * b_stride);
-
-  // c = b + (a >> 6)
-  c0 = vrsraq_n_s16(vreinterpretq_s16_u16(vmovl_u8(b0)), a0, 6);
-  c1 = vrsraq_n_s16(vreinterpretq_s16_u16(vmovl_u8(b1)), a1, 6);
-  c2 = vrsraq_n_s16(vreinterpretq_s16_u16(vmovl_u8(b2)), a2, 6);
-  c3 = vrsraq_n_s16(vreinterpretq_s16_u16(vmovl_u8(b3)), a3, 6);
-  c4 = vrsraq_n_s16(vreinterpretq_s16_u16(vmovl_u8(b4)), a4, 6);
-  c5 = vrsraq_n_s16(vreinterpretq_s16_u16(vmovl_u8(b5)), a5, 6);
-  c6 = vrsraq_n_s16(vreinterpretq_s16_u16(vmovl_u8(b6)), a6, 6);
-  c7 = vrsraq_n_s16(vreinterpretq_s16_u16(vmovl_u8(b7)), a7, 6);
-
-  b0 = vqmovun_s16(c0);
-  b1 = vqmovun_s16(c1);
-  b2 = vqmovun_s16(c2);
-  b3 = vqmovun_s16(c3);
-  b4 = vqmovun_s16(c4);
-  b5 = vqmovun_s16(c5);
-  b6 = vqmovun_s16(c6);
-  b7 = vqmovun_s16(c7);
-
-  vst1_u8(b, b0);
-  b += b_stride;
-  vst1_u8(b, b1);
-  b += b_stride;
-  vst1_u8(b, b2);
-  b += b_stride;
-  vst1_u8(b, b3);
-  b += b_stride;
-  vst1_u8(b, b4);
-  b += b_stride;
-  vst1_u8(b, b5);
-  b += b_stride;
-  vst1_u8(b, b6);
-  b += b_stride;
-  vst1_u8(b, b7);
-}
 
 // Only for the first pass of the  _34_ variant. Since it only uses values from
 // the top left 8x8 it can safely assume all the remaining values are 0 and skip
@@ -163,23 +46,8 @@ static void idct32_6_neon(const int16_t *input, int16_t *output) {
       s2_31;
   int16x8_t s3_24, s3_25, s3_26, s3_27;
 
-  in0 = vld1q_s16(input);
-  input += 32;
-  in1 = vld1q_s16(input);
-  input += 32;
-  in2 = vld1q_s16(input);
-  input += 32;
-  in3 = vld1q_s16(input);
-  input += 32;
-  in4 = vld1q_s16(input);
-  input += 32;
-  in5 = vld1q_s16(input);
-  input += 32;
-  in6 = vld1q_s16(input);
-  input += 32;
-  in7 = vld1q_s16(input);
-
-  transpose_s16_8x8(&in0, &in1, &in2, &in3, &in4, &in5, &in6, &in7);
+  load_and_transpose_s16_8x8(input, 32, &in0, &in1, &in2, &in3, &in4, &in5,
+                             &in6, &in7);
 
   // stage 1
   // input[1] * cospi_31_64 - input[31] * cospi_1_64 (but input[31] == 0)
@@ -403,23 +271,8 @@ static void idct32_8_neon(const int16_t *input, uint8_t *output, int stride) {
       s2_31;
   int16x8_t s3_24, s3_25, s3_26, s3_27;
 
-  in0 = vld1q_s16(input);
-  input += 8;
-  in1 = vld1q_s16(input);
-  input += 8;
-  in2 = vld1q_s16(input);
-  input += 8;
-  in3 = vld1q_s16(input);
-  input += 8;
-  in4 = vld1q_s16(input);
-  input += 8;
-  in5 = vld1q_s16(input);
-  input += 8;
-  in6 = vld1q_s16(input);
-  input += 8;
-  in7 = vld1q_s16(input);
-
-  transpose_s16_8x8(&in0, &in1, &in2, &in3, &in4, &in5, &in6, &in7);
+  load_and_transpose_s16_8x8(input, 8, &in0, &in1, &in2, &in3, &in4, &in5, &in6,
+                             &in7);
 
   // stage 1
   s1_16 = multiply_shift_and_narrow(in1, cospi_31_64);
