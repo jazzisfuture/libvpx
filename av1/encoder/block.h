@@ -35,6 +35,14 @@ typedef struct macroblock_plane {
   uint16_t *eobs;
   struct buf_2d src;
 
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  // NOTE: The predicted pixel value buffer from the compound reference pair
+  // (LAST_FRAME & BWDREF_FRAME) respectively
+  struct buf_2d dst_comp_pair[2];
+  // The pixel buffer bi-predicted by the two compound pair of references
+  struct buf_2d dst_bipred;
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+
   // Quantizer setings
   const int16_t *quant_fp;
   const int16_t *round_fp;
@@ -63,7 +71,14 @@ typedef struct {
 #if CONFIG_EXT_INTER
   int16_t compound_mode_context[MODE_CTX_REF_FRAMES];
 #endif  // CONFIG_EXT_INTER
-#endif
+#endif  // CONFIG_REF_MV
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  // NOTE: The motion vectors from LAST_FRAME & BWDREF_FRAME respectively
+  int_mv mv_comp_pair[2];
+  PREDICTION_MODE mode_comp_pair;
+  MV_REFERENCE_FRAME ref_frame_comp_pair[2];
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
 } MB_MODE_INFO_EXT;
 
 #if CONFIG_PALETTE
@@ -99,7 +114,7 @@ struct macroblock {
 
 #if CONFIG_VAR_TX
   unsigned int txb_split_count;
-#endif
+#endif  // CONFIG_VAR_TX
 
   // These are set to their default values at the beginning, and then adjusted
   // further in the encoding process.
@@ -125,7 +140,7 @@ struct macroblock {
   int *nmvcost[2];
   int *nmvcost_hp[2];
   int nmvjointsadcost[MV_JOINTS];
-#endif
+#endif  // CONFIG_REF_MV
 
   int **mvcost;
   int *nmvsadcost[2];
@@ -151,8 +166,8 @@ struct macroblock {
   uint8_t blk_skip[MAX_MB_PLANE][MAX_MIB_SIZE * MAX_MIB_SIZE * 4];
 #if CONFIG_REF_MV
   uint8_t blk_skip_drl[MAX_MB_PLANE][MAX_MIB_SIZE * MAX_MIB_SIZE * 4];
-#endif
-#endif
+#endif  // CONFIG_REF_MV
+#endif  // CONFIG_VAR_TX
 
   int skip;
 
