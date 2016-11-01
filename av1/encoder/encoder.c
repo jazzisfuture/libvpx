@@ -2187,6 +2187,12 @@ AV1_COMP *av1_create_compressor(AV1EncoderConfig *oxcf,
 
   init_upsampled_ref_frame_bufs(cpi);
 
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  cpi->img_bipred = (YV12_BUFFER_CONFIG *)aom_calloc(
+      1, sizeof(YV12_BUFFER_CONFIG));
+  if (cpi->img_bipred == NULL) return NULL;
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+
   av1_set_speed_features_framesize_independent(cpi);
   av1_set_speed_features_framesize_dependent(cpi);
 
@@ -2508,6 +2514,11 @@ void av1_remove_compressor(AV1_COMP *cpi) {
 
   av1_remove_common(cm);
   av1_free_ref_frame_buffers(cm->buffer_pool);
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  aom_free(cpi->img_bipred);
+#endif // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+
   aom_free(cpi);
 
 #ifdef OUTPUT_YUV_SKINMAP

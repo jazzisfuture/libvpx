@@ -294,7 +294,11 @@ static void set_offsets_without_segment_id(const AV1_COMP *const cpi,
                  cm->mi_cols);
 
   // Set up source buffers.
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  av1_setup_src_planes(x, cpi->Source, cpi->img_bipred, mi_row, mi_col);
+#else
   av1_setup_src_planes(x, cpi->Source, mi_row, mi_col);
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
 
   // R/D setup.
   x->rddiv = cpi->rd.RDDIV;
@@ -1000,6 +1004,7 @@ static void update_filter_type_count(FRAME_COUNTS *counts,
   }
 }
 #endif
+
 #if CONFIG_GLOBAL_MOTION
 static void update_global_motion_used(PREDICTION_MODE mode,
                                       const MB_MODE_INFO *mbmi, AV1_COMP *cpi) {
@@ -1153,7 +1158,8 @@ static void update_state(const AV1_COMP *const cpi, ThreadData *td,
       ++mode_chosen_counts[ctx->best_mode_index];
     }
   }
-#endif
+#endif  // CONFIG_INTERNAL_STATS
+
   if (!frame_is_intra_only(cm)) {
     if (is_inter_block(mbmi)) {
       av1_update_mv_count(td);
@@ -1175,6 +1181,7 @@ static void update_state(const AV1_COMP *const cpi, ThreadData *td,
         }
       }
 #endif  // CONFIG_GLOBAL_MOTION
+
       if (cm->interp_filter == SWITCHABLE
 #if CONFIG_EXT_INTERP
           && av1_is_interp_needed(xd)
@@ -1577,6 +1584,9 @@ static void update_supertx_param_sb(const AV1_COMP *const cpi, ThreadData *td,
 #endif  // CONFIG_SUPERTX
 
 void av1_setup_src_planes(MACROBLOCK *x, const YV12_BUFFER_CONFIG *src,
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+                          const YV12_BUFFER_CONFIG *img_bipred,
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
                           int mi_row, int mi_col) {
   uint8_t *const buffers[3] = { src->y_buffer, src->u_buffer, src->v_buffer };
   const int widths[3] = { src->y_crop_width, src->uv_crop_width,
@@ -1584,16 +1594,36 @@ void av1_setup_src_planes(MACROBLOCK *x, const YV12_BUFFER_CONFIG *src,
   const int heights[3] = { src->y_crop_height, src->uv_crop_height,
                            src->uv_crop_height };
   const int strides[3] = { src->y_stride, src->uv_stride, src->uv_stride };
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  uint8_t *const buffers_bipred[3] = { img_bipred->y_buffer,
+    img_bipred->u_buffer, img_bipred->v_buffer };
+  const int widths_bipred[3] = { img_bipred->y_crop_width,
+    img_bipred->uv_crop_width, img_bipred->uv_crop_width };
+  const int heights_bipred[3] = { img_bipred->y_crop_height,
+    img_bipred->uv_crop_height, img_bipred->uv_crop_height };
+  const int strides_bipred[3] = { img_bipred->y_stride, img_bipred->uv_stride,
+    img_bipred->uv_stride };
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
   int i;
 
   // Set current frame pointer.
   x->e_mbd.cur_buf = src;
 
-  for (i = 0; i < MAX_MB_PLANE; i++)
+  for (i = 0; i < MAX_MB_PLANE; i++) {
     setup_pred_plane(&x->plane[i].src, buffers[i], widths[i], heights[i],
                      strides[i], mi_row, mi_col, NULL,
                      x->e_mbd.plane[i].subsampling_x,
                      x->e_mbd.plane[i].subsampling_y);
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+    setup_pred_plane(&x->plane[i].dst_bipred, buffers_bipred[i],
+                     widths_bipred[i], heights_bipred[i], strides_bipred[i],
+                     mi_row, mi_col, NULL,
+                     x->e_mbd.plane[i].subsampling_x,
+                     x->e_mbd.plane[i].subsampling_y);
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  }
 }
 
 static int set_segment_rdmult(const AV1_COMP *const cpi, MACROBLOCK *const x,
@@ -4325,7 +4355,11 @@ static void init_encode_frame_mb_context(AV1_COMP *cpi) {
   MACROBLOCKD *const xd = &x->e_mbd;
 
   // Copy data over into macro block data structures.
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  av1_setup_src_planes(x, cpi->Source, cpi->img_bipred, 0, 0);
+#else
   av1_setup_src_planes(x, cpi->Source, 0, 0);
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
 
   av1_setup_block_planes(xd, cm->subsampling_x, cm->subsampling_y);
 }
@@ -4691,6 +4725,25 @@ static void encode_frame_internal(AV1_COMP *cpi) {
     }
   }
 #endif  // CONFIG_GLOBAL_MOTION
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  aom_clear_system_state();
+
+  if (cm->frame_type == INTER_FRAME && cpi->Source) {
+    // Scan through each pair of compound reference frames and check the residue
+    int tile_col, tile_row;
+
+    // TODO(zoeliu): To confirm whether we need to initialize the title data
+    //               here.
+    av1_init_tile_data(cpi);
+
+    for (tile_row = 0; tile_row < cm->tile_rows; ++tile_row) {
+      for (tile_col = 0; tile_col < cm->tile_cols; ++tile_col) {
+        // TODO(zoeliu): ...
+      }
+    }
+  }
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
 
   for (i = 0; i < MAX_SEGMENTS; ++i) {
     const int qindex = cm->seg.enabled

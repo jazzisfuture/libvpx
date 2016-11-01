@@ -619,6 +619,10 @@ typedef struct AV1_COMP {
 #if CONFIG_GLOBAL_MOTION
   int global_motion_used[TOTAL_REFS_PER_FRAME];
 #endif
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  YV12_BUFFER_CONFIG *img_bipred;
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
 } AV1_COMP;
 
 void av1_initialize_enc(void);

@@ -31,8 +31,11 @@ struct ThreadData;
 #define VAR_HIST_SMALL_CUT_OFF 45
 
 void av1_setup_src_planes(struct macroblock *x,
-                          const struct yv12_buffer_config *src, int mi_row,
-                          int mi_col);
+                          const struct yv12_buffer_config *src,
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+                          const struct yv12_buffer_config *img_bipred,
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+                          int mi_row, int mi_col);
 
 void av1_encode_frame(struct AV1_COMP *cpi);
 
