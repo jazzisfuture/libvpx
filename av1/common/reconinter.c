@@ -650,7 +650,7 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
     }
     return;
   }
-#endif
+#endif // CONFIG_DUAL_FILTER
 
 #if CONFIG_SUB8X8_MC
 #if CONFIG_MOTION_VAR
@@ -729,13 +729,13 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
           inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride, subpel_x,
                           subpel_y, sf, x_step, y_step, ref,
                           mi->mbmi.interp_filter, xs, ys);
-#endif
+#endif  // CONFIG_AOM_HIGHBITDEPTH
         }
       }
     }
     return;
   }
-#endif
+#endif  // CONFIG_SUB8X8_MC
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
     const struct scale_factors *const sf = &xd->block_refs[ref]->sf;
@@ -2033,6 +2033,77 @@ void av1_build_interintra_predictors(MACROBLOCKD *xd, uint8_t *ypred,
                                        bsize);
 }
 
+static void build_wedge_inter_predictor_from_buf(
+    MACROBLOCKD *xd, int plane, int x, int y, int w, int h, uint8_t *ext_dst0,
+    int ext_dst_stride0, uint8_t *ext_dst1, int ext_dst_stride1) {
+  const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+  const int is_compound = has_second_ref(mbmi);
+  MACROBLOCKD_PLANE *const pd = &xd->plane[plane];
+  struct buf_2d *const dst_buf = &pd->dst;
+  uint8_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
+
+  if (is_compound && is_interinter_wedge_used(mbmi->sb_type) &&
+      mbmi->use_wedge_interinter) {
+#if CONFIG_AOM_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+      build_masked_compound_wedge_highbd(
+          dst, dst_buf->stride, CONVERT_TO_BYTEPTR(ext_dst0), ext_dst_stride0,
+          CONVERT_TO_BYTEPTR(ext_dst1), ext_dst_stride1,
+          mbmi->interinter_wedge_index, mbmi->interinter_wedge_sign,
+          mbmi->sb_type, h, w, xd->bd);
+    else
+#endif  // CONFIG_AOM_HIGHBITDEPTH
+      build_masked_compound_wedge(
+          dst, dst_buf->stride, ext_dst0, ext_dst_stride0, ext_dst1,
+          ext_dst_stride1, mbmi->interinter_wedge_index,
+          mbmi->interinter_wedge_sign, mbmi->sb_type, h, w);
+  } else {
+#if CONFIG_AOM_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+      aom_highbd_convolve_copy(CONVERT_TO_BYTEPTR(ext_dst0), ext_dst_stride0,
+                               dst, dst_buf->stride, NULL, 0, NULL, 0, w, h,
+                               xd->bd);
+    else
+#endif  // CONFIG_AOM_HIGHBITDEPTH
+      aom_convolve_copy(ext_dst0, ext_dst_stride0, dst, dst_buf->stride, NULL,
+                        0, NULL, 0, w, h);
+  }
+}
+
+void av1_build_wedge_inter_predictor_from_buf(MACROBLOCKD *xd, BLOCK_SIZE bsize,
+                                              int plane_from, int plane_to,
+                                              uint8_t *ext_dst0[3],
+                                              int ext_dst_stride0[3],
+                                              uint8_t *ext_dst1[3],
+                                              int ext_dst_stride1[3]) {
+  int plane;
+  for (plane = plane_from; plane <= plane_to; ++plane) {
+    const BLOCK_SIZE plane_bsize =
+        get_plane_block_size(bsize, &xd->plane[plane]);
+    const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
+    const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+
+    if (xd->mi[0]->mbmi.sb_type < BLOCK_8X8) {
+      int x, y;
+      assert(bsize == BLOCK_8X8);
+      for (y = 0; y < num_4x4_h; ++y)
+        for (x = 0; x < num_4x4_w; ++x)
+          build_wedge_inter_predictor_from_buf(
+              xd, plane, 4 * x, 4 * y, 4, 4, ext_dst0[plane],
+              ext_dst_stride0[plane], ext_dst1[plane], ext_dst_stride1[plane]);
+    } else {
+      const int bw = 4 * num_4x4_w;
+      const int bh = 4 * num_4x4_h;
+      build_wedge_inter_predictor_from_buf(
+          xd, plane, 0, 0, bw, bh, ext_dst0[plane], ext_dst_stride0[plane],
+          ext_dst1[plane], ext_dst_stride1[plane]);
+    }
+  }
+}
+#endif  // CONFIG_EXT_INTER
+
+#if CONFIG_EXT_INTER || (CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT)
+
 // Builds the inter-predictor for the single ref case
 // for use in the encoder to search the wedges efficiently.
 static void build_inter_predictors_single_buf(MACROBLOCKD *xd, int plane,
@@ -2122,72 +2193,4 @@ void av1_build_inter_predictors_for_planes_single_buf(
     }
   }
 }
-
-static void build_wedge_inter_predictor_from_buf(
-    MACROBLOCKD *xd, int plane, int x, int y, int w, int h, uint8_t *ext_dst0,
-    int ext_dst_stride0, uint8_t *ext_dst1, int ext_dst_stride1) {
-  const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
-  const int is_compound = has_second_ref(mbmi);
-  MACROBLOCKD_PLANE *const pd = &xd->plane[plane];
-  struct buf_2d *const dst_buf = &pd->dst;
-  uint8_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
-
-  if (is_compound && is_interinter_wedge_used(mbmi->sb_type) &&
-      mbmi->use_wedge_interinter) {
-#if CONFIG_AOM_HIGHBITDEPTH
-    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
-      build_masked_compound_wedge_highbd(
-          dst, dst_buf->stride, CONVERT_TO_BYTEPTR(ext_dst0), ext_dst_stride0,
-          CONVERT_TO_BYTEPTR(ext_dst1), ext_dst_stride1,
-          mbmi->interinter_wedge_index, mbmi->interinter_wedge_sign,
-          mbmi->sb_type, h, w, xd->bd);
-    else
-#endif  // CONFIG_AOM_HIGHBITDEPTH
-      build_masked_compound_wedge(
-          dst, dst_buf->stride, ext_dst0, ext_dst_stride0, ext_dst1,
-          ext_dst_stride1, mbmi->interinter_wedge_index,
-          mbmi->interinter_wedge_sign, mbmi->sb_type, h, w);
-  } else {
-#if CONFIG_AOM_HIGHBITDEPTH
-    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
-      aom_highbd_convolve_copy(CONVERT_TO_BYTEPTR(ext_dst0), ext_dst_stride0,
-                               dst, dst_buf->stride, NULL, 0, NULL, 0, w, h,
-                               xd->bd);
-    else
-#endif  // CONFIG_AOM_HIGHBITDEPTH
-      aom_convolve_copy(ext_dst0, ext_dst_stride0, dst, dst_buf->stride, NULL,
-                        0, NULL, 0, w, h);
-  }
-}
-
-void av1_build_wedge_inter_predictor_from_buf(MACROBLOCKD *xd, BLOCK_SIZE bsize,
-                                              int plane_from, int plane_to,
-                                              uint8_t *ext_dst0[3],
-                                              int ext_dst_stride0[3],
-                                              uint8_t *ext_dst1[3],
-                                              int ext_dst_stride1[3]) {
-  int plane;
-  for (plane = plane_from; plane <= plane_to; ++plane) {
-    const BLOCK_SIZE plane_bsize =
-        get_plane_block_size(bsize, &xd->plane[plane]);
-    const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
-    const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
-
-    if (xd->mi[0]->mbmi.sb_type < BLOCK_8X8) {
-      int x, y;
-      assert(bsize == BLOCK_8X8);
-      for (y = 0; y < num_4x4_h; ++y)
-        for (x = 0; x < num_4x4_w; ++x)
-          build_wedge_inter_predictor_from_buf(
-              xd, plane, 4 * x, 4 * y, 4, 4, ext_dst0[plane],
-              ext_dst_stride0[plane], ext_dst1[plane], ext_dst_stride1[plane]);
-    } else {
-      const int bw = 4 * num_4x4_w;
-      const int bh = 4 * num_4x4_h;
-      build_wedge_inter_predictor_from_buf(
-          xd, plane, 0, 0, bw, bh, ext_dst0[plane], ext_dst_stride0[plane],
-          ext_dst1[plane], ext_dst_stride1[plane]);
-    }
-  }
-}
-#endif  // CONFIG_EXT_INTER
+#endif  // CONFIG_EXT_INTER || (CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT)

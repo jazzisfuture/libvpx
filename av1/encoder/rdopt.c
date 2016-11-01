@@ -417,6 +417,14 @@ static const REF_DEFINITION av1_ref_order[MAX_REFS] = {
   { { INTRA_FRAME, NONE } },
 };
 
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGEMENT
+static const REF_DEFINITION av1_refs_segment_order[MAX_REFS_SEGMENT] = {
+  { { LAST_FRAME, BWDREF_FRAME } },  { { LAST2_FRAME, BWDREF_FRAME } },
+  { { LAST_FRAME, ALTREF2_FRAME } }, { { LAST2_FRAME, ALTREF2_FRAME } },
+  { { LAST_FRAME, ALTREF_FRAME } },  { { LAST2_FRAME, ALTREF_FRAME } },
+};
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+
 #if CONFIG_EXT_INTRA || CONFIG_FILTER_INTRA || CONFIG_PALETTE
 static INLINE int write_uniform_cost(int n, int v) {
   int l = get_unsigned_bits(n), m = (1 << l) - n;
@@ -7401,6 +7409,7 @@ static int64_t handle_inter_mode(
     pred_exists = 0;
   }
 #endif  // CONFIG_EXT_INTERP
+
   if (pred_exists == 0) {
     int tmp_rate;
     int64_t tmp_dist;
@@ -7539,6 +7548,7 @@ static int64_t handle_inter_mode(
     if (allow_motvar) *rate2 += cpi->motion_mode_cost[bsize][mbmi->motion_mode];
     *distortion = 0;
 #endif  // CONFIG_MOTION_VAR || CONFIG_WARPED_MOTION
+
     if (!skip_txfm_sb) {
       int skippable_y, skippable_uv;
       int64_t sseuv = INT64_MAX;
@@ -7561,8 +7571,8 @@ static int64_t handle_inter_mode(
                sizeof(uint8_t) * xd->n8_h * xd->n8_w * 4);
       }
 #else
-    super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse, bsize,
-                    ref_best_rd);
+      super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse, bsize,
+                      ref_best_rd);
 #endif  // CONFIG_VAR_TX
 
       if (*rate_y == INT_MAX) {
@@ -7590,8 +7600,8 @@ static int64_t handle_inter_mode(
       if (!inter_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv,
                             &sseuv, bsize, ref_best_rd - rdcosty))
 #else
-    if (!super_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv,
-                          &sseuv, bsize, ref_best_rd - rdcosty))
+      if (!super_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv,
+                            &sseuv, bsize, ref_best_rd - rdcosty))
 #endif  // CONFIG_VAR_TX
       {
         *rate2 = INT_MAX;
@@ -7652,6 +7662,7 @@ static int64_t handle_inter_mode(
       *rate_uv = 0;
       *skippable = 1;
     }
+
 #if CONFIG_GLOBAL_MOTION
     if (this_mode == ZEROMV) {
       *rate2 += GLOBAL_MOTION_RATE(mbmi->ref_frame[0]);
@@ -7705,10 +7716,12 @@ static int64_t handle_inter_mode(
     restore_dst_buf(xd, orig_dst, orig_dst_stride);
     return INT64_MAX;
   }
+
   *mbmi = best_mbmi;
   *rate2 = best_rate2;
   *rate_y = best_rate_y;
   *rate_uv = best_rate_uv;
+
 #if CONFIG_VAR_TX
   for (i = 0; i < MAX_MB_PLANE; ++i)
     memcpy(x->blk_skip[i], best_blk_skip[i],
@@ -8097,6 +8110,62 @@ static void calc_target_weighted_pred(const AV1_COMMON *cm, const MACROBLOCK *x,
                                       int left_stride);
 #endif  // CONFIG_MOTION_VAR
 
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+void compare_predictors(int rows, int cols, uint8_t *mask,
+                        ptrdiff_t mask_stride, const uint8_t *pred1,
+                        ptrdiff_t pred1_stride, const uint8_t *pred0,
+                        ptrdiff_t pred0_stride) {
+  int r, c;
+
+  for (r = 0; r < rows; r++) {
+    for (c = 0; c < cols; c++)
+      mask[c] = (abs(pred1[c] - pred0[c]) < 1) ? 1 : 0;
+
+    mask += mask_stride;
+    pred0 += pred0_stride;
+    pred1 += pred1_stride;
+  }
+}
+
+void output_segments(MACROBLOCK *x, int bsize,
+                      const uint8_t *mask, ptrdiff_t mask_stride,
+                      const uint8_t *pred1, ptrdiff_t pred1_stride,
+                      const uint8_t *pred0, ptrdiff_t pred0_stride) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  int i;
+
+  for (i = 0; i < MAX_MB_PLANE; i++) {
+    struct macroblockd_plane *const pd = &xd->plane[i];
+
+    // ==== plane size info ===
+    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize, pd);
+    const int bw = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+    const int bh = 4 * num_4x4_blocks_high_lookup[plane_bsize];
+
+    struct buf_2d *const bipred_buf = &x->plane[i].dst_bipred;
+    uint8_t *bipred = bipred_buf->buf;
+    int r, c;
+
+    if (i == 0) {  // = Y =
+      for (r = 0; r < bh; ++r) {
+        for (c = 0; c < bw; ++c)
+          bipred[c] = (mask[c]) ? (((int)pred0[c] + (int)pred1[c]) >> 1) : 255;
+
+        bipred += bipred_buf->stride;
+        mask += mask_stride;
+        pred0 += pred0_stride;
+        pred1 += pred1_stride;
+      }
+    } else {  // = U/V =
+      for (r = 0; r < bh; ++r) {
+        memset(bipred, 128, bw);
+        bipred += bipred_buf->stride;
+      }
+    }
+  }
+}
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+
 void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
                                MACROBLOCK *x, int mi_row, int mi_col,
                                RD_COST *rd_cost,
@@ -8144,6 +8213,9 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
     AOM_ALT_FLAG
   };
   int64_t best_rd = best_rd_so_far;
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  int64_t best_rd_comp_pair = INT_MAX;
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
   int best_rate_y = INT_MAX, best_rate_uv = INT_MAX;
   int64_t best_pred_diff[REFERENCE_MODES];
   int64_t best_pred_rd[REFERENCE_MODES];
@@ -8830,7 +8902,7 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
 
       backup_ref_mv[0] = mbmi_ext->ref_mvs[ref_frame][0];
       if (comp_pred) backup_ref_mv[1] = mbmi_ext->ref_mvs[second_ref_frame][0];
-#endif
+#endif  // CONFIG_REF_MV
 #if CONFIG_EXT_INTER
       if (second_ref_frame == INTRA_FRAME) {
         if (best_single_inter_ref != ref_frame) continue;
@@ -8848,6 +8920,7 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
 #endif  // CONFIG_FILTER_INTRA
       }
 #endif  // CONFIG_EXT_INTER
+
 #if CONFIG_REF_MV
       mbmi->ref_mv_idx = 0;
       ref_frame_type = av1_ref_frame_type(mbmi->ref_frame);
@@ -8862,7 +8935,8 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
           mbmi_ext->ref_mvs[mbmi->ref_frame[ref]][0] = this_mv;
         }
       }
-#endif
+#endif  // CONFIG_REF_MV
+
       this_rd = handle_inter_mode(
           cpi, x, bsize, &rate2, &distortion2, &skippable, &rate_y, &rate_uv,
           &disable_skip, frame_mv, mi_row, mi_col,
@@ -8921,7 +8995,7 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
         for (i = 0; i < MAX_MB_PLANE; ++i)
           memcpy(x->blk_skip_drl[i], x->blk_skip[i],
                  sizeof(uint8_t) * ctx->num_4x4_blk);
-#endif
+#endif  // CONFIG_VAR_TX
 
         for (ref_idx = 0; ref_idx < ref_set; ++ref_idx) {
           int64_t tmp_alt_rd = INT64_MAX;
@@ -8962,7 +9036,7 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
             int dummy_compmode_wedge_cost = 0;
 #else
             int_mv dummy_single_newmv[TOTAL_REFS_PER_FRAME] = { { 0 } };
-#endif
+#endif  // CONFIG_EXT_INTER
 
             frame_mv[NEARMV][ref_frame] = cur_mv;
             tmp_alt_rd = handle_inter_mode(
@@ -8977,7 +9051,7 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
                 NULL,
 #else
                 dummy_single_newmv,
-#endif
+#endif  // CONFIG_EXT_INTER
                 single_inter_filter, dummy_single_skippable, &tmp_sse, best_rd);
           }
 
@@ -9033,7 +9107,7 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
             for (i = 0; i < MAX_MB_PLANE; ++i)
               memcpy(x->blk_skip_drl[i], x->blk_skip[i],
                      sizeof(uint8_t) * ctx->num_4x4_blk);
-#endif
+#endif  // CONFIG_VAR_TX
           } else {
             *mbmi = backup_mbmi;
             x->skip = backup_skip;
@@ -9047,7 +9121,7 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
         for (i = 0; i < MAX_MB_PLANE; ++i)
           memcpy(x->blk_skip[i], x->blk_skip_drl[i],
                  sizeof(uint8_t) * ctx->num_4x4_blk);
-#endif
+#endif  // CONFIG_VAR_TX
       }
       mbmi_ext->ref_mvs[ref_frame][0] = backup_ref_mv[0];
       if (comp_pred) mbmi_ext->ref_mvs[second_ref_frame][0] = backup_ref_mv[1];
@@ -9179,6 +9253,7 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
           *returnrate_nocoef -= cpi->motion_mode_cost[bsize][mbmi->motion_mode];
 #endif  // CONFIG_MOTION_VAR || CONFIG_WARPED_MOTION
 #endif  // CONFIG_SUPERTX
+
         rd_cost->dist = distortion2;
         rd_cost->rdcost = this_rd;
         best_rd = this_rd;
@@ -9224,6 +9299,24 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
     }
 
     if (x->skip && !comp_pred) break;
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+    // Keep record of the best compound prediction using the pair of references
+    // (LAST_FRAME, BWDREF_FRAME)
+    if (cpi->rc.is_last_bipred_frame || cpi->rc.is_bipred_frame) {
+      if (comp_pred && ref_frame == LAST_FRAME &&
+          second_ref_frame == BWDREF_FRAME) {
+        if (this_rd < best_rd_comp_pair || x->skip) {
+          best_rd_comp_pair = this_rd;
+          mbmi_ext->mv_comp_pair[0].as_int = mbmi->mv[0].as_int;
+          mbmi_ext->mv_comp_pair[1].as_int = mbmi->mv[1].as_int;
+          mbmi_ext->mode_comp_pair = this_mode;
+          mbmi_ext->ref_frame_comp_pair[0] = LAST_FRAME;
+          mbmi_ext->ref_frame_comp_pair[1] = BWDREF_FRAME;
+        }
+      }
+    }
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
   }
 
   if (xd->lossless[mbmi->segment_id] == 0 && best_mode_index >= 0 &&
@@ -9240,6 +9333,110 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
     x->use_default_intra_tx_type = 0;
 
     *mbmi = best_mbmode;
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+    // REFS_SEGMENT: Observe the difference between the two predictors from the
+    // compound reference pair and decide on a 3rd region in the current block
+    // that may need a 3rd predictor.
+    //
+    // TODO(zoeliu): For other type of frames it is needed to locate their
+    // nearest forward predictive frame and the nearest backward predictive
+    // frame. (Such info is implicit in the frame level and can be traced back
+    // by the decoder.)
+    if (cpi->rc.is_last_bipred_frame && best_rd_comp_pair < INT_MAX) {
+      // NOTE(zoeliu): Need to backup the info of mode, refs, and mvs in mbmi,
+      // as the functions to call to build up the inter predictors will use the
+      // info inside mbmi by default.
+      MV_REFERENCE_FRAME ref_frame_backup[2];
+      int_mv mv_backup[2];
+      PREDICTION_MODE mode_backup = mbmi->mode;
+      // int use_wedge_interinter_backup = mbmi->use_wedge_interinter;
+
+      DECLARE_ALIGNED(8, uint8_t, bipred_mask[MAX_SB_SQUARE]);
+
+      // TODO(zoeliu): To find out why it is needed to allocate 2x space
+      uint8_t pred0[2 * MAX_SB_SQUARE];
+      uint8_t pred1[2 * MAX_SB_SQUARE];
+      uint8_t *preds0[1] = { pred0 };
+      uint8_t *preds1[1] = { pred1 };
+      const int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+      const int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+      int strides[1] = { bw };
+
+      // ==== Decoder side plane buffer info ===
+      struct macroblockd_plane *const pd = &xd->plane[0];  // Y plane
+
+      // TODO(zoeliu): dst_comp_pair may not be needed.
+      /*
+      struct buf_2d *const dst_comp_pair_buf[2][MAX_MB_PLANE] = {
+        { &x->plane[0].dst_comp_pair[0], &x->plane[1].dst_comp_pair[0],
+          &x->plane[2].dst_comp_pair[0] },
+        { &x->plane[0].dst_comp_pair[1], &x->plane[1].dst_comp_pair[1],
+          &x->plane[2].dst_comp_pair[1] } };
+      uint8_t *const dst_comp_pair[2][MAX_MB_PLANE] = {
+        { dst_comp_pair_buf[0][0]->buf, dst_comp_pair_buf[0][1]->buf,
+          dst_comp_pair_buf[0][2]->buf },
+        { dst_comp_pair_buf[1][0]->buf, dst_comp_pair_buf[1][1]->buf,
+          dst_comp_pair_buf[1][2]->buf } };*/
+
+      // Back up the current best RD result.
+
+      // TODO(zoeliu): To further explore whether mbmi->mode matters
+      mbmi->mode = mbmi_ext->mode_comp_pair;
+      // mbmi->use_wedge_interinter_backup = 0;
+
+      assert(is_comp_pred);
+
+      ref_frame_backup[0] = mbmi->ref_frame[0];
+      ref_frame_backup[1] = mbmi->ref_frame[1];
+
+      mv_backup[0].as_int = mbmi->mv[0].as_int;
+      mv_backup[1].as_int = mbmi->mv[1].as_int;
+
+      mbmi->ref_frame[0] = mbmi_ext->ref_frame_comp_pair[0];
+      mbmi->ref_frame[1] = mbmi_ext->ref_frame_comp_pair[1];
+
+      mbmi->mv[0].as_int = mbmi_ext->mv_comp_pair[0].as_int;
+      mbmi->mv[1].as_int = mbmi_ext->mv_comp_pair[1].as_int;
+
+      // Obtain the two predictors from the comp pair of references.
+
+      // TODO(zoeliu): To further explore whether mbmi->mode matters
+      // (a) Set up the block-level compound reference frame pair.
+      set_ref_ptrs(cm, xd, mbmi->ref_frame[0], mbmi->ref_frame[1]);
+
+      // (b) Set the plane prediction reference frames.
+      pd->pre[0] = yv12_mb[mbmi->ref_frame[0]][0];
+      pd->pre[1] = yv12_mb[mbmi->ref_frame[1]][0];
+
+      // Obtain the predictors from the compound reference pair.
+      av1_build_inter_predictors_for_planes_single_buf(
+          xd, bsize, 0, 0, mi_row, mi_col, 0, preds0, strides);
+      av1_build_inter_predictors_for_planes_single_buf(
+          xd, bsize, 0, 0, mi_row, mi_col, 1, preds1, strides);
+
+      // Compare the predictors and obtain the prediction mask.
+
+      // Compare the two predictors and obtain the bi-preded interpolation.
+      compare_predictors(bh, bw, bipred_mask, bw, pred1, bw, pred0, bw);
+
+      // Debug: Output the segmentation results, where the bi-predictive segment
+      // choose the value from the predictors and the remaining area choose to
+      // be pure white.
+      output_segments(x, bsize, bipred_mask, bw, pred1, bw, pred0, bw);
+
+      // Restore the original inter block info.
+
+      mbmi->mode = mode_backup;
+      // mbmi->use_wedge_interinter = use_wedge_interinter_backup;
+
+      mbmi->ref_frame[0] = ref_frame_backup[0];
+      mbmi->ref_frame[1] = ref_frame_backup[1];
+
+      mbmi->mv[0].as_int = mv_backup[0].as_int;
+      mbmi->mv[1].as_int = mv_backup[1].as_int;
+    }
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
 
     set_ref_ptrs(cm, xd, mbmi->ref_frame[0], mbmi->ref_frame[1]);
 
@@ -9258,6 +9455,7 @@ void av1_rd_pick_inter_mode_sb(const AV1_COMP *cpi, TileDataEnc *tile_data,
                                         dst_stride1, dst_buf2, dst_stride2);
 #endif  // CONFIG_MOTION_VAR
       av1_subtract_plane(x, bsize, 0);
+
 #if CONFIG_VAR_TX
       if (cm->tx_mode == TX_MODE_SELECT || xd->lossless[mbmi->segment_id]) {
         select_tx_type_yrd(cpi, x, &rate_y, &dist_y, &skip_y, &sse_y, bsize,
@@ -9509,7 +9707,7 @@ PALETTE_EXIT:
         nearmv[0] = frame_mv[NEARMV][refs[0]];
         nearmv[1] = frame_mv[NEARMV][refs[1]];
       }
-#else
+#else  // CONFIG_EXT_INTER
       int ref_set = (mbmi_ext->ref_mv_count[rf_type] >= 2)
                         ? AOMMIN(2, mbmi_ext->ref_mv_count[rf_type] - 2)
                         : INT_MAX;
@@ -9524,7 +9722,7 @@ PALETTE_EXIT:
           best_mbmode.ref_mv_idx = i;
         }
       }
-#endif
+#endif  // CONFIG_EXT_INTER
       if (mbmi_ext->ref_mv_count[rf_type] >= 1) {
         nearestmv[0] = mbmi_ext->ref_mv_stack[rf_type][0].this_mv;
         nearestmv[1] = mbmi_ext->ref_mv_stack[rf_type][0].comp_mv;
@@ -9548,14 +9746,14 @@ PALETTE_EXIT:
         best_mbmode.mode = NEAR_NEARMV;
       else if (best_mbmode.mv[0].as_int == 0 && best_mbmode.mv[1].as_int == 0)
         best_mbmode.mode = ZERO_ZEROMV;
-#else
+#else  // CONFIG_EXT_INTER
         best_mbmode.mode = NEARESTMV;
       else if (best_mbmode.mv[0].as_int == zeromv[0].as_int &&
                best_mbmode.mv[1].as_int == zeromv[1].as_int)
         best_mbmode.mode = ZEROMV;
 #endif  // CONFIG_EXT_INTER
     }
-#else
+#else  // CONFIG_REF_MV
 #if CONFIG_EXT_INTER
     if (!comp_pred_mode) {
 #endif  // CONFIG_EXT_INTER
@@ -9604,14 +9802,14 @@ PALETTE_EXIT:
         best_mbmode.mode = ZERO_ZEROMV;
     }
 #endif  // CONFIG_EXT_INTER
-#endif
+#endif  // CONFIG_REF_MV
   }
 
 #if CONFIG_REF_MV
   if (best_mbmode.ref_frame[0] > INTRA_FRAME && best_mbmode.mv[0].as_int == 0 &&
 #if CONFIG_EXT_INTER
       (best_mbmode.ref_frame[1] <= INTRA_FRAME)
-#else
+#else  // CONFIG_EXT_INTER
       (best_mbmode.ref_frame[1] == NONE || best_mbmode.mv[1].as_int == 0)
 #endif  // CONFIG_EXT_INTER
           ) {
@@ -9623,7 +9821,7 @@ PALETTE_EXIT:
 
     if (mode_ctx & (1 << ALL_ZERO_FLAG_OFFSET)) best_mbmode.mode = ZEROMV;
   }
-#endif
+#endif  // CONFIG_REF_MV
 
   if (best_mode_index < 0 || best_rd >= best_rd_so_far) {
     rd_cost->rate = INT_MAX;

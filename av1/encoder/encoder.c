@@ -2187,6 +2187,12 @@ AV1_COMP *av1_create_compressor(AV1EncoderConfig *oxcf,
 
   init_upsampled_ref_frame_bufs(cpi);
 
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  cpi->img_bipred = (YV12_BUFFER_CONFIG *)aom_calloc(
+      1, sizeof(YV12_BUFFER_CONFIG));
+  if (cpi->img_bipred == NULL) return NULL;
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+
   av1_set_speed_features_framesize_independent(cpi);
   av1_set_speed_features_framesize_dependent(cpi);
 
@@ -2508,6 +2514,11 @@ void av1_remove_compressor(AV1_COMP *cpi) {
 
   av1_remove_common(cm);
   av1_free_ref_frame_buffers(cm->buffer_pool);
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+  aom_free(cpi->img_bipred);
+#endif // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+
   aom_free(cpi);
 
 #ifdef OUTPUT_YUV_SKINMAP
@@ -4450,6 +4461,82 @@ static void dump_filtered_recon_frames(AV1_COMP *cpi) {
 }
 #endif  // DUMP_RECON_FRAMES
 
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+
+#define DUMP_BIPRED_FRAMES 1
+
+#if DUMP_BIPRED_FRAMES == 1
+// NOTE(zoeliu): For debug - Output the bi-predictive video.
+static void dump_bipred_frames(AV1_COMP *cpi) {
+  AV1_COMMON *const cm = &cpi->common;
+  const YV12_BUFFER_CONFIG *bipred_buf = cpi->img_bipred;
+  int h;
+  char file_name[256] = "/tmp/enc_bipred.yuv";
+  FILE *f_bipred = NULL;
+
+  if (bipred_buf == NULL || !cm->show_frame) {
+    printf("Frame %d is not ready or no show to dump.\n",
+           cm->current_video_frame);
+    return;
+  }
+
+  if (cm->current_video_frame == 0) {
+    if ((f_bipred = fopen(file_name, "wb")) == NULL) {
+      printf("Unable to open file %s to write.\n", file_name);
+      return;
+    }
+  } else {
+    if ((f_bipred = fopen(file_name, "ab")) == NULL) {
+      printf("Unable to open file %s to append.\n", file_name);
+      return;
+    }
+  }
+  printf(
+      "\nFrame=%5d, encode_update_type[%5d]=%1d, show_existing_frame=%d, "
+      "y_stride=%4d, uv_stride=%4d, width=%4d, height=%4d\n",
+      cm->current_video_frame, cpi->twopass.gf_group.index,
+      cpi->twopass.gf_group.update_type[cpi->twopass.gf_group.index],
+      cm->show_existing_frame, bipred_buf->y_stride, bipred_buf->uv_stride,
+      cm->width, cm->height);
+
+  // TODO(zoeliu): We simply set up a fake show frame, which will be fixed later
+  // on, when all the inter-coded frames are interpolated through bi-prediction.
+  if (!cpi->rc.is_last_bipred_frame && !cpi->rc.is_bipred_frame) {
+    // --- Y ---
+    for (h = 0; h < cm->height; ++h)
+      memset(&bipred_buf->y_buffer[h * bipred_buf->y_stride], 255, cm->width);
+    // TODO(zoeliu): It may be needed to use subsampling_x/subsampling_y instead of
+    // simply assuming the subsampling factor of 2 in either direction.
+    // --- U ---
+    for (h = 0; h < (cm->height >> 1); ++h)
+      memset(&bipred_buf->u_buffer[h * bipred_buf->uv_stride], 128, (cm->width >> 1));
+    // --- V ---
+    for (h = 0; h < (cm->height >> 1); ++h)
+      memset(&bipred_buf->v_buffer[h * bipred_buf->uv_stride], 128, (cm->width >> 1));
+  }
+
+  // --- Y ---
+  for (h = 0; h < cm->height; ++h) {
+    fwrite(&bipred_buf->y_buffer[h * bipred_buf->y_stride], 1, cm->width,
+           f_bipred);
+  }
+  // --- U ---
+  for (h = 0; h < (cm->height >> 1); ++h) {
+    fwrite(&bipred_buf->u_buffer[h * bipred_buf->uv_stride], 1, (cm->width >> 1),
+           f_bipred);
+  }
+  // --- V ---
+  for (h = 0; h < (cm->height >> 1); ++h) {
+    fwrite(&bipred_buf->v_buffer[h * bipred_buf->uv_stride], 1, (cm->width >> 1),
+           f_bipred);
+  }
+
+  fclose(f_bipred);
+}
+#endif  // DUMP_BIPRED_FRAMES
+
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+
 static void encode_frame_to_data_rate(AV1_COMP *cpi, size_t *size,
                                       uint8_t *dest,
                                       unsigned int *frame_flags) {
@@ -4502,6 +4589,12 @@ static void encode_frame_to_data_rate(AV1_COMP *cpi, size_t *size,
     // NOTE(zoeliu): For debug - Output the filtered reconstructed video.
     dump_filtered_recon_frames(cpi);
 #endif  // DUMP_RECON_FRAMES
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+#if DUMP_BIPRED_FRAME == 1
+    dump_bipred_frames(cpi);
+#endif  // DUMP_BIPRED_FRAME
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
 
     // Update the LAST_FRAME in the reference frame buffer.
     av1_update_reference_frames(cpi);
@@ -4636,6 +4729,12 @@ static void encode_frame_to_data_rate(AV1_COMP *cpi, size_t *size,
   // NOTE(zoeliu): For debug - Output the filtered reconstructed video.
   if (cm->show_frame) dump_filtered_recon_frames(cpi);
 #endif  // DUMP_RECON_FRAMES
+
+#if CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
+#if DUMP_BIPRED_FRAME == 1
+  dump_bipred_frames(cpi);
+#endif  // DUMP_BIPRED_FRAME
+#endif  // CONFIG_EXT_REFS && CONFIG_REFS_SEGMENT
 
 #if CONFIG_CLPF
   aom_free(cm->clpf_blocks);
