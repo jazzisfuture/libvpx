@@ -3993,7 +3993,7 @@ BITSTREAM_PROFILE av1_read_profile(struct aom_read_bit_buffer *rb) {
   if (profile > 2) profile += aom_rb_read_bit(rb);
   return (BITSTREAM_PROFILE)profile;
 }
-#if CONFIG_TILE_GROUPS
+
 static int read_all_headers(AV1Decoder *pbi, struct aom_read_bit_buffer *rb,
                             const uint8_t **p_data,
                             const uint8_t **p_data_end) {
@@ -4042,7 +4042,7 @@ static int read_all_headers(AV1Decoder *pbi, struct aom_read_bit_buffer *rb,
 
   return 0;
 }
-#endif
+
 void av1_decode_frame(AV1Decoder *pbi, const uint8_t *data,
                       const uint8_t *data_end, const uint8_t **p_data_end) {
   AV1_COMMON *const cm = &pbi->common;
@@ -4050,37 +4050,20 @@ void av1_decode_frame(AV1Decoder *pbi, const uint8_t *data,
   struct aom_read_bit_buffer rb;
   int context_updated = 0;
   uint8_t clear_data[MAX_AV1_HEADER_SIZE];
-  size_t first_partition_size;
-  YV12_BUFFER_CONFIG *new_fb;
+
+  int early_terminate;
+  YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
+  xd->cur_buf = new_fb;
 
 #if CONFIG_BITSTREAM_DEBUG
   bitstream_queue_set_frame_read(cm->current_video_frame * 2 + cm->show_frame);
 #endif
 
-  first_partition_size = read_uncompressed_header(
-      pbi, init_read_bit_buffer(pbi, &rb, data, data_end, clear_data));
-  new_fb = get_frame_new_buffer(cm);
-  xd->cur_buf = new_fb;
-#if CONFIG_GLOBAL_MOTION
-  xd->global_motion = cm->global_motion;
-#endif  // CONFIG_GLOBAL_MOTION
+  early_terminate = read_all_headers(
+      pbi, init_read_bit_buffer(pbi, &rb, data, data_end, clear_data), &data,
+      &data_end);
 
-  if (!first_partition_size) {
-// showing a frame directly
-#if CONFIG_EXT_REFS
-    if (cm->show_existing_frame)
-      *p_data_end = data + aom_rb_bytes_read(&rb);
-    else
-#endif  // CONFIG_EXT_REFS
-      *p_data_end = data + (cm->profile <= PROFILE_2 ? 1 : 2);
-
-    return;
-  }
-
-  data += aom_rb_bytes_read(&rb);
-  if (!read_is_valid(data, first_partition_size, data_end))
-    aom_internal_error(&cm->error, AOM_CODEC_CORRUPT_FRAME,
-                       "Truncated packet or corrupt header length");
+  if (early_terminate) return;
 
 #if CONFIG_SIMP_MV_PRED
   cm->setup_mi(cm);
@@ -4109,19 +4092,6 @@ void av1_decode_frame(AV1Decoder *pbi, const uint8_t *data,
 #endif  // CONFIG_EXT_REFS
 
   av1_setup_block_planes(xd, cm->subsampling_x, cm->subsampling_y);
-
-  *cm->fc = cm->frame_contexts[cm->frame_context_idx];
-  if (!cm->fc->initialized)
-    aom_internal_error(&cm->error, AOM_CODEC_CORRUPT_FRAME,
-                       "Uninitialized entropy context.");
-
-  av1_zero(cm->counts);
-
-  xd->corrupted = 0;
-  new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
-  if (new_fb->corrupted)
-    aom_internal_error(&cm->error, AOM_CODEC_CORRUPT_FRAME,
-                       "Decode failed. Frame data header is corrupted.");
 
   if (cm->lf.filter_level && !cm->skip_loop_filter) {
     av1_loop_filter_frame_init(cm, cm->lf.filter_level);
@@ -4157,7 +4127,7 @@ void av1_decode_frame(AV1Decoder *pbi, const uint8_t *data,
 #endif                          // CONFIG_EXT_TILE
       && cm->tile_cols > 1) {
     // Multi-threaded tile decoder
-    *p_data_end = decode_tiles_mt(pbi, data + first_partition_size, data_end);
+    *p_data_end = decode_tiles_mt(pbi, data, data_end);
     if (!xd->corrupted) {
       if (!cm->skip_loop_filter) {
         // If multiple threads are used to decode tiles, then we use those
@@ -4171,7 +4141,7 @@ void av1_decode_frame(AV1Decoder *pbi, const uint8_t *data,
                          "Decode failed. Frame data is corrupted.");
     }
   } else {
-    *p_data_end = decode_tiles(pbi, data + first_partition_size, data_end);
+    *p_data_end = decode_tiles(pbi, data, data_end);
   }
 #if CONFIG_LOOP_RESTORATION
   if (cm->rst_info.restoration_type != RESTORE_NONE) {
