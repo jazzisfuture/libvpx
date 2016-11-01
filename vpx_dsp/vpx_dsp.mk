@@ -210,6 +210,7 @@ ifeq ($(HAVE_NEON),yes)
 DSP_SRCS-yes  += arm/idct16x16_add_neon.c
 endif  # HAVE_NEON
 endif  # HAVE_NEON_ASM
+DSP_SRCS-$(HAVE_NEON)  += arm/idct_neon.h
 DSP_SRCS-$(HAVE_NEON)  += arm/idct16x16_neon.c
 DSP_SRCS-$(HAVE_NEON)  += arm/idct32x32_add_neon.c
 DSP_SRCS-$(HAVE_NEON)  += arm/idct32x32_34_add_neon.c
