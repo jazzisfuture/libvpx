@@ -650,7 +650,7 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
     }
     return;
   }
-#endif
+#endif // CONFIG_DUAL_FILTER
 
 #if CONFIG_SUB8X8_MC
 #if CONFIG_MOTION_VAR
@@ -729,13 +729,13 @@ void build_inter_predictors(MACROBLOCKD *xd, int plane,
           inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride, subpel_x,
                           subpel_y, sf, x_step, y_step, ref,
                           mi->mbmi.interp_filter, xs, ys);
-#endif
+#endif  // CONFIG_AOM_HIGHBITDEPTH
         }
       }
     }
     return;
   }
-#endif
+#endif  // CONFIG_SUB8X8_MC
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
     const struct scale_factors *const sf = &xd->block_refs[ref]->sf;

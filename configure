@@ -290,6 +290,7 @@ EXPERIMENT_LIST="
     adapt_scan
     filter_7bit
     parallel_deblocking
+    refs_segment
 "
 CONFIG_LIST="
     dependency_tracking
