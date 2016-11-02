@@ -259,7 +259,7 @@ TEST_P(VpxMbPostProcDownTest, CheckFilterOutput) {
   delete[] src_c;
 }
 
-TEST_P(VpxMbPostProcDownTest, DISABLED_CheckCvsAssembly) {
+TEST_P(VpxMbPostProcDownTest, CheckCvsAssembly) {
   const int rows = 16;
   const int cols = 16;
   const int src_pitch = cols;
@@ -297,6 +297,10 @@ INSTANTIATE_TEST_CASE_P(
 
 INSTANTIATE_TEST_CASE_P(C, VpxMbPostProcAcrossIpTest,
                         ::testing::Values(vpx_mbpost_proc_across_ip_c));
+
+INSTANTIATE_TEST_CASE_P(C, VpxMbPostProcDownTest,
+                        ::testing::Values(vpx_mbpost_proc_down_c));
+
 #if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(
     SSE2, VpxPostProcDownAndAcrossMbRowTest,
@@ -316,6 +320,9 @@ INSTANTIATE_TEST_CASE_P(
 
 INSTANTIATE_TEST_CASE_P(MSA, VpxMbPostProcAcrossIpTest,
                         ::testing::Values(vpx_mbpost_proc_across_ip_msa));
+
+INSTANTIATE_TEST_CASE_P(MSA, VpxMbPostProcDownTest,
+                        ::testing::Values(vpx_mbpost_proc_down_msa));
 #endif
 
 }  // namespace
