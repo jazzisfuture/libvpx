@@ -1524,6 +1524,9 @@ static int tile_worker_hook(TileWorkerData *const tile_data,
     const TileBuffer *const buf = pbi->tile_buffers + n;
     vp9_zero(tile_data->dqcoeff);
     vp9_tile_init(tile, &pbi->common, 0, buf->col);
+    // TODO(jzern): setting error_info multiple times shouldn't be necessary if
+    // vp9_init_macroblockd() was reworked.
+    tile_data->xd.error_info = &tile_data->error_info;
     setup_token_decoder(buf->data, tile_data->data_end, buf->size,
                         &tile_data->error_info, &tile_data->bit_reader,
                         pbi->decrypt_cb, pbi->decrypt_state);
