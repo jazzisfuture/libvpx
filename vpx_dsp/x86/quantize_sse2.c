@@ -10,6 +10,7 @@
 
 #include <emmintrin.h>
 #include <xmmintrin.h>
+#include <string.h>
 
 #include "./vpx_dsp_rtcd.h"
 #include "vpx/vpx_integer.h"
@@ -22,19 +23,20 @@ void vpx_quantize_b_sse2(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                          tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
                          uint16_t *eob_ptr, const int16_t *scan_ptr,
                          const int16_t *iscan_ptr) {
-  __m128i zero;
   (void)scan_ptr;
 
-  coeff_ptr += n_coeffs;
-  iscan_ptr += n_coeffs;
-  qcoeff_ptr += n_coeffs;
-  dqcoeff_ptr += n_coeffs;
-  n_coeffs = -n_coeffs;
-  zero = _mm_setzero_si128();
   if (!skip_block) {
+    const __m128i zero = _mm_setzero_si128();
     __m128i eob;
     __m128i zbin;
     __m128i round, quant, dequant, shift;
+
+    coeff_ptr += n_coeffs;
+    iscan_ptr += n_coeffs;
+    qcoeff_ptr += n_coeffs;
+    dqcoeff_ptr += n_coeffs;
+    n_coeffs = -n_coeffs;
+
     {
       __m128i coeff0, coeff1;
 
@@ -211,13 +213,8 @@ void vpx_quantize_b_sse2(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
       *eob_ptr = _mm_extract_epi16(eob, 1);
     }
   } else {
-    do {
-      store_tran_low(zero, dqcoeff_ptr + n_coeffs);
-      store_tran_low(zero, dqcoeff_ptr + n_coeffs + 8);
-      store_tran_low(zero, qcoeff_ptr + n_coeffs);
-      store_tran_low(zero, qcoeff_ptr + n_coeffs + 8);
-      n_coeffs += 8 * 2;
-    } while (n_coeffs < 0);
+    memset(dqcoeff_ptr, 0, sizeof(*dqcoeff_ptr) * n_coeffs);
+    memset(qcoeff_ptr, 0, sizeof(*qcoeff_ptr) * n_coeffs);
     *eob_ptr = 0;
   }
 }

@@ -10,6 +10,7 @@
 
 #include <assert.h>
 #include <tmmintrin.h>  // SSSE3
+#include <string.h>
 
 #include "./vp9_rtcd.h"
 #include "./vpx_config.h"
@@ -24,7 +25,6 @@ void vp9_fdct8x8_quant_ssse3(
     const int16_t *quant_ptr, const int16_t *quant_shift_ptr,
     tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
     uint16_t *eob_ptr, const int16_t *scan_ptr, const int16_t *iscan_ptr) {
-  __m128i zero;
   int pass;
   // Constants
   //    When we use them, in one case, they are all the same. In all others
@@ -282,16 +282,16 @@ void vp9_fdct8x8_quant_ssse3(
     in7 = _mm_srai_epi16(in7, 1);
   }
 
-  iscan_ptr += n_coeffs;
-  qcoeff_ptr += n_coeffs;
-  dqcoeff_ptr += n_coeffs;
-  n_coeffs = -n_coeffs;
-  zero = _mm_setzero_si128();
-
   if (!skip_block) {
     __m128i eob;
     __m128i round, quant, dequant, thr;
     int16_t nzflag;
+    const __m128i zero = _mm_setzero_si128();
+
+    iscan_ptr += n_coeffs;
+    qcoeff_ptr += n_coeffs;
+    dqcoeff_ptr += n_coeffs;
+    n_coeffs = -n_coeffs;
     {
       __m128i coeff0, coeff1;
 
@@ -410,12 +410,8 @@ void vp9_fdct8x8_quant_ssse3(
           store_tran_low(coeff0, dqcoeff_ptr + n_coeffs);
           store_tran_low(coeff1, dqcoeff_ptr + n_coeffs + 8);
         } else {
-          // Maybe a more efficient way to store 0?
-          store_zero_tran_low(qcoeff_ptr + n_coeffs);
-          store_zero_tran_low(qcoeff_ptr + n_coeffs + 8);
-
-          store_zero_tran_low(dqcoeff_ptr + n_coeffs);
-          store_zero_tran_low(dqcoeff_ptr + n_coeffs + 8);
+          memset(qcoeff_ptr + n_coeffs, 0, sizeof(*qcoeff_ptr) * 16);
+          memset(dqcoeff_ptr + n_coeffs, 0, sizeof(*dqcoeff_ptr) * 16);
         }
       }
 
@@ -455,13 +451,9 @@ void vp9_fdct8x8_quant_ssse3(
       *eob_ptr = _mm_extract_epi16(eob, 1);
     }
   } else {
-    do {
-      store_zero_tran_low(dqcoeff_ptr + n_coeffs);
-      store_zero_tran_low(dqcoeff_ptr + n_coeffs + 8);
-      store_zero_tran_low(qcoeff_ptr + n_coeffs);
-      store_zero_tran_low(qcoeff_ptr + n_coeffs + 8);
-      n_coeffs += 8 * 2;
-    } while (n_coeffs < 0);
+    assert(n_coeffs == 64);
+    memset(dqcoeff_ptr, 0, sizeof(*dqcoeff_ptr) * 64);
+    memset(qcoeff_ptr, 0, sizeof(*qcoeff_ptr) * 64);
     *eob_ptr = 0;
   }
 }
