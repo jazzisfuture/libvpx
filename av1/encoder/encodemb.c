@@ -585,6 +585,14 @@ void av1_xform_quant_fp_nuq(const AV1_COMMON *cm, MACROBLOCK *x, int plane,
   TX_TYPE tx_type = get_tx_type(plane_type, xd, block, tx_size);
   const SCAN_ORDER *const scan_order = get_scan(cm, tx_size, tx_type, is_inter);
   int dq = get_dq_profile_from_ctx(x->qindex, ctx, is_inter, plane_type);
+/*
+////sarahparker temporary
+
+  xd->plane[plane].profile_index = dq;
+  xd->plane[plane].ctx_used = ctx;
+  xd->plane[plane].mb_block = block;
+///////
+*/
   tran_low_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   tran_low_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
@@ -641,6 +649,29 @@ void av1_xform_quant_fp_nuq(const AV1_COMMON *cm, MACROBLOCK *x, int plane,
                     (const cuml_bins_type_nuq *)p->cuml_bins_nuq[dq],
                     (const dequant_val_type_nuq *)pd->dequant_val_nuq[dq],
                     qcoeff, dqcoeff, eob, scan_order->scan, band);
+  }
+  if (xd->not_dry_run && *eob > 0) {
+    int i, rc, curr_band, bin_lower, bin_upper;
+    const cuml_bins_type_nuq *cuml_bins = p->cuml_bins_nuq[dq];
+    FILE *fp = fopen("coeff_stats", "a");
+
+    fprintf(fp, "\n%d %d %d %d ", qindex_to_qrange(x->qindex), ctx, is_inter, plane > 0);
+
+    for (i = 0; i < *eob; ++i) {
+      rc = scan_order->scan[i];
+      curr_band = band[i];
+      if (abs(qcoeff[rc]) < NUQ_KNOTS) {
+        bin_lower = abs(qcoeff[rc]) ? cuml_bins[curr_band][abs(qcoeff[rc] - 1)] : 0;
+        bin_upper = cuml_bins[curr_band][abs(qcoeff[rc])];
+      } else {
+        bin_lower = cuml_bins[curr_band][NUQ_KNOTS - 1] +
+          (pd->dequant[rc != 0] *  (abs(qcoeff[rc]) - NUQ_KNOTS)) ;
+        bin_upper = cuml_bins[curr_band][NUQ_KNOTS - 1] +
+          (pd->dequant[rc != 0] * (abs(qcoeff[rc]) - NUQ_KNOTS + 1));
+      }
+      fprintf(fp, "%d %d %d %d ", curr_band, coeff[rc], bin_lower, bin_upper);
+    }
+    fclose(fp);
   }
 }
 

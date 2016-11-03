@@ -335,6 +335,9 @@ typedef struct RefBuffer {
 
 typedef struct macroblockd {
   struct macroblockd_plane plane[MAX_MB_PLANE];
+//sarahparker temporary
+  int not_dry_run;
+//////
   uint8_t bmode_blocks_wl;
   uint8_t bmode_blocks_hl;
 

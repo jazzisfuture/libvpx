@@ -5110,7 +5110,6 @@ static void tx_partition_set_contexts(const AV1_COMMON *const cm,
       set_txfm_context(xd, max_tx_size, idy, idx);
 }
 #endif
-
 static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
                               TOKENEXTRA **t, RUN_TYPE dry_run, int mi_row,
                               int mi_col, BLOCK_SIZE bsize,
@@ -5128,6 +5127,8 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
+//sarahparker temporary
+  xd->not_dry_run = !dry_run;
 
   if (!is_inter_block(mbmi)) {
     int plane;
