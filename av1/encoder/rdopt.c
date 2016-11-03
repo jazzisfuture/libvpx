@@ -2909,6 +2909,9 @@ typedef struct RD_STATS {
   int64_t dist;
   int64_t sse;
   int skip;
+#if CONFIG_RD_DEBUG
+  int64_t txb_cost_y;
+#endif
 } RD_STATS;
 
 void av1_tx_block_rd_b(const AV1_COMP *cpi, MACROBLOCK *x, TX_SIZE tx_size,
