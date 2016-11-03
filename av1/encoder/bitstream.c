@@ -2126,7 +2126,7 @@ static void write_modes_sb(AV1_COMP *const cpi, const TileInfo *const tile,
         token_stats.cost = 0;
         for (row = 0; row < num_4x4_h; row += bw)
           for (col = 0; col < num_4x4_w; col += bw)
-            pack_mb_tokens(w, tok, tok_end, cm->bit_depth, tx, token_stats);
+            pack_mb_tokens(w, tok, tok_end, cm->bit_depth, tx, &token_stats);
         assert(*tok < tok_end && (*tok)->token == EOSB_TOKEN);
         (*tok)++;
       }
