@@ -3076,7 +3076,7 @@ static void select_tx_block(const AV1_COMP *cpi, MACROBLOCK *x, int blk_row,
   int tmp_eob = 0;
   int zero_blk_rate;
   RD_STATS sum_rd_stats;
-  init_rd_stats(&sum_rd_stats);
+  av1_init_rd_stats(&sum_rd_stats);
 
 #if CONFIG_EXT_TX
   assert(tx_size < TX_SIZES);
@@ -3089,7 +3089,7 @@ static void select_tx_block(const AV1_COMP *cpi, MACROBLOCK *x, int blk_row,
 
   coeff_ctx = get_entropy_context(tx_size, pta, ptl);
 
-  init_rd_stats(rd_stats);
+  av1_init_rd_stats(rd_stats);
 
   if (blk_row >= max_blocks_high || blk_col >= max_blocks_wide) return;
 
@@ -3142,7 +3142,7 @@ static void select_tx_block(const AV1_COMP *cpi, MACROBLOCK *x, int blk_row,
                       block + i * sub_step, sub_txs, depth + 1, plane_bsize, ta,
                       tl, tx_above, tx_left, &this_rd_stats,
                       ref_best_rd - tmp_rd, &this_cost_valid);
-      merge_rd_stats(&sum_rd_stats, &this_rd_stats);
+      av1_merge_rd_stats(&sum_rd_stats, &this_rd_stats);
       tmp_rd =
           RDCOST(x->rdmult, x->rddiv, sum_rd_stats.rate, sum_rd_stats.dist);
       if (this_rd < tmp_rd) break;
@@ -3178,7 +3178,7 @@ static void inter_block_yrd(const AV1_COMP *cpi, MACROBLOCK *x,
 
   if (ref_best_rd < 0) is_cost_valid = 0;
 
-  init_rd_stats(rd_stats);
+  av1_init_rd_stats(rd_stats);
 
   if (is_cost_valid) {
     const struct macroblockd_plane *const pd = &xd->plane[0];
@@ -3197,7 +3197,7 @@ static void inter_block_yrd(const AV1_COMP *cpi, MACROBLOCK *x,
     TXFM_CONTEXT tx_left[MAX_MIB_SIZE];
 
     RD_STATS pn_rd_stats;
-    init_rd_stats(&pn_rd_stats);
+    av1_init_rd_stats(&pn_rd_stats);
 
     av1_get_entropy_contexts(bsize, TX_4X4, pd, ctxa, ctxl);
     memcpy(tx_above, xd->above_txfm_context,
@@ -3211,7 +3211,7 @@ static void inter_block_yrd(const AV1_COMP *cpi, MACROBLOCK *x,
                         mi_height != mi_width, plane_bsize, ctxa, ctxl,
                         tx_above, tx_left, &pn_rd_stats, ref_best_rd - this_rd,
                         &is_cost_valid);
-        merge_rd_stats(rd_stats, &pn_rd_stats);
+        av1_merge_rd_stats(rd_stats, &pn_rd_stats);
         this_rd += AOMMIN(
             RDCOST(x->rdmult, x->rddiv, pn_rd_stats.rate, pn_rd_stats.dist),
             RDCOST(x->rdmult, x->rddiv, 0, pn_rd_stats.sse));
@@ -3226,7 +3226,7 @@ static void inter_block_yrd(const AV1_COMP *cpi, MACROBLOCK *x,
 
   if (!is_cost_valid) {
     // reset cost value
-    invalid_rd_stats(rd_stats);
+    av1_invalid_rd_stats(rd_stats);
   }
 }
 
@@ -3365,11 +3365,11 @@ static void select_tx_type_yrd(const AV1_COMP *cpi, MACROBLOCK *x,
     prune = prune_tx_types(cpi, bsize, x, xd, 0);
 #endif
 
-  invalid_rd_stats(rd_stats);
+  av1_invalid_rd_stats(rd_stats);
 
   for (tx_type = DCT_DCT; tx_type < TX_TYPES; ++tx_type) {
     RD_STATS this_rd_stats;
-    init_rd_stats(&this_rd_stats);
+    av1_init_rd_stats(&this_rd_stats);
 #if CONFIG_EXT_TX
     if (is_inter) {
       if (!ext_tx_used_inter[ext_tx_set][tx_type]) continue;
@@ -3483,7 +3483,7 @@ static int inter_block_uvrd(const AV1_COMP *cpi, MACROBLOCK *x,
 
   if (ref_best_rd < 0) is_cost_valid = 0;
 
-  init_rd_stats(rd_stats);
+  av1_init_rd_stats(rd_stats);
 
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
   if (is_rect_tx(mbmi->tx_size)) {
@@ -3512,7 +3512,7 @@ static int inter_block_uvrd(const AV1_COMP *cpi, MACROBLOCK *x,
     ENTROPY_CONTEXT ta[2 * MAX_MIB_SIZE];
     ENTROPY_CONTEXT tl[2 * MAX_MIB_SIZE];
     RD_STATS pn_rd_stats;
-    init_rd_stats(&pn_rd_stats);
+    av1_init_rd_stats(&pn_rd_stats);
 
     av1_get_entropy_contexts(bsize, TX_4X4, pd, ta, tl);
 
@@ -3546,7 +3546,7 @@ static int inter_block_uvrd(const AV1_COMP *cpi, MACROBLOCK *x,
 
   if (!is_cost_valid) {
     // reset cost value
-    invalid_rd_stats(rd_stats);
+    av1_invalid_rd_stats(rd_stats);
   }
 
   return is_cost_valid;
