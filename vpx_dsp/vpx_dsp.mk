@@ -248,6 +248,7 @@ DSP_SRCS-$(HAVE_NEON) += arm/idct32x32_1_add_neon.c
 endif  # CONFIG_VP9
 
 # quantization
+DSP_SRCS-$(HAVE_SSE2)  += x86/fdct.h
 ifeq ($(CONFIG_VP9_ENCODER),yes)
 DSP_SRCS-yes            += quantize.c
 DSP_SRCS-yes            += quantize.h
