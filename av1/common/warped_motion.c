@@ -34,19 +34,25 @@ void project_points_translation(int16_t *mat, int *points, int *proj,
   for (i = 0; i < n; ++i) {
     const int x = *(points++), y = *(points++);
     if (subsampling_x)
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          ((x * (1 << (WARPEDMODEL_PREC_BITS + 1))) + mat[1]),
-          WARPEDDIFF_PREC_BITS + 1);
+      *(proj++) =
+          ROUND_POWER_OF_TWO_SIGNED(((x * (1 << (WARPEDMODEL_PREC_BITS + 1))) +
+                                     (mat[1] * (1 << GM_TRANS_PREC_DIFF))),
+                                    WARPEDDIFF_PREC_BITS + 1);
     else
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          ((x * (1 << WARPEDMODEL_PREC_BITS)) + mat[1]), WARPEDDIFF_PREC_BITS);
+      *(proj++) =
+          ROUND_POWER_OF_TWO_SIGNED(((x * (1 << WARPEDMODEL_PREC_BITS)) +
+                                     (mat[1] * (1 << GM_TRANS_PREC_DIFF))),
+                                    WARPEDDIFF_PREC_BITS);
     if (subsampling_y)
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          ((y * (1 << (WARPEDMODEL_PREC_BITS + 1))) + mat[0]),
-          WARPEDDIFF_PREC_BITS + 1);
+      *(proj++) =
+          ROUND_POWER_OF_TWO_SIGNED(((y * (1 << (WARPEDMODEL_PREC_BITS + 1))) +
+                                     (mat[0] * (1 << GM_TRANS_PREC_DIFF))),
+                                    WARPEDDIFF_PREC_BITS + 1);
     else
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          ((y * (1 << WARPEDMODEL_PREC_BITS))) + mat[0], WARPEDDIFF_PREC_BITS);
+      *(proj++) =
+          ROUND_POWER_OF_TWO_SIGNED(((y * (1 << WARPEDMODEL_PREC_BITS))) +
+                                        (mat[0] * (1 << GM_TRANS_PREC_DIFF)),
+                                    WARPEDDIFF_PREC_BITS);
     points += stride_points - 2;
     proj += stride_proj - 2;
   }
@@ -60,20 +66,36 @@ void project_points_rotzoom(int16_t *mat, int *points, int *proj, const int n,
     const int x = *(points++), y = *(points++);
     if (subsampling_x)
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          mat[3] * 2 * x + mat[2] * 2 * y + mat[1] +
-              (mat[3] + mat[2] - (1 << WARPEDMODEL_PREC_BITS)) / 2,
+          (mat[3] * (1 << GM_ZOOM_PREC_DIFF)) * 2 * x +
+              (mat[2] * (1 << GM_ROTATION_PREC_DIFF)) * 2 * y +
+              (mat[1] * (1 << GM_TRANS_PREC_DIFF)) +
+              ((mat[3] * (1 << GM_ZOOM_PREC_DIFF)) +
+               (mat[2] * (1 << GM_ROTATION_PREC_DIFF)) -
+               (1 * (1 << WARPEDMODEL_PREC_BITS))) /
+                  2,
           WARPEDDIFF_PREC_BITS + 1);
     else
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(mat[3] * x + mat[2] * y + mat[1],
-                                            WARPEDDIFF_PREC_BITS);
+      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
+          (mat[3] * (1 << GM_ZOOM_PREC_DIFF)) * x +
+              (mat[2] * (1 << GM_ROTATION_PREC_DIFF)) * y +
+              (mat[1] * (1 << GM_TRANS_PREC_DIFF)),
+          WARPEDDIFF_PREC_BITS);
     if (subsampling_y)
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          -mat[2] * 2 * x + mat[3] * 2 * y + mat[0] +
-              (-mat[2] + mat[3] - (1 << WARPEDMODEL_PREC_BITS)) / 2,
+          -(mat[2] * (1 << GM_ROTATION_PREC_DIFF)) * 2 * x +
+              (mat[3] * (1 << GM_ZOOM_PREC_DIFF)) * 2 * y +
+              (mat[0] * (1 << GM_TRANS_PREC_DIFF)) +
+              (-(mat[2] * (1 << GM_ROTATION_PREC_DIFF)) +
+               (mat[3] * (1 << GM_ZOOM_PREC_DIFF)) -
+               (1 * (1 << WARPEDMODEL_PREC_BITS))) /
+                  2,
           WARPEDDIFF_PREC_BITS + 1);
     else
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(-mat[2] * x + mat[3] * y + mat[0],
-                                            WARPEDDIFF_PREC_BITS);
+      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
+          -(mat[2] * (1 << GM_ROTATION_PREC_DIFF)) * x +
+              (mat[3] * (1 << GM_ZOOM_PREC_DIFF)) * y +
+              (mat[0] * (1 << GM_TRANS_PREC_DIFF)),
+          WARPEDDIFF_PREC_BITS);
     points += stride_points - 2;
     proj += stride_proj - 2;
   }

@@ -3654,29 +3654,23 @@ static void read_global_motion_params(Global_Motion_Params *params,
     case GLOBAL_ZERO: break;
     case GLOBAL_AFFINE:
       params->motion_params.wmmat[2].as_mv.row =
-          (aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-           GM_ALPHA_DECODE_FACTOR);
+          aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS);
       params->motion_params.wmmat[2].as_mv.col =
-          aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-              GM_ALPHA_DECODE_FACTOR +
-          (1 << WARPEDMODEL_PREC_BITS);
+          aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) +
+          (1 << GM_ZOOM_PREC_BITS);
     // fallthrough intended
     case GLOBAL_ROTZOOM:
       params->motion_params.wmmat[1].as_mv.row =
-          aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-          GM_ALPHA_DECODE_FACTOR;
+          aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS);
       params->motion_params.wmmat[1].as_mv.col =
-          (aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-           GM_ALPHA_DECODE_FACTOR) +
-          (1 << WARPEDMODEL_PREC_BITS);
+          aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) +
+          (1 << GM_ZOOM_PREC_BITS);
     // fallthrough intended
     case GLOBAL_TRANSLATION:
       params->motion_params.wmmat[0].as_mv.row =
-          aom_read_primitive_symmetric(r, GM_ABS_TRANS_BITS) *
-          GM_TRANS_DECODE_FACTOR;
+          aom_read_primitive_symmetric(r, GM_ABS_TRANS_BITS);
       params->motion_params.wmmat[0].as_mv.col =
-          aom_read_primitive_symmetric(r, GM_ABS_TRANS_BITS) *
-          GM_TRANS_DECODE_FACTOR;
+          aom_read_primitive_symmetric(r, GM_ABS_TRANS_BITS);
       break;
     default: assert(0);
   }
