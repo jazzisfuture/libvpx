@@ -36,8 +36,8 @@ typedef struct mv32 {
 
 #if CONFIG_GLOBAL_MOTION || CONFIG_WARPED_MOTION
 // Bits of precision used for the model
-#define WARPEDMODEL_PREC_BITS 8
-#define WARPEDMODEL_ROW3HOMO_PREC_BITS 12
+#define WARPEDMODEL_PREC_BITS 14
+#define WARPEDMODEL_ROW3HOMO_PREC_BITS 14
 
 // Bits of subpel precision for warped interpolation
 #define WARPEDPIXEL_PREC_BITS 6
@@ -94,16 +94,16 @@ typedef struct {
 //
 // XX_MIN, XX_MAX are also computed to avoid repeated computation
 
-#define GM_TRANS_PREC_BITS 8
+#define GM_TRANS_PREC_BITS 3
 #define GM_TRANS_PREC_DIFF (WARPEDMODEL_PREC_BITS - GM_TRANS_PREC_BITS)
 #define GM_TRANS_DECODE_FACTOR (1 << GM_TRANS_PREC_DIFF)
 
-#define GM_ALPHA_PREC_BITS 8
+#define GM_ALPHA_PREC_BITS 12
 #define GM_ALPHA_PREC_DIFF (WARPEDMODEL_PREC_BITS - GM_ALPHA_PREC_BITS)
 #define GM_ALPHA_DECODE_FACTOR (1 << GM_ALPHA_PREC_DIFF)
 
-#define GM_ABS_ALPHA_BITS 8
-#define GM_ABS_TRANS_BITS 8
+#define GM_ABS_ALPHA_BITS  11
+#define GM_ABS_TRANS_BITS  11
 
 #define GM_TRANS_MAX (1 << GM_ABS_TRANS_BITS)
 #define GM_ALPHA_MAX (1 << GM_ABS_ALPHA_BITS)
@@ -122,6 +122,17 @@ typedef struct {
   GLOBAL_MOTION_TYPE gmtype;
   WarpedMotionParams motion_params;
 } Global_Motion_Params;
+
+// Convert a global motion translation vector (which may have more bits than a
+// regular motion vector) into a motion vector
+static INLINE int_mv gm_get_motion_vector(const Global_Motion_Params *gm) {
+  int_mv res;
+  res.as_mv.row = ROUND_POWER_OF_TWO_SIGNED(
+      gm->motion_params.wmmat[0].as_mv.row, GM_TRANS_PREC_BITS - 3);
+  res.as_mv.col = ROUND_POWER_OF_TWO_SIGNED(
+      gm->motion_params.wmmat[0].as_mv.col, GM_TRANS_PREC_BITS - 3);
+  return res;
+}
 
 static INLINE TransformationType gm_to_trans_type(GLOBAL_MOTION_TYPE gmtype) {
   switch (gmtype) {
