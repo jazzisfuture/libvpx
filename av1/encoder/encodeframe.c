@@ -4496,15 +4496,16 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 // zero-centering.
 static int32_t add_param_offset(int param_index, int32_t param_value,
                                 int32_t offset) {
-  const int scale_vals[2] = { GM_ALPHA_PREC_DIFF, GM_TRANS_PREC_DIFF };
+  const int scale_vals[4] = { GM_TRANS_PREC_DIFF, GM_TRANS_PREC_DIFF,
+                              GM_ROTATION_PREC_DIFF, GM_ZOOM_PREC_DIFF };
   const int clamp_vals[2] = { GM_ALPHA_MAX, GM_TRANS_MAX };
   const int is_trans_param = param_index < 2;
-  const int is_one_centered = (!is_trans_param) && (param_index & 1);
+  const int is_one_centered = (param_index == 3);
 
   // Make parameter zero-centered and offset the shift that was done to make
   // it compatible with the warped model
   param_value = (param_value - (is_one_centered << WARPEDMODEL_PREC_BITS)) >>
-                scale_vals[is_trans_param];
+                scale_vals[param_index];
   // Add desired offset to the rescaled/zero-centered parameter
   param_value += offset;
   // Clamp the parameter so it does not overflow the number of bits allotted
@@ -4513,7 +4514,7 @@ static int32_t add_param_offset(int param_index, int32_t param_value,
                                clamp_vals[is_trans_param]);
   // Rescale the parameter to WARPEDMODEL_PRECISION_BITS so it is compatible
   // with the warped motion library
-  param_value *= (1 << scale_vals[is_trans_param]);
+  param_value *= (1 << scale_vals[param_index]);
 
   // Undo the zero-centering step if necessary
   return param_value + (is_one_centered << WARPEDMODEL_PREC_BITS);
@@ -4594,7 +4595,7 @@ static void refine_integerized_param(WarpedMotionParams *wm,
 
 static void convert_to_params(const double *params, TransformationType type,
                               int32_t *model) {
-  int i, diag_value;
+  int i;
   int alpha_present = 0;
   int n_params = n_trans_model_params[type];
   model[0] = (int32_t)floor(params[0] * (1 << GM_TRANS_PREC_BITS) + 0.5);
@@ -4604,14 +4605,20 @@ static void convert_to_params(const double *params, TransformationType type,
   model[1] = (int32_t)clamp(model[1], GM_TRANS_MIN, GM_TRANS_MAX) *
              GM_TRANS_DECODE_FACTOR;
 
-  for (i = 2; i < n_params; ++i) {
-    diag_value = ((i & 1) ? (1 << GM_ALPHA_PREC_BITS) : 0);
-    model[i] = (int32_t)floor(params[i] * (1 << GM_ALPHA_PREC_BITS) + 0.5);
-    model[i] =
-        (int32_t)(clamp(model[i] - diag_value, GM_ALPHA_MIN, GM_ALPHA_MAX) +
-                  diag_value) *
-        GM_ALPHA_DECODE_FACTOR;
-    alpha_present |= (model[i] != 0);
+  for (i = 2; i < n_params; i += 2) {
+    model[i] = (int32_t)floor(params[i] * (1 << GM_ROTATION_PREC_BITS) + 0.5);
+    model[i] = (int32_t)(clamp(model[i], GM_ALPHA_MIN, GM_ALPHA_MAX)) *
+               GM_ROTATION_DECODE_FACTOR;
+
+    model[i + 1] =
+        (int32_t)floor(params[i + 1] * (1 << GM_ZOOM_PREC_BITS) + 0.5);
+    model[i + 1] = (int32_t)(clamp(model[i + 1] - (1 << GM_ZOOM_PREC_BITS),
+                                   GM_ALPHA_MIN, GM_ALPHA_MAX) *
+                                 GM_ZOOM_DECODE_FACTOR +
+                             (1 << WARPEDMODEL_PREC_BITS));
+
+    alpha_present |=
+        (model[i] != 0) || (model[i + 1] != (1 << WARPEDMODEL_PREC_BITS));
   }
 
   if (!alpha_present) {
