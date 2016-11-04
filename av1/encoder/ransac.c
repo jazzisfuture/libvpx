@@ -273,7 +273,7 @@ static int ransac(double *matched_points, int npoints, int *number_of_inliers,
         pNoOutliers = 1 - pow(fracinliers, minpts);
         pNoOutliers = fmax(EPS, pNoOutliers);
         pNoOutliers = fmin(1 - EPS, pNoOutliers);
-        assert(fabs(1.0 - pNoOutliers) > 0.00001);
+        assert(fabs(pNoOutliers) > 0.00001);
         temp = (int)(log(1.0 - PROBABILITY_REQUIRED) / log(pNoOutliers));
         if (temp > 0 && temp < N) {
           N = AOMMAX(temp, MIN_TRIALS);
