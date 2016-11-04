@@ -4124,13 +4124,14 @@ static int get_gmbitcost(const Global_Motion_Params *gm,
   int gmtype_cost[GLOBAL_MOTION_TYPES];
   int bits;
   av1_cost_tokens(gmtype_cost, probs, av1_global_motion_types_tree);
-  if (gm->motion_params.wmmat[2].as_int) {
+  if (gm->motion_params.wmmat[5] || gm->motion_params.wmmat[4]) {
     bits = (GM_ABS_TRANS_BITS + 1) * 2 + 4 * GM_ABS_ALPHA_BITS + 4;
-  } else if (gm->motion_params.wmmat[1].as_int) {
+  } else if (gm->motion_params.wmmat[3] || gm->motion_params.wmmat[2]) {
     bits = (GM_ABS_TRANS_BITS + 1) * 2 + 2 * GM_ABS_ALPHA_BITS + 2;
   } else {
-    bits =
-        (gm->motion_params.wmmat[0].as_int ? ((GM_ABS_TRANS_BITS + 1) * 2) : 0);
+    bits = ((gm->motion_params.wmmat[1] || gm->motion_params.wmmat[0])
+                ? ((GM_ABS_TRANS_BITS + 1) * 2)
+                : 0);
   }
   return bits ? (bits << AV1_PROB_COST_SHIFT) + gmtype_cost[gm->gmtype] : 0;
 }
@@ -9424,10 +9425,7 @@ PALETTE_EXIT:
 #endif  // CONFIG_REF_MV
 #if CONFIG_GLOBAL_MOTION
     zeromv[0].as_int = gm_get_motion_vector(&cm->global_motion[refs[0]]).as_int;
-    if (comp_pred_mode) {
-      zeromv[1].as_int =
-          gm_get_motion_vector(&cm->global_motion[refs[1]]).as_int;
-    }
+    zeromv[1].as_int = gm_get_motion_vector(&cm->global_motion[refs[1]]).as_int;
 #else
     zeromv[0].as_int = 0;
     zeromv[1].as_int = 0;
