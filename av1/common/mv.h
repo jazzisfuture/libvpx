@@ -65,7 +65,7 @@ static const int n_trans_model_params[TRANS_TYPES] = { 9, 6, 4, 2 };
 
 typedef struct {
   TransformationType wmtype;
-  int_mv wmmat[4];  // For homography wmmat[9] is assumed to be 1
+  int32_t  wmmat[8];  // For homography wmmat[9] is assumed to be 1
 } WarpedMotionParams;
 #endif  // CONFIG_GLOBAL_MOTION || CONFIG_WARPED_MOTION
 
@@ -127,10 +127,10 @@ typedef struct {
 // regular motion vector) into a motion vector
 static INLINE int_mv gm_get_motion_vector(const Global_Motion_Params *gm) {
   int_mv res;
-  res.as_mv.row = ROUND_POWER_OF_TWO_SIGNED(
-      gm->motion_params.wmmat[0].as_mv.row, GM_TRANS_PREC_BITS - 3);
-  res.as_mv.col = ROUND_POWER_OF_TWO_SIGNED(
-      gm->motion_params.wmmat[0].as_mv.col, GM_TRANS_PREC_BITS - 3);
+  res.as_mv.row = (int32_t)ROUND_POWER_OF_TWO_SIGNED(
+      gm->motion_params.wmmat[0], GM_TRANS_PREC_BITS - 3);
+  res.as_mv.col = (int32_t)ROUND_POWER_OF_TWO_SIGNED(
+      gm->motion_params.wmmat[1], GM_TRANS_PREC_BITS - 3);
   return res;
 }
 
@@ -146,10 +146,10 @@ static INLINE TransformationType gm_to_trans_type(GLOBAL_MOTION_TYPE gmtype) {
 }
 
 static INLINE GLOBAL_MOTION_TYPE get_gmtype(const Global_Motion_Params *gm) {
-  if (!gm->motion_params.wmmat[2].as_int) {
-    if (!gm->motion_params.wmmat[1].as_int) {
-      return (gm->motion_params.wmmat[0].as_int ? GLOBAL_TRANSLATION
-                                                : GLOBAL_ZERO);
+  if (!gm->motion_params.wmmat[5] && !gm->motion_params.wmmat[4]) {
+    if (!gm->motion_params.wmmat[3] && !gm->motion_params.wmmat[2]) {
+      return ((!gm->motion_params.wmmat[1] && !gm->motion_params.wmmat[0]) ?
+        GLOBAL_ZERO : GLOBAL_TRANSLATION);
     } else {
       return GLOBAL_ROTZOOM;
     }
