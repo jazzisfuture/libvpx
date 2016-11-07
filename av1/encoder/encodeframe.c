@@ -2084,10 +2084,10 @@ typedef struct {
 
 static void restore_context(MACROBLOCK *x,
                             const RD_SEARCH_MACROBLOCK_CONTEXT *ctx, int mi_row,
-                            int mi_col, 
+                            int mi_col,
 #if CONFIG_PVQ
                             od_rollback_buffer *rdo_buf,
-#endif														
+#endif
 							BLOCK_SIZE bsize) {
   MACROBLOCKD *xd = &x->e_mbd;
   int p;
@@ -2124,7 +2124,7 @@ static void restore_context(MACROBLOCK *x,
 }
 
 static void save_context(const MACROBLOCK *x, RD_SEARCH_MACROBLOCK_CONTEXT *ctx,
-                         int mi_row, int mi_col, 
+                         int mi_row, int mi_col,
 #if CONFIG_PVQ
                          od_rollback_buffer *rdo_buf,
 #endif
