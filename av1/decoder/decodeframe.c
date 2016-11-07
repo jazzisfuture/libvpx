@@ -3856,22 +3856,26 @@ static void read_global_motion_params(Global_Motion_Params *params,
   switch (gmtype) {
     case GLOBAL_ZERO: break;
     case GLOBAL_AFFINE:
-      params->motion_params.wmmat[4] =
-          (aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-           GM_ALPHA_DECODE_FACTOR);
-      params->motion_params.wmmat[5] =
-          aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-              GM_ALPHA_DECODE_FACTOR +
-          (1 << WARPEDMODEL_PREC_BITS);
-    // fallthrough intended
     case GLOBAL_ROTZOOM:
       params->motion_params.wmmat[2] =
-          aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
-          GM_ALPHA_DECODE_FACTOR;
-      params->motion_params.wmmat[3] =
           (aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
            GM_ALPHA_DECODE_FACTOR) +
           (1 << WARPEDMODEL_PREC_BITS);
+      params->motion_params.wmmat[3] =
+          aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
+          GM_ALPHA_DECODE_FACTOR;
+      if (gmtype == GLOBAL_AFFINE) {
+        params->motion_params.wmmat[4] =
+            (aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
+             GM_ALPHA_DECODE_FACTOR);
+        params->motion_params.wmmat[5] =
+            aom_read_primitive_symmetric(r, GM_ABS_ALPHA_BITS) *
+            GM_ALPHA_DECODE_FACTOR +
+            (1 << WARPEDMODEL_PREC_BITS);
+      } else {
+        params->motion_params.wmmat[4] = -params->motion_params.wmmat[3];
+        params->motion_params.wmmat[5] = params->motion_params.wmmat[2];
+      }
     // fallthrough intended
     case GLOBAL_TRANSLATION:
       params->motion_params.wmmat[0] =

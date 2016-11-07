@@ -3808,22 +3808,23 @@ static void write_global_motion_params(Global_Motion_Params *params,
   switch (gmtype) {
     case GLOBAL_ZERO: break;
     case GLOBAL_AFFINE:
-      aom_write_primitive_symmetric(
-          w, (params->motion_params.wmmat[4] >> GM_ALPHA_PREC_DIFF),
-          GM_ABS_ALPHA_BITS);
-      aom_write_primitive_symmetric(
-          w, (params->motion_params.wmmat[5] >> GM_ALPHA_PREC_DIFF) -
-                 (1 << GM_ALPHA_PREC_BITS),
-          GM_ABS_ALPHA_BITS);
-    // fallthrough intended
     case GLOBAL_ROTZOOM:
       aom_write_primitive_symmetric(
-          w, (params->motion_params.wmmat[2] >> GM_ALPHA_PREC_DIFF),
-          GM_ABS_ALPHA_BITS);
-      aom_write_primitive_symmetric(
-          w, (params->motion_params.wmmat[3] >> GM_ALPHA_PREC_DIFF) -
+          w, (params->motion_params.wmmat[2] >> GM_ALPHA_PREC_DIFF) -
                  (1 << GM_ALPHA_PREC_BITS),
           GM_ABS_ALPHA_BITS);
+      aom_write_primitive_symmetric(
+          w, (params->motion_params.wmmat[3] >> GM_ALPHA_PREC_DIFF),
+          GM_ABS_ALPHA_BITS);
+      if (gmtype == GLOBAL_AFFINE) {
+        aom_write_primitive_symmetric(
+            w, (params->motion_params.wmmat[4] >> GM_ALPHA_PREC_DIFF),
+            GM_ABS_ALPHA_BITS);
+        aom_write_primitive_symmetric(
+            w, (params->motion_params.wmmat[5] >> GM_ALPHA_PREC_DIFF) -
+            (1 << GM_ALPHA_PREC_BITS),
+            GM_ABS_ALPHA_BITS);
+      }
     // fallthrough intended
     case GLOBAL_TRANSLATION:
       aom_write_primitive_symmetric(
