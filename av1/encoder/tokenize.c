@@ -320,6 +320,7 @@ struct tokenize_b_args {
   int this_rate;
 };
 
+#if !CONFIG_PVQ
 static void cost_coeffs_b(int plane, int block, int blk_row, int blk_col,
                           BLOCK_SIZE plane_bsize, TX_SIZE tx_size, void *arg) {
   struct tokenize_b_args *const args = arg;
@@ -343,7 +344,6 @@ static void cost_coeffs_b(int plane, int block, int blk_row, int blk_col,
   av1_set_contexts(xd, pd, tx_size, p->eobs[block] > 0, blk_col, blk_row);
 }
 
-#if !CONFIG_PVQ
 static void set_entropy_context_b(int plane, int block, int blk_row,
                                   int blk_col, BLOCK_SIZE plane_bsize,
                                   TX_SIZE tx_size, void *arg) {

@@ -62,7 +62,6 @@ typedef struct av1_token_state {
   tran_low_t dqc;
 } av1_token_state;
 
-#if !CONFIG_PVQ
 // These numbers are empirically obtained.
 static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] = {
   { 10, 6 }, { 8, 5 },
@@ -404,7 +403,6 @@ int av1_optimize_b(const AV1_COMMON *cm, MACROBLOCK *mb, int plane, int block,
   assert(final_eob <= default_eob);
   return final_eob;
 }
-#endif  // !CONFIG_PVG
 
 #if CONFIG_AOM_HIGHBITDEPTH
 typedef enum QUANT_FUNC {
@@ -1166,7 +1164,7 @@ void av1_encode_block_intra(int plane, int block, int blk_row, int blk_col,
                             BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
                             void *arg) {
   struct encode_b_args *const args = arg;
-#if !CONFIG_PVG
+#if !CONFIG_PVQ
   AV1_COMMON *cm = args->cm;
 #endif
   MACROBLOCK *const x = args->x;

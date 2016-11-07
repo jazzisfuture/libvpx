@@ -411,6 +411,8 @@ static int av1_pvq_decode_helper2(
     int seg_id = mbmi->segment_id;
     int16_t *quant;
     FWD_TXFM_PARAM fwd_txfm_param;
+    // ToDo(yaowu): figure out how to initialize this
+    int max_scan_line = 0;
 
     for (j = 0; j < tx_blk_size; j++)
       for (i = 0; i < tx_blk_size; i++) {
@@ -436,8 +438,8 @@ static int av1_pvq_decode_helper2(
     for (j = 0; j < tx_blk_size; j++)
       for (i = 0; i < tx_blk_size; i++) dst[j * pd->dst.stride + i] = 0;
 
-    inverse_transform_block(xd, plane, tx_type, tx_size, dst,
-                            pd->dst.stride, eob);
+    inverse_transform_block(xd, plane, tx_type, tx_size, dst, pd->dst.stride,
+                            max_scan_line, eob);
   }
 
   return eob;
@@ -553,7 +555,6 @@ static int reconstruct_inter_block(AV1_COMMON *cm, MACROBLOCKD *const xd,
 #endif
                                    int segment_id, int plane, int row, int col,
                                    TX_SIZE tx_size) {
-  struct macroblockd_plane *const pd = &xd->plane[plane];
   PLANE_TYPE plane_type = (plane == 0) ? PLANE_TYPE_Y : PLANE_TYPE_UV;
   int block_idx = (row << 1) + col;
   TX_TYPE tx_type = get_tx_type(plane_type, xd, block_idx, tx_size);
@@ -561,6 +562,9 @@ static int reconstruct_inter_block(AV1_COMMON *cm, MACROBLOCKD *const xd,
   int eob;
   (void)cm;
   (void)r;
+  (void)segment_id;
+#else
+  struct macroblockd_plane *const pd = &xd->plane[plane];
 #endif
 
 #if !CONFIG_PVQ
@@ -577,7 +581,8 @@ static int reconstruct_inter_block(AV1_COMMON *cm, MACROBLOCKD *const xd,
                             &pd->dst.buf[4 * row * pd->dst.stride + 4 * col],
                             pd->dst.stride, max_scan_line, eob);
 #else
-  eob = av1_pvq_decode_helper2(xd, mbmi, plane, row, col, tx_size, tx_type);
+  eob = av1_pvq_decode_helper2(xd, &xd->mi[0]->mbmi, plane, row, col, tx_size,
+                               tx_type);
 #endif
   return eob;
 }
@@ -3032,7 +3037,7 @@ static const uint8_t *decode_tiles(AV1Decoder *pbi, const uint8_t *data,
               : NULL;
       av1_zero(td->dqcoeff);
 #if CONFIG_PVQ
-      av1_zero(tile_data->pvq_ref_coeff);
+      av1_zero(td->pvq_ref_coeff);
 #endif
       av1_tile_init(&td->xd.tile, td->cm, tile_row, tile_col);
 #if !CONFIG_ANS
