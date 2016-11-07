@@ -35,18 +35,18 @@ void project_points_translation(int32_t *mat, int *points, int *proj,
     const int x = *(points++), y = *(points++);
     if (subsampling_x)
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          ((x * (1 << (WARPEDMODEL_PREC_BITS + 1))) + mat[1]),
+          ((x * (1 << (WARPEDMODEL_PREC_BITS + 1))) + mat[0]),
           WARPEDDIFF_PREC_BITS + 1);
     else
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          ((x * (1 << WARPEDMODEL_PREC_BITS)) + mat[1]), WARPEDDIFF_PREC_BITS);
+          ((x * (1 << WARPEDMODEL_PREC_BITS)) + mat[0]), WARPEDDIFF_PREC_BITS);
     if (subsampling_y)
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          ((y * (1 << (WARPEDMODEL_PREC_BITS + 1))) + mat[0]),
+          ((y * (1 << (WARPEDMODEL_PREC_BITS + 1))) + mat[1]),
           WARPEDDIFF_PREC_BITS + 1);
     else
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          ((y * (1 << WARPEDMODEL_PREC_BITS))) + mat[0], WARPEDDIFF_PREC_BITS);
+          ((y * (1 << WARPEDMODEL_PREC_BITS))) + mat[1], WARPEDDIFF_PREC_BITS);
     points += stride_points - 2;
     proj += stride_proj - 2;
   }
@@ -60,19 +60,19 @@ void project_points_rotzoom(int32_t *mat, int *points, int *proj, const int n,
     const int x = *(points++), y = *(points++);
     if (subsampling_x)
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          mat[3] * 2 * x + mat[2] * 2 * y + mat[1] +
+          mat[3] * 2 * x + mat[2] * 2 * y + mat[0] +
               (mat[3] + mat[2] - (1 << WARPEDMODEL_PREC_BITS)) / 2,
           WARPEDDIFF_PREC_BITS + 1);
     else
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(mat[3] * x + mat[2] * y + mat[1],
+      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(mat[3] * x + mat[2] * y + mat[0],
                                             WARPEDDIFF_PREC_BITS);
     if (subsampling_y)
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          -mat[2] * 2 * x + mat[3] * 2 * y + mat[0] +
+          -mat[2] * 2 * x + mat[3] * 2 * y + mat[1] +
               (-mat[2] + mat[3] - (1 << WARPEDMODEL_PREC_BITS)) / 2,
           WARPEDDIFF_PREC_BITS + 1);
     else
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(-mat[2] * x + mat[3] * y + mat[0],
+      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(-mat[2] * x + mat[3] * y + mat[1],
                                             WARPEDDIFF_PREC_BITS);
     points += stride_points - 2;
     proj += stride_proj - 2;
@@ -87,19 +87,19 @@ void project_points_affine(int32_t *mat, int *points, int *proj, const int n,
     const int x = *(points++), y = *(points++);
     if (subsampling_x)
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          mat[3] * 2 * x + mat[2] * 2 * y + mat[1] +
+          mat[3] * 2 * x + mat[2] * 2 * y + mat[0] +
               (mat[3] + mat[2] - (1 << WARPEDMODEL_PREC_BITS)) / 2,
           WARPEDDIFF_PREC_BITS + 1);
     else
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(mat[3] * x + mat[2] * y + mat[1],
+      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(mat[3] * x + mat[2] * y + mat[0],
                                             WARPEDDIFF_PREC_BITS);
     if (subsampling_y)
       *(proj++) = ROUND_POWER_OF_TWO_SIGNED(
-          mat[4] * 2 * x + mat[5] * 2 * y + mat[0] +
+          mat[4] * 2 * x + mat[5] * 2 * y + mat[1] +
               (mat[4] + mat[5] - (1 << WARPEDMODEL_PREC_BITS)) / 2,
           WARPEDDIFF_PREC_BITS + 1);
     else
-      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(mat[4] * x + mat[5] * y + mat[0],
+      *(proj++) = ROUND_POWER_OF_TWO_SIGNED(mat[4] * x + mat[5] * y + mat[1],
                                             WARPEDDIFF_PREC_BITS);
     points += stride_points - 2;
     proj += stride_proj - 2;
@@ -978,8 +978,8 @@ static void denormalize_affine(double *params, double *T1, double *T2) {
   params_denorm[6] = params_denorm[7] = 0;
   params_denorm[8] = 1;
   denormalize_homography(params_denorm, T1, T2);
-  params[0] = params_denorm[5];
-  params[1] = params_denorm[2];
+  params[0] = params_denorm[2];
+  params[1] = params_denorm[5];
   params[2] = params_denorm[1];
   params[3] = params_denorm[0];
   params[4] = params_denorm[3];
@@ -997,8 +997,8 @@ static void denormalize_rotzoom(double *params, double *T1, double *T2) {
   params_denorm[6] = params_denorm[7] = 0;
   params_denorm[8] = 1;
   denormalize_homography(params_denorm, T1, T2);
-  params[0] = params_denorm[5];
-  params[1] = params_denorm[2];
+  params[0] = params_denorm[2];
+  params[1] = params_denorm[5];
   params[2] = params_denorm[1];
   params[3] = params_denorm[0];
 }
@@ -1014,8 +1014,8 @@ static void denormalize_translation(double *params, double *T1, double *T2) {
   params_denorm[6] = params_denorm[7] = 0;
   params_denorm[8] = 1;
   denormalize_homography(params_denorm, T1, T2);
-  params[0] = params_denorm[5];
-  params[1] = params_denorm[2];
+  params[0] = params_denorm[2];
+  params[1] = params_denorm[5];
 }
 
 int find_translation(const int np, double *pts1, double *pts2, double *mat) {
