@@ -4724,7 +4724,7 @@ static void refine_integerized_param(WarpedMotionParams *wm,
 
 static void convert_to_params(const double *params, TransformationType type,
                               int32_t *model) {
-  int i, diag_value;
+  int i;
   int alpha_present = 0;
   int n_params = n_trans_model_params[type];
   model[0] = (int32_t)floor(params[0] * (1 << GM_TRANS_PREC_BITS) + 0.5);
@@ -4734,13 +4734,21 @@ static void convert_to_params(const double *params, TransformationType type,
   model[1] = (int32_t)clamp(model[1], GM_TRANS_MIN, GM_TRANS_MAX) *
              GM_TRANS_DECODE_FACTOR;
 
-  for (i = 2; i < n_params; ++i) {
-    diag_value = ((i & 1) ? (1 << GM_ALPHA_PREC_BITS) : 0);
+  for (i = 2; i < 6; ++i) {
+    const int diag_value = ((i == 2 || i == 5) ? (1 << GM_ALPHA_PREC_BITS) : 0);
     model[i] = (int32_t)floor(params[i] * (1 << GM_ALPHA_PREC_BITS) + 0.5);
     model[i] =
         (int32_t)(clamp(model[i] - diag_value, GM_ALPHA_MIN, GM_ALPHA_MAX) +
                   diag_value) *
         GM_ALPHA_DECODE_FACTOR;
+    alpha_present |= (model[i] != 0);
+  }
+  for (; i < 9; ++i) {
+    model[i] = (int32_t)floor(params[i] * (1 << GM_ROW3HOMO_PREC_BITS) + 0.5);
+    model[i] =
+        (int32_t)(clamp(model[i],
+                        GM_ROW3HOMO_MIN, GM_ROW3HOMO_MAX) + diag_value) *
+        GM_ROW3HOMO_DECODE_FACTOR;
     alpha_present |= (model[i] != 0);
   }
 
@@ -4755,9 +4763,7 @@ static void convert_to_params(const double *params, TransformationType type,
 static void convert_model_to_params(const double *params,
                                     TransformationType type,
                                     Global_Motion_Params *model) {
-  // TODO(sarahparker) implement for homography
-  if (type > HOMOGRAPHY)
-    convert_to_params(params, type, model->motion_params.wmmat);
+  convert_to_params(params, type, model->motion_params.wmmat);
   model->gmtype = get_gmtype(model);
   model->motion_params.wmtype = gm_to_trans_type(model->gmtype);
 }
