@@ -37,7 +37,7 @@ typedef struct mv32 {
 #if CONFIG_GLOBAL_MOTION || CONFIG_WARPED_MOTION
 // Bits of precision used for the model
 #define WARPEDMODEL_PREC_BITS 12
-#define WARPEDMODEL_ROW3HOMO_PREC_BITS 12
+#define WARPEDMODEL_ROW3HOMO_PREC_BITS 14
 
 // Bits of subpel precision for warped interpolation
 #define WARPEDPIXEL_PREC_BITS 6
@@ -102,19 +102,29 @@ typedef struct {
 #define GM_ALPHA_PREC_DIFF (WARPEDMODEL_PREC_BITS - GM_ALPHA_PREC_BITS)
 #define GM_ALPHA_DECODE_FACTOR (1 << GM_ALPHA_PREC_DIFF)
 
-#define GM_ABS_ALPHA_BITS 9
+#define GM_ROW3HOMO_PREC_BITS 14
+#define GM_ROW3HOMO_PREC_DIFF \
+    (WARPEDMODEL_ROW3HOMO_PREC_BITS - GM_ROW3HOMO_PREC_BITS)
+#define GM_ROW3HOMO_DECODE_FACTOR (1 << GM_ROW3HOMO_PREC_DIFF)
+
 #define GM_ABS_TRANS_BITS 9
+#define GM_ABS_ALPHA_BITS 9
+#define GM_ABS_ROW3HOMO_BITS 9
 
 #define GM_TRANS_MAX (1 << GM_ABS_TRANS_BITS)
 #define GM_ALPHA_MAX (1 << GM_ABS_ALPHA_BITS)
+#define GM_ROW3HOMO_MAX (1 << GM_ABS_ROW3HOMO_BITS)
+
 #define GM_TRANS_MIN -GM_TRANS_MAX
 #define GM_ALPHA_MIN -GM_ALPHA_MAX
+#define GM_ROW3HOMO_MIN -GM_ROW3HOMO_MAX
 
 typedef enum {
   GLOBAL_ZERO = 0,
   GLOBAL_TRANSLATION = 1,
   GLOBAL_ROTZOOM = 2,
   GLOBAL_AFFINE = 3,
+  // GLOBAL_HOMOGRAPHY = 4,
   GLOBAL_MOTION_TYPES
 } GLOBAL_MOTION_TYPE;
 
@@ -140,23 +150,26 @@ static INLINE TransformationType gm_to_trans_type(GLOBAL_MOTION_TYPE gmtype) {
     case GLOBAL_TRANSLATION: return TRANSLATION; break;
     case GLOBAL_ROTZOOM: return ROTZOOM; break;
     case GLOBAL_AFFINE: return AFFINE; break;
+    // case GLOBAL_HOMOGRAPHY: return HOMOGRAPHY; break;
     default: assert(0);
   }
   return UNKNOWN_TRANSFORM;
 }
 
 static INLINE GLOBAL_MOTION_TYPE get_gmtype(const Global_Motion_Params *gm) {
-  if (!gm->motion_params.wmmat[5] && !gm->motion_params.wmmat[4]) {
-    if (!gm->motion_params.wmmat[3] && !gm->motion_params.wmmat[2]) {
-      return ((!gm->motion_params.wmmat[1] && !gm->motion_params.wmmat[0])
-                  ? GLOBAL_ZERO
-                  : GLOBAL_TRANSLATION);
-    } else {
-      return GLOBAL_ROTZOOM;
-    }
-  } else {
-    return GLOBAL_AFFINE;
+  // if (gm->motion_params.wmmat[6] != 0 || gm->motion_params.wmmat[7] != 0)
+  //   return GLOBAL_HOMOGRAPHY;
+  if (!gm->motion_params.wmmat[5] && !gm->motion_params.wmmat[4] &&
+      !gm->motion_params.wmmat[3] && !gm->motion_params.wmmat[2]) {
+    return ((!gm->motion_params.wmmat[1] && !gm->motion_params.wmmat[0])
+            ? GLOBAL_ZERO
+            : GLOBAL_TRANSLATION);
   }
+  if (gm->motion_params.wmmat[2] == gm->motion_params.wmmat[5] &&
+      gm->motion_params.wmmat[3] == -gm->motion_params.wmmat[4])
+    return GLOBAL_ROTZOOM;
+  else
+    return GLOBAL_AFFINE;
 }
 #endif  // CONFIG_GLOBAL_MOTION
 

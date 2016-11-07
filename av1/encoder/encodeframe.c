@@ -4626,24 +4626,25 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 // zero-centering.
 static int32_t add_param_offset(int param_index, int32_t param_value,
                                 int32_t offset) {
-  const int scale_vals[2] = { GM_ALPHA_PREC_DIFF, GM_TRANS_PREC_DIFF };
-  const int clamp_vals[2] = { GM_ALPHA_MAX, GM_TRANS_MAX };
-  const int is_trans_param = param_index < 2;
-  const int is_one_centered = (!is_trans_param) && (param_index & 1);
+  const int scale_vals[2] = {
+    GM_TRANS_PREC_DIFF, GM_ALPHA_PREC_DIFF, GM_ROW3HOMO_PREC_DIFF };
+  const int clamp_vals[2] = { GM_TRANS_MAX, GM_ALPHA_MAX, GM_ROW3HOMO_MAX };
+  const int param_type = (param_index < 2 ? 0 : (param_index < 6 ? 1 : 2));
+  const int is_one_centered = (param_index == 2 || param_index == 5);
 
   // Make parameter zero-centered and offset the shift that was done to make
   // it compatible with the warped model
   param_value = (param_value - (is_one_centered << WARPEDMODEL_PREC_BITS)) >>
-                scale_vals[is_trans_param];
+      scale_vals[param_type];
   // Add desired offset to the rescaled/zero-centered parameter
   param_value += offset;
   // Clamp the parameter so it does not overflow the number of bits allotted
   // to it in the bitstream
-  param_value = (int32_t)clamp(param_value, -clamp_vals[is_trans_param],
-                               clamp_vals[is_trans_param]);
+  param_value = (int32_t)clamp(param_value, -clamp_vals[param_type],
+                               clamp_vals[param_type]);
   // Rescale the parameter to WARPEDMODEL_PRECISION_BITS so it is compatible
   // with the warped motion library
-  param_value *= (1 << scale_vals[is_trans_param]);
+  param_value *= (1 << scale_vals[param_type]);
 
   // Undo the zero-centering step if necessary
   return param_value + (is_one_centered << WARPEDMODEL_PREC_BITS);
@@ -4724,7 +4725,7 @@ static void refine_integerized_param(WarpedMotionParams *wm,
 
 static void convert_to_params(const double *params, TransformationType type,
                               int32_t *model) {
-  int i, diag_value;
+  int i;
   int alpha_present = 0;
   int n_params = n_trans_model_params[type];
   model[0] = (int32_t)floor(params[0] * (1 << GM_TRANS_PREC_BITS) + 0.5);
@@ -4734,13 +4735,19 @@ static void convert_to_params(const double *params, TransformationType type,
   model[1] = (int32_t)clamp(model[1], GM_TRANS_MIN, GM_TRANS_MAX) *
              GM_TRANS_DECODE_FACTOR;
 
-  for (i = 2; i < n_params; ++i) {
-    diag_value = ((i & 1) ? (1 << GM_ALPHA_PREC_BITS) : 0);
+  for (i = 2; i < 6; ++i) {
+    const int diag_value = ((i == 2 || i == 5) ? (1 << GM_ALPHA_PREC_BITS) : 0);
     model[i] = (int32_t)floor(params[i] * (1 << GM_ALPHA_PREC_BITS) + 0.5);
     model[i] =
         (int32_t)(clamp(model[i] - diag_value, GM_ALPHA_MIN, GM_ALPHA_MAX) +
                   diag_value) *
         GM_ALPHA_DECODE_FACTOR;
+    alpha_present |= (model[i] != 0);
+  }
+  for (; i < 9; ++i) {
+    model[i] = (int32_t)floor(params[i] * (1 << GM_ROW3HOMO_PREC_BITS) + 0.5);
+    model[i] = (int32_t)clamp(model[i], GM_ROW3HOMO_MIN, GM_ROW3HOMO_MAX) *
+               GM_ROW3HOMO_DECODE_FACTOR;
     alpha_present |= (model[i] != 0);
   }
 
@@ -4755,9 +4762,7 @@ static void convert_to_params(const double *params, TransformationType type,
 static void convert_model_to_params(const double *params,
                                     TransformationType type,
                                     Global_Motion_Params *model) {
-  // TODO(sarahparker) implement for homography
-  if (type > HOMOGRAPHY)
-    convert_to_params(params, type, model->motion_params.wmmat);
+  convert_to_params(params, type, model->motion_params.wmmat);
   model->gmtype = get_gmtype(model);
   model->motion_params.wmtype = gm_to_trans_type(model->gmtype);
 }
