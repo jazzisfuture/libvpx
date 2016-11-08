@@ -4599,7 +4599,6 @@ static void refine_integerized_param(WarpedMotionParams *wm,
 static void convert_to_params(const double *params, TransformationType type,
                               int32_t *model) {
   int i, diag_value;
-  int alpha_present = 0;
   int n_params = n_trans_model_params[type];
   model[0] = (int32_t)floor(params[0] * (1 << GM_TRANS_PREC_BITS) + 0.5);
   model[1] = (int32_t)floor(params[1] * (1 << GM_TRANS_PREC_BITS) + 0.5);
@@ -4615,14 +4614,44 @@ static void convert_to_params(const double *params, TransformationType type,
         (int32_t)(clamp(model[i] - diag_value, GM_ALPHA_MIN, GM_ALPHA_MAX) +
                   diag_value) *
         GM_ALPHA_DECODE_FACTOR;
-    alpha_present |= (model[i] != 0);
   }
+}
 
-  if (!alpha_present) {
-    if (abs(model[0]) < MIN_TRANS_THRESH && abs(model[1]) < MIN_TRANS_THRESH) {
-      model[0] = 0;
-      model[1] = 0;
-    }
+// Try to simplify a quantized global motion model
+static void simplify_model(Global_Motion_Params *model) {
+  int32_t *wmmat = model->motion_params.wmmat;
+  switch (model->gmtype) {
+    case GLOBAL_AFFINE:
+      if ((wmmat[4] == -wmmat[2]) && (wmmat[5] == wmmat[3])) {
+        // Equivalent to a ROTZOOM model
+        model->gmtype = GLOBAL_ROTZOOM;
+        model->motion_params.wmtype = ROTZOOM;
+      } else
+        break;
+    // fall through if we downgraded to a ROTZOOM model
+    case GLOBAL_ROTZOOM:
+      if ((wmmat[2] == 0) && (wmmat[3] == (1 << WARPEDMODEL_PREC_BITS))) {
+        // Equivalent to a TRANSLATION model
+        model->gmtype = GLOBAL_TRANSLATION;
+        model->motion_params.wmtype = TRANSLATION;
+      } else
+        break;
+    // fall through if we downgraded to a TRANSLATION model
+    case GLOBAL_TRANSLATION:
+      if (abs(wmmat[0]) < MIN_TRANS_THRESH &&
+          abs(wmmat[1]) < MIN_TRANS_THRESH) {
+        // Equivalent to a IDENTITY / GLOBAL_ZERO model
+        wmmat[0] = 0;
+        wmmat[1] = 0;
+        model->gmtype = GLOBAL_ZERO;
+        model->motion_params.wmtype = IDENTITY;
+      } else
+        break;
+    // fall through if we downgraded to a ZERO model
+    case GLOBAL_ZERO:
+      // No simplification possible
+      break;
+    default: assert(0); break;
   }
 }
 
@@ -4632,8 +4661,9 @@ static void convert_model_to_params(const double *params,
   // TODO(sarahparker) implement for homography
   if (type > HOMOGRAPHY)
     convert_to_params(params, type, model->motion_params.wmmat);
-  model->gmtype = get_gmtype(model);
-  model->motion_params.wmtype = gm_to_trans_type(model->gmtype);
+  model->gmtype = trans_to_gm_type(type);
+  model->motion_params.wmtype = type;
+  simplify_model(model);
 }
 #endif  // CONFIG_GLOBAL_MOTION
 
@@ -4673,7 +4703,7 @@ static void encode_frame_internal(AV1_COMP *cpi) {
                                                 cpi->Source, ref_buf, params)) {
           convert_model_to_params(params, GLOBAL_MOTION_MODEL,
                                   &cm->global_motion[frame]);
-          if (get_gmtype(&cm->global_motion[frame]) > GLOBAL_ZERO) {
+          if (cm->global_motion[frame].gmtype > GLOBAL_ZERO) {
             refine_integerized_param(
                 &cm->global_motion[frame].motion_params,
 #if CONFIG_AOM_HIGHBITDEPTH
@@ -4682,20 +4712,24 @@ static void encode_frame_internal(AV1_COMP *cpi) {
                 ref_buf->y_buffer, ref_buf->y_width, ref_buf->y_height,
                 ref_buf->y_stride, cpi->Source->y_buffer, cpi->Source->y_width,
                 cpi->Source->y_height, cpi->Source->y_stride, 3);
-            // compute the advantage of using gm parameters over 0 motion
-            erroradvantage = av1_warp_erroradv(
-                &cm->global_motion[frame].motion_params,
+            // See if we can use a simpler model type
+            simplify_model(&cm->global_motion[frame]);
+            if (cm->global_motion[frame].gmtype != GLOBAL_ZERO) {
+              // compute the advantage of using gm parameters over 0 motion
+              erroradvantage = av1_warp_erroradv(
+                  &cm->global_motion[frame].motion_params,
 #if CONFIG_AOM_HIGHBITDEPTH
-                xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
+                  xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH, xd->bd,
 #endif  // CONFIG_AOM_HIGHBITDEPTH
-                ref_buf->y_buffer, ref_buf->y_width, ref_buf->y_height,
-                ref_buf->y_stride, cpi->Source->y_buffer, 0, 0,
-                cpi->Source->y_width, cpi->Source->y_height,
-                cpi->Source->y_stride, 0, 0, 16, 16);
-            if (erroradvantage > GLOBAL_MOTION_ADVANTAGE_THRESH)
-              // Not enough advantage in using a global model. Make 0.
-              memset(&cm->global_motion[frame], 0,
-                     sizeof(cm->global_motion[frame]));
+                  ref_buf->y_buffer, ref_buf->y_width, ref_buf->y_height,
+                  ref_buf->y_stride, cpi->Source->y_buffer, 0, 0,
+                  cpi->Source->y_width, cpi->Source->y_height,
+                  cpi->Source->y_stride, 0, 0, 16, 16);
+              if (erroradvantage > GLOBAL_MOTION_ADVANTAGE_THRESH)
+                // Not enough advantage in using a global model. Make 0.
+                memset(&cm->global_motion[frame], 0,
+                       sizeof(cm->global_motion[frame]));
+            }
           }
         }
       }
