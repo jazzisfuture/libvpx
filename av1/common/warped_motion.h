@@ -30,6 +30,10 @@ typedef void (*ProjectPointsFunc)(int32_t *mat, int *points, int *proj,
                                   const int subsampling_x,
                                   const int subsampling_y);
 
+void project_points_identity(int32_t *mat, int *points, int *proj, const int n,
+                             const int stride_points, const int stride_proj,
+                             const int subsampling_x, const int subsampling_y);
+
 void project_points_translation(int32_t *mat, int *points, int *proj,
                                 const int n, const int stride_points,
                                 const int stride_proj, const int subsampling_x,

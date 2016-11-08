@@ -57,11 +57,12 @@ typedef enum {
   AFFINE,       // affine, 6-parameter
   ROTZOOM,      // simplified affine with rotation and zoom only, 4-parameter
   TRANSLATION,  // translational motion 2-parameter
+  IDENTITY,     // identity transformation, 0-parameter
   TRANS_TYPES
 } TransformationType;
 
 // number of parameters used by each transformation in TransformationTypes
-static const int n_trans_model_params[TRANS_TYPES] = { 9, 6, 4, 2 };
+static const int n_trans_model_params[TRANS_TYPES] = { 9, 6, 4, 2, 0 };
 
 typedef struct {
   TransformationType wmtype;
@@ -136,7 +137,7 @@ static INLINE int_mv gm_get_motion_vector(const Global_Motion_Params *gm) {
 
 static INLINE TransformationType gm_to_trans_type(GLOBAL_MOTION_TYPE gmtype) {
   switch (gmtype) {
-    case GLOBAL_ZERO: return UNKNOWN_TRANSFORM; break;
+    case GLOBAL_ZERO: return IDENTITY; break;
     case GLOBAL_TRANSLATION: return TRANSLATION; break;
     case GLOBAL_ROTZOOM: return ROTZOOM; break;
     case GLOBAL_AFFINE: return AFFINE; break;
@@ -145,18 +146,15 @@ static INLINE TransformationType gm_to_trans_type(GLOBAL_MOTION_TYPE gmtype) {
   return UNKNOWN_TRANSFORM;
 }
 
-static INLINE GLOBAL_MOTION_TYPE get_gmtype(const Global_Motion_Params *gm) {
-  if (!gm->motion_params.wmmat[5] && !gm->motion_params.wmmat[4]) {
-    if (!gm->motion_params.wmmat[3] && !gm->motion_params.wmmat[2]) {
-      return ((!gm->motion_params.wmmat[1] && !gm->motion_params.wmmat[0])
-                  ? GLOBAL_ZERO
-                  : GLOBAL_TRANSLATION);
-    } else {
-      return GLOBAL_ROTZOOM;
-    }
-  } else {
-    return GLOBAL_AFFINE;
+static INLINE GLOBAL_MOTION_TYPE trans_to_gm_type(TransformationType type) {
+  switch (type) {
+    case IDENTITY: return GLOBAL_ZERO; break;
+    case TRANSLATION: return GLOBAL_TRANSLATION; break;
+    case ROTZOOM: return GLOBAL_ROTZOOM; break;
+    case AFFINE: return GLOBAL_AFFINE; break;
+    default: assert(0);
   }
+  return GLOBAL_ZERO;
 }
 #endif  // CONFIG_GLOBAL_MOTION
 
