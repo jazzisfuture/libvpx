@@ -101,7 +101,7 @@ static struct av1_token ext_tx_intra_encodings[EXT_TX_SETS_INTRA][TX_TYPES];
 static struct av1_token ext_tx_encodings[TX_TYPES];
 #endif  // CONFIG_EXT_TX
 #if CONFIG_GLOBAL_MOTION
-static struct av1_token global_motion_types_encodings[GLOBAL_MOTION_TYPES];
+static struct av1_token global_motion_types_encodings[TRANS_TYPES];
 #endif  // CONFIG_GLOBAL_MOTION
 #if CONFIG_EXT_INTRA
 static struct av1_token intra_filter_encodings[INTRA_FILTERS];
@@ -3651,12 +3651,12 @@ static void write_uncompressed_header(AV1_COMP *cpi,
 #if CONFIG_GLOBAL_MOTION
 static void write_global_motion_params(Global_Motion_Params *params,
                                        aom_prob *probs, aom_writer *w) {
-  GLOBAL_MOTION_TYPE gmtype = params->gmtype;
+  TransformationType type = params->motion_params.wmtype;
   av1_write_token(w, av1_global_motion_types_tree, probs,
-                  &global_motion_types_encodings[gmtype]);
-  switch (gmtype) {
-    case GLOBAL_ZERO: break;
-    case GLOBAL_AFFINE:
+                  &global_motion_types_encodings[type]);
+  switch (type) {
+    case IDENTITY: break;
+    case AFFINE:
       aom_write_primitive_symmetric(
           w, (params->motion_params.wmmat[4] >> GM_ALPHA_PREC_DIFF),
           GM_ABS_ALPHA_BITS);
@@ -3665,7 +3665,7 @@ static void write_global_motion_params(Global_Motion_Params *params,
                  (1 << GM_ALPHA_PREC_BITS),
           GM_ABS_ALPHA_BITS);
     // fallthrough intended
-    case GLOBAL_ROTZOOM:
+    case ROTZOOM:
       aom_write_primitive_symmetric(
           w, (params->motion_params.wmmat[2] >> GM_ALPHA_PREC_DIFF),
           GM_ABS_ALPHA_BITS);
@@ -3674,7 +3674,7 @@ static void write_global_motion_params(Global_Motion_Params *params,
                  (1 << GM_ALPHA_PREC_BITS),
           GM_ABS_ALPHA_BITS);
     // fallthrough intended
-    case GLOBAL_TRANSLATION:
+    case TRANSLATION:
       aom_write_primitive_symmetric(
           w, (params->motion_params.wmmat[0] >> GM_TRANS_PREC_DIFF),
           GM_ABS_TRANS_BITS);

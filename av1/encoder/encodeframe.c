@@ -4620,38 +4620,35 @@ static void convert_to_params(const double *params, TransformationType type,
 // Try to simplify a quantized global motion model
 static void simplify_model(Global_Motion_Params *model) {
   int32_t *wmmat = model->motion_params.wmmat;
-  switch (model->gmtype) {
-    case GLOBAL_AFFINE:
+  switch (model->motion_params.wmtype) {
+    case AFFINE:
       if ((wmmat[4] == -wmmat[2]) && (wmmat[5] == wmmat[3])) {
         // Equivalent to a ROTZOOM model
-        model->gmtype = GLOBAL_ROTZOOM;
         model->motion_params.wmtype = ROTZOOM;
       } else {
         break;
       }
     // fall through if we downgraded to a ROTZOOM model
-    case GLOBAL_ROTZOOM:
+    case ROTZOOM:
       if ((wmmat[2] == 0) && (wmmat[3] == (1 << WARPEDMODEL_PREC_BITS))) {
         // Equivalent to a TRANSLATION model
-        model->gmtype = GLOBAL_TRANSLATION;
         model->motion_params.wmtype = TRANSLATION;
       } else {
         break;
       }
     // fall through if we downgraded to a TRANSLATION model
-    case GLOBAL_TRANSLATION:
+    case TRANSLATION:
       if (abs(wmmat[0]) < MIN_TRANS_THRESH &&
           abs(wmmat[1]) < MIN_TRANS_THRESH) {
-        // Equivalent to a IDENTITY / GLOBAL_ZERO model
+        // Equivalent to a IDENTITY model
         wmmat[0] = 0;
         wmmat[1] = 0;
-        model->gmtype = GLOBAL_ZERO;
         model->motion_params.wmtype = IDENTITY;
       } else {
         break;
       }
     // fall through if we downgraded to a ZERO model
-    case GLOBAL_ZERO:
+    case IDENTITY:
       // No simplification possible
       break;
     default: assert(0); break;
@@ -4662,9 +4659,8 @@ static void convert_model_to_params(const double *params,
                                     TransformationType type,
                                     Global_Motion_Params *model) {
   // TODO(sarahparker) implement for homography
-  if (type > HOMOGRAPHY)
+  if (type != HOMOGRAPHY)
     convert_to_params(params, type, model->motion_params.wmmat);
-  model->gmtype = trans_to_gm_type(type);
   model->motion_params.wmtype = type;
   simplify_model(model);
 }
@@ -4706,7 +4702,7 @@ static void encode_frame_internal(AV1_COMP *cpi) {
                                                 cpi->Source, ref_buf, params)) {
           convert_model_to_params(params, GLOBAL_MOTION_MODEL,
                                   &cm->global_motion[frame]);
-          if (cm->global_motion[frame].gmtype > GLOBAL_ZERO) {
+          if (cm->global_motion[frame].motion_params.wmtype != IDENTITY) {
             refine_integerized_param(
                 &cm->global_motion[frame].motion_params,
 #if CONFIG_AOM_HIGHBITDEPTH
@@ -4717,7 +4713,7 @@ static void encode_frame_internal(AV1_COMP *cpi) {
                 cpi->Source->y_height, cpi->Source->y_stride, 3);
             // See if we can use a simpler model type
             simplify_model(&cm->global_motion[frame]);
-            if (cm->global_motion[frame].gmtype != GLOBAL_ZERO) {
+            if (cm->global_motion[frame].motion_params.wmtype != IDENTITY) {
               // compute the advantage of using gm parameters over 0 motion
               erroradvantage = av1_warp_erroradv(
                   &cm->global_motion[frame].motion_params,
