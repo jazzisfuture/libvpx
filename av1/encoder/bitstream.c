@@ -3800,7 +3800,7 @@ static void write_uncompressed_header(AV1_COMP *cpi,
 #if CONFIG_GLOBAL_MOTION
 static void write_global_motion_params(Global_Motion_Params *params,
                                        aom_prob *probs, aom_writer *w) {
-  GLOBAL_MOTION_TYPE gmtype = get_gmtype(params);
+  GLOBAL_MOTION_TYPE gmtype = params->gmtype;
   av1_write_token(w, av1_global_motion_types_tree, probs,
                   &global_motion_types_encodings[gmtype]);
   switch (gmtype) {

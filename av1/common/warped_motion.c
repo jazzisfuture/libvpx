@@ -22,7 +22,23 @@ static ProjectPointsFunc get_project_points_type(TransformationType type) {
     case AFFINE: return project_points_affine;
     case ROTZOOM: return project_points_rotzoom;
     case TRANSLATION: return project_points_translation;
+    case IDENTITY: return project_points_identity;
     default: assert(0); return NULL;
+  }
+}
+
+void project_points_identity(int32_t *mat, int *points, int *proj, const int n,
+                             const int stride_points, const int stride_proj,
+                             const int subsampling_x, const int subsampling_y) {
+  int i;
+  (void)mat;
+  (void)subsampling_x;
+  (void)subsampling_y;
+  for (i = 0; i < n; ++i) {
+    *(proj++) = *(points++);
+    *(proj++) = *(points++);
+    points += stride_points - 2;
+    proj += stride_proj - 2;
   }
 }
 
@@ -608,7 +624,8 @@ void av1_integerize_model(const double *model, TransformationType wmtype,
     case TRANSLATION:
       wm->wmmat[0] = (int32_t)lrint(model[0] * (1 << WARPEDMODEL_PREC_BITS));
       wm->wmmat[1] = (int32_t)lrint(model[1] * (1 << WARPEDMODEL_PREC_BITS));
-      break;
+    /* fallthrough intended */
+    case IDENTITY: break;
     default: assert(0 && "Invalid TransformationType");
   }
 }
