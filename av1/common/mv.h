@@ -53,16 +53,18 @@ typedef struct mv32 {
 
 typedef enum {
   UNKNOWN_TRANSFORM = -1,
-  HOMOGRAPHY,   // homography, 8-parameter
-  AFFINE,       // affine, 6-parameter
-  ROTZOOM,      // simplified affine with rotation and zoom only, 4-parameter
-  TRANSLATION,  // translational motion 2-parameter
-  IDENTITY,     // identity transformation, 0-parameter
+  IDENTITY = 0,  // identity transformation, 0-parameter.
+                 // This must have value 0 so that zeroing out this structure
+                 // corresponds to no transformation.
+  TRANSLATION,   // translational motion, 2-parameter
+  ROTZOOM,       // simplified affine with rotation and zoom only, 4-parameter
+  AFFINE,        // affine, 6-parameter
+  HOMOGRAPHY,    // homography, 8-parameter
   TRANS_TYPES
 } TransformationType;
 
 // number of parameters used by each transformation in TransformationTypes
-static const int n_trans_model_params[TRANS_TYPES] = { 8, 6, 4, 2, 0 };
+static const int n_trans_model_params[TRANS_TYPES] = { 0, 2, 4, 6, 8 };
 
 typedef struct {
   TransformationType wmtype;
@@ -111,18 +113,7 @@ typedef struct {
 #define GM_TRANS_MIN -GM_TRANS_MAX
 #define GM_ALPHA_MIN -GM_ALPHA_MAX
 
-typedef enum {
-  GLOBAL_ZERO = 0,
-  GLOBAL_TRANSLATION = 1,
-  GLOBAL_ROTZOOM = 2,
-  GLOBAL_AFFINE = 3,
-  GLOBAL_MOTION_TYPES
-} GLOBAL_MOTION_TYPE;
-
-typedef struct {
-  GLOBAL_MOTION_TYPE gmtype;
-  WarpedMotionParams motion_params;
-} Global_Motion_Params;
+typedef struct { WarpedMotionParams motion_params; } Global_Motion_Params;
 
 // Convert a global motion translation vector (which may have more bits than a
 // regular motion vector) into a motion vector
@@ -133,28 +124,6 @@ static INLINE int_mv gm_get_motion_vector(const Global_Motion_Params *gm) {
   res.as_mv.col = (int16_t)ROUND_POWER_OF_TWO_SIGNED(gm->motion_params.wmmat[1],
                                                      WARPEDMODEL_PREC_BITS - 3);
   return res;
-}
-
-static INLINE TransformationType gm_to_trans_type(GLOBAL_MOTION_TYPE gmtype) {
-  switch (gmtype) {
-    case GLOBAL_ZERO: return IDENTITY; break;
-    case GLOBAL_TRANSLATION: return TRANSLATION; break;
-    case GLOBAL_ROTZOOM: return ROTZOOM; break;
-    case GLOBAL_AFFINE: return AFFINE; break;
-    default: assert(0);
-  }
-  return UNKNOWN_TRANSFORM;
-}
-
-static INLINE GLOBAL_MOTION_TYPE trans_to_gm_type(TransformationType type) {
-  switch (type) {
-    case IDENTITY: return GLOBAL_ZERO; break;
-    case TRANSLATION: return GLOBAL_TRANSLATION; break;
-    case ROTZOOM: return GLOBAL_ROTZOOM; break;
-    case AFFINE: return GLOBAL_AFFINE; break;
-    default: assert(0);
-  }
-  return GLOBAL_ZERO;
 }
 #endif  // CONFIG_GLOBAL_MOTION
 
