@@ -227,7 +227,9 @@ DSP_SRCS-$(HAVE_DSPR2) += mips/itrans8_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2) += mips/itrans16_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2) += mips/itrans32_dspr2.c
 DSP_SRCS-$(HAVE_DSPR2) += mips/itrans32_cols_dspr2.c
-endif  # !CONFIG_VP9_HIGHBITDEPTH
+else  # CONFIG_VP9_HIGHBITDEPTH
+DSP_SRCS-$(HAVE_NEON)  += arm/highbd_idct4x4_add_neon.c
+endif  # CONFIG_VP9_HIGHBITDEPTH
 
 ifeq ($(HAVE_NEON_ASM),yes)
 DSP_SRCS-yes += arm/idct_neon$(ASM)

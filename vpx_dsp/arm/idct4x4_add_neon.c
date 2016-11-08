@@ -13,45 +13,12 @@
 
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/arm/idct_neon.h"
-#include "vpx_dsp/arm/transpose_neon.h"
 #include "vpx_dsp/txfm_common.h"
-
-static INLINE void idct4x4_16_kernel(const int16x4_t cospis, int16x8_t *a0,
-                                     int16x8_t *a1) {
-  int16x4_t b0, b1, b2, b3, b4, b5;
-  int32x4_t c0, c1, c2, c3;
-  int16x8_t d0, d1;
-
-  transpose_s16_4x4q(a0, a1);
-  b0 = vget_low_s16(*a0);
-  b1 = vget_high_s16(*a0);
-  b2 = vget_low_s16(*a1);
-  b3 = vget_high_s16(*a1);
-  b4 = vadd_s16(b0, b1);
-  b5 = vsub_s16(b0, b1);
-  c0 = vmull_lane_s16(b4, cospis, 2);
-  c1 = vmull_lane_s16(b5, cospis, 2);
-  c2 = vmull_lane_s16(b2, cospis, 3);
-  c3 = vmull_lane_s16(b2, cospis, 1);
-  c2 = vmlsl_lane_s16(c2, b3, cospis, 1);
-  c3 = vmlal_lane_s16(c3, b3, cospis, 3);
-  b0 = vrshrn_n_s32(c0, 14);
-  b1 = vrshrn_n_s32(c1, 14);
-  b2 = vrshrn_n_s32(c2, 14);
-  b3 = vrshrn_n_s32(c3, 14);
-  d0 = vcombine_s16(b0, b1);
-  d1 = vcombine_s16(b3, b2);
-  *a0 = vaddq_s16(d0, d1);
-  *a1 = vsubq_s16(d0, d1);
-}
 
 void vpx_idct4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
                              int dest_stride) {
-  DECLARE_ALIGNED(16, static const int16_t, cospi[4]) = {
-    0, (int16_t)cospi_8_64, (int16_t)cospi_16_64, (int16_t)cospi_24_64
-  };
   const uint8_t *dst = dest;
-  const int16x4_t cospis = vld1_s16(cospi);
+  const int16x4_t cospis = vld1_s16(kCospi);
   uint32x2_t dest01_u32 = vdup_n_u32(0);
   uint32x2_t dest32_u32 = vdup_n_u32(0);
   int16x8_t a0, a1;
