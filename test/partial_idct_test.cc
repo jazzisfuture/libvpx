@@ -26,6 +26,8 @@
 
 using libvpx_test::ACMRandom;
 
+#define SPEED_TEST 0
+
 namespace {
 
 typedef void (*FwdTxfmFunc)(const int16_t *in, tran_low_t *out, int stride);
@@ -153,6 +155,8 @@ class PartialIDctTest : public ::testing::TestWithParam<PartialInvTxfmParam> {
   InvTxfmFunc partial_itxfm_;
 };
 
+#if !SPEED_TEST
+
 TEST_P(PartialIDctTest, RunQuantCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   DECLARE_ALIGNED(16, int16_t, input_extreme_block[kMaxNumCoeffs]);
@@ -277,6 +281,52 @@ TEST_P(PartialIDctTest, SingleLargeCoeff) {
     }
   }
 }
+
+#else  // SPEED_TEST
+
+#include "vpx_ports/vpx_timer.h"
+
+TEST_P(PartialIDctTest, Speed) {
+  ACMRandom rnd(ACMRandom::DeterministicSeed());
+  const int max_coeff = 32766 / 4;
+  // clear out destination buffer
+  memset(input_block_, 0, sizeof(*input_block_) * input_block_size_);
+  for (int j = 0; j < output_block_size_; ++j) {
+    output_block_[j] = output_block_ref_[j] = rnd.Rand16() & mask_;
+  }
+  int max_energy_leftover = max_coeff * max_coeff;
+  for (int j = 0; j < last_nonzero_; ++j) {
+    int16_t coef = static_cast<int16_t>(sqrt(1.0 * max_energy_leftover) *
+                                        (rnd.Rand16() - 32768) / 65536);
+    max_energy_leftover -= coef * coef;
+    if (max_energy_leftover < 0) {
+      max_energy_leftover = 0;
+      coef = 0;
+    }
+    input_block_[vp9_default_scan_orders[tx_size_].scan[j]] = coef;
+  }
+
+  for (int i = 0; i < (500000 * kCountTestBlock / input_block_size_); ++i) {
+    ASM_REGISTER_STATE_CHECK(Exec(full_itxfm_, output_block_ref_));
+  }
+  vpx_usec_timer timer;
+  vpx_usec_timer_start(&timer);
+  for (int i = 0; i < (500000 * kCountTestBlock / input_block_size_); ++i) {
+    Exec(partial_itxfm_, output_block_);
+  }
+  libvpx_test::ClearSystemState();
+  vpx_usec_timer_mark(&timer);
+  const int elapsed_time =
+      static_cast<int>(vpx_usec_timer_elapsed(&timer) / 1000);
+  printf("idct%dx%d_%d (bitdepth %d) time: %5d ms ", size_, size_,
+         last_nonzero_, bit_depth_, elapsed_time);
+
+  ASSERT_EQ(0, memcmp(output_block_ref_, output_block_,
+                      sizeof(*output_block_) * output_block_size_))
+      << "Error: partial inverse transform produces different results";
+}
+
+#endif  // SPEED_TEST
 
 using std::tr1::make_tuple;
 
