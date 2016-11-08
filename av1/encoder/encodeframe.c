@@ -5133,10 +5133,11 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
   const int mis = cm->mi_stride;
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
+  const int is_inter = is_inter_block(mbmi);
 
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
 
-  if (!is_inter_block(mbmi)) {
+  if (!is_inter) {
     int plane;
     mbmi->skip = 1;
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
@@ -5236,8 +5237,7 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
 
   if (!dry_run) {
     if (cm->tx_mode == TX_MODE_SELECT && mbmi->sb_type >= BLOCK_8X8 &&
-        !(is_inter_block(mbmi) && (mbmi->skip || seg_skip))) {
-      const int is_inter = is_inter_block(mbmi);
+        !(is_inter && (mbmi->skip || seg_skip))) {
       const int tx_size_ctx = get_tx_size_context(xd);
       const int tx_size_cat = is_inter ? inter_tx_size_cat_lookup[bsize]
                                        : intra_tx_size_cat_lookup[bsize];
@@ -5270,7 +5270,7 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
       int i, j;
       TX_SIZE tx_size;
       // The new intra coding scheme requires no change of transform size
-      if (is_inter_block(&mi->mbmi)) {
+      if (is_inter) {
         if (xd->lossless[mbmi->segment_id]) {
           tx_size = TX_4X4;
         } else {
@@ -5298,12 +5298,12 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
     ++td->counts
           ->tx_size_totals[txsize_sqr_map[get_uv_tx_size(mbmi, &xd->plane[1])]];
 #if CONFIG_EXT_TX
-    if (get_ext_tx_types(mbmi->tx_size, bsize, is_inter_block(mbmi)) > 1 &&
+    if (get_ext_tx_types(mbmi->tx_size, bsize, is_inter) > 1 &&
         cm->base_qindex > 0 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      int eset = get_ext_tx_set(mbmi->tx_size, bsize, is_inter_block(mbmi));
+      int eset = get_ext_tx_set(mbmi->tx_size, bsize, is_inter);
       if (eset > 0) {
-        if (is_inter_block(mbmi)) {
+        if (is_inter) {
           ++td->counts->inter_ext_tx[eset][txsize_sqr_map[mbmi->tx_size]]
                                     [mbmi->tx_type];
         } else {
@@ -5315,7 +5315,7 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
 #else
     if (mbmi->tx_size < TX_32X32 && cm->base_qindex > 0 && !mbmi->skip &&
         !segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      if (is_inter_block(mbmi)) {
+      if (is_inter) {
         ++td->counts->inter_ext_tx[mbmi->tx_size][mbmi->tx_type];
       } else {
         ++td->counts->intra_ext_tx[mbmi->tx_size]
@@ -5327,8 +5327,8 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
   }
 
 #if CONFIG_VAR_TX
-  if (cm->tx_mode == TX_MODE_SELECT && mbmi->sb_type >= BLOCK_8X8 &&
-      is_inter_block(mbmi) && !(mbmi->skip || seg_skip)) {
+  if (cm->tx_mode == TX_MODE_SELECT && mbmi->sb_type >= BLOCK_8X8 && is_inter &&
+      !(mbmi->skip || seg_skip)) {
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
     if (is_rect_tx(mbmi->tx_size)) {
       set_txfm_ctxs(mbmi->tx_size, xd->n8_w, xd->n8_h, xd);
@@ -5341,7 +5341,7 @@ static void encode_superblock(const AV1_COMP *const cpi, ThreadData *td,
   } else {
     TX_SIZE tx_size;
     // The new intra coding scheme requires no change of transform size
-    if (is_inter_block(mbmi))
+    if (is_inter)
 #if CONFIG_EXT_TX && CONFIG_RECT_TX
     {
       tx_size = AOMMIN(tx_mode_to_biggest_tx_size[cm->tx_mode],
