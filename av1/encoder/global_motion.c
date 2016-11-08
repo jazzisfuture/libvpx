@@ -31,6 +31,7 @@ static INLINE RansacFunc get_ransac_type(TransformationType type) {
     case AFFINE: return ransac_affine;
     case ROTZOOM: return ransac_rotzoom;
     case TRANSLATION: return ransac_translation;
+    case IDENTITY: /* not implemented */ assert(0); return NULL;
     default: assert(0); return NULL;
   }
 }
