@@ -311,6 +311,8 @@ extern const aom_tree_index
     av1_interintra_mode_tree[TREE_SIZE(INTERINTRA_MODES)];
 extern const aom_tree_index
     av1_inter_compound_mode_tree[TREE_SIZE(INTER_COMPOUND_MODES)];
+extern const aom_tree_index
+    av1_compound_type_tree[TREE_SIZE(COMPOUND_TYPES)];
 #endif  // CONFIG_EXT_INTER
 extern const aom_tree_index av1_partition_tree[TREE_SIZE(PARTITION_TYPES)];
 #if CONFIG_EXT_PARTITION_TYPES

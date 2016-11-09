@@ -291,6 +291,8 @@ static const aom_prob default_inter_compound_mode_probs
       { 25, 29, 50, 192, 64, 192, 128, 180, 180 },   // 6 = two intra neighbours
     };
 
+static const aom_prob default_compound_type_probs[COMPOUND_TYPES - 1] = {208};
+
 static const aom_prob default_interintra_prob[BLOCK_SIZE_GROUPS] = {
   208, 208, 208, 208,
 };
@@ -428,6 +430,10 @@ const aom_tree_index av1_inter_compound_mode_tree
   -INTER_COMPOUND_OFFSET(NEAREST_NEWMV), -INTER_COMPOUND_OFFSET(NEW_NEARESTMV),
   -INTER_COMPOUND_OFFSET(NEAR_NEWMV), -INTER_COMPOUND_OFFSET(NEW_NEARMV)
 };
+
+const aom_tree_index av1_compound_type_tree[TREE_SIZE(COMPOUND_TYPES)] = {
+  -AVERAGE, -WEDGE
+}
 /* clang-format on */
 #endif  // CONFIG_EXT_INTER
 
