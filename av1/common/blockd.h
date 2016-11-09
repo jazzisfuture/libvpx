@@ -278,7 +278,8 @@ typedef struct {
   int use_wedge_interintra;
   int interintra_wedge_index;
   int interintra_wedge_sign;
-  int use_wedge_interinter;
+  COMPOUND_TYPE interinter_compound;
+  //int use_wedge_interinter;
   int interinter_wedge_index;
   int interinter_wedge_sign;
 #endif  // CONFIG_EXT_INTER

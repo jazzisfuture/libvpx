@@ -1594,9 +1594,12 @@ static void pack_inter_mode_mvs(AV1_COMP *cpi, const MODE_INFO *mi,
           mbmi->motion_mode != SIMPLE_TRANSLATION) &&
 #endif  // CONFIG_MOTION_VAR
         is_interinter_wedge_used(bsize)) {
+      //sarahparker
+    //av1_write_token(w, av1_global_motion_types_tree, probs,
+    //                &global_motion_types_encodings[gmtype]);
       aom_write(w, mbmi->use_wedge_interinter,
                 cm->fc->wedge_interinter_prob[bsize]);
-      if (mbmi->use_wedge_interinter) {
+      if (mbmi->interinter_compound) {
         aom_write_literal(w, mbmi->interinter_wedge_index,
                           get_wedge_bits_lookup(bsize));
         aom_write_bit(w, mbmi->interinter_wedge_sign);
