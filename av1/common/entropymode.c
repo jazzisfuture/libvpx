@@ -291,6 +291,8 @@ static const aom_prob default_inter_compound_mode_probs
       { 25, 29, 50, 192, 64, 192, 128, 180, 180 },   // 6 = two intra neighbours
     };
 
+static const aom_prob default_compound_type_probs[COMPOUND_TYPES - 1] = {208};
+
 static const aom_prob default_interintra_prob[BLOCK_SIZE_GROUPS] = {
   208, 208, 208, 208,
 };
@@ -427,6 +429,10 @@ const aom_tree_index av1_inter_compound_mode_tree
   14, 16,
   -INTER_COMPOUND_OFFSET(NEAREST_NEWMV), -INTER_COMPOUND_OFFSET(NEW_NEARESTMV),
   -INTER_COMPOUND_OFFSET(NEAR_NEWMV), -INTER_COMPOUND_OFFSET(NEW_NEARMV)
+};
+
+const aom_tree_index av1_compound_type_tree[TREE_SIZE(COMPOUND_TYPES)] = {
+  -AVERAGE, -WEDGE
 };
 /* clang-format on */
 #endif  // CONFIG_EXT_INTER
@@ -1470,6 +1476,7 @@ static void init_mode_probs(FRAME_CONTEXT *fc) {
 #endif  // CONFIG_MOTION_VAR || CONFIG_WARPED_MOTION
 #if CONFIG_EXT_INTER
   av1_copy(fc->inter_compound_mode_probs, default_inter_compound_mode_probs);
+  av1_copy(fc->compound_type_prob, default_compound_type_probs);
   av1_copy(fc->interintra_prob, default_interintra_prob);
   av1_copy(fc->interintra_mode_prob, default_interintra_mode_prob);
   av1_copy(fc->wedge_interintra_prob, default_wedge_interintra_prob);

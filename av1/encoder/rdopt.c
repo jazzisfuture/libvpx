@@ -6973,7 +6973,7 @@ static int64_t handle_inter_mode(
   *compmode_interintra_cost = 0;
   mbmi->use_wedge_interintra = 0;
   *compmode_wedge_cost = 0;
-  mbmi->use_wedge_interinter = 0;
+  mbmi->interinter_compound = AVERAGE;
 
   // is_comp_interintra_pred implies !is_comp_pred
   assert(!is_comp_interintra_pred || (!is_comp_pred));
@@ -7379,7 +7379,7 @@ static int64_t handle_inter_mode(
     int64_t tmp_skip_sse_sb;
 
     rs2 = av1_cost_bit(cm->fc->wedge_interinter_prob[bsize], 0);
-    mbmi->use_wedge_interinter = 0;
+    mbmi->interinter_compound = AVERAGE;
     av1_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
     av1_subtract_plane(x, bsize, 0);
     rd = estimate_yrd_for_sb(cpi, bsize, x, &rate_sum, &dist_sum,
@@ -7397,7 +7397,7 @@ static int64_t handle_inter_mode(
       uint8_t *preds1[1] = { pred1 };
       int strides[1] = { bw };
 
-      mbmi->use_wedge_interinter = 1;
+      mbmi->interinter_compound = WEDGE;
       rs2 = av1_cost_literal(get_interinter_wedge_bits(bsize)) +
             av1_cost_bit(cm->fc->wedge_interinter_prob[bsize], 1);
 
@@ -7460,13 +7460,13 @@ static int64_t handle_inter_mode(
         best_rd_wedge = rd;
 
         if (best_rd_wedge < best_rd_nowedge) {
-          mbmi->use_wedge_interinter = 1;
+          mbmi->interinter_compound = WEDGE;
           xd->mi[0]->bmi[0].as_mv[0].as_int = mbmi->mv[0].as_int;
           xd->mi[0]->bmi[0].as_mv[1].as_int = mbmi->mv[1].as_int;
           *rate2 += tmp_rate_mv - rate_mv;
           rate_mv = tmp_rate_mv;
         } else {
-          mbmi->use_wedge_interinter = 0;
+          mbmi->interinter_compound = AVERAGE;
           mbmi->mv[0].as_int = cur_mv[0].as_int;
           mbmi->mv[1].as_int = cur_mv[1].as_int;
           xd->mi[0]->bmi[0].as_mv[0].as_int = mbmi->mv[0].as_int;
@@ -7483,9 +7483,9 @@ static int64_t handle_inter_mode(
           rd = RDCOST(x->rdmult, x->rddiv, rs2 + rate_mv + rate_sum, dist_sum);
         best_rd_wedge = rd;
         if (best_rd_wedge < best_rd_nowedge) {
-          mbmi->use_wedge_interinter = 1;
+          mbmi->interinter_compound = WEDGE;
         } else {
-          mbmi->use_wedge_interinter = 0;
+          mbmi->interinter_compound = AVERAGE;
         }
       }
     }
@@ -7495,7 +7495,7 @@ static int64_t handle_inter_mode(
 
     pred_exists = 0;
 
-    if (mbmi->use_wedge_interinter)
+    if (mbmi->interinter_compound)
       *compmode_wedge_cost =
           av1_cost_literal(get_interinter_wedge_bits(bsize)) +
           av1_cost_bit(cm->fc->wedge_interinter_prob[bsize], 1);
@@ -10208,7 +10208,7 @@ void av1_rd_pick_inter_mode_sub8x8(const struct AV1_COMP *cpi,
 #endif  // CONFIG_FILTER_INTRA
   mbmi->motion_mode = SIMPLE_TRANSLATION;
 #if CONFIG_EXT_INTER
-  mbmi->use_wedge_interinter = 0;
+  mbmi->interinter_compound = AVERAGE;
   mbmi->use_wedge_interintra = 0;
 #endif  // CONFIG_EXT_INTER
 
