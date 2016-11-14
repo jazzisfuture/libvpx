@@ -834,8 +834,9 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     }
   }
 
+  // For non keyframes, disable 4x4 average for low resolution when speed>=8
   threshold_4x4avg =
-      (cpi->oxcf.speed < 8) ? thresholds[1] << 1 : thresholds[2] >> 1;
+      (cpi->oxcf.speed < 8) ? thresholds[1] << 1 : INT64_MAX;
 
   memset(x->variance_low, 0, sizeof(x->variance_low));
 
