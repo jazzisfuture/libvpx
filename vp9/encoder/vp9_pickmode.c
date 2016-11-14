@@ -1105,8 +1105,7 @@ static int set_intra_cost_penalty(const VP9_COMP *const cpi, BLOCK_SIZE bsize) {
     // Don't reduce intra cost penalty if estimated noise level is high.
     reduction_fac = 0;
   return vp9_get_intra_cost_penalty(cm->base_qindex, cm->y_dc_delta_q,
-                                    cm->bit_depth) >>
-         reduction_fac;
+                                    cm->bit_depth) >> reduction_fac;
 }
 
 static INLINE void find_predictors(
