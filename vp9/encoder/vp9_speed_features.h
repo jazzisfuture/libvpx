@@ -454,7 +454,8 @@ typedef struct SPEED_FEATURES {
   // Skip a number of expensive mode evaluations for blocks with very low
   // temporal variance.
   // 1: Skip golden non-zeromv and ALL INTRA for bsize >= 32x32.
-  // 2: Skip golden non-zeromv and newmv-last for bsize >= 16x16, skip ALL
+  // 2: Skip golden non-zeromv and newmv-last for bsize >= 16x16, skip golden
+  // when the block variance is lower than thresholds, skip ALL
   // INTRA for bsize >= 32x32 and vert/horz INTRA for bsize 16x16, 16x32 and
   // 32x16.
   int short_circuit_low_temp_var;
