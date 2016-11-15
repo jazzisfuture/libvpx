@@ -1395,6 +1395,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int perform_intra_pred = 1;
   int use_golden_nonzeromv = 1;
   int force_skip_low_temp_var = 0;
+  const int low_res = (cm->width <= 352 && cm->height <= 288);
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
@@ -1445,7 +1446,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   mi->tx_size =
       VPXMIN(max_txsize_lookup[bsize], tx_mode_to_biggest_tx_size[cm->tx_mode]);
 
-  if (sf->short_circuit_flat_blocks || sf->limit_newmv_early_exit) {
+  if (sf->short_circuit_flat_blocks || sf->limit_newmv_early_exit ||
+      sf->short_circuit_low_temp_var) {
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
       x->source_variance = vp9_high_get_sby_perpixel_variance(
@@ -1729,8 +1731,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       int64_t best_cost = INT64_MAX;
       INTERP_FILTER best_filter = SWITCHABLE, filter;
       PRED_BUFFER *current_pred = this_mode_pred;
-
-      for (filter = EIGHTTAP; filter <= EIGHTTAP_SMOOTH; ++filter) {
+      INTERP_FILTER filter_start = EIGHTTAP;
+      INTERP_FILTER filter_end = EIGHTTAP_SMOOTH;
+      if (cpi->oxcf.speed == 8 && low_res && cpi->noise_estimate.enabled) {
+        NOISE_LEVEL noise_level =
+            vp9_noise_estimate_extract_level(&cpi->noise_estimate);
+        if (noise_level > kLow && x->source_variance < 50)
+          filter_start = EIGHTTAP_SMOOTH;
+      }
+      for (filter = filter_start; filter <= filter_end; ++filter) {
         int64_t cost;
         mi->interp_filter = filter;
         vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
