@@ -1729,8 +1729,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       int64_t best_cost = INT64_MAX;
       INTERP_FILTER best_filter = SWITCHABLE, filter;
       PRED_BUFFER *current_pred = this_mode_pred;
-
-      for (filter = EIGHTTAP; filter <= EIGHTTAP_SMOOTH; ++filter) {
+      INTERP_FILTER filter_start = EIGHTTAP;
+      INTERP_FILTER filter_end = EIGHTTAP_SMOOTH;
+      if (cpi->oxcf.speed == 8 && cpi->noise_estimate.enabled) {
+        NOISE_LEVEL noise_level =
+            vp9_noise_estimate_extract_level(&cpi->noise_estimate);
+        if (noise_level == kHigh) filter_start = EIGHTTAP_SMOOTH;
+      }
+      for (filter = filter_start; filter <= filter_end; ++filter) {
         int64_t cost;
         mi->interp_filter = filter;
         vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
