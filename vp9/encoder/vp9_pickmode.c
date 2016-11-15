@@ -1490,6 +1490,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   if (cpi->sf.short_circuit_low_temp_var) {
     force_skip_low_temp_var =
         get_force_skip_low_temp_var(&x->variance_low[0], mi_row, mi_col, bsize);
+    if (cpi->sf.short_circuit_low_temp_var == 2 && force_skip_low_temp_var) {
+      usable_ref_frame = LAST_FRAME;
+    }
   }
 
   if (!((cpi->ref_frame_flags & flag_list[GOLDEN_FRAME]) &&
