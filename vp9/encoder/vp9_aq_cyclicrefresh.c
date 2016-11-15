@@ -382,7 +382,8 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
           ? vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex)
           : vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex);
   // More aggressive settings for noisy content.
-  if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium) {
+  if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium &&
+      cm->width >= 640 && cm->height >= 480) {
     consec_zero_mv_thresh = 60;
     qindex_thresh =
         VPXMAX(vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex),
