@@ -17,7 +17,11 @@
 #include "vpx_dsp/arm/transpose_neon.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 
-DECLARE_ALIGNED(16, static const int16_t, cospi[4]) = { 0, 15137, 11585, 6270 };
+DECLARE_ALIGNED(16, static const int16_t,
+                cospi[8]) = { 16384 /* cospi_0_64 */,  15137 /* cospi_8_64 */,
+                              11585 /* cospi_16_64 */, 6270 /* cospi_24_64 */,
+                              16069 /* cospi_4_64 */,  13623 /* cospi_12_64 */,
+                              9102 /* cospi_20_64 */,  3196 /* cospi_28_64 */ };
 
 //------------------------------------------------------------------------------
 
@@ -31,6 +35,15 @@ static INLINE int16x8_t load_tran_low_to_s16(const tran_low_t *buf) {
   return vcombine_s16(s0, s1);
 #else
   return vld1q_s16(buf);
+#endif
+}
+
+static INLINE int16x4_t load_tran_low_to_s16d(const tran_low_t *buf) {
+#if CONFIG_VP9_HIGHBITDEPTH
+  const int32x4_t v = vld1q_s32(buf);
+  return vmovn_s32(v);
+#else
+  return vld1_s16(buf);
 #endif
 }
 
