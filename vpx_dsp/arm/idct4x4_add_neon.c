@@ -29,8 +29,8 @@ void vpx_idct4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
 
   d26u32 = d27u32 = vdup_n_u32(0);
 
-  q8s16 = load_tran_low_to_s16(input);
-  q9s16 = load_tran_low_to_s16(input + 8);
+  q8s16 = load_tran_low_to_s16q(input);
+  q9s16 = load_tran_low_to_s16q(input + 8);
 
   d16s16 = vget_low_s16(q8s16);
   d17s16 = vget_high_s16(q8s16);
