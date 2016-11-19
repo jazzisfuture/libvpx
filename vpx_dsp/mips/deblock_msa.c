@@ -474,7 +474,7 @@ void vpx_mbpost_proc_across_ip_msa(uint8_t *src_ptr, int32_t pitch,
     ILVRL_B2_UH(zero, src, src_r_h, src_l_h);
     src_r_w = __msa_dotp_u_w(src_r_h, src_r_h);
     src_r_w += __msa_dotp_u_w(src_l_h, src_l_h);
-    sum_sq = HADD_SW_S32(src_r_w);
+    sum_sq = HADD_SW_S32(src_r_w) + 16;
     sum_h = __msa_hadd_u_h(src, src);
     sum = HADD_UH_U32(sum_h);
     {
