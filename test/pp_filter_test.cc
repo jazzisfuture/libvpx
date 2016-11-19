@@ -177,7 +177,7 @@ TEST_P(VpxMbPostProcAcrossIpTest, CheckLowFilterOutput) {
   delete[] expected_output;
 }
 
-TEST_P(VpxMbPostProcAcrossIpTest, DISABLED_CheckMediumFilterOutput) {
+TEST_P(VpxMbPostProcAcrossIpTest, CheckMediumFilterOutput) {
   const int rows = 16;
   const int cols = 16;
   const int src_left_padding = 8;
@@ -223,7 +223,7 @@ TEST_P(VpxMbPostProcAcrossIpTest, CheckHighFilterOutput) {
   delete[] src;
 }
 
-TEST_P(VpxMbPostProcAcrossIpTest, DISABLED_CheckCvsAssembly) {
+TEST_P(VpxMbPostProcAcrossIpTest, CheckCvsAssembly) {
   const int rows = 16;
   const int cols = 16;
   const int src_left_padding = 8;
@@ -371,7 +371,7 @@ TEST_P(VpxMbPostProcDownTest, CheckHighFilterOutput) {
   delete[] c_mem;
 }
 
-TEST_P(VpxMbPostProcDownTest, DISABLED_CheckMediumFilterOutput) {
+TEST_P(VpxMbPostProcDownTest, CheckMediumFilterOutput) {
   const int rows = 16;
   const int cols = 16;
   const int src_pitch = cols;
@@ -433,7 +433,7 @@ TEST_P(VpxMbPostProcDownTest, CheckLowFilterOutput) {
   delete[] expected_output;
 }
 
-TEST_P(VpxMbPostProcDownTest, DISABLED_CheckCvsAssembly) {
+TEST_P(VpxMbPostProcDownTest, CheckCvsAssembly) {
   const int rows = 16;
   const int cols = 16;
   const int src_pitch = cols;
