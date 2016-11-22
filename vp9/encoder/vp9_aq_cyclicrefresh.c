@@ -441,7 +441,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   } while (cr->target_num_seg_blocks < block_count && i != cr->sb_index);
   cr->sb_index = i;
   cr->reduce_refresh = 0;
-  if (count_sel<(3 * count_tot)>> 2) cr->reduce_refresh = 1;
+  if (count_sel < (3 * count_tot) >> 2) cr->reduce_refresh = 1;
 }
 
 // Set cyclic refresh parameters.
@@ -472,8 +472,9 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   }
   // Adjust some parameters for low resolutions at low bitrates.
   if (cm->width <= 352 && cm->height <= 288 && rc->avg_frame_bandwidth < 3400) {
-    cr->motion_thresh = 4;
-    cr->rate_boost_fac = 10;
+    cr->motion_thresh = 8;
+    cr->rate_boost_fac = 13;
+    cr->percent_refresh = 10;
   }
   if (cpi->svc.spatial_layer_id > 0) {
     cr->motion_thresh = 4;
