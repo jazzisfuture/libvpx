@@ -283,6 +283,8 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::Values(make_tuple(&vpx_fdct32x32_c, &vpx_idct32x32_1024_add_c,
                                  &vpx_idct32x32_1_add_neon, TX_32X32, 1),
                       make_tuple(&vpx_fdct32x32_c, &vpx_idct32x32_1024_add_c,
+                                 &vpx_idct32x32_135_add_neon, TX_32X32, 135),
+                      make_tuple(&vpx_fdct32x32_c, &vpx_idct32x32_1024_add_c,
                                  &vpx_idct32x32_34_add_neon, TX_32X32, 34),
                       make_tuple(&vpx_fdct16x16_c, &vpx_idct16x16_256_add_c,
                                  &vpx_idct16x16_1_add_neon, TX_16X16, 1),
