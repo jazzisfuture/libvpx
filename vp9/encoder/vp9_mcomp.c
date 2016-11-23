@@ -536,7 +536,7 @@ uint32_t vp9_find_best_sub_pixel_tree_pruned_more(
 
   if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
       (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
-    return UINT_MAX;
+    return INT_MAX;
 
   return besterr;
 }
