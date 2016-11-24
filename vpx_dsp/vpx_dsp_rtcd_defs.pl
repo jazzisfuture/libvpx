@@ -402,17 +402,22 @@ add_proto qw/void vpx_convolve8_avg_vert/, "const uint8_t *src, ptrdiff_t src_st
 specialize qw/vpx_convolve8_avg_vert sse2 ssse3 neon dspr2 msa/;
 
 add_proto qw/void vpx_scaled_2d/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
-specialize qw/vpx_scaled_2d ssse3/;
+specialize qw/vpx_scaled_2d ssse3 msa/;
 
 add_proto qw/void vpx_scaled_horiz/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
+specialize qw/vpx_scaled_horiz msa/;
 
 add_proto qw/void vpx_scaled_vert/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
+specialize qw/vpx_scaled_vert msa/;
 
 add_proto qw/void vpx_scaled_avg_2d/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
+specialize qw/vpx_scaled_avg_2d msa/;
 
 add_proto qw/void vpx_scaled_avg_horiz/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
+specialize qw/vpx_scaled_avg_horiz msa/;
 
 add_proto qw/void vpx_scaled_avg_vert/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h";
+specialize qw/vpx_scaled_avg_vert msa/;
 
 if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   #
