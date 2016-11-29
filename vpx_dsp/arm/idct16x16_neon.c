@@ -16,6 +16,21 @@ void vpx_idct16x16_256_add_neon_pass2(const int16_t *src, int16_t *output,
                                       int16_t *pass1_output,
                                       int16_t skip_adding, uint8_t *dest,
                                       int dest_stride);
+#if CONFIG_VP9_HIGHBITDEPTH
+void vpx_idct16x16_256_add_neon_pass1_tran_low(const tran_low_t *input,
+                                               int16_t *output);
+void vpx_idct16x16_256_add_neon_pass2_tran_low(const tran_low_t *src,
+                                               int16_t *output,
+                                               int16_t *pass1_output,
+                                               int16_t skip_adding,
+                                               uint8_t *dest, int dest_stride);
+#else
+#define vpx_idct16x16_256_add_neon_pass1_tran_low \
+  vpx_idct16x16_256_add_neon_pass1
+#define vpx_idct16x16_256_add_neon_pass2_tran_low \
+  vpx_idct16x16_256_add_neon_pass2
+#endif
+
 void vpx_idct16x16_10_add_neon_pass1(const tran_low_t *input, int16_t *output);
 void vpx_idct16x16_10_add_neon_pass2(const tran_low_t *src, int16_t *output,
                                      int16_t *pass1_output);
