@@ -4345,7 +4345,8 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
    * cm->refresh_golden_frame is set we copy the old GF over to the ARF buffer
    * This is purely an encoder decision at present.
    */
-  if (!cpi->oxcf.error_resilient_mode && cm->refresh_golden_frame) {
+  if (!cpi->oxcf.error_resilient_mode && cm->refresh_golden_frame &&
+      !cpi->gf_update_onepass_cbr) {
     cm->copy_buffer_to_arf = 2;
   } else {
     cm->copy_buffer_to_arf = 0;
