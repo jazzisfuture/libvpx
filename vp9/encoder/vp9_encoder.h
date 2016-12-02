@@ -237,7 +237,7 @@ typedef struct VP9EncoderConfig {
 
   int max_threads;
 
-  int target_level;
+  unsigned int target_level;
 
   vpx_fixed_buf_t two_pass_stats_in;
   struct vpx_codec_pkt_list *output_pkt_list;
@@ -341,6 +341,8 @@ typedef struct {
   uint8_t max_ref_frame_buffers;
 } Vp9LevelSpec;
 
+extern const Vp9LevelSpec vp9_level_defs[VP9_LEVELS];
+
 typedef struct {
   int64_t ts;  // timestamp
   uint32_t luma_samples;
@@ -367,6 +369,27 @@ typedef struct {
   Vp9LevelStats level_stats;
   Vp9LevelSpec level_spec;
 } Vp9LevelInfo;
+
+typedef enum {
+  BITRATE_TOO_LARGE = 0,
+  LUMA_PIC_SIZE_TOO_LARGE = 1,
+  LUMA_SAMPLE_RATE_TOO_LARGE = 2,
+  CPB_TOO_LARGE = 3,
+  COMPRESSION_RATIO_TOO_SMALL = 4,
+  COLUMN_TILE_TOO_MANY = 5,
+  ALTREF_DIST_TOO_SMALL = 6,
+  REF_BUFFER_TOO_MANY = 7,
+  TARGET_LEVEL_FAIL_IDS = 8,
+} TARGET_LEVEL_FAIL_ID;
+
+typedef struct {
+  int8_t level_index;
+  double max_cpb_size;         // in bits
+  int max_frame_size;          // in bits
+  uint8_t level_achievable;
+  uint8_t rc_config_updated;
+  uint16_t fail_flag;
+} LEVEL_CONSTRAINT;
 
 typedef struct VP9_COMP {
   QUANTS quants;
@@ -605,6 +628,7 @@ typedef struct VP9_COMP {
 
   int keep_level_stats;
   Vp9LevelInfo level_info;
+  LEVEL_CONSTRAINT level_constraint;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
@@ -758,6 +782,14 @@ static INLINE int get_chessboard_index(const int frame_index) {
 
 static INLINE int *cond_cost_list(const struct VP9_COMP *cpi, int *cost_list) {
   return cpi->sf.mv.subpel_search_method != SUBPEL_TREE ? cost_list : NULL;
+}
+
+static INLINE int get_level_index(VP9_LEVEL level) {
+  int8_t i;
+  for (i = 0; i < VP9_LEVELS; ++i) {
+    if (level == vp9_level_defs[i].level) return i;
+  }
+  return -1;
 }
 
 VP9_LEVEL vp9_get_level(const Vp9LevelSpec *const level_spec);
