@@ -71,7 +71,6 @@ vpx_codec_err_t vpx_codec_destroy(vpx_codec_ctx_t *ctx) {
     res = VPX_CODEC_ERROR;
   else {
     ctx->iface->destroy((vpx_codec_alg_priv_t *)ctx->priv);
-
     ctx->iface = NULL;
     ctx->name = NULL;
     ctx->priv = NULL;
