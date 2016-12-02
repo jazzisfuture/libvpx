@@ -287,6 +287,13 @@ static void vpx_filter_block1d16_h8_avx2(
   }
 }
 
+#if defined(__clang__) && __clang_major__ == 4 && __clang_minor__ == 0
+// TODO(jzern): reenable avx2 version after
+// https://bugs.chromium.org/p/webm/issues/detail?id=1347
+// is resolved.
+filter8_1dfunction vpx_filter_block1d16_v8_ssse3;
+#define vpx_filter_block1d16_v8_avx2 vpx_filter_block1d16_v8_ssse3
+#else
 static void vpx_filter_block1d16_v8_avx2(
     const uint8_t *src_ptr, ptrdiff_t src_pitch, uint8_t *output_ptr,
     ptrdiff_t out_pitch, uint32_t output_height, const int16_t *filter) {
@@ -521,6 +528,7 @@ static void vpx_filter_block1d16_v8_avx2(
     _mm_store_si128((__m128i *)output_ptr, srcRegFilt1);
   }
 }
+#endif  // clang 4.0
 
 #if HAVE_AVX2 && HAVE_SSSE3
 filter8_1dfunction vpx_filter_block1d4_v8_ssse3;
