@@ -1861,6 +1861,16 @@ static void print_time(const char *label, int64_t etl) {
   }
 }
 
+static void destroy_codec(struct stream_state *stream, vpx_codec_ctx_t *ctx) {
+  if (vpx_codec_destroy(ctx)) {
+    //ctx_exit_on_error(ctx, "Stream %d: Failed to destroy codec.",
+      //                stream->index);
+    printf("error\n");
+    fprintf(stderr, "Stream %d: Failed to destroy codec.", stream->index);
+    exit(EXIT_FAILURE);
+  }
+}
+
 int main(int argc, const char **argv_) {
   int pass;
   vpx_image_t raw;
@@ -2200,7 +2210,11 @@ int main(int argc, const char **argv_) {
       }
     }
 
+#if 1
+    FOREACH_STREAM(destroy_codec(stream, &stream->encoder));
+#else
     FOREACH_STREAM(vpx_codec_destroy(&stream->encoder));
+#endif
 
     if (global.test_decode != TEST_DECODE_OFF) {
       FOREACH_STREAM(vpx_codec_destroy(&stream->decoder));
