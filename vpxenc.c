@@ -2166,6 +2166,14 @@ int main(int argc, const char **argv_) {
 
         if (got_data && global.test_decode != TEST_DECODE_OFF)
           FOREACH_STREAM(test_decode(stream, global.test_decode, global.codec));
+
+#if 0
+        if (1) {
+          int level_;
+          vpx_codec_control(&streams->encoder, VP9E_GET_LEVEL, &level_);
+          printf("\n frame %d, level %d\n", frames_in, level_);
+        }
+#endif
       }
 
       fflush(stdout);
