@@ -533,6 +533,48 @@ static vpx_codec_err_t set_encoder_config(
   } else if (oxcf->ts_number_layers == 1) {
     oxcf->ts_rate_decimator[0] = 1;
   }
+
+  if (get_level_index(oxcf->target_level) != -1 && 1) {
+    double max_average_bitrate;
+    int max_over_shoot_pct;
+    const int target_level_index = get_level_index(oxcf->target_level);
+
+    vpx_clear_system_state();
+
+    // Average bit-rate limit
+    // Maximum target bitrate is level_limit * 90%
+    max_average_bitrate =
+        vp9_level_defs[target_level_index].average_bitrate * 900.0;
+    if ((double)oxcf->target_bandwidth > max_average_bitrate)
+      oxcf->target_bandwidth = (int64_t)(max_average_bitrate);
+    if (oxcf->ss_number_layers == 1 && oxcf->pass != 0) {
+      oxcf->ss_target_bitrate[0] = (int)oxcf->target_bandwidth;
+#if CONFIG_SPATIAL_SVC
+      oxcf->ss_enable_auto_arf[0] = extra_cfg->enable_auto_alt_ref;
+#endif
+    }
+
+    max_over_shoot_pct =
+        (int)((max_average_bitrate * 1.05 - (double)oxcf->target_bandwidth) *
+              100 / (double)(oxcf->target_bandwidth));
+    if (oxcf->over_shoot_pct > max_over_shoot_pct)
+      oxcf->over_shoot_pct = max_over_shoot_pct;
+
+    // Minimum art-ref distance limit
+    if (oxcf->min_gf_interval <
+        (int)vp9_level_defs[target_level_index].min_altref_distance)
+      oxcf->min_gf_interval =
+          (int)vp9_level_defs[target_level_index].min_altref_distance;
+
+    // Maximum column tiles limit
+    if (vp9_level_defs[target_level_index].max_col_tiles <
+        (1 << oxcf->tile_columns)) {
+      while (oxcf->tile_columns > 0 &&
+             vp9_level_defs[target_level_index].max_col_tiles <
+                 (1 << oxcf->tile_columns))
+        --oxcf->tile_columns;
+    }
+  }
   /*
   printf("Current VP9 Settings: \n");
   printf("target_bandwidth: %d\n", oxcf->target_bandwidth);
@@ -1002,6 +1044,19 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
   size_t data_sz;
 
   if (cpi == NULL) return VPX_CODEC_INVALID_PARAM;
+
+  if (cpi->level_constraint.level_index != -1 &&
+      !cpi->level_constraint.enc_config_updated) {
+    if (cpi->oxcf.pass == 2) {
+      if (cpi->svc.number_spatial_layers > 1 ||
+          cpi->svc.number_temporal_layers > 1) {
+        vp9_init_second_pass_spatial_svc(cpi);
+      } else {
+        vp9_init_second_pass(cpi);
+      }
+    }
+    cpi->level_constraint.enc_config_updated = 1;
+  }
 
   if (img != NULL) {
     res = validate_img(ctx, img);
