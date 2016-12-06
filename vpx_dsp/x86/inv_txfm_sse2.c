@@ -342,15 +342,22 @@ void iadst4_sse2(__m128i *in) {
     tmp6 = _mm_add_epi32(tmp6, rounding);                                      \
     tmp7 = _mm_add_epi32(tmp7, rounding);                                      \
                                                                                \
-    tmp0 = _mm_srai_epi32(tmp0, DCT_CONST_BITS);                               \
-    tmp1 = _mm_srai_epi32(tmp1, DCT_CONST_BITS);                               \
-    tmp2 = _mm_srai_epi32(tmp2, DCT_CONST_BITS);                               \
-    tmp3 = _mm_srai_epi32(tmp3, DCT_CONST_BITS);                               \
-    tmp4 = _mm_srai_epi32(tmp4, DCT_CONST_BITS);                               \
-    tmp5 = _mm_srai_epi32(tmp5, DCT_CONST_BITS);                               \
-    tmp6 = _mm_srai_epi32(tmp6, DCT_CONST_BITS);                               \
-    tmp7 = _mm_srai_epi32(tmp7, DCT_CONST_BITS);                               \
-                                                                               \
+    tmp0 = _mm_slli_epi32(tmp0, 16 - DCT_CONST_BITS);                          \
+    tmp1 = _mm_slli_epi32(tmp1, 16 - DCT_CONST_BITS);                          \
+    tmp2 = _mm_slli_epi32(tmp2, 16 - DCT_CONST_BITS);                          \
+    tmp3 = _mm_slli_epi32(tmp3, 16 - DCT_CONST_BITS);                          \
+    tmp4 = _mm_slli_epi32(tmp4, 16 - DCT_CONST_BITS);                          \
+    tmp5 = _mm_slli_epi32(tmp5, 16 - DCT_CONST_BITS);                          \
+    tmp6 = _mm_slli_epi32(tmp6, 16 - DCT_CONST_BITS);                          \
+    tmp7 = _mm_slli_epi32(tmp7, 16 - DCT_CONST_BITS);                          \
+    tmp0 = _mm_srai_epi32(tmp0, 16);                                           \
+    tmp1 = _mm_srai_epi32(tmp1, 16);                                           \
+    tmp2 = _mm_srai_epi32(tmp2, 16);                                           \
+    tmp3 = _mm_srai_epi32(tmp3, 16);                                           \
+    tmp4 = _mm_srai_epi32(tmp4, 16);                                           \
+    tmp5 = _mm_srai_epi32(tmp5, 16);                                           \
+    tmp6 = _mm_srai_epi32(tmp6, 16);                                           \
+    tmp7 = _mm_srai_epi32(tmp7, 16);                                           \
     res0 = _mm_packs_epi32(tmp0, tmp1);                                        \
     res1 = _mm_packs_epi32(tmp2, tmp3);                                        \
     res2 = _mm_packs_epi32(tmp4, tmp5);                                        \
