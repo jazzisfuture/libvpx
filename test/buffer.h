@@ -15,6 +15,7 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "test/acm_random.h"
 #include "vpx/vpx_integer.h"
 
 namespace libvpx_test {
@@ -42,7 +43,16 @@ class Buffer {
   // Set the buffer (excluding padding) to a.
   void Set(int a);
 
+  // Set the buffer (excluding padding) to the output of ACMRandom function b.
+  void Set(const ACMRandom &a, T (ACMRandom::*b)());
+
+  // Set the buffer (excluding pattern) to the contents of Buffer a.
+  void Set(Buffer<T> a);
+
   void DumpBuffer();
+
+  // Highlight the differences between two buffers.
+  void PrintDifference(Buffer<T> a);
 
   void SetPadding() { SetPadding(std::numeric_limits<T>::max()); }
 
@@ -54,6 +64,9 @@ class Buffer {
 
   // Returns 0 when padding matches the expected value or there is no padding.
   int CheckPadding();
+
+  // Compare the non-padding portion of two buffers.
+  int CompareBuffer(Buffer<T> a);
 
   virtual ~Buffer() {
     if (b_) {
@@ -86,10 +99,77 @@ void Buffer<T>::Set(int a) {
 }
 
 template <typename T>
+void Buffer<T>::Set(const ACMRandom &a, T (ACMRandom::*b)()) {
+  T *src = Src();
+  for (int y = 0; y < y_; ++y) {
+    for (int x = 0; x < x_; ++x) {
+      src[x + y * stride_] = (a.*b)();
+    }
+  }
+}
+
+template <typename T>
+void Buffer<T>::Set(Buffer<T> a) {
+  if ((a.x_ != this->x_) || (a.y_ != this->y_)) {
+    printf(
+        "Unable to copy buffer. Reference buffer of size %dx%d does not match "
+        "this buffer which is size %dx%d\n",
+        a.x_, a.y_, this->x_, this->y_);
+    return;
+  }
+
+  T *a_src = a.Src();
+  T *b_src = this->Src();
+  for (int y = 0; y < y_; y++) {
+    for (int x = 0; x < x_; x++) {
+      b_src[x + y * a.Stride()] = a_src[x + y * this->Stride()];
+    }
+  }
+}
+
+template <typename T>
 void Buffer<T>::DumpBuffer() {
   for (int y = 0; y < y_ + 2 * p_; ++y) {
     for (int x = 0; x < stride_; ++x) {
       printf("%4d", b_[x + y * stride_]);
+    }
+    printf("\n");
+  }
+}
+
+template <typename T>
+void Buffer<T>::PrintDifference(Buffer<T> a) {
+  if ((a.x_ != this->x_) || (a.y_ != this->y_)) {
+    printf(
+        "Unable to print buffers. Reference buffer of size %dx%d does not "
+        "match this buffer which is size %dx%d\n",
+        a.x_, a.y_, this->x_, this->y_);
+    return;
+  }
+
+  T *a_src = a.Src();
+  T *b_src = Src();
+
+  printf("This buffer:\n");
+  for (int y = 0; y < y_; ++y) {
+    for (int x = 0; x < x_; ++x) {
+      if (a_src[x + y * a.Stride()] != b_src[x + y * Stride()]) {
+        printf("*%3d", b_src[x + y * Stride()]);
+      } else {
+        printf("%4d", b_src[x + y * Stride()]);
+      }
+    }
+    printf("\n");
+  }
+
+  printf("Reference buffer:\n");
+  for (int y = 0; y < y_; ++y) {
+    for (int x = 0; x < x_; ++x) {
+      if (a_src[x + y * a.Stride()] != b_src[x + y * Stride()]) {
+        printf("*%3d", a_src[x + y * a.Stride()]);
+      } else {
+        printf("%4d", a_src[x + y * a.Stride()]);
+      }
     }
     printf("\n");
   }
@@ -194,6 +274,30 @@ int Buffer<T>::CheckPadding() {
   }
 
   return error;
+}
+
+template <typename T>
+int Buffer<T>::CompareBuffer(Buffer<T> a) {
+  if ((a.x_ != this->x_) || (a.y_ != this->y_)) {
+    printf(
+        "Unable to compare buffers. Reference buffer of size %dx%d does not "
+        "match this buffer which is size %dx%d\n",
+        a.x_, a.y_, this->x_, this->y_);
+    return 1;
+  }
+
+  T *a_src = a.Src();
+  T *b_src = this->Src();
+  for (int y = 0; y < y_; y++) {
+    for (int x = 0; x < x_; x++) {
+      if (a_src[x + y * a.Stride()] != b_src[x + y * this->Stride()]) {
+        printf("Buffers do not match\n");
+        PrintDifference(a);
+        return 1;
+      }
+    }
+  }
+  return 0;
 }
 }  // namespace libvpx_test
 #endif  // TEST_BUFFER_H_
