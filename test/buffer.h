@@ -15,6 +15,7 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "test/acm_random.h"
 #include "vpx/vpx_integer.h"
 
 namespace libvpx_test {
@@ -59,7 +60,16 @@ class Buffer {
   // Set the buffer (excluding padding) to 'value'.
   void Set(const int value);
 
+  // Set the buffer (excluding padding) to the output of ACMRandom function b.
+  void Set(ACMRandom *a, T (ACMRandom::*b)());
+
+  // Set the buffer (excluding pattern) to the contents of Buffer a.
+  void Set(const Buffer<T> &a);
+
   void DumpBuffer() const;
+
+  // Highlight the differences between two buffers.
+  void PrintDifference(const Buffer<T> &a) const;
 
   bool HasPadding() const;
 
@@ -71,6 +81,9 @@ class Buffer {
 
   // Check that padding matches the expected value or there is no padding.
   bool CheckPadding() const;
+
+  // Compare the non-padding portion of two buffers.
+  bool CheckValues(const Buffer<T> &a) const;
 
   ~Buffer() {
     if (raw_buffer_) {
@@ -112,6 +125,39 @@ void Buffer<T>::Set(const int value) {
 }
 
 template <typename T>
+void Buffer<T>::Set(ACMRandom *RandClass, T (ACMRandom::*RandFunc)()) {
+  T *src = TopLeftPixel();
+  for (int height = 0; height < height_; ++height) {
+    for (int width = 0; width < width_; ++width) {
+      src[width] = (*RandClass.*RandFunc)();
+    }
+    src += Stride();
+  }
+}
+
+template <typename T>
+void Buffer<T>::Set(const Buffer<T> &SourceBuffer) {
+  if ((SourceBuffer.width_ != this->width_) ||
+      (SourceBuffer.width_ != this->width_)) {
+    printf(
+        "Unable to copy buffer. Reference buffer of size %dx%d does not match "
+        "this buffer which is size %dx%d\n",
+        SourceBuffer.width_, SourceBuffer.width_, this->width_, this->width_);
+    return;
+  }
+
+  T *a_src = SourceBuffer.TopLeftPixel();
+  T *b_src = this->TopLeftPixel();
+  for (int height = 0; height < height_; height++) {
+    for (int width = 0; width < width_; width++) {
+      b_src[width] = a_src[width];
+    }
+    a_src += SourceBuffer.Stride();
+    b_src += this->Stride();
+  }
+}
+
+template <typename T>
 void Buffer<T>::DumpBuffer() const {
   for (int height = 0; height < height_ + top_padding_ + bottom_padding_;
        ++height) {
@@ -125,6 +171,52 @@ void Buffer<T>::DumpBuffer() const {
 template <typename T>
 bool Buffer<T>::HasPadding() const {
   return top_padding_ || left_padding_ || right_padding_ || bottom_padding_;
+}
+
+template <typename T>
+void Buffer<T>::PrintDifference(const Buffer<T> &RefBuffer) const {
+  if ((RefBuffer.width_ != this->width_) ||
+      (RefBuffer.width_ != this->width_)) {
+    printf(
+        "Unable to print buffers. Reference buffer of size %dx%d does not "
+        "match this buffer which is size %dx%d\n",
+        RefBuffer.width_, RefBuffer.width_, this->width_, this->width_);
+    return;
+  }
+
+  T *a_src = RefBuffer.TopLeftPixel();
+  T *b_src = TopLeftPixel();
+
+  printf("This buffer:\n");
+  for (int height = 0; height < height_; ++height) {
+    for (int width = 0; width < width_; ++width) {
+      if (a_src[width] != b_src[width]) {
+        printf("*%3d", b_src[width]);
+      } else {
+        printf("%4d", b_src[width]);
+      }
+    }
+    printf("\n");
+    a_src += RefBuffer.Stride();
+    b_src += this->Stride();
+  }
+
+  a_src = RefBuffer.TopLeftPixel();
+  b_src = TopLeftPixel();
+
+  printf("Reference buffer:\n");
+  for (int height = 0; height < height_; ++height) {
+    for (int width = 0; width < width_; ++width) {
+      if (a_src[width] != b_src[width]) {
+        printf("*%3d", a_src[width]);
+      } else {
+        printf("%4d", a_src[width]);
+      }
+    }
+    printf("\n");
+    a_src += RefBuffer.Stride();
+    b_src += this->Stride();
+  }
 }
 
 template <typename T>
@@ -197,6 +289,33 @@ bool Buffer<T>::CheckPadding() const {
     }
   }
 
+  return true;
+}
+
+template <typename T>
+bool Buffer<T>::CheckValues(const Buffer<T> &RefBuffer) const {
+  if ((RefBuffer.width_ != this->width_) ||
+      (RefBuffer.width_ != this->width_)) {
+    printf(
+        "Unable to compare buffers. Reference buffer of size %dx%d does not "
+        "match this buffer which is size %dx%d\n",
+        RefBuffer.width_, RefBuffer.width_, this->width_, this->width_);
+    return false;
+  }
+
+  T *a_src = RefBuffer.TopLeftPixel();
+  T *b_src = this->TopLeftPixel();
+  for (int height = 0; height < height_; height++) {
+    for (int width = 0; width < width_; width++) {
+      if (a_src[width] != b_src[width]) {
+        printf("Buffers do not match\n");
+        PrintDifference(RefBuffer);
+        return false;
+      }
+    }
+    a_src += RefBuffer.Stride();
+    b_src += this->Stride();
+  }
   return true;
 }
 }  // namespace libvpx_test
