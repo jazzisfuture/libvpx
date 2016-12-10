@@ -159,7 +159,7 @@ VP8_INSTANTIATE_TEST_CASE(
 
 // Test VP8 decode in with different numbers of threads.
 INSTANTIATE_TEST_CASE_P(
-    DISABLED_VP8MultiThreaded, TestVectorTest,
+    VP8MultiThreaded, TestVectorTest,
     ::testing::Combine(
         ::testing::Values(
             static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP8)),
