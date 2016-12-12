@@ -4267,11 +4267,7 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
  * Last frame has one more line(add to bottom) and one more column(add to
  * right) than cm->mip. The edge elements are initialized to 0.
  */
-#if CONFIG_MULTI_RES_ENCODING
-  if (!cpi->oxcf.mr_encoder_id && cm->show_frame)
-#else
   if (cm->show_frame) /* do not save for altref frame */
-#endif
   {
     int mb_row;
     int mb_col;

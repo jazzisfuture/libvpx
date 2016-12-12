@@ -1012,10 +1012,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 #if CONFIG_MULTI_RES_ENCODING
         /* If lower-res frame is not available for mv reuse (because of
            frame dropping or different temporal layer pattern), then higher
-           resol encoder does motion search without any previous knowledge.
-           Also, since last frame motion info is not stored, then we can not
-           use improved_mv_pred. */
-        if (cpi->oxcf.mr_encoder_id) sf_improved_mv_pred = 0;
+           resol encoder does motion search without any previous knowledge. */
 
         // Only use parent MV as predictor if this candidate reference frame
         // (|this_ref_frame|) is equal to |parent_ref_frame|.
