@@ -1256,8 +1256,8 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi, int frame_target,
     if ((cpi->common.frame_type == KEY_FRAME) ||
         ((cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame) &&
          !cpi->rc.is_src_frame_alt_ref)) {
-      *frame_over_shoot_limit =
-          VPXMIN(frame_target + (tol_high / 4) + 100, cpi->rc.max_frame_bandwidth);
+      *frame_over_shoot_limit = VPXMIN(frame_target + (tol_high / 4) + 100,
+                                       cpi->rc.max_frame_bandwidth);
     } else {
       *frame_over_shoot_limit =
           VPXMIN(frame_target + tol_high + 100, cpi->rc.max_frame_bandwidth);
