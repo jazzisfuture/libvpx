@@ -3340,6 +3340,9 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
               (cpi->current_ref_frames[GOLDEN_FRAME] ==
                low_res_frame_info->low_res_ref_frames[GOLDEN_FRAME]);
 
+        // Set this to 0 to disable motion vector reuse for multi-res-encoding.
+        // cpi->mr_low_res_mv_avail = 0;
+
         // Don't use altref to determine whether low res is available.
         // TODO (marpan): Should we make this type of condition on a
         // per-reference frame basis?
