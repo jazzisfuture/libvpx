@@ -107,13 +107,15 @@ static void output_stats(FIRSTPASS_STATS *stats,
     fpfile = fopen("firstpass.stt", "a");
 
     fprintf(fpfile,
-            "%12.0lf %12.4lf %12.0lf %12.0lf %12.0lf %12.0lf %12.4lf"
+            "%12.0lf %12.4lf %12.0lf %12.0lf %12.0lf %12.0lf %12.4lf %12.4lf"
             "%12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf"
-            "%12.4lf %12.4lf %12.4lf %12.4lf %12.0lf %12.0lf %12.0lf %12.4lf"
+            "%12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.0lf %12.0lf %12.0lf"
+            "%12.4lf"
             "\n",
             stats->frame, stats->weight, stats->intra_error, stats->coded_error,
             stats->sr_coded_error, stats->frame_noise_energy, stats->pcnt_inter,
             stats->pcnt_motion, stats->pcnt_second_ref, stats->pcnt_neutral,
+            stats->pcnt_intra_low, stats->pcnt_intra_high,
             stats->intra_skip_pct, stats->intra_smooth_pct,
             stats->inactive_zone_rows, stats->inactive_zone_cols, stats->MVr,
             stats->mvr_abs, stats->MVc, stats->mvc_abs, stats->MVrv,
@@ -147,6 +149,8 @@ static void zero_stats(FIRSTPASS_STATS *section) {
   section->pcnt_neutral = 0.0;
   section->intra_skip_pct = 0.0;
   section->intra_smooth_pct = 0.0;
+  section->pcnt_intra_low = 0.0;
+  section->pcnt_intra_high = 0.0;
   section->inactive_zone_rows = 0.0;
   section->inactive_zone_cols = 0.0;
   section->MVr = 0.0;
@@ -176,6 +180,8 @@ static void accumulate_stats(FIRSTPASS_STATS *section,
   section->pcnt_neutral += frame->pcnt_neutral;
   section->intra_skip_pct += frame->intra_skip_pct;
   section->intra_smooth_pct += frame->intra_smooth_pct;
+  section->pcnt_intra_low += frame->pcnt_intra_low;
+  section->pcnt_intra_high += frame->pcnt_intra_high;
   section->inactive_zone_rows += frame->inactive_zone_rows;
   section->inactive_zone_cols += frame->inactive_zone_cols;
   section->MVr += frame->MVr;
@@ -203,6 +209,8 @@ static void subtract_stats(FIRSTPASS_STATS *section,
   section->pcnt_neutral -= frame->pcnt_neutral;
   section->intra_skip_pct -= frame->intra_skip_pct;
   section->intra_smooth_pct -= frame->intra_smooth_pct;
+  section->pcnt_intra_low -= frame->pcnt_intra_low;
+  section->pcnt_intra_high -= frame->pcnt_intra_high;
   section->inactive_zone_rows -= frame->inactive_zone_rows;
   section->inactive_zone_cols -= frame->inactive_zone_cols;
   section->MVr -= frame->MVr;
@@ -214,6 +222,15 @@ static void subtract_stats(FIRSTPASS_STATS *section,
   section->mv_in_out_count -= frame->mv_in_out_count;
   section->count -= frame->count;
   section->duration -= frame->duration;
+}
+
+// This function returns a linear linear size factor for the image / format
+// normalized against 1080P.
+#define AREA_1080P 2073600.0
+static double normalized_linear_size(VP9_COMP *cpi) {
+  int image_area = (cpi->initial_height * cpi->initial_width);
+  double area_factor = (double)image_area / AREA_1080P;
+  return pow(area_factor, 0.5);
 }
 
 // Calculate an active area of the image that discounts formatting
@@ -672,6 +689,8 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   int second_ref_count = 0;
   const int intrapenalty = INTRA_MODE_PENALTY;
   double neutral_count;
+  double intra_count_low;
+  double intra_count_high;
   int intra_skip_count = 0;
   int intra_smooth_count = 0;
   int image_data_start_row = INVALID_ROW;
@@ -708,6 +727,8 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   intra_factor = 0.0;
   brightness_factor = 0.0;
   neutral_count = 0.0;
+  intra_count_low = 0.0;
+  intra_count_high = 0.0;
 
   set_first_pass_params(cpi);
   vp9_set_quantizer(cm, find_fp_qindex(cm->bit_depth));
@@ -1170,10 +1191,14 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
             frame_noise_energy += (int64_t)SECTION_NOISE_DEF;
           }
         } else {  // Intra < inter error
-          if (this_intra_error < scale_sse_threshold(cm, LOW_I_THRESH))
+          int scaled_low_intra_thresh = scale_sse_threshold(cm, LOW_I_THRESH);
+          if (this_intra_error < scaled_low_intra_thresh) {
             frame_noise_energy += fp_estimate_block_noise(x, bsize);
-          else
+            intra_count_low += 1.0;
+          } else {
             frame_noise_energy += (int64_t)SECTION_NOISE_DEF;
+            intra_count_high += 1.0;
+          }
         }
       } else {
         sr_coded_error += (int64_t)this_error;
@@ -1239,6 +1264,8 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     fps.pcnt_neutral = (double)neutral_count / num_mbs;
     fps.intra_skip_pct = (double)intra_skip_count / num_mbs;
     fps.intra_smooth_pct = (double)intra_smooth_count / num_mbs;
+    fps.pcnt_intra_low = (double)intra_count_low / num_mbs;
+    fps.pcnt_intra_high = (double)intra_count_high / num_mbs;
     fps.inactive_zone_rows = (double)image_data_start_row;
     // Currently set to 0 as most issues relate to letter boxing.
     fps.inactive_zone_cols = (double)0;

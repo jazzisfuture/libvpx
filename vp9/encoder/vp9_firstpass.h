@@ -50,6 +50,8 @@ typedef struct {
   double pcnt_motion;
   double pcnt_second_ref;
   double pcnt_neutral;
+  double pcnt_intra_low;      // Coded intra but low variance
+  double pcnt_intra_high;     // Coded intra high variance
   double intra_skip_pct;
   double intra_smooth_pct;    // % of blocks that are smooth
   double inactive_zone_rows;  // Image mask rows top and bottom.
