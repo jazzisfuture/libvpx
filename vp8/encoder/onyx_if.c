@@ -4263,15 +4263,11 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
         vp8_calc_ss_err(cpi->Source, &cm->yv12_fb[cm->new_fb_idx]);
   }
 
-/* This frame's MVs are saved and will be used in next frame's MV predictor.
- * Last frame has one more line(add to bottom) and one more column(add to
- * right) than cm->mip. The edge elements are initialized to 0.
- */
-#if CONFIG_MULTI_RES_ENCODING
-  if (!cpi->oxcf.mr_encoder_id && cm->show_frame)
-#else
+  /* This frame's MVs are saved and will be used in next frame's MV predictor.
+  * Last frame has one more line(add to bottom) and one more column(add to
+  * right) than cm->mip. The edge elements are initialized to 0.
+  */
   if (cm->show_frame) /* do not save for altref frame */
-#endif
   {
     int mb_row;
     int mb_col;
