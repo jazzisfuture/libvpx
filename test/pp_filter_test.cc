@@ -100,6 +100,57 @@ TEST_P(VpxPostProcDownAndAcrossMbRowTest, CheckFilterOutput) {
   vpx_free(flimits);
 };
 
+TEST_P(VpxPostProcDownAndAcrossMbRowTest, CvsAssembly) {
+  // Size of the underlying data block that will be filtered.
+  const int block_width = 24;
+  // 'size' can only be 16 or 8 (Y or U/V). This corrosponds to the
+  // block_height.
+  const int block_height = 16;
+
+  // 5-tap filter needs 2 padding rows above and below the block in the input.
+  Buffer<uint8_t> src_image = Buffer<uint8_t>(block_width, block_height, 2);
+
+  // Filter extends output block by 8 samples at left and right edges.
+  // Though the left padding is only 8 bytes, the assembly code tries to
+  // read 16 bytes before the pointer.
+  Buffer<uint8_t> dst_image = Buffer<uint8_t>(block_width, block_height, 16);
+  Buffer<uint8_t> dst_image_ref =
+      Buffer<uint8_t>(block_width, block_height, 16);
+
+  // F values are set in blocks of 8. Each macroblock can have a different
+  // filter.
+  uint8_t *const flimits =
+      reinterpret_cast<uint8_t *>(vpx_memalign(16, block_width));
+
+  ACMRandom rnd;
+  rnd.Reset(ACMRandom::DeterministicSeed());
+
+  for (int blocks = 0; blocks < block_width; blocks += 8) {
+    for (int f = 0; f < 255; f++) {
+      (void)memset(flimits, 0, sizeof(*flimits) * block_width);
+      (void)memset(flimits + blocks, f, sizeof(*flimits) * 8);
+
+      // src_image.Set(rnd, &ACMRandom::Rand8);
+      src_image.Set(5);
+      src_image.SetPadding(10);
+
+      dst_image.Set(99);
+      dst_image_ref.Set(99);
+
+      vpx_post_proc_down_and_across_mb_row_c(
+          src_image.Src(), dst_image_ref.Src(), src_image.Stride(),
+          dst_image_ref.Stride(), block_width, flimits, block_height);
+      ASM_REGISTER_STATE_CHECK(
+          GetParam()(src_image.Src(), dst_image.Src(), src_image.Stride(),
+                     dst_image.Stride(), block_width, flimits, block_height));
+
+      ASSERT_EQ(0, dst_image.CompareBuffer(dst_image_ref));
+    }
+  }
+
+  vpx_free(flimits);
+};
+
 class VpxMbPostProcAcrossIpTest
     : public ::testing::TestWithParam<VpxMbPostProcAcrossIpFunc> {
  public:
@@ -380,7 +431,13 @@ INSTANTIATE_TEST_CASE_P(SSE2, VpxMbPostProcAcrossIpTest,
 
 INSTANTIATE_TEST_CASE_P(SSE2, VpxMbPostProcDownTest,
                         ::testing::Values(vpx_mbpost_proc_down_sse2));
-#endif
+#endif  // HAVE_SSE2
+
+#if HAVE_NEON
+INSTANTIATE_TEST_CASE_P(
+    NEON, VpxPostProcDownAndAcrossMbRowTest,
+    ::testing::Values(vpx_post_proc_down_and_across_mb_row_neon));
+#endif  // HAVE_NEON
 
 #if HAVE_MSA
 INSTANTIATE_TEST_CASE_P(
@@ -392,6 +449,6 @@ INSTANTIATE_TEST_CASE_P(MSA, VpxMbPostProcAcrossIpTest,
 
 INSTANTIATE_TEST_CASE_P(MSA, VpxMbPostProcDownTest,
                         ::testing::Values(vpx_mbpost_proc_down_msa));
-#endif
+#endif  // HAVE_MSA
 
 }  // namespace
