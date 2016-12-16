@@ -2074,8 +2074,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                                 best_mode, best_ref_frame, best_pred_filter,
                                 best_mode_skip_txfm);
     vp9_denoiser_denoise(cpi, x, mi_row, mi_col, bsize, ctx, &decision);
-    recheck_zeromv_after_denoising(cpi, mi, x, xd, decision, &ctx_den, yv12_mb,
-                                   &best_rdc, bsize, mi_row, mi_col);
+    // TODO(marpan): This is causing corrupt decoder error, re-enable when fixed.
+    // recheck_zeromv_after_denoising(cpi, mi, x, xd, decision, &ctx_den,
+    //                                yv12_mb, &best_rdc, bsize, mi_row,
+    //                                mi_col);
     best_ref_frame = ctx_den.best_ref_frame;
   }
 #endif
