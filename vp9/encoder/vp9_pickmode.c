@@ -1235,7 +1235,7 @@ static void recheck_zeromv_after_denoising(
   // denoised result. Only do this under noise conditions, and if rdcost of
   // ZEROMV onoriginal source is not significantly higher than rdcost of best
   // mode.
-  if (cpi->noise_estimate.enabled && cpi->noise_estimate.level > kLow &&
+  if (cpi->noise_estimate.enabled && cpi->noise_estimate.level > kHigh &&
       ctx_den->zero_last_cost_orig < (best_rdc->rdcost << 3) &&
       ((ctx_den->best_ref_frame == INTRA_FRAME && decision >= FILTER_BLOCK) ||
        (ctx_den->best_ref_frame == GOLDEN_FRAME &&
@@ -2074,7 +2074,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                                 best_mode, best_ref_frame, best_pred_filter,
                                 best_mode_skip_txfm);
     vp9_denoiser_denoise(cpi, x, mi_row, mi_col, bsize, ctx, &decision);
-    recheck_zeromv_after_denoising(cpi, mi, x, xd, decision, &ctx_den, yv12_mb,
+    recheck_zeromv_after_denoising(cpi, mi, x, xd, decision, &ctx_den,yv12_mb,
                                    &best_rdc, bsize, mi_row, mi_col);
     best_ref_frame = ctx_den.best_ref_frame;
   }
