@@ -766,6 +766,93 @@ static void set_low_temp_var_flag(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
   }
 }
 
+static void copy_prev_partition(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
+                                int mi_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  BLOCK_SIZE *prev_part = cpi->prev_partition;
+  int start_pos = mi_row * cm->mi_stride + mi_col;
+
+  const int bsl = b_width_log2_lookup[bsize];
+  const int bs = (1 << bsl) / 4;
+  BLOCK_SIZE subsize;
+  PARTITION_TYPE partition;
+  MODE_INFO *mi = NULL;
+
+  if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols) return;
+
+  partition = partition_lookup[bsl][prev_part[start_pos]];
+  subsize = get_subsize(bsize, partition);
+  mi = cm->mi_grid_visible[mi_row * cm->mi_stride + mi_col];
+
+  if (subsize < BLOCK_8X8) {
+    mi->sb_type = bsize;
+  } else {
+    switch (partition) {
+      case PARTITION_NONE: mi->sb_type = bsize; break;
+      case PARTITION_HORZ:
+        mi->sb_type = subsize;
+        if (mi_row + bs < cm->mi_rows)
+          cm->mi_grid_visible[(mi_row + bs) * cm->mi_stride + mi_col]->sb_type =
+              subsize;
+        break;
+      case PARTITION_VERT:
+        mi->sb_type = subsize;
+        if (mi_col + bs < cm->mi_cols)
+          cm->mi_grid_visible[mi_row * cm->mi_stride + mi_col + bs]->sb_type =
+              subsize;
+        break;
+      case PARTITION_SPLIT:
+        copy_prev_partition(cpi, subsize, mi_row, mi_col);
+        copy_prev_partition(cpi, subsize, mi_row + bs, mi_col);
+        copy_prev_partition(cpi, subsize, mi_row, mi_col + bs);
+        copy_prev_partition(cpi, subsize, mi_row + bs, mi_col + bs);
+        break;
+      default: assert(0);
+    }
+  }
+}
+
+static void update_prev_partition(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
+                                  int mi_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  BLOCK_SIZE *prev_part = cpi->prev_partition;
+  int start_pos = mi_row * cm->mi_stride + mi_col;
+  const int bsl = b_width_log2_lookup[bsize];
+  const int bs = (1 << bsl) / 4;
+  BLOCK_SIZE subsize;
+  PARTITION_TYPE partition;
+  const MODE_INFO *mi = NULL;
+
+  if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols) return;
+
+  mi = cm->mi_grid_visible[start_pos];
+  partition = partition_lookup[bsl][mi->sb_type];
+  subsize = get_subsize(bsize, partition);
+  if (subsize < BLOCK_8X8) {
+    prev_part[start_pos] = bsize;
+  } else {
+    switch (partition) {
+      case PARTITION_NONE: prev_part[start_pos] = bsize; break;
+      case PARTITION_HORZ:
+        prev_part[start_pos] = subsize;
+        if (mi_row + bs < cm->mi_rows)
+          prev_part[start_pos + bs * cm->mi_stride] = subsize;
+        break;
+      case PARTITION_VERT:
+        prev_part[start_pos] = subsize;
+        if (mi_col + bs < cm->mi_cols) prev_part[start_pos + bs] = subsize;
+        break;
+      case PARTITION_SPLIT:
+        update_prev_partition(cpi, subsize, mi_row, mi_col);
+        update_prev_partition(cpi, subsize, mi_row + bs, mi_col);
+        update_prev_partition(cpi, subsize, mi_row, mi_col + bs);
+        update_prev_partition(cpi, subsize, mi_row + bs, mi_col + bs);
+        break;
+      default: assert(0);
+    }
+  }
+}
+
 static void chroma_check(VP9_COMP *cpi, MACROBLOCK *x, int bsize,
                          unsigned int y_sad, int is_key_frame) {
   int i;
@@ -828,6 +915,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   const int low_res = (cm->width <= 352 && cm->height <= 288);
   int variance4x4downsample[16];
   int segment_id;
+  int offset = cm->mi_stride * mi_row + mi_col;
 
   set_offsets(cpi, tile, x, mi_row, mi_col, BLOCK_64X64);
   segment_id = xd->mi[0]->segment_id;
@@ -937,6 +1025,19 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       if (mi_col + block_width / 2 < cm->mi_cols &&
           mi_row + block_height / 2 < cm->mi_rows) {
         set_block_size(cpi, x, xd, mi_row, mi_col, BLOCK_64X64);
+        chroma_check(cpi, x, bsize, y_sad, is_key_frame);
+        return 0;
+      }
+    }
+
+    // If the y_sad is small enough, copy the partition of the superblock in the
+    // last frame to current frame only if the last frame is not a keyframe
+    // TODO(jianj) : choose right threshold maybe name a new one
+    if (cpi->sf.copy_partition_flag && cpi->rc.frames_since_key > 1 &&
+        segment_id == CR_SEGMENT_ID_BASE &&
+        cpi->prev_segment_id[offset] == CR_SEGMENT_ID_BASE) {
+      if (cpi->prev_partition != NULL) {
+        copy_prev_partition(cpi, BLOCK_64X64, mi_row, mi_col);
         chroma_check(cpi, x, bsize, y_sad, is_key_frame);
         return 0;
       }
@@ -1133,6 +1234,14 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
         }
       }
     }
+  }
+
+  if (cm->frame_type != KEY_FRAME && cpi->sf.copy_partition_flag) {
+    if (xd->mi[0] != CR_SEGMENT_ID_BASE ||
+        cpi->prev_segment_id[offset] != CR_SEGMENT_ID_BASE) {
+      update_prev_partition(cpi, BLOCK_64X64, mi_row, mi_col);
+    }
+    cpi->prev_segment_id[offset] = segment_id;
   }
 
   if (cpi->sf.short_circuit_low_temp_var) {
