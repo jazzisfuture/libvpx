@@ -605,6 +605,10 @@ typedef struct VP9_COMP {
 
   int keep_level_stats;
   Vp9LevelInfo level_info;
+
+  // Previous Partition Info
+  BLOCK_SIZE *prev_partition;
+  int8_t *prev_segment_id;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
