@@ -439,6 +439,9 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   cpi->nmvsadcosts_hp[0] = NULL;
   cpi->nmvsadcosts_hp[1] = NULL;
 
+  vpx_free(cpi->prev_partition);
+  cpi->prev_partition = NULL;
+
   vp9_cyclic_refresh_free(cpi->cyclic_refresh);
   cpi->cyclic_refresh = NULL;
 
