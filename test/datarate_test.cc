@@ -954,8 +954,87 @@ TEST_P(DatarateTestVP9Large, BasicRateTargeting3TemporalLayersFrameDropping) {
 }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
+class DatarateTestVP9LargeDenoiser
+    : public ::libvpx_test::EncoderTest,
+      public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
+ public:
+  DatarateTestVP9LargeDenoiser() : EncoderTest(GET_PARAM(0)) {}
+
+ protected:
+  virtual ~DatarateTestVP9LargeDenoiser() {}
+
+  virtual void SetUp() {
+    InitializeConfig();
+    SetMode(GET_PARAM(1));
+    set_cpu_used_ = GET_PARAM(2);
+    ResetModel();
+  }
+
+  virtual void ResetModel() {
+    last_pts_ = 0;
+    bits_in_buffer_model_ = cfg_.rc_target_bitrate * cfg_.rc_buf_initial_sz;
+    // Denoiser is off by default.
+    denoiser_on_ = 0;
+    denoiser_offon_test_ = 0;
+    denoiser_offon_period_ = -1;
+    bits_total_ = 0;
+  }
+
+  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                                  ::libvpx_test::Encoder *encoder) {
+    if (video->frame() == 0) encoder->Control(VP8E_SET_CPUUSED, set_cpu_used_);
+    if (denoiser_offon_test_) {
+      ASSERT_GT(denoiser_offon_period_, 0)
+          << "denoiser_offon_period_ is not positive.";
+      if ((video->frame() + 1) % denoiser_offon_period_ == 0) {
+        // Flip denoiser_on_ periodically
+        denoiser_on_ ^= 1;
+      }
+    }
+    encoder->Control(VP9E_SET_NOISE_SENSITIVITY, denoiser_on_);
+    const vpx_rational_t tb = video->timebase();
+    timebase_ = static_cast<double>(tb.num) / tb.den;
+    duration_ = 0;
+  }
+
+  virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
+    // Time since last timestamp = duration.
+    vpx_codec_pts_t duration = pkt->data.frame.pts - last_pts_;
+    // Add to the buffer the bits we'd expect from a constant bitrate server.
+    bits_in_buffer_model_ += static_cast<int64_t>(
+        duration * timebase_ * cfg_.rc_target_bitrate * 1000);
+    // Buffer should not go negative.
+    ASSERT_GE(bits_in_buffer_model_, 0) << "Buffer Underrun at frame "
+                                        << pkt->data.frame.pts;
+    const size_t frame_size_in_bits = pkt->data.frame.sz * 8;
+    // Update the total encoded bits.
+    bits_total_ += frame_size_in_bits;
+    // Update the most recent pts.
+    last_pts_ = pkt->data.frame.pts;
+  }
+
+  virtual void EndPassHook(void) {
+    duration_ = (last_pts_ + 1) * timebase_;
+    if (bits_total_) {
+      // Effective file datarate:
+      effective_datarate_ = (bits_total_ / 1000.0) / duration_;
+    }
+  }
+
+  vpx_codec_pts_t last_pts_;
+  double timebase_;
+  int64_t bits_total_;
+  double duration_;
+  double effective_datarate_;
+  int set_cpu_used_;
+  int64_t bits_in_buffer_model_;
+  int denoiser_on_;
+  int denoiser_offon_test_;
+  int denoiser_offon_period_;
+};
+
 // Check basic datarate targeting, for a single bitrate, when denoiser is on.
-TEST_P(DatarateTestVP9Large, DenoiserLevels) {
+TEST_P(DatarateTestVP9LargeDenoiser, LowNoise) {
   cfg_.rc_buf_initial_sz = 500;
   cfg_.rc_buf_optimal_sz = 500;
   cfg_.rc_buf_sz = 1000;
@@ -976,15 +1055,44 @@ TEST_P(DatarateTestVP9Large, DenoiserLevels) {
   // Turn on the denoiser.
   denoiser_on_ = 1;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  ASSERT_GE(effective_datarate_[0], cfg_.rc_target_bitrate * 0.85)
+  ASSERT_GE(effective_datarate_, cfg_.rc_target_bitrate * 0.85)
       << " The datarate for the file is lower than target by too much!";
-  ASSERT_LE(effective_datarate_[0], cfg_.rc_target_bitrate * 1.15)
+  ASSERT_LE(effective_datarate_, cfg_.rc_target_bitrate * 1.15)
+      << " The datarate for the file is greater than target by too much!";
+}
+
+// Check basic datarate targeting, for a single bitrate, when denoiser is on,
+// for HD clip with high noise level.
+TEST_P(DatarateTestVP9LargeDenoiser, HighNoise) {
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_dropframe_thresh = 1;
+  cfg_.rc_min_quantizer = 2;
+  cfg_.rc_max_quantizer = 56;
+  cfg_.rc_end_usage = VPX_CBR;
+  cfg_.g_lag_in_frames = 0;
+
+  ::libvpx_test::I420VideoSource video("noisey_clip.640_360.yuv", 640, 360, 30,
+                                       1, 0, 200);
+
+  // For the temporal denoiser (#if CONFIG_VP9_TEMPORAL_DENOISING),
+  // there is only one denoiser mode: denoiserYonly(which is 1),
+  // but may add more modes in the future.
+  cfg_.rc_target_bitrate = 1500;
+  ResetModel();
+  // Turn on the denoiser.
+  denoiser_on_ = 1;
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  ASSERT_GE(effective_datarate_, cfg_.rc_target_bitrate * 0.85)
+      << " The datarate for the file is lower than target by too much!";
+  ASSERT_LE(effective_datarate_, cfg_.rc_target_bitrate * 1.15)
       << " The datarate for the file is greater than target by too much!";
 }
 
 // Check basic datarate targeting, for a single bitrate, when denoiser is off
 // and on.
-TEST_P(DatarateTestVP9Large, DenoiserOffOn) {
+TEST_P(DatarateTestVP9LargeDenoiser, DenoiserOffOn) {
   cfg_.rc_buf_initial_sz = 500;
   cfg_.rc_buf_optimal_sz = 500;
   cfg_.rc_buf_sz = 1000;
@@ -1008,9 +1116,9 @@ TEST_P(DatarateTestVP9Large, DenoiserOffOn) {
   denoiser_offon_test_ = 1;
   denoiser_offon_period_ = 100;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  ASSERT_GE(effective_datarate_[0], cfg_.rc_target_bitrate * 0.85)
+  ASSERT_GE(effective_datarate_, cfg_.rc_target_bitrate * 0.85)
       << " The datarate for the file is lower than target by too much!";
-  ASSERT_LE(effective_datarate_[0], cfg_.rc_target_bitrate * 1.15)
+  ASSERT_LE(effective_datarate_, cfg_.rc_target_bitrate * 1.15)
       << " The datarate for the file is greater than target by too much!";
 }
 #endif  // CONFIG_VP9_TEMPORAL_DENOISING
@@ -1435,6 +1543,11 @@ VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9Large,
                           ::testing::Values(::libvpx_test::kOnePassGood,
                                             ::libvpx_test::kRealTime),
                           ::testing::Range(2, 9));
+#if CONFIG_VP9_TEMPORAL_DENOISING
+VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9LargeDenoiser,
+                          ::testing::Values(::libvpx_test::kRealTime),
+                          ::testing::Range(5, 9));
+#endif
 VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvc,
                           ::testing::Values(::libvpx_test::kRealTime),
                           ::testing::Range(5, 9));
