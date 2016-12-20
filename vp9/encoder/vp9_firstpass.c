@@ -1246,12 +1246,21 @@ static int get_twopass_worst_quality(VP9_COMP *cpi,
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   TWO_PASS *const twopass = &cpi->twopass;
+  double last_group_rate_err;
 
   // Clamp the target rate to VBR min / max limts.
   const int target_rate =
       vp9_rc_clamp_pframe_target_size(cpi, section_target_bandwidth);
 
   inactive_zone = fclamp(inactive_zone, 0.0, 1.0);
+
+  // based on recent history adjust expectations of bits per macroblock.
+  last_group_rate_err =
+      (double)twopass->rolling_arf_group_actual_bits /
+      DOUBLE_DIVIDE_CHECK((double)twopass->rolling_arf_group_target_bits);
+  last_group_rate_err = VPXMAX(0.25, VPXMIN(4.0, last_group_rate_err));
+  twopass->bpm_factor *= (3.0 + last_group_rate_err) / 4.0;
+  twopass->bpm_factor = VPXMAX(0.25, VPXMIN(4.0, twopass->bpm_factor));
 
   if (target_rate <= 0) {
     return rc->worst_quality;  // Highest value allowed
@@ -1261,7 +1270,6 @@ static int get_twopass_worst_quality(VP9_COMP *cpi,
     const int active_mbs = VPXMAX(1, num_mbs - (int)(num_mbs * inactive_zone));
     const double av_err_per_mb = section_err / active_mbs;
     const double speed_term = 1.0 + 0.04 * oxcf->speed;
-    double last_group_rate_err;
     const int target_norm_bits_per_mb = ((uint64_t)target_rate <<
                                          BPER_MB_NORMBITS) / active_mbs;
     int q;
@@ -1269,15 +1277,6 @@ static int get_twopass_worst_quality(VP9_COMP *cpi,
 
     if (is_two_pass_svc(cpi) && cpi->svc.spatial_layer_id > 0)
       is_svc_upper_layer = 1;
-
-    // based on recent history adjust expectations of bits per macroblock.
-    last_group_rate_err = (double)twopass->rolling_arf_group_actual_bits /
-        DOUBLE_DIVIDE_CHECK((double)twopass->rolling_arf_group_target_bits);
-    last_group_rate_err =
-        VPXMAX(0.25, VPXMIN(4.0, last_group_rate_err));
-    twopass->bpm_factor *= (3.0 + last_group_rate_err) / 4.0;
-    twopass->bpm_factor =
-        VPXMAX(0.25, VPXMIN(4.0, twopass->bpm_factor));
 
     // Try and pick a max Q that will be high enough to encode the
     // content at the given rate.
@@ -2176,6 +2175,10 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
                                   vbr_group_bits_per_frame);
     twopass->active_worst_quality =
         (tmp_q + (twopass->active_worst_quality * 3)) >> 2;
+
+    // Reset rolling actual and target bits counters for ARF groups.
+    twopass->rolling_arf_group_target_bits = 0;
+    twopass->rolling_arf_group_actual_bits = 0;
   }
 
   // Calculate the extra bits to be used for boosted frame(s)
@@ -2217,9 +2220,6 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     cpi->rc.next_frame_size_selector = UNSCALED;
   }
 
-  // Reset rolling actual and target bits counters for ARF groups.
-  twopass->rolling_arf_group_target_bits = 0;
-  twopass->rolling_arf_group_actual_bits = 0;
 }
 
 // Threshold for use of the lagging second reference frame. High second ref
