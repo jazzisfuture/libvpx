@@ -3700,17 +3700,15 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     // Dummy pack of the bitstream using up to date stats to get an
     // accurate estimate of output frame size to determine if we need
     // to recode.
-    if (cpi->sf.recode_loop >= ALLOW_RECODE_KFARFGF) {
-      save_coding_context(cpi);
-      if (!cpi->sf.use_nonrd_pick_mode)
-        vp9_pack_bitstream(cpi, dest, size);
+    save_coding_context(cpi);
+    if (!cpi->sf.use_nonrd_pick_mode)
+      vp9_pack_bitstream(cpi, dest, size);
 
-      rc->projected_frame_size = (int)(*size) << 3;
-      restore_coding_context(cpi);
+    rc->projected_frame_size = (int)(*size) << 3;
+    restore_coding_context(cpi);
 
-      if (frame_over_shoot_limit == 0)
-        frame_over_shoot_limit = 1;
-    }
+    if (frame_over_shoot_limit == 0)
+      frame_over_shoot_limit = 1;
 
     if (cpi->oxcf.rc_mode == VPX_Q) {
       loop = 0;
