@@ -40,19 +40,18 @@ void vp9_noise_estimate_init(NOISE_ESTIMATE *const ne, int width, int height) {
 static int enable_noise_estimation(VP9_COMP *const cpi) {
 // Enable noise estimation if denoising is on, but not for low resolutions.
 #if CONFIG_VP9_TEMPORAL_DENOISING
-  if (cpi->oxcf.noise_sensitivity > 0 && cpi->common.width >= 640 &&
-      cpi->common.height >= 360)
+  if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
+      cpi->common.width >= 640 && cpi->common.height >= 360)
     return 1;
 #endif
   // Only allow noise estimate under certain encoding mode.
   // Enabled for 1 pass CBR, speed >=5, and if resolution is same as original.
-  // Not enabled for SVC mode and screen_content_mode.
-  // Not enabled for low resolutions.
+  // Not enabled for screen_content_mode and for low resolutions.
   if (cpi->oxcf.pass == 0 && cpi->oxcf.rc_mode == VPX_CBR &&
       cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi->oxcf.speed >= 5 &&
-      cpi->resize_state == ORIG && cpi->resize_pending == 0 && !cpi->use_svc &&
-      cpi->oxcf.content != VP9E_CONTENT_SCREEN && cpi->common.width >= 640 &&
-      cpi->common.height >= 360)
+      cpi->resize_state == ORIG && cpi->resize_pending == 0 &&
+      denoise_svc(cpi) && cpi->oxcf.content != VP9E_CONTENT_SCREEN &&
+      cpi->common.width >= 640 && cpi->common.height >= 360)
     return 1;
   else
     return 0;
@@ -101,17 +100,20 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
   unsigned int thresh_sum_spatial = (200 * 200) << 8;
   unsigned int thresh_spatial_var = (32 * 32) << 8;
   int min_blocks_estimate = cm->mi_rows * cm->mi_cols >> 7;
+  int frame_counter = cm->current_video_frame;
   // Estimate is between current source and last source.
   YV12_BUFFER_CONFIG *last_source = cpi->Last_Source;
 #if CONFIG_VP9_TEMPORAL_DENOISING
-  if (cpi->oxcf.noise_sensitivity > 0) last_source = &cpi->denoiser.last_source;
+  if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi))
+    last_source = &cpi->denoiser.last_source;
 #endif
   ne->enabled = enable_noise_estimation(cpi);
-  if (!ne->enabled || cm->current_video_frame % frame_period != 0 ||
-      last_source == NULL || ne->last_w != cm->width ||
-      ne->last_h != cm->height) {
+  if (cpi->use_svc) frame_counter = cpi->svc.current_superframe;
+  if (!ne->enabled || frame_counter % frame_period != 0 ||
+      last_source == NULL || (!cpi->use_svc && (ne->last_w != cm->width ||
+                                                ne->last_h != cm->height))) {
 #if CONFIG_VP9_TEMPORAL_DENOISING
-    if (cpi->oxcf.noise_sensitivity > 0)
+    if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi))
       copy_frame(&cpi->denoiser.last_source, cpi->Source);
 #endif
     if (last_source != NULL) {
@@ -123,7 +125,7 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
     // Force noise estimation to 0 and denoiser off if content has high motion.
     ne->level = kLowLow;
 #if CONFIG_VP9_TEMPORAL_DENOISING
-    if (cpi->oxcf.noise_sensitivity > 0)
+    if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi))
       vp9_denoiser_set_noise_level(&cpi->denoiser, ne->level);
 #endif
     return;
@@ -232,14 +234,14 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
         ne->count = 0;
         ne->level = vp9_noise_estimate_extract_level(ne);
 #if CONFIG_VP9_TEMPORAL_DENOISING
-        if (cpi->oxcf.noise_sensitivity > 0)
+        if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi))
           vp9_denoiser_set_noise_level(&cpi->denoiser, ne->level);
 #endif
       }
     }
   }
 #if CONFIG_VP9_TEMPORAL_DENOISING
-  if (cpi->oxcf.noise_sensitivity > 0)
+  if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi))
     copy_frame(&cpi->denoiser.last_source, cpi->Source);
 #endif
 }
