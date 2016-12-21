@@ -26,10 +26,14 @@
 /* MSVS uses _f{seek,tell}i64. */
 #define fseeko _fseeki64
 #define ftello _ftelli64
+typedef int64_t FileOffset;
 #elif defined(_WIN32)
 /* MinGW uses f{seek,tell}o64 for large files. */
 #define fseeko fseeko64
 #define ftello ftello64
+typedef off64_t FileOffset;
+#else
+typedef off_t FileOffset;
 #endif /* _WIN32 */
 
 #if CONFIG_OS_SUPPORT
