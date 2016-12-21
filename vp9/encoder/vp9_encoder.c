@@ -2537,6 +2537,8 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   }
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0 &&
+      (!cpi->use_svc || (cpi->use_svc &&
+       cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1)) &&
       cpi->denoiser.denoising_level > kDenLowLow) {
     vp9_denoiser_update_frame_info(
         &cpi->denoiser, *cpi->Source, cpi->common.frame_type,
