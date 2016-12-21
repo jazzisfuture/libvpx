@@ -1684,9 +1684,9 @@ static void get_cx_data(struct stream_state *stream,
 
             if (!(pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT)) {
               const int64_t currpos = ftello(stream->file);
-              fseeko(stream->file, ivf_header_pos, SEEK_SET);
+              fseeko(stream->file, (fileoffset_t)ivf_header_pos, SEEK_SET);
               ivf_write_frame_size(stream->file, fsize);
-              fseeko(stream->file, currpos, SEEK_SET);
+              fseeko(stream->file, (fileoffset_t)currpos, SEEK_SET);
             }
           }
 
