@@ -1700,6 +1700,9 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     tmp_mv.col >>= 3;
     tmp_mv.row >>= 3;
 
+    clamp_mv(&tmp_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min,
+             x->mv_row_max);
+
     // Small-range full-pixel motion search.
     bestsme = vp9_refining_search_8p_c(x, &tmp_mv, sadpb,
                                        search_range,
