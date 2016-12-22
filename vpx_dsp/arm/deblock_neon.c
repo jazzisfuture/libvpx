@@ -15,6 +15,8 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/arm/transpose_neon.h"
 
+extern const int16_t vpx_rv[];
+
 static uint8x8_t average_k_out(const uint8x8_t a2, const uint8x8_t a1,
                                const uint8x8_t v0, const uint8x8_t b1,
                                const uint8x8_t b2) {
@@ -391,5 +393,115 @@ void vpx_mbpost_proc_across_ip_neon(uint8_t *src, int pitch, int rows, int cols,
     }
 
     src += pitch;
+  }
+}
+
+// Apply filter of (vpx_rv + sum + s[c]) >> 4.
+static uint8x8_t filter_pixels_rv(const int32x4_t sum_l, const int32x4_t sum_r,
+                                  const uint8x8_t s, const int16x8_t rv) {
+  // Expand s to s16 and add to sum, expanding further to s32.
+  const int16x8_t s16 = vreinterpretq_s16_u16(vmovl_u8(s));
+  const int32x4_t sum_s_l = vaddw_s16(sum_l, vget_low_s16(s16));
+  const int32x4_t sum_s_r = vaddw_s16(sum_r, vget_high_s16(s16));
+
+  // Add rounding value from vpx_rv.
+  const int32x4_t rounded_l = vaddw_s16(sum_s_l, vget_low_s16(rv));
+  const int32x4_t rounded_r = vaddw_s16(sum_s_r, vget_high_s16(rv));
+  // Shift, narrow, saturate to unsigned, and narrow again.
+  return vqmovn_u16(
+      vcombine_u16(vqshrun_n_s32(rounded_l, 4), vqshrun_n_s32(rounded_r, 4)));
+}
+
+void vpx_mbpost_proc_down_neon(uint8_t *dst, int pitch, int rows, int cols,
+                               int flimit) {
+  int row, col, i;
+  const int32x4_t f = vdupq_n_s32(flimit);
+
+  // 8 columns are processed at a time.
+  // If rows is less than 8 the bottom border extension fails.
+  assert(cols % 8 == 0);
+  assert(rows >= 8);
+
+  // Load and keep the first 8 values in memory. Process a vertical stripe that
+  // is 8 wide.
+  for (col = 0; col < cols; col += 8) {
+    uint8x8_t above_context_0, above_context_1, above_context_2,
+        above_context_3, above_context_4, above_context_5, above_context_6,
+        above_context_7, s;
+    int32x4_t sum_l, sum_r, sumsq_l, sumsq_r;
+    int32x4_t sum_l_tmp, sum_r_tmp;
+    int16x8_t sum_tmp;
+
+    s = vld1_u8(dst);
+    above_context_0 = above_context_1 = above_context_2 = above_context_3 =
+        above_context_4 = above_context_5 = above_context_6 = above_context_7 =
+            s;
+
+    sum_tmp = vreinterpretq_s16_u16(vmovl_u8(s));
+    sum_l_tmp = vmovl_s16(vget_low_s16(sum_tmp));
+    sum_r_tmp = vmovl_s16(vget_high_s16(sum_tmp));
+
+    // sum * 9
+    sum_l = vmulq_n_s32(sum_l_tmp, 9);
+    sum_r = vmulq_n_s32(sum_r_tmp, 9);
+
+    // (sum * 9) * sum == sum * sum * 9
+    sumsq_l = vmulq_s32(sum_l, sum_l_tmp);
+    sumsq_r = vmulq_s32(sum_r, sum_r_tmp);
+
+    // Load and discard the next 6 values to prime sum and sumsq.
+    for (i = 1; i <= 6; ++i) {
+      const uint8x8_t a = vld1_u8(dst + i * pitch);
+      const int16x8_t b = vreinterpretq_s16_u16(vmovl_u8(a));
+      sum_l = vaddw_s16(sum_l, vget_low_s16(b));
+      sum_r = vaddw_s16(sum_r, vget_high_s16(b));
+
+      sumsq_l = vmlal_s16(sumsq_l, vget_low_s16(b), vget_low_s16(b));
+      sumsq_r = vmlal_s16(sumsq_r, vget_high_s16(b), vget_high_s16(b));
+    }
+
+    for (row = 0; row < rows; ++row) {
+      uint8x8_t below_context, mask, output;
+      int16x8_t x, y;
+      int32x4_t xy_l, xy_r;
+
+      s = vld1_u8(dst + row * pitch);
+
+      // Extend the bottom border.
+      if (row + 7 < rows) {
+        below_context = vld1_u8(dst + (row + 7) * pitch);
+      }
+
+      x = vreinterpretq_s16_u16(vsubl_u8(below_context, above_context_0));
+      y = vreinterpretq_s16_u16(vaddl_u8(below_context, above_context_0));
+      xy_l = vmull_s16(vget_low_s16(x), vget_low_s16(y));
+      xy_r = vmull_s16(vget_high_s16(x), vget_high_s16(y));
+
+      sum_l = vaddw_s16(sum_l, vget_low_s16(x));
+      sum_r = vaddw_s16(sum_r, vget_high_s16(x));
+
+      sumsq_l = vaddq_s32(sumsq_l, xy_l);
+      sumsq_r = vaddq_s32(sumsq_r, xy_r);
+
+      mask = calculate_filter_mask(sum_l, sum_r, sumsq_l, sumsq_r, f);
+
+      output = filter_pixels_rv(sum_l, sum_r, s,
+                                vld1q_s16(vpx_rv + (row & 127) + (col & 7)));
+
+      output = vbsl_u8(mask, output, s);
+
+      vst1_u8(dst + row * pitch, output);
+
+      above_context_0 = above_context_1;
+      above_context_1 = above_context_2;
+      above_context_2 = above_context_3;
+      above_context_3 = above_context_4;
+      above_context_4 = above_context_5;
+      above_context_5 = above_context_6;
+      above_context_6 = above_context_7;
+      above_context_7 = s;
+    }
+
+    dst += 8;
   }
 }
