@@ -824,9 +824,10 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
     }
   }
 
-  vp9_predict_intra_block(xd, bwl, tx_size, mode, x->skip_encode ? src : dst,
-                          x->skip_encode ? src_stride : dst_stride,
-                          dst, dst_stride, i, j, plane);
+  vp9_predict_intra_block(xd, bwl, tx_size, mode,
+                          (x->skip_encode || x->fp_src_pred) ? src : dst,
+                          x->skip_encode ? src_stride : dst_stride, dst,
+                          dst_stride, i, j, plane);
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
