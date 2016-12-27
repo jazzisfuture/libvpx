@@ -841,7 +841,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                       qcoeff, dqcoeff, pd->dequant, eob,
                                       scan_order->scan, scan_order->iscan);
         }
-        if (!x->skip_encode && *eob) {
+        if ((!x->skip_encode || x->src_pred_recon) && *eob) {
           vp9_highbd_idct32x32_add(dqcoeff, dst, dst_stride, *eob, xd->bd);
         }
         break;
@@ -858,7 +858,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                 pd->dequant, eob,
                                 scan_order->scan, scan_order->iscan);
         }
-        if (!x->skip_encode && *eob) {
+        if ((!x->skip_encode || x->src_pred_recon) && *eob) {
           vp9_highbd_iht16x16_add(tx_type, dqcoeff, dst, dst_stride,
                                   *eob, xd->bd);
         }
@@ -876,7 +876,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                 pd->dequant, eob,
                                 scan_order->scan, scan_order->iscan);
         }
-        if (!x->skip_encode && *eob) {
+        if ((!x->skip_encode || x->src_pred_recon) && *eob) {
           vp9_highbd_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob,
                                 xd->bd);
         }
@@ -895,7 +895,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                 scan_order->scan, scan_order->iscan);
         }
 
-        if (!x->skip_encode && *eob) {
+        if ((!x->skip_encode || x->src_pred_recon) && *eob) {
           if (tx_type == DCT_DCT) {
             // this is like vp9_short_idct4x4 but has a special case around
             // eob<=1 which is significant (not just an optimization) for the
@@ -930,7 +930,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (args->ctx != NULL && !x->skip_recode) {
        *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
-      if (!x->skip_encode && *eob)
+      if ((!x->skip_encode || x->src_pred_recon) && *eob)
         vp9_idct32x32_add(dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_16X16:
@@ -946,7 +946,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
-      if (!x->skip_encode && *eob)
+      if ((!x->skip_encode || x->src_pred_recon) && *eob)
         vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_8X8:
@@ -962,7 +962,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
-      if (!x->skip_encode && *eob)
+      if ((!x->skip_encode || x->src_pred_recon) && *eob)
         vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_4X4:
@@ -981,7 +981,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (args->ctx != NULL && !x->skip_recode) {
         *a = *l = optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
-      if (!x->skip_encode && *eob) {
+      if ((!x->skip_encode || x->src_pred_recon) && *eob) {
         if (tx_type == DCT_DCT)
           // this is like vp9_short_idct4x4 but has a special case around eob<=1
           // which is significant (not just an optimization) for the lossless

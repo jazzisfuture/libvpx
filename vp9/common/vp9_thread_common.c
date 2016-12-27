@@ -433,3 +433,116 @@ void vp9_accumulate_frame_counts(FRAME_COUNTS *accum,
       comps->fp[i] += comps_t->fp[i];
   }
 }
+
+// Allocate memory for wpp row synchronization
+void vp9_wpp_sync_mem_alloc(VP9WPPSync *wpp_sync, VP9_COMMON *cm, int rows,
+                            int num_workers) {
+  wpp_sync->rows = rows;
+#if CONFIG_MULTITHREAD
+  {
+    int i;
+
+    CHECK_MEM_ERROR(cm, wpp_sync->mutex_,
+                    vpx_malloc(sizeof(*wpp_sync->mutex_) * rows));
+    if (wpp_sync->mutex_) {
+      for (i = 0; i < rows; ++i) {
+        pthread_mutex_init(&wpp_sync->mutex_[i], NULL);
+      }
+    }
+
+    CHECK_MEM_ERROR(cm, wpp_sync->cond_,
+                    vpx_malloc(sizeof(*wpp_sync->cond_) * rows));
+    if (wpp_sync->cond_) {
+      for (i = 0; i < rows; ++i) {
+        pthread_cond_init(&wpp_sync->cond_[i], NULL);
+      }
+    }
+  }
+#endif  // CONFIG_MULTITHREAD
+
+  wpp_sync->num_workers = num_workers;
+
+  CHECK_MEM_ERROR(cm, wpp_sync->cur_col,
+                  vpx_malloc(sizeof(*wpp_sync->cur_col) * rows));
+
+  // Set up nsync.
+  wpp_sync->sync_range = 1;
+}
+
+// Allocate memory for top row synchronization
+void vp9_top_row_sync_mem_alloc(VP9TopRowSync *top_row_sync, VP9_COMMON *cm,
+                                int rows) {
+  top_row_sync->rows = rows;
+#if CONFIG_MULTITHREAD
+  {
+    int i;
+
+    CHECK_MEM_ERROR(cm, top_row_sync->mutex_,
+                    vpx_malloc(sizeof(*top_row_sync->mutex_)));
+    if (top_row_sync->mutex_) {
+      pthread_mutex_init(top_row_sync->mutex_, NULL);
+    }
+
+    CHECK_MEM_ERROR(cm, top_row_sync->cond_,
+                    vpx_malloc(sizeof(*top_row_sync->cond_) * rows));
+    if (top_row_sync->cond_) {
+      for (i = 0; i < rows; ++i) {
+        pthread_cond_init(&top_row_sync->cond_[i], NULL);
+      }
+    }
+  }
+#endif  // CONFIG_MULTITHREAD
+
+  CHECK_MEM_ERROR(cm, top_row_sync->cur_mb_row,
+                  vpx_malloc(sizeof(*top_row_sync->cur_mb_row)));
+}
+
+// Deallocate wpp synchronization related mutex and data
+void vp9_wpp_sync_mem_dealloc(VP9WPPSync *wpp_sync) {
+  if (wpp_sync != NULL) {
+#if CONFIG_MULTITHREAD
+    int i;
+
+    if (wpp_sync->mutex_ != NULL) {
+      for (i = 0; i < wpp_sync->rows; ++i) {
+        pthread_mutex_destroy(&wpp_sync->mutex_[i]);
+      }
+      vpx_free(wpp_sync->mutex_);
+    }
+    if (wpp_sync->cond_ != NULL) {
+      for (i = 0; i < wpp_sync->rows; ++i) {
+        pthread_cond_destroy(&wpp_sync->cond_[i]);
+      }
+      vpx_free(wpp_sync->cond_);
+    }
+#endif  // CONFIG_MULTITHREAD
+    vpx_free(wpp_sync->cur_col);
+    // clear the structure as the source of this call may be a resize in which
+    // case this call will be followed by an _alloc() which may fail.
+    vp9_zero(*wpp_sync);
+  }
+}
+
+// Deallocate top row synchronization related mutex and data
+void vp9_top_row_sync_mem_dealloc(VP9TopRowSync *top_row_sync) {
+  if (top_row_sync != NULL) {
+#if CONFIG_MULTITHREAD
+    int i;
+
+    if (top_row_sync->mutex_ != NULL) {
+      pthread_mutex_destroy(top_row_sync->mutex_);
+      vpx_free(top_row_sync->mutex_);
+    }
+    if (top_row_sync->cond_ != NULL) {
+      for (i = 0; i < top_row_sync->rows; ++i) {
+        pthread_cond_destroy(&top_row_sync->cond_[i]);
+      }
+      vpx_free(top_row_sync->cond_);
+    }
+#endif  // CONFIG_MULTITHREAD
+    vpx_free(top_row_sync->cur_mb_row);
+    // clear the structure as the source of this call may be a resize in which
+    // case this call will be followed by an _alloc() which may fail.
+    vp9_zero(*top_row_sync);
+  }
+}

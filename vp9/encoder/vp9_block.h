@@ -125,6 +125,8 @@ struct macroblock {
   int use_lp32x32fdct;
   int skip_encode;
 
+  int src_pred_recon;
+
   // use fast quantization process
   int quant_fp;
 
