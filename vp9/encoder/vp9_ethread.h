@@ -22,9 +22,23 @@ typedef struct EncWorkerData {
   struct VP9_COMP *cpi;
   struct ThreadData *td;
   int start;
+  int thread_id;
 } EncWorkerData;
 
 void vp9_encode_tiles_mt(struct VP9_COMP *cpi);
+
+void vp9_encode_fp_tiles_row_mt(struct VP9_COMP *cpi);
+
+void vp9_row_mt_sync_read(VP9RowMTSync *const row_mt_sync, int r, int c);
+void vp9_row_mt_sync_write(VP9RowMTSync *const row_mt_sync, int r, int c,
+                           const int cols);
+
+void vp9_row_mt_sync_read_dummy(VP9RowMTSync *const row_mt_sync, int r, int c);
+void vp9_row_mt_sync_write_dummy(VP9RowMTSync *const row_mt_sync, int r, int c,
+                                 const int cols);
+
+void vp9_top_row_sync_read(VP9TopRowSync *const top_row_sync, int r);
+void vp9_top_row_sync_write(VP9TopRowSync *const top_row_sync, int r);
 
 #ifdef __cplusplus
 }  // extern "C"

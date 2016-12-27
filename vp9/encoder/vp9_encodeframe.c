@@ -42,6 +42,7 @@
 #include "vp9/encoder/vp9_encodemv.h"
 #include "vp9/encoder/vp9_ethread.h"
 #include "vp9/encoder/vp9_extend.h"
+#include "vp9/encoder/vp9_multi_thread.h"
 #include "vp9/encoder/vp9_pickmode.h"
 #include "vp9/encoder/vp9_rd.h"
 #include "vp9/encoder/vp9_rdopt.h"
@@ -4006,8 +4007,11 @@ void vp9_init_tile_data(VP9_COMP *cpi) {
   int tile_tok = 0;
 
   if (cpi->tile_data == NULL || cpi->allocated_tiles < tile_cols * tile_rows) {
-    if (cpi->tile_data != NULL)
+    if (cpi->tile_data != NULL) {
+      if (cpi->new_mt)
+        vp9_row_mt_mem_dealloc(cpi);
       vpx_free(cpi->tile_data);
+    }
     CHECK_MEM_ERROR(cm, cpi->tile_data,
         vpx_malloc(tile_cols * tile_rows * sizeof(*cpi->tile_data)));
     cpi->allocated_tiles = tile_cols * tile_rows;
@@ -4037,6 +4041,12 @@ void vp9_init_tile_data(VP9_COMP *cpi) {
       tile_tok = allocated_tokens(*tile_info);
     }
   }
+
+  if (cpi->new_mt &&
+      cpi->multi_thread_ctxt.max_num_tile_cols *
+              cpi->multi_thread_ctxt.max_num_tile_rows <
+          tile_cols * tile_rows)
+    vp9_row_mt_mem_alloc(cpi);
 }
 
 void vp9_encode_tile(VP9_COMP *cpi, ThreadData *td,

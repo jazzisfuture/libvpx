@@ -48,6 +48,7 @@
 #include "vp9/encoder/vp9_ethread.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mbgraph.h"
+#include "vp9/encoder/vp9_multi_thread.h"
 #include "vp9/encoder/vp9_noise_estimate.h"
 #include "vp9/encoder/vp9_picklpf.h"
 #include "vp9/encoder/vp9_ratectrl.h"
@@ -1647,6 +1648,13 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_set_var_fns(cpi);
 #endif
+
+  // Enable multi-threading for first pass.
+  cpi->new_mt = 0;
+  if (((cpi->oxcf.mode == GOOD || cpi->oxcf.mode == BEST) &&
+       cpi->oxcf.speed < 5 && cpi->oxcf.pass == 1) &&
+      cpi->oxcf.new_mt)
+    cpi->new_mt = 1;
 }
 
 #ifndef M_LOG2_E
@@ -1799,6 +1807,12 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   } else {
     cpi->twopass.frame_mb_stats_buf = NULL;
   }
+#endif
+
+#if ENABLE_MT_BIT_MATCH
+  CHECK_MEM_ERROR(
+      cm, cpi->twopass.fp_mb_float_stats,
+      vpx_calloc(cm->MBs * sizeof(*cpi->twopass.fp_mb_float_stats), 1));
 #endif
 
   cpi->refresh_alt_ref_frame = 0;
@@ -2163,6 +2177,8 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 #if CONFIG_VP9_TEMPORAL_DENOISING
   vp9_denoiser_free(&(cpi->denoiser));
 #endif
+  if (cpi->new_mt)
+    vp9_row_mt_mem_dealloc(cpi);
 
   for (t = 0; t < cpi->num_workers; ++t) {
     VPxWorker *const worker = &cpi->workers[t];
@@ -2196,6 +2212,11 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
     vpx_free(cpi->twopass.frame_mb_stats_buf);
     cpi->twopass.frame_mb_stats_buf = NULL;
   }
+#endif
+
+#if ENABLE_MT_BIT_MATCH
+  vpx_free(cpi->twopass.fp_mb_float_stats);
+  cpi->twopass.fp_mb_float_stats = NULL;
 #endif
 
   vp9_remove_common(cm);
@@ -4815,6 +4836,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->scaled_ref_idx[i] = INVALID_IDX;
   }
 
+  cpi->td.mb.src_pred_recon = 0;
   if (oxcf->pass == 1 &&
       (!cpi->use_svc || is_two_pass_svc(cpi))) {
     const int lossless = is_lossless_requested(oxcf);
