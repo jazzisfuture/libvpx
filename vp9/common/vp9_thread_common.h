@@ -39,6 +39,26 @@ typedef struct VP9LfSyncData {
   int num_workers;
 } VP9LfSync;
 
+// Encoder row synchronization
+typedef struct VP9RowMTSyncData {
+  pthread_mutex_t *mutex_;
+  pthread_cond_t *cond_;
+  // Allocate memory to store the sb/mb block index in each row.
+  int *cur_col;
+  int sync_range;
+  int rows;
+  int num_workers;
+} VP9RowMTSync;
+
+typedef struct VP9TopRowSyncData {
+  pthread_mutex_t *mutex_;
+  pthread_cond_t *cond_;
+  // Allocate memory to store the completed row in the
+  // first pass stats accumulation
+  int *cur_mb_row;
+  int rows;
+} VP9TopRowSync;
+
 // Allocate memory for loopfilter row synchronization.
 void vp9_loop_filter_alloc(VP9LfSync *lf_sync, struct VP9Common *cm, int rows,
                            int width, int num_workers);
@@ -57,6 +77,22 @@ void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame,
 
 void vp9_accumulate_frame_counts(struct FRAME_COUNTS *accum,
                                  const struct FRAME_COUNTS *counts, int is_dec);
+
+// Allocate memory for row based multi-threading synchronization.
+void vp9_row_mt_sync_mem_alloc(VP9RowMTSync *row_mt_sync, struct VP9Common *cm,
+                               int rows, int num_workers);
+
+// Allocate memory for top row synchronization in first pass stats accumulation.
+// This is done to maintain the order of addition of floating point variables,
+// thereby generating identical first pass stats file in multithreaded case.
+void vp9_top_row_sync_mem_alloc(VP9TopRowSync *top_row_sync,
+                                struct VP9Common *cm, int rows);
+
+// Deallocate row based multi-threading synchronization related mutex and data.
+void vp9_row_mt_sync_mem_dealloc(VP9RowMTSync *row_mt_sync);
+
+// Deallocate top row synchronization related mutex and data.
+void vp9_top_row_sync_mem_dealloc(VP9TopRowSync *top_row_sync);
 
 #ifdef __cplusplus
 }  // extern "C"

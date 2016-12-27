@@ -39,6 +39,40 @@ typedef struct {
 } FIRSTPASS_MB_STATS;
 #endif
 
+#define INVALID_ROW -1
+
+#define ENABLE_MT_BIT_MATCH 0
+#if ENABLE_MT_BIT_MATCH
+typedef struct {
+  double frame_mb_intra_factor;
+  double frame_mb_brightness_factor;
+  double frame_mb_neutral_count;
+} FP_MB_FLOAT_STATS;
+#endif
+
+typedef struct {
+  double intra_factor;
+  double brightness_factor;
+  int64_t coded_error;
+  int64_t sr_coded_error;
+  int64_t intra_error;
+  int intercount;
+  int second_ref_count;
+  double neutral_count;
+  int intra_skip_count;
+  int image_data_start_row;
+  int mvcount;
+  int sum_mvr;
+  int sum_mvr_abs;
+  int sum_mvc;
+  int sum_mvc_abs;
+  int64_t sum_mvrs;
+  int64_t sum_mvcs;
+  int sum_in_vectors;
+  int new_mv_count;
+  int intra_smooth_count;
+} FIRSTPASS_DATA;
+
 typedef struct {
   double frame;
   double weight;
@@ -60,7 +94,9 @@ typedef struct {
   double MVrv;
   double MVcv;
   double mv_in_out_count;
+#if !ENABLE_MT_BIT_MATCH
   double new_mv_count;
+#endif
   double duration;
   double count;
   int64_t spatial_layer_id;
@@ -113,6 +149,11 @@ typedef struct {
   uint8_t *this_frame_mb_stats;
   FIRSTPASS_MB_STATS firstpass_mb_stats;
 #endif
+
+#if ENABLE_MT_BIT_MATCH
+  FP_MB_FLOAT_STATS *fp_mb_float_stats;
+#endif
+
   // An indication of the content type of the current frame
   FRAME_CONTENT_TYPE fr_content_type;
 
@@ -139,11 +180,19 @@ typedef struct {
 } TWO_PASS;
 
 struct VP9_COMP;
+struct ThreadData;
+struct TileDataEnc;
 
 void vp9_init_first_pass(struct VP9_COMP *cpi);
 void vp9_rc_get_first_pass_params(struct VP9_COMP *cpi);
 void vp9_first_pass(struct VP9_COMP *cpi, const struct lookahead_entry *source);
 void vp9_end_first_pass(struct VP9_COMP *cpi);
+
+void vp9_first_pass_encode_tile_mb_row(struct VP9_COMP *cpi,
+                                       struct ThreadData *td,
+                                       FIRSTPASS_DATA *fp_acc_data,
+                                       struct TileDataEnc *tile_data,
+                                       MV *lastmv, MV *best_ref_mv, int mb_row);
 
 void vp9_init_second_pass(struct VP9_COMP *cpi);
 void vp9_rc_get_second_pass_params(struct VP9_COMP *cpi);

@@ -449,6 +449,9 @@ static const arg_def_t target_level = ARG_DEF(
     NULL, "target-level", 1,
     "Target level (255: off (default); 0: only keep level stats; 10: level 1.0;"
     " 11: level 1.1; ... 62: level 6.2)");
+
+static const arg_def_t new_mt =
+    ARG_DEF(NULL, "new_mt", 1, "Enable row based multi-threading");
 #endif
 
 #if CONFIG_VP9_ENCODER
@@ -459,7 +462,7 @@ static const arg_def_t *vp9_args[] = {
   &gf_cbr_boost_pct, &lossless,
   &frame_parallel_decoding, &aq_mode, &frame_periodic_boost,
   &noise_sens, &tune_content, &input_color_space,
-  &min_gf_interval, &max_gf_interval, &target_level,
+  &min_gf_interval, &max_gf_interval, &target_level, &new_mt,
 #if CONFIG_VP9_HIGHBITDEPTH
   &bitdeptharg, &inbitdeptharg,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -476,6 +479,7 @@ static const int vp9_arg_ctrl_map[] = {
   VP9E_SET_FRAME_PERIODIC_BOOST, VP9E_SET_NOISE_SENSITIVITY,
   VP9E_SET_TUNE_CONTENT, VP9E_SET_COLOR_SPACE,
   VP9E_SET_MIN_GF_INTERVAL, VP9E_SET_MAX_GF_INTERVAL, VP9E_SET_TARGET_LEVEL,
+  VP9E_SET_NEW_MT,
   0
 };
 #endif

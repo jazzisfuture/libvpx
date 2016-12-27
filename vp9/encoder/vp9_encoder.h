@@ -33,6 +33,7 @@
 #include "vp9/encoder/vp9_context_tree.h"
 #include "vp9/encoder/vp9_encodemb.h"
 #include "vp9/encoder/vp9_firstpass.h"
+#include "vp9/encoder/vp9_job_queue.h"
 #include "vp9/encoder/vp9_lookahead.h"
 #include "vp9/encoder/vp9_mbgraph.h"
 #include "vp9/encoder/vp9_mcomp.h"
@@ -54,6 +55,10 @@ extern "C" {
 
 // vp9 uses 10,000,000 ticks/second as time stamp
 #define TICKS_PER_SEC 10000000
+
+#define MAX_NUM_TILE_COLS (1 << 6)
+#define MAX_NUM_TILE_ROWS 4
+#define MAX_NUM_THREADS 80
 
 typedef struct {
   int nmvjointcost[MV_JOINTS];
@@ -250,6 +255,8 @@ typedef struct VP9EncoderConfig {
   int render_width;
   int render_height;
   VP9E_TEMPORAL_LAYERING_MODE temporal_layering_mode;
+
+  int new_mt;
 } VP9EncoderConfig;
 
 static INLINE int is_lossless_requested(const VP9EncoderConfig *cfg) {
@@ -261,7 +268,47 @@ typedef struct TileDataEnc {
   TileInfo tile_info;
   int thresh_freq_fact[BLOCK_SIZES][MAX_MODES];
   int mode_map[BLOCK_SIZES][MAX_MODES];
+  MV tile_start_lastmv;
+  MV tile_start_best_ref_mv;
+  FIRSTPASS_DATA fp_data;
+  VP9RowMTSync row_mt_sync;
+  VP9TopRowSync fp_top_row_sync;
 } TileDataEnc;
+
+typedef struct TileRowMTInfo {
+  JobQueueHandle job_que_enc_hdl;
+  JobQueueHandle job_que_arnr_hdl;
+  pthread_mutex_t tile_job_mutex;
+  pthread_mutex_t arnr_job_mutex;
+  int num_sb_rows;
+  int num_mb_rows;
+  job_queue_t *job_tile;
+} TileRowMTInfo;
+
+typedef struct MultiThreadHandle {
+  int num_row_mt_workers;
+  int max_num_tile_rows;
+  int max_num_tile_cols;
+
+  // Frame level params
+  int num_sb_cols;
+  int num_sb_rows;
+
+  int num_tile_vert_units[MAX_NUM_TILE_ROWS];
+
+  int num_mb_cols;
+  int num_mb_rows;
+
+  // Job Queues structure and handles
+  job_queue_t *enc_job_queue;
+  job_queue_t *arnr_job_queue;
+
+  int num_enc_jobs;
+  int num_arnr_jobs;
+
+  TileRowMTInfo tile_row_mt_info[MAX_NUM_TILE_COLS];
+  int thread_id_to_tile_id[MAX_NUM_THREADS];  // Mapping of threads to tiles
+} MultiThreadHandle;
 
 typedef struct RD_COUNTS {
   vp9_coeff_count coef_counts[TX_SIZES][PLANE_TYPES];
@@ -588,6 +635,10 @@ typedef struct VP9_COMP {
 
   int keep_level_stats;
   Vp9LevelInfo level_info;
+  MultiThreadHandle multi_thread_ctxt;
+  void (*row_mt_sync_read_ptr)(VP9RowMTSync *const, int, int);
+  void (*row_mt_sync_write_ptr)(VP9RowMTSync *const, int, int, const int);
+  int new_mt;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
@@ -741,6 +792,18 @@ static INLINE int get_chessboard_index(const int frame_index) {
 
 static INLINE int *cond_cost_list(const struct VP9_COMP *cpi, int *cost_list) {
   return cpi->sf.mv.subpel_search_method != SUBPEL_TREE ? cost_list : NULL;
+}
+
+static INLINE int get_num_vert_units(TileInfo tile, int shift) {
+  int num_vert_units =
+      (tile.mi_row_end - tile.mi_row_start + (1 << shift) - 1) >> shift;
+  return num_vert_units;
+}
+
+static INLINE int get_num_cols(TileInfo tile, int shift) {
+  int num_cols =
+      (tile.mi_col_end - tile.mi_col_start + (1 << shift) - 1) >> shift;
+  return num_cols;
 }
 
 VP9_LEVEL vp9_get_level(const Vp9LevelSpec *const level_spec);
