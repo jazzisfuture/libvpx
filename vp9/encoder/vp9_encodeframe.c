@@ -4006,8 +4006,8 @@ void vp9_init_tile_data(VP9_COMP *cpi) {
   int tile_tok = 0;
 
   if (cpi->tile_data == NULL || cpi->allocated_tiles < tile_cols * tile_rows) {
-    if (cpi->tile_data != NULL)
-      vpx_free(cpi->tile_data);
+    if (cpi->tile_data != NULL) vpx_free(cpi->tile_data);
+
     CHECK_MEM_ERROR(cm, cpi->tile_data,
         vpx_malloc(tile_cols * tile_rows * sizeof(*cpi->tile_data)));
     cpi->allocated_tiles = tile_cols * tile_rows;
