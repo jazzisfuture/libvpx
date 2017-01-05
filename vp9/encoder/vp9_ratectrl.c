@@ -93,10 +93,17 @@ static int inter_minq_12[QINDEX_RANGE];
 static int rtc_minq_12[QINDEX_RANGE];
 #endif
 
+#ifdef AGRESSIVE_VBR
+static int gf_high = 2400;
+static int gf_low = 400;
+static int kf_high = 4000;
+static int kf_low = 400;
+#else
 static int gf_high = 2000;
 static int gf_low = 400;
 static int kf_high = 5000;
 static int kf_low = 400;
+#endif
 
 // Functions to compute the active minq lookup table entries based on a
 // formulaic approach to facilitate easier adjustment of the Q tables.
@@ -126,9 +133,14 @@ static void init_minq_luts(int *kf_low_m, int *kf_high_m, int *arfgf_low,
     const double maxq = vp9_convert_qindex_to_q(i, bit_depth);
     kf_low_m[i] = get_minq_index(maxq, 0.000001, -0.0004, 0.150, bit_depth);
     kf_high_m[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.55, bit_depth);
+#ifdef AGRESSIVE_VBR
+    arfgf_low[i] = get_minq_index(maxq, 0.0000015, -0.0009, 0.275, bit_depth);
+    inter[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.80, bit_depth);
+#else
     arfgf_low[i] = get_minq_index(maxq, 0.0000015, -0.0009, 0.30, bit_depth);
-    arfgf_high[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.55, bit_depth);
     inter[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.70, bit_depth);
+#endif
+    arfgf_high[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.55, bit_depth);
     rtc[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.70, bit_depth);
   }
 }
@@ -1240,8 +1252,16 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi, int frame_target,
     const int tol_low = (cpi->sf.recode_tolerance_low * frame_target) / 100;
     const int tol_high = (cpi->sf.recode_tolerance_high * frame_target) / 100;
     *frame_under_shoot_limit = VPXMAX(frame_target - tol_low - 100, 0);
-    *frame_over_shoot_limit =
-        VPXMIN(frame_target + tol_high + 100, cpi->rc.max_frame_bandwidth);
+
+    if ((cpi->common.frame_type == KEY_FRAME) ||
+        ((cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame) &&
+         !cpi->rc.is_src_frame_alt_ref)) {
+      *frame_over_shoot_limit =
+          VPXMIN(frame_target + (tol_high / 4) + 100, cpi->rc.max_frame_bandwidth);
+    } else {
+      *frame_over_shoot_limit =
+          VPXMIN(frame_target + tol_high + 100, cpi->rc.max_frame_bandwidth);
+    }
   }
 }
 
