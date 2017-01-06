@@ -128,6 +128,16 @@ static const Vp9LevelSpec vp9_level_defs[VP9_LEVELS] = {
 };
 /* clang-format on */
 
+static const char *level_fail_messages[TARGET_LEVEL_FAIL_IDS] =
+    { "The average bit-rate is too high.",
+      "The picture size is too large.",
+      "The luma sample rate is too large.",
+      "The CPB size is too large.",
+      "The compression ratio is too small",
+      "Too many column tiles are used.",
+      "The alt-ref distance is too small.",
+      "Too many reference buffers are used." };
+
 static INLINE void Scale2Ratio(VPX_SCALING mode, int *hr, int *hs) {
   switch (mode) {
     case NORMAL:
