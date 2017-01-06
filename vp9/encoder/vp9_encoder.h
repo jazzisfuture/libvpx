@@ -368,6 +368,18 @@ typedef struct {
   Vp9LevelSpec level_spec;
 } Vp9LevelInfo;
 
+typedef enum {
+  BITRATE_TOO_LARGE = 0,
+  LUMA_PIC_SIZE_TOO_LARGE = 1,
+  LUMA_SAMPLE_RATE_TOO_LARGE = 2,
+  CPB_TOO_LARGE = 3,
+  COMPRESSION_RATIO_TOO_SMALL = 4,
+  TOO_MANY_COLUMN_TILE = 5,
+  ALTREF_DIST_TOO_SMALL = 6,
+  TOO_MANY_REF_BUFFER = 7,
+  TARGET_LEVEL_FAIL_IDS = 8
+} TARGET_LEVEL_FAIL_ID;
+
 typedef struct VP9_COMP {
   QUANTS quants;
   ThreadData td;
