@@ -508,9 +508,11 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
   // const int apply_cyclic_refresh = apply_cyclic_refresh_bitrate(cm, rc);
   const int apply_cyclic_refresh = 1;
   if (cm->current_video_frame == 0) cr->low_content_avg = 0.0;
-  // Don't apply refresh on key frame or temporal enhancement layer frames.
+  // Don't apply refresh on key frame or temporal enhancement layer frames,
+  // or on golden frame if it is boosted.
   if (!apply_cyclic_refresh || (cm->frame_type == KEY_FRAME) ||
-      (cpi->force_update_segmentation) || (cpi->svc.temporal_layer_id > 0)) {
+      (cpi->force_update_segmentation) || (cpi->svc.temporal_layer_id > 0) ||
+      (cpi->oxcf.gf_cbr_boost_pct && cpi->refresh_golden_frame)) {
     // Set segmentation map to 0 and disable.
     unsigned char *const seg_map = cpi->segmentation_map;
     memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
