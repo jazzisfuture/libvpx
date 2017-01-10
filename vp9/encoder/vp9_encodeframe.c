@@ -526,6 +526,10 @@ void vp9_set_variance_partition_thresholds(VP9_COMP *cpi, int q) {
                                      : 1000;
       cpi->vbp_bsize_min = BLOCK_16X16;
     }
+    // cpi->vbp_threshold_copy = (cm->width <= 352 && cm->height <= 288)
+    //                               ? cpi->vbp_threshold_sad << 12
+    //                               : cpi->vbp_threshold_sad << 5;
+
     cpi->vbp_threshold_copy = cpi->vbp_thresholds[0] << 16;
     cpi->vbp_threshold_minmax = 15 + (q >> 3);
   }
@@ -1037,6 +1041,9 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     // TODO(jianj) : tune the threshold.
     if (cpi->sf.copy_partition_flag && cpi->rc.frames_since_key > 1 &&
         segment_id == CR_SEGMENT_ID_BASE &&
+        !(cpi->resize_pending || cpi->resize_state || cpi->external_resize ||
+          cpi->oxcf.resize_mode != RESIZE_NONE) &&
+        cpi->oxcf.ss_number_layers == 1 && cpi->oxcf.ts_number_layers == 1 &&
         cpi->prev_segment_id[offset] == CR_SEGMENT_ID_BASE &&
         y_sad_last < cpi->vbp_threshold_copy) {
       if (cpi->prev_partition != NULL) {
