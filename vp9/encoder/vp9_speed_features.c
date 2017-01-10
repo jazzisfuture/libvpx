@@ -498,7 +498,11 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
   if (speed >= 8) {
     sf->adaptive_rd_thresh = 4;
     // Disabled for now until the threshold is tuned.
-    sf->copy_partition_flag = 0;
+    sf->copy_partition_flag = 1 &&
+    !(cpi->resize_pending || cpi->resize_state || cpi->external_resize ||
+          cpi->oxcf.resize_mode != RESIZE_NONE) &&
+        cpi->oxcf.ss_number_layers == 1 && cpi->oxcf.ts_number_layers == 1;
+        
     if (sf->copy_partition_flag) {
       if (cpi->prev_partition == NULL) {
         cpi->prev_partition = (BLOCK_SIZE *)vpx_calloc(
