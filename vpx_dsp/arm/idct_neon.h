@@ -541,4 +541,44 @@ static INLINE void idct16x16_add8x1(int16x8_t res, uint8_t **dest,
   *dest += stride;
 }
 
+static INLINE void idct16x16_add_stage7(const int16x8_t *const step2,
+                                        int16x8_t *const out) {
+#if CONFIG_VP9_HIGHBITDEPTH
+  // Use saturating add/sub to avoid overflow in 2nd pass.
+  out[0] = vqaddq_s16(step2[0], step2[15]);
+  out[1] = vqaddq_s16(step2[1], step2[14]);
+  out[2] = vqaddq_s16(step2[2], step2[13]);
+  out[3] = vqaddq_s16(step2[3], step2[12]);
+  out[4] = vqaddq_s16(step2[4], step2[11]);
+  out[5] = vqaddq_s16(step2[5], step2[10]);
+  out[6] = vqaddq_s16(step2[6], step2[9]);
+  out[7] = vqaddq_s16(step2[7], step2[8]);
+  out[8] = vqsubq_s16(step2[7], step2[8]);
+  out[9] = vqsubq_s16(step2[6], step2[9]);
+  out[10] = vqsubq_s16(step2[5], step2[10]);
+  out[11] = vqsubq_s16(step2[4], step2[11]);
+  out[12] = vqsubq_s16(step2[3], step2[12]);
+  out[13] = vqsubq_s16(step2[2], step2[13]);
+  out[14] = vqsubq_s16(step2[1], step2[14]);
+  out[15] = vqsubq_s16(step2[0], step2[15]);
+#else
+  out[0] = vaddq_s16(step2[0], step2[15]);
+  out[1] = vaddq_s16(step2[1], step2[14]);
+  out[2] = vaddq_s16(step2[2], step2[13]);
+  out[3] = vaddq_s16(step2[3], step2[12]);
+  out[4] = vaddq_s16(step2[4], step2[11]);
+  out[5] = vaddq_s16(step2[5], step2[10]);
+  out[6] = vaddq_s16(step2[6], step2[9]);
+  out[7] = vaddq_s16(step2[7], step2[8]);
+  out[8] = vsubq_s16(step2[7], step2[8]);
+  out[9] = vsubq_s16(step2[6], step2[9]);
+  out[10] = vsubq_s16(step2[5], step2[10]);
+  out[11] = vsubq_s16(step2[4], step2[11]);
+  out[12] = vsubq_s16(step2[3], step2[12]);
+  out[13] = vsubq_s16(step2[2], step2[13]);
+  out[14] = vsubq_s16(step2[1], step2[14]);
+  out[15] = vsubq_s16(step2[0], step2[15]);
+#endif
+}
+
 #endif  // VPX_DSP_ARM_IDCT_NEON_H_
