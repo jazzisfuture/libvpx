@@ -86,7 +86,7 @@ TEST_P(LevelTest, TestTargetLevel20) {
   ASSERT_EQ(target_level_, level_);
 }
 
-TEST_P(LevelTest, TestTargetLevel31) {
+TEST_P(LevelTest, TestTargetLevel31Large) {
   ASSERT_NE(encoding_mode_, ::libvpx_test::kRealTime);
   ::libvpx_test::I420VideoSource video("niklas_1280_720_30.y4m", 1280, 720, 30,
                                        1, 0, 60);
