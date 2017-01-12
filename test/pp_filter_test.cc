@@ -245,8 +245,8 @@ TEST_P(VpxMbPostProcAcrossIpTest, CheckHighFilterOutput) {
 }
 
 TEST_P(VpxMbPostProcAcrossIpTest, CheckCvsAssembly) {
-  const int rows = 16;
-  const int cols = 16;
+  const int rows = 24;
+  const int cols = 40;
 
   Buffer<uint8_t> c_mem = Buffer<uint8_t>(cols, rows, 8, 8, 17, 8);
   Buffer<uint8_t> asm_mem = Buffer<uint8_t>(cols, rows, 8, 8, 17, 8);
