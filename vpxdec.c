@@ -771,6 +771,7 @@ static int main_loop(int argc, const char **argv_) {
     frame_avail = 0;
     if (!stop_after || frame_in < stop_after) {
       if (!read_frame(&input, &buf, &bytes_in_buffer, &buffer_size)) {
+        int qp;
         frame_avail = 1;
         frame_in++;
 
@@ -785,6 +786,12 @@ static int main_loop(int argc, const char **argv_) {
           corrupted = 1;
           if (!keep_going) goto fail;
         }
+
+        if (vpx_codec_control(&decoder, VPXD_GET_LAST_QUANTIZER, &qp)) {
+          warn("Failed VPXD_GET_LAST_QUANTIZER: %s", vpx_codec_error(&decoder));
+          if (!keep_going) goto fail;
+        }
+        printf("qp %d, size: %zu\n", qp, bytes_in_buffer);
 
         vpx_usec_timer_mark(&timer);
         dx_time += vpx_usec_timer_elapsed(&timer);
