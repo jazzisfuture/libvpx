@@ -510,6 +510,10 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
         cpi->prev_segment_id =
             (int8_t *)vpx_calloc(cm->mi_stride * cm->mi_rows, sizeof(int8_t));
       }
+      if (cpi->prev_variance_low == NULL) {
+        cpi->prev_variance_low =
+            (uint8_t *)vpx_calloc(cm->mi_stride * cm->mi_rows * 25, sizeof(uint8_t));
+      }
     }
     sf->mv.subpel_force_stop = (content == VP9E_CONTENT_SCREEN) ? 3 : 2;
     if (content == VP9E_CONTENT_SCREEN) sf->lpf_pick = LPF_PICK_MINIMAL_LPF;
