@@ -507,8 +507,12 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
             cm->mi_stride * cm->mi_rows, sizeof(BLOCK_SIZE));
       }
       if (cpi->prev_segment_id == NULL) {
-        cpi->prev_segment_id =
-            (int8_t *)vpx_calloc(cm->mi_stride * cm->mi_rows, sizeof(int8_t));
+        cpi->prev_segment_id = (int8_t *)vpx_calloc(
+            (cm->mi_stride / 8) * (cm->mi_rows / 8 + 1), sizeof(int8_t));
+      }
+      if (cpi->prev_variance_low == NULL) {
+        cpi->prev_variance_low = (uint8_t *)vpx_calloc(
+            (cm->mi_stride / 8) * (cm->mi_rows / 8 + 1) * 25, sizeof(uint8_t));
       }
     }
     sf->mv.subpel_force_stop = (content == VP9E_CONTENT_SCREEN) ? 3 : 2;
