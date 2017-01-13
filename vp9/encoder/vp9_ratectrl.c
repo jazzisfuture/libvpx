@@ -2255,7 +2255,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
           for (sbi_col = 0; sbi_col < sb_cols; ++sbi_col) {
             // Checker-board pattern, ignore boundary.
             // If the partition copy is on, compute for every superblock.
-            if (cpi->sf.copy_partition_flag ||
+            if (cpi->sf.use_source_sad ||
                 ((sbi_row > 0 && sbi_col > 0) &&
                  (sbi_row < sb_rows - 1 && sbi_col < sb_cols - 1) &&
                  ((sbi_row % 2 == 0 && sbi_col % 2 == 0) ||

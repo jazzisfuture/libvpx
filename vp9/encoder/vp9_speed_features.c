@@ -312,6 +312,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
   sf->exhaustive_searches_thresh = INT_MAX;
   sf->allow_acl = 0;
   sf->copy_partition_flag = 0;
+  sf->use_source_sad = 0;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -501,6 +502,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
     if (!cpi->use_svc && !cpi->resize_pending && !cpi->resize_state &&
         !cpi->external_resize)
       sf->copy_partition_flag = 1;
+      sf->use_source_sad= 1;
     if (sf->copy_partition_flag) {
       if (cpi->prev_partition == NULL) {
         cpi->prev_partition = (BLOCK_SIZE *)vpx_calloc(
