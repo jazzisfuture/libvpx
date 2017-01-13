@@ -1035,6 +1035,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       if (mi_col + block_width / 2 < cm->mi_cols &&
           mi_row + block_height / 2 < cm->mi_rows) {
         set_block_size(cpi, x, xd, mi_row, mi_col, BLOCK_64X64);
+        x->variance_low[0] = 1;
         chroma_check(cpi, x, bsize, y_sad, is_key_frame);
         return 0;
       }
