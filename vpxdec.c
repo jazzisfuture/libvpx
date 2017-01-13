@@ -94,17 +94,21 @@ static const arg_def_t outbitdeptharg =
 #endif
 static const arg_def_t svcdecodingarg = ARG_DEF(
     NULL, "svc-decode-layer", 1, "Decode SVC stream up to given spatial layer");
+static const arg_def_t framestatsarg =
+    ARG_DEF(NULL, "framestats", 1, "Output per-frame stats (.csv format)");
 
-static const arg_def_t *all_args[] = {
-  &codecarg,       &use_yv12,    &use_i420,   &flipuvarg,         &rawvideo,
-  &noblitarg,      &progressarg, &limitarg,   &skiparg,           &postprocarg,
-  &summaryarg,     &outputfile,  &threadsarg, &frameparallelarg,  &verbosearg,
-  &scalearg,       &fb_arg,      &md5arg,     &error_concealment, &continuearg,
+static const arg_def_t* all_args[] = {
+    &codecarg,          &use_yv12,         &use_i420,
+    &flipuvarg,         &rawvideo,         &noblitarg,
+    &progressarg,       &limitarg,         &skiparg,
+    &postprocarg,       &summaryarg,       &outputfile,
+    &threadsarg,        &frameparallelarg, &verbosearg,
+    &scalearg,          &fb_arg,           &md5arg,
+    &error_concealment, &continuearg,
 #if CONFIG_VP9_HIGHBITDEPTH
-  &outbitdeptharg,
+    &outbitdeptharg,
 #endif
-  &svcdecodingarg, NULL
-};
+    &svcdecodingarg,    &framestatsarg,    NULL};
 
 #if CONFIG_VP8_DECODER
 static const arg_def_t addnoise_level =
@@ -527,6 +531,8 @@ static int main_loop(int argc, const char **argv_) {
   char outfile_name[PATH_MAX] = { 0 };
   FILE *outfile = NULL;
 
+  FILE* framestats_file = NULL;
+
   MD5Context md5_ctx;
   unsigned char md5_digest[16];
 
@@ -603,6 +609,12 @@ static int main_loop(int argc, const char **argv_) {
     else if (arg_match(&arg, &svcdecodingarg, argi)) {
       svc_decoding = 1;
       svc_spatial_layer = arg_parse_uint(&arg);
+    } else if (arg_match(&arg, &framestatsarg, argi)) {
+      framestats_file = fopen(arg.val, "w");
+      if (!framestats_file) {
+        die("Error: Could not open --framestats file (%s) for writing.\n",
+            arg.val);
+      }
     }
 #if CONFIG_VP8_DECODER
     else if (arg_match(&arg, &addnoise_level, argi)) {
@@ -761,6 +773,9 @@ static int main_loop(int argc, const char **argv_) {
   frame_avail = 1;
   got_data = 0;
 
+  if (framestats_file)
+    fprintf(framestats_file, "qp,bytes\n");
+
   /* Decode file */
   while (frame_avail || got_data) {
     vpx_codec_iter_t iter = NULL;
@@ -784,6 +799,17 @@ static int main_loop(int argc, const char **argv_) {
           if (detail) warn("Additional information: %s", detail);
           corrupted = 1;
           if (!keep_going) goto fail;
+        }
+
+        if (framestats_file) {
+          int qp;
+          if (vpx_codec_control(&decoder, VPXD_GET_LAST_QUANTIZER, &qp)) {
+            warn("Failed VPXD_GET_LAST_QUANTIZER: %s",
+                 vpx_codec_error(&decoder));
+            if (!keep_going)
+              goto fail;
+          }
+          fprintf(framestats_file, "%d,%d\n", qp, (int)bytes_in_buffer);
         }
 
         vpx_usec_timer_mark(&timer);
@@ -1018,6 +1044,9 @@ fail2:
   free(ext_fb_list.ext_fb);
 
   fclose(infile);
+  if (framestats_file)
+    fclose(framestats_file);
+
   free(argv);
 
   return ret;
