@@ -312,6 +312,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
   sf->exhaustive_searches_thresh = INT_MAX;
   sf->allow_acl = 0;
   sf->copy_partition_flag = 0;
+  cpi->max_copied_frame = 5;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -498,10 +499,15 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
   if (speed >= 8) {
     sf->adaptive_rd_thresh = 4;
     // Enable partition copy
+    // Stop copy every max_copied_frame frame to refresh partitioning
     if (!cpi->use_svc && !cpi->resize_pending && !cpi->resize_state &&
-        !cpi->external_resize)
+        !cpi->external_resize && cpi->copied_frame_cnt < cpi->max_copied_frame)
       sf->copy_partition_flag = 1;
+    if (cpi->copied_frame_cnt == cpi->max_copied_frame)
+      cpi->copied_frame_cnt = 0;
+
     if (sf->copy_partition_flag) {
+      cpi->copied_frame_cnt += !is_keyframe;
       if (cpi->prev_partition == NULL) {
         cpi->prev_partition = (BLOCK_SIZE *)vpx_calloc(
             cm->mi_stride * cm->mi_rows, sizeof(BLOCK_SIZE));
@@ -516,6 +522,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
             sizeof(uint8_t));
       }
     }
+
     sf->mv.subpel_force_stop = (content == VP9E_CONTENT_SCREEN) ? 3 : 2;
     if (content == VP9E_CONTENT_SCREEN) sf->lpf_pick = LPF_PICK_MINIMAL_LPF;
     // Only keep INTRA_DC mode for speed 8.

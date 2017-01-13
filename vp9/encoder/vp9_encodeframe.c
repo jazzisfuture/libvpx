@@ -1043,6 +1043,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
 
     // If the y_sad is small enough, copy the partition of the superblock in the
     // last frame to current frame only if the last frame is not a keyframe.
+    // Stop the copy every 5 frames to refresh the partition.
     // TODO(jianj) : tune the threshold.
     if (cpi->sf.copy_partition_flag && cpi->rc.frames_since_key > 1 &&
         segment_id == CR_SEGMENT_ID_BASE &&

@@ -639,6 +639,8 @@ typedef struct VP9_COMP {
   // This is for the last frame and is copied to the current frame
   // when partition copy happens.
   uint8_t *prev_variance_low;
+  unsigned int copied_frame_cnt;
+  unsigned int max_copied_frame;
 
   LevelConstraint level_constraint;
 } VP9_COMP;
