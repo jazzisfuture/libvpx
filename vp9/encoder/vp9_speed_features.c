@@ -494,6 +494,13 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
       sf->mv.search_method = NSTEP;
       sf->mv.fullpel_search_step_param = 6;
     }
+    sf->use_source_sad = 1;
+    if (sf->use_source_sad) {
+      if (cpi->avg_source_sad_sb == NULL) {
+        cpi->avg_source_sad_sb = (uint64_t *)vpx_calloc(
+            (cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1), sizeof(uint64_t));
+      }
+    }
   }
 
   if (speed >= 8) {
@@ -503,7 +510,6 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
         !cpi->external_resize && cpi->oxcf.resize_mode == RESIZE_NONE)
       sf->copy_partition_flag = 1;
     if (sf->copy_partition_flag) {
-      sf->use_source_sad = 1;
       if (cpi->prev_partition == NULL) {
         cpi->prev_partition = (BLOCK_SIZE *)vpx_calloc(
             cm->mi_stride * cm->mi_rows, sizeof(BLOCK_SIZE));

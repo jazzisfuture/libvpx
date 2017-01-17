@@ -640,6 +640,8 @@ typedef struct VP9_COMP {
   // when partition copy happens.
   uint8_t *prev_variance_low;
 
+  uint64_t *avg_source_sad_sb;
+
   LevelConstraint level_constraint;
 } VP9_COMP;
 
