@@ -494,6 +494,13 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
       sf->mv.search_method = NSTEP;
       sf->mv.fullpel_search_step_param = 6;
     }
+    sf->use_source_sad = 1;
+    if (sf->use_source_sad) {
+      if (cpi->avg_source_sad_sb == NULL) {
+        cpi->avg_source_sad_sb = (uint8_t *)vpx_calloc(
+            (cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1), sizeof(uint8_t));
+      }
+    }
   }
 
   if (speed >= 8) {
