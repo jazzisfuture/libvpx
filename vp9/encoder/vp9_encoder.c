@@ -462,6 +462,9 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vpx_free(cpi->copied_frame_cnt);
   cpi->copied_frame_cnt = NULL;
 
+  vpx_free(cpi->avg_source_sad_sb);
+  cpi->avg_source_sad_sb = NULL;
+
   vp9_cyclic_refresh_free(cpi->cyclic_refresh);
   cpi->cyclic_refresh = NULL;
 
