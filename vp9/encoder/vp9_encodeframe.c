@@ -925,7 +925,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   int variance4x4downsample[16];
   int segment_id;
   int offset = cm->mi_stride * mi_row + mi_col;
-
+  x->skip_low_source_sad = (cm->width >= 640 && cm->height >= 480 &&
+      cpi->avg_source_sad_sb[offset] < 10000) ? 1 : 0;
   set_offsets(cpi, tile, x, mi_row, mi_col, BLOCK_64X64);
   segment_id = xd->mi[0]->segment_id;
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled) {
@@ -3846,6 +3847,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     x->color_sensitivity[0] = 0;
     x->color_sensitivity[1] = 0;
     x->sb_is_skin = 0;
+    x->skip_low_source_sad = 0;
 
     if (seg->enabled) {
       const uint8_t *const map =
