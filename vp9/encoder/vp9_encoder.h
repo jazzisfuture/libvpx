@@ -634,6 +634,8 @@ typedef struct VP9_COMP {
   BLOCK_SIZE *prev_partition;
   int8_t *prev_segment_id;
 
+  uint32_t *avg_source_sad_sb;
+
   LevelConstraint level_constraint;
 } VP9_COMP;
 
