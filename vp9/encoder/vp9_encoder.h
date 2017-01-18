@@ -603,6 +603,8 @@ typedef struct VP9_COMP {
 
   int use_skin_detection;
 
+  uint64_t sb_source_sad[1000];
+
   int target_level;
 
   NOISE_ESTIMATE noise_estimate;

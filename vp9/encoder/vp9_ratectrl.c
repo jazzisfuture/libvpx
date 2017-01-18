@@ -2242,6 +2242,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         const BLOCK_SIZE bsize = BLOCK_64X64;
         // Loop over sub-sample of frame, compute average sad over 64x64 blocks.
         uint64_t avg_sad = 0;
+        uint64_t tmp_sad = 0;
         int num_samples = 0;
         int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
         int sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
@@ -2253,17 +2254,10 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         }
         for (sbi_row = 0; sbi_row < sb_rows; ++sbi_row) {
           for (sbi_col = 0; sbi_col < sb_cols; ++sbi_col) {
-            // Checker-board pattern, ignore boundary.
-            // If the use_source_sad is on, compute for every superblock.
-            if (cpi->sf.use_source_sad ||
-                ((sbi_row > 0 && sbi_col > 0) &&
-                 (sbi_row < sb_rows - 1 && sbi_col < sb_cols - 1) &&
-                 ((sbi_row % 2 == 0 && sbi_col % 2 == 0) ||
-                  (sbi_row % 2 != 0 && sbi_col % 2 != 0)))) {
-              num_samples++;
-              avg_sad += cpi->fn_ptr[bsize].sdf(src_y, src_ystride, last_src_y,
+              tmp_sad = cpi->fn_ptr[bsize].sdf(src_y, src_ystride, last_src_y,
                                                 last_src_ystride);
-            }
+               cpi->sb_source_sad[num_samples++] = tmp_sad;
+               avg_sad += tmp_sad;
             src_y += 64;
             last_src_y += 64;
           }

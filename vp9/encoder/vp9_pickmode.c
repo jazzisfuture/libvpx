@@ -1398,6 +1398,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int use_golden_nonzeromv = 1;
   int force_skip_low_temp_var = 0;
   int skip_ref_find_pred[4] = { 0 };
+  int sb_index;
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
@@ -1948,10 +1949,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     perform_intra_pred = 0;
   // Perform intra prediction search, if the best SAD is above a certain
   // threshold.
+   sb_index = (mi_row >> 3) * ((cm->mi_cols+7) >> 3) + (mi_col >> 3);
   if ((!force_skip_low_temp_var || bsize < BLOCK_32X32) && perform_intra_pred &&
       (best_rdc.rdcost == INT64_MAX ||
        (!x->skip && best_rdc.rdcost > inter_mode_thresh &&
-        bsize <= cpi->sf.max_intra_bsize))) {
+        bsize <= cpi->sf.max_intra_bsize)) && (cpi->sb_source_sad[sb_index] >= 10000 ||
+        cpi->common.width < 640 || cpi->common.height < 480)) {
     struct estimate_block_intra_args args = { cpi, x, DC_PRED, 1, 0 };
     int i;
     TX_SIZE best_intra_tx_size = TX_SIZES;
