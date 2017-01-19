@@ -283,7 +283,7 @@ TEST_P(PartialIDctTest, SingleExtremeCoeff) {
   }
 }
 
-TEST_P(PartialIDctTest, DISABLED_Speed) {
+TEST_P(PartialIDctTest, Old_Speed) {
   // Keep runtime stable with transform size.
   const int kCountSpeedTestBlock = 500000000 / input_block_size_;
   InitMem();
@@ -302,7 +302,7 @@ TEST_P(PartialIDctTest, DISABLED_Speed) {
   vpx_usec_timer_mark(&timer);
   const int elapsed_time =
       static_cast<int>(vpx_usec_timer_elapsed(&timer) / 1000);
-  printf("idct%dx%d_%d (bitdepth %d) time: %5d ms ", size_, size_,
+  printf("idct%dx%d_%d (bitdepth %d) time: %5d ms\n", size_, size_,
          last_nonzero_, bit_depth_, elapsed_time);
 
   ASSERT_EQ(0, memcmp(output_block_ref_, output_block_,
@@ -486,6 +486,7 @@ const PartialInvTxfmParam neon_partial_idct_tests[] = {
   make_tuple(&vpx_highbd_fdct4x4_c, &highbd_wrapper<vpx_highbd_idct4x4_1_add_c>,
              &highbd_wrapper<vpx_highbd_idct4x4_1_add_neon>, TX_4X4, 1, 12, 2),
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+  /*
   make_tuple(&vpx_fdct32x32_c, &wrapper<vpx_idct32x32_1024_add_c>,
              &wrapper<vpx_idct32x32_1024_add_neon>, TX_32X32, 1024, 8, 1),
   make_tuple(&vpx_fdct32x32_c, &wrapper<vpx_idct32x32_1024_add_c>,
@@ -494,6 +495,7 @@ const PartialInvTxfmParam neon_partial_idct_tests[] = {
              &wrapper<vpx_idct32x32_34_add_neon>, TX_32X32, 34, 8, 1),
   make_tuple(&vpx_fdct32x32_c, &wrapper<vpx_idct32x32_1024_add_c>,
              &wrapper<vpx_idct32x32_1_add_neon>, TX_32X32, 1, 8, 1),
+             */
   make_tuple(&vpx_fdct16x16_c, &wrapper<vpx_idct16x16_256_add_c>,
              &wrapper<vpx_idct16x16_256_add_neon>, TX_16X16, 256, 8, 1),
   make_tuple(&vpx_fdct16x16_c, &wrapper<vpx_idct16x16_256_add_c>,
