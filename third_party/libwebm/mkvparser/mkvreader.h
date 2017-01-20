@@ -9,6 +9,7 @@
 #define MKVPARSER_MKVREADER_H_
 
 #include <cstdio>
+#include <sys/types.h>  // for off_t
 
 #include "mkvparser/mkvparser.h"
 
