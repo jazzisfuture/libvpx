@@ -7,4 +7,6 @@ Description:
 libwebm is used to handle WebM container I/O.
 
 Local Changes:
-* <none>
+* Include sys/types.h for off_t on OS/2
+  mkvmuxer/mkvwriter.cc
+  mkvparser/mkvreader.cc
