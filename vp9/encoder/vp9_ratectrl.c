@@ -2264,7 +2264,8 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
               tmp_sad = cpi->fn_ptr[bsize].sdf(src_y, src_ystride, last_src_y,
                                                last_src_ystride);
               if (cpi->sf.use_source_sad)
-                cpi->avg_source_sad_sb[num_samples] = tmp_sad < 5000 ? 1 : 0;
+                cpi->avg_source_sad_sb[num_samples] =
+                    tmp_sad < (cpi->oxcf.speed == 8 ? 5000 : 10000) ? 1 : 0;
               avg_sad += tmp_sad;
               num_samples++;
             }
