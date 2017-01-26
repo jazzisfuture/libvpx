@@ -10,6 +10,7 @@
 #include <math.h>
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
+#include "test/util.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "./vpx_dsp_rtcd.h"
 #include "vpx/vpx_integer.h"
@@ -47,7 +48,7 @@ TEST_P(AddNoiseTest, CheckNoiseAdded) {
   const int clamp = vpx_setup_noise(4.4, noise, kNoiseSize);
   uint8_t *const s =
       reinterpret_cast<uint8_t *>(vpx_calloc(image_size, sizeof(*s)));
-  ASSERT_TRUE(s != NULL);
+  ASSERT_NE_NULL(s);
   memset(s, 99, image_size * sizeof(*s));
 
   ASM_REGISTER_STATE_CHECK(
@@ -100,8 +101,8 @@ TEST_P(AddNoiseTest, CheckCvsAssembly) {
 
   uint8_t *const s = reinterpret_cast<uint8_t *>(vpx_calloc(image_size, 1));
   uint8_t *const d = reinterpret_cast<uint8_t *>(vpx_calloc(image_size, 1));
-  ASSERT_TRUE(s != NULL);
-  ASSERT_TRUE(d != NULL);
+  ASSERT_NE_NULL(s);
+  ASSERT_NE_NULL(d);
 
   memset(s, 99, image_size);
   memset(d, 99, image_size);

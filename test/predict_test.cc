@@ -49,11 +49,11 @@ class PredictTestBase : public ::testing::TestWithParam<PredictParam> {
     padded_dst_size_ = dst_stride_ * (kBorderSize + height_ + kBorderSize);
     padded_dst_ =
         reinterpret_cast<uint8_t *>(vpx_memalign(16, padded_dst_size_));
-    ASSERT_TRUE(padded_dst_ != NULL);
+    ASSERT_NE_NULL(padded_dst_);
     dst_ = padded_dst_ + (kBorderSize * dst_stride_) + kBorderSize;
 
     dst_c_ = new uint8_t[16 * 16];
-    ASSERT_TRUE(dst_c_ != NULL);
+    ASSERT_NE_NULL(dst_c_);
 
     memset(src_, 0, kSrcSize);
     memset(padded_dst_, 128, padded_dst_size_);
