@@ -142,7 +142,7 @@ class ExternalFrameBufferList {
   // Sets |fb| to an external frame buffer. idx is the index into the frame
   // buffer list.
   void SetFrameBuffer(int idx, vpx_codec_frame_buffer_t *fb) {
-    ASSERT_TRUE(fb != NULL);
+    ASSERT_NE_NULL(fb);
     fb->data = ext_fb_list_[idx].data;
     fb->size = ext_fb_list_[idx].size;
     ASSERT_EQ(0, ext_fb_list_[idx].in_use);

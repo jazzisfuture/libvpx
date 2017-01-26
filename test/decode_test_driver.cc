@@ -13,6 +13,7 @@
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
 #include "test/register_state_check.h"
+#include "test/util.h"
 #include "test/video_source.h"
 
 namespace libvpx_test {
@@ -67,7 +68,7 @@ void DecoderTest::HandlePeekResult(Decoder *const decoder,
 void DecoderTest::RunLoop(CompressedVideoSource *video,
                           const vpx_codec_dec_cfg_t &dec_cfg) {
   Decoder *const decoder = codec_->CreateDecoder(dec_cfg, flags_);
-  ASSERT_TRUE(decoder != NULL);
+  ASSERT_NE_NULL(decoder);
   bool end_of_file = false;
 
   // Decode frames.
