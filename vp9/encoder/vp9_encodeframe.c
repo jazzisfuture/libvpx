@@ -1049,7 +1049,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
 
     x->sb_is_skin = 0;
-#if !CONFIG_VP9_HIGHBITDEPTH
+#if !CONFIG_VP9_HIGHBITDEPTH && 0
     if (cpi->use_skin_detection)
       x->sb_is_skin =
           skin_sb_split(cpi, x, low_res, mi_row, mi_col, force_split);
