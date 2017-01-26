@@ -19,6 +19,14 @@
 // Macros
 #define GET_PARAM(k) std::tr1::get<k>(GetParam())
 
+// Prevent clang static analyzer from thinking that ASSERT_TRUE will return in
+// the event of an error. A better solution would be to annotate it with
+// __attribute__((analyzer_noreturn)) but with the nested macros it is difficult
+// to make that work.
+#define ASSERT_NE_NULL(x) \
+  ASSERT_TRUE(x != NULL); \
+  assert(x != NULL)
+
 inline double compute_psnr(const vpx_image_t *img1, const vpx_image_t *img2) {
   assert((img1->fmt == img2->fmt) && (img1->d_w == img2->d_w) &&
          (img1->d_h == img2->d_h));
