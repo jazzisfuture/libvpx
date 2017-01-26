@@ -1815,7 +1815,7 @@ unsigned int vp9_int_pro_motion_estimation(const VP9_COMP *cpi, MACROBLOCK *x,
   }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-  {
+  if (xd->bd != 8) {
     unsigned int this_sad;
     tmp_mv->row = 0;
     tmp_mv->col = 0;
