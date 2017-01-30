@@ -312,7 +312,7 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
   const uint32_t dc_quant = pd->dequant[0];
   const uint32_t ac_quant = pd->dequant[1];
   const int64_t dc_thr = dc_quant * dc_quant >> 6;
-  const int64_t ac_thr = ac_quant * ac_quant >> 6;
+  int64_t ac_thr = ac_quant * ac_quant >> 6;
   unsigned int var;
   int sum;
   int skip_dc = 0;
@@ -340,6 +340,12 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
 
   *var_y = var;
   *sse_y = sse;
+
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  if (cpi->oxcf.noise_sensitivity > 0)
+    ac_thr = vp9_scale_acskip_thresh(ac_thr, cpi->denoiser.denoising_level,
+		                     (abs(sum) >> (bw + bh)));
+#endif
 
   if (cpi->common.tx_mode == TX_MODE_SELECT) {
     if (sse > (var << 2))
