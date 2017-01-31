@@ -43,6 +43,7 @@
 #endif
 #include "encodeframe.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <limits.h>
@@ -3054,6 +3055,7 @@ static int measure_square_diff_partial(YV12_BUFFER_CONFIG *source,
     dst += 16 * skip * dest->y_stride;
   }
   // Only return non-zero if we have at least ~1/16 samples for estimate.
+  assert(num_blocks != 0);
   if (num_blocks > (tot_num_blocks >> 4)) {
     return (Total / num_blocks);
   } else {
