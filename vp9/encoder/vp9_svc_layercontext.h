@@ -88,6 +88,7 @@ typedef struct {
   int force_zero_mode_spatial_ref;
   int current_superframe;
   int use_base_mv;
+  int phase_scaler;
 } SVC;
 
 struct VP9_COMP;
