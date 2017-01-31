@@ -36,6 +36,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->scaled_temp_is_alloc = 0;
   svc->scaled_one_half = 0;
   svc->current_superframe = 0;
+  svc->phase_scaler = 0;
   for (i = 0; i < REF_FRAMES; ++i) svc->ref_frame_index[i] = -1;
   for (sl = 0; sl < oxcf->ss_number_layers; ++sl) {
     cpi->svc.ext_frame_flags[sl] = 0;
@@ -653,6 +654,9 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   // The usage of use_base_mv assumes down-scale of 2x2. For now, turn off use
   // of base motion vectors if spatial scale factors for any layers are not 2.
   // TODO(marpan): Fix this to allow for use_base_mv for scale factors != 2.
+  // Same condition applies to use of non-zero phase_scaler, but keep it to 0
+  // for now until further testing.
+  // cpi->svc.phase_scaler = 8;
   if (cpi->svc.number_spatial_layers > 1) {
     int sl;
     for (sl = 0; sl < cpi->svc.number_spatial_layers - 1; ++sl) {
@@ -660,6 +664,7 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
                                    cpi->svc.temporal_layer_id];
       if (lc->scaling_factor_num != lc->scaling_factor_den >> 1) {
         cpi->svc.use_base_mv = 0;
+        cpi->svc.phase_scaler = 0;
         break;
       }
     }
