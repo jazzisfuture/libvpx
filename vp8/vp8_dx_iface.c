@@ -102,8 +102,6 @@ static vpx_codec_err_t vp8_init(vpx_codec_ctx_t *ctx,
         (priv->base.init_flags & VPX_CODEC_USE_INPUT_FRAGMENTS);
 
     /*post processing level initialized to do nothing */
-  } else {
-    priv = (vpx_codec_alg_priv_t *)ctx->priv;
   }
 
   return res;
