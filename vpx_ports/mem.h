@@ -27,7 +27,7 @@
  * that it's safe to use uninitialized. Silences 'may be used uninitialized'
  * warnings on gcc.
  */
-#if defined(__GNUC__) && __GNUC__
+#if (defined(__GNUC__) && __GNUC__) || defined(__clang__)
 #define UNINITIALIZED_IS_SAFE(x) x = x
 #else
 #define UNINITIALIZED_IS_SAFE(x) x
