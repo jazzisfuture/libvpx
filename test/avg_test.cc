@@ -383,14 +383,12 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(64, &vpx_int_pro_col_neon,
                                  &vpx_int_pro_col_c)));
 
-#if !CONFIG_VP9_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(NEON, SatdTest,
                         ::testing::Values(make_tuple(16, &vpx_satd_neon),
                                           make_tuple(64, &vpx_satd_neon),
                                           make_tuple(256, &vpx_satd_neon),
                                           make_tuple(1024, &vpx_satd_neon)));
-#endif  // !CONFIG_VP9_HIGHBITDEPTH
-#endif  // HAVE_NEON
+#endif
 
 #if HAVE_MSA
 INSTANTIATE_TEST_CASE_P(
@@ -416,13 +414,11 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(64, &vpx_int_pro_col_msa,
                                  &vpx_int_pro_col_c)));
 
-#if !CONFIG_VP9_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(MSA, SatdTest,
                         ::testing::Values(make_tuple(16, &vpx_satd_msa),
                                           make_tuple(64, &vpx_satd_msa),
                                           make_tuple(256, &vpx_satd_msa),
                                           make_tuple(1024, &vpx_satd_msa)));
-#endif  // !CONFIG_VP9_HIGHBITDEPTH
-#endif  // HAVE_MSA
+#endif
 
 }  // namespace
