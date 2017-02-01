@@ -14,6 +14,7 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "./vp9_rtcd.h"
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 
@@ -228,6 +229,61 @@ class SatdTest : public ::testing::Test,
   ACMRandom rnd_;
 };
 
+typedef int64_t (*BlockErrorFunc)(const int16_t *coeff, const int16_t *dqcoeff,
+                                  int block_size);
+typedef std::tr1::tuple<int, BlockErrorFunc> BlockErrorTestParam;
+
+class BlockErrorTest
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<BlockErrorTestParam> {
+ protected:
+  virtual void SetUp() {
+    txfm_size_ = GET_PARAM(0);
+    block_error_func_ = GET_PARAM(1);
+    rnd_.Reset(ACMRandom::DeterministicSeed());
+    coeff_ = reinterpret_cast<int16_t *>(
+        vpx_memalign(16, sizeof(*coeff_) * txfm_size_));
+    dqcoeff_ = reinterpret_cast<int16_t *>(
+        vpx_memalign(16, sizeof(*dqcoeff_) * txfm_size_));
+    ASSERT_TRUE(coeff_ != NULL);
+    ASSERT_TRUE(dqcoeff_ != NULL);
+  }
+
+  virtual void TearDown() {
+    libvpx_test::ClearSystemState();
+    vpx_free(coeff_);
+    vpx_free(dqcoeff_);
+  }
+
+  void FillConstant(const int16_t coeff_val, const int16_t dqcoeff_val) {
+    for (int i = 0; i < txfm_size_; ++i) coeff_[i] = coeff_val;
+    for (int i = 0; i < txfm_size_; ++i) dqcoeff_[i] = dqcoeff_val;
+  }
+
+  void FillRandom() {
+    // Just two fixed seeds
+    rnd_.Reset(0xb0b9);
+    for (int i = 0; i < txfm_size_; ++i) coeff_[i] = rnd_.Rand16();
+    rnd_.Reset(0xb0c8);
+    for (int i = 0; i < txfm_size_; ++i) dqcoeff_[i] = rnd_.Rand16();
+  }
+
+  void Check(const int64_t expected) {
+    int64_t total;
+    ASM_REGISTER_STATE_CHECK(
+        total = block_error_func_(coeff_, dqcoeff_, txfm_size_));
+    EXPECT_EQ(expected, total);
+  }
+
+  int txfm_size_;
+
+ private:
+  int16_t *coeff_;
+  int16_t *dqcoeff_;
+  BlockErrorFunc block_error_func_;
+  ACMRandom rnd_;
+};
+
 uint8_t *AverageTestBase::source_data_ = NULL;
 
 TEST_P(AverageTest, MinValue) {
@@ -308,6 +364,35 @@ TEST_P(SatdTest, Random) {
   Check(expected);
 }
 
+TEST_P(BlockErrorTest, MinValue) {
+  const int kMin = -32640;
+  const int64_t expected = (int64_t)kMin * kMin * txfm_size_;
+  FillConstant(kMin, 0);
+  Check(expected);
+}
+
+TEST_P(BlockErrorTest, MaxValue) {
+  const int kMax = 32640;
+  const int64_t expected = (int64_t)kMax * kMax * txfm_size_;
+  FillConstant(kMax, 0);
+  Check(expected);
+}
+
+TEST_P(BlockErrorTest, Random) {
+  int64_t expected;
+  switch (txfm_size_) {
+    case 16: expected = 1695603287; break;
+    case 64: expected = 23765835832; break;
+    case 256: expected = 84778961763; break;
+    case 1024: expected = 395318928186; break;
+    default:
+      FAIL() << "Invalid satd size (" << txfm_size_
+             << ") valid: 16/64/256/1024";
+  }
+  FillRandom();
+  Check(expected);
+}
+
 using std::tr1::make_tuple;
 
 INSTANTIATE_TEST_CASE_P(
@@ -320,6 +405,15 @@ INSTANTIATE_TEST_CASE_P(C, SatdTest,
                                           make_tuple(64, &vpx_satd_c),
                                           make_tuple(256, &vpx_satd_c),
                                           make_tuple(1024, &vpx_satd_c)));
+
+#if !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    C, BlockErrorTest,
+    ::testing::Values(make_tuple(16, &vp9_block_error_fp_c),
+                      make_tuple(64, &vp9_block_error_fp_c),
+                      make_tuple(256, &vp9_block_error_fp_c),
+                      make_tuple(1024, &vp9_block_error_fp_c)));
+#endif
 
 #if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(
@@ -350,6 +444,15 @@ INSTANTIATE_TEST_CASE_P(SSE2, SatdTest,
                                           make_tuple(64, &vpx_satd_sse2),
                                           make_tuple(256, &vpx_satd_sse2),
                                           make_tuple(1024, &vpx_satd_sse2)));
+
+#if !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    SSE2, BlockErrorTest,
+    ::testing::Values(make_tuple(16, &vp9_block_error_fp_sse2),
+                      make_tuple(64, &vp9_block_error_fp_sse2),
+                      make_tuple(256, &vp9_block_error_fp_sse2),
+                      make_tuple(1024, &vp9_block_error_fp_sse2)));
+#endif
 #endif
 
 #if HAVE_NEON
@@ -381,6 +484,15 @@ INSTANTIATE_TEST_CASE_P(NEON, SatdTest,
                                           make_tuple(64, &vpx_satd_neon),
                                           make_tuple(256, &vpx_satd_neon),
                                           make_tuple(1024, &vpx_satd_neon)));
+
+#if !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    NEON, BlockErrorTest,
+    ::testing::Values(make_tuple(16, &vp9_block_error_fp_neon),
+                      make_tuple(64, &vp9_block_error_fp_neon),
+                      make_tuple(256, &vp9_block_error_fp_neon),
+                      make_tuple(1024, &vp9_block_error_fp_neon)));
+#endif
 #endif
 
 #if HAVE_MSA
@@ -412,6 +524,14 @@ INSTANTIATE_TEST_CASE_P(MSA, SatdTest,
                                           make_tuple(64, &vpx_satd_msa),
                                           make_tuple(256, &vpx_satd_msa),
                                           make_tuple(1024, &vpx_satd_msa)));
+#if !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    MSA, BlockErrorTest,
+    ::testing::Values(make_tuple(16, &vp9_block_error_fp_msa),
+                      make_tuple(64, &vp9_block_error_fp_msa),
+                      make_tuple(256, &vp9_block_error_fp_msa),
+                      make_tuple(1024, &vp9_block_error_fp_msa)));
+#endif
 #endif
 
 }  // namespace
