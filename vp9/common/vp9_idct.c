@@ -132,6 +132,10 @@ void vp9_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
     vpx_iwht4x4_1_add(input, dest, stride);
 }
 
+#include "stdio.h"
+#include "vpx_ports/x86.h"
+#include "vpx_ports/system_state.h"
+
 void vp9_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
                      int eob) {
   // If dc is 1, then input[0] is the reconstructed value, do not need
@@ -144,8 +148,26 @@ void vp9_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
     vpx_idct8x8_1_add(input, dest, stride);
   else if (eob <= 12)
     vpx_idct8x8_12_add(input, dest, stride);
-  else
+  else {
+    unsigned int ta, tb;
+    static unsigned int count = 0;
+    static unsigned int cycle = 0;
+
+    vpx_clear_system_state();
+    ta = x86_readtsc();
     vpx_idct8x8_64_add(input, dest, stride);
+    tb = x86_readtsc();
+    vpx_clear_system_state();
+
+    cycle += (tb - ta);
+    ++count;
+
+    if (count == 10000) {
+      fprintf(stderr, "cycle = %d\n", cycle);
+      cycle = 0;
+      count = 0;
+    }
+  }
 }
 
 void vp9_idct16x16_add(const tran_low_t *input, uint8_t *dest, int stride,
