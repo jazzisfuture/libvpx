@@ -212,7 +212,6 @@ TEST_P(Hadamard16x16Test, VaryStride) {
   }
 }
 
-#if !CONFIG_VP9_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(C, Hadamard16x16Test,
                         ::testing::Values(&vpx_hadamard_16x16_c));
 
@@ -230,5 +229,4 @@ INSTANTIATE_TEST_CASE_P(NEON, Hadamard16x16Test,
 INSTANTIATE_TEST_CASE_P(MSA, Hadamard16x16Test,
                         ::testing::Values(&vpx_hadamard_16x16_msa));
 #endif  // HAVE_MSA
-#endif  // !CONFIG_VP9_HIGHBITDEPTH
 }  // namespace
