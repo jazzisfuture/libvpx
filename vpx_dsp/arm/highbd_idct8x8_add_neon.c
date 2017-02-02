@@ -223,10 +223,12 @@ static INLINE void idct8x8_12_half1d_bd12(
   *io7 = vsubq_s32(step1[0], step2[7]);
 }
 
-static INLINE void highbd_add8x8(int16x8_t a0, int16x8_t a1, int16x8_t a2,
-                                 int16x8_t a3, int16x8_t a4, int16x8_t a5,
-                                 int16x8_t a6, int16x8_t a7, uint16_t *dest,
-                                 const int stride, const int bd) {
+static INLINE void highbd_add8x8(const int16x8_t a0, const int16x8_t a1,
+                                 const int16x8_t a2, const int16x8_t a3,
+                                 const int16x8_t a4, const int16x8_t a5,
+                                 const int16x8_t a6, const int16x8_t a7,
+                                 uint16_t *dest, const int stride,
+                                 const int bd) {
   const int16x8_t max = vdupq_n_s16((1 << bd) - 1);
   const uint16_t *dst = dest;
   uint16x8_t d0, d1, d2, d3, d4, d5, d6, d7;
