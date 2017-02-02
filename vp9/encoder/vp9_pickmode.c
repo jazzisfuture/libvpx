@@ -1839,7 +1839,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       this_rdc.rate += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
     }
 
-    if (x->color_sensitivity[0] || x->color_sensitivity[1]) {
+    if (!this_early_term &&
+        (x->color_sensitivity[0] || x->color_sensitivity[1])) {
       RD_COST rdc_uv;
       const BLOCK_SIZE uv_bsize = get_plane_block_size(bsize, &xd->plane[1]);
       if (x->color_sensitivity[0])
@@ -1869,7 +1870,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     // Skipping checking: test to see if this block can be reconstructed by
     // prediction only.
-    if (cpi->allow_encode_breakout) {
+    if (!this_early_term && cpi->allow_encode_breakout) {
       encode_breakout_test(cpi, x, bsize, mi_row, mi_col, ref_frame, this_mode,
                            var_y, sse_y, yv12_mb, &this_rdc.rate,
                            &this_rdc.dist);
