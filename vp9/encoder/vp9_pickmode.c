@@ -1397,6 +1397,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int use_golden_nonzeromv = 1;
   int force_skip_low_temp_var = 0;
   int skip_ref_find_pred[4] = { 0 };
+  int idx_exit = 1;
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
@@ -1839,7 +1840,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       this_rdc.rate += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
     }
 
-    if (x->color_sensitivity[0] || x->color_sensitivity[1]) {
+    if (!this_early_term &&
+        (x->color_sensitivity[0] || x->color_sensitivity[1])) {
       RD_COST rdc_uv;
       const BLOCK_SIZE uv_bsize = get_plane_block_size(bsize, &xd->plane[1]);
       if (x->color_sensitivity[0])
@@ -1869,7 +1871,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     // Skipping checking: test to see if this block can be reconstructed by
     // prediction only.
-    if (cpi->allow_encode_breakout) {
+    if (!this_early_term && cpi->allow_encode_breakout) {
       encode_breakout_test(cpi, x, bsize, mi_row, mi_col, ref_frame, this_mode,
                            var_y, sse_y, yv12_mb, &this_rdc.rate,
                            &this_rdc.dist);
@@ -1911,9 +1913,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     if (x->skip) break;
 
-    // If early termination flag is 1 and at least 2 modes are checked,
-    // the mode search is terminated.
-    if (best_early_term && idx > 0) {
+    // If early termination flag is set: mode search is terminated on first
+    // mode for zeromv, otherwise 2 modes need to be checked for exit.
+    idx_exit = (frame_mv[best_mode][best_ref_frame].as_int == 0) ? 0 : 1;
+    if (best_early_term && idx >= idx_exit) {
       x->skip = 1;
       break;
     }
