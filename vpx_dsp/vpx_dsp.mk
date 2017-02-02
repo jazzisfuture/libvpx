@@ -13,6 +13,9 @@ DSP_SRCS-yes += vpx_dsp_common.h
 
 DSP_SRCS-$(HAVE_MSA)    += mips/macros_msa.h
 
+DSP_SRCS-$(HAVE_SSE2)   += x86/bitdepth_conversions_sse2.h
+DSP_SRCS-$(HAVE_SSE2)   += x86/bitdepth_conversions_sse2$(ASM)
+
 # bit reader
 DSP_SRCS-yes += prob.h
 DSP_SRCS-yes += prob.c
@@ -244,7 +247,6 @@ ifeq ($(CONFIG_VP9_ENCODER),yes)
 DSP_SRCS-yes            += quantize.c
 DSP_SRCS-yes            += quantize.h
 
-DSP_SRCS-$(HAVE_SSE2)   += x86/fdct.h
 DSP_SRCS-$(HAVE_SSE2)   += x86/quantize_sse2.c
 ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_quantize_intrin_sse2.c
