@@ -312,7 +312,7 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
   const uint32_t dc_quant = pd->dequant[0];
   const uint32_t ac_quant = pd->dequant[1];
   const int64_t dc_thr = dc_quant * dc_quant >> 6;
-  const int64_t ac_thr = ac_quant * ac_quant >> 6;
+  int64_t ac_thr = ac_quant * ac_quant >> 6;
   unsigned int var;
   int sum;
   int skip_dc = 0;
@@ -340,6 +340,13 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
 
   *var_y = var;
   *sse_y = sse;
+
+  if (cpi->oxcf.speed >= 8 && (abs(sum) >> (bw + bh)) < 5) {
+    if (cpi->common.width <= 640 && cpi->common.height <= 480)
+      ac_thr *= 6;
+    else
+      ac_thr *= 4;
+  }
 
   if (cpi->common.tx_mode == TX_MODE_SELECT) {
     if (sse > (var << 2))
