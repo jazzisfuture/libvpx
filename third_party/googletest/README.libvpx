@@ -20,3 +20,5 @@ Local Modifications:
    LICENSE
    README.md
    src
+- Add wcslen() to std namespace manually on OS/2
+  src/src/gtest-printers.cc

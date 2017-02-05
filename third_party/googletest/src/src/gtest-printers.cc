@@ -50,6 +50,13 @@
 #include <string>
 #include "gtest/internal/gtest-port.h"
 
+#ifdef __KLIBC__
+// OS/2 kLIBC has wcslen(), but it is not in std namespace.
+namespace std {
+  using ::wcslen;
+}
+#endif
+
 namespace testing {
 
 namespace {
