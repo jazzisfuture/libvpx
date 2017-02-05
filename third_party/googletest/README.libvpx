@@ -22,3 +22,5 @@ Local Modifications:
    src
 - Suppress unsigned overflow instrumentation in the LCG
   https://github.com/google/googletest/pull/1066
+- Use ::wcslen() instead of std::wcslen on OS/2
+  src/src/gtest-printers.cc
