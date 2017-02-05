@@ -20,3 +20,5 @@ Local Modifications:
    LICENSE
    README.md
    src
+- Use ::wcslen() instead of std::wcslen on OS/2
+  src/src/gtest-printers.cc
