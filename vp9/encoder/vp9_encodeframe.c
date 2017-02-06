@@ -4097,6 +4097,9 @@ void vp9_init_tile_data(VP9_COMP *cpi) {
             tile_data->mode_map[i][j] = j;
           }
         }
+#if CONFIG_MULTITHREAD
+        tile_data->search_count_mutex = NULL;
+#endif
       }
   }
 
@@ -4129,6 +4132,9 @@ void vp9_encode_tile(VP9_COMP *cpi, ThreadData *td, int tile_row,
   this_tile->ex_search_count = 0;  // Exhaustive mesh search hits.
   td->mb.m_search_count_ptr = &this_tile->m_search_count;
   td->mb.ex_search_count_ptr = &this_tile->ex_search_count;
+#if CONFIG_MULTITHREAD
+  td->mb.search_count_mutex = this_tile->search_count_mutex;
+#endif
 
   for (mi_row = mi_row_start; mi_row < mi_row_end; mi_row += MI_BLOCK_SIZE) {
     if (cpi->sf.use_nonrd_pick_mode)
@@ -4569,5 +4575,21 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
       vp9_cyclic_refresh_update_sb_postencode(cpi, mi, mi_row, mi_col, bsize);
     if (cpi->oxcf.pass == 0 && cpi->svc.temporal_layer_id == 0)
       update_zeromv_cnt(cpi, mi, mi_row, mi_col, bsize);
+  }
+}
+
+void vp9_init_motion_search_counts(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  const int tile_cols = 1 << cm->log2_tile_cols;
+  const int tile_rows = 1 << cm->log2_tile_rows;
+  int tile_col, tile_row;
+
+  // Set up pointers to per thread motion search counters.
+  for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
+    for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
+      TileDataEnc *tile_data = &cpi->tile_data[tile_row * tile_cols + tile_col];
+      tile_data->m_search_count = 0;   // Count of motion search hits.
+      tile_data->ex_search_count = 0;  // Exhaustive mesh search hits.
+    }
   }
 }

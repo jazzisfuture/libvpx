@@ -41,6 +41,8 @@ void vp9_encode_tile(struct VP9_COMP *cpi, struct ThreadData *td, int tile_row,
 
 void vp9_set_variance_partition_thresholds(struct VP9_COMP *cpi, int q);
 
+void vp9_init_motion_search_counts(struct VP9_COMP *cpi);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

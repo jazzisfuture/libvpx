@@ -275,6 +275,9 @@ typedef struct TileDataEnc {
   int ex_search_count;
   FIRSTPASS_DATA fp_data;
   VP9RowMTSync row_mt_sync;
+#if CONFIG_MULTITHREAD
+  pthread_mutex_t *search_count_mutex;
+#endif
 } TileDataEnc;
 
 typedef struct RowMTInfo {
