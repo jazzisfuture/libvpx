@@ -296,6 +296,7 @@ static void calculate_variance(int bw, int bh, TX_SIZE tx_size,
   }
 }
 
+#if !CONFIG_VP9_TEMPORAL_DENOISING
 // Adjust the ac_thr according to speed, width, height and normalized sum
 static int ac_thr_factor(const int speed, const int width, const int height,
                          const int norm_sum) {
@@ -307,6 +308,7 @@ static int ac_thr_factor(const int speed, const int width, const int height,
   }
   return 1;
 }
+#endif
 
 static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
                                     MACROBLOCK *x, MACROBLOCKD *xd,
@@ -353,8 +355,14 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
   *var_y = var;
   *sse_y = sse;
 
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  if (cpi->oxcf.noise_sensitivity > 0)
+    ac_thr = vp9_scale_acskip_thresh(ac_thr, cpi->denoiser.denoising_level,
+                                     (abs(sum) >> (bw + bh)));
+#else
   ac_thr *= ac_thr_factor(cpi->oxcf.speed, cpi->common.width,
                           cpi->common.height, abs(sum) >> (bw + bh));
+#endif
 
   if (cpi->common.tx_mode == TX_MODE_SELECT) {
     if (sse > (var << 2))
