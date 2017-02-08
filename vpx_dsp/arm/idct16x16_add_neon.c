@@ -62,42 +62,6 @@ static INLINE void idct_cospi_16_16_d(const int16x4_t s0, const int16x4_t s1,
   wrap_low_4x2(t32, d0, d1);
 }
 
-static INLINE void idct16x16_store_pass1(const int16x8_t *const out,
-                                         int16_t *output) {
-  // Save the result into output
-  vst1q_s16(output, out[0]);
-  output += 16;
-  vst1q_s16(output, out[1]);
-  output += 16;
-  vst1q_s16(output, out[2]);
-  output += 16;
-  vst1q_s16(output, out[3]);
-  output += 16;
-  vst1q_s16(output, out[4]);
-  output += 16;
-  vst1q_s16(output, out[5]);
-  output += 16;
-  vst1q_s16(output, out[6]);
-  output += 16;
-  vst1q_s16(output, out[7]);
-  output += 16;
-  vst1q_s16(output, out[8]);
-  output += 16;
-  vst1q_s16(output, out[9]);
-  output += 16;
-  vst1q_s16(output, out[10]);
-  output += 16;
-  vst1q_s16(output, out[11]);
-  output += 16;
-  vst1q_s16(output, out[12]);
-  output += 16;
-  vst1q_s16(output, out[13]);
-  output += 16;
-  vst1q_s16(output, out[14]);
-  output += 16;
-  vst1q_s16(output, out[15]);
-}
-
 static INLINE void idct16x16_add_store(const int16x8_t *const out,
                                        uint8_t *dest, const int stride) {
   // Add the result to dest
