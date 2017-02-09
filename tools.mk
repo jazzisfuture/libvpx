@@ -10,7 +10,9 @@
 
 # List of tools to build.
 TOOLS-yes            += tiny_ssim.c
-tiny_ssim.SRCS       += vpx/vpx_integer.h
+tiny_ssim.SRCS       += vpx/vpx_integer.h y4minput.c y4minput.h \
+                        vpx/vpx_codec.h vpx/src/vpx_image.c \
+                        vpx_mem/vpx_mem.h vpx_mem/vpx_mem.c
 tiny_ssim.GUID        = 3afa9b05-940b-4d68-b5aa-55157d8ed7b4
 tiny_ssim.DESCRIPTION = Generate SSIM/PSNR from raw .yuv files
 
