@@ -9,10 +9,13 @@
  */
 
 #include <errno.h>
+#include <malloc.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <y4minput.h>
+#include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
 
 void vp8_ssim_parms_8x8_c(unsigned char *s, int sp, unsigned char *r, int rp,
@@ -97,7 +100,6 @@ static uint64_t calc_plane_error(uint8_t *orig, int orig_stride, uint8_t *recon,
     orig += orig_stride;
     recon += recon_stride;
   }
-
   return total_sse;
 }
 
@@ -116,9 +118,27 @@ double vp9_mse2psnr(double samples, double peak, double mse) {
   return psnr;
 }
 
+// Open a file and determine if its y4m or raw.  If y4m get the header.
+FILE *open_y4m_or_raw(char *file_name, int *is_y4m, y4m_input *y4m) {
+  char y4m_buf[4];
+  FILE *f;
+  size_t r1;
+  *is_y4m = 0;
+  f = strcmp(file_name, "-") ? fopen(file_name, "rb") : stdin;
+  r1 = fread(y4m_buf, 1, 4, f);
+  if (r1 == 4) {
+    if (memcmp(y4m_buf, "YUV4", 4) == 0) *is_y4m = 1;
+    if (*is_y4m)
+      y4m_input_open(y4m, f, y4m_buf, 4, 0);
+    else
+      fseek(f, -4, SEEK_CUR);
+  }
+  return f;
+}
+
 int main(int argc, char *argv[]) {
   FILE *f[2] = { NULL, NULL }, *framestats = NULL;
-  uint8_t *buf[2];
+  uint8_t *buf[2] = { NULL, NULL };
   int w, h, tl_skip = 0, tl_skips_remaining = 0;
   double ssimavg = 0, ssimyavg = 0, ssimuavg = 0, ssimvavg = 0;
   double psnrglb = 0, psnryglb = 0, psnruglb = 0, psnrvglb = 0;
@@ -126,19 +146,28 @@ int main(int argc, char *argv[]) {
   double *ssimy = NULL, *ssimu = NULL, *ssimv = NULL;
   uint64_t *psnry = NULL, *psnru = NULL, *psnrv = NULL;
   size_t i, n_frames = 0, allocated_frames = 0;
+  y4m_input y4m[2];
+  int is_y4m[2] = { 0, 0 };
+  vpx_image_t img[2];
   int return_value = 0;
 
-  if (argc < 4 || argc > 6) {
+  if (argc < 2) {
     fprintf(stderr,
-            "Usage: %s file1.yuv file2.yuv WxH [tl_skip={0,1,3}] "
-            "[framestats.csv]\n",
+            "Usage: %s file1.{yuv|y4m} file2.{yuv|y4m"
+            "[WxH tl_skip={0,1,3}]\n",
             argv[0]);
     return_value = 1;
     goto clean_up;
   }
-  f[0] = strcmp(argv[1], "-") ? fopen(argv[1], "rb") : stdin;
-  f[1] = strcmp(argv[2], "-") ? fopen(argv[2], "rb") : stdin;
-  sscanf(argv[3], "%dx%d", &w, &h);
+  f[0] = open_y4m_or_raw(argv[1], &is_y4m[0], &y4m[0]);
+  w = y4m[0].pic_w;
+  h = y4m[0].pic_h;
+  f[1] = open_y4m_or_raw(argv[2], &is_y4m[1], &y4m[1]);
+
+  if (argc > 3) {
+    sscanf(argv[3], "%dx%d", &w, &h);
+  }
+
   // Number of frames to skip from file1.yuv for every frame used. Normal values
   // 0, 1 and 3 correspond to TL2, TL1 and TL0 respectively for a 3TL encoding
   // in mode 10. 7 would be reasonable for comparing TL0 of a 4-layer encoding.
@@ -154,6 +183,7 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+
   if (!f[0] || !f[1]) {
     fprintf(stderr, "Could not open input files: %s\n", strerror(errno));
     return_value = 1;
@@ -164,11 +194,23 @@ int main(int argc, char *argv[]) {
     return_value = 1;
     goto clean_up;
   }
-  buf[0] = malloc(w * h * 3 / 2);
-  buf[1] = malloc(w * h * 3 / 2);
+  if (is_y4m[0] == 0) buf[0] = malloc(w * h * 3 / 2);
+  if (is_y4m[1] == 0) buf[1] = malloc(w * h * 3 / 2);
   while (1) {
     size_t r1, r2;
-    r1 = fread(buf[0], w * h * 3 / 2, 1, f[0]);
+    unsigned char *y[2], *u[2], *v[2];
+    if (is_y4m[0] == 1) {
+      r1 = y4m_input_fetch_frame(&y4m[0], f[0], &img[0]);
+      y[0] = img[0].planes[0];
+      u[0] = img[0].planes[1];
+      v[0] = img[0].planes[2];
+    } else {
+      r1 = fread(buf[0], w * h * 3 / 2, 1, f[0]);
+      y[0] = buf[0];
+      u[0] = buf[0] + w * h;
+      v[0] = buf[0] + 5 * w * h / 4;
+    }
+
     if (r1) {
       // Reading parts of file1.yuv that were not used in temporal layer.
       if (tl_skips_remaining > 0) {
@@ -178,7 +220,19 @@ int main(int argc, char *argv[]) {
       // Use frame, but skip |tl_skip| after it.
       tl_skips_remaining = tl_skip;
     }
-    r2 = fread(buf[1], w * h * 3 / 2, 1, f[1]);
+
+    if (is_y4m[1] == 1) {
+      r2 = y4m_input_fetch_frame(&y4m[1], f[1], &img[1]);
+      y[1] = img[1].planes[0];
+      u[1] = img[1].planes[1];
+      v[1] = img[1].planes[2];
+    } else {
+      r2 = fread(buf[1], w * h * 3 / 2, 1, f[1]);
+      y[1] = buf[1];
+      u[1] = buf[1] + w * h;
+      v[1] = buf[1] + 5 * w * h / 4;
+    }
+
     if (r1 && r2 && r1 != r2) {
       fprintf(stderr, "Failed to read data: %s [%d/%d]\n", strerror(errno),
               (int)r1, (int)r2);
@@ -190,25 +244,27 @@ int main(int argc, char *argv[]) {
 #define psnr_and_ssim(ssim, psnr, buf0, buf1, w, h) \
   ssim = vp8_ssim2(buf0, buf1, w, w, w, h);         \
   psnr = calc_plane_error(buf0, w, buf1, w, w, h);
+
     if (n_frames == allocated_frames) {
       allocated_frames = allocated_frames == 0 ? 1024 : allocated_frames * 2;
       ssimy = realloc(ssimy, allocated_frames * sizeof(*ssimy));
       ssimu = realloc(ssimu, allocated_frames * sizeof(*ssimu));
       ssimv = realloc(ssimv, allocated_frames * sizeof(*ssimv));
-
       psnry = realloc(psnry, allocated_frames * sizeof(*psnry));
       psnru = realloc(psnru, allocated_frames * sizeof(*psnru));
       psnrv = realloc(psnrv, allocated_frames * sizeof(*psnrv));
     }
-    psnr_and_ssim(ssimy[n_frames], psnry[n_frames], buf[0], buf[1], w, h);
-    psnr_and_ssim(ssimu[n_frames], psnru[n_frames], buf[0] + w * h,
-                  buf[1] + w * h, w / 2, h / 2);
-    psnr_and_ssim(ssimv[n_frames], psnrv[n_frames], buf[0] + w * h * 5 / 4,
-                  buf[1] + w * h * 5 / 4, w / 2, h / 2);
+    psnr_and_ssim(ssimy[n_frames], psnry[n_frames], y[0], y[1], w, h);
+    psnr_and_ssim(ssimu[n_frames], psnru[n_frames], u[0], u[1], w / 2, h / 2);
+    psnr_and_ssim(ssimv[n_frames], psnrv[n_frames], v[0], v[1], w / 2, h / 2);
+
     n_frames++;
   }
-  free(buf[0]);
-  free(buf[1]);
+  if (is_y4m[0] == 0) free(buf[0]);
+  if (is_y4m[1] == 0) free(buf[1]);
+  if (is_y4m[0] == 1) vpx_img_free(&img[0]);
+  if (is_y4m[1] == 1) vpx_img_free(&img[1]);
+
 
   if (framestats) {
     fprintf(framestats,
