@@ -1386,7 +1386,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int64_t inter_mode_thresh =
       RDCOST(x->rdmult, x->rddiv, intra_cost_penalty, 0);
   const int *const rd_threshes = cpi->rd.threshes[mi->segment_id][bsize];
-  const int *const rd_thresh_freq_fact = tile_data->thresh_freq_fact[bsize];
+  int *rd_thresh_freq_fact = tile_data->thresh_freq_fact[bsize];
   INTERP_FILTER filter_ref;
   const int bsl = mi_width_log2_lookup[bsize];
   const int pred_filter_search =
@@ -1655,7 +1655,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       mode_rd_thresh = mode_rd_thresh << 3;
 
     if (rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
-                            rd_thresh_freq_fact[mode_index]))
+#if CONFIG_MULTITHREAD
+                            tile_data->enc_row_mt_mutex,
+#endif
+                            &rd_thresh_freq_fact[mode_index]))
       continue;
 
     if (this_mode == NEWMV) {
@@ -2016,7 +2019,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         continue;
 
       if (rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
-                              rd_thresh_freq_fact[mode_index]))
+#if CONFIG_MULTITHREAD
+                              tile_data->enc_row_mt_mutex,
+#endif
+                              &rd_thresh_freq_fact[mode_index]))
         continue;
 
       mi->mode = this_mode;
