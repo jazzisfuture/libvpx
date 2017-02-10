@@ -261,7 +261,7 @@ class VPxEncoderThreadTest
   std::vector<std::string> md5_;
 };
 
-TEST_P(VPxEncoderThreadTest, EncoderResultTest) {
+TEST_P(VPxEncoderThreadTest, DISABLED_EncoderResultTest) {
   std::vector<std::string> single_thr_md5, multi_thr_md5;
 
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 15, 20);
