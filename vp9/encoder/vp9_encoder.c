@@ -3230,7 +3230,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     cpi->use_skin_detection = 1;
   }
 
-  vp9_set_quantizer(cm, q);
+  vp9_set_quantizer(cpi, q);
   vp9_set_variance_partition_thresholds(cpi, q);
 
   setup_frame(cpi);
@@ -3273,7 +3273,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     // adjust some rate control parameters, and return to re-encode the frame.
     if (vp9_encodedframe_overshoot(cpi, frame_size, &q)) {
       vpx_clear_system_state();
-      vp9_set_quantizer(cm, q);
+      vp9_set_quantizer(cpi, q);
       vp9_set_variance_partition_thresholds(cpi, q);
       suppress_active_map(cpi);
       // Turn-off cyclic refresh for re-encoded frame.
@@ -3391,7 +3391,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
       vp9_scale_references(cpi);
     }
 
-    vp9_set_quantizer(cm, q);
+    vp9_set_quantizer(cpi, q);
 
     if (loop_count == 0) setup_frame(cpi);
 
