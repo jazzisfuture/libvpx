@@ -539,6 +539,11 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
   int i, target_bits_per_mb, bits_per_mb_at_this_q;
   const double correction_factor = get_rate_correction_factor(cpi);
 
+  cpi->cyclic_refresh->factor_cyclic_refresh = 1;
+
+  if (cpi->oxcf.speed >= 8)
+    cpi->cyclic_refresh->factor_cyclic_refresh = 0;
+
   // Calculate required scaling factor based on target frame size and size of
   // frame produced using previous Q.
   target_bits_per_mb =
@@ -549,6 +554,7 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
   do {
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled &&
         cpi->svc.temporal_layer_id == 0 &&
+        cpi->cyclic_refresh->factor_cyclic_refresh &&
         (!cpi->oxcf.gf_cbr_boost_pct || !cpi->refresh_golden_frame)) {
       bits_per_mb_at_this_q =
           (int)vp9_cyclic_refresh_rc_bits_per_mb(cpi, i, correction_factor);
