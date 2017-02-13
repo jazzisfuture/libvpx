@@ -66,6 +66,9 @@ struct CYCLIC_REFRESH {
   double low_content_avg;
   int qindex_delta[3];
   int reduce_refresh;
+
+  // Whether factor the cyclic refresh into estimation for bits per mb
+  uint8_t factor_qpdelta_rc;
 };
 
 struct VP9_COMP;
