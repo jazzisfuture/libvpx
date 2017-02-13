@@ -1020,6 +1020,13 @@ static INLINE void update_thresh_freq_fact(
     VP9_COMP *cpi, TileDataEnc *tile_data, int source_variance,
     BLOCK_SIZE bsize, MV_REFERENCE_FRAME ref_frame, THR_MODES best_mode_idx,
     PREDICTION_MODE mode) {
+#if CONFIG_MULTITHREAD
+  // Synchronize to ensure data coherency as thresh_freq_fact is maintained at
+  // tile level and not thread-safe with row based multi-threading.
+  if (tile_data->enc_row_mt_mutex != NULL) {
+    pthread_mutex_lock(tile_data->enc_row_mt_mutex);
+  }
+#endif
   THR_MODES thr_mode_idx = mode_idx[ref_frame][mode_offset(mode)];
   int *freq_fact = &tile_data->thresh_freq_fact[bsize][thr_mode_idx];
   if (thr_mode_idx == best_mode_idx)
@@ -1031,6 +1038,11 @@ static INLINE void update_thresh_freq_fact(
     *freq_fact = VPXMIN(*freq_fact + RD_THRESH_INC,
                         cpi->sf.adaptive_rd_thresh * RD_THRESH_MAX_FACT);
   }
+#if CONFIG_MULTITHREAD
+  if (tile_data->enc_row_mt_mutex != NULL) {
+    pthread_mutex_unlock(tile_data->enc_row_mt_mutex);
+  }
+#endif
 }
 
 void vp9_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
