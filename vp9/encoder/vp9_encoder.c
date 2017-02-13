@@ -463,8 +463,8 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vpx_free(cpi->copied_frame_cnt);
   cpi->copied_frame_cnt = NULL;
 
-  vpx_free(cpi->avg_source_sad_sb);
-  cpi->avg_source_sad_sb = NULL;
+  vpx_free(cpi->content_state_sb);
+  cpi->content_state_sb = NULL;
 
   vp9_cyclic_refresh_free(cpi->cyclic_refresh);
   cpi->cyclic_refresh = NULL;
@@ -3221,7 +3221,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   }
 
   vp9_set_quantizer(cm, q);
-  vp9_set_variance_partition_thresholds(cpi, q);
+  vp9_set_variance_partition_thresholds(cpi, q, 0);
 
   setup_frame(cpi);
 
@@ -3264,7 +3264,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     if (vp9_encodedframe_overshoot(cpi, frame_size, &q)) {
       vpx_clear_system_state();
       vp9_set_quantizer(cm, q);
-      vp9_set_variance_partition_thresholds(cpi, q);
+      vp9_set_variance_partition_thresholds(cpi, q, 0);
       suppress_active_map(cpi);
       // Turn-off cyclic refresh for re-encoded frame.
       if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
@@ -3335,10 +3335,10 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
         // Adjustment limits for min and max q
         qrange_adj = VPXMAX(1, (top_index - bottom_index) / 2);
 
-        bottom_index = VPXMAX(bottom_index - qrange_adj / 2,
-                              cpi->oxcf.best_allowed_q);
-        top_index = VPXMIN(cpi->oxcf.worst_allowed_q,
-                           top_index + qrange_adj / 2);
+        bottom_index =
+            VPXMAX(bottom_index - qrange_adj / 2, cpi->oxcf.best_allowed_q);
+        top_index =
+            VPXMIN(cpi->oxcf.worst_allowed_q, top_index + qrange_adj / 2);
       }
 #endif
       // TODO(agrange) Scale cpi->max_mv_magnitude if frame-size has changed.
@@ -3610,7 +3610,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
 #ifdef AGRESSIVE_VBR
   if (two_pass_first_group_inter(cpi)) {
     cpi->twopass.active_worst_quality =
-       VPXMIN(q + qrange_adj, cpi->oxcf.worst_allowed_q);
+        VPXMIN(q + qrange_adj, cpi->oxcf.worst_allowed_q);
   }
 #endif
 

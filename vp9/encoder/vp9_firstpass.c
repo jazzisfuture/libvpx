@@ -2463,7 +2463,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     rc->source_alt_ref_pending = 0;
   }
 
-  // Limit maximum boost based on interval length.
+// Limit maximum boost based on interval length.
 #ifdef AGRESSIVE_VBR
   rc->gfu_boost = VPXMIN((int)rc->gfu_boost, i * 140);
 #else
