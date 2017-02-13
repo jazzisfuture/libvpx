@@ -66,6 +66,9 @@ struct CYCLIC_REFRESH {
   double low_content_avg;
   int qindex_delta[3];
   int reduce_refresh;
+  // Whether to factor the qpdelta of the segment into rate control
+  // for the estimation of bits per mb
+  uint8_t factor_qpdelta_rc;
 };
 
 struct VP9_COMP;
