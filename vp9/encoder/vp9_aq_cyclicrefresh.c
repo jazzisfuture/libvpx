@@ -453,6 +453,8 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  cr->factor_qpdelta_rc = 1;
+  if (cpi->oxcf.speed >= 8) cr->factor_qpdelta_rc = 0;
   cr->percent_refresh = 10;
   if (cr->reduce_refresh) cr->percent_refresh = 5;
   cr->max_qdelta_perc = 60;
