@@ -5235,4 +5235,11 @@ void vp9_set_new_mt(VP9_COMP *cpi) {
       (cpi->oxcf.pass == 0 || cpi->oxcf.pass == 2) && cpi->oxcf.new_mt &&
       !cpi->use_svc)
     cpi->new_mt = 1;
+
+  // In realtime mode, enable row based multi-threading for all the speed levels
+  // where non-rd path is used.
+  if (cpi->oxcf.mode == REALTIME && cpi->oxcf.speed >= 5 && cpi->oxcf.new_mt &&
+      !cpi->use_svc) {
+    cpi->new_mt = 1;
+  }
 }
