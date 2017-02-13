@@ -1031,6 +1031,11 @@ static INLINE void update_thresh_freq_fact(
     *freq_fact = VPXMIN(*freq_fact + RD_THRESH_INC,
                         cpi->sf.adaptive_rd_thresh * RD_THRESH_MAX_FACT);
   }
+#if CONFIG_MULTITHREAD
+  if (tile_data->enc_row_mt_mutex != NULL) {
+    pthread_mutex_unlock(tile_data->enc_row_mt_mutex);
+  }
+#endif
 }
 
 void vp9_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
@@ -1666,11 +1671,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         cpi->rc.frames_since_golden > 4)
       mode_rd_thresh = mode_rd_thresh << 3;
 
-    if (rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
+    if (rd_less_than_thresh(
+            best_rdc.rdcost, mode_rd_thresh,
 #if CONFIG_MULTITHREAD
-                            tile_data->enc_row_mt_mutex,
+            // Synchronization of this function is only necessary when
+            // adaptive_rd_thresh is > 0.
+            cpi->sf.adaptive_rd_thresh ? tile_data->enc_row_mt_mutex : NULL,
 #endif
-                            &rd_thresh_freq_fact[mode_index]))
+            &rd_thresh_freq_fact[mode_index]))
       continue;
 
     if (this_mode == NEWMV) {
@@ -1753,9 +1761,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       x->pred_mv_sad[LAST_FRAME] = best_pred_sad;
     }
 
-    if (this_mode != NEARESTMV &&
-        frame_mv[this_mode][ref_frame].as_int ==
-            frame_mv[NEARESTMV][ref_frame].as_int)
+    if (this_mode != NEARESTMV && frame_mv[this_mode][ref_frame].as_int ==
+                                      frame_mv[NEARESTMV][ref_frame].as_int)
       continue;
 
     mi->mode = this_mode;
@@ -2030,11 +2037,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       if (!((1 << this_mode) & cpi->sf.intra_y_mode_bsize_mask[bsize]))
         continue;
 
-      if (rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
+      if (rd_less_than_thresh(
+              best_rdc.rdcost, mode_rd_thresh,
 #if CONFIG_MULTITHREAD
-                              tile_data->enc_row_mt_mutex,
+              // Synchronization of this function is only necessary when
+              // adaptive_rd_thresh is > 0.
+              cpi->sf.adaptive_rd_thresh ? tile_data->enc_row_mt_mutex : NULL,
 #endif
-                              &rd_thresh_freq_fact[mode_index]))
+              &rd_thresh_freq_fact[mode_index]))
         continue;
 
       mi->mode = this_mode;
