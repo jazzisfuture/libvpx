@@ -20,12 +20,16 @@
 
 void vp9_fdct8x8_quant_ssse3(
     const int16_t *input, int stride, tran_low_t *coeff_ptr, intptr_t n_coeffs,
-    int skip_block, const int16_t *zbin_ptr, const int16_t *round_ptr,
-    const int16_t *quant_ptr, const int16_t *quant_shift_ptr,
+    int skip_block, const int16_t *round_ptr,
+    const int16_t *quant_ptr,
     tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
     uint16_t *eob_ptr, const int16_t *scan_ptr, const int16_t *iscan_ptr) {
   __m128i zero;
   int pass;
+
+  (void)scan_ptr;
+  (void)coeff_ptr;
+
   // Constants
   //    When we use them, in one case, they are all the same. In all others
   //    it's a pair of them that we need to repeat four times. This is done
@@ -51,11 +55,6 @@ void vp9_fdct8x8_quant_ssse3(
   __m128i in7 = _mm_load_si128((const __m128i *)(input + 7 * stride));
   __m128i *in[8];
   int index = 0;
-
-  (void)scan_ptr;
-  (void)zbin_ptr;
-  (void)quant_shift_ptr;
-  (void)coeff_ptr;
 
   // Pre-condition input (shift by two)
   in0 = _mm_slli_epi16(in0, 2);
