@@ -20,9 +20,8 @@
 
 void vp9_fdct8x8_quant_neon(const int16_t *input, int stride,
                             tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                            int skip_block, const int16_t *zbin_ptr,
+                            int skip_block,
                             const int16_t *round_ptr, const int16_t *quant_ptr,
-                            const int16_t *quant_shift_ptr,
                             tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                             const int16_t *dequant_ptr, uint16_t *eob_ptr,
                             const int16_t *scan_ptr, const int16_t *iscan_ptr) {
@@ -30,7 +29,7 @@ void vp9_fdct8x8_quant_neon(const int16_t *input, int stride,
   (void)coeff_ptr;
 
   vpx_fdct8x8_neon(input, temp_buffer, stride);
-  vp9_quantize_fp_neon(temp_buffer, n_coeffs, skip_block, zbin_ptr, round_ptr,
-                       quant_ptr, quant_shift_ptr, qcoeff_ptr, dqcoeff_ptr,
+  vp9_quantize_fp_neon(temp_buffer, n_coeffs, skip_block, round_ptr,
+                       quant_ptr, qcoeff_ptr, dqcoeff_ptr,
                        dequant_ptr, eob_ptr, scan_ptr, iscan_ptr);
 }
