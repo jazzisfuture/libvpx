@@ -15,9 +15,8 @@
 #include "vpx/vpx_integer.h"
 
 void vp9_quantize_fp_sse2(const int16_t *coeff_ptr, intptr_t n_coeffs,
-                          int skip_block, const int16_t *zbin_ptr,
-                          const int16_t *round_ptr, const int16_t *quant_ptr,
-                          const int16_t *quant_shift_ptr, int16_t *qcoeff_ptr,
+                          int skip_block, const int16_t *round_ptr,
+                          const int16_t *quant_ptr, int16_t *qcoeff_ptr,
                           int16_t *dqcoeff_ptr, const int16_t *dequant_ptr,
                           uint16_t *eob_ptr, const int16_t *scan_ptr,
                           const int16_t *iscan_ptr) {
@@ -25,8 +24,6 @@ void vp9_quantize_fp_sse2(const int16_t *coeff_ptr, intptr_t n_coeffs,
   __m128i thr;
   int16_t nzflag;
   (void)scan_ptr;
-  (void)zbin_ptr;
-  (void)quant_shift_ptr;
 
   coeff_ptr += n_coeffs;
   iscan_ptr += n_coeffs;
