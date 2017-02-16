@@ -152,6 +152,10 @@ typedef long vpx_codec_caps_t;
 #define VPX_CODEC_CAP_DECODER 0x1 /**< Is a decoder */
 #define VPX_CODEC_CAP_ENCODER 0x2 /**< Is an encoder */
 
+/*! Can support images at greater than 8 bitdepth.
+ */
+#define VPX_CODEC_CAP_HIGHBITDEPTH 0x4
+
 /*! \brief Initialization-time Feature Enabling
  *
  *  Certain codec features must be known at initialization time, to allow for
