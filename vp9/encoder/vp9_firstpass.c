@@ -1748,26 +1748,22 @@ static double get_sr_decay_rate(const VP9_COMP *cpi,
   return VPXMAX(sr_decay, DEFAULT_DECAY_LIMIT);
 }
 
-// This function gives an estimate of how badly we believe the prediction
-// quality is decaying from frame to frame.
 static double get_zero_motion_factor(const VP9_COMP *cpi,
                                      const FIRSTPASS_STATS *frame) {
   const double zero_motion_pct = frame->pcnt_inter - frame->pcnt_motion;
-  double sr_decay = get_sr_decay_rate(cpi, frame);
+  const double sr_decay = get_sr_decay_rate(cpi, frame);
   return VPXMIN(sr_decay, zero_motion_pct);
 }
 
-#define ZM_POWER_FACTOR 0.75
-
+// This function gives an estimate of how badly we believe the prediction
+// quality is decaying from frame to frame.
 static double get_prediction_decay_rate(const VP9_COMP *cpi,
                                         const FIRSTPASS_STATS *next_frame) {
   const double sr_decay_rate = get_sr_decay_rate(cpi, next_frame);
   const double zero_motion_factor =
-      (0.95 * pow((next_frame->pcnt_inter - next_frame->pcnt_motion),
-                  ZM_POWER_FACTOR));
+      (next_frame->pcnt_inter - next_frame->pcnt_motion) * 0.50;
 
-  return VPXMAX(zero_motion_factor,
-                (sr_decay_rate + ((1.0 - sr_decay_rate) * zero_motion_factor)));
+  return sr_decay_rate + ((1.0 - sr_decay_rate) * zero_motion_factor);
 }
 
 // Function to test for a condition where a complex transition is followed
