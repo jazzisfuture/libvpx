@@ -172,4 +172,19 @@ TEST(DecodeAPI, Vp9PeekSI) {
 }
 #endif  // CONFIG_VP9_DECODER
 
+#if CONFIG_VP9_HIGHBITDEPTH
+TEST(DecodeAPI, HighBitDepthCapability) {
+// VP8 should not claim VP9 HBD as a capability.
+#if CONFIG_VP8_DECODER
+  vpx_codec_caps_t vp8_caps = vpx_codec_get_caps(&vpx_codec_vp8_dx_algo);
+  EXPECT_FALSE(vp8_caps & VPX_CODEC_CAP_HIGHBITDEPTH);
+#endif
+
+#if CONFIG_VP9_DECODER
+  vpx_codec_caps_t vp9_caps = vpx_codec_get_caps(&vpx_codec_vp9_dx_algo);
+  EXPECT_TRUE(vp9_caps & VPX_CODEC_CAP_HIGHBITDEPTH);
+#endif
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
 }  // namespace

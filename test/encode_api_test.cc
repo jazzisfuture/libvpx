@@ -62,4 +62,19 @@ TEST(EncodeAPI, InvalidParams) {
   }
 }
 
+#if CONFIG_VP9_HIGHBITDEPTH
+TEST(EncodeAPI, HighBitDepthCapability) {
+// VP8 should not claim VP9 HBD as a capability.
+#if CONFIG_VP8_ENCODER
+  vpx_codec_caps_t vp8_caps = vpx_codec_get_caps(&vpx_codec_vp8_cx_algo);
+  EXPECT_FALSE(vp8_caps & VPX_CODEC_CAP_HIGHBITDEPTH);
+#endif
+
+#if CONFIG_VP9_ENCODER
+  vpx_codec_caps_t vp9_caps = vpx_codec_get_caps(&vpx_codec_vp9_cx_algo);
+  EXPECT_TRUE(vp9_caps & VPX_CODEC_CAP_HIGHBITDEPTH);
+#endif
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
 }  // namespace
