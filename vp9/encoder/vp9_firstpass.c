@@ -647,7 +647,6 @@ static int fp_estimate_block_noise(MACROBLOCK *x, BLOCK_SIZE bsize) {
   return block_noise << 2;  // Scale << 2 to account for sampling.
 }
 
-#if ENABLE_MT_BIT_MATCH
 static void accumulate_floating_point_stats(VP9_COMP *cpi,
                                             TileDataEnc *first_tile_col) {
   VP9_COMMON *const cm = &cpi->common;
@@ -667,7 +666,6 @@ static void accumulate_floating_point_stats(VP9_COMP *cpi,
     }
   }
 }
-#endif
 
 static void first_pass_stat_calc(VP9_COMP *cpi, FIRSTPASS_STATS *fps,
                                  FIRSTPASS_DATA *fp_acc_data) {
@@ -804,6 +802,10 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
                            : NULL;
   MODE_INFO mi_above, mi_left;
 
+  double mb_intra_factor;
+  double mb_brightness_factor;
+  double mb_neutral_count;
+
   // First pass code requires valid last and new frame buffers.
   assert(new_yv12 != NULL);
   assert((lc != NULL) || frame_is_intra_only(cm) || (lst_yv12 != NULL));
@@ -861,9 +863,7 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
     const BLOCK_SIZE bsize = get_bsize(cm, mb_row, mb_col);
     double log_intra;
     int level_sample;
-#if ENABLE_MT_BIT_MATCH
     const int mb_index = mb_row * cm->mb_cols + mb_col;
-#endif
 
 #if CONFIG_FP_MB_STATS
     const int mb_index = mb_row * cm->mb_cols + mb_col;
@@ -962,16 +962,13 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
     vpx_clear_system_state();
     log_intra = log(this_error + 1.0);
     if (log_intra < 10.0) {
-      fp_acc_data->intra_factor += 1.0 + ((10.0 - log_intra) * 0.05);
-#if ENABLE_MT_BIT_MATCH
+      mb_intra_factor = 1.0 + ((10.0 - log_intra) * 0.05);
+      fp_acc_data->intra_factor += mb_intra_factor;
       cpi->twopass.fp_mb_float_stats[mb_index].frame_mb_intra_factor =
-          1.0 + ((10.0 - log_intra) * 0.05);
-#endif
+          mb_intra_factor;
     } else {
       fp_acc_data->intra_factor += 1.0;
-#if ENABLE_MT_BIT_MATCH
       cpi->twopass.fp_mb_float_stats[mb_index].frame_mb_intra_factor = 1.0;
-#endif
     }
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -983,17 +980,13 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
     level_sample = x->plane[0].src.buf[0];
 #endif
     if ((level_sample < DARK_THRESH) && (log_intra < 9.0)) {
-      fp_acc_data->brightness_factor +=
-          1.0 + (0.01 * (DARK_THRESH - level_sample));
-#if ENABLE_MT_BIT_MATCH
+      mb_brightness_factor = 1.0 + (0.01 * (DARK_THRESH - level_sample));
+      fp_acc_data->brightness_factor += mb_brightness_factor;
       cpi->twopass.fp_mb_float_stats[mb_index].frame_mb_brightness_factor =
-          1.0 + (0.01 * (DARK_THRESH - level_sample));
-#endif
+          mb_brightness_factor;
     } else {
       fp_acc_data->brightness_factor += 1.0;
-#if ENABLE_MT_BIT_MATCH
       cpi->twopass.fp_mb_float_stats[mb_index].frame_mb_brightness_factor = 1.0;
-#endif
     }
 
     // Intrapenalty below deals with situations where the intra and inter
@@ -1153,19 +1146,16 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
         if (((this_error - intrapenalty) * 9 <= motion_error * 10) &&
             (this_error < (2 * intrapenalty))) {
           fp_acc_data->neutral_count += 1.0;
-#if ENABLE_MT_BIT_MATCH
           cpi->twopass.fp_mb_float_stats[mb_index].frame_mb_neutral_count = 1.0;
-#endif
           // Also track cases where the intra is not much worse than the inter
           // and use this in limiting the GF/arf group length.
         } else if ((this_error > NCOUNT_INTRA_THRESH) &&
                    (this_error < (NCOUNT_INTRA_FACTOR * motion_error))) {
-          fp_acc_data->neutral_count +=
+          mb_neutral_count =
               (double)motion_error / DOUBLE_DIVIDE_CHECK((double)this_error);
-#if ENABLE_MT_BIT_MATCH
+          fp_acc_data->neutral_count += mb_neutral_count;
           cpi->twopass.fp_mb_float_stats[mb_index].frame_mb_neutral_count =
-              (double)motion_error / DOUBLE_DIVIDE_CHECK((double)this_error);
-#endif
+              mb_neutral_count;
         }
 
         mv.row *= 8;
@@ -1415,15 +1405,12 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     } else {
       cpi->row_mt_sync_read_ptr = vp9_row_mt_sync_read;
       cpi->row_mt_sync_write_ptr = vp9_row_mt_sync_write;
-#if ENABLE_MT_BIT_MATCH
-      cm->log2_tile_cols = 0;
+      if (cpi->oxcf.ethread_bit_match) cm->log2_tile_cols = 0;
       vp9_zero_array(cpi->twopass.fp_mb_float_stats, cm->MBs);
-#endif
       vp9_encode_fp_row_mt(cpi);
       first_tile_col = &cpi->tile_data[0];
-#if ENABLE_MT_BIT_MATCH
-      accumulate_floating_point_stats(cpi, first_tile_col);
-#endif
+      if (cpi->oxcf.ethread_bit_match)
+        accumulate_floating_point_stats(cpi, first_tile_col);
       first_pass_stat_calc(cpi, &fps, &(first_tile_col->fp_data));
     }
 

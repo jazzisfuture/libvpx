@@ -1732,11 +1732,9 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   }
 #endif
 
-#if ENABLE_MT_BIT_MATCH
   CHECK_MEM_ERROR(
       cm, cpi->twopass.fp_mb_float_stats,
       vpx_calloc(cm->MBs * sizeof(*cpi->twopass.fp_mb_float_stats), 1));
-#endif
 
   cpi->refresh_alt_ref_frame = 0;
   cpi->multi_arf_last_grp_enabled = 0;
@@ -2118,10 +2116,8 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
   }
 #endif
 
-#if ENABLE_MT_BIT_MATCH
   vpx_free(cpi->twopass.fp_mb_float_stats);
   cpi->twopass.fp_mb_float_stats = NULL;
-#endif
 
   vp9_remove_common(cm);
   vp9_free_ref_frame_buffers(cm->buffer_pool);
