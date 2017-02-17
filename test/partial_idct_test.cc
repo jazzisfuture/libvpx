@@ -55,32 +55,13 @@ typedef std::tr1::tuple<FwdTxfmFunc, InvTxfmWithBdFunc, InvTxfmWithBdFunc,
 const int kMaxNumCoeffs = 1024;
 const int kCountTestBlock = 1000;
 
-// https://bugs.chromium.org/p/webm/issues/detail?id=1332
-// The functions specified do not pass with INT16_MIN/MAX. They fail at the
-// value specified, but pass when 1 is added/subtracted.
 int16_t MaxSupportedCoeff(InvTxfmWithBdFunc a) {
-#if HAVE_SSSE3 && ARCH_X86_64 && !CONFIG_EMULATE_HARDWARE && \
-    !CONFIG_VP9_HIGHBITDEPTH
-  if (a == &wrapper<vpx_idct8x8_64_add_ssse3> ||
-      a == &wrapper<vpx_idct8x8_12_add_ssse3>) {
-    return 23625 - 1;
-  }
-#else
   (void)a;
-#endif
   return std::numeric_limits<int16_t>::max();
 }
 
 int16_t MinSupportedCoeff(InvTxfmWithBdFunc a) {
-#if HAVE_SSSE3 && ARCH_X86_64 && !CONFIG_EMULATE_HARDWARE && \
-    !CONFIG_VP9_HIGHBITDEPTH
-  if (a == &wrapper<vpx_idct8x8_64_add_ssse3> ||
-      a == &wrapper<vpx_idct8x8_12_add_ssse3>) {
-    return -23625 + 1;
-  }
-#else
   (void)a;
-#endif
   return std::numeric_limits<int16_t>::min();
 }
 
@@ -285,7 +266,7 @@ TEST_P(PartialIDctTest, SingleExtremeCoeff) {
   }
 }
 
-TEST_P(PartialIDctTest, Speed) {
+TEST_P(PartialIDctTest, DISABLED_Speed) {
   // Keep runtime stable with transform size.
   const int kCountSpeedTestBlock = 500000000 / input_block_size_;
   InitMem();
