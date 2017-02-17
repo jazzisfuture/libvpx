@@ -651,6 +651,17 @@ static void block_yrd(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
   }
 #endif
 
+  if (cpi->sf.use_simple_block_yrd && cpi->common.frame_type != KEY_FRAME &&
+      !cyclic_refresh_segment_id_boosted(xd->mi[0]->segment_id)) {
+    unsigned int var_y, sse_y;
+    (void)tx_size;
+    model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc->rate, &this_rdc->dist,
+                      &var_y, &sse_y);
+    *sse = INT_MAX;
+    *skippable = 0;
+    return;
+  }
+
   (void)cpi;
 
   // The max tx_size passed in is TX_16X16.
@@ -1614,9 +1625,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         continue;
     }
 
-    if (sf->reference_masking &&
-        !(frame_mv[this_mode][ref_frame].as_int == 0 &&
-          ref_frame == LAST_FRAME)) {
+    if (sf->reference_masking && !(frame_mv[this_mode][ref_frame].as_int == 0 &&
+                                   ref_frame == LAST_FRAME)) {
       if (usable_ref_frame < ALTREF_FRAME) {
         if (!force_skip_low_temp_var && usable_ref_frame > LAST_FRAME) {
           i = (ref_frame == LAST_FRAME) ? GOLDEN_FRAME : LAST_FRAME;
@@ -1742,9 +1752,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       x->pred_mv_sad[LAST_FRAME] = best_pred_sad;
     }
 
-    if (this_mode != NEARESTMV &&
-        frame_mv[this_mode][ref_frame].as_int ==
-            frame_mv[NEARESTMV][ref_frame].as_int)
+    if (this_mode != NEARESTMV && frame_mv[this_mode][ref_frame].as_int ==
+                                      frame_mv[NEARESTMV][ref_frame].as_int)
       continue;
 
     mi->mode = this_mode;
