@@ -638,15 +638,18 @@ static void block_yrd(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
   // remove this check condition.
   // TODO(marpan): Disable this for 8 bit once optimizations for the functions
   // below are merged in.
-  // if (xd->bd != 8) {
-  unsigned int var_y, sse_y;
-  (void)tx_size;
-  model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc->rate, &this_rdc->dist, &var_y,
-                    &sse_y);
-  *sse = INT_MAX;
-  *skippable = 0;
-  return;
-// }
+  if (xd->bd != 8 ||
+      (cpi->common.frame_type != KEY_FRAME &&
+       !cyclic_refresh_segment_id_boosted(xd->mi[0]->segment_id) &&
+       !x->sb_is_skin)) {
+    unsigned int var_y, sse_y;
+    (void)tx_size;
+    model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc->rate, &this_rdc->dist,
+                      &var_y, &sse_y);
+    *sse = INT_MAX;
+    *skippable = 0;
+    return;
+  }
 #endif
 
   (void)cpi;
