@@ -16,12 +16,12 @@ SECTION .text
 ALIGN 16
 
 ;
-; int64_t vp9_highbd_block_error_8bit(int32_t *coeff, int32_t *dqcoeff,
-;                                     intptr_t block_size, int64_t *ssz)
+; int64_t vp9_block_error_avx(const tran_low_t *coeff, const tran_low_t *dqcoeff,
+;                             intptr_t block_size, int64_t *ssz)
 ;
 
 INIT_XMM avx
-cglobal highbd_block_error_8bit, 4, 5, 8, uqc, dqc, size, ssz
+cglobal block_error, 4, 5, 8, uqc, dqc, size, ssz
   vzeroupper
 
   ; If only one iteration is required, then handle this as a special case.

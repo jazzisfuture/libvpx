@@ -146,6 +146,7 @@ endif
 
 LIBVPX_TEST_SRCS-yes                   += convolve_test.cc
 LIBVPX_TEST_SRCS-yes                   += lpf_test.cc
+LIBVPX_TEST_SRCS-yes                   += vp9_block_error_test.cc
 LIBVPX_TEST_SRCS-yes                   += vp9_intrapred_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_DECODER) += vp9_decrypt_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_DECODER) += vp9_thread_test.cc
@@ -157,7 +158,6 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct8x8_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += hadamard_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += minmax_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += variance_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_error_block_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_quantize_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_subtract_test.cc
 
