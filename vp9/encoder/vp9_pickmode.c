@@ -640,7 +640,8 @@ static void block_yrd(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
   // for now, as the vp9_quantize_fp below for highbitdepth build is slow.
   if (xd->bd != 8 ||
       (cpi->oxcf.speed > 5 && cpi->common.frame_type != KEY_FRAME &&
-       bsize < BLOCK_32X32)) {
+       bsize < BLOCK_32X32 &&
+       !cyclic_refresh_segment_id_boosted(xd->mi[0]->segment_id))) {
     unsigned int var_y, sse_y;
     (void)tx_size;
     model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc->rate, &this_rdc->dist,
