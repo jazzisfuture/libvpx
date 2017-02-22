@@ -1399,7 +1399,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
                  (cpi->ref_frame_flags & VP9_LAST_FLAG) ? LAST_FRAME : NONE,
                  (cpi->ref_frame_flags & VP9_GOLD_FLAG) ? GOLDEN_FRAME : NONE);
 
-    cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
+    cpi->Source = vp9_scale_if_required(cm, xd, cpi->un_scaled_source,
                                         &cpi->scaled_source, 0);
   }
 
