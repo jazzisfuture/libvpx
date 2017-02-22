@@ -226,9 +226,12 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 # End vp9_high encoder functions
 
 #
-# frame based scale
+# frame based scale.
+# Only use vp9_scale_and_extend_frame_ssse3 in HBD when bitdepth = 8.
 #
 if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+  add_proto qw/void vp9_scale_and_extend_frame/, "const struct yv12_buffer_config *src, struct yv12_buffer_config *dst";
+  specialize qw/vp9_scale_and_extend_frame ssse3/;
 } else {
   add_proto qw/void vp9_scale_and_extend_frame/, "const struct yv12_buffer_config *src, struct yv12_buffer_config *dst";
   specialize qw/vp9_scale_and_extend_frame ssse3/;
