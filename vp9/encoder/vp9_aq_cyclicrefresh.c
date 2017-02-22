@@ -356,18 +356,21 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   int qindex_thresh = 0;
   int count_sel = 0;
   int count_tot = 0;
+  int end_row1, end_row2;
+  int end_col1, start_col2, end_col2;
+  const int tile_cols = 1 << cm->log2_tile_cols;
+  int tile_row = 0; int tile_col = 0;
+  TileDataEnc *this_tile = &cpi->tile_data[tile_row * tile_cols + tile_col];
+  TileInfo *tile_info = &this_tile->tile_info;
+  int pass;
+  int numpass = 1;
+  int target_num = cr->percent_refresh;
+  int sbindex;
+
   memset(seg_map, CR_SEGMENT_ID_BASE, cm->mi_rows * cm->mi_cols);
   sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
   sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
   sbs_in_frame = sb_cols * sb_rows;
-  // Number of target blocks to get the q delta (segment 1).
-  block_count = cr->percent_refresh * cm->mi_rows * cm->mi_cols / 100;
-  // Set the segmentation map: cycle through the superblocks, starting at
-  // cr->mb_index, and stopping when either block_count blocks have been found
-  // to be refreshed, or we have passed through whole frame.
-  assert(cr->sb_index < sbs_in_frame);
-  i = cr->sb_index;
-  cr->target_num_seg_blocks = 0;
   if (cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
     consec_zero_mv_thresh = 100;
   }
@@ -382,58 +385,112 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         VPXMAX(vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex),
                cm->base_qindex);
   }
-  do {
-    int sum_map = 0;
-    int consec_zero_mv_thresh_block = consec_zero_mv_thresh;
-    // Get the mi_row/mi_col corresponding to superblock index i.
-    int sb_row_index = (i / sb_cols);
-    int sb_col_index = i - sb_row_index * sb_cols;
-    int mi_row = sb_row_index * MI_BLOCK_SIZE;
-    int mi_col = sb_col_index * MI_BLOCK_SIZE;
-    assert(mi_row >= 0 && mi_row < cm->mi_rows);
-    assert(mi_col >= 0 && mi_col < cm->mi_cols);
-    bl_index = mi_row * cm->mi_cols + mi_col;
-    // Loop through all 8x8 blocks in superblock and update map.
-    xmis =
-        VPXMIN(cm->mi_cols - mi_col, num_8x8_blocks_wide_lookup[BLOCK_64X64]);
-    ymis =
-        VPXMIN(cm->mi_rows - mi_row, num_8x8_blocks_high_lookup[BLOCK_64X64]);
-    if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium &&
-        (xmis <= 2 || ymis <= 2))
-      consec_zero_mv_thresh_block = 10;
-    for (y = 0; y < ymis; y++) {
-      for (x = 0; x < xmis; x++) {
-        const int bl_index2 = bl_index + y * cm->mi_cols + x;
-        // If the block is as a candidate for clean up then mark it
-        // for possible boost/refresh (segment 1). The segment id may get
-        // reset to 0 later if block gets coded anything other than ZEROMV.
-        if (cr->map[bl_index2] == 0) {
-          count_tot++;
-          if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
-              cpi->consec_zero_mv[bl_index2] < consec_zero_mv_thresh_block) {
-            sum_map++;
-            count_sel++;
+
+  end_row1 = tile_info->mi_row_end;
+  end_col1 = tile_info->mi_col_end;
+  end_row2 = end_row1;
+  end_col2 = end_col1;
+  start_col2 = 0;
+  if (tile_cols > 1) {
+    tile_row = 0; tile_col = 1;
+    this_tile = &cpi->tile_data[tile_row * tile_cols + tile_col];
+    tile_info = &this_tile->tile_info;
+    end_row2 = tile_info->mi_row_end;
+    start_col2 = tile_info->mi_col_start;
+    end_col2 = tile_info->mi_col_end;
+  }
+  if (cr->sb_index2 == 0) cr->sb_index2 = start_col2 >> 3;
+  if (tile_cols > 1) {
+    numpass = 2;
+    target_num = cr->percent_refresh >> 1;
+  }
+     
+  for (pass = 0; pass < numpass; pass++) {
+    // Number of target blocks to get the q delta (segment 1).
+    block_count = target_num * cm->mi_rows * cm->mi_cols / 100;
+    // Set the segmentation map: cycle through the superblocks, starting at
+    // cr->mb_index, and stopping when either block_count blocks have been found
+    // to be refreshed, or we have passed through whole frame.
+    assert(cr->sb_index < sbs_in_frame);
+    i = cr->sb_index;
+    if (pass == 1) {
+      i = cr->sb_index2;
+    }
+    sbindex = i;
+    cr->target_num_seg_blocks = 0;
+    do {
+      int sum_map = 0;
+      int consec_zero_mv_thresh_block = consec_zero_mv_thresh;
+      // Get the mi_row/mi_col corresponding to superblock index i.
+      int sb_row_index = (i / sb_cols);
+      int sb_col_index = i - sb_row_index * sb_cols;
+      int mi_row = sb_row_index * MI_BLOCK_SIZE;
+      int mi_col = sb_col_index * MI_BLOCK_SIZE;
+      assert(mi_row >= 0 && mi_row < cm->mi_rows);
+      assert(mi_col >= 0 && mi_col < cm->mi_cols);
+      bl_index = mi_row * cm->mi_cols + mi_col;
+      // Loop through all 8x8 blocks in superblock and update map.
+      xmis =
+          VPXMIN(cm->mi_cols - mi_col, num_8x8_blocks_wide_lookup[BLOCK_64X64]);
+      ymis =
+          VPXMIN(cm->mi_rows - mi_row, num_8x8_blocks_high_lookup[BLOCK_64X64]);
+      if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium &&
+          (xmis <= 2 || ymis <= 2))
+        consec_zero_mv_thresh_block = 10;
+      for (y = 0; y < ymis; y++) {
+        for (x = 0; x < xmis; x++) {
+          const int bl_index2 = bl_index + y * cm->mi_cols + x;
+          // If the block is as a candidate for clean up then mark it
+          // for possible boost/refresh (segment 1). The segment id may get
+          // reset to 0 later if block gets coded anything other than ZEROMV.
+          if (cr->map[bl_index2] == 0) {
+            count_tot++;
+            if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
+                cpi->consec_zero_mv[bl_index2] < consec_zero_mv_thresh_block) {
+              sum_map++;
+              count_sel++;
+            }
+          } else if (cr->map[bl_index2] < 0) {
+            cr->map[bl_index2]++;
           }
-        } else if (cr->map[bl_index2] < 0) {
-          cr->map[bl_index2]++;
         }
       }
-    }
-    // Enforce constant segment over superblock.
-    // If segment is at least half of superblock, set to 1.
-    if (sum_map >= xmis * ymis / 2) {
-      for (y = 0; y < ymis; y++)
-        for (x = 0; x < xmis; x++) {
-          seg_map[bl_index + y * cm->mi_cols + x] = CR_SEGMENT_ID_BOOST1;
+      // Enforce constant segment over superblock.
+      // If segment is at least half of superblock, set to 1.
+      if (sum_map >= xmis * ymis / 2) {
+        for (y = 0; y < ymis; y++)
+          for (x = 0; x < xmis; x++) {
+            seg_map[bl_index + y * cm->mi_cols + x] = CR_SEGMENT_ID_BOOST1;
+          }
+        cr->target_num_seg_blocks += xmis * ymis;
+      }
+      i++;
+      if (numpass == 1) {
+        if (i == sbs_in_frame)
+          i = 0;
+      }
+      if (numpass == 2) {
+        if (pass == 0) {
+          if (i == sbs_in_frame - ((end_col2 - end_col1) >> 3)) {
+            i = 0;
+          }
+          if (mi_col == (end_col1 - 8) && mi_row < (end_row1 - 8)) {
+            i += (end_col2 - end_col1) >> 3;
+          }
         }
-      cr->target_num_seg_blocks += xmis * ymis;
-    }
-    i++;
-    if (i == sbs_in_frame) {
-      i = 0;
-    }
-  } while (cr->target_num_seg_blocks < block_count && i != cr->sb_index);
-  cr->sb_index = i;
+        if (pass == 1) {
+          if (i == sbs_in_frame) {
+            i = start_col2 >> 3;
+          }
+          if (mi_col == (end_col2 - 8) && mi_row < (end_row2 - 8)) {
+            i += (start_col2 >> 3);
+          }
+        }
+      }
+    } while (cr->target_num_seg_blocks < block_count && i != sbindex);
+    if (pass == 0) cr->sb_index = i;
+    if (pass == 1) cr->sb_index2 = i;
+  } // end of 2 pass loop
   cr->reduce_refresh = 0;
   if (count_sel<(3 * count_tot)>> 2) cr->reduce_refresh = 1;
 }
