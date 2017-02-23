@@ -450,35 +450,40 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
     *out_rate_sum = 0;
     *out_dist_sum = sse << 4;
 
-    // Transform skipping test in UV planes.
-    for (i = 1; i <= 2; i++) {
-      struct macroblock_plane *const p = &x->plane[i];
-      struct macroblockd_plane *const pd = &xd->plane[i];
-      const TX_SIZE uv_tx_size = get_uv_tx_size(xd->mi[0], pd);
-      const BLOCK_SIZE unit_size = txsize_to_bsize[uv_tx_size];
-      const BLOCK_SIZE uv_bsize = get_plane_block_size(bsize, pd);
-      const int uv_bw = b_width_log2_lookup[uv_bsize];
-      const int uv_bh = b_height_log2_lookup[uv_bsize];
-      const int sf = (uv_bw - b_width_log2_lookup[unit_size]) +
-                     (uv_bh - b_height_log2_lookup[unit_size]);
-      const uint32_t uv_dc_thr = pd->dequant[0] * pd->dequant[0] >> (6 - sf);
-      const uint32_t uv_ac_thr = pd->dequant[1] * pd->dequant[1] >> (6 - sf);
-      int j = i - 1;
+    if (cpi->oxcf.speed < 8 || x->color_sensitivity[0] ||
+        x->color_sensitivity[1]) {
+      // Transform skipping test in UV planes.
+      for (i = 1; i <= 2; i++) {
+        struct macroblock_plane *const p = &x->plane[i];
+        struct macroblockd_plane *const pd = &xd->plane[i];
+        const TX_SIZE uv_tx_size = get_uv_tx_size(xd->mi[0], pd);
+        const BLOCK_SIZE unit_size = txsize_to_bsize[uv_tx_size];
+        const BLOCK_SIZE uv_bsize = get_plane_block_size(bsize, pd);
+        const int uv_bw = b_width_log2_lookup[uv_bsize];
+        const int uv_bh = b_height_log2_lookup[uv_bsize];
+        const int sf = (uv_bw - b_width_log2_lookup[unit_size]) +
+                       (uv_bh - b_height_log2_lookup[unit_size]);
+        const uint32_t uv_dc_thr = pd->dequant[0] * pd->dequant[0] >> (6 - sf);
+        const uint32_t uv_ac_thr = pd->dequant[1] * pd->dequant[1] >> (6 - sf);
+        int j = i - 1;
 
-      vp9_build_inter_predictors_sbp(xd, mi_row, mi_col, bsize, i);
-      var_uv[j] = cpi->fn_ptr[uv_bsize].vf(
-          p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride, &sse_uv[j]);
+        vp9_build_inter_predictors_sbp(xd, mi_row, mi_col, bsize, i);
+        var_uv[j] = cpi->fn_ptr[uv_bsize].vf(
+            p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride, &sse_uv[j]);
 
-      if ((var_uv[j] < uv_ac_thr || var_uv[j] == 0) &&
-          (sse_uv[j] - var_uv[j] < uv_dc_thr || sse_uv[j] == var_uv[j]))
-        skip_uv[j] = 1;
-      else
-        break;
-    }
+        if ((var_uv[j] < uv_ac_thr || var_uv[j] == 0) &&
+            (sse_uv[j] - var_uv[j] < uv_dc_thr || sse_uv[j] == var_uv[j]))
+          skip_uv[j] = 1;
+        else
+          break;
+      }
 
-    // If the transform in YUV planes are skippable, the mode search checks
-    // fewer inter modes and doesn't check intra modes.
-    if (skip_uv[0] & skip_uv[1]) {
+      // If the transform in YUV planes are skippable, the mode search checks
+      // fewer inter modes and doesn't check intra modes.
+      if (skip_uv[0] & skip_uv[1]) {
+        *early_term = 1;
+      }
+    } else {
       *early_term = 1;
     }
 
@@ -907,35 +912,40 @@ static void encode_breakout_test(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
       vp9_build_inter_predictors_sbuv(xd, mi_row, mi_col, bsize);
     }
 
-    var_u = cpi->fn_ptr[uv_size].vf(x->plane[1].src.buf, x->plane[1].src.stride,
-                                    xd->plane[1].dst.buf,
-                                    xd->plane[1].dst.stride, &sse_u);
+    if (cpi->oxcf.speed < 8 || x->color_sensitivity[0] ||
+        x->color_sensitivity[1]) {
+      var_u = cpi->fn_ptr[uv_size].vf(
+          x->plane[1].src.buf, x->plane[1].src.stride, xd->plane[1].dst.buf,
+          xd->plane[1].dst.stride, &sse_u);
 
-    // U skipping condition checking
-    if (((var_u << 2) <= thresh_ac_uv) && (sse_u - var_u <= thresh_dc_uv)) {
-      var_v = cpi->fn_ptr[uv_size].vf(
-          x->plane[2].src.buf, x->plane[2].src.stride, xd->plane[2].dst.buf,
-          xd->plane[2].dst.stride, &sse_v);
+      // U skipping condition checking
+      if (((var_u << 2) <= thresh_ac_uv) && (sse_u - var_u <= thresh_dc_uv)) {
+        var_v = cpi->fn_ptr[uv_size].vf(
+            x->plane[2].src.buf, x->plane[2].src.stride, xd->plane[2].dst.buf,
+            xd->plane[2].dst.stride, &sse_v);
 
-      // V skipping condition checking
-      if (((var_v << 2) <= thresh_ac_uv) && (sse_v - var_v <= thresh_dc_uv)) {
-        x->skip = 1;
+        // V skipping condition checking
+        if (((var_v << 2) <= thresh_ac_uv) && (sse_v - var_v <= thresh_dc_uv)) {
+          x->skip = 1;
 
-        // The cost of skip bit needs to be added.
-        *rate = cpi->inter_mode_cost[x->mbmi_ext->mode_context[ref_frame]]
-                                    [INTER_OFFSET(this_mode)];
+          // The cost of skip bit needs to be added.
+          *rate = cpi->inter_mode_cost[x->mbmi_ext->mode_context[ref_frame]]
+                                      [INTER_OFFSET(this_mode)];
 
-        // More on this part of rate
-        // rate += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
+          // More on this part of rate
+          // rate += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
 
-        // Scaling factor for SSE from spatial domain to frequency
-        // domain is 16. Adjust distortion accordingly.
-        // TODO(yunqingwang): In this function, only y-plane dist is
-        // calculated.
-        *dist = (sse << 4);  // + ((sse_u + sse_v) << 4);
+          // Scaling factor for SSE from spatial domain to frequency
+          // domain is 16. Adjust distortion accordingly.
+          // TODO(yunqingwang): In this function, only y-plane dist is
+          // calculated.
+          *dist = (sse << 4);  // + ((sse_u + sse_v) << 4);
 
-        // *disable_skip = 1;
+          // *disable_skip = 1;
+        }
       }
+    } else {
+      x->skip = 1;
     }
   }
 }
