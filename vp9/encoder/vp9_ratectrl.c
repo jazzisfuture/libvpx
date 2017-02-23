@@ -591,6 +591,7 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
       cpi->rc.q_1_frame != cpi->rc.q_2_frame) {
     q = clamp(q, VPXMIN(cpi->rc.q_1_frame, cpi->rc.q_2_frame),
               VPXMAX(cpi->rc.q_1_frame, cpi->rc.q_2_frame));
+    if (cpi->rc.low_source_sad) q = (q + active_best_quality) >> 1;
   }
 #if USE_ALTREF_FOR_ONE_PASS
   if (cpi->oxcf.enable_auto_arf && cpi->oxcf.pass == 0 &&
@@ -2209,6 +2210,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
   if (cm->use_highbitdepth) return;
 #endif
   rc->high_source_sad = 0;
+  rc->low_source_sad = 0;
   if (cpi->Last_Source != NULL &&
       cpi->Last_Source->y_width == cpi->Source->y_width &&
       cpi->Last_Source->y_height == cpi->Source->y_height) {
@@ -2221,6 +2223,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
     int frames_to_buffer = 1;
     int frame = 0;
     uint64_t avg_sad_current = 0;
+    uint64_t avg_source_sad_threshold = 10000;
     uint32_t min_thresh = 4000;
     float thresh = 8.0f;
     if (cpi->oxcf.rc_mode == VPX_VBR) {
@@ -2273,7 +2276,6 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         int num_samples = 0;
         int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
         int sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
-        uint64_t avg_source_sad_threshold = 10000;
         if (cpi->oxcf.lag_in_frames > 0) {
           src_y = frames[frame]->y_buffer;
           src_ystride = frames[frame]->y_stride;
@@ -2332,6 +2334,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         } else {
           rc->avg_source_sad[lagframe_idx] = avg_sad;
         }
+        if (avg_sad < 7 * avg_source_sad_threshold >> 3) rc->low_source_sad = 1;
       }
     }
     // For VBR, under scene change/high content change, force golden refresh.
