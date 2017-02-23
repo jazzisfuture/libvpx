@@ -450,6 +450,7 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
     *out_rate_sum = 0;
     *out_dist_sum = sse << 4;
 
+    if (x->color_sensitivity[0] || x->color_sensitivity[1]) {
     // Transform skipping test in UV planes.
     for (i = 1; i <= 2; i++) {
       struct macroblock_plane *const p = &x->plane[i];
@@ -479,6 +480,9 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
     // If the transform in YUV planes are skippable, the mode search checks
     // fewer inter modes and doesn't check intra modes.
     if (skip_uv[0] & skip_uv[1]) {
+      *early_term = 1;
+    }
+    } else {
       *early_term = 1;
     }
 
@@ -907,6 +911,7 @@ static void encode_breakout_test(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
       vp9_build_inter_predictors_sbuv(xd, mi_row, mi_col, bsize);
     }
 
+    if (x->color_sensitivity[0] || x->color_sensitivity[1]) {
     var_u = cpi->fn_ptr[uv_size].vf(x->plane[1].src.buf, x->plane[1].src.stride,
                                     xd->plane[1].dst.buf,
                                     xd->plane[1].dst.stride, &sse_u);
@@ -936,6 +941,9 @@ static void encode_breakout_test(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
 
         // *disable_skip = 1;
       }
+    }
+    } else {
+      x->skip = 1;
     }
   }
 }
