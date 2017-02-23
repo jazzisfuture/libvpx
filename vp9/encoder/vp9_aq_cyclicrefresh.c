@@ -390,6 +390,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     int sb_col_index = i - sb_row_index * sb_cols;
     int mi_row = sb_row_index * MI_BLOCK_SIZE;
     int mi_col = sb_col_index * MI_BLOCK_SIZE;
+    int sb_offset = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
     assert(mi_row >= 0 && mi_row < cm->mi_rows);
     assert(mi_col >= 0 && mi_col < cm->mi_cols);
     bl_index = mi_row * cm->mi_cols + mi_col;
