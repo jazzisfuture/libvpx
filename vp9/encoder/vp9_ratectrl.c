@@ -352,6 +352,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->count_last_scene_change = 0;
   rc->af_ratio_onepass_vbr = 10;
   rc->prev_avg_source_sad_lag = 0;
+  rc->low_source_sad = 0;
   rc->high_source_sad = 0;
   rc->high_source_sad_lagindex = -1;
   rc->alt_ref_gf_group = 0;
@@ -678,7 +679,8 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
   int active_worst_quality;
   int ambient_qp;
   unsigned int num_frames_weight_key = 5 * cpi->svc.number_temporal_layers;
-  if (cm->frame_type == KEY_FRAME) return rc->worst_quality;
+  if (cm->frame_type == KEY_FRAME || rc->high_source_sad)
+    return rc->worst_quality;
   // For ambient_qp we use minimum of avg_frame_qindex[KEY_FRAME/INTER_FRAME]
   // for the first few frames following key frame. These are both initialized
   // to worst_quality and updated with (3/4, 1/4) average in postencode_update.
@@ -699,6 +701,8 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
       ambient_qp = VPXMIN(ambient_qp, lrc->last_q[KEY_FRAME]);
     }
   }
+  if (rc->low_source_sad && rc->frames_since_key > 1)
+    ambient_qp = (7 * ambient_qp) >> 3;
   active_worst_quality = VPXMIN(rc->worst_quality, ambient_qp * 5 >> 2);
   if (rc->buffer_level > rc->optimal_buffer_level) {
     // Adjust down.
@@ -786,8 +790,10 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
   } else {
     // Use the lower of active_worst_quality and recent/average Q.
     if (cm->current_video_frame > 1) {
-      if (rc->avg_frame_qindex[INTER_FRAME] < active_worst_quality)
-        active_best_quality = rtc_minq[rc->avg_frame_qindex[INTER_FRAME]];
+      int qref = rc->avg_frame_qindex[INTER_FRAME];
+      if (rc->low_source_sad) qref = (7 * qref) >> 3;
+      if (qref < active_worst_quality)
+        active_best_quality = rtc_minq[qref];
       else
         active_best_quality = rtc_minq[active_worst_quality];
     } else {
@@ -2220,6 +2226,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
   if (cm->use_highbitdepth) return;
 #endif
   rc->high_source_sad = 0;
+  rc->low_source_sad = 0;
   if (cpi->Last_Source != NULL &&
       cpi->Last_Source->y_width == cpi->Source->y_width &&
       cpi->Last_Source->y_height == cpi->Source->y_height) {
@@ -2232,6 +2239,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
     int frames_to_buffer = 1;
     int frame = 0;
     uint64_t avg_sad_current = 0;
+    uint64_t avg_source_sad_threshold = 10000;
     uint32_t min_thresh = 4000;
     float thresh = 8.0f;
     if (cpi->oxcf.rc_mode == VPX_VBR) {
@@ -2284,7 +2292,6 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         int num_samples = 0;
         int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
         int sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
-        uint64_t avg_source_sad_threshold = 10000;
         if (cpi->oxcf.lag_in_frames > 0) {
           src_y = frames[frame]->y_buffer;
           src_ystride = frames[frame]->y_stride;
@@ -2340,6 +2347,8 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
             rc->high_source_sad = 0;
           if (avg_sad > 0 || cpi->oxcf.rc_mode == VPX_CBR)
             rc->avg_source_sad[0] = (3 * rc->avg_source_sad[0] + avg_sad) >> 2;
+          if (rc->avg_source_sad[0] < avg_source_sad_threshold && !cpi->use_svc)
+            rc->low_source_sad = 1;
         } else {
           rc->avg_source_sad[lagframe_idx] = avg_sad;
         }
