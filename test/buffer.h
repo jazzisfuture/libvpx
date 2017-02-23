@@ -27,15 +27,22 @@ class Buffer {
  public:
   Buffer(int width, int height, int top_padding, int left_padding,
          int right_padding, int bottom_padding)
-      : width_(width), height_(height), top_padding_(top_padding),
-        left_padding_(left_padding), right_padding_(right_padding),
-        bottom_padding_(bottom_padding) {
+      : width_(width), height_(height), alignment_(1),
+        top_padding_(top_padding), left_padding_(left_padding),
+        right_padding_(right_padding), bottom_padding_(bottom_padding) {
     Init();
   }
 
   Buffer(int width, int height, int padding)
-      : width_(width), height_(height), top_padding_(padding),
+      : width_(width), height_(height), alignment_(1), top_padding_(padding),
         left_padding_(padding), right_padding_(padding),
+        bottom_padding_(padding) {
+    Init();
+  }
+
+  Buffer(int width, int height, int alignment, int padding)
+      : width_(width), height_(height), alignment_(alignment),
+        top_padding_(padding), left_padding_(padding), right_padding_(padding),
         bottom_padding_(padding) {
     Init();
   }
@@ -51,6 +58,12 @@ class Buffer {
 
   // Set the buffer (excluding padding) to the output of ACMRandom function 'b'.
   void Set(ACMRandom *rand_class, T (ACMRandom::*rand_func)());
+
+  // Set the pixel at x/column/width X y/row/height to 'value'.
+  void Set(const int x, const int y, const T value);
+
+  // Retrieve the value at x/column/width X y/row/height.
+  T Get(const int x, const int y);
 
   // Copy the contents of Buffer 'a' (excluding padding).
   void CopyFrom(const Buffer<T> &a);
@@ -79,14 +92,33 @@ class Buffer {
   void Init() {
     ASSERT_GT(width_, 0);
     ASSERT_GT(height_, 0);
+    ASSERT_GT(alignment_, 0);
     ASSERT_GE(top_padding_, 0);
     ASSERT_GE(left_padding_, 0);
     ASSERT_GE(right_padding_, 0);
     ASSERT_GE(bottom_padding_, 0);
     stride_ = left_padding_ + width_ + right_padding_;
-    raw_size_ = stride_ * (top_padding_ + height_ + bottom_padding_);
+    // Ensure alignment is maintained for the first element of each row.
+    if (left_padding_ % alignment_ != 0) {
+      left_padding_ += alignment_ - (left_padding_ % alignment_);
+    }
+    if (stride_ % alignment_ != 0) {
+      right_padding_ += alignment_ - (stride_ % alignment_);
+    }
+    raw_size_ =
+        stride_ * (top_padding_ + height_ + bottom_padding_) + alignment_;
     raw_buffer_ = new (std::nothrow) T[raw_size_];
     ASSERT_TRUE(raw_buffer_ != NULL);
+    top_left_pixel_ = raw_buffer_ + (top_padding_ * stride_) + left_padding_;
+    if (alignment_ == 1) {
+      top_left_pixel_ =
+          reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(top_left_pixel_) |
+                                static_cast<uintptr_t>(alignment_));
+    } else {
+      top_left_pixel_ =
+          reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(top_left_pixel_) |
+                                static_cast<uintptr_t>(alignment_ * 8));
+    }
     SetPadding(std::numeric_limits<T>::max());
   }
 
@@ -94,19 +126,22 @@ class Buffer {
 
   const int width_;
   const int height_;
+  const int alignment_;
   const int top_padding_;
-  const int left_padding_;
-  const int right_padding_;
+  int left_padding_;
+  int right_padding_;
   const int bottom_padding_;
   int padding_value_;
   int stride_;
   int raw_size_;
   T *raw_buffer_;
+  T *top_left_pixel_;
 };
 
 template <typename T>
 T *Buffer<T>::TopLeftPixel() const {
-  return raw_buffer_ + (top_padding_ * stride()) + left_padding_;
+  return top_left_pixel_;  // raw_buffer_ + (top_padding_ * stride()) +
+                           // left_padding_;
 }
 
 template <typename T>
@@ -129,6 +164,22 @@ void Buffer<T>::Set(ACMRandom *rand_class, T (ACMRandom::*rand_func)()) {
     }
     src += stride();
   }
+}
+
+template <typename T>
+void Buffer<T>::Set(const int x, const int y, const T value) {
+  ASSERT_TRUE(0 <= x < width_);
+  ASSERT_TRUE(0 <= y < height_);
+  T *src = TopLeftPixel();
+  src[x + y * stride()] = value;
+}
+
+template <typename T>
+T Buffer<T>::Get(const int x, const int y) {
+  EXPECT_TRUE(0 <= x < width_);
+  EXPECT_TRUE(0 <= y < height_);
+  T *src = TopLeftPixel();
+  return src[x + y * stride()];
 }
 
 template <typename T>
