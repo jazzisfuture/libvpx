@@ -390,6 +390,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     int sb_col_index = i - sb_row_index * sb_cols;
     int mi_row = sb_row_index * MI_BLOCK_SIZE;
     int mi_col = sb_col_index * MI_BLOCK_SIZE;
+    int sb_offset = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
     assert(mi_row >= 0 && mi_row < cm->mi_rows);
     assert(mi_col >= 0 && mi_col < cm->mi_cols);
     bl_index = mi_row * cm->mi_cols + mi_col;
@@ -407,7 +408,11 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         // If the block is as a candidate for clean up then mark it
         // for possible boost/refresh (segment 1). The segment id may get
         // reset to 0 later if block gets coded anything other than ZEROMV.
-        if (cr->map[bl_index2] == 0) {
+	// Don't consider blocks with very high source_sad.
+	int high_content = 0;
+        if (cpi->sf.use_source_sad && cpi->content_state_sb[sb_offset] == kVeryHighSad)
+          high_content = 1;
+        if (cr->map[bl_index2] == 0 && !high_content) {
           count_tot++;
           if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
               cpi->consec_zero_mv[bl_index2] < consec_zero_mv_thresh_block) {
@@ -450,6 +455,7 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   cr->percent_refresh = 10;
   if (cr->reduce_refresh) cr->percent_refresh = 5;
   cr->max_qdelta_perc = 60;
+  if (rc->low_source_sad) cr->max_qdelta_perc = 70;
   cr->time_for_refresh = 0;
   cr->motion_thresh = 32;
   cr->rate_boost_fac = 15;
