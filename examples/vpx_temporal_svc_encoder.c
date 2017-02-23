@@ -714,7 +714,7 @@ int main(int argc, char **argv) {
     vpx_svc_extra_cfg_t svc_params;
     memset(&svc_params, 0, sizeof(svc_params));
     vpx_codec_control(&codec, VP8E_SET_CPUUSED, speed);
-    vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 3);
+    vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 0);
     vpx_codec_control(&codec, VP9E_SET_GF_CBR_BOOST_PCT, 0);
     vpx_codec_control(&codec, VP9E_SET_FRAME_PARALLEL_DECODING, 0);
     vpx_codec_control(&codec, VP9E_SET_FRAME_PERIODIC_BOOST, 0);
