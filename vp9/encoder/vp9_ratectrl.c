@@ -591,6 +591,7 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
       cpi->rc.q_1_frame != cpi->rc.q_2_frame) {
     q = clamp(q, VPXMIN(cpi->rc.q_1_frame, cpi->rc.q_2_frame),
               VPXMAX(cpi->rc.q_1_frame, cpi->rc.q_2_frame));
+    if (cpi->rc.high_source_sad == -1) q = VPXMIN(q, (q + active_best_quality) >> 1);
   }
 #if USE_ALTREF_FOR_ONE_PASS
   if (cpi->oxcf.enable_auto_arf && cpi->oxcf.pass == 0 &&
@@ -2332,6 +2333,8 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         } else {
           rc->avg_source_sad[lagframe_idx] = avg_sad;
         }
+	if (avg_sad < 7 * avg_source_sad_thresh >> 3)
+	  rc->high_source_sad = -1;
       }
     }
     // For VBR, under scene change/high content change, force golden refresh.
