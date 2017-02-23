@@ -352,6 +352,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->count_last_scene_change = 0;
   rc->af_ratio_onepass_vbr = 10;
   rc->prev_avg_source_sad_lag = 0;
+  rc->low_source_sad = 0;
   rc->high_source_sad = 0;
   rc->high_source_sad_lagindex = -1;
   rc->alt_ref_gf_group = 0;
@@ -716,6 +717,8 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
     // Set to worst_quality if buffer is below critical level.
     active_worst_quality = rc->worst_quality;
   }
+  if (rc->low_source_sad && rc->buffer_level > (rc->optimal_buffer_level >> 1))
+    active_worst_quality = 7 * active_worst_quality >> 3;
   return active_worst_quality;
 }
 
@@ -785,6 +788,8 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
       else
         active_best_quality = rtc_minq[active_worst_quality];
     }
+    if (rc->low_source_sad && rc->buffer_level > (rc->optimal_buffer_level >> 1))
+      active_best_quality = 7 * active_best_quality >> 3;
   }
 
   // Clip the active best and worst quality values to limits
@@ -2209,6 +2214,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
   if (cm->use_highbitdepth) return;
 #endif
   rc->high_source_sad = 0;
+  rc->low_source_sad = 0;
   if (cpi->Last_Source != NULL &&
       cpi->Last_Source->y_width == cpi->Source->y_width &&
       cpi->Last_Source->y_height == cpi->Source->y_height) {
@@ -2221,6 +2227,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
     int frames_to_buffer = 1;
     int frame = 0;
     uint64_t avg_sad_current = 0;
+    uint64_t avg_source_sad_threshold = 10000;
     uint32_t min_thresh = 4000;
     float thresh = 8.0f;
     if (cpi->oxcf.rc_mode == VPX_VBR) {
@@ -2273,7 +2280,6 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         int num_samples = 0;
         int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
         int sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
-        uint64_t avg_source_sad_threshold = 10000;
         if (cpi->oxcf.lag_in_frames > 0) {
           src_y = frames[frame]->y_buffer;
           src_ystride = frames[frame]->y_stride;
@@ -2332,6 +2338,7 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
         } else {
           rc->avg_source_sad[lagframe_idx] = avg_sad;
         }
+        if (avg_sad < avg_source_sad_threshold) rc->low_source_sad = 1;
       }
     }
     // For VBR, under scene change/high content change, force golden refresh.
