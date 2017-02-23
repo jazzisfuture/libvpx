@@ -85,9 +85,9 @@ class FdctTest : public ::testing::TestWithParam<FdctFunc> {
 };
 
 TEST_P(FdctTest, SignBiasCheck) {
-  int16_t test_input_block[16];
-  int16_t test_output_block[16];
-  const int pitch = 8;
+  Buffer<int16_t> test_input_block = Buffer<int16_t>(4, 4, 8);
+  Buffer<int16_t> test_output_block = Buffer<int16_t>(4, 4, 2, 0);
+  const int pitch = test_input_block.stride() * 2;
   int count_sign_block[16][2];
   const int count_test_block = 1000000;
 
@@ -95,17 +95,25 @@ TEST_P(FdctTest, SignBiasCheck) {
 
   for (int i = 0; i < count_test_block; ++i) {
     // Initialize a test block with input range [-255, 255].
-    for (int j = 0; j < 16; ++j) {
-      test_input_block[j] = rnd_.Rand8() - rnd_.Rand8();
+    // This appears to fail with Rand9Signed(). It should only extend the range
+    // by 1 (to -256).
+    // test_input_block.Set(&rnd_, &ACMRandom::Rand9Signed);
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        test_input_block.Set(k, j, rnd_.Rand8() - rnd_.Rand8());
+      }
     }
 
-    fdct_func_(test_input_block, test_output_block, pitch);
+    fdct_func_(test_input_block.TopLeftPixel(),
+               test_output_block.TopLeftPixel(), pitch);
 
-    for (int j = 0; j < 16; ++j) {
-      if (test_output_block[j] < 0) {
-        ++count_sign_block[j][0];
-      } else if (test_output_block[j] > 0) {
-        ++count_sign_block[j][1];
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        if (test_output_block.Get(k, j) < 0) {
+          ++count_sign_block[k + j * 4][0];
+        } else if (test_output_block.Get(k, j) > 0) {
+          ++count_sign_block[k + j * 4][1];
+        }
       }
     }
   }
@@ -125,16 +133,21 @@ TEST_P(FdctTest, SignBiasCheck) {
   for (int i = 0; i < count_test_block; ++i) {
     // Initialize a test block with input range [-15, 15].
     for (int j = 0; j < 16; ++j) {
-      test_input_block[j] = (rnd_.Rand8() >> 4) - (rnd_.Rand8() >> 4);
+      for (int k = 0; k < 16; ++k) {
+        test_input_block.Set(k, j, (rnd_.Rand8() >> 4) - (rnd_.Rand8() >> 4));
+      }
     }
 
-    fdct_func_(test_input_block, test_output_block, pitch);
+    fdct_func_(test_input_block.TopLeftPixel(),
+               test_output_block.TopLeftPixel(), pitch);
 
-    for (int j = 0; j < 16; ++j) {
-      if (test_output_block[j] < 0) {
-        ++count_sign_block[j][0];
-      } else if (test_output_block[j] > 0) {
-        ++count_sign_block[j][1];
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        if (test_output_block.Get(k, j) < 0) {
+          ++count_sign_block[k + j * 4][0];
+        } else if (test_output_block.Get(k, j) > 0) {
+          ++count_sign_block[k + j * 4][1];
+        }
       }
     }
   }
@@ -154,25 +167,28 @@ TEST_P(FdctTest, RoundTripErrorCheck) {
   int max_error = 0;
   double total_error = 0;
   const int count_test_block = 1000000;
+  Buffer<int16_t> test_input_block = Buffer<int16_t>(4, 4, 8);
+  Buffer<int16_t> test_output_block = Buffer<int16_t>(4, 4, 0);
+  Buffer<int16_t> test_temp_block = Buffer<int16_t>(4, 4, 2, 0);
+  // DECLARE_ALIGNED(16, int16_t, test_temp_block[16]);
   for (int i = 0; i < count_test_block; ++i) {
-    DECLARE_ALIGNED(16, int16_t, test_input_block[16]);
-    DECLARE_ALIGNED(16, int16_t, test_output_block[16]);
-    int16_t test_temp_block[16];
-
     // Initialize a test block with input range [-255, 255].
-    for (int j = 0; j < 16; ++j) {
-      test_input_block[j] = rnd_.Rand8() - rnd_.Rand8();
-    }
+    test_input_block.Set(&rnd_, &ACMRandom::Rand9Signed);
 
-    const int pitch = 8;
-    fdct_func_(test_input_block, test_temp_block, pitch);
-    reference_idct4x4(test_temp_block, test_output_block);
+    const int pitch = test_input_block.stride() * 2;
+    fdct_func_(test_input_block.TopLeftPixel(), test_temp_block.TopLeftPixel(),
+               pitch);
+    reference_idct4x4(test_temp_block.TopLeftPixel(),
+                      test_output_block.TopLeftPixel());
 
-    for (int j = 0; j < 16; ++j) {
-      const int diff = test_input_block[j] - test_output_block[j];
-      const int error = diff * diff;
-      if (max_error < error) max_error = error;
-      total_error += error;
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        const int diff =
+            test_input_block.Get(k, j) - test_output_block.Get(k, j);
+        const int error = diff * diff;
+        if (max_error < error) max_error = error;
+        total_error += error;
+      }
     }
   }
 
