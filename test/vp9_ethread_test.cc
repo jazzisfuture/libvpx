@@ -39,8 +39,8 @@ class VPxFirstPassEncoderThreadTest
         encoding_mode_(GET_PARAM(1)), set_cpu_used_(GET_PARAM(2)) {
     init_flags_ = VPX_CODEC_USE_PSNR;
 
-    new_mt_mode_ = 1;
-    bit_match_mode_ = 0;
+    row_mt_mode_ = 1;
+    bit_exact_mode_ = 0;
     first_pass_only_ = true;
     firstpass_stats_.buf = NULL;
     firstpass_stats_.sz = 0;
@@ -82,11 +82,11 @@ class VPxFirstPassEncoderThreadTest
       encoder->Control(VP8E_SET_ARNR_TYPE, 3);
       encoder->Control(VP9E_SET_FRAME_PARALLEL_DECODING, 0);
 
-      // For now, new_mt_mode only works for 2-pass encoding.
+      // For now, row_mt_mode only works for 2-pass encoding.
       if (encoding_mode_ == ::libvpx_test::kTwoPassGood)
-        encoder->Control(VP9E_SET_NEW_MT, new_mt_mode_);
+        encoder->Control(VP9E_SET_ROW_MT, row_mt_mode_);
 
-      encoder->Control(VP9E_ENABLE_THREAD_BIT_MATCH, bit_match_mode_);
+      encoder->Control(VP9E_ENABLE_ROW_MT_BIT_EXACT, bit_exact_mode_);
 
       encoder_initialized_ = true;
     }
@@ -112,8 +112,8 @@ class VPxFirstPassEncoderThreadTest
   int tiles_;
   ::libvpx_test::TestMode encoding_mode_;
   int set_cpu_used_;
-  int new_mt_mode_;
-  int bit_match_mode_;
+  int row_mt_mode_;
+  int bit_exact_mode_;
   bool first_pass_only_;
   vpx_fixed_buf_t firstpass_stats_;
 };
@@ -153,16 +153,16 @@ static void compare_fp_stats_md5(vpx_fixed_buf_t *fp_stats) {
   // stats are compared to check if the stats match.
   uint8_t *stats1 = reinterpret_cast<uint8_t *>(fp_stats->buf);
   uint8_t *stats2 = stats1 + fp_stats->sz / 2;
-  ::libvpx_test::MD5 md5_new_mt_0, md5_new_mt_1;
+  ::libvpx_test::MD5 md5_row_mt_0, md5_row_mt_1;
 
-  md5_new_mt_0.Add(stats1, fp_stats->sz / 2);
-  const char *md5_new_mt_0_str = md5_new_mt_0.Get();
+  md5_row_mt_0.Add(stats1, fp_stats->sz / 2);
+  const char *md5_row_mt_0_str = md5_row_mt_0.Get();
 
-  md5_new_mt_1.Add(stats2, fp_stats->sz / 2);
-  const char *md5_new_mt_1_str = md5_new_mt_1.Get();
+  md5_row_mt_1.Add(stats2, fp_stats->sz / 2);
+  const char *md5_row_mt_1_str = md5_row_mt_1.Get();
 
   // Check md5 match.
-  ASSERT_STREQ(md5_new_mt_0_str, md5_new_mt_1_str)
+  ASSERT_STREQ(md5_row_mt_0_str, md5_row_mt_1_str)
       << "MD5 checksums don't match";
 
   // Reset firstpass_stats_ to 0.
@@ -176,23 +176,23 @@ TEST_P(VPxFirstPassEncoderThreadTest, FirstPassStatsTest) {
   first_pass_only_ = true;
   cfg_.rc_target_bitrate = 1000;
 
-  // Test new_mt_mode: 0 vs 1 (threads = 1, tiles_ = 0)
-  bit_match_mode_ = 0;
+  // Test row_mt_mode: 0 vs 1 (threads = 1, tiles_ = 0)
+  bit_exact_mode_ = 0;
   tiles_ = 0;
   cfg_.g_threads = 1;
 
-  new_mt_mode_ = 0;
+  row_mt_mode_ = 0;
   init_flags_ = VPX_CODEC_USE_PSNR;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 
-  new_mt_mode_ = 1;
+  row_mt_mode_ = 1;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 
-  // Compare to check if using or not using new-mt generates matching stats.
+  // Compare to check if using or not using row-mt generates matching stats.
   compare_fp_stats(&firstpass_stats_);
 
   // Test multi-threads: single thread vs 4 threads
-  new_mt_mode_ = 1;
+  row_mt_mode_ = 1;
   tiles_ = 2;
 
   cfg_.g_threads = 1;
@@ -205,19 +205,19 @@ TEST_P(VPxFirstPassEncoderThreadTest, FirstPassStatsTest) {
   // Compare to check if single-thread and multi-thread stats matches.
   compare_fp_stats(&firstpass_stats_);
 
-  // Test new_mt_mode: 0 vs 1 (threads = 8, tiles_ = 2)
-  bit_match_mode_ = 1;
+  // Test row_mt_mode: 0 vs 1 (threads = 8, tiles_ = 2)
+  bit_exact_mode_ = 1;
   tiles_ = 2;
   cfg_.g_threads = 8;
 
-  new_mt_mode_ = 0;
+  row_mt_mode_ = 0;
   init_flags_ = VPX_CODEC_USE_PSNR;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 
-  new_mt_mode_ = 1;
+  row_mt_mode_ = 1;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 
-  // Compare to check if stats match with new-mt=0/1.
+  // Compare to check if stats match with row-mt=0/1.
   compare_fp_stats_md5(&firstpass_stats_);
 }
 
@@ -232,8 +232,8 @@ class VPxEncoderThreadTest
         encoding_mode_(GET_PARAM(1)), set_cpu_used_(GET_PARAM(2)) {
     init_flags_ = VPX_CODEC_USE_PSNR;
     md5_.clear();
-    new_mt_mode_ = 1;
-    bit_match_mode_ = 0;
+    row_mt_mode_ = 1;
+    bit_exact_mode_ = 0;
   }
   virtual ~VPxEncoderThreadTest() {}
 
@@ -272,11 +272,11 @@ class VPxEncoderThreadTest
         encoder->Control(VP8E_SET_ARNR_TYPE, 3);
         encoder->Control(VP9E_SET_FRAME_PARALLEL_DECODING, 0);
 
-        encoder->Control(VP9E_SET_NEW_MT, new_mt_mode_);
-        // While new_mt = 1/0(with/without row-based multi-threading), several
+        encoder->Control(VP9E_SET_ROW_MT, row_mt_mode_);
+        // While row_mt = 1/0(with/without row-based multi-threading), several
         // speed features that would adaptively adjust encoding parameters have
         // to be disabled to guarantee the bit match of the resulted bitstream.
-        encoder->Control(VP9E_ENABLE_THREAD_BIT_MATCH, bit_match_mode_);
+        encoder->Control(VP9E_ENABLE_ROW_MT_BIT_EXACT, bit_exact_mode_);
       } else {
         encoder->Control(VP8E_SET_ENABLEAUTOALTREF, 0);
         encoder->Control(VP9E_SET_AQ_MODE, 3);
@@ -308,19 +308,19 @@ class VPxEncoderThreadTest
   int threads_;
   ::libvpx_test::TestMode encoding_mode_;
   int set_cpu_used_;
-  int new_mt_mode_;
-  int bit_match_mode_;
+  int row_mt_mode_;
+  int bit_exact_mode_;
   std::vector<std::string> md5_;
 };
 
 TEST_P(VPxEncoderThreadTest, EncoderResultTest) {
-  std::vector<std::string> single_thr_md5, multi_thr_md5, new_mt_0_md5;
+  std::vector<std::string> single_thr_md5, multi_thr_md5, row_mt_0_md5;
 
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 15, 20);
 
   cfg_.rc_target_bitrate = 1000;
-  bit_match_mode_ = 1;
-  new_mt_mode_ = 1;
+  bit_exact_mode_ = 1;
+  row_mt_mode_ = 1;
 
   // Encode using single thread.
   cfg_.g_threads = 1;
@@ -338,16 +338,16 @@ TEST_P(VPxEncoderThreadTest, EncoderResultTest) {
   // Compare to check if two vectors are equal.
   ASSERT_EQ(single_thr_md5, multi_thr_md5);
 
-  // Encode with new-mt 0.
-  new_mt_mode_ = 0;
+  // Encode with row-mt 0.
+  row_mt_mode_ = 0;
   cfg_.g_threads = threads_;
   init_flags_ = VPX_CODEC_USE_PSNR;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  new_mt_0_md5 = md5_;
+  row_mt_0_md5 = md5_;
   md5_.clear();
 
   // Compare to check if two vectors are equal.
-  ASSERT_EQ(new_mt_0_md5, multi_thr_md5);
+  ASSERT_EQ(row_mt_0_md5, multi_thr_md5);
 }
 
 INSTANTIATE_TEST_CASE_P(
