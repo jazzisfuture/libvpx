@@ -79,6 +79,12 @@ typedef struct MODE_INFO {
   // Only for INTER blocks
   INTERP_FILTER interp_filter;
 
+  // For machine learning-based early termination
+  int source_var;
+  int last_var;
+  int last_sad;
+  int sum_eobs;
+
   // if ref_frame[idx] is equal to ALTREF_FRAME then
   // MACROBLOCKD::block_ref[idx] is an altref
   MV_REFERENCE_FRAME ref_frame[2];
