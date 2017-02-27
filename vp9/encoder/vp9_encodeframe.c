@@ -68,6 +68,28 @@ static const uint8_t VP9_VAR_OFFS[64] = {
     128, 128, 128, 128, 128, 128, 128, 128
 };
 
+// Machine learning-based early termination parameters.
+static const double train_mean[21] = {
+    303501.697372, 3042630.372158, 24.694696,     1.392182,      689.413511,
+    162.027012,    1.478213,       135382.260230, 912738.513263, 28.845217,
+    1.515230,      544.158492,     131.807995,    1.436863,      43682.377587,
+    208131.711766, 28.084737,      1.356677,      138.254122,    119.522553,
+    1.252322};
+
+static const double train_stdm[21] = {
+    673689.212982, 5996652.516628, 0.024449,      1.989792,       985.880847,
+    0.014638,      2.001898,       208798.775332, 1812548.443284, 0.018693,
+    1.838009,      396.986910,     0.015657,      1.332541,       55888.847031,
+    448587.962714, 0.017900,       1.904776,      98.652832,      0.016598,
+    1.320992};
+
+// Error tolerance: 0.01%-0.0.05%-0.1%
+static const double classifiers[24] = {
+    0.111736, 0.289977, 0.042219, 0.204765, 0.120410, -0.143863,
+    0.282376, 0.847811, 0.637161, 0.131570, 0.018636, 0.202134,
+    0.112797, 0.028162, 0.182450, 1.124367, 0.386133, 0.083700,
+    0.050028, 0.150873, 0.061119, 0.109318, 0.127255, 0.625211};
+
 #if CONFIG_VP9_HIGHBITDEPTH
 static const uint16_t VP9_HIGH_VAR_OFFS_8[64] = {
     128, 128, 128, 128, 128, 128, 128, 128,
@@ -151,6 +173,21 @@ static unsigned int get_sby_perpixel_diff_variance(VP9_COMP *cpi,
       &last->y_buffer[mi_row * MI_SIZE * last->y_stride + mi_col * MI_SIZE];
   var = cpi->fn_ptr[bs].vf(ref->buf, ref->stride, last_y, last->y_stride, &sse);
   return ROUND_POWER_OF_TWO(var, num_pels_log2_lookup[bs]);
+}
+
+static unsigned int get_sby_perpixel_diff_sad(VP9_COMP *cpi,
+                                              const struct buf_2d *ref,
+                                              int mi_row, int mi_col,
+                                              BLOCK_SIZE bs) {
+  unsigned int sad;
+  uint8_t *last_y;
+  const YV12_BUFFER_CONFIG *last = get_ref_frame_buffer(cpi, LAST_FRAME);
+
+  assert(last != NULL);
+  last_y =
+      &last->y_buffer[mi_row * MI_SIZE * last->y_stride + mi_col * MI_SIZE];
+  sad = cpi->fn_ptr[bs].sdf(ref->buf, ref->stride, last_y, last->y_stride);
+  return sad;
 }
 
 static BLOCK_SIZE get_rd_var_based_fixed_partition(VP9_COMP *cpi, MACROBLOCK *x,
@@ -1356,6 +1393,17 @@ static int set_segment_rdmult(VP9_COMP *const cpi,
   return vp9_compute_rd_mult(cpi, segment_qindex + cm->y_dc_delta_q);
 }
 
+static void accumulate_eobs(int plane, int block, int row, int col,
+                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+                            void *arg) {
+  PICK_MODE_CONTEXT *ctx = (PICK_MODE_CONTEXT *)arg;
+  (void)row;
+  (void)col;
+  (void)plane_bsize;
+  (void)tx_size;
+  ctx->mic.sum_eobs += ctx->eobs_pbuf[plane][1][block];
+}
+
 static void rd_pick_sb_modes(VP9_COMP *cpi,
                              TileDataEnc *tile_data,
                              MACROBLOCK *const x,
@@ -1462,7 +1510,6 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
     }
   }
 
-
   // Examine the resulting rate and for AQ mode 2 make a segment choice.
   if ((rd_cost->rate != INT_MAX) &&
       (aq_mode == COMPLEXITY_AQ) && (bsize >= BLOCK_16X16) &&
@@ -1481,6 +1528,21 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
 
   ctx->rate = rd_cost->rate;
   ctx->dist = rd_cost->dist;
+  ctx->mic.source_var = x->source_variance;
+
+  if (ctx->mic.mode < INTRA_MODES) {
+    ctx->mic.last_var = INT_MAX;
+    ctx->mic.last_sad = INT_MAX;
+    ctx->mic.sum_eobs = INT_MAX;
+  } else {
+    ctx->mic.last_var = get_sby_perpixel_diff_variance(cpi, &x->plane[0].src,
+                                                         mi_row, mi_col, bsize);
+    ctx->mic.last_sad =
+        get_sby_perpixel_diff_sad(cpi, &x->plane[0].src, mi_row, mi_col, bsize);
+
+    ctx->mic.sum_eobs = 0;
+    vp9_foreach_transformed_block_in_plane(xd, bsize, 0, accumulate_eobs, ctx);
+  }
 }
 
 static void update_stats(VP9_COMMON *cm, ThreadData *td) {
@@ -2712,10 +2774,10 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         // If all y, u, v transform blocks in this partition are skippable, and
         // the dist & rate are within the thresholds, the partition search is
         // terminated for current branch of the partition search tree.
-        if (!x->e_mbd.lossless && ctx->skippable  &&
-            ((best_rdc.dist < (dist_breakout_thr >> 2)) ||
-             (best_rdc.dist < dist_breakout_thr &&
-              best_rdc.rate < rate_breakout_thr))) {
+        if (VPXMIN(cm->width, cm->height) < 480 && !x->e_mbd.lossless &&
+            ctx->skippable && ((best_rdc.dist < (dist_breakout_thr >> 2)) ||
+                               (best_rdc.dist < dist_breakout_thr &&
+                                best_rdc.rate < rate_breakout_thr))) {
           do_split = 0;
           do_rect = 0;
         }
@@ -2766,6 +2828,132 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
           }
         }
 #endif
+
+        if (VPXMIN(cm->width, cm->height) >= 480 &&
+            ctx->mic.mode >= INTRA_MODES && bsize >= BLOCK_16X16 &&
+            b_width_log2_lookup[bsize] == b_height_log2_lookup[bsize]) {
+          const int left_in_image = !!xd->left_mi;
+          const int above_in_image = !!xd->above_mi;
+          MODE_INFO **prev_mi =
+              &cm->prev_mi_grid_visible[mi_col + cm->mi_stride * mi_row];
+          int above_partitioning = 0;
+          int left_partitioning = 0;
+          int last_partitioning = 0;
+          BLOCK_SIZE context_size;
+          double score;
+
+          if (above_in_image) {
+            context_size = xd->above_mi->sb_type;
+            if (context_size < bsize)
+              above_partitioning = 2;
+            else if (context_size == bsize)
+              above_partitioning = 1;
+          }
+
+          if (left_in_image) {
+            context_size = xd->left_mi->sb_type;
+            if (context_size < bsize)
+              left_partitioning = 2;
+            else if (context_size == bsize)
+              left_partitioning = 1;
+          }
+
+          if (prev_mi) {
+            context_size = prev_mi[0]->sb_type;
+            if (context_size < bsize)
+              last_partitioning = 2;
+            else if (context_size == bsize)
+              last_partitioning = 1;
+          }
+
+          // early termination score calculation
+          if (bsize == BLOCK_64X64) {
+            score =
+                classifiers[0] *
+                    (((double)(ctx->rate) - train_mean[0]) / train_stdm[0]) +
+                classifiers[1] *
+                    (((double)(ctx->dist) - train_mean[1]) / train_stdm[1]) +
+                classifiers[2] * (((double)(abs(ctx->mic.mv[0].as_mv.col) +
+                                            abs(ctx->mic.mv[0].as_mv.row)) /
+                                       2 -
+                                   train_mean[2]) *
+                                  train_stdm[2]) +
+                classifiers[3] *
+                    (((double)(left_partitioning + above_partitioning) / 2 -
+                      train_mean[3]) *
+                     train_stdm[3]) +
+                classifiers[4] *
+                    (((double)(ctx->mic.sum_eobs) - train_mean[4]) /
+                     train_stdm[4]) +
+                classifiers[5] * (((double)(cm->base_qindex) - train_mean[5]) *
+                                  train_stdm[5]) +
+                classifiers[6] * (((double)(last_partitioning)-train_mean[6]) *
+                                  train_stdm[6]) +
+                classifiers[7];
+            if (score < 0) {
+              do_split = 0;
+              do_rect = 0;
+            }
+          } else if (bsize == BLOCK_32X32) {
+            score =
+                classifiers[8] *
+                    (((double)(ctx->rate) - train_mean[7]) / train_stdm[7]) +
+                classifiers[9] *
+                    (((double)(ctx->dist) - train_mean[8]) / train_stdm[8]) +
+                classifiers[10] * (((double)(abs(ctx->mic.mv[0].as_mv.col) +
+                                             abs(ctx->mic.mv[0].as_mv.row)) /
+                                        2 -
+                                    train_mean[9]) *
+                                   train_stdm[9]) +
+                classifiers[11] *
+                    (((double)(left_partitioning + above_partitioning) / 2 -
+                      train_mean[10]) *
+                     train_stdm[10]) +
+                classifiers[12] *
+                    (((double)(ctx->mic.sum_eobs) - train_mean[11]) /
+                     train_stdm[11]) +
+                classifiers[13] *
+                    (((double)(cm->base_qindex) - train_mean[12]) *
+                     train_stdm[12]) +
+                classifiers[14] *
+                    (((double)(last_partitioning)-train_mean[13]) *
+                     train_stdm[13]) +
+                classifiers[15];
+            if (score < 0) {
+              do_split = 0;
+              do_rect = 0;
+            }
+          } else if (bsize == BLOCK_16X16) {
+            score =
+                classifiers[16] *
+                    (((double)(ctx->rate) - train_mean[14]) / train_stdm[14]) +
+                classifiers[17] *
+                    (((double)(ctx->dist) - train_mean[15]) / train_stdm[15]) +
+                classifiers[18] * (((double)(abs(ctx->mic.mv[0].as_mv.col) +
+                                             abs(ctx->mic.mv[0].as_mv.row)) /
+                                        2 -
+                                    train_mean[16]) *
+                                   train_stdm[16]) +
+                classifiers[19] *
+                    (((double)(left_partitioning + above_partitioning) / 2 -
+                      train_mean[17]) *
+                     train_stdm[17]) +
+                classifiers[20] *
+                    (((double)(ctx->mic.sum_eobs) - train_mean[18]) /
+                     train_stdm[18]) +
+                classifiers[21] *
+                    (((double)(cm->base_qindex) - train_mean[19]) *
+                     train_stdm[19]) +
+                classifiers[22] *
+                    (((double)(last_partitioning)-train_mean[20]) *
+                     train_stdm[20]) +
+                classifiers[23];
+            if (score < 0) {
+              do_split = 0;
+              do_rect = 0;
+            }
+          }
+        }
       }
     }
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -2835,7 +3023,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         pc_tree->partitioning = PARTITION_SPLIT;
 
         // Rate and distortion based partition search termination clause.
-        if (!x->e_mbd.lossless &&
+        if (VPXMIN(cm->width, cm->height) < 480 && !x->e_mbd.lossless &&
             ((best_rdc.dist < (dist_breakout_thr >> 2)) ||
              (best_rdc.dist < dist_breakout_thr &&
               best_rdc.rate < rate_breakout_thr))) {
