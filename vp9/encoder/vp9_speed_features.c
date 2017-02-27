@@ -66,12 +66,26 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
                                                        SPEED_FEATURES *sf,
                                                        int speed) {
   VP9_COMMON *const cm = &cpi->common;
+  int i;
 
   // speed 0 features
   sf->partition_search_breakout_thr.dist = (1 << 20);
   sf->partition_search_breakout_thr.rate = 80;
 
+  // Currently, the machine-learning based partition search early termination
+  // is only used while VPXMIN(cm->width, cm->height) >= 480 and speed = 0.
+  if (VPXMIN(cm->width, cm->height) >= 480) {
+    for (i = 0; i < BLOCK_SIZES; ++i)
+      if (i >= BLOCK_16X16)
+        sf->ml_partition_search_early_termination[i] = 1;
+      else
+        sf->ml_partition_search_early_termination[i] = 0;
+  }
+
   if (speed >= 1) {
+    for (i = 0; i < BLOCK_SIZES; ++i)
+      sf->ml_partition_search_early_termination[i] = 0;
+
     if (VPXMIN(cm->width, cm->height) >= 720) {
       sf->disable_split_mask =
           cm->show_frame ? DISABLE_ALL_SPLIT : DISABLE_ALL_INTER_SPLIT;
@@ -586,6 +600,8 @@ void vp9_set_speed_features_framesize_dependent(VP9_COMP *cpi) {
   // Some speed-up features even for best quality as minimal impact on quality.
   sf->partition_search_breakout_thr.dist = (1 << 19);
   sf->partition_search_breakout_thr.rate = 80;
+  for (i = 0; i < BLOCK_SIZES; ++i)
+    sf->ml_partition_search_early_termination[i] = 0;
 
   if (oxcf->mode == REALTIME) {
     set_rt_speed_feature_framesize_dependent(cpi, sf, oxcf->speed);
