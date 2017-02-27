@@ -706,6 +706,8 @@ static int skin_sb_split(VP9_COMP *cpi, MACROBLOCK *x, const int low_res,
     const int bh = num_8x8_blocks_high_lookup[BLOCK_64X64];
     const int xmis = VPXMIN(cm->mi_cols - mi_col, bw);
     const int ymis = VPXMIN(cm->mi_rows - mi_row, bh);
+    int num_nonskin_exit = 5;
+    int num_skin_thresh = 10;
     // Loop through the 16x16 sub-blocks.
     int i, j;
     for (i = 0; i < ymis; i += 2) {
@@ -723,8 +725,9 @@ static int skin_sb_split(VP9_COMP *cpi, MACROBLOCK *x, const int low_res,
             ysignal, usignal, vsignal, sp, spuv, BLOCK_16X16, consec_zeromv, 0);
         num_16x16_skin += is_skin;
         num_16x16_nonskin += (1 - is_skin);
-        if (num_16x16_nonskin > 3) {
-          // Exit loop if at least 4 of the 16x16 blocks are not skin.
+        if (num_16x16_nonskin > num_nonskin_exit) {
+          // Exit loop if more than num_nonskin_exit of the 16x16 blocks
+          // are not skin.
           i = ymis;
           break;
         }
@@ -736,7 +739,7 @@ static int skin_sb_split(VP9_COMP *cpi, MACROBLOCK *x, const int low_res,
       usignal += (spuv << 3) - 32;
       vsignal += (spuv << 3) - 32;
     }
-    if (num_16x16_skin > 12) {
+    if (num_16x16_skin > num_skin_thresh) {
       *force_split = 1;
       return 1;
     }
