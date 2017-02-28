@@ -467,11 +467,13 @@ int64_t scale_part_thresh_sumdiff(int64_t threshold_base, int speed, int width,
     if (width <= 640 && height <= 480)
       return (5 * threshold_base) >> 2;
     else if ((content_state == kLowSadLowSumdiff) ||
-             (content_state == kHighSadLowSumdiff))
+             (content_state == kHighSadLowSumdiff) ||
+             (content_state == kLowVarHighSumdiff))
       return (5 * threshold_base) >> 2;
   } else if (speed == 7) {
     if ((content_state == kLowSadLowSumdiff) ||
-        (content_state == kHighSadLowSumdiff)) {
+        (content_state == kHighSadLowSumdiff) ||
+        (content_state == kLowVarHighSumdiff)) {
       return (5 * threshold_base) >> 2;
     }
   }
@@ -991,6 +993,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
                               content_state == kLowSadHighSumdiff)
                                  ? 1
                                  : 0;
+    x->lowvar_highsumdiff = (content_state == kLowVarHighSumdiff) ? 1 : 0;
     // If source_sad is low copy the partition without computing the y_sad.
     if (x->skip_low_source_sad && cpi->sf.copy_partition_flag &&
         copy_partitioning(cpi, x, mi_row, mi_col, segment_id, sb_offset)) {
