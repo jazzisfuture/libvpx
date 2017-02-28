@@ -1190,7 +1190,8 @@ static INLINE void find_predictors(
 static void vp9_NEWMV_diff_bias(const NOISE_ESTIMATE *ne, MACROBLOCKD *xd,
                                 PREDICTION_MODE this_mode, RD_COST *this_rdc,
                                 BLOCK_SIZE bsize, int mv_row, int mv_col,
-                                int is_last_frame) {
+                                int is_last_frame, int lowvar_highsumdiff,
+                                int skin) {
   // Bias against MVs associated with NEWMV mode that are very different from
   // top/left neighbors.
   if (this_mode == NEWMV) {
@@ -1239,7 +1240,10 @@ static void vp9_NEWMV_diff_bias(const NOISE_ESTIMATE *ne, MACROBLOCKD *xd,
   if (ne->enabled && ne->level >= kMedium && bsize >= BLOCK_32X32 &&
       is_last_frame && mv_row < 8 && mv_row > -8 && mv_col < 8 && mv_col > -8) {
     this_rdc->rdcost = 7 * this_rdc->rdcost >> 3;
-  }
+  } else if (lowvar_highsumdiff && !skin && bsize >= BLOCK_16X16 &&
+             is_last_frame && mv_row < 8 && mv_row > -8 && mv_col < 8 &&
+             mv_col > -8)
+    this_rdc->rdcost = this_rdc->rdcost >> 1;
 }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
@@ -1903,7 +1907,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       vp9_NEWMV_diff_bias(&cpi->noise_estimate, xd, this_mode, &this_rdc, bsize,
                           frame_mv[this_mode][ref_frame].as_mv.row,
                           frame_mv[this_mode][ref_frame].as_mv.col,
-                          ref_frame == LAST_FRAME);
+                          ref_frame == LAST_FRAME, x->lowvar_highsumdiff,
+                          x->sb_is_skin);
     }
 
     // Skipping checking: test to see if this block can be reconstructed by
@@ -1930,6 +1935,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 #else
     (void)ctx;
 #endif
+
 
     if (this_rdc.rdcost < best_rdc.rdcost || x->skip) {
       best_rdc = this_rdc;
@@ -1986,7 +1992,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       (best_rdc.rdcost == INT64_MAX ||
        (!x->skip && best_rdc.rdcost > inter_mode_thresh &&
         bsize <= cpi->sf.max_intra_bsize)) &&
-      !x->skip_low_source_sad) {
+      !x->skip_low_source_sad && !x->lowvar_highsumdiff) {
     struct estimate_block_intra_args args = { cpi, x, DC_PRED, 1, 0 };
     int i;
     TX_SIZE best_intra_tx_size = TX_SIZES;
