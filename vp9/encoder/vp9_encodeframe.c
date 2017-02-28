@@ -467,11 +467,13 @@ int64_t scale_part_thresh_sumdiff(int64_t threshold_base, int speed, int width,
     if (width <= 640 && height <= 480)
       return (5 * threshold_base) >> 2;
     else if ((content_state == kLowSadLowSumdiff) ||
-             (content_state == kHighSadLowSumdiff))
+             (content_state == kHighSadLowSumdiff) ||
+             (content_state == kLowVarHighSumdiff))
       return (5 * threshold_base) >> 2;
   } else if (speed == 7) {
     if ((content_state == kLowSadLowSumdiff) ||
-        (content_state == kHighSadLowSumdiff)) {
+        (content_state == kHighSadLowSumdiff) ||
+        (content_state == kLowVarHighSumdiff)) {
       return (5 * threshold_base) >> 2;
     }
   }
@@ -489,7 +491,6 @@ static void set_vbp_thresholds(VP9_COMP *cpi, int64_t thresholds[], int q,
   const int threshold_multiplier = is_key_frame ? 20 : 1;
   int64_t threshold_base =
       (int64_t)(threshold_multiplier * cpi->y_dequant[q][1]);
-
   if (is_key_frame) {
     thresholds[0] = threshold_base;
     thresholds[1] = threshold_base >> 2;
@@ -966,6 +967,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   int64_t thresholds[4] = { cpi->vbp_thresholds[0], cpi->vbp_thresholds[1],
                             cpi->vbp_thresholds[2], cpi->vbp_thresholds[3] };
 
+
   // For the variance computation under SVC mode, we treat the frame as key if
   // the reference (base layer frame) is key frame (i.e., is_key_frame == 1).
   const int is_key_frame =
@@ -991,6 +993,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
                               content_state == kLowSadHighSumdiff)
                                  ? 1
                                  : 0;
+    x->lowvar_highsumdiff = (cpi->oxcf.speed >= 8 &&
+        content_state == kLowVarHighSumdiff) ? 1 : 0;
     // If source_sad is low copy the partition without computing the y_sad.
     if (x->skip_low_source_sad && cpi->sf.copy_partition_flag &&
         copy_partitioning(cpi, x, mi_row, mi_col, segment_id, sb_offset)) {
@@ -999,11 +1003,10 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     }
   }
 
-  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled) {
-    if (cyclic_refresh_segment_id_boosted(segment_id)) {
-      int q = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
-      set_vbp_thresholds(cpi, thresholds, q, content_state);
-    }
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled &&
+      cyclic_refresh_segment_id_boosted(segment_id)) {
+    int q = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
+    set_vbp_thresholds(cpi, thresholds, q, content_state);
   } else {
     set_vbp_thresholds(cpi, thresholds, cm->base_qindex, content_state);
   }

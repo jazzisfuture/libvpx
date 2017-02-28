@@ -162,6 +162,8 @@ struct macroblock {
 
   uint8_t skip_low_source_sad;
 
+  uint8_t lowvar_highsumdiff;
+
   // Used to save the status of whether a block has a low variance in
   // choose_partitioning. 0 for 64x64, 1~2 for 64x32, 3~4 for 32x64, 5~8 for
   // 32x32, 9~24 for 16x16.
