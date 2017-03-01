@@ -652,6 +652,7 @@ static void block_yrd(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
 #endif
 
   if (cpi->sf.use_simple_block_yrd && cpi->common.frame_type != KEY_FRAME &&
+      !x->high_source_sad &&
       !cyclic_refresh_segment_id_boosted(xd->mi[0]->segment_id)) {
     unsigned int var_y, sse_y;
     (void)tx_size;
