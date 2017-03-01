@@ -133,10 +133,12 @@ typedef enum {
 
 typedef enum {
   kInvalid = 0,
-  kLowSadLowSumdiff = 1,
-  kLowSadHighSumdiff = 2,
-  kHighSadLowSumdiff = 3,
-  kHighSadHighSumdiff = 4,
+  kLowSad = 1,
+  kMedSad = 2,
+  kHighSad = 3,
+  kLowSadLowSumdiff = 4,
+  kMedSadLowSumdiff = 5,
+  kHighSadLowSumdiff = 6,
 } CONTENT_STATE_SB;
 
 typedef struct VP9EncoderConfig {
