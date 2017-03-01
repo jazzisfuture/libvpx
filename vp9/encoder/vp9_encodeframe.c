@@ -467,10 +467,12 @@ int64_t scale_part_thresh_sumdiff(int64_t threshold_base, int speed, int width,
     if (width <= 640 && height <= 480)
       return (5 * threshold_base) >> 2;
     else if ((content_state == kLowSadLowSumdiff) ||
+             (content_state == kMedSadLowSumdiff) ||
              (content_state == kHighSadLowSumdiff))
       return (5 * threshold_base) >> 2;
   } else if (speed == 7) {
     if ((content_state == kLowSadLowSumdiff) ||
+        (content_state == kMedSadLowSumdiff) ||
         (content_state == kHighSadLowSumdiff)) {
       return (5 * threshold_base) >> 2;
     }
@@ -987,10 +989,10 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     // vp9_avg_source_sad() in vp9_ratectrl.c.
     int sb_offset2 = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
     content_state = cpi->content_state_sb[sb_offset2];
-    x->skip_low_source_sad = (content_state == kLowSadLowSumdiff ||
-                              content_state == kLowSadHighSumdiff)
-                                 ? 1
-                                 : 0;
+    x->skip_low_source_sad =
+        (content_state == kLowSadLowSumdiff || content_state == kLowSad) ? 1
+                                                                         : 0;
+    x->high_source_sad = (content_state == kHighSad) ? 1 : 0;
     // If source_sad is low copy the partition without computing the y_sad.
     if (x->skip_low_source_sad && cpi->sf.copy_partition_flag &&
         copy_partitioning(cpi, x, mi_row, mi_col, segment_id, sb_offset)) {
