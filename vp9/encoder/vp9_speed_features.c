@@ -556,7 +556,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
       }
     }
     sf->limit_newmv_early_exit = 0;
-    sf->use_simple_block_yrd = 0;
+    sf->use_simple_block_yrd = 1;
   }
 }
 
