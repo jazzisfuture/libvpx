@@ -554,6 +554,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf, int speed,
             vp9_noise_estimate_extract_level(&cpi->noise_estimate);
         if (noise_level >= kMedium) sf->short_circuit_low_temp_var = 2;
       }
+      sf->adaptive_rd_thresh = 2;
     }
     sf->limit_newmv_early_exit = 0;
     sf->use_simple_block_yrd = 0;
