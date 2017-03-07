@@ -594,6 +594,13 @@ void vp9_encode_tiles_row_mt(VP9_COMP *cpi) {
   int num_workers = VPXMAX(cpi->oxcf.max_threads, 1);
   int i;
 
+  // While using SVC, we need to allocate threads according to the highest
+  // resolution.
+  if (cpi->use_svc) {
+    int max_tile_cols = get_max_tile_cols(cpi);
+    num_workers = VPXMIN(num_workers, max_tile_cols);
+  }
+
   if (multi_thread_ctxt->allocated_tile_cols < tile_cols ||
       multi_thread_ctxt->allocated_tile_rows < tile_rows ||
       multi_thread_ctxt->allocated_vert_unit_rows < cm->mb_rows) {
@@ -615,7 +622,6 @@ void vp9_encode_tiles_row_mt(VP9_COMP *cpi) {
   for (i = 0; i < num_workers; i++) {
     EncWorkerData *thread_data;
     thread_data = &cpi->tile_thr_data[i];
-
     // Before encoding a frame, copy the thread data from cpi.
     if (thread_data->td != &cpi->td) {
       thread_data->td->mb = cpi->td.mb;
