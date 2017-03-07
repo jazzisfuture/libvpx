@@ -1096,6 +1096,7 @@ class DatarateOnePassCbrSvc
       encoder->Control(VP9E_SET_TILE_COLUMNS, 0);
       encoder->Control(VP8E_SET_MAX_INTRA_BITRATE_PCT, 300);
       encoder->Control(VP9E_SET_TILE_COLUMNS, (cfg_.g_threads >> 1));
+      encoder->Control(VP9E_SET_ROW_MT, 1);
       encoder->Control(VP8E_SET_STATIC_THRESHOLD, 1);
     }
     const vpx_rational_t tb = video->timebase();
@@ -1483,7 +1484,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc2SpatialLayers5x5MultipleRuns) {
   cfg_.ts_number_layers = 1;
   cfg_.ts_rate_decimator[0] = 1;
   cfg_.g_error_resilient = 1;
-  cfg_.g_threads = 3;
+  cfg_.g_threads = 2;
   cfg_.temporal_layering_mode = 0;
   svc_params_.scaling_factor_num[0] = 256;
   svc_params_.scaling_factor_den[0] = 1280;
