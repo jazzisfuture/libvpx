@@ -3165,6 +3165,8 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
 #endif
   }
 
+  vp9_update_noise_estimate(cpi);
+
   // Avoid scaling last_source unless its needed.
   // Last source is needed if vp9_avg_source_sad() is used, or if
   // partition_search_type == SOURCE_VAR_BASED_PARTITION, or if noise
@@ -3183,8 +3185,6 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     memset(cpi->consec_zero_mv, 0,
            cm->mi_rows * cm->mi_cols * sizeof(*cpi->consec_zero_mv));
   }
-
-  vp9_update_noise_estimate(cpi);
 
   if (cpi->oxcf.pass == 0 && cpi->oxcf.mode == REALTIME &&
       cpi->oxcf.speed >= 5 && cpi->resize_state == 0 &&
