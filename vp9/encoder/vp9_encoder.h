@@ -852,11 +852,15 @@ static INLINE int is_one_pass_cbr_svc(const struct VP9_COMP *const cpi) {
   return (cpi->use_svc && cpi->oxcf.pass == 0);
 }
 
+
+static INLINE int top_layer_svc(const struct VP9_COMP *const cpi) {
+  return (cpi->use_svc &&
+          cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1);
+}
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
-static INLINE int denoise_svc(const struct VP9_COMP *const cpi) {
-  return (!cpi->use_svc ||
-          (cpi->use_svc &&
-           cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1));
+static INLINE int _svc(const struct VP9_COMP *const cpi) {
+  return (!cpi->use_svc || top_layer_svc(cpi));
 }
 #endif
 
