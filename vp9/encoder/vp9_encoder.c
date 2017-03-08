@@ -3165,6 +3165,9 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
 #endif
   }
 
+  set_size_independent_vars(cpi);
+  set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
+
   // Avoid scaling last_source unless its needed.
   // Last source is needed if vp9_avg_source_sad() is used, or if
   // partition_search_type == SOURCE_VAR_BASED_PARTITION, or if noise
@@ -3200,9 +3203,6 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   if (frame_is_intra_only(cm) == 0 && !is_one_pass_cbr_svc(cpi)) {
     vp9_scale_references(cpi);
   }
-
-  set_size_independent_vars(cpi);
-  set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
 
   if (cpi->oxcf.speed >= 5 && cpi->oxcf.pass == 0 &&
       cpi->oxcf.rc_mode == VPX_CBR &&
