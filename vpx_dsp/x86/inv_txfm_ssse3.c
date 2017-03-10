@@ -407,27 +407,27 @@ static INLINE void add_sub_butterfly(const __m128i *in, __m128i *out,
     tmp3 = _mm_srai_epi32(tmp3, DCT_CONST_BITS); \
   } while (0)
 
-static INLINE void butterfly(const __m128i x0, const __m128i x1,
-                             const __m128i c0, const __m128i c1, __m128i *y0,
+static INLINE void butterfly(const __m128i *x0, const __m128i *x1,
+                             const __m128i *c0, const __m128i *c1, __m128i *y0,
                              __m128i *y1) {
-  __m128i tmp0, tmp1, tmp2, tmp3, u0, u1;
-  const __m128i rounding = _mm_set1_epi32(DCT_CONST_ROUNDING);
-
-  u0 = _mm_unpacklo_epi16(x0, x1);
-  u1 = _mm_unpackhi_epi16(x0, x1);
-  BUTTERFLY_PAIR(u0, u1, c0, c1);
-  *y0 = _mm_packs_epi32(tmp0, tmp1);
-  *y1 = _mm_packs_epi32(tmp2, tmp3);
-}
-
-static INLINE void butterfly_self(__m128i *x0, __m128i *x1, const __m128i c0,
-                                  const __m128i c1) {
   __m128i tmp0, tmp1, tmp2, tmp3, u0, u1;
   const __m128i rounding = _mm_set1_epi32(DCT_CONST_ROUNDING);
 
   u0 = _mm_unpacklo_epi16(*x0, *x1);
   u1 = _mm_unpackhi_epi16(*x0, *x1);
-  BUTTERFLY_PAIR(u0, u1, c0, c1);
+  BUTTERFLY_PAIR(u0, u1, *c0, *c1);
+  *y0 = _mm_packs_epi32(tmp0, tmp1);
+  *y1 = _mm_packs_epi32(tmp2, tmp3);
+}
+
+static INLINE void butterfly_self(__m128i *x0, __m128i *x1, const __m128i *c0,
+                                  const __m128i *c1) {
+  __m128i tmp0, tmp1, tmp2, tmp3, u0, u1;
+  const __m128i rounding = _mm_set1_epi32(DCT_CONST_ROUNDING);
+
+  u0 = _mm_unpacklo_epi16(*x0, *x1);
+  u1 = _mm_unpackhi_epi16(*x0, *x1);
+  BUTTERFLY_PAIR(u0, u1, *c0, *c1);
   *x0 = _mm_packs_epi32(tmp0, tmp1);
   *x1 = _mm_packs_epi32(tmp2, tmp3);
 }
@@ -469,8 +469,8 @@ static void idct32_34_first_half(const __m128i *in, __m128i *stp1) {
   // in[2], in[6]
   u0 = _mm_mulhrs_epi16(in[2], stk2_0);         // stp2_8
   u1 = _mm_mulhrs_epi16(in[6], stk2_6);         // stp2_11
-  butterfly(u0, u2, stg4_4, stg4_5, &u4, &u5);  // stp2_9, stp2_14
-  butterfly(u1, u3, stg4_6, stg4_4, &u6, &u7);  // stp2_10, stp2_13
+  butterfly(&u0, &u2, &stg4_4, &stg4_5, &u4, &u5);  // stp2_9, stp2_14
+  butterfly(&u1, &u3, &stg4_6, &stg4_4, &u6, &u7);  // stp2_10, stp2_13
 
   v8 = _mm_add_epi16(u0, u1);
   v9 = _mm_add_epi16(u4, u6);
@@ -480,14 +480,14 @@ static void idct32_34_first_half(const __m128i *in, __m128i *stp1) {
   v13 = _mm_sub_epi16(u5, u7);
   v14 = _mm_add_epi16(u5, u7);
 
-  butterfly_self(&v10, &v13, stg6_0, stg4_0);
-  butterfly_self(&v11, &v12, stg6_0, stg4_0);
+  butterfly_self(&v10, &v13, &stg6_0, &stg4_0);
+  butterfly_self(&v11, &v12, &stg6_0, &stg4_0);
 
   // 1, 14
   x1 = _mm_mulhrs_epi16(in[0], stk4_0);  // stp1[1], stk4_1 = stk4_0
   // stp1[2] = stp1[0], stp1[3] = stp1[1]
   x4 = _mm_mulhrs_epi16(in[4], stk3_0);  // stp1[4]
-  butterfly(x7, x4, stg4_1, stg4_0, &x5, &x6);
+  butterfly(&x7, &x4, &stg4_1, &stg4_0, &x5, &x6);
   v1 = _mm_add_epi16(x1, x6);  // stp2_1
   v2 = _mm_add_epi16(x0, x5);  // stp2_2
   stp1[1] = _mm_add_epi16(v1, v14);
@@ -558,10 +558,10 @@ static void idct32_34_second_half(const __m128i *in, __m128i *stp1) {
   v23 = _mm_mulhrs_epi16(in[3], stk1_14);
   v24 = _mm_mulhrs_epi16(in[3], stk1_15);
 
-  butterfly(v16, v31, stg3_4, stg3_5, &v17, &v30);
-  butterfly(v19, v28, stg3_6, stg3_4, &v18, &v29);
-  butterfly(v20, v27, stg3_8, stg3_9, &v21, &v26);
-  butterfly(v23, v24, stg3_10, stg3_8, &v22, &v25);
+  butterfly(&v16, &v31, &stg3_4, &stg3_5, &v17, &v30);
+  butterfly(&v19, &v28, &stg3_6, &stg3_4, &v18, &v29);
+  butterfly(&v20, &v27, &stg3_8, &stg3_9, &v21, &v26);
+  butterfly(&v23, &v24, &stg3_10, &stg3_8, &v22, &v25);
 
   u16 = _mm_add_epi16(v16, v19);
   u17 = _mm_add_epi16(v17, v18);
@@ -580,39 +580,39 @@ static void idct32_34_second_half(const __m128i *in, __m128i *stp1) {
   u29 = _mm_sub_epi16(v30, v29);
   u30 = _mm_add_epi16(v29, v30);
 
-  butterfly_self(&u18, &u29, stg4_4, stg4_5);
-  butterfly_self(&u19, &u28, stg4_4, stg4_5);
-  butterfly_self(&u20, &u27, stg4_6, stg4_4);
-  butterfly_self(&u21, &u26, stg4_6, stg4_4);
+  butterfly_self(&u18, &u29, &stg4_4, &stg4_5);
+  butterfly_self(&u19, &u28, &stg4_4, &stg4_5);
+  butterfly_self(&u20, &u27, &stg4_6, &stg4_4);
+  butterfly_self(&u21, &u26, &stg4_6, &stg4_4);
 
   stp1[16] = _mm_add_epi16(u16, u23);
-  v23 = _mm_sub_epi16(u16, u23);
+  stp1[23] = _mm_sub_epi16(u16, u23);
 
   stp1[17] = _mm_add_epi16(u17, u22);
-  v22 = _mm_sub_epi16(u17, u22);
+  stp1[22] = _mm_sub_epi16(u17, u22);
 
   stp1[18] = _mm_add_epi16(u18, u21);
-  v21 = _mm_sub_epi16(u18, u21);
+  stp1[21] = _mm_sub_epi16(u18, u21);
 
   stp1[19] = _mm_add_epi16(u19, u20);
-  v20 = _mm_sub_epi16(u19, u20);
+  stp1[20] = _mm_sub_epi16(u19, u20);
 
-  v24 = _mm_sub_epi16(u31, u24);
+  stp1[24] = _mm_sub_epi16(u31, u24);
   stp1[31] = _mm_add_epi16(u24, u31);
 
-  v25 = _mm_sub_epi16(u30, u25);
+  stp1[25] = _mm_sub_epi16(u30, u25);
   stp1[30] = _mm_add_epi16(u25, u30);
 
-  v26 = _mm_sub_epi16(u29, u26);
+  stp1[26] = _mm_sub_epi16(u29, u26);
   stp1[29] = _mm_add_epi16(u26, u29);
 
-  v27 = _mm_sub_epi16(u28, u27);
+  stp1[27] = _mm_sub_epi16(u28, u27);
   stp1[28] = _mm_add_epi16(u27, u28);
 
-  butterfly(v20, v27, stg6_0, stg4_0, &stp1[20], &stp1[27]);
-  butterfly(v21, v26, stg6_0, stg4_0, &stp1[21], &stp1[26]);
-  butterfly(v22, v25, stg6_0, stg4_0, &stp1[22], &stp1[25]);
-  butterfly(v23, v24, stg6_0, stg4_0, &stp1[23], &stp1[24]);
+  butterfly_self(&stp1[20], &stp1[27], &stg6_0, &stg4_0);
+  butterfly_self(&stp1[21], &stp1[26], &stg6_0, &stg4_0);
+  butterfly_self(&stp1[22], &stp1[25], &stg6_0, &stg4_0);
+  butterfly_self(&stp1[23], &stp1[24], &stg6_0, &stg4_0);
 }
 
 // Only upper-left 8x8 has non-zero coeff
@@ -723,7 +723,7 @@ static void idct32_8x32_135_quarter_1(const __m128i in[16], __m128i out[8]) {
   {
     const __m128i stg4_0 = pair_set_epi16(cospi_16_64, cospi_16_64);
     const __m128i stg4_1 = pair_set_epi16(cospi_16_64, -cospi_16_64);
-    butterfly(v6, v5, stg4_1, stg4_0, &v5, &v6);
+    butterfly(&v6, &v5, &stg4_1, &stg4_0, &v5, &v6);
   }
 
   out[0] = _mm_add_epi16(v0, v7);
@@ -772,8 +772,8 @@ static void idct32_8x32_135_quarter_2(const __m128i in[16], __m128i out[8]) {
     const __m128i stg4_4 = pair_set_epi16(-cospi_8_64, cospi_24_64);
     const __m128i stg4_5 = pair_set_epi16(cospi_24_64, cospi_8_64);
     const __m128i stg4_6 = pair_set_epi16(-cospi_24_64, -cospi_8_64);
-    butterfly_self(&v9, &v14, stg4_4, stg4_5);
-    butterfly_self(&v10, &v13, stg4_6, stg4_4);
+    butterfly_self(&v9, &v14, &stg4_4, &stg4_5);
+    butterfly_self(&v10, &v13, &stg4_6, &stg4_4);
   }
 
   out[0] = _mm_add_epi16(v8, v11);
@@ -788,8 +788,8 @@ static void idct32_8x32_135_quarter_2(const __m128i in[16], __m128i out[8]) {
   {
     const __m128i stg4_0 = pair_set_epi16(cospi_16_64, cospi_16_64);
     const __m128i stg6_0 = pair_set_epi16(-cospi_16_64, cospi_16_64);
-    butterfly_self(&out[2], &out[5], stg6_0, stg4_0);
-    butterfly_self(&out[3], &out[4], stg6_0, stg4_0);
+    butterfly_self(&out[2], &out[5], &stg6_0, &stg4_0);
+    butterfly_self(&out[3], &out[4], &stg6_0, &stg4_0);
   }
 }
 
@@ -878,10 +878,10 @@ static void idct32_8x32_quarter_3_4(const __m128i in[16], __m128i out[32]) {
     const __m128i stg3_9 = pair_set_epi16(cospi_12_64, cospi_20_64);
     const __m128i stg3_10 = pair_set_epi16(-cospi_12_64, -cospi_20_64);
 
-    butterfly_self(&v17, &v30, stg3_4, stg3_5);
-    butterfly_self(&v18, &v29, stg3_6, stg3_4);
-    butterfly_self(&v21, &v26, stg3_8, stg3_9);
-    butterfly_self(&v22, &v25, stg3_10, stg3_8);
+    butterfly_self(&v17, &v30, &stg3_4, &stg3_5);
+    butterfly_self(&v18, &v29, &stg3_6, &stg3_4);
+    butterfly_self(&v21, &v26, &stg3_8, &stg3_9);
+    butterfly_self(&v22, &v25, &stg3_10, &stg3_8);
   }
 
   u16 = _mm_add_epi16(v16, v19);
@@ -906,10 +906,10 @@ static void idct32_8x32_quarter_3_4(const __m128i in[16], __m128i out[32]) {
     const __m128i stg4_4 = pair_set_epi16(-cospi_8_64, cospi_24_64);
     const __m128i stg4_5 = pair_set_epi16(cospi_24_64, cospi_8_64);
     const __m128i stg4_6 = pair_set_epi16(-cospi_24_64, -cospi_8_64);
-    butterfly_self(&u18, &u29, stg4_4, stg4_5);
-    butterfly_self(&u19, &u28, stg4_4, stg4_5);
-    butterfly_self(&u20, &u27, stg4_6, stg4_4);
-    butterfly_self(&u21, &u26, stg4_6, stg4_4);
+    butterfly_self(&u18, &u29, &stg4_4, &stg4_5);
+    butterfly_self(&u19, &u28, &stg4_4, &stg4_5);
+    butterfly_self(&u20, &u27, &stg4_6, &stg4_4);
+    butterfly_self(&u21, &u26, &stg4_6, &stg4_4);
   }
 
   out[0] = _mm_add_epi16(u16, u23);
@@ -933,10 +933,10 @@ static void idct32_8x32_quarter_3_4(const __m128i in[16], __m128i out[32]) {
   {
     const __m128i stg4_0 = pair_set_epi16(cospi_16_64, cospi_16_64);
     const __m128i stg6_0 = pair_set_epi16(-cospi_16_64, cospi_16_64);
-    butterfly(v20, v27, stg6_0, stg4_0, &out[4], &out[11]);
-    butterfly(v21, v26, stg6_0, stg4_0, &out[5], &out[10]);
-    butterfly(v22, v25, stg6_0, stg4_0, &out[6], &out[9]);
-    butterfly(v23, v24, stg6_0, stg4_0, &out[7], &out[8]);
+    butterfly(&v20, &v27, &stg6_0, &stg4_0, &out[4], &out[11]);
+    butterfly(&v21, &v26, &stg6_0, &stg4_0, &out[5], &out[10]);
+    butterfly(&v22, &v25, &stg6_0, &stg4_0, &out[6], &out[9]);
+    butterfly(&v23, &v24, &stg6_0, &stg4_0, &out[7], &out[8]);
   }
 }
 
@@ -1037,8 +1037,8 @@ static void idct32_full_8x32_quarter_2(const __m128i in[32], __m128i out[16]) {
     const __m128i stg2_1 = pair_set_epi16(cospi_2_64, cospi_30_64);
     const __m128i stg2_2 = pair_set_epi16(cospi_14_64, -cospi_18_64);
     const __m128i stg2_3 = pair_set_epi16(cospi_18_64, cospi_14_64);
-    butterfly(in[2], in[30], stg2_0, stg2_1, &u8, &u15);
-    butterfly(in[18], in[14], stg2_2, stg2_3, &u9, &u14);
+    butterfly(&in[2], &in[30], &stg2_0, &stg2_1, &u8, &u15);
+    butterfly(&in[18], &in[14], &stg2_2, &stg2_3, &u9, &u14);
   }
 
   v8 = _mm_add_epi16(u8, u9);
@@ -1051,8 +1051,8 @@ static void idct32_full_8x32_quarter_2(const __m128i in[32], __m128i out[16]) {
     const __m128i stg2_5 = pair_set_epi16(cospi_10_64, cospi_22_64);
     const __m128i stg2_6 = pair_set_epi16(cospi_6_64, -cospi_26_64);
     const __m128i stg2_7 = pair_set_epi16(cospi_26_64, cospi_6_64);
-    butterfly(in[10], in[22], stg2_4, stg2_5, &u10, &u13);
-    butterfly(in[26], in[6], stg2_6, stg2_7, &u11, &u12);
+    butterfly(&in[10], &in[22], &stg2_4, &stg2_5, &u10, &u13);
+    butterfly(&in[26], &in[6], &stg2_6, &stg2_7, &u11, &u12);
   }
 
   v10 = _mm_sub_epi16(u11, u10);
@@ -1064,8 +1064,8 @@ static void idct32_full_8x32_quarter_2(const __m128i in[32], __m128i out[16]) {
     const __m128i stg4_4 = pair_set_epi16(-cospi_8_64, cospi_24_64);
     const __m128i stg4_5 = pair_set_epi16(cospi_24_64, cospi_8_64);
     const __m128i stg4_6 = pair_set_epi16(-cospi_24_64, -cospi_8_64);
-    butterfly_self(&v9, &v14, stg4_4, stg4_5);
-    butterfly_self(&v10, &v13, stg4_6, stg4_4);
+    butterfly_self(&v9, &v14, &stg4_4, &stg4_5);
+    butterfly_self(&v10, &v13, &stg4_6, &stg4_4);
   }
 
   out[0] = _mm_add_epi16(v8, v11);
@@ -1081,8 +1081,8 @@ static void idct32_full_8x32_quarter_2(const __m128i in[32], __m128i out[16]) {
   {
     const __m128i stg4_0 = pair_set_epi16(cospi_16_64, cospi_16_64);
     const __m128i stg6_0 = pair_set_epi16(-cospi_16_64, cospi_16_64);
-    butterfly_self(&out[2], &out[5], stg6_0, stg4_0);
-    butterfly_self(&out[3], &out[4], stg6_0, stg4_0);
+    butterfly_self(&out[2], &out[5], &stg6_0, &stg4_0);
+    butterfly_self(&out[3], &out[4], &stg6_0, &stg4_0);
   }
 }
 
@@ -1098,8 +1098,8 @@ static void idct32_full_8x32_quarter_1(const __m128i in[32], __m128i out[8]) {
     const __m128i stg3_1 = pair_set_epi16(cospi_4_64, cospi_28_64);
     const __m128i stg3_2 = pair_set_epi16(cospi_12_64, -cospi_20_64);
     const __m128i stg3_3 = pair_set_epi16(cospi_20_64, cospi_12_64);
-    butterfly(in[4], in[28], stg3_0, stg3_1, &u4, &u7);
-    butterfly(in[20], in[12], stg3_2, stg3_3, &u5, &u6);
+    butterfly(&in[4], &in[28], &stg3_0, &stg3_1, &u4, &u7);
+    butterfly(&in[20], &in[12], &stg3_2, &stg3_3, &u5, &u6);
   }
 
   v4 = _mm_add_epi16(u4, u5);
@@ -1112,10 +1112,10 @@ static void idct32_full_8x32_quarter_1(const __m128i in[32], __m128i out[8]) {
     const __m128i stg4_1 = pair_set_epi16(cospi_16_64, -cospi_16_64);
     const __m128i stg4_2 = pair_set_epi16(cospi_24_64, -cospi_8_64);
     const __m128i stg4_3 = pair_set_epi16(cospi_8_64, cospi_24_64);
-    butterfly(v6, v5, stg4_1, stg4_0, &v5, &v6);
+    butterfly(&v6, &v5, &stg4_1, &stg4_0, &v5, &v6);
 
-    butterfly(in[0], in[16], stg4_0, stg4_1, &u0, &u1);
-    butterfly(in[8], in[24], stg4_2, stg4_3, &u2, &u3);
+    butterfly(&in[0], &in[16], &stg4_0, &stg4_1, &u0, &u1);
+    butterfly(&in[8], &in[24], &stg4_2, &stg4_3, &u2, &u3);
   }
 
   v0 = _mm_add_epi16(u0, u3);
@@ -1163,16 +1163,16 @@ static void idct32_full_8x32_quarter_3_4(const __m128i in[32],
     const __m128i stg1_13 = pair_set_epi16(cospi_13_64, cospi_19_64);
     const __m128i stg1_14 = pair_set_epi16(cospi_3_64, -cospi_29_64);
     const __m128i stg1_15 = pair_set_epi16(cospi_29_64, cospi_3_64);
-    butterfly(in[1], in[31], stg1_0, stg1_1, &u16, &u31);
-    butterfly(in[17], in[15], stg1_2, stg1_3, &u17, &u30);
-    butterfly(in[9], in[23], stg1_4, stg1_5, &u18, &u29);
-    butterfly(in[25], in[7], stg1_6, stg1_7, &u19, &u28);
+    butterfly(&in[1], &in[31], &stg1_0, &stg1_1, &u16, &u31);
+    butterfly(&in[17], &in[15], &stg1_2, &stg1_3, &u17, &u30);
+    butterfly(&in[9], &in[23], &stg1_4, &stg1_5, &u18, &u29);
+    butterfly(&in[25], &in[7], &stg1_6, &stg1_7, &u19, &u28);
 
-    butterfly(in[5], in[27], stg1_8, stg1_9, &u20, &u27);
-    butterfly(in[21], in[11], stg1_10, stg1_11, &u21, &u26);
+    butterfly(&in[5], &in[27], &stg1_8, &stg1_9, &u20, &u27);
+    butterfly(&in[21], &in[11], &stg1_10, &stg1_11, &u21, &u26);
 
-    butterfly(in[13], in[19], stg1_12, stg1_13, &u22, &u25);
-    butterfly(in[29], in[3], stg1_14, stg1_15, &u23, &u24);
+    butterfly(&in[13], &in[19], &stg1_12, &stg1_13, &u22, &u25);
+    butterfly(&in[29], &in[3], &stg1_14, &stg1_15, &u23, &u24);
   }
 
   v16 = _mm_add_epi16(u16, u17);
@@ -1202,10 +1202,10 @@ static void idct32_full_8x32_quarter_3_4(const __m128i in[32],
     const __m128i stg3_8 = pair_set_epi16(-cospi_20_64, cospi_12_64);
     const __m128i stg3_9 = pair_set_epi16(cospi_12_64, cospi_20_64);
     const __m128i stg3_10 = pair_set_epi16(-cospi_12_64, -cospi_20_64);
-    butterfly_self(&v17, &v30, stg3_4, stg3_5);
-    butterfly_self(&v18, &v29, stg3_6, stg3_4);
-    butterfly_self(&v21, &v26, stg3_8, stg3_9);
-    butterfly_self(&v22, &v25, stg3_10, stg3_8);
+    butterfly_self(&v17, &v30, &stg3_4, &stg3_5);
+    butterfly_self(&v18, &v29, &stg3_6, &stg3_4);
+    butterfly_self(&v21, &v26, &stg3_8, &stg3_9);
+    butterfly_self(&v22, &v25, &stg3_10, &stg3_8);
   }
 
   u16 = _mm_add_epi16(v16, v19);
@@ -1231,10 +1231,10 @@ static void idct32_full_8x32_quarter_3_4(const __m128i in[32],
     const __m128i stg4_4 = pair_set_epi16(-cospi_8_64, cospi_24_64);
     const __m128i stg4_5 = pair_set_epi16(cospi_24_64, cospi_8_64);
     const __m128i stg4_6 = pair_set_epi16(-cospi_24_64, -cospi_8_64);
-    butterfly_self(&u18, &u29, stg4_4, stg4_5);
-    butterfly_self(&u19, &u28, stg4_4, stg4_5);
-    butterfly_self(&u20, &u27, stg4_6, stg4_4);
-    butterfly_self(&u21, &u26, stg4_6, stg4_4);
+    butterfly_self(&u18, &u29, &stg4_4, &stg4_5);
+    butterfly_self(&u19, &u28, &stg4_4, &stg4_5);
+    butterfly_self(&u20, &u27, &stg4_6, &stg4_4);
+    butterfly_self(&u21, &u26, &stg4_6, &stg4_4);
   }
 
   out[0] = _mm_add_epi16(u16, u23);
@@ -1258,10 +1258,10 @@ static void idct32_full_8x32_quarter_3_4(const __m128i in[32],
   {
     const __m128i stg4_0 = pair_set_epi16(cospi_16_64, cospi_16_64);
     const __m128i stg6_0 = pair_set_epi16(-cospi_16_64, cospi_16_64);
-    butterfly_self(&out[4], &out[11], stg6_0, stg4_0);
-    butterfly_self(&out[5], &out[10], stg6_0, stg4_0);
-    butterfly_self(&out[6], &out[9], stg6_0, stg4_0);
-    butterfly_self(&out[7], &out[8], stg6_0, stg4_0);
+    butterfly_self(&out[4], &out[11], &stg6_0, &stg4_0);
+    butterfly_self(&out[5], &out[10], &stg6_0, &stg4_0);
+    butterfly_self(&out[6], &out[9], &stg6_0, &stg4_0);
+    butterfly_self(&out[7], &out[8], &stg6_0, &stg4_0);
   }
 }
 
