@@ -40,9 +40,9 @@ int vp8_dc_quant(int QIndex, int Delta) {
   QIndex = QIndex + Delta;
 
   if (QIndex > 127) {
-    QIndex = 127;
+    return 157;
   } else if (QIndex < 0) {
-    QIndex = 0;
+    return 4;
   }
 
   retval = dc_qlookup[QIndex];
@@ -55,9 +55,9 @@ int vp8_dc2quant(int QIndex, int Delta) {
   QIndex = QIndex + Delta;
 
   if (QIndex > 127) {
-    QIndex = 127;
+    return 314;
   } else if (QIndex < 0) {
-    QIndex = 0;
+    return 8;
   }
 
   retval = dc_qlookup[QIndex] * 2;
@@ -69,9 +69,9 @@ int vp8_dc_uv_quant(int QIndex, int Delta) {
   QIndex = QIndex + Delta;
 
   if (QIndex > 127) {
-    QIndex = 127;
+    return 132;
   } else if (QIndex < 0) {
-    QIndex = 0;
+    return 4;
   }
 
   retval = dc_qlookup[QIndex];
@@ -85,9 +85,9 @@ int vp8_ac_yquant(int QIndex) {
   int retval;
 
   if (QIndex > 127) {
-    QIndex = 127;
+    return 284;
   } else if (QIndex < 0) {
-    QIndex = 0;
+    return 4;
   }
 
   retval = ac_qlookup[QIndex];
@@ -100,9 +100,9 @@ int vp8_ac2quant(int QIndex, int Delta) {
   QIndex = QIndex + Delta;
 
   if (QIndex > 127) {
-    QIndex = 127;
+    return 440;
   } else if (QIndex < 0) {
-    QIndex = 0;
+    return 8;
   }
 
   /* For all x in [0..284], x*155/100 is bitwise equal to (x*101581) >> 16.
@@ -120,9 +120,9 @@ int vp8_ac_uv_quant(int QIndex, int Delta) {
   QIndex = QIndex + Delta;
 
   if (QIndex > 127) {
-    QIndex = 127;
+    return 284;
   } else if (QIndex < 0) {
-    QIndex = 0;
+    return 4;
   }
 
   retval = ac_qlookup[QIndex];
