@@ -501,7 +501,7 @@ static void set_rt_speed_feature_framesize_independent(
       sf->mv.search_method = NSTEP;
       sf->mv.fullpel_search_step_param = 6;
     }
-    if (!cpi->use_svc && !cpi->resize_pending && !cpi->resize_state &&
+    if (!cpi->use_svc && !cpi->resize_pending && cpi->resize_state != ORIG &&
         !cpi->external_resize && cpi->oxcf.resize_mode == RESIZE_NONE)
       sf->use_source_sad = 1;
     if (sf->use_source_sad) {
@@ -515,7 +515,7 @@ static void set_rt_speed_feature_framesize_independent(
   if (speed >= 8) {
     sf->adaptive_rd_thresh = 4;
     // Enable partition copy
-    if (!cpi->use_svc && !cpi->resize_pending && !cpi->resize_state &&
+    if (!cpi->use_svc && !cpi->resize_pending && cpi->resize_state != ORIG &&
         !cpi->external_resize && cpi->oxcf.resize_mode == RESIZE_NONE)
       sf->copy_partition_flag = 1;
 
