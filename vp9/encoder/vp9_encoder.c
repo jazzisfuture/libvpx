@@ -3130,13 +3130,14 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
 
   if (cpi->use_svc &&
       (cpi->svc.spatial_layer_id < cpi->svc.number_spatial_layers - 1 ||
-       cpi->svc.current_superframe < 1)) {
+       cpi->svc.current_superframe < 1) &&
+      !cpi->resize_pending && !cpi->resize_state && !cpi->external_resize) {
     compute_source_sad = 0;
     if (cpi->content_state_sb != NULL)
       memset(cpi->content_state_sb, 0, (cm->mi_stride >> 3) *
                                            ((cm->mi_rows >> 3) + 1) *
                                            sizeof(*cpi->content_state_sb));
-  }
+    }
 
   // Avoid scaling last_source unless its needed.
   // Last source is needed if vp9_avg_source_sad() is used, or if
