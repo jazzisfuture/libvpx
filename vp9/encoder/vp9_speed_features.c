@@ -315,6 +315,7 @@ static void set_rt_speed_feature_framesize_independent(
   const int frames_since_key = is_keyframe ? 0 : cpi->rc.frames_since_key;
   sf->static_segmentation = 0;
   sf->adaptive_rd_thresh = 1;
+  sf->adaptive_rd_thresh_row_mt = 0;
   sf->use_fast_coef_costing = 1;
   sf->allow_exhaustive_searches = 0;
   sf->exhaustive_searches_thresh = INT_MAX;
@@ -490,6 +491,8 @@ static void set_rt_speed_feature_framesize_independent(
       sf->short_circuit_low_temp_var = 1;
     }
     if (cpi->use_svc) sf->base_mv_aggressive = 1;
+    if (cpi->row_mt && cpi->num_workers > 1)
+      sf->adaptive_rd_thresh_row_mt = 1;
   }
 
   if (speed >= 7) {
@@ -567,11 +570,10 @@ static void set_rt_speed_feature_framesize_independent(
     sf->limit_newmv_early_exit = 0;
     sf->use_simple_block_yrd = 0;
   }
-  // Turn off adaptive_rd_thresh if row_mt is on for all the non-rd paths. This
-  // causes too many locks in realtime mode in certain platforms (Android ARM,
-  // Mac).
-  if (speed >= 5 && cpi->row_mt && cpi->num_workers > 1) {
+  // Turn off adaptive_rd_thresh if row_mt is on for speed = 5.
+  if (speed == 5 && cpi->row_mt && cpi->num_workers > 1) {
     sf->adaptive_rd_thresh = 0;
+    sf->adaptive_rd_thresh_row_mt = 0;
   }
 }
 
