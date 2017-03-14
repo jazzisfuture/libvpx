@@ -284,6 +284,9 @@ typedef struct TileDataEnc {
   int ex_search_count;
   FIRSTPASS_DATA fp_data;
   VP9RowMTSync row_mt_sync;
+
+  // Reduce the using of lock for row multithreading
+  int *row_base_thresh_freq_fact;
 #if CONFIG_MULTITHREAD
   pthread_mutex_t *search_count_mutex;
   pthread_mutex_t *enc_row_mt_mutex;
