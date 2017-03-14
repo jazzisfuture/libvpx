@@ -609,15 +609,15 @@ void vp9_set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi) {
   memcpy(rd->thresh_mult_sub8x8, thresh_mult[idx], sizeof(thresh_mult[idx]));
 }
 
-void vp9_update_rd_thresh_fact(int (*factor_buf)[MAX_MODES], int rd_thresh,
-                               int bsize,
-#if CONFIG_MULTITHREAD
-                               pthread_mutex_t *enc_row_mt_mutex,
-#endif
-                               int best_mode_index) {
-#if CONFIG_MULTITHREAD
-  if (NULL != enc_row_mt_mutex) pthread_mutex_lock(enc_row_mt_mutex);
-#endif
+void vp9_update_rd_thresh_fact(
+    int (*factor_buf)[MAX_MODES], int rd_thresh, int bsize,
+    #if CONFIG_MULTITHREAD
+                                   pthread_mutex_t *enc_row_mt_mutex,
+    #endif
+    int best_mode_index) {
+  #if CONFIG_MULTITHREAD
+    if (NULL != enc_row_mt_mutex) pthread_mutex_lock(enc_row_mt_mutex);
+  #endif
 
   if (rd_thresh > 0) {
     const int top_mode = bsize < BLOCK_8X8 ? MAX_REFS : MAX_MODES;
@@ -637,9 +637,9 @@ void vp9_update_rd_thresh_fact(int (*factor_buf)[MAX_MODES], int rd_thresh,
     }
   }
 
-#if CONFIG_MULTITHREAD
-  if (NULL != enc_row_mt_mutex) pthread_mutex_unlock(enc_row_mt_mutex);
-#endif
+  #if CONFIG_MULTITHREAD
+    if (NULL != enc_row_mt_mutex) pthread_mutex_unlock(enc_row_mt_mutex);
+  #endif
 }
 
 int vp9_get_intra_cost_penalty(int qindex, int qdelta,

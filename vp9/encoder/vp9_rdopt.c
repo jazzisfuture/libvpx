@@ -3602,12 +3602,12 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, TileDataEnc *tile_data,
          !is_inter_block(&best_mbmode));
 
   if (!cpi->rc.is_src_frame_alt_ref)
-    vp9_update_rd_thresh_fact(tile_data->thresh_freq_fact,
-                              sf->adaptive_rd_thresh, bsize,
+      vp9_update_rd_thresh_fact(tile_data->thresh_freq_fact,
+                                sf->adaptive_rd_thresh, bsize,
 #if CONFIG_MULTITHREAD
-                              tile_data->enc_row_mt_mutex,
+                                tile_data->enc_row_mt_mutex,
 #endif
-                              best_mode_index);
+                                best_mode_index);
 
   // macroblock modes
   *mi = best_mbmode;
