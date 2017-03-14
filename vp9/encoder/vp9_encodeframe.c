@@ -1626,7 +1626,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
   } else {
     if (bsize >= BLOCK_8X8) {
       if (segfeature_active(&cm->seg, mi->segment_id, SEG_LVL_SKIP))
-        vp9_rd_pick_inter_mode_sb_seg_skip(cpi, tile_data, x, rd_cost, bsize,
+        vp9_rd_pick_inter_mode_sb_seg_skip(cpi, tile_data, x, mi_row, rd_cost, bsize,
                                            ctx, best_rd);
       else
         vp9_rd_pick_inter_mode_sb(cpi, tile_data, x, mi_row, mi_col, rd_cost,
@@ -4146,8 +4146,10 @@ void vp9_init_tile_data(VP9_COMP *cpi) {
   int tile_tok = 0;
   int tplist_count = 0;
 
+  const int sb_rows = mi_cols_aligned_to_sb(cm->mi_rows) >> MI_BLOCK_SIZE_LOG2;
+
   if (cpi->tile_data == NULL || cpi->allocated_tiles < tile_cols * tile_rows) {
-    if (cpi->tile_data != NULL) vpx_free(cpi->tile_data);
+    if (cpi->tile_data == NULL) vpx_free(cpi->tile_data);
     CHECK_MEM_ERROR(cm, cpi->tile_data, vpx_malloc(tile_cols * tile_rows *
                                                    sizeof(*cpi->tile_data)));
     cpi->allocated_tiles = tile_cols * tile_rows;
@@ -4157,6 +4159,10 @@ void vp9_init_tile_data(VP9_COMP *cpi) {
         TileDataEnc *tile_data =
             &cpi->tile_data[tile_row * tile_cols + tile_col];
         int i, j;
+#if CONFIG_MULTITHREAD
+        tile_data->row_base_thresh_freq_fact = vpx_calloc(sb_rows * BLOCK_SIZES * MAX_MODES, sizeof(int));
+        memset(tile_data->row_base_thresh_freq_fact, 32, sb_rows * BLOCK_SIZES * MAX_MODES * sizeof(int));
+#endif
         for (i = 0; i < BLOCK_SIZES; ++i) {
           for (j = 0; j < MAX_MODES; ++j) {
             tile_data->thresh_freq_fact[i][j] = 32;

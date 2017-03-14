@@ -423,6 +423,11 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vpx_free(cpi->mbmi_ext_base);
   cpi->mbmi_ext_base = NULL;
 
+#if CONFIG_MULTITHREAD
+  vpx_free(cpi->tile_data->row_base_thresh_freq_fact);
+  cpi->tile_data->row_base_thresh_freq_fact = NULL;
+#endif
+
   vpx_free(cpi->tile_data);
   cpi->tile_data = NULL;
 

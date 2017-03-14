@@ -36,7 +36,7 @@ void vp9_rd_pick_inter_mode_sb(struct VP9_COMP *cpi,
                                PICK_MODE_CONTEXT *ctx, int64_t best_rd_so_far);
 
 void vp9_rd_pick_inter_mode_sb_seg_skip(
-    struct VP9_COMP *cpi, struct TileDataEnc *tile_data, struct macroblock *x,
+    struct VP9_COMP *cpi, struct TileDataEnc *tile_data, struct macroblock *x, int mi_row,
     struct RD_COST *rd_cost, BLOCK_SIZE bsize, PICK_MODE_CONTEXT *ctx,
     int64_t best_rd_so_far);
 
