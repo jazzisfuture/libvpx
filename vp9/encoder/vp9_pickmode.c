@@ -1033,6 +1033,27 @@ static INLINE void update_thresh_freq_fact(
   }
 }
 
+#if CONFIG_MULTITHREAD
+static INLINE void update_row_mt_thresh_freq_fact(
+    VP9_COMP *cpi, TileDataEnc *tile_data, int source_variance, int mi_row,
+    BLOCK_SIZE bsize, MV_REFERENCE_FRAME ref_frame, THR_MODES best_mode_idx,
+    PREDICTION_MODE mode) {
+  int sb_row = mi_cols_aligned_to_sb(mi_row) >> MI_BLOCK_SIZE_LOG2;
+  THR_MODES thr_mode_idx = mode_idx[ref_frame][mode_offset(mode)];
+  int thresh_freq_fact_idx = sb_row * BLOCK_SIZES * MAX_MODES + bsize * MAX_MODES + thr_mode_idx;
+  int *freq_fact = &tile_data->row_base_thresh_freq_fact[thresh_freq_fact_idx];
+  if (thr_mode_idx == best_mode_idx)
+    *freq_fact -= (*freq_fact >> 4);
+  else if (cpi->sf.limit_newmv_early_exit && mode == NEWMV &&
+           ref_frame == LAST_FRAME && source_variance < 5) {
+    *freq_fact = VPXMIN(*freq_fact + RD_THRESH_INC, 32);
+  } else {
+    *freq_fact = VPXMIN(*freq_fact + RD_THRESH_INC,
+                        cpi->sf.adaptive_rd_thresh * RD_THRESH_MAX_FACT);
+  }
+}
+#endif
+
 void vp9_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
                          BLOCK_SIZE bsize, PICK_MODE_CONTEXT *ctx) {
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -1398,7 +1419,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int64_t inter_mode_thresh =
       RDCOST(x->rdmult, x->rddiv, intra_cost_penalty, 0);
   const int *const rd_threshes = cpi->rd.threshes[mi->segment_id][bsize];
+#if CONFIG_MULTITHREAD
+  const int sb_row = mi_cols_aligned_to_sb(mi_row) >> MI_BLOCK_SIZE_LOG2;
+  int thresh_freq_fact_idx = sb_row * BLOCK_SIZES * MAX_MODES + bsize * MAX_MODES;
+  const int *const rd_thresh_freq_fact = &(tile_data->row_base_thresh_freq_fact[thresh_freq_fact_idx]);
+#else
   const int *const rd_thresh_freq_fact = tile_data->thresh_freq_fact[bsize];
+#endif
   INTERP_FILTER filter_ref;
   const int bsl = mi_width_log2_lookup[bsize];
   const int pred_filter_search =
@@ -1668,11 +1695,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     if (rd_less_than_thresh(
             best_rdc.rdcost, mode_rd_thresh,
-#if CONFIG_MULTITHREAD
-            // Synchronization of this function is only necessary when
-            // adaptive_rd_thresh is > 0.
-            cpi->sf.adaptive_rd_thresh ? tile_data->enc_row_mt_mutex : NULL,
-#endif
+// #if CONFIG_MULTITHREAD
+//             // Synchronization of this function is only necessary when
+//             // adaptive_rd_thresh is > 0.
+//             cpi->sf.adaptive_rd_thresh ? tile_data->enc_row_mt_mutex : NULL,
+// #endif
             &rd_thresh_freq_fact[mode_index]))
       continue;
 
@@ -2034,11 +2061,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
       if (rd_less_than_thresh(
               best_rdc.rdcost, mode_rd_thresh,
-#if CONFIG_MULTITHREAD
-              // Synchronization of this function is only necessary when
-              // adaptive_rd_thresh is > 0.
-              cpi->sf.adaptive_rd_thresh ? tile_data->enc_row_mt_mutex : NULL,
-#endif
+// #if CONFIG_MULTITHREAD
+//               // Synchronization of this function is only necessary when
+//               // adaptive_rd_thresh is > 0.
+//               cpi->sf.adaptive_rd_thresh ? tile_data->enc_row_mt_mutex : NULL,
+// #endif
               &rd_thresh_freq_fact[mode_index]))
         continue;
 
@@ -2147,16 +2174,26 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       // TODO(yunqingwang): Check intra mode mask and only update freq_fact
       // for those valid modes.
       for (i = 0; i < intra_modes; i++) {
+#if CONFIG_MULTITHREAD
+        update_row_mt_thresh_freq_fact(cpi, tile_data, x->source_variance, mi_row, bsize,
+                                INTRA_FRAME, best_mode_idx, intra_mode_list[i]);
+#else
         update_thresh_freq_fact(cpi, tile_data, x->source_variance, bsize,
                                 INTRA_FRAME, best_mode_idx, intra_mode_list[i]);
+#endif
       }
     } else {
       for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ++ref_frame) {
         PREDICTION_MODE this_mode;
         if (best_ref_frame != ref_frame) continue;
         for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {
-          update_thresh_freq_fact(cpi, tile_data, x->source_variance, bsize,
-                                  ref_frame, best_mode_idx, this_mode);
+#if CONFIG_MULTITHREAD
+        update_row_mt_thresh_freq_fact(cpi, tile_data, x->source_variance, mi_row, bsize,
+                                INTRA_FRAME, best_mode_idx, this_mode);
+#else
+        update_thresh_freq_fact(cpi, tile_data, x->source_variance, bsize,
+                                INTRA_FRAME, best_mode_idx, this_mode);
+#endif
         }
       }
     }
