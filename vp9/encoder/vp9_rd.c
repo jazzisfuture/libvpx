@@ -611,13 +611,13 @@ void vp9_set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi) {
 
 void vp9_update_rd_thresh_fact(int (*factor_buf)[MAX_MODES], int rd_thresh,
                                int bsize,
-#if CONFIG_MULTITHREAD
-                               pthread_mutex_t *enc_row_mt_mutex,
-#endif
+// #if CONFIG_MULTITHREAD
+//                                pthread_mutex_t *enc_row_mt_mutex,
+// #endif
                                int best_mode_index) {
-#if CONFIG_MULTITHREAD
-  if (NULL != enc_row_mt_mutex) pthread_mutex_lock(enc_row_mt_mutex);
-#endif
+// #if CONFIG_MULTITHREAD
+//   if (NULL != enc_row_mt_mutex) pthread_mutex_lock(enc_row_mt_mutex);
+// #endif
 
   if (rd_thresh > 0) {
     const int top_mode = bsize < BLOCK_8X8 ? MAX_REFS : MAX_MODES;
@@ -637,10 +637,35 @@ void vp9_update_rd_thresh_fact(int (*factor_buf)[MAX_MODES], int rd_thresh,
     }
   }
 
-#if CONFIG_MULTITHREAD
-  if (NULL != enc_row_mt_mutex) pthread_mutex_unlock(enc_row_mt_mutex);
-#endif
+// #if CONFIG_MULTITHREAD
+//   if (NULL != enc_row_mt_mutex) pthread_mutex_unlock(enc_row_mt_mutex);
+// #endif
 }
+
+#if CONFIG_MULTITHREAD
+void vp9_update_rd_row_mt_thresh_fact(int *factor_buf, int rd_thresh,
+                               int bsize,
+                               int best_mode_index) {
+  if (rd_thresh > 0) {
+    const int top_mode = bsize < BLOCK_8X8 ? MAX_REFS : MAX_MODES;
+    int mode;
+    for (mode = 0; mode < top_mode; ++mode) {
+      const BLOCK_SIZE min_size = VPXMAX(bsize - 1, BLOCK_4X4);
+      const BLOCK_SIZE max_size = VPXMIN(bsize + 2, BLOCK_64X64);
+      BLOCK_SIZE bs;
+      for (bs = min_size; bs <= max_size; ++bs) {
+        int buf_idx = bs * MAX_MODES + mode;
+        int *const fact = &factor_buf[buf_idx];
+        if (mode == best_mode_index) {
+          *fact -= (*fact >> 4);
+        } else {
+          *fact = VPXMIN(*fact + RD_THRESH_INC, rd_thresh * RD_THRESH_MAX_FACT);
+        }
+      }
+    }
+  }
+}
+#endif
 
 int vp9_get_intra_cost_penalty(int qindex, int qdelta,
                                vpx_bit_depth_t bit_depth) {

@@ -287,6 +287,9 @@ typedef struct TileDataEnc {
 #if CONFIG_MULTITHREAD
   pthread_mutex_t *search_count_mutex;
   pthread_mutex_t *enc_row_mt_mutex;
+
+  // Reduce the using of lock for row multithreading
+  int *row_base_thresh_freq_fact;
 #endif
 } TileDataEnc;
 
