@@ -1190,7 +1190,7 @@ static INLINE void find_predictors(
 static void vp9_NEWMV_diff_bias(const NOISE_ESTIMATE *ne, MACROBLOCKD *xd,
                                 PREDICTION_MODE this_mode, RD_COST *this_rdc,
                                 BLOCK_SIZE bsize, int mv_row, int mv_col,
-                                int is_last_frame) {
+                                int is_last_frame, int bias_zeromv) {
   // Bias against MVs associated with NEWMV mode that are very different from
   // top/left neighbors.
   if (this_mode == NEWMV) {
@@ -1239,6 +1239,8 @@ static void vp9_NEWMV_diff_bias(const NOISE_ESTIMATE *ne, MACROBLOCKD *xd,
   if (ne->enabled && ne->level >= kMedium && bsize >= BLOCK_32X32 &&
       is_last_frame && mv_row < 8 && mv_row > -8 && mv_col < 8 && mv_col > -8) {
     this_rdc->rdcost = 7 * this_rdc->rdcost >> 3;
+  } else if (bias_zeromv && mv_row == 0 && mv_col == 0) {
+    this_rdc->rdcost = 3 * this_rdc->rdcost >> 2;
   }
 }
 
@@ -1437,6 +1439,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
 #endif
+  int bias_zeromv = 0;
 
   init_ref_frame_cost(cm, xd, ref_frame_cost);
 
@@ -1554,6 +1557,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                       mi_col, yv12_mb, bsize, force_skip_low_temp_var);
     }
   }
+
+  if (cpi->oxcf.speed >= 8 && bsize >= BLOCK_16X16 && !x->sb_is_skin &&
+      x->source_variance < 30 && x->skip_low_source_sad)
+    bias_zeromv = 1;
 
   for (idx = 0; idx < RT_INTER_MODES; ++idx) {
     int rate_mv = 0;
@@ -1906,7 +1913,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       vp9_NEWMV_diff_bias(&cpi->noise_estimate, xd, this_mode, &this_rdc, bsize,
                           frame_mv[this_mode][ref_frame].as_mv.row,
                           frame_mv[this_mode][ref_frame].as_mv.col,
-                          ref_frame == LAST_FRAME);
+                          ref_frame == LAST_FRAME, bias_zeromv);
     }
 
     // Skipping checking: test to see if this block can be reconstructed by

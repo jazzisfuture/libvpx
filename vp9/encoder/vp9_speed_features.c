@@ -577,6 +577,7 @@ static void set_rt_speed_feature_framesize_independent(
     }
     sf->limit_newmv_early_exit = 0;
     if (cm->width > 640 && cm->height > 480) sf->use_simple_block_yrd = 1;
+    sf->short_circuit_flat_blocks = 1;
   }
   // Turn off adaptive_rd_thresh if row_mt is on for all the non-rd paths. This
   // causes too many locks in realtime mode in certain platforms (Android ARM,
