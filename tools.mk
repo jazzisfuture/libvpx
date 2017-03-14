@@ -26,7 +26,7 @@ tiny_ssim.DESCRIPTION = Generate SSIM/PSNR from raw .yuv files
 # Expand list of selected tools to build (as specified above)
 TOOLS           = $(addprefix tools/,$(call enabled,TOOLS))
 ALL_SRCS        = $(foreach ex,$(TOOLS),$($(notdir $(ex:.c=)).SRCS))
-CFLAGS += -I../include
+CFLAGS += -I../include -I../include/vpx
 
 
 # Expand all tools sources into a variable containing all sources
