@@ -4159,7 +4159,7 @@ void vp9_init_tile_data(VP9_COMP *cpi) {
         int i, j;
         for (i = 0; i < BLOCK_SIZES; ++i) {
           for (j = 0; j < MAX_MODES; ++j) {
-            tile_data->thresh_freq_fact[i][j] = 32;
+            tile_data->thresh_freq_fact[i][j] = RD_THRESH_INIT_FACT;
             tile_data->mode_map[i][j] = j;
           }
         }
