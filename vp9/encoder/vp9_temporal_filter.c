@@ -89,8 +89,8 @@ void vp9_temporal_filter_init(void) {
   for (i = 1; i < 512; ++i) fixed_divide[i] = 0x80000 / i;
 }
 
-void vp9_temporal_filter_apply_c(uint8_t *frame1, unsigned int stride,
-                                 uint8_t *frame2, unsigned int block_width,
+void vp9_temporal_filter_apply_c(const uint8_t *frame1, unsigned int stride,
+                                 const uint8_t *frame2, unsigned int block_width,
                                  unsigned int block_height, int strength,
                                  int filter_weight, unsigned int *accumulator,
                                  uint16_t *count) {
