@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
 #include <math.h>
 #include <limits.h>
 
@@ -99,6 +100,12 @@ void vp9_temporal_filter_apply_c(const uint8_t *frame1, unsigned int stride,
   int modifier;
   int byte = 0;
   const int rounding = strength > 0 ? 1 << (strength - 1) : 0;
+
+  assert(strength >= 0);
+  assert(strength <= 6);
+
+  assert(filter_weight >= 0);
+  assert(filter_weight <= 2);
 
   for (i = 0, k = 0; i < block_height; i++) {
     for (j = 0; j < block_width; j++, k++) {
