@@ -418,10 +418,13 @@ void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                                     FRAME_TYPE frame_type,
                                     int refresh_alt_ref_frame,
                                     int refresh_golden_frame,
-                                    int refresh_last_frame, int resized) {
+                                    int refresh_last_frame, int resized,
+                                    int svc_base_is_key) {
   // Copy source into denoised reference buffers on KEY_FRAME or
-  // if the just encoded frame was resized.
-  if (frame_type == KEY_FRAME || resized != 0 || denoiser->reset) {
+  // if the just encoded frame was resized. For SVC, copy source if the base
+  // spatial layer was key frame.
+  if (frame_type == KEY_FRAME || resized != 0 || denoiser->reset ||
+      svc_base_is_key) {
     int i;
     // Start at 1 so as not to overwrite the INTRA_FRAME
     for (i = 1; i < MAX_REF_FRAMES; ++i)
