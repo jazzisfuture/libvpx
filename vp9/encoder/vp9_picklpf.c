@@ -150,6 +150,10 @@ void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
   VP9_COMMON *const cm = &cpi->common;
   struct loopfilter *const lf = &cm->lf;
 
+  if (cpi->oxcf.fast_decoding) {
+    lf->filter_level = 0;
+    return;
+  }
   lf->sharpness_level = cm->frame_type == KEY_FRAME ? 0 : cpi->oxcf.sharpness;
 
   if (method == LPF_PICK_MINIMAL_LPF && lf->filter_level) {

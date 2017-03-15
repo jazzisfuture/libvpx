@@ -23,7 +23,10 @@
 #include "vp9/vp9_iface_common.h"
 
 struct vp9_extracfg {
-  int cpu_used;  // available cpu percentage in 1/16
+  int cpu_used;  // range [-9, 8]:
+                 // Positive value indicates the encode speed desired.
+                 // Negative value indicates fast decoding is needed,
+                 //          and encode speed desired is abs(cpu_used) - 1
   unsigned int enable_auto_alt_ref;
   unsigned int noise_sensitivity;
   unsigned int sharpness;
@@ -252,7 +255,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   RANGE_CHECK(extra_cfg, row_mt, 0, 1);
   RANGE_CHECK(extra_cfg, row_mt_bit_exact, 0, 1);
   RANGE_CHECK(extra_cfg, enable_auto_alt_ref, 0, 2);
-  RANGE_CHECK(extra_cfg, cpu_used, -8, 8);
+  RANGE_CHECK(extra_cfg, cpu_used, -9, 8);
   RANGE_CHECK_HI(extra_cfg, noise_sensitivity, 6);
   RANGE_CHECK(extra_cfg, tile_columns, 0, 6);
   RANGE_CHECK(extra_cfg, tile_rows, 0, 2);
@@ -509,7 +512,13 @@ static vpx_codec_err_t set_encoder_config(
 
   oxcf->key_freq = cfg->kf_max_dist;
 
-  oxcf->speed = abs(extra_cfg->cpu_used);
+  if (extra_cfg->cpu_used >= 0) {
+    oxcf->speed = extra_cfg->cpu_used;
+    oxcf->fast_decoding = 0;
+  } else {
+    oxcf->speed = abs(extra_cfg->cpu_used) - 1;
+    oxcf->fast_decoding = 1;
+  }
   oxcf->encode_breakout = extra_cfg->static_thresh;
   oxcf->enable_auto_arf = extra_cfg->enable_auto_alt_ref;
   oxcf->noise_sensitivity = extra_cfg->noise_sensitivity;
