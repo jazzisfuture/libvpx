@@ -707,7 +707,7 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   // Recode loop tolerance %.
   sf->recode_tolerance_low = 12;
   sf->recode_tolerance_high = 25;
-  sf->default_interp_filter = SWITCHABLE;
+  sf->default_interp_filter = BILINEAR; //SWITCHABLE;
   sf->simple_model_rd_from_var = 0;
   sf->short_circuit_flat_blocks = 0;
   sf->short_circuit_low_temp_var = 0;

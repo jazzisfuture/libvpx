@@ -2598,7 +2598,8 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
           (!cpi->rc.this_key_frame_forced)) {
         lf->last_filt_level = 0;
       }
-      vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.lpf_pick);
+      // vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.lpf_pick);
+      lf->filter_level = 0;
       lf->last_filt_level = lf->filter_level;
     } else {
       lf->filter_level = 0;
