@@ -23,6 +23,7 @@ extern "C" {
 
 // Used to control aggressive VBR mode.
 // #define AGGRESSIVE_VBR 1
+#define EXACT_VBR_EXPERIMENT 1
 
 // Bits Per MB at different Q (Multiplied by 512)
 #define BPER_MB_NORMBITS 9
