@@ -1547,6 +1547,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         !svc_force_zero_mode[GOLDEN_FRAME - 1] && !force_skip_low_temp_var))
     use_golden_nonzeromv = 0;
 
+  if (cpi->oxcf.speed >= 8 &&
+      (cpi->rc.frames_since_golden < x->last_sb_high_content ||
+       x->last_sb_high_content > 40))
+    usable_ref_frame = LAST_FRAME;
+
   for (ref_frame = LAST_FRAME; ref_frame <= usable_ref_frame; ++ref_frame) {
     if (!skip_ref_find_pred[ref_frame]) {
       find_predictors(cpi, x, ref_frame, frame_mv, const_motion,
