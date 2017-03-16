@@ -706,6 +706,7 @@ typedef struct VP9_COMP {
   uint8_t max_copied_frame;
 
   uint8_t *content_state_sb;
+  uint8_t *content_state_sb_fd;
 
   LevelConstraint level_constraint;
 } VP9_COMP;
