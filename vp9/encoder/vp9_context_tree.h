@@ -27,6 +27,7 @@ typedef struct {
   MODE_INFO mic;
   MB_MODE_INFO_EXT mbmi_ext;
   uint8_t *zcoeff_blk;
+  int32_t sum_y_eobs;
   tran_low_t *coeff[MAX_MB_PLANE][3];
   tran_low_t *qcoeff[MAX_MB_PLANE][3];
   tran_low_t *dqcoeff[MAX_MB_PLANE][3];
@@ -71,9 +72,6 @@ typedef struct {
   // search loop
   MV pred_mv[MAX_REF_FRAMES];
   INTERP_FILTER pred_interp_filter;
-
-  // Used for the machine learning-based early termination
-  int sum_eobs;
 } PICK_MODE_CONTEXT;
 
 typedef struct PC_TREE {
