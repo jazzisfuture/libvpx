@@ -211,7 +211,11 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
   }
 
   if (speed >= 2) {
+#ifdef EXACT_VBR_EXPERIMENT
+    sf->recode_loop = ALLOW_RECODE;
+#else
     sf->recode_loop = ALLOW_RECODE_KFARFGF;
+#endif
     sf->tx_size_search_method =
         frame_is_boosted(cpi) ? USE_FULL_RD : USE_LARGESTALL;
 
@@ -227,8 +231,15 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
     sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
     sf->auto_min_max_partition_size = RELAXED_NEIGHBORING_MIN_MAX;
     sf->allow_partition_search_skip = 1;
+
+//#ifdef EXACT_VBR_EXPERIMENT
     sf->recode_tolerance_low = 15;
     sf->recode_tolerance_high = 45;
+// #else
+//     sf->recode_tolerance_low = 15;
+//     sf->recode_tolerance_high = 45;
+// #endif
+
   }
 
   if (speed >= 3) {

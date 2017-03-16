@@ -3306,6 +3306,15 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
             VPXMIN(cpi->oxcf.worst_allowed_q, top_index + qrange_adj / 2);
       }
 #endif
+
+#ifdef EXACT_VBR_EXPERIMENT
+//  if (two_pass_first_group_inter(cpi)) {
+//  if ( !frame_is_kf_gf_arf(cpi)) {
+  bottom_index = cpi->oxcf.best_allowed_q;
+  top_index = cpi->oxcf.worst_allowed_q;
+//  }
+#endif
+
       // TODO(agrange) Scale cpi->max_mv_magnitude if frame-size has changed.
       set_mv_search_params(cpi);
 
