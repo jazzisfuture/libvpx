@@ -2315,6 +2315,12 @@ void vp9_avg_source_sad(VP9_COMP *cpi) {
                   cpi->content_state_sb[num_samples] =
                       ((tmp_sse - tmp_variance) < 25) ? kHighSadLowSumdiff
                                                       : kHighSadHighSumdiff;
+                if (tmp_sad < (3 * avg_source_sad_threshold >> 1))
+                  cpi->content_state_sb_fd[num_samples]++;
+                else
+                  cpi->content_state_sb_fd[num_samples] = 0;
+                if (cpi->content_state_sb_fd[num_samples] >= 255)
+                  cpi->content_state_sb_fd[num_samples] = 255;
               }
               avg_sad += tmp_sad;
               num_samples++;
