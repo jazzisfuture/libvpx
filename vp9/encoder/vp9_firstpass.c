@@ -39,8 +39,8 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vpx_dsp/variance.h"
 
-#define OUTPUT_FPF 0
-#define ARF_STATS_OUTPUT 0
+#define OUTPUT_FPF 1
+#define ARF_STATS_OUTPUT 1
 
 #define FACTOR_PT_LOW 0.70
 #define FACTOR_PT_HIGH 0.90
@@ -1853,7 +1853,7 @@ static void accumulate_frame_motion_stats(const FIRSTPASS_STATS *stats,
   }
 }
 
-#define BASELINE_ERR_PER_MB 12500.0
+#define BASELINE_ERR_PER_MB 250.0
 static double calc_frame_boost(VP9_COMP *cpi, const FIRSTPASS_STATS *this_frame,
                                double *sr_accumulator,
                                double this_frame_mv_in_out, double max_boost) {
@@ -1882,7 +1882,7 @@ static double calc_frame_boost(VP9_COMP *cpi, const FIRSTPASS_STATS *this_frame,
     frame_boost += frame_boost * (this_frame_mv_in_out * 2.0);
 
   // Q correction and scalling
-  frame_boost = frame_boost * boost_q_correction;
+  frame_boost =  + (48.0 + (frame_boost * boost_q_correction));
 
   return VPXMIN(frame_boost, max_boost * boost_q_correction);
 }
