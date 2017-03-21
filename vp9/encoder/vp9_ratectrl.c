@@ -100,7 +100,7 @@ static int gf_low = 400;
 static int kf_high = 4000;
 static int kf_low = 400;
 #else
-static int gf_high = 2000;
+static int gf_high = 1500;
 static int gf_low = 400;
 static int kf_high = 5000;
 static int kf_low = 400;
