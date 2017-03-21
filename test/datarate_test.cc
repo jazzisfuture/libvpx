@@ -561,6 +561,7 @@ class DatarateTestVP9Large
     }
 
     encoder->Control(VP9E_SET_NOISE_SENSITIVITY, denoiser_on_);
+    encoder->Control(VP9E_SET_TILE_COLUMNS, (cfg_.g_threads >> 1));
 
     if (cfg_.ts_number_layers > 1) {
       if (video->frame() == 0) {
@@ -988,7 +989,7 @@ TEST_P(DatarateTestVP9LargeDenoiser, LowNoise) {
 }
 
 // Check basic datarate targeting, for a single bitrate, when denoiser is on,
-// for clip with high noise level.
+// for clip with high noise level. Use 2 threads.
 TEST_P(DatarateTestVP9LargeDenoiser, HighNoise) {
   cfg_.rc_buf_initial_sz = 500;
   cfg_.rc_buf_optimal_sz = 500;
@@ -998,6 +999,7 @@ TEST_P(DatarateTestVP9LargeDenoiser, HighNoise) {
   cfg_.rc_max_quantizer = 56;
   cfg_.rc_end_usage = VPX_CBR;
   cfg_.g_lag_in_frames = 0;
+  cfg_.g_threads = 2;
 
   ::libvpx_test::Y4mVideoSource video("noisy_clip_640_360.y4m", 0, 200);
 
@@ -1026,7 +1028,6 @@ TEST_P(DatarateTestVP9LargeDenoiser, DenoiserOffOn) {
   cfg_.rc_max_quantizer = 56;
   cfg_.rc_end_usage = VPX_CBR;
   cfg_.g_lag_in_frames = 0;
-
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
                                        30, 1, 0, 299);
 
