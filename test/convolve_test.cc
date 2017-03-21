@@ -912,6 +912,35 @@ WRAP(convolve8_sse2, 12)
 WRAP(convolve8_avg_sse2, 12)
 #endif  // HAVE_SSE2 && ARCH_X86_64
 
+#if HAVE_AVX2 && ARCH_X86_64
+WRAP(convolve_copy_avx2, 8)
+WRAP(convolve_avg_avx2, 8)
+WRAP(convolve8_horiz_avx2, 8)
+WRAP(convolve8_avg_horiz_avx2, 8)
+WRAP(convolve8_vert_avx2, 8)
+WRAP(convolve8_avg_vert_avx2, 8)
+WRAP(convolve8_avx2, 8)
+WRAP(convolve8_avg_avx2, 8)
+
+WRAP(convolve_copy_avx2, 10)
+WRAP(convolve_avg_avx2, 10)
+WRAP(convolve8_avx2, 10)
+WRAP(convolve8_horiz_avx2, 10)
+WRAP(convolve8_vert_avx2, 10)
+WRAP(convolve8_avg_avx2, 10)
+WRAP(convolve8_avg_horiz_avx2, 10)
+WRAP(convolve8_avg_vert_avx2, 10)
+
+WRAP(convolve_copy_avx2, 12)
+WRAP(convolve_avg_avx2, 12)
+WRAP(convolve8_avx2, 12)
+WRAP(convolve8_horiz_avx2, 12)
+WRAP(convolve8_vert_avx2, 12)
+WRAP(convolve8_avg_avx2, 12)
+WRAP(convolve8_avg_horiz_avx2, 12)
+WRAP(convolve8_avg_vert_avx2, 12)
+#endif  // HAVE_AVX2 && ARCH_X86_64
+
 #if HAVE_NEON
 WRAP(convolve_copy_neon, 8)
 WRAP(convolve_avg_neon, 8)
@@ -1057,7 +1086,40 @@ INSTANTIATE_TEST_CASE_P(SSSE3, ConvolveTest,
                         ::testing::ValuesIn(kArrayConvolve8_ssse3));
 #endif
 
-#if HAVE_AVX2 && HAVE_SSSE3
+#if HAVE_AVX2
+#if CONFIG_VP9_HIGHBITDEPTH
+#if HAVE_SSE2 && ARCH_X86_64
+const ConvolveFunctions convolve8_avx2(
+    wrap_convolve_copy_avx2_8, wrap_convolve_avg_avx2_8,
+    wrap_convolve8_horiz_avx2_8, wrap_convolve8_avg_horiz_avx2_8,
+    wrap_convolve8_vert_avx2_8, wrap_convolve8_avg_vert_avx2_8,
+    wrap_convolve8_avx2_8, wrap_convolve8_avg_avx2_8, wrap_convolve8_horiz_c_8,
+    wrap_convolve8_avg_horiz_c_8, wrap_convolve8_vert_c_8,
+    wrap_convolve8_avg_vert_c_8, wrap_convolve8_c_8, wrap_convolve8_avg_c_8, 8);
+const ConvolveFunctions convolve10_avx2(
+    wrap_convolve_copy_avx2_10, wrap_convolve_avg_avx2_10,
+    wrap_convolve8_horiz_avx2_10, wrap_convolve8_avg_horiz_avx2_10,
+    wrap_convolve8_vert_avx2_10, wrap_convolve8_avg_vert_avx2_10,
+    wrap_convolve8_avx2_10, wrap_convolve8_avg_avx2_10,
+    wrap_convolve8_horiz_c_10, wrap_convolve8_avg_horiz_c_10,
+    wrap_convolve8_vert_c_10, wrap_convolve8_avg_vert_c_10, wrap_convolve8_c_10,
+    wrap_convolve8_avg_c_10, 10);
+const ConvolveFunctions convolve12_avx2(
+    wrap_convolve_copy_avx2_12, wrap_convolve_avg_avx2_12,
+    wrap_convolve8_horiz_avx2_12, wrap_convolve8_avg_horiz_avx2_12,
+    wrap_convolve8_vert_avx2_12, wrap_convolve8_avg_vert_avx2_12,
+    wrap_convolve8_avx2_12, wrap_convolve8_avg_avx2_12,
+    wrap_convolve8_horiz_c_12, wrap_convolve8_avg_horiz_c_12,
+    wrap_convolve8_vert_c_12, wrap_convolve8_avg_vert_c_12, wrap_convolve8_c_12,
+    wrap_convolve8_avg_c_12, 12);
+const ConvolveParam kArrayConvolve8_avx2[] = { ALL_SIZES(convolve8_avx2),
+                                               ALL_SIZES(convolve10_avx2),
+                                               ALL_SIZES(convolve12_avx2) };
+INSTANTIATE_TEST_CASE_P(AVX2, ConvolveTest,
+                        ::testing::ValuesIn(kArrayConvolve8_avx2));
+#endif  // HAVE_SSE2 && ARCH_X86_64
+#else  // CONFIG_VP9_HIGHBITDEPTH
+#if HAVE_SSSE3
 const ConvolveFunctions convolve8_avx2(
     vpx_convolve_copy_c, vpx_convolve_avg_c, vpx_convolve8_horiz_avx2,
     vpx_convolve8_avg_horiz_ssse3, vpx_convolve8_vert_avx2,
@@ -1068,7 +1130,9 @@ const ConvolveFunctions convolve8_avx2(
 const ConvolveParam kArrayConvolve8_avx2[] = { ALL_SIZES(convolve8_avx2) };
 INSTANTIATE_TEST_CASE_P(AVX2, ConvolveTest,
                         ::testing::ValuesIn(kArrayConvolve8_avx2));
-#endif  // HAVE_AVX2 && HAVE_SSSE3
+#endif  // HAVE_SSSE3
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // HAVE_AVX2
 
 #if HAVE_NEON
 #if CONFIG_VP9_HIGHBITDEPTH
