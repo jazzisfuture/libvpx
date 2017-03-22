@@ -1679,6 +1679,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         int tmp_sad;
         uint32_t dis;
         int cost_list[5];
+        const MvLimits tmp_mv_limits = x->mv_limits;
 
         if (bsize < BLOCK_16X16) continue;
 
@@ -1694,6 +1695,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                                   x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
         frame_mv[NEWMV][ref_frame].as_mv.row >>= 3;
         frame_mv[NEWMV][ref_frame].as_mv.col >>= 3;
+
+        x->mv_limits = tmp_mv_limits;
 
         cpi->find_fractional_mv_step(
             x, &frame_mv[NEWMV][ref_frame].as_mv,
@@ -2298,7 +2301,7 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x, int mi_row,
             }
 
             vp9_set_mv_search_range(&x->mv_limits,
-                                    &mbmi_ext->ref_mvs[0]->as_mv);
+                                    &mbmi_ext->ref_mvs[ref_frame][0].as_mv);
 
             vp9_full_pixel_search(
                 cpi, x, bsize, &mvp_full, step_param, cpi->sf.mv.search_method,
