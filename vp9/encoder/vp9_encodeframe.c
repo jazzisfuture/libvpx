@@ -1072,6 +1072,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     mi->mv[0].as_int = 0;
     mi->interp_filter = BILINEAR;
 
+    vp9_set_mv_search_range(&x->mv_limits, &(mi->mv[0].as_mv));
+
     y_sad = vp9_int_pro_motion_estimation(cpi, x, bsize, mi_row, mi_col);
     y_sad_last = y_sad;
     // Pick ref frame for partitioning, bias last frame when y_sad_g and y_sad

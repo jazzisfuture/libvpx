@@ -1679,8 +1679,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         int tmp_sad;
         uint32_t dis;
         int cost_list[5];
+        const MvLimits tmp_mv_limits = x->mv_limits;
 
         if (bsize < BLOCK_16X16) continue;
+
+        vp9_set_mv_search_range(&x->mv_limits,
+                                &x->mbmi_ext->ref_mvs[ref_frame][0].as_mv);
 
         tmp_sad = vp9_int_pro_motion_estimation(cpi, x, bsize, mi_row, mi_col);
 
@@ -1694,6 +1698,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                                   x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
         frame_mv[NEWMV][ref_frame].as_mv.row >>= 3;
         frame_mv[NEWMV][ref_frame].as_mv.col >>= 3;
+
+        x->mv_limits = tmp_mv_limits;
 
         cpi->find_fractional_mv_step(
             x, &frame_mv[NEWMV][ref_frame].as_mv,
