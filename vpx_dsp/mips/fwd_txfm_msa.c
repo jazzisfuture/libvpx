@@ -18,13 +18,12 @@ void fdct8x16_1d_column(const int16_t *input, int16_t *tmp_ptr,
   v8i16 stp21, stp22, stp23, stp24, stp25, stp26, stp30;
   v8i16 stp31, stp32, stp33, stp34, stp35, stp36, stp37;
   v8i16 vec0, vec1, vec2, vec3, vec4, vec5, cnst0, cnst1, cnst4, cnst5;
-  v8i16 coeff = { cospi_16_64, -cospi_16_64, cospi_8_64,  cospi_24_64,
-                  -cospi_8_64, -cospi_24_64, cospi_12_64, cospi_20_64 };
-  v8i16 coeff1 = { cospi_2_64,  cospi_30_64, cospi_14_64, cospi_18_64,
-                   cospi_10_64, cospi_22_64, cospi_6_64,  cospi_26_64 };
+  v8i16 coeff = {cospi_16_64, -cospi_16_64, cospi_8_64,  cospi_24_64,
+                 -cospi_8_64, -cospi_24_64, cospi_12_64, cospi_20_64};
+  v8i16 coeff1 = {cospi_2_64,  cospi_30_64, cospi_14_64, cospi_18_64,
+                  cospi_10_64, cospi_22_64, cospi_6_64,  cospi_26_64};
   v8i16 coeff2 = {
-    -cospi_2_64, -cospi_10_64, -cospi_18_64, -cospi_26_64, 0, 0, 0, 0
-  };
+      -cospi_2_64, -cospi_10_64, -cospi_18_64, -cospi_26_64, 0, 0, 0, 0};
 
   LD_SH16(input, src_stride, in0, in1, in2, in3, in4, in5, in6, in7, in8, in9,
           in10, in11, in12, in13, in14, in15);
@@ -175,7 +174,7 @@ void vpx_fdct4x4_msa(const int16_t *input, int16_t *output,
   /* fdct4 pre-process */
   {
     v8i16 vec, mask;
-    v16i8 zero = { 0 };
+    v16i8 zero = {0};
     v16i8 one = __msa_ldi_b(1);
 
     mask = (v8i16)__msa_sldi_b(zero, one, 15);
@@ -216,7 +215,15 @@ void vpx_fdct8x8_msa(const int16_t *input, int16_t *output,
 }
 
 void vpx_fdct8x8_1_msa(const int16_t *input, int16_t *out, int32_t stride) {
-  out[0] = LD_HADD(input, stride);
+  v8i16 in0, in1, in2, in3, in4, in5, in6, in7;
+  v4i32 vec_w;
+
+  LD_SH8(input, stride, in0, in1, in2, in3, in4, in5, in6, in7);
+  ADD4(in0, in1, in2, in3, in4, in5, in6, in7, in0, in2, in4, in6);
+  ADD2(in0, in2, in4, in6, in0, in4);
+  vec_w = __msa_hadd_s_w(in0, in0);
+  vec_w += __msa_hadd_s_w(in4, in4);
+  out[0] = HADD_SW_S32(vec_w);
   out[1] = 0;
 }
 
@@ -237,9 +244,25 @@ void vpx_fdct16x16_msa(const int16_t *input, int16_t *output,
 }
 
 void vpx_fdct16x16_1_msa(const int16_t *input, int16_t *out, int32_t stride) {
-  int sum = LD_HADD(input, stride);
-  sum += LD_HADD(input + 8, stride);
-  sum += LD_HADD(input + 16 * 8, stride);
-  sum += LD_HADD(input + 16 * 8 + 8, stride);
+  int sum, i;
+  v8i16 in0, in1, in2, in3, in4, in5, in6, in7;
+  v4i32 vec_w = {0};
+
+  for (i = 0; i < 4; ++i) {
+    LD_SH2(input, 8, in0, in1);
+    input += stride;
+    LD_SH2(input, 8, in2, in3);
+    input += stride;
+    LD_SH2(input, 8, in4, in5);
+    input += stride;
+    LD_SH2(input, 8, in6, in7);
+    input += stride;
+    ADD4(in0, in1, in2, in3, in4, in5, in6, in7, in0, in2, in4, in6);
+    ADD2(in0, in2, in4, in6, in0, in4);
+    vec_w += __msa_hadd_s_w(in0, in0);
+    vec_w += __msa_hadd_s_w(in4, in4);
+  }
+
+  sum = HADD_SW_S32(vec_w);
   out[0] = (int16_t)(sum >> 1);
 }
