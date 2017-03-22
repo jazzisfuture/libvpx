@@ -119,6 +119,8 @@ struct macroblock {
   // from extending outside the UMV borders
   MvLimits mv_limits;
 
+  MvLimits sub_pixel_mv_limits;
+
   // Notes transform blocks where no coefficents are coded.
   // Set during mode selection. Read during block encoding.
   uint8_t zcoeff_blk[TX_SIZES][256];

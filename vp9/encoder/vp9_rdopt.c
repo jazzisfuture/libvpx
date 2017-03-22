@@ -1802,6 +1802,10 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
 
     x->mv_limits = tmp_mv_limits;
 
+    vp9_set_subpel_mv_search_range(&x->sub_pixel_mv_limits,
+                                   (const MvLimits *)&x->mv_limits,
+                                   &ref_mv[id].as_mv);
+
     if (bestsme < UINT_MAX) {
       uint32_t dis; /* TODO: use dis in distortion calculation later. */
       uint32_t sse;
@@ -1988,6 +1992,10 @@ static int64_t rd_pick_best_sub8x8_mode(
               &bsi->ref_mv[0]->as_mv, new_mv, INT_MAX, 1);
 
           x->mv_limits = tmp_mv_limits;
+
+          vp9_set_subpel_mv_search_range(&x->sub_pixel_mv_limits,
+                                         (const MvLimits *)&x->mv_limits,
+                                         &bsi->ref_mv[0]->as_mv);
 
           if (bestsme < UINT_MAX) {
             uint32_t distortion;
@@ -2393,6 +2401,9 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
       cond_cost_list(cpi, cost_list), &ref_mv, &tmp_mv->as_mv, INT_MAX, 1);
 
   x->mv_limits = tmp_mv_limits;
+
+  vp9_set_subpel_mv_search_range(&x->sub_pixel_mv_limits,
+                                 (const MvLimits *)&x->mv_limits, &ref_mv);
 
   if (bestsme < INT_MAX) {
     uint32_t dis; /* TODO: use dis in distortion calculation later. */

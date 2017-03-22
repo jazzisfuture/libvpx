@@ -233,6 +233,21 @@ static uint32_t temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   struct buf_2d src = x->plane[0].src;
   struct buf_2d pre = xd->plane[0].pre[0];
 
+  const MvLimits tmp_mv_limits = x->mv_limits;
+  int col_min =
+      (best_ref_mv1.col >> 3) - (MV_MAX >> 3) + (best_ref_mv1.col & 7 ? 1 : 0);
+  int row_min =
+      (best_ref_mv1.row >> 3) - (MV_MAX >> 3) + (best_ref_mv1.row & 7 ? 1 : 0);
+  int col_max = (best_ref_mv1.col >> 3) + ((MV_MAX - 1) >> 3);
+  int row_max = (best_ref_mv1.row >> 3) + ((MV_MAX - 1) >> 3);
+
+  // Get intersection of UMV window and valid MV window to reduce # of checks
+  // in diamond search.
+  if (x->mv_limits.col_min < col_min) x->mv_limits.col_min = col_min;
+  if (x->mv_limits.col_max > col_max) x->mv_limits.col_max = col_max;
+  if (x->mv_limits.row_min < row_min) x->mv_limits.row_min = row_min;
+  if (x->mv_limits.row_max > row_max) x->mv_limits.row_max = row_max;
+
   best_ref_mv1_full.col = best_ref_mv1.col >> 3;
   best_ref_mv1_full.row = best_ref_mv1.row >> 3;
 
@@ -248,6 +263,30 @@ static uint32_t temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   vp9_full_pixel_search(cpi, x, BLOCK_16X16, &best_ref_mv1_full, step_param,
                         search_method, sadpb, cond_cost_list(cpi, cost_list),
                         &best_ref_mv1, ref_mv, 0, 0);
+
+  /* restore UMV window */
+  x->mv_limits = tmp_mv_limits;
+
+  x->sub_pixel_mv_limits.col_min = x->mv_limits.col_min * 8;
+  x->sub_pixel_mv_limits.col_max = x->mv_limits.col_max * 8;
+  x->sub_pixel_mv_limits.row_min = x->mv_limits.row_min * 8;
+  x->sub_pixel_mv_limits.row_max = x->mv_limits.row_max * 8;
+
+  col_min = best_ref_mv1.col - MV_MAX;
+  row_min = best_ref_mv1.row - MV_MAX;
+  col_max = best_ref_mv1.col + MV_MAX - 1;
+  row_max = best_ref_mv1.row + MV_MAX - 1;
+
+  // Get intersection of UMV window and valid MV window to reduce # of checks
+  // in diamond search.
+  if (x->sub_pixel_mv_limits.col_min < col_min)
+    x->sub_pixel_mv_limits.col_min = col_min;
+  if (x->sub_pixel_mv_limits.col_max > col_max)
+    x->sub_pixel_mv_limits.col_max = col_max;
+  if (x->sub_pixel_mv_limits.row_min < row_min)
+    x->sub_pixel_mv_limits.row_min = row_min;
+  if (x->sub_pixel_mv_limits.row_max > row_max)
+    x->sub_pixel_mv_limits.row_max = row_max;
 
   // Ignore mv costing by sending NULL pointer instead of cost array
   bestsme = cpi->find_fractional_mv_step(
