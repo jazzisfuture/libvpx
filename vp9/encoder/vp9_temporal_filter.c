@@ -249,6 +249,11 @@ static uint32_t temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
                         search_method, sadpb, cond_cost_list(cpi, cost_list),
                         &best_ref_mv1, ref_mv, 0, 0);
 
+  x->sub_pixel_mv_limits.col_min = x->mv_limits.col_min * 8;
+  x->sub_pixel_mv_limits.col_max = x->mv_limits.col_max * 8;
+  x->sub_pixel_mv_limits.row_min = x->mv_limits.row_min * 8;
+  x->sub_pixel_mv_limits.row_max = x->mv_limits.row_max * 8;
+
   // Ignore mv costing by sending NULL pointer instead of cost array
   bestsme = cpi->find_fractional_mv_step(
       x, ref_mv, &best_ref_mv1, cpi->common.allow_high_precision_mv,
