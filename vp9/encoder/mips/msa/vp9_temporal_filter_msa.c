@@ -265,8 +265,8 @@ static void temporal_filter_apply_16size_msa(uint8_t *frm1_ptr, uint32_t stride,
   }
 }
 
-void vp9_temporal_filter_apply_msa(uint8_t *frame1_ptr, uint32_t stride,
-                                   uint8_t *frame2_ptr, uint32_t blk_w,
+void vp9_temporal_filter_apply_msa(const uint8_t *frame1_ptr, uint32_t stride,
+                                   const uint8_t *frame2_ptr, uint32_t blk_w,
                                    uint32_t blk_h, int32_t strength,
                                    int32_t filt_wgt, uint32_t *accu,
                                    uint16_t *cnt) {
