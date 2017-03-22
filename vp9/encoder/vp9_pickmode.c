@@ -1576,6 +1576,16 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     }
   }
 
+  int flag_force_zeromv_last = 0;
+  // Take zeromv-last and exit, for 64x64 blocks with low source sad and low
+  // temporal variance.
+  if (cpi->oxcf.speed >= 8 && bsize == BLOCK_64X64 && x->skip_low_source_sad &&
+      force_skip_low_temp_var) {
+    flag_force_zeromv_last = 1;
+  }
+
+
+
   for (idx = 0; idx < RT_INTER_MODES; ++idx) {
     int rate_mv = 0;
     int mode_rd_thresh;
@@ -1622,6 +1632,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     }
 
     if (!(cpi->ref_frame_flags & flag_list[ref_frame])) continue;
+
+    if (flag_force_zeromv_last && ref_frame != LAST_FRAME &&
+        frame_mv[this_mode][ref_frame].as_int != 0)
+      continue;
+
 
     if (const_motion[ref_frame] && this_mode == NEARMV) continue;
 
@@ -1860,6 +1875,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       mi->interp_filter = (filter_ref == SWITCHABLE) ? EIGHTTAP : filter_ref;
       vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
 
+      if (!flag_force_zeromv_last) {
       // For large partition blocks, extra testing is done.
       if (cpi->oxcf.rc_mode == VPX_CBR && large_block &&
           !cyclic_refresh_segment_id_boosted(xd->mi[0]->segment_id) &&
@@ -1870,6 +1886,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       } else {
         model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc.rate, &this_rdc.dist,
                           &var_y, &sse_y);
+      }
+      } else {
+        mi->tx_size = TX_16X16;
       }
     }
 
@@ -1902,7 +1921,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       this_rdc.rate += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
     }
 
-    if (x->color_sensitivity[0] || x->color_sensitivity[1]) {
+    if (!flag_force_zeromv_last && (x->color_sensitivity[0] || x->color_sensitivity[1])) {
       RD_COST rdc_uv;
       const BLOCK_SIZE uv_bsize = get_plane_block_size(bsize, &xd->plane[1]);
       if (x->color_sensitivity[0])
@@ -1922,7 +1941,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     // Bias against NEWMV that is very different from its neighbors, and bias
     // to small motion-lastref for noisy input.
-    if (cpi->oxcf.rc_mode == VPX_CBR && cpi->oxcf.speed >= 5 &&
+    if (!flag_force_zeromv_last && cpi->oxcf.rc_mode == VPX_CBR && cpi->oxcf.speed >= 5 &&
         cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
       vp9_NEWMV_diff_bias(&cpi->noise_estimate, xd, this_mode, &this_rdc, bsize,
                           frame_mv[this_mode][ref_frame].as_mv.row,
@@ -1932,7 +1951,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     // Skipping checking: test to see if this block can be reconstructed by
     // prediction only.
-    if (cpi->allow_encode_breakout) {
+    if (!flag_force_zeromv_last && cpi->allow_encode_breakout) {
       encode_breakout_test(cpi, x, bsize, mi_row, mi_col, ref_frame, this_mode,
                            var_y, sse_y, yv12_mb, &this_rdc.rate,
                            &this_rdc.dist);
