@@ -287,10 +287,14 @@ static INLINE const uint8_t *pre(const uint8_t *buf, int stride, int r, int c) {
   int br = bestmv->row * 8;                                                \
   int bc = bestmv->col * 8;                                                \
   int hstep = 4;                                                           \
-  const int minc = VPXMAX(x->mv_limits.col_min * 8, ref_mv->col - MV_MAX); \
-  const int maxc = VPXMIN(x->mv_limits.col_max * 8, ref_mv->col + MV_MAX); \
-  const int minr = VPXMAX(x->mv_limits.row_min * 8, ref_mv->row - MV_MAX); \
-  const int maxr = VPXMIN(x->mv_limits.row_max * 8, ref_mv->row + MV_MAX); \
+  const int minc = VPXMAX(                                                 \
+      MV_LOW + 1, VPXMAX(x->mv_limits.col_min * 8, ref_mv->col - MV_MAX)); \
+  const int maxc = VPXMIN(                                                 \
+      MV_UPP - 1, VPXMIN(x->mv_limits.col_max * 8, ref_mv->col + MV_MAX)); \
+  const int minr = VPXMAX(                                                 \
+      MV_LOW + 1, VPXMAX(x->mv_limits.row_min * 8, ref_mv->row - MV_MAX)); \
+  const int maxr = VPXMIN(                                                 \
+      MV_UPP - 1, VPXMIN(x->mv_limits.row_max * 8, ref_mv->row + MV_MAX)); \
   int tr = br;                                                             \
   int tc = bc;                                                             \
                                                                            \
@@ -653,10 +657,14 @@ uint32_t vp9_find_best_sub_pixel_tree(
   int bc = bestmv->col * 8;
   int hstep = 4;
   int iter, round = 3 - forced_stop;
-  const int minc = VPXMAX(x->mv_limits.col_min * 8, ref_mv->col - MV_MAX);
-  const int maxc = VPXMIN(x->mv_limits.col_max * 8, ref_mv->col + MV_MAX);
-  const int minr = VPXMAX(x->mv_limits.row_min * 8, ref_mv->row - MV_MAX);
-  const int maxr = VPXMIN(x->mv_limits.row_max * 8, ref_mv->row + MV_MAX);
+  const int minc = VPXMAX(
+      MV_LOW + 1, VPXMAX(x->mv_limits.col_min * 8, ref_mv->col - MV_MAX));
+  const int maxc = VPXMIN(
+      MV_UPP - 1, VPXMIN(x->mv_limits.col_max * 8, ref_mv->col + MV_MAX));
+  const int minr = VPXMAX(
+      MV_LOW + 1, VPXMAX(x->mv_limits.row_min * 8, ref_mv->row - MV_MAX));
+  const int maxr = VPXMIN(
+      MV_UPP - 1, VPXMIN(x->mv_limits.row_max * 8, ref_mv->row + MV_MAX));
   int tr = br;
   int tc = bc;
   const MV *search_step = search_step_table;
