@@ -11,7 +11,6 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 #include "./vpx_dsp_rtcd.h"
-
 #include "test/acm_random.h"
 #include "test/buffer.h"
 #include "test/register_state_check.h"
@@ -132,8 +131,7 @@ TEST_P(AvgPredTest, DISABLED_Speed) {
       }
       vpx_usec_timer_mark(&timer);
 
-      const int elapsed_time =
-          static_cast<int>(vpx_usec_timer_elapsed(&timer) / 1000);
+      const int elapsed_time = static_cast<int>(vpx_usec_timer_elapsed(&timer));
       printf("Average Test %dx%d time: %5d ms\n", width, height, elapsed_time);
     }
   }
@@ -142,10 +140,8 @@ TEST_P(AvgPredTest, DISABLED_Speed) {
 INSTANTIATE_TEST_CASE_P(C, AvgPredTest,
                         ::testing::Values(&vpx_comp_avg_pred_c));
 
-/* TODO(johannkoenig): https://bugs.chromium.org/p/webm/issues/detail?id=1390
 #if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(SSE2, AvgPredTest,
                         ::testing::Values(&vpx_comp_avg_pred_sse2));
 #endif  // HAVE_SSE2
-*/
 }  // namespace
