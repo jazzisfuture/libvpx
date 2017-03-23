@@ -126,15 +126,14 @@ TEST_P(AvgPredTest, DISABLED_Speed) {
 
       vpx_usec_timer timer;
       vpx_usec_timer_start(&timer);
-      for (int i = 0; i < 100000; ++i) {
+      for (int i = 0; i < 10000000 / (width * height); ++i) {
         avg_pred_func_(avg.TopLeftPixel(), pred.TopLeftPixel(), width, height,
                        ref.TopLeftPixel(), ref.stride());
       }
       vpx_usec_timer_mark(&timer);
 
-      const int elapsed_time =
-          static_cast<int>(vpx_usec_timer_elapsed(&timer) / 1000);
-      printf("Average Test %dx%d time: %5d ms\n", width, height, elapsed_time);
+      const int elapsed_time = static_cast<int>(vpx_usec_timer_elapsed(&timer));
+      printf("Average Test %dx%d time: %5d us\n", width, height, elapsed_time);
     }
   }
 }
@@ -142,10 +141,8 @@ TEST_P(AvgPredTest, DISABLED_Speed) {
 INSTANTIATE_TEST_CASE_P(C, AvgPredTest,
                         ::testing::Values(&vpx_comp_avg_pred_c));
 
-/* TODO(johannkoenig): https://bugs.chromium.org/p/webm/issues/detail?id=1390
 #if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(SSE2, AvgPredTest,
                         ::testing::Values(&vpx_comp_avg_pred_sse2));
 #endif  // HAVE_SSE2
-*/
 }  // namespace
