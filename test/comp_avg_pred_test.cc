@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 #include "./vpx_dsp_rtcd.h"
-
 #include "test/acm_random.h"
 #include "test/buffer.h"
 #include "vpx_ports/vpx_timer.h"
@@ -24,6 +25,7 @@ using ::libvpx_test::Buffer;
 typedef void (*AvgPredFunc)(uint8_t *a, const uint8_t *b, int w, int h,
                             const uint8_t *c, int c_stride);
 
+const int kMaxBlockSize = 64;
 uint8_t avg_with_rounding(uint8_t a, uint8_t b) {
   uint16_t c = a + b;
   c += 1;
@@ -31,11 +33,19 @@ uint8_t avg_with_rounding(uint8_t a, uint8_t b) {
   return c;
 }
 
+// Compares 2 buffers but only up to w*h - ignores trailing values. The existing
+// calls use a 64x64 comp buffer for all size calls. The SSE2 over-reads and
+// over-writes but this is acceptable under those circumstances.
+bool compare_buffers(const uint8_t *a, const uint8_t *b, int w, int h) {
+  int size = w * h;
+  return !memcmp(a, b, sizeof(*a) * size);
+}
+
 void reference_pred(const Buffer<uint8_t> &a, const Buffer<uint8_t> &b, int w,
-                    int h, Buffer<uint8_t> *c) {
+                    int h, uint8_t *c) {
   for (int height = 0; height < h; ++height) {
     for (int width = 0; width < w; ++width) {
-      c->TopLeftPixel()[height * c->stride() + width] =
+      c[height * w + width] =
           avg_with_rounding(a.TopLeftPixel()[height * a.stride() + width],
                             b.TopLeftPixel()[height * b.stride() + width]);
     }
@@ -69,16 +79,19 @@ TEST_P(AvgPredTest, SizeCombinations) {
       Buffer<uint8_t> a = Buffer<uint8_t>(width, height, 0);
       // Only the prediction buffer may have a stride not equal to width.
       Buffer<uint8_t> b = Buffer<uint8_t>(width, height, 8);
-      Buffer<uint8_t> c_ref = Buffer<uint8_t>(width, height, 0);
-      Buffer<uint8_t> c_chk = Buffer<uint8_t>(width, height, 0);
+      Buffer<uint8_t> c_ref = Buffer<uint8_t>(kMaxBlockSize, kMaxBlockSize, 0);
+      Buffer<uint8_t> c_chk = Buffer<uint8_t>(kMaxBlockSize, kMaxBlockSize, 0);
 
       a.Set(&rnd_, &ACMRandom::Rand8);
       b.Set(&rnd_, &ACMRandom::Rand8);
+      c_ref.Set(0);
+      c_chk.Set(0);
 
-      reference_pred(a, b, width, height, &c_ref);
+      reference_pred(a, b, width, height, c_ref.TopLeftPixel());
       avg_pred_func_(c_chk.TopLeftPixel(), a.TopLeftPixel(), width, height,
                      b.TopLeftPixel(), b.stride());
-      EXPECT_TRUE(c_chk.CheckValues(c_ref));
+      EXPECT_TRUE(compare_buffers(c_chk.TopLeftPixel(), c_ref.TopLeftPixel(),
+                                  width, height));
       if (HasFailure()) {
         c_chk.PrintDifference(c_ref);
         ASSERT_TRUE(false);
@@ -92,17 +105,20 @@ TEST_P(AvgPredTest, CompareReferenceRandom) {
   const int height = 32;
   Buffer<uint8_t> a = Buffer<uint8_t>(width, height, 0);
   Buffer<uint8_t> b = Buffer<uint8_t>(width, height, 8);
-  Buffer<uint8_t> c_ref = Buffer<uint8_t>(width, height, 0);
-  Buffer<uint8_t> c_chk = Buffer<uint8_t>(width, height, 0);
+  Buffer<uint8_t> c_ref = Buffer<uint8_t>(kMaxBlockSize, kMaxBlockSize, 0);
+  Buffer<uint8_t> c_chk = Buffer<uint8_t>(kMaxBlockSize, kMaxBlockSize, 0);
 
   for (int i = 0; i < 500; ++i) {
     a.Set(&rnd_, &ACMRandom::Rand8);
     b.Set(&rnd_, &ACMRandom::Rand8);
+    c_ref.Set(0);
+    c_chk.Set(0);
 
-    reference_pred(a, b, width, height, &c_ref);
+    reference_pred(a, b, width, height, c_ref.TopLeftPixel());
     avg_pred_func_(c_chk.TopLeftPixel(), a.TopLeftPixel(), width, height,
                    b.TopLeftPixel(), b.stride());
-    EXPECT_TRUE(c_chk.CheckValues(c_ref));
+    EXPECT_TRUE(compare_buffers(c_chk.TopLeftPixel(), c_ref.TopLeftPixel(),
+                                width, height));
     if (HasFailure()) {
       c_chk.PrintDifference(c_ref);
       ASSERT_TRUE(false);
@@ -121,14 +137,14 @@ TEST_P(AvgPredTest, DISABLED_Speed) {
       const int height = 1 << height_pow;
       Buffer<uint8_t> a = Buffer<uint8_t>(width, height, 0);
       Buffer<uint8_t> b = Buffer<uint8_t>(width, height, 8);
-      Buffer<uint8_t> c = Buffer<uint8_t>(width, height, 0);
+      Buffer<uint8_t> c = Buffer<uint8_t>(kMaxBlockSize, kMaxBlockSize, 0);
 
       a.Set(&rnd_, &ACMRandom::Rand8);
       b.Set(&rnd_, &ACMRandom::Rand8);
 
       vpx_usec_timer timer;
       vpx_usec_timer_start(&timer);
-      for (int i = 0; i < 100000; ++i) {
+      for (int i = 0; i < 1000000; ++i) {
         avg_pred_func_(c.TopLeftPixel(), a.TopLeftPixel(), width, height,
                        b.TopLeftPixel(), b.stride());
       }
@@ -144,10 +160,8 @@ TEST_P(AvgPredTest, DISABLED_Speed) {
 INSTANTIATE_TEST_CASE_P(C, AvgPredTest,
                         ::testing::Values(&vpx_comp_avg_pred_c));
 
-/* TODO(johannkoenig): https://bugs.chromium.org/p/webm/issues/detail?id=1390
 #if HAVE_SSE2
 INSTANTIATE_TEST_CASE_P(SSE2, AvgPredTest,
-                        ::testing::Values(&vpx_avg_pred_func_sse2));
+                        ::testing::Values(&vpx_comp_avg_pred_sse2));
 #endif  // HAVE_SSE2
-*/
 }  // namespace
