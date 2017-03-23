@@ -221,6 +221,10 @@ MSE(16, 8)
 MSE(8, 16)
 MSE(8, 8)
 
+/* comp_pred and pred must be 16 byte aligned. For vp9 this is done in
+ * vp9_mcomp.c for comp_pred: DECLARE_ALIGNED(16, uint8_t, comp_pred[64 * 64]);
+ * vp9_rdopt.c for pred: DECLARE_ALIGNED(16, uint8_t, second_pred[64 * 64]);
+ */
 void vpx_comp_avg_pred_c(uint8_t *comp_pred, const uint8_t *pred, int width,
                          int height, const uint8_t *ref, int ref_stride) {
   int i, j;
