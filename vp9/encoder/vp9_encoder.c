@@ -3094,7 +3094,9 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
                                        uint8_t *dest) {
   VP9_COMMON *const cm = &cpi->common;
   int q = 0, bottom_index = 0, top_index = 0;  // Dummy variables.
-  int compute_source_sad = cpi->sf.use_source_sad;
+  int compute_source_sad = cpi->sf.use_source_sad ||
+                           cpi->oxcf.content == VP9E_CONTENT_SCREEN ||
+                           cpi->oxcf.rc_mode == VPX_VBR;
 
   vpx_clear_system_state();
 
@@ -3177,9 +3179,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   vp9_update_noise_estimate(cpi);
 
   if (cpi->oxcf.pass == 0 && cpi->oxcf.mode == REALTIME &&
-      cpi->oxcf.speed >= 5 && cpi->resize_state == ORIG &&
-      (cpi->oxcf.content == VP9E_CONTENT_SCREEN ||
-       cpi->oxcf.rc_mode == VPX_VBR || compute_source_sad) &&
+      cpi->oxcf.speed >= 5 && cpi->resize_state == ORIG && compute_source_sad &&
       cm->show_frame)
     vp9_avg_source_sad(cpi);
 
