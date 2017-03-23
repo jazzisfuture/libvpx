@@ -963,6 +963,46 @@ static void chroma_check(VP9_COMP *cpi, MACROBLOCK *x, int bsize,
   }
 }
 
+static int avg_source_sad(VP9_COMP *cpi, MACROBLOCK *x, int shift,
+                          int sb_offset) {
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (cpi->common.use_highbitdepth) return;
+#endif
+  unsigned int tmp_sse;
+  uint64_t tmp_sad;
+  unsigned int tmp_variance;
+  const BLOCK_SIZE bsize = BLOCK_64X64;
+  uint8_t *src_y = cpi->Source->y_buffer;
+  int src_ystride = cpi->Source->y_stride;
+  uint8_t *last_src_y = cpi->Last_Source->y_buffer;
+  int last_src_ystride = cpi->Last_Source->y_stride;
+  uint64_t avg_source_sad_threshold = 10000;
+  uint64_t avg_source_sad_threshold2 = 12000;
+  src_y += shift;
+  last_src_y += shift;
+  tmp_sad =
+      cpi->fn_ptr[bsize].sdf(src_y, src_ystride, last_src_y, last_src_ystride);
+  tmp_variance = vpx_variance64x64(src_y, src_ystride, last_src_y,
+                                   last_src_ystride, &tmp_sse);
+  // printf("%d %d %d %d %d %d\n", cpi->common.current_video_frame, mi_col,
+  //        mi_row, tmp_sad, tmp_variance, tmp_sse);
+  // Note: tmp_sse - tmp_variance = ((sum * sum) >> 12)
+  if (tmp_sad < avg_source_sad_threshold)
+    x->content_state_sb = ((tmp_sse - tmp_variance) < 25) ? kLowSadLowSumdiff
+                                                          : kLowSadHighSumdiff;
+  else
+    x->content_state_sb = ((tmp_sse - tmp_variance) < 25) ? kHighSadLowSumdiff
+                                                          : kHighSadHighSumdiff;
+  if (tmp_sad < avg_source_sad_threshold2) {
+    // Cap the increment to 255.
+    if (cpi->content_state_sb_fd[sb_offset] < 255)
+      cpi->content_state_sb_fd[sb_offset]++;
+  } else {
+    cpi->content_state_sb_fd[sb_offset] = 0;
+  }
+  return 0;
+}
+
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for down-sampled inputs.
 static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
@@ -1012,15 +1052,14 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   segment_id = xd->mi[0]->segment_id;
 
   if (cpi->sf.use_source_sad && !is_key_frame) {
-    // The sb_offset2 is to make it consistent with the index in the function
-    // vp9_avg_source_sad() in vp9_ratectrl.c.
     int sb_offset2 = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
-    content_state = cpi->content_state_sb[sb_offset2];
+    content_state = x->content_state_sb;
     x->skip_low_source_sad = (content_state == kLowSadLowSumdiff ||
                               content_state == kLowSadHighSumdiff)
                                  ? 1
                                  : 0;
     x->last_sb_high_content = cpi->content_state_sb_fd[sb_offset2];
+    printf("%d %d\n", cm->current_video_frame, x->last_sb_high_content);
     // If source_sad is low copy the partition without computing the y_sad.
     if (x->skip_low_source_sad && cpi->sf.copy_partition_flag &&
         copy_partitioning(cpi, x, mi_row, mi_col, segment_id, sb_offset)) {
@@ -4062,6 +4101,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     x->color_sensitivity[1] = 0;
     x->sb_is_skin = 0;
     x->skip_low_source_sad = 0;
+    x->content_state_sb = 0;
 
     if (seg->enabled) {
       const uint8_t *const map =
@@ -4071,6 +4111,12 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
       if (seg_skip) {
         partition_search_type = FIXED_PARTITION;
       }
+    }
+
+    if (cpi->compute_source_sad_onepass_cbr) {
+      int shift = cpi->Source->y_stride * (mi_row << 3) + (mi_col << 3);
+      int sb_offset2 = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
+      avg_source_sad(cpi, x, shift, sb_offset2);
     }
 
     // Set the partition type of the 64X64 block
