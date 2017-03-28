@@ -43,6 +43,14 @@ class ACMRandom {
     return (value >> 23) & 0xff;
   }
 
+  uint8_t Rand8LowVariance(void) {
+    const uint32_t value =
+        random_.Generate(testing::internal::Random::kMaxRange);
+    // Only return values in the range 0-7. Helps when functions expect close
+    // values such as when comparing frames.
+    return (value >> 23) & 0x7;
+  }
+
   uint8_t Rand8Extremes(void) {
     // Returns a random value near 0 or near 255, to better exercise
     // saturation behavior.
