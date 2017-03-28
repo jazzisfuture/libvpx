@@ -320,7 +320,7 @@ void vp9_row_mt_sync_read(VP9RowMTSync *const row_mt_sync, int r, int c) {
     pthread_mutex_t *const mutex = &row_mt_sync->mutex_[r - 1];
     pthread_mutex_lock(mutex);
 
-    while (c > row_mt_sync->cur_col[r - 1] - nsync) {
+    while (c > row_mt_sync->cur_col[r - 1] - nsync + 1) {
       pthread_cond_wait(&row_mt_sync->cond_[r - 1], mutex);
     }
     pthread_mutex_unlock(mutex);
