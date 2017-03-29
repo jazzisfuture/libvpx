@@ -717,11 +717,11 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
     if (critical_level) {
       buff_lvl_step = (rc->optimal_buffer_level - critical_level);
       if (buff_lvl_step) {
-        adjustment = (int)((rc->worst_quality - ambient_qp) *
+        adjustment = (int)((rc->worst_quality - active_worst_quality) *
                            (rc->optimal_buffer_level - rc->buffer_level) /
                            buff_lvl_step);
       }
-      active_worst_quality = ambient_qp + adjustment;
+      active_worst_quality += adjustment;
     }
   } else {
     // Set to worst_quality if buffer is below critical level.

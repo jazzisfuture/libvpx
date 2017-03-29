@@ -148,7 +148,8 @@ int vp9_cyclic_refresh_rc_bits_per_mb(const VP9_COMP *cpi, int i,
 void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi, MODE_INFO *const mi,
                                        int mi_row, int mi_col, BLOCK_SIZE bsize,
                                        int64_t rate, int64_t dist, int skip,
-                                       struct macroblock_plane *const p) {
+                                       struct macroblock_plane *const p,
+                                       int content_state_sb) {
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   const int bw = num_8x8_blocks_wide_lookup[bsize];
@@ -177,6 +178,8 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi, MODE_INFO *const mi,
   // If this block is labeled for refresh, check if we should reset the
   // segment_id.
   if (cyclic_refresh_segment_id_boosted(mi->segment_id)) {
+    if (content_state_sb == kLowSadLowSumdiff)
+      refresh_this_block = CR_SEGMENT_ID_BOOST2;
     mi->segment_id = refresh_this_block;
     // Reset segment_id if it will be skipped.
     if (skip) mi->segment_id = CR_SEGMENT_ID_BASE;
@@ -243,21 +246,25 @@ void vp9_cyclic_refresh_update_sb_postencode(VP9_COMP *const cpi,
 // Update the actual number of blocks that were applied the segment delta q.
 void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
+  MODE_INFO **mi = cm->mi_grid_visible;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   unsigned char *const seg_map = cpi->segmentation_map;
   int mi_row, mi_col;
   cr->actual_num_seg1_blocks = 0;
   cr->actual_num_seg2_blocks = 0;
-  for (mi_row = 0; mi_row < cm->mi_rows; mi_row++)
+  for (mi_row = 0; mi_row < cm->mi_rows; mi_row++) {
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
       if (cyclic_refresh_segment_id(seg_map[mi_row * cm->mi_cols + mi_col]) ==
-          CR_SEGMENT_ID_BOOST1)
+          CR_SEGMENT_ID_BOOST1 && !mi[0]->skip)
         cr->actual_num_seg1_blocks++;
       else if (cyclic_refresh_segment_id(
                    seg_map[mi_row * cm->mi_cols + mi_col]) ==
-               CR_SEGMENT_ID_BOOST2)
+               CR_SEGMENT_ID_BOOST2 && !mi[0]->skip)
         cr->actual_num_seg2_blocks++;
+      mi++;
     }
+    mi += 8;
+  }
 }
 
 // Set golden frame update interval, for non-svc 1 pass CBR mode.
