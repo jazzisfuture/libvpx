@@ -118,7 +118,7 @@ class TemporalFilterTest : public ::testing::TestWithParam<TemporalFilterFunc> {
 TEST_P(TemporalFilterTest, SizeCombinations) {
   // Depending on subsampling this function may be called with values of 8 or 16
   // for width and height, in any combination.
-  Buffer<uint8_t> a = Buffer<uint8_t>(16, 16, 8);
+  Buffer<uint8_t> a = Buffer<uint8_t>(16, 16, 16);
 
   const int filter_weight = 2;
   const int filter_strength = 6;
@@ -160,7 +160,7 @@ TEST_P(TemporalFilterTest, SizeCombinations) {
 TEST_P(TemporalFilterTest, CompareReferenceRandom) {
   const int width = 16;
   const int height = 16;
-  Buffer<uint8_t> a = Buffer<uint8_t>(width, height, 8);
+  Buffer<uint8_t> a = Buffer<uint8_t>(width, height, 16);
   // The second buffer must not have any border.
   Buffer<uint8_t> b = Buffer<uint8_t>(width, height, 0);
   Buffer<unsigned int> accum_ref = Buffer<unsigned int>(width, height, 0);
@@ -198,7 +198,7 @@ TEST_P(TemporalFilterTest, CompareReferenceRandom) {
 }
 
 TEST_P(TemporalFilterTest, DISABLED_Speed) {
-  Buffer<uint8_t> a = Buffer<uint8_t>(16, 16, 8);
+  Buffer<uint8_t> a = Buffer<uint8_t>(16, 16, 16);
 
   const int filter_weight = 2;
   const int filter_strength = 6;
