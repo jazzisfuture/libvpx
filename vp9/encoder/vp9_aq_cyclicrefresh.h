@@ -64,6 +64,7 @@ struct CYCLIC_REFRESH {
   // Boost factor for rate target ratio, for segment CR_SEGMENT_ID_BOOST2.
   int rate_boost_fac;
   double low_content_avg;
+  int low_content_frame;
   int qindex_delta[3];
   int reduce_refresh;
   double weight_segment;
