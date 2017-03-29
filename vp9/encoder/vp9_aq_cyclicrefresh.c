@@ -243,21 +243,27 @@ void vp9_cyclic_refresh_update_sb_postencode(VP9_COMP *const cpi,
 // Update the actual number of blocks that were applied the segment delta q.
 void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
+  MODE_INFO **mi = cm->mi_grid_visible;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   unsigned char *const seg_map = cpi->segmentation_map;
   int mi_row, mi_col;
   cr->actual_num_seg1_blocks = 0;
   cr->actual_num_seg2_blocks = 0;
-  for (mi_row = 0; mi_row < cm->mi_rows; mi_row++)
+  for (mi_row = 0; mi_row < cm->mi_rows; mi_row++) {
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
       if (cyclic_refresh_segment_id(seg_map[mi_row * cm->mi_cols + mi_col]) ==
-          CR_SEGMENT_ID_BOOST1)
+              CR_SEGMENT_ID_BOOST1 &&
+          !mi[0]->skip)
         cr->actual_num_seg1_blocks++;
       else if (cyclic_refresh_segment_id(
                    seg_map[mi_row * cm->mi_cols + mi_col]) ==
-               CR_SEGMENT_ID_BOOST2)
+                   CR_SEGMENT_ID_BOOST2 &&
+               !mi[0]->skip)
         cr->actual_num_seg2_blocks++;
+      mi++;
     }
+    mi += 8;
+  }
 }
 
 // Set golden frame update interval, for non-svc 1 pass CBR mode.
@@ -406,7 +412,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         const int bl_index2 = bl_index + y * cm->mi_cols + x;
         // If the block is as a candidate for clean up then mark it
         // for possible boost/refresh (segment 1). The segment id may get
-        // reset to 0 later if block gets coded anything other than ZEROMV.
+        // reset to 0 later depending on the coding mode.
         if (cr->map[bl_index2] == 0) {
           count_tot++;
           if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
@@ -447,8 +453,6 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   int target_refresh = 0;
   double weight_segment_target = 0;
   double weight_segment = 0;
-  cr->percent_refresh = 10;
-  if (cr->reduce_refresh) cr->percent_refresh = 5;
   cr->max_qdelta_perc = 60;
   cr->time_for_refresh = 0;
   cr->motion_thresh = 32;
@@ -456,12 +460,13 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   // Use larger delta-qp (increase rate_ratio_qdelta) for first few (~4)
   // periods of the refresh cycle, after a key frame.
   // Account for larger interval on base layer for temporal layers.
-  if (cr->percent_refresh > 0 &&
-      rc->frames_since_key <
-          (4 * cpi->svc.number_temporal_layers) * (100 / cr->percent_refresh)) {
+  if (rc->frames_since_key < (4 * cpi->svc.number_temporal_layers) * 10) {
     cr->rate_ratio_qdelta = 3.0;
+    cr->percent_refresh = 15;
   } else {
     cr->rate_ratio_qdelta = 2.0;
+    cr->percent_refresh = 10;
+    if (cr->reduce_refresh) cr->percent_refresh = 5;
     if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium) {
       // Reduce the delta-qp if the estimated source noise is above threshold.
       cr->rate_ratio_qdelta = 1.7;
