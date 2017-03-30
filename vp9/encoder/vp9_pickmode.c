@@ -1470,6 +1470,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int64_t zero_last_cost_orig = INT64_MAX;
   int denoise_svc_pickmode = 1;
 #endif
+  int short_circuit_flat_bl = 0;
+  unsigned int thr_spatial = 0;
 
   init_ref_frame_cost(cm, xd, ref_frame_cost);
 
@@ -1515,17 +1517,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
   mi->tx_size =
       VPXMIN(max_txsize_lookup[bsize], tx_mode_to_biggest_tx_size[cm->tx_mode]);
-
-  if (sf->short_circuit_flat_blocks || sf->limit_newmv_early_exit) {
-#if CONFIG_VP9_HIGHBITDEPTH
-    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
-      x->source_variance = vp9_high_get_sby_perpixel_variance(
-          cpi, &x->plane[0].src, bsize, xd->bd);
-    else
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-      x->source_variance =
-          vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
-  }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0) {
@@ -1581,6 +1572,22 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         force_skip_low_temp_var) {
       usable_ref_frame = LAST_FRAME;
     }
+    if (force_skip_low_temp_var) thr_spatial = 10;
+  }
+
+  short_circuit_flat_bl = sf->short_circuit_flat_blocks;
+  if (cpi->oxcf.speed >= 8 && !force_skip_low_temp_var && x->sb_is_skin)
+    short_circuit_flat_bl = 0;
+
+  if (short_circuit_flat_bl || sf->limit_newmv_early_exit) {
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+      x->source_variance = vp9_high_get_sby_perpixel_variance(
+          cpi, &x->plane[0].src, bsize, xd->bd);
+    else
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+      x->source_variance =
+          vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
   }
 
   if (!((cpi->ref_frame_flags & flag_list[GOLDEN_FRAME]) &&
@@ -1627,11 +1634,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     if (ref_frame > usable_ref_frame) continue;
     if (skip_ref_find_pred[ref_frame]) continue;
 
-    if (sf->short_circuit_flat_blocks && x->source_variance == 0 &&
-        this_mode != NEARESTMV) {
-      continue;
-    }
-
     if (!(cpi->sf.inter_mode_mask[bsize] & (1 << this_mode))) continue;
 
     if (cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.rc_mode == VPX_VBR) {
@@ -1656,6 +1658,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     if (!(cpi->ref_frame_flags & flag_list[ref_frame])) continue;
 
     if (const_motion[ref_frame] && this_mode == NEARMV) continue;
+
+    if (short_circuit_flat_bl && x->source_variance <= thr_spatial &&
+        frame_mv[this_mode][ref_frame].as_int != 0) {
+      continue;
+    }
 
     // Skip non-zeromv mode search for golden frame if force_skip_low_temp_var
     // is set. If nearestmv for golden frame is 0, zeromv mode will be skipped
@@ -2089,7 +2096,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       const PREDICTION_MODE this_mode = intra_mode_list[i];
       THR_MODES mode_index = mode_idx[INTRA_FRAME][mode_offset(this_mode)];
       int mode_rd_thresh = rd_threshes[mode_index];
-      if (sf->short_circuit_flat_blocks && x->source_variance == 0 &&
+      if (short_circuit_flat_bl && x->source_variance <= thr_spatial &&
           this_mode != DC_PRED) {
         continue;
       }

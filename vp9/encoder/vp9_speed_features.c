@@ -578,6 +578,7 @@ static void set_rt_speed_feature_framesize_independent(
     }
     sf->limit_newmv_early_exit = 0;
     if (cm->width > 320 && cm->height > 240) sf->use_simple_block_yrd = 1;
+    sf->short_circuit_flat_blocks = 1;
   }
   // Turn off adaptive_rd_thresh if row_mt is on for speed 5, 6, 7.
   if (speed >= 5 && speed < 8 && cpi->row_mt && cpi->num_workers > 1) {
