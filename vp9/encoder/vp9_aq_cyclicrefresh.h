@@ -37,6 +37,7 @@ struct CYCLIC_REFRESH {
   int max_qdelta_perc;
   // Superblock starting index for cycling through the frame.
   int sb_index;
+  int sb_index2;
   // Controls how long block will need to wait to be refreshed again, in
   // excess of the cycle time, i.e., in the case of all zero motion, block
   // will be refreshed every (100/percent_refresh + time_for_refresh) frames.
