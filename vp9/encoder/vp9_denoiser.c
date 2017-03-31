@@ -186,7 +186,7 @@ static uint8_t *block_start(uint8_t *framebuf, int stride, int mi_row,
   return framebuf + (stride * mi_row << 3) + (mi_col << 3);
 }
 
-static VP9_DENOISER_DECISION perform_motion_compensation(
+static VP9_DENOISER_DECISION perform_motion_compensation(VP9_COMMON *const cm,
     VP9_DENOISER *denoiser, MACROBLOCK *mb, BLOCK_SIZE bs,
     int increase_denoising, int mi_row, int mi_col, PICK_MODE_CONTEXT *ctx,
     int motion_magnitude, int is_skin, int *zeromv_filter, int consec_zeromv,
@@ -199,6 +199,7 @@ static VP9_DENOISER_DECISION perform_motion_compensation(
   int i;
   struct buf_2d saved_dst[MAX_MB_PLANE];
   struct buf_2d saved_pre[MAX_MB_PLANE];
+  RefBuffer *saved_block_refs[2];
 
   frame = ctx->best_reference_frame;
   saved_mi = *mi;
@@ -260,6 +261,7 @@ static VP9_DENOISER_DECISION perform_motion_compensation(
     saved_pre[i] = filter_mbd->plane[i].pre[0];
     saved_dst[i] = filter_mbd->plane[i].dst;
   }
+  saved_block_refs[0] = filter_mbd->block_refs[0];
 
   // Set the pointers in the MACROBLOCKD to point to the buffers in the denoiser
   // struct.
@@ -289,10 +291,12 @@ static VP9_DENOISER_DECISION perform_motion_compensation(
                   denoiser->mc_running_avg_y.uv_stride, mi_row, mi_col);
   filter_mbd->plane[2].dst.stride = denoiser->mc_running_avg_y.uv_stride;
 
+  set_ref_ptrs(cm, filter_mbd, frame, NONE);
   vp9_build_inter_predictors_sby(filter_mbd, mi_row, mi_col, bs);
 
   // Restore everything to its original state
   *mi = saved_mi;
+  filter_mbd->block_refs[0] = saved_block_refs[0];
   for (i = 0; i < MAX_MB_PLANE; ++i) {
     filter_mbd->plane[i].pre[0] = saved_pre[i];
     filter_mbd->plane[i].dst = saved_dst[i];
@@ -362,7 +366,7 @@ void vp9_denoiser_denoise(VP9_COMP *cpi, MACROBLOCK *mb, int mi_row, int mi_col,
   if (!is_skin && denoiser->denoising_level == kDenHigh) increase_denoising = 1;
 
   if (denoiser->denoising_level >= kDenLow)
-    decision = perform_motion_compensation(
+    decision = perform_motion_compensation(&cpi->common,
         denoiser, mb, bs, increase_denoising, mi_row, mi_col, ctx,
         motion_magnitude, is_skin, &zeromv_filter, consec_zeromv,
         cpi->svc.number_spatial_layers, cpi->Source->y_width);
