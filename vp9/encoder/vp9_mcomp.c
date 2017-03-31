@@ -2477,3 +2477,102 @@ int vp9_full_pixel_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
 
   return var;
 }
+
+// The following 2 functions are only used in motion vector unit test.
+uint32_t vp9_return_max_sub_pixel_mv(
+    const MACROBLOCK *x, MV *bestmv, const MV *ref_mv, int allow_hp,
+    int error_per_bit, const vp9_variance_fn_ptr_t *vfp, int forced_stop,
+    int iters_per_step, int *cost_list, int *mvjcost, int *mvcost[2],
+    uint32_t *distortion, uint32_t *sse1, const uint8_t *second_pred, int w,
+    int h) {
+  SETUP_SUBPEL_SEARCH;
+
+  (void)error_per_bit;
+  (void)vfp;
+  (void)z;
+  (void)src_stride;
+  (void)y;
+  (void)y_stride;
+  (void)second_pred;
+  (void)w;
+  (void)h;
+  (void)offset;
+  (void)mvjcost;
+  (void)mvcost;
+  (void)sse1;
+  (void)distortion;
+
+  (void)halfiters;
+  (void)quarteriters;
+  (void)eighthiters;
+  (void)whichdir;
+  (void)allow_hp;
+  (void)forced_stop;
+  (void)hstep;
+  (void)rr;
+  (void)rc;
+  (void)minr;
+  (void)minc;
+  // (void)maxr;
+  // (void)maxc;
+  (void)tr;
+  (void)tc;
+  (void)sse;
+  (void)thismse;
+  (void)cost_list;
+
+  bestmv->row = maxr;
+  bestmv->col = maxc;
+  besterr = 0;
+
+  return besterr;
+}
+
+uint32_t vp9_return_min_sub_pixel_mv(
+    const MACROBLOCK *x, MV *bestmv, const MV *ref_mv, int allow_hp,
+    int error_per_bit, const vp9_variance_fn_ptr_t *vfp, int forced_stop,
+    int iters_per_step, int *cost_list, int *mvjcost, int *mvcost[2],
+    uint32_t *distortion, uint32_t *sse1, const uint8_t *second_pred, int w,
+    int h) {
+  SETUP_SUBPEL_SEARCH;
+
+  (void)error_per_bit;
+  (void)vfp;
+  (void)z;
+  (void)src_stride;
+  (void)y;
+  (void)y_stride;
+  (void)second_pred;
+  (void)w;
+  (void)h;
+  (void)offset;
+  (void)mvjcost;
+  (void)mvcost;
+  (void)sse1;
+  (void)distortion;
+
+  (void)halfiters;
+  (void)quarteriters;
+  (void)eighthiters;
+  (void)whichdir;
+  (void)allow_hp;
+  (void)forced_stop;
+  (void)hstep;
+  (void)rr;
+  (void)rc;
+  // (void)minr;
+  // (void)minc;
+  (void)maxr;
+  (void)maxc;
+  (void)tr;
+  (void)tc;
+  (void)sse;
+  (void)thismse;
+  (void)cost_list;
+
+  bestmv->row = minr;
+  bestmv->col = minc;
+  besterr = 0;
+
+  return besterr;
+}
