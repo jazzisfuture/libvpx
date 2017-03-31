@@ -287,10 +287,14 @@ static INLINE const uint8_t *pre(const uint8_t *buf, int stride, int r, int c) {
   int br = bestmv->row * 8;                                                \
   int bc = bestmv->col * 8;                                                \
   int hstep = 4;                                                           \
-  const int minc = VPXMAX(x->mv_limits.col_min * 8, ref_mv->col - MV_MAX); \
-  const int maxc = VPXMIN(x->mv_limits.col_max * 8, ref_mv->col + MV_MAX); \
-  const int minr = VPXMAX(x->mv_limits.row_min * 8, ref_mv->row - MV_MAX); \
-  const int maxr = VPXMIN(x->mv_limits.row_max * 8, ref_mv->row + MV_MAX); \
+  const int minc = VPXMAX(                                                 \
+      MV_LOW + 1, VPXMAX(x->mv_limits.col_min * 8, ref_mv->col - MV_MAX)); \
+  const int maxc = VPXMIN(                                                 \
+      MV_UPP - 1, VPXMIN(x->mv_limits.col_max * 8, ref_mv->col + MV_MAX)); \
+  const int minr = VPXMAX(                                                 \
+      MV_LOW + 1, VPXMAX(x->mv_limits.row_min * 8, ref_mv->row - MV_MAX)); \
+  const int maxr = VPXMIN(                                                 \
+      MV_UPP - 1, VPXMIN(x->mv_limits.row_max * 8, ref_mv->row + MV_MAX)); \
   int tr = br;                                                             \
   int tc = bc;                                                             \
                                                                            \
@@ -653,10 +657,14 @@ uint32_t vp9_find_best_sub_pixel_tree(
   int bc = bestmv->col * 8;
   int hstep = 4;
   int iter, round = 3 - forced_stop;
-  const int minc = VPXMAX(x->mv_limits.col_min * 8, ref_mv->col - MV_MAX);
-  const int maxc = VPXMIN(x->mv_limits.col_max * 8, ref_mv->col + MV_MAX);
-  const int minr = VPXMAX(x->mv_limits.row_min * 8, ref_mv->row - MV_MAX);
-  const int maxr = VPXMIN(x->mv_limits.row_max * 8, ref_mv->row + MV_MAX);
+  const int minc = VPXMAX(
+      MV_LOW + 1, VPXMAX(x->mv_limits.col_min * 8, ref_mv->col - MV_MAX));
+  const int maxc = VPXMIN(
+      MV_UPP - 1, VPXMIN(x->mv_limits.col_max * 8, ref_mv->col + MV_MAX));
+  const int minr = VPXMAX(
+      MV_LOW + 1, VPXMAX(x->mv_limits.row_min * 8, ref_mv->row - MV_MAX));
+  const int maxr = VPXMIN(
+      MV_UPP - 1, VPXMIN(x->mv_limits.row_max * 8, ref_mv->row + MV_MAX));
   int tr = br;
   int tc = bc;
   const MV *search_step = search_step_table;
@@ -2469,4 +2477,115 @@ int vp9_full_pixel_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
     var = vp9_get_mvpred_var(x, tmp_mv, ref_mv, fn_ptr, 1);
 
   return var;
+}
+
+// The following 2 functions are only used in motion vector unit test.
+uint32_t vp9_return_max_sub_pixel_mv(const MACROBLOCK *x, MV *bestmv,
+                                     const MV *ref_mv, int allow_hp,
+                                     int error_per_bit,
+                                     const vp9_variance_fn_ptr_t *vfp,
+                                     int forced_stop, int iters_per_step,
+                                     int *cost_list, int *mvjcost, int *mvcost[2],
+                                     uint32_t *distortion, uint32_t *sse1,
+                                     const uint8_t *second_pred, int w, int h) {
+  SETUP_SUBPEL_SEARCH;
+
+  (void)error_per_bit;
+  (void)vfp;
+  (void)z;
+  (void)src_stride;
+  (void)y;
+  (void)y_stride;
+  (void)second_pred;
+  (void)w;
+  (void)h;
+  (void)offset;
+  (void)mvjcost;
+  (void)mvcost;
+  (void)sse1;
+  (void)distortion;
+
+  (void)halfiters;
+  (void)quarteriters;
+  (void)eighthiters;
+  (void)whichdir;
+  (void)allow_hp;
+  (void)forced_stop;
+  (void)hstep;
+  (void)rr;
+  (void)rc;
+  (void)minr;
+  (void)minc;
+//  (void)maxr;
+//  (void)maxc;
+  (void)tr;
+  (void)tc;
+  (void)sse;
+  (void)thismse;
+  (void)cost_list;
+
+  bestmv->row = maxr;
+  bestmv->col = maxc;
+  besterr = 0;
+
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+    return UINT_MAX;
+
+  return besterr;
+}
+
+uint32_t vp9_return_min_sub_pixel_mv(const MACROBLOCK *x, MV *bestmv,
+                                     const MV *ref_mv, int allow_hp,
+                                     int error_per_bit,
+                                     const vp9_variance_fn_ptr_t *vfp,
+                                     int forced_stop, int iters_per_step,
+                                     int *cost_list, int *mvjcost, int *mvcost[2],
+                                     uint32_t *distortion, uint32_t *sse1,
+                                     const uint8_t *second_pred, int w, int h) {
+  SETUP_SUBPEL_SEARCH;
+
+  (void)error_per_bit;
+  (void)vfp;
+  (void)z;
+  (void)src_stride;
+  (void)y;
+  (void)y_stride;
+  (void)second_pred;
+  (void)w;
+  (void)h;
+  (void)offset;
+  (void)mvjcost;
+  (void)mvcost;
+  (void)sse1;
+  (void)distortion;
+
+  (void)halfiters;
+  (void)quarteriters;
+  (void)eighthiters;
+  (void)whichdir;
+  (void)allow_hp;
+  (void)forced_stop;
+  (void)hstep;
+  (void)rr;
+  (void)rc;
+//  (void)minr;
+//  (void)minc;
+  (void)maxr;
+  (void)maxc;
+  (void)tr;
+  (void)tc;
+  (void)sse;
+  (void)thismse;
+  (void)cost_list;
+
+  bestmv->row = minr;
+  bestmv->col = minc;
+  besterr = 0;
+
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+    return UINT_MAX;
+
+  return besterr;
 }

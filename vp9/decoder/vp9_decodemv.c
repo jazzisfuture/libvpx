@@ -387,8 +387,11 @@ static void read_intra_block_mode_info(VP9_COMMON *const cm,
 }
 
 static INLINE int is_mv_valid(const MV *mv) {
-  return mv->row > MV_LOW && mv->row < MV_UPP && mv->col > MV_LOW &&
+  int ret = mv->row > MV_LOW && mv->row < MV_UPP && mv->col > MV_LOW &&
          mv->col < MV_UPP;
+  if(!ret)
+    printf("\nINvalid_mv: %d; %d;\n", mv->row, mv->col);
+  return ret;
 }
 
 static INLINE void copy_mv_pair(int_mv *dst, const int_mv *src) {
