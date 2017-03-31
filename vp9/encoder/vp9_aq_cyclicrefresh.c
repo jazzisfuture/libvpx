@@ -318,64 +318,99 @@ void vp9_cyclic_refresh_set_golden_update(VP9_COMP *const cpi) {
   if (cpi->oxcf.rc_mode == VPX_VBR) rc->baseline_gf_interval = 20;
 }
 
-// Update the segmentation map, and related quantities: cyclic refresh map,
-// refresh sb_index, and target number of blocks to be refreshed.
-// The map is set to either 0/CR_SEGMENT_ID_BASE (no refresh) or to
-// 1/CR_SEGMENT_ID_BOOST1 (refresh) for each superblock.
-// Blocks labeled as BOOST1 may later get set to BOOST2 (during the
-// encoding of the superblock).
-static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
+// Update some encoding stats (from the just encoded frame). If this frame's
+// background has high motion, refresh the golden frame. Otherwise, if the
+// golden reference is to be updated check if we should NOT update the golden
+// ref.
+void vp9_cyclic_refresh_check_golden_update(VP9_COMP *const cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  int mi_row, mi_col;
+  double fraction_low = 0.0;
+  int low_content_frame = 0;
+  MODE_INFO **mi = cm->mi_grid_visible;
+  RATE_CONTROL *const rc = &cpi->rc;
+  const int rows = cm->mi_rows, cols = cm->mi_cols;
+  int cnt1 = 0, cnt2 = 0;
+  int force_gf_refresh = 0;
+  int flag_force_gf_high_motion = 0;
+  for (mi_row = 0; mi_row < rows; mi_row++) {
+    for (mi_col = 0; mi_col < cols; mi_col++) {
+      if (flag_force_gf_high_motion == 1) {
+        int16_t abs_mvr = mi[0]->mv[0].as_mv.row >= 0
+                              ? mi[0]->mv[0].as_mv.row
+                              : -1 * mi[0]->mv[0].as_mv.row;
+        int16_t abs_mvc = mi[0]->mv[0].as_mv.col >= 0
+                              ? mi[0]->mv[0].as_mv.col
+                              : -1 * mi[0]->mv[0].as_mv.col;
+        // Calculate the motion of the background.
+        if (abs_mvr <= 16 && abs_mvc <= 16) {
+          cnt1++;
+          if (abs_mvr == 0 && abs_mvc == 0) cnt2++;
+        }
+      }
+      mi++;
+      // Accumulate low_content_frame.
+      if (cr->map[mi_row * cols + mi_col] < 1) low_content_frame++;
+    }
+    mi += 8;
+  }
+  // For video conference clips, if the background has high motion in current
+  // frame because of the camera movement, set this frame as the golden frame.
+  // Use 70% and 5% as the thresholds for golden frame refreshing.
+  // Also, force this frame as a golden update frame if this frame will change
+  // the resolution (resize_pending != 0).
+  if (cpi->resize_pending != 0 ||
+      (cnt1 * 100 > (70 * rows * cols) && cnt2 * 20 < cnt1)) {
+    vp9_cyclic_refresh_set_golden_update(cpi);
+    rc->frames_till_gf_update_due = rc->baseline_gf_interval;
+
+    if (rc->frames_till_gf_update_due > rc->frames_to_key)
+      rc->frames_till_gf_update_due = rc->frames_to_key;
+    cpi->refresh_golden_frame = 1;
+    force_gf_refresh = 1;
+  }
+  fraction_low = (double)low_content_frame / (rows * cols);
+  // Update average.
+  cr->low_content_avg = (fraction_low + 3 * cr->low_content_avg) / 4;
+  if (!force_gf_refresh && cpi->refresh_golden_frame == 1) {
+    // Don't update golden reference if the amount of low_content for the
+    // current encoded frame is small, or if the recursive average of the
+    // low_content over the update interval window falls below threshold.
+    if (fraction_low < 0.8 || cr->low_content_avg < 0.7)
+      cpi->refresh_golden_frame = 0;
+    // Reset for next internal.
+    cr->low_content_avg = fraction_low;
+  }
+}
+
+int generate_map(VP9_COMP *cpi, int block_count, int sb_index, int start,
+                 int end, int sb_cols, int consec_zero_mv_thresh,
+                 int qindex_thresh, int *data, int mode) {
   VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   unsigned char *const seg_map = cpi->segmentation_map;
-  int i, block_count, bl_index, sb_rows, sb_cols, sbs_in_frame;
-  int xmis, ymis, x, y;
-  int consec_zero_mv_thresh = 0;
-  int qindex_thresh = 0;
+  int x, y;
+  int consec_zero_mv_thresh_block = consec_zero_mv_thresh;
+  int target_num_seg_blocks = 0;
+  int i = sb_index;
   int count_sel = 0;
   int count_tot = 0;
-  memset(seg_map, CR_SEGMENT_ID_BASE, cm->mi_rows * cm->mi_cols);
-  sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
-  sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
-  sbs_in_frame = sb_cols * sb_rows;
-  // Number of target blocks to get the q delta (segment 1).
-  block_count = cr->percent_refresh * cm->mi_rows * cm->mi_cols / 100;
-  // Set the segmentation map: cycle through the superblocks, starting at
-  // cr->mb_index, and stopping when either block_count blocks have been found
-  // to be refreshed, or we have passed through whole frame.
-  assert(cr->sb_index < sbs_in_frame);
-  i = cr->sb_index;
-  cr->target_num_seg_blocks = 0;
-  if (cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
-    consec_zero_mv_thresh = 100;
-  }
-  qindex_thresh =
-      cpi->oxcf.content == VP9E_CONTENT_SCREEN
-          ? vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex)
-          : vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex);
-  // More aggressive settings for noisy content.
-  if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium) {
-    consec_zero_mv_thresh = 60;
-    qindex_thresh =
-        VPXMAX(vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex),
-               cm->base_qindex);
-  }
   do {
-    int sum_map = 0;
-    int consec_zero_mv_thresh_block = consec_zero_mv_thresh;
     // Get the mi_row/mi_col corresponding to superblock index i.
+    int sum_map = 0;
     int sb_row_index = (i / sb_cols);
     int sb_col_index = i - sb_row_index * sb_cols;
     int mi_row = sb_row_index * MI_BLOCK_SIZE;
     int mi_col = sb_col_index * MI_BLOCK_SIZE;
+    int bl_index = mi_row * cm->mi_cols + mi_col;
+    // Loop through all 8x8 blocks in superblock and update map.
+    int xmis =
+        VPXMIN(cm->mi_cols - mi_col, num_8x8_blocks_wide_lookup[BLOCK_64X64]);
+    int ymis =
+        VPXMIN(cm->mi_rows - mi_row, num_8x8_blocks_high_lookup[BLOCK_64X64]);
     assert(mi_row >= 0 && mi_row < cm->mi_rows);
     assert(mi_col >= 0 && mi_col < cm->mi_cols);
-    bl_index = mi_row * cm->mi_cols + mi_col;
-    // Loop through all 8x8 blocks in superblock and update map.
-    xmis =
-        VPXMIN(cm->mi_cols - mi_col, num_8x8_blocks_wide_lookup[BLOCK_64X64]);
-    ymis =
-        VPXMIN(cm->mi_rows - mi_row, num_8x8_blocks_high_lookup[BLOCK_64X64]);
     if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium &&
         (xmis <= 2 || ymis <= 2))
       consec_zero_mv_thresh_block = 4;
@@ -385,9 +420,9 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         // If the block is as a candidate for clean up then mark it
         // for possible boost/refresh (segment 1). The segment id may get
         // reset to 0 later depending on the coding mode.
-        if (cr->map[bl_index2] == 0) {
+        if (mode || cr->map[bl_index2] == 0) {
           count_tot++;
-          if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
+          if (mode || cr->last_coded_q_map[bl_index2] > qindex_thresh ||
               cpi->consec_zero_mv[bl_index2] < consec_zero_mv_thresh_block) {
             sum_map++;
             count_sel++;
@@ -404,16 +439,95 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         for (x = 0; x < xmis; x++) {
           seg_map[bl_index + y * cm->mi_cols + x] = CR_SEGMENT_ID_BOOST1;
         }
-      cr->target_num_seg_blocks += xmis * ymis;
+      if (mode)
+        target_num_seg_blocks += 64;
+      else
+        target_num_seg_blocks += xmis * ymis;
     }
     i++;
-    if (i == sbs_in_frame) {
-      i = 0;
-    }
-  } while (cr->target_num_seg_blocks < block_count && i != cr->sb_index);
-  cr->sb_index = i;
+    if (i % sb_cols == 0 && mode) i += sb_cols;
+    if (i >= end) i = start;
+  } while (target_num_seg_blocks < block_count && i != sb_index);
+  data[0] = i;
+  data[1] = count_sel;
+  data[2] = count_tot;
+  return target_num_seg_blocks;
+}
+
+// Update the segmentation map, and related quantities: cyclic refresh map,
+// refresh sb_index, and target number of blocks to be refreshed.
+// The map is set to either 0/CR_SEGMENT_ID_BASE (no refresh) or to
+// 1/CR_SEGMENT_ID_BOOST1 (refresh) for each superblock.
+// Blocks labeled as BOOST1 may later get set to BOOST2 (during the
+// encoding of the superblock).
+static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  unsigned char *const seg_map = cpi->segmentation_map;
+  int block_count, sb_rows, sb_cols, sbs_in_frame;
+  int consec_zero_mv_thresh = 0;
+  int qindex_thresh = 0;
+  int count_sel = 0;
+  int count_tot = 0;
+  int data[3] = { 0 };
+  int equal_row_refresh = 1;
+  int num_blocks;
+  memset(seg_map, CR_SEGMENT_ID_BASE, cm->mi_rows * cm->mi_cols);
+  sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+  sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+  sbs_in_frame = sb_cols * sb_rows;
+  assert(cr->sb_index < sbs_in_frame);
+  assert(cr->sb_index2 < sbs_in_frame);
+  if (cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
+    consec_zero_mv_thresh = 100;
+  }
+  qindex_thresh =
+      cpi->oxcf.content == VP9E_CONTENT_SCREEN
+          ? vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST2, cm->base_qindex)
+          : vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex);
+  // More aggressive settings for noisy content.
+  if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium) {
+    consec_zero_mv_thresh = 60;
+    qindex_thresh =
+        VPXMAX(vp9_get_qindex(&cm->seg, CR_SEGMENT_ID_BOOST1, cm->base_qindex),
+               cm->base_qindex);
+  }
+  // Set the segmentation map: cycle through the superblocks, starting at
+  // cr->sb_index, and stopping when either "block_count" blocks have been found
+  // to be refreshed, or we have passed through whole frame.
+  block_count = cr->percent_refresh * cm->mi_rows * cm->mi_cols / 100;
+
+  // Split the refresh onto two adjacent rows.
+  if (equal_row_refresh) {
+    // For even superblock rows.
+    num_blocks = generate_map(cpi, block_count >> 1, cr->sb_index, 0,
+                              sbs_in_frame - sb_cols, sb_cols,
+                              consec_zero_mv_thresh, qindex_thresh, data, 1);
+    cr->target_num_seg_blocks = num_blocks;
+    cr->sb_index = data[0];
+    count_sel = data[1];
+    count_tot = data[2];
+    // For odd superblock rows.
+    num_blocks = generate_map(cpi, block_count >> 1, cr->sb_index2, 0 + sb_cols,
+                              sbs_in_frame, sb_cols, consec_zero_mv_thresh,
+                              qindex_thresh, data, 1);
+    cr->target_num_seg_blocks += num_blocks;
+    cr->sb_index2 = data[0];
+    count_sel += data[1];
+    count_tot += data[2];
+  } else {
+    // Normal mode: no split among superblock-rows.
+    num_blocks =
+        generate_map(cpi, block_count, cr->sb_index, 0, sbs_in_frame, sb_cols,
+                     consec_zero_mv_thresh, qindex_thresh, data, 0);
+    cr->target_num_seg_blocks = num_blocks;
+    cr->sb_index = data[0];
+    count_sel = data[1];
+    count_tot = data[2];
+  }
+  // Check if we should reduce the refresh.
   cr->reduce_refresh = 0;
-  if (count_sel<(3 * count_tot)>> 2) cr->reduce_refresh = 1;
+  if (!equal_row_refresh && count_sel<(3 * count_tot)>> 2) cr->reduce_refresh = 1;
 }
 
 // Set cyclic refresh parameters.
@@ -506,9 +620,11 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
     vp9_disable_segmentation(&cm->seg);
     if (cm->frame_type == KEY_FRAME) {
+      int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
       memset(cr->last_coded_q_map, MAXQ,
              cm->mi_rows * cm->mi_cols * sizeof(*cr->last_coded_q_map));
       cr->sb_index = 0;
+      cr->sb_index2 = sb_cols;
       cr->reduce_refresh = 0;
     }
     return;
@@ -580,9 +696,11 @@ int vp9_cyclic_refresh_get_rdmult(const CYCLIC_REFRESH *cr) {
 void vp9_cyclic_refresh_reset_resize(VP9_COMP *const cpi) {
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
   memset(cr->map, 0, cm->mi_rows * cm->mi_cols);
   memset(cr->last_coded_q_map, MAXQ, cm->mi_rows * cm->mi_cols);
   cr->sb_index = 0;
+  cr->sb_index2 = sb_cols;
   cpi->refresh_golden_frame = 1;
   cpi->refresh_alt_ref_frame = 1;
 }
