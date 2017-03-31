@@ -192,6 +192,24 @@ struct macroblock {
 #endif
 };
 
+
+
+
+static INLINE int is_mv_valid(const MV *mv) {
+  int ret = mv->row > MV_LOW && mv->row < MV_UPP && mv->col > MV_LOW &&
+         mv->col < MV_UPP;
+  if (!ret) printf("\nENC invalid_mv: %d; %d;\n", mv->row, mv->col);
+  return ret;
+}
+
+
+
+
+
+
+
+
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
