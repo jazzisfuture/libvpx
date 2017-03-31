@@ -4552,6 +4552,8 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   // Keep record of the total distortion this time around for future use
   cpi->last_frame_distortion = cpi->frame_distortion;
 #endif
+
+  //vp9_print_modes_and_motion_vectors(cm, "./mv.txt");
 }
 
 static INTERP_FILTER get_interp_filter(

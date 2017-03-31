@@ -3241,6 +3241,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, TileDataEnc *tile_data,
 
     if (best_rd < mode_threshold[mode_index]) continue;
 
+    if (cpi->oxcf.motion_vector_unit_test && this_mode != 13) continue;
+    if (cpi->oxcf.motion_vector_unit_test) assert(this_mode == 13);
+
     if (sf->motion_field_mode_search) {
       const int mi_width = VPXMIN(num_8x8_blocks_wide_lookup[bsize],
                                   tile_info->mi_col_end - mi_col);
