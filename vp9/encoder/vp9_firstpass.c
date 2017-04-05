@@ -707,9 +707,14 @@ static void first_pass_stat_calc(VP9_COMP *cpi, FIRSTPASS_STATS *fps,
 
   fps->frame = cm->current_video_frame;
   fps->spatial_layer_id = cpi->svc.spatial_layer_id;
-  fps->coded_error = (double)(fp_acc_data->coded_error >> 8) + min_err;
-  fps->sr_coded_error = (double)(fp_acc_data->sr_coded_error >> 8) + min_err;
-  fps->intra_error = (double)(fp_acc_data->intra_error >> 8) + min_err;
+
+  fps->coded_error =
+      ((double)(fp_acc_data->coded_error >> 8) + min_err) / num_mbs;
+  fps->sr_coded_error =
+      ((double)(fp_acc_data->sr_coded_error >> 8) + min_err) / num_mbs;
+  fps->intra_error =
+      ((double)(fp_acc_data->intra_error >> 8) + min_err) / num_mbs;
+
   fps->frame_noise_energy =
       (double)(fp_acc_data->frame_noise_energy) / (double)num_mbs;
   fps->count = 1.0;
@@ -1565,8 +1570,9 @@ static int get_twopass_worst_quality(VP9_COMP *cpi, const double section_err,
     const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE)
                             ? cpi->initial_mbs
                             : cpi->common.MBs;
-    const int active_mbs = VPXMAX(1, num_mbs - (int)(num_mbs * inactive_zone));
-    const double av_err_per_mb = section_err / active_mbs;
+    const double active_pct = VPXMAX(0.01, 1.0 - inactive_zone);
+    const int active_mbs = (int)VPXMAX(1, (double)num_mbs * active_pct);
+    const double av_err_per_mb = section_err / active_pct;
     const double speed_term = 1.0 + 0.04 * oxcf->speed;
     double last_group_rate_err;
     const int target_norm_bits_per_mb =
@@ -1727,9 +1733,7 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
 
 static double get_sr_decay_rate(const VP9_COMP *cpi,
                                 const FIRSTPASS_STATS *frame) {
-  const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE) ? cpi->initial_mbs
-                                                             : cpi->common.MBs;
-  double sr_diff = (frame->sr_coded_error - frame->coded_error) / num_mbs;
+  double sr_diff = (frame->sr_coded_error - frame->coded_error);
   double sr_decay = 1.0;
   double modified_pct_inter;
   double modified_pcnt_intra;
@@ -1738,7 +1742,7 @@ static double get_sr_decay_rate(const VP9_COMP *cpi,
                             (cpi->initial_height + cpi->initial_width));
 
   modified_pct_inter = frame->pcnt_inter;
-  if (((frame->coded_error / num_mbs) > LOW_CODED_ERR_PER_MB) &&
+  if ((frame->coded_error > LOW_CODED_ERR_PER_MB) &&
       ((frame->intra_error / DOUBLE_DIVIDE_CHECK(frame->coded_error)) <
        (double)NCOUNT_FRAME_II_THRESH)) {
     modified_pct_inter =
@@ -1860,14 +1864,10 @@ static double calc_frame_boost(VP9_COMP *cpi, const FIRSTPASS_STATS *this_frame,
   const double lq = vp9_convert_qindex_to_q(
       cpi->rc.avg_frame_qindex[INTER_FRAME], cpi->common.bit_depth);
   const double boost_q_correction = VPXMIN((0.5 + (lq * 0.015)), 1.5);
-  int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE) ? cpi->initial_mbs
-                                                       : cpi->common.MBs;
-
-  // Correct for any inactive region in the image
-  num_mbs = (int)VPXMAX(1, num_mbs * calculate_active_area(cpi, this_frame));
+  const double active_area = calculate_active_area(cpi, this_frame);
 
   // Underlying boost factor is based on inter error ratio.
-  frame_boost = (BASELINE_ERR_PER_MB * num_mbs) /
+  frame_boost = (BASELINE_ERR_PER_MB * active_area) /
                 DOUBLE_DIVIDE_CHECK(this_frame->coded_error + *sr_accumulator);
 
   // Update the accumulator for second ref error difference.
@@ -1896,14 +1896,10 @@ static double calc_kf_frame_boost(VP9_COMP *cpi,
   const double lq = vp9_convert_qindex_to_q(
       cpi->rc.avg_frame_qindex[INTER_FRAME], cpi->common.bit_depth);
   const double boost_q_correction = VPXMIN((0.50 + (lq * 0.015)), 2.00);
-  int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE) ? cpi->initial_mbs
-                                                       : cpi->common.MBs;
-
-  // Correct for any inactive region in the image
-  num_mbs = (int)VPXMAX(1, num_mbs * calculate_active_area(cpi, this_frame));
+  const double active_area = calculate_active_area(cpi, this_frame);
 
   // Underlying boost factor is based on inter error ratio.
-  frame_boost = (KF_BASELINE_ERR_PER_MB * num_mbs) /
+  frame_boost = (KF_BASELINE_ERR_PER_MB * active_area) /
                 DOUBLE_DIVIDE_CHECK(this_frame->coded_error + *sr_accumulator);
 
   // Update the accumulator for second ref error difference.
@@ -3172,16 +3168,10 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   target_rate = gf_group->bit_allocation[gf_group->index];
   rc->base_frame_target = target_rate;
 
-  {
-    const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE)
-                            ? cpi->initial_mbs
-                            : cpi->common.MBs;
-    // The multiplication by 256 reverses a scaling factor of (>> 8)
-    // applied when combining MB error values for the frame.
-    twopass->mb_av_energy =
-        log(((this_frame.intra_error * 256.0) / num_mbs) + 1.0);
-    twopass->mb_smooth_pct = this_frame.intra_smooth_pct;
-  }
+  // The multiplication by 256 reverses a scaling factor of (>> 8)
+  // applied when combining MB error values for the frame.
+  twopass->mb_av_energy = log((this_frame.intra_error * 256.0) + 1.0);
+  twopass->mb_smooth_pct = this_frame.intra_smooth_pct;
 
   // Update the total stats remaining structure.
   subtract_stats(&twopass->total_left_stats, &this_frame);
