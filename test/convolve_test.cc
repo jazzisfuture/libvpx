@@ -300,9 +300,9 @@ void wrapper_filter_average_block2d_8_c(
     filter_average_block2d_8_c(src_ptr, src_stride, hfilter, vfilter, dst_ptr,
                                dst_stride, output_width, output_height);
   } else {
-    highbd_filter_average_block2d_8_c(CONVERT_TO_SHORTPTR(src_ptr), src_stride,
+    highbd_filter_average_block2d_8_c(CAST_TO_SHORTPTR(src_ptr), src_stride,
                                       hfilter, vfilter,
-                                      CONVERT_TO_SHORTPTR(dst_ptr), dst_stride,
+                                      CAST_TO_SHORTPTR(dst_ptr), dst_stride,
                                       output_width, output_height, use_highbd);
   }
 #else
@@ -323,8 +323,8 @@ void wrapper_filter_block2d_8_c(const uint8_t *src_ptr,
     filter_block2d_8_c(src_ptr, src_stride, hfilter, vfilter, dst_ptr,
                        dst_stride, output_width, output_height);
   } else {
-    highbd_filter_block2d_8_c(CONVERT_TO_SHORTPTR(src_ptr), src_stride, hfilter,
-                              vfilter, CONVERT_TO_SHORTPTR(dst_ptr), dst_stride,
+    highbd_filter_block2d_8_c(CAST_TO_SHORTPTR(src_ptr), src_stride, hfilter,
+                              vfilter, CAST_TO_SHORTPTR(dst_ptr), dst_stride,
                               output_width, output_height, use_highbd);
   }
 #else
@@ -459,7 +459,7 @@ class ConvolveTest : public ::testing::TestWithParam<ConvolveParam> {
     if (UUT_->use_highbd_ == 0) {
       return input_ + offset;
     } else {
-      return CONVERT_TO_BYTEPTR(input16_) + offset;
+      return CAST_TO_BYTEPTR(input16_ + offset);
     }
 #else
     return input_ + offset;
@@ -472,7 +472,7 @@ class ConvolveTest : public ::testing::TestWithParam<ConvolveParam> {
     if (UUT_->use_highbd_ == 0) {
       return output_ + offset;
     } else {
-      return CONVERT_TO_BYTEPTR(output16_) + offset;
+      return CAST_TO_BYTEPTR(output16_ + offset);
     }
 #else
     return output_ + offset;
@@ -485,7 +485,7 @@ class ConvolveTest : public ::testing::TestWithParam<ConvolveParam> {
     if (UUT_->use_highbd_ == 0) {
       return output_ref_ + offset;
     } else {
-      return CONVERT_TO_BYTEPTR(output16_ref_) + offset;
+      return CAST_TO_BYTEPTR(output16_ref_ + offset);
     }
 #else
     return output_ref_ + offset;
@@ -497,7 +497,7 @@ class ConvolveTest : public ::testing::TestWithParam<ConvolveParam> {
     if (UUT_->use_highbd_ == 0) {
       return list[index];
     } else {
-      return CONVERT_TO_SHORTPTR(list)[index];
+      return CAST_TO_SHORTPTR(list)[index];
     }
 #else
     return list[index];
@@ -509,7 +509,7 @@ class ConvolveTest : public ::testing::TestWithParam<ConvolveParam> {
     if (UUT_->use_highbd_ == 0) {
       list[index] = (uint8_t)val;
     } else {
-      CONVERT_TO_SHORTPTR(list)[index] = val;
+      CAST_TO_SHORTPTR(list)[index] = val;
     }
 #else
     list[index] = (uint8_t)val;
@@ -677,7 +677,7 @@ TEST_P(ConvolveTest, MatchesReferenceSubpixelFilter) {
     if (UUT_->use_highbd_ == 0) {
       ref = ref8;
     } else {
-      ref = CONVERT_TO_BYTEPTR(ref16);
+      ref = CAST_TO_BYTEPTR(ref16);
     }
 #else
     uint8_t ref[kOutputStride * kMaxDimension];
@@ -756,7 +756,7 @@ TEST_P(ConvolveTest, FilterExtremes) {
   if (UUT_->use_highbd_ == 0) {
     ref = ref8;
   } else {
-    ref = CONVERT_TO_BYTEPTR(ref16);
+    ref = CAST_TO_BYTEPTR(ref16);
   }
 #else
   uint8_t ref[kOutputStride * kMaxDimension];
