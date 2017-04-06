@@ -363,6 +363,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   do {
     int sum_map = 0;
     int consec_zero_mv_thresh_block = consec_zero_mv_thresh;
+    int qindex_thresh_block = qindex_thresh;
     // Get the mi_row/mi_col corresponding to superblock index i.
     int sb_row_index = (i / sb_cols);
     int sb_col_index = i - sb_row_index * sb_cols;
@@ -377,8 +378,10 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     ymis =
         VPXMIN(cm->mi_rows - mi_row, num_8x8_blocks_high_lookup[BLOCK_64X64]);
     if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium &&
-        (xmis <= 2 || ymis <= 2))
-      consec_zero_mv_thresh_block = 10;
+        (xmis <= 2 || ymis <= 2)) {
+      consec_zero_mv_thresh_block = 4;
+      qindex_thresh_block = 5 * cm->base_qindex >> 2;
+    }
     for (y = 0; y < ymis; y++) {
       for (x = 0; x < xmis; x++) {
         const int bl_index2 = bl_index + y * cm->mi_cols + x;
@@ -387,7 +390,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         // reset to 0 later depending on the coding mode.
         if (cr->map[bl_index2] == 0) {
           count_tot++;
-          if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
+          if (cr->last_coded_q_map[bl_index2] > qindex_thresh_block ||
               cpi->consec_zero_mv[bl_index2] < consec_zero_mv_thresh_block) {
             sum_map++;
             count_sel++;
