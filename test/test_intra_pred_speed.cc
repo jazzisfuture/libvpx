@@ -319,7 +319,7 @@ INTRA_PRED_TEST(VSX, TestIntraPred16,
                 NULL,
                 NULL,
                 vpx_v_predictor_16x16_vsx,
-                NULL,
+                vpx_h_predictor_16x16_vsx,
                 NULL, NULL, NULL, NULL, NULL, NULL,
                 NULL)
 
