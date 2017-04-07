@@ -217,6 +217,12 @@ static void apply_active_map(VP9_COMP *cpi) {
   }
 }
 
+static void alloc_speed_feature_data(VP9_COMP *cpi) {
+  if (cpi->sf.copy_partition_flag) {
+    vp9_alloc_copy_partition_data(cpi);
+  }
+}
+
 static void init_level_info(Vp9LevelInfo *level_info) {
   Vp9LevelStats *const level_stats = &level_info->level_stats;
   Vp9LevelSpec *const level_spec = &level_info->level_spec;
@@ -1445,31 +1451,23 @@ static void realloc_segmentation_maps(VP9_COMP *cpi) {
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
 }
 
-static void alloc_copy_partition_data(VP9_COMP *cpi) {
+void vp9_alloc_copy_partition_data(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
-  if (cpi->prev_partition == NULL) {
-    CHECK_MEM_ERROR(cm, cpi->prev_partition,
-                    (BLOCK_SIZE *)vpx_calloc(cm->mi_stride * cm->mi_rows,
-                                             sizeof(*cpi->prev_partition)));
-  }
-  if (cpi->prev_segment_id == NULL) {
-    CHECK_MEM_ERROR(
-        cm, cpi->prev_segment_id,
-        (int8_t *)vpx_calloc((cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1),
-                             sizeof(*cpi->prev_segment_id)));
-  }
-  if (cpi->prev_variance_low == NULL) {
-    CHECK_MEM_ERROR(cm, cpi->prev_variance_low,
-                    (uint8_t *)vpx_calloc(
-                        (cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1) * 25,
-                        sizeof(*cpi->prev_variance_low)));
-  }
-  if (cpi->copied_frame_cnt == NULL) {
-    CHECK_MEM_ERROR(
-        cm, cpi->copied_frame_cnt,
-        (uint8_t *)vpx_calloc((cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1),
-                              sizeof(*cpi->copied_frame_cnt)));
-  }
+  CHECK_MEM_ERROR(cm, cpi->prev_partition,
+                  (BLOCK_SIZE *)vpx_calloc(cm->mi_stride * cm->mi_rows,
+                                           sizeof(*cpi->prev_partition)));
+  CHECK_MEM_ERROR(
+      cm, cpi->prev_segment_id,
+      (int8_t *)vpx_calloc((cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1),
+                           sizeof(*cpi->prev_segment_id)));
+  CHECK_MEM_ERROR(cm, cpi->prev_variance_low,
+                  (uint8_t *)vpx_calloc(
+                      (cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1) * 25,
+                      sizeof(*cpi->prev_variance_low)));
+  CHECK_MEM_ERROR(
+      cm, cpi->copied_frame_cnt,
+      (uint8_t *)vpx_calloc((cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1),
+                            sizeof(*cpi->copied_frame_cnt)));
 }
 
 void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
@@ -1477,6 +1475,8 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   RATE_CONTROL *const rc = &cpi->rc;
   int last_w = cpi->oxcf.width;
   int last_h = cpi->oxcf.height;
+  int last_speed = cpi->oxcf.speed;
+  MODE last_mode = cpi->oxcf.mode;
 
   if (cm->profile != oxcf->profile) cm->profile = oxcf->profile;
   cm->bit_depth = oxcf->bit_depth;
@@ -1497,6 +1497,13 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 #if CONFIG_VP9_HIGHBITDEPTH
   cpi->td.mb.e_mbd.bd = (int)cm->bit_depth;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  if ((oxcf->speed >= 8 && last_speed != oxcf->speed && oxcf->mode == REALTIME)
+      || (oxcf->mode == REALTIME && last_mode != oxcf->mode && oxcf->speed >= 8)) {
+    vp9_set_speed_features_framesize_independent(cpi);
+    vp9_set_speed_features_framesize_dependent(cpi);
+    alloc_speed_feature_data(cpi);
+  }
 
   if ((oxcf->pass == 0) && (oxcf->rc_mode == VPX_Q)) {
     rc->baseline_gf_interval = FIXED_GF_INTERVAL;
@@ -3223,8 +3230,6 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
 
   set_size_independent_vars(cpi);
   set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
-
-  if (cpi->sf.copy_partition_flag) alloc_copy_partition_data(cpi);
 
   if (cpi->oxcf.speed >= 5 && cpi->oxcf.pass == 0 &&
       cpi->oxcf.rc_mode == VPX_CBR &&

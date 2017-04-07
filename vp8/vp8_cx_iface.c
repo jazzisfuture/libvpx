@@ -481,6 +481,12 @@ static vpx_codec_err_t update_extracfg(vpx_codec_alg_priv_t *ctx,
   return res;
 }
 
+static vpx_codec_err_t set_deadline(vpx_codec_alg_priv_t *ctx,
+                                        va_list args) {
+  ctx->oxcf.Mode = CAST(VP8E_SET_DEADLINE, args);
+  return set_vp8e_config(&ctx->oxcf, ctx->cfg, ctx->vp8_cfg, NULL);
+}
+
 static vpx_codec_err_t set_cpu_used(vpx_codec_alg_priv_t *ctx, va_list args) {
   struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
   extra_cfg.cpu_used = CAST(VP8E_SET_CPUUSED, args);
@@ -1155,6 +1161,7 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] = {
   { VP8E_SET_ACTIVEMAP, vp8e_set_activemap },
   { VP8E_SET_SCALEMODE, vp8e_set_scalemode },
   { VP8E_SET_CPUUSED, set_cpu_used },
+  { VP8E_SET_DEADLINE, set_deadline },
   { VP8E_SET_NOISE_SENSITIVITY, set_noise_sensitivity },
   { VP8E_SET_ENABLEAUTOALTREF, set_enable_auto_alt_ref },
   { VP8E_SET_SHARPNESS, set_sharpness },
