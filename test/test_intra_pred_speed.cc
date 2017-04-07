@@ -341,7 +341,7 @@ INTRA_PRED_TEST(VSX, TestIntraPred32,
                 vpx_v_predictor_32x32_vsx,
                 vpx_h_predictor_32x32_vsx,
                 NULL, NULL, NULL, NULL, NULL, NULL,
-                NULL)
+                vpx_tm_predictor_32x32_vsx)
 #endif  // HAVE_VSX
 
 // -----------------------------------------------------------------------------
