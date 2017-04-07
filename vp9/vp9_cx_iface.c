@@ -513,6 +513,7 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->key_freq = cfg->kf_max_dist;
 
   oxcf->speed = abs(extra_cfg->cpu_used);
+  oxcf->mode = oxcf->speed >= 8 ? REALTIME : GOOD;
   oxcf->encode_breakout = extra_cfg->static_thresh;
   oxcf->enable_auto_arf = extra_cfg->enable_auto_alt_ref;
   oxcf->noise_sensitivity = extra_cfg->noise_sensitivity;
@@ -691,11 +692,24 @@ static vpx_codec_err_t update_extra_cfg(vpx_codec_alg_priv_t *ctx,
   return res;
 }
 
+static void alloc_speed_feature_memories(VP9_COMP *cpi) {
+  if (cpi->sf.copy_partition_flag) {
+    alloc_copy_partition_data(cpi);
+  }
+}
+
 static vpx_codec_err_t ctrl_set_cpuused(vpx_codec_alg_priv_t *ctx,
                                         va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.cpu_used = CAST(VP8E_SET_CPUUSED, args);
-  return update_extra_cfg(ctx, &extra_cfg);
+  update_extra_cfg(ctx, &extra_cfg);
+
+  vp9_set_speed_features_framesize_independent(ctx->cpi);
+  vp9_set_speed_features_framesize_dependent(ctx->cpi);
+
+  alloc_speed_feature_memories(ctx->cpi);
+
+  return VPX_CODEC_OK;
 }
 
 static vpx_codec_err_t ctrl_set_enable_auto_alt_ref(vpx_codec_alg_priv_t *ctx,
