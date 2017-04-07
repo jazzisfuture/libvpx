@@ -724,6 +724,8 @@ struct VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
                                        BufferPool *const pool);
 void vp9_remove_compressor(VP9_COMP *cpi);
 
+void vp9_alloc_copy_partition_data(VP9_COMP *cpi);
+
 void vp9_change_config(VP9_COMP *cpi, const VP9EncoderConfig *oxcf);
 
 // receive a frames worth of data. caller can assume that a copy of this

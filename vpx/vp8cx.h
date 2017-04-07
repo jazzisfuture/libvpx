@@ -154,6 +154,8 @@ enum vp8e_enc_control_id {
    */
   VP8E_SET_CPUUSED = 13,
 
+  VP8E_SET_DEADLINE,
+
   /*!\brief Codec control function to enable automatic set and use alf frames.
    *
    * Supported in codecs: VP8, VP9
@@ -771,6 +773,8 @@ VPX_CTRL_USE_TYPE(VP9E_SET_SVC_LAYER_ID, vpx_svc_layer_id_t *)
 
 VPX_CTRL_USE_TYPE(VP8E_SET_CPUUSED, int)
 #define VPX_CTRL_VP8E_SET_CPUUSED
+VPX_CTRL_USE_TYPE(VP8E_SET_DEADLINE, int)
+#define VPX_CTRL_VP8E_SET_DEADLINE
 VPX_CTRL_USE_TYPE(VP8E_SET_ENABLEAUTOALTREF, unsigned int)
 #define VPX_CTRL_VP8E_SET_ENABLEAUTOALTREF
 VPX_CTRL_USE_TYPE(VP8E_SET_NOISE_SENSITIVITY, unsigned int)

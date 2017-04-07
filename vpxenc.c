@@ -50,6 +50,8 @@
 #endif
 #include "./y4minput.h"
 
+enum deadlineMode { kBest, kGood, kRealtime };
+
 /* Swallow warnings about unused results of fread/fwrite */
 static size_t wrap_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
   return fread(ptr, size, nmemb, stream);
@@ -63,6 +65,8 @@ static size_t wrap_fwrite(const void *ptr, size_t size, size_t nmemb,
 #define fwrite wrap_fwrite
 
 static const char *exec_name;
+
+static unsigned int deadline_mode;
 
 static void warn_or_exit_on_errorv(vpx_codec_ctx_t *ctx, int fatal,
                                    const char *s, va_list ap) {
@@ -911,13 +915,16 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
       global->usage = arg_parse_uint(&arg);
     else if (arg_match(&arg, &deadline, argi))
       global->deadline = arg_parse_uint(&arg);
-    else if (arg_match(&arg, &best_dl, argi))
+    else if (arg_match(&arg, &best_dl, argi)) {
       global->deadline = VPX_DL_BEST_QUALITY;
-    else if (arg_match(&arg, &good_dl, argi))
+      deadline_mode = kBest;
+    } else if (arg_match(&arg, &good_dl, argi)) {
       global->deadline = VPX_DL_GOOD_QUALITY;
-    else if (arg_match(&arg, &rt_dl, argi))
+      deadline_mode = kGood;
+    } else if (arg_match(&arg, &rt_dl, argi)) {
       global->deadline = VPX_DL_REALTIME;
-    else if (arg_match(&arg, &use_yv12, argi))
+      deadline_mode = kRealtime;
+    } else if (arg_match(&arg, &use_yv12, argi))
       global->color_type = YV12;
     else if (arg_match(&arg, &use_i420, argi))
       global->color_type = I420;
@@ -1546,6 +1553,8 @@ static void initialize_encoder(struct stream_state *stream,
 
     ctx_exit_on_error(&stream->encoder, "Failed to control codec");
   }
+
+  vpx_codec_control_(&stream->encoder, VP8E_SET_DEADLINE, deadline_mode);
 
 #if CONFIG_DECODERS
   if (global->test_decode != TEST_DECODE_OFF) {
