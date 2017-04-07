@@ -24,6 +24,7 @@
 
 struct vp9_extracfg {
   int cpu_used;  // available cpu percentage in 1/16
+  MODE mode;  // GOOD, BEST or REALTIME
   unsigned int enable_auto_alt_ref;
   unsigned int noise_sensitivity;
   unsigned int sharpness;
@@ -58,6 +59,7 @@ struct vp9_extracfg {
 
 static struct vp9_extracfg default_extra_cfg = {
   0,                     // cpu_used
+  0,                     // mode
   1,                     // enable_auto_alt_ref
   0,                     // noise_sensitivity
   0,                     // sharpness
@@ -458,8 +460,6 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->init_framerate = (double)cfg->g_timebase.den / cfg->g_timebase.num;
   if (oxcf->init_framerate > 180) oxcf->init_framerate = 30;
 
-  oxcf->mode = GOOD;
-
   switch (cfg->g_pass) {
     case VPX_RC_ONE_PASS: oxcf->pass = 0; break;
     case VPX_RC_FIRST_PASS: oxcf->pass = 1; break;
@@ -513,6 +513,7 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->key_freq = cfg->kf_max_dist;
 
   oxcf->speed = abs(extra_cfg->cpu_used);
+  oxcf->mode = extra_cfg->mode;
   oxcf->encode_breakout = extra_cfg->static_thresh;
   oxcf->enable_auto_arf = extra_cfg->enable_auto_alt_ref;
   oxcf->noise_sensitivity = extra_cfg->noise_sensitivity;
@@ -689,6 +690,13 @@ static vpx_codec_err_t update_extra_cfg(vpx_codec_alg_priv_t *ctx,
     vp9_change_config(ctx->cpi, &ctx->oxcf);
   }
   return res;
+}
+
+static vpx_codec_err_t ctrl_set_deadline(vpx_codec_alg_priv_t *ctx,
+                                        va_list args) {
+  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  extra_cfg.mode = CAST(VP8E_SET_DEADLINE, args);
+  return update_extra_cfg(ctx, &extra_cfg);
 }
 
 static vpx_codec_err_t ctrl_set_cpuused(vpx_codec_alg_priv_t *ctx,
@@ -1601,6 +1609,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP8E_SET_ACTIVEMAP, ctrl_set_active_map },
   { VP8E_SET_SCALEMODE, ctrl_set_scale_mode },
   { VP8E_SET_CPUUSED, ctrl_set_cpuused },
+  { VP8E_SET_DEADLINE, ctrl_set_deadline },
   { VP8E_SET_ENABLEAUTOALTREF, ctrl_set_enable_auto_alt_ref },
   { VP8E_SET_SHARPNESS, ctrl_set_sharpness },
   { VP8E_SET_STATIC_THRESHOLD, ctrl_set_static_thresh },
