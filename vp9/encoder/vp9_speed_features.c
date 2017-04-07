@@ -579,7 +579,7 @@ void vp9_set_speed_features_framesize_dependent(VP9_COMP *cpi) {
   sf->partition_search_breakout_thr.rate = 80;
   sf->ml_partition_search_early_termination = 0;
 
-  if (oxcf->mode == REALTIME) {
+  if (oxcf->mode == REALTIME || oxcf->speed >= 8) {
     set_rt_speed_feature_framesize_dependent(cpi, sf, oxcf->speed);
   } else if (oxcf->mode == GOOD) {
     set_good_speed_feature_framesize_dependent(cpi, sf, oxcf->speed);
@@ -708,7 +708,7 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   sf->adaptive_rd_thresh = 1;
   sf->tx_size_search_breakout = 1;
 
-  if (oxcf->mode == REALTIME)
+  if (oxcf->mode == REALTIME || oxcf->speed >= 8)
     set_rt_speed_feature_framesize_independent(cpi, sf, oxcf->speed,
                                                oxcf->content);
   else if (oxcf->mode == GOOD)
