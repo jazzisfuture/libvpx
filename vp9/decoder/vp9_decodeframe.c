@@ -599,8 +599,8 @@ static void dec_build_inter_predictors(
     // Wait until reference block is ready. Pad 7 more pixels as last 7
     // pixels of each superblock row can be changed by next superblock row.
     if (worker != NULL)
-      vp9_frameworker_wait(worker, ref_frame_buf, VPXMAX(0, (y1 + 7))
-                                                      << (plane == 0 ? 0 : 1));
+      vp9_frameworker_wait(worker, ref_frame_buf,
+                           VPXMAX(0, (y1 + 7)) << (plane == 0 ? 0 : 1));
 
     // Skip border extension if block is inside the frame.
     if (x0 < 0 || x0 > frame_width - 1 || x1 < 0 || x1 > frame_width - 1 ||
@@ -625,8 +625,8 @@ static void dec_build_inter_predictors(
     // pixels of each superblock row can be changed by next superblock row.
     if (worker != NULL) {
       const int y1 = (y0_16 + (h - 1) * ys) >> SUBPEL_BITS;
-      vp9_frameworker_wait(worker, ref_frame_buf, VPXMAX(0, (y1 + 7))
-                                                      << (plane == 0 ? 0 : 1));
+      vp9_frameworker_wait(worker, ref_frame_buf,
+                           VPXMAX(0, (y1 + 7)) << (plane == 0 ? 0 : 1));
     }
   }
 #if CONFIG_VP9_HIGHBITDEPTH

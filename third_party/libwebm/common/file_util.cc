@@ -23,10 +23,10 @@ namespace libwebm {
 std::string GetTempFileName() {
 #if !defined _MSC_VER && !defined __MINGW32__
   std::string temp_file_name_template_str =
-      std::string(std::getenv("TEST_TMPDIR") ? std::getenv("TEST_TMPDIR") :
-                                               ".") +
+      std::string(std::getenv("TEST_TMPDIR") ? std::getenv("TEST_TMPDIR")
+                                             : ".") +
       "/libwebm_temp.XXXXXX";
-  char* temp_file_name_template =
+  char *temp_file_name_template =
       new char[temp_file_name_template_str.length() + 1];
   memset(temp_file_name_template, 0, temp_file_name_template_str.length() + 1);
   temp_file_name_template_str.copy(temp_file_name_template,
@@ -49,7 +49,7 @@ std::string GetTempFileName() {
 #endif
 }
 
-uint64_t GetFileSize(const std::string& file_name) {
+uint64_t GetFileSize(const std::string &file_name) {
   uint64_t file_size = 0;
 #ifndef _MSC_VER
   struct stat st;

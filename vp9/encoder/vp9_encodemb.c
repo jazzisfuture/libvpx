@@ -120,8 +120,9 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
   int rate0, rate1;
   int64_t error0, error1;
   int16_t t0, t1;
-  int best, band = (eob < default_eob) ? band_translate[eob]
-                                       : band_translate[eob - 1];
+  int best,
+      band =
+          (eob < default_eob) ? band_translate[eob] : band_translate[eob - 1];
   int pt, i, final_eob;
 #if CONFIG_VP9_HIGHBITDEPTH
   const uint16_t *cat6_high_cost = vp9_get_high_cost_table(xd->bd);
