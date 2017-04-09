@@ -29,6 +29,7 @@ typedef vector unsigned int uint32x4_t;
   (int16x8_t) vec_mergeh(vec_splat_u8(0), (uint8x16_t)v)
 #define unpack_to_s16_l(v) \
   (int16x8_t) vec_mergel(vec_splat_u8(0), (uint8x16_t)v)
+#define xxpermdi(a, b, c) vec_xxpermdi(a, b, c)
 #else
 #define unpack_to_u16_h(v) \
   (uint16x8_t) vec_mergeh((uint8x16_t)v, vec_splat_u8(0))
@@ -38,6 +39,7 @@ typedef vector unsigned int uint32x4_t;
   (int16x8_t) vec_mergeh((uint8x16_t)v, vec_splat_u8(0))
 #define unpack_to_s16_l(v) \
   (int16x8_t) vec_mergel((uint8x16_t)v, vec_splat_u8(0))
+#define xxpermdi(a, b, c) vec_xxpermdi(b, a, ((c >> 1) | (c & 1) << 1) ^ 3)
 #endif
 
 #endif  // VPX_DSP_PPC_TYPES_VSX_H_
