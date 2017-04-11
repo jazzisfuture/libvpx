@@ -2618,6 +2618,12 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   MACROBLOCKD *xd = &cpi->td.mb.e_mbd;
   struct loopfilter *lf = &cm->lf;
 
+  int update_any_ref_buffers = 1;
+  if (cpi->refresh_last_frame == 0 && cpi->refresh_golden_frame == 0 &&
+      cpi->refresh_alt_ref_frame == 0) {
+      update_any_ref_buffers = 0;
+  }
+
   if (xd->lossless) {
     lf->filter_level = 0;
     lf->last_filt_level = 0;
@@ -2643,7 +2649,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
     cpi->time_pick_lpf += vpx_usec_timer_elapsed(&timer);
   }
 
-  if (lf->filter_level > 0) {
+  if (lf->filter_level > 0 && update_any_ref_buffers) {
     vp9_build_mask_frame(cm, lf->filter_level, 0);
 
     if (cpi->num_workers > 1)
