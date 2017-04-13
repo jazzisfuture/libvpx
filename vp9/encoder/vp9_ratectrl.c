@@ -653,10 +653,15 @@ static int calc_active_worst_quality_one_pass_vbr(const VP9_COMP *cpi) {
               ? rc->last_q[KEY_FRAME] * 5 >> 2
               : rc->last_q[INTER_FRAME] * rc->fac_active_worst_gf / 100;
     } else {
+      double rate_err =
+          (double)rc->rolling_actual_bits / (double)rc->rolling_target_bits;
+      int refqindex = rc->avg_frame_qindex[INTER_FRAME];
+      if (rate_err > 8.0)
+        refqindex =
+            VPXMAX(rc->avg_frame_qindex[INTER_FRAME], rc->last_q[INTER_FRAME]);
       active_worst_quality = curr_frame == 1
                                  ? rc->last_q[KEY_FRAME] << 1
-                                 : rc->avg_frame_qindex[INTER_FRAME] *
-                                       rc->fac_active_worst_inter / 100;
+                                 : refqindex * rc->fac_active_worst_inter / 100;
     }
   }
   return VPXMIN(active_worst_quality, rc->worst_quality);
@@ -2172,6 +2177,9 @@ void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi, uint64_t avg_sad_current) {
     if (rate_err < 2.0 && !high_content) {
       rc->fac_active_worst_inter = 120;
       rc->fac_active_worst_gf = 90;
+    } else if (rate_err > 8.0 && rc->avg_frame_qindex[INTER_FRAME] < 8) {
+      // Increase active_worst faster at low QP if rate fluctuation is high.
+      rc->fac_active_worst_inter = 180;
     }
     if (low_content && rc->avg_frame_low_motion > 80) {
       rc->af_ratio_onepass_vbr = 15;
