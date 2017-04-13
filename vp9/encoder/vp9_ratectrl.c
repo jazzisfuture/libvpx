@@ -2169,9 +2169,13 @@ void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi, uint64_t avg_sad_current) {
     // Adjust factors for active_worst setting & af_ratio for next gf interval.
     rc->fac_active_worst_inter = 150;  // corresponds to 3/2 (= 150 /100).
     rc->fac_active_worst_gf = 100;
-    if (rate_err < 2.0 && !high_content) {
+    if (rate_err < 2.0 && !high_content &&
+        rc->avg_frame_qindex[INTER_FRAME] > 4) {
       rc->fac_active_worst_inter = 120;
       rc->fac_active_worst_gf = 90;
+    } else if (rate_err > 10.0 && rc->avg_frame_qindex[INTER_FRAME] < 8) {
+      // Increase active_worst faster at low QP if rate fluctuation is high.
+      rc->fac_active_worst_inter = 180;
     }
     if (low_content && rc->avg_frame_low_motion > 80) {
       rc->af_ratio_onepass_vbr = 15;
