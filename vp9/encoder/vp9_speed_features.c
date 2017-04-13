@@ -556,7 +556,7 @@ static void set_rt_speed_feature_framesize_independent(
       // Since the short_circuit_low_temp_var is used, reduce the
       // adaptive_rd_thresh level.
       if (cm->width > 320 && cm->height > 240)
-        sf->adaptive_rd_thresh = 1;
+        sf->adaptive_rd_thresh = 2;
       else
         sf->adaptive_rd_thresh = 2;
     }

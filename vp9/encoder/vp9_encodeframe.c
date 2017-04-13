@@ -1047,6 +1047,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   // Always use 4x4 partition for key frame.
   const int use_4x4_partition = cm->frame_type == KEY_FRAME;
   const int low_res = (cm->width <= 352 && cm->height <= 288);
+  const int high_res = (cm->width >= 1280 && cm->height >= 720);
+  const int mid_res = !low_res && !high_res;
   int variance4x4downsample[16];
   int segment_id;
   int sb_offset = (cm->mi_stride >> 3) * (mi_row >> 3) + (mi_col >> 3);
@@ -1142,7 +1144,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     mi->mv[0].as_int = 0;
     mi->interp_filter = BILINEAR;
 
-    if (cpi->oxcf.speed >= 8 && !low_res)
+    if (0 && cpi->oxcf.speed >= 8 && mid_res)
       y_sad = cpi->fn_ptr[bsize].sdf(
           x->plane[0].src.buf, x->plane[0].src.stride, xd->plane[0].pre[0].buf,
           xd->plane[0].pre[0].stride);
