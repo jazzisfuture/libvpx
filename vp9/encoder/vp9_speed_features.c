@@ -519,6 +519,10 @@ static void set_rt_speed_feature_framesize_independent(
             (cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1), sizeof(uint8_t));
       }
     }
+    // Under certain conditions restrict the motion limit range in
+    // non-rd pickmode.
+    sf->mv.set_mv_limit_rt = 1;
+    sf->mv.mv_limit_rt = 10;
   }
 
   if (speed >= 8) {
