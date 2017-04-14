@@ -88,6 +88,10 @@ typedef struct {
   int force_zero_mode_spatial_ref;
   int current_superframe;
   int use_base_mv;
+  // phase_scaler = 0 will do sub-sampling for downsampling,
+  // phase_scaler = 8 with center the target pixel and use the averaging filter,
+  // for eightap regular: {-1, 6, -19, 78, 78, -19, 6, -1 }.
+  int phase_scaler;
 } SVC;
 
 struct VP9_COMP;
