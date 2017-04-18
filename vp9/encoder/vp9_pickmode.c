@@ -170,6 +170,13 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   }
   vp9_set_mv_search_range(&x->mv_limits, &ref_mv);
 
+  if (cpi->sf.mv.set_mv_limit_rt) {
+    x->mv_limits.col_min = -cpi->sf.mv.mv_limit_rt;
+    x->mv_limits.col_max = cpi->sf.mv.mv_limit_rt;
+    x->mv_limits.row_min = -cpi->sf.mv.mv_limit_rt;
+    x->mv_limits.row_max = cpi->sf.mv.mv_limit_rt;
+  }
+
   assert(x->mv_best_ref_index[ref] <= 2);
   if (x->mv_best_ref_index[ref] < 2)
     mvp_full = x->mbmi_ext->ref_mvs[ref][x->mv_best_ref_index[ref]].as_mv;

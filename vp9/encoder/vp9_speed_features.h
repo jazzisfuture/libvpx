@@ -191,6 +191,11 @@ typedef struct MV_SPEED_FEATURES {
 
   // This variable sets the step_param used in full pel motion search.
   int fullpel_search_step_param;
+
+  // This is to directly set the motion vector limits, for non-rd pickmode.
+  int set_mv_limit_rt;
+  // This set the motion vector row/col search limit, for non-rd pickmode.
+  int mv_limit_rt;
 } MV_SPEED_FEATURES;
 
 typedef struct PARTITION_SEARCH_BREAKOUT_THR {
