@@ -2,6 +2,7 @@ LIBVPX_TEST_SRCS-yes += acm_random.h
 LIBVPX_TEST_SRCS-yes += buffer.h
 LIBVPX_TEST_SRCS-yes += clear_system_state.h
 LIBVPX_TEST_SRCS-yes += codec_factory.h
+LIBVPX_TEST_SRCS-yes += dspbuffer.h
 LIBVPX_TEST_SRCS-yes += md5_helper.h
 LIBVPX_TEST_SRCS-yes += register_state_check.h
 LIBVPX_TEST_SRCS-yes += test.mk
