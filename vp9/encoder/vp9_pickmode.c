@@ -1835,6 +1835,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         (((mi->mv[0].as_mv.row | mi->mv[0].as_mv.col) & 0x07) != 0)) {
       int pf_rate[3];
       int64_t pf_dist[3];
+      int curr_rate[3];
       unsigned int pf_var[3];
       unsigned int pf_sse[3];
       TX_SIZE pf_tx_size[3];
@@ -1848,6 +1849,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
         model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[filter], &pf_dist[filter],
                           &pf_var[filter], &pf_sse[filter]);
+        curr_rate[filter] = pf_rate[filter];
         pf_rate[filter] += vp9_get_switchable_rate(cpi, xd);
         cost = RDCOST(x->rdmult, x->rddiv, pf_rate[filter], pf_dist[filter]);
         pf_tx_size[filter] = mi->tx_size;
@@ -1873,7 +1875,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
       mi->interp_filter = best_filter;
       mi->tx_size = pf_tx_size[best_filter];
-      this_rdc.rate = pf_rate[best_filter];
+      this_rdc.rate = curr_rate[best_filter];
       this_rdc.dist = pf_dist[best_filter];
       var_y = pf_var[best_filter];
       sse_y = pf_sse[best_filter];
@@ -1904,8 +1906,16 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     if (!this_early_term) {
       this_sse = (int64_t)sse_y;
-      block_yrd(cpi, x, &this_rdc, &is_skippable, &this_sse, bsize,
-                VPXMIN(mi->tx_size, TX_16X16));
+      if (!(cpi->sf.use_simple_block_yrd && cpi->common.frame_type != KEY_FRAME &&
+      bsize < BLOCK_32X32)) {
+        block_yrd(cpi, x, &this_rdc, &is_skippable, &this_sse, bsize,
+                  VPXMIN(mi->tx_size, TX_16X16));
+      }
+      else {
+        this_sse = INT_MAX;
+        is_skippable = 0;
+      }
+
       x->skip_txfm[0] = is_skippable;
       if (is_skippable) {
         this_rdc.rate = vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
