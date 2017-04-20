@@ -13,6 +13,7 @@
 #include "./vp9_rtcd.h"
 #include "test/acm_random.h"
 #include "test/buffer.h"
+#include "test/dspbuffer.h"
 #include "test/register_state_check.h"
 #include "vpx_ports/vpx_timer.h"
 
@@ -20,6 +21,7 @@ namespace {
 
 using ::libvpx_test::ACMRandom;
 using ::libvpx_test::Buffer;
+using ::libvpx_test::DSPBuffer;
 
 typedef void (*TemporalFilterFunc)(const uint8_t *a, unsigned int stride,
                                    const uint8_t *b, unsigned int w,
@@ -32,8 +34,8 @@ typedef void (*TemporalFilterFunc)(const uint8_t *a, unsigned int stride,
 // 'count' and apply it to 'b' and store it in 'accumulator'.
 void reference_filter(const Buffer<uint8_t> &a, const Buffer<uint8_t> &b, int w,
                       int h, int filter_strength, int filter_weight,
-                      Buffer<unsigned int> *accumulator,
-                      Buffer<uint16_t> *count) {
+                      DSPBuffer<unsigned int> *accumulator,
+                      DSPBuffer<uint16_t> *count) {
   Buffer<int> diff_sq = Buffer<int>(w, h, 0);
   diff_sq.Set(0);
 
@@ -125,12 +127,12 @@ TEST_P(TemporalFilterTest, SizeCombinations) {
 
   for (int width = 8; width <= 16; width += 8) {
     for (int height = 8; height <= 16; height += 8) {
-      // The second buffer must not have any border.
-      Buffer<uint8_t> b = Buffer<uint8_t>(width, height, 0);
-      Buffer<unsigned int> accum_ref = Buffer<unsigned int>(width, height, 0);
-      Buffer<unsigned int> accum_chk = Buffer<unsigned int>(width, height, 0);
-      Buffer<uint16_t> count_ref = Buffer<uint16_t>(width, height, 0);
-      Buffer<uint16_t> count_chk = Buffer<uint16_t>(width, height, 0);
+      // The second buffer (predictor) must be aligned and not have any border.
+      DSPBuffer<uint8_t> b = DSPBuffer<uint8_t>(width, height, 0, 16);
+      DSPBuffer<unsigned int> accum_ref = DSPBuffer<unsigned int>(width, height, 0, 16);
+      DSPBuffer<unsigned int> accum_chk = DSPBuffer<unsigned int>(width, height, 0, 16);
+      DSPBuffer<uint16_t> count_ref = DSPBuffer<uint16_t>(width, height, 0, 16);
+      DSPBuffer<uint16_t> count_chk = DSPBuffer<uint16_t>(width, height, 0, 16);
 
       a.Set(&rnd_, &ACMRandom::Rand8);
       b.Set(&rnd_, &ACMRandom::Rand8);
@@ -161,12 +163,11 @@ TEST_P(TemporalFilterTest, CompareReferenceRandom) {
   for (int width = 8; width <= 16; width += 8) {
     for (int height = 8; height <= 16; height += 8) {
       Buffer<uint8_t> a = Buffer<uint8_t>(width, height, 8);
-      // The second buffer must not have any border.
-      Buffer<uint8_t> b = Buffer<uint8_t>(width, height, 0);
-      Buffer<unsigned int> accum_ref = Buffer<unsigned int>(width, height, 0);
-      Buffer<unsigned int> accum_chk = Buffer<unsigned int>(width, height, 0);
-      Buffer<uint16_t> count_ref = Buffer<uint16_t>(width, height, 0);
-      Buffer<uint16_t> count_chk = Buffer<uint16_t>(width, height, 0);
+      DSPBuffer<uint8_t> b = DSPBuffer<uint8_t>(width, height, 0, 16);
+      DSPBuffer<unsigned int> accum_ref = DSPBuffer<unsigned int>(width, height, 0, 16);
+      DSPBuffer<unsigned int> accum_chk = DSPBuffer<unsigned int>(width, height, 0, 16);
+      DSPBuffer<uint16_t> count_ref = DSPBuffer<uint16_t>(width, height, 0, 16);
+      DSPBuffer<uint16_t> count_chk = DSPBuffer<uint16_t>(width, height, 0, 16);
 
       for (int filter_strength = 0; filter_strength <= 6; ++filter_strength) {
         for (int filter_weight = 0; filter_weight <= 2; ++filter_weight) {
@@ -208,12 +209,11 @@ TEST_P(TemporalFilterTest, DISABLED_Speed) {
 
   for (int width = 8; width <= 16; width += 8) {
     for (int height = 8; height <= 16; height += 8) {
-      // The second buffer must not have any border.
-      Buffer<uint8_t> b = Buffer<uint8_t>(width, height, 0);
-      Buffer<unsigned int> accum_ref = Buffer<unsigned int>(width, height, 0);
-      Buffer<unsigned int> accum_chk = Buffer<unsigned int>(width, height, 0);
-      Buffer<uint16_t> count_ref = Buffer<uint16_t>(width, height, 0);
-      Buffer<uint16_t> count_chk = Buffer<uint16_t>(width, height, 0);
+      DSPBuffer<uint8_t> b = DSPBuffer<uint8_t>(width, height, 0, 16);
+      DSPBuffer<unsigned int> accum_ref = DSPBuffer<unsigned int>(width, height, 0, 16);
+      DSPBuffer<unsigned int> accum_chk = DSPBuffer<unsigned int>(width, height, 0, 16);
+      DSPBuffer<uint16_t> count_ref = DSPBuffer<uint16_t>(width, height, 0, 16);
+      DSPBuffer<uint16_t> count_chk = DSPBuffer<uint16_t>(width, height, 0, 16);
 
       a.Set(&rnd_, &ACMRandom::Rand8);
       b.Set(&rnd_, &ACMRandom::Rand8);
