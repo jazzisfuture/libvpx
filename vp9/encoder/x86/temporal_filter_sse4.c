@@ -75,7 +75,7 @@ static void sum_16(const uint8_t *a, const uint8_t *b, __m128i *sum_0,
                    __m128i *sum_1) {
   const __m128i zero = _mm_setzero_si128();
   const __m128i a_u8 = _mm_loadu_si128((const __m128i *)a);
-  const __m128i b_u8 = _mm_loadu_si128((const __m128i *)b);
+  const __m128i b_u8 = _mm_load_si128((const __m128i *)b);
 
   const __m128i a_0_u16 = _mm_cvtepu8_epi16(a_u8);
   const __m128i a_1_u16 = _mm_unpackhi_epi8(a_u8, zero);
@@ -168,7 +168,7 @@ static void accumulate_and_store_8(const __m128i sum_u16, const uint8_t *pred,
                                    uint16_t *count, uint32_t *accumulator) {
   const __m128i pred_u8 = _mm_loadl_epi64((const __m128i *)pred);
   const __m128i zero = _mm_setzero_si128();
-  __m128i count_u16 = _mm_loadu_si128((const __m128i *)count);
+  __m128i count_u16 = _mm_load_si128((const __m128i *)count);
   __m128i pred_u16 = _mm_cvtepu8_epi16(pred_u8);
   __m128i pred_0_u32, pred_1_u32;
   __m128i accum_0_u32, accum_1_u32;
@@ -181,8 +181,8 @@ static void accumulate_and_store_8(const __m128i sum_u16, const uint8_t *pred,
   pred_0_u32 = _mm_cvtepu16_epi32(pred_u16);
   pred_1_u32 = _mm_unpackhi_epi16(pred_u16, zero);
 
-  accum_0_u32 = _mm_loadu_si128((const __m128i *)accumulator);
-  accum_1_u32 = _mm_loadu_si128((const __m128i *)(accumulator + 4));
+  accum_0_u32 = _mm_load_si128((const __m128i *)accumulator);
+  accum_1_u32 = _mm_load_si128((const __m128i *)(accumulator + 4));
 
   accum_0_u32 = _mm_add_epi32(pred_0_u32, accum_0_u32);
   accum_1_u32 = _mm_add_epi32(pred_1_u32, accum_1_u32);
@@ -195,10 +195,10 @@ static void accumulate_and_store_16(const __m128i sum_0_u16,
                                     const __m128i sum_1_u16,
                                     const uint8_t *pred, uint16_t *count,
                                     uint32_t *accumulator) {
-  const __m128i pred_u8 = _mm_loadu_si128((const __m128i *)pred);
+  const __m128i pred_u8 = _mm_load_si128((const __m128i *)pred);
   const __m128i zero = _mm_setzero_si128();
-  __m128i count_0_u16 = _mm_loadu_si128((const __m128i *)count),
-          count_1_u16 = _mm_loadu_si128((const __m128i *)(count + 8));
+  __m128i count_0_u16 = _mm_load_si128((const __m128i *)count),
+          count_1_u16 = _mm_load_si128((const __m128i *)(count + 8));
   __m128i pred_0_u16 = _mm_cvtepu8_epi16(pred_u8),
           pred_1_u16 = _mm_unpackhi_epi8(pred_u8, zero);
   __m128i pred_0_u32, pred_1_u32, pred_2_u32, pred_3_u32;
@@ -218,10 +218,10 @@ static void accumulate_and_store_16(const __m128i sum_0_u16,
   pred_2_u32 = _mm_cvtepu16_epi32(pred_1_u16);
   pred_3_u32 = _mm_unpackhi_epi16(pred_1_u16, zero);
 
-  accum_0_u32 = _mm_loadu_si128((const __m128i *)accumulator);
-  accum_1_u32 = _mm_loadu_si128((const __m128i *)(accumulator + 4));
-  accum_2_u32 = _mm_loadu_si128((const __m128i *)(accumulator + 8));
-  accum_3_u32 = _mm_loadu_si128((const __m128i *)(accumulator + 12));
+  accum_0_u32 = _mm_load_si128((const __m128i *)accumulator);
+  accum_1_u32 = _mm_load_si128((const __m128i *)(accumulator + 4));
+  accum_2_u32 = _mm_load_si128((const __m128i *)(accumulator + 8));
+  accum_3_u32 = _mm_load_si128((const __m128i *)(accumulator + 12));
 
   accum_0_u32 = _mm_add_epi32(pred_0_u32, accum_0_u32);
   accum_1_u32 = _mm_add_epi32(pred_1_u32, accum_1_u32);

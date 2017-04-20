@@ -25,6 +25,7 @@ namespace libvpx_test {
 template <typename T>
 class Buffer {
  public:
+  // TODO(johannkoenig): Use size_t.
   Buffer(int width, int height, int top_padding, int left_padding,
          int right_padding, int bottom_padding)
       : width_(width), height_(height), top_padding_(top_padding),
@@ -40,7 +41,9 @@ class Buffer {
     Init();
   }
 
-  ~Buffer() { delete[] raw_buffer_; }
+  virtual ~Buffer() {
+    if (raw_buffer_) delete[] raw_buffer_;
+  }
 
   T *TopLeftPixel() const;
 
@@ -75,7 +78,7 @@ class Buffer {
   // Compare the non-padding portion of two buffers if they are the same size.
   bool CheckValues(const Buffer<T> &a) const;
 
- private:
+ protected:
   void Init() {
     ASSERT_GT(width_, 0);
     ASSERT_GT(height_, 0);
@@ -84,8 +87,9 @@ class Buffer {
     ASSERT_GE(right_padding_, 0);
     ASSERT_GE(bottom_padding_, 0);
     stride_ = left_padding_ + width_ + right_padding_;
-    raw_size_ = stride_ * (top_padding_ + height_ + bottom_padding_);
-    raw_buffer_ = new (std::nothrow) T[raw_size_];
+    num_elements_ = stride_ * (top_padding_ + height_ + bottom_padding_);
+    raw_size_ = num_elements_ * sizeof(T);
+    raw_buffer_ = new (std::nothrow) T[num_elements_];
     ASSERT_TRUE(raw_buffer_ != NULL);
     SetPadding(std::numeric_limits<T>::max());
   }
@@ -101,6 +105,7 @@ class Buffer {
   int padding_value_;
   int stride_;
   int raw_size_;
+  int num_elements_;
   T *raw_buffer_;
 };
 
@@ -210,7 +215,7 @@ void Buffer<T>::SetPadding(const int padding_value) {
   padding_value_ = padding_value;
 
   T *src = raw_buffer_;
-  for (int i = 0; i < raw_size_; ++i) {
+  for (int i = 0; i < num_elements_; ++i) {
     src[i] = padding_value;
   }
 }
