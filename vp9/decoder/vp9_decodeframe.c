@@ -1857,15 +1857,26 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
         pbi->need_resync = 0;
       }
     } else if (pbi->need_resync != 1) { /* Skip if need resync */
+#if 1
+      if (1 || ((pbi->refresh_frame_flags) >> 2 & 1)) {
+        int i;
+        printf("frame %d  ", pbi->common.current_video_frame);
+        for (i = 0; i < 8; ++i) {
+          printf("%3d ", (pbi->refresh_frame_flags) >> i & 1);
+        }
+      }
+#endif
       pbi->refresh_frame_flags = vpx_rb_read_literal(rb, REF_FRAMES);
       for (i = 0; i < REFS_PER_FRAME; ++i) {
         const int ref = vpx_rb_read_literal(rb, REF_FRAMES_LOG2);
         const int idx = cm->ref_frame_map[ref];
+        printf("%3d   ", ref);
         RefBuffer *const ref_frame = &cm->frame_refs[i];
         ref_frame->idx = idx;
         ref_frame->buf = &frame_bufs[idx].buf;
         cm->ref_frame_sign_bias[LAST_FRAME + i] = vpx_rb_read_bit(rb);
       }
+      printf("\n");
 
       setup_frame_size_with_refs(cm, rb);
 
