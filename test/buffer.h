@@ -40,7 +40,9 @@ class Buffer {
     Init();
   }
 
-  ~Buffer() { delete[] raw_buffer_; }
+  virtual ~Buffer() {
+    if (raw_buffer_) delete[] raw_buffer_;
+  }
 
   T *TopLeftPixel() const;
 
@@ -75,7 +77,7 @@ class Buffer {
   // Compare the non-padding portion of two buffers if they are the same size.
   bool CheckValues(const Buffer<T> &a) const;
 
- private:
+ protected:
   void Init() {
     ASSERT_GT(width_, 0);
     ASSERT_GT(height_, 0);

@@ -14,6 +14,7 @@
 
 #include "test/acm_random.h"
 #include "test/buffer.h"
+#include "test/dspbuffer.h"
 #include "test/register_state_check.h"
 #include "vpx_ports/mem.h"
 #include "vpx_ports/vpx_timer.h"
@@ -22,18 +23,20 @@ namespace {
 
 using ::libvpx_test::ACMRandom;
 using ::libvpx_test::Buffer;
+using ::libvpx_test::DSPBuffer;
 
 typedef void (*AvgPredFunc)(uint8_t *a, const uint8_t *b, int w, int h,
                             const uint8_t *c, int c_stride);
 
 uint8_t avg_with_rounding(uint8_t a, uint8_t b) { return (a + b + 1) >> 1; }
 
-void reference_pred(const uint8_t *pred, const Buffer<uint8_t> &ref, int width,
-                    int height, uint8_t *avg) {
+void reference_pred(const DSPBuffer<uint8_t> &pred, const Buffer<uint8_t> &ref,
+                    int width, int height, uint8_t *avg) {
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
-      avg[y * width + x] = avg_with_rounding(
-          pred[y * width + x], ref.TopLeftPixel()[y * ref.stride() + x]);
+      avg[y * width + x] =
+          avg_with_rounding(pred.TopLeftPixel()[y * pred.stride() + x],
+                            ref.TopLeftPixel()[y * ref.stride() + x]);
     }
   }
 }
@@ -62,7 +65,6 @@ TEST_P(AvgPredTest, SizeCombinations) {
   // This is called as part of the sub pixel variance. As such it must be one of
   // the variance block sizes.
 
-  DECLARE_ALIGNED(16, uint8_t, pred[64 * 64]);
   DECLARE_ALIGNED(16, uint8_t, avg_ref[64 * 64]);
   DECLARE_ALIGNED(16, uint8_t, avg_chk[64 * 64]);
 
@@ -77,16 +79,18 @@ TEST_P(AvgPredTest, SizeCombinations) {
       for (int ref_padding = 0; ref_padding < 2; ref_padding++) {
         const int width = 1 << width_pow;
         const int height = 1 << height_pow;
+        DSPBuffer<uint8_t> pred = DSPBuffer<uint8_t>(width, height, 0, 16);
         // Only the reference buffer may have a stride not equal to width.
         Buffer<uint8_t> ref =
             Buffer<uint8_t>(width, height, ref_padding ? 8 : 0);
 
-        fill(&rnd_, pred, width, height);
+        pred.Set(&rnd_, &ACMRandom::Rand8);
         ref.Set(&rnd_, &ACMRandom::Rand8);
 
         reference_pred(pred, ref, width, height, avg_ref);
-        ASM_REGISTER_STATE_CHECK(avg_pred_func_(
-            avg_chk, pred, width, height, ref.TopLeftPixel(), ref.stride()));
+        ASM_REGISTER_STATE_CHECK(
+            avg_pred_func_(avg_chk, pred.TopLeftPixel(), pred.stride(), height,
+                           ref.TopLeftPixel(), ref.stride()));
         ASSERT_EQ(memcmp(avg_ref, avg_chk, sizeof(*avg_ref) * width * height),
                   0);
       }
@@ -98,16 +102,17 @@ TEST_P(AvgPredTest, CompareReferenceRandom) {
   const int width = 64;
   const int height = 32;
   Buffer<uint8_t> ref = Buffer<uint8_t>(width, height, 8);
-  DECLARE_ALIGNED(16, uint8_t, pred[width * height]);
+  DSPBuffer<uint8_t> pred = DSPBuffer<uint8_t>(width, height, 0, 16);
   DECLARE_ALIGNED(16, uint8_t, avg_ref[width * height]);
   DECLARE_ALIGNED(16, uint8_t, avg_chk[width * height]);
 
   for (int i = 0; i < 500; ++i) {
-    fill(&rnd_, pred, width, height);
+    pred.Set(&rnd_, &ACMRandom::Rand8);
     ref.Set(&rnd_, &ACMRandom::Rand8);
 
     reference_pred(pred, ref, width, height, avg_ref);
-    ASM_REGISTER_STATE_CHECK(avg_pred_func_(avg_chk, pred, width, height,
+    ASM_REGISTER_STATE_CHECK(avg_pred_func_(avg_chk, pred.TopLeftPixel(),
+                                            pred.stride(), height,
                                             ref.TopLeftPixel(), ref.stride()));
     ASSERT_EQ(memcmp(avg_ref, avg_chk, sizeof(*avg_ref) * width * height), 0);
   }
