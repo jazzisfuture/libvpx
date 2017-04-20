@@ -4490,6 +4490,7 @@ static void update_level_info(VP9_COMP *cpi, size_t *size, int arf_src_index) {
         (double)TICKS_PER_SEC;
   }
 
+  ++level_stats->frames_since_last_altref;
   if (arf_src_index > 0) {
     if (!level_stats->seen_first_altref) {
       level_stats->seen_first_altref = 1;
@@ -4498,8 +4499,6 @@ static void update_level_info(VP9_COMP *cpi, size_t *size, int arf_src_index) {
       level_spec->min_altref_distance = level_stats->frames_since_last_altref;
     }
     level_stats->frames_since_last_altref = 0;
-  } else {
-    ++level_stats->frames_since_last_altref;
   }
 
   if (level_stats->frame_window_buffer.len < FRAME_WINDOW_SIZE - 1) {
