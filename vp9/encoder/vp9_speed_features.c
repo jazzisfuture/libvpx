@@ -607,7 +607,7 @@ void vp9_set_speed_features_framesize_dependent(VP9_COMP *cpi) {
   // With row based multi-threading, the following speed features
   // have to be disabled to guarantee that bitstreams encoded with single thread
   // and multiple threads match
-  if (cpi->oxcf.row_mt_bit_exact) {
+  if (cpi->row_mt_bit_exact) {
     sf->adaptive_rd_thresh = 0;
     sf->allow_exhaustive_searches = 0;
     sf->adaptive_pred_interp_filter = 0;
@@ -781,7 +781,7 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   // With row based multi-threading, the following speed features
   // have to be disabled to guarantee that bitstreams encoded with single thread
   // and multiple threads match
-  if (cpi->oxcf.row_mt_bit_exact) {
+  if (cpi->row_mt_bit_exact) {
     sf->adaptive_rd_thresh = 0;
     sf->allow_exhaustive_searches = 0;
     sf->adaptive_pred_interp_filter = 0;
