@@ -268,7 +268,6 @@ typedef struct VP9EncoderConfig {
   VP9E_TEMPORAL_LAYERING_MODE temporal_layering_mode;
 
   int row_mt;
-  unsigned int row_mt_bit_exact;
   unsigned int motion_vector_unit_test;
 } VP9EncoderConfig;
 
@@ -692,7 +691,9 @@ typedef struct VP9_COMP {
   void (*row_mt_sync_read_ptr)(VP9RowMTSync *const, int, int);
   void (*row_mt_sync_write_ptr)(VP9RowMTSync *const, int, int, const int);
   ARNRFilterData arnr_filter_data;
+
   int row_mt;
+  unsigned int row_mt_bit_exact;
 
   // Previous Partition Info
   BLOCK_SIZE *prev_partition;
