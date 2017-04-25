@@ -130,6 +130,7 @@ static int vp9_denoiser_NxM_sse2_small(const uint8_t *sig, int sig_stride,
           ? 1
           : 0;
   uint8_t sig_buffer[8][16], mc_running_buffer[8][16], running_buffer[8][16];
+
   __m128i acc_diff = _mm_setzero_si128();
   const __m128i k_0 = _mm_setzero_si128();
   const __m128i k_4 = _mm_set1_epi8(4 + shift_inc);
