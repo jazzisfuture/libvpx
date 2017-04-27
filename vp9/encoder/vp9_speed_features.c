@@ -647,8 +647,8 @@ void vp9_set_speed_features_framesize_dependent(VP9_COMP *cpi) {
   // With row based multi-threading, the following speed features
   // have to be disabled to guarantee that bitstreams encoded with single thread
   // and multiple threads match.
-  // It can be used since adaptive_rd_thresh is defined per-row for REALTIME.
-  if (oxcf->mode != REALTIME && cpi->row_mt_bit_exact)
+  // It can be used since adaptive_rd_thresh is defined per-row for non-rd.
+  if (oxcf->mode != REALTIME && oxcf->speed < 5 && cpi->row_mt_bit_exact)
     sf->adaptive_rd_thresh = 0;
 
   // This is only used in motion vector unit test.
@@ -803,8 +803,8 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   // With row based multi-threading, the following speed features
   // have to be disabled to guarantee that bitstreams encoded with single thread
   // and multiple threads match.
-  // It can be used since adaptive_rd_thresh is defined per-row for REALTIME.
-  if (oxcf->mode != REALTIME && cpi->row_mt_bit_exact)
+  // It can be used since adaptive_rd_thresh is defined per-row for non-rd.
+  if (oxcf->mode != REALTIME && oxcf->speed < 5 && cpi->row_mt_bit_exact)
     sf->adaptive_rd_thresh = 0;
 
   // This is only used in motion vector unit test.
