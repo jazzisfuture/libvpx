@@ -41,10 +41,10 @@ static int enable_noise_estimation(VP9_COMP *const cpi) {
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cpi->common.use_highbitdepth) return 0;
 #endif
-// Enable noise estimation if denoising is on, but not for low resolutions.
+// Enable noise estimation if denoising is on.
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
-      cpi->common.width >= 640 && cpi->common.height >= 360)
+      cpi->common.width >= 320 && cpi->common.height >= 180)
     return 1;
 #endif
   // Only allow noise estimate under certain encoding mode.
@@ -237,6 +237,7 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
       // Update noise estimate.
       ne->value = (int)((15 * ne->value + avg_est) >> 4);
       ne->count++;
+      //printf("%d %d %d \n", cm->current_video_frame, ne->value, ne->level);
       if (ne->count == ne->num_frames_estimate) {
         // Reset counter and check noise level condition.
         ne->num_frames_estimate = 30;
