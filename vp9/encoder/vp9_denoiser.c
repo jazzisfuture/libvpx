@@ -326,7 +326,7 @@ void vp9_denoiser_denoise(VP9_COMP *cpi, MACROBLOCK *mb, int mi_row, int mi_col,
   mv_row = ctx->best_sse_mv.as_mv.row;
   motion_magnitude = mv_row * mv_row + mv_col * mv_col;
 
-  if (cpi->use_skin_detection && bs <= BLOCK_32X32 &&
+  if (cpi->oxcf.speed < 8 && cpi->use_skin_detection && bs <= BLOCK_32X32 &&
       denoiser->denoising_level < kDenHigh) {
     int motion_level = (motion_magnitude < 16) ? 0 : 1;
     // If motion for current block is small/zero, compute consec_zeromv for
