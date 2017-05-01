@@ -26,25 +26,28 @@ void vp9_noise_estimate_init(NOISE_ESTIMATE *const ne, int width, int height) {
   ne->level = kLowLow;
   ne->value = 0;
   ne->count = 0;
-  ne->thresh = 100;
+  ne->thresh = 90;
   ne->last_w = 0;
   ne->last_h = 0;
   if (width * height >= 1920 * 1080) {
     ne->thresh = 200;
   } else if (width * height >= 1280 * 720) {
     ne->thresh = 140;
+  } else if (width * height >= 640 * 360) {
+    ne->thresh = 100;
   }
-  ne->num_frames_estimate = 20;
+  ne->num_frames_estimate = 15;
+  ne->count_high_motion = 0;
 }
 
 static int enable_noise_estimation(VP9_COMP *const cpi) {
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cpi->common.use_highbitdepth) return 0;
 #endif
-// Enable noise estimation if denoising is on, but not for low resolutions.
+// Enable noise estimation if denoising is on.
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
-      cpi->common.width >= 640 && cpi->common.height >= 360)
+      cpi->common.width >= 320 && cpi->common.height >= 180)
     return 1;
 #endif
   // Only allow noise estimate under certain encoding mode.
@@ -97,6 +100,7 @@ NOISE_LEVEL vp9_noise_estimate_extract_level(NOISE_ESTIMATE *const ne) {
 void vp9_update_noise_estimate(VP9_COMP *const cpi) {
   const VP9_COMMON *const cm = &cpi->common;
   NOISE_ESTIMATE *const ne = &cpi->noise_estimate;
+  const int low_res = (cm->width <= 352 && cm->height <= 288);
   // Estimate of noise level every frame_period frames.
   int frame_period = 8;
   int thresh_consec_zeromv = 6;
@@ -164,8 +168,10 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
           num_low_motion++;
       }
     }
-    if (num_low_motion < ((3 * cm->mi_rows * cm->mi_cols) >> 3))
+    if (num_low_motion < ((3 * cm->mi_rows * cm->mi_cols) >> 3)) {
       frame_low_motion = 0;
+      ne->count_high_motion++;
+    }
     for (mi_row = 0; mi_row < cm->mi_rows; mi_row++) {
       for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
         // 16x16 blocks, 1/4 sample of frame.
@@ -210,7 +216,8 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
               // Avoid blocks with high brightness and high spatial variance.
               if ((sse2 - spatial_variance) < thresh_sum_spatial &&
                   spatial_variance < thresh_spatial_var) {
-                avg_est += variance / ((spatial_variance >> 9) + 1);
+                avg_est += low_res ? variance >> 4
+                                   : variance / ((spatial_variance >> 9) + 1);
                 num_samples++;
               }
             }
@@ -247,6 +254,16 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
           vp9_denoiser_set_noise_level(&cpi->denoiser, ne->level);
 #endif
       }
+    } else if (low_res && ne->level <= kLow &&
+               ne->count_high_motion >= ((3 * ne->num_frames_estimate) >> 2)) {
+      // If there are enough high motion frames, the noise level is set to
+      // kLowLow.
+      ne->num_frames_estimate = 15;
+      ne->count_high_motion = 0;
+      ne->level = kLowLow;
+#if CONFIG_VP9_TEMPORAL_DENOISING
+      vp9_denoiser_set_noise_level(&cpi->denoiser, ne->level);
+#endif
     }
   }
 #if CONFIG_VP9_TEMPORAL_DENOISING
