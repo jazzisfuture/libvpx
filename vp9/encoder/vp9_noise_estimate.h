@@ -34,6 +34,7 @@ typedef struct noise_estimate {
   int last_w;
   int last_h;
   int num_frames_estimate;
+  int count_high_motion;
 } NOISE_ESTIMATE;
 
 struct VP9_COMP;
