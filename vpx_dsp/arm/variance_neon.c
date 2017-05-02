@@ -31,6 +31,63 @@ static INLINE int horizontal_add_s32x4(const int32x4_t v_32x4) {
   return vget_lane_s32(c, 0);
 }
 
+// Prevent clang from adding alignment hints to load instructions:
+// https://bugs.llvm.org//show_bug.cgi?id=24421
+typedef uint32_t __attribute__((aligned(1))) uint32_unaligned;
+
+static INLINE uint8x16_t load_32x4_from_u8(const uint8_t *a, int a_stride) {
+  uint32x4_t a_u32 = vdupq_n_u32(0);
+  a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 0);
+  a += a_stride;
+  a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 1);
+  a += a_stride;
+  a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 2);
+  a += a_stride;
+  a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 3);
+  return vreinterpretq_u8_u32(a_u32);
+}
+
+// w * h must be less than 2048 or sum_s16 may overflow.
+// Process a block of width 4 four rows at a time.
+static void variance_neon_w4x4(const uint8_t *a, int a_stride, const uint8_t *b,
+                               int b_stride, int h, uint32_t *sse, int *sum) {
+  int i;
+  int16x8_t sum_s16 = vdupq_n_s16(0);
+  int32x4_t sse_lo_s32 = vdupq_n_s32(0);
+  int32x4_t sse_hi_s32 = vdupq_n_s32(0);
+
+  for (i = 0; i < h; i += 4) {
+    const uint8x16_t a_u8 = load_32x4_from_u8(a, a_stride);
+    const uint8x16_t b_u8 = load_32x4_from_u8(b, b_stride);
+    const uint16x8_t diff_lo_u16 =
+        vsubl_u8(vget_low_u8(a_u8), vget_low_u8(b_u8));
+    const uint16x8_t diff_hi_u16 =
+        vsubl_u8(vget_high_u8(a_u8), vget_high_u8(b_u8));
+
+    const int16x8_t diff_lo_s16 = vreinterpretq_s16_u16(diff_lo_u16);
+    const int16x8_t diff_hi_s16 = vreinterpretq_s16_u16(diff_hi_u16);
+
+    sum_s16 = vaddq_s16(sum_s16, diff_lo_s16);
+    sum_s16 = vaddq_s16(sum_s16, diff_hi_s16);
+
+    sse_lo_s32 = vmlal_s16(sse_lo_s32, vget_low_s16(diff_lo_s16),
+                           vget_low_s16(diff_lo_s16));
+    sse_lo_s32 = vmlal_s16(sse_lo_s32, vget_high_s16(diff_lo_s16),
+                           vget_high_s16(diff_lo_s16));
+
+    sse_hi_s32 = vmlal_s16(sse_hi_s32, vget_low_s16(diff_hi_s16),
+                           vget_low_s16(diff_hi_s16));
+    sse_hi_s32 = vmlal_s16(sse_hi_s32, vget_high_s16(diff_hi_s16),
+                           vget_high_s16(diff_hi_s16));
+
+    a += 4 * a_stride;
+    b += 4 * b_stride;
+  }
+
+  *sum = horizontal_add_s16x8(sum_s16);
+  *sse = (uint32_t)horizontal_add_s32x4(vaddq_s32(sse_lo_s32, sse_hi_s32));
+}
+
 // w * h must be less than 2048 or sum_s16 may overflow.
 // Process a block of any size where the width is divisible by 16.
 static void variance_neon_w16(const uint8_t *a, int a_stride, const uint8_t *b,
@@ -126,7 +183,9 @@ void vpx_get16x16var_neon(const uint8_t *a, int a_stride, const uint8_t *b,
                                             const uint8_t *b, int b_stride, \
                                             unsigned int *sse) {            \
     int sum;                                                                \
-    if (n == 8)                                                             \
+    if (n == 4)                                                             \
+      variance_neon_w4x4(a, a_stride, b, b_stride, m, sse, &sum);           \
+    else if (n == 8)                                                        \
       variance_neon_w8x2(a, a_stride, b, b_stride, m, sse, &sum);           \
     else                                                                    \
       variance_neon_w16(a, a_stride, b, b_stride, n, m, sse, &sum);         \
@@ -136,6 +195,8 @@ void vpx_get16x16var_neon(const uint8_t *a, int a_stride, const uint8_t *b,
       return *sse - (uint32_t)(((int64_t)sum * sum) >> shift);              \
   }
 
+varianceNxM(4, 4, 4);
+varianceNxM(4, 8, 5);
 varianceNxM(8, 4, 5);
 varianceNxM(8, 8, 6);
 varianceNxM(8, 16, 7);
