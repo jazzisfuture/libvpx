@@ -563,6 +563,9 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 #
 # Inverse transform
 if (vpx_config("CONFIG_VP9") eq "yes") {
+
+add_proto qw/void vpx_idct4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int stride";
+
 if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   # Note as optimized versions of these functions are added we need to add a check to ensure
   # that when CONFIG_EMULATE_HARDWARE is on, it defaults to the C versions only.
@@ -593,7 +596,6 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 
   # Force C versions if CONFIG_EMULATE_HARDWARE is 1
   if (vpx_config("CONFIG_EMULATE_HARDWARE") eq "yes") {
-    add_proto qw/void vpx_idct4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int stride";
 
     add_proto qw/void vpx_idct4x4_1_add/, "const tran_low_t *input, uint8_t *dest, int stride";
 
@@ -631,13 +633,8 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 
     add_proto qw/void vpx_highbd_idct16x16_10_add/, "const tran_low_t *input, uint8_t *dest, int stride, int bd";
 
-    add_proto qw/void vpx_highbd_idct32x32_1024_add/, "const tran_low_t *input, uint8_t *dest, int stride, int bd";
-
     add_proto qw/void vpx_highbd_idct32x32_135_add/, "const tran_low_t *input, uint8_t *dest, int stride, int bd";
-
-    add_proto qw/void vpx_highbd_idct32x32_34_add/, "const tran_low_t *input, uint8_t *dest, int stride, int bd";
   } else {
-    add_proto qw/void vpx_idct4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int stride";
     specialize qw/vpx_idct4x4_16_add neon sse2/;
 
     add_proto qw/void vpx_idct4x4_1_add/, "const tran_low_t *input, uint8_t *dest, int stride";
@@ -698,21 +695,17 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
     add_proto qw/void vpx_highbd_idct16x16_10_add/, "const tran_low_t *input, uint8_t *dest, int stride, int bd";
     specialize qw/vpx_highbd_idct16x16_10_add neon sse2/;
 
-    add_proto qw/void vpx_highbd_idct32x32_1024_add/, "const tran_low_t *input, uint8_t *dest, int stride, int bd";
     specialize qw/vpx_highbd_idct32x32_1024_add neon/;
 
     add_proto qw/void vpx_highbd_idct32x32_135_add/, "const tran_low_t *input, uint8_t *dest, int stride, int bd";
     specialize qw/vpx_highbd_idct32x32_135_add neon/;
 
-    add_proto qw/void vpx_highbd_idct32x32_34_add/, "const tran_low_t *input, uint8_t *dest, int stride, int bd";
     specialize qw/vpx_highbd_idct32x32_34_add neon/;
   }  # CONFIG_EMULATE_HARDWARE
 } else {
   # Force C versions if CONFIG_EMULATE_HARDWARE is 1
   if (vpx_config("CONFIG_EMULATE_HARDWARE") eq "yes") {
     add_proto qw/void vpx_idct4x4_1_add/, "const tran_low_t *input, uint8_t *dest, int stride";
-
-    add_proto qw/void vpx_idct4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int stride";
 
     add_proto qw/void vpx_idct8x8_1_add/, "const tran_low_t *input, uint8_t *dest, int stride";
 
@@ -743,7 +736,6 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
     add_proto qw/void vpx_idct4x4_1_add/, "const tran_low_t *input, uint8_t *dest, int stride";
     specialize qw/vpx_idct4x4_1_add sse2 neon dspr2 msa/;
 
-    add_proto qw/void vpx_idct4x4_16_add/, "const tran_low_t *input, uint8_t *dest, int stride";
     specialize qw/vpx_idct4x4_16_add sse2 neon dspr2 msa/;
 
     add_proto qw/void vpx_idct8x8_1_add/, "const tran_low_t *input, uint8_t *dest, int stride";
