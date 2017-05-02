@@ -840,12 +840,16 @@ YV12_BUFFER_CONFIG *vp9_svc_twostage_scale(VP9_COMMON *cm,
                                            YV12_BUFFER_CONFIG *unscaled,
                                            YV12_BUFFER_CONFIG *scaled,
                                            YV12_BUFFER_CONFIG *scaled_temp,
-                                           int phase_scaler, int phase_scaler2);
+                                           INTERP_FILTER filter_type,
+                                           int phase_scaler,
+                                           INTERP_FILTER filter_type2,
+                                           int phase_scaler2);
 
 YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
                                           YV12_BUFFER_CONFIG *unscaled,
                                           YV12_BUFFER_CONFIG *scaled,
                                           int use_normative_scaler,
+                                          INTERP_FILTER filter_type,
                                           int phase_scaler);
 
 void vp9_apply_encoding_flags(VP9_COMP *cpi, vpx_enc_frame_flags_t flags);
