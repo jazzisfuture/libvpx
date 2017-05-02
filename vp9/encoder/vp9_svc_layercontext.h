@@ -93,7 +93,8 @@ typedef struct {
   // pixel and use the averaging filter, for the default eightap_regular:
   // {-1, 6, -19, 78, 78, -19, 6, -1 }.
   // TODO(marpan): Add option for bilinear.
-  int filtertype_downsample_source[VPX_SS_MAX_LAYERS];
+  INTERP_FILTER downsample_filter_type[VPX_SS_MAX_LAYERS];
+  int downsample_filter_phase[VPX_SS_MAX_LAYERS];
 } SVC;
 
 struct VP9_COMP;
