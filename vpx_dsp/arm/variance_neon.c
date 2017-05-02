@@ -36,15 +36,19 @@ static INLINE int horizontal_add_s32x4(const int32x4_t v_32x4) {
 typedef uint32_t __attribute__((aligned(1))) uint32_unaligned;
 
 static INLINE uint8x16_t load_32x4_from_u8(const uint8_t *a, int a_stride) {
-  uint32x4_t a_u32 = vdupq_n_u32(0);
-  a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 0);
-  a += a_stride;
-  a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 1);
-  a += a_stride;
-  a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 2);
-  a += a_stride;
-  a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 3);
-  return vreinterpretq_u8_u32(a_u32);
+  if (a_stride == 4) {
+    return vld1q_u8(a);
+  } else {
+    uint32x4_t a_u32 = vdupq_n_u32(0);
+    a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 0);
+    a += a_stride;
+    a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 1);
+    a += a_stride;
+    a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 2);
+    a += a_stride;
+    a_u32 = vld1q_lane_u32((const uint32_unaligned *)a, a_u32, 3);
+    return vreinterpretq_u8_u32(a_u32);
+  }
 }
 
 // w * h must be less than 2048 or sum_s16 may overflow.
