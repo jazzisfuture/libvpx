@@ -69,12 +69,30 @@ static INLINE void store_s16q_to_tran_low(tran_low_t *buf, const int16x8_t a) {
 #endif
 }
 
-// Propagate type information to compiler. Without this the compiler may assume
-// the required alignment of uint32_t (4 bytes) and add alignment hints to the
-// memory access.
-//
+// Load 4 sets of 4 bytes when alignment is not guaranteed. Use memcpy to
+// propagate type information to the compiler.
+static INLINE uint8x16_t load_unaligned_u8q(const uint8_t *buf, int stride) {
+  uint32_t a;
+  uint32x4_t a_u32 = vdupq_n_u32(0);
+  memcpy(&a, buf, 4);
+  a_u32 = vld1q_lane_u32(&a, a_u32, 0);
+  memcpy(&a, buf + stride, 4);
+  a_u32 = vld1q_lane_u32(&a, a_u32, 1);
+  memcpy(&a, buf + 2 * stride, 4);
+  a_u32 = vld1q_lane_u32(&a, a_u32, 2);
+  memcpy(&a, buf + 3 * stride, 4);
+  a_u32 = vld1q_lane_u32(&a, a_u32, 3);
+  return vreinterpretq_u8_u32(a_u32);
+}
+
+// Propagate type information to the compiler. Without this the compiler may
+// assume the required alignment of uint32_t (4 bytes) and add alignment hints
+// to the memory access.
+
 // This is used for functions operating on uint8_t which wish to load or store 4
 // values at a time but which may not be on 4 byte boundaries.
+
+// Store 4 sets of 4 bytes when alignment is not guaranteed.
 static INLINE void uint32_to_mem(uint8_t *buf, uint32_t a) {
   memcpy(buf, &a, 4);
 }
