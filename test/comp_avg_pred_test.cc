@@ -156,4 +156,9 @@ INSTANTIATE_TEST_CASE_P(C, AvgPredTest,
 INSTANTIATE_TEST_CASE_P(SSE2, AvgPredTest,
                         ::testing::Values(&vpx_comp_avg_pred_sse2));
 #endif  // HAVE_SSE2
+
+#if HAVE_NEON
+INSTANTIATE_TEST_CASE_P(NEON, AvgPredTest,
+                        ::testing::Values(&vpx_comp_avg_pred_neon));
+#endif  // HAVE_NEON
 }  // namespace
