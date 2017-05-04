@@ -709,6 +709,8 @@ typedef struct VP9_COMP {
   // the superblock did not have low source sad.
   uint8_t *content_state_sb_fd;
 
+  int unused_dummy_gap;
+
   int compute_source_sad_onepass;
 
   LevelConstraint level_constraint;
