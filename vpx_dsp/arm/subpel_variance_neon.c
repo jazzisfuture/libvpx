@@ -22,6 +22,45 @@ static const uint8_t bilinear_filters[8][2] = {
   { 64, 64 }, { 48, 80 },  { 32, 96 }, { 16, 112 },
 };
 
+// Prevent clang from adding alignment hints to load instructions:
+// https://bugs.llvm.org//show_bug.cgi?id=24421
+typedef uint32_t __attribute__((aligned(1))) uint32_unaligned;
+
+// TODO(johannkoenig): move these to a common header.
+static INLINE uint8x8_t load_32x2_from_u8(const uint8_t *a, int a_stride) {
+  uint32x2_t a_u32 = vdup_n_u32(0);
+  a_u32 = vld1_lane_u32((const uint32_unaligned *)a, a_u32, 0);
+  a += a_stride;
+  a_u32 = vld1_lane_u32((const uint32_unaligned *)a, a_u32, 1);
+  return vreinterpret_u8_u32(a_u32);
+}
+
+// Process a block exactly 4 wide and any height.
+// Maybe do a multiple of 2 or 4? generate extra context?
+static void var_filter_block2d_bil_w4(const uint8_t *src_ptr,
+                                      uint8_t *output_ptr,
+                                      unsigned int src_pixels_per_line,
+                                      int pixel_step,
+                                      unsigned int output_height,
+                                      const uint8_t *filter) {
+  const uint8x8_t f0 = vmov_n_u8(filter[0]);
+  const uint8x8_t f1 = vmov_n_u8(filter[1]);
+  unsigned int i;
+  for (i = 0; i < output_height; i += 2) {
+    const uint8x8_t src_0 = load_32x2_from_u8(src_ptr, src_pixels_per_line);
+    const uint8x8_t src_1 =
+        load_32x2_from_u8(src_ptr + pixel_step, src_pixels_per_line);
+    const uint16x8_t a = vmull_u8(src_0, f0);
+    const uint16x8_t b = vmlal_u8(a, src_1, f1);
+    const uint8x8_t out = vrshrn_n_u16(b, FILTER_BITS);
+    vst1_lane_u32((uint32_unaligned *)output_ptr, out, 0);
+    vst1_lane_u32((uint32_unaligned *)(output_ptr + 4), out, 1);
+    // Next row...
+    src_ptr += 2 * src_pixels_per_line;
+    output_ptr += 8;
+  }
+}
+
 // Process a block exactly 8 wide and any height.
 static void var_filter_block2d_bil_w8(const uint8_t *src_ptr,
                                       uint8_t *output_ptr,
@@ -74,15 +113,21 @@ static void var_filter_block2d_bil_w16(const uint8_t *src_ptr,
   }
 }
 
-// TODO(johannkoenig): support 4xM block sizes.
+// 4x filter writes an extra row.
 #define sub_pixel_varianceNxM(n, m)                                  \
   uint32_t vpx_sub_pixel_variance##n##x##m##_neon(                   \
       const uint8_t *a, int a_stride, int xoffset, int yoffset,      \
       const uint8_t *b, int b_stride, uint32_t *sse) {               \
-    DECLARE_ALIGNED(16, uint8_t, fdata3[n * (m + 1)]);               \
+    const int padding = n == 4 ? 2 : 1;                              \
+    DECLARE_ALIGNED(16, uint8_t, fdata3[n * (m + padding)]);         \
     DECLARE_ALIGNED(16, uint8_t, temp2[n * m]);                      \
                                                                      \
-    if (n == 8) {                                                    \
+    if (n == 4) {                                                    \
+      var_filter_block2d_bil_w4(a, fdata3, a_stride, 1, (m + 2),     \
+                                bilinear_filters[xoffset]);          \
+      var_filter_block2d_bil_w4(fdata3, temp2, n, n, m,              \
+                                bilinear_filters[yoffset]);          \
+    } else if (n == 8) {                                             \
       var_filter_block2d_bil_w8(a, fdata3, a_stride, 1, (m + 1),     \
                                 bilinear_filters[xoffset]);          \
       var_filter_block2d_bil_w8(fdata3, temp2, n, n, m,              \
@@ -96,6 +141,8 @@ static void var_filter_block2d_bil_w16(const uint8_t *src_ptr,
     return vpx_variance##n##x##m(temp2, n, b, b_stride, sse);        \
   }
 
+sub_pixel_varianceNxM(4, 4);
+sub_pixel_varianceNxM(4, 8);
 sub_pixel_varianceNxM(8, 4);
 sub_pixel_varianceNxM(8, 8);
 sub_pixel_varianceNxM(8, 16);
