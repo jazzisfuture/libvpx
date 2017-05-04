@@ -9,6 +9,7 @@
  */
 
 #include <arm_neon.h>
+#include <assert.h>
 
 #include "./vpx_dsp_rtcd.h"
 #include "./vpx_config.h"
@@ -51,7 +52,6 @@ static INLINE uint8x16_t load_32x4_from_u8(const uint8_t *a, int a_stride) {
   }
 }
 
-// w * h must be less than 2048 or sum_s16 may overflow.
 // Process a block of width 4 four rows at a time.
 static void variance_neon_w4x4(const uint8_t *a, int a_stride, const uint8_t *b,
                                int b_stride, int h, uint32_t *sse, int *sum) {
@@ -59,6 +59,9 @@ static void variance_neon_w4x4(const uint8_t *a, int a_stride, const uint8_t *b,
   int16x8_t sum_s16 = vdupq_n_s16(0);
   int32x4_t sse_lo_s32 = vdupq_n_s32(0);
   int32x4_t sse_hi_s32 = vdupq_n_s32(0);
+
+  // w * h must be less than 2048 or sum_s16 may overflow.
+  assert(4 * h < 2048);
 
   for (i = 0; i < h; i += 4) {
     const uint8x16_t a_u8 = load_32x4_from_u8(a, a_stride);
@@ -92,7 +95,6 @@ static void variance_neon_w4x4(const uint8_t *a, int a_stride, const uint8_t *b,
   *sse = (uint32_t)horizontal_add_s32x4(vaddq_s32(sse_lo_s32, sse_hi_s32));
 }
 
-// w * h must be less than 2048 or sum_s16 may overflow.
 // Process a block of any size where the width is divisible by 16.
 static void variance_neon_w16(const uint8_t *a, int a_stride, const uint8_t *b,
                               int b_stride, int w, int h, uint32_t *sse,
@@ -101,6 +103,10 @@ static void variance_neon_w16(const uint8_t *a, int a_stride, const uint8_t *b,
   int16x8_t sum_s16 = vdupq_n_s16(0);
   int32x4_t sse_lo_s32 = vdupq_n_s32(0);
   int32x4_t sse_hi_s32 = vdupq_n_s32(0);
+
+  // w * h must be less than 2048 or sum_s16 may overflow.
+  // 32 * 64 = 2048 and overflow may occur.
+  assert(4 * h < 2048);
 
   for (i = 0; i < h; ++i) {
     for (j = 0; j < w; j += 16) {
@@ -136,7 +142,6 @@ static void variance_neon_w16(const uint8_t *a, int a_stride, const uint8_t *b,
   *sse = (unsigned int)horizontal_add_s32x4(vaddq_s32(sse_lo_s32, sse_hi_s32));
 }
 
-// w * h must be less than 2048 or sum_s16 may overflow.
 // Process a block of width 8 two rows at a time.
 static void variance_neon_w8x2(const uint8_t *a, int a_stride, const uint8_t *b,
                                int b_stride, int h, uint32_t *sse, int *sum) {
@@ -144,6 +149,9 @@ static void variance_neon_w8x2(const uint8_t *a, int a_stride, const uint8_t *b,
   int16x8_t sum_s16 = vdupq_n_s16(0);
   int32x4_t sse_lo_s32 = vdupq_n_s32(0);
   int32x4_t sse_hi_s32 = vdupq_n_s32(0);
+
+  // w * h must be less than 2048 or sum_s16 may overflow.
+  assert(w * h < 2048);
 
   do {
     const uint8x8_t a_0_u8 = vld1_u8(a);
