@@ -88,7 +88,7 @@ NOISE_LEVEL vp9_noise_estimate_extract_level(NOISE_ESTIMATE *const ne) {
   } else {
     if (ne->value > ne->thresh)
       noise_level = kMedium;
-    else if (ne->value > ((9 * ne->thresh) >> 4))
+    else if (ne->value > ((10 * ne->thresh) >> 4))
       noise_level = kLow;
     else
       noise_level = kLowLow;
@@ -114,6 +114,11 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
   if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi))
     last_source = &cpi->denoiser.last_source;
 #endif
+  if (cm->width > 640 && cm->height > 480) {
+    thresh_sum_diff = 220;
+    thresh_sum_spatial = (128 * 128) << 8;
+    thresh_spatial_var = (48 * 48) << 8;
+  }
   ne->enabled = enable_noise_estimation(cpi);
   if (cpi->svc.number_spatial_layers > 1)
     frame_counter = cpi->svc.current_superframe;
