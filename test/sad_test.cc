@@ -924,6 +924,9 @@ INSTANTIATE_TEST_CASE_P(MSA, SADx4Test, ::testing::ValuesIn(x4d_msa_tests));
 // VSX functions
 #if HAVE_VSX
 const SadMxNParam vsx_tests[] = {
+  SadMxNParam(32, 64, &vpx_sad32x64_vsx),
+  SadMxNParam(32, 32, &vpx_sad32x32_vsx),
+  SadMxNParam(32, 16, &vpx_sad32x16_vsx),
   SadMxNParam(16, 32, &vpx_sad16x32_vsx),
   SadMxNParam(16, 16, &vpx_sad16x16_vsx), SadMxNParam(16, 8, &vpx_sad16x8_vsx),
 };
