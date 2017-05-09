@@ -621,14 +621,15 @@ void vp9_fdct8x8_quant_sse2(const int16_t *input, int stride,
 // load 8x8 array
 static INLINE void load_buffer_8x8(const int16_t *input, __m128i *in,
                                    int stride) {
-  in[0] = _mm_load_si128((const __m128i *)(input + 0 * stride));
-  in[1] = _mm_load_si128((const __m128i *)(input + 1 * stride));
-  in[2] = _mm_load_si128((const __m128i *)(input + 2 * stride));
-  in[3] = _mm_load_si128((const __m128i *)(input + 3 * stride));
-  in[4] = _mm_load_si128((const __m128i *)(input + 4 * stride));
-  in[5] = _mm_load_si128((const __m128i *)(input + 5 * stride));
-  in[6] = _mm_load_si128((const __m128i *)(input + 6 * stride));
-  in[7] = _mm_load_si128((const __m128i *)(input + 7 * stride));
+  // TODO(johannkoenig): fix tests to provide aligned buffers.
+  in[0] = _mm_loadu_si128((const __m128i *)(input + 0 * stride));
+  in[1] = _mm_loadu_si128((const __m128i *)(input + 1 * stride));
+  in[2] = _mm_loadu_si128((const __m128i *)(input + 2 * stride));
+  in[3] = _mm_loadu_si128((const __m128i *)(input + 3 * stride));
+  in[4] = _mm_loadu_si128((const __m128i *)(input + 4 * stride));
+  in[5] = _mm_loadu_si128((const __m128i *)(input + 5 * stride));
+  in[6] = _mm_loadu_si128((const __m128i *)(input + 6 * stride));
+  in[7] = _mm_loadu_si128((const __m128i *)(input + 7 * stride));
 
   in[0] = _mm_slli_epi16(in[0], 2);
   in[1] = _mm_slli_epi16(in[1], 2);
