@@ -36,17 +36,18 @@ cglobal fdct8x8, 3, 5, 13, input, output, stride
 
   lea                r3, [2 * strideq]
   lea                r4, [4 * strideq]
-  mova               m0, [inputq]
-  mova               m1, [inputq + r3]
+  ; TODO(johannkoenig): use aligned buffers in tests.
+  movu               m0, [inputq]
+  movu               m1, [inputq + r3]
   lea                inputq, [inputq + r4]
-  mova               m2, [inputq]
-  mova               m3, [inputq + r3]
+  movu               m2, [inputq]
+  movu               m3, [inputq + r3]
   lea                inputq, [inputq + r4]
-  mova               m4, [inputq]
-  mova               m5, [inputq + r3]
+  movu               m4, [inputq]
+  movu               m5, [inputq + r3]
   lea                inputq, [inputq + r4]
-  mova               m6, [inputq]
-  mova               m7, [inputq + r3]
+  movu               m6, [inputq]
+  movu               m7, [inputq + r3]
 
   ; left shift by 2 to increase forward transformation precision
   psllw              m0, 2
