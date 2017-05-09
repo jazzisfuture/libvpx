@@ -274,14 +274,15 @@ void FDCT8x8_2D(const int16_t *input, tran_low_t *output, int stride) {
   int overflow;
 #endif
   // Load input
-  __m128i in0 = _mm_load_si128((const __m128i *)(input + 0 * stride));
-  __m128i in1 = _mm_load_si128((const __m128i *)(input + 1 * stride));
-  __m128i in2 = _mm_load_si128((const __m128i *)(input + 2 * stride));
-  __m128i in3 = _mm_load_si128((const __m128i *)(input + 3 * stride));
-  __m128i in4 = _mm_load_si128((const __m128i *)(input + 4 * stride));
-  __m128i in5 = _mm_load_si128((const __m128i *)(input + 5 * stride));
-  __m128i in6 = _mm_load_si128((const __m128i *)(input + 6 * stride));
-  __m128i in7 = _mm_load_si128((const __m128i *)(input + 7 * stride));
+  // TODO(johannkoenig): fix tests to provide aligned buffers.
+  __m128i in0 = _mm_loadu_si128((const __m128i *)(input + 0 * stride));
+  __m128i in1 = _mm_loadu_si128((const __m128i *)(input + 1 * stride));
+  __m128i in2 = _mm_loadu_si128((const __m128i *)(input + 2 * stride));
+  __m128i in3 = _mm_loadu_si128((const __m128i *)(input + 3 * stride));
+  __m128i in4 = _mm_loadu_si128((const __m128i *)(input + 4 * stride));
+  __m128i in5 = _mm_loadu_si128((const __m128i *)(input + 5 * stride));
+  __m128i in6 = _mm_loadu_si128((const __m128i *)(input + 6 * stride));
+  __m128i in7 = _mm_loadu_si128((const __m128i *)(input + 7 * stride));
   // Pre-condition input (shift by two)
   in0 = _mm_slli_epi16(in0, 2);
   in1 = _mm_slli_epi16(in1, 2);
@@ -621,22 +622,23 @@ void FDCT16x16_2D(const int16_t *input, tran_low_t *output, int stride) {
       __m128i res08, res09, res10, res11, res12, res13, res14, res15;
       // Load and pre-condition input.
       if (0 == pass) {
-        in00 = _mm_load_si128((const __m128i *)(in + 0 * stride));
-        in01 = _mm_load_si128((const __m128i *)(in + 1 * stride));
-        in02 = _mm_load_si128((const __m128i *)(in + 2 * stride));
-        in03 = _mm_load_si128((const __m128i *)(in + 3 * stride));
-        in04 = _mm_load_si128((const __m128i *)(in + 4 * stride));
-        in05 = _mm_load_si128((const __m128i *)(in + 5 * stride));
-        in06 = _mm_load_si128((const __m128i *)(in + 6 * stride));
-        in07 = _mm_load_si128((const __m128i *)(in + 7 * stride));
-        in08 = _mm_load_si128((const __m128i *)(in + 8 * stride));
-        in09 = _mm_load_si128((const __m128i *)(in + 9 * stride));
-        in10 = _mm_load_si128((const __m128i *)(in + 10 * stride));
-        in11 = _mm_load_si128((const __m128i *)(in + 11 * stride));
-        in12 = _mm_load_si128((const __m128i *)(in + 12 * stride));
-        in13 = _mm_load_si128((const __m128i *)(in + 13 * stride));
-        in14 = _mm_load_si128((const __m128i *)(in + 14 * stride));
-        in15 = _mm_load_si128((const __m128i *)(in + 15 * stride));
+        // TODO(johannkoenig): fix tests to provide aligned buffers.
+        in00 = _mm_loadu_si128((const __m128i *)(in + 0 * stride));
+        in01 = _mm_loadu_si128((const __m128i *)(in + 1 * stride));
+        in02 = _mm_loadu_si128((const __m128i *)(in + 2 * stride));
+        in03 = _mm_loadu_si128((const __m128i *)(in + 3 * stride));
+        in04 = _mm_loadu_si128((const __m128i *)(in + 4 * stride));
+        in05 = _mm_loadu_si128((const __m128i *)(in + 5 * stride));
+        in06 = _mm_loadu_si128((const __m128i *)(in + 6 * stride));
+        in07 = _mm_loadu_si128((const __m128i *)(in + 7 * stride));
+        in08 = _mm_loadu_si128((const __m128i *)(in + 8 * stride));
+        in09 = _mm_loadu_si128((const __m128i *)(in + 9 * stride));
+        in10 = _mm_loadu_si128((const __m128i *)(in + 10 * stride));
+        in11 = _mm_loadu_si128((const __m128i *)(in + 11 * stride));
+        in12 = _mm_loadu_si128((const __m128i *)(in + 12 * stride));
+        in13 = _mm_loadu_si128((const __m128i *)(in + 13 * stride));
+        in14 = _mm_loadu_si128((const __m128i *)(in + 14 * stride));
+        in15 = _mm_loadu_si128((const __m128i *)(in + 15 * stride));
         // x = x << 2
         in00 = _mm_slli_epi16(in00, 2);
         in01 = _mm_slli_epi16(in01, 2);
