@@ -23,6 +23,12 @@
 #define DECLARE_ALIGNED(n, typ, val) typ val
 #endif
 
+#if defined(__GNUC__) && __GNUC__ && !defined(_WIN32)
+#define DECLARE_HIDDEN __attribute__((visibility("hidden")))
+#else
+#define DECLARE_HIDDEN
+#endif
+
 #if HAVE_NEON && defined(_MSC_VER)
 #define __builtin_prefetch(x)
 #endif
