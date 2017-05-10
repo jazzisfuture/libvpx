@@ -622,6 +622,42 @@ if (vpx_config("CONFIG_EMULATE_HARDWARE") ne "yes") {
   specialize qw/vpx_idct32x32_34_add neon sse2 ssse3/;
 
   specialize qw/vpx_idct32x32_1_add neon sse2/;
+
+  if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") ne "yes") {
+    specialize qw/vpx_idct4x4_16_add dspr2 msa/;
+
+    specialize qw/vpx_idct4x4_1_add dspr2 msa/;
+
+    specialize qw/vpx_idct8x8_64_add dspr2 msa/;
+
+    specialize qw/vpx_idct8x8_12_add dspr2 msa/;
+
+    specialize qw/vpx_idct8x8_1_add dspr2 msa/;
+
+    specialize qw/vpx_idct16x16_256_add dspr2 msa/;
+
+    specialize qw/vpx_idct16x16_38_add dspr2 msa/;
+    $vpx_idct16x16_38_add_dspr2=vpx_idct16x16_256_add_dspr2;
+    $vpx_idct16x16_38_add_msa=vpx_idct16x16_256_add_msa;
+
+    specialize qw/vpx_idct16x16_10_add dspr2 msa/;
+
+    specialize qw/vpx_idct16x16_1_add dspr2 msa/;
+
+    specialize qw/vpx_idct32x32_1024_add dspr2 msa/;
+
+    specialize qw/vpx_idct32x32_135_add dspr2 msa/;
+    $vpx_idct32x32_135_add_dspr2=vpx_idct32x32_1024_add_dspr2;
+    $vpx_idct32x32_135_add_msa=vpx_idct32x32_1024_add_msa;
+
+    specialize qw/vpx_idct32x32_34_add dspr2 msa/;
+
+    specialize qw/vpx_idct32x32_1_add dspr2 msa/;
+
+    specialize qw/vpx_iwht4x4_16_add msa sse2/;
+
+    specialize qw/vpx_iwht4x4_1_add msa/;
+  } # !CONFIG_VP9_HIGHBITDEPTH
 }  # !CONFIG_EMULATE_HARDWARE
 
 if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
@@ -682,42 +718,6 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
     specialize qw/vpx_highbd_idct32x32_135_add neon/;
 
     specialize qw/vpx_highbd_idct32x32_34_add neon/;
-  }  # !CONFIG_EMULATE_HARDWARE
-} else {
-  if (vpx_config("CONFIG_EMULATE_HARDWARE") ne "yes") {
-    specialize qw/vpx_idct4x4_16_add dspr2 msa/;
-
-    specialize qw/vpx_idct4x4_1_add dspr2 msa/;
-
-    specialize qw/vpx_idct8x8_64_add dspr2 msa/;
-
-    specialize qw/vpx_idct8x8_12_add dspr2 msa/;
-
-    specialize qw/vpx_idct8x8_1_add dspr2 msa/;
-
-    specialize qw/vpx_idct16x16_256_add dspr2 msa/;
-
-    specialize qw/vpx_idct16x16_38_add dspr2 msa/;
-    $vpx_idct16x16_38_add_dspr2=vpx_idct16x16_256_add_dspr2;
-    $vpx_idct16x16_38_add_msa=vpx_idct16x16_256_add_msa;
-
-    specialize qw/vpx_idct16x16_10_add dspr2 msa/;
-
-    specialize qw/vpx_idct16x16_1_add dspr2 msa/;
-
-    specialize qw/vpx_idct32x32_1024_add dspr2 msa/;
-
-    specialize qw/vpx_idct32x32_135_add dspr2 msa/;
-    $vpx_idct32x32_135_add_dspr2=vpx_idct32x32_1024_add_dspr2;
-    $vpx_idct32x32_135_add_msa=vpx_idct32x32_1024_add_msa;
-
-    specialize qw/vpx_idct32x32_34_add dspr2 msa/;
-
-    specialize qw/vpx_idct32x32_1_add dspr2 msa/;
-
-    specialize qw/vpx_iwht4x4_16_add msa sse2/;
-
-    specialize qw/vpx_iwht4x4_1_add msa/;
   }  # !CONFIG_EMULATE_HARDWARE
 }  # CONFIG_VP9_HIGHBITDEPTH
 }  # CONFIG_VP9
