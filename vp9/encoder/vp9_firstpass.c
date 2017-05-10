@@ -42,15 +42,13 @@
 #define OUTPUT_FPF 0
 #define ARF_STATS_OUTPUT 0
 
-#define FACTOR_PT_LOW 0.70
-#define FACTOR_PT_HIGH 0.90
+
 #define FIRST_PASS_Q 10.0
 #define GF_MAX_BOOST 96.0
 #define INTRA_MODE_PENALTY 1024
 #define MIN_ARF_GF_BOOST 240
 #define MIN_DECAY_FACTOR 0.01
 #define NEW_MV_MODE_PENALTY 32
-#define SVC_FACTOR_PT_LOW 0.45
 #define DARK_THRESH 64
 #define DEFAULT_GRP_WEIGHT 1.0
 #define RC_FACTOR_MIN 0.75
@@ -1522,14 +1520,20 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   if (cpi->use_svc) vp9_inc_frame_in_layer(cpi);
 }
 
-static double calc_correction_factor(double err_per_mb, double err_divisor,
-                                     double pt_low, double pt_high, int q,
-                                     vpx_bit_depth_t bit_depth) {
-  const double error_term = err_per_mb / err_divisor;
+static const double q_pow_term[(QINDEX_RANGE >> 5) + 1] =
+   { 0.65, 0.70, 0.75, 0.85, 0.90, 0.90, 0.90, 1.00, 1.25 };
 
-  // Adjustment based on actual quantizer to power term.
-  const double power_term =
-      VPXMIN(vp9_convert_qindex_to_q(q, bit_depth) * 0.01 + pt_low, pt_high);
+static double calc_correction_factor(double err_per_mb, double err_divisor,
+                                     int q) {
+  const double error_term = err_per_mb / DOUBLE_DIVIDE_CHECK(err_divisor);
+  const int index = q >> 5;
+  double power_term;
+
+  assert((index >= 0) && (index < (QINDEX_RANGE >> 5)));
+
+  // Adjustment based on quantizer to the power term.
+  power_term = q_pow_term[index] + (((q_pow_term[index + 1] - q_pow_term[index])
+      * (q % 32)) / 32.0);
 
   // Calculate correction factor.
   if (power_term < 1.0) assert(error_term >= 0.0);
@@ -1584,9 +1588,7 @@ static int get_twopass_worst_quality(VP9_COMP *cpi, const double section_err,
     // content at the given rate.
     for (q = rc->best_quality; q < rc->worst_quality; ++q) {
       const double factor = calc_correction_factor(
-          av_err_per_mb, ERR_DIVISOR,
-          is_svc_upper_layer ? SVC_FACTOR_PT_LOW : FACTOR_PT_LOW,
-          FACTOR_PT_HIGH, q, cpi->common.bit_depth);
+          av_err_per_mb, ERR_DIVISOR, q);
       const int bits_per_mb = vp9_rc_bits_per_mb(
           INTER_FRAME, q,
           factor * speed_term * cpi->twopass.bpm_factor * noise_factor,
