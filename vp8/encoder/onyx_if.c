@@ -728,6 +728,7 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
   SPEED_FEATURES *sf = &cpi->sf;
   int Mode = cpi->compressor_speed;
   int Speed = cpi->Speed;
+  int Speed2;
   int i;
   VP8_COMMON *cm = &cpi->common;
   int last_improved_quant = sf->improved_quant;
@@ -777,6 +778,7 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
     if (Speed > 5) Speed = 5;
     Speed = GOOD(Speed);
   }
+  Speed2 = Speed;
 
   sf->thresh_mult[THR_ZERO1] = sf->thresh_mult[THR_NEAREST1] =
       sf->thresh_mult[THR_NEAR1] = sf->thresh_mult[THR_DC] = 0; /* always */
@@ -819,19 +821,22 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
       cpi->mode_check_freq[THR_NEAR1] = cpi->mode_check_freq[THR_TM] =
           cpi->mode_check_freq[THR_DC] = 0; /* always */
 
+  if (cpi->Speed == 10) Speed2 = RT(9);
+
   cpi->mode_check_freq[THR_ZERO2] = cpi->mode_check_freq[THR_ZERO3] =
       cpi->mode_check_freq[THR_NEAREST2] = cpi->mode_check_freq[THR_NEAREST3] =
-          speed_map(Speed, mode_check_freq_map_zn2);
+          speed_map(Speed2, mode_check_freq_map_zn2);
 
   cpi->mode_check_freq[THR_NEAR2] = cpi->mode_check_freq[THR_NEAR3] =
-      speed_map(Speed, mode_check_freq_map_near2);
+      speed_map(Speed2, mode_check_freq_map_near2);
 
   cpi->mode_check_freq[THR_V_PRED] = cpi->mode_check_freq[THR_H_PRED] =
       cpi->mode_check_freq[THR_B_PRED] =
-          speed_map(Speed, mode_check_freq_map_vhbpred);
-  cpi->mode_check_freq[THR_NEW1] = speed_map(Speed, mode_check_freq_map_new1);
+          speed_map(Speed2, mode_check_freq_map_vhbpred);
+  cpi->mode_check_freq[THR_NEW1] = speed_map(Speed2, mode_check_freq_map_new1);
   cpi->mode_check_freq[THR_NEW2] = cpi->mode_check_freq[THR_NEW3] =
-      speed_map(Speed, mode_check_freq_map_new2);
+      speed_map(Speed2, mode_check_freq_map_new2);
+
   cpi->mode_check_freq[THR_SPLIT1] =
       speed_map(Speed, mode_check_freq_map_split1);
   cpi->mode_check_freq[THR_SPLIT2] = cpi->mode_check_freq[THR_SPLIT3] =
