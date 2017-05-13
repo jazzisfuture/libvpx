@@ -68,4 +68,29 @@ static INLINE void store_s16q_to_tran_low(tran_low_t *buf, const int16x8_t a) {
   vst1q_s16(buf, a);
 #endif
 }
+
+// Load 2 sets of 4 bytes when alignment is guaranteed.
+static INLINE uint8x8_t load_u8(const uint8_t *a, int a_stride) {
+  uint32x2_t a_u32 = vdup_n_u32(0);
+
+  assert(!((intptr_t)a % sizeof(uint32_t)));
+  assert(!(a_stride % sizeof(uint32_t)));
+
+  a_u32 = vld1_lane_u32((const uint32_t *)a, a_u32, 0);
+  a += a_stride;
+  a_u32 = vld1_lane_u32((const uint32_t *)a, a_u32, 1);
+  return vreinterpret_u8_u32(a_u32);
+}
+
+// Store 2 sets of 4 bytes when alignment is guaranteed.
+static INLINE void store_u8(uint8_t *a, int a_stride, const uint8x8_t b) {
+  uint32x2_t b_u32 = vreinterpret_u32_u8(b);
+
+  assert(!((intptr_t)a % sizeof(uint32_t)));
+  assert(!(a_stride % sizeof(uint32_t)));
+
+  vst1_lane_u32((uint32_t *)a, b_u32, 0);
+  a += a_stride;
+  vst1_lane_u32((uint32_t *)a, b_u32, 1);
+}
 #endif  // VPX_DSP_ARM_MEM_NEON_H_
