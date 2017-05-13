@@ -69,6 +69,45 @@ static INLINE void store_s16q_to_tran_low(tran_low_t *buf, const int16x8_t a) {
 #endif
 }
 
+// Prevent clang and gcc from adding alignment hints to load instructions:
+// https://bugs.llvm.org//show_bug.cgi?id=24421
+// The attribute has existed for gcc  for a long time. clang appears to have
+// added it in 3.8:
+// http://releases.llvm.org/3.8.0/tools/clang/docs/ReleaseNotes.html
+#if !defined(VPX_INCOMPATIBLE_GCC) && !defined(_WIN32)
+typedef uint32_t __attribute__((aligned(1))) uint32_unaligned;
+#endif  //  !defined(VPX_INCOMPATIBLE_GCC) && !defined(_WIN32)
+
+// Store 4 sets of 4 bytes when alignment is not guaranteed.
+static INLINE void store_unaligned_u8q(uint8_t *a, int a_stride,
+                                       const uint8x16_t b) {
+  const uint32x4_t b_u32 = vreinterpretq_u32_u8(b);
+#if !defined(VPX_INCOMPATIBLE_GCC) && !defined(_WIN32)
+  vst1q_lane_u32((uint32_unaligned *)a, b_u32, 0);
+  a += a_stride;
+  vst1q_lane_u32((uint32_unaligned *)a, b_u32, 1);
+  a += a_stride;
+  vst1q_lane_u32((uint32_unaligned *)a, b_u32, 2);
+  a += a_stride;
+  vst1q_lane_u32((uint32_unaligned *)a, b_u32, 3);
+#else
+  uint32_t c[4];
+
+  vst1q_lane_u32(c, b_u32, 0);
+  vst1q_lane_u32(c + 1, b_u32, 1);
+  vst1q_lane_u32(c + 2, b_u32, 2);
+  vst1q_lane_u32(c + 3, b_u32, 3);
+
+  memcpy(a, c, 4);
+  a += a_stride;
+  memcpy(a, c + 1, 4);
+  a += a_stride;
+  memcpy(a, c + 2, 4);
+  a += a_stride;
+  memcpy(a, c + 3, 4);
+#endif  //  !defined(VPX_INCOMPATIBLE_GCC) && !defined(_WIN32)
+}
+
 // Load 2 sets of 4 bytes when alignment is guaranteed.
 static INLINE uint8x8_t load_u8(const uint8_t *a, int a_stride) {
   uint32x2_t a_u32 = vdup_n_u32(0);
