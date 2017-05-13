@@ -13,6 +13,7 @@
 
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/arm/idct_neon.h"
+#include "vpx_dsp/arm/mem_neon.h"
 #include "vpx_dsp/txfm_common.h"
 
 void vpx_idct4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
@@ -39,10 +40,9 @@ void vpx_idct4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
   a0 = vrshrq_n_s16(a0, 4);
   a1 = vrshrq_n_s16(a1, 4);
 
-  dest01_u32 = vld1_lane_u32((const uint32_t *)dst, dest01_u32, 0);
-  dst += stride;
-  dest01_u32 = vld1_lane_u32((const uint32_t *)dst, dest01_u32, 1);
-  dst += stride;
+  dest01_u32 = load_u8(dst, stride);
+  dst += 2 * stride;
+  // The elements are loaded in reverse order.
   dest32_u32 = vld1_lane_u32((const uint32_t *)dst, dest32_u32, 1);
   dst += stride;
   dest32_u32 = vld1_lane_u32((const uint32_t *)dst, dest32_u32, 0);
@@ -54,10 +54,9 @@ void vpx_idct4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
   d01 = vqmovun_s16(vreinterpretq_s16_u16(d01_u16));
   d32 = vqmovun_s16(vreinterpretq_s16_u16(d32_u16));
 
-  vst1_lane_u32((uint32_t *)dest, vreinterpret_u32_u8(d01), 0);
-  dest += stride;
-  vst1_lane_u32((uint32_t *)dest, vreinterpret_u32_u8(d01), 1);
-  dest += stride;
+  store_u8(dest, stride, d01);
+  dest += 2 * stride;
+  // The elements are stored in reverse order.
   vst1_lane_u32((uint32_t *)dest, vreinterpret_u32_u8(d32), 1);
   dest += stride;
   vst1_lane_u32((uint32_t *)dest, vreinterpret_u32_u8(d32), 0);
