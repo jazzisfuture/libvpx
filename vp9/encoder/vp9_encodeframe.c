@@ -889,7 +889,15 @@ static void copy_partitioning_helper(VP9_COMP *cpi, BLOCK_SIZE bsize,
 
 static int copy_partitioning(VP9_COMP *cpi, MACROBLOCK *x, int mi_row,
                              int mi_col, int segment_id, int sb_offset) {
-  if (cpi->rc.frames_since_key > 1 && segment_id == CR_SEGMENT_ID_BASE &&
+  int base_is_key = 0;
+  if (cpi->use_svc && cpi->svc.spatial_layer_id > 0) {
+    int layer = LAYER_IDS_TO_IDX(0, cpi->svc.temporal_layer_id,
+                                 cpi->svc.number_temporal_layers);
+    const LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+    if (lc->is_key_frame) base_is_key = 1;
+  }
+  if (cpi->rc.frames_since_key > 1 && !cpi->resize_pending && !base_is_key &&
+      segment_id == CR_SEGMENT_ID_BASE &&
       cpi->prev_segment_id[sb_offset] == CR_SEGMENT_ID_BASE &&
       cpi->copied_frame_cnt[sb_offset] < cpi->max_copied_frame) {
     if (cpi->prev_partition != NULL) {
