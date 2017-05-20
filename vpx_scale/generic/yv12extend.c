@@ -111,25 +111,6 @@ void vp8_yv12_extend_frame_borders_c(YV12_BUFFER_CONFIG *ybf) {
   assert(ybf->y_height - ybf->y_crop_height >= 0);
   assert(ybf->y_width - ybf->y_crop_width >= 0);
 
-#if CONFIG_VP9_HIGHBITDEPTH
-  if (ybf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    extend_plane_high(ybf->y_buffer, ybf->y_stride, ybf->y_crop_width,
-                      ybf->y_crop_height, ybf->border, ybf->border,
-                      ybf->border + ybf->y_height - ybf->y_crop_height,
-                      ybf->border + ybf->y_width - ybf->y_crop_width);
-
-    extend_plane_high(ybf->u_buffer, ybf->uv_stride, ybf->uv_crop_width,
-                      ybf->uv_crop_height, uv_border, uv_border,
-                      uv_border + ybf->uv_height - ybf->uv_crop_height,
-                      uv_border + ybf->uv_width - ybf->uv_crop_width);
-
-    extend_plane_high(ybf->v_buffer, ybf->uv_stride, ybf->uv_crop_width,
-                      ybf->uv_crop_height, uv_border, uv_border,
-                      uv_border + ybf->uv_height - ybf->uv_crop_height,
-                      uv_border + ybf->uv_width - ybf->uv_crop_width);
-    return;
-  }
-#endif
   extend_plane(ybf->y_buffer, ybf->y_stride, ybf->y_crop_width,
                ybf->y_crop_height, ybf->border, ybf->border,
                ybf->border + ybf->y_height - ybf->y_crop_height,
