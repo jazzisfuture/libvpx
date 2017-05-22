@@ -626,6 +626,7 @@ class SubpelVarianceTest
  protected:
   void RefTest();
   void ExtremeRefTest();
+  void SpeedTest();
 
   ACMRandom rnd_;
   uint8_t *src_;
@@ -708,6 +709,36 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::ExtremeRefTest() {
   }
 }
 
+template <typename SubpelVarianceFunctionType>
+void SubpelVarianceTest<SubpelVarianceFunctionType>::SpeedTest() {
+  const int half = block_size_ / 2;
+  if (!use_high_bit_depth_) {
+    memset(src_, 0, half);
+    memset(src_ + half, 255, half);
+    memset(ref_, 255, half);
+    memset(ref_ + half, 0, half + width_ + height_ + 1);
+#if CONFIG_VP9_HIGHBITDEPTH
+  } else {
+    vpx_memset16(CONVERT_TO_SHORTPTR(src_), mask_, half);
+    vpx_memset16(CONVERT_TO_SHORTPTR(src_) + half, 0, half);
+    vpx_memset16(CONVERT_TO_SHORTPTR(ref_), 0, half);
+    vpx_memset16(CONVERT_TO_SHORTPTR(ref_) + half, mask_,
+                 half + width_ + height_ + 1);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  }
+  unsigned int sse;
+  vpx_usec_timer timer;
+  vpx_usec_timer_start(&timer);
+  for (int i = 0; i < 100000000 / block_size_; ++i) {
+    const uint32_t variance =
+        subpel_variance_(ref_, width_ + 1, 4, 4, src_, width_, &sse);
+    (void)variance;
+  }
+  vpx_usec_timer_mark(&timer);
+  const int elapsed_time = static_cast<int>(vpx_usec_timer_elapsed(&timer));
+  printf("Variance %dx%d time: %5d ms\n", width_, height_, elapsed_time / 1000);
+}
+
 template <>
 void SubpelVarianceTest<SubpixAvgVarMxNFunc>::RefTest() {
   for (int x = 0; x < 8; ++x) {
@@ -764,6 +795,7 @@ TEST_P(SumOfSquaresTest, Const) { ConstTest(); }
 TEST_P(SumOfSquaresTest, Ref) { RefTest(); }
 TEST_P(VpxSubpelVarianceTest, Ref) { RefTest(); }
 TEST_P(VpxSubpelVarianceTest, ExtremeRef) { ExtremeRefTest(); }
+TEST_P(VpxSubpelVarianceTest, DISABLED_Speed) { SpeedTest(); }
 TEST_P(VpxSubpelAvgVarianceTest, Ref) { RefTest(); }
 
 INSTANTIATE_TEST_CASE_P(C, SumOfSquaresTest,
