@@ -2511,7 +2511,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Should we use the alternate reference frame.
   if (allow_alt_ref && (i < cpi->oxcf.lag_in_frames) &&
-      (i >= rc->min_gf_interval)) {
+      (i > rc->min_gf_interval)) {
     // Calculate the boost for alt ref.
     rc->gfu_boost =
         calc_arf_boost(cpi, 0, (i - 1), (i - 1), &f_boost, &b_boost);
