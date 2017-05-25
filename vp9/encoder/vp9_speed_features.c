@@ -225,7 +225,12 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
   }
 
   if (speed >= 2) {
+#ifdef CORPUS_VBR_EXPERIMENT
+    sf->recode_loop = ALLOW_RECODE_FIRST;
+#else
     sf->recode_loop = ALLOW_RECODE_KFARFGF;
+#endif
+    //sf->recode_loop = ALLOW_RECODE_FIRST;
     sf->tx_size_search_method =
         frame_is_boosted(cpi) ? USE_FULL_RD : USE_LARGESTALL;
 

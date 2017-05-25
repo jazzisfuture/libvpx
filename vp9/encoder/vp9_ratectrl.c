@@ -1934,8 +1934,10 @@ void vp9_set_target_rate(VP9_COMP *cpi) {
     target_rate = vp9_rc_clamp_pframe_target_size(cpi, target_rate);
 
   // Correction to rate target based on prior over or under shoot.
+#ifndef CORPUS_VBR_EXPERIMENT
   if (cpi->oxcf.rc_mode == VPX_VBR || cpi->oxcf.rc_mode == VPX_CQ)
     vbr_rate_correction(cpi, &target_rate);
+#endif
   vp9_rc_set_frame_target(cpi, target_rate);
 }
 
