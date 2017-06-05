@@ -1647,9 +1647,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     if (ref_frame > usable_ref_frame) continue;
     if (skip_ref_find_pred[ref_frame]) continue;
 
-    // For SVC, skip the golden (spatial) reference search if sse of zeromv_last
-    // is below threshold.
-    if (cpi->use_svc && ref_frame == GOLDEN_FRAME &&
+    // For CBR mode: skip the golden reference search if sse of zeromv_last is
+    // below threshold.
+    if (ref_frame == GOLDEN_FRAME && cpi->oxcf.rc_mode == VPX_CBR &&
         sse_zeromv_normalized < thresh_svc_skip_golden)
       continue;
 
@@ -1937,7 +1937,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                           &var_y, &sse_y);
       }
       // Save normalized sse (between current and last frame) for (0, 0) motion.
-      if (cpi->use_svc && ref_frame == LAST_FRAME &&
+      if (ref_frame == LAST_FRAME &&
           frame_mv[this_mode][ref_frame].as_int == 0) {
         sse_zeromv_normalized =
             sse_y >> (b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize]);
