@@ -171,8 +171,8 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   }
   vp9_set_mv_search_range(&x->mv_limits, &ref_mv);
 
-  // Limit motion vector for large lightning change.
-  if (cpi->oxcf.speed > 5 && x->lowvar_highsumdiff) {
+  // Check if we should imit motion vector search.
+  if (x->limit_mv_search) {
     x->mv_limits.col_min = VPXMAX(x->mv_limits.col_min, -10);
     x->mv_limits.row_min = VPXMAX(x->mv_limits.row_min, -10);
     x->mv_limits.col_max = VPXMIN(x->mv_limits.col_max, 10);
@@ -1232,14 +1232,21 @@ static INLINE void find_predictors(
   }
 }
 
-static void vp9_NEWMV_diff_bias(const NOISE_ESTIMATE *ne, MACROBLOCKD *xd,
-                                PREDICTION_MODE this_mode, RD_COST *this_rdc,
-                                BLOCK_SIZE bsize, int mv_row, int mv_col,
-                                int is_last_frame, int lowvar_highsumdiff,
-                                int is_skin) {
-  // Bias against MVs associated with NEWMV mode that are very different from
-  // top/left neighbors.
-  if (this_mode == NEWMV) {
+static void bias_rdcost(const NOISE_ESTIMATE *ne, MACROBLOCKD *xd,
+                        PREDICTION_MODE this_mode, RD_COST *this_rdc,
+                        BLOCK_SIZE bsize, int mv_row, int mv_col,
+                        int is_last_frame, int lowvar_highsumdiff, int is_skin,
+                        int sse_zeromv_normalized, int source_variance,
+                        int use_source_variance) {
+  // Bias against large motion vectors for big blocks with low spatial source
+  // variance (flat areas) when the sse of zeromv-last is small.
+  if (sse_zeromv_normalized < 600 && use_source_variance &&
+      source_variance < 40 && bsize >= BLOCK_32X32 &&
+      (mv_row > 48 || mv_row < -48 || mv_col > 48 || mv_col < -48)) {
+    this_rdc->rdcost = this_rdc->rdcost << 1;
+  } else if (this_mode == NEWMV) {
+    // Bias against MVs associated with NEWMV mode that are very different from
+    // top/left neighbors.
     int al_mv_average_row;
     int al_mv_average_col;
     int left_row, left_col;
@@ -1489,13 +1496,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int force_skip_low_temp_var = 0;
   int skip_ref_find_pred[4] = { 0 };
   unsigned int sse_zeromv_normalized = UINT_MAX;
-  unsigned int thresh_svc_skip_golden = 500;
+  unsigned int thresh_sse_zeromv = 500;
+  unsigned int use_source_variance = 0;
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
   int denoise_svc_pickmode = 1;
 #endif
   INTERP_FILTER filter_gf_svc = EIGHTTAP;
+  x->limit_mv_search = 0;
 
   init_ref_frame_cost(cm, xd, ref_frame_cost);
 
@@ -1551,6 +1560,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       x->source_variance =
           vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
+    use_source_variance = 1;
   }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
@@ -1647,11 +1657,18 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     if (ref_frame > usable_ref_frame) continue;
     if (skip_ref_find_pred[ref_frame]) continue;
 
-    // For SVC, skip the golden (spatial) reference search if sse of zeromv_last
-    // is below threshold.
-    if (cpi->use_svc && ref_frame == GOLDEN_FRAME &&
-        sse_zeromv_normalized < thresh_svc_skip_golden)
+    // For CBR mode: skip the golden reference search if sse of zeromv_last is
+    // below threshold. Also use condition on source variance for non-SVC.
+    if (ref_frame == GOLDEN_FRAME && cpi->oxcf.rc_mode == VPX_CBR &&
+        sse_zeromv_normalized < thresh_sse_zeromv &&
+        (cpi->use_svc || (use_source_variance && x->source_variance < 40 &&
+                          bsize >= BLOCK_32X32)))
       continue;
+
+    if (cpi->oxcf.rc_mode == VPX_CBR && cpi->oxcf.speed > 5 &&
+        x->lowvar_highsumdiff || (sse_zeromv_normalized < thresh_sse_zeromv &&
+            use_source_variance && x->source_variance < 40))
+      x->limit_mv_search = 1;
 
     if (sf->short_circuit_flat_blocks && x->source_variance == 0 &&
         this_mode != NEARESTMV) {
@@ -1937,7 +1954,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                           &var_y, &sse_y);
       }
       // Save normalized sse (between current and last frame) for (0, 0) motion.
-      if (cpi->use_svc && ref_frame == LAST_FRAME &&
+      if (ref_frame == LAST_FRAME &&
           frame_mv[this_mode][ref_frame].as_int == 0) {
         sse_zeromv_normalized =
             sse_y >> (b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize]);
@@ -1996,11 +2013,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     // to small motion-lastref for noisy input.
     if (cpi->oxcf.rc_mode == VPX_CBR && cpi->oxcf.speed >= 5 &&
         cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
-      vp9_NEWMV_diff_bias(&cpi->noise_estimate, xd, this_mode, &this_rdc, bsize,
-                          frame_mv[this_mode][ref_frame].as_mv.row,
-                          frame_mv[this_mode][ref_frame].as_mv.col,
-                          ref_frame == LAST_FRAME, x->lowvar_highsumdiff,
-                          x->sb_is_skin);
+      bias_rdcost(&cpi->noise_estimate, xd, this_mode, &this_rdc, bsize,
+                  frame_mv[this_mode][ref_frame].as_mv.row,
+                  frame_mv[this_mode][ref_frame].as_mv.col,
+                  ref_frame == LAST_FRAME, x->lowvar_highsumdiff, x->sb_is_skin,
+                  sse_zeromv_normalized, x->source_variance,
+                  use_source_variance);
     }
 
     // Skipping checking: test to see if this block can be reconstructed by
