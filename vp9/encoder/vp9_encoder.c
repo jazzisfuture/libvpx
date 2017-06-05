@@ -79,9 +79,6 @@
 #ifdef OUTPUT_YUV_DENOISED
 FILE *yuv_denoised_file = NULL;
 #endif
-#ifdef OUTPUT_YUV_SKINMAP
-FILE *yuv_skinmap_file = NULL;
-#endif
 #ifdef OUTPUT_YUV_REC
 FILE *yuv_rec_file;
 #endif
@@ -2580,38 +2577,6 @@ int vp9_update_entropy(VP9_COMP *cpi, int update) {
   cpi->ext_refresh_frame_context_pending = 1;
   return 0;
 }
-
-#if defined(OUTPUT_YUV_DENOISED) || defined(OUTPUT_YUV_SKINMAP)
-// The denoiser buffer is allocated as a YUV 440 buffer. This function writes it
-// as YUV 420. We simply use the top-left pixels of the UV buffers, since we do
-// not denoise the UV channels at this time. If ever we implement UV channel
-// denoising we will have to modify this.
-void vp9_write_yuv_frame_420(YV12_BUFFER_CONFIG *s, FILE *f) {
-  uint8_t *src = s->y_buffer;
-  int h = s->y_crop_height;
-
-  do {
-    fwrite(src, s->y_width, 1, f);
-    src += s->y_stride;
-  } while (--h);
-
-  src = s->u_buffer;
-  h = s->uv_crop_height;
-
-  do {
-    fwrite(src, s->uv_width, 1, f);
-    src += s->uv_stride;
-  } while (--h);
-
-  src = s->v_buffer;
-  h = s->uv_crop_height;
-
-  do {
-    fwrite(src, s->uv_width, 1, f);
-    src += s->uv_stride;
-  } while (--h);
-}
-#endif
 
 #ifdef OUTPUT_YUV_REC
 void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {

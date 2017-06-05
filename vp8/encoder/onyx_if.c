@@ -88,9 +88,6 @@ FILE *yuv_file;
 #ifdef OUTPUT_YUV_DENOISED
 FILE *yuv_denoised_file;
 #endif
-#ifdef OUTPUT_YUV_SKINMAP
-FILE *yuv_skinmap_file = NULL;
-#endif
 
 #if 0
 FILE *framepsnr;
@@ -2484,35 +2481,6 @@ int vp8_update_entropy(VP8_COMP *cpi, int update) {
   return 0;
 }
 
-#if defined(OUTPUT_YUV_SRC) || defined(OUTPUT_YUV_DENOISED) || \
-    defined(OUTPUT_YUV_SKINMAP)
-void vp8_write_yuv_frame(FILE *yuv_file, YV12_BUFFER_CONFIG *s) {
-  unsigned char *src = s->y_buffer;
-  int h = s->y_crop_height;
-
-  do {
-    fwrite(src, s->y_width, 1, yuv_file);
-    src += s->y_stride;
-  } while (--h);
-
-  src = s->u_buffer;
-  h = s->uv_crop_height;
-
-  do {
-    fwrite(src, s->uv_width, 1, yuv_file);
-    src += s->uv_stride;
-  } while (--h);
-
-  src = s->v_buffer;
-  h = s->uv_crop_height;
-
-  do {
-    fwrite(src, s->uv_width, 1, yuv_file);
-    src += s->uv_stride;
-  } while (--h);
-}
-#endif
-
 static void scale_and_extend_source(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi) {
   VP8_COMMON *cm = &cpi->common;
 
@@ -3872,7 +3840,7 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
 #endif
 
 #ifdef OUTPUT_YUV_SRC
-  vp8_write_yuv_frame(yuv_file, cpi->Source);
+  vpx_write_yuv_frame(yuv_file, cpi->Source);
 #endif
 
   do {
@@ -4452,7 +4420,7 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
   update_reference_frames(cpi);
 
 #ifdef OUTPUT_YUV_DENOISED
-  vp8_write_yuv_frame(yuv_denoised_file,
+  vpx_write_yuv_frame(yuv_denoised_file,
                       &cpi->denoiser.yv12_running_avg[INTRA_FRAME]);
 #endif
 
@@ -4801,7 +4769,7 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
 #endif
 
   /* DEBUG */
-  /* vp8_write_yuv_frame("encoder_recon.yuv", cm->frame_to_show); */
+  /* vpx_write_yuv_frame("encoder_recon.yuv", cm->frame_to_show); */
 }
 #if !CONFIG_REALTIME_ONLY
 static void Pass2Encode(VP8_COMP *cpi, size_t *size, unsigned char *dest,
