@@ -1489,7 +1489,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int force_skip_low_temp_var = 0;
   int skip_ref_find_pred[4] = { 0 };
   unsigned int sse_zeromv_normalized = UINT_MAX;
-  unsigned int thresh_svc_skip_golden = 500;
+  unsigned int thresh_sse_zeromv = 500;
+  unsigned int use_source_variance = 0;
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
@@ -1551,6 +1552,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       x->source_variance =
           vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
+    use_source_variance = 1;
   }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
@@ -1647,10 +1649,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     if (ref_frame > usable_ref_frame) continue;
     if (skip_ref_find_pred[ref_frame]) continue;
 
-    // For SVC, skip the golden (spatial) reference search if sse of zeromv_last
-    // is below threshold.
-    if (cpi->use_svc && ref_frame == GOLDEN_FRAME &&
-        sse_zeromv_normalized < thresh_svc_skip_golden)
+    // For CBR mode: skip the golden reference search if sse of zeromv_last is
+    // below threshold. Also use condition on source variance for non-SVC.
+    if (ref_frame == GOLDEN_FRAME && cpi->oxcf.rc_mode == VPX_CBR &&
+        sse_zeromv_normalized < thresh_sse_zeromv &&
+        (cpi->use_svc || (use_source_variance && x->source_variance < 40 &&
+                          bsize > BLOCK_16X16)))
       continue;
 
     if (sf->short_circuit_flat_blocks && x->source_variance == 0 &&
@@ -1819,6 +1823,18 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       }
     }
 
+    // For CBR mode, non-SVC: skip checking modes with large motion vectors for
+    // big blocks with low spatial source variance (flat areas) when the
+    // sse of zeromv-last is small.
+    if (!cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR &&
+        sse_zeromv_normalized < thresh_sse_zeromv &&
+        use_source_variance && x->source_variance < 40 && bsize > BLOCK_16X16 &&
+        (frame_mv[this_mode][ref_frame].as_mv.row > 48 ||
+        frame_mv[this_mode][ref_frame].as_mv.row < -48 ||
+        frame_mv[this_mode][ref_frame].as_mv.col > 48 ||
+        frame_mv[this_mode][ref_frame].as_mv.col < -48))
+    continue;
+
     // If use_golden_nonzeromv is false, NEWMV mode is skipped for golden, no
     // need to compute best_pred_sad which is only used to skip golden NEWMV.
     if (use_golden_nonzeromv && this_mode == NEWMV && ref_frame == LAST_FRAME &&
@@ -1937,7 +1953,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                           &var_y, &sse_y);
       }
       // Save normalized sse (between current and last frame) for (0, 0) motion.
-      if (cpi->use_svc && ref_frame == LAST_FRAME &&
+      if (ref_frame == LAST_FRAME &&
           frame_mv[this_mode][ref_frame].as_int == 0) {
         sse_zeromv_normalized =
             sse_y >> (b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize]);
