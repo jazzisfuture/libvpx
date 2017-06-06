@@ -17,6 +17,7 @@
 #include "vpx_scale/yv12config.h"
 #include "postproc.h"
 #include "common.h"
+#include "vp8/common/skin_detection.h"
 #include "vpx_scale/vpx_scale.h"
 #include "systemdependent.h"
 
@@ -72,6 +73,11 @@ void vp8_deblock(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
    * is a skipped block.  */
   unsigned char *ylimits = cm->pp_limits_buffer;
   unsigned char *uvlimits = cm->pp_limits_buffer + 16 * cm->mb_cols;
+  const uint8_t *src_y = source->y_buffer;
+  const uint8_t *src_u = source->u_buffer;
+  const uint8_t *src_v = source->v_buffer;
+  const int src_ystride = source->y_stride;
+  const int src_uvstride = source->uv_stride;
   (void)low_var_thresh;
   (void)flag;
 
@@ -81,6 +87,18 @@ void vp8_deblock(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
       unsigned char *uvlptr = uvlimits;
       for (mbc = 0; mbc < cm->mb_cols; ++mbc) {
         unsigned char mb_ppl;
+        int consec_zeromv = 0;
+        int is_skin = 0;
+        const int bl_index = mbr * cm->mb_cols + mbc;
+        const int bl_index1 = bl_index + 1;
+        const int bl_index2 = bl_index + cm->mb_cols;
+        const int bl_index3 = bl_index2 + 1;
+        consec_zeromv = VPXMIN(cm->consec_zero_last[bl_index],
+                               VPXMIN(cm->consec_zero_last[bl_index1],
+                                      VPXMIN(cm->consec_zero_last[bl_index2],
+                                             cm->consec_zero_last[bl_index3])));
+        is_skin = compute_skin_block(src_y, src_u, src_v, src_ystride,
+                                     src_uvstride, consec_zeromv, 0);
 
         if (mode_info_context->mbmi.mb_skip_coeff) {
           mb_ppl = (unsigned char)ppl >> 1;
@@ -88,12 +106,18 @@ void vp8_deblock(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
           mb_ppl = (unsigned char)ppl;
         }
 
+        if (is_skin)
+          mb_ppl >>= 1;
+
         memset(ylptr, mb_ppl, 16);
         memset(uvlptr, mb_ppl, 8);
 
         ylptr += 16;
         uvlptr += 8;
         mode_info_context++;
+        src_y += 16;
+        src_u += 8;
+        src_v += 8;
       }
       mode_info_context++;
 
