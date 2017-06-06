@@ -11,7 +11,6 @@
 #ifndef VP8_ENCODER_SKIN_DETECTION_H_
 #define VP8_ENCODER_SKIN_DETECTION_H_
 
-#include "vp8/encoder/onyx_int.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_scale/yv12config.h"
 

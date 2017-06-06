@@ -54,6 +54,7 @@ static int check_dot_artifact_candidate(VP8_COMP *cpi, MACROBLOCK *x,
                                         unsigned char *target_last, int stride,
                                         unsigned char *last_ref, int mb_row,
                                         int mb_col, int channel) {
+  VP8_COMMON *cm = &cpi->common;
   int threshold1 = 6;
   int threshold2 = 3;
   unsigned int max_num = (cpi->common.MBs) / 10;
@@ -76,7 +77,7 @@ static int check_dot_artifact_candidate(VP8_COMP *cpi, MACROBLOCK *x,
   // Only allow this for at most |max_num| blocks per frame.
   // Don't allow this for screen content input.
   if (cpi->current_layer == 0 &&
-      cpi->consec_zero_last_mvbias[index] > num_frames &&
+      cm->consec_zero_last_mvbias[index] > num_frames &&
       x->mbs_zero_last_dot_suppress < max_num &&
       !cpi->oxcf.screen_content_mode) {
     // If this block is checked here, label it so we don't check it again until
@@ -693,7 +694,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     int block_index = mb_row * cpi->common.mb_cols + mb_col;
     x->is_skin = compute_skin_block(
         x->src.y_buffer, x->src.u_buffer, x->src.v_buffer, x->src.y_stride,
-        x->src.uv_stride, cpi->consec_zero_last[block_index], 0);
+        x->src.uv_stride, cpi->common.consec_zero_last[block_index], 0);
   }
 #if CONFIG_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity) {
@@ -1222,14 +1223,14 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     if (!x->is_skin && x->best_sse_inter_mode == ZEROMV &&
         (x->best_reference_frame == LAST_FRAME ||
          x->best_reference_frame == cpi->closest_reference_frame) &&
-        cpi->consec_zero_last[block_index] >= 20 && is_noisy) {
+        cpi->common.consec_zero_last[block_index] >= 20 && is_noisy) {
       x->increase_denoising = 1;
     }
     x->denoise_zeromv = 0;
     vp8_denoiser_denoise_mb(&cpi->denoiser, x, best_sse, zero_mv_sse,
                             recon_yoffset, recon_uvoffset, &cpi->common.lf_info,
                             mb_row, mb_col, block_index,
-                            cpi->consec_zero_last_mvbias[block_index]);
+                            cpi->common.consec_zero_last_mvbias[block_index]);
 
     // Reevaluate ZEROMV after denoising: for large noise content
     // (i.e., cpi->mse_source_denoised is above threshold), do this for all
