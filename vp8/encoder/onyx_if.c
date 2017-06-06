@@ -589,7 +589,7 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment) {
         // lf_adjustment = -MAX_LOOP_FILTER;
         lf_adjustment = -40;
         for (i = 0; i < mbs_in_frame; ++i) {
-          seg_map[i] = (cpi->consec_zero_last[i] >
+          seg_map[i] = (cpi->common.consec_zero_last[i] >
                         cpi->denoiser.denoise_pars.consec_zerolast)
                            ? 1
                            : 0;
@@ -1861,9 +1861,9 @@ struct VP8_COMP *vp8_create_compressor(VP8_CONFIG *oxcf) {
     cpi->cyclic_refresh_map = (signed char *)NULL;
   }
 
-  CHECK_MEM_ERROR(cpi->consec_zero_last,
+  CHECK_MEM_ERROR(cm->consec_zero_last,
                   vpx_calloc(cm->mb_rows * cm->mb_cols, 1));
-  CHECK_MEM_ERROR(cpi->consec_zero_last_mvbias,
+  CHECK_MEM_ERROR(cm->consec_zero_last_mvbias,
                   vpx_calloc((cpi->common.mb_rows * cpi->common.mb_cols), 1));
 
 #ifdef VP8_ENTROPY_STATS
@@ -2292,8 +2292,6 @@ void vp8_remove_compressor(VP8_COMP **ptr) {
   vpx_free(cpi->mb.ss);
   vpx_free(cpi->tok);
   vpx_free(cpi->cyclic_refresh_map);
-  vpx_free(cpi->consec_zero_last);
-  vpx_free(cpi->consec_zero_last_mvbias);
 
   vp8_remove_common(&cpi->common);
   vpx_free(cpi);
@@ -3056,7 +3054,7 @@ static int measure_square_diff_partial(YV12_BUFFER_CONFIG *source,
     int block_index_row = (i >> 4) * cpi->common.mb_cols;
     for (j = 0; j < source->y_width; j += 16 * skip) {
       int index = block_index_row + (j >> 4);
-      if (cpi->consec_zero_last[index] >= min_consec_zero_last) {
+      if (cpi->common.consec_zero_last[index] >= min_consec_zero_last) {
         unsigned int sse;
         Total += vpx_mse16x16(src + j, source->y_stride, dst + j,
                               dest->y_stride, &sse);
@@ -3119,7 +3117,7 @@ static void process_denoiser_mode_change(VP8_COMP *cpi) {
     int block_index_row = (i >> 4) * cm->mb_cols;
     for (j = 0; j < cm->Width; j += 16 * skip) {
       int index = block_index_row + (j >> 4);
-      if (cpi->consec_zero_last[index] >= min_consec_zero_last) {
+      if (cm->consec_zero_last[index] >= min_consec_zero_last) {
         unsigned int sse;
         const unsigned int var =
             vpx_variance16x16(src + j, ystride, dst + j, ystride, &sse);
@@ -3472,8 +3470,8 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
     }
 
     // Reset the zero_last counter to 0 on key frame.
-    memset(cpi->consec_zero_last, 0, cm->mb_rows * cm->mb_cols);
-    memset(cpi->consec_zero_last_mvbias, 0,
+    memset(cm->consec_zero_last, 0, cm->mb_rows * cm->mb_cols);
+    memset(cm->consec_zero_last_mvbias, 0,
            (cpi->common.mb_rows * cpi->common.mb_cols));
   }
 
@@ -3964,8 +3962,8 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
           }
         }
         // Reset the zero_last counter to 0 on key frame.
-        memset(cpi->consec_zero_last, 0, cm->mb_rows * cm->mb_cols);
-        memset(cpi->consec_zero_last_mvbias, 0,
+        memset(cm->consec_zero_last, 0, cm->mb_rows * cm->mb_cols);
+        memset(cm->consec_zero_last_mvbias, 0,
                (cpi->common.mb_rows * cpi->common.mb_cols));
         vp8_set_quantizer(cpi, Q);
       }

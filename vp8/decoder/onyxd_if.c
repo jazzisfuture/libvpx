@@ -65,6 +65,11 @@ static void remove_decompressor(VP8D_COMP *pbi) {
 
 static struct VP8D_COMP *create_decompressor(VP8D_CONFIG *oxcf) {
   VP8D_COMP *pbi = vpx_memalign(32, sizeof(VP8D_COMP));
+  VP8_COMMON *pc = &pbi->common;
+  int width = oxcf->Width;
+  int height = oxcf->Height;
+  if ((width & 0xf) != 0) width += 16 - (width & 0xf);
+  if ((height & 0xf) != 0) height += 16 - (height & 0xf);
 
   if (!pbi) return NULL;
 
@@ -116,6 +121,9 @@ static struct VP8D_COMP *create_decompressor(VP8D_CONFIG *oxcf) {
   vp8_setup_block_dptrs(&pbi->mb);
 
   once(initialize_dec);
+
+  CHECK_MEM_ERROR(pc->consec_zero_last,
+                  vpx_calloc((width >> 4) * (height >> 4), 1));
 
   return pbi;
 }

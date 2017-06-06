@@ -137,6 +137,12 @@ typedef struct VP8Common {
   int refresh_golden_frame;  /* Two state 0 = NO, 1 = YES */
   int refresh_alt_ref_frame; /* Two state 0 = NO, 1 = YES */
 
+  // Count on how many (consecutive) times a macroblock uses ZER0MV_LAST.
+  unsigned char *consec_zero_last;
+  // Counter that is reset when a block is checked for a mode-bias against
+  // ZEROMV_LASTREF.
+  unsigned char *consec_zero_last_mvbias;
+
   int copy_buffer_to_gf;  /* 0 none, 1 Last to GF, 2 ARF to GF */
   int copy_buffer_to_arf; /* 0 none, 1 Last to ARF, 2 GF to ARF */
 
