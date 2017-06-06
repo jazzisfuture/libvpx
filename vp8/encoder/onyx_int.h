@@ -487,11 +487,6 @@ typedef struct VP8_COMP {
   int cyclic_refresh_mode_index;
   int cyclic_refresh_q;
   signed char *cyclic_refresh_map;
-  // Count on how many (consecutive) times a macroblock uses ZER0MV_LAST.
-  unsigned char *consec_zero_last;
-  // Counter that is reset when a block is checked for a mode-bias against
-  // ZEROMV_LASTREF.
-  unsigned char *consec_zero_last_mvbias;
 
   // Frame counter for the temporal pattern. Counter is rest when the temporal
   // layers are changed dynamically (run-time change).

@@ -140,10 +140,10 @@ void compute_skin_map(VP8_COMP *const cpi, FILE *yuv_skinmap_file) {
       const int bl_index1 = bl_index + 1;
       const int bl_index2 = bl_index + cm->mb_cols;
       const int bl_index3 = bl_index2 + 1;
-      consec_zeromv = VPXMIN(cpi->consec_zero_last[bl_index],
-                             VPXMIN(cpi->consec_zero_last[bl_index1],
-                                    VPXMIN(cpi->consec_zero_last[bl_index2],
-                                           cpi->consec_zero_last[bl_index3])));
+      consec_zeromv = VPXMIN(cm->consec_zero_last[bl_index],
+                             VPXMIN(cm->consec_zero_last[bl_index1],
+                                    VPXMIN(cm->consec_zero_last[bl_index2],
+                                           cm->consec_zero_last[bl_index3])));
       is_skin = compute_skin_block(src_y, src_u, src_v, src_ystride,
                                    src_uvstride, consec_zeromv, 0);
       for (i = 0; i < 16; i++) {
