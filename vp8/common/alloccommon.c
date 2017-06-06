@@ -184,4 +184,8 @@ void vp8_create_common(VP8_COMMON *oci) {
   oci->copy_buffer_to_arf = 0;
 }
 
-void vp8_remove_common(VP8_COMMON *oci) { vp8_de_alloc_frame_buffers(oci); }
+void vp8_remove_common(VP8_COMMON *oci) {
+  vpx_free(oci->consec_zero_last);
+  vpx_free(oci->consec_zero_last_mvbias);
+  vp8_de_alloc_frame_buffers(oci);
+}

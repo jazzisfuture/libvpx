@@ -574,6 +574,21 @@ static void decode_mb_rows(VP8D_COMP *pbi) {
 
       decode_macroblock(pbi, xd, mb_idx);
 
+      // Keep track of how many (consecutive) times a  block is coded
+      // as ZEROMV_LASTREF, for base layer frames.
+      // Reset to 0 if its coded as anything else.
+      if (pc->frame_type != KEY_FRAME) {
+        if (xd->mode_info_context->mbmi.mode == ZEROMV &&
+            xd->mode_info_context->mbmi.ref_frame == LAST_FRAME) {
+          // Increment, check for wrap-around.
+          if (pc->consec_zero_last[mb_idx] < 255) {
+            pc->consec_zero_last[mb_idx] += 1;
+          }
+        } else {
+          pc->consec_zero_last[mb_idx] = 0;
+        }
+      }
+
       mb_idx++;
       xd->left_available = 1;
 
@@ -824,6 +839,9 @@ static void init_frame(VP8D_COMP *pbi) {
     /* reset the mode ref deltasa for loop filter */
     memset(xd->ref_lf_deltas, 0, sizeof(xd->ref_lf_deltas));
     memset(xd->mode_lf_deltas, 0, sizeof(xd->mode_lf_deltas));
+
+    // Reset the zero_last counter to 0 on key frame.
+    memset(pc->consec_zero_last, 0, pc->mb_rows * pc->mb_cols);
 
     /* All buffers are implicitly updated on key frames. */
     pc->refresh_golden_frame = 1;

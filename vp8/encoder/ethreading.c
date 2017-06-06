@@ -201,18 +201,18 @@ static THREAD_FUNCTION thread_encoding_proc(void *p_data) {
               if (xd->mode_info_context->mbmi.mode == ZEROMV &&
                   xd->mode_info_context->mbmi.ref_frame == LAST_FRAME) {
                 // Increment, check for wrap-around.
-                if (cpi->consec_zero_last[map_index + mb_col] < 255) {
-                  cpi->consec_zero_last[map_index + mb_col] += 1;
+                if (cm->consec_zero_last[map_index + mb_col] < 255) {
+                  cm->consec_zero_last[map_index + mb_col] += 1;
                 }
-                if (cpi->consec_zero_last_mvbias[map_index + mb_col] < 255) {
-                  cpi->consec_zero_last_mvbias[map_index + mb_col] += 1;
+                if (cm->consec_zero_last_mvbias[map_index + mb_col] < 255) {
+                  cm->consec_zero_last_mvbias[map_index + mb_col] += 1;
                 }
               } else {
-                cpi->consec_zero_last[map_index + mb_col] = 0;
-                cpi->consec_zero_last_mvbias[map_index + mb_col] = 0;
+                cm->consec_zero_last[map_index + mb_col] = 0;
+                cm->consec_zero_last_mvbias[map_index + mb_col] = 0;
               }
               if (x->zero_last_dot_suppress) {
-                cpi->consec_zero_last_mvbias[map_index + mb_col] = 0;
+                cm->consec_zero_last_mvbias[map_index + mb_col] = 0;
               }
             }
 
