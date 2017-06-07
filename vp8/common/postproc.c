@@ -17,6 +17,7 @@
 #include "vpx_scale/yv12config.h"
 #include "postproc.h"
 #include "common.h"
+#include "vp8/common/skin_detection.h"
 #include "vpx_scale/vpx_scale.h"
 #include "systemdependent.h"
 
@@ -67,6 +68,11 @@ void vp8_deblock(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
 
   const MODE_INFO *mode_info_context = cm->show_frame_mi;
   int mbr, mbc;
+  const uint8_t *src_y = source->y_buffer;
+  const uint8_t *src_u = source->u_buffer;
+  const uint8_t *src_v = source->v_buffer;
+  const int src_ystride = source->y_stride;
+  const int src_uvstride = source->uv_stride;
 
   /* The pixel thresholds are adjusted according to if or not the macroblock
    * is a skipped block.  */
@@ -81,12 +87,16 @@ void vp8_deblock(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
       unsigned char *uvlptr = uvlimits;
       for (mbc = 0; mbc < cm->mb_cols; ++mbc) {
         unsigned char mb_ppl;
-
+        int is_skin = 0;
         if (mode_info_context->mbmi.mb_skip_coeff) {
           mb_ppl = (unsigned char)ppl >> 1;
         } else {
           mb_ppl = (unsigned char)ppl;
         }
+        is_skin = compute_skin_block(src_y, src_u, src_v, src_ystride,
+                                     src_uvstride, 0, 0);
+
+        if (is_skin) mb_ppl >>= 1;
 
         memset(ylptr, mb_ppl, 16);
         memset(uvlptr, mb_ppl, 8);
@@ -94,6 +104,9 @@ void vp8_deblock(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
         ylptr += 16;
         uvlptr += 8;
         mode_info_context++;
+        src_y += 16;
+        src_u += 8;
+        src_v += 8;
       }
       mode_info_context++;
 
