@@ -97,6 +97,7 @@ class Buffer {
   bool CheckValues(const Buffer<T> &a) const;
 
   bool Init() {
+    EXPECT_EQ(raw_buffer_, NULL);
     EXPECT_GT(width_, 0u);
     EXPECT_GT(height_, 0u);
     stride_ = left_padding_ + width_ + right_padding_;
