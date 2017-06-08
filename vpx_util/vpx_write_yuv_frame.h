@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP8_COMMON_SKIN_DETECTION_H_
-#define VP8_COMMON_SKIN_DETECTION_H_
+#ifndef VPX_UTIL_VPX_WRITE_YUV_FRAME_H_
+#define VPX_UTIL_VPX_WRITE_YUV_FRAME_H_
 
-#include "vp8/encoder/onyx_int.h"
-#include "vpx/vpx_integer.h"
+#include <stdio.h>
+
 #include "vpx_dsp/skin_detection.h"
 #include "vpx_scale/yv12config.h"
 
@@ -20,19 +20,10 @@
 extern "C" {
 #endif
 
-struct VP8_COMP;
-
-int compute_skin_block(const uint8_t *y, const uint8_t *u, const uint8_t *v,
-                       int stride, int strideuv, int consec_zeromv,
-                       int curr_motion_magn);
-
-#ifdef OUTPUT_YUV_SKINMAP
-// For viewing skin map on input source.
-void compute_skin_map(struct VP8_COMP *const cpi, FILE *yuv_skinmap_file);
-#endif
+void vpx_write_yuv_frame(FILE *yuv_file, YV12_BUFFER_CONFIG *s);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // VP8_COMMON_SKIN_DETECTION_H_
+#endif  // VPX_UTIL_VPX_WRITE_YUV_FRAME_H_
