@@ -42,7 +42,7 @@ class Buffer {
 
   T *TopLeftPixel() const;
 
-  size_t stride() const { return stride_; }
+  int stride() const { return stride_; }
 
   // Set the buffer (excluding padding) to 'value'.
   void Set(const T value);
@@ -76,7 +76,7 @@ class Buffer {
   bool Init() {
     EXPECT_GT(width_, 0u);
     EXPECT_GT(height_, 0u);
-    stride_ = left_padding_ + width_ + right_padding_;
+    stride_ = static_cast<int>(left_padding_ + width_ + right_padding_);
     num_elements_ = stride_ * (top_padding_ + height_ + bottom_padding_);
     raw_buffer_ = new (std::nothrow) T[num_elements_];
     raw_size_ = num_elements_ * sizeof(T);
@@ -95,7 +95,7 @@ class Buffer {
   const size_t right_padding_;
   const size_t bottom_padding_;
   T padding_value_;
-  size_t stride_;
+  int stride_;
   size_t raw_size_;
   size_t num_elements_;
   T *raw_buffer_;
