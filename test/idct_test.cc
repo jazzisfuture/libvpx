@@ -30,11 +30,11 @@ class IDCTTest : public ::testing::TestWithParam<IdctFunc> {
   virtual void SetUp() {
     UUT = GetParam();
 
-    input = new (std::nothrow) Buffer<int16_t>(4, 4, 0);
+    input = new Buffer<int16_t>(4, 4, 0);
     ASSERT_TRUE(input->Init());
-    predict = new (std::nothrow) Buffer<uint8_t>(4, 4, 3);
+    predict = new Buffer<uint8_t>(4, 4, 3);
     ASSERT_TRUE(predict->Init());
-    output = new (std::nothrow) Buffer<uint8_t>(4, 4, 3);
+    output = new Buffer<uint8_t>(4, 4, 3);
     ASSERT_TRUE(output->Init());
   }
 
