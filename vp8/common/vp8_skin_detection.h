@@ -22,9 +22,12 @@ extern "C" {
 
 struct VP8_COMP;
 
+// bsize: 1 - based on 16x16 block
+//        0 - based on 8x8. If two of them are identified as skin, the
+//        macroblock is marked as skin.
 int vp8_compute_skin_block(const uint8_t *y, const uint8_t *u, const uint8_t *v,
-                           int stride, int strideuv, int consec_zeromv,
-                           int curr_motion_magn);
+                           int stride, int strideuv, int bsize,
+                           int consec_zeromv, int curr_motion_magn);
 
 #ifdef OUTPUT_YUV_SKINMAP
 // For viewing skin map on input source.
