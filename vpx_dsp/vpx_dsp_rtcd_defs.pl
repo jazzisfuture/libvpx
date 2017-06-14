@@ -744,6 +744,9 @@ if (vpx_config("CONFIG_VP9_ENCODER") eq "yes") {
   add_proto qw/unsigned int vpx_avg_4x4/, "const uint8_t *, int p";
   specialize qw/vpx_avg_4x4 sse2 neon msa/;
 
+  add_proto qw/unsigned int vpx_avg_2x2/, "const uint8_t *, int p";
+  specialize qw/vpx_avg_2x2/;
+
   add_proto qw/void vpx_minmax_8x8/, "const uint8_t *s, int p, const uint8_t *d, int dp, int *min, int *max";
   specialize qw/vpx_minmax_8x8 sse2 neon msa/;
 

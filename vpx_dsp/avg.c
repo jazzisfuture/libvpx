@@ -32,6 +32,16 @@ unsigned int vpx_avg_4x4_c(const uint8_t *s, int p) {
   return (sum + 8) >> 4;
 }
 
+unsigned int vpx_avg_2x2_c(const uint8_t *s, int p) {
+  int i, j;
+  int sum = 0;
+  for (i = 0; i < 2; ++i, s += p)
+    for (j = 0; j < 2; sum += s[j], ++j) {
+    }
+
+  return (sum + 2) >> 2;
+}
+
 // src_diff: first pass, 9 bit, dynamic range [-255, 255]
 //           second pass, 12 bit, dynamic range [-2040, 2040]
 static void hadamard_col8(const int16_t *src_diff, int src_stride,
