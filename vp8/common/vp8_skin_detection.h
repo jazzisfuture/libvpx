@@ -22,8 +22,20 @@ extern "C" {
 
 struct VP8_COMP;
 
+typedef enum SKIN_DETECTION_BLOCK_SIZE {
+  // Skin detection based on 16x16 block.
+  SKIN_16X16,
+  // Skin detection based on 8x8 block.If two of them are identified as skin,
+  // the macroblock is marked as skin.
+  SKIN_8X8
+} SKIN_DETECTION_BLOCK_SIZE;
+
+// bsize: 1 -
+//        0 - based on 8x8. If two of them are identified as skin, the
+//        macroblock is marked as skin.
 int vp8_compute_skin_block(const uint8_t *y, const uint8_t *u, const uint8_t *v,
-                           int stride, int strideuv, int consec_zeromv,
+                           int stride, int strideuv,
+                           SKIN_DETECTION_BLOCK_SIZE bsize, int consec_zeromv,
                            int curr_motion_magn);
 
 #ifdef OUTPUT_YUV_SKINMAP
