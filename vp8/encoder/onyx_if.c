@@ -64,8 +64,6 @@ extern void vp8_deblock_frame(YV12_BUFFER_CONFIG *source,
 extern void print_parms(VP8_CONFIG *ocf, char *filenam);
 extern unsigned int vp8_get_processor_freq();
 extern void print_tree_update_probs();
-extern int vp8cx_create_encoder_threads(VP8_COMP *cpi);
-extern void vp8cx_remove_encoder_threads(VP8_COMP *cpi);
 
 int vp8_calc_ss_err(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest);
 
