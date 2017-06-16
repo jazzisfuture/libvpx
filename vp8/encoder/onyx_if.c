@@ -45,6 +45,7 @@
 #endif
 #include "encodeframe.h"
 #include "picklpf.h"
+#include "temporal_filter.h"
 
 #include <assert.h>
 #include <math.h>
@@ -65,8 +66,6 @@ extern int vp8cx_create_encoder_threads(VP8_COMP *cpi);
 extern void vp8cx_remove_encoder_threads(VP8_COMP *cpi);
 
 int vp8_calc_ss_err(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest);
-
-extern void vp8_temporal_filter_prepare_c(VP8_COMP *cpi, int distance);
 
 static void set_default_lf_deltas(VP8_COMP *cpi);
 
