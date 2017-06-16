@@ -45,6 +45,9 @@
 #endif
 #include "encodeframe.h"
 #include "picklpf.h"
+#if !CONFIG_REALTIME_ONLY
+#include "temporal_filter.h"
+#endif
 
 #include <assert.h>
 #include <math.h>
@@ -63,8 +66,6 @@ extern unsigned int vp8_get_processor_freq();
 extern void print_tree_update_probs();
 
 int vp8_calc_ss_err(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest);
-
-extern void vp8_temporal_filter_prepare_c(VP8_COMP *cpi, int distance);
 
 static void set_default_lf_deltas(VP8_COMP *cpi);
 
