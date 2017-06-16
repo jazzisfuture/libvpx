@@ -8,6 +8,7 @@
  *  the root of the source tree.
  */
 
+#include "vp9/encoder/vp9_alt_ref_aq.h"
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_alt_ref_aq.h"
 
@@ -15,7 +16,7 @@ struct ALT_REF_AQ {
   int dummy;
 };
 
-struct ALT_REF_AQ *vp9_alt_ref_aq_create() {
+struct ALT_REF_AQ *vp9_alt_ref_aq_create(void) {
   return (struct ALT_REF_AQ *)vpx_malloc(sizeof(struct ALT_REF_AQ));
 }
 
