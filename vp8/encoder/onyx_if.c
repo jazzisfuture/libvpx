@@ -512,6 +512,24 @@ static void set_segment_data(VP8_COMP *cpi, signed char *feature_data,
          sizeof(cpi->segment_feature_data));
 }
 
+static void apply_skinmap_cyclic_refresh(VP8_COMP *cpi, int *block_count) {
+  int mb_row, mb_col;
+  unsigned char *seg_map = cpi->segmentation_map;
+  VP8_COMMON *cm = &cpi->common;
+  int offset = 0;
+  for (mb_row = 0; mb_row < cm->mb_rows; mb_row++) {
+    for (mb_col = 0; mb_col < cm->mb_cols; mb_col++) {
+      if (cpi->skin_map[offset]) {
+        seg_map[offset] = 1;
+        (*block_count)--;
+        cpi->cyclic_refresh_map[offset] = -1;
+      }
+      offset++;
+      if (*block_count <= 0) return;
+    }
+  }
+}
+
 /* A simple function to cyclically refresh the background at a lower Q */
 static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment) {
   unsigned char *seg_map = cpi->segmentation_map;
@@ -548,6 +566,7 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment) {
   memset(cpi->segmentation_map, 0, mbs_in_frame);
 
   if (cpi->common.frame_type != KEY_FRAME && block_count > 0) {
+    apply_skinmap_cyclic_refresh(cpi, &block_count);
     /* Cycle through the macro_block rows */
     /* MB loop to set local segmentation map */
     i = cpi->cyclic_refresh_mode_index;
@@ -569,7 +588,7 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment) {
       i++;
       if (i == mbs_in_frame) i = 0;
 
-    } while (block_count && i != cpi->cyclic_refresh_mode_index);
+    } while (block_count > 0 && i != cpi->cyclic_refresh_mode_index);
 
     cpi->cyclic_refresh_mode_index = i;
 
