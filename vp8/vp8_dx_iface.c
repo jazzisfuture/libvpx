@@ -227,10 +227,9 @@ static void yuvconfig2image(vpx_image_t *img, const YV12_BUFFER_CONFIG *yv12,
   img->self_allocd = 0;
 }
 
-static int update_fragments(vpx_codec_alg_priv_t *ctx, const uint8_t *data,
-                            unsigned int data_sz, vpx_codec_err_t *res) {
-  *res = VPX_CODEC_OK;
-
+static vpx_codec_err_t update_fragments(vpx_codec_alg_priv_t *ctx,
+                                        const uint8_t *data,
+                                        unsigned int data_sz) {
   if (ctx->fragments.count == 0) {
     /* New frame, reset fragment pointers and sizes */
     memset((void *)ctx->fragments.ptrs, 0, sizeof(ctx->fragments.ptrs));
@@ -245,14 +244,13 @@ static int update_fragments(vpx_codec_alg_priv_t *ctx, const uint8_t *data,
     ctx->fragments.count++;
     if (ctx->fragments.count > (1 << EIGHT_PARTITION) + 1) {
       ctx->fragments.count = 0;
-      *res = VPX_CODEC_INVALID_PARAM;
-      return -1;
+      return VPX_CODEC_INVALID_PARAM;
     }
-    return 0;
+    return VPX_CODEC_OK;
   }
 
   if (!ctx->fragments.enabled && (data == NULL && data_sz == 0)) {
-    return 0;
+    return VPX_CODEC_OK;
   }
 
   if (!ctx->fragments.enabled) {
@@ -261,13 +259,13 @@ static int update_fragments(vpx_codec_alg_priv_t *ctx, const uint8_t *data,
     ctx->fragments.count = 1;
   }
 
-  return 1;
+  return VPX_CODEC_OK;
 }
 
 static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
                                   const uint8_t *data, unsigned int data_sz,
                                   void *user_priv, long deadline) {
-  vpx_codec_err_t res = VPX_CODEC_OK;
+  volatile vpx_codec_err_t res;
   unsigned int resolution_change = 0;
   unsigned int w, h;
 
@@ -276,7 +274,8 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
   }
 
   /* Update the input fragment data */
-  if (update_fragments(ctx, data, data_sz, &res) <= 0) return res;
+  res = update_fragments(ctx, data, data_sz);
+  if (res != VPX_CODEC_OK) return res;
 
   /* Determine the stream parameters. Note that we rely on peek_si to
    * validate that we have a buffer that does not wrap around the top
