@@ -24,7 +24,9 @@
 #include "vp9/common/vp9_entropy.h"
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
+#include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
+#include "vpx_ports/msvc.h"  // for round()
 
 using libvpx_test::ACMRandom;
 using libvpx_test::Buffer;
@@ -378,6 +380,105 @@ class TransTestBase {
     }
   }
 
+  void RunSignBiasCheck() {
+    // TODO(johannkoenig): determine values for other sizes.
+    if (size_ != 8) return;
+
+    ACMRandom rnd(ACMRandom::DeterministicSeed());
+    const int count_test_block = 100000;
+    Buffer<int16_t> input_block =
+        Buffer<int16_t>(size_, size_, 8, size_ == 4 ? 0 : 16);
+    ASSERT_TRUE(input_block.Init());
+    Buffer<tran_low_t> output_block = Buffer<tran_low_t>(size_, size_, 0, 16);
+    ASSERT_TRUE(output_block.Init());
+    int *count_sign_even =
+        static_cast<int *>(vpx_calloc(size_ * size_, sizeof(*count_sign_even)));
+    ASSERT_TRUE(count_sign_even != NULL);
+    int *count_sign_odd =
+        static_cast<int *>(vpx_calloc(size_ * size_, sizeof(*count_sign_odd)));
+    ASSERT_TRUE(count_sign_odd != NULL);
+
+    // Calculate the distribution of positive and negative values when the input
+    // range is [-mask_, mask_].
+    for (int i = 0; i < count_test_block; ++i) {
+      for (int h = 0; h < size_; ++h) {
+        for (int w = 0; w < size_; ++w) {
+          input_block.TopLeftPixel()[h * input_block.stride() + w] =
+              ((rnd.Rand16() >> (16 - bit_depth_)) & mask_) - ((rnd.Rand16() >> (16 - bit_depth_)) & mask_);
+        }
+      }
+
+      ASM_REGISTER_STATE_CHECK(RunFwdTxfm(input_block, &output_block));
+
+      for (int y = 0; y < size_; ++y) {
+        for (int x = 0; x < size_; ++x) {
+          const int16_t sign =
+              output_block.TopLeftPixel()[y * output_block.stride() + x];
+          if (sign < 0) ++count_sign_odd[y * size_ + x];
+          if (sign > 0) ++count_sign_even[y * size_ + x];
+        }
+      }
+    }
+
+    for (int y = 0; y < size_; ++y) {
+      for (int x = 0; x < size_; ++x) {
+        const int diff =
+            abs(count_sign_odd[y * size_ + x] - count_sign_even[y * size_ + x]);
+          const int max8x8bias = 1500;
+          EXPECT_LT(diff, max8x8bias << (bit_depth_ - 8))
+              << "Error: 8x8 FDCT/FHT has a sign bias > "
+              << 1. * max8x8bias / count_test_block * 100 << "%"
+              << " for input range [-255, 255] at " << x << "x" << y
+              << " count0: " << count_sign_odd[y * size_ + x]
+              << " count1: " << count_sign_even[y * size_ + x]
+              << " diff: " << diff;
+      }
+    }
+
+    memset(count_sign_even, 0, size_ * size_ * sizeof(*count_sign_even));
+    memset(count_sign_odd, 0, size_ * size_ * sizeof(*count_sign_odd));
+
+    // Calculate the distribution of positive and negative values when the input
+    // range is [-mask_ / 16, mask_ / 16].
+    for (int i = 0; i < count_test_block; ++i) {
+      for (int h = 0; h < size_; ++h) {
+        for (int w = 0; w < size_; ++w) {
+          input_block.TopLeftPixel()[h * input_block.stride() + w] =
+              ((rnd.Rand16() & mask_) >> 4) - ((rnd.Rand16() & mask_) >> 4);
+        }
+      }
+
+      ASM_REGISTER_STATE_CHECK(RunFwdTxfm(input_block, &output_block));
+
+      for (int y = 0; y < size_; ++y) {
+        for (int x = 0; x < size_; ++x) {
+          const int16_t sign =
+              output_block.TopLeftPixel()[y * output_block.stride() + x];
+          if (sign < 0) ++count_sign_odd[y * size_ + x];
+          if (sign > 0) ++count_sign_even[y * size_ + x];
+        }
+      }
+    }
+
+    for (int y = 0; y < size_; ++y) {
+      for (int x = 0; x < size_; ++x) {
+        const int diff =
+            abs(count_sign_odd[y * size_ + x] - count_sign_even[y * size_ + x]);
+          const int div_by_4_8x8bias = 10000;
+          EXPECT_LT(diff, div_by_4_8x8bias << (bit_depth_ - 8))
+              << "Error: 8x8 FDCT/FHT has a sign bias > "
+              << 1. * div_by_4_8x8bias / count_test_block * 100 << "%"
+              << " for input range [-255, 255] at " << x << "x" << y
+              << " count0: " << count_sign_odd[y * size_ + x]
+              << " count1: " << count_sign_even[y * size_ + x]
+              << " diff: " << diff;
+      }
+    }
+
+    vpx_free(count_sign_even);
+    vpx_free(count_sign_odd);
+  }
+
   FhtFuncRef fwd_txfm_ref;
   vpx_bit_depth_t bit_depth_;
   int tx_type_;
@@ -418,6 +519,8 @@ TEST_P(TransDCT, CoeffCheck) { RunCoeffCheck(); }
 TEST_P(TransDCT, MemCheck) { RunMemCheck(); }
 
 TEST_P(TransDCT, InvAccuracyCheck) { RunInvAccuracyCheck(1); }
+
+TEST_P(TransDCT, SignBiasCheck) { RunSignBiasCheck(); }
 
 #if CONFIG_VP9_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(
@@ -588,6 +691,8 @@ TEST_P(TransHT, CoeffCheck) { RunCoeffCheck(); }
 TEST_P(TransHT, MemCheck) { RunMemCheck(); }
 
 TEST_P(TransHT, InvAccuracyCheck) { RunInvAccuracyCheck(1); }
+
+TEST_P(TransHT, SignBiasCheck) { RunSignBiasCheck(); }
 
 /* TODO:(johannkoenig) Determine why these fail AccuracyCheck
    make_tuple(&vp9_highbd_fht16x16_c, &iht16x16_12, 16, 0, VPX_BITS_12),
