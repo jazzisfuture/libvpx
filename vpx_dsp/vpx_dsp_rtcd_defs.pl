@@ -737,6 +737,10 @@ specialize qw/vpx_sad4x4 neon msa sse2/;
 #
 # Avg
 #
+
+add_proto qw/unsigned int vpx_avg_2x2/, "const uint8_t *, int p";
+specialize qw/vpx_avg_2x2/;
+
 if (vpx_config("CONFIG_VP9_ENCODER") eq "yes") {
   add_proto qw/unsigned int vpx_avg_8x8/, "const uint8_t *, int p";
   specialize qw/vpx_avg_8x8 sse2 neon msa/;
