@@ -274,6 +274,7 @@ ifeq ($(ARCH_X86_64),yes)
 DSP_SRCS-$(HAVE_SSSE3)  += x86/quantize_ssse3_x86_64.asm
 DSP_SRCS-$(HAVE_AVX)    += x86/quantize_avx_x86_64.asm
 endif
+endif  # CONFIG_VP9_ENCODER
 
 # avg
 DSP_SRCS-yes           += avg.c
@@ -285,8 +286,6 @@ ifeq ($(ARCH_X86_64),yes)
 DSP_SRCS-$(HAVE_SSSE3) += x86/avg_ssse3_x86_64.asm
 endif
 DSP_SRCS-$(HAVE_VSX)   += ppc/hadamard_vsx.c
-
-endif  # CONFIG_VP9_ENCODER
 
 # skin detection
 DSP_SRCS-yes            += skin_detection.h
