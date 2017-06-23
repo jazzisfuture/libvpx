@@ -1498,6 +1498,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int denoise_svc_pickmode = 1;
 #endif
   INTERP_FILTER filter_gf_svc = EIGHTTAP;
+  INTERP_FILTER end_filter = EIGHTTAP_SMOOTH;
 
   init_ref_frame_cost(cm, xd, ref_frame_cost);
 
@@ -1627,6 +1628,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                       mi_col, yv12_mb, bsize, force_skip_low_temp_var);
     }
   }
+
+  if (cpi->oxcf.speed >= 8 && cm->width > 720 &&
+      x->content_state_sb == kVeryHighSad &&
+      cpi->rc.avg_frame_low_motion < 75 && cpi->rc.frames_since_key > 30)
+    end_filter = EIGHTTAP;
 
   for (idx = 0; idx < RT_INTER_MODES; ++idx) {
     int rate_mv = 0;
@@ -1886,7 +1892,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       PRED_BUFFER *current_pred = this_mode_pred;
       rd_computed = 1;
 
-      for (filter = EIGHTTAP; filter <= EIGHTTAP_SMOOTH; ++filter) {
+      for (filter = EIGHTTAP; filter <= end_filter; ++filter) {
         int64_t cost;
         mi->interp_filter = filter;
         vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
