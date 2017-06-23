@@ -779,6 +779,9 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   cpi->nmvsadcosts_hp[0] = NULL;
   cpi->nmvsadcosts_hp[1] = NULL;
 
+  vpx_free(cpi->skin_map);
+  cpi->skin_map = NULL;
+
   vpx_free(cpi->prev_partition);
   cpi->prev_partition = NULL;
 
@@ -2045,6 +2048,9 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   cpi->tile_data = NULL;
 
   realloc_segmentation_maps(cpi);
+
+  CHECK_MEM_ERROR(cm, cpi->skin_map, vpx_calloc(cm->mi_rows * cm->mi_cols,
+                                                sizeof(cpi->skin_map[0])));
 
   CHECK_MEM_ERROR(cm, cpi->alt_ref_aq, vp9_alt_ref_aq_create());
 
@@ -3326,6 +3332,69 @@ static void init_motion_estimation(VP9_COMP *cpi) {
   }
 }
 
+static void compute_skin_map(VP9_COMP *const cpi, BLOCK_SIZE bsize) {
+  int mi_row, mi_col, num_bl;
+  VP9_COMMON *const cm = &cpi->common;
+  const uint8_t *src_y = cpi->Source->y_buffer;
+  const uint8_t *src_u = cpi->Source->u_buffer;
+  const uint8_t *src_v = cpi->Source->v_buffer;
+  const int src_ystride = cpi->Source->y_stride;
+  const int src_uvstride = cpi->Source->uv_stride;
+  const int y_bsize = 4 << b_width_log2_lookup[bsize];
+  const int uv_bsize = y_bsize >> 1;
+  const int ypos = y_bsize >> 1;
+  const int uvpos = uv_bsize >> 1;
+  const int shy = (y_bsize == 8) ? 3 : 4;
+  const int shuv = shy - 1;
+  const int fac = y_bsize / 8;
+  // Use center pixel or average of center 2x2 pixels.
+  const int mode_filter = 0;
+
+  // Loop through blocks and set skin map based on center pixel of block.
+  // Set y to white for skin block, otherwise set to source with gray scale.
+  // Ignore rightmost/bottom boundary blocks.
+  for (mi_row = 0; mi_row < cm->mi_rows - 1; mi_row += fac) {
+    num_bl = 0;
+    for (mi_col = 0; mi_col < cm->mi_cols - 1; mi_col += fac) {
+      int is_skin = 0;
+      if (mode_filter == 1) {
+        // Use 2x2 average at center.
+        uint8_t ysource =
+            vpx_avg_2x2(src_y + ypos * src_ystride + ypos, src_ystride);
+        uint8_t usource =
+            vpx_avg_2x2(src_u + uvpos * src_uvstride + uvpos, src_uvstride);
+        uint8_t vsource =
+            vpx_avg_2x2(src_v + uvpos * src_uvstride + uvpos, src_uvstride);
+        is_skin = vpx_skin_pixel(ysource, usource, vsource, 1);
+      } else {
+        int consec_zeromv = 0;
+        int bl_index = mi_row * cm->mi_cols + mi_col;
+        int bl_index1 = bl_index + 1;
+        int bl_index2 = bl_index + cm->mi_cols;
+        int bl_index3 = bl_index2 + 1;
+        if (bsize == BLOCK_8X8)
+          consec_zeromv = cpi->consec_zero_mv[bl_index];
+        else
+          consec_zeromv =
+              VPXMIN(cpi->consec_zero_mv[bl_index],
+                     VPXMIN(cpi->consec_zero_mv[bl_index1],
+                            VPXMIN(cpi->consec_zero_mv[bl_index2],
+                                   cpi->consec_zero_mv[bl_index3])));
+        is_skin = vp9_compute_skin_block(src_y, src_u, src_v, src_ystride,
+                                         src_uvstride, bsize, consec_zeromv, 0);
+      }
+      cpi->skin_map[mi_row * cm->mi_cols + mi_col] = is_skin;
+      num_bl++;
+      src_y += y_bsize;
+      src_u += uv_bsize;
+      src_v += uv_bsize;
+    }
+    src_y += (src_ystride << shy) - (num_bl << shy);
+    src_u += (src_uvstride << shuv) - (num_bl << shuv);
+    src_v += (src_uvstride << shuv) - (num_bl << shuv);
+  }
+}
+
 static void set_frame_size(VP9_COMP *cpi) {
   int ref_frame;
   VP9_COMMON *const cm = &cpi->common;
@@ -3496,6 +3565,8 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
              (cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1) *
                  sizeof(*cpi->content_state_sb_fd));
   }
+
+  compute_skin_map(cpi, BLOCK_16X16);
 
   // Avoid scaling last_source unless its needed.
   // Last source is needed if avg_source_sad() is used, or if
