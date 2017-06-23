@@ -584,6 +584,7 @@ static void set_rt_speed_feature_framesize_independent(
     if (cpi->row_mt && cpi->oxcf.max_threads > 1)
       sf->adaptive_rd_thresh_row_mt = 1;
 
+    sf->mv.subpel_search_method = SUBPEL_TREE_PRUNED;
     if (content == VP9E_CONTENT_SCREEN)
       sf->mv.subpel_force_stop = 3;
     else if (cm->width * cm->height > 1280 * 720) {
