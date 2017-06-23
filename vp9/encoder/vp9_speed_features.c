@@ -590,6 +590,8 @@ static void set_rt_speed_feature_framesize_independent(
       sf->mv.subpel_force_stop = 2;
       if (cpi->rc.avg_frame_low_motion > 87 && cm->current_video_frame > 30)
         sf->mv.subpel_search_method = SUBPEL_TREE_PRUNED_EVENMORE;
+    } else if (cm->width * cm->height > 640 * 480) {
+      sf->mv.subpel_search_method = SUBPEL_TREE_PRUNED;
     }
 
     if (content == VP9E_CONTENT_SCREEN) sf->lpf_pick = LPF_PICK_MINIMAL_LPF;
