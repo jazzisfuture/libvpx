@@ -528,16 +528,16 @@ static void set_vbp_thresholds(VP9_COMP *cpi, int64_t thresholds[], int q,
     thresholds[3] = threshold_base << 2;
   } else {
     // Increase base variance threshold based on estimated noise level.
-    if (cpi->noise_estimate.enabled && cm->width >= 640 && cm->height >= 480) {
-      NOISE_LEVEL noise_level =
+    NOISE_LEVEL noise_level = kLowLow;
+    if (cpi->noise_estimate.enabled && cm->width >= 640 && cm->height >= 480)
+      noise_level =
           vp9_noise_estimate_extract_level(&cpi->noise_estimate);
-      if (noise_level == kHigh)
-        threshold_base = 3 * threshold_base;
-      else if (noise_level == kMedium)
-        threshold_base = threshold_base << 1;
-      else if (noise_level < kLow)
-        threshold_base = (7 * threshold_base) >> 3;
-    }
+    if (noise_level == kHigh)
+      threshold_base = 3 * threshold_base;
+    else if (noise_level == kMedium)
+      threshold_base = threshold_base << 1;
+    else if (noise_level < kLow)
+      threshold_base = (7 * threshold_base) >> 3;
 #if CONFIG_VP9_TEMPORAL_DENOISING
     if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
         cpi->oxcf.speed > 5 && cpi->denoiser.denoising_level >= kDenLow)
@@ -1056,7 +1056,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   int maxvar_16x16[4];
   int minvar_16x16[4];
   int64_t threshold_4x4avg;
-  NOISE_LEVEL noise_level = kLow;
+  NOISE_LEVEL noise_level = kLowLow;
   int content_state = 0;
   uint8_t *s;
   const uint8_t *d;
