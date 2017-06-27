@@ -8,22 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_dsp_rtcd.h"
 #include "vp8/common/alloccommon.h"
 #include "vp8/common/vp8_skin_detection.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_util/vpx_write_yuv_frame.h"
-
-static int avg_2x2(const uint8_t *s, int p) {
-  int i, j;
-  int sum = 0;
-  for (i = 0; i < 2; ++i, s += p) {
-    for (j = 0; j < 2; ++j) {
-      sum += s[j];
-    }
-  }
-  return (sum + 2) >> 2;
-}
 
 int vp8_compute_skin_block(const uint8_t *y, const uint8_t *u, const uint8_t *v,
                            int stride, int strideuv,
@@ -37,9 +27,9 @@ int vp8_compute_skin_block(const uint8_t *y, const uint8_t *u, const uint8_t *v,
     if (consec_zeromv > 25 && curr_motion_magn == 0) motion = 0;
     if (bsize == SKIN_16X16) {
       // Take the average of center 2x2 pixels.
-      const int ysource = avg_2x2(y + 7 * stride + 7, stride);
-      const int usource = avg_2x2(u + 3 * strideuv + 3, strideuv);
-      const int vsource = avg_2x2(v + 3 * strideuv + 3, strideuv);
+      const int ysource = vpx_avg_2x2(y + 7 * stride + 7, stride);
+      const int usource = vpx_avg_2x2(u + 3 * strideuv + 3, strideuv);
+      const int vsource = vpx_avg_2x2(v + 3 * strideuv + 3, strideuv);
       return vpx_skin_pixel(ysource, usource, vsource, motion);
     } else {
       int num_skin = 0;
@@ -47,9 +37,9 @@ int vp8_compute_skin_block(const uint8_t *y, const uint8_t *u, const uint8_t *v,
       for (i = 0; i < 2; i++) {
         for (j = 0; j < 2; j++) {
           // Take the average of center 2x2 pixels.
-          const int ysource = avg_2x2(y + 3 * stride + 3, stride);
-          const int usource = avg_2x2(u + strideuv + 1, strideuv);
-          const int vsource = avg_2x2(v + strideuv + 1, strideuv);
+          const int ysource = vpx_avg_2x2(y + 3 * stride + 3, stride);
+          const int usource = vpx_avg_2x2(u + strideuv + 1, strideuv);
+          const int vsource = vpx_avg_2x2(v + strideuv + 1, strideuv);
           num_skin += vpx_skin_pixel(ysource, usource, vsource, motion);
           if (num_skin >= 2) return 1;
           y += 8;

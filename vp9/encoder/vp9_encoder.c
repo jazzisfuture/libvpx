@@ -3359,21 +3359,12 @@ static void compute_skin_map(VP9_COMP *const cpi, BLOCK_SIZE bsize) {
         const int ypos = y_bsize >> 1;
         const int uvpos = uv_bsize >> 1;
         // Use 2x2 average at center.
-        uint8_t ysource = src_y[ypos * src_ystride + ypos];
-        uint8_t usource = src_u[uvpos * src_uvstride + uvpos];
-        uint8_t vsource = src_v[uvpos * src_uvstride + uvpos];
-        uint8_t ysource2 = src_y[(ypos + 1) * src_ystride + ypos];
-        uint8_t usource2 = src_u[(uvpos + 1) * src_uvstride + uvpos];
-        uint8_t vsource2 = src_v[(uvpos + 1) * src_uvstride + uvpos];
-        uint8_t ysource3 = src_y[ypos * src_ystride + (ypos + 1)];
-        uint8_t usource3 = src_u[uvpos * src_uvstride + (uvpos + 1)];
-        uint8_t vsource3 = src_v[uvpos * src_uvstride + (uvpos + 1)];
-        uint8_t ysource4 = src_y[(ypos + 1) * src_ystride + (ypos + 1)];
-        uint8_t usource4 = src_u[(uvpos + 1) * src_uvstride + (uvpos + 1)];
-        uint8_t vsource4 = src_v[(uvpos + 1) * src_uvstride + (uvpos + 1)];
-        ysource = (ysource + ysource2 + ysource3 + ysource4) >> 2;
-        usource = (usource + usource2 + usource3 + usource4) >> 2;
-        vsource = (vsource + vsource2 + vsource3 + vsource4) >> 2;
+        uint8_t ysource =
+            vpx_avg_2x2(src_y + ypos * src_ystride + ypos, src_ystride);
+        uint8_t usource =
+            vpx_avg_2x2(src_u + uvpos * src_uvstride + uvpos, src_uvstride);
+        uint8_t vsource =
+            vpx_avg_2x2(src_v + uvpos * src_uvstride + uvpos, src_uvstride);
         is_skin = vpx_skin_pixel(ysource, usource, vsource, 1);
       } else {
         int consec_zeromv = 0;
