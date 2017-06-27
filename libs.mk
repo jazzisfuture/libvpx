@@ -207,6 +207,8 @@ ASM_INCLUDES := \
     vpx_ports/x86_abi_support.asm \
     vpx_dsp/x86/bitdepth_conversion_sse2.asm \
 
+vpx.$(VCPROJ_SFX): VCPROJ_SRCS=$(filter-out $(addprefix %, $(ASM_INCLUDES)), $^)
+
 vpx.$(VCPROJ_SFX): $(CODEC_SRCS) vpx.def
 	@echo "    [CREATE] $@"
 	$(qexec)$(GEN_VCPROJ) \
@@ -219,7 +221,15 @@ vpx.$(VCPROJ_SFX): $(CODEC_SRCS) vpx.def
             --ver=$(CONFIG_VS_VERSION) \
             --src-path-bare="$(SRC_PATH_BARE)" \
             --out=$@ $(CFLAGS) \
-            $(filter-out $(addprefix %, $(ASM_INCLUDES)), $^) \
+            $(filter $(SRC_PATH_BARE)/vp8/%.c, $(VCPROJ_SRCS)) \
+            $(filter $(SRC_PATH_BARE)/vp8/%.h, $(VCPROJ_SRCS)) \
+            $(filter $(SRC_PATH_BARE)/vp9/%.c, $(VCPROJ_SRCS)) \
+            $(filter $(SRC_PATH_BARE)/vp9/%.h, $(VCPROJ_SRCS)) \
+            $(filter $(SRC_PATH_BARE)/vpx/%, $(VCPROJ_SRCS)) \
+            $(filter $(SRC_PATH_BARE)/vpx_dsp/%, $(VCPROJ_SRCS)) \
+            $(filter-out $(addprefix $(SRC_PATH_BARE)/, \
+                           vp8/%.c vp8/%.h vp9/%.c vp9/%.h vpx/% vpx_dsp/%), \
+              $(VCPROJ_SRCS)) \
             --src-path-bare="$(SRC_PATH_BARE)" \
 
 PROJECTS-yes += vpx.$(VCPROJ_SFX)
