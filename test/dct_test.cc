@@ -166,11 +166,10 @@ class TransTestBase {
         }
 #if CONFIG_VP9_HIGHBITDEPTH
       } else {
+        src16.Set(&rnd, 0, mask_);
+        dst16.Set(&rnd, 0, mask_);
         for (int h = 0; h < size_; ++h) {
           for (int w = 0; w < size_; ++w) {
-            src16.TopLeftPixel()[h * src16.stride() + w] = rnd.Rand16() & mask_;
-            dst16.TopLeftPixel()[h * dst16.stride() + w] = rnd.Rand16() & mask_;
-
             test_input_block.TopLeftPixel()[h * test_input_block.stride() + w] =
                 src16.TopLeftPixel()[h * src16.stride() + w] -
                 dst16.TopLeftPixel()[h * dst16.stride() + w];
@@ -232,12 +231,7 @@ class TransTestBase {
 
     for (int i = 0; i < count_test_block; ++i) {
       // Initialize a test block with input range [-mask_, mask_].
-      for (int h = 0; h < size_; ++h) {
-        for (int w = 0; w < size_; ++w) {
-          input_block.TopLeftPixel()[h * input_block.stride() + w] =
-              (rnd.Rand16() & mask_) - (rnd.Rand16() & mask_);
-        }
-      }
+      input_block.Set(&rnd, -mask_, mask_);
 
       fwd_txfm_ref(input_block, &output_ref_block, size_, tx_type_);
       ASM_REGISTER_STATE_CHECK(RunFwdTxfm(input_block, &output_block));
@@ -332,10 +326,10 @@ class TransTestBase {
         }
 #if CONFIG_VP9_HIGHBITDEPTH
       } else {
+        src16.Set(&rnd, 0, mask_);
+        dst16.Set(&rnd, 0, mask_);
         for (int h = 0; h < size_; ++h) {
           for (int w = 0; w < size_; ++w) {
-            src16.TopLeftPixel()[h * src16.stride() + w] = rnd.Rand16() & mask_;
-            dst16.TopLeftPixel()[h * dst16.stride() + w] = rnd.Rand16() & mask_;
             in.TopLeftPixel()[h * in.stride() + w] =
                 src16.TopLeftPixel()[h * src16.stride() + w] -
                 dst16.TopLeftPixel()[h * dst16.stride() + w];
