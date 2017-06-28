@@ -11,6 +11,10 @@
 #ifndef TEST_ACM_RANDOM_H_
 #define TEST_ACM_RANDOM_H_
 
+#include <assert.h>
+
+#include <limits>
+
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 #include "vpx/vpx_integer.h"
@@ -48,6 +52,18 @@ class ACMRandom {
     // saturation behavior.
     const uint8_t r = Rand8();
     return r < 128 ? r << 4 : r >> 4;
+  }
+
+  int64_t RandRange(const int64_t low, const int64_t high) {
+    // testing::internal::Random provides values in the range uint32_t. Use
+    // int64_t to offer a wide range of possible values.
+    assert(low < high);
+    assert(low >= std::numeric_limits<int64_t>::min());
+    assert(high <= std::numeric_limits<int64_t>::max());
+    const int64_t range = labs(low - high);
+    assert(range < std::numeric_limits<uint32_t>::max());
+    const int64_t value = random_.Generate(range);
+    return value + low;
   }
 
   int PseudoUniform(int range) { return random_.Generate(range); }
