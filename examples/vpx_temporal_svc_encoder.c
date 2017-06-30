@@ -770,6 +770,7 @@ int main(int argc, char **argv) {
     }
     flags = layer_flags[frame_cnt % flag_periodicity];
     if (layering_mode == 0) flags = 0;
+    if (frame_cnt == 604) flags = VPX_EFLAG_FORCE_KF;
     frame_avail = vpx_img_read(&raw, infile);
     if (frame_avail) ++rc.layer_input_frames[layer_id.temporal_layer_id];
     vpx_usec_timer_start(&timer);
