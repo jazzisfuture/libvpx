@@ -182,10 +182,10 @@ struct macroblock {
   uint8_t variance_low[25];
 
   void (*fwd_txfm4x4)(const int16_t *input, tran_low_t *output, int stride);
-  void (*itxfm_add)(const tran_low_t *input, uint8_t *dest, int stride,
+  void (*inv_txfm_add)(const tran_low_t *input, uint8_t *dest, int stride,
                     int eob);
 #if CONFIG_VP9_HIGHBITDEPTH
-  void (*highbd_itxfm_add)(const tran_low_t *input, uint16_t *dest, int stride,
+  void (*highbd_inv_txfm_add)(const tran_low_t *input, uint16_t *dest, int stride,
                            int eob, int bd);
 #endif
 };
