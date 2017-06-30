@@ -14,12 +14,10 @@
 #include <smmintrin.h>  // SSE4.1
 
 #include "./vpx_config.h"
-#include "vpx/vpx_integer.h"
-#include "vpx_dsp/inv_txfm.h"
-#include "vpx_dsp/x86/txfm_common_sse2.h"
+#include "vpx_dsp/x86/highbd_inv_txfm_sse2.h"
 
-static INLINE __m128i multiplication_round_shift(const __m128i *const in,
-                                                 const __m128i cospi) {
+static INLINE __m128i multiplication_round_shift_sse4_1(
+    const __m128i *const in /*in[2]*/, const __m128i cospi) {
   __m128i t0, t1;
   t0 = _mm_mul_epi32(in[0], cospi);
   t1 = _mm_mul_epi32(in[1], cospi);
@@ -28,15 +26,12 @@ static INLINE __m128i multiplication_round_shift(const __m128i *const in,
   return pack_4(t0, t1);
 }
 
-static INLINE void multiplication_and_add_2_ssse4_1(const __m128i *const in0,
-                                                    const __m128i *const in1,
-                                                    const __m128i *const cst0,
-                                                    const __m128i *const cst1,
-                                                    __m128i *const out0,
-                                                    __m128i *const out1) {
+static INLINE void multiplication_and_add_2_sse4_1(
+    const __m128i in0, const __m128i in1, const __m128i *const cst0,
+    const __m128i *const cst1, __m128i *const out0, __m128i *const out1) {
   __m128i temp1[4], temp2[4];
-  extend_64bit(*in0, temp1);
-  extend_64bit(*in1, temp2);
+  extend_64bit(in0, temp1);
+  extend_64bit(in1, temp2);
   temp1[2] = _mm_mul_epi32(temp1[0], *cst1);
   temp1[3] = _mm_mul_epi32(temp1[1], *cst1);
   temp1[0] = _mm_mul_epi32(temp1[0], *cst0);
