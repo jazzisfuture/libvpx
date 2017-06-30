@@ -505,6 +505,7 @@ typedef struct VP8_COMP {
   int mse_source_denoised;
 
   int force_maxqp;
+  int frames_since_last_drop_overshoot;
 
   // GF update for 1 pass cbr.
   int gf_update_onepass_cbr;
