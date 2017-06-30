@@ -1442,12 +1442,11 @@ int vp8_pick_frame_size(VP8_COMP *cpi) {
 // If this just encoded frame (mcomp/transform/quant, but before loopfilter and
 // pack_bitstream) has large overshoot, and was not being encoded close to the
 // max QP, then drop this frame and force next frame to be encoded at max QP.
-// Condition this on 1 pass CBR with screen content mode and frame dropper off.
+// Condition this on 1 pass CBR.
 // TODO(marpan): Should do this exit condition during the encode_frame
 // (i.e., halfway during the encoding of the frame) to save cycles.
 int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
-  if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
-      cpi->drop_frames_allowed == 0 && cpi->common.frame_type != KEY_FRAME) {
+  if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
     // Note: the "projected_frame_size" from encode_frame() only gives estimate
     // of mode/motion vector rate (in non-rd mode): so below we only require
     // that projected_frame_size is somewhat greater than per-frame-bandwidth,
@@ -1462,13 +1461,12 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
     int thresh_pred_err_mb = (200 << 4);
     int pred_err_mb = (int)(cpi->mb.prediction_error / cpi->common.MBs);
     if (Q < thresh_qp && cpi->projected_frame_size > thresh_rate &&
-        pred_err_mb > thresh_pred_err_mb) {
+        pred_err_mb > thresh_pred_err_mb &&
+        (cpi->oxcf.screen_content_mode == 2 ||
+         cpi->rate_correction_factor == MIN_BPB_FACTOR)) {
       double new_correction_factor;
       const int target_size = cpi->av_per_frame_bandwidth;
       int target_bits_per_mb;
-      // Drop this frame: advance frame counters, and set force_maxqp flag.
-      cpi->common.current_video_frame++;
-      cpi->frames_since_key++;
       // Flag to indicate we will force next frame to be encoded at max QP.
       cpi->force_maxqp = 1;
       // Reset the buffer levels.
@@ -1499,7 +1497,16 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
       if (cpi->rate_correction_factor > MAX_BPB_FACTOR) {
         cpi->rate_correction_factor = MAX_BPB_FACTOR;
       }
-      return 1;
+      if (cpi->common.frame_type != KEY_FRAME) {
+        // Drop this frame: advance frame counters, and set force_maxqp flag.
+        cpi->common.current_video_frame++;
+        cpi->frames_since_key++;
+        cpi->temporal_pattern_counter++;
+        return 1;
+      } else {
+        // Don't drop.
+        return 0;
+      }
     }
     cpi->force_maxqp = 0;
     return 0;

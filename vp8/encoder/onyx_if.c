@@ -4005,7 +4005,7 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
 #else
     /* transform / motion compensation build reconstruction frame */
     vp8_encode_frame(cpi);
-    if (cpi->oxcf.screen_content_mode == 2) {
+    if (cpi->oxcf.screen_content_mode == 2 || cpi->drop_frames_allowed) {
       if (vp8_drop_encodedframe_overshoot(cpi, Q)) return;
     }
 
