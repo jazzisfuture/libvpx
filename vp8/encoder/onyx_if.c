@@ -220,7 +220,7 @@ static void save_layer_context(VP8_COMP *cpi) {
   lc->inter_frame_target = cpi->inter_frame_target;
   lc->total_byte_count = cpi->total_byte_count;
   lc->filter_level = cpi->common.filter_level;
-
+  lc->frames_since_last_drop_overshoot = cpi->frames_since_last_drop_overshoot;
   lc->last_frame_percent_intra = cpi->last_frame_percent_intra;
 
   memcpy(lc->count_mb_ref_frame_usage, cpi->mb.count_mb_ref_frame_usage,
@@ -256,7 +256,7 @@ static void restore_layer_context(VP8_COMP *cpi, const int layer) {
   cpi->inter_frame_target = lc->inter_frame_target;
   cpi->total_byte_count = lc->total_byte_count;
   cpi->common.filter_level = lc->filter_level;
-
+  cpi->frames_since_last_drop_overshoot = lc->frames_since_last_drop_overshoot;
   cpi->last_frame_percent_intra = lc->last_frame_percent_intra;
 
   memcpy(cpi->mb.count_mb_ref_frame_usage, lc->count_mb_ref_frame_usage,
@@ -1915,6 +1915,7 @@ struct VP8_COMP *vp8_create_compressor(VP8_CONFIG *oxcf) {
   cpi->common.refresh_alt_ref_frame = 0;
 
   cpi->force_maxqp = 0;
+  cpi->frames_since_last_drop_overshoot = 0;
 
   cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
 #if CONFIG_INTERNAL_STATS
@@ -4005,7 +4006,8 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
 #else
     /* transform / motion compensation build reconstruction frame */
     vp8_encode_frame(cpi);
-    if (cpi->oxcf.screen_content_mode == 2) {
+
+    if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
       if (vp8_drop_encodedframe_overshoot(cpi, Q)) return;
     }
 
