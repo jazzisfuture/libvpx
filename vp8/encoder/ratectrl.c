@@ -1442,12 +1442,15 @@ int vp8_pick_frame_size(VP8_COMP *cpi) {
 // If this just encoded frame (mcomp/transform/quant, but before loopfilter and
 // pack_bitstream) has large overshoot, and was not being encoded close to the
 // max QP, then drop this frame and force next frame to be encoded at max QP.
-// Condition this on 1 pass CBR with screen content mode and frame dropper off.
+// Allow this for screen_content_mode = 2, or if drop frames is allowed.
 // TODO(marpan): Should do this exit condition during the encode_frame
 // (i.e., halfway during the encoding of the frame) to save cycles.
 int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
-  if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
-      cpi->drop_frames_allowed == 0 && cpi->common.frame_type != KEY_FRAME) {
+  if (cpi->common.frame_type != KEY_FRAME &&
+      (cpi->oxcf.screen_content_mode == 2 ||
+       (cpi->drop_frames_allowed &&
+        cpi->rate_correction_factor < (2.0f * MIN_BPB_FACTOR) &&
+        cpi->frames_since_last_drop_overshoot > (int)cpi->framerate))) {
     // Note: the "projected_frame_size" from encode_frame() only gives estimate
     // of mode/motion vector rate (in non-rd mode): so below we only require
     // that projected_frame_size is somewhat greater than per-frame-bandwidth,
@@ -1458,7 +1461,7 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
     // Rate threshold, in bytes.
     int thresh_rate = 2 * (cpi->av_per_frame_bandwidth >> 3);
     // Threshold for the average (over all macroblocks) of the pixel-sum
-    // residual error over 16x16 block. Should add QP dependence on threshold?
+    // residual error over 16x16 block.
     int thresh_pred_err_mb = (200 << 4);
     int pred_err_mb = (int)(cpi->mb.prediction_error / cpi->common.MBs);
     if (Q < thresh_qp && cpi->projected_frame_size > thresh_rate &&
@@ -1466,9 +1469,6 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
       double new_correction_factor;
       const int target_size = cpi->av_per_frame_bandwidth;
       int target_bits_per_mb;
-      // Drop this frame: advance frame counters, and set force_maxqp flag.
-      cpi->common.current_video_frame++;
-      cpi->frames_since_key++;
       // Flag to indicate we will force next frame to be encoded at max QP.
       cpi->force_maxqp = 1;
       // Reset the buffer levels.
@@ -1499,11 +1499,18 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
       if (cpi->rate_correction_factor > MAX_BPB_FACTOR) {
         cpi->rate_correction_factor = MAX_BPB_FACTOR;
       }
+      // Drop this frame: update frame counters, and set force_maxqp flag.
+      cpi->common.current_video_frame++;
+      cpi->frames_since_key++;
+      cpi->temporal_pattern_counter++;
+      cpi->frames_since_last_drop_overshoot = 0;
       return 1;
     }
     cpi->force_maxqp = 0;
+    cpi->frames_since_last_drop_overshoot++;
     return 0;
   }
   cpi->force_maxqp = 0;
+  cpi->frames_since_last_drop_overshoot++;
   return 0;
 }
