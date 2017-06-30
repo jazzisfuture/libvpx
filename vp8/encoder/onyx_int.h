@@ -249,6 +249,8 @@ typedef struct {
 
   int filter_level;
 
+  int frames_since_last_drop_overshoot;
+
   int last_frame_percent_intra;
 
   int count_mb_ref_frame_usage[MAX_REF_FRAMES];
@@ -505,6 +507,7 @@ typedef struct VP8_COMP {
   int mse_source_denoised;
 
   int force_maxqp;
+  int frames_since_last_drop_overshoot;
 
   // GF update for 1 pass cbr.
   int gf_update_onepass_cbr;
