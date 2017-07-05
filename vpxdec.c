@@ -193,7 +193,7 @@ void usage_exit(void) {
 static int raw_read_frame(FILE *infile, uint8_t **buffer, size_t *bytes_read,
                           size_t *buffer_size) {
   char raw_hdr[RAW_FRAME_HDR_SZ];
-  size_t frame_size = 0;
+  size_t frame_size = -1;
 
   if (fread(raw_hdr, RAW_FRAME_HDR_SZ, 1, infile) != 1) {
     if (!feof(infile)) warn("Failed to read RAW frame size\n");
