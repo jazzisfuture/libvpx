@@ -44,18 +44,6 @@ static INLINE unsigned int sad(const uint8_t *a, int a_stride, const uint8_t *b,
     return sad(src, src_stride, comp_pred, m, m, n);                        \
   }
 
-// depending on call sites, pass **ref_array to avoid & in subsequent call and
-// de-dup with 4D below.
-#define sadMxNxK(m, n, k)                                                   \
-  void vpx_sad##m##x##n##x##k##_c(const uint8_t *src, int src_stride,       \
-                                  const uint8_t *ref_array, int ref_stride, \
-                                  uint32_t *sad_array) {                    \
-    int i;                                                                  \
-    for (i = 0; i < k; ++i)                                                 \
-      sad_array[i] =                                                        \
-          vpx_sad##m##x##n##_c(src, src_stride, &ref_array[i], ref_stride); \
-  }
-
 // This appears to be equivalent to the above when k == 4 and refs is const
 #define sadMxNx4D(m, n)                                                    \
   void vpx_sad##m##x##n##x4d_c(const uint8_t *src, int src_stride,         \
@@ -94,26 +82,18 @@ sadMxNx4D(16, 32)
 
 // 16x16
 sadMxN(16, 16)
-sadMxNxK(16, 16, 3)
-sadMxNxK(16, 16, 8)
 sadMxNx4D(16, 16)
 
 // 16x8
 sadMxN(16, 8)
-sadMxNxK(16, 8, 3)
-sadMxNxK(16, 8, 8)
 sadMxNx4D(16, 8)
 
 // 8x16
 sadMxN(8, 16)
-sadMxNxK(8, 16, 3)
-sadMxNxK(8, 16, 8)
 sadMxNx4D(8, 16)
 
 // 8x8
 sadMxN(8, 8)
-sadMxNxK(8, 8, 3)
-sadMxNxK(8, 8, 8)
 sadMxNx4D(8, 8)
 
 // 8x4
@@ -126,8 +106,6 @@ sadMxNx4D(4, 8)
 
 // 4x4
 sadMxN(4, 4)
-sadMxNxK(4, 4, 3)
-sadMxNxK(4, 4, 8)
 sadMxNx4D(4, 4)
 /* clang-format on */
 
