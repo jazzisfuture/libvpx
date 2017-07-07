@@ -1365,47 +1365,6 @@ static void set_rc_buffer_sizes(RATE_CONTROL *rc,
            4;                                                                  \
   }
 
-#define MAKE_BFP_SAD3_WRAPPER(fnname)                                    \
-  static void fnname##_bits8(const uint8_t *src_ptr, int source_stride,  \
-                             const uint8_t *ref_ptr, int ref_stride,     \
-                             unsigned int *sad_array) {                  \
-    fnname(src_ptr, source_stride, ref_ptr, ref_stride, sad_array);      \
-  }                                                                      \
-  static void fnname##_bits10(const uint8_t *src_ptr, int source_stride, \
-                              const uint8_t *ref_ptr, int ref_stride,    \
-                              unsigned int *sad_array) {                 \
-    int i;                                                               \
-    fnname(src_ptr, source_stride, ref_ptr, ref_stride, sad_array);      \
-    for (i = 0; i < 3; i++) sad_array[i] >>= 2;                          \
-  }                                                                      \
-  static void fnname##_bits12(const uint8_t *src_ptr, int source_stride, \
-                              const uint8_t *ref_ptr, int ref_stride,    \
-                              unsigned int *sad_array) {                 \
-    int i;                                                               \
-    fnname(src_ptr, source_stride, ref_ptr, ref_stride, sad_array);      \
-    for (i = 0; i < 3; i++) sad_array[i] >>= 4;                          \
-  }
-
-#define MAKE_BFP_SAD8_WRAPPER(fnname)                                    \
-  static void fnname##_bits8(const uint8_t *src_ptr, int source_stride,  \
-                             const uint8_t *ref_ptr, int ref_stride,     \
-                             unsigned int *sad_array) {                  \
-    fnname(src_ptr, source_stride, ref_ptr, ref_stride, sad_array);      \
-  }                                                                      \
-  static void fnname##_bits10(const uint8_t *src_ptr, int source_stride, \
-                              const uint8_t *ref_ptr, int ref_stride,    \
-                              unsigned int *sad_array) {                 \
-    int i;                                                               \
-    fnname(src_ptr, source_stride, ref_ptr, ref_stride, sad_array);      \
-    for (i = 0; i < 8; i++) sad_array[i] >>= 2;                          \
-  }                                                                      \
-  static void fnname##_bits12(const uint8_t *src_ptr, int source_stride, \
-                              const uint8_t *ref_ptr, int ref_stride,    \
-                              unsigned int *sad_array) {                 \
-    int i;                                                               \
-    fnname(src_ptr, source_stride, ref_ptr, ref_stride, sad_array);      \
-    for (i = 0; i < 8; i++) sad_array[i] >>= 4;                          \
-  }
 #define MAKE_BFP_SAD4D_WRAPPER(fnname)                                        \
   static void fnname##_bits8(const uint8_t *src_ptr, int source_stride,       \
                              const uint8_t *const ref_ptr[], int ref_stride,  \
@@ -1441,33 +1400,21 @@ MAKE_BFP_SADAVG_WRAPPER(vpx_highbd_sad32x64_avg)
 MAKE_BFP_SAD4D_WRAPPER(vpx_highbd_sad32x64x4d)
 MAKE_BFP_SAD_WRAPPER(vpx_highbd_sad32x32)
 MAKE_BFP_SADAVG_WRAPPER(vpx_highbd_sad32x32_avg)
-MAKE_BFP_SAD3_WRAPPER(vpx_highbd_sad32x32x3)
-MAKE_BFP_SAD8_WRAPPER(vpx_highbd_sad32x32x8)
 MAKE_BFP_SAD4D_WRAPPER(vpx_highbd_sad32x32x4d)
 MAKE_BFP_SAD_WRAPPER(vpx_highbd_sad64x64)
 MAKE_BFP_SADAVG_WRAPPER(vpx_highbd_sad64x64_avg)
-MAKE_BFP_SAD3_WRAPPER(vpx_highbd_sad64x64x3)
-MAKE_BFP_SAD8_WRAPPER(vpx_highbd_sad64x64x8)
 MAKE_BFP_SAD4D_WRAPPER(vpx_highbd_sad64x64x4d)
 MAKE_BFP_SAD_WRAPPER(vpx_highbd_sad16x16)
 MAKE_BFP_SADAVG_WRAPPER(vpx_highbd_sad16x16_avg)
-MAKE_BFP_SAD3_WRAPPER(vpx_highbd_sad16x16x3)
-MAKE_BFP_SAD8_WRAPPER(vpx_highbd_sad16x16x8)
 MAKE_BFP_SAD4D_WRAPPER(vpx_highbd_sad16x16x4d)
 MAKE_BFP_SAD_WRAPPER(vpx_highbd_sad16x8)
 MAKE_BFP_SADAVG_WRAPPER(vpx_highbd_sad16x8_avg)
-MAKE_BFP_SAD3_WRAPPER(vpx_highbd_sad16x8x3)
-MAKE_BFP_SAD8_WRAPPER(vpx_highbd_sad16x8x8)
 MAKE_BFP_SAD4D_WRAPPER(vpx_highbd_sad16x8x4d)
 MAKE_BFP_SAD_WRAPPER(vpx_highbd_sad8x16)
 MAKE_BFP_SADAVG_WRAPPER(vpx_highbd_sad8x16_avg)
-MAKE_BFP_SAD3_WRAPPER(vpx_highbd_sad8x16x3)
-MAKE_BFP_SAD8_WRAPPER(vpx_highbd_sad8x16x8)
 MAKE_BFP_SAD4D_WRAPPER(vpx_highbd_sad8x16x4d)
 MAKE_BFP_SAD_WRAPPER(vpx_highbd_sad8x8)
 MAKE_BFP_SADAVG_WRAPPER(vpx_highbd_sad8x8_avg)
-MAKE_BFP_SAD3_WRAPPER(vpx_highbd_sad8x8x3)
-MAKE_BFP_SAD8_WRAPPER(vpx_highbd_sad8x8x8)
 MAKE_BFP_SAD4D_WRAPPER(vpx_highbd_sad8x8x4d)
 MAKE_BFP_SAD_WRAPPER(vpx_highbd_sad8x4)
 MAKE_BFP_SADAVG_WRAPPER(vpx_highbd_sad8x4_avg)
@@ -1479,8 +1426,6 @@ MAKE_BFP_SAD8_WRAPPER(vpx_highbd_sad4x8x8)
 MAKE_BFP_SAD4D_WRAPPER(vpx_highbd_sad4x8x4d)
 MAKE_BFP_SAD_WRAPPER(vpx_highbd_sad4x4)
 MAKE_BFP_SADAVG_WRAPPER(vpx_highbd_sad4x4_avg)
-MAKE_BFP_SAD3_WRAPPER(vpx_highbd_sad4x4x3)
-MAKE_BFP_SAD8_WRAPPER(vpx_highbd_sad4x4x8)
 MAKE_BFP_SAD4D_WRAPPER(vpx_highbd_sad4x4x4d)
 
 static void highbd_set_var_fns(VP9_COMP *const cpi) {
