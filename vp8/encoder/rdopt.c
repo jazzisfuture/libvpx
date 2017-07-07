@@ -918,8 +918,6 @@ static unsigned int vp8_encode_inter_mb_segment(MACROBLOCK *x,
   return distortion;
 }
 
-static const unsigned int segmentation_to_sseshift[4] = { 3, 3, 2, 0 };
-
 typedef struct {
   int_mv *ref_mv;
   int_mv mvp;
@@ -1016,7 +1014,6 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x, BEST_SEG_INFO *bsi,
       tl_s = (ENTROPY_CONTEXT *)&t_left_s;
 
       if (this_mode == NEW4X4) {
-        int sseshift;
         int num00;
         int step_param = 0;
         int further_steps;
@@ -1094,8 +1091,6 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x, BEST_SEG_INFO *bsi,
               }
             }
           }
-
-          sseshift = segmentation_to_sseshift[segmentation];
         }
 
         if (bestsme < INT_MAX) {
