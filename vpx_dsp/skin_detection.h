@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-// #define OUTPUT_YUV_SKINMAP
+#define OUTPUT_YUV_SKINMAP
 
 int vpx_skin_pixel(const int y, const int cb, const int cr, int motion);
 
