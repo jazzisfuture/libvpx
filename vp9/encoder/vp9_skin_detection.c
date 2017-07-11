@@ -57,14 +57,16 @@ void vp9_compute_skin_sb(VP9_COMP *const cpi, BLOCK_SIZE bsize, int mi_row,
   src_u += uv_shift;
   src_v += uv_shift;
 
-  for (i = mi_row; i < VPXMIN(mi_row + 7, cm->mi_rows - 1); i += fac) {
+  for (i = mi_row; i < VPXMIN(mi_row + 7, cm->mi_rows - 2); i += fac) {
     num_bl = 0;
-    for (j = mi_col; j < VPXMIN(mi_col + 7, cm->mi_cols - 1); j += fac) {
+    for (j = mi_col; j < VPXMIN(mi_col + 7, cm->mi_cols - 2); j += fac) {
       int consec_zeromv = 0;
       int bl_index = i * cm->mi_cols + j;
       int bl_index1 = bl_index + 1;
       int bl_index2 = bl_index + cm->mi_cols;
       int bl_index3 = bl_index2 + 1;
+      // Don't detect skin on the boundary.
+      if (i == 0 || j == 0) continue;
       if (bsize == BLOCK_8X8)
         consec_zeromv = cpi->consec_zero_mv[bl_index];
       else
@@ -83,6 +85,32 @@ void vp9_compute_skin_sb(VP9_COMP *const cpi, BLOCK_SIZE bsize, int mi_row,
     src_y += (src_ystride << shy) - (num_bl << shy);
     src_u += (src_uvstride << shuv) - (num_bl << shuv);
     src_v += (src_uvstride << shuv) - (num_bl << shuv);
+  }
+
+  for (i = mi_row; i < VPXMIN(mi_row + 7, cm->mi_rows - 2); i += fac) {
+    for (j = mi_col; j < VPXMIN(mi_col + 7, cm->mi_cols - 2); j += fac) {
+      int bl_index = i * cm->mi_cols + j;
+      int num_neighbor = 0;
+      int mi, mj;
+      if (!cpi->skin_map[bl_index]) continue;
+      for (mi = -fac; mi <= fac; mi += fac) {
+        for (mj = -fac; mj <= fac; mj += fac) {
+          if (i + mi >= 0 && i + mi < cm->mi_rows - 1 && j + mj >= 0 &&
+              j + mj < cm->mi_cols - 1) {
+            int bl_neighbor_index = (i + mi) * cm->mi_cols + j + mj;
+            if (cpi->skin_map[bl_neighbor_index]) num_neighbor++;
+          }
+        }
+      }
+      if (num_neighbor <= 2)
+        for (mi = -fac; mi <= fac; mi += fac)
+          for (mj = -fac; mj <= fac; mj += fac)
+            if (i + mi >= 0 && i + mi < cm->mi_rows - 1 && j + mj >= 0 &&
+                j + mj < cm->mi_cols - 1) {
+              int bl_neighbor_index = (i + mi) * cm->mi_cols + j + mj;
+              cpi->skin_map[bl_neighbor_index] = 0;
+            }
+    }
   }
 }
 
