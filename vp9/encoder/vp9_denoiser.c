@@ -420,12 +420,20 @@ static void swap_frame_buffer(YV12_BUFFER_CONFIG *const dest,
   src->y_buffer = tmp_buf;
 }
 
+void vp9_denoise_init_svc(VP9_DENOISER *denoiser) {
+  copy_frame(&denoiser->running_avg_y[LAST_FRAME],
+             &denoiser->running_avg_y[GOLDEN_FRAME]);
+}
+
 void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                                     YV12_BUFFER_CONFIG src,
                                     FRAME_TYPE frame_type,
+                                    int refresh_alt_ref_frame,
                                     int refresh_golden_frame,
-                                    int refresh_last_frame, int resized,
-                                    int svc_base_is_key) {
+                                    int refresh_last_frame,
+                                    int resized,
+                                    int svc_base_is_key,
+                                    int svc_fixed_pattern) {
   // Copy source into denoised reference buffers on KEY_FRAME or
   // if the just encoded frame was resized. For SVC, copy source if the base
   // spatial layer was key frame.
@@ -438,14 +446,20 @@ void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
     denoiser->reset = 0;
     return;
   }
-
+  // Keep tack of last denoised buffer by copying it into the golden buffer.
+  // For the fixed pattern SVC golden is always spatial reference and is never
+  // used for denoising.
+  if (refresh_alt_ref_frame && svc_fixed_pattern) {
+    copy_frame(&denoiser->running_avg_y[GOLDEN_FRAME],
+               &denoiser->running_avg_y[LAST_FRAME]);
+  }
   // If more than one refresh occurs, must copy frame buffer.
-  if (refresh_golden_frame + refresh_last_frame > 1) {
+  if (refresh_golden_frame + refresh_last_frame + refresh_alt_ref_frame > 1) {
     if (refresh_golden_frame) {
       copy_frame(&denoiser->running_avg_y[GOLDEN_FRAME],
                  &denoiser->running_avg_y[INTRA_FRAME]);
     }
-    if (refresh_last_frame) {
+    if (refresh_last_frame || (refresh_alt_ref_frame && svc_fixed_pattern)) {
       copy_frame(&denoiser->running_avg_y[LAST_FRAME],
                  &denoiser->running_avg_y[INTRA_FRAME]);
     }
@@ -454,7 +468,7 @@ void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
       swap_frame_buffer(&denoiser->running_avg_y[GOLDEN_FRAME],
                         &denoiser->running_avg_y[INTRA_FRAME]);
     }
-    if (refresh_last_frame) {
+    if (refresh_last_frame || (refresh_alt_ref_frame && svc_fixed_pattern)) {
       swap_frame_buffer(&denoiser->running_avg_y[LAST_FRAME],
                         &denoiser->running_avg_y[INTRA_FRAME]);
     }
