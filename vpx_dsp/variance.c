@@ -156,7 +156,7 @@ static void var_filter_block2d_bil_second_pass(const uint16_t *a, uint8_t *b,
       const uint8_t *b, int b_stride, uint32_t *sse,                    \
       const uint8_t *second_pred) {                                     \
     uint16_t fdata3[(H + 1) * W];                                       \
-    uint8_t temp2[H * W];                                               \
+    uint8_t temp2[H * W + 16];                                          \
     DECLARE_ALIGNED(16, uint8_t, temp3[H * W]);                         \
                                                                         \
     var_filter_block2d_bil_first_pass(a, fdata3, a_stride, 1, H + 1, W, \
