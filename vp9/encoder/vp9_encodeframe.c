@@ -1166,12 +1166,17 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     mi->mv[0].as_int = 0;
     mi->interp_filter = BILINEAR;
 
-    if (cpi->oxcf.speed >= 8 && !low_res && x->content_state_sb != kVeryHighSad)
+    if (cpi->oxcf.speed >= 8 && !low_res &&
+        x->content_state_sb != kVeryHighSad) {
       y_sad = cpi->fn_ptr[bsize].sdf(
           x->plane[0].src.buf, x->plane[0].src.stride, xd->plane[0].pre[0].buf,
           xd->plane[0].pre[0].stride);
-    else
+    } else {
       y_sad = vp9_int_pro_motion_estimation(cpi, x, bsize, mi_row, mi_col);
+      x->sb_use_mv_part = 1;
+      x->sb_mvcol_part = mi->mv[0].as_mv.col;
+      x->sb_mvrow_part = mi->mv[0].as_mv.row;
+    }
 
     y_sad_last = y_sad;
     // Pick ref frame for partitioning, bias last frame when y_sad_g and y_sad
@@ -4142,6 +4147,9 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     x->skip_low_source_sad = 0;
     x->lowvar_highsumdiff = 0;
     x->content_state_sb = 0;
+    x->sb_use_mv_part = 0;
+    x->sb_mvcol_part = 0;
+    x->sb_mvrow_part = 0;
 
     if (seg->enabled) {
       const uint8_t *const map =
