@@ -39,11 +39,12 @@ typedef enum vp9_denoiser_level {
 } VP9_DENOISER_LEVEL;
 
 typedef struct vp9_denoiser {
-  YV12_BUFFER_CONFIG running_avg_y[DENOISER_REF_FRAMES];
+  YV12_BUFFER_CONFIG *running_avg_y;
   YV12_BUFFER_CONFIG mc_running_avg_y;
   YV12_BUFFER_CONFIG last_source;
   int frame_buffer_initialized;
   int reset;
+  int num_ref_frames;
   VP9_DENOISER_LEVEL denoising_level;
   VP9_DENOISER_LEVEL prev_denoising_level;
 } VP9_DENOISER;
@@ -80,8 +81,8 @@ void vp9_denoiser_update_frame_stats(MODE_INFO *mi, unsigned int sse,
                                      PREDICTION_MODE mode,
                                      PICK_MODE_CONTEXT *ctx);
 
-int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height, int ssx,
-                       int ssy,
+int vp9_denoiser_alloc(VP9_COMMON *cm, int use_svc, VP9_DENOISER *denoiser,
+                       int width, int height, int ssx, int ssy,
 #if CONFIG_VP9_HIGHBITDEPTH
                        int use_highbitdepth,
 #endif
