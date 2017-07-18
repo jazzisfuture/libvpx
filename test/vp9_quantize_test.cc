@@ -30,7 +30,6 @@ using libvpx_test::ACMRandom;
 using libvpx_test::Buffer;
 
 namespace {
-#if CONFIG_VP9_HIGHBITDEPTH
 const int number_of_iterations = 100;
 
 typedef void (*QuantizeFunc)(const tran_low_t *coeff, intptr_t count,
@@ -90,10 +89,9 @@ TEST_P(VP9QuantizeTest, OperationCheck) {
   DECLARE_ALIGNED(16, int16_t, quant_ptr[8]);
   DECLARE_ALIGNED(16, int16_t, quant_shift_ptr[8]);
   DECLARE_ALIGNED(16, int16_t, dequant_ptr[8]);
-  // These will need to be aligned to 32 when avx code is tested.
-  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(16, 16, 0, 16);
+  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(16, 16, 0, 32);
   ASSERT_TRUE(qcoeff.Init());
-  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(16, 16, 0, 16);
+  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(16, 16, 0, 32);
   ASSERT_TRUE(dqcoeff.Init());
   Buffer<tran_low_t> ref_qcoeff = Buffer<tran_low_t>(16, 16, 0);
   ASSERT_TRUE(ref_qcoeff.Init());
@@ -165,9 +163,9 @@ TEST_P(VP9Quantize32Test, OperationCheck) {
   DECLARE_ALIGNED(16, int16_t, quant_ptr[8]);
   DECLARE_ALIGNED(16, int16_t, quant_shift_ptr[8]);
   DECLARE_ALIGNED(16, int16_t, dequant_ptr[8]);
-  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(32, 32, 0, 16);
+  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(32, 32, 0, 32);
   ASSERT_TRUE(qcoeff.Init());
-  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(32, 32, 0, 16);
+  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(32, 32, 0, 32);
   ASSERT_TRUE(dqcoeff.Init());
   Buffer<tran_low_t> ref_qcoeff = Buffer<tran_low_t>(32, 32, 0);
   ASSERT_TRUE(ref_qcoeff.Init());
@@ -231,9 +229,9 @@ TEST_P(VP9QuantizeTest, EOBCheck) {
   DECLARE_ALIGNED(16, int16_t, quant_ptr[8]);
   DECLARE_ALIGNED(16, int16_t, quant_shift_ptr[8]);
   DECLARE_ALIGNED(16, int16_t, dequant_ptr[8]);
-  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(16, 16, 0, 16);
+  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(16, 16, 0, 32);
   ASSERT_TRUE(qcoeff.Init());
-  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(16, 16, 0, 16);
+  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(16, 16, 0, 32);
   ASSERT_TRUE(dqcoeff.Init());
   Buffer<tran_low_t> ref_qcoeff = Buffer<tran_low_t>(16, 16, 0);
   ASSERT_TRUE(ref_qcoeff.Init());
@@ -300,9 +298,9 @@ TEST_P(VP9Quantize32Test, EOBCheck) {
   DECLARE_ALIGNED(16, int16_t, quant_ptr[8]);
   DECLARE_ALIGNED(16, int16_t, quant_shift_ptr[8]);
   DECLARE_ALIGNED(16, int16_t, dequant_ptr[8]);
-  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(32, 32, 0, 16);
+  Buffer<tran_low_t> qcoeff = Buffer<tran_low_t>(32, 32, 0, 32);
   ASSERT_TRUE(qcoeff.Init());
-  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(32, 32, 0, 16);
+  Buffer<tran_low_t> dqcoeff = Buffer<tran_low_t>(32, 32, 0, 32);
   ASSERT_TRUE(dqcoeff.Init());
   Buffer<tran_low_t> ref_qcoeff = Buffer<tran_low_t>(32, 32, 0);
   ASSERT_TRUE(ref_qcoeff.Init());
@@ -362,9 +360,12 @@ TEST_P(VP9Quantize32Test, EOBCheck) {
 using std::tr1::make_tuple;
 
 #if HAVE_SSE2
+#if CONFIG_VP9_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(
     SSE2, VP9QuantizeTest,
-    ::testing::Values(make_tuple(&vpx_highbd_quantize_b_sse2,
+    ::testing::Values(make_tuple(&vpx_quantize_b_sse2, &vpx_highbd_quantize_b_c,
+                                 VPX_BITS_8),
+                      make_tuple(&vpx_highbd_quantize_b_sse2,
                                  &vpx_highbd_quantize_b_c, VPX_BITS_8),
                       make_tuple(&vpx_highbd_quantize_b_sse2,
                                  &vpx_highbd_quantize_b_c, VPX_BITS_10),
@@ -378,6 +379,26 @@ INSTANTIATE_TEST_CASE_P(
                                  &vpx_highbd_quantize_b_32x32_c, VPX_BITS_10),
                       make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
                                  &vpx_highbd_quantize_b_32x32_c, VPX_BITS_12)));
+#else
+INSTANTIATE_TEST_CASE_P(SSE2, VP9QuantizeTest,
+                        ::testing::Values(make_tuple(&vpx_quantize_b_sse2,
+                                                     &vpx_quantize_b_c,
+                                                     VPX_BITS_8)));
 #endif  // HAVE_SSE2
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+// TODO(johannkoenig): SSSE3 optimizations do not yet pass this test.
+#if 0   // HAVE_SSSE3 && ARCH_X86_64
+INSTANTIATE_TEST_CASE_P(SSSE3, VP9QuantizeTest,
+                        ::testing::Values(make_tuple(&vpx_quantize_b_ssse3,
+                                                     &vpx_quantize_b_c,
+                                                     VPX_BITS_8)));
+#endif  // HAVE_SSSE3 && ARCH_X86_64
+
+#if HAVE_AVX && ARCH_X86_64
+INSTANTIATE_TEST_CASE_P(AVX, VP9QuantizeTest,
+                        ::testing::Values(make_tuple(&vpx_quantize_b_avx,
+                                                     &vpx_quantize_b_c,
+                                                     VPX_BITS_8)));
+#endif  // HAVE_AVX && ARCH_X86_64
 }  // namespace
