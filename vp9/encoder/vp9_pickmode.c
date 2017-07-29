@@ -1501,6 +1501,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
   int denoise_svc_pickmode = 1;
+  ctx_den->sb_skip_denoising = 0;
+  // TODO(marpan): There is an issue with denoising when the
+  // superblock partitioning scheme is based on the pickmode.
+  // Remove this condition when the issue is resolved.
+  if (x->sb_pickmode_part) ctx_den->sb_skip_denoising = 1;
 #endif
   INTERP_FILTER filter_gf_svc = EIGHTTAP;
 
