@@ -4154,6 +4154,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     x->sb_use_mv_part = 0;
     x->sb_mvcol_part = 0;
     x->sb_mvrow_part = 0;
+    x->sb_pickmode_part = 0;
 
     if (seg->enabled) {
       const uint8_t *const map =
@@ -4169,8 +4170,10 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
       int shift = cpi->Source->y_stride * (mi_row << 3) + (mi_col << 3);
       int sb_offset2 = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
       int64_t source_sad = avg_source_sad(cpi, x, shift, sb_offset2);
-      if (sf->adapt_partition_source_sad && source_sad > 40000)
+      if (sf->adapt_partition_source_sad && source_sad > 40000) {
         partition_search_type = REFERENCE_PARTITION;
+	x->sb_pickmode_part = 1;
+      }
     }
 
     // Set the partition type of the 64X64 block
