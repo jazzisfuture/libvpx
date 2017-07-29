@@ -59,6 +59,7 @@ typedef struct {
   MV_REFERENCE_FRAME best_ref_frame;
   INTERP_FILTER best_pred_filter;
   uint8_t best_mode_skip_txfm;
+  int sb_skip_denoising;
 } VP9_PICKMODE_CTX_DEN;
 
 struct VP9_COMP;
