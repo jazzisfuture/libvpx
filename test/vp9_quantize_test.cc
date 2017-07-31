@@ -412,5 +412,10 @@ INSTANTIATE_TEST_CASE_P(NEON, VP9QuantizeTest,
                         ::testing::Values(make_tuple(&vpx_quantize_b_neon,
                                                      &vpx_quantize_b_c,
                                                      VPX_BITS_8)));
+
+INSTANTIATE_TEST_CASE_P(NEON, VP9Quantize32Test,
+                        ::testing::Values(make_tuple(&vpx_quantize_b_32x32_neon,
+                                                     &vpx_quantize_b_32x32_c,
+                                                     VPX_BITS_8)));
 #endif  // HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH
 }  // namespace
