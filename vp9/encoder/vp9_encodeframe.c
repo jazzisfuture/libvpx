@@ -3636,7 +3636,7 @@ static void nonrd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   BLOCK_SIZE subsize = bsize;
   RD_COST this_rdc, sum_rdc, best_rdc;
   int do_split = bsize >= BLOCK_8X8;
-  int do_rect = 1;
+  int do_rect = (cpi->oxcf.speed <= 5) ? 1 : 0;
   // Override skipping rectangular partition operations for edge blocks
   const int force_horz_split = (mi_row + ms >= cm->mi_rows);
   const int force_vert_split = (mi_col + ms >= cm->mi_cols);
@@ -3892,6 +3892,7 @@ static void nonrd_select_partition(VP9_COMP *cpi, ThreadData *td,
   } else if (bsize == BLOCK_32X32 && partition != PARTITION_NONE &&
              subsize >= BLOCK_16X16) {
     x->max_partition_size = BLOCK_32X32;
+    if (cpi->oxcf.speed > 5) x->max_partition_size = BLOCK_16X16;
     x->min_partition_size = BLOCK_8X8;
     nonrd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col, bsize, rd_cost,
                          0, INT64_MAX, pc_tree);
