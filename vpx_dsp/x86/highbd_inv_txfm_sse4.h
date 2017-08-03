@@ -58,4 +58,15 @@ static INLINE void highbd_multiplication_and_add_sse4_1(
   *out1 = pack_4(temp2[0], temp2[1]);
 }
 
+static INLINE void highbd_multiplication_sse4_1(const __m128i in, const int c0,
+                                                const int c1,
+                                                __m128i *const out0,
+                                                __m128i *const out1) {
+  __m128i temp[2];
+
+  extend_64bit(in, temp);
+  *out0 = multiplication_round_shift_sse4_1(temp, c0);
+  *out1 = multiplication_round_shift_sse4_1(temp, c1);
+}
+
 #endif  // VPX_DSP_X86_HIGHBD_INV_TXFM_SSE4_H_
