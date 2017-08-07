@@ -2763,6 +2763,9 @@ static int recode_loop_test(VP9_COMP *cpi, int high_limit, int low_limit, int q,
 void vp9_update_reference_frames(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   BufferPool *const pool = cm->buffer_pool;
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  VP9_DENOISER *denoiser = &cpi->denoiser;
+#endif
 
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
@@ -2802,6 +2805,9 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
       }
 
       ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
+#if CONFIG_VP9_TEMPORAL_DENOISING
+      denoiser->frame_idx_denoiser[cm->new_fb_idx] = ALTREF_FRAME;
+#endif
       memcpy(cpi->interp_filter_selected[ALTREF_FRAME],
              cpi->interp_filter_selected[0],
              sizeof(cpi->interp_filter_selected[0]));
@@ -2810,6 +2816,9 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     if (cpi->refresh_golden_frame) {
       ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->gld_fb_idx],
                  cm->new_fb_idx);
+#if CONFIG_VP9_TEMPORAL_DENOISING
+      denoiser->frame_idx_denoiser[cm->new_fb_idx] = GOLDEN_FRAME;
+#endif
       if (!cpi->rc.is_src_frame_alt_ref)
         memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
                cpi->interp_filter_selected[0],
@@ -2824,6 +2833,9 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   if (cpi->refresh_last_frame) {
     ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->lst_fb_idx],
                cm->new_fb_idx);
+#if CONFIG_VP9_TEMPORAL_DENOISING
+    denoiser->frame_idx_denoiser[cm->new_fb_idx] = LAST_FRAME;
+#endif
     if (!cpi->rc.is_src_frame_alt_ref)
       memcpy(cpi->interp_filter_selected[LAST_FRAME],
              cpi->interp_filter_selected[0],
@@ -2831,23 +2843,19 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   }
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
-      cpi->denoiser.denoising_level > kDenLowLow) {
+      denoiser->denoising_level > kDenLowLow) {
     int svc_base_is_key = 0;
-    int svc_fixed_pattern = 0;
     if (cpi->use_svc) {
       int layer = LAYER_IDS_TO_IDX(cpi->svc.spatial_layer_id,
                                    cpi->svc.temporal_layer_id,
                                    cpi->svc.number_temporal_layers);
       LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
       svc_base_is_key = lc->is_key_frame;
-      svc_fixed_pattern = (cpi->svc.temporal_layering_mode !=
-                           VP9E_TEMPORAL_LAYERING_MODE_BYPASS);
     }
     vp9_denoiser_update_frame_info(
-        &cpi->denoiser, *cpi->Source, cpi->common.frame_type,
+        denoiser, *cpi->Source, cpi->common.frame_type,
         cpi->refresh_alt_ref_frame, cpi->refresh_golden_frame,
-        cpi->refresh_last_frame, cpi->resize_pending, svc_base_is_key,
-        svc_fixed_pattern, cpi->svc.temporal_layer_id);
+        cpi->refresh_last_frame, cpi->resize_pending, svc_base_is_key);
   }
 #endif
   if (is_one_pass_cbr_svc(cpi)) {
@@ -3483,8 +3491,10 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0 && cpi->use_svc &&
-      cpi->denoiser.denoising_level > kDenLowLow)
-    vp9_denoise_init_svc(cpi);
+      cpi->denoiser.denoising_level > kDenLowLow) {
+    int buffer_idx = get_ref_frame_buf_idx(cpi, LAST_FRAME);
+    vp9_denoise_init_svc(cpi, buffer_idx);
+  }
 #endif
 
   // Scene detection is always used for VBR mode or screen-content case.
