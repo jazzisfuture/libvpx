@@ -709,6 +709,8 @@ int main(int argc, const char **argv) {
   if (svc_ctx.speed >= 5)
     vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
 
+  vpx_codec_control(&codec, VP9E_SET_NOISE_SENSITIVITY, 1);
+
   // Encode frames
   while (!end_of_stream) {
     vpx_codec_iter_t iter = NULL;
