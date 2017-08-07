@@ -25,6 +25,8 @@ extern "C" {
 // need to allocate for it, and hence we need MAX_REF_FRAME - 1
 #define NONSVC_REF_FRAMES MAX_REF_FRAMES - 1
 
+#define SVC_REF_FRAMES 9
+
 typedef enum vp9_denoiser_decision {
   COPY_BLOCK,
   FILTER_BLOCK,
@@ -63,13 +65,11 @@ typedef struct {
 
 struct VP9_COMP;
 
-void vp9_denoise_init_svc(struct VP9_COMP *cpi);
-
 void vp9_denoiser_update_frame_info(
     VP9_DENOISER *denoiser, YV12_BUFFER_CONFIG src, FRAME_TYPE frame_type,
     int refresh_alt_ref_frame, int refresh_golden_frame, int refresh_last_frame,
-    int resized, int svc_base_is_key, int svc_fixed_pattern,
-    int temporal_layer_id);
+    int alt_fb_idx, int gld_fb_idx, int lst_fb_idx, int resized,
+    int svc_base_is_key);
 
 void vp9_denoiser_denoise(struct VP9_COMP *cpi, MACROBLOCK *mb, int mi_row,
                           int mi_col, BLOCK_SIZE bs, PICK_MODE_CONTEXT *ctx,
@@ -80,6 +80,10 @@ void vp9_denoiser_reset_frame_stats(PICK_MODE_CONTEXT *ctx);
 void vp9_denoiser_update_frame_stats(MODE_INFO *mi, unsigned int sse,
                                      PREDICTION_MODE mode,
                                      PICK_MODE_CONTEXT *ctx);
+
+int vp9_denoiser_realloc_svc(VP9_COMMON *cm, VP9_DENOISER *denoiser,
+                             int refresh_alt, int refresh_gld, int refresh_lst,
+                             int alt_fb_idx, int gld_fb_idx, int lst_fb_idx);
 
 int vp9_denoiser_alloc(VP9_COMMON *cm, int use_svc, VP9_DENOISER *denoiser,
                        int width, int height, int ssx, int ssy,
