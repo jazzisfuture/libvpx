@@ -47,6 +47,7 @@ typedef struct vp9_denoiser {
   int num_ref_frames;
   VP9_DENOISER_LEVEL denoising_level;
   VP9_DENOISER_LEVEL prev_denoising_level;
+  MV_REFERENCE_FRAME frame_idx_denoiser[REF_FRAMES];
 } VP9_DENOISER;
 
 typedef struct {
@@ -63,13 +64,12 @@ typedef struct {
 
 struct VP9_COMP;
 
-void vp9_denoise_init_svc(struct VP9_COMP *cpi);
+void vp9_denoise_init_svc(struct VP9_COMP *cpi, int buffer_idx);
 
 void vp9_denoiser_update_frame_info(
-    VP9_DENOISER *denoiser, YV12_BUFFER_CONFIG src, FRAME_TYPE frame_type,
-    int refresh_alt_ref_frame, int refresh_golden_frame, int refresh_last_frame,
-    int resized, int svc_base_is_key, int svc_fixed_pattern,
-    int temporal_layer_id);
+    struct VP9_COMP *cpi, VP9_DENOISER *denoiser, YV12_BUFFER_CONFIG src,
+    FRAME_TYPE frame_type, int refresh_alt_ref_frame, int refresh_golden_frame,
+    int refresh_last_frame, int resized, int svc_base_is_key);
 
 void vp9_denoiser_denoise(struct VP9_COMP *cpi, MACROBLOCK *mb, int mi_row,
                           int mi_col, BLOCK_SIZE bs, PICK_MODE_CONTEXT *ctx,
