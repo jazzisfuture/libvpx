@@ -64,6 +64,20 @@ static int get_max_tile_cols(VP9_COMP *cpi) {
   vp9_get_tile_n_bits(mi_cols, &min_log2_tile_cols, &max_log2_tile_cols);
   log2_tile_cols =
       clamp(cpi->oxcf.tile_columns, min_log2_tile_cols, max_log2_tile_cols);
+  if (cpi->oxcf.target_level == LEVEL_ADAPT) {
+    const uint32_t pic_size = cpi->common.width * cpi->common.height;
+    int i;
+    for (i = LEVEL_1; i < LEVEL_MAX; ++i) {
+      if (vp9_level_defs[i].max_luma_picture_size > pic_size) {
+        if (vp9_level_defs[i].max_col_tiles < (1 << log2_tile_cols)) {
+          while (log2_tile_cols >= min_log2_tile_cols &&
+                 vp9_level_defs[i].max_col_tiles < (1 << log2_tile_cols))
+            --log2_tile_cols;
+        }
+        break;
+      }
+    }
+  }
   return (1 << log2_tile_cols);
 }
 

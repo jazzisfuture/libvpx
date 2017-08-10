@@ -468,8 +468,11 @@ static const arg_def_t tune_content = ARG_DEF_ENUM(
 
 static const arg_def_t target_level = ARG_DEF(
     NULL, "target-level", 1,
-    "Target level (255: off (default); 0: only keep level stats; 10: level 1.0;"
-    " 11: level 1.1; ... 62: level 6.2)");
+    "Target level (255: off (default); 0: only keep level stats; 1: adaptively "
+    "set alt-ref distance and tile column limit based on picture size, and keep"
+    " level stats;\n"
+    "                                        10: level 1.0; 11: level 1.1; ... "
+    "62: level 6.2)");
 
 static const arg_def_t row_mt =
     ARG_DEF(NULL, "row-mt", 1,
