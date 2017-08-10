@@ -376,6 +376,14 @@ INSTANTIATE_TEST_CASE_P(
                                  VPX_BITS_8, 16),
                       make_tuple(&vpx_quantize_b_32x32_neon,
                                  &vpx_quantize_b_32x32_c, VPX_BITS_8, 32)));
+/*
+INSTANTIATE_TEST_CASE_P(
+    NEON, VP9QuantizeFpTest,
+    ::testing::Values(make_tuple(&vp9_quantize_fp_neon, &vp9_quantize_fp_c,
+                                 VPX_BITS_8, 16),
+                      make_tuple(&vp9_quantize_fp_32x32_neon,
+                                 &vp9_quantize_fp_32x32_c, VPX_BITS_8, 32)));
+                                 */
 #endif  // HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH
 
 // Only useful to compare "Speed" test results.
