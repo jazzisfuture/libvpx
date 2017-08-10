@@ -1850,6 +1850,25 @@ void vp9_rc_set_gf_interval_range(const VP9_COMP *const cpi,
 
     // Clamp min to max
     rc->min_gf_interval = VPXMIN(rc->min_gf_interval, rc->max_gf_interval);
+
+    // When level monitoring is on, restrict the minimum gf interval according
+    // to the frame size.
+    if (oxcf->target_level == LEVEL_UNKNOWN) {
+      const int pic_size = cpi->common.width * cpi->common.height;
+      int i;
+      for (i = LEVEL_1; i < LEVEL_MAX; ++i) {
+        if (vp9_level_defs[i].max_luma_picture_size > pic_size) {
+          if (rc->min_gf_interval
+              <= (int) vp9_level_defs[i].min_altref_distance) {
+            rc->min_gf_interval = (int) vp9_level_defs[i].min_altref_distance
+                + 1;
+            rc->max_gf_interval = VPXMAX(rc->max_gf_interval,
+                                         rc->min_gf_interval);
+          }
+          break;
+        }
+      }
+    }
   }
 }
 
