@@ -313,10 +313,10 @@ using std::tr1::make_tuple;
 #if HAVE_SSE2
 #if CONFIG_VP9_HIGHBITDEPTH
 // TODO(johannkoenig): Fix vpx_quantize_b_sse2 in highbitdepth builds.
-// make_tuple(&vpx_quantize_b_sse2, &vpx_highbd_quantize_b_c, VPX_BITS_8),
 INSTANTIATE_TEST_CASE_P(
     SSE2, VP9QuantizeTest,
     ::testing::Values(
+        make_tuple(&vpx_quantize_b_sse2, &vpx_quantize_b_c, VPX_BITS_8, 16),
         make_tuple(&vpx_highbd_quantize_b_sse2, &vpx_highbd_quantize_b_c,
                    VPX_BITS_8, 16),
         make_tuple(&vpx_highbd_quantize_b_sse2, &vpx_highbd_quantize_b_c,
@@ -338,13 +338,10 @@ INSTANTIATE_TEST_CASE_P(SSE2, VP9QuantizeTest,
 #endif  // HAVE_SSE2
 
 #if HAVE_SSSE3
-#if !CONFIG_VP9_HIGHBITDEPTH
-// TODO(johannkoenig): SSSE3 optimizations do not yet pass this test.
 INSTANTIATE_TEST_CASE_P(SSSE3, VP9QuantizeTest,
                         ::testing::Values(make_tuple(&vpx_quantize_b_ssse3,
                                                      &vpx_quantize_b_c,
                                                      VPX_BITS_8, 16)));
-#endif
 
 #if ARCH_X86_64
 // TODO(johannkoenig): SSSE3 optimizations do not yet pass this test.
@@ -357,16 +354,18 @@ INSTANTIATE_TEST_CASE_P(
 
 // TODO(johannkoenig): AVX optimizations do not yet pass the 32x32 test or
 // highbitdepth configurations.
-#if HAVE_AVX && ARCH_X86_64 && !CONFIG_VP9_HIGHBITDEPTH
+#if HAVE_AVX && ARCH_X86_64
 INSTANTIATE_TEST_CASE_P(AVX, VP9QuantizeTest,
                         ::testing::Values(make_tuple(&vpx_quantize_b_avx,
                                                      &vpx_quantize_b_c,
                                                      VPX_BITS_8, 16)));
+#if !CONFIG_VP9_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(DISABLED_AVX, VP9QuantizeTest,
                         ::testing::Values(make_tuple(&vpx_quantize_b_32x32_avx,
                                                      &vpx_quantize_b_32x32_c,
                                                      VPX_BITS_8, 32)));
-#endif  // HAVE_AVX && ARCH_X86_64 && !CONFIG_VP9_HIGHBITDEPTH
+#endif  // !CONFIG_VP9_HIGHBITDEPTH
+#endif  // HAVE_AVX && ARCH_X86_64
 
 // TODO(webm:1448): dqcoeff is not handled correctly in HBD builds.
 #if HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH
