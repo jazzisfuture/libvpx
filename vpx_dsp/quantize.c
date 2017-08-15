@@ -155,7 +155,12 @@ void vpx_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
              quant_shift_ptr[rc != 0]) >>
             16;  // quantization
       qcoeff_ptr[rc] = (tmp ^ coeff_sign) - coeff_sign;
-      dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0];
+
+      // dqcoeff values may exceed int16_t. In regular builds, the values will
+      // be truncated. Ensure they are truncated in high bit depth builds as
+      // well to match assembly optimizations and prevent accidental mismatch
+      // between configurations.
+      dqcoeff_ptr[rc] = (int16_t)(qcoeff_ptr[rc] * dequant_ptr[rc != 0]);
 
       if (tmp) eob = i;
     }
