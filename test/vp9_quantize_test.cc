@@ -465,12 +465,11 @@ TEST_P(VP9QuantizeTest, DISABLED_Speed) {
 using ::testing::make_tuple;
 
 #if HAVE_SSE2
-#if CONFIG_VP9_HIGHBITDEPTH
-// TODO(johannkoenig): Fix vpx_quantize_b_sse2 in highbitdepth builds.
-// make_tuple(&vpx_quantize_b_sse2, &vpx_highbd_quantize_b_c, VPX_BITS_8),
 INSTANTIATE_TEST_CASE_P(
     SSE2, VP9QuantizeTest,
     ::testing::Values(
+        make_tuple(&vpx_quantize_b_sse2, &vpx_quantize_b_c, VPX_BITS_8, 16,
+                   false),
         make_tuple(&vpx_highbd_quantize_b_sse2, &vpx_highbd_quantize_b_c,
                    VPX_BITS_8, 16, false),
         make_tuple(&vpx_highbd_quantize_b_sse2, &vpx_highbd_quantize_b_c,
@@ -484,18 +483,9 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vpx_highbd_quantize_b_32x32_sse2,
                    &vpx_highbd_quantize_b_32x32_c, VPX_BITS_12, 32, false)));
 
-#else
-INSTANTIATE_TEST_CASE_P(
-    SSE2, VP9QuantizeTest,
-    ::testing::Values(make_tuple(&vpx_quantize_b_sse2, &vpx_quantize_b_c,
-                                 VPX_BITS_8, 16, false),
-                      make_tuple(&QuantFPWrapper<vp9_quantize_fp_sse2>,
-                                 &QuantFPWrapper<quantize_fp_nz_c>, VPX_BITS_8,
-                                 16, true)));
-#endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // HAVE_SSE2
 
-#if HAVE_SSSE3 && !CONFIG_VP9_HIGHBITDEPTH
+#if HAVE_SSSE3
 #if ARCH_X86_64
 INSTANTIATE_TEST_CASE_P(
     SSSE3, VP9QuantizeTest,
@@ -511,31 +501,24 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(SSSE3, VP9QuantizeTest,
                         ::testing::Values(make_tuple(&vpx_quantize_b_ssse3,
                                                      &vpx_quantize_b_c,
-                                                     VPX_BITS_8, 16, false)));
-#endif
-
-#if ARCH_X86_64
-// TODO(johannkoenig): SSSE3 optimizations do not yet pass this test.
-INSTANTIATE_TEST_CASE_P(DISABLED_SSSE3, VP9QuantizeTest,
+                                                     VPX_BITS_8, 16, false),
                         ::testing::Values(make_tuple(
                             &vpx_quantize_b_32x32_ssse3,
                             &vpx_quantize_b_32x32_c, VPX_BITS_8, 32, false)));
 #endif  // ARCH_X86_64
-#endif  // HAVE_SSSE3 && !CONFIG_VP9_HIGHBITDEPTH
+#endif  // HAVE_SSSE3
 
-// TODO(johannkoenig): AVX optimizations do not yet pass the 32x32 test or
-// highbitdepth configurations.
-#if HAVE_AVX && !CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
-    AVX, VP9QuantizeTest,
-    ::testing::Values(make_tuple(&vpx_quantize_b_avx, &vpx_quantize_b_c,
-                                 VPX_BITS_8, 16, false),
-                      // Even though SSSE3 and AVX do not match the reference
-                      // code, we can keep them in sync with each other.
-                      make_tuple(&vpx_quantize_b_32x32_avx,
-                                 &vpx_quantize_b_32x32_ssse3, VPX_BITS_8, 32,
-                                 false)));
-#endif  // HAVE_AVX && !CONFIG_VP9_HIGHBITDEPTH
+#if HAVE_AVX
+INSTANTIATE_TEST_CASE_P(AVX, VP9QuantizeTest,
+                        ::testing::Values(make_tuple(&vpx_quantize_b_avx,
+                                                     &vpx_quantize_b_c,
+                                                     VPX_BITS_8, 16, false)));
+// TODO(johannkoenig): This should pass.
+INSTANTIATE_TEST_CASE_P(DISABLED_AVX, VP9QuantizeTest,
+                        ::testing::Values(make_tuple(&vpx_quantize_b_32x32_avx,
+                                                     &vpx_quantize_b_32x32_c,
+                                                     VPX_BITS_8, 32, false)));
+#endif  // HAVE_AVX
 
 #if ARCH_X86_64 && HAVE_AVX2
 INSTANTIATE_TEST_CASE_P(
@@ -543,10 +526,9 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::Values(make_tuple(&QuantFPWrapper<vp9_quantize_fp_avx2>,
                                  &QuantFPWrapper<quantize_fp_nz_c>, VPX_BITS_8,
                                  16, true)));
-#endif  // HAVE_AVX2 && !CONFIG_VP9_HIGHBITDEPTH
+#endif  // ARCH_X86_64 && HAVE_AVX2
 
-// TODO(webm:1448): dqcoeff is not handled correctly in HBD builds.
-#if HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH
+#if HAVE_NEON
 INSTANTIATE_TEST_CASE_P(
     NEON, VP9QuantizeTest,
     ::testing::Values(make_tuple(&vpx_quantize_b_neon, &vpx_quantize_b_c,
@@ -560,9 +542,9 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&QuantFPWrapper<vp9_quantize_fp_32x32_neon>,
                                  &QuantFPWrapper<vp9_quantize_fp_32x32_c>,
                                  VPX_BITS_8, 32, true)));
-#endif  // HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH
+#endif  // HAVE_NEON
 
-#if HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
+#if HAVE_VSX
 INSTANTIATE_TEST_CASE_P(
     VSX, VP9QuantizeTest,
     ::testing::Values(make_tuple(&vpx_quantize_b_vsx, &vpx_quantize_b_c,
@@ -576,7 +558,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&QuantFPWrapper<vp9_quantize_fp_32x32_vsx>,
                                  &QuantFPWrapper<vp9_quantize_fp_32x32_c>,
                                  VPX_BITS_8, 32, true)));
-#endif  // HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
+#endif  // HAVE_VSX
 
 // Only useful to compare "Speed" test results.
 INSTANTIATE_TEST_CASE_P(
