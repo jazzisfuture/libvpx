@@ -34,6 +34,13 @@ using libvpx_test::Buffer;
 namespace {
 const int number_of_iterations = 100;
 
+extern "C" void new_vpx_quantize_b_32x32_ssse3(
+    const tran_low_t *coeff, intptr_t count, int skip_block,
+    const int16_t *zbin, const int16_t *round, const int16_t *quant,
+    const int16_t *quant_shift, tran_low_t *qcoeff, tran_low_t *dqcoeff,
+    const int16_t *dequant, uint16_t *eob, const int16_t *scan,
+    const int16_t *iscan);
+
 typedef void (*QuantizeFunc)(const tran_low_t *coeff, intptr_t count,
                              int skip_block, const int16_t *zbin,
                              const int16_t *round, const int16_t *quant,
@@ -362,29 +369,30 @@ INSTANTIATE_TEST_CASE_P(
                                  16)));
 #endif  // HAVE_SSE2
 
-#if HAVE_SSSE3
-#if !CONFIG_VP9_HIGHBITDEPTH
-// TODO(johannkoenig): SSSE3 optimizations do not yet pass this test.
+#if HAVE_SSSE3 && !CONFIG_VP9_HIGHBITDEPTH
 INSTANTIATE_TEST_CASE_P(SSSE3, VP9QuantizeTest,
                         ::testing::Values(make_tuple(&vpx_quantize_b_ssse3,
                                                      &vpx_quantize_b_c,
                                                      VPX_BITS_8, 16)));
-#endif
 
-#if ARCH_X86_64
 // TODO(johannkoenig): SSSE3 optimizations do not yet pass this test.
 INSTANTIATE_TEST_CASE_P(
     DISABLED_SSSE3, VP9QuantizeTest,
     ::testing::Values(make_tuple(&vpx_quantize_b_32x32_ssse3,
-                                 &vpx_quantize_b_32x32_c, VPX_BITS_8, 32),
+                                 &vpx_quantize_b_32x32_c, VPX_BITS_8, 32)/*,
                       make_tuple(&QuantFPWrapper<vp9_quantize_fp_ssse3>,
                                  &QuantFPWrapper<vp9_quantize_fp_c>, VPX_BITS_8,
                                  16),
                       make_tuple(&QuantFPWrapper<vp9_quantize_fp_32x32_ssse3>,
                                  &QuantFPWrapper<vp9_quantize_fp_32x32_c>,
-                                 VPX_BITS_8, 32)));
-#endif  // ARCH_X86_64
-#endif  // HAVE_SSSE3
+                                 VPX_BITS_8, 32)*/));
+  /*
+INSTANTIATE_TEST_CASE_P(
+    SSSE3NEW, VP9QuantizeTest,
+    ::testing::Values(make_tuple(&new_vpx_quantize_b_32x32_ssse3,
+                                 &vpx_quantize_b_32x32_ssse3, VPX_BITS_8, 32)));
+                                 */
+#endif  // HAVE_SSSE3 && !CONFIG_VP9_HIGHBITDEPTH
 
 // TODO(johannkoenig): AVX optimizations do not yet pass the 32x32 test or
 // highbitdepth configurations.
