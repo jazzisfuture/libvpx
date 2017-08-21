@@ -535,8 +535,12 @@ static void set_rt_speed_feature_framesize_independent(
     if (!cpi->external_resize && cm->width <= 1920) sf->use_source_sad = 1;
 
     if (sf->use_source_sad) {
-      if (cm->width * cm->height <= 640 * 360)
+      if (cm->width * cm->height <= 640 * 360 ||
+          cpi->oxcf.rc_mode == VPX_VBR) {
         sf->adapt_partition_source_sad = 1;
+        sf->adapt_partition_thresh =
+            (cpi->oxcf.rc_mode == VPX_VBR) ? 120000 : 40000;
+      }
       if (cpi->content_state_sb_fd == NULL &&
           (!cpi->use_svc ||
            cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1)) {
