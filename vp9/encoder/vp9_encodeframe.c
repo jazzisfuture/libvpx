@@ -4175,7 +4175,9 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
       int shift = cpi->Source->y_stride * (mi_row << 3) + (mi_col << 3);
       int sb_offset2 = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
       int64_t source_sad = avg_source_sad(cpi, x, shift, sb_offset2);
-      if (sf->adapt_partition_source_sad && source_sad > 40000)
+      if (sf->adapt_partition_source_sad &&
+          (source_sad > sf->adapt_partition_thresh ||
+           (cpi->oxcf.rc_mode == VPX_VBR && cpi->refresh_golden_frame)))
         partition_search_type = REFERENCE_PARTITION;
     }
 
@@ -4207,8 +4209,8 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
         // Use nonrd_pick_partition on scene-cut for VBR mode.
         // nonrd_pick_partition does not support 4x4 partition, so avoid it
         // on key frame for now.
-        if ((cpi->oxcf.rc_mode == VPX_VBR && cpi->rc.high_source_sad &&
-             cm->frame_type != KEY_FRAME)) {
+        if (cpi->oxcf.rc_mode == VPX_VBR && cpi->rc.high_source_sad &&
+            cm->frame_type != KEY_FRAME && cpi->oxcf.speed < 6) {
           // Use lower max_partition_size for low resoultions.
           if (cm->width <= 352 && cm->height <= 288)
             x->max_partition_size = BLOCK_32X32;
