@@ -299,7 +299,13 @@ TEST_P(VP9QuantizeTest, DISABLED_Speed) {
 
       if (i == 0) {
         // When |coeff values| are less than zbin the results are 0.
-        for (int j = 0; j < 8; ++j) zbin_ptr_[j] = 100;
+        int threshold = 100;
+        if (max_size_ == 32) {
+          // For 32x32, the threshold is halved. Double it to keep the values
+          // from clearing it.
+          threshold = 200;
+        }
+        for (int j = 0; j < 8; ++j) zbin_ptr_[j] = threshold;
         coeff.Set(&rnd, -99, 99);
       } else if (i == 1) {
         for (int j = 0; j < 8; ++j) zbin_ptr_[j] = 50;
@@ -389,16 +395,14 @@ INSTANTIATE_TEST_CASE_P(
 // TODO(johannkoenig): AVX optimizations do not yet pass the 32x32 test or
 // highbitdepth configurations.
 #if HAVE_AVX && !CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(AVX, VP9QuantizeTest,
-                        ::testing::Values(make_tuple(&vpx_quantize_b_avx,
-                                                     &vpx_quantize_b_c,
-                                                     VPX_BITS_8, 16)));
-#if ARCH_X86_64
-INSTANTIATE_TEST_CASE_P(DISABLED_AVX, VP9QuantizeTest,
-                        ::testing::Values(make_tuple(&vpx_quantize_b_32x32_avx,
-                                                     &vpx_quantize_b_32x32_c,
-                                                     VPX_BITS_8, 32)));
-#endif  // ARCH_X86_64
+INSTANTIATE_TEST_CASE_P(
+    AVX, VP9QuantizeTest,
+    ::testing::Values(make_tuple(&vpx_quantize_b_avx, &vpx_quantize_b_c,
+                                 VPX_BITS_8, 16),
+                      // Even though SSSE3 and AVX do not match x86, we can keep
+                      // them in sync here.
+                      make_tuple(&vpx_quantize_b_32x32_avx,
+                                 &vpx_quantize_b_32x32_ssse3, VPX_BITS_8, 32)));
 #endif  // HAVE_AVX && !CONFIG_VP9_HIGHBITDEPTH
 
 // TODO(webm:1448): dqcoeff is not handled correctly in HBD builds.
