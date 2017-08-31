@@ -1012,6 +1012,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
                (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
       qdelta = vp9_compute_qdelta_by_rate(
           &cpi->rc, cm->frame_type, active_worst_quality, 1.75, cm->bit_depth);
+      if (oxcf->rc_mode == VPX_VBR && rc->high_source_sad) qdelta = 0;
     }
     *top_index = active_worst_quality + qdelta;
     *top_index = (*top_index > *bottom_index) ? *top_index : *bottom_index;
@@ -2161,6 +2162,8 @@ static void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi,
     }
     if (rc->baseline_gf_interval > cpi->oxcf.lag_in_frames - 1)
       rc->baseline_gf_interval = cpi->oxcf.lag_in_frames - 1;
+    if (rc->high_source_sad && rc->baseline_gf_interval > 6)
+      rc->baseline_gf_interval = 6;
     // Check for constraining gf_interval for up-coming scene/content changes,
     // or for up-coming key frame, whichever is closer.
     frame_constraint = rc->frames_to_key;
