@@ -1013,6 +1013,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
       qdelta = vp9_compute_qdelta_by_rate(
           &cpi->rc, cm->frame_type, active_worst_quality, 1.75, cm->bit_depth);
     }
+    if (oxcf->rc_mode == VPX_VBR && rc->high_source_sad) qdelta = qdelta >> 1;
     *top_index = active_worst_quality + qdelta;
     *top_index = (*top_index > *bottom_index) ? *top_index : *bottom_index;
   }
@@ -2161,6 +2162,8 @@ static void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi,
     }
     if (rc->baseline_gf_interval > cpi->oxcf.lag_in_frames - 1)
       rc->baseline_gf_interval = cpi->oxcf.lag_in_frames - 1;
+    if (rc->high_source_sad && rc->baseline_gf_interval > 6)
+      rc->baseline_gf_interval = 6;
     // Check for constraining gf_interval for up-coming scene/content changes,
     // or for up-coming key frame, whichever is closer.
     frame_constraint = rc->frames_to_key;
@@ -2174,7 +2177,7 @@ static void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi,
     // Adjust factors for active_worst setting & af_ratio for next gf interval.
     rc->fac_active_worst_inter = 150;  // corresponds to 3/2 (= 150 /100).
     rc->fac_active_worst_gf = 100;
-    if (rate_err < 2.0 && !high_content) {
+    if (rate_err < 2.0 && !high_content && !rc->high_source_sad) {
       rc->fac_active_worst_inter = 120;
       rc->fac_active_worst_gf = 90;
     } else if (rate_err > 8.0 && rc->avg_frame_qindex[INTER_FRAME] < 16) {
