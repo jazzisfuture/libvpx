@@ -8,13 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
+
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "./vp9_rtcd.h"
 #include "./vpx_config.h"
 #include "./vpx_scale_rtcd.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "vpx_mem/vpx_mem.h"
+#include "vpx_ports/vpx_timer.h"
 #include "vpx_scale/yv12config.h"
 
 namespace {
@@ -22,41 +26,69 @@ namespace {
 typedef void (*ExtendFrameBorderFunc)(YV12_BUFFER_CONFIG *ybf);
 typedef void (*CopyFrameFunc)(const YV12_BUFFER_CONFIG *src_ybf,
                               YV12_BUFFER_CONFIG *dst_ybf);
+typedef void (*ScaleFunc)(const YV12_BUFFER_CONFIG *src,
+                          YV12_BUFFER_CONFIG *dst, INTERP_FILTER filter_type,
+                          int phase_scaler);
 
 class VpxScaleBase {
  public:
   virtual ~VpxScaleBase() { libvpx_test::ClearSystemState(); }
 
-  void ResetImage(int width, int height) {
-    width_ = width;
-    height_ = height;
-    memset(&img_, 0, sizeof(img_));
-    ASSERT_EQ(0, vp8_yv12_alloc_frame_buffer(&img_, width_, height_,
-                                             VP8BORDERINPIXELS));
-    memset(img_.buffer_alloc, kBufFiller, img_.frame_size);
+  void ResetImage(YV12_BUFFER_CONFIG *const img, const int width,
+                  const int height) {
+    memset(img, 0, sizeof(YV12_BUFFER_CONFIG));
+    ASSERT_EQ(
+        0, vp8_yv12_alloc_frame_buffer(img, width, height, VP8BORDERINPIXELS));
+    memset(img->buffer_alloc, kBufFiller, img->frame_size);
+  }
+
+  void ResetImages(const int width, const int height) {
+    ResetImage(&img_, width, height);
+    ResetImage(&ref_img_, width, height);
+    ResetImage(&dst_img_, width, height);
+
     FillPlane(img_.y_buffer, img_.y_crop_width, img_.y_crop_height,
               img_.y_stride);
     FillPlane(img_.u_buffer, img_.uv_crop_width, img_.uv_crop_height,
               img_.uv_stride);
     FillPlane(img_.v_buffer, img_.uv_crop_width, img_.uv_crop_height,
               img_.uv_stride);
-
-    memset(&ref_img_, 0, sizeof(ref_img_));
-    ASSERT_EQ(0, vp8_yv12_alloc_frame_buffer(&ref_img_, width_, height_,
-                                             VP8BORDERINPIXELS));
-    memset(ref_img_.buffer_alloc, kBufFiller, ref_img_.frame_size);
-
-    memset(&cpy_img_, 0, sizeof(cpy_img_));
-    ASSERT_EQ(0, vp8_yv12_alloc_frame_buffer(&cpy_img_, width_, height_,
-                                             VP8BORDERINPIXELS));
-    memset(cpy_img_.buffer_alloc, kBufFiller, cpy_img_.frame_size);
-    ReferenceCopyFrame();
   }
 
-  void DeallocImage() {
+  void ResetScaleImage(YV12_BUFFER_CONFIG *const img, const int width,
+                       const int height) {
+    memset(img, 0, sizeof(YV12_BUFFER_CONFIG));
+    ASSERT_EQ(0, vpx_alloc_frame_buffer(img, width, height, 1, 1,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                        0,
+#endif
+                                        VP9_ENC_BORDER_IN_PIXELS, 0));
+    memset(img->buffer_alloc, kBufFiller, img->frame_size);
+  }
+
+  void ResetScaleImages(const int src_width, const int src_height,
+                        const int dst_width, const int dst_height) {
+    ResetScaleImage(&img_, src_width, src_height);
+    ResetScaleImage(&ref_img_, dst_width, dst_height);
+    ResetScaleImage(&dst_img_, dst_width, dst_height);
+    FillPlane(img_.y_buffer, img_.y_crop_width, img_.y_crop_height,
+              img_.y_stride);
+    FillPlane(img_.u_buffer, img_.uv_crop_width, img_.uv_crop_height,
+              img_.uv_stride);
+    FillPlane(img_.v_buffer, img_.uv_crop_width, img_.uv_crop_height,
+              img_.uv_stride);
+  }
+
+  void DeallocImages() {
     vp8_yv12_de_alloc_frame_buffer(&img_);
     vp8_yv12_de_alloc_frame_buffer(&ref_img_);
-    vp8_yv12_de_alloc_frame_buffer(&cpy_img_);
+    vp8_yv12_de_alloc_frame_buffer(&dst_img_);
+  }
+
+  void DeallocScaleImages() {
+    vpx_free_frame_buffer(&img_);
+    vpx_free_frame_buffer(&ref_img_);
+    vpx_free_frame_buffer(&dst_img_);
   }
 
  protected:
@@ -144,6 +176,10 @@ class VpxScaleBase {
     ReferenceExtendBorder();
   }
 
+  void ReferenceScale(INTERP_FILTER filter_type, int phase_scaler) {
+    vp9_scale_and_extend_frame_c(&img_, &ref_img_, filter_type, phase_scaler);
+  }
+
   void CompareImages(const YV12_BUFFER_CONFIG actual) {
     EXPECT_EQ(ref_img_.frame_size, actual.frame_size);
     EXPECT_EQ(0, memcmp(ref_img_.buffer_alloc, actual.buffer_alloc,
@@ -152,9 +188,7 @@ class VpxScaleBase {
 
   YV12_BUFFER_CONFIG img_;
   YV12_BUFFER_CONFIG ref_img_;
-  YV12_BUFFER_CONFIG cpy_img_;
-  int width_;
-  int height_;
+  YV12_BUFFER_CONFIG dst_img_;
 };
 
 class ExtendBorderTest
@@ -178,11 +212,11 @@ class ExtendBorderTest
     static const int kSizesToTest[] = { 1, 15, 33, 145, 512, 1025, 16383 };
     for (int h = 0; h < kNumSizesToTest; ++h) {
       for (int w = 0; w < kNumSizesToTest; ++w) {
-        ASSERT_NO_FATAL_FAILURE(ResetImage(kSizesToTest[w], kSizesToTest[h]));
+        ASSERT_NO_FATAL_FAILURE(ResetImages(kSizesToTest[w], kSizesToTest[h]));
+        ReferenceCopyFrame();
         ExtendBorder();
-        ReferenceExtendBorder();
         CompareImages(img_);
-        DeallocImage();
+        DeallocImages();
       }
     }
   }
@@ -204,7 +238,7 @@ class CopyFrameTest : public VpxScaleBase,
   virtual void SetUp() { copy_frame_fn_ = GetParam(); }
 
   void CopyFrame() {
-    ASM_REGISTER_STATE_CHECK(copy_frame_fn_(&img_, &cpy_img_));
+    ASM_REGISTER_STATE_CHECK(copy_frame_fn_(&img_, &dst_img_));
   }
 
   void RunTest() {
@@ -217,11 +251,11 @@ class CopyFrameTest : public VpxScaleBase,
     static const int kSizesToTest[] = { 1, 15, 33, 145, 512, 1025, 16383 };
     for (int h = 0; h < kNumSizesToTest; ++h) {
       for (int w = 0; w < kNumSizesToTest; ++w) {
-        ASSERT_NO_FATAL_FAILURE(ResetImage(kSizesToTest[w], kSizesToTest[h]));
+        ASSERT_NO_FATAL_FAILURE(ResetImages(kSizesToTest[w], kSizesToTest[h]));
         ReferenceCopyFrame();
         CopyFrame();
-        CompareImages(cpy_img_);
-        DeallocImage();
+        CompareImages(dst_img_);
+        DeallocImages();
       }
     }
   }
@@ -233,4 +267,128 @@ TEST_P(CopyFrameTest, CopyFrame) { ASSERT_NO_FATAL_FAILURE(RunTest()); }
 
 INSTANTIATE_TEST_CASE_P(C, CopyFrameTest,
                         ::testing::Values(vp8_yv12_copy_frame_c));
+
+class ScaleTest : public VpxScaleBase,
+                  public ::testing::TestWithParam<ScaleFunc> {
+ public:
+  virtual ~ScaleTest() {}
+
+ protected:
+  virtual void SetUp() { scale_fn_ = GetParam(); }
+
+  void Scale(INTERP_FILTER filter_type, int phase_scaler) {
+    ASM_REGISTER_STATE_CHECK(
+        scale_fn_(&img_, &dst_img_, filter_type, phase_scaler));
+  }
+
+  void RunTest() {
+    static const int kNumSizesToTest = 4;
+    static const int kNumScaleFactorsToTest = 2;
+    static const int kWidthsToTest[] = { 16, 32, 48, 64 };
+    static const int kHeightsToTest[] = { 16, 20, 24, 28 };
+    static const int kScaleFactor[] = { 1, 2 };
+    for (INTERP_FILTER filter_type = 0; filter_type < 4; ++filter_type) {
+      for (int phase_scaler = 0; phase_scaler < 16; ++phase_scaler) {
+        for (int h = 0; h < kNumSizesToTest; ++h) {
+          const int src_height = kHeightsToTest[h];
+          for (int w = 0; w < kNumSizesToTest; ++w) {
+            const int src_width = kWidthsToTest[w];
+            for (int sf_up_idx = 0; sf_up_idx < kNumScaleFactorsToTest;
+                 ++sf_up_idx) {
+              const int sf_up = kScaleFactor[sf_up_idx];
+              for (int sf_down_idx = 0; sf_down_idx < kNumScaleFactorsToTest;
+                   ++sf_down_idx) {
+                const int sf_down = kScaleFactor[sf_down_idx];
+                const int dst_width = src_width * sf_up / sf_down;
+                const int dst_height = src_height * sf_up / sf_down;
+                if (sf_up == sf_down && sf_up != 1) {
+                  continue;
+                }
+                ASSERT_NO_FATAL_FAILURE(ResetScaleImages(
+                    src_width, src_height, dst_width, dst_height));
+                ReferenceScale(filter_type, phase_scaler);
+                Scale(filter_type, phase_scaler);
+                PrintDiff();
+                CompareImages(dst_img_);
+                DeallocScaleImages();
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void PrintDiff() {
+    if (memcmp(dst_img_.buffer_alloc, ref_img_.buffer_alloc,
+               ref_img_.frame_size)) {
+      for (int y = 0; y < ref_img_.y_stride; y++) {
+        for (int x = 0; x < ref_img_.y_stride; x++) {
+          if (ref_img_.buffer_alloc[y * ref_img_.y_stride + x] !=
+              dst_img_.buffer_alloc[y * ref_img_.y_stride + x]) {
+            printf("dst_img_[%d][%d] diff:%6d (ref),%6d (opt)\n", y, x,
+                   ref_img_.buffer_alloc[y * ref_img_.y_stride + x],
+                   dst_img_.buffer_alloc[y * ref_img_.y_stride + x]);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  ScaleFunc scale_fn_;
+};
+
+TEST_P(ScaleTest, Scale) { ASSERT_NO_FATAL_FAILURE(RunTest()); }
+
+TEST_P(ScaleTest, DISABLED_Speed) {
+  static const int kCountSpeedTestBlock = 100;
+  static const int kNumScaleFactorsToTest = 2;
+  static const int kScaleFactor[] = { 1, 2 };
+  const int src_height = 1280;
+  const int src_width = 720;
+  for (INTERP_FILTER filter_type = 2; filter_type < 4; ++filter_type) {
+    for (int phase_scaler = 0; phase_scaler < 2; ++phase_scaler) {
+      for (int sf_up_idx = 0; sf_up_idx < kNumScaleFactorsToTest; ++sf_up_idx) {
+        const int sf_up = kScaleFactor[sf_up_idx];
+        for (int sf_down_idx = 0; sf_down_idx < kNumScaleFactorsToTest;
+             ++sf_down_idx) {
+          const int sf_down = kScaleFactor[sf_down_idx];
+          const int dst_width = src_width * sf_up / sf_down;
+          const int dst_height = src_height * sf_up / sf_down;
+          if (sf_up == sf_down && sf_up != 1) {
+            continue;
+          }
+          ASSERT_NO_FATAL_FAILURE(
+              ResetScaleImages(src_width, src_height, dst_width, dst_height));
+          ASM_REGISTER_STATE_CHECK(ReferenceScale(filter_type, phase_scaler));
+
+          vpx_usec_timer timer;
+          vpx_usec_timer_start(&timer);
+          for (int i = 0; i < kCountSpeedTestBlock; ++i) {
+            Scale(filter_type, phase_scaler);
+          }
+          libvpx_test::ClearSystemState();
+          vpx_usec_timer_mark(&timer);
+          const int elapsed_time =
+              static_cast<int>(vpx_usec_timer_elapsed(&timer) / 1000);
+          CompareImages(dst_img_);
+          DeallocScaleImages();
+
+          printf(
+              "filter_type = %d, phase_scaler = %d, src_width = %4d, "
+              "src_height = %4d, dst_width = %4d, dst_height = %4d, "
+              "scale factor = %d:%d, scale time: %5d ms\n",
+              filter_type, phase_scaler, src_width, src_height, dst_width,
+              dst_height, sf_down, sf_up, elapsed_time);
+        }
+      }
+    }
+  }
+}
+
+#if HAVE_SSSE3
+INSTANTIATE_TEST_CASE_P(SSSE3, ScaleTest,
+                        ::testing::Values(vp9_scale_and_extend_frame_ssse3));
+#endif  // HAVE_SSSE3
 }  // namespace
