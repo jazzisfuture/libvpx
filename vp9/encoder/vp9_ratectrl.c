@@ -2161,6 +2161,9 @@ static void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi,
     }
     if (rc->baseline_gf_interval > cpi->oxcf.lag_in_frames - 1)
       rc->baseline_gf_interval = cpi->oxcf.lag_in_frames - 1;
+    if (rc->high_source_sad && rc->baseline_gf_interval > 6) {
+      rc->baseline_gf_interval = 6;
+    }
     // Check for constraining gf_interval for up-coming scene/content changes,
     // or for up-coming key frame, whichever is closer.
     frame_constraint = rc->frames_to_key;
@@ -2176,7 +2179,7 @@ static void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi,
     rc->fac_active_worst_gf = 100;
     if (rate_err < 2.0 && !high_content) {
       rc->fac_active_worst_inter = 120;
-      rc->fac_active_worst_gf = 90;
+      if (!rc->high_source_sad) rc->fac_active_worst_gf = 90;
     } else if (rate_err > 8.0 && rc->avg_frame_qindex[INTER_FRAME] < 16) {
       // Increase active_worst faster at low Q if rate fluctuation is high.
       rc->fac_active_worst_inter = 200;
