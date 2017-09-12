@@ -15,6 +15,64 @@
 #include "vpx_dsp/vpx_filter.h"
 #include "vpx_scale/yv12config.h"
 
+// Example 4 to 3 scaling's pixel locations when phase_scaler = 0.
+// (O: Original pixel. S: Scaled pixel. X: Overlapped pixel.)
+//
+// X     O S   O   S O     X
+//
+//
+//
+//
+//
+// O     O     O     O     O
+//
+// S       S       S       S
+//
+//
+//
+// O     O     O     O     O
+//
+//
+//
+// S       S       S       S
+//
+// O     O     O     O     O
+//
+//
+//
+//
+//
+// X     O S   O   S O     X
+//
+// Example 4 to 3 scaling's pixel locations when phase_scaler = 8.
+// (O: Original. S: Scaled.)
+//
+// O     O     O     O     O
+//
+//
+//    S       S       S
+//
+//
+// O     O     O     O     O
+//
+//
+//
+//
+//    S       S       S
+// O     O     O     O     O
+//
+//
+//
+//
+//
+// O     O     O     O     O
+//    S       S       S
+//
+//
+//
+//
+// O     O     O     O     O
+
 void vp9_scale_and_extend_frame_c(const YV12_BUFFER_CONFIG *src,
                                   YV12_BUFFER_CONFIG *dst,
                                   INTERP_FILTER filter_type, int phase_scaler) {
