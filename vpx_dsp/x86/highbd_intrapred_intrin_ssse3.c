@@ -179,3 +179,147 @@ void vpx_highbd_d207_predictor_32x32_ssse3(uint16_t *dst, ptrdiff_t stride,
   d207_store_4x32(&dst, stride, &out_g, &out_h, &LR, &LR, &LR);
   d207_store_4x32(&dst, stride, &out_h, &LR, &LR, &LR, &LR);
 }
+
+static INLINE void d63_store_4x8(uint16_t **dst, const ptrdiff_t stride,
+                                 __m128i *a, __m128i *b,
+                                 const __m128i *ar) {
+  _mm_store_si128((__m128i *)*dst, *a);
+  *dst += stride;
+  _mm_store_si128((__m128i *)*dst, *b);
+  *dst += stride;
+  *a = _mm_alignr_epi8(*ar, *a, 2);
+  *b = _mm_alignr_epi8(*ar, *b, 2);
+  _mm_store_si128((__m128i *)*dst, *a);
+  *dst += stride;
+  _mm_store_si128((__m128i *)*dst, *b);
+  *dst += stride;
+  *a = _mm_alignr_epi8(*ar, *a, 2);
+  *b = _mm_alignr_epi8(*ar, *b, 2);
+}
+
+void vpx_highbd_d63_predictor_8x8_ssse3(uint16_t *dst, ptrdiff_t stride,
+                                        const uint16_t *above,
+                                        const uint16_t *left, int bd) {
+  const __m128i ABCDEFGH = _mm_load_si128((const __m128i *)above);
+  const __m128i ABCDHHHH = _mm_shufflehi_epi16(ABCDEFGH, 0xff);
+  const __m128i HHHHHHHH = _mm_unpackhi_epi64(ABCDHHHH, ABCDHHHH);
+  const __m128i BCDEFGHH = _mm_alignr_epi8(HHHHHHHH, ABCDEFGH, 2);
+  const __m128i CDEFGHHH = _mm_alignr_epi8(HHHHHHHH, ABCDEFGH, 4);
+  __m128i avg3 = avg3_epu16(&ABCDEFGH, &BCDEFGHH, &CDEFGHHH);
+  __m128i avg2 = _mm_avg_epu16(ABCDEFGH, BCDEFGHH);
+  (void)left;
+  (void)bd;
+  d63_store_4x8(&dst, stride, &avg2, &avg3, &HHHHHHHH);
+  d63_store_4x8(&dst, stride, &avg2, &avg3, &HHHHHHHH);
+}
+
+static INLINE void d63_store_4x16(uint16_t **dst, const ptrdiff_t stride,
+                                  const __m128i *a, const __m128i *b,
+                                  const __m128i *c) {
+  _mm_store_si128((__m128i *)*dst, *a);
+  _mm_store_si128((__m128i *)(*dst + 8), *b);
+  *dst += stride;
+  _mm_store_si128((__m128i *)*dst, _mm_alignr_epi8(*b, *a, 4));
+  _mm_store_si128((__m128i *)(*dst + 8), _mm_alignr_epi8(*c, *b, 4));
+  *dst += stride;
+  _mm_store_si128((__m128i *)*dst, _mm_alignr_epi8(*b, *a, 8));
+  _mm_store_si128((__m128i *)(*dst + 8), _mm_alignr_epi8(*c, *b, 8));
+  *dst += stride;
+  _mm_store_si128((__m128i *)*dst, _mm_alignr_epi8(*b, *a, 12));
+  _mm_store_si128((__m128i *)(*dst + 8), _mm_alignr_epi8(*c, *b, 12));
+  *dst += stride;
+}
+
+void vpx_highbd_d63_predictor_16x16_ssse3(uint16_t *dst, ptrdiff_t stride,
+                                          const uint16_t *above,
+                                          const uint16_t *left, int bd) {
+  const __m128i A0 = _mm_load_si128((const __m128i *)above);
+  const __m128i A1 = _mm_load_si128((const __m128i *)(above + 8));
+  const __m128i AR0 = _mm_shufflehi_epi16(A1, 0xff);
+  const __m128i AR = _mm_unpackhi_epi64(AR0, AR0);
+  const __m128i B0 = _mm_alignr_epi8(A1, A0, 2);
+  const __m128i B1 = _mm_alignr_epi8(AR, A1, 2);
+  const __m128i C0 = _mm_alignr_epi8(A1, A0, 4);
+  const __m128i C1 = _mm_alignr_epi8(AR, A1, 4);
+  const __m128i avg3_0 = avg3_epu16(&A0, &B0, &C0);
+  const __m128i avg3_1 = avg3_epu16(&A1, &B1, &C1);
+  const __m128i avg2_0 = _mm_avg_epu16(A0, B0);
+  const __m128i avg2_1 = _mm_avg_epu16(A1, B1);
+   __m128i out_a = avg2_0;
+   __m128i out_b = avg2_1;
+   __m128i out_c = avg3_0;
+   __m128i out_d = avg3_1;
+  int i;
+  (void)left;
+  (void)bd;
+  for (i = 0; i < 16; i += 2) {
+    _mm_store_si128((__m128i *)dst, out_a);
+    _mm_store_si128((__m128i *)(dst + 8), out_b);
+    dst += stride;
+    _mm_store_si128((__m128i *)dst, out_c);
+    _mm_store_si128((__m128i *)(dst + 8), out_d);
+    dst += stride;
+    out_a = _mm_alignr_epi8(out_b, out_a, 2);
+    out_b = _mm_alignr_epi8(AR, out_b, 2);
+    out_c = _mm_alignr_epi8(out_d, out_c, 2);
+    out_d = _mm_alignr_epi8(AR, out_d, 2);
+  }
+}
+
+void vpx_highbd_d63_predictor_32x32_ssse3(uint16_t *dst, ptrdiff_t stride,
+                                          const uint16_t *above,
+                                          const uint16_t *left, int bd) {
+  const __m128i A0 = _mm_load_si128((const __m128i *)above);
+  const __m128i A1 = _mm_load_si128((const __m128i *)(above + 8));
+  const __m128i A2 = _mm_load_si128((const __m128i *)(above + 16));
+  const __m128i A3 = _mm_load_si128((const __m128i *)(above + 24));
+  const __m128i AR0 = _mm_shufflehi_epi16(A3, 0xff);
+  const __m128i AR = _mm_unpackhi_epi64(AR0, AR0);
+  const __m128i B0 = _mm_alignr_epi8(A1, A0, 2);
+  const __m128i B1 = _mm_alignr_epi8(A2, A1, 2);
+  const __m128i B2 = _mm_alignr_epi8(A3, A2, 2);
+  const __m128i B3 = _mm_alignr_epi8(AR, A3, 2);
+  const __m128i C0 = _mm_alignr_epi8(A1, A0, 4);
+  const __m128i C1 = _mm_alignr_epi8(A2, A1, 4);
+  const __m128i C2 = _mm_alignr_epi8(A3, A2, 4);
+  const __m128i C3 = _mm_alignr_epi8(AR, A3, 4);
+  const __m128i avg3_0 = avg3_epu16(&A0, &B0, &C0);
+  const __m128i avg3_1 = avg3_epu16(&A1, &B1, &C1);
+  const __m128i avg3_2 = avg3_epu16(&A2, &B2, &C2);
+  const __m128i avg3_3 = avg3_epu16(&A3, &B3, &C3);
+  const __m128i avg2_0 = _mm_avg_epu16(A0, B0);
+  const __m128i avg2_1 = _mm_avg_epu16(A1, B1);
+  const __m128i avg2_2 = _mm_avg_epu16(A2, B2);
+  const __m128i avg2_3 = _mm_avg_epu16(A3, B3);
+  __m128i out_a = avg2_0;
+  __m128i out_b = avg2_1;
+  __m128i out_c = avg2_2;
+  __m128i out_d = avg2_3;
+  __m128i out_e = avg3_0;
+  __m128i out_f = avg3_1;
+  __m128i out_g = avg3_2;
+  __m128i out_h = avg3_3;
+  int i;
+  (void)left;
+  (void)bd;
+  for (i = 0; i < 32; i += 2) {
+    _mm_store_si128((__m128i *)dst, out_a);
+    _mm_store_si128((__m128i *)(dst + 8), out_b);
+    _mm_store_si128((__m128i *)(dst + 16), out_c);
+    _mm_store_si128((__m128i *)(dst + 24), out_d);
+    dst += stride;
+    _mm_store_si128((__m128i *)dst, out_e);
+    _mm_store_si128((__m128i *)(dst + 8), out_f);
+    _mm_store_si128((__m128i *)(dst + 16), out_g);
+    _mm_store_si128((__m128i *)(dst + 24), out_h);
+    dst += stride;
+    out_a = _mm_alignr_epi8(out_b, out_a, 2);
+    out_b = _mm_alignr_epi8(out_c, out_b, 2);
+    out_c = _mm_alignr_epi8(out_d, out_c, 2);
+    out_d = _mm_alignr_epi8(AR, out_d, 2);
+    out_e = _mm_alignr_epi8(out_f, out_e, 2);
+    out_f = _mm_alignr_epi8(out_g, out_f, 2);
+    out_g = _mm_alignr_epi8(out_h, out_g, 2);
+    out_h = _mm_alignr_epi8(AR, out_h, 2);
+  }
+}
