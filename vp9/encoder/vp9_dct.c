@@ -247,13 +247,13 @@ static void fadst4(const tran_low_t *input, tran_low_t *output) {
   }
 
   // 32-bit result is enough for the following multiplications.
-  s0 = sinpi_1_9 * input[0];
-  s1 = sinpi_4_9 * input[0];
-  s2 = sinpi_2_9 * input[1];
-  s3 = sinpi_1_9 * input[1];
-  s4 = sinpi_3_9 * input[2];
-  s5 = sinpi_4_9 * input[3];
-  s6 = sinpi_2_9 * input[3];
+  s0 = (tran_high_t)sinpi_1_9 * input[0];
+  s1 = (tran_high_t)sinpi_4_9 * input[0];
+  s2 = (tran_high_t)sinpi_2_9 * input[1];
+  s3 = (tran_high_t)sinpi_1_9 * input[1];
+  s4 = (tran_high_t)sinpi_3_9 * input[2];
+  s5 = (tran_high_t)sinpi_4_9 * input[3];
+  s6 = (tran_high_t)sinpi_2_9 * input[3];
   s7 = x0 + x1 - x3;
 
   x0 = s0 + s2 + s5;
