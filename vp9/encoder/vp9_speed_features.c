@@ -365,7 +365,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->use_source_sad = 0;
   sf->use_simple_block_yrd = 0;
   sf->adapt_partition_source_sad = 0;
-  sf->use_altref_onepass = 0;
+  sf->use_altref_onepass = 1;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -529,6 +529,9 @@ static void set_rt_speed_feature_framesize_independent(
       sf->partition_search_type = FIXED_PARTITION;
       sf->always_this_block_size = BLOCK_64X64;
     }
+    if (cpi->oxcf.rc_mode == VPX_VBR && cpi->oxcf.lag_in_frames > 0 &&
+        sf->use_altref_onepass && cpi->refresh_alt_ref_frame)
+      sf->partition_search_type = REFERENCE_PARTITION;
     // Turn on this to use non-RD key frame coding mode.
     sf->use_nonrd_pick_mode = 1;
     sf->mv.search_method = NSTEP;
@@ -631,6 +634,16 @@ static void set_rt_speed_feature_framesize_independent(
     }
     sf->limit_newmv_early_exit = 0;
     sf->use_simple_block_yrd = 1;
+  }
+  if (sf->use_altref_onepass) {
+    if (cpi->count_arf_frame_usage == NULL)
+      cpi->count_arf_frame_usage =
+          (uint8_t *)vpx_calloc((cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1),
+                                sizeof(*cpi->count_arf_frame_usage));
+    if (cpi->count_lastgolden_frame_usage == NULL)
+      cpi->count_lastgolden_frame_usage =
+          (uint8_t *)vpx_calloc((cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1),
+                                sizeof(*cpi->count_lastgolden_frame_usage));
   }
 }
 
