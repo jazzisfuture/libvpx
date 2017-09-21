@@ -3430,6 +3430,8 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
           ? cpi->svc.downsample_filter_phase[cpi->svc.spatial_layer_id]
           : 0;
 
+ memset(cpi->count_ref_frame_usage, 0, 6);
+
   // Flag to check if its valid to compute the source sad (used for
   // scene detection and for superblock content state in CBR mode).
   // The flag may get reset below based on SVC or resizing state.
