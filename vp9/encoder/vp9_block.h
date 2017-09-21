@@ -189,6 +189,8 @@ struct macroblock {
   // 32x32, 9~24 for 16x16.
   uint8_t variance_low[25];
 
+  int ref_frame_usage[6];
+
   void (*fwd_txfm4x4)(const int16_t *input, tran_low_t *output, int stride);
   void (*inv_txfm_add)(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob);
