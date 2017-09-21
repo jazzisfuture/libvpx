@@ -10,13 +10,31 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "../tools_common.h"
+
 #include "./vpx_config.h"
+#include "test/codec_factory.h"
+#include "test/encode_test_driver.h"
+#include "test/i420_video_source.h"
+#include "test/util.h"
+#include "test/y4m_video_source.h"
+
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
 
 namespace {
 
 #define NELEMENTS(x) static_cast<int>(sizeof(x) / sizeof(x[0]))
+
+static const VpxInterface vpx_encoders[] = {
+#if CONFIG_VP8_ENCODER
+  { "vp8", VP8_FOURCC, &vpx_codec_vp8_cx },
+#endif
+
+#if CONFIG_VP9_ENCODER
+  { "vp9", VP9_FOURCC, &vpx_codec_vp9_cx },
+#endif
+};
 
 TEST(EncodeAPI, InvalidParams) {
   static const vpx_codec_iface_t *kCodecs[] = {
@@ -76,6 +94,28 @@ TEST(EncodeAPI, HighBitDepthCapability) {
 #else
   EXPECT_EQ(vp9_caps & VPX_CODEC_CAP_HIGHBITDEPTH, 0);
 #endif
+#endif
+}
+
+TEST(EncodeAPI, ImageSizeSetting) {
+#if CONFIG_VP8_ENCODER
+  uint8_t buf[5] = { 0, 0, 0, 0, 0 };
+  libvpx_test::I420VideoSource video("desktop_640_360_30.yuv", 711, 360, 30, 1,
+                                     0, 5);
+  vpx_image_t img = *(video.img());
+  vpx_codec_ctx_t enc;
+  vpx_codec_enc_cfg_t cfg;
+  const VpxInterface *encoder = &vpx_encoders[0];
+  vpx_codec_enc_config_default(encoder->codec_interface(), &cfg, 0);
+
+  cfg.g_w = 711;
+  cfg.g_h = 360;
+
+  vpx_img_wrap(&img, VPX_IMG_FMT_I420, 711, 360, 1, buf);
+
+  vpx_codec_enc_init(&enc, encoder->codec_interface(), &cfg, 0);
+
+  vpx_codec_encode(&enc, &img, 0, 1, 0, 0);
 #endif
 }
 
