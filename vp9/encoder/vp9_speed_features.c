@@ -365,7 +365,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->use_source_sad = 0;
   sf->use_simple_block_yrd = 0;
   sf->adapt_partition_source_sad = 0;
-  sf->use_altref_onepass = 0;
+  sf->use_altref_onepass = 1;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -631,6 +631,14 @@ static void set_rt_speed_feature_framesize_independent(
     }
     sf->limit_newmv_early_exit = 0;
     sf->use_simple_block_yrd = 1;
+  }
+  if (sf->use_altref_onepass) {
+    if (cpi->count_arf_frame_usage == NULL)
+      cpi->count_arf_frame_usage = (char *)vpx_calloc(
+          (cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1), sizeof(char));
+    if (cpi->count_lastgolden_frame_usage == NULL)
+      cpi->count_lastgolden_frame_usage = (char *)vpx_calloc(
+          (cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1), sizeof(char));
   }
 }
 
