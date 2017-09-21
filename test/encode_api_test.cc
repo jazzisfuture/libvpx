@@ -10,9 +10,18 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
+#include "../tools_common.h"
+
 #include "./vpx_config.h"
+#include "test/codec_factory.h"
+#include "test/encode_test_driver.h"
+#include "test/i420_video_source.h"
+#include "test/util.h"
+#include "test/y4m_video_source.h"
+
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
+#include "vpx_mem/vpx_mem.h"
 
 namespace {
 
@@ -78,5 +87,32 @@ TEST(EncodeAPI, HighBitDepthCapability) {
 #endif
 #endif
 }
+
+#if CONFIG_VP8_ENCODER
+TEST(EncodeAPI, DISABLED_ImageSizeSetting) {
+  const int width = 711;
+  const int height = 360;
+  const int bps = 12;
+  vpx_image_t img;
+  vpx_codec_ctx_t enc;
+  vpx_codec_enc_cfg_t cfg;
+  uint8_t *img_buf = reinterpret_cast<uint8_t *>(
+      calloc(width * height * bps / 8, sizeof(*img_buf)));
+  vpx_codec_enc_config_default(vpx_codec_vp8_cx(), &cfg, 0);
+
+  cfg.g_w = width;
+  cfg.g_h = height;
+
+  vpx_img_wrap(&img, VPX_IMG_FMT_I420, width, height, 1, img_buf);
+
+  vpx_codec_enc_init(&enc, vpx_codec_vp8_cx(), &cfg, 0);
+
+  EXPECT_EQ(VPX_CODEC_OK, vpx_codec_encode(&enc, &img, 0, 1, 0, 0));
+
+  free(img_buf);
+
+  vpx_codec_destroy(&enc);
+}
+#endif
 
 }  // namespace
