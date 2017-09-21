@@ -3398,7 +3398,7 @@ static void set_frame_size(VP9_COMP *cpi) {
 static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
                                        uint8_t *dest) {
   VP9_COMMON *const cm = &cpi->common;
-  int q = 0, bottom_index = 0, top_index = 0;  // Dummy variables.
+  int q = 0, i = 0, bottom_index = 0, top_index = 0;  // Dummy variables.
   const INTERP_FILTER filter_scaler =
       (is_one_pass_cbr_svc(cpi))
           ? cpi->svc.downsample_filter_type[cpi->svc.spatial_layer_id]
@@ -3407,6 +3407,9 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
       (is_one_pass_cbr_svc(cpi))
           ? cpi->svc.downsample_filter_phase[cpi->svc.spatial_layer_id]
           : 0;
+
+  for(i = 0; i < 6; i++)
+    cpi->count_ref_frame_usage[i] = 0;
 
   // Flag to check if its valid to compute the source sad (used for
   // scene detection and for superblock content state in CBR mode).

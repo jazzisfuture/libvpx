@@ -47,7 +47,7 @@
 #define FRAME_OVERHEAD_BITS 200
 
 // Use this macro to turn on/off use of alt-refs in one-pass vbr mode.
-#define USE_ALTREF_FOR_ONE_PASS 0
+#define USE_ALTREF_FOR_ONE_PASS 1
 
 #if CONFIG_VP9_HIGHBITDEPTH
 #define ASSIGN_MINQ_TABLE(bit_depth, name)                   \
@@ -594,13 +594,6 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
     q = clamp(q, VPXMIN(cpi->rc.q_1_frame, cpi->rc.q_2_frame),
               VPXMAX(cpi->rc.q_1_frame, cpi->rc.q_2_frame));
   }
-#if USE_ALTREF_FOR_ONE_PASS
-  if (cpi->oxcf.enable_auto_arf && cpi->oxcf.pass == 0 &&
-      cpi->oxcf.rc_mode == VPX_VBR && cpi->oxcf.lag_in_frames > 0 &&
-      cpi->rc.is_src_frame_alt_ref && !cpi->rc.alt_ref_gf_group) {
-    q = VPXMIN(q, (q + cpi->rc.last_boosted_qindex) >> 1);
-  }
-#endif
   return q;
 }
 
@@ -1467,6 +1460,18 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
     if (cm->frame_type != KEY_FRAME) compute_frame_low_motion(cpi);
   }
   if (cm->frame_type != KEY_FRAME) rc->reset_high_source_sad = 0;
+
+#if USE_ALTREF_FOR_ONE_PASS
+  if (!cpi->rc.is_src_frame_alt_ref && !cpi->refresh_golden_frame &&
+      !cpi->refresh_alt_ref_frame && cpi->rc.alt_ref_gf_group) {
+    if (cpi->count_ref_frame_usage[0] > 0) {
+      float altref_count = 100 * cpi->count_ref_frame_usage[4] /
+                           cpi->count_ref_frame_usage[0];
+      cpi->rc.perc_arf_usage =
+          0.75 * cpi->rc.perc_arf_usage + 0.25 * altref_count;
+    }
+  }
+#endif
 }
 
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
@@ -2209,9 +2214,14 @@ static void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi,
     }
 #if USE_ALTREF_FOR_ONE_PASS
     if (cpi->oxcf.enable_auto_arf) {
-      // Don't use alt-ref if there is a scene cut within the group,
-      // or content is not low.
-      if ((rc->high_source_sad_lagindex > 0 &&
+      // Flag to disable usage of ARF based on past usage, only allow this
+      // disabling if current frame/group does not start with key frame or
+      // scene cut.
+      int arf_usage_low = (cm->frame_type != KEY_FRAME &&
+                           !rc->high_source_sad && cpi->rc.perc_arf_usage < 15);
+      // Don't use alt-ref for this group under certain conditons.
+      if (arf_usage_low ||
+          (rc->high_source_sad_lagindex > 0 &&
            rc->high_source_sad_lagindex <= rc->frames_till_gf_update_due) ||
           (avg_source_sad_lag > 3 * sad_thresh1 >> 3)) {
         rc->source_alt_ref_pending = 0;
