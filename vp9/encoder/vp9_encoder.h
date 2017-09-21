@@ -717,6 +717,8 @@ typedef struct VP9_COMP {
   int compute_source_sad_onepass;
 
   LevelConstraint level_constraint;
+
+  int count_ref_frame_usage[6];
 } VP9_COMP;
 
 void vp9_initialize_enc(void);

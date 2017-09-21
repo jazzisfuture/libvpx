@@ -4142,6 +4142,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     PARTITION_SEARCH_TYPE partition_search_type = sf->partition_search_type;
     BLOCK_SIZE bsize = BLOCK_64X64;
     int seg_skip = 0;
+    int i;
 
     (*(cpi->row_mt_sync_read_ptr))(&tile_data->row_mt_sync, sb_row,
                                    sb_col_in_tile);
@@ -4163,6 +4164,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     x->sb_mvcol_part = 0;
     x->sb_mvrow_part = 0;
     x->sb_pickmode_part = 0;
+    for (i = 0; i < 6; i++) x->ref_frame_usage[i] = 0;
 
     if (seg->enabled) {
       const uint8_t *const map =
@@ -4239,6 +4241,13 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
 
         break;
       default: assert(0); break;
+    }
+
+    // Update ref_frame usage for inter frame if this group is ARF group.
+    if (cpi->rc.alt_ref_gf_group && !cpi->rc.is_src_frame_alt_ref &&
+        !cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame) {
+      for (i = 0; i < 6; i++)
+        cpi->count_ref_frame_usage[i] += x->ref_frame_usage[i];
     }
 
     (*(cpi->row_mt_sync_write_ptr))(&tile_data->row_mt_sync, sb_row,
