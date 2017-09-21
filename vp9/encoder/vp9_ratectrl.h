@@ -170,6 +170,8 @@ typedef struct {
   int af_ratio_onepass_vbr;
   int force_qpmin;
   int reset_high_source_sad;
+  int count_ref_frame_usage[5];
+  double perc_arf_usage;
 } RATE_CONTROL;
 
 struct VP9_COMP;

@@ -1678,6 +1678,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         continue;
 
       if (cpi->rc.alt_ref_gf_group && cm->show_frame &&
+          cpi->rc.frames_since_golden > 0 &&
           cpi->rc.frames_since_golden < (cpi->rc.baseline_gf_interval >> 1) &&
           ref_frame == ALTREF_FRAME &&
           frame_mv[this_mode][ref_frame].as_int != 0)
@@ -2286,6 +2287,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     best_ref_frame = ctx_den.best_ref_frame;
   }
 #endif
+
+  cpi->rc.count_ref_frame_usage[best_ref_frame + 1]++;
+  cpi->rc.count_ref_frame_usage[0]++;
 
   if (cpi->sf.adaptive_rd_thresh) {
     THR_MODES best_mode_idx = mode_idx[best_ref_frame][mode_offset(mi->mode)];
