@@ -10,6 +10,7 @@ LIBVPX_TEST_SRCS-yes += test_vectors.cc
 LIBVPX_TEST_SRCS-yes += test_vectors.h
 LIBVPX_TEST_SRCS-yes += util.h
 LIBVPX_TEST_SRCS-yes += video_source.h
+LIBVPX_TEST_SRCS-yes += ../vpx_mem/vpx_mem.h ../vpx_mem/vpx_mem.c
 
 ##
 ## BLACK BOX TESTS
