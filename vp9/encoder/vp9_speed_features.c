@@ -514,9 +514,9 @@ static void set_rt_speed_feature_framesize_independent(
     if (content == VP9E_CONTENT_SCREEN) {
       sf->short_circuit_flat_blocks = 1;
     }
+    sf->limit_newmv_early_exit = 1;
     if (cpi->oxcf.rc_mode == VPX_CBR &&
         cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
-      sf->limit_newmv_early_exit = 1;
       if (!cpi->use_svc) sf->bias_golden = 1;
     }
   }
