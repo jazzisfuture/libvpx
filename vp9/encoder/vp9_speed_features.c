@@ -365,6 +365,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->use_source_sad = 0;
   sf->use_simple_block_yrd = 0;
   sf->adapt_partition_source_sad = 0;
+  sf->use_altref_onepass_vbr = 0;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -464,9 +465,11 @@ static void set_rt_speed_feature_framesize_independent(
     sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST;
     sf->max_intra_bsize = BLOCK_32X32;
     sf->allow_skip_recode = 1;
+    sf->use_altref_onepass_vbr = 1;
   }
 
   if (speed >= 5) {
+    sf->use_altref_onepass_vbr = 0;
     sf->use_quant_fp = !is_keyframe;
     sf->auto_min_max_partition_size =
         is_keyframe ? RELAXED_NEIGHBORING_MIN_MAX : STRICT_NEIGHBORING_MIN_MAX;
