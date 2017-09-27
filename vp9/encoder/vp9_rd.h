@@ -42,6 +42,9 @@ extern "C" {
 #define RD_THRESH_MAX_FACT 64
 #define RD_THRESH_INC 1
 
+// Experiment to adjust rd behaviour and arf filter for low variance regions.
+#define VAR_ADJ_EXPERIMENT 0
+
 // This enumerator type needs to be kept aligned with the mode order in
 // const MODE_DEFINITION vp9_mode_order[MAX_MODES] used in the rd code.
 typedef enum {
@@ -194,10 +197,16 @@ void vp9_setup_pred_block(const MACROBLOCKD *xd,
 int vp9_get_intra_cost_penalty(const struct VP9_COMP *const cpi,
                                BLOCK_SIZE bsize, int qindex, int qdelta);
 
+unsigned int vp9_get_sby_variance(struct VP9_COMP *cpi,
+                                  const struct buf_2d *ref,
+                                  BLOCK_SIZE bs);
 unsigned int vp9_get_sby_perpixel_variance(struct VP9_COMP *cpi,
                                            const struct buf_2d *ref,
                                            BLOCK_SIZE bs);
 #if CONFIG_VP9_HIGHBITDEPTH
+unsigned int vp9_high_get_sby_variance(struct VP9_COMP *cpi,
+                                       const struct buf_2d *ref,
+                                       BLOCK_SIZE bs, int bd);
 unsigned int vp9_high_get_sby_perpixel_variance(struct VP9_COMP *cpi,
                                                 const struct buf_2d *ref,
                                                 BLOCK_SIZE bs, int bd);
