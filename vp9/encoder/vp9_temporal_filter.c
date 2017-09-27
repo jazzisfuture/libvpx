@@ -314,6 +314,10 @@ void vp9_temporal_filter_iterate_row_c(VP9_COMP *cpi, ThreadData *td,
   int mb_y_offset = mb_row * 16 * (f->y_stride) + 16 * mb_col_start;
   int mb_uv_offset =
       mb_row * mb_uv_height * f->uv_stride + mb_uv_width * mb_col_start;
+#ifdef VAR_ADJ_EXPERIMENT
+  unsigned int src_variance;
+  struct buf_2d src;
+#endif
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -349,6 +353,26 @@ void vp9_temporal_filter_iterate_row_c(VP9_COMP *cpi, ThreadData *td,
     td->mb.mv_limits.col_min = -((mb_col * 16) + (17 - 2 * VP9_INTERP_EXTEND));
     td->mb.mv_limits.col_max =
         ((mb_cols - 1 - mb_col) * 16) + (17 - 2 * VP9_INTERP_EXTEND);
+
+#ifdef VAR_ADJ_EXPERIMENT
+    src.buf = f->y_buffer + mb_y_offset;
+    src.stride = f->y_stride;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (mbd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      src_variance =
+          vp9_high_get_sby_perpixel_variance(cpi, &src, BLOCK_16X16, mbd->bd);
+    } else {
+      src_variance = vp9_get_sby_perpixel_variance(cpi, &src, BLOCK_16X16);
+    }
+#else
+     src_variance =
+        vp9_get_sby_perpixel_variance(cpi, &src, BLOCK_16X16);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+    if (src_variance < 2)
+      strength = VPXMAX(0, (int)strength - 2);
+#endif
 
     for (frame = 0; frame < frame_count; frame++) {
       const uint32_t thresh_low = 10000;
