@@ -460,6 +460,8 @@ static const arg_def_t inbitdeptharg =
 static const struct arg_enum_list tune_content_enum[] = {
   { "default", VP9E_CONTENT_DEFAULT },
   { "screen", VP9E_CONTENT_SCREEN },
+  { "film", VP9E_CONTENT_FILM },
+  { "film2", VP9E_CONTENT_FILM2 },
   { NULL, 0 }
 };
 
