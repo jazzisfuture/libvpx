@@ -4214,9 +4214,11 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
         set_offsets(cpi, tile_info, x, mi_row, mi_col, BLOCK_64X64);
         // Use nonrd_pick_partition on scene-cut for VBR mode.
         // nonrd_pick_partition does not support 4x4 partition, so avoid it
-        // on key frame for now.
-        if ((cpi->oxcf.rc_mode == VPX_VBR && cpi->rc.high_source_sad &&
-             cpi->oxcf.speed < 6 && cm->frame_type != KEY_FRAME)) {
+        // on key frame for now. Also avoid this for speed 6 and for
+	// resolutions >= 1080p, to avoid high encoding times.
+        if (cpi->oxcf.rc_mode == VPX_VBR && cpi->rc.high_source_sad &&
+            cm->width < 1920 && cm->height < 1080 &&
+            cpi->oxcf.speed < 6 && cm->frame_type != KEY_FRAME) {
           // Use lower max_partition_size for low resoultions.
           if (cm->width <= 352 && cm->height <= 288)
             x->max_partition_size = BLOCK_32X32;
