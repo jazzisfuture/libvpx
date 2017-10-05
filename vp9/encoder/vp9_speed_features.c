@@ -503,7 +503,7 @@ static void set_rt_speed_feature_framesize_independent(
 
     if (!is_keyframe) {
       int i;
-      if (content == VP9E_CONTENT_SCREEN) {
+      if (content == VP9E_CONTENT_SCREEN || cpi->rc.high_source_sad) {
         for (i = 0; i < BLOCK_SIZES; ++i)
           sf->intra_y_mode_bsize_mask[i] = INTRA_DC_TM_H_V;
       } else {
