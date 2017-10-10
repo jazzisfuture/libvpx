@@ -591,6 +591,13 @@ typedef struct vpx_codec_enc_cfg {
    */
   unsigned int rc_2pass_vbr_maxsection_pct;
 
+  /*!\brief Two-pass corpus vbr mode complexity control
+  * A value representing the corpus midpoint complexity for corpus vbr mode.
+  * This value defaults to 0 which disables corpus vbr mode in favour of
+  * normal vbr mode.
+  */
+  unsigned int rc_2pass_vbr_corpus_complexity;
+
   /*
    * keyframing settings (kf)
    */
