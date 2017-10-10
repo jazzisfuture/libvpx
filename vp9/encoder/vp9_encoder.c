@@ -3102,7 +3102,7 @@ static void full_to_model_counts(vp9_coeff_count_model *model_count,
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -4514,7 +4514,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
   if (!(is_two_pass_svc(cpi) && cpi->svc.encode_empty_frame_state == ENCODING))
     vp9_rc_postencode_update(cpi, *size);
 
-#if 0
+#if 1
   output_frame_level_debug_stats(cpi);
 #endif
 
