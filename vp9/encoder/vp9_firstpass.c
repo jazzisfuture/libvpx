@@ -245,7 +245,7 @@ static double get_distribution_av_err(TWO_PASS *const twopass) {
   const double av_weight =
       twopass->total_stats.weight / twopass->total_stats.count;
 #ifdef CORPUS_VBR_EXPERIMENT
-  return av_weight * CORPUS_VBR_MIDPOINT;
+  return av_weight * twopass->mean_mod_score;
 #else
   return (twopass->total_stats.coded_error * av_weight) /
          twopass->total_stats.count;
@@ -1722,11 +1722,16 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
   {
     double modified_score_total = 0.0;
     const FIRSTPASS_STATS *s = twopass->stats_in;
-    const double av_err = get_distribution_av_err(twopass);
+    double av_err;
 
 #ifdef CORPUS_VBR_EXPERIMENT
-    twopass->mean_mod_score = CORPUS_VBR_MIDPOINT;
+    if (oxcf->vbr_corpus_complexity)
+      twopass->mean_mod_score = (double)oxcf->vbr_corpus_complexity / 10.0;
+    else
+      twopass->mean_mod_score = CORPUS_VBR_MIDPOINT;
+    av_err = get_distribution_av_err(twopass);
 #else
+    av_err = get_distribution_av_err(twopass);
     // The first scan is unclamped and gives a raw average.
     while (s < twopass->stats_in_end) {
       modified_score_total += calculate_mod_frame_score(cpi, oxcf, s, av_err);
