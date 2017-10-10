@@ -1919,6 +1919,7 @@ void vp9_rc_update_framerate(VP9_COMP *cpi) {
   vp9_rc_set_gf_interval_range(cpi, rc);
 }
 
+#ifndef CORPUS_VBR_EXPERIMENT
 #define VBR_PCT_ADJUSTMENT_LIMIT 50
 // For VBR...adjustment to the frame target based on error from previous frames
 static void vbr_rate_correction(VP9_COMP *cpi, int *this_frame_target) {
@@ -1963,6 +1964,7 @@ static void vbr_rate_correction(VP9_COMP *cpi, int *this_frame_target) {
     rc->vbr_bits_off_target_fast -= fast_extra_bits;
   }
 }
+#endif
 
 void vp9_set_target_rate(VP9_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
