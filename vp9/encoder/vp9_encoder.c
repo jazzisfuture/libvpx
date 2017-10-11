@@ -3956,6 +3956,9 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
     // rate miss. If so adjust the active maxQ for the subsequent frames.
     if (q > cpi->twopass.active_worst_quality) {
       cpi->twopass.active_worst_quality = q;
+    } else if (q == q_low && big_rate_miss(cpi)) {
+      cpi->twopass.active_worst_quality =
+          VPXMAX(q, cpi->twopass.active_worst_quality - 1);
     }
   }
 
