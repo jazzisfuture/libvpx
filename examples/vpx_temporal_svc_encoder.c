@@ -26,6 +26,8 @@
 #include "../tools_common.h"
 #include "../video_writer.h"
 
+#define VP8_ROI_MAP 0
+
 static const char *exec_name;
 
 void usage_exit(void) { exit(EXIT_FAILURE); }
@@ -153,6 +155,43 @@ static void printout_rate_control_summary(struct RateControlMetrics *rc,
   if ((frame_cnt - 1) != tot_num_frames)
     die("Error: Number of input frames not equal to output! \n");
 }
+
+#if VP8_ROI_MAP
+static void vp8_set_roi_map(vpx_codec_enc_cfg_t *cfg, vpx_roi_map_t *roi) {
+  unsigned int i;
+  memset(roi, 0, sizeof(*roi));
+
+  // ROI is based on the segments (4 for vp8, 8 for vp9), smallest unit for
+  // segment is 16x16 for vp8, 8x8 for vp9.
+  roi->rows = (cfg->g_h + 15) / 16;
+  roi->cols = (cfg->g_w + 15) / 16;
+
+  // Applies delta QP on the segment blocks, varies from -63 to 63.
+  // Setting to negative means lower QP (better quality).
+  roi->delta_q[0] = 0;
+  roi->delta_q[1] = -63;
+  roi->delta_q[2] = 0;
+  roi->delta_q[3] = 0;
+
+  // Applies delta loopfilter strength on the segment blocks, varies from -63 to
+  // 63. Setting to positive means stronger loopfilter.
+  roi->delta_lf[0] = 0;
+  roi->delta_lf[1] = 0;
+  roi->delta_lf[2] = 0;
+  roi->delta_lf[3] = 0;
+
+  // As example, prefer to set map = 1 on square (say 1/4 x 1/4 of image) and
+  // centered in middle of image, map=0 elsewhere.
+  roi->static_threshold[0] = 1500;
+  roi->static_threshold[1] = 1000;
+  roi->static_threshold[2] = 500;
+  roi->static_threshold[3] = 0;
+
+  roi->roi_map = (uint8_t *)malloc(roi->rows * roi->cols);
+  for (i = 0; i < roi->rows * roi->cols; ++i)
+    roi->roi_map[i] = (i > (roi->rows * roi->cols / 2));
+}
+#endif
 
 // Temporal scaling parameters:
 // NOTE: The 3 prediction frames cannot be used interchangeably due to
@@ -506,6 +545,9 @@ int main(int argc, char **argv) {
   int layering_mode = 0;
   int layer_flags[VPX_TS_MAX_PERIODICITY] = { 0 };
   int flag_periodicity = 1;
+#if VP8_ROI_MAP
+  vpx_roi_map_t roi;
+#endif
 #if VPX_ENCODER_ABI_VERSION > (4 + VPX_CODEC_ABI_VERSION)
   vpx_svc_layer_id_t layer_id = { 0, 0 };
 #else
@@ -710,6 +752,12 @@ int main(int argc, char **argv) {
     vpx_codec_control(&codec, VP8E_SET_NOISE_SENSITIVITY, kDenoiserOff);
     vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
     vpx_codec_control(&codec, VP8E_SET_GF_CBR_BOOST_PCT, 0);
+#if VP8_ROI_MAP
+    vp8_set_roi_map(&cfg, &roi);
+    if (vpx_codec_control(&codec, VP8E_SET_ROI_MAP, &roi))
+      die_codec(&codec, "Failed to set ROI map");
+#endif
+
   } else if (strncmp(encoder->name, "vp9", 3) == 0) {
     vpx_svc_extra_cfg_t svc_params;
     memset(&svc_params, 0, sizeof(svc_params));
