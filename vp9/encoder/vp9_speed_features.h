@@ -499,6 +499,10 @@ typedef struct SPEED_FEATURES {
 
   // Enable use of alt-refs in 1 pass VBR.
   int use_altref_onepass;
+
+  // Use nonrd pick_intra for 16x16 or smaller blocks on keyframes.
+  // Disabled for speed 8.
+  int nonrd_keyframe_16x16;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
