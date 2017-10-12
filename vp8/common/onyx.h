@@ -239,6 +239,8 @@ typedef struct {
   /* Memory location to store low-resolution encoder's mode info */
   void *mr_low_res_mode_info;
 #endif
+
+  int use_roi;
 } VP8_CONFIG;
 
 void vp8_initialize();
