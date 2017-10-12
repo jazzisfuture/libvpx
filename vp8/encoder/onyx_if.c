@@ -1845,9 +1845,9 @@ struct VP8_COMP *vp8_create_compressor(VP8_CONFIG *oxcf) {
    * Enable it for error_resilient_mode, or for 1 pass CBR mode.
    */
   cpi->cyclic_refresh_mode_enabled =
-      (cpi->oxcf.error_resilient_mode ||
-       (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
-        cpi->oxcf.Mode <= 2));
+      (0 && (cpi->oxcf.error_resilient_mode ||
+             (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
+              cpi->oxcf.Mode <= 2)));
   cpi->cyclic_refresh_mode_max_mbs_perframe =
       (cpi->common.mb_rows * cpi->common.mb_cols) / 7;
   if (cpi->oxcf.number_of_layers == 1) {
@@ -5353,6 +5353,7 @@ int vp8_set_roimap(VP8_COMP *cpi, unsigned char *map, unsigned int rows,
   int internal_delta_q[MAX_MB_SEGMENTS];
   const int range = 63;
   int i;
+  printf("%d\n", cpi->cyclic_refresh_mode_enabled);
 
   // This method is currently incompatible with the cyclic refresh method
   if (cpi->cyclic_refresh_mode_enabled) return -1;
