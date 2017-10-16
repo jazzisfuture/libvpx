@@ -546,6 +546,10 @@ static void set_rt_speed_feature_framesize_independent(
       sf->adapt_partition_source_sad = 1;
       sf->adapt_partition_thresh =
           (cm->width * cm->height <= 640 * 360) ? 40000 : 60000;
+      if (cpi->oxcf.rc_mode == VPX_VBR && cpi->oxcf.lag_in_frames > 0 &&
+        sf->use_altref_onepass && cm->frame_type != KEY_FRAME &&
+        !cpi->rc.is_src_frame_alt_ref && cpi->refresh_alt_ref_frame)
+        sf->adapt_partition_thresh = 20000;
       if (cpi->content_state_sb_fd == NULL &&
           (!cpi->use_svc ||
            cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1)) {
@@ -565,6 +569,7 @@ static void set_rt_speed_feature_framesize_independent(
   }
 
   if (speed >= 7) {
+    sf->use_nonrd_pick_mode = 1;
     sf->adapt_partition_source_sad = 0;
     sf->adaptive_rd_thresh = 3;
     sf->mv.search_method = FAST_DIAMOND;
