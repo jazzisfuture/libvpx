@@ -352,6 +352,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->high_source_sad = 0;
   rc->reset_high_source_sad = 0;
   rc->high_source_sad_lagindex = -1;
+  rc->high_source_sad_lag = 0;
   rc->alt_ref_gf_group = 0;
   rc->last_frame_is_src_altref = 0;
   rc->fac_active_worst_inter = 150;
@@ -2173,6 +2174,8 @@ static void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi,
     rc->high_source_sad_lagindex = high_source_sad_lagindex;
   // Adjust some factors for the next GF group, ignore initial key frame,
   // and only for lag_in_frames not too small.
+  cpi->rc.high_source_sad_lag = 0;
+  if (avg_source_sad_lag > sad_thresh1 >> 2) cpi->rc.high_source_sad_lag = 1;
   if (cpi->refresh_golden_frame == 1 && cm->current_video_frame > 30 &&
       cpi->oxcf.lag_in_frames > 8) {
     int frame_constraint;
