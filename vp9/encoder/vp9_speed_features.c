@@ -536,6 +536,10 @@ static void set_rt_speed_feature_framesize_independent(
     sf->partition_search_type = VAR_BASED_PARTITION;
     // Turn on this to use non-RD key frame coding mode.
     sf->use_nonrd_pick_mode = 1;
+    if (cpi->oxcf.rc_mode == VPX_VBR && cpi->oxcf.lag_in_frames > 0 &&
+        sf->use_altref_onepass && cm->frame_type != KEY_FRAME &&
+        !cpi->rc.is_src_frame_alt_ref && cpi->refresh_alt_ref_frame)
+     sf->use_nonrd_pick_mode = 0;
     sf->mv.search_method = NSTEP;
     sf->mv.reduce_first_step_size = 1;
     sf->skip_encode_sb = 0;
@@ -565,6 +569,7 @@ static void set_rt_speed_feature_framesize_independent(
   }
 
   if (speed >= 7) {
+    sf->use_nonrd_pick_mode = 1;
     sf->adapt_partition_source_sad = 0;
     sf->adaptive_rd_thresh = 3;
     sf->mv.search_method = FAST_DIAMOND;
