@@ -723,6 +723,10 @@ typedef struct VP9_COMP {
 
   uint8_t *count_arf_frame_usage;
   uint8_t *count_lastgolden_frame_usage;
+
+  vpx_roi_map_t roi;
+  // Use the static threshold from ROI settings.
+  int use_roi_static_threshold;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
@@ -937,6 +941,10 @@ static INLINE int log_tile_cols_from_picsize_level(uint32_t width,
 }
 
 VP9_LEVEL vp9_get_level(const Vp9LevelSpec *const level_spec);
+
+int vp9_set_roi_map(VP9_COMP *cpi, unsigned char *map, unsigned int rows,
+                    unsigned int cols, int delta_q[4], int delta_lf[4],
+                    unsigned int threshold[4]);
 
 void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 

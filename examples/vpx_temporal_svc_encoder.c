@@ -26,7 +26,7 @@
 #include "../tools_common.h"
 #include "../video_writer.h"
 
-#define VP8_ROI_MAP 0
+#define ROI_MAP 1
 
 static const char *exec_name;
 
@@ -164,15 +164,16 @@ static void printout_rate_control_summary(struct RateControlMetrics *rc,
     die("Error: Number of input frames not equal to output! \n");
 }
 
-#if VP8_ROI_MAP
-static void vp8_set_roi_map(vpx_codec_enc_cfg_t *cfg, vpx_roi_map_t *roi) {
+#if ROI_MAP
+static void set_roi_map(vpx_codec_enc_cfg_t *cfg, vpx_roi_map_t *roi,
+                        unsigned int block_size) {
   unsigned int i, j;
   memset(roi, 0, sizeof(*roi));
 
   // ROI is based on the segments (4 for vp8, 8 for vp9), smallest unit for
   // segment is 16x16 for vp8, 8x8 for vp9.
-  roi->rows = (cfg->g_h + 15) / 16;
-  roi->cols = (cfg->g_w + 15) / 16;
+  roi->rows = (cfg->g_h + block_size - 1) / block_size;
+  roi->cols = (cfg->g_w + block_size - 1) / block_size;
 
   // Applies delta QP on the segment blocks, varies from -63 to 63.
   // Setting to negative means lower QP (better quality).
@@ -563,7 +564,7 @@ int main(int argc, char **argv) {
   int layering_mode = 0;
   int layer_flags[VPX_TS_MAX_PERIODICITY] = { 0 };
   int flag_periodicity = 1;
-#if VP8_ROI_MAP
+#if ROI_MAP
   vpx_roi_map_t roi;
 #endif
   vpx_svc_layer_id_t layer_id = { 0, 0 };
@@ -766,8 +767,8 @@ int main(int argc, char **argv) {
     vpx_codec_control(&codec, VP8E_SET_NOISE_SENSITIVITY, kVp8DenoiserOff);
     vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
     vpx_codec_control(&codec, VP8E_SET_GF_CBR_BOOST_PCT, 0);
-#if VP8_ROI_MAP
-    vp8_set_roi_map(&cfg, &roi);
+#if ROI_MAP
+    set_roi_map(&cfg, &roi, 16);
     if (vpx_codec_control(&codec, VP8E_SET_ROI_MAP, &roi))
       die_codec(&codec, "Failed to set ROI map");
 #endif
@@ -776,7 +777,7 @@ int main(int argc, char **argv) {
     vpx_svc_extra_cfg_t svc_params;
     memset(&svc_params, 0, sizeof(svc_params));
     vpx_codec_control(&codec, VP8E_SET_CPUUSED, speed);
-    vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 3);
+    vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 0);
     vpx_codec_control(&codec, VP9E_SET_GF_CBR_BOOST_PCT, 0);
     vpx_codec_control(&codec, VP9E_SET_FRAME_PARALLEL_DECODING, 0);
     vpx_codec_control(&codec, VP9E_SET_FRAME_PERIODIC_BOOST, 0);
@@ -784,6 +785,9 @@ int main(int argc, char **argv) {
     vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
     vpx_codec_control(&codec, VP9E_SET_TUNE_CONTENT, 0);
     vpx_codec_control(&codec, VP9E_SET_TILE_COLUMNS, (cfg.g_threads >> 1));
+    set_roi_map(&cfg, &roi, 8);
+    if (vpx_codec_control(&codec, VP8E_SET_ROI_MAP, &roi))
+      die_codec(&codec, "Failed to set ROI map");
     // TODO(marpan/jianj): There is an issue with row-mt for low resolutons at
     // high speed settings, disable its use for those cases for now.
     if (cfg.g_threads > 1 && ((cfg.g_w > 320 && cfg.g_h > 240) || speed < 7))
