@@ -266,7 +266,8 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
     }
     vp9_init_plane_quantizers(cpi, x);
 
-    x->encode_breakout = cpi->segment_encode_breakout[mi->segment_id];
+    if (cpi->use_roi_static_threshold)
+      x->encode_breakout = cpi->segment_encode_breakout[mi->segment_id];
   } else {
     mi->segment_id = 0;
     x->encode_breakout = cpi->encode_breakout;
