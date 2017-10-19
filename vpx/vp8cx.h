@@ -640,19 +640,23 @@ typedef enum vp9e_temporal_layering_mode {
  *
  * These defines the data structures for the region of interest map
  *
+ * TODO(jianj): VP9 has two other features: see SEG_LVL_REF_FRAME and
+ * SEG_LVL_SKIP and not sure if they work in real-time mode. Ignore them for
+ * now.
  */
 
 typedef struct vpx_roi_map {
-  /*! An id between 0 and 3 for each 16x16 region within a frame. */
+  /*! If ROI is enabled. */
+  int enabled;
+  /*! An id between 0-3 (0-7 for vp9) for each 16x16 (8x8 for VP9)
+   * region within a frame. */
   unsigned char *roi_map;
   unsigned int rows; /**< Number of rows. */
   unsigned int cols; /**< Number of columns. */
-  // TODO(paulwilkins): broken for VP9 which has 8 segments
-  // q and loop filter deltas for each segment
-  // (see MAX_MB_SEGMENTS)
-  int delta_q[4];  /**< Quantizer deltas. */
-  int delta_lf[4]; /**< Loop filter deltas. */
-  /*! Static breakout threshold for each segment. */
+  /*! VP8 only uses the first 4 segments. VP9 uses 8 segments. */
+  int delta_q[8];  /**< Quantizer deltas. */
+  int delta_lf[8]; /**< Loop filter deltas. */
+  /*! Static breakout threshold for each segment. Only used in VP8. */
   unsigned int static_threshold[4];
 } vpx_roi_map_t;
 

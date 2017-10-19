@@ -30,7 +30,7 @@ void vp9_disable_segmentation(struct segmentation *seg) {
   seg->update_data = 0;
 }
 
-void vp9_set_segment_data(struct segmentation *seg, signed char *feature_data,
+void vp9_set_segment_data(struct segmentation *seg, int16_t *feature_data,
                           unsigned char abs_delta) {
   seg->abs_delta = abs_delta;
 

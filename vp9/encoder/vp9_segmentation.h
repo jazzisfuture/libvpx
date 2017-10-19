@@ -36,7 +36,7 @@ void vp9_clear_segdata(struct segmentation *seg, int segment_id,
 //
 // abs_delta = SEGMENT_DELTADATA (deltas) abs_delta = SEGMENT_ABSDATA (use
 // the absolute values given).
-void vp9_set_segment_data(struct segmentation *seg, signed char *feature_data,
+void vp9_set_segment_data(struct segmentation *seg, int16_t *feature_data,
                           unsigned char abs_delta);
 
 void vp9_choose_segmap_coding_method(VP9_COMMON *cm, MACROBLOCKD *xd);
