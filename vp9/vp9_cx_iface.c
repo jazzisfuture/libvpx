@@ -79,7 +79,7 @@ static struct vp9_extracfg default_extra_cfg = {
   0,                     // alt_ref_aq
   0,                     // frame_periodic_delta_q
   VPX_BITS_8,            // Bit depth
-  VP9E_CONTENT_DEFAULT,  // content
+  VP9E_CONTENT_FILM,     // For this test branch force default content to film.
   VPX_CS_UNKNOWN,        // color space
   0,                     // color range
   0,                     // render width

@@ -2877,7 +2877,7 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
 // This function is designed to apply a bias or adjustment to an rd value based
 // on the relative variance of the source and reconstruction.
 #define VERY_LOW_VAR_THRESH 2
-static unsigned int low_var_thresh[VP9E_CONTENT_INVALID] = { 5, 5, 10, 20 };
+static unsigned int low_var_thresh[VP9E_CONTENT_INVALID] = { 5, 5, 5, 10 };
 static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 100, 200 };
 static unsigned int var_mult[VP9E_CONTENT_INVALID] = { 100, 100, 100, 200 };
 
