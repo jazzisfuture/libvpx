@@ -4701,7 +4701,6 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     RD_OPT *const rd_opt = &cpi->rd;
     FRAME_COUNTS *counts = cpi->td.counts;
     RD_COUNTS *const rdc = &cpi->td.rd_counts;
-
     // This code does a single RD pass over the whole frame assuming
     // either compound, single or hybrid prediction as per whatever has
     // worked best for that type of frame in the past.
@@ -4791,6 +4790,8 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     }
   } else {
     cm->reference_mode = SINGLE_REFERENCE;
+    if  (cpi->allow_comp_inter_inter && cpi->sf.use_altref_onepass)
+      cm->reference_mode = REFERENCE_MODE_SELECT;
     encode_frame_internal(cpi);
   }
 
