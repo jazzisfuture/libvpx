@@ -4791,6 +4791,8 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     }
   } else {
     cm->reference_mode = SINGLE_REFERENCE;
+    if  (cpi->allow_comp_inter_inter && cpi->sf.use_altref_onepass)
+      cm->reference_mode = REFERENCE_MODE_SELECT;
     encode_frame_internal(cpi);
   }
 
