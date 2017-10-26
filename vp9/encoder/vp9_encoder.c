@@ -792,6 +792,12 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vpx_free(cpi->prev_variance_low);
   cpi->prev_variance_low = NULL;
 
+  vpx_free(cpi->vt);
+  cpi->vt = NULL;
+
+  vpx_free(cpi->vt2);
+  cpi->vt2 = NULL;
+
   vpx_free(cpi->copied_frame_cnt);
   cpi->copied_frame_cnt = NULL;
 
@@ -1988,6 +1994,9 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   cpi->tile_data = NULL;
 
   realloc_segmentation_maps(cpi);
+
+  CHECK_MEM_ERROR(cm, cpi->vt, vpx_calloc(1, sizeof(*cpi->vt)));
+  CHECK_MEM_ERROR(cm, cpi->vt2, vpx_calloc(16, sizeof(*cpi->vt2)));
 
   CHECK_MEM_ERROR(cm, cpi->skin_map, vpx_calloc(cm->mi_rows * cm->mi_cols,
                                                 sizeof(cpi->skin_map[0])));
