@@ -447,6 +447,44 @@ typedef struct ARNRFilterData {
   struct scale_factors sf;
 } ARNRFilterData;
 
+typedef struct {
+  int64_t sum_square_error;
+  int64_t sum_error;
+  int log2_count;
+  int variance;
+} var;
+
+typedef struct {
+  var none;
+  var horz[2];
+  var vert[2];
+} partition_variance;
+
+typedef struct {
+  partition_variance part_variances;
+  var split[4];
+} v4x4;
+
+typedef struct {
+  partition_variance part_variances;
+  v4x4 split[4];
+} v8x8;
+
+typedef struct {
+  partition_variance part_variances;
+  v8x8 split[4];
+} v16x16;
+
+typedef struct {
+  partition_variance part_variances;
+  v16x16 split[4];
+} v32x32;
+
+typedef struct {
+  partition_variance part_variances;
+  v32x32 split[4];
+} v64x64;
+
 typedef struct VP9_COMP {
   QUANTS quants;
   ThreadData td;
@@ -695,6 +733,10 @@ typedef struct VP9_COMP {
 
   int row_mt;
   unsigned int row_mt_bit_exact;
+
+  // Variance structure used for partitioning.
+  v64x64 *vt;
+  v16x16 *vt2;
 
   // Previous Partition Info
   BLOCK_SIZE *prev_partition;
