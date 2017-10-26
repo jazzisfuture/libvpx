@@ -32,6 +32,7 @@
 #include "vp9/encoder/vp9_alt_ref_aq.h"
 #include "vp9/encoder/vp9_aq_cyclicrefresh.h"
 #include "vp9/encoder/vp9_context_tree.h"
+#include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemb.h"
 #include "vp9/encoder/vp9_ethread.h"
 #include "vp9/encoder/vp9_firstpass.h"
@@ -695,6 +696,10 @@ typedef struct VP9_COMP {
 
   int row_mt;
   unsigned int row_mt_bit_exact;
+
+  // Variance structure used for partitioning.
+  v64x64 *vt;
+  v16x16 *vt2;
 
   // Previous Partition Info
   BLOCK_SIZE *prev_partition;

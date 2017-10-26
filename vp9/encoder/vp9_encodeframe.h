@@ -22,6 +22,44 @@ struct yv12_buffer_config;
 struct VP9_COMP;
 struct ThreadData;
 
+typedef struct {
+  int64_t sum_square_error;
+  int64_t sum_error;
+  int log2_count;
+  int variance;
+} var;
+
+typedef struct {
+  var none;
+  var horz[2];
+  var vert[2];
+} partition_variance;
+
+typedef struct {
+  partition_variance part_variances;
+  var split[4];
+} v4x4;
+
+typedef struct {
+  partition_variance part_variances;
+  v4x4 split[4];
+} v8x8;
+
+typedef struct {
+  partition_variance part_variances;
+  v8x8 split[4];
+} v16x16;
+
+typedef struct {
+  partition_variance part_variances;
+  v16x16 split[4];
+} v32x32;
+
+typedef struct {
+  partition_variance part_variances;
+  v32x32 split[4];
+} v64x64;
+
 // Constants used in SOURCE_VAR_BASED_PARTITION
 #define VAR_HIST_MAX_BG_VAR 1000
 #define VAR_HIST_FACTOR 10
