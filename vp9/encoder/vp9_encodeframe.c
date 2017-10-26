@@ -1039,8 +1039,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   int i, j, k, m;
-  v64x64 vt;
-  v16x16 vt2[16];
+  v64x64 *vt;
+  v16x16 *vt2;
   int force_split[21];
   int avg_32x32;
   int max_var_32x32 = 0;
@@ -1076,6 +1076,9 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   int variance4x4downsample[16];
   int segment_id;
   int sb_offset = (cm->mi_stride >> 3) * (mi_row >> 3) + (mi_col >> 3);
+
+  CHECK_MEM_ERROR(cm, vt, vpx_calloc(1, sizeof(*vt)));
+  CHECK_MEM_ERROR(cm, vt2, vpx_calloc(16, sizeof(*vt2)));
 
   set_offsets(cpi, tile, x, mi_row, mi_col, BLOCK_64X64);
   segment_id = xd->mi[0]->segment_id;
@@ -1260,7 +1263,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       const int x16_idx = x32_idx + ((j & 1) << 4);
       const int y16_idx = y32_idx + ((j >> 1) << 4);
       const int split_index = 5 + i2 + j;
-      v16x16 *vst = &vt.split[i].split[j];
+      v16x16 *vst = &vt->split[i].split[j];
       force_split[split_index] = 0;
       variance4x4downsample[i2 + j] = 0;
       if (!is_key_frame) {
@@ -1269,21 +1272,24 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
                              xd->cur_buf->flags,
 #endif
                              pixels_wide, pixels_high, is_key_frame);
-        fill_variance_tree(&vt.split[i].split[j], BLOCK_16X16);
-        get_variance(&vt.split[i].split[j].part_variances.none);
-        avg_16x16[i] += vt.split[i].split[j].part_variances.none.variance;
-        if (vt.split[i].split[j].part_variances.none.variance < minvar_16x16[i])
-          minvar_16x16[i] = vt.split[i].split[j].part_variances.none.variance;
-        if (vt.split[i].split[j].part_variances.none.variance > maxvar_16x16[i])
-          maxvar_16x16[i] = vt.split[i].split[j].part_variances.none.variance;
-        if (vt.split[i].split[j].part_variances.none.variance > thresholds[2]) {
+        fill_variance_tree(&vt->split[i].split[j], BLOCK_16X16);
+        get_variance(&vt->split[i].split[j].part_variances.none);
+        avg_16x16[i] += vt->split[i].split[j].part_variances.none.variance;
+        if (vt->split[i].split[j].part_variances.none.variance <
+            minvar_16x16[i])
+          minvar_16x16[i] = vt->split[i].split[j].part_variances.none.variance;
+        if (vt->split[i].split[j].part_variances.none.variance >
+            maxvar_16x16[i])
+          maxvar_16x16[i] = vt->split[i].split[j].part_variances.none.variance;
+        if (vt->split[i].split[j].part_variances.none.variance >
+            thresholds[2]) {
           // 16X16 variance is above threshold for split, so force split to 8x8
           // for this 16x16 block (this also forces splits for upper levels).
           force_split[split_index] = 1;
           force_split[i + 1] = 1;
           force_split[0] = 1;
         } else if (cpi->oxcf.speed < 8 &&
-                   vt.split[i].split[j].part_variances.none.variance >
+                   vt->split[i].split[j].part_variances.none.variance >
                        thresholds[1] &&
                    !cyclic_refresh_segment_id_boosted(segment_id)) {
           // We have some nominal amount of 16x16 variance (based on average),
@@ -1305,7 +1311,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
         }
       }
       if (is_key_frame || (low_res &&
-                           vt.split[i].split[j].part_variances.none.variance >
+                           vt->split[i].split[j].part_variances.none.variance >
                                threshold_4x4avg)) {
         force_split[split_index] = 0;
         // Go down to 4x4 down-sampling for variance.
@@ -1331,7 +1337,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     const int i2 = i << 2;
     for (j = 0; j < 4; j++) {
       if (variance4x4downsample[i2 + j] == 1) {
-        v16x16 *vtemp = (!is_key_frame) ? &vt2[i2 + j] : &vt.split[i].split[j];
+        v16x16 *vtemp = (!is_key_frame) ? &vt2[i2 + j] : &vt->split[i].split[j];
         for (m = 0; m < 4; m++) fill_variance_tree(&vtemp->split[m], BLOCK_8X8);
         fill_variance_tree(vtemp, BLOCK_16X16);
         // If variance of this 16x16 block is above the threshold, force block
@@ -1344,20 +1350,20 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
         }
       }
     }
-    fill_variance_tree(&vt.split[i], BLOCK_32X32);
+    fill_variance_tree(&vt->split[i], BLOCK_32X32);
     // If variance of this 32x32 block is above the threshold, or if its above
     // (some threshold of) the average variance over the sub-16x16 blocks, then
     // force this block to split. This also forces a split on the upper
     // (64x64) level.
     if (!force_split[i + 1]) {
-      get_variance(&vt.split[i].part_variances.none);
-      var_32x32 = vt.split[i].part_variances.none.variance;
+      get_variance(&vt->split[i].part_variances.none);
+      var_32x32 = vt->split[i].part_variances.none.variance;
       max_var_32x32 = VPXMAX(var_32x32, max_var_32x32);
       min_var_32x32 = VPXMIN(var_32x32, min_var_32x32);
-      if (vt.split[i].part_variances.none.variance > thresholds[1] ||
+      if (vt->split[i].part_variances.none.variance > thresholds[1] ||
           (!is_key_frame &&
-           vt.split[i].part_variances.none.variance > (thresholds[1] >> 1) &&
-           vt.split[i].part_variances.none.variance > (avg_16x16[i] >> 1))) {
+           vt->split[i].part_variances.none.variance > (thresholds[1] >> 1) &&
+           vt->split[i].part_variances.none.variance > (avg_16x16[i] >> 1))) {
         force_split[i + 1] = 1;
         force_split[0] = 1;
       } else if (!is_key_frame && noise_level < kLow && cm->height <= 360 &&
@@ -1370,13 +1376,13 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     }
   }
   if (!force_split[0]) {
-    fill_variance_tree(&vt, BLOCK_64X64);
-    get_variance(&vt.part_variances.none);
+    fill_variance_tree(vt, BLOCK_64X64);
+    get_variance(&vt->part_variances.none);
     // If variance of this 64x64 block is above (some threshold of) the average
     // variance over the sub-32x32 blocks, then force this block to split.
     // Only checking this for noise level >= medium for now.
     if (!is_key_frame && noise_level >= kMedium &&
-        vt.part_variances.none.variance > (9 * avg_32x32) >> 5)
+        vt->part_variances.none.variance > (9 * avg_32x32) >> 5)
       force_split[0] = 1;
     // Else if the maximum 32x32 variance minus the miniumum 32x32 variance in
     // a 64x64 block is greater than threshold and the maximum 32x32 variance is
@@ -1391,13 +1397,13 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   // Now go through the entire structure, splitting every block size until
   // we get to one that's got a variance lower than our threshold.
   if (mi_col + 8 > cm->mi_cols || mi_row + 8 > cm->mi_rows ||
-      !set_vt_partitioning(cpi, x, xd, &vt, BLOCK_64X64, mi_row, mi_col,
+      !set_vt_partitioning(cpi, x, xd, vt, BLOCK_64X64, mi_row, mi_col,
                            thresholds[0], BLOCK_16X16, force_split[0])) {
     for (i = 0; i < 4; ++i) {
       const int x32_idx = ((i & 1) << 2);
       const int y32_idx = ((i >> 1) << 2);
       const int i2 = i << 2;
-      if (!set_vt_partitioning(cpi, x, xd, &vt.split[i], BLOCK_32X32,
+      if (!set_vt_partitioning(cpi, x, xd, &vt->split[i], BLOCK_32X32,
                                (mi_row + y32_idx), (mi_col + x32_idx),
                                thresholds[1], BLOCK_16X16,
                                force_split[i + 1])) {
@@ -1409,7 +1415,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
           // in set_vt_partioning(), otherwise use vt.
           v16x16 *vtemp = (!is_key_frame && variance4x4downsample[i2 + j] == 1)
                               ? &vt2[i2 + j]
-                              : &vt.split[i].split[j];
+                              : &vt->split[i].split[j];
           if (!set_vt_partitioning(
                   cpi, x, xd, vtemp, BLOCK_16X16, mi_row + y32_idx + y16_idx,
                   mi_col + x32_idx + x16_idx, thresholds[2], cpi->vbp_bsize_min,
@@ -1450,11 +1456,13 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   }
 
   if (cpi->sf.short_circuit_low_temp_var) {
-    set_low_temp_var_flag(cpi, x, xd, &vt, thresholds, ref_frame_partition,
+    set_low_temp_var_flag(cpi, x, xd, vt, thresholds, ref_frame_partition,
                           mi_col, mi_row);
   }
 
   chroma_check(cpi, x, bsize, y_sad, is_key_frame);
+  vpx_free(vt);
+  vpx_free(vt2);
   return 0;
 }
 
