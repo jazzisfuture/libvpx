@@ -1040,7 +1040,6 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   MACROBLOCKD *xd = &x->e_mbd;
   int i, j, k, m;
   v64x64 vt;
-  v16x16 vt2[16];
   int force_split[21];
   int avg_32x32;
   int max_var_32x32 = 0;
@@ -1313,7 +1312,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
         for (k = 0; k < 4; k++) {
           int x8_idx = x16_idx + ((k & 1) << 3);
           int y8_idx = y16_idx + ((k >> 1) << 3);
-          v8x8 *vst2 = is_key_frame ? &vst->split[k] : &vt2[i2 + j].split[k];
+          v8x8 *vst2 = &vst->split[k];
           fill_variance_4x4avg(s, sp, d, dp, x8_idx, y8_idx, vst2,
 #if CONFIG_VP9_HIGHBITDEPTH
                                xd->cur_buf->flags,
@@ -1331,7 +1330,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     const int i2 = i << 2;
     for (j = 0; j < 4; j++) {
       if (variance4x4downsample[i2 + j] == 1) {
-        v16x16 *vtemp = (!is_key_frame) ? &vt2[i2 + j] : &vt.split[i].split[j];
+        v16x16 *vtemp = &vt.split[i].split[j];
         for (m = 0; m < 4; m++) fill_variance_tree(&vtemp->split[m], BLOCK_8X8);
         fill_variance_tree(vtemp, BLOCK_16X16);
         // If variance of this 16x16 block is above the threshold, force block
@@ -1405,11 +1404,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
           const int x16_idx = ((j & 1) << 1);
           const int y16_idx = ((j >> 1) << 1);
           // For inter frames: if variance4x4downsample[] == 1 for this 16x16
-          // block, then the variance is based on 4x4 down-sampling, so use vt2
-          // in set_vt_partioning(), otherwise use vt.
-          v16x16 *vtemp = (!is_key_frame && variance4x4downsample[i2 + j] == 1)
-                              ? &vt2[i2 + j]
-                              : &vt.split[i].split[j];
+          // block, then the variance is based on 4x4 down-sampling.
+          v16x16 *vtemp = &vt.split[i].split[j];
           if (!set_vt_partitioning(
                   cpi, x, xd, vtemp, BLOCK_16X16, mi_row + y32_idx + y16_idx,
                   mi_col + x32_idx + x16_idx, thresholds[2], cpi->vbp_bsize_min,
