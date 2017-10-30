@@ -287,8 +287,8 @@ static void set_block_size(VP9_COMP *const cpi, MACROBLOCK *const x,
 }
 
 typedef struct {
-  int64_t sum_square_error;
-  int64_t sum_error;
+  uint32_t sum_square_error;
+  int32_t sum_error;
   int log2_count;
   int variance;
 } var;
