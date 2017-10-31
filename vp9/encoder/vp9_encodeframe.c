@@ -1044,7 +1044,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   MACROBLOCKD *xd = &x->e_mbd;
   int i, j, k, m;
   v64x64 vt;
-  v16x16 vt2[16];
+  v16x16 *vt2 = NULL;
   int force_split[21];
   int avg_32x32;
   int max_var_32x32 = 0;
@@ -1312,6 +1312,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
                            vt.split[i].split[j].part_variances.none.variance >
                                threshold_4x4avg)) {
         force_split[split_index] = 0;
+        CHECK_MEM_ERROR(cm, vt2, vpx_calloc(16, sizeof(*vt2)));
         // Go down to 4x4 down-sampling for variance.
         variance4x4downsample[i2 + j] = 1;
         for (k = 0; k < 4; k++) {
@@ -1459,6 +1460,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   }
 
   chroma_check(cpi, x, bsize, y_sad, is_key_frame);
+  if (vt2) vpx_free(vt2);
   return 0;
 }
 
