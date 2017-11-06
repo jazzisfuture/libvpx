@@ -1146,6 +1146,66 @@ void vp9_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
   *rd_cost = best_rdc;
 }
 
+static void init_ref_frame_costs_compound(const VP9_COMMON *cm,
+                                          const MACROBLOCKD *xd, int segment_id,
+                                          unsigned int *ref_costs_single,
+                                          unsigned int *ref_costs_comp,
+                                          vpx_prob *comp_mode_p) {
+  int seg_ref_active =
+      segfeature_active(&cm->seg, segment_id, SEG_LVL_REF_FRAME);
+  if (seg_ref_active) {
+    memset(ref_costs_single, 0, MAX_REF_FRAMES * sizeof(*ref_costs_single));
+    memset(ref_costs_comp, 0, MAX_REF_FRAMES * sizeof(*ref_costs_comp));
+    *comp_mode_p = 128;
+  } else {
+    vpx_prob intra_inter_p = vp9_get_intra_inter_prob(cm, xd);
+    vpx_prob comp_inter_p = 128;
+
+    if (cm->reference_mode == REFERENCE_MODE_SELECT) {
+      comp_inter_p = vp9_get_reference_mode_prob(cm, xd);
+      *comp_mode_p = comp_inter_p;
+    } else {
+      *comp_mode_p = 128;
+    }
+
+    ref_costs_single[INTRA_FRAME] = vp9_cost_bit(intra_inter_p, 0);
+
+    if (cm->reference_mode != COMPOUND_REFERENCE) {
+      vpx_prob ref_single_p1 = vp9_get_pred_prob_single_ref_p1(cm, xd);
+      vpx_prob ref_single_p2 = vp9_get_pred_prob_single_ref_p2(cm, xd);
+      unsigned int base_cost = vp9_cost_bit(intra_inter_p, 1);
+
+      if (cm->reference_mode == REFERENCE_MODE_SELECT)
+        base_cost += vp9_cost_bit(comp_inter_p, 0);
+
+      ref_costs_single[LAST_FRAME] = ref_costs_single[GOLDEN_FRAME] =
+          ref_costs_single[ALTREF_FRAME] = base_cost;
+      ref_costs_single[LAST_FRAME] += vp9_cost_bit(ref_single_p1, 0);
+      ref_costs_single[GOLDEN_FRAME] += vp9_cost_bit(ref_single_p1, 1);
+      ref_costs_single[ALTREF_FRAME] += vp9_cost_bit(ref_single_p1, 1);
+      ref_costs_single[GOLDEN_FRAME] += vp9_cost_bit(ref_single_p2, 0);
+      ref_costs_single[ALTREF_FRAME] += vp9_cost_bit(ref_single_p2, 1);
+    } else {
+      ref_costs_single[LAST_FRAME] = 512;
+      ref_costs_single[GOLDEN_FRAME] = 512;
+      ref_costs_single[ALTREF_FRAME] = 512;
+    }
+    if (cm->reference_mode != SINGLE_REFERENCE) {
+      vpx_prob ref_comp_p = vp9_get_pred_prob_comp_ref_p(cm, xd);
+      unsigned int base_cost = vp9_cost_bit(intra_inter_p, 1);
+
+      if (cm->reference_mode == REFERENCE_MODE_SELECT)
+        base_cost += vp9_cost_bit(comp_inter_p, 1);
+
+      ref_costs_comp[LAST_FRAME] = base_cost + vp9_cost_bit(ref_comp_p, 0);
+      ref_costs_comp[GOLDEN_FRAME] = base_cost + vp9_cost_bit(ref_comp_p, 1);
+    } else {
+      ref_costs_comp[LAST_FRAME] = 512;
+      ref_costs_comp[GOLDEN_FRAME] = 512;
+    }
+  }
+}
+
 static void init_ref_frame_cost(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                 int ref_frame_cost[MAX_REF_FRAMES]) {
   vpx_prob intra_inter_p = vp9_get_intra_inter_prob(cm, xd);
@@ -1496,6 +1556,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   INTERP_FILTER filter_gf_svc = EIGHTTAP;
   MV_REFERENCE_FRAME best_second_ref_frame = NONE;
   int comp_modes = 0;
+  unsigned int ref_costs_single[MAX_REF_FRAMES], ref_costs_comp[MAX_REF_FRAMES];
+  vpx_prob comp_mode_p;
 
   init_ref_frame_cost(cm, xd, ref_frame_cost);
 
@@ -1630,8 +1692,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
   // Compound prediction modes: (0,0) on LAST/GOLDEN and ARF.
   if (cm->reference_mode == REFERENCE_MODE_SELECT &&
-      cpi->sf.use_compound_nonrd_pickmode && usable_ref_frame == ALTREF_FRAME)
+      cpi->sf.use_compound_nonrd_pickmode && usable_ref_frame == ALTREF_FRAME) {
     comp_modes = 2;
+    init_ref_frame_costs_compound(cm, xd, mi->segment_id, ref_costs_single,
+                                  ref_costs_comp, &comp_mode_p);
+  }
 
   for (ref_frame = LAST_FRAME; ref_frame <= usable_ref_frame; ++ref_frame) {
     if (!skip_ref_find_pred[ref_frame]) {
@@ -2082,11 +2147,25 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       this_rdc.dist += rdc_uv.dist;
     }
 
+    if (cm->reference_mode == REFERENCE_MODE_SELECT) {
+      int compmode_cost = vp9_cost_bit(comp_mode_p, comp_pred);
+      this_rdc.rate += compmode_cost;
+    }
+
     this_rdc.rate += rate_mv;
     this_rdc.rate += cpi->inter_mode_cost[x->mbmi_ext->mode_context[ref_frame]]
                                          [INTER_OFFSET(this_mode)];
-    // TODO(marpan): Add costing for compound mode.
-    this_rdc.rate += ref_frame_cost[ref_frame];
+
+    if (comp_modes) {
+      if (comp_pred) {
+        this_rdc.rate += ref_costs_comp[ref_frame];
+      } else {
+        this_rdc.rate += ref_costs_single[ref_frame];
+      }
+    } else {
+      this_rdc.rate += ref_frame_cost[ref_frame];
+    }
+
     this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, this_rdc.rate, this_rdc.dist);
 
     // Bias against NEWMV that is very different from its neighbors, and bias
