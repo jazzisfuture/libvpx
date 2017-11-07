@@ -100,11 +100,14 @@ class ExternalFrameBufferList {
     }
     ExternalFrameBuffer *const ext_fb =
         reinterpret_cast<ExternalFrameBuffer *>(fb->priv);
+
+    if (!ext_fb->in_use) return 0;
+
     if (ext_fb == NULL) {
       EXPECT_TRUE(ext_fb != NULL);
       return -1;
     }
-    EXPECT_EQ(1, ext_fb->in_use);
+
     ext_fb->in_use = 0;
     return 0;
   }
