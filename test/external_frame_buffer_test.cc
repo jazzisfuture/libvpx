@@ -107,7 +107,9 @@ class ExternalFrameBufferList {
       EXPECT_TRUE(ext_fb != NULL);
       return -1;
     }
-    EXPECT_EQ(1, ext_fb->in_use);
+    // If we are releasing nonref buffer when decoder is destroyed, it might
+    // have been released before.
+    if (!ext_fb->in_use) return 0;
     ext_fb->in_use = 0;
     num_used_buffers_--;
     return 0;
@@ -503,7 +505,7 @@ TEST_F(ExternalFrameBufferTest, SetAfterDecode) {
                                     release_vp9_frame_buffer));
 }
 
-TEST_F(ExternalFrameBufferNonRefTest, DISABLED_ReleaseNonRefFrameBuffer) {
+TEST_F(ExternalFrameBufferNonRefTest, ReleaseNonRefFrameBuffer) {
   const int num_buffers = VP9_MAXIMUM_REF_BUFFERS + VPX_MAXIMUM_WORK_BUFFERS;
   ASSERT_EQ(VPX_CODEC_OK,
             SetFrameBufferFunctions(num_buffers, get_vp9_frame_buffer,
