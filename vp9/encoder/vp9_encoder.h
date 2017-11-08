@@ -710,6 +710,9 @@ typedef struct VP9_COMP {
   // If the last frame is dropped, we don't copy partition.
   uint8_t last_frame_dropped;
 
+  BLOCK_SIZE *prev_partition_svc;
+  int stride_svc1;
+
   // For each superblock: keeps track of the last time (in frame distance) the
   // the superblock did not have low source sad.
   uint8_t *content_state_sb_fd;
