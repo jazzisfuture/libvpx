@@ -34,7 +34,8 @@ struct ExternalFrameBuffer {
 // Class to manipulate a list of external frame buffers.
 class ExternalFrameBufferList {
  public:
-  ExternalFrameBufferList() : num_buffers_(0), ext_fb_list_(NULL) {}
+  ExternalFrameBufferList()
+      : num_buffers_(0), num_used_buffers_(0), ext_fb_list_(NULL) {}
 
   virtual ~ExternalFrameBufferList() {
     for (int i = 0; i < num_buffers_; ++i) {
@@ -71,6 +72,8 @@ class ExternalFrameBufferList {
     }
 
     SetFrameBuffer(idx, fb);
+
+    num_used_buffers_++;
     return 0;
   }
 
@@ -106,6 +109,7 @@ class ExternalFrameBufferList {
     }
     EXPECT_EQ(1, ext_fb->in_use);
     ext_fb->in_use = 0;
+    num_used_buffers_--;
     return 0;
   }
 
@@ -120,6 +124,8 @@ class ExternalFrameBufferList {
                   img->planes[0] < (ext_fb->data + ext_fb->size));
     }
   }
+
+  int GetNumUsedBuf() { return num_used_buffers_; }
 
  private:
   // Returns the index of the first free frame buffer. Returns |num_buffers_|
@@ -145,6 +151,7 @@ class ExternalFrameBufferList {
   }
 
   int num_buffers_;
+  int num_used_buffers_;
   ExternalFrameBuffer *ext_fb_list_;
 };
 
@@ -273,6 +280,7 @@ class ExternalFrameBufferMD5Test
 
 #if CONFIG_WEBM_IO
 const char kVP9TestFile[] = "vp90-2-02-size-lf-1920x1080.webm";
+const char kVP9NonRefTestFile[] = "vp90-2-22-svc_1280x720_1.webm";
 
 // Class for testing passing in external frame buffers to libvpx.
 class ExternalFrameBufferTest : public ::testing::Test {
@@ -291,8 +299,14 @@ class ExternalFrameBufferTest : public ::testing::Test {
   }
 
   virtual void TearDown() {
-    delete decoder_;
-    delete video_;
+    if (decoder_) {
+      delete decoder_;
+      decoder_ = NULL;
+    }
+    if (video_) {
+      delete video_;
+      video_ = NULL;
+    }
   }
 
   // Passes the external frame buffer information to libvpx.
@@ -325,7 +339,7 @@ class ExternalFrameBufferTest : public ::testing::Test {
     return VPX_CODEC_OK;
   }
 
- private:
+ protected:
   void CheckDecodedFrames() {
     libvpx_test::DxDataIterator dec_iter = decoder_->GetDxData();
     const vpx_image_t *img = NULL;
@@ -341,11 +355,31 @@ class ExternalFrameBufferTest : public ::testing::Test {
   int num_buffers_;
   ExternalFrameBufferList fb_list_;
 };
+
+class ExternalFrameBufferNonRefTest : public ExternalFrameBufferTest {
+ protected:
+  virtual void SetUp() {
+    video_ = new libvpx_test::WebMVideoSource(kVP9NonRefTestFile);
+    ASSERT_TRUE(video_ != NULL);
+    video_->Init();
+    video_->Begin();
+
+    vpx_codec_dec_cfg_t cfg = vpx_codec_dec_cfg_t();
+    decoder_ = new libvpx_test::VP9Decoder(cfg, 0);
+    ASSERT_TRUE(decoder_ != NULL);
+  }
+
+  virtual void CheckFrameBufferRelease() {
+    TearDown();
+    ASSERT_EQ(0, fb_list_.GetNumUsedBuf());
+  }
+};
 #endif  // CONFIG_WEBM_IO
 
 // This test runs through the set of test vectors, and decodes them.
 // Libvpx will call into the application to allocate a frame buffer when
-// needed. The md5 checksums are computed for each frame in the video file.
+// needed. The md5 checksums are computed for each frame in the video
+// file.
 // If md5 checksums match the correct md5 data, then the test is passed.
 // Otherwise, the test failed.
 TEST_P(ExternalFrameBufferMD5Test, ExtFBMD5Match) {
@@ -386,7 +420,6 @@ TEST_P(ExternalFrameBufferMD5Test, ExtFBMD5Match) {
   // Decode frame, and check the md5 matching.
   ASSERT_NO_FATAL_FAILURE(RunLoop(video.get()));
 }
-
 #if CONFIG_WEBM_IO
 TEST_F(ExternalFrameBufferTest, MinFrameBuffers) {
   // Minimum number of external frame buffers for VP9 is
@@ -466,6 +499,15 @@ TEST_F(ExternalFrameBufferTest, SetAfterDecode) {
   ASSERT_EQ(VPX_CODEC_ERROR,
             SetFrameBufferFunctions(num_buffers, get_vp9_frame_buffer,
                                     release_vp9_frame_buffer));
+}
+
+TEST_F(ExternalFrameBufferNonRefTest, DISABLED_ReleaseNonRefFrameBuffer) {
+  const int num_buffers = VP9_MAXIMUM_REF_BUFFERS + VPX_MAXIMUM_WORK_BUFFERS;
+  ASSERT_EQ(VPX_CODEC_OK,
+            SetFrameBufferFunctions(num_buffers, get_vp9_frame_buffer,
+                                    release_vp9_frame_buffer));
+  ASSERT_EQ(VPX_CODEC_OK, DecodeRemainingFrames());
+  CheckFrameBufferRelease();
 }
 #endif  // CONFIG_WEBM_IO
 
