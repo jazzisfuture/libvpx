@@ -96,6 +96,8 @@ typedef struct {
   // eighttap_smooth, eighttap_sharp, and bilinear.
   INTERP_FILTER downsample_filter_type[VPX_SS_MAX_LAYERS];
   int downsample_filter_phase[VPX_SS_MAX_LAYERS];
+  
+  int mi_stride[VPX_MAX_LAYERS];
 } SVC;
 
 struct VP9_COMP;

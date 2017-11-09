@@ -117,9 +117,10 @@ static int mv_refs_rt(VP9_COMP *cpi, const VP9_COMMON *cm, const MACROBLOCK *x,
       !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame &&
       ref_frame == LAST_FRAME) {
     // Get base layer mv.
+    int mi_stride_prevlayer = cpi->svc.mi_stride[cpi->svc.spatial_layer_id - 1];
     MV_REF *candidate =
         &cm->prev_frame
-             ->mvs[(mi_col >> 1) + (mi_row >> 1) * (cm->mi_cols >> 1)];
+             ->mvs[(mi_col >> 1) + (mi_row >> 1) * mi_stride_prevlayer];
     if (candidate->mv[0].as_int != INVALID_MV) {
       base_mv->as_mv.row = (candidate->mv[0].as_mv.row * 2);
       base_mv->as_mv.col = (candidate->mv[0].as_mv.col * 2);
