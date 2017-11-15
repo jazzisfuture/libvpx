@@ -45,6 +45,25 @@ extern vpx_codec_iface_t vpx_codec_vp9_dx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp9_dx(void);
 /*!@} - end algorithm interface member group*/
 
+#ifndef VPX_INSPECTION_H_
+/** Callback that inspects decoder frame data.
+ */
+typedef void (*vpx_inspect_cb)(void *decoder, void *ctx);
+#endif
+
+/*!\brief Structure to hold inspection callback and context.
+ *
+ * Defines a structure to hold the inspection callback function and calling
+ * context.
+ */
+typedef struct vpx_inspect_init {
+  /*! Inspection callback. */
+  vpx_inspect_cb inspect_cb;
+
+  /*! Inspection context. */
+  void *inspect_ctx;
+} vpx_inspect_init;
+
 /*!\enum vp8_dec_control_id
  * \brief VP8 decoder control functions
  *
@@ -124,6 +143,12 @@ enum vp8_dec_control_id {
    */
   VPXD_GET_LAST_QUANTIZER,
 
+  /** control function to set an vpx_inspect_cb callback that is invoked each
+   * time a frame is decoded.  When compiled without --enable-inspection, this
+   * returns VPX_CODEC_INCAPABLE.
+   */
+  VP9_SET_INSPECTION_CALLBACK,
+
   VP8_DECODER_CTRL_ID_MAX
 };
 
@@ -179,6 +204,8 @@ VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
 #define VPX_CTRL_VP9_INVERT_TILE_DECODE_ORDER
 #define VPX_CTRL_VP9_DECODE_SVC_SPATIAL_LAYER
 VPX_CTRL_USE_TYPE(VP9_DECODE_SVC_SPATIAL_LAYER, int)
+#define VPX_CTRL_VP9_SET_INSPECTION_CALLBACK
+VPX_CTRL_USE_TYPE(VP9_SET_INSPECTION_CALLBACK, vpx_inspect_init *)
 
 /*!\endcond */
 /*! @} - end defgroup vp8_decoder */
