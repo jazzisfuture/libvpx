@@ -1255,13 +1255,13 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     if (cpi->content_state_sb_fd != NULL)
       x->last_sb_high_content = cpi->content_state_sb_fd[sb_offset2];
 
-    // For SVC on top spatial layer and non_reference frame: copy partition
-    // from lower spatial resolution if svc_use_lowres_part is enabled.
+    // For SVC on top spatial layer: use/scale the partition from
+    // the lower spatial resolution if svc_use_lowres_part is enabled.
     // TODO(jianj): Fix to allow it to work on boundary.
-    if (cpi->sf.svc_use_lowres_part && cpi->svc.spatial_layer_id == 2 &&
-        cpi->svc.non_reference_frame && cpi->svc.prev_partition_svc != NULL &&
-        mi_row < cm->mi_rows - 8 && mi_col < cm->mi_cols - 8 &&
-        content_state != kVeryHighSad) {
+    if (cpi->sf.svc_use_lowres_part &&
+        cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1 &&
+        cpi->svc.prev_partition_svc != NULL && mi_row < cm->mi_rows - 8 &&
+        mi_col < cm->mi_cols - 8 && content_state != kVeryHighSad) {
       copy_partitioning_svc(cpi, x, xd, BLOCK_64X64, mi_row >> 1, mi_col >> 1,
                             mi_row >> 1, mi_col >> 1, mi_row, mi_col);
       return 0;
