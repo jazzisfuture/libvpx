@@ -610,7 +610,7 @@ static void set_rt_speed_feature_framesize_independent(
     // Enable only for top temporal enhancement layer (which are non-reference
     // frames for the fixed SVC patterns).
     if (cpi->use_svc && cpi->svc.number_spatial_layers == 3 &&
-        cpi->svc.temporal_layer_id == cpi->svc.number_temporal_layers - 1 &&
+        cpi->svc.temporal_layer_id > 0 &&
         cpi->oxcf.width * cpi->oxcf.height > 640 * 480)
       sf->svc_use_lowres_part = 1;
   }
