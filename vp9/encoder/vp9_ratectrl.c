@@ -1562,7 +1562,8 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
         q = active_worst_quality;
     }
   }
-  clamp(q, active_best_quality, active_worst_quality);
+
+  q = clamp(q, active_best_quality, active_worst_quality);
 
   *top_index = active_worst_quality;
   *bottom_index = active_best_quality;
