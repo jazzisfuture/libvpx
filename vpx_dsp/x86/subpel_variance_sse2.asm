@@ -126,7 +126,6 @@ SECTION .text
                                   y_offset, dst, dst_stride, height, sse
   %endif
   %define block_height heightd
-  %define bilin_filter sseq
 %else
   %if ARCH_X86=1 && CONFIG_PIC=1
     %if %2 == 1 ; avg
@@ -372,15 +371,15 @@ SECTION .text
 .x_zero_y_nonhalf:
   ; x_offset == 0 && y_offset == bilin interpolation
 %ifdef PIC
-  lea        bilin_filter, [bilin_filter_m]
+  lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           y_offsetd, filter_idx_shift
 %if ARCH_X86_64 && %1 > 4
-  mova                 m8, [bilin_filter+y_offsetq]
+  mova                 m8, [GLOBAL(bilin_filter+y_offsetq)]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
-  mova                 m9, [bilin_filter+y_offsetq+16]
+  mova                 m9, [GLOBAL(bilin_filter+y_offsetq+16)]
 %endif
-  mova                m10, [pw_8]
+  mova                m10, [GLOBAL(pw_8)]
 %define filter_y_a m8
 %define filter_y_b m9
 %define filter_rnd m10
@@ -389,15 +388,15 @@ SECTION .text
 ; x_offset == 0, reuse x_offset reg
 %define tempq x_offsetq
   add y_offsetq, g_bilin_filterm
-%define filter_y_a [y_offsetq]
-%define filter_y_b [y_offsetq+16]
+%define filter_y_a [GLOBAL(y_offsetq)]
+%define filter_y_b [GLOBAL(y_offsetq+16)]
   mov tempq, g_pw_8m
-%define filter_rnd [tempq]
+%define filter_rnd [GLOBAL(tempq)]
 %else
   add           y_offsetq, bilin_filter
-%define filter_y_a [y_offsetq]
-%define filter_y_b [y_offsetq+16]
-%define filter_rnd [pw_8]
+%define filter_y_a [GLOBAL(y_offsetq)]
+%define filter_y_b [GLOBAL(y_offsetq+16)]
+%define filter_rnd [GLOBAL(pw_8)]
 %endif
 %endif
 
@@ -695,15 +694,15 @@ SECTION .text
 .x_half_y_nonhalf:
   ; x_offset == 0.5 && y_offset == bilin interpolation
 %ifdef PIC
-  lea        bilin_filter, [bilin_filter_m]
+  lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           y_offsetd, filter_idx_shift
 %if ARCH_X86_64 && %1 > 4
-  mova                 m8, [bilin_filter+y_offsetq]
+  mova                 m8, [GLOBAL(bilin_filter+y_offsetq)]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
-  mova                 m9, [bilin_filter+y_offsetq+16]
+  mova                 m9, [GLOBAL(bilin_filter+y_offsetq+16)]
 %endif
-  mova                m10, [pw_8]
+  mova                m10, [GLOBAL(pw_8)]
 %define filter_y_a m8
 %define filter_y_b m9
 %define filter_rnd m10
@@ -712,15 +711,15 @@ SECTION .text
 ; x_offset == 0.5. We can reuse x_offset reg
 %define tempq x_offsetq
   add y_offsetq, g_bilin_filterm
-%define filter_y_a [y_offsetq]
-%define filter_y_b [y_offsetq+16]
+%define filter_y_a [GLOBAL(y_offsetq)]
+%define filter_y_b [GLOBAL(y_offsetq+16)]
   mov tempq, g_pw_8m
-%define filter_rnd [tempq]
+%define filter_rnd [GLOBAL(tempq)]
 %else
   add           y_offsetq, bilin_filter
-%define filter_y_a [y_offsetq]
-%define filter_y_b [y_offsetq+16]
-%define filter_rnd [pw_8]
+%define filter_y_a [GLOBAL(y_offsetq)]
+%define filter_y_b [GLOBAL(y_offsetq+16)]
+%define filter_rnd [GLOBAL(pw_8)]
 %endif
 %endif
 
@@ -853,15 +852,15 @@ SECTION .text
 
   ; x_offset == bilin interpolation && y_offset == 0
 %ifdef PIC
-  lea        bilin_filter, [bilin_filter_m]
+  lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           x_offsetd, filter_idx_shift
 %if ARCH_X86_64 && %1 > 4
-  mova                 m8, [bilin_filter+x_offsetq]
+  mova                 m8, [GLOBAL(bilin_filter+x_offsetq)]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
-  mova                 m9, [bilin_filter+x_offsetq+16]
+  mova                 m9, [GLOBAL(bilin_filter+x_offsetq+16)]
 %endif
-  mova                m10, [pw_8]
+  mova                m10, [GLOBAL(pw_8)]
 %define filter_x_a m8
 %define filter_x_b m9
 %define filter_rnd m10
@@ -870,15 +869,15 @@ SECTION .text
 ;y_offset == 0. We can reuse y_offset reg.
 %define tempq y_offsetq
   add x_offsetq, g_bilin_filterm
-%define filter_x_a [x_offsetq]
-%define filter_x_b [x_offsetq+16]
+%define filter_x_a [GLOBAL(x_offsetq)]
+%define filter_x_b [GLOBAL(x_offsetq+16)]
   mov tempq, g_pw_8m
-%define filter_rnd [tempq]
+%define filter_rnd [GLOBAL(tempq)]
 %else
   add           x_offsetq, bilin_filter
-%define filter_x_a [x_offsetq]
-%define filter_x_b [x_offsetq+16]
-%define filter_rnd [pw_8]
+%define filter_x_a [GLOBAL(x_offsetq)]
+%define filter_x_b [GLOBAL(x_offsetq+16)]
+%define filter_rnd [GLOBAL(pw_8)]
 %endif
 %endif
 
@@ -995,15 +994,15 @@ SECTION .text
 
   ; x_offset == bilin interpolation && y_offset == 0.5
 %ifdef PIC
-  lea        bilin_filter, [bilin_filter_m]
+  lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           x_offsetd, filter_idx_shift
 %if ARCH_X86_64 && %1 > 4
-  mova                 m8, [bilin_filter+x_offsetq]
+  mova                 m8, [GLOBAL(bilin_filter+x_offsetq)]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
-  mova                 m9, [bilin_filter+x_offsetq+16]
+  mova                 m9, [GLOBAL(bilin_filter+x_offsetq+16)]
 %endif
-  mova                m10, [pw_8]
+  mova                m10, [GLOBAL(pw_8)]
 %define filter_x_a m8
 %define filter_x_b m9
 %define filter_rnd m10
@@ -1012,15 +1011,15 @@ SECTION .text
 ; y_offset == 0.5. We can reuse y_offset reg.
 %define tempq y_offsetq
   add x_offsetq, g_bilin_filterm
-%define filter_x_a [x_offsetq]
-%define filter_x_b [x_offsetq+16]
+%define filter_x_a [GLOBAL(x_offsetq)]
+%define filter_x_b [GLOBAL(x_offsetq+16)]
   mov tempq, g_pw_8m
-%define filter_rnd [tempq]
+%define filter_rnd [GLOBAL(tempq)]
 %else
   add           x_offsetq, bilin_filter
-%define filter_x_a [x_offsetq]
-%define filter_x_b [x_offsetq+16]
-%define filter_rnd [pw_8]
+%define filter_x_a [GLOBAL(x_offsetq)]
+%define filter_x_b [GLOBAL(x_offsetq+16)]
+%define filter_rnd [GLOBAL(pw_8)]
 %endif
 %endif
 
@@ -1193,20 +1192,20 @@ SECTION .text
 
 .x_nonhalf_y_nonhalf:
 %ifdef PIC
-  lea        bilin_filter, [bilin_filter_m]
+  lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           x_offsetd, filter_idx_shift
   shl           y_offsetd, filter_idx_shift
 %if ARCH_X86_64 && %1 > 4
-  mova                 m8, [bilin_filter+x_offsetq]
+  mova                 m8, [GLOBAL(bilin_filter+x_offsetq)]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
-  mova                 m9, [bilin_filter+x_offsetq+16]
+  mova                 m9, [GLOBAL(bilin_filter+x_offsetq+16)]
 %endif
-  mova                m10, [bilin_filter+y_offsetq]
+  mova                m10, [GLOBAL(bilin_filter+y_offsetq)]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
-  mova                m11, [bilin_filter+y_offsetq+16]
+  mova                m11, [GLOBAL(bilin_filter+y_offsetq+16)]
 %endif
-  mova                m12, [pw_8]
+  mova                m12, [GLOBAL(pw_8)]
 %define filter_x_a m8
 %define filter_x_b m9
 %define filter_y_a m10
@@ -1220,21 +1219,21 @@ SECTION .text
   mov tempq, g_bilin_filterm
   add           x_offsetq, tempq
   add           y_offsetq, tempq
-%define filter_x_a [x_offsetq]
-%define filter_x_b [x_offsetq+16]
-%define filter_y_a [y_offsetq]
-%define filter_y_b [y_offsetq+16]
+%define filter_x_a [GLOBAL(x_offsetq)]
+%define filter_x_b [GLOBAL(x_offsetq+16)]
+%define filter_y_a [GLOBAL(y_offsetq)]
+%define filter_y_b [GLOBAL(y_offsetq+16)]
 
   mov tempq, g_pw_8m
-%define filter_rnd [tempq]
+%define filter_rnd [GLOBAL(tempq)]
 %else
   add           x_offsetq, bilin_filter
   add           y_offsetq, bilin_filter
-%define filter_x_a [x_offsetq]
-%define filter_x_b [x_offsetq+16]
-%define filter_y_a [y_offsetq]
-%define filter_y_b [y_offsetq+16]
-%define filter_rnd [pw_8]
+%define filter_x_a [GLOBAL(x_offsetq)]
+%define filter_x_b [GLOBAL(x_offsetq+16)]
+%define filter_y_a [GLOBAL(y_offsetq)]
+%define filter_y_b [GLOBAL(y_offsetq+16)]
+%define filter_rnd [GLOBAL(pw_8)]
 %endif
 %endif
 
