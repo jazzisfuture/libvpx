@@ -358,7 +358,6 @@ DSP_SRCS-$(HAVE_MSA)    += mips/sub_pixel_variance_msa.c
 
 DSP_SRCS-$(HAVE_MMI)    += mips/variance_mmi.c
 
-DSP_SRCS-$(HAVE_SSE)    += x86/variance_sse2.c
 DSP_SRCS-$(HAVE_SSE2)   += x86/avg_pred_sse2.c
 DSP_SRCS-$(HAVE_SSE2)   += x86/variance_sse2.c  # Contains SSE2 and SSSE3
 DSP_SRCS-$(HAVE_AVX2)   += x86/variance_avx2.c
@@ -368,8 +367,9 @@ ifeq ($(ARCH_X86_64),yes)
 DSP_SRCS-$(HAVE_SSE2)   += x86/ssim_opt_x86_64.asm
 endif  # ARCH_X86_64
 
-DSP_SRCS-$(HAVE_SSE)    += x86/subpel_variance_sse2.asm
-DSP_SRCS-$(HAVE_SSE2)   += x86/subpel_variance_sse2.asm  # Contains SSE2 and SSSE3
+DSP_SRCS-$(HAVE_SSE2)   += x86/subpel_variance_x86.h
+DSP_SRCS-$(HAVE_SSE2)   += x86/subpel_variance_sse2.c
+DSP_SRCS-$(HAVE_SSSE3)   += x86/subpel_variance_ssse3.c
 
 ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
 DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_variance_sse2.c
