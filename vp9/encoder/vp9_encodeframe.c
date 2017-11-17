@@ -1250,6 +1250,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
 
   if (cpi->sf.use_source_sad && !is_key_frame) {
     int sb_offset2 = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
+    int do_scale_part = 0;
     content_state = x->content_state_sb;
     x->skip_low_source_sad = (content_state == kLowSadLowSumdiff ||
                               content_state == kLowSadHighSumdiff)
@@ -1261,9 +1262,12 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
 
     // For SVC on top spatial layer: use/scale the partition from
     // the lower spatial resolution if svc_use_lowres_part is enabled.
+    if ((cpi->svc.non_reference_frame && content_state != kVeryHighSad) ||
+        x->skip_low_source_sad)
+      do_scale_part = 1;
     if (cpi->sf.svc_use_lowres_part &&
         cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1 &&
-        cpi->svc.prev_partition_svc != NULL && content_state != kVeryHighSad) {
+        cpi->svc.prev_partition_svc != NULL && do_scale_part) {
       if (!scale_partitioning_svc(cpi, x, xd, BLOCK_64X64, mi_row >> 1,
                                   mi_col >> 1, mi_row, mi_col))
         return 0;
