@@ -578,6 +578,14 @@ VP9_LEVEL vp9_get_level(const Vp9LevelSpec *const level_spec) {
   return (i == VP9_LEVELS) ? LEVEL_UNKNOWN : vp9_level_defs[i].level;
 }
 
+int vp9_get_width(VP9_COMP *cpi) {
+  return cpi->common.width;
+}
+
+int vp9_get_height(VP9_COMP *cpi) {
+  return cpi->common.height;
+}
+
 int vp9_set_active_map(VP9_COMP *cpi, unsigned char *new_map_16x16, int rows,
                        int cols) {
   if (rows == cpi->common.mb_rows && cols == cpi->common.mb_cols) {

@@ -899,6 +899,21 @@ static vpx_codec_err_t ctrl_get_level(vpx_codec_alg_priv_t *ctx, va_list args) {
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t ctrl_get_width(vpx_codec_alg_priv_t *ctx, va_list args) {
+  int *const arg = va_arg(args, int *);
+  if (arg == NULL) return VPX_CODEC_INVALID_PARAM;
+  *arg = (int)vp9_get_width(ctx->cpi);
+  return VPX_CODEC_OK;
+}
+
+static vpx_codec_err_t ctrl_get_height(vpx_codec_alg_priv_t *ctx,
+                                       va_list args) {
+  int *const arg = va_arg(args, int *);
+  if (arg == NULL) return VPX_CODEC_INVALID_PARAM;
+  *arg = (int)vp9_get_height(ctx->cpi);
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
                                     vpx_codec_priv_enc_mr_cfg_t *data) {
   vpx_codec_err_t res = VPX_CODEC_OK;
@@ -1653,6 +1668,8 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP9E_GET_SVC_LAYER_ID, ctrl_get_svc_layer_id },
   { VP9E_GET_ACTIVEMAP, ctrl_get_active_map },
   { VP9E_GET_LEVEL, ctrl_get_level },
+  { VP9E_GET_WIDTH, ctrl_get_width },
+  { VP9E_GET_HEIGHT, ctrl_get_height },
 
   { -1, NULL },
 };
