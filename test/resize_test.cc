@@ -466,6 +466,13 @@ class ResizeRealtimeTest
 
   unsigned int GetMismatchFrames() { return mismatch_nframes_; }
 
+  unsigned int GetFrameWidth(size_t idx) {
+    return (unsigned int)encode_frame_width_[idx];
+  }
+  unsigned int GetFrameHeight(size_t idx) {
+    return (unsigned int)encode_frame_height_[idx];
+  }
+
   void DefaultConfig() {
     cfg_.rc_buf_initial_sz = 500;
     cfg_.rc_buf_optimal_sz = 600;
@@ -531,6 +538,7 @@ TEST_P(ResizeRealtimeTest, TestInternalResizeDown) {
   cfg_.g_w = 352;
   cfg_.g_h = 288;
   change_bitrate_ = false;
+  cfg_.rc_dropframe_thresh = 0;
   mismatch_psnr_ = 0.0;
   mismatch_nframes_ = 0;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
@@ -540,6 +548,9 @@ TEST_P(ResizeRealtimeTest, TestInternalResizeDown) {
   int resize_count = 0;
   for (std::vector<FrameInfo>::const_iterator info = frame_info_list_.begin();
        info != frame_info_list_.end(); ++info) {
+    size_t idx = info - frame_info_list_.begin();
+    ASSERT_EQ(info->w, GetFrameWidth(idx));
+    ASSERT_EQ(info->h, GetFrameHeight(idx));
     if (info->w != last_w || info->h != last_h) {
       // Verify that resize down occurs.
       ASSERT_LT(info->w, last_w);
@@ -582,6 +593,9 @@ TEST_P(ResizeRealtimeTest, TestInternalResizeDownUpChangeBitRate) {
   int resize_count = 0;
   for (std::vector<FrameInfo>::const_iterator info = frame_info_list_.begin();
        info != frame_info_list_.end(); ++info) {
+    size_t idx = info - frame_info_list_.begin();
+    ASSERT_EQ(info->w, GetFrameWidth(idx));
+    ASSERT_EQ(info->h, GetFrameHeight(idx));
     if (info->w != last_w || info->h != last_h) {
       resize_count++;
       if (resize_count == 1) {

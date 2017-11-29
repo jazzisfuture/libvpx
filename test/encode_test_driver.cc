@@ -195,11 +195,17 @@ void EncoderTest::RunLoop(VideoSource *video) {
         codec_->CreateDecoder(dec_cfg, dec_init_flags));
     bool again;
     for (again = true; again; video->Next()) {
+      int width, height;
       again = (video->img() != NULL);
 
       PreEncodeFrameHook(video);
       PreEncodeFrameHook(video, encoder.get());
       encoder->EncodeFrame(video, frame_flags_);
+
+      encoder.get()->Control(VP8E_GET_WIDTH, &width);
+      encode_frame_width_.push_back(width);
+      encoder.get()->Control(VP8E_GET_HEIGHT, &height);
+      encode_frame_height_.push_back(height);
 
       CxDataIterator iter = encoder->GetCxData();
 

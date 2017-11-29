@@ -267,6 +267,8 @@ class EncoderTest {
   unsigned long init_flags_;
   unsigned long frame_flags_;
   vpx_codec_pts_t last_pts_;
+  std::vector<int> encode_frame_width_;
+  std::vector<int> encode_frame_height_;
 };
 
 }  // namespace libvpx_test
