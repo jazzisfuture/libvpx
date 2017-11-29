@@ -5476,3 +5476,7 @@ int vp8_calc_ss_err(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest) {
 }
 
 int vp8_get_quantizer(VP8_COMP *cpi) { return cpi->common.base_qindex; }
+
+int vp8_get_width(struct VP8_COMP *cpi) { return cpi->common.Width; }
+
+int vp8_get_height(struct VP8_COMP *cpi) { return cpi->common.Height; }
