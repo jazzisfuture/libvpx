@@ -12,6 +12,7 @@
 
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_ports/mem.h"
+#include "vpx_ports/avx2_compat.h"
 
 void vpx_lpf_horizontal_16_avx2(unsigned char *s, int p,
                                 const unsigned char *_blimit,
@@ -386,37 +387,27 @@ void vpx_lpf_horizontal_16_dual_avx2(unsigned char *s, int p,
   const __m128i blimit =
       _mm_broadcastb_epi8(_mm_cvtsi32_si128((int)_blimit[0]));
 
-  p256_4 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s - 5 * p)));
-  p256_3 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s - 4 * p)));
-  p256_2 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s - 3 * p)));
-  p256_1 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s - 2 * p)));
-  p256_0 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s - 1 * p)));
-  q256_0 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s - 0 * p)));
-  q256_1 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s + 1 * p)));
-  q256_2 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s + 2 * p)));
-  q256_3 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s + 3 * p)));
-  q256_4 =
-      _mm256_castpd_si256(_mm256_broadcast_pd((__m128d const *)(s + 4 * p)));
+  p4 = _mm_loadu_si128((__m128i *)(s - 5 * p));
+  p3 = _mm_loadu_si128((__m128i *)(s - 4 * p));
+  p2 = _mm_loadu_si128((__m128i *)(s - 3 * p));
+  p1 = _mm_loadu_si128((__m128i *)(s - 2 * p));
+  p0 = _mm_loadu_si128((__m128i *)(s - 1 * p));
+  q0 = _mm_loadu_si128((__m128i *)(s - 0 * p));
+  q1 = _mm_loadu_si128((__m128i *)(s + 1 * p));
+  q2 = _mm_loadu_si128((__m128i *)(s + 2 * p));
+  q3 = _mm_loadu_si128((__m128i *)(s + 3 * p));
+  q4 = _mm_loadu_si128((__m128i *)(s + 4 * p));
 
-  p4 = _mm256_castsi256_si128(p256_4);
-  p3 = _mm256_castsi256_si128(p256_3);
-  p2 = _mm256_castsi256_si128(p256_2);
-  p1 = _mm256_castsi256_si128(p256_1);
-  p0 = _mm256_castsi256_si128(p256_0);
-  q0 = _mm256_castsi256_si128(q256_0);
-  q1 = _mm256_castsi256_si128(q256_1);
-  q2 = _mm256_castsi256_si128(q256_2);
-  q3 = _mm256_castsi256_si128(q256_3);
-  q4 = _mm256_castsi256_si128(q256_4);
+  p256_4 = MM256_BROADCASTSI128_SI256(p4);
+  p256_3 = MM256_BROADCASTSI128_SI256(p3);
+  p256_2 = MM256_BROADCASTSI128_SI256(p2);
+  p256_1 = MM256_BROADCASTSI128_SI256(p1);
+  p256_0 = MM256_BROADCASTSI128_SI256(p0);
+  q256_0 = MM256_BROADCASTSI128_SI256(q0);
+  q256_1 = MM256_BROADCASTSI128_SI256(q1);
+  q256_2 = MM256_BROADCASTSI128_SI256(q2);
+  q256_3 = MM256_BROADCASTSI128_SI256(q3);
+  q256_4 = MM256_BROADCASTSI128_SI256(q4);
 
   {
     const __m128i abs_p1p0 =
@@ -531,35 +522,29 @@ void vpx_lpf_horizontal_16_dual_avx2(unsigned char *s, int p,
       flat = _mm_cmpeq_epi8(flat, zero);
       flat = _mm_and_si128(flat, mask);
 
-      p256_5 = _mm256_castpd_si256(
-          _mm256_broadcast_pd((__m128d const *)(s - 6 * p)));
-      q256_5 = _mm256_castpd_si256(
-          _mm256_broadcast_pd((__m128d const *)(s + 5 * p)));
-      p5 = _mm256_castsi256_si128(p256_5);
-      q5 = _mm256_castsi256_si128(q256_5);
+      p5 = _mm_loadu_si128((__m128i *)(s - 6 * p));
+      q5 = _mm_loadu_si128((__m128i *)(s + 5 * p));
+      p256_5 = MM256_BROADCASTSI128_SI256(p5);
+      q256_5 = MM256_BROADCASTSI128_SI256(q5);
       flat2 = _mm_max_epu8(
           _mm_or_si128(_mm_subs_epu8(p5, p0), _mm_subs_epu8(p0, p5)),
           _mm_or_si128(_mm_subs_epu8(q5, q0), _mm_subs_epu8(q0, q5)));
 
       flat2 = _mm_max_epu8(work, flat2);
-      p256_6 = _mm256_castpd_si256(
-          _mm256_broadcast_pd((__m128d const *)(s - 7 * p)));
-      q256_6 = _mm256_castpd_si256(
-          _mm256_broadcast_pd((__m128d const *)(s + 6 * p)));
-      p6 = _mm256_castsi256_si128(p256_6);
-      q6 = _mm256_castsi256_si128(q256_6);
+      p6 = _mm_loadu_si128((__m128i *)(s - 7 * p));
+      q6 = _mm_loadu_si128((__m128i *)(s + 6 * p));
+      p256_6 = MM256_BROADCASTSI128_SI256(p6);
+      q256_6 = MM256_BROADCASTSI128_SI256(q6);
       work = _mm_max_epu8(
           _mm_or_si128(_mm_subs_epu8(p6, p0), _mm_subs_epu8(p0, p6)),
           _mm_or_si128(_mm_subs_epu8(q6, q0), _mm_subs_epu8(q0, q6)));
 
       flat2 = _mm_max_epu8(work, flat2);
 
-      p256_7 = _mm256_castpd_si256(
-          _mm256_broadcast_pd((__m128d const *)(s - 8 * p)));
-      q256_7 = _mm256_castpd_si256(
-          _mm256_broadcast_pd((__m128d const *)(s + 7 * p)));
-      p7 = _mm256_castsi256_si128(p256_7);
-      q7 = _mm256_castsi256_si128(q256_7);
+      p7 = _mm_loadu_si128((__m128i *)(s - 8 * p));
+      q7 = _mm_loadu_si128((__m128i *)(s + 7 * p));
+      p256_7 = MM256_BROADCASTSI128_SI256(p7);
+      q256_7 = MM256_BROADCASTSI128_SI256(q7);
       work = _mm_max_epu8(
           _mm_or_si128(_mm_subs_epu8(p7, p0), _mm_subs_epu8(p0, p7)),
           _mm_or_si128(_mm_subs_epu8(q7, q0), _mm_subs_epu8(q0, q7)));

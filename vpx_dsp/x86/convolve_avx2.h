@@ -14,30 +14,7 @@
 #include <immintrin.h>  // AVX2
 
 #include "./vpx_config.h"
-
-#if defined(__clang__)
-#if (__clang_major__ > 0 && __clang_major__ < 3) ||            \
-    (__clang_major__ == 3 && __clang_minor__ <= 3) ||          \
-    (defined(__APPLE__) && defined(__apple_build_version__) && \
-     ((__clang_major__ == 4 && __clang_minor__ <= 2) ||        \
-      (__clang_major__ == 5 && __clang_minor__ == 0)))
-#define MM256_BROADCASTSI128_SI256(x) \
-  _mm_broadcastsi128_si256((__m128i const *)&(x))
-#else  // clang > 3.3, and not 5.0 on macosx.
-#define MM256_BROADCASTSI128_SI256(x) _mm256_broadcastsi128_si256(x)
-#endif  // clang <= 3.3
-#elif defined(__GNUC__)
-#if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 6)
-#define MM256_BROADCASTSI128_SI256(x) \
-  _mm_broadcastsi128_si256((__m128i const *)&(x))
-#elif __GNUC__ == 4 && __GNUC_MINOR__ == 7
-#define MM256_BROADCASTSI128_SI256(x) _mm_broadcastsi128_si256(x)
-#else  // gcc > 4.7
-#define MM256_BROADCASTSI128_SI256(x) _mm256_broadcastsi128_si256(x)
-#endif  // gcc <= 4.6
-#else   // !(gcc || clang)
-#define MM256_BROADCASTSI128_SI256(x) _mm256_broadcastsi128_si256(x)
-#endif  // __clang__
+#include "vpx_ports/avx2_compat.h"
 
 static INLINE void shuffle_filter_avx2(const int16_t *const filter,
                                        __m256i *const f) {
@@ -99,7 +76,5 @@ static INLINE __m128i convolve8_8_avx2(const __m256i *const s,
   sum1 = _mm_srai_epi16(sum1, 7);
   return sum1;
 }
-
-#undef MM256_BROADCASTSI128_SI256
 
 #endif  // VPX_DSP_X86_CONVOLVE_AVX2_H_

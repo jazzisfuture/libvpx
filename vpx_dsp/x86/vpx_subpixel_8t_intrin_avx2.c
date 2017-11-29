@@ -59,12 +59,9 @@ static INLINE void vpx_filter_block1d16_h8_x_avx2(
     __m256i srcReg;
 
     // load the 2 strides of source
-    srcReg =
-        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *)(src_ptr - 3)));
-    srcReg = _mm256_inserti128_si256(
-        srcReg,
-        _mm_loadu_si128((const __m128i *)(src_ptr + src_pixels_per_line - 3)),
-        1);
+    srcReg = MM256_SETR_M128I(
+        _mm_loadu_si128((const __m128i *)(src_ptr - 3)),
+        _mm_loadu_si128((const __m128i *)(src_ptr + src_pixels_per_line - 3)));
 
     // filter the source buffer
     s[0] = _mm256_shuffle_epi8(srcReg, filt[0]);
@@ -75,12 +72,9 @@ static INLINE void vpx_filter_block1d16_h8_x_avx2(
 
     // reading 2 strides of the next 16 bytes
     // (part of it was being read by earlier read)
-    srcReg =
-        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *)(src_ptr + 5)));
-    srcReg = _mm256_inserti128_si256(
-        srcReg,
-        _mm_loadu_si128((const __m128i *)(src_ptr + src_pixels_per_line + 5)),
-        1);
+    srcReg = MM256_SETR_M128I(
+        _mm_loadu_si128((const __m128i *)(src_ptr + 5)),
+        _mm_loadu_si128((const __m128i *)(src_ptr + src_pixels_per_line + 5)));
 
     // filter the source buffer
     s[0] = _mm256_shuffle_epi8(srcReg, filt[0]);
@@ -206,13 +200,12 @@ static INLINE void vpx_filter_block1d16_v8_x_avx2(
         _mm_loadu_si128((const __m128i *)(src_ptr + 6 * src_pitch)));
 
     // have each consecutive loads on the same 256 register
-    s32b[0] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[0]), s[1], 1);
-    s32b[1] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[1]), s[2], 1);
-    s32b[2] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[2]), s[3], 1);
-    s32b[3] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[3]), s[4], 1);
-    s32b[4] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[4]), s[5], 1);
-    s32b[5] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[5]),
-                                      _mm256_castsi256_si128(srcRegHead1), 1);
+    s32b[0] = MM256_SETR_M128I(s[0], s[1]);
+    s32b[1] = MM256_SETR_M128I(s[1], s[2]);
+    s32b[2] = MM256_SETR_M128I(s[2], s[3]);
+    s32b[3] = MM256_SETR_M128I(s[3], s[4]);
+    s32b[4] = MM256_SETR_M128I(s[4], s[5]);
+    s32b[5] = MM256_SETR_M128I(s[5], _mm256_castsi256_si128(srcRegHead1));
 
     // merge every two consecutive registers except the last one
     // the first lanes contain values for filtering odd rows (1,3,5...) and
