@@ -277,6 +277,9 @@ int vp8_set_internal_size(struct VP8_COMP *comp, VPX_SCALING horiz_mode,
                           VPX_SCALING vert_mode);
 int vp8_get_quantizer(struct VP8_COMP *c);
 
+int vp8_get_width(struct VP8_COMP *cpi);
+int vp8_get_height(struct VP8_COMP *cpi);
+
 #ifdef __cplusplus
 }
 #endif

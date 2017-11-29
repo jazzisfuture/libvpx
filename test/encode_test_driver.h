@@ -258,6 +258,9 @@ class EncoderTest {
     return pkt;
   }
 
+  // Get current frame size from the encoder.
+  virtual void GetFrameSize(Encoder * /*encoder*/) {}
+
   bool abort_;
   vpx_codec_enc_cfg_t cfg_;
   vpx_codec_dec_cfg_t dec_cfg_;

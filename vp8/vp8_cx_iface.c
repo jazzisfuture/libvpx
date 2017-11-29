@@ -470,6 +470,21 @@ static vpx_codec_err_t get_quantizer64(vpx_codec_alg_priv_t *ctx,
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t ctrl_get_width(vpx_codec_alg_priv_t *ctx, va_list args) {
+  int *const arg = va_arg(args, int *);
+  if (arg == NULL) return VPX_CODEC_INVALID_PARAM;
+  *arg = (int)vp8_get_width(ctx->cpi);
+  return VPX_CODEC_OK;
+}
+
+static vpx_codec_err_t ctrl_get_height(vpx_codec_alg_priv_t *ctx,
+                                       va_list args) {
+  int *const arg = va_arg(args, int *);
+  if (arg == NULL) return VPX_CODEC_INVALID_PARAM;
+  *arg = (int)vp8_get_height(ctx->cpi);
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_err_t update_extracfg(vpx_codec_alg_priv_t *ctx,
                                        const struct vp8_extracfg *extra_cfg) {
   const vpx_codec_err_t res = validate_config(ctx, &ctx->cfg, extra_cfg, 0);
@@ -1170,6 +1185,8 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] = {
   { VP8E_SET_MAX_INTRA_BITRATE_PCT, set_rc_max_intra_bitrate_pct },
   { VP8E_SET_SCREEN_CONTENT_MODE, set_screen_content_mode },
   { VP8E_SET_GF_CBR_BOOST_PCT, ctrl_set_rc_gf_cbr_boost_pct },
+  { VP8E_GET_WIDTH, ctrl_get_width },
+  { VP8E_GET_HEIGHT, ctrl_get_height },
   { -1, NULL },
 };
 
