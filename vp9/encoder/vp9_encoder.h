@@ -932,6 +932,9 @@ static INLINE int log_tile_cols_from_picsize_level(uint32_t pic_size) {
 
 VP9_LEVEL vp9_get_level(const Vp9LevelSpec *const level_spec);
 
+int vp9_get_width(VP9_COMP *cpi);
+int vp9_get_height(VP9_COMP *cpi);
+
 void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 
 void vp9_set_row_mt(VP9_COMP *cpi);

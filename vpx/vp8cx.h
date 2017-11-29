@@ -563,6 +563,18 @@ enum vp8e_enc_control_id {
    */
   VP9E_GET_LEVEL,
 
+  /*!\brief Codec control function to get frame width.
+   *
+   * Supported in codecs: VP8, VP9
+   */
+  VP8E_GET_WIDTH,
+
+  /*!\brief Codec control function to get frame height.
+   *
+   * Supported in codecs: VP8, VP9
+   */
+  VP8E_GET_HEIGHT,
+
   /*!\brief Codec control function to enable/disable special mode for altref
    *        adaptive quantization. You can use it with --aq-mode concurrently.
    *
@@ -862,6 +874,12 @@ VPX_CTRL_USE_TYPE(VP9E_SET_ROW_MT, unsigned int)
 #define VPX_CTRL_VP9E_SET_ROW_MT
 
 VPX_CTRL_USE_TYPE(VP9E_GET_LEVEL, int *)
+#define VPX_CTRL_VP9E_GET_LEVEL
+
+VPX_CTRL_USE_TYPE(VP8E_GET_WIDTH, int *)
+#define VPX_CTRL_VP9E_GET_LEVEL
+
+VPX_CTRL_USE_TYPE(VP8E_GET_HEIGHT, int *)
 #define VPX_CTRL_VP9E_GET_LEVEL
 
 VPX_CTRL_USE_TYPE(VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST, unsigned int)
