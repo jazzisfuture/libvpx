@@ -146,6 +146,8 @@ CODEC_SRCS-yes += vpx_ports/mem_ops.h
 CODEC_SRCS-yes += vpx_ports/mem_ops_aligned.h
 CODEC_SRCS-yes += vpx_ports/vpx_once.h
 CODEC_SRCS-yes += $(BUILD_PFX)vpx_config.c
+CODEC_SRCS-$(HAVE_AVX) += x86/compat_avx.h
+CODEC_SRCS-$(HAVE_AVX2) += x86/compat_avx2.h
 INSTALL-SRCS-no += $(BUILD_PFX)vpx_config.c
 ifeq ($(ARCH_X86)$(ARCH_X86_64),yes)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += third_party/x86inc/x86inc.asm

@@ -12,6 +12,7 @@
 
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/x86/convolve.h"
+#include "vpx_ports/compat_avx2.h"
 
 // -----------------------------------------------------------------------------
 // Copy and average
@@ -272,7 +273,7 @@ static INLINE void pack_16x1_pixels(const uint16_t *src, __m256i *x) {
 //  Shared by horizontal and vertical filtering
 static INLINE void pack_filters(const int16_t *filter, __m256i *f /*f[4]*/) {
   const __m128i h = _mm_loadu_si128((const __m128i *)filter);
-  const __m256i hh = _mm256_insertf128_si256(_mm256_castsi128_si256(h), h, 1);
+  const __m256i hh = MM256_BROADCASTSI128_SI256(h);
   const __m256i p0 = _mm256_set1_epi32(0x03020100);
   const __m256i p1 = _mm256_set1_epi32(0x07060504);
   const __m256i p2 = _mm256_set1_epi32(0x0b0a0908);
@@ -388,7 +389,7 @@ static void vpx_highbd_filter_block1d16_h8_avx2(
 
 static INLINE void pack_2t_filter(const int16_t *filter, __m256i *f) {
   const __m128i h = _mm_loadu_si128((const __m128i *)filter);
-  const __m256i hh = _mm256_insertf128_si256(_mm256_castsi128_si256(h), h, 1);
+  const __m256i hh = MM256_BROADCASTSI128_SI256(h);
   const __m256i p = _mm256_set1_epi32(0x09080706);
   f[0] = _mm256_shuffle_epi8(hh, p);
 }
@@ -505,49 +506,44 @@ static void vpx_highbd_filter_block1d16_h2_avx2(
 // Vertical Filtering
 
 static void pack_8x9_init(const uint16_t *src, ptrdiff_t pitch, __m256i *sig) {
-  __m256i s0 = _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *)src));
-  __m256i s1 =
-      _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *)(src + pitch)));
-  __m256i s2 = _mm256_castsi128_si256(
-      _mm_loadu_si128((const __m128i *)(src + 2 * pitch)));
-  __m256i s3 = _mm256_castsi128_si256(
-      _mm_loadu_si128((const __m128i *)(src + 3 * pitch)));
-  __m256i s4 = _mm256_castsi128_si256(
-      _mm_loadu_si128((const __m128i *)(src + 4 * pitch)));
-  __m256i s5 = _mm256_castsi128_si256(
-      _mm_loadu_si128((const __m128i *)(src + 5 * pitch)));
-  __m256i s6 = _mm256_castsi128_si256(
-      _mm_loadu_si128((const __m128i *)(src + 6 * pitch)));
+  __m128i s[7];
+  __m256i s16w[6];
 
-  s0 = _mm256_inserti128_si256(s0, _mm256_castsi256_si128(s1), 1);
-  s1 = _mm256_inserti128_si256(s1, _mm256_castsi256_si128(s2), 1);
-  s2 = _mm256_inserti128_si256(s2, _mm256_castsi256_si128(s3), 1);
-  s3 = _mm256_inserti128_si256(s3, _mm256_castsi256_si128(s4), 1);
-  s4 = _mm256_inserti128_si256(s4, _mm256_castsi256_si128(s5), 1);
-  s5 = _mm256_inserti128_si256(s5, _mm256_castsi256_si128(s6), 1);
+  s[0] = _mm_loadu_si128((const __m128i *)(src + 0 * pitch));
+  s[1] = _mm_loadu_si128((const __m128i *)(src + 1 * pitch));
+  s[2] = _mm_loadu_si128((const __m128i *)(src + 2 * pitch));
+  s[3] = _mm_loadu_si128((const __m128i *)(src + 3 * pitch));
+  s[4] = _mm_loadu_si128((const __m128i *)(src + 4 * pitch));
+  s[5] = _mm_loadu_si128((const __m128i *)(src + 5 * pitch));
+  s[6] = _mm_loadu_si128((const __m128i *)(src + 6 * pitch));
 
-  sig[0] = _mm256_unpacklo_epi16(s0, s1);
-  sig[4] = _mm256_unpackhi_epi16(s0, s1);
-  sig[1] = _mm256_unpacklo_epi16(s2, s3);
-  sig[5] = _mm256_unpackhi_epi16(s2, s3);
-  sig[2] = _mm256_unpacklo_epi16(s4, s5);
-  sig[6] = _mm256_unpackhi_epi16(s4, s5);
-  sig[8] = s6;
+  s16w[0] = MM256_SETR_M128I(s[0], s[1]);
+  s16w[1] = MM256_SETR_M128I(s[1], s[2]);
+  s16w[2] = MM256_SETR_M128I(s[2], s[3]);
+  s16w[3] = MM256_SETR_M128I(s[3], s[4]);
+  s16w[4] = MM256_SETR_M128I(s[4], s[5]);
+  s16w[5] = MM256_SETR_M128I(s[5], s[6]);
+
+  sig[0] = _mm256_unpacklo_epi16(s16w[0], s16w[1]);
+  sig[4] = _mm256_unpackhi_epi16(s16w[0], s16w[1]);
+  sig[1] = _mm256_unpacklo_epi16(s16w[2], s16w[3]);
+  sig[5] = _mm256_unpackhi_epi16(s16w[2], s16w[3]);
+  sig[2] = _mm256_unpacklo_epi16(s16w[4], s16w[5]);
+  sig[6] = _mm256_unpackhi_epi16(s16w[4], s16w[5]);
+  sig[8] = _mm256_castsi128_si256(s[6]);
 }
 
 static INLINE void pack_8x9_pixels(const uint16_t *src, ptrdiff_t pitch,
                                    __m256i *sig) {
   // base + 7th row
-  __m256i s0 = _mm256_castsi128_si256(
-      _mm_loadu_si128((const __m128i *)(src + 7 * pitch)));
+  __m128i s0 = _mm_loadu_si128((const __m128i *)(src + 7 * pitch));
   // base + 8th row
-  __m256i s1 = _mm256_castsi128_si256(
-      _mm_loadu_si128((const __m128i *)(src + 8 * pitch)));
-  __m256i s2 = _mm256_inserti128_si256(sig[8], _mm256_castsi256_si128(s0), 1);
-  __m256i s3 = _mm256_inserti128_si256(s0, _mm256_castsi256_si128(s1), 1);
+  __m128i s1 = _mm_loadu_si128((const __m128i *)(src + 8 * pitch));
+  __m256i s2 = _mm256_inserti128_si256(sig[8], s0, 1);
+  __m256i s3 = MM256_SETR_M128I(s0, s1);
   sig[3] = _mm256_unpacklo_epi16(s2, s3);
   sig[7] = _mm256_unpackhi_epi16(s2, s3);
-  sig[8] = s1;
+  sig[8] = _mm256_castsi128_si256(s1);
 }
 
 static INLINE void filter_8x9_pixels(const __m256i *sig, const __m256i *f,
