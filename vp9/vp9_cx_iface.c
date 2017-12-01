@@ -1093,6 +1093,46 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
   const vpx_rational_t *const timebase = &ctx->cfg.g_timebase;
   size_t data_sz;
 
+  // HACK
+   ctx->cpi->use_svc = 1;
+   ctx->cpi->svc.number_temporal_layers = 3;
+   ctx->cpi->svc.temporal_layering_mode = 3;
+   ctx->cpi->svc.number_spatial_layers = 3;
+   if (cpi->oxcf.width <= 640) ctx->cpi->svc.number_spatial_layers = 2;
+
+   //ctx->cpi->svc.number_spatial_layers = 1;
+
+   int sl, tl;
+   for (sl = 0; sl < cpi->svc.number_spatial_layers; ++sl) {
+     for (tl = 0; tl < cpi->svc.number_temporal_layers; ++tl) {
+       const int layer =
+            LAYER_IDS_TO_IDX(sl, tl, cpi->svc.number_temporal_layers);
+       LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+       lc->max_q = 56;
+       lc->min_q = 2;
+       lc->scaling_factor_num = 1;
+       lc->scaling_factor_den = 1;
+       if (ctx->cpi->svc.number_spatial_layers == 3) {
+         if (sl == 0) {
+           lc->scaling_factor_num = 1;
+           lc->scaling_factor_den = 4;
+         } else if (sl == 1) {
+           lc->scaling_factor_num = 1;
+           lc->scaling_factor_den = 2;
+         }
+       } else if (ctx->cpi->svc.number_spatial_layers == 2) {
+         if (sl == 0) {
+           lc->scaling_factor_num = 1;
+           lc->scaling_factor_den = 2;
+         } else if (sl == 1) {
+           lc->scaling_factor_num = 1;
+           lc->scaling_factor_den = 1;
+         }
+       }
+     }
+   }
+   //
+
   if (cpi == NULL) return VPX_CODEC_INVALID_PARAM;
 
   if (cpi->oxcf.pass == 2 && cpi->level_constraint.level_index >= 0 &&

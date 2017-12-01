@@ -25,9 +25,58 @@ static vpx_codec_alg_priv_t *get_alg_priv(vpx_codec_ctx_t *ctx) {
 
 vpx_codec_err_t vpx_codec_enc_init_ver(vpx_codec_ctx_t *ctx,
                                        vpx_codec_iface_t *iface,
-                                       const vpx_codec_enc_cfg_t *cfg,
+                                       vpx_codec_enc_cfg_t *cfg,
                                        vpx_codec_flags_t flags, int ver) {
   vpx_codec_err_t res;
+
+   // HACK
+   if (1) {
+   int ids[4] = {0, 2, 1, 2};
+   cfg->ts_periodicity = 4;
+   cfg->ts_number_layers = 3;
+   cfg->ts_rate_decimator[0] = 4;
+   cfg->ts_rate_decimator[1] = 2;
+   cfg->ts_rate_decimator[2] = 1;
+   memcpy(cfg->ts_layer_id, ids, sizeof(ids));
+   // 50-20-30 split on temporal layers.
+   if (cfg->g_w > 640) {
+     cfg->ss_number_layers = 3;
+     //int top_bitrate = cfg->rc_target_bitrate - 500 - 200;
+     int top_bitrate = cfg->rc_target_bitrate;
+     /*`
+     cfg->ss_number_layers = 1;
+     cfg->layer_target_bitrate[0] = 50 * top_bitrate / 100;
+     cfg->layer_target_bitrate[1] = 70 * top_bitrate / 100;
+     cfg->layer_target_bitrate[2] = top_bitrate;
+     */
+     cfg->layer_target_bitrate[0] = 100;
+     cfg->layer_target_bitrate[1] = 140;
+     cfg->layer_target_bitrate[2] = 200;
+     cfg->layer_target_bitrate[3] = 250;
+     cfg->layer_target_bitrate[4] = 350;
+     cfg->layer_target_bitrate[5] = 500;
+     cfg->layer_target_bitrate[6] = 50 * top_bitrate / 100;
+     cfg->layer_target_bitrate[7] = 70 * top_bitrate / 100;
+     cfg->layer_target_bitrate[8] = top_bitrate;
+   } else if (cfg->g_w <= 640) {
+     cfg->ss_number_layers = 2;
+     //int top_bitrate = cfg->rc_target_bitrate - 200;
+     int top_bitrate = cfg->rc_target_bitrate;
+     /*
+     cfg->ss_number_layers = 1;
+     cfg->layer_target_bitrate[0] = 50 * top_bitrate / 100;
+     cfg->layer_target_bitrate[1] = 70 * top_bitrate / 100;
+     cfg->layer_target_bitrate[2] = top_bitrate;
+     */
+     cfg->layer_target_bitrate[0] = 100;
+     cfg->layer_target_bitrate[1] = 140;
+     cfg->layer_target_bitrate[2] = 200;
+     cfg->layer_target_bitrate[3] = 50 * top_bitrate / 100;
+     cfg->layer_target_bitrate[4] = 70 * top_bitrate / 100;
+     cfg->layer_target_bitrate[5] = top_bitrate;
+   }
+   }
+   //
 
   if (ver != VPX_ENCODER_ABI_VERSION)
     res = VPX_CODEC_ABI_MISMATCH;
