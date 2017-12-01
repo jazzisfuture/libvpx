@@ -1660,6 +1660,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     int inter_mv_mode = 0;
     int skip_this_mv = 0;
     int comp_pred = 0;
+    int force_gf_newmv = 0;
     PREDICTION_MODE this_mode;
     second_ref_frame = NONE;
 
@@ -1678,6 +1679,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       if (idx == num_inter_modes + comp_modes - 1) ref_frame = GOLDEN_FRAME;
       second_ref_frame = ALTREF_FRAME;
       comp_pred = 1;
+    }
+
+    if (cpi->svc.spatial_layer_id > 0 && svc_force_zero_mode[ref_frame - 1] &&
+        ref_frame == GOLDEN_FRAME && this_mode == NEWMV &&
+        cpi->rc.frames_since_key > cpi->svc.number_spatial_layers &&
+        cpi->svc.downsample_filter_phase[cpi->svc.spatial_layer_id - 1] == 8) {
+      frame_mv[this_mode][ref_frame].as_mv.col = -4;
+      frame_mv[this_mode][ref_frame].as_mv.row = -4;
+      force_gf_newmv = 1;
     }
 
     if (comp_pred) {
@@ -1737,7 +1747,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     // Skip non-zeromv mode search for golden frame if force_skip_low_temp_var
     // is set. If nearestmv for golden frame is 0, zeromv mode will be skipped
     // later.
-    if (force_skip_low_temp_var && ref_frame == GOLDEN_FRAME &&
+    if (!force_gf_newmv && force_skip_low_temp_var &&
+        ref_frame == GOLDEN_FRAME &&
         frame_mv[this_mode][ref_frame].as_int != 0) {
       continue;
     }
@@ -1751,7 +1762,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     }
 
     if (cpi->use_svc) {
-      if (svc_force_zero_mode[ref_frame - 1] &&
+      if (!force_gf_newmv && svc_force_zero_mode[ref_frame - 1] &&
           frame_mv[this_mode][ref_frame].as_int != 0)
         continue;
     }
@@ -1800,15 +1811,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         cpi->rc.frames_since_golden > 4)
       mode_rd_thresh = mode_rd_thresh << 3;
 
-    if ((cpi->sf.adaptive_rd_thresh_row_mt &&
+    if ((cpi->sf.adaptive_rd_thresh_row_mt && !force_gf_newmv &&
          rd_less_than_thresh_row_mt(best_rdc.rdcost, mode_rd_thresh,
                                     &rd_thresh_freq_fact[mode_index])) ||
-        (!cpi->sf.adaptive_rd_thresh_row_mt &&
+        (!cpi->sf.adaptive_rd_thresh_row_mt && !force_gf_newmv &&
          rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
                              &rd_thresh_freq_fact[mode_index])))
       continue;
 
-    if (this_mode == NEWMV) {
+    if (this_mode == NEWMV && !force_gf_newmv) {
       if (ref_frame > LAST_FRAME && !cpi->use_svc &&
           cpi->oxcf.rc_mode == VPX_CBR) {
         int tmp_sad;
@@ -1924,7 +1935,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       x->pred_mv_sad[LAST_FRAME] = best_pred_sad;
     }
 
-    if (this_mode != NEARESTMV && !comp_pred &&
+    if (this_mode != NEARESTMV && !comp_pred && !force_gf_newmv &&
         frame_mv[this_mode][ref_frame].as_int ==
             frame_mv[NEARESTMV][ref_frame].as_int)
       continue;
@@ -1949,7 +1960,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     if ((this_mode == NEWMV || filter_ref == SWITCHABLE) &&
         pred_filter_search &&
         (ref_frame == LAST_FRAME ||
-         (ref_frame == GOLDEN_FRAME &&
+         (ref_frame == GOLDEN_FRAME && !force_gf_newmv &&
           (cpi->use_svc || cpi->oxcf.rc_mode == VPX_VBR))) &&
         (((mi->mv[0].as_mv.row | mi->mv[0].as_mv.col) & 0x07) != 0)) {
       int pf_rate[3];
@@ -2156,7 +2167,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     // If early termination flag is 1 and at least 2 modes are checked,
     // the mode search is terminated.
-    if (best_early_term && idx > 0) {
+    if (best_early_term && idx > 0 && ref_frame == LAST_FRAME) {
       x->skip = 1;
       break;
     }
