@@ -1929,6 +1929,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
             frame_mv[NEARESTMV][ref_frame].as_int)
       continue;
 
+    if (cpi->use_svc && cpi->svc.spatial_layer_id > 0 &&
+        ref_frame == GOLDEN_FRAME &&
+	cpi->svc.downsample_filter_phase[cpi->svc.spatial_layer_id] == 8) {
+      this_mode = NEWMV;
+      frame_mv[NEWMV][ref_frame].as_mv.col = -4;
+      frame_mv[NEWMV][ref_frame].as_mv.row = -4;
+    }
+
     mi->mode = this_mode;
     mi->mv[0].as_int = frame_mv[this_mode][ref_frame].as_int;
     mi->mv[1].as_int = 0;
