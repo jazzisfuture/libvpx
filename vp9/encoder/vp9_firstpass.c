@@ -2543,8 +2543,10 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       // Update the accumulator for second ref error difference.
       // This is intended to give an indication of how much the coded error is
       // increasing over time.
-      sr_accumulator += (next_frame.sr_coded_error - next_frame.coded_error);
-      sr_accumulator = VPXMAX(0.0, sr_accumulator);
+      if (i == 1)
+          sr_accumulator += next_frame.coded_error;
+      else
+          sr_accumulator += (next_frame.sr_coded_error - next_frame.coded_error);
     }
 
     // Break out conditions.
@@ -2844,6 +2846,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   vp9_zero(next_frame);
 
   cpi->common.frame_type = KEY_FRAME;
+  rc->frames_since_key = 0;
 
   // Reset the GF group data structures.
   vp9_zero(*gf_group);
