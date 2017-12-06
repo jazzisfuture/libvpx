@@ -965,6 +965,9 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x, BEST_SEG_INFO *bsi,
   ENTROPY_CONTEXT *ta_b;
   ENTROPY_CONTEXT *tl_b;
 
+  memset(&t_above_b, 0, sizeof(ENTROPY_CONTEXT_PLANES));
+  memset(&t_left_b, 0, sizeof(ENTROPY_CONTEXT_PLANES));
+
   memcpy(&t_above, x->e_mbd.above_context, sizeof(ENTROPY_CONTEXT_PLANES));
   memcpy(&t_left, x->e_mbd.left_context, sizeof(ENTROPY_CONTEXT_PLANES));
 
