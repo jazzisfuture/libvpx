@@ -658,7 +658,7 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
 
   // For resolutions <= QVGA: set phase of the filter = 8 (for symmetric
   // averaging filter), use bilinear for now.
-  if (width * height <= 320 * 240) {
+  if (width * height <= 640 * 480) {
     cpi->svc.downsample_filter_type[cpi->svc.spatial_layer_id] = BILINEAR;
     cpi->svc.downsample_filter_phase[cpi->svc.spatial_layer_id] = 8;
   }
