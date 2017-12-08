@@ -110,6 +110,9 @@ typedef struct {
   int min_frame_bandwidth;  // Minimum allocation used for any frame
   int max_frame_bandwidth;  // Maximum burst rate allowed for a frame.
 
+  // Keep track of the last updated average frame bandwidth.
+  int last_avg_frame_bandwidth;
+
   int ni_av_qi;
   int ni_tot_qi;
   int ni_frames;
