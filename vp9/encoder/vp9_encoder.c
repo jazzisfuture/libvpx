@@ -1863,6 +1863,21 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
                                            (int)cpi->oxcf.target_bandwidth);
   }
 
+  // Check for resetting the rc flags (rc_1_frame, rc_2_frame) if the
+  // configuration change has a large change in avg_frame_bandwidth.
+  // For SVC check for resetting based on spatial layer average bandwidth.
+  if (cm->current_video_frame > 0) {
+    if (cpi->use_svc) {
+      vp9_svc_check_reset_layer_rc_flag(cpi);
+    } else {
+      if (rc->avg_frame_bandwidth > (3 * rc->last_avg_frame_bandwidth >> 1) ||
+          rc->avg_frame_bandwidth < (rc->last_avg_frame_bandwidth >> 1)) {
+        cpi->rc.rc_1_frame = 0;
+        cpi->rc.rc_2_frame = 0;
+      }
+    }
+  }
+
   cpi->alt_ref_source = NULL;
   rc->is_src_frame_alt_ref = 0;
 
