@@ -862,3 +862,33 @@ void vp9_svc_reset_key_frame(VP9_COMP *const cpi) {
   vp9_update_temporal_layer_framerate(cpi);
   vp9_restore_layer_context(cpi);
 }
+
+int vp9_svc_fullstream_avg_bandwidth(VP9_COMP *const cpi) {
+  SVC *svc = &cpi->svc;
+  int sl = 0;
+  int last_avg_frame_bandwidth = 0;
+  for (sl = 0; sl < svc->number_spatial_layers; ++sl) {
+    int layer = LAYER_IDS_TO_IDX(sl, svc->number_temporal_layers - 1,
+                                 svc->number_temporal_layers);
+    LAYER_CONTEXT *lc = &svc->layer_context[layer];
+    RATE_CONTROL *lrc = &lc->rc;
+    last_avg_frame_bandwidth += lrc->last_avg_frame_bandwidth;
+  }
+  return last_avg_frame_bandwidth;
+}
+
+void vp9_svc_reset_layer_buffer(VP9_COMP *const cpi) {
+  SVC *svc = &cpi->svc;
+  int sl, tl;
+  for (sl = 0; sl < svc->number_spatial_layers; ++sl) {
+    for (tl = 0; tl < svc->number_temporal_layers; ++tl) {
+      int layer = LAYER_IDS_TO_IDX(sl, tl, svc->number_temporal_layers);
+      LAYER_CONTEXT *lc = &svc->layer_context[layer];
+      RATE_CONTROL *lrc = &lc->rc;
+      lrc->bits_off_target = lrc->optimal_buffer_level;
+      lrc->buffer_level = lrc->optimal_buffer_level;
+      lrc->rc_1_frame = 0;
+      lrc->rc_2_frame = 0;
+    }
+  }
+}
