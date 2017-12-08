@@ -1805,6 +1805,14 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   // keep buffer level clipped to the maximum allowed buffer size.
   rc->bits_off_target = VPXMIN(rc->bits_off_target, rc->maximum_buffer_size);
   rc->buffer_level = VPXMIN(rc->buffer_level, rc->maximum_buffer_size);
+  // Reset the buffer level to optimal_level if the configuration change
+  // has a large change in avg_frame_bandwidth.
+  if (rc->last_avg_frame_bandwidth > 0 &&
+      (rc->avg_frame_bandwidth > (rc->last_avg_frame_bandwidth << 1) ||
+       rc->avg_frame_bandwidth < (rc->last_avg_frame_bandwidth >> 1))) {
+    rc->bits_off_target = rc->optimal_buffer_level;
+    rc->buffer_level = rc->optimal_buffer_level;
+  }
 
   // Set up frame rate and related parameters rate control values.
   vp9_new_framerate(cpi, cpi->framerate);
