@@ -1863,6 +1863,36 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
                                            (int)cpi->oxcf.target_bandwidth);
   }
 
+  // Check for resetting the buffer level to optimal_level and resetting
+  // rc_1_frame/rc_2_frame if the configuration change has a large change in
+  // avg_frame_bandwidth. For SVC use the full stream average bandwidth.
+  if (cm->current_video_frame > 0) {
+    int last_avg_frame_bandwidth = rc->last_avg_frame_bandwidth;
+    int new_avg_frame_bandwidth = rc->avg_frame_bandwidth;
+    if (cpi->use_svc) {
+      SVC *svc = &cpi->svc;
+      int sl = 0;
+      last_avg_frame_bandwidth = 0;
+      new_avg_frame_bandwidth = 0;
+      for (sl = 0; sl < svc->number_spatial_layers; ++sl) {
+        int layer = LAYER_IDS_TO_IDX(sl, svc->number_temporal_layers - 1,
+                                     svc->number_temporal_layers);
+        LAYER_CONTEXT *lc = &svc->layer_context[layer];
+        RATE_CONTROL *lrc = &lc->rc;
+        last_avg_frame_bandwidth += lrc->last_avg_frame_bandwidth;
+        new_avg_frame_bandwidth += lrc->avg_frame_bandwidth;
+      }
+    }
+    if (new_avg_frame_bandwidth > (3 * last_avg_frame_bandwidth >> 1) ||
+        new_avg_frame_bandwidth < (last_avg_frame_bandwidth >> 1)) {
+      rc->bits_off_target = rc->optimal_buffer_level;
+      rc->buffer_level = rc->optimal_buffer_level;
+      cpi->rc.rc_1_frame = 0;
+      cpi->rc.rc_2_frame = 0;
+      if (cpi->use_svc) vp9_svc_reset_layer_buffer(cpi);
+    }
+  }
+
   cpi->alt_ref_source = NULL;
   rc->is_src_frame_alt_ref = 0;
 
