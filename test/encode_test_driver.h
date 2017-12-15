@@ -258,6 +258,9 @@ class EncoderTest {
     return pkt;
   }
 
+  // Hook to get spatial and temporal layers id for SVC.
+  virtual void GetLayerId(Encoder * /*encoder*/) {}
+
   bool abort_;
   vpx_codec_enc_cfg_t cfg_;
   vpx_codec_dec_cfg_t dec_cfg_;
