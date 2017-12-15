@@ -201,6 +201,9 @@ void EncoderTest::RunLoop(VideoSource *video) {
       PreEncodeFrameHook(video, encoder.get());
       encoder->EncodeFrame(video, frame_flags_);
 
+      if (cfg_.g_pass == VPX_RC_ONE_PASS && cfg_.rc_end_usage == VPX_CBR)
+        GetLayerId(encoder.get());
+
       CxDataIterator iter = encoder->GetCxData();
 
       bool has_cxdata = false;
