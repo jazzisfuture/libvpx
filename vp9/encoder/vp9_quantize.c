@@ -54,6 +54,64 @@ void vp9_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   *eob_ptr = eob + 1;
 }
 
+// This quantizer compares the AC coefficients to the quantization step size to
+// determine if further multiplication operations are needed.
+// Based on vp9_quantize_fp_sse2().
+void vp9_quantize_fp_nz_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+                          int skip_block, const int16_t *round_ptr,
+                          const int16_t *quant_ptr, tran_low_t *qcoeff_ptr,
+                          tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
+                          uint16_t *eob_ptr, const int16_t *scan,
+                          const int16_t *iscan) {
+  int i, eob = -1;
+  const int thr = dequant_ptr[1] >> 1;
+  (void)iscan;
+  (void)skip_block;
+  assert(!skip_block);
+
+  memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+  memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+
+  // Quantization pass: All coefficients with index >= zero_flag are
+  // skippable. Note: zero_flag can be zero.
+  for (i = 0; i < n_coeffs; i++) {
+    // Work on row order in this loop.
+    const int rc = i;
+    const int coeff = coeff_ptr[rc];
+    const int coeff_sign = (coeff >> 31);
+    const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+    int nzflag = 1;
+
+    // If all of the AC coeffs in a row has magnitude less than the
+    // quantization step_size/2, quantize to zero.
+    //
+    // The first 16 are skipped in the sse2 code.  Do the same here to match.
+    if (i >= 16 && (abs_coeff <= thr)) {
+      nzflag = 0;
+    }
+
+    if (nzflag) {
+      int tmp = clamp(abs_coeff + round_ptr[rc != 0], INT16_MIN, INT16_MAX);
+      tmp = (tmp * quant_ptr[rc != 0]) >> 16;
+      qcoeff_ptr[rc] = (tmp ^ coeff_sign) - coeff_sign;
+      dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0];
+    } else {
+      qcoeff_ptr[rc] = 0;
+      dqcoeff_ptr[rc] = 0;
+    }
+  }
+
+  // Scan for eob.
+  for (i = 0; i < n_coeffs; i++) {
+    // Use the scan order to find the correct eob.
+    const int rc = scan[i];
+    if (qcoeff_ptr[rc]) {
+      eob = i;
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                               int skip_block, const int16_t *round_ptr,
