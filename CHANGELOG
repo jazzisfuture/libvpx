@@ -1,3 +1,25 @@
+2017-01-04 v1.7.0 "Mandarin Duck"
+  This release focused on high bit depth performance (10/12 bit) and vp9
+  encoding improvements.
+
+  - Upgrading:
+    This releaes is ABI incompatible due to new vp9 encoder features.
+    Frame parallel decoding for vp9 has been removed.
+
+  - Enhancements:
+    Due to the structure of the library 8 bit coding speed suffered when higher
+    bitdepths were initially enabled. The 8 bit regression was addressed and
+    optimizations were written for 10/12 bit.
+
+    A new mode for vp9 encoding to address large encoding projects called
+    "cvbr". See vpxenc help text for --corpus-complexity.
+
+    Additional tooling for respecting the vp9 "level" profiles has been added.
+
+  - Bug fixes:
+    A variety of fuzzing issues.
+    vp8 threading fix for ARM.
+
 2017-01-09 v1.6.1 "Long Tailed Duck"
   This release improves upon the VP9 encoder and speeds up the encoding and
   decoding processes.
