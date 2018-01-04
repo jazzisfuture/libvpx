@@ -2411,7 +2411,6 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   double mv_in_out_accumulator = 0.0;
   double abs_mv_in_out_accumulator = 0.0;
   double mv_ratio_accumulator_thresh;
-  double mv_in_out_thresh;
   double abs_mv_in_out_thresh;
   double sr_accumulator = 0.0;
   const double av_err = get_distribution_av_err(cpi, twopass);
@@ -2457,8 +2456,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // Motion breakout threshold for loop below depends on image size.
   mv_ratio_accumulator_thresh =
       (cpi->initial_height + cpi->initial_width) / 4.0;
-  mv_in_out_thresh = (cpi->initial_height + cpi->initial_width) / 300.0;
-  abs_mv_in_out_thresh = (cpi->initial_height + cpi->initial_width) / 200.0;
+  abs_mv_in_out_thresh = 4.0;
 
   // Set a maximum and minimum interval for the GF group.
   // If the image appears almost completely static we can extend beyond this.
@@ -2562,7 +2560,6 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
             (!flash_detected) &&
             ((mv_ratio_accumulator > mv_ratio_accumulator_thresh) ||
              (abs_mv_in_out_accumulator > abs_mv_in_out_thresh) ||
-             (mv_in_out_accumulator < -mv_in_out_thresh) ||
              (sr_accumulator > next_frame.intra_error)))) {
       break;
     }
