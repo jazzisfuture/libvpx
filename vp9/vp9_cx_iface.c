@@ -1213,7 +1213,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
            -1 != vp9_get_compressed_data(cpi, &lib_flags, &size, cx_data,
                                          &dst_time_stamp, &dst_end_time_stamp,
                                          !img)) {
-      if (size) {
+      if (size || (cpi->use_svc && cpi->svc.skip_enhancement_layer)) {
         vpx_codec_cx_pkt_t pkt;
 
 #if CONFIG_SPATIAL_SVC
