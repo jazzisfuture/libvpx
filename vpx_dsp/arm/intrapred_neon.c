@@ -258,8 +258,6 @@ void vpx_dc_128_predictor_32x32_neon(uint8_t *dst, ptrdiff_t stride,
   dc_store_32x32(dst, stride, dc);
 }
 
-// -----------------------------------------------------------------------------
-
 void vpx_d45_predictor_4x4_neon(uint8_t *dst, ptrdiff_t stride,
                                 const uint8_t *above, const uint8_t *left) {
   const uint8x8_t ABCDEFGH = vld1_u8(above);
@@ -380,8 +378,6 @@ void vpx_d45_predictor_32x32_neon(uint8_t *dst, ptrdiff_t stride,
   dst += 16;
   vst1q_u8(dst, row_1);
 }
-
-// -----------------------------------------------------------------------------
 
 void vpx_d135_predictor_4x4_neon(uint8_t *dst, ptrdiff_t stride,
                                  const uint8_t *above, const uint8_t *left) {
@@ -667,8 +663,6 @@ void vpx_d135_predictor_32x32_neon(uint8_t *dst, ptrdiff_t stride,
   d135_store_32x2(&dst, stride, row_0, row_1, row_2);
 }
 
-// -----------------------------------------------------------------------------
-
 #if !HAVE_NEON_ASM
 
 void vpx_v_predictor_4x4_neon(uint8_t *dst, ptrdiff_t stride,
@@ -721,8 +715,6 @@ void vpx_v_predictor_32x32_neon(uint8_t *dst, ptrdiff_t stride,
     dst += stride - 16;
   }
 }
-
-// -----------------------------------------------------------------------------
 
 void vpx_h_predictor_4x4_neon(uint8_t *dst, ptrdiff_t stride,
                               const uint8_t *above, const uint8_t *left) {
@@ -870,8 +862,6 @@ void vpx_h_predictor_32x32_neon(uint8_t *dst, ptrdiff_t stride,
     h_store_32x8(&dst, stride, vget_high_u8(left_u8));
   }
 }
-
-// -----------------------------------------------------------------------------
 
 static INLINE int16x8_t convert_u8_to_s16(uint8x8_t v) {
   return vreinterpretq_s16_u16(vmovl_u8(v));
