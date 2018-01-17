@@ -190,8 +190,8 @@ static void set_temporal_layer_pattern(int num_temporal_layers,
       cfg->ts_layer_id[0] = 0;
       cfg->ts_layer_id[1] = 1;
       // Use 60/40 bit allocation as example.
-      cfg->ts_target_bitrate[0] = (int)(0.6f * bitrate);
-      cfg->ts_target_bitrate[1] = bitrate;
+      cfg->ts_target_bitrate[0] = 0; //(int)(0.6f * bitrate);
+      cfg->ts_target_bitrate[1] = 0; //bitrate;
 
       /* 0=L, 1=GF */
       // ARF is used as predictor for all frames, and is only updated on
