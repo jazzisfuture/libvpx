@@ -50,10 +50,6 @@ typedef struct {
 #define WINAPI_FAMILY_PARTITION(x) x
 #endif
 
-#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#define USE_CREATE_THREAD
-#endif
-
 //------------------------------------------------------------------------------
 // simplistic pthread emulation layer
 
@@ -75,17 +71,10 @@ static INLINE int pthread_create(pthread_t *const thread, const void *attr,
                                  unsigned int(__stdcall *start)(void *),
                                  void *arg) {
   (void)attr;
-#ifdef USE_CREATE_THREAD
-  *thread = CreateThread(NULL,          /* lpThreadAttributes */
-                         0,             /* dwStackSize */
-                         start, arg, 0, /* dwStackSize */
-                         NULL);         /* lpThreadId */
-#else
   *thread = (pthread_t)_beginthreadex(NULL,          /* void *security */
                                       0,             /* unsigned stack_size */
                                       start, arg, 0, /* unsigned initflag */
                                       NULL);         /* unsigned *thrdaddr */
-#endif
   if (*thread == NULL) return 1;
   SetThreadPriority(*thread, THREAD_PRIORITY_ABOVE_NORMAL);
   return 0;
