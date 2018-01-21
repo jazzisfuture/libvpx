@@ -1005,4 +1005,12 @@ INSTANTIATE_TEST_CASE_P(
                                  &idct_wrapper<vpx_iwht4x4_16_add_sse2>, 4, 0,
                                  VPX_BITS_8, 1)));
 #endif  // HAVE_SSE2 && !CONFIG_EMULATE_HARDWARE
+
+#if HAVE_VSX && !CONFIG_EMULATE_HARDWARE && !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    VSX, TransWHT,
+    ::testing::Values(make_tuple(&fdct_wrapper<vp9_fwht4x4_c>,
+                                 &idct_wrapper<vpx_iwht4x4_16_add_vsx>, 4, 0,
+                                 VPX_BITS_8, 1)));
+#endif  // HAVE_VSX && !CONFIG_EMULATE_HARDWARE
 }  // namespace
