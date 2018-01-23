@@ -1638,6 +1638,26 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       cpi->sf.use_compound_nonrd_pickmode && usable_ref_frame == ALTREF_FRAME)
     comp_modes = 2;
 
+  // For SVC, on spatial_layer_id > 1, remove the spatial (golden) prediction
+  // if cpi->svc.spatial_prediction_mode is set.
+  if (cpi->use_svc && cpi->svc.spatial_layer_id > 0 &&
+      cpi->svc.spatial_prediction_mode > 0) {
+    int layer =
+        LAYER_IDS_TO_IDX(cpi->svc.spatial_layer_id, cpi->svc.temporal_layer_id,
+                         cpi->svc.number_temporal_layers);
+    LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+    // Only remove the spatial (golden ref) prediction if the base spatial layer
+    // is not a key frame. If the base spatial layer is a key frame and
+    // cpi->svc.spatial_prediction_mode = 2, then the upper spatial layers
+    // should be encoded as key frame and not enter pick_inter_mode.
+    // TODO(marpan): Fix this for the case cpi->svc.spatial_prediction_mode = 2.
+    if (!lc->is_key_frame) {
+      usable_ref_frame = LAST_FRAME;
+      skip_ref_find_pred[LAST_FRAME] = 0;
+      skip_ref_find_pred[GOLDEN_FRAME] = 1;
+    }
+  }
+
   for (ref_frame = LAST_FRAME; ref_frame <= usable_ref_frame; ++ref_frame) {
     if (!skip_ref_find_pred[ref_frame]) {
       find_predictors(cpi, x, ref_frame, frame_mv, const_motion,
