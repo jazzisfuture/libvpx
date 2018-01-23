@@ -640,6 +640,13 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
     }
   }
 
+  // If spatial_prediction_mode is set, disable the inter-layer/spatial
+  // prediction. For the fixed SVC patterns, GOLDEN is always the spatial
+  // reference on non-key frames.
+  if (cpi->svc.spatial_prediction_mode > 0 && cpi->svc.spatial_layer_id > 0 &&
+      cpi->svc.temporal_layering_mode != VP9E_TEMPORAL_LAYERING_MODE_BYPASS)
+    cpi->ref_frame_flags = VP9_LAST_FLAG;
+
   if (cpi->svc.spatial_layer_id == cpi->svc.first_spatial_layer_to_encode)
     cpi->svc.rc_drop_superframe = 0;
 
