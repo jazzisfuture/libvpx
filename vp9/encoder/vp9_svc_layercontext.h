@@ -103,6 +103,12 @@ typedef struct SVC {
   int first_layer_denoise;
 
   int skip_enhancement_layer;
+
+  // Setting is passed in via the control VP9E_SET_SVC_SPATIAL_PREDICTION_MODE.
+  // Default is 0, which means spatial prediction (prediction off lower
+  // resolution) is always used. Value of 1 means skip this spatial prediction
+  // for delta frames. Value of 2 means we always skip it.
+  int spatial_prediction_mode;
 } SVC;
 
 struct VP9_COMP;

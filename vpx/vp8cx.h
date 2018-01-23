@@ -596,6 +596,17 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST,
+
+  /*!\brief Codec control function to set the spatial prediction mode for SVC.
+   *
+   * This value applies to SVC encoding and controls whether spatial prediction
+   * off the lower resolution is used.  Value 0 mean spatial prediction is
+   * always used, 1 means no spatial prediction on delta frames, and 2 means the
+   * spatial prediction is never used. Default value is 0 (always used).
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_SVC_SPATIAL_PREDICTION_MODE,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -866,6 +877,9 @@ VPX_CTRL_USE_TYPE(VP9E_GET_LEVEL, int *)
 
 VPX_CTRL_USE_TYPE(VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST, unsigned int)
 #define VPX_CTRL_VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST
+
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_SPATIAL_PREDICTION_MODE, unsigned int)
+#define VPX_CTRL_VP9E_SET_SVC_SPATIAL_PREDICTION_MODE
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */
