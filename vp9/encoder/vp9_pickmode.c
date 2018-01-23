@@ -1760,7 +1760,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     }
 
     if (!(cpi->ref_frame_flags & flag_list[ref_frame])) continue;
-
     if (const_motion[ref_frame] && this_mode == NEARMV) continue;
 
     // Skip non-zeromv mode search for golden frame if force_skip_low_temp_var
