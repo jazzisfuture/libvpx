@@ -429,9 +429,8 @@ static void set_rate_control_stats(struct RateControlStats *rc,
         rc->layer_framerate[layer] = framerate / cfg->ts_rate_decimator[tl];
       if (tl > 0) {
         rc->layer_pfb[layer] =
-            1000.0 *
-            (cfg->layer_target_bitrate[layer] -
-             cfg->layer_target_bitrate[layer - 1]) /
+            1000.0 * (cfg->layer_target_bitrate[layer] -
+                      cfg->layer_target_bitrate[layer - 1]) /
             (rc->layer_framerate[layer] - rc->layer_framerate[layer - 1]);
       } else {
         rc->layer_pfb[layer] = 1000.0 * cfg->layer_target_bitrate[layer] /
@@ -711,6 +710,8 @@ int main(int argc, const char **argv) {
   if (svc_ctx.speed >= 5)
     vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
   vpx_codec_control(&codec, VP8E_SET_MAX_INTRA_BITRATE_PCT, 900);
+
+  vpx_codec_control(&codec, VP9E_SET_SVC_SPATIAL_PREDICTION_MODE, 1);
 
   // Encode frames
   while (!end_of_stream) {
