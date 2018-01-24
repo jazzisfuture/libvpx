@@ -22,9 +22,8 @@ static INLINE int32x4_t dct_const_round_shift_high_4(const int64x2x2_t in) {
   return vcombine_s32(t32.val[0], t32.val[1]);
 }
 
-static INLINE void
-dct_const_round_shift_high_4_dual(const int64x2x2_t *const in,
-                                  int32x4_t *const d0, int32x4_t *const d1) {
+static INLINE void dct_const_round_shift_high_4_dual(
+    const int64x2x2_t *const in, int32x4_t *const d0, int32x4_t *const d1) {
   *d0 = dct_const_round_shift_high_4(in[0]);
   *d1 = dct_const_round_shift_high_4(in[1]);
 }
