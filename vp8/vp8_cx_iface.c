@@ -804,11 +804,17 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
 
   if (!ctx->cfg.rc_target_bitrate) {
 #if CONFIG_MULTI_RES_ENCODING
-    LOWER_RES_FRAME_INFO *low_res_frame_info =
-        (LOWER_RES_FRAME_INFO *)ctx->cpi->oxcf.mr_low_res_mode_info;
-    low_res_frame_info->skip_encoding_prev_stream = 1;
-    if (ctx->cpi->oxcf.mr_encoder_id == 0)
-      low_res_frame_info->skip_encoding_base_stream = 1;
+    if (ctx->cpi->oxcf.mr_total_resolutions > 1) {
+      LOWER_RES_FRAME_INFO *low_res_frame_info =
+          (LOWER_RES_FRAME_INFO *)ctx->cpi->oxcf.mr_low_res_mode_info;
+      if (low_res_frame_info != NULL) {
+        low_res_frame_info->skip_encoding_prev_stream = 1;
+        if (ctx->cpi->oxcf.mr_encoder_id == 0)
+          low_res_frame_info->skip_encoding_base_stream = 1;
+      } else {
+        return VPX_CODEC_ERROR;
+      }
+    }
 #endif
     return res;
   }
