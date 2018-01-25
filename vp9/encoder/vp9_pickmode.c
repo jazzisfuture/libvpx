@@ -2367,6 +2367,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     }
   }
 
+  if (cm->current_video_frame >= 300 && best_ref_frame == GOLDEN_FRAME) {
+    printf("GOLDEN\n");
+  }
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0 && cpi->resize_pending == 0 &&
       denoise_svc_pickmode && cpi->denoiser.denoising_level > kDenLowLow &&
