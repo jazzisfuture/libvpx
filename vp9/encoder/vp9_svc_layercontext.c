@@ -623,6 +623,7 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
     set_flags_and_fb_idx_for_temporal_mode2(cpi);
   } else if (cpi->svc.temporal_layering_mode ==
              VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
+    printf("TEST BYPASS %d\n", cpi->common.current_video_frame);
     // In the BYPASS/flexible mode, the encoder is relying on the application
     // to specify, for each spatial layer, the flags and buffer indices for the
     // layering.

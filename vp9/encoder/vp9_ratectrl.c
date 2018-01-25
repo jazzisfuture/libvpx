@@ -1386,6 +1386,10 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
+  printf("%d %d %d %d %d %d %f %d\n", cm->current_video_frame, cm->width,
+         cm->height, cpi->svc.spatial_layer_id, cpi->svc.temporal_layer_id,
+         (int)cpi->oxcf.target_bandwidth, cpi->framerate,
+         cpi->svc.temporal_layering_mode);
   // Post encode loop adjustment of Q prediction.
   vp9_rc_update_rate_correction_factors(cpi);
 
