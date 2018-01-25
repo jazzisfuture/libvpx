@@ -69,7 +69,7 @@ class TwopassStatsStore {
   }
 
   vpx_fixed_buf_t buf() {
-    const vpx_fixed_buf_t buf = { &buffer_[0], buffer_.size() };
+    const vpx_fixed_buf_t buf = {&buffer_[0], buffer_.size()};
     return buf;
   }
 
@@ -124,6 +124,11 @@ class Encoder {
   }
 
   void Control(int ctrl_id, struct vpx_svc_layer_id *arg) {
+    const vpx_codec_err_t res = vpx_codec_control_(&encoder_, ctrl_id, arg);
+    ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
+  }
+
+  void Control(int ctrl_id, struct vpx_svc_ref_frame_config *arg) {
     const vpx_codec_err_t res = vpx_codec_control_(&encoder_, ctrl_id, arg);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
@@ -186,7 +191,10 @@ class Encoder {
 class EncoderTest {
  protected:
   explicit EncoderTest(const CodecFactory *codec)
-      : codec_(codec), abort_(false), init_flags_(0), frame_flags_(0),
+      : codec_(codec),
+        abort_(false),
+        init_flags_(0),
+        frame_flags_(0),
         last_pts_(0) {
     // Default to 1 thread.
     cfg_.g_threads = 1;

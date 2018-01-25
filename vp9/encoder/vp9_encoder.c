@@ -1863,6 +1863,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
        cpi->oxcf.pass != 1)) {
     vp9_update_layer_context_change_config(cpi,
                                            (int)cpi->oxcf.target_bandwidth);
+    cpi->svc.temporal_layering_mode = oxcf->temporal_layering_mode;
   }
 
   // Check for resetting the rc flags (rc_1_frame, rc_2_frame) if the
