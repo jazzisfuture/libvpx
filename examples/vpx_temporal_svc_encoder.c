@@ -26,7 +26,7 @@
 #include "../tools_common.h"
 #include "../video_writer.h"
 
-#define VP8_ROI_MAP 0
+#define ROI_MAP 0
 
 static const char *exec_name;
 
@@ -165,15 +165,22 @@ static void printout_rate_control_summary(struct RateControlMetrics *rc,
     die("Error: Number of input frames not equal to output! \n");
 }
 
-#if VP8_ROI_MAP
-static void vp8_set_roi_map(vpx_codec_enc_cfg_t *cfg, vpx_roi_map_t *roi) {
+#if ROI_MAP
+static void set_roi_map(vpx_codec_enc_cfg_t *cfg, vpx_roi_map_t *roi,
+                        const VpxInterface *encoder) {
   unsigned int i, j;
+  int block_size = 0;
   memset(roi, 0, sizeof(*roi));
+
+  if (strncmp(encoder->name, "vp8", 3) == 0)
+    block_size = 16;
+  else if (strncmp(encoder->name, "vp9", 3) == 0)
+    block_size = 8;
 
   // ROI is based on the segments (4 for vp8, 8 for vp9), smallest unit for
   // segment is 16x16 for vp8, 8x8 for vp9.
-  roi->rows = (cfg->g_h + 15) / 16;
-  roi->cols = (cfg->g_w + 15) / 16;
+  roi->rows = (cfg->g_h + block_size - 1) / block_size;
+  roi->cols = (cfg->g_w + block_size - 1) / block_size;
 
   // Applies delta QP on the segment blocks, varies from -63 to 63.
   // Setting to negative means lower QP (better quality).
@@ -182,6 +189,12 @@ static void vp8_set_roi_map(vpx_codec_enc_cfg_t *cfg, vpx_roi_map_t *roi) {
   roi->delta_q[1] = -63;
   roi->delta_q[2] = 0;
   roi->delta_q[3] = 0;
+  if (strncmp(encoder->name, "vp9", 3) == 0) {
+    roi->delta_q[4] = 0;
+    roi->delta_q[5] = 0;
+    roi->delta_q[6] = 0;
+    roi->delta_q[7] = 0;
+  }
 
   // Applies delta loopfilter strength on the segment blocks, varies from -63 to
   // 63. Setting to positive means stronger loopfilter.
@@ -189,14 +202,51 @@ static void vp8_set_roi_map(vpx_codec_enc_cfg_t *cfg, vpx_roi_map_t *roi) {
   roi->delta_lf[1] = 0;
   roi->delta_lf[2] = 0;
   roi->delta_lf[3] = 0;
+  if (strncmp(encoder->name, "vp9", 3) == 0) {
+    roi->delta_lf[4] = 0;
+    roi->delta_lf[5] = 0;
+    roi->delta_lf[6] = 0;
+    roi->delta_lf[7] = 0;
+  }
 
-  // Applies skip encoding threshold on the segment blocks, varies from 0 to
-  // UINT_MAX. Larger value means more skipping of encoding is possible.
-  // This skip threshold only applies on delta frames.
-  roi->static_threshold[0] = 0;
-  roi->static_threshold[1] = 0;
-  roi->static_threshold[2] = 0;
-  roi->static_threshold[3] = 0;
+  if (strncmp(encoder->name, "vp8", 3) == 0) {
+    // Applies skip encoding threshold on the segment blocks, varies from 0 to
+    // UINT_MAX. Larger value means more skipping of encoding is possible.
+    // This skip threshold only applies on delta frames.
+    roi->static_threshold[0] = 0;
+    roi->static_threshold[1] = 0;
+    roi->static_threshold[2] = 0;
+    roi->static_threshold[3] = 0;
+  }
+
+  if (strncmp(encoder->name, "vp9", 3) == 0) {
+    // Apply skip segment. Setting to 1 means this block will be copied from
+    // previous frame.
+    roi->skip[0] = 0;
+    roi->skip[1] = 0;
+    roi->skip[2] = 0;
+    roi->skip[3] = 0;
+    roi->skip[4] = 0;
+    roi->skip[5] = 0;
+    roi->skip[6] = 0;
+    roi->skip[7] = 0;
+  }
+
+  if (strncmp(encoder->name, "vp9", 3) == 0) {
+    // Apply ref frame segment.
+    // -1 : Do not apply this segment.
+    //  0 : Froce using intra.
+    //  1 : Force using last.
+    //  2 : Force using golden.
+    roi->ref_frame[0] = -1;
+    roi->ref_frame[1] = -1;
+    roi->ref_frame[2] = -1;
+    roi->ref_frame[3] = -1;
+    roi->ref_frame[4] = -1;
+    roi->ref_frame[5] = -1;
+    roi->ref_frame[6] = -1;
+    roi->ref_frame[7] = -1;
+  }
 
   // Use 2 states: 1 is center square, 0 is the rest.
   roi->roi_map =
@@ -564,7 +614,7 @@ int main(int argc, char **argv) {
   int layering_mode = 0;
   int layer_flags[VPX_TS_MAX_PERIODICITY] = { 0 };
   int flag_periodicity = 1;
-#if VP8_ROI_MAP
+#if ROI_MAP
   vpx_roi_map_t roi;
 #endif
   vpx_svc_layer_id_t layer_id = { 0, 0 };
@@ -767,8 +817,8 @@ int main(int argc, char **argv) {
     vpx_codec_control(&codec, VP8E_SET_NOISE_SENSITIVITY, kVp8DenoiserOff);
     vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
     vpx_codec_control(&codec, VP8E_SET_GF_CBR_BOOST_PCT, 0);
-#if VP8_ROI_MAP
-    vp8_set_roi_map(&cfg, &roi);
+#if ROI_MAP
+    set_roi_map(&cfg, &roi, encoder);
     if (vpx_codec_control(&codec, VP8E_SET_ROI_MAP, &roi))
       die_codec(&codec, "Failed to set ROI map");
 #endif
@@ -785,6 +835,12 @@ int main(int argc, char **argv) {
     vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
     vpx_codec_control(&codec, VP9E_SET_TUNE_CONTENT, 0);
     vpx_codec_control(&codec, VP9E_SET_TILE_COLUMNS, (cfg.g_threads >> 1));
+#if ROI_MAP
+    set_roi_map(&cfg, &roi, encoder);
+    if (vpx_codec_control(&codec, VP9E_SET_ROI_MAP, &roi))
+      die_codec(&codec, "Failed to set ROI map");
+    vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 0);
+#endif
     // TODO(marpan/jianj): There is an issue with row-mt for low resolutons at
     // high speed settings, disable its use for those cases for now.
     if (cfg.g_threads > 1 && ((cfg.g_w > 320 && cfg.g_h > 240) || speed < 7))
