@@ -621,6 +621,10 @@ class DatarateTestVP9Large
     encoder->Control(VP9E_SET_FRAME_PARALLEL_DECODING,
                      frame_parallel_decoding_mode_);
 
+    if (use_roi_ == 1) {
+      encoder->Control(VP9E_SET_ROI_MAP, &roi_);
+    }
+
     if (cfg_.ts_number_layers > 1) {
       if (video->frame() == 0) {
         encoder->Control(VP9E_SET_SVC, 1);
@@ -701,6 +705,8 @@ class DatarateTestVP9Large
   int denoiser_offon_test_;
   int denoiser_offon_period_;
   int frame_parallel_decoding_mode_;
+  int use_roi_;
+  vpx_roi_map_t roi_;
 };
 
 // Check basic rate targeting for VBR mode with 0 lag.
@@ -803,6 +809,60 @@ TEST_P(DatarateTestVP9Large, BasicRateTargeting) {
     ASSERT_LE(effective_datarate_[0], cfg_.rc_target_bitrate * 1.15)
         << " The datarate for the file is greater than target by too much!";
   }
+}
+
+// Check basic rate targeting for CBR mode.
+TEST_P(DatarateTestVP9Large, RegionOfInterest) {
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.rc_end_usage = VPX_CBR;
+  cfg_.g_lag_in_frames = 0;
+
+  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       30, 1, 0, 300);
+
+  cfg_.rc_target_bitrate = 450;
+  cfg_.g_w = 352;
+  cfg_.g_h = 288;
+
+  ResetModel();
+
+  // Set ROI parameters
+  use_roi_ = 1;
+  memset(&roi_, 0, sizeof(roi_));
+
+  roi_.rows = (cfg_.g_h + 7) / 8;
+  roi_.cols = (cfg_.g_w + 7) / 8;
+
+  roi_.delta_q[1] = -63;
+  // roi_.delta_lf[2] = -20;
+  memset(roi_.ref_frame, -1, sizeof(roi_.ref_frame));
+  // roi_.ref_frame[2] = 1;
+
+  // Use 2 states: 1 is center square, 0 is the rest.
+  roi_.roi_map =
+      (uint8_t *)calloc(roi_.rows * roi_.cols, sizeof(*roi_.roi_map));
+  for (unsigned int i = 0; i < roi_.rows; ++i) {
+    for (unsigned int j = 0; j < roi_.cols; ++j) {
+      if (i > (roi_.rows >> 2) && i < ((roi_.rows * 3) >> 2) &&
+          j > (roi_.cols >> 2) && j < ((roi_.cols * 3) >> 2)) {
+        roi_.roi_map[i * roi_.cols + j] = 1;
+      }
+    }
+  }
+
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  ASSERT_GE(cfg_.rc_target_bitrate, effective_datarate_[0] * 0.90)
+      << " The datarate for the file exceeds the target!";
+
+  ASSERT_LE(cfg_.rc_target_bitrate, effective_datarate_[0] * 1.4)
+      << " The datarate for the file missed the target!";
+
+  free(roi_.roi_map);
 }
 
 // Check basic rate targeting for CBR mode, with frame_parallel_decoding_mode
