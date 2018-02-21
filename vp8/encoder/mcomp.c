@@ -413,6 +413,9 @@ int vp8_find_best_sub_pixel_step(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
   this_mv.as_mv.col = ((startmv.as_mv.col - 8) | 4);
   /* "halfpix" horizontal variance */
   thismse = vfp->svf(y - 1, y_stride, 4, 0, z, b->src_stride, &sse);
+  // Cap this_mv
+  vp8_clamp_mv(&this_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min,
+               x->mv_row_max);
   left = thismse + mv_err_cost(&this_mv, ref_mv, mvcost, error_per_bit);
 
   if (left < bestmse) {
@@ -425,6 +428,9 @@ int vp8_find_best_sub_pixel_step(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
   this_mv.as_mv.col += 8;
   /* "halfpix" horizontal variance */
   thismse = vfp->svf(y, y_stride, 4, 0, z, b->src_stride, &sse);
+  // Cap this_mv
+  vp8_clamp_mv(&this_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min,
+               x->mv_row_max);
   right = thismse + mv_err_cost(&this_mv, ref_mv, mvcost, error_per_bit);
 
   if (right < bestmse) {
