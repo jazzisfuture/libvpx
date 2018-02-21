@@ -1047,16 +1047,16 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             }
           }
 
-          x->mv_col_min = tmp_col_min;
-          x->mv_col_max = tmp_col_max;
-          x->mv_row_min = tmp_row_min;
-          x->mv_row_max = tmp_row_max;
-
           if (bestsme < INT_MAX) {
             cpi->find_fractional_mv_step(
                 x, b, d, &d->bmi.mv, &best_ref_mv, x->errorperbit,
                 &cpi->fn_ptr[BLOCK_16X16], cpi->mb.mvcost, &distortion2, &sse);
           }
+
+          x->mv_col_min = tmp_col_min;
+          x->mv_col_max = tmp_col_max;
+          x->mv_row_min = tmp_row_min;
+          x->mv_row_max = tmp_row_max;
         }
 
         mode_mv[NEWMV].as_int = d->bmi.mv.as_int;
