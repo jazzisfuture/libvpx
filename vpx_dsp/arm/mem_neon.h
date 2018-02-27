@@ -21,7 +21,7 @@
 
 static INLINE int16x4_t create_s16x4_neon(const int16_t c0, const int16_t c1,
                                           const int16_t c2, const int16_t c3) {
-  return vcreate_s16((uint16_t)c0 | ((uint16_t)c1 << 16) |
+  return vcreate_s16((uint16_t)c0 | (uint32_t)((uint16_t)c1 << 16) |
                      ((int64_t)(uint16_t)c2 << 32) |
                      ((int64_t)(uint16_t)c3 << 48));
 }
