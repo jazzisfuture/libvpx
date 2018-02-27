@@ -407,9 +407,18 @@ INSTANTIATE_TEST_CASE_P(
         ::testing::Values(
             static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)),
         ::testing::Values(::libvpx_test::kTwoPassGood,
-                          ::libvpx_test::kOnePassGood,
-                          ::libvpx_test::kRealTime),
-        ::testing::Range(3, 9),    // cpu_used
+                          ::libvpx_test::kOnePassGood),
+        ::testing::Range(3, 6),    // cpu_used
+        ::testing::Range(0, 3),    // tile_columns
+        ::testing::Range(2, 5)));  // threads
+
+INSTANTIATE_TEST_CASE_P(
+    VP9, VPxEncoderThreadTest,
+    ::testing::Combine(
+        ::testing::Values(
+            static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)),
+        ::testing::Values(::libvpx_test::kRealTime),
+        ::testing::Range(6, 9),    // cpu_used
         ::testing::Range(0, 3),    // tile_columns
         ::testing::Range(2, 5)));  // threads
 
