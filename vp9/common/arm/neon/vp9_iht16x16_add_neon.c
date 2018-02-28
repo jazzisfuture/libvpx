@@ -19,9 +19,9 @@
 #include "vpx_dsp/arm/mem_neon.h"
 #include "vpx_dsp/arm/transpose_neon.h"
 
-static void iadst16x16_256_add_half1d(const void *const input, int16_t *output,
-                                      void *const dest, const int stride,
-                                      const int highbd_flag) {
+void iadst16x16_256_add_half1d(const void *const input, int16_t *output,
+                               void *const dest, const int stride,
+                               const int highbd_flag) {
   int16x8_t in[16], out[16];
   const int16x4_t c_1_31_5_27 =
       create_s16x4_neon(cospi_1_64, cospi_31_64, cospi_5_64, cospi_27_64);
@@ -273,14 +273,6 @@ static void iadst16x16_256_add_half1d(const void *const input, int16_t *output,
     }
   }
 }
-
-typedef void (*iht_1d)(const void *const input, int16_t *output,
-                       void *const dest, const int stride,
-                       const int highbd_flag);
-
-typedef struct {
-  iht_1d cols, rows;  // vertical and horizontal
-} iht_2d;
 
 void vp9_iht16x16_256_add_neon(const tran_low_t *input, uint8_t *dest,
                                int stride, int tx_type) {
