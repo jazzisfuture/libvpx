@@ -46,7 +46,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     svc->ext_gld_fb_idx[sl] = 1;
     svc->ext_alt_fb_idx[sl] = 2;
     svc->downsample_filter_type[sl] = BILINEAR;
-    svc->downsample_filter_phase[sl] = 8;  // Set to 8 for averaging filter.
+    svc->downsample_filter_phase[sl] = 0;
   }
 
   if (cpi->oxcf.error_resilient_mode == 0 && cpi->oxcf.pass == 2) {
@@ -663,16 +663,17 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
                        lc->scaling_factor_num, lc->scaling_factor_den, &width,
                        &height);
 
-  // For resolutions <= VGA: set phase of the filter = 8 (for symmetric
-  // averaging filter), use bilinear for now.
-  if (width * height <= 640 * 480) {
-    cpi->svc.downsample_filter_type[cpi->svc.spatial_layer_id] = BILINEAR;
-    // Use Eightap_smooth for low resolutions.
-    if (width * height <= 320 * 240)
-      cpi->svc.downsample_filter_type[cpi->svc.spatial_layer_id] =
-          EIGHTTAP_SMOOTH;
+  // Use Eightap_smooth for low resolutions.
+  if (width * height <= 320 * 240)
+    cpi->svc.downsample_filter_type[cpi->svc.spatial_layer_id] =
+        EIGHTTAP_SMOOTH;
+  // For scale factors <= 0.75, set the phase to 8 (aligns decimated pixel
+  // midway between orginal pixels).
+  lc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id *
+                                   cpi->svc.number_temporal_layers +
+                               cpi->svc.temporal_layer_id];
+  if (lc->scaling_factor_num <= (3 * lc->scaling_factor_den) >> 2)
     cpi->svc.downsample_filter_phase[cpi->svc.spatial_layer_id] = 8;
-  }
 
   // The usage of use_base_mv assumes down-scale of 2x2. For now, turn off use
   // of base motion vectors if spatial scale factors for any layers are not 2,
