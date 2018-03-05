@@ -14,8 +14,9 @@
 #include "./vpx_config.h"
 
 #if ARCH_X86 || ARCH_X86_64
-void vpx_reset_mmx_state(void);
-#define vpx_clear_system_state() vpx_reset_mmx_state()
+#include <mmintrin.h>
+
+static INLINE void vpx_clear_system_state(void) { _mm_empty(); }
 #else
 #define vpx_clear_system_state()
 #endif  // ARCH_X86 || ARCH_X86_64
