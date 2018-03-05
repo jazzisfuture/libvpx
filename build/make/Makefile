@@ -125,8 +125,11 @@ CFLAGS += -mstackrealign
 endif
 
 # x86[_64]
-$(BUILD_PFX)%_mmx.c.d: CFLAGS += -mmmx
-$(BUILD_PFX)%_mmx.c.o: CFLAGS += -mmmx
+# Many files use emms/_mm_empty()
+$(BUILD_PFX)%.c.d: CFLAGS += -mmmx
+$(BUILD_PFX)%.c.o: CFLAGS += -mmmx
+$(BUILD_PFX)%.cc.d: CXXFLAGS += -mmmx
+$(BUILD_PFX)%.cc.o: CXXFLAGS += -mmmx
 $(BUILD_PFX)%_sse2.c.d: CFLAGS += -msse2
 $(BUILD_PFX)%_sse2.c.o: CFLAGS += -msse2
 $(BUILD_PFX)%_sse3.c.d: CFLAGS += -msse3
