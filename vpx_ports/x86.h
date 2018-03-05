@@ -276,47 +276,6 @@ static INLINE uint64_t x86_readtsc64(void) {
 #endif
 #endif
 
-#if defined(__GNUC__) && __GNUC__
-static void x87_set_control_word(unsigned short mode) {
-  __asm__ __volatile__("fldcw %0" : : "m"(*&mode));
-}
-static unsigned short x87_get_control_word(void) {
-  unsigned short mode;
-  __asm__ __volatile__("fstcw %0\n\t" : "=m"(*&mode) :);
-  return mode;
-}
-#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-static void x87_set_control_word(unsigned short mode) {
-  asm volatile("fldcw %0" : : "m"(*&mode));
-}
-static unsigned short x87_get_control_word(void) {
-  unsigned short mode;
-  asm volatile("fstcw %0\n\t" : "=m"(*&mode) :);
-  return mode;
-}
-#elif ARCH_X86_64
-/* No fldcw intrinsics on Windows x64, punt to external asm */
-extern void vpx_winx64_fldcw(unsigned short mode);
-extern unsigned short vpx_winx64_fstcw(void);
-#define x87_set_control_word vpx_winx64_fldcw
-#define x87_get_control_word vpx_winx64_fstcw
-#else
-static void x87_set_control_word(unsigned short mode) {
-  __asm { fldcw mode }
-}
-static unsigned short x87_get_control_word(void) {
-  unsigned short mode;
-  __asm { fstcw mode }
-  return mode;
-}
-#endif
-
-static INLINE unsigned int x87_set_double_precision(void) {
-  unsigned int mode = x87_get_control_word();
-  x87_set_control_word((mode & ~0x300) | 0x200);
-  return mode;
-}
-
 extern void vpx_reset_mmx_state(void);
 
 #ifdef __cplusplus

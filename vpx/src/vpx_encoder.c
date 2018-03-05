@@ -175,24 +175,6 @@ vpx_codec_err_t vpx_codec_enc_config_default(vpx_codec_iface_t *iface,
   return res;
 }
 
-#if ARCH_X86 || ARCH_X86_64
-/* On X86, disable the x87 unit's internal 80 bit precision for better
- * consistency with the SSE unit's 64 bit precision.
- */
-#include "vpx_ports/x86.h"
-#define FLOATING_POINT_INIT() \
-  do {                        \
-    unsigned short x87_orig_mode = x87_set_double_precision();
-#define FLOATING_POINT_RESTORE()       \
-  x87_set_control_word(x87_orig_mode); \
-  }                                    \
-  while (0)
-
-#else
-static void FLOATING_POINT_INIT() {}
-static void FLOATING_POINT_RESTORE() {}
-#endif
-
 vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
                                  vpx_codec_pts_t pts, unsigned long duration,
                                  vpx_enc_frame_flags_t flags,
@@ -207,11 +189,6 @@ vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
     res = VPX_CODEC_INCAPABLE;
   else {
     unsigned int num_enc = ctx->priv->enc.total_encoders;
-
-    /* Execute in a normalized floating point environment, if the platform
-     * requires it.
-     */
-    FLOATING_POINT_INIT();
 
     if (num_enc == 1)
       res = ctx->iface->enc.encode(get_alg_priv(ctx), img, pts, duration, flags,
@@ -237,8 +214,6 @@ vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
       }
       ctx++;
     }
-
-    FLOATING_POINT_RESTORE();
   }
 
   return SAVE_STATUS(ctx, res);

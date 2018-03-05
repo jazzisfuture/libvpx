@@ -16,23 +16,3 @@ global sym(vpx_reset_mmx_state) PRIVATE
 sym(vpx_reset_mmx_state):
     emms
     ret
-
-
-%if LIBVPX_YASM_WIN64
-global sym(vpx_winx64_fldcw) PRIVATE
-sym(vpx_winx64_fldcw):
-    sub   rsp, 8
-    mov   [rsp], rcx ; win x64 specific
-    fldcw [rsp]
-    add   rsp, 8
-    ret
-
-
-global sym(vpx_winx64_fstcw) PRIVATE
-sym(vpx_winx64_fstcw):
-    sub   rsp, 8
-    fstcw [rsp]
-    mov   rax, [rsp]
-    add   rsp, 8
-    ret
-%endif
