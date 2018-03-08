@@ -36,6 +36,7 @@ Options:
     --module-def=filename       File containing export definitions (for DLLs)
     --ver=version               Version (10,11,12,14,15) of visual studio to generate for
     --src-path-bare=dir         Path to root of source tree
+    --force-toolchain           Attempt to run with unsupported target
     -Ipath/to/include           Additional include directories
     -DFLAG[=value]              Preprocessor macros to define
     -Lpath/to/lib               Additional library search paths
@@ -174,6 +175,8 @@ for opt in "$@"; do
                 ;;
             esac
         ;;
+        --force-toolchain) force_toolchain=true
+        ;;
         -I*)
             opt=${opt##-I}
             opt=$(fix_path "$opt")
@@ -266,7 +269,8 @@ case "$target" in
         asm_Debug_cmdline="armasm -nologo -oldit &quot;%(FullPath)&quot;"
         asm_Release_cmdline="armasm -nologo -oldit &quot;%(FullPath)&quot;"
     ;;
-    *) die "Unsupported target $target!"
+    *)
+      [ "${force_toolchain}" = "true" ] || die "Unsupported target $target!"
     ;;
 esac
 
