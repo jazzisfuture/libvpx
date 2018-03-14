@@ -1714,7 +1714,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc2SL3TL) {
   svc_params_.scaling_factor_den[0] = 288;
   svc_params_.scaling_factor_num[1] = 288;
   svc_params_.scaling_factor_den[1] = 288;
-  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_dropframe_thresh = 30;
   cfg_.kf_max_dist = 9999;
   number_spatial_layers_ = cfg_.ss_number_layers;
   number_temporal_layers_ = cfg_.ts_number_layers;
@@ -1766,7 +1766,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc2SL3TLDenoiserOn) {
   svc_params_.scaling_factor_den[0] = 288;
   svc_params_.scaling_factor_num[1] = 288;
   svc_params_.scaling_factor_den[1] = 288;
-  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_dropframe_thresh = 30;
   cfg_.kf_max_dist = 9999;
   number_spatial_layers_ = cfg_.ss_number_layers;
   number_temporal_layers_ = cfg_.ts_number_layers;
@@ -1869,7 +1869,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc2SL3TL4Threads) {
   svc_params_.scaling_factor_den[0] = 288;
   svc_params_.scaling_factor_num[1] = 288;
   svc_params_.scaling_factor_den[1] = 288;
-  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_dropframe_thresh = 30;
   cfg_.kf_max_dist = 9999;
   number_spatial_layers_ = cfg_.ss_number_layers;
   number_temporal_layers_ = cfg_.ts_number_layers;
@@ -1917,7 +1917,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc3SL3TL) {
   svc_params_.scaling_factor_den[1] = 288;
   svc_params_.scaling_factor_num[2] = 288;
   svc_params_.scaling_factor_den[2] = 288;
-  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_dropframe_thresh = 30;
   cfg_.kf_max_dist = 9999;
   number_spatial_layers_ = cfg_.ss_number_layers;
   number_temporal_layers_ = cfg_.ts_number_layers;
@@ -1966,7 +1966,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc3SL3TLDynamicBitrateChange) {
   svc_params_.scaling_factor_den[1] = 288;
   svc_params_.scaling_factor_num[2] = 288;
   svc_params_.scaling_factor_den[2] = 288;
-  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_dropframe_thresh = 30;
   cfg_.kf_max_dist = 9999;
   number_spatial_layers_ = cfg_.ss_number_layers;
   number_temporal_layers_ = cfg_.ts_number_layers;
@@ -2017,7 +2017,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc3SL2TLDynamicPatternChange) {
   svc_params_.scaling_factor_den[1] = 288;
   svc_params_.scaling_factor_num[2] = 288;
   svc_params_.scaling_factor_den[2] = 288;
-  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_dropframe_thresh = 30;
   cfg_.kf_max_dist = 9999;
   number_spatial_layers_ = cfg_.ss_number_layers;
   number_temporal_layers_ = cfg_.ts_number_layers;
@@ -2068,7 +2068,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc3SL_to_2SL_dynamic) {
   svc_params_.scaling_factor_den[1] = 288;
   svc_params_.scaling_factor_num[2] = 288;
   svc_params_.scaling_factor_den[2] = 288;
-  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_dropframe_thresh = 30;
   cfg_.kf_max_dist = 9999;
   number_spatial_layers_ = cfg_.ss_number_layers;
   number_temporal_layers_ = cfg_.ts_number_layers;
@@ -2160,7 +2160,7 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc3SL3TL4threads) {
   svc_params_.scaling_factor_den[1] = 288;
   svc_params_.scaling_factor_num[2] = 288;
   svc_params_.scaling_factor_den[2] = 288;
-  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_dropframe_thresh = 30;
   cfg_.kf_max_dist = 9999;
   number_spatial_layers_ = cfg_.ss_number_layers;
   number_temporal_layers_ = cfg_.ts_number_layers;
