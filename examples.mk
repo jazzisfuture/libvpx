@@ -54,6 +54,8 @@ LIBWEBM_PARSER_SRCS = third_party/libwebm/mkvparser/mkvparser.cc \
                       third_party/libwebm/mkvparser/mkvparser.h \
                       third_party/libwebm/mkvparser/mkvreader.h
 
+Y4M_INPUT_SRCS = third_party/y4m_input/y4m_input.c
+
 # Add compile flags and include path for libwebm sources.
 ifeq ($(CONFIG_WEBM_IO),yes)
   CXXFLAGS     += -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS
@@ -87,7 +89,7 @@ endif
 vpxdec.GUID                  = BA5FE66F-38DD-E034-F542-B1578C5FB950
 vpxdec.DESCRIPTION           = Full featured decoder
 UTILS-$(CONFIG_ENCODERS)    += vpxenc.c
-vpxenc.SRCS                 += args.c args.h y4minput.c y4minput.h vpxenc.h
+vpxenc.SRCS                 += args.c args.h vpxenc.h
 vpxenc.SRCS                 += ivfdec.c ivfdec.h
 vpxenc.SRCS                 += ivfenc.c ivfenc.h
 vpxenc.SRCS                 += rate_hist.c rate_hist.h
@@ -107,6 +109,7 @@ ifeq ($(CONFIG_WEBM_IO),yes)
   vpxenc.SRCS                 += $(LIBWEBM_PARSER_SRCS)
   vpxenc.SRCS                 += webmenc.cc webmenc.h
 endif
+vpxenc.SRCS                 += $(Y4M_INPUT_SRCS)
 vpxenc.GUID                  = 548DEC74-7A15-4B2B-AFC3-AA102E7C25C1
 vpxenc.DESCRIPTION           = Full featured encoder
 

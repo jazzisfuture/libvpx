@@ -1,0 +1,9 @@
+URL: https://git.xiph.org/daala.git
+Version: d10a875282e69c56fec3a3584bf06709e00edabe
+License: BSD
+License File: COPYING
+
+Description:
+Conversion utility for various yuv formats.
+
+Local Modifications:

@@ -91,24 +91,24 @@ class Y4mVideoSourceTest : public ::testing::TestWithParam<Y4mTestParam>,
   // Checks y4m header information
   void HeaderChecks(unsigned int bit_depth, vpx_img_fmt_t fmt) {
     ASSERT_TRUE(input_file_ != NULL);
-    ASSERT_EQ(y4m_.pic_w, (int)kWidth);
-    ASSERT_EQ(y4m_.pic_h, (int)kHeight);
+    ASSERT_EQ(y4m_->pic_w, (int)kWidth);
+    ASSERT_EQ(y4m_->pic_h, (int)kHeight);
     ASSERT_EQ(img()->d_w, kWidth);
     ASSERT_EQ(img()->d_h, kHeight);
-    ASSERT_EQ(y4m_.bit_depth, bit_depth);
-    ASSERT_EQ(y4m_.vpx_fmt, fmt);
+    ASSERT_EQ(y4m_->depth, bit_depth);
+    ASSERT_EQ(y4m_->vpx_fmt, fmt);
     if (fmt == VPX_IMG_FMT_I420 || fmt == VPX_IMG_FMT_I42016) {
-      ASSERT_EQ(y4m_.bps, (int)y4m_.bit_depth * 3 / 2);
+      ASSERT_EQ(img()->bps, (int)y4m_->depth * 3 / 2);
       ASSERT_EQ(img()->x_chroma_shift, 1U);
       ASSERT_EQ(img()->y_chroma_shift, 1U);
     }
     if (fmt == VPX_IMG_FMT_I422 || fmt == VPX_IMG_FMT_I42216) {
-      ASSERT_EQ(y4m_.bps, (int)y4m_.bit_depth * 2);
+      ASSERT_EQ(img()->bps, (int)y4m_->depth * 2);
       ASSERT_EQ(img()->x_chroma_shift, 1U);
       ASSERT_EQ(img()->y_chroma_shift, 0U);
     }
     if (fmt == VPX_IMG_FMT_I444 || fmt == VPX_IMG_FMT_I44416) {
-      ASSERT_EQ(y4m_.bps, (int)y4m_.bit_depth * 3);
+      ASSERT_EQ(img()->bps, (int)y4m_->depth * 3);
       ASSERT_EQ(img()->x_chroma_shift, 0U);
       ASSERT_EQ(img()->y_chroma_shift, 0U);
     }
@@ -157,11 +157,11 @@ class Y4mVideoWriteTest : public Y4mVideoSourceTest {
   void WriteY4mAndReadBack() {
     ASSERT_TRUE(input_file_ != NULL);
     char buf[Y4M_BUFFER_SIZE] = { 0 };
-    const struct VpxRational framerate = { y4m_.fps_n, y4m_.fps_d };
+    const struct VpxRational framerate = { y4m_->fps_n, y4m_->fps_d };
     tmpfile_ = new libvpx_test::TempOutFile;
     ASSERT_TRUE(tmpfile_->file() != NULL);
     y4m_write_file_header(buf, sizeof(buf), kWidth, kHeight, &framerate,
-                          y4m_.vpx_fmt, y4m_.bit_depth);
+                          y4m_->vpx_fmt, y4m_->depth);
     fputs(buf, tmpfile_->file());
     for (unsigned int i = start_; i < limit_; i++) {
       y4m_write_frame_header(buf, sizeof(buf));
