@@ -17,8 +17,11 @@ PORTS_SRCS-yes += msvc.h
 PORTS_SRCS-yes += system_state.h
 PORTS_SRCS-yes += vpx_timer.h
 
+PORTS_SRCS-$(HAVE_MMX) += emms_mmx.c
+
+PORTS_SRCS-$(ARCH_X86_64) += float_control_word.asm
+
 ifeq ($(ARCH_X86)$(ARCH_X86_64),yes)
-PORTS_SRCS-yes += emms.asm
 PORTS_SRCS-yes += x86.h
 PORTS_SRCS-yes += x86_abi_support.asm
 endif
