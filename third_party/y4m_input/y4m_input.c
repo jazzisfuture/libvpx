@@ -26,12 +26,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 #include "config.h"
 #endif
 
-#include "vidinput.h"
 #include <stdlib.h>
 #include <string.h>
-#include <ogg/os_types.h>
 
-typedef struct y4m_input y4m_input;
+#include "vpx/vpx_image.h"
+#include "y4minput.h"
 
 /*The function used to perform chroma conversion.*/
 typedef void (*y4m_convert_func)(y4m_input *_y4m,
@@ -48,37 +47,6 @@ typedef void (*y4m_convert_func)(y4m_input *_y4m,
 #define OC_MINI(_a,_b)      ((_a)>(_b)?(_b):(_a))
 #define OC_MAXI(_a,_b)      ((_a)<(_b)?(_b):(_a))
 #define OC_CLAMPI(_a,_b,_c) (OC_MAXI(_a,OC_MINI(_b,_c)))
-
-struct y4m_input{
-  int               frame_w;
-  int               frame_h;
-  int               pic_w;
-  int               pic_h;
-  int               pic_x;
-  int               pic_y;
-  int               fps_n;
-  int               fps_d;
-  int               par_n;
-  int               par_d;
-  char              interlace;
-  int               src_c_dec_h;
-  int               src_c_dec_v;
-  int               dst_c_dec_h;
-  int               dst_c_dec_v;
-  char              chroma_type[16];
-  int               depth;
-  /*The size of each converted frame buffer.*/
-  size_t            dst_buf_sz;
-  /*The amount to read directly into the converted frame buffer.*/
-  size_t            dst_buf_read_sz;
-  /*The size of the auxilliary buffer.*/
-  size_t            aux_buf_sz;
-  /*The amount to read into the auxilliary buffer.*/
-  size_t            aux_buf_read_sz;
-  y4m_convert_func  convert;
-  unsigned char    *dst_buf;
-  unsigned char    *aux_buf;
-};
 
 static int y4m_parse_tags(y4m_input *_y4m,char *_tags){
   int   got_w;
@@ -594,6 +562,7 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
      "Theora only handles progressive scan.\n");
     return -1;
   }
+  _y4m->vpx_fmt = VPX_IMG_FMT_I420;
   _y4m->depth=8;
   if(strcmp(_y4m->chroma_type,"420")==0||
    strcmp(_y4m->chroma_type,"420jpeg")==0){
@@ -612,6 +581,7 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
     _y4m->convert=y4m_convert_null;
+    _y4m->vpx_fmt = VPX_IMG_FMT_I42016;
   }
   else if(strcmp(_y4m->chroma_type,"444p10")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
@@ -620,6 +590,7 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
     _y4m->convert=y4m_convert_null;
+    _y4m->vpx_fmt = VPX_IMG_FMT_I44416;
   }
   else if(strcmp(_y4m->chroma_type,"420mpeg2")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=2;
@@ -646,6 +617,7 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     /*Chroma filter required: read into the aux buf first.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=2*((_y4m->pic_w+1)/2)*_y4m->pic_h;
     _y4m->convert=y4m_convert_42xmpeg2_42xjpeg;
+    _y4m->vpx_fmt = VPX_IMG_FMT_I422;
   }
   else if(strcmp(_y4m->chroma_type,"411")==0){
     _y4m->src_c_dec_h=4;
@@ -665,6 +637,7 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
     _y4m->convert=y4m_convert_null;
+    _y4m->vpx_fmt = VPX_IMG_FMT_I444;
   }
   else if(strcmp(_y4m->chroma_type,"444alpha")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
@@ -673,6 +646,7 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
       It will be discarded.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=_y4m->pic_w*_y4m->pic_h;
     _y4m->convert=y4m_convert_null;
+    _y4m->vpx_fmt = VPX_IMG_FMT_444A;
   }
   else if(strcmp(_y4m->chroma_type,"mono")==0){
     _y4m->src_c_dec_h=_y4m->src_c_dec_v=0;
@@ -705,38 +679,22 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
   return 0;
 }
 
-static y4m_input *y4m_input_open(FILE *_fin){
-  y4m_input *y4m = (y4m_input *)_ogg_malloc(sizeof(*y4m));
+y4m_input *y4m_input_open(FILE *_fin){
+  y4m_input *y4m = (y4m_input *)malloc(sizeof(*y4m));
   if(y4m==NULL){
     fprintf(stderr,"Could not allocate y4m reader state.\n");
     return NULL;
   }
   if(y4m_input_open_impl(y4m,_fin)<0){
     fprintf(stderr,"Error opening y4m file.\n");
-    _ogg_free(y4m);
+    free(y4m);
     return NULL;
   }
   return y4m;
 }
 
-static void y4m_input_get_info(y4m_input *_y4m,video_input_info *_info){
-  _info->frame_w=_y4m->frame_w;
-  _info->frame_h=_y4m->frame_h;
-  _info->pic_w=_y4m->pic_w;
-  _info->pic_h=_y4m->pic_h;
-  _info->pic_x=_y4m->pic_x;
-  _info->pic_y=_y4m->pic_y;
-  _info->fps_n=_y4m->fps_n;
-  _info->fps_d=_y4m->fps_d;
-  _info->par_n=_y4m->par_n;
-  _info->par_d=_y4m->par_d;
-  _info->pixel_fmt=_y4m->dst_c_dec_h==2?
-   (_y4m->dst_c_dec_v==2?PF_420:PF_422):PF_444;
-  _info->depth=_y4m->depth;
-}
-
-static int y4m_input_fetch_frame(y4m_input *_y4m,FILE *_fin,
- video_input_ycbcr _ycbcr,char _tag[5]){
+int y4m_input_fetch_frame(y4m_input *_y4m,FILE *_fin,
+ vpx_image_t *_img) {
   char frame[6];
   int  pic_sz;
   int  frame_c_w;
@@ -781,7 +739,33 @@ static int y4m_input_fetch_frame(y4m_input *_y4m,FILE *_fin,
   }
   /*Now convert the just read frame.*/
   (*_y4m->convert)(_y4m,_y4m->dst_buf,_y4m->aux_buf);
-  /*Fill in the frame buffer pointers.*/
+  /*Fill in the frame buffer pointers.
+    We don't use vpx_img_wrap() because it forces padding for odd picture
+    sizes, which would require a separate fread call for every row.*/
+  memset(_img, 0, sizeof(*_img));
+  /*Y4M has the planes in Y'CbCr order, which libvpx calls Y, U, and V.*/
+  _img->fmt = _y4m->vpx_fmt;
+  _img->w = _img->d_w = _y4m->pic_w;
+  _img->h = _img->d_h = _y4m->pic_h;
+  _img->x_chroma_shift = _y4m->dst_c_dec_h >> 1;
+  _img->y_chroma_shift = _y4m->dst_c_dec_v >> 1;
+  _img->bps = xstride;
+
+  /*Set up the buffer pointers.*/
+  pic_sz = _y4m->pic_w * _y4m->pic_h * xstride;
+  c_w = (_y4m->pic_w + _y4m->dst_c_dec_h - 1) / _y4m->dst_c_dec_h;
+  c_w *= xstride;
+  c_h = (_y4m->pic_h + _y4m->dst_c_dec_v - 1) / _y4m->dst_c_dec_v;
+  c_sz = c_w * c_h;
+  _img->stride[VPX_PLANE_Y] = _img->stride[VPX_PLANE_ALPHA] =
+      _y4m->pic_w * xstride;
+  _img->stride[VPX_PLANE_U] = _img->stride[VPX_PLANE_V] = c_w;
+  _img->planes[VPX_PLANE_Y] = _y4m->dst_buf;
+  _img->planes[VPX_PLANE_U] = _y4m->dst_buf + pic_sz;
+  _img->planes[VPX_PLANE_V] = _y4m->dst_buf + pic_sz + c_sz;
+  _img->planes[VPX_PLANE_ALPHA] = _y4m->dst_buf + pic_sz + 2 * c_sz;
+  return 1;
+/*
   _ycbcr[0].width=_y4m->frame_w;
   _ycbcr[0].height=_y4m->frame_h;
   _ycbcr[0].stride=_y4m->pic_w*xstride;
@@ -797,16 +781,20 @@ static int y4m_input_fetch_frame(y4m_input *_y4m,FILE *_fin,
   _ycbcr[2].data=_ycbcr[1].data+c_sz;
   if(_tag!=NULL)_tag[0]='\0';
   return 1;
+  */
 }
 
-static void y4m_input_close(y4m_input *_y4m){
+void y4m_input_close(y4m_input *_y4m){
+  if (_y4m != NULL) {
+  if (_y4m->dst_buf != NULL ) {
   free(_y4m->dst_buf);
+  _y4m->dst_buf = NULL;
+  }
+  if (_y4m->aux_buf != NULL ) {
   free(_y4m->aux_buf);
+  _y4m->aux_buf = NULL;
+  }
+  free(_y4m);
+  _y4m = NULL;
+  }
 }
-
-OC_EXTERN const video_input_vtbl Y4M_INPUT_VTBL={
-  (video_input_open_func)y4m_input_open,
-  (video_input_get_info_func)y4m_input_get_info,
-  (video_input_fetch_frame_func)y4m_input_fetch_frame,
-  (video_input_close_func)y4m_input_close
-};

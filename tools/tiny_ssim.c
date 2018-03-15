@@ -86,7 +86,7 @@ typedef struct input_file {
   FILE *file;
   input_file_type type;
   unsigned char *buf;
-  y4m_input y4m;
+  y4m_input *y4m;
   vpx_image_t img;
   int w;
   int h;
@@ -107,10 +107,11 @@ static int open_input_file(const char *file_name, input_file_t *input, int w,
     if (memcmp(y4m_buf, "YUV4", 4) == 0) input->type = Y4M;
     switch (input->type) {
       case Y4M:
-        y4m_input_open(&input->y4m, input->file, y4m_buf, 4, 0);
-        input->w = input->y4m.pic_w;
-        input->h = input->y4m.pic_h;
-        input->bit_depth = input->y4m.bit_depth;
+        rewind(input->file);
+        input->y4m = y4m_input_open(input->file);
+        input->w = input->y4m->pic_w;
+        input->h = input->y4m->pic_h;
+        input->bit_depth = input->y4m->depth;
         // Y4M alloc's its own buf. Init this to avoid problems if we never
         // read frames.
         memset(&input->img, 0, sizeof(input->img));
@@ -143,7 +144,7 @@ static size_t read_input_file(input_file_t *in, unsigned char **y,
   size_t r1 = 0;
   switch (in->type) {
     case Y4M:
-      r1 = y4m_input_fetch_frame(&in->y4m, in->file, &in->img);
+      r1 = y4m_input_fetch_frame(in->y4m, in->file, &in->img);
       *y = in->img.planes[0];
       *u = in->img.planes[1];
       *v = in->img.planes[2];

@@ -24,7 +24,7 @@ class Y4mVideoSource : public VideoSource {
   Y4mVideoSource(const std::string &file_name, unsigned int start, int limit)
       : file_name_(file_name), input_file_(NULL), img_(new vpx_image_t()),
         start_(start), limit_(limit), frame_(0), framerate_numerator_(0),
-        framerate_denominator_(0), y4m_() {}
+        framerate_denominator_(0), y4m_(NULL) {}
 
   virtual ~Y4mVideoSource() {
     vpx_img_free(img_.get());
@@ -39,10 +39,10 @@ class Y4mVideoSource : public VideoSource {
   }
 
   virtual void ReadSourceToStart() {
-    ASSERT_TRUE(input_file_ != NULL);
-    ASSERT_FALSE(y4m_input_open(&y4m_, input_file_, NULL, 0, 0));
-    framerate_numerator_ = y4m_.fps_n;
-    framerate_denominator_ = y4m_.fps_d;
+    y4m_ = y4m_input_open(input_file_);
+    ASSERT_TRUE(y4m_ != NULL);
+    framerate_numerator_ = y4m_->fps_n;
+    framerate_denominator_ = y4m_->fps_d;
     frame_ = 0;
     for (unsigned int i = 0; i < start_; i++) {
       Next();
@@ -81,7 +81,7 @@ class Y4mVideoSource : public VideoSource {
   virtual void FillFrame() {
     ASSERT_TRUE(input_file_ != NULL);
     // Read a frame from input_file.
-    y4m_input_fetch_frame(&y4m_, input_file_, img_.get());
+    y4m_input_fetch_frame(y4m_, input_file_, img_.get());
   }
 
   // Swap buffers with another y4m source. This allows reading a new frame
@@ -89,7 +89,7 @@ class Y4mVideoSource : public VideoSource {
   // not just a vpx_image_t because of how the y4m reader manipulates
   // vpx_image_t internals,
   void SwapBuffers(Y4mVideoSource *other) {
-    std::swap(other->y4m_.dst_buf, y4m_.dst_buf);
+    std::swap(other->y4m_->dst_buf, y4m_->dst_buf);
     vpx_image_t *tmp;
     tmp = other->img_.release();
     other->img_.reset(img_.release());
@@ -98,8 +98,8 @@ class Y4mVideoSource : public VideoSource {
 
  protected:
   void CloseSource() {
-    y4m_input_close(&y4m_);
-    y4m_ = y4m_input();
+    y4m_input_close(y4m_);
+    y4m_ = NULL;
     if (input_file_ != NULL) {
       fclose(input_file_);
       input_file_ = NULL;
@@ -114,7 +114,7 @@ class Y4mVideoSource : public VideoSource {
   unsigned int frame_;
   int framerate_numerator_;
   int framerate_denominator_;
-  y4m_input y4m_;
+  y4m_input *y4m_;
 };
 
 }  // namespace libvpx_test

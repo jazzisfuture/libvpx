@@ -25,11 +25,15 @@ typedef struct y4m_input y4m_input;
 
 /*The function used to perform chroma conversion.*/
 typedef void (*y4m_convert_func)(y4m_input *_y4m, unsigned char *_dst,
-                                 unsigned char *_src);
+                                 unsigned char *_aux);
 
 struct y4m_input {
+  int frame_w;
+  int frame_h;
   int pic_w;
   int pic_h;
+  int pic_x;
+  int pic_y;
   int fps_n;
   int fps_d;
   int par_n;
@@ -40,6 +44,7 @@ struct y4m_input {
   int dst_c_dec_h;
   int dst_c_dec_v;
   char chroma_type[16];
+  unsigned int depth;
   /*The size of each converted frame buffer.*/
   size_t dst_buf_sz;
   /*The amount to read directly into the converted frame buffer.*/
@@ -52,12 +57,9 @@ struct y4m_input {
   unsigned char *dst_buf;
   unsigned char *aux_buf;
   enum vpx_img_fmt vpx_fmt;
-  int bps;
-  unsigned int bit_depth;
 };
 
-int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
-                   int only_420);
+y4m_input *y4m_input_open(FILE *_fin);
 void y4m_input_close(y4m_input *_y4m);
 int y4m_input_fetch_frame(y4m_input *_y4m, FILE *_fin, vpx_image_t *img);
 

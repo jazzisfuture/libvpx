@@ -18,7 +18,8 @@ LIBVPX_TEST_SRCS-yes += video_source.h
 ##
 LIBVPX_TEST_SRCS-yes                   += ../md5_utils.h ../md5_utils.c
 LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += ivf_video_source.h
-LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += ../y4minput.h ../y4minput.c
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += ../y4minput.h
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += ../third_party/y4m_input/y4m_input.c
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += altref_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += aq_segment_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += alt_ref_aq_segment_test.cc

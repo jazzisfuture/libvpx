@@ -95,11 +95,11 @@ struct VpxInputContext {
   struct VpxRational pixel_aspect_ratio;
   vpx_img_fmt_t fmt;
   vpx_bit_depth_t bit_depth;
-  int only_i420;
+  int convert_to_i420;
   uint32_t fourcc;
   struct VpxRational framerate;
 #if CONFIG_ENCODERS
-  y4m_input y4m;
+  y4m_input *y4m;
 #endif
 };
 

@@ -97,7 +97,7 @@ static void warn_or_exit_on_error(vpx_codec_ctx_t *ctx, int fatal,
 
 static int read_frame(struct VpxInputContext *input_ctx, vpx_image_t *img) {
   FILE *f = input_ctx->file;
-  y4m_input *y4m = &input_ctx->y4m;
+  y4m_input *y4m = input_ctx->y4m;
   int shortread = 0;
 
   if (input_ctx->file_type == FILE_TYPE_Y4M) {
@@ -1038,17 +1038,17 @@ static void open_input_file(struct VpxInputContext *input) {
   input->detect.position = 0;
 
   if (input->detect.buf_read == 4 && file_is_y4m(input->detect.buf)) {
-    if (y4m_input_open(&input->y4m, input->file, input->detect.buf, 4,
-                       input->only_i420) >= 0) {
+    rewind(input->file);
+    if ((input->y4m = y4m_input_open(input->file)) != NULL) {
       input->file_type = FILE_TYPE_Y4M;
-      input->width = input->y4m.pic_w;
-      input->height = input->y4m.pic_h;
-      input->pixel_aspect_ratio.numerator = input->y4m.par_n;
-      input->pixel_aspect_ratio.denominator = input->y4m.par_d;
-      input->framerate.numerator = input->y4m.fps_n;
-      input->framerate.denominator = input->y4m.fps_d;
-      input->fmt = input->y4m.vpx_fmt;
-      input->bit_depth = input->y4m.bit_depth;
+      input->width = input->y4m->pic_w;
+      input->height = input->y4m->pic_h;
+      input->pixel_aspect_ratio.numerator = input->y4m->par_n;
+      input->pixel_aspect_ratio.denominator = input->y4m->par_d;
+      input->framerate.numerator = input->y4m->fps_n;
+      input->framerate.denominator = input->y4m->fps_d;
+      input->fmt = input->y4m->vpx_fmt;
+      input->bit_depth = input->y4m->depth;
     } else
       fatal("Unsupported Y4M stream.");
   } else if (input->detect.buf_read == 4 && fourcc_is_ivf(input->detect.buf)) {
@@ -1060,7 +1060,7 @@ static void open_input_file(struct VpxInputContext *input) {
 
 static void close_input_file(struct VpxInputContext *input) {
   fclose(input->file);
-  if (input->file_type == FILE_TYPE_Y4M) y4m_input_close(&input->y4m);
+  if (input->file_type == FILE_TYPE_Y4M) y4m_input_close(input->y4m);
 }
 
 static struct stream_state *new_stream(struct VpxEncoderConfig *global,
@@ -1922,7 +1922,7 @@ int main(int argc, const char **argv_) {
   /* Setup default input stream settings */
   input.framerate.numerator = 30;
   input.framerate.denominator = 1;
-  input.only_i420 = 1;
+  input.convert_to_i420 = 1;
   input.bit_depth = 0;
 
   /* First parse the global configuration values, because we want to apply
@@ -1973,7 +1973,7 @@ int main(int argc, const char **argv_) {
   }
 
   /* Decide if other chroma subsamplings than 4:2:0 are supported */
-  if (global.codec->fourcc == VP9_FOURCC) input.only_i420 = 0;
+  if (global.codec->fourcc == VP9_FOURCC) input.convert_to_i420 = 0;
 
   for (pass = global.pass ? global.pass - 1 : 0; pass < global.passes; pass++) {
     int frames_in = 0, seen_frames = 0;

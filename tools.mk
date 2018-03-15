@@ -10,8 +10,8 @@
 
 # List of tools to build.
 TOOLS-yes            += tiny_ssim.c
-tiny_ssim.SRCS       += vpx/vpx_integer.h y4minput.c y4minput.h \
-                        vpx/vpx_codec.h vpx/src/vpx_image.c
+tiny_ssim.SRCS       += vpx/vpx_integer.h third_party/y4m_input/y4m_input.c \
+                        y4minput.h vpx/vpx_codec.h vpx/src/vpx_image.c
 tiny_ssim.SRCS       += vpx_mem/vpx_mem.c vpx_mem/vpx_mem.h
 tiny_ssim.SRCS       += vpx_dsp/ssim.h vpx_scale/yv12config.h
 tiny_ssim.SRCS       += vpx_ports/mem.h vpx_ports/mem.h
