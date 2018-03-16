@@ -393,6 +393,31 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->baseline_gf_interval = (rc->min_gf_interval + rc->max_gf_interval) / 2;
 }
 
+static int check_buffer(VP9_COMP *cpi, int drop_mark) {
+  SVC *svc = &cpi->svc;
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  if (!cpi->use_svc) {
+    RATE_CONTROL *const rc = &cpi->rc;
+    return (rc->buffer_level <= drop_mark);
+  } else {
+    int i;
+    // For SVC: the condition on buffer (for drop frame) is checked
+    // on current and upper spatial layers.
+    for (i = svc->spatial_layer_id; i < svc->number_spatial_layers; ++i) {
+      const int layer = LAYER_IDS_TO_IDX(i, svc->temporal_layer_id,
+                                         svc->number_temporal_layers);
+      LAYER_CONTEXT *lc = &svc->layer_context[layer];
+      RATE_CONTROL *lrc = &lc->rc;
+      const int drop_mark_layer = (drop_mark >= 0)
+                                      ? (int)(oxcf->drop_frames_water_mark *
+                                              lrc->optimal_buffer_level / 100)
+                                      : -1;
+      if (!(lrc->buffer_level <= drop_mark_layer)) return 0;
+    }
+    return 1;
+  }
+}
+
 int vp9_rc_drop_frame(VP9_COMP *cpi) {
   const VP9EncoderConfig *oxcf = &cpi->oxcf;
   RATE_CONTROL *const rc = &cpi->rc;
@@ -401,7 +426,7 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
        cpi->svc.rc_drop_spatial_layer[cpi->svc.spatial_layer_id] == 1)) {
     return 0;
   } else {
-    if (rc->buffer_level < 0) {
+    if (check_buffer(cpi, -1)) {
       // Always drop if buffer is below 0.
       return 1;
     } else {
@@ -411,7 +436,7 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
           (int)(oxcf->drop_frames_water_mark * rc->optimal_buffer_level / 100);
       if ((rc->buffer_level > drop_mark) && (rc->decimation_factor > 0)) {
         --rc->decimation_factor;
-      } else if (rc->buffer_level <= drop_mark && rc->decimation_factor == 0) {
+      } else if (check_buffer(cpi, drop_mark) && rc->decimation_factor == 0) {
         rc->decimation_factor = 1;
       }
       if (rc->decimation_factor > 0) {
