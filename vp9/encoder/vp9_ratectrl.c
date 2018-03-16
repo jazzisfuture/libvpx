@@ -393,6 +393,50 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->baseline_gf_interval = (rc->min_gf_interval + rc->max_gf_interval) / 2;
 }
 
+int check_buffer(VP9_COMP *cpi, int use_dropmark, int comparison) {
+  SVC *svc = &cpi->svc;
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  int result =  0;
+  if (!cpi->use_svc) {
+    RATE_CONTROL *const rc = &cpi->rc;
+    int drop_mark = -1;
+    if (use_dropmark)
+      drop_mark =
+          (int)(oxcf->drop_frames_water_mark * rc->optimal_buffer_level / 100);
+    if (comparison)
+      result = (rc->buffer_level < drop_mark);
+    else
+      result = (rc->buffer_level >= drop_mark);
+    return result;
+  } else {
+    int i;
+    result = 1;
+    // For SVC: the condition on buffer (for drop frame ) is checked
+    // on current and upper spatial layers.
+    for (i = svc->spatial_layer_id; i < svc->number_spatial_layers; ++i) {
+      const int layer = LAYER_IDS_TO_IDX(i, svc->temporal_layer_id,
+          svc->number_temporal_layers);
+      LAYER_CONTEXT *lc = &svc->layer_context[layer];
+      RATE_CONTROL *lrc = &lc->rc;
+      int drop_mark = -1;
+      int result_lay = 0;
+      if (use_dropmark)
+        drop_mark =
+            (int)(oxcf->drop_frames_water_mark * lrc->optimal_buffer_level / 100);
+      if (comparison)
+        result_lay = (lrc->buffer_level <= drop_mark);
+      else
+        result_lay = (lrc->buffer_level > drop_mark);
+      if (!result_lay) {
+        result = 0;
+        break;
+      }
+    }
+    return result;
+  }
+  return result;
+}
+
 int vp9_rc_drop_frame(VP9_COMP *cpi) {
   const VP9EncoderConfig *oxcf = &cpi->oxcf;
   RATE_CONTROL *const rc = &cpi->rc;
@@ -401,17 +445,15 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
        cpi->svc.rc_drop_spatial_layer[cpi->svc.spatial_layer_id] == 1)) {
     return 0;
   } else {
-    if (rc->buffer_level < 0) {
+    if (check_buffer(cpi, 0, 1)) {
       // Always drop if buffer is below 0.
       return 1;
     } else {
       // If buffer is below drop_mark, for now just drop every other frame
       // (starting with the next frame) until it increases back over drop_mark.
-      int drop_mark =
-          (int)(oxcf->drop_frames_water_mark * rc->optimal_buffer_level / 100);
-      if ((rc->buffer_level > drop_mark) && (rc->decimation_factor > 0)) {
+      if (check_buffer(cpi, 1, 0) && (rc->decimation_factor > 0)) {
         --rc->decimation_factor;
-      } else if (rc->buffer_level <= drop_mark && rc->decimation_factor == 0) {
+      } else if (check_buffer(cpi, 1, 1) && rc->decimation_factor == 0) {
         rc->decimation_factor = 1;
       }
       if (rc->decimation_factor > 0) {
