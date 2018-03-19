@@ -649,12 +649,17 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
     }
   }
 
-  // Reset the drop flags for all spatial lauyers, on the base layer.
+  // Reset the drop flags for all spatial layers, on the base layer.
   if (cpi->svc.spatial_layer_id == 0) {
     int i;
     for (i = 0; i < cpi->svc.number_spatial_layers; i++)
       cpi->svc.rc_drop_spatial_layer[i] = 0;
   }
+  // For non-zero spatial layers: if the previous spatial layer was dropped
+  // disable the inter-layer (spatial) prediction, which is the GOLDEN ref.
+  if (cpi->svc.spatial_layer_id > 0 &&
+      cpi->svc.rc_drop_spatial_layer[cpi->svc.spatial_layer_id - 1] == 1)
+    cpi->ref_frame_flags &= (~VP9_GOLD_FLAG);
 
   lc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id *
                                    cpi->svc.number_temporal_layers +
