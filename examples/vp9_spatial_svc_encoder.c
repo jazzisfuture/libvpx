@@ -784,6 +784,7 @@ int main(int argc, const char **argv) {
           if (cx_pkt->data.frame.sz > 0) {
 #if OUTPUT_RC_STATS
             uint64_t sizes[8];
+            uint64_t sizes_parsed[8];
             int count = 0;
             vp9_zero(sizes);
 #endif
@@ -795,7 +796,7 @@ int main(int argc, const char **argv) {
             if (svc_ctx.output_rc_stat) {
               vpx_codec_control(&codec, VP9E_GET_SVC_LAYER_ID, &layer_id);
               parse_superframe_index(cx_pkt->data.frame.buf,
-                                     cx_pkt->data.frame.sz, sizes, &count);
+                                     cx_pkt->data.frame.sz, sizes_parsed, &count);
               if (enc_cfg.ss_number_layers == 1)
                 sizes[0] = cx_pkt->data.frame.sz;
               // Note computing input_layer_frames here won't account for frame
@@ -805,8 +806,11 @@ int main(int argc, const char **argv) {
               if (svc_ctx.temporal_layering_mode !=
                   VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
                 for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
-                  ++rc.layer_input_frames[sl * enc_cfg.ts_number_layers +
-                                          layer_id.temporal_layer_id];
+                    ++rc.layer_input_frames[sl * enc_cfg.ts_number_layers +
+                                            layer_id.temporal_layer_id];
+                   sizes[sl] = 0;
+                   if (cx_pkt->data.frame.spatial_layer_encoded[sl] == 1)
+                     sizes[sl] = sizes_parsed[sl];
                 }
               }
               for (tl = layer_id.temporal_layer_id;
@@ -817,20 +821,22 @@ int main(int argc, const char **argv) {
               }
 
               for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
-                for (tl = layer_id.temporal_layer_id;
-                     tl < enc_cfg.ts_number_layers; ++tl) {
-                  const int layer = sl * enc_cfg.ts_number_layers + tl;
-                  ++rc.layer_tot_enc_frames[layer];
-                  rc.layer_encoding_bitrate[layer] += 8.0 * sizes[sl];
-                  // Keep count of rate control stats per layer, for non-key
-                  // frames.
-                  if (tl == (unsigned int)layer_id.temporal_layer_id &&
-                      !(cx_pkt->data.frame.flags & VPX_FRAME_IS_KEY)) {
-                    rc.layer_avg_frame_size[layer] += 8.0 * sizes[sl];
-                    rc.layer_avg_rate_mismatch[layer] +=
-                        fabs(8.0 * sizes[sl] - rc.layer_pfb[layer]) /
-                        rc.layer_pfb[layer];
-                    ++rc.layer_enc_frames[layer];
+                if (cx_pkt->data.frame.spatial_layer_encoded[sl] == 1) {
+                  for (tl = layer_id.temporal_layer_id;
+                       tl < enc_cfg.ts_number_layers; ++tl) {
+                    const int layer = sl * enc_cfg.ts_number_layers + tl;
+                    ++rc.layer_tot_enc_frames[layer];
+                    rc.layer_encoding_bitrate[layer] += 8.0 * sizes[sl];
+                    // Keep count of rate control stats per layer, for non-key
+                    // frames.
+                    if (tl == (unsigned int)layer_id.temporal_layer_id &&
+                        !(cx_pkt->data.frame.flags & VPX_FRAME_IS_KEY)) {
+                      rc.layer_avg_frame_size[layer] += 8.0 * sizes[sl];
+                      rc.layer_avg_rate_mismatch[layer] +=
+                          fabs(8.0 * sizes[sl] - rc.layer_pfb[layer]) /
+                          rc.layer_pfb[layer];
+                      ++rc.layer_enc_frames[layer];
+                    }
                   }
                 }
               }
@@ -840,7 +846,8 @@ int main(int argc, const char **argv) {
               // Ignore first window segment, due to key frame.
               if (frame_cnt > (unsigned int)rc.window_size) {
                 for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
-                  sum_bitrate += 0.001 * 8.0 * sizes[sl] * framerate;
+                  if (cx_pkt->data.frame.spatial_layer_encoded[sl] == 1)
+                    sum_bitrate += 0.001 * 8.0 * sizes[sl] * framerate;
                 }
                 if (frame_cnt % rc.window_size == 0) {
                   rc.window_count += 1;
