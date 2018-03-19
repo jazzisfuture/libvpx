@@ -649,7 +649,7 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
     }
   }
 
-  // Reset the drop flags for all spatial lauyers, on the base layer.
+  // Reset the drop flags for all spatial layers, on the base layer.
   if (cpi->svc.spatial_layer_id == 0) {
     int i;
     for (i = 0; i < cpi->svc.number_spatial_layers; i++)
@@ -701,6 +701,13 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
         cpi->svc.use_partition_reuse = 0;
         break;
       }
+    }
+    // For non-zero spatial layers: if the previous spatial layer was dropped
+    // disable the base_mv and partition_reuse features.
+    if (cpi->svc.spatial_layer_id > 0 &&
+        cpi->svc.rc_drop_spatial_layer[cpi->svc.spatial_layer_id - 1]) {
+      cpi->svc.use_base_mv = 0;
+      cpi->svc.use_partition_reuse = 0;
     }
   }
 
