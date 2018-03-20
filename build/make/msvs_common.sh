@@ -41,7 +41,7 @@ fix_path() {
 # Corrects the paths in file_list in one pass for efficiency.
 # $1 is the name of the array to be modified.
 fix_file_list() {
-    declare -n array_ref=$1
+    declare array_ref=$1
     files=$(fix_path "${array_ref[@]}")
     local IFS=$'\n'
     array_ref=($files)
