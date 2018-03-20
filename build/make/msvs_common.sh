@@ -12,8 +12,6 @@
 if [ "$(uname -o 2>/dev/null)" = "Cygwin" ] \
    && cygpath --help >/dev/null 2>&1; then
     FIXPATH='cygpath -m'
-else
-    FIXPATH='echo_path'
 fi
 
 die() {
@@ -35,12 +33,17 @@ echo_path() {
 
 # Output one, possibly changed based on the system, path per line.
 fix_path() {
-    $FIXPATH "$@"
+    if [ -z "${FIXPATH}" ] ; then
+        echo_path "$@"
+    else
+        $FIXPATH "$@"
+    fi
 }
 
 # Corrects the paths in file_list in one pass for efficiency.
 # $1 is the name of the array to be modified.
 fix_file_list() {
+    [ -z "${FIXPATH}" ] && return
     declare -n array_ref=$1
     files=$(fix_path "${array_ref[@]}")
     local IFS=$'\n'
