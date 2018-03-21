@@ -13,6 +13,13 @@
 
 section .text
 
+; Dummy function to keep non-MSVC builds from complaining about an empty
+; compilation unit.
+global sym(vpx_empty_function) PRIVATE
+sym(vpx_empty_function):
+    mov   rax, 0
+    ret
+
 %if LIBVPX_YASM_WIN64
 global sym(vpx_winx64_fldcw) PRIVATE
 sym(vpx_winx64_fldcw):
