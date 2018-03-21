@@ -763,6 +763,17 @@ int main(int argc, const char **argv) {
         ++rc.layer_input_frames[sl * enc_cfg.ts_number_layers +
                                 layer_id.temporal_layer_id];
       }
+    } else {
+      // For the fixed pattern SVC, temporal layer is given by superframe count.
+      unsigned int tl = 0;
+      if (enc_cfg.ts_number_layers == 2)
+        tl = (frame_cnt % 2 != 0);
+      else if (enc_cfg.ts_number_layers == 3) {
+        if (frame_cnt % 2 != 0) tl = 2;
+        if ((frame_cnt > 1) && ((frame_cnt - 2) % 4 == 0)) tl = 1;
+      }
+      for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl)
+        ++rc.layer_input_frames[sl * enc_cfg.ts_number_layers + tl];
     }
 
     vpx_usec_timer_start(&timer);
@@ -805,8 +816,6 @@ int main(int argc, const char **argv) {
                   VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
                 int num_layers_encoded = 0;
                 for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
-                  ++rc.layer_input_frames[sl * enc_cfg.ts_number_layers +
-                                          layer_id.temporal_layer_id];
                   sizes[sl] = 0;
                   if (cx_pkt->data.frame.spatial_layer_encoded[sl]) {
                     sizes[sl] = sizes_parsed[num_layers_encoded];
