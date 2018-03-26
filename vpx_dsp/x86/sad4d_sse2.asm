@@ -211,7 +211,7 @@ cglobal sad%1x%2x4d, 4, 7, 8, src, src_stride, ref1, ref_stride, \
   punpckhqdq            m5, m7
   movifnidn             r4, r4mp
   paddd                 m4, m5
-  movu                [r4], m4
+  mova                [r4], m4
   RET
 %else
   movifnidn             r4, r4mp
