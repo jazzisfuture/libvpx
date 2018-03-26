@@ -1493,11 +1493,15 @@ static vpx_codec_err_t ctrl_set_svc_parameters(vpx_codec_alg_priv_t *ctx,
       LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
       lc->max_q = params->max_quantizers[layer];
       lc->min_q = params->min_quantizers[layer];
+      // These are set per spatial layer.
       lc->scaling_factor_num = params->scaling_factor_num[sl];
       lc->scaling_factor_den = params->scaling_factor_den[sl];
       lc->speed = params->speed_per_layer[sl];
+      cpi->svc.framedrop_thresh[sl] = params->framedrop_thresh[sl];
     }
   }
+  // Set per stream.
+  cpi->svc.framedrop_mode = params->framedrop_mode;
 
   return VPX_CODEC_OK;
 }
