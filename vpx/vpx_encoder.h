@@ -63,7 +63,7 @@ extern "C" {
  * fields to structures
  */
 #define VPX_ENCODER_ABI_VERSION \
-  (10 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
+  (11 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
 
 /*! \brief Encoder capabilities bitfield
  *
@@ -721,6 +721,9 @@ typedef struct vpx_svc_parameters {
   int scaling_factor_den[VPX_MAX_LAYERS]; /**< Scaling factor-denominator */
   int speed_per_layer[VPX_MAX_LAYERS];    /**< Speed setting for each sl */
   int temporal_layering_mode;             /**< Temporal layering mode */
+  int framedrop_thresh[VPX_MAX_LAYERS]; /**< Drop frame thresholds per layer */
+  int framedrop_mode; /** <Frame drop mode: 0: layer-based dropping, 1: current
+                       * layer drop forces drops on all upper layers */
 } vpx_svc_extra_cfg_t;
 
 /*!\brief Initialize an encoder instance
