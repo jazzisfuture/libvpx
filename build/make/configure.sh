@@ -1394,11 +1394,13 @@ EOF
           add_cflags  ${sim_arch}
           add_ldflags ${sim_arch}
 
-          if [ "$(show_darwin_sdk_major_version iphonesimulator)" -gt 8 ]; then
-            # yasm v1.3.0 doesn't know what -fembed-bitcode means, so turning it
-            # on is pointless (unless building a C-only lib). Warn the user, but
-            # do nothing here.
-            log "Warning: Bitcode embed disabled for simulator targets."
+          if [ $(which show_darwin_sdk_major_version) ]; then
+            if [ "$(show_darwin_sdk_major_version iphonesimulator)" -gt 8 ]; then
+              # yasm v1.3.0 doesn't know what -fembed-bitcode means, so turning it
+              # on is pointless (unless building a C-only lib). Warn the user, but
+              # do nothing here.
+              log "Warning: Bitcode embed disabled for simulator targets."
+            fi
           fi
           ;;
         os2)
