@@ -142,6 +142,7 @@ class TransTestBase : public ::testing::TestWithParam<DctParam> {
     fwd_txfm_ = func_info->ft_func;
     inv_txfm_ = func_info->it_func;
     size_ = func_info->size;
+    assert(size_ != 0);
     pixel_size_ = func_info->pixel_size;
     max_pixel_value_ = (1 << bit_depth_) - 1;
 
