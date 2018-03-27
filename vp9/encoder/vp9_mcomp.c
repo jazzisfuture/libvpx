@@ -689,7 +689,81 @@ uint32_t vp9_find_best_sub_pixel_tree(
 
   (void)cost_list;  // to silence compiler warning
 
-  for (iter = 0; iter < round; ++iter) {
+  // Check vertical and horizontal half-pixel positions.
+  for (idx = 0; idx < 4; ++idx) {
+    tr = br + search_step[idx].row;
+    tc = bc + search_step[idx].col;
+    if (tc >= minc && tc <= maxc && tr >= minr && tr <= maxr) {
+      const uint8_t *const pre_address = y + (tr >> 3) * y_stride + (tc >> 3);
+      MV this_mv;
+      this_mv.row = tr;
+      this_mv.col = tc;
+      if (second_pred == NULL)
+        thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr), src_address,
+                           src_stride, &sse);
+      else
+        thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr), src_address,
+                            src_stride, &sse, second_pred);
+      cost_array[idx] = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost,
+                                              error_per_bit);
+
+      if (cost_array[idx] < besterr) {
+        best_idx = idx;
+        besterr = cost_array[idx];
+        *distortion = thismse;
+        *sse1 = sse;
+      }
+    } else {
+      cost_array[idx] = UINT_MAX;
+    }
+  }
+
+  // Check diagonal half-pixel position
+  kc = (cost_array[0] <= cost_array[1] ? -hstep : hstep);
+  kr = (cost_array[2] <= cost_array[3] ? -hstep : hstep);
+
+  tc = bc + kc;
+  tr = br + kr;
+  if (tc >= minc && tc <= maxc && tr >= minr && tr <= maxr) {
+    const uint8_t *const pre_address = y + (tr >> 3) * y_stride + (tc >> 3);
+    MV this_mv = { tr, tc };
+    if (second_pred == NULL)
+      thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr), src_address,
+                         src_stride, &sse);
+    else
+      thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr), src_address,
+                          src_stride, &sse, second_pred);
+    cost_array[4] =
+        thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost, error_per_bit);
+
+    if (cost_array[4] < besterr) {
+      best_idx = 4;
+      besterr = cost_array[4];
+      *distortion = thismse;
+      *sse1 = sse;
+    }
+  } else {
+    cost_array[idx] = UINT_MAX;
+  }
+
+  if (best_idx < 4 && best_idx >= 0) {
+    br += search_step[best_idx].row;
+    bc += search_step[best_idx].col;
+  } else if (best_idx == 4) {
+    br = tr;
+    bc = tc;
+  }
+
+  if (iters_per_step > 1 && best_idx != -1) SECOND_LEVEL_CHECKS_BEST;
+
+  tr = br;
+  tc = bc;
+
+  search_step += 4;
+  hstep >>= 1;
+  best_idx = -1;
+
+  for (iter = 1; iter < round; ++iter) {
     // Check vertical and horizontal sub-pixel positions.
     for (idx = 0; idx < 4; ++idx) {
       tr = br + search_step[idx].row;
