@@ -317,6 +317,10 @@ class VPxEncoderThreadTest
 
 TEST_P(VPxEncoderThreadTest, EncoderResultTest) {
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 15, 20);
+
+  // Skip the test for speed 9 and 4 threads.
+  if (set_cpu_used_ >= 9 && threads_ == 4) return;
+
   cfg_.rc_target_bitrate = 1000;
 
   // Part 1: Bit exact test for row_mt_mode_ = 0.
@@ -409,7 +413,7 @@ INSTANTIATE_TEST_CASE_P(
         ::testing::Values(::libvpx_test::kTwoPassGood,
                           ::libvpx_test::kOnePassGood,
                           ::libvpx_test::kRealTime),
-        ::testing::Range(3, 9),    // cpu_used
+        ::testing::Range(3, 10),   // cpu_used
         ::testing::Range(0, 3),    // tile_columns
         ::testing::Range(2, 5)));  // threads
 
