@@ -316,11 +316,17 @@ class VPxEncoderThreadTest
 };
 
 TEST_P(VPxEncoderThreadTest, EncoderResultTest) {
+  // Skip the test for speed 9 when number of threads is greater than number of
+  // tiles. See bug webm:1519.
+  if (set_cpu_used_ >= 9 && threads_ > tiles_) return;
+  if (set_cpu_used_ >= 9 && encoding_mode_ == ::libvpx_test::kRealTime) return;
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 15, 20);
+
   cfg_.rc_target_bitrate = 1000;
 
   // Part 1: Bit exact test for row_mt_mode_ = 0.
-  // This part keeps original unit tests done before row-mt code is checked in.
+  // This part keeps original unit tests done before row-mt code is checked
+  // in.
   row_mt_mode_ = 0;
 
   // Encode using single thread.
@@ -339,7 +345,8 @@ TEST_P(VPxEncoderThreadTest, EncoderResultTest) {
   // Compare to check if two vectors are equal.
   ASSERT_EQ(single_thr_md5, multi_thr_md5);
 
-  // Part 2: row_mt_mode_ = 0 vs row_mt_mode_ = 1 single thread bit exact test.
+  // Part 2: row_mt_mode_ = 0 vs row_mt_mode_ = 1 single thread bit exact
+  // test.
   row_mt_mode_ = 1;
 
   // Encode using single thread
@@ -409,7 +416,7 @@ INSTANTIATE_TEST_CASE_P(
         ::testing::Values(::libvpx_test::kTwoPassGood,
                           ::libvpx_test::kOnePassGood,
                           ::libvpx_test::kRealTime),
-        ::testing::Range(3, 9),    // cpu_used
+        ::testing::Range(3, 10),   // cpu_used
         ::testing::Range(0, 3),    // tile_columns
         ::testing::Range(2, 5)));  // threads
 

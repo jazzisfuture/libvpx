@@ -781,13 +781,13 @@ TEST_P(DatarateTestVP9LargeDenoiser, DenoiserOffOn) {
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9Large,
                           ::testing::Values(::libvpx_test::kOnePassGood,
                                             ::libvpx_test::kRealTime),
-                          ::testing::Range(2, 9));
+                          ::testing::Range(2, 10));
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9RealTime,
                           ::testing::Values(::libvpx_test::kRealTime),
-                          ::testing::Range(5, 9));
+                          ::testing::Range(5, 10));
 #if CONFIG_VP9_TEMPORAL_DENOISING
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9LargeDenoiser,
                           ::testing::Values(::libvpx_test::kRealTime),
-                          ::testing::Range(5, 9));
+                          ::testing::Range(5, 10));
 #endif
 }  // namespace
