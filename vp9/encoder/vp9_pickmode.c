@@ -224,6 +224,9 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   if (rv && search_subpel) {
     int subpel_force_stop = cpi->sf.mv.subpel_force_stop;
     if (use_base_mv && cpi->sf.base_mv_aggressive) subpel_force_stop = 2;
+    if (cpi->sf.speed >= 9 &&
+        (tmp_mv->as_mv.row == 0 && tmp_mv->as_mv.col == 0))
+      subpel_force_stop = 1;
     cpi->find_fractional_mv_step(
         x, &tmp_mv->as_mv, &ref_mv, cpi->common.allow_high_precision_mv,
         x->errorperbit, &cpi->fn_ptr[bsize], subpel_force_stop,
