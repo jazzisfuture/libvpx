@@ -1071,14 +1071,14 @@ TEST_P(DatarateOnePassCbrSvcSmallKF, OnePassCbrSvc2SL3TLSmallKf) {
 #endif
 }
 
-VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvc, ::testing::Range(5, 9),
+VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvc, ::testing::Range(5, 10),
                           ::testing::Range(0, 2), ::testing::Range(0, 3));
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
-VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcDenoiser, ::testing::Range(5, 9),
+VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcDenoiser, ::testing::Range(5, 10),
                           ::testing::Range(1, 3), ::testing::Range(0, 3));
 #endif
 
-VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcSmallKF, ::testing::Range(5, 9),
+VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcSmallKF, ::testing::Range(5, 10),
                           ::testing::Range(32, 36), ::testing::Range(0, 3));
 }  // namespace

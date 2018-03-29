@@ -656,6 +656,11 @@ static void set_rt_speed_feature_framesize_independent(
     sf->limit_newmv_early_exit = 0;
     sf->use_simple_block_yrd = 1;
   }
+
+  if (speed >= 9) {
+    sf->mv.subpel_search_method = SUBPEL_TREE_PRUNED_EVENMORE;
+  }
+
   if (sf->use_altref_onepass) {
     if (cpi->rc.is_src_frame_alt_ref && cm->frame_type != KEY_FRAME) {
       sf->partition_search_type = FIXED_PARTITION;
