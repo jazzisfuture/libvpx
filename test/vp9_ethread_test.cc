@@ -316,78 +316,87 @@ class VPxEncoderThreadTest
 };
 
 TEST_P(VPxEncoderThreadTest, EncoderResultTest) {
-  ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 15, 20);
-  cfg_.rc_target_bitrate = 1000;
+  // Skip the test for speed 9 when number of threads is greater than number of
+  // tiles. See bug webm:1519.
+  if (set_cpu_used_ < 9 || threads_ <= tiles_) {
+    if (set_cpu_used_ >= 9 && encoding_mode_ == ::libvpx_test::kRealTime)
+      return;
+    ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 15, 20);
 
-  // Part 1: Bit exact test for row_mt_mode_ = 0.
-  // This part keeps original unit tests done before row-mt code is checked in.
-  row_mt_mode_ = 0;
+    cfg_.rc_target_bitrate = 1000;
 
-  // Encode using single thread.
-  cfg_.g_threads = 1;
-  init_flags_ = VPX_CODEC_USE_PSNR;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  const std::vector<std::string> single_thr_md5 = md5_;
-  md5_.clear();
+    // Part 1: Bit exact test for row_mt_mode_ = 0.
+    // This part keeps original unit tests done before row-mt code is checked
+    // in.
+    row_mt_mode_ = 0;
 
-  // Encode using multiple threads.
-  cfg_.g_threads = threads_;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  const std::vector<std::string> multi_thr_md5 = md5_;
-  md5_.clear();
+    // Encode using single thread.
+    cfg_.g_threads = 1;
+    init_flags_ = VPX_CODEC_USE_PSNR;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    const std::vector<std::string> single_thr_md5 = md5_;
+    md5_.clear();
 
-  // Compare to check if two vectors are equal.
-  ASSERT_EQ(single_thr_md5, multi_thr_md5);
+    // Encode using multiple threads.
+    cfg_.g_threads = threads_;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    const std::vector<std::string> multi_thr_md5 = md5_;
+    md5_.clear();
 
-  // Part 2: row_mt_mode_ = 0 vs row_mt_mode_ = 1 single thread bit exact test.
-  row_mt_mode_ = 1;
+    // Compare to check if two vectors are equal.
+    ASSERT_EQ(single_thr_md5, multi_thr_md5);
 
-  // Encode using single thread
-  cfg_.g_threads = 1;
-  init_flags_ = VPX_CODEC_USE_PSNR;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  std::vector<std::string> row_mt_single_thr_md5 = md5_;
-  md5_.clear();
+    // Part 2: row_mt_mode_ = 0 vs row_mt_mode_ = 1 single thread bit exact
+    // test.
+    row_mt_mode_ = 1;
 
-  ASSERT_EQ(single_thr_md5, row_mt_single_thr_md5);
+    // Encode using single thread
+    cfg_.g_threads = 1;
+    init_flags_ = VPX_CODEC_USE_PSNR;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    std::vector<std::string> row_mt_single_thr_md5 = md5_;
+    md5_.clear();
 
-  // Part 3: Bit exact test with row-mt on
-  // When row_mt_mode_=1 and using >1 threads, the encoder generates bit exact
-  // result.
-  row_mt_mode_ = 1;
-  row_mt_single_thr_md5.clear();
+    ASSERT_EQ(single_thr_md5, row_mt_single_thr_md5);
 
-  // Encode using 2 threads.
-  cfg_.g_threads = 2;
-  init_flags_ = VPX_CODEC_USE_PSNR;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  row_mt_single_thr_md5 = md5_;
-  md5_.clear();
+    // Part 3: Bit exact test with row-mt on
+    // When row_mt_mode_=1 and using >1 threads, the encoder generates bit exact
+    // result.
+    row_mt_mode_ = 1;
+    row_mt_single_thr_md5.clear();
 
-  // Encode using multiple threads.
-  cfg_.g_threads = threads_;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  const std::vector<std::string> row_mt_multi_thr_md5 = md5_;
-  md5_.clear();
+    // Encode using 2 threads.
+    cfg_.g_threads = 2;
+    init_flags_ = VPX_CODEC_USE_PSNR;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    row_mt_single_thr_md5 = md5_;
+    md5_.clear();
 
-  // Compare to check if two vectors are equal.
-  ASSERT_EQ(row_mt_single_thr_md5, row_mt_multi_thr_md5);
+    // Encode using multiple threads.
+    cfg_.g_threads = threads_;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    const std::vector<std::string> row_mt_multi_thr_md5 = md5_;
+    md5_.clear();
 
-  // Part 4: PSNR test with bit_match_mode_ = 0
-  row_mt_mode_ = 1;
+    // Compare to check if two vectors are equal.
+    ASSERT_EQ(row_mt_single_thr_md5, row_mt_multi_thr_md5);
 
-  // Encode using single thread.
-  cfg_.g_threads = 1;
-  init_flags_ = VPX_CODEC_USE_PSNR;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  const double single_thr_psnr = GetAveragePsnr();
+    // Part 4: PSNR test with bit_match_mode_ = 0
+    row_mt_mode_ = 1;
 
-  // Encode using multiple threads.
-  cfg_.g_threads = threads_;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  const double multi_thr_psnr = GetAveragePsnr();
+    // Encode using single thread.
+    cfg_.g_threads = 1;
+    init_flags_ = VPX_CODEC_USE_PSNR;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    const double single_thr_psnr = GetAveragePsnr();
 
-  EXPECT_NEAR(single_thr_psnr, multi_thr_psnr, 0.1);
+    // Encode using multiple threads.
+    cfg_.g_threads = threads_;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    const double multi_thr_psnr = GetAveragePsnr();
+
+    EXPECT_NEAR(single_thr_psnr, multi_thr_psnr, 0.1);
+  }
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -409,7 +418,7 @@ INSTANTIATE_TEST_CASE_P(
         ::testing::Values(::libvpx_test::kTwoPassGood,
                           ::libvpx_test::kOnePassGood,
                           ::libvpx_test::kRealTime),
-        ::testing::Range(3, 9),    // cpu_used
+        ::testing::Range(3, 10),   // cpu_used
         ::testing::Range(0, 3),    // tile_columns
         ::testing::Range(2, 5)));  // threads
 

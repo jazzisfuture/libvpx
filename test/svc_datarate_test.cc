@@ -1075,5 +1075,5 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc2SL1TL5x5MultipleRuns) {
 
 VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvc,
                           ::testing::Values(::libvpx_test::kRealTime),
-                          ::testing::Range(5, 9));
+                          ::testing::Range(5, 10));
 }  // namespace
