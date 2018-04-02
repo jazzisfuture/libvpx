@@ -77,7 +77,7 @@ static void variance(const uint8_t *a, int a_stride, const uint8_t *b,
 // applied horizontally (pixel_step = 1) or vertically (pixel_step = stride).
 // It defines the offset required to move from one input to the next.
 static void var_filter_block2d_bil_first_pass(const uint8_t *a, uint16_t *b,
-                                              unsigned int src_pixels_per_line,
+                                              unsigned int a_stride,
                                               int pixel_step,
                                               unsigned int output_height,
                                               unsigned int output_width,
@@ -92,7 +92,7 @@ static void var_filter_block2d_bil_first_pass(const uint8_t *a, uint16_t *b,
       ++a;
     }
 
-    a += src_pixels_per_line - output_width;
+    a += a_stride - output_width;
     b += output_width;
   }
 }
@@ -106,12 +106,11 @@ static void var_filter_block2d_bil_first_pass(const uint8_t *a, uint16_t *b,
 // filter is applied horizontally (pixel_step = 1) or vertically
 // (pixel_step = stride). It defines the offset required to move from one input
 // to the next. Output is 8-bit.
-static void var_filter_block2d_bil_second_pass(const uint16_t *a, uint8_t *b,
-                                               unsigned int src_pixels_per_line,
-                                               unsigned int pixel_step,
-                                               unsigned int output_height,
-                                               unsigned int output_width,
-                                               const uint8_t *filter) {
+static void var_filter_block2d_bil_second_pass(
+    const uint16_t *a, const unsigned int a_stride, uint8_t *b,
+    const unsigned int b_stride, const unsigned int pixel_step,
+    const unsigned int output_height, const unsigned int output_width,
+    const uint8_t *const filter) {
   unsigned int i, j;
 
   for (i = 0; i < output_height; ++i) {
@@ -121,8 +120,8 @@ static void var_filter_block2d_bil_second_pass(const uint16_t *a, uint8_t *b,
       ++a;
     }
 
-    a += src_pixels_per_line - output_width;
-    b += output_width;
+    a += a_stride - output_width;
+    b += b_stride;
   }
 }
 
@@ -135,6 +134,50 @@ static void var_filter_block2d_bil_second_pass(const uint16_t *a, uint8_t *b,
     return *sse - (uint32_t)(((int64_t)sum * sum) / (W * H));        \
   }
 
+// Calculate one more column.
+#define HOR_HALFPIX(W, H)                                                   \
+  int vpx_hor_half_pixel##W##x##H##_c(                                      \
+      const uint8_t *const src, const int src_stride, uint8_t *const dst) { \
+    const int dst_stride = (W & ~31) + 32;                                  \
+    unsigned int i, j;                                                      \
+                                                                            \
+    for (i = 0; i < H; ++i) {                                               \
+      for (j = 0; j < W + 1; ++j) {                                         \
+        dst[i * dst_stride + j] = ROUND_POWER_OF_TWO(                       \
+            src[i * src_stride + j] + src[i * src_stride + j + 1], 1);      \
+      }                                                                     \
+    }                                                                       \
+    return dst_stride;                                                      \
+  }
+
+// Calculate one more row.
+#define VER_HALFPIX(W, H)                                                   \
+  int vpx_ver_half_pixel##W##x##H##_c(                                      \
+      const uint8_t *const src, const int src_stride, uint8_t *const dst) { \
+    const int dst_stride = W;                                               \
+    unsigned int i, j;                                                      \
+                                                                            \
+    for (i = 0; i < H + 1; ++i) {                                           \
+      for (j = 0; j < W; ++j) {                                             \
+        dst[i * dst_stride + j] = ROUND_POWER_OF_TWO(                       \
+            src[i * src_stride + j] + src[(i + 1) * src_stride + j], 1);    \
+      }                                                                     \
+    }                                                                       \
+    return dst_stride;                                                      \
+  }
+
+#define HALFPIX_AVG_VAR(W, H)                                             \
+  uint32_t vpx_half_pixel_avg_variance##W##x##H(                          \
+      const uint8_t *const a, const int a_stride, const uint8_t *const b, \
+      const int b_stride, uint32_t *const sse,                            \
+      const uint8_t *const second_pred) {                                 \
+    DECLARE_ALIGNED(16, uint8_t, temp[H * W]);                            \
+                                                                          \
+    vpx_comp_avg_pred(temp, second_pred, W, H, a, a_stride);              \
+                                                                          \
+    return vpx_variance##W##x##H(temp, W, b, b_stride, sse);              \
+  }
+
 #define SUBPIX_VAR(W, H)                                                \
   uint32_t vpx_sub_pixel_variance##W##x##H##_c(                         \
       const uint8_t *a, int a_stride, int xoffset, int yoffset,         \
@@ -144,7 +187,7 @@ static void var_filter_block2d_bil_second_pass(const uint16_t *a, uint8_t *b,
                                                                         \
     var_filter_block2d_bil_first_pass(a, fdata3, a_stride, 1, H + 1, W, \
                                       bilinear_filters[xoffset]);       \
-    var_filter_block2d_bil_second_pass(fdata3, temp2, W, W, H, W,       \
+    var_filter_block2d_bil_second_pass(fdata3, W, temp2, W, W, H, W,    \
                                        bilinear_filters[yoffset]);      \
                                                                         \
     return vpx_variance##W##x##H##_c(temp2, W, b, b_stride, sse);       \
@@ -161,7 +204,7 @@ static void var_filter_block2d_bil_second_pass(const uint16_t *a, uint8_t *b,
                                                                         \
     var_filter_block2d_bil_first_pass(a, fdata3, a_stride, 1, H + 1, W, \
                                       bilinear_filters[xoffset]);       \
-    var_filter_block2d_bil_second_pass(fdata3, temp2, W, W, H, W,       \
+    var_filter_block2d_bil_second_pass(fdata3, W, temp2, W, W, H, W,    \
                                        bilinear_filters[yoffset]);      \
                                                                         \
     vpx_comp_avg_pred_c(temp3, second_pred, W, H, temp2, W);            \
@@ -196,6 +239,9 @@ static void var_filter_block2d_bil_second_pass(const uint16_t *a, uint8_t *b,
 /* All three forms of the variance are available in the same sizes. */
 #define VARIANCES(W, H) \
   VAR(W, H)             \
+  HOR_HALFPIX(W, H)     \
+  VER_HALFPIX(W, H)     \
+  HALFPIX_AVG_VAR(W, H) \
   SUBPIX_VAR(W, H)      \
   SUBPIX_AVG_VAR(W, H)
 
@@ -403,6 +449,82 @@ static void highbd_var_filter_block2d_bil_second_pass(
   }
 }
 
+// Calculate one more column.
+#define HIGHBD_HOR_HALFPIX(W, H)                                              \
+  int vpx_highbd_hor_half_pixel##W##x##H##_c(                                 \
+      const uint8_t *const src8, const int src_stride, uint8_t *const dst8) { \
+    const int dst_stride = (W & ~31) + 32;                                    \
+    const uint16_t *const src = CONVERT_TO_SHORTPTR(src8);                    \
+    uint16_t *const dst = CONVERT_TO_SHORTPTR(dst8);                          \
+    unsigned int i, j;                                                        \
+                                                                              \
+    for (i = 0; i < H; ++i) {                                                 \
+      for (j = 0; j < W + 1; ++j) {                                           \
+        dst[i * dst_stride + j] = ROUND_POWER_OF_TWO(                         \
+            src[i * src_stride + j] + src[i * src_stride + j + 1], 1);        \
+      }                                                                       \
+    }                                                                         \
+    return dst_stride;                                                        \
+  }
+
+// Calculate one more row.
+#define HIGHBD_VER_HALFPIX(W, H)                                              \
+  int vpx_highbd_ver_half_pixel##W##x##H##_c(                                 \
+      const uint8_t *const src8, const int src_stride, uint8_t *const dst8) { \
+    const int dst_stride = W;                                                 \
+    const uint16_t *const src = CONVERT_TO_SHORTPTR(src8);                    \
+    uint16_t *const dst = CONVERT_TO_SHORTPTR(dst8);                          \
+    unsigned int i, j;                                                        \
+                                                                              \
+    for (i = 0; i < H + 1; ++i) {                                             \
+      for (j = 0; j < W; ++j) {                                               \
+        dst[i * dst_stride + j] = ROUND_POWER_OF_TWO(                         \
+            src[i * src_stride + j] + src[(i + 1) * src_stride + j], 1);      \
+      }                                                                       \
+    }                                                                         \
+    return dst_stride;                                                        \
+  }
+
+#define HIGHBD_HALFPIX_AVG_VAR(W, H)                                       \
+  uint32_t vpx_highbd_8_half_pixel_avg_variance##W##x##H(                  \
+      const uint8_t *const a, const int a_stride, const uint8_t *const b,  \
+      const int b_stride, uint32_t *const sse,                             \
+      const uint8_t *const second_pred) {                                  \
+    DECLARE_ALIGNED(16, uint16_t, temp[H * W]);                            \
+                                                                           \
+    vpx_highbd_comp_avg_pred(temp, CONVERT_TO_SHORTPTR(second_pred), W, H, \
+                             CONVERT_TO_SHORTPTR(a), a_stride);            \
+                                                                           \
+    return vpx_highbd_8_variance##W##x##H(CONVERT_TO_BYTEPTR(temp), W, b,  \
+                                          b_stride, sse);                  \
+  }                                                                        \
+                                                                           \
+  uint32_t vpx_highbd_10_half_pixel_avg_variance##W##x##H(                 \
+      const uint8_t *const a, const int a_stride, const uint8_t *const b,  \
+      const int b_stride, uint32_t *const sse,                             \
+      const uint8_t *const second_pred) {                                  \
+    DECLARE_ALIGNED(16, uint16_t, temp[H * W]);                            \
+                                                                           \
+    vpx_highbd_comp_avg_pred(temp, CONVERT_TO_SHORTPTR(second_pred), W, H, \
+                             CONVERT_TO_SHORTPTR(a), a_stride);            \
+                                                                           \
+    return vpx_highbd_10_variance##W##x##H(CONVERT_TO_BYTEPTR(temp), W, b, \
+                                           b_stride, sse);                 \
+  }                                                                        \
+                                                                           \
+  uint32_t vpx_highbd_12_half_pixel_avg_variance##W##x##H(                 \
+      const uint8_t *const a, const int a_stride, const uint8_t *const b,  \
+      const int b_stride, uint32_t *const sse,                             \
+      const uint8_t *const second_pred) {                                  \
+    DECLARE_ALIGNED(16, uint16_t, temp[H * W]);                            \
+                                                                           \
+    vpx_highbd_comp_avg_pred(temp, CONVERT_TO_SHORTPTR(second_pred), W, H, \
+                             CONVERT_TO_SHORTPTR(a), a_stride);            \
+                                                                           \
+    return vpx_highbd_12_variance##W##x##H(CONVERT_TO_BYTEPTR(temp), W, b, \
+                                           b_stride, sse);                 \
+  }
+
 #define HIGHBD_SUBPIX_VAR(W, H)                                              \
   uint32_t vpx_highbd_8_sub_pixel_variance##W##x##H##_c(                     \
       const uint8_t *src, int src_stride, int xoffset, int yoffset,          \
@@ -513,6 +635,9 @@ static void highbd_var_filter_block2d_bil_second_pass(
 /* All three forms of the variance are available in the same sizes. */
 #define HIGHBD_VARIANCES(W, H) \
   HIGHBD_VAR(W, H)             \
+  HIGHBD_HOR_HALFPIX(W, H)     \
+  HIGHBD_VER_HALFPIX(W, H)     \
+  HIGHBD_HALFPIX_AVG_VAR(W, H) \
   HIGHBD_SUBPIX_VAR(W, H)      \
   HIGHBD_SUBPIX_AVG_VAR(W, H)
 
