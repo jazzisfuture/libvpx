@@ -670,6 +670,23 @@ uint32_t vp9_find_best_sub_pixel_tree(
   unsigned int cost_array[5];
   int kr, kc;
   MvLimits subpel_mv_limits;
+  int h_stride, v_stride;
+  // Calculate one more column for horizontal half pixels.
+  // Calculate one more row for vertical half pixels.
+  // Buffer and its stride are 32-byte aligned.
+#if CONFIG_VP9_HIGHBITDEPTH
+  DECLARE_ALIGNED(32, uint8_t, half_pixel_h8[(64 + 32) * 64]);
+  DECLARE_ALIGNED(32, uint8_t, half_pixel_v8[64 * (64 + 1)]);
+  DECLARE_ALIGNED(32, uint16_t, half_pixel_h16[(64 + 32) * 64]);
+  DECLARE_ALIGNED(32, uint16_t, half_pixel_v16[64 * (64 + 1)]);
+  uint8_t *const half_pixel_h =
+      vfp->highbd_flag ? CONVERT_TO_BYTEPTR(half_pixel_h16) : half_pixel_h8;
+  uint8_t *const half_pixel_v =
+      vfp->highbd_flag ? CONVERT_TO_BYTEPTR(half_pixel_v16) : half_pixel_v8;
+#else
+  DECLARE_ALIGNED(32, uint8_t, half_pixel_h[(64 + 32) * 64]);
+  DECLARE_ALIGNED(32, uint8_t, half_pixel_v[64 * (64 + 1)]);
+#endif
 
   vp9_set_subpel_mv_search_range(&subpel_mv_limits, &x->mv_limits, ref_mv);
   minc = subpel_mv_limits.col_min;
@@ -690,20 +707,53 @@ uint32_t vp9_find_best_sub_pixel_tree(
   (void)cost_list;  // to silence compiler warning
 
   // Check vertical and horizontal half-pixel positions.
+  // Note: w and h are not set for P blocks, and sb_type in MODE_INFO is not
+  // always set, so we rely on the half pixel filter function to calculate
+  // stride.
+  h_stride = vfp->hhf(y + (br >> 3) * y_stride + ((bc - 4) >> 3), y_stride,
+                      half_pixel_h);
+  v_stride = vfp->vhf(y + ((br - 4) >> 3) * y_stride + (bc >> 3), y_stride,
+                      half_pixel_v);
+
   for (idx = 0; idx < 4; ++idx) {
     tr = br + search_step[idx].row;
     tc = bc + search_step[idx].col;
     if (tc >= minc && tc <= maxc && tr >= minr && tr <= maxr) {
       const uint8_t *const pre_address = y + (tr >> 3) * y_stride + (tc >> 3);
+      const int half_stride = search_step[idx].row ? v_stride : h_stride;
       MV this_mv;
+      uint8_t *t;
+      // TODO(linfengz): Remove the temporary sseT, thismseT and asserts later.
+      // These are just for testing purposes. vf/havf should replace svf/svaf.
+      unsigned int sseT;
+      int thismseT;
+
       this_mv.row = tr;
       this_mv.col = tc;
-      if (second_pred == NULL)
+
+      if (search_step[idx].row < 0) {
+        t = half_pixel_v;
+      } else if (search_step[idx].row > 0) {
+        t = half_pixel_v + half_stride;
+      } else if (search_step[idx].col < 0) {
+        t = half_pixel_h;
+      } else {
+        assert(search_step[idx].col > 0);
+        t = half_pixel_h + 1;
+      }
+
+      if (second_pred == NULL) {
         thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr), src_address,
                            src_stride, &sse);
-      else
+        thismseT = vfp->vf(t, half_stride, src_address, src_stride, &sseT);
+      } else {
         thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr), src_address,
                             src_stride, &sse, second_pred);
+        thismseT = vfp->havf(t, half_stride, src_address, src_stride, &sseT,
+                             second_pred);
+      }
+      assert(sseT == sse);
+      assert(thismseT == thismse);
       cost_array[idx] = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost,
                                               error_per_bit);
 

@@ -1151,6 +1151,49 @@ add_proto qw/void vpx_comp_avg_pred/, "uint8_t *comp_pred, const uint8_t *pred, 
   specialize qw/vpx_comp_avg_pred neon sse2 vsx/;
 
 #
+# Half Pixel Variance
+#
+add_proto qw/int vpx_hor_half_pixel64x64/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel64x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel32x64/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel32x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel32x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel16x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel16x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel16x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel8x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel8x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel8x4/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel4x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_hor_half_pixel4x4/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel64x64/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel64x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel32x64/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel32x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel32x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel16x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel16x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel16x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel8x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel8x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel8x4/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel4x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_ver_half_pixel4x4/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance64x64/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance64x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance32x64/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance32x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance32x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance16x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance16x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance16x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance8x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance8x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance8x4/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance4x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_half_pixel_avg_variance4x4/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+
+#
 # Subpixel Variance
 #
 add_proto qw/uint32_t vpx_sub_pixel_variance64x64/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse";
@@ -1368,6 +1411,77 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   specialize qw/vpx_highbd_12_mse8x8 sse2/;
 
   add_proto qw/void vpx_highbd_comp_avg_pred/, "uint16_t *comp_pred, const uint8_t *pred8, int width, int height, const uint8_t *ref8, int ref_stride";
+
+#
+# Half Pixel Variance
+#
+add_proto qw/int vpx_highbd_hor_half_pixel64x64/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel64x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel32x64/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel32x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel32x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel16x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel16x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel16x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel8x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel8x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel8x4/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel4x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_hor_half_pixel4x4/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel64x64/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel64x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel32x64/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel32x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel32x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel16x32/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel16x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel16x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel8x16/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel8x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel8x4/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel4x8/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/int vpx_highbd_ver_half_pixel4x4/, "const uint8_t *const a, const int a_stride, uint8_t *const b";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance64x64/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance64x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance32x64/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance32x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance32x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance16x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance16x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance16x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance8x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance8x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance8x4/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance4x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_12_half_pixel_avg_variance4x4/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance64x64/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance64x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance32x64/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance32x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance32x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance16x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance16x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance16x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance8x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance8x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance8x4/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance4x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_10_half_pixel_avg_variance4x4/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance64x64/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance64x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance32x64/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance32x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance32x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance16x32/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance16x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance16x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance8x16/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance8x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance8x4/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance4x8/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
+add_proto qw/uint32_t vpx_highbd_8_half_pixel_avg_variance4x4/, "const uint8_t *const a, const int a_stride, const uint8_t *const b, const int b_stride, uint32_t *const sse, const uint8_t *second_pred";
 
   #
   # Subpixel Variance
