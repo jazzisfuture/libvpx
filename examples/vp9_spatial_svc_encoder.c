@@ -804,7 +804,6 @@ int main(int argc, const char **argv) {
             uint64_t sizes[8];
             uint64_t sizes_parsed[8];
             int count = 0;
-            int tot_size = 0;
             vp9_zero(sizes);
             vp9_zero(sizes_parsed);
 #endif
@@ -832,7 +831,7 @@ int main(int argc, const char **argv) {
                 }
                 for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
                   unsigned int sl2;
-                  tot_size = 0;
+                  uint64_t tot_size = 0;
                   for (sl2 = 0; sl2 <= sl; ++sl2) {
                     if (cx_pkt->data.frame.spatial_layer_encoded[sl2])
                       tot_size += sizes[sl2];
