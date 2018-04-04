@@ -1226,6 +1226,10 @@ EOF
           add_cflags -mmsa
           add_asflags -mmsa
           add_ldflags -mmsa
+
+          # Older compilers have trouble with some libyuv assembly.
+          # See libyuv:493 for details.
+          check_add_cflags -flax-vector-coversions
         fi
       fi
 
