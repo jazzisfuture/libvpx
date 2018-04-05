@@ -534,7 +534,8 @@ static int64_t scale_part_thresh_sumdiff(int64_t threshold_base, int speed,
 static void set_vbp_thresholds(VP9_COMP *cpi, int64_t thresholds[], int q,
                                int content_state) {
   VP9_COMMON *const cm = &cpi->common;
-  const int is_key_frame = (cm->frame_type == KEY_FRAME);
+  const int is_key_frame =
+      (cm->frame_type == KEY_FRAME || cpi->sf.svc_use_keyframe_part);
   const int threshold_multiplier = is_key_frame ? 20 : 1;
   int64_t threshold_base =
       (int64_t)(threshold_multiplier * cpi->y_dequant[q][1]);
@@ -593,7 +594,8 @@ void vp9_set_variance_partition_thresholds(VP9_COMP *cpi, int q,
                                            int content_state) {
   VP9_COMMON *const cm = &cpi->common;
   SPEED_FEATURES *const sf = &cpi->sf;
-  const int is_key_frame = (cm->frame_type == KEY_FRAME);
+   const int is_key_frame =
+       (cm->frame_type == KEY_FRAME || sf->svc_use_keyframe_part);
   if (sf->partition_search_type != VAR_BASED_PARTITION &&
       sf->partition_search_type != REFERENCE_PARTITION) {
     return;
@@ -1249,7 +1251,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
        (is_one_pass_cbr_svc(cpi) &&
         cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame));
   // Always use 4x4 partition for key frame.
-  const int use_4x4_partition = cm->frame_type == KEY_FRAME;
+  const int use_4x4_partition =
+      cm->frame_type == KEY_FRAME || cpi->sf.svc_use_keyframe_part;
   const int low_res = (cm->width <= 352 && cm->height <= 288);
   int variance4x4downsample[16];
   int segment_id;
@@ -3747,7 +3750,7 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
     if (cyclic_refresh_segment_id_boosted(mi->segment_id))
       x->rdmult = vp9_cyclic_refresh_get_rdmult(cpi->cyclic_refresh);
 
-  if (cm->frame_type == KEY_FRAME)
+  if (cm->frame_type == KEY_FRAME || cpi->sf.svc_use_keyframe_part)
     hybrid_intra_mode_search(cpi, x, rd_cost, bsize, ctx);
   else if (segfeature_active(&cm->seg, mi->segment_id, SEG_LVL_SKIP))
     set_mode_info_seg_skip(x, cm->tx_mode, rd_cost, bsize);
@@ -4454,7 +4457,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
           // TODO(marpan): Seems like nonrd_select_partition does not support
           // 4x4 partition. Since 4x4 is used on key frame, use this switch
           // for now.
-          if (cm->frame_type == KEY_FRAME)
+          if (cm->frame_type == KEY_FRAME || sf->svc_use_keyframe_part)
             nonrd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col,
                                 BLOCK_64X64, 1, &dummy_rdc, td->pc_root);
           else
