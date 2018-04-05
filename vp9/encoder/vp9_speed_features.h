@@ -508,6 +508,10 @@ typedef struct SPEED_FEATURES {
 
   // For SVC: enables use of partition from lower spatial resolution.
   int svc_use_lowres_part;
+
+  // For SVC: use key_frame partitioning and coding for spatial layer whose
+  // base is key.
+  int svc_use_keyframe_coding;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
