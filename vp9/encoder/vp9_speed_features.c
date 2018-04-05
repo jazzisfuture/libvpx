@@ -374,6 +374,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->use_compound_nonrd_pickmode = 0;
   sf->nonrd_keyframe = 0;
   sf->svc_use_lowres_part = 0;
+  sf->svc_use_keyframe_part = 0;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -530,6 +531,13 @@ static void set_rt_speed_feature_framesize_independent(
         cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
       sf->limit_newmv_early_exit = 1;
       if (!cpi->use_svc) sf->bias_golden = 1;
+    }
+    if (cpi->use_svc && cpi->svc.spatial_layer_id > 0 &&
+        cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame) {
+      // Keep nonrd_keyframe = 1 to avoid increase in encode time.
+      sf->nonrd_keyframe = 1;
+      if (cpi->svc.disable_inter_layer_pred == INTER_LAYER_PRED_OFF)
+        sf->svc_use_keyframe_part = 1;
     }
   }
 
