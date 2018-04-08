@@ -20,7 +20,7 @@ extern "C" {
 #if CONFIG_OS_SUPPORT && CONFIG_MULTITHREAD
 
 /* Thread management macros */
-#if defined(_WIN32) && !HAVE_PTHREAD_H
+#if defined(_WIN32)
 /* Win32 */
 #include <process.h>
 #include <windows.h>
@@ -87,7 +87,7 @@ extern "C" {
 #endif
 
 /* Synchronization macros: Win32 and Pthreads */
-#if defined(_WIN32) && !HAVE_PTHREAD_H
+#if defined(_WIN32)
 #define sem_t HANDLE
 #define pause(voidpara) __asm PAUSE
 #define sem_init(sem, sem_attr1, sem_init_value) \

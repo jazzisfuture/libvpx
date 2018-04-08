@@ -1478,7 +1478,7 @@ EOF
   # Almost every platform uses pthreads.
   if enabled multithread; then
     case ${toolchain} in
-      *-win*-vs*)
+      *-win*-*)
         ;;
       *-android-gcc)
         # bionic includes basic pthread functionality, obviating -lpthread.
