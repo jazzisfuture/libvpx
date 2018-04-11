@@ -457,7 +457,7 @@ void vp9_denoiser_update_frame_info(
   // Copy source into denoised reference buffers on KEY_FRAME or
   // if the just encoded frame was resized. For SVC, copy source if the base
   // spatial layer was key frame.
-  if (frame_type == KEY_FRAME || resized != 0 || denoiser->reset ||
+  if (frame_is_intra_only(cm) || resized != 0 || denoiser->reset ||
       svc_base_is_key) {
     int i;
     // Start at 1 so as not to overwrite the INTRA_FRAME
