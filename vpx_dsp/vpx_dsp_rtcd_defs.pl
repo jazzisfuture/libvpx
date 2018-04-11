@@ -1154,18 +1154,44 @@ add_proto qw/void vpx_comp_avg_pred/, "uint8_t *comp_pred, const uint8_t *pred, 
 # Half Pixel Interpolation
 #
 add_proto qw/int vpx_hor_half_pixel64x64/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel64x64 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel64x32/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel64x32 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel32x64/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel32x64 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel32x32/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel32x32 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel32x16/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel32x16 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel16x32/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel16x32 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel16x16/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel16x16 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel16x8/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel16x8 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel8x16/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel8x16 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel8x8/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel8x8 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel8x4/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel8x4 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel4x8/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel4x8 sse2/;
+
 add_proto qw/int vpx_hor_half_pixel4x4/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+specialize qw/vpx_hor_half_pixel4x4 sse2/;
+
 add_proto qw/int vpx_ver_half_pixel64x64/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
 specialize qw/vpx_ver_half_pixel64x64 sse2/;
 
@@ -1428,18 +1454,44 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   # Half Pixel Interpolation
   #
   add_proto qw/int vpx_highbd_hor_half_pixel64x64/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel64x64 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel64x32/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel64x32 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel32x64/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel32x64 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel32x32/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel32x32 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel32x16/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel32x16 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel16x32/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel16x32 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel16x16/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel16x16 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel16x8/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel16x8 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel8x16/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel8x16 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel8x8/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel8x8 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel8x4/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel8x4 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel4x8/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel4x8 sse2/;
+
   add_proto qw/int vpx_highbd_hor_half_pixel4x4/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
+  specialize qw/vpx_highbd_hor_half_pixel4x4 sse2/;
+
   add_proto qw/int vpx_highbd_ver_half_pixel64x64/, "const uint8_t *const src, const int src_stride, uint8_t *const dst";
   specialize qw/vpx_highbd_ver_half_pixel64x64 sse2/;
 

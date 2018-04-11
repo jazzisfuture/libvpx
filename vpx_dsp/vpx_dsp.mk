@@ -90,6 +90,7 @@ DSP_SRCS-$(ARCH_X86)$(ARCH_X86_64) += x86/convolve.h
 DSP_SRCS-$(ARCH_X86)$(ARCH_X86_64) += x86/vpx_asm_stubs.c
 DSP_SRCS-$(HAVE_SSSE3) += x86/convolve_ssse3.h
 DSP_SRCS-$(HAVE_AVX2)  += x86/convolve_avx2.h
+DSP_SRCS-$(HAVE_SSE2)  += x86/half_pixel_hor_sse2.c
 DSP_SRCS-$(HAVE_SSE2)  += x86/half_pixel_ver_sse2.c
 DSP_SRCS-$(HAVE_SSE2)  += x86/vpx_subpixel_8t_sse2.asm
 DSP_SRCS-$(HAVE_SSE2)  += x86/vpx_subpixel_bilinear_sse2.asm
@@ -98,6 +99,7 @@ DSP_SRCS-$(HAVE_SSSE3) += x86/vpx_subpixel_bilinear_ssse3.asm
 DSP_SRCS-$(HAVE_AVX2)  += x86/vpx_subpixel_8t_intrin_avx2.c
 DSP_SRCS-$(HAVE_SSSE3) += x86/vpx_subpixel_8t_intrin_ssse3.c
 ifeq ($(CONFIG_VP9_HIGHBITDEPTH),yes)
+DSP_SRCS-$(HAVE_SSE2)  += x86/highbd_half_pixel_hor_sse2.c
 DSP_SRCS-$(HAVE_SSE2)  += x86/highbd_half_pixel_ver_sse2.c
 DSP_SRCS-$(HAVE_SSE2)  += x86/vpx_high_subpixel_8t_sse2.asm
 DSP_SRCS-$(HAVE_SSE2)  += x86/vpx_high_subpixel_bilinear_sse2.asm
