@@ -725,6 +725,9 @@ typedef struct VP9_COMP {
   uint8_t *count_lastgolden_frame_usage;
 
   vpx_roi_map_t roi;
+
+  unsigned int set_intra_only_frame;
+  unsigned int previous_frame_is_intra_only;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
