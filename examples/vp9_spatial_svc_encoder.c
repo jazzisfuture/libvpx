@@ -643,6 +643,8 @@ int main(int argc, const char **argv) {
 #endif
   struct vpx_usec_timer timer;
   int64_t cx_time = 0;
+  int intra_test = 1;
+  unsigned int insert_intra = 100;
   memset(&svc_ctx, 0, sizeof(svc_ctx));
   memset(&app_input, 0, sizeof(AppInput));
   memset(&info, 0, sizeof(VpxVideoInfo));
@@ -783,6 +785,9 @@ int main(int argc, const char **argv) {
         ++rc.layer_input_frames[sl * enc_cfg.ts_number_layers + tl];
     }
 
+    if (intra_test && frame_cnt == insert_intra)
+      vpx_codec_control(&codec, VP9E_SET_INTRA_ONLY_FRAME, 1);
+
     vpx_usec_timer_start(&timer);
     res = vpx_svc_encode(
         &svc_ctx, &codec, (end_of_stream ? NULL : &raw), pts, frame_duration,
@@ -804,6 +809,8 @@ int main(int argc, const char **argv) {
             uint64_t sizes[8];
             uint64_t sizes_parsed[8];
             int count = 0;
+            int intra_layer = 0;
+            if (intra_test && frame_cnt == insert_intra) intra_layer = 1;
             vp9_zero(sizes);
             vp9_zero(sizes_parsed);
 #endif
@@ -822,7 +829,8 @@ int main(int argc, const char **argv) {
               if (svc_ctx.temporal_layering_mode !=
                   VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
                 int num_layers_encoded = 0;
-                for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
+                for (sl = 0; sl < enc_cfg.ss_number_layers + intra_layer;
+                     ++sl) {
                   sizes[sl] = 0;
                   if (cx_pkt->data.frame.spatial_layer_encoded[sl]) {
                     sizes[sl] = sizes_parsed[num_layers_encoded];
@@ -832,14 +840,17 @@ int main(int argc, const char **argv) {
                 for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
                   unsigned int sl2;
                   uint64_t tot_size = 0;
-                  for (sl2 = 0; sl2 <= sl; ++sl2) {
+                  for (sl2 = 0; sl2 <= sl + intra_layer; ++sl2) {
                     if (cx_pkt->data.frame.spatial_layer_encoded[sl2])
                       tot_size += sizes[sl2];
                   }
-                  if (tot_size > 0)
-                    vpx_video_writer_write_frame(
-                        outfile[sl], cx_pkt->data.frame.buf, (size_t)(tot_size),
-                        cx_pkt->data.frame.pts);
+                  if (tot_size > 0) {
+                    if ((intra_test && frame_cnt >= insert_intra) || sl > 0 ||
+                        !intra_test)
+                      vpx_video_writer_write_frame(
+                          outfile[sl], cx_pkt->data.frame.buf,
+                          (size_t)(tot_size), cx_pkt->data.frame.pts);
+                  }
                 }
               }
               for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
