@@ -121,6 +121,8 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
     force_key_test_ = 0;
     insert_layer_sync_ = 0;
     layer_sync_on_base_ = 0;
+    force_intra_only_frame_ = 0;
+    intra_only_framecnt_ = 0;
   }
   virtual void BeginPassHook(unsigned int /*pass*/) {}
 
@@ -191,6 +193,14 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
       svc_params_.speed_per_layer[0] = base_speed_setting_;
       for (i = 1; i < VPX_SS_MAX_LAYERS; ++i) {
         svc_params_.speed_per_layer[i] = speed_setting_;
+      }
+      
+      if (force_intra_only_frame_) {      
+        // Decoder sets the color_space for Intra-only frames
+        // to BT_601 (see line 1810 in vp9_decodeframe.c).
+        // So set it here to avoid encoder-decoder mismatch check
+        // on color space setting.
+        encoder->Control(VP9E_SET_COLOR_SPACE, VPX_CS_BT_601);
       }
 
       encoder->Control(VP9E_SET_NOISE_SENSITIVITY, denoiser_on_);
@@ -324,22 +334,29 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
     else
       frame_flags_ = 0;
 
-    if (insert_layer_sync_) {
+    if (insert_layer_sync_ || force_intra_only_frame_) {
       vpx_svc_spatial_layer_sync_t svc_layer_sync;
-      svc_layer_sync.base_layer_intra_only = 0;
-      layer_sync_on_base_ = 0;
       for (int i = 0; i < number_spatial_layers_; i++)
         svc_layer_sync.spatial_layer_sync[i] = 0;
-      if (video->frame() == 150) {
-        svc_layer_sync.spatial_layer_sync[1] = 1;
-        encoder->Control(VP9E_SET_SVC_SPATIAL_LAYER_SYNC, &svc_layer_sync);
-      } else if (video->frame() == 240) {
-        svc_layer_sync.spatial_layer_sync[2] = 1;
-        encoder->Control(VP9E_SET_SVC_SPATIAL_LAYER_SYNC, &svc_layer_sync);
-      } else if (video->frame() == 320) {
-        svc_layer_sync.spatial_layer_sync[0] = 1;
-        layer_sync_on_base_ = 1;
-        encoder->Control(VP9E_SET_SVC_SPATIAL_LAYER_SYNC, &svc_layer_sync);
+      if (force_intra_only_frame_) {       
+        if (video->frame() == (unsigned int) intra_only_framecnt_) {
+          svc_layer_sync.base_layer_intra_only = 1;
+          encoder->Control(VP9E_SET_SVC_SPATIAL_LAYER_SYNC, &svc_layer_sync);
+        }
+      } else {
+        svc_layer_sync.base_layer_intra_only = 0;
+        layer_sync_on_base_ = 0;        
+        if (video->frame() == 150) {
+          svc_layer_sync.spatial_layer_sync[1] = 1;
+          encoder->Control(VP9E_SET_SVC_SPATIAL_LAYER_SYNC, &svc_layer_sync);
+        } else if (video->frame() == 240) {
+          svc_layer_sync.spatial_layer_sync[2] = 1;
+          encoder->Control(VP9E_SET_SVC_SPATIAL_LAYER_SYNC, &svc_layer_sync);
+        } else if (video->frame() == 320) {
+          svc_layer_sync.spatial_layer_sync[0] = 1;
+          layer_sync_on_base_ = 1;
+          encoder->Control(VP9E_SET_SVC_SPATIAL_LAYER_SYNC, &svc_layer_sync);
+        }
       }
     }
 
@@ -422,7 +439,13 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
         num_layers_encoded++;
       }
     }
-    ASSERT_EQ(count, num_layers_encoded);
+    // For superframe with Intra-only count will be +1 larger
+    // because of no-show frame.
+    if (force_intra_only_frame_ && superframe_count_ == intra_only_framecnt_)
+      ASSERT_EQ(count, num_layers_encoded + 1);
+    else
+      ASSERT_EQ(count, num_layers_encoded);
+
     // In the constrained frame drop mode, if a given spatial is dropped all
     // upper layers must be dropped too.
     if (!layer_framedrop_) {
@@ -532,6 +555,8 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
   int inter_layer_pred_mode_;
   int insert_layer_sync_;
   int layer_sync_on_base_;
+  int force_intra_only_frame_;
+  int intra_only_framecnt_;
 };
 
 // Params: speed setting.
@@ -1330,6 +1355,53 @@ TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL3TLSyncFrames) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
+#if CONFIG_VP9_DECODER
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames.
+  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
+#endif
+}
+
+// Run SVC encoder for 3 spatial layers, 1 temporal layer, with
+// Intra-only frame as starting frame (no key frame).
+TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL1TLStartWithIntraOnly) {
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.rc_end_usage = VPX_CBR;
+  cfg_.g_lag_in_frames = 0;
+  cfg_.ss_number_layers = 3;
+  cfg_.ts_number_layers = 1;
+  cfg_.ts_rate_decimator[0] = 1;
+  cfg_.temporal_layering_mode = 0;
+  cfg_.g_error_resilient = 1;
+  cfg_.g_threads = 4;
+  svc_params_.scaling_factor_num[0] = 72;
+  svc_params_.scaling_factor_den[0] = 288;
+  svc_params_.scaling_factor_num[1] = 144;
+  svc_params_.scaling_factor_den[1] = 288;
+  svc_params_.scaling_factor_num[2] = 288;
+  svc_params_.scaling_factor_den[2] = 288;
+  cfg_.rc_dropframe_thresh = 30;
+  cfg_.kf_max_dist = 9999;
+  number_spatial_layers_ = cfg_.ss_number_layers;
+  number_temporal_layers_ = cfg_.ts_number_layers;
+  ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
+  top_sl_width_ = 1280;
+  top_sl_height_ = 720;
+  layer_framedrop_ = 0;
+  cfg_.rc_target_bitrate = 400;
+  ResetModel();
+  force_intra_only_frame_ = 1;
+  intra_only_framecnt_ = 0;
+  AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
+                      cfg_.ts_number_layers, cfg_.temporal_layering_mode,
+                      layer_target_avg_bandwidth_, bits_in_buffer_model_);
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
+                          number_temporal_layers_, file_datarate_, 0.73, 1.2);
 #if CONFIG_VP9_DECODER
   // The non-reference frames are expected to be mismatched frames as the
   // encoder will avoid loopfilter on these frames.

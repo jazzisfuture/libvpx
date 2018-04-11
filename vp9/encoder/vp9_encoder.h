@@ -763,6 +763,7 @@ typedef struct VP9_COMP {
   int bwd_ref_allowed;
 
   vpx_roi_map_t roi;
+
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
