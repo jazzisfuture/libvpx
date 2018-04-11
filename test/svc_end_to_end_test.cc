@@ -254,6 +254,62 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameVGAHD) {
 #endif
 }
 
+// Test for sync layer for 1 pass CBR SVC with intra only base layer: 3 spatial
+// layers and 3 temporal layers. Only start decoding from sync frame and decode
+// only QVGA.
+TEST_P(SyncFrameOnePassCbrSvc,
+       DISABLED_OnePassCbrSvc3SL3TLSyncFrameIntraOnlyQVGA) {
+  Set3SpatialLayerConfig();
+  frame_to_start_decode_ = 0;
+  frame_to_sync_ = 20;
+  decode_to_layer_before_sync_ = 2;
+  decode_to_layer_after_sync_ = 2;
+
+  // Set up svc layer sync structure.
+  svc_layer_sync_.base_layer_intra_only = 1;
+  svc_layer_sync_.spatial_layer_sync[0] = 1;
+  svc_layer_sync_.spatial_layer_sync[1] = 0;
+  svc_layer_sync_.spatial_layer_sync[2] = 0;
+
+  ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
+  cfg_.rc_target_bitrate = 600;
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+#if CONFIG_VP9_DECODER
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames.
+  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
+#endif
+}
+
+// Test for sync layer for 1 pass CBR SVC with intra only base layer: 3 spatial
+// layers and 3 temporal layers. Only start decoding from sync frame and decode
+// up to VGA.
+TEST_P(SyncFrameOnePassCbrSvc,
+       DISABLED_OnePassCbrSvc3SL3TLSyncFrameIntraOnlyVGA) {
+  Set3SpatialLayerConfig();
+  frame_to_start_decode_ = 0;
+  frame_to_sync_ = 20;
+  decode_to_layer_before_sync_ = 2;
+  decode_to_layer_after_sync_ = 2;
+
+  // Set up svc layer sync structure.
+  svc_layer_sync_.base_layer_intra_only = 1;
+  svc_layer_sync_.spatial_layer_sync[0] = 1;
+  svc_layer_sync_.spatial_layer_sync[1] = 1;
+  svc_layer_sync_.spatial_layer_sync[2] = 0;
+
+  ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
+  cfg_.rc_target_bitrate = 600;
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+#if CONFIG_VP9_DECODER
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames.
+  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
+#endif
+}
+
 VP9_INSTANTIATE_TEST_CASE(SyncFrameOnePassCbrSvc, ::testing::Range(0, 3));
 
 }  // namespace
