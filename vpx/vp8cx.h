@@ -620,6 +620,13 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_SET_SVC_FRAME_DROP_LAYER,
+
+  /*!\brief Codec control function to set an intra only frame for the current
+   * frame to be encoded.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_INTRA_ONLY_FRAME,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -926,6 +933,9 @@ VPX_CTRL_USE_TYPE(VP9E_SET_SVC_INTER_LAYER_PRED, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_SVC_FRAME_DROP_LAYER, vpx_svc_frame_drop_t *)
 #define VPX_CTRL_VP9E_SET_SVC_FRAME_DROP_LAYER
+
+VPX_CTRL_USE_TYPE(VP9E_SET_INTRA_ONLY_FRAME, unsigned int)
+#define VPX_CTRL_VP9E_SET_INTRA_ONLY_FRAME
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */
