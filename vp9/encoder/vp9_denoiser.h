@@ -70,7 +70,7 @@ struct VP9_COMP;
 struct SVC;
 
 void vp9_denoiser_update_frame_info(
-    VP9_DENOISER *denoiser, YV12_BUFFER_CONFIG src, FRAME_TYPE frame_type,
+    VP9_COMMON *cm, VP9_DENOISER *denoiser, YV12_BUFFER_CONFIG src,
     int refresh_alt_ref_frame, int refresh_golden_frame, int refresh_last_frame,
     int alt_fb_idx, int gld_fb_idx, int lst_fb_idx, int resized,
     int svc_base_is_key, int second_spatial_layer);
