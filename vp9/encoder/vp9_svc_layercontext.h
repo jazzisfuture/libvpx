@@ -123,6 +123,9 @@ typedef struct SVC {
   // currently checked for each superframe prior to encoding, on the full
   // resolution source.
   int high_source_sad_superframe;
+
+  int fb_idx_base[8];
+  int fb_idx_nonbase[8];
 } SVC;
 
 struct VP9_COMP;
@@ -177,6 +180,10 @@ void vp9_free_svc_cyclic_refresh(struct VP9_COMP *const cpi);
 void vp9_svc_reset_key_frame(struct VP9_COMP *const cpi);
 
 void vp9_svc_check_reset_layer_rc_flag(struct VP9_COMP *const cpi);
+
+void vp9_svc_update_ref_frame_buffer_idx(struct VP9_COMP *const cpi);
+
+int vp9_svc_check_setting_intra_only(struct VP9_COMP *const cpi);
 
 #ifdef __cplusplus
 }  // extern "C"

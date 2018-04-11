@@ -1420,6 +1420,9 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cpi->svc.temporal_layering_mode = oxcf->temporal_layering_mode;
 
+  cpi->set_intra_only_frame = 0;
+  cpi->previous_frame_is_intra_only = 0;
+
   // Single thread case: use counts in common.
   cpi->td.counts = &cm->counts;
 
@@ -3027,22 +3030,8 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
         denoise_svc_second_layer);
   }
 #endif
-  if (is_one_pass_cbr_svc(cpi)) {
-    // Keep track of frame index for each reference frame.
-    SVC *const svc = &cpi->svc;
-    if (cm->frame_type == KEY_FRAME) {
-      svc->ref_frame_index[cpi->lst_fb_idx] = svc->current_superframe;
-      svc->ref_frame_index[cpi->gld_fb_idx] = svc->current_superframe;
-      svc->ref_frame_index[cpi->alt_fb_idx] = svc->current_superframe;
-    } else {
-      if (cpi->refresh_last_frame)
-        svc->ref_frame_index[cpi->lst_fb_idx] = svc->current_superframe;
-      if (cpi->refresh_golden_frame)
-        svc->ref_frame_index[cpi->gld_fb_idx] = svc->current_superframe;
-      if (cpi->refresh_alt_ref_frame)
-        svc->ref_frame_index[cpi->alt_fb_idx] = svc->current_superframe;
-    }
-  }
+  if (is_one_pass_cbr_svc(cpi))
+    vp9_svc_update_ref_frame_buffer_idx(cpi);
 }
 
 static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
@@ -3672,7 +3661,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
       cpi->Last_Source->y_height != cpi->Source->y_height)
     cpi->compute_source_sad_onepass = 0;
 
-  if (cm->frame_type == KEY_FRAME || cpi->resize_pending != 0) {
+  if (frame_is_intra_only(cm) || cpi->resize_pending != 0) {
     memset(cpi->consec_zero_mv, 0,
            cm->mi_rows * cm->mi_cols * sizeof(*cpi->consec_zero_mv));
   }
@@ -3767,7 +3756,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     // it may be pretty bad for rate-control,
     // and I should handle it somehow
     vp9_alt_ref_aq_setup_map(cpi->alt_ref_aq, cpi);
-  } else if (cpi->roi.enabled && cm->frame_type != KEY_FRAME) {
+  } else if (cpi->roi.enabled && !frame_is_intra_only(cm)) {
     apply_roi_map(cpi);
   }
 
@@ -3807,7 +3796,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
 
   // Update some stats from cyclic refresh, and check for golden frame update.
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled &&
-      cm->frame_type != KEY_FRAME)
+      !frame_is_intra_only(cm))
     vp9_cyclic_refresh_postencode(cpi);
 
   // Update the skip mb flag probabilities based on the distribution
@@ -4559,8 +4548,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
 
   // For 1 pass CBR, check if we are dropping this frame.
   // Never drop on key frame, or if base layer is key for svc.
-  if (oxcf->pass == 0 && oxcf->rc_mode == VPX_CBR &&
-      cm->frame_type != KEY_FRAME &&
+  if (oxcf->pass == 0 && oxcf->rc_mode == VPX_CBR && !frame_is_intra_only(cm) &&
       (!cpi->use_svc ||
        !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame)) {
     int svc_prev_layer_dropped = 0;
@@ -4745,6 +4733,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
 
   if (cpi->oxcf.aq_mode == LOOKAHEAD_AQ)
     vp9_alt_ref_aq_unset_all(cpi->alt_ref_aq, cpi);
+
+  if (cm->intra_only)
+    cpi->previous_frame_is_intra_only = 1;
+  else
+    cpi->previous_frame_is_intra_only = 0;
+  cpi->set_intra_only_frame = 0;
 }
 
 static void SvcEncode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
@@ -5298,7 +5292,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     }
 
     // Read in the source frame.
-    if (cpi->use_svc)
+    if (cpi->use_svc || cpi->set_intra_only_frame)
       source = vp9_svc_lookahead_pop(cpi, cpi->lookahead, flush);
     else
       source = vp9_lookahead_pop(cpi->lookahead, flush);
@@ -5437,7 +5431,6 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     Pass0Encode(cpi, size, dest, frame_flags);
   }
 #endif  // CONFIG_REALTIME_ONLY
-
   if (cm->refresh_frame_context)
     cm->frame_contexts[cm->frame_context_idx] = *cm->fc;
 

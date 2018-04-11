@@ -457,9 +457,10 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
 
 static double get_rate_correction_factor(const VP9_COMP *cpi) {
   const RATE_CONTROL *const rc = &cpi->rc;
+  const VP9_COMMON *const cm = &cpi->common;
   double rcf;
 
-  if (cpi->common.frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(cm)) {
     rcf = rc->rate_correction_factors[KF_STD];
   } else if (cpi->oxcf.pass == 2) {
     RATE_FACTOR_LEVEL rf_lvl =
@@ -479,13 +480,14 @@ static double get_rate_correction_factor(const VP9_COMP *cpi) {
 
 static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
   RATE_CONTROL *const rc = &cpi->rc;
+  const VP9_COMMON *const cm = &cpi->common;
 
   // Normalize RCF to account for the size-dependent scaling factor.
   factor /= rcf_mult[cpi->rc.frame_size_selector];
 
   factor = fclamp(factor, MIN_BPB_FACTOR, MAX_BPB_FACTOR);
 
-  if (cpi->common.frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(cm)) {
     rc->rate_correction_factors[KF_STD] = factor;
   } else if (cpi->oxcf.pass == 2) {
     RATE_FACTOR_LEVEL rf_lvl =
@@ -522,8 +524,9 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi) {
     projected_size_based_on_q =
         vp9_cyclic_refresh_estimate_bits_at_q(cpi, rate_correction_factor);
   } else {
+    FRAME_TYPE frame_type = cm->intra_only ? KEY_FRAME : cm->frame_type;
     projected_size_based_on_q =
-        vp9_estimate_bits_at_q(cpi->common.frame_type, cm->base_qindex, cm->MBs,
+        vp9_estimate_bits_at_q(frame_type, cm->base_qindex, cm->MBs,
                                rate_correction_factor, cm->bit_depth);
   }
   // Work out a size correction factor.
@@ -597,8 +600,9 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
       bits_per_mb_at_this_q =
           (int)vp9_cyclic_refresh_rc_bits_per_mb(cpi, i, correction_factor);
     } else {
+      FRAME_TYPE frame_type = cm->intra_only ? KEY_FRAME : cm->frame_type;
       bits_per_mb_at_this_q = (int)vp9_rc_bits_per_mb(
-          cm->frame_type, i, correction_factor, cm->bit_depth);
+          frame_type, i, correction_factor, cm->bit_depth);
     }
 
     if (bits_per_mb_at_this_q <= target_bits_per_mb) {
@@ -620,14 +624,8 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
        !(cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)) &&
       (cpi->rc.rc_1_frame * cpi->rc.rc_2_frame == -1) &&
       cpi->rc.q_1_frame != cpi->rc.q_2_frame) {
-    int qclamp = clamp(q, VPXMIN(cpi->rc.q_1_frame, cpi->rc.q_2_frame),
-                       VPXMAX(cpi->rc.q_1_frame, cpi->rc.q_2_frame));
-    // If the previous had overshoot and the current q needs to increase above
-    // the clamped value, reduce the clamp for faster reaction to overshoot.
-    if (cpi->rc.rc_1_frame == -1 && q > qclamp)
-      q = (q + qclamp) >> 1;
-    else
-      q = qclamp;
+    q = clamp(q, VPXMIN(cpi->rc.q_1_frame, cpi->rc.q_2_frame),
+              VPXMAX(cpi->rc.q_1_frame, cpi->rc.q_2_frame));
   }
   return q;
 }
@@ -708,7 +706,7 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
   int active_worst_quality;
   int ambient_qp;
   unsigned int num_frames_weight_key = 5 * cpi->svc.number_temporal_layers;
-  if (cm->frame_type == KEY_FRAME || rc->reset_high_source_sad)
+  if (frame_is_intra_only(cm) || rc->reset_high_source_sad)
     return rc->worst_quality;
   // For ambient_qp we use minimum of avg_frame_qindex[KEY_FRAME/INTER_FRAME]
   // for the first few frames following key frame. These are both initialized
@@ -838,8 +836,21 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
   *top_index = active_worst_quality;
   *bottom_index = active_best_quality;
 
+#if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
+  // Limit Q range for the adaptive loop.
+  if (frame_is_intra_only(cm) && !rc->this_key_frame_forced &&
+      !(cm->current_video_frame == 0)) {
+    int qdelta = 0;
+    vpx_clear_system_state();
+    qdelta = vp9_compute_qdelta_by_rate(
+        &cpi->rc, cm->frame_type, active_worst_quality, 2.0, cm->bit_depth);
+    *top_index = active_worst_quality + qdelta;
+    *top_index = (*top_index > *bottom_index) ? *top_index : *bottom_index;
+  }
+#endif
+
   // Special case code to try and match quality with forced key frames
-  if (cm->frame_type == KEY_FRAME && rc->this_key_frame_forced) {
+  if (frame_is_intra_only(cm) && rc->this_key_frame_forced) {
     q = rc->last_boosted_qindex;
   } else {
     q = vp9_rc_regulate_q(cpi, rc->this_frame_target, active_best_quality,
@@ -1412,7 +1423,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   vp9_rc_update_rate_correction_factors(cpi);
 
   // Keep a record of last Q and ambient average Q.
-  if (cm->frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(cm)) {
     rc->last_q[KEY_FRAME] = qindex;
     rc->avg_frame_qindex[KEY_FRAME] =
         ROUND_POWER_OF_TWO(3 * rc->avg_frame_qindex[KEY_FRAME] + qindex, 2);
@@ -1456,13 +1467,13 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
         (cpi->refresh_golden_frame && !rc->is_src_frame_alt_ref)))) {
     rc->last_boosted_qindex = qindex;
   }
-  if (cm->frame_type == KEY_FRAME) rc->last_kf_qindex = qindex;
+  if (frame_is_intra_only(cm)) rc->last_kf_qindex = qindex;
 
   update_buffer_level(cpi, rc->projected_frame_size);
 
   // Rolling monitors of whether we are over or underspending used to help
   // regulate min and Max Q in two pass.
-  if (cm->frame_type != KEY_FRAME) {
+  if (!frame_is_intra_only(cm)) {
     rc->rolling_target_bits = ROUND_POWER_OF_TWO(
         rc->rolling_target_bits * 3 + rc->this_frame_target, 2);
     rc->rolling_actual_bits = ROUND_POWER_OF_TWO(
@@ -1481,7 +1492,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
 
   if (!cpi->use_svc) {
     if (is_altref_enabled(cpi) && cpi->refresh_alt_ref_frame &&
-        (cm->frame_type != KEY_FRAME))
+        (!frame_is_intra_only(cm)))
       // Update the alternate reference frame stats as appropriate.
       update_alt_ref_frame_stats(cpi);
     else
@@ -1489,7 +1500,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
       update_golden_frame_stats(cpi);
   }
 
-  if (cm->frame_type == KEY_FRAME) rc->frames_since_key = 0;
+  if (frame_is_intra_only(cm)) rc->frames_since_key = 0;
   if (cm->show_frame) {
     rc->frames_since_key++;
     rc->frames_to_key--;
@@ -1503,13 +1514,13 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   }
 
   if (oxcf->pass == 0) {
-    if (cm->frame_type != KEY_FRAME) {
+    if (!frame_is_intra_only(cm)) {
       compute_frame_low_motion(cpi);
       if (cpi->sf.use_altref_onepass) update_altref_usage(cpi);
     }
     cpi->rc.last_frame_is_src_altref = cpi->rc.is_src_frame_alt_ref;
   }
-  if (cm->frame_type != KEY_FRAME) rc->reset_high_source_sad = 0;
+  if (!frame_is_intra_only(cm)) rc->reset_high_source_sad = 0;
 
   rc->last_avg_frame_bandwidth = rc->avg_frame_bandwidth;
   if (cpi->use_svc &&
@@ -1710,6 +1721,38 @@ static int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
   return vp9_rc_clamp_iframe_target_size(cpi, target);
 }
 
+static void set_intra_only_frame(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  if (vp9_svc_check_setting_intra_only(cpi)) {
+    cm->show_frame = 0;
+    cm->intra_only = 1;
+    cm->frame_type = INTER_FRAME;
+    cpi->ext_refresh_frame_flags_pending = 1;
+    cpi->ext_refresh_last_frame = 1;
+    cpi->ext_refresh_golden_frame = 1;
+    cpi->ext_refresh_alt_ref_frame = 1;
+    if (cm->current_video_frame == 0) {
+      cpi->lst_fb_idx = 0;
+      cpi->gld_fb_idx = 1;
+      cpi->alt_fb_idx = 2;
+    } else {
+      int i;
+      int count = 0;
+      cpi->lst_fb_idx = -1;
+      cpi->gld_fb_idx = -1;
+      cpi->alt_fb_idx = -1;
+      for (i = 0; i < 8; ++i) {
+        if (cpi->svc.fb_idx_base[i] == 1) count++;
+        if (count == 1 && cpi->lst_fb_idx == -1) cpi->lst_fb_idx = i;
+        if (count == 2 && cpi->gld_fb_idx == -1) cpi->gld_fb_idx = i;
+        if (count == 3 && cpi->alt_fb_idx == -1) cpi->alt_fb_idx = i;
+      }
+      if (cpi->gld_fb_idx == -1) cpi->gld_fb_idx = cpi->lst_fb_idx;
+      if (cpi->alt_fb_idx == -1) cpi->alt_fb_idx = cpi->gld_fb_idx;
+    }
+  }
+}
+
 void vp9_rc_get_svc_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
@@ -1719,10 +1762,11 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
                        cpi->svc.number_temporal_layers);
   // Periodic key frames is based on the super-frame counter
   // (svc.current_superframe), also only base spatial layer is key frame.
-  if ((cm->current_video_frame == 0) || (cpi->frame_flags & FRAMEFLAGS_KEY) ||
+  if ((cm->current_video_frame == 0 && !cpi->previous_frame_is_intra_only) ||
+      (cpi->frame_flags & FRAMEFLAGS_KEY) ||
       (cpi->oxcf.auto_key &&
-       (cpi->svc.current_superframe % cpi->oxcf.key_freq == 0) &&
-       cpi->svc.spatial_layer_id == 0)) {
+       cpi->svc.current_superframe % cpi->oxcf.key_freq == 0 &&
+       !cpi->previous_frame_is_intra_only && cpi->svc.spatial_layer_id == 0)) {
     cm->frame_type = KEY_FRAME;
     rc->source_alt_ref_active = 0;
     if (is_one_pass_cbr_svc(cpi)) {
@@ -1749,7 +1793,10 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
       target = calc_pframe_target_size_one_pass_cbr(cpi);
     }
   }
-
+  if (cpi->set_intra_only_frame) {
+    set_intra_only_frame(cpi);
+    target = calc_iframe_target_size_one_pass_cbr(cpi);
+  }
   // Any update/change of global cyclic refresh parameters (amount/delta-qp)
   // should be done here, before the frame qp is selected.
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
@@ -1765,9 +1812,12 @@ void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
   int target;
   // TODO(yaowu): replace the "auto_key && 0" below with proper decision logic.
-  if ((cm->current_video_frame == 0 || (cpi->frame_flags & FRAMEFLAGS_KEY) ||
-       rc->frames_to_key == 0 || (cpi->oxcf.auto_key && 0))) {
+  if ((cm->current_video_frame == 0 && !cpi->previous_frame_is_intra_only) ||
+      (cpi->frame_flags & FRAMEFLAGS_KEY) || rc->frames_to_key == 0 ||
+      (cpi->oxcf.auto_key && 0)) {
     cm->frame_type = KEY_FRAME;
+    rc->this_key_frame_forced =
+        cm->current_video_frame != 0 && rc->frames_to_key == 0;
     rc->frames_to_key = cpi->oxcf.key_freq;
     rc->kf_boost = DEFAULT_KF_BOOST;
     rc->source_alt_ref_active = 0;
@@ -1787,13 +1837,14 @@ void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
     cpi->refresh_golden_frame = 1;
     rc->gfu_boost = DEFAULT_GF_BOOST;
   }
+  if (cpi->set_intra_only_frame) set_intra_only_frame(cpi);
 
   // Any update/change of global cyclic refresh parameters (amount/delta-qp)
   // should be done here, before the frame qp is selected.
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
     vp9_cyclic_refresh_update_parameters(cpi);
 
-  if (cm->frame_type == KEY_FRAME)
+  if (frame_is_intra_only(cm))
     target = calc_iframe_target_size_one_pass_cbr(cpi);
   else
     target = calc_pframe_target_size_one_pass_cbr(cpi);
@@ -2277,34 +2328,18 @@ static void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi,
 void vp9_scene_detection_onepass(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
-  YV12_BUFFER_CONFIG const *unscaled_src = cpi->un_scaled_source;
-  YV12_BUFFER_CONFIG const *unscaled_last_src = cpi->unscaled_last_source;
-  uint8_t *src_y;
-  int src_ystride;
-  int src_width;
-  int src_height;
-  uint8_t *last_src_y;
-  int last_src_ystride;
-  int last_src_width;
-  int last_src_height;
-  if (cpi->un_scaled_source == NULL || cpi->unscaled_last_source == NULL ||
-      (cpi->use_svc && cpi->svc.current_superframe == 0))
-    return;
-  src_y = unscaled_src->y_buffer;
-  src_ystride = unscaled_src->y_stride;
-  src_width = unscaled_src->y_width;
-  src_height = unscaled_src->y_height;
-  last_src_y = unscaled_last_src->y_buffer;
-  last_src_ystride = unscaled_last_src->y_stride;
-  last_src_width = unscaled_last_src->y_width;
-  last_src_height = unscaled_last_src->y_height;
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) return;
 #endif
   rc->high_source_sad = 0;
-  if (cpi->svc.spatial_layer_id == 0 && src_width == last_src_width &&
-      src_height == last_src_height) {
+  if (cpi->Last_Source != NULL &&
+      cpi->Last_Source->y_width == cpi->Source->y_width &&
+      cpi->Last_Source->y_height == cpi->Source->y_height) {
     YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = { NULL };
+    uint8_t *src_y = cpi->Source->y_buffer;
+    int src_ystride = cpi->Source->y_stride;
+    uint8_t *last_src_y = cpi->Last_Source->y_buffer;
+    int last_src_ystride = cpi->Last_Source->y_stride;
     int start_frame = 0;
     int frames_to_buffer = 1;
     int frame = 0;
