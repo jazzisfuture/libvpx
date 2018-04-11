@@ -623,6 +623,10 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   cpi->svc.force_zero_mode_spatial_ref = 1;
   cpi->svc.mi_stride[cpi->svc.spatial_layer_id] = cpi->common.mi_stride;
 
+  // Needed if very first frame is intra-only, otherwise has no effect.
+  if (cpi->svc.current_superframe == 0 && cpi->svc.spatial_layer_to_encode > 0)
+    cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame = 1;
+
   if (cpi->svc.temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_0212) {
     set_flags_and_fb_idx_for_temporal_mode3(cpi);
   } else if (cpi->svc.temporal_layering_mode ==
@@ -734,8 +738,10 @@ struct lookahead_entry *vp9_svc_lookahead_pop(VP9_COMP *const cpi,
   if (ctx->sz && (drain || ctx->sz == ctx->max_sz - MAX_PRE_FRAMES)) {
     buf = vp9_lookahead_peek(ctx, 0);
     if (buf != NULL) {
-      // Only remove the buffer when pop the highest layer.
-      if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
+      // Only remove the buffer when pop the highest layer and current frame
+      // is not intra_only frame.
+      if (!cpi->set_intra_only_frame &&
+          cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
         vp9_lookahead_pop(ctx, drain);
       }
     }

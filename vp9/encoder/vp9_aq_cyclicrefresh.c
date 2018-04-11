@@ -427,7 +427,8 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   double weight_segment = 0;
   int thresh_low_motion = (cm->width < 720) ? 55 : 20;
   cr->apply_cyclic_refresh = 1;
-  if (cm->frame_type == KEY_FRAME || cpi->svc.temporal_layer_id > 0 ||
+  if (frame_is_intra_only(cm) || cpi->svc.temporal_layer_id > 0 ||
+      cpi->previous_frame_is_intra_only ||
       (cpi->use_svc &&
        cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame) ||
       (!cpi->use_svc && rc->avg_frame_low_motion < thresh_low_motion &&
