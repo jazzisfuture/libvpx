@@ -1823,11 +1823,13 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
         pbi->need_resync = 0;
       }
     } else if (pbi->need_resync != 1) { /* Skip if need resync */
+      printf("DECODE DELTA \n");
       pbi->refresh_frame_flags = vpx_rb_read_literal(rb, REF_FRAMES);
       for (i = 0; i < REFS_PER_FRAME; ++i) {
         const int ref = vpx_rb_read_literal(rb, REF_FRAMES_LOG2);
         const int idx = cm->ref_frame_map[ref];
-        RefBuffer *const ref_frame = &cm->frame_refs[i];
+        printf("%d %d %d \n", i, ref, idx);
+        RefBuffer *const ref_frame = &cm->frame_refs[i];      
         ref_frame->idx = idx;
         ref_frame->buf = &frame_bufs[idx].buf;
         cm->ref_frame_sign_bias[LAST_FRAME + i] = vpx_rb_read_bit(rb);
