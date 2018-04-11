@@ -1807,7 +1807,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
         // of either the color format or color sub-sampling in profile 0. VP9
         // specifies that the default color format should be YUV 4:2:0 in this
         // case (normative).
-        cm->color_space = VPX_CS_BT_601;
+        cm->color_space = VPX_CS_UNKNOWN;
         cm->color_range = VPX_CR_STUDIO_RANGE;
         cm->subsampling_y = cm->subsampling_x = 1;
         cm->bit_depth = VPX_BITS_8;
