@@ -86,7 +86,8 @@ void CheckLayerRateTargeting(vpx_codec_enc_cfg_t *const cfg,
 
 class DatarateOnePassCbrSvc
     : public ::libvpx_test::EncoderTest,
-      public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
+      public ::libvpx_test::CodecTestWith4Params<libvpx_test::TestMode, int,
+                                                 int, int> {
  public:
   DatarateOnePassCbrSvc() : EncoderTest(GET_PARAM(0)) {
     memset(&svc_params_, 0, sizeof(svc_params_));
@@ -701,25 +702,20 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc2SL3TL4Threads) {
   top_sl_width_ = 1280;
   top_sl_height_ = 720;
   layer_framedrop_ = 0;
-  for (int k = 0; k < 2; k++) {
-    for (int i = 200; i <= 600; i += 200) {
-      cfg_.rc_target_bitrate = i;
-      ResetModel();
-      layer_framedrop_ = k;
-      AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
-                          cfg_.ts_number_layers, cfg_.temporal_layering_mode,
-                          layer_target_avg_bandwidth_, bits_in_buffer_model_);
-      ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-      CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
-                              number_temporal_layers_, file_datarate_, 0.75,
-                              1.2);
+  cfg_.rc_target_bitrate = GET_PARAM(4);
+  ResetModel();
+  layer_framedrop_ = GET_PARAM(3);
+  AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
+                      cfg_.ts_number_layers, cfg_.temporal_layering_mode,
+                      layer_target_avg_bandwidth_, bits_in_buffer_model_);
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
+                          number_temporal_layers_, file_datarate_, 0.75, 1.2);
 #if CONFIG_VP9_DECODER
-      // The non-reference frames are expected to be mismatched frames as the
-      // encoder will avoid loopfilter on these frames.
-      EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames.
+  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
 #endif
-    }
-  }
 }
 
 // Check basic rate targeting for 1 pass CBR SVC: 3 spatial layers and
@@ -1002,25 +998,20 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc3SL3TL4Threads) {
   top_sl_width_ = 1280;
   top_sl_height_ = 720;
   layer_framedrop_ = 0;
-  for (int k = 0; k < 2; k++) {
-    for (int i = 200; i <= 600; i += 200) {
-      cfg_.rc_target_bitrate = i;
-      ResetModel();
-      layer_framedrop_ = k;
-      AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
-                          cfg_.ts_number_layers, cfg_.temporal_layering_mode,
-                          layer_target_avg_bandwidth_, bits_in_buffer_model_);
-      ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-      CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
-                              number_temporal_layers_, file_datarate_, 0.73,
-                              1.2);
+  cfg_.rc_target_bitrate = GET_PARAM(4);
+  ResetModel();
+  layer_framedrop_ = GET_PARAM(3);
+  AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
+                      cfg_.ts_number_layers, cfg_.temporal_layering_mode,
+                      layer_target_avg_bandwidth_, bits_in_buffer_model_);
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
+                          number_temporal_layers_, file_datarate_, 0.73, 1.2);
 #if CONFIG_VP9_DECODER
-      // The non-reference frames are expected to be mismatched frames as the
-      // encoder will avoid loopfilter on these frames.
-      EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames.
+  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
 #endif
-    }
-  }
 }
 
 // Run SVC encoder for 1 temporal layer, 2 spatial layers, with spatial
@@ -1075,5 +1066,6 @@ TEST_P(DatarateOnePassCbrSvc, OnePassCbrSvc2SL1TL5x5MultipleRuns) {
 
 VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvc,
                           ::testing::Values(::libvpx_test::kRealTime),
-                          ::testing::Range(5, 9));
+                          ::testing::Range(5, 9), ::testing::Range(0, 2),
+                          ::testing::Range(200, 800, 200));
 }  // namespace
