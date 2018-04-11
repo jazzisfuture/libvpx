@@ -1547,6 +1547,15 @@ static vpx_codec_err_t ctrl_set_svc_gf_temporal_ref(vpx_codec_alg_priv_t *ctx,
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t ctrl_set_intra_only_frame(vpx_codec_alg_priv_t *ctx,
+                                                 va_list args) {
+  VP9_COMP *const cpi = ctx->cpi;
+  int data = va_arg(args, int);
+  if (data < 0) return VPX_CODEC_INVALID_PARAM;
+  cpi->set_intra_only_frame = data;
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_err_t ctrl_register_cx_callback(vpx_codec_alg_priv_t *ctx,
                                                  va_list args) {
   vpx_codec_priv_output_cx_pkt_cb_pair_t *cbp =
@@ -1633,6 +1642,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP9E_SET_SVC_INTER_LAYER_PRED, ctrl_set_svc_inter_layer_pred },
   { VP9E_SET_SVC_FRAME_DROP_LAYER, ctrl_set_svc_frame_drop_layer },
   { VP9E_SET_SVC_GF_TEMPORAL_REF, ctrl_set_svc_gf_temporal_ref },
+  { VP9E_SET_INTRA_ONLY_FRAME, ctrl_set_intra_only_frame },
 
   // Getters
   { VP8E_GET_LAST_QUANTIZER, ctrl_get_quantizer },

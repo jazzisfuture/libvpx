@@ -429,8 +429,8 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   int thresh_low_motion = (cm->width < 720) ? 55 : 20;
   cr->apply_cyclic_refresh = 1;
   // TODO(jianj): Look into issue of cyclic refresh with high bitdepth.
-  if (cm->bit_depth > 8 || cm->frame_type == KEY_FRAME ||
-      cpi->svc.temporal_layer_id > 0 ||
+  if (cm->bit_depth > 8 || frame_is_intra_only(cm) ||
+      cpi->svc.temporal_layer_id > 0 || cpi->previous_frame_is_intra_only ||
       (cpi->use_svc &&
        cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame) ||
       (!cpi->use_svc && rc->avg_frame_low_motion < thresh_low_motion &&
