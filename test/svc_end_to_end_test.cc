@@ -28,7 +28,8 @@ class SyncFrameOnePassCbrSvc : public ::svc_test::OnePassCbrSvc,
       : OnePassCbrSvc(GET_PARAM(0)), current_video_frame_(0),
         frame_to_start_decode_(0), frame_to_sync_(0), mismatch_nframes_(0),
         num_nonref_frames_(0), inter_layer_pred_mode_(GET_PARAM(1)),
-        decode_to_layer_before_sync_(-1), decode_to_layer_after_sync_(-1) {
+        decode_to_layer_before_sync_(-1), decode_to_layer_after_sync_(-1),
+        intra_only_test_(false) {
     SetMode(::libvpx_test::kRealTime);
     memset(&svc_layer_sync_, 0, sizeof(svc_layer_sync_));
   }
@@ -41,28 +42,23 @@ class SyncFrameOnePassCbrSvc : public ::svc_test::OnePassCbrSvc,
     speed_setting_ = 7;
   }
 
-  void Set2SpatialLayerConfig() {
+  void SetSvcConfig(int num_spatial_layer, int num_temporal_layer) {
     SetConfig();
-    cfg_.ss_number_layers = 2;
-    cfg_.ts_number_layers = 3;
-    svc_params_.scaling_factor_num[0] = 144;
-    svc_params_.scaling_factor_den[0] = 288;
-    svc_params_.scaling_factor_num[1] = 288;
-    svc_params_.scaling_factor_den[1] = 288;
-    number_spatial_layers_ = cfg_.ss_number_layers;
-    number_temporal_layers_ = cfg_.ts_number_layers;
-  }
-
-  void Set3SpatialLayerConfig() {
-    SetConfig();
-    cfg_.ss_number_layers = 3;
-    cfg_.ts_number_layers = 3;
-    svc_params_.scaling_factor_num[0] = 72;
-    svc_params_.scaling_factor_den[0] = 288;
-    svc_params_.scaling_factor_num[1] = 144;
-    svc_params_.scaling_factor_den[1] = 288;
-    svc_params_.scaling_factor_num[2] = 288;
-    svc_params_.scaling_factor_den[2] = 288;
+    cfg_.ss_number_layers = num_spatial_layer;
+    cfg_.ts_number_layers = num_temporal_layer;
+    if (num_spatial_layer == 2) {
+      svc_params_.scaling_factor_num[0] = 144;
+      svc_params_.scaling_factor_den[0] = 288;
+      svc_params_.scaling_factor_num[1] = 288;
+      svc_params_.scaling_factor_den[1] = 288;
+    } else if (num_spatial_layer == 3) {
+      svc_params_.scaling_factor_num[0] = 72;
+      svc_params_.scaling_factor_den[0] = 288;
+      svc_params_.scaling_factor_num[1] = 144;
+      svc_params_.scaling_factor_den[1] = 288;
+      svc_params_.scaling_factor_num[2] = 288;
+      svc_params_.scaling_factor_den[2] = 288;
+    }
     number_spatial_layers_ = cfg_.ss_number_layers;
     number_temporal_layers_ = cfg_.ts_number_layers;
   }
@@ -75,8 +71,15 @@ class SyncFrameOnePassCbrSvc : public ::svc_test::OnePassCbrSvc,
                                   ::libvpx_test::Encoder *encoder) {
     current_video_frame_ = video->frame();
     PreEncodeFrameHookSetup(video, encoder);
-    if (video->frame() == 0)
+    if (video->frame() == 0) {
       encoder->Control(VP9E_SET_SVC_INTER_LAYER_PRED, inter_layer_pred_mode_);
+      if (intra_only_test_)
+        // Decoder sets the color_space for Intra-only frames
+        // to BT_601 (see line 1810 in vp9_decodeframe.c).
+        // So set it here in these tess to avoid encoder-decoder
+        // mismatch check on color space setting.
+        encoder->Control(VP9E_SET_COLOR_SPACE, VPX_CS_BT_601);
+    }
     if (video->frame() == frame_to_sync_) {
       encoder->Control(VP9E_SET_SVC_SPATIAL_LAYER_SYNC, &svc_layer_sync_);
     }
@@ -123,6 +126,7 @@ class SyncFrameOnePassCbrSvc : public ::svc_test::OnePassCbrSvc,
   int inter_layer_pred_mode_;
   int decode_to_layer_before_sync_;
   int decode_to_layer_after_sync_;
+  bool intra_only_test_;
   vpx_svc_spatial_layer_sync_t svc_layer_sync_;
 
  private:
@@ -148,8 +152,8 @@ class SyncFrameOnePassCbrSvc : public ::svc_test::OnePassCbrSvc,
 // Test for sync layer for 1 pass CBR SVC: 3 spatial layers and
 // 3 temporal layers. Only start decoding on the sync layer.
 // Full sync: insert key frame on base layer.
-TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameFull) {
-  Set3SpatialLayerConfig();
+TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLFullSync) {
+  SetSvcConfig(3, 3);
   // Sync is on base layer so the frame to sync and the frame to start decoding
   // is the same.
   frame_to_start_decode_ = 20;
@@ -176,8 +180,8 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameFull) {
 // Test for sync layer for 1 pass CBR SVC: 2 spatial layers and
 // 3 temporal layers. Decoding QVGA before sync frame and decode up to
 // VGA on and after sync.
-TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc2SL3TLSyncFrameVGA) {
-  Set2SpatialLayerConfig();
+TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc2SL3TLSyncToVGA) {
+  SetSvcConfig(2, 3);
   frame_to_start_decode_ = 0;
   frame_to_sync_ = 100;
   decode_to_layer_before_sync_ = 0;
@@ -203,8 +207,8 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc2SL3TLSyncFrameVGA) {
 // Test for sync layer for 1 pass CBR SVC: 3 spatial layers and
 // 3 temporal layers. Decoding QVGA and VGA before sync frame and decode up to
 // HD on and after sync.
-TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameHD) {
-  Set3SpatialLayerConfig();
+TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncToHD) {
+  SetSvcConfig(3, 3);
   frame_to_start_decode_ = 0;
   frame_to_sync_ = 20;
   decode_to_layer_before_sync_ = 1;
@@ -230,8 +234,8 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameHD) {
 // Test for sync layer for 1 pass CBR SVC: 3 spatial layers and
 // 3 temporal layers. Decoding QVGA before sync frame and decode up to
 // HD on and after sync.
-TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameVGAHD) {
-  Set3SpatialLayerConfig();
+TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncToVGAHD) {
+  SetSvcConfig(3, 3);
   frame_to_start_decode_ = 0;
   frame_to_sync_ = 20;
   decode_to_layer_before_sync_ = 0;
@@ -242,6 +246,64 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameVGAHD) {
   svc_layer_sync_.spatial_layer_sync[0] = 0;
   svc_layer_sync_.spatial_layer_sync[1] = 1;
   svc_layer_sync_.spatial_layer_sync[2] = 1;
+
+  ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
+  cfg_.rc_target_bitrate = 600;
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+#if CONFIG_VP9_DECODER
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames.
+  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
+#endif
+}
+
+// Start decoding from beginning of sequence, during sequence insert intra-only
+// on base/qvga layer. Decode all layers.
+TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameIntraOnlyQVGA) {
+  SetSvcConfig(3, 3);
+  frame_to_start_decode_ = 0;
+  frame_to_sync_ = 20;
+  decode_to_layer_before_sync_ = 2;
+  // The superframe containing intra-only layer will have 4 frames. Thus set the
+  // layer to decode after sync frame to 3.
+  decode_to_layer_after_sync_ = 3;
+  intra_only_test_ = true;
+
+  // Set up svc layer sync structure.
+  svc_layer_sync_.base_layer_intra_only = 1;
+  svc_layer_sync_.spatial_layer_sync[0] = 1;
+  svc_layer_sync_.spatial_layer_sync[1] = 0;
+  svc_layer_sync_.spatial_layer_sync[2] = 0;
+
+  ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
+  cfg_.rc_target_bitrate = 600;
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+#if CONFIG_VP9_DECODER
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames.
+  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
+#endif
+}
+
+// Start decoding from beginning of sequence, during sequence insert intra-only
+// on base/qvga layer and sync_layer on middle/VGA layer. Decode all layers.
+TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameIntraOnlyVGA) {
+  SetSvcConfig(3, 3);
+  frame_to_start_decode_ = 0;
+  frame_to_sync_ = 20;
+  decode_to_layer_before_sync_ = 2;
+  // The superframe containing intra-only layer will have 4 frames. Thus set the
+  // layer to decode after sync frame to 3.
+  decode_to_layer_after_sync_ = 3;
+  intra_only_test_ = true;
+
+  // Set up svc layer sync structure.
+  svc_layer_sync_.base_layer_intra_only = 1;
+  svc_layer_sync_.spatial_layer_sync[0] = 1;
+  svc_layer_sync_.spatial_layer_sync[1] = 1;
+  svc_layer_sync_.spatial_layer_sync[2] = 0;
 
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
   cfg_.rc_target_bitrate = 600;
