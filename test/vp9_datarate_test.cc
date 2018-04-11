@@ -52,6 +52,7 @@ class DatarateTestVP9Large
     denoiser_offon_period_ = -1;
     frame_parallel_decoding_mode_ = 1;
     use_roi_ = false;
+    force_intra_only_frame_ = 0;
   }
 
   //
@@ -118,8 +119,11 @@ class DatarateTestVP9Large
 
   virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
                                   ::libvpx_test::Encoder *encoder) {
-    if (video->frame() == 0) encoder->Control(VP8E_SET_CPUUSED, set_cpu_used_);
-
+    if (video->frame() == 0) {
+      encoder->Control(VP8E_SET_CPUUSED, set_cpu_used_);
+      if (force_intra_only_frame_)
+        encoder->Control(VP9E_SET_INTRA_ONLY_FRAME, 1);
+    }
     if (denoiser_offon_test_) {
       ASSERT_GT(denoiser_offon_period_, 0)
           << "denoiser_offon_period_ is not positive.";
@@ -220,6 +224,7 @@ class DatarateTestVP9Large
   int frame_parallel_decoding_mode_;
   bool use_roi_;
   vpx_roi_map_t roi_;
+  int force_intra_only_frame_;
 };
 
 // Check basic rate targeting for VBR mode with 0 lag.
@@ -778,6 +783,36 @@ TEST_P(DatarateTestVP9LargeDenoiser, DenoiserOffOn) {
       << " The datarate for the file is greater than target by too much!";
 }
 #endif  // CONFIG_VP9_TEMPORAL_DENOISING
+
+// Test for stream that starts with Intra-only frame.
+TEST_P(DatarateTestVP9Large, StartIntraOnlyFrame) {
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_dropframe_thresh = 1;
+  cfg_.rc_min_quantizer = 2;
+  cfg_.rc_max_quantizer = 56;
+  cfg_.rc_end_usage = VPX_CBR;
+  cfg_.g_lag_in_frames = 0;
+
+  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       30, 1, 0, 299);
+
+  // For the temporal denoiser (#if CONFIG_VP9_TEMPORAL_DENOISING),
+  // there is only one denoiser mode: denoiserYonly(which is 1),
+  // but may add more modes in the future.
+  cfg_.rc_target_bitrate = 300;
+  ResetModel();
+  // The denoiser is off by default.
+  denoiser_on_ = 0;
+  // Force intra-only frame.
+  force_intra_only_frame_ = 1;
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  ASSERT_GE(effective_datarate_[0], cfg_.rc_target_bitrate * 0.85)
+      << " The datarate for the file is lower than target by too much!";
+  ASSERT_LE(effective_datarate_[0], cfg_.rc_target_bitrate * 1.15)
+      << " The datarate for the file is greater than target by too much!";
+}
 
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9Large,
                           ::testing::Values(::libvpx_test::kOnePassGood,
