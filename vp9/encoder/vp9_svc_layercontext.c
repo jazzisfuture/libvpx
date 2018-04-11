@@ -44,6 +44,8 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   for (i = 0; i < REF_FRAMES; ++i) {
     svc->fb_idx_spatial_layer_id[i] = -1;
     svc->fb_idx_temporal_layer_id[i] = -1;
+    svc->fb_idx_base[i] = 0;
+    svc->fb_idx_nonbase[i] = 0;
   }
   for (sl = 0; sl < oxcf->ss_number_layers; ++sl) {
     svc->last_layer_dropped[sl] = 0;
@@ -677,6 +679,10 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   cpi->svc.force_zero_mode_spatial_ref = 1;
   cpi->svc.mi_stride[cpi->svc.spatial_layer_id] = cpi->common.mi_stride;
 
+  // Needed if very first frame is intra-only, otherwise has no effect.
+  if (cpi->svc.current_superframe == 0 && cpi->svc.spatial_layer_to_encode > 0)
+    cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame = 1;
+
   if (cpi->svc.temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_0212) {
     set_flags_and_fb_idx_for_temporal_mode3(cpi);
   } else if (cpi->svc.temporal_layering_mode ==
@@ -704,6 +710,14 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
       cpi->gld_fb_idx = cpi->svc.gld_fb_idx[sl];
       cpi->alt_fb_idx = cpi->svc.alt_fb_idx[sl];
     }
+  }
+
+  // Base spatial layer should only use fb_idx for reference frames
+  // which are updated.
+  if (cpi->svc.spatial_layer_id == 0) {
+    if (!cpi->ext_refresh_last_frame) cpi->lst_fb_idx = 0;
+    if (!cpi->ext_refresh_golden_frame) cpi->gld_fb_idx = 0;
+    if (!cpi->ext_refresh_alt_ref_frame) cpi->alt_fb_idx = 0;
   }
 
   // Reset the drop flags for all spatial layers, on the base layer.
@@ -811,8 +825,10 @@ struct lookahead_entry *vp9_svc_lookahead_pop(VP9_COMP *const cpi,
   if (ctx->sz && (drain || ctx->sz == ctx->max_sz - MAX_PRE_FRAMES)) {
     buf = vp9_lookahead_peek(ctx, 0);
     if (buf != NULL) {
-      // Only remove the buffer when pop the highest layer.
-      if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
+      // Only remove the buffer when pop the highest layer and current frame
+      // is not intra_only frame.
+      if (!cpi->set_intra_only_frame &&
+          cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
         vp9_lookahead_pop(ctx, drain);
       }
     }
@@ -986,4 +1002,34 @@ void vp9_svc_assert_constraints_pattern(VP9_COMP *const cpi) {
       }
     }
   }
+}
+
+void vp9_svc_update_ref_frame_buffer_idx(VP9_COMP *const cpi) {
+  // Keep track of frame index for each reference frame.
+  SVC *const svc = &cpi->svc;
+  // Update the frame buffer index for base and non base layers.
+  if (svc->spatial_layer_id == 0) {
+    svc->fb_idx_base[cpi->lst_fb_idx] = 1;
+    svc->fb_idx_base[cpi->gld_fb_idx] = 1;
+    svc->fb_idx_base[cpi->alt_fb_idx] = 1;
+  } else if (svc->spatial_layer_id > 0) {
+    if (cpi->refresh_last_frame) svc->fb_idx_nonbase[cpi->lst_fb_idx] = 1;
+    if (cpi->refresh_golden_frame) svc->fb_idx_nonbase[cpi->gld_fb_idx] = 1;
+    if (cpi->refresh_alt_ref_frame) svc->fb_idx_nonbase[cpi->alt_fb_idx] = 1;
+  }
+}
+
+int vp9_svc_check_setting_intra_only(VP9_COMP *const cpi) {
+  SVC *svc = &cpi->svc;
+  int i;
+  int count = 0;
+  if (cpi->common.current_video_frame == 0 &&
+      cpi->svc.number_spatial_layers > 1 && cpi->svc.number_temporal_layers > 1)
+    return 0;
+  for (i = 0; i < REF_FRAMES; ++i) {
+    if (svc->fb_idx_base[i]) count++;
+    if (svc->fb_idx_base[i] && svc->fb_idx_nonbase[i]) return 0;
+  }
+  if (count > 3) return 0;
+  return 1;
 }
