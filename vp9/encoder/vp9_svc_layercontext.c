@@ -734,8 +734,10 @@ struct lookahead_entry *vp9_svc_lookahead_pop(VP9_COMP *const cpi,
   if (ctx->sz && (drain || ctx->sz == ctx->max_sz - MAX_PRE_FRAMES)) {
     buf = vp9_lookahead_peek(ctx, 0);
     if (buf != NULL) {
-      // Only remove the buffer when pop the highest layer.
-      if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
+      // Only remove the buffer when pop the highest layer and current frame
+      // is not intra_only frame.
+      if (!cpi->set_intra_only_frame &&
+          cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
         vp9_lookahead_pop(ctx, drain);
       }
     }
