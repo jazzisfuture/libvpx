@@ -17,7 +17,7 @@
  */
 #include "./vp8.h"
 #include "./vpx_encoder.h"
-
+7
 /*!\file
  * \brief Provides definitions for using VP8 or VP9 encoder algorithm within the
  *        vpx Codec Interface.
@@ -637,6 +637,13 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_SET_SVC_GF_TEMPORAL_REF,
+
+  /*!\brief Codec control function to set an intra only frame for the current
+   * base spatial layer frame.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_INTRA_ONLY_FRAME,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -959,6 +966,9 @@ VPX_CTRL_USE_TYPE(VP9E_GET_SVC_REF_FRAME_CONFIG, vpx_svc_ref_frame_config_t *)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_SVC_GF_TEMPORAL_REF, unsigned int)
 #define VPX_CTRL_VP9E_SET_SVC_GF_TEMPORAL_REF
+
+VPX_CTRL_USE_TYPE(VP9E_SET_INTRA_ONLY_FRAME, unsigned int)
+#define VPX_CTRL_VP9E_SET_INTRA_ONLY_FRAME
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */
