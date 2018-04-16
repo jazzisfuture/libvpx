@@ -3639,10 +3639,9 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
 #endif
   }
 
-  if ((cpi->use_svc &&
+  if ((cpi->use_svc && cpi->oxcf.content != VP9E_CONTENT_SCREEN &&
        (cpi->svc.spatial_layer_id < cpi->svc.number_spatial_layers - 1 ||
-        cpi->svc.temporal_layer_id < cpi->svc.number_temporal_layers - 1 ||
-        cpi->svc.current_superframe < 1)) ||
+        cpi->svc.temporal_layer_id < cpi->svc.number_temporal_layers - 1)) ||
       cpi->resize_pending || cpi->resize_state || cpi->external_resize ||
       cpi->resize_state != ORIG) {
     cpi->compute_source_sad_onepass = 0;
@@ -3662,10 +3661,11 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
         cpi->oxcf.mode == REALTIME && cpi->oxcf.speed >= 5) ||
        cpi->sf.partition_search_type == SOURCE_VAR_BASED_PARTITION ||
        (cpi->noise_estimate.enabled && !cpi->oxcf.noise_sensitivity) ||
-       cpi->compute_source_sad_onepass))
+       cpi->compute_source_sad_onepass)) {
     cpi->Last_Source = vp9_scale_if_required(
         cm, cpi->unscaled_last_source, &cpi->scaled_last_source,
         (cpi->oxcf.pass == 0), EIGHTTAP, 0);
+  }
 
   if (cpi->Last_Source == NULL ||
       cpi->Last_Source->y_width != cpi->Source->y_width ||
@@ -3688,6 +3688,9 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
        cpi->oxcf.content == VP9E_CONTENT_SCREEN ||
        (cpi->oxcf.speed >= 5 && cpi->oxcf.speed < 8 && !cpi->use_svc)))
     vp9_scene_detection_onepass(cpi);
+
+  if (cpi->svc.spatial_layer_id == 0)
+    cpi->svc.high_source_sad_superframe = cpi->rc.high_source_sad;
 
   // For 1 pass CBR SVC, only ZEROMV is allowed for spatial reference frame
   // when svc->force_zero_mode_spatial_ref = 1. Under those conditions we can
@@ -3774,10 +3777,10 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
 
   // Check if we should drop this frame because of high overshoot.
   // Only for frames where high temporal-source SAD is detected.
-  if (cpi->oxcf.pass == 0 && cpi->oxcf.rc_mode == VPX_CBR &&
-      cpi->resize_state == ORIG && cm->frame_type != KEY_FRAME &&
-      cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
-      cpi->rc.high_source_sad == 1) {
+  // For SVC: all spatial layers are checked for re-encoding.
+  if (cpi->sf.re_encode_overshoot_rt &&
+      (cpi->rc.high_source_sad == 1 ||
+       (cpi->use_svc && cpi->svc.high_source_sad_superframe))) {
     int frame_size = 0;
     // Get an estimate of the encoded frame size.
     save_coding_context(cpi);

@@ -301,7 +301,6 @@ int vp9_resize_one_pass_cbr(struct VP9_COMP *cpi);
 void vp9_scene_detection_onepass(struct VP9_COMP *cpi);
 
 int vp9_encodedframe_overshoot(struct VP9_COMP *cpi, int frame_size, int *q);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif
