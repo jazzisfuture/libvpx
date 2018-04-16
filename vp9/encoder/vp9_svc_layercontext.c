@@ -720,6 +720,9 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
       !cpi->ext_refresh_golden_frame && !cpi->ext_refresh_alt_ref_frame) {
     cpi->svc.non_reference_frame = 1;
   }
+ 
+  if (cpi->svc.spatial_layer_id == 0)
+    cpi->svc.high_source_sad_superframe = 0;
 
   if (vp9_set_size_literal(cpi, width, height) != 0)
     return VPX_CODEC_INVALID_PARAM;

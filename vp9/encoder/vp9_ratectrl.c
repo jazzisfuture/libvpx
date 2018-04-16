@@ -1417,6 +1417,9 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
+  printf("%d %d %d %d postencode %d %d ** %d %d %d %d \n", cpi->svc.spatial_layer_id, cpi->svc.temporal_layer_id, cm->width, cm->height,
+    cm->current_video_frame, cpi->svc.current_superframe, cm->base_qindex, rc->projected_frame_size, rc->avg_frame_bandwidth, (int)cpi->oxcf.target_bandwidth);
+
   // Post encode loop adjustment of Q prediction.
   vp9_rc_update_rate_correction_factors(cpi);
 
@@ -2305,14 +2308,28 @@ void vp9_scene_detection_onepass(VP9_COMP *cpi) {
   if (cm->use_highbitdepth) return;
 #endif
   rc->high_source_sad = 0;
-  if (cpi->Last_Source != NULL &&
-      cpi->Last_Source->y_width == cpi->Source->y_width &&
-      cpi->Last_Source->y_height == cpi->Source->y_height) {
-    YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = { NULL };
-    uint8_t *src_y = cpi->Source->y_buffer;
-    int src_ystride = cpi->Source->y_stride;
-    uint8_t *last_src_y = cpi->Last_Source->y_buffer;
-    int last_src_ystride = cpi->Last_Source->y_stride;
+  uint8_t *src_y = cpi->Source->y_buffer;
+  int src_ystride = cpi->Source->y_stride;
+  int src_width = cpi->Source->y_width;
+  int src_height = cpi->Source->y_height;
+  uint8_t *last_src_y = cpi->Last_Source->y_buffer;
+  int last_src_ystride = cpi->Last_Source->y_stride;
+  int last_src_width = cpi->Last_Source->y_width;
+  int last_src_height = cpi->Last_Source->y_height;
+  // For SVC: use unscaled source/last_source and only do this scene detection
+  // once per superframe. We do it on the base layer then, but using the full
+  // resolution (unscaled) source and last_source.
+  if (cpi->use_svc) {
+     *src_y = cpi->un_scaled_source->y_buffer;
+     src_ystride = cpi->un_scaled_source->y_stride;
+     src_width = cpi->un_scaled_source->y_width;
+     *last_src_y = cpi->unscaled_last_source->y_buffer;
+     last_src_ystride = cpi->unscaled_last_source->y_stride;
+     last_src_width = cpi->unscaled_last_source->y_width;
+  }
+  if (cpi->svc.spatial_layer_id == 0 && src_y != NULL && last_src_y != NULL &&
+      src_width  == last_src_width && src_height == last_src_height) {   
+    YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = { NULL };   
     int start_frame = 0;
     int frames_to_buffer = 1;
     int frame = 0;
@@ -2411,6 +2428,8 @@ void vp9_scene_detection_onepass(VP9_COMP *cpi) {
             rc->high_source_sad = 1;
           else
             rc->high_source_sad = 0;
+          printf("scene det: %d %d %d ** %d %d %d \n", cm->current_video_frame, cpi->svc.current_superframe, cpi->svc.spatial_layer_id,
+            (int)avg_sad, (int)rc->avg_source_sad[0], rc->high_source_sad);
           if (rc->high_source_sad && avg_sad > thresh_key)
             scene_cut_force_key_frame = 1;
           if (avg_sad > 0 || cpi->oxcf.rc_mode == VPX_CBR)
@@ -2419,12 +2438,12 @@ void vp9_scene_detection_onepass(VP9_COMP *cpi) {
           rc->avg_source_sad[lagframe_idx] = avg_sad;
         }
       }
-    }
-    // For CBR non-screen content mode, check if we should reset the rate
+    }  
+     // For CBR non-screen content mode, check if we should reset the rate
     // control. Reset is done if high_source_sad is detected and the rate
     // control is at very low QP with rate correction factor at min level.
     if (cpi->oxcf.rc_mode == VPX_CBR &&
-        cpi->oxcf.content != VP9E_CONTENT_SCREEN && !cpi->use_svc) {
+        cpi->oxcf.content != VP9E_CONTENT_SCREEN && !cpi->use_svc) {    
       if (rc->high_source_sad && rc->last_q[INTER_FRAME] == rc->best_quality &&
           rc->avg_frame_qindex[INTER_FRAME] < (rc->best_quality << 1) &&
           rc->rate_correction_factors[INTER_NORMAL] == MIN_BPB_FACTOR) {
@@ -2522,7 +2541,7 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
         lrc->buffer_level = rc->optimal_buffer_level;
         lrc->bits_off_target = rc->optimal_buffer_level;
         lrc->rc_1_frame = 0;
-        lrc->rc_2_frame = 0;
+          lrc->rc_2_frame = 0;
         lrc->rate_correction_factors[INTER_NORMAL] = rate_correction_factor;
       }
     }
