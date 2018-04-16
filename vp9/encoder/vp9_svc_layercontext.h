@@ -118,6 +118,8 @@ typedef struct SVC {
   SVC_LAYER_DROP_MODE framedrop_mode;
 
   INTER_LAYER_PRED disable_inter_layer_pred;
+
+  int high_source_sad_superframe;
 } SVC;
 
 struct VP9_COMP;
