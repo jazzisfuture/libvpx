@@ -2286,18 +2286,44 @@ static void adjust_gf_boost_lag_one_pass_vbr(VP9_COMP *cpi,
 void vp9_scene_detection_onepass(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
+  uint8_t *src_y;
+  int src_ystride;
+  int src_width;
+  int src_height;
+  uint8_t *last_src_y;
+  int last_src_ystride;
+  int last_src_width;
+  int last_src_height;
+  if (cpi->Source == NULL || cpi->Last_Source == NULL)
+    return;
+  src_y = cpi->Source->y_buffer;
+  src_ystride = cpi->Source->y_stride;
+  src_width = cpi->Source->y_width;
+  src_height = cpi->Source->y_height;
+  last_src_y = cpi->Last_Source->y_buffer;
+  last_src_ystride = cpi->Last_Source->y_stride;
+  last_src_width = cpi->Last_Source->y_width;
+  last_src_height = cpi->Last_Source->y_height;
+  // For SVC: use unscaled source/last_source and only do this scene detection
+  // once per superframe. We do it on the base layer then, but using the full
+  // resolution (unscaled) source and last_source.
+  if (cpi->use_svc) {
+    if (cpi->un_scaled_source == NULL || cpi->unscaled_last_source == NULL)
+      return;
+    src_y = cpi->un_scaled_source->y_buffer;
+    src_ystride = cpi->un_scaled_source->y_stride;
+    src_width = cpi->un_scaled_source->y_width;
+    last_src_y = cpi->unscaled_last_source->y_buffer;
+    last_src_ystride = cpi->unscaled_last_source->y_stride;
+    last_src_width = cpi->unscaled_last_source->y_width;
+  }
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) return;
 #endif
   rc->high_source_sad = 0;
-  if (cpi->Last_Source != NULL &&
-      cpi->Last_Source->y_width == cpi->Source->y_width &&
-      cpi->Last_Source->y_height == cpi->Source->y_height) {
+  if (cpi->svc.spatial_layer_id == 0 && src_y != NULL && last_src_y != NULL &&
+      src_width  == last_src_width && src_height == last_src_height) {
     YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = { NULL };
-    uint8_t *src_y = cpi->Source->y_buffer;
-    int src_ystride = cpi->Source->y_stride;
-    uint8_t *last_src_y = cpi->Last_Source->y_buffer;
-    int last_src_ystride = cpi->Last_Source->y_stride;
     int start_frame = 0;
     int frames_to_buffer = 1;
     int frame = 0;
