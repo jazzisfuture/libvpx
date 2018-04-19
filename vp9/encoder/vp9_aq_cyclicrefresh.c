@@ -449,8 +449,11 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   // Account for larger interval on base layer for temporal layers.
   if (cr->percent_refresh > 0 &&
       rc->frames_since_key <
-          (4 * cpi->svc.number_temporal_layers) * (100 / cr->percent_refresh)) {
-    cr->rate_ratio_qdelta = 3.0;
+          (4 * cpi->svc.number_temporal_layers) * (100 / cr->percent_refresh)) {    
+  } else if (cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
+    if (cr->percent_refresh > 0 &&
+        cr->frames_since_slide_change_maxq < 400 / cr->percent_refresh)
+      cr->rate_ratio_qdelta = 2.5;
   } else {
     cr->rate_ratio_qdelta = 2.0;
     if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium) {
@@ -588,4 +591,20 @@ void vp9_cyclic_refresh_reset_resize(VP9_COMP *const cpi) {
   cr->sb_index = 0;
   cpi->refresh_golden_frame = 1;
   cpi->refresh_alt_ref_frame = 1;
+}
+
+double vp9_cyclic_refresh_damp_factor(VP9_COMP *const cpi,
+                                      double adjustment_limit) {
+  CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+  // For screen content under CBR mode: after slide change we use
+  // larger quality ramp-up, so increase the damping factor for rate correction
+  // update (frame-level QP) to compensate and reduce possible big overshoots.
+  // Do this for low motion content within some distance from the re-encode
+  // at max QP (slide change), or from key frame.
+  if (cpi->rc.avg_frame_low_motion > 80 && cr->percent_refresh > 0 &&
+      cr->frames_since_slide_change_maxq < 400 / cr->percent_refresh) {
+    return adjustment_limit / 2;
+  } else {
+    return adjustment_limit;
+  }
 }
