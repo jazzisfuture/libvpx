@@ -536,6 +536,12 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi) {
   adjustment_limit =
       0.25 + 0.5 * VPXMIN(1, fabs(log10(0.01 * correction_factor)));
 
+  // Increase the damping for screen-content CBR mode with stationary content.
+  if (cpi->oxcf.rc_mode == VPX_CBR &&
+      cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
+      cpi->rc.avg_frame_low_motion > 90)
+    adjustment_limit = adjustment_limit / 2;
+
   cpi->rc.q_2_frame = cpi->rc.q_1_frame;
   cpi->rc.q_1_frame = cm->base_qindex;
   cpi->rc.rc_2_frame = cpi->rc.rc_1_frame;
