@@ -68,6 +68,8 @@ struct CYCLIC_REFRESH {
   int reduce_refresh;
   double weight_segment;
   int apply_cyclic_refresh;
+  // Frame counter from last slide change encoded at max QP.
+  int frames_since_slide_change_maxq;
 };
 
 struct VP9_COMP;
@@ -138,6 +140,9 @@ static INLINE int cyclic_refresh_segment_id(int segment_id) {
   else
     return CR_SEGMENT_ID_BASE;
 }
+
+void vp9_cyclic_refresh_damp_factor(struct VP9_COMP *const cpi,
+                                    double *adjustment_limit);
 
 #ifdef __cplusplus
 }  // extern "C"

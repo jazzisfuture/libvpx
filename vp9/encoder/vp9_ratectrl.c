@@ -588,6 +588,12 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi) {
   adjustment_limit =
       0.25 + 0.5 * VPXMIN(1, fabs(log10(0.01 * correction_factor)));
 
+  // Adjust damping under certain conditions for screen content with aq_mode 3.
+  if (cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
+      cpi->oxcf.rc_mode == VPX_CBR && cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+      cpi->common.seg.enabled)
+    vp9_cyclic_refresh_damp_factor(cpi, &adjustment_limit);
+
   cpi->rc.q_2_frame = cpi->rc.q_1_frame;
   cpi->rc.q_1_frame = cm->base_qindex;
   cpi->rc.rc_2_frame = cpi->rc.rc_1_frame;
@@ -2542,6 +2548,10 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
     int target_bits_per_mb;
     double q2;
     int enumerator;
+    // Reset slide change counter for cyclic refresh, for now only if base
+    // layer is encoded at max q.
+    if (cpi->svc.spatial_layer_id == 0)
+      cpi->cyclic_refresh->frames_since_slide_change_maxq = 0;
     // Force a re-encode, and for now use max-QP.
     *q = cpi->rc.worst_quality;
     // Adjust avg_frame_qindex, buffer_level, and rate correction factors, as
