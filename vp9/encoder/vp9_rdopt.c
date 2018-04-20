@@ -851,6 +851,7 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
   TX_SIZE best_tx = max_tx_size;
   int start_tx, end_tx;
   const int tx_size_ctx = get_tx_size_context(xd);
+
   assert(skip_prob > 0);
   s0 = vp9_cost_bit(skip_prob, 0);
   s1 = vp9_cost_bit(skip_prob, 1);
@@ -2771,11 +2772,56 @@ static int64_t handle_inter_mode(
     int skippable_y, skippable_uv;
     int64_t sseuv = INT64_MAX;
     int64_t rdcosty = INT64_MAX;
+    MB_INTER_RD_RECORD *mb_inter_rd_record = NULL;
+    int tx_rd_results_ready = 0;
+    int64_t hash = 0;
+
+#if 1
+    if (1 && ref_best_rd != INT64_MAX && !has_second_ref(mi)) {
+      int i;
+      hash = mi->mv[0].as_int;
+      hash = (hash << 16) | (mi->ref_frame[0] << 8) | (mi->interp_filter);
+      mb_inter_rd_record = &x->mb_inter_rd_record;
+      for (i = 0; i < mb_inter_rd_record->num; ++i) {
+        if (mb_inter_rd_record->tx_rd_info[i].hash_value == hash) {
+          //printf("match mi %d %d, bs %d\n", mi_row, mi_col, bsize);
+#if 1
+          mi->tx_size = mb_inter_rd_record->tx_rd_info[i].tx_size;
+          distortion_y = mb_inter_rd_record->tx_rd_info[i].dist;
+          *rate_y = mb_inter_rd_record->tx_rd_info[i].rate;
+          skippable_y = mb_inter_rd_record->tx_rd_info[i].skip;
+          *psse = mb_inter_rd_record->tx_rd_info[i].sse;
+          tx_rd_results_ready = 1;
+#endif
+        }
+      }
+    }
+#endif
 
     // Y cost and distortion
-    vp9_subtract_plane(x, bsize, 0);
-    super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse, bsize,
-                    ref_best_rd);
+    if (!tx_rd_results_ready) {
+      vp9_subtract_plane(x, bsize, 0);
+      super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse, bsize,
+                      ref_best_rd);
+#if 1
+      if (mb_inter_rd_record) {
+        //save_mb_rd_info(hash, mi->tx_size, distortion_y, *psse, *rate_y,
+          //              skippable_y, mb_rd_record)
+        const int num = mb_inter_rd_record->num;
+        if (num < RD_RECORD_BUFFER_LEN) {
+          MB_RD_INFO *tx_rd_info =
+              &mb_inter_rd_record->tx_rd_info[num];
+          tx_rd_info->hash_value = hash;
+          tx_rd_info->tx_size = mi->tx_size;
+          tx_rd_info->dist = distortion_y;
+          tx_rd_info->sse = *psse;
+          tx_rd_info->rate = *rate_y;
+          tx_rd_info->skip = skippable_y;
+          ++mb_inter_rd_record->num;
+        }
+      }
+#endif
+    }
 
     if (*rate_y == INT_MAX) {
       *rate2 = INT_MAX;

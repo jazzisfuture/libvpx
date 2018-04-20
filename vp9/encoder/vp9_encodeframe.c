@@ -1940,6 +1940,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
       x->rdmult = vp9_cyclic_refresh_get_rdmult(cpi->cyclic_refresh);
   }
 
+  x->mb_inter_rd_record.num = 0;
   // Find best coding mode & reconstruct the MB so it is available
   // as a predictor for MBs that follow in the SB
   if (frame_is_intra_only(cm)) {
