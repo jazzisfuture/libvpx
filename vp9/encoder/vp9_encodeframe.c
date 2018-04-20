@@ -4938,6 +4938,32 @@ void vp9_encode_sb_row(VP9_COMP *cpi, ThreadData *td, int tile_row,
   (void)tile_mb_cols;
 }
 
+#define POLY 0x82f63b78
+static void crc_calculator_init(CRC_CALCULATOR *p_crc) {
+  uint32_t crc;
+  int n;
+  for (n = 0; n < 256; n++) {
+    crc = n;
+    crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
+    crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
+    crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
+    crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
+    crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
+    crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
+    crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
+    crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
+    p_crc->table[0][n] = crc;
+  }
+  for (n = 0; n < 256; n++) {
+    crc = p_crc->table[0][n];
+    for (int k = 1; k < 8; k++) {
+      crc = p_crc->table[0][crc & 0xff] ^ (crc >> 8);
+      p_crc->table[k][n] = crc;
+    }
+  }
+}
+#undef POLY
+
 void vp9_encode_tile(VP9_COMP *cpi, ThreadData *td, int tile_row,
                      int tile_col) {
   VP9_COMMON *const cm = &cpi->common;
@@ -4947,6 +4973,8 @@ void vp9_encode_tile(VP9_COMP *cpi, ThreadData *td, int tile_row,
   const int mi_row_start = tile_info->mi_row_start;
   const int mi_row_end = tile_info->mi_row_end;
   int mi_row;
+
+  crc_calculator_init(&td->mb.mb_rd_record.crc_calculator);
 
   for (mi_row = mi_row_start; mi_row < mi_row_end; mi_row += MI_BLOCK_SIZE)
     vp9_encode_sb_row(cpi, td, tile_row, tile_col, mi_row);

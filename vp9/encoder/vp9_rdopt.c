@@ -830,6 +830,80 @@ static void choose_largest_tx_size(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
                    mi->tx_size, cpi->sf.use_fast_coef_costing);
 }
 
+uint32_t vp9_get_crc_value_c(CRC_CALCULATOR *p, const uint8_t *data,
+                             size_t len) {
+  const uint8_t *next = data;
+  uint64_t crc;
+
+  crc = 0 ^ 0xffffffff;
+  while (len && ((uintptr_t)next & 7) != 0) {
+    crc = p->table[0][(crc ^ *next++) & 0xff] ^ (crc >> 8);
+    len--;
+  }
+  while (len >= 8) {
+    crc ^= *(const uint64_t *)next;
+    crc = p->table[7][crc & 0xff] ^ p->table[6][(crc >> 8) & 0xff] ^
+          p->table[5][(crc >> 16) & 0xff] ^ p->table[4][(crc >> 24) & 0xff] ^
+          p->table[3][(crc >> 32) & 0xff] ^ p->table[2][(crc >> 40) & 0xff] ^
+          p->table[1][(crc >> 48) & 0xff] ^ p->table[0][crc >> 56];
+    next += 8;
+    len -= 8;
+  }
+  while (len) {
+    crc = p->table[0][(crc ^ *next++) & 0xff] ^ (crc >> 8);
+    len--;
+  }
+  return (uint32_t)crc ^ 0xffffffff;
+}
+
+static uint32_t get_block_residue_hash(MACROBLOCK *x, BLOCK_SIZE bsize) {
+  const int rows = 4 * num_4x4_blocks_high_lookup[bsize];
+  const int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
+  const struct macroblock_plane *const p = &x->plane[0];
+  const int16_t *diff = &p->src_diff[0];
+  uint16_t hash_data[64 * 64];
+  memcpy(hash_data, diff, sizeof(*hash_data) * rows * cols);
+  return (vp9_get_crc_value_c(&x->mb_rd_record.crc_calculator,
+                              (uint8_t *)hash_data, 2 * rows * cols)
+          << 7) +
+         bsize;
+}
+
+static void save_mb_rd_info(uint32_t hash, TX_SIZE tx_size,
+                            int64_t dist, int64_t sse, int rate, int skip,
+                            MB_RD_RECORD *mb_rd_record) {
+  MB_RD_INFO *tx_rd_info;
+  int index;
+  if (mb_rd_record->num < RD_RECORD_BUFFER_LEN) {
+    index =
+        (mb_rd_record->index_start + mb_rd_record->num) % RD_RECORD_BUFFER_LEN;
+    ++mb_rd_record->num;
+  } else {
+    index = mb_rd_record->index_start;
+    mb_rd_record->index_start =
+        (mb_rd_record->index_start + 1) % RD_RECORD_BUFFER_LEN;
+  }
+  tx_rd_info = &mb_rd_record->tx_rd_info[index];
+  tx_rd_info->hash_value = hash;
+  tx_rd_info->tx_size = tx_size;
+  tx_rd_info->dist = dist;
+  tx_rd_info->sse = sse;
+  tx_rd_info->rate = rate;
+  tx_rd_info->skip = skip;
+}
+
+#if 0
+static void fetch_mb_rd_info(const MB_RD_INFO *const mb_rd_info,
+                             TX_SIZE *tx_size, int64_t *dist, int64_t *sse,
+                             int *rate, int *skip) {
+  *tx_size = mb_rd_info->tx_size;
+  *dist = mb_rd_info->dist;
+  *rate = mb_rd_info->rate;
+  *skip = mb_rd_info->skip;
+  *sse = mb_rd_info->sse;
+}
+#endif
+
 static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
                                    int64_t *distortion, int *skip,
                                    int64_t *psse, int64_t ref_best_rd,
@@ -851,6 +925,43 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
   TX_SIZE best_tx = max_tx_size;
   int start_tx, end_tx;
   const int tx_size_ctx = get_tx_size_context(xd);
+  MB_RD_RECORD *mb_rd_record = NULL;
+  uint32_t hash = 0;
+
+  if (is_inter_block(mi) && ref_best_rd != INT64_MAX &&
+      (1 || bs == BLOCK_8X8 || bs == BLOCK_16X16 ||
+       bs == BLOCK_32X32 || bs == BLOCK_64X64)) {
+    const int mi_row = -xd->mb_to_top_edge >> (3 + MI_SIZE_LOG2);
+    const int mi_col = -xd->mb_to_left_edge >> (3 + MI_SIZE_LOG2);
+    const int within_border =
+        mi_row >= xd->tile.mi_row_start &&
+        (mi_row + num_8x8_blocks_high_lookup[bs] < xd->tile.mi_row_end) &&
+        mi_col >= xd->tile.mi_col_start &&
+        (mi_col + num_8x8_blocks_wide_lookup[bs] < xd->tile.mi_col_end);
+    if (within_border) {
+      mb_rd_record = &x->mb_rd_record;
+      hash = get_block_residue_hash(x, bs);
+      for (int i = 0; i < mb_rd_record->num; ++i) {
+        const int index =
+            (mb_rd_record->index_start + i) % RD_RECORD_BUFFER_LEN;
+        // If there is a match in the tx_rd_record, fetch the RD decision and
+        // terminate early.
+        if (mb_rd_record->tx_rd_info[index].hash_value == hash) {
+          //printf("match mi %d %d, bs %d\n", mi_row, mi_col, bs);
+#if 1
+          mi->tx_size = mb_rd_record->tx_rd_info[index].tx_size;
+          *distortion = mb_rd_record->tx_rd_info[index].dist;
+          *rate = mb_rd_record->tx_rd_info[index].rate;
+          *skip = mb_rd_record->tx_rd_info[index].skip;
+          *psse = mb_rd_record->tx_rd_info[index].sse;
+          return;
+#endif
+        }
+      }
+      //printf("===========no match\n");
+    }
+  }
+
   assert(skip_prob > 0);
   s0 = vp9_cost_bit(skip_prob, 0);
   s1 = vp9_cost_bit(skip_prob, 1);
@@ -911,6 +1022,11 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
   *rate = r[mi->tx_size][cm->tx_mode == TX_MODE_SELECT];
   *skip = s[mi->tx_size];
   *psse = sse[mi->tx_size];
+
+  if (mb_rd_record) {
+    save_mb_rd_info(hash, best_tx, *distortion, *psse, *rate, *skip,
+                    mb_rd_record);
+  }
 }
 
 static void super_block_yrd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,

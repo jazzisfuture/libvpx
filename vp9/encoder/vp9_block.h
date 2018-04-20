@@ -61,6 +61,27 @@ typedef struct {
   int row_max;
 } MvLimits;
 
+typedef struct {
+  int64_t dist;
+  int64_t sse;
+  int skip;
+  int rate;
+  uint32_t hash_value;
+  TX_SIZE tx_size;
+} MB_RD_INFO;
+
+typedef struct {
+  uint32_t table[8][256];
+} CRC_CALCULATOR;
+
+#define RD_RECORD_BUFFER_LEN 8
+typedef struct {
+  MB_RD_INFO tx_rd_info[RD_RECORD_BUFFER_LEN];  // Circular buffer.
+  int index_start;
+  int num;
+  CRC_CALCULATOR crc_calculator;  // Hash function.
+} MB_RD_RECORD;
+
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
 // cf. https://bugs.chromium.org/p/webm/issues/detail?id=1054
@@ -199,6 +220,9 @@ struct macroblock {
   void (*highbd_inv_txfm_add)(const tran_low_t *input, uint16_t *dest,
                               int stride, int eob, int bd);
 #endif
+
+  // Inter macroblock RD search info.
+  MB_RD_RECORD mb_rd_record;
 };
 
 #ifdef __cplusplus
