@@ -606,6 +606,8 @@ static void set_flags_and_fb_idx_for_temporal_mode_noLayering(
 int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   int width = 0, height = 0;
   LAYER_CONTEXT *lc = NULL;
+  static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
+                                    VP9_ALT_FLAG };
   cpi->svc.skip_enhancement_layer = 0;
   if (cpi->svc.number_spatial_layers > 1) {
     cpi->svc.use_base_mv = 1;
@@ -713,6 +715,18 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   }
 
   if (cpi->svc.spatial_layer_id == 0) cpi->svc.high_source_sad_superframe = 0;
+
+  cpi->svc.update_last[cpi->svc.spatial_layer_id] = cpi->ext_refresh_last_frame;
+  cpi->svc.update_golden[cpi->svc.spatial_layer_id] =
+      cpi->ext_refresh_golden_frame;
+  cpi->svc.update_altref[cpi->svc.spatial_layer_id] =
+      cpi->ext_refresh_alt_ref_frame;
+  cpi->svc.reference_last[cpi->svc.spatial_layer_id] =
+      (cpi->ref_frame_flags & flag_list[LAST_FRAME]);
+  cpi->svc.reference_golden[cpi->svc.spatial_layer_id] =
+      (cpi->ref_frame_flags & flag_list[GOLDEN_FRAME]);
+  cpi->svc.reference_altref[cpi->svc.spatial_layer_id] =
+      (cpi->ref_frame_flags & flag_list[ALTREF_FRAME]);
 
   if (vp9_set_size_literal(cpi, width, height) != 0)
     return VPX_CODEC_INVALID_PARAM;

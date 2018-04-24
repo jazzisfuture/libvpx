@@ -123,6 +123,13 @@ typedef struct SVC {
   // currently checked for each superframe prior to encoding, on the full
   // resolution source.
   int high_source_sad_superframe;
+
+  int update_last[VPX_SS_MAX_LAYERS];
+  int update_golden[VPX_SS_MAX_LAYERS];
+  int update_altref[VPX_SS_MAX_LAYERS];
+  int reference_last[VPX_SS_MAX_LAYERS];
+  int reference_golden[VPX_SS_MAX_LAYERS];
+  int reference_altref[VPX_SS_MAX_LAYERS];
 } SVC;
 
 struct VP9_COMP;
