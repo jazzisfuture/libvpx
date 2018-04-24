@@ -1758,6 +1758,8 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
   vp9_rc_set_frame_target(cpi, target);
   rc->frames_till_gf_update_due = INT_MAX;
   rc->baseline_gf_interval = INT_MAX;
+
+  update_svc_ref_flags(cpi);
 }
 
 void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
