@@ -2929,6 +2929,20 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   BufferPool *const pool = cm->buffer_pool;
 
+ static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
+                                    VP9_ALT_FLAG };
+ int tt1 = 0;
+ int tt2 = 0;
+ int tt3 = 0;
+ tt1 = (cpi->ref_frame_flags & flag_list[LAST_FRAME]);
+ tt2 = (cpi->ref_frame_flags & flag_list[GOLDEN_FRAME]);
+ tt3 = (cpi->ref_frame_flags & flag_list[ALTREF_FRAME]);
+ printf(" ENCODER: START OF UPDATE REF_FRAMES: %d %d ** %d %d ** %d %d %d ** %d %d %d ** %d %d %d \n", 
+  cm->current_video_frame, cpi->svc.current_superframe, cpi->svc.spatial_layer_id, cpi->svc.temporal_layer_id,
+  cpi->lst_fb_idx, cpi->gld_fb_idx, cpi->alt_fb_idx, cpi->refresh_last_frame, cpi->refresh_golden_frame, 
+  cpi->refresh_alt_ref_frame, tt1, tt2, tt3);
+
+
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
   if (cm->frame_type == KEY_FRAME) {

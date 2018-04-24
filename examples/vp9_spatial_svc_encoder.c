@@ -816,6 +816,16 @@ int main(int argc, const char **argv) {
             // TODO(marpan): Put this (to line728) in separate function.
             if (svc_ctx.output_rc_stat) {
               vpx_codec_control(&codec, VP9E_GET_SVC_LAYER_ID, &layer_id);
+
+              vpx_codec_control(&codec, VP9E_GET_SVC_REF_FRAME_CONFIG, &ref_frame_config);
+
+              printf("done with encode of superframe, do GET REF_FRAME_CONFIG \n");
+              for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
+                printf("%d %d ** %d %d %d ** %d %d %d ** %d %d %d \n", frame_cnt, sl,
+                       ref_frame_config.lst_fb_idx[sl], ref_frame_config.gld_fb_idx[sl], ref_frame_config.alt_fb_idx[sl],
+                       ref_frame_config.update_last[sl], ref_frame_config.update_golden[sl], ref_frame_config.update_alt_ref[sl],
+                       ref_frame_config.reference_last[sl], ref_frame_config.reference_golden[sl], ref_frame_config.reference_alt_ref[sl]);
+              }
               parse_superframe_index(cx_pkt->data.frame.buf,
                                      cx_pkt->data.frame.sz, sizes_parsed,
                                      &count);
