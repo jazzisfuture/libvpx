@@ -5412,6 +5412,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     // One pass encode
     Pass0Encode(cpi, size, dest, frame_flags);
   }
+
+  vp9_copy_flags_ref_update_idx(cpi);
 #else  // !CONFIG_REALTIME_ONLY
   if (oxcf->pass == 1 && !cpi->use_svc) {
     const int lossless = is_lossless_requested(oxcf);
