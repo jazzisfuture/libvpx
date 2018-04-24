@@ -739,6 +739,7 @@ EOF
     esac
     # libwebm needs to be linked with C++ standard library
     enabled webm_io && LD=${CXX}
+    enabled webm_io && check_add_cxxflags -std=c++11
 
     # append any user defined extra cflags
     if [ -n "${extra_cflags}" ] ; then
