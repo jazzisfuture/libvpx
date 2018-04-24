@@ -1487,6 +1487,23 @@ static vpx_codec_err_t ctrl_set_svc_parameters(vpx_codec_alg_priv_t *ctx,
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t ctrl_get_svc_ref_frame_config(vpx_codec_alg_priv_t *ctx,
+                                                    va_list args) {
+  VP9_COMP *const cpi = ctx->cpi;
+  vpx_svc_ref_frame_config_t *data = va_arg(args, vpx_svc_ref_frame_config_t *);
+  int sl = cpi->svc.spatial_layer_id;
+  data->update_last[sl] = cpi->refresh_last_frame;
+  data->update_golden[sl] = cpi->refresh_golden_frame;
+  data->update_alt_ref[sl] = cpi->refresh_alt_ref_frame;
+  data->reference_last[sl] = cpi->svc.reference_last;
+  data->reference_golden[sl] = cpi->svc.reference_golden;
+  data->reference_alt_ref[sl] = cpi->svc.reference_altref;
+  data->lst_fb_idx[sl] = cpi->lst_fb_idx;
+  data->gld_fb_idx[sl] = cpi->gld_fb_idx;
+  data->alt_fb_idx[sl] = cpi->alt_fb_idx;
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_err_t ctrl_set_svc_ref_frame_config(vpx_codec_alg_priv_t *ctx,
                                                      va_list args) {
   VP9_COMP *const cpi = ctx->cpi;
@@ -1613,6 +1630,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP9E_GET_SVC_LAYER_ID, ctrl_get_svc_layer_id },
   { VP9E_GET_ACTIVEMAP, ctrl_get_active_map },
   { VP9E_GET_LEVEL, ctrl_get_level },
+  { VP9E_GET_SVC_REF_FRAME_CONFIG, ctrl_get_svc_ref_frame_config},
 
   { -1, NULL },
 };
