@@ -1121,6 +1121,37 @@ add_proto qw/unsigned int vpx_variance4x4/, "const uint8_t *src_ptr, int source_
   specialize qw/vpx_variance4x4 sse2 neon msa mmi/;
 
 #
+# Variance 4
+#
+add_proto qw/void vpx_variance_four_64x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_64x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_32x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_32x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_32x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_16x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_16x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_16x8/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_8x16/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_8x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_8x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_4x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+add_proto qw/void vpx_variance_four_4x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+
+add_proto qw/void vpx_half_pixel_avg_variance_four_64x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_64x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_32x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_32x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_32x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_16x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_16x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_16x8/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_8x16/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_8x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_8x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_4x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+add_proto qw/void vpx_half_pixel_avg_variance_four_4x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+
+#
 # Specialty Variance
 #
 add_proto qw/void vpx_get16x16var/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse, int *sum";
@@ -1414,6 +1445,94 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   add_proto qw/unsigned int vpx_highbd_8_variance8x4/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
   add_proto qw/unsigned int vpx_highbd_8_variance4x8/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
   add_proto qw/unsigned int vpx_highbd_8_variance4x4/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
+
+
+#
+# Variance 4
+#
+  add_proto qw/void vpx_highbd_12_variance_four_64x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_64x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_32x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_32x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_32x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_16x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_16x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_16x8/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_8x16/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_8x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_8x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_4x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_12_variance_four_4x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+
+  add_proto qw/void vpx_highbd_10_variance_four_64x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_64x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_32x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_32x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_32x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_16x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_16x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_16x8/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_8x16/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_8x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_8x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_4x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_10_variance_four_4x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+
+  add_proto qw/void vpx_highbd_8_variance_four_64x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_64x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_32x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_32x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_32x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_16x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_16x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_16x8/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_8x16/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_8x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_8x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_4x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+  add_proto qw/void vpx_highbd_8_variance_four_4x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref, const int ref_stride, uint32_t *const sse, uint32_t *const var";
+
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_64x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_64x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_32x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_32x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_32x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_16x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_16x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_16x8/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_8x16/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_8x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_8x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_4x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_12_half_pixel_avg_variance_four_4x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_64x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_64x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_32x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_32x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_32x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_16x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_16x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_16x8/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_8x16/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_8x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_8x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_4x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_10_half_pixel_avg_variance_four_4x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_64x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_64x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_32x64/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_32x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_32x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_16x32/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_16x16/, "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_16x8/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_8x16/,  "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_8x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_8x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_4x8/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
+  add_proto qw/void vpx_highbd_8_half_pixel_avg_variance_four_4x4/,   "const uint8_t *const src, const int src_stride, const uint8_t **const ref0 /*[4]*/, const int ref0_stride, uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/, const uint8_t *const ref1";
 
   add_proto qw/void vpx_highbd_8_get16x16var/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse, int *sum";
   add_proto qw/void vpx_highbd_8_get8x8var/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse, int *sum";
