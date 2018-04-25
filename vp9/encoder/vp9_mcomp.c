@@ -650,7 +650,9 @@ uint32_t vp9_find_best_sub_pixel_tree(
   const MACROBLOCKD *xd = &x->e_mbd;
   unsigned int besterr = UINT_MAX;
   unsigned int sse;
-  int thismse;
+  uint32_t thismse;
+  DECLARE_ALIGNED(16, uint32_t, sses[4]);
+  DECLARE_ALIGNED(16, uint32_t, thismses[4]);
   const int y_stride = xd->plane[0].pre[0].stride;
   const int offset = bestmv->row * y_stride + bestmv->col;
   const uint8_t *const y = xd->plane[0].pre[0].buf;
@@ -674,7 +676,7 @@ uint32_t vp9_find_best_sub_pixel_tree(
   // The horizontal buffer and its stride are 32-byte aligned.
   // The vertical buffer is 32-byte aligned, and its stride is block width.
   int half_stride, v_stride;
-  uint8_t *pres[4];
+  const uint8_t *pres[4];
 #if CONFIG_VP9_HIGHBITDEPTH
   DECLARE_ALIGNED(32, uint8_t, half_pixel_h8[(64 + 32) * 64]);
   DECLARE_ALIGNED(32, uint8_t, half_pixel_v8[64 * (64 + 1)]);
@@ -723,6 +725,13 @@ uint32_t vp9_find_best_sub_pixel_tree(
   pres[2] = half_pixel_v;
   pres[3] = half_pixel_v + half_stride;
 
+  if (second_pred == NULL) {
+    vfp->v4f(src_address, src_stride, pres, half_stride, sses, thismses);
+  } else {
+    vfp->hav4f(src_address, src_stride, pres, half_stride, sses, thismses,
+               second_pred);
+  }
+
   for (idx = 0; idx < 4; ++idx) {
     tr = br + search_step[idx].row;
     tc = bc + search_step[idx].col;
@@ -732,21 +741,14 @@ uint32_t vp9_find_best_sub_pixel_tree(
       this_mv.row = tr;
       this_mv.col = tc;
 
-      if (second_pred == NULL) {
-        thismse =
-            vfp->vf(pres[idx], half_stride, src_address, src_stride, &sse);
-      } else {
-        thismse = vfp->havf(pres[idx], half_stride, src_address, src_stride,
-                            &sse, second_pred);
-      }
-      cost_array[idx] = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost,
-                                              error_per_bit);
+      cost_array[idx] = thismses[idx] + mv_err_cost(&this_mv, ref_mv, mvjcost,
+                                                    mvcost, error_per_bit);
 
       if (cost_array[idx] < besterr) {
         best_idx = idx;
         besterr = cost_array[idx];
-        *distortion = thismse;
-        *sse1 = sse;
+        *distortion = thismses[idx];
+        *sse1 = sses[idx];
       }
     } else {
       cost_array[idx] = UINT_MAX;
