@@ -44,12 +44,21 @@ typedef uint32_t (*vpx_variance_fn_t)(const uint8_t *a, int a_stride,
                                       const uint8_t *b, int b_stride,
                                       uint32_t *sse);
 
+typedef void (*vpx_variance_four_fn_t)(const uint8_t *const src,
+                                       const int src_stride,
+                                       const uint8_t **const ref /*[4]*/,
+                                       const int ref_stride,
+                                       uint32_t *const sse /*[4]*/,
+                                       uint32_t *const var /*[4]*/);
+
 typedef int (*vpx_half_pixel_fn_t)(const uint8_t *const a, const int a_stride,
                                    uint8_t *const b);
 
-typedef uint32_t (*vpx_half_pixel_avg_variance_fn_t)(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *second_pred);
+typedef void (*vpx_half_pixel_avg_variance_four_fn_t)(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1);
 
 typedef uint32_t (*vpx_sub_pixel_variance_fn_t)(const uint8_t *a, int a_stride,
                                                 int xoffset, int yoffset,
@@ -82,186 +91,15 @@ typedef struct vp9_variance_vtable {
   vpx_sad_fn_t sdf;
   vpx_sad_avg_fn_t sdaf;
   vpx_variance_fn_t vf;
+  vpx_variance_four_fn_t v4f;
   vpx_half_pixel_fn_t hhf;
   vpx_half_pixel_fn_t vhf;
-  vpx_half_pixel_avg_variance_fn_t havf;
+  vpx_half_pixel_avg_variance_four_fn_t hav4f;
   vpx_sub_pixel_variance_fn_t svf;
   vpx_sub_pixel_avg_variance_fn_t svaf;
   vpx_sad_multi_d_fn_t sdx4df;
 } vp9_variance_fn_ptr_t;
 #endif  // CONFIG_VP9
-
-uint32_t vpx_half_pixel_avg_variance4x4(const uint8_t *const a,
-                                        const int a_stride,
-                                        const uint8_t *const b,
-                                        const int b_stride, uint32_t *const sse,
-                                        const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance4x8(const uint8_t *const a,
-                                        const int a_stride,
-                                        const uint8_t *const b,
-                                        const int b_stride, uint32_t *const sse,
-                                        const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance8x4(const uint8_t *const a,
-                                        const int a_stride,
-                                        const uint8_t *const b,
-                                        const int b_stride, uint32_t *const sse,
-                                        const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance8x8(const uint8_t *const a,
-                                        const int a_stride,
-                                        const uint8_t *const b,
-                                        const int b_stride, uint32_t *const sse,
-                                        const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance8x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance16x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance16x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance16x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance32x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance32x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance32x64(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance64x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_half_pixel_avg_variance64x64(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-
-#if CONFIG_VP9_HIGHBITDEPTH
-
-uint32_t vpx_highbd_8_half_pixel_avg_variance4x4(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance4x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance8x4(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance8x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance8x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance16x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance16x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance16x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance32x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance32x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance32x64(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance64x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_8_half_pixel_avg_variance64x64(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-
-uint32_t vpx_highbd_10_half_pixel_avg_variance4x4(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance4x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance8x4(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance8x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance8x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance16x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance16x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance16x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance32x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance32x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance32x64(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance64x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_10_half_pixel_avg_variance64x64(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-
-uint32_t vpx_highbd_12_half_pixel_avg_variance4x4(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance4x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance8x4(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance8x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance8x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance16x8(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance16x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance16x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance32x16(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance32x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance32x64(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance64x32(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-uint32_t vpx_highbd_12_half_pixel_avg_variance64x64(
-    const uint8_t *const a, const int a_stride, const uint8_t *const b,
-    const int b_stride, uint32_t *const sse, const uint8_t *const second_pred);
-
-#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #ifdef __cplusplus
 }  // extern "C"
