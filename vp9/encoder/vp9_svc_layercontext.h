@@ -131,6 +131,8 @@ typedef struct SVC {
   uint8_t reference_last[VPX_SS_MAX_LAYERS];
   uint8_t reference_golden[VPX_SS_MAX_LAYERS];
   uint8_t reference_altref[VPX_SS_MAX_LAYERS];
+
+  int force_rtp_pred;
 } SVC;
 
 struct VP9_COMP;

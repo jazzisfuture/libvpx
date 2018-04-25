@@ -3732,10 +3732,11 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   suppress_active_map(cpi);
 
   // For SVC on non-zero spatial layer: check for disabling inter-layer
-  // (spatial) prediction, if svc.disable_inter_layer_pred is set.
-  // if the previous spatial layer was dropped then disable the prediction from
-  // this (scaled) reference.
+  // prediction.
   if (cpi->use_svc && cpi->svc.spatial_layer_id > 0) {
+    // Check for disabling inter-layer (spatial) prediction, if
+    // svc.disable_inter_layer_pred is set. If the previous spatial layer was
+    // dropped then disable the prediction from this (scaled) reference.
     if ((cpi->svc.disable_inter_layer_pred == INTER_LAYER_PRED_OFF_NONKEY &&
          !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame) ||
         cpi->svc.disable_inter_layer_pred == INTER_LAYER_PRED_OFF ||
@@ -3751,6 +3752,56 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
           if (vp9_is_scaled(scale_fac))
             cpi->ref_frame_flags &= (~flag_list[ref_frame]);
         }
+      }
+    }
+    // Check for disabling inter-layer prediction if VP9E_FORCE_RTP_PRED is
+    // enabled. If the reference for inter-layer prediction (the reference that
+    // is scaled) is not the previous spatial layer from the same superframe.
+    if (cpi->svc.force_rtp_pred) {
+      // We only use LAST and GOLDEN for prediction in real-time mode, so we
+      // check both. For LAST
+      struct scale_factors *scale_fac = &cm->frame_refs[LAST_FRAME - 1].sf;
+      if (vp9_is_scaled(scale_fac)) {
+        // If this reference (buffer idx: lst_fb_idx) was not last updated on
+        // previpus spatial layer of current superframe, then remove this
+        // referene (disable this prediction). We check if the current
+        // lst_fb_idx was equal to any of the slots for the previous spatial
+        // layer, and if so that slot was updated/refreshed, then the reference
+        // is valid.
+        int check = 0;
+        int sl = cpi->svc.spatial_layer_id;
+        if (cpi->lst_fb_idx == cpi->svc.lst_fb_idx[sl - 1] &&
+            cpi->svc.update_last[sl - 1])
+          check = 1;
+        else if (cpi->lst_fb_idx == cpi->svc.gld_fb_idx[sl - 1] &&
+                 cpi->svc.update_golden[sl - 1])
+          check = 1;
+        else if (cpi->lst_fb_idx == cpi->svc.alt_fb_idx[sl - 1] &&
+                 cpi->svc.update_altref[sl - 1])
+          check = 1;
+        if (check) cpi->ref_frame_flags &= (~VP9_LAST_FLAG);
+      }
+      // For GOLDEN
+      scale_fac = &cm->frame_refs[GOLDEN_FRAME - 1].sf;
+      if (vp9_is_scaled(scale_fac)) {
+        // If this reference (buffer idx: gld_fb_idx) was not last updated on
+        // previpus spatial layer of current superframe, then remove this
+        // referene (disable this prediction). We check if the current
+        // gld_fb_idx was equal to any of the slots for the previous spatial
+        // layer, and if so that slot was updated/refreshed, then the reference
+        // is valid
+        int check = 0;
+        int sl = cpi->svc.spatial_layer_id;
+        if (cpi->gld_fb_idx == cpi->svc.lst_fb_idx[sl - 1] &&
+            cpi->svc.update_last[sl - 1])
+          check = 1;
+        else if (cpi->gld_fb_idx == cpi->svc.gld_fb_idx[sl - 1] &&
+                 cpi->svc.update_golden[sl - 1])
+          check = 1;
+        else if (cpi->gld_fb_idx == cpi->svc.alt_fb_idx[sl - 1] &&
+                 cpi->svc.update_altref[sl - 1])
+          check = 1;
+        if (check) cpi->ref_frame_flags &= (~VP9_GOLD_FLAG);
       }
     }
   }
