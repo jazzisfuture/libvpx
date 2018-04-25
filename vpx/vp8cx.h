@@ -627,6 +627,13 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_GET_SVC_REF_FRAME_CONFIG,
+
+  /*!\brief Codec control to force interlayer prediction to be compliant with
+   * RTP, i.e. disable interlayer predication when lower resolution is dropped.
+
+   * Supported in codecs: VP9
+   */
+  VP9E_SVC_FORCE_RTP_PRED,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -944,6 +951,9 @@ VPX_CTRL_USE_TYPE(VP9E_SET_SVC_FRAME_DROP_LAYER, vpx_svc_frame_drop_t *)
 
 VPX_CTRL_USE_TYPE(VP9E_GET_SVC_REF_FRAME_CONFIG, vpx_svc_ref_frame_config_t *)
 #define VPX_CTRL_VP9E_GET_SVC_REF_FRAME_CONFIG
+
+VPX_CTRL_USE_TYPE(VP9E_SVC_FORCE_RTP_PRED, int)
+#define VPX_CTRL_VP9E_SVC_FORCE_RTP_PRED
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */
