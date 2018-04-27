@@ -668,6 +668,15 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
     int i;
     for (i = 0; i < cpi->svc.number_spatial_layers; i++) {
       cpi->svc.drop_spatial_layer[i] = 0;
+      cpi->svc.lst_fb_idx[i] = -1;
+      cpi->svc.gld_fb_idx[i] = -1;
+      cpi->svc.alt_fb_idx[i] = -1;
+      cpi->svc.update_last[i] = 0;
+      cpi->svc.update_golden[i] = 0;
+      cpi->svc.update_altref[i] = 0;
+      cpi->svc.reference_last[i] = 0;
+      cpi->svc.reference_golden[i] = 0;
+      cpi->svc.reference_altref[i] = 0;
     }
   }
 
@@ -733,8 +742,6 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   }
 
   if (cpi->svc.spatial_layer_id == 0) cpi->svc.high_source_sad_superframe = 0;
-
-  vp9_copy_flags_ref_update_idx(cpi);
 
   if (vp9_set_size_literal(cpi, width, height) != 0)
     return VPX_CODEC_INVALID_PARAM;
