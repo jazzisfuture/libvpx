@@ -1428,12 +1428,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   // Temporal scalability.
   cpi->svc.number_temporal_layers = oxcf->ts_number_layers;
 
-  if ((cpi->svc.number_temporal_layers > 1 && cpi->oxcf.rc_mode == VPX_CBR) ||
-      ((cpi->svc.number_temporal_layers > 1 ||
-        cpi->svc.number_spatial_layers > 1) &&
-       cpi->oxcf.pass != 1)) {
-    vp9_init_layer_context(cpi);
-  }
+  if (cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR) vp9_init_layer_context(cpi);
 
   // change includes all joint functionality
   vp9_change_config(cpi, oxcf);
@@ -1973,13 +1968,9 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
     rc->rc_2_frame = 0;
   }
 
-  if ((cpi->svc.number_temporal_layers > 1 && cpi->oxcf.rc_mode == VPX_CBR) ||
-      ((cpi->svc.number_temporal_layers > 1 ||
-        cpi->svc.number_spatial_layers > 1) &&
-       cpi->oxcf.pass != 1)) {
+  if (cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR)
     vp9_update_layer_context_change_config(cpi,
                                            (int)cpi->oxcf.target_bandwidth);
-  }
 
   // Check for resetting the rc flags (rc_1_frame, rc_2_frame) if the
   // configuration change has a large change in avg_frame_bandwidth.
