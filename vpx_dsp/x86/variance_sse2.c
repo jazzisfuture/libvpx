@@ -1094,3 +1094,479 @@ void vpx_variance_four_64x64_sse2(const uint8_t *const src,
   vsum[1] = _mm_srli_epi64(vsum[1], 12);
   sum_four_final_sse2(vsse[0], vsum, var);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+static INLINE __m128i avg_4x2_sse2(const uint8_t *const ref0,
+                                   const int ref0_stride,
+                                   const uint8_t *const ref1) {
+  const __m128i r0_0 =
+      _mm_cvtsi32_si128(*(const uint32_t *)(ref0 + 0 * ref0_stride));
+  const __m128i r0_1 =
+      _mm_cvtsi32_si128(*(const uint32_t *)(ref0 + 1 * ref0_stride));
+  const __m128i r0 = _mm_unpacklo_epi32(r0_0, r0_1);
+  const __m128i r1 = _mm_loadl_epi64((const __m128i *)ref1);
+  const __m128i d = _mm_avg_epu8(r0, r1);
+  return _mm_unpacklo_epi8(d, _mm_setzero_si128());
+}
+
+static INLINE __m128i avg_8_sse2(const uint8_t *const ref0, const __m128i r1) {
+  const __m128i r0 = _mm_loadl_epi64((const __m128i *)ref0);
+  const __m128i d = _mm_avg_epu8(r0, r1);
+  return _mm_unpacklo_epi8(d, _mm_setzero_si128());
+}
+
+static INLINE void half_pixel_avg_variance_four_4_sse2(
+    const uint8_t *src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    const uint8_t *const ref1, const int h, __m128i *const sse /*[4]*/,
+    __m128i *const sum /*[4]*/) {
+  int i;
+  __m128i r;
+
+  assert(h <= 256);  // May overflow for larger height.
+  sse[0] = sse[1] = sse[2] = sse[3] = _mm_setzero_si128();
+  sum[0] = sum[1] = sum[2] = sum[3] = _mm_setzero_si128();
+
+  for (i = 0; i < h; i += 2) {
+    const __m128i s = load4x2_sse2(src, src_stride);
+
+    r = avg_4x2_sse2(ref0[0] + i * ref0_stride, ref0_stride, ref1 + i * 4);
+    variance_kernel_sse2(s, r, &sse[0], &sum[0]);
+
+    r = avg_4x2_sse2(ref0[1] + i * ref0_stride, ref0_stride, ref1 + i * 4);
+    variance_kernel_sse2(s, r, &sse[1], &sum[1]);
+
+    r = avg_4x2_sse2(ref0[2] + i * ref0_stride, ref0_stride, ref1 + i * 4);
+    variance_kernel_sse2(s, r, &sse[2], &sum[2]);
+
+    r = avg_4x2_sse2(ref0[3] + i * ref0_stride, ref0_stride, ref1 + i * 4);
+    variance_kernel_sse2(s, r, &sse[3], &sum[3]);
+
+    src += 2 * src_stride;
+  }
+}
+
+static INLINE void half_pixel_avg_variance_four_8_sse2(
+    const uint8_t *src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    const uint8_t *const ref1, const int h, __m128i *const sse /*[4]*/,
+    __m128i *const sum /*[4]*/) {
+  const __m128i zero = _mm_setzero_si128();
+  int i;
+  __m128i r;
+
+  assert(h <= 128);  // May overflow for larger height.
+  sse[0] = sse[1] = sse[2] = sse[3] = zero;
+  sum[0] = sum[1] = sum[2] = sum[3] = zero;
+
+  for (i = 0; i < h; i++) {
+    const __m128i s =
+        _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *)src), zero);
+    const __m128i r1 = _mm_loadl_epi64((const __m128i *)(ref1 + i * 8));
+
+    r = avg_8_sse2(ref0[0] + i * ref0_stride, r1);
+    variance_kernel_sse2(s, r, &sse[0], &sum[0]);
+
+    r = avg_8_sse2(ref0[1] + i * ref0_stride, r1);
+    variance_kernel_sse2(s, r, &sse[1], &sum[1]);
+
+    r = avg_8_sse2(ref0[2] + i * ref0_stride, r1);
+    variance_kernel_sse2(s, r, &sse[2], &sum[2]);
+
+    r = avg_8_sse2(ref0[3] + i * ref0_stride, r1);
+    variance_kernel_sse2(s, r, &sse[3], &sum[3]);
+
+    src += src_stride;
+  }
+}
+
+static INLINE void half_pixel_avg_variance_four_16_kernel_sse2(
+    const __m128i *const src, const uint8_t *const ref0, const __m128i r1,
+    __m128i *const sse, __m128i *const sum) {
+  const __m128i zero = _mm_setzero_si128();
+  const __m128i r0 = _mm_loadu_si128((const __m128i *)ref0);
+  const __m128i r = _mm_avg_epu8(r0, r1);
+  const __m128i t0 = _mm_unpacklo_epi8(r, zero);
+  const __m128i t1 = _mm_unpackhi_epi8(r, zero);
+
+  variance_kernel_sse2(src[0], t0, sse, sum);
+  variance_kernel_sse2(src[1], t1, sse, sum);
+}
+
+static INLINE void half_pixel_avg_variance_four_16_sse2(
+    const uint8_t *src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    const uint8_t *const ref1, const int h, __m128i *const sse /*[4]*/,
+    __m128i *const sum /*[4]*/) {
+  const __m128i zero = _mm_setzero_si128();
+  int i;
+
+  assert(h <= 64);  // May overflow for larger height.
+  sse[0] = sse[1] = sse[2] = sse[3] = zero;
+  sum[0] = sum[1] = sum[2] = sum[3] = zero;
+
+  for (i = 0; i < h; ++i) {
+    const __m128i t = _mm_loadu_si128((const __m128i *)src);
+    const __m128i r1 = _mm_loadu_si128((const __m128i *)(ref1 + i * 16));
+    __m128i s[2];
+
+    s[0] = _mm_unpacklo_epi8(t, zero);
+    s[1] = _mm_unpackhi_epi8(t, zero);
+    half_pixel_avg_variance_four_16_kernel_sse2(s, ref0[0] + i * ref0_stride,
+                                                r1, &sse[0], &sum[0]);
+    half_pixel_avg_variance_four_16_kernel_sse2(s, ref0[1] + i * ref0_stride,
+                                                r1, &sse[1], &sum[1]);
+    half_pixel_avg_variance_four_16_kernel_sse2(s, ref0[2] + i * ref0_stride,
+                                                r1, &sse[2], &sum[2]);
+    half_pixel_avg_variance_four_16_kernel_sse2(s, ref0[3] + i * ref0_stride,
+                                                r1, &sse[3], &sum[3]);
+    src += src_stride;
+  }
+}
+
+static INLINE void half_pixel_avg_variance_four_32_sse2(
+    const uint8_t *src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    const uint8_t *const ref1, const int h, const int offset,
+    __m128i *const sse /*[4]*/, __m128i *const sum /*[4]*/) {
+  const __m128i zero = _mm_setzero_si128();
+  int i;
+
+  assert(h <= 32);  // May overflow for larger height.
+  sum[0] = sum[1] = sum[2] = sum[3] = zero;
+  src += offset * src_stride;
+
+  for (i = offset; i < h + offset; ++i) {
+    __m128i t;
+    __m128i s[2][2], r1[2];
+
+    t = _mm_loadu_si128((const __m128i *)(src + 0));
+    s[0][0] = _mm_unpacklo_epi8(t, zero);
+    s[0][1] = _mm_unpackhi_epi8(t, zero);
+    t = _mm_loadu_si128((const __m128i *)(src + 16));
+    s[1][0] = _mm_unpacklo_epi8(t, zero);
+    s[1][1] = _mm_unpackhi_epi8(t, zero);
+    r1[0] = _mm_loadu_si128((const __m128i *)(ref1 + i * 32 + 0));
+    r1[1] = _mm_loadu_si128((const __m128i *)(ref1 + i * 32 + 16));
+
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[0], ref0[0] + i * ref0_stride + 0, r1[0], &sse[0], &sum[0]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[1], ref0[0] + i * ref0_stride + 16, r1[1], &sse[0], &sum[0]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[0], ref0[1] + i * ref0_stride + 0, r1[0], &sse[1], &sum[1]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[1], ref0[1] + i * ref0_stride + 16, r1[1], &sse[1], &sum[1]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[0], ref0[2] + i * ref0_stride + 0, r1[0], &sse[2], &sum[2]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[1], ref0[2] + i * ref0_stride + 16, r1[1], &sse[2], &sum[2]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[0], ref0[3] + i * ref0_stride + 0, r1[0], &sse[3], &sum[3]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[1], ref0[3] + i * ref0_stride + 16, r1[1], &sse[3], &sum[3]);
+    src += src_stride;
+  }
+}
+
+static INLINE void half_pixel_avg_variance_four_64_sse2(
+    const uint8_t *src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    const uint8_t *const ref1, const int h, const int offset,
+    __m128i *const sse /*[4]*/, __m128i *const sum /*[4]*/) {
+  const __m128i zero = _mm_setzero_si128();
+  int i;
+
+  assert(h <= 16);  // May overflow for larger height.
+  sum[0] = sum[1] = sum[2] = sum[3] = zero;
+  src += offset * src_stride;
+
+  for (i = offset; i < h + offset; ++i) {
+    __m128i t;
+    __m128i s[4][2], r1[4];
+
+    t = _mm_loadu_si128((const __m128i *)(src + 0));
+    s[0][0] = _mm_unpacklo_epi8(t, zero);
+    s[0][1] = _mm_unpackhi_epi8(t, zero);
+    t = _mm_loadu_si128((const __m128i *)(src + 16));
+    s[1][0] = _mm_unpacklo_epi8(t, zero);
+    s[1][1] = _mm_unpackhi_epi8(t, zero);
+    t = _mm_loadu_si128((const __m128i *)(src + 32));
+    s[2][0] = _mm_unpacklo_epi8(t, zero);
+    s[2][1] = _mm_unpackhi_epi8(t, zero);
+    t = _mm_loadu_si128((const __m128i *)(src + 48));
+    s[3][0] = _mm_unpacklo_epi8(t, zero);
+    s[3][1] = _mm_unpackhi_epi8(t, zero);
+    r1[0] = _mm_loadu_si128((const __m128i *)(ref1 + i * 64 + 0));
+    r1[1] = _mm_loadu_si128((const __m128i *)(ref1 + i * 64 + 16));
+    r1[2] = _mm_loadu_si128((const __m128i *)(ref1 + i * 64 + 32));
+    r1[3] = _mm_loadu_si128((const __m128i *)(ref1 + i * 64 + 48));
+
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[0], ref0[0] + i * ref0_stride + 0, r1[0], &sse[0], &sum[0]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[1], ref0[0] + i * ref0_stride + 16, r1[1], &sse[0], &sum[0]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[2], ref0[0] + i * ref0_stride + 32, r1[2], &sse[0], &sum[0]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[3], ref0[0] + i * ref0_stride + 48, r1[3], &sse[0], &sum[0]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[0], ref0[1] + i * ref0_stride + 0, r1[0], &sse[1], &sum[1]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[1], ref0[1] + i * ref0_stride + 16, r1[1], &sse[1], &sum[1]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[2], ref0[1] + i * ref0_stride + 32, r1[2], &sse[1], &sum[1]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[3], ref0[1] + i * ref0_stride + 48, r1[3], &sse[1], &sum[1]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[0], ref0[2] + i * ref0_stride + 0, r1[0], &sse[2], &sum[2]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[1], ref0[2] + i * ref0_stride + 16, r1[1], &sse[2], &sum[2]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[2], ref0[2] + i * ref0_stride + 32, r1[2], &sse[2], &sum[2]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[3], ref0[2] + i * ref0_stride + 48, r1[3], &sse[2], &sum[2]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[0], ref0[3] + i * ref0_stride + 0, r1[0], &sse[3], &sum[3]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[1], ref0[3] + i * ref0_stride + 16, r1[1], &sse[3], &sum[3]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[2], ref0[3] + i * ref0_stride + 32, r1[2], &sse[3], &sum[3]);
+    half_pixel_avg_variance_four_16_kernel_sse2(
+        s[3], ref0[3] + i * ref0_stride + 48, r1[3], &sse[3], &sum[3]);
+    src += src_stride;
+  }
+}
+
+void vpx_half_pixel_avg_variance_four_4x4_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  half_pixel_avg_variance_four_4_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                      4, vsse, vsum);
+  variance_four_final_128_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srai_epi32(vsum[0], 4);
+  vsum[0] = _mm_sub_epi32(vsse[0], vsum[0]);
+  _mm_store_si128((__m128i *)var, vsum[0]);
+}
+
+void vpx_half_pixel_avg_variance_four_4x8_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  half_pixel_avg_variance_four_4_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                      8, vsse, vsum);
+  variance_four_final_128_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srai_epi32(vsum[0], 5);
+  vsum[0] = _mm_sub_epi32(vsse[0], vsum[0]);
+  _mm_store_si128((__m128i *)var, vsum[0]);
+}
+
+void vpx_half_pixel_avg_variance_four_8x4_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  half_pixel_avg_variance_four_8_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                      4, vsse, vsum);
+  variance_four_final_128_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srai_epi32(vsum[0], 5);
+  vsum[0] = _mm_sub_epi32(vsse[0], vsum[0]);
+  _mm_store_si128((__m128i *)var, vsum[0]);
+}
+
+void vpx_half_pixel_avg_variance_four_8x8_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  half_pixel_avg_variance_four_8_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                      8, vsse, vsum);
+  variance_four_final_128_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srai_epi32(vsum[0], 6);
+  vsum[0] = _mm_sub_epi32(vsse[0], vsum[0]);
+  _mm_store_si128((__m128i *)var, vsum[0]);
+}
+
+void vpx_half_pixel_avg_variance_four_8x16_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  half_pixel_avg_variance_four_8_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                      16, vsse, vsum);
+  variance_four_final_128_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srai_epi32(vsum[0], 7);
+  vsum[0] = _mm_sub_epi32(vsse[0], vsum[0]);
+  _mm_store_si128((__m128i *)var, vsum[0]);
+}
+
+void vpx_half_pixel_avg_variance_four_16x8_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  half_pixel_avg_variance_four_16_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                       8, vsse, vsum);
+  variance_four_final_128_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srai_epi32(vsum[0], 7);
+  vsum[0] = _mm_sub_epi32(vsse[0], vsum[0]);
+  _mm_store_si128((__m128i *)var, vsum[0]);
+}
+
+void vpx_half_pixel_avg_variance_four_16x16_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  half_pixel_avg_variance_four_16_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                       16, vsse, vsum);
+  variance_four_final_256_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srli_epi64(vsum[0], 8);
+  vsum[1] = _mm_srli_epi64(vsum[1], 8);
+  sum_four_final_sse2(vsse[0], vsum, var);
+}
+
+void vpx_half_pixel_avg_variance_four_16x32_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  half_pixel_avg_variance_four_16_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                       32, vsse, vsum);
+  variance_four_final_512_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srli_epi64(vsum[0], 9);
+  vsum[1] = _mm_srli_epi64(vsum[1], 9);
+  sum_four_final_sse2(vsse[0], vsum, var);
+}
+
+void vpx_half_pixel_avg_variance_four_32x16_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  vsse[0] = vsse[1] = vsse[2] = vsse[3] = _mm_setzero_si128();
+  half_pixel_avg_variance_four_32_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                       16, 0, vsse, vsum);
+  variance_four_final_512_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srli_epi64(vsum[0], 9);
+  vsum[1] = _mm_srli_epi64(vsum[1], 9);
+  sum_four_final_sse2(vsse[0], vsum, var);
+}
+
+void vpx_half_pixel_avg_variance_four_32x32_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  __m128i vsse[4], vsum[4];
+  vsse[0] = vsse[1] = vsse[2] = vsse[3] = _mm_setzero_si128();
+  half_pixel_avg_variance_four_32_sse2(src, src_stride, ref0, ref0_stride, ref1,
+                                       32, 0, vsse, vsum);
+  variance_four_final_1024_pel_sse2(vsse, vsum, sse);
+  vsum[0] = _mm_srli_epi64(vsum[0], 10);
+  vsum[1] = _mm_srli_epi64(vsum[1], 10);
+  sum_four_final_sse2(vsse[0], vsum, var);
+}
+
+void vpx_half_pixel_avg_variance_four_32x64_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  const __m128i zero = _mm_setzero_si128();
+  __m128i vsse[4], vsum[4];
+  int i;
+
+  vsse[0] = vsse[1] = vsse[2] = vsse[3] = zero;
+  vsum[0] = vsum[1] = vsum[2] = vsum[3] = zero;
+
+  for (i = 0; i < 64; i += 32) {
+    __m128i vsum16[4];
+    half_pixel_avg_variance_four_32_sse2(src, src_stride, ref0, ref0_stride,
+                                         ref1, 32, i, vsse, vsum16);
+    vsum[0] = _mm_add_epi32(vsum[0], sum_to_32bit_sse2(vsum16[0]));
+    vsum[1] = _mm_add_epi32(vsum[1], sum_to_32bit_sse2(vsum16[1]));
+    vsum[2] = _mm_add_epi32(vsum[2], sum_to_32bit_sse2(vsum16[2]));
+    vsum[3] = _mm_add_epi32(vsum[3], sum_to_32bit_sse2(vsum16[3]));
+  }
+
+  sse_four_final_sse2(vsse, sse);
+  add_four_32x4_sse2(vsum);
+  square_four_sse2(vsum);
+  vsum[0] = _mm_srli_epi64(vsum[0], 11);
+  vsum[1] = _mm_srli_epi64(vsum[1], 11);
+  sum_four_final_sse2(vsse[0], vsum, var);
+}
+
+void vpx_half_pixel_avg_variance_four_64x32_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  const __m128i zero = _mm_setzero_si128();
+  __m128i vsse[4], vsum[4];
+  int i;
+
+  vsse[0] = vsse[1] = vsse[2] = vsse[3] = zero;
+  vsum[0] = vsum[1] = vsum[2] = vsum[3] = zero;
+
+  for (i = 0; i < 32; i += 16) {
+    __m128i vsum16[4];
+    half_pixel_avg_variance_four_64_sse2(src, src_stride, ref0, ref0_stride,
+                                         ref1, 16, i, vsse, vsum16);
+    vsum[0] = _mm_add_epi32(vsum[0], sum_to_32bit_sse2(vsum16[0]));
+    vsum[1] = _mm_add_epi32(vsum[1], sum_to_32bit_sse2(vsum16[1]));
+    vsum[2] = _mm_add_epi32(vsum[2], sum_to_32bit_sse2(vsum16[2]));
+    vsum[3] = _mm_add_epi32(vsum[3], sum_to_32bit_sse2(vsum16[3]));
+  }
+
+  sse_four_final_sse2(vsse, sse);
+  add_four_32x4_sse2(vsum);
+  square_four_sse2(vsum);
+  vsum[0] = _mm_srli_epi64(vsum[0], 11);
+  vsum[1] = _mm_srli_epi64(vsum[1], 11);
+  sum_four_final_sse2(vsse[0], vsum, var);
+}
+
+void vpx_half_pixel_avg_variance_four_64x64_sse2(
+    const uint8_t *const src, const int src_stride,
+    const uint8_t **const ref0 /*[4]*/, const int ref0_stride,
+    uint32_t *const sse /*[4]*/, uint32_t *const var /*[4]*/,
+    const uint8_t *const ref1) {
+  const __m128i zero = _mm_setzero_si128();
+  __m128i vsse[4], vsum[4];
+  int i;
+
+  vsse[0] = vsse[1] = vsse[2] = vsse[3] = zero;
+  vsum[0] = vsum[1] = vsum[2] = vsum[3] = zero;
+
+  for (i = 0; i < 64; i += 16) {
+    __m128i vsum16[4];
+    half_pixel_avg_variance_four_64_sse2(src, src_stride, ref0, ref0_stride,
+                                         ref1, 16, i, vsse, vsum16);
+    vsum[0] = _mm_add_epi32(vsum[0], sum_to_32bit_sse2(vsum16[0]));
+    vsum[1] = _mm_add_epi32(vsum[1], sum_to_32bit_sse2(vsum16[1]));
+    vsum[2] = _mm_add_epi32(vsum[2], sum_to_32bit_sse2(vsum16[2]));
+    vsum[3] = _mm_add_epi32(vsum[3], sum_to_32bit_sse2(vsum16[3]));
+  }
+
+  sse_four_final_sse2(vsse, sse);
+  add_four_32x4_sse2(vsum);
+  square_four_sse2(vsum);
+  vsum[0] = _mm_srli_epi64(vsum[0], 12);
+  vsum[1] = _mm_srli_epi64(vsum[1], 12);
+  sum_four_final_sse2(vsse[0], vsum, var);
+}
