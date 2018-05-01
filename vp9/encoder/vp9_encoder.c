@@ -3055,6 +3055,8 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
       (cm->frame_type == KEY_FRAME || cpi->refresh_last_frame ||
        cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame);
 
+  if (cpi->use_svc && cpi->svc.encode_skip_frame) return;
+
   if (xd->lossless) {
     lf->filter_level = 0;
     lf->last_filt_level = 0;
@@ -4488,6 +4490,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     cpi->svc.skip_enhancement_layer = 1;
     vp9_rc_postencode_update_drop_frame(cpi);
     vp9_inc_frame_in_layer(cpi);
+    cpi->common.current_video_frame++;
     cpi->ext_refresh_frame_flags_pending = 0;
     cpi->last_frame_dropped = 1;
     cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 1;
@@ -4556,27 +4559,34 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     if ((svc_prev_layer_dropped &&
          cpi->svc.framedrop_mode == CONSTRAINED_LAYER_DROP) ||
         vp9_rc_drop_frame(cpi)) {
-      vp9_rc_postencode_update_drop_frame(cpi);
-      cpi->ext_refresh_frame_flags_pending = 0;
-      cpi->last_frame_dropped = 1;
-      if (cpi->use_svc) {
-        cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 1;
-        cpi->svc.drop_spatial_layer[cpi->svc.spatial_layer_id] = 1;
-        vp9_inc_frame_in_layer(cpi);
-        cpi->svc.skip_enhancement_layer = 1;
-        if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
-          int i;
-          int all_layers_drop = 1;
-          for (i = 0; i < cpi->svc.spatial_layer_id; i++) {
-            if (cpi->svc.drop_spatial_layer[i] == 0) {
-              all_layers_drop = 0;
-              break;
+      if (cpi->svc.framedrop_mode != LAYER_SKIP_FRAME) {
+        vp9_rc_postencode_update_drop_frame(cpi);
+        cpi->common.current_video_frame++;
+        cpi->ext_refresh_frame_flags_pending = 0;
+        cpi->last_frame_dropped = 1;
+        if (cpi->use_svc) {
+          cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 1;
+          cpi->svc.drop_spatial_layer[cpi->svc.spatial_layer_id] = 1;
+          vp9_inc_frame_in_layer(cpi);
+          cpi->svc.skip_enhancement_layer = 1;
+          if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
+            int i;
+            int all_layers_drop = 1;
+            for (i = 0; i < cpi->svc.spatial_layer_id; i++) {
+              if (cpi->svc.drop_spatial_layer[i] == 0) {
+                all_layers_drop = 0;
+                break;
+              }
             }
+            if (all_layers_drop == 1) cpi->svc.skip_enhancement_layer = 0;
           }
-          if (all_layers_drop == 1) cpi->svc.skip_enhancement_layer = 0;
         }
+        return;
+      } else {
+        // Instead of dropping the frame we will encode it as skip frame,
+        // small delta/copy from previous (LAST) frame.
+        cpi->svc.encode_skip_frame = 1;
       }
-      return;
     }
   }
 
@@ -4593,8 +4603,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     encode_with_recode_loop(cpi, size, dest);
   }
 
-  cpi->last_frame_dropped = 0;
-  cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 0;
+  if (cpi->use_svc && !cpi->svc.encode_skip_frame) {
+    cpi->last_frame_dropped = 0;
+    cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 0;
+  }
 
   // Disable segmentation if it decrease rate/distortion ratio
   if (cpi->oxcf.aq_mode == LOOKAHEAD_AQ)
