@@ -84,6 +84,21 @@ void CheckLayerRateTargeting(vpx_codec_enc_cfg_t *const cfg,
     }
 }
 
+void CheckNumMisMatchFrames(int is_layer_skip_mode, int num_nonref_frames,
+                            int num_mismatch_frames) {
+#if CONFIG_VP9_DECODER
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames. But if the framedrop mode
+  // is LAYER_SKIP_FRAME, then we expect mismatch frames to be less than
+  // numb_nonref_frames (because on these frames in LAYER_SKIP_FRAME we don't
+  // apply loopfilter and signal that to the decoder).
+  if (is_layer_skip_mode)
+    ASSERT_GE(num_nonref_frames, num_mismatch_frames);
+  else
+    ASSERT_EQ(num_nonref_frames, num_mismatch_frames);
+#endif
+}
+
 class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
  public:
   explicit DatarateOnePassCbrSvc(const ::libvpx_test::CodecFactory *codec)
@@ -114,7 +129,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
     superframe_count_ = -1;
     key_frame_spacing_ = 9999;
     num_nonref_frames_ = 0;
-    layer_framedrop_ = 0;
+    framedrop_mode_ = CONSTRAINED_LAYER_DROP;
   }
   virtual void BeginPassHook(unsigned int /*pass*/) {}
 
@@ -198,13 +213,11 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
       encoder->Control(VP8E_SET_STATIC_THRESHOLD, 1);
       encoder->Control(VP9E_SET_TUNE_CONTENT, tune_content_);
 
-      if (layer_framedrop_) {
-        vpx_svc_frame_drop_t svc_drop_frame;
-        svc_drop_frame.framedrop_mode = LAYER_DROP;
-        for (i = 0; i < number_spatial_layers_; i++)
-          svc_drop_frame.framedrop_thresh[i] = 30;
-        encoder->Control(VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
-      }
+      vpx_svc_frame_drop_t svc_drop_frame;
+      svc_drop_frame.framedrop_mode = framedrop_mode_;
+      for (i = 0; i < number_spatial_layers_; i++)
+        svc_drop_frame.framedrop_thresh[i] = cfg_.rc_dropframe_thresh;
+      encoder->Control(VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
     }
 
     superframe_count_++;
@@ -365,7 +378,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
     ASSERT_EQ(count, num_layers_encoded);
     // In the constrained frame drop mode, if a given spatial is dropped all
     // upper layers must be dropped too.
-    if (!layer_framedrop_) {
+    if (framedrop_mode_ == CONSTRAINED_LAYER_DROP) {
       for (int sl = 0; sl < number_spatial_layers_; ++sl) {
         if (!pkt->data.frame.spatial_layer_encoded[sl]) {
           // Check that all upper layers are dropped.
@@ -460,7 +473,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
   int superframe_count_;
   int key_frame_spacing_;
   unsigned int num_nonref_frames_;
-  int layer_framedrop_;
+  SVC_LAYER_DROP_MODE framedrop_mode_;
 };
 
 // Params: speed setting.
@@ -520,11 +533,8 @@ TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc2SL1TLScreenContent1) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 // Check basic rate targeting for 1 pass CBR SVC: 3 spatial layers and
@@ -567,11 +577,8 @@ TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL3TL) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 // Check rate targeting for 1 pass CBR SVC: 3 spatial layers and
@@ -615,11 +622,8 @@ TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL3TLDynamicBitrateChange) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 // Check basic rate targeting for 1 pass CBR SVC: 3 spatial layers and
@@ -665,11 +669,8 @@ TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL2TLDynamicPatternChange) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 // Check basic rate targeting for 1 pass CBR SVC with 3 spatial layers and on
@@ -715,11 +716,8 @@ TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL_DisableEnableLayers) {
   // for part of the sequence.
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_ - 1,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 // Params: speed setting and index for bitrate array.
@@ -782,14 +780,12 @@ TEST_P(DatarateOnePassCbrSvcMultiBR, OnePassCbrSvc2SL3TL) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.75, 1.2);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
-// Params: speed setting, layer framedrop control and index for bitrate array.
+// Params: speed setting, layer framedrop control, index for bitrate array and
+// layer frame drop mode.
 class DatarateOnePassCbrSvcFrameDropMultiBR
     : public DatarateOnePassCbrSvc,
       public ::libvpx_test::CodecTestWith3Params<int, int, int> {
@@ -838,22 +834,18 @@ TEST_P(DatarateOnePassCbrSvcFrameDropMultiBR, OnePassCbrSvc2SL3TL4Threads) {
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
   top_sl_width_ = 1280;
   top_sl_height_ = 720;
-  layer_framedrop_ = 0;
   const int bitrates[3] = { 200, 400, 600 };
   cfg_.rc_target_bitrate = bitrates[GET_PARAM(3)];
   ResetModel();
-  layer_framedrop_ = GET_PARAM(2);
+  framedrop_mode_ = static_cast<SVC_LAYER_DROP_MODE>(GET_PARAM(2));
   AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
                       cfg_.ts_number_layers, cfg_.temporal_layering_mode,
                       layer_target_avg_bandwidth_, bits_in_buffer_model_);
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
-                          number_temporal_layers_, file_datarate_, 0.75, 1.2);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+                          number_temporal_layers_, file_datarate_, 0.65, 1.2);
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 // Check basic rate targeting for 1 pass CBR SVC: 3 spatial layers and
@@ -887,22 +879,18 @@ TEST_P(DatarateOnePassCbrSvcFrameDropMultiBR, OnePassCbrSvc3SL3TL4Threads) {
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
   top_sl_width_ = 1280;
   top_sl_height_ = 720;
-  layer_framedrop_ = 0;
   const int bitrates[3] = { 200, 400, 600 };
   cfg_.rc_target_bitrate = bitrates[GET_PARAM(3)];
   ResetModel();
-  layer_framedrop_ = GET_PARAM(2);
+  framedrop_mode_ = static_cast<SVC_LAYER_DROP_MODE>(GET_PARAM(2));
   AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
                       cfg_.ts_number_layers, cfg_.temporal_layering_mode,
                       layer_target_avg_bandwidth_, bits_in_buffer_model_);
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
-                          number_temporal_layers_, file_datarate_, 0.73, 1.2);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+                          number_temporal_layers_, file_datarate_, 0.65, 1.2);
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 // Run SVC encoder for 1 temporal layer, 2 spatial layers, with spatial
@@ -948,11 +936,8 @@ TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc2SL1TL5x5MultipleRuns) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
@@ -1019,11 +1004,8 @@ TEST_P(DatarateOnePassCbrSvcDenoiser, OnePassCbrSvc2SL3TLDenoiserOn) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 #endif
 
@@ -1090,11 +1072,8 @@ TEST_P(DatarateOnePassCbrSvcSmallKF, OnePassCbrSvc3SL3TLSmallKf) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 // Check basic rate targeting for 1 pass CBR SVC: 2 spatial layers and 3
@@ -1139,11 +1118,8 @@ TEST_P(DatarateOnePassCbrSvcSmallKF, OnePassCbrSvc2SL3TLSmallKf) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   CheckLayerRateTargeting(&cfg_, number_spatial_layers_,
                           number_temporal_layers_, file_datarate_, 0.78, 1.15);
-#if CONFIG_VP9_DECODER
-  // The non-reference frames are expected to be mismatched frames as the
-  // encoder will avoid loopfilter on these frames.
-  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
-#endif
+  CheckNumMisMatchFrames(framedrop_mode_ == LAYER_SKIP_FRAME,
+                         num_nonref_frames_, GetMismatchFrames());
 }
 
 VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcSingleBR,
@@ -1153,7 +1129,7 @@ VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcMultiBR, ::testing::Range(5, 9),
                           ::testing::Range(0, 3));
 
 VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcFrameDropMultiBR,
-                          ::testing::Range(5, 9), ::testing::Range(0, 2),
+                          ::testing::Range(5, 9), ::testing::Range(0, 3),
                           ::testing::Range(0, 3));
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
