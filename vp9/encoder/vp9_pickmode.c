@@ -1212,7 +1212,7 @@ static INLINE void find_predictors(
       const_motion[ref_frame] =
           mv_refs_rt(cpi, cm, x, xd, tile_info, xd->mi[0], ref_frame,
                      candidates, &frame_mv[NEWMV][ref_frame], mi_row, mi_col,
-                     (int)(cpi->svc.use_base_mv && cpi->svc.spatial_layer_id));
+                     (int)(cpi->svc.use_base_mv && cpi->svc.spatial_layer_id));      
     }
     vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
                           &frame_mv[NEARESTMV][ref_frame],
@@ -1726,6 +1726,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       comp_pred = 1;
     }
 
+    // For SVC, if encode_skip_frame is set: only do ZEROMV-LAST.
+    if (cpi->use_svc && cpi->svc.encode_skip_frame) {
+      if (ref_frame != LAST_FRAME || this_mode != ZEROMV)
+        continue;
+    }
+
     if (ref_frame > usable_ref_frame) continue;
     if (skip_ref_find_pred[ref_frame]) continue;
 
@@ -1995,7 +2001,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       x->pred_mv_sad[LAST_FRAME] = best_pred_sad;
     }
 
-    if (this_mode != NEARESTMV && !comp_pred &&
+    if (this_mode != NEARESTMV && !comp_pred && !cpi->svc.encode_skip_frame &&
         frame_mv[this_mode][ref_frame].as_int ==
             frame_mv[NEARESTMV][ref_frame].as_int)
       continue;
@@ -2258,6 +2264,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   if (cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.rc_mode == VPX_VBR &&
       cpi->rc.is_src_frame_alt_ref)
     perform_intra_pred = 0;
+
+  // For SVC: if encode_skip_frame is set set skip_flag and don't
+  // check intra modes.
+  if (cpi->use_svc && cpi->svc.encode_skip_frame) {
+    x->skip = 1;
+    x->skip_txfm[0] = SKIP_TXFM_AC_DC;
+    perform_intra_pred = 0;
+  }
 
   // If the segment reference frame feature is enabled and set then
   // skip the intra prediction.
