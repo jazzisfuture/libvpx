@@ -115,6 +115,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
     key_frame_spacing_ = 9999;
     num_nonref_frames_ = 0;
     layer_framedrop_ = 0;
+    framedrop_mode_ = LAYER_DROP;
   }
   virtual void BeginPassHook(unsigned int /*pass*/) {}
 
@@ -200,7 +201,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
 
       if (layer_framedrop_) {
         vpx_svc_frame_drop_t svc_drop_frame;
-        svc_drop_frame.framedrop_mode = LAYER_DROP;
+        svc_drop_frame.framedrop_mode = framedrop_mode_;
         for (i = 0; i < number_spatial_layers_; i++)
           svc_drop_frame.framedrop_thresh[i] = 30;
         encoder->Control(VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
@@ -461,6 +462,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
   int key_frame_spacing_;
   unsigned int num_nonref_frames_;
   int layer_framedrop_;
+  SVC_LAYER_DROP_MODE framedrop_mode_;
 };
 
 // Params: speed setting.
@@ -789,10 +791,11 @@ TEST_P(DatarateOnePassCbrSvcMultiBR, OnePassCbrSvc2SL3TL) {
 #endif
 }
 
-// Params: speed setting, layer framedrop control and index for bitrate array.
+// Params: speed setting, layer framedrop control, index for bitrate array and
+// layer frame drop mode.
 class DatarateOnePassCbrSvcFrameDropMultiBR
     : public DatarateOnePassCbrSvc,
-      public ::libvpx_test::CodecTestWith3Params<int, int, int> {
+      public ::libvpx_test::CodecTestWith4Params<int, int, int, int> {
  public:
   DatarateOnePassCbrSvcFrameDropMultiBR()
       : DatarateOnePassCbrSvc(GET_PARAM(0)) {
@@ -843,6 +846,7 @@ TEST_P(DatarateOnePassCbrSvcFrameDropMultiBR, OnePassCbrSvc2SL3TL4Threads) {
   cfg_.rc_target_bitrate = bitrates[GET_PARAM(3)];
   ResetModel();
   layer_framedrop_ = GET_PARAM(2);
+  framedrop_mode_ = static_cast<SVC_LAYER_DROP_MODE>(GET_PARAM(4));
   AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
                       cfg_.ts_number_layers, cfg_.temporal_layering_mode,
                       layer_target_avg_bandwidth_, bits_in_buffer_model_);
@@ -1154,7 +1158,7 @@ VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcMultiBR, ::testing::Range(5, 9),
 
 VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcFrameDropMultiBR,
                           ::testing::Range(5, 9), ::testing::Range(0, 2),
-                          ::testing::Range(0, 3));
+                          ::testing::Range(0, 3), ::testing::Range(1, 3));
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
 VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcDenoiser, ::testing::Range(5, 9),
