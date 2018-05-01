@@ -1405,6 +1405,13 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   RATE_CONTROL *const rc = &cpi->rc;
   const int qindex = cm->base_qindex;
 
+  // For SVC if this frame is a skip frame, treat it as dropped frame,
+  // don't update rate correction factor and QP stats.
+  if (cpi->use_svc && cpi->svc.encode_skip_frame) {
+    vp9_rc_postencode_update_drop_frame(cpi);
+    return;
+  }
+
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
@@ -1520,7 +1527,6 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
   // Update buffer level with zero size, update frame counters, and return.
   update_buffer_level(cpi, 0);
-  cpi->common.current_video_frame++;
   cpi->rc.frames_since_key++;
   cpi->rc.frames_to_key--;
   cpi->rc.rc_2_frame = 0;
