@@ -1726,6 +1726,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       comp_pred = 1;
     }
 
+    // For SVC, if encode_skip_frame is set: only do ZEROMV-LAST.
+    if (cpi->use_svc && cpi->svc.spatial_layer_id > 0 &&
+        cpi->svc.encode_skip_frame) {
+      if (ref_frame != LAST_FRAME || frame_mv[this_mode][ref_frame].as_int != 0)
+        continue;
+    }
+
     if (ref_frame > usable_ref_frame) continue;
     if (skip_ref_find_pred[ref_frame]) continue;
 
@@ -2258,6 +2265,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   if (cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.rc_mode == VPX_VBR &&
       cpi->rc.is_src_frame_alt_ref)
     perform_intra_pred = 0;
+
+  // For SVC: on non-base layer if encode_skip_frame is set: set skip_flag and don't
+  // check intra modes.
+  if (cpi->use_svc && cpi->svc.spatial_layer_id > 0 && cpi->svc.encode_skip_frame) {
+    x->skip = 1;
+    perform_intra_pred = 0;
+  }
 
   // If the segment reference frame feature is enabled and set then
   // skip the intra prediction.

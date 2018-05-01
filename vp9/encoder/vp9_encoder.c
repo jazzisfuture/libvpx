@@ -4488,6 +4488,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     cpi->svc.skip_enhancement_layer = 1;
     vp9_rc_postencode_update_drop_frame(cpi);
     vp9_inc_frame_in_layer(cpi);
+    cpi->common.current_video_frame++;
     cpi->ext_refresh_frame_flags_pending = 0;
     cpi->last_frame_dropped = 1;
     cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 1;
@@ -4557,6 +4558,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
          cpi->svc.framedrop_mode == CONSTRAINED_LAYER_DROP) ||
         vp9_rc_drop_frame(cpi)) {
       vp9_rc_postencode_update_drop_frame(cpi);
+      cpi->common.current_video_frame++;
       cpi->ext_refresh_frame_flags_pending = 0;
       cpi->last_frame_dropped = 1;
       if (cpi->use_svc) {
@@ -4593,8 +4595,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     encode_with_recode_loop(cpi, size, dest);
   }
 
-  cpi->last_frame_dropped = 0;
-  cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 0;
+  if (cpi->use_svc && !cpi->svc.encode_skip_frame) {
+    cpi->last_frame_dropped = 0;
+    cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 0;
+  }
 
   // Disable segmentation if it decrease rate/distortion ratio
   if (cpi->oxcf.aq_mode == LOOKAHEAD_AQ)
@@ -4682,7 +4686,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
 
   cm->last_frame_type = cm->frame_type;
 
-  vp9_rc_postencode_update(cpi, *size);
+  if (cpi->use_svc && cpi->svc.spatial_layer_id > 0 &&
+      cpi->svc.encode_skip_frame)
+    vp9_rc_postencode_update_drop_frame(cpi);
+  else
+    vp9_rc_postencode_update(cpi, *size);
 
 #if 0
   output_frame_level_debug_stats(cpi);
