@@ -423,6 +423,17 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
   if (cpi->use_svc)
     drop_frames_water_mark =
         cpi->svc.framedrop_thresh[cpi->svc.spatial_layer_id];
+  // Special case for SVC with CONSTRAINED DROP MODE, when base has non-zero
+  // framedrop threshold, but uppper layers have it set to 0.
+  // In this case: if buffer is below 0 for the non-base layer, we won't drop
+  // the frame but will force a skip encoding.
+  if (cpi->use_svc && cpi->svc.spatial_layer_id > 0 &&
+      cpi->svc.framedrop_mode == CONSTRAINED_LAYER_DROP &&
+      cpi->svc.framedrop_thresh[0] > 0 && drop_frames_water_mark == 0 &&
+      rc->buffer_level < 0) {
+    cpi->svc.force_skip_frame = 1;
+    return 0;
+  }
   if (!drop_frames_water_mark) {
     return 0;
   } else {
@@ -1520,7 +1531,6 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
   // Update buffer level with zero size, update frame counters, and return.
   update_buffer_level(cpi, 0);
-  cpi->common.current_video_frame++;
   cpi->rc.frames_since_key++;
   cpi->rc.frames_to_key--;
   cpi->rc.rc_2_frame = 0;

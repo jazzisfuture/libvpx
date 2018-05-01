@@ -40,6 +40,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->skip_enhancement_layer = 0;
   svc->disable_inter_layer_pred = INTER_LAYER_PRED_ON;
   svc->framedrop_mode = CONSTRAINED_LAYER_DROP;
+  svc->force_skip_frame = 0;
 
   for (i = 0; i < REF_FRAMES; ++i) svc->ref_frame_index[i] = -1;
   for (sl = 0; sl < oxcf->ss_number_layers; ++sl) {
@@ -740,6 +741,8 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   }
 
   if (cpi->svc.spatial_layer_id == 0) cpi->svc.high_source_sad_superframe = 0;
+
+  cpi->svc.force_skip_frame = 0;
 
   if (vp9_set_size_literal(cpi, width, height) != 0)
     return VPX_CODEC_INVALID_PARAM;
