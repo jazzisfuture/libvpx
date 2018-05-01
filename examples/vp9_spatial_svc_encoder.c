@@ -636,6 +636,7 @@ int main(int argc, const char **argv) {
   struct RateControlStats rc;
   vpx_svc_layer_id_t layer_id;
   vpx_svc_ref_frame_config_t ref_frame_config;
+  vpx_svc_frame_drop_t svc_drop_frame;
   unsigned int sl, tl;
   double sum_bitrate = 0.0;
   double sum_bitrate2 = 0.0;
@@ -731,6 +732,11 @@ int main(int argc, const char **argv) {
   vpx_codec_control(&codec, VP9E_SET_NOISE_SENSITIVITY, 0);
 
   vpx_codec_control(&codec, VP9E_SET_TUNE_CONTENT, 0);
+
+  svc_drop_frame.framedrop_mode = CONSTRAINED_LAYER_DROP;
+  for (i = 0; i < enc_cfg.ss_number_layers; i++)
+    svc_drop_frame.framedrop_thresh[i] = 0;
+  vpx_codec_control(&codec, VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
 
   // Encode frames
   while (!end_of_stream) {
