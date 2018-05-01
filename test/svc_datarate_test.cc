@@ -114,7 +114,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
     superframe_count_ = -1;
     key_frame_spacing_ = 9999;
     num_nonref_frames_ = 0;
-    layer_framedrop_ = 0;
+    framedrop_mode_ = CONSTRAINED_LAYER_DROP;
   }
   virtual void BeginPassHook(unsigned int /*pass*/) {}
 
@@ -198,13 +198,11 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
       encoder->Control(VP8E_SET_STATIC_THRESHOLD, 1);
       encoder->Control(VP9E_SET_TUNE_CONTENT, tune_content_);
 
-      if (layer_framedrop_) {
-        vpx_svc_frame_drop_t svc_drop_frame;
-        svc_drop_frame.framedrop_mode = LAYER_DROP;
-        for (i = 0; i < number_spatial_layers_; i++)
-          svc_drop_frame.framedrop_thresh[i] = 30;
-        encoder->Control(VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
-      }
+      vpx_svc_frame_drop_t svc_drop_frame;
+      svc_drop_frame.framedrop_mode = framedrop_mode_;
+      for (i = 0; i < number_spatial_layers_; i++)
+        svc_drop_frame.framedrop_thresh[i] = 30;
+      encoder->Control(VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
     }
 
     superframe_count_++;
@@ -365,7 +363,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
     ASSERT_EQ(count, num_layers_encoded);
     // In the constrained frame drop mode, if a given spatial is dropped all
     // upper layers must be dropped too.
-    if (!layer_framedrop_) {
+    if (!framedrop_mode_) {
       for (int sl = 0; sl < number_spatial_layers_; ++sl) {
         if (!pkt->data.frame.spatial_layer_encoded[sl]) {
           // Check that all upper layers are dropped.
@@ -460,7 +458,7 @@ class DatarateOnePassCbrSvc : public ::libvpx_test::EncoderTest {
   int superframe_count_;
   int key_frame_spacing_;
   unsigned int num_nonref_frames_;
-  int layer_framedrop_;
+  SVC_LAYER_DROP_MODE framedrop_mode_;
 };
 
 // Params: speed setting.
@@ -789,7 +787,8 @@ TEST_P(DatarateOnePassCbrSvcMultiBR, OnePassCbrSvc2SL3TL) {
 #endif
 }
 
-// Params: speed setting, layer framedrop control and index for bitrate array.
+// Params: speed setting, layer framedrop control, index for bitrate array and
+// layer frame drop mode.
 class DatarateOnePassCbrSvcFrameDropMultiBR
     : public DatarateOnePassCbrSvc,
       public ::libvpx_test::CodecTestWith3Params<int, int, int> {
@@ -838,11 +837,10 @@ TEST_P(DatarateOnePassCbrSvcFrameDropMultiBR, OnePassCbrSvc2SL3TL4Threads) {
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
   top_sl_width_ = 1280;
   top_sl_height_ = 720;
-  layer_framedrop_ = 0;
   const int bitrates[3] = { 200, 400, 600 };
   cfg_.rc_target_bitrate = bitrates[GET_PARAM(3)];
   ResetModel();
-  layer_framedrop_ = GET_PARAM(2);
+  framedrop_mode_ = static_cast<SVC_LAYER_DROP_MODE>(GET_PARAM(2));
   AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
                       cfg_.ts_number_layers, cfg_.temporal_layering_mode,
                       layer_target_avg_bandwidth_, bits_in_buffer_model_);
@@ -887,11 +885,10 @@ TEST_P(DatarateOnePassCbrSvcFrameDropMultiBR, OnePassCbrSvc3SL3TL4Threads) {
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
   top_sl_width_ = 1280;
   top_sl_height_ = 720;
-  layer_framedrop_ = 0;
   const int bitrates[3] = { 200, 400, 600 };
   cfg_.rc_target_bitrate = bitrates[GET_PARAM(3)];
   ResetModel();
-  layer_framedrop_ = GET_PARAM(2);
+  framedrop_mode_ = static_cast<SVC_LAYER_DROP_MODE>(GET_PARAM(2));
   AssignLayerBitrates(&cfg_, &svc_params_, cfg_.ss_number_layers,
                       cfg_.ts_number_layers, cfg_.temporal_layering_mode,
                       layer_target_avg_bandwidth_, bits_in_buffer_model_);
@@ -1153,7 +1150,7 @@ VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcMultiBR, ::testing::Range(5, 9),
                           ::testing::Range(0, 3));
 
 VP9_INSTANTIATE_TEST_CASE(DatarateOnePassCbrSvcFrameDropMultiBR,
-                          ::testing::Range(5, 9), ::testing::Range(0, 2),
+                          ::testing::Range(5, 9), ::testing::Range(0, 3),
                           ::testing::Range(0, 3));
 
 #if CONFIG_VP9_TEMPORAL_DENOISING

@@ -675,6 +675,16 @@ static void set_rt_speed_feature_framesize_independent(
           (uint8_t *)vpx_calloc((cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1),
                                 sizeof(*cpi->count_lastgolden_frame_usage));
   }
+  // For SVC if force_skip_frame is set, force 64x64 partition.
+  if (cpi->use_svc && cpi->svc.encode_skip_frame) {
+    sf->partition_search_type = FIXED_PARTITION;
+    sf->always_this_block_size = BLOCK_64X64;
+    // Turn off cyclic refresh if its enabled.
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+      cr->apply_cyclic_refresh = 0;
+    }
+  }
 }
 
 void vp9_set_speed_features_framesize_dependent(VP9_COMP *cpi) {
