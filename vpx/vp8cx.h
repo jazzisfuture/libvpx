@@ -787,6 +787,9 @@ typedef enum {
   CONSTRAINED_LAYER_DROP,
   /**< Upper layers are constrained to drop if current layer drops. */
   LAYER_DROP, /**< Any spatial layer can drop. */
+  CONSTRAINED_DROPBASE_ENCODESKIP_ENH,
+  /**< Base spatial layer can drop, and this forces drop of all spatial layers.
+   * Enhancement spatial layer encodes a skip frame instead of dropping. */
 } SVC_LAYER_DROP_MODE;
 
 /*!\brief vp9 svc frame dropping parameters.
