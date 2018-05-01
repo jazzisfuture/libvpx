@@ -3065,7 +3065,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 
     vpx_usec_timer_start(&timer);
 
-    if (!cpi->rc.is_src_frame_alt_ref) {
+    if (!cpi->rc.is_src_frame_alt_ref && !cpi->svc.encode_skip_frame) {
       if ((cpi->common.frame_type == KEY_FRAME) &&
           (!cpi->rc.this_key_frame_forced)) {
         lf->last_filt_level = 0;
@@ -4486,6 +4486,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     cpi->svc.skip_enhancement_layer = 1;
     vp9_rc_postencode_update_drop_frame(cpi);
     vp9_inc_frame_in_layer(cpi);
+    cpi->common.current_video_frame++;
     cpi->ext_refresh_frame_flags_pending = 0;
     cpi->last_frame_dropped = 1;
     cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 1;
@@ -4544,17 +4545,22 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
       cm->frame_type != KEY_FRAME &&
       (!cpi->use_svc ||
        !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame)) {
-    int svc_prev_layer_dropped = 0;
-    // In the contrained framedrop mode for svc (framedrop_mode =
-    // CONSTRAINED_LAYER_DROP), if the previous spatial layer was dropped, drop
-    // the current spatial layer.
+    int svc_force_drop_from_prev_layer = 0;
+    int drop_from_rate_control = (vp9_rc_drop_frame(cpi)) ? 1 : 0;
+    // In the contrained framedrop modes for svc, if the previous spatial layer
+    // was dropped, drop the current spatial layer. For encodeskip mode, the
+    // base layer must be dropped to force drop on upper layers.
     if (cpi->use_svc && cpi->svc.spatial_layer_id > 0 &&
-        cpi->svc.drop_spatial_layer[cpi->svc.spatial_layer_id - 1])
-      svc_prev_layer_dropped = 1;
-    if ((svc_prev_layer_dropped &&
-         cpi->svc.framedrop_mode == CONSTRAINED_LAYER_DROP) ||
-        vp9_rc_drop_frame(cpi)) {
+        ((cpi->svc.framedrop_mode == CONSTRAINED_LAYER_DROP &&
+          cpi->svc.drop_spatial_layer[cpi->svc.spatial_layer_id - 1]) ||
+         (cpi->svc.framedrop_mode == CONSTRAINED_DROPBASE_ENCODESKIP_ENH &&
+          cpi->svc.drop_spatial_layer[0])))
+      svc_force_drop_from_prev_layer = 1;
+    if (svc_force_drop_from_prev_layer ||
+        (drop_from_rate_control &&
+         cpi->svc.framedrop_mode != CONSTRAINED_DROPBASE_ENCODESKIP_ENH)) {
       vp9_rc_postencode_update_drop_frame(cpi);
+      cpi->common.current_video_frame++;
       cpi->ext_refresh_frame_flags_pending = 0;
       cpi->last_frame_dropped = 1;
       if (cpi->use_svc) {
@@ -4575,6 +4581,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
         }
       }
       return;
+    } else if (cpi->svc.framedrop_mode == CONSTRAINED_DROPBASE_ENCODESKIP_ENH &&
+               drop_from_rate_control) {
+      // Instead of dropping the frame we will encode it as skip frame,
+      // small delta/copy from previous (LAST) frame.
+      cpi->svc.encode_skip_frame = 1;
     }
   }
 
@@ -4591,8 +4602,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     encode_with_recode_loop(cpi, size, dest);
   }
 
-  cpi->last_frame_dropped = 0;
-  cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 0;
+  if (cpi->use_svc && !cpi->svc.encode_skip_frame) {
+    cpi->last_frame_dropped = 0;
+    cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 0;
+  }
 
   // Disable segmentation if it decrease rate/distortion ratio
   if (cpi->oxcf.aq_mode == LOOKAHEAD_AQ)
