@@ -160,8 +160,8 @@ YV12_BUFFER_CONFIG *vp9_get_scaled_ref_frame(const struct VP9_COMP *cpi,
 
 void vp9_init_me_luts(void);
 
-void vp9_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
-                              const struct macroblockd_plane *pd,
+void vp9_get_entropy_contexts(const TX_SIZE tx_size,
+                              const struct macroblockd_plane *const pd,
                               ENTROPY_CONTEXT t_above[16],
                               ENTROPY_CONTEXT t_left[16]);
 

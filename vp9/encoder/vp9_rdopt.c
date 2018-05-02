@@ -796,7 +796,7 @@ static void txfm_rd_in_plane(const VP9_COMP *cpi, MACROBLOCK *x, int *rate,
 
   if (plane == 0) xd->mi[0]->tx_size = tx_size;
 
-  vp9_get_entropy_contexts(bsize, tx_size, pd, args.t_above, args.t_left);
+  vp9_get_entropy_contexts(tx_size, pd, args.t_above, args.t_left);
 
   args.so = get_scan(xd, tx_size, get_plane_type(plane), 0);
 

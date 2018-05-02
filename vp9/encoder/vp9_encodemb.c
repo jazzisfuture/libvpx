@@ -715,8 +715,7 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
     if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
       const struct macroblockd_plane *const pd = &xd->plane[plane];
       const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
-      vp9_get_entropy_contexts(bsize, tx_size, pd, ctx.ta[plane],
-                               ctx.tl[plane]);
+      vp9_get_entropy_contexts(tx_size, pd, ctx.ta[plane], ctx.tl[plane]);
       arg.enable_coeff_opt = 1;
     } else {
       arg.enable_coeff_opt = 0;
@@ -972,7 +971,7 @@ void vp9_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane,
     const struct macroblockd_plane *const pd = &xd->plane[plane];
     const TX_SIZE tx_size =
         plane ? get_uv_tx_size(xd->mi[0], pd) : xd->mi[0]->tx_size;
-    vp9_get_entropy_contexts(bsize, tx_size, pd, ctx.ta[plane], ctx.tl[plane]);
+    vp9_get_entropy_contexts(tx_size, pd, ctx.ta[plane], ctx.tl[plane]);
   } else {
     arg.enable_coeff_opt = 0;
   }
