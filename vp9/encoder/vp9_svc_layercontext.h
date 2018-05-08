@@ -138,6 +138,9 @@ typedef struct SVC {
   uint8_t reference_last[VPX_SS_MAX_LAYERS];
   uint8_t reference_golden[VPX_SS_MAX_LAYERS];
   uint8_t reference_altref[VPX_SS_MAX_LAYERS];
+
+  // Keep track of the last frame buffer index on base temporal superframe.
+  uint8_t lst_fb_idx_tl0[VPX_SS_MAX_LAYERS];
 } SVC;
 
 struct VP9_COMP;

@@ -4593,6 +4593,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
 
   cpi->last_frame_dropped = 0;
   cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 0;
+  // Keep track of the lst frame buffer index for the encoded TL0 superframes.
+  if (cpi->svc.temporal_layer_id == 0)
+    cpi->svc.lst_fb_idx_tl0[cpi->svc.spatial_layer_id] = cpi->lst_fb_idx;
 
   // Disable segmentation if it decrease rate/distortion ratio
   if (cpi->oxcf.aq_mode == LOOKAHEAD_AQ)
