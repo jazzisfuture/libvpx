@@ -524,7 +524,7 @@ static void set_rt_speed_feature_framesize_independent(
             sf->intra_y_mode_bsize_mask[i] = INTRA_DC_H_V;
       }
     }
-    if (content == VP9E_CONTENT_SCREEN) {
+    if (content == VP9E_CONTENT_SCREEN && !cpi->use_svc) {
       sf->short_circuit_flat_blocks = 1;
     }
     if (cpi->oxcf.rc_mode == VPX_CBR &&
