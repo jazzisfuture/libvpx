@@ -40,13 +40,20 @@ static INLINE int16x8_t quantize_coeff(int16x8_t coeff, int16x8_t coeff_abs,
   return vec_and(qcoeff, mask);
 }
 
-static INLINE int16x8_t nonzero_scanindex(int16x8_t qcoeff, bool16x8_t mask,
+static INLINE int16x8_t nonzero_scanindex(int16x8_t qcoeff0, bool16x8_t mask0,
+                                          int16x8_t qcoeff1, bool16x8_t mask1,
                                           const int16_t *iscan_ptr) {
-  bool16x8_t zero_coeff;
-  int16x8_t scan = vec_vsx_ld(0, iscan_ptr);
-  zero_coeff = vec_cmpeq(qcoeff, vec_zeros_s16);
-  scan = vec_sub(scan, mask);
-  return vec_andc(scan, zero_coeff);
+  bool16x8_t zero_coeff0, zero_coeff1;
+  int16x8_t eob0, eob1;
+  int16x8_t scan0 = vec_vsx_ld(0, iscan_ptr);
+  int16x8_t scan1 = vec_vsx_ld(16, iscan_ptr);
+  zero_coeff0 = vec_cmpeq(qcoeff0, vec_zeros_s16);
+  zero_coeff1 = vec_cmpeq(qcoeff1, vec_zeros_s16);
+  scan0 = vec_sub(scan0, mask0);
+  scan1 = vec_sub(scan1, mask1);
+  eob0 = vec_andc(scan0, zero_coeff0);
+  eob1 = vec_andc(scan1, zero_coeff1);
+  return vec_max(eob0, eob1);
 }
 
 // Compare packed 16-bit integers across a, and return the maximum value in
@@ -64,7 +71,8 @@ void vpx_quantize_b_vsx(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                         tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
                         uint16_t *eob_ptr, const int16_t *scan_ptr,
                         const int16_t *iscan_ptr) {
-  int16x8_t qcoeff, dqcoeff, eob;
+  int16x8_t qcoeff0, qcoeff1, dqcoeff0, dqcoeff1, eob;
+  bool16x8_t zero_mask0, zero_mask1;
 
   // First set of 8 coeff starts with DC + 7 AC
   int16x8_t zbin = vec_vsx_ld(0, zbin_ptr);
@@ -73,51 +81,68 @@ void vpx_quantize_b_vsx(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   int16x8_t dequant = vec_vsx_ld(0, dequant_ptr);
   int16x8_t quant_shift = vec_vsx_ld(0, quant_shift_ptr);
 
-  int16x8_t coeff = vec_vsx_ld(0, coeff_ptr);
-  int16x8_t coeff_abs = vec_abs(coeff);
-  bool16x8_t zero_mask = vec_cmpge(coeff_abs, zbin);
+  int16x8_t coeff0 = vec_vsx_ld(0, coeff_ptr);
+  int16x8_t coeff1 = vec_vsx_ld(16, coeff_ptr);
+
+  int16x8_t coeff0_abs = vec_abs(coeff0);
+  int16x8_t coeff1_abs = vec_abs(coeff1);
+
+  zero_mask0 = vec_cmpge(coeff0_abs, zbin);
+  zbin = vec_splat(zbin, 1);
+  zero_mask1 = vec_cmpge(coeff1_abs, zbin);
 
   (void)scan_ptr;
   (void)skip_block;
   assert(!skip_block);
 
-  qcoeff =
-      quantize_coeff(coeff, coeff_abs, round, quant, quant_shift, zero_mask);
-  vec_vsx_st(qcoeff, 0, qcoeff_ptr);
-
-  dqcoeff = vec_mladd(qcoeff, dequant, vec_zeros_s16);
-  vec_vsx_st(dqcoeff, 0, dqcoeff_ptr);
-
-  eob = nonzero_scanindex(qcoeff, zero_mask, iscan_ptr);
-
-  // All other sets of 8 coeffs will only contain AC
-  zbin = vec_splat(zbin, 1);
+  qcoeff0 =
+      quantize_coeff(coeff0, coeff0_abs, round, quant, quant_shift, zero_mask0);
+  vec_vsx_st(qcoeff0, 0, qcoeff_ptr);
   round = vec_splat(round, 1);
   quant = vec_splat(quant, 1);
-  dequant = vec_splat(dequant, 1);
   quant_shift = vec_splat(quant_shift, 1);
+  qcoeff1 =
+      quantize_coeff(coeff1, coeff1_abs, round, quant, quant_shift, zero_mask1);
+  vec_vsx_st(qcoeff1, 16, qcoeff_ptr);
 
-  n_coeffs -= 8;
-  do {
-    coeff_ptr += 8;
-    qcoeff_ptr += 8;
-    dqcoeff_ptr += 8;
-    iscan_ptr += 8;
+  dqcoeff0 = vec_mladd(qcoeff0, dequant, vec_zeros_s16);
+  vec_vsx_st(dqcoeff0, 0, dqcoeff_ptr);
+  dequant = vec_splat(dequant, 1);
+  dqcoeff1 = vec_mladd(qcoeff1, dequant, vec_zeros_s16);
+  vec_vsx_st(dqcoeff1, 16, dqcoeff_ptr);
 
-    coeff = vec_vsx_ld(0, coeff_ptr);
-    coeff_abs = vec_abs(coeff);
-    zero_mask = vec_cmpge(coeff_abs, zbin);
-    qcoeff =
-        quantize_coeff(coeff, coeff_abs, round, quant, quant_shift, zero_mask);
-    vec_vsx_st(qcoeff, 0, qcoeff_ptr);
+  eob = nonzero_scanindex(qcoeff0, zero_mask0, qcoeff1, zero_mask1, iscan_ptr);
 
-    dqcoeff = vec_mladd(qcoeff, dequant, vec_zeros_s16);
-    vec_vsx_st(dqcoeff, 0, dqcoeff_ptr);
+  n_coeffs -= 16;
+  while (n_coeffs > 0) {
+    coeff_ptr += 16;
+    qcoeff_ptr += 16;
+    dqcoeff_ptr += 16;
+    iscan_ptr += 16;
 
-    eob = vec_max(eob, nonzero_scanindex(qcoeff, zero_mask, iscan_ptr));
+    coeff0 = vec_vsx_ld(0, coeff_ptr);
+    coeff1 = vec_vsx_ld(16, coeff_ptr);
+    coeff0_abs = vec_abs(coeff0);
+    coeff1_abs = vec_abs(coeff1);
+    zero_mask0 = vec_cmpge(coeff0_abs, zbin);
+    zero_mask1 = vec_cmpge(coeff1_abs, zbin);
+    qcoeff0 = quantize_coeff(coeff0, coeff0_abs, round, quant, quant_shift,
+                             zero_mask0);
+    qcoeff1 = quantize_coeff(coeff1, coeff1_abs, round, quant, quant_shift,
+                             zero_mask1);
+    vec_vsx_st(qcoeff0, 0, qcoeff_ptr);
+    vec_vsx_st(qcoeff1, 16, qcoeff_ptr);
 
-    n_coeffs -= 8;
-  } while (n_coeffs > 0);
+    dqcoeff0 = vec_mladd(qcoeff0, dequant, vec_zeros_s16);
+    dqcoeff1 = vec_mladd(qcoeff1, dequant, vec_zeros_s16);
+    vec_vsx_st(dqcoeff0, 0, dqcoeff_ptr);
+    vec_vsx_st(dqcoeff1, 16, dqcoeff_ptr);
+
+    eob = vec_max(eob, nonzero_scanindex(qcoeff0, zero_mask0, qcoeff1,
+                                         zero_mask1, iscan_ptr));
+
+    n_coeffs -= 16;
+  }
 
   eob = vec_max_across(eob);
   *eob_ptr = eob[0];
