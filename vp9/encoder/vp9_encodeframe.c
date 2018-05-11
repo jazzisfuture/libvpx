@@ -3525,6 +3525,69 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
   }
 
+#if 0
+  do {
+    const int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+    const int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+    const int left_in_image = !!xd->left_mi;
+    const int above_in_image = !!xd->above_mi;
+    MODE_INFO **prev_mi =
+        &cm->prev_mi_grid_visible[mi_col + cm->mi_stride * mi_row];
+    int above_par = -1;  // above_partitioning
+    int left_par = -1;   // left_partitioning
+    int last_par = -1;   // last_partitioning
+    BLOCK_SIZE context_size;
+    FILE *fp;
+
+    if (bsize < BLOCK_8X8) break;
+    if (bsize == BLOCK_8X8) {
+      const int rnd_val = rand() % 4;
+      if (rnd_val) break;
+    }
+    fp = fopen("vp9_partition_data.txt", "a");
+    if (!fp) break;
+
+    if (above_in_image) {
+      context_size = xd->above_mi->sb_type;
+      if (context_size < bsize)
+        above_par = 2;
+      else if (context_size == bsize)
+        above_par = 1;
+      else
+        above_par = 0;
+    }
+    if (left_in_image) {
+      context_size = xd->left_mi->sb_type;
+      if (context_size < bsize)
+        left_par = 2;
+      else if (context_size == bsize)
+        left_par = 1;
+      else
+        left_par = 0;
+    }
+    if (!frame_is_intra_only(cm) && prev_mi) {
+      context_size = prev_mi[0]->sb_type;
+      if (context_size < bsize)
+        last_par = 2;
+      else if (context_size == bsize)
+        last_par = 1;
+      else
+        last_par = 0;
+    }
+
+    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+            pc_tree->partitioning, bw, bh, ctx->rate,
+            (int)((ctx->dist > INT_MAX) ? INT_MAX : ctx->dist),
+            ctx->mic.mv[0].as_mv.row, ctx->mic.mv[0].as_mv.col,
+            left_par, above_par, last_par, ctx->sum_y_eobs, cm->base_qindex,
+            ctx->mic.mode, ctx->mic.uv_mode, ctx->mic.tx_size,
+            ctx->mic.interp_filter, ctx->mic.ref_frame[0],
+            ctx->mic.ref_frame[1]);
+    fprintf(fp, "\n");
+    fclose(fp);
+  } while (0);
+#endif
+
   // TODO(jbb): This code added so that we avoid static analysis
   // warning related to the fact that best_rd isn't used after this
   // point.  This code should be refactored so that the duplicate
