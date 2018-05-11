@@ -161,7 +161,6 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
   const int boosted = frame_is_boosted(cpi);
   int i;
 
-  sf->tx_size_search_breakout = 1;
   sf->adaptive_rd_thresh = 1;
   sf->adaptive_rd_thresh_row_mt = 0;
   sf->allow_skip_recode = 1;
@@ -183,6 +182,7 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
   }
 
   if (speed >= 1) {
+    sf->tx_size_search_breakout = 0;
     if (oxcf->pass == 2) {
       TWO_PASS *const twopass = &cpi->twopass;
       if ((twopass->fr_content_type == FC_GRAPHICS_ANIMATION) ||
@@ -375,6 +375,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->nonrd_keyframe = 0;
   sf->svc_use_lowres_part = 0;
   sf->re_encode_overshoot_rt = 0;
+  sf->tx_size_search_breakout = 0;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -816,8 +817,8 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
 
   // Some speed-up features even for best quality as minimal impact on quality.
   sf->adaptive_rd_thresh = 1;
-  sf->tx_size_search_breakout = 1;
   sf->tx_size_search_depth = 2;
+  sf->tx_size_search_breakout = 0;
 
   sf->exhaustive_searches_thresh =
       (cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ? (1 << 20)
