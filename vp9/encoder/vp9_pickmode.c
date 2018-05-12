@@ -1504,6 +1504,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int svc_mv_row = 0;
   int no_scaling = 0;
   unsigned int thresh_svc_skip_golden = 500;
+  int i, j;
+  for (i = 0; i < MB_MODE_COUNT; i++)
+    for (j = 0; j < MAX_REF_FRAMES; j++) frame_mv[i][j].as_int = INVALID_MV;
+
   if (cpi->use_svc && cpi->svc.spatial_layer_id > 0) {
     int layer = LAYER_IDS_TO_IDX(cpi->svc.spatial_layer_id - 1,
                                  cpi->svc.temporal_layer_id,
@@ -1772,6 +1776,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       continue;
 
     if (sf->short_circuit_flat_blocks && x->source_variance == 0 &&
+        frame_mv[this_mode][ref_frame].as_int != INVALID_MV &&
         frame_mv[this_mode][ref_frame].as_int != 0) {
       continue;
     }
