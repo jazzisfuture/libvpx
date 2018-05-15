@@ -375,6 +375,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->nonrd_keyframe = 0;
   sf->svc_use_lowres_part = 0;
   sf->re_encode_overshoot_rt = 0;
+  sf->disable_16x16part_nonkey = 0;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -671,8 +672,14 @@ static void set_rt_speed_feature_framesize_independent(
   if (speed >= 9) {
     sf->mv.enable_adaptive_subpel_force_stop = 1;
     sf->mv.adapt_subpel_force_stop.mv_thresh = 2;
+    if (cpi->rc.avg_frame_low_motion < 40)
+      sf->mv.adapt_subpel_force_stop.mv_thresh = 1;
     sf->mv.adapt_subpel_force_stop.force_stop_below = 1;
     sf->mv.adapt_subpel_force_stop.force_stop_above = 2;
+    // Disable partition blocks below 16x16, except for low-resolutions.
+    if (cm->width >= 320 && cm->height >= 240) sf->disable_16x16part_nonkey = 1;
+    // Disable GOLDEN reference.
+    cpi->ref_frame_flags &= (~VP9_GOLD_FLAG);
   }
 
   if (sf->use_altref_onepass) {
