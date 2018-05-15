@@ -2460,7 +2460,10 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   int thresh_qp = 3 * (rc->worst_quality >> 2);
-  int thresh_rate = rc->avg_frame_bandwidth * 10;
+  int thresh_rate = rc->avg_frame_bandwidth << 3;
+  // Lower rate threshold for video.
+  if (cpi->oxcf.content != VP9E_CONTENT_SCREEN)
+    thresh_rate = rc->avg_frame_bandwidth << 2;
   if (cm->base_qindex < thresh_qp && frame_size > thresh_rate) {
     double rate_correction_factor =
         cpi->rc.rate_correction_factors[INTER_NORMAL];
