@@ -1082,37 +1082,37 @@ if (vpx_config("CONFIG_ENCODERS") eq "yes" || vpx_config("CONFIG_POSTPROC") eq "
 # Variance
 #
 add_proto qw/unsigned int vpx_variance64x64/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance64x64 sse2 avx2 neon msa mmi/;
+  specialize qw/vpx_variance64x64 sse2 avx2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance64x32/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance64x32 sse2 avx2 neon msa mmi/;
+  specialize qw/vpx_variance64x32 sse2 avx2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance32x64/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance32x64 sse2 avx2 neon msa mmi/;
+  specialize qw/vpx_variance32x64 sse2 avx2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance32x32/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance32x32 sse2 avx2 neon msa mmi/;
+  specialize qw/vpx_variance32x32 sse2 avx2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance32x16/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance32x16 sse2 avx2 neon msa mmi/;
+  specialize qw/vpx_variance32x16 sse2 avx2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance16x32/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance16x32 sse2 avx2 neon msa mmi/;
+  specialize qw/vpx_variance16x32 sse2 avx2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance16x16/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance16x16 sse2 avx2 neon msa mmi/;
+  specialize qw/vpx_variance16x16 sse2 avx2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance16x8/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance16x8 sse2 avx2 neon msa mmi/;
+  specialize qw/vpx_variance16x8 sse2 avx2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance8x16/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance8x16 sse2 neon msa mmi/;
+  specialize qw/vpx_variance8x16 sse2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance8x8/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance8x8 sse2 neon msa mmi/;
+  specialize qw/vpx_variance8x8 sse2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance8x4/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
-  specialize qw/vpx_variance8x4 sse2 neon msa mmi/;
+  specialize qw/vpx_variance8x4 sse2 neon msa mmi vsx/;
 
 add_proto qw/unsigned int vpx_variance4x8/, "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse";
   specialize qw/vpx_variance4x8 sse2 neon msa mmi/;
@@ -1190,7 +1190,7 @@ add_proto qw/uint32_t vpx_sub_pixel_variance4x8/, "const uint8_t *src_ptr, int s
   specialize qw/vpx_sub_pixel_variance4x8 neon msa mmi sse2 ssse3/;
 
 add_proto qw/uint32_t vpx_sub_pixel_variance4x4/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse";
-  specialize qw/vpx_sub_pixel_variance4x4 neon msa mmi sse2 ssse3/;
+  specialize qw/vpx_sub_pixel_variance4x4 neon msa mmi sse2 ssse3 /;
 
 add_proto qw/uint32_t vpx_sub_pixel_avg_variance64x64/, "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, uint32_t *sse, const uint8_t *second_pred";
   specialize qw/vpx_sub_pixel_avg_variance64x64 neon avx2 msa mmi sse2 ssse3/;

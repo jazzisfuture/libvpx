@@ -101,3 +101,142 @@ void vpx_comp_avg_pred_vsx(uint8_t *comp_pred, const uint8_t *pred, int width,
     }
   }
 }
+
+static inline void variance_inner_32(const uint8_t *a, const uint8_t *b,
+                                     int32x4_t *ps, int32x4_t *pss) {
+  int32x4_t s = *ps;
+  int32x4_t ss = *pss;
+
+  const uint8x16_t va0 = vec_vsx_ld(0, a);
+  const uint8x16_t vb0 = vec_vsx_ld(0, b);
+  const uint8x16_t va1 = vec_vsx_ld(16, a);
+  const uint8x16_t vb1 = vec_vsx_ld(16, b);
+
+  const int16x8_t a0 = unpack_to_s16_h(va0);
+  const int16x8_t b0 = unpack_to_s16_h(vb0);
+  const int16x8_t a1 = unpack_to_s16_l(va0);
+  const int16x8_t b1 = unpack_to_s16_l(vb0);
+  const int16x8_t a2 = unpack_to_s16_h(va1);
+  const int16x8_t b2 = unpack_to_s16_h(vb1);
+  const int16x8_t a3 = unpack_to_s16_l(va1);
+  const int16x8_t b3 = unpack_to_s16_l(vb1);
+  const int16x8_t d0 = vec_sub(a0, b0);
+  const int16x8_t d1 = vec_sub(a1, b1);
+  const int16x8_t d2 = vec_sub(a2, b2);
+  const int16x8_t d3 = vec_sub(a3, b3);
+
+  s = vec_sum4s(d0, s);
+  ss = vec_msum(d0, d0, ss);
+  s = vec_sum4s(d1, s);
+  ss = vec_msum(d1, d1, ss);
+  s = vec_sum4s(d2, s);
+  ss = vec_msum(d2, d2, ss);
+  s = vec_sum4s(d3, s);
+  ss = vec_msum(d3, d3, ss);
+  *ps = s;
+  *pss = ss;
+}
+
+static inline void variance(const uint8_t *a, int a_stride, const uint8_t *b,
+                            int b_stride, int w, int h, uint32_t *sse,
+                            int *sum) {
+  int i;
+
+  int32x4_t s = vec_splat_s32(0);
+  int32x4_t ss = vec_splat_s32(0);
+
+  switch (w) {
+    case 4:
+      for (i = 0; i < h / 4; ++i) {
+        const int16x8_t a0 = unpack_to_s16_h(read4x2(a, a_stride));
+        const int16x8_t b0 = unpack_to_s16_h(read4x2(b, b_stride));
+        const int16x8_t d = vec_sub(a0, b0);
+        s = vec_sum4s(d, s);
+        ss = vec_msum(d, d, ss);
+        a += a_stride * 2;
+        b += b_stride * 2;
+      }
+      break;
+    case 8:
+      for (i = 0; i < h; ++i) {
+        const int16x8_t a0 = unpack_to_s16_h(vec_vsx_ld(0, a));
+        const int16x8_t b0 = unpack_to_s16_h(vec_vsx_ld(0, b));
+        const int16x8_t d = vec_sub(a0, b0);
+
+        s = vec_sum4s(d, s);
+        ss = vec_msum(d, d, ss);
+        a += a_stride;
+        b += b_stride;
+      }
+      break;
+    case 16:
+      for (i = 0; i < h; ++i) {
+        const uint8x16_t va = vec_vsx_ld(0, a);
+        const uint8x16_t vb = vec_vsx_ld(0, b);
+        const int16x8_t a0 = unpack_to_s16_h(va);
+        const int16x8_t b0 = unpack_to_s16_h(vb);
+        const int16x8_t a1 = unpack_to_s16_l(va);
+        const int16x8_t b1 = unpack_to_s16_l(vb);
+        const int16x8_t d0 = vec_sub(a0, b0);
+        const int16x8_t d1 = vec_sub(a1, b1);
+
+        s = vec_sum4s(d0, s);
+        ss = vec_msum(d0, d0, ss);
+        s = vec_sum4s(d1, s);
+        ss = vec_msum(d1, d1, ss);
+
+        a += a_stride;
+        b += b_stride;
+      }
+      break;
+    case 32:
+      for (i = 0; i < h; ++i) {
+        variance_inner_32(a, b, &s, &ss);
+        a += a_stride;
+        b += b_stride;
+      }
+      break;
+    case 64:
+      for (i = 0; i < h; ++i) {
+        variance_inner_32(a, b, &s, &ss);
+        variance_inner_32(a + 32, b + 32, &s, &ss);
+
+        a += a_stride;
+        b += b_stride;
+      }
+      break;
+  }
+
+  s = vec_splat(vec_sums(s, vec_splat_s32(0)), 3);
+
+  vec_ste(s, 0, sum);
+
+  ss = vec_splat(vec_sums(ss, vec_splat_s32(0)), 3);
+
+  vec_ste((uint32x4_t)ss, 0, sse);
+}
+
+#define VAR(W, H)                                                      \
+  uint32_t vpx_variance##W##x##H##_vsx(const uint8_t *a, int a_stride, \
+                                       const uint8_t *b, int b_stride, \
+                                       uint32_t *sse) {                \
+    int sum;                                                           \
+    variance(a, a_stride, b, b_stride, W, H, sse, &sum);               \
+    return *sse - (uint32_t)(((int64_t)sum * sum) / (W * H));          \
+  }
+
+#define VARIANCES(W, H) VAR(W, H)
+
+VARIANCES(64, 64)
+VARIANCES(64, 32)
+VARIANCES(32, 64)
+VARIANCES(32, 32)
+VARIANCES(32, 16)
+VARIANCES(16, 32)
+VARIANCES(16, 16)
+VARIANCES(16, 8)
+VARIANCES(8, 16)
+VARIANCES(8, 8)
+VARIANCES(8, 4)
+VARIANCES(4, 8)
+VARIANCES(4, 4)
