@@ -531,6 +531,9 @@ typedef struct SPEED_FEATURES {
   // Enable re-encoding on scene change with potential high overshoot,
   // for real-time encoding flow.
   int re_encode_overshoot_rt;
+
+  // Disable partitioning of 16x16 blocks.
+  int disable_16x16part_nonkey;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
