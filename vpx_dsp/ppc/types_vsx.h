@@ -19,6 +19,8 @@ typedef vector signed short int16x8_t;
 typedef vector unsigned short uint16x8_t;
 typedef vector signed int int32x4_t;
 typedef vector unsigned int uint32x4_t;
+typedef vector signed long int64x2_t;
+typedef vector unsigned long uint64x2_t;
 typedef vector bool short bool16x8_t;
 
 #ifdef __clang__
@@ -70,6 +72,7 @@ static const int16x8_t vec_zeros_s16 = { 0, 0, 0, 0, 0, 0, 0, 0 };
 static const int16x8_t vec_ones_s16 = { 1, 1, 1, 1, 1, 1, 1, 1 };
 static const uint16x8_t vec_ones_u16 = { 1, 1, 1, 1, 1, 1, 1, 1 };
 static const uint32x4_t vec_ones_u32 = { 1, 1, 1, 1 };
+static const int32x4_t vec_zeros_s32 = { 0, 0, 0, 0 };
 static const uint16x8_t vec_shift_sign_s16 = { 15, 15, 15, 15, 15, 15, 15, 15 };
 static const uint32x4_t vec_shift_sign_s32 = { 31, 31, 31, 31 };
 static const uint8x16_t vec_perm64 = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
