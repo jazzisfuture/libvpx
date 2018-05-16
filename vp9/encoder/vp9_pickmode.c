@@ -1764,7 +1764,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         frame_mv[this_mode][ref_frame].as_mv.row = svc_mv_row;
       } else if (frame_mv[this_mode][ref_frame].as_mv.col != svc_mv_col ||
                  frame_mv[this_mode][ref_frame].as_mv.row != svc_mv_row) {
-        continue;
+        // Allow zeromv to be always checked.
+        if (frame_mv[this_mode][ref_frame].as_int != 0) continue;
       }
     }
 
