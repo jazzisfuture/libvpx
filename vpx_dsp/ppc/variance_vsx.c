@@ -147,30 +147,37 @@ static INLINE void variance(const uint8_t *a, int a_stride, const uint8_t *b,
   int32x4_t ss = vec_splat_s32(0);
 
   switch (w) {
-    case 4:
+    case 4: {
+      int16x8_t s0 = vec_zeros_s16;
       for (i = 0; i < h / 2; ++i) {
         const int16x8_t a0 = unpack_to_s16_h(read4x2(a, a_stride));
         const int16x8_t b0 = unpack_to_s16_h(read4x2(b, b_stride));
         const int16x8_t d = vec_sub(a0, b0);
-        s = vec_sum4s(d, s);
+        s0 = vec_add(d, s0);
         ss = vec_msum(d, d, ss);
         a += a_stride * 2;
         b += b_stride * 2;
       }
+      s = vec_sum4s(s0, s);
       break;
-    case 8:
+    }
+    case 8: {
+      int16x8_t s0 = vec_zeros_s16;
       for (i = 0; i < h; ++i) {
         const int16x8_t a0 = unpack_to_s16_h(vec_vsx_ld(0, a));
         const int16x8_t b0 = unpack_to_s16_h(vec_vsx_ld(0, b));
         const int16x8_t d = vec_sub(a0, b0);
-
-        s = vec_sum4s(d, s);
+        s0 = vec_add(d, s0);
         ss = vec_msum(d, d, ss);
         a += a_stride;
         b += b_stride;
       }
+      s = vec_sum4s(s0, s);
       break;
-    case 16:
+    }
+    case 16: {
+      int16x8_t s0 = vec_zeros_s16;
+      int16x8_t s1 = vec_zeros_s16;
       for (i = 0; i < h; ++i) {
         const uint8x16_t va = vec_vsx_ld(0, a);
         const uint8x16_t vb = vec_vsx_ld(0, b);
@@ -181,15 +188,19 @@ static INLINE void variance(const uint8_t *a, int a_stride, const uint8_t *b,
         const int16x8_t d0 = vec_sub(a0, b0);
         const int16x8_t d1 = vec_sub(a1, b1);
 
-        s = vec_sum4s(d0, s);
+        s0 = vec_add(d0, s0);
+        s1 = vec_add(d1, s1);
+
         ss = vec_msum(d0, d0, ss);
-        s = vec_sum4s(d1, s);
         ss = vec_msum(d1, d1, ss);
 
         a += a_stride;
         b += b_stride;
       }
+      s = vec_sum4s(s0, s);
+      s = vec_sum4s(s1, s);
       break;
+    }
     case 32:
       for (i = 0; i < h; ++i) {
         variance_inner_32(a, b, &ss, &s);
