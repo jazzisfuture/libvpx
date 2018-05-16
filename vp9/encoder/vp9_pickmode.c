@@ -1757,14 +1757,32 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     if (flag_svc_subpel && ref_frame == inter_layer_ref) {
       force_gf_mv = 1;
-      // Only test mode if NEARESTMV/NEARMV is (svc_mv_col, svc_mv_row),
-      // otherwise set NEWMV to (svc_mv_col, svc_mv_row).
-      if (this_mode == NEWMV) {
-        frame_mv[this_mode][ref_frame].as_mv.col = svc_mv_col;
-        frame_mv[this_mode][ref_frame].as_mv.row = svc_mv_row;
-      } else if (frame_mv[this_mode][ref_frame].as_mv.col != svc_mv_col ||
-                 frame_mv[this_mode][ref_frame].as_mv.row != svc_mv_row) {
-        continue;
+      if (0 && !svc->layer_context[svc->temporal_layer_id].is_key_frame) {
+        // Only test mode if NEARESTMV/NEARMV is (svc_mv_col, svc_mv_row),
+        // otherwise set NEWMV to (svc_mv_col, svc_mv_row).
+        // This guarantees we only check 1 motion for inter_layer_ref, the
+        // motion vector (svc_mv_col, svc_mv_row).
+        if (this_mode == NEWMV) {
+          frame_mv[this_mode][ref_frame].as_mv.col = svc_mv_col;
+          frame_mv[this_mode][ref_frame].as_mv.row = svc_mv_row;
+        } else if (frame_mv[this_mode][ref_frame].as_mv.col != svc_mv_col ||
+                   frame_mv[this_mode][ref_frame].as_mv.row != svc_mv_row) {
+          continue;
+        }
+      } else {
+        // Allow zero/nearest/nearmv/newmv to be tested, but NEWMV will be set
+        // to (svc_mv_col, svc_mv_row) is that motion was not already tested.
+        if (this_mode == NEWMV) {
+          // If both NEAREST and NEAR are not (svc_mv_col, svc_mv_row), then
+          // set NEWMV to that motion vector.
+          if ((frame_mv[NEARESTMV][ref_frame].as_mv.col != svc_mv_col ||
+               frame_mv[NEARESTMV][ref_frame].as_mv.row != svc_mv_row) &&
+              (frame_mv[NEARMV][ref_frame].as_mv.col != svc_mv_col ||
+               frame_mv[NEARMV][ref_frame].as_mv.row != svc_mv_row)) {
+            frame_mv[NEWMV][ref_frame].as_mv.col = svc_mv_col;
+            frame_mv[NEWMV][ref_frame].as_mv.row = svc_mv_row;
+          }
+        }
       }
     }
 
