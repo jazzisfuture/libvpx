@@ -3296,7 +3296,8 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
           // VPXMIN(cm->width, cm->height) >= 480, and speed = 0.
           if (!x->e_mbd.lossless &&
               !segfeature_active(&cm->seg, mi->segment_id, SEG_LVL_SKIP) &&
-              ctx->mic.mode >= INTRA_MODES && bsize >= BLOCK_16X16) {
+              ctx->mic.mode >= INTRA_MODES && bsize >= BLOCK_16X16 &&
+              bsize < BLOCK_64X64) {
             if (compute_score(cm, xd, ctx, mi_row, mi_col, bsize) < 0.0) {
               do_split = 0;
               do_rect = 0;
