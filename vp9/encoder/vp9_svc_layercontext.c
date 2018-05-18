@@ -790,7 +790,8 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   if (cpi->svc.spatial_layer_id == 0) cpi->svc.high_source_sad_superframe = 0;
 
   if (cpi->svc.temporal_layering_mode != VP9E_TEMPORAL_LAYERING_MODE_BYPASS &&
-      cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id]) {
+      cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] &&
+      !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame) {
     // For fixed/non-flexible mode, if the previous frame (same spatial layer
     // from previous superframe) was dropped, make sure the lst_fb_idx
     // for this frame corresponds to the buffer index updated on (last) encoded
