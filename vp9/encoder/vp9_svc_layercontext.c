@@ -790,7 +790,8 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   if (cpi->svc.spatial_layer_id == 0) cpi->svc.high_source_sad_superframe = 0;
 
   if (cpi->svc.temporal_layering_mode != VP9E_TEMPORAL_LAYERING_MODE_BYPASS &&
-      cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id]) {
+      cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] &&
+      !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame) {
     // For fixed/non-flexible mode, if the previous frame (same spatial layer
     // from previous superframe) was dropped, make sure the lst_fb_idx
     // for this frame corresponds to the buffer index updated on (last) encoded
@@ -906,19 +907,18 @@ void vp9_svc_constrain_inter_layer_pred(VP9_COMP *const cpi) {
       }
     }
   }
-  // Check for disabling inter-layer prediction if
-  // INTER_LAYER_PRED_ON_CONSTRAINED is enabled.
-  // If the reference for inter-layer prediction (the reference that is scaled)
-  // is not the previous spatial layer from the same superframe, then we
-  // disable inter-layer prediction.
-  if (cpi->svc.disable_inter_layer_pred == INTER_LAYER_PRED_ON_CONSTRAINED) {
+  // Check for disabling inter-layer prediction if the reference for inter-layer
+  // prediction (the reference that is scaled) is not the previous spatial layer
+  // from the same superframe, then we disable inter-layer prediction.
+  // Only need to check when inter_layer prediction is not OFF.
+  if (cpi->svc.disable_inter_layer_pred != INTER_LAYER_PRED_OFF) {
     // We only use LAST and GOLDEN for prediction in real-time mode, so we
     // check both here.
     MV_REFERENCE_FRAME ref_frame;
     for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ref_frame++) {
       struct scale_factors *scale_fac = &cm->frame_refs[ref_frame - 1].sf;
       if (vp9_is_scaled(scale_fac)) {
-        // If this reference  was updated on the previous spatial layer of the
+        // If this reference was updated on the previous spatial layer of the
         // current superframe, then we keep this reference (don't disable).
         // Otherwise we disable the inter-layer prediction.
         // This condition is verified by checking if the current frame buffer
