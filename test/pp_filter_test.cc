@@ -481,4 +481,9 @@ INSTANTIATE_TEST_CASE_P(MSA, VpxMbPostProcDownTest,
                         ::testing::Values(vpx_mbpost_proc_down_msa));
 #endif  // HAVE_MSA
 
+#if HAVE_VSX
+INSTANTIATE_TEST_CASE_P(VSX, VpxMbPostProcDownTest,
+                        ::testing::Values(vpx_mbpost_proc_down_vsx));
+#endif  // HAVE_VSX
+
 }  // namespace
