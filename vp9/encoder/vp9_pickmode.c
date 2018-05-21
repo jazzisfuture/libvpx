@@ -2055,10 +2055,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       TX_SIZE pf_tx_size[3];
       int64_t best_cost = INT64_MAX;
       INTERP_FILTER best_filter = SWITCHABLE, filter;
+      INTERP_FILTER stop_filter = EIGHTTAP_SMOOTH;
       PRED_BUFFER *current_pred = this_mode_pred;
       rd_computed = 1;
+      if (cpi->oxcf.content == VP9E_CONTENT_SCREEN)
+        stop_filter = EIGHTTAP_SHARP;
 
-      for (filter = EIGHTTAP; filter <= EIGHTTAP_SMOOTH; ++filter) {
+      for (filter = EIGHTTAP; filter <= stop_filter; ++filter) {
         int64_t cost;
         mi->interp_filter = filter;
         vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
