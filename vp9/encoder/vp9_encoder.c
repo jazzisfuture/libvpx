@@ -2325,6 +2325,16 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   }
 #endif  // !CONFIG_REALTIME_ONLY
 
+  for (int frame = 0; frame < MAX_LAG_BUFFERS; ++frame) {
+    CHECK_MEM_ERROR(cm, cpi->tpl_stats[frame].tpl_stats_ptr,
+                    vpx_calloc(cm->mi_rows * cm->mi_cols,
+                               sizeof(*cpi->tpl_stats[frame].tpl_stats_ptr)));
+    cpi->tpl_stats[frame].is_valid = 1;
+    cpi->tpl_stats[frame].width = cm->mi_cols;
+    cpi->tpl_stats[frame].height = cm->mi_rows;
+    cpi->tpl_stats[frame].stride = cm->mi_cols;
+  }
+
   vp9_set_speed_features_framesize_independent(cpi);
   vp9_set_speed_features_framesize_dependent(cpi);
 
@@ -2510,6 +2520,11 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 #if CONFIG_VP9_TEMPORAL_DENOISING
   vp9_denoiser_free(&(cpi->denoiser));
 #endif
+
+  for (int frame = 0; frame < MAX_LAG_BUFFERS; ++frame) {
+    if (cpi->tpl_stats->is_valid) vpx_free(cpi->tpl_stats->tpl_stats_ptr);
+    cpi->tpl_stats->is_valid = 0;
+  }
 
   for (t = 0; t < cpi->num_workers; ++t) {
     VPxWorker *const worker = &cpi->workers[t];
