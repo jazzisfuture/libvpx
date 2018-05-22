@@ -26,6 +26,7 @@
 #include "vp9/common/vp9_scan.h"
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
+#include "test/bench.h"
 #include "vpx_ports/vpx_timer.h"
 
 using libvpx_test::ACMRandom;
@@ -438,22 +439,25 @@ TEST_P(VP9QuantizeTest, DISABLED_Speed) {
         coeff.Set(&rnd, -500, 500);
       }
 
-      vpx_usec_timer timer;
-      vpx_usec_timer_start(&timer);
-      for (int j = 0; j < 100000000 / count; ++j) {
-        quantize_op_(coeff.TopLeftPixel(), count, skip_block, zbin_ptr_, r_ptr,
-                     q_ptr, quant_shift_ptr_, qcoeff.TopLeftPixel(),
-                     dqcoeff.TopLeftPixel(), dequant_ptr_, &eob,
-                     scan_order->scan, scan_order->iscan);
+      vpx_usec_timer timer[VPX_BENCH_ROBUST_ITER];
+      for (int r = 0; r < VPX_BENCH_ROBUST_ITER; r++) {
+        vpx_usec_timer_start(&timer[r]);
+        for (int j = 0; j < 10000000 / count; ++j) {
+          quantize_op_(coeff.TopLeftPixel(), count, skip_block, zbin_ptr_,
+                       r_ptr, q_ptr, quant_shift_ptr_, qcoeff.TopLeftPixel(),
+                       dqcoeff.TopLeftPixel(), dequant_ptr_, &eob,
+                       scan_order->scan, scan_order->iscan);
+        }
+        vpx_usec_timer_mark(&timer[r]);
       }
-      vpx_usec_timer_mark(&timer);
-      const int elapsed_time = static_cast<int>(vpx_usec_timer_elapsed(&timer));
-      if (i == 0) printf("Bypass calculations.\n");
-      if (i == 1) printf("Full calculations.\n");
-      printf("Quantize %dx%d time: %5d ms\n", 4 << sz, 4 << sz,
-             elapsed_time / 1000);
+      const char *type =
+          (i == 0) ? "Bypass calculations " : "Full calculations ";
+      char *block_size;
+      asprintf(&block_size, "%dx%d", 4 << sz, 4 << sz);
+      char *title;
+      asprintf(&title, "%25s %8s ", type, block_size);
+      vpx_print_median(title, timer);
     }
-    printf("\n");
   }
 }
 
