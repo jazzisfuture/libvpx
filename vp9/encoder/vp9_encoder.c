@@ -4120,10 +4120,11 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
   if (two_pass_first_group_inter(cpi)) {
     cpi->twopass.active_worst_quality =
         VPXMIN(q + qrange_adj, oxcf->worst_allowed_q);
-  } else if (!frame_is_kf_gf_arf(cpi)) {
+  } else if (!frame_is_kf_gf_arf(cpi))
 #else
-  if (!frame_is_kf_gf_arf(cpi)) {
+  if (!frame_is_kf_gf_arf(cpi))
 #endif
+  {
     // Have we been forced to adapt Q outside the expected range by an extreme
     // rate miss. If so adjust the active maxQ for the subsequent frames.
     if (q > cpi->twopass.active_worst_quality) {
@@ -4155,6 +4156,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
 
     restore_coding_context(cpi);
   }
+  // fprintf(stderr, "frm %d, q = %d\n", cm->current_video_frame,
+  // cm->base_qindex);
 }
 
 static int get_ref_frame_flags(const VP9_COMP *cpi) {
