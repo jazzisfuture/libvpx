@@ -247,6 +247,20 @@ static double get_distribution_av_err(VP9_COMP *cpi, TWO_PASS *const twopass) {
            twopass->total_stats.count;
 }
 
+static double get_motion_bias(const FIRSTPASS_STATS *this_frame) {
+  if (this_frame->frame < 0.01) return 0.1;
+
+  if (this_frame->pcnt_motion > 0.9) {
+    return 0.2;
+  } else if (this_frame->pcnt_motion > 0.8) {
+    return 0.1;
+  } else if (this_frame->pcnt_motion < 0.6) {
+    return 0.05;
+  } else {
+    return 0;
+  }
+}
+
 #define ACT_AREA_CORRECTION 0.5
 // Calculate a modified Error used in distributing bits between easier and
 // harder frames.
@@ -254,10 +268,20 @@ static double calculate_mod_frame_score(const VP9_COMP *cpi,
                                         const VP9EncoderConfig *oxcf,
                                         const FIRSTPASS_STATS *this_frame,
                                         const double av_err) {
+  /*
+  fprintf(stderr, "frm %d, pcnt_motion %f, motion_bias %f\n",
+          cpi->common.current_video_frame, this_frame->pcnt_motion,
+  motion_bias);
+  */
+  // If frames have less motion, allocate more bits towards frames with
+  // large distortions. Increase the score.
+  const double motion_bias = get_motion_bias(this_frame);
+  const double modified_weight = oxcf->two_pass_vbrbias / 100.0 + motion_bias;
   double modified_score =
       av_err * pow(this_frame->coded_error * this_frame->weight /
                        DOUBLE_DIVIDE_CHECK(av_err),
-                   oxcf->two_pass_vbrbias / 100.0);
+                   modified_weight);
+  // oxcf->two_pass_vbrbias / 100.0);
 
   // Correction for active area. Frames with a reduced active area
   // (eg due to formatting bars) have a higher error per mb for the
@@ -275,10 +299,13 @@ static double calculate_norm_frame_score(const VP9_COMP *cpi,
                                          const VP9EncoderConfig *oxcf,
                                          const FIRSTPASS_STATS *this_frame,
                                          const double av_err) {
+  const double motion_bias = get_motion_bias(this_frame);
+  const double modified_weight = oxcf->two_pass_vbrbias / 100.0 + motion_bias;
   double modified_score =
       av_err * pow(this_frame->coded_error * this_frame->weight /
                        DOUBLE_DIVIDE_CHECK(av_err),
-                   oxcf->two_pass_vbrbias / 100.0);
+                   modified_weight);
+  // oxcf->two_pass_vbrbias / 100.0);
 
   const double min_score = (double)(oxcf->two_pass_vbrmin_section) / 100.0;
   const double max_score = (double)(oxcf->two_pass_vbrmax_section) / 100.0;
