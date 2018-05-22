@@ -247,7 +247,20 @@ static double get_distribution_av_err(VP9_COMP *cpi, TWO_PASS *const twopass) {
            twopass->total_stats.count;
 }
 
-static double get_motion_bias(const FIRSTPASS_STATS *this_frame) {
+static double get_motion_bias(const VP9_COMP *cpi,
+                              const FIRSTPASS_STATS *this_frame) {
+  if (cpi->twopass.total_stats.pcnt_inter > 0.95 &&
+      cpi->twopass.total_stats.pcnt_motion < 0.2)
+    return -0.4;
+  /*
+  if (this_frame->frame < 0.01) return 0;
+
+  if (this_frame->pcnt_inter > 0.95 && this_frame->pcnt_motion < 0.2) {
+    return -0.4;
+  }
+  */
+
+  /*
   if (this_frame->frame < 0.01) return 0.1;
 
   if (this_frame->pcnt_motion > 0.9) {
@@ -259,6 +272,14 @@ static double get_motion_bias(const FIRSTPASS_STATS *this_frame) {
   } else {
     return 0;
   }
+  */
+
+  /*
+  // to calibrate frame weight. Assume that frames with very little motion
+  // and large amount of motion have higher score and thus more bits.
+  if (this_frame->frame < 0.01) return 1.0;
+  return 1.0 + 0.5 * sqrt(fabs(this_frame->pcnt_motion - 0.5));
+  */
 }
 
 #define ACT_AREA_CORRECTION 0.5
@@ -269,18 +290,43 @@ static double calculate_mod_frame_score(const VP9_COMP *cpi,
                                         const FIRSTPASS_STATS *this_frame,
                                         const double av_err) {
   /*
-  fprintf(stderr, "frm %d, pcnt_motion %f, motion_bias %f\n",
-          cpi->common.current_video_frame, this_frame->pcnt_motion,
-  motion_bias);
+  {
+    FILE *fpfile;
+    fpfile = fopen("firstpass.stt", "a");
+    const FIRSTPASS_STATS *stats = this_frame;
+
+    fprintf(fpfile,
+            "%.0lf,%.4lf,%.2lf,%.2lf,%.2lf,%.0lf,%.4lf,%.4lf,"
+            "%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,"
+            "%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.0lf,%.4lf,%.0lf,"
+            "%.4lf"
+            "\n",
+            stats->frame, stats->weight, stats->intra_error, stats->coded_error,
+            stats->sr_coded_error, stats->frame_noise_energy, stats->pcnt_inter,
+            stats->pcnt_motion, stats->pcnt_second_ref, stats->pcnt_neutral,
+            stats->pcnt_intra_low, stats->pcnt_intra_high,
+            stats->intra_skip_pct, stats->intra_smooth_pct,
+            stats->inactive_zone_rows, stats->inactive_zone_cols, stats->MVr,
+            stats->mvr_abs, stats->MVc, stats->mvc_abs, stats->MVrv,
+            stats->MVcv, stats->mv_in_out_count, stats->count, stats->duration);
+    fclose(fpfile);
+  }
   */
   // If frames have less motion, allocate more bits towards frames with
   // large distortions. Increase the score.
-  const double motion_bias = get_motion_bias(this_frame);
+  const double motion_bias = get_motion_bias(cpi, this_frame);
   const double modified_weight = oxcf->two_pass_vbrbias / 100.0 + motion_bias;
-  double modified_score =
-      av_err * pow(this_frame->coded_error * this_frame->weight /
-                       DOUBLE_DIVIDE_CHECK(av_err),
-                   modified_weight);
+  /*
+  fprintf(stderr, "frm %d, pcnt_motion %f, motion_bias %f, coded_error %f, "
+          "weight %f\n",
+          cpi->common.current_video_frame, this_frame->pcnt_motion,
+          motion_bias, this_frame->coded_error, this_frame->weight);
+  */
+  double modified_score = av_err * pow(this_frame->coded_error *
+                                           this_frame->weight
+                                           // * motion_bias
+                                           / DOUBLE_DIVIDE_CHECK(av_err),
+                                       modified_weight);
   // oxcf->two_pass_vbrbias / 100.0);
 
   // Correction for active area. Frames with a reduced active area
@@ -299,12 +345,13 @@ static double calculate_norm_frame_score(const VP9_COMP *cpi,
                                          const VP9EncoderConfig *oxcf,
                                          const FIRSTPASS_STATS *this_frame,
                                          const double av_err) {
-  const double motion_bias = get_motion_bias(this_frame);
+  const double motion_bias = get_motion_bias(cpi, this_frame);
   const double modified_weight = oxcf->two_pass_vbrbias / 100.0 + motion_bias;
-  double modified_score =
-      av_err * pow(this_frame->coded_error * this_frame->weight /
-                       DOUBLE_DIVIDE_CHECK(av_err),
-                   modified_weight);
+  double modified_score = av_err * pow(this_frame->coded_error *
+                                           this_frame->weight
+                                           // * motion_bias
+                                           / DOUBLE_DIVIDE_CHECK(av_err),
+                                       modified_weight);
   // oxcf->two_pass_vbrbias / 100.0);
 
   const double min_score = (double)(oxcf->two_pass_vbrmin_section) / 100.0;
@@ -839,6 +886,23 @@ static void accumulate_fp_mb_row_stat(TileDataEnc *this_tile,
                    fp_acc_data->image_data_start_row);
 }
 
+static int compare(const void *a, const void *b) {
+  return (*((int *)a) - *((int *)b));
+}
+
+static int get_block_median(uint8_t *buf, int stride) {
+  int array[256], a, b;
+  for (a = 0; a < 16; ++a) {
+    for (b = 0; b < 16; ++b) {
+      array[a * 16 + b] = buf[b];
+    }
+    buf += stride;
+  }
+
+  qsort(array, 256, sizeof(int), compare);
+  return array[128];
+}
+
 void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
                                        FIRSTPASS_DATA *fp_acc_data,
                                        TileDataEnc *tile_data, MV *best_ref_mv,
@@ -1025,6 +1089,12 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
 #else
     level_sample = x->plane[0].src.buf[0];
 #endif
+    /* It seems not help
+    // Instead of using sample of the first pixel value. Use median of block
+    level_sample = get_block_median(x->plane[0].src.buf,
+                                    x->plane[0].src.stride);
+    */
+
     if ((level_sample < DARK_THRESH) && (log_intra < 9.0)) {
       mb_brightness_factor = 1.0 + (0.01 * (DARK_THRESH - level_sample));
       fp_acc_data->brightness_factor += mb_brightness_factor;
