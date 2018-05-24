@@ -1534,8 +1534,10 @@ static vpx_codec_err_t ctrl_set_svc_frame_drop_layer(vpx_codec_alg_priv_t *ctx,
   vpx_svc_frame_drop_t *data = va_arg(args, vpx_svc_frame_drop_t *);
   int sl;
   cpi->svc.framedrop_mode = data->framedrop_mode;
-  for (sl = 0; sl < cpi->svc.number_spatial_layers; ++sl)
+  for (sl = 0; sl < cpi->svc.number_spatial_layers; ++sl) {
     cpi->svc.framedrop_thresh[sl] = data->framedrop_thresh[sl];
+    cpi->svc.max_consec_drop[sl] = data->max_consec_drop[sl];
+  }
   return VPX_CODEC_OK;
 }
 

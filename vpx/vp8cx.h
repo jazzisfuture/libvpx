@@ -801,6 +801,7 @@ typedef struct vpx_svc_frame_drop {
   int framedrop_thresh[VPX_SS_MAX_LAYERS]; /**< Frame drop thresholds */
   SVC_LAYER_DROP_MODE
   framedrop_mode; /**< Layer-based or constrained dropping. */
+  int max_consec_drop[VPX_SS_MAX_LAYERS]; /**< Maximum consecutive drops. */
 } vpx_svc_frame_drop_t;
 
 /*!\cond */

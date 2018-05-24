@@ -56,6 +56,8 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     svc->downsample_filter_phase[sl] = 8;  // Set to 8 for averaging filter.
     svc->framedrop_thresh[sl] = oxcf->drop_frames_water_mark;
     svc->fb_idx_upd_tl0[sl] = -1;
+    svc->drop_count[sl] = 0;
+    svc->max_consec_drop[sl] = INT_MAX;
   }
 
   if (cpi->oxcf.error_resilient_mode == 0 && cpi->oxcf.pass == 2) {
