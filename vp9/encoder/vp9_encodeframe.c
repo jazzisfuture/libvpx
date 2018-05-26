@@ -47,6 +47,7 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_tokenize.h"
+#include "vp9_firstpass.h"
 
 static void encode_superblock(VP9_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
                               int output_enabled, int mi_row, int mi_col,
