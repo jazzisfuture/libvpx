@@ -491,6 +491,10 @@ INSTANTIATE_TEST_CASE_P(MSA, VpxMbPostProcDownTest,
 #endif  // HAVE_MSA
 
 #if HAVE_VSX
+
+INSTANTIATE_TEST_CASE_P(VSX, VpxMbPostProcAcrossIpTest,
+                        ::testing::Values(vpx_mbpost_proc_across_ip_vsx));
+
 INSTANTIATE_TEST_CASE_P(VSX, VpxMbPostProcDownTest,
                         ::testing::Values(vpx_mbpost_proc_down_vsx));
 #endif  // HAVE_VSX
