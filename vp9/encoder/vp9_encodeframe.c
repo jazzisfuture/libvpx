@@ -3099,6 +3099,36 @@ static double compute_score(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   return score;
 }
 
+int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
+                     int orig_rdmult) {
+  TplDepFrame *tpl_frame = &cpi->tpl_stats[cpi->twopass.gf_group.index];
+  TplDepStats *tpl_stats = tpl_frame->tpl_stats_ptr;
+  int tpl_stride = tpl_frame->stride;
+  int64_t intra_cost = 0;
+  int64_t mc_dep_cost = 0;
+  int mi_wide = num_8x8_blocks_wide_lookup[bsize];
+  int mi_high = num_8x8_blocks_high_lookup[bsize];
+
+  int dr;
+  double r0, rk;
+
+  for (int row = mi_row; row < mi_row + mi_high; ++row) {
+    for (int col = mi_col; col < mi_col + mi_wide; ++col) {
+      TplDepStats *this_stats = &tpl_stats[row * tpl_stride + col];
+      intra_cost += this_stats->intra_cost;
+      mc_dep_cost += this_stats->mc_dep_cost;
+    }
+  }
+
+  r0 = cpi->rd.r0;
+  rk = log((double)intra_cost / (intra_cost + mc_dep_cost));
+
+  dr = (int)(0.5 * (rk - r0) * orig_rdmult);
+  dr = VPXMIN(dr, orig_rdmult / 4);
+  dr = VPXMAX(dr, -orig_rdmult / 4);
+  return dr;
+}
+
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
 // unlikely to be selected depending on previous rate-distortion optimization
 // results, for encoding speed-up.
@@ -3627,14 +3657,28 @@ static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
       rd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col, BLOCK_64X64,
                        &dummy_rate, &dummy_dist, 1, td->pc_root);
     } else {
+      int orig_rdmult = cpi->rd.RDMULT;
+      int rdmult = orig_rdmult;
+
       // If required set upper and lower partition size limits
       if (sf->auto_min_max_partition_size) {
         set_offsets(cpi, tile_info, x, mi_row, mi_col, BLOCK_64X64);
         rd_auto_partition_range(cpi, tile_info, xd, mi_row, mi_col,
                                 &x->min_partition_size, &x->max_partition_size);
       }
+
+      if (cpi->twopass.gf_group.index > 0) {
+        int dr =
+            get_rdmult_delta(cpi, BLOCK_64X64, mi_row, mi_col, orig_rdmult);
+        rdmult = dr + orig_rdmult;
+      }
+
+      cpi->rd.RDMULT = rdmult;
+
       rd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col, BLOCK_64X64,
                         &dummy_rdc, INT64_MAX, td->pc_root);
+
+      cpi->rd.RDMULT = orig_rdmult;
     }
     (*(cpi->row_mt_sync_write_ptr))(&tile_data->row_mt_sync, sb_row,
                                     sb_col_in_tile, num_sb_cols);
@@ -4831,6 +4875,24 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
     if (sf->partition_search_type == SOURCE_VAR_BASED_PARTITION)
       source_var_based_partition_search_method(cpi);
+  } else if (cpi->twopass.gf_group.index) {
+    TplDepFrame *tpl_frame = &cpi->tpl_stats[cpi->twopass.gf_group.index];
+    TplDepStats *tpl_stats = tpl_frame->tpl_stats_ptr;
+
+    int tpl_stride = tpl_frame->stride;
+    int64_t intra_cost_base = 0;
+    int64_t mc_dep_cost_base = 0;
+
+    for (int row = 0; row < cm->mi_rows; ++row) {
+      for (int col = 0; col < cm->mi_cols; ++col) {
+        TplDepStats *this_stats = &tpl_stats[row * tpl_stride + col];
+        intra_cost_base += this_stats->intra_cost;
+        mc_dep_cost_base += this_stats->mc_dep_cost;
+      }
+    }
+
+    cpi->rd.r0 =
+        log((double)intra_cost_base / (intra_cost_base + mc_dep_cost_base));
   }
 
   {

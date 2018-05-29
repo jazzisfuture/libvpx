@@ -109,6 +109,8 @@ typedef struct RD_OPT {
 
   int64_t filter_threshes[MAX_REF_FRAMES][SWITCHABLE_FILTER_CONTEXTS];
 
+  double r0;
+
   int RDMULT;
   int RDDIV;
 } RD_OPT;
