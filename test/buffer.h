@@ -356,6 +356,8 @@ bool Buffer<T>::CheckValues(const Buffer<T> &a) const {
   for (int height = 0; height < height_; ++height) {
     for (int width = 0; width < width_; ++width) {
       if (a_src[width] != b_src[width]) {
+        printf("%d != %d at %d/%d, %d/%d", a_src[width], b_src[width], width,
+               width_, height, height_);
         return false;
       }
     }
