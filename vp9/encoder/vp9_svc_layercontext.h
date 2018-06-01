@@ -97,6 +97,10 @@ typedef struct SVC {
   int gld_fb_idx[VPX_MAX_LAYERS];
   int alt_fb_idx[VPX_MAX_LAYERS];
   int force_zero_mode_spatial_ref;
+  // Sequence level flag to enable second (long term) temporal reference.
+  int use_longterm_ref;
+  // Frame level flag to enable second (long term) temporal reference.
+  int use_longterm_ref_current_layer;
   int current_superframe;
   int non_reference_frame;
   int use_base_mv;
