@@ -282,6 +282,111 @@ static double get_motion_bias(const VP9_COMP *cpi,
   */
 }
 
+const double regress_param[41] = {
+  -1.8826,      0.66135,   0.00029641,  0.0045483,     -0.0037457,
+  -0.000022108, 1.8308,    0.25436,     -0.3575,       0.29249,
+  1.4635,       2.7411,    -4.5935,     0.013339,      -0.0096697,
+  0.001376,     0.0035354, -0.0048334,  -0.0000017834, 0.000005163,
+  -0.094928,    -3.1153,   -0.00034616, -0.013464,     0.0086619,
+  0.0019315,    -0.30694,  -0.35179,    -0.42649,      0.57899,
+  2.3245,       1.7904,    7.6115,      -0.30788,      0.00095729,
+  -0.0033598,   0.0040304, -0.001087,   0.0000040223,  -0.0000022566,
+  0.36082
+};
+
+static void compute_std(double *std, const FIRSTPASS_STATS *s, double num) {
+  double param[20][200] = { 0 };
+  double sum[20] = { 0 };
+  double mean[20];
+  int i, j, count = 0;
+
+  while ((double)count < num) {
+    param[0][count] = s->weight;
+    param[1][count] = s->intra_error;
+    param[2][count] = s->coded_error;
+    param[3][count] = s->sr_coded_error;
+    param[4][count] = s->frame_noise_energy;
+    param[5][count] = s->pcnt_inter;
+    param[6][count] = s->pcnt_motion;
+    param[7][count] = s->pcnt_second_ref;
+    param[8][count] = s->pcnt_neutral;
+    param[9][count] = s->pcnt_intra_low;
+    param[10][count] = s->pcnt_intra_high;
+    param[11][count] = s->intra_skip_pct;
+    param[12][count] = s->intra_smooth_pct;
+    param[13][count] = s->MVr;
+    param[14][count] = s->mvr_abs;
+    param[15][count] = s->MVc;
+    param[16][count] = s->mvc_abs;
+    param[17][count] = s->MVrv;
+    param[18][count] = s->MVcv;
+    param[19][count] = s->mv_in_out_count;
+
+    for (i = 0; i < 20; ++i) sum[i] += param[i][count];
+    ++count;
+    ++s;
+  }
+
+  for (i = 0; i < 20; ++i) mean[i] = sum[i] / num;
+
+  for (i = 0; i < 20; ++i) {
+    sum[i] = 0;
+    for (j = 0; j < (int)num; ++j) {
+      sum[i] += (param[i][j] - mean[i]) * (param[i][j] - mean[i]);
+    }
+    std[i] = sqrt(sum[i] / num);
+  }
+}
+
+static double get_std_weight(const VP9_COMP *cpi) {
+  const TWO_PASS *twopass = &cpi->twopass;
+  double std[20] = { 0 };
+  double wt = 0;
+  int i;
+
+  compute_std(std, twopass->stats_in_start, twopass->total_stats.count);
+
+  for (i = 0; i < 20; ++i) wt += std[i] * regress_param[i + 21];
+
+  return wt;
+}
+
+static double get_model_weight(const VP9_COMP *cpi) {
+  const FIRSTPASS_STATS *stats = &cpi->twopass.total_stats;
+  FIRSTPASS_STATS *s = &cpi->twopass.stats_in_start;
+  double wt = 0;
+  double num = cpi->twopass.total_stats.count;
+
+  wt = stats->weight * regress_param[1] +
+       stats->intra_error * regress_param[2] +
+       stats->coded_error * regress_param[3] +
+       stats->sr_coded_error * regress_param[4] +
+       stats->frame_noise_energy * regress_param[5] +
+       stats->pcnt_inter * regress_param[6] +
+       stats->pcnt_motion * regress_param[7] +
+       stats->pcnt_second_ref * regress_param[8] +
+       stats->pcnt_neutral * regress_param[9] +
+       stats->pcnt_intra_low * regress_param[10] +
+       stats->pcnt_intra_high * regress_param[11] +
+       stats->intra_skip_pct * regress_param[12] +
+       stats->intra_smooth_pct * regress_param[13] +
+       stats->MVr * regress_param[14] + stats->mvr_abs * regress_param[15] +
+       stats->MVc * regress_param[16] + stats->mvc_abs * regress_param[17] +
+       stats->MVrv * regress_param[18] + stats->MVcv * regress_param[19] +
+       stats->mv_in_out_count * regress_param[20];
+
+  wt /= num;
+  wt += regress_param[0];
+  wt += get_std_weight(cpi);
+
+  if (wt < 0)
+    wt = 0.5;
+  else if (wt >= 1.0)
+    wt = 0.5;
+
+  return wt;
+}
+
 #define ACT_AREA_CORRECTION 0.5
 // Calculate a modified Error used in distributing bits between easier and
 // harder frames.
@@ -315,7 +420,9 @@ static double calculate_mod_frame_score(const VP9_COMP *cpi,
   // If frames have less motion, allocate more bits towards frames with
   // large distortions. Increase the score.
   const double motion_bias = get_motion_bias(cpi, this_frame);
-  const double modified_weight = oxcf->two_pass_vbrbias / 100.0 + motion_bias;
+  // const double modified_weight = oxcf->two_pass_vbrbias / 100.0 +
+  // motion_bias;
+  const double modified_weight = get_model_weight(cpi);
   /*
   fprintf(stderr, "frm %d, pcnt_motion %f, motion_bias %f, coded_error %f, "
           "weight %f\n",
@@ -346,7 +453,9 @@ static double calculate_norm_frame_score(const VP9_COMP *cpi,
                                          const FIRSTPASS_STATS *this_frame,
                                          const double av_err) {
   const double motion_bias = get_motion_bias(cpi, this_frame);
-  const double modified_weight = oxcf->two_pass_vbrbias / 100.0 + motion_bias;
+  // const double modified_weight = oxcf->two_pass_vbrbias / 100.0 +
+  // motion_bias;
+  const double modified_weight = get_model_weight(cpi);
   double modified_score = av_err * pow(this_frame->coded_error *
                                            this_frame->weight
                                            // * motion_bias
