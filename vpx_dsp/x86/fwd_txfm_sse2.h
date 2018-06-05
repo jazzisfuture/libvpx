@@ -15,9 +15,6 @@
 extern "C" {
 #endif
 
-#define pair_set_epi32(a, b) \
-  _mm_set_epi32((int)(b), (int)(a), (int)(b), (int)(a))
-
 static INLINE __m128i k_madd_epi32(__m128i a, __m128i b) {
   __m128i buf0, buf1;
   buf0 = _mm_mul_epu32(a, b);
@@ -135,112 +132,6 @@ static INLINE int check_epi16_overflow_x32(
     }
   }
   return res0 + res1;
-}
-
-static INLINE int k_check_epi32_overflow_4(const __m128i *preg0,
-                                           const __m128i *preg1,
-                                           const __m128i *preg2,
-                                           const __m128i *preg3,
-                                           const __m128i *zero) {
-  __m128i minus_one = _mm_set1_epi32(-1);
-  // Check for overflows
-  __m128i reg0_shifted = _mm_slli_epi64(*preg0, 1);
-  __m128i reg1_shifted = _mm_slli_epi64(*preg1, 1);
-  __m128i reg2_shifted = _mm_slli_epi64(*preg2, 1);
-  __m128i reg3_shifted = _mm_slli_epi64(*preg3, 1);
-  __m128i reg0_top_dwords =
-      _mm_shuffle_epi32(reg0_shifted, _MM_SHUFFLE(0, 0, 3, 1));
-  __m128i reg1_top_dwords =
-      _mm_shuffle_epi32(reg1_shifted, _MM_SHUFFLE(0, 0, 3, 1));
-  __m128i reg2_top_dwords =
-      _mm_shuffle_epi32(reg2_shifted, _MM_SHUFFLE(0, 0, 3, 1));
-  __m128i reg3_top_dwords =
-      _mm_shuffle_epi32(reg3_shifted, _MM_SHUFFLE(0, 0, 3, 1));
-  __m128i top_dwords_01 = _mm_unpacklo_epi64(reg0_top_dwords, reg1_top_dwords);
-  __m128i top_dwords_23 = _mm_unpacklo_epi64(reg2_top_dwords, reg3_top_dwords);
-  __m128i valid_positve_01 = _mm_cmpeq_epi32(top_dwords_01, *zero);
-  __m128i valid_positve_23 = _mm_cmpeq_epi32(top_dwords_23, *zero);
-  __m128i valid_negative_01 = _mm_cmpeq_epi32(top_dwords_01, minus_one);
-  __m128i valid_negative_23 = _mm_cmpeq_epi32(top_dwords_23, minus_one);
-  int overflow_01 =
-      _mm_movemask_epi8(_mm_cmpeq_epi32(valid_positve_01, valid_negative_01));
-  int overflow_23 =
-      _mm_movemask_epi8(_mm_cmpeq_epi32(valid_positve_23, valid_negative_23));
-  return (overflow_01 + overflow_23);
-}
-
-static INLINE int k_check_epi32_overflow_8(
-    const __m128i *preg0, const __m128i *preg1, const __m128i *preg2,
-    const __m128i *preg3, const __m128i *preg4, const __m128i *preg5,
-    const __m128i *preg6, const __m128i *preg7, const __m128i *zero) {
-  int overflow = k_check_epi32_overflow_4(preg0, preg1, preg2, preg3, zero);
-  if (!overflow) {
-    overflow = k_check_epi32_overflow_4(preg4, preg5, preg6, preg7, zero);
-  }
-  return overflow;
-}
-
-static INLINE int k_check_epi32_overflow_16(
-    const __m128i *preg0, const __m128i *preg1, const __m128i *preg2,
-    const __m128i *preg3, const __m128i *preg4, const __m128i *preg5,
-    const __m128i *preg6, const __m128i *preg7, const __m128i *preg8,
-    const __m128i *preg9, const __m128i *preg10, const __m128i *preg11,
-    const __m128i *preg12, const __m128i *preg13, const __m128i *preg14,
-    const __m128i *preg15, const __m128i *zero) {
-  int overflow = k_check_epi32_overflow_4(preg0, preg1, preg2, preg3, zero);
-  if (!overflow) {
-    overflow = k_check_epi32_overflow_4(preg4, preg5, preg6, preg7, zero);
-    if (!overflow) {
-      overflow = k_check_epi32_overflow_4(preg8, preg9, preg10, preg11, zero);
-      if (!overflow) {
-        overflow =
-            k_check_epi32_overflow_4(preg12, preg13, preg14, preg15, zero);
-      }
-    }
-  }
-  return overflow;
-}
-
-static INLINE int k_check_epi32_overflow_32(
-    const __m128i *preg0, const __m128i *preg1, const __m128i *preg2,
-    const __m128i *preg3, const __m128i *preg4, const __m128i *preg5,
-    const __m128i *preg6, const __m128i *preg7, const __m128i *preg8,
-    const __m128i *preg9, const __m128i *preg10, const __m128i *preg11,
-    const __m128i *preg12, const __m128i *preg13, const __m128i *preg14,
-    const __m128i *preg15, const __m128i *preg16, const __m128i *preg17,
-    const __m128i *preg18, const __m128i *preg19, const __m128i *preg20,
-    const __m128i *preg21, const __m128i *preg22, const __m128i *preg23,
-    const __m128i *preg24, const __m128i *preg25, const __m128i *preg26,
-    const __m128i *preg27, const __m128i *preg28, const __m128i *preg29,
-    const __m128i *preg30, const __m128i *preg31, const __m128i *zero) {
-  int overflow = k_check_epi32_overflow_4(preg0, preg1, preg2, preg3, zero);
-  if (!overflow) {
-    overflow = k_check_epi32_overflow_4(preg4, preg5, preg6, preg7, zero);
-    if (!overflow) {
-      overflow = k_check_epi32_overflow_4(preg8, preg9, preg10, preg11, zero);
-      if (!overflow) {
-        overflow =
-            k_check_epi32_overflow_4(preg12, preg13, preg14, preg15, zero);
-        if (!overflow) {
-          overflow =
-              k_check_epi32_overflow_4(preg16, preg17, preg18, preg19, zero);
-          if (!overflow) {
-            overflow =
-                k_check_epi32_overflow_4(preg20, preg21, preg22, preg23, zero);
-            if (!overflow) {
-              overflow = k_check_epi32_overflow_4(preg24, preg25, preg26,
-                                                  preg27, zero);
-              if (!overflow) {
-                overflow = k_check_epi32_overflow_4(preg28, preg29, preg30,
-                                                    preg31, zero);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  return overflow;
 }
 
 static INLINE void store_output(const __m128i *poutput, tran_low_t *dst_ptr) {
