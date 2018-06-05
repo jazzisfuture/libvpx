@@ -18,6 +18,8 @@
 // The current SSE2 implementation also causes cross reference to the static
 // functions in the C implementation file.
 #if DCT_HIGH_BIT_DEPTH
+#define check_epi32_overflow_accumulate(preg0, preg1, or_reg, zero) \
+or_reg = _mm_or_si128(or_reg, check_epi32_overflow_2(&preg0, &preg0, &zero));
 #define ADD_EPI16 _mm_adds_epi16
 #define SUB_EPI16 _mm_subs_epi16
 #if FDCT32x32_HIGH_PRECISION
@@ -48,9 +50,41 @@ void vpx_fdct32x32_rd_rows_c(const int16_t *intermediate, tran_low_t *out) {
 #define HIGH_FDCT32x32_2D_ROWS_C vpx_fdct32x32_rd_rows_c
 #endif  // FDCT32x32_HIGH_PRECISION
 #else
+#define check_epi32_overflow_accumulate(preg0, preg1, or_reg, zero)
 #define ADD_EPI16 _mm_add_epi16
 #define SUB_EPI16 _mm_sub_epi16
 #endif  // DCT_HIGH_BIT_DEPTH
+
+// vertical madd - c0*in0*sign(sign0) + c1*in1*sign(sign1)
+#define k_madd_32_sse2(c0, c1, sign0, sign1, in0, in1, out, overflow_reg, \
+                       zero)                                              \
+  do {                                                                    \
+    __m128i c0x, even0, even1, odd0, odd1;                                \
+    if (sign0 < 0 && sign1 < 0)                                           \
+      c0x = _mm_sub_epi32(_mm_setzero_si128(), c0);                       \
+    else                                                                  \
+      c0x = c0;                                                           \
+    even0 = _mm_mul_epu32(c0x, in0);                                      \
+    even1 = _mm_mul_epu32(c1, in1);                                       \
+    odd0 = _mm_shuffle_epi32(in0, _MM_SHUFFLE(0, 3, 0, 1));               \
+    odd1 = _mm_shuffle_epi32(in1, _MM_SHUFFLE(0, 3, 0, 1));               \
+    odd0 = _mm_mul_epu32(c0x, odd0);                                      \
+    odd1 = _mm_mul_epu32(c1, odd1);                                       \
+    if (sign1 < 0) {                                                      \
+      even0 = _mm_sub_epi32(even0, even1);                                \
+      odd0 = _mm_sub_epi32(odd0, odd1);                                   \
+    } else if (sign0 < 0) {                                               \
+      even0 = _mm_sub_epi32(even1, even0);                                \
+      odd0 = _mm_sub_epi32(odd1, odd0);                                   \
+    } else {                                                              \
+      even0 = _mm_add_epi32(even0, even1);                                \
+      odd0 = _mm_add_epi32(odd0, odd1);                                   \
+    }                                                                     \
+    check_epi32_overflow_accumulate(overflow_reg, even0, odd0, zero);     \
+    even0 = _mm_shuffle_epi32(even0, _MM_SHUFFLE(0, 0, 2, 0));            \
+    odd0 = _mm_shuffle_epi32(odd0, _MM_SHUFFLE(0, 0, 2, 0));              \
+    out = _mm_unpacklo_epi32(even0, odd0);                                \
+  } while (0)
 
 void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
   // Calculate pre-multiplied strides
@@ -1508,7 +1542,7 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
       } else {
         int i;
         __m128i hi[32];
-        __m128i u[16], v[16], sign[8];
+        __m128i u[16], v[8], sign[8];
         __m128i *out_ptr = out;
         const __m128i K32One = _mm_set_epi32(1, 1, 1, 1);
         const __m128i k__pOne_mOne = pair_set_epi16(1, -1);
@@ -1670,31 +1704,23 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
           {
             // to be continued...
             //
-            const __m128i k32_p16_p16 =
-                pair_set_epi32(cospi_16_64, cospi_16_64);
-            const __m128i k32_p16_m16 =
-                pair_set_epi32(cospi_16_64, -cospi_16_64);
+            const __m128i k32_p16 = _mm_set1_epi32(cospi_16_64);
+            __m128i overflow_vec = _mm_setzero_si128();
+            (void)overflow_vec;
 
-            u[0] = _mm_unpacklo_epi32(step3[6], step3[5]);
-            u[1] = _mm_unpackhi_epi32(step3[6], step3[5]);
-
-            // TODO(jingning): manually inline k_madd_epi32_ to further hide
-            // instruction latency.
-            v[0] = k_madd_epi32(u[0], k32_p16_m16);
-            v[1] = k_madd_epi32(u[1], k32_p16_m16);
-            v[2] = k_madd_epi32(u[0], k32_p16_p16);
-            v[3] = k_madd_epi32(u[1], k32_p16_p16);
+            // TODO(kylesiefring): use madd_epi16 instead of 32-bit multiplies
+            // p16_m16
+            k_madd_32_sse2(k32_p16, k32_p16, 1, -1, step3[6], step3[5], u[0],
+                           overflow_vec, kZero);
+            // p16_p16
+            k_madd_32_sse2(k32_p16, k32_p16, 1, 1, step3[6], step3[5], u[1],
+                           overflow_vec, kZero);
 #if DCT_HIGH_BIT_DEPTH
-            overflow =
-                k_check_epi32_overflow_4(&v[0], &v[1], &v[2], &v[3], &kZero);
-            if (overflow) {
+            if (_mm_movemask_epi8(overflow_vec)) {
               HIGH_FDCT32x32_2D_ROWS_C(intermediate, output_org);
               return;
             }
 #endif  // DCT_HIGH_BIT_DEPTH
-            u[0] = k_packs_epi64(v[0], v[1]);
-            u[1] = k_packs_epi64(v[2], v[3]);
-
             v[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
             v[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
 
@@ -1702,55 +1728,38 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
             step1[6] = _mm_srai_epi32(v[1], DCT_CONST_BITS);
           }
           {
-            const __m128i k32_m08_p24 =
-                pair_set_epi32(-cospi_8_64, cospi_24_64);
-            const __m128i k32_m24_m08 =
-                pair_set_epi32(-cospi_24_64, -cospi_8_64);
-            const __m128i k32_p24_p08 = pair_set_epi32(cospi_24_64, cospi_8_64);
+            const __m128i k32_m08 = _mm_set1_epi32(-cospi_8_64);
+            const __m128i k32_p24 = _mm_set1_epi32(cospi_24_64);
+            __m128i overflow_vec = _mm_setzero_si128();
+            (void)overflow_vec;
 
-            u[0] = _mm_unpacklo_epi32(step3[18], step3[29]);
-            u[1] = _mm_unpackhi_epi32(step3[18], step3[29]);
-            u[2] = _mm_unpacklo_epi32(step3[19], step3[28]);
-            u[3] = _mm_unpackhi_epi32(step3[19], step3[28]);
-            u[4] = _mm_unpacklo_epi32(step3[20], step3[27]);
-            u[5] = _mm_unpackhi_epi32(step3[20], step3[27]);
-            u[6] = _mm_unpacklo_epi32(step3[21], step3[26]);
-            u[7] = _mm_unpackhi_epi32(step3[21], step3[26]);
-
-            v[0] = k_madd_epi32(u[0], k32_m08_p24);
-            v[1] = k_madd_epi32(u[1], k32_m08_p24);
-            v[2] = k_madd_epi32(u[2], k32_m08_p24);
-            v[3] = k_madd_epi32(u[3], k32_m08_p24);
-            v[4] = k_madd_epi32(u[4], k32_m24_m08);
-            v[5] = k_madd_epi32(u[5], k32_m24_m08);
-            v[6] = k_madd_epi32(u[6], k32_m24_m08);
-            v[7] = k_madd_epi32(u[7], k32_m24_m08);
-            v[8] = k_madd_epi32(u[6], k32_m08_p24);
-            v[9] = k_madd_epi32(u[7], k32_m08_p24);
-            v[10] = k_madd_epi32(u[4], k32_m08_p24);
-            v[11] = k_madd_epi32(u[5], k32_m08_p24);
-            v[12] = k_madd_epi32(u[2], k32_p24_p08);
-            v[13] = k_madd_epi32(u[3], k32_p24_p08);
-            v[14] = k_madd_epi32(u[0], k32_p24_p08);
-            v[15] = k_madd_epi32(u[1], k32_p24_p08);
+            // TODO(kylesiefring): use madd_epi16 instead of 32-bit multiplies
+            // m08_p24
+            k_madd_32_sse2(k32_m08, k32_p24, 1, 1, step3[18], step3[29], u[0],
+                           overflow_vec, kZero);
+            k_madd_32_sse2(k32_m08, k32_p24, 1, 1, step3[19], step3[28], u[1],
+                           overflow_vec, kZero);
+            // m24_m08
+            k_madd_32_sse2(k32_p24, k32_m08, -1, 1, step3[20], step3[27], u[2],
+                           overflow_vec, kZero);
+            k_madd_32_sse2(k32_p24, k32_m08, -1, 1, step3[21], step3[26], u[3],
+                           overflow_vec, kZero);
+            // m08_p24
+            k_madd_32_sse2(k32_m08, k32_p24, 1, 1, step3[21], step3[26], u[4],
+                           overflow_vec, kZero);
+            k_madd_32_sse2(k32_m08, k32_p24, 1, 1, step3[20], step3[27], u[5],
+                           overflow_vec, kZero);
+            // p24_p08
+            k_madd_32_sse2(k32_p24, k32_m08, 1, -1, step3[19], step3[28], u[6],
+                           overflow_vec, kZero);
+            k_madd_32_sse2(k32_p24, k32_m08, 1, -1, step3[18], step3[29], u[7],
+                           overflow_vec, kZero);
 #if DCT_HIGH_BIT_DEPTH
-            overflow = k_check_epi32_overflow_16(
-                &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &v[8],
-                &v[9], &v[10], &v[11], &v[12], &v[13], &v[14], &v[15], &kZero);
-            if (overflow) {
+            if (_mm_movemask_epi8(overflow_vec)) {
               HIGH_FDCT32x32_2D_ROWS_C(intermediate, output_org);
               return;
             }
 #endif  // DCT_HIGH_BIT_DEPTH
-            u[0] = k_packs_epi64(v[0], v[1]);
-            u[1] = k_packs_epi64(v[2], v[3]);
-            u[2] = k_packs_epi64(v[4], v[5]);
-            u[3] = k_packs_epi64(v[6], v[7]);
-            u[4] = k_packs_epi64(v[8], v[9]);
-            u[5] = k_packs_epi64(v[10], v[11]);
-            u[6] = k_packs_epi64(v[12], v[13]);
-            u[7] = k_packs_epi64(v[14], v[15]);
-
             v[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
             v[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
             v[2] = _mm_add_epi32(u[2], k__DCT_CONST_ROUNDING);
@@ -1777,42 +1786,30 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
             step2[7] = _mm_add_epi32(step1[6], step3[7]);
           }
           {
-            const __m128i k32_p16_p16 =
-                pair_set_epi32(cospi_16_64, cospi_16_64);
-            const __m128i k32_p16_m16 =
-                pair_set_epi32(cospi_16_64, -cospi_16_64);
-            const __m128i k32_p24_p08 = pair_set_epi32(cospi_24_64, cospi_8_64);
-            const __m128i k32_m08_p24 =
-                pair_set_epi32(-cospi_8_64, cospi_24_64);
+            const __m128i k32_p16 = _mm_set1_epi32(cospi_16_64);
+            const __m128i k32_m08 = _mm_set1_epi32(-cospi_8_64);
+            const __m128i k32_p24 = _mm_set1_epi32(cospi_24_64);
+            __m128i overflow_vec = _mm_setzero_si128();
+            (void)overflow_vec;
 
-            u[0] = _mm_unpacklo_epi32(step1[0], step1[1]);
-            u[1] = _mm_unpackhi_epi32(step1[0], step1[1]);
-            u[2] = _mm_unpacklo_epi32(step1[2], step1[3]);
-            u[3] = _mm_unpackhi_epi32(step1[2], step1[3]);
-
-            // TODO(jingning): manually inline k_madd_epi32_ to further hide
-            // instruction latency.
-            v[0] = k_madd_epi32(u[0], k32_p16_p16);
-            v[1] = k_madd_epi32(u[1], k32_p16_p16);
-            v[2] = k_madd_epi32(u[0], k32_p16_m16);
-            v[3] = k_madd_epi32(u[1], k32_p16_m16);
-            v[4] = k_madd_epi32(u[2], k32_p24_p08);
-            v[5] = k_madd_epi32(u[3], k32_p24_p08);
-            v[6] = k_madd_epi32(u[2], k32_m08_p24);
-            v[7] = k_madd_epi32(u[3], k32_m08_p24);
+            // p16_p16
+            k_madd_32_sse2(k32_p16, k32_p16, 1, 1, step1[0], step1[1], u[0],
+                           overflow_vec, kZero);
+            // p16_m16
+            k_madd_32_sse2(k32_p16, k32_p16, 1, -1, step1[0], step1[1], u[1],
+                           overflow_vec, kZero);
+            // p24_p08
+            k_madd_32_sse2(k32_p24, k32_m08, 1, -1, step1[2], step1[3], u[2],
+                           overflow_vec, kZero);
+            // m08_p24
+            k_madd_32_sse2(k32_m08, k32_p24, 1, 1, step1[2], step1[3], u[3],
+                           overflow_vec, kZero);
 #if DCT_HIGH_BIT_DEPTH
-            overflow = k_check_epi32_overflow_8(
-                &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &kZero);
-            if (overflow) {
+            if (_mm_movemask_epi8(overflow_vec)) {
               HIGH_FDCT32x32_2D_ROWS_C(intermediate, output_org);
               return;
             }
 #endif  // DCT_HIGH_BIT_DEPTH
-            u[0] = k_packs_epi64(v[0], v[1]);
-            u[1] = k_packs_epi64(v[2], v[3]);
-            u[2] = k_packs_epi64(v[4], v[5]);
-            u[3] = k_packs_epi64(v[6], v[7]);
-
             v[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
             v[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
             v[2] = _mm_add_epi32(u[2], k__DCT_CONST_ROUNDING);
@@ -1855,38 +1852,29 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
 #endif  // DCT_HIGH_BIT_DEPTH
           }
           {
-            const __m128i k32_m08_p24 =
-                pair_set_epi32(-cospi_8_64, cospi_24_64);
-            const __m128i k32_m24_m08 =
-                pair_set_epi32(-cospi_24_64, -cospi_8_64);
-            const __m128i k32_p24_p08 = pair_set_epi32(cospi_24_64, cospi_8_64);
+            const __m128i k32_m08 = _mm_set1_epi32(-cospi_8_64);
+            const __m128i k32_p24 = _mm_set1_epi32(cospi_24_64);
+            __m128i overflow_vec = _mm_setzero_si128();
+            (void)overflow_vec;
 
-            u[0] = _mm_unpacklo_epi32(step1[9], step1[14]);
-            u[1] = _mm_unpackhi_epi32(step1[9], step1[14]);
-            u[2] = _mm_unpacklo_epi32(step1[10], step1[13]);
-            u[3] = _mm_unpackhi_epi32(step1[10], step1[13]);
-
-            v[0] = k_madd_epi32(u[0], k32_m08_p24);
-            v[1] = k_madd_epi32(u[1], k32_m08_p24);
-            v[2] = k_madd_epi32(u[2], k32_m24_m08);
-            v[3] = k_madd_epi32(u[3], k32_m24_m08);
-            v[4] = k_madd_epi32(u[2], k32_m08_p24);
-            v[5] = k_madd_epi32(u[3], k32_m08_p24);
-            v[6] = k_madd_epi32(u[0], k32_p24_p08);
-            v[7] = k_madd_epi32(u[1], k32_p24_p08);
+            // m08_p24
+            k_madd_32_sse2(k32_m08, k32_p24, 1, 1, step1[9], step1[14], u[0],
+                           overflow_vec, kZero);
+            // m24_m08
+            k_madd_32_sse2(k32_p24, k32_m08, -1, 1, step1[10], step1[13], u[1],
+                           overflow_vec, kZero);
+            // m08_p24
+            k_madd_32_sse2(k32_m08, k32_p24, 1, 1, step1[10], step1[13], u[2],
+                           overflow_vec, kZero);
+            // p24_p08
+            k_madd_32_sse2(k32_p24, k32_m08, 1, -1, step1[9], step1[14], u[3],
+                           overflow_vec, kZero);
 #if DCT_HIGH_BIT_DEPTH
-            overflow = k_check_epi32_overflow_8(
-                &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &kZero);
-            if (overflow) {
+            if (_mm_movemask_epi8(overflow_vec)) {
               HIGH_FDCT32x32_2D_ROWS_C(intermediate, output_org);
               return;
             }
 #endif  // DCT_HIGH_BIT_DEPTH
-            u[0] = k_packs_epi64(v[0], v[1]);
-            u[1] = k_packs_epi64(v[2], v[3]);
-            u[2] = k_packs_epi64(v[4], v[5]);
-            u[3] = k_packs_epi64(v[6], v[7]);
-
             u[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
             u[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
             u[2] = _mm_add_epi32(u[2], k__DCT_CONST_ROUNDING);
@@ -1917,40 +1905,31 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
           }
           // stage 6
           {
-            const __m128i k32_p28_p04 = pair_set_epi32(cospi_28_64, cospi_4_64);
-            const __m128i k32_p12_p20 =
-                pair_set_epi32(cospi_12_64, cospi_20_64);
-            const __m128i k32_m20_p12 =
-                pair_set_epi32(-cospi_20_64, cospi_12_64);
-            const __m128i k32_m04_p28 =
-                pair_set_epi32(-cospi_4_64, cospi_28_64);
+            const __m128i k32_m04 = _mm_set1_epi32(-cospi_4_64);
+            const __m128i k32_p28 = _mm_set1_epi32(cospi_28_64);
+            const __m128i k32_p12 = _mm_set1_epi32(cospi_12_64);
+            const __m128i k32_m20 = _mm_set1_epi32(-cospi_20_64);
+            __m128i overflow_vec = _mm_setzero_si128();
+            (void)overflow_vec;
 
-            u[0] = _mm_unpacklo_epi32(step2[4], step2[7]);
-            u[1] = _mm_unpackhi_epi32(step2[4], step2[7]);
-            u[2] = _mm_unpacklo_epi32(step2[5], step2[6]);
-            u[3] = _mm_unpackhi_epi32(step2[5], step2[6]);
-
-            v[0] = k_madd_epi32(u[0], k32_p28_p04);
-            v[1] = k_madd_epi32(u[1], k32_p28_p04);
-            v[2] = k_madd_epi32(u[2], k32_p12_p20);
-            v[3] = k_madd_epi32(u[3], k32_p12_p20);
-            v[4] = k_madd_epi32(u[2], k32_m20_p12);
-            v[5] = k_madd_epi32(u[3], k32_m20_p12);
-            v[6] = k_madd_epi32(u[0], k32_m04_p28);
-            v[7] = k_madd_epi32(u[1], k32_m04_p28);
+            // p28_p04
+            k_madd_32_sse2(k32_p28, k32_m04, 1, -1, step2[4], step2[7], u[0],
+                           overflow_vec, kZero);
+            // p12_p20
+            k_madd_32_sse2(k32_p12, k32_m20, 1, -1, step2[5], step2[6], u[1],
+                           overflow_vec, kZero);
+            // m20_p12
+            k_madd_32_sse2(k32_m20, k32_p12, 1, 1, step2[5], step2[6], u[2],
+                           overflow_vec, kZero);
+            // m04_p28
+            k_madd_32_sse2(k32_m04, k32_p28, 1, 1, step2[4], step2[7], u[3],
+                           overflow_vec, kZero);
 #if DCT_HIGH_BIT_DEPTH
-            overflow = k_check_epi32_overflow_8(
-                &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &kZero);
-            if (overflow) {
+            if (_mm_movemask_epi8(overflow_vec)) {
               HIGH_FDCT32x32_2D_ROWS_C(intermediate, output_org);
               return;
             }
 #endif  // DCT_HIGH_BIT_DEPTH
-            u[0] = k_packs_epi64(v[0], v[1]);
-            u[1] = k_packs_epi64(v[2], v[3]);
-            u[2] = k_packs_epi64(v[4], v[5]);
-            u[3] = k_packs_epi64(v[6], v[7]);
-
             v[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
             v[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
             v[2] = _mm_add_epi32(u[2], k__DCT_CONST_ROUNDING);
@@ -2003,61 +1982,43 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
             step3[15] = _mm_add_epi32(step2[14], step1[15]);
           }
           {
-            const __m128i k32_m04_p28 =
-                pair_set_epi32(-cospi_4_64, cospi_28_64);
-            const __m128i k32_m28_m04 =
-                pair_set_epi32(-cospi_28_64, -cospi_4_64);
-            const __m128i k32_m20_p12 =
-                pair_set_epi32(-cospi_20_64, cospi_12_64);
-            const __m128i k32_m12_m20 =
-                pair_set_epi32(-cospi_12_64, -cospi_20_64);
-            const __m128i k32_p12_p20 =
-                pair_set_epi32(cospi_12_64, cospi_20_64);
-            const __m128i k32_p28_p04 = pair_set_epi32(cospi_28_64, cospi_4_64);
+            const __m128i k32_m04 = _mm_set1_epi32(-cospi_4_64);
+            const __m128i k32_p28 = _mm_set1_epi32(cospi_28_64);
+            const __m128i k32_p12 = _mm_set1_epi32(cospi_12_64);
+            const __m128i k32_m20 = _mm_set1_epi32(-cospi_20_64);
+            __m128i overflow_vec = _mm_setzero_si128();
+            (void)overflow_vec;
 
-            u[0] = _mm_unpacklo_epi32(step2[17], step2[30]);
-            u[1] = _mm_unpackhi_epi32(step2[17], step2[30]);
-            u[2] = _mm_unpacklo_epi32(step2[18], step2[29]);
-            u[3] = _mm_unpackhi_epi32(step2[18], step2[29]);
-            u[4] = _mm_unpacklo_epi32(step2[21], step2[26]);
-            u[5] = _mm_unpackhi_epi32(step2[21], step2[26]);
-            u[6] = _mm_unpacklo_epi32(step2[22], step2[25]);
-            u[7] = _mm_unpackhi_epi32(step2[22], step2[25]);
-
-            v[0] = k_madd_epi32(u[0], k32_m04_p28);
-            v[1] = k_madd_epi32(u[1], k32_m04_p28);
-            v[2] = k_madd_epi32(u[2], k32_m28_m04);
-            v[3] = k_madd_epi32(u[3], k32_m28_m04);
-            v[4] = k_madd_epi32(u[4], k32_m20_p12);
-            v[5] = k_madd_epi32(u[5], k32_m20_p12);
-            v[6] = k_madd_epi32(u[6], k32_m12_m20);
-            v[7] = k_madd_epi32(u[7], k32_m12_m20);
-            v[8] = k_madd_epi32(u[6], k32_m20_p12);
-            v[9] = k_madd_epi32(u[7], k32_m20_p12);
-            v[10] = k_madd_epi32(u[4], k32_p12_p20);
-            v[11] = k_madd_epi32(u[5], k32_p12_p20);
-            v[12] = k_madd_epi32(u[2], k32_m04_p28);
-            v[13] = k_madd_epi32(u[3], k32_m04_p28);
-            v[14] = k_madd_epi32(u[0], k32_p28_p04);
-            v[15] = k_madd_epi32(u[1], k32_p28_p04);
+            // m04_p28
+            k_madd_32_sse2(k32_m04, k32_p28, 1, 1, step2[17], step2[30], u[0],
+                           overflow_vec, kZero);
+            // m28_m04
+            k_madd_32_sse2(k32_p28, k32_m04, -1, 1, step2[18], step2[29], u[1],
+                           overflow_vec, kZero);
+            // m20_p12
+            k_madd_32_sse2(k32_m20, k32_p12, 1, 1, step2[21], step2[26], u[2],
+                           overflow_vec, kZero);
+            // m12_m20
+            k_madd_32_sse2(k32_p12, k32_m20, -1, 1, step2[22], step2[25], u[3],
+                           overflow_vec, kZero);
+            // m20_p12
+            k_madd_32_sse2(k32_m20, k32_p12, 1, 1, step2[22], step2[25], u[4],
+                           overflow_vec, kZero);
+            // p12_p20
+            k_madd_32_sse2(k32_p12, k32_m20, 1, -1, step2[21], step2[26], u[5],
+                           overflow_vec, kZero);
+            // m04_p28
+            k_madd_32_sse2(k32_m04, k32_p28, 1, 1, step2[18], step2[29], u[6],
+                           overflow_vec, kZero);
+            // p28_p04
+            k_madd_32_sse2(k32_p28, k32_m04, 1, -1, step2[17], step2[30], u[7],
+                           overflow_vec, kZero);
 #if DCT_HIGH_BIT_DEPTH
-            overflow = k_check_epi32_overflow_16(
-                &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &v[8],
-                &v[9], &v[10], &v[11], &v[12], &v[13], &v[14], &v[15], &kZero);
-            if (overflow) {
+            if (_mm_movemask_epi8(overflow_vec)) {
               HIGH_FDCT32x32_2D_ROWS_C(intermediate, output_org);
               return;
             }
 #endif  // DCT_HIGH_BIT_DEPTH
-            u[0] = k_packs_epi64(v[0], v[1]);
-            u[1] = k_packs_epi64(v[2], v[3]);
-            u[2] = k_packs_epi64(v[4], v[5]);
-            u[3] = k_packs_epi64(v[6], v[7]);
-            u[4] = k_packs_epi64(v[8], v[9]);
-            u[5] = k_packs_epi64(v[10], v[11]);
-            u[6] = k_packs_epi64(v[12], v[13]);
-            u[7] = k_packs_epi64(v[14], v[15]);
-
             v[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
             v[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
             v[2] = _mm_add_epi32(u[2], k__DCT_CONST_ROUNDING);
@@ -2078,64 +2039,47 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
           }
           // stage 7
           {
-            const __m128i k32_p30_p02 = pair_set_epi32(cospi_30_64, cospi_2_64);
-            const __m128i k32_p14_p18 =
-                pair_set_epi32(cospi_14_64, cospi_18_64);
-            const __m128i k32_p22_p10 =
-                pair_set_epi32(cospi_22_64, cospi_10_64);
-            const __m128i k32_p06_p26 = pair_set_epi32(cospi_6_64, cospi_26_64);
-            const __m128i k32_m26_p06 =
-                pair_set_epi32(-cospi_26_64, cospi_6_64);
-            const __m128i k32_m10_p22 =
-                pair_set_epi32(-cospi_10_64, cospi_22_64);
-            const __m128i k32_m18_p14 =
-                pair_set_epi32(-cospi_18_64, cospi_14_64);
-            const __m128i k32_m02_p30 =
-                pair_set_epi32(-cospi_2_64, cospi_30_64);
+            const __m128i k32_m02 = _mm_set1_epi32(-cospi_2_64);
+            const __m128i k32_p30 = _mm_set1_epi32(cospi_30_64);
+            const __m128i k32_p14 = _mm_set1_epi32(cospi_14_64);
+            const __m128i k32_m18 = _mm_set1_epi32(-cospi_18_64);
+            const __m128i k32_m10 = _mm_set1_epi32(-cospi_10_64);
+            const __m128i k32_p22 = _mm_set1_epi32(cospi_22_64);
+            const __m128i k32_p06 = _mm_set1_epi32(cospi_6_64);
+            const __m128i k32_m26 = _mm_set1_epi32(-cospi_26_64);
+            __m128i overflow_vec = _mm_setzero_si128();
+            (void)overflow_vec;
 
-            u[0] = _mm_unpacklo_epi32(step3[8], step3[15]);
-            u[1] = _mm_unpackhi_epi32(step3[8], step3[15]);
-            u[2] = _mm_unpacklo_epi32(step3[9], step3[14]);
-            u[3] = _mm_unpackhi_epi32(step3[9], step3[14]);
-            u[4] = _mm_unpacklo_epi32(step3[10], step3[13]);
-            u[5] = _mm_unpackhi_epi32(step3[10], step3[13]);
-            u[6] = _mm_unpacklo_epi32(step3[11], step3[12]);
-            u[7] = _mm_unpackhi_epi32(step3[11], step3[12]);
-
-            v[0] = k_madd_epi32(u[0], k32_p30_p02);
-            v[1] = k_madd_epi32(u[1], k32_p30_p02);
-            v[2] = k_madd_epi32(u[2], k32_p14_p18);
-            v[3] = k_madd_epi32(u[3], k32_p14_p18);
-            v[4] = k_madd_epi32(u[4], k32_p22_p10);
-            v[5] = k_madd_epi32(u[5], k32_p22_p10);
-            v[6] = k_madd_epi32(u[6], k32_p06_p26);
-            v[7] = k_madd_epi32(u[7], k32_p06_p26);
-            v[8] = k_madd_epi32(u[6], k32_m26_p06);
-            v[9] = k_madd_epi32(u[7], k32_m26_p06);
-            v[10] = k_madd_epi32(u[4], k32_m10_p22);
-            v[11] = k_madd_epi32(u[5], k32_m10_p22);
-            v[12] = k_madd_epi32(u[2], k32_m18_p14);
-            v[13] = k_madd_epi32(u[3], k32_m18_p14);
-            v[14] = k_madd_epi32(u[0], k32_m02_p30);
-            v[15] = k_madd_epi32(u[1], k32_m02_p30);
+            // p30_p02
+            k_madd_32_sse2(k32_p30, k32_m02, 1, -1, step3[8], step3[15], u[0],
+                           overflow_vec, kZero);
+            // p14_p18
+            k_madd_32_sse2(k32_p14, k32_m18, 1, -1, step3[9], step3[14], u[1],
+                           overflow_vec, kZero);
+            // p22_p10
+            k_madd_32_sse2(k32_p22, k32_m10, 1, -1, step3[10], step3[13], u[2],
+                           overflow_vec, kZero);
+            // p06_p26
+            k_madd_32_sse2(k32_p06, k32_m26, 1, -1, step3[11], step3[12], u[3],
+                           overflow_vec, kZero);
+            // m26_p06
+            k_madd_32_sse2(k32_m26, k32_p06, 1, 1, step3[11], step3[12], u[4],
+                           overflow_vec, kZero);
+            // m10_p22
+            k_madd_32_sse2(k32_m10, k32_p22, 1, 1, step3[10], step3[13], u[5],
+                           overflow_vec, kZero);
+            // m18_p14
+            k_madd_32_sse2(k32_m18, k32_p14, 1, 1, step3[9], step3[14], u[6],
+                           overflow_vec, kZero);
+            // m02_p30
+            k_madd_32_sse2(k32_m02, k32_p30, 1, 1, step3[8], step3[15], u[7],
+                           overflow_vec, kZero);
 #if DCT_HIGH_BIT_DEPTH
-            overflow = k_check_epi32_overflow_16(
-                &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &v[8],
-                &v[9], &v[10], &v[11], &v[12], &v[13], &v[14], &v[15], &kZero);
-            if (overflow) {
+            if (_mm_movemask_epi8(overflow_vec)) {
               HIGH_FDCT32x32_2D_ROWS_C(intermediate, output_org);
               return;
             }
 #endif  // DCT_HIGH_BIT_DEPTH
-            u[0] = k_packs_epi64(v[0], v[1]);
-            u[1] = k_packs_epi64(v[2], v[3]);
-            u[2] = k_packs_epi64(v[4], v[5]);
-            u[3] = k_packs_epi64(v[6], v[7]);
-            u[4] = k_packs_epi64(v[8], v[9]);
-            u[5] = k_packs_epi64(v[10], v[11]);
-            u[6] = k_packs_epi64(v[12], v[13]);
-            u[7] = k_packs_epi64(v[14], v[15]);
-
             v[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
             v[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
             v[2] = _mm_add_epi32(u[2], k__DCT_CONST_ROUNDING);
@@ -2224,63 +2168,47 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
           }
           // stage 8
           {
-            const __m128i k32_p31_p01 = pair_set_epi32(cospi_31_64, cospi_1_64);
-            const __m128i k32_p15_p17 =
-                pair_set_epi32(cospi_15_64, cospi_17_64);
-            const __m128i k32_p23_p09 = pair_set_epi32(cospi_23_64, cospi_9_64);
-            const __m128i k32_p07_p25 = pair_set_epi32(cospi_7_64, cospi_25_64);
-            const __m128i k32_m25_p07 =
-                pair_set_epi32(-cospi_25_64, cospi_7_64);
-            const __m128i k32_m09_p23 =
-                pair_set_epi32(-cospi_9_64, cospi_23_64);
-            const __m128i k32_m17_p15 =
-                pair_set_epi32(-cospi_17_64, cospi_15_64);
-            const __m128i k32_m01_p31 =
-                pair_set_epi32(-cospi_1_64, cospi_31_64);
+            const __m128i k32_m01 = _mm_set1_epi32(-cospi_1_64);
+            const __m128i k32_p31 = _mm_set1_epi32(cospi_31_64);
+            const __m128i k32_p15 = _mm_set1_epi32(cospi_15_64);
+            const __m128i k32_m17 = _mm_set1_epi32(-cospi_17_64);
+            const __m128i k32_m09 = _mm_set1_epi32(-cospi_9_64);
+            const __m128i k32_p23 = _mm_set1_epi32(cospi_23_64);
+            const __m128i k32_p07 = _mm_set1_epi32(cospi_7_64);
+            const __m128i k32_m25 = _mm_set1_epi32(-cospi_25_64);
+            __m128i overflow_vec = _mm_setzero_si128();
+            (void)overflow_vec;
 
-            u[0] = _mm_unpacklo_epi32(step1[16], step1[31]);
-            u[1] = _mm_unpackhi_epi32(step1[16], step1[31]);
-            u[2] = _mm_unpacklo_epi32(step1[17], step1[30]);
-            u[3] = _mm_unpackhi_epi32(step1[17], step1[30]);
-            u[4] = _mm_unpacklo_epi32(step1[18], step1[29]);
-            u[5] = _mm_unpackhi_epi32(step1[18], step1[29]);
-            u[6] = _mm_unpacklo_epi32(step1[19], step1[28]);
-            u[7] = _mm_unpackhi_epi32(step1[19], step1[28]);
-
-            v[0] = k_madd_epi32(u[0], k32_p31_p01);
-            v[1] = k_madd_epi32(u[1], k32_p31_p01);
-            v[2] = k_madd_epi32(u[2], k32_p15_p17);
-            v[3] = k_madd_epi32(u[3], k32_p15_p17);
-            v[4] = k_madd_epi32(u[4], k32_p23_p09);
-            v[5] = k_madd_epi32(u[5], k32_p23_p09);
-            v[6] = k_madd_epi32(u[6], k32_p07_p25);
-            v[7] = k_madd_epi32(u[7], k32_p07_p25);
-            v[8] = k_madd_epi32(u[6], k32_m25_p07);
-            v[9] = k_madd_epi32(u[7], k32_m25_p07);
-            v[10] = k_madd_epi32(u[4], k32_m09_p23);
-            v[11] = k_madd_epi32(u[5], k32_m09_p23);
-            v[12] = k_madd_epi32(u[2], k32_m17_p15);
-            v[13] = k_madd_epi32(u[3], k32_m17_p15);
-            v[14] = k_madd_epi32(u[0], k32_m01_p31);
-            v[15] = k_madd_epi32(u[1], k32_m01_p31);
+            // p31_p01
+            k_madd_32_sse2(k32_p31, k32_m01, 1, -1, step1[16], step1[31], u[0],
+                           overflow_vec, kZero);
+            // p15_p17
+            k_madd_32_sse2(k32_p15, k32_m17, 1, -1, step1[17], step1[30], u[1],
+                           overflow_vec, kZero);
+            // p23_p09
+            k_madd_32_sse2(k32_p23, k32_m09, 1, -1, step1[18], step1[29], u[2],
+                           overflow_vec, kZero);
+            // p07_p25
+            k_madd_32_sse2(k32_p07, k32_m25, 1, -1, step1[19], step1[28], u[3],
+                           overflow_vec, kZero);
+            // m25_p07
+            k_madd_32_sse2(k32_m25, k32_p07, 1, 1, step1[19], step1[28], u[4],
+                           overflow_vec, kZero);
+            // m09_p23
+            k_madd_32_sse2(k32_m09, k32_p23, 1, 1, step1[18], step1[29], u[5],
+                           overflow_vec, kZero);
+            // m15_p17
+            k_madd_32_sse2(k32_m17, k32_p15, 1, 1, step1[17], step1[30], u[6],
+                           overflow_vec, kZero);
+            // m01_p31
+            k_madd_32_sse2(k32_m01, k32_p31, 1, 1, step1[16], step1[31], u[7],
+                           overflow_vec, kZero);
 #if DCT_HIGH_BIT_DEPTH
-            overflow = k_check_epi32_overflow_16(
-                &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &v[8],
-                &v[9], &v[10], &v[11], &v[12], &v[13], &v[14], &v[15], &kZero);
-            if (overflow) {
+            if (_mm_movemask_epi8(overflow_vec)) {
               HIGH_FDCT32x32_2D_ROWS_C(intermediate, output_org);
               return;
             }
 #endif  // DCT_HIGH_BIT_DEPTH
-            u[0] = k_packs_epi64(v[0], v[1]);
-            u[1] = k_packs_epi64(v[2], v[3]);
-            u[2] = k_packs_epi64(v[4], v[5]);
-            u[3] = k_packs_epi64(v[6], v[7]);
-            u[4] = k_packs_epi64(v[8], v[9]);
-            u[5] = k_packs_epi64(v[10], v[11]);
-            u[6] = k_packs_epi64(v[12], v[13]);
-            u[7] = k_packs_epi64(v[14], v[15]);
-
             v[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
             v[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
             v[2] = _mm_add_epi32(u[2], k__DCT_CONST_ROUNDING);
@@ -2350,64 +2278,47 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
 #endif  // DCT_HIGH_BIT_DEPTH
           }
           {
-            const __m128i k32_p27_p05 = pair_set_epi32(cospi_27_64, cospi_5_64);
-            const __m128i k32_p11_p21 =
-                pair_set_epi32(cospi_11_64, cospi_21_64);
-            const __m128i k32_p19_p13 =
-                pair_set_epi32(cospi_19_64, cospi_13_64);
-            const __m128i k32_p03_p29 = pair_set_epi32(cospi_3_64, cospi_29_64);
-            const __m128i k32_m29_p03 =
-                pair_set_epi32(-cospi_29_64, cospi_3_64);
-            const __m128i k32_m13_p19 =
-                pair_set_epi32(-cospi_13_64, cospi_19_64);
-            const __m128i k32_m21_p11 =
-                pair_set_epi32(-cospi_21_64, cospi_11_64);
-            const __m128i k32_m05_p27 =
-                pair_set_epi32(-cospi_5_64, cospi_27_64);
+            const __m128i k32_m05 = _mm_set1_epi32(-cospi_5_64);
+            const __m128i k32_p27 = _mm_set1_epi32(cospi_27_64);
+            const __m128i k32_p11 = _mm_set1_epi32(cospi_11_64);
+            const __m128i k32_m21 = _mm_set1_epi32(-cospi_21_64);
+            const __m128i k32_m13 = _mm_set1_epi32(-cospi_13_64);
+            const __m128i k32_p19 = _mm_set1_epi32(cospi_19_64);
+            const __m128i k32_p03 = _mm_set1_epi32(cospi_3_64);
+            const __m128i k32_m29 = _mm_set1_epi32(-cospi_29_64);
+            __m128i overflow_vec = _mm_setzero_si128();
+            (void)overflow_vec;
 
-            u[0] = _mm_unpacklo_epi32(step1[20], step1[27]);
-            u[1] = _mm_unpackhi_epi32(step1[20], step1[27]);
-            u[2] = _mm_unpacklo_epi32(step1[21], step1[26]);
-            u[3] = _mm_unpackhi_epi32(step1[21], step1[26]);
-            u[4] = _mm_unpacklo_epi32(step1[22], step1[25]);
-            u[5] = _mm_unpackhi_epi32(step1[22], step1[25]);
-            u[6] = _mm_unpacklo_epi32(step1[23], step1[24]);
-            u[7] = _mm_unpackhi_epi32(step1[23], step1[24]);
-
-            v[0] = k_madd_epi32(u[0], k32_p27_p05);
-            v[1] = k_madd_epi32(u[1], k32_p27_p05);
-            v[2] = k_madd_epi32(u[2], k32_p11_p21);
-            v[3] = k_madd_epi32(u[3], k32_p11_p21);
-            v[4] = k_madd_epi32(u[4], k32_p19_p13);
-            v[5] = k_madd_epi32(u[5], k32_p19_p13);
-            v[6] = k_madd_epi32(u[6], k32_p03_p29);
-            v[7] = k_madd_epi32(u[7], k32_p03_p29);
-            v[8] = k_madd_epi32(u[6], k32_m29_p03);
-            v[9] = k_madd_epi32(u[7], k32_m29_p03);
-            v[10] = k_madd_epi32(u[4], k32_m13_p19);
-            v[11] = k_madd_epi32(u[5], k32_m13_p19);
-            v[12] = k_madd_epi32(u[2], k32_m21_p11);
-            v[13] = k_madd_epi32(u[3], k32_m21_p11);
-            v[14] = k_madd_epi32(u[0], k32_m05_p27);
-            v[15] = k_madd_epi32(u[1], k32_m05_p27);
+            // p27_p05
+            k_madd_32_sse2(k32_p27, k32_m05, 1, -1, step1[20], step1[27], u[0],
+                           overflow_vec, kZero);
+            // p11_p21
+            k_madd_32_sse2(k32_p11, k32_m21, 1, -1, step1[21], step1[26], u[1],
+                           overflow_vec, kZero);
+            // p19_p13
+            k_madd_32_sse2(k32_p19, k32_m13, 1, -1, step1[22], step1[25], u[2],
+                           overflow_vec, kZero);
+            // p03_p29
+            k_madd_32_sse2(k32_p03, k32_m29, 1, -1, step1[23], step1[24], u[3],
+                           overflow_vec, kZero);
+            // m29_p03
+            k_madd_32_sse2(k32_m29, k32_p03, 1, 1, step1[23], step1[24], u[4],
+                           overflow_vec, kZero);
+            // m13_p19
+            k_madd_32_sse2(k32_m13, k32_p19, 1, 1, step1[22], step1[25], u[5],
+                           overflow_vec, kZero);
+            // m21_p11
+            k_madd_32_sse2(k32_m21, k32_p11, 1, 1, step1[21], step1[26], u[6],
+                           overflow_vec, kZero);
+            // m05_p27
+            k_madd_32_sse2(k32_m05, k32_p27, 1, 1, step1[20], step1[27], u[7],
+                           overflow_vec, kZero);
 #if DCT_HIGH_BIT_DEPTH
-            overflow = k_check_epi32_overflow_16(
-                &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &v[8],
-                &v[9], &v[10], &v[11], &v[12], &v[13], &v[14], &v[15], &kZero);
-            if (overflow) {
+            if (_mm_movemask_epi8(overflow_vec)) {
               HIGH_FDCT32x32_2D_ROWS_C(intermediate, output_org);
               return;
             }
 #endif  // DCT_HIGH_BIT_DEPTH
-            u[0] = k_packs_epi64(v[0], v[1]);
-            u[1] = k_packs_epi64(v[2], v[3]);
-            u[2] = k_packs_epi64(v[4], v[5]);
-            u[3] = k_packs_epi64(v[6], v[7]);
-            u[4] = k_packs_epi64(v[8], v[9]);
-            u[5] = k_packs_epi64(v[10], v[11]);
-            u[6] = k_packs_epi64(v[12], v[13]);
-            u[7] = k_packs_epi64(v[14], v[15]);
-
             v[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
             v[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
             v[2] = _mm_add_epi32(u[2], k__DCT_CONST_ROUNDING);
@@ -2657,6 +2568,8 @@ void FDCT32x32_2D(const int16_t *input, tran_low_t *output_org, int stride) {
   }
 }  // NOLINT
 
+#undef check_epi32_overflow_accumulate
+#undef k_madd_32_sse2
 #undef ADD_EPI16
 #undef SUB_EPI16
 #undef HIGH_FDCT32x32_2D_C
