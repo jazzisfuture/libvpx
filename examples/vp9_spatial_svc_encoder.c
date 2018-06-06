@@ -727,7 +727,7 @@ int main(int argc, const char **argv) {
     vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
   vpx_codec_control(&codec, VP8E_SET_MAX_INTRA_BITRATE_PCT, 900);
 
-  vpx_codec_control(&codec, VP9E_SET_SVC_INTER_LAYER_PRED, 0);
+  vpx_codec_control(&codec, VP9E_SET_SVC_INTER_LAYER_PRED, 2);
 
   vpx_codec_control(&codec, VP9E_SET_NOISE_SENSITIVITY, 0);
 
