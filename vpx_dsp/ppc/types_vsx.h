@@ -51,6 +51,8 @@ static const uint8x16_t xxpermdi3_perm = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
   (int16x8_t) vec_mergeh(vec_splat_u8(0), (uint8x16_t)v)
 #define unpack_to_s16_l(v) \
   (int16x8_t) vec_mergel(vec_splat_u8(0), (uint8x16_t)v)
+#define unpack_u16_to_s32_h(v) (int32x4_t) vec_mergeh((uint16x8_t) vec_splat_u8(0), (uint16x8_t) v)
+#define unpack_u16_to_s32_l(v) (int32x4_t) vec_mergel((uint16x8_t) vec_splat_u8(0), (uint16x8_t) v)
 #ifndef xxpermdi
 #define xxpermdi(a, b, c) vec_xxpermdi(a, b, c)
 #endif
@@ -63,6 +65,8 @@ static const uint8x16_t xxpermdi3_perm = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
   (int16x8_t) vec_mergeh((uint8x16_t)v, vec_splat_u8(0))
 #define unpack_to_s16_l(v) \
   (int16x8_t) vec_mergel((uint8x16_t)v, vec_splat_u8(0))
+#define unpack_u16_to_s32_h(v) (int32x4_t) vec_mergeh((uint16x8_t) v, (uint16x8_t) vec_splat_u8(0))
+#define unpack_u16_to_s32_l(v) (int32x4_t) vec_mergel((uint16x8_t) v, (uint16x8_t) vec_splat_u8(0))
 #ifndef xxpermdi
 #define xxpermdi(a, b, c) vec_xxpermdi(b, a, ((c >> 1) | (c & 1) << 1) ^ 3)
 #endif
