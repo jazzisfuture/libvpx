@@ -14,6 +14,32 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/ppc/types_vsx.h"
 
+static VPX_FORCE_INLINE void subtract_block4x4(
+    int16_t *diff, ptrdiff_t diff_stride, const uint8_t *src,
+    ptrdiff_t src_stride, const uint8_t *pred, ptrdiff_t pred_stride) {
+  int16_t *diff1 = diff + 2 * diff_stride;
+  const uint8_t *src1 = src + 2 * src_stride;
+  const uint8_t *pred1 = pred + 2 * pred_stride;
+
+  const int16x8_t d0 = vec_vsx_ld(0, diff);
+  const int16x8_t d1 = vec_vsx_ld(0, diff + diff_stride);
+  const int16x8_t d2 = vec_vsx_ld(0, diff1);
+  const int16x8_t d3 = vec_vsx_ld(0, diff1 + diff_stride);
+
+  const uint8x16_t s0 = read4x2(src, (int)src_stride);
+  const uint8x16_t p0 = read4x2(pred, (int)pred_stride);
+  const uint8x16_t s1 = read4x2(src1, (int)src_stride);
+  const uint8x16_t p1 = read4x2(pred1, (int)pred_stride);
+
+  const int16x8_t da = vec_sub(unpack_to_s16_h(s0), unpack_to_s16_h(p0));
+  const int16x8_t db = vec_sub(unpack_to_s16_h(s1), unpack_to_s16_h(p1));
+
+  vec_vsx_st(xxpermdi(da, d0, 1), 0, diff);
+  vec_vsx_st(xxpermdi(da, d1, 3), 0, diff + diff_stride);
+  vec_vsx_st(xxpermdi(db, d2, 1), 0, diff1);
+  vec_vsx_st(xxpermdi(db, d3, 3), 0, diff1 + diff_stride);
+}
+
 void vpx_subtract_block_vsx(int rows, int cols, int16_t *diff,
                             ptrdiff_t diff_stride, const uint8_t *src,
                             ptrdiff_t src_stride, const uint8_t *pred,
@@ -72,42 +98,18 @@ void vpx_subtract_block_vsx(int rows, int cols, int16_t *diff,
       } while (--r);
       break;
     case 4:
-      do {
-        const int16x8_t d0 = vec_vsx_ld(0, diff);
-        const int16x8_t d1 = vec_vsx_ld(0, diff + diff_stride);
-        const uint8x16_t s0 = read4x2(src, (int)src_stride);
-        const uint8x16_t p0 = read4x2(pred, (int)pred_stride);
-        const int16x8_t d = vec_sub(unpack_to_s16_h(s0), unpack_to_s16_h(p0));
-        /*
-        for (c = 0; c < 8; c++) printf("%d ", src[c]);
-        printf("\n");
-        for (c = 0; c < 8; c++) printf("%d ", src[c + src_stride]);
-        printf("\n");
-        for (c = 0; c < 8; c++) printf("%d ", s0[c]);
-        printf("\n");
-        for (c = 0; c < 8; c++) printf("%d ", pred[c]);
-        printf("\n");
-        for (c = 0; c < 8; c++) printf("%d ", pred[c + pred_stride]);
-        printf("\n");
-        for (c = 0; c < 8; c++) printf("%d ", p0[c]);
-        printf("\n");
-        printf("d\n");
-        for (c = 0; c < 8; c++) printf("%d ", d[c]);
-        printf("\n");
-        printf("\n");
-        for (c = 0; c < 8; c++) printf("%d ", d0[c]);
-        printf("\n");
-        const int16x8_t o0 = vec_xxpermdi(d, d0, 1);
-        for (c = 0; c < 8; c++) printf("%d ", o0[c]);
-        printf("\n");
-        */
-        vec_vsx_st(xxpermdi(d, d0, 1), 0, diff);
-        vec_vsx_st(xxpermdi(d, d1, 3), 0, diff + diff_stride);
-        diff += 2 * diff_stride;
-        pred += 2 * pred_stride;
-        src += 2 * src_stride;
-        r -= 2;
-      } while (r);
+      subtract_block4x4(diff, diff_stride, src, src_stride, pred, pred_stride);
+      if (r > 4) {
+        diff += 4 * diff_stride;
+        pred += 4 * pred_stride;
+        src += 4 * src_stride;
+
+        subtract_block4x4(diff, diff_stride,
+
+                          src, src_stride,
+
+                          pred, pred_stride);
+      }
       break;
     default:
       assert(0);  // unreachable
