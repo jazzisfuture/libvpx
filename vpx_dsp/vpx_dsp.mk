@@ -222,6 +222,8 @@ DSP_SRCS-$(HAVE_MSA)    += mips/fwd_dct32x32_msa.c
 DSP_SRCS-$(HAVE_VSX)    += ppc/fdct32x32_vsx.c
 endif  # CONFIG_VP9_ENCODER
 
+DSP_SRCS-$(HAVE_VSX)    += ppc/fwd_txfm_vsx.c
+
 # inverse transform
 ifeq ($(CONFIG_VP9),yes)
 DSP_SRCS-yes            += inv_txfm.h
