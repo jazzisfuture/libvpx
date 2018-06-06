@@ -17,6 +17,7 @@
 #include "./vp9_rtcd.h"
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
+#include "test/bench.h"
 #include "test/buffer.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
@@ -25,6 +26,7 @@
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
+#include "vpx_ports/vpx_timer.h"
 
 using libvpx_test::ACMRandom;
 using libvpx_test::Buffer;
@@ -432,9 +434,32 @@ class TransTestBase : public ::testing::TestWithParam<DctParam> {
 
 /* -------------------------------------------------------------------------- */
 
-class TransDCT : public TransTestBase {
+class TransDCT : public TransTestBase,
+                 public AbstractBench {
  public:
   TransDCT() { fwd_txfm_ref = fdct_ref; }
+
+  virtual void SetUp() {
+    TransTestBase::SetUp();
+    input_ = new Buffer<int16_t>(size_, size_, 8, size_ == 4 ? 0 : 16);
+    output_ = new Buffer<tran_low_t>(size_, size_, 0, 16);
+    ASSERT_TRUE(input_->Init());
+    ASSERT_TRUE(output_->Init());
+  }
+
+  virtual void TearDown() {
+    delete input_;
+    delete output_;
+    TransTestBase::TearDown();
+  }
+
+ protected:
+  virtual void Run() {
+    RunFwdTxfm(*input_, output_);
+  }
+
+  Buffer<int16_t> *input_;
+  Buffer<tran_low_t> *output_;
 };
 
 TEST_P(TransDCT, AccuracyCheck) {
@@ -452,6 +477,17 @@ TEST_P(TransDCT, CoeffCheck) { RunCoeffCheck(); }
 TEST_P(TransDCT, MemCheck) { RunMemCheck(); }
 
 TEST_P(TransDCT, InvAccuracyCheck) { RunInvAccuracyCheck(1); }
+
+TEST_P(TransDCT, DISABLED_Speed) {
+  char block_size[16];
+  char title[100];
+
+  snprintf(block_size, sizeof(block_size), "%dx%d", size_, size_);
+  snprintf(title, sizeof(title), "%25s %8s ", "TransDCT", block_size);
+
+  RunNTimes(100000000 / (size_ * size_));
+  PrintMedian(title);
+}
 
 static const FuncInfo dct_c_func_info[] = {
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -577,7 +613,7 @@ INSTANTIATE_TEST_CASE_P(MSA, TransDCT,
 
 #if HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
 static const FuncInfo dct_vsx_func_info = {
-  &fdct_wrapper<vpx_fdct4x4_c>, &idct_wrapper<vpx_idct4x4_16_add_vsx>, 4, 1
+  &fdct_wrapper<vpx_fdct4x4_vsx>, &idct_wrapper<vpx_idct4x4_16_add_vsx>, 4, 1
 };
 
 INSTANTIATE_TEST_CASE_P(VSX, TransDCT,

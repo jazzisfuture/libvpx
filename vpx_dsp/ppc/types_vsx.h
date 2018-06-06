@@ -51,6 +51,10 @@ static const uint8x16_t xxpermdi3_perm = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
   (int16x8_t) vec_mergeh(vec_splat_u8(0), (uint8x16_t)v)
 #define unpack_to_s16_l(v) \
   (int16x8_t) vec_mergel(vec_splat_u8(0), (uint8x16_t)v)
+#define unpack_u16_to_s32_h(v) \
+    (int32x4_t) vec_mergeh((uint16x8_t) vec_splat_u8(0), (uint16x8_t) v)
+#define unpack_u16_to_s32_l(v) \
+    (int32x4_t) vec_mergel((uint16x8_t) vec_splat_u8(0), (uint16x8_t) v)
 #ifndef xxpermdi
 #define xxpermdi(a, b, c) vec_xxpermdi(a, b, c)
 #endif
@@ -63,6 +67,10 @@ static const uint8x16_t xxpermdi3_perm = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
   (int16x8_t) vec_mergeh((uint8x16_t)v, vec_splat_u8(0))
 #define unpack_to_s16_l(v) \
   (int16x8_t) vec_mergel((uint8x16_t)v, vec_splat_u8(0))
+#define unpack_u16_to_s32_h(v) \
+    (int32x4_t) vec_mergeh((uint16x8_t) v, (uint16x8_t) vec_splat_u8(0))
+#define unpack_u16_to_s32_l(v) \
+    (int32x4_t) vec_mergel((uint16x8_t) v, (uint16x8_t) vec_splat_u8(0))
 #ifndef xxpermdi
 #define xxpermdi(a, b, c) vec_xxpermdi(b, a, ((c >> 1) | (c & 1) << 1) ^ 3)
 #endif
@@ -83,11 +91,14 @@ static const uint8x16_t vec_zeros_u8 = { 0, 0, 0, 0, 0, 0, 0, 0,
                                          0, 0, 0, 0, 0, 0, 0, 0 };
 static const int16x8_t vec_zeros_s16 = { 0, 0, 0, 0, 0, 0, 0, 0 };
 static const int16x8_t vec_ones_s16 = { 1, 1, 1, 1, 1, 1, 1, 1 };
+static const int32x4_t vec_ones_s32 = { 1, 1, 1, 1 };
 static const int16x8_t vec_twos_s16 = { 2, 2, 2, 2, 2, 2, 2, 2 };
 static const uint16x8_t vec_ones_u16 = { 1, 1, 1, 1, 1, 1, 1, 1 };
 static const uint32x4_t vec_ones_u32 = { 1, 1, 1, 1 };
 static const int32x4_t vec_zeros_s32 = { 0, 0, 0, 0 };
 static const uint32x4_t vec_zeros_u32 = { 0, 0, 0, 0 };
+static const uint32x4_t vec_twos_u32 = { 2, 2, 2, 2 };
+static const uint16x8_t vec_fours_u16 = { 4, 4, 4, 4, 4, 4, 4, 4 };
 static const uint16x8_t vec_shift_sign_s16 = { 15, 15, 15, 15, 15, 15, 15, 15 };
 static const uint32x4_t vec_shift_sign_s32 = { 31, 31, 31, 31 };
 static const uint8x16_t vec_perm64 = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
