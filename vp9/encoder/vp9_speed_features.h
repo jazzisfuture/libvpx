@@ -535,8 +535,8 @@ typedef struct SPEED_FEATURES {
   // Disable partitioning of 16x16 blocks.
   int disable_16x16part_nonkey;
 
-  // Allow for disabling golden reference.
-  int disable_golden_ref;
+  // Allow for disabling golden temporal reference.
+  int disable_golden_temporal_ref;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
