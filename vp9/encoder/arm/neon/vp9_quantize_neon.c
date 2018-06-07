@@ -22,7 +22,7 @@
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/encoder/vp9_rd.h"
 
-#include "vpx_dsp/arm/idct_neon.h"
+#include "vpx_dsp/arm/idct_neon.h" idct_neon
 #include "vpx_dsp/arm/mem_neon.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 
