@@ -55,12 +55,13 @@ typedef void (*QuantizeFPFunc)(const tran_low_t *coeff, intptr_t count,
                                const int16_t *iscan);
 
 template <QuantizeFPFunc fn>
-void QuantFPWrapper(const tran_low_t *coeff, intptr_t count, int skip_block,
-                    const int16_t *zbin, const int16_t *round,
-                    const int16_t *quant, const int16_t *quant_shift,
-                    tran_low_t *qcoeff, tran_low_t *dqcoeff,
-                    const int16_t *dequant, uint16_t *eob, const int16_t *scan,
-                    const int16_t *iscan) {
+static void QuantFPWrapper(const tran_low_t *coeff, intptr_t count,
+                           int skip_block, const int16_t *zbin,
+                           const int16_t *round, const int16_t *quant,
+                           const int16_t *quant_shift, tran_low_t *qcoeff,
+                           tran_low_t *dqcoeff, const int16_t *dequant,
+                           uint16_t *eob, const int16_t *scan,
+                           const int16_t *iscan) {
   (void)zbin;
   (void)quant_shift;
 
@@ -562,13 +563,16 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH
 
 #if HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(VSX, VP9QuantizeTest,
-                        ::testing::Values(make_tuple(&vpx_quantize_b_vsx,
-                                                     &vpx_quantize_b_c,
-                                                     VPX_BITS_8, 16, false),
-                                          make_tuple(&vpx_quantize_b_32x32_vsx,
-                                                     &vpx_quantize_b_32x32_c,
-                                                     VPX_BITS_8, 32, false)));
+INSTANTIATE_TEST_CASE_P(
+    VSX, VP9QuantizeTest,
+    ::testing::Values(make_tuple(&vpx_quantize_b_vsx, &vpx_quantize_b_c,
+                                 VPX_BITS_8, 16, false),
+                      make_tuple(&vpx_quantize_b_32x32_vsx,
+                                 &vpx_quantize_b_32x32_c, VPX_BITS_8, 32,
+                                 false),
+                      make_tuple(&QuantFPWrapper<vp9_quantize_fp_vsx>,
+                                 &QuantFPWrapper<vp9_quantize_fp_c>, VPX_BITS_8,
+                                 16, true)));
 #endif  // HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
 
 // Only useful to compare "Speed" test results.
