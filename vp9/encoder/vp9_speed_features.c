@@ -376,7 +376,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->svc_use_lowres_part = 0;
   sf->re_encode_overshoot_rt = 0;
   sf->disable_16x16part_nonkey = 0;
-  sf->disable_golden_ref = 0;
+  sf->disable_golden_temporal_ref = 0;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -629,6 +629,9 @@ static void set_rt_speed_feature_framesize_independent(
         cpi->svc.number_spatial_layers == 3 && cpi->svc.temporal_layer_id > 0 &&
         cpi->oxcf.width * cpi->oxcf.height > 640 * 480)
       sf->svc_use_lowres_part = 1;
+    if (cpi->use_svc && cpi->svc.use_gf_temporal_ref_current_layer &&
+        cpi->svc.temporal_layer_id > 0)
+      cpi->sf.disable_golden_temporal_ref = 1;
   }
 
   if (speed >= 8) {
@@ -681,7 +684,7 @@ static void set_rt_speed_feature_framesize_independent(
     if (cm->frame_type != KEY_FRAME && cm->width >= 320 && cm->height >= 240)
       sf->disable_16x16part_nonkey = 1;
     // Allow for disabling GOLDEN reference, for CBR mode.
-    if (cpi->oxcf.rc_mode == VPX_CBR) sf->disable_golden_ref = 1;
+    if (cpi->oxcf.rc_mode == VPX_CBR) sf->disable_golden_temporal_ref = 1;
     if (cpi->rc.avg_frame_low_motion < 65) sf->default_interp_filter = BILINEAR;
   }
 
