@@ -629,6 +629,8 @@ static void set_rt_speed_feature_framesize_independent(
         cpi->svc.number_spatial_layers == 3 && cpi->svc.temporal_layer_id > 0 &&
         cpi->oxcf.width * cpi->oxcf.height > 640 * 480)
       sf->svc_use_lowres_part = 1;
+    if (cpi->use_svc && cpi->svc.temporal_layer_id > 0)
+      cpi->svc.use_gf_temporal_ref_current_layer = 1;
   }
 
   if (speed >= 8) {
