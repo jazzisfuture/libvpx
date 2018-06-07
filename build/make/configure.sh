@@ -1272,6 +1272,18 @@ EOF
           setup_gnu_toolchain
           #for 32 bit x86 builds, -O3 did not turn on this flag
           enabled optimizations && disabled gprof && check_add_cflags -fomit-frame-pointer
+
+          case ${tgt_os} in
+            darwin*)
+              # Confirm that the compiler really supports avx512.
+              check_cc -mavx512f <<EOF || soft_disable avx512 && RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx512 "
+#include <immintrin.h>
+void f(void) {
+  __m512i x = _mm512_set1_epi16(0);
+}
+EOF
+              ;;
+          esac
           ;;
         vs*)
           # When building with Microsoft Visual Studio the assembler is
