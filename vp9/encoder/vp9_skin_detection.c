@@ -23,6 +23,7 @@ int vp9_compute_skin_block(const uint8_t *y, const uint8_t *u, const uint8_t *v,
     return 0;
   } else {
     int motion = 1;
+
     // Take center pixel in block to determine is_skin.
     const int y_width_shift = (4 << b_width_log2_lookup[bsize]) >> 1;
     const int y_height_shift = (4 << b_height_log2_lookup[bsize]) >> 1;
@@ -67,6 +68,16 @@ void vp9_compute_skin_sb(VP9_COMP *const cpi, BLOCK_SIZE bsize, int mi_row,
       int bl_index1 = bl_index + 1;
       int bl_index2 = bl_index + cm->mi_cols;
       int bl_index3 = bl_index2 + 1;
+      const uint8_t *src_y_addr = src_y;
+      const uint8_t *src_u_addr = src_u;
+      const uint8_t *src_v_addr = src_v;
+#if CONFIG_VP9_HIGHBITDEPTH
+      if (cpi->Source->flags & YV12_FLAG_HIGHBITDEPTH) {
+        src_y_addr = (uint8_t *)CONVERT_TO_SHORTPTR(src_y);
+        src_u_addr = (uint8_t *)CONVERT_TO_SHORTPTR(src_u);
+        src_v_addr = (uint8_t *)CONVERT_TO_SHORTPTR(src_v);
+      }
+#endif
       // Don't detect skin on the boundary.
       if (i == 0 || j == 0) continue;
       if (bsize == BLOCK_8X8)
@@ -76,9 +87,9 @@ void vp9_compute_skin_sb(VP9_COMP *const cpi, BLOCK_SIZE bsize, int mi_row,
                                VPXMIN(cpi->consec_zero_mv[bl_index1],
                                       VPXMIN(cpi->consec_zero_mv[bl_index2],
                                              cpi->consec_zero_mv[bl_index3])));
-      cpi->skin_map[bl_index] =
-          vp9_compute_skin_block(src_y, src_u, src_v, src_ystride, src_uvstride,
-                                 bsize, consec_zeromv, 0);
+      cpi->skin_map[bl_index] = vp9_compute_skin_block(
+          src_y_addr, src_u_addr, src_v_addr, src_ystride, src_uvstride, bsize,
+          consec_zeromv, 0);
       num_bl++;
       src_y += y_bsize;
       src_u += uv_bsize;
