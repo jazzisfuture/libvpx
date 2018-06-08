@@ -709,8 +709,6 @@ static vpx_codec_err_t ctrl_set_noise_sensitivity(vpx_codec_alg_priv_t *ctx,
                                                   va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.noise_sensitivity = CAST(VP9E_SET_NOISE_SENSITIVITY, args);
-  // TODO(jianj): Look into issue of noise estimation with high bitdepth.
-  if (ctx->cfg.g_bit_depth > 8) extra_cfg.noise_sensitivity = 0;
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
@@ -1073,6 +1071,12 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
   size_t data_sz;
 
   if (cpi == NULL) return VPX_CODEC_INVALID_PARAM;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  // Disable denoiser for high bitdepth since vp9_denoiser_filter only works for
+  // 8 bits.
+  if (cpi->common.bit_depth > 8) cpi->oxcf.noise_sensitivity = 0;
+#endif
 
   if (cpi->oxcf.pass == 2 && cpi->level_constraint.level_index >= 0 &&
       !cpi->level_constraint.rc_config_updated) {
