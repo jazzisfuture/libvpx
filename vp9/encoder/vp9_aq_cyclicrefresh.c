@@ -156,6 +156,9 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi, MODE_INFO *const mi,
   const int xmis = VPXMIN(cm->mi_cols - mi_col, bw);
   const int ymis = VPXMIN(cm->mi_rows - mi_row, bh);
   const int block_index = mi_row * cm->mi_cols + mi_col;
+  const uint8_t *src_y = p[0].src.buf;
+  const uint8_t *src_u = p[1].src.buf;
+  const uint8_t *src_v = p[2].src.buf;
   int refresh_this_block = candidate_refresh_aq(cr, mi, rate, dist, bsize);
   // Default is to not update the refresh map.
   int new_map_value = cr->map[block_index];
@@ -163,11 +166,18 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi, MODE_INFO *const mi,
   int y = 0;
 
   int is_skin = 0;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (cpi->Source->flags & YV12_FLAG_HIGHBITDEPTH) {
+    src_y = (uint8_t *)CONVERT_TO_SHORTPTR(p[0].src.buf);
+    src_u = (uint8_t *)CONVERT_TO_SHORTPTR(p[1].src.buf);
+    src_v = (uint8_t *)CONVERT_TO_SHORTPTR(p[2].src.buf);
+  }
+#endif
   if (refresh_this_block == 0 && bsize <= BLOCK_16X16 &&
       cpi->use_skin_detection) {
-    is_skin =
-        vp9_compute_skin_block(p[0].src.buf, p[1].src.buf, p[2].src.buf,
-                               p[0].src.stride, p[1].src.stride, bsize, 0, 0);
+    is_skin = vp9_compute_skin_block(src_y, src_u, src_v, p[0].src.stride,
+                                     p[1].src.stride, bsize, 0, 0);
     if (is_skin) refresh_this_block = 1;
   }
 

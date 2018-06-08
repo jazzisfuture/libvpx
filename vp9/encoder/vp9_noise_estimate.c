@@ -79,6 +79,13 @@ static void copy_frame(YV12_BUFFER_CONFIG *const dest,
   const uint8_t *srcbuf = src->y_buffer;
   uint8_t *destbuf = dest->y_buffer;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (src->flags & YV12_FLAG_HIGHBITDEPTH)
+    srcbuf = (uint8_t *)CONVERT_TO_SHORTPTR(src->y_buffer);
+  if (dest->flags & YV12_FLAG_HIGHBITDEPTH)
+    destbuf = (uint8_t *)CONVERT_TO_SHORTPTR(dest->y_buffer);
+#endif
+
   assert(dest->y_width == src->y_width);
   assert(dest->y_height == src->y_height);
 

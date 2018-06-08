@@ -342,10 +342,10 @@ void vp9_denoiser_denoise(VP9_COMP *cpi, MACROBLOCK *mb, int mi_row, int mi_col,
       cpi->svc.number_spatial_layers - cpi->svc.spatial_layer_id - 1;
   YV12_BUFFER_CONFIG mc_avg = denoiser->mc_running_avg_y[denoise_layer_index];
   uint8_t *avg_start = block_start(avg.y_buffer, avg.y_stride, mi_row, mi_col);
-
   uint8_t *mc_avg_start =
       block_start(mc_avg.y_buffer, mc_avg.y_stride, mi_row, mi_col);
   struct buf_2d src = mb->plane[0].src;
+  uint8_t *srcbuf = src.buf;
   int is_skin = 0;
   int increase_denoising = 0;
   int consec_zeromv = 0;
@@ -353,6 +353,13 @@ void vp9_denoiser_denoise(VP9_COMP *cpi, MACROBLOCK *mb, int mi_row, int mi_col,
   mv_row = ctx->best_sse_mv.as_mv.row;
   motion_magnitude = mv_row * mv_row + mv_col * mv_col;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (avg.flags & YV12_FLAG_HIGHBITDEPTH)
+    avg_start = (uint8_t *)CONVERT_TO_SHORTPTR(
+        block_start(avg.y_buffer, avg.y_stride, mi_row, mi_col));
+  if (cpi->common.bit_depth > 8)
+    srcbuf = (uint8_t *)CONVERT_TO_SHORTPTR(src.buf);
+#endif
   if (cpi->use_skin_detection && bs <= BLOCK_32X32 &&
       denoiser->denoising_level < kDenHigh) {
     int motion_level = (motion_magnitude < 16) ? 0 : 1;
@@ -400,17 +407,17 @@ void vp9_denoiser_denoise(VP9_COMP *cpi, MACROBLOCK *mb, int mi_row, int mi_col,
         cpi->gld_fb_idx, cpi->use_svc, cpi->svc.spatial_layer_id);
 
   if (decision == FILTER_BLOCK) {
-    decision = vp9_denoiser_filter(src.buf, src.stride, mc_avg_start,
+    decision = vp9_denoiser_filter(srcbuf, src.stride, mc_avg_start,
                                    mc_avg.y_stride, avg_start, avg.y_stride,
                                    increase_denoising, bs, motion_magnitude);
   }
 
   if (decision == FILTER_BLOCK) {
-    vpx_convolve_copy(avg_start, avg.y_stride, src.buf, src.stride, NULL, 0, 0,
+    vpx_convolve_copy(avg_start, avg.y_stride, srcbuf, src.stride, NULL, 0, 0,
                       0, 0, num_4x4_blocks_wide_lookup[bs] << 2,
                       num_4x4_blocks_high_lookup[bs] << 2);
   } else {  // COPY_BLOCK
-    vpx_convolve_copy(src.buf, src.stride, avg_start, avg.y_stride, NULL, 0, 0,
+    vpx_convolve_copy(srcbuf, src.stride, avg_start, avg.y_stride, NULL, 0, 0,
                       0, 0, num_4x4_blocks_wide_lookup[bs] << 2,
                       num_4x4_blocks_high_lookup[bs] << 2);
   }
@@ -424,6 +431,13 @@ static void copy_frame(YV12_BUFFER_CONFIG *const dest,
   int r;
   const uint8_t *srcbuf = src->y_buffer;
   uint8_t *destbuf = dest->y_buffer;
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (src->flags & YV12_FLAG_HIGHBITDEPTH)
+    srcbuf = (uint8_t *)CONVERT_TO_SHORTPTR(src->y_buffer);
+  if (dest->flags & YV12_FLAG_HIGHBITDEPTH)
+    destbuf = (uint8_t *)CONVERT_TO_SHORTPTR(dest->y_buffer);
+#endif
 
   assert(dest->y_width == src->y_width);
   assert(dest->y_height == src->y_height);
