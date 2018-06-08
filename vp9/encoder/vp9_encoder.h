@@ -283,6 +283,7 @@ typedef struct TplDepStats {
   uint64_t inter_cost;
   uint64_t mc_flow;
   uint64_t mc_dep_cost;
+  uint64_t mc_ref_cost;
 
   int ref_frame_index;
   int_mv mv;

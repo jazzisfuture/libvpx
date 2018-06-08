@@ -3083,6 +3083,8 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     target_rate = vp9_rc_clamp_pframe_target_size(cpi, target_rate);
     rc->base_frame_target = target_rate;
 
+//    fprintf(stderr, "\n\n arf target rate = %d\n", target_rate);
+
     cm->frame_type = INTER_FRAME;
 
     // Do the firstpass stats indicate that this frame is skippable for the

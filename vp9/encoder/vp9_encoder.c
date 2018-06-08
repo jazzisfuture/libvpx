@@ -62,6 +62,8 @@
 #include "vp9/encoder/vp9_speed_features.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_temporal_filter.h"
+#include "vp9_firstpass.h"
+#include "vp9_ratectrl.h"
 
 #define AM_SEGMENT_ID_INACTIVE 7
 #define AM_SEGMENT_ID_ACTIVE 0
@@ -4160,11 +4162,33 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
     // Skip recoding, if model diff is below threshold
     const int thresh = compute_context_model_thresh(cpi);
     const int diff = compute_context_model_diff(cm);
-    if (diff < thresh) {
+    if (diff < thresh && 0) {
       vpx_clear_system_state();
       restore_coding_context(cpi);
       return;
     }
+
+    GF_GROUP *gf_group = &cpi->twopass.gf_group;
+    const int gf_index = gf_group->index;
+    const int delta_size =
+        abs(gf_group->bit_allocation[gf_index] - gf_group->mod_frame_size[gf_index]);
+    const int enable_delta_q =
+        delta_size > gf_group->bit_allocation[gf_index] / 20 &&
+            cm->frame_type == INTER_FRAME;
+
+    if (enable_delta_q) {
+      if (gf_group->bit_allocation[gf_index]
+          < gf_group->mod_frame_size[gf_index])
+        q -= 1;
+      if (gf_group->bit_allocation[gf_index]
+          > gf_group->mod_frame_size[gf_index])
+        q += 1;
+    }
+
+    q = VPXMAX(q, MINQ);
+    q = VPXMIN(q, MAXQ);
+
+    vp9_set_quantizer(cm, q);
 
     vp9_encode_frame(cpi);
     vpx_clear_system_state();
@@ -5279,7 +5303,7 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
   ++frame_idx;
 
   // Extend two frames outside the current gf group.
-  for (; frame_idx < MAX_LAG_BUFFERS && extend_frame_count < 2; ++frame_idx) {
+  for (; frame_idx < MAX_LAG_BUFFERS && extend_frame_count < 4; ++frame_idx) {
     struct lookahead_entry *buf =
         vp9_lookahead_peek(cpi->lookahead, frame_idx - 2);
 
@@ -5415,6 +5439,9 @@ void tpl_model_update(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
 
       ref_stats[ref_mi_row * ref_tpl_frame->stride + ref_mi_col].mc_flow +=
           (mc_flow * overlap_area) >> (MI_SIZE_LOG2 * 2);
+
+      ref_stats[ref_mi_row * ref_tpl_frame->stride + ref_mi_col].mc_ref_cost +=
+          ((tpl_stats->intra_cost - tpl_stats->inter_cost) * overlap_area ) >> (MI_SIZE_LOG2 * 2);
       assert(overlap_area >= 0);
     }
   }
@@ -5614,6 +5641,56 @@ void setup_tpl_stats(VP9_COMP *cpi) {
     mc_flow_dispenser(cpi, gf_picture, frame_idx);
 }
 
+void gop_rate_allocation(VP9_COMP *cpi) {
+  GF_GROUP *gf_group = &cpi->twopass.gf_group;
+  double inn_factor[MAX_LAG_BUFFERS] = { 0 };
+  double norm = 0;
+  int frame_length = cpi->rc.baseline_gf_interval;
+  int mi_rows = cpi->common.mi_rows;
+  int mi_cols = cpi->common.mi_cols;
+  int total_gf_bits = 0;
+
+  for (int frame_idx = 1; frame_idx <= frame_length; ++frame_idx) {
+    int64_t inn_cost = 0;
+    int64_t mc_dep_cost = 0;
+    TplDepFrame *tpl_frame = &cpi->tpl_stats[frame_idx];
+    TplDepStats *tpl_stats = tpl_frame->tpl_stats_ptr;
+    int tpl_stride = tpl_frame->stride;
+
+    for (int row = 0; row < mi_rows; ++row) {
+      for (int col = 0; col < mi_cols; ++col) {
+        TplDepStats *this_stats = &tpl_stats[row * tpl_stride + col];
+        inn_cost += VPXMIN(this_stats->intra_cost, this_stats->inter_cost);
+        mc_dep_cost += this_stats->mc_ref_cost;
+      }
+    }
+
+    inn_factor[frame_idx] = (double)inn_cost * inn_cost;
+    if (frame_idx == 1) inn_factor[frame_idx] += (double)mc_dep_cost * mc_dep_cost;
+
+    norm += inn_factor[frame_idx];
+    total_gf_bits += gf_group->bit_allocation[frame_idx];
+
+//    fprintf(stderr, "frame index = %d, bits alloc = %d\n", frame_idx,
+//            gf_group->bit_allocation[frame_idx]);
+  }
+
+  for (int frame_idx = 1; frame_idx <= frame_length; ++frame_idx) {
+    int bit_alloc;
+
+    inn_factor[frame_idx] /= norm;
+    bit_alloc = (int)(inn_factor[frame_idx] * total_gf_bits);
+
+    gf_group->mod_frame_size[frame_idx] = bit_alloc;
+
+    if (gf_group->mod_frame_size[frame_idx] <= 0)
+      gf_group->mod_frame_size[frame_idx] = 10;
+
+//    fprintf(stderr, "frame index = %d, bits alloc = %d\n", frame_idx,
+//            gf_group->bit_allocation[frame_idx]);
+  }
+}
+
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest, int64_t *time_stamp,
                             int64_t *time_end, int flush) {
@@ -5807,6 +5884,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   cpi->frame_flags = *frame_flags;
 
+  if (arf_src_index) {
+    setup_tpl_stats(cpi);
+    gop_rate_allocation(cpi);
+  }
+
 #if !CONFIG_REALTIME_ONLY
   if ((oxcf->pass == 2) && !cpi->use_svc) {
     vp9_rc_get_second_pass_params(cpi);
@@ -5822,8 +5904,6 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   if (cpi->oxcf.pass != 0 || cpi->use_svc || frame_is_intra_only(cm) == 1) {
     for (i = 0; i < MAX_REF_FRAMES; ++i) cpi->scaled_ref_idx[i] = INVALID_IDX;
   }
-
-  if (arf_src_index) setup_tpl_stats(cpi);
 
   cpi->td.mb.fp_src_pred = 0;
 #if CONFIG_REALTIME_ONLY

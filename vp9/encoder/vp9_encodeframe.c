@@ -4901,6 +4901,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
     cpi->rd.r0 =
         log((double)intra_cost_base / (intra_cost_base + mc_dep_cost_base));
+
+//    fprintf(stderr, "\nframe = %d, show frame = %d, qindex = %d\n",
+//            cm->current_video_frame, cm->show_frame, cm->base_qindex);
   }
 
   {

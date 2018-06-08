@@ -126,6 +126,7 @@ typedef struct {
   unsigned char arf_update_idx[MAX_STATIC_GF_GROUP_LENGTH + 1];
   unsigned char arf_ref_idx[MAX_STATIC_GF_GROUP_LENGTH + 1];
   int bit_allocation[MAX_STATIC_GF_GROUP_LENGTH + 1];
+  int mod_frame_size[MAX_STATIC_GF_GROUP_LENGTH + 1];
 } GF_GROUP;
 
 typedef struct {
