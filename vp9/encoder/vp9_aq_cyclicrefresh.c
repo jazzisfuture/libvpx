@@ -164,7 +164,7 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi, MODE_INFO *const mi,
 
   int is_skin = 0;
   if (refresh_this_block == 0 && bsize <= BLOCK_16X16 &&
-      cpi->use_skin_detection) {
+      cpi->use_skin_detection && cm->bit_depth == 8) {
     is_skin =
         vp9_compute_skin_block(p[0].src.buf, p[1].src.buf, p[2].src.buf,
                                p[0].src.stride, p[1].src.stride, bsize, 0, 0);
