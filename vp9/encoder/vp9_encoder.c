@@ -3630,6 +3630,12 @@ static void encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   // The flag may get reset below based on SVC or resizing state.
   cpi->compute_source_sad_onepass = cpi->oxcf.mode == REALTIME;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  // Disable denoiser for high bitdepth since vp9_denoiser_filter only works for
+  // 8 bits.
+  if (cm->bit_depth > 8) cpi->oxcf.noise_sensitivity = 0;
+#endif
+
   vpx_clear_system_state();
 
   set_frame_size(cpi);

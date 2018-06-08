@@ -4389,7 +4389,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     (*(cpi->row_mt_sync_read_ptr))(&tile_data->row_mt_sync, sb_row,
                                    sb_col_in_tile);
 
-    if (cpi->use_skin_detection) {
+    if (cpi->use_skin_detection && cm->bit_depth == 8) {
       vp9_compute_skin_sb(cpi, BLOCK_16X16, mi_row, mi_col);
     }
 
