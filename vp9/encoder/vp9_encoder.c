@@ -5432,6 +5432,12 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   int arf_src_index;
   int i;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  // Disable denoiser for high bitdepth since vp9_denoiser_filter only works for
+  // 8 bits.
+  if (cpi->common.bit_depth > 8) cpi->oxcf.noise_sensitivity = 0;
+#endif
+
   if (is_one_pass_cbr_svc(cpi)) {
     vp9_one_pass_cbr_svc_start_layer(cpi);
   }
