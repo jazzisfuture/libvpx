@@ -3248,6 +3248,8 @@ static int ml_pruning_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   float nn_score, linear_score;
   float features[7];
 
+  return 0;
+
   assert(b_width_log2_lookup[bsize] == b_height_log2_lookup[bsize]);
   vpx_clear_system_state();
 
@@ -3362,6 +3364,13 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   int64_t dist_breakout_thr = cpi->sf.partition_search_breakout_thr.dist;
   int rate_breakout_thr = cpi->sf.partition_search_breakout_thr.rate;
 
+  RD_COST none_rd, split_rd;
+  int none_sum_y_eobs = 0;
+  int none_is_inter = 0;
+  int none_is_compound = 0;
+  vp9_zero(none_rd);
+  vp9_zero(split_rd);
+
   (void)*tp_orig;
 
   assert(num_8x8_blocks_wide_lookup[bsize] ==
@@ -3371,6 +3380,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   dist_breakout_thr >>=
       8 - (b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize]);
   rate_breakout_thr *= num_pels_log2_lookup[bsize];
+
+  dist_breakout_thr = 0;
+  rate_breakout_thr = 0;
 
   vp9_rd_cost_init(&this_rdc);
   vp9_rd_cost_init(&sum_rdc);
@@ -3488,6 +3500,11 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         this_rdc.rdcost =
             RDCOST(x->rdmult, x->rddiv, this_rdc.rate, this_rdc.dist);
       }
+
+      none_rd = this_rdc;
+      none_sum_y_eobs = ctx->sum_y_eobs;
+      none_is_inter = is_inter_mode(ctx->mic.mode);
+      none_is_compound = has_second_ref(&ctx->mic);
 
       if (this_rdc.rdcost < best_rdc.rdcost) {
         MODE_INFO *mi = xd->mi[0];
@@ -3624,6 +3641,11 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     if (sum_rdc.rdcost < best_rdc.rdcost && i == 4) {
       sum_rdc.rate += cpi->partition_cost[pl][PARTITION_SPLIT];
       sum_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
+
+      split_rd = sum_rdc;
+
+      none_is_inter = is_inter_mode(ctx->mic.mode);
+            none_is_compound = has_second_ref(&ctx->mic);
 
       if (sum_rdc.rdcost < best_rdc.rdcost) {
         best_rdc = sum_rdc;
@@ -3762,6 +3784,41 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   } else {
     assert(tp_orig == *tp);
   }
+
+#if 1
+  do {
+    const int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+    const int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+    FILE *fp;
+
+    if (bw != bh) {
+      printf("error\n");
+      assert(0);
+      break;
+    }
+
+    fp = fopen("vp9_breakout_data.txt", "a");
+    if (!fp) break;
+
+    // bs, final RD(3), none RD(3), split RD(3), base_qindex, rdmult, rddiv,
+    // none_sum_y_eobs, none_is_inter, none_is_compound, block_energy
+    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+            bw,
+            rd_cost->rate,
+            (int)VPXMIN(rd_cost->dist, INT_MAX),
+            (int)VPXMIN(rd_cost->rdcost, INT_MAX),
+            none_rd.rate,
+            (int)VPXMIN(none_rd.dist, INT_MAX),
+            (int)VPXMIN(none_rd.rdcost, INT_MAX),
+            split_rd.rate,
+            (int)VPXMIN(split_rd.dist, INT_MAX),
+            (int)VPXMIN(split_rd.rdcost, INT_MAX),
+            cm->base_qindex, x->rdmult, x->rddiv, none_sum_y_eobs,
+            none_is_inter, none_is_compound, vp9_block_energy(cpi, x, bsize));
+    fprintf(fp, "\n");
+    fclose(fp);
+  } while (0);
+#endif
 }
 
 static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
