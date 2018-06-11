@@ -3248,6 +3248,8 @@ static int ml_pruning_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   float nn_score, linear_score;
   float features[7];
 
+  return 0;
+
   assert(b_width_log2_lookup[bsize] == b_height_log2_lookup[bsize]);
   vpx_clear_system_state();
 
@@ -3362,6 +3364,10 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   int64_t dist_breakout_thr = cpi->sf.partition_search_breakout_thr.dist;
   int rate_breakout_thr = cpi->sf.partition_search_breakout_thr.rate;
 
+  RD_COST none_rd;
+  int data_collected = 0;
+  vp9_zero(none_rd);
+
   (void)*tp_orig;
 
   assert(num_8x8_blocks_wide_lookup[bsize] ==
@@ -3371,6 +3377,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   dist_breakout_thr >>=
       8 - (b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize]);
   rate_breakout_thr *= num_pels_log2_lookup[bsize];
+
+  dist_breakout_thr = 0;
+  rate_breakout_thr = 0;
 
   vp9_rd_cost_init(&this_rdc);
   vp9_rd_cost_init(&sum_rdc);
@@ -3494,6 +3503,11 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
         best_rdc = this_rdc;
         if (bsize >= BLOCK_8X8) pc_tree->partitioning = PARTITION_NONE;
+
+        if (!x->e_mbd.lossless && ctx->skippable) {
+          none_rd = this_rdc;
+          data_collected = 1;
+        }
 
         if (!cpi->sf.ml_partition_search_early_termination) {
           // If all y, u, v transform blocks in this partition are skippable,
@@ -3762,6 +3776,48 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   } else {
     assert(tp_orig == *tp);
   }
+
+#if 1
+  do {
+    const int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+    const int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+    FILE *fp;
+    unsigned int var, sse;
+    DECLARE_ALIGNED(16, static const uint8_t, vp9_64_zeros[64]) = { 0 };
+
+    if (!data_collected) break;
+
+    if (bw != bh) {
+      printf("error\n");
+      assert(0);
+      break;
+    }
+
+    fp = fopen("vp9_breakout_data.txt", "a");
+    if (!fp) break;
+
+    var = cpi->fn_ptr[bsize].vf(x->plane[0].src.buf, x->plane[0].src.stride,
+                                vp9_64_zeros, 0, &sse);
+
+    var = var >> num_pels_log2_lookup[bsize];
+    sse = sse >> num_pels_log2_lookup[bsize];
+    // bs, final RD(3), none RD(3), ac_quant, rdmult, rddiv, var, sse
+    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+            bw,
+            rd_cost->rate,
+            (int)VPXMIN(rd_cost->dist, INT_MAX),
+            (int)VPXMIN(rd_cost->rdcost, INT_MAX),
+            none_rd.rate,
+            (int)VPXMIN(none_rd.dist, INT_MAX),
+            (int)VPXMIN(none_rd.rdcost, INT_MAX),
+            vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth),
+            x->rdmult, x->rddiv,
+            (int)VPXMIN(var, INT_MAX),
+            (int)VPXMIN(sse, INT_MAX));
+    fprintf(fp, "\n");
+    fclose(fp);
+  } while (0);
+#endif
 }
 
 static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
