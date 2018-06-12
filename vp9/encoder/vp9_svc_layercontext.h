@@ -158,6 +158,8 @@ typedef struct SVC {
   // updated the frame buffer index.
   uint8_t fb_idx_spatial_layer_id[REF_FRAMES];
   uint8_t fb_idx_temporal_layer_id[REF_FRAMES];
+
+  int spatial_layer_sync[VPX_SS_MAX_LAYERS];
 } SVC;
 
 struct VP9_COMP;
@@ -218,6 +220,8 @@ void vp9_svc_check_reset_layer_rc_flag(struct VP9_COMP *const cpi);
 void vp9_svc_constrain_inter_layer_pred(struct VP9_COMP *const cpi);
 
 void vp9_svc_assert_constraints_pattern(struct VP9_COMP *const cpi);
+
+void vp9_svc_check_spatial_layer_sync(struct VP9_COMP *const cpi);
 
 #ifdef __cplusplus
 }  // extern "C"
