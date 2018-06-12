@@ -637,6 +637,21 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_SET_SVC_GF_TEMPORAL_REF,
+
+  /*!\brief Codec control function to enable spatial layer sync frame, for any
+   * spatial layer. Enabling it for layer k means spatial layer k will disable
+   * all temporal prediction, but keep the inter-layer prediction. It will refresh
+   * any temporal reference buffer for that layer, and reset the temporal layer
+   * for the superframe to 0. Setting the layer sync for base spatial layer forces
+   * a key frame. Default is off (0) for all spatial layers. Spatial layer sync
+   * flag is reset to 0 after each encoded layer, so when htis control is invoked
+   * it is only used for the current superframe.
+   *
+   * 0: Off (default), 1: Enabled
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_SVC_SPATIAL_LAYER_SYNC,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -959,6 +974,9 @@ VPX_CTRL_USE_TYPE(VP9E_GET_SVC_REF_FRAME_CONFIG, vpx_svc_ref_frame_config_t *)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_SVC_GF_TEMPORAL_REF, unsigned int)
 #define VPX_CTRL_VP9E_SET_SVC_GF_TEMPORAL_REF
+
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_SPATIAL_LAYER_SYNC, int *)
+#define VPX_CTRL_VP9E_SET_SVC_SPATIAL_LAYER_SYNC
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */
