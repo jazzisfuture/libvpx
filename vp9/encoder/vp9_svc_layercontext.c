@@ -58,6 +58,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     svc->framedrop_thresh[sl] = oxcf->drop_frames_water_mark;
     svc->fb_idx_upd_tl0[sl] = -1;
     svc->drop_count[sl] = 0;
+    svc->spatial_layer_sync[sl] = 0;
   }
   svc->max_consec_drop = INT_MAX;
 
@@ -1030,5 +1031,41 @@ void vp9_svc_assert_constraints_pattern(VP9_COMP *const cpi) {
     assert(svc->fb_idx_spatial_layer_id[cpi->gld_fb_idx] ==
            svc->spatial_layer_id);
     assert(svc->fb_idx_temporal_layer_id[cpi->gld_fb_idx] == 0);
+  }
+}
+
+void vp9_svc_check_spatial_layer_sync(VP9_COMP *const cpi) {
+  SVC *const svc = &cpi->svc;
+  // Only for superframes whose base is not key, as those are
+  // already sync frames.
+  if (!svc->layer_context[svc->temporal_layer_id].is_key_frame) {
+    if (svc->spatial_layer_id == 0) {
+      // On base spatial layer: check if any of the spatial layers in the
+      // superframe is a sync frame, then reset pattern counters and reset
+      // to base temporal layer (as if it were key frame). And reset the
+      // golden update (set period to 0), if golden is used as second
+      // temporal reference.
+      int sl;
+      // Start at 1 since layer sync is only used for layers > 0.
+      // If layer sync is set for layer 0, then key frame is set.
+      for (sl = 1; sl < svc->number_spatial_layers; sl++) {
+        if (svc->spatial_layer_sync[sl]) {
+          vp9_svc_reset_key_frame(cpi);
+          if (svc->use_gf_temporal_ref_current_layer) {
+            cpi->rc.baseline_gf_interval = 0;
+            cpi->rc.frames_till_gf_update_due = 0;
+          }
+          sl = svc->number_spatial_layers;
+        }
+      }
+    }
+    // If the layer sync is set for this current spatial layer then
+    // disable the temporal reference.
+    if (svc->spatial_layer_id > 0 &&
+        svc->spatial_layer_sync[svc->spatial_layer_id]) {
+      cpi->ref_frame_flags &= (~VP9_LAST_FLAG);
+      if (svc->use_gf_temporal_ref_current_layer)
+        cpi->ref_frame_flags &= (~VP9_GOLD_FLAG);
+    }
   }
 }
