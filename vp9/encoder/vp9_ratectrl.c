@@ -1880,6 +1880,10 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
       target = calc_pframe_target_size_one_pass_cbr(cpi);
     }
   }
+
+  // Check if superframe contains a sync layer.
+  vp9_svc_check_spatial_layer_sync(cpi);
+
   // If long term termporal feature is enabled, set the period of the update.
   // The update/refresh of this reference frame is always on base temporal
   // layer frame.
