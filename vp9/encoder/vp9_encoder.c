@@ -4771,12 +4771,14 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
   }
   cm->prev_frame = cm->cur_frame;
 
-  if (cpi->use_svc)
+  if (cpi->use_svc) {
     cpi->svc
         .layer_context[cpi->svc.spatial_layer_id *
                            cpi->svc.number_temporal_layers +
                        cpi->svc.temporal_layer_id]
         .last_frame_type = cm->frame_type;
+    cpi->svc.spatial_layer_sync[cpi->svc.spatial_layer_id] = 0;
+  }
 
   cpi->force_update_segmentation = 0;
 
