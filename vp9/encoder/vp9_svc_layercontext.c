@@ -41,6 +41,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->skip_enhancement_layer = 0;
   svc->disable_inter_layer_pred = INTER_LAYER_PRED_ON;
   svc->framedrop_mode = CONSTRAINED_LAYER_DROP;
+  svc->base_layer_intra_only = 0;
 
   for (i = 0; i < REF_FRAMES; ++i) {
     svc->fb_idx_spatial_layer_id[i] = -1;
@@ -58,6 +59,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     svc->framedrop_thresh[sl] = oxcf->drop_frames_water_mark;
     svc->fb_idx_upd_tl0[sl] = -1;
     svc->drop_count[sl] = 0;
+    svc->spatial_layer_sync[sl] = 0;
   }
   svc->max_consec_drop = INT_MAX;
 
@@ -927,8 +929,15 @@ void vp9_svc_constrain_inter_layer_pred(VP9_COMP *const cpi) {
   // Check for disabling inter-layer (spatial) prediction, if
   // svc.disable_inter_layer_pred is set. If the previous spatial layer was
   // dropped then disable the prediction from this (scaled) reference.
+  // For INTER_LAYER_PRED_OFF_NONKEY: inter-layer prediction is disabled
+  // on key frames or if any spatial layer is a sync layer.
+  int layer_sync = 0, i = 0;
+  // Check if any layer is a sync frame.
+  for (i = 0; i < cpi->svc.number_spatial_layers; i++)
+    if (cpi->svc.spatial_layer_sync[i]) layer_sync = 1;
   if ((cpi->svc.disable_inter_layer_pred == INTER_LAYER_PRED_OFF_NONKEY &&
-       !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame) ||
+       !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame &&
+       !layer_sync) ||
       cpi->svc.disable_inter_layer_pred == INTER_LAYER_PRED_OFF ||
       cpi->svc.drop_spatial_layer[cpi->svc.spatial_layer_id - 1]) {
     MV_REFERENCE_FRAME ref_frame;
@@ -1030,5 +1039,50 @@ void vp9_svc_assert_constraints_pattern(VP9_COMP *const cpi) {
     assert(svc->fb_idx_spatial_layer_id[cpi->gld_fb_idx] ==
            svc->spatial_layer_id);
     assert(svc->fb_idx_temporal_layer_id[cpi->gld_fb_idx] == 0);
+  }
+}
+
+void vp9_svc_check_spatial_layer_sync(VP9_COMP *const cpi) {
+  SVC *const svc = &cpi->svc;
+  // Only for superframes whose base is not key, as those are
+  // already sync frames.
+  if (!svc->layer_context[svc->temporal_layer_id].is_key_frame) {
+    if (svc->spatial_layer_id == 0) {
+      // On base spatial layer: check if any of the spatial layers in the
+      // superframe is a sync frame, then reset pattern counters and reset
+      // to base temporal layer (as if it were key frame). And reset the
+      // golden update (set period to 0), if golden is used as second
+      // temporal reference.
+      int sl;
+      // Start at 1 since layer sync is only used for layers > 0.
+      // If layer sync is set for layer 0, then key frame is set.
+      for (sl = 1; sl < svc->number_spatial_layers; sl++) {
+        if (svc->spatial_layer_sync[sl]) {
+          vp9_svc_reset_key_frame(cpi);
+          sl = svc->number_spatial_layers;
+        }
+      }
+    }
+    // If the layer sync is set for this current spatial layer then
+    // disable the temporal reference.
+    if (svc->spatial_layer_id > 0 &&
+        svc->spatial_layer_sync[svc->spatial_layer_id]) {
+      cpi->ref_frame_flags &= (~VP9_LAST_FLAG);
+      if (svc->use_gf_temporal_ref_current_layer) {
+        int index = svc->spatial_layer_id;
+        // If golden is used as second reference: need to remove it from
+        // prediction, reset refresh period to 0, and update the reference.
+        svc->use_gf_temporal_ref_current_layer = 0;
+        cpi->rc.baseline_gf_interval = 0;
+        cpi->rc.frames_till_gf_update_due = 0;
+        // On layer sync frame we must update the buffer index used for long
+        // term reference. Use the alt_ref since it is not used or updated on
+        // sync frames.
+        if (svc->number_spatial_layers == 3) index = svc->spatial_layer_id - 1;
+        assert(index >= 0);
+        cpi->alt_fb_idx = svc->buffer_gf_temporal_ref[index].idx;
+        cpi->ext_refresh_alt_ref_frame = 1;
+      }
+    }
   }
 }
