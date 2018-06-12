@@ -1895,6 +1895,10 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
       // generally be further behind/long-term reference).
       cpi->ref_frame_flags = VP9_LAST_FLAG | VP9_GOLD_FLAG;
     }
+
+    // Check if superframe contains a sync layer.
+    vp9_svc_check_spatial_layer_sync(cpi);
+
     // Check for update/refresh of reference: only refresh on base temporal
     // layer.
     if (svc->temporal_layer_id == 0) {
