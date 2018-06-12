@@ -3802,6 +3802,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     // On non-zero spatial layer, check for disabling inter-layer
     // prediction.
     if (cpi->svc.spatial_layer_id > 0) vp9_svc_constrain_inter_layer_pred(cpi);
+    vp9_svc_check_spatial_layer_sync(cpi);
     vp9_svc_assert_constraints_pattern(cpi);
   }
 

@@ -58,6 +58,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     svc->framedrop_thresh[sl] = oxcf->drop_frames_water_mark;
     svc->fb_idx_upd_tl0[sl] = -1;
     svc->drop_count[sl] = 0;
+    svc->spatial_layer_sync[sl] = 0;
   }
   svc->max_consec_drop = INT_MAX;
 
@@ -1030,5 +1031,19 @@ void vp9_svc_assert_constraints_pattern(VP9_COMP *const cpi) {
     assert(svc->fb_idx_spatial_layer_id[cpi->gld_fb_idx] ==
            svc->spatial_layer_id);
     assert(svc->fb_idx_temporal_layer_id[cpi->gld_fb_idx] == 0);
+  }
+}
+
+void vp9_svc_check_spatial_layer_sync(VP9_COMP *const cpi) {
+  SVC *const svc = &cpi->svc;
+  // If the layer sync is set for the current spatial layer then disable the
+  // temporal reference.  Excluse superframes whose base is key as those are
+  // already sync frames.
+  if (svc->spatial_layer_id > 0 &&
+      !svc->layer_context[svc->temporal_layer_id].is_key_frame &&
+      svc->spatial_layer_sync[svc->spatial_layer_id]) {
+    cpi->ref_frame_flags &= (~VP9_LAST_FLAG);
+    if (svc->use_gf_temporal_ref_current_layer)
+        cpi->ref_frame_flags &= (~VP9_GOLD_FLAG);
   }
 }
