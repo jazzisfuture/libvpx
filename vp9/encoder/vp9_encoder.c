@@ -3628,7 +3628,7 @@ static void save_encode_params(VP9_COMP *cpi) {
 static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
                                       uint8_t *dest) {
   VP9_COMMON *const cm = &cpi->common;
-  int q = 0, bottom_index = 0, top_index = 0;  // Dummy variables.
+  int q = 0, bottom_index = 0, top_index = 0, layer_sync = 0;
   const INTERP_FILTER filter_scaler =
       (is_one_pass_cbr_svc(cpi))
           ? cpi->svc.downsample_filter_type[cpi->svc.spatial_layer_id]
@@ -3750,11 +3750,16 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     cpi->svc.high_source_sad_superframe = cpi->rc.high_source_sad;
 
   // For 1 pass CBR, check if we are dropping this frame.
-  // Never drop on key frame, or if base layer is key for svc.
-  // Don't drop on scene change.
+  // Never drop on key frame, if base layer is key for svc,
+  // on scene change, or if superframe has layer sync.
+  if (cpi->use_svc) {
+    int sl = 0;
+    for (sl = 1; sl < cpi->svc.number_spatial_layers; sl++)
+      if (cpi->svc.spatial_layer_sync[sl] == 1) layer_sync = 1;
+  }
   if (cpi->oxcf.pass == 0 && cpi->oxcf.rc_mode == VPX_CBR &&
       cm->frame_type != KEY_FRAME && !cpi->rc.high_source_sad &&
-      !cpi->svc.high_source_sad_superframe &&
+      !cpi->svc.high_source_sad_superframe && !layer_sync &&
       (!cpi->use_svc ||
        !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame)) {
     if (vp9_rc_drop_frame(cpi)) return 0;
@@ -4771,12 +4776,14 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
   }
   cm->prev_frame = cm->cur_frame;
 
-  if (cpi->use_svc)
+  if (cpi->use_svc) {
     cpi->svc
         .layer_context[cpi->svc.spatial_layer_id *
                            cpi->svc.number_temporal_layers +
                        cpi->svc.temporal_layer_id]
         .last_frame_type = cm->frame_type;
+    cpi->svc.spatial_layer_sync[cpi->svc.spatial_layer_id] = 0;
+  }
 
   cpi->force_update_segmentation = 0;
 
