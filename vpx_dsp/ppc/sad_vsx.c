@@ -31,6 +31,34 @@
   v_sad = vec_sum4s(v_absh, v_sad); \
   v_sad = vec_sum4s(v_absl, v_sad);
 
+// TODO(ltrudeau) compare vec_sub and vec_abs with vec_sub(vec_max(a,b),
+// vec_min(a,b))
+#define SAD8(height)                                                     \
+  unsigned int vpx_sad8x##height##_vsx(const uint8_t *a, int a_stride,   \
+                                       const uint8_t *b, int b_stride) { \
+    int y;                                                               \
+    unsigned int sad[4];                                                 \
+    uint8x16_t v_a, v_b;                                                 \
+    int16x8_t v_ah, v_bh, v_absh, v_subh;                                \
+    int32x4_t v_sad = vec_splat_s32(0);                                  \
+                                                                         \
+    for (y = 0; y < height; y++) {                                       \
+      v_a = vec_vsx_ld(0, a);                                            \
+      v_b = vec_vsx_ld(0, b);                                            \
+      v_ah = unpack_to_s16_h(v_a);                                       \
+      v_bh = unpack_to_s16_h(v_b);                                       \
+      v_subh = vec_sub(v_ah, v_bh);                                      \
+      v_absh = vec_abs(v_subh);                                          \
+      v_sad = vec_sum4s(v_absh, v_sad);                                  \
+                                                                         \
+      a += a_stride;                                                     \
+      b += b_stride;                                                     \
+    }                                                                    \
+    vec_vsx_st((uint32x4_t)v_sad, 0, sad);                               \
+                                                                         \
+    return sad[3] + sad[2] + sad[1] + sad[0];                            \
+  }
+
 #define SAD16(height)                                                     \
   unsigned int vpx_sad16x##height##_vsx(const uint8_t *a, int a_stride,   \
                                         const uint8_t *b, int b_stride) { \
@@ -95,6 +123,9 @@
     return sad[3] + sad[2] + sad[1] + sad[0];                             \
   }
 
+SAD8(4);
+SAD8(16);
+SAD8(8);
 SAD16(8);
 SAD16(16);
 SAD16(32);
