@@ -274,12 +274,19 @@ static void set_block_size(VP9_COMP *const cpi, MACROBLOCK *const x,
 }
 
 typedef struct {
-  // This struct is used for computing variance in choose_partitioning(), where
-  // the max number of samples within a superblock is 16x16 (with 4x4 avg). Even
-  // in high bitdepth, uint32_t is enough for sum_square_error (2^12 * 2^12 * 16
-  // * 16 = 2^32).
-  uint32_t sum_square_error;
+// This struct is used for computing variance in choose_partitioning(), where
+// the max number of samples within a superblock is 16x16 (with 4x4 avg). Even
+// in high bitdepth, uint32_t is enough for sum_square_error (2^12 * 2^12 * 16
+// * 16 = 2^32).
+// For sum_error, in high bitdepth, it could be (2^12 * 16 * 16 = 2^20), and it
+// could be negative so it needs to be defined as int64_t. For low bitdepth, it
+// could be (2^8 * 16 * 16 = 2^16), so int32_t is enough.
+#if CONFIG_VP9_HIGHBITDEPTH
+  int64_t sum_error;
+#else
   int32_t sum_error;
+#endif
+  uint32_t sum_square_error;
   int log2_count;
   int variance;
 } var;
@@ -369,17 +376,32 @@ static void tree_to_node(void *data, BLOCK_SIZE bsize, variance_node *node) {
 }
 
 // Set variance values given sum square error, sum error, count.
-static void fill_variance(uint32_t s2, int32_t s, int c, var *v) {
+static void fill_variance(uint32_t s2,
+#if CONFIG_VP9_HIGHBITDEPTH
+                          int64_t s,
+#else
+                          int32_t s,
+#endif
+                          int c, var *v) {
   v->sum_square_error = s2;
   v->sum_error = s;
   v->log2_count = c;
 }
 
 static void get_variance(var *v) {
+#if CONFIG_VP9_HIGHBITDEPTH
+  uint64_t sum_error_abs = labs(v->sum_error);
+  uint64_t error_square = sum_error_abs * sum_error_abs;
+  v->variance = (int)(256 * (v->sum_square_error -
+                             (uint32_t)(error_square >> v->log2_count)) >>
+                      v->log2_count);
+#else
   v->variance =
       (int)(256 * (v->sum_square_error -
-                   ((v->sum_error * v->sum_error) >> v->log2_count)) >>
+                   (uint32_t)(((int64_t)v->sum_error * v->sum_error) >>
+                              v->log2_count)) >>
             v->log2_count);
+#endif
 }
 
 static void sum_2_variances(const var *a, const var *b, var *r) {
