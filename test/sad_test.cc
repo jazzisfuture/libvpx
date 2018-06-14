@@ -364,7 +364,7 @@ TEST_P(SADTest, DISABLED_Speed) {
   RunNTimes(kCountSpeedTestBlock);
 
   char title[16];
-  snprintf(title, sizeof(title), "%dx%d", params_.width, params_.height);
+  sprintf(title, "%dx%d", params_.width, params_.height);
   PrintMedian(title);
 }
 
