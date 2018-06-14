@@ -67,10 +67,10 @@ TEST_P(VP9SubtractBlockTest, DISABLED_Speed) {
 
     RunNTimes(100000000 / (block_height_ * block_width_));
     char block_size[16];
-    snprintf(block_size, sizeof(block_size), "%dx%d", block_height_,
-             block_width_);
+    GTEST_SNPRINTF_(block_size, sizeof(block_size), "%dx%d", block_height_,
+                    block_width_);
     char title[100];
-    snprintf(title, sizeof(title), "%8s ", block_size);
+    GTEST_SNPRINTF_(title, sizeof(title), "%8s ", block_size);
     PrintMedian(title);
 
     vpx_free(diff_);

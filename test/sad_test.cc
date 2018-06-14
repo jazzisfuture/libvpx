@@ -10,7 +10,6 @@
 
 #include <string.h>
 #include <limits.h>
-#include <stdio.h>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
@@ -364,7 +363,7 @@ TEST_P(SADTest, DISABLED_Speed) {
   RunNTimes(kCountSpeedTestBlock);
 
   char title[16];
-  snprintf(title, sizeof(title), "%dx%d", params_.width, params_.height);
+  GTEST_SNPRINTF_(title, sizeof(title), "%dx%d", params_.width, params_.height);
   PrintMedian(title);
 }
 

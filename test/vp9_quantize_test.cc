@@ -453,9 +453,10 @@ TEST_P(VP9QuantizeTest, DISABLED_Speed) {
       const char *type =
           (i == 0) ? "Bypass calculations " : "Full calculations ";
       char block_size[16];
-      snprintf(block_size, sizeof(block_size), "%dx%d", 4 << sz, 4 << sz);
+      GTEST_SNPRINTF_(block_size, sizeof(block_size), "%dx%d", 4 << sz,
+                      4 << sz);
       char title[100];
-      snprintf(title, sizeof(title), "%25s %8s ", type, block_size);
+      GTEST_SNPRINTF_(title, sizeof(title), "%25s %8s ", type, block_size);
       PrintMedian(title);
     }
   }
