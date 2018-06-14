@@ -27,6 +27,7 @@
 #include "vp9/common/vp9_scan.h"
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
+#include "vpx_ports/msvc.h"
 #include "vpx_ports/vpx_timer.h"
 
 using libvpx_test::ACMRandom;
@@ -453,7 +454,8 @@ TEST_P(VP9QuantizeTest, DISABLED_Speed) {
       const char *type =
           (i == 0) ? "Bypass calculations " : "Full calculations ";
       char block_size[16];
-      snprintf(block_size, sizeof(block_size), "%dx%d", 4 << sz, 4 << sz);
+      snprintf(block_size, sizeof(block_size), "%dx%d", 4 << sz,
+                      4 << sz);
       char title[100];
       snprintf(title, sizeof(title), "%25s %8s ", type, block_size);
       PrintMedian(title);

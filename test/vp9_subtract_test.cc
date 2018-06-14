@@ -18,6 +18,7 @@
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "vp9/common/vp9_blockd.h"
+#include "vpx_ports/msvc.h"
 #include "vpx_mem/vpx_mem.h"
 
 typedef void (*SubtractFunc)(int rows, int cols, int16_t *diff_ptr,
@@ -68,7 +69,7 @@ TEST_P(VP9SubtractBlockTest, DISABLED_Speed) {
     RunNTimes(100000000 / (block_height_ * block_width_));
     char block_size[16];
     snprintf(block_size, sizeof(block_size), "%dx%d", block_height_,
-             block_width_);
+                    block_width_);
     char title[100];
     snprintf(title, sizeof(title), "%8s ", block_size);
     PrintMedian(title);
