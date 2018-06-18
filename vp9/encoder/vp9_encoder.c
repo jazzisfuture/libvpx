@@ -5862,6 +5862,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   cpi->frame_flags = *frame_flags;
 
+  if (arf_src_index) setup_tpl_stats(cpi);
+
 #if !CONFIG_REALTIME_ONLY
   if ((oxcf->pass == 2) && !cpi->use_svc) {
     vp9_rc_get_second_pass_params(cpi);
@@ -5877,8 +5879,6 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   if (cpi->oxcf.pass != 0 || cpi->use_svc || frame_is_intra_only(cm) == 1) {
     for (i = 0; i < MAX_REF_FRAMES; ++i) cpi->scaled_ref_idx[i] = INVALID_IDX;
   }
-
-  if (arf_src_index) setup_tpl_stats(cpi);
 
   cpi->td.mb.fp_src_pred = 0;
 #if CONFIG_REALTIME_ONLY
