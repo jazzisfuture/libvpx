@@ -264,7 +264,6 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
   int recon_y_stride = yv12_fb_new->y_stride;
   int recon_uv_stride = yv12_fb_new->uv_stride;
 
-  unsigned char *ref_buffer[MAX_REF_FRAMES][3];
   unsigned char *dst_buffer[3];
   int i;
   int ref_fb_corrupted[MAX_REF_FRAMES];
@@ -273,11 +272,6 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
 
   for (i = 1; i < MAX_REF_FRAMES; ++i) {
     YV12_BUFFER_CONFIG *this_fb = pbi->dec_fb_ref[i];
-
-    ref_buffer[i][0] = this_fb->y_buffer;
-    ref_buffer[i][1] = this_fb->u_buffer;
-    ref_buffer[i][2] = this_fb->v_buffer;
-
     ref_fb_corrupted[i] = this_fb->corrupted;
   }
 
@@ -399,13 +393,6 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
       xd->dst.y_buffer = dst_buffer[0] + recon_yoffset;
       xd->dst.u_buffer = dst_buffer[1] + recon_uvoffset;
       xd->dst.v_buffer = dst_buffer[2] + recon_uvoffset;
-
-      xd->pre.y_buffer =
-          ref_buffer[xd->mode_info_context->mbmi.ref_frame][0] + recon_yoffset;
-      xd->pre.u_buffer =
-          ref_buffer[xd->mode_info_context->mbmi.ref_frame][1] + recon_uvoffset;
-      xd->pre.v_buffer =
-          ref_buffer[xd->mode_info_context->mbmi.ref_frame][2] + recon_uvoffset;
 
       /* propagate errors from reference frames */
       xd->corrupted |= ref_fb_corrupted[xd->mode_info_context->mbmi.ref_frame];
