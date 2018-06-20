@@ -679,6 +679,7 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
     if (x->block_tx_domain) {
       dist_block(args->cpi, x, plane, plane_bsize, block, blk_row, blk_col,
                  tx_size, &dist, &sse);
+      exit(0);
     } else {
       const BLOCK_SIZE tx_bsize = txsize_to_bsize[tx_size];
       const struct macroblock_plane *const p = &x->plane[plane];
