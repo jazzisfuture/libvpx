@@ -5431,8 +5431,8 @@ void tpl_model_update(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
   int ref_pos_col = mi_col * MI_SIZE + mv_col;
 
   // top-left on grid block location
-  int grid_pos_row_base = (ref_pos_row >> MI_SIZE_LOG2) << MI_SIZE_LOG2;
-  int grid_pos_col_base = (ref_pos_col >> MI_SIZE_LOG2) << MI_SIZE_LOG2;
+  int grid_pos_row_base = (ref_pos_row / MI_SIZE) * MI_SIZE;
+  int grid_pos_col_base = (ref_pos_col / MI_SIZE) * MI_SIZE;
   int block;
 
   for (block = 0; block < 4; ++block) {
@@ -5443,8 +5443,8 @@ void tpl_model_update(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
         grid_pos_col >= 0 && grid_pos_col < ref_tpl_frame->mi_cols * MI_SIZE) {
       int overlap_area = get_overlap_area(grid_pos_row, grid_pos_col,
                                           ref_pos_row, ref_pos_col, block);
-      int ref_mi_row = grid_pos_row >> MI_SIZE_LOG2;
-      int ref_mi_col = grid_pos_col >> MI_SIZE_LOG2;
+      int ref_mi_row = grid_pos_row / MI_SIZE;
+      int ref_mi_col = grid_pos_col / MI_SIZE;
 
       int64_t mc_flow = tpl_stats->mc_dep_cost -
                         (tpl_stats->mc_dep_cost * tpl_stats->inter_cost) /
