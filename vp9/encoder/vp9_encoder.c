@@ -5666,6 +5666,10 @@ void setup_tpl_stats(VP9_COMP *cpi) {
   int tpl_group_frames = 0;
   int frame_idx;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  return;
+#endif
+
   init_gop_frames(cpi, gf_picture, gf_group, &tpl_group_frames);
 
   init_tpl_stats(cpi);
