@@ -30,6 +30,7 @@
 
 #include "vp9/encoder/vp9_encodemv.h"
 #include "vp9/encoder/vp9_ratectrl.h"
+#include "vp9_firstpass.h"
 
 // Max rate per frame for 1080P and below encodes if no level requirement given.
 // For larger formats limit to MAX_MB_RATE bits per MB
@@ -1186,6 +1187,24 @@ int vp9_frame_type_qdelta(const VP9_COMP *cpi, int rf_level, int q) {
   return qdelta;
 }
 
+static int tpl_constantq(const VP9_COMP *cpi, int base_qindex) {
+  GF_GROUP *gf_group = &cpi->twopass.gf_group;
+  VP9_COMMON *cm = &cpi->common;
+  int qstep = vp9_ac_quant(base_qindex, 0, cm->bit_depth);
+  int tpl_qstep = (int)(qstep / sqrt(1.0 + gf_group->alpha[gf_group->index]));
+  int qindex = base_qindex;
+
+  if (cm->frame_type == KEY_FRAME) return base_qindex;
+  if (cm->show_frame) return base_qindex;
+
+  for (; qindex >= 0; --qindex) {
+    int this_qstep = vp9_ac_quant(qindex, 0, cm->bit_depth);
+    if (this_qstep < tpl_qstep) break;
+  }
+
+  return qindex;
+}
+
 #define STATIC_MOTION_THRESH 95
 static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
                                          int *top_index) {
@@ -1357,6 +1376,16 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
     }
   }
   clamp(q, active_best_quality, active_worst_quality);
+
+  if (oxcf->rc_mode == VPX_Q && cm->frame_type != KEY_FRAME) {
+    active_worst_quality = tpl_constantq(cpi, oxcf->cq_level);
+    active_best_quality = active_worst_quality;
+    active_best_quality =
+        clamp(active_best_quality, rc->best_quality, rc->worst_quality);
+    active_worst_quality =
+        clamp(active_worst_quality, active_best_quality, rc->worst_quality);
+    q = active_best_quality;
+  }
 
   *top_index = active_worst_quality;
   *bottom_index = active_best_quality;

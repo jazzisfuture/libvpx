@@ -131,6 +131,8 @@ typedef struct {
   unsigned char arf_update_idx[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char arf_ref_idx[(MAX_LAG_BUFFERS * 2) + 1];
   int bit_allocation[(MAX_LAG_BUFFERS * 2) + 1];
+  int mod_frame_size[(MAX_LAG_BUFFERS * 2) + 1];
+  double alpha[(MAX_LAG_BUFFERS * 2) + 1];
 } GF_GROUP;
 
 typedef struct {

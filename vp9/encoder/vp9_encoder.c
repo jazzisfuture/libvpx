@@ -62,6 +62,8 @@
 #include "vp9/encoder/vp9_speed_features.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_temporal_filter.h"
+#include "vp9_firstpass.h"
+#include "vp9_ratectrl.h"
 
 #define AM_SEGMENT_ID_INACTIVE 7
 #define AM_SEGMENT_ID_ACTIVE 0
@@ -5300,9 +5302,9 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
     if (gf_group->update_type[frame_idx] == OVERLAY_UPDATE) break;
   }
 
-  gld_index = frame_idx;
+  gld_index = alt_index; // frame_idx;
   lst_index = VPXMAX(0, frame_idx - 1);
-  alt_index = -1;
+//  alt_index = -1;
   ++frame_idx;
 
   // Extend two frames outside the current gf group.
@@ -5669,6 +5671,62 @@ void setup_tpl_stats(VP9_COMP *cpi) {
     mc_flow_dispenser(cpi, gf_picture, frame_idx);
 }
 
+void gop_rate_allocation(VP9_COMP *cpi) {
+  GF_GROUP *gf_group = &cpi->twopass.gf_group;
+  double inn_factor[MAX_LAG_BUFFERS] = { 0 };
+  double norm = 0;
+  int frame_length = cpi->rc.baseline_gf_interval;
+  int mi_rows = cpi->common.mi_rows;
+  int mi_cols = cpi->common.mi_cols;
+  int total_gf_bits = 0;
+
+  for (int frame_idx = 1; frame_idx <= frame_length; ++frame_idx) {
+    int64_t inn_cost = 0;
+    int64_t mc_dep_cost = 0;
+    int64_t mc_flow = 0;
+    int64_t intra_cost = 0;
+    TplDepFrame *tpl_frame = &cpi->tpl_stats[frame_idx];
+    TplDepStats *tpl_stats = tpl_frame->tpl_stats_ptr;
+    int tpl_stride = tpl_frame->stride;
+
+    for (int row = 0; row < mi_rows; ++row) {
+      for (int col = 0; col < mi_cols; ++col) {
+        TplDepStats *this_stats = &tpl_stats[row * tpl_stride + col];
+        inn_cost += VPXMIN(this_stats->intra_cost, this_stats->inter_cost);
+        mc_dep_cost += this_stats->mc_ref_cost;
+        intra_cost += this_stats->intra_cost;
+        mc_flow += this_stats->mc_flow;
+      }
+    }
+
+    inn_factor[frame_idx] = (double)inn_cost;
+    inn_factor[frame_idx] += (double)mc_dep_cost;
+
+    norm += inn_factor[frame_idx];
+    total_gf_bits += gf_group->bit_allocation[frame_idx];
+    gf_group->alpha[frame_idx] = (double)mc_dep_cost / intra_cost;
+//    fprintf(stderr, "mc_dep = %ld, intra = %ld\n", mc_dep_cost, intra_cost);
+
+//    fprintf(stderr, "frame index = %d, bits alloc = %d\n", frame_idx,
+//            gf_group->bit_allocation[frame_idx]);
+  }
+
+  for (int frame_idx = 1; frame_idx <= frame_length; ++frame_idx) {
+    int bit_alloc;
+
+    inn_factor[frame_idx] /= norm;
+    bit_alloc = (int)(inn_factor[frame_idx] * total_gf_bits);
+
+    gf_group->mod_frame_size[frame_idx] = bit_alloc;
+
+    if (gf_group->mod_frame_size[frame_idx] <= 0)
+      gf_group->mod_frame_size[frame_idx] = 10;
+
+//    fprintf(stderr, "frame index = %d, bits alloc = %d\n", frame_idx,
+//            gf_group->bit_allocation[frame_idx]);
+  }
+}
+
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest, int64_t *time_stamp,
                             int64_t *time_end, int flush) {
@@ -5862,7 +5920,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   cpi->frame_flags = *frame_flags;
 
-  if (arf_src_index) setup_tpl_stats(cpi);
+  if (arf_src_index) {
+    setup_tpl_stats(cpi);
+    gop_rate_allocation(cpi);
+  }
 
 #if !CONFIG_REALTIME_ONLY
   if ((oxcf->pass == 2) && !cpi->use_svc) {
