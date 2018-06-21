@@ -1592,7 +1592,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
 
   if (!cpi->use_svc) {
     if (is_altref_enabled(cpi) && cpi->refresh_alt_ref_frame &&
-        (cm->frame_type != KEY_FRAME))
+        rc->source_alt_ref_pending && (cm->frame_type != KEY_FRAME))
       // Update the alternate reference frame stats as appropriate.
       update_alt_ref_frame_stats(cpi);
     else

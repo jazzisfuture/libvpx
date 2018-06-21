@@ -2115,7 +2115,6 @@ static double calculate_group_score(VP9_COMP *cpi, double av_score,
     ++s;
     ++i;
   }
-  assert(i == frame_count);
 
   return score_total;
 }
@@ -3085,7 +3084,7 @@ static void configure_buffer_updates(VP9_COMP *cpi) {
     case GF_UPDATE:
       cpi->refresh_last_frame = 1;
       cpi->refresh_golden_frame = 1;
-      cpi->refresh_alt_ref_frame = 0;
+      cpi->refresh_alt_ref_frame = 1;
       break;
     case OVERLAY_UPDATE:
       cpi->refresh_last_frame = 0;
