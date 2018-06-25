@@ -61,9 +61,11 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
                                                        SPEED_FEATURES *sf,
                                                        int speed) {
   VP9_COMMON *const cm = &cpi->common;
-  const int is_480p_or_larger = VPXMIN(cm->width, cm->height) >= 480;
-  const int is_720p_or_larger = VPXMIN(cm->width, cm->height) >= 720;
-  const int is_2160p_or_larger = VPXMIN(cm->width, cm->height) >= 2160;
+  const int min_frame_size = VPXMIN(cm->width, cm->height);
+  const int is_480p_or_larger = min_frame_size >= 480;
+  const int is_720p_or_larger = min_frame_size >= 720;
+  const int is_1080p_or_larger = min_frame_size >= 1080;
+  const int is_2160p_or_larger = min_frame_size >= 2160;
 
   // speed 0 features
   sf->partition_search_breakout_thr.dist = (1 << 20);
@@ -75,7 +77,7 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
     sf->ml_partition_search_early_termination = 1;
   }
 
-  if (!is_720p_or_larger) {
+  if (!is_1080p_or_larger) {
     sf->use_ml_partition_search_breakout = 1;
     sf->ml_partition_search_breakout_thresh[0] = 2.5f;
     sf->ml_partition_search_breakout_thresh[1] = 1.5f;
@@ -89,6 +91,12 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
       sf->disable_split_mask =
           cm->show_frame ? DISABLE_ALL_SPLIT : DISABLE_ALL_INTER_SPLIT;
       sf->partition_search_breakout_thr.dist = (1 << 23);
+      if (VPXMIN(cm->width, cm->height) < 1080) {
+        sf->use_ml_partition_search_breakout = 1;
+        sf->ml_partition_search_breakout_thresh[0] = 0.0f;
+        sf->ml_partition_search_breakout_thresh[1] = -1.0f;
+        sf->ml_partition_search_breakout_thresh[2] = -10.0f;
+      }
     } else {
       sf->disable_split_mask = DISABLE_COMPOUND_SPLIT;
       sf->partition_search_breakout_thr.dist = (1 << 21);
@@ -105,6 +113,9 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
       sf->adaptive_pred_interp_filter = 0;
       sf->partition_search_breakout_thr.dist = (1 << 24);
       sf->partition_search_breakout_thr.rate = 120;
+      sf->ml_partition_search_breakout_thresh[0] = 0.0f;
+      sf->ml_partition_search_breakout_thresh[1] = -1.0f;
+      sf->ml_partition_search_breakout_thresh[2] = -4.0f;
     } else {
       sf->disable_split_mask = LAST_AND_INTRA_SPLIT_ONLY;
       sf->partition_search_breakout_thr.dist = (1 << 22);
