@@ -26,9 +26,20 @@ static INLINE void inter_predictor(const uint8_t *src, int src_stride,
                                    const struct scale_factors *sf, int w, int h,
                                    int ref, const InterpKernel *kernel, int xs,
                                    int ys) {
-  sf->predict[subpel_x != 0][subpel_y != 0][ref](src, src_stride, dst,
-                                                 dst_stride, kernel, subpel_x,
-                                                 xs, subpel_y, ys, w, h);
+#if HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH
+  int filter_type = 0;
+  if (0 != subpel_x && kernel == vp9_filter_kernels[1]) {
+    filter_type += 2;
+  }
+  if (0 != subpel_y && kernel == vp9_filter_kernels[1]) {
+    filter_type += 1;
+  }
+  sf->predict[filter_type][subpel_x != 0][subpel_y != 0][ref](
+#else  /* HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH */
+  sf->predict[subpel_x != 0][subpel_y != 0][ref](
+#endif /* HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH */
+      src, src_stride, dst, dst_stride, kernel, subpel_x, xs, subpel_y, ys, w,
+      h);
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH

@@ -31,7 +31,12 @@ struct scale_factors {
   int (*scale_value_x)(int val, const struct scale_factors *sf);
   int (*scale_value_y)(int val, const struct scale_factors *sf);
 
+#if HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH
+  convolve_fn_t predict[4][2][2][2];  // type, horiz, vert, avg
+#else  /* HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH */
   convolve_fn_t predict[2][2][2];  // horiz, vert, avg
+#endif /* HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH */
+
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_convolve_fn_t highbd_predict[2][2][2];  // horiz, vert, avg
 #endif
