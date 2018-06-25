@@ -69,13 +69,159 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *sf, int other_w,
     sf->scale_value_y = unscaled_value;
   }
 
-  // TODO(agrange): Investigate the best choice of functions to use here
-  // for EIGHTTAP_SMOOTH. Since it is not interpolating, need to choose what
-  // to do at full-pel offsets. The current selection, where the filter is
-  // applied in one direction only, and not at all for 0,0, seems to give the
-  // best quality, but it may be worth trying an additional mode that does
-  // do the filtering on full-pel.
+    // TODO(agrange): Investigate the best choice of functions to use here
+    // for EIGHTTAP_SMOOTH. Since it is not interpolating, need to choose what
+    // to do at full-pel offsets. The current selection, where the filter is
+    // applied in one direction only, and not at all for 0,0, seems to give the
+    // best quality, but it may be worth trying an additional mode that does
+    // do the filtering on full-pel.
 
+#if HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH
+  if (sf->x_step_q4 == SUBPEL_SHIFTS) {
+    if (sf->y_step_q4 == SUBPEL_SHIFTS) {
+      // No scaling in either direction.
+      sf->predict[0][0][0][0] = vpx_convolve_copy;
+      sf->predict[0][0][0][1] = vpx_convolve_avg;
+      sf->predict[0][0][1][0] = vpx_convolve8_vert_filter_type2;
+      sf->predict[0][0][1][1] = vpx_convolve8_avg_vert_filter_type2;
+      sf->predict[0][1][0][0] = vpx_convolve8_horiz_filter_type2;
+      sf->predict[0][1][0][1] = vpx_convolve8_avg_horiz_filter_type2;
+
+      sf->predict[1][0][0][0] = vpx_convolve_copy;
+      sf->predict[1][0][0][1] = vpx_convolve_avg;
+      sf->predict[1][0][1][0] = vpx_convolve8_vert_filter_type1;
+      sf->predict[1][0][1][1] = vpx_convolve8_avg_vert_filter_type1;
+      sf->predict[1][1][0][0] = vpx_convolve8_horiz_filter_type2;
+      sf->predict[1][1][0][1] = vpx_convolve8_avg_horiz_filter_type2;
+
+      sf->predict[2][0][0][0] = vpx_convolve_copy;
+      sf->predict[2][0][0][1] = vpx_convolve_avg;
+      sf->predict[2][0][1][0] = vpx_convolve8_vert_filter_type2;
+      sf->predict[2][0][1][1] = vpx_convolve8_avg_vert_filter_type2;
+      sf->predict[2][1][0][0] = vpx_convolve8_horiz_filter_type1;
+      sf->predict[2][1][0][1] = vpx_convolve8_avg_horiz_filter_type1;
+
+      sf->predict[3][0][0][0] = vpx_convolve_copy;
+      sf->predict[3][0][0][1] = vpx_convolve_avg;
+      sf->predict[3][0][1][0] = vpx_convolve8_vert_filter_type1;
+      sf->predict[3][0][1][1] = vpx_convolve8_avg_vert_filter_type1;
+      sf->predict[3][1][0][0] = vpx_convolve8_horiz_filter_type1;
+      sf->predict[3][1][0][1] = vpx_convolve8_avg_horiz_filter_type1;
+    } else {
+      // No scaling in x direction. Must always scale in the y direction.
+      sf->predict[0][0][0][0] = vpx_convolve8_vert_filter_type2;
+      sf->predict[0][0][0][1] = vpx_convolve8_avg_vert_filter_type2;
+      sf->predict[0][0][1][0] = vpx_convolve8_vert_filter_type2;
+      sf->predict[0][0][1][1] = vpx_convolve8_avg_vert_filter_type2;
+      sf->predict[0][1][0][0] = vpx_convolve8_horz_t2_vert_t2;
+      sf->predict[0][1][0][1] = vpx_convolve8_avg_horz_t2_vert_t2;
+
+      sf->predict[1][0][0][0] = vpx_convolve8_vert_filter_type1;
+      sf->predict[1][0][0][1] = vpx_convolve8_avg_vert_filter_type1;
+      sf->predict[1][0][1][0] = vpx_convolve8_vert_filter_type1;
+      sf->predict[1][0][1][1] = vpx_convolve8_avg_vert_filter_type1;
+      sf->predict[1][1][0][0] = vpx_convolve8_horz_t2_vert_t1;
+      sf->predict[1][1][0][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+
+      sf->predict[2][0][0][0] = vpx_convolve8_vert_filter_type2;
+      sf->predict[2][0][0][1] = vpx_convolve8_avg_vert_filter_type2;
+      sf->predict[2][0][1][0] = vpx_convolve8_vert_filter_type2;
+      sf->predict[2][0][1][1] = vpx_convolve8_avg_vert_filter_type2;
+      sf->predict[2][1][0][0] = vpx_convolve8_horz_t1_vert_t2;
+      sf->predict[2][1][0][1] = vpx_convolve8_avg_horz_t1_vert_t2;
+
+      sf->predict[3][0][0][0] = vpx_convolve8_vert_filter_type1;
+      sf->predict[3][0][0][1] = vpx_convolve8_avg_vert_filter_type1;
+      sf->predict[3][0][1][0] = vpx_convolve8_vert_filter_type1;
+      sf->predict[3][0][1][1] = vpx_convolve8_avg_vert_filter_type1;
+      sf->predict[3][1][0][0] = vpx_convolve8_horz_t1_vert_t1;
+      sf->predict[3][1][0][1] = vpx_convolve8_avg_horz_t1_vert_t1;
+    }
+  } else {
+    if (sf->y_step_q4 == SUBPEL_SHIFTS) {
+      // No scaling in the y direction. Must always scale in the x direction.
+      sf->predict[0][0][0][0] = vpx_convolve8_horiz_filter_type2;
+      sf->predict[0][0][0][1] = vpx_convolve8_avg_horiz_filter_type2;
+      sf->predict[0][0][1][0] = vpx_convolve8_horz_t2_vert_t2;
+      sf->predict[0][0][1][1] = vpx_convolve8_avg_horz_t2_vert_t2;
+      sf->predict[0][1][0][0] = vpx_convolve8_horiz_filter_type2;
+      sf->predict[0][1][0][1] = vpx_convolve8_avg_horiz_filter_type2;
+
+      sf->predict[1][0][0][0] = vpx_convolve8_horiz_filter_type2;
+      sf->predict[1][0][0][1] = vpx_convolve8_avg_horiz_filter_type2;
+      sf->predict[1][0][1][0] = vpx_convolve8_horz_t2_vert_t1;
+      sf->predict[1][0][1][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+      sf->predict[1][1][0][0] = vpx_convolve8_horiz_filter_type2;
+      sf->predict[1][1][0][1] = vpx_convolve8_avg_horiz_filter_type2;
+
+      sf->predict[2][0][0][0] = vpx_convolve8_horiz_filter_type1;
+      sf->predict[2][0][0][1] = vpx_convolve8_avg_horiz_filter_type1;
+      sf->predict[2][0][1][0] = vpx_convolve8_horz_t1_vert_t2;
+      sf->predict[2][0][1][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+      sf->predict[2][1][0][0] = vpx_convolve8_horiz_filter_type1;
+      sf->predict[2][1][0][1] = vpx_convolve8_avg_horiz_filter_type1;
+
+      sf->predict[3][0][0][0] = vpx_convolve8_horiz_filter_type1;
+      sf->predict[3][0][0][1] = vpx_convolve8_avg_horiz_filter_type1;
+      sf->predict[3][0][1][0] = vpx_convolve8_horz_t1_vert_t1;
+      sf->predict[3][0][1][1] = vpx_convolve8_avg_horz_t1_vert_t1;
+      sf->predict[3][1][0][0] = vpx_convolve8_horiz_filter_type1;
+      sf->predict[3][1][0][1] = vpx_convolve8_avg_horiz_filter_type1;
+
+    } else {
+      // Must always scale in both directions.
+      sf->predict[0][0][0][0] = vpx_convolve8_horz_t2_vert_t2;
+      sf->predict[0][0][0][1] = vpx_convolve8_avg_horz_t2_vert_t2;
+      sf->predict[0][0][1][0] = vpx_convolve8_horz_t2_vert_t2;
+      sf->predict[0][0][1][1] = vpx_convolve8_avg_horz_t2_vert_t2;
+      sf->predict[0][1][0][0] = vpx_convolve8_horz_t2_vert_t2;
+      sf->predict[0][1][0][1] = vpx_convolve8_avg_horz_t2_vert_t2;
+
+      sf->predict[1][0][0][0] = vpx_convolve8_horz_t2_vert_t1;
+      sf->predict[1][0][0][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+      sf->predict[1][0][1][0] = vpx_convolve8_horz_t2_vert_t1;
+      sf->predict[1][0][1][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+      sf->predict[1][1][0][0] = vpx_convolve8_horz_t2_vert_t1;
+      sf->predict[1][1][0][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+
+      sf->predict[2][0][0][0] = vpx_convolve8_horz_t1_vert_t2;
+      sf->predict[2][0][0][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+      sf->predict[2][0][1][0] = vpx_convolve8_horz_t1_vert_t2;
+      sf->predict[2][0][1][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+      sf->predict[2][1][0][0] = vpx_convolve8_horz_t1_vert_t2;
+      sf->predict[2][1][0][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+
+      sf->predict[3][0][0][0] = vpx_convolve8_horz_t1_vert_t1;
+      sf->predict[3][0][0][1] = vpx_convolve8_avg_horz_t1_vert_t1;
+      sf->predict[3][0][1][0] = vpx_convolve8_horz_t1_vert_t1;
+      sf->predict[3][0][1][1] = vpx_convolve8_avg_horz_t1_vert_t1;
+      sf->predict[3][1][0][0] = vpx_convolve8_horz_t1_vert_t1;
+      sf->predict[3][1][0][1] = vpx_convolve8_avg_horz_t1_vert_t1;
+    }
+  }
+
+  // 2D subpel motion always gets filtered in both directions
+  if ((sf->x_step_q4 != 16) || (sf->y_step_q4 != 16)) {
+    int i;
+    for (i = 0; i < 4; ++i) {
+      sf->predict[i][1][1][0] = vpx_scaled_2d;
+      sf->predict[i][1][1][1] = vpx_scaled_avg_2d;
+    }
+  } else {
+    // 2D subpel motion always gets filtered in both directions
+    sf->predict[0][1][1][0] = vpx_convolve8_horz_t2_vert_t2;
+    sf->predict[0][1][1][1] = vpx_convolve8_avg_horz_t2_vert_t2;
+
+    sf->predict[1][1][1][0] = vpx_convolve8_horz_t2_vert_t1;
+    sf->predict[1][1][1][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+
+    sf->predict[2][1][1][0] = vpx_convolve8_horz_t1_vert_t2;
+    sf->predict[2][1][1][1] = vpx_convolve8_avg_horz_t2_vert_t1;
+
+    sf->predict[3][1][1][0] = vpx_convolve8_horz_t1_vert_t1;
+    sf->predict[3][1][1][1] = vpx_convolve8_avg_horz_t1_vert_t1;
+  }
+#else  /* HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH */
   if (sf->x_step_q4 == 16) {
     if (sf->y_step_q4 == 16) {
       // No scaling in either direction.
@@ -123,6 +269,7 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *sf, int other_w,
     sf->predict[1][1][0] = vpx_convolve8;
     sf->predict[1][1][1] = vpx_convolve8_avg;
   }
+#endif /* HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH */
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (use_highbd) {
