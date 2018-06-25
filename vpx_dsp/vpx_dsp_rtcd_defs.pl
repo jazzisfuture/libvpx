@@ -426,6 +426,61 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 }  # CONFIG_VP9_HIGHBITDEPTH
 
 #
+# Ittiam sub-pel function wrapper
+#
+add_proto qw/void vpx_convolve8_horiz_filter_type2/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_horiz_filter_type2 neon/;
+
+add_proto qw/void vpx_convolve8_vert_filter_type2/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_vert_filter_type2 neon/;
+
+add_proto qw/void vpx_convolve8_avg_horiz_filter_type2/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_avg_horiz_filter_type2 neon/;
+
+add_proto qw/void vpx_convolve8_avg_vert_filter_type2/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_avg_vert_filter_type2 neon/;
+
+add_proto qw/void vpx_convolve8_horiz_filter_type1/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_horiz_filter_type1 neon/;
+
+add_proto qw/void vpx_convolve8_vert_filter_type1/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_vert_filter_type1 neon/;
+
+add_proto qw/void vpx_convolve8_avg_horiz_filter_type1/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_avg_horiz_filter_type1 neon/;
+
+add_proto qw/void vpx_convolve8_avg_vert_filter_type1/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_avg_vert_filter_type1 neon/;
+
+#
+# Ittiam sub-pel functions
+#
+
+add_proto qw/void vpx_convolve8_horz_t2_vert_t2/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_horz_t2_vert_t2 neon/;
+
+add_proto qw/void vpx_convolve8_horz_t2_vert_t1/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_horz_t2_vert_t1 neon/;
+
+add_proto qw/void vpx_convolve8_horz_t1_vert_t2/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_horz_t1_vert_t2 neon/;
+
+add_proto qw/void vpx_convolve8_horz_t1_vert_t1/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_horz_t1_vert_t1 neon/;
+
+add_proto qw/void vpx_convolve8_avg_horz_t2_vert_t2/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_avg_horz_t2_vert_t2 neon/;
+
+add_proto qw/void vpx_convolve8_avg_horz_t2_vert_t1/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_avg_horz_t2_vert_t1 neon/;
+
+add_proto qw/void vpx_convolve8_avg_horz_t1_vert_t2/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_avg_horz_t1_vert_t2 neon/;
+
+add_proto qw/void vpx_convolve8_avg_horz_t1_vert_t1/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
+specialize qw/vpx_convolve8_avg_horz_t1_vert_t1 neon/;
+
+#
 # Loopfilter
 #
 add_proto qw/void vpx_lpf_vertical_16/, "uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh";
