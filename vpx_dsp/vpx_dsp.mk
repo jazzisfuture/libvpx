@@ -109,6 +109,15 @@ endif
 
 DSP_SRCS-$(HAVE_SSE2)  += x86/vpx_convolve_copy_sse2.asm
 DSP_SRCS-$(HAVE_NEON)  += arm/vpx_scaled_convolve8_neon.c
+DSP_SRCS-$(HAVE_NEON_ASM) += arm/vpx_convolve8_horiz_filter_type2_neon$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM) += arm/vpx_convolve8_vert_filter_type2_neon$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM) += arm/vpx_convolve8_horiz_filter_type1_neon$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM) += arm/vpx_convolve8_vert_filter_type1_neon$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM) += arm/vpx_convolve8_avg_horiz_filter_type2_neon$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM) += arm/vpx_convolve8_avg_vert_filter_type2_neon$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM) += arm/vpx_convolve8_avg_horiz_filter_type1_neon$(ASM)
+DSP_SRCS-$(HAVE_NEON_ASM) += arm/vpx_convolve8_avg_vert_filter_type1_neon$(ASM)
+
 
 ifeq ($(HAVE_NEON_ASM),yes)
 DSP_SRCS-yes += arm/vpx_convolve_copy_neon_asm$(ASM)
