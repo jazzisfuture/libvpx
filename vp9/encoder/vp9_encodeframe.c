@@ -47,6 +47,7 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_tokenize.h"
+#include "vp9_firstpass.h"
 
 static void encode_superblock(VP9_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
                               int output_enabled, int mi_row, int mi_col,
@@ -1896,6 +1897,8 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
   // Save rdmult before it might be changed, so it can be restored later.
   orig_rdmult = x->rdmult;
 
+  x->pds = &x->dist_scale[(mi_row & MI_MASK) * MI_BLOCK_SIZE + (mi_col & MI_MASK)];
+
   if ((cpi->sf.tx_domain_thresh > 0.0) || (cpi->sf.quant_opt_thresh > 0.0)) {
     double logvar = vp9_log_block_var(cpi, x, bsize);
     // Check block complexity as part of descision on using pixel or transform
@@ -3644,7 +3647,7 @@ int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
     }
   }
 
-  rk = (double)intra_cost / (intra_cost + mc_dep_cost);
+  rk = (double)intra_cost / mc_dep_cost;
   beta = r0 / rk;
   dr = vp9_get_adaptive_rdmult(cpi, beta);
 
@@ -3653,6 +3656,104 @@ int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
 
   dr = VPXMAX(1, dr);
   return dr;
+}
+
+void get_dist_scale_mesh(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
+                         int mi_row, int mi_col) {
+  TplDepFrame *tpl_frame = &cpi->tpl_stats[cpi->twopass.gf_group.index];
+  TplDepStats *tpl_stats = tpl_frame->tpl_stats_ptr;
+  int tpl_stride = tpl_frame->stride;
+  int64_t intra_cost = 0;
+  int64_t mc_dep_cost = 0;
+  int mi_wide = num_8x8_blocks_wide_lookup[bsize];
+  int mi_high = num_8x8_blocks_high_lookup[bsize];
+
+  double r0, rk;
+
+  double sum = 0;
+  int count = 0;
+
+  if (cpi->common.show_frame) return;
+
+  r0 = cpi->rd.r0;
+//  double max_beta = 0.0;
+//  double min_beta = 10.0;
+
+  for (int row = mi_row; row < mi_row + mi_high; ++row) {
+    for (int col = mi_col; col < mi_col + mi_wide; ++col) {
+      int blk_row = row - mi_row;
+      int blk_col = col - mi_col;
+
+      TplDepStats *this_stats = &tpl_stats[row * tpl_stride + col];
+
+      if (row >= cpi->common.mi_rows || col >= cpi->common.mi_cols) {
+        x->dist_scale[blk_row * MI_BLOCK_SIZE + blk_col] = 0.0;
+        sum += 0.0;
+        continue;
+      }
+
+      intra_cost = this_stats->intra_cost;
+      mc_dep_cost = this_stats->mc_dep_cost;
+
+      rk = 1 + log((double)mc_dep_cost / intra_cost);
+
+      x->dist_scale[blk_row * MI_BLOCK_SIZE + blk_col] =
+          1 + (rk / r0 - 1) * cpi->rd.alpha;
+
+      sum += x->dist_scale[blk_row * MI_BLOCK_SIZE + blk_col];
+      ++count;
+
+//      if (r0 / rk < min_beta) min_beta = r0 / rk;
+//      if (r0 / rk > max_beta) max_beta = r0 / rk;
+    }
+  }
+
+//  fprintf(stderr, "sum dist = %lf\n", sum);
+
+//  rk = 1 + log((double)mc_dep_cost / intra_cost);
+//
+//  for (int row = mi_row; row < mi_row + mi_high; ++row) {
+//    for (int col = mi_col; col < mi_col + mi_wide; ++col) {
+//      int blk_row = row - mi_row;
+//      int blk_col = col - mi_col;
+//
+//      TplDepStats *this_stats = &tpl_stats[row * tpl_stride + col];
+//
+//      if (row >= cpi->common.mi_rows || col >= cpi->common.mi_cols) {
+//        x->dist_scale[blk_row * MI_BLOCK_SIZE + blk_col] = 1.0;
+//        continue;
+//      }
+//
+//      x->dist_scale[blk_row * MI_BLOCK_SIZE + blk_col] =
+//          1 + (rk / r0 - 1) * cpi->rd.alpha;
+//    }
+//  }
+
+
+//  for (int row = mi_row; row < mi_row + mi_high; ++row) {
+//    for (int col = mi_col; col < mi_col + mi_wide; ++col) {
+//      int blk_row = row - mi_row;
+//      int blk_col = col - mi_col;
+//
+//      TplDepStats *this_stats = &tpl_stats[row * tpl_stride + col];
+//
+//      if (row >= cpi->common.mi_rows || col >= cpi->common.mi_cols) {
+//        x->dist_scale[blk_row * MI_BLOCK_SIZE + blk_col] = 1.0;
+//        continue;
+//      }
+//
+//      intra_cost = this_stats->intra_cost;
+//      mc_dep_cost = this_stats->mc_dep_cost;
+//
+//      rk = (double)intra_cost / mc_dep_cost;
+//
+//      if ((r0 / rk) == min_beta)
+//        fprintf(stderr, "intra_cost = %ld, mc_dep_cost = %ld\n", intra_cost,
+//                mc_dep_cost);
+//    }
+//  }
+//
+//  fprintf(stderr, "max = %lf, min = %lf\n", max_beta, min_beta);
 }
 
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
@@ -4221,11 +4322,19 @@ static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
                        &dummy_rate, &dummy_dist, 1, td->pc_root);
     } else {
       int orig_rdmult = cpi->rd.RDMULT;
-      x->cb_rdmult = orig_rdmult;
-      if (cpi->twopass.gf_group.index > 0 && cpi->sf.enable_tpl_model) {
-        int dr =
-            get_rdmult_delta(cpi, BLOCK_64X64, mi_row, mi_col, orig_rdmult);
-        x->cb_rdmult = dr;
+      int rdmult = orig_rdmult;
+
+      int row, col;
+      for (row = 0; row < MI_BLOCK_SIZE; ++row)
+        for (col = 0; col < MI_BLOCK_SIZE; ++col)
+          x->dist_scale[row * MI_BLOCK_SIZE + col] = 1.0;
+
+      if (cpi->twopass.gf_group.index > 0) {
+//        int dr =
+//            get_rdmult_delta(cpi, BLOCK_64X64, mi_row, mi_col, orig_rdmult);
+//        rdmult = dr;
+
+        get_dist_scale_mesh(cpi, x, BLOCK_64X64, mi_row, mi_col);
       }
 
       // If required set upper and lower partition size limits
@@ -5446,16 +5555,42 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     int64_t intra_cost_base = 0;
     int64_t mc_dep_cost_base = 0;
     int row, col;
+    double ds_max = 0.0;
+    double ds_min = 100.0;
+    double ds;
+    double thred;
 
     for (row = 0; row < cm->mi_rows; ++row) {
       for (col = 0; col < cm->mi_cols; ++col) {
         TplDepStats *this_stats = &tpl_stats[row * tpl_stride + col];
         intra_cost_base += this_stats->intra_cost;
         mc_dep_cost_base += this_stats->mc_dep_cost;
+
+        ds = (double)this_stats->intra_cost / this_stats->mc_dep_cost;
+        if (ds > ds_max) ds_max = ds;
+        if (ds < ds_min) ds_min = ds;
       }
     }
 
-    cpi->rd.r0 = (double)intra_cost_base / (intra_cost_base + mc_dep_cost_base);
+    cpi->rd.r0 = 1 + log((double)mc_dep_cost_base / intra_cost_base);
+    cpi->rd.alpha = 1.0;
+
+    ds_max /= cpi->rd.r0;
+    ds_min /= cpi->rd.r0;
+
+    if (ds_max > 1.0) {
+      thred = 1.0 / (ds_max - 1.0);
+      if (cpi->rd.alpha >= thred) cpi->rd.alpha = thred;
+    }
+    if (ds_min < 1.0) {
+      thred = 1.0 / (2 * (1 - ds_min));
+      if (cpi->rd.alpha <= thred) cpi->rd.alpha = thred;
+    }
+
+    cpi->rd.alpha = 1.0;
+
+//    fprintf(stderr, "ds_max = %lf, ds_min = %lf, alpha = %lf\n", ds_max, ds_min,
+//            cpi->rd.alpha);
   }
 
   {

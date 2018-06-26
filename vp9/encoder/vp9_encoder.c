@@ -5655,9 +5655,7 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
                            this_frame->y_stride, &predictor[0], MI_SIZE);
 #endif
         vpx_hadamard_8x8(src_diff, MI_SIZE, coeff);
-
         inter_cost = vpx_satd(coeff, MI_SIZE * MI_SIZE);
-
         if (inter_cost < best_inter_cost) {
           best_rf_idx = rf_idx;
           best_inter_cost = inter_cost;

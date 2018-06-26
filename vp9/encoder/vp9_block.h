@@ -81,6 +81,9 @@ struct macroblock {
   int block_qcoeff_opt;
   int block_tx_domain;
 
+  double *pds;
+  double dist_scale[MI_BLOCK_SIZE * MI_BLOCK_SIZE];
+
   // The equivalent error at the current rdmult of one whole bit (not one
   // bitcost unit).
   int errorperbit;

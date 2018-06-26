@@ -461,8 +461,10 @@ static INLINE int num_4x4_to_edge(int plane_4x4_dim, int mb_to_edge_dim,
 
 // Compute the pixel domain sum square error on all visible 4x4s in the
 // transform block.
-static unsigned pixel_sse(const VP9_COMP *const cpi, const MACROBLOCKD *xd,
+static unsigned pixel_sse(const VP9_COMP *const cpi, const MACROBLOCK *x,
+                          const MACROBLOCKD *xd,
                           const struct macroblockd_plane *const pd,
+                          const int plane,
                           const uint8_t *src, const int src_stride,
                           const uint8_t *dst, const int dst_stride, int blk_row,
                           int blk_col, const BLOCK_SIZE plane_bsize,
@@ -476,13 +478,16 @@ static unsigned pixel_sse(const VP9_COMP *const cpi, const MACROBLOCKD *xd,
                                             pd->subsampling_x, blk_col);
   int b4x4s_to_bottom_edge = num_4x4_to_edge(plane_4x4_h, xd->mb_to_bottom_edge,
                                              pd->subsampling_y, blk_row);
-  if (tx_bsize == BLOCK_4X4 ||
-      (b4x4s_to_right_edge >= tx_4x4_w && b4x4s_to_bottom_edge >= tx_4x4_h)) {
+  if (0 &&
+      (tx_bsize == BLOCK_4X4 ||
+      (b4x4s_to_right_edge >= tx_4x4_w && b4x4s_to_bottom_edge >= tx_4x4_h))) {
     cpi->fn_ptr[tx_bsize].vf(src, src_stride, dst, dst_stride, &sse);
+    sse =
+        (unsigned int)(x->pds[(blk_row >> 1) * MI_BLOCK_SIZE + (blk_col >> 1)] * sse);
   } else {
     const vpx_variance_fn_t vf_4x4 = cpi->fn_ptr[BLOCK_4X4].vf;
     int r, c;
-    unsigned this_sse = 0;
+    unsigned int this_sse = 0;
     int max_r = VPXMIN(b4x4s_to_bottom_edge, tx_4x4_h);
     int max_c = VPXMIN(b4x4s_to_right_edge, tx_4x4_w);
     sse = 0;
@@ -492,6 +497,10 @@ static unsigned pixel_sse(const VP9_COMP *const cpi, const MACROBLOCKD *xd,
       for (c = 0; c < max_c; ++c) {
         vf_4x4(src + r * src_stride * 4 + c * 4, src_stride,
                dst + r * dst_stride * 4 + c * 4, dst_stride, &this_sse);
+        if (plane == 0) {
+          this_sse =
+              (unsigned int)(x->pds[(r >> 1) * MI_BLOCK_SIZE + (c >> 1)] * this_sse);
+        }
         sse += this_sse;
       }
     }
@@ -500,8 +509,9 @@ static unsigned pixel_sse(const VP9_COMP *const cpi, const MACROBLOCKD *xd,
 }
 
 // Compute the squares sum squares on all visible 4x4s in the transform block.
-static int64_t sum_squares_visible(const MACROBLOCKD *xd,
+static int64_t sum_squares_visible(const MACROBLOCK *x, const MACROBLOCKD *xd,
                                    const struct macroblockd_plane *const pd,
+                                   const int plane,
                                    const int16_t *diff, const int diff_stride,
                                    int blk_row, int blk_col,
                                    const BLOCK_SIZE plane_bsize,
@@ -515,8 +525,9 @@ static int64_t sum_squares_visible(const MACROBLOCKD *xd,
                                             pd->subsampling_x, blk_col);
   int b4x4s_to_bottom_edge = num_4x4_to_edge(plane_4x4_h, xd->mb_to_bottom_edge,
                                              pd->subsampling_y, blk_row);
-  if (tx_bsize == BLOCK_4X4 ||
-      (b4x4s_to_right_edge >= tx_4x4_w && b4x4s_to_bottom_edge >= tx_4x4_h)) {
+  if (0 &&
+      (tx_bsize == BLOCK_4X4 ||
+      (b4x4s_to_right_edge >= tx_4x4_w && b4x4s_to_bottom_edge >= tx_4x4_h))) {
     assert(tx_4x4_w == tx_4x4_h);
     sse = (int64_t)vpx_sum_squares_2d_i16(diff, diff_stride, tx_4x4_w << 2);
   } else {
@@ -528,8 +539,15 @@ static int64_t sum_squares_visible(const MACROBLOCKD *xd,
     for (r = 0; r < max_r; ++r) {
       // Skip visiting the sub blocks that are wholly within the UMV.
       for (c = 0; c < max_c; ++c) {
-        sse += (int64_t)vpx_sum_squares_2d_i16(
+        int64_t this_sse;
+        this_sse = (int64_t)vpx_sum_squares_2d_i16(
             diff + r * diff_stride * 4 + c * 4, diff_stride, 4);
+        if (plane == 0) {
+          this_sse =
+              (int64_t) (x->pds[(r >> 1) * MI_BLOCK_SIZE + (c >> 1)]
+                  * this_sse);
+        }
+        sse += this_sse;
       }
     }
   }
@@ -588,7 +606,7 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
     unsigned int tmp;
     TX_TYPE tx_type = DCT_DCT;
 
-    tmp = pixel_sse(cpi, xd, pd, src, src_stride, dst, dst_stride, blk_row,
+    tmp = pixel_sse(cpi, x, xd, pd, plane, src, src_stride, dst, dst_stride, blk_row,
                     blk_col, plane_bsize, tx_bsize);
     *out_sse = (int64_t)tmp * 16;
 
@@ -650,7 +668,7 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
       }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-      tmp = pixel_sse(cpi, xd, pd, src, src_stride, recon, 32, blk_row, blk_col,
+      tmp = pixel_sse(cpi, x, xd, pd, plane, src, src_stride, recon, 32, blk_row, blk_col,
                       plane_bsize, tx_bsize);
     }
 
@@ -698,18 +716,18 @@ static void block_rd_txfm(int plane, int block, int blk_row, int blk_col,
       const uint8_t *dst = &pd->dst.buf[4 * (blk_row * dst_stride + blk_col)];
       const int16_t *diff = &p->src_diff[4 * (blk_row * diff_stride + blk_col)];
       unsigned int tmp;
-      sse = sum_squares_visible(xd, pd, diff, diff_stride, blk_row, blk_col,
+      sse = sum_squares_visible(x, xd, pd, plane, diff, diff_stride, blk_row, blk_col,
                                 plane_bsize, tx_bsize);
 #if CONFIG_VP9_HIGHBITDEPTH
       if ((xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) && (xd->bd > 8))
         sse = ROUND64_POWER_OF_TWO(sse, (xd->bd - 8) * 2);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       sse = sse * 16;
-      tmp = pixel_sse(args->cpi, xd, pd, src, src_stride, dst, dst_stride,
+      tmp = pixel_sse(args->cpi, x, xd, pd, plane, src, src_stride, dst, dst_stride,
                       blk_row, blk_col, plane_bsize, tx_bsize);
       dist = (int64_t)tmp * 16;
     }
-  } else if (max_txsize_lookup[plane_bsize] == tx_size) {
+  } else if (max_txsize_lookup[plane_bsize] == tx_size && 0) {
     if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] ==
         SKIP_TXFM_NONE) {
       // full forward transform and quantization
