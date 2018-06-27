@@ -586,6 +586,7 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
     const uint8_t *dst = &pd->dst.buf[dst_idx];
     const tran_low_t *dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
     unsigned int tmp;
+    TX_TYPE tx_type = DCT_DCT;
 
     tmp = pixel_sse(cpi, xd, pd, src, src_stride, dst, dst_stride, blk_row,
                     blk_col, plane_bsize, tx_bsize);
@@ -628,14 +629,21 @@ static void dist_block(const VP9_COMP *cpi, MACROBLOCK *x, int plane,
         vpx_convolve_copy(dst, dst_stride, recon, 32, NULL, 0, 0, 0, 0, bs, bs);
         switch (tx_size) {
           case TX_32X32: vp9_idct32x32_add(dqcoeff, recon, 32, eob); break;
-          case TX_16X16: vp9_idct16x16_add(dqcoeff, recon, 32, eob); break;
-          case TX_8X8: vp9_idct8x8_add(dqcoeff, recon, 32, eob); break;
+          case TX_16X16:
+            tx_type = get_tx_type(get_plane_type(plane), xd);
+            vp9_iht16x16_add(tx_type, dqcoeff, recon, 32, eob);
+            break;
+          case TX_8X8:
+            tx_type = get_tx_type(get_plane_type(plane), xd);
+            vp9_iht8x8_add(tx_type, dqcoeff, recon, 32, eob);
+            break;
           default:
             assert(tx_size == TX_4X4);
-            // this is like vp9_short_idct4x4 but has a special case around
-            // eob<=1, which is significant (not just an optimization) for
-            // the lossless case.
-            x->inv_txfm_add(dqcoeff, recon, 32, eob);
+            tx_type = get_tx_type_4x4(get_plane_type(plane), xd, block);
+            if (tx_type == DCT_DCT)
+              x->inv_txfm_add(dqcoeff, recon, 32, eob);
+            else
+              vp9_iht4x4_16_add(dqcoeff, recon, 32, tx_type);
             break;
         }
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -1131,14 +1139,15 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int row,
           const scan_order *so = &vp9_scan_orders[TX_4X4][tx_type];
           const int coeff_ctx =
               combine_entropy_contexts(tempa[idx], templ[idy]);
+          int64_t dist;
           vp9_fht4x4(src_diff, coeff, 8, tx_type);
           vp9_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
           ratey += cost_coeffs(x, 0, block, TX_4X4, coeff_ctx, so->scan,
                                so->neighbors, cpi->sf.use_fast_coef_costing);
           tempa[idx] = templ[idy] = (x->plane[0].eobs[block] > 0) ? 1 : 0;
-          distortion += vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, block),
-                                        16, &unused) >>
-                        2;
+          dist_block(cpi, x, 0, BLOCK_8X8, block, row + idy, col + idx, TX_4X4,
+                     &dist, &unused);
+          distortion += dist;
           if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
             goto next;
           vp9_iht4x4_add(tx_type, BLOCK_OFFSET(pd->dqcoeff, block), dst,
@@ -1570,6 +1579,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi, MACROBLOCK *x,
       int64_t ssz, rd, rd1, rd2;
       tran_low_t *coeff;
       int coeff_ctx;
+      int64_t dist;
       k += (idy * 2 + idx);
       coeff_ctx = combine_entropy_contexts(ta[k & 1], tl[k >> 1]);
       coeff = BLOCK_OFFSET(p->coeff, k);
@@ -1580,8 +1590,11 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi, MACROBLOCK *x,
       thisdistortion += vp9_highbd_block_error_dispatch(
           coeff, BLOCK_OFFSET(pd->dqcoeff, k), 16, &ssz, bd);
 #else
-      thisdistortion +=
-          vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, k), 16, &ssz);
+      dist_block(cpi, x, 0, BLOCK_8X8, k, (i >> 1) + idy, (i & 0x01) + idx,
+                 TX_4X4, &dist, &ssz);
+      dist <<= 2;
+      ssz <<= 2;
+      thisdistortion += dist;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       thissse += ssz;
       thisrate += cost_coeffs(x, 0, k, TX_4X4, coeff_ctx, so->scan,
