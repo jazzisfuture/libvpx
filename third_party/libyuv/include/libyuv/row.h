@@ -299,11 +299,13 @@ extern "C" {
 // The following are available for AVX512 clang x86 platforms:
 // TODO(fbarchard): Port to GCC and Visual C
 // TODO(fbarchard): re-enable HAS_ARGBTORGB24ROW_AVX512VBMI. Issue libyuv:789
+#if 0  // Build fails in libvpx on Mac
 #if !defined(LIBYUV_DISABLE_X86) &&                                       \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
     (defined(CLANG_HAS_AVX512))
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
 #endif
+#endif  // 0
 
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && \
