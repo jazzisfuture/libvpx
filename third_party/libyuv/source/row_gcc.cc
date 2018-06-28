@@ -554,7 +554,7 @@ void ARGBToRGB24Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
 }
 #endif
 
-#ifdef HAS_ARGBTORGB24ROW_AVX512VBMI
+#if 0  // def HAS_ARGBTORGB24ROW_AVX512VBMI
 // Shuffle table for converting ARGBToRGB24
 static const ulvec8 kPermARGBToRGB24_0 = {
     0u,  1u,  2u,  4u,  5u,  6u,  8u,  9u,  10u, 12u, 13u,
