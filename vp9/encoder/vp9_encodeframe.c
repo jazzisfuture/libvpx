@@ -3501,6 +3501,8 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   int64_t dist_breakout_thr = cpi->sf.partition_search_breakout_thr.dist;
   int rate_breakout_thr = cpi->sf.partition_search_breakout_thr.rate;
 
+  int partition_mul = cpi->rd.RDMULT;
+
   (void)*tp_orig;
 
   assert(num_8x8_blocks_wide_lookup[bsize] ==
@@ -3623,7 +3625,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
                      best_rdc.rdcost);
     if (this_rdc.rate != INT_MAX) {
       if (bsize >= BLOCK_8X8) {
-        this_rdc.rdcost += RDCOST(x->rdmult, x->rddiv,
+        this_rdc.rdcost += RDCOST(partition_mul, x->rddiv,
                                   cpi->partition_cost[pl][PARTITION_NONE], 0);
         this_rdc.rate += cpi->partition_cost[pl][PARTITION_NONE];
       }
@@ -3776,7 +3778,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     }
 
     if (sum_rdc.rdcost < best_rdc.rdcost && i == 4) {
-      sum_rdc.rdcost += RDCOST(x->rdmult, x->rddiv,
+      sum_rdc.rdcost += RDCOST(partition_mul, x->rddiv,
                                cpi->partition_cost[pl][PARTITION_SPLIT], 0);
       sum_rdc.rate += cpi->partition_cost[pl][PARTITION_SPLIT];
 
@@ -3838,7 +3840,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     }
 
     if (sum_rdc.rdcost < best_rdc.rdcost) {
-      sum_rdc.rdcost += RDCOST(x->rdmult, x->rddiv,
+      sum_rdc.rdcost += RDCOST(partition_mul, x->rddiv,
                                cpi->partition_cost[pl][PARTITION_HORZ], 0);
       sum_rdc.rate += cpi->partition_cost[pl][PARTITION_HORZ];
       if (sum_rdc.rdcost < best_rdc.rdcost) {
@@ -3886,8 +3888,10 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
       }
     }
 
+    if (x->rdmult != partition_mul) assert(0);
+
     if (sum_rdc.rdcost < best_rdc.rdcost) {
-      sum_rdc.rdcost += RDCOST(x->rdmult, x->rddiv,
+      sum_rdc.rdcost += RDCOST(partition_mul, x->rddiv,
                                cpi->partition_cost[pl][PARTITION_VERT], 0);
       sum_rdc.rate += cpi->partition_cost[pl][PARTITION_VERT];
       if (sum_rdc.rdcost < best_rdc.rdcost) {
