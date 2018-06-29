@@ -3039,7 +3039,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
                                    cpi->svc.temporal_layer_id,
                                    cpi->svc.number_temporal_layers);
       LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
-      svc_base_is_key = lc->is_key_frame;
+      svc_base_is_key = lc->is_key_frame || frame_is_intra_only(cm);
       denoise_svc_second_layer =
           cpi->svc.number_spatial_layers - cpi->svc.spatial_layer_id == 2 ? 1
                                                                           : 0;
