@@ -226,7 +226,7 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
     for (i = 0; i < 2; ++i) {
       int qrounding_factor_fp = i == 0 ? 48 : 42;
       if (q == 0) qrounding_factor_fp = 64;
-
+      qrounding_factor_fp = 64;
       // y
       quant = i == 0 ? vp9_dc_quant(q, cm->y_dc_delta_q, cm->bit_depth)
                      : vp9_ac_quant(q, 0, cm->bit_depth);

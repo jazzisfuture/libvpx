@@ -77,13 +77,15 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
   const scan_order *const so = get_scan(xd, tx_size, plane_type, block);
   const int16_t *const scan = so->scan;
   const int16_t *const nb = so->neighbors;
-  const int64_t rdmult =
-      ((int64_t)mb->rdmult * plane_rd_mult[ref][plane_type]) >> 1;
+  const int64_t rdmult = mb->rdmult;
+      //((int64_t)mb->rdmult * plane_rd_mult[ref][plane_type]) >> 1;
   const int64_t rddiv = mb->rddiv;
   int64_t rd_cost0, rd_cost1;
   int64_t rate0, rate1;
   int16_t t0, t1;
   int i, final_eob;
+  int pre;
+  int count_high_values_after_eob = 0;
 #if CONFIG_VP9_HIGHBITDEPTH
   const uint16_t *cat6_high_cost = vp9_get_high_cost_table(xd->bd);
 #else
@@ -94,6 +96,7 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
   unsigned int(*token_costs_cur)[2][COEFF_CONTEXTS][ENTROPY_TOKENS];
   int64_t eob_cost0, eob_cost1;
   const int ctx0 = ctx;
+  int new_final_eob;
   int64_t accu_rate = 0;
   // Initialized to the worst possible error for the largest transform size.
   // This ensures that it never goes negative.
@@ -102,7 +105,6 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
   int x_prev = 1;
   tran_low_t before_best_eob_qc = 0;
   tran_low_t before_best_eob_dqc = 0;
-
   assert((!plane_type && !plane) || (plane_type && plane));
   assert(eob <= default_eob);
 
@@ -120,6 +122,7 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
   // For each token, pick one of two choices greedily:
   // (i) First candidate: Keep current quantized value, OR
   // (ii) Second candidate: Reduce quantized value by 1.
+
   for (i = 0; i < eob; i++) {
     const int rc = scan[i];
     const int x = qcoeff[rc];
@@ -248,7 +251,6 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
             dqc1 = 0;
           }
         }
-
         // Pick and record the better quantized and de-quantized values.
         if (rdcost_better_for_x1) {
           qcoeff[rc] = x1;
@@ -263,6 +265,7 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
           assert(distortion0 <= distortion_for_zero);
           token_cache[rc] = vp9_pt_energy_class[t0];
         }
+        if ( abs(qcoeff[rc]) > 1) count_high_values_after_eob ++;
         assert(accu_error >= 0);
         x_prev = qcoeff[rc];  // Update based on selected quantized value.
 
@@ -273,6 +276,7 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
         if (best_eob_cost_cur < best_block_rd_cost) {
           best_block_rd_cost = best_eob_cost_cur;
           final_eob = i + 1;
+          count_high_values_after_eob = 0;
           if (use_x1) {
             before_best_eob_qc = x1;
             before_best_eob_dqc = dqc1;
@@ -284,19 +288,31 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
       }
     }
   }
-  assert(final_eob <= eob);
-  if (final_eob > 0) {
-    int rc;
-    assert(before_best_eob_qc != 0);
-    i = final_eob - 1;
-    rc = scan[i];
-    qcoeff[rc] = before_best_eob_qc;
-    dqcoeff[rc] = before_best_eob_dqc;
-  }
-  for (i = final_eob; i < eob; i++) {
-    int rc = scan[i];
-    qcoeff[rc] = 0;
-    dqcoeff[rc] = 0;
+  if ( count_high_values_after_eob > 0) {
+    final_eob = eob-1;
+    for (;final_eob >= 0;final_eob-- ){
+    const int rc = scan[final_eob];
+    const int x = qcoeff[rc];
+    if (x) {
+      break;
+    }
+    }
+    final_eob ++;
+  } else {
+    assert(final_eob <= eob);
+    if (final_eob > 0) {
+      int rc;
+      assert(before_best_eob_qc != 0);
+      i = final_eob - 1;
+      rc = scan[i];
+      qcoeff[rc] = before_best_eob_qc;
+      dqcoeff[rc] = before_best_eob_dqc;
+    }
+    for (i = final_eob; i < eob; i++) {
+      int rc = scan[i];
+      qcoeff[rc] = 0;
+      dqcoeff[rc] = 0;
+    }
   }
   mb->plane[plane].eobs[block] = final_eob;
   return final_eob;

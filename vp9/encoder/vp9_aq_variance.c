@@ -12,7 +12,6 @@
 
 #include "vpx_ports/mem.h"
 #include "vpx_ports/system_state.h"
-
 #include "vp9/encoder/vp9_aq_variance.h"
 
 #include "vp9/common/vp9_seg_common.h"
@@ -186,10 +185,62 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
   }
 }
 
-double vp9_log_block_var(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
+double vp9b_log_block_var(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
   unsigned int var = block_variance(cpi, x, bs);
   vpx_clear_system_state();
   return log(var + 1.0);
+}
+static unsigned int block_lvariance(const VP9_COMP *const cpi, MACROBLOCK *x,
+                                    BLOCK_SIZE bs) {
+  // This functions returns a score for the blocks local variance as calculated
+  // by: sum of the log of the (4x4 variances) of each subblock to the current
+  // block (x,bs)
+  // * 32 / number of pixels in the block_size.
+  // This is used for segmentation because to avoid situations in which a large
+  // block with a gentle gradient gets marked high variance even though each
+  // subblock has a low variance.   This allows us to assign the same segment
+  // number for the same sorts of area regardless of how the partitioning goes.
+
+  MACROBLOCKD *xd = &x->e_mbd;
+  double var = 0;
+  unsigned int sse;
+  int i, j;
+
+  int right_overflow =
+      (xd->mb_to_right_edge < 0) ? ((-xd->mb_to_right_edge) >> 3) : 0;
+  int bottom_overflow =
+      (xd->mb_to_bottom_edge < 0) ? ((-xd->mb_to_bottom_edge) >> 3) : 0;
+
+  const int bw = 8 * num_8x8_blocks_wide_lookup[bs] - right_overflow;
+  const int bh = 8 * num_8x8_blocks_high_lookup[bs] - bottom_overflow;
+
+  for (i = 0; i < bh; i += 4) {
+    for (j = 0; j < bw; j += 4) {
+#if CONFIG_VP9_HIGHBITDEPTH
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+        var +=
+            log(1.0 + cpi->fn_ptr[BLOCK_4X4].vf(
+                          x->plane[0].src.buf + i * x->plane[0].src.stride + j,
+                          x->plane[0].src.stride,
+                          CONVERT_TO_BYTEPTR(vp9_highbd_64_zeros), 0, &sse));
+      } else {
+#endif
+        var +=
+            log(1.0 + cpi->fn_ptr[BLOCK_4X4].vf(
+                          x->plane[0].src.buf + i * x->plane[0].src.stride + j,
+                          x->plane[0].src.stride, vp9_64_zeros, 0, &sse));
+#if CONFIG_VP9_HIGHBITDEPTH
+      }
+#endif
+    }
+  }
+  return (unsigned int)((uint64_t)(var * 32)) >> (num_pels_log2_lookup[bs]);
+}
+
+double vp9_log_block_var(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
+  unsigned int var = block_lvariance(cpi, x, bs);
+  vpx_clear_system_state();
+  return var;
 }
 
 #define DEFAULT_E_MIDPOINT 10.0
