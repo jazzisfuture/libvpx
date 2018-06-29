@@ -52,6 +52,9 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
                               int output_enabled, int mi_row, int mi_col,
                               BLOCK_SIZE bsize, PICK_MODE_CONTEXT *ctx);
 
+int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
+                     int orig_rdmult, double *beta);
+
 // This is used as a reference when computing the source variance for the
 //  purpose of activity masking.
 // Eventually this should be replaced by custom no-reference routines,
@@ -2112,7 +2115,11 @@ static void encode_b(VP9_COMP *cpi, const TileInfo *const tile, ThreadData *td,
                      PICK_MODE_CONTEXT *ctx) {
   MACROBLOCK *const x = &td->mb;
   set_offsets(cpi, tile, x, mi_row, mi_col, bsize);
-  if (cpi->sf.enable_tpl_model) x->rdmult = x->cb_rdmult;
+  if (cpi->sf.enable_tpl_model && cpi->twopass.gf_group.index) {
+    double beta;
+    x->rdmult = get_rdmult_delta(cpi, BLOCK_64X64, mi_row & 0xfff8,
+                                 mi_col & 0xfff8, cpi->rd.RDMULT, &beta);
+  }
   update_state(cpi, td, ctx, mi_row, mi_col, bsize, output_enabled);
   encode_superblock(cpi, td, tp, output_enabled, mi_row, mi_col, bsize, ctx);
 
@@ -3495,7 +3502,7 @@ static int ml_predict_breakout(const VP9_COMP *const cpi, BLOCK_SIZE bsize,
 #undef Q_CTX
 
 int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
-                     int orig_rdmult) {
+                     int orig_rdmult, double *beta) {
   TplDepFrame *tpl_frame = &cpi->tpl_stats[cpi->twopass.gf_group.index];
   TplDepStats *tpl_stats = tpl_frame->tpl_stats_ptr;
   int tpl_stride = tpl_frame->stride;
@@ -3507,7 +3514,7 @@ int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
 
   int dr = 0;
   int count = 0;
-  double r0, rk, beta;
+  double r0, rk;
 
   r0 = cpi->rd.r0;
 
@@ -3525,8 +3532,8 @@ int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
   }
 
   rk = (double)intra_cost / (intra_cost + mc_dep_cost);
-  beta = r0 / rk;
-  dr = vp9_get_adaptive_rdmult(cpi, beta);
+  *beta = r0 / rk;
+  dr = vp9_get_adaptive_rdmult(cpi, *beta);
 
   dr = VPXMIN(dr, orig_rdmult * 5 / 4);
   dr = VPXMAX(dr, orig_rdmult * 3 / 4);
@@ -4101,10 +4108,11 @@ static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
                        &dummy_rate, &dummy_dist, 1, td->pc_root);
     } else {
       int orig_rdmult = cpi->rd.RDMULT;
+      double beta;
       x->cb_rdmult = orig_rdmult;
       if (cpi->twopass.gf_group.index > 0 && cpi->sf.enable_tpl_model) {
-        int dr =
-            get_rdmult_delta(cpi, BLOCK_64X64, mi_row, mi_col, orig_rdmult);
+        int dr = get_rdmult_delta(cpi, BLOCK_64X64, mi_row, mi_col, orig_rdmult,
+                                  &beta);
         x->cb_rdmult = dr;
       }
 
