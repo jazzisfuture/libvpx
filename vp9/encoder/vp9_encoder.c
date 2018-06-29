@@ -3021,7 +3021,7 @@ void update_ref_frames(VP9_COMP *cpi) {
 void vp9_update_reference_frames(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   BufferPool *const pool = cm->buffer_pool;
-
+  SVC *const svc = &cpi->svc;
   update_ref_frames(cpi);
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
@@ -3032,17 +3032,17 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     if (cpi->use_svc) {
       int realloc_fail = 0;
       const int svc_buf_shift =
-          cpi->svc.number_spatial_layers - cpi->svc.spatial_layer_id == 2
+          svc->number_spatial_layers - svc->spatial_layer_id == 2
               ? cpi->denoiser.num_ref_frames
               : 0;
-      int layer = LAYER_IDS_TO_IDX(cpi->svc.spatial_layer_id,
-                                   cpi->svc.temporal_layer_id,
-                                   cpi->svc.number_temporal_layers);
-      LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
-      svc_base_is_key = lc->is_key_frame;
+      int layer =
+          LAYER_IDS_TO_IDX(SVC->spatial_layer_id, SVC->temporal_layer_id,
+                           SVC->number_temporal_layers);
+      LAYER_CONTEXT *const lc = &SVC->layer_context[layer];
+      svc_base_is_key =
+          lc->is_key_frame || svc->spatial_layer_sync[svc->spatial_layer_id];
       denoise_svc_second_layer =
-          cpi->svc.number_spatial_layers - cpi->svc.spatial_layer_id == 2 ? 1
-                                                                          : 0;
+          svc->number_spatial_layers - svc->spatial_layer_id == 2 ? 1 : 0;
       // Check if we need to allocate extra buffers in the denoiser
       // for
       // refreshed frames.
@@ -3064,7 +3064,6 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
 
   if (is_one_pass_cbr_svc(cpi)) {
     // Keep track of frame index for each reference frame.
-    SVC *const svc = &cpi->svc;
     if (cm->frame_type == KEY_FRAME) {
       int i;
       // On key frame update all reference frame slots.
