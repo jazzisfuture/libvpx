@@ -148,7 +148,8 @@ int vp9_cyclic_refresh_rc_bits_per_mb(const VP9_COMP *cpi, int i,
 void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi, MODE_INFO *const mi,
                                        int mi_row, int mi_col, BLOCK_SIZE bsize,
                                        int64_t rate, int64_t dist, int skip,
-                                       struct macroblock_plane *const p) {
+                                       struct macroblock_plane *const p,
+                                       int source_variance) {
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   const int bw = num_8x8_blocks_wide_lookup[bsize];
@@ -178,8 +179,11 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi, MODE_INFO *const mi,
   // segment_id.
   if (cyclic_refresh_segment_id_boosted(mi->segment_id)) {
     mi->segment_id = refresh_this_block;
-    // Reset segment_id if it will be skipped.
-    if (skip) mi->segment_id = CR_SEGMENT_ID_BASE;
+    // Reset segment_id if it will be skipped, or if block is spatially
+    // flat (source_variance = 0) for screen content.
+    if (skip ||
+        (cpi->oxcf.content == VP9E_CONTENT_SCREEN && source_variance == 0))
+      mi->segment_id = CR_SEGMENT_ID_BASE;
   }
 
   // Update the cyclic refresh map, to be used for setting segmentation map

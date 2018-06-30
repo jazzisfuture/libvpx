@@ -95,7 +95,8 @@ void vp9_cyclic_refresh_update_segment(struct VP9_COMP *const cpi,
                                        MODE_INFO *const mi, int mi_row,
                                        int mi_col, BLOCK_SIZE bsize,
                                        int64_t rate, int64_t dist, int skip,
-                                       struct macroblock_plane *const p);
+                                       struct macroblock_plane *const p,
+                                       int source_variance);
 
 void vp9_cyclic_refresh_update_sb_postencode(struct VP9_COMP *const cpi,
                                              const MODE_INFO *const mi,
