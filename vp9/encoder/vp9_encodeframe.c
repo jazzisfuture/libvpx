@@ -592,11 +592,6 @@ void vp9_set_variance_partition_thresholds(VP9_COMP *cpi, int q,
         cpi->vbp_threshold_copy = (cpi->y_dequant[q][1] << 3) > 8000
                                       ? (cpi->y_dequant[q][1] << 3)
                                       : 8000;
-      if (cpi->rc.high_source_sad ||
-          (cpi->use_svc && cpi->svc.high_source_sad_superframe)) {
-        cpi->vbp_threshold_sad = 0;
-        cpi->vbp_threshold_copy = 0;
-      }
     }
     cpi->vbp_threshold_minmax = 15 + (q >> 3);
   }
@@ -1218,9 +1213,6 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   int pixels_wide = 64, pixels_high = 64;
   int64_t thresholds[4] = { cpi->vbp_thresholds[0], cpi->vbp_thresholds[1],
                             cpi->vbp_thresholds[2], cpi->vbp_thresholds[3] };
-  int scene_change_detected =
-      cpi->rc.high_source_sad ||
-      (cpi->use_svc && cpi->svc.high_source_sad_superframe);
 
   // For the variance computation under SVC mode, we treat the frame as key if
   // the reference (base layer frame) is key frame (i.e., is_key_frame == 1).
@@ -1282,7 +1274,6 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     }
     // If source_sad is low copy the partition without computing the y_sad.
     if (x->skip_low_source_sad && cpi->sf.copy_partition_flag &&
-        !scene_change_detected &&
         copy_partitioning(cpi, x, xd, mi_row, mi_col, segment_id, sb_offset)) {
       x->sb_use_mv_part = 1;
       if (cpi->sf.svc_use_lowres_part &&
@@ -1311,7 +1302,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
 
   // Index for force_split: 0 for 64x64, 1-4 for 32x32 blocks,
   // 5-20 for the 16x16 blocks.
-  force_split[0] = scene_change_detected;
+  force_split[0] = 0;
 
   if (!is_key_frame) {
     // In the case of spatial/temporal scalable coding, the assumption here is
@@ -1706,7 +1697,8 @@ static void update_state(VP9_COMP *cpi, ThreadData *td, PICK_MODE_CONTEXT *ctx,
     // and then update the quantizer.
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
       vp9_cyclic_refresh_update_segment(cpi, xd->mi[0], mi_row, mi_col, bsize,
-                                        ctx->rate, ctx->dist, x->skip, p);
+                                        ctx->rate, ctx->dist, x->skip, p,
+                                        x->source_variance);
     }
   }
 
@@ -2412,7 +2404,8 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
     } else {
       // Setting segmentation map for cyclic_refresh.
       vp9_cyclic_refresh_update_segment(cpi, mi, mi_row, mi_col, bsize,
-                                        ctx->rate, ctx->dist, x->skip, p);
+                                        ctx->rate, ctx->dist, x->skip, p,
+                                        x->source_variance);
     }
     vp9_init_plane_quantizers(cpi, x);
   }
