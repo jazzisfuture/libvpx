@@ -3274,9 +3274,9 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 
   rc->base_frame_target = gf_group->bit_allocation[gf_group->index];
 
-  // The multiplication by 256 reverses a scaling factor of (>> 8)
-  // applied when combining MB error values for the frame.
-  twopass->mb_av_energy = log((this_frame.intra_error * 256.0) + 1.0);
+  // Energy here is error when dc predicted and is an approximation of
+  // pixel variance calculated on a 16x16 block.
+  twopass->mb_av_energy = log(this_frame.intra_error + 1.0);
   twopass->mb_smooth_pct = this_frame.intra_smooth_pct;
 
   // Update the total stats remaining structure.
