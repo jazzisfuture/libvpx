@@ -116,6 +116,7 @@ typedef struct RD_OPT {
   int RDMULT;
   int RDDIV;
   double r0;
+  double reg;
 } RD_OPT;
 
 typedef struct RD_COST {

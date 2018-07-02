@@ -3531,8 +3531,8 @@ int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
     }
   }
 
-  rk = (double)intra_cost / (intra_cost + mc_dep_cost);
-  *beta = r0 / rk;
+  rk = (double)(intra_cost + mc_dep_cost) / intra_cost;
+  *beta = rk / r0;
   dr = vp9_get_adaptive_rdmult(cpi, *beta);
 
   dr = VPXMIN(dr, orig_rdmult * 5 / 4);
@@ -5326,23 +5326,51 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     if (sf->partition_search_type == SOURCE_VAR_BASED_PARTITION)
       source_var_based_partition_search_method(cpi);
   } else if (cpi->twopass.gf_group.index) {
-    TplDepFrame *tpl_frame = &cpi->tpl_stats[cpi->twopass.gf_group.index];
-    TplDepStats *tpl_stats = tpl_frame->tpl_stats_ptr;
+    TplDepFrame* tpl_frame = &cpi->tpl_stats[cpi->twopass.gf_group.index];
+    TplDepStats* tpl_stats = tpl_frame->tpl_stats_ptr;
 
     int tpl_stride = tpl_frame->stride;
     int64_t intra_cost_base = 0;
     int64_t mc_dep_cost_base = 0;
     int row, col;
+    double max_scale = 0.0;
+    double min_scale = 1000.0;
+    double reg_norm = 1.0;
 
     for (row = 0; row < cm->mi_rows; ++row) {
       for (col = 0; col < cm->mi_cols; ++col) {
-        TplDepStats *this_stats = &tpl_stats[row * tpl_stride + col];
+        TplDepStats* this_stats = &tpl_stats[row * tpl_stride + col];
+        double beta =
+            (double) (this_stats->mc_dep_cost + this_stats->intra_cost) /
+                this_stats->intra_cost;
+
         intra_cost_base += this_stats->intra_cost;
         mc_dep_cost_base += this_stats->mc_dep_cost;
+
+        if (beta > max_scale) max_scale = beta;
+        if (beta < min_scale) min_scale = beta;
       }
     }
+    cpi->rd.r0 =
+        (double)(intra_cost_base + mc_dep_cost_base) / intra_cost_base;
 
-    cpi->rd.r0 = (double)intra_cost_base / (intra_cost_base + mc_dep_cost_base);
+    fprintf(stderr, "max = %lf, min = %lf, r0 = %lf\n", max_scale, min_scale,
+            cpi->rd.r0);
+
+    fprintf(stderr, "upper = %lf, %lf\n", 1.0 / ((max_scale / cpi->rd.r0) - 1.0),
+            0.5 / ((1.0 - min_scale / cpi->rd.r0)));
+
+    if (reg_norm > 1.0 / ((max_scale / cpi->rd.r0) - 1.0)) {
+      reg_norm = 1.0 / ((max_scale / cpi->rd.r0) - 1.0);
+      fprintf(stderr, "frame index = %d, show frame = %d, reg_norm = %lf\n",
+              cm->current_video_frame, cm->show_frame, reg_norm);
+    }
+
+    if (reg_norm > 0.5 / ((1.0 - min_scale / cpi->rd.r0))) {
+      reg_norm = 0.5 / ((1.0 - min_scale / cpi->rd.r0));
+      fprintf(stderr, "frame index = %d, show frame = %d, reg_norm = %lf\n",
+              cm->current_video_frame, cm->show_frame, reg_norm);
+    }
   }
 
   {
