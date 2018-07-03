@@ -894,11 +894,13 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
       rd[n][1] = VPXMIN(rd[n][1], RDCOST(x->rdmult, x->rddiv, s1, sse[n]));
     }
 
+#if 0
     // Early termination in transform size search.
     if (cpi->sf.tx_size_search_breakout &&
         (rd[n][1] == INT64_MAX ||
          (n < (int)max_tx_size && rd[n][1] > rd[n + 1][1]) || s[n] == 1))
       break;
+#endif
 
     if (rd[n][1] < best_rd) {
       best_tx = n;
@@ -911,6 +913,58 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
   *rate = r[mi->tx_size][cm->tx_mode == TX_MODE_SELECT];
   *skip = s[mi->tx_size];
   *psse = sse[mi->tx_size];
+
+#if 1
+  do {
+    const int bw = 4 * num_4x4_blocks_wide_lookup[bs];
+    const int bh = 4 * num_4x4_blocks_high_lookup[bs];
+    const int diff_stride = bw;
+    const int16_t *src_diff = x->plane[0].src_diff;
+    FILE *fp;
+#if 1
+    // Randomly select blocks to collect data to reduce output file size.
+    const int min_frame_size = VPXMIN(cm->width, cm->height);
+    const int rnd_val = rand();
+    int sampling_factor = 5;
+    if (min_frame_size >= 480) sampling_factor = 15;
+    if (min_frame_size >= 720) sampling_factor = 50;
+    if (min_frame_size >= 1080) sampling_factor = 100;
+    if (rnd_val % sampling_factor) break;
+#endif
+
+    if (!is_inter_block(mi)) break;
+
+    if (bw < 8 || bh < 8) break;
+
+    fp = fopen("vp9_tx_size_data.txt", "a");
+    if (!fp) break;
+
+    // bw, bh, max_tx_size, best_tx, tx RD(4), qindex, dc_quant, ac_quant,
+    // rdmult, rddiv
+    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+            bw, bh, max_tx_size, best_tx,
+            (rd[0][1] == INT64_MAX) ? 0 : (int)VPXMIN(rd[0][1], INT_MAX),
+            (rd[1][1] == INT64_MAX) ? 0 : (int)VPXMIN(rd[1][1], INT_MAX),
+            (rd[2][1] == INT64_MAX) ? 0 : (int)VPXMIN(rd[2][1], INT_MAX),
+            (rd[3][1] == INT64_MAX) ? 0 : (int)VPXMIN(rd[3][1], INT_MAX),
+            cm->base_qindex,
+            vp9_dc_quant(cm->base_qindex, 0, cm->bit_depth),
+            vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth),
+            x->rdmult, x->rddiv);
+    fprintf(fp, "\n");
+
+    // Residue signal.
+    for (int r = 0; r < bh; ++r) {
+      for (int c = 0; c < bw; ++c) {
+        fprintf(fp, "%d,", src_diff[c]);
+      }
+      src_diff += diff_stride;
+    }
+    fprintf(fp, "\n");
+
+    fclose(fp);
+  } while (0);
+#endif
 }
 
 static void super_block_yrd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
