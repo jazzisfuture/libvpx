@@ -281,6 +281,7 @@ static INLINE int is_lossless_requested(const VP9EncoderConfig *cfg) {
 typedef struct TplDepStats {
   uint64_t intra_cost;
   uint64_t inter_cost;
+  uint64_t content;
   uint64_t mc_flow;
   uint64_t mc_dep_cost;
   uint64_t mc_ref_cost;

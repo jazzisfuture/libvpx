@@ -5563,11 +5563,37 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
       TplDepStats *tpl_stats =
           &tpl_frame->tpl_stats_ptr[mi_row * tpl_frame->stride + mi_col];
 
+      uint8_t *src, *dst;
+      int src_stride, dst_stride;
+
+      xd->cur_buf = this_frame;
+
+      src = this_frame->y_buffer + mb_y_offset;
+      src_stride = this_frame->y_stride;
+
+      dst = &predictor[0];
+      dst_stride = MI_SIZE;
+
+      xd->mi[0]->sb_type = BLOCK_8X8;
+      xd->mi[0]->ref_frame[0] = INTRA_FRAME;
+      xd->mb_to_top_edge = -((mi_row * MI_SIZE) * 8);
+      xd->mb_to_bottom_edge = ((cm->mi_rows - 1 - mi_row) * MI_SIZE) * 8;
+      xd->mb_to_left_edge = -((mi_col * MI_SIZE) * 8);
+      xd->mb_to_right_edge = ((cm->mi_cols - 1 - mi_col) * MI_SIZE) * 8;
+      xd->above_mi = NULL;
+      xd->left_mi = NULL;
+
+      vp9_predict_intra_block(xd, b_width_log2_lookup[BLOCK_8X8], TX_8X8,
+                              DC_PRED, src, src_stride, dst, dst_stride, 0, 0,
+                              0);
+
+      vpx_subtract_block(MI_SIZE, MI_SIZE, src_diff, MI_SIZE, src, src_stride,
+                         dst, dst_stride);
+
+      tpl_stats->content = VPXMAX(vpx_satd(src_diff, MI_SIZE * MI_SIZE), 64);
+
       // Intra prediction search
       for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
-        uint8_t *src, *dst;
-        int src_stride, dst_stride;
-
         xd->cur_buf = this_frame;
 
         src = this_frame->y_buffer + mb_y_offset;
@@ -5667,7 +5693,7 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
       best_inter_cost = VPXMIN(best_inter_cost, best_intra_cost);
       tpl_stats->inter_cost = best_inter_cost << TPL_DEP_COST_SCALE_LOG2;
       tpl_stats->intra_cost = best_intra_cost << TPL_DEP_COST_SCALE_LOG2;
-      tpl_stats->mc_dep_cost = tpl_stats->intra_cost + tpl_stats->mc_flow;
+      tpl_stats->mc_dep_cost = tpl_stats->content + tpl_stats->mc_flow;
       tpl_stats->ref_frame_index = gf_picture[frame_idx].ref_frame[best_rf_idx];
       tpl_stats->mv.as_int = best_mv.as_int;
 
