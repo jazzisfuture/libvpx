@@ -255,6 +255,7 @@ static vpx_codec_err_t init_decoder(vpx_codec_alg_priv_t *ctx) {
   ctx->last_show_frame = -1;
   ctx->need_resync = 1;
   ctx->flushed = 0;
+  ctx->row_mt = 1;
 
   ctx->buffer_pool = (BufferPool *)vpx_calloc(1, sizeof(BufferPool));
   if (ctx->buffer_pool == NULL) return VPX_CODEC_MEM_ERROR;
