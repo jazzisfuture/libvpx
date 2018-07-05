@@ -1826,6 +1826,23 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
     }
 
     setup_frame_size(cm, rb);
+    if (1 == pbi->row_mt) {
+      const int aligned_cols = mi_cols_aligned_to_sb(cm->mi_cols);
+      const int sb_cols = aligned_cols >> MI_BLOCK_SIZE_LOG2;
+      const int aligned_rows = mi_cols_aligned_to_sb(cm->mi_rows);
+      const int sb_rows = aligned_rows >> MI_BLOCK_SIZE_LOG2;
+
+      int num_sbs = sb_cols * sb_rows;
+
+      if (num_sbs > pbi->num_sbs) {
+        vp9_dec_free_row_mt_mem(pbi);
+        if (vp9_dec_alloc_row_mt_mem(pbi, num_sbs)) {
+          vpx_internal_error(
+              &cm->error, VPX_CODEC_MEM_ERROR,
+              "Failed to allocate buffers for row multi-threading");
+        }
+      }
+    }
     if (pbi->need_resync) {
       memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
       pbi->need_resync = 0;
