@@ -55,6 +55,39 @@ static void vp9_dec_setup_mi(VP9_COMMON *cm) {
          cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mi_grid_base));
 }
 
+int vp9_dec_alloc_row_mt_mem(VP9Decoder *pbi, int num_sbs) {
+  int plane;
+  pbi->num_sbs = num_sbs;
+  for (plane = 0; plane < 3; ++plane) {
+    pbi->dqcoeff[plane] =
+        vpx_calloc(num_sbs << DQCOEFFS_PER_SB_LOG2, sizeof(*pbi->dqcoeff));
+    if (!pbi->dqcoeff[plane]) return 1;
+    pbi->eob[plane] =
+        vpx_calloc(num_sbs << EOBS_PER_SB_LOG2, sizeof(*pbi->eob));
+    if (!pbi->eob[plane]) return 1;
+  }
+  pbi->partition =
+      vpx_calloc((num_sbs * PARTITIONS_PER_SB), sizeof(*pbi->partition));
+  if (!pbi->partition) return 1;
+  pbi->recon_map = (int8_t *)vpx_calloc(num_sbs, sizeof(*pbi->recon_map));
+  if (!pbi->recon_map) return 1;
+  return 0;
+}
+
+void vp9_dec_free_row_mt_mem(VP9Decoder *pbi) {
+  int plane;
+  for (plane = 0; plane < 3; ++plane) {
+    vpx_free(pbi->eob[plane]);
+    pbi->eob[plane] = NULL;
+    vpx_free(pbi->dqcoeff[plane]);
+    pbi->dqcoeff[plane] = NULL;
+  }
+  vpx_free(pbi->partition);
+  pbi->partition = NULL;
+  vpx_free(pbi->recon_map);
+  pbi->recon_map = NULL;
+}
+
 static int vp9_dec_alloc_mi(VP9_COMMON *cm, int mi_size) {
   cm->mip = vpx_calloc(mi_size, sizeof(*cm->mip));
   if (!cm->mip) return 1;
@@ -139,6 +172,7 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
     vp9_loop_filter_dealloc(&pbi->lf_row_sync);
   }
 
+  vp9_dec_free_row_mt_mem(pbi);
   vp9_remove_common(&pbi->common);
   vpx_free(pbi);
 }
