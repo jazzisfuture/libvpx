@@ -124,6 +124,12 @@ enum vp8_dec_control_id {
    */
   VPXD_GET_LAST_QUANTIZER,
 
+  /** control function to enable row based multi-threading in the decoder.
+   * Calling this control function with argument "1" will enable row
+   * multi-threading. Any other value will not enable row multi-threading.
+   */
+  VP9_DECODE_SET_ROW_MT,
+
   VP8_DECODER_CTRL_ID_MAX
 };
 
@@ -181,6 +187,8 @@ VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
 VPX_CTRL_USE_TYPE(VP9_DECODE_SVC_SPATIAL_LAYER, int)
 #define VPX_CTRL_VP9_SET_SKIP_LOOP_FILTER
 VPX_CTRL_USE_TYPE(VP9_SET_SKIP_LOOP_FILTER, int)
+#define VPX_CTRL_VP9_DECODE_SET_ROW_MT
+VPX_CTRL_USE_TYPE(VP9_DECODE_SET_ROW_MT, int)
 
 /*!\endcond */
 /*! @} - end defgroup vp8_decoder */
