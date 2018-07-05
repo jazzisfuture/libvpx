@@ -250,6 +250,7 @@ static vpx_codec_err_t init_decoder(vpx_codec_alg_priv_t *ctx) {
   }
   ctx->pbi->max_threads = ctx->cfg.threads;
   ctx->pbi->inv_tile_order = ctx->invert_tile_order;
+  ctx->pbi->row_mt = (ctx->row_mt == 1) ? 1 : 0;
 
   // If postprocessing was enabled by the application and a
   // configuration has not been provided, default it.
@@ -632,6 +633,13 @@ static vpx_codec_err_t ctrl_set_spatial_layer_svc(vpx_codec_alg_priv_t *ctx,
     return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t ctrl_set_row_mt(vpx_codec_alg_priv_t *ctx,
+                                       va_list args) {
+  ctx->row_mt = va_arg(args, int);
+
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_ctrl_fn_map_t decoder_ctrl_maps[] = {
   { VP8_COPY_REFERENCE, ctrl_copy_reference },
 
@@ -643,6 +651,7 @@ static vpx_codec_ctrl_fn_map_t decoder_ctrl_maps[] = {
   { VP9_SET_BYTE_ALIGNMENT, ctrl_set_byte_alignment },
   { VP9_SET_SKIP_LOOP_FILTER, ctrl_set_skip_loop_filter },
   { VP9_DECODE_SVC_SPATIAL_LAYER, ctrl_set_spatial_layer_svc },
+  { VP9_DECODE_SET_ROW_MT, ctrl_set_row_mt },
 
   // Getters
   { VPXD_GET_LAST_QUANTIZER, ctrl_get_quantizer },
