@@ -5604,7 +5604,7 @@ uint32_t motion_compensated_prediction(VP9_COMP *cpi, ThreadData *td,
 
   vp9_set_mv_search_range(&x->mv_limits, &best_ref_mv1);
 
-  vp9_full_pixel_search(cpi, x, BLOCK_8X8, &best_ref_mv1_full, step_param,
+  vp9_full_pixel_search(cpi, x, BLOCK_32X32, &best_ref_mv1_full, step_param,
                         search_method, sadpb, cond_cost_list(cpi, cost_list),
                         &best_ref_mv1, mv, 0, 0);
 
@@ -5614,7 +5614,7 @@ uint32_t motion_compensated_prediction(VP9_COMP *cpi, ThreadData *td,
   // Ignore mv costing by sending NULL pointer instead of cost array
   bestsme = cpi->find_fractional_mv_step(
       x, mv, &best_ref_mv1, cpi->common.allow_high_precision_mv, x->errorperbit,
-      &cpi->fn_ptr[BLOCK_8X8], 0, mv_sf->subpel_iters_per_step,
+      &cpi->fn_ptr[BLOCK_32X32], 0, mv_sf->subpel_iters_per_step,
       cond_cost_list(cpi, cost_list), NULL, NULL, &distortion, &sse, NULL, 0,
       0);
 
@@ -5627,20 +5627,20 @@ int get_overlap_area(int grid_pos_row, int grid_pos_col, int ref_pos_row,
   int width = 0, height = 0;
   switch (block) {
     case 0:
-      width = grid_pos_col + MI_SIZE - ref_pos_col;
-      height = grid_pos_row + MI_SIZE - ref_pos_row;
+      width = grid_pos_col + 4 * MI_SIZE - ref_pos_col;
+      height = grid_pos_row + 4 * MI_SIZE - ref_pos_row;
       break;
     case 1:
-      width = ref_pos_col + MI_SIZE - grid_pos_col;
-      height = grid_pos_row + MI_SIZE - ref_pos_row;
+      width = ref_pos_col + 4 * MI_SIZE - grid_pos_col;
+      height = grid_pos_row + 4 * MI_SIZE - ref_pos_row;
       break;
     case 2:
-      width = grid_pos_col + MI_SIZE - ref_pos_col;
-      height = ref_pos_row + MI_SIZE - grid_pos_row;
+      width = grid_pos_col + 4 * MI_SIZE - ref_pos_col;
+      height = ref_pos_row + 4 * MI_SIZE - grid_pos_row;
       break;
     case 3:
-      width = ref_pos_col + MI_SIZE - grid_pos_col;
-      height = ref_pos_row + MI_SIZE - grid_pos_row;
+      width = ref_pos_col + 4 * MI_SIZE - grid_pos_col;
+      height = ref_pos_row + 4 * MI_SIZE - grid_pos_row;
       break;
     default: assert(0);
   }
@@ -5651,9 +5651,9 @@ int get_overlap_area(int grid_pos_row, int grid_pos_col, int ref_pos_row,
 int round_floor(int ref_pos) {
   int round;
   if (ref_pos < 0)
-    round = -(1 + (-ref_pos - 1) / MI_SIZE);
+    round = -(1 + (-ref_pos - 1) / 32);
   else
-    round = ref_pos / MI_SIZE;
+    round = ref_pos / 32;
 
   return round;
 }
@@ -5669,32 +5669,32 @@ void tpl_model_update(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
   int ref_pos_row = mi_row * MI_SIZE + mv_row;
   int ref_pos_col = mi_col * MI_SIZE + mv_col;
 
-  // top-left on grid block location
-  int grid_pos_row_base = round_floor(ref_pos_row) * MI_SIZE;
-  int grid_pos_col_base = round_floor(ref_pos_col) * MI_SIZE;
+  // top-left on grid block location in pixel
+  int grid_pos_row_base = round_floor(ref_pos_row) * 32;
+  int grid_pos_col_base = round_floor(ref_pos_col) * 32;
   int block;
 
   for (block = 0; block < 4; ++block) {
-    int grid_pos_row = grid_pos_row_base + MI_SIZE * (block >> 1);
-    int grid_pos_col = grid_pos_col_base + MI_SIZE * (block & 0x01);
+    int grid_pos_row = grid_pos_row_base + 4 * MI_SIZE * (block >> 1);
+    int grid_pos_col = grid_pos_col_base + 4 * MI_SIZE * (block & 0x01);
 
     if (grid_pos_row >= 0 && grid_pos_row < ref_tpl_frame->mi_rows * MI_SIZE &&
         grid_pos_col >= 0 && grid_pos_col < ref_tpl_frame->mi_cols * MI_SIZE) {
       int overlap_area = get_overlap_area(grid_pos_row, grid_pos_col,
                                           ref_pos_row, ref_pos_col, block);
-      int ref_mi_row = round_floor(grid_pos_row);
-      int ref_mi_col = round_floor(grid_pos_col);
+      int ref_mi_row = round_floor(grid_pos_row) * 4;
+      int ref_mi_col = round_floor(grid_pos_col) * 4;
 
       int64_t mc_flow = tpl_stats->mc_dep_cost -
                         (tpl_stats->mc_dep_cost * tpl_stats->inter_cost) /
                             tpl_stats->intra_cost;
 
       ref_stats[ref_mi_row * ref_tpl_frame->stride + ref_mi_col].mc_flow +=
-          (mc_flow * overlap_area) >> (MI_SIZE_LOG2 * 2);
+          (mc_flow * overlap_area) / 1024;
 
       ref_stats[ref_mi_row * ref_tpl_frame->stride + ref_mi_col].mc_ref_cost +=
-          ((tpl_stats->intra_cost - tpl_stats->inter_cost) * overlap_area) >>
-          (MI_SIZE_LOG2 * 2);
+          ((tpl_stats->intra_cost - tpl_stats->inter_cost) * overlap_area) /
+          1024;
       assert(overlap_area >= 0);
     }
   }
@@ -5717,14 +5717,14 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
   // TODO(jingning): Let's keep the buffer size to support 16x16 pixel block,
   // in case we would like to increase the operating block size.
 #if CONFIG_VP9_HIGHBITDEPTH
-  DECLARE_ALIGNED(16, uint16_t, predictor16[16 * 16 * 3]);
-  DECLARE_ALIGNED(16, uint8_t, predictor8[16 * 16 * 3]);
+  DECLARE_ALIGNED(16, uint16_t, predictor16[32 * 32 * 3]);
+  DECLARE_ALIGNED(16, uint8_t, predictor8[32 * 32 * 3]);
   uint8_t *predictor;
 #else
-  DECLARE_ALIGNED(16, uint8_t, predictor[16 * 16 * 3]);
+  DECLARE_ALIGNED(16, uint8_t, predictor[32 * 32 * 3]);
 #endif
-  DECLARE_ALIGNED(16, int16_t, src_diff[16 * 16]);
-  DECLARE_ALIGNED(16, tran_low_t, coeff[16 * 16]);
+  DECLARE_ALIGNED(16, int16_t, src_diff[32 * 32]);
+  DECLARE_ALIGNED(16, tran_low_t, coeff[32 * 32]);
 
   MODE_INFO mi_above, mi_left;
 
@@ -5762,12 +5762,12 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
   vp9_initialize_me_consts(cpi, &cpi->td.mb, ARNR_FILT_QINDEX);
 
   tpl_frame->is_valid = 1;
-  for (mi_row = 0; mi_row < cm->mi_rows; ++mi_row) {
+  for (mi_row = 0; mi_row < cm->mi_rows; mi_row += 4) {
     // Motion estimation row boundary
     x->mv_limits.row_min = -((mi_row * MI_SIZE) + (17 - 2 * VP9_INTERP_EXTEND));
     x->mv_limits.row_max =
         (cm->mi_rows - 1 - mi_row) * MI_SIZE + (17 - 2 * VP9_INTERP_EXTEND);
-    for (mi_col = 0; mi_col < cm->mi_cols; ++mi_col) {
+    for (mi_col = 0; mi_col < cm->mi_cols; mi_col += 4) {
       int mb_y_offset =
           mi_row * MI_SIZE * this_frame->y_stride + mi_col * MI_SIZE;
       int best_rf_idx = -1;
@@ -5794,9 +5794,9 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
         src_stride = this_frame->y_stride;
 
         dst = &predictor[0];
-        dst_stride = MI_SIZE;
+        dst_stride = MI_SIZE * 4;
 
-        xd->mi[0]->sb_type = BLOCK_8X8;
+        xd->mi[0]->sb_type = BLOCK_32X32;
         xd->mi[0]->ref_frame[0] = INTRA_FRAME;
         xd->mb_to_top_edge = -((mi_row * MI_SIZE) * 8);
         xd->mb_to_bottom_edge = ((cm->mi_rows - 1 - mi_row) * MI_SIZE) * 8;
@@ -5805,16 +5805,16 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
         xd->above_mi = (mi_row > 0) ? &mi_above : NULL;
         xd->left_mi = (mi_col > 0) ? &mi_left : NULL;
 
-        vp9_predict_intra_block(xd, b_width_log2_lookup[BLOCK_8X8], TX_8X8,
+        vp9_predict_intra_block(xd, b_width_log2_lookup[BLOCK_32X32], TX_32X32,
                                 mode, src, src_stride, dst, dst_stride, 0, 0,
                                 0);
 
-        vpx_subtract_block(MI_SIZE, MI_SIZE, src_diff, MI_SIZE, src, src_stride,
-                           dst, dst_stride);
+        vpx_subtract_block(32, 32, src_diff, 32, src, src_stride, dst,
+                           dst_stride);
 
-        vpx_hadamard_8x8(src_diff, MI_SIZE, coeff);
+        vpx_fdct32x32(src_diff, coeff, 32);
 
-        intra_cost = vpx_satd(coeff, MI_SIZE * MI_SIZE);
+        intra_cost = vpx_satd(coeff, 32 * 32);
 
         if (intra_cost < best_intra_cost) best_intra_cost = intra_cost;
       }
@@ -5845,35 +5845,33 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
           vp9_highbd_build_inter_predictor(
               CONVERT_TO_SHORTPTR(ref_frame[rf_idx]->y_buffer + mb_y_offset),
               ref_frame[rf_idx]->y_stride, CONVERT_TO_SHORTPTR(&predictor[0]),
-              MI_SIZE, &mv.as_mv, &sf, MI_SIZE, MI_SIZE, 0, kernel,
-              MV_PRECISION_Q3, mi_col * MI_SIZE, mi_row * MI_SIZE, xd->bd);
-          vpx_highbd_subtract_block(MI_SIZE, MI_SIZE, src_diff, MI_SIZE,
-                                    this_frame->y_buffer + mb_y_offset,
-                                    this_frame->y_stride, &predictor[0],
-                                    MI_SIZE, xd->bd);
+              32, &mv.as_mv, &sf, 32, 32, 0, kernel, MV_PRECISION_Q3,
+              mi_col * MI_SIZE, mi_row * MI_SIZE, xd->bd);
+          vpx_highbd_subtract_block(
+              32, 32, src_diff, 32, this_frame->y_buffer + mb_y_offset,
+              this_frame->y_stride, &predictor[0], 16, xd->bd);
         } else {
           vp9_build_inter_predictor(ref_frame[rf_idx]->y_buffer + mb_y_offset,
                                     ref_frame[rf_idx]->y_stride, &predictor[0],
-                                    MI_SIZE, &mv.as_mv, &sf, MI_SIZE, MI_SIZE,
-                                    0, kernel, MV_PRECISION_Q3,
-                                    mi_col * MI_SIZE, mi_row * MI_SIZE);
-          vpx_subtract_block(MI_SIZE, MI_SIZE, src_diff, MI_SIZE,
+                                    32, &mv.as_mv, &sf, 32, 32, 0, kernel,
+                                    MV_PRECISION_Q3, mi_col * MI_SIZE,
+                                    mi_row * MI_SIZE);
+          vpx_subtract_block(32, 32, src_diff, 32,
                              this_frame->y_buffer + mb_y_offset,
-                             this_frame->y_stride, &predictor[0], MI_SIZE);
+                             this_frame->y_stride, &predictor[0], 32);
         }
 #else
-        vp9_build_inter_predictor(ref_frame[rf_idx]->y_buffer + mb_y_offset,
-                                  ref_frame[rf_idx]->y_stride, &predictor[0],
-                                  MI_SIZE, &mv.as_mv, &sf, MI_SIZE, MI_SIZE, 0,
-                                  kernel, MV_PRECISION_Q3, mi_col * MI_SIZE,
-                                  mi_row * MI_SIZE);
-        vpx_subtract_block(MI_SIZE, MI_SIZE, src_diff, MI_SIZE,
+        vp9_build_inter_predictor(
+            ref_frame[rf_idx]->y_buffer + mb_y_offset,
+            ref_frame[rf_idx]->y_stride, &predictor[0], 32, &mv.as_mv, &sf, 32,
+            32, 0, kernel, MV_PRECISION_Q3, mi_col * MI_SIZE, mi_row * MI_SIZE);
+        vpx_subtract_block(32, 32, src_diff, 32,
                            this_frame->y_buffer + mb_y_offset,
-                           this_frame->y_stride, &predictor[0], MI_SIZE);
+                           this_frame->y_stride, &predictor[0], 32);
 #endif
-        vpx_hadamard_8x8(src_diff, MI_SIZE, coeff);
+        vpx_fdct32x32(src_diff, coeff, 32);
 
-        inter_cost = vpx_satd(coeff, MI_SIZE * MI_SIZE);
+        inter_cost = vpx_satd(coeff, 32 * 32);
 
         if (inter_cost < best_inter_cost) {
           best_rf_idx = rf_idx;
