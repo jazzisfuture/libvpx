@@ -5811,7 +5811,7 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
         vpx_subtract_block(32, 32, src_diff, 32, src, src_stride, dst,
                            dst_stride);
 
-        vpx_fdct32x32(src_diff, coeff, 32);
+        vpx_hadamard_32x32(src_diff, 32, coeff);
 
         intra_cost = vpx_satd(coeff, 32 * 32);
 
@@ -5868,7 +5868,7 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
                            this_frame->y_buffer + mb_y_offset,
                            this_frame->y_stride, &predictor[0], 32);
 #endif
-        vpx_fdct32x32(src_diff, coeff, 32);
+        vpx_hadamard_32x32(src_diff, 32, coeff);
 
         inter_cost = vpx_satd(coeff, 32 * 32);
 
