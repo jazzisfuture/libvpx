@@ -29,7 +29,7 @@ class SyncFrameOnePassCbrSvc : public ::svc_test::OnePassCbrSvc,
         frame_to_start_decode_(0), frame_to_sync_(0), mismatch_nframes_(0),
         num_nonref_frames_(0), inter_layer_pred_mode_(GET_PARAM(1)),
         decode_to_layer_before_sync_(-1), decode_to_layer_after_sync_(-1),
-        denoiser_on_(0), intra_only_test_(false) {
+        denoiser_on_(0), intra_only_test_(false), check_key_frame_(false) {
     SetMode(::libvpx_test::kRealTime);
     memset(&svc_layer_sync_, 0, sizeof(svc_layer_sync_));
   }
@@ -110,6 +110,13 @@ class SyncFrameOnePassCbrSvc : public ::svc_test::OnePassCbrSvc,
         pkt->data.frame.spatial_layer_encoded[number_spatial_layers_ - 1] &&
         current_video_frame_ >= frame_to_sync_)
       num_nonref_frames_++;
+
+    if (check_key_frame_) {
+      const bool key_frame =
+          (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
+      if (current_video_frame_ == frame_to_sync_ && intra_only_test_)
+        ASSERT_TRUE(key_frame);
+    }
   }
 
   virtual void MismatchHook(const vpx_image_t * /*img1*/,
@@ -129,6 +136,7 @@ class SyncFrameOnePassCbrSvc : public ::svc_test::OnePassCbrSvc,
   int decode_to_layer_after_sync_;
   int denoiser_on_;
   bool intra_only_test_;
+  bool check_key_frame_;
   vpx_svc_spatial_layer_sync_t svc_layer_sync_;
 
  private:
@@ -345,6 +353,33 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameIntraOnlyVGA) {
   svc_layer_sync_.spatial_layer_sync[0] = 1;
   svc_layer_sync_.spatial_layer_sync[1] = 1;
   svc_layer_sync_.spatial_layer_sync[2] = 0;
+
+  ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
+  cfg_.rc_target_bitrate = 600;
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+#if CONFIG_VP9_DECODER
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames.
+  EXPECT_EQ(num_nonref_frames_, GetMismatchFrames());
+#endif
+}
+
+// Start decoding from beginning of sequence, during sequence insert intra-only
+// on base/qvga layer and sync_layer on middle/VGA layer. Decode all layers.
+// For 1 spatial layer, it inserts a key frame.
+TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc1SL3TLSyncFrameIntraOnlyQVGA) {
+  SetSvcConfig(1, 3);
+  frame_to_start_decode_ = 0;
+  frame_to_sync_ = 20;
+  decode_to_layer_before_sync_ = 0;
+  decode_to_layer_after_sync_ = 0;
+  intra_only_test_ = true;
+  check_key_frame_ = true;
+
+  // Set up svc layer sync structure.
+  svc_layer_sync_.base_layer_intra_only = 1;
+  svc_layer_sync_.spatial_layer_sync[0] = 1;
 
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
   cfg_.rc_target_bitrate = 600;
