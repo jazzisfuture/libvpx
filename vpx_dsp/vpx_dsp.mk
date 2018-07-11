@@ -183,6 +183,8 @@ DSP_SRCS-$(HAVE_NEON)   += arm/highbd_loopfilter_neon.c
 DSP_SRCS-$(HAVE_SSE2)   += x86/highbd_loopfilter_sse2.c
 endif  # CONFIG_VP9_HIGHBITDEPTH
 
+DSP_SRCS-$(HAVE_VSX)   += ppc/loopfilter_vsx.c
+
 DSP_SRCS-yes            += txfm_common.h
 DSP_SRCS-$(HAVE_SSE2)   += x86/txfm_common_sse2.h
 DSP_SRCS-$(HAVE_MSA)    += mips/txfm_macros_msa.h
