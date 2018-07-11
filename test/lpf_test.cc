@@ -187,6 +187,7 @@ TEST_P(Loop8Test6Param, OperationCheck) {
                     thresh[16]) = { tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
                                     tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp };
     InitInput(s, ref_s, &rnd, *limit, mask_, p, i);
+
 #if CONFIG_VP9_HIGHBITDEPTH
     ref_loopfilter_op_(ref_s + 8 + p * 8, p, blimit, limit, thresh, bit_depth_);
     ASM_REGISTER_STATE_CHECK(
@@ -680,5 +681,13 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_lpf_vertical_8_dual_msa,
                                  &vpx_lpf_vertical_8_dual_c, 8)));
 #endif  // HAVE_MSA && (!CONFIG_VP9_HIGHBITDEPTH)
+
+#if HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    VSX, Loop8Test6Param,
+    ::testing::Values(make_tuple(&vpx_lpf_horizontal_16_dual_vsx,
+                                 &vpx_lpf_horizontal_16_dual_c, 8)));
+
+#endif  // HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
 
 }  // namespace
