@@ -681,4 +681,12 @@ INSTANTIATE_TEST_CASE_P(
                                  &vpx_lpf_vertical_8_dual_c, 8)));
 #endif  // HAVE_MSA && (!CONFIG_VP9_HIGHBITDEPTH)
 
+#if HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    VSX, Loop8Test6Param,
+    ::testing::Values(make_tuple(&vpx_lpf_horizontal_16_dual_vsx,
+                                 &vpx_lpf_horizontal_16_dual_c, 8)));
+
+#endif  // HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
+
 }  // namespace
