@@ -17,6 +17,7 @@
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
+#include "test/bench.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
@@ -126,7 +127,8 @@ uint8_t GetHevThresh(ACMRandom *rnd) {
   return static_cast<uint8_t>(rnd->RandRange(MAX_LOOP_FILTER + 1) >> 4);
 }
 
-class Loop8Test6Param : public ::testing::TestWithParam<loop8_param_t> {
+class Loop8Test6Param : public AbstractBench,
+                        public ::testing::TestWithParam<loop8_param_t> {
  public:
   virtual ~Loop8Test6Param() {}
   virtual void SetUp() {
@@ -134,16 +136,27 @@ class Loop8Test6Param : public ::testing::TestWithParam<loop8_param_t> {
     ref_loopfilter_op_ = GET_PARAM(1);
     bit_depth_ = GET_PARAM(2);
     mask_ = (1 << bit_depth_) - 1;
+    p_ = kNumCoeffs / 32;
   }
 
   virtual void TearDown() { libvpx_test::ClearSystemState(); }
 
  protected:
+  virtual void Run();
   int bit_depth_;
   int mask_;
   loop_op_t loopfilter_op_;
   loop_op_t ref_loopfilter_op_;
+  const uint8_t *blimit_ptr_;
+  const uint8_t *limit_ptr_;
+  const uint8_t *thresh_ptr_;
+  Pixel *s_ptr_;
+  int32_t p_;
 };
+
+void Loop8Test6Param::Run() {
+  loopfilter_op_(s_ptr_, p_, blimit_ptr_, limit_ptr_, thresh_ptr_);
+}
 
 class Loop8Test9Param : public ::testing::TestWithParam<dualloop8_param_t> {
  public:
@@ -272,6 +285,32 @@ TEST_P(Loop8Test6Param, ValueCheck) {
       << "Error: Loop8Test6Param, C output doesn't match SSE2 "
          "loopfilter output. "
       << "First failed at test case " << first_failure;
+}
+
+TEST_P(Loop8Test6Param, DISABLED_Speed) {
+  ACMRandom rnd(ACMRandom::DeterministicSeed());
+  DECLARE_ALIGNED(PIXEL_WIDTH, Pixel, s[kNumCoeffs]);
+
+  uint8_t tmp = GetOuterThresh(&rnd);
+  DECLARE_ALIGNED(16, const uint8_t,
+                  blimit[16]) = { tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
+                                  tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp };
+  tmp = GetInnerThresh(&rnd);
+  DECLARE_ALIGNED(16, const uint8_t,
+                  limit[16]) = { tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
+                                 tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp };
+  tmp = GetHevThresh(&rnd);
+  DECLARE_ALIGNED(16, const uint8_t,
+                  thresh[16]) = { tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
+                                  tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp };
+  p_ = kNumCoeffs / 32;
+  s_ptr_ = s + 8 + p_ * 8;
+  blimit_ptr_ = blimit;
+  limit_ptr_ = limit;
+  thresh_ptr_ = thresh;
+
+  RunNTimes(UINT16_MAX);
+  PrintMedian("16x16");
 }
 
 TEST_P(Loop8Test9Param, OperationCheck) {
@@ -680,5 +719,13 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_lpf_vertical_8_dual_msa,
                                  &vpx_lpf_vertical_8_dual_c, 8)));
 #endif  // HAVE_MSA && (!CONFIG_VP9_HIGHBITDEPTH)
+
+#if HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    VSX, Loop8Test6Param,
+    ::testing::Values(make_tuple(&vpx_lpf_horizontal_16_dual_vsx,
+                                 &vpx_lpf_horizontal_16_dual_c, 8)));
+
+#endif  // HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
 
 }  // namespace
