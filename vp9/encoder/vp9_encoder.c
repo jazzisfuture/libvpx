@@ -4088,6 +4088,10 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
       vpx_clear_system_state();
       vp9_set_quantizer(cm, q);
       vp9_set_variance_partition_thresholds(cpi, q, 0);
+      if (cm->frame_type == KEY_FRAME) {
+        release_scaled_references(cpi);
+        setup_frame(cpi);
+      }
       suppress_active_map(cpi);
       // Turn-off cyclic refresh for re-encoded frame.
       if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
