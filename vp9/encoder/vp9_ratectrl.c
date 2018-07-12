@@ -2752,6 +2752,25 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
     int enumerator;
     // Force a re-encode, and for now use max-QP.
     *q = cpi->rc.worst_quality;
+    // If the frame_size is much larger than the threshold (big content change)
+    // and the encoded frame used alot of Intra modes, then force key frame for
+    // the re-encode on this scene change.
+    if (frame_size > (thresh_rate << 1)) {
+      MODE_INFO **mi = cm->mi_grid_visible;
+      int sum_intra_usage = 0;
+      int mi_row, mi_col;
+      int tot = 0;
+      for (mi_row = 0; mi_row < cm->mi_rows; mi_row++) {
+        for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
+          if (mi[0]->ref_frame[0] == INTRA_FRAME) sum_intra_usage++;
+          tot++;
+          mi++;
+        }
+        mi += 8;
+      }
+      sum_intra_usage = 100 * sum_intra_usage / (cm->mi_rows * cm->mi_cols);
+      if (sum_intra_usage > 80) cm->frame_type = KEY_FRAME;
+    }
     // Adjust avg_frame_qindex, buffer_level, and rate correction factors, as
     // these parameters will affect QP selection for subsequent frames. If they
     // have settled down to a very different (low QP) state, then not adjusting
