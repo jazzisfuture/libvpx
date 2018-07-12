@@ -2750,6 +2750,9 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
     int enumerator;
     // Force a re-encode, and for now use max-QP.
     *q = cpi->rc.worst_quality;
+    // If the frame_size is much larger than the threshold (big content change)
+    // then force key frame for this re-encode on scene change.
+    if (frame_size > thresh_rate << 2) cm->frame_type = KEY_FRAME;
     // Adjust avg_frame_qindex, buffer_level, and rate correction factors, as
     // these parameters will affect QP selection for subsequent frames. If they
     // have settled down to a very different (low QP) state, then not adjusting
