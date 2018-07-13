@@ -3541,11 +3541,11 @@ static void configure_multi_arf_buffer_updates(VP9_COMP *cpi) {
   }
 }
 
-static void configure_buffer_updates(VP9_COMP *cpi) {
+void vp9_configure_buffer_updates(VP9_COMP *cpi, int gf_group_index) {
   TWO_PASS *const twopass = &cpi->twopass;
 
   cpi->rc.is_src_frame_alt_ref = 0;
-  switch (twopass->gf_group.update_type[twopass->gf_group.index]) {
+  switch (twopass->gf_group.update_type[gf_group_index]) {
     case KF_UPDATE:
       cpi->refresh_last_frame = 1;
       cpi->refresh_golden_frame = 1;
@@ -3568,8 +3568,7 @@ static void configure_buffer_updates(VP9_COMP *cpi) {
       cpi->rc.is_src_frame_alt_ref = 1;
       break;
     default:
-      assert(twopass->gf_group.update_type[twopass->gf_group.index] ==
-             ARF_UPDATE);
+      assert(twopass->gf_group.update_type[gf_group_index] == ARF_UPDATE);
       cpi->refresh_last_frame = 0;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_alt_ref_frame = 1;
@@ -3613,7 +3612,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     if (cpi->extra_arf_allowed) {
       configure_multi_arf_buffer_updates(cpi);
     } else {
-      configure_buffer_updates(cpi);
+      vp9_configure_buffer_updates(cpi, gf_group->index);
     }
 
     target_rate = gf_group->bit_allocation[gf_group->index];
@@ -3710,7 +3709,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   if (cpi->extra_arf_allowed) {
     configure_multi_arf_buffer_updates(cpi);
   } else {
-    configure_buffer_updates(cpi);
+    vp9_configure_buffer_updates(cpi, gf_group->index);
   }
 
   // Do the firstpass stats indicate that this frame is skippable for the
