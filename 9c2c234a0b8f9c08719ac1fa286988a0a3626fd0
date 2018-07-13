@@ -22,6 +22,30 @@
       "revId": "9c2c234a0b8f9c08719ac1fa286988a0a3626fd0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1afa0138_ee39a5c3",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 849,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2018-07-13T03:59:58Z",
+      "side": 1,
+      "message": "Right, we will enable this model for high bit-depth route once the model for low bit-depth is set. Probably still need some work to turn on the CONFIG_HIGHBD flag for tpl model flow for the moment.",
+      "parentUuid": "5b93f9f8_0e6ffd62",
+      "range": {
+        "startLine": 849,
+        "startChar": 6,
+        "endLine": 849,
+        "endChar": 22
+      },
+      "revId": "9c2c234a0b8f9c08719ac1fa286988a0a3626fd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
