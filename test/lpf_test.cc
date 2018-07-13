@@ -736,7 +736,9 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(
     VSX, Loop8Test6Param,
     ::testing::Values(make_tuple(&vpx_lpf_horizontal_16_dual_vsx,
-                                 &vpx_lpf_horizontal_16_dual_c, 8)));
+                                 &vpx_lpf_horizontal_16_dual_c, 8),
+                      make_tuple(&vpx_lpf_vertical_16_dual_vsx,
+                                 &vpx_lpf_vertical_16_dual_c, 8)));
 
 #endif  // HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
 
