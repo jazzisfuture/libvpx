@@ -1402,6 +1402,25 @@ int vp9_rc_pick_q_and_bounds(const VP9_COMP *cpi, int *bottom_index,
   return q;
 }
 
+void vp9_estimate_qp_gop(VP9_COMP *cpi) {
+  int gop_length = cpi->rc.baseline_gf_interval;
+  int bottom_index, top_index;
+  int idx;
+  int q;
+  const int gf_index = cpi->twopass.gf_group.index;
+
+  for (idx = 1; idx <= gop_length; ++idx) {
+    int target_rate = cpi->twopass.gf_group.bit_allocation[idx];
+    cpi->twopass.gf_group.index = idx;
+    vp9_rc_set_frame_target(cpi, target_rate);
+    vp9_configure_buffer_updates(cpi, idx);
+    q = rc_pick_q_and_bounds_two_pass(cpi, &bottom_index, &top_index, idx);
+    (void)q;
+  }
+  // Reset the actual index
+  cpi->twopass.gf_group.index = gf_index;
+}
+
 void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi, int frame_target,
                                       int *frame_under_shoot_limit,
                                       int *frame_over_shoot_limit) {

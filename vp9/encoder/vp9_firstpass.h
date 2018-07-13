@@ -217,6 +217,8 @@ void vp9_twopass_postencode_update(struct VP9_COMP *cpi);
 void calculate_coded_size(struct VP9_COMP *cpi, int *scaled_frame_width,
                           int *scaled_frame_height);
 
+void vp9_configure_buffer_updates(struct VP9_COMP *cpi, int gf_group_index);
+
 static INLINE int get_number_of_extra_arfs(int interval, int arf_pending) {
   assert(MAX_EXT_ARFS > 0);
   if (arf_pending) {
