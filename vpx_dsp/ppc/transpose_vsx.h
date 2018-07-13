@@ -119,7 +119,7 @@ static INLINE void transpose_8x8(const int16x8_t *a, int16x8_t *b) {
   const int16x8_t s2_6 = vec_mergeh(s1_3, s1_7);
   const int16x8_t s2_7 = vec_mergel(s1_3, s1_7);
 
-  // Stage 2
+  // Stage 3
   b[0] = vec_mergeh(s2_0, s2_4);
   b[1] = vec_mergel(s2_0, s2_4);
   b[2] = vec_mergeh(s2_1, s2_5);
@@ -128,6 +128,80 @@ static INLINE void transpose_8x8(const int16x8_t *a, int16x8_t *b) {
   b[5] = vec_mergel(s2_2, s2_6);
   b[6] = vec_mergeh(s2_3, s2_7);
   b[7] = vec_mergel(s2_3, s2_7);
+}
+
+static INLINE void transpose_16x16(const uint8x16_t *a, uint8x16_t *b) {
+  // Stage 1
+  const uint8x16_t s1_0 = vec_mergeh(a[0], a[8]);
+  const uint8x16_t s1_1 = vec_mergel(a[0], a[8]);
+  const uint8x16_t s1_2 = vec_mergeh(a[1], a[9]);
+  const uint8x16_t s1_3 = vec_mergel(a[1], a[9]);
+  const uint8x16_t s1_4 = vec_mergeh(a[2], a[10]);
+  const uint8x16_t s1_5 = vec_mergel(a[2], a[10]);
+  const uint8x16_t s1_6 = vec_mergeh(a[3], a[11]);
+  const uint8x16_t s1_7 = vec_mergel(a[3], a[11]);
+  const uint8x16_t s1_8 = vec_mergeh(a[4], a[12]);
+  const uint8x16_t s1_9 = vec_mergel(a[4], a[12]);
+  const uint8x16_t s1_A = vec_mergeh(a[5], a[13]);
+  const uint8x16_t s1_B = vec_mergel(a[5], a[13]);
+  const uint8x16_t s1_C = vec_mergeh(a[6], a[14]);
+  const uint8x16_t s1_D = vec_mergel(a[6], a[14]);
+  const uint8x16_t s1_E = vec_mergeh(a[7], a[15]);
+  const uint8x16_t s1_F = vec_mergel(a[7], a[15]);
+
+  // Stage 2
+  const uint8x16_t s2_0 = vec_mergeh(s1_0, s1_8);
+  const uint8x16_t s2_1 = vec_mergel(s1_0, s1_8);
+  const uint8x16_t s2_2 = vec_mergeh(s1_1, s1_9);
+  const uint8x16_t s2_3 = vec_mergel(s1_1, s1_9);
+  const uint8x16_t s2_4 = vec_mergeh(s1_2, s1_A);
+  const uint8x16_t s2_5 = vec_mergel(s1_2, s1_A);
+  const uint8x16_t s2_6 = vec_mergeh(s1_3, s1_B);
+  const uint8x16_t s2_7 = vec_mergel(s1_3, s1_B);
+  const uint8x16_t s2_8 = vec_mergeh(s1_4, s1_C);
+  const uint8x16_t s2_9 = vec_mergel(s1_4, s1_C);
+  const uint8x16_t s2_A = vec_mergeh(s1_5, s1_D);
+  const uint8x16_t s2_B = vec_mergel(s1_5, s1_D);
+  const uint8x16_t s2_C = vec_mergeh(s1_6, s1_E);
+  const uint8x16_t s2_D = vec_mergel(s1_6, s1_E);
+  const uint8x16_t s2_E = vec_mergeh(s1_7, s1_F);
+  const uint8x16_t s2_F = vec_mergel(s1_7, s1_F);
+
+  // Stage 3
+  const uint8x16_t s3_0 = vec_mergeh(s2_0, s2_8);
+  const uint8x16_t s3_1 = vec_mergel(s2_0, s2_8);
+  const uint8x16_t s3_2 = vec_mergeh(s2_1, s2_9);
+  const uint8x16_t s3_3 = vec_mergel(s2_1, s2_9);
+  const uint8x16_t s3_4 = vec_mergeh(s2_2, s2_A);
+  const uint8x16_t s3_5 = vec_mergel(s2_2, s2_A);
+  const uint8x16_t s3_6 = vec_mergeh(s2_3, s2_B);
+  const uint8x16_t s3_7 = vec_mergel(s2_3, s2_B);
+  const uint8x16_t s3_8 = vec_mergeh(s2_4, s2_C);
+  const uint8x16_t s3_9 = vec_mergel(s2_4, s2_C);
+  const uint8x16_t s3_A = vec_mergeh(s2_5, s2_D);
+  const uint8x16_t s3_B = vec_mergel(s2_5, s2_D);
+  const uint8x16_t s3_C = vec_mergeh(s2_6, s2_E);
+  const uint8x16_t s3_D = vec_mergel(s2_6, s2_E);
+  const uint8x16_t s3_E = vec_mergeh(s2_7, s2_F);
+  const uint8x16_t s3_F = vec_mergel(s2_7, s2_F);
+
+  // Stage 4
+  b[0] = vec_mergeh(s3_0, s3_8);
+  b[1] = vec_mergel(s3_0, s3_8);
+  b[2] = vec_mergeh(s3_1, s3_9);
+  b[3] = vec_mergel(s3_1, s3_9);
+  b[4] = vec_mergeh(s3_2, s3_A);
+  b[5] = vec_mergel(s3_2, s3_A);
+  b[6] = vec_mergeh(s3_3, s3_B);
+  b[7] = vec_mergel(s3_3, s3_B);
+  b[8] = vec_mergeh(s3_4, s3_C);
+  b[9] = vec_mergel(s3_4, s3_C);
+  b[10] = vec_mergeh(s3_5, s3_D);
+  b[11] = vec_mergel(s3_5, s3_D);
+  b[12] = vec_mergeh(s3_6, s3_E);
+  b[13] = vec_mergel(s3_6, s3_E);
+  b[14] = vec_mergeh(s3_7, s3_F);
+  b[15] = vec_mergel(s3_7, s3_F);
 }
 
 #endif  // VPX_DSP_PPC_TRANSPOSE_VSX_H_
