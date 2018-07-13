@@ -15,6 +15,7 @@
 #include "vpx_ports/mem.h"
 
 #include "vpx_dsp/ppc/types_vsx.h"
+#include "vpx_dsp/ppc/transpose_vsx.h"
 
 static INLINE bool8x16_t flat_mask4(uint8x16_t p3, uint8x16_t p2, uint8x16_t p1,
                                     uint8x16_t p0, uint8x16_t q0, uint8x16_t q1,
@@ -398,4 +399,290 @@ void vpx_lpf_horizontal_16_dual_vsx(uint8_t *s, int p, const uint8_t *blimit,
   win_o = move_window(win_o, p1_o, q5_o, q7_o, q6_o);
   if (store16)
     vec_vsx_st(combine_window(win_e, win_o, q6, filter16_mask), 0, s + 6 * p);
+}
+
+void vpx_lpf_vertical_16_dual_vsx(uint8_t *s, int stride, const uint8_t *blimit,
+                                  const uint8_t *limit, const uint8_t *thresh) {
+  uint8x16_t p[16];
+  bool8x16_t mask, filter8_mask, filter16_mask;
+  uint16x8_t p7_e, p7_o, p6_e, p6_o, p5_e, p5_o, p4_e, p4_o, p3_e, p3_o, p2_e,
+      p2_o, p1_e, p1_o, p0_e, p0_o;
+  uint16x8_t q7_e, q7_o, q6_e, q6_o, q5_e, q5_o, q4_e, q4_o, q3_e, q3_o, q2_e,
+      q2_o, q1_e, q1_o, q0_e, q0_o;
+  uint16x8_t p10q0_e, p10q0_o;
+
+  // Sliding windows
+  uint16x8_t win_e, win_o;
+  uint16x8_t win8_e, win8_o;
+
+  uint8x16_t comb;
+
+  // Filter 4 filters
+  uint8x16_t ps1_filtered, ps0_filtered, qs0_filtered, qs1_filtered;
+
+  int store16;
+
+  // Position pointer so that 0 is -8.
+  s -= 8;
+
+  p[0] = vec_vsx_ld(0, s);
+  p[1] = vec_vsx_ld(0, s + 1 * stride);
+  p[2] = vec_vsx_ld(0, s + 2 * stride);
+  p[3] = vec_vsx_ld(0, s + 3 * stride);
+  p[4] = vec_vsx_ld(0, s + 4 * stride);
+  p[5] = vec_vsx_ld(0, s + 5 * stride);
+  p[6] = vec_vsx_ld(0, s + 6 * stride);
+  p[7] = vec_vsx_ld(0, s + 7 * stride);
+  p[8] = vec_vsx_ld(0, s + 8 * stride);
+  p[9] = vec_vsx_ld(0, s + 9 * stride);
+  p[10] = vec_vsx_ld(0, s + 10 * stride);
+  p[11] = vec_vsx_ld(0, s + 11 * stride);
+  p[12] = vec_vsx_ld(0, s + 12 * stride);
+  p[13] = vec_vsx_ld(0, s + 13 * stride);
+  p[14] = vec_vsx_ld(0, s + 14 * stride);
+  p[15] = vec_vsx_ld(0, s + 15 * stride);
+
+  transpose_16x16(p, p);
+
+  mask = filter_mask(limit, blimit, p[4], p[5], p[6], p[7], p[8], p[9], p[10],
+                     p[11]);
+  filter8_mask = vec_and(
+      flat_mask4(p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11]), mask);
+  filter16_mask =
+      vec_and(filter8_mask, flat_mask5(p[0], p[1], p[2], p[3], p[7], p[8],
+                                       p[12], p[13], p[14], p[15]));
+  store16 = vec_any_ne(filter16_mask, vec_zeros_u8);
+
+  // Unpack ps and qs to 16 bits
+  p7_e = vec_unpacke(p[0]);
+  p7_o = vec_unpacko(p[0]);
+  p6_e = vec_unpacke(p[1]);
+  p6_o = vec_unpacko(p[1]);
+  p5_e = vec_unpacke(p[2]);
+  p5_o = vec_unpacko(p[2]);
+  p4_e = vec_unpacke(p[3]);
+  p4_o = vec_unpacko(p[3]);
+  p3_e = vec_unpacke(p[4]);
+  p3_o = vec_unpacko(p[4]);
+  p2_e = vec_unpacke(p[5]);
+  p2_o = vec_unpacko(p[5]);
+  p1_e = vec_unpacke(p[6]);
+  p1_o = vec_unpacko(p[6]);
+  p0_e = vec_unpacke(p[7]);
+  p0_o = vec_unpacko(p[7]);
+  q0_e = vec_unpacke(p[8]);
+  q0_o = vec_unpacko(p[8]);
+  q1_e = vec_unpacke(p[9]);
+  q1_o = vec_unpacko(p[9]);
+  q2_e = vec_unpacke(p[10]);
+  q2_o = vec_unpacko(p[10]);
+  q3_e = vec_unpacke(p[11]);
+  q3_o = vec_unpacko(p[11]);
+  q4_e = vec_unpacke(p[12]);
+  q4_o = vec_unpacko(p[12]);
+  q5_e = vec_unpacke(p[13]);
+  q5_o = vec_unpacko(p[13]);
+  q6_e = vec_unpacke(p[14]);
+  q6_o = vec_unpacko(p[14]);
+  q7_e = vec_unpacke(p[15]);
+  q7_o = vec_unpacko(p[15]);
+
+  // p1 + p0 + q0
+  p10q0_e = vec_add(vec_add(p1_e, p0_e), q0_e);
+  p10q0_o = vec_add(vec_add(p1_o, p0_o), q0_o);
+
+  // OP[1]
+  // p7 * 7 + p6 * 2 + p5 + p4 + p3 + p2 + p1 + p0 + q0
+  {  // Fill Filter16 Sliding Window
+    const uint16x8_t m7p7_e = vec_mule(p[0], vec_splats((uint8_t)7));
+    const uint16x8_t m7p7_o = vec_mulo(p[0], vec_splats((uint8_t)7));
+    const uint16x8_t m2p6_e = vec_add(p6_e, p6_e);
+    const uint16x8_t m2p6_o = vec_add(p6_o, p6_o);
+
+    const uint16x8_t p76_e = vec_add(m7p7_e, m2p6_e);
+    const uint16x8_t p76_o = vec_add(m7p7_o, m2p6_o);
+    const uint16x8_t p5432_e =
+        vec_add(vec_add(p5_e, p4_e), vec_add(p3_e, p2_e));
+    const uint16x8_t p5432_o =
+        vec_add(vec_add(p5_o, p4_o), vec_add(p3_o, p2_o));
+
+    const uint16x8_t p765432_e = vec_add(p76_e, p5432_e);
+    const uint16x8_t p765432_o = vec_add(p76_o, p5432_o);
+
+    win_e = vec_add(p765432_e, p10q0_e);
+    win_o = vec_add(p765432_o, p10q0_o);
+  }
+  if (store16) p[1] = combine_window(win_e, win_o, p[1], filter16_mask);
+
+  // OP[2]
+  // p7 * 6 + p6 + p5 * 2 + p4 + p3 + p2 + p1 + p0 + q0 + q1
+  win_e = move_window(win_e, p7_e, p6_e, q1_e, p5_e);
+  win_o = move_window(win_o, p7_o, p6_o, q1_o, p5_o);
+  if (store16) p[2] = combine_window(win_e, win_o, p[2], filter16_mask);
+
+  // OP[3]
+  // p7 * 5 + p6 + p5 + p4 * 2 + p3 + p2 + p1 + p0 + q0 + q1 + q2
+  win_e = move_window(win_e, p7_e, p5_e, q2_e, p4_e);
+  win_o = move_window(win_o, p7_o, p5_o, q2_o, p4_o);
+  if (store16) p[3] = combine_window(win_e, win_o, p[3], filter16_mask);
+
+  // OP[4]
+  // p7 * 4 + p6 + p5 + p4 + p3 * 2 + p2 + p1 + p0 + q0 + q1 + q2 + q3
+  win_e = move_window(win_e, p7_e, p4_e, q3_e, p3_e);
+  win_o = move_window(win_o, p7_o, p4_o, q3_o, p3_o);
+  if (store16) p[4] = combine_window(win_e, win_o, p[4], filter16_mask);
+
+  // OP[5] (FILTER8)
+  // p3 + p3 + p3 + 2 * p2 + p1 + p0 + q0
+  {  // Fill Filter8 Sliding Window
+    const uint16x8_t m3p3_e = vec_add(vec_add(p3_e, p3_e), p3_e);
+    const uint16x8_t m3p3_o = vec_add(vec_add(p3_o, p3_o), p3_o);
+
+    win8_e = vec_add(vec_add(m3p3_e, vec_add(p2_e, p2_e)), p10q0_e);
+    win8_o = vec_add(vec_add(m3p3_o, vec_add(p2_o, p2_o)), p10q0_o);
+  }
+  comb = combine_window_f8(win8_e, win8_o, p[5], filter8_mask);
+
+  // OP[5] (FILTER 16)
+  // p7 * 3 + p6 + p5 + p4 + p3 + p2 * 2 + p1 + p0 + q0 + q1 + q2 + q3 + q4
+  win_e = move_window(win_e, p7_e, p3_e, q4_e, p2_e);
+  win_o = move_window(win_o, p7_o, p3_o, q4_o, p2_o);
+  p[5] = combine_window(win_e, win_o, comb, filter16_mask);
+
+  {  // Compute Filter 4 filters
+    const bool8x16_t hev =
+        vec_cmpgt(vec_max(vec_absd(p[6], p[7]), vec_absd(p[9], p[8])),
+                  vec_splats(*thresh));
+
+    const int8x16_t ps1 = u8_to_s8(p[6]);
+    const int8x16_t ps0 = u8_to_s8(p[7]);
+    const int8x16_t qs0 = u8_to_s8(p[8]);
+    const int8x16_t qs1 = u8_to_s8(p[9]);
+
+    const int8x16_t qsps0 = vec_subs(qs0, ps0);
+    const int8x16_t psqs1 = vec_subs(ps1, qs1);
+
+    // equivalent to
+    // filter = signed_char_clamp(filter + 3 * (qs0 - ps0)) & mask
+    int8x16_t filter4 = vec_and(
+        vec_adds(vec_adds(vec_adds(vec_and(psqs1, hev), qsps0), qsps0), qsps0),
+        mask);
+
+    const int8x16_t q0_filter = vec_sra(
+        vec_adds(filter4, vec_splats((int8_t)4)), vec_splats((uint8_t)3));
+    const int8x16_t p0_filter = vec_sra(
+        vec_adds(filter4, vec_splats((int8_t)3)), vec_splats((uint8_t)3));
+
+    filter4 =
+        vec_andc(vec_sra(vec_add(q0_filter, vec_ones_s8), vec_ones_u8), hev);
+
+    ps1_filtered = s8_to_u8(vec_adds(ps1, filter4));
+    ps0_filtered = s8_to_u8(vec_adds(ps0, p0_filter));
+    qs0_filtered = s8_to_u8(vec_subs(qs0, q0_filter));
+    qs1_filtered = s8_to_u8(vec_subs(qs1, filter4));
+  }
+
+  // OP[6] (FILTER 8)
+  // p3 + p3 + p2 + 2 * p1 + p0 + q0 + q1
+  win8_e = move_window(win8_e, p3_e, p2_e, p1_e, q1_e);
+  win8_o = move_window(win8_o, p3_o, p2_o, p1_o, q1_o);
+  comb = combine_window_f8(win8_e, win8_o, ps1_filtered, filter8_mask);
+
+  // OP[6] (FILTER 16)
+  // p7 * 2 + p6 + p5 + p4 + p3 + p2 + p1 * 2 + p0 + q0 + q1 + q2 + q3 + q4 + q5
+  win_e = move_window(win_e, p7_e, p2_e, q5_e, p1_e);
+  win_o = move_window(win_o, p7_o, p2_o, q5_o, p1_o);
+  p[6] = combine_window(win_e, win_o, comb, filter16_mask);
+
+  // OP[7] (FILTER 8)
+  // p3 + p2 + p1 + 2 * p0 + q0 + q1 + q2
+  win8_e = move_window(win8_e, p3_e, p1_e, p0_e, q2_e);
+  win8_o = move_window(win8_o, p3_o, p1_o, p0_o, q2_o);
+  comb = combine_window_f8(win8_e, win8_o, ps0_filtered, filter8_mask);
+
+  // OP[7] (FILTER 16)
+  // p7 + p6 + p5 + p4 + p3 + p2 + p1 + p0 * 2 + q0 + q1 + q2 + q3 + q4 + q5 +
+  // q6
+  win_e = move_window(win_e, p7_e, p1_e, q6_e, p0_e);
+  win_o = move_window(win_o, p7_o, p1_o, q6_o, p0_o);
+  p[7] = combine_window(win_e, win_o, comb, filter16_mask);
+
+  // OP[8] (FILTER 8)
+  // p2 + p1 + p0 + 2 * q0 + q1 + q2 + q3
+  win8_e = move_window(win8_e, p3_e, p0_e, q0_e, q3_e);
+  win8_o = move_window(win8_o, p3_o, p0_o, q0_o, q3_o);
+  comb = combine_window_f8(win8_e, win8_o, qs0_filtered, filter8_mask);
+
+  // OP[8] (FILTER 16)
+  // p6 + p5 + p4 + p3 + p2 + p1 + p0 + q0 * 2 + q1 + q2 + q3 + q4 + q5 + q6 +
+  // q7
+  win_e = move_window(win_e, p7_e, p0_e, q7_e, q0_e);
+  win_o = move_window(win_o, p7_o, p0_o, q7_o, q0_o);
+  p[8] = combine_window(win_e, win_o, comb, filter16_mask);
+
+  // OP[9] (FILTER 8)
+  // p1 + p0 + q0 + 2 * q1 + q2 + q3 + q3
+  win8_e = move_window(win8_e, p2_e, q0_e, q1_e, q3_e);
+  win8_o = move_window(win8_o, p2_o, q0_o, q1_o, q3_o);
+  comb = combine_window_f8(win8_e, win8_o, qs1_filtered, filter8_mask);
+
+  // OP[9] (FILTER 16)
+  // p5 + p4 + p3 + p2 + p1 + p0 + q0 + q1 * 2 + q2 + q3 + q4 + q5 + q6 + q7 * 2
+  win_e = move_window(win_e, p6_e, q0_e, q7_e, q1_e);
+  win_o = move_window(win_o, p6_o, q0_o, q7_o, q1_o);
+  p[9] = combine_window(win_e, win_o, comb, filter16_mask);
+
+  // OP[10] (FILTER 8)
+  // p0 + q0 + q1 + 2 * q2 + q3 + q3 + q3
+  win8_e = move_window(win8_e, p1_e, q1_e, q2_e, q3_e);
+  win8_o = move_window(win8_o, p1_o, q1_o, q2_o, q3_o);
+  comb = combine_window_f8(win8_e, win8_o, p[10], filter8_mask);
+
+  // OP[10] (FILTER16)
+  // p4 + p3 + p2 + p1 + p0 + q0 + q1 + q2 * 2 + q3 + q4 + q5 + q6 + q7 * 3
+  win_e = move_window(win_e, p5_e, q1_e, q7_e, q2_e);
+  win_o = move_window(win_o, p5_o, q1_o, q7_o, q2_o);
+  p[10] = combine_window(win_e, win_o, comb, filter16_mask);
+
+  // OP[11]
+  // p3 + p2 + p1 + p0 + q0 + q1 + q2 + q3 * 2 + q4 + q5 + q6 + q7 * 4
+  win_e = move_window(win_e, p4_e, q2_e, q7_e, q3_e);
+  win_o = move_window(win_o, p4_o, q2_o, q7_o, q3_o);
+  if (store16) p[11] = combine_window(win_e, win_o, p[11], filter16_mask);
+
+  // OP[12]
+  // p2 + p1 + p0 + q0 + q1 + q2 + q3 + q4 * 2 + q5 + q6 + q7 * 5
+  win_e = move_window(win_e, p3_e, q3_e, q7_e, q4_e);
+  win_o = move_window(win_o, p3_o, q3_o, q7_o, q4_o);
+  if (store16) p[12] = combine_window(win_e, win_o, p[12], filter16_mask);
+
+  // OP[13]
+  // p1 + p0 + q0 + q1 + q2 + q3 + q4 + q5 * 2 + q6 + q7 * 6
+  win_e = move_window(win_e, p2_e, q4_e, q7_e, q5_e);
+  win_o = move_window(win_o, p2_o, q4_o, q7_o, q5_o);
+  if (store16) p[13] = combine_window(win_e, win_o, p[13], filter16_mask);
+
+  // OQ6
+  // p0 + q0 + q1 + q2 + q3 + q4 + q5 + q6 * 2 + q7 * 7
+  win_e = move_window(win_e, p1_e, q5_e, q7_e, q6_e);
+  win_o = move_window(win_o, p1_o, q5_o, q7_o, q6_o);
+  if (store16) p[14] = combine_window(win_e, win_o, p[14], filter16_mask);
+
+  transpose_16x16(p, p);
+  vec_vsx_st(p[0], 0, s);
+  vec_vsx_st(p[1], 0, s + stride);
+  vec_vsx_st(p[2], 0, s + 2 * stride);
+  vec_vsx_st(p[3], 0, s + 3 * stride);
+  vec_vsx_st(p[4], 0, s + 4 * stride);
+  vec_vsx_st(p[5], 0, s + 5 * stride);
+  vec_vsx_st(p[6], 0, s + 6 * stride);
+  vec_vsx_st(p[7], 0, s + 7 * stride);
+  vec_vsx_st(p[8], 0, s + 8 * stride);
+  vec_vsx_st(p[9], 0, s + 9 * stride);
+  vec_vsx_st(p[10], 0, s + 10 * stride);
+  vec_vsx_st(p[11], 0, s + 11 * stride);
+  vec_vsx_st(p[12], 0, s + 12 * stride);
+  vec_vsx_st(p[13], 0, s + 13 * stride);
+  vec_vsx_st(p[14], 0, s + 14 * stride);
+  vec_vsx_st(p[15], 0, s + 15 * stride);
 }
