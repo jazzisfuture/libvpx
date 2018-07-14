@@ -193,7 +193,7 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
   sf->allow_skip_recode = 1;
   sf->less_rectangular_check = 1;
   sf->use_square_partition_only = !frame_is_boosted(cpi);
-  sf->use_square_only_threshold = BLOCK_16X16;
+  sf->use_square_only_threshold = BLOCK_64X64;
 
   if (cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) {
     sf->exhaustive_searches_thresh = (1 << 22);

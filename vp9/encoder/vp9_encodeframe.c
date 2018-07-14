@@ -3671,7 +3671,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   ENTROPY_CONTEXT l[16 * MAX_MB_PLANE], a[16 * MAX_MB_PLANE];
   PARTITION_CONTEXT sl[8], sa[8];
   TOKENEXTRA *tp_orig = *tp;
-  PICK_MODE_CONTEXT *ctx = &pc_tree->none;
+  PICK_MODE_CONTEXT *const ctx = &pc_tree->none;
   int i;
   const int pl = partition_plane_context(xd, mi_row, mi_col, bsize);
   BLOCK_SIZE subsize;
@@ -3705,6 +3705,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   int must_split = 0;
 
   int partition_mul = cpi->sf.enable_tpl_model ? x->cb_rdmult : cpi->rd.RDMULT;
+
+  int tried_horz = 0, tried_vert = 0;
+  int64_t horz_rd = 0, vert_rd = 0;
 
   (void)*tp_orig;
 
@@ -3834,6 +3837,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   if (partition_none_allowed) {
     rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &this_rdc, bsize, ctx,
                      best_rdc.rdcost);
+    ctx->rdcost = this_rdc.rdcost;
     if (this_rdc.rate != INT_MAX) {
       if (bsize >= BLOCK_8X8) {
         this_rdc.rdcost += RDCOST(partition_mul, x->rddiv,
@@ -3951,6 +3955,10 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // PARTITION_SPLIT
   // TODO(jingning): use the motion vectors given by the above search as
   // the starting point of motion search in the following partition type check.
+  pc_tree->split[0]->none.rdcost = 0;
+  pc_tree->split[1]->none.rdcost = 0;
+  pc_tree->split[2]->none.rdcost = 0;
+  pc_tree->split[3]->none.rdcost = 0;
   if (do_split || must_split) {
     subsize = get_subsize(bsize, PARTITION_SPLIT);
     if (bsize == BLOCK_8X8) {
@@ -4028,6 +4036,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // PARTITION_HORZ
   if (partition_horz_allowed &&
       (do_rect || vp9_active_h_edge(cpi, mi_row, mi_step))) {
+    tried_horz = 1;
     subsize = get_subsize(bsize, PARTITION_HORZ);
     if (cpi->sf.adaptive_motion_search) load_pred_mv(x, ctx);
     if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
@@ -4058,6 +4067,12 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
       }
     }
 
+    if (sum_rdc.rdcost != INT64_MAX) {
+      horz_rd =
+          sum_rdc.rdcost + RDCOST(partition_mul, x->rddiv,
+                                  cpi->partition_cost[pl][PARTITION_HORZ], 0);
+    }
+
     if (sum_rdc.rdcost < best_rdc.rdcost) {
       sum_rdc.rdcost += RDCOST(partition_mul, x->rddiv,
                                cpi->partition_cost[pl][PARTITION_HORZ], 0);
@@ -4077,6 +4092,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // PARTITION_VERT
   if (partition_vert_allowed &&
       (do_rect || vp9_active_v_edge(cpi, mi_col, mi_step))) {
+    tried_vert = 1;
     subsize = get_subsize(bsize, PARTITION_VERT);
 
     if (cpi->sf.adaptive_motion_search) load_pred_mv(x, ctx);
@@ -4105,6 +4121,12 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         sum_rdc.dist += this_rdc.dist;
         sum_rdc.rdcost += this_rdc.rdcost;
       }
+    }
+
+    if (sum_rdc.rdcost != INT64_MAX) {
+      vert_rd =
+          sum_rdc.rdcost + RDCOST(partition_mul, x->rddiv,
+                                  cpi->partition_cost[pl][PARTITION_VERT], 0);
     }
 
     if (sum_rdc.rdcost < best_rdc.rdcost) {
@@ -4140,6 +4162,68 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   } else {
     assert(tp_orig == *tp);
   }
+
+#if 0
+  {
+    int i;
+    int flag = 0;
+    for (i = 0; i < 4; ++i) {
+      if (split_rd[i] > 0 && pc_tree->split[i]->none.rdcost != split_rd[i])
+        flag = 1;
+    }
+    if (flag || 1) {
+      for (i = 0; i < 4; ++i) {
+        printf("%8lld vs %8lld, ",
+               pc_tree->split[i]->none.rdcost, split_rd[i]);
+      }
+      printf("\n");
+    }
+  }
+#endif
+
+#if 1
+  do {
+    const int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+    const int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+    FILE *fp;
+
+    if (frame_is_intra_only(cm)) break;
+
+    if (bw != bh) {
+      printf("error\n");
+      assert(0);
+      break;
+    }
+
+    fp = fopen("vp9_rect_partition_data.txt", "a");
+    if (!fp) break;
+
+    // bs, best partition, tried_horz, tried_vert, best rd, none rd,
+    // split rd(4), horz_rd, vert_rd, none skip, split skip(4),
+    // qindex, dc_quant, ac_quant, rdmult, rddiv,
+    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+            bw, pc_tree->partitioning, tried_horz, tried_vert,
+            (int)VPXMIN(best_rdc.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->none.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->split[0]->none.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->split[1]->none.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->split[2]->none.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->split[3]->none.rdcost, INT_MAX),
+            (int)VPXMIN(horz_rd, INT_MAX),
+            (int)VPXMIN(vert_rd, INT_MAX),
+            pc_tree->none.skippable,
+            pc_tree->split[0]->none.skippable,
+            pc_tree->split[1]->none.skippable,
+            pc_tree->split[2]->none.skippable,
+            pc_tree->split[3]->none.skippable,
+            cm->base_qindex,
+            vp9_dc_quant(cm->base_qindex, 0, cm->bit_depth),
+            vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth),
+            x->rdmult);
+    fprintf(fp, "\n");
+    fclose(fp);
+  } while (0);
+#endif
 }
 
 static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
