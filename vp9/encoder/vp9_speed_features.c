@@ -77,7 +77,7 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
     // is only used while VPXMIN(cm->width, cm->height) >= 480 and speed = 0.
     sf->ml_partition_search_early_termination = 1;
   } else {
-    sf->use_square_only_threshold = BLOCK_32X32;
+    // sf->use_square_only_threshold = BLOCK_32X32;
   }
 
   if (!is_1080p_or_larger) {
