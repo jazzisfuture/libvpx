@@ -3687,7 +3687,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   ENTROPY_CONTEXT l[16 * MAX_MB_PLANE], a[16 * MAX_MB_PLANE];
   PARTITION_CONTEXT sl[8], sa[8];
   TOKENEXTRA *tp_orig = *tp;
-  PICK_MODE_CONTEXT *ctx = &pc_tree->none;
+  PICK_MODE_CONTEXT *const ctx = &pc_tree->none;
   int i;
   const int pl = partition_plane_context(xd, mi_row, mi_col, bsize);
   BLOCK_SIZE subsize;
@@ -3725,6 +3725,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // Ref frames picked in the [i_th] quarter subblock during square partition
   // RD search. It may be used to prune ref frame selection of rect partitions.
   uint8_t ref_frames_used[4] = { 0, 0, 0, 0 };
+
+  int tried_horz = 0, tried_vert = 0;
+  int64_t horz_rd = 0, vert_rd = 0;
 
   (void)*tp_orig;
 
@@ -3868,6 +3871,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
                                   cpi->partition_cost[pl][PARTITION_NONE], 0);
         this_rdc.rate += cpi->partition_cost[pl][PARTITION_NONE];
       }
+      ctx->rdcost = this_rdc.rdcost;
 
       if (this_rdc.rdcost < best_rdc.rdcost) {
         MODE_INFO *mi = xd->mi[0];
@@ -3979,6 +3983,10 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // PARTITION_SPLIT
   // TODO(jingning): use the motion vectors given by the above search as
   // the starting point of motion search in the following partition type check.
+  pc_tree->split[0]->none.rdcost = 0;
+  pc_tree->split[1]->none.rdcost = 0;
+  pc_tree->split[2]->none.rdcost = 0;
+  pc_tree->split[3]->none.rdcost = 0;
   if (do_split || must_split) {
     subsize = get_subsize(bsize, PARTITION_SPLIT);
     load_pred_mv(x, ctx);
@@ -4093,6 +4101,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     const int part_mode_rate = cpi->partition_cost[pl][PARTITION_HORZ];
     const int64_t part_mode_rdcost =
         RDCOST(partition_mul, x->rddiv, part_mode_rate, 0);
+    tried_horz = 1;
     subsize = get_subsize(bsize, PARTITION_HORZ);
     load_pred_mv(x, ctx);
     if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
@@ -4126,6 +4135,8 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
       }
     }
 
+    if (sum_rdc.rdcost != INT64_MAX) horz_rd = sum_rdc.rdcost;
+
     if (sum_rdc.rdcost < best_rdc.rdcost) {
       best_rdc = sum_rdc;
       pc_tree->partitioning = PARTITION_HORZ;
@@ -4143,6 +4154,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     const int part_mode_rate = cpi->partition_cost[pl][PARTITION_VERT];
     const int64_t part_mode_rdcost =
         RDCOST(partition_mul, x->rddiv, part_mode_rate, 0);
+    tried_vert = 1;
     subsize = get_subsize(bsize, PARTITION_VERT);
     load_pred_mv(x, ctx);
     if (cpi->sf.adaptive_pred_interp_filter && bsize == BLOCK_8X8 &&
@@ -4175,6 +4187,8 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
       }
     }
 
+    if (sum_rdc.rdcost != INT64_MAX) vert_rd = sum_rdc.rdcost;
+
     if (sum_rdc.rdcost < best_rdc.rdcost) {
       best_rdc = sum_rdc;
       pc_tree->partitioning = PARTITION_VERT;
@@ -4203,6 +4217,103 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   } else {
     assert(tp_orig == *tp);
   }
+
+#if 1
+  do {
+    const int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+    const int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+    unsigned int source_var;
+    unsigned int sub_source_var[4] = { 0 };
+    struct buf_2d buf;
+    FILE *fp;
+
+    if (frame_is_intra_only(cm)) break;
+
+    if (bsize <= BLOCK_8X8) break;
+
+    if (force_horz_split || force_vert_split) break;
+
+    if (!tried_horz && !tried_vert) break;
+
+    if (bw != bh) {
+      printf("error\n");
+      assert(0);
+      break;
+    }
+
+    {
+      int i;
+      subsize = get_subsize(bsize, PARTITION_SPLIT);
+      vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
+
+#if CONFIG_VP9_HIGHBITDEPTH
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+        source_var = vp9_high_get_sby_perpixel_variance(
+            cpi, &x->plane[0].src, bsize, xd->bd);
+      } else {
+        source_var =
+            vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
+      }
+#else
+      source_var =
+          vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+      buf.stride = x->plane[0].src.stride;
+      for (i = 0; i < 4; ++i) {
+        const int x_idx = (i & 1) * bw / 2;
+        const int y_idx = (i >> 1) * bw / 2;
+        buf.buf = x->plane[0].src.buf + x_idx + y_idx * buf.stride;
+#if CONFIG_VP9_HIGHBITDEPTH
+        if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+          sub_source_var[i] = vp9_high_get_sby_perpixel_variance(
+              cpi, &buf, subsize, xd->bd);
+        } else {
+          sub_source_var[i] =
+              vp9_get_sby_perpixel_variance(cpi, &buf, subsize);
+        }
+#else
+        sub_source_var[i] = vp9_get_sby_perpixel_variance(cpi, &buf, subsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+      }
+    }
+
+    fp = fopen("vp9_rect_partition_data.txt", "a");
+    if (!fp) break;
+
+    // bs, best partition, tried_horz, tried_vert, best rd, none rd,
+    // split rd(4), horz_rd, vert_rd, none skip, split skip(4),
+    // qindex, dc_quant, ac_quant, rdmult, source_var(1+4),
+    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,"
+                "%d,%d,%d,%d,%d,%d,",
+            bw, pc_tree->partitioning, tried_horz, tried_vert,
+            (int)VPXMIN(best_rdc.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->none.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->split[0]->none.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->split[1]->none.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->split[2]->none.rdcost, INT_MAX),
+            (int)VPXMIN(pc_tree->split[3]->none.rdcost, INT_MAX),
+            (int)VPXMIN(horz_rd, INT_MAX),
+            (int)VPXMIN(vert_rd, INT_MAX),
+            pc_tree->none.skippable,
+            pc_tree->split[0]->none.skippable,
+            pc_tree->split[1]->none.skippable,
+            pc_tree->split[2]->none.skippable,
+            pc_tree->split[3]->none.skippable,
+            cm->base_qindex,
+            vp9_dc_quant(cm->base_qindex, 0, cm->bit_depth),
+            vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth),
+            x->rdmult,
+            (int)VPXMIN(source_var, INT_MAX),
+            (int)VPXMIN(sub_source_var[0], INT_MAX),
+            (int)VPXMIN(sub_source_var[1], INT_MAX),
+            (int)VPXMIN(sub_source_var[2], INT_MAX),
+            (int)VPXMIN(sub_source_var[3], INT_MAX)
+            );
+    fprintf(fp, "\n");
+    fclose(fp);
+  } while (0);
+#endif
 }
 
 static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
