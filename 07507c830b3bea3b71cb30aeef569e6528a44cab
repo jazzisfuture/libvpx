@@ -22,6 +22,30 @@
       "revId": "07507c830b3bea3b71cb30aeef569e6528a44cab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae3fd5e6_1a378b8b",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 5554,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2018-07-16T15:05:36Z",
+      "side": 1,
+      "message": "At this point not yet. The quantizer will be applied to the prediction residuals between two source blocks initially.",
+      "parentUuid": "24e8712f_544e1443",
+      "range": {
+        "startLine": 5554,
+        "startChar": 3,
+        "endLine": 5554,
+        "endChar": 58
+      },
+      "revId": "07507c830b3bea3b71cb30aeef569e6528a44cab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
