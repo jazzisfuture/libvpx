@@ -258,6 +258,11 @@ const libvpx_test::VP9CodecFactory kVP9;
           ::testing::Values(static_cast<const libvpx_test::CodecFactory *>( \
               &libvpx_test::kVP9)),                                         \
           __VA_ARGS__))
+
+#define VP9_INSTANTIATE_TEST_CASE_NO_PARAM(test) \
+  INSTANTIATE_TEST_CASE_P(                       \
+      VP9, test,                                 \
+      static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9))
 #else
 #define VP9_INSTANTIATE_TEST_CASE(test, ...)
 #endif  // CONFIG_VP9

@@ -295,6 +295,9 @@ int vp9_receive_compressed_data(VP9Decoder *pbi, size_t size,
     frame_bufs[cm->new_fb_idx].released = 1;
   }
 
+  // Flush all frame buffers on key frame.
+  if (cm->frame_type == KEY_FRAME && cm->current_video_frame > 1)
+    flush_all_fb(cm);
   // Find a free frame buffer. Return error if can not find any.
   cm->new_fb_idx = get_free_fb(cm);
   if (cm->new_fb_idx == INVALID_IDX) {

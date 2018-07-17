@@ -286,6 +286,20 @@ static INLINE int get_free_fb(VP9_COMMON *cm) {
   return i;
 }
 
+static INLINE void flush_all_fb(VP9_COMMON *cm) {
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
+  BufferPool *const pool = cm->buffer_pool;
+  int i;
+
+  for (i = 0; i < FRAME_BUFFERS; ++i) {
+    frame_bufs[i].ref_count = 0;
+    if (!frame_bufs[i].released) {
+      pool->release_fb_cb(pool->cb_priv, &frame_bufs[i].raw_frame_buffer);
+      frame_bufs[i].released = 1;
+    }
+  }
+}
+
 static INLINE void ref_cnt_fb(RefCntBuffer *bufs, int *idx, int new_idx) {
   const int ref_index = *idx;
 
