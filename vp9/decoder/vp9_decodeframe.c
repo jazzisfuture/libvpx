@@ -43,8 +43,6 @@
 #include "vp9/decoder/vp9_decoder.h"
 #include "vp9/decoder/vp9_dsubexp.h"
 
-#define MAX_VP9_HEADER_SIZE 80
-
 static int is_compound_reference_allowed(const VP9_COMMON *cm) {
   int i;
   for (i = 1; i < REFS_PER_FRAME; ++i)
@@ -1681,11 +1679,6 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi, const uint8_t *data,
   return bit_reader_end;
 }
 
-static void error_handler(void *data) {
-  VP9_COMMON *const cm = (VP9_COMMON *)data;
-  vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME, "Truncated packet");
-}
-
 static void read_bitdepth_colorspace_sampling(VP9_COMMON *cm,
                                               struct vpx_read_bit_buffer *rb) {
   if (cm->profile >= PROFILE_2) {
@@ -1974,24 +1967,6 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
   }
 
   return vpx_reader_has_error(&r);
-}
-
-static struct vpx_read_bit_buffer *init_read_bit_buffer(
-    VP9Decoder *pbi, struct vpx_read_bit_buffer *rb, const uint8_t *data,
-    const uint8_t *data_end, uint8_t clear_data[MAX_VP9_HEADER_SIZE]) {
-  rb->bit_offset = 0;
-  rb->error_handler = error_handler;
-  rb->error_handler_data = &pbi->common;
-  if (pbi->decrypt_cb) {
-    const int n = (int)VPXMIN(MAX_VP9_HEADER_SIZE, data_end - data);
-    pbi->decrypt_cb(pbi->decrypt_state, data, clear_data, n);
-    rb->bit_buffer = clear_data;
-    rb->bit_buffer_end = clear_data + n;
-  } else {
-    rb->bit_buffer = data;
-    rb->bit_buffer_end = data_end;
-  }
-  return rb;
 }
 
 //------------------------------------------------------------------------------

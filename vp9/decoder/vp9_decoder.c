@@ -16,6 +16,7 @@
 #include "./vpx_dsp_rtcd.h"
 #include "./vpx_scale_rtcd.h"
 
+#include "vpx_dsp/bitreader_buffer.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/system_state.h"
 #include "vpx_ports/vpx_once.h"
@@ -46,6 +47,11 @@ static void initialize_dec(void) {
     vp9_init_intra_predictors();
     init_done = 1;
   }
+}
+
+static void error_handler(void *data) {
+  VP9_COMMON *const cm = (VP9_COMMON *)data;
+  vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME, "Truncated packet");
 }
 
 static void vp9_dec_setup_mi(VP9_COMMON *cm) {
@@ -261,6 +267,59 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
     cm->frame_refs[ref_index].idx = -1;
 }
 
+struct vpx_read_bit_buffer *init_read_bit_buffer(
+    VP9Decoder *pbi, struct vpx_read_bit_buffer *rb, const uint8_t *data,
+    const uint8_t *data_end, uint8_t clear_data[MAX_VP9_HEADER_SIZE]) {
+  rb->bit_offset = 0;
+  rb->error_handler = error_handler;
+  rb->error_handler_data = &pbi->common;
+  if (pbi->decrypt_cb) {
+    const int n = (int)VPXMIN(MAX_VP9_HEADER_SIZE, data_end - data);
+    pbi->decrypt_cb(pbi->decrypt_state, data, clear_data, n);
+    rb->bit_buffer = clear_data;
+    rb->bit_buffer_end = clear_data + n;
+  } else {
+    rb->bit_buffer = data;
+    rb->bit_buffer_end = data_end;
+  }
+  return rb;
+}
+
+static INLINE void flush_all_fb_on_key(VP9Decoder *pbi, const uint8_t *data,
+                                       const uint8_t *data_end) {
+  VP9_COMMON *const cm = &pbi->common;
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
+  BufferPool *const pool = cm->buffer_pool;
+  uint8_t clear_data[MAX_VP9_HEADER_SIZE];
+  struct vpx_read_bit_buffer rb;
+  int i;
+  FRAME_TYPE frame_type;
+
+  init_read_bit_buffer(pbi, &rb, data, data_end, clear_data);
+
+  vpx_rb_read_literal(&rb, 2);
+
+  cm->profile = vp9_read_profile(&rb);
+  cm->show_existing_frame = vpx_rb_read_bit(&rb);
+  if (cm->show_existing_frame) {
+    // Show an existing frame directly.
+    vpx_rb_read_literal(&rb, 3);
+    return;
+  }
+
+  frame_type = (FRAME_TYPE)vpx_rb_read_bit(&rb);
+
+  if (frame_type == KEY_FRAME) {
+    for (i = 0; i < FRAME_BUFFERS; ++i) {
+      frame_bufs[i].ref_count = 0;
+      if (!frame_bufs[i].released) {
+        pool->release_fb_cb(pool->cb_priv, &frame_bufs[i].raw_frame_buffer);
+        frame_bufs[i].released = 1;
+      }
+    }
+  }
+}
+
 int vp9_receive_compressed_data(VP9Decoder *pbi, size_t size,
                                 const uint8_t **psource) {
   VP9_COMMON *volatile const cm = &pbi->common;
@@ -295,6 +354,8 @@ int vp9_receive_compressed_data(VP9Decoder *pbi, size_t size,
     frame_bufs[cm->new_fb_idx].released = 1;
   }
 
+  // Flush all frame buffers on key frame.
+  flush_all_fb_on_key(pbi, source, source + size);
   // Find a free frame buffer. Return error if can not find any.
   cm->new_fb_idx = get_free_fb(cm);
   if (cm->new_fb_idx == INVALID_IDX) {
