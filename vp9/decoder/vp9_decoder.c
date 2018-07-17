@@ -295,6 +295,10 @@ int vp9_receive_compressed_data(VP9Decoder *pbi, size_t size,
     frame_bufs[cm->new_fb_idx].released = 1;
   }
 
+  // Find corrupted frame buffers and release them.
+  // It's safer to do this on key frame since key frame will refresh all
+  // reference frame buffers.
+  if (cm->frame_type == KEY_FRAME) release_corrupted_fb(cm);
   // Find a free frame buffer. Return error if can not find any.
   cm->new_fb_idx = get_free_fb(cm);
   if (cm->new_fb_idx == INVALID_IDX) {
