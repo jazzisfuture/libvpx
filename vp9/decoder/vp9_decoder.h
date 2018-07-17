@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+#define MAX_VP9_HEADER_SIZE 80
+
 typedef struct TileBuffer {
   const uint8_t *data;
   size_t size;
@@ -108,6 +110,10 @@ vpx_codec_err_t vp9_parse_superframe_index(const uint8_t *data, size_t data_sz,
 struct VP9Decoder *vp9_decoder_create(BufferPool *const pool);
 
 void vp9_decoder_remove(struct VP9Decoder *pbi);
+
+struct vpx_read_bit_buffer *init_read_bit_buffer(
+    VP9Decoder *pbi, struct vpx_read_bit_buffer *rb, const uint8_t *data,
+    const uint8_t *data_end, uint8_t clear_data[MAX_VP9_HEADER_SIZE]);
 
 static INLINE void decrease_ref_count(int idx, RefCntBuffer *const frame_bufs,
                                       BufferPool *const pool) {
