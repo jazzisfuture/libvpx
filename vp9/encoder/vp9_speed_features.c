@@ -72,6 +72,23 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
   sf->partition_search_breakout_thr.rate = 80;
   sf->use_square_only_threshold = BLOCK_SIZES;
 
+  sf->ml_prune_rect_partition_threhold[0] = -1;
+  sf->ml_prune_rect_partition_threhold[1] = -1;
+  sf->ml_prune_rect_partition_threhold[2] = -1;
+  sf->ml_prune_rect_partition_threhold[3] = -1;
+
+  if (is_480p_or_larger) {
+    sf->ml_prune_rect_partition_threhold[0] = 300;
+    sf->ml_prune_rect_partition_threhold[1] = 300;
+    sf->ml_prune_rect_partition_threhold[2] = 300;
+    sf->ml_prune_rect_partition_threhold[3] = 250;
+  } else {
+    sf->ml_prune_rect_partition_threhold[0] = 300;
+    sf->ml_prune_rect_partition_threhold[1] = 300;
+    sf->ml_prune_rect_partition_threhold[2] = 225;
+    sf->ml_prune_rect_partition_threhold[3] = -1;
+  }
+
   if (is_480p_or_larger) {
     // Currently, the machine-learning based partition search early termination
     // is only used while VPXMIN(cm->width, cm->height) >= 480 and speed = 0.
@@ -96,6 +113,18 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
   if (speed >= 1) {
     sf->ml_partition_search_early_termination = 0;
     sf->use_square_only_threshold = BLOCK_4X4;
+    sf->use_square_only_threshold = BLOCK_8X8;
+    if (!frame_is_boosted(cpi)) {
+      sf->ml_prune_rect_partition_threhold[0] = 300;
+      sf->ml_prune_rect_partition_threhold[1] = -1;
+      sf->ml_prune_rect_partition_threhold[2] = -1;
+      sf->ml_prune_rect_partition_threhold[3] = -1;
+    } else {
+      sf->ml_prune_rect_partition_threhold[0] = -1;
+      sf->ml_prune_rect_partition_threhold[1] = -1;
+      sf->ml_prune_rect_partition_threhold[2] = -1;
+      sf->ml_prune_rect_partition_threhold[3] = -1;
+    }
 
     if (is_720p_or_larger) {
       sf->disable_split_mask =
