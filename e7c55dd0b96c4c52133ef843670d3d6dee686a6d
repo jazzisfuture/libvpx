@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "206eec62_1f2b5c84",
+        "filename": "vp9/common/vp9_onyxc_int.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-07-18T05:53:27Z",
+      "side": 1,
+      "message": "there\u0027s a mix of checks between .priv/.data. here would just checking !released be enough?",
+      "range": {
+        "startLine": 298,
+        "startChar": 37,
+        "endLine": 298,
+        "endChar": 72
+      },
+      "revId": "e7c55dd0b96c4c52133ef843670d3d6dee686a6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
