@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7fd7543_b810108f",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-07-19T05:54:46Z",
+      "side": 1,
+      "message": "you could factor this out to a function ReferenceHadamard(int size)",
+      "revId": "fbcc579f3baa8166309b6d51dca1152a8ff8f03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
