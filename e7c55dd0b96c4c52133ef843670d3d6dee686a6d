@@ -22,6 +22,30 @@
       "revId": "e7c55dd0b96c4c52133ef843670d3d6dee686a6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb74290a_19939ec4",
+        "filename": "vp9/common/vp9_onyxc_int.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-07-19T17:26:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "206eec62_1f2b5c84",
+      "range": {
+        "startLine": 298,
+        "startChar": 37,
+        "endLine": 298,
+        "endChar": 72
+      },
+      "revId": "e7c55dd0b96c4c52133ef843670d3d6dee686a6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
