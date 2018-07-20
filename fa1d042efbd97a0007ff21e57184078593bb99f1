@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2421edb_fd6f80ac",
+        "filename": "test/vp9_decode_corrupted.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-07-20T23:48:03Z",
+      "side": 1,
+      "message": "add a newline here",
+      "revId": "fa1d042efbd97a0007ff21e57184078593bb99f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00d3a909_a8a75fb0",
+        "filename": "test/vp9_decode_corrupted.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-07-20T23:48:03Z",
+      "side": 1,
+      "message": "prefer sizeof(pkt) or a direct assignment will work in this case",
+      "range": {
+        "startLine": 60,
+        "startChar": 32,
+        "endLine": 60,
+        "endChar": 58
+      },
+      "revId": "fa1d042efbd97a0007ff21e57184078593bb99f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dc4ac62_355c5c15",
+        "filename": "test/vp9_decode_corrupted.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-07-20T23:48:03Z",
+      "side": 1,
+      "message": "this can be (res_dec, VPX_CODEC_...) with the current release of googletest",
+      "range": {
+        "startLine": 71,
+        "startChar": 14,
+        "endLine": 71,
+        "endChar": 42
+      },
+      "revId": "fa1d042efbd97a0007ff21e57184078593bb99f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
