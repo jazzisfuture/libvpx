@@ -22,6 +22,30 @@
       "revId": "841c10da8c2c09a6edbd348bec10d5d718a030f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc90c30c_94025d88",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-07-20T23:06:34Z",
+      "side": 1,
+      "message": "\u003e It seems there is a problem here.\n\u003e \n\u003e I encoded a clip with only 1 key frame at the beginning. And when I decode it and print out frame type and frame number, frame 0 and 1 are both marked as key frame.\n\nAt this point, it\u0027s still unknown if the frame is key or not.",
+      "parentUuid": "8b5b64f6_644b35ed",
+      "range": {
+        "startLine": 299,
+        "startChar": 6,
+        "endLine": 299,
+        "endChar": 33
+      },
+      "revId": "841c10da8c2c09a6edbd348bec10d5d718a030f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
