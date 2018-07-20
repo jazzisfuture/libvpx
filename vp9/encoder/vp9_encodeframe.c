@@ -2630,6 +2630,7 @@ static void rd_use_partition(VP9_COMP *cpi, ThreadData *td,
                        ctx, INT64_MAX);
       break;
     case PARTITION_HORZ:
+      pc_tree->horizontal[0].skip_ref_frame_mask = 0;
       rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &last_part_rdc,
                        subsize, &pc_tree->horizontal[0], INT64_MAX);
       if (last_part_rdc.rate != INT_MAX && bsize >= BLOCK_8X8 &&
@@ -2639,6 +2640,7 @@ static void rd_use_partition(VP9_COMP *cpi, ThreadData *td,
         vp9_rd_cost_init(&tmp_rdc);
         update_state(cpi, td, ctx, mi_row, mi_col, subsize, 0);
         encode_superblock(cpi, td, tp, 0, mi_row, mi_col, subsize, ctx);
+        pc_tree->horizontal[1].skip_ref_frame_mask = 0;
         rd_pick_sb_modes(cpi, tile_data, x, mi_row + (mi_step >> 1), mi_col,
                          &tmp_rdc, subsize, &pc_tree->horizontal[1], INT64_MAX);
         if (tmp_rdc.rate == INT_MAX || tmp_rdc.dist == INT64_MAX) {
@@ -2651,6 +2653,7 @@ static void rd_use_partition(VP9_COMP *cpi, ThreadData *td,
       }
       break;
     case PARTITION_VERT:
+      pc_tree->vertical[0].skip_ref_frame_mask = 0;
       rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &last_part_rdc,
                        subsize, &pc_tree->vertical[0], INT64_MAX);
       if (last_part_rdc.rate != INT_MAX && bsize >= BLOCK_8X8 &&
@@ -2660,6 +2663,7 @@ static void rd_use_partition(VP9_COMP *cpi, ThreadData *td,
         vp9_rd_cost_init(&tmp_rdc);
         update_state(cpi, td, ctx, mi_row, mi_col, subsize, 0);
         encode_superblock(cpi, td, tp, 0, mi_row, mi_col, subsize, ctx);
+        pc_tree->vertical[bsize > BLOCK_8X8].skip_ref_frame_mask = 0;
         rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col + (mi_step >> 1),
                          &tmp_rdc, subsize,
                          &pc_tree->vertical[bsize > BLOCK_8X8], INT64_MAX);
@@ -3705,6 +3709,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   int must_split = 0;
 
   int partition_mul = cpi->sf.enable_tpl_model ? x->cb_rdmult : cpi->rd.RDMULT;
+  uint8_t ref_frames_used[4] = { 0, 0, 0, 0 };
 
   (void)*tp_orig;
 
@@ -3835,6 +3840,12 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &this_rdc, bsize, ctx,
                      best_rdc.rdcost);
     if (this_rdc.rate != INT_MAX) {
+      const int ref1 = ctx->mic.ref_frame[0];
+      const int ref2 = ctx->mic.ref_frame[1];
+      for (i = 0; i < 4; ++i) {
+        ref_frames_used[i] |= (1 << ref1);
+        if (ref2 > 0) ref_frames_used[i] |= (1 << ref2);
+      }
       if (bsize >= BLOCK_8X8) {
         this_rdc.rdcost += RDCOST(partition_mul, x->rddiv,
                                   cpi->partition_cost[pl][PARTITION_NONE], 0);
@@ -3959,8 +3970,17 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         pc_tree->leaf_split[0]->pred_interp_filter = pred_interp_filter;
       rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &sum_rdc, subsize,
                        pc_tree->leaf_split[0], best_rdc.rdcost);
-
-      if (sum_rdc.rate == INT_MAX) sum_rdc.rdcost = INT64_MAX;
+      if (sum_rdc.rate == INT_MAX) {
+        sum_rdc.rdcost = INT64_MAX;
+      } else {
+        const int ref1 = pc_tree->leaf_split[0]->mic.ref_frame[0];
+        const int ref2 = pc_tree->leaf_split[0]->mic.ref_frame[1];
+        for (i = 0; i < 4; ++i) {
+          ref_frames_used[i] |= (1 << ref1);
+          if (ref2 > 0)
+            ref_frames_used[i] |= (1 << ref2);
+        }
+      }
     } else {
       for (i = 0; (i < 4) && ((sum_rdc.rdcost < best_rdc.rdcost) || must_split);
            ++i) {
@@ -3988,6 +4008,12 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
           sum_rdc.rdcost = INT64_MAX;
           break;
         } else {
+          if (pc_tree->split[i]->none.rate != INT_MAX) {
+            const int ref1 = pc_tree->split[i]->none.mic.ref_frame[0];
+            const int ref2 = pc_tree->split[i]->none.mic.ref_frame[1];
+            ref_frames_used[i] |= (1 << ref1);
+            if (ref2 > 0) ref_frames_used[i] |= (1 << ref2);
+          }
           sum_rdc.rate += this_rdc.rate;
           sum_rdc.dist += this_rdc.dist;
           sum_rdc.rdcost += this_rdc.rdcost;
@@ -4023,6 +4049,22 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         do_rect &= !partition_none_allowed;
     }
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
+  }
+
+  pc_tree->horizontal[0].skip_ref_frame_mask = 0;
+  pc_tree->horizontal[1].skip_ref_frame_mask = 0;
+  pc_tree->vertical[0].skip_ref_frame_mask = 0;
+  pc_tree->vertical[1].skip_ref_frame_mask = 0;
+  if (cpi->sf.prune_ref_frame_for_rect_partitions) {
+    uint8_t used_frames;
+    used_frames = ref_frames_used[0] | ref_frames_used[1];
+    if (used_frames) pc_tree->horizontal[0].skip_ref_frame_mask = ~used_frames;
+    used_frames = ref_frames_used[2] | ref_frames_used[3];
+    if (used_frames) pc_tree->horizontal[1].skip_ref_frame_mask = ~used_frames;
+    used_frames = ref_frames_used[0] | ref_frames_used[2];
+    if (used_frames) pc_tree->vertical[0].skip_ref_frame_mask = ~used_frames;
+    used_frames = ref_frames_used[1] | ref_frames_used[3];
+    if (used_frames) pc_tree->vertical[1].skip_ref_frame_mask = ~used_frames;
   }
 
   // PARTITION_HORZ
