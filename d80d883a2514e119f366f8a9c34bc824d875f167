@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b09cbf51_5848b5bd",
+        "filename": "vpx_dsp/x86/avg_intrin_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-07-21T01:08:41Z",
+      "side": 1,
+      "message": "const int16_t",
+      "range": {
+        "startLine": 338,
+        "startChar": 29,
+        "endLine": 338,
+        "endChar": 42
+      },
+      "revId": "d80d883a2514e119f366f8a9c34bc824d875f167",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8516717_19929dc7",
+        "filename": "vpx_dsp/x86/avg_intrin_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-07-21T01:08:41Z",
+      "side": 1,
+      "message": "const int...",
+      "range": {
+        "startLine": 342,
+        "startChar": 4,
+        "endLine": 342,
+        "endChar": 17
+      },
+      "revId": "d80d883a2514e119f366f8a9c34bc824d875f167",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
