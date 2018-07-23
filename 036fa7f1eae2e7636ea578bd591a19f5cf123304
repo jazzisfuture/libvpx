@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8d2cbc65_5096d8ac",
+        "filename": "vpx_dsp/x86/avg_intrin_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-07-23T19:44:22Z",
+      "side": 1,
+      "message": "const int. looks like there\u0027s some existing code with that pattern. could get all of that including this one in a followup",
+      "range": {
+        "startLine": 175,
+        "startChar": 29,
+        "endLine": 175,
+        "endChar": 42
+      },
+      "revId": "036fa7f1eae2e7636ea578bd591a19f5cf123304",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
