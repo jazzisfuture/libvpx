@@ -22,6 +22,30 @@
       "revId": "036fa7f1eae2e7636ea578bd591a19f5cf123304",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db03f003_46ccad86",
+        "filename": "vpx_dsp/x86/avg_intrin_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2018-07-23T19:49:25Z",
+      "side": 1,
+      "message": "I\u0027ll fix this one now.  Need to update the commit message.",
+      "parentUuid": "8d2cbc65_5096d8ac",
+      "range": {
+        "startLine": 175,
+        "startChar": 29,
+        "endLine": 175,
+        "endChar": 42
+      },
+      "revId": "036fa7f1eae2e7636ea578bd591a19f5cf123304",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
