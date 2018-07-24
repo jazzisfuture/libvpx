@@ -5693,7 +5693,8 @@ void tpl_model_store(TplDepStats *tpl_stats, int mi_row, int mi_col,
 }
 
 void tpl_model_update_b(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
-                        int mi_row, int mi_col, const BLOCK_SIZE bsize) {
+                        int mi_row, int mi_col, const BLOCK_SIZE bsize,
+                        double cr) {
   TplDepFrame *ref_tpl_frame = &tpl_frame[tpl_stats->ref_frame_index];
   TplDepStats *ref_stats = ref_tpl_frame->tpl_stats_ptr;
   MV mv = tpl_stats->mv.as_mv;
@@ -5725,11 +5726,11 @@ void tpl_model_update_b(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
       int ref_mi_row = round_floor(grid_pos_row, bh) * mi_height;
       int ref_mi_col = round_floor(grid_pos_col, bw) * mi_width;
 
-      int64_t mc_flow = tpl_stats->mc_dep_cost -
-                        (tpl_stats->mc_dep_cost * tpl_stats->inter_cost) /
-                            tpl_stats->intra_cost;
-
-      int idx, idy;
+      int64_t mc_flow = (int64_t)(
+          tpl_stats->mc_dep_cost * cr *
+          sqrt(sqrt(1.0 - (double)tpl_stats->inter_cost / tpl_stats->intra_cost)) *
+          overlap_area / pix_num);
+      int idy, idx;
 
       for (idy = 0; idy < mi_height; ++idy) {
         for (idx = 0; idx < mi_width; ++idx) {
@@ -5737,7 +5738,7 @@ void tpl_model_update_b(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
               &ref_stats[(ref_mi_row + idy) * ref_tpl_frame->stride +
                          (ref_mi_col + idx)];
 
-          des_stats->mc_flow += (mc_flow * overlap_area) / pix_num;
+          des_stats->mc_flow += mc_flow;
           des_stats->mc_ref_cost +=
               ((tpl_stats->intra_cost - tpl_stats->inter_cost) * overlap_area) /
               pix_num;
@@ -5749,17 +5750,19 @@ void tpl_model_update_b(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
 }
 
 void tpl_model_update(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
-                      int mi_row, int mi_col, const BLOCK_SIZE bsize) {
+                      int mi_row, int mi_col, const BLOCK_SIZE bsize,
+                      int64_t recon_error, int64_t sse) {
   int idx, idy;
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  double cr = (double)recon_error / sse;
 
   for (idy = 0; idy < mi_height; ++idy) {
     for (idx = 0; idx < mi_width; ++idx) {
       TplDepStats *tpl_ptr =
           &tpl_stats[(mi_row + idy) * tpl_frame->stride + (mi_col + idx)];
       tpl_model_update_b(tpl_frame, tpl_ptr, mi_row + idy, mi_col + idx,
-                         BLOCK_8X8);
+                         BLOCK_8X8, cr);
     }
   }
 }
@@ -5831,7 +5834,7 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int pix_num = bw * bh;
-  int64_t recon_error, sse;
+  int64_t recon_error = 0, sse = 1;
 
   // Setup scaling factor
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -6000,7 +6003,7 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
                       gf_picture[frame_idx].ref_frame[best_rf_idx], best_mv);
 
       tpl_model_update(cpi->tpl_stats, tpl_frame->tpl_stats_ptr, mi_row, mi_col,
-                       bsize);
+                       bsize, recon_error, sse);
     }
   }
 }
