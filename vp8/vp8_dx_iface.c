@@ -627,6 +627,14 @@ static vpx_codec_err_t vp8_set_decryptor(vpx_codec_alg_priv_t *ctx,
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t vp8_set_row_mt(vpx_codec_alg_priv_t *ctx,
+                                      va_list args) {
+  (void)ctx;
+  /* row-mt is not supported in vp8 decoder */
+  if(va_arg(args, int)) return VPX_CODEC_UNSUP_FEATURE;
+  return VPX_CODEC_OK;
+}
+
 vpx_codec_ctrl_fn_map_t vp8_ctf_maps[] = {
   { VP8_SET_REFERENCE, vp8_set_reference },
   { VP8_COPY_REFERENCE, vp8_get_reference },
@@ -636,6 +644,7 @@ vpx_codec_ctrl_fn_map_t vp8_ctf_maps[] = {
   { VP8D_GET_LAST_REF_USED, vp8_get_last_ref_frame },
   { VPXD_GET_LAST_QUANTIZER, vp8_get_quantizer },
   { VPXD_SET_DECRYPTOR, vp8_set_decryptor },
+  { VP9D_SET_ROW_MT, vp8_set_row_mt },
   { -1, NULL },
 };
 
