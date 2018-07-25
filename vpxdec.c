@@ -99,7 +99,7 @@ static const arg_def_t svcdecodingarg = ARG_DEF(
 static const arg_def_t framestatsarg =
     ARG_DEF(NULL, "framestats", 1, "Output per-frame stats (.csv format)");
 static const arg_def_t rowmtarg =
-    ARG_DEF(NULL, "row-mt", 1, "Enable multi-threading to run row-wise");
+    ARG_DEF(NULL, "row-mt", 1, "Enable multi-threading to run row-wise in VP9");
 
 static const arg_def_t *all_args[] = {
   &help,           &codecarg,      &use_yv12,         &use_i420,
