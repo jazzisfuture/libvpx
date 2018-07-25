@@ -183,6 +183,30 @@
     },
     {
       "key": {
+        "uuid": "e6f49b36_a66aa83b",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1002054
+      },
+      "writtenOn": "2018-07-25T20:22:25Z",
+      "side": 1,
+      "message": "I understand that. But there is decryptor state associated with a frame (in case of full frame) and a sample (in case of sub-sample).",
+      "parentUuid": "73511301_35865f36",
+      "range": {
+        "startLine": 276,
+        "startChar": 11,
+        "endLine": 276,
+        "endChar": 21
+      },
+      "revId": "952a450a289990d5077321eed62ce595f6fe487e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b3c34f3e_cb2da606",
         "filename": "vp9/decoder/vp9_decoder.c",
         "patchSetId": 8
