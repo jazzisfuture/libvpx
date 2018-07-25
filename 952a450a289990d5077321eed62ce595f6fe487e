@@ -76,6 +76,52 @@
     },
     {
       "key": {
+        "uuid": "46d06d3f_f506f199",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1002054
+      },
+      "writtenOn": "2018-07-25T16:01:26Z",
+      "side": 1,
+      "message": "I\u0027m not sure this will work with real encrypted content.",
+      "range": {
+        "startLine": 276,
+        "startChar": 11,
+        "endLine": 276,
+        "endChar": 21
+      },
+      "revId": "952a450a289990d5077321eed62ce595f6fe487e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3c34f3e_cb2da606",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1002054
+      },
+      "writtenOn": "2018-07-25T16:01:26Z",
+      "side": 1,
+      "message": "with the need_resync flag can you move this to after the uncompressed header is read? Then do this? I know on need_resync you will perform an extra release_fb() and get_fb().\n\nEven better would be if you could detect that you had a corrupted frame. I still feel like you should be able to tell that you had a corrupted frame in the previous key frame sequence vs not having one.",
+      "range": {
+        "startLine": 356,
+        "startChar": 22,
+        "endLine": 356,
+        "endChar": 23
+      },
+      "revId": "952a450a289990d5077321eed62ce595f6fe487e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "07ac88e6_0bff5d1b",
         "filename": "vp9/decoder/vp9_decoder.h",
         "patchSetId": 8
