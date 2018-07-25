@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "11d302bb_a7145678",
+        "filename": "test/vp9_decode_corrupted.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-07-25T19:33:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d0225c59_a8170a1a",
+      "revId": "952a450a289990d5077321eed62ce595f6fe487e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e96160c1_b71f86a9",
         "filename": "test/vp9_decode_corrupted.cc",
         "patchSetId": 8
@@ -39,6 +57,30 @@
       "revId": "952a450a289990d5077321eed62ce595f6fe487e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3442031_4fc0eb21",
+        "filename": "test/vp9_decode_corrupted.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-07-25T19:33:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e96160c1_b71f86a9",
+      "range": {
+        "startLine": 63,
+        "startChar": 7,
+        "endLine": 63,
+        "endChar": 21
+      },
+      "revId": "952a450a289990d5077321eed62ce595f6fe487e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -76,6 +118,24 @@
     },
     {
       "key": {
+        "uuid": "f07749ff_457ff75c",
+        "filename": "test/vp9_decode_corrupted.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-07-25T19:33:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "60ecf024_85d52d6f",
+      "revId": "952a450a289990d5077321eed62ce595f6fe487e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "46d06d3f_f506f199",
         "filename": "vp9/decoder/vp9_decoder.c",
         "patchSetId": 8
@@ -99,6 +159,30 @@
     },
     {
       "key": {
+        "uuid": "73511301_35865f36",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-07-25T19:33:25Z",
+      "side": 1,
+      "message": "This function is moved from vp9_decodeframe.c to here and remains unchanged. So it should work here if it works there.",
+      "parentUuid": "46d06d3f_f506f199",
+      "range": {
+        "startLine": 276,
+        "startChar": 11,
+        "endLine": 276,
+        "endChar": 21
+      },
+      "revId": "952a450a289990d5077321eed62ce595f6fe487e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b3c34f3e_cb2da606",
         "filename": "vp9/decoder/vp9_decoder.c",
         "patchSetId": 8
@@ -110,6 +194,30 @@
       "writtenOn": "2018-07-25T16:01:26Z",
       "side": 1,
       "message": "with the need_resync flag can you move this to after the uncompressed header is read? Then do this? I know on need_resync you will perform an extra release_fb() and get_fb().\n\nEven better would be if you could detect that you had a corrupted frame. I still feel like you should be able to tell that you had a corrupted frame in the previous key frame sequence vs not having one.",
+      "range": {
+        "startLine": 356,
+        "startChar": 22,
+        "endLine": 356,
+        "endChar": 23
+      },
+      "revId": "952a450a289990d5077321eed62ce595f6fe487e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b197e9c5_35d6966e",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-07-25T19:33:25Z",
+      "side": 1,
+      "message": "Corrupted frame can be detected and cleaned up but the problem is the previous key frames. Because the ref_frame_map is reset to -1 with need_resync flag, the frame buffers occupied by previous key frames can\u0027t be released in swap_frame_buffers.\n\nIn normal cases, when the second key frame comes in, the ref_count of the frame buffer taken by previous key frame is decreased to 0 in swap_frame_buffers.",
+      "parentUuid": "b3c34f3e_cb2da606",
       "range": {
         "startLine": 356,
         "startChar": 22,
