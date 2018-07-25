@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04412bd0_20523233",
+        "filename": "test/decode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002174
+      },
+      "writtenOn": "2018-07-25T17:00:37Z",
+      "side": 1,
+      "message": "*const?",
+      "range": {
+        "startLine": 141,
+        "startChar": 32,
+        "endLine": 141,
+        "endChar": 33
+      },
+      "revId": "8964b6e6f65c4d68258285d698ad41c622ad4133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "343cfb46_d3b70e70",
+        "filename": "test/decode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002174
+      },
+      "writtenOn": "2018-07-25T17:00:37Z",
+      "side": 1,
+      "message": "nit: this could be a separate test so that if it fails it would be obvious which one failed.",
+      "revId": "8964b6e6f65c4d68258285d698ad41c622ad4133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
