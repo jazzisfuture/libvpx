@@ -16,6 +16,24 @@
       "revId": "f8d9db2c516428710676470c670f8479894b7e54",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1edb174a_4fd983c8",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 1739,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-07-26T17:28:47Z",
+      "side": 1,
+      "message": "This is reset when new frame comes in and decoder reads compressed header at https://chromium.googlesource.com/webm/libvpx/+/master/vp9/decoder/vp9_decodeframe.c#2056",
+      "parentUuid": "2ee59b3c_1d0cfa6b",
+      "revId": "f8d9db2c516428710676470c670f8479894b7e54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
