@@ -231,6 +231,30 @@
     },
     {
       "key": {
+        "uuid": "1debd750_d615dc10",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-07-26T17:29:44Z",
+      "side": 1,
+      "message": "Per offline discussion, key frame buffer flush was moved after uncompress header is read so there should be no problem here.",
+      "parentUuid": "674cba8d_8e888913",
+      "range": {
+        "startLine": 276,
+        "startChar": 11,
+        "endLine": 276,
+        "endChar": 21
+      },
+      "revId": "952a450a289990d5077321eed62ce595f6fe487e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3c34f3e_cb2da606",
         "filename": "vp9/decoder/vp9_decoder.c",
         "patchSetId": 8
