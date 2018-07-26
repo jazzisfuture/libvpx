@@ -105,6 +105,24 @@
       "revId": "8964b6e6f65c4d68258285d698ad41c622ad4133",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7beb6d0a_c0358bbd",
+        "filename": "test/decode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-07-26T05:15:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac2409b5_4092b97e",
+      "revId": "8964b6e6f65c4d68258285d698ad41c622ad4133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
