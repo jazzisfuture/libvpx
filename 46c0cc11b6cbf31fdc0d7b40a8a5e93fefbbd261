@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "abc462f3_2c18e080",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-07-27T18:29:03Z",
+      "side": 1,
+      "message": "It\u0027s good to test more sequences, resolutions, and bitrate/quality settings.",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 25
+      },
+      "revId": "46c0cc11b6cbf31fdc0d7b40a8a5e93fefbbd261",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
