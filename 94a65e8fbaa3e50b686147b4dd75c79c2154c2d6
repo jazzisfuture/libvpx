@@ -22,6 +22,30 @@
       "revId": "94a65e8fbaa3e50b686147b4dd75c79c2154c2d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "302d6433_b27703c0",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-07-27T16:55:55Z",
+      "side": 0,
+      "message": "This function is a no-op if ybf is a null pointer. This function is structured like this:\n\nint vpx_realloc_frame_buffer(...) {\n  if (ybf) {\n    ... the bulk of the function ...\n    return 0;\n  }\n  return -2;\n}\n\nThis is why I added the decode size limit checks inside the if (ybf) block. All the other checks for invalid inputs are inside the if (ybf) block.\n\nNote: I would restructure the function as follows:\n\nint vpx_realloc_frame_buffer(...) {\n  if (!ybf) {\n    return -2;\n  }\n\n  ... the bulk of the function ...\n  return 0;\n}\n\nBut I usually refrain from code cleanup in a bug fix.",
+      "parentUuid": "bbdcc45f_78fbdd52",
+      "range": {
+        "startLine": 145,
+        "startChar": 6,
+        "endLine": 145,
+        "endChar": 9
+      },
+      "revId": "94a65e8fbaa3e50b686147b4dd75c79c2154c2d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
