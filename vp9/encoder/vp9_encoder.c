@@ -5672,8 +5672,8 @@ void tpl_model_store(TplDepStats *tpl_stats, int mi_row, int mi_col,
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   int idx, idy;
 
-  int intra_cost = src_stats->intra_cost / (mi_height * mi_width);
-  int inter_cost = src_stats->inter_cost / (mi_height * mi_width);
+  int64_t intra_cost = src_stats->intra_cost / (mi_height * mi_width);
+  int64_t inter_cost = src_stats->inter_cost / (mi_height * mi_width);
 
   intra_cost = VPXMAX(1, intra_cost);
   inter_cost = VPXMAX(1, inter_cost);
@@ -5982,6 +5982,7 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
 
   xd->mi = cm->mi_grid_visible;
   xd->mi[0] = cm->mi;
+  xd->cur_buf = this_frame;
 
   // Get rd multiplier set up.
   rdmult =
@@ -6002,7 +6003,6 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx) {
         (cm->mi_rows - 1 - mi_row) * MI_SIZE + (17 - 2 * VP9_INTERP_EXTEND);
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col += mi_width) {
       TplDepStats tpl_stats;
-      xd->cur_buf = this_frame;
       mode_estimation(cpi, x, xd, &sf, gf_picture, frame_idx, src_diff, coeff,
                       qcoeff, dqcoeff, mi_row, mi_col, bsize, tx_size,
                       ref_frame, predictor, &recon_error, &sse, &tpl_stats);
