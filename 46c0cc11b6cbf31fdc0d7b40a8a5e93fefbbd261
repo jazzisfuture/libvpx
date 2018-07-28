@@ -22,6 +22,30 @@
       "revId": "46c0cc11b6cbf31fdc0d7b40a8a5e93fefbbd261",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a44c7bcf_b86d63e7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2018-07-28T01:06:54Z",
+      "side": 1,
+      "message": "I will do this next time.",
+      "parentUuid": "abc462f3_2c18e080",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 25
+      },
+      "revId": "46c0cc11b6cbf31fdc0d7b40a8a5e93fefbbd261",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
