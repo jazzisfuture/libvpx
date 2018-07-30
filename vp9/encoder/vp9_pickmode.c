@@ -1624,6 +1624,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   MV_REFERENCE_FRAME ref_frame;
   MV_REFERENCE_FRAME usable_ref_frame, second_ref_frame;
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
+  int_mv newmv_motion;
+  int selected_scroll;
+  int scroll_mode;
   uint8_t mode_checked[MB_MODE_COUNT][MAX_REF_FRAMES];
   struct buf_2d yv12_mb[4][MAX_MB_PLANE];
   static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
@@ -1928,7 +1931,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     flag_svc_subpel = 1;
   }
 
-  for (idx = 0; idx < num_inter_modes + comp_modes; ++idx) {
+  selected_scroll = 0;
+  scroll_mode = 0;
+  newmv_motion.as_int = 0;
+  if (cpi->oxcf.content == VP9E_CONTENT_SCREEN && x->sb_scroll_motion)
+    scroll_mode = 1;
+
+  for (idx = 0; idx < num_inter_modes + scroll_mode + comp_modes; ++idx) {
     int rate_mv = 0;
     int mode_rd_thresh;
     int mode_index;
@@ -1953,8 +1962,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
         this_mode = ref_mode_set_svc[idx].pred_mode;
         ref_frame = ref_mode_set_svc[idx].ref_frame;
       }
-    } else {
-      // Add (0,0) compound modes.
+    } else if (scroll_mode) {
+      this_mode = NEWMV;
+      ref_frame = LAST_FRAME;
+      frame_mv[this_mode][ref_frame].as_mv.col = x->sb_mvcol_part;
+      frame_mv[this_mode][ref_frame].as_mv.row = x->sb_mvrow_part;
+    } else {  // Add (0,0) compound modes.
       this_mode = ZEROMV;
       ref_frame = LAST_FRAME;
       if (idx == num_inter_modes + comp_modes - 1) ref_frame = GOLDEN_FRAME;
@@ -2122,7 +2135,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                              &rd_thresh_freq_fact[mode_index])))
       if (frame_mv[this_mode][ref_frame].as_int != 0) continue;
 
-    if (this_mode == NEWMV && !force_mv_inter_layer) {
+    if (this_mode == NEWMV && !force_mv_inter_layer && idx < num_inter_modes) {
       if (search_new_mv(cpi, x, frame_mv, ref_frame, gf_temporal_ref, bsize,
                         mi_row, mi_col, best_pred_sad, &rate_mv, best_sse_sofar,
                         &best_rdc))
@@ -2167,6 +2180,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     mi->mode = this_mode;
     mi->mv[0].as_int = frame_mv[this_mode][ref_frame].as_int;
     mi->mv[1].as_int = 0;
+
+    if (this_mode == NEWMV && ref_frame == LAST_FRAME && idx < num_inter_modes)
+      newmv_motion.as_int = frame_mv[this_mode][ref_frame].as_int;
 
     // Search for the best prediction filter type, when the resulting
     // motion vector is at sub-pixel accuracy level for luma component, i.e.,
@@ -2329,7 +2345,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       best_pickmode.best_ref_frame = ref_frame;
       best_pickmode.best_mode_skip_txfm = x->skip_txfm[0];
       best_pickmode.best_second_ref_frame = second_ref_frame;
-
+      if (scroll_mode && this_mode == NEWMV && ref_frame == LAST_FRAME) {
+        if (idx == num_inter_modes) selected_scroll = 1;
+      }
       if (reuse_inter_pred) {
         free_pred_buffer(best_pickmode.best_pred);
         best_pickmode.best_pred = this_mode_pred;
@@ -2354,6 +2372,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   mi->ref_frame[0] = best_pickmode.best_ref_frame;
   mi->mv[0].as_int =
       frame_mv[best_pickmode.best_mode][best_pickmode.best_ref_frame].as_int;
+  if (scroll_mode && best_pickmode.best_mode == NEWMV &&
+      best_pickmode.best_ref_frame == LAST_FRAME) {
+    if (!selected_scroll) mi->mv[0].as_int = newmv_motion.as_int;
+  }
   xd->mi[0]->bmi[0].as_mv[0].as_int = mi->mv[0].as_int;
   x->skip_txfm[0] = best_pickmode.best_mode_skip_txfm;
   mi->ref_frame[1] = best_pickmode.best_second_ref_frame;
