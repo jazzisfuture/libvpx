@@ -1378,6 +1378,19 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       x->sb_use_mv_part = 1;
       x->sb_mvcol_part = mi->mv[0].as_mv.col;
       x->sb_mvrow_part = mi->mv[0].as_mv.row;
+      // For screen-content, on superblocks that have motion and the whole frame
+      // has many blocks with non-zero motion, if the integer motion vector
+      // (from pro_motion_estimation) has large row component and small column component,
+      // then flag it as possible (vertical) scroll motion.
+      // TODO(marpan): Put threhsold on prediction error.
+      if (cpi->oxcf.content == VP9E_CONTENT_SCREEN && !scene_change_detected &&
+          !x->zero_temp_sad_source && cpi->rc.high_num_blocks_with_motion &&
+          abs(x->sb_mvrow_part) > 80 && abs(x->sb_mvcol_part) < 8) {
+        x->sb_scroll_motion = 1;
+        // Disable 8x8 and 4x4 blocks for this case.
+        thresholds[2] = INT64_MAX;
+        thresholds[1] = INT64_MAX;
+      }
     }
 
     y_sad_last = y_sad;
@@ -5262,6 +5275,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     x->sb_mvcol_part = 0;
     x->sb_mvrow_part = 0;
     x->sb_pickmode_part = 0;
+    x->sb_scroll_motion = 0;
     x->arf_frame_usage = 0;
     x->lastgolden_frame_usage = 0;
 
