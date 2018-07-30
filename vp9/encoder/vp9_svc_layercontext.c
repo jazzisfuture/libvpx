@@ -862,7 +862,6 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
       svc->use_partition_reuse = 0;
     }
   }
-
   svc->non_reference_frame = 0;
   if (cpi->common.frame_type != KEY_FRAME && !cpi->ext_refresh_last_frame &&
       !cpi->ext_refresh_golden_frame && !cpi->ext_refresh_alt_ref_frame)
