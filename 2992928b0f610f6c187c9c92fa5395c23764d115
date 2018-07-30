@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f6a9f7c5_e542758e",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 5670,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-07-30T18:07:24Z",
+      "side": 1,
+      "message": "const TplDepStats *.",
+      "range": {
+        "startLine": 5670,
+        "startChar": 51,
+        "endLine": 5670,
+        "endChar": 64
+      },
+      "revId": "2992928b0f610f6c187c9c92fa5395c23764d115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "931746d7_a4040dcd",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 5683,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-07-30T18:07:24Z",
+      "side": 1,
+      "message": "Suggestion(maybe in another patch): define it out of the for loop, and update its value during each iteration.",
+      "range": {
+        "startLine": 5683,
+        "startChar": 6,
+        "endLine": 5683,
+        "endChar": 26
+      },
+      "revId": "2992928b0f610f6c187c9c92fa5395c23764d115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
