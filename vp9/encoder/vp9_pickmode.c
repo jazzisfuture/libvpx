@@ -1773,6 +1773,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     int skip_this_mv = 0;
     int comp_pred = 0;
     int force_mv_inter_layer = 0;
+    int force_mv_newmv_last = 0;
     PREDICTION_MODE this_mode;
     second_ref_frame = NONE;
 
@@ -1818,6 +1819,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                  frame_mv[this_mode][ref_frame].as_mv.row != svc_mv_row) {
         continue;
       }
+    }
+
+    // Take the newmv from the superblock motion estimate if the scroll_motion
+    // is set. Attempt to capture scrolling motion better.
+    if (cpi->oxcf.content == VP9E_CONTENT_SCREEN && x->sb_scroll_motion &&
+        this_mode == NEWMV && ref_frame == LAST_FRAME) {
+      frame_mv[this_mode][ref_frame].as_mv.col = x->sb_mvcol_part;
+      frame_mv[this_mode][ref_frame].as_mv.row = x->sb_mvrow_part;
+      force_mv_newmv_last = 1;
     }
 
     if (comp_pred) {
@@ -1952,7 +1962,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                              &rd_thresh_freq_fact[mode_index])))
       if (frame_mv[this_mode][ref_frame].as_int != 0) continue;
 
-    if (this_mode == NEWMV && !force_mv_inter_layer) {
+    if (this_mode == NEWMV && !force_mv_inter_layer && !force_mv_newmv_last) {
       if (ref_frame > LAST_FRAME && gf_temporal_ref &&
           cpi->oxcf.rc_mode == VPX_CBR) {
         int tmp_sad;
@@ -2307,6 +2317,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       break;
     }
   }
+
 
   mi->mode = best_mode;
   mi->interp_filter = best_pred_filter;
