@@ -169,6 +169,7 @@ typedef struct SVC {
   uint8_t fb_idx_base[REF_FRAMES];
 
   int use_set_ref_frame_config;
+  int quality_layers;
 } SVC;
 
 struct VP9_COMP;
