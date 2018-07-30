@@ -21,6 +21,14 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
+static const uint8_t VP9_VAR_OFFS[64] = {
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128
+};
+
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   size_t last_coded_q_map_size;
   CYCLIC_REFRESH *const cr = vpx_calloc(1, sizeof(*cr));
@@ -369,8 +377,35 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     int sb_col_index = i - sb_row_index * sb_cols;
     int mi_row = sb_row_index * MI_BLOCK_SIZE;
     int mi_col = sb_col_index * MI_BLOCK_SIZE;
+    int compute_content = 1;
+    int flat_static_blocks = 0;
     assert(mi_row >= 0 && mi_row < cm->mi_rows);
     assert(mi_col >= 0 && mi_col < cm->mi_cols);
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (cpi->common.use_highbitdepth) compute_content = 0;
+#endif
+    // For screen-content: compute spatial variance and exclude blocks
+    // that are spatially flat.
+    if (compute_content && cpi->svc.number_spatial_layers == 1 &&
+        cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
+      unsigned int source_variance;
+      const uint8_t *src_y = cpi->Source->y_buffer;
+      int ystride = cpi->Source->y_stride;
+      unsigned int sse;
+      const BLOCK_SIZE bsize = BLOCK_64X64;
+      src_y += (sb_row_index << 6) * ystride + (sb_col_index << 6);
+      source_variance =
+          cpi->fn_ptr[bsize].vf(src_y, ystride, VP9_VAR_OFFS, 0, &sse);
+      if (source_variance == 0) {
+        uint64_t tmp_sad;
+        const uint8_t *last_src_y = cpi->Last_Source->y_buffer;
+        int last_ystride = cpi->Last_Source->y_stride;
+        last_src_y += (sb_row_index << 6) * ystride + (sb_col_index << 6);
+        tmp_sad =
+            cpi->fn_ptr[bsize].sdf(src_y, ystride, last_src_y, last_ystride);
+        if (tmp_sad == 0) flat_static_blocks = 1;
+      }
+    }
     bl_index = mi_row * cm->mi_cols + mi_col;
     // Loop through all 8x8 blocks in superblock and update map.
     xmis =
@@ -388,8 +423,9 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
         // reset to 0 later depending on the coding mode.
         if (cr->map[bl_index2] == 0) {
           count_tot++;
-          if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
-              cpi->consec_zero_mv[bl_index2] < consec_zero_mv_thresh_block) {
+          if ((cr->last_coded_q_map[bl_index2] > qindex_thresh ||
+               cpi->consec_zero_mv[bl_index2] < consec_zero_mv_thresh_block) &&
+              !flat_static_blocks) {
             sum_map++;
             count_sel++;
           }
@@ -464,12 +500,11 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   // For screen-content: keep rate_ratio_qdelta to 2.0 (segment#1 boost) and
   // percent_refresh (refresh rate) to 10. But reduce rate boost for segment#2
   // (rate_boost_fac = 10 disables segment#2).
-  // TODO(marpan): Consider increasing refresh rate after slide change.
   if (cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
-    cr->percent_refresh = 10;
+    cr->percent_refresh = 5;
     // Increase the amount of refresh on scene change that is encoded at max Q,
-    // increase for a few cycles of the refresh period (~30 frames).
-    if (cr->counter_encode_maxq_scene_change < 30) cr->percent_refresh = 15;
+    // increase for a few cycles of the refresh period (~100 / percent_refresh).
+    if (cr->counter_encode_maxq_scene_change < 30) cr->percent_refresh = 10;
     cr->rate_ratio_qdelta = 2.0;
     cr->rate_boost_fac = 10;
   }
