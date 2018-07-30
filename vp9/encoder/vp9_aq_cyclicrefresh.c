@@ -21,6 +21,14 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
+static const uint8_t VP9_VAR_OFFS[64] = {
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128
+};
+
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   size_t last_coded_q_map_size;
   CYCLIC_REFRESH *const cr = vpx_calloc(1, sizeof(*cr));
@@ -335,6 +343,8 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   int qindex_thresh = 0;
   int count_sel = 0;
   int count_tot = 0;
+  const uint8_t *src_y = cpi->Source->y_buffer;
+  int ystride = cpi->Source->y_stride;
   memset(seg_map, CR_SEGMENT_ID_BASE, cm->mi_rows * cm->mi_cols);
   sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
   sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
@@ -383,6 +393,8 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     for (y = 0; y < ymis; y++) {
       for (x = 0; x < xmis; x++) {
         const int bl_index2 = bl_index + y * cm->mi_cols + x;
+        const int y_shift = ystride * y + x;
+        src_y += y_shift;
         // If the block is as a candidate for clean up then mark it
         // for possible boost/refresh (segment 1). The segment id may get
         // reset to 0 later depending on the coding mode.
@@ -390,8 +402,25 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
           count_tot++;
           if (cr->last_coded_q_map[bl_index2] > qindex_thresh ||
               cpi->consec_zero_mv[bl_index2] < consec_zero_mv_thresh_block) {
-            sum_map++;
-            count_sel++;
+            unsigned int source_variance = UINT_MAX;
+            int compute_spatial_var = 1;
+#if CONFIG_VP9_HIGHBITDEPTH
+            if (cpi->common.use_highbitdepth) compute_spatial_var = 0;
+#endif
+            // For screen-content: compute spatial variance and exclude blocks
+            // that are spatially flat.
+            if (compute_spatial_var &&
+                cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
+              unsigned int sse;
+              const BLOCK_SIZE bsize = BLOCK_64X64;
+              source_variance =
+                  cpi->fn_ptr[bsize].vf(src_y, ystride, VP9_VAR_OFFS, 0, &sse);
+            }
+            // Avoid assigning segment to spatially flat blocks.
+            if (source_variance > 0) {
+              sum_map++;
+              count_sel++;
+            }
           }
         } else if (cr->map[bl_index2] < 0) {
           cr->map[bl_index2]++;
