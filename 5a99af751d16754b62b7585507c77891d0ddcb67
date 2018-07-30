@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bbdfd44b_25c37673",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 5506,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2018-07-30T15:10:53Z",
+      "side": 1,
+      "message": "personally I am not that keen on defining two values liek this on one line especially when one is initialized and the other not. However that is possibly a personal stylistic nit.",
+      "range": {
+        "startLine": 5506,
+        "startChar": 0,
+        "endLine": 5506,
+        "endChar": 23
+      },
+      "revId": "5a99af751d16754b62b7585507c77891d0ddcb67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b67ad8f8_96f491d6",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 5540,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2018-07-30T15:10:53Z",
+      "side": 1,
+      "message": "Should this be under some sort of stat output ifdef?",
+      "range": {
+        "startLine": 5537,
+        "startChar": 0,
+        "endLine": 5540,
+        "endChar": 48
+      },
+      "revId": "5a99af751d16754b62b7585507c77891d0ddcb67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
