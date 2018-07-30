@@ -187,6 +187,8 @@ struct macroblock {
 
   int sb_pickmode_part;
 
+  int sb_scroll_motion;
+
   int zero_temp_sad_source;
 
   // For each superblock: saves the content value (e.g., low/high sad/sumdiff)
