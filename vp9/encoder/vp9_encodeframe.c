@@ -1377,6 +1377,20 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       x->sb_use_mv_part = 1;
       x->sb_mvcol_part = mi->mv[0].as_mv.col;
       x->sb_mvrow_part = mi->mv[0].as_mv.row;
+      // For screen-content: if the estimated motion vector has large row
+      // component and small column component, and the superblock has high
+      // spatial variance, then mark it as reliable estimate of scroll motion.
+      if (cpi->oxcf.content == VP9E_CONTENT_SCREEN && !scene_change_detected) {
+        if (abs(x->sb_mvrow_part) > 80 && abs(x->sb_mvcol_part) < 8 &&
+            mi_col > 0 && mi_col < cm->mi_cols - 8 && mi_row > 0 &&
+            mi_row < cm->mi_rows - 8) {
+          unsigned int tmp_sse;
+          x->source_variance =
+              cpi->fn_ptr[BLOCK_64X64].vf(s, sp, VP9_VAR_OFFS, 0, &tmp_sse);
+          x->source_variance = x->source_variance >> 12;
+          if (x->source_variance > 2000) x->sb_scroll_motion = 1;
+        }
+      }
     }
 
     y_sad_last = y_sad;
@@ -5096,6 +5110,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     x->sb_mvcol_part = 0;
     x->sb_mvrow_part = 0;
     x->sb_pickmode_part = 0;
+    x->sb_scroll_motion = 0;
     x->arf_frame_usage = 0;
     x->lastgolden_frame_usage = 0;
 
