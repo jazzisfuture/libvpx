@@ -21,6 +21,14 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
+static const uint8_t VP9_VAR_OFFS[64] = {
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128
+};
+
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
   size_t last_coded_q_map_size;
   CYCLIC_REFRESH *const cr = vpx_calloc(1, sizeof(*cr));
@@ -319,6 +327,27 @@ void vp9_cyclic_refresh_set_golden_update(VP9_COMP *const cpi) {
     rc->baseline_gf_interval = 10;
 }
 
+int is_superblock_flat_static(const VP9_COMP *const cpi, int sb_row_index,
+                              int sb_col_index) {
+  unsigned int source_variance;
+  const uint8_t *src_y = cpi->Source->y_buffer;
+  const int ystride = cpi->Source->y_stride;
+  unsigned int sse;
+  const BLOCK_SIZE bsize = BLOCK_64X64;
+  src_y += (sb_row_index << 6) * ystride + (sb_col_index << 6);
+  source_variance =
+      cpi->fn_ptr[bsize].vf(src_y, ystride, VP9_VAR_OFFS, 0, &sse);
+  if (source_variance == 0) {
+    uint64_t tmp_sad;
+    const uint8_t *last_src_y = cpi->Last_Source->y_buffer;
+    const int last_ystride = cpi->Last_Source->y_stride;
+    last_src_y += (sb_row_index << 6) * ystride + (sb_col_index << 6);
+    tmp_sad = cpi->fn_ptr[bsize].sdf(src_y, ystride, last_src_y, last_ystride);
+    if (tmp_sad == 0) return 1;
+  }
+  return 0;
+}
+
 // Update the segmentation map, and related quantities: cyclic refresh map,
 // refresh sb_index, and target number of blocks to be refreshed.
 // The map is set to either 0/CR_SEGMENT_ID_BASE (no refresh) or to
@@ -335,6 +364,7 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
   int qindex_thresh = 0;
   int count_sel = 0;
   int count_tot = 0;
+  cr->skip_flat_steady_blocks = 0;
   memset(seg_map, CR_SEGMENT_ID_BASE, cm->mi_rows * cm->mi_cols);
   sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
   sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
@@ -369,8 +399,12 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     int sb_col_index = i - sb_row_index * sb_cols;
     int mi_row = sb_row_index * MI_BLOCK_SIZE;
     int mi_col = sb_col_index * MI_BLOCK_SIZE;
+    int compute_content = 1;
     assert(mi_row >= 0 && mi_row < cm->mi_rows);
     assert(mi_col >= 0 && mi_col < cm->mi_cols);
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (cpi->common.use_highbitdepth) compute_content = 0;
+#endif
     bl_index = mi_row * cm->mi_cols + mi_col;
     // Loop through all 8x8 blocks in superblock and update map.
     xmis =
@@ -401,11 +435,22 @@ static void cyclic_refresh_update_map(VP9_COMP *const cpi) {
     // Enforce constant segment over superblock.
     // If segment is at least half of superblock, set to 1.
     if (sum_map >= xmis * ymis / 2) {
-      for (y = 0; y < ymis; y++)
-        for (x = 0; x < xmis; x++) {
-          seg_map[bl_index + y * cm->mi_cols + x] = CR_SEGMENT_ID_BOOST1;
+      // This superblock is a candidate for refresh, for screen-content:
+      // compute spatial variance and exclude blocks that are spatially flat
+      // and stationary. Only do this for 1 spatial layer for now.
+      // TODO(marpan): Test/enable this for spatial or quality layers.
+      if (compute_content && cpi->svc.number_spatial_layers == 1 &&
+          cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
+        cr->skip_flat_steady_blocks = 1;
+        if (!is_superblock_flat_static(cpi, sb_row_index, sb_col_index)) {
+          // Label this superblock as segment 1.
+          for (y = 0; y < ymis; y++)
+            for (x = 0; x < xmis; x++) {
+              seg_map[bl_index + y * cm->mi_cols + x] = CR_SEGMENT_ID_BOOST1;
+            }
+          cr->target_num_seg_blocks += xmis * ymis;
         }
-      cr->target_num_seg_blocks += xmis * ymis;
+      }
     }
     i++;
     if (i == sbs_in_frame) {
@@ -464,12 +509,12 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
   // For screen-content: keep rate_ratio_qdelta to 2.0 (segment#1 boost) and
   // percent_refresh (refresh rate) to 10. But reduce rate boost for segment#2
   // (rate_boost_fac = 10 disables segment#2).
-  // TODO(marpan): Consider increasing refresh rate after slide change.
   if (cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
-    cr->percent_refresh = 10;
+    cr->percent_refresh = (cr->skip_flat_steady_blocks) ? 5 : 10;
     // Increase the amount of refresh on scene change that is encoded at max Q,
-    // increase for a few cycles of the refresh period (~30 frames).
-    if (cr->counter_encode_maxq_scene_change < 30) cr->percent_refresh = 15;
+    // increase for a few cycles of the refresh period (~100 / percent_refresh).
+    if (cr->counter_encode_maxq_scene_change < 30)
+      cr->percent_refresh = (cr->skip_flat_steady_blocks) ? 10 : 15;
     cr->rate_ratio_qdelta = 2.0;
     cr->rate_boost_fac = 10;
   }
