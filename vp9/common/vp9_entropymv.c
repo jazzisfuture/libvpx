@@ -158,6 +158,8 @@ void vp9_adapt_mv_probs(VP9_COMMON *cm, int allow_hp) {
   const nmv_context *pre_fc = &cm->frame_contexts[cm->frame_context_idx].nmvc;
   const nmv_context_counts *counts = &cm->counts.mv;
 
+  printf("\n====makr==\n");
+
   vpx_tree_merge_probs(vp9_mv_joint_tree, pre_fc->joints, counts->joints,
                        fc->joints);
 

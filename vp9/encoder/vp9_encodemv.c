@@ -229,6 +229,58 @@ void vp9_encode_mv(VP9_COMP *cpi, vpx_writer *w, const MV *mv, const MV *ref,
   }
 }
 
+void vp9_encode_mv_d(VP9_COMP *cpi, vpx_writer *w, const MV *mv, const MV *ref,
+                   const nmv_context *mvctx, int usehp,
+                   unsigned int *const max_mv_magnitude) {
+  const MV diff = { mv->row - ref->row, mv->col - ref->col };
+  const MV_JOINT_TYPE j = vp9_get_mv_joint(&diff);
+  usehp = usehp && use_mv_hp(ref);
+
+  printf("joint type %d, diff %d %d\n",
+         j, diff.row, diff.col);
+  printf("joints %d %d %d\n",
+         mvctx->joints[0], mvctx->joints[1], mvctx->joints[2]);
+  printf("sing %d\n", mvctx->comps[0].sign);
+  int i, jj;
+  for (i = 0; i < MV_CLASSES - 1; ++i) {
+    printf("%3d ", mvctx->comps[0].classes[i]);
+  }
+  printf("\n");
+  for (i = 0; i < CLASS0_SIZE - 1; ++i) {
+    printf("%3d ", mvctx->comps[0].class0[i]);
+  }
+  printf("\n");
+  for (i = 0; i < MV_OFFSET_BITS; ++i) {
+    printf("%3d ", mvctx->comps[0].bits[i]);
+  }
+  printf("\n");
+  for (i = 0; i < MV_FP_SIZE - 1; ++i) {
+    printf("%3d ", mvctx->comps[0].fp[i]);
+  }
+  printf("\n");
+  for (i = 0; i < CLASS0_SIZE; ++i) {
+    for (jj = 0; jj < MV_FP_SIZE - 1; ++jj) {
+      printf("%3d ", mvctx->comps[0].class0_fp[i][jj]);
+    }
+    printf("\n");
+  }
+  printf("\n");
+
+  vp9_write_token(w, vp9_mv_joint_tree, mvctx->joints, &mv_joint_encodings[j]);
+  if (mv_joint_vertical(j))
+    encode_mv_component(w, diff.row, &mvctx->comps[0], usehp);
+
+  if (mv_joint_horizontal(j))
+    encode_mv_component(w, diff.col, &mvctx->comps[1], usehp);
+
+  // If auto_mv_step_size is enabled then keep track of the largest
+  // motion vector component used.
+  if (cpi->sf.mv.auto_mv_step_size) {
+    const unsigned int maxv = VPXMAX(abs(mv->row), abs(mv->col)) >> 3;
+    *max_mv_magnitude = VPXMAX(maxv, *max_mv_magnitude);
+  }
+}
+
 void vp9_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
                               const nmv_context *ctx, int usehp) {
   vp9_cost_tokens(mvjoint, ctx->joints, vp9_mv_joint_tree);

@@ -4876,7 +4876,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
   save_encode_params(cpi);
 #endif
 
-  if (cpi->sf.recode_loop == DISALLOW_RECODE) {
+  if (cpi->sf.recode_loop == DISALLOW_RECODE || 1) {
     if (!encode_without_recode_loop(cpi, size, dest)) return;
   } else {
     encode_with_recode_loop(cpi, size, dest);
@@ -4956,12 +4956,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
                          cpi->td.rd_counts.coef_counts[t]);
 
   if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode)
-    vp9_adapt_coef_probs(cm);
+    //vp9_adapt_coef_probs(cm);
 
   if (!frame_is_intra_only(cm)) {
     if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
-      vp9_adapt_mode_probs(cm);
-      vp9_adapt_mv_probs(cm, cm->allow_high_precision_mv);
+      //vp9_adapt_mode_probs(cm);
+      //vp9_adapt_mv_probs(cm, cm->allow_high_precision_mv);
     }
   }
 

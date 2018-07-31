@@ -232,6 +232,7 @@ static void write_ref_frames(const VP9_COMMON *cm, const MACROBLOCKD *const xd,
 
 static void pack_inter_mode_mvs(
     VP9_COMP *cpi, const MACROBLOCKD *const xd,
+    int mi_row, int mi_col,
     const MB_MODE_INFO_EXT *const mbmi_ext, vpx_writer *w,
     unsigned int *const max_mv_magnitude,
     int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE]) {
@@ -324,10 +325,31 @@ static void pack_inter_mode_mvs(
       }
     } else {
       if (mode == NEWMV) {
+#if 1
+        if (cm->current_video_frame == 1 && mi_row == 2 && mi_col == 2) {
+          printf("\n enc bsize %d, mode %d, ref mv %d %d, is_compound %d, "
+                 "allow_hp %d, mv %d %d\n",
+                 bsize, mi->mode,
+                 mbmi_ext->ref_mvs[0][0].as_mv.row,
+                 mbmi_ext->ref_mvs[0][0].as_mv.col,
+                 is_compound, allow_hp,
+                 mi->mv[0].as_mv.row, mi->mv[0].as_mv.col);
+          for (ref = 0; ref < 1 + is_compound; ++ref)
+            vp9_encode_mv_d(cpi, w, &mi->mv[ref].as_mv,
+                          &mbmi_ext->ref_mvs[mi->ref_frame[ref]][0].as_mv, nmvc,
+                          allow_hp, max_mv_magnitude);
+        } else {
+          for (ref = 0; ref < 1 + is_compound; ++ref)
+            vp9_encode_mv(cpi, w, &mi->mv[ref].as_mv,
+                          &mbmi_ext->ref_mvs[mi->ref_frame[ref]][0].as_mv, nmvc,
+                          allow_hp, max_mv_magnitude);
+        }
+#else
         for (ref = 0; ref < 1 + is_compound; ++ref)
           vp9_encode_mv(cpi, w, &mi->mv[ref].as_mv,
                         &mbmi_ext->ref_mvs[mi->ref_frame[ref]][0].as_mv, nmvc,
                         allow_hp, max_mv_magnitude);
+#endif
       }
     }
   }
@@ -386,7 +408,7 @@ static void write_modes_b(
   if (frame_is_intra_only(cm)) {
     write_mb_modes_kf(cm, xd, w);
   } else {
-    pack_inter_mode_mvs(cpi, xd, mbmi_ext, w, max_mv_magnitude,
+    pack_inter_mode_mvs(cpi, xd, mi_row, mi_col, mbmi_ext, w, max_mv_magnitude,
                         interp_filter_selected);
   }
 

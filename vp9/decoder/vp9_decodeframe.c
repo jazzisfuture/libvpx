@@ -837,6 +837,42 @@ static void decode_block(TileWorkerData *twd, VP9Decoder *const pbi, int mi_row,
     }
   }
 
+#if 0
+  if (1) {
+    FILE *fp = fopen("dec.txt", "a");
+
+    fprintf(fp, "frame %d, mi %d %d, bsize %d, mode %d %d, ref %d %d, "
+                    "mv (%d %d) (%d %d), segment_id %d, skip %d, tx_size %d, "
+                    "interp_filter %d\n",
+                cm->current_video_frame, mi_row, mi_col, bsize,
+                mi->mode, mi->uv_mode, mi->ref_frame[0], mi->ref_frame[1],
+                mi->mv[0].as_mv.row, mi->mv[0].as_mv.col,
+                mi->ref_frame[1] == -1 ? 0 : mi->mv[1].as_mv.row,
+                mi->ref_frame[1] == -1 ? 0 : mi->mv[1].as_mv.col,
+                mi->segment_id, mi->skip, mi->tx_size,
+                is_inter_block(mi) ? mi->interp_filter : 0);
+
+    {
+      const uint8_t *dst = xd->plane[0].dst.buf;
+      const int stride = xd->plane[0].dst.stride;
+      const int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+      const int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+      int r, c;
+      for (r = 0; r < bh; ++r) {
+        for (c = 0; c < bw; ++c) {
+          fprintf(fp, "%3d ", dst[r * stride + c]);
+        }
+        fprintf(fp, "\n");
+      }
+      fprintf(fp, "\n");
+    }
+
+    fprintf(fp, "\n");
+    fclose(fp);
+  }
+#endif
+
+
   xd->corrupted |= vpx_reader_has_error(r);
 
   if (cm->lf.filter_level) {
@@ -2112,11 +2148,11 @@ void vp9_decode_frame(VP9Decoder *pbi, const uint8_t *data,
 
   if (!xd->corrupted) {
     if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
-      vp9_adapt_coef_probs(cm);
+      //vp9_adapt_coef_probs(cm);
 
       if (!frame_is_intra_only(cm)) {
-        vp9_adapt_mode_probs(cm);
-        vp9_adapt_mv_probs(cm, cm->allow_high_precision_mv);
+        //vp9_adapt_mode_probs(cm);
+        //vp9_adapt_mv_probs(cm, cm->allow_high_precision_mv);
       }
     }
   } else {

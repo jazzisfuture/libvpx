@@ -431,6 +431,89 @@ static INLINE int assign_mv(VP9_COMMON *cm, MACROBLOCKD *xd,
   return ret;
 }
 
+static INLINE void read_mv_d(vpx_reader *r, MV *mv, const MV *ref,
+                             const nmv_context *ctx, nmv_context_counts *counts,
+                             int allow_hp) {
+  const MV_JOINT_TYPE joint_type =
+      (MV_JOINT_TYPE)vpx_read_tree(r, vp9_mv_joint_tree, ctx->joints);
+  const int use_hp = allow_hp && use_mv_hp(ref);
+  MV diff = { 0, 0 };
+
+  if (mv_joint_vertical(joint_type))
+    diff.row = read_mv_component(r, &ctx->comps[0], use_hp);
+
+  if (mv_joint_horizontal(joint_type))
+    diff.col = read_mv_component(r, &ctx->comps[1], use_hp);
+
+  const nmv_context *mvctx = ctx;
+  printf("\n joint_type %d, diff %d %d\n",
+         joint_type, diff.row, diff.col);
+  printf("joints %d %d %d\n",
+         ctx->joints[0], ctx->joints[1], ctx->joints[2]);
+  printf("sing %d\n", ctx->comps[0].sign);
+  int i, jj;
+  for (i = 0; i < MV_CLASSES - 1; ++i) {
+    printf("%3d ", ctx->comps[0].classes[i]);
+  }
+  printf("\n");
+  for (i = 0; i < CLASS0_SIZE - 1; ++i) {
+    printf("%3d ", mvctx->comps[0].class0[i]);
+  }
+  printf("\n");
+  for (i = 0; i < MV_OFFSET_BITS; ++i) {
+    printf("%3d ", mvctx->comps[0].bits[i]);
+  }
+  printf("\n");
+  for (i = 0; i < MV_FP_SIZE - 1; ++i) {
+    printf("%3d ", mvctx->comps[0].fp[i]);
+  }
+  printf("\n");
+  for (i = 0; i < CLASS0_SIZE; ++i) {
+    for (jj = 0; jj < MV_FP_SIZE - 1; ++jj) {
+      printf("%3d ", mvctx->comps[0].class0_fp[i][jj]);
+    }
+    printf("\n");
+  }
+  printf("\n");
+
+  vp9_inc_mv(&diff, counts);
+
+  mv->row = ref->row + diff.row;
+  mv->col = ref->col + diff.col;
+}
+
+static INLINE int assign_mv_d(VP9_COMMON *cm, MACROBLOCKD *xd,
+                            PREDICTION_MODE mode, int_mv mv[2],
+                            int_mv ref_mv[2], int_mv near_nearest_mv[2],
+                            int is_compound, int allow_hp, vpx_reader *r) {
+  int i;
+  int ret = 1;
+
+  switch (mode) {
+    case NEWMV: {
+      FRAME_COUNTS *counts = xd->counts;
+      nmv_context_counts *const mv_counts = counts ? &counts->mv : NULL;
+      for (i = 0; i < 1 + is_compound; ++i) {
+        read_mv_d(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc->nmvc, mv_counts,
+                  allow_hp);
+        ret = ret && is_mv_valid(&mv[i].as_mv);
+      }
+      break;
+    }
+    case NEARMV:
+    case NEARESTMV: {
+      copy_mv_pair(mv, near_nearest_mv);
+      break;
+    }
+    case ZEROMV: {
+      zero_mv_pair(mv);
+      break;
+    }
+    default: { return 0; }
+  }
+  return ret;
+}
+
 static int read_is_inter_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                int segment_id, vpx_reader *r) {
   if (segfeature_active(&cm->seg, segment_id, SEG_LVL_REF_FRAME)) {
@@ -705,6 +788,8 @@ static void read_inter_block_mode_info(VP9Decoder *const pbi,
   is_compound = has_second_ref(mi);
   inter_mode_ctx = get_mode_context(cm, xd, mv_ref_search, mi_row, mi_col);
 
+  mi->uv_mode = 0;
+
   if (segfeature_active(&cm->seg, mi->segment_id, SEG_LVL_SKIP)) {
     mi->mode = ZEROMV;
     if (bsize < BLOCK_8X8) {
@@ -777,8 +862,26 @@ static void read_inter_block_mode_info(VP9Decoder *const pbi,
 
     copy_mv_pair(mi->mv, mi->bmi[3].as_mv);
   } else {
+#if 1
+    if (cm->current_video_frame == 1 && mi_row == 2 && mi_col == 2) {
+      xd->corrupted |= !assign_mv_d(cm, xd, mi->mode, mi->mv, best_ref_mvs,
+                                  best_ref_mvs, is_compound, allow_hp, r);
+      if (xd->corrupted) printf("\n xd->corrupted\n");
+      printf("\n dec bsize %d, mode %d, ref mv %d %d, is_compound %d, "
+             "allow_hp %d, mv %d %d\n",
+             bsize, mi->mode,
+             best_ref_mvs[0].as_mv.row,
+             best_ref_mvs[0].as_mv.col,
+             is_compound, allow_hp,
+             mi->mv[0].as_mv.row, mi->mv[0].as_mv.col);
+    } else {
+      xd->corrupted |= !assign_mv(cm, xd, mi->mode, mi->mv, best_ref_mvs,
+                                  best_ref_mvs, is_compound, allow_hp, r);
+    }
+#else
     xd->corrupted |= !assign_mv(cm, xd, mi->mode, mi->mv, best_ref_mvs,
                                 best_ref_mvs, is_compound, allow_hp, r);
+#endif
   }
 }
 

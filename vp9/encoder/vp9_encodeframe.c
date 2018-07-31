@@ -2159,6 +2159,8 @@ static void encode_sb(VP9_COMP *cpi, ThreadData *td, const TileInfo *const tile,
     subsize = BLOCK_4X4;
   }
 
+  //printf("bsize %d\n", bsize);
+
   partition = partition_lookup[bsl][subsize];
   if (output_enabled && bsize != BLOCK_4X4)
     td->counts->partition[ctx][partition]++;
@@ -3668,13 +3670,17 @@ int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
   return dr;
 }
 
+#define NONE_ONLY 1
+#define NO_NONE 2
+
+
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
 // unlikely to be selected depending on previous rate-distortion optimization
 // results, for encoding speed-up.
 static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
                               TileDataEnc *tile_data, TOKENEXTRA **tp,
                               int mi_row, int mi_col, BLOCK_SIZE bsize,
-                              RD_COST *rd_cost, int64_t best_rd,
+                              int flag, RD_COST *rd_cost, int64_t best_rd,
                               PC_TREE *pc_tree) {
   VP9_COMMON *const cm = &cpi->common;
   TileInfo *const tile_info = &tile_data->tile_info;
@@ -3684,7 +3690,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   ENTROPY_CONTEXT l[16 * MAX_MB_PLANE], a[16 * MAX_MB_PLANE];
   PARTITION_CONTEXT sl[8], sa[8];
   TOKENEXTRA *tp_orig = *tp;
-  PICK_MODE_CONTEXT *ctx = &pc_tree->none;
+  PICK_MODE_CONTEXT *const ctx = &pc_tree->none;
   int i;
   const int pl = partition_plane_context(xd, mi_row, mi_col, bsize);
   BLOCK_SIZE subsize;
@@ -3698,6 +3704,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   const int force_vert_split = (mi_col + mi_step >= cm->mi_cols);
   const int xss = x->e_mbd.plane[1].subsampling_x;
   const int yss = x->e_mbd.plane[1].subsampling_y;
+  const int in_bound =
+      (mi_row + num_8x8_blocks_high_lookup[bsize] < cm->mi_rows) &&
+      (mi_col + num_8x8_blocks_wide_lookup[bsize] < cm->mi_cols);
 
   BLOCK_SIZE min_size = x->min_partition_size;
   BLOCK_SIZE max_size = x->max_partition_size;
@@ -3722,6 +3731,8 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // Ref frames picked in the [i_th] quarter subblock during square partition
   // RD search. It may be used to prune ref frame selection of rect partitions.
   uint8_t ref_frames_used[4] = { 0, 0, 0, 0 };
+  int64_t split_rd = INT64_MAX;
+  int simple_split_search = 0;
 
   (void)*tp_orig;
 
@@ -3849,8 +3860,20 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   // PARTITION_NONE
   if (partition_none_allowed) {
+#if 1
+    if (flag == NO_NONE &&
+        (1 || (ctx->rate != INT_MAX && ctx->rdcost != INT64_MAX))) {
+      this_rdc.rate = ctx->rate;
+      this_rdc.dist = ctx->dist;
+      this_rdc.rdcost = ctx->rdcost;
+    } else {
+      rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &this_rdc, bsize, ctx,
+                       best_rdc.rdcost);
+    }
+#else
     rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &this_rdc, bsize, ctx,
                      best_rdc.rdcost);
+#endif
     if (this_rdc.rate != INT_MAX) {
       if (cpi->sf.prune_ref_frame_for_rect_partitions) {
         const int ref1 = ctx->mic.ref_frame[0];
@@ -3973,6 +3996,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     pred_interp_filter = ctx->mic.interp_filter;
   }
 
+  if (flag == NONE_ONLY) goto SEARCH_DONE;
+
+  must_split = 0;
   // PARTITION_SPLIT
   // TODO(jingning): use the motion vectors given by the above search as
   // the starting point of motion search in the following partition type check.
@@ -3997,49 +4023,127 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         }
       }
     } else {
-      for (i = 0; (i < 4) && ((sum_rdc.rdcost < best_rdc.rdcost) || must_split);
-           ++i) {
-        const int x_idx = (i & 1) * mi_step;
-        const int y_idx = (i >> 1) * mi_step;
-
-        if (mi_row + y_idx >= cm->mi_rows || mi_col + x_idx >= cm->mi_cols)
-          continue;
-
-        if (cpi->sf.adaptive_motion_search) load_pred_mv(x, ctx);
-
-        pc_tree->split[i]->index = i;
-        if (cpi->sf.prune_ref_frame_for_rect_partitions)
+      if (1 && (in_bound)) {
+#if 0
+        const int64_t rd_limit =
+            (best_rdc.rdcost > 0 && best_rdc.rdcost < INT64_MAX) ?
+                3 * (best_rdc.rdcost >> 2) : best_rdc.rdcost;
+#else
+        const int64_t rd_limit = best_rdc.rdcost;
+#endif
+        simple_split_search = 1;
+        for (i = 0; i < 4; ++i) {
+          pc_tree->split[i]->partitioning = PARTITION_NONE;
           pc_tree->split[i]->none.rate = INT_MAX;
-        rd_pick_partition(cpi, td, tile_data, tp, mi_row + y_idx,
-                          mi_col + x_idx, subsize, &this_rdc,
-                          // A must split test here increases the number of sub
-                          // partitions but hurts metrics results quite a bit,
-                          // so this extra test is commented out pending
-                          // further tests on whether it adds much in terms of
-                          // visual quality.
-                          // (must_split) ? best_rdc.rdcost
-                          //              : best_rdc.rdcost - sum_rdc.rdcost,
-                          best_rdc.rdcost - sum_rdc.rdcost, pc_tree->split[i]);
+          pc_tree->split[i]->none.dist = INT64_MAX;
+          pc_tree->split[i]->none.rdcost = INT64_MAX;
+        }
 
-        if (this_rdc.rate == INT_MAX) {
-          sum_rdc.rdcost = INT64_MAX;
-          break;
-        } else {
-          if (cpi->sf.prune_ref_frame_for_rect_partitions &&
-              pc_tree->split[i]->none.rate != INT_MAX) {
-            const int ref1 = pc_tree->split[i]->none.mic.ref_frame[0];
-            const int ref2 = pc_tree->split[i]->none.mic.ref_frame[1];
-            ref_frames_used[i] |= (1 << ref1);
-            if (ref2 > 0) ref_frames_used[i] |= (1 << ref2);
+        for (i = 0; (i < 4) && ((sum_rdc.rdcost < rd_limit) || must_split);
+            ++i) {
+          const int x_idx = (i & 1) * mi_step;
+          const int y_idx = (i >> 1) * mi_step;
+          const int this_mi_row = mi_row + y_idx;
+          const int this_mi_col = mi_col + x_idx;
+          pc_tree->split[i]->index = i;
+
+          if (this_mi_row >= cm->mi_rows || this_mi_col >= cm->mi_cols)
+            continue;
+
+          if (cpi->sf.adaptive_motion_search) load_pred_mv(x, ctx);
+
+#if 0
+          if (i > 0) {
+            PICK_MODE_CONTEXT *ctx = &pc_tree->split[i - 1]->none;
+            const int last_mi_row = mi_row + ((i - 1) >> 1) * mi_step;
+            const int last_mi_col = mi_col + ((i - 1) & 1) * mi_step;
+            if (last_mi_row < cm->mi_rows && last_mi_col < cm->mi_cols) {
+              update_state(cpi, td, ctx, last_mi_row, last_mi_col, subsize, 0);
+              encode_superblock(cpi, td, tp, 0, last_mi_row, last_mi_col, subsize,
+                                ctx);
+            }
           }
-          sum_rdc.rate += this_rdc.rate;
-          sum_rdc.dist += this_rdc.dist;
-          sum_rdc.rdcost += this_rdc.rdcost;
+#endif
+
+          rd_pick_sb_modes(cpi, tile_data, x, this_mi_row, this_mi_col,
+                           &this_rdc, subsize,
+                           &pc_tree->split[i]->none,
+                           rd_limit - sum_rdc.rdcost);
+          pc_tree->split[i]->none.rate = this_rdc.rate;
+          pc_tree->split[i]->none.dist = this_rdc.dist;
+          pc_tree->split[i]->none.rdcost = this_rdc.rdcost;
+
+          if (this_rdc.rate != INT_MAX) {
+            if (cpi->sf.prune_ref_frame_for_rect_partitions) {
+              const int ref1 = pc_tree->split[i]->none.mic.ref_frame[0];
+              const int ref2 = pc_tree->split[i]->none.mic.ref_frame[1];
+              ref_frames_used[i] |= (1 << ref1);
+              if (ref2 > 0) ref_frames_used[i] |= (1 << ref2);
+            }
+            sum_rdc.rate += this_rdc.rate;
+            sum_rdc.dist += this_rdc.dist;
+            sum_rdc.rdcost += this_rdc.rdcost;
+
+#if 1
+            update_state(cpi, td, &pc_tree->split[i]->none,
+                         this_mi_row, this_mi_col, subsize, 0);
+            encode_superblock(cpi, td, tp, 0, this_mi_row, this_mi_col, subsize,
+                              &pc_tree->split[i]->none);
+#endif
+          } else {
+            sum_rdc.rate = INT_MAX;
+            sum_rdc.rdcost = INT64_MAX;
+            break;
+          }
+        }
+        split_rd = sum_rdc.rdcost;
+      } else {
+        for (i = 0; (i < 4) && ((sum_rdc.rdcost < best_rdc.rdcost) || must_split);
+            ++i) {
+          const int x_idx = (i & 1) * mi_step;
+          const int y_idx = (i >> 1) * mi_step;
+
+          if (mi_row + y_idx >= cm->mi_rows || mi_col + x_idx >= cm->mi_cols)
+            continue;
+
+          if (cpi->sf.adaptive_motion_search) load_pred_mv(x, ctx);
+
+          pc_tree->split[i]->index = i;
+          if (cpi->sf.prune_ref_frame_for_rect_partitions)
+            pc_tree->split[i]->none.rate = INT_MAX;
+          rd_pick_partition(cpi, td, tile_data, tp, mi_row + y_idx,
+                            mi_col + x_idx, subsize,
+                            in_bound ? 0 : 0, &this_rdc,
+                            // A must split test here increases the number of sub
+                                // partitions but hurts metrics results quite a bit,
+                                // so this extra test is commented out pending
+                                // further tests on whether it adds much in terms of
+                                // visual quality.
+                                // (must_split) ? best_rdc.rdcost
+                                //              : best_rdc.rdcost - sum_rdc.rdcost,
+                                best_rdc.rdcost - sum_rdc.rdcost, pc_tree->split[i]);
+
+          if (this_rdc.rate == INT_MAX) {
+            sum_rdc.rdcost = INT64_MAX;
+            break;
+          } else {
+            if (cpi->sf.prune_ref_frame_for_rect_partitions &&
+                pc_tree->split[i]->none.rate != INT_MAX) {
+              const int ref1 = pc_tree->split[i]->none.mic.ref_frame[0];
+              const int ref2 = pc_tree->split[i]->none.mic.ref_frame[1];
+              ref_frames_used[i] |= (1 << ref1);
+              if (ref2 > 0) ref_frames_used[i] |= (1 << ref2);
+            }
+            sum_rdc.rate += this_rdc.rate;
+            sum_rdc.dist += this_rdc.dist;
+            sum_rdc.rdcost += this_rdc.rdcost;
+          }
         }
       }
     }
 
-    if (((sum_rdc.rdcost < best_rdc.rdcost) || must_split) && i == 4) {
+    if (((sum_rdc.rdcost < best_rdc.rdcost) || must_split) && i == 4 &&
+        sum_rdc.rdcost < INT64_MAX) {
       sum_rdc.rdcost += RDCOST(partition_mul, x->rddiv,
                                cpi->partition_cost[pl][PARTITION_SPLIT], 0);
       sum_rdc.rate += cpi->partition_cost[pl][PARTITION_SPLIT];
@@ -4179,12 +4283,87 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
   }
 
+#if 1
+  // PARTITION_SPLIT
+  if ((do_split || must_split) && bsize > BLOCK_8X8 &&
+      (split_rd - (split_rd >> 2) < best_rdc.rdcost || 1) &&
+      (pc_tree->partitioning == PARTITION_SPLIT || 1) &&
+      simple_split_search) {
+    vp9_rd_cost_init(&this_rdc);
+    vp9_rd_cost_init(&sum_rdc);
+    subsize = get_subsize(bsize, PARTITION_SPLIT);
+    for (i = 0; (i < 4) && ((sum_rdc.rdcost < best_rdc.rdcost) || must_split);
+        ++i) {
+      const int x_idx = (i & 1) * mi_step;
+      const int y_idx = (i >> 1) * mi_step;
+
+      if (mi_row + y_idx >= cm->mi_rows || mi_col + x_idx >= cm->mi_cols)
+        continue;
+
+      if (cpi->sf.adaptive_motion_search) load_pred_mv(x, ctx);
+
+      pc_tree->split[i]->index = i;
+      rd_pick_partition(cpi, td, tile_data, tp, mi_row + y_idx,
+                        mi_col + x_idx, subsize, NO_NONE, &this_rdc,
+                        // A must split test here increases the number of sub
+                        // partitions but hurts metrics results quite a bit,
+                        // so this extra test is commented out pending
+                        // further tests on whether it adds much in terms of
+                        // visual quality.
+                        // (must_split) ? best_rdc.rdcost
+                        //              : best_rdc.rdcost - sum_rdc.rdcost,
+                        best_rdc.rdcost - sum_rdc.rdcost, pc_tree->split[i]);
+
+      if (this_rdc.rate == INT_MAX) {
+        sum_rdc.rdcost = INT64_MAX;
+        break;
+      } else {
+        sum_rdc.rate += this_rdc.rate;
+        sum_rdc.dist += this_rdc.dist;
+        sum_rdc.rdcost += this_rdc.rdcost;
+      }
+    }
+
+    if (((sum_rdc.rdcost < best_rdc.rdcost) || must_split) && i == 4 &&
+        sum_rdc.rdcost != INT64_MAX && 1) {
+      sum_rdc.rdcost += RDCOST(partition_mul, x->rddiv,
+                               cpi->partition_cost[pl][PARTITION_SPLIT], 0);
+      sum_rdc.rate += cpi->partition_cost[pl][PARTITION_SPLIT];
+
+      if ((sum_rdc.rdcost < best_rdc.rdcost) ||
+          (must_split && (sum_rdc.dist < best_rdc.dist))) {
+        best_rdc = sum_rdc;
+        pc_tree->partitioning = PARTITION_SPLIT;
+        //printf("error %d\n", must_split);
+      }
+    }
+    restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
+  }
+#endif
+
+  SEARCH_DONE: {}
+
   // TODO(jbb): This code added so that we avoid static analysis
   // warning related to the fact that best_rd isn't used after this
   // point.  This code should be refactored so that the duplicate
   // checks occur in some sub function and thus are used...
   (void)best_rd;
   *rd_cost = best_rdc;
+
+#if 0
+  if (mi_row == 28 && mi_col == 8 && bsize == 9) {
+    printf("\n ==== mi %d %d, partition_none_allowed %d, partition %d\n",
+           mi_row, mi_col, partition_none_allowed, pc_tree->partitioning);
+  }
+#endif
+
+#if 0
+  if ((mi_row / 8) == (28 / 8) && (mi_col / 8) == (8 / 8) &&
+      (1 || bsize == 9)) {
+    printf("\n ====mi %d %d, partition_none_allowed %d, bisze %d, partition %d\n",
+           mi_row, mi_col, partition_none_allowed, bsize, pc_tree->partitioning);
+  }
+#endif
 
   if (best_rdc.rate < INT_MAX && best_rdc.dist < INT64_MAX &&
       pc_tree->index != 3) {
@@ -4197,6 +4376,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     assert(tp_orig < *tp);
     assert(best_rdc.rate < INT_MAX);
     assert(best_rdc.dist < INT64_MAX);
+    if (flag) printf("error\n");
   } else {
     assert(tp_orig == *tp);
   }
@@ -4294,7 +4474,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
         rd_auto_partition_range(cpi, tile_info, xd, mi_row, mi_col,
                                 &x->min_partition_size, &x->max_partition_size);
       }
-      rd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col, BLOCK_64X64,
+      rd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col, BLOCK_64X64, 0,
                         &dummy_rdc, INT64_MAX, td->pc_root);
     }
     (*(cpi->row_mt_sync_write_ptr))(&tile_data->row_mt_sync, sb_row,
@@ -5917,6 +6097,41 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
   if (seg_skip) {
     assert(mi->skip);
   }
+
+#if 0
+  if (output_enabled) {
+    FILE *fp = fopen("enc.txt", "a");
+
+    fprintf(fp, "frame %d, mi %d %d, bsize %d, mode %d %d, ref %d %d, "
+                "mv (%d %d) (%d %d), segment_id %d, skip %d, tx_size %d, "
+                "interp_filter %d\n",
+            cm->current_video_frame, mi_row, mi_col, bsize,
+            mi->mode, mi->uv_mode, mi->ref_frame[0], mi->ref_frame[1],
+            mi->mv[0].as_mv.row, mi->mv[0].as_mv.col,
+            mi->ref_frame[1] == -1 ? 0 : mi->mv[1].as_mv.row,
+            mi->ref_frame[1] == -1 ? 0 : mi->mv[1].as_mv.col,
+            mi->segment_id, mi->skip, mi->tx_size,
+            is_inter_block(mi) ? mi->interp_filter : 0);
+
+    {
+      const uint8_t *dst = xd->plane[0].dst.buf;
+      const int stride = xd->plane[0].dst.stride;
+      const int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+      const int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+      int r, c;
+      for (r = 0; r < bh; ++r) {
+        for (c = 0; c < bw; ++c) {
+          fprintf(fp, "%3d ", dst[r * stride + c]);
+        }
+        fprintf(fp, "\n");
+      }
+      fprintf(fp, "\n");
+    }
+
+    fprintf(fp, "\n");
+    fclose(fp);
+  }
+#endif
 
   if (output_enabled) {
     if (cm->tx_mode == TX_MODE_SELECT && mi->sb_type >= BLOCK_8X8 &&

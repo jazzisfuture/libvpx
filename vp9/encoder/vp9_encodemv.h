@@ -26,6 +26,11 @@ void vp9_encode_mv(VP9_COMP *cpi, vpx_writer *w, const MV *mv, const MV *ref,
                    const nmv_context *mvctx, int usehp,
                    unsigned int *const max_mv_magnitude);
 
+void vp9_encode_mv_d(VP9_COMP *cpi, vpx_writer *w, const MV *mv, const MV *ref,
+                   const nmv_context *mvctx, int usehp,
+                   unsigned int *const max_mv_magnitude);
+
+
 void vp9_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
                               const nmv_context *mvctx, int usehp);
 
