@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b7915139_48115311",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 5680,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-07-31T01:13:21Z",
+      "side": 1,
+      "message": "I meant something like ++tpl_ptr.",
+      "range": {
+        "startLine": 5680,
+        "startChar": 6,
+        "endLine": 5680,
+        "endChar": 69
+      },
+      "revId": "95fd8c08ed98f8ed96cbda4c16fdfc3a716edfb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
