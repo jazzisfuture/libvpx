@@ -3723,6 +3723,8 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // RD search. It may be used to prune ref frame selection of rect partitions.
   uint8_t ref_frames_used[4] = { 0, 0, 0, 0 };
 
+  if (best_rd < 0) return;
+
   (void)*tp_orig;
 
   assert(num_8x8_blocks_wide_lookup[bsize] ==
