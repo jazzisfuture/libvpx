@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "./vp9_rtcd.h"
 #include "./vpx_dsp_rtcd.h"
@@ -35,6 +36,7 @@
 #include "vp9/decoder/vp9_decodeframe.h"
 #include "vp9/decoder/vp9_decoder.h"
 #include "vp9/decoder/vp9_detokenize.h"
+#include "vp9/decoder/vp9_job_queue.h"
 
 static void initialize_dec(void) {
   static volatile int init_done = 0;
@@ -143,7 +145,9 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
   cm->alloc_mi = vp9_dec_alloc_mi;
   cm->free_mi = vp9_dec_free_mi;
   cm->setup_mi = vp9_dec_setup_mi;
-
+#if CONFIG_MULTITHREAD
+  pthread_mutex_init(&pbi->parse_mutex, NULL);
+#endif
   vp9_loop_filter_init(cm);
 
   cm->error.setjmp = 0;
@@ -172,8 +176,14 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
   if (pbi->num_tile_workers > 0) {
     vp9_loop_filter_dealloc(&pbi->lf_row_sync);
   }
-
-  vp9_dec_free_row_mt_mem(pbi);
+#if CONFIG_MULTITHREAD
+  pthread_mutex_destroy(&pbi->parse_mutex);
+#endif
+  if (pbi->row_mt == 1) {
+    vp9_dec_free_row_mt_mem(pbi);
+    vp9_jobq_deinit(&pbi->jobq);
+    vpx_free(pbi->jobq_buf);
+  }
   vp9_remove_common(&pbi->common);
   vpx_free(pbi);
 }
