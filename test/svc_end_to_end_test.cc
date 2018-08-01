@@ -47,8 +47,8 @@ class SyncFrameOnePassCbrSvc : public ::svc_test::OnePassCbrSvc,
     cfg_.ss_number_layers = num_spatial_layer;
     cfg_.ts_number_layers = num_temporal_layer;
     if (num_spatial_layer == 1) {
-      svc_params_.scaling_factor_num[0] = 288;
-      svc_params_.scaling_factor_den[0] = 288;
+      // svc_params_.scaling_factor_num[0] = 288;
+      // svc_params_.scaling_factor_den[0] = 288;
     } else if (num_spatial_layer == 2) {
       svc_params_.scaling_factor_num[0] = 144;
       svc_params_.scaling_factor_den[0] = 288;
