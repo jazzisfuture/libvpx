@@ -21,6 +21,7 @@
 #include "vp9/common/vp9_thread_common.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_ppflags.h"
+#include "./vp9_job_queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,6 +31,8 @@ extern "C" {
 #define DQCOEFFS_PER_SB_LOG2 12
 #define PARTITIONS_PER_SB 85
 
+typedef enum _job_type { PARSE_JOB, RECON_JOB } job_type;
+
 typedef struct TileBuffer {
   const uint8_t *data;
   size_t size;
@@ -37,6 +40,7 @@ typedef struct TileBuffer {
 } TileBuffer;
 
 typedef struct TileWorkerData {
+  struct VP9Decoder *pbi;
   const uint8_t *data_end;
   int buf_start, buf_end;  // pbi->tile_buffers to decode, inclusive
   vpx_reader bit_reader;
@@ -46,6 +50,16 @@ typedef struct TileWorkerData {
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
   struct vpx_internal_error_info error_info;
 } TileWorkerData;
+
+/* Structure to queue and dequeue row decode jobs */
+typedef struct Job {
+  /* The row which has to be processed */
+  int row_num;
+  /* The tile column number to which the row belongs to */
+  int tile_col;
+  /* Flag to indicate type of job (parse/recon) */
+  job_type job_type;
+} Job;
 
 typedef struct VP9Decoder {
   DECLARE_ALIGNED(16, MACROBLOCKD, mb);
@@ -83,6 +97,16 @@ typedef struct VP9Decoder {
   PARTITION_TYPE *partition;
   tran_low_t *dqcoeff[MAX_MB_PLANE];
   int8_t *recon_map;
+
+  int cur_tile_col;
+  const uint8_t *data_end;
+  uint8_t *jobq_buf;
+  jobq_t jobq;
+  int jobq_size;
+  int64_t num_tiles_done;
+#if CONFIG_MULTITHREAD
+  pthread_mutex_t recon_mutex;
+#endif
 } VP9Decoder;
 
 int vp9_receive_compressed_data(struct VP9Decoder *pbi, size_t size,
