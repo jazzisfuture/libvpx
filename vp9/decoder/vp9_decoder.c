@@ -143,7 +143,9 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
   cm->alloc_mi = vp9_dec_alloc_mi;
   cm->free_mi = vp9_dec_free_mi;
   cm->setup_mi = vp9_dec_setup_mi;
-
+#if CONFIG_MULTITHREAD
+  pthread_mutex_init(&pbi->parse_mutex, NULL);
+#endif
   vp9_loop_filter_init(cm);
 
   cm->error.setjmp = 0;
@@ -168,12 +170,19 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
 
   vpx_free(pbi->tile_worker_data);
   vpx_free(pbi->tile_workers);
+  vpx_free(pbi->thread_data);
 
   if (pbi->num_tile_workers > 0) {
     vp9_loop_filter_dealloc(&pbi->lf_row_sync);
   }
-
-  vp9_dec_free_row_mt_mem(pbi);
+#if CONFIG_MULTITHREAD
+  pthread_mutex_destroy(&pbi->parse_mutex);
+#endif
+  if (pbi->row_mt == 1) {
+    vp9_dec_free_row_mt_mem(pbi);
+    vp9_jobq_deinit(&pbi->jobq);
+    vpx_free(pbi->jobq_buf);
+  }
   vp9_remove_common(&pbi->common);
   vpx_free(pbi);
 }
