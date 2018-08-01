@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "03ddf4e7_ca4d8fa9",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-01T02:01:12Z",
+      "side": 1,
+      "message": "this can be const. you could also make it *const, though there\u0027s a mix throughout",
+      "range": {
+        "startLine": 337,
+        "startChar": 33,
+        "endLine": 337,
+        "endChar": 46
+      },
+      "revId": "1332e7a16d2676eb6e761265264f94195c70edef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d410a9c0_bfc9ac84",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-01T02:01:12Z",
+      "side": 1,
+      "message": "same here for const",
+      "range": {
+        "startLine": 338,
+        "startChar": 32,
+        "endLine": 338,
+        "endChar": 48
+      },
+      "revId": "1332e7a16d2676eb6e761265264f94195c70edef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
