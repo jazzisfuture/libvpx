@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c3a8c9e3_e06c8a46",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2226,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-08-01T23:27:07Z",
+      "side": 1,
+      "message": "It may be worth doing some refactoring to make the logic more clear. e.g., when method \u003d\u003d MESH, there\u0027s no need to calculate \"exhuastive_thr\".",
+      "range": {
+        "startLine": 2225,
+        "startChar": 10,
+        "endLine": 2226,
+        "endChar": 59
+      },
+      "revId": "da41cbb8b3f30a663772741dd001bbc84e6a3658",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4417166_ba00d3d5",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2231,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-08-01T23:27:07Z",
+      "side": 1,
+      "message": "Comment needs update.",
+      "range": {
+        "startLine": 2231,
+        "startChar": 8,
+        "endLine": 2231,
+        "endChar": 60
+      },
+      "revId": "da41cbb8b3f30a663772741dd001bbc84e6a3658",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23685769_38e08e06",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-08-01T23:27:07Z",
+      "side": 1,
+      "message": "Can delete this? Otherwise add \"const\".",
+      "range": {
+        "startLine": 209,
+        "startChar": 8,
+        "endLine": 209,
+        "endChar": 26
+      },
+      "revId": "da41cbb8b3f30a663772741dd001bbc84e6a3658",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
