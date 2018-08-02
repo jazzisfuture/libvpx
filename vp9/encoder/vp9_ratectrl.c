@@ -2811,7 +2811,14 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
   // Lower rate threshold for video.
   if (cpi->oxcf.content != VP9E_CONTENT_SCREEN)
     thresh_rate = rc->avg_frame_bandwidth << 2;
-  if (cm->base_qindex < thresh_qp && frame_size > thresh_rate) {
+  // If this decision is not based on an encoded frame size but just on the
+  // scene/slide change detection (i.e., re_encode_overshoot_rt = 0) and the
+  // current Q, then set thresh_rate = 0, and adjust/lower qp_thresh.
+  if (!cpi->sf.re_encode_overshoot_rt) {
+    thresh_rate = 0;
+    thresh_qp = rc->worst_quality >> 1;
+  }
+  if (cm->base_qindex < thresh_qp && frame_size >= thresh_rate) {
     double rate_correction_factor =
         cpi->rc.rate_correction_factors[INTER_NORMAL];
     const int target_size = cpi->rc.avg_frame_bandwidth;
@@ -2827,7 +2834,8 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
     // and the encoded frame used alot of Intra modes, then force hybrid_intra
     // encoding for the re-encode on this scene change. hybrid_intra will
     // use rd-based intra mode selection for small blocks.
-    if (frame_size > (thresh_rate << 1) && cpi->svc.spatial_layer_id == 0) {
+    if (cpi->sf.re_encode_overshoot_rt && frame_size > (thresh_rate << 1) &&
+        cpi->svc.spatial_layer_id == 0) {
       MODE_INFO **mi = cm->mi_grid_visible;
       int sum_intra_usage = 0;
       int mi_row, mi_col;
