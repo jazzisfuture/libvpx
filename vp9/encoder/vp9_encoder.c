@@ -4070,6 +4070,29 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     apply_roi_map(cpi);
   }
 
+  if (!cpi->sf.re_encode_overshoot_rt &&
+      (cpi->rc.high_source_sad ||
+       (cpi->use_svc && cpi->svc.high_source_sad_superframe))) {
+    int frame_size = 0;
+    // Check if this high_source_sad (scene/slide change) frame should be
+    // encoded at high/max QP, and if so, set the q and adjust some rate
+    // control parameters.
+    if (vp9_encodedframe_overshoot(cpi, frame_size, &q)) {
+      vp9_set_quantizer(cm, q);
+      vp9_set_variance_partition_thresholds(cpi, q, 0);
+      // Disable cyclic refresh on this scene/slide change frame.
+      if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+        CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
+        unsigned char *const seg_map = cpi->segmentation_map;
+        memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
+        memset(cr->last_coded_q_map, MAXQ,
+               cm->mi_rows * cm->mi_cols * sizeof(*cr->last_coded_q_map));
+        cr->sb_index = 0;
+        vp9_disable_segmentation(&cm->seg);
+      }
+    }
+  }
+
   apply_active_map(cpi);
 
   vp9_encode_frame(cpi);
