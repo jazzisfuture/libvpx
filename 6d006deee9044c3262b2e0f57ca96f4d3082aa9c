@@ -22,6 +22,30 @@
       "revId": "6d006deee9044c3262b2e0f57ca96f4d3082aa9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79803eac_b01124fd",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4058,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-02T17:50:58Z",
+      "side": 1,
+      "message": "was to indicate frame is not encoded. Now use the re_encode_overshoot speed feature in vp9_encodeframe_overshoot to better handle this case",
+      "parentUuid": "a8f3247b_2242fde7",
+      "range": {
+        "startLine": 4058,
+        "startChar": 8,
+        "endLine": 4058,
+        "endChar": 18
+      },
+      "revId": "6d006deee9044c3262b2e0f57ca96f4d3082aa9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
