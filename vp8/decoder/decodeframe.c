@@ -746,7 +746,7 @@ static void setup_token_decoder(VP8D_COMP *pbi,
   /* Check for partitions within the fragments and unpack the fragments
    * so that each fragment pointer points to its corresponding partition. */
   for (fragment_idx = 0; fragment_idx < pbi->fragments.count; ++fragment_idx) {
-    unsigned int fragment_size = pbi->fragments.sizes[fragment_idx];
+    int fragment_size = pbi->fragments.sizes[fragment_idx];
     const unsigned char *fragment_end =
         pbi->fragments.ptrs[fragment_idx] + fragment_size;
     /* Special case for handling the first partition since we have already
@@ -756,7 +756,7 @@ static void setup_token_decoder(VP8D_COMP *pbi,
       ptrdiff_t ext_first_part_size = token_part_sizes -
                                       pbi->fragments.ptrs[0] +
                                       3 * (num_token_partitions - 1);
-      fragment_size -= (unsigned int)ext_first_part_size;
+      fragment_size -= ext_first_part_size;
       if (fragment_size > 0) {
         pbi->fragments.sizes[0] = (unsigned int)ext_first_part_size;
         /* The fragment contains an additional partition. Move to
