@@ -16,6 +16,24 @@
       "revId": "f66de7b18ddd4523037a8cb33e6a8d239be70edc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "415b8be5_c139fdf3",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2324,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-03T19:48:32Z",
+      "side": 1,
+      "message": "This is more like the intermediate result used to pick best mode, instead of part of the mode selected eventually. So I didn\u0027t put it into the new struct.",
+      "parentUuid": "7ed8b311_21b037f0",
+      "revId": "f66de7b18ddd4523037a8cb33e6a8d239be70edc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
