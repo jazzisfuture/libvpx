@@ -4061,9 +4061,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     } else {
       // skip rectangular partition test when larger block size
       // gives better rd cost
-      if ((cpi->sf.less_rectangular_check) &&
-          ((bsize > cpi->sf.use_square_only_threshold) ||
-           (best_rdc.dist < dist_breakout_thr)))
+      if (cpi->sf.less_rectangular_check &&
+          (i <= 2 || bsize > cpi->sf.use_square_only_threshold ||
+           best_rdc.dist < dist_breakout_thr))
         do_rect &= !partition_none_allowed;
     }
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
