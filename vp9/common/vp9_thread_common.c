@@ -231,6 +231,26 @@ void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame, VP9_COMMON *cm,
                       workers, num_workers, lf_sync);
 }
 
+void vp9_lpf_mt_init(VP9_COMMON *cm, VP9LfSync *lf_sync, int frame_filter_level,
+                     int num_workers) {
+  const int sb_rows = mi_cols_aligned_to_sb(cm->mi_rows) >> MI_BLOCK_SIZE_LOG2;
+
+  if (!frame_filter_level) return;
+
+  if (!lf_sync->sync_range || sb_rows != lf_sync->rows ||
+      num_workers > lf_sync->num_workers) {
+    vp9_loop_filter_dealloc(lf_sync);
+    vp9_loop_filter_alloc(lf_sync, cm, sb_rows, cm->width, num_workers);
+  }
+
+  // Initialize cur_sb_col to -1 for all SB rows.
+  memset(lf_sync->cur_sb_col, -1, sizeof(*lf_sync->cur_sb_col) * sb_rows);
+
+  memset(lf_sync->no_of_tiles_done, 0,
+         sizeof(*lf_sync->no_of_tiles_done) * sb_rows);
+  cm->lf_row = 0;
+}
+
 // Set up nsync by width.
 static INLINE int get_sync_range(int width) {
   // nsync numbers are picked by testing. For example, for 4k
@@ -268,6 +288,25 @@ void vp9_loop_filter_alloc(VP9LfSync *lf_sync, VP9_COMMON *cm, int rows,
         pthread_cond_init(&lf_sync->cond_[i], NULL);
       }
     }
+    pthread_mutex_init(&lf_sync->lf_mutex, NULL);
+
+    CHECK_MEM_ERROR(cm, lf_sync->recon_done_mutex_,
+                    vpx_malloc(sizeof(*lf_sync->recon_done_mutex_) * rows));
+    if (lf_sync->recon_done_mutex_) {
+      int i;
+      for (i = 0; i < rows; ++i) {
+        pthread_mutex_init(&lf_sync->recon_done_mutex_[i], NULL);
+      }
+    }
+
+    CHECK_MEM_ERROR(cm, lf_sync->recon_done_cond_,
+                    vpx_malloc(sizeof(*lf_sync->recon_done_cond_) * rows));
+    if (lf_sync->recon_done_cond_) {
+      int i;
+      for (i = 0; i < rows; ++i) {
+        pthread_cond_init(&lf_sync->recon_done_cond_[i], NULL);
+      }
+    }
   }
 #endif  // CONFIG_MULTITHREAD
 
@@ -277,6 +316,11 @@ void vp9_loop_filter_alloc(VP9LfSync *lf_sync, VP9_COMMON *cm, int rows,
 
   CHECK_MEM_ERROR(cm, lf_sync->cur_sb_col,
                   vpx_malloc(sizeof(*lf_sync->cur_sb_col) * rows));
+
+  CHECK_MEM_ERROR(
+      cm, lf_sync->no_of_tiles_done,
+      vpx_malloc(sizeof(*lf_sync->no_of_tiles_done) *
+                 (mi_cols_aligned_to_sb(cm->mi_rows) >> MI_BLOCK_SIZE_LOG2)));
 
   // Set up nsync.
   lf_sync->sync_range = get_sync_range(width);
@@ -300,13 +344,36 @@ void vp9_loop_filter_dealloc(VP9LfSync *lf_sync) {
       }
       vpx_free(lf_sync->cond_);
     }
+    if (lf_sync->recon_done_mutex_ != NULL) {
+      int i;
+      for (i = 0; i < lf_sync->rows; ++i) {
+        pthread_mutex_destroy(&lf_sync->recon_done_mutex_[i]);
+      }
+      vpx_free(lf_sync->recon_done_mutex_);
+    }
+
+    pthread_mutex_destroy(&lf_sync->lf_mutex);
+    if (NULL != lf_sync->recon_done_cond_) {
+      int i;
+      for (i = 0; i < lf_sync->rows; ++i) {
+        pthread_cond_destroy(&lf_sync->recon_done_cond_[i]);
+      }
+      vpx_free(lf_sync->recon_done_cond_);
+    }
 #endif  // CONFIG_MULTITHREAD
     vpx_free(lf_sync->lfdata);
     vpx_free(lf_sync->cur_sb_col);
+    vpx_free(lf_sync->no_of_tiles_done);
     // clear the structure as the source of this call may be a resize in which
     // case this call will be followed by an _alloc() which may fail.
     vp9_zero(*lf_sync);
   }
+}
+
+void vp9_loopfilter_job(LFWorkerData *lf_data, VP9LfSync *lf_sync) {
+  thread_loop_filter_rows(lf_data->frame_buffer, lf_data->cm, lf_data->planes,
+                          lf_data->start, lf_data->stop, lf_data->y_only,
+                          lf_sync);
 }
 
 // Accumulate frame counts.

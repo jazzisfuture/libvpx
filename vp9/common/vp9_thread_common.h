@@ -37,6 +37,13 @@ typedef struct VP9LfSyncData {
   // Row-based parallel loopfilter data
   LFWorkerData *lfdata;
   int num_workers;
+
+#if CONFIG_MULTITHREAD
+  pthread_mutex_t lf_mutex;
+  pthread_mutex_t *recon_done_mutex_;
+  pthread_cond_t *recon_done_cond_;
+#endif
+  int *no_of_tiles_done;
 } VP9LfSync;
 
 // Allocate memory for loopfilter row synchronization.
@@ -52,6 +59,12 @@ void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame, struct VP9Common *cm,
                               int frame_filter_level, int y_only,
                               int partial_frame, VPxWorker *workers,
                               int num_workers, VP9LfSync *lf_sync);
+
+// Multi-threaded loopfilter initialisations
+void vp9_lpf_mt_init(struct VP9Common *cm, VP9LfSync *lf_sync,
+                     int frame_filter_level, int num_workers);
+
+void vp9_loopfilter_job(LFWorkerData *lf_data, VP9LfSync *lf_sync);
 
 void vp9_accumulate_frame_counts(struct FRAME_COUNTS *accum,
                                  const struct FRAME_COUNTS *counts, int is_dec);
