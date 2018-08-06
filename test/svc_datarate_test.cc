@@ -62,62 +62,6 @@ class DatarateOnePassCbrSvc : public ::svc_test::OnePassCbrSvc {
   }
   virtual void BeginPassHook(unsigned int /*pass*/) {}
 
-  // Example pattern for spatial layers and 2 temporal layers used in the
-  // bypass/flexible mode. The pattern corresponds to the pattern
-  // VP9E_TEMPORAL_LAYERING_MODE_0101 (temporal_layering_mode == 2) used in
-  // non-flexible mode, except that we disable inter-layer prediction.
-  void set_frame_flags_bypass_mode(
-      int tl, int num_spatial_layers, int is_key_frame,
-      vpx_svc_ref_frame_config_t *ref_frame_config) {
-    for (int sl = 0; sl < num_spatial_layers; ++sl) {
-      if (!tl) {
-        if (!sl) {
-          ref_frame_config->frame_flags[sl] =
-              VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_GF |
-              VP8_EFLAG_NO_UPD_ARF;
-        } else {
-          if (is_key_frame) {
-            ref_frame_config->frame_flags[sl] =
-                VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_REF_ARF |
-                VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_ARF;
-          } else {
-            ref_frame_config->frame_flags[sl] =
-                VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_GF |
-                VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_REF_GF;
-          }
-        }
-      } else if (tl == 1) {
-        if (!sl) {
-          ref_frame_config->frame_flags[sl] =
-              VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_REF_ARF |
-              VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_GF;
-        } else {
-          ref_frame_config->frame_flags[sl] =
-              VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_LAST |
-              VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_REF_GF;
-        }
-      }
-      if (tl == 0) {
-        ref_frame_config->lst_fb_idx[sl] = sl;
-        if (sl) {
-          if (is_key_frame) {
-            ref_frame_config->lst_fb_idx[sl] = sl - 1;
-            ref_frame_config->gld_fb_idx[sl] = sl;
-          } else {
-            ref_frame_config->gld_fb_idx[sl] = sl - 1;
-          }
-        } else {
-          ref_frame_config->gld_fb_idx[sl] = 0;
-        }
-        ref_frame_config->alt_fb_idx[sl] = 0;
-      } else if (tl == 1) {
-        ref_frame_config->lst_fb_idx[sl] = sl;
-        ref_frame_config->gld_fb_idx[sl] = num_spatial_layers + sl - 1;
-        ref_frame_config->alt_fb_idx[sl] = num_spatial_layers + sl;
-      }
-    }
-  }
-
   void CheckLayerRateTargeting(int num_spatial_layers, int num_temporal_layers,
                                double thresh_overshoot,
                                double thresh_undershoot) const {
@@ -171,8 +115,6 @@ class DatarateOnePassCbrSvc : public ::svc_test::OnePassCbrSvc {
       layer_id.temporal_layer_id = (video->frame() % 2 != 0);
       temporal_layer_id_ = layer_id.temporal_layer_id;
       encoder->Control(VP9E_SET_SVC_LAYER_ID, &layer_id);
-      set_frame_flags_bypass_mode(layer_id.temporal_layer_id,
-                                  number_spatial_layers_, 0, &ref_frame_config);
       encoder->Control(VP9E_SET_SVC_REF_FRAME_CONFIG, &ref_frame_config);
     }
 
