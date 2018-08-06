@@ -791,16 +791,14 @@ typedef struct vpx_svc_layer_id {
 typedef struct vpx_svc_ref_frame_config {
   // TODO(jianj/marpan): Remove the usage of frame_flags, instead use the
   // update and reference flags.
-  int frame_flags[VPX_SS_MAX_LAYERS];       /**< Frame flags. */
-  int lst_fb_idx[VPX_SS_MAX_LAYERS];        /**< Last buffer index. */
-  int gld_fb_idx[VPX_SS_MAX_LAYERS];        /**< Golden buffer index. */
-  int alt_fb_idx[VPX_SS_MAX_LAYERS];        /**< Altref buffer index. */
-  int update_last[VPX_SS_MAX_LAYERS];       /**< Update last. */
-  int update_golden[VPX_SS_MAX_LAYERS];     /**< Update golden. */
-  int update_alt_ref[VPX_SS_MAX_LAYERS];    /**< Update altref. */
-  int reference_last[VPX_SS_MAX_LAYERS];    /**< Last as eference. */
-  int reference_golden[VPX_SS_MAX_LAYERS];  /**< Golden as reference. */
-  int reference_alt_ref[VPX_SS_MAX_LAYERS]; /**< Altref as reference. */
+  int frame_flags[VPX_SS_MAX_LAYERS];         /**< Frame flags. */
+  int lst_fb_idx[VPX_SS_MAX_LAYERS];          /**< Last buffer index. */
+  int gld_fb_idx[VPX_SS_MAX_LAYERS];          /**< Golden buffer index. */
+  int alt_fb_idx[VPX_SS_MAX_LAYERS];          /**< Altref buffer index. */
+  int update_reference[8][VPX_SS_MAX_LAYERS]; /**< Update reference frames. */
+  int reference_last[VPX_SS_MAX_LAYERS];      /**< Last as eference. */
+  int reference_golden[VPX_SS_MAX_LAYERS];    /**< Golden as reference. */
+  int reference_alt_ref[VPX_SS_MAX_LAYERS];   /**< Altref as reference. */
 } vpx_svc_ref_frame_config_t;
 
 /*!\brief VP9 svc frame dropping mode.

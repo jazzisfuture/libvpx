@@ -669,9 +669,11 @@ void vp9_copy_flags_ref_update_idx(VP9_COMP *const cpi) {
   svc->gld_fb_idx[sl] = cpi->gld_fb_idx;
   svc->alt_fb_idx[sl] = cpi->alt_fb_idx;
 
-  svc->update_last[sl] = (uint8_t)cpi->refresh_last_frame;
-  svc->update_golden[sl] = (uint8_t)cpi->refresh_golden_frame;
-  svc->update_altref[sl] = (uint8_t)cpi->refresh_alt_ref_frame;
+  svc->update_reference[cpi->lst_fb_idx][sl] = (uint8_t)cpi->refresh_last_frame;
+  svc->update_reference[cpi->gld_fb_idx][sl] =
+      (uint8_t)cpi->refresh_golden_frame;
+  svc->update_reference[cpi->alt_fb_idx][sl] =
+      (uint8_t)cpi->refresh_alt_ref_frame;
   svc->reference_last[sl] =
       (uint8_t)(cpi->ref_frame_flags & flag_list[LAST_FRAME]);
   svc->reference_golden[sl] =
@@ -773,9 +775,9 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
       memset(&svc->gld_fb_idx, -1, sizeof(svc->lst_fb_idx));
       memset(&svc->alt_fb_idx, -1, sizeof(svc->lst_fb_idx));
     }
-    vp9_zero(svc->update_last);
-    vp9_zero(svc->update_golden);
-    vp9_zero(svc->update_altref);
+    vp9_zero(svc->update_reference);
+    // vp9_zero(svc->update_golden);
+    // vp9_zero(svc->update_altref);
     vp9_zero(svc->reference_last);
     vp9_zero(svc->reference_golden);
     vp9_zero(svc->reference_altref);
@@ -988,11 +990,11 @@ void vp9_svc_constrain_inter_layer_pred(VP9_COMP *const cpi) {
         int sl = cpi->svc.spatial_layer_id;
         int disable = 1;
         if ((fb_idx == cpi->svc.lst_fb_idx[sl - 1] &&
-             cpi->svc.update_last[sl - 1]) ||
+             cpi->svc.update_reference[fb_idx][sl - 1]) ||
             (fb_idx == cpi->svc.gld_fb_idx[sl - 1] &&
-             cpi->svc.update_golden[sl - 1]) ||
+             cpi->svc.update_reference[fb_idx][sl - 1]) ||
             (fb_idx == cpi->svc.alt_fb_idx[sl - 1] &&
-             cpi->svc.update_altref[sl - 1]))
+             cpi->svc.update_reference[fb_idx][sl - 1]))
           disable = 0;
         if (disable) cpi->ref_frame_flags &= (~ref_flag);
       }
