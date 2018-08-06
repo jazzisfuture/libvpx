@@ -3277,6 +3277,8 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
 #endif
 
   if (is_one_pass_cbr_svc(cpi)) {
+    if (svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS)
+      vp9_svc_update_ref_frame_bypass(cpi);
     // Keep track of frame index for each reference frame.
     if (cm->frame_type == KEY_FRAME) {
       int i;
@@ -3314,8 +3316,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   struct loopfilter *lf = &cm->lf;
 
   const int is_reference_frame =
-      (cm->frame_type == KEY_FRAME || cpi->refresh_last_frame ||
-       cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame);
+      !(cpi->use_svc && cpi->svc.non_reference_frame);
 
   if (xd->lossless) {
     lf->filter_level = 0;
