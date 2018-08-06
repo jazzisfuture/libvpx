@@ -137,6 +137,8 @@ struct macroblockd_plane {
 
   // encoder
   const int16_t *dequant;
+
+  int *eob;
 };
 
 #define BLOCK_OFFSET(x, i) ((x) + (i)*16)
@@ -200,6 +202,8 @@ typedef struct macroblockd {
   int corrupted;
 
   struct vpx_internal_error_info *error_info;
+
+  PARTITION_TYPE *partition;
 } MACROBLOCKD;
 
 static INLINE PLANE_TYPE get_plane_type(int plane) {
