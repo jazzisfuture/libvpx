@@ -1603,6 +1603,15 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
+  if (cm->current_video_frame < 8)
+    printf("%d %d %d ** %d %d %d %d ** %d %d %d ** %d %d %d ** %d %d %d \n",
+           cm->current_video_frame, cm->frame_type, cpi->svc.temporal_layer_id,
+           cpi->oxcf.speed, (oxcf->mode == REALTIME), oxcf->aq_mode,
+           cm->error_resilient_mode, cm->base_qindex, rc->projected_frame_size,
+           rc->avg_frame_bandwidth, cpi->refresh_last_frame,
+           cpi->refresh_golden_frame, cpi->refresh_alt_ref_frame,
+           cpi->lst_fb_idx, cpi->gld_fb_idx, cpi->alt_fb_idx);
+
   // Post encode loop adjustment of Q prediction.
   vp9_rc_update_rate_correction_factors(cpi);
 
