@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ca6aa75c_ae4e11cc",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 779,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-06T21:44:34Z",
+      "side": 1,
+      "message": "remove these two lines",
+      "range": {
+        "startLine": 779,
+        "startChar": 21,
+        "endLine": 779,
+        "endChar": 34
+      },
+      "revId": "859f384bfe2c9dfc00ceee080a151c7618aa7850",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56ccb49c_99eb52d2",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 993,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-06T21:44:34Z",
+      "side": 1,
+      "message": "should this be cpi-\u003elst_fb_idx?\nand so on for the other 2",
+      "revId": "859f384bfe2c9dfc00ceee080a151c7618aa7850",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd2d6d79_1779e73b",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1510,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-06T21:44:34Z",
+      "side": 1,
+      "message": "put the same interface here (as in GET_REF_FRAME_CONFIG), for the SET_REF_FRAME_CONFIG here",
+      "revId": "859f384bfe2c9dfc00ceee080a151c7618aa7850",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b4675b0_7fcc4b7f",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1511,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-06T21:44:34Z",
+      "side": 1,
+      "message": "remove frame flags",
+      "revId": "859f384bfe2c9dfc00ceee080a151c7618aa7850",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d8c6247_40cc312b",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 794,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-06T21:44:34Z",
+      "side": 1,
+      "message": "remove frame_flags and the TODO comment",
+      "revId": "859f384bfe2c9dfc00ceee080a151c7618aa7850",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
