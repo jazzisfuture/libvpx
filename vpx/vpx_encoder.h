@@ -31,6 +31,14 @@ extern "C" {
 
 #include "./vpx_codec.h"
 
+/*! Reference frame slots.
+ */
+#define REF_FRAMES_LOG2 3
+
+/*! Number of reference frame slots.
+ */
+#define REF_FRAMES (1 << REF_FRAMES_LOG2)
+
 /*! Temporal Scalability: Maximum length of the sequence defining frame
  * layer membership
  */
@@ -202,6 +210,28 @@ typedef struct vpx_codec_cx_pkt {
     char pad[128 - sizeof(enum vpx_codec_cx_pkt_kind)]; /**< fixed sz */
   } data;                                               /**< packet data */
 } vpx_codec_cx_pkt_t; /**< alias for struct vpx_codec_cx_pkt */
+
+/*!\brief vp9 svc frame flag parameters.
+ *
+ * This defines the frame flags and buffer indices for each spatial layer for
+ * svc encoding.
+ * This is used with the #VP9E_SET_SVC_REF_FRAME_CONFIG control to set frame
+ * flags and buffer indices for each spatial layer for the current (super)frame.
+ *
+ */
+typedef struct vpx_svc_ref_frame_config {
+  // TODO(jianj/marpan): Remove the usage of frame_flags, instead use the
+  // update and reference flags.
+  // int frame_flags[VPX_SS_MAX_LAYERS];         /**< Frame flags. */
+  int lst_fb_idx[VPX_SS_MAX_LAYERS]; /**< Last buffer index. */
+  int gld_fb_idx[VPX_SS_MAX_LAYERS]; /**< Golden buffer index. */
+  int alt_fb_idx[VPX_SS_MAX_LAYERS]; /**< Altref buffer index. */
+  int update_reference[REF_FRAMES]
+                      [VPX_SS_MAX_LAYERS];  /**< Update reference frames. */
+  int reference_last[VPX_SS_MAX_LAYERS];    /**< Last as eference. */
+  int reference_golden[VPX_SS_MAX_LAYERS];  /**< Golden as reference. */
+  int reference_alt_ref[VPX_SS_MAX_LAYERS]; /**< Altref as reference. */
+} vpx_svc_ref_frame_config_t;
 
 /*!\brief Encoder return output buffer callback
  *
