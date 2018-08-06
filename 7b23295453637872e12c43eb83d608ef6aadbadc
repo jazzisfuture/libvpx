@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "934f4206_8aa14108",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1884,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-08-06T00:28:41Z",
+      "side": 1,
+      "message": "Move this block to line before 1882: map_write() \nThat would ensure two threads can never queue lpf jobs simultaneously and they are queued in the correct order.",
+      "revId": "7b23295453637872e12c43eb83d608ef6aadbadc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
