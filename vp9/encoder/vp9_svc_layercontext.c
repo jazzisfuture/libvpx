@@ -660,18 +660,48 @@ static void set_flags_and_fb_idx_for_temporal_mode_noLayering(
   reset_fb_idx_unused(cpi);
 }
 
+static void set_flags_and_fb_idx_bypass_via_set_ref_frame_config(
+    VP9_COMP *const cpi) {
+  SVC *const svc = &cpi->svc;
+  int ref;
+  int sl = svc->spatial_layer_id = svc->spatial_layer_to_encode;
+  cpi->ext_refresh_frame_flags_pending = 1;
+  cpi->lst_fb_idx = svc->lst_fb_idx[sl];
+  cpi->gld_fb_idx = svc->gld_fb_idx[sl];
+  cpi->alt_fb_idx = svc->alt_fb_idx[sl];
+  cpi->ext_refresh_last_frame = 0;
+  cpi->ext_refresh_golden_frame = 0;
+  cpi->ext_refresh_alt_ref_frame = 0;
+  for (ref = 0; ref < REF_FRAMES; ++ref) {
+    if (ref == cpi->lst_fb_idx && svc->update_buffer_slot[ref][sl] == 1)
+      cpi->ext_refresh_last_frame = 1;
+    if (ref == cpi->gld_fb_idx && svc->update_buffer_slot[ref][sl] == 1)
+      cpi->ext_refresh_golden_frame = 1;
+    if (ref == cpi->alt_fb_idx && svc->update_buffer_slot[ref][sl] == 1)
+      cpi->ext_refresh_alt_ref_frame = 1;
+  }
+  cpi->ref_frame_flags = 0;
+  if (svc->reference_last[sl]) cpi->ref_frame_flags |= VP9_LAST_FLAG;
+  if (svc->reference_golden[sl]) cpi->ref_frame_flags |= VP9_GOLD_FLAG;
+  if (svc->reference_altref[sl]) cpi->ref_frame_flags |= VP9_ALT_FLAG;
+}
+
 void vp9_copy_flags_ref_update_idx(VP9_COMP *const cpi) {
   SVC *const svc = &cpi->svc;
   static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
                                     VP9_ALT_FLAG };
+  int ref;
   int sl = svc->spatial_layer_id;
   svc->lst_fb_idx[sl] = cpi->lst_fb_idx;
   svc->gld_fb_idx[sl] = cpi->gld_fb_idx;
   svc->alt_fb_idx[sl] = cpi->alt_fb_idx;
-
-  svc->update_last[sl] = (uint8_t)cpi->refresh_last_frame;
-  svc->update_golden[sl] = (uint8_t)cpi->refresh_golden_frame;
-  svc->update_altref[sl] = (uint8_t)cpi->refresh_alt_ref_frame;
+  for (ref = 0; ref < REF_FRAMES; ++ref) {
+    svc->update_buffer_slot[ref][sl] = 0;
+    if ((ref == svc->lst_fb_idx[sl] && cpi->refresh_last_frame) ||
+        (ref == svc->gld_fb_idx[sl] && cpi->refresh_golden_frame) ||
+        (ref == svc->alt_fb_idx[sl] && cpi->refresh_alt_ref_frame))
+      svc->update_buffer_slot[ref][sl] = 1;
+  }
   svc->reference_last[sl] =
       (uint8_t)(cpi->ref_frame_flags & flag_list[LAST_FRAME]);
   svc->reference_golden[sl] =
@@ -701,23 +731,8 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
     set_flags_and_fb_idx_for_temporal_mode2(cpi);
   } else if (svc->temporal_layering_mode ==
              VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
-    // In the BYPASS/flexible mode, the encoder is relying on the application
-    // to specify, for each spatial layer, the flags and buffer indices for the
-    // layering.
-    // Note that the check (cpi->ext_refresh_frame_flags_pending == 0) is
-    // needed to support the case where the frame flags may be passed in via
-    // vpx_codec_encode(), which can be used for the temporal-only svc case.
-    // TODO(marpan): Consider adding an enc_config parameter to better handle
-    // this case.
-    if (cpi->ext_refresh_frame_flags_pending == 0) {
-      int sl;
-      svc->spatial_layer_id = svc->spatial_layer_to_encode;
-      sl = svc->spatial_layer_id;
-      vp9_apply_encoding_flags(cpi, svc->ext_frame_flags[sl]);
-      cpi->lst_fb_idx = svc->lst_fb_idx[sl];
-      cpi->gld_fb_idx = svc->gld_fb_idx[sl];
-      cpi->alt_fb_idx = svc->alt_fb_idx[sl];
-    }
+    if (cpi->ext_refresh_frame_flags_pending == 0)
+      set_flags_and_fb_idx_bypass_via_set_ref_frame_config(cpi);
   }
 
   if (cpi->lst_fb_idx == svc->buffer_gf_temporal_ref[0].idx ||
@@ -772,13 +787,14 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
       memset(&svc->lst_fb_idx, -1, sizeof(svc->lst_fb_idx));
       memset(&svc->gld_fb_idx, -1, sizeof(svc->lst_fb_idx));
       memset(&svc->alt_fb_idx, -1, sizeof(svc->lst_fb_idx));
+      // These are set by API before the superframe is encoded and they are
+      // passed to encoder layer by layer. Don't reset them on layer 0 in bypass
+      // mode.
+      vp9_zero(svc->update_buffer_slot);
+      vp9_zero(svc->reference_last);
+      vp9_zero(svc->reference_golden);
+      vp9_zero(svc->reference_altref);
     }
-    vp9_zero(svc->update_last);
-    vp9_zero(svc->update_golden);
-    vp9_zero(svc->update_altref);
-    vp9_zero(svc->reference_last);
-    vp9_zero(svc->reference_golden);
-    vp9_zero(svc->reference_altref);
   }
 
   lc = &svc->layer_context[svc->spatial_layer_id * svc->number_temporal_layers +
@@ -940,16 +956,17 @@ void vp9_svc_check_reset_layer_rc_flag(VP9_COMP *const cpi) {
 
 void vp9_svc_constrain_inter_layer_pred(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
+  SVC *const svc = &cpi->svc;
   // Check for disabling inter-layer (spatial) prediction, if
   // svc.disable_inter_layer_pred is set. If the previous spatial layer was
   // dropped then disable the prediction from this (scaled) reference.
   // For INTER_LAYER_PRED_OFF_NONKEY: inter-layer prediction is disabled
   // on key frames or if any spatial layer is a sync layer.
-  if ((cpi->svc.disable_inter_layer_pred == INTER_LAYER_PRED_OFF_NONKEY &&
-       !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame &&
-       !cpi->svc.superframe_has_layer_sync) ||
-      cpi->svc.disable_inter_layer_pred == INTER_LAYER_PRED_OFF ||
-      cpi->svc.drop_spatial_layer[cpi->svc.spatial_layer_id - 1]) {
+  if ((svc->disable_inter_layer_pred == INTER_LAYER_PRED_OFF_NONKEY &&
+       !svc->layer_context[svc->temporal_layer_id].is_key_frame &&
+       !svc->superframe_has_layer_sync) ||
+      svc->disable_inter_layer_pred == INTER_LAYER_PRED_OFF ||
+      svc->drop_spatial_layer[svc->spatial_layer_id - 1]) {
     MV_REFERENCE_FRAME ref_frame;
     static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
                                       VP9_ALT_FLAG };
@@ -967,7 +984,7 @@ void vp9_svc_constrain_inter_layer_pred(VP9_COMP *const cpi) {
   // prediction (the reference that is scaled) is not the previous spatial layer
   // from the same superframe, then we disable inter-layer prediction.
   // Only need to check when inter_layer prediction is not set to OFF mode.
-  if (cpi->svc.disable_inter_layer_pred != INTER_LAYER_PRED_OFF) {
+  if (svc->disable_inter_layer_pred != INTER_LAYER_PRED_OFF) {
     // We only use LAST and GOLDEN for prediction in real-time mode, so we
     // check both here.
     MV_REFERENCE_FRAME ref_frame;
@@ -985,14 +1002,14 @@ void vp9_svc_constrain_inter_layer_pred(VP9_COMP *const cpi) {
         int fb_idx =
             ref_frame == LAST_FRAME ? cpi->lst_fb_idx : cpi->gld_fb_idx;
         int ref_flag = ref_frame == LAST_FRAME ? VP9_LAST_FLAG : VP9_GOLD_FLAG;
-        int sl = cpi->svc.spatial_layer_id;
+        int sl = svc->spatial_layer_id;
         int disable = 1;
-        if ((fb_idx == cpi->svc.lst_fb_idx[sl - 1] &&
-             cpi->svc.update_last[sl - 1]) ||
-            (fb_idx == cpi->svc.gld_fb_idx[sl - 1] &&
-             cpi->svc.update_golden[sl - 1]) ||
-            (fb_idx == cpi->svc.alt_fb_idx[sl - 1] &&
-             cpi->svc.update_altref[sl - 1]))
+        if ((fb_idx == svc->lst_fb_idx[sl - 1] &&
+             svc->update_buffer_slot[fb_idx][sl - 1]) ||
+            (fb_idx == svc->gld_fb_idx[sl - 1] &&
+             svc->update_buffer_slot[fb_idx][sl - 1]) ||
+            (fb_idx == svc->alt_fb_idx[sl - 1] &&
+             svc->update_buffer_slot[fb_idx][sl - 1]))
           disable = 0;
         if (disable) cpi->ref_frame_flags &= (~ref_flag);
       }
