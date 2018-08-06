@@ -16,6 +16,24 @@
       "revId": "81a2393af85b5b7e768b534b13342cbaea48754b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "805f3266_2352402a",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1606,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-06T22:36:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e598d526_dfcdea43",
+      "revId": "81a2393af85b5b7e768b534b13342cbaea48754b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
