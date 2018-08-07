@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "67f0ab95_e1735b6a",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-07T23:51:20Z",
+      "side": 1,
+      "message": "you could return from the original location and assert here. Is corrupted being checked post decode to return an error?",
+      "revId": "ca90ae0b91d387e2e320fd86c6f284bb63fc6f3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
