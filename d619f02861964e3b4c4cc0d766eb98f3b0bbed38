@@ -16,6 +16,24 @@
       "revId": "d619f02861964e3b4c4cc0d766eb98f3b0bbed38",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "536ff4f5_760b891a",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 9
+      },
+      "lineNbr": 790,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-07T22:25:06Z",
+      "side": 0,
+      "message": "REF_FRAMES are defined in vp9/common/ and it can\u0027t be included by this file.\n\nAnd I don\u0027t think it\u0027s good to have the svc structs defined in a file named as vp8cx.h but they are only used by vp9\n\nI moved it back anyway and use 8 instead of REF_FRAMES. This file probably needs some clean up.",
+      "parentUuid": "93a79bc1_e13b4111",
+      "revId": "d619f02861964e3b4c4cc0d766eb98f3b0bbed38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
