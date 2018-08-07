@@ -93,6 +93,7 @@ static void mt_decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
   (void)mb_idx;
 #endif
 
+  if (xd->corrupted) return;
   if (xd->mode_info_context->mbmi.mb_skip_coeff) {
     vp8_reset_mb_tokens_context(xd);
   } else if (!vp8dx_bool_error(xd->current_bc)) {
@@ -414,10 +415,6 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
 
       /* propagate errors from reference frames */
       xd->corrupted |= ref_fb_corrupted[xd->mode_info_context->mbmi.ref_frame];
-
-      if (xd->corrupted)
-        vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
-                           "Corrupted reference frame buffer");
 
       mt_decode_macroblock(pbi, xd, 0);
 
