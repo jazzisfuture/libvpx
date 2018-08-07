@@ -16,6 +16,24 @@
       "revId": "36ea670e3c9a39cd40361d1e5cbb02c68500028a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8f1d5c5_8e52d7bc",
+        "filename": "vpx_dsp/x86/avg_intrin_sse2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2018-08-07T21:57:46Z",
+      "side": 1,
+      "message": "yep...  in mc_flow_dispenser()\n\nDECLARE_ALIGNED(16, tran_low_t, coeff[32 * 32]);",
+      "parentUuid": "2736cfaa_7efc39c9",
+      "revId": "36ea670e3c9a39cd40361d1e5cbb02c68500028a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
