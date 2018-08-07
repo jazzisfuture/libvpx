@@ -344,6 +344,9 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
     }
 
     pbi->common.error.error_code = VPX_CODEC_ERROR;
+    // Propagate the error info.
+    if (pbi->mb.error_info.error_code != 0)
+      pbi->common.error.error_code = pbi->mb.error_info.error_code;
     goto decode_exit;
   }
 
