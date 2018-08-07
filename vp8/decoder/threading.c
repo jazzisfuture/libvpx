@@ -410,6 +410,15 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
       /* propagate errors from reference frames */
       xd->corrupted |= ref_fb_corrupted[xd->mode_info_context->mbmi.ref_frame];
 
+      if (xd->corrupted) {
+        for (; mb_row < pc->mb_rows; mb_row += (pbi->decoding_thread_count + 1)) {
+          current_mb_col = &pbi->mt_current_mb_col[mb_row];
+          vpx_atomic_store_release(current_mb_col, pc->mb_cols + nsync);
+        }
+        vpx_internal_error(&xd->error_info, VPX_CODEC_CORRUPT_FRAME,
+                           "Corrupted reference frame");
+      }
+
       mt_decode_macroblock(pbi, xd, 0);
 
       xd->left_available = 1;
@@ -576,7 +585,12 @@ static THREAD_FUNCTION thread_decoding_proc(void *p_data) {
       } else {
         MACROBLOCKD *xd = &mbrd->mbd;
         xd->left_context = &mb_row_left_context;
-
+        if (setjmp(xd->error_info.jmp)) {
+          xd->error_info.setjmp = 0;
+          sem_post(&pbi->h_event_end_decoding);
+          continue;
+        }
+        xd->error_info.setjmp = 1;
         mt_decode_mb_rows(pbi, xd, ithread + 1);
       }
     }
@@ -809,13 +823,22 @@ void vp8_decoder_remove_threads(VP8D_COMP *pbi) {
   }
 }
 
-void vp8mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd) {
+int vp8mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd) {
   VP8_COMMON *pc = &pbi->common;
   unsigned int i;
   int j;
 
   int filter_level = pc->filter_level;
   YV12_BUFFER_CONFIG *yv12_fb_new = pbi->dec_fb_ref[INTRA_FRAME];
+
+  xd->error_info.setjmp = 1;
+
+  if (setjmp(xd->error_info.jmp)) {
+    xd->error_info.setjmp = 0;
+    xd->corrupted = 1;
+    sem_wait(&pbi->h_event_end_decoding);
+    return -1;
+  }
 
   if (filter_level) {
     /* Set above_row buffer to 127 for decoding first MB row */
@@ -858,4 +881,6 @@ void vp8mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd) {
   mt_decode_mb_rows(pbi, xd, 0);
 
   sem_wait(&pbi->h_event_end_decoding); /* add back for each frame */
+
+  return 0;
 }
