@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2736cfaa_7efc39c9",
+        "filename": "vpx_dsp/x86/avg_intrin_sse2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-07T21:49:13Z",
+      "side": 1,
+      "message": "coeff is aligned properly for x86 right?",
+      "revId": "36ea670e3c9a39cd40361d1e5cbb02c68500028a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
