@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "06f8c468_f10a90ed",
+        "filename": "test/svc_datarate_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-07T22:54:04Z",
+      "side": 1,
+      "message": "reference_golden/alt should be 0 here?",
+      "revId": "5d8c40721eb87be75d4412e829a24fbb5b066f92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0cc414e_3dcc8207",
+        "filename": "test/svc_datarate_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-07T22:54:04Z",
+      "side": 1,
+      "message": "this is wrong, should be (its not exactly same pattern as in sample encoder), should be:\nreference_last \u003d 1\nreference_golden \u003d 0\nreference_alt \u003d 0\nupdate_reference[gld] \u003d 1;",
+      "range": {
+        "startLine": 104,
+        "startChar": 19,
+        "endLine": 104,
+        "endChar": 37
+      },
+      "revId": "5d8c40721eb87be75d4412e829a24fbb5b066f92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05fe6a20_2b5a5bc3",
+        "filename": "test/svc_datarate_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-07T22:54:04Z",
+      "side": 1,
+      "message": "you need to set the fb_idx first, since they are used in update_reference",
+      "revId": "5d8c40721eb87be75d4412e829a24fbb5b066f92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
