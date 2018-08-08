@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "14794838_0be7c41a",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 22
+      },
+      "lineNbr": 919,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-08T23:18:18Z",
+      "side": 1,
+      "message": "remove extra line?",
+      "revId": "3bc9c96fb04e1872dbe274590c4b5b3f8de6af7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f386a717_db12fefb",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 22
+      },
+      "lineNbr": 3281,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-08T23:18:18Z",
+      "side": 1,
+      "message": "can you name it: vp9_svc_update_ref_frame_bypass_mode()",
+      "revId": "3bc9c96fb04e1872dbe274590c4b5b3f8de6af7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e28794b_e3507b3c",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 22
+      },
+      "lineNbr": 674,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-08T23:18:18Z",
+      "side": 1,
+      "message": "remove these commented lines",
+      "revId": "3bc9c96fb04e1872dbe274590c4b5b3f8de6af7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de0c61db_39d5d1e7",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 22
+      },
+      "lineNbr": 875,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-08T23:18:18Z",
+      "side": 1,
+      "message": "extra line?",
+      "revId": "3bc9c96fb04e1872dbe274590c4b5b3f8de6af7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
