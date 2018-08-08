@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c57e849e_0b8944b2",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 21
+      },
+      "lineNbr": 682,
+      "author": {
+        "id": 1262464
+      },
+      "writtenOn": "2018-08-08T08:45:04Z",
+      "side": 1,
+      "message": "It seems this still only allows to update last, golden and alt buffers but not other buffer(s).",
+      "range": {
+        "startLine": 675,
+        "startChar": 0,
+        "endLine": 682,
+        "endChar": 3
+      },
+      "revId": "e1fa7c8267b7c90c50d52448d4c2a476f5b6d3f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a1e032e_b5a117d7",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 21
+      },
+      "lineNbr": 795,
+      "author": {
+        "id": 1262464
+      },
+      "writtenOn": "2018-08-08T08:45:04Z",
+      "side": 1,
+      "message": "Since this only takes 0/1 values it could be replaced with bits field:\nint update_buffer_slot[VPX_SS_MAX_LAYERS];\n\nThen, for example, if you want to store frame in buffers 0,3,4:\nupdate_buffer_slot[sl] \u003d (1\u003c\u003c0) | (1\u003c\u003c3) | (1\u003c\u003c4);",
+      "range": {
+        "startLine": 795,
+        "startChar": 2,
+        "endLine": 795,
+        "endChar": 46
+      },
+      "revId": "e1fa7c8267b7c90c50d52448d4c2a476f5b6d3f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
