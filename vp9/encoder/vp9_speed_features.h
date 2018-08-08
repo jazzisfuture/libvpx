@@ -542,9 +542,14 @@ typedef struct SPEED_FEATURES {
   // For SVC: enables use of partition from lower spatial resolution.
   int svc_use_lowres_part;
 
-  // Enable re-encoding on scene change with potential high overshoot,
-  // for real-time encoding flow.
-  int re_encode_overshoot_rt;
+  // Flag to indicate process for handling overshoot on slide/scene change,
+  // for real-time CBR mode.
+  // 0: no reaction on Q/rate control reset to slide/scene change.
+  // 1: set frame Q to rc->worst_quality on the detected slide/scene change,
+  // no re-encode step.
+  // 2: if large overshoot is detected on first pass encoded frame, then
+  // re-encode frame at Q = rc->worst_quality.
+  int overshoot_detection_rt;
 
   // Disable partitioning of 16x16 blocks.
   int disable_16x16part_nonkey;
