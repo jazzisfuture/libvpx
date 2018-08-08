@@ -2646,10 +2646,8 @@ void vp9_scene_detection_onepass(VP9_COMP *cpi) {
     float thresh = 8.0f;
     uint32_t thresh_key = 140000;
     if (cpi->oxcf.speed <= 5) thresh_key = 240000;
-    if (cpi->oxcf.rc_mode == VPX_VBR) {
-      min_thresh = 65000;
-      thresh = 2.1f;
-    }
+    if (cpi->oxcf.content != VP9E_CONTENT_SCREEN) min_thresh = 65000;
+    if (cpi->oxcf.rc_mode == VPX_VBR) thresh = 2.1f;
     if (cpi->oxcf.lag_in_frames > 0) {
       frames_to_buffer = (cm->current_video_frame == 1)
                              ? (int)vp9_lookahead_depth(cpi->lookahead) - 1
@@ -2818,10 +2816,11 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
   if (cpi->oxcf.content != VP9E_CONTENT_SCREEN)
     thresh_rate = rc->avg_frame_bandwidth << 2;
   // If this decision is not based on an encoded frame size but just on
-  // scene/slide change detection (i.e., re_encode_overshoot_rt = 0), adjust the
+  // scene/slide change detection (i.e., re_encode_overshoot_rt = 1), adjust the
   // qp_thresh and skip the (frame_size > thresh_rate) condition in this case.
-  if (!sf->re_encode_overshoot_rt) thresh_qp = 3 * (rc->worst_quality >> 2);
-  if ((!sf->re_encode_overshoot_rt || frame_size > thresh_rate) &&
+  // TODO(marpan): Use a better rate condition for this case.
+  if (sf->overshoot_detection_rt == 1) thresh_qp = 3 * (rc->worst_quality >> 2);
+  if ((sf->overshoot_detection_rt == 1 || frame_size > thresh_rate) &&
       cm->base_qindex < thresh_qp) {
     double rate_correction_factor =
         cpi->rc.rate_correction_factors[INTER_NORMAL];
@@ -2838,7 +2837,7 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
     // and the encoded frame used alot of Intra modes, then force hybrid_intra
     // encoding for the re-encode on this scene change. hybrid_intra will
     // use rd-based intra mode selection for small blocks.
-    if (sf->re_encode_overshoot_rt && frame_size > (thresh_rate << 1) &&
+    if (sf->overshoot_detection_rt == 2 && frame_size > (thresh_rate << 1) &&
         cpi->svc.spatial_layer_id == 0) {
       MODE_INFO **mi = cm->mi_grid_visible;
       int sum_intra_usage = 0;
@@ -2892,8 +2891,8 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
         LAYER_CONTEXT *lc = &svc->layer_context[layer];
         RATE_CONTROL *lrc = &lc->rc;
         lrc->avg_frame_qindex[INTER_FRAME] = *q;
-        lrc->buffer_level = rc->optimal_buffer_level;
-        lrc->bits_off_target = rc->optimal_buffer_level;
+        lrc->buffer_level = lrc->optimal_buffer_level;
+        lrc->bits_off_target = lrc->optimal_buffer_level;
         lrc->rc_1_frame = 0;
         lrc->rc_2_frame = 0;
         lrc->rate_correction_factors[INTER_NORMAL] = rate_correction_factor;
