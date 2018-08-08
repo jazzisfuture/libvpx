@@ -4053,7 +4053,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   }
 
   if (!cpi->sf.re_encode_overshoot_rt &&
-      cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
+      cpi->oxcf.rc_mode == VPX_CBR &&
       (cpi->rc.high_source_sad ||
        (cpi->use_svc && cpi->svc.high_source_sad_superframe))) {
     // Check if this high_source_sad (scene/slide change) frame should be
@@ -4090,7 +4090,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   // Check if we should drop this frame because of high overshoot.
   // Only for frames where high temporal-source SAD is detected.
   // For SVC: all spatial layers are checked for re-encoding.
-  if (cpi->sf.re_encode_overshoot_rt &&
+  if (cpi->sf.re_encode_overshoot_rt && cpi->oxcf.rc_mode == VPX_CBR &&
       (cpi->rc.high_source_sad ||
        (cpi->use_svc && cpi->svc.high_source_sad_superframe))) {
     int frame_size = 0;
