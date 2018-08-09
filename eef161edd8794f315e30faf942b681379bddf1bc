@@ -16,6 +16,24 @@
       "revId": "eef161edd8794f315e30faf942b681379bddf1bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "893298b2_bb71800d",
+        "filename": "test/vp9_datarate_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 690,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-09T19:58:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8d731ec_43eec2bb",
+      "revId": "eef161edd8794f315e30faf942b681379bddf1bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
