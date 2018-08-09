@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cbf8d33b_b8d99bf9",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 21
+      },
+      "lineNbr": 682,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-09T00:16:58Z",
+      "side": 1,
+      "message": "Removed this, done.",
+      "parentUuid": "c57e849e_0b8944b2",
+      "range": {
+        "startLine": 675,
+        "startChar": 0,
+        "endLine": 682,
+        "endChar": 3
+      },
+      "revId": "e1fa7c8267b7c90c50d52448d4c2a476f5b6d3f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3a1e032e_b5a117d7",
         "filename": "vpx/vp8cx.h",
         "patchSetId": 21
