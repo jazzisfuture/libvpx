@@ -68,17 +68,19 @@ int vp9_jobq_queue(jobq_t *jobq, void *job, int job_size) {
 #if CONFIG_MULTITHREAD
   pthread_mutex_lock(&jobq->mutex);
 #endif
-  if (jobq->buf_end >= (jobq->buf_wr + job_size)) {
-    memcpy(jobq->buf_wr, job, job_size);
-    jobq->buf_wr = jobq->buf_wr + job_size;
+  if (jobq->terminate != 1) {
+    if (jobq->buf_end >= (jobq->buf_wr + job_size)) {
+      memcpy(jobq->buf_wr, job, job_size);
+      jobq->buf_wr = jobq->buf_wr + job_size;
 #if CONFIG_MULTITHREAD
-    pthread_cond_signal(&jobq->cond);
+      pthread_cond_signal(&jobq->cond);
 #endif
-    ret = 0;
-  } else {
-    /* Wrap around case is not supported */
-    assert(0);
-    ret = 1;
+      ret = 0;
+    } else {
+      /* Wrap around case is not supported */
+      assert(0);
+      ret = 1;
+    }
   }
 #if CONFIG_MULTITHREAD
   pthread_mutex_unlock(&jobq->mutex);
