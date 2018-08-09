@@ -2636,6 +2636,8 @@ void vp9_scene_detection_onepass(VP9_COMP *cpi) {
   if (cpi->svc.spatial_layer_id == 0 && src_width == last_src_width &&
       src_height == last_src_height) {
     YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = { NULL };
+    int num_mi_cols = cm->mi_cols;
+    int num_mi_rows = cm->mi_rows;
     int start_frame = 0;
     int frames_to_buffer = 1;
     int frame = 0;
@@ -2646,9 +2648,13 @@ void vp9_scene_detection_onepass(VP9_COMP *cpi) {
     float thresh = 8.0f;
     uint32_t thresh_key = 140000;
     if (cpi->oxcf.speed <= 5) thresh_key = 240000;
-    if (cpi->oxcf.rc_mode == VPX_VBR) {
-      min_thresh = 65000;
-      thresh = 2.1f;
+    if (cpi->oxcf.content != VP9E_CONTENT_SCREEN) min_thresh = 65000;
+    if (cpi->oxcf.rc_mode == VPX_VBR) thresh = 2.1f;
+    if (cpi->use_svc && cpi->svc.number_spatial_layers > 1) {
+      const int aligned_width = ALIGN_POWER_OF_TWO(src_width, MI_SIZE_LOG2);
+      const int aligned_height = ALIGN_POWER_OF_TWO(src_height, MI_SIZE_LOG2);
+      num_mi_cols = aligned_width >> MI_SIZE_LOG2;
+      num_mi_rows = aligned_height >> MI_SIZE_LOG2;
     }
     if (cpi->oxcf.lag_in_frames > 0) {
       frames_to_buffer = (cm->current_video_frame == 1)
@@ -2696,8 +2702,8 @@ void vp9_scene_detection_onepass(VP9_COMP *cpi) {
         uint64_t avg_sad = 0;
         uint64_t tmp_sad = 0;
         int num_samples = 0;
-        int sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
-        int sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+        int sb_cols = (num_mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+        int sb_rows = (num_mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
         if (cpi->oxcf.lag_in_frames > 0) {
           src_y = frames[frame]->y_buffer;
           src_ystride = frames[frame]->y_stride;
@@ -2733,7 +2739,7 @@ void vp9_scene_detection_onepass(VP9_COMP *cpi) {
           if (avg_sad >
                   VPXMAX(min_thresh,
                          (unsigned int)(rc->avg_source_sad[0] * thresh)) &&
-              rc->frames_since_key > 1 &&
+              rc->frames_since_key > 1 + cpi->svc.number_spatial_layers &&
               num_zero_temp_sad < 3 * (num_samples >> 2))
             rc->high_source_sad = 1;
           else
@@ -2892,8 +2898,8 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
         LAYER_CONTEXT *lc = &svc->layer_context[layer];
         RATE_CONTROL *lrc = &lc->rc;
         lrc->avg_frame_qindex[INTER_FRAME] = *q;
-        lrc->buffer_level = rc->optimal_buffer_level;
-        lrc->bits_off_target = rc->optimal_buffer_level;
+        lrc->buffer_level = lrc->optimal_buffer_level;
+        lrc->bits_off_target = lrc->optimal_buffer_level;
         lrc->rc_1_frame = 0;
         lrc->rc_2_frame = 0;
         lrc->rate_correction_factors[INTER_NORMAL] = rate_correction_factor;
