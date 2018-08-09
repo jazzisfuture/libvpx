@@ -31,7 +31,21 @@ extern "C" {
 #define DQCOEFFS_PER_SB_LOG2 12
 #define PARTITIONS_PER_SB 85
 
-typedef enum _job_type { PARSE_JOB, RECON_JOB } job_type;
+typedef enum _job_type { PARSE_JOB, RECON_JOB, LPF_JOB, FULL_DECODE } job_type;
+
+typedef enum {
+  NO_FLAG = 0x0,
+  RECON_DONE = 0x1,
+  LPF_QUEUED = 0x2,
+  MAX_FLAGS
+} FLAG;
+
+typedef struct ThreadData {
+  struct VP9Decoder *pbi;
+  LFWorkerData *lf_data;
+  VP9LfSync *lf_sync;
+  int thread_num;
+} ThreadData;
 
 typedef struct TileBuffer {
   const uint8_t *data;
@@ -49,6 +63,8 @@ typedef struct TileWorkerData {
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
   struct vpx_internal_error_info error_info;
+  LFWorkerData *lf_data;
+  VP9LfSync *lf_sync;
 } TileWorkerData;
 
 /* Structure to queue and dequeue row decode jobs */
@@ -77,6 +93,7 @@ typedef struct VP9Decoder {
   VPxWorker lf_worker;
   VPxWorker *tile_workers;
   TileWorkerData *tile_worker_data;
+  ThreadData *thread_data;
   TileBuffer tile_buffers[64];
   int num_tile_workers;
   int total_tiles;

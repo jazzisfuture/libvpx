@@ -1740,20 +1740,20 @@ static void get_tile_buffers(VP9Decoder *pbi, const uint8_t *data,
   }
 }
 
-static void map_write(VP9Decoder *pbi, int idx) {
+static void map_write(VP9Decoder *pbi, int idx, int flag) {
 #if CONFIG_MULTITHREAD
-  pbi->recon_map[idx] = 1;
+  pbi->recon_map[idx] |= flag;
 #else
   (void)pbi;
   (void)idx;
 #endif
 }
 
-static void map_read(VP9Decoder *pbi, int idx) {
+static void map_read(VP9Decoder *pbi, int idx, int flag) {
 #if CONFIG_MULTITHREAD
   volatile int8_t *map;
   map = pbi->recon_map + idx;
-  while (!(*map)) {
+  while (!((*map) & flag)) {
     sched_yield();
   }
 #else
@@ -1762,7 +1762,17 @@ static void map_read(VP9Decoder *pbi, int idx) {
 #endif
 }
 
-static void vp9_parse_thread_done(VP9Decoder *pbi) {
+static int lpf_map_write_check(VP9LfSync *lf_sync, int row, int num_tile_cols) {
+  int return_val = 0;
+  pthread_mutex_lock(&lf_sync->recon_done_mutex_[row]);
+  lf_sync->num_tiles_in_frame_row_done[row] += 1;
+  if (num_tile_cols == lf_sync->num_tiles_in_frame_row_done[row])
+    return_val = 1;
+  pthread_mutex_unlock(&lf_sync->recon_done_mutex_[row]);
+  return return_val;
+}
+
+static void vp9_tile_done(VP9Decoder *pbi) {
 #if CONFIG_MULTITHREAD
   int all_parse_done = (1 << pbi->common.log2_tile_cols);
   pthread_mutex_lock(&pbi->recon_mutex);
@@ -1782,7 +1792,7 @@ void vp9_jobq_alloc(VP9Decoder *pbi) {
   const int sb_rows = aligned_rows >> MI_BLOCK_SIZE_LOG2;
   const int tile_cols = 1 << cm->log2_tile_cols;
   int jobq_size = 0;
-  jobq_size = (tile_cols * sb_rows * 2) * sizeof(Job);
+  jobq_size = ((tile_cols * sb_rows * 2) + sb_rows) * sizeof(Job);
 
   if (jobq_size > pbi->jobq_size) {
     vpx_free(pbi->jobq_buf);
@@ -1792,18 +1802,33 @@ void vp9_jobq_alloc(VP9Decoder *pbi) {
   }
 }
 
-int row_decode_worker_hook(VP9Decoder *pbi, uint8_t **data_end) {
+int row_decode_worker_hook(ThreadData *const thread_data, uint8_t **data_end) {
+  VP9Decoder *pbi = thread_data->pbi;
   VP9_COMMON *cm = &pbi->common;
   int tile_cols = 1 << cm->log2_tile_cols;
   const int aligned_cols = mi_cols_aligned_to_sb(cm->mi_cols);
   const int sb_cols = aligned_cols >> MI_BLOCK_SIZE_LOG2;
+  const int aligned_rows = mi_cols_aligned_to_sb(cm->mi_rows);
+  const int sb_rows = aligned_rows >> MI_BLOCK_SIZE_LOG2;
   Job job;
+  LFWorkerData *lf_data = thread_data->lf_data;
+  VP9LfSync *lf_sync = thread_data->lf_sync;
 
   while (!vp9_jobq_dequeue(&pbi->jobq, &job, sizeof(job), 1)) {
     int mi_col;
     int mi_row = job.row_num;
 
-    if (RECON_JOB == job.job_type) {
+    if (job.job_type == LPF_JOB) {
+      lf_data->start = mi_row;
+      lf_data->stop = lf_data->start + MI_BLOCK_SIZE;
+
+      if (!pbi->mb.corrupted && cm->lf.filter_level && !cm->skip_loop_filter &&
+          (mi_row < cm->mi_rows)) {
+        vp9_loopfilter_job(lf_data, lf_sync);
+      }
+    } else if (job.job_type == RECON_JOB) {
+      int cur_sb_row = mi_row >> MI_BLOCK_SIZE_LOG2;
+      int is_last_row = ((sb_rows - 1) == (cur_sb_row)) ? 1 : 0;
       TileWorkerData twd_recon;
       TileWorkerData *const tile_data_recon = &twd_recon;
       int mi_col_start, mi_col_end;
@@ -1820,7 +1845,7 @@ int row_decode_worker_hook(VP9Decoder *pbi, uint8_t **data_end) {
              mi_col += MI_BLOCK_SIZE) {
           const int r = mi_row >> MI_BLOCK_SIZE_LOG2;
           const int c = mi_col >> MI_BLOCK_SIZE_LOG2;
-          map_write(pbi, (r * sb_cols) + c);
+          map_write(pbi, (r * sb_cols) + c, RECON_DONE);
         }
         tile_data_recon->error_info.setjmp = 0;
         tile_data_recon->xd.corrupted = 1;
@@ -1842,7 +1867,7 @@ int row_decode_worker_hook(VP9Decoder *pbi, uint8_t **data_end) {
 
         // Top Dependency
         if (r) {
-          map_read(pbi, ((r - 1) * sb_cols) + c);
+          map_read(pbi, ((r - 1) * sb_cols) + c, RECON_DONE);
         }
 
         for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
@@ -1854,7 +1879,38 @@ int row_decode_worker_hook(VP9Decoder *pbi, uint8_t **data_end) {
         tile_data_recon->xd.partition =
             pbi->partition + (sb_num * PARTITIONS_PER_SB);
         recon_partition(tile_data_recon, pbi, mi_row, mi_col, BLOCK_64X64, 4);
-        map_write(pbi, (r * sb_cols) + c);
+        if (cm->lf.filter_level && !cm->skip_loop_filter &&
+            !pbi->mb.corrupted) {
+          // Queue LPF_JOB
+          int cur_sb_row = mi_row >> MI_BLOCK_SIZE_LOG2;
+          int is_lpf_job_ready = 0;
+
+          if ((mi_col + MI_BLOCK_SIZE) >= mi_col_end) {
+            /* Checks if this row has been decoded across the entire frame
+             * (in all tiles)
+             */
+            is_lpf_job_ready =
+                lpf_map_write_check(lf_sync, cur_sb_row, tile_cols);
+
+            if (is_lpf_job_ready) {
+              Job lpf_job;
+              lpf_job.job_type = LPF_JOB;
+              if (cur_sb_row > 0) {
+                lpf_job.row_num = mi_row - MI_BLOCK_SIZE;
+                vp9_jobq_queue(&pbi->jobq, &lpf_job, sizeof(lpf_job));
+              }
+              if (is_last_row) {
+                lpf_job.row_num = mi_row;
+                vp9_jobq_queue(&pbi->jobq, &lpf_job, sizeof(lpf_job));
+              }
+            }
+          }
+        }
+        map_write(pbi, (r * sb_cols) + c, RECON_DONE);
+      }
+
+      if (is_last_row) {
+        vp9_tile_done(pbi);
       }
     } else if (PARSE_JOB == job.job_type) {
       TileInfo *tile;
@@ -1927,8 +1983,6 @@ int row_decode_worker_hook(VP9Decoder *pbi, uint8_t **data_end) {
         parse_job.tile_col = job.tile_col;
         parse_job.job_type = PARSE_JOB;
         vp9_jobq_queue(&pbi->jobq, &parse_job, sizeof(parse_job));
-      } else {
-        vp9_parse_thread_done(pbi);
       }
 
       /* Set data end */
@@ -1939,7 +1993,7 @@ int row_decode_worker_hook(VP9Decoder *pbi, uint8_t **data_end) {
         tile_data->data_end = pbi->data_end;
       }
     }
-  }
+  } /* JOB_DEQUEUE_LOOP_ENDS */
 
   return !pbi->mb.corrupted;
 }
@@ -2213,6 +2267,7 @@ static int tile_worker_hook(void *arg1, void *arg2) {
   TileInfo *volatile tile = &tile_data->xd.tile;
   const int final_col = (1 << pbi->common.log2_tile_cols) - 1;
   const uint8_t *volatile bit_reader_end = NULL;
+
   volatile int n = tile_data->buf_start;
   tile_data->error_info.setjmp = 1;
 
@@ -2275,6 +2330,8 @@ const uint8_t *decode_tiles_multi_row(VP9Decoder *pbi, const uint8_t *data,
   int col;
   const int sb_rows = mi_cols_aligned_to_sb(cm->mi_rows) >> MI_BLOCK_SIZE_LOG2;
   const int sb_cols = mi_cols_aligned_to_sb(cm->mi_cols) >> MI_BLOCK_SIZE_LOG2;
+  VP9LfSync *lf_row_sync = &pbi->lf_row_sync;
+  YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
 
   assert(tile_cols <= (1 << 6));
   assert(tile_rows == 1);
@@ -2301,13 +2358,36 @@ const uint8_t *decode_tiles_multi_row(VP9Decoder *pbi, const uint8_t *data,
     }
   }
 
+  // allocate memory for thread_data
+  if (pbi->thread_data == NULL) {
+    const size_t thread_size = pbi->max_threads * sizeof(*pbi->thread_data);
+    CHECK_MEM_ERROR(cm, pbi->thread_data, vpx_memalign(32, thread_size));
+  }
+
+  // Initialize LPF
+  if (cm->lf.filter_level && !cm->skip_loop_filter) {
+    vp9_lpf_mt_init(cm, lf_row_sync, cm->lf.filter_level,
+                    pbi->num_tile_workers);
+  }
+
   // Reset tile decoding hook
   for (n = 0; n < num_workers; ++n) {
     VPxWorker *const worker = &pbi->tile_workers[n];
+    ThreadData *const thread_data = &pbi->thread_data[n];
     winterface->sync(worker);
 
+    if (cm->lf.filter_level && !cm->skip_loop_filter) {
+      thread_data->lf_sync = lf_row_sync;
+      thread_data->lf_data = &thread_data->lf_sync->lfdata[n];
+      vp9_loop_filter_data_reset(thread_data->lf_data, new_fb, cm,
+                                 pbi->mb.plane);
+    }
+
+    thread_data->pbi = pbi;
+    thread_data->thread_num = n;
+
     worker->hook = (VPxWorkerHook)row_decode_worker_hook;
-    worker->data1 = pbi;
+    worker->data1 = thread_data;
     worker->data2 = &pbi->data_end;
   }
 
@@ -2430,6 +2510,7 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi, const uint8_t *data,
     TileWorkerData *const tile_data =
         &pbi->tile_worker_data[n + pbi->total_tiles];
     winterface->sync(worker);
+
     tile_data->xd = pbi->mb;
     tile_data->xd.counts =
         cm->frame_parallel_decoding_mode ? NULL : &tile_data->counts;
@@ -2961,21 +3042,25 @@ void vp9_decode_frame(VP9Decoder *pbi, const uint8_t *data,
     if (pbi->row_mt == 1) {
       *p_data_end =
           decode_tiles_multi_row(pbi, data + first_partition_size, data_end);
+      if (xd->corrupted) {
+        vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                           "Decode failed. Frame data is corrupted.");
+      }
     } else {
       // Multi-threaded tile decoder
       *p_data_end = decode_tiles_mt(pbi, data + first_partition_size, data_end);
-    }
-    if (!xd->corrupted) {
-      if (!cm->skip_loop_filter) {
-        // If multiple threads are used to decode tiles, then we use those
-        // threads to do parallel loopfiltering.
-        vp9_loop_filter_frame_mt(new_fb, cm, pbi->mb.plane, cm->lf.filter_level,
-                                 0, 0, pbi->tile_workers, pbi->num_tile_workers,
-                                 &pbi->lf_row_sync);
+      if (!xd->corrupted) {
+        if (!cm->skip_loop_filter) {
+          // If multiple threads are used to decode tiles, then we use those
+          // threads to do parallel loopfiltering.
+          vp9_loop_filter_frame_mt(new_fb, cm, pbi->mb.plane,
+                                   cm->lf.filter_level, 0, 0, pbi->tile_workers,
+                                   pbi->num_tile_workers, &pbi->lf_row_sync);
+        }
+      } else {
+        vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                           "Decode failed. Frame data is corrupted.");
       }
-    } else {
-      vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
-                         "Decode failed. Frame data is corrupted.");
     }
   } else {
     if (pbi->row_mt == 1) {
