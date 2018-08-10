@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "985fad8f_336d529a",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-10T20:29:26Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 334,
+        "startChar": 6,
+        "endLine": 334,
+        "endChar": 13
+      },
+      "revId": "e2509498890374bd555b652d2f78e91c01a28579",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53c8311a_9b80055e",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-10T20:29:26Z",
+      "side": 1,
+      "message": "can you define it here since it\u0027s only used in this function.\n\nYou can use memset to set it all to 128.",
+      "range": {
+        "startLine": 339,
+        "startChar": 44,
+        "endLine": 339,
+        "endChar": 56
+      },
+      "revId": "e2509498890374bd555b652d2f78e91c01a28579",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dc360c5_2d928f21",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 343,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-10T20:29:26Z",
+      "side": 1,
+      "message": "this can be const too",
+      "range": {
+        "startLine": 343,
+        "startChar": 8,
+        "endLine": 343,
+        "endChar": 20
+      },
+      "revId": "e2509498890374bd555b652d2f78e91c01a28579",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06421f05_418317f0",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-10T20:29:26Z",
+      "side": 1,
+      "message": "you can remove this variable and put is_superblock_flat_static into the condition here.",
+      "range": {
+        "startLine": 446,
+        "startChar": 11,
+        "endLine": 446,
+        "endChar": 29
+      },
+      "revId": "e2509498890374bd555b652d2f78e91c01a28579",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
