@@ -3238,42 +3238,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     update_ref_frames(cpi);
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
-  if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
-      cpi->denoiser.denoising_level > kDenLowLow) {
-    int svc_refresh_denoiser_buffers = 0;
-    int denoise_svc_second_layer = 0;
-    FRAME_TYPE frame_type = cm->intra_only ? KEY_FRAME : cm->frame_type;
-    if (cpi->use_svc) {
-      int realloc_fail = 0;
-      const int svc_buf_shift =
-          svc->number_spatial_layers - svc->spatial_layer_id == 2
-              ? cpi->denoiser.num_ref_frames
-              : 0;
-      int layer =
-          LAYER_IDS_TO_IDX(svc->spatial_layer_id, svc->temporal_layer_id,
-                           svc->number_temporal_layers);
-      LAYER_CONTEXT *const lc = &svc->layer_context[layer];
-      svc_refresh_denoiser_buffers =
-          lc->is_key_frame || svc->spatial_layer_sync[svc->spatial_layer_id];
-      denoise_svc_second_layer =
-          svc->number_spatial_layers - svc->spatial_layer_id == 2 ? 1 : 0;
-      // Check if we need to allocate extra buffers in the denoiser
-      // for
-      // refreshed frames.
-      realloc_fail = vp9_denoiser_realloc_svc(
-          cm, &cpi->denoiser, svc_buf_shift, cpi->refresh_alt_ref_frame,
-          cpi->refresh_golden_frame, cpi->refresh_last_frame, cpi->alt_fb_idx,
-          cpi->gld_fb_idx, cpi->lst_fb_idx);
-      if (realloc_fail)
-        vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                           "Failed to re-allocate denoiser for SVC");
-    }
-    vp9_denoiser_update_frame_info(
-        &cpi->denoiser, *cpi->Source, frame_type, cpi->refresh_alt_ref_frame,
-        cpi->refresh_golden_frame, cpi->refresh_last_frame, cpi->alt_fb_idx,
-        cpi->gld_fb_idx, cpi->lst_fb_idx, cpi->resize_pending,
-        svc_refresh_denoiser_buffers, denoise_svc_second_layer);
-  }
+  vp9_denoiser_update_ref_frame(cpi);
 #endif
 
   if (is_one_pass_cbr_svc(cpi)) {
