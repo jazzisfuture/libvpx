@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "509bc2db_1b1339a8",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3244,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-10T16:41:31Z",
+      "side": 1,
+      "message": "can you also move this out to svc_layercontext.c?",
+      "revId": "dfaf58e78e42a2782493e69da6bfa61714a7d792",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
