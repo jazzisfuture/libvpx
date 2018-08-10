@@ -592,7 +592,7 @@ int main(int argc, char **argv) {
 #if ROI_MAP
   vpx_roi_map_t roi;
 #endif
-  vpx_svc_layer_id_t layer_id = { 0, 0 };
+  vpx_svc_layer_id_t layer_id;
   const VpxInterface *encoder = NULL;
   FILE *infile = NULL;
   struct RateControlMetrics rc;
@@ -610,7 +610,7 @@ int main(int argc, char **argv) {
   double framerate = 30.0;
 
   zero(rc.layer_target_bitrate);
-
+  memset(&layer_id, 0, sizeof(vpx_svc_layer_id_t));
   exec_name = argv[0];
   // Check usage and arguments.
   if (argc < min_args) {
