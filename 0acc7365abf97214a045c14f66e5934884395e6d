@@ -22,6 +22,30 @@
       "revId": "0acc7365abf97214a045c14f66e5934884395e6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "952e876d_5bc4176c",
+        "filename": "vp9/common/vp9_thread_common.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-10T19:06:34Z",
+      "side": 1,
+      "message": "\u003e I think this works. Just want to ask if num_active_workers is necessary. Can we use lf_sync-\u003enum_workers here?\n\u003e It seems when sb_rows !\u003d lf_sync-\u003erows, vp9_loop_filter_alloc() will be called, and lf_sync-\u003enum_workers is set to the right value.\n\nThe problem came when we started with 4 num_workers from a frame with 4 tiles then went to a frame with 2 tiles. In that case num_workers\u003d4, sb_rows\u003d3 so the offset to mi_row was too large and we missed the last row.",
+      "parentUuid": "114e0ec3_7e80faeb",
+      "range": {
+        "startLine": 107,
+        "startChar": 17,
+        "endLine": 107,
+        "endChar": 35
+      },
+      "revId": "0acc7365abf97214a045c14f66e5934884395e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
