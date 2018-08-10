@@ -94,6 +94,145 @@ void vp9_temporal_filter_init(void) {
   for (i = 1; i < 512; ++i) fixed_divide[i] = 0x80000 / i;
 }
 
+void apply_temporal_filter(const uint8_t *y_frame1, int y_stride,
+                           const uint8_t *y_pred, int y_buf_stride,
+                           const uint8_t *u_frame1, const uint8_t *v_frame1,
+                           int uv_stride, const uint8_t *u_pred,
+                           const uint8_t *v_pred, int uv_buf_stride,
+                           unsigned int block_width, unsigned int block_height,
+                           int ss_x, int ss_y, int strength, int filter_weight,
+                           uint32_t *y_accumulator, uint16_t *y_count,
+                           uint32_t *u_accumulator, uint16_t *u_count,
+                           uint32_t *v_accumulator, uint16_t *v_count) {
+  unsigned int i, j, k, m;
+  int modifier;
+  const int rounding = (1 << strength) >> 1;
+  const int uv_block_width = block_width >> ss_x;
+  const int uv_block_height = block_height >> ss_y;
+
+  assert(strength >= 0);
+  assert(strength <= 6);
+
+  assert(filter_weight >= 0);
+  assert(filter_weight <= 2);
+
+  for (i = 0, k = 0, m = 0; i < block_height; i++) {
+    for (j = 0; j < block_width; j++) {
+      int pixel_value = y_pred[i * y_buf_stride + j];
+
+      // non-local mean approach
+      int diff_sse[9] = { 0 };
+      int idx, idy, index = 0;
+
+      for (idy = -1; idy <= 1; ++idy) {
+        for (idx = -1; idx <= 1; ++idx) {
+          int row = (int)i + idy;
+          int col = (int)j + idx;
+
+          if (row >= 0 && row < (int)block_height && col >= 0 &&
+              col < (int)block_width) {
+            int diff = y_frame1[row * (int)y_stride + col] -
+                       y_pred[row * (int)block_width + col];
+            diff_sse[index] = diff * diff;
+            ++index;
+          }
+        }
+      }
+
+      assert(index > 0);
+
+      modifier = 0;
+      for (idx = 0; idx < 9; ++idx) modifier += diff_sse[idx];
+
+      modifier *= 3;
+      modifier /= index;
+
+      modifier += rounding;
+      modifier >>= strength;
+
+      if (modifier > 16) modifier = 16;
+
+      modifier = 16 - modifier;
+      modifier *= filter_weight;
+
+      y_count[k] += modifier;
+      y_accumulator[k] += modifier * pixel_value;
+
+      ++k;
+
+      // Process chroma component
+      if (!(i & ss_y) && !(j & ss_x)) {
+        int uv_r = i >> ss_y;
+        int uv_c = j >> ss_x;
+
+        int u_pixel_value = u_pred[uv_r * uv_buf_stride + uv_c];
+        int v_pixel_value = v_pred[uv_r * uv_buf_stride + uv_c];
+
+        // non-local mean approach
+        int u_diff_sse[9] = { 0 };
+        int v_diff_sse[9] = { 0 };
+        int idx, idy, index = 0;
+        int u_mod = 0, v_mod = 0;
+
+        for (idy = -1; idy <= 1; ++idy) {
+          for (idx = -1; idx <= 1; ++idx) {
+            int row = uv_r + idy;
+            int col = uv_c + idx;
+
+            if (row >= 0 && row < uv_block_height && col >= 0 &&
+                col < uv_block_width) {
+              int diff = u_frame1[row * uv_stride + col] -
+                         u_pred[row * uv_buf_stride + col];
+              u_diff_sse[index] = diff * diff;
+
+              diff = v_frame1[row * uv_stride + col] -
+                     v_pred[row * uv_buf_stride + col];
+              v_diff_sse[index] = diff * diff;
+
+              ++index;
+            }
+          }
+        }
+
+        assert(index > 0);
+
+        for (idx = 0; idx < 9; ++idx) {
+          u_mod += u_diff_sse[idx];
+          v_mod += v_diff_sse[idx];
+        }
+
+        u_mod *= 3;
+        v_mod *= 3;
+
+        u_mod /= index;
+        v_mod /= index;
+
+        u_mod += rounding;
+        v_mod += rounding;
+
+        u_mod >>= strength;
+        v_mod >>= strength;
+
+        if (u_mod > 16) u_mod = 16;
+        if (v_mod > 16) v_mod = 16;
+
+        u_mod = 16 - u_mod;
+        v_mod = 16 - v_mod;
+
+        u_mod *= filter_weight;
+        v_mod *= filter_weight;
+
+        u_count[m] += u_mod;
+        u_accumulator[m] += u_mod * u_pixel_value;
+        v_count[m] += v_mod;
+        v_accumulator[m] += v_mod * v_pixel_value;
+
+        ++m;
+      }  // Complete YUV pixel
+    }
+  }
+}
+
 void vp9_temporal_filter_apply_c(const uint8_t *frame1, unsigned int stride,
                                  const uint8_t *frame2,
                                  unsigned int block_width,
@@ -435,17 +574,13 @@ void vp9_temporal_filter_iterate_row_c(VP9_COMP *cpi, ThreadData *td,
         }
 #else
         // Apply the filter (YUV)
-        vp9_temporal_filter_apply_c(f->y_buffer + mb_y_offset, f->y_stride,
-                                    predictor, 16, 16, strength, filter_weight,
-                                    accumulator, count);
-        vp9_temporal_filter_apply_c(f->u_buffer + mb_uv_offset, f->uv_stride,
-                                    predictor + 256, mb_uv_width, mb_uv_height,
-                                    strength, filter_weight, accumulator + 256,
-                                    count + 256);
-        vp9_temporal_filter_apply_c(f->v_buffer + mb_uv_offset, f->uv_stride,
-                                    predictor + 512, mb_uv_width, mb_uv_height,
-                                    strength, filter_weight, accumulator + 512,
-                                    count + 512);
+        apply_temporal_filter(
+            f->y_buffer + mb_y_offset, f->y_stride, predictor, 16,
+            f->u_buffer + mb_uv_offset, f->v_buffer + mb_uv_offset,
+            f->uv_stride, predictor + 256, predictor + 512, mb_uv_width, 16, 16,
+            mbd->plane[1].subsampling_x, mbd->plane[1].subsampling_y, strength,
+            filter_weight, accumulator, count, accumulator + 256, count + 256,
+            accumulator + 512, count + 512);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       }
     }
