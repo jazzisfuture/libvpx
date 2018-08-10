@@ -70,6 +70,30 @@
       "revId": "0acc7365abf97214a045c14f66e5934884395e6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1364fb20_db03e9c2",
+        "filename": "vp9/common/vp9_thread_common.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-10T22:36:38Z",
+      "side": 1,
+      "message": "\u003e Yes. I just thought maybe the change in this function is not necessary since you already have\n\u003e num_workers \u003d VPXMIN(nworkers, sb_rows);\n\u003e If sb_rows changes in this frame, vp9_loop_filter_alloc() will be called, and lf_sync-\u003enum_workers is set correctly. Is it right? Maybe I miss something here.\n\nThe allocation won\u0027t happen in the second frame, it\u0027s 4 tiles (alloc happens num_workers\u003d4), then 2 tiles (num_workers \u003c lf_sync-\u003enum_workers, so no alloc happens). So the allocated version of lf_sync-\u003enum_workers will be used in the calculation.",
+      "parentUuid": "d882bd25_bd494c09",
+      "range": {
+        "startLine": 107,
+        "startChar": 17,
+        "endLine": 107,
+        "endChar": 35
+      },
+      "revId": "0acc7365abf97214a045c14f66e5934884395e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
