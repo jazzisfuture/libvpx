@@ -776,8 +776,12 @@ typedef enum { VP8_TUNE_PSNR, VP8_TUNE_SSIM } vp8e_tuning;
  *
  */
 typedef struct vpx_svc_layer_id {
-  int spatial_layer_id;  /**< Spatial layer id number. */
+  // First spatial layer to start encoding in superframe.
+  int spatial_layer_id;
+  // TODO(jianj): Deprecated, to be removed.
   int temporal_layer_id; /**< Temporal layer id number. */
+  // Temporal layer id for each spatial layer.
+  int temporal_layer_id_per_spatial[VPX_SS_MAX_LAYERS];
 } vpx_svc_layer_id_t;
 
 /*!\brief vp9 svc frame flag parameters.
