@@ -1,0 +1,123 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0578ac53_346ead01",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1743,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-08-10T23:59:51Z",
+      "side": 1,
+      "message": "Now that only RECON_DONE is the only required value, remove all LPF_QUEUED and RECON_DONE related code. Revert this to set 1 like earlier.",
+      "revId": "6d34492313e9722a8ff068ebd84a129f7ac89f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48f8dc46_fdc2b497",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1752,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-08-10T23:59:51Z",
+      "side": 1,
+      "message": "Same here. Remove flag.",
+      "revId": "6d34492313e9722a8ff068ebd84a129f7ac89f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4658c277_6e29d6fa",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2270,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-08-10T23:59:51Z",
+      "side": 1,
+      "message": "Remove this unnecessary blank line change",
+      "revId": "6d34492313e9722a8ff068ebd84a129f7ac89f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f41a9858_fd5f2c4a",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2516,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-08-10T23:59:51Z",
+      "side": 1,
+      "message": "Remove this unnecessary blank line change",
+      "revId": "6d34492313e9722a8ff068ebd84a129f7ac89f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f5b0290_d6f8e0bd",
+        "filename": "vp9/decoder/vp9_decoder.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-08-10T23:59:51Z",
+      "side": 1,
+      "message": "Is FULL_DECODE used anywhere?",
+      "revId": "6d34492313e9722a8ff068ebd84a129f7ac89f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbd6a445_10bdad98",
+        "filename": "vp9/decoder/vp9_decoder.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-08-10T23:59:51Z",
+      "side": 1,
+      "message": "Remove FLAG enum",
+      "revId": "6d34492313e9722a8ff068ebd84a129f7ac89f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d474cc63_52ca4c14",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-08-10T23:59:51Z",
+      "side": 1,
+      "message": "Is this change still needed? Parent commit was updated to not do this check.",
+      "revId": "6d34492313e9722a8ff068ebd84a129f7ac89f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
