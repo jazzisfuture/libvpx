@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "114e0ec3_7e80faeb",
+        "filename": "vp9/common/vp9_thread_common.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-08-10T18:39:15Z",
+      "side": 1,
+      "message": "I think this works. Just want to ask if num_active_workers is necessary. Can we use lf_sync-\u003enum_workers here?\nIt seems when sb_rows !\u003d lf_sync-\u003erows, vp9_loop_filter_alloc() will be called, and lf_sync-\u003enum_workers is set to the right value.",
+      "range": {
+        "startLine": 107,
+        "startChar": 17,
+        "endLine": 107,
+        "endChar": 35
+      },
+      "revId": "0acc7365abf97214a045c14f66e5934884395e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
