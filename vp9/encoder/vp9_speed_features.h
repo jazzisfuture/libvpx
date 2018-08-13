@@ -234,7 +234,10 @@ typedef enum {
   // then set to higher Q for the second re-encode. This involves 2 pass
   // encoding on slide change, so slower than 1, but more accurate for
   // detecting overshoot.
-  RE_ENCODE_MAXQ = 2
+  RE_ENCODE_MAXQ = 2,
+
+  // Force a resize on slide change, and come back as quality ramps up.
+  FORCE_RESIZE = 3
 } OVERSHOOT_DETECTION_CBR_RT;
 
 typedef struct SPEED_FEATURES {
