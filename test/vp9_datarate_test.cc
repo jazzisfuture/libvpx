@@ -223,16 +223,15 @@ class DatarateTestVP9 : public ::libvpx_test::EncoderTest {
 // Params: test mode, speed setting and index for bitrate array.
 class DatarateTestVP9Large
     : public DatarateTestVP9,
-      public ::libvpx_test::CodecTestWith3Params<libvpx_test::TestMode, int,
-                                                 int> {
+      public ::libvpx_test::CodecTestWith2Params<int, int> {
  public:
   DatarateTestVP9Large() : DatarateTestVP9(GET_PARAM(0)) {}
 
  protected:
   virtual void SetUp() {
     InitializeConfig();
-    SetMode(GET_PARAM(1));
-    set_cpu_used_ = GET_PARAM(2);
+    SetMode(::libvpx_test::kRealTime);
+    set_cpu_used_ = GET_PARAM(1);
     ResetModel();
   }
 };
@@ -240,15 +239,15 @@ class DatarateTestVP9Large
 // Params: test mode, speed setting.
 class DatarateTestVP9LargeOneBR
     : public DatarateTestVP9,
-      public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
+      public ::libvpx_test::CodecTestWithParam<int> {
  public:
   DatarateTestVP9LargeOneBR() : DatarateTestVP9(GET_PARAM(0)) {}
 
  protected:
   virtual void SetUp() {
     InitializeConfig();
-    SetMode(GET_PARAM(1));
-    set_cpu_used_ = GET_PARAM(2);
+    SetMode(::libvpx_test::kRealTime);
+    set_cpu_used_ = GET_PARAM(1);
     ResetModel();
   }
 };
@@ -363,7 +362,7 @@ TEST_P(DatarateTestVP9Large, BasicRateTargeting) {
   ::libvpx_test::I420VideoSource video("niklas_640_480_30.yuv", 640, 480, 30, 1,
                                        0, 400);
   const int bitrates[4] = { 150, 350, 550, 750 };
-  const int bitrate_index = GET_PARAM(3);
+  const int bitrate_index = GET_PARAM(2);
   cfg_.rc_target_bitrate = bitrates[bitrate_index];
   ResetModel();
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
@@ -389,7 +388,7 @@ TEST_P(DatarateTestVP9Large, BasicRateTargetingFrameParDecOff) {
   ::libvpx_test::I420VideoSource video("niklas_640_480_30.yuv", 640, 480, 30, 1,
                                        0, 400);
   const int bitrates[4] = { 150, 350, 550, 750 };
-  const int bitrate_index = GET_PARAM(3);
+  const int bitrate_index = GET_PARAM(2);
   cfg_.rc_target_bitrate = bitrates[bitrate_index];
   ResetModel();
   frame_parallel_decoding_mode_ = 0;
@@ -439,7 +438,7 @@ TEST_P(DatarateTestVP9Large, BasicRateTargeting444) {
   cfg_.rc_max_quantizer = 63;
   cfg_.rc_end_usage = VPX_CBR;
   const int bitrates[4] = { 250, 450, 650, 850 };
-  const int bitrate_index = GET_PARAM(3);
+  const int bitrate_index = GET_PARAM(2);
   cfg_.rc_target_bitrate = bitrates[bitrate_index];
   ResetModel();
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
@@ -477,7 +476,7 @@ TEST_P(DatarateTestVP9Large, ChangingDropFrameThresh) {
 
   const int kDropFrameThreshTestStep = 30;
   const int bitrates[2] = { 50, 150 };
-  const int bitrate_index = GET_PARAM(3);
+  const int bitrate_index = GET_PARAM(2);
   if (bitrate_index > 1) return;
   cfg_.rc_target_bitrate = bitrates[bitrate_index];
   vpx_codec_pts_t last_drop = 140;
@@ -525,7 +524,7 @@ TEST_P(DatarateTestVP9Large, BasicRateTargeting2TemporalLayers) {
   ::libvpx_test::I420VideoSource video("niklas_640_480_30.yuv", 640, 480, 30, 1,
                                        0, 400);
   const int bitrates[4] = { 200, 400, 600, 800 };
-  const int bitrate_index = GET_PARAM(3);
+  const int bitrate_index = GET_PARAM(2);
   cfg_.rc_target_bitrate = bitrates[bitrate_index];
   ResetModel();
   // 60-40 bitrate allocation for 2 temporal layers.
@@ -572,7 +571,7 @@ TEST_P(DatarateTestVP9Large, BasicRateTargeting3TemporalLayers) {
   ::libvpx_test::I420VideoSource video("niklas_640_480_30.yuv", 640, 480, 30, 1,
                                        0, 400);
   const int bitrates[4] = { 200, 400, 600, 800 };
-  const int bitrate_index = GET_PARAM(3);
+  const int bitrate_index = GET_PARAM(2);
   cfg_.rc_target_bitrate = bitrates[bitrate_index];
   ResetModel();
   // 40-20-40 bitrate allocation for 3 temporal layers.
@@ -854,20 +853,15 @@ TEST_P(DatarateTestVP9LargeDenoiser, DenoiserOffOn) {
 }
 #endif  // CONFIG_VP9_TEMPORAL_DENOISING
 
-VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9Large,
-                          ::testing::Values(::libvpx_test::kOnePassGood,
-                                            ::libvpx_test::kRealTime),
-                          ::testing::Range(2, 10), ::testing::Range(0, 4));
+VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9Large, ::testing::Range(5, 10),
+                          ::testing::Range(0, 4));
 
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9LargeVBR,
                           ::testing::Values(::libvpx_test::kOnePassGood,
                                             ::libvpx_test::kRealTime),
                           ::testing::Range(2, 9), ::testing::Range(0, 2));
 
-VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9LargeOneBR,
-                          ::testing::Values(::libvpx_test::kOnePassGood,
-                                            ::libvpx_test::kRealTime),
-                          ::testing::Range(2, 10));
+VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9LargeOneBR, ::testing::Range(5, 10));
 
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9RealTime, ::testing::Range(5, 10));
 
