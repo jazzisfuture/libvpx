@@ -552,6 +552,7 @@ typedef struct SPEED_FEATURES {
   // then set to higher Q for second encode. This involves 2 pass encoding
   // on slide change, so slower than 1, but more accurate for detecting
   // overshoot.
+  // 3: force resize on slide change
   int overshoot_detection_rt;
 
   // Disable partitioning of 16x16 blocks.

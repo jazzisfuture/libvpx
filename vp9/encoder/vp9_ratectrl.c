@@ -1603,6 +1603,9 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
+  printf("postencode: %d %d %d %d \n", cm->current_video_frame, cm->base_qindex, rc->projected_frame_size,
+                        rc->avg_frame_bandwidth);
+
   // Post encode loop adjustment of Q prediction.
   vp9_rc_update_rate_correction_factors(cpi);
 
@@ -2130,7 +2133,8 @@ void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
     target = calc_pframe_target_size_one_pass_cbr(cpi);
 
   vp9_rc_set_frame_target(cpi, target);
-  if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC)
+  if (cpi->sf.overshoot_detection_rt != 3 &&
+      cpi->oxcf.resize_mode == RESIZE_DYNAMIC)
     cpi->resize_pending = vp9_resize_one_pass_cbr(cpi);
   else
     cpi->resize_pending = 0;
@@ -2911,4 +2915,24 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
   } else {
     return 0;
   }
+}
+
+int vp9_encodedframe_overshoot_resize(VP9_COMP *cpi, int resize_down) {
+  if (resize_down) {
+    cpi->resize_scale_num = 1;
+    cpi->resize_scale_den = 2;
+    cpi->resize_state = ONE_HALF;
+    cpi->rc.buffer_level = cpi->rc.optimal_buffer_level;
+    cpi->rc.bits_off_target = cpi->rc.optimal_buffer_level;
+    cpi->rc.this_frame_target = cpi->rc.avg_frame_bandwidth;
+    cpi->rc.rc_1_frame = 0;
+    cpi->rc.rc_2_frame = 0;
+    cpi->rc.avg_frame_qindex[INTER_FRAME] = cpi->rc.worst_quality;
+    cpi->cyclic_refresh->counter_encode_maxq_scene_change = 0;
+  } else {
+    cpi->resize_scale_num = 1;
+    cpi->resize_scale_den = 1;
+    cpi->resize_state = ORIG;
+  }
+  cpi->resize_pending = 1;
 }

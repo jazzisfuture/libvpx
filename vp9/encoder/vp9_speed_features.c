@@ -570,9 +570,11 @@ static void set_rt_speed_feature_framesize_independent(
     // Keep nonrd_keyframe = 1 for non-base spatial layers to prevent
     // increase in encoding time.
     if (cpi->use_svc && cpi->svc.spatial_layer_id > 0) sf->nonrd_keyframe = 1;
+    
     if (cm->frame_type != KEY_FRAME && cpi->resize_state == ORIG &&
         cpi->oxcf.rc_mode == VPX_CBR)
-      sf->overshoot_detection_rt = 1;
+      sf->overshoot_detection_rt = 3;
+    
     if (cpi->oxcf.rc_mode == VPX_VBR && cpi->oxcf.lag_in_frames > 0 &&
         cm->width <= 1280 && cm->height <= 720) {
       sf->use_altref_onepass = 1;
