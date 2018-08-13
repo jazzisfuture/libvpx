@@ -3940,6 +3940,27 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     if (vp9_rc_drop_frame(cpi)) return 0;
   }
 
+  if (cpi->sf.overshoot_detection_cbr_rt == FORCE_RESIZE) {
+    if (cpi->svc.high_source_sad_superframe && cpi->resize_state == ORIG) {
+      cpi->resize_pending = vp9_overshoot_resize(cpi, 1);
+      set_frame_size(cpi);
+      // Try eighttap_sharp.
+      cpi->Source =
+          vp9_scale_if_required(cm, cpi->un_scaled_source, &cpi->scaled_source,
+                                (cpi->oxcf.pass == 0), EIGHTTAP_SHARP, 8);
+    } else if (cpi->resize_state != ORIG) {
+      cpi->resize_pending = vp9_overshoot_resize(cpi, 0);
+      if (cpi->resize_pending) {
+        set_frame_size(cpi);
+        cpi->Source = vp9_scale_if_required(
+            cm, cpi->un_scaled_source, &cpi->scaled_source,
+            (cpi->oxcf.pass == 0), EIGHTTAP_SHARP, 8);
+      }
+    } else {
+      cpi->resize_pending = 0;
+    }
+  }
+
   // For 1 pass CBR SVC, only ZEROMV is allowed for spatial reference frame
   // when svc->force_zero_mode_spatial_ref = 1. Under those conditions we can
   // avoid this frame-level upsampling (for non intra_only frames).

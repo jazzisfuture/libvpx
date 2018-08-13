@@ -1602,7 +1602,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
 
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
-
+  
   // Post encode loop adjustment of Q prediction.
   vp9_rc_update_rate_correction_factors(cpi);
 
@@ -2130,7 +2130,8 @@ void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
     target = calc_pframe_target_size_one_pass_cbr(cpi);
 
   vp9_rc_set_frame_target(cpi, target);
-  if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC)
+  if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC &&
+      cpi->sf.overshoot_detection_cbr_rt != FORCE_RESIZE)
     cpi->resize_pending = vp9_resize_one_pass_cbr(cpi);
   else
     cpi->resize_pending = 0;
@@ -2913,4 +2914,32 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
   } else {
     return 0;
   }
+}
+
+int vp9_overshoot_resize(VP9_COMP *cpi, int resize_down) {
+  if (resize_down) {
+    cpi->resize_scale_num = 3;
+    cpi->resize_scale_den = 4;
+    cpi->resize_state = THREE_QUARTER;  //ONE_HALF;
+    cpi->rc.buffer_level = cpi->rc.optimal_buffer_level;
+    cpi->rc.bits_off_target = cpi->rc.optimal_buffer_level;
+    cpi->rc.this_frame_target = cpi->rc.avg_frame_bandwidth;
+    cpi->rc.rc_1_frame = 0;
+    cpi->rc.rc_2_frame = 0;
+    cpi->rc.avg_frame_qindex[INTER_FRAME] = cpi->rc.worst_quality;
+    cpi->cyclic_refresh->counter_encode_maxq_scene_change = 0;
+    return 1;
+  } else if (!resize_down) {
+    // Check for going back up: for now check if buffer is stable and at
+    // least ~x frames from last slide change.
+    int64_t thresh_buff = 0;  //cpi->rc.optimal_buffer_level;
+    if (cpi->rc.buffer_level > thresh_buff &&
+        cpi->cyclic_refresh->counter_encode_maxq_scene_change > 30) {
+      cpi->resize_scale_num = 1;
+      cpi->resize_scale_den = 1;
+      cpi->resize_state = ORIG;
+      return 1;
+    }
+  }
+  return 0;
 }
