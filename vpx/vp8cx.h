@@ -364,6 +364,14 @@ enum vp8e_enc_control_id {
    */
   VP9E_SET_TILE_ROWS,
 
+  /*!\brief Codec control function to enable temporal dependency model.
+   *
+   * Vp9 allows the encoder to run temporal dependency model and use it to
+   * improve the compression performance. To enable, set this parameter to be
+   * 1. The default value is set to be 1.
+   */
+  VP9E_SET_TPL,
+
   /*!\brief Codec control function to enable frame parallel decoding feature.
    *
    * VP9 has a bitstream feature to reduce decoding dependency between frames
@@ -896,6 +904,9 @@ VPX_CTRL_USE_TYPE(VP9E_SET_TILE_COLUMNS, int)
 #define VPX_CTRL_VP9E_SET_TILE_COLUMNS
 VPX_CTRL_USE_TYPE(VP9E_SET_TILE_ROWS, int)
 #define VPX_CTRL_VP9E_SET_TILE_ROWS
+
+VPX_CTRL_USE_TYPE(VP9E_SET_TPL, int)
+#define VPX_CTRL_VP9E_SET_TPL
 
 VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER, int *)
 #define VPX_CTRL_VP8E_GET_LAST_QUANTIZER
