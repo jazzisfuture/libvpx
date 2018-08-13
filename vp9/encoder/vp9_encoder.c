@@ -3873,7 +3873,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
 #endif
   }
 
-  if ((cpi->use_svc &&
+  if ((cpi->use_svc && !cpi->svc.quality_layers &&
        (cpi->svc.spatial_layer_id < cpi->svc.number_spatial_layers - 1 ||
         cpi->svc.temporal_layer_id < cpi->svc.number_temporal_layers - 1 ||
         cpi->svc.current_superframe < 1)) ||

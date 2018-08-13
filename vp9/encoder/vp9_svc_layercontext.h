@@ -169,6 +169,11 @@ typedef struct SVC {
   uint8_t fb_idx_base[REF_FRAMES];
 
   int use_set_ref_frame_config;
+
+  // Flag to indicate SVC is using quality layers Quality layers are the
+  // configured/set as spatial layers with same resolution but different
+  // bitrates.
+  int quality_layers;
 } SVC;
 
 struct VP9_COMP;

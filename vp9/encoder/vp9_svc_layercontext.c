@@ -45,6 +45,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->previous_frame_is_intra_only = 0;
   svc->superframe_has_layer_sync = 0;
   svc->use_set_ref_frame_config = 0;
+  svc->quality_layers = 0;
 
   for (i = 0; i < REF_FRAMES; ++i) {
     svc->fb_idx_spatial_layer_id[i] = -1;
@@ -851,6 +852,15 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
         svc->drop_spatial_layer[svc->spatial_layer_id - 1]) {
       svc->use_base_mv = 0;
       svc->use_partition_reuse = 0;
+    }
+
+    svc->quality_layers = 1;
+    for (sl = 0; sl < cpi->svc.number_spatial_layers; ++sl) {
+      LAYER_CONTEXT *const lc =
+          &cpi->svc.layer_context[sl * cpi->svc.number_temporal_layers +
+                                  cpi->svc.temporal_layer_id];
+      if (lc->scaling_factor_num != lc->scaling_factor_den)
+        svc->quality_layers = 0;
     }
   }
 
