@@ -3940,6 +3940,20 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     if (vp9_rc_drop_frame(cpi)) return 0;
   }
 
+  if (cpi->sf.overshoot_detection_cbr_rt == FORCE_RESIZE) {
+    if (cpi->svc.high_source_sad_superframe && cpi->resize_state == ORIG) {     
+      cpi->resize_pending = vp9_overshoot_resize(cpi, 1);
+      set_frame_size(cpi);
+    } else if (cpi->resize_state != ORIG) {
+      cpi->resize_pending = vp9_overshoot_resize(cpi, 0);
+      if (cpi->resize_pending) {   
+        set_frame_size(cpi);
+      }
+    } else {
+      cpi->resize_pending = 0;
+    }
+  }
+
   // For 1 pass CBR SVC, only ZEROMV is allowed for spatial reference frame
   // when svc->force_zero_mode_spatial_ref = 1. Under those conditions we can
   // avoid this frame-level upsampling (for non intra_only frames).
@@ -4016,7 +4030,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   }
 
   apply_active_map(cpi);
-
+  
   vp9_encode_frame(cpi);
 
   // Check if we should re-encode this frame at high Q because of high
@@ -4510,6 +4524,7 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     return scaled;
   } else {
+    //printf("no scaling needed %d \n", cm->current_video_frame);
     return unscaled;
   }
 }
