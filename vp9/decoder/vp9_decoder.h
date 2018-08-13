@@ -31,7 +31,13 @@ extern "C" {
 #define DQCOEFFS_PER_SB_LOG2 12
 #define PARTITIONS_PER_SB 85
 
-typedef enum _job_type { PARSE_JOB, RECON_JOB } job_type;
+typedef enum _job_type { PARSE_JOB, RECON_JOB, LPF_JOB } job_type;
+
+typedef struct ThreadData {
+  struct VP9Decoder *pbi;
+  LFWorkerData *lf_data;
+  VP9LfSync *lf_sync;
+} ThreadData;
 
 typedef struct TileBuffer {
   const uint8_t *data;
@@ -49,6 +55,8 @@ typedef struct TileWorkerData {
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
   struct vpx_internal_error_info error_info;
+  LFWorkerData *lf_data;
+  VP9LfSync *lf_sync;
 } TileWorkerData;
 
 /* Structure to queue and dequeue row decode jobs */
@@ -57,7 +65,7 @@ typedef struct Job {
   int row_num;
   /* The tile column number to which the row belongs to */
   int tile_col;
-  /* Flag to indicate type of job (parse/recon) */
+  /* Flag to indicate type of job (parse/recon/lpf) */
   job_type job_type;
 } Job;
 
@@ -77,6 +85,7 @@ typedef struct VP9Decoder {
   VPxWorker lf_worker;
   VPxWorker *tile_workers;
   TileWorkerData *tile_worker_data;
+  ThreadData *thread_data;
   TileBuffer tile_buffers[64];
   int num_tile_workers;
   int total_tiles;
@@ -102,9 +111,9 @@ typedef struct VP9Decoder {
   uint8_t *jobq_buf;
   jobq_t jobq;
   int jobq_size;
-  int64_t num_tile_cols_parsed;
+  int64_t num_tiles_done;
 #if CONFIG_MULTITHREAD
-  pthread_mutex_t parse_mutex;
+  pthread_mutex_t recon_mutex;
 #endif
 } VP9Decoder;
 
