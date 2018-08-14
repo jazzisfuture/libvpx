@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e8cd31f8_1ea20de0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-14T02:24:07Z",
+      "side": 1,
+      "message": "Should say another case is where speed for base layer is different than that of higher spatial layers. So with this fix we can remove the constraint \"base_speed_setting_ \u003d speed_setting_\" in some svc unittests.",
+      "revId": "6ecf07f0750a482ac73b0bc8bfa61b65a9d7c48c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
