@@ -5787,12 +5787,12 @@ void get_quantize_error(MACROBLOCK *x, int plane, tran_low_t *coeff,
   *sse = VPXMAX(*sse, 1);
 }
 
-void wht_fwd_txfm(int16_t *src_diff, int bw, tran_low_t *coeff,
+void wht_fwd_txfm(int16_t *src_diff, int src_diff_stride, tran_low_t *coeff,
                   TX_SIZE tx_size) {
   switch (tx_size) {
-    case TX_8X8: vpx_hadamard_8x8(src_diff, bw, coeff); break;
-    case TX_16X16: vpx_hadamard_16x16(src_diff, bw, coeff); break;
-    case TX_32X32: vpx_hadamard_32x32(src_diff, bw, coeff); break;
+    case TX_8X8: vpx_fdct8x8(src_diff, coeff, src_diff_stride); break;
+    case TX_16X16: vpx_fdct16x16(src_diff, coeff, src_diff_stride); break;
+    case TX_32X32: vpx_fdct32x32(src_diff, coeff, src_diff_stride); break;
     default: assert(0);
   }
 }
@@ -5807,6 +5807,7 @@ void mode_estimation(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
                      TplDepStats *tpl_stats) {
   VP9_COMMON *cm = &cpi->common;
   ThreadData *td = &cpi->td;
+  YV12_BUFFER_CONFIG *recon_frame = gf_picture[frame_idx].recon_frame;
 
   const int bw = 4 << b_width_log2_lookup[bsize];
   const int bh = 4 << b_height_log2_lookup[bsize];
@@ -5841,8 +5842,8 @@ void mode_estimation(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
     src = xd->cur_buf->y_buffer + mb_y_offset;
     src_stride = xd->cur_buf->y_stride;
 
-    dst = &predictor[0];
-    dst_stride = bw;
+    dst = recon_frame->y_buffer + mb_y_offset;
+    dst_stride = recon_frame->y_stride;
 
     xd->mi[0]->sb_type = bsize;
     xd->mi[0]->ref_frame[0] = INTRA_FRAME;
