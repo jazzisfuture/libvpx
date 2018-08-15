@@ -142,6 +142,23 @@
     },
     {
       "key": {
+        "uuid": "b52523e0_dbebb38d",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 905,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-15T21:06:58Z",
+      "side": 1,
+      "message": "but here you would want to set layer_id.temporal_layer_id_per_spatial[sl] \u003d 1",
+      "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e745fb62_9e6805af",
         "filename": "examples/vp9_spatial_svc_encoder.c",
         "patchSetId": 2
