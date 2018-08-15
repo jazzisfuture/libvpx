@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "281538c1_655eeb56",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 679,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-15T19:23:17Z",
+      "side": 1,
+      "message": "since this will be for special case of (2SL - 2TL) pattern, maybe we can just do:\n\nif (TL \u003d\u003d 0) {\n// SL \u003d 0\n-ref_frame_config-\u003eupdate_buffer_slot[0] \u003d\u003d ..\n-ref_frame_config-\u003elst/gld/alt_fb_idx[0] \u003d\u003d ..\n-ref_frame_config-\u003ereference_last/golden/alt[0] \u003d ..\n\n// SL \u003d 1\n-ref_frame_config-\u003eupdate_buffer_slot[1] \u003d\u003d ..\n-ref_frame_config-\u003elst/gld/alt_fb_idx[1] \u003d\u003d ..\n-ref_frame_config-\u003ereference_last/golden/alt[1] \u003d ..\n\n} else if (TL \u003d\u003d 1) {\n\n// SL \u003d 1\n-ref_frame_config-\u003eupdate_buffer_slot[1] \u003d\u003d ..\n-ref_frame_config-\u003elst/gld/alt_fb_idx[1] \u003d\u003d ..\n-ref_frame_config-\u003ereference_last/golden/alt[1] \u003d ..\n}",
+      "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3dabc92_177edd7a",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 883,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-15T19:23:17Z",
+      "side": 1,
+      "message": "// example_pattern \u003d 0: 2 temporal layers, and spatial_layers \u003d 1, 2, 3. Exact to fixed SVC patterns.",
+      "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d68b90f8_d0188dab",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 884,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-15T19:23:17Z",
+      "side": 1,
+      "message": "extra space between with and SLO",
+      "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e745fb62_9e6805af",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 906,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-15T19:23:17Z",
+      "side": 1,
+      "message": "since this example pattern \u003d\u003d 1 will be hard-coded for 2 spatial and 2 temporal layers, add assert to check that?",
+      "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63c94d5f_ae707e4f",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 781,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-15T19:23:17Z",
+      "side": 1,
+      "message": "add TODO for removal later",
+      "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
