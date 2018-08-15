@@ -53,6 +53,23 @@
     },
     {
       "key": {
+        "uuid": "eebb9341_c68651b3",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 903,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-15T19:52:42Z",
+      "side": 1,
+      "message": "should we also set layer_id.temporal_layer_id_per_spatial[sl] \u003d 0, for all spatial layers.\n\nsee below (line 905)",
+      "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e745fb62_9e6805af",
         "filename": "examples/vp9_spatial_svc_encoder.c",
         "patchSetId": 2
@@ -64,6 +81,40 @@
       "writtenOn": "2018-08-15T19:23:17Z",
       "side": 1,
       "message": "since this example pattern \u003d\u003d 1 will be hard-coded for 2 spatial and 2 temporal layers, add assert to check that?",
+      "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "448a6401_f48e653b",
+        "filename": "examples/vpx_temporal_svc_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 858,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-15T19:52:42Z",
+      "side": 1,
+      "message": "should we also set: layer_id.temporal_layer_id_per_spatial_layer[0] \u003d layer_id.temporal_layer_id\n\nsimilar change in the datarate_tests",
+      "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5c2633e_389664b3",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1441,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-15T19:52:42Z",
+      "side": 1,
+      "message": "add comment: deprecated to be removed",
       "revId": "6559d92780bd2e28be785609778e409cc1d0779a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
