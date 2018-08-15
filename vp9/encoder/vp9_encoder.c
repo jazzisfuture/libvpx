@@ -5438,6 +5438,7 @@ static void update_level_info(VP9_COMP *cpi, size_t *size, int arf_src_index) {
 
 typedef struct GF_PICTURE {
   YV12_BUFFER_CONFIG *frame;
+  YV12_BUFFER_CONFIG *recon_frame;
   int ref_frame[3];
 } GF_PICTURE;
 
@@ -5454,6 +5455,12 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
 
   RefCntBuffer *frame_bufs = cm->buffer_pool->frame_bufs;
   int recon_frame_index[REFS_PER_FRAME + 1] = { -1, -1, -1, -1 };
+
+  // TODO(jingning): This needs to be re-visited to properly support multi-arf
+  // coding scheme.
+  YV12_BUFFER_CONFIG *tpl_recon_frames[REFS_PER_FRAME + 1] = { NULL };
+  int release_index[2] = { -1, -1 };
+  int open_index = 0;
 
   for (i = 0; i < FRAME_BUFFERS && frame_idx < REFS_PER_FRAME + 1; ++i) {
     if (frame_bufs[i].ref_count == 0) {
@@ -5475,13 +5482,15 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
 
   for (i = 0; i < REFS_PER_FRAME + 1; ++i) {
     assert(recon_frame_index[i] >= 0);
-    cpi->tpl_recon_frames[i] = &frame_bufs[recon_frame_index[i]].buf;
+    tpl_recon_frames[i] = &frame_bufs[recon_frame_index[i]].buf;
   }
 
   *tpl_group_frames = 0;
 
   // Initialize Golden reference frame.
   gf_picture[0].frame = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+  // The golden reference frame is reconstructed.
+  gf_picture[0].recon_frame = gf_picture[0].frame;
   for (i = 0; i < 3; ++i) gf_picture[0].ref_frame[i] = -1;
   gld_index = 0;
   ++*tpl_group_frames;
@@ -5492,6 +5501,8 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
   gf_picture[1].ref_frame[1] = lst_index;
   gf_picture[1].ref_frame[2] = alt_index;
   alt_index = 1;
+  gf_picture[1].recon_frame = tpl_recon_frames[open_index];
+  ++open_index;
   ++*tpl_group_frames;
 
   // Initialize P frames
@@ -5502,6 +5513,16 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
     if (buf == NULL) break;
 
     gf_picture[frame_idx].frame = &buf->img;
+    gf_picture[frame_idx].recon_frame = tpl_recon_frames[open_index];
+
+    release_index[0] = release_index[1];
+    release_index[1] = open_index;
+
+    if (release_index[0] == -1)
+      ++open_index;
+    else
+      open_index = release_index[0];
+
     gf_picture[frame_idx].ref_frame[0] = gld_index;
     gf_picture[frame_idx].ref_frame[1] = lst_index;
     gf_picture[frame_idx].ref_frame[2] = alt_index;
@@ -5512,6 +5533,9 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
   }
 
   gld_index = frame_idx;
+  // TODO(jingning): Depreciate hardwired numbers to support all the
+  // group of picture structures.
+  release_index[1] = 3;
   lst_index = VPXMAX(0, frame_idx - 1);
   alt_index = -1;
   ++frame_idx;
@@ -5526,6 +5550,12 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
     cpi->tpl_stats[frame_idx].base_qindex = pframe_qindex;
 
     gf_picture[frame_idx].frame = &buf->img;
+    gf_picture[frame_idx].recon_frame = tpl_recon_frames[open_index];
+
+    release_index[0] = release_index[1];
+    release_index[1] = open_index;
+    open_index = release_index[0];
+
     gf_picture[frame_idx].ref_frame[0] = gld_index;
     gf_picture[frame_idx].ref_frame[1] = lst_index;
     gf_picture[frame_idx].ref_frame[2] = alt_index;
