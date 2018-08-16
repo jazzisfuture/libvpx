@@ -16,6 +16,24 @@
       "revId": "3103fcb932c65a001cc4ee140efb6eab0616ec2e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e20ac4fa_61753d49",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 892,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-16T04:54:05Z",
+      "side": 1,
+      "message": "Done\n\nexample0 case is unchanged.",
+      "parentUuid": "24dfe056_f65b4ab0",
+      "revId": "3103fcb932c65a001cc4ee140efb6eab0616ec2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
