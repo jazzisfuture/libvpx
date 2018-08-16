@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "660cafbf_5bf158e5",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 20
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-16T00:55:35Z",
+      "side": 1,
+      "message": "this can be static int .... since it\u0027s only used in this file.",
+      "range": {
+        "startLine": 330,
+        "startChar": 0,
+        "endLine": 330,
+        "endChar": 3
+      },
+      "revId": "3253bddc34a89996336585ac709f2b0817642cb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4598125c_774c1018",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 20
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-16T00:55:35Z",
+      "side": 1,
+      "message": "it makes more sense to remove this const for VP9_COMP?",
+      "range": {
+        "startLine": 330,
+        "startChar": 30,
+        "endLine": 330,
+        "endChar": 35
+      },
+      "revId": "3253bddc34a89996336585ac709f2b0817642cb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bd20fef_8d09c7b2",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 20
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-16T00:55:35Z",
+      "side": 1,
+      "message": "it computes the variance between source and [128]?",
+      "range": {
+        "startLine": 338,
+        "startChar": 2,
+        "endLine": 338,
+        "endChar": 17
+      },
+      "revId": "3253bddc34a89996336585ac709f2b0817642cb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ffa55a7_33b312e1",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 20
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-16T00:55:35Z",
+      "side": 1,
+      "message": "rename to block_sad?",
+      "range": {
+        "startLine": 341,
+        "startChar": 13,
+        "endLine": 341,
+        "endChar": 20
+      },
+      "revId": "3253bddc34a89996336585ac709f2b0817642cb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a691f0e_8f2fff23",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 20
+      },
+      "lineNbr": 520,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-16T00:55:35Z",
+      "side": 1,
+      "message": "you don\u0027t need this",
+      "range": {
+        "startLine": 520,
+        "startChar": 54,
+        "endLine": 520,
+        "endChar": 55
+      },
+      "revId": "3253bddc34a89996336585ac709f2b0817642cb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83329d96_c5c7fb0e",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 20
+      },
+      "lineNbr": 524,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-16T00:55:35Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 524,
+        "startChar": 56,
+        "endLine": 524,
+        "endChar": 57
+      },
+      "revId": "3253bddc34a89996336585ac709f2b0817642cb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
