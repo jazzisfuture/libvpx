@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d4029fa3_3ffd0808",
+        "filename": "vp9/encoder/vp9_temporal_filter.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-17T22:00:14Z",
+      "side": 1,
+      "message": "to avoid the shadow warning this should be renamed to something other than index. that may be legacy compilers at this point, since it isn\u0027t a function definition. you can probably drop this one since there are other instances.",
+      "revId": "6b8e1a442f634b1cdd685e2ca5a27a341a7afc20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
