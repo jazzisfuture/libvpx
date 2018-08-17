@@ -134,7 +134,8 @@ static void apply_temporal_filter(
 
       // non-local mean approach
       int diff_sse[9] = { 0 };
-      int idx, idy, index = 0;
+      int idx, idy;
+      int index = 0;
 
       const int uv_r = i >> ss_y;
       const int uv_c = j >> ss_x;
