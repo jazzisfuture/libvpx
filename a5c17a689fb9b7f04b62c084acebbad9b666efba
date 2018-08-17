@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "becf8c1b_eb9bd5c0",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 677,
+      "author": {
+        "id": 1262464
+      },
+      "writtenOn": "2018-08-17T15:32:02Z",
+      "side": 1,
+      "message": "It seems that the first spatial layer specifies temporal layer for all. Is that right? We need to assign different temporal_id for different spatial layers within a superframe in order to get something like this:\nS0: T0 T1 T0 T1\nS1: T0 T0 T1 T0",
+      "range": {
+        "startLine": 677,
+        "startChar": 2,
+        "endLine": 677,
+        "endChar": 73
+      },
+      "revId": "a5c17a689fb9b7f04b62c084acebbad9b666efba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
