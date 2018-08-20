@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9cd5e1ec_f500bbc0",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-20T21:29:53Z",
+      "side": 1,
+      "message": "this is done conditionally in normal cases, but if the decoder is going to shut down in response to the error then it should be OK",
+      "revId": "e65b388d766aac7fd68f5b6b73184dc9fc365374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "362da1e4_efb6c5a6",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 594,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-20T21:29:53Z",
+      "side": 1,
+      "message": "I guess this could go either way (break vs continue) as long as xd-\u003ecorrupted is being used to stop the decode on error.",
+      "revId": "e65b388d766aac7fd68f5b6b73184dc9fc365374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
