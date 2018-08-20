@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3c8f4a93_9cb49799",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 5515,
+      "author": {
+        "id": 1000893
+      },
+      "writtenOn": "2018-08-20T15:57:00Z",
+      "side": 1,
+      "message": "This statement is harder to understand than the original statement. Would it make sense to add some comment here?",
+      "range": {
+        "startLine": 5515,
+        "startChar": 4,
+        "endLine": 5515,
+        "endChar": 61
+      },
+      "revId": "eb327e418ed05d4e6df23701c514607a940a9ca0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
