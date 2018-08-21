@@ -4829,6 +4829,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     encode_with_recode_loop(cpi, size, dest);
   }
 
+  if (cm->show_existing_frame)
+    cm->new_fb_idx = cm->ref_frame_map[cpi->alt_fb_idx];
+
   cpi->last_frame_dropped = 0;
   cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 0;
   // Keep track of the frame buffer index updated/refreshed for the
