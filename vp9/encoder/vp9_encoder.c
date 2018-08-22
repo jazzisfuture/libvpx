@@ -854,6 +854,9 @@ static void vp9_swap_mi_and_prev_mi(VP9_COMMON *cm) {
   cm->prev_mip = cm->mip;
   cm->mip = temp;
 
+  // Skip update prev_mi frame in show_existing_frame mode.
+  if (cm->show_existing_frame) return;
+
   // Update the upper left visible macroblock ptrs.
   cm->mi = cm->mip + cm->mi_stride + 1;
   cm->prev_mi = cm->prev_mip + cm->mi_stride + 1;
