@@ -4913,15 +4913,15 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
   }
   vp9_update_reference_frames(cpi);
 
-  for (t = TX_4X4; t <= TX_32X32; t++)
+  for (t = TX_4X4; t <= TX_32X32 && !cm->show_existing_frame; ++t) {
     full_to_model_counts(cpi->td.counts->coef[t],
                          cpi->td.rd_counts.coef_counts[t]);
+  }
 
-  if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode)
+  if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode &&
+      !cm->show_existing_frame) {
     vp9_adapt_coef_probs(cm);
-
-  if (!frame_is_intra_only(cm)) {
-    if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
+    if (!frame_is_intra_only(cm)) {
       vp9_adapt_mode_probs(cm);
       vp9_adapt_mv_probs(cm, cm->allow_high_precision_mv);
     }
