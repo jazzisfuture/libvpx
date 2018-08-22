@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3746296_0d5cdec2",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4918,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-08-22T19:38:24Z",
+      "side": 1,
+      "message": "Recommend using {} for branch with more than 1 lines.",
+      "range": {
+        "startLine": 4917,
+        "startChar": 4,
+        "endLine": 4918,
+        "endChar": 59
+      },
+      "revId": "7af2e359695e85b7d453b0ed46937c8342663ff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2aa1014_2a30adfd",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4927,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-08-22T19:38:24Z",
+      "side": 1,
+      "message": "These can go into a single if (!refresh_frame_context) loop.",
+      "range": {
+        "startLine": 4916,
+        "startChar": 2,
+        "endLine": 4927,
+        "endChar": 3
+      },
+      "revId": "7af2e359695e85b7d453b0ed46937c8342663ff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
