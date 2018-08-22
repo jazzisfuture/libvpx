@@ -46,6 +46,30 @@
       "revId": "fe47e829298a7f7c44749164a480ff7dcdf07ea5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6a942db_6c573b5d",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1428,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-08-22T19:38:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "9da66dcb_a951093e",
+      "range": {
+        "startLine": 1428,
+        "startChar": 2,
+        "endLine": 1428,
+        "endChar": 30
+      },
+      "revId": "fe47e829298a7f7c44749164a480ff7dcdf07ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
