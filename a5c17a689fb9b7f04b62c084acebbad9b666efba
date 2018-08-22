@@ -22,6 +22,30 @@
       "revId": "a5c17a689fb9b7f04b62c084acebbad9b666efba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8501fcea_3192e0b6",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 677,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-22T20:47:59Z",
+      "side": 1,
+      "message": "This function is called every frame/layer so the temporal layer id should be set per spatial layer",
+      "parentUuid": "becf8c1b_eb9bd5c0",
+      "range": {
+        "startLine": 677,
+        "startChar": 2,
+        "endLine": 677,
+        "endChar": 73
+      },
+      "revId": "a5c17a689fb9b7f04b62c084acebbad9b666efba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
