@@ -1491,6 +1491,7 @@ static int tile_worker_hook(void *arg1, void *arg2) {
 
   LFWorkerData *lf_data = tile_data->lf_data;
   VP9LfSync *lf_sync = tile_data->lf_sync;
+  volatile int mi_row = 0, mi_col = 0;
 
   volatile int n = tile_data->buf_start;
   tile_data->error_info.setjmp = 1;
@@ -1498,14 +1499,30 @@ static int tile_worker_hook(void *arg1, void *arg2) {
   if (setjmp(tile_data->error_info.jmp)) {
     tile_data->error_info.setjmp = 0;
     tile_data->xd.corrupted = 1;
+    pbi->mb.corrupted |= tile_data->xd.corrupted;
     tile_data->data_end = NULL;
+    if (cm->lf.filter_level && !cm->skip_loop_filter) {
+      int num_tiles_left = tile_data->buf_end - n;
+      do {
+        /* Initialize mi_row value here, in case there is a longjmp from
+         * setup_token_decoder()This initialization is defensive, it could be
+         * incorrect, but ensures that all the rows are marked as decoded.
+         */
+        for (mi_row = 0; mi_row < cm->mi_rows; mi_row += MI_BLOCK_SIZE) {
+          const int aligned_rows = mi_cols_aligned_to_sb(cm->mi_rows);
+          const int sb_rows = (aligned_rows >> MI_BLOCK_SIZE_LOG2);
+          const int is_last_row = (sb_rows - 1 == mi_row >> MI_BLOCK_SIZE_LOG2);
+          vp9_set_row(lf_sync, 1 << cm->log2_tile_cols,
+                      mi_row >> MI_BLOCK_SIZE_LOG2, is_last_row);
+        }
+      } while (num_tiles_left--);
+    }
     return 0;
   }
 
   tile_data->xd.corrupted = 0;
 
   do {
-    int mi_row, mi_col;
     const TileBuffer *const buf = pbi->tile_buffers + n;
     vp9_zero(tile_data->dqcoeff);
     vp9_tile_init(tile, &pbi->common, 0, buf->col);
@@ -1520,7 +1537,8 @@ static int tile_worker_hook(void *arg1, void *arg2) {
          mi_row += MI_BLOCK_SIZE) {
       vp9_zero(tile_data->xd.left_context);
       vp9_zero(tile_data->xd.left_seg_context);
-      for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
+      for (mi_col = tile->mi_col_start;
+           mi_col < tile->mi_col_end && !tile_data->xd.corrupted;
            mi_col += MI_BLOCK_SIZE) {
         decode_partition(tile_data, pbi, mi_row, mi_col, BLOCK_64X64, 4);
       }
@@ -1536,9 +1554,11 @@ static int tile_worker_hook(void *arg1, void *arg2) {
     if (buf->col == final_col) {
       bit_reader_end = vpx_reader_find_end(&tile_data->bit_reader);
     }
-  } while (!tile_data->xd.corrupted && ++n <= tile_data->buf_end);
+  } while (++n <= tile_data->buf_end);
 
-  if (!tile_data->xd.corrupted && cm->lf.filter_level &&
+  pbi->mb.corrupted |= tile_data->xd.corrupted;
+
+  if (!pbi->mb.corrupted && cm->lf.filter_level &&
       !cm->skip_loop_filter) {
     vp9_loopfilter_rows(lf_data, lf_sync, &tile_data->xd);
   }
