@@ -46,6 +46,30 @@
       "revId": "a5c17a689fb9b7f04b62c084acebbad9b666efba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd5c1edb_79d837e1",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 677,
+      "author": {
+        "id": 1262464
+      },
+      "writtenOn": "2018-08-23T07:24:54Z",
+      "side": 1,
+      "message": "I see. Thanks.",
+      "parentUuid": "8501fcea_3192e0b6",
+      "range": {
+        "startLine": 677,
+        "startChar": 2,
+        "endLine": 677,
+        "endChar": 73
+      },
+      "revId": "a5c17a689fb9b7f04b62c084acebbad9b666efba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
