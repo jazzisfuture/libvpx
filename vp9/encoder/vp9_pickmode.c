@@ -1500,6 +1500,92 @@ static void search_filter_ref(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
   }
 }
 
+static void search_intra_modes(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
+                               RD_COST *best_rdc,
+                               const int *const rd_thresh_freq_fact,
+                               struct estimate_block_intra_args *args,
+                               int *ref_frame_cost,
+                               BEST_PICKMODE *best_pickmode) {
+  VP9_COMMON *const cm = &cpi->common;
+  SPEED_FEATURES *const sf = &cpi->sf;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MODE_INFO *const mi = xd->mi[0];
+  int i;
+  RD_COST this_rdc;
+  const int *const rd_threshes = cpi->rd.threshes[mi->segment_id][bsize];
+  const int intra_cost_penalty =
+      vp9_get_intra_cost_penalty(cpi, bsize, cm->base_qindex, cm->y_dc_delta_q);
+  TX_SIZE intra_tx_size =
+      VPXMIN(max_txsize_lookup[bsize],
+             tx_mode_to_biggest_tx_size[cpi->common.tx_mode]);
+  if (cpi->oxcf.content != VP9E_CONTENT_SCREEN && intra_tx_size > TX_16X16)
+    intra_tx_size = TX_16X16;
+
+  for (i = 0; i < 4; ++i) {
+    const PREDICTION_MODE this_mode = intra_mode_list[i];
+    THR_MODES mode_index = mode_idx[INTRA_FRAME][mode_offset(this_mode)];
+    int mode_rd_thresh = rd_threshes[mode_index];
+    if (sf->short_circuit_flat_blocks && x->source_variance == 0 &&
+        this_mode != DC_PRED) {
+      continue;
+    }
+
+    if (!((1 << this_mode) & cpi->sf.intra_y_mode_bsize_mask[bsize])) continue;
+
+    if ((cpi->sf.adaptive_rd_thresh_row_mt &&
+         rd_less_than_thresh_row_mt(best_rdc->rdcost, mode_rd_thresh,
+                                    &rd_thresh_freq_fact[mode_index])) ||
+        (!cpi->sf.adaptive_rd_thresh_row_mt &&
+         rd_less_than_thresh(best_rdc->rdcost, mode_rd_thresh,
+                             &rd_thresh_freq_fact[mode_index])))
+      continue;
+
+    mi->mode = this_mode;
+    mi->ref_frame[0] = INTRA_FRAME;
+    this_rdc.dist = this_rdc.rate = 0;
+    args->mode = this_mode;
+    args->skippable = 1;
+    args->rdc = &this_rdc;
+    mi->tx_size = intra_tx_size;
+    vp9_foreach_transformed_block_in_plane(xd, bsize, 0, estimate_block_intra,
+                                           args);
+    // Check skip cost here since skippable is not set for for uv, this
+    // mirrors the behavior used by inter
+    if (args->skippable) {
+      x->skip_txfm[0] = SKIP_TXFM_AC_DC;
+      this_rdc.rate = vp9_cost_bit(vp9_get_skip_prob(&cpi->common, xd), 1);
+    } else {
+      x->skip_txfm[0] = SKIP_TXFM_NONE;
+      this_rdc.rate += vp9_cost_bit(vp9_get_skip_prob(&cpi->common, xd), 0);
+    }
+    // Inter and intra RD will mismatch in scale for non-screen content.
+    if (cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
+      if (x->color_sensitivity[0])
+        vp9_foreach_transformed_block_in_plane(xd, bsize, 1,
+                                               estimate_block_intra, args);
+      if (x->color_sensitivity[1])
+        vp9_foreach_transformed_block_in_plane(xd, bsize, 2,
+                                               estimate_block_intra, args);
+    }
+    this_rdc.rate += cpi->mbmode_cost[this_mode];
+    this_rdc.rate += ref_frame_cost[INTRA_FRAME];
+    this_rdc.rate += intra_cost_penalty;
+    this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, this_rdc.rate, this_rdc.dist);
+
+    if (this_rdc.rdcost < best_rdc->rdcost) {
+      *best_rdc = this_rdc;
+      best_pickmode->best_mode = this_mode;
+      best_pickmode->best_intra_tx_size = mi->tx_size;
+      best_pickmode->best_ref_frame = INTRA_FRAME;
+      best_pickmode->best_second_ref_frame = NONE;
+      mi->uv_mode = this_mode;
+      mi->mv[0].as_int = INVALID_MV;
+      mi->mv[1].as_int = INVALID_MV;
+      best_pickmode->best_mode_skip_txfm = x->skip_txfm[0];
+    }
+  }
+}
+
 static int search_new_mv(VP9_COMP *cpi, MACROBLOCK *x,
                          int_mv frame_mv[][MAX_REF_FRAMES],
                          MV_REFERENCE_FRAME ref_frame, int gf_temporal_ref,
@@ -2392,15 +2478,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
        bsize <= cpi->sf.max_intra_bsize && !x->skip_low_source_sad &&
        !x->lowvar_highsumdiff)) {
     struct estimate_block_intra_args args = { cpi, x, DC_PRED, 1, 0 };
-    int i;
-    PRED_BUFFER *const best_pred = best_pickmode.best_pred;
-    TX_SIZE intra_tx_size =
-        VPXMIN(max_txsize_lookup[bsize],
-               tx_mode_to_biggest_tx_size[cpi->common.tx_mode]);
-    if (cpi->oxcf.content != VP9E_CONTENT_SCREEN && intra_tx_size > TX_16X16)
-      intra_tx_size = TX_16X16;
 
-    if (reuse_inter_pred && best_pred != NULL) {
+    if (reuse_inter_pred && best_pickmode.best_pred != NULL) {
+      PRED_BUFFER *best_pred = best_pickmode.best_pred;
       if (best_pred->data == orig_dst.buf) {
         this_mode_pred = &tmp[get_pred_buffer(tmp, 3)];
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -2423,71 +2503,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     }
     pd->dst = orig_dst;
 
-    for (i = 0; i < 4; ++i) {
-      const PREDICTION_MODE this_mode = intra_mode_list[i];
-      THR_MODES mode_index = mode_idx[INTRA_FRAME][mode_offset(this_mode)];
-      int mode_rd_thresh = rd_threshes[mode_index];
-      if (sf->short_circuit_flat_blocks && x->source_variance == 0 &&
-          this_mode != DC_PRED) {
-        continue;
-      }
-
-      if (!((1 << this_mode) & cpi->sf.intra_y_mode_bsize_mask[bsize]))
-        continue;
-
-      if ((cpi->sf.adaptive_rd_thresh_row_mt &&
-           rd_less_than_thresh_row_mt(best_rdc.rdcost, mode_rd_thresh,
-                                      &rd_thresh_freq_fact[mode_index])) ||
-          (!cpi->sf.adaptive_rd_thresh_row_mt &&
-           rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
-                               &rd_thresh_freq_fact[mode_index])))
-        continue;
-
-      mi->mode = this_mode;
-      mi->ref_frame[0] = INTRA_FRAME;
-      this_rdc.dist = this_rdc.rate = 0;
-      args.mode = this_mode;
-      args.skippable = 1;
-      args.rdc = &this_rdc;
-      mi->tx_size = intra_tx_size;
-      vp9_foreach_transformed_block_in_plane(xd, bsize, 0, estimate_block_intra,
-                                             &args);
-      // Check skip cost here since skippable is not set for for uv, this
-      // mirrors the behavior used by inter
-      if (args.skippable) {
-        x->skip_txfm[0] = SKIP_TXFM_AC_DC;
-        this_rdc.rate = vp9_cost_bit(vp9_get_skip_prob(&cpi->common, xd), 1);
-      } else {
-        x->skip_txfm[0] = SKIP_TXFM_NONE;
-        this_rdc.rate += vp9_cost_bit(vp9_get_skip_prob(&cpi->common, xd), 0);
-      }
-      // Inter and intra RD will mismatch in scale for non-screen content.
-      if (cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
-        if (x->color_sensitivity[0])
-          vp9_foreach_transformed_block_in_plane(xd, bsize, 1,
-                                                 estimate_block_intra, &args);
-        if (x->color_sensitivity[1])
-          vp9_foreach_transformed_block_in_plane(xd, bsize, 2,
-                                                 estimate_block_intra, &args);
-      }
-      this_rdc.rate += cpi->mbmode_cost[this_mode];
-      this_rdc.rate += ref_frame_cost[INTRA_FRAME];
-      this_rdc.rate += intra_cost_penalty;
-      this_rdc.rdcost =
-          RDCOST(x->rdmult, x->rddiv, this_rdc.rate, this_rdc.dist);
-
-      if (this_rdc.rdcost < best_rdc.rdcost) {
-        best_rdc = this_rdc;
-        best_pickmode.best_mode = this_mode;
-        best_pickmode.best_intra_tx_size = mi->tx_size;
-        best_pickmode.best_ref_frame = INTRA_FRAME;
-        best_pickmode.best_second_ref_frame = NONE;
-        mi->uv_mode = this_mode;
-        mi->mv[0].as_int = INVALID_MV;
-        mi->mv[1].as_int = INVALID_MV;
-        best_pickmode.best_mode_skip_txfm = x->skip_txfm[0];
-      }
-    }
+    search_intra_modes(cpi, x, bsize, &best_rdc, rd_thresh_freq_fact, &args,
+                       ref_frame_cost, &best_pickmode);
 
     // Reset mb_mode_info to the best inter mode.
     if (best_pickmode.best_ref_frame != INTRA_FRAME) {
