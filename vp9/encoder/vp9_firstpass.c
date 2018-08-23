@@ -2427,6 +2427,8 @@ static void define_gf_group_structure(VP9_COMP *cpi) {
     }
   }
 
+  cpi->multi_layer_arf = 1;
+
   if (rc->source_alt_ref_pending && cpi->multi_layer_arf) {
     layer_depth[frame_index] = 1;
 
