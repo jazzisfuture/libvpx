@@ -4950,6 +4950,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
 
   vp9_rc_postencode_update(cpi, *size);
 
+  *size = VPXMAX(1, *size);
+
 #if 0
   output_frame_level_debug_stats(cpi);
 #endif
@@ -6090,7 +6092,14 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   }
 
   if (arf_src_index) {
+    fprintf(stderr, "\ngfg_index = %d\n", cpi->twopass.gf_group.index);
+
+    fprintf(stderr, "arf_src_index = %d, frames_to_key = %d\n", arf_src_index,
+            rc->frames_to_key);
+
     assert(arf_src_index <= rc->frames_to_key);
+
+    if (arf_src_index > rc->frames_to_key) exit(0);
 
     if ((source = vp9_lookahead_peek(cpi->lookahead, arf_src_index)) != NULL) {
       cpi->alt_ref_source = source;
