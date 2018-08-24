@@ -1477,6 +1477,24 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi, const uint8_t *data,
   return vpx_reader_find_end(&tile_data->bit_reader);
 }
 
+static void set_rows_after_error(VP9LfSync *lf_sync, int start_row, int mi_rows,
+                                 int num_tiles_left, int total_num_tiles) {
+  do {
+    int mi_row;
+    const int aligned_rows = mi_cols_aligned_to_sb(mi_rows);
+    const int sb_rows = (aligned_rows >> MI_BLOCK_SIZE_LOG2);
+    for (mi_row = start_row; mi_row < mi_rows; mi_row += MI_BLOCK_SIZE) {
+      const int is_last_row = (sb_rows - 1 == mi_row >> MI_BLOCK_SIZE_LOG2);
+      vp9_set_row(lf_sync, total_num_tiles, mi_row >> MI_BLOCK_SIZE_LOG2,
+                  is_last_row);
+    }
+    /* If there are multiple tiles, the second tile should start marking row
+     * progress from row 0.
+     */
+    start_row = 0;
+  } while (num_tiles_left--);
+}
+
 // On entry 'tile_data->data_end' points to the end of the input frame, on exit
 // it is updated to reflect the bitreader position of the final tile column if
 // present in the tile buffer group or NULL otherwise.
@@ -1492,6 +1510,7 @@ static int tile_worker_hook(void *arg1, void *arg2) {
   LFWorkerData *lf_data = tile_data->lf_data;
   VP9LfSync *lf_sync = tile_data->lf_sync;
 
+  volatile int mi_row;
   volatile int n = tile_data->buf_start;
   tile_data->error_info.setjmp = 1;
 
@@ -1499,14 +1518,25 @@ static int tile_worker_hook(void *arg1, void *arg2) {
     tile_data->error_info.setjmp = 0;
     tile_data->xd.corrupted = 1;
     tile_data->data_end = NULL;
+    if (cm->lf.filter_level && !cm->skip_loop_filter) {
+      int num_tiles_left = tile_data->buf_end - n;
+      int mi_row_start = mi_row;
+      set_rows_after_error(lf_sync, mi_row_start, cm->mi_rows, num_tiles_left,
+                           1 << cm->log2_tile_cols);
+    }
     return 0;
   }
 
   tile_data->xd.corrupted = 0;
 
   do {
-    int mi_row, mi_col;
+    int mi_col;
     const TileBuffer *const buf = pbi->tile_buffers + n;
+
+    /* Initialize to 0 is safe since we do not deal with streams that have
+     * more than one row of tiles. (So tile->mi_row_start will be 0)
+     */
+    mi_row = 0;
     vp9_zero(tile_data->dqcoeff);
     vp9_tile_init(tile, &pbi->common, 0, buf->col);
     setup_token_decoder(buf->data, tile_data->data_end, buf->size,
@@ -1537,6 +1567,15 @@ static int tile_worker_hook(void *arg1, void *arg2) {
       bit_reader_end = vpx_reader_find_end(&tile_data->bit_reader);
     }
   } while (!tile_data->xd.corrupted && ++n <= tile_data->buf_end);
+
+  if (n < tile_data->buf_end && cm->lf.filter_level && !cm->skip_loop_filter) {
+    /* The was not incremented in the tile loop, so increment before tiles left
+     * calculation
+     */
+    ++n;
+    set_rows_after_error(lf_sync, 0, cm->mi_rows, tile_data->buf_end - n,
+                         1 << cm->log2_tile_cols);
+  }
 
   if (!tile_data->xd.corrupted && cm->lf.filter_level &&
       !cm->skip_loop_filter) {
