@@ -1477,6 +1477,24 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi, const uint8_t *data,
   return vpx_reader_find_end(&tile_data->bit_reader);
 }
 
+static void set_rows_after_error(VP9LfSync *lf_sync, int mi_rows,
+                                 int num_tiles_left, int total_num_tiles) {
+  do {
+    /* Initialize mi_row value here, in case there is a longjmp from
+     * setup_token_decoder(). This initialization is defensive, it could be
+     * incorrect, but ensures that all the rows are marked as decoded.
+     */
+    int mi_row;
+    const int aligned_rows = mi_cols_aligned_to_sb(mi_rows);
+    const int sb_rows = (aligned_rows >> MI_BLOCK_SIZE_LOG2);
+    for (mi_row = 0; mi_row < mi_rows; mi_row += MI_BLOCK_SIZE) {
+      const int is_last_row = (sb_rows - 1 == mi_row >> MI_BLOCK_SIZE_LOG2);
+      vp9_set_row(lf_sync, total_num_tiles, mi_row >> MI_BLOCK_SIZE_LOG2,
+                  is_last_row);
+    }
+  } while (num_tiles_left--);
+}
+
 // On entry 'tile_data->data_end' points to the end of the input frame, on exit
 // it is updated to reflect the bitreader position of the final tile column if
 // present in the tile buffer group or NULL otherwise.
@@ -1499,6 +1517,11 @@ static int tile_worker_hook(void *arg1, void *arg2) {
     tile_data->error_info.setjmp = 0;
     tile_data->xd.corrupted = 1;
     tile_data->data_end = NULL;
+    if (cm->lf.filter_level && !cm->skip_loop_filter) {
+      int num_tiles_left = tile_data->buf_end - n;
+      set_rows_after_error(lf_sync, cm->mi_rows, num_tiles_left,
+                           1 << cm->log2_tile_cols);
+    }
     return 0;
   }
 
@@ -1537,6 +1560,11 @@ static int tile_worker_hook(void *arg1, void *arg2) {
       bit_reader_end = vpx_reader_find_end(&tile_data->bit_reader);
     }
   } while (!tile_data->xd.corrupted && ++n <= tile_data->buf_end);
+
+  if (n <= tile_data->buf_end && cm->lf.filter_level && !cm->skip_loop_filter) {
+    set_rows_after_error(lf_sync, cm->mi_rows, tile_data->buf_end - n,
+                         1 << cm->log2_tile_cols);
+  }
 
   if (!tile_data->xd.corrupted && cm->lf.filter_level &&
       !cm->skip_loop_filter) {
