@@ -63,6 +63,7 @@
 #include "vp9/encoder/vp9_speed_features.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_temporal_filter.h"
+#include "vp9_firstpass.h"
 
 #define AM_SEGMENT_ID_INACTIVE 7
 #define AM_SEGMENT_ID_ACTIVE 0
@@ -3169,6 +3170,13 @@ void update_multi_arf_ref_frames(VP9_COMP *cpi) {
 void update_ref_frames(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   BufferPool *const pool = cm->buffer_pool;
+  GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+
+  // Pop ARF.
+  if (cm->show_existing_frame) {
+    cpi->lst_fb_idx = cpi->alt_fb_idx;
+    cpi->alt_fb_idx = stack_pop(gf_group->arf_index_stack);
+  }
 
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
@@ -3202,10 +3210,31 @@ void update_ref_frames(VP9_COMP *cpi) {
         arf_idx = gf_group->arf_update_idx[gf_group->index];
       }
 
+      // Push new ARF into stack.
+      stack_push(gf_group->arf_index_stack, cpi->alt_fb_idx);
+
+      /*
+      for (arf_idx = 0; arf_idx < REF_FRAMES; ++arf_idx) {
+        if (arf_idx != cpi->alt_fb_idx && arf_idx != cpi->lst_fb_idx &&
+            arf_idx != cpi->gld_fb_idx) {
+          int idx;
+          for (idx = 0; idx < MAX_LAG_BUFFERS * 2; ++idx)
+            if (arf_idx == gf_group->arf_index_stack[idx]) break;
+          if (idx == MAX_LAG_BUFFERS * 2) break;
+        }
+      }
+      */
+      arf_idx = gf_group->top_arf_idx;
+
+      arf_idx = gf_group->alt_ref_idx[gf_group->index];
+      assert(arf_idx < REF_FRAMES);
+
       ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
       memcpy(cpi->interp_filter_selected[ALTREF_FRAME],
              cpi->interp_filter_selected[0],
              sizeof(cpi->interp_filter_selected[0]));
+
+      cpi->alt_fb_idx = arf_idx;
     }
 
     if (cpi->refresh_golden_frame) {
@@ -6091,16 +6120,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     }
   }
 
+  // Clear arf index stack before group of pictures processing starts.
+  if (cpi->twopass.gf_group.index == 1)
+    stack_init(cpi->twopass.gf_group.arf_index_stack, MAX_LAG_BUFFERS * 2);
+
   if (arf_src_index) {
-    fprintf(stderr, "\ngfg_index = %d\n", cpi->twopass.gf_group.index);
-
-    fprintf(stderr, "arf_src_index = %d, frames_to_key = %d\n", arf_src_index,
-            rc->frames_to_key);
-
-    assert(arf_src_index <= rc->frames_to_key);
-
-    if (arf_src_index > rc->frames_to_key) exit(0);
-
     if ((source = vp9_lookahead_peek(cpi->lookahead, arf_src_index)) != NULL) {
       cpi->alt_ref_source = source;
 
