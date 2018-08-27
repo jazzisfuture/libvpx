@@ -39,6 +39,7 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vpx_dsp/variance.h"
 #include "vp9_ratectrl.h"
+#include "vp9_firstpass.h"
 
 #define OUTPUT_FPF 0
 #define ARF_STATS_OUTPUT 0
@@ -2369,7 +2370,7 @@ static void find_arf_order(GF_GROUP *gf_group, int *layer_depth,
   find_arf_order(gf_group, layer_depth, index_counter, depth + 1, mid + 1, end);
 }
 
-static void define_gf_group_structure(VP9_COMP *cpi) {
+static int define_gf_group_structure(VP9_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
   TWO_PASS *const twopass = &cpi->twopass;
   GF_GROUP *const gf_group = &twopass->gf_group;
@@ -2446,7 +2447,7 @@ static void define_gf_group_structure(VP9_COMP *cpi) {
 
     (void)layer_depth;
 
-    return;
+    return frame_index;
   }
 
   // Note index of the first normal inter frame int eh group (not gf kf arf)
@@ -2496,6 +2497,8 @@ static void define_gf_group_structure(VP9_COMP *cpi) {
 
   // Note whether multi-arf was enabled this group for next time.
   cpi->multi_arf_last_grp_enabled = cpi->multi_arf_enabled;
+
+  return frame_index;
 }
 
 static void allocate_gf_multi_arf_bits(VP9_COMP *cpi, int64_t gf_group_bits,
@@ -2666,7 +2669,7 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
   double this_frame_score = 1.0;
 
   // Define the GF structure and specify
-  define_gf_group_structure(cpi);
+  int gop_frames = define_gf_group_structure(cpi);
 
   key_frame = cpi->common.frame_type == KEY_FRAME;
 
@@ -2703,6 +2706,27 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
     normal_frame_bits = (int)(total_group_bits / normal_frames);
   else
     normal_frame_bits = (int)total_group_bits;
+
+  if (cpi->multi_layer_arf) {
+    int idx;
+    target_frame_size = normal_frame_bits;
+    target_frame_size =
+        clamp(target_frame_size, 0, VPXMIN(max_bits, (int)total_group_bits));
+
+    for (idx = frame_index; idx < gop_frames; ++idx) {
+      if (gf_group->update_type[idx] == USE_BUF_FRAME)
+        gf_group->bit_allocation[idx] = 0;
+      else
+        gf_group->bit_allocation[idx] = target_frame_size;
+    }
+    gf_group->bit_allocation[idx] = 0;
+
+    for (idx = 0; idx < gop_frames; ++idx)
+      if (gf_group->update_type[idx] == LF_UPDATE) break;
+    gf_group->first_inter_index = idx;
+
+    return;
+  }
 
   if (oxcf->vbr_corpus_complexity) {
     av_score = get_distribution_av_err(cpi, twopass);
