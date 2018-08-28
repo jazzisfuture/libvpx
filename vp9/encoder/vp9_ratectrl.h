@@ -194,6 +194,11 @@ typedef struct {
   int force_qpmin;
   int reset_high_source_sad;
   double perc_arf_usage;
+  int force_max_q;
+  // Last frame was dropped post encode on scene change.
+  int last_post_encode_dropped_scene_change;
+  // Enable post encode frame dropping for screen content.
+  int use_post_encode_drop;
 } RATE_CONTROL;
 
 struct VP9_COMP;
