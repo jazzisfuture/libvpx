@@ -692,6 +692,8 @@ typedef struct VP9_COMP {
   VP9_DENOISER denoiser;
 #endif
 
+  uint64_t estimated_rate;
+
   int resize_pending;
   RESIZE_STATE resize_state;
   int external_resize;
@@ -771,6 +773,7 @@ typedef struct VP9_COMP {
 
   int multi_layer_arf;
   vpx_roi_map_t roi;
+  int last_post_encode_dropped;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);

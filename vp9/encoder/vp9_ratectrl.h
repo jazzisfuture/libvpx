@@ -194,6 +194,7 @@ typedef struct {
   int force_qpmin;
   int reset_high_source_sad;
   double perc_arf_usage;
+  int force_max_q;
 } RATE_CONTROL;
 
 struct VP9_COMP;
