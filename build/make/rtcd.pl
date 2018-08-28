@@ -22,6 +22,7 @@ my @REQUIRES;
 my %opts = ();
 my %disabled = ();
 my %required = ();
+my $chromium = ''; # Require SSE2 for x86 targets.
 
 my @argv;
 foreach (@ARGV) {
@@ -37,6 +38,7 @@ GetOptions(
   'arch=s',
   'sym=s',
   'config=s',
+  'chromium' => \$chromium,
 );
 
 foreach my $opt (qw/arch config/) {
@@ -402,6 +404,11 @@ EOF
 &require("c");
 if ($opts{arch} eq 'x86') {
   @ALL_ARCHS = filter(qw/mmx sse sse2 sse3 ssse3 sse4_1 avx avx2 avx512/);
+  if ($chromium) {
+    # Chromium has required sse2 support since 2014.
+    @REQUIRES = filter(keys %required ? keys %required : qw/mmx sse sse2/);
+    &require(@REQUIRES);
+  }
   x86;
 } elsif ($opts{arch} eq 'x86_64') {
   @ALL_ARCHS = filter(qw/mmx sse sse2 sse3 ssse3 sse4_1 avx avx2 avx512/);
