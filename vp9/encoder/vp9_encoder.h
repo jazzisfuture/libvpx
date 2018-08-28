@@ -771,6 +771,12 @@ typedef struct VP9_COMP {
 
   int multi_layer_arf;
   vpx_roi_map_t roi;
+
+  // Last frame was dropped post encode on scene change.
+  int last_post_encode_dropped_scene_change;
+
+  // Enable post encode frame dropping for screen content.
+  int use_post_encode_drop;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
