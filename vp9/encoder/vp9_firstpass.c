@@ -2337,10 +2337,10 @@ static void define_gf_multi_arf_structure(VP9_COMP *cpi) {
 
 static void find_arf_order(GF_GROUP *gf_group, int *layer_depth,
                            int *index_counter, int depth, int start, int end) {
-  int mid = (start + end + 1) >> 1;
+  int mid = (start + end) >> 1;
 
   // Process regular P frames
-  if (end - start <= 3) {
+  if (end - start < 3) {
     int idx;
     for (idx = start; idx < end; ++idx) {
       gf_group->update_type[*index_counter] = LF_UPDATE;
@@ -2351,7 +2351,7 @@ static void find_arf_order(GF_GROUP *gf_group, int *layer_depth,
     return;
   }
 
-  assert(abs(mid - start) > 1 && abs(mid - end) > 1);
+  assert(abs(mid - start) >= 1 && abs(mid - end) >= 1);
 
   // Process ARF frame
   layer_depth[*index_counter] = depth;
