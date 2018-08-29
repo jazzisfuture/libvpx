@@ -144,7 +144,7 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
   cm->free_mi = vp9_dec_free_mi;
   cm->setup_mi = vp9_dec_setup_mi;
 #if CONFIG_MULTITHREAD
-  pthread_mutex_init(&pbi->parse_mutex, NULL);
+  pthread_mutex_init(&pbi->recon_mutex, NULL);
 #endif
   vp9_loop_filter_init(cm);
 
@@ -176,7 +176,7 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
     vp9_loop_filter_dealloc(&pbi->lf_row_sync);
   }
 #if CONFIG_MULTITHREAD
-  pthread_mutex_destroy(&pbi->parse_mutex);
+  pthread_mutex_destroy(&pbi->recon_mutex);
 #endif
   if (pbi->row_mt == 1) {
     vp9_dec_free_row_mt_mem(pbi);
