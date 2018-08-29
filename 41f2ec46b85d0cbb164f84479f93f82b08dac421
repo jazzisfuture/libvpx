@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a84269f9_8c229be6",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 4025,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T22:13:15Z",
+      "side": 1,
+      "message": "remove this. We want to use FAST_DETECTION_MAXQ even when postencode_drop is enabled. The FAST_DETECTION_MAXQ will just make it less likely for postencode_drop to trigger",
+      "revId": "41f2ec46b85d0cbb164f84479f93f82b08dac421",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24ee0f41_81885f13",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 4924,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T22:13:15Z",
+      "side": 1,
+      "message": "this line should be part of the post_encode_drop_screen_content() function",
+      "revId": "41f2ec46b85d0cbb164f84479f93f82b08dac421",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35ada364_a62c403c",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T22:13:15Z",
+      "side": 1,
+      "message": "initialize to 0 the other 2 flags here too?",
+      "revId": "41f2ec46b85d0cbb164f84479f93f82b08dac421",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
