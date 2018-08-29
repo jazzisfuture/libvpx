@@ -1,0 +1,158 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d75bfffd_b883596c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T16:31:05Z",
+      "side": 1,
+      "message": "add bug: https://buganizer.corp.google.com/issues/112990050",
+      "revId": "deca914f0bf8fe55219b5bf33db628a8e8f48e26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4683ad59_21024de8",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 3992,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T16:31:05Z",
+      "side": 1,
+      "message": "for screen content mode",
+      "revId": "deca914f0bf8fe55219b5bf33db628a8e8f48e26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "608cd647_e1c5b0d1",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 4771,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T16:31:05Z",
+      "side": 1,
+      "message": "put this function in vp9_ratectrl.c, since it is rate control feature",
+      "revId": "deca914f0bf8fe55219b5bf33db628a8e8f48e26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adcb6638_dea0d860",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 4773,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T16:31:05Z",
+      "side": 1,
+      "message": "put this logic conditon outside function",
+      "range": {
+        "startLine": 4773,
+        "startChar": 14,
+        "endLine": 4773,
+        "endChar": 34
+      },
+      "revId": "deca914f0bf8fe55219b5bf33db628a8e8f48e26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a205bc80_1d13f2ff",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 4776,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T16:31:05Z",
+      "side": 1,
+      "message": "add comment: \"For now we drop if new buffer level (given the encoded frame size) goes below 0.\"",
+      "range": {
+        "startLine": 4776,
+        "startChar": 39,
+        "endLine": 4776,
+        "endChar": 58
+      },
+      "revId": "deca914f0bf8fe55219b5bf33db628a8e8f48e26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59e8464f_52a08919",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 4794,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T16:31:05Z",
+      "side": 1,
+      "message": "this code (lines 4794 - 4805) is not part of this new function. It was existing code that we just moved down to after the postencode drop. So prefer to keep it in encode_frame_to_data_rate(), i.e., move it to after line 4961.",
+      "revId": "deca914f0bf8fe55219b5bf33db628a8e8f48e26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ca85a7a_b52810a0",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 4960,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T16:31:05Z",
+      "side": 1,
+      "message": "put this comment at beginning of function (in ratectrl.c)",
+      "range": {
+        "startLine": 4960,
+        "startChar": 0,
+        "endLine": 4960,
+        "endChar": 49
+      },
+      "revId": "deca914f0bf8fe55219b5bf33db628a8e8f48e26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96ff1508_80e1c350",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 4962,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T16:31:05Z",
+      "side": 1,
+      "message": "prefer to do:\nif (cpi-\u003erc.use_post_encode_drop \u0026\u0026 cm-\u003ebase_qindex \u003c cpi-\u003erc.worst_quality) {\n  if (post_encode_drop_screen_content(cpi, size)) return;\n}",
+      "revId": "deca914f0bf8fe55219b5bf33db628a8e8f48e26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
