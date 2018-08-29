@@ -31,7 +31,7 @@ extern "C" {
 #define DQCOEFFS_PER_SB_LOG2 12
 #define PARTITIONS_PER_SB 85
 
-typedef enum _job_type { PARSE_JOB, RECON_JOB } job_type;
+typedef enum _job_type { PARSE_JOB, RECON_JOB, LPF_JOB } job_type;
 
 typedef struct ThreadData {
   struct VP9Decoder *pbi;
@@ -65,7 +65,7 @@ typedef struct Job {
   int row_num;
   /* The tile column number to which the row belongs to */
   int tile_col;
-  /* Flag to indicate type of job (parse/recon) */
+  /* Flag to indicate type of job (parse/recon/lpf) */
   job_type job_type;
 } Job;
 
@@ -111,9 +111,9 @@ typedef struct VP9Decoder {
   uint8_t *jobq_buf;
   jobq_t jobq;
   int jobq_size;
-  int64_t num_tile_cols_parsed;
+  int64_t num_tiles_done;
 #if CONFIG_MULTITHREAD
-  pthread_mutex_t parse_mutex;
+  pthread_mutex_t recon_mutex;
 #endif
 } VP9Decoder;
 
