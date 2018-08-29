@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "91d7dec9_5076109a",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 4923,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-08-29T23:32:35Z",
+      "side": 1,
+      "message": "should we set these 2 (line 4923 and 4924) to 1 in the post_encode_drop_screen_content is drop is triggered",
+      "revId": "ff0d7f27ec47430612614350ff41c4dbacd8e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
