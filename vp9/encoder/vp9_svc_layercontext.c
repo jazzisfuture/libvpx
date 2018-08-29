@@ -1196,3 +1196,13 @@ void vp9_svc_update_ref_frame(VP9_COMP *const cpi) {
   vp9_copy_flags_ref_update_idx(cpi);
   vp9_svc_update_ref_frame_buffer_idx(cpi);
 }
+
+void vp9_svc_adjust_frame_rate(VP9_COMP *cpi) {
+  int64_t ts_start = cpi->svc.timebase_fac * (cpi->svc.pts);
+  int64_t ts_end =
+      cpi->svc.timebase_fac *
+      (cpi->svc.pts + cpi->svc.duration[cpi->svc.spatial_layer_id]);
+  int64_t this_duration = ts_end - ts_start;
+  vp9_new_framerate(cpi, 10000000.0 / this_duration);
+}
+
