@@ -1150,6 +1150,9 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
     size_t size, cx_data_sz;
     unsigned char *cx_data;
 
+    cpi->svc.timebase_fac = timebase_units_to_ticks(timebase, 1);
+    cpi->svc.pts = pts;
+
     // Set up internal flags
     if (ctx->base.init_flags & VPX_CODEC_USE_PSNR) cpi->b_calculate_psnr = 1;
 
@@ -1536,6 +1539,7 @@ static vpx_codec_err_t ctrl_set_svc_ref_frame_config(vpx_codec_alg_priv_t *ctx,
     cpi->svc.lst_fb_idx[sl] = data->lst_fb_idx[sl];
     cpi->svc.gld_fb_idx[sl] = data->gld_fb_idx[sl];
     cpi->svc.alt_fb_idx[sl] = data->alt_fb_idx[sl];
+    cpi->svc.duration[sl] = data->duration[sl];
   }
   return VPX_CODEC_OK;
 }
