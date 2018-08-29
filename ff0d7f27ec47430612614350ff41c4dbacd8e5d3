@@ -16,6 +16,24 @@
       "revId": "ff0d7f27ec47430612614350ff41c4dbacd8e5d3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3645dd0_e5794a25",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 4923,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-08-29T23:50:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "91d7dec9_5076109a",
+      "revId": "ff0d7f27ec47430612614350ff41c4dbacd8e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
