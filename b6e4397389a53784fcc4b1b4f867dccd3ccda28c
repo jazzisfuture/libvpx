@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93d77eae_3b7211ae",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1557,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-30T16:54:29Z",
+      "side": 1,
+      "message": "this fixes one issue, but code changes over time. I think it would be better to have this abort early and set the max rows afterward and in the longjmp target.",
+      "revId": "b6e4397389a53784fcc4b1b4f867dccd3ccda28c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
