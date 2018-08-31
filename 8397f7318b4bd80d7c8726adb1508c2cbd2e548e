@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1d56a83_c42b8c0c",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 824,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2018-08-31T00:07:13Z",
+      "side": 1,
+      "message": "I am not sure about the use case, but using -1 to mark the end of the stack makes me a little bit unsafe. Alternatively, can we add an input parameter \u0027stack_size\u0027?",
+      "range": {
+        "startLine": 824,
+        "startChar": 2,
+        "endLine": 824,
+        "endChar": 26
+      },
+      "revId": "8397f7318b4bd80d7c8726adb1508c2cbd2e548e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "860db5b7_f52341c5",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 831,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2018-08-31T00:07:13Z",
+      "side": 1,
+      "message": "I slightly prefer to call it stack_top. (Since there is a top() in std::stack)",
+      "range": {
+        "startLine": 831,
+        "startChar": 24,
+        "endLine": 831,
+        "endChar": 28
+      },
+      "revId": "8397f7318b4bd80d7c8726adb1508c2cbd2e548e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
