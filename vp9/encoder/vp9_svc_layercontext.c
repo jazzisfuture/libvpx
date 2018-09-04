@@ -1063,7 +1063,7 @@ void vp9_svc_assert_constraints_pattern(VP9_COMP *const cpi) {
         assert(svc->fb_idx_temporal_layer_id[cpi->lst_fb_idx] <
                svc->temporal_layer_id);
       if (svc->spatial_layer_id > 0 && cpi->ref_frame_flags & VP9_GOLD_FLAG &&
-          svc->first_spatial_layer_to_encode >= svc->spatial_layer_id - 1) {
+          svc->spatial_layer_id > svc->first_spatial_layer_to_encode) {
         // Non-base spatial only predicts from lower spatial layer with same
         // temporal_id.
         assert(svc->fb_idx_spatial_layer_id[cpi->gld_fb_idx] ==
@@ -1071,7 +1071,8 @@ void vp9_svc_assert_constraints_pattern(VP9_COMP *const cpi) {
         assert(svc->fb_idx_temporal_layer_id[cpi->gld_fb_idx] ==
                svc->temporal_layer_id);
       }
-    } else if (svc->spatial_layer_id > 0) {
+    } else if (svc->spatial_layer_id > 0 &&
+               svc->spatial_layer_id > svc->first_spatial_layer_to_encode) {
       // Only 1 reference for frame whose base is key; reference may be LAST
       // or GOLDEN, so we check both.
       if (cpi->ref_frame_flags & VP9_LAST_FLAG) {
