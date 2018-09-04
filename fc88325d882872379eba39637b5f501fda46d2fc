@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "906b7a6d_653e69c3",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 1385,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-09-04T17:22:15Z",
+      "side": 1,
+      "message": "screen can be rolled both vertically and horizontally. We can add another condition where row component is small but col component is large to address both.",
+      "range": {
+        "startLine": 1385,
+        "startChar": 45,
+        "endLine": 1385,
+        "endChar": 58
+      },
+      "revId": "fc88325d882872379eba39637b5f501fda46d2fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
