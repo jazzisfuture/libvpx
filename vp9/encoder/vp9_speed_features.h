@@ -331,9 +331,11 @@ typedef struct SPEED_FEATURES {
   // rd than partition type split.
   int less_rectangular_check;
 
-  // Disable testing non square partitions. (eg 16x32)
+  // Disable testing non square partitions(eg 16x32) for block sizes larger than
+  // use_square_only_thresh_high or smaller than use_square_only_thresh_low.
   int use_square_partition_only;
-  BLOCK_SIZE use_square_only_threshold;
+  BLOCK_SIZE use_square_only_thresh_high;
+  BLOCK_SIZE use_square_only_thresh_low;
 
   // Prune reference frames for rectangular partitions.
   int prune_ref_frame_for_rect_partitions;
