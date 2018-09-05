@@ -22,6 +22,30 @@
       "revId": "30c22d842cffc737de00388af972110b89b1547c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7b81979_6e009ab3",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2338,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2018-09-05T14:30:09Z",
+      "side": 1,
+      "message": "The structure layout is still in experimental phase to figure the optimal setup. I was trying to throw in a few different variations here to test the overall pipeline state.\n\nWill add more comments when we fine tune this.",
+      "parentUuid": "7e1997c9_aa6066b7",
+      "range": {
+        "startLine": 2338,
+        "startChar": 2,
+        "endLine": 2338,
+        "endChar": 37
+      },
+      "revId": "30c22d842cffc737de00388af972110b89b1547c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
