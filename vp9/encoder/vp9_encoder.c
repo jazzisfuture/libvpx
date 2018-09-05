@@ -5722,6 +5722,15 @@ void tpl_model_store(TplDepStats *tpl_stats, int mi_row, int mi_col,
   for (idy = 0; idy < mi_height; ++idy) {
     tpl_ptr = &tpl_stats[(mi_row + idy) * stride + mi_col];
     for (idx = 0; idx < mi_width; ++idx) {
+#if CONFIG_NON_GREEDY_MV
+      int rf_idx;
+      for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
+        tpl_ptr->inter_cost_arr[rf_idx] = src_stats->inter_cost;
+        tpl_ptr->recon_error_arr[rf_idx] = src_stats->recon_error_arr[rf_idx];
+        tpl_ptr->sse_arr[rf_idx] = src_stats->sse_arr[rf_idx];
+        tpl_ptr->mv_arr[rf_idx].as_int = src_stats->mv.as_int;
+      }
+#endif
       tpl_ptr->intra_cost = intra_cost;
       tpl_ptr->inter_cost = inter_cost;
       tpl_ptr->mc_dep_cost = tpl_ptr->intra_cost + tpl_ptr->mc_flow;
@@ -5909,7 +5918,12 @@ void mode_estimation(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
 
   for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
     int_mv mv;
-    if (ref_frame[rf_idx] == NULL) continue;
+    if (ref_frame[rf_idx] == NULL) {
+#if CONFIG_NON_GREEDY_MV
+      tpl_stats->inter_cost_arr[rf_idx] = -1;
+#endif
+      continue;
+    }
 
     motion_compensated_prediction(cpi, td, xd->cur_buf->y_buffer + mb_y_offset,
                                   ref_frame[rf_idx]->y_buffer + mb_y_offset,
@@ -5949,12 +5963,25 @@ void mode_estimation(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
 
     inter_cost = vpx_satd(coeff, pix_num);
 
+#if CONFIG_NON_GREEDY_MV
+    tpl_stats->inter_cost_arr[rf_idx] = inter_cost;
+    tpl_stats->mv_arr[rf_idx].as_int = mv.as_int;
+    get_quantize_error(x, 0, coeff, qcoeff, dqcoeff,
+                       tx_size, &tpl_stats->recon_error_arr[rf_idx],
+                       &tpl_stats->sse_arr[rf_idx]);
+#endif
+
     if (inter_cost < best_inter_cost) {
       best_rf_idx = rf_idx;
       best_inter_cost = inter_cost;
       best_mv.as_int = mv.as_int;
+#if CONFIG_NON_GREEDY_MV
+      *recon_error = tpl_stats->recon_error_arr[rf_idx];
+      *sse = tpl_stats->sse_arr[rf_idx];
+#else
       get_quantize_error(x, 0, coeff, qcoeff, dqcoeff, tx_size, recon_error,
                          sse);
+#endif
     }
   }
   best_intra_cost = VPXMAX(best_intra_cost, 1);
