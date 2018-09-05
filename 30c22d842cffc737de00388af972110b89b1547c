@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7e1997c9_aa6066b7",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2338,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2018-09-05T10:54:00Z",
+      "side": 1,
+      "message": "Ok.... Is there a specific reason why it is better to truncate here rather than round up?  If so it might be nice to document it. In any case, as we discussed, I think we may want to force the ARF interval to be even (as a minimum - perhaps even a power of 2) when using multiple layers.",
+      "range": {
+        "startLine": 2338,
+        "startChar": 2,
+        "endLine": 2338,
+        "endChar": 37
+      },
+      "revId": "30c22d842cffc737de00388af972110b89b1547c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
