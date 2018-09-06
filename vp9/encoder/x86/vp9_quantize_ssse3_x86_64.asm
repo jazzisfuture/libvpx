@@ -18,17 +18,24 @@ pw_1: times 8 dw 1
 
 SECTION .text
 
+;void vp9_quantize_*(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+;                    int skip_block, const int16_t *round_ptr,
+;                    const int16_t *quant_ptr, tran_low_t *qcoeff_ptr,
+;                    tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
+;                    uint16_t eob_ptr, const int16_t *scan,
+;                    const int16_t *iscan)
+
 %macro QUANTIZE_FP 2
 cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, round, quant, \
                                 qcoeff, dqcoeff, dequant, \
                                 eob, scan, iscan
 
   ; actual quantize loop - setup pointers, rounders, etc.
-  movifnidn                   coeffq, coeffmp
-  movifnidn                  ncoeffq, ncoeffmp
-  mov                             r2, dequantmp
-  movifnidn                   roundq, roundmp
-  movifnidn                   quantq, quantmp
+  movifnidn                   coeffp, coeffmx
+  movsxdifnidn               ncoeffq, ncoeffmx
+  mov                            r2p, dequantmx
+  movifnidn                   roundp, roundmx
+  movifnidn                   quantp, quantmx
   mova                            m1, [roundq]             ; m1 = round
   mova                            m2, [quantq]             ; m2 = quant
 %ifidn %1, fp_32x32
@@ -38,9 +45,9 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, round, quant, \
   psrlw                           m1, 1                    ; m1 = (m1 + 1) / 2
 %endif
   mova                            m3, [r2q]                ; m3 = dequant
-  mov                             r3, qcoeffmp
-  mov                             r4, dqcoeffmp
-  mov                             r5, iscanmp
+  mov                             r3p, qcoeffmx
+  mov                             r4p, dqcoeffmx
+  mov                             r5p, iscanmx
 %ifidn %1, fp_32x32
   psllw                           m2, 1
 %endif
@@ -161,7 +168,7 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, round, quant, \
 
 .accumulate_eob:
   ; horizontally accumulate/max eobs and write into [eob] memory pointer
-  mov                             r2, eobmp
+  mov                            r2p, eobmx
   pshufd                          m7, m8, 0xe
   pmaxsw                          m8, m7
   pshuflw                         m7, m8, 0xe

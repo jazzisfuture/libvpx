@@ -30,7 +30,7 @@ cglobal block_error, 3, 3, 8, uqc, dqc, size, ssz
   LOAD_TRAN_LOW 1, dqcq, 8
   INCREMENT_ELEMENTS_TRAN_LOW uqcq, 16
   INCREMENT_ELEMENTS_TRAN_LOW dqcq, 16
-  sub    sizeq, 16
+  sub    sizep, 16
   psubw     m0, m2
   psubw     m1, m3
   ; individual errors are max. 15bit+sign, so squares are 30bit, and
@@ -86,7 +86,7 @@ cglobal block_error_fp, 3, 3, 6, uqc, dqc, size
   LOAD_TRAN_LOW 1, dqcq, 8
   INCREMENT_ELEMENTS_TRAN_LOW uqcq, 16
   INCREMENT_ELEMENTS_TRAN_LOW dqcq, 16
-  sub    sizeq, 16
+  sub    sizep, 16
   psubw     m0, m2
   psubw     m1, m3
   ; individual errors are max. 15bit+sign, so squares are 30bit, and
