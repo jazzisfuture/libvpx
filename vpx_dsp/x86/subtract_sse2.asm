@@ -21,6 +21,8 @@ INIT_XMM sse2
 cglobal subtract_block, 7, 7, 8, \
                         rows, cols, diff, diff_stride, src, src_stride, \
                         pred, pred_stride
+  movsxdifnidn diff_strideq, diff_stridep
+  movsxdifnidn  src_strideq, src_stridep
 %define pred_str colsq
   pxor                  m7, m7         ; dedicated zero register
   cmp                colsd, 4
@@ -55,7 +57,7 @@ cglobal subtract_block, 7, 7, 8, \
   mova [diffq+mmsize*1+%6], m1
 %endmacro
 
-  mov             pred_str, pred_stridemp
+  movsxpq         pred_str, pred_stridemx
 .loop_64:
   loop16 0*mmsize, 1*mmsize, 0*mmsize, 1*mmsize, 0*mmsize, 2*mmsize
   loop16 2*mmsize, 3*mmsize, 2*mmsize, 3*mmsize, 4*mmsize, 6*mmsize
@@ -67,7 +69,7 @@ cglobal subtract_block, 7, 7, 8, \
   RET
 
 .case_32:
-  mov             pred_str, pred_stridemp
+  movsxpq         pred_str, pred_stridemx
 .loop_32:
   loop16 0, mmsize, 0, mmsize, 0, 2*mmsize
   lea                diffq, [diffq+diff_strideq*2]
@@ -78,7 +80,7 @@ cglobal subtract_block, 7, 7, 8, \
   RET
 
 .case_16:
-  mov             pred_str, pred_stridemp
+  movsxpq         pred_str, pred_stridemx
 .loop_16:
   loop16 0, src_strideq, 0, pred_str, 0, diff_strideq*2
   lea                diffq, [diffq+diff_strideq*4]
@@ -104,7 +106,7 @@ cglobal subtract_block, 7, 7, 8, \
 %endmacro
 
 .case_8:
-  mov             pred_str, pred_stridemp
+  movsxpq         pred_str, pred_stridemx
 .loop_8:
   loop_h
   lea                diffq, [diffq+diff_strideq*4]
@@ -116,7 +118,7 @@ cglobal subtract_block, 7, 7, 8, \
 
 INIT_MMX
 .case_4:
-  mov             pred_str, pred_stridemp
+  movsxpq         pred_str, pred_stridemx
 .loop_4:
   loop_h
   lea                diffq, [diffq+diff_strideq*4]

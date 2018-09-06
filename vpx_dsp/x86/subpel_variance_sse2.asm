@@ -120,6 +120,10 @@ SECTION .text
                                         x_offset, y_offset, dst, dst_stride, \
                                         sec, sec_stride, height, sse
     %define sec_str sec_strideq
+    %if ABI_X32
+      mov secp, secp
+      movsxd sec_strideq, sec_stridep
+    %endif
   %else
     cglobal sub_pixel_variance%1xh, 7, 8, 13, src, src_stride, \
                                     x_offset, y_offset, dst, dst_stride, \
@@ -127,6 +131,9 @@ SECTION .text
   %endif
   %define block_height heightd
   %define bilin_filter sseq
+  %if ABI_X32
+    mov ssep, ssep
+  %endif
 %else
   %if CONFIG_PIC=1
     %if %2 == 1 ; avg
@@ -193,6 +200,9 @@ SECTION .text
 %else
   %define movx movh
 %endif
+
+  movsxdifnidn src_strideq, src_stridep
+  movsxdifnidn dst_strideq, dst_stridep
 
   ASSERT               %1 <= 16         ; m6 overflows if w > 16
   pxor                 m6, m6           ; sum

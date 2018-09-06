@@ -29,6 +29,8 @@ cglobal convolve_%1, 4, 8, 4+AUX_XMM_REGS, src, src_stride, \
                                            dst, dst_stride, \
                                            f, fxo, fxs, fyo, fys, w, h
 %endif
+  movsxdifnidn src_strideq, src_stridep
+  movsxdifnidn dst_strideq, dst_stridep
   mov r4d, dword wm
 %ifidn %2, highbd
   shl r4d, 1

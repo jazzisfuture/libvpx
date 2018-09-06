@@ -45,6 +45,7 @@ INIT_XMM sse2
 cglobal d45_predictor_4x4, 3, 4, 4, dst, stride, above, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn    strideq, stridep
   movq                 m0, [aboveq]
   DEFINE_ARGS dst, stride, temp
   psrldq               m1, m0, 1
@@ -71,6 +72,7 @@ INIT_XMM sse2
 cglobal d45_predictor_8x8, 3, 4, 4, dst, stride, above, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn    strideq, stridep
   movu                m1, [aboveq]
   pslldq              m0, m1, 1
   psrldq              m2, m1, 1
@@ -110,6 +112,7 @@ INIT_XMM sse2
 cglobal d207_predictor_4x4, 4, 4, 5, dst, stride, unused, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn   strideq, stridep
   movd                m0, [leftq]                ; abcd [byte]
   punpcklbw           m4, m0, m0                 ; aabb ccdd
   punpcklwd           m4, m4                     ; aaaa bbbb cccc dddd
@@ -137,6 +140,7 @@ INIT_XMM sse2
 cglobal dc_predictor_4x4, 4, 5, 3, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   movd                  m2, [leftq]
   movd                  m0, [aboveq]
   pxor                  m1, m1
@@ -157,7 +161,8 @@ cglobal dc_predictor_4x4, 4, 5, 3, dst, stride, above, left, goffset
 
 INIT_XMM sse2
 cglobal dc_left_predictor_4x4, 2, 5, 2, dst, stride, above, left, goffset
-  movifnidn          leftq, leftmp
+  movsxdifnidn     strideq, stridep
+  movifnidn          leftp, leftmx
   GET_GOT     goffsetq
 
   pxor                  m1, m1
@@ -180,6 +185,7 @@ INIT_XMM sse2
 cglobal dc_top_predictor_4x4, 3, 5, 2, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   movd                  m0, [aboveq]
   psadbw                m0, m1
@@ -200,6 +206,7 @@ INIT_XMM sse2
 cglobal dc_predictor_8x8, 4, 5, 3, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   movq                  m0, [aboveq]
   movq                  m2, [leftq]
@@ -229,6 +236,7 @@ INIT_XMM sse2
 cglobal dc_top_predictor_8x8, 3, 5, 2, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   movq                  m0, [aboveq]
   DEFINE_ARGS dst, stride, stride3
@@ -253,7 +261,8 @@ cglobal dc_top_predictor_8x8, 3, 5, 2, dst, stride, above, left, goffset
 
 INIT_XMM sse2
 cglobal dc_left_predictor_8x8, 2, 5, 2, dst, stride, above, left, goffset
-  movifnidn          leftq, leftmp
+  movsxdifnidn     strideq, stridep
+  movifnidn          leftp, leftmx
   GET_GOT     goffsetq
 
   pxor                  m1, m1
@@ -282,6 +291,7 @@ INIT_XMM sse2
 cglobal dc_128_predictor_4x4, 2, 5, 1, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   DEFINE_ARGS dst, stride, stride3
   lea             stride3q, [strideq*3]
   movd     m0,        [GLOBAL(dc_128)]
@@ -296,6 +306,7 @@ INIT_XMM sse2
 cglobal dc_128_predictor_8x8, 2, 5, 1, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   DEFINE_ARGS dst, stride, stride3
   lea             stride3q, [strideq*3]
   movq    m0,        [GLOBAL(dc_128)]
@@ -315,6 +326,7 @@ INIT_XMM sse2
 cglobal dc_predictor_16x16, 4, 5, 3, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   mova                  m0, [aboveq]
   mova                  m2, [leftq]
@@ -348,6 +360,7 @@ INIT_XMM sse2
 cglobal dc_top_predictor_16x16, 4, 5, 3, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   mova                  m0, [aboveq]
   DEFINE_ARGS dst, stride, stride3, lines4
@@ -377,6 +390,7 @@ INIT_XMM sse2
 cglobal dc_left_predictor_16x16, 4, 5, 3, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   mova                  m0, [leftq]
   DEFINE_ARGS dst, stride, stride3, lines4
@@ -406,6 +420,7 @@ INIT_XMM sse2
 cglobal dc_128_predictor_16x16, 4, 5, 3, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   DEFINE_ARGS dst, stride, stride3, lines4
   lea             stride3q, [strideq*3]
   mov              lines4d, 4
@@ -426,6 +441,7 @@ INIT_XMM sse2
 cglobal dc_predictor_32x32, 4, 5, 5, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   mova                  m0, [aboveq]
   mova                  m2, [aboveq+16]
@@ -468,6 +484,7 @@ INIT_XMM sse2
 cglobal dc_top_predictor_32x32, 4, 5, 5, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   mova                  m0, [aboveq]
   mova                  m2, [aboveq+16]
@@ -504,6 +521,7 @@ INIT_XMM sse2
 cglobal dc_left_predictor_32x32, 4, 5, 5, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   mova                  m0, [leftq]
   mova                  m2, [leftq+16]
@@ -540,6 +558,7 @@ INIT_XMM sse2
 cglobal dc_128_predictor_32x32, 4, 5, 3, dst, stride, above, left, goffset
   GET_GOT     goffsetq
 
+  movsxdifnidn     strideq, stridep
   DEFINE_ARGS dst, stride, stride3, lines4
   lea             stride3q, [strideq*3]
   mov              lines4d, 8
@@ -561,6 +580,7 @@ cglobal dc_128_predictor_32x32, 4, 5, 3, dst, stride, above, left, goffset
 
 INIT_XMM sse2
 cglobal v_predictor_4x4, 3, 3, 1, dst, stride, above
+  movsxdifnidn     strideq, stridep
   movd                  m0, [aboveq]
   movd      [dstq        ], m0
   movd      [dstq+strideq], m0
@@ -571,6 +591,7 @@ cglobal v_predictor_4x4, 3, 3, 1, dst, stride, above
 
 INIT_XMM sse2
 cglobal v_predictor_8x8, 3, 3, 1, dst, stride, above
+  movsxdifnidn     strideq, stridep
   movq                  m0, [aboveq]
   DEFINE_ARGS dst, stride, stride3
   lea             stride3q, [strideq*3]
@@ -587,6 +608,7 @@ cglobal v_predictor_8x8, 3, 3, 1, dst, stride, above
 
 INIT_XMM sse2
 cglobal v_predictor_16x16, 3, 4, 1, dst, stride, above
+  movsxdifnidn     strideq, stridep
   mova                  m0, [aboveq]
   DEFINE_ARGS dst, stride, stride3, nlines4
   lea             stride3q, [strideq*3]
@@ -603,6 +625,7 @@ cglobal v_predictor_16x16, 3, 4, 1, dst, stride, above
 
 INIT_XMM sse2
 cglobal v_predictor_32x32, 3, 4, 2, dst, stride, above
+  movsxdifnidn     strideq, stridep
   mova                  m0, [aboveq]
   mova                  m1, [aboveq+16]
   DEFINE_ARGS dst, stride, stride3, nlines4
@@ -624,7 +647,8 @@ cglobal v_predictor_32x32, 3, 4, 2, dst, stride, above
 
 INIT_XMM sse2
 cglobal h_predictor_4x4, 2, 4, 4, dst, stride, line, left
-  movifnidn          leftq, leftmp
+  movsxdifnidn     strideq, stridep
+  movifnidn          leftp, leftmx
   movd                  m0, [leftq]
   punpcklbw             m0, m0
   punpcklbw             m0, m0
@@ -640,7 +664,8 @@ cglobal h_predictor_4x4, 2, 4, 4, dst, stride, line, left
 
 INIT_XMM sse2
 cglobal h_predictor_8x8, 2, 5, 3, dst, stride, line, left
-  movifnidn          leftq, leftmp
+  movsxdifnidn     strideq, stridep
+  movifnidn          leftp, leftmx
   mov                lineq, -2
   DEFINE_ARGS  dst, stride, line, left, stride3
   lea             stride3q, [strideq*3]
@@ -663,7 +688,8 @@ cglobal h_predictor_8x8, 2, 5, 3, dst, stride, line, left
 
 INIT_XMM sse2
 cglobal h_predictor_16x16, 2, 5, 3, dst, stride, line, left
-  movifnidn          leftq, leftmp
+  movsxdifnidn     strideq, stridep
+  movifnidn          leftp, leftmx
   mov                lineq, -4
   DEFINE_ARGS dst, stride, line, left, stride3
   lea             stride3q, [strideq*3]
@@ -687,7 +713,8 @@ cglobal h_predictor_16x16, 2, 5, 3, dst, stride, line, left
 
 INIT_XMM sse2
 cglobal h_predictor_32x32, 2, 5, 3, dst, stride, line, left
-  movifnidn              leftq, leftmp
+  movsxdifnidn         strideq, stridep
+  movifnidn              leftp, leftmx
   mov                    lineq, -8
   DEFINE_ARGS dst, stride, line, left, stride3
   lea                 stride3q, [strideq*3]
@@ -715,6 +742,7 @@ cglobal h_predictor_32x32, 2, 5, 3, dst, stride, line, left
 
 INIT_XMM sse2
 cglobal tm_predictor_4x4, 4, 4, 5, dst, stride, above, left
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   movq                  m0, [aboveq-1]; [63:0] tl t1 t2 t3 t4 x x x
   punpcklbw             m0, m1
@@ -744,6 +772,7 @@ cglobal tm_predictor_4x4, 4, 4, 5, dst, stride, above, left
 
 INIT_XMM sse2
 cglobal tm_predictor_8x8, 4, 4, 5, dst, stride, above, left
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   movd                  m2, [aboveq-1]
   movq                  m0, [aboveq]
@@ -774,6 +803,7 @@ cglobal tm_predictor_8x8, 4, 4, 5, dst, stride, above, left
 
 INIT_XMM sse2
 cglobal tm_predictor_16x16, 4, 5, 8, dst, stride, above, left
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   mova                  m2, [aboveq-16];
   mova                  m0, [aboveq]   ; t1 t2 ... t16 [byte]
@@ -812,6 +842,7 @@ cglobal tm_predictor_16x16, 4, 5, 8, dst, stride, above, left
 
 INIT_XMM sse2
 cglobal tm_predictor_32x32, 4, 4, 8, dst, stride, above, left
+  movsxdifnidn     strideq, stridep
   pxor                  m1, m1
   movd                  m2, [aboveq-1]
   mova                  m0, [aboveq]
