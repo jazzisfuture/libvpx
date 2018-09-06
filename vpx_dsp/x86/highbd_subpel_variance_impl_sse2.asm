@@ -70,7 +70,7 @@ SECTION .text
   pshufd               m4, m6, 0x1
   paddd                m7, m3
   paddd                m6, m4
-  mov                  r1, ssem         ; r1 = unsigned int *sse
+  mov                 r1p, ssemx        ; r1 = unsigned int *sse
   movd               [r1], m7           ; store sse
   movd                eax, m6           ; store sum as return value
 %endif
@@ -79,8 +79,8 @@ SECTION .text
 
 %macro INC_SRC_BY_SRC_STRIDE  0
 %if ARCH_X86=1 && CONFIG_PIC=1
-  add                srcq, src_stridemp
-  add                srcq, src_stridemp
+  add                srcp, src_stridemx
+  add                srcp, src_stridemx
 %else
   lea                srcq, [srcq + src_strideq*2]
 %endif
@@ -97,7 +97,10 @@ SECTION .text
                                       x_offset, y_offset, \
                                       dst, dst_stride, \
                                       sec, sec_stride, height, sse
-    %define sec_str sec_strideq
+    %define sec_str sec_stridep
+    %if ABI_X32
+      mov        secp, secp
+    %endif
   %else
     cglobal highbd_sub_pixel_variance%1xh, 7, 8, 13, src, src_stride, \
                                   x_offset, y_offset, \
@@ -105,6 +108,9 @@ SECTION .text
   %endif
   %define block_height heightd
   %define bilin_filter sseq
+  %if ABI_X32
+    mov        ssep, ssep
+  %endif
 %else
   %if CONFIG_PIC=1
     %if %2 == 1 ; avg
@@ -169,6 +175,9 @@ SECTION .text
   %endif
 %endif
 
+  movsxdifnidn src_strideq, src_stridep
+  movsxdifnidn dst_strideq, dst_stridep
+
   ASSERT               %1 <= 16         ; m6 overflows if w > 16
   pxor                 m6, m6           ; sum
   pxor                 m7, m7           ; sse
@@ -203,7 +212,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*2]
   lea                dstq, [dstq + dst_strideq*2]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %else ; %1 < 16
   movu                 m0, [srcq]
@@ -212,7 +221,7 @@ SECTION .text
   mova                 m3, [dstq + dst_strideq*2]
 %if %2 == 1 ; avg
   pavgw                m0, [secq]
-  add                secq, sec_str
+  add                secp, sec_str
   pavgw                m2, [secq]
 %endif
   SUM_SSE              m0, m1, m2, m3, m6, m7
@@ -220,7 +229,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*4]
   lea                dstq, [dstq + dst_strideq*4]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %endif
   dec                   block_height
@@ -251,7 +260,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*2]
   lea                dstq, [dstq + dst_strideq*2]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %else ; %1 < 16
   movu                 m0, [srcq]
@@ -263,7 +272,7 @@ SECTION .text
   pavgw                m1, m5
 %if %2 == 1 ; avg
   pavgw                m0, [secq]
-  add                secq, sec_str
+  add                secp, sec_str
   pavgw                m1, [secq]
 %endif
   SUM_SSE              m0, m2, m1, m3, m6, m7
@@ -271,7 +280,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*4]
   lea                dstq, [dstq + dst_strideq*4]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %endif
   dec                   block_height
@@ -340,7 +349,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*2]
   lea                dstq, [dstq + dst_strideq*2]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %else ; %1 < 16
   movu                 m0, [srcq]
@@ -361,7 +370,7 @@ SECTION .text
   psrlw                m0, 4
 %if %2 == 1 ; avg
   pavgw                m0, [secq]
-  add                secq, sec_str
+  add                secp, sec_str
   pavgw                m1, [secq]
 %endif
   SUM_SSE              m0, m2, m1, m3, m6, m7
@@ -369,7 +378,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*4]
   lea                dstq, [dstq + dst_strideq*4]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %endif
   dec                   block_height
@@ -406,7 +415,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*2]
   lea                dstq, [dstq + dst_strideq*2]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %else ; %1 < 16
   movu                 m0, [srcq]
@@ -419,7 +428,7 @@ SECTION .text
   pavgw                m1, m5
 %if %2 == 1 ; avg
   pavgw                m0, [secq]
-  add                secq, sec_str
+  add                secp, sec_str
   pavgw                m1, [secq]
 %endif
   SUM_SSE              m0, m2, m1, m3, m6, m7
@@ -427,7 +436,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*4]
   lea                dstq, [dstq + dst_strideq*4]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %endif
   dec                   block_height
@@ -469,7 +478,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*2]
   lea                dstq, [dstq + dst_strideq*2]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %else ; %1 < 16
   movu                 m0, [srcq]
@@ -489,7 +498,7 @@ SECTION .text
   mova                 m5, [dstq + dst_strideq*2]
 %if %2 == 1 ; avg
   pavgw                m0, [secq]
-  add                secq, sec_str
+  add                secp, sec_str
   pavgw                m2, [secq]
 %endif
   SUM_SSE              m0, m4, m2, m5, m6, m7
@@ -498,7 +507,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*4]
   lea                dstq, [dstq + dst_strideq*4]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %endif
   dec                   block_height
@@ -575,7 +584,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*2]
   lea                dstq, [dstq + dst_strideq*2]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %else ; %1 < 16
   movu                 m0, [srcq]
@@ -605,7 +614,7 @@ SECTION .text
   mova                 m3, [dstq+dst_strideq*2]
 %if %2 == 1 ; avg
   pavgw                m0, [secq]
-  add                secq, sec_str
+  add                secp, sec_str
   pavgw                m4, [secq]
 %endif
   SUM_SSE              m0, m2, m4, m3, m6, m7
@@ -614,7 +623,7 @@ SECTION .text
   lea                srcq, [srcq + src_strideq*4]
   lea                dstq, [dstq + dst_strideq*4]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %endif
   dec                   block_height
@@ -684,7 +693,7 @@ SECTION .text
   lea                srcq, [srcq+src_strideq*2]
   lea                dstq, [dstq+dst_strideq*2]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %else ; %1 < 16
   movu                 m0, [srcq]
@@ -705,7 +714,7 @@ SECTION .text
   psrlw                m0, 4
 %if %2 == 1 ; avg
   pavgw                m0, [secq]
-  add                secq, sec_str
+  add                secp, sec_str
   pavgw                m1, [secq]
 %endif
   SUM_SSE              m0, m4, m1, m5, m6, m7
@@ -713,7 +722,7 @@ SECTION .text
   lea                srcq, [srcq+src_strideq*4]
   lea                dstq, [dstq+dst_strideq*4]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %endif
   dec                   block_height
@@ -802,7 +811,7 @@ SECTION .text
   lea                srcq, [srcq+src_strideq*2]
   lea                dstq, [dstq+dst_strideq*2]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %else ; %1 < 16
   movu                 m0, [srcq]
@@ -834,7 +843,7 @@ SECTION .text
   pavgw                m2, m3
 %if %2 == 1 ; avg
   pavgw                m0, [secq]
-  add                secq, sec_str
+  add                secp, sec_str
   pavgw                m2, [secq]
 %endif
   SUM_SSE              m0, m4, m2, m5, m6, m7
@@ -843,7 +852,7 @@ SECTION .text
   lea                srcq, [srcq+src_strideq*4]
   lea                dstq, [dstq+dst_strideq*4]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %endif
   dec                   block_height
@@ -957,7 +966,7 @@ SECTION .text
   INC_SRC_BY_SRC_STRIDE
   lea                dstq, [dstq + dst_strideq * 2]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %else ; %1 < 16
   movu                 m0, [srcq]
@@ -1002,7 +1011,7 @@ SECTION .text
   mova                 m3, [dstq+dst_strideq*2]
 %if %2 == 1 ; avg
   pavgw                m0, [secq]
-  add                secq, sec_str
+  add                secp, sec_str
   pavgw                m4, [secq]
 %endif
   SUM_SSE              m0, m2, m4, m3, m6, m7
@@ -1011,7 +1020,7 @@ SECTION .text
   INC_SRC_BY_SRC_STRIDE
   lea                dstq, [dstq + dst_strideq * 4]
 %if %2 == 1 ; avg
-  add                secq, sec_str
+  add                secp, sec_str
 %endif
 %endif
   dec                   block_height

@@ -231,10 +231,10 @@ cglobal highbd_sad%1x%2x4d, 4, 7, 8, src, src_stride, ref1, ref_stride, \
 
   movsxdifnidn src_strideq, src_strided
   movsxdifnidn ref_strideq, ref_strided
-  mov                ref2q, [ref1q+gprsize*1]
-  mov                ref3q, [ref1q+gprsize*2]
-  mov                ref4q, [ref1q+gprsize*3]
-  mov                ref1q, [ref1q+gprsize*0]
+  mov                ref2p, [ref1q+ptrsize*1]
+  mov                ref3p, [ref1q+ptrsize*2]
+  mov                ref4p, [ref1q+ptrsize*3]
+  mov                ref1p, [ref1q+ptrsize*0]
 
 ; convert byte pointers to short pointers
   shl                 srcq, 1
@@ -265,7 +265,7 @@ cglobal highbd_sad%1x%2x4d, 4, 7, 8, src, src_stride, ref1, ref_stride, \
   paddd                 m4, m0
   paddd                 m6, m1
   punpcklqdq            m4, m6
-  movifnidn             r4, r4mp
+  movifnidn            r4p, r4mx
   movu                [r4], m4
   RET
 %endmacro
