@@ -2896,6 +2896,8 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   vpx_clear_system_state();
   vp9_zero(next_frame);
 
+  cpi->multi_layer_arf = cpi->oxcf.enable_multi_arfs;
+
   // Load stats for the current frame.
   mod_frame_err =
       calculate_norm_frame_score(cpi, twopass, oxcf, this_frame, av_err);

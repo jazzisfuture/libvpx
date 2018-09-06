@@ -416,6 +416,9 @@ static const arg_def_t tile_rows =
 static const arg_def_t enable_tpl_model =
     ARG_DEF(NULL, "enable-tpl", 1, "Enable temporal dependency model");
 
+static const arg_def_t enable_mul_arfs =
+    ARG_DEF(NULL, "enable-mul-arfs", 1, "Enable multi-layer ARFs");
+
 static const arg_def_t lossless =
     ARG_DEF(NULL, "lossless", 1, "Lossless mode (0: false (default), 1: true)");
 static const arg_def_t frame_parallel_decoding = ARG_DEF(
@@ -502,6 +505,7 @@ static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &tile_cols,
                                        &tile_rows,
                                        &enable_tpl_model,
+                                       &enable_mul_arfs,
                                        &arnr_maxframes,
                                        &arnr_strength,
                                        &arnr_type,
@@ -534,6 +538,7 @@ static const int vp9_arg_ctrl_map[] = { VP8E_SET_CPUUSED,
                                         VP9E_SET_TILE_COLUMNS,
                                         VP9E_SET_TILE_ROWS,
                                         VP9E_SET_TPL,
+                                        VP9E_SET_MUL_ARFS,
                                         VP8E_SET_ARNR_MAXFRAMES,
                                         VP8E_SET_ARNR_STRENGTH,
                                         VP8E_SET_ARNR_TYPE,

@@ -660,6 +660,14 @@ enum vp8e_enc_control_id {
    * 1. The default value is set to be 1.
    */
   VP9E_SET_TPL,
+
+  /*!\brief Codec control function to enable multi-layer ARFs.
+   *
+   * Allow the codec to use multiple layer ARFs within a group of pictures.
+   * The intermediate layer ARFs are by default coded / used through show
+   * existing frame.
+   */
+  VP9E_SET_MUL_ARFS,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -909,6 +917,9 @@ VPX_CTRL_USE_TYPE(VP9E_SET_TILE_ROWS, int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_TPL, int)
 #define VPX_CTRL_VP9E_SET_TPL
+
+VPX_CTRL_USE_TYPE(VP9E_SET_MUL_ARFS, int)
+#define VPX_CTRL_VP9E_SET_MUL_ARFS
 
 VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER, int *)
 #define VPX_CTRL_VP8E_GET_LAST_QUANTIZER

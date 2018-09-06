@@ -250,6 +250,8 @@ typedef struct VP9EncoderConfig {
 
   int enable_tpl_model;
 
+  int enable_multi_arfs;
+
   int max_threads;
 
   unsigned int target_level;
