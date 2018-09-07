@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f8f39761_2ff06df9",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-09-07T17:39:03Z",
+      "side": 1,
+      "message": "I added some additional comments.",
+      "parentUuid": "a2f127f7_c3592d1f",
+      "range": {
+        "startLine": 111,
+        "startChar": 51,
+        "endLine": 111,
+        "endChar": 55
+      },
+      "revId": "56788f2874dbcc1ef161e126e2ad7cdda7a057f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "468dc319_70700212",
         "filename": "vp9/encoder/vp9_speed_features.c",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2018-09-07T16:53:08Z",
       "side": 1,
       "message": "So is the intent here to force use to always use square only for hbd, assuming of course the use_square_partition_only flag is set?  If so why is this done for HBD? Will this not create a difference between 8 bit encodes when HBD is set and 8 bit encodes when HBD is not set where these surely should be the same?",
+      "range": {
+        "startLine": 122,
+        "startChar": 0,
+        "endLine": 123,
+        "endChar": 51
+      },
+      "revId": "56788f2874dbcc1ef161e126e2ad7cdda7a057f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c8594e6_65dcea8d",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-09-07T17:39:03Z",
+      "side": 1,
+      "message": "We haven\u0027t created the ML models for HBD yet, so the speed loss is too large if we turn on rectangular search for HBD. \"cpi-\u003eSource-\u003eflags \u0026 YV12_FLAG_HIGHBITDEPTH\" will check if the frame buffer is 8 bit or not, and apply speed settings accordingly. I tested on some clips and the 8 bit encodes are identical when CONFIG_VP9_HIGHBITDEPTH is on and off.",
+      "parentUuid": "468dc319_70700212",
       "range": {
         "startLine": 122,
         "startChar": 0,
