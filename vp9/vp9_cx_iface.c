@@ -58,13 +58,13 @@ struct vp9_extracfg {
 
 static struct vp9_extracfg default_extra_cfg = {
   0,                     // cpu_used
-  1,                     // enable_auto_alt_ref
+  3,                     // enable_auto_alt_ref
   0,                     // noise_sensitivity
   0,                     // sharpness
   0,                     // static_thresh
   6,                     // tile_columns
   0,                     // tile_rows
-  1,                     // enable_tpl_model
+  0,                     // enable_tpl_model
   7,                     // arnr_max_frames
   5,                     // arnr_strength
   0,                     // min_gf_interval; 0 -> default decision
