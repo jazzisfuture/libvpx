@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "bc38ae54_09d05fa5",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2018-09-11T11:48:29Z",
+      "side": 1,
+      "message": "I understand and had already concluded these values probably came from the neural net work, but then I remember that work. Someone looking at this in a year may have trouble understanding what all the weights etc mean or where they come from. It is perhaps not as relevant to this patch really and I dont want to hold this one up, but it would be helpful if alongside tables such as vp9_partition_breakout_weights* there was a comment to the effect that the values are experimental weights derived from a neural net. The only comment I found was a very terse one near the top of the file\n\n\"// Neural net model config.\"",
+      "parentUuid": "bae27d32_417f44c2",
+      "range": {
+        "startLine": 111,
+        "startChar": 51,
+        "endLine": 111,
+        "endChar": 55
+      },
+      "revId": "56788f2874dbcc1ef161e126e2ad7cdda7a057f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "468dc319_70700212",
         "filename": "vp9/encoder/vp9_speed_features.c",
         "patchSetId": 2
