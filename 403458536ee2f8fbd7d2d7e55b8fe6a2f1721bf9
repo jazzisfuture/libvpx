@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b92c4fa_571f4677",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2416,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2018-09-11T16:55:17Z",
+      "side": 1,
+      "message": "I think this is probably right now for the GF case which logically is layer 0. What should it be if this frame is the overlay for an arf (i.e. the if (rc-\u003esource_alt_ref_active) {...} case above, which is a very small inter frame on top of the previous arf).  I am not sure what is correct or that it matters too much here, but just raising the question.",
+      "range": {
+        "startLine": 2416,
+        "startChar": 40,
+        "endLine": 2416,
+        "endChar": 42
+      },
+      "revId": "403458536ee2f8fbd7d2d7e55b8fe6a2f1721bf9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
