@@ -2977,25 +2977,6 @@ static int recode_loop_test(VP9_COMP *cpi, int high_limit, int low_limit, int q,
   return force_recode;
 }
 
-// This function is used to shift the virtual indices of last reference frames
-// as follows:
-// LAST_FRAME -> LAST2_FRAME -> LAST3_FRAME
-// when the LAST_FRAME is updated.
-static INLINE void shift_last_ref_frames(VP9_COMP *cpi) {
-  int ref_frame;
-  for (ref_frame = LAST_REF_FRAMES - 1; ref_frame > 0; --ref_frame) {
-    cpi->ref_fb_idx[ref_frame] = cpi->ref_fb_idx[ref_frame - 1];
-
-    // [0] is allocated to the current coded frame. The statistics for the
-    // reference frames start at [LAST_FRAME], i.e. [1].
-    if (!cpi->rc.is_src_frame_alt_ref) {
-      memcpy(cpi->interp_filter_selected[ref_frame + LAST_FRAME],
-             cpi->interp_filter_selected[ref_frame - 1 + LAST_FRAME],
-             sizeof(cpi->interp_filter_selected[ref_frame - 1 + LAST_FRAME]));
-    }
-  }
-}
-
 void update_ref_frames(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   BufferPool *const pool = cm->buffer_pool;
