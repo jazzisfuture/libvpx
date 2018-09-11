@@ -58,13 +58,13 @@ struct vp9_extracfg {
 
 static struct vp9_extracfg default_extra_cfg = {
   0,                     // cpu_used
-  1,                     // enable_auto_alt_ref
+  3,                     // enable_auto_alt_ref
   0,                     // noise_sensitivity
   0,                     // sharpness
   0,                     // static_thresh
   6,                     // tile_columns
   0,                     // tile_rows
-  1,                     // enable_tpl_model
+  0,                     // enable_tpl_model
   7,                     // arnr_max_frames
   5,                     // arnr_strength
   0,                     // min_gf_interval; 0 -> default decision
@@ -522,7 +522,7 @@ static vpx_codec_err_t set_encoder_config(
 
   oxcf->speed = abs(extra_cfg->cpu_used);
   oxcf->encode_breakout = extra_cfg->static_thresh;
-  oxcf->enable_auto_arf = extra_cfg->enable_auto_alt_ref;
+  oxcf->enable_auto_arf = 6;  // extra_cfg->enable_auto_alt_ref;
   oxcf->noise_sensitivity = extra_cfg->noise_sensitivity;
   oxcf->sharpness = extra_cfg->sharpness;
 
