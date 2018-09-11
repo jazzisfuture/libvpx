@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "246fdbf8_786a9c9e",
+        "filename": "test/invalid_file_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-09-11T05:58:41Z",
+      "side": 1,
+      "message": "I uploaded this as invalid-crbug-1558.ivf",
+      "revId": "fd6a2f5b2ff32eb41bb99c23f4b6d9bcfc14bb3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
