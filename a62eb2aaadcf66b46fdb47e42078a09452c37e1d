@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1017271c_86a5bf88",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4592,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-09-17T23:15:30Z",
+      "side": 1,
+      "message": "can be localized inside the if branch.",
+      "range": {
+        "startLine": 4592,
+        "startChar": 2,
+        "endLine": 4592,
+        "endChar": 58
+      },
+      "revId": "a62eb2aaadcf66b46fdb47e42078a09452c37e1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "367688b1_13070c4b",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 863,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-09-17T23:15:30Z",
+      "side": 1,
+      "message": "Can be in the .c file unless we\u0027ll likely use it in different files.",
+      "range": {
+        "startLine": 861,
+        "startChar": 0,
+        "endLine": 863,
+        "endChar": 1
+      },
+      "revId": "a62eb2aaadcf66b46fdb47e42078a09452c37e1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
