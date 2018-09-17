@@ -2220,17 +2220,6 @@ static int define_gf_group_structure(VP9_COMP *cpi) {
         arf_buffer_indices[cpi->multi_arf_last_grp_enabled &&
                            rc->source_alt_ref_active];
     ++frame_index;
-
-    if (cpi->multi_arf_enabled) {
-      // Set aside a slot for a level 1 arf.
-      gf_group->update_type[frame_index] = ARF_UPDATE;
-      gf_group->rf_level[frame_index] = GF_ARF_LOW;
-      gf_group->arf_src_offset[frame_index] =
-          (unsigned char)((rc->baseline_gf_interval >> 1) - 1);
-      gf_group->arf_update_idx[frame_index] = arf_buffer_indices[1];
-      gf_group->arf_ref_idx[frame_index] = arf_buffer_indices[0];
-      ++frame_index;
-    }
   }
 
   if (rc->source_alt_ref_pending && cpi->multi_layer_arf) {
@@ -2258,10 +2247,6 @@ static int define_gf_group_structure(VP9_COMP *cpi) {
     int arf_idx = 0;
     if (twopass->stats_in >= twopass->stats_in_end) break;
 
-    if (rc->source_alt_ref_pending && cpi->multi_arf_enabled) {
-      if (frame_index <= mid_frame_idx) arf_idx = 1;
-    }
-
     gf_group->arf_update_idx[frame_index] = arf_buffer_indices[arf_idx];
     gf_group->arf_ref_idx[frame_index] = arf_buffer_indices[arf_idx];
 
@@ -2282,17 +2267,13 @@ static int define_gf_group_structure(VP9_COMP *cpi) {
   if (rc->source_alt_ref_pending) {
     gf_group->update_type[frame_index] = OVERLAY_UPDATE;
     gf_group->rf_level[frame_index] = INTER_NORMAL;
-
-    // Final setup for second arf and its overlay.
-    if (cpi->multi_arf_enabled)
-      gf_group->update_type[mid_frame_idx] = OVERLAY_UPDATE;
   } else {
     gf_group->update_type[frame_index] = GF_UPDATE;
     gf_group->rf_level[frame_index] = GF_ARF_STD;
   }
 
   // Note whether multi-arf was enabled this group for next time.
-  cpi->multi_arf_last_grp_enabled = cpi->multi_arf_enabled;
+  cpi->multi_arf_last_grp_enabled = 0;
 
   return frame_index;
 }
@@ -2344,9 +2325,6 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
     gf_group->bit_allocation[frame_index] = gf_arf_bits;
 
     ++frame_index;
-
-    // Set aside a slot for a level 1 arf.
-    if (cpi->multi_arf_enabled) ++frame_index;
   }
 
   // Define middle frame
@@ -2436,11 +2414,6 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
       target_frame_size -= last_frame_reduction;
     }
 
-    if (rc->source_alt_ref_pending && cpi->multi_arf_enabled) {
-      mid_boost_bits += (target_frame_size >> 4);
-      target_frame_size -= (target_frame_size >> 4);
-    }
-
     target_frame_size =
         clamp(target_frame_size, 0, VPXMIN(max_bits, (int)total_group_bits));
 
@@ -2455,15 +2428,6 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
   // We need to configure the frame at the end of the sequence + 1 that will be
   // the start frame for the next group. Otherwise prior to the call to
   // vp9_rc_get_second_pass_params() the data will be undefined.
-
-  if (rc->source_alt_ref_pending) {
-    // Final setup for second arf and its overlay.
-    if (cpi->multi_arf_enabled) {
-      gf_group->bit_allocation[2] =
-          gf_group->bit_allocation[mid_frame_idx] + mid_boost_bits;
-      gf_group->bit_allocation[mid_frame_idx] = 0;
-    }
-  }
 }
 
 // Adjusts the ARNF filter for a GF group.
@@ -2689,9 +2653,6 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     // Calculate the boost for alt ref.
     rc->gfu_boost = calc_arf_boost(cpi, forward_frames, (i - 1));
     rc->source_alt_ref_pending = 1;
-
-    // Test to see if multi arf is appropriate.
-    cpi->multi_arf_enabled = 0;
   } else {
     rc->gfu_boost = VPXMIN(MAX_GF_BOOST, calc_arf_boost(cpi, 0, (i - 1)));
     rc->source_alt_ref_pending = 0;
