@@ -275,53 +275,6 @@ static void set_block_size(VP9_COMP *const cpi, MACROBLOCK *const x,
   }
 }
 
-typedef struct {
-  // This struct is used for computing variance in choose_partitioning(), where
-  // the max number of samples within a superblock is 16x16 (with 4x4 avg). Even
-  // in high bitdepth, uint32_t is enough for sum_square_error (2^12 * 2^12 * 16
-  // * 16 = 2^32).
-  uint32_t sum_square_error;
-  int32_t sum_error;
-  int log2_count;
-  int variance;
-} var;
-
-typedef struct {
-  var none;
-  var horz[2];
-  var vert[2];
-} partition_variance;
-
-typedef struct {
-  partition_variance part_variances;
-  var split[4];
-} v4x4;
-
-typedef struct {
-  partition_variance part_variances;
-  v4x4 split[4];
-} v8x8;
-
-typedef struct {
-  partition_variance part_variances;
-  v8x8 split[4];
-} v16x16;
-
-typedef struct {
-  partition_variance part_variances;
-  v16x16 split[4];
-} v32x32;
-
-typedef struct {
-  partition_variance part_variances;
-  v32x32 split[4];
-} v64x64;
-
-typedef struct {
-  partition_variance *part_variances;
-  var *split[4];
-} variance_node;
-
 typedef enum {
   V16X16,
   V32X32,
@@ -383,6 +336,11 @@ static void get_variance(var *v) {
                    (uint32_t)(((int64_t)v->sum_error * v->sum_error) >>
                               v->log2_count)) >>
             v->log2_count);
+}
+
+static INLINE int get_sse(var *v) {
+  return v->log2_count <= 0 ? (int)v->sum_square_error :
+      (int)(ROUND_POWER_OF_TWO(v->sum_square_error, v->log2_count));
 }
 
 static void sum_2_variances(const var *a, const var *b, var *r) {
@@ -1238,6 +1196,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   int segment_id;
   int sb_offset = (cm->mi_stride >> 3) * (mi_row >> 3) + (mi_col >> 3);
 
+  vp9_zero(vt);
+
   // For SVC: check if LAST frame is NULL or if the resolution of LAST is
   // different than the current frame resolution, and if so, treat this frame
   // as a key frame, for the purpose of the superblock partitioning.
@@ -1514,7 +1474,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
         }
       }
       if (is_key_frame ||
-          (low_res && vt.split[i].split[j].part_variances.none.variance >
+          (0 && low_res && vt.split[i].split[j].part_variances.none.variance >
                           threshold_4x4avg)) {
         force_split[split_index] = 0;
         // Go down to 4x4 down-sampling for variance.
@@ -1648,6 +1608,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
     }
   }
 
+  cpi->vt_data = vt;
+
   if (!frame_is_intra_only(cm) && cpi->sf.copy_partition_flag) {
     update_prev_partition(cpi, x, segment_id, mi_row, mi_col, sb_offset);
   }
@@ -1664,6 +1626,515 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   chroma_check(cpi, x, bsize, y_sad, is_key_frame);
   if (vt2) vpx_free(vt2);
   return 0;
+}
+
+// Only generate variance tree data.
+static int choose_partitioning_vt_tree_only(
+    VP9_COMP *cpi, const TileInfo *const tile,
+    MACROBLOCK *x, int mi_row, int mi_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *xd = &x->e_mbd;
+  int i, j, k, m;
+  v64x64 vt;
+  v16x16 *vt2 = NULL;
+  int force_split[21];
+  int avg_32x32;
+  int max_var_32x32 = 0;
+  int min_var_32x32 = INT_MAX;
+  int var_32x32;
+  int avg_16x16[4];
+  int maxvar_16x16[4];
+  int minvar_16x16[4];
+  int64_t threshold_4x4avg;
+  NOISE_LEVEL noise_level = kLow;
+  int content_state = 0;
+  uint8_t *s;
+  const uint8_t *d;
+  int sp;
+  int dp;
+  int compute_minmax_variance = 1;
+  unsigned int y_sad = UINT_MAX;
+  BLOCK_SIZE bsize = BLOCK_64X64;
+  // Ref frame used in partitioning.
+  MV_REFERENCE_FRAME ref_frame_partition = LAST_FRAME;
+  int pixels_wide = 64, pixels_high = 64;
+  int64_t thresholds[4] = { cpi->vbp_thresholds[0], cpi->vbp_thresholds[1],
+                            cpi->vbp_thresholds[2], cpi->vbp_thresholds[3] };
+  int scene_change_detected =
+      cpi->rc.high_source_sad ||
+      (cpi->use_svc && cpi->svc.high_source_sad_superframe);
+
+  // For the variance computation under SVC mode, we treat the frame as key if
+  // the reference (base layer frame) is key frame (i.e., is_key_frame == 1).
+  int is_key_frame =
+      (frame_is_intra_only(cm) ||
+       (is_one_pass_cbr_svc(cpi) &&
+        cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame));
+  // Always use 4x4 partition for key frame.
+  const int use_4x4_partition = frame_is_intra_only(cm);
+  // Disable 4x4 sampling.
+  const int low_res = 0 && (cm->width <= 352 && cm->height <= 288);
+  int variance4x4downsample[16];
+  int segment_id;
+  int sb_offset = (cm->mi_stride >> 3) * (mi_row >> 3) + (mi_col >> 3);
+
+  vp9_zero(vt);
+
+  // For SVC: check if LAST frame is NULL or if the resolution of LAST is
+  // different than the current frame resolution, and if so, treat this frame
+  // as a key frame, for the purpose of the superblock partitioning.
+  // LAST == NULL can happen in some cases where enhancement spatial layers are
+  // enabled dyanmically in the stream and the only reference is the spatial
+  // reference (GOLDEN).
+  if (cpi->use_svc) {
+    const YV12_BUFFER_CONFIG *const ref = get_ref_frame_buffer(cpi, LAST_FRAME);
+    if (ref == NULL || ref->y_crop_height != cm->height ||
+        ref->y_crop_width != cm->width)
+      is_key_frame = 1;
+  }
+
+  set_offsets(cpi, tile, x, mi_row, mi_col, BLOCK_64X64);
+  segment_id = xd->mi[0]->segment_id;
+
+  if (cpi->oxcf.speed >= 8 || (cpi->use_svc && cpi->svc.non_reference_frame))
+    compute_minmax_variance = 0;
+
+  memset(x->variance_low, 0, sizeof(x->variance_low));
+
+  if (cpi->sf.use_source_sad && !is_key_frame) {
+    int sb_offset2 = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
+    content_state = x->content_state_sb;
+    x->skip_low_source_sad = (content_state == kLowSadLowSumdiff ||
+                              content_state == kLowSadHighSumdiff)
+                                 ? 1
+                                 : 0;
+    x->lowvar_highsumdiff = (content_state == kLowVarHighSumdiff) ? 1 : 0;
+    if (cpi->content_state_sb_fd != NULL)
+      x->last_sb_high_content = cpi->content_state_sb_fd[sb_offset2];
+
+#if 0
+    // For SVC on top spatial layer: use/scale the partition from
+    // the lower spatial resolution if svc_use_lowres_part is enabled.
+    if (cpi->sf.svc_use_lowres_part &&
+        cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1 &&
+        cpi->svc.prev_partition_svc != NULL && content_state != kVeryHighSad) {
+      if (!scale_partitioning_svc(cpi, x, xd, BLOCK_64X64, mi_row >> 1,
+                                  mi_col >> 1, mi_row, mi_col)) {
+        if (cpi->sf.copy_partition_flag) {
+          update_prev_partition(cpi, x, segment_id, mi_row, mi_col, sb_offset);
+        }
+        return 0;
+      }
+    }
+#endif
+
+#if 0
+    // If source_sad is low copy the partition without computing the y_sad.
+    if (x->skip_low_source_sad && cpi->sf.copy_partition_flag &&
+        !scene_change_detected &&
+        copy_partitioning(cpi, x, xd, mi_row, mi_col, segment_id, sb_offset)) {
+      x->sb_use_mv_part = 1;
+      if (cpi->sf.svc_use_lowres_part &&
+          cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 2)
+        update_partition_svc(cpi, BLOCK_64X64, mi_row, mi_col);
+      return 0;
+    }
+#endif
+  }
+
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled &&
+      cyclic_refresh_segment_id_boosted(segment_id)) {
+    int q = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
+    set_vbp_thresholds(cpi, thresholds, q, content_state);
+  } else {
+    set_vbp_thresholds(cpi, thresholds, cm->base_qindex, content_state);
+  }
+
+  // For non keyframes, disable 4x4 average for low resolution when speed = 8
+  threshold_4x4avg = (cpi->oxcf.speed < 8) ? thresholds[1] << 1 : INT64_MAX;
+
+  if (xd->mb_to_right_edge < 0) pixels_wide += (xd->mb_to_right_edge >> 3);
+  if (xd->mb_to_bottom_edge < 0) pixels_high += (xd->mb_to_bottom_edge >> 3);
+
+  s = x->plane[0].src.buf;
+  sp = x->plane[0].src.stride;
+
+  // Index for force_split: 0 for 64x64, 1-4 for 32x32 blocks,
+  // 5-20 for the 16x16 blocks.
+  force_split[0] = scene_change_detected;
+
+  if (!is_key_frame) {
+    // In the case of spatial/temporal scalable coding, the assumption here is
+    // that the temporal reference frame will always be of type LAST_FRAME.
+    // TODO(marpan): If that assumption is broken, we need to revisit this code.
+    MODE_INFO *mi = xd->mi[0];
+    YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
+
+    const YV12_BUFFER_CONFIG *yv12_g = NULL;
+    unsigned int y_sad_g, y_sad_thr, y_sad_last;
+    bsize = BLOCK_32X32 + (mi_col + 4 < cm->mi_cols) * 2 +
+            (mi_row + 4 < cm->mi_rows);
+
+    assert(yv12 != NULL);
+
+    if (!(is_one_pass_cbr_svc(cpi) && cpi->svc.spatial_layer_id) ||
+        cpi->svc.use_gf_temporal_ref_current_layer) {
+      // For now, GOLDEN will not be used for non-zero spatial layers, since
+      // it may not be a temporal reference.
+      yv12_g = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+    }
+
+    // Only compute y_sad_g (sad for golden reference) for speed < 8.
+    if (cpi->oxcf.speed < 8 && yv12_g && yv12_g != yv12 &&
+        (cpi->ref_frame_flags & VP9_GOLD_FLAG)) {
+      vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
+                           &cm->frame_refs[GOLDEN_FRAME - 1].sf);
+      y_sad_g = cpi->fn_ptr[bsize].sdf(
+          x->plane[0].src.buf, x->plane[0].src.stride, xd->plane[0].pre[0].buf,
+          xd->plane[0].pre[0].stride);
+    } else {
+      y_sad_g = UINT_MAX;
+    }
+
+    if (cpi->oxcf.lag_in_frames > 0 && cpi->oxcf.rc_mode == VPX_VBR &&
+        cpi->rc.is_src_frame_alt_ref) {
+      yv12 = get_ref_frame_buffer(cpi, ALTREF_FRAME);
+      vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
+                           &cm->frame_refs[ALTREF_FRAME - 1].sf);
+      mi->ref_frame[0] = ALTREF_FRAME;
+      y_sad_g = UINT_MAX;
+    } else {
+      vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
+                           &cm->frame_refs[LAST_FRAME - 1].sf);
+      mi->ref_frame[0] = LAST_FRAME;
+    }
+    mi->ref_frame[1] = NONE;
+    mi->sb_type = BLOCK_64X64;
+    mi->mv[0].as_int = 0;
+    mi->interp_filter = BILINEAR;
+
+    if (cpi->oxcf.speed >= 8 && !low_res &&
+        x->content_state_sb != kVeryHighSad) {
+      y_sad = cpi->fn_ptr[bsize].sdf(
+          x->plane[0].src.buf, x->plane[0].src.stride, xd->plane[0].pre[0].buf,
+          xd->plane[0].pre[0].stride);
+    } else {
+      const MV dummy_mv = { 0, 0 };
+      y_sad = vp9_int_pro_motion_estimation(cpi, x, bsize, mi_row, mi_col,
+                                            &dummy_mv);
+      x->sb_use_mv_part = 1;
+      x->sb_mvcol_part = mi->mv[0].as_mv.col;
+      x->sb_mvrow_part = mi->mv[0].as_mv.row;
+    }
+
+    y_sad_last = y_sad;
+    // Pick ref frame for partitioning, bias last frame when y_sad_g and y_sad
+    // are close if short_circuit_low_temp_var is on.
+    y_sad_thr = cpi->sf.short_circuit_low_temp_var ? (y_sad * 7) >> 3 : y_sad;
+    if (y_sad_g < y_sad_thr) {
+      vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
+                           &cm->frame_refs[GOLDEN_FRAME - 1].sf);
+      mi->ref_frame[0] = GOLDEN_FRAME;
+      mi->mv[0].as_int = 0;
+      y_sad = y_sad_g;
+      ref_frame_partition = GOLDEN_FRAME;
+    } else {
+      x->pred_mv[LAST_FRAME] = mi->mv[0].as_mv;
+      ref_frame_partition = LAST_FRAME;
+    }
+
+    set_ref_ptrs(cm, xd, mi->ref_frame[0], mi->ref_frame[1]);
+    vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
+
+    if (cpi->use_skin_detection)
+      x->sb_is_skin =
+          skin_sb_split(cpi, x, low_res, mi_row, mi_col, force_split);
+
+    d = xd->plane[0].dst.buf;
+    dp = xd->plane[0].dst.stride;
+
+#if 0
+    // If the y_sad is very small, take 64x64 as partition and exit.
+    // Don't check on boosted segment for now, as 64x64 is suppressed there.
+    if (segment_id == CR_SEGMENT_ID_BASE && y_sad < cpi->vbp_threshold_sad) {
+      const int block_width = num_8x8_blocks_wide_lookup[BLOCK_64X64];
+      const int block_height = num_8x8_blocks_high_lookup[BLOCK_64X64];
+      if (mi_col + block_width / 2 < cm->mi_cols &&
+          mi_row + block_height / 2 < cm->mi_rows) {
+        set_block_size(cpi, x, xd, mi_row, mi_col, BLOCK_64X64);
+        x->variance_low[0] = 1;
+        chroma_check(cpi, x, bsize, y_sad, is_key_frame);
+        if (cpi->sf.svc_use_lowres_part &&
+            cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 2)
+          update_partition_svc(cpi, BLOCK_64X64, mi_row, mi_col);
+        if (cpi->sf.copy_partition_flag) {
+          update_prev_partition(cpi, x, segment_id, mi_row, mi_col, sb_offset);
+        }
+        return 0;
+      }
+    }
+#endif
+
+#if 0
+    // If the y_sad is small enough, copy the partition of the superblock in the
+    // last frame to current frame only if the last frame is not a keyframe.
+    // Stop the copy every cpi->max_copied_frame to refresh the partition.
+    // TODO(jianj) : tune the threshold.
+    if (cpi->sf.copy_partition_flag && y_sad_last < cpi->vbp_threshold_copy &&
+        copy_partitioning(cpi, x, xd, mi_row, mi_col, segment_id, sb_offset)) {
+      chroma_check(cpi, x, bsize, y_sad, is_key_frame);
+      if (cpi->sf.svc_use_lowres_part &&
+          cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 2)
+        update_partition_svc(cpi, BLOCK_64X64, mi_row, mi_col);
+      return 0;
+    }
+#endif
+  } else {
+    d = VP9_VAR_OFFS;
+    dp = 0;
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      switch (xd->bd) {
+        case 10: d = CONVERT_TO_BYTEPTR(VP9_HIGH_VAR_OFFS_10); break;
+        case 12: d = CONVERT_TO_BYTEPTR(VP9_HIGH_VAR_OFFS_12); break;
+        case 8:
+        default: d = CONVERT_TO_BYTEPTR(VP9_HIGH_VAR_OFFS_8); break;
+      }
+    }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  }
+
+  if (low_res && threshold_4x4avg < INT64_MAX)
+    CHECK_MEM_ERROR(cm, vt2, vpx_calloc(16, sizeof(*vt2)));
+  // Fill in the entire tree of 8x8 (or 4x4 under some conditions) variances
+  // for splits.
+  for (i = 0; i < 4; i++) {
+    const int x32_idx = ((i & 1) << 5);
+    const int y32_idx = ((i >> 1) << 5);
+    const int i2 = i << 2;
+    force_split[i + 1] = 0;
+    avg_16x16[i] = 0;
+    maxvar_16x16[i] = 0;
+    minvar_16x16[i] = INT_MAX;
+    for (j = 0; j < 4; j++) {
+      const int x16_idx = x32_idx + ((j & 1) << 4);
+      const int y16_idx = y32_idx + ((j >> 1) << 4);
+      const int split_index = 5 + i2 + j;
+      v16x16 *vst = &vt.split[i].split[j];
+      force_split[split_index] = 0;
+      variance4x4downsample[i2 + j] = 0;
+      if (!is_key_frame) {
+        fill_variance_8x8avg(s, sp, d, dp, x16_idx, y16_idx, vst,
+#if CONFIG_VP9_HIGHBITDEPTH
+                             xd->cur_buf->flags,
+#endif
+                             pixels_wide, pixels_high, is_key_frame);
+        fill_variance_tree(&vt.split[i].split[j], BLOCK_16X16);
+        get_variance(&vt.split[i].split[j].part_variances.none);
+        avg_16x16[i] += vt.split[i].split[j].part_variances.none.variance;
+        if (vt.split[i].split[j].part_variances.none.variance < minvar_16x16[i])
+          minvar_16x16[i] = vt.split[i].split[j].part_variances.none.variance;
+        if (vt.split[i].split[j].part_variances.none.variance > maxvar_16x16[i])
+          maxvar_16x16[i] = vt.split[i].split[j].part_variances.none.variance;
+        if (vt.split[i].split[j].part_variances.none.variance > thresholds[2]) {
+          // 16X16 variance is above threshold for split, so force split to 8x8
+          // for this 16x16 block (this also forces splits for upper levels).
+          force_split[split_index] = 1;
+          force_split[i + 1] = 1;
+          force_split[0] = 1;
+        } else if (compute_minmax_variance &&
+                   vt.split[i].split[j].part_variances.none.variance >
+                       thresholds[1] &&
+                   !cyclic_refresh_segment_id_boosted(segment_id)) {
+          // We have some nominal amount of 16x16 variance (based on average),
+          // compute the minmax over the 8x8 sub-blocks, and if above threshold,
+          // force split to 8x8 block for this 16x16 block.
+          int minmax = compute_minmax_8x8(s, sp, d, dp, x16_idx, y16_idx,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                          xd->cur_buf->flags,
+#endif
+                                          pixels_wide, pixels_high);
+          int thresh_minmax = (int)cpi->vbp_threshold_minmax;
+          if (x->content_state_sb == kVeryHighSad)
+            thresh_minmax = thresh_minmax << 1;
+          if (minmax > thresh_minmax) {
+            force_split[split_index] = 1;
+            force_split[i + 1] = 1;
+            force_split[0] = 1;
+          }
+        }
+      }
+      if (is_key_frame ||
+          (0 && low_res && vt.split[i].split[j].part_variances.none.variance >
+                          threshold_4x4avg)) {
+        force_split[split_index] = 0;
+        // Go down to 4x4 down-sampling for variance.
+        variance4x4downsample[i2 + j] = 1;
+        for (k = 0; k < 4; k++) {
+          int x8_idx = x16_idx + ((k & 1) << 3);
+          int y8_idx = y16_idx + ((k >> 1) << 3);
+          v8x8 *vst2 = is_key_frame ? &vst->split[k] : &vt2[i2 + j].split[k];
+          fill_variance_4x4avg(s, sp, d, dp, x8_idx, y8_idx, vst2,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               xd->cur_buf->flags,
+#endif
+                               pixels_wide, pixels_high, is_key_frame);
+        }
+      }
+    }
+  }
+  if (cpi->noise_estimate.enabled)
+    noise_level = vp9_noise_estimate_extract_level(&cpi->noise_estimate);
+  // Fill the rest of the variance tree by summing split partition values.
+  avg_32x32 = 0;
+  for (i = 0; i < 4; i++) {
+    const int i2 = i << 2;
+    for (j = 0; j < 4; j++) {
+      if (variance4x4downsample[i2 + j] == 1) {
+        v16x16 *vtemp = (!is_key_frame) ? &vt2[i2 + j] : &vt.split[i].split[j];
+        printf("error asf\n");
+        for (m = 0; m < 4; m++) fill_variance_tree(&vtemp->split[m], BLOCK_8X8);
+        fill_variance_tree(vtemp, BLOCK_16X16);
+        // If variance of this 16x16 block is above the threshold, force block
+        // to split. This also forces a split on the upper levels.
+        get_variance(&vtemp->part_variances.none);
+        if (vtemp->part_variances.none.variance > thresholds[2]) {
+          force_split[5 + i2 + j] = 1;
+          force_split[i + 1] = 1;
+          force_split[0] = 1;
+        }
+      }
+    }
+    fill_variance_tree(&vt.split[i], BLOCK_32X32);
+    // If variance of this 32x32 block is above the threshold, or if its above
+    // (some threshold of) the average variance over the sub-16x16 blocks, then
+    // force this block to split. This also forces a split on the upper
+    // (64x64) level.
+    if (!force_split[i + 1]) {
+      get_variance(&vt.split[i].part_variances.none);
+      var_32x32 = vt.split[i].part_variances.none.variance;
+      max_var_32x32 = VPXMAX(var_32x32, max_var_32x32);
+      min_var_32x32 = VPXMIN(var_32x32, min_var_32x32);
+      if (vt.split[i].part_variances.none.variance > thresholds[1] ||
+          (!is_key_frame &&
+           vt.split[i].part_variances.none.variance > (thresholds[1] >> 1) &&
+           vt.split[i].part_variances.none.variance > (avg_16x16[i] >> 1))) {
+        force_split[i + 1] = 1;
+        force_split[0] = 1;
+      } else if (!is_key_frame && noise_level < kLow && cm->height <= 360 &&
+                 (maxvar_16x16[i] - minvar_16x16[i]) > (thresholds[1] >> 1) &&
+                 maxvar_16x16[i] > thresholds[1]) {
+        force_split[i + 1] = 1;
+        force_split[0] = 1;
+      }
+      avg_32x32 += var_32x32;
+    }
+  }
+  if (1 || !force_split[0]) {
+    fill_variance_tree(&vt, BLOCK_64X64);
+    get_variance(&vt.part_variances.none);
+    // If variance of this 64x64 block is above (some threshold of) the average
+    // variance over the sub-32x32 blocks, then force this block to split.
+    // Only checking this for noise level >= medium for now.
+    if (!is_key_frame && noise_level >= kMedium &&
+        vt.part_variances.none.variance > (9 * avg_32x32) >> 5)
+      force_split[0] = 1;
+    // Else if the maximum 32x32 variance minus the miniumum 32x32 variance in
+    // a 64x64 block is greater than threshold and the maximum 32x32 variance is
+    // above a miniumum threshold, then force the split of a 64x64 block
+    // Only check this for low noise.
+    else if (!is_key_frame && noise_level < kMedium &&
+             (max_var_32x32 - min_var_32x32) > 3 * (thresholds[0] >> 3) &&
+             max_var_32x32 > thresholds[0] >> 1)
+      force_split[0] = 1;
+  }
+
+  // All we need is the variance tree.
+  cpi->vt_data = vt;
+  return 0;
+
+#if 0
+  // Now go through the entire structure, splitting every block size until
+  // we get to one that's got a variance lower than our threshold.
+  if (mi_col + 8 > cm->mi_cols || mi_row + 8 > cm->mi_rows ||
+      !set_vt_partitioning(cpi, x, xd, &vt, BLOCK_64X64, mi_row, mi_col,
+                           thresholds[0], BLOCK_16X16, force_split[0])) {
+    for (i = 0; i < 4; ++i) {
+      const int x32_idx = ((i & 1) << 2);
+      const int y32_idx = ((i >> 1) << 2);
+      const int i2 = i << 2;
+      if (!set_vt_partitioning(cpi, x, xd, &vt.split[i], BLOCK_32X32,
+                               (mi_row + y32_idx), (mi_col + x32_idx),
+                               thresholds[1], BLOCK_16X16,
+                               force_split[i + 1])) {
+        for (j = 0; j < 4; ++j) {
+          const int x16_idx = ((j & 1) << 1);
+          const int y16_idx = ((j >> 1) << 1);
+          // For inter frames: if variance4x4downsample[] == 1 for this 16x16
+          // block, then the variance is based on 4x4 down-sampling, so use vt2
+          // in set_vt_partioning(), otherwise use vt.
+          v16x16 *vtemp = (!is_key_frame && variance4x4downsample[i2 + j] == 1)
+                              ? &vt2[i2 + j]
+                              : &vt.split[i].split[j];
+          if (!set_vt_partitioning(
+                  cpi, x, xd, vtemp, BLOCK_16X16, mi_row + y32_idx + y16_idx,
+                  mi_col + x32_idx + x16_idx, thresholds[2], cpi->vbp_bsize_min,
+                  force_split[5 + i2 + j])) {
+            for (k = 0; k < 4; ++k) {
+              const int x8_idx = (k & 1);
+              const int y8_idx = (k >> 1);
+              if (use_4x4_partition) {
+                if (!set_vt_partitioning(cpi, x, xd, &vtemp->split[k],
+                                         BLOCK_8X8,
+                                         mi_row + y32_idx + y16_idx + y8_idx,
+                                         mi_col + x32_idx + x16_idx + x8_idx,
+                                         thresholds[3], BLOCK_8X8, 0)) {
+                  set_block_size(
+                      cpi, x, xd, (mi_row + y32_idx + y16_idx + y8_idx),
+                      (mi_col + x32_idx + x16_idx + x8_idx), BLOCK_4X4);
+                }
+              } else {
+                set_block_size(
+                    cpi, x, xd, (mi_row + y32_idx + y16_idx + y8_idx),
+                    (mi_col + x32_idx + x16_idx + x8_idx), BLOCK_8X8);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (!frame_is_intra_only(cm) && cpi->sf.copy_partition_flag) {
+    update_prev_partition(cpi, x, segment_id, mi_row, mi_col, sb_offset);
+  }
+
+  if (!frame_is_intra_only(cm) && cpi->sf.svc_use_lowres_part &&
+      cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 2)
+    update_partition_svc(cpi, BLOCK_64X64, mi_row, mi_col);
+
+  if (cpi->sf.short_circuit_low_temp_var) {
+    set_low_temp_var_flag(cpi, x, xd, &vt, thresholds, ref_frame_partition,
+                          mi_col, mi_row);
+  }
+
+  chroma_check(cpi, x, bsize, y_sad, is_key_frame);
+#endif
+
+  if (vt2) vpx_free(vt2);
+  return 0;
+}
+
+static void dump_pc_tree_data(const PC_TREE *const pc_tree, FILE *fp) {
+  const int partitioning = pc_tree->partitioning;
+  if (pc_tree->block_size <= BLOCK_4X4) return;
+  fprintf(fp, "%d,", partitioning);
+  if (partitioning == PARTITION_SPLIT) {
+    int i;
+    for (i = 0; i < 4; ++i) {
+      dump_pc_tree_data(pc_tree->split[0], fp);
+    }
+  }
 }
 
 static void update_state(VP9_COMP *cpi, ThreadData *td, PICK_MODE_CONTEXT *ctx,
@@ -3986,6 +4457,96 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     int output_enabled = (bsize == BLOCK_64X64);
     encode_sb(cpi, td, tile_info, tp, mi_row, mi_col, output_enabled, bsize,
               pc_tree);
+#if 1
+    if (!frame_is_intra_only(cm) && bsize == BLOCK_64X64 &&
+        mi_row + 8 <= cm->mi_rows &&
+        mi_col + 8 <= cm->mi_cols) {
+      do {
+        FILE *fp = fopen("vp9_var_partition_data.txt", "a");
+        v64x64 *const vt = &cpi->vt_data;
+        int i, j, k;
+        if (!fp) break;
+
+        // quantizers
+        fprintf(fp, "%d,%d,",
+                vp9_dc_quant(cm->base_qindex, 0, cm->bit_depth),
+                vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth));
+
+        // 64x64 block
+        get_variance(&vt->part_variances.none);
+        get_variance(&vt->part_variances.vert[0]);
+        get_variance(&vt->part_variances.vert[1]);
+        get_variance(&vt->part_variances.horz[0]);
+        get_variance(&vt->part_variances.horz[1]);
+        fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+                vt->part_variances.none.variance,
+                vt->part_variances.vert[0].variance,
+                vt->part_variances.vert[1].variance,
+                vt->part_variances.horz[0].variance,
+                vt->part_variances.horz[1].variance,
+                get_sse(&vt->part_variances.none),
+                get_sse(&vt->part_variances.vert[0]),
+                get_sse(&vt->part_variances.vert[1]),
+                get_sse(&vt->part_variances.horz[0]),
+                get_sse(&vt->part_variances.horz[1]));
+
+        for (i = 0; i < 4; ++i) {
+          // 32x32 block
+          v32x32 *const vt_32 = &vt->split[i];
+          get_variance(&vt_32->part_variances.none);
+          get_variance(&vt_32->part_variances.vert[0]);
+          get_variance(&vt_32->part_variances.vert[1]);
+          get_variance(&vt_32->part_variances.horz[0]);
+          get_variance(&vt_32->part_variances.horz[1]);
+          fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+                  vt_32->part_variances.none.variance,
+                  vt_32->part_variances.vert[0].variance,
+                  vt_32->part_variances.vert[1].variance,
+                  vt_32->part_variances.horz[0].variance,
+                  vt_32->part_variances.horz[1].variance,
+                  get_sse(&vt_32->part_variances.none),
+                  get_sse(&vt_32->part_variances.vert[0]),
+                  get_sse(&vt_32->part_variances.vert[1]),
+                  get_sse(&vt_32->part_variances.horz[0]),
+                  get_sse(&vt_32->part_variances.horz[1]));
+
+          for (j = 0; j < 4; ++j) {
+            // 16x16 block
+            v16x16 *const vt_16 = &vt_32->split[j];
+            get_variance(&vt_16->part_variances.none);
+            get_variance(&vt_16->part_variances.vert[0]);
+            get_variance(&vt_16->part_variances.vert[1]);
+            get_variance(&vt_16->part_variances.horz[0]);
+            get_variance(&vt_16->part_variances.horz[1]);
+            fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+                    vt_16->part_variances.none.variance,
+                    vt_16->part_variances.vert[0].variance,
+                    vt_16->part_variances.vert[1].variance,
+                    vt_16->part_variances.horz[0].variance,
+                    vt_16->part_variances.horz[1].variance,
+                    get_sse(&vt_16->part_variances.none),
+                    get_sse(&vt_16->part_variances.vert[0]),
+                    get_sse(&vt_16->part_variances.vert[1]),
+                    get_sse(&vt_16->part_variances.horz[0]),
+                    get_sse(&vt_16->part_variances.horz[1]));
+
+            for (k = 0; k < 4; ++k) {
+              // 8x8 block
+              v8x8 *const vt_8 = &vt_16->split[k];
+              fprintf(fp, "%d,",
+                      get_sse(&vt_8->part_variances.none));
+            }
+          }
+        }
+
+        fprintf(fp, "%d,", 123456);
+        dump_pc_tree_data(pc_tree, fp);
+
+        fprintf(fp, "\n");
+        fclose(fp);
+      } while (0);
+    }
+#endif
   }
 
   if (bsize == BLOCK_64X64) {
@@ -4092,6 +4653,113 @@ static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
         rd_auto_partition_range(cpi, tile_info, xd, mi_row, mi_col,
                                 &x->min_partition_size, &x->max_partition_size);
       }
+
+      vp9_zero(cpi->vt_data);
+      if (!frame_is_intra_only(cm)) {
+        choose_partitioning_vt_tree_only(cpi, tile_info, x, mi_row, mi_col);
+
+#if 0
+    if (!frame_is_intra_only(cm) &&
+        mi_row + 8 <= cm->mi_rows &&
+        mi_col + 8 <= cm->mi_cols) {
+      do {
+        FILE *fp = fopen("vp9_var_partition_data.txt", "a");
+        v64x64 *const vt = &cpi->vt_data;
+        int i, j, k;
+        if (!fp) break;
+
+#if 0
+        {
+          const uint8_t *s = x->plane[0].src.buf;
+          const int sp = x->plane[0].src.stride;
+          const uint8_t *d = xd->plane[0].dst.buf;
+          const int dp = xd->plane[0].dst.stride;
+          int r, c;
+          for (r = 0; r < 8; ++r) {
+            for (c = 0; c < 8; ++c) {
+              const unsigned int s_avg = vpx_avg_8x8(s + r * 8 * sp + c * 8, sp);
+              const unsigned int d_avg = vpx_avg_8x8(d + r * 8 * dp + c * 8, dp);
+              fprintf(fp, "%4d ", s_avg - d_avg);
+            }
+            fprintf(fp, "\n");
+          }
+        }
+#endif
+
+        // 64x64 block
+        get_variance(&vt->part_variances.none);
+        get_variance(&vt->part_variances.vert[0]);
+        get_variance(&vt->part_variances.vert[1]);
+        get_variance(&vt->part_variances.horz[0]);
+        get_variance(&vt->part_variances.horz[1]);
+        fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+                vt->part_variances.none.variance,
+                vt->part_variances.vert[0].variance,
+                vt->part_variances.vert[1].variance,
+                vt->part_variances.horz[0].variance,
+                vt->part_variances.horz[1].variance,
+                get_sse(&vt->part_variances.none),
+                get_sse(&vt->part_variances.vert[0]),
+                get_sse(&vt->part_variances.vert[1]),
+                get_sse(&vt->part_variances.horz[0]),
+                get_sse(&vt->part_variances.horz[1]));
+
+        for (i = 0; i < 4; ++i) {
+          // 32x32 block
+          v32x32 *const vt_32 = &vt->split[i];
+          get_variance(&vt_32->part_variances.none);
+          get_variance(&vt_32->part_variances.vert[0]);
+          get_variance(&vt_32->part_variances.vert[1]);
+          get_variance(&vt_32->part_variances.horz[0]);
+          get_variance(&vt_32->part_variances.horz[1]);
+          fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+                  vt_32->part_variances.none.variance,
+                  vt_32->part_variances.vert[0].variance,
+                  vt_32->part_variances.vert[1].variance,
+                  vt_32->part_variances.horz[0].variance,
+                  vt_32->part_variances.horz[1].variance,
+                  get_sse(&vt_32->part_variances.none),
+                  get_sse(&vt_32->part_variances.vert[0]),
+                  get_sse(&vt_32->part_variances.vert[1]),
+                  get_sse(&vt_32->part_variances.horz[0]),
+                  get_sse(&vt_32->part_variances.horz[1]));
+
+          for (j = 0; j < 4; ++j) {
+            // 16x16 block
+            v16x16 *const vt_16 = &vt_32->split[j];
+            get_variance(&vt_16->part_variances.none);
+            get_variance(&vt_16->part_variances.vert[0]);
+            get_variance(&vt_16->part_variances.vert[1]);
+            get_variance(&vt_16->part_variances.horz[0]);
+            get_variance(&vt_16->part_variances.horz[1]);
+            fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+                    vt_16->part_variances.none.variance,
+                    vt_16->part_variances.vert[0].variance,
+                    vt_16->part_variances.vert[1].variance,
+                    vt_16->part_variances.horz[0].variance,
+                    vt_16->part_variances.horz[1].variance,
+                    get_sse(&vt_16->part_variances.none),
+                    get_sse(&vt_16->part_variances.vert[0]),
+                    get_sse(&vt_16->part_variances.vert[1]),
+                    get_sse(&vt_16->part_variances.horz[0]),
+                    get_sse(&vt_16->part_variances.horz[1]));
+
+            for (k = 0; k < 4; ++k) {
+              // 8x8 block
+              v8x8 *const vt_8 = &vt_16->split[k];
+              fprintf(fp, "%d,",
+                      get_sse(&vt_8->part_variances.none));
+            }
+          }
+        }
+
+        fprintf(fp, "\n");
+        fclose(fp);
+      } while (0);
+    }
+#endif
+      }
+
       td->pc_root->none.rdcost = 0;
       rd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col, BLOCK_64X64,
                         &dummy_rdc, INT64_MAX, td->pc_root);

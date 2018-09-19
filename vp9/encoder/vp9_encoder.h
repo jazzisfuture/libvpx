@@ -486,6 +486,53 @@ typedef struct ARNRFilterData {
   struct scale_factors sf;
 } ARNRFilterData;
 
+typedef struct {
+  // This struct is used for computing variance in choose_partitioning(), where
+  // the max number of samples within a superblock is 16x16 (with 4x4 avg). Even
+  // in high bitdepth, uint32_t is enough for sum_square_error (2^12 * 2^12 * 16
+  // * 16 = 2^32).
+  uint32_t sum_square_error;
+  int32_t sum_error;
+  int log2_count;
+  int variance;
+} var;
+
+typedef struct {
+  var none;
+  var horz[2];
+  var vert[2];
+} partition_variance;
+
+typedef struct {
+  partition_variance part_variances;
+  var split[4];
+} v4x4;
+
+typedef struct {
+  partition_variance part_variances;
+  v4x4 split[4];
+} v8x8;
+
+typedef struct {
+  partition_variance part_variances;
+  v8x8 split[4];
+} v16x16;
+
+typedef struct {
+  partition_variance part_variances;
+  v16x16 split[4];
+} v32x32;
+
+typedef struct {
+  partition_variance part_variances;
+  v32x32 split[4];
+} v64x64;
+
+typedef struct {
+  partition_variance *part_variances;
+  var *split[4];
+} variance_node;
+
 typedef struct VP9_COMP {
   QUANTS quants;
   ThreadData td;
@@ -765,6 +812,7 @@ typedef struct VP9_COMP {
 
   int multi_layer_arf;
   vpx_roi_map_t roi;
+  v64x64 vt_data;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
