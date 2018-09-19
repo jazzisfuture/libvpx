@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c2a06a84_b99fc59f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-09-19T19:37:26Z",
+      "side": 1,
+      "message": "Please add this to third_party/googletest/README.libvpx as an entry under \"Local Modifications\"",
+      "revId": "49e15da3dd9a515d048af39476b928dab3e8f274",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
