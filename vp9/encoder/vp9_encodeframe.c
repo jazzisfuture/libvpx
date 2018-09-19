@@ -275,53 +275,6 @@ static void set_block_size(VP9_COMP *const cpi, MACROBLOCK *const x,
   }
 }
 
-typedef struct {
-  // This struct is used for computing variance in choose_partitioning(), where
-  // the max number of samples within a superblock is 16x16 (with 4x4 avg). Even
-  // in high bitdepth, uint32_t is enough for sum_square_error (2^12 * 2^12 * 16
-  // * 16 = 2^32).
-  uint32_t sum_square_error;
-  int32_t sum_error;
-  int log2_count;
-  int variance;
-} var;
-
-typedef struct {
-  var none;
-  var horz[2];
-  var vert[2];
-} partition_variance;
-
-typedef struct {
-  partition_variance part_variances;
-  var split[4];
-} v4x4;
-
-typedef struct {
-  partition_variance part_variances;
-  v4x4 split[4];
-} v8x8;
-
-typedef struct {
-  partition_variance part_variances;
-  v8x8 split[4];
-} v16x16;
-
-typedef struct {
-  partition_variance part_variances;
-  v16x16 split[4];
-} v32x32;
-
-typedef struct {
-  partition_variance part_variances;
-  v32x32 split[4];
-} v64x64;
-
-typedef struct {
-  partition_variance *part_variances;
-  var *split[4];
-} variance_node;
-
 typedef enum {
   V16X16,
   V32X32,
@@ -1238,6 +1191,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   int segment_id;
   int sb_offset = (cm->mi_stride >> 3) * (mi_row >> 3) + (mi_col >> 3);
 
+  vp9_zero(vt);
+
   // For SVC: check if LAST frame is NULL or if the resolution of LAST is
   // different than the current frame resolution, and if so, treat this frame
   // as a key frame, for the purpose of the superblock partitioning.
@@ -1514,7 +1469,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
         }
       }
       if (is_key_frame ||
-          (low_res && vt.split[i].split[j].part_variances.none.variance >
+          (0 && low_res && vt.split[i].split[j].part_variances.none.variance >
                           threshold_4x4avg)) {
         force_split[split_index] = 0;
         // Go down to 4x4 down-sampling for variance.
@@ -1647,6 +1602,8 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       }
     }
   }
+
+  cpi->vt_data = vt;
 
   if (!frame_is_intra_only(cm) && cpi->sf.copy_partition_flag) {
     update_prev_partition(cpi, x, segment_id, mi_row, mi_col, sb_offset);
@@ -3986,6 +3943,64 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     int output_enabled = (bsize == BLOCK_64X64);
     encode_sb(cpi, td, tile_info, tp, mi_row, mi_col, output_enabled, bsize,
               pc_tree);
+    if (!frame_is_intra_only(cm) && bsize == BLOCK_64X64 &&
+        mi_row + 8 <= cm->mi_rows &&
+        mi_col + 8 <= cm->mi_cols) {
+      do {
+        FILE *fp = fopen("vp9_var_partition_data.txt", "a");
+        const v64x64 *const vt = &cpi->vt_data;
+        int i, j, k;
+        if (!fp) break;
+
+        // 64x64 block
+        fprintf(fp, "%d,%d,%d,%d,%d,",
+                vt->part_variances.none.variance,
+                vt->part_variances.vert[0].variance,
+                vt->part_variances.vert[1].variance,
+                vt->part_variances.horz[0].variance,
+                vt->part_variances.horz[1].variance);
+
+        for (i = 0; i < 4; ++i) {
+          // 32x32 block
+          const v32x32 *const vt_32 = &vt->split[i];
+          fprintf(fp, "%d,%d,%d,%d,%d,",
+                  vt_32->part_variances.none.variance,
+                  vt_32->part_variances.vert[0].variance,
+                  vt_32->part_variances.vert[1].variance,
+                  vt_32->part_variances.horz[0].variance,
+                  vt_32->part_variances.horz[1].variance);
+
+          for (j = 0; j < 4; ++j) {
+            // 16x16 block
+            const v16x16 *const vt_16 = &vt_32->split[j];
+            fprintf(fp, "%d,%d,%d,%d,%d,",
+                    vt_16->part_variances.none.variance,
+                    vt_16->part_variances.vert[0].variance,
+                    vt_16->part_variances.vert[1].variance,
+                    vt_16->part_variances.horz[0].variance,
+                    vt_16->part_variances.horz[1].variance);
+
+            for (k = 0; k < 4; ++k) {
+              // 8x8 block
+              const v8x8 *const vt_8 = &vt_16->split[k];
+              fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+                      vt_8->part_variances.none.variance,
+                      vt_8->part_variances.vert[0].variance,
+                      vt_8->part_variances.vert[1].variance,
+                      vt_8->part_variances.horz[0].variance,
+                      vt_8->part_variances.horz[1].variance,
+                      vt_8->split[0].part_variances.none.variance,
+                      vt_8->split[1].part_variances.none.variance,
+                      vt_8->split[2].part_variances.none.variance,
+                      vt_8->split[3].part_variances.none.variance);
+            }
+          }
+        }
+
+        fprintf(fp, "\n");
+        fclose(fp);
+      } while (0);
+    }
   }
 
   if (bsize == BLOCK_64X64) {
@@ -4092,6 +4107,12 @@ static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
         rd_auto_partition_range(cpi, tile_info, xd, mi_row, mi_col,
                                 &x->min_partition_size, &x->max_partition_size);
       }
+
+      vp9_zero(cpi->vt_data);
+      if (!frame_is_intra_only(cm)) {
+        choose_partitioning(cpi, tile_info, x, mi_row, mi_col);
+      }
+
       td->pc_root->none.rdcost = 0;
       rd_pick_partition(cpi, td, tile_data, tp, mi_row, mi_col, BLOCK_64X64,
                         &dummy_rdc, INT64_MAX, td->pc_root);
