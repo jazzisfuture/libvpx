@@ -2980,6 +2980,19 @@ void update_ref_frames(VP9_COMP *cpi) {
   BufferPool *const pool = cm->buffer_pool;
   GF_GROUP *const gf_group = &cpi->twopass.gf_group;
 
+  const int cur_frame_index = cm->current_video_frame;
+  const int second_half_gop =
+      cur_frame_index > (gf_group->frame_start + gf_group->frame_end) >> 1;
+
+  if (cm->frame_type == KEY_FRAME) cpi->gld_fb_idx_backup = INVALID_IDX;
+
+  if (cpi->refresh_golden_frame) {
+    if (cpi->gld_fb_idx_backup != INVALID_IDX) {
+      cpi->gld_fb_idx = cpi->gld_fb_idx_backup;
+      cpi->gld_fb_idx_backup = INVALID_IDX;
+    }
+  }
+
   // Pop ARF.
   if (cm->show_existing_frame) {
     cpi->lst_fb_idx = cpi->alt_fb_idx;
@@ -3052,6 +3065,17 @@ void update_ref_frames(VP9_COMP *cpi) {
       memcpy(cpi->interp_filter_selected[LAST_FRAME],
              cpi->interp_filter_selected[0],
              sizeof(cpi->interp_filter_selected[0]));
+  }
+
+  if (!cpi->refresh_golden_frame && second_half_gop) {
+    if (gf_group->stack_size >= 2) {
+      if (cpi->gld_fb_idx_backup == INVALID_IDX)
+        cpi->gld_fb_idx_backup = cpi->gld_fb_idx;
+      cpi->gld_fb_idx = gf_group->arf_index_stack[0];
+    } else {
+      if (cpi->gld_fb_idx_backup != INVALID_IDX)
+        cpi->gld_fb_idx = cpi->gld_fb_idx_backup;
+    }
   }
 }
 

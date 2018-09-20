@@ -915,7 +915,7 @@ int vp9_get_refresh_mask(VP9_COMP *cpi) {
     if (cpi->multi_layer_arf) {
       for (arf_idx = 0; arf_idx < REF_FRAMES; ++arf_idx) {
         if (arf_idx != cpi->alt_fb_idx && arf_idx != cpi->lst_fb_idx &&
-            arf_idx != cpi->gld_fb_idx) {
+            arf_idx != cpi->gld_fb_idx && arf_idx != cpi->gld_fb_idx_backup) {
           int idx;
           for (idx = 0; idx < gf_group->stack_size; ++idx)
             if (arf_idx == gf_group->arf_index_stack[idx]) break;
