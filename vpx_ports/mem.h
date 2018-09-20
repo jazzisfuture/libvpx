@@ -11,6 +11,7 @@
 #ifndef VPX_VPX_PORTS_MEM_H_
 #define VPX_VPX_PORTS_MEM_H_
 
+#include <string.h>
 #include "vpx_config.h"
 #include "vpx/vpx_integer.h"
 
@@ -22,6 +23,19 @@
 #warning No alignment directives known for this compiler.
 #define DECLARE_ALIGNED(n, typ, val) typ val
 #endif
+
+/* Use for possibly unaligned load/stores.
+ * All modern compilers compile this into simple moves.
+ */
+static inline void vpx_storeu_uint32(void *dst, uint32_t v) {
+  memcpy(dst, &v, sizeof(v));
+}
+
+static inline uint32_t vpx_loadu_uint32(const void *src) {
+  uint32_t v;
+  memcpy(&v, src, sizeof(v));
+  return v;
+}
 
 #if HAVE_NEON && defined(_MSC_VER)
 #define __builtin_prefetch(x)
