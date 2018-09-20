@@ -22,6 +22,30 @@
       "revId": "b1c2e3860d0f7dc291c6d776485965bb3a1fa688",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa65ff65_dac5d3c5",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 708,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2018-09-20T19:02:31Z",
+      "side": 1,
+      "message": "Yes, that would work.\n\nWe probably need to test both 2 and 6.\n2 gives two-layer ARFs. 6 allows maximum layers of 6.",
+      "parentUuid": "76170865_f9f18f4f",
+      "range": {
+        "startLine": 708,
+        "startChar": 2,
+        "endLine": 708,
+        "endChar": 31
+      },
+      "revId": "b1c2e3860d0f7dc291c6d776485965bb3a1fa688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
