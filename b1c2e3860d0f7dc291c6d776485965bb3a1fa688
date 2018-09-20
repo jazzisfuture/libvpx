@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76170865_f9f18f4f",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 708,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-09-20T19:00:33Z",
+      "side": 1,
+      "message": "I think you just need extra_cfg.enable_auto_alt_ref \u003d 3 here.",
+      "range": {
+        "startLine": 708,
+        "startChar": 2,
+        "endLine": 708,
+        "endChar": 31
+      },
+      "revId": "b1c2e3860d0f7dc291c6d776485965bb3a1fa688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
