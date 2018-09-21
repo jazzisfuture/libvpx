@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f3f21da_864ed226",
+        "filename": "vpx_dsp/x86/loopfilter_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1630,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-09-21T21:46:09Z",
+      "side": 0,
+      "message": "the avx2 code uses _mm_storel_epi64() which is available in SSE2 - does that trigger any issues?",
+      "range": {
+        "startLine": 1630,
+        "startChar": 4,
+        "endLine": 1630,
+        "endChar": 17
+      },
+      "revId": "e65f9e8bcef72711133b1ef7109856c9de05e8d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c341b0b7_72e61b6a",
+        "filename": "vpx_dsp/x86/loopfilter_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1632,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-09-21T21:46:09Z",
+      "side": 0,
+      "message": "The avx2 appears to use _mm_storeh_pi which should only be storing 32 bits ... that seems weird.",
+      "range": {
+        "startLine": 1632,
+        "startChar": 4,
+        "endLine": 1632,
+        "endChar": 17
+      },
+      "revId": "e65f9e8bcef72711133b1ef7109856c9de05e8d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
