@@ -56,7 +56,7 @@ static void vp9_dec_setup_mi(VP9_COMMON *cm) {
 }
 
 int vp9_dec_alloc_row_mt_mem(RowMtHandle *row_mt_handle, VP9_COMMON *cm,
-                             int num_sbs) {
+                             int num_sbs, int max_threads) {
   int plane;
   const int dqcoeff_size =
       (num_sbs << DQCOEFFS_PER_SB_LOG2) * sizeof(*row_mt_handle->dqcoeff[0]);
@@ -74,6 +74,14 @@ int vp9_dec_alloc_row_mt_mem(RowMtHandle *row_mt_handle, VP9_COMMON *cm,
                              sizeof(*row_mt_handle->partition)));
   CHECK_MEM_ERROR(cm, row_mt_handle->recon_map,
                   vpx_calloc(num_sbs, sizeof(*row_mt_handle->recon_map)));
+
+  // allocate memory for thread_data
+  if (row_mt_handle->thread_data == NULL) {
+    const size_t thread_size =
+        max_threads * sizeof(*row_mt_handle->thread_data);
+    CHECK_MEM_ERROR(cm, row_mt_handle->thread_data,
+                    vpx_memalign(32, thread_size));
+  }
   return 0;
 }
 
@@ -90,6 +98,8 @@ void vp9_dec_free_row_mt_mem(RowMtHandle *row_mt_handle) {
     row_mt_handle->partition = NULL;
     vpx_free(row_mt_handle->recon_map);
     row_mt_handle->recon_map = NULL;
+    vpx_free(row_mt_handle->thread_data);
+    row_mt_handle->thread_data = NULL;
   }
 }
 
@@ -180,8 +190,17 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
 
   if (pbi->row_mt == 1) {
     vp9_dec_free_row_mt_mem(pbi->row_mt_handle);
+    if (pbi->row_mt_handle != NULL) {
+      vp9_jobq_deinit(&pbi->row_mt_handle->jobq);
+      vpx_free(pbi->row_mt_handle->jobq_buf);
+#if CONFIG_MULTITHREAD
+      pthread_mutex_destroy(&pbi->row_mt_handle->recon_mutex);
+      pthread_mutex_destroy(&pbi->row_mt_handle->map_mutex);
+#endif
+    }
     vpx_free(pbi->row_mt_handle);
   }
+
   vp9_remove_common(&pbi->common);
   vpx_free(pbi);
 }
