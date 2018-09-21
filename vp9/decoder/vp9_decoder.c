@@ -180,6 +180,13 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
   if (pbi->row_mt == 1) {
     if (pbi->row_mt_handle != NULL) {
       vp9_dec_free_row_mt_mem(pbi->row_mt_handle);
+      vp9_jobq_deinit(&pbi->row_mt_handle->jobq);
+      vpx_free(pbi->row_mt_handle->jobq_buf);
+#if CONFIG_MULTITHREAD
+      pthread_mutex_destroy(&pbi->row_mt_handle->recon_mutex);
+      pthread_mutex_destroy(&pbi->row_mt_handle->map_mutex);
+#endif
+      vpx_free(pbi->row_mt_handle->thread_data);
     }
     vpx_free(pbi->row_mt_handle);
   }
