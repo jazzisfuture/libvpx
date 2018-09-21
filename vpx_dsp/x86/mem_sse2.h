@@ -26,6 +26,17 @@ static INLINE uint32_t loadu_uint32(const void *src) {
   return v;
 }
 
+static INLINE void mm_storelu_pd(double *dst, __m128d v) {
+  double x;
+  _mm_storel_pd(&x, v);
+  memcpy(dst, &x, sizeof(x));
+}
+
+static INLINE void mm_storehu_pd(double *dst, __m128d v) {
+  double x;
+  _mm_storeh_pd(&x, v);
+  memcpy(dst, &x, sizeof(x));
+}
 static INLINE __m128i loadh_epi64(const __m128i s, const void *const src) {
   return _mm_castps_si128(
       _mm_loadh_pi(_mm_castsi128_ps(s), (const __m64 *)src));
