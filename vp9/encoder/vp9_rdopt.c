@@ -101,6 +101,7 @@ static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
 
   { NEARESTMV, { LAST_FRAME, ALTREF_FRAME } },
   { NEARESTMV, { GOLDEN_FRAME, ALTREF_FRAME } },
+  { NEARESTMV, { LAST_FRAME, GOLDEN_FRAME } },
 
   { TM_PRED, { INTRA_FRAME, NONE } },
 
@@ -108,9 +109,12 @@ static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   { NEWMV, { LAST_FRAME, ALTREF_FRAME } },
   { NEARMV, { GOLDEN_FRAME, ALTREF_FRAME } },
   { NEWMV, { GOLDEN_FRAME, ALTREF_FRAME } },
+  { NEWMV, { LAST_FRAME, GOLDEN_FRAME } },
+  { NEARMV, { LAST_FRAME, GOLDEN_FRAME } },
 
   { ZEROMV, { LAST_FRAME, ALTREF_FRAME } },
   { ZEROMV, { GOLDEN_FRAME, ALTREF_FRAME } },
+  { ZEROMV, { LAST_FRAME, GOLDEN_FRAME } },
 
   { H_PRED, { INTRA_FRAME, NONE } },
   { V_PRED, { INTRA_FRAME, NONE } },
@@ -125,7 +129,8 @@ static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
 static const REF_DEFINITION vp9_ref_order[MAX_REFS] = {
   { { LAST_FRAME, NONE } },           { { GOLDEN_FRAME, NONE } },
   { { ALTREF_FRAME, NONE } },         { { LAST_FRAME, ALTREF_FRAME } },
-  { { GOLDEN_FRAME, ALTREF_FRAME } }, { { INTRA_FRAME, NONE } },
+  { { GOLDEN_FRAME, ALTREF_FRAME } }, { { LAST_FRAME, GOLDEN_FRAME } },
+  { { INTRA_FRAME, NONE } },
 };
 
 static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx, int m, int n,

@@ -63,6 +63,7 @@
 #include "vp9/encoder/vp9_speed_features.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_temporal_filter.h"
+#include "vp9_firstpass.h"
 
 #define AM_SEGMENT_ID_INACTIVE 7
 #define AM_SEGMENT_ID_ACTIVE 0
@@ -3071,7 +3072,7 @@ void update_ref_frames(VP9_COMP *cpi) {
     if (gf_group->stack_size >= 2) {
       if (cpi->gld_fb_idx_backup == INVALID_IDX)
         cpi->gld_fb_idx_backup = cpi->gld_fb_idx;
-      cpi->gld_fb_idx = gf_group->arf_index_stack[0];
+      cpi->gld_fb_idx = gf_group->arf_index_stack[gf_group->stack_size - 2];
     } else {
       if (cpi->gld_fb_idx_backup != INVALID_IDX)
         cpi->gld_fb_idx = cpi->gld_fb_idx_backup;

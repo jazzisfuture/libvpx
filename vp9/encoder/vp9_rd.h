@@ -35,8 +35,8 @@ extern "C" {
 
 #define INVALID_MV 0x80008000
 
-#define MAX_MODES 30
-#define MAX_REFS 6
+#define MAX_MODES 34
+#define MAX_REFS 7
 
 #define RD_THRESH_INIT_FACT 32
 #define RD_THRESH_MAX_FACT 64
@@ -65,6 +65,7 @@ typedef enum {
 
   THR_COMP_NEARESTLA,
   THR_COMP_NEARESTGA,
+  THR_COMP_NEARESTLG,
 
   THR_TM,
 
@@ -72,9 +73,12 @@ typedef enum {
   THR_COMP_NEWLA,
   THR_COMP_NEARGA,
   THR_COMP_NEWGA,
+  THR_COMP_NEWLG,
+  THR_COMP_NEARLG,
 
   THR_COMP_ZEROLA,
   THR_COMP_ZEROGA,
+  THR_COMP_ZEROLG,
 
   THR_H_PRED,
   THR_V_PRED,
@@ -92,6 +96,7 @@ typedef enum {
   THR_ALTR,
   THR_COMP_LA,
   THR_COMP_GA,
+  THR_COMP_LG,
   THR_INTRA,
 } THR_MODES_SUB8X8;
 
