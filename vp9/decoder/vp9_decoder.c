@@ -348,7 +348,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi, size_t size,
     // Release current frame.
     decrease_ref_count(cm->new_fb_idx, frame_bufs, pool);
 
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
     return -1;
   }
 
@@ -357,7 +357,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi, size_t size,
 
   swap_frame_buffers(pbi);
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
   if (!cm->show_existing_frame) {
     cm->last_show_frame = cm->show_frame;
@@ -406,7 +406,7 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
   *sd = *cm->frame_to_show;
   ret = 0;
 #endif /*!CONFIG_POSTPROC*/
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
   return ret;
 }
 

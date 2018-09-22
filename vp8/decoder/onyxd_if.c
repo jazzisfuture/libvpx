@@ -352,7 +352,7 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
     goto decode_exit;
   }
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
   if (cm->show_frame) {
     cm->current_video_frame++;
@@ -383,7 +383,7 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
 
 decode_exit:
   pbi->common.error.setjmp = 0;
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
   return retcode;
 }
 int vp8dx_get_raw_frame(VP8D_COMP *pbi, YV12_BUFFER_CONFIG *sd,
@@ -416,7 +416,7 @@ int vp8dx_get_raw_frame(VP8D_COMP *pbi, YV12_BUFFER_CONFIG *sd,
   }
 
 #endif /*!CONFIG_POSTPROC*/
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
   return ret;
 }
 
@@ -446,7 +446,7 @@ int vp8_create_decoder_instances(struct frame_buffers *fb, VP8D_CONFIG *oxcf) {
   if (setjmp(fb->pbi[0]->common.error.jmp)) {
     vp8_remove_decoder_instances(fb);
     memset(fb->pbi, 0, sizeof(fb->pbi));
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
     return VPX_CODEC_ERROR;
   }
 

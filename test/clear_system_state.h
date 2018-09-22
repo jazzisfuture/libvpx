@@ -10,6 +10,7 @@
 #ifndef VPX_TEST_CLEAR_SYSTEM_STATE_H_
 #define VPX_TEST_CLEAR_SYSTEM_STATE_H_
 
+#include <cassert>
 #include "./vpx_config.h"
 #include "vpx_ports/system_state.h"
 
@@ -17,7 +18,7 @@ namespace libvpx_test {
 
 // Reset system to a known state. This function should be used for all non-API
 // test cases.
-inline void ClearSystemState() { vpx_clear_system_state(); }
+inline void ClearSystemState() { assert(vpx_check_system_state()); }
 
 }  // namespace libvpx_test
 #endif  // VPX_TEST_CLEAR_SYSTEM_STATE_H_

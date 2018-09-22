@@ -637,7 +637,7 @@ VP9_LEVEL vp9_get_level(const Vp9LevelSpec *const level_spec) {
   int i;
   const Vp9LevelSpec *this_level;
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
   for (i = 0; i < VP9_LEVELS; ++i) {
     this_level = &vp9_level_defs[i];
@@ -1409,7 +1409,7 @@ static void init_level_constraint(LevelConstraint *lc) {
 }
 
 static void set_level_constraint(LevelConstraint *ls, int8_t level_index) {
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
   ls->level_index = level_index;
   if (level_index >= 0) {
     ls->max_cpb_size = vp9_level_defs[level_index].max_cpb_size * (double)1000;
@@ -2475,7 +2475,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
   cm = &cpi->common;
   if (cm->current_video_frame > 0) {
 #if CONFIG_INTERNAL_STATS
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
 
     if (cpi->oxcf.pass != 1) {
       char headings[512] = { 0 };
@@ -3092,7 +3092,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   } else {
     struct vpx_usec_timer timer;
 
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
 
     vpx_usec_timer_start(&timer);
 
@@ -3294,7 +3294,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
   int64_t recon_err;
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
@@ -3675,7 +3675,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   // The flag may get reset below based on SVC or resizing state.
   cpi->compute_source_sad_onepass = cpi->oxcf.mode == REALTIME;
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
   set_frame_size(cpi);
 
@@ -3890,7 +3890,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     // Check if encoded frame will overshoot too much, and if so, set the q and
     // adjust some rate control parameters, and return to re-encode the frame.
     if (vp9_encodedframe_overshoot(cpi, frame_size, &q)) {
-      vpx_clear_system_state();
+      assert(vpx_check_system_state());
       vp9_set_quantizer(cm, q);
       vp9_set_variance_partition_thresholds(cpi, q, 0);
       suppress_active_map(cpi);
@@ -3917,7 +3917,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   // Update the skip mb flag probabilities based on the distribution
   // seen in the last encoder iteration.
   // update_base_skip_probs(cpi);
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
   return 1;
 }
 
@@ -3959,7 +3959,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
                    : 0;
 
   do {
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
 
     set_frame_size(cpi);
 
@@ -4053,7 +4053,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
     // seen in the last encoder iteration.
     // update_base_skip_probs(cpi);
 
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
 
     // Dummy pack of the bitstream using up to date stats to get an
     // accurate estimate of output frame size to determine if we need
@@ -4270,13 +4270,13 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
     const int thresh = compute_context_model_thresh(cpi);
     const int diff = compute_context_model_diff(cm);
     if (diff < thresh) {
-      vpx_clear_system_state();
+      assert(vpx_check_system_state());
       restore_coding_context(cpi);
       return;
     }
 
     vp9_encode_frame(cpi);
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
     restore_coding_context(cpi);
   }
 }
@@ -4639,7 +4639,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
   }
 
   set_ext_overrides(cpi);
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
 #ifdef ENABLE_KF_DENOISE
   // Spatial denoise of key frame.
@@ -4688,7 +4688,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     }
   }
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
 #if CONFIG_INTERNAL_STATS
   memset(cpi->mode_chosen_counts, 0,
@@ -5103,7 +5103,7 @@ static void level_rc_framerate(VP9_COMP *cpi, int arf_src_index) {
   LevelConstraint *const ls = &cpi->level_constraint;
   VP9_COMMON *const cm = &cpi->common;
   const double max_cpb_size = ls->max_cpb_size;
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
   rc->max_frame_bandwidth = VPXMIN(rc->max_frame_bandwidth, ls->max_frame_size);
   if (frame_is_intra_only(cm)) {
     rc->max_frame_bandwidth =
@@ -5130,7 +5130,7 @@ static void update_level_info(VP9_COMP *cpi, size_t *size, int arf_src_index) {
   const int8_t level_index = level_constraint->level_index;
   double cpb_data_size;
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
   // update level_stats
   level_stats->total_compressed_size += *size;
@@ -5681,7 +5681,7 @@ double get_feature_score(uint8_t *buf, ptrdiff_t stride, int rows, int cols) {
   double IyIy = 0;
   double score;
   int r, c;
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
   for (r = 0; r + 1 < rows; ++r) {
     for (c = 0; c + 1 < cols; ++c) {
       int diff_x = buf[r * stride + c] - buf[r * stride + c + 1];
@@ -6198,8 +6198,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->last_end_time_stamp_seen = source->ts_start;
   }
 
-  // Clear down mmx registers
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
   // adjust frame rates based on timestamps given
   if (cm->show_frame) {
@@ -6374,7 +6373,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                                 cpi->un_scaled_source->y_width);
           }
 #endif
-          vpx_clear_system_state();
+          assert(vpx_check_system_state());
 
 #if CONFIG_VP9_HIGHBITDEPTH
           vpx_calc_highbd_psnr(orig, pp, &psnr2, cpi->td.mb.e_mbd.bd,
@@ -6488,7 +6487,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     }
   }
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
   return 0;
 }
 
@@ -6517,7 +6516,7 @@ int vp9_get_preview_raw_frame(VP9_COMP *cpi, YV12_BUFFER_CONFIG *dest,
       ret = -1;
     }
 #endif  // !CONFIG_VP9_POSTPROC
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
     return ret;
   }
 }
