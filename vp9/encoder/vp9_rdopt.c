@@ -3000,6 +3000,7 @@ int vp9_active_h_edge(VP9_COMP *cpi, int mi_row, int mi_step) {
   int bottom_edge = cpi->common.mi_rows;
   int is_active_h_edge = 0;
 
+  assert(vpx_check_system_state());
   // For two pass account for any formatting bars detected.
   if (cpi->oxcf.pass == 2) {
     TWO_PASS *twopass = &cpi->twopass;
@@ -3027,6 +3028,7 @@ int vp9_active_v_edge(VP9_COMP *cpi, int mi_col, int mi_step) {
   int right_edge = cpi->common.mi_cols;
   int is_active_v_edge = 0;
 
+  assert(vpx_check_system_state());
   // For two pass account for any formatting bars detected.
   if (cpi->oxcf.pass == 2) {
     TWO_PASS *twopass = &cpi->twopass;

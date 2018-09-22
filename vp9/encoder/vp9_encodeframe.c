@@ -1841,7 +1841,7 @@ static int set_segment_rdmult(VP9_COMP *const cpi, MACROBLOCK *const x,
   int segment_qindex;
   VP9_COMMON *const cm = &cpi->common;
   vp9_init_plane_quantizers(cpi, x);
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
   segment_qindex = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
   return vp9_compute_rd_mult(cpi, segment_qindex + cm->y_dc_delta_q);
 }
@@ -1859,7 +1859,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
   const AQ_MODE aq_mode = cpi->oxcf.aq_mode;
   int i, orig_rdmult;
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
   x->use_lp32x32fdct = 1;
@@ -3113,7 +3113,7 @@ static int ml_pruning_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   float features[FEATURES];
 
   assert(b_width_log2_lookup[bsize] == b_height_log2_lookup[bsize]);
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
   switch (bsize) {
     case BLOCK_64X64:
@@ -3224,7 +3224,7 @@ static int ml_predict_breakout(const VP9_COMP *const cpi, BLOCK_SIZE bsize,
                                 vp9_64_zeros, 0, &sse);
     var = var >> num_pels_log2;
 
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
 
     rate_f = (float)VPXMIN(rd_cost->rate, INT_MAX);
     dist_f = (float)(VPXMIN(rd_cost->dist, INT_MAX) >> num_pels_log2);
@@ -3427,7 +3427,7 @@ int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
     }
   }
 
-  vpx_clear_system_state();
+  assert(vpx_check_system_state());
 
   r0 = cpi->rd.r0;
   rk = (double)intra_cost / mc_dep_cost;
@@ -5345,7 +5345,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       }
     }
 
-    vpx_clear_system_state();
+    assert(vpx_check_system_state());
 
     if (tpl_frame->is_valid)
       cpi->rd.r0 = (double)intra_cost_base / mc_dep_cost_base;

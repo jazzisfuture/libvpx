@@ -107,6 +107,7 @@ sym(vp8_filter_block1d_h6_mmx):
         jnz         .nextrow                 ; next row
 
     ; begin epilog
+    emms
     pop rdi
     pop rsi
     RESTORE_GOT
@@ -197,6 +198,7 @@ sym(vp8_filter_block1dc_v6_mmx):
         pop         rbx
 
     ; begin epilog
+    emms
     pop rdi
     pop rsi
     RESTORE_GOT
@@ -352,6 +354,7 @@ sym(vp8_bilinear_predict8x4_mmx):
         jne         .next_row_8x4
 
     ; begin epilog
+    emms
     pop rdi
     pop rsi
     RESTORE_GOT
@@ -470,6 +473,7 @@ sym(vp8_bilinear_predict4x4_mmx):
         jne         .next_row_4x4
 
     ; begin epilog
+    emms
     pop rdi
     pop rsi
     RESTORE_GOT
