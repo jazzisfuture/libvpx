@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "8ca6397d_90f5786b",
+        "filename": "vpx_dsp/x86/loopfilter_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1630,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-09-24T19:20:49Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "f7af5cdc_67b7824a",
+      "range": {
+        "startLine": 1630,
+        "startChar": 4,
+        "endLine": 1630,
+        "endChar": 17
+      },
+      "revId": "e65f9e8bcef72711133b1ef7109856c9de05e8d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c341b0b7_72e61b6a",
         "filename": "vpx_dsp/x86/loopfilter_sse2.c",
         "patchSetId": 1
@@ -84,6 +108,30 @@
       "side": 0,
       "message": "It\u0027s still a 64-bit store, the l and h suffix say that the lower and upper half of the xmm register is to be store. The suffix only says what kind of data to expect in that register (packed double  - which is effectively only a single one, since we only look at half of the register -  vs. *packed* (32-bit) integers). There are issues with domain transitions on some processors when switching between integer and floating point values, but that shouldn\u0027t really matter for pure stores, so the choice of intrinsic is likely to be irrelevant - esp. since there is no actual instruction to store the upper half in integer format, so the compiler likely uses the floating point version anyway.",
       "parentUuid": "c341b0b7_72e61b6a",
+      "range": {
+        "startLine": 1632,
+        "startChar": 4,
+        "endLine": 1632,
+        "endChar": 17
+      },
+      "revId": "e65f9e8bcef72711133b1ef7109856c9de05e8d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b213bf11_0086153c",
+        "filename": "vpx_dsp/x86/loopfilter_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1632,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-09-24T19:20:49Z",
+      "side": 0,
+      "message": "Ah, the description I read said:\nStore the upper 2 single-precision (32-bit) floating-point elements from a into memory.\n\nand I saw that as 1 32 bit value, not 2 32 bit values.",
+      "parentUuid": "c82972d7_b2c346a0",
       "range": {
         "startLine": 1632,
         "startChar": 4,
