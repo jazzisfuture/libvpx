@@ -22,6 +22,30 @@
       "revId": "08e6fd2fbb61f3e8f3fdb40f553b7146e3dce88c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1d9502b_d052e1c6",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-09-25T03:11:08Z",
+      "side": 1,
+      "message": "that does look pretty arbitrary, oh well",
+      "parentUuid": "23442af6_3c458b2c",
+      "range": {
+        "startLine": 61,
+        "startChar": 29,
+        "endLine": 61,
+        "endChar": 45
+      },
+      "revId": "08e6fd2fbb61f3e8f3fdb40f553b7146e3dce88c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
