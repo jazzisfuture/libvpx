@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "7ba14364_07bf1712",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-09-26T20:19:46Z",
+      "side": 1,
+      "message": "Bug: 1562",
+      "revId": "a6c19d92c02b21907a7b464277c579eba6a6488e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8b327c1d_8f3fddf6",
         "filename": "test/invalid_file_test.cc",
         "patchSetId": 1
