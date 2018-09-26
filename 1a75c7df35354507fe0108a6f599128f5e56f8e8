@@ -22,6 +22,30 @@
       "revId": "1a75c7df35354507fe0108a6f599128f5e56f8e8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0ea11f4_9b029e12",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 5463,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2018-09-26T19:05:51Z",
+      "side": 1,
+      "message": "Done\nThank you for catching the bug.",
+      "parentUuid": "6c98faec_340a9948",
+      "range": {
+        "startLine": 5463,
+        "startChar": 32,
+        "endLine": 5463,
+        "endChar": 43
+      },
+      "revId": "1a75c7df35354507fe0108a6f599128f5e56f8e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
