@@ -4890,7 +4890,6 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     x->sb_use_mv_part = 0;
     x->sb_mvcol_part = 0;
     x->sb_mvrow_part = 0;
-    x->sb_pickmode_part = 0;
     x->arf_frame_usage = 0;
     x->lastgolden_frame_usage = 0;
 
@@ -4939,7 +4938,6 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
         break;
       default:
         assert(partition_search_type == REFERENCE_PARTITION);
-        x->sb_pickmode_part = 1;
         set_offsets(cpi, tile_info, x, mi_row, mi_col, BLOCK_64X64);
         // Use nonrd_pick_partition on scene-cut for VBR mode.
         // nonrd_pick_partition does not support 4x4 partition, so avoid it
