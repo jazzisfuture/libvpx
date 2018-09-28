@@ -22,6 +22,30 @@
       "revId": "12d6c66f500141343a736d85c7224db5ebf0730e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c9418e0_13a52029",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2095,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2018-09-28T01:41:57Z",
+      "side": 1,
+      "message": "Does assign value count?\nthissme \u003d vp9_diamond_search_sad_new(x, \u0026cpi-\u003ess_cfg, mvp_full, \u0026temp_mv,\n                                           step_param + n, lambda, \u0026num00,\n                                           fn_ptr, nb_full_mvs);",
+      "parentUuid": "000167ac_45459384",
+      "range": {
+        "startLine": 2095,
+        "startChar": 2,
+        "endLine": 2095,
+        "endChar": 27
+      },
+      "revId": "12d6c66f500141343a736d85c7224db5ebf0730e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
