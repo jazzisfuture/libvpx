@@ -22,6 +22,30 @@
       "revId": "89c4ba1c77869eff129b4663b38a0e959572dc74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dba312ec_c0979fc1",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2563,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2018-09-28T16:07:25Z",
+      "side": 0,
+      "message": "This cl should fix the mess-up for oxcf-\u003eenable_auto_alt \u003d 1, 2, 3+ cases.\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/1251861",
+      "parentUuid": "392a9ca4_c92d961c",
+      "range": {
+        "startLine": 2563,
+        "startChar": 28,
+        "endLine": 2563,
+        "endChar": 42
+      },
+      "revId": "89c4ba1c77869eff129b4663b38a0e959572dc74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
