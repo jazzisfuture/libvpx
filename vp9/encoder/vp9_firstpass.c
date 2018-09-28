@@ -2560,7 +2560,8 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // Adapt the intra_error factor to active_max_gf_interval limit.
   for (i = active_max_gf_interval; i > 0; i >>= 1) ++gop_intra_factor;
 
-  gop_intra_factor = VPXMIN(MAX_ARF_LAYERS, gop_intra_factor);
+  // The gop_intra_factor is linear to the maximally allowed layer depth.
+  gop_intra_factor = VPXMIN(oxcf->enable_auto_arf, gop_intra_factor);
 
   i = 0;
   while (i < rc->static_scene_max_gf_interval && i < rc->frames_to_key) {
