@@ -3442,6 +3442,128 @@ int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row, int mi_col,
   return dr;
 }
 
+static void get_estimated_pred(VP9_COMP *cpi, const TileInfo *const tile,
+                               MACROBLOCK *x, int mi_row, int mi_col,
+                               BLOCK_SIZE bsize, uint8_t *pred_buf) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *xd = &x->e_mbd;
+  MODE_INFO *mi = xd->mi[0];
+
+  mi->ref_frame[1] = NONE;
+  mi->sb_type = bsize;
+  {
+    const MV_REFERENCE_FRAME ref =
+        cpi->rc.is_src_frame_alt_ref ? ALTREF_FRAME : LAST_FRAME;
+    YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref);
+    MV ref_mv = { 0, 0 };
+    MV ref_mv_full = { 0, 0 };
+    const int step_param = 1;
+    const MvLimits tmp_mv_limits = x->mv_limits;
+    const SEARCH_METHODS search_method = NSTEP;
+    const int sadpb = x->sadperbit16;
+    MV best_mv = { 0 , 0 };
+    int cost_list[5];
+    const int do_sub_pel_search = 0;
+
+    assert(yv12 != NULL);
+    vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
+                         &cm->frame_refs[ref - 1].sf);
+    mi->ref_frame[0] = ref;
+    vp9_set_mv_search_range(&x->mv_limits, &ref_mv);
+    vp9_full_pixel_search(cpi, x, bsize, &ref_mv_full, step_param,
+                          search_method, sadpb, cond_cost_list(cpi, cost_list),
+                          &ref_mv, &best_mv, 0, 0);
+
+    if (do_sub_pel_search) {
+      uint32_t distortion;
+      uint32_t sse;
+      const int subpel_search_level = 0;
+      // Ignore mv costing by sending NULL pointer instead of cost array
+      cpi->find_fractional_mv_step(
+          x, &best_mv, &ref_mv, cpi->common.allow_high_precision_mv, x->errorperbit,
+          &cpi->fn_ptr[bsize], 0, subpel_search_level,
+          cond_cost_list(cpi, cost_list), NULL, NULL, &distortion, &sse, NULL, 0,
+          0);
+    } else {
+      best_mv.row *= 8;
+      best_mv.col *= 8;
+    }
+
+    x->mv_limits = tmp_mv_limits;
+    mi->mv[0].as_mv = best_mv;
+  }
+
+#if 0
+  {
+    unsigned int best_sad = UINT_MAX;
+    int best_me = INT_MAX;
+    int best_ref = LAST_FRAME;
+    MV best_mv = { 0 , 0 };
+    const MV ref_mv = { 0, 0 };
+    int ref;
+    int this_me;
+    MV this_mv;
+    for (ref = LAST_FRAME; ref <= LAST_FRAME; ++ref) {
+      YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref);
+      if (!yv12) continue;
+      //printf("begin %d, bsize %d, %lld\n", ref, bsize, yv12);
+      vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
+                           &cm->frame_refs[ref - 1].sf);
+      mi->ref_frame[0] = ref;
+      {
+        MV_SPEED_FEATURES *const mv_sf = &cpi->sf.mv;
+        const SEARCH_METHODS search_method = NSTEP;
+        int step_param;
+        int sadpb = x->sadperbit16;
+        uint32_t distortion;
+        uint32_t sse;
+        int cost_list[5];
+        const MvLimits tmp_mv_limits = x->mv_limits;
+
+        MV ref_mv = { 0, 0 };
+        MV ref_mv_full = { 0, 0 };
+
+        //step_param = mv_sf->reduce_first_step_size;
+        //step_param = VPXMIN(step_param, MAX_MVSEARCH_STEPS - 2);
+        step_param = 1;
+
+        vp9_set_mv_search_range(&x->mv_limits, &ref_mv);
+
+        vp9_full_pixel_search(cpi, x, bsize, &ref_mv_full, step_param,
+                              search_method, sadpb, cond_cost_list(cpi, cost_list),
+                              &ref_mv, &this_mv, 0, 0);
+
+        /* restore UMV window */
+        x->mv_limits = tmp_mv_limits;
+
+#if 1
+        // Ignore mv costing by sending NULL pointer instead of cost array
+        this_me = cpi->find_fractional_mv_step(
+            x, &this_mv, &ref_mv, cpi->common.allow_high_precision_mv, x->errorperbit,
+            &cpi->fn_ptr[bsize], 0, mv_sf->subpel_search_level,
+            cond_cost_list(cpi, cost_list), NULL, NULL, &distortion, &sse, NULL, 0,
+            0);
+#endif
+      }
+      if (this_me < best_me) {
+        best_me = this_me;
+        best_ref = ref;
+        best_mv = this_mv;
+      }
+      //printf("done %d\n", ref);
+    }
+
+    mi->ref_frame[0] = best_ref;
+    mi->mv[0].as_mv = best_mv;
+  }
+#endif
+
+  set_ref_ptrs(cm, xd, mi->ref_frame[0], mi->ref_frame[1]);
+  xd->plane[0].dst.buf = pred_buf;
+  xd->plane[0].dst.stride = 64;
+  vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+}
+
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
 // unlikely to be selected depending on previous rate-distortion optimization
 // results, for encoding speed-up.
@@ -3496,6 +3618,12 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // Ref frames picked in the [i_th] quarter subblock during square partition
   // RD search. It may be used to prune ref frame selection of rect partitions.
   uint8_t ref_frames_used[4] = { 0, 0, 0, 0 };
+
+  uint8_t pred_buf[64 * 64];
+  int dump_data = !frame_is_intra_only(cm) && bsize >= BLOCK_8X8 &&
+      mi_row + num_8x8_blocks_high_lookup[bsize] <= cm->mi_rows &&
+      mi_col + num_8x8_blocks_wide_lookup[bsize] <= cm->mi_cols;
+  int binary_part_label = 0;
 
   (void)*tp_orig;
 
@@ -3624,6 +3752,30 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   pc_tree->partitioning = PARTITION_NONE;
 
+#if 1
+  if (dump_data) {
+    get_estimated_pred(cpi, tile_info, x, mi_row, mi_col, bsize, pred_buf);
+
+#if 0
+    if (bsize < BLOCK_32X32) {
+      const int bs = 4 * num_4x4_blocks_wide_lookup[bsize];
+      const uint8_t *s = x->plane[0].src.buf;
+      const int sp = x->plane[0].src.stride;
+      const uint8_t *d = pred_buf;
+      const int dp = 64;
+      int r, c;
+      for (r = 0; r < bs; ++r) {
+        for (c = 0; c < bs; ++c) {
+          printf("%3d ", s[r * sp + c] - d[r * dp + c]);
+        }
+        printf("\n");
+      }
+    }
+#endif
+
+  }
+#endif
+
   // PARTITION_NONE
   if (partition_none_allowed) {
     rd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &this_rdc, bsize, ctx,
@@ -3650,6 +3802,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         best_rdc = this_rdc;
         if (bsize >= BLOCK_8X8) pc_tree->partitioning = PARTITION_NONE;
 
+#if 0
         if (cpi->sf.ml_partition_search_early_termination) {
           // Currently, the machine-learning based partition search early
           // termination is only used while bsize is 16x16, 32x32 or 64x64,
@@ -3688,6 +3841,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
             }
           }
         }
+#endif
 
 #if CONFIG_FP_MB_STATS
         // Check if every 16x16 first pass block statistics has zero
@@ -3850,6 +4004,8 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
   }
 
+  binary_part_label = pc_tree->partitioning;
+
   pc_tree->horizontal[0].skip_ref_frame_mask = 0;
   pc_tree->horizontal[1].skip_ref_frame_mask = 0;
   pc_tree->vertical[0].skip_ref_frame_mask = 0;
@@ -3975,6 +4131,71 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     }
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
   }
+
+#if 1
+  if (!partition_none_allowed || !do_split) dump_data = 0;
+  do {
+    FILE *fp;
+    const int bs = 4 * num_4x4_blocks_wide_lookup[bsize];
+
+    if (!dump_data) break;
+
+    fp = fopen("vp9_var_rd_partition_data.txt", "a");
+    if (!fp) break;
+
+    // best partition, binary_part_label, bsize, quantizer(2),
+    fprintf(fp, "%d,%d,%d,%d,%d,",
+            pc_tree->partitioning,
+            binary_part_label,
+            bs,
+            vp9_dc_quant(cm->base_qindex, 0, cm->bit_depth),
+            vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth));
+
+    vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
+    {
+      const BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_SPLIT);
+      const int bs = 4 * num_4x4_blocks_wide_lookup[bsize];
+      const uint8_t *pred = pred_buf;
+      const uint8_t *src = x->plane[0].src.buf;
+      const int src_stride = x->plane[0].src.stride;
+      const int pred_stride = 64;
+      unsigned int sse;
+      unsigned int var;
+      int i;
+
+#if 0
+          {
+            int r, c;
+            fprintf(fp, "\n");
+            for (r = 0; r < bs; ++r) {
+              for (c = 0; c < bs; ++c) {
+                fprintf(fp, "%3d ",
+                       src[r * src_stride + c] - pred[r * pred_stride + c]);
+              }
+              fprintf(fp, "\n");
+            }
+            fprintf(fp, "\n");
+          }
+#endif
+
+      var = cpi->fn_ptr[bsize].vf(src, src_stride, pred, pred_stride, &sse);
+      fprintf(fp, "%d,", VPXMIN(var, INT_MAX));
+      for (i = 0; i < 4; ++i) {
+        const int x_idx = (i & 1) * bs / 2;
+        const int y_idx = (i >> 1) * bs / 2;
+        const int src_offset = y_idx * src_stride + x_idx;
+        const int pred_offset = y_idx * pred_stride + x_idx;
+        var =
+            cpi->fn_ptr[subsize].vf(src + src_offset, src_stride,
+                                    pred + pred_offset, pred_stride, &sse);
+        fprintf(fp, "%d,", VPXMIN(var, INT_MAX));
+      }
+
+      fprintf(fp, "\n");
+      fclose(fp);
+    }
+  } while (0);
+#endif
 
   // TODO(jbb): This code added so that we avoid static analysis
   // warning related to the fact that best_rd isn't used after this
