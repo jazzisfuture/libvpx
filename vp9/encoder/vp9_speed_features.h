@@ -515,6 +515,9 @@ typedef struct SPEED_FEATURES {
   // Machine-learning based partition search early termination
   int ml_partition_search_early_termination;
 
+  // Machine-learning based partition search pruning using prediction variance.
+  int ml_var_partition_pruning;
+
   // Allow skipping partition search for still image frame
   int allow_partition_search_skip;
 
