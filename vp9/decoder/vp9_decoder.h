@@ -21,10 +21,23 @@
 #include "vp9/common/vp9_thread_common.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_ppflags.h"
+#include "./vp9_job_queue.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define EOBS_PER_SB_LOG2 8
+#define DQCOEFFS_PER_SB_LOG2 12
+#define PARTITIONS_PER_SB 85
+
+typedef enum _job_type { PARSE_JOB, RECON_JOB, LPF_JOB } job_type;
+
+typedef struct ThreadData {
+  struct VP9Decoder *pbi;
+  LFWorkerData *lf_data;
+  VP9LfSync *lf_sync;
+} ThreadData;
 
 typedef struct TileBuffer {
   const uint8_t *data;
@@ -44,6 +57,34 @@ typedef struct TileWorkerData {
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
   struct vpx_internal_error_info error_info;
 } TileWorkerData;
+
+typedef struct RowMtHandle {
+  int num_sbs;
+  int *eob[MAX_MB_PLANE];
+  PARTITION_TYPE *partition;
+  tran_low_t *dqcoeff[MAX_MB_PLANE];
+  int8_t *recon_map;
+  const uint8_t *data_end;
+  uint8_t *jobq_buf;
+  jobq_t jobq;
+  int jobq_size;
+  int64_t num_tiles_done;
+#if CONFIG_MULTITHREAD
+  pthread_mutex_t recon_mutex;
+  pthread_mutex_t map_mutex;
+#endif
+  ThreadData *thread_data;
+} RowMtHandle;
+
+/* Structure to queue and dequeue row decode jobs */
+typedef struct Job {
+  /* The row which has to be processed */
+  int row_num;
+  /* The tile column number to which the row belongs to */
+  int tile_col;
+  /* Flag to indicate type of job (parse/recon/lpf) */
+  job_type job_type;
+} Job;
 
 typedef struct VP9Decoder {
   DECLARE_ALIGNED(16, MACROBLOCKD, mb);
@@ -77,6 +118,7 @@ typedef struct VP9Decoder {
 
   int row_mt;
   int lpf_mt_opt;
+  RowMtHandle *row_mt_handle;
 } VP9Decoder;
 
 int vp9_receive_compressed_data(struct VP9Decoder *pbi, size_t size,
@@ -113,6 +155,10 @@ vpx_codec_err_t vp9_parse_superframe_index(const uint8_t *data, size_t data_sz,
 struct VP9Decoder *vp9_decoder_create(BufferPool *const pool);
 
 void vp9_decoder_remove(struct VP9Decoder *pbi);
+
+int vp9_dec_alloc_row_mt_mem(RowMtHandle *row_mt_handle, VP9_COMMON *cm,
+                             int num_sbs);
+void vp9_dec_free_row_mt_mem(RowMtHandle *row_mt_handle);
 
 static INLINE void decrease_ref_count(int idx, RefCntBuffer *const frame_bufs,
                                       BufferPool *const pool) {
