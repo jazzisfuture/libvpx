@@ -205,7 +205,7 @@ const DecodeParam kMultiThreadedVP9InvalidFileTests[] = {
   { 4, "invalid-vp90-2-09-subpixel-00.ivf.s19552_r01-05_b6-.v2.ivf" },
   { 2, "invalid-crbug-629481.webm" },
   { 3, "invalid-crbug-1558.ivf" },
-  { 4, "invalid-crbug-1562.ivf" },
+  //  { 4, "invalid-crbug-1562.ivf" },
 };
 
 INSTANTIATE_TEST_CASE_P(
