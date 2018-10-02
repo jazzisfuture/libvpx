@@ -236,7 +236,8 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
         x, &tmp_mv->as_mv, &ref_mv, cpi->common.allow_high_precision_mv,
         x->errorperbit, &cpi->fn_ptr[bsize], subpel_force_stop,
         cpi->sf.mv.subpel_iters_per_step, cond_cost_list(cpi, cost_list),
-        x->nmvjointcost, x->mvcost, &dis, &x->pred_sse[ref], NULL, 0, 0);
+        x->nmvjointcost, x->mvcost, &dis, &x->pred_sse[ref], NULL, 0, 0,
+        0);  // cpi->sf.precise_subpel_search);
     *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv, x->nmvjointcost,
                                x->mvcost, MV_COST_WEIGHT);
   }
@@ -1946,7 +1947,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
             &cpi->fn_ptr[bsize], cpi->sf.mv.subpel_force_stop,
             cpi->sf.mv.subpel_iters_per_step, cond_cost_list(cpi, cost_list),
             x->nmvjointcost, x->mvcost, &dis, &x->pred_sse[ref_frame], NULL, 0,
-            0);
+            0, 0);  // cpi->sf.precise_subpel_search);
       } else if (svc->use_base_mv && svc->spatial_layer_id) {
         if (frame_mv[NEWMV][ref_frame].as_int != INVALID_MV) {
           const int pre_stride = xd->plane[0].pre[0].stride;
@@ -2677,7 +2678,8 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x, int mi_row,
                 &cpi->fn_ptr[bsize], cpi->sf.mv.subpel_force_stop,
                 cpi->sf.mv.subpel_iters_per_step,
                 cond_cost_list(cpi, cost_list), x->nmvjointcost, x->mvcost,
-                &dummy_dist, &x->pred_sse[ref_frame], NULL, 0, 0);
+                &dummy_dist, &x->pred_sse[ref_frame], NULL, 0, 0,
+                0);  // cpi->sf.precise_subpel_search);
 
             xd->mi[0]->bmi[i].as_mv[0].as_mv = tmp_mv;
           } else {
