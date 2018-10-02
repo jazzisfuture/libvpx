@@ -78,13 +78,16 @@ static double similarity(uint32_t sum_s, uint32_t sum_r, uint32_t sum_sq_s,
   if (bd == 8) {
     // scale the constants by number of pixels
     c1 = (cc1 * count * count) >> 12;
-    c2 = (cc2 * count * count) >> 12;
+    // The unbiased estimate of cross correlation and variance is averaged
+    // over (count - 1). It is then scaled up by a factor of (count). Hence
+    // c2 should be scaled by (count - 1) * count.
+    c2 = (cc2 * count * (count - 1)) >> 12;
   } else if (bd == 10) {
     c1 = (cc1_10 * count * count) >> 12;
-    c2 = (cc2_10 * count * count) >> 12;
+    c2 = (cc2_10 * count * (count - 1)) >> 12;
   } else if (bd == 12) {
     c1 = (cc1_12 * count * count) >> 12;
-    c2 = (cc2_12 * count * count) >> 12;
+    c2 = (cc2_12 * count * (count - 1)) >> 12;
   } else {
     c1 = c2 = 0;
     assert(0);
