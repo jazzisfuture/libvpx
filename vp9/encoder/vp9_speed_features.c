@@ -275,6 +275,7 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
             good_quality_mesh_patterns[mesh_density_level][i].interval;
       }
     }
+    sf->precise_subpel_search = 0;
   }
 
   if (speed >= 3) {
@@ -864,6 +865,7 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   sf->limit_newmv_early_exit = 0;
   sf->bias_golden = 0;
   sf->base_mv_aggressive = 0;
+  sf->precise_subpel_search = 1;
 
   // Some speed-up features even for best quality as minimal impact on quality.
   sf->adaptive_rd_thresh = 1;

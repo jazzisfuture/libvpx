@@ -2426,6 +2426,17 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
 
   vp9_loop_filter_init(cm);
 
+// Set up the scaling factor used during motion search.
+#if CONFIG_VP9_HIGHBITDEPTH
+  vp9_setup_scale_factors_for_frame(&cpi->me_sf, cm->width, cm->height,
+                                    cm->width, cm->height,
+                                    cm->use_highbitdepth);
+#else
+  vp9_setup_scale_factors_for_frame(&cpi->me_sf, cm->width, cm->height,
+                                    cm->width, cm->height);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  cpi->td.mb.me_sf = &cpi->me_sf;
+
   cm->error.setjmp = 0;
 
   return cpi;
@@ -5395,8 +5406,8 @@ uint32_t motion_compensated_prediction(VP9_COMP *cpi, ThreadData *td,
   bestsme = cpi->find_fractional_mv_step(
       x, mv, &best_ref_mv1, cpi->common.allow_high_precision_mv, x->errorperbit,
       &cpi->fn_ptr[BLOCK_8X8], 0, mv_sf->subpel_iters_per_step,
-      cond_cost_list(cpi, cost_list), NULL, NULL, &distortion, &sse, NULL, 0,
-      0);
+      cond_cost_list(cpi, cost_list), NULL, NULL, &distortion, &sse, NULL, 0, 0,
+      0);  // cpi->sf.precise_subpel_search);
 
   return bestsme;
 }
