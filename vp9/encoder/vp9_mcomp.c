@@ -388,14 +388,13 @@ static void get_cost_surf_min(int *cost_list, int *ir, int *ic, int bits) {
   *ir = (int)divide_and_round(x1 * b, y1);
 }
 
-uint32_t vp9_skip_sub_pixel_tree(const MACROBLOCK *x, MV *bestmv,
-                                 const MV *ref_mv, int allow_hp,
-                                 int error_per_bit,
-                                 const vp9_variance_fn_ptr_t *vfp,
-                                 int forced_stop, int iters_per_step,
-                                 int *cost_list, int *mvjcost, int *mvcost[2],
-                                 uint32_t *distortion, uint32_t *sse1,
-                                 const uint8_t *second_pred, int w, int h) {
+uint32_t vp9_skip_sub_pixel_tree(
+    const MACROBLOCK *x, MV *bestmv, const MV *ref_mv, int allow_hp,
+    int error_per_bit, const vp9_variance_fn_ptr_t *vfp, int forced_stop,
+    int iters_per_step, int *cost_list, int *mvjcost, int *mvcost[2],
+    uint32_t *distortion, uint32_t *sse1, const uint8_t *second_pred, int w,
+    int h, int precise_subpel_search) {
+  (void)precise_subpel_search;
   SETUP_SUBPEL_SEARCH;
   besterr = setup_center_error(xd, bestmv, ref_mv, error_per_bit, vfp, z,
                                src_stride, y, y_stride, second_pred, w, h,
@@ -427,7 +426,8 @@ uint32_t vp9_find_best_sub_pixel_tree_pruned_evenmore(
     int error_per_bit, const vp9_variance_fn_ptr_t *vfp, int forced_stop,
     int iters_per_step, int *cost_list, int *mvjcost, int *mvcost[2],
     uint32_t *distortion, uint32_t *sse1, const uint8_t *second_pred, int w,
-    int h) {
+    int h, int precise_subpel_search) {
+  (void)precise_subpel_search;
   SETUP_SUBPEL_SEARCH;
   besterr = setup_center_error(xd, bestmv, ref_mv, error_per_bit, vfp, z,
                                src_stride, y, y_stride, second_pred, w, h,
@@ -492,7 +492,8 @@ uint32_t vp9_find_best_sub_pixel_tree_pruned_more(
     int error_per_bit, const vp9_variance_fn_ptr_t *vfp, int forced_stop,
     int iters_per_step, int *cost_list, int *mvjcost, int *mvcost[2],
     uint32_t *distortion, uint32_t *sse1, const uint8_t *second_pred, int w,
-    int h) {
+    int h, int precise_subpel_search) {
+  (void)precise_subpel_search;
   SETUP_SUBPEL_SEARCH;
   besterr = setup_center_error(xd, bestmv, ref_mv, error_per_bit, vfp, z,
                                src_stride, y, y_stride, second_pred, w, h,
@@ -552,7 +553,8 @@ uint32_t vp9_find_best_sub_pixel_tree_pruned(
     int error_per_bit, const vp9_variance_fn_ptr_t *vfp, int forced_stop,
     int iters_per_step, int *cost_list, int *mvjcost, int *mvcost[2],
     uint32_t *distortion, uint32_t *sse1, const uint8_t *second_pred, int w,
-    int h) {
+    int h, int precise_subpel_search) {
+  (void)precise_subpel_search;
   SETUP_SUBPEL_SEARCH;
   besterr = setup_center_error(xd, bestmv, ref_mv, error_per_bit, vfp, z,
                                src_stride, y, y_stride, second_pred, w, h,
@@ -638,12 +640,35 @@ static const MV search_step_table[12] = {
 };
 /* clang-format on */
 
+static int precise_sub_pel_search(
+    const MV *this_mv, const struct scale_factors *sf,
+    const InterpKernel *kernel, const vp9_variance_fn_ptr_t *vfp,
+    const uint8_t *const src_address, const int src_stride,
+    const uint8_t *const pre_address, int y_stride, const uint8_t *second_pred,
+    int w, int h, uint32_t *sse) {
+  DECLARE_ALIGNED(16, uint8_t, pred[64 * 64]);
+  uint8_t *p = pred;
+  vp9_build_inter_predictor(pre_address, y_stride, pred, w, this_mv, sf, w, h,
+                            0, kernel, MV_PRECISION_Q3, 0, 0);
+  if (second_pred != NULL) {
+    int i, j;
+    for (i = 0; i < h; i++) {
+      for (j = 0; j < w; j++) {
+        p[j] = ROUND_POWER_OF_TWO(p[j] + second_pred[j], 1);
+      }
+      p += w;
+      second_pred += w;
+    }
+  }
+  return vfp->vf(pred, w, src_address, src_stride, sse);
+}
+
 uint32_t vp9_find_best_sub_pixel_tree(
     const MACROBLOCK *x, MV *bestmv, const MV *ref_mv, int allow_hp,
     int error_per_bit, const vp9_variance_fn_ptr_t *vfp, int forced_stop,
     int iters_per_step, int *cost_list, int *mvjcost, int *mvcost[2],
     uint32_t *distortion, uint32_t *sse1, const uint8_t *second_pred, int w,
-    int h) {
+    int h, int precise_subpel_search) {
   const uint8_t *const z = x->plane[0].src.buf;
   const uint8_t *const src_address = z;
   const int src_stride = x->plane[0].src.stride;
@@ -670,6 +695,7 @@ uint32_t vp9_find_best_sub_pixel_tree(
   unsigned int cost_array[5];
   int kr, kc;
   MvLimits subpel_mv_limits;
+  const InterpKernel *kernel = vp9_filter_kernels[EIGHTTAP];
 
   vp9_set_subpel_mv_search_range(&subpel_mv_limits, &x->mv_limits, ref_mv);
   minc = subpel_mv_limits.col_min;
@@ -699,12 +725,20 @@ uint32_t vp9_find_best_sub_pixel_tree(
         MV this_mv;
         this_mv.row = tr;
         this_mv.col = tc;
-        if (second_pred == NULL)
-          thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr), src_address,
-                             src_stride, &sse);
-        else
-          thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr),
-                              src_address, src_stride, &sse, second_pred);
+
+        if (precise_subpel_search) {
+          thismse = precise_sub_pel_search(&this_mv, x->me_sf, kernel, vfp,
+                                           src_address, src_stride, pre_address,
+                                           y_stride, second_pred, w, h, &sse);
+        } else {
+          if (second_pred == NULL)
+            thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr),
+                               src_address, src_stride, &sse);
+          else
+            thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr),
+                                src_address, src_stride, &sse, second_pred);
+        }
+
         cost_array[idx] = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost,
                                                 mvcost, error_per_bit);
 
@@ -728,12 +762,20 @@ uint32_t vp9_find_best_sub_pixel_tree(
     if (tc >= minc && tc <= maxc && tr >= minr && tr <= maxr) {
       const uint8_t *const pre_address = y + (tr >> 3) * y_stride + (tc >> 3);
       MV this_mv = { tr, tc };
-      if (second_pred == NULL)
-        thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr), src_address,
-                           src_stride, &sse);
-      else
-        thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr), src_address,
-                            src_stride, &sse, second_pred);
+
+      if (precise_subpel_search) {
+        thismse = precise_sub_pel_search(&this_mv, x->me_sf, kernel, vfp,
+                                         src_address, src_stride, pre_address,
+                                         y_stride, second_pred, w, h, &sse);
+      } else {
+        if (second_pred == NULL)
+          thismse = vfp->svf(pre_address, y_stride, sp(tc), sp(tr), src_address,
+                             src_stride, &sse);
+        else
+          thismse = vfp->svaf(pre_address, y_stride, sp(tc), sp(tr),
+                              src_address, src_stride, &sse, second_pred);
+      }
+
       cost_array[4] = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost,
                                             error_per_bit);
 
@@ -2293,7 +2335,8 @@ uint32_t vp9_return_max_sub_pixel_mv(
     int error_per_bit, const vp9_variance_fn_ptr_t *vfp, int forced_stop,
     int iters_per_step, int *cost_list, int *mvjcost, int *mvcost[2],
     uint32_t *distortion, uint32_t *sse1, const uint8_t *second_pred, int w,
-    int h) {
+    int h, int precise_subpel_search) {
+  (void)precise_subpel_search;
   COMMON_MV_TEST;
 
   (void)minr;
@@ -2315,7 +2358,8 @@ uint32_t vp9_return_min_sub_pixel_mv(
     int error_per_bit, const vp9_variance_fn_ptr_t *vfp, int forced_stop,
     int iters_per_step, int *cost_list, int *mvjcost, int *mvcost[2],
     uint32_t *distortion, uint32_t *sse1, const uint8_t *second_pred, int w,
-    int h) {
+    int h, int precise_subpel_search) {
+  (void)precise_subpel_search;
   COMMON_MV_TEST;
 
   (void)maxr;

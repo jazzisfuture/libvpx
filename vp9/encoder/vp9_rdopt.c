@@ -1826,7 +1826,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
           x, &tmp_mv, &ref_mv[id].as_mv, cpi->common.allow_high_precision_mv,
           x->errorperbit, &cpi->fn_ptr[bsize], 0,
           cpi->sf.mv.subpel_iters_per_step, NULL, x->nmvjointcost, x->mvcost,
-          &dis, &sse, second_pred, pw, ph);
+          &dis, &sse, second_pred, pw, ph, cpi->sf.precise_subpel_search);
     }
 
     // Restore the pointer to the first (possibly scaled) prediction buffer.
@@ -2013,7 +2013,8 @@ static int64_t rd_pick_best_sub8x8_mode(
                 x->errorperbit, &cpi->fn_ptr[bsize], sf->mv.subpel_force_stop,
                 sf->mv.subpel_iters_per_step, cond_cost_list(cpi, cost_list),
                 x->nmvjointcost, x->mvcost, &distortion,
-                &x->pred_sse[mi->ref_frame[0]], NULL, 0, 0);
+                &x->pred_sse[mi->ref_frame[0]], NULL, 0, 0,
+                cpi->sf.precise_subpel_search);
 
             // save motion search result for use in compound prediction
             seg_mvs[i][mi->ref_frame[0]].as_mv = *new_mv;
@@ -2417,7 +2418,8 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
         x, &tmp_mv->as_mv, &ref_mv, cm->allow_high_precision_mv, x->errorperbit,
         &cpi->fn_ptr[bsize], cpi->sf.mv.subpel_force_stop,
         cpi->sf.mv.subpel_iters_per_step, cond_cost_list(cpi, cost_list),
-        x->nmvjointcost, x->mvcost, &dis, &x->pred_sse[ref], NULL, 0, 0);
+        x->nmvjointcost, x->mvcost, &dis, &x->pred_sse[ref], NULL, 0, 0,
+        cpi->sf.precise_subpel_search);
   }
   *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv, x->nmvjointcost,
                              x->mvcost, MV_COST_WEIGHT);
