@@ -221,13 +221,13 @@ static double similarity(uint32_t sum_s, uint32_t sum_r, uint32_t sum_sq_s,
   if (bd == 8) {
     // scale the constants by number of pixels
     c1 = (cc1 * count * count) >> 12;
-    c2 = (cc2 * count * count) >> 12;
+    c2 = (cc2 * count * (count - 1)) >> 12;
   } else if (bd == 10) {
     c1 = (cc1_10 * count * count) >> 12;
-    c2 = (cc2_10 * count * count) >> 12;
+    c2 = (cc2_10 * count * (count - 1)) >> 12;
   } else if (bd == 12) {
     c1 = (cc1_12 * count * count) >> 12;
-    c2 = (cc2_12 * count * count) >> 12;
+    c2 = (cc2_12 * count * (count - 1)) >> 12;
   } else {
     assert(0);
   }
@@ -617,7 +617,7 @@ int main(int argc, char *argv[]) {
   }
   if (bit_depth == 10) peak = 1023.0;
 
-  if (bit_depth == 12) peak = 4095;
+  if (bit_depth == 12) peak = 4095.0;
 
   if (open_input_file(argv[2], &in[1], w, h, bit_depth) < 0) {
     fprintf(stderr, "File %s can't be opened or parsed!\n", argv[2]);
