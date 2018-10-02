@@ -544,6 +544,11 @@ typedef struct SPEED_FEATURES {
 
   // Allow for disabling golden reference.
   int disable_golden_ref;
+
+  // Allow to use 8-tap interpolation filter in sub-pixel search instead of
+  // bilinear filter. This is only implemented in
+  // vp9_find_best_sub_pixel_tree().
+  int precise_subpel_search;
 } SPEED_FEATURES;
 
 struct VP9_COMP;

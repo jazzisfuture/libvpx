@@ -52,7 +52,7 @@ void vp9_build_inter_predictor(const uint8_t *src, int src_stride, uint8_t *dst,
   const int subpel_x = mv.col & SUBPEL_MASK;
   const int subpel_y = mv.row & SUBPEL_MASK;
 
-  src += (mv.row >> SUBPEL_BITS) * src_stride + (mv.col >> SUBPEL_BITS);
+  src +=(mv.row >> SUBPEL_BITS) * src_stride + (mv.col >> SUBPEL_BITS);
 
   inter_predictor(src, src_stride, dst, dst_stride, subpel_x, subpel_y, sf, w,
                   h, ref, kernel, sf->x_step_q4, sf->y_step_q4);
