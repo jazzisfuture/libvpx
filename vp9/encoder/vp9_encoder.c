@@ -2995,10 +2995,11 @@ void update_ref_frames(VP9_COMP *cpi) {
 
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
+  //
   if (cm->frame_type == KEY_FRAME) {
-    ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->gld_fb_idx],
+    ref_cnt_fb(&pool->frame_bufs[0], &cm->ref_frame_map[cpi->gld_fb_idx],
                cm->new_fb_idx);
-    ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->alt_fb_idx],
+    ref_cnt_fb(&pool->frame_bufs[0], &cm->ref_frame_map[cpi->alt_fb_idx],
                cm->new_fb_idx);
   } else if (vp9_preserve_existing_gf(cpi)) {
     // We have decided to preserve the previously existing golden frame as our
@@ -3011,7 +3012,7 @@ void update_ref_frames(VP9_COMP *cpi) {
     // slot and, if we're updating the GF, the current frame becomes the new GF.
     int tmp;
 
-    ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->alt_fb_idx],
+    ref_cnt_fb(&pool->frame_bufs[0], &cm->ref_frame_map[cpi->alt_fb_idx],
                cm->new_fb_idx);
 
     tmp = cpi->alt_fb_idx;
@@ -3028,7 +3029,8 @@ void update_ref_frames(VP9_COMP *cpi) {
 
       assert(arf_idx < REF_FRAMES);
 
-      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
+      ref_cnt_fb(&pool->frame_bufs[0], &cm->ref_frame_map[arf_idx],
+                 cm->new_fb_idx);
       memcpy(cpi->interp_filter_selected[ALTREF_FRAME],
              cpi->interp_filter_selected[0],
              sizeof(cpi->interp_filter_selected[0]));
@@ -3037,7 +3039,7 @@ void update_ref_frames(VP9_COMP *cpi) {
     }
 
     if (cpi->refresh_golden_frame) {
-      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->gld_fb_idx],
+      ref_cnt_fb(&pool->frame_bufs[0], &cm->ref_frame_map[cpi->gld_fb_idx],
                  cm->new_fb_idx);
       if (!cpi->rc.is_src_frame_alt_ref)
         memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
@@ -3051,7 +3053,7 @@ void update_ref_frames(VP9_COMP *cpi) {
   }
 
   if (cpi->refresh_last_frame) {
-    ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->lst_fb_idx],
+    ref_cnt_fb(&pool->frame_bufs[0], &cm->ref_frame_map[cpi->lst_fb_idx],
                cm->new_fb_idx);
     if (!cpi->rc.is_src_frame_alt_ref)
       memcpy(cpi->interp_filter_selected[LAST_FRAME],
