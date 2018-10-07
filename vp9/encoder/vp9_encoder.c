@@ -2995,6 +2995,7 @@ void update_ref_frames(VP9_COMP *cpi) {
 
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
+  //
   if (cm->frame_type == KEY_FRAME) {
     ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->gld_fb_idx],
                cm->new_fb_idx);
