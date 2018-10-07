@@ -3217,8 +3217,8 @@ void vp9_scale_references(VP9_COMP *cpi) {
         if (cpi->oxcf.pass == 0 && !cpi->use_svc) {
           // Check for release of scaled reference.
           buf_idx = cpi->scaled_ref_idx[ref_frame - 1];
-          buf = (buf_idx != INVALID_IDX) ? &pool->frame_bufs[buf_idx] : NULL;
-          if (buf != NULL) {
+          if (buf_idx != INVALID_IDX) {
+            buf = &pool->frame_bufs[buf_idx];
             --buf->ref_count;
             cpi->scaled_ref_idx[ref_frame - 1] = INVALID_IDX;
           }
@@ -3249,22 +3249,21 @@ static void release_scaled_references(VP9_COMP *cpi) {
     refresh[2] = (cpi->refresh_alt_ref_frame) ? 1 : 0;
     for (i = LAST_FRAME; i <= ALTREF_FRAME; ++i) {
       const int idx = cpi->scaled_ref_idx[i - 1];
-      RefCntBuffer *const buf =
-          idx != INVALID_IDX ? &cm->buffer_pool->frame_bufs[idx] : NULL;
-      const YV12_BUFFER_CONFIG *const ref = get_ref_frame_buffer(cpi, i);
-      if (buf != NULL &&
-          (refresh[i - 1] || (buf->buf.y_crop_width == ref->y_crop_width &&
-                              buf->buf.y_crop_height == ref->y_crop_height))) {
-        --buf->ref_count;
-        cpi->scaled_ref_idx[i - 1] = INVALID_IDX;
+      if (idx != INVALID_IDX) {
+        RefCntBuffer *const buf = &cm->buffer_pool->frame_bufs[idx];
+        const YV12_BUFFER_CONFIG *const ref = get_ref_frame_buffer(cpi, i);
+        if (refresh[i - 1] || (buf->buf.y_crop_width == ref->y_crop_width &&
+                               buf->buf.y_crop_height == ref->y_crop_height)) {
+          --buf->ref_count;
+          cpi->scaled_ref_idx[i - 1] = INVALID_IDX;
+        }
       }
     }
   } else {
-    for (i = 0; i < MAX_REF_FRAMES; ++i) {
+    for (i = 0; i < REFS_PER_FRAME; ++i) {
       const int idx = cpi->scaled_ref_idx[i];
-      RefCntBuffer *const buf =
-          idx != INVALID_IDX ? &cm->buffer_pool->frame_bufs[idx] : NULL;
-      if (buf != NULL) {
+      if (idx != INVALID_IDX) {
+        RefCntBuffer *const buf = &cm->buffer_pool->frame_bufs[idx];
         --buf->ref_count;
         cpi->scaled_ref_idx[i] = INVALID_IDX;
       }
@@ -4910,6 +4909,8 @@ static void init_ref_frame_bufs(VP9_COMMON *cm) {
   cm->new_fb_idx = INVALID_IDX;
   for (i = 0; i < REF_FRAMES; ++i) {
     cm->ref_frame_map[i] = INVALID_IDX;
+  }
+  for (i = 0; i < FRAME_BUFFERS; ++i) {
     pool->frame_bufs[i].ref_count = 0;
   }
 }
@@ -6340,7 +6341,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     level_rc_framerate(cpi, arf_src_index);
 
   if (cpi->oxcf.pass != 0 || cpi->use_svc || frame_is_intra_only(cm) == 1) {
-    for (i = 0; i < MAX_REF_FRAMES; ++i) cpi->scaled_ref_idx[i] = INVALID_IDX;
+    for (i = 0; i < REFS_PER_FRAME; ++i) cpi->scaled_ref_idx[i] = INVALID_IDX;
   }
 
   if (arf_src_index && cpi->sf.enable_tpl_model) {
