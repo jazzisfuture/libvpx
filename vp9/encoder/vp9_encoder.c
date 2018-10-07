@@ -2990,7 +2990,7 @@ void update_ref_frames(VP9_COMP *cpi) {
     cpi->lst_fb_idx = cpi->alt_fb_idx;
     cpi->alt_fb_idx =
         stack_pop(gf_group->arf_index_stack, gf_group->stack_size);
-    --gf_group->stack_size;
+    gf_group->stack_size--;
   }
 
   // At this point the new frame has been encoded.
