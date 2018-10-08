@@ -47,6 +47,8 @@ static vpx_codec_err_t decoder_init(vpx_codec_ctx_t *ctx,
     ctx->priv->init_flags = ctx->init_flags;
     priv->si.sz = sizeof(priv->si);
     priv->flushed = 0;
+    // turn on lpf mt optimization by default
+    priv->lpf_opt = 1;
     if (ctx->config.dec) {
       priv->cfg = *ctx->config.dec;
       ctx->config.dec = &priv->cfg;
