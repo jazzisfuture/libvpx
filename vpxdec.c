@@ -529,7 +529,7 @@ static int main_loop(int argc, const char **argv_) {
   int ec_enabled = 0;
   int keep_going = 0;
   int enable_row_mt = 0;
-  int enable_lpf_opt = 0;
+  int enable_lpf_opt = 1;
   const VpxInterface *interface = NULL;
   const VpxInterface *fourcc_interface = NULL;
   uint64_t dx_time = 0;
