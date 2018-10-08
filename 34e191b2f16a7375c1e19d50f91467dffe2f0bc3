@@ -34,6 +34,24 @@
       "revId": "34e191b2f16a7375c1e19d50f91467dffe2f0bc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1e5abb11_c96d4499",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-10-08T20:51:24Z",
+      "side": 1,
+      "message": "Thanks for the suggestion. Adding an assert is also suggested by this Chromium page:\n\nhttps://chromium.googlesource.com/chromium/src/+/lkgr/docs/clang_static_analyzer.md\n\nBut it does not make sense for the warning in the ref_cnt_fb() function, which I reproduced here:\n\nstatic INLINE void ref_cnt_fb(RefCntBuffer *bufs, int *idx, int new_idx) {\n  const int ref_index \u003d *idx;\n\n  if (ref_index \u003e\u003d 0 \u0026\u0026 bufs[ref_index].ref_count \u003e 0)\n    bufs[ref_index].ref_count--;\n\n  *idx \u003d new_idx;\n\n  bufs[new_idx].ref_count++;\n}\n\nThe function first dereferences idx and then bufs. But scan-build does not warn about the dereferencing of idx. (I would have added asserts if scan-build had warned about both idx and bufs.) This told me something else is going on. Eventually I found the best hint in the clang scan-build FAQ:\n\nhttps://clang-analyzer.llvm.org/faq.html#null_pointer\n\nIt says \"The reason the analyzer often thinks that a pointer can be null is because the preceding code checked compared it against null.\" That prompted me to look for null checks for pool-\u003eframe_bufs in vp9_encoder.c.\n\nBased on this experience, I now think adding an assert to the function in question is the wrong way to fix the null pointer dereferencing warning. Instead, we should follow clang analyzer team\u0027s official recommendation and look for the null pointer checks that mislead scan-build. But it is time consuming to do that ...",
+      "parentUuid": "7dfd6983_577895fe",
+      "revId": "34e191b2f16a7375c1e19d50f91467dffe2f0bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
