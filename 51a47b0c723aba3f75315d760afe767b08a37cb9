@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e2315458_5327060d",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4915,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-10-08T17:11:19Z",
+      "side": 1,
+      "message": "I assume we want to initialize the ref_count of all frame buffers to 0.\n\nI already fixed this in libaom:\nhttps://aomedia-review.googlesource.com/c/aom/+/72302",
+      "revId": "51a47b0c723aba3f75315d760afe767b08a37cb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
