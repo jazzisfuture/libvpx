@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "60982150_9dbe68ca",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-10-08T16:53:36Z",
+      "side": 1,
+      "message": "An example of this scan-build warning is in patch set 1 of https://chromium-review.googlesource.com/c/webm/libvpx/+/1267475. Although I think it is a false positive (pool-\u003eframe_bufs is declared as an array, so it cannot possibly be a null pointer), it is a good idea to make our code easier to understand for static analyzers.",
+      "revId": "34e191b2f16a7375c1e19d50f91467dffe2f0bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
