@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ebb792d_303bfbb9",
+        "filename": "vpx/vp8dx.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-08T21:30:45Z",
+      "side": 1,
+      "message": "can you add a bit more detail as to what optimization this controls in the body of this comment?",
+      "revId": "2259931f4176aaef98570d6b06beb2fd1465c502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0109dcbc_958d7c4f",
+        "filename": "vpx/vp8dx.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-08T21:30:45Z",
+      "side": 1,
+      "message": "this can be expanded to LOOP_FILTER to match VP9_SET_SKIP_LOOP_FILTER",
+      "range": {
+        "startLine": 141,
+        "startChar": 11,
+        "endLine": 141,
+        "endChar": 14
+      },
+      "revId": "2259931f4176aaef98570d6b06beb2fd1465c502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
