@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8f921721_3a62f7d3",
+        "filename": "vp9/common/vp9_onyxc_int.h",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-10-08T21:03:54Z",
+      "side": 1,
+      "message": "REFS_PER_FRAME is defined as 3 here. The corresponding macro in libaom is named INTER_REFS_PER_FRAME.",
+      "revId": "9addd7499cc06bac2c04f1aa2bd287a1ee1b67f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c07741a4_04f7f5b0",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 9
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-10-08T21:03:54Z",
+      "side": 1,
+      "message": "MAX_REF_FRAMES is 4 (defined in vp9/common/vp9_blockd.h). REFS_PER_FRAME is 3.",
+      "revId": "9addd7499cc06bac2c04f1aa2bd287a1ee1b67f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
