@@ -495,6 +495,14 @@ typedef struct ARNRFilterData {
   struct scale_factors sf;
 } ARNRFilterData;
 
+#if CONFIG_NON_GREEDY_MV
+typedef struct FEATURE_SCORE_LOC {
+  double feature_score;
+  int mi_row;
+  int mi_col;
+} FEATURE_SCORE_LOC;
+#endif
+
 typedef struct VP9_COMP {
   QUANTS quants;
   ThreadData td;
@@ -519,6 +527,9 @@ typedef struct VP9_COMP {
   YV12_BUFFER_CONFIG *raw_source_frame;
 
   TplDepFrame tpl_stats[MAX_LAG_BUFFERS];
+#if CONFIG_NON_GREEDY_MV
+  FEATURE_SCORE_LOC *feature_score_loc_arr;
+#endif
   YV12_BUFFER_CONFIG *tpl_recon_frames[REFS_PER_FRAME + 1];
 
   TileDataEnc *tile_data;
