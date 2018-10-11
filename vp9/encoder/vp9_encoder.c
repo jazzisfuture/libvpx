@@ -2359,10 +2359,15 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   vp9_set_speed_features_framesize_dependent(cpi);
 
   if (cpi->sf.enable_tpl_model) {
-    for (frame = 0; frame < MAX_LAG_BUFFERS; ++frame) {
-      int mi_cols = mi_cols_aligned_to_sb(cm->mi_cols);
-      int mi_rows = mi_cols_aligned_to_sb(cm->mi_rows);
+    const int mi_cols = mi_cols_aligned_to_sb(cm->mi_cols);
+    const int mi_rows = mi_cols_aligned_to_sb(cm->mi_rows);
 
+#if CONFIG_NON_GREEDY_MV
+    CHECK_MEM_ERROR(
+        cm, cpi->feature_score_loc_arr,
+        vpx_calloc(mi_rows * mi_cols, sizeof(*cpi->feature_score_loc_arr)));
+#endif
+    for (frame = 0; frame < MAX_LAG_BUFFERS; ++frame) {
       CHECK_MEM_ERROR(cm, cpi->tpl_stats[frame].tpl_stats_ptr,
                       vpx_calloc(mi_rows * mi_cols,
                                  sizeof(*cpi->tpl_stats[frame].tpl_stats_ptr)));
@@ -2561,6 +2566,9 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
   vp9_denoiser_free(&(cpi->denoiser));
 #endif
 
+#if CONFIG_NON_GREEDY_MV
+  vpx_free(cpi->feature_score_loc_arr);
+#endif
   for (frame = 0; frame < MAX_LAG_BUFFERS; ++frame) {
     vpx_free(cpi->tpl_stats[frame].tpl_stats_ptr);
     cpi->tpl_stats[frame].is_valid = 0;
@@ -5898,6 +5906,20 @@ void mode_estimation(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
   tpl_stats->mv.as_int = best_mv.as_int;
 }
 
+#if CONFIG_NON_GREEDY_MV
+int compare_feature_score(const void *a, const void *b) {
+  const FEATURE_SCORE_LOC *aa = (const FEATURE_SCORE_LOC *)a;
+  const FEATURE_SCORE_LOC *bb = (const FEATURE_SCORE_LOC *)b;
+  if (aa->feature_score < bb->feature_score) {
+    return 1;
+  } else if (aa->feature_score > bb->feature_score) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+#endif
+
 void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx,
                        BLOCK_SIZE bsize) {
   TplDepFrame *tpl_frame = &cpi->tpl_stats[frame_idx];
@@ -5930,6 +5952,8 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx,
   int64_t recon_error, sse;
 #if CONFIG_NON_GREEDY_MV
   int rf_idx;
+  int fs_loc_arr_size;
+  int i;
 #endif
 
   // Setup scaling factor
@@ -5975,6 +5999,7 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx,
 #if CONFIG_NON_GREEDY_MV
   tpl_frame->lambda = 250;
 
+  fs_loc_arr_size = 0;
   for (mi_row = 0; mi_row < cm->mi_rows; mi_row += mi_height) {
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col += mi_width) {
       const int mb_y_offset =
@@ -5983,37 +6008,46 @@ void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture, int frame_idx,
       const int bh = 4 << b_height_log2_lookup[bsize];
       TplDepStats *tpl_stats =
           &tpl_frame->tpl_stats_ptr[mi_row * tpl_frame->stride + mi_col];
+      FEATURE_SCORE_LOC *fs_loc = &cpi->feature_score_loc_arr[fs_loc_arr_size];
       tpl_stats->feature_score = get_feature_score(
           xd->cur_buf->y_buffer + mb_y_offset, xd->cur_buf->y_stride, bw, bh);
+      fs_loc->feature_score = tpl_stats->feature_score;
+      fs_loc->mi_row = mi_row;
+      fs_loc->mi_col = mi_col;
+      ++fs_loc_arr_size;
     }
   }
+
+  qsort(cpi->feature_score_loc_arr, fs_loc_arr_size,
+        sizeof(*cpi->feature_score_loc_arr), compare_feature_score);
 
   for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
     tpl_frame->mv_dist_sum[rf_idx] = 0;
     tpl_frame->mv_cost_sum[rf_idx] = 0;
   }
 
-  for (mi_row = 0; mi_row < cm->mi_rows; mi_row += mi_height) {
-    for (mi_col = 0; mi_col < cm->mi_cols; mi_col += mi_width) {
-      const int mb_y_offset =
-          mi_row * MI_SIZE * xd->cur_buf->y_stride + mi_col * MI_SIZE;
-      TplDepStats *tpl_stats =
-          &tpl_frame->tpl_stats_ptr[mi_row * tpl_frame->stride + mi_col];
+  for (i = 0; i < fs_loc_arr_size; ++i) {
+    int mb_y_offset;
+    TplDepStats *tpl_stats;
+    mi_row = cpi->feature_score_loc_arr[i].mi_row;
+    mi_col = cpi->feature_score_loc_arr[i].mi_col;
 
-      set_mv_limits(cm, x, mi_row, mi_col);
+    mb_y_offset = mi_row * MI_SIZE * xd->cur_buf->y_stride + mi_col * MI_SIZE;
+    tpl_stats = &tpl_frame->tpl_stats_ptr[mi_row * tpl_frame->stride + mi_col];
 
-      for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
-        if (ref_frame[rf_idx] == NULL) {
-          tpl_stats->ready[rf_idx] = 0;
-          continue;
-        } else {
-          tpl_stats->ready[rf_idx] = 1;
-        }
-        motion_compensated_prediction(
-            cpi, td, frame_idx, xd->cur_buf->y_buffer + mb_y_offset,
-            ref_frame[rf_idx]->y_buffer + mb_y_offset, xd->cur_buf->y_stride,
-            bsize, mi_row, mi_col, tpl_stats, rf_idx);
+    set_mv_limits(cm, x, mi_row, mi_col);
+
+    for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
+      if (ref_frame[rf_idx] == NULL) {
+        tpl_stats->ready[rf_idx] = 0;
+        continue;
+      } else {
+        tpl_stats->ready[rf_idx] = 1;
       }
+      motion_compensated_prediction(
+          cpi, td, frame_idx, xd->cur_buf->y_buffer + mb_y_offset,
+          ref_frame[rf_idx]->y_buffer + mb_y_offset, xd->cur_buf->y_stride,
+          bsize, mi_row, mi_col, tpl_stats, rf_idx);
     }
   }
 
