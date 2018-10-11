@@ -5361,12 +5361,14 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
   int pframe_qindex = cpi->tpl_stats[2].base_qindex;
 
   RefCntBuffer *frame_bufs = cm->buffer_pool->frame_bufs;
-  int recon_frame_index[REFS_PER_FRAME + 1] = { -1, -1, -1, -1 };
+  uint8_t recon_frame_index[REFS_PER_FRAME + MAX_ARF_LAYERS];
+
+  memset(recon_frame_index, -1, sizeof(recon_frame_index));
 
   // TODO(jingning): To be used later for gf frame type parsing.
   (void)gf_group;
 
-  for (i = 0; i < FRAME_BUFFERS && frame_idx < REFS_PER_FRAME + 1; ++i) {
+  for (i = 0; i < FRAME_BUFFERS; ++i) {
     if (frame_bufs[i].ref_count == 0) {
       alloc_frame_mvs(cm, i);
       if (vpx_realloc_frame_buffer(&frame_bufs[i].buf, cm->width, cm->height,
@@ -5381,6 +5383,8 @@ void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
 
       recon_frame_index[frame_idx] = i;
       ++frame_idx;
+
+      if (frame_idx < REFS_PER_FRAME + cpi->oxcf.enable_auto_arf) break;
     }
   }
 
@@ -6142,7 +6146,7 @@ static void dump_tpl_stats(const VP9_COMP *cpi, int tpl_group_frames,
 #endif  // CONFIG_NON_GREEDY_MV
 
 static void setup_tpl_stats(VP9_COMP *cpi) {
-  GF_PICTURE gf_picture[MAX_LAG_BUFFERS];
+  GF_PICTURE gf_picture[MAX_STATIC_GF_GROUP_LENGTH + 2];
   const GF_GROUP *gf_group = &cpi->twopass.gf_group;
   int tpl_group_frames = 0;
   int frame_idx;

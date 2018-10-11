@@ -518,7 +518,7 @@ typedef struct VP9_COMP {
 #endif
   YV12_BUFFER_CONFIG *raw_source_frame;
 
-  TplDepFrame tpl_stats[MAX_LAG_BUFFERS];
+  TplDepFrame tpl_stats[MAX_STATIC_GF_GROUP_LENGTH + 2];
   YV12_BUFFER_CONFIG *tpl_recon_frames[REFS_PER_FRAME + 1];
 
   TileDataEnc *tile_data;
