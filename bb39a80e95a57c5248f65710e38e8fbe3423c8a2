@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb5a4692_1d426abf",
+        "filename": "vp9/encoder/vp9_temporal_filter.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1000893
+      },
+      "writtenOn": "2018-10-12T21:38:45Z",
+      "side": 1,
+      "message": "qq, is there any need to align these?",
+      "range": {
+        "startLine": 124,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 30
+      },
+      "revId": "bb39a80e95a57c5248f65710e38e8fbe3423c8a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f144c8da_69f82153",
+        "filename": "vp9/encoder/vp9_temporal_filter.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1000893
+      },
+      "writtenOn": "2018-10-12T21:38:45Z",
+      "side": 1,
+      "message": "const?",
+      "range": {
+        "startLine": 139,
+        "startChar": 6,
+        "endLine": 139,
+        "endChar": 14
+      },
+      "revId": "bb39a80e95a57c5248f65710e38e8fbe3423c8a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dab10bef_f490bcb4",
+        "filename": "vp9/encoder/vp9_temporal_filter.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1000893
+      },
+      "writtenOn": "2018-10-12T21:38:45Z",
+      "side": 1,
+      "message": "not sure if it would be clearer if we use two const variables here: \nconst int diffu \u003d ..\nconst int diffv \u003d ..",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 152,
+        "endChar": 12
+      },
+      "revId": "bb39a80e95a57c5248f65710e38e8fbe3423c8a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
