@@ -318,7 +318,7 @@ void vp9_temporal_filter_apply_c(const uint8_t *frame1, unsigned int stride,
   }
 }
 
-#if CONFIG_VP9_HIGHBITDEPTH
+#if 1 || CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_temporal_filter_apply_c(
     const uint8_t *frame1_8, unsigned int stride, const uint8_t *frame2_8,
     unsigned int block_width, unsigned int block_height, int strength,
@@ -330,10 +330,21 @@ void vp9_highbd_temporal_filter_apply_c(
   int byte = 0;
   const int rounding = strength > 0 ? 1 << (strength - 1) : 0;
 
+  int diff_sse[256] = { 0 };
+  int this_idx = 0;
+
+  for (i = 0; i < block_height; i++) {
+    for (j = 0; j < block_width; j++, k++) {
+      const int diff = frame1[byte + i * (int)stride + j] -
+                       frame2[i * (int)block_width + j];
+      diff_sse[this_idx++] = diff * diff;
+    }
+  }
+
+  modifier = 0;
   for (i = 0, k = 0; i < block_height; i++) {
     for (j = 0; j < block_width; j++, k++) {
       int pixel_value = *frame2;
-      int diff_sse[9] = { 0 };
       int idx, idy, index = 0;
 
       for (idy = -1; idy <= 1; ++idy) {
@@ -343,17 +354,12 @@ void vp9_highbd_temporal_filter_apply_c(
 
           if (row >= 0 && row < (int)block_height && col >= 0 &&
               col < (int)block_width) {
-            int diff = frame1[byte + idy * (int)stride + idx] -
-                       frame2[idy * (int)block_width + idx];
-            diff_sse[index] = diff * diff;
+            modifier +=  diff_sse[idy * (int)block_width + idx];
             ++index;
           }
         }
       }
       assert(index > 0);
-
-      modifier = 0;
-      for (idx = 0; idx < 9; ++idx) modifier += diff_sse[idx];
 
       modifier *= 3;
       modifier /= index;
