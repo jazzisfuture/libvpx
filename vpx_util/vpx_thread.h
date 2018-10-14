@@ -219,6 +219,9 @@ static INLINE int pthread_cond_wait(pthread_cond_t *const condition,
 #include <stdlib.h>       // NOLINT
 #include <sys/builtin.h>  // NOLINT
 
+// _beginthread() is not declared on __STRICT_ANSI__ mode. Declare here.
+int _beginthread(void (*)(void *), void *, unsigned, void *);
+
 #define pthread_t TID
 #define pthread_mutex_t HMTX
 
