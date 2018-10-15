@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5dcbc740_1ec7358e",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 5365,
+      "author": {
+        "id": 1000893
+      },
+      "writtenOn": "2018-10-15T16:47:47Z",
+      "side": 1,
+      "message": "do you mean int8_t here? since you initialized them to -1 instead of 255.",
+      "range": {
+        "startLine": 5365,
+        "startChar": 2,
+        "endLine": 5365,
+        "endChar": 9
+      },
+      "revId": "2e7faef02b3357ae316cfcbac0b2cb1bb51b3f9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
