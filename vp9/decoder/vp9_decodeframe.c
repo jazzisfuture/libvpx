@@ -330,13 +330,13 @@ static void parse_intra_block_row_mt(TileWorkerData *twd, MODE_INFO *const mi,
                                      int plane, int row, int col,
                                      TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &twd->xd;
-  struct macroblockd_plane *const pd = &xd->plane[plane];
   PREDICTION_MODE mode = (plane == 0) ? mi->mode : mi->uv_mode;
 
   if (mi->sb_type < BLOCK_8X8)
     if (plane == 0) mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
 
   if (!mi->skip) {
+    struct macroblockd_plane *const pd = &xd->plane[plane];
     const TX_TYPE tx_type =
         (plane || xd->lossless) ? DCT_DCT : intra_mode_to_tx_type_lookup[mode];
     const scan_order *sc = (plane || xd->lossless)
@@ -358,8 +358,7 @@ static void predict_and_reconstruct_intra_block_row_mt(TileWorkerData *twd,
   MACROBLOCKD *const xd = &twd->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   PREDICTION_MODE mode = (plane == 0) ? mi->mode : mi->uv_mode;
-  uint8_t *dst;
-  dst = &pd->dst.buf[4 * row * pd->dst.stride + 4 * col];
+  uint8_t *dst = &pd->dst.buf[4 * row * pd->dst.stride + 4 * col];
 
   if (mi->sb_type < BLOCK_8X8)
     if (plane == 0) mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
@@ -403,11 +402,10 @@ static int parse_inter_block_row_mt(TileWorkerData *twd, MODE_INFO *const mi,
   MACROBLOCKD *const xd = &twd->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const scan_order *sc = &vp9_default_scan_orders[tx_size];
-  int eob;
-  *pd->eob = vp9_decode_block_tokens(twd, plane, sc, col, row, tx_size,
-                                     mi->segment_id);
+  const int eob = vp9_decode_block_tokens(twd, plane, sc, col, row, tx_size,
+                                          mi->segment_id);
 
-  eob = *pd->eob;
+  *pd->eob = eob;
   pd->dqcoeff += (16 << (tx_size << 1));
   pd->eob++;
 
@@ -419,15 +417,14 @@ static int reconstruct_inter_block_row_mt(TileWorkerData *twd,
                                           int row, int col, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &twd->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  int eob;
+  const int eob = *pd->eob;
 
   (void)mi;
-  if (*pd->eob > 0) {
+  if (eob > 0) {
     inverse_transform_block_inter(
         xd, plane, tx_size, &pd->dst.buf[4 * row * pd->dst.stride + 4 * col],
-        pd->dst.stride, *pd->eob);
+        pd->dst.stride, eob);
   }
-  eob = *pd->eob;
   pd->dqcoeff += (16 << (tx_size << 1));
   pd->eob++;
 
