@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9ed1746_cda72a79",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2363,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-10-15T21:55:57Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 2362,
+        "startChar": 4,
+        "endLine": 2363,
+        "endChar": 53
+      },
+      "revId": "630603adca1870a9045153bc06011a6beaa4d6da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
