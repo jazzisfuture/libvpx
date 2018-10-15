@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8f2bf5e1_1eba1786",
+        "filename": "vpx_util/vpx_thread.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-15T14:30:22Z",
+      "side": 1,
+      "message": "Should this be guarded by\n#if defined(__STRICT_ANSI__)?",
+      "range": {
+        "startLine": 222,
+        "startChar": 37,
+        "endLine": 222,
+        "endChar": 52
+      },
+      "revId": "67c5fd3e35eed5cb0f6caf1ecde0f908b3b2f008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
