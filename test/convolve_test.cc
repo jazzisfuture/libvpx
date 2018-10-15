@@ -789,7 +789,11 @@ TEST_P(ConvolveTest, Copy2D) {
   }
 }
 
+#if HAVE_MSA
+const int kNumFilterBanks = 4;
+#else
 const int kNumFilterBanks = 5;
+#endif
 const int kNumFilters = 16;
 
 TEST(ConvolveTest, FiltersWontSaturateWhenAddedPairwise) {
