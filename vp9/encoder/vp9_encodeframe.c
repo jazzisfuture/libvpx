@@ -3214,14 +3214,29 @@ static int ml_predict_breakout(const VP9_COMP *const cpi, BLOCK_SIZE bsize,
   if (!linear_weights) return 0;
 
   {  // Generate feature values.
+#if CONFIG_VP9_HIGHBITDEPTH
+    const int ac_q =
+        vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth) >> (x->e_mbd.bd - 8);
+#else
     const int ac_q = vp9_ac_quant(qindex, 0, cm->bit_depth);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
     const int num_pels_log2 = num_pels_log2_lookup[bsize];
     int feature_index = 0;
     unsigned int var, sse;
     float rate_f, dist_f;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (x->e_mbd.cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      var =
+          vp9_high_get_sby_variance(cpi, &x->plane[0].src, bsize, x->e_mbd.bd);
+    } else {
+      var = cpi->fn_ptr[bsize].vf(x->plane[0].src.buf, x->plane[0].src.stride,
+                                  vp9_64_zeros, 0, &sse);
+    }
+#else
     var = cpi->fn_ptr[bsize].vf(x->plane[0].src.buf, x->plane[0].src.stride,
                                 vp9_64_zeros, 0, &sse);
+#endif
     var = var >> num_pels_log2;
 
     vpx_clear_system_state();
@@ -3822,13 +3837,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         }
 
         if ((do_split || do_rect) && !x->e_mbd.lossless && ctx->skippable) {
-          int use_ml_based_breakout =
+          const int use_ml_based_breakout =
               cpi->sf.use_ml_partition_search_breakout &&
               cm->base_qindex >= 100;
-#if CONFIG_VP9_HIGHBITDEPTH
-          if (x->e_mbd.cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
-            use_ml_based_breakout = 0;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
           if (use_ml_based_breakout) {
             if (ml_predict_breakout(cpi, bsize, x, &this_rdc)) {
               do_split = 0;
