@@ -65,6 +65,67 @@ typedef void filter8_1dfunction(const uint8_t *src_ptr, ptrdiff_t src_pitch,
     }                                                                        \
   }
 
+// TODO (chiyotsai): use 4-tap version of the function when w < 16
+#define FUN_CONV_1D_4TAP(name, offset, step_q4, dir, src_start, avg, opt)    \
+  void vpx_convolve8_##name##_##opt(                                         \
+      const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,                \
+      ptrdiff_t dst_stride, const InterpKernel *filter_kernel, int x0_q4,    \
+      int x_step_q4, int y0_q4, int y_step_q4, int w, int h) {               \
+    const int16_t *filter = filter_kernel[offset];                           \
+    (void)x0_q4;                                                             \
+    (void)x_step_q4;                                                         \
+    (void)y0_q4;                                                             \
+    (void)y_step_q4;                                                         \
+    assert(filter[3] != 128);                                                \
+    assert(step_q4 == 16);                                                   \
+    if (filter[0] | filter[1]) {                                             \
+      while (w >= 16) {                                                      \
+        vpx_filter_block1d16_##dir##8_##avg##opt(src_start, src_stride, dst, \
+                                                 dst_stride, h, filter);     \
+        src += 16;                                                           \
+        dst += 16;                                                           \
+        w -= 16;                                                             \
+      }                                                                      \
+      if (w == 8) {                                                          \
+        vpx_filter_block1d8_##dir##8_##avg##opt(src_start, src_stride, dst,  \
+                                                dst_stride, h, filter);      \
+      } else if (w == 4) {                                                   \
+        vpx_filter_block1d4_##dir##8_##avg##opt(src_start, src_stride, dst,  \
+                                                dst_stride, h, filter);      \
+      }                                                                      \
+    } else if (filter[2]) {                                                 \
+      while (w >= 16) {                                                      \
+        vpx_filter_block1d16_##dir##4_##avg##opt(src_start, src_stride, dst, \
+                                                 dst_stride, h, filter);     \
+        src += 16;                                                           \
+        dst += 16;                                                           \
+        w -= 16;                                                             \
+      }                                                                      \
+      if (w == 8) {                                                          \
+        vpx_filter_block1d8_##dir##8_##avg##opt(src_start, src_stride, dst,  \
+                                                dst_stride, h, filter);      \
+      } else if (w == 4) {                                                   \
+        vpx_filter_block1d4_##dir##8_##avg##opt(src_start, src_stride, dst,  \
+                                                dst_stride, h, filter);      \
+      }                                                                      \
+    }else {                                                                  \
+      while (w >= 16) {                                                      \
+        vpx_filter_block1d16_##dir##2_##avg##opt(src, src_stride, dst,       \
+                                                 dst_stride, h, filter);     \
+        src += 16;                                                           \
+        dst += 16;                                                           \
+        w -= 16;                                                             \
+      }                                                                      \
+      if (w == 8) {                                                          \
+        vpx_filter_block1d8_##dir##2_##avg##opt(src, src_stride, dst,        \
+                                                dst_stride, h, filter);      \
+      } else if (w == 4) {                                                   \
+        vpx_filter_block1d4_##dir##2_##avg##opt(src, src_stride, dst,        \
+                                                dst_stride, h, filter);      \
+      }                                                                      \
+    }                                                                        \
+  }
+
 #define FUN_CONV_2D(avg, opt)                                                  \
   void vpx_convolve8_##avg##opt(                                               \
       const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,                  \

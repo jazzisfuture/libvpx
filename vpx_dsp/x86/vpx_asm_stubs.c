@@ -26,6 +26,9 @@ filter8_1dfunction vpx_filter_block1d8_h8_avg_sse2;
 filter8_1dfunction vpx_filter_block1d4_v8_avg_sse2;
 filter8_1dfunction vpx_filter_block1d4_h8_avg_sse2;
 
+filter8_1dfunction vpx_filter_block1d16_h4_sse2;
+filter8_1dfunction vpx_filter_block1d16_v4_sse2;
+
 filter8_1dfunction vpx_filter_block1d16_v2_sse2;
 filter8_1dfunction vpx_filter_block1d16_h2_sse2;
 filter8_1dfunction vpx_filter_block1d8_v2_sse2;
@@ -59,8 +62,8 @@ filter8_1dfunction vpx_filter_block1d4_h2_avg_sse2;
 //                                  const InterpKernel *filter, int x0_q4,
 //                                  int32_t x_step_q4, int y0_q4, int y_step_q4,
 //                                  int w, int h);
-FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , sse2);
-FUN_CONV_1D(vert, y0_q4, y_step_q4, v, src - src_stride * 3, , sse2);
+FUN_CONV_1D_4TAP(horiz, x0_q4, x_step_q4, h, src, , sse2);
+FUN_CONV_1D_4TAP(vert, y0_q4, y_step_q4, v, src - src_stride * 3, , sse2);
 FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, sse2);
 FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v, src - src_stride * 3, avg_, sse2);
 
