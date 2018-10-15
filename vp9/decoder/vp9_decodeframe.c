@@ -46,6 +46,12 @@
 
 #define MAX_VP9_HEADER_SIZE 80
 
+typedef int (*predict_recon_func)(TileWorkerData *twd, MODE_INFO *const mi,
+                                  int plane, int row, int col, TX_SIZE tx_size);
+
+typedef void (*intra_recon_func)(TileWorkerData *twd, MODE_INFO *const mi,
+                                 int plane, int row, int col, TX_SIZE tx_size);
+
 static int read_is_valid(const uint8_t *start, size_t len, const uint8_t *end) {
   return len != 0 && len <= (size_t)(end - start);
 }
@@ -330,13 +336,13 @@ static void parse_intra_block_row_mt(TileWorkerData *twd, MODE_INFO *const mi,
                                      int plane, int row, int col,
                                      TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &twd->xd;
-  struct macroblockd_plane *const pd = &xd->plane[plane];
   PREDICTION_MODE mode = (plane == 0) ? mi->mode : mi->uv_mode;
 
   if (mi->sb_type < BLOCK_8X8)
     if (plane == 0) mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
 
   if (!mi->skip) {
+    struct macroblockd_plane *const pd = &xd->plane[plane];
     const TX_TYPE tx_type =
         (plane || xd->lossless) ? DCT_DCT : intra_mode_to_tx_type_lookup[mode];
     const scan_order *sc = (plane || xd->lossless)
@@ -358,8 +364,7 @@ static void predict_and_reconstruct_intra_block_row_mt(TileWorkerData *twd,
   MACROBLOCKD *const xd = &twd->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   PREDICTION_MODE mode = (plane == 0) ? mi->mode : mi->uv_mode;
-  uint8_t *dst;
-  dst = &pd->dst.buf[4 * row * pd->dst.stride + 4 * col];
+  uint8_t *dst = &pd->dst.buf[4 * row * pd->dst.stride + 4 * col];
 
   if (mi->sb_type < BLOCK_8X8)
     if (plane == 0) mode = xd->mi[0]->bmi[(row << 1) + col].as_mode;
@@ -403,11 +408,10 @@ static int parse_inter_block_row_mt(TileWorkerData *twd, MODE_INFO *const mi,
   MACROBLOCKD *const xd = &twd->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const scan_order *sc = &vp9_default_scan_orders[tx_size];
-  int eob;
-  *pd->eob = vp9_decode_block_tokens(twd, plane, sc, col, row, tx_size,
-                                     mi->segment_id);
+  const int eob = vp9_decode_block_tokens(twd, plane, sc, col, row, tx_size,
+                                          mi->segment_id);
 
-  eob = *pd->eob;
+  *pd->eob = eob;
   pd->dqcoeff += (16 << (tx_size << 1));
   pd->eob++;
 
@@ -419,15 +423,14 @@ static int reconstruct_inter_block_row_mt(TileWorkerData *twd,
                                           int row, int col, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &twd->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  int eob;
+  const int eob = *pd->eob;
 
   (void)mi;
-  if (*pd->eob > 0) {
+  if (eob > 0) {
     inverse_transform_block_inter(
         xd, plane, tx_size, &pd->dst.buf[4 * row * pd->dst.stride + 4 * col],
-        pd->dst.stride, *pd->eob);
+        pd->dst.stride, eob);
   }
-  eob = *pd->eob;
   pd->dqcoeff += (16 << (tx_size << 1));
   pd->eob++;
 
@@ -829,6 +832,66 @@ static MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   return xd->mi[0];
 }
 
+static INLINE int predict_recon_inter(MACROBLOCKD *xd, MODE_INFO *mi,
+                                      TileWorkerData *twd,
+                                      predict_recon_func func) {
+  int eobtotal = 0;
+  int plane;
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    const struct macroblockd_plane *const pd = &xd->plane[plane];
+    const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
+    const int num_4x4_w = pd->n4_w;
+    const int num_4x4_h = pd->n4_h;
+    const int step = (1 << tx_size);
+    int row, col;
+    const int max_blocks_wide =
+        num_4x4_w + (xd->mb_to_right_edge >= 0
+                         ? 0
+                         : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
+    const int max_blocks_high =
+        num_4x4_h + (xd->mb_to_bottom_edge >= 0
+                         ? 0
+                         : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
+
+    xd->max_blocks_wide = xd->mb_to_right_edge >= 0 ? 0 : max_blocks_wide;
+    xd->max_blocks_high = xd->mb_to_bottom_edge >= 0 ? 0 : max_blocks_high;
+
+    for (row = 0; row < max_blocks_high; row += step)
+      for (col = 0; col < max_blocks_wide; col += step)
+        eobtotal += func(twd, mi, plane, row, col, tx_size);
+  }
+  return eobtotal;
+}
+
+static INLINE void predict_recon_intra(MACROBLOCKD *xd, MODE_INFO *mi,
+                                       TileWorkerData *twd,
+                                       intra_recon_func func) {
+  int plane;
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    const struct macroblockd_plane *const pd = &xd->plane[plane];
+    const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
+    const int num_4x4_w = pd->n4_w;
+    const int num_4x4_h = pd->n4_h;
+    const int step = (1 << tx_size);
+    int row, col;
+    const int max_blocks_wide =
+        num_4x4_w + (xd->mb_to_right_edge >= 0
+                         ? 0
+                         : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
+    const int max_blocks_high =
+        num_4x4_h + (xd->mb_to_bottom_edge >= 0
+                         ? 0
+                         : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
+
+    xd->max_blocks_wide = xd->mb_to_right_edge >= 0 ? 0 : max_blocks_wide;
+    xd->max_blocks_high = xd->mb_to_bottom_edge >= 0 ? 0 : max_blocks_high;
+
+    for (row = 0; row < max_blocks_high; row += step)
+      for (col = 0; col < max_blocks_wide; col += step)
+        func(twd, mi, plane, row, col, tx_size);
+  }
+}
+
 static void decode_block(TileWorkerData *twd, VP9Decoder *const pbi, int mi_row,
                          int mi_col, BLOCK_SIZE bsize, int bwl, int bhl) {
   VP9_COMMON *const cm = &pbi->common;
@@ -947,63 +1010,15 @@ static void recon_block(TileWorkerData *twd, VP9Decoder *const pbi, int mi_row,
   }
 
   if (!is_inter_block(mi)) {
-    int plane;
-    for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-      const struct macroblockd_plane *const pd = &xd->plane[plane];
-      const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
-      const int num_4x4_w = pd->n4_w;
-      const int num_4x4_h = pd->n4_h;
-      const int step = (1 << tx_size);
-      int row, col;
-      const int max_blocks_wide =
-          num_4x4_w + (xd->mb_to_right_edge >= 0
-                           ? 0
-                           : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
-      const int max_blocks_high =
-          num_4x4_h + (xd->mb_to_bottom_edge >= 0
-                           ? 0
-                           : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
-
-      xd->max_blocks_wide = xd->mb_to_right_edge >= 0 ? 0 : max_blocks_wide;
-      xd->max_blocks_high = xd->mb_to_bottom_edge >= 0 ? 0 : max_blocks_high;
-
-      for (row = 0; row < max_blocks_high; row += step)
-        for (col = 0; col < max_blocks_wide; col += step)
-          predict_and_reconstruct_intra_block_row_mt(twd, mi, plane, row, col,
-                                                     tx_size);
-    }
+    predict_recon_intra(xd, mi, twd,
+                        predict_and_reconstruct_intra_block_row_mt);
   } else {
     // Prediction
     dec_build_inter_predictors_sb(pbi, xd, mi_row, mi_col);
 
     // Reconstruction
     if (!mi->skip) {
-      int plane;
-
-      for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-        const struct macroblockd_plane *const pd = &xd->plane[plane];
-        const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
-        const int num_4x4_w = pd->n4_w;
-        const int num_4x4_h = pd->n4_h;
-        const int step = (1 << tx_size);
-        int row, col;
-        const int max_blocks_wide =
-            num_4x4_w + (xd->mb_to_right_edge >= 0
-                             ? 0
-                             : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
-        const int max_blocks_high =
-            num_4x4_h +
-            (xd->mb_to_bottom_edge >= 0
-                 ? 0
-                 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
-
-        xd->max_blocks_wide = xd->mb_to_right_edge >= 0 ? 0 : max_blocks_wide;
-        xd->max_blocks_high = xd->mb_to_bottom_edge >= 0 ? 0 : max_blocks_high;
-
-        for (row = 0; row < max_blocks_high; row += step)
-          for (col = 0; col < max_blocks_wide; col += step)
-            reconstruct_inter_block_row_mt(twd, mi, plane, row, col, tx_size);
-      }
+      predict_recon_inter(xd, mi, twd, reconstruct_inter_block_row_mt);
     }
   }
 
@@ -1039,60 +1054,10 @@ static void parse_block(TileWorkerData *twd, VP9Decoder *const pbi, int mi_row,
   }
 
   if (!is_inter_block(mi)) {
-    int plane;
-    for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-      const struct macroblockd_plane *const pd = &xd->plane[plane];
-      const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
-      const int num_4x4_w = pd->n4_w;
-      const int num_4x4_h = pd->n4_h;
-      const int step = (1 << tx_size);
-      int row, col;
-      const int max_blocks_wide =
-          num_4x4_w + (xd->mb_to_right_edge >= 0
-                           ? 0
-                           : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
-      const int max_blocks_high =
-          num_4x4_h + (xd->mb_to_bottom_edge >= 0
-                           ? 0
-                           : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
-
-      xd->max_blocks_wide = xd->mb_to_right_edge >= 0 ? 0 : max_blocks_wide;
-      xd->max_blocks_high = xd->mb_to_bottom_edge >= 0 ? 0 : max_blocks_high;
-
-      for (row = 0; row < max_blocks_high; row += step)
-        for (col = 0; col < max_blocks_wide; col += step)
-          parse_intra_block_row_mt(twd, mi, plane, row, col, tx_size);
-    }
+      predict_recon_intra(xd, mi, twd, parse_intra_block_row_mt);
   } else {
     if (!mi->skip) {
-      int eobtotal = 0;
-      int plane;
-
-      for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-        const struct macroblockd_plane *const pd = &xd->plane[plane];
-        const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
-        const int num_4x4_w = pd->n4_w;
-        const int num_4x4_h = pd->n4_h;
-        const int step = (1 << tx_size);
-        int row, col;
-        const int max_blocks_wide =
-            num_4x4_w + (xd->mb_to_right_edge >= 0
-                             ? 0
-                             : xd->mb_to_right_edge >> (5 + pd->subsampling_x));
-        const int max_blocks_high =
-            num_4x4_h +
-            (xd->mb_to_bottom_edge >= 0
-                 ? 0
-                 : xd->mb_to_bottom_edge >> (5 + pd->subsampling_y));
-
-        xd->max_blocks_wide = xd->mb_to_right_edge >= 0 ? 0 : max_blocks_wide;
-        xd->max_blocks_high = xd->mb_to_bottom_edge >= 0 ? 0 : max_blocks_high;
-
-        for (row = 0; row < max_blocks_high; row += step)
-          for (col = 0; col < max_blocks_wide; col += step)
-            eobtotal +=
-                parse_inter_block_row_mt(twd, mi, plane, row, col, tx_size);
-      }
+      int eobtotal = predict_recon_inter(xd, mi, twd, parse_inter_block_row_mt);
 
       if (!less8x8 && eobtotal == 0) mi->skip = 1;  // skip loopfilter
     }
