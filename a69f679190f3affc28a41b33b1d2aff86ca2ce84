@@ -16,6 +16,24 @@
       "revId": "a69f679190f3affc28a41b33b1d2aff86ca2ce84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cd79d7a_3c3680d2",
+        "filename": "test/vpxenc.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-10-16T03:35:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f56c4f3d_4e57b6a3",
+      "revId": "a69f679190f3affc28a41b33b1d2aff86ca2ce84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
