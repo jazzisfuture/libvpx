@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04ef36a3_b463a365",
+        "filename": "vpx_dsp/x86/convolve.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-10-16T23:40:22Z",
+      "side": 1,
+      "message": "This probably couldn\u0027t handle \"{ 0, 0, 12, 48, 54, 16, -2, 0 }\"? If this is true, seems no unit test tests this?",
+      "range": {
+        "startLine": 50,
+        "startChar": 6,
+        "endLine": 50,
+        "endChar": 25
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc5bc357_75926118",
+        "filename": "vpx_dsp/x86/convolve_sse2.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-10-16T23:40:22Z",
+      "side": 1,
+      "message": "2018",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3da4c1a_03c3611d",
+        "filename": "vpx_dsp/x86/convolve_sse2.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-10-16T23:40:22Z",
+      "side": 1,
+      "message": "This works for the first 3 parameters since they are written to registers, but not for the fourth one. To be safe, pass in pointers instead of values.",
+      "range": {
+        "startLine": 39,
+        "startChar": 53,
+        "endLine": 39,
+        "endChar": 72
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c95bde07_d3c12fa7",
+        "filename": "vpx_dsp/x86/vpx_asm_stubs.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-10-16T23:40:22Z",
+      "side": 1,
+      "message": "In previous file, for \u003c16 width, you call 8 tap functions directly. So, these seems unnecessary.",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 71
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ace6a20c_e70fd308",
+        "filename": "vpx_dsp/x86/vpx_subpixel_4t_intrin_sse2.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-10-16T23:40:22Z",
+      "side": 1,
+      "message": "2018",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98554293_04a73634",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-10-16T23:40:22Z",
+      "side": 1,
+      "message": "These are unnecessary. You can add it later when \u003c16 width functions are added.",
+      "range": {
+        "startLine": 384,
+        "startChar": 0,
+        "endLine": 387,
+        "endChar": 63
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "917cfc16_8a91b5b3",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-10-16T23:40:22Z",
+      "side": 1,
+      "message": "same as above",
+      "range": {
+        "startLine": 391,
+        "startChar": 0,
+        "endLine": 394,
+        "endChar": 63
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ad1c784_e955a9d7",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-10-16T23:40:22Z",
+      "side": 1,
+      "message": "should be removed",
+      "range": {
+        "startLine": 206,
+        "startChar": 0,
+        "endLine": 209,
+        "endChar": 65
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d9c2989_92f7c36d",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-10-16T23:40:22Z",
+      "side": 1,
+      "message": "same as above",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 216,
+        "endChar": 65
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
