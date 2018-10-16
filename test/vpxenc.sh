@@ -291,15 +291,16 @@ vpxenc_vp9_webm_rt_multithread_tiled() {
           --threads=${threads} \
           --tile-columns=${tile_cols} \
           --output="${output}"
+
+        if [ ! -e "${output}" ]; then
+          elog "Output file does not exist."
+          return 1
+        fi
+        rm "${output}"
       done
     done
 
-    if [ ! -e "${output}" ]; then
-      elog "Output file does not exist."
-      return 1
-    fi
 
-    rm "${output}"
   fi
 }
 
@@ -321,14 +322,14 @@ vpxenc_vp9_webm_rt_multithread_tiled_frameparallel() {
           --frame-parallel=1 \
           --output="${output}"
       done
+      if [ ! -e "${output}" ]; then
+        elog "Output file does not exist."
+        return 1
+      fi
+      rm "${output}"
     done
 
-    if [ ! -e "${output}" ]; then
-      elog "Output file does not exist."
-      return 1
-    fi
 
-    rm "${output}"
   fi
 }
 
