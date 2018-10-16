@@ -505,6 +505,7 @@ typedef struct EncFrameBuf {
 #define MAX_ARF_GOP_SIZE (2 * MAX_LAG_BUFFERS)
 #if CONFIG_NON_GREEDY_MV
 typedef struct FEATURE_SCORE_LOC {
+  int visited;
   double feature_score;
   int mi_row;
   int mi_col;
@@ -543,6 +544,7 @@ typedef struct VP9_COMP {
 #if CONFIG_NON_GREEDY_MV
   FEATURE_SCORE_LOC *feature_score_loc_arr;
   FEATURE_SCORE_LOC **feature_score_loc_sort;
+  FEATURE_SCORE_LOC **feature_score_loc_heap;
 #endif
   YV12_BUFFER_CONFIG *tpl_recon_frames[REFS_PER_FRAME + 1];
 >>>>>>> Change mv search order according to feature_score
