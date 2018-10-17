@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c72adc3_f237a190",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 645,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-10-17T23:27:16Z",
+      "side": 1,
+      "message": "It\u0027s possible to clean up some code here since it\u0027s already set in speed \u003e\u003d 5 under same condition.",
+      "range": {
+        "startLine": 645,
+        "startChar": 10,
+        "endLine": 645,
+        "endChar": 31
+      },
+      "revId": "6a6593f3a1be600ab7f2206c8c0ec5e5b46573cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
