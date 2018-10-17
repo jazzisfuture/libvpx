@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "adadba5c_a4ff8661",
+        "filename": "vpx_dsp/x86/convolve.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2018-10-17T00:20:21Z",
+      "side": 1,
+      "message": "That is true, but currently in the codebase all filters whose first two entries are zero are 4-tap filters. Since the unit test uses the filter in the codebase, they don\u0027t test this.\n\nWe can always add additional check if you feel this is not safe.",
+      "parentUuid": "04ef36a3_b463a365",
+      "range": {
+        "startLine": 50,
+        "startChar": 6,
+        "endLine": 50,
+        "endChar": 25
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bc5bc357_75926118",
         "filename": "vpx_dsp/x86/convolve_sse2.h",
         "patchSetId": 11
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "103f638c_e9033f0b",
+        "filename": "vpx_dsp/x86/convolve_sse2.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2018-10-17T00:20:21Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "bc5bc357_75926118",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c3d4efee_488758a8",
         "filename": "vpx_dsp/x86/convolve_sse2.h",
         "patchSetId": 11
@@ -59,6 +107,24 @@
       "writtenOn": "2018-10-16T23:42:49Z",
       "side": 1,
       "message": "Need to add this file to vpx_dsp.mk?",
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de6f1014_afef8507",
+        "filename": "vpx_dsp/x86/convolve_sse2.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2018-10-17T00:20:21Z",
+      "side": 1,
+      "message": "Probably should. But it builds on my machine without it. Weird.",
+      "parentUuid": "c3d4efee_488758a8",
       "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -99,6 +165,30 @@
       "writtenOn": "2018-10-16T23:40:22Z",
       "side": 1,
       "message": "In previous file, for \u003c16 width, you call 8 tap functions directly. So, these seems unnecessary.",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 71
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bef69abc_6d480bb9",
+        "filename": "vpx_dsp/x86/vpx_asm_stubs.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2018-10-17T00:20:21Z",
+      "side": 1,
+      "message": "I am leaving this here because I already have the code for smaller block width in a commit built on this one. So it is easier to just leave them here for now. \n\nOf course, we can always squash the commit for smaller block width into this one if you prefer that.",
+      "parentUuid": "c95bde07_d3c12fa7",
       "range": {
         "startLine": 31,
         "startChar": 0,
@@ -157,6 +247,30 @@
     },
     {
       "key": {
+        "uuid": "287d5b13_c67394ff",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2018-10-17T00:20:21Z",
+      "side": 1,
+      "message": "See comment in vpx_asm_stub.c.",
+      "parentUuid": "98554293_04a73634",
+      "range": {
+        "startLine": 384,
+        "startChar": 0,
+        "endLine": 387,
+        "endChar": 63
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "917cfc16_8a91b5b3",
         "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
         "patchSetId": 11
@@ -168,6 +282,30 @@
       "writtenOn": "2018-10-16T23:40:22Z",
       "side": 1,
       "message": "same as above",
+      "range": {
+        "startLine": 391,
+        "startChar": 0,
+        "endLine": 394,
+        "endChar": 63
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e49284c8_6ee079f0",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2018-10-17T00:20:21Z",
+      "side": 1,
+      "message": "See comment in vpx_asm_stub.c.",
+      "parentUuid": "917cfc16_8a91b5b3",
       "range": {
         "startLine": 391,
         "startChar": 0,
@@ -203,6 +341,30 @@
     },
     {
       "key": {
+        "uuid": "62fe88c2_69eece10",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2018-10-17T00:20:21Z",
+      "side": 1,
+      "message": "See comment in vpx_asm_stub.c.",
+      "parentUuid": "7ad1c784_e955a9d7",
+      "range": {
+        "startLine": 206,
+        "startChar": 0,
+        "endLine": 209,
+        "endChar": 65
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0d9c2989_92f7c36d",
         "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c",
         "patchSetId": 11
@@ -214,6 +376,30 @@
       "writtenOn": "2018-10-16T23:40:22Z",
       "side": 1,
       "message": "same as above",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 216,
+        "endChar": 65
+      },
+      "revId": "4a2401fc23b1d2cc556ea58b7e4c53438e92a3df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a29fa4b4_9ad3cf3d",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2018-10-17T00:20:21Z",
+      "side": 1,
+      "message": "See comment in vpx_asm_stub.c.",
+      "parentUuid": "0d9c2989_92f7c36d",
       "range": {
         "startLine": 213,
         "startChar": 0,
