@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "724c7213_78c67d9a",
+        "filename": "vp8/decoder/decodeframe.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1223,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-18T04:04:50Z",
+      "side": 1,
+      "message": "there\u0027s some additional corrupt flag and error reporting below for yv12_fb_new; did you want to set corrupt_tokens and let this proceed to that?",
+      "revId": "2f8c410614c980bd332e92c2e26b82467efaca8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3662e14f_8285d24c",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 833,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-18T04:04:50Z",
+      "side": 1,
+      "message": "this xd is global and the one in threadproc is local to the thread correct?",
+      "revId": "2f8c410614c980bd332e92c2e26b82467efaca8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
