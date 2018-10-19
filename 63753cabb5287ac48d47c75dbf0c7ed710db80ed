@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d81beeff_fa687ca7",
+        "filename": "vpx_dsp/x86/convolve_sse2.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-19T01:34:01Z",
+      "side": 1,
+      "message": "In thinking about it multiply accumulate usually means: v1 + v2 * v3, here it\u0027s just a refined madd, so maybe multiply_add would be clearest.",
+      "range": {
+        "startLine": 35,
+        "startChar": 31,
+        "endLine": 35,
+        "endChar": 41
+      },
+      "revId": "63753cabb5287ac48d47c75dbf0c7ed710db80ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e95e22aa_8d73a3e2",
+        "filename": "vpx_dsp/x86/convolve_sse2.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-19T01:34:01Z",
+      "side": 1,
+      "message": "I think \u0027Interleaves\u0027 might be more common",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 53,
+        "endChar": 14
+      },
+      "revId": "63753cabb5287ac48d47c75dbf0c7ed710db80ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
