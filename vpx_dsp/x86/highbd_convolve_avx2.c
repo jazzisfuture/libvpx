@@ -1058,39 +1058,44 @@ static void vpx_highbd_filter_block1d8_v2_avg_avx2(
   } while (height > 0);
 }
 
-void vpx_highbd_filter_block1d4_h8_sse2(const uint16_t *, ptrdiff_t, uint16_t *,
-                                        ptrdiff_t, uint32_t, const int16_t *,
-                                        int);
-void vpx_highbd_filter_block1d4_h2_sse2(const uint16_t *, ptrdiff_t, uint16_t *,
-                                        ptrdiff_t, uint32_t, const int16_t *,
-                                        int);
-void vpx_highbd_filter_block1d4_v8_sse2(const uint16_t *, ptrdiff_t, uint16_t *,
-                                        ptrdiff_t, uint32_t, const int16_t *,
-                                        int);
-void vpx_highbd_filter_block1d4_v2_sse2(const uint16_t *, ptrdiff_t, uint16_t *,
-                                        ptrdiff_t, uint32_t, const int16_t *,
-                                        int);
+highbd_filter8_1dfunction vpx_highbd_filter_block1d4_h8_sse2;
+highbd_filter8_1dfunction vpx_highbd_filter_block1d4_h2_sse2;
+highbd_filter8_1dfunction vpx_highbd_filter_block1d4_v8_sse2;
+highbd_filter8_1dfunction vpx_highbd_filter_block1d4_v2_sse2;
+
 #define vpx_highbd_filter_block1d4_h8_avx2 vpx_highbd_filter_block1d4_h8_sse2
 #define vpx_highbd_filter_block1d4_h2_avx2 vpx_highbd_filter_block1d4_h2_sse2
 #define vpx_highbd_filter_block1d4_v8_avx2 vpx_highbd_filter_block1d4_v8_sse2
 #define vpx_highbd_filter_block1d4_v2_avx2 vpx_highbd_filter_block1d4_v2_sse2
 
+#define vpx_highbd_filter_block1d16_v4_avx2 vpx_highbd_filter_block1d16_v8_avx2
+#define vpx_highbd_filter_block1d16_h4_avx2 vpx_highbd_filter_block1d16_h8_avx2
+#define vpx_highbd_filter_block1d8_v4_avx2 vpx_highbd_filter_block1d8_v8_avx2
+#define vpx_highbd_filter_block1d8_h4_avx2 vpx_highbd_filter_block1d8_h8_avx2
+#define vpx_highbd_filter_block1d4_v4_avx2 vpx_highbd_filter_block1d4_v8_avx2
+#define vpx_highbd_filter_block1d4_h4_avx2 vpx_highbd_filter_block1d4_h8_avx2
+#define vpx_highbd_filter_block1d16_v4_avg_avx2 \
+  vpx_highbd_filter_block1d16_v8_avg_avx2
+#define vpx_highbd_filter_block1d16_h4_avg_avx2 \
+  vpx_highbd_filter_block1d16_h8_avg_avx2
+#define vpx_highbd_filter_block1d8_v4_avg_avx2 \
+  vpx_highbd_filter_block1d8_v8_avg_avx2
+#define vpx_highbd_filter_block1d8_h4_avg_avx2 \
+  vpx_highbd_filter_block1d8_h8_avg_avx2
+#define vpx_highbd_filter_block1d4_v4_avg_avx2 \
+  vpx_highbd_filter_block1d4_v8_avg_avx2
+#define vpx_highbd_filter_block1d4_h4_avg_avx2 \
+  vpx_highbd_filter_block1d4_h8_avg_avx2
+
 HIGH_FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , avx2);
 HIGH_FUN_CONV_1D(vert, y0_q4, y_step_q4, v, src - src_stride * 3, , avx2);
 HIGH_FUN_CONV_2D(, avx2);
 
-void vpx_highbd_filter_block1d4_h8_avg_sse2(const uint16_t *, ptrdiff_t,
-                                            uint16_t *, ptrdiff_t, uint32_t,
-                                            const int16_t *, int);
-void vpx_highbd_filter_block1d4_h2_avg_sse2(const uint16_t *, ptrdiff_t,
-                                            uint16_t *, ptrdiff_t, uint32_t,
-                                            const int16_t *, int);
-void vpx_highbd_filter_block1d4_v8_avg_sse2(const uint16_t *, ptrdiff_t,
-                                            uint16_t *, ptrdiff_t, uint32_t,
-                                            const int16_t *, int);
-void vpx_highbd_filter_block1d4_v2_avg_sse2(const uint16_t *, ptrdiff_t,
-                                            uint16_t *, ptrdiff_t, uint32_t,
-                                            const int16_t *, int);
+highbd_filter8_1dfunction vpx_highbd_filter_block1d4_h8_avg_sse2;
+highbd_filter8_1dfunction vpx_highbd_filter_block1d4_h2_avg_sse2;
+highbd_filter8_1dfunction vpx_highbd_filter_block1d4_v8_avg_sse2;
+highbd_filter8_1dfunction vpx_highbd_filter_block1d4_v2_avg_sse2;
+
 #define vpx_highbd_filter_block1d4_h8_avg_avx2 \
   vpx_highbd_filter_block1d4_h8_avg_sse2
 #define vpx_highbd_filter_block1d4_h2_avg_avx2 \
