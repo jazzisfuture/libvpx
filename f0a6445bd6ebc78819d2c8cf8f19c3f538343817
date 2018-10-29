@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc7c583a_0fae88a5",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1307,
+      "author": {
+        "id": 1000893
+      },
+      "writtenOn": "2018-10-29T23:47:21Z",
+      "side": 1,
+      "message": "const..",
+      "range": {
+        "startLine": 1307,
+        "startChar": 10,
+        "endLine": 1307,
+        "endChar": 13
+      },
+      "revId": "f0a6445bd6ebc78819d2c8cf8f19c3f538343817",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "709c6ad6_c2b942ac",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1310,
+      "author": {
+        "id": 1000893
+      },
+      "writtenOn": "2018-10-29T23:47:21Z",
+      "side": 1,
+      "message": "it would be nice to have some comment on the rationale behind this formula here.",
+      "range": {
+        "startLine": 1308,
+        "startChar": 0,
+        "endLine": 1310,
+        "endChar": 44
+      },
+      "revId": "f0a6445bd6ebc78819d2c8cf8f19c3f538343817",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
