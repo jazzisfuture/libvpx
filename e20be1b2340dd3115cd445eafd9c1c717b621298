@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "70a5c4c0_7c95e212",
+        "filename": "vp8/common/idct_blk.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T19:01:45Z",
+      "side": 0,
+      "message": "These are in vp8_rtcd.h",
+      "range": {
+        "startLine": 15,
+        "startChar": 5,
+        "endLine": 15,
+        "endChar": 27
+      },
+      "revId": "e20be1b2340dd3115cd445eafd9c1c717b621298",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30f390e3_6b659061",
+        "filename": "vp8/common/reconinter.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T19:01:45Z",
+      "side": 0,
+      "message": "extern doesn\u0027t make any sense here. there were not any warnings about it from clang-tidy, just happened to notice it.",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 6
+      },
+      "revId": "e20be1b2340dd3115cd445eafd9c1c717b621298",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

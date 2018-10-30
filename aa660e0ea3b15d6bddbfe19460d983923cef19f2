@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e659ae09_f03014dd",
+        "filename": "vp8/common/findnearmv.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T19:01:45Z",
+      "side": 1,
+      "message": "decided to pull in this direction because the name seemed a little more descriptive/useful.",
+      "range": {
+        "startLine": 31,
+        "startChar": 14,
+        "endLine": 31,
+        "endChar": 30
+      },
+      "revId": "aa660e0ea3b15d6bddbfe19460d983923cef19f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb1c650d_381fffca",
+        "filename": "vp8/common/loopfilter_filters.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T19:01:45Z",
+      "side": 1,
+      "message": "Pulled in this direction because the other functions in this file and the optimized versions of these functions use y_ptr/y_stride rather than the shorthand.",
+      "range": {
+        "startLine": 273,
+        "startChar": 61,
+        "endLine": 273,
+        "endChar": 66
+      },
+      "revId": "aa660e0ea3b15d6bddbfe19460d983923cef19f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "275ade30_d82becee",
+        "filename": "vp8/common/treecoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T19:01:45Z",
+      "side": 1,
+      "message": "Pfactor/Round seemed more descriptive",
+      "range": {
+        "startLine": 83,
+        "startChar": 51,
+        "endLine": 83,
+        "endChar": 58
+      },
+      "revId": "aa660e0ea3b15d6bddbfe19460d983923cef19f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "875841be_0426df4a",
+        "filename": "vp8/common/x86/iwalsh_sse2.asm",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T19:01:45Z",
+      "side": 1,
+      "message": "Just happened to catch it with a grep",
+      "range": {
+        "startLine": 16,
+        "startChar": 55,
+        "endLine": 16,
+        "endChar": 65
+      },
+      "revId": "aa660e0ea3b15d6bddbfe19460d983923cef19f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
