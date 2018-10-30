@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "84789113_3b5552a7",
+        "filename": "vp8/common/idct_blk.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-30T21:57:50Z",
+      "side": 0,
+      "message": "good catch. at some point I think I made a pass to add missing *rtcd.h includes for a missing prototype warning.",
+      "parentUuid": "70a5c4c0_7c95e212",
+      "range": {
+        "startLine": 15,
+        "startChar": 5,
+        "endLine": 15,
+        "endChar": 27
+      },
+      "revId": "e20be1b2340dd3115cd445eafd9c1c717b621298",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30f390e3_6b659061",
         "filename": "vp8/common/reconinter.h",
         "patchSetId": 1
