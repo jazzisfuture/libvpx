@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a436501e_8a5673d8",
+        "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T22:53:06Z",
+      "side": 1,
+      "message": "Normalizing to drop the _ptr from scan/iscan was kind of annoying. I think this was the easier direction though.",
+      "range": {
+        "startLine": 137,
+        "startChar": 19,
+        "endLine": 137,
+        "endChar": 26
+      },
+      "revId": "868484bc66be8563636ead1be3daf1c347d0ec42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
