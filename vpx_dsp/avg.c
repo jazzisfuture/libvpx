@@ -314,6 +314,19 @@ void vpx_hadamard_32x32_c(const int16_t *src_diff, ptrdiff_t src_stride,
   }
 }
 
+#if CONFIG_VP9_HIGHBITDEPTH
+// coeff: 32 bits, dynamic range [-65535, 65535].
+// length: value range {16, 64, 256, 1024}.
+int vpx_satd_c(const tran_low_t *coeff, int length) {
+  int i;
+  int satd = 0;
+  for (i = 0; i < length; ++i) satd += abs(coeff[i]);
+
+  // satd: 26 bits, dynamic range [-32640 * 1024, 32640 * 1024]
+  return satd;
+}
+
+#else
 // coeff: 16 bits, dynamic range [-32640, 32640].
 // length: value range {16, 64, 256, 1024}.
 int vpx_satd_c(const tran_low_t *coeff, int length) {
@@ -324,6 +337,8 @@ int vpx_satd_c(const tran_low_t *coeff, int length) {
   // satd: 26 bits, dynamic range [-32640 * 1024, 32640 * 1024]
   return satd;
 }
+
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 // Integer projection onto row vectors.
 // height: value range {16, 32, 64}.
