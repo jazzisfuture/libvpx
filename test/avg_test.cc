@@ -273,6 +273,16 @@ class SatdTest : public ::testing::Test,
   ACMRandom rnd_;
 };
 
+class SatdLowbdTest : public SatdTest {
+ protected:
+};
+
+#ifdef CONFIG_VP9_HIGHBITDEPTH
+class SatdHighbdTest : public SatdTest {
+ protected:
+};
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
 typedef int64_t (*BlockErrorFunc)(const tran_low_t *coeff,
                                   const tran_low_t *dqcoeff, int block_size);
 typedef ::testing::tuple<int, BlockErrorFunc> BlockErrorTestFPParam;
@@ -402,21 +412,21 @@ TEST_P(IntProColTest, Random) {
   RunComparison();
 }
 
-TEST_P(SatdTest, MinValue) {
+TEST_P(SatdLowbdTest, MinValue) {
   const int kMin = -32640;
   const int expected = -kMin * satd_size_;
   FillConstant(kMin);
   Check(expected);
 }
 
-TEST_P(SatdTest, MaxValue) {
+TEST_P(SatdLowbdTest, MaxValue) {
   const int kMax = 32640;
   const int expected = kMax * satd_size_;
   FillConstant(kMax);
   Check(expected);
 }
 
-TEST_P(SatdTest, Random) {
+TEST_P(SatdLowbdTest, Random) {
   int expected;
   switch (satd_size_) {
     case 16: expected = 205298; break;
@@ -431,7 +441,7 @@ TEST_P(SatdTest, Random) {
   Check(expected);
 }
 
-TEST_P(SatdTest, DISABLED_Speed) {
+TEST_P(SatdLowbdTest, DISABLED_Speed) {
   const int kCountSpeedTestBlock = 20000;
   vpx_usec_timer timer;
   const int blocksize = GET_PARAM(0);
@@ -446,6 +456,24 @@ TEST_P(SatdTest, DISABLED_Speed) {
   const int elapsed_time = static_cast<int>(vpx_usec_timer_elapsed(&timer));
   printf("blocksize: %4d time: %4d us\n", blocksize, elapsed_time);
 }
+
+#ifdef CONFIG_VP9_HIGHBITDEPTH
+TEST_P(SatdHighbdTest, DISABLED_Speed) {
+  const int kCountSpeedTestBlock = 20000;
+  vpx_usec_timer timer;
+  const int blocksize = GET_PARAM(0);
+  FillRandom();
+  tran_low_t *coeff = GetCoeff();
+
+  vpx_usec_timer_start(&timer);
+  for (int i = 0; i < kCountSpeedTestBlock; ++i) {
+    GET_PARAM(1)(coeff, blocksize);
+  }
+  vpx_usec_timer_mark(&timer);
+  const int elapsed_time = static_cast<int>(vpx_usec_timer_elapsed(&timer));
+  printf("blocksize: %4d time: %4d us\n", blocksize, elapsed_time);
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 TEST_P(BlockErrorTestFP, MinValue) {
   const int64_t kMin = -32640;
@@ -512,9 +540,15 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::Values(make_tuple(16, 16, 1, 8, &vpx_highbd_avg_8x8_sse2),
                       make_tuple(16, 16, 1, 4, &vpx_highbd_avg_4x4_sse2)));
 #endif  // HAVE_SSE2
+
+INSTANTIATE_TEST_CASE_P(C, SatdHighbdTest,
+                        ::testing::Values(make_tuple(16, &vpx_satd_c),
+                                          make_tuple(64, &vpx_satd_c),
+                                          make_tuple(256, &vpx_satd_c),
+                                          make_tuple(1024, &vpx_satd_c)));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-INSTANTIATE_TEST_CASE_P(C, SatdTest,
+INSTANTIATE_TEST_CASE_P(C, SatdLowbdTest,
                         ::testing::Values(make_tuple(16, &vpx_satd_c),
                                           make_tuple(64, &vpx_satd_c),
                                           make_tuple(256, &vpx_satd_c),
@@ -551,7 +585,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(64, &vpx_int_pro_col_sse2,
                                  &vpx_int_pro_col_c)));
 
-INSTANTIATE_TEST_CASE_P(SSE2, SatdTest,
+INSTANTIATE_TEST_CASE_P(SSE2, SatdLowbdTest,
                         ::testing::Values(make_tuple(16, &vpx_satd_sse2),
                                           make_tuple(64, &vpx_satd_sse2),
                                           make_tuple(256, &vpx_satd_sse2),
@@ -566,11 +600,20 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_SSE2
 
 #if HAVE_AVX2
-INSTANTIATE_TEST_CASE_P(AVX2, SatdTest,
+INSTANTIATE_TEST_CASE_P(AVX2, SatdLowbdTest,
                         ::testing::Values(make_tuple(16, &vpx_satd_avx2),
                                           make_tuple(64, &vpx_satd_avx2),
                                           make_tuple(256, &vpx_satd_avx2),
                                           make_tuple(1024, &vpx_satd_avx2)));
+
+#if CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_CASE_P(
+    AVX2, SatdHighbdTest,
+    ::testing::Values(make_tuple(16, &vpx_highbd_satd_avx2),
+                      make_tuple(64, &vpx_highbd_satd_avx2),
+                      make_tuple(256, &vpx_highbd_satd_avx2),
+                      make_tuple(1024, &vpx_highbd_satd_avx2)));
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 INSTANTIATE_TEST_CASE_P(
     AVX2, BlockErrorTestFP,
@@ -604,7 +647,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(64, &vpx_int_pro_col_neon,
                                  &vpx_int_pro_col_c)));
 
-INSTANTIATE_TEST_CASE_P(NEON, SatdTest,
+INSTANTIATE_TEST_CASE_P(NEON, SatdLowbdTest,
                         ::testing::Values(make_tuple(16, &vpx_satd_neon),
                                           make_tuple(64, &vpx_satd_neon),
                                           make_tuple(256, &vpx_satd_neon),
@@ -649,7 +692,7 @@ INSTANTIATE_TEST_CASE_P(
 // TODO(jingning): Remove the highbitdepth flag once the SIMD functions are
 // in place.
 #if !CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(MSA, SatdTest,
+INSTANTIATE_TEST_CASE_P(MSA, SatdLowbdTest,
                         ::testing::Values(make_tuple(16, &vpx_satd_msa),
                                           make_tuple(64, &vpx_satd_msa),
                                           make_tuple(256, &vpx_satd_msa),
