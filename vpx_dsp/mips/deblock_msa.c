@@ -508,10 +508,10 @@ void vpx_post_proc_down_and_across_mb_row_msa(uint8_t *src, uint8_t *dst,
   }
 }
 
-void vpx_mbpost_proc_across_ip_msa(uint8_t *src_ptr, int32_t pitch,
-                                   int32_t rows, int32_t cols, int32_t flimit) {
+void vpx_mbpost_proc_across_ip_msa(uint8_t *src, int32_t pitch, int32_t rows,
+                                   int32_t cols, int32_t flimit) {
   int32_t row, col, cnt;
-  uint8_t *src_dup = src_ptr;
+  uint8_t *src_dup = src;
   v16u8 src0, src, tmp_orig;
   v16u8 tmp = { 0 };
   v16i8 zero = { 0 };
