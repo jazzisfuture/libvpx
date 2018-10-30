@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "17b64fcc_f83b1908",
+        "filename": "vp8/encoder/denoising.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T22:50:35Z",
+      "side": 0,
+      "message": "Dropped _uv here instead of adding it to the prototype. The opt functions do not use _uv and it was more work to add it to them.",
+      "range": {
+        "startLine": 216,
+        "startChar": 58,
+        "endLine": 216,
+        "endChar": 61
+      },
+      "revId": "e018967dc4a8cfe472253bf70ed0af369ef14c64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7060613_09913037",
+        "filename": "vp8/encoder/mcomp.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T22:50:35Z",
+      "side": 0,
+      "message": "Random extern cleanup.",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 6
+      },
+      "revId": "e018967dc4a8cfe472253bf70ed0af369ef14c64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e887870_67acb0e4",
+        "filename": "vp8/encoder/pickinter.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T22:50:35Z",
+      "side": 0,
+      "message": "Happened to notice the blank line. Removing it causes a reflow.",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 178,
+        "endChar": 0
+      },
+      "revId": "e018967dc4a8cfe472253bf70ed0af369ef14c64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0d2c266_17cf01a1",
+        "filename": "vp8/encoder/pickinter.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1306,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-30T22:50:35Z",
+      "side": 0,
+      "message": "Swapped rate_ with the local rate",
+      "range": {
+        "startLine": 1306,
+        "startChar": 45,
+        "endLine": 1306,
+        "endChar": 50
+      },
+      "revId": "e018967dc4a8cfe472253bf70ed0af369ef14c64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
