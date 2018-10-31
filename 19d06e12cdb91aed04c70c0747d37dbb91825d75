@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c15ce2d0_68bb5aee",
+        "filename": "vpx_dsp/x86/highbd_subpel_variance_impl_sse2.asm",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-31T18:54:31Z",
+      "side": 1,
+      "message": "The assembly does not always use _ptr but I can live with that.",
+      "range": {
+        "startLine": 33,
+        "startChar": 47,
+        "endLine": 33,
+        "endChar": 50
+      },
+      "revId": "19d06e12cdb91aed04c70c0747d37dbb91825d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
