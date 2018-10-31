@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "12263e48_9b7333de",
+        "filename": "vpx_dsp/mips/variance_mmi.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 723,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T21:27:29Z",
+      "side": 1,
+      "message": "alignment got thrown off in some of these",
+      "revId": "19d06e12cdb91aed04c70c0747d37dbb91825d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f64355b_ff9eb27a",
+        "filename": "vpx_dsp/variance.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T21:27:29Z",
+      "side": 1,
+      "message": "these could be src8_ptr or src_ptr",
+      "range": {
+        "startLine": 260,
+        "startChar": 45,
+        "endLine": 260,
+        "endChar": 47
+      },
+      "revId": "19d06e12cdb91aed04c70c0747d37dbb91825d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c15ce2d0_68bb5aee",
         "filename": "vpx_dsp/x86/highbd_subpel_variance_impl_sse2.asm",
         "patchSetId": 2
