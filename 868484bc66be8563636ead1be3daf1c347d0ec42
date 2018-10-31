@@ -22,6 +22,47 @@
       "revId": "868484bc66be8563636ead1be3daf1c347d0ec42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "833b2337_693d0050",
+        "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T21:16:48Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a436501e_8a5673d8",
+      "range": {
+        "startLine": 137,
+        "startChar": 19,
+        "endLine": 137,
+        "endChar": 26
+      },
+      "revId": "868484bc66be8563636ead1be3daf1c347d0ec42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "79b1598c_5edccda5",
+        "filename": "vp9/encoder/x86/vp9_quantize_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T21:16:48Z",
+      "side": 1,
+      "message": "there\u0027s some naming mismatch in these now, but like you mentioned it was probably easier to go in this direction",
+      "revId": "868484bc66be8563636ead1be3daf1c347d0ec42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
