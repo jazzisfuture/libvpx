@@ -432,7 +432,7 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
   pbi->ready_for_new_data = 1;
 
   /* no raw frame to show!!! */
-  if (!cm->show_frame) return ret;
+  if (!cm->show_frame || cm->frame_to_show == NULL) return ret;
 
   pbi->ready_for_new_data = 1;
 
