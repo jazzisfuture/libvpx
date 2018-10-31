@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b65e953d_2a08f733",
+        "filename": "vp8/decoder/decodeframe.c",
+        "patchSetId": 17
+      },
+      "lineNbr": 1225,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-10-31T07:22:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2fe484c3_6722e2a7",
+      "range": {
+        "startLine": 1225,
+        "startChar": 26,
+        "endLine": 1225,
+        "endChar": 35
+      },
+      "revId": "4c07862bd53ef95a98f8bdf725e8e50d14c66667",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4c1dc9f_baa41c06",
         "filename": "vp8/decoder/onyxd_if.c",
         "patchSetId": 17
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "4cbb92b4_66534363",
+        "filename": "vp8/decoder/onyxd_if.c",
+        "patchSetId": 17
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-10-31T07:22:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4c1dc9f_baa41c06",
+      "range": {
+        "startLine": 351,
+        "startChar": 66,
+        "endLine": 351,
+        "endChar": 68
+      },
+      "revId": "4c07862bd53ef95a98f8bdf725e8e50d14c66667",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "993821e3_7d236154",
         "filename": "vp8/decoder/threading.c",
         "patchSetId": 17
@@ -59,6 +107,24 @@
       "writtenOn": "2018-10-31T05:42:15Z",
       "side": 1,
       "message": "you could immediately break out of the loop here, no?",
+      "revId": "4c07862bd53ef95a98f8bdf725e8e50d14c66667",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a06dd00_45280ec6",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 17
+      },
+      "lineNbr": 596,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-10-31T07:22:11Z",
+      "side": 1,
+      "message": "I think the idea of while(1) here is that the thread keeps waiting for h_event_start_decoding available (which is set by main thread at the beginning of every frame) to start decode current frame. \n\nSo if it breaks out here, the thread can\u0027t start decoding next frame even the main thread already starts. Then the main thread would keep waiting for this thread.",
+      "parentUuid": "993821e3_7d236154",
       "revId": "4c07862bd53ef95a98f8bdf725e8e50d14c66667",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -79,6 +145,24 @@
       "revId": "4c07862bd53ef95a98f8bdf725e8e50d14c66667",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef8068f3_1aef11a2",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 17
+      },
+      "lineNbr": 839,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-10-31T07:22:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04d5fa5f_cb22bc60",
+      "revId": "4c07862bd53ef95a98f8bdf725e8e50d14c66667",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
