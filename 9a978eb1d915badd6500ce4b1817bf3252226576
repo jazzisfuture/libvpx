@@ -22,6 +22,30 @@
       "revId": "9a978eb1d915badd6500ce4b1817bf3252226576",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "623394de_b8dc26f1",
+        "filename": "vp8/encoder/boolhuff.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-31T21:22:35Z",
+      "side": 1,
+      "message": "Ah, was that intended to be bool Reader vs bool Coder (writer)?",
+      "parentUuid": "0ceb1df9_54899fd2",
+      "range": {
+        "startLine": 38,
+        "startChar": 34,
+        "endLine": 38,
+        "endChar": 36
+      },
+      "revId": "9a978eb1d915badd6500ce4b1817bf3252226576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
