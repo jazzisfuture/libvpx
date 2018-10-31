@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0ceb1df9_54899fd2",
+        "filename": "vp8/encoder/boolhuff.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T21:12:31Z",
+      "side": 1,
+      "message": "\u0027bc\u0027 might be more appropriate for a BOOL_CODER",
+      "range": {
+        "startLine": 38,
+        "startChar": 34,
+        "endLine": 38,
+        "endChar": 36
+      },
+      "revId": "9a978eb1d915badd6500ce4b1817bf3252226576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
