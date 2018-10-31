@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4aa47c70_5c10269c",
+        "filename": "vpx_dsp/mips/variance_mmi.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 723,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-31T22:05:51Z",
+      "side": 1,
+      "message": "Woops I caught the macros at the top but not these.\n\nCleaned up the next line too.",
+      "parentUuid": "12263e48_9b7333de",
+      "revId": "19d06e12cdb91aed04c70c0747d37dbb91825d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f64355b_ff9eb27a",
         "filename": "vpx_dsp/variance.c",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "19d06e12cdb91aed04c70c0747d37dbb91825d75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b06de2e_45b1694b",
+        "filename": "vpx_dsp/variance.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-10-31T22:05:51Z",
+      "side": 1,
+      "message": "Argh, missed these because I was did a search and replace on \\\u003ca\\\u003e",
+      "parentUuid": "1f64355b_ff9eb27a",
+      "range": {
+        "startLine": 260,
+        "startChar": 45,
+        "endLine": 260,
+        "endChar": 47
+      },
+      "revId": "19d06e12cdb91aed04c70c0747d37dbb91825d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
