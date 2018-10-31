@@ -131,6 +131,24 @@
     },
     {
       "key": {
+        "uuid": "4a28ab23_0c5ae2d5",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 17
+      },
+      "lineNbr": 596,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T17:31:46Z",
+      "side": 1,
+      "message": "\u003e I think the idea of while(1) here is that the thread keeps waiting for h_event_start_decoding available (which is set by main thread at the beginning of every frame) to start decode current frame. \n\u003e \n\u003e So if it breaks out here, the thread can\u0027t start decoding next frame even the main thread already starts. Then the main thread would keep waiting for this thread.\n\ngood point. this is structured a little differently than vp9, if we want to try to recover then this thread needs to stay active.",
+      "parentUuid": "0a06dd00_45280ec6",
+      "revId": "4c07862bd53ef95a98f8bdf725e8e50d14c66667",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04d5fa5f_cb22bc60",
         "filename": "vp8/decoder/threading.c",
         "patchSetId": 17

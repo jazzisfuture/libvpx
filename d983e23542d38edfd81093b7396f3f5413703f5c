@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3895e957_dc0591cb",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 18
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T17:31:46Z",
+      "side": 1,
+      "message": "thread",
+      "range": {
+        "startLine": 408,
+        "startChar": 28,
+        "endLine": 408,
+        "endChar": 35
+      },
+      "revId": "d983e23542d38edfd81093b7396f3f5413703f5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f3e1be8_abec2821",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 18
+      },
+      "lineNbr": 880,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T17:31:46Z",
+      "side": 1,
+      "message": "...for other threads to finish",
+      "range": {
+        "startLine": 880,
+        "startChar": 12,
+        "endLine": 880,
+        "endChar": 35
+      },
+      "revId": "d983e23542d38edfd81093b7396f3f5413703f5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "453240eb_9d228055",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 18
+      },
+      "lineNbr": 881,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T17:31:46Z",
+      "side": 1,
+      "message": "the current frame...the next frame",
+      "range": {
+        "startLine": 881,
+        "startChar": 7,
+        "endLine": 881,
+        "endChar": 20
+      },
+      "revId": "d983e23542d38edfd81093b7396f3f5413703f5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51d15f29_b945e8e3",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 18
+      },
+      "lineNbr": 882,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-10-31T17:31:46Z",
+      "side": 1,
+      "message": "...a data race",
+      "range": {
+        "startLine": 882,
+        "startChar": 14,
+        "endLine": 882,
+        "endChar": 23
+      },
+      "revId": "d983e23542d38edfd81093b7396f3f5413703f5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
