@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a85bdc4f_4d7dd325",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-01T18:45:18Z",
+      "side": 1,
+      "message": "_v seemed as good as any of the other options.",
+      "range": {
+        "startLine": 41,
+        "startChar": 21,
+        "endLine": 41,
+        "endChar": 28
+      },
+      "revId": "7a670c5af69445aa965984ecb39df6949c87815e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95ba18cd_b5c2f591",
+        "filename": "vpx_dsp/sad.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-01T18:45:18Z",
+      "side": 1,
+      "message": "Weird spacing, probably from the sadMxNx4D macros, despite having clang-format off.",
+      "range": {
+        "startLine": 136,
+        "startChar": 0,
+        "endLine": 136,
+        "endChar": 8
+      },
+      "revId": "7a670c5af69445aa965984ecb39df6949c87815e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4912aff2_ec69be9d",
+        "filename": "vpx_dsp/x86/loopfilter_sse2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1156,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-01T18:45:18Z",
+      "side": 1,
+      "message": "was able to get away w/o renaming these because the input is blimit0/1",
+      "range": {
+        "startLine": 1156,
+        "startChar": 16,
+        "endLine": 1156,
+        "endChar": 22
+      },
+      "revId": "7a670c5af69445aa965984ecb39df6949c87815e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
