@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1c1ead55_2b4312a8",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-01T22:12:38Z",
+      "side": 1,
+      "message": "Happened to notice this. Turns out this was deleted a pretty long time ago:\ncommit a9ce3e3834fb7f790523e0f0180520034589d786\nAuthor: John Koleszar \u003cjkoleszar@google.com\u003e\nDate:   Mon Apr 11 10:34:40 2011 -0400\n\n    Remove unused files\n    \n    Change-Id: I36ca3f2f4620358033da34daf764f0b388dacd08\n\nIt also got cleaned up once when vp9 branched:\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/37039/8/vp8/encoder/onyx_if.c",
+      "range": {
+        "startLine": 68,
+        "startChar": 12,
+        "endLine": 68,
+        "endChar": 23
+      },
+      "revId": "7533737c06765e968e8da5dcf7baaeee31ef5bcf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
