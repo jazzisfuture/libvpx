@@ -25,13 +25,13 @@ using ::libvpx_test::ACMRandom;
 typedef void (*HadamardFunc)(const int16_t *a, ptrdiff_t a_stride,
                              tran_low_t *b);
 
-void hadamard_loop(const int16_t *a, int a_stride, int16_t *out) {
-  int16_t b[8];
+void hadamard_loop(const tran_low_t *a, tran_low_t *out) {
+  tran_low_t b[8];
   for (int i = 0; i < 8; i += 2) {
-    b[i + 0] = a[i * a_stride] + a[(i + 1) * a_stride];
-    b[i + 1] = a[i * a_stride] - a[(i + 1) * a_stride];
+    b[i + 0] = a[i * 8] + a[(i + 1) * 8];
+    b[i + 1] = a[i * 8] - a[(i + 1) * 8];
   }
-  int16_t c[8];
+  tran_low_t c[8];
   for (int i = 0; i < 8; i += 4) {
     c[i + 0] = b[i + 0] + b[i + 2];
     c[i + 1] = b[i + 1] + b[i + 3];
@@ -49,12 +49,14 @@ void hadamard_loop(const int16_t *a, int a_stride, int16_t *out) {
 }
 
 void reference_hadamard8x8(const int16_t *a, int a_stride, tran_low_t *b) {
-  int16_t buf[64];
-  int16_t buf2[64];
-  for (int i = 0; i < 8; ++i) hadamard_loop(a + i, a_stride, buf + i * 8);
-  for (int i = 0; i < 8; ++i) hadamard_loop(buf + i, 8, buf2 + i * 8);
-
-  for (int i = 0; i < 64; ++i) b[i] = (tran_low_t)buf2[i];
+  tran_low_t input[64];
+  tran_low_t buf[64];
+  for (int i = 0; i < 8; ++i) {
+    for (int j = 0; j < 8; ++j)
+      input[i * 8 + j] = (tran_low_t)a[i * a_stride + j];
+  }
+  for (int i = 0; i < 8; ++i) hadamard_loop(input + i, buf + i * 8);
+  for (int i = 0; i < 8; ++i) hadamard_loop(buf + i, b + i * 8);
 }
 
 void reference_hadamard16x16(const int16_t *a, int a_stride, tran_low_t *b) {
@@ -115,6 +117,7 @@ void reference_hadamard32x32(const int16_t *a, int a_stride, tran_low_t *b) {
   }
 }
 
+template <class T>
 class HadamardTestBase : public ::testing::TestWithParam<HadamardFunc> {
  public:
   virtual void SetUp() {
@@ -139,7 +142,7 @@ class HadamardTestBase : public ::testing::TestWithParam<HadamardFunc> {
     DECLARE_ALIGNED(16, tran_low_t, b[kBlockSize]);
     tran_low_t b_ref[kBlockSize];
     for (int i = 0; i < kBlockSize; ++i) {
-      a[i] = rnd_.Rand9Signed();
+      a[i] = static_cast<T *>(this)->Rand();
     }
     memset(b, 0, sizeof(b));
     memset(b_ref, 0, sizeof(b_ref));
@@ -160,7 +163,7 @@ class HadamardTestBase : public ::testing::TestWithParam<HadamardFunc> {
     DECLARE_ALIGNED(16, tran_low_t, b[kBlockSize]);
     tran_low_t b_ref[kBlockSize];
     for (int i = 0; i < kBlockSize * 8; ++i) {
-      a[i] = rnd_.Rand9Signed();
+      a[i] = static_cast<T *>(this)->Rand();
     }
 
     for (int i = 8; i < 64; i += 8) {
@@ -198,7 +201,12 @@ void HadamardSpeedTest(const char *name, HadamardFunc const func,
   printf("%s[%12d runs]: %d us\n", name, times, elapsed_time);
 }
 
-class Hadamard8x8Test : public HadamardTestBase {};
+class HadamardLowbdTest : public HadamardTestBase<HadamardLowbdTest> {
+ public:
+  int16_t Rand() { return rnd_.Rand9Signed(); }
+};
+
+class Hadamard8x8Test : public HadamardLowbdTest {};
 
 void HadamardSpeedTest8x8(HadamardFunc const func, int times) {
   DECLARE_ALIGNED(16, int16_t, input[64]);
@@ -249,7 +257,7 @@ INSTANTIATE_TEST_CASE_P(VSX, Hadamard8x8Test,
                         ::testing::Values(&vpx_hadamard_8x8_vsx));
 #endif  // HAVE_VSX
 
-class Hadamard16x16Test : public HadamardTestBase {};
+class Hadamard16x16Test : public HadamardLowbdTest {};
 
 void HadamardSpeedTest16x16(HadamardFunc const func, int times) {
   DECLARE_ALIGNED(16, int16_t, input[256]);
@@ -300,7 +308,7 @@ INSTANTIATE_TEST_CASE_P(MSA, Hadamard16x16Test,
 #endif  // HAVE_MSA
 #endif  // !CONFIG_VP9_HIGHBITDEPTH
 
-class Hadamard32x32Test : public HadamardTestBase {};
+class Hadamard32x32Test : public HadamardLowbdTest {};
 
 void HadamardSpeedTest32x32(HadamardFunc const func, int times) {
   DECLARE_ALIGNED(16, int16_t, input[1024]);
@@ -333,4 +341,61 @@ INSTANTIATE_TEST_CASE_P(SSE2, Hadamard32x32Test,
 INSTANTIATE_TEST_CASE_P(AVX2, Hadamard32x32Test,
                         ::testing::Values(&vpx_hadamard_32x32_avx2));
 #endif  // HAVE_AVX2
+
+class HadamardHighbdTest : public HadamardTestBase<HadamardHighbdTest> {
+ public:
+  int16_t Rand() { return rnd_.Rand13Signed(); }
+};
+
+class HadamardHighbd8x8Test : public HadamardHighbdTest {};
+
+TEST_P(HadamardHighbd8x8Test, CompareReferenceRandom) {
+  CompareReferenceRandom<8>();
+}
+
+TEST_P(HadamardHighbd8x8Test, VaryStride) { VaryStride<8>(); }
+
+TEST_P(HadamardHighbd8x8Test, DISABLED_Speed) {
+  HadamardSpeedTest8x8(h_func_, 10);
+  HadamardSpeedTest8x8(h_func_, 10000);
+  HadamardSpeedTest8x8(h_func_, 10000000);
+}
+
+INSTANTIATE_TEST_CASE_P(C, HadamardHighbd8x8Test,
+                        ::testing::Values(&vpx_highbd_hadamard_8x8_c));
+
+class HadamardHighbd16x16Test : public HadamardHighbdTest {};
+
+TEST_P(HadamardHighbd16x16Test, CompareReferenceRandom) {
+  CompareReferenceRandom<16>();
+}
+
+TEST_P(HadamardHighbd16x16Test, VaryStride) { VaryStride<16>(); }
+
+TEST_P(HadamardHighbd16x16Test, DISABLED_Speed) {
+  HadamardSpeedTest16x16(h_func_, 10);
+  HadamardSpeedTest16x16(h_func_, 10000);
+  HadamardSpeedTest16x16(h_func_, 10000000);
+}
+
+INSTANTIATE_TEST_CASE_P(C, HadamardHighbd16x16Test,
+                        ::testing::Values(&vpx_highbd_hadamard_16x16_c));
+
+class HadamardHighbd32x32Test : public HadamardHighbdTest {};
+
+TEST_P(HadamardHighbd32x32Test, CompareReferenceRandom) {
+  CompareReferenceRandom<32>();
+}
+
+TEST_P(HadamardHighbd32x32Test, VaryStride) { VaryStride<32>(); }
+
+TEST_P(HadamardHighbd32x32Test, DISABLED_Speed) {
+  HadamardSpeedTest32x32(h_func_, 10);
+  HadamardSpeedTest32x32(h_func_, 10000);
+  HadamardSpeedTest32x32(h_func_, 10000000);
+}
+
+INSTANTIATE_TEST_CASE_P(C, HadamardHighbd32x32Test,
+                        ::testing::Values(&vpx_highbd_hadamard_32x32_c));
+
 }  // namespace
