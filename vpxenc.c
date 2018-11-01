@@ -1431,7 +1431,7 @@ static void show_stream_config(struct stream_state *stream,
   fprintf(stderr, "Destination file: %s\n", stream->config.out_fn);
   fprintf(stderr, "Encoder parameters:\n");
 
-  SHOW(g_usage);
+  SHOW(reserved);
   SHOW(g_threads);
   SHOW(g_profile);
   SHOW(g_w);
