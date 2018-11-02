@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8b982b10_883a5045",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2018-11-02T23:07:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "995214e1_05558787",
+      "revId": "122a9b04a95f677880041905dbe8329adcd720ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ac27c353_604ff5fd",
         "filename": "test/hadamard_test.cc",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2018-11-02T05:51:32Z",
       "side": 1,
       "message": "it might be simpler to make the block size a test parameter",
+      "revId": "122a9b04a95f677880041905dbe8329adcd720ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0530030a_0efb583f",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2018-11-02T23:07:28Z",
+      "side": 1,
+      "message": "Done. Much simpler now. Thanks for the suggestion.",
+      "parentUuid": "ac27c353_604ff5fd",
       "revId": "122a9b04a95f677880041905dbe8329adcd720ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -56,6 +92,30 @@
       "revId": "122a9b04a95f677880041905dbe8329adcd720ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47e5c429_4dc44e1c",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2018-11-02T23:07:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a563ceb2_bd2eb705",
+      "range": {
+        "startLine": 401,
+        "startChar": 11,
+        "endLine": 401,
+        "endChar": 35
+      },
+      "revId": "122a9b04a95f677880041905dbe8329adcd720ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
