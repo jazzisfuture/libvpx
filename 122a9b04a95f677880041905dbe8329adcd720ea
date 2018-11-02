@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "995214e1_05558787",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-02T05:51:32Z",
+      "side": 1,
+      "message": "this should be a virtual function in the base class that the children override",
+      "revId": "122a9b04a95f677880041905dbe8329adcd720ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac27c353_604ff5fd",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-02T05:51:32Z",
+      "side": 1,
+      "message": "it might be simpler to make the block size a test parameter",
+      "revId": "122a9b04a95f677880041905dbe8329adcd720ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a563ceb2_bd2eb705",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-02T05:51:32Z",
+      "side": 1,
+      "message": "CONFIG_VP9_HIGHBITDEPTH",
+      "range": {
+        "startLine": 401,
+        "startChar": 11,
+        "endLine": 401,
+        "endChar": 35
+      },
+      "revId": "122a9b04a95f677880041905dbe8329adcd720ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
