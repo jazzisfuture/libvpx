@@ -1090,22 +1090,19 @@ void vpx_highbd_filter_block1d8_h4_avx2(const uint16_t *src_ptr,
 
   // Repeat for the last row if needed
   if (h > 0) {
-    src_reg = _mm256_loadu_si256((const __m256i *)src_ptr);
-    // Reorder into 2 1 1 2
-    src_reg = _mm256_permute4x64_epi64(src_reg, 0x94);
-
+    src_reg = mm256_loadu2_si128(src_ptr, src_ptr + 4);
     src_reg_shift_0 = _mm256_shuffle_epi8(src_reg, idx_shift_0);
     src_reg_shift_2 = _mm256_shuffle_epi8(src_reg, idx_shift_2);
 
     res_reg = mm256_madd_add_epi32(&src_reg_shift_0, &src_reg_shift_2,
                                    &kernel_reg_23, &kernel_reg_45);
 
-    res_reg = mm256_round_epi32(&res_first, &reg_round, CONV8_ROUNDING_BITS);
+    res_reg = mm256_round_epi32(&res_reg, &reg_round, CONV8_ROUNDING_BITS);
 
     res_reg = _mm256_packus_epi32(res_reg, res_reg);
-    res_reg = _mm256_permute4x64_epi64(res_reg, 0x8);
+    res_reg = _mm256_min_epi16(res_reg, reg_max);
 
-    _mm_store_si128((__m128i *)dst_ptr, _mm256_castsi256_si128(res_reg));
+    mm256_storeu2_epi64((__m128i *)dst_ptr, (__m128i *)(dst_ptr + 4), &res_reg);
   }
 }
 
