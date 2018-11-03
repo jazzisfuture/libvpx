@@ -94,12 +94,20 @@ typedef void filter8_1dfunction(const uint8_t *src_ptr, ptrdiff_t src_pitch,
     assert(h <= 64);                                                           \
     assert(x_step_q4 == 16);                                                   \
     assert(y_step_q4 == 16);                                                   \
-    if (filter_x[0] | filter_x[1] | filter_x[2]) {                             \
+    if (filter_x[0] | filter_x[1] | filter_x[6] | filter_x[7]) {               \
       DECLARE_ALIGNED(16, uint8_t, fdata2[64 * 71]);                           \
       vpx_convolve8_horiz_##opt(src - 3 * src_stride, src_stride, fdata2, 64,  \
                                 filter, x0_q4, x_step_q4, y0_q4, y_step_q4, w, \
                                 h + 7);                                        \
       vpx_convolve8_##avg##vert_##opt(fdata2 + 3 * 64, 64, dst, dst_stride,    \
+                                      filter, x0_q4, x_step_q4, y0_q4,         \
+                                      y_step_q4, w, h);                        \
+    } else if (filter_x[2] | filter_x[5]) {                                    \
+      DECLARE_ALIGNED(16, uint8_t, fdata2[64 * 67]);                           \
+      vpx_convolve8_horiz_##opt(src - 1 * src_stride, src_stride, fdata2, 64,  \
+                                filter, x0_q4, x_step_q4, y0_q4, y_step_q4, w, \
+                                h + 3);                                        \
+      vpx_convolve8_##avg##vert_##opt(fdata2 + 64, 64, dst, dst_stride,        \
                                       filter, x0_q4, x_step_q4, y0_q4,         \
                                       y_step_q4, w, h);                        \
     } else {                                                                   \
@@ -212,7 +220,7 @@ typedef void highbd_filter8_1dfunction(const uint16_t *src_ptr,
     assert(w <= 64);                                                           \
     assert(h <= 64);                                                           \
     if (x_step_q4 == 16 && y_step_q4 == 16) {                                  \
-      if ((filter_x[0] | filter_x[1] | filter_x[2]) || filter_x[3] == 128) {   \
+      if (filter_x[0] | filter_x[1] | filter_x[6] | filter_x[7]) {             \
         DECLARE_ALIGNED(16, uint16_t, fdata2[64 * 71]);                        \
         vpx_highbd_convolve8_horiz_##opt(src - 3 * src_stride, src_stride,     \
                                          fdata2, 64, filter, x0_q4, x_step_q4, \
@@ -220,6 +228,14 @@ typedef void highbd_filter8_1dfunction(const uint16_t *src_ptr,
         vpx_highbd_convolve8_##avg##vert_##opt(                                \
             fdata2 + 192, 64, dst, dst_stride, filter, x0_q4, x_step_q4,       \
             y0_q4, y_step_q4, w, h, bd);                                       \
+      } else if (filter_x[2] | filter_x[5]) {                                  \
+        DECLARE_ALIGNED(16, uint16_t, fdata2[64 * 67]);                        \
+        vpx_highbd_convolve8_horiz_##opt(src - 1 * src_stride, src_stride,     \
+                                         fdata2, 64, filter, x0_q4, x_step_q4, \
+                                         y0_q4, y_step_q4, w, h + 3, bd);      \
+        vpx_highbd_convolve8_##avg##vert_##opt(                                \
+            fdata2 + 64, 64, dst, dst_stride, filter, x0_q4, x_step_q4, y0_q4, \
+            y_step_q4, w, h, bd);                                              \
       } else {                                                                 \
         DECLARE_ALIGNED(16, uint16_t, fdata2[64 * 65]);                        \
         vpx_highbd_convolve8_horiz_##opt(src, src_stride, fdata2, 64, filter,  \
