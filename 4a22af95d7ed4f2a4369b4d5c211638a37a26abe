@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93952d46_d9eb78ba",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-03T07:35:37Z",
+      "side": 1,
+      "message": "in new code I\u0027d generally prefer {}s on conditionals or loops that continue to the next line even it\u0027s only a single line. I think this helps readability and is less fragile as code is move around.",
+      "revId": "4a22af95d7ed4f2a4369b4d5c211638a37a26abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51301079_a4cfa9aa",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-03T07:35:37Z",
+      "side": 1,
+      "message": "you can use static_cast\u003ctran_low_t\u003e() here",
+      "range": {
+        "startLine": 57,
+        "startChar": 25,
+        "endLine": 57,
+        "endChar": 37
+      },
+      "revId": "4a22af95d7ed4f2a4369b4d5c211638a37a26abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "382693d8_5acd200e",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-03T07:35:37Z",
+      "side": 1,
+      "message": "this is ok, though a struct with HadamardFunc + block_size would help document the parameters. note this is still built as c++03 in places so \u003e\u003e will break (that\u0027s c++11)",
+      "range": {
+        "startLine": 122,
+        "startChar": 38,
+        "endLine": 122,
+        "endChar": 66
+      },
+      "revId": "4a22af95d7ed4f2a4369b4d5c211638a37a26abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5438ee81_cad8f468",
+        "filename": "test/hadamard_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-03T07:35:37Z",
+      "side": 1,
+      "message": "this should be virtual for c++03 (gcc\u0027s default standard can move from version to version). we should force this or decide that we want to convert to c++11 like libaom recently did",
+      "range": {
+        "startLine": 214,
+        "startChar": 17,
+        "endLine": 214,
+        "endChar": 25
+      },
+      "revId": "4a22af95d7ed4f2a4369b4d5c211638a37a26abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
