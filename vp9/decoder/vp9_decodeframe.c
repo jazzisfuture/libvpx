@@ -2204,8 +2204,6 @@ void vp9_decode_frame(VP9Decoder *pbi, const uint8_t *data,
     cm->frame_contexts[cm->frame_context_idx] = *cm->fc;
 
 #if CONFIG_INSPECTION
-  if (pbi->inspect_cb != NULL)
-    (*pbi->inspect_cb)(pbi, pbi->inspect_ctx);
+  if (pbi->inspect_cb != NULL) (*pbi->inspect_cb)(pbi, pbi->inspect_ctx);
 #endif
-
 }
