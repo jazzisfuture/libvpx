@@ -42,6 +42,8 @@ int ifd_inspect(insp_frame_data *fd, void *decoder) {
   fd->show_frame = cm->show_frame;
   fd->frame_type = cm->frame_type;
   fd->base_qindex = cm->base_qindex;
+  fd->show_existing_frame = cm->show_existing_frame;
+
   // TODO: copy tile data
   // fd->tile_mi_cols = cm->tile_width;
   // fd->tile_mi_rows = cm->tile_height;
@@ -57,16 +59,21 @@ int ifd_inspect(insp_frame_data *fd, void *decoder) {
   }
   for (j = 0; j < cm->mi_rows; j++) {
     for (i = 0; i < cm->mi_cols; i++) {
-      const MODE_INFO *bmi =
-          cm->mi_grid_visible[j * cm->mi_stride + i];
+      const MODE_INFO *bmi = cm->mi_grid_visible[j * cm->mi_stride + i];
       insp_mi_data *mi = &fd->mi_grid[j * cm->mi_cols + i];
       // Segment
       mi->segment_id = bmi->segment_id;
       // Motion Vectors
       mi->mv[0].row = bmi->mv[0].as_mv.row;
       mi->mv[0].col = bmi->mv[0].as_mv.col;
-      mi->mv[1].row = bmi->mv[1].as_mv.row;
-      mi->mv[1].col = bmi->mv[1].as_mv.col;
+
+      if (bmi->ref_frame[1] == -1) {
+        mi->mv[1].row = 0;
+        mi->mv[1].col = 0;
+      } else {
+        mi->mv[1].row = bmi->mv[1].as_mv.row;
+        mi->mv[1].col = bmi->mv[1].as_mv.col;
+      }
       // Reference Frames
       mi->ref_frame[0] = bmi->ref_frame[0];
       mi->ref_frame[1] = bmi->ref_frame[1];
@@ -75,7 +82,7 @@ int ifd_inspect(insp_frame_data *fd, void *decoder) {
       // Prediction Mode for Chromatic planes
       // TODO: mbx handle UV_MODE_INVALID case
       // if (mi->mode < INTRA_MODES) {
-        mi->uv_mode = bmi->uv_mode;
+      mi->uv_mode = bmi->uv_mode;
       // } else {
       //   mi->uv_mode = UV_MODE_INVALID;
       // }
