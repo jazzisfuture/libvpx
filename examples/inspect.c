@@ -42,8 +42,6 @@
 // #include "../vp8/common/onyxc_int.h"
 // #include "../vp8/encoder/onyx_int.h"
 
-
-
 #include "../video_common.h"
 
 // Max JSON buffer size.
@@ -129,36 +127,28 @@ typedef struct map_entry {
   int value;
 } map_entry;
 
-const map_entry refs_map[] = {
-  ENUM(INTRA_FRAME),   ENUM(LAST_FRAME), ENUM(GOLDEN_FRAME),
-  ENUM(ALTREF_FRAME),  LAST_ENUM
-};
+const map_entry refs_map[] = { ENUM(INTRA_FRAME), ENUM(LAST_FRAME),
+                               ENUM(GOLDEN_FRAME), ENUM(ALTREF_FRAME),
+                               LAST_ENUM };
 
 const map_entry block_size_map[] = {
-  ENUM(BLOCK_4X4),    ENUM(BLOCK_4X8),    ENUM(BLOCK_8X4),
-  ENUM(BLOCK_8X8),    ENUM(BLOCK_8X16),   ENUM(BLOCK_16X8),
-  ENUM(BLOCK_16X16),  ENUM(BLOCK_16X32),  ENUM(BLOCK_32X16),
-  ENUM(BLOCK_32X32),  ENUM(BLOCK_32X64),  ENUM(BLOCK_64X32),
-  ENUM(BLOCK_64X64),  LAST_ENUM
+  ENUM(BLOCK_4X4),   ENUM(BLOCK_4X8),   ENUM(BLOCK_8X4),   ENUM(BLOCK_8X8),
+  ENUM(BLOCK_8X16),  ENUM(BLOCK_16X8),  ENUM(BLOCK_16X16), ENUM(BLOCK_16X32),
+  ENUM(BLOCK_32X16), ENUM(BLOCK_32X32), ENUM(BLOCK_32X64), ENUM(BLOCK_64X32),
+  ENUM(BLOCK_64X64), LAST_ENUM
 };
 
-const map_entry tx_size_map[] = {
-  ENUM(TX_4X4),   ENUM(TX_8X8),   ENUM(TX_16X16), ENUM(TX_32X32),
-  LAST_ENUM
-};
+const map_entry tx_size_map[] = { ENUM(TX_4X4), ENUM(TX_8X8), ENUM(TX_16X16),
+                                  ENUM(TX_32X32), LAST_ENUM };
 
-const map_entry tx_type_map[] = { ENUM(DCT_DCT),
-                                  ENUM(ADST_DCT),
-                                  ENUM(DCT_ADST),
-                                  ENUM(ADST_ADST),
-                                  LAST_ENUM };
+const map_entry tx_type_map[] = { ENUM(DCT_DCT), ENUM(ADST_DCT), ENUM(DCT_ADST),
+                                  ENUM(ADST_ADST), LAST_ENUM };
 
 const map_entry prediction_mode_map[] = {
-  ENUM(DC_PRED),       ENUM(V_PRED),        ENUM(H_PRED),
-  ENUM(D45_PRED),      ENUM(D135_PRED),     ENUM(D117_PRED),
-  ENUM(D153_PRED),     ENUM(D207_PRED),     ENUM(D63_PRED),
-  ENUM(TM_PRED),       ENUM(NEARESTMV),     ENUM(NEARMV),
-  ENUM(ZEROMV),        ENUM(NEWMV),         LAST_ENUM
+  ENUM(DC_PRED),   ENUM(V_PRED),    ENUM(H_PRED),    ENUM(D45_PRED),
+  ENUM(D135_PRED), ENUM(D117_PRED), ENUM(D153_PRED), ENUM(D207_PRED),
+  ENUM(D63_PRED),  ENUM(TM_PRED),   ENUM(NEARESTMV), ENUM(NEARMV),
+  ENUM(ZEROMV),    ENUM(NEWMV),     LAST_ENUM
 };
 
 #define uv_prediction_mode_map prediction_mode_map
@@ -558,22 +548,51 @@ int open_file(char *file) {
   return EXIT_SUCCESS;
 }
 
+VpxDecodeReturn adr;
+int have_frame = 0;
+const unsigned char *frame;
+const unsigned char *end_frame;
+size_t frame_size = 0;
+vpx_codec_iter_t iter = NULL;
 EMSCRIPTEN_KEEPALIVE
 int read_frame() {
-  if (!vpx_video_reader_read_frame(reader)) return EXIT_FAILURE;
+  int got_any_frames = 0;
+  struct vpx_ref_frame ref_dec;
   img = NULL;
-  vpx_codec_iter_t iter = NULL;
-  size_t frame_size = 0;
-  const unsigned char *frame = vpx_video_reader_get_frame(reader, &frame_size);
-  if (vpx_codec_decode(&codec, frame, (unsigned int)frame_size, NULL, 0) !=
-      VPX_CODEC_OK) {
-    die_codec(&codec, "Failed to decode frame.");
+
+  // This loop skips over any frames that are show_existing_frames,  as
+  // there is nothing to analyze.
+  do {
+    if (!have_frame) {
+      if (!vpx_video_reader_read_frame(reader)) return EXIT_FAILURE;
+      frame = vpx_video_reader_get_frame(reader, &frame_size);
+
+      have_frame = 1;
+      end_frame = frame + frame_size;
+    }
+
+    if (vpx_codec_decode(&codec, frame, (unsigned int)frame_size, &adr, 0) !=
+        VPX_CODEC_OK) {
+      die_codec(&codec, "Failed to decode frame.");
+    }
+
+    frame = adr.buf;
+    if (adr.finished_superframes) have_frame = 0;
+  } while (adr.show_existing);
+
+  // ref_dec.idx is the index to the reference buffer idx to VP9_GET_REFERENCE
+  // if its -1 the decoder didn't update any reference buffer and the only
+  // way to see the frame is aom_codec_get_frame.
+  ref_dec.frame_type = adr.idx;
+
+  if (!vpx_codec_control(&codec, VP9_GET_REFERENCE, &ref_dec)) {
+    img = &ref_dec.img;
+    ++frame_count;
+    got_any_frames = 1;
   }
-  img = vpx_codec_get_frame(&codec, &iter);
-  if (img == NULL) {
+  if (!got_any_frames) {
     return EXIT_FAILURE;
   }
-  ++frame_count;
   return EXIT_SUCCESS;
 }
 
