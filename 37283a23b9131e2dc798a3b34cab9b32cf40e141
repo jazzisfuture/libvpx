@@ -22,6 +22,30 @@
       "revId": "37283a23b9131e2dc798a3b34cab9b32cf40e141",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ca3ee94_fd2cefb0",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 491,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-05T21:37:04Z",
+      "side": 1,
+      "message": "The part that is related to \u0027usage\u0027 seems like it needs to go.\n\nDo you mean it should say \"the default max is X\"? I don\u0027t know what you mean by \"0 is meaningful with vp9\"",
+      "parentUuid": "34d21884_feca567f",
+      "range": {
+        "startLine": 491,
+        "startChar": 19,
+        "endLine": 491,
+        "endChar": 71
+      },
+      "revId": "37283a23b9131e2dc798a3b34cab9b32cf40e141",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

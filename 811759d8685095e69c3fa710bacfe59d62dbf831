@@ -22,6 +22,30 @@
       "revId": "811759d8685095e69c3fa710bacfe59d62dbf831",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ecca782_81989ab7",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-05T21:37:04Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "082e22b6_a6e07ac8",
+      "range": {
+        "startLine": 230,
+        "startChar": 42,
+        "endLine": 230,
+        "endChar": 70
+      },
+      "revId": "811759d8685095e69c3fa710bacfe59d62dbf831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
