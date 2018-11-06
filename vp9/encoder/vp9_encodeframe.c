@@ -1378,6 +1378,11 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       x->sb_use_mv_part = 1;
       x->sb_mvcol_part = mi->mv[0].as_mv.col;
       x->sb_mvrow_part = mi->mv[0].as_mv.row;
+      if (cpi->oxcf.content == VP9E_CONTENT_SCREEN && cpi->rc.high_num_blocks_with_motion) {
+        // Disable split below 16x16 block size.
+        compute_minmax_variance = 0;
+        thresholds[2] = INT64_MAX;
+      }
     }
 
     y_sad_last = y_sad;
