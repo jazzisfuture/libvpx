@@ -1453,6 +1453,15 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   }
 
+  if (cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
+      cpi->svc.spatial_layer_id == 0 &&
+      cpi->rc.high_num_blocks_with_motion &&
+      cpi->sf.mv.fullpel_search_step_param < 4) {
+    // Disable split below 16x16 block size.
+    compute_minmax_variance = 0;
+    thresholds[2] = INT64_MAX;
+  }
+
   if (low_res && threshold_4x4avg < INT64_MAX)
     CHECK_MEM_ERROR(cm, vt2, vpx_calloc(16, sizeof(*vt2)));
   // Fill in the entire tree of 8x8 (or 4x4 under some conditions) variances
