@@ -151,8 +151,8 @@ class HadamardTestBase : public ::testing::TestWithParam<HadamardFuncWithSize> {
 
   void CompareReferenceRandom() {
     const int kMaxBlockSize = 32 * 32;
-    DECLARE_ALIGNED(16, int16_t, a[kMaxBlockSize]);
-    DECLARE_ALIGNED(16, tran_low_t, b[kMaxBlockSize]);
+    DECLARE_ALIGNED(32, int16_t, a[kMaxBlockSize]);
+    DECLARE_ALIGNED(32, tran_low_t, b[kMaxBlockSize]);
     memset(a, 0, sizeof(a));
     memset(b, 0, sizeof(b));
 
@@ -172,8 +172,8 @@ class HadamardTestBase : public ::testing::TestWithParam<HadamardFuncWithSize> {
 
   void VaryStride() {
     const int kMaxBlockSize = 32 * 32;
-    DECLARE_ALIGNED(16, int16_t, a[kMaxBlockSize * 8]);
-    DECLARE_ALIGNED(16, tran_low_t, b[kMaxBlockSize]);
+    DECLARE_ALIGNED(32, int16_t, a[kMaxBlockSize * 8]);
+    DECLARE_ALIGNED(32, tran_low_t, b[kMaxBlockSize]);
     memset(a, 0, sizeof(a));
     for (int i = 0; i < block_size_ * 8; ++i) a[i] = Rand();
 
@@ -194,8 +194,8 @@ class HadamardTestBase : public ::testing::TestWithParam<HadamardFuncWithSize> {
 
   void SpeedTest(int times) {
     const int kMaxBlockSize = 32 * 32;
-    DECLARE_ALIGNED(16, int16_t, input[kMaxBlockSize]);
-    DECLARE_ALIGNED(16, tran_low_t, output[kMaxBlockSize]);
+    DECLARE_ALIGNED(32, int16_t, input[kMaxBlockSize]);
+    DECLARE_ALIGNED(32, tran_low_t, output[kMaxBlockSize]);
     memset(input, 1, sizeof(input));
     memset(output, 0, sizeof(output));
 
@@ -310,7 +310,9 @@ INSTANTIATE_TEST_CASE_P(
 #if HAVE_AVX2
 INSTANTIATE_TEST_CASE_P(
     AVX2, HadamardHighbdTest,
-    ::testing::Values(HadamardFuncWithSize(&vpx_highbd_hadamard_8x8_avx2, 8)));
+    ::testing::Values(HadamardFuncWithSize(&vpx_highbd_hadamard_8x8_avx2, 8),
+                      HadamardFuncWithSize(&vpx_highbd_hadamard_16x16_avx2,
+                                           16)));
 #endif  // HAVE_AVX2
 
 #endif  // CONFIG_VP9_HIGHBITDEPTH
