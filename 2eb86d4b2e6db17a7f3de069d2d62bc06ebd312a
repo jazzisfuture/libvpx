@@ -46,6 +46,30 @@
       "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcd8d29f_7fc8b480",
+        "filename": "vpx_dsp/x86/avg_intrin_avx2.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-07T19:05:01Z",
+      "side": 1,
+      "message": "I need to sit down with a pencil to double check. Where is the highbd C version? This only has 8 bit:\nhttps://aomedia.googlesource.com/aom/+/master/aom_dsp/avg.c",
+      "parentUuid": "35f53578_a3f0178b",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 34
+      },
+      "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
