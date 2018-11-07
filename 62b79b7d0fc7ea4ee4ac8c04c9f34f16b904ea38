@@ -89,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "1c89447f_67e066d8",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 1289402
+      },
+      "writtenOn": "2018-11-07T09:38:09Z",
+      "side": 1,
+      "message": "We didn\u0027t condition it because it is used even in the single thread path when row_mt flag is set. Previously, functions seem to have been conditioned on the macro only if they depended on it to compile successfully. Functions like vp9_accumulate_frame_counts and decode_tiles_mt are not in the macro.",
+      "parentUuid": "d5f0bae6_70fcd75b",
+      "revId": "62b79b7d0fc7ea4ee4ac8c04c9f34f16b904ea38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e9933bfc_1b880502",
         "filename": "vp9/decoder/vp9_decodeframe.c",
         "patchSetId": 19
@@ -173,6 +191,24 @@
       "revId": "62b79b7d0fc7ea4ee4ac8c04c9f34f16b904ea38",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0570e308_19fa89ae",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 1000,
+      "author": {
+        "id": 1289402
+      },
+      "writtenOn": "2018-11-07T09:38:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "99d07cdb_14c8fd6e",
+      "revId": "62b79b7d0fc7ea4ee4ac8c04c9f34f16b904ea38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
