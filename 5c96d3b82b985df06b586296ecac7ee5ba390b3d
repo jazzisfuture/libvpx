@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a8e4402b_b5f2f66a",
+        "filename": "vp9/encoder/vp9_rd.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1000893
+      },
+      "writtenOn": "2018-11-07T19:59:14Z",
+      "side": 1,
+      "message": "This computation makes use of the following equation:\n88 * q * q / 24 \u003d q * q * 11 /3 \u003d q * q * 3 + q * q * 2 / 3\nThe computation stays within 32-bit integer given the range of dc_quant.",
+      "range": {
+        "startLine": 179,
+        "startChar": 0,
+        "endLine": 180,
+        "endChar": 41
+      },
+      "revId": "5c96d3b82b985df06b586296ecac7ee5ba390b3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
