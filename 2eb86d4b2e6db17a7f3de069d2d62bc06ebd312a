@@ -94,6 +94,30 @@
       "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f47939a6_8fb16842",
+        "filename": "vpx_dsp/x86/avg_intrin_avx2.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-08T18:25:10Z",
+      "side": 1,
+      "message": "Apologies, I was looking at aom by mistake.\n\nThe first pass should still fit in 16 bits though?\n\n#if CONFIG_VP9_HIGHBITDEPTH\n// src_diff: 13 bit, dynamic range [-4095, 4095]\n// coeff: 16 bit\nstatic void hadamard_highbd_col8_first_pass(const int16_t *src_diff,\n                                            ptrdiff_t src_stride,\n                                            int32_t *coeff) {\n\nNot sure why the C uses int32_t for coeff.",
+      "parentUuid": "946af3f2_c230d288",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 34
+      },
+      "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
