@@ -61,6 +61,7 @@ int vp8_yv12_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width,
 
     if (!ybf->buffer_alloc) {
       ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, frame_size);
+      memset(ybf->buffer_alloc, 0, frame_size);
       ybf->buffer_alloc_sz = frame_size;
     }
 
