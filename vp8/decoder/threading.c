@@ -15,8 +15,9 @@
 #endif
 #include "onyxd_int.h"
 #include "vpx_mem/vpx_mem.h"
+#include "vpx_mem/include/vpx_mem_intrnl.h"
+#include "vp8/common/common.h"
 #include "vp8/common/threading.h"
-
 #include "vp8/common/loopfilter.h"
 #include "vp8/common/extend.h"
 #include "vpx_ports/vpx_timer.h"
@@ -36,6 +37,10 @@
     CHECK_MEM_ERROR((p), vpx_memalign((algn), sizeof(*(p)) * (n))); \
     memset((p), 0, (n) * sizeof(*(p)));                             \
   } while (0)
+
+static uint64_t get_aligned_malloc_size(size_t size, size_t align) {
+  return (uint64_t)size + align - 1 + ADDRESS_STORAGE_SIZE;
+}
 
 static void setup_decoding_thread_data(VP8D_COMP *pbi, MACROBLOCKD *xd,
                                        MB_ROW_DEC *mbrd, int count) {
@@ -761,22 +766,37 @@ void vp8mt_alloc_temp_buffers(VP8D_COMP *pbi, int width, int prev_mb_rows) {
 
     /* Allocate memory for above_row buffers. */
     CALLOC_ARRAY(pbi->mt_yabove_row, pc->mb_rows);
-    for (i = 0; i < pc->mb_rows; ++i)
+    for (i = 0; i < pc->mb_rows; ++i) {
       CHECK_MEM_ERROR(pbi->mt_yabove_row[i],
                       vpx_memalign(16, sizeof(unsigned char) *
                                            (width + (VP8BORDERINPIXELS << 1))));
+      vp8_zero_array(
+          pbi->mt_yabove_row[i],
+          get_aligned_malloc_size(
+              sizeof(unsigned char) * (width + (VP8BORDERINPIXELS << 1)), 16));
+    }
 
     CALLOC_ARRAY(pbi->mt_uabove_row, pc->mb_rows);
-    for (i = 0; i < pc->mb_rows; ++i)
+    for (i = 0; i < pc->mb_rows; ++i) {
       CHECK_MEM_ERROR(pbi->mt_uabove_row[i],
                       vpx_memalign(16, sizeof(unsigned char) *
                                            (uv_width + VP8BORDERINPIXELS)));
+      vp8_zero_array(
+          pbi->mt_uabove_row[i],
+          get_aligned_malloc_size(
+              sizeof(unsigned char) * (uv_width + VP8BORDERINPIXELS), 16));
+    }
 
     CALLOC_ARRAY(pbi->mt_vabove_row, pc->mb_rows);
-    for (i = 0; i < pc->mb_rows; ++i)
+    for (i = 0; i < pc->mb_rows; ++i) {
       CHECK_MEM_ERROR(pbi->mt_vabove_row[i],
                       vpx_memalign(16, sizeof(unsigned char) *
                                            (uv_width + VP8BORDERINPIXELS)));
+      vp8_zero_array(
+          pbi->mt_vabove_row[i],
+          get_aligned_malloc_size(
+              sizeof(unsigned char) * (uv_width + VP8BORDERINPIXELS), 16));
+    }
 
     /* Allocate memory for left_col buffers. */
     CALLOC_ARRAY(pbi->mt_yleft_col, pc->mb_rows);
