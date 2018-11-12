@@ -1012,16 +1012,20 @@ EOF
         vs*)
           asm_conversion_cmd="${source_path}/build/make/ads2armasm_ms.pl"
           AS_SFX=.S
-          msvs_arch_dir=arm-msvs
-          disable_feature multithread
-          disable_feature unit_tests
           vs_version=${tgt_cc##vs}
-          if [ $vs_version -ge 12 ]; then
-            # MSVC 2013 doesn't allow doing plain .exe projects for ARM,
-            # only "AppContainerApplication" which requires an AppxManifest.
-            # Therefore disable the examples, just build the library.
-            disable_feature examples
-            disable_feature tools
+          # Visual Studio 15.9.0+ with the Windows SDK has full ARM64 support.
+          # ARM64 => Win64, Win64+ARM => ARM64
+          if [ $tgt_os != "win64" || $vsversion -lt 15 ]; then
+            msvs_arch_dir=arm-msvs
+            disable_feature multithread
+            disable_feature unit_tests
+            if [ $vs_version -ge 12 ]; then
+              # MSVC 2013 doesn't allow doing plain .exe projects for ARM32,
+              # only "AppContainerApplication" which requires an AppxManifest.
+              # Therefore disable the examples, just build the library.
+              disable_feature examples
+              disable_feature tools
+            fi
           fi
           ;;
         rvct)
