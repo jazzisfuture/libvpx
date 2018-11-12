@@ -3713,6 +3713,9 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     return 1;
   }
 
+  cpi->svc.time_stamp_prev[cpi->svc.spatial_layer_id] = 
+      cpi->svc.time_stamp_superframe;
+
   // Flag to check if its valid to compute the source sad (used for
   // scene detection and for superblock content state in CBR mode).
   // The flag may get reset below based on SVC or resizing state.
@@ -6696,7 +6699,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   // Save layer specific state.
   if (is_one_pass_cbr_svc(cpi) || ((cpi->svc.number_temporal_layers > 1 ||
                                     cpi->svc.number_spatial_layers > 1) &&
-                                   oxcf->pass == 2)) {
+                                   oxcf->pass == 2)) {    
     vp9_save_layer_context(cpi);
   }
 
