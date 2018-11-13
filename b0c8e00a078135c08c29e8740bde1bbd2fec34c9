@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3bdc2932_71575352",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-13T06:38:49Z",
+      "side": 1,
+      "message": "2018",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a64c3c3_c3bcff57",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-13T06:38:49Z",
+      "side": 1,
+      "message": "we can make this DECODE_MODE_serial for this project. libaom\u0027s version was released in this form and couldn\u0027t change as it would invalidate open bugs on oss-fuzz.",
+      "range": {
+        "startLine": 48,
+        "startChar": 27,
+        "endLine": 48,
+        "endChar": 39
+      },
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6badc5bc_1a92d498",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-13T06:38:49Z",
+      "side": 1,
+      "message": "like the tests, this C++ file should use upper camel-case for functions: CloseFile()",
+      "range": {
+        "startLine": 82,
+        "startChar": 12,
+        "endLine": 82,
+        "endChar": 22
+      },
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8568a267_b06a4211",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-13T06:38:49Z",
+      "side": 1,
+      "message": "add a note for the origin of this function and it\u0027s difference (i.e., reduce error logging).",
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76211165_4885832e",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-13T06:38:49Z",
+      "side": 1,
+      "message": "this can just be a define for which decoder:\n#define VPX_TOSTRING(str) #str\n#define VPX_STRINGIFY(str) VPX_TOSTRING(str)\n...\n const VpxInterface *decoder \u003d get_vpx_decoder_by_name(VPX_STRINGIFY(DECODER));",
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
