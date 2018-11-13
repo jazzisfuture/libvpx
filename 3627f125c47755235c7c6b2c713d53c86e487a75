@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4ed78a6_09bf6fec",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-13T00:02:07Z",
+      "side": 1,
+      "message": "add comment about how \"sgn\" is  used. and maybe get a more meaningful name.",
+      "range": {
+        "startLine": 264,
+        "startChar": 12,
+        "endLine": 264,
+        "endChar": 45
+      },
+      "revId": "3627f125c47755235c7c6b2c713d53c86e487a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3cf81c9_10efb7e7",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-13T00:02:07Z",
+      "side": 1,
+      "message": "this can be const",
+      "range": {
+        "startLine": 267,
+        "startChar": 10,
+        "endLine": 267,
+        "endChar": 18
+      },
+      "revId": "3627f125c47755235c7c6b2c713d53c86e487a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24ad3521_f92d5234",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-13T00:02:07Z",
+      "side": 1,
+      "message": "*const",
+      "range": {
+        "startLine": 272,
+        "startChar": 18,
+        "endLine": 272,
+        "endChar": 19
+      },
+      "revId": "3627f125c47755235c7c6b2c713d53c86e487a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ceb0ee21_b3d9ba80",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-13T00:02:07Z",
+      "side": 1,
+      "message": "*const",
+      "range": {
+        "startLine": 273,
+        "startChar": 17,
+        "endLine": 273,
+        "endChar": 18
+      },
+      "revId": "3627f125c47755235c7c6b2c713d53c86e487a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "783bfa6b_a19997dc",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-13T00:02:07Z",
+      "side": 1,
+      "message": "these two can be both const",
+      "range": {
+        "startLine": 276,
+        "startChar": 13,
+        "endLine": 277,
+        "endChar": 29
+      },
+      "revId": "3627f125c47755235c7c6b2c713d53c86e487a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24e0ac65_7a066af9",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-13T00:02:07Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 298,
+        "startChar": 6,
+        "endLine": 298,
+        "endChar": 28
+      },
+      "revId": "3627f125c47755235c7c6b2c713d53c86e487a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
