@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "11059268_77564d4e",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-11-13T07:25:14Z",
+      "side": 1,
+      "message": "One thing I was wondering was, do we really need this build time switch for 1 core vs multi-core.\nAs long as threads takes values from 1 to 64, we can have a single binary which would test both paths. \nThis way, there is no need to test both _serial and _threaded binaries separately.\nWere any issues seen/feedback given on this approach in libaom?",
+      "parentUuid": "0a64c3c3_c3bcff57",
+      "range": {
+        "startLine": 48,
+        "startChar": 27,
+        "endLine": 48,
+        "endChar": 39
+      },
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6badc5bc_1a92d498",
         "filename": "examples/vpx_dec_fuzzer.cc",
         "patchSetId": 5
@@ -99,6 +123,24 @@
       "writtenOn": "2018-11-13T06:38:49Z",
       "side": 1,
       "message": "this can just be a define for which decoder:\n#define VPX_TOSTRING(str) #str\n#define VPX_STRINGIFY(str) VPX_TOSTRING(str)\n...\n const VpxInterface *decoder \u003d get_vpx_decoder_by_name(VPX_STRINGIFY(DECODER));",
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0165986c_a979d48b",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-11-13T07:25:14Z",
+      "side": 1,
+      "message": "I was thinking if it is better make this decision in the run-time based on fourCC present in the stream. That way if the ivf file fed as input is a VP8, it would call VP8 else it would call VP9. One downside however is VP9 decoder will never be tested with VP8 files in the corpus and vice versa. But I expect that feeding clips of different standard, would hit errors in the first few entries and return and won\u0027t really test the decoder much.\nIf it is better to continue to have two different binaries, I will make the changes suggested.",
+      "parentUuid": "76211165_4885832e",
       "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
