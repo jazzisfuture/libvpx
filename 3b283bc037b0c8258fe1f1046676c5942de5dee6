@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cb9bd3df_cb618252",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1014,
+      "author": {
+        "id": 1312654
+      },
+      "writtenOn": "2018-11-14T21:14:08Z",
+      "side": 1,
+      "message": "Understood; that\u0027s easy enough.",
+      "parentUuid": "6cd23517_acf8d464",
+      "range": {
+        "startLine": 1013,
+        "startChar": 10,
+        "endLine": 1014,
+        "endChar": 19
+      },
+      "revId": "3b283bc037b0c8258fe1f1046676c5942de5dee6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "91ffc585_3cb4f618",
         "filename": "build/make/configure.sh",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "bd49fc38_633aaf28",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1016,
+      "author": {
+        "id": 1312654
+      },
+      "writtenOn": "2018-11-14T21:14:08Z",
+      "side": 1,
+      "message": "VS 15 is the first version to include ARM64 support, albeit in 15.9.",
+      "parentUuid": "91ffc585_3cb4f618",
+      "range": {
+        "startLine": 1016,
+        "startChar": 0,
+        "endLine": 1016,
+        "endChar": 78
+      },
+      "revId": "3b283bc037b0c8258fe1f1046676c5942de5dee6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cd0ac261_0c222196",
         "filename": "build/make/configure.sh",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2018-11-14T20:09:20Z",
       "side": 1,
       "message": "Do examples/tools work in Win64/VS 15?",
+      "range": {
+        "startLine": 1026,
+        "startChar": 14,
+        "endLine": 1026,
+        "endChar": 38
+      },
+      "revId": "3b283bc037b0c8258fe1f1046676c5942de5dee6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d78e3072_b12c236c",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1026,
+      "author": {
+        "id": 1312654
+      },
+      "writtenOn": "2018-11-14T21:14:08Z",
+      "side": 1,
+      "message": "If it works for any Win platform, it should work for ARM64 Win64. The new SDK has full Win32 API support and is happy to produce EXEs and other targets. The goal is for ARM64 Windows to be Just Another Windows, in sharp contrast to Windows RT.\n\nI haven\u0027t actually built it yet, so I\u0027ll give it a shot.",
+      "parentUuid": "cd0ac261_0c222196",
       "range": {
         "startLine": 1026,
         "startChar": 14,
