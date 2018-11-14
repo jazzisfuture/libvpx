@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e2ce0ffb_2369823f",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-14T07:34:22Z",
+      "side": 1,
+      "message": "add a blank line after the system headers",
+      "revId": "cce20eb689eca56834f164e6f8eaed7edc9ac86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8be1222a_f0c29df2",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-14T07:34:22Z",
+      "side": 1,
+      "message": "these can be sorted, I don\u0027t believe you need vpx_config.h after removing the CONFIG_* check",
+      "revId": "cce20eb689eca56834f164e6f8eaed7edc9ac86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9348faf1_e332248c",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-14T07:34:22Z",
+      "side": 1,
+      "message": "this won\u0027t build if the include is missing, best to include it unconditionally for this standalone test. if a codec is requested that isn\u0027t built into libvpx it will fail at runtime.",
+      "revId": "cce20eb689eca56834f164e6f8eaed7edc9ac86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bad17c2a_bdc40d12",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-14T07:34:22Z",
+      "side": 1,
+      "message": "missing a period (decoder.)",
+      "range": {
+        "startLine": 92,
+        "startChar": 58,
+        "endLine": 92,
+        "endChar": 65
+      },
+      "revId": "cce20eb689eca56834f164e6f8eaed7edc9ac86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
