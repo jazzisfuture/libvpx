@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "b513494c_7a342932",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-14T07:27:16Z",
+      "side": 1,
+      "message": "\u003e Changed as per the suggestion. Will take up having a single binary for single core and multi-core as a new commit if required.\n\nI had a similar thought, I think it can be one now. The define is leftover from the forced 1/16 values in libaom before we moved to randomizing the value.",
+      "parentUuid": "9a80bded_a94cbbfd",
+      "range": {
+        "startLine": 48,
+        "startChar": 27,
+        "endLine": 48,
+        "endChar": 39
+      },
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6badc5bc_1a92d498",
         "filename": "examples/vpx_dec_fuzzer.cc",
         "patchSetId": 5
