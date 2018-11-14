@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6cd23517_acf8d464",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1014,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-14T20:09:20Z",
+      "side": 1,
+      "message": "This can go in the win32 block. We do not support assembly files with aarch64.",
+      "range": {
+        "startLine": 1013,
+        "startChar": 10,
+        "endLine": 1014,
+        "endChar": 19
+      },
+      "revId": "3b283bc037b0c8258fe1f1046676c5942de5dee6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91ffc585_3cb4f618",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1016,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-14T20:09:20Z",
+      "side": 1,
+      "message": "I\u0027m not sure how VS 15 comes into play here. I think this block would be clearer as:\n\nif win32\n msvs_arch_dir\u003darm-msvs\n disable_feature multithread\n disable_feature unit_tests\n if vs_version \u003e\u003d 12\n   disable_feature examples\n   disable_feature tools\n endif\nelse  # win64\n  # optional explanation of why win64 doesn\u0027t need this\nendif\n\nor is the intention actually:\nif win32\n msvs_arch_dir\u003darm-msvs\n disable_feature multithread\n disable_feature unit_tests\nendif\n\nif vs_version \u003e\u003d 12\n disable_feature examples\n disable_feature tools\nendif\n\nor is there a version where examples/tools do work?",
+      "range": {
+        "startLine": 1016,
+        "startChar": 0,
+        "endLine": 1016,
+        "endChar": 78
+      },
+      "revId": "3b283bc037b0c8258fe1f1046676c5942de5dee6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd0ac261_0c222196",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1026,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-14T20:09:20Z",
+      "side": 1,
+      "message": "Do examples/tools work in Win64/VS 15?",
+      "range": {
+        "startLine": 1026,
+        "startChar": 14,
+        "endLine": 1026,
+        "endChar": 38
+      },
+      "revId": "3b283bc037b0c8258fe1f1046676c5942de5dee6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
