@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bc6fa2b1_35af9383",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-11-14T00:35:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3bdc2932_71575352",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a64c3c3_c3bcff57",
         "filename": "examples/vpx_dec_fuzzer.cc",
         "patchSetId": 5
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "9a80bded_a94cbbfd",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-11-14T00:35:50Z",
+      "side": 1,
+      "message": "Changed as per the suggestion. Will take up having a single binary for single core and multi-core as a new commit if required.",
+      "parentUuid": "11059268_77564d4e",
+      "range": {
+        "startLine": 48,
+        "startChar": 27,
+        "endLine": 48,
+        "endChar": 39
+      },
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6badc5bc_1a92d498",
         "filename": "examples/vpx_dec_fuzzer.cc",
         "patchSetId": 5
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "66c63c95_1cb0a867",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-11-14T00:35:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6badc5bc_1a92d498",
+      "range": {
+        "startLine": 82,
+        "startChar": 12,
+        "endLine": 82,
+        "endChar": 22
+      },
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8568a267_b06a4211",
         "filename": "examples/vpx_dec_fuzzer.cc",
         "patchSetId": 5
@@ -109,6 +181,24 @@
       "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fe727d9_fafe87ea",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-11-14T00:35:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8568a267_b06a4211",
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -144,6 +234,24 @@
       "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c5ca563_0c79aaad",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-11-14T00:35:50Z",
+      "side": 1,
+      "message": "Done. Made changes suggested. \nFurther changes to combine vp8 and vp9 into a single binary will be taken up as a separate commit if required.",
+      "parentUuid": "0165986c_a979d48b",
+      "revId": "b0c8e00a078135c08c29e8740bde1bbd2fec34c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
