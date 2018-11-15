@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "96677475_0132372e",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 5
+      },
+      "lineNbr": 1019,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-15T22:17:28Z",
+      "side": 1,
+      "message": "I made a minor edit to keep the previous order (and minimize the diff) and because gerrit won\u0027t let me rebase a change that is against the current ToT so I can change the \"committer:\" field.",
+      "range": {
+        "startLine": 1019,
+        "startChar": 0,
+        "endLine": 1019,
+        "endChar": 34
+      },
+      "revId": "e6f889c120f65bb3d612aec8e6b1e7e4fcd25378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
