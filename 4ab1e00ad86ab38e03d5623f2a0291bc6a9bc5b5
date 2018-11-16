@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "184974fe_b0f922c0",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 1058,
+      "author": {
+        "id": 1312654
+      },
+      "writtenOn": "2018-11-16T00:51:04Z",
+      "side": 1,
+      "message": "This fails because check_header is broken here. I\u0027m looking into it.",
+      "revId": "4ab1e00ad86ab38e03d5623f2a0291bc6a9bc5b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
