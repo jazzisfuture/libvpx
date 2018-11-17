@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "278f369e_94cd57da",
+        "filename": "test/add_noise_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-17T00:41:43Z",
+      "side": 1,
+      "message": "another option is to use a simple struct so the parameters have a meaningful name associated with them. this is OK though",
+      "revId": "a421e21e0315aea89663bf0cd350551d92111e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
