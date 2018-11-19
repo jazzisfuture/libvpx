@@ -210,6 +210,10 @@ class TransTestBase : public ::testing::TestWithParam<DctParam> {
     Buffer<int16_t> test_input_block =
         Buffer<int16_t>(size_, size_, 8, size_ == 4 ? 0 : 16);
     ASSERT_TRUE(test_input_block.Init());
+    if (test_input_block.TopLeftPixel() == NULL) {
+      assert(0);
+      return;
+    }
     Buffer<tran_low_t> test_temp_block =
         Buffer<tran_low_t>(size_, size_, 0, 16);
     ASSERT_TRUE(test_temp_block.Init());
@@ -314,6 +318,10 @@ class TransTestBase : public ::testing::TestWithParam<DctParam> {
       } else if (i == 1) {
         input_extreme_block.Set(-max_pixel_value_);
       } else {
+        if (input_extreme_block.TopLeftPixel() == NULL) {
+          assert(0);
+          return;
+        }
         for (int h = 0; h < size_; ++h) {
           for (int w = 0; w < size_; ++w) {
             input_extreme_block
@@ -328,6 +336,10 @@ class TransTestBase : public ::testing::TestWithParam<DctParam> {
 
       // The minimum quant value is 4.
       EXPECT_TRUE(output_block.CheckValues(output_ref_block));
+      if (output_block.TopLeftPixel() == NULL) {
+        assert(0);
+        return;
+      }
       for (int h = 0; h < size_; ++h) {
         for (int w = 0; w < size_; ++w) {
           EXPECT_GE(
@@ -365,6 +377,10 @@ class TransTestBase : public ::testing::TestWithParam<DctParam> {
 
     for (int i = 0; i < count_test_block; ++i) {
       InitMem();
+      if (in.TopLeftPixel() == NULL) {
+        assert(0);
+        return;
+      }
       // Initialize a test block with input range [-max_pixel_value_,
       // max_pixel_value_].
       for (int h = 0; h < size_; ++h) {
