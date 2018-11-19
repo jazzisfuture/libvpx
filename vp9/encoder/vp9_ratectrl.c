@@ -2122,7 +2122,7 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
     cm->frame_type = KEY_FRAME;
     rc->source_alt_ref_active = 0;
     if (is_one_pass_cbr_svc(cpi)) {
-      if (cm->current_video_frame > 0) vp9_svc_reset_key_frame(cpi);
+      if (cm->current_video_frame > 0) vp9_svc_reset_temporal_layers(cpi, 1);
       layer = LAYER_IDS_TO_IDX(svc->spatial_layer_id, svc->temporal_layer_id,
                                svc->number_temporal_layers);
       svc->layer_context[layer].is_key_frame = 1;
