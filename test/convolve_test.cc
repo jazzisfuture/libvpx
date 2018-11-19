@@ -113,7 +113,7 @@ void filter_block2d_8_c(const uint8_t *src_ptr, const unsigned int src_stride,
   //                               = 23
   // and filter_max_width          = 16
   //
-  uint8_t intermediate_buffer[71 * kMaxDimension];
+  uint8_t intermediate_buffer[71 * kMaxDimension] = { 0 };
   const int intermediate_next_stride =
       1 - static_cast<int>(intermediate_height * output_width);
 
