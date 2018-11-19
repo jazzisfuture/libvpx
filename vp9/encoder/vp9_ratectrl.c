@@ -274,12 +274,12 @@ static void update_buffer_level_svc_preencode(VP9_COMP *cpi) {
         LAYER_IDS_TO_IDX(svc->spatial_layer_id, i, svc->number_temporal_layers);
     LAYER_CONTEXT *const lc = &svc->layer_context[layer];
     RATE_CONTROL *const lrc = &lc->rc;
-    if (use_timestamp && cpi->svc.use_set_ref_frame_config &&
-        svc->number_temporal_layers == 1 && ts_delta > 0 &&
+    if (use_timestamp && cpi->svc.use_set_ref_frame_config && ts_delta > 0 &&
         svc->current_superframe > 0) {
-      // TODO(marpan): This may need to be modified for temporal layers.
       const double framerate_pts = 10000000.0 / ts_delta;
-      lrc->bits_off_target += (int)(lc->target_bandwidth / framerate_pts);
+      const double lc_framerate_pts =
+          framerate_pts / cpi->oxcf.ts_rate_decimator[i];
+      lrc->bits_off_target += (int)(lc->target_bandwidth / lc_framerate_pts);
     } else {
       lrc->bits_off_target += (int)(lc->target_bandwidth / lc->framerate);
     }
@@ -2122,7 +2122,7 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
     cm->frame_type = KEY_FRAME;
     rc->source_alt_ref_active = 0;
     if (is_one_pass_cbr_svc(cpi)) {
-      if (cm->current_video_frame > 0) vp9_svc_reset_key_frame(cpi);
+      if (cm->current_video_frame > 0) vp9_svc_reset_temporal_layers(cpi, 1);
       layer = LAYER_IDS_TO_IDX(svc->spatial_layer_id, svc->temporal_layer_id,
                                svc->number_temporal_layers);
       svc->layer_context[layer].is_key_frame = 1;
