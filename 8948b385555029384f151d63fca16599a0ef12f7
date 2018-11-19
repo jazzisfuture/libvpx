@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5904e94f_97a58433",
+        "filename": "test/convolve_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-19T22:41:42Z",
+      "side": 1,
+      "message": "Some compilers only set the first element to 0 with this syntax. You can use vp9_zero() to ensure the whole array is set.",
+      "range": {
+        "startLine": 116,
+        "startChar": 52,
+        "endLine": 116,
+        "endChar": 57
+      },
+      "revId": "8948b385555029384f151d63fca16599a0ef12f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
