@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb2e83b0_8561ee72",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-20T21:28:23Z",
+      "side": 1,
+      "message": "Does this comparison make sense anymore? Can size_t be \u003e SIZE_MAX?",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 32
+      },
+      "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "384cbe4b_1d762760",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-20T21:28:23Z",
+      "side": 1,
+      "message": "You should be able to remove this now?",
+      "range": {
+        "startLine": 214,
+        "startChar": 36,
+        "endLine": 214,
+        "endChar": 42
+      },
+      "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f33054d_93977124",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-20T21:28:23Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 225,
+        "startChar": 30,
+        "endLine": 225,
+        "endChar": 36
+      },
+      "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea701c39_811bf0a3",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-20T21:28:23Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 246,
+        "startChar": 23,
+        "endLine": 246,
+        "endChar": 29
+      },
+      "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
