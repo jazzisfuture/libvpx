@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ddd6452a_6766aea3",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-11-20T17:42:46Z",
+      "side": 0,
+      "message": "This (int) cast may have come from the (int) cast in line 218, where we assign frame_size to ybf-\u003ebuffer_alloc_sz, which has the int type. Since the third parameter of memset() is a size_t, we should use a (size_t) cast here.",
+      "range": {
+        "startLine": 207,
+        "startChar": 35,
+        "endLine": 207,
+        "endChar": 50
+      },
+      "revId": "1e58bdb41d886be6246f85913b2cd5ec6aae57bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
