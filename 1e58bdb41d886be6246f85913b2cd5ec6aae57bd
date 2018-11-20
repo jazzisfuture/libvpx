@@ -104,6 +104,30 @@
       "revId": "1e58bdb41d886be6246f85913b2cd5ec6aae57bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "397eeb1b_c4d5b8cd",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-11-20T20:26:37Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "f0df8898_fa01facd",
+      "range": {
+        "startLine": 210,
+        "startChar": 29,
+        "endLine": 210,
+        "endChar": 35
+      },
+      "revId": "1e58bdb41d886be6246f85913b2cd5ec6aae57bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
