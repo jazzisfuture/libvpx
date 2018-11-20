@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "758e522d_951675a2",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-20T18:03:52Z",
+      "side": 0,
+      "message": "Should frame_size be size_t throughout?",
+      "revId": "1e58bdb41d886be6246f85913b2cd5ec6aae57bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ddd6452a_6766aea3",
         "filename": "vpx_scale/generic/yv12config.c",
         "patchSetId": 1
@@ -22,6 +39,29 @@
       "revId": "1e58bdb41d886be6246f85913b2cd5ec6aae57bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7650c9b6_66a1e4b0",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-20T18:03:52Z",
+      "side": 0,
+      "message": "This is being cast to size_t before comparing.",
+      "range": {
+        "startLine": 210,
+        "startChar": 29,
+        "endLine": 210,
+        "endChar": 35
+      },
+      "revId": "1e58bdb41d886be6246f85913b2cd5ec6aae57bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
