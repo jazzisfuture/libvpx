@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "70a32324_151c57b4",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-11-20T21:52:00Z",
+      "side": 1,
+      "message": "There are two xxx_realloc_frame_buffer() functions in this file. I changed the type of |frame_size| to size_t in the first function (vp8_yv12_realloc_frame_buffer). This is the second function (vpx_realloc_frame_buffer). I didn\u0027t modify |frame_size| in this function. It is still a uint64_t. But this function now casts |frame_size| to size_t instead of int, so we need to compare |frame_size| with SIZE_MAX here.",
+      "parentUuid": "bb2e83b0_8561ee72",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 32
+      },
+      "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "384cbe4b_1d762760",
         "filename": "vpx_scale/generic/yv12config.c",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2142bed1_62155a66",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-11-20T21:52:00Z",
+      "side": 1,
+      "message": "We still need a cast because |frame_size| is a uint64_t in this function.",
+      "parentUuid": "384cbe4b_1d762760",
+      "range": {
+        "startLine": 214,
+        "startChar": 36,
+        "endLine": 214,
+        "endChar": 42
+      },
+      "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "780e44a2_21dcb608",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-11-20T21:52:00Z",
+      "side": 1,
+      "message": "For the same reason, this cast is needed.",
+      "parentUuid": "3f33054d_93977124",
+      "range": {
+        "startLine": 225,
+        "startChar": 30,
+        "endLine": 225,
+        "endChar": 36
+      },
+      "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea701c39_811bf0a3",
         "filename": "vpx_scale/generic/yv12config.c",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a211782c_8f734e60",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-11-20T21:52:00Z",
+      "side": 1,
+      "message": "This cast is needed.",
+      "parentUuid": "ea701c39_811bf0a3",
+      "range": {
+        "startLine": 246,
+        "startChar": 23,
+        "endLine": 246,
+        "endChar": 29
+      },
+      "revId": "73cbff0e531aea1c25a3c004afdee130651b6396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
