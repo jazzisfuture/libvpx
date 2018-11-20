@@ -217,14 +217,14 @@ static int modulate_rdmult(const VP9_COMP *cpi, int64_t rdmult) {
 }
 
 int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
-  int64_t rdmult = vp9_compute_rd_mult_based_on_qindex(cpi, qindex);
+  int rdmult = vp9_compute_rd_mult_based_on_qindex(cpi, qindex);
   return modulate_rdmult(cpi, rdmult);
 }
 
 int vp9_get_adaptive_rdmult(const VP9_COMP *cpi, double beta) {
-  int64_t rdmult =
+  int rdmult =
       vp9_compute_rd_mult_based_on_qindex(cpi, cpi->common.base_qindex);
-  rdmult = (int64_t)((double)rdmult / beta);
+  rdmult = (int)((double)rdmult / beta);
   rdmult = rdmult > 0 ? rdmult : 1;
   return modulate_rdmult(cpi, rdmult);
 }
