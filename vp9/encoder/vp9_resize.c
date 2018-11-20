@@ -429,6 +429,10 @@ void vp9_resize_plane(const uint8_t *const input, int height, int width,
       (uint8_t *)malloc(sizeof(uint8_t) * (width < height ? height : width));
   uint8_t *arrbuf = (uint8_t *)malloc(sizeof(uint8_t) * height);
   uint8_t *arrbuf2 = (uint8_t *)malloc(sizeof(uint8_t) * height2);
+  memset(intbuf, 0, sizeof(*intbuf) * width2 * height);
+  memset(tmpbuf, 0, sizeof(*tmpbuf) * (width < height ? height : width));
+  memset(arrbuf, 0, sizeof(*arrbuf) * height);
+  memset(arrbuf2, 0, sizeof(*arrbuf2) * height2);
   if (intbuf == NULL || tmpbuf == NULL || arrbuf == NULL || arrbuf2 == NULL)
     goto Error;
   assert(width > 0);
