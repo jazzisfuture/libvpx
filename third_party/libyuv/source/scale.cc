@@ -867,7 +867,7 @@ void ScalePlaneBilinearDown(int src_width, int src_height, int dst_width,
   // Allocate a row buffer.
   align_buffer_64(row, src_width);
 
-  const int max_y = (src_height - 1) << 16;
+  const int max_y = (src_height - 1) * (1 << 16);
   int j;
   void (*ScaleFilterCols)(uint8_t * dst_ptr, const uint8_t *src_ptr,
                           int dst_width, int x, int dx) =
@@ -969,7 +969,7 @@ void ScalePlaneBilinearDown_16(int src_width, int src_height, int dst_width,
   // Allocate a row buffer.
   align_buffer_64(row, src_width * 2);
 
-  const int max_y = (src_height - 1) << 16;
+  const int max_y = (src_height - 1) * (1 << 16);
   int j;
   void (*ScaleFilterCols)(uint16_t * dst_ptr, const uint16_t *src_ptr,
                           int dst_width, int x, int dx) =
@@ -1053,7 +1053,7 @@ void ScalePlaneBilinearUp(int src_width, int src_height, int dst_width,
   int y = 0;
   int dx = 0;
   int dy = 0;
-  const int max_y = (src_height - 1) << 16;
+  const int max_y = (src_height - 1) * (1 << 16);
   void (*InterpolateRow)(uint8_t * dst_ptr, const uint8_t *src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
@@ -1183,7 +1183,7 @@ void ScalePlaneBilinearUp_16(int src_width, int src_height, int dst_width,
   int y = 0;
   int dx = 0;
   int dy = 0;
-  const int max_y = (src_height - 1) << 16;
+  const int max_y = (src_height - 1) * (1 << 16);
   void (*InterpolateRow)(uint16_t * dst_ptr, const uint16_t *src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_16_C;
