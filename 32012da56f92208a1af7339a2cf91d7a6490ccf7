@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "de768238_6ea3a59f",
+        "filename": "test/dct_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-20T00:28:42Z",
+      "side": 1,
+      "message": "ASSERT_TRUE(ptr !\u003d NULL) should work for these",
+      "revId": "32012da56f92208a1af7339a2cf91d7a6490ccf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
