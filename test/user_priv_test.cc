@@ -74,6 +74,7 @@ string DecodeFile(const string &filename) {
 
         // Also test ctrl_get_reference api.
         struct vp9_ref_frame ref;
+        memset(&ref, 0, sizeof(ref));
         // Randomly fetch a reference frame.
         ref.idx = rnd.Rand8() % 3;
         decoder.Control(VP9_GET_REFERENCE, &ref);
