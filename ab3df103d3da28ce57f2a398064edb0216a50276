@@ -22,6 +22,30 @@
       "revId": "ab3df103d3da28ce57f2a398064edb0216a50276",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c6a4770_c1b5802f",
+        "filename": "vp9/encoder/vp9_resize.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2018-11-21T18:25:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b5c8a938_428c1694",
+      "range": {
+        "startLine": 427,
+        "startChar": 31,
+        "endLine": 427,
+        "endChar": 37
+      },
+      "revId": "ab3df103d3da28ce57f2a398064edb0216a50276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
