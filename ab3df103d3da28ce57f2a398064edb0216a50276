@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5c8a938_428c1694",
+        "filename": "vp9/encoder/vp9_resize.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-21T15:11:25Z",
+      "side": 1,
+      "message": "would it make sense to use calloc() here instead?",
+      "range": {
+        "startLine": 427,
+        "startChar": 31,
+        "endLine": 427,
+        "endChar": 37
+      },
+      "revId": "ab3df103d3da28ce57f2a398064edb0216a50276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
