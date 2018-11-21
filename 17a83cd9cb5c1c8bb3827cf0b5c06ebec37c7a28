@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "260cc717_fb86b6f3",
+        "filename": "test/variance_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-21T18:24:44Z",
+      "side": 1,
+      "message": "Weird that it is not triggering here as well.",
+      "range": {
+        "startLine": 564,
+        "startChar": 0,
+        "endLine": 564,
+        "endChar": 64
+      },
+      "revId": "17a83cd9cb5c1c8bb3827cf0b5c06ebec37c7a28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35f390b9_24ffb4fc",
+        "filename": "test/variance_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 572,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-21T18:24:44Z",
+      "side": 1,
+      "message": "I think the original reason this was different was that it did not need to be aligned. You could use vpx_malloc here.",
+      "range": {
+        "startLine": 572,
+        "startChar": 10,
+        "endLine": 572,
+        "endChar": 12
+      },
+      "revId": "17a83cd9cb5c1c8bb3827cf0b5c06ebec37c7a28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
