@@ -259,7 +259,21 @@ void vpx_quantize_b_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
           15;
 
     qcoeff_ptr[rc] = (tmp ^ coeff_sign) - coeff_sign;
+#if CONFIG_VP9_HIGHBITDEPTH
     dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0] / 2;
+#else
+    // Saturate because truncation is very difficult to replicate in x86.
+    {
+      int32_t full = qcoeff_ptr[rc] * dequant_ptr[rc != 0] / 2;
+      if (full > INT16_MAX) {
+        dqcoeff_ptr[rc] = INT16_MAX;
+      } else if (full < INT16_MIN) {
+        dqcoeff_ptr[rc] = INT16_MIN;
+      } else {
+        dqcoeff_ptr[rc] = full;
+      }
+    }
+#endif
 
     if (tmp) eob = idx_arr[i];
   }
