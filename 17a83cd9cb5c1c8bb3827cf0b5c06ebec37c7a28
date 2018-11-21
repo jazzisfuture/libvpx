@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4d037bee_5775df1e",
+        "filename": "test/variance_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2018-11-21T18:45:57Z",
+      "side": 1,
+      "message": "I guess CONVERT_TO_BYTEPTR triggers the warnings.\nThe original address of new uint16_t[] is not recorded in any variable, which may lead to a memory leak.\nFor some reason, vpx_memalign() functions helps use bypass the check.",
+      "parentUuid": "260cc717_fb86b6f3",
+      "range": {
+        "startLine": 564,
+        "startChar": 0,
+        "endLine": 564,
+        "endChar": 64
+      },
+      "revId": "17a83cd9cb5c1c8bb3827cf0b5c06ebec37c7a28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "35f390b9_24ffb4fc",
         "filename": "test/variance_test.cc",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "17a83cd9cb5c1c8bb3827cf0b5c06ebec37c7a28",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7fc9659_a33bb9db",
+        "filename": "test/variance_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 572,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2018-11-21T18:45:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35f390b9_24ffb4fc",
+      "range": {
+        "startLine": 572,
+        "startChar": 10,
+        "endLine": 572,
+        "endChar": 12
+      },
+      "revId": "17a83cd9cb5c1c8bb3827cf0b5c06ebec37c7a28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
