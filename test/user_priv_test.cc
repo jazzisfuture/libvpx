@@ -24,6 +24,7 @@
 #endif
 #include "vpx_mem/vpx_mem.h"
 #include "vpx/vp8.h"
+#include "vp9/common/vp9_common.h"
 
 namespace {
 
@@ -74,6 +75,7 @@ string DecodeFile(const string &filename) {
 
         // Also test ctrl_get_reference api.
         struct vp9_ref_frame ref;
+        vp9_zero(ref);
         // Randomly fetch a reference frame.
         ref.idx = rnd.Rand8() % 3;
         decoder.Control(VP9_GET_REFERENCE, &ref);
