@@ -1733,6 +1733,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       (svc->use_gf_temporal_ref_current_layer &&
        !svc->layer_context[svc->temporal_layer_id].is_key_frame)) {
     gf_temporal_ref = 1;
+    // For temporal long term prediction, check that the golden reference
+    // is same scale as last reference, otherwise disable.
+    struct scale_factors *const sf_last = &cm->frame_refs[LAST_FRAME - 1].sf;
+    struct scale_factors *const sf_golden =
+        &cm->frame_refs[GOLDEN_FRAME - 1].sf;
+    if ((sf_last->x_scale_fp != sf_golden->x_scale_fp) ||
+        (sf_last->y_scale_fp != sf_golden->y_scale_fp))
+      gf_temporal_ref = 0;
     if (cpi->rc.avg_frame_low_motion > 70)
       thresh_svc_skip_golden = 500;
     else
