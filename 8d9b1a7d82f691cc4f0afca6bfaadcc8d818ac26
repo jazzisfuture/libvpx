@@ -22,6 +22,30 @@
       "revId": "8d9b1a7d82f691cc4f0afca6bfaadcc8d818ac26",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af36c35d_abe4e3d6",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1376,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2018-11-26T23:05:19Z",
+      "side": 1,
+      "message": "Yes, I will do another CL to largely refactor and clean up this function, and combine the twopass with onepass control whenever possible.",
+      "parentUuid": "25d2a8ca_7a993af9",
+      "range": {
+        "startLine": 1367,
+        "startChar": 6,
+        "endLine": 1376,
+        "endChar": 7
+      },
+      "revId": "8d9b1a7d82f691cc4f0afca6bfaadcc8d818ac26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
