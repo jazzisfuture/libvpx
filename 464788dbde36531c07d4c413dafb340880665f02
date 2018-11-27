@@ -22,6 +22,30 @@
       "revId": "464788dbde36531c07d4c413dafb340880665f02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e526d80_785bc95a",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-27T23:57:35Z",
+      "side": 1,
+      "message": "Updated the comment.",
+      "parentUuid": "d7381a0f_e9a2ca76",
+      "range": {
+        "startLine": 270,
+        "startChar": 5,
+        "endLine": 270,
+        "endChar": 22
+      },
+      "revId": "464788dbde36531c07d4c413dafb340880665f02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
