@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8935ec9b_eff9ea4b",
+        "filename": "vpx_dsp/x86/quantize_ssse3.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-27T22:23:22Z",
+      "side": 1,
+      "message": "This leaves the previous 32 bit behaviour.",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 54
+      },
+      "revId": "ea1611c74cb8b6b574903f7e385742f717b52774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
