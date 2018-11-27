@@ -16,6 +16,24 @@
       "revId": "69d8a9aa5a00c8eb9bc17d2eaa4b4866b98cc644",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73ecf05d_599e254f",
+        "filename": "third_party/googletest/README.libvpx",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-27T22:50:25Z",
+      "side": 1,
+      "message": "Both of there are from after the 1.8.1 release",
+      "parentUuid": "6fb1bbf8_dbbe790d",
+      "revId": "69d8a9aa5a00c8eb9bc17d2eaa4b4866b98cc644",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
