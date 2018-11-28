@@ -24,7 +24,6 @@ static INLINE void calculate_dqcoeff_and_store_32x32(const __m128i qcoeff,
   // Un-sign to bias rounding like C.
   const __m128i coeff = _mm_abs_epi16(qcoeff);
 
-#if CONFIG_VP9_HIGHBITDEPTH
   const __m128i sign_0 = _mm_unpacklo_epi16(zero, qcoeff);
   const __m128i sign_1 = _mm_unpackhi_epi16(zero, qcoeff);
 
@@ -40,17 +39,21 @@ static INLINE void calculate_dqcoeff_and_store_32x32(const __m128i qcoeff,
   dqcoeff32_0 = _mm_sign_epi32(dqcoeff32_0, sign_0);
   dqcoeff32_1 = _mm_sign_epi32(dqcoeff32_1, sign_1);
 
+#if CONFIG_VP9_HIGHBITDEPTH
   _mm_store_si128((__m128i *)(dqcoeff), dqcoeff32_0);
   _mm_store_si128((__m128i *)(dqcoeff + 4), dqcoeff32_1);
 #else
-  __m128i dqcoeff16 = _mm_mullo_epi16(coeff, dequant);
-  (void)zero;
+  // Truncate 32 bit values to 16 bits. Match casting behavior in C.
+  dqcoeff32_0 = _mm_shufflelo_epi16(dqcoeff32_0, _MM_SHUFFLE(0, 0, 2, 0));
+  dqcoeff32_0 = _mm_shufflehi_epi16(dqcoeff32_0, _MM_SHUFFLE(0, 0, 2, 0));
+  dqcoeff32_0 = _mm_shuffle_epi32(dqcoeff32_0, _MM_SHUFFLE(0, 0, 2, 0));
 
-  dqcoeff16 = _mm_srli_epi16(dqcoeff16, 1);
+  dqcoeff32_1 = _mm_shufflelo_epi16(dqcoeff32_1, _MM_SHUFFLE(0, 0, 2, 0));
+  dqcoeff32_1 = _mm_shufflehi_epi16(dqcoeff32_1, _MM_SHUFFLE(0, 0, 2, 0));
+  dqcoeff32_1 = _mm_shuffle_epi32(dqcoeff32_1, _MM_SHUFFLE(2, 0, 2, 0));
 
-  dqcoeff16 = _mm_sign_epi16(dqcoeff16, qcoeff);
-
-  _mm_store_si128((__m128i *)(dqcoeff), dqcoeff16);
+  _mm_store_si128((__m128i *)(dqcoeff),
+                  _mm_unpacklo_epi64(dqcoeff32_0, dqcoeff32_1));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
