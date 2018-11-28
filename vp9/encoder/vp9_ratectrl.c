@@ -1322,7 +1322,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
       active_best_quality =
           get_kf_active_quality(rc, active_worst_quality, cm->bit_depth);
       if (cpi->twopass.kf_zeromotion_pct >= STATIC_KF_GROUP_THRESH) {
-        active_best_quality /= 4;
+        active_best_quality /= 3;
       }
 
       // Dont allow the active min to be lossless (q0) unlesss the max q
@@ -1457,7 +1457,9 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
   active_worst_quality =
       clamp(active_worst_quality, active_best_quality, rc->worst_quality);
 
-  if (oxcf->rc_mode == VPX_Q) {
+  if (oxcf->rc_mode == VPX_Q ||
+      (frame_is_intra_only(cm) && !rc->this_key_frame_forced &&
+       cpi->twopass.kf_zeromotion_pct >= STATIC_KF_GROUP_THRESH)) {
     q = active_best_quality;
     // Special case code to try and match quality with forced key frames.
   } else if (frame_is_intra_only(cm) && rc->this_key_frame_forced) {
