@@ -142,6 +142,30 @@
       "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbdaefb6_ad55a49a",
+        "filename": "vpx_dsp/x86/avg_intrin_avx2.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2018-11-29T23:06:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18156ed5_4c1b19a4",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 34
+      },
+      "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
