@@ -3815,6 +3815,8 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
            cm->mi_rows * cm->mi_cols * sizeof(*cpi->consec_zero_mv));
   }
 
+  reset_denoiser_on_first_frame(cpi);
+
   vp9_update_noise_estimate(cpi);
 
   // Scene detection is always used for VBR mode or screen-content case.
