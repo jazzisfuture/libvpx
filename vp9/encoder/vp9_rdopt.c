@@ -2316,7 +2316,7 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
 }
 
 static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
-                                 int mi_row, int mi_col, int_mv *tmp_mv,
+                                 int mi_row, int mi_col, int_mv *new_mv,
                                  int *rate_mv) {
   MACROBLOCKD *xd = &x->e_mbd;
   const VP9_COMMON *cm = &cpi->common;
@@ -2385,7 +2385,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
         if ((x->pred_mv_sad[ref] >> 3) > x->pred_mv_sad[i]) {
           x->pred_mv[ref].row = INT16_MAX;
           x->pred_mv[ref].col = INT16_MAX;
-          tmp_mv->as_int = INVALID_MV;
+          new_mv->as_int = INVALID_MV;
 
           if (scaled_ref_frame) {
             int i;
@@ -2408,7 +2408,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
 
   bestsme = vp9_full_pixel_search(
       cpi, x, bsize, &mvp_full, step_param, cpi->sf.mv.search_method, sadpb,
-      cond_cost_list(cpi, cost_list), &ref_mv, &tmp_mv->as_mv, INT_MAX, 1);
+      cond_cost_list(cpi, cost_list), &ref_mv, &new_mv->as_mv, INT_MAX, 1);
 
   if (cpi->sf.enhanced_full_pixel_motion_search) {
     int i;
@@ -2443,7 +2443,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
           cpi->sf.mv.search_method, sadpb, cond_cost_list(cpi, cost_list),
           &ref_mv, &this_mv, INT_MAX, 1);
       if (this_me < bestsme) {
-        tmp_mv->as_mv = this_mv;
+        new_mv->as_mv = this_mv;
         bestsme = this_me;
       }
     }
@@ -2454,16 +2454,16 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
   if (bestsme < INT_MAX) {
     uint32_t dis; /* TODO: use dis in distortion calculation later. */
     cpi->find_fractional_mv_step(
-        x, &tmp_mv->as_mv, &ref_mv, cm->allow_high_precision_mv, x->errorperbit,
+        x, &new_mv->as_mv, &ref_mv, cm->allow_high_precision_mv, x->errorperbit,
         &cpi->fn_ptr[bsize], cpi->sf.mv.subpel_force_stop,
         cpi->sf.mv.subpel_search_level, cond_cost_list(cpi, cost_list),
         x->nmvjointcost, x->mvcost, &dis, &x->pred_sse[ref], NULL, pw, ph,
         cpi->sf.use_accurate_subpel_search);
   }
-  *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv, x->nmvjointcost,
+  *rate_mv = vp9_mv_bit_cost(&new_mv->as_mv, &ref_mv, x->nmvjointcost,
                              x->mvcost, MV_COST_WEIGHT);
 
-  x->pred_mv[ref] = tmp_mv->as_mv;
+  x->pred_mv[ref] = new_mv->as_mv;
 
   if (scaled_ref_frame) {
     int i;
@@ -2598,19 +2598,19 @@ static int64_t handle_inter_mode(
       }
       *rate2 += rate_mv;
     } else {
-      int_mv tmp_mv;
-      single_motion_search(cpi, x, bsize, mi_row, mi_col, &tmp_mv, &rate_mv);
-      if (tmp_mv.as_int == INVALID_MV) return INT64_MAX;
+      int_mv new_mv;
+      single_motion_search(cpi, x, bsize, mi_row, mi_col, &new_mv, &rate_mv);
+      if (new_mv.as_int == INVALID_MV) return INT64_MAX;
 
       frame_mv[refs[0]].as_int = xd->mi[0]->bmi[0].as_mv[0].as_int =
-          tmp_mv.as_int;
-      single_newmv[refs[0]].as_int = tmp_mv.as_int;
+          new_mv.as_int;
+      single_newmv[refs[0]].as_int = new_mv.as_int;
 
       // Estimate the rate implications of a new mv but discount this
       // under certain circumstances where we want to help initiate a weak
       // motion field, where the distortion gain for a single block may not
       // be enough to overcome the cost of a new mv.
-      if (discount_newmv_test(cpi, this_mode, tmp_mv, mode_mv, refs[0])) {
+      if (discount_newmv_test(cpi, this_mode, new_mv, mode_mv, refs[0])) {
         *rate2 += VPXMAX((rate_mv / NEW_MV_DISCOUNT_FACTOR), 1);
       } else {
         *rate2 += rate_mv;
