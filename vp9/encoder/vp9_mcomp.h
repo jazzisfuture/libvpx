@@ -132,8 +132,8 @@ double vp9_full_pixel_diamond_new(const struct VP9_COMP *cpi, MACROBLOCK *x,
                                   MV *mvp_full, int step_param, double lambda,
                                   int further_steps, int do_refine,
                                   const vp9_variance_fn_ptr_t *fn_ptr,
-                                  const int_mv *nb_full_mvs,
-                                  struct TplDepStats *tpl_stats, int rf_idx);
+                                  const int_mv *nb_full_mvs, MV *best_mv,
+                                  double *best_mv_dist, double *best_mv_cost);
 
 double av1_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_mvs);
 #endif  // CONFIG_NON_GREEDY_MV
