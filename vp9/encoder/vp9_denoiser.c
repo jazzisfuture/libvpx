@@ -692,6 +692,7 @@ int vp9_denoiser_alloc(VP9_COMMON *cm, struct SVC *svc, VP9_DENOISER *denoiser,
   denoiser->denoising_level = kDenLow;
   denoiser->prev_denoising_level = kDenLow;
   denoiser->reset = 0;
+  denoiser->current_denoiser_frame = 0;
   return 0;
 }
 
@@ -716,13 +717,16 @@ void vp9_denoiser_free(VP9_DENOISER *denoiser) {
   vpx_free_frame_buffer(&denoiser->last_source);
 }
 
-void vp9_denoiser_set_noise_level(VP9_DENOISER *denoiser, int noise_level) {
+void vp9_denoiser_set_noise_level(VP9_COMP *cpi, VP9_DENOISER *denoiser,
+                                  int noise_level) {
+  const SVC *const svc = &cpi->svc;
   denoiser->denoising_level = noise_level;
   if (denoiser->denoising_level > kDenLowLow &&
-      denoiser->prev_denoising_level == kDenLowLow)
+      denoiser->prev_denoising_level == kDenLowLow) {
     denoiser->reset = 1;
-  else
+  } else {
     denoiser->reset = 0;
+  }
   denoiser->prev_denoising_level = denoiser->denoising_level;
 }
 
@@ -754,14 +758,43 @@ int64_t vp9_scale_acskip_thresh(int64_t threshold,
     return threshold;
 }
 
+void reset_denoiser_on_first_frame(VP9_COMP *const cpi) {
+  int denoise_svc_pickmode = 0;
+  if (cpi->oxcf.noise_sensitivity > 0) {
+    if (cpi->use_svc) {
+      int layer = LAYER_IDS_TO_IDX(cpi->svc.spatial_layer_id,
+                                   cpi->svc.temporal_layer_id,
+                                   cpi->svc.number_temporal_layers);
+      LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+      denoise_svc_pickmode = denoise_svc(cpi) && !lc->is_key_frame;
+    }
+    if (denoise_svc_pickmode && cpi->denoiser.current_denoiser_frame == 0) {
+      cpi->denoiser.reset = 1;
+    }
+  }
+}
+
 void vp9_denoiser_update_ref_frame(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
   SVC *const svc = &cpi->svc;
-  if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
-      cpi->denoiser.denoising_level > kDenLowLow) {
+  if (cpi->denoiser.reset) {
+    // If long term reference is used, force refresh of that slot, so
+    // denoiser buffer for long term reference stays in sync.
+    if (svc->use_gf_temporal_ref_current_layer) {
+      int index = svc->spatial_layer_id;
+      if (svc->number_spatial_layers == 3) index = svc->spatial_layer_id - 1;
+      assert(index >= 0);
+      cpi->alt_fb_idx = svc->buffer_gf_temporal_ref[index].idx;
+      cpi->refresh_alt_ref_frame = 1;
+    }
+  }
+  if (cpi->denoiser.reset ||
+      (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
+       cpi->denoiser.denoising_level > kDenLowLow)) {
     int svc_refresh_denoiser_buffers = 0;
     int denoise_svc_second_layer = 0;
     FRAME_TYPE frame_type = cm->intra_only ? KEY_FRAME : cm->frame_type;
+    cpi->denoiser.current_denoiser_frame++;
     if (cpi->use_svc) {
       const int svc_buf_shift =
           svc->number_spatial_layers - svc->spatial_layer_id == 2

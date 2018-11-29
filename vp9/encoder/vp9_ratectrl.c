@@ -2179,6 +2179,8 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
       if (svc->layer_context[svc->temporal_layer_id].is_key_frame) {
         // On key frame we update the buffer index used for long term reference.
         // Use the alt_ref since it is not used or updated on key frames.
+        // We also will force this update is the denosier is reset after
+        // noise estimation,
         int index = svc->spatial_layer_id;
         if (svc->number_spatial_layers == 3) index = svc->spatial_layer_id - 1;
         assert(index >= 0);

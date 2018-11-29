@@ -159,7 +159,7 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
 #if CONFIG_VP9_TEMPORAL_DENOISING
     if (cpi->oxcf.noise_sensitivity > 0 && noise_est_svc(cpi) &&
         cpi->svc.current_superframe > 1) {
-      vp9_denoiser_set_noise_level(&cpi->denoiser, ne->level);
+      vp9_denoiser_set_noise_level(cpi, &cpi->denoiser, ne->level);
       copy_frame(&cpi->denoiser.last_source, cpi->Source);
     }
 #endif
@@ -268,8 +268,9 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
         ne->count = 0;
         ne->level = vp9_noise_estimate_extract_level(ne);
 #if CONFIG_VP9_TEMPORAL_DENOISING
-        if (cpi->oxcf.noise_sensitivity > 0 && noise_est_svc(cpi))
-          vp9_denoiser_set_noise_level(&cpi->denoiser, ne->level);
+        if (cpi->oxcf.noise_sensitivity > 0 && noise_est_svc(cpi)) {
+          vp9_denoiser_set_noise_level(cpi, &cpi->denoiser, ne->level);
+        }
 #endif
       }
     }
