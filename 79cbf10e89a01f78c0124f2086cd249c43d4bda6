@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9c08d15e_d272b48a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-29T04:26:19Z",
+      "side": 1,
+      "message": "When last is not a reference for the current layer,...",
+      "revId": "79cbf10e89a01f78c0124f2086cd249c43d4bda6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebb7ff1e_716a2c37",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-29T04:26:19Z",
+      "side": 1,
+      "message": "prefer: \"last_is_reference\"",
+      "revId": "79cbf10e89a01f78c0124f2086cd249c43d4bda6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18356113_ebc24dcc",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 407,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-29T04:26:19Z",
+      "side": 1,
+      "message": "Copy block if LAST is not a reference.",
+      "revId": "79cbf10e89a01f78c0124f2086cd249c43d4bda6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
