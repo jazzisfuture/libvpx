@@ -1106,6 +1106,20 @@ void vp9_svc_assert_constraints_pattern(VP9_COMP *const cpi) {
   }
 }
 
+#if CONFIG_VP9_TEMPORAL_DENOISING
+int vp9_denoise_svc_non_key(VP9_COMP *const cpi) {
+  int denoise_svc_pickmode = 0;
+  if (cpi->use_svc) {
+    int layer =
+        LAYER_IDS_TO_IDX(cpi->svc.spatial_layer_id, cpi->svc.temporal_layer_id,
+                         cpi->svc.number_temporal_layers);
+    LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+    denoise_svc_pickmode = denoise_svc(cpi) && !lc->is_key_frame;
+  }
+  return denoise_svc_pickmode;
+}
+#endif
+
 void vp9_svc_check_spatial_layer_sync(VP9_COMP *const cpi) {
   SVC *const svc = &cpi->svc;
   // Only for superframes whose base is not key, as those are
