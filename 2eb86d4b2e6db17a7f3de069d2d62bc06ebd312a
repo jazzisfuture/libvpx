@@ -214,6 +214,30 @@
       "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40202e6b_f992a32a",
+        "filename": "vpx_dsp/x86/avg_intrin_avx2.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-11-30T20:16:34Z",
+      "side": 1,
+      "message": "What makes using the 128 bit instructions slower?\n\nI suppose since you need to step up to 32 bits at some point anyway, it doesn\u0027t really matter if you do it at the very beginning or between the two loops.",
+      "parentUuid": "3de8b07b_f848f343",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 34
+      },
+      "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
