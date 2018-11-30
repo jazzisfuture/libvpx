@@ -78,7 +78,7 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
   const int16_t *const scan = so->scan;
   const int16_t *const nb = so->neighbors;
   const MODE_INFO *mbmi = xd->mi[0];
-  const int sharpness = mb->sharpness;
+  const int sharpness = 6; // mb->sharpness;
   const int64_t rdadj = (int64_t)mb->rdmult * plane_rd_mult[ref][plane_type];
   const int64_t rdmult =
       (sharpness == 0 ? rdadj >> 1
