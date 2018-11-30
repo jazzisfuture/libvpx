@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f072190a_a9c3a1ae",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 23
+      },
+      "lineNbr": 1175,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-30T07:29:21Z",
+      "side": 1,
+      "message": "I don\u0027t think there\u0027s a need to reproduce this TODO",
+      "revId": "3fa8323e4db21b1a742fc992b76d12a3ba597828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27a6690b_db17e14c",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 23
+      },
+      "lineNbr": 1194,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-30T07:29:21Z",
+      "side": 1,
+      "message": "this is an inline function containing the same line, why not just call it?",
+      "range": {
+        "startLine": 1194,
+        "startChar": 50,
+        "endLine": 1194,
+        "endChar": 80
+      },
+      "revId": "3fa8323e4db21b1a742fc992b76d12a3ba597828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04850125_cd119291",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 23
+      },
+      "lineNbr": 1228,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-30T07:29:21Z",
+      "side": 1,
+      "message": "here too, I think this is redundant as if one call site was updated they all most likely would need to be",
+      "revId": "3fa8323e4db21b1a742fc992b76d12a3ba597828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e309bdf_f685f4fb",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 23
+      },
+      "lineNbr": 1250,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-30T07:29:21Z",
+      "side": 1,
+      "message": "same comment for get_subsize()",
+      "revId": "3fa8323e4db21b1a742fc992b76d12a3ba597828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6306fb4_99b5b6b4",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 23
+      },
+      "lineNbr": 1871,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-11-30T07:29:21Z",
+      "side": 1,
+      "message": "much of this looks duplicated, could you break the shared sections to some functions?",
+      "revId": "3fa8323e4db21b1a742fc992b76d12a3ba597828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
