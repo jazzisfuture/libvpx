@@ -719,7 +719,7 @@ static vpx_codec_err_t ctrl_set_noise_sensitivity(vpx_codec_alg_priv_t *ctx,
 static vpx_codec_err_t ctrl_set_sharpness(vpx_codec_alg_priv_t *ctx,
                                           va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
-  extra_cfg.sharpness = CAST(VP8E_SET_SHARPNESS, args);
+  extra_cfg.sharpness = 3; // CAST(VP8E_SET_SHARPNESS, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
@@ -1599,7 +1599,7 @@ static vpx_codec_err_t ctrl_register_cx_callback(vpx_codec_alg_priv_t *ctx,
 static vpx_codec_err_t ctrl_set_tune_content(vpx_codec_alg_priv_t *ctx,
                                              va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
-  extra_cfg.content = CAST(VP9E_SET_TUNE_CONTENT, args);
+  extra_cfg.content = VP9E_CONTENT_FILM; // CAST(VP9E_SET_TUNE_CONTENT, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
