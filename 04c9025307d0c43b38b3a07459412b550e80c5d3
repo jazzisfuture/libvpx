@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "340a3277_4021109a",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-30T22:52:15Z",
+      "side": 1,
+      "message": "it is better to remove this if (cpi-\u003edenoiser\u003ereset) here and only call this function when reset is set to 1.",
+      "revId": "04c9025307d0c43b38b3a07459412b550e80c5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2452774c_ec5c480a",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 743,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-30T22:52:15Z",
+      "side": 1,
+      "message": "would prefer to move this to after line 740, see above comment",
+      "revId": "04c9025307d0c43b38b3a07459412b550e80c5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e759636_440230de",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 787,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-30T22:52:15Z",
+      "side": 1,
+      "message": "would prefer to have this after liine 785, see above comment",
+      "revId": "04c9025307d0c43b38b3a07459412b550e80c5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6caeff3f_a19a7db8",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 794,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-30T22:52:15Z",
+      "side": 1,
+      "message": "can remove the extra ( now",
+      "revId": "04c9025307d0c43b38b3a07459412b550e80c5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

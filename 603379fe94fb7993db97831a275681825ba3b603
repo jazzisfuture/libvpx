@@ -262,6 +262,23 @@
       "revId": "603379fe94fb7993db97831a275681825ba3b603",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc0de8ca_ce921c5c",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 3818,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-30T22:52:15Z",
+      "side": 1,
+      "message": "should only go in any denoiser code if noise_sensitivity \u003e 0",
+      "revId": "603379fe94fb7993db97831a275681825ba3b603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
