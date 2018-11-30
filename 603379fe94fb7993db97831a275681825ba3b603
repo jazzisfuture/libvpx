@@ -158,6 +158,24 @@
     },
     {
       "key": {
+        "uuid": "30af13e7_d06e9c48",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 786,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-30T22:36:01Z",
+      "side": 1,
+      "message": "Adding it here caused several SVC test failures...",
+      "parentUuid": "007ab993_4bec6e38",
+      "revId": "603379fe94fb7993db97831a275681825ba3b603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3d6a5581_ec107212",
         "filename": "vp9/encoder/vp9_denoiser.c",
         "patchSetId": 5
