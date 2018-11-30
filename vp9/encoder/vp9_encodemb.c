@@ -109,6 +109,9 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
   tran_low_t before_best_eob_qc = 0;
   tran_low_t before_best_eob_dqc = 0;
 
+
+  if (!is_inter_block(mbmi)) return eob;
+
   assert((!plane_type && !plane) || (plane_type && plane));
   assert(eob <= default_eob);
 
