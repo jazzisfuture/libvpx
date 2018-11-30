@@ -186,6 +186,24 @@
       "revId": "3fa8323e4db21b1a742fc992b76d12a3ba597828",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cabb65b6_183e4596",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 23
+      },
+      "lineNbr": 1871,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-11-30T14:02:34Z",
+      "side": 1,
+      "message": "Removed the function decode_tiles_split_parse_recon() and added conditional code for this function in decode_tiles().",
+      "parentUuid": "59354cbe_ca1625b1",
+      "revId": "3fa8323e4db21b1a742fc992b76d12a3ba597828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
