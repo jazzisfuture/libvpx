@@ -71,6 +71,24 @@
     },
     {
       "key": {
+        "uuid": "c6a74d1d_6bd213aa",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 740,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-30T22:38:09Z",
+      "side": 1,
+      "message": "calling it here should be equivalent to calling from line 743, as there is another check on reset flag in that function.",
+      "parentUuid": "5b0f8bc9_431d88c9",
+      "revId": "603379fe94fb7993db97831a275681825ba3b603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa3771f1_bb47a0e1",
         "filename": "vp9/encoder/vp9_denoiser.c",
         "patchSetId": 5
