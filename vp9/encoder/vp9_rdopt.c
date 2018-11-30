@@ -2921,10 +2921,10 @@ static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 100 };
 static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
                                    BLOCK_SIZE bsize, int64_t *this_rd,
                                    MV_REFERENCE_FRAME ref_frame,
-                                   unsigned int source_variance) {
+                                   int source_variance) {
   MACROBLOCKD *const xd = &x->e_mbd;
-  unsigned int rec_variance;
-  unsigned int src_variance;
+  int rec_variance;
+  int src_variance;
   unsigned int src_rec_min;
   unsigned int absvar_diff = 0;
   unsigned int var_factor = 0;
@@ -2935,7 +2935,7 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    if (source_variance > 0) {
+    if (source_variance > 0 && 0) {
       rec_variance = vp9_high_get_sby_perpixel_variance(cpi, &xd->plane[0].dst,
                                                         bsize, xd->bd);
       src_variance = source_variance;
@@ -2946,7 +2946,7 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
           vp9_high_get_sby_variance(cpi, &x->plane[0].src, bsize, xd->bd);
     }
   } else {
-    if (source_variance > 0) {
+    if (source_variance > 0 && 0) {
       rec_variance =
           vp9_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
       src_variance = source_variance;
@@ -2956,7 +2956,7 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 #else
-  if (source_variance > 0) {
+  if (source_variance > 0 && 0) {
     rec_variance = vp9_get_sby_perpixel_variance(cpi, &xd->plane[0].dst, bsize);
     src_variance = source_variance;
   } else {
@@ -2964,6 +2964,11 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
     src_variance = vp9_get_sby_variance(cpi, &x->plane[0].src, bsize);
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  if (content_type == VP9E_CONTENT_FILM) {
+    unsigned int diff_var = VPXMAX(0, src_variance - rec_variance);
+    *this_rd += diff_var;
+  }
 
   // Lower of source (raw per pixel value) and recon variance. Note that
   // if the source per pixel is 0 then the recon value here will not be per
