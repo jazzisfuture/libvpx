@@ -190,6 +190,30 @@
       "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3de8b07b_f848f343",
+        "filename": "vpx_dsp/x86/avg_intrin_avx2.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2018-11-30T05:51:13Z",
+      "side": 1,
+      "message": "I do not have a good way to make the assembly using int16_t.\nIf I use sse2 128 bit instructions, it will be slower than the current version.\nOn the other hand, it would be very complicated if packing two rows (16 16-bit ints) into one __m256i.\nAny thoughts?",
+      "parentUuid": "95369914_a755312d",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 34
+      },
+      "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
