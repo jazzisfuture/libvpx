@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6db25190_2cd7c80f",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 720,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-30T07:20:04Z",
+      "side": 1,
+      "message": "rename this to something like:\nforce_refresh_longterm_ref()",
+      "revId": "603379fe94fb7993db97831a275681825ba3b603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b0f8bc9_431d88c9",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 740,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-30T07:20:04Z",
+      "side": 1,
+      "message": "i think you need to call force_refresh_longterm_ref() here once reset is set",
+      "revId": "603379fe94fb7993db97831a275681825ba3b603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "809eccd4_f5247d8b",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 786,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-30T07:20:04Z",
+      "side": 1,
+      "message": "i think you need to call force_refresh_longterm_ref() here",
+      "revId": "603379fe94fb7993db97831a275681825ba3b603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d6a5581_ec107212",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 795,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-11-30T07:20:04Z",
+      "side": 1,
+      "message": "i think doing this here will make denoiser long-term ref out of sync with enocoder long-term ref, since encoder\u0027s update_ref_frames is called before this.",
+      "revId": "603379fe94fb7993db97831a275681825ba3b603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
