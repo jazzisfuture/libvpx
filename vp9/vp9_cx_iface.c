@@ -698,7 +698,7 @@ static vpx_codec_err_t update_extra_cfg(vpx_codec_alg_priv_t *ctx,
 static vpx_codec_err_t ctrl_set_cpuused(vpx_codec_alg_priv_t *ctx,
                                         va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
-  extra_cfg.cpu_used = CAST(VP8E_SET_CPUUSED, args);
+  extra_cfg.cpu_used = 0; // CAST(VP8E_SET_CPUUSED, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
