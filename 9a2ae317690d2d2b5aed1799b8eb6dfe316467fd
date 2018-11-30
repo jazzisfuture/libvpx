@@ -22,6 +22,30 @@
       "revId": "9a2ae317690d2d2b5aed1799b8eb6dfe316467fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbf9a74e_21100355",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2348,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2018-11-30T18:25:40Z",
+      "side": 1,
+      "message": "I am still figuring out how to combine entropy cost and motion vector inconsistency.\nWill add this in later if needed.",
+      "parentUuid": "2b5b321f_86fd43b6",
+      "range": {
+        "startLine": 2348,
+        "startChar": 6,
+        "endLine": 2348,
+        "endChar": 11
+      },
+      "revId": "9a2ae317690d2d2b5aed1799b8eb6dfe316467fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
