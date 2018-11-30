@@ -194,6 +194,24 @@
     },
     {
       "key": {
+        "uuid": "f79603a4_674935b0",
+        "filename": "vp9/encoder/vp9_denoiser.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 786,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2018-11-30T22:48:17Z",
+      "side": 1,
+      "message": "Or if we keep this wrapped in if (cpi-\u003eoxcf.noise_sensitivity \u003e 0) {} then the tests pass...",
+      "parentUuid": "30af13e7_d06e9c48",
+      "revId": "603379fe94fb7993db97831a275681825ba3b603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3d6a5581_ec107212",
         "filename": "vp9/encoder/vp9_denoiser.c",
         "patchSetId": 5
