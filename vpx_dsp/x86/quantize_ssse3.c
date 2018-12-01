@@ -202,9 +202,9 @@ void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
     store_tran_low(qcoeff0, qcoeff_ptr);
     store_tran_low(qcoeff1, qcoeff_ptr + 8);
 
-    calculate_dqcoeff_and_store_32x32(qcoeff0, dequant, zero, dqcoeff_ptr);
+    calculate_dqcoeff_and_store_32x32(qcoeff0, dequant, dqcoeff_ptr);
     dequant = _mm_unpackhi_epi64(dequant, dequant);
-    calculate_dqcoeff_and_store_32x32(qcoeff1, dequant, zero, dqcoeff_ptr + 8);
+    calculate_dqcoeff_and_store_32x32(qcoeff1, dequant, dqcoeff_ptr + 8);
 
     eob =
         scan_for_eob(&qcoeff0, &qcoeff1, cmp_mask0, cmp_mask1, iscan, 0, zero);
@@ -248,9 +248,8 @@ void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
     store_tran_low(qcoeff0, qcoeff_ptr + index);
     store_tran_low(qcoeff1, qcoeff_ptr + index + 8);
 
-    calculate_dqcoeff_and_store_32x32(qcoeff0, dequant, zero,
-                                      dqcoeff_ptr + index);
-    calculate_dqcoeff_and_store_32x32(qcoeff1, dequant, zero,
+    calculate_dqcoeff_and_store_32x32(qcoeff0, dequant, dqcoeff_ptr + index);
+    calculate_dqcoeff_and_store_32x32(qcoeff1, dequant,
                                       dqcoeff_ptr + 8 + index);
 
     eob0 = scan_for_eob(&qcoeff0, &qcoeff1, cmp_mask0, cmp_mask1, iscan, index,
