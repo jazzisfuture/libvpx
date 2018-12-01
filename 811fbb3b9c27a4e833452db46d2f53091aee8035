@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93c32d41_e2dc125c",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 1818,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-12-01T00:26:10Z",
+      "side": 1,
+      "message": "if (cpi-\u003euse_svc)...",
+      "revId": "811fbb3b9c27a4e833452db46d2f53091aee8035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f7de4ef_86edeff5",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 1111,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-12-01T00:26:10Z",
+      "side": 1,
+      "message": "no need for this",
+      "revId": "811fbb3b9c27a4e833452db46d2f53091aee8035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
