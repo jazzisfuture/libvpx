@@ -238,6 +238,30 @@
       "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f6284aa_fb1f9695",
+        "filename": "vpx_dsp/x86/avg_intrin_avx2.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2018-12-03T02:40:12Z",
+      "side": 1,
+      "message": "It is slightly slower (speed test: 163k vs 156k us) if I use https://cs.corp.google.com/piper///depot/google3/third_party/libvpx/git_root/vpx_dsp/x86/avg_intrin_sse2.c?l\u003d191\u0026gs\u003dkythe%253A%252F%252Fgoogle3%253Flang%253Dc%25252B%25252B%253Fpath%253Dthird_party%252Flibvpx%252Fgit_root%252Fvpx_dsp%252Fx86%252Favg_intrin_sse2.c%2523o6S1D22yKAKmQZ7DuHVd7JnZOjXPSgSgaq3aqPJmPVU%25253D\u0026gsn\u003dhadamard_col8_sse2\u0026ct\u003dxref_usages as the first pass.  I do not know why.\n\nI also tried to use __m256i to pack two strides of source but still did not get better results (needs extra pack/unpack instructions https://chromium-review.googlesource.com/c/webm/libvpx/+/1357940).",
+      "parentUuid": "40202e6b_f992a32a",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 34
+      },
+      "revId": "2eb86d4b2e6db17a7f3de069d2d62bc06ebd312a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
