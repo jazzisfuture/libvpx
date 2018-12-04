@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "87f6cb15_6784410c",
+        "filename": "test/dct_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 458,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-04T02:07:49Z",
+      "side": 1,
+      "message": "You don\u0027t want to do the ASM_REGISTER_STATE_CHECK when testing performance.",
+      "range": {
+        "startLine": 458,
+        "startChar": 4,
+        "endLine": 458,
+        "endChar": 28
+      },
+      "revId": "7ec17e7e2db58ea829ddfd56507b015288d9d6c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
