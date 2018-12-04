@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b443239_6384246b",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 1040,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-04T23:59:38Z",
+      "side": 0,
+      "message": "Defined in the top level \u0027configure\u0027 file:\nconfigure:             vs_version\u003d${tgt_cc##vs}",
+      "range": {
+        "startLine": 1040,
+        "startChar": 12,
+        "endLine": 1040,
+        "endChar": 22
+      },
+      "revId": "5039d2d82b3beab14ca7c354e1a8fefe67bb671a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "363cf1a1_163c2a1a",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 1356,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-04T23:59:38Z",
+      "side": 0,
+      "message": "Needless duplication of vs_version",
+      "range": {
+        "startLine": 1356,
+        "startChar": 10,
+        "endLine": 1356,
+        "endChar": 20
+      },
+      "revId": "5039d2d82b3beab14ca7c354e1a8fefe67bb671a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
