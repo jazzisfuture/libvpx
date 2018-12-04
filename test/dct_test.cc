@@ -455,7 +455,7 @@ class TransDCT : public TransTestBase,
 
  protected:
   virtual void Run() {
-    ASM_REGISTER_STATE_CHECK(RunFwdTxfm(*input_, output_));
+    RunFwdTxfm(*input_, output_);
   }
 
   Buffer<int16_t> *input_;
