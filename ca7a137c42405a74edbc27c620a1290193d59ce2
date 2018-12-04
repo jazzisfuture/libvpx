@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80dbfabb_0f9364da",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-12-04T03:31:38Z",
+      "side": 1,
+      "message": "Fix this comment to make it more precise and general, the fix is not specific to \"new top layer brought up\"",
+      "revId": "ca7a137c42405a74edbc27c620a1290193d59ce2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a69b0ff3_0f96bfff",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 1817,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-12-04T03:31:38Z",
+      "side": 1,
+      "message": "i don\u0027t think this will be bitexact for an non-svc encoding",
+      "revId": "ca7a137c42405a74edbc27c620a1290193d59ce2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
