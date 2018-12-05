@@ -683,6 +683,7 @@ static void set_rt_speed_feature_framesize_independent(
          cpi->oxcf.width * cpi->oxcf.height <= 640 * 360)) {
       sf->mv.search_method = NSTEP;
       sf->mv.fullpel_search_step_param = 6;
+      vp9_init3smotion_compensation(&cpi->ss_cfg, cpi->scaled_source.y_stride);
     }
     if (cpi->svc.temporal_layer_id > 0 || cpi->svc.spatial_layer_id > 1) {
       sf->use_simple_block_yrd = 1;
@@ -799,16 +800,11 @@ static void set_rt_speed_feature_framesize_independent(
   // layer when high motion is detected or previous SL0 frame was dropped.
   // Avoid speed 5 for as there is an issue with SVC datarate test.
   // TODO(marpan/jianj): Investigate issue at speed 5.
-  if (cpi->oxcf.content == VP9E_CONTENT_SCREEN && cpi->oxcf.speed > 5 &&
+  if (cpi->oxcf.content == VP9E_CONTENT_SCREEN && cpi->oxcf.speed >= 5 &&
       cpi->svc.spatial_layer_id == 0 &&
       (cpi->rc.high_num_blocks_with_motion || cpi->svc.last_layer_dropped[0])) {
     sf->mv.search_method = NSTEP;
     sf->mv.fullpel_search_step_param = 2;
-    // TODO(marpan/jianj): Investigate issue for lower setting of step_param
-    // for spatial layers (namely on lower layers).
-    if (cpi->use_svc && cm->width != cpi->oxcf.width &&
-        cm->height != cpi->oxcf.height)
-      sf->mv.fullpel_search_step_param = 4;
   }
 }
 
