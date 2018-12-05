@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "45d45036_4f75aa2c",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 1040,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-05T18:19:17Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "7b443239_6384246b",
+      "range": {
+        "startLine": 1040,
+        "startChar": 12,
+        "endLine": 1040,
+        "endChar": 22
+      },
+      "revId": "5039d2d82b3beab14ca7c354e1a8fefe67bb671a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "363cf1a1_163c2a1a",
         "filename": "build/make/configure.sh",
         "patchSetId": 1
@@ -69,6 +93,30 @@
       "revId": "5039d2d82b3beab14ca7c354e1a8fefe67bb671a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a08c2f6c_08ad4c4f",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 1356,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-05T18:19:17Z",
+      "side": 0,
+      "message": "At least that one still works for CONFIG_VS_VERSION",
+      "parentUuid": "ab288352_eca59e27",
+      "range": {
+        "startLine": 1356,
+        "startChar": 10,
+        "endLine": 1356,
+        "endChar": 20
+      },
+      "revId": "5039d2d82b3beab14ca7c354e1a8fefe67bb671a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
