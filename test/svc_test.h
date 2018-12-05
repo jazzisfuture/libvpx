@@ -38,6 +38,10 @@ class OnePassCbrSvc : public ::libvpx_test::EncoderTest {
  protected:
   virtual ~OnePassCbrSvc() {}
 
+  virtual void SetConfig(int) {}
+
+  virtual void SetSvcConfig(int num_spatial_layer, int num_temporal_layer);
+
   virtual void PreEncodeFrameHookSetup(::libvpx_test::VideoSource *video,
                                        ::libvpx_test::Encoder *encoder);
 
