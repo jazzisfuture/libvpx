@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "50e84679_0a63020b",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1393,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-05T01:17:05Z",
+      "side": 1,
+      "message": "in checking this change locally I noticed that even before this change this path gets hit for visual studio. it looks like avx512 was never being enabled for those targets",
+      "revId": "b243d8fbaca774dbdb1a96f78b185098f0dec80f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

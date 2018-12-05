@@ -45,6 +45,30 @@
       "revId": "5039d2d82b3beab14ca7c354e1a8fefe67bb671a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab288352_eca59e27",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 1356,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-05T01:17:05Z",
+      "side": 0,
+      "message": "\u003e Needless duplication of vs_version\n\nthe variable in configure doesn\u0027t get set until after this function is called, it\u0027ll be empty at this point (process_toolchain() -\u003e process_common_toolchain() [here] -\u003e process_toolchain() vs_version set)",
+      "parentUuid": "363cf1a1_163c2a1a",
+      "range": {
+        "startLine": 1356,
+        "startChar": 10,
+        "endLine": 1356,
+        "endChar": 20
+      },
+      "revId": "5039d2d82b3beab14ca7c354e1a8fefe67bb671a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
