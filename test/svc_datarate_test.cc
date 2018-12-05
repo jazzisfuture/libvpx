@@ -535,6 +535,26 @@ class DatarateOnePassCbrSvc : public ::svc_test::OnePassCbrSvc {
   bool denoiser_off_on_;
   // Top layer enabled on the fly.
   bool denoiser_enable_layers_;
+
+ private:
+  void SetConfig(int num_temporal_layer) {
+    cfg_.rc_end_usage = VPX_CBR;
+    cfg_.g_lag_in_frames = 0;
+    cfg_.g_error_resilient = 1;
+    if (num_temporal_layer == 3) {
+      cfg_.ts_rate_decimator[0] = 4;
+      cfg_.ts_rate_decimator[1] = 2;
+      cfg_.ts_rate_decimator[2] = 1;
+      cfg_.temporal_layering_mode = 3;
+    } else if (num_temporal_layer == 2) {
+      cfg_.ts_rate_decimator[0] = 2;
+      cfg_.ts_rate_decimator[1] = 1;
+      cfg_.temporal_layering_mode = 2;
+    } else if (num_temporal_layer == 1) {
+      cfg_.ts_rate_decimator[0] = 1;
+      cfg_.temporal_layering_mode = 0;
+    }
+  }
 };
 
 // Params: speed setting.
