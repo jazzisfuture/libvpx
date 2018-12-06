@@ -1733,6 +1733,12 @@ static int exhuastive_mesh_search(const MACROBLOCK *x, MV *ref_mv, MV *best_mv,
 }
 
 #if CONFIG_NON_GREEDY_MV
+MV get_full_mv(const MV *mv) {
+  MV out_mv;
+  out_mv.row = mv->row >> 3;
+  out_mv.col = mv->col >> 3;
+  return out_mv;
+}
 double av1_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_mvs,
                                 int mv_num) {
   int i;
