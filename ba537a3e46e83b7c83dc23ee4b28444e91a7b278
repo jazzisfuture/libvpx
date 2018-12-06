@@ -22,6 +22,29 @@
       "revId": "ba537a3e46e83b7c83dc23ee4b28444e91a7b278",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5399e8e8_4791ca6d",
+        "filename": "vp9/encoder/vp9_mcomp.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1003005
+      },
+      "writtenOn": "2018-12-06T23:38:58Z",
+      "side": 1,
+      "message": "Short function like this may be inlined.",
+      "range": {
+        "startLine": 140,
+        "startChar": 3,
+        "endLine": 140,
+        "endChar": 14
+      },
+      "revId": "ba537a3e46e83b7c83dc23ee4b28444e91a7b278",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
