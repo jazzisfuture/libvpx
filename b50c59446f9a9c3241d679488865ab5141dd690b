@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8312a5ce_29a2d322",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-12-07T17:38:19Z",
+      "side": 1,
+      "message": "update comment to reflect more general change",
+      "revId": "b50c59446f9a9c3241d679488865ab5141dd690b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "357aeda4_42641923",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 807,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2018-12-07T17:38:19Z",
+      "side": 1,
+      "message": "Since we may go back and forth between NTEP and FAST_DIAMOND (depending on speed, resolution, encoding mode,etc.), i think its better to just call init_motion_estimation() again for every frame in vp9_encoder, around line 3875, after the speed settings are done in encode_without_recode_loop().",
+      "revId": "b50c59446f9a9c3241d679488865ab5141dd690b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
