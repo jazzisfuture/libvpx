@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ad0f65b_87013dd4",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-07T00:48:04Z",
+      "side": 1,
+      "message": "I don\u0027t think you need to setjmp here at all if it isn\u0027t already set. when error.setjmp \u003d 0 the internal error will return so you can just cleanup first set the internal error and have it return like it was previously.",
+      "revId": "091a8abec89be55e82eb859d65432272c008d0ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
