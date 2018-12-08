@@ -16,6 +16,24 @@
       "revId": "95009b42ebd474ea2c9caf40cacb8cda245c73bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56513908_b7e635c9",
+        "filename": "test/codec_factory.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-08T01:55:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ccd8f986_88d32eff",
+      "revId": "95009b42ebd474ea2c9caf40cacb8cda245c73bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
