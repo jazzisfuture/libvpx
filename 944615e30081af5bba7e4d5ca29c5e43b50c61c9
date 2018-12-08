@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d76e6c8_836c5e6d",
+        "filename": "test/svc_end_to_end_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-08T05:41:23Z",
+      "side": 1,
+      "message": "to simplify these tests since they\u0027re all related you could put them in the svc_test namespace:\nnamespace svc_test {\nnamespace {",
+      "range": {
+        "startLine": 24,
+        "startChar": 13,
+        "endLine": 24,
+        "endChar": 23
+      },
+      "revId": "944615e30081af5bba7e4d5ca29c5e43b50c61c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e559f33_7e42da82",
+        "filename": "test/svc_end_to_end_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-08T05:41:23Z",
+      "side": 1,
+      "message": "With the accessor the members could be private or you could just access it directly; protected is allowed in tests for this reason. The test functions are viewed as extensions of the class.",
+      "revId": "944615e30081af5bba7e4d5ca29c5e43b50c61c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
