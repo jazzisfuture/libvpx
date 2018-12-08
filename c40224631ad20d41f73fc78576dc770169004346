@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c5cdb3e2_c79cb247",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1031,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2018-12-08T18:39:17Z",
+      "side": 0,
+      "message": "Can we remove this lines from vp9_set_speed_features_framesize_dependent() since all other find_fractional_mv_step assigning happens in this function?",
+      "range": {
+        "startLine": 1028,
+        "startChar": 2,
+        "endLine": 1031,
+        "endChar": 63
+      },
+      "revId": "c40224631ad20d41f73fc78576dc770169004346",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
