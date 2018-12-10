@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab8c1ab3_dd05aad9",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 24
+      },
+      "lineNbr": 2964,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2018-12-10T19:35:20Z",
+      "side": 1,
+      "message": "Would be easier to just pass the function pointer as an additional argument, instead of storing them here.\nAlso will avoid having process_block_void() function as well.",
+      "revId": "110d4c22fefaf35e9dfe7b9790fa748ed2051456",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
