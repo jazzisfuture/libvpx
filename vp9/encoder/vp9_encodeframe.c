@@ -1764,6 +1764,8 @@ static void update_state(VP9_COMP *cpi, ThreadData *td, PICK_MODE_CONTEXT *ctx,
   if (!output_enabled) return;
 
 #if CONFIG_INTERNAL_STATS
+// HACK
+if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
   if (frame_is_intra_only(cm)) {
     static const int kf_mode_index[] = {
       THR_DC /*DC_PRED*/,          THR_V_PRED /*V_PRED*/,
@@ -1777,6 +1779,7 @@ static void update_state(VP9_COMP *cpi, ThreadData *td, PICK_MODE_CONTEXT *ctx,
     // Note how often each mode chosen as best
     ++cpi->mode_chosen_counts[ctx->best_mode_index];
   }
+} // HACK
 #endif
   if (!frame_is_intra_only(cm)) {
     if (is_inter_block(xdmi)) {
