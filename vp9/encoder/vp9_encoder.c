@@ -1919,6 +1919,12 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
     rc->baseline_gf_interval = (MIN_GF_INTERVAL + MAX_GF_INTERVAL) / 2;
   }
 
+
+if (cpi->svc.number_spatial_layers == 3) cpi->oxcf.target_bandwidth += 500000 + 200000;
+ else if (cpi->svc.number_spatial_layers == 2) cpi->oxcf.target_bandwidth += 200000;
+
+
+
   cpi->refresh_golden_frame = 0;
   cpi->refresh_last_frame = 1;
   cm->refresh_frame_context = 1;
@@ -3115,7 +3121,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   MACROBLOCKD *xd = &cpi->td.mb.e_mbd;
   struct loopfilter *lf = &cm->lf;
   int is_reference_frame =
-      (cm->frame_type == KEY_FRAME || cpi->refresh_last_frame ||
+      (1 || cm->frame_type == KEY_FRAME || cpi->refresh_last_frame ||
        cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame);
   if (cpi->use_svc &&
       cpi->svc.temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS)
@@ -6748,6 +6754,9 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
 #if CONFIG_INTERNAL_STATS
 
+// HACK
+if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
+
   if (oxcf->pass != 1) {
     double samples = 0.0;
     cpi->bytes += (int)(*size);
@@ -6908,6 +6917,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     }
   }
 
+// HACK
+}
 #endif
 
   if (is_one_pass_cbr_svc(cpi)) {
