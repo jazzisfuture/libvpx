@@ -48,6 +48,8 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->non_reference_frame = 0;
   svc->skip_enhancement_layer = 0;
   svc->disable_inter_layer_pred = INTER_LAYER_PRED_ON;
+  // HACK: for K-SVC
+  //svc->disable_inter_layer_pred = INTER_LAYER_PRED_OFF_NONKEY;
   svc->framedrop_mode = CONSTRAINED_LAYER_DROP;
   svc->set_intra_only_frame = 0;
   svc->previous_frame_is_intra_only = 0;
