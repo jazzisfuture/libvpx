@@ -528,7 +528,7 @@ static int main_loop(int argc, const char **argv_) {
   int arg_skip = 0;
   int ec_enabled = 0;
   int keep_going = 0;
-  int enable_row_mt = 0;
+  int enable_row_mt = 1;
   int enable_lpf_opt = 0;
   const VpxInterface *interface = NULL;
   const VpxInterface *fourcc_interface = NULL;
