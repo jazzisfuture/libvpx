@@ -1,0 +1,226 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88c3548e_8c1850cf",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 1720,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "join this and the line after and make it a size_t with the use of sizeof",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3039b71_e6069a2d",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 1721,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "prefer sizeof(variable) to sizeof(type):\nhttps://google.github.io/styleguide/cppguide.html#sizeof",
+      "range": {
+        "startLine": 1721,
+        "startChar": 59,
+        "endLine": 1721,
+        "endChar": 62
+      },
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1015df78_fb12eba9",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 1732,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "I think this can be static",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33b87221_72fcc615",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 1750,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "this function is a bit long and difficult to parse, can some of it be broken out to separate functions?",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10fade63_3a689501",
+        "filename": "vp9/decoder/vp9_decoder.h",
+        "patchSetId": 25
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "this name isn\u0027t necessary with the typedef or you can make it match as with the structs in this file. prefer JobType for new types",
+      "range": {
+        "startLine": 34,
+        "startChar": 13,
+        "endLine": 34,
+        "endChar": 22
+      },
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cd989ad_e8d6b540",
+        "filename": "vp9/decoder/vp9_decoder.h",
+        "patchSetId": 25
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "this should be size_t or the value stored to it needs to be cast",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a58befa_be5d2716",
+        "filename": "vp9/decoder/vp9_decoder.h",
+        "patchSetId": 25
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "do you need 64-bits here?",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25d1b4fb_e5703c5c",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "this looks to be unused",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb35dd85_ebc7554a",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "this is redundant in a void function",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f03d5ade_4dff8be8",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "this is redundant in a void function",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94fd5d55_19d77d8a",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "this is redundant in a void function",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c107a61_25f1629d",
+        "filename": "vp9/decoder/vp9_job_queue.h",
+        "patchSetId": 25
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-12T01:58:36Z",
+      "side": 1,
+      "message": "this should be \u003cPROJECT\u003e_\u003cDIRECTORY\u003e_\u003cFILE\u003e_\nVPX_VP9_DECODER_VP9_JOB_QUEUE_H_",
+      "range": {
+        "startLine": 11,
+        "startChar": 8,
+        "endLine": 11,
+        "endChar": 25
+      },
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
