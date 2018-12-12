@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7cbf4168_4b96bcdd",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 1720,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88c3548e_8c1850cf",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3039b71_e6069a2d",
         "filename": "vp9/decoder/vp9_decodeframe.c",
         "patchSetId": 25
@@ -30,6 +48,30 @@
       "writtenOn": "2018-12-12T01:58:36Z",
       "side": 1,
       "message": "prefer sizeof(variable) to sizeof(type):\nhttps://google.github.io/styleguide/cppguide.html#sizeof",
+      "range": {
+        "startLine": 1721,
+        "startChar": 59,
+        "endLine": 1721,
+        "endChar": 62
+      },
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6b0b36e_9c3f7846",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 1721,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "We do not have a variable here, they are created only during decode (job, parse_job, recon_job, lpf_job). Hence using type here.",
+      "parentUuid": "f3039b71_e6069a2d",
       "range": {
         "startLine": 1721,
         "startChar": 59,
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "876bd1ea_425d3135",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 1732,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1015df78_fb12eba9",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33b87221_72fcc615",
         "filename": "vp9/decoder/vp9_decodeframe.c",
         "patchSetId": 25
@@ -73,6 +133,24 @@
       "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "439495a8_e36ca3dc",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 1750,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Created two more functions recon_tile_row, parse_tile_row.",
+      "parentUuid": "33b87221_72fcc615",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "5f504d90_cd124fbb",
+        "filename": "vp9/decoder/vp9_decoder.h",
+        "patchSetId": 25
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10fade63_3a689501",
+      "range": {
+        "startLine": 34,
+        "startChar": 13,
+        "endLine": 34,
+        "endChar": 22
+      },
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3cd989ad_e8d6b540",
         "filename": "vp9/decoder/vp9_decoder.h",
         "patchSetId": 25
@@ -113,6 +215,24 @@
       "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d96cf765_c0decafa",
+        "filename": "vp9/decoder/vp9_decoder.h",
+        "patchSetId": 25
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3cd989ad_e8d6b540",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -133,6 +253,24 @@
     },
     {
       "key": {
+        "uuid": "be316ab3_57475782",
+        "filename": "vp9/decoder/vp9_decoder.h",
+        "patchSetId": 25
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "64 bits are not needed; modified to int. Done.",
+      "parentUuid": "2a58befa_be5d2716",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "25d1b4fb_e5703c5c",
         "filename": "vp9/decoder/vp9_job_queue.c",
         "patchSetId": 25
@@ -147,6 +285,24 @@
       "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9186de62_0b715f99",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "25d1b4fb_e5703c5c",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -167,6 +323,24 @@
     },
     {
       "key": {
+        "uuid": "254dec28_7113037e",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb35dd85_ebc7554a",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f03d5ade_4dff8be8",
         "filename": "vp9/decoder/vp9_job_queue.c",
         "patchSetId": 25
@@ -184,6 +358,24 @@
     },
     {
       "key": {
+        "uuid": "7a50a641_830da2bb",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f03d5ade_4dff8be8",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "94fd5d55_19d77d8a",
         "filename": "vp9/decoder/vp9_job_queue.c",
         "patchSetId": 25
@@ -198,6 +390,24 @@
       "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e8ed146_fed559f9",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94fd5d55_19d77d8a",
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -221,6 +431,30 @@
       "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "849cad29_89f5ad12",
+        "filename": "vp9/decoder/vp9_job_queue.h",
+        "patchSetId": 25
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2018-12-12T13:33:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c107a61_25f1629d",
+      "range": {
+        "startLine": 11,
+        "startChar": 8,
+        "endLine": 11,
+        "endChar": 25
+      },
+      "revId": "85cfa1079da81fe31871a0f9c9e4be8b5a3c092f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
