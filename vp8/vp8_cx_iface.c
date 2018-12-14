@@ -16,6 +16,7 @@
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx_version.h"
 #include "vpx_mem/vpx_mem.h"
+#include "vpx_ports/system_state.h"
 #include "vpx_ports/vpx_once.h"
 #include "vp8/encoder/onyx_int.h"
 #include "vpx/vp8cx.h"
@@ -49,7 +50,7 @@ static struct vp8_extracfg default_extracfg = {
 #if !(CONFIG_REALTIME_ONLY)
   0, /* cpu_used      */
 #else
-  4,                      /* cpu_used      */
+  4, /* cpu_used      */
 #endif
   0, /* enable_auto_alt_ref */
   0, /* noise_sensitivity */
@@ -798,7 +799,7 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
                                    unsigned long duration,
                                    vpx_enc_frame_flags_t flags,
                                    unsigned long deadline) {
-  vpx_codec_err_t res = VPX_CODEC_OK;
+  volatile vpx_codec_err_t res = VPX_CODEC_OK;
 
   if (!ctx->cfg.rc_target_bitrate) {
 #if CONFIG_MULTI_RES_ENCODING
@@ -885,6 +886,14 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
     cx_data_sz = ctx->cx_data_sz;
     cx_data_end = ctx->cx_data + cx_data_sz;
     lib_flags = 0;
+
+    if (setjmp(ctx->cpi->common.error.jmp)) {
+      ctx->cpi->common.error.setjmp = 0;
+      vpx_clear_system_state();
+      return VPX_CODEC_CORRUPT_FRAME;
+    }
+
+    ctx->cpi->common.error.setjmp = 1;
 
     while (cx_data_sz >= ctx->cx_data_sz / 2) {
       comp_data_state = vp8_get_compressed_data(
