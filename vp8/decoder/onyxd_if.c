@@ -304,7 +304,7 @@ static int check_fragments_for_errors(VP8D_COMP *pbi) {
 int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
                                   const uint8_t *source, int64_t time_stamp) {
   VP8_COMMON *cm = &pbi->common;
-  int retcode = -1;
+  volatile int retcode = -1;
   (void)size;
   (void)source;
 
