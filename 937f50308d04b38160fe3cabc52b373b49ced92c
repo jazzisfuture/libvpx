@@ -1,0 +1,152 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6c43f832_ace86261",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 29
+      },
+      "lineNbr": 1664,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-14T07:24:14Z",
+      "side": 1,
+      "message": "the inner ()s are unnecessary",
+      "range": {
+        "startLine": 1664,
+        "startChar": 15,
+        "endLine": 1664,
+        "endChar": 16
+      },
+      "revId": "937f50308d04b38160fe3cabc52b373b49ced92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "845dda9a_20d0949e",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 29
+      },
+      "lineNbr": 2804,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-14T07:24:14Z",
+      "side": 1,
+      "message": "it\u0027s not clear what this happens separately from. the function name is a clear enough indication of what will be done so I think the comment can be removed.",
+      "revId": "937f50308d04b38160fe3cabc52b373b49ced92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d1e6b19_5c1713e1",
+        "filename": "vp9/decoder/vp9_decoder.h",
+        "patchSetId": 29
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-14T07:24:14Z",
+      "side": 1,
+      "message": "these field comments redundant given the names and types.",
+      "revId": "937f50308d04b38160fe3cabc52b373b49ced92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74cf2078_212ff11c",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 29
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-14T07:24:14Z",
+      "side": 1,
+      "message": "sort these",
+      "revId": "937f50308d04b38160fe3cabc52b373b49ced92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49ffa171_1289d69d",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 29
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-14T07:24:14Z",
+      "side": 1,
+      "message": "use vpx/vpx_integer.h for platform compatibility",
+      "revId": "937f50308d04b38160fe3cabc52b373b49ced92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b35eaecd_96869bb9",
+        "filename": "vp9/decoder/vp9_job_queue.h",
+        "patchSetId": 29
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-14T07:24:14Z",
+      "side": 1,
+      "message": "this is redundant",
+      "revId": "937f50308d04b38160fe3cabc52b373b49ced92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c2b578f_7150f9da",
+        "filename": "vp9/decoder/vp9_job_queue.h",
+        "patchSetId": 29
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-14T07:24:14Z",
+      "side": 1,
+      "message": "this and the next are clear given the types",
+      "revId": "937f50308d04b38160fe3cabc52b373b49ced92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12faa252_bcd6b801",
+        "filename": "vp9/decoder/vp9_job_queue.h",
+        "patchSetId": 29
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-14T07:24:14Z",
+      "side": 1,
+      "message": "I believe all other instances are using // VPX_...",
+      "range": {
+        "startLine": 48,
+        "startChar": 7,
+        "endLine": 48,
+        "endChar": 45
+      },
+      "revId": "937f50308d04b38160fe3cabc52b373b49ced92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
