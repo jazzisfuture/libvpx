@@ -16,6 +16,7 @@
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx_version.h"
 #include "vpx_mem/vpx_mem.h"
+#include "vpx_ports/system_state.h"
 #include "vpx_ports/vpx_once.h"
 #include "vp8/encoder/onyx_int.h"
 #include "vpx/vp8cx.h"
@@ -798,7 +799,9 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
                                    unsigned long duration,
                                    vpx_enc_frame_flags_t flags,
                                    unsigned long deadline) {
-  vpx_codec_err_t res = VPX_CODEC_OK;
+  volatile vpx_codec_err_t res = VPX_CODEC_OK;
+  // Make a copy as volatile to avoid -Wclobbered with longjmp.
+  volatile vpx_enc_frame_flags_t vflags = flags;
 
   if (!ctx->cfg.rc_target_bitrate) {
 #if CONFIG_MULTI_RES_ENCODING
@@ -824,20 +827,26 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
 
   // If no flags are set in the encode call, then use the frame flags as
   // defined via the control function: vp8e_set_frame_flags.
-  if (!flags) {
-    flags = ctx->control_frame_flags;
+  if (!vflags) {
+    vflags = ctx->control_frame_flags;
   }
   ctx->control_frame_flags = 0;
 
-  if (!res) res = set_reference_and_update(ctx, flags);
+  if (!res) res = set_reference_and_update(ctx, vflags);
 
   /* Handle fixed keyframe intervals */
   if (ctx->cfg.kf_mode == VPX_KF_AUTO &&
       ctx->cfg.kf_min_dist == ctx->cfg.kf_max_dist) {
     if (++ctx->fixed_kf_cntr > ctx->cfg.kf_min_dist) {
-      flags |= VPX_EFLAG_FORCE_KF;
+      vflags |= VPX_EFLAG_FORCE_KF;
       ctx->fixed_kf_cntr = 1;
     }
+  }
+
+  if (setjmp(ctx->cpi->common.error.jmp)) {
+    ctx->cpi->common.error.setjmp = 0;
+    vpx_clear_system_state();
+    return VPX_CODEC_CORRUPT_FRAME;
   }
 
   /* Initialize the encoder instance on the first frame*/
@@ -860,7 +869,7 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
     }
 
     /* Convert API flags to internal codec lib flags */
-    lib_flags = (flags & VPX_EFLAG_FORCE_KF) ? FRAMEFLAGS_KEY : 0;
+    lib_flags = (vflags & VPX_EFLAG_FORCE_KF) ? FRAMEFLAGS_KEY : 0;
 
     /* vp8 use 10,000,000 ticks/second as time stamp */
     dst_time_stamp =
@@ -885,6 +894,8 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
     cx_data_sz = ctx->cx_data_sz;
     cx_data_end = ctx->cx_data + cx_data_sz;
     lib_flags = 0;
+
+    ctx->cpi->common.error.setjmp = 1;
 
     while (cx_data_sz >= ctx->cx_data_sz / 2) {
       comp_data_state = vp8_get_compressed_data(
