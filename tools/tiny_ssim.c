@@ -565,35 +565,6 @@ double get_ssim_metrics(uint8_t *img1, int img1_pitch, uint8_t *img2,
   return inconsistency_total;
 }
 
-double highbd_calc_ssim(const YV12_BUFFER_CONFIG *source,
-                        const YV12_BUFFER_CONFIG *dest, double *weight,
-                        uint32_t bd, uint32_t in_bd) {
-  double a, b, c;
-  double ssimv;
-  uint32_t shift = 0;
-
-  assert(bd >= in_bd);
-  shift = bd - in_bd;
-
-  a = highbd_ssim2(source->y_buffer, dest->y_buffer, source->y_stride,
-                   dest->y_stride, source->y_crop_width, source->y_crop_height,
-                   in_bd, shift);
-
-  b = highbd_ssim2(source->u_buffer, dest->u_buffer, source->uv_stride,
-                   dest->uv_stride, source->uv_crop_width,
-                   source->uv_crop_height, in_bd, shift);
-
-  c = highbd_ssim2(source->v_buffer, dest->v_buffer, source->uv_stride,
-                   dest->uv_stride, source->uv_crop_width,
-                   source->uv_crop_height, in_bd, shift);
-
-  ssimv = a * .8 + .1 * (b + c);
-
-  *weight = 1;
-
-  return ssimv;
-}
-
 int main(int argc, char *argv[]) {
   FILE *framestats = NULL;
   int bit_depth = 8;
