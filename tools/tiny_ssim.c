@@ -677,7 +677,7 @@ int main(int argc, char *argv[]) {
     psnr = calc_plane_error(buf0, w, buf1, w, w, h);                           \
   } else {                                                                     \
     ssim = highbd_ssim2(CONVERT_TO_BYTEPTR(buf0), CONVERT_TO_BYTEPTR(buf1), w, \
-                        w, w, h, bit_depth, bit_depth - 8);                    \
+                        w, w, h, bit_depth, 0);                                \
     psnr = calc_plane_error16(CAST_TO_SHORTPTR(buf0), w,                       \
                               CAST_TO_SHORTPTR(buf1), w, w, h);                \
   }
