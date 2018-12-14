@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6bfcec6e_d330761d",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-14T07:31:08Z",
+      "side": 1,
+      "message": "as a followup you could add // CONFIG_VP9_HIGHBITDEPTH to these new #endif\u0027s  and the existing ones",
+      "revId": "4013561ac2195a743887c60c5c65d1de0837e3f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
