@@ -254,6 +254,9 @@ static const arg_def_t error_resilient =
 static const arg_def_t lag_in_frames =
     ARG_DEF(NULL, "lag-in-frames", 1, "Max number of frames to lag");
 
+static const arg_def_t enable_tpl =
+    ARG_DEF(NULL, "enable-tpl", 1, "Enable temporal dependency model");
+
 static const arg_def_t *global_args[] = { &use_yv12,
                                           &use_i420,
                                           &use_i422,
@@ -412,10 +415,6 @@ static const arg_def_t tile_cols =
 static const arg_def_t tile_rows =
     ARG_DEF(NULL, "tile-rows", 1,
             "Number of tile rows to use, log2 (set to 0 while threads > 1)");
-
-static const arg_def_t enable_tpl_model =
-    ARG_DEF(NULL, "enable-tpl", 1, "Enable temporal dependency model");
-
 static const arg_def_t lossless =
     ARG_DEF(NULL, "lossless", 1, "Lossless mode (0: false (default), 1: true)");
 static const arg_def_t frame_parallel_decoding = ARG_DEF(
@@ -501,7 +500,6 @@ static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &static_thresh,
                                        &tile_cols,
                                        &tile_rows,
-                                       &enable_tpl_model,
                                        &arnr_maxframes,
                                        &arnr_strength,
                                        &arnr_type,
@@ -533,7 +531,6 @@ static const int vp9_arg_ctrl_map[] = { VP8E_SET_CPUUSED,
                                         VP8E_SET_STATIC_THRESHOLD,
                                         VP9E_SET_TILE_COLUMNS,
                                         VP9E_SET_TILE_ROWS,
-                                        VP9E_SET_TPL,
                                         VP8E_SET_ARNR_MAXFRAMES,
                                         VP8E_SET_ARNR_STRENGTH,
                                         VP8E_SET_ARNR_TYPE,
@@ -1277,6 +1274,8 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
         test_16bit_internal = 1;
       }
 #endif
+    } else if (arg_match(&arg, &enable_tpl, argi)) {
+      config->cfg.enable_tpl = arg_parse_uint(&arg);
     } else {
       int i, match = 0;
       for (i = 0; ctrl_args[i]; i++) {
@@ -1303,7 +1302,7 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
       }
       if (!match) argj++;
     }
-  }
+    }
 #if CONFIG_VP9_HIGHBITDEPTH
   if (strcmp(global->codec->name, "vp9") == 0) {
     config->use_16bit_internal =

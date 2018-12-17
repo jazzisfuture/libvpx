@@ -594,6 +594,8 @@ static vpx_codec_err_t set_encoder_config(
     oxcf->ts_rate_decimator[0] = 1;
   }
 
+  oxcf->enable_tpl_model = cfg->enable_tpl;
+
   if (get_level_index(oxcf->target_level) >= 0) config_target_level(oxcf);
   /*
   printf("Current VP9 Settings: \n");
@@ -741,13 +743,6 @@ static vpx_codec_err_t ctrl_set_tile_rows(vpx_codec_alg_priv_t *ctx,
                                           va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.tile_rows = CAST(VP9E_SET_TILE_ROWS, args);
-  return update_extra_cfg(ctx, &extra_cfg);
-}
-
-static vpx_codec_err_t ctrl_set_tpl_model(vpx_codec_alg_priv_t *ctx,
-                                          va_list args) {
-  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
-  extra_cfg.enable_tpl_model = CAST(VP9E_SET_TPL, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
@@ -1649,7 +1644,6 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP8E_SET_STATIC_THRESHOLD, ctrl_set_static_thresh },
   { VP9E_SET_TILE_COLUMNS, ctrl_set_tile_columns },
   { VP9E_SET_TILE_ROWS, ctrl_set_tile_rows },
-  { VP9E_SET_TPL, ctrl_set_tpl_model },
   { VP8E_SET_ARNR_MAXFRAMES, ctrl_set_arnr_max_frames },
   { VP8E_SET_ARNR_STRENGTH, ctrl_set_arnr_strength },
   { VP8E_SET_ARNR_TYPE, ctrl_set_arnr_type },
@@ -1756,7 +1750,8 @@ static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
         0,      // ts_periodicity
         { 0 },  // ts_layer_id
         { 0 },  // layer_taget_bitrate
-        0       // temporal_layering_mode
+        0,      // temporal_layering_mode
+        1       // temporal dependency model
     } },
 };
 
