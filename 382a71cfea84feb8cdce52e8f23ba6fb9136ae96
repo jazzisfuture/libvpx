@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "86f6cb46_782c2635",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 804,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-17T19:58:50Z",
+      "side": 1,
+      "message": "to keep the rename down, you could rename the parameter to enc_flags like in vp9.",
+      "revId": "382a71cfea84feb8cdce52e8f23ba6fb9136ae96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
