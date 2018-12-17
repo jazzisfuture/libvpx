@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d9ef6550_35848de6",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 549,
+      "author": {
+        "id": 1318536
+      },
+      "writtenOn": "2018-12-17T23:19:38Z",
+      "side": 1,
+      "message": "This line needs to be removed.",
+      "revId": "4ba0d50dca1813ad0a66930885266ce13aa84b25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40040ba0_777c6748",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1754,
+      "author": {
+        "id": 1318536
+      },
+      "writtenOn": "2018-12-17T23:19:38Z",
+      "side": 1,
+      "message": "Does this change the default to \"enabled\"?",
+      "revId": "4ba0d50dca1813ad0a66930885266ce13aa84b25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
