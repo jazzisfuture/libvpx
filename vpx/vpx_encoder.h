@@ -702,6 +702,11 @@ typedef struct vpx_codec_enc_cfg {
    *
    */
   int temporal_layering_mode;
+
+  /*!\brief Control turning on and off the temporal dependency model based
+   * encoder optimization.
+   */
+  int enable_tpl;
 } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
 /*!\brief  vp9 svc extra configure parameters
