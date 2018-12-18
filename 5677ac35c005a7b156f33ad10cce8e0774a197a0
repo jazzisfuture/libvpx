@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "807ce646_ab7fa935",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-18T00:26:09Z",
+      "side": 1,
+      "message": "configured",
+      "range": {
+        "startLine": 11,
+        "startChar": 38,
+        "endLine": 11,
+        "endChar": 50
+      },
+      "revId": "5677ac35c005a7b156f33ad10cce8e0774a197a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20498fa3_ac1ed471",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 6448,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-18T00:26:09Z",
+      "side": 1,
+      "message": "you could just check the pointers rather than introduce new flags.",
+      "revId": "5677ac35c005a7b156f33ad10cce8e0774a197a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
