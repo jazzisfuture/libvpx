@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5547f85_5976f2da",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 30
+      },
+      "lineNbr": 2237,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-18T06:43:44Z",
+      "side": 1,
+      "message": "I think much of this initialization can be broken out to another function to be shared with the other _mt implementation",
+      "revId": "1c7a40771fa6b25e1353553534bacc9995868a28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a8d9a27_4d595465",
+        "filename": "vp9/decoder/vp9_job_queue.h",
+        "patchSetId": 30
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-18T06:43:44Z",
+      "side": 1,
+      "message": "Just make this JobQueue, we should avoid introducing more _t types as they\u0027re reserved by posix",
+      "range": {
+        "startLine": 35,
+        "startChar": 2,
+        "endLine": 35,
+        "endChar": 8
+      },
+      "revId": "1c7a40771fa6b25e1353553534bacc9995868a28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
