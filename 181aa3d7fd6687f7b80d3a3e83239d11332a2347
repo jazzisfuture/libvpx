@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b6a4b36_44c8d178",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1707,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2018-12-18T09:51:58Z",
+      "side": 1,
+      "message": "What about 8x8 as in vp9_pick_inter_mode_sub8x8() or is this only used for \u003e8x8 block sizes?",
+      "range": {
+        "startLine": 1707,
+        "startChar": 22,
+        "endLine": 1707,
+        "endChar": 23
+      },
+      "revId": "181aa3d7fd6687f7b80d3a3e83239d11332a2347",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
