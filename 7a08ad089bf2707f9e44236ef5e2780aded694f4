@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "02c315fc_d9a868b7",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 682,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2018-12-18T04:49:34Z",
+      "side": 1,
+      "message": "this parameter can be removed?",
+      "range": {
+        "startLine": 682,
+        "startChar": 44,
+        "endLine": 682,
+        "endChar": 45
+      },
+      "revId": "7a08ad089bf2707f9e44236ef5e2780aded694f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
