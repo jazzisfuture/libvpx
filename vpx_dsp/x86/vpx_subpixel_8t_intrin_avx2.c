@@ -328,6 +328,7 @@ static void vpx_filter_block1d16_v8_avg_avx2(
                                  height, filter, 1);
 }
 
+filter8_1dfunction vpx_filter_block1d16_h4_avx2;
 void vpx_filter_block1d16_h4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
                                   uint8_t *dst_ptr, ptrdiff_t dst_stride,
                                   uint32_t height, const int16_t *kernel) {
@@ -432,6 +433,7 @@ void vpx_filter_block1d16_h4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
   }
 }
 
+filter8_1dfunction vpx_filter_block1d16_v4_avx2;
 void vpx_filter_block1d16_v4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
                                   uint8_t *dst_ptr, ptrdiff_t dst_stride,
                                   uint32_t height, const int16_t *kernel) {
@@ -537,6 +539,7 @@ void vpx_filter_block1d16_v4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
   }
 }
 
+filter8_1dfunction vpx_filter_block1d8_h4_avx2;
 void vpx_filter_block1d8_h4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
                                  uint8_t *dst_ptr, ptrdiff_t dst_stride,
                                  uint32_t height, const int16_t *kernel) {
@@ -631,6 +634,7 @@ void vpx_filter_block1d8_h4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
   }
 }
 
+filter8_1dfunction vpx_filter_block1d8_v4_avx2;
 void vpx_filter_block1d8_v4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
                                  uint8_t *dst_ptr, ptrdiff_t dst_stride,
                                  uint32_t height, const int16_t *kernel) {
@@ -725,6 +729,7 @@ void vpx_filter_block1d8_v4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
   }
 }
 
+filter8_1dfunction vpx_filter_block1d4_h4_avx2;
 void vpx_filter_block1d4_h4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
                                  uint8_t *dst_ptr, ptrdiff_t dst_stride,
                                  uint32_t height, const int16_t *kernel) {
@@ -805,6 +810,7 @@ void vpx_filter_block1d4_h4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
   }
 }
 
+filter8_1dfunction vpx_filter_block1d4_v4_avx2;
 void vpx_filter_block1d4_v4_avx2(const uint8_t *src_ptr, ptrdiff_t src_stride,
                                  uint8_t *dst_ptr, ptrdiff_t dst_stride,
                                  uint32_t height, const int16_t *kernel) {
