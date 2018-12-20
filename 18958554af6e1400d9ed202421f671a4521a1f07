@@ -34,6 +34,24 @@
       "revId": "18958554af6e1400d9ed202421f671a4521a1f07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c40d5f0_4eeac71d",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-12-20T18:31:05Z",
+      "side": 1,
+      "message": "Please see https://aomedia-review.googlesource.com/c/aom/+/77262.",
+      "parentUuid": "aa8148ba_f99ba8c8",
+      "revId": "18958554af6e1400d9ed202421f671a4521a1f07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
