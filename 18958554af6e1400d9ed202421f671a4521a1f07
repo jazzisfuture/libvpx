@@ -16,6 +16,24 @@
       "revId": "18958554af6e1400d9ed202421f671a4521a1f07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa8148ba_f99ba8c8",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-12-20T18:13:28Z",
+      "side": 1,
+      "message": "Johann: I am working on a concrete example of how I would solve this kind of problem in libaom. Give me half an hour. Then you can assess whether that is the right approach to solving this kind of problem.",
+      "parentUuid": "56b2018d_10030d64",
+      "revId": "18958554af6e1400d9ed202421f671a4521a1f07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
