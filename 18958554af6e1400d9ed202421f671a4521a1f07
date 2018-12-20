@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56b2018d_10030d64",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-12-20T17:43:01Z",
+      "side": 1,
+      "message": "Hi Johann, \n\nThank you very much for fixing the -Wmissing-declarations warnings.\n\nManually declaring the functions in .c files like this partially defeats the purpose of -Wmissing-declarations. The -Wmissing-declarations flag is intended to detect discrepancies in a function\u0027s prototype between the declaration in a .h file and the definition in a .c file.\n\nIn libaom, such functions are declared in either config/aom_dsp_rtcd.h or config/av1_rtcd.h. To fix -Wmissing-declarations warnings, we can simply add the missing #include statement. Here is an example from yesterday:\n\nhttps://aomedia-review.googlesource.com/c/aom/+/77182\n\nThings get complicated if the function that -Wmissing-declarations warns about is not declared in config/aom_dsp_rtcd.h or config/av1_rtcd.h. (I suspect you are running into this problem with these libvpx functions.) In my experience, we can modify one of those rtcd perl scripts so that the function is declared in one of the xxx_rtcd.h headers, and then we can add the missing #include statement. (I don\u0027t have an example of this kind of fix right now.)\n\nWould this approach work for libvpx?",
+      "revId": "18958554af6e1400d9ed202421f671a4521a1f07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
