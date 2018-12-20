@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/vpx_filter.h"
 #include "vpx_dsp/x86/convolve.h"
@@ -22,10 +23,7 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
 
-// These are reused by the avx2 intrinsics.
-// vpx_filter_block1d8_v8_intrin_ssse3()
-// vpx_filter_block1d8_h8_intrin_ssse3()
-// vpx_filter_block1d4_h8_intrin_ssse3()
+// Several functions are reused by the avx2 intrinsics.
 
 static INLINE __m128i shuffle_filter_convolve8_8_ssse3(
     const __m128i *const s, const int16_t *const filter) {
@@ -33,6 +31,26 @@ static INLINE __m128i shuffle_filter_convolve8_8_ssse3(
   shuffle_filter_ssse3(filter, f);
   return convolve8_8_ssse3(s, f);
 }
+
+#if ARCH_X86_64
+filter8_1dfunction vpx_filter_block1d4_h8_intrin_ssse3;
+filter8_1dfunction vpx_filter_block1d8_h8_intrin_ssse3;
+filter8_1dfunction vpx_filter_block1d8_v8_intrin_ssse3;
+#define vpx_filter_block1d4_h8_ssse3 vpx_filter_block1d4_h8_intrin_ssse3
+#define vpx_filter_block1d8_h8_ssse3 vpx_filter_block1d8_h8_intrin_ssse3
+#define vpx_filter_block1d8_v8_ssse3 vpx_filter_block1d8_v8_intrin_ssse3
+#else // ARCH_X86
+filter8_1dfunction vpx_filter_block1d4_h8_ssse3;
+filter8_1dfunction vpx_filter_block1d8_h8_ssse3;
+filter8_1dfunction vpx_filter_block1d8_v8_ssse3;
+#endif
+
+filter8_1dfunction vpx_filter_block1d16_h4_ssse3;
+filter8_1dfunction vpx_filter_block1d16_v4_ssse3;
+filter8_1dfunction vpx_filter_block1d8_h4_ssse3;
+filter8_1dfunction vpx_filter_block1d8_v4_ssse3;
+filter8_1dfunction vpx_filter_block1d4_h4_ssse3;
+filter8_1dfunction vpx_filter_block1d4_v4_ssse3;
 
 void vpx_filter_block1d4_h8_intrin_ssse3(
     const uint8_t *src_ptr, ptrdiff_t src_pitch, uint8_t *output_ptr,
@@ -670,10 +688,7 @@ void vpx_filter_block1d4_v4_ssse3(const uint8_t *src_ptr, ptrdiff_t src_stride,
 
 filter8_1dfunction vpx_filter_block1d16_v8_ssse3;
 filter8_1dfunction vpx_filter_block1d16_h8_ssse3;
-filter8_1dfunction vpx_filter_block1d8_v8_ssse3;
-filter8_1dfunction vpx_filter_block1d8_h8_ssse3;
 filter8_1dfunction vpx_filter_block1d4_v8_ssse3;
-filter8_1dfunction vpx_filter_block1d4_h8_ssse3;
 filter8_1dfunction vpx_filter_block1d16_v8_avg_ssse3;
 filter8_1dfunction vpx_filter_block1d16_h8_avg_ssse3;
 filter8_1dfunction vpx_filter_block1d8_v8_avg_ssse3;
