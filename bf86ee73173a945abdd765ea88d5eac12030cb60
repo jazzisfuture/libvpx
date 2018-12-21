@@ -22,6 +22,30 @@
       "revId": "bf86ee73173a945abdd765ea88d5eac12030cb60",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "16da1688_e1eb4d88",
+        "filename": "vp9/encoder/x86/vp9_highbd_block_error_intrin_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-21T21:37:24Z",
+      "side": 1,
+      "message": "Yes it noticed the missing const and I happened to notice the bps/bd difference. I had fixed most of those with clang tidy, but without the header file, it couldn\u0027t help here.",
+      "parentUuid": "98ff18bb_95801436",
+      "range": {
+        "startLine": 18,
+        "startChar": 36,
+        "endLine": 18,
+        "endChar": 41
+      },
+      "revId": "bf86ee73173a945abdd765ea88d5eac12030cb60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
