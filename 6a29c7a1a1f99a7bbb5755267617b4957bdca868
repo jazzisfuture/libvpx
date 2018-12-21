@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a09b2718_b2e82707",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-12-21T21:44:32Z",
+      "side": 1,
+      "message": "Nit: Please add parentheses around the macro. This is the common style in libvpx.\n\n#if defined(VPX_MAX_ALLOCABLE_MEMORY)\n\nBut I think it is fine to this #if and just include the header unconditionally.",
+      "range": {
+        "startLine": 18,
+        "startChar": 1,
+        "endLine": 18,
+        "endChar": 36
+      },
+      "revId": "6a29c7a1a1f99a7bbb5755267617b4957bdca868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "068e8f39_e6d6e5e1",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-12-21T21:44:32Z",
+      "side": 1,
+      "message": "Nit: Please add parentheses around the macro. This is the common style in libvpx.\n\n#if defined(VPX_MAX_ALLOCABLE_MEMORY)",
+      "range": {
+        "startLine": 191,
+        "startChar": 4,
+        "endLine": 191,
+        "endChar": 36
+      },
+      "revId": "6a29c7a1a1f99a7bbb5755267617b4957bdca868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
