@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "82d2e021_15c49e8c",
+        "filename": "vpx_dsp/x86/vpx_high_subpixel_8t_sse2.asm",
+        "patchSetId": 3
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-21T15:23:15Z",
+      "side": 1,
+      "message": "Typos found while searching for these implementations.",
+      "range": {
+        "startLine": 202,
+        "startChar": 6,
+        "endLine": 202,
+        "endChar": 40
+      },
+      "revId": "a492e7020b945b3b31f5df30a1c794da6dd04876",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
