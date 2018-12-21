@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd867803_f92d340d",
+        "filename": "vpx_dsp/x86/vpx_high_subpixel_8t_sse2.asm",
+        "patchSetId": 6
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-21T17:21:37Z",
+      "side": 1,
+      "message": "minor typo cleanups",
+      "range": {
+        "startLine": 202,
+        "startChar": 6,
+        "endLine": 202,
+        "endChar": 40
+      },
+      "revId": "c67a2e76a1b317995fc6f7fe40ba773ea55272ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "13e47586_47274242",
+        "filename": "vpx_dsp/x86/vpx_subpixel_4t_intrin_sse2.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 617,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-21T17:21:37Z",
+      "side": 1,
+      "message": "Fixes unused function warnings on x86 + hbd",
+      "range": {
+        "startLine": 617,
+        "startChar": 0,
+        "endLine": 617,
+        "endChar": 42
+      },
+      "revId": "c67a2e76a1b317995fc6f7fe40ba773ea55272ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2374f70f_04912fe1",
+        "filename": "vpx_dsp/x86/vpx_subpixel_4t_intrin_sse2.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1007,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-21T17:21:37Z",
+      "side": 1,
+      "message": "Documented origin of functions",
+      "range": {
+        "startLine": 1007,
+        "startChar": 8,
+        "endLine": 1007,
+        "endChar": 28
+      },
+      "revId": "c67a2e76a1b317995fc6f7fe40ba773ea55272ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53eafb9b_8e5c978a",
+        "filename": "vpx_dsp/x86/vpx_subpixel_4t_intrin_sse2.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1021,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2018-12-21T17:21:37Z",
+      "side": 1,
+      "message": "and justification for #define",
+      "range": {
+        "startLine": 1021,
+        "startChar": 0,
+        "endLine": 1021,
+        "endChar": 66
+      },
+      "revId": "c67a2e76a1b317995fc6f7fe40ba773ea55272ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
