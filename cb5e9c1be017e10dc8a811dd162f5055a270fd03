@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ddfe9ebf_5e9f9390",
+        "filename": "vpx_ports/x86.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2018-12-21T06:02:41Z",
+      "side": 1,
+      "message": "Elliott: Please name these four variables as follows:\n\nunsigned int reg_eax, reg_ebx, reg_ecx, reg_edx;\n\nThe reason is that these variables may be used in inline assembly\ncode directly in one build configuration (Visual Studio, 32-bit x86),\nso the variable names cannot be the same as register names.\n\nMake the same change to line 312.",
+      "range": {
+        "startLine": 305,
+        "startChar": 2,
+        "endLine": 305,
+        "endChar": 30
+      },
+      "revId": "cb5e9c1be017e10dc8a811dd162f5055a270fd03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
