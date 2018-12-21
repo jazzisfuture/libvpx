@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c0f3b33c_47000240",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1319299
+      },
+      "writtenOn": "2018-12-21T22:03:15Z",
+      "side": 1,
+      "message": "I am reluctant to include this file unconditionally. It is needed only to use REF_FRAMES. I don\u0027t quite like the necessity to include this file at all, because it bounds vpx_scale to vp9 code quite tightly. But this is the best we can do without re-factoring. So, I would leave this include under #ifdef. Please let me know if you strongly disagree.",
+      "parentUuid": "a09b2718_b2e82707",
+      "range": {
+        "startLine": 18,
+        "startChar": 1,
+        "endLine": 18,
+        "endChar": 36
+      },
+      "revId": "6a29c7a1a1f99a7bbb5755267617b4957bdca868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "068e8f39_e6d6e5e1",
         "filename": "vpx_scale/generic/yv12config.c",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "6a29c7a1a1f99a7bbb5755267617b4957bdca868",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e54e7af_4630fe10",
+        "filename": "vpx_scale/generic/yv12config.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1319299
+      },
+      "writtenOn": "2018-12-21T22:03:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "068e8f39_e6d6e5e1",
+      "range": {
+        "startLine": 191,
+        "startChar": 4,
+        "endLine": 191,
+        "endChar": 36
+      },
+      "revId": "6a29c7a1a1f99a7bbb5755267617b4957bdca868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
