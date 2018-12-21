@@ -16,6 +16,24 @@
       "revId": "3d779e6a209e076ed3a62fb3d4d87bcd63545294",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "560fd0a7_8c0eb2a3",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-12-21T12:40:48Z",
+      "side": 1,
+      "message": "\u003e These six functions can be marked as static, because they are only used within this file.\n\nGood point, I wasn\u0027t paying close enough attention.",
+      "parentUuid": "2386bd02_3aaef02a",
+      "revId": "3d779e6a209e076ed3a62fb3d4d87bcd63545294",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
