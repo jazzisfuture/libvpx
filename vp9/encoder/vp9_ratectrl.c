@@ -1759,6 +1759,8 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   RATE_CONTROL *const rc = &cpi->rc;
   SVC *const svc = &cpi->svc;
   const int qindex = cm->base_qindex;
+  const int gf_group_index = cpi->twopass.gf_group.index;
+  const GF_GROUP *gf_group = &cpi->twopass.gf_group;
 
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
@@ -1797,6 +1799,15 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
       // frames).
       rc->ni_tot_qi += qindex;
       rc->ni_av_qi = rc->ni_tot_qi / rc->ni_frames;
+    } else if (!rc->is_src_frame_alt_ref &&
+               gf_group->rf_level[gf_group_index] == GF_ARF_LOW) {
+      const VP9_COMMON *const cm = &cpi->common;
+      int qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, qindex,
+                                              1.5, cm->bit_depth);
+      const int avg_frame_qindex =
+          clamp(qindex - qdelta, rc->best_quality, rc->worst_quality);
+      rc->avg_frame_qindex[INTER_FRAME] = ROUND_POWER_OF_TWO(
+          3 * rc->avg_frame_qindex[INTER_FRAME] + avg_frame_qindex, 2);
     }
   }
 
