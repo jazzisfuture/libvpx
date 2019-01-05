@@ -87,7 +87,16 @@ int main(int argc, char **argv) {
   if (argc != 4) die("Invalid number of arguments.");
 
   reader = vpx_video_reader_open(argv[1]);
-  if (!reader) die("Failed to open %s for reading.", argv[1]);
+  if (!reader) {
+    switch (Reader_Error) {
+      case 0: break;
+      case 1: die("%s can't be opened.", argv[1]); break;
+      case 2: die("File header on %s can't be read.", argv[1]); break;
+      case 3: die("The IVF signature on %s is wrong.", argv[1]); break;
+      case 4: die("%s uses the wrong IVF version.", argv[1]); break;
+      case 5: die("Can't allocate VpxVideoReader"); break;
+    }
+  }
 
   if (!(outfile = fopen(argv[2], "wb")))
     die("Failed to open %s for writing.", argv[2]);
