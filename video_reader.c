@@ -75,3 +75,24 @@ const uint8_t *vpx_video_reader_get_frame(VpxVideoReader *reader,
 const VpxVideoInfo *vpx_video_reader_get_info(VpxVideoReader *reader) {
   return &reader->info;
 }
+
+VpxVideoError_t vpx_video_reader_check_file(const char *filename) {
+  char header[32];
+  VpxVideoReader *reader = NULL;
+  FILE *const file = fopen(filename, "rb");
+  if (!file) return ERR_OPENING_FILE;  // Can't open file
+
+  if (fread(header, 1, 32, file) != 32)
+    return ERR_FILE_HEADER;  // Can't read file header
+
+  if (memcmp(kIVFSignature, header, 4) != 0)
+    return ERR_IVF_SIGNATURE;  // Wrong IVF signature
+
+  if (mem_get_le16(header + 4) != 0)
+    return ERR_IVF_VERSION;  // Wrong IVF version
+
+  reader = calloc(1, sizeof(*reader));
+  if (!reader) return ERR_ALLOCATION;  // Can't allocate VpxVideoReader
+
+  return ERR_NONE;  // Can be used to verify a file
+}
