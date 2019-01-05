@@ -44,6 +44,18 @@ const uint8_t *vpx_video_reader_get_frame(VpxVideoReader *reader, size_t *size);
 // Fills VpxVideoInfo with information from opened video file.
 const VpxVideoInfo *vpx_video_reader_get_info(VpxVideoReader *reader);
 
+// Returns an error code for why a file could not be opened with VpxVideoReader.
+typedef enum VpxVideoError {
+  READER_OK,
+  READER_OPEN_FAILED,
+  READER_CANNOT_READ_HEADER,
+  READER_INVALID_IVF_SIGNATURE,
+  READER_INVALID_IVF_VERSION,
+  READER_OUT_OF_MEMORY
+} VpxVideoError;
+
+VpxVideoError Reader_Error;
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
