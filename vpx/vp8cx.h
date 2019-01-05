@@ -555,6 +555,8 @@ enum vp8e_enc_control_id {
    */
   VP9E_SET_TARGET_LEVEL,
 
+  VP9E_SET_ML_LEVEL,
+
   /*!\brief Codec control function to set row level multi-threading.
    *
    * 0 : off, 1 : on
@@ -976,6 +978,9 @@ VPX_CTRL_USE_TYPE(VP9E_SET_RENDER_SIZE, int *)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_TARGET_LEVEL, unsigned int)
 #define VPX_CTRL_VP9E_SET_TARGET_LEVEL
+
+VPX_CTRL_USE_TYPE(VP9E_SET_ML_LEVEL, unsigned int)
+#define VPX_CTRL_VP9E_SET_ML_LEVEL
 
 VPX_CTRL_USE_TYPE(VP9E_SET_ROW_MT, unsigned int)
 #define VPX_CTRL_VP9E_SET_ROW_MT

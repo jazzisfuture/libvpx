@@ -195,6 +195,26 @@ static void set_good_speed_feature_framesize_dependent(VP9_COMP *cpi,
   if (speed >= 5) {
     sf->partition_search_breakout_thr.rate = 500;
   }
+
+  {
+    const int level = ~cpi->oxcf.ml_level;
+
+    if (1 & (level >> 0))
+      sf->ml_var_partition_pruning = 0;
+
+    if (1 & (level >> 1)) {
+      sf->ml_prune_rect_partition_threhold[0] = -1;
+      sf->ml_prune_rect_partition_threhold[1] = -1;
+      sf->ml_prune_rect_partition_threhold[2] = -1;
+      sf->ml_prune_rect_partition_threhold[3] = -1;
+    }
+
+    if (1 & (level >> 2))
+      sf->ml_partition_search_early_termination = 0;
+
+    if (1 & (level >> 3))
+      sf->use_ml_partition_search_breakout = 0;
+  }
 }
 
 static double tx_dom_thresholds[6] = { 99.0, 14.0, 12.0, 8.0, 4.0, 0.0 };

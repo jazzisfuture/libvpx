@@ -489,6 +489,9 @@ static const arg_def_t target_level = ARG_DEF(
     "                                         10: level 1.0  11: level 1.1  "
     "...  62: level 6.2");
 
+static const arg_def_t ml_level =
+    ARG_DEF(NULL, "ml-level", 1, "Set ml level");
+
 static const arg_def_t row_mt =
     ARG_DEF(NULL, "row-mt", 1,
             "Enable row based non-deterministic multi-threading in VP9");
@@ -521,6 +524,7 @@ static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &min_gf_interval,
                                        &max_gf_interval,
                                        &target_level,
+                                       &ml_level,
                                        &row_mt,
 #if CONFIG_VP9_HIGHBITDEPTH
                                        &bitdeptharg,
@@ -553,6 +557,7 @@ static const int vp9_arg_ctrl_map[] = { VP8E_SET_CPUUSED,
                                         VP9E_SET_MIN_GF_INTERVAL,
                                         VP9E_SET_MAX_GF_INTERVAL,
                                         VP9E_SET_TARGET_LEVEL,
+                                        VP9E_SET_ML_LEVEL,
                                         VP9E_SET_ROW_MT,
                                         0 };
 #endif
@@ -1802,6 +1807,14 @@ static void show_psnr(struct stream_state *stream, double peak) {
     fprintf(stderr, " %.3f", stream->psnr_totals[i] / stream->psnr_count);
   }
   fprintf(stderr, "\n");
+
+#if 1
+  {
+    FILE *fp = fopen("timing.txt", "a");
+    fprintf(fp, "%lld\n", (long long)stream->cx_time);
+    fclose(fp);
+  }
+#endif
 }
 
 static float usec_to_fps(uint64_t usec, unsigned int frames) {

@@ -42,6 +42,7 @@ struct vp9_extracfg {
   unsigned int gf_cbr_boost_pct;
   unsigned int lossless;
   unsigned int target_level;
+  unsigned int ml_level;
   unsigned int frame_parallel_decoding_mode;
   AQ_MODE aq_mode;
   int alt_ref_aq;
@@ -76,6 +77,7 @@ static struct vp9_extracfg default_extra_cfg = {
   0,                     // gf_cbr_boost_pct
   0,                     // lossless
   255,                   // target_level
+  0,                     // ml_level
   1,                     // frame_parallel_decoding_mode
   NO_AQ,                 // aq_mode
   0,                     // alt_ref_aq
@@ -572,6 +574,7 @@ static vpx_codec_err_t set_encoder_config(
       (enum vp9e_temporal_layering_mode)cfg->temporal_layering_mode;
 
   oxcf->target_level = extra_cfg->target_level;
+  oxcf->ml_level = extra_cfg->ml_level;
 
   oxcf->row_mt = extra_cfg->row_mt;
   oxcf->motion_vector_unit_test = extra_cfg->motion_vector_unit_test;
@@ -863,6 +866,13 @@ static vpx_codec_err_t ctrl_set_target_level(vpx_codec_alg_priv_t *ctx,
                                              va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.target_level = CAST(VP9E_SET_TARGET_LEVEL, args);
+  return update_extra_cfg(ctx, &extra_cfg);
+}
+
+static vpx_codec_err_t ctrl_set_ml_level(vpx_codec_alg_priv_t *ctx,
+                                         va_list args) {
+  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  extra_cfg.ml_level = CAST(VP9E_SET_TARGET_LEVEL, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
@@ -1667,6 +1677,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP9E_SET_SVC_REF_FRAME_CONFIG, ctrl_set_svc_ref_frame_config },
   { VP9E_SET_RENDER_SIZE, ctrl_set_render_size },
   { VP9E_SET_TARGET_LEVEL, ctrl_set_target_level },
+  { VP9E_SET_ML_LEVEL, ctrl_set_ml_level },
   { VP9E_SET_ROW_MT, ctrl_set_row_mt },
   { VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST, ctrl_enable_motion_vector_unit_test },
   { VP9E_SET_SVC_INTER_LAYER_PRED, ctrl_set_svc_inter_layer_pred },
