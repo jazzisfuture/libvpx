@@ -16,6 +16,24 @@
       "revId": "76a3a2dc9dc3cf133c4705da5124aa51a715c678",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc78a4b0_74527c05",
+        "filename": "vp8/common/rtcd_defs.pl",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-07T22:58:06Z",
+      "side": 1,
+      "message": "\u003e not sure why this check is here at all. this covers both 32 and 64-bit, but in general should be harmless on non-x86 platforms just like the other specialize calls.\n\nlooks like I picked it up from the original .sh where it looks like it was introduced during some experimental development, though the function is now used in all cases.",
+      "parentUuid": "a9d0f220_139c4324",
+      "revId": "76a3a2dc9dc3cf133c4705da5124aa51a715c678",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
