@@ -177,8 +177,9 @@ if (vpx_config("CONFIG_VP8_ENCODER") eq "yes") {
 #
 # Block copy
 #
-if ($opts{arch} =~ /x86/) {
     add_proto qw/void vp8_copy32xn/, "const unsigned char *src_ptr, int src_stride, unsigned char *dst_ptr, int dst_stride, int height";
+# Only specialize copy32xn on 32 bit builds.
+if ($opts{arch} =~ /x86/) {
     specialize qw/vp8_copy32xn sse2 sse3/;
 }
 
