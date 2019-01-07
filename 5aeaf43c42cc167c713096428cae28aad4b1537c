@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2ec2384d_974ab18e",
+        "filename": "vp8/encoder/mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1132,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-07T23:01:27Z",
+      "side": 1,
+      "message": "these are weird. there\u0027s no assembly, but we force this version instead of vp8_diamond_search_sad_c",
+      "revId": "5aeaf43c42cc167c713096428cae28aad4b1537c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
