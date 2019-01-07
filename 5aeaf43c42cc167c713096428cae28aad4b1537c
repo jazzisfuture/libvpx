@@ -52,6 +52,24 @@
       "revId": "5aeaf43c42cc167c713096428cae28aad4b1537c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3e87eae5_cf1b20fa",
+        "filename": "vp8/encoder/mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1132,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-07T23:56:04Z",
+      "side": 1,
+      "message": "Yeah, I would guess that at the time, the x3 used some functions which were only optimized for ssse3, etc. Given that its for non-RT vp8 encoding, I\u0027m not sure it\u0027s worth looking into (except maybe to delete it)",
+      "parentUuid": "48269dc7_f8332d57",
+      "revId": "5aeaf43c42cc167c713096428cae28aad4b1537c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
