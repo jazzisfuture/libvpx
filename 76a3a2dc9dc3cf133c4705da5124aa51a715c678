@@ -34,6 +34,24 @@
       "revId": "76a3a2dc9dc3cf133c4705da5124aa51a715c678",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5974e4ae_27924106",
+        "filename": "vp8/common/rtcd_defs.pl",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-07T22:58:54Z",
+      "side": 1,
+      "message": "Good point, I misread the \u003d~",
+      "parentUuid": "cc78a4b0_74527c05",
+      "revId": "76a3a2dc9dc3cf133c4705da5124aa51a715c678",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
