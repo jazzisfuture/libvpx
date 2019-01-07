@@ -16,6 +16,24 @@
       "revId": "5aeaf43c42cc167c713096428cae28aad4b1537c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f2f1785_be4a74ea",
+        "filename": "vp8/encoder/mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1132,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-07T23:07:08Z",
+      "side": 1,
+      "message": "Some weird historical thing where these had all the relevant sped up versions defined. I tried removing a bunch of it a while back but the testing was tricky: https://chromium-review.googlesource.com/c/webm/libvpx/+/563505",
+      "parentUuid": "2ec2384d_974ab18e",
+      "revId": "5aeaf43c42cc167c713096428cae28aad4b1537c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
