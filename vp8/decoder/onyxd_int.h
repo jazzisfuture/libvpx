@@ -118,6 +118,7 @@ typedef struct VP8D_COMP {
 
   vpx_decrypt_cb decrypt_cb;
   void *decrypt_state;
+  int restart_threads;
 } VP8D_COMP;
 
 void vp8cx_init_de_quantizer(VP8D_COMP *pbi);
