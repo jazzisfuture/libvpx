@@ -45,6 +45,9 @@ struct vpx_codec_alg_priv {
   vpx_codec_dec_cfg_t cfg;
   vp8_stream_info_t si;
   int decoder_init;
+#if CONFIG_MULTITHREAD
+  int restart_threads;
+#endif
   int postproc_cfg_set;
   vp8_postproc_cfg_t postproc_cfg;
   vpx_decrypt_cb decrypt_cb;
@@ -268,7 +271,7 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
                                   const uint8_t *data, unsigned int data_sz,
                                   void *user_priv, long deadline) {
   volatile vpx_codec_err_t res;
-  unsigned int resolution_change = 0;
+  volatile unsigned int resolution_change = 0;
   unsigned int w, h;
 
   if (!ctx->fragments.enabled && (data == NULL && data_sz == 0)) {
@@ -297,7 +300,24 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
   if (!ctx->decoder_init && !ctx->si.is_kf) res = VPX_CODEC_UNSUP_BITSTREAM;
 
   if ((ctx->si.h != h) || (ctx->si.w != w)) resolution_change = 1;
+  ctx->restart_threads = 0;
 
+#if CONFIG_MULTITHREAD
+  if (!res && ctx->restart_threads) {
+    struct frame_buffers *fb = &ctx->yv12_frame_buffers;
+    if (setjmp(fb->pbi[0]->common.error.jmp)) {
+      vp8_remove_decoder_instances(fb);
+      memset(fb->pbi, 0, sizeof(fb->pbi));
+      vpx_clear_system_state();
+      return VPX_CODEC_ERROR;
+    }
+
+    fb->pbi[0]->common.error.setjmp = 1;
+    fb->pbi[0]->max_threads = ctx->cfg.threads;
+    vp8_decoder_create_threads(fb->pbi[0]);
+    fb->pbi[0]->common.error.setjmp = 0;
+  }
+#endif
   /* Initialize the decoder instance on the first frame*/
   if (!res && !ctx->decoder_init) {
     VP8D_CONFIG oxcf;
@@ -439,9 +459,13 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
         pc->fb_idx_ref_cnt[pc->new_fb_idx]--;
       }
       pc->error.setjmp = 0;
-      ctx->si.w = 0;
-      ctx->si.h = 0;
-      ctx->decoder_init = 0;
+      if (pbi->restart_threads) {
+        ctx->si.w = 0;
+        ctx->si.h = 0;
+#if CONFIG_MULTITHREAD
+        ctx->restart_threads = 1;
+#endif
+      }
       res = update_error_state(ctx, &pbi->common.error);
       return res;
     }
@@ -450,7 +474,7 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
 
     /* update the pbi fragment data */
     pbi->fragments = ctx->fragments;
-
+    pbi->restart_threads = 0;
     ctx->user_priv = user_priv;
     if (vp8dx_receive_compressed_data(pbi, data_sz, data, deadline)) {
       res = update_error_state(ctx, &pbi->common.error);
