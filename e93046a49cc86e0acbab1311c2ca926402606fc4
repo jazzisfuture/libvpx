@@ -34,6 +34,24 @@
       "revId": "e93046a49cc86e0acbab1311c2ca926402606fc4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "71f07693_096a89a3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-08T04:47:03Z",
+      "side": 1,
+      "message": "\u003e When building with --disable-vp[89]-encoder there was a warning for the missing declaration because in the RTCD the definition is guarded by \"if encoder\"\n\ngot it, thanks for the explanation.",
+      "parentUuid": "43f920a0_d22c5b9a",
+      "revId": "e93046a49cc86e0acbab1311c2ca926402606fc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
