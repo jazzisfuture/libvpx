@@ -16,6 +16,24 @@
       "revId": "38d98d870f74cece13a891ba9cf55846bef61649",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec962dd5_3ffc61d2",
+        "filename": "vp8/common/arm/neon/idct_blk_neon.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-08T04:36:40Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2c5c9e11_0ee02801",
+      "revId": "38d98d870f74cece13a891ba9cf55846bef61649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
