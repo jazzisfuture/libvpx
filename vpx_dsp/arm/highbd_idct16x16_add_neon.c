@@ -926,7 +926,7 @@ static void vpx_highbd_idct16x16_38_add_half1d(const int32_t *input,
   }
 }
 
-void vpx_highbd_idct16x16_10_add_half1d_pass1(const tran_low_t *input,
+static void highbd_idct16x16_10_add_half1d_pass1(const tran_low_t *input,
                                               int32_t *output) {
   const int32x4_t cospi_0_8_16_24 = vld1q_s32(kCospi32 + 0);
   const int32x4_t cospi_4_12_20N_28 = vld1q_s32(kCospi32 + 4);
@@ -1065,7 +1065,7 @@ void vpx_highbd_idct16x16_10_add_half1d_pass1(const tran_low_t *input,
   vst1q_s32(output, out[15]);
 }
 
-void vpx_highbd_idct16x16_10_add_half1d_pass2(const int32_t *input,
+static void highbd_idct16x16_10_add_half1d_pass2(const int32_t *input,
                                               int32_t *const output,
                                               uint16_t *const dest,
                                               const int stride, const int bd) {
@@ -1289,15 +1289,15 @@ void vpx_highbd_idct16x16_10_add_neon(const tran_low_t *input, uint16_t *dest,
 
     // pass 1
     // Parallel idct on the upper 8 rows
-    vpx_highbd_idct16x16_10_add_half1d_pass1(input, row_idct_output);
+    highbd_idct16x16_10_add_half1d_pass1(input, row_idct_output);
 
     // pass 2
     // Parallel idct to get the left 8 columns
-    vpx_highbd_idct16x16_10_add_half1d_pass2(row_idct_output, NULL, dest,
+    highbd_idct16x16_10_add_half1d_pass2(row_idct_output, NULL, dest,
                                              stride, bd);
 
     // Parallel idct to get the right 8 columns
-    vpx_highbd_idct16x16_10_add_half1d_pass2(row_idct_output + 4 * 8, NULL,
+    highbd_idct16x16_10_add_half1d_pass2(row_idct_output + 4 * 8, NULL,
                                              dest + 8, stride, bd);
   }
 }
