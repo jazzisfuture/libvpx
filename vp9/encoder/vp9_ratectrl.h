@@ -42,13 +42,15 @@ extern "C" {
 // The maximum duration of a GF group that is static (for example a slide show).
 #define MAX_STATIC_GF_GROUP_LENGTH 250
 
+#define MAX_ARF_LAYERS 6
+
 typedef enum {
   INTER_NORMAL = 0,
   INTER_HIGH = 1,
   GF_ARF_LOW = 2,
-  GF_ARF_STD = 3,
-  KF_STD = 4,
-  RATE_FACTOR_LEVELS = 5
+  GF_ARF_STD = GF_ARF_LOW + (MAX_ARF_LAYERS - 1),
+  KF_STD = GF_ARF_STD + 1,
+  RATE_FACTOR_LEVELS = KF_STD + 1
 } RATE_FACTOR_LEVEL;
 
 // Internal frame scaling level.

@@ -1283,9 +1283,13 @@ int vp9_frame_type_qdelta(const VP9_COMP *cpi, int rf_level, int q) {
   static const double rate_factor_deltas[RATE_FACTOR_LEVELS] = {
     1.00,  // INTER_NORMAL
     1.00,  // INTER_HIGH
-    1.50,  // GF_ARF_LOW
-    1.75,  // GF_ARF_STD
-    2.00,  // KF_STD
+    1.50,  // GF_ARF_LOW (Layer 6)
+    1.50,  // GF_ARF_LOW (Layer 5)
+    1.50,  // GF_ARF_LOW (Layer 4)
+    1.50,  // GF_ARF_LOW (Layer 3)
+    1.50,  // GF_ARF_LOW (Layer 2)
+    1.75,  // GF_ARF_STD (Layer 1)
+    2.00   // KF_STD
   };
   const VP9_COMMON *const cm = &cpi->common;
 
@@ -1385,7 +1389,8 @@ static int rc_constant_q(const VP9_COMP *cpi, int *bottom_index, int *top_index,
 
     // Modify best quality for second level arfs. For mode VPX_Q this
     // becomes the baseline frame q.
-    if (gf_group->rf_level[gf_group_index] == GF_ARF_LOW) {
+    if (gf_group->rf_level[gf_group_index] >= GF_ARF_LOW &&
+        gf_group->rf_level[gf_group_index] < GF_ARF_STD) {
       const int layer_depth = gf_group->layer_depth[gf_group_index];
       // linearly fit the frame q depending on the layer depth index from
       // the base layer ARF.
@@ -1444,7 +1449,8 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
 
       // Modify best quality for second level arfs. For mode VPX_Q this
       // becomes the baseline frame q.
-      if (gf_group->rf_level[gf_group_index] == GF_ARF_LOW) {
+      if (gf_group->rf_level[gf_group_index] >= GF_ARF_LOW &&
+          gf_group->rf_level[gf_group_index] < GF_ARF_STD) {
         const int layer_depth = gf_group->layer_depth[gf_group_index];
         // linearly fit the frame q depending on the layer depth index from
         // the base layer ARF.
@@ -1800,7 +1806,8 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
       rc->ni_tot_qi += qindex;
       rc->ni_av_qi = rc->ni_tot_qi / rc->ni_frames;
     } else if (!rc->is_src_frame_alt_ref &&
-               gf_group->rf_level[gf_group_index] == GF_ARF_LOW) {
+               gf_group->rf_level[gf_group_index] >= GF_ARF_LOW &&
+               gf_group->rf_level[gf_group_index] < GF_ARF_STD) {
       const VP9_COMMON *const cm = &cpi->common;
       int qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, qindex,
                                               1.5, cm->bit_depth);

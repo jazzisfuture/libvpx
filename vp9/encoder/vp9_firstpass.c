@@ -2155,7 +2155,7 @@ static void find_arf_order(VP9_COMP *cpi, GF_GROUP *gf_group,
   gf_group->update_type[*index_counter] = ARF_UPDATE;
   gf_group->arf_src_offset[*index_counter] = mid - start;
   gf_group->frame_gop_index[*index_counter] = mid;
-  gf_group->rf_level[*index_counter] = GF_ARF_LOW;
+  gf_group->rf_level[*index_counter] = GF_ARF_LOW + (MAX_ARF_LAYERS - depth);
 
   for (idx = 0; idx <= mid; ++idx)
     if (EOF == input_stats(twopass, &fpf_frame)) break;

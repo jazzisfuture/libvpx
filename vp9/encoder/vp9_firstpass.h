@@ -43,8 +43,6 @@ typedef struct {
 
 #define INVALID_ROW -1
 
-#define MAX_ARF_LAYERS 6
-
 typedef struct {
   double frame_mb_intra_factor;
   double frame_mb_brightness_factor;
