@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "53ab589a_f0aa6606",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-01-10T18:42:37Z",
+      "side": 1,
+      "message": "I added comments to explain these two flags.",
+      "parentUuid": "8ee1211a_55a2201c",
+      "range": {
+        "startLine": 49,
+        "startChar": 6,
+        "endLine": 49,
+        "endChar": 21
+      },
+      "revId": "7577793262e4ec8404880129fb1aa0d2b1b82fc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "23a4b797_24818885",
         "filename": "vp8/vp8_dx_iface.c",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "59b7cd25_72371ed0",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-01-10T18:42:37Z",
+      "side": 1,
+      "message": "Because there is longjmp at line 309.",
+      "parentUuid": "23a4b797_24818885",
+      "range": {
+        "startLine": 274,
+        "startChar": 2,
+        "endLine": 274,
+        "endChar": 10
+      },
+      "revId": "7577793262e4ec8404880129fb1aa0d2b1b82fc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9042ed1d_82c6ec85",
         "filename": "vp8/vp8_dx_iface.c",
         "patchSetId": 7
@@ -68,6 +116,30 @@
       "revId": "7577793262e4ec8404880129fb1aa0d2b1b82fc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "191b6e04_0a497d0a",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-01-10T18:42:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9042ed1d_82c6ec85",
+      "range": {
+        "startLine": 311,
+        "startChar": 0,
+        "endLine": 311,
+        "endChar": 42
+      },
+      "revId": "7577793262e4ec8404880129fb1aa0d2b1b82fc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

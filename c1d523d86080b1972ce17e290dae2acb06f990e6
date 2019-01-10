@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "54df9fb0_72fe5bd0",
+        "filename": "test/invalid_file_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-01-10T18:42:37Z",
+      "side": 0,
+      "message": "because decoder_init is set in my previous CL so error code would be VPX_CODEC_UNSUP_BITSTREAM[1] (so I added new .res file and named it v2 so the test still works if anyone checks out old code).\n\nNow I added new flag to bring up all threads so we can use the original version.\n\n[1]https://chromium.googlesource.com/webm/libvpx/+/master/vp8/vp8_dx_iface.c#297",
+      "parentUuid": "f6782832_b963819e",
+      "range": {
+        "startLine": 126,
+        "startChar": 25,
+        "endLine": 126,
+        "endChar": 27
+      },
+      "revId": "c1d523d86080b1972ce17e290dae2acb06f990e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "83dab5a5_bd8daed7",
         "filename": "vp8/decoder/onyxd_if.c",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "c1d523d86080b1972ce17e290dae2acb06f990e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb5b3264_aef93c2d",
+        "filename": "vp8/decoder/onyxd_if.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 431,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-01-10T18:42:37Z",
+      "side": 0,
+      "message": "In previous CL I set decoder_init so this function is called on that when all threads are shut down (usually this function is only called once on very first frame).\nSo I called remove_decompressor first or there would be memory leak.\n\nNow I just create new threads (instead of creating new decoder instance) so we don\u0027t need this any more.",
+      "parentUuid": "83dab5a5_bd8daed7",
+      "range": {
+        "startLine": 431,
+        "startChar": 2,
+        "endLine": 431,
+        "endChar": 50
+      },
+      "revId": "c1d523d86080b1972ce17e290dae2acb06f990e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
