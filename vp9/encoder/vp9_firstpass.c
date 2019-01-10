@@ -2169,7 +2169,7 @@ static void find_arf_order(VP9_COMP *cpi, GF_GROUP *gf_group,
 
   find_arf_order(cpi, gf_group, index_counter, depth + 1, start, mid - 1);
 
-  gf_group->update_type[*index_counter] = USE_BUF_FRAME;
+  gf_group->update_type[*index_counter] = MID_OVERLAY_UPDATE;  // USE_BUF_FRAME;
   gf_group->arf_src_offset[*index_counter] = 0;
   gf_group->frame_gop_index[*index_counter] = mid;
   gf_group->rf_level[*index_counter] = INTER_NORMAL;
@@ -2344,7 +2344,9 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
                      gf_group->gfu_boost[idx]) /
                     arf_depth_boost[gf_group->layer_depth[idx]]);
           break;
-        case USE_BUF_FRAME: gf_group->bit_allocation[idx] = 0; break;
+        case USE_BUF_FRAME:
+        case MID_OVERLAY_UPDATE:
+          gf_group->bit_allocation[idx] = 0; break;
         default: gf_group->bit_allocation[idx] = target_frame_size; break;
       }
     }
