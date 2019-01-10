@@ -49,6 +49,29 @@
     },
     {
       "key": {
+        "uuid": "1e4ea6cc_d7dbe4b6",
+        "filename": "test/test-data.sha1",
+        "patchSetId": 11
+      },
+      "lineNbr": 854,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-10T20:27:47Z",
+      "side": 0,
+      "message": "The res file hashes need to be updated. From:\ncommit 7ae34aeb1e75086d41582aea14e8b780104e2468\nAuthor: James Zern \u003cjzern@google.com\u003e\nDate:   Sat Dec 22 09:35:35 2018 -0500\n\n    test-data: add missing test data entries\n\nit looks like they should be:\nfd3020fa6e9ca5966206738654c97dec313b0a95 *invalid-bug-1443.ivf.res\n\na61774cf03fc584bd9f0904fc145253bb8ea6c4c *invalid-vp80-00-comprehensive-s17661_r01-05_b6-.ivf.res",
+      "range": {
+        "startLine": 854,
+        "startChar": 0,
+        "endLine": 854,
+        "endChar": 69
+      },
+      "revId": "c1d523d86080b1972ce17e290dae2acb06f990e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "83dab5a5_bd8daed7",
         "filename": "vp8/decoder/onyxd_if.c",
         "patchSetId": 7
