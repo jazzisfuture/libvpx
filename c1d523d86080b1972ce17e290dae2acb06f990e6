@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f6782832_b963819e",
+        "filename": "test/invalid_file_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-10T17:32:15Z",
+      "side": 0,
+      "message": "Why are these going back to the original version? What was different about \u0027v2\u0027?",
+      "range": {
+        "startLine": 126,
+        "startChar": 25,
+        "endLine": 126,
+        "endChar": 27
+      },
+      "revId": "c1d523d86080b1972ce17e290dae2acb06f990e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83dab5a5_bd8daed7",
+        "filename": "vp8/decoder/onyxd_if.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 431,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-10T17:32:15Z",
+      "side": 0,
+      "message": "So now fb-\u003epbi[0] is always guaranteed to be null?",
+      "range": {
+        "startLine": 431,
+        "startChar": 2,
+        "endLine": 431,
+        "endChar": 50
+      },
+      "revId": "c1d523d86080b1972ce17e290dae2acb06f990e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

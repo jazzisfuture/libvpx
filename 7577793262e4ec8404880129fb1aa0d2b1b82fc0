@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ee1211a_55a2201c",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-10T17:32:15Z",
+      "side": 1,
+      "message": "maybe \u0027restart_threads_after_error\u0027? (if i\u0027m reading the usage correctly) or \u0027restart*ing*_threads_after_error? This is kind of tricky.",
+      "range": {
+        "startLine": 49,
+        "startChar": 6,
+        "endLine": 49,
+        "endChar": 21
+      },
+      "revId": "7577793262e4ec8404880129fb1aa0d2b1b82fc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23a4b797_24818885",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-10T17:32:15Z",
+      "side": 1,
+      "message": "Why does this need to be volatile now?",
+      "range": {
+        "startLine": 274,
+        "startChar": 2,
+        "endLine": 274,
+        "endChar": 10
+      },
+      "revId": "7577793262e4ec8404880129fb1aa0d2b1b82fc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9042ed1d_82c6ec85",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-01-10T17:32:15Z",
+      "side": 1,
+      "message": "vp8_zero()",
+      "range": {
+        "startLine": 311,
+        "startChar": 0,
+        "endLine": 311,
+        "endChar": 42
+      },
+      "revId": "7577793262e4ec8404880129fb1aa0d2b1b82fc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
