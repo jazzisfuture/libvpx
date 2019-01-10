@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "beb9d753_e04d0ed4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-01-10T19:48:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5c3f8503_052a1803",
+      "range": {
+        "startLine": 9,
+        "startChar": 34,
+        "endLine": 9,
+        "endChar": 41
+      },
+      "revId": "8e0772598226b2cccaf3554c24c9a41ba89f9a88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b24a84d3_ce54914e",
         "filename": "test/invalid_file_test.cc",
         "patchSetId": 10
@@ -39,6 +63,24 @@
       "revId": "8e0772598226b2cccaf3554c24c9a41ba89f9a88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db77a625_09302d8f",
+        "filename": "test/invalid_file_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-01-10T19:48:45Z",
+      "side": 1,
+      "message": "Done\n\nI updated the sha1 file as well.",
+      "parentUuid": "b24a84d3_ce54914e",
+      "revId": "8e0772598226b2cccaf3554c24c9a41ba89f9a88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
