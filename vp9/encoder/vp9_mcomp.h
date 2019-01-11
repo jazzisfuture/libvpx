@@ -167,7 +167,7 @@ static INLINE BLOCK_SIZE get_square_block_size(BLOCK_SIZE bsize) {
     case BLOCK_64X64: square_bsize = BLOCK_32X32; break;
     default:
       square_bsize = BLOCK_INVALID;
-      printf("ERROR: invlid block size %d\n", bsize);
+      printf("ERROR: invalid block size %d\n", bsize);
       assert(0);
       break;
   }
