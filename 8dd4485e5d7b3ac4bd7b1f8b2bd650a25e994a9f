@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ad577a8_2ffe0dad",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-12T00:41:31Z",
+      "side": 1,
+      "message": "doesn\u0027t seem like that would block anything given it\u0027s a debug print out",
+      "revId": "8dd4485e5d7b3ac4bd7b1f8b2bd650a25e994a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6535927_f94ebb17",
+        "filename": "vp9/encoder/vp9_mcomp.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-12T00:41:31Z",
+      "side": 1,
+      "message": "this might be better as assert(0 \u0026 \"...\")",
+      "revId": "8dd4485e5d7b3ac4bd7b1f8b2bd650a25e994a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
