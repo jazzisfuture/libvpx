@@ -545,7 +545,7 @@ static uint32_t temporal_filter_find_matching_mb_c(
       x, ref_mv, &best_ref_mv1, cpi->common.allow_high_precision_mv,
       x->errorperbit, &cpi->fn_ptr[TF_BLOCK], 0, mv_sf->subpel_search_level,
       cond_cost_list(cpi, cost_list), NULL, NULL, &distortion, &sse, NULL, BW,
-      BH, USE_8_TAPS_SHARP);
+      BH, USE_4_TAPS);
 
   // DO motion search on 4 16x16 sub_blocks.
   best_ref_mv1.row = ref_mv->row;
@@ -573,7 +573,7 @@ static uint32_t temporal_filter_find_matching_mb_c(
           x, &blk_mvs[k], &best_ref_mv1, cpi->common.allow_high_precision_mv,
           x->errorperbit, &cpi->fn_ptr[TF_SUB_BLOCK], 0,
           mv_sf->subpel_search_level, cond_cost_list(cpi, cost_list), NULL,
-          NULL, &distortion, &sse, NULL, SUB_BW, SUB_BH, USE_8_TAPS_SHARP);
+          NULL, &distortion, &sse, NULL, SUB_BW, SUB_BH, USE_4_TAPS);
       k++;
     }
   }
