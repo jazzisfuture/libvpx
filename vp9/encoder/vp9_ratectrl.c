@@ -1924,8 +1924,10 @@ void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
   // increasing buffer levels/overflow for certain layers even though whole
   // superframe is dropped, we cap buffer level if its already stable.
   if (cpi->use_svc && cpi->svc.framedrop_mode != LAYER_DROP &&
-      cpi->rc.buffer_level > cpi->rc.optimal_buffer_level)
+      cpi->rc.buffer_level > cpi->rc.optimal_buffer_level) {
     cpi->rc.buffer_level = cpi->rc.optimal_buffer_level;
+    cpi->rc.bits_off_target = cpi->rc.optimal_buffer_level;
+  }
 }
 
 static int calc_pframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
