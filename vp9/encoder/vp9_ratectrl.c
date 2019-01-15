@@ -1800,6 +1800,22 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
     }
   }
 
+  // On key frames in CBR SVC mode, reset the avg_frame_index for base layer
+  // (to level closer to worst_quality) if the overshoot is significant.
+  if (cm->frame_type == KEY_FRAME && cpi->use_svc && oxcf->rc_mode == VPX_CBR &&
+      rc->projected_frame_size > 3* rc->avg_frame_bandwidth) {
+    int tl;
+    rc->avg_frame_qindex[INTER_FRAME] =
+        VPXMAX(rc->avg_frame_qindex[INTER_FRAME], (qindex + rc->worst_quality) >> 1);
+    for (tl = 0; tl < svc->number_temporal_layers; ++tl) {
+      const int layer =
+          LAYER_IDS_TO_IDX(0, tl, svc->number_temporal_layers);
+      LAYER_CONTEXT *lc = &svc->layer_context[layer];
+      RATE_CONTROL *lrc = &lc->rc;
+      lrc->avg_frame_qindex[INTER_FRAME] = rc->avg_frame_qindex[INTER_FRAME];
+    }
+  }
+
   // Keep record of last boosted (KF/KF/ARF) Q value.
   // If the current frame is coded at a lower Q then we also update it.
   // If all mbs in this group are skipped only update if the Q value is
