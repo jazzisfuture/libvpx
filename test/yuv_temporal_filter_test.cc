@@ -77,7 +77,7 @@ void ApplyReferenceFilter(
   u_dif.Set(0);
   v_dif.Set(0);
 
-  // How many bits to we want to round
+  // How many bits do we want to round
   ASSERT_GE(strength, 0);
   ASSERT_LE(strength, 6);
   int rounding = 0;
@@ -230,7 +230,7 @@ class YUVTemporalFilterTest
   ACMRandom rnd_;
 };
 
-TEST_P(YUVTemporalFilterTest, Use_32X32) {
+TEST_P(YUVTemporalFilterTest, Use32X32) {
   const int width = 32, height = 32;
   Buffer<uint8_t> y_src = Buffer<uint8_t>(width, height, 8);
   Buffer<uint8_t> y_pre = Buffer<uint8_t>(width, height, 0);
@@ -347,7 +347,7 @@ TEST_P(YUVTemporalFilterTest, Use_32X32) {
   }
 }
 
-TEST_P(YUVTemporalFilterTest, Use_16X16) {
+TEST_P(YUVTemporalFilterTest, Use16X16) {
   const int width = 32, height = 32;
   Buffer<uint8_t> y_src = Buffer<uint8_t>(width, height, 8);
   Buffer<uint8_t> y_pre = Buffer<uint8_t>(width, height, 0);
@@ -564,5 +564,10 @@ TEST_P(YUVTemporalFilterTest, DISABLED_Speed) {
 }
 
 INSTANTIATE_TEST_CASE_P(C, YUVTemporalFilterTest,
-                        ::testing::Values(&vp9_apply_temporal_filter));
+                        ::testing::Values(&vp9_apply_temporal_filter_c));
+
+#if HAVE_SSE4_1
+INSTANTIATE_TEST_CASE_P(SSE4, YUVTemporalFilterTest,
+                        ::testing::Values(&vp9_apply_temporal_filter_sse4_1));
+#endif  // HAVE_SSE4_1
 }  // namespace
