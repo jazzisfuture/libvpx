@@ -42,7 +42,13 @@ int GetFilterWeight(unsigned int row, unsigned int col,
 
 int GetModIndex(int sum_dist, int index, int rounding, int strength,
                 int filter_weight) {
-  int mod = (sum_dist * 3) / index;
+  int index_mult[14] = { -1,    -1,    -1,    -1,    49152, 39322, 32768,
+                         28087, 24576, 21846, 19661, 17874, -1,    15124 };
+
+  assert(index >= 0 && index <= 13);
+  assert(index_mult[index] != -1);
+
+  int mod = (sum_dist * index_mult[index]) >> 16;
   mod += rounding;
   mod >>= strength;
 
@@ -564,5 +570,10 @@ TEST_P(YUVTemporalFilterTest, DISABLED_Speed) {
 }
 
 INSTANTIATE_TEST_CASE_P(C, YUVTemporalFilterTest,
-                        ::testing::Values(&vp9_apply_temporal_filter));
+                        ::testing::Values(&vp9_apply_temporal_filter_c));
+
+#if HAVE_SSE4_1
+INSTANTIATE_TEST_CASE_P(SSE4, YUVTemporalFilterTest,
+                        ::testing::Values(&vp9_apply_temporal_filter_sse4_1));
+#endif  // HAVE_SSE4_1
 }  // namespace
