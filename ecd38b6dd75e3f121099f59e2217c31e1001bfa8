@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3024a16_8e06c1d2",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1663,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-17T06:53:48Z",
+      "side": 1,
+      "message": "rather than this polling why not a condition variable like what is used for the loop filter and row-mt in libaom:\n\nhttps://aomedia.googlesource.com/aom/+/master/av1/decoder/decodeframe.c#2963",
+      "revId": "ecd38b6dd75e3f121099f59e2217c31e1001bfa8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
