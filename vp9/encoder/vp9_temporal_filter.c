@@ -500,7 +500,7 @@ static uint32_t temporal_filter_find_matching_mb_c(
   MACROBLOCK *const x = &td->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   MV_SPEED_FEATURES *const mv_sf = &cpi->sf.mv;
-  const SEARCH_METHODS search_method = MESH;
+  const SEARCH_METHODS search_method = cpi->sf.temporal_filter_search_method;
   int step_param;
   int sadpb = x->sadperbit16;
   uint32_t bestsme = UINT_MAX;
