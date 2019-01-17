@@ -22,6 +22,30 @@
       "revId": "da5e2463fac0ca5aff84f7eae181584aa491f1b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a6f537d_40560f15",
+        "filename": "test/test.mk",
+        "patchSetId": 8
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2019-01-17T20:35:15Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s a good idea to remove it because highbd version of temporal filter still treats the luma and chroma components separately. That being said, temporal_filter_test.cc doesn\u0027t actually have tests for highbd temporal filter.\n\nPersonally, I would prefer to add unit tests for highbd functions to temporal_filter_test.cc than removing it now.",
+      "parentUuid": "17f11ba1_65cf7c55",
+      "range": {
+        "startLine": 173,
+        "startChar": 41,
+        "endLine": 173,
+        "endChar": 65
+      },
+      "revId": "da5e2463fac0ca5aff84f7eae181584aa491f1b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
