@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ac31ec3_9678d8a6",
+        "filename": ".directory",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2019-01-17T16:53:31Z",
+      "side": 1,
+      "message": "Why is this here?",
+      "revId": "2026657ba373963d1823b2733115c62421b14834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "409f693c_5d905935",
+        "filename": "examples/simple_decoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2019-01-17T16:53:31Z",
+      "side": 1,
+      "message": "I don\u0027t think simple_decoder.c should be changed on its own. vpx_video_reader_open() is called by the following examples:\n\nexamples/decode_to_md5.c:90:  reader \u003d vpx_video_reader_open(argv[1]);\nexamples/decode_with_drops.c:89:  reader \u003d vpx_video_reader_open(argv[1]);\nexamples/postproc.c:73:  reader \u003d vpx_video_reader_open(argv[1]);\nexamples/simple_decoder.c:107:  reader \u003d vpx_video_reader_open(argv[1]);\n\nTBH, I don\u0027t think the enum is necessary. Some fprintf(stderr, \"err string\") calls in video_reader.c would suffice.",
+      "range": {
+        "startLine": 111,
+        "startChar": 0,
+        "endLine": 116,
+        "endChar": 20
+      },
+      "revId": "2026657ba373963d1823b2733115c62421b14834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ae219f6_d36a627a",
+        "filename": "video_reader.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2019-01-17T16:53:31Z",
+      "side": 1,
+      "message": "I think it would be better to add the error messages to the error handlers in this function instead of adding a new function and type.",
+      "revId": "2026657ba373963d1823b2733115c62421b14834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0ed4178_78e64754",
+        "filename": "video_reader.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2019-01-17T16:53:31Z",
+      "side": 1,
+      "message": "For example, instead of this line:\n\n    if (!file)\n      fprintf(stderr, \"%s can\u0027t be opened.\", argv[1]);\n      return NULL;\n    }\n\netc etc",
+      "range": {
+        "startLine": 33,
+        "startChar": 2,
+        "endLine": 33,
+        "endChar": 45
+      },
+      "revId": "2026657ba373963d1823b2733115c62421b14834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95abeb79_e7d4b30e",
+        "filename": "video_reader.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2019-01-17T16:53:31Z",
+      "side": 1,
+      "message": "As noted above I don\u0027t think this enum is necessary. At least not as things are currently written in this patch. \n\nA note either way:\nVpxVideoReaderError would be better, and I would suggest replacing the ERR_ prefix with READER_. Something like:\n\nREADER_OK,\nREADER_OPEN_FAILED,\nREADER_CANNOT_READ_HEADER,\nREADER_INVALID_IVF_SIGNATURE,\nREADER_INVALID_IVF_VERSION,\nREADER_OUT_OF_MEMORY",
+      "range": {
+        "startLine": 48,
+        "startChar": 13,
+        "endLine": 48,
+        "endChar": 26
+      },
+      "revId": "2026657ba373963d1823b2733115c62421b14834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b94796fc_00df30ae",
+        "filename": "video_reader.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2019-01-17T16:53:31Z",
+      "side": 1,
+      "message": "0 should mean OK. See other enums in libvpx; vpx_codec_err_t for example:\n\nhttps://chromium.googlesource.com/webm/libvpx/+/master/vpx/vpx_codec.h#90",
+      "range": {
+        "startLine": 54,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 10
+      },
+      "revId": "2026657ba373963d1823b2733115c62421b14834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a7f36fa_025e58b0",
+        "filename": "video_reader.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2019-01-17T16:53:31Z",
+      "side": 1,
+      "message": "Drop the _t. This isn\u0027t part of the library API (and the use of the _t suffix there isn\u0027t necessarily the best thing ever, anyway).\n\n    typedef enum VpxVideoReaderError_ {\n    ...\n    } VpxVideoReaderError;",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 18
+      },
+      "revId": "2026657ba373963d1823b2733115c62421b14834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
