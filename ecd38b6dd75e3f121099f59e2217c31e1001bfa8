@@ -16,6 +16,24 @@
       "revId": "ecd38b6dd75e3f121099f59e2217c31e1001bfa8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4ffed05_58a91b68",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1663,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2019-01-17T18:52:55Z",
+      "side": 1,
+      "message": "As changing to conditional variable is a significant change (changes to allocate/free multiple conditional variables, changes to signal and wait etc), can we take that up in a follow up commit?\nThis way, it would be easier to narrow down to a commit while debugging in case of any issues seen in future. We will also need to test fuzzed clips and measure performance impact with that change.",
+      "parentUuid": "a3024a16_8e06c1d2",
+      "revId": "ecd38b6dd75e3f121099f59e2217c31e1001bfa8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
