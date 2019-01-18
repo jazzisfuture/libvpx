@@ -34,6 +34,24 @@
       "revId": "ecd38b6dd75e3f121099f59e2217c31e1001bfa8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee38775b_804e042a",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1663,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-18T08:41:08Z",
+      "side": 1,
+      "message": "Given it\u0027s behind a flag it\u0027s OK, though not my general preference.",
+      "parentUuid": "d4ffed05_58a91b68",
+      "revId": "ecd38b6dd75e3f121099f59e2217c31e1001bfa8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
