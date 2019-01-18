@@ -32,10 +32,9 @@ typedef void (*YUVTemporalFilterFunc)(
     uint32_t *y_accumulator, uint16_t *y_count, uint32_t *u_accumulator,
     uint16_t *u_count, uint32_t *v_accumulator, uint16_t *v_count);
 
-static INLINE int get_filter_weight(unsigned int row, unsigned int col,
-                                    unsigned int block_height,
-                                    unsigned int block_width,
-                                    const int *const blk_fw, int use_32x32) {
+INLINE int GetFilterWeight(unsigned int row, unsigned int col,
+                           unsigned int block_height, unsigned int block_width,
+                           const int *const blk_fw, int use_32x32) {
   if (use_32x32) {
     return blk_fw[0];
   }
@@ -43,8 +42,8 @@ static INLINE int get_filter_weight(unsigned int row, unsigned int col,
   return blk_fw[2 * (row >= block_height / 2) + (col >= block_width / 2)];
 }
 
-static INLINE int mod_index(int sum_dist, int index, int rounding, int strength,
-                            int filter_weight) {
+INLINE int GetModIndex(int sum_dist, int index, int rounding, int strength,
+                       int filter_weight) {
   int mod = (sum_dist * 3) / index;
   mod += rounding;
   mod >>= strength;
@@ -57,7 +56,7 @@ static INLINE int mod_index(int sum_dist, int index, int rounding, int strength,
   return mod;
 }
 
-void reference_filter(
+void ApplyReferenceFilter(
     const Buffer<uint8_t> &y_src, const Buffer<uint8_t> &y_pre,
     const Buffer<uint8_t> &u_src, const Buffer<uint8_t> &v_src,
     const Buffer<uint8_t> &u_pre, const Buffer<uint8_t> &v_pre,
@@ -80,7 +79,7 @@ void reference_filter(
   u_dif.Set(0);
   v_dif.Set(0);
 
-  // How many bits to we want round
+  // How many bits to we want to round
   ASSERT_GE(strength, 0);
   ASSERT_LE(strength, 6);
   int rounding = 0;
@@ -100,8 +99,8 @@ void reference_filter(
   ASSERT_TRUE(v_dif.TopLeftPixel() != NULL);
 
   // Get the square diffs
-  for (int row = 0; row < (int)block_height; row++) {
-    for (int col = 0; col < (int)block_width; col++) {
+  for (int row = 0; row < static_cast<int>(block_height); row++) {
+    for (int col = 0; col < static_cast<int>(block_width); col++) {
       int diff = y_src.TopLeftPixel()[row * y_src.stride() + col] -
                  y_pre.TopLeftPixel()[row * y_pre.stride() + col];
       y_dif.TopLeftPixel()[row * y_dif.stride() + col] = diff * diff;
@@ -120,12 +119,12 @@ void reference_filter(
   }
 
   // Apply the filter
-  for (int row = 0; row < (int)block_height; row++) {
-    for (int col = 0; col < (int)block_width; col++) {
+  for (int row = 0; row < static_cast<int>(block_height); row++) {
+    for (int col = 0; col < static_cast<int>(block_width); col++) {
       const int uv_r = row >> ss_y;
       const int uv_c = col >> ss_x;
-      int filter_weight = get_filter_weight(row, col, block_height, block_width,
-                                            blk_fw, use_32x32);
+      int filter_weight = GetFilterWeight(row, col, block_height, block_width,
+                                          blk_fw, use_32x32);
 
       // First we get the modifier for the current y pixel
       const int y_pixel = y_pre.TopLeftPixel()[row * y_pre.stride() + col];
@@ -138,8 +137,8 @@ void reference_filter(
           const int sub_row = row + row_step;
           const int sub_col = col + col_step;
 
-          if (sub_row >= 0 && sub_row < (int)block_height && sub_col >= 0 &&
-              sub_col < (int)block_width) {
+          if (sub_row >= 0 && sub_row < static_cast<int>(block_height) &&
+              sub_col >= 0 && sub_col < static_cast<int>(block_width)) {
             y_mod += y_dif.TopLeftPixel()[sub_row * y_dif.stride() + sub_col];
             y_num_used++;
           }
@@ -156,7 +155,7 @@ void reference_filter(
       y_num_used += 2;
 
       // Set the modifier
-      y_mod = mod_index(y_mod, y_num_used, rounding, strength, filter_weight);
+      y_mod = GetModIndex(y_mod, y_num_used, rounding, strength, filter_weight);
 
       // Accumulate the result
       y_count->TopLeftPixel()[row * y_count->stride() + col] += y_mod;
@@ -186,7 +185,7 @@ void reference_filter(
           }
         }
 
-        assert(uv_num_used > 0);
+        ASSERT_GT(uv_num_used, 0);
 
         // Sum all the luma pixels associated with the current luma pixel
         for (int row_step = 0; row_step < 1 + ss_y; row_step++) {
@@ -204,9 +203,9 @@ void reference_filter(
 
         // Set the modifier
         u_mod =
-            mod_index(u_mod, uv_num_used, rounding, strength, filter_weight);
+            GetModIndex(u_mod, uv_num_used, rounding, strength, filter_weight);
         v_mod =
-            mod_index(v_mod, uv_num_used, rounding, strength, filter_weight);
+            GetModIndex(v_mod, uv_num_used, rounding, strength, filter_weight);
 
         // Accumuate the result
         u_count->TopLeftPixel()[uv_r * u_count->stride() + uv_c] += u_mod;
@@ -311,10 +310,11 @@ TEST_P(YUVTemporalFilterTest, USE_32X32) {
           v_count_ref.Set(rnd_.Rand8());
           v_count_tst.CopyFrom(v_count_ref);
 
-          reference_filter(y_src, y_pre, u_src, v_src, u_pre, v_pre, width,
-                           height, ss_x, ss_y, filter_strength, &filter_weight,
-                           use_32x32, &y_accum_ref, &y_count_ref, &u_accum_ref,
-                           &u_count_ref, &v_accum_ref, &v_count_ref);
+          ApplyReferenceFilter(y_src, y_pre, u_src, v_src, u_pre, v_pre, width,
+                               height, ss_x, ss_y, filter_strength,
+                               &filter_weight, use_32x32, &y_accum_ref,
+                               &y_count_ref, &u_accum_ref, &u_count_ref,
+                               &v_accum_ref, &v_count_ref);
           ASM_REGISTER_STATE_CHECK(filter_func_(
               y_src.TopLeftPixel(), y_src.stride(), y_pre.TopLeftPixel(),
               y_pre.stride(), u_src.TopLeftPixel(), v_src.TopLeftPixel(),
@@ -436,10 +436,11 @@ TEST_P(YUVTemporalFilterTest, USE_16X16) {
           v_count_ref.Set(rnd_.Rand8());
           v_count_tst.CopyFrom(v_count_ref);
 
-          reference_filter(y_src, y_pre, u_src, v_src, u_pre, v_pre, width,
-                           height, ss_x, ss_y, filter_strength, filter_weight,
-                           use_32x32, &y_accum_ref, &y_count_ref, &u_accum_ref,
-                           &u_count_ref, &v_accum_ref, &v_count_ref);
+          ApplyReferenceFilter(y_src, y_pre, u_src, v_src, u_pre, v_pre, width,
+                               height, ss_x, ss_y, filter_strength,
+                               filter_weight, use_32x32, &y_accum_ref,
+                               &y_count_ref, &u_accum_ref, &u_count_ref,
+                               &v_accum_ref, &v_count_ref);
           ASM_REGISTER_STATE_CHECK(filter_func_(
               y_src.TopLeftPixel(), y_src.stride(), y_pre.TopLeftPixel(),
               y_pre.stride(), u_src.TopLeftPixel(), v_src.TopLeftPixel(),
