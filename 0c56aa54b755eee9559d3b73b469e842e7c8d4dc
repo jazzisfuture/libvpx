@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bbe205d9_3ddfdc16",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-19T08:30:13Z",
+      "side": 1,
+      "message": "this is a bit redundant with the subject line, if you keep it: apply_temporal_filter",
+      "revId": "0c56aa54b755eee9559d3b73b469e842e7c8d4dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
