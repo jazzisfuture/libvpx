@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1ca8bfb_63cb142c",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1663,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-19T04:45:48Z",
+      "side": 1,
+      "message": "...with a condition variable",
+      "range": {
+        "startLine": 1663,
+        "startChar": 42,
+        "endLine": 1663,
+        "endChar": 53
+      },
+      "revId": "1ff878c72cf3f206a7cda589bfc0843d30904af2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
