@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b51c15ea_23094e11",
+        "filename": "vp9/encoder/x86/temporal_filter_sse4.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1436,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2019-01-22T20:44:09Z",
+      "side": 1,
+      "message": "Is it possible to use the block size related definitions in temporal_filter.h to make this function more general(not hard coded to 32)?",
+      "range": {
+        "startLine": 1436,
+        "startChar": 26,
+        "endLine": 1436,
+        "endChar": 28
+      },
+      "revId": "435eb70f8746c8ad66829f245329f4c5f3559f83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
