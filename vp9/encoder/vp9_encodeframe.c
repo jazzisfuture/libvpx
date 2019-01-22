@@ -5713,6 +5713,8 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   cm->prev_mi =
       cm->use_prev_frame_mvs ? cm->prev_mip + cm->mi_stride + 1 : NULL;
 
+  x->num_mesh_steps = MAX_MESH_STEP;
+
   x->quant_fp = cpi->sf.use_quant_fp;
   vp9_zero(x->skip_txfm);
   if (sf->use_nonrd_pick_mode) {

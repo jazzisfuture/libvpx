@@ -1889,7 +1889,7 @@ static double full_pixel_exhaustive_new(const VP9_COMP *cpi, MACROBLOCK *x,
   if ((interval > MIN_INTERVAL) && (range > MIN_RANGE)) {
     // Progressive searches with range and step size decreasing each time
     // till we reach a step size of 1. Then break out.
-    for (i = 1; i < MAX_MESH_STEP; ++i) {
+    for (i = 1; i < x->num_mesh_steps; ++i) {
       // First pass with coarser step and longer range
       bestsme = exhaustive_mesh_search_new(
           x, &temp_mv, sf->mesh_patterns[i].range,
@@ -2587,7 +2587,7 @@ static int full_pixel_exhaustive(VP9_COMP *cpi, MACROBLOCK *x,
   if ((interval > MIN_INTERVAL) && (range > MIN_RANGE)) {
     // Progressive searches with range and step size decreasing each time
     // till we reach a step size of 1. Then break out.
-    for (i = 1; i < MAX_MESH_STEP; ++i) {
+    for (i = 1; i < x->num_mesh_steps; ++i) {
       // First pass with coarser step and longer range
       bestsme = exhaustive_mesh_search(
           x, &f_ref_mv, &temp_mv, sf->mesh_patterns[i].range,

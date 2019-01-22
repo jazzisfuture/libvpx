@@ -213,6 +213,9 @@ struct macroblock {
 #endif  // CONFIG_ML_VAR_PARTITION
 
   struct scale_factors *me_sf;
+
+  // Determine how many steps to take in exhaustive full_pixel_search
+  int num_mesh_steps;
 };
 
 #ifdef __cplusplus

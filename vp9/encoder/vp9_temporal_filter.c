@@ -518,6 +518,11 @@ static uint32_t temporal_filter_find_matching_mb_c(
   struct buf_2d pre = xd->plane[0].pre[0];
   int i, j, k = 0;
 
+  const int backup_num_mesh_steps = x->num_mesh_steps;
+  const int num_mesh_steps = 3;
+
+  x->num_mesh_steps = AOMMIN(num_mesh_steps, x->num_mesh_steps);
+
   best_ref_mv1_full.col = best_ref_mv1.col >> 3;
   best_ref_mv1_full.row = best_ref_mv1.row >> 3;
 
@@ -535,6 +540,8 @@ static uint32_t temporal_filter_find_matching_mb_c(
   vp9_full_pixel_search(cpi, x, TF_BLOCK, &best_ref_mv1_full, step_param,
                         search_method, sadpb, cond_cost_list(cpi, cost_list),
                         &best_ref_mv1, ref_mv, 0, 0);
+
+  x->num_mesh_steps = backup_num_mesh_steps;
 
   /* restore UMV window */
   x->mv_limits = tmp_mv_limits;
