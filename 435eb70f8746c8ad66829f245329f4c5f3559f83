@@ -22,6 +22,30 @@
       "revId": "435eb70f8746c8ad66829f245329f4c5f3559f83",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3aa232f0_9da86d4c",
+        "filename": "vp9/encoder/x86/temporal_filter_sse4.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1436,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2019-01-23T22:38:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b51c15ea_23094e11",
+      "range": {
+        "startLine": 1436,
+        "startChar": 26,
+        "endLine": 1436,
+        "endChar": 28
+      },
+      "revId": "435eb70f8746c8ad66829f245329f4c5f3559f83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
