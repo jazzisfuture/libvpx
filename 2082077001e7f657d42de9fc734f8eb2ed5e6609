@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b371df07_f2119239",
+        "filename": "test/yuv_temporal_filter_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-23T01:17:22Z",
+      "side": 1,
+      "message": "do we?",
+      "range": {
+        "startLine": 80,
+        "startChar": 19,
+        "endLine": 80,
+        "endChar": 24
+      },
+      "revId": "2082077001e7f657d42de9fc734f8eb2ed5e6609",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1c509ef_9d8eeb09",
+        "filename": "test/yuv_temporal_filter_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-23T01:17:22Z",
+      "side": 1,
+      "message": "I was thinking no \u0027_\u0027 and lowercase \u0027x\u0027 to match function naming rules, but it\u0027s really not that critical here.",
+      "range": {
+        "startLine": 233,
+        "startChar": 30,
+        "endLine": 233,
+        "endChar": 39
+      },
+      "revId": "2082077001e7f657d42de9fc734f8eb2ed5e6609",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
