@@ -88,6 +88,14 @@ typedef struct Job {
   JobType job_type;
 } Job;
 
+typedef struct VP9ReconSyncData {
+#if CONFIG_MULTITHREAD
+  pthread_mutex_t *mutex;
+  pthread_cond_t *cond;
+  int count;
+#endif
+} VP9ReconSync;
+
 typedef struct VP9Decoder {
   DECLARE_ALIGNED(16, MACROBLOCKD, mb);
 
@@ -109,6 +117,7 @@ typedef struct VP9Decoder {
   int total_tiles;
 
   VP9LfSync lf_row_sync;
+  VP9ReconSync recon_sync;
 
   vpx_decrypt_cb decrypt_cb;
   void *decrypt_state;
@@ -161,6 +170,9 @@ void vp9_decoder_remove(struct VP9Decoder *pbi);
 void vp9_dec_alloc_row_mt_mem(RowMTWorkerData *row_mt_worker_data,
                               VP9_COMMON *cm, int num_sbs, int max_threads);
 void vp9_dec_free_row_mt_mem(RowMTWorkerData *row_mt_worker_data);
+
+void vp9_recon_alloc(VP9Decoder *pbi, int count);
+void vp9_recon_dealloc(VP9Decoder *pbi);
 
 static INLINE void decrease_ref_count(int idx, RefCntBuffer *const frame_bufs,
                                       BufferPool *const pool) {

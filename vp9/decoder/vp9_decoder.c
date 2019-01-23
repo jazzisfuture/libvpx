@@ -55,6 +55,62 @@ static void vp9_dec_setup_mi(VP9_COMMON *cm) {
          cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mi_grid_base));
 }
 
+// Allocate memory for recon synchronization
+void vp9_recon_alloc(VP9Decoder *pbi, int count) {
+#if CONFIG_MULTITHREAD
+  int i;
+  VP9_COMMON *const cm = &pbi->common;
+  VP9ReconSync *const recon_sync = &pbi->recon_sync;
+
+  recon_sync->count = count;
+
+  CHECK_MEM_ERROR(cm, recon_sync->mutex,
+                  vpx_malloc(sizeof(*recon_sync->mutex) * count));
+  if (recon_sync->mutex) {
+    for (i = 0; i < count; ++i) {
+      pthread_mutex_init(&recon_sync->mutex[i], NULL);
+    }
+  }
+
+  CHECK_MEM_ERROR(cm, recon_sync->cond,
+                  vpx_malloc(sizeof(*recon_sync->cond) * count));
+  if (recon_sync->cond) {
+    for (i = 0; i < count; ++i) {
+      pthread_cond_init(&recon_sync->cond[i], NULL);
+    }
+  }
+#else
+  (void)pbi;
+  (void)count;
+#endif  // CONFIG_MULTITHREAD
+}
+
+// Deallocate recon synchronization related mutex and data
+void vp9_recon_dealloc(VP9Decoder *pbi) {
+#if CONFIG_MULTITHREAD
+  VP9ReconSync *const recon_sync = &pbi->recon_sync;
+  if (recon_sync != NULL) {
+    int i;
+
+    if (recon_sync->mutex != NULL) {
+      for (i = 0; i < recon_sync->count; ++i) {
+        pthread_mutex_destroy(&recon_sync->mutex[i]);
+      }
+      vpx_free(recon_sync->mutex);
+    }
+    if (recon_sync->cond != NULL) {
+      for (i = 0; i < recon_sync->count; ++i) {
+        pthread_cond_destroy(&recon_sync->cond[i]);
+      }
+      vpx_free(recon_sync->cond);
+    }
+    vp9_zero(*recon_sync);
+  }
+#else
+  (void)pbi;
+#endif  // CONFIG_MULTITHREAD
+}
+
 void vp9_dec_alloc_row_mt_mem(RowMTWorkerData *row_mt_worker_data,
                               VP9_COMMON *cm, int num_sbs, int max_threads) {
   int plane;
@@ -199,7 +255,7 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
     }
     vpx_free(pbi->row_mt_worker_data);
   }
-
+  vp9_recon_dealloc(pbi);
   vp9_remove_common(&pbi->common);
   vpx_free(pbi);
 }
