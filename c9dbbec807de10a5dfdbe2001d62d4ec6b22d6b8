@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3448654b_78f3de2e",
+        "filename": "vp9/encoder/x86/temporal_filter_constants.h",
+        "patchSetId": 13
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2019-01-24T20:19:42Z",
+      "side": 1,
+      "message": "Yeah, just did some more testing. It appears that we do need to modify the c function. It never showed up before because the input m tends to be pretty small.",
+      "parentUuid": "90065918_6a4bcdf8",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 43
+      },
+      "revId": "c9dbbec807de10a5dfdbe2001d62d4ec6b22d6b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "944318ca_0f3ae9c8",
         "filename": "vp9/encoder/x86/temporal_filter_sse4.c",
         "patchSetId": 13
@@ -45,6 +69,30 @@
       "revId": "c9dbbec807de10a5dfdbe2001d62d4ec6b22d6b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d791f5e3_ea1caf29",
+        "filename": "vp9/encoder/x86/temporal_filter_sse4.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2019-01-24T20:19:42Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "944318ca_0f3ae9c8",
+      "range": {
+        "startLine": 195,
+        "startChar": 30,
+        "endLine": 195,
+        "endChar": 59
+      },
+      "revId": "c9dbbec807de10a5dfdbe2001d62d4ec6b22d6b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
