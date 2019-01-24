@@ -6142,6 +6142,41 @@ double get_mv_dist(int mv_mode, VP9_COMP *cpi, MACROBLOCKD *xd,
   return (double)sse;
 }
 
+static double get_mv_cost(int mv_mode) {
+  // TODO(angiebird): Implement this function.
+  (void)mv_mode;
+  return 0;
+}
+
+static double rd_cost(int rdmult, int rddiv, double rate, double dist) {
+  return (rate * rdmult) / (1 << 9) + dist * (1 << rddiv);
+}
+
+int find_best_ref_mv_mode(VP9_COMP *cpi, MACROBLOCK *x, GF_PICTURE *gf_picture,
+                          int frame_idx, TplDepFrame *tpl_frame, int rf_idx,
+                          BLOCK_SIZE bsize, int mi_row, int mi_col,
+                          double *rd) {
+  int best_mv_mode;
+  MACROBLOCKD *xd = &x->e_mbd;
+  int update = 0;
+  int mv_mode;
+  for (mv_mode = 0; mv_mode < MAX_MV_MODE; ++mv_mode) {
+    double mv_dist = get_mv_dist(mv_mode, cpi, xd, gf_picture, frame_idx,
+                                 tpl_frame, rf_idx, bsize, mi_row, mi_col);
+    double mv_cost = get_mv_cost(mv_mode);
+    if (update == 0) {
+      *rd = rd_cost(x->rdmult, x->rddiv, mv_cost, mv_dist);
+      best_mv_mode = mv_mode;
+      update = 1;
+    } else {
+      double new_rd = rd_cost(x->rdmult, x->rddiv, mv_cost, mv_dist);
+      *rd = new_rd < *rd ? new_rd : *rd;
+      best_mv_mode = mv_mode;
+    }
+  }
+  return best_mv_mode;
+}
+
 static double get_feature_score(uint8_t *buf, ptrdiff_t stride, int rows,
                                 int cols) {
   double IxIx = 0;
