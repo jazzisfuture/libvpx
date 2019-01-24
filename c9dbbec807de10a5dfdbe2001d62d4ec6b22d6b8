@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "90065918_6a4bcdf8",
+        "filename": "vp9/encoder/x86/temporal_filter_constants.h",
+        "patchSetId": 13
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2019-01-24T20:08:04Z",
+      "side": 1,
+      "message": "If it is needed, we may need to modify the c version to do the same thing.",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 43
+      },
+      "revId": "c9dbbec807de10a5dfdbe2001d62d4ec6b22d6b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "944318ca_0f3ae9c8",
+        "filename": "vp9/encoder/x86/temporal_filter_sse4.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2019-01-24T20:08:04Z",
+      "side": 1,
+      "message": "Pass in pointer instead.",
+      "range": {
+        "startLine": 195,
+        "startChar": 30,
+        "endLine": 195,
+        "endChar": 59
+      },
+      "revId": "c9dbbec807de10a5dfdbe2001d62d4ec6b22d6b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
