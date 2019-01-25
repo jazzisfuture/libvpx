@@ -216,6 +216,7 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
   sf->use_square_partition_only = !boosted;
   sf->prune_ref_frame_for_rect_partitions = 1;
   sf->ml_var_partition_pruning = 1;
+  sf->check_block_merge = 0;
 
   sf->ml_prune_rect_partition_threhold[0] = -1;
   sf->ml_prune_rect_partition_threhold[1] = 350;
@@ -447,6 +448,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->enable_tpl_model = 0;
   sf->enhanced_full_pixel_motion_search = 0;
   sf->use_accurate_subpel_search = USE_2_TAPS;
+  sf->check_block_merge = 0;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -758,6 +760,10 @@ static void set_rt_speed_feature_framesize_independent(
     }
     sf->limit_newmv_early_exit = 0;
     sf->use_simple_block_yrd = 1;
+    // TODO: uncomment if results are prove to worth it.
+    // On RTC content we see 1.5% BD curve improvement with about 20% perf hit 
+    //(still better perf than switching to lower speed)
+    sf->check_block_merge = 1;
   }
 
   if (speed >= 9) {
