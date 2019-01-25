@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7be615d7_08c21a31",
+        "filename": "configure",
+        "patchSetId": 8
+      },
+      "lineNbr": 625,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-25T00:48:28Z",
+      "side": 1,
+      "message": "did you happen to try this with CXXFLAGS too?",
+      "range": {
+        "startLine": 624,
+        "startChar": 10,
+        "endLine": 625,
+        "endChar": 0
+      },
+      "revId": "219ea62d00e68de9267c266913d3205a1530b58a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
