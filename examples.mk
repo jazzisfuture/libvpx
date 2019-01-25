@@ -54,6 +54,12 @@ LIBWEBM_PARSER_SRCS = third_party/libwebm/mkvparser/mkvparser.cc \
                       third_party/libwebm/mkvparser/mkvparser.h \
                       third_party/libwebm/mkvparser/mkvreader.h
 
+VPX_IMAGE_SRCS += vpx/src/vpx_image.c
+VPX_IMAGE_SRCS += vpx/vpx_image.h
+
+VPX_MEM_SRCS += vpx_mem/vpx_mem.c
+VPX_MEM_SRCS += vpx_mem/vpx_mem.h
+
 # Add compile flags and include path for libwebm sources.
 ifeq ($(CONFIG_WEBM_IO),yes)
   CXXFLAGS     += -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS
@@ -64,6 +70,8 @@ endif
 # List of examples to build. UTILS are tools meant for distribution
 # while EXAMPLES demonstrate specific portions of the API.
 UTILS-$(CONFIG_DECODERS)    += vpxdec.c
+vpxdec.SRCS                 += $(VPX_IMAGE_SRCS)
+vpxdec.SRCS                 += $(VPX_MEM_SRCS)
 vpxdec.SRCS                 += md5_utils.c md5_utils.h
 vpxdec.SRCS                 += vpx_ports/mem_ops.h
 vpxdec.SRCS                 += vpx_ports/mem_ops_aligned.h
@@ -87,6 +95,8 @@ endif
 vpxdec.GUID                  = BA5FE66F-38DD-E034-F542-B1578C5FB950
 vpxdec.DESCRIPTION           = Full featured decoder
 UTILS-$(CONFIG_ENCODERS)    += vpxenc.c
+vpxenc.SRCS                 += $(VPX_IMAGE_SRCS)
+vpxenc.SRCS                 += $(VPX_MEM_SRCS)
 vpxenc.SRCS                 += args.c args.h y4minput.c y4minput.h vpxenc.h
 vpxenc.SRCS                 += ivfdec.c ivfdec.h
 vpxenc.SRCS                 += ivfenc.c ivfenc.h
@@ -111,6 +121,8 @@ vpxenc.GUID                  = 548DEC74-7A15-4B2B-AFC3-AA102E7C25C1
 vpxenc.DESCRIPTION           = Full featured encoder
 
 EXAMPLES-$(CONFIG_VP9_ENCODER)      += vp9_spatial_svc_encoder.c
+vp9_spatial_svc_encoder.SRCS        += $(VPX_IMAGE_SRCS)
+vp9_spatial_svc_encoder.SRCS        += $(VPX_MEM_SRCS)
 vp9_spatial_svc_encoder.SRCS        += args.c args.h
 vp9_spatial_svc_encoder.SRCS        += ivfenc.c ivfenc.h
 vp9_spatial_svc_encoder.SRCS        += tools_common.c tools_common.h
@@ -128,6 +140,8 @@ EXAMPLES-$(CONFIG_VP9_ENCODER)    += resize_util.c
 endif
 
 EXAMPLES-$(CONFIG_ENCODERS)          += vpx_temporal_svc_encoder.c
+vpx_temporal_svc_encoder.SRCS        += $(VPX_IMAGE_SRCS)
+vpx_temporal_svc_encoder.SRCS        += $(VPX_MEM_SRCS)
 vpx_temporal_svc_encoder.SRCS        += ivfenc.c ivfenc.h
 vpx_temporal_svc_encoder.SRCS        += tools_common.c tools_common.h
 vpx_temporal_svc_encoder.SRCS        += video_common.h
@@ -137,6 +151,8 @@ vpx_temporal_svc_encoder.GUID        = B18C08F2-A439-4502-A78E-849BE3D60947
 vpx_temporal_svc_encoder.DESCRIPTION = Temporal SVC Encoder
 EXAMPLES-$(CONFIG_DECODERS)        += simple_decoder.c
 simple_decoder.GUID                 = D3BBF1E9-2427-450D-BBFF-B2843C1D44CC
+simple_decoder.SRCS                += $(VPX_IMAGE_SRCS)
+simple_decoder.SRCS                += $(VPX_MEM_SRCS)
 simple_decoder.SRCS                += ivfdec.h ivfdec.c
 simple_decoder.SRCS                += tools_common.h tools_common.c
 simple_decoder.SRCS                += video_common.h
@@ -146,6 +162,8 @@ simple_decoder.SRCS                += vpx_ports/mem_ops_aligned.h
 simple_decoder.SRCS                += vpx_ports/msvc.h
 simple_decoder.DESCRIPTION          = Simplified decoder loop
 EXAMPLES-$(CONFIG_DECODERS)        += postproc.c
+postproc.SRCS                      += $(VPX_IMAGE_SRCS)
+postproc.SRCS                      += $(VPX_MEM_SRCS)
 postproc.SRCS                      += ivfdec.h ivfdec.c
 postproc.SRCS                      += tools_common.h tools_common.c
 postproc.SRCS                      += video_common.h
@@ -156,6 +174,8 @@ postproc.SRCS                      += vpx_ports/msvc.h
 postproc.GUID                       = 65E33355-F35E-4088-884D-3FD4905881D7
 postproc.DESCRIPTION                = Decoder postprocessor control
 EXAMPLES-$(CONFIG_DECODERS)        += decode_to_md5.c
+decode_to_md5.SRCS                 += $(VPX_IMAGE_SRCS)
+decode_to_md5.SRCS                 += $(VPX_MEM_SRCS)
 decode_to_md5.SRCS                 += md5_utils.h md5_utils.c
 decode_to_md5.SRCS                 += ivfdec.h ivfdec.c
 decode_to_md5.SRCS                 += tools_common.h tools_common.c
@@ -167,6 +187,8 @@ decode_to_md5.SRCS                 += vpx_ports/msvc.h
 decode_to_md5.GUID                  = 59120B9B-2735-4BFE-B022-146CA340FE42
 decode_to_md5.DESCRIPTION           = Frame by frame MD5 checksum
 EXAMPLES-$(CONFIG_ENCODERS)     += simple_encoder.c
+simple_encoder.SRCS             += $(VPX_IMAGE_SRCS)
+simple_encoder.SRCS             += $(VPX_MEM_SRCS)
 simple_encoder.SRCS             += ivfenc.h ivfenc.c
 simple_encoder.SRCS             += tools_common.h tools_common.c
 simple_encoder.SRCS             += video_common.h
@@ -175,6 +197,8 @@ simple_encoder.SRCS             += vpx_ports/msvc.h
 simple_encoder.GUID              = 4607D299-8A71-4D2C-9B1D-071899B6FBFD
 simple_encoder.DESCRIPTION       = Simplified encoder loop
 EXAMPLES-$(CONFIG_VP9_ENCODER)  += vp9_lossless_encoder.c
+vp9_lossless_encoder.SRCS       += $(VPX_IMAGE_SRCS)
+vp9_lossless_encoder.SRCS       += $(VPX_MEM_SRCS)
 vp9_lossless_encoder.SRCS       += ivfenc.h ivfenc.c
 vp9_lossless_encoder.SRCS       += tools_common.h tools_common.c
 vp9_lossless_encoder.SRCS       += video_common.h
@@ -183,6 +207,8 @@ vp9_lossless_encoder.SRCS       += vpx_ports/msvc.h
 vp9_lossless_encoder.GUID        = B63C7C88-5348-46DC-A5A6-CC151EF93366
 vp9_lossless_encoder.DESCRIPTION = Simplified lossless VP9 encoder
 EXAMPLES-$(CONFIG_ENCODERS)     += twopass_encoder.c
+twopass_encoder.SRCS            += $(VPX_IMAGE_SRCS)
+twopass_encoder.SRCS            += $(VPX_MEM_SRCS)
 twopass_encoder.SRCS            += ivfenc.h ivfenc.c
 twopass_encoder.SRCS            += tools_common.h tools_common.c
 twopass_encoder.SRCS            += video_common.h
@@ -191,6 +217,8 @@ twopass_encoder.SRCS            += vpx_ports/msvc.h
 twopass_encoder.GUID             = 73494FA6-4AF9-4763-8FBB-265C92402FD8
 twopass_encoder.DESCRIPTION      = Two-pass encoder loop
 EXAMPLES-$(CONFIG_DECODERS)     += decode_with_drops.c
+decode_with_drops.SRCS          += $(VPX_IMAGE_SRCS)
+decode_with_drops.SRCS          += $(VPX_MEM_SRCS)
 decode_with_drops.SRCS          += ivfdec.h ivfdec.c
 decode_with_drops.SRCS          += tools_common.h tools_common.c
 decode_with_drops.SRCS          += video_common.h
@@ -201,6 +229,8 @@ decode_with_drops.SRCS          += vpx_ports/msvc.h
 decode_with_drops.GUID           = CE5C53C4-8DDA-438A-86ED-0DDD3CDB8D26
 decode_with_drops.DESCRIPTION    = Drops frames while decoding
 EXAMPLES-$(CONFIG_ENCODERS)        += set_maps.c
+set_maps.SRCS                      += $(VPX_IMAGE_SRCS)
+set_maps.SRCS                      += $(VPX_MEM_SRCS)
 set_maps.SRCS                      += ivfenc.h ivfenc.c
 set_maps.SRCS                      += tools_common.h tools_common.c
 set_maps.SRCS                      += video_common.h
@@ -209,6 +239,8 @@ set_maps.SRCS                      += vpx_ports/msvc.h
 set_maps.GUID                       = ECB2D24D-98B8-4015-A465-A4AF3DCC145F
 set_maps.DESCRIPTION                = Set active and ROI maps
 EXAMPLES-$(CONFIG_VP8_ENCODER)     += vp8cx_set_ref.c
+vp8cx_set_ref.SRCS                 += $(VPX_IMAGE_SRCS)
+vp8cx_set_ref.SRCS                 += $(VPX_MEM_SRCS)
 vp8cx_set_ref.SRCS                 += ivfenc.h ivfenc.c
 vp8cx_set_ref.SRCS                 += tools_common.h tools_common.c
 vp8cx_set_ref.SRCS                 += video_common.h
@@ -220,6 +252,8 @@ vp8cx_set_ref.DESCRIPTION           = VP8 set encoder reference frame
 ifeq ($(CONFIG_VP9_ENCODER),yes)
 ifeq ($(CONFIG_DECODERS),yes)
 EXAMPLES-yes                       += vp9cx_set_ref.c
+vp9cx_set_ref.SRCS                 += $(VPX_IMAGE_SRCS)
+vp9cx_set_ref.SRCS                 += $(VPX_MEM_SRCS)
 vp9cx_set_ref.SRCS                 += ivfenc.h ivfenc.c
 vp9cx_set_ref.SRCS                 += tools_common.h tools_common.c
 vp9cx_set_ref.SRCS                 += video_common.h
@@ -232,6 +266,8 @@ endif
 ifeq ($(CONFIG_MULTI_RES_ENCODING),yes)
 ifeq ($(CONFIG_LIBYUV),yes)
 EXAMPLES-$(CONFIG_VP8_ENCODER)          += vp8_multi_resolution_encoder.c
+vp8_multi_resolution_encoder.SRCS       += $(VPX_IMAGE_SRCS)
+vp8_multi_resolution_encoder.SRCS       += $(VPX_MEM_SRCS)
 vp8_multi_resolution_encoder.SRCS       += ivfenc.h ivfenc.c
 vp8_multi_resolution_encoder.SRCS       += tools_common.h tools_common.c
 vp8_multi_resolution_encoder.SRCS       += video_writer.h video_writer.c
