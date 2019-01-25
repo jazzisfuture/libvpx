@@ -15,6 +15,8 @@
 #ifndef VPX_VPX_VPX_IMAGE_H_
 #define VPX_VPX_VPX_IMAGE_H_
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -199,6 +201,34 @@ void vpx_img_flip(vpx_image_t *img);
  * \param[in]    img       Image descriptor
  */
 void vpx_img_free(vpx_image_t *img);
+
+/*!\brief Return width of plane in the image
+ *
+ * \param[in]    img       Image descriptor
+ * \param[in]    plane     plane
+ */
+int vpx_img_plane_width(const vpx_image_t *img, int plane);
+
+/*!\brief Return height of plane in the image
+ *
+ * \param[in]    img       Image descriptor
+ * \param[in]    plane     plane
+ */
+int vpx_img_plane_height(const vpx_image_t *img, int plane);
+
+/*!\brief Write image to file
+ *
+ * \param[in]    img       Image descriptor
+ * \param[in]    file      file descriptor for output
+ */
+void vpx_img_write(const vpx_image_t *img, FILE *file);
+
+/*!\brief Read image from file
+ *
+ * \param[in]    img       Image descriptor
+ * \param[in]    file      file descriptor for input
+ */
+int vpx_img_read(vpx_image_t *img, FILE *file);
 
 #ifdef __cplusplus
 }  // extern "C"
