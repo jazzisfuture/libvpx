@@ -5028,6 +5028,7 @@ static void nonrd_use_partition(VP9_COMP *cpi, ThreadData *td,
                                 BLOCK_SIZE bsize, int output_enabled,
                                 RD_COST *dummy_cost, PC_TREE *pc_tree) {
   VP9_COMMON *const cm = &cpi->common;
+  SPEED_FEATURES *const sf = &cpi->sf;
   TileInfo *tile_info = &tile_data->tile_info;
   MACROBLOCK *const x = &td->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -5035,11 +5036,100 @@ static void nonrd_use_partition(VP9_COMP *cpi, ThreadData *td,
   const int mis = cm->mi_stride;
   PARTITION_TYPE partition;
   BLOCK_SIZE subsize;
+  int can_merge = 0;
 
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols) return;
 
   subsize = (bsize >= BLOCK_8X8) ? mi[0]->sb_type : BLOCK_4X4;
   partition = partition_lookup[bsl][subsize];
+
+  // TODO: Add handling of PARTITION_VERT and PARTITION_HORZ
+  if (partition == PARTITION_SPLIT && !frame_is_intra_only(cm) &&
+      sf->check_block_merge) {
+    RD_COST this_rdcost, split_rdcost;
+    if (bsize > BLOCK_8X8 && !(mi_row + hbs >= cm->mi_rows || mi_col + hbs >= cm->mi_cols)) {
+      const BLOCK_SIZE ss = get_subsize(bsize, PARTITION_SPLIT);
+      const int bsl_tmp = b_width_log2_lookup[ss];
+      const int mi_rows[4] = { mi_row, mi_row, mi_row + hbs, mi_row + hbs };
+      const int mi_cols[4] = { mi_col, mi_col + hbs, mi_col, mi_col + hbs };
+
+      MODE_INFO *minfos[4];
+      PARTITION_TYPE pts[4];
+      BLOCK_SIZE bss;
+
+      minfos[0] = *mi;
+      minfos[1] = *(mi + hbs);
+      minfos[2] = *(mi + hbs * mis);
+      minfos[3] = *(mi + hbs * mis + hbs);
+
+      bss = (ss >= BLOCK_8X8) ? minfos[0]->sb_type : BLOCK_4X4;
+      pts[0] = partition_lookup[bsl_tmp][bss];
+
+      bss = (ss >= BLOCK_8X8) ? minfos[1]->sb_type : BLOCK_4X4;
+      pts[1] = partition_lookup[bsl_tmp][bss];
+
+      bss = (ss >= BLOCK_8X8) ? minfos[2]->sb_type : BLOCK_4X4;
+      pts[2] = partition_lookup[bsl_tmp][bss];
+
+      bss = (ss >= BLOCK_8X8) ? minfos[3]->sb_type : BLOCK_4X4;
+      pts[3] = partition_lookup[bsl_tmp][bss];
+
+      if (pts[0] == PARTITION_NONE && pts[1] == PARTITION_NONE && pts[2] == PARTITION_NONE && pts[3] == PARTITION_NONE) {
+        PC_TREE *current_pc_tree;
+        PREDICTION_MODE current_mode = MB_MODE_COUNT;
+        int_mv current_mv0, current_mv1;
+
+        vp9_rd_cost_init(&this_rdcost);
+        vp9_rd_cost_init(&split_rdcost);
+        can_merge = 1;
+
+        for (int sb_index = 0; sb_index < 4; sb_index++) {
+          current_pc_tree = pc_tree->split[sb_index];
+          // TODO: we can try to avoid re-estimation if we break out early from this loop with can_merge==0
+          // For this we need memorize estimated modes
+          nonrd_pick_sb_modes(cpi, tile_data, x, mi_rows[sb_index],
+                              mi_cols[sb_index], &this_rdcost, ss,
+                              &current_pc_tree->none);
+          current_pc_tree->none.mic = *xd->mi[0];
+          current_pc_tree->none.mbmi_ext = *x->mbmi_ext;
+          current_pc_tree->none.skip_txfm[0] = x->skip_txfm[0];
+          current_pc_tree->none.skip = x->skip;
+
+          if (current_mode == MB_MODE_COUNT) {
+            current_mode = minfos[sb_index]->mode;
+            current_mv0 = minfos[sb_index]->mv[0];
+            current_mv1 = minfos[sb_index]->mv[1];
+          }
+          if (minfos[sb_index]->mode < NEARESTMV ||
+              minfos[sb_index]->mv[0].as_int != current_mv0.as_int ||
+              minfos[sb_index]->mv[1].as_int != current_mv1.as_int) {
+            can_merge = 0;
+            break;
+          }
+          split_rdcost.rate += this_rdcost.rate;
+          split_rdcost.dist += this_rdcost.dist;
+          split_rdcost.rdcost += this_rdcost.rdcost;
+        }
+      }
+    }
+
+    if (can_merge) {
+      RD_COST nonsplit_rdcost;
+      const BLOCK_SIZE oldbs = mi[0]->sb_type;
+
+      vp9_rd_cost_init(&nonsplit_rdcost);
+      mi[0]->sb_type = bsize;
+      nonrd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, &nonsplit_rdcost,
+                          bsize, &pc_tree->none);
+      if (nonsplit_rdcost.rdcost < split_rdcost.rdcost) {
+        partition = PARTITION_NONE;
+        subsize = bsize;
+      } else {
+        mi[0]->sb_type = oldbs;
+        can_merge = 0;
+      }
+    }
+  }
 
   if (output_enabled && bsize != BLOCK_4X4) {
     int ctx = partition_plane_context(xd, mi_row, mi_col, bsize);
@@ -5048,9 +5138,11 @@ static void nonrd_use_partition(VP9_COMP *cpi, ThreadData *td,
 
   switch (partition) {
     case PARTITION_NONE:
-      pc_tree->none.pred_pixel_ready = 1;
-      nonrd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, dummy_cost,
-                          subsize, &pc_tree->none);
+      if (!can_merge) { // If can_merge is set we have already estimated mode and it is in *x, *xd
+        pc_tree->none.pred_pixel_ready = 1;
+        nonrd_pick_sb_modes(cpi, tile_data, x, mi_row, mi_col, dummy_cost,
+                            subsize, &pc_tree->none);
+      }
       pc_tree->none.mic = *xd->mi[0];
       pc_tree->none.mbmi_ext = *x->mbmi_ext;
       pc_tree->none.skip_txfm[0] = x->skip_txfm[0];

@@ -598,6 +598,10 @@ typedef struct SPEED_FEATURES {
 
   // Search method used by temporal filtering in full_pixel_motion_search.
   SEARCH_METHODS temporal_filter_search_method;
+
+  // for pre-defined partitions (such as VAR_BASED_PARTITION) setting this to 1 will trigger
+  // extra check if PARTITION_NONE is better then PARTITION_SPLIT
+  int check_block_merge;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
