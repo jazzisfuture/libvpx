@@ -22,6 +22,30 @@
       "revId": "4f36bea7e9ecbfd99fae737138a050c4c55a4536",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db0d891f_6cc49b9f",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 6099,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-01-25T01:59:06Z",
+      "side": 1,
+      "message": "This function is not called.\nI am submitting the next patch with a function that calls this function.\nA static decorator will be added accordingly.",
+      "parentUuid": "f2355759_661ae24b",
+      "range": {
+        "startLine": 6099,
+        "startChar": 0,
+        "endLine": 6099,
+        "endChar": 78
+      },
+      "revId": "4f36bea7e9ecbfd99fae737138a050c4c55a4536",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
