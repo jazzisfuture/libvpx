@@ -6170,6 +6170,7 @@ int find_best_ref_mv_mode(VP9_COMP *cpi, MACROBLOCK *x, GF_PICTURE *gf_picture,
   int best_mv_mode = ZERO_MV_MODE;
   int update = 0;
   int mv_mode;
+  *rd = 0;
   for (mv_mode = 0; mv_mode < MAX_MV_MODE; ++mv_mode) {
     double this_rd;
     int_mv this_mv;
@@ -6192,6 +6193,75 @@ int find_best_ref_mv_mode(VP9_COMP *cpi, MACROBLOCK *x, GF_PICTURE *gf_picture,
     }
   }
   return best_mv_mode;
+}
+
+void predict_mv_mode(VP9_COMP *cpi, MACROBLOCK *x, GF_PICTURE *gf_picture,
+                     int frame_idx, TplDepFrame *tpl_frame, int rf_idx,
+                     BLOCK_SIZE bsize, int mi_row, int mi_col, double *rd) {
+  int r, c;
+  const int mi_height = num_8x8_blocks_high_lookup[bsize];
+  const int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  int tmp_mv_mode_arr[MV_PRECHECK_SIZE * MV_PRECHECK_SIZE];
+  int *mv_mode_arr = tpl_frame->mv_mode_arr[rf_idx];
+  int_mv *select_mv_arr = cpi->select_mv_arr;
+  int_mv tmp_select_mv_arr[MV_PRECHECK_SIZE * MV_PRECHECK_SIZE];
+  int stride = tpl_frame->stride;
+  double new_mv_rd = 0;
+  double no_new_mv_rd = 0;
+  // no new mv
+  for (r = 0; r < MV_PRECHECK_SIZE; ++r) {
+    for (c = 0; c < MV_PRECHECK_SIZE; ++c) {
+      int nb_row = mi_row + r * mi_height;
+      int nb_col = mi_col + c * mi_width;
+      double rd;
+      int_mv *mv = &select_mv_arr[nb_row * stride + nb_col];
+      mv_mode_arr[nb_row * stride + nb_col] =
+          find_best_ref_mv_mode(cpi, x, gf_picture, frame_idx, tpl_frame,
+                                rf_idx, bsize, nb_row, nb_col, &rd, mv);
+      no_new_mv_rd += rd;
+      tmp_mv_mode_arr[r * MV_PRECHECK_SIZE + c] =
+          mv_mode_arr[nb_row * stride + nb_col];
+      tmp_select_mv_arr[r * MV_PRECHECK_SIZE + c] =
+          select_mv_arr[nb_row * stride + nb_col];
+    }
+  }
+
+  // new mv
+  mv_mode_arr[mi_row * stride + mi_col] = NEW_MV_MODE;
+  new_mv_rd = eval_mv_mode(NEW_MV_MODE, cpi, x, gf_picture, frame_idx,
+                           tpl_frame, rf_idx, bsize, mi_row, mi_col,
+                           &select_mv_arr[mi_row * stride + mi_col]);
+  for (r = 0; r < MV_PRECHECK_SIZE; ++r) {
+    for (c = 0; c < MV_PRECHECK_SIZE; ++c) {
+      if (r != 0 || c != 0) {
+        int nb_row = mi_row + r * mi_height;
+        int nb_col = mi_col + c * mi_width;
+        double rd;
+        int_mv *mv = &select_mv_arr[nb_row * stride + nb_col];
+        mv_mode_arr[nb_row * stride + nb_col] =
+            find_best_ref_mv_mode(cpi, x, gf_picture, frame_idx, tpl_frame,
+                                  rf_idx, bsize, nb_row, nb_col, &rd, mv);
+        new_mv_rd += rd;
+      }
+    }
+  }
+
+  // update best_mv_mode
+  if (no_new_mv_rd < new_mv_rd) {
+    *rd = no_new_mv_rd;
+    for (r = 0; r < MV_PRECHECK_SIZE; ++r) {
+      for (c = 0; c < MV_PRECHECK_SIZE; ++c) {
+        int nb_row = mi_row + r * mi_height;
+        int nb_col = mi_col + c * mi_width;
+        mv_mode_arr[nb_row * stride + nb_col] =
+            tmp_mv_mode_arr[r * MV_PRECHECK_SIZE + c];
+        select_mv_arr[nb_row * stride + nb_col] =
+            tmp_select_mv_arr[r * MV_PRECHECK_SIZE + c];
+      }
+    }
+  } else {
+    *rd = new_mv_rd;
+  }
 }
 
 static double get_feature_score(uint8_t *buf, ptrdiff_t stride, int rows,
