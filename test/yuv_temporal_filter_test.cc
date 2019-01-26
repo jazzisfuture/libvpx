@@ -61,6 +61,29 @@ int GetModIndex(int sum_dist, int index, int rounding, int strength,
   return mod;
 }
 
+int HighbdGetModIndex(int sum_dist, int index, int rounding, int strength,
+                      int filter_weight) {
+  unsigned int index_mult[14] = {
+    0, 0, 0, 0, 49152, 39322, 32768, 28087, 24576, 21846, 19661, 17874, 0, 15124
+  };
+
+  assert(index >= 0 && index <= 13);
+  assert(index_mult[index] != 0);
+
+  int mod = ((uint64_t)clamp(sum_dist, 0, UINT32_MAX) *
+             (uint64_t)index_mult[index]) >>
+            16;
+  mod += rounding;
+  mod >>= strength;
+
+  mod = VPXMIN(16, mod);
+
+  mod = 16 - mod;
+  mod *= filter_weight;
+
+  return mod;
+}
+
 void ApplyReferenceFilter(
     const Buffer<uint8_t> &y_src, const Buffer<uint8_t> &y_pre,
     const Buffer<uint8_t> &u_src, const Buffer<uint8_t> &v_src,
@@ -223,6 +246,172 @@ void ApplyReferenceFilter(
     }
   }
 }
+
+#if CONFIG_VP9_HIGHBITDEPTH
+void HighbdApplyReferenceFilter(
+    const Buffer<uint16_t> &y_src, const Buffer<uint16_t> &y_pre,
+    const Buffer<uint16_t> &u_src, const Buffer<uint16_t> &v_src,
+    const Buffer<uint16_t> &u_pre, const Buffer<uint16_t> &v_pre,
+    unsigned int block_width, unsigned int block_height, int ss_x, int ss_y,
+    int strength, const int *const blk_fw, int use_32x32,
+    Buffer<uint32_t> *y_accumulator, Buffer<uint16_t> *y_count,
+    Buffer<uint32_t> *u_accumulator, Buffer<uint16_t> *u_count,
+    Buffer<uint32_t> *v_accumulator, Buffer<uint16_t> *v_count) {
+  // blk_fw means block_filter_weight
+  // Set up buffer to store squared_diffs
+  Buffer<int> y_dif = Buffer<int>(block_width, block_height, 0);
+  const int uv_block_width = block_width >> ss_x;
+  const int uv_block_height = block_height >> ss_y;
+  Buffer<int> u_dif = Buffer<int>(uv_block_width, uv_block_height, 0);
+  Buffer<int> v_dif = Buffer<int>(uv_block_width, uv_block_height, 0);
+  ASSERT_TRUE(y_dif.Init());
+  ASSERT_TRUE(u_dif.Init());
+  ASSERT_TRUE(v_dif.Init());
+  y_dif.Set(0);
+  u_dif.Set(0);
+  v_dif.Set(0);
+
+  // How many bits do we want to round
+  ASSERT_GE(strength, 0);
+  ASSERT_LE(strength, 6);
+  int rounding = 0;
+  if (strength > 0) {
+    rounding = 1 << (strength - 1);
+  }
+
+  // Check that the buffers are valid
+  ASSERT_TRUE(y_src.TopLeftPixel() != NULL);
+  ASSERT_TRUE(y_pre.TopLeftPixel() != NULL);
+  ASSERT_TRUE(y_dif.TopLeftPixel() != NULL);
+  ASSERT_TRUE(u_src.TopLeftPixel() != NULL);
+  ASSERT_TRUE(u_pre.TopLeftPixel() != NULL);
+  ASSERT_TRUE(u_dif.TopLeftPixel() != NULL);
+  ASSERT_TRUE(v_src.TopLeftPixel() != NULL);
+  ASSERT_TRUE(v_pre.TopLeftPixel() != NULL);
+  ASSERT_TRUE(v_dif.TopLeftPixel() != NULL);
+
+  // Get the square diffs
+  for (int row = 0; row < static_cast<int>(block_height); row++) {
+    for (int col = 0; col < static_cast<int>(block_width); col++) {
+      const int diff = y_src.TopLeftPixel()[row * y_src.stride() + col] -
+                       y_pre.TopLeftPixel()[row * y_pre.stride() + col];
+      y_dif.TopLeftPixel()[row * y_dif.stride() + col] = diff * diff;
+    }
+  }
+
+  for (int row = 0; row < uv_block_height; row++) {
+    for (int col = 0; col < uv_block_width; col++) {
+      const int u_diff = u_src.TopLeftPixel()[row * u_src.stride() + col] -
+                         u_pre.TopLeftPixel()[row * u_pre.stride() + col];
+      const int v_diff = v_src.TopLeftPixel()[row * v_src.stride() + col] -
+                         v_pre.TopLeftPixel()[row * v_pre.stride() + col];
+      u_dif.TopLeftPixel()[row * u_dif.stride() + col] = u_diff * u_diff;
+      v_dif.TopLeftPixel()[row * v_dif.stride() + col] = v_diff * v_diff;
+    }
+  }
+
+  // Apply the filter
+  for (int row = 0; row < static_cast<int>(block_height); row++) {
+    for (int col = 0; col < static_cast<int>(block_width); col++) {
+      const int uv_r = row >> ss_y;
+      const int uv_c = col >> ss_x;
+      const int filter_weight = GetFilterWeight(row, col, block_height,
+                                                block_width, blk_fw, use_32x32);
+
+      // First we get the modifier for the current y pixel
+      const int y_pixel = y_pre.TopLeftPixel()[row * y_pre.stride() + col];
+      int y_num_used = 0;
+      int y_mod = 0;
+
+      // Sum the neighboring 3x3 y pixels
+      for (int row_step = -1; row_step <= 1; row_step++) {
+        for (int col_step = -1; col_step <= 1; col_step++) {
+          const int sub_row = row + row_step;
+          const int sub_col = col + col_step;
+
+          if (sub_row >= 0 && sub_row < static_cast<int>(block_height) &&
+              sub_col >= 0 && sub_col < static_cast<int>(block_width)) {
+            y_mod += y_dif.TopLeftPixel()[sub_row * y_dif.stride() + sub_col];
+            y_num_used++;
+          }
+        }
+      }
+
+      ASSERT_GE(y_num_used, 0);
+
+      // Sum the corresponding uv pixels to the current y modifier
+      // Note we are rounding down instead of rounding to the nearest pixel.
+      y_mod += u_dif.TopLeftPixel()[uv_r * uv_block_width + uv_c];
+      y_mod += v_dif.TopLeftPixel()[uv_r * uv_block_width + uv_c];
+
+      y_num_used += 2;
+
+      // Set the modifier
+      y_mod = HighbdGetModIndex(y_mod, y_num_used, rounding, strength,
+                                filter_weight);
+
+      // Accumulate the result
+      y_count->TopLeftPixel()[row * y_count->stride() + col] += y_mod;
+      y_accumulator->TopLeftPixel()[row * y_accumulator->stride() + col] +=
+          y_mod * y_pixel;
+
+      // Get the modifier for chroma components
+      if (!(row & ss_y) && !(col & ss_x)) {
+        const int u_pixel = u_pre.TopLeftPixel()[uv_r * u_pre.stride() + uv_c];
+        const int v_pixel = v_pre.TopLeftPixel()[uv_r * v_pre.stride() + uv_c];
+
+        int uv_num_used = 0;
+        int u_mod = 0, v_mod = 0;
+
+        // Sum the neighboring 3x3 chromal pixels to the chroma modifier
+        for (int row_step = -1; row_step <= 1; row_step++) {
+          for (int col_step = -1; col_step <= 1; col_step++) {
+            const int sub_row = uv_r + row_step;
+            const int sub_col = uv_c + col_step;
+
+            if (sub_row >= 0 && sub_row < uv_block_height && sub_col >= 0 &&
+                sub_col < uv_block_width) {
+              u_mod += u_dif.TopLeftPixel()[sub_row * uv_block_width + sub_col];
+              v_mod += v_dif.TopLeftPixel()[sub_row * uv_block_width + sub_col];
+              uv_num_used++;
+            }
+          }
+        }
+
+        ASSERT_GT(uv_num_used, 0);
+
+        // Sum all the luma pixels associated with the current luma pixel
+        for (int row_step = 0; row_step < 1 + ss_y; row_step++) {
+          for (int col_step = 0; col_step < 1 + ss_x; col_step++) {
+            const int sub_row = (uv_r << ss_y) + row_step;
+            const int sub_col = (uv_c << ss_x) + col_step;
+            const int y_diff =
+                y_dif.TopLeftPixel()[sub_row * y_dif.stride() + sub_col];
+
+            u_mod += y_diff;
+            v_mod += y_diff;
+            uv_num_used++;
+          }
+        }
+
+        // Set the modifier
+        u_mod = HighbdGetModIndex(u_mod, uv_num_used, rounding, strength,
+                                  filter_weight);
+        v_mod = HighbdGetModIndex(v_mod, uv_num_used, rounding, strength,
+                                  filter_weight);
+
+        // Accumulate the result
+        u_count->TopLeftPixel()[uv_r * u_count->stride() + uv_c] += u_mod;
+        u_accumulator->TopLeftPixel()[uv_r * u_accumulator->stride() + uv_c] +=
+            u_mod * u_pixel;
+        v_count->TopLeftPixel()[uv_r * u_count->stride() + uv_c] += v_mod;
+        v_accumulator->TopLeftPixel()[uv_r * v_accumulator->stride() + uv_c] +=
+            v_mod * v_pixel;
+      }
+    }
+  }
+}
+#endif
 
 class YUVTemporalFilterTest
     : public ::testing::TestWithParam<YUVTemporalFilterFunc> {
