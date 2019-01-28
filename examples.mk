@@ -125,6 +125,7 @@ vp9_spatial_svc_encoder.SRCS        += $(VPX_IMAGE_SRCS)
 vp9_spatial_svc_encoder.SRCS        += $(VPX_MEM_SRCS)
 vp9_spatial_svc_encoder.SRCS        += args.c args.h
 vp9_spatial_svc_encoder.SRCS        += ivfenc.c ivfenc.h
+vp9_spatial_svc_encoder.SRCS        += y4minput.c y4minput.h
 vp9_spatial_svc_encoder.SRCS        += tools_common.c tools_common.h
 vp9_spatial_svc_encoder.SRCS        += video_common.h
 vp9_spatial_svc_encoder.SRCS        += video_writer.h video_writer.c

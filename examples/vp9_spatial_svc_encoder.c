@@ -30,6 +30,8 @@
 #include "vpx/vpx_encoder.h"
 #include "../vpxstats.h"
 #include "vp9/encoder/vp9_encoder.h"
+#include "./y4minput.h"
+
 #define OUTPUT_RC_STATS 1
 
 static const arg_def_t skip_frames_arg =
@@ -181,6 +183,67 @@ void usage_exit(void) {
   fprintf(stderr, "Options:\n");
   arg_show_usage(stderr, svc_args);
   exit(EXIT_FAILURE);
+}
+
+static int file_is_y4m(const char detect[4]) {
+  if (memcmp(detect, "YUV4", 4) == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+static int fourcc_is_ivf(const char detect[4]) {
+  if (memcmp(detect, "DKIF", 4) == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+static void open_input_file(struct VpxInputContext *input) {
+  /* Parse certain options from the input file, if possible */
+  input->file = strcmp(input->filename, "-") ? fopen(input->filename, "rb")
+                                             : set_binary_mode(stdin);
+
+  if (!input->file) fatal("Failed to open input file");
+
+  if (!fseeko(input->file, 0, SEEK_END)) {
+    /* Input file is seekable. Figure out how long it is, so we can get
+     * progress info.
+     */
+    input->length = ftello(input->file);
+    rewind(input->file);
+  }
+
+  /* Default to 1:1 pixel aspect ratio. */
+  input->pixel_aspect_ratio.numerator = 1;
+  input->pixel_aspect_ratio.denominator = 1;
+
+  /* For RAW input sources, these bytes will applied on the first frame
+   *  in read_frame().
+   */
+  input->detect.buf_read = fread(input->detect.buf, 1, 4, input->file);
+  input->detect.position = 0;
+
+  if (input->detect.buf_read == 4 && file_is_y4m(input->detect.buf)) {
+    if (y4m_input_open(&input->y4m, input->file, input->detect.buf, 4,
+                       input->only_i420) >= 0) {
+      input->file_type = FILE_TYPE_Y4M;
+      input->width = input->y4m.pic_w;
+      input->height = input->y4m.pic_h;
+      input->pixel_aspect_ratio.numerator = input->y4m.par_n;
+      input->pixel_aspect_ratio.denominator = input->y4m.par_d;
+      input->framerate.numerator = input->y4m.fps_n;
+      input->framerate.denominator = input->y4m.fps_d;
+      input->fmt = input->y4m.vpx_fmt;
+      input->bit_depth = input->y4m.bit_depth;
+    } else {
+      fatal("Unsupported Y4M stream.");
+    }
+  } else if (input->detect.buf_read == 4 && fourcc_is_ivf(input->detect.buf)) {
+    fatal("IVF is not supported as input.");
+  } else {
+    input->file_type = FILE_TYPE_RAW;
+  }
 }
 
 static void parse_command_line(int argc, const char **argv_,
@@ -395,7 +458,14 @@ static void parse_command_line(int argc, const char **argv_,
   }
   app_input->input_filename = argv[0];
   app_input->output_filename = argv[1];
+  app_input->input_ctx.filename = argv[0];
   free(argv);
+
+  open_input_file(&app_input->input_ctx);
+  if (app_input->input_ctx.file_type == FILE_TYPE_Y4M) {
+    enc_cfg->g_w = app_input->input_ctx.width;
+    enc_cfg->g_h = app_input->input_ctx.height;
+  }
 
   if (enc_cfg->g_w < 16 || enc_cfg->g_w % 2 || enc_cfg->g_h < 16 ||
       enc_cfg->g_h % 2)
@@ -738,6 +808,25 @@ static void set_frame_flags_bypass_mode_ex1(
   }
 }
 
+static void close_input_file(struct VpxInputContext *input) {
+  fclose(input->file);
+  if (input->file_type == FILE_TYPE_Y4M) y4m_input_close(&input->y4m);
+}
+
+static int read_frame(struct VpxInputContext *input_ctx, vpx_image_t *img) {
+  FILE *f = input_ctx->file;
+  y4m_input *y4m = &input_ctx->y4m;
+  int shortread = 0;
+
+  if (input_ctx->file_type == FILE_TYPE_Y4M) {
+    if (y4m_input_fetch_frame(y4m, f, img) < 1) return 0;
+  } else {
+    shortread = read_yuv_frame(input_ctx, img);
+  }
+
+  return !shortread;
+}
+
 int main(int argc, const char **argv) {
   AppInput app_input;
   VpxVideoWriter *writer = NULL;
@@ -752,7 +841,6 @@ int main(int argc, const char **argv) {
   vpx_codec_err_t res;
   int pts = 0;            /* PTS starts at 0 */
   int frame_duration = 1; /* 1 timebase tick per frame */
-  FILE *infile = NULL;
   int end_of_stream = 0;
   int frames_received = 0;
 #if OUTPUT_RC_STATS
@@ -773,6 +861,13 @@ int main(int argc, const char **argv) {
   memset(&layer_id, 0, sizeof(vpx_svc_layer_id_t));
   memset(&rc, 0, sizeof(struct RateControlStats));
   exec_name = argv[0];
+
+  /* Setup default input stream settings */
+  app_input.input_ctx.framerate.numerator = 30;
+  app_input.input_ctx.framerate.denominator = 1;
+  app_input.input_ctx.only_i420 = 1;
+  app_input.input_ctx.bit_depth = 0;
+
   parse_command_line(argc, argv, &app_input, &svc_ctx, &enc_cfg);
 
 // Allocate image buffer
@@ -788,9 +883,6 @@ int main(int argc, const char **argv) {
     die("Failed to allocate image %dx%d\n", enc_cfg.g_w, enc_cfg.g_h);
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-
-  if (!(infile = fopen(app_input.input_filename, "rb")))
-    die("Failed to open %s for reading\n", app_input.input_filename);
 
   // Initialize codec
   if (vpx_svc_init(&svc_ctx, &codec, vpx_codec_vp9_cx(), &enc_cfg) !=
@@ -835,7 +927,8 @@ int main(int argc, const char **argv) {
 #endif
 
   // skip initial frames
-  for (i = 0; i < app_input.frames_to_skip; ++i) vpx_img_read(&raw, infile);
+  for (i = 0; i < app_input.frames_to_skip; ++i)
+    read_frame(&app_input.input_ctx, &raw);
 
   if (svc_ctx.speed != -1)
     vpx_codec_control(&codec, VP8E_SET_CPUUSED, svc_ctx.speed);
@@ -875,7 +968,8 @@ int main(int argc, const char **argv) {
     // layers, with SL0 only has TL0, and SL1 has both TL0 and TL1. This example
     // uses the extended API.
     int example_pattern = 0;
-    if (frame_cnt >= app_input.frames_to_code || !vpx_img_read(&raw, infile)) {
+    if (frame_cnt >= app_input.frames_to_code ||
+        !read_frame(&app_input.input_ctx, &raw)) {
       // We need one extra vpx_svc_encode call at end of stream to flush
       // encoder and get remaining data
       end_of_stream = 1;
@@ -1091,7 +1185,9 @@ int main(int argc, const char **argv) {
   }
 
   printf("Processed %d frames\n", frame_cnt);
-  fclose(infile);
+
+  close_input_file(&app_input.input_ctx);
+
 #if OUTPUT_RC_STATS
   if (svc_ctx.output_rc_stat) {
     printout_rate_control_summary(&rc, &enc_cfg, frame_cnt);

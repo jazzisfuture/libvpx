@@ -1057,8 +1057,9 @@ static void open_input_file(struct VpxInputContext *input) {
       input->framerate.denominator = input->y4m.fps_d;
       input->fmt = input->y4m.vpx_fmt;
       input->bit_depth = input->y4m.bit_depth;
-    } else
+    } else {
       fatal("Unsupported Y4M stream.");
+    }
   } else if (input->detect.buf_read == 4 && fourcc_is_ivf(input->detect.buf)) {
     fatal("IVF is not supported as input.");
   } else {
