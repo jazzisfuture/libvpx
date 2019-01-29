@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa604605_f1bf5fa3",
+        "filename": "vpx/vpx_image.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-29T07:36:06Z",
+      "side": 1,
+      "message": "this makes additions to the API, I think the ABI check didn\u0027t trigger because they weren\u0027t added to the exports for the .so.",
+      "revId": "a182cff0437285aecc17505c3c83f698c4ece704",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49623d89_24e29038",
+        "filename": "vpx/vpx_image.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-29T07:36:06Z",
+      "side": 1,
+      "message": "I don\u0027t think libvpx should be providing I/O in the main lib.",
+      "revId": "a182cff0437285aecc17505c3c83f698c4ece704",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
