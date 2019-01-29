@@ -22,6 +22,30 @@
       "revId": "fa540837aa23ae8cdd926961ddbef71998a2a525",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d56b70cf_77c5d15c",
+        "filename": "vp9/encoder/vp9_temporal_filter.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2019-01-29T17:01:56Z",
+      "side": 1,
+      "message": "No, this is unrelated. \nThe mismatch is due to a row of intermediate chroma values got casted down to 8-bit instead of 16-bit.",
+      "parentUuid": "8a2b4e33_bad748db",
+      "range": {
+        "startLine": 196,
+        "startChar": 7,
+        "endLine": 196,
+        "endChar": 21
+      },
+      "revId": "fa540837aa23ae8cdd926961ddbef71998a2a525",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
