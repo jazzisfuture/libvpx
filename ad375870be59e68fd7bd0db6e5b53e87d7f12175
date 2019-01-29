@@ -16,6 +16,24 @@
       "revId": "ad375870be59e68fd7bd0db6e5b53e87d7f12175",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d4fd7de_2dd0722f",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2019-01-29T04:49:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee859c72_6d3bca55",
+      "revId": "ad375870be59e68fd7bd0db6e5b53e87d7f12175",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
