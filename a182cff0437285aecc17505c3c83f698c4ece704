@@ -33,6 +33,24 @@
       "revId": "a182cff0437285aecc17505c3c83f698c4ece704",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40d10e91_3466844d",
+        "filename": "vpx/vpx_image.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-01-29T17:04:18Z",
+      "side": 1,
+      "message": "\u003e I don\u0027t think libvpx should be providing I/O in the main lib.\n\nYeah I agree. So it\u0027s better to still keep them in tools_common.{c,h}?",
+      "parentUuid": "49623d89_24e29038",
+      "revId": "a182cff0437285aecc17505c3c83f698c4ece704",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
