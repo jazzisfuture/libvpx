@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88dc6050_aef2b4d0",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-29T07:24:08Z",
+      "side": 1,
+      "message": "on windows the wrapper for pthread_cond_destroy will dereference the pointer passed in; this has the risk of passing invalid memory.",
+      "revId": "a22adbc35b41b1fa72679c35714a80ea4c890d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
