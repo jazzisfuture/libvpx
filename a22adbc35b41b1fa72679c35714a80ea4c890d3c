@@ -16,6 +16,24 @@
       "revId": "a22adbc35b41b1fa72679c35714a80ea4c890d3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "474fb46a_225e76d8",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1294814
+      },
+      "writtenOn": "2019-01-29T12:17:21Z",
+      "side": 1,
+      "message": "Now, there is no risk of dereferencing unallocated pointers.\nInitializing to NULL after free will ensure that invalid memory is not passed to a subsequent free if the allocation fails.",
+      "parentUuid": "88dc6050_aef2b4d0",
+      "revId": "a22adbc35b41b1fa72679c35714a80ea4c890d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
