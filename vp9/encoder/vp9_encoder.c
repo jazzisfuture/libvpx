@@ -6025,12 +6025,15 @@ static void get_block_src_pred_buf(MACROBLOCKD *xd, GF_PICTURE *gf_picture,
   int ref_frame_idx = gf_picture[frame_idx].ref_frame[rf_idx];
   if (ref_frame_idx != -1) {
     ref_frame = gf_picture[ref_frame_idx].frame;
+    src->buf = xd->cur_buf->y_buffer + mb_y_offset;
+    src->stride = xd->cur_buf->y_stride;
+    pre->buf = ref_frame->y_buffer + mb_y_offset;
+    pre->stride = ref_frame->y_stride;
+    assert(src->stride == pre->stride);
+  } else {
+    printf("invalid ref_frame_idx");
+    assert(ref_frame_idx != -1);
   }
-  src->buf = xd->cur_buf->y_buffer + mb_y_offset;
-  src->stride = xd->cur_buf->y_stride;
-  pre->buf = ref_frame->y_buffer + mb_y_offset;
-  pre->stride = ref_frame->y_stride;
-  assert(src->stride == pre->stride);
 }
 
 #define kMvPreCheckLines 5
