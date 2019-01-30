@@ -22,6 +22,30 @@
       "revId": "9c3557e6d525e44ff5aa8d1f4d631f0782e48b30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4eb699ce_fb169039",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2019-01-30T17:37:51Z",
+      "side": 1,
+      "message": "This was added automatically by chromium-review. So I didn\u0027t want to modify the commit messages.",
+      "parentUuid": "1507c844_d7803e79",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 0
+      },
+      "revId": "9c3557e6d525e44ff5aa8d1f4d631f0782e48b30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
