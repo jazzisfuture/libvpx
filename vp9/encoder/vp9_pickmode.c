@@ -1683,6 +1683,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   unsigned int sse_zeromv_normalized = UINT_MAX;
   unsigned int best_sse_sofar = UINT_MAX;
   int gf_temporal_ref = 0;
+  int allow_early_breakout = 1;
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_PICKMODE_CTX_DEN ctx_den;
   int64_t zero_last_cost_orig = INT64_MAX;
@@ -1939,6 +1940,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     flag_svc_subpel = 1;
   }
 
+  // Prevent some early breakout on scene detection, or for certain cases
+  // in screen content mode.
+  if (scene_change_detected || (cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
+      ((!x->zero_temp_sad_source && x->source_variance < 80) ||
+      (svc->spatial_layer_id > 0 && usable_ref_frame == GOLDEN_FRAME &&
+       cm->base_qindex > svc->lower_layer_qindex + 20))))
+    allow_early_breakout = 0;
+
   for (idx = 0; idx < num_inter_modes + comp_modes; ++idx) {
     int rate_mv = 0;
     int mode_rd_thresh;
@@ -2031,6 +2040,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
           (ref_frame != ALTREF_FRAME ||
            frame_mv[this_mode][ref_frame].as_int != 0))
         continue;
+
 
       if (!cm->show_frame && ref_frame == ALTREF_FRAME &&
           frame_mv[this_mode][ref_frame].as_int != 0)
@@ -2306,7 +2316,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     // Skipping checking: test to see if this block can be reconstructed by
     // prediction only.
-    if (cpi->allow_encode_breakout && !xd->lossless && !scene_change_detected) {
+    if (cpi->allow_encode_breakout && !xd->lossless && allow_early_breakout) {
       encode_breakout_test(cpi, x, bsize, mi_row, mi_col, ref_frame, this_mode,
                            var_y, sse_y, yv12_mb, &this_rdc.rate,
                            &this_rdc.dist, flag_preduv_computed);
@@ -2353,7 +2363,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     // If early termination flag is 1 and at least 2 modes are checked,
     // the mode search is terminated.
-    if (best_early_term && idx > 0 && !scene_change_detected) {
+    if (best_early_term && idx > 0 && allow_early_breakout) {
       x->skip = 1;
       break;
     }
