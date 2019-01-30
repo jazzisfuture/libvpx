@@ -34,6 +34,24 @@
       "revId": "a22adbc35b41b1fa72679c35714a80ea4c890d3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51a8053a_98363398",
+        "filename": "vp9/decoder/vp9_decoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-30T03:27:30Z",
+      "side": 1,
+      "message": "Ack. I missed you were checking the pointers themselves before relying on num_jobs, looks good now with the pointers being cleared given the allocation of row_mt_worker_data is calloc\u0027d.",
+      "parentUuid": "474fb46a_225e76d8",
+      "revId": "a22adbc35b41b1fa72679c35714a80ea4c890d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

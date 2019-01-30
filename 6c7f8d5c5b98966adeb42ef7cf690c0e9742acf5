@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4f72fa1_ac85ee0c",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1649,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-30T03:27:30Z",
+      "side": 1,
+      "message": "you might want to name these: map_idx, sync_idx",
+      "range": {
+        "startLine": 1649,
+        "startChar": 26,
+        "endLine": 1649,
+        "endChar": 27
+      },
+      "revId": "6c7f8d5c5b98966adeb42ef7cf690c0e9742acf5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
