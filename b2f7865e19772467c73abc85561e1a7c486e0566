@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92a695d6_68a379ba",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-30T19:08:59Z",
+      "side": 1,
+      "message": "the order shouldn\u0027t change, but it might be safer to set this to app_input-\u003einput_filename. Or just drop app_input-\u003einput_filename as it doesn\u0027t look to get used now.",
+      "revId": "b2f7865e19772467c73abc85561e1a7c486e0566",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b9c0f12_9770d744",
+        "filename": "tools_common.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-01-30T19:08:59Z",
+      "side": 1,
+      "message": "these could all be namespaced to since they\u0027re public to avoid some of the naming conflicts, but they\u0027re only part of the examples so it\u0027s not as much of a concern as with the library.",
+      "revId": "b2f7865e19772467c73abc85561e1a7c486e0566",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
