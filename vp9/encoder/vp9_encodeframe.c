@@ -3656,6 +3656,25 @@ static int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
   return dr;
 }
 
+#if 1
+static void get_redisue(VP9_COMP *cpi, MACROBLOCK *const x, BLOCK_SIZE bsize,
+                        PC_TREE *pc_tree, int mi_row, int mi_col,
+                        uint8_t *pred_buf) {
+  MV ref_mv;
+  const MV_REFERENCE_FRAME ref =
+      cpi->rc.is_src_frame_alt_ref ? ALTREF_FRAME : LAST_FRAME;
+  // If bsize is 64x64, use zero MV as reference; otherwise, use MV result
+  // of previous(larger) block as reference.
+  if (bsize == BLOCK_64X64)
+    ref_mv.row = ref_mv.col = 0;
+  else
+    ref_mv = pc_tree->mv;
+  vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
+  simple_motion_search(cpi, x, bsize, mi_row, mi_col, ref_mv, ref, pred_buf);
+  pc_tree->mv = x->e_mbd.mi[0]->mv[0].as_mv;
+}
+#endif
+
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
 // unlikely to be selected depending on previous rate-distortion optimization
 // results, for encoding speed-up.
@@ -3710,6 +3729,23 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // Ref frames picked in the [i_th] quarter subblock during square partition
   // RD search. It may be used to prune ref frame selection of rect partitions.
   uint8_t ref_frames_used[4] = { 0, 0, 0, 0 };
+
+#if 1
+  uint8_t pred_buf[64 * 64];
+  int dump_data = !frame_is_intra_only(cm) && bsize >= BLOCK_8X8 &&
+      mi_row + num_8x8_blocks_high_lookup[bsize] <= cm->mi_rows &&
+      mi_col + num_8x8_blocks_wide_lookup[bsize] <= cm->mi_cols &&
+      partition_none_allowed && do_split;
+  unsigned int whole_sse = 0;
+  unsigned int split_sse_good[4] = { 0, };
+  unsigned int split_sse_fast[4] = { 0, };
+  unsigned int whole_var = 0;
+  unsigned int split_var_good[4] = { 0, };
+  unsigned int split_var_fast[4] = { 0, };
+  const uint8_t *const pred = pred_buf;
+  const int pred_stride = 64;
+  // unsigned int sse, var;
+#endif
 
   (void)*tp_orig;
 
@@ -3838,6 +3874,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   pc_tree->partitioning = PARTITION_NONE;
 
+#if 0
   if (cpi->sf.ml_var_partition_pruning && !frame_is_intra_only(cm)) {
     const int do_ml_var_partition_pruning =
         partition_none_allowed && do_split &&
@@ -3853,6 +3890,98 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
       for (i = 0; i < 4; ++i) pc_tree->split[i]->mv = pc_tree->mv;
     }
   }
+#endif
+
+#if 1
+  if (dump_data) {
+    get_redisue(cpi, x, bsize, pc_tree, mi_row, mi_col, pred_buf);
+  } else {
+    vp9_zero(pc_tree->mv);
+  }
+  if (bsize > BLOCK_8X8) {  // Store MV result as reference for subblocks.
+    for (i = 0; i < 4; ++i) pc_tree->split[i]->mv = pc_tree->mv;
+  }
+
+  if (dump_data) {
+    const int bs = 4 * num_4x4_blocks_wide_lookup[bsize];
+    const BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_SPLIT);
+
+    //vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
+    {
+      const uint8_t *src = x->plane[0].src.buf;
+      const int src_stride = x->plane[0].src.stride;
+      // Variance of whole block.
+      whole_var =
+          cpi->fn_ptr[bsize].vf(src, src_stride, pred, pred_stride, &whole_sse);
+      for (i = 0; i < 4; ++i) {
+        const int x_idx = (i & 1) * bs / 2;
+        const int y_idx = (i >> 1) * bs / 2;
+        const int src_offset = y_idx * src_stride + x_idx;
+        const int pred_offset = y_idx * pred_stride + x_idx;
+        // Variance of quarter block.
+        split_var_fast[i] =
+            cpi->fn_ptr[subsize].vf(src + src_offset, src_stride,
+                                    pred + pred_offset, pred_stride,
+                                    &split_sse_fast[i]);
+      }
+#if 0
+      if (bsize == BLOCK_16X16) {
+        FILE *fp = fopen("vp9_part_split_data.txt", "a");
+        const int bs = 4 * num_4x4_blocks_wide_lookup[bsize];
+
+        int r, c;
+        fprintf(fp, "\n");
+        for (r = 0; r < bs; ++r) {
+          for (c = 0; c < bs; ++c) {
+            fprintf(fp, "%3d ",
+                    src[r * src_stride + c] - pred[r * pred_stride + c]);
+          }
+          fprintf(fp, "\n");
+        }
+        fprintf(fp, "\n");
+        fclose(fp);
+      }
+#endif
+    }
+
+    if (bsize > BLOCK_8X8) {
+      const int mi_size = num_8x8_blocks_high_lookup[bsize];
+      for (i = 0; i < 4; i++) {
+        const int sub_mi_col = mi_col + (i & 1) * mi_size / 2;
+        const int sub_mi_row = mi_row + (i >> 1) * mi_size / 2;
+        //vp9_setup_src_planes(x, cpi->Source, sub_mi_row, sub_mi_col);
+        get_redisue(cpi, x, subsize, pc_tree->split[i], sub_mi_row, sub_mi_col,
+                    pred_buf);
+        //vp9_setup_src_planes(x, cpi->Source, sub_mi_row, sub_mi_col);
+        {
+          const uint8_t *src = x->plane[0].src.buf;
+          const int src_stride = x->plane[0].src.stride;
+          split_var_good[i] =
+              cpi->fn_ptr[subsize].vf(src, src_stride, pred, pred_stride,
+                                      &split_sse_good[i]);
+#if 0
+          if (bsize == BLOCK_16X16) {
+            FILE *fp = fopen("vp9_part_split_data.txt", "a");
+            const int bs = 4 * num_4x4_blocks_wide_lookup[subsize];
+
+            int r, c;
+            fprintf(fp, "\n");
+            for (r = 0; r < bs; ++r) {
+              for (c = 0; c < bs; ++c) {
+                fprintf(fp, "%3d ",
+                        src[r * src_stride + c] - pred[r * pred_stride + c]);
+              }
+              fprintf(fp, "\n");
+            }
+            fprintf(fp, "\n");
+            fclose(fp);
+          }
+#endif
+        }
+      }
+    }
+  }
+#endif
 
   // PARTITION_NONE
   if (partition_none_allowed) {
@@ -3880,6 +4009,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         best_rdc = this_rdc;
         if (bsize >= BLOCK_8X8) pc_tree->partitioning = PARTITION_NONE;
 
+#if 0
         if (cpi->sf.ml_partition_search_early_termination) {
           // Currently, the machine-learning based partition search early
           // termination is only used while bsize is 16x16, 32x32 or 64x64,
@@ -3893,7 +4023,9 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
             }
           }
         }
+#endif
 
+#if 0
         if ((do_split || do_rect) && !x->e_mbd.lossless && ctx->skippable) {
           const int use_ml_based_breakout =
               cpi->sf.use_ml_partition_search_breakout &&
@@ -3914,6 +4046,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
             }
           }
         }
+#endif
 
 #if CONFIG_FP_MB_STATS
         // Check if every 16x16 first pass block statistics has zero
@@ -4078,6 +4211,68 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     }
     restore_context(x, mi_row, mi_col, a, l, sa, sl, bsize);
   }
+
+#if 1
+  if (!partition_none_allowed || !do_split) dump_data = 0;
+  do {
+    FILE *fp;
+    const int bs = 4 * num_4x4_blocks_wide_lookup[bsize];
+
+    if (!dump_data) break;
+
+    fp = fopen("vp9_part_split_data.txt", "a");
+    if (!fp) break;
+
+    {
+      MODE_INFO *prev_mi =
+          cm->prev_mi_grid_visible[mi_col + cm->mi_stride * mi_row];
+      int above_bsize = -1;  // above_partitioning
+      int left_bsize = -1;   // left_partitioning
+      int last_bsize = -1;   // last_partitioning
+      int above_is_inter = 1;
+      int left_is_inter = 1;
+      int last_is_inter = 1;
+      const int left_in_image = !!xd->left_mi;
+      const int above_in_image = !!xd->above_mi;
+
+      if (above_in_image) {
+        above_bsize = xd->above_mi->sb_type;
+        above_is_inter = is_inter_block(xd->above_mi);
+      }
+      if (left_in_image) {
+        left_bsize = xd->left_mi->sb_type;
+        left_is_inter = is_inter_block(xd->left_mi);
+      }
+      if (prev_mi) {
+        last_bsize = prev_mi->sb_type;
+        last_is_inter = is_inter_block(prev_mi);
+      }
+
+      // best partition, bsize, above_bs, left_bs, last_bs,
+      // above_is_inter, left_is_inter, last_is_inter, quantizer(2)
+      fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+              pc_tree->partitioning,
+              bs, above_bsize, left_bsize, last_bsize,
+              above_is_inter, left_is_inter, last_is_inter,
+              vp9_dc_quant(cm->base_qindex, 0, cm->bit_depth),
+              vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth));
+    }
+    // variance
+    fprintf(fp, "%d,%d,",
+            VPXMIN(whole_var, INT_MAX),
+            VPXMIN(whole_sse, INT_MAX));
+    for (i = 0; i < 4; ++i) {
+      fprintf(fp, "%d,%d,%d,%d,",
+              VPXMIN(split_var_fast[i], INT_MAX),
+              VPXMIN(split_var_good[i], INT_MAX),
+              VPXMIN(split_sse_fast[i], INT_MAX),
+              VPXMIN(split_sse_good[i], INT_MAX));
+    }
+
+    fprintf(fp, "\n");
+    fclose(fp);
+  } while (0);
+#endif
 
   pc_tree->horizontal[0].skip_ref_frame_mask = 0;
   pc_tree->horizontal[1].skip_ref_frame_mask = 0;
