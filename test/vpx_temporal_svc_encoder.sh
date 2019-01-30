@@ -58,6 +58,12 @@ vpx_tsvc_encoder() {
         "${YUV_RAW_INPUT_HEIGHT}" "${timebase_num}" "${timebase_den}" \
         "${speed}" "${frame_drop_thresh}" "${error_resilient}" "${threads}" \
         "$@" ${devnull}
+      # Test for y4m input.
+      eval "${VPX_TEST_PREFIX}" "${encoder}" "${Y4M_720P_INPUT}" \
+        "${output_file}" "${codec}" "${Y4M_720P_INPUT_WIDTH}" \
+        "${Y4M_720P_INPUT_HEIGHT}" "${timebase_num}" "${timebase_den}" \
+        "${speed}" "${frame_drop_thresh}" "${error_resilient}" "${threads}" \
+        "$@" ${devnull}
     else
       eval "${VPX_TEST_PREFIX}" "${encoder}" "${YUV_RAW_INPUT}" \
         "${output_file}" "${codec}" "${YUV_RAW_INPUT_WIDTH}" \
