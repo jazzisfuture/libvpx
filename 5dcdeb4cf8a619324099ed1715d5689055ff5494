@@ -22,6 +22,30 @@
       "revId": "5dcdeb4cf8a619324099ed1715d5689055ff5494",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "531cf378_48a998d8",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 6036,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-01-31T02:42:06Z",
+      "side": 1,
+      "message": "Okay, the plan is to check whether ref_frame_idx \u003d\u003d -1 at high-level function like the caller of predict_mv_mode_arr() so that the lower-level functions need not to take care of the corner case.",
+      "parentUuid": "6bc1ee0a_95e96f69",
+      "range": {
+        "startLine": 6036,
+        "startChar": 4,
+        "endLine": 6036,
+        "endChar": 32
+      },
+      "revId": "5dcdeb4cf8a619324099ed1715d5689055ff5494",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
