@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6bc1ee0a_95e96f69",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 6036,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2019-01-31T00:22:54Z",
+      "side": 1,
+      "message": "Just want to check that ref_frame_idx \u003d\u003d -1 is expected in certain frames?\n\nCertain frames in a GOP might have some of its ref_frame[] index set as -1.\nFor example, the first ARF will only have its Golden frame index set as valid, its Last_frame and Alt_frame indexes are set as -1, since these two reference frames are not available for it in the tpl model. Whenever it is set as -1, it means the corresponding reference frame is not available.",
+      "range": {
+        "startLine": 6036,
+        "startChar": 4,
+        "endLine": 6036,
+        "endChar": 32
+      },
+      "revId": "5dcdeb4cf8a619324099ed1715d5689055ff5494",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
