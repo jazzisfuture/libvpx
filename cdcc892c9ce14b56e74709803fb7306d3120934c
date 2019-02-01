@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ac63bb2_68ab2fea",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-02-01T20:58:03Z",
+      "side": 1,
+      "message": "this can go now, no?",
+      "revId": "cdcc892c9ce14b56e74709803fb7306d3120934c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
