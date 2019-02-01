@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b68036bb_718d31ab",
+        "filename": "vp9/encoder/vp9_temporal_filter.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-02-01T20:53:27Z",
+      "side": 1,
+      "message": "this structure could be refined further as the else\u0027s aren\u0027t needed when other blocks return:\n\nhttp://clang.llvm.org/extra/clang-tidy/checks/readability-else-after-return.html",
+      "revId": "2c1f8d3d1a986052931e7a6a9f1ec214130d2510",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
