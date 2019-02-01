@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fb4d3b8b_07077fa3",
+        "filename": "vp9/encoder/vp9_temporal_filter.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-02-01T06:56:35Z",
+      "side": 1,
+      "message": "not necessary here, but these could return directly; that would address the dead store at line 212.",
+      "revId": "495a98ed93c2931ec9dc7b9803b017586ff4578c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8b11d474_6fd4e5c6",
+        "filename": "vp9/encoder/vp9_temporal_filter.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-02-01T06:56:35Z",
+      "side": 1,
+      "message": "this one can be const too",
+      "revId": "495a98ed93c2931ec9dc7b9803b017586ff4578c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
