@@ -465,7 +465,7 @@ void vp9_highbd_temporal_filter_apply_c(
   for (i = 0, k = 0; i < block_height; i++) {
     for (j = 0; j < block_width; j++, k++) {
       int pixel_value = frame2[i * (int)block_width + j];
-      int filter_weight =
+      const int filter_weight =
           get_filter_weight(i, j, block_height, block_width, blk_fw, use_32x32);
 
       int idx, idy, index = 0;
