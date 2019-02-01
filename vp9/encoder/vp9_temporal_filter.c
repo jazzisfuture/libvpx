@@ -209,24 +209,21 @@ static INLINE int get_filter_weight(unsigned int i, unsigned int j,
                                     unsigned int block_height,
                                     unsigned int block_width,
                                     const int *const blk_fw, int use_32x32) {
-  int filter_weight = 0;
-
   if (use_32x32)
     // blk_fw[0] ~ blk_fw[3] are the same.
     return blk_fw[0];
 
   if (i < block_height / 2) {
     if (j < block_width / 2)
-      filter_weight = blk_fw[0];
+      return blk_fw[0];
     else
-      filter_weight = blk_fw[1];
+      return blk_fw[1];
   } else {
     if (j < block_width / 2)
-      filter_weight = blk_fw[2];
+      return blk_fw[2];
     else
-      filter_weight = blk_fw[3];
+      return blk_fw[3];
   }
-  return filter_weight;
 }
 
 void vp9_apply_temporal_filter_c(
@@ -280,7 +277,7 @@ void vp9_apply_temporal_filter_c(
   for (i = 0, k = 0, m = 0; i < block_height; i++) {
     for (j = 0; j < block_width; j++) {
       const int pixel_value = y_pred[i * y_buf_stride + j];
-      int filter_weight =
+      const int filter_weight =
           get_filter_weight(i, j, block_height, block_width, blk_fw, use_32x32);
 
       // non-local mean approach
@@ -465,7 +462,7 @@ void vp9_highbd_temporal_filter_apply_c(
   for (i = 0, k = 0; i < block_height; i++) {
     for (j = 0; j < block_width; j++, k++) {
       int pixel_value = frame2[i * (int)block_width + j];
-      int filter_weight =
+      const int filter_weight =
           get_filter_weight(i, j, block_height, block_width, blk_fw, use_32x32);
 
       int idx, idy, index = 0;
