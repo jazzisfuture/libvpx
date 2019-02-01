@@ -16,6 +16,24 @@
       "revId": "cdcc892c9ce14b56e74709803fb7306d3120934c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "012bdfe2_266269b1",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1289407
+      },
+      "writtenOn": "2019-02-01T21:57:56Z",
+      "side": 1,
+      "message": "IVF_FRAME_HDR_SZ and IVF_FILE_HDR_SZ are being used from there.\nShall I define them here and remove tools_common.h?",
+      "parentUuid": "9ac63bb2_68ab2fea",
+      "revId": "cdcc892c9ce14b56e74709803fb7306d3120934c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
