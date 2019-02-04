@@ -657,6 +657,9 @@ int main(int argc, char **argv) {
     die("Invalid number of arguments");
   }
 
+  input_ctx.filename = argv[1];
+  open_input_file(&input_ctx);
+
 #if CONFIG_VP9_HIGHBITDEPTH
   switch (strtol(argv[argc - 1], NULL, 0)) {
     case 8:
@@ -673,14 +676,22 @@ int main(int argc, char **argv) {
       break;
     default: die("Invalid bit depth (8, 10, 12) %s", argv[argc - 1]);
   }
-  if (!vpx_img_alloc(
-          &raw, bit_depth == VPX_BITS_8 ? VPX_IMG_FMT_I420 : VPX_IMG_FMT_I42016,
-          width, height, 32)) {
-    die("Failed to allocate image", width, height);
+
+  // Y4M reader has its own allocation.
+  if (input_ctx.file_type != FILE_TYPE_Y4M) {
+    if (!vpx_img_alloc(
+            &raw,
+            bit_depth == VPX_BITS_8 ? VPX_IMG_FMT_I420 : VPX_IMG_FMT_I42016,
+            width, height, 32)) {
+      die("Failed to allocate image", width, height);
+    }
   }
 #else
-  if (!vpx_img_alloc(&raw, VPX_IMG_FMT_I420, width, height, 32)) {
-    die("Failed to allocate image", width, height);
+  // Y4M reader has its own allocation.
+  if (input_ctx.file_type != FILE_TYPE_Y4M) {
+    if (!vpx_img_alloc(&raw, VPX_IMG_FMT_I420, width, height, 32)) {
+      die("Failed to allocate image", width, height);
+    }
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -761,9 +772,6 @@ int main(int argc, char **argv) {
   // Target bandwidth for the whole stream.
   // Set to layer_target_bitrate for highest layer (total bitrate).
   cfg.rc_target_bitrate = rc.layer_target_bitrate[cfg.ts_number_layers - 1];
-
-  input_ctx.filename = argv[1];
-  open_input_file(&input_ctx);
 
   if (input_ctx.file_type == FILE_TYPE_Y4M) {
     if (input_ctx.width != cfg.g_w || input_ctx.height != cfg.g_h) {
@@ -962,7 +970,10 @@ int main(int argc, char **argv) {
   // Try to rewrite the output file headers with the actual frame count.
   for (i = 0; i < cfg.ts_number_layers; ++i) vpx_video_writer_close(outfile[i]);
 
-  vpx_img_free(&raw);
+  if (input_ctx.file_type != FILE_TYPE_Y4M) {
+    vpx_img_free(&raw);
+  }
+
 #if ROI_MAP
   free(roi.roi_map);
 #endif
