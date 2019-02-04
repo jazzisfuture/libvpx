@@ -3298,13 +3298,19 @@ static void ml_prune_rect_partition(VP9_COMP *const cpi, MACROBLOCK *const x,
                                     BLOCK_SIZE bsize,
                                     const PC_TREE *const pc_tree,
                                     int *allow_horz, int *allow_vert,
-                                    int64_t ref_rd, int mi_row, int mi_col) {
+                                    int64_t ref_rd, int mi_row, int mi_col,
+                                    uint8_t *pred_buf, int pred_buf_filled,
+                                    unsigned int *block_var) {
   const NN_CONFIG *nn_config = NULL;
   float score[LABELS] = {
     0.0f,
   };
   int thresh = -1;
   int i;
+
+  (void)pred_buf;
+  (void)pred_buf_filled;
+  (void)block_var;
 
   if (ref_rd <= 0 || ref_rd > 1000000000) return;
 
@@ -3484,23 +3490,12 @@ static void simple_motion_search(const VP9_COMP *const cpi, MACROBLOCK *const x,
 // Features used: QP; spatial block size contexts; variance of prediction
 // residue after simple_motion_search.
 #define FEATURES 12
-static void ml_predict_var_rd_paritioning(const VP9_COMP *const cpi,
-                                          MACROBLOCK *const x,
-                                          PC_TREE *const pc_tree,
-                                          BLOCK_SIZE bsize, int mi_row,
-                                          int mi_col, int *none, int *split) {
+static void ml_predict_var_rd_paritioning(
+    const VP9_COMP *const cpi, MACROBLOCK *const x, PC_TREE *const pc_tree,
+    BLOCK_SIZE bsize, int mi_row, int mi_col, uint8_t *pred_buf,
+    int *pred_buf_filled, unsigned int *block_var, int *none, int *split) {
   const VP9_COMMON *const cm = &cpi->common;
   const NN_CONFIG *nn_config = NULL;
-#if CONFIG_VP9_HIGHBITDEPTH
-  MACROBLOCKD *xd = &x->e_mbd;
-  DECLARE_ALIGNED(16, uint8_t, pred_buffer[64 * 64 * 2]);
-  uint8_t *const pred_buf = (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
-                                ? (CONVERT_TO_BYTEPTR(pred_buffer))
-                                : pred_buffer;
-#else
-  DECLARE_ALIGNED(16, uint8_t, pred_buffer[64 * 64]);
-  uint8_t *const pred_buf = pred_buffer;
-#endif  // CONFIG_VP9_HIGHBITDEPTH
   const int speed = cpi->oxcf.speed;
   float thresh = 0.0f;
 
@@ -3543,6 +3538,7 @@ static void ml_predict_var_rd_paritioning(const VP9_COMP *const cpi,
       ref_mv = pc_tree->mv;
     vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
     simple_motion_search(cpi, x, bsize, mi_row, mi_col, ref_mv, ref, pred_buf);
+    *pred_buf_filled = 1;
     pc_tree->mv = x->e_mbd.mi[0]->mv[0].as_mv;
   }
 
@@ -3589,6 +3585,7 @@ static void ml_predict_var_rd_paritioning(const VP9_COMP *const cpi,
       features[feature_idx++] = (float)b_width_log2_lookup[left_bsize];
       features[feature_idx++] = (float)b_height_log2_lookup[left_bsize];
       features[feature_idx++] = logf((float)var + 1.0f);
+      block_var[0] = var;
       for (i = 0; i < 4; ++i) {
         const int x_idx = (i & 1) * bs / 2;
         const int y_idx = (i >> 1) * bs / 2;
@@ -3600,6 +3597,7 @@ static void ml_predict_var_rd_paritioning(const VP9_COMP *const cpi,
                                     pred + pred_offset, pred_stride, &sse);
         const float var_ratio = (var == 0) ? 1.0f : factor * (float)sub_var;
         features[feature_idx++] = var_ratio;
+        block_var[i + 1] = sub_var;
       }
     }
     assert(feature_idx == FEATURES);
@@ -3721,6 +3719,22 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
   // Ref frames picked in the [i_th] quarter subblock during square partition
   // RD search. It may be used to prune ref frame selection of rect partitions.
   uint8_t ref_frames_used[4] = { 0, 0, 0, 0 };
+
+  // Buffer used to store the prediction obtained by simple motion search.
+  // It is used by the ML models for partition search speedup.
+#if CONFIG_VP9_HIGHBITDEPTH
+  DECLARE_ALIGNED(16, uint8_t, pred_buffer[64 * 64 * 2]);
+  uint8_t *const pred_buf = (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH)
+                                ? (CONVERT_TO_BYTEPTR(pred_buffer))
+                                : pred_buffer;
+#else
+  DECLARE_ALIGNED(16, uint8_t, pred_buffer[64 * 64]);
+  uint8_t *const pred_buf = pred_buffer;
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  int pred_buf_filled = 0;
+  // Variance of the residue block after simple motion search.
+  // 0: whole block; 1~4: quarter sub-blocks.
+  unsigned int block_var[5];
 
   (void)*tp_orig;
 
@@ -3856,6 +3870,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
         mi_col + num_8x8_blocks_wide_lookup[bsize] <= cm->mi_cols;
     if (do_ml_var_partition_pruning) {
       ml_predict_var_rd_paritioning(cpi, x, pc_tree, bsize, mi_row, mi_col,
+                                    pred_buf, &pred_buf_filled, block_var,
                                     &partition_none_allowed, &do_split);
     } else {
       vp9_zero(pc_tree->mv);
@@ -4113,7 +4128,7 @@ static void rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     if (do_ml_rect_partition_pruning) {
       ml_prune_rect_partition(cpi, x, bsize, pc_tree, &partition_horz_allowed,
                               &partition_vert_allowed, best_rdc.rdcost, mi_row,
-                              mi_col);
+                              mi_col, pred_buf, pred_buf_filled, block_var);
     }
   }
 
