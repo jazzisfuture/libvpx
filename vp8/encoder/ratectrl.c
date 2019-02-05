@@ -1264,6 +1264,13 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
     }
   }
 
+  // Limit decrease in Q for 1 pass CBR screen content mode.
+  if (cpi->common.frame_type != KEY_FRAME && cpi->pass == 0 &&
+      cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
+      cpi->oxcf.screen_content_mode && cpi->last_q[1] - Q > 10) {
+    Q = cpi->last_q[1]- 10;
+  }
+
   return Q;
 }
 
