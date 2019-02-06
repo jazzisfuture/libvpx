@@ -6040,11 +6040,6 @@ static int get_block_src_pred_buf(MACROBLOCKD *xd, GF_PICTURE *gf_picture,
 
 #define kMvPreCheckLines 5
 #define kMvPreCheckSize 15
-#define ZERO_MV_MODE 0
-#define NEW_MV_MODE 1
-#define NEAREST_MV_MODE 2
-#define NEAR_MV_MODE 3
-#define MAX_MV_MODE 4
 
 #define MV_REF_POS_NUM 3
 POSITION mv_ref_pos[MV_REF_POS_NUM] = {
