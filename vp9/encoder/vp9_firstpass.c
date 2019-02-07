@@ -2775,6 +2775,7 @@ static int test_candidate_kf(TWO_PASS *twopass,
        (slide_transition(this_frame, last_frame, next_frame)) ||
        (((this_frame->coded_error > (next_frame->coded_error * 1.1)) &&
          (this_frame->coded_error > (last_frame->coded_error * 1.1))) &&
+        (pcnt_intra - this_frame->pcnt_intra_low > 0.1) &&
         (pcnt_intra > MIN_INTRA_LEVEL) &&
         ((pcnt_intra + this_frame->pcnt_neutral) > 0.5) &&
         ((this_frame->intra_error /
