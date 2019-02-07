@@ -436,8 +436,8 @@ void vp9_highbd_apply_temporal_filter_c(
   }
 
   // Apply the filter to luma
-  for (row = 0; row < (int)block_height; row++) {
-    for (col = 0; col < (int)block_width; col++) {
+  for (row = 0; row < block_height; row++) {
+    for (col = 0; col < block_width; col++) {
       const int uv_row = row >> ss_y;
       const int uv_col = col >> ss_x;
       const int filter_weight = get_filter_weight(
@@ -480,8 +480,8 @@ void vp9_highbd_apply_temporal_filter_c(
   }
 
   // Apply the filter to chroma
-  for (uv_row = 0; uv_row < (int)uv_block_height; uv_row++) {
-    for (uv_col = 0; uv_col < (int)uv_block_width; uv_col++) {
+  for (uv_row = 0; uv_row < uv_block_height; uv_row++) {
+    for (uv_col = 0; uv_col < uv_block_width; uv_col++) {
       const int y_row = uv_row << ss_y;
       const int y_col = uv_col << ss_x;
       const int filter_weight = get_filter_weight(
