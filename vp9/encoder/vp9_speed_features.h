@@ -151,10 +151,8 @@ typedef enum {
   // Use non-fixed partitions based on source variance.
   SOURCE_VAR_BASED_PARTITION,
 
-#if CONFIG_ML_VAR_PARTITION
   // Make partition decisions with machine learning models.
   ML_BASED_PARTITION
-#endif  // CONFIG_ML_VAR_PARTITION
 } PARTITION_SEARCH_TYPE;
 
 typedef enum {
@@ -512,17 +510,17 @@ typedef struct SPEED_FEATURES {
   PARTITION_SEARCH_BREAKOUT_THR partition_search_breakout_thr;
 
   // Use ML-based partition search early breakout.
-  int use_ml_partition_search_breakout;
+  int rd_use_ml_partition_search_breakout;
   // Higher values mean more aggressiveness for partition search breakout that
   // results in better encoding  speed but worse compression performance.
-  float ml_partition_search_breakout_thresh[3];
+  float rd_ml_partition_search_breakout_thresh[3];
 
   // Machine-learning based partition search early termination
-  int ml_partition_search_early_termination;
+  int rd_ml_partition_search_early_termination;
 
   // Machine-learning based partition search pruning using prediction residue
   // variance.
-  int ml_var_partition_pruning;
+  int rd_ml_var_partition_pruning;
 
   // Allow skipping partition search for still image frame
   int allow_partition_search_skip;
@@ -598,6 +596,9 @@ typedef struct SPEED_FEATURES {
 
   // Search method used by temporal filtering in full_pixel_motion_search.
   SEARCH_METHODS temporal_filter_search_method;
+
+  // Use machine learning based partition search.
+  int nonrd_use_ml_partition;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
