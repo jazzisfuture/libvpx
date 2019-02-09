@@ -213,7 +213,7 @@ static void set_segment_index(VP9_COMP *cpi, MACROBLOCK *const x, int mi_row,
                                    &max_energy);
         } else {
           min_energy = bsize <= BLOCK_16X16 ? x->mb_energy
-                                            : vp9_block_energy(cpi, x, bsize);
+            : vp9_block_energy(cpi, x, bsize);
         }
         mi->segment_id = vp9_vaq_segment_id(min_energy);
       } else {
@@ -1917,7 +1917,8 @@ static void set_segment_rdmult(VP9_COMP *const cpi, MACROBLOCK *const x,
     return;
   }
 
-  x->rdmult = vp9_compute_rd_mult(cpi, segment_qindex + cm->y_dc_delta_q);
+  //x->rdmult = vp9_compute_rd_mult(cpi, segment_qindex + cm->y_dc_delta_q);
+  x->rdmult = vp9_compute_rd_mult(cpi, cm->base_qindex + cm->y_dc_delta_q);
 }
 
 static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,

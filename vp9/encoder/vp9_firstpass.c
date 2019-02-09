@@ -39,8 +39,8 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vpx_dsp/variance.h"
 
-#define OUTPUT_FPF 0
-#define ARF_STATS_OUTPUT 0
+#define OUTPUT_FPF 1
+#define ARF_STATS_OUTPUT 1
 #define COMPLEXITY_STATS_OUTPUT 0
 
 #define FIRST_PASS_Q 10.0
@@ -2654,6 +2654,9 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Calculate the bits to be allocated to the gf/arf group as a whole
   gf_group_bits = calculate_total_gf_group_bits(cpi, gf_group_err);
+
+  // Store the average noise level measured for the group.
+  twopass->gf_group.group_noise_energy = gf_group_noise / rc->baseline_gf_interval;
 
   // Calculate an estimate of the maxq needed for the group.
   // We are more aggressive about correcting for sections

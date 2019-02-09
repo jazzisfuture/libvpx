@@ -2999,8 +2999,8 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
 // on the relative variance of the source and reconstruction.
 #define VERY_LOW_VAR_THRESH 2
 #define LOW_VAR_THRESH 5
-#define VAR_MULT 100
-static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 100 };
+#define VAR_MULT 250
+static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 250 };
 
 static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
                                    BLOCK_SIZE bsize, int64_t *this_rd,
@@ -3013,6 +3013,9 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   unsigned int absvar_diff = 0;
   unsigned int var_factor = 0;
   unsigned int adj_max;
+  unsigned int low_var_thresh = LOW_VAR_THRESH;
+  double noise_factor = 1.0;
+
   vp9e_tune_content content_type = cpi->oxcf.content;
 
   if (*this_rd == INT64_MAX) return;
@@ -3054,7 +3057,13 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   // pixel (see above) so will likely be much larger.
   src_rec_min = VPXMIN(source_variance, rec_variance);
 
-  if (src_rec_min > LOW_VAR_THRESH) return;
+  // Higher variance threshold for proceeding in FILM mode
+  if (content_type == VP9E_CONTENT_FILM) {
+    noise_factor = (double)cpi->twopass.gf_group.group_noise_energy / 250.0;
+    low_var_thresh = (unsigned int)(low_var_thresh * 2 * noise_factor);
+  }
+
+  if (src_rec_min > low_var_thresh) return;
 
   absvar_diff = (src_variance > rec_variance) ? (src_variance - rec_variance)
                                               : (rec_variance - src_variance);
@@ -3068,7 +3077,8 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   *this_rd += (*this_rd * var_factor) / 100;
 
   if (content_type == VP9E_CONTENT_FILM) {
-    if (src_rec_min <= VERY_LOW_VAR_THRESH) {
+    unsigned int v_low_var_thresh = VERY_LOW_VAR_THRESH * noise_factor;
+    if (src_rec_min <= v_low_var_thresh) {
       if (ref_frame == INTRA_FRAME) *this_rd *= 2;
       if (bsize > BLOCK_16X16) *this_rd *= 2;
     }

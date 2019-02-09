@@ -142,6 +142,7 @@ typedef struct {
   int gf_group_size;
   int max_layer_depth;
   int allowed_max_layer_depth;
+  int group_noise_energy;
 } GF_GROUP;
 
 typedef struct {
