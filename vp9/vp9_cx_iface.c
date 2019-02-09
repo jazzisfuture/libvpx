@@ -514,6 +514,7 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->two_pass_vbrmin_section = cfg->rc_2pass_vbr_minsection_pct;
   oxcf->two_pass_vbrmax_section = cfg->rc_2pass_vbr_maxsection_pct;
   oxcf->vbr_corpus_complexity = cfg->rc_2pass_vbr_corpus_complexity;
+  oxcf->vbr_corpus_complexity = 15; // force corpus vbr with setting 15 for experiment
 
   oxcf->auto_key =
       cfg->kf_mode == VPX_KF_AUTO && cfg->kf_min_dist != cfg->kf_max_dist;
