@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e9f9bbd_a5decdfe",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2562,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2019-02-10T05:17:24Z",
+      "side": 1,
+      "message": "If one of the component is large enough, shall we consider to discount_newmv cost, and hence return 1 here (?)",
+      "range": {
+        "startLine": 2562,
+        "startChar": 37,
+        "endLine": 2562,
+        "endChar": 39
+      },
+      "revId": "1bec04b49cb91c55918c4d4d77a5b2c7f67a4442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
