@@ -2292,7 +2292,7 @@ static const uint8_t *decode_tiles_row_wise_mt(VP9Decoder *pbi,
   const VPxWorkerInterface *const winterface = vpx_get_worker_interface();
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int tile_rows = 1 << cm->log2_tile_rows;
-  const int num_workers = pbi->max_threads;
+  const int num_workers = VPXMIN(VPXMIN(pbi->max_threads, tile_cols << 2), 8);
   int i, n;
   int col;
   int corrupted = 0;
