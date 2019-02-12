@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c0eb8dcb_59838455",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 784,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-02-12T03:59:55Z",
+      "side": 1,
+      "message": "It may be possible later to embed this check in find_mismatch() to avoid duplicating this logic everywhere",
+      "revId": "7bee33bd77bdd980542b423fcb75e682ec881dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "80a0be08_b46124fc",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1186,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-02-12T03:59:55Z",
+      "side": 1,
+      "message": "seems like these first two conditions could be swapped if only to make the logic a bit simpler to understand with the negative check",
+      "revId": "7bee33bd77bdd980542b423fcb75e682ec881dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9ebd2d2_5fb77e62",
+        "filename": "tools_common.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 587,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-02-12T03:59:55Z",
+      "side": 1,
+      "message": "this is just shifting code around so could be done later, but note there is a VPXMIN() too",
+      "revId": "7bee33bd77bdd980542b423fcb75e682ec881dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
