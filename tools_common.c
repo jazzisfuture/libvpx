@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "./tools_common.h"
+#include "vpx_dsp/vpx_dsp_common.h"
 
 #if CONFIG_VP8_ENCODER || CONFIG_VP9_ENCODER
 #include "vpx/vp8cx.h"
@@ -584,8 +585,6 @@ int compare_img(const vpx_image_t *const img1, const vpx_image_t *const img2) {
   return match;
 }
 
-#define mmin(a, b) ((a) < (b) ? (a) : (b))
-
 #if CONFIG_VP9_HIGHBITDEPTH
 void find_mismatch_high(const vpx_image_t *const img1,
                         const vpx_image_t *const img2, int yloc[4], int uloc[4],
@@ -609,8 +608,8 @@ void find_mismatch_high(const vpx_image_t *const img1,
   for (i = 0, match = 1; match && i < img1->d_h; i += bsize) {
     for (j = 0; match && j < img1->d_w; j += bsize) {
       int k, l;
-      const int si = mmin(i + bsize, img1->d_h) - i;
-      const int sj = mmin(j + bsize, img1->d_w) - j;
+      const int si = VPXMIN(i + bsize, img1->d_h) - i;
+      const int sj = VPXMIN(j + bsize, img1->d_w) - j;
       for (k = 0; match && k < si; ++k) {
         for (l = 0; match && l < sj; ++l) {
           if (*(plane1 + (i + k) * stride1 + j + l) !=
@@ -635,8 +634,8 @@ void find_mismatch_high(const vpx_image_t *const img1,
   for (i = 0, match = 1; match && i < c_h; i += bsizey) {
     for (j = 0; match && j < c_w; j += bsizex) {
       int k, l;
-      const int si = mmin(i + bsizey, c_h - i);
-      const int sj = mmin(j + bsizex, c_w - j);
+      const int si = VPXMIN(i + bsizey, c_h - i);
+      const int sj = VPXMIN(j + bsizex, c_w - j);
       for (k = 0; match && k < si; ++k) {
         for (l = 0; match && l < sj; ++l) {
           if (*(plane1 + (i + k) * stride1 + j + l) !=
@@ -661,8 +660,8 @@ void find_mismatch_high(const vpx_image_t *const img1,
   for (i = 0, match = 1; match && i < c_h; i += bsizey) {
     for (j = 0; match && j < c_w; j += bsizex) {
       int k, l;
-      const int si = mmin(i + bsizey, c_h - i);
-      const int sj = mmin(j + bsizex, c_w - j);
+      const int si = VPXMIN(i + bsizey, c_h - i);
+      const int sj = VPXMIN(j + bsizex, c_w - j);
       for (k = 0; match && k < si; ++k) {
         for (l = 0; match && l < sj; ++l) {
           if (*(plane1 + (i + k) * stride1 + j + l) !=
@@ -696,8 +695,8 @@ void find_mismatch(const vpx_image_t *const img1, const vpx_image_t *const img2,
   for (i = 0, match = 1; match && i < img1->d_h; i += bsize) {
     for (j = 0; match && j < img1->d_w; j += bsize) {
       int k, l;
-      const int si = mmin(i + bsize, img1->d_h) - i;
-      const int sj = mmin(j + bsize, img1->d_w) - j;
+      const int si = VPXMIN(i + bsize, img1->d_h) - i;
+      const int sj = VPXMIN(j + bsize, img1->d_w) - j;
       for (k = 0; match && k < si; ++k) {
         for (l = 0; match && l < sj; ++l) {
           if (*(img1->planes[VPX_PLANE_Y] +
@@ -722,8 +721,8 @@ void find_mismatch(const vpx_image_t *const img1, const vpx_image_t *const img2,
   for (i = 0, match = 1; match && i < c_h; i += bsizey) {
     for (j = 0; match && j < c_w; j += bsizex) {
       int k, l;
-      const int si = mmin(i + bsizey, c_h - i);
-      const int sj = mmin(j + bsizex, c_w - j);
+      const int si = VPXMIN(i + bsizey, c_h - i);
+      const int sj = VPXMIN(j + bsizex, c_w - j);
       for (k = 0; match && k < si; ++k) {
         for (l = 0; match && l < sj; ++l) {
           if (*(img1->planes[VPX_PLANE_U] +
@@ -747,8 +746,8 @@ void find_mismatch(const vpx_image_t *const img1, const vpx_image_t *const img2,
   for (i = 0, match = 1; match && i < c_h; i += bsizey) {
     for (j = 0; match && j < c_w; j += bsizex) {
       int k, l;
-      const int si = mmin(i + bsizey, c_h - i);
-      const int sj = mmin(j + bsizex, c_w - j);
+      const int si = VPXMIN(i + bsizey, c_h - i);
+      const int sj = VPXMIN(j + bsizex, c_w - j);
       for (k = 0; match && k < si; ++k) {
         for (l = 0; match && l < sj; ++l) {
           if (*(img1->planes[VPX_PLANE_V] +
