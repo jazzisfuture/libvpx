@@ -996,7 +996,6 @@ struct estimate_block_intra_args {
   int skippable;
   RD_COST *rdc;
 };
-
 static void estimate_block_intra(int plane, int block, int row, int col,
                                  BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
                                  void *arg) {

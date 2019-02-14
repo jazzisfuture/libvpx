@@ -2961,10 +2961,15 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
 
 // This function is designed to apply a bias or adjustment to an rd value based
 // on the relative variance of the source and reconstruction.
-#define VERY_LOW_VAR_THRESH 2
-#define LOW_VAR_THRESH 5
-#define VAR_MULT 100
-static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 100 };
+#define VERY_LOW_VAR_THRESH 5
+#define LOW_VAR_THRESH 10
+#define VAR_MULT 250
+// static intra_size_bias[BLOCK_SIZES] = { 2, 3, 3, 4, 5, 5, 6, 8, 8, 12, 14, 14, 16 };
+static intra_size_bias[BLOCK_SIZES] = { 6, 7, 7, 8, 9, 9, 10, 12, 12, 14, 16, 16, 16 };
+
+static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 250 };
+//#define VAR_MULT 100
+//static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 100 };
 
 static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
                                    BLOCK_SIZE bsize, int64_t *this_rd,
@@ -2974,7 +2979,7 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   unsigned int rec_variance;
   unsigned int src_variance;
   unsigned int src_rec_min;
-  unsigned int absvar_diff = 0;
+  unsigned int var_diff = 0;
   unsigned int var_factor = 0;
   unsigned int adj_max;
   vp9e_tune_content content_type = cpi->oxcf.content;
@@ -3020,21 +3025,22 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
 
   if (src_rec_min > LOW_VAR_THRESH) return;
 
-  absvar_diff = (src_variance > rec_variance) ? (src_variance - rec_variance)
-                                              : (rec_variance - src_variance);
+  // We care more when the reconstruction has lower variance.
+  var_diff = (src_variance > rec_variance) ? (src_variance - rec_variance) * 2
+                                           : (rec_variance - src_variance) / 4;
 
   adj_max = max_var_adjust[content_type];
 
   var_factor =
-      (unsigned int)((int64_t)VAR_MULT * absvar_diff) / VPXMAX(1, src_variance);
+      (unsigned int)((int64_t)VAR_MULT * var_diff) / VPXMAX(1, src_variance);
   var_factor = VPXMIN(adj_max, var_factor);
 
   *this_rd += (*this_rd * var_factor) / 100;
 
   if (content_type == VP9E_CONTENT_FILM) {
     if (src_rec_min <= VERY_LOW_VAR_THRESH) {
-      if (ref_frame == INTRA_FRAME) *this_rd *= 2;
-      if (bsize > BLOCK_16X16) *this_rd *= 2;
+      if (ref_frame == INTRA_FRAME) *this_rd += (*this_rd * intra_size_bias[bsize]) / 4;
+      else if (ref_frame == LAST_FRAME) *this_rd += (*this_rd * 10) / 8;
     }
   }
 }
@@ -4349,6 +4355,11 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, TileDataEnc *tile_data,
       for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
         best_filter_rd[i] = VPXMIN(best_filter_rd[i], this_rd);
     }
+
+    // Apply an adjustment to the rd value based on the similarity of the
+    // source variance and reconstructed variance.
+    rd_variance_adjustment(cpi, x, bsize, &this_rd, ref_frame,
+                           x->source_variance);
 
     // Did this mode help.. i.e. is it the new best mode
     if (this_rd < best_rd || x->skip) {

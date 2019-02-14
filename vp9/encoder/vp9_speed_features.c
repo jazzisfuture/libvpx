@@ -24,7 +24,8 @@ static MESH_PATTERN best_quality_mesh_pattern[MAX_MESH_STEP] = {
 #define MESH_DENSITY_LEVELS 3
 static MESH_PATTERN
     good_quality_mesh_patterns[MESH_DENSITY_LEVELS][MAX_MESH_STEP] = {
-      { { 64, 8 }, { 28, 4 }, { 15, 1 }, { 7, 1 } },
+      { { 64, 8 },{ 28, 4 },{ 15, 1 },{ 7, 1 } },
+      //{ { 256, 16 },{ 64, 8 },{ 32, 4 },{ 15, 1 } },
       { { 64, 8 }, { 14, 2 }, { 7, 1 }, { 7, 1 } },
       { { 64, 16 }, { 24, 8 }, { 12, 4 }, { 7, 1 } },
     };
@@ -227,6 +228,7 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
   } else {
     sf->exhaustive_searches_thresh = INT_MAX;
   }
+  sf->exhaustive_searches_thresh = (1 << 20);
 
   for (i = 0; i < MAX_MESH_STEP; ++i) {
     const int mesh_density_level = 0;
@@ -261,8 +263,8 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
     sf->quant_opt_thresh = qopt_thresholds[(speed < 6) ? speed : 5];
     sf->less_rectangular_check = 1;
     sf->use_rd_breakout = 1;
-    sf->adaptive_motion_search = 1;
-    sf->mv.auto_mv_step_size = 1;
+    sf->adaptive_motion_search = 0;
+    sf->mv.auto_mv_step_size = 0;
     sf->adaptive_rd_thresh = 2;
     sf->mv.subpel_search_level = 1;
     sf->mode_skip_start = 10;
@@ -278,8 +280,10 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
     sf->recode_tolerance_high = 30;
 
     sf->exhaustive_searches_thresh =
-        (cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ? (1 << 23)
+        (cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ? (1 << 22)
                                                                 : INT_MAX;
+    sf->exhaustive_searches_thresh = (1 << 20);
+
     sf->use_accurate_subpel_search = USE_4_TAPS;
   }
 
@@ -306,7 +310,7 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
     sf->auto_min_max_partition_size = RELAXED_NEIGHBORING_MIN_MAX;
     sf->recode_tolerance_low = 15;
     sf->recode_tolerance_high = 45;
-    sf->enhanced_full_pixel_motion_search = 0;
+    //sf->enhanced_full_pixel_motion_search = 0;
     sf->prune_ref_frame_for_rect_partitions = 0;
     sf->ml_prune_rect_partition_threhold[1] = -1;
     sf->ml_prune_rect_partition_threhold[2] = -1;
@@ -868,7 +872,7 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   sf->mv.reduce_first_step_size = 0;
   sf->coeff_prob_appx_step = 1;
   sf->mv.auto_mv_step_size = 0;
-  sf->mv.fullpel_search_step_param = 6;
+  sf->mv.fullpel_search_step_param = 8;
   sf->comp_inter_joint_search_thresh = BLOCK_4X4;
   sf->tx_size_search_method = USE_FULL_RD;
   sf->use_lp32x32fdct = 0;
@@ -956,6 +960,9 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
   sf->exhaustive_searches_thresh =
       (cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ? (1 << 20)
                                                               : INT_MAX;
+  sf->exhaustive_searches_thresh = (1 << 20);
+
+
   if (cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) {
     for (i = 0; i < MAX_MESH_STEP; ++i) {
       sf->mesh_patterns[i].range = best_quality_mesh_pattern[i].range;
