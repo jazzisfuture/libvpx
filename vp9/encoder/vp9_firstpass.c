@@ -39,8 +39,8 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vpx_dsp/variance.h"
 
-#define OUTPUT_FPF 0
-#define ARF_STATS_OUTPUT 0
+#define OUTPUT_FPF 1
+#define ARF_STATS_OUTPUT 1
 #define COMPLEXITY_STATS_OUTPUT 0
 
 #define FIRST_PASS_Q 10.0
