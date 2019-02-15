@@ -5371,7 +5371,13 @@ int vp8_set_active_map(VP8_COMP *cpi, unsigned char *map, unsigned int rows,
                        unsigned int cols) {
   if ((int)rows == cpi->common.mb_rows && (int)cols == cpi->common.mb_cols) {
     if (map) {
+      int i;
+      int num_inactive = 0;
       memcpy(cpi->active_map, map, rows * cols);
+      cpi->frame_is_static = 0;
+      for (i = 0; i < rows * cols; i++)
+        if (cpi->active_map[i] == 0) num_inactive++;
+      if (num_inactive == rows * cols) cpi->frame_is_static = 1;
       cpi->active_map_enabled = 1;
     } else {
       cpi->active_map_enabled = 0;
