@@ -509,6 +509,8 @@ typedef struct VP8_COMP {
   // Measure of average squared difference between source and denoised signal.
   int mse_source_denoised;
 
+  int frame_is_static;
+
   int force_maxqp;
   int frames_since_last_drop_overshoot;
   int last_pred_err_mb;
