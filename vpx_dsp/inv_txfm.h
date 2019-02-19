@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 static INLINE tran_high_t check_range(tran_high_t input) {
-#if CONFIG_COEFFICIENT_RANGE_CHECKING
+#if CONFIG_COEFFICIENT_RANGE_CHECKING && !CONFIG_VP9_ENCODER
   // For valid VP9 input streams, intermediate stage coefficients should always
   // stay within the range of a signed 16 bit integer. Coefficients can go out
   // of this range for invalid/corrupt VP9 streams. However, strictly checking
@@ -31,7 +31,7 @@ static INLINE tran_high_t check_range(tran_high_t input) {
   // --enable-coefficient-range-checking.
   assert(INT16_MIN <= input);
   assert(input <= INT16_MAX);
-#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING && !CONFIG_VP9_ENCODER
   return input;
 }
 
@@ -42,7 +42,7 @@ static INLINE tran_high_t dct_const_round_shift(tran_high_t input) {
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static INLINE tran_high_t highbd_check_range(tran_high_t input, int bd) {
-#if CONFIG_COEFFICIENT_RANGE_CHECKING
+#if CONFIG_COEFFICIENT_RANGE_CHECKING && !CONFIG_VP9_ENCODER
   // For valid highbitdepth VP9 streams, intermediate stage coefficients will
   // stay within the ranges:
   // - 8 bit: signed 16 bit integer
@@ -53,7 +53,7 @@ static INLINE tran_high_t highbd_check_range(tran_high_t input, int bd) {
   assert(int_min <= input);
   assert(input <= int_max);
   (void)int_min;
-#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING && !CONFIG_VP9_ENCODER
   (void)bd;
   return input;
 }
