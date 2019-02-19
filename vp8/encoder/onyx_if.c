@@ -5362,7 +5362,10 @@ int vp8_set_roimap(VP8_COMP *cpi, unsigned char *map, unsigned int rows,
   if (threshold[0] != 0 || threshold[1] != 0 || threshold[2] != 0 ||
       threshold[3] != 0)
     cpi->use_roi_static_threshold = 1;
-  cpi->cyclic_refresh_mode_enabled = 0;
+  // Disable cyclic refresh when delta_q is specified.
+  if (!(delta_q[0] == 0 && delta_q[1] == 0 && delta_q[2] == 0 &&
+        delta_q[3] == 0))
+    cpi->cyclic_refresh_mode_enabled = 0;
 
   return 0;
 }
