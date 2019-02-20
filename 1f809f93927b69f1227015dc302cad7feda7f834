@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f6c8d94b_d1cba0ca",
+        "filename": "configure",
+        "patchSetId": 2
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-02-20T01:24:02Z",
+      "side": 1,
+      "message": "you could swap the order here.",
+      "revId": "1f809f93927b69f1227015dc302cad7feda7f834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
