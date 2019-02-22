@@ -46,6 +46,30 @@
       "revId": "9c8ef187d257562e10049c3a26e586a65f89adc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "75d5362c_d9762ca7",
+        "filename": "vp9/encoder/vp9_aq_variance.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-02-22T23:15:13Z",
+      "side": 1,
+      "message": "Yeah, that\u0027s the way HBD is handled in vp9 - when you switch on HBD, you *always* get the large buffers:\nhttps://chromium.googlesource.com/webm/libvpx/+/refs/heads/master/vpx_dsp/variance.c#260\n\nThe 8/10/12 bit variance functions are identical (in C). They only differ in how they treat the outgoing sse/sum values.\n\nIf it looks like this is intended to be for all sizes, that sounds fine.",
+      "parentUuid": "ae1ef233_7b23f963",
+      "range": {
+        "startLine": 158,
+        "startChar": 7,
+        "endLine": 161,
+        "endChar": 56
+      },
+      "revId": "9c8ef187d257562e10049c3a26e586a65f89adc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
