@@ -70,6 +70,30 @@
       "revId": "9c8ef187d257562e10049c3a26e586a65f89adc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0fcb36cd_442fca24",
+        "filename": "vp9/encoder/vp9_aq_variance.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1319299
+      },
+      "writtenOn": "2019-02-22T23:30:56Z",
+      "side": 1,
+      "message": "Looking deeper into it, sum is not calculated correctly as it was by some reason declared as uint64. Overall I decided to simplify things and call 64 bit function directly and cast sse and sum after shift in the caller.",
+      "parentUuid": "75d5362c_d9762ca7",
+      "range": {
+        "startLine": 158,
+        "startChar": 7,
+        "endLine": 161,
+        "endChar": 56
+      },
+      "revId": "9c8ef187d257562e10049c3a26e586a65f89adc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
