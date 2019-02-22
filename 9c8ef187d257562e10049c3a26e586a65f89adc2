@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "72e3b466_a8961d60",
+        "filename": "vp9/encoder/vp9_aq_variance.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-02-22T23:00:36Z",
+      "side": 1,
+      "message": "Is this correct? The function is named _8_ but the values are being adjusted like the 10/12 bit ones here:\n\nhttps://chromium.googlesource.com/webm/libvpx/+/refs/heads/master/vpx_dsp/variance.c#278\n\nOr is this function actually supporting all bitdepths, not just 8?\n\nThe plain block_variance calls different variance functions:\nhttps://chromium.googlesource.com/webm/libvpx/+/refs/heads/master/vp9/encoder/vp9_pickmode.c#263\n\nsse also is not divided by 2 all the time in that version.",
+      "range": {
+        "startLine": 158,
+        "startChar": 7,
+        "endLine": 161,
+        "endChar": 56
+      },
+      "revId": "9c8ef187d257562e10049c3a26e586a65f89adc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
