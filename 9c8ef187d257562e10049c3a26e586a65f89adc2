@@ -22,6 +22,30 @@
       "revId": "9c8ef187d257562e10049c3a26e586a65f89adc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae1ef233_7b23f963",
+        "filename": "vp9/encoder/vp9_aq_variance.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1319299
+      },
+      "writtenOn": "2019-02-22T23:10:46Z",
+      "side": 1,
+      "message": "The function is certainly dealing with high BD as it treats input as 16 bits. So, it is likely a naming issue. I\u0027ll change the name.\nthe different per-BD functions in plain block_variance are likely because of SIMD optimization. Overall I think the calcualtion will be the same for all 16-bit packed data except the final shift. So, it looks logical to me.",
+      "parentUuid": "72e3b466_a8961d60",
+      "range": {
+        "startLine": 158,
+        "startChar": 7,
+        "endLine": 161,
+        "endChar": 56
+      },
+      "revId": "9c8ef187d257562e10049c3a26e586a65f89adc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
