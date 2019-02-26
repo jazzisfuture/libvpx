@@ -235,6 +235,10 @@ static void set_segment_index(VP9_COMP *cpi, MACROBLOCK *const x, int mi_row,
       break;
   }
 
+  // Set segment index from ROI map if it's enabled.
+  if (cpi->roi.enabled)
+    mi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
+
   vp9_init_plane_quantizers(cpi, x);
 }
 
