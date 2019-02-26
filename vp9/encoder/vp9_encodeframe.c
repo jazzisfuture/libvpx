@@ -1917,7 +1917,7 @@ static void set_segment_rdmult(VP9_COMP *const cpi, MACROBLOCK *const x,
     return;
   }
 
-  x->rdmult = vp9_compute_rd_mult(cpi, segment_qindex + cm->y_dc_delta_q);
+  x->rdmult = vp9_compute_rd_mult(cpi, cm->base_qindex + cm->y_dc_delta_q);
 }
 
 static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
