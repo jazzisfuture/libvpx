@@ -235,6 +235,10 @@ static void set_segment_index(VP9_COMP *cpi, MACROBLOCK *const x, int mi_row,
       break;
   }
 
+  // Set segment index from ROI map if it's enabled.
+  if (cpi->roi.enabled)
+    mi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
+
   vp9_init_plane_quantizers(cpi, x);
 }
 
@@ -2497,6 +2501,7 @@ static void encode_b_rt(VP9_COMP *cpi, ThreadData *td,
                         PICK_MODE_CONTEXT *ctx) {
   MACROBLOCK *const x = &td->mb;
   set_offsets(cpi, tile, x, mi_row, mi_col, bsize);
+  set_segment_index(cpi, x, mi_row, mi_col, bsize, 0);
   update_state_rt(cpi, td, ctx, mi_row, mi_col, bsize);
 
   encode_superblock(cpi, td, tp, output_enabled, mi_row, mi_col, bsize, ctx);
