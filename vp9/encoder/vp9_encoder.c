@@ -572,7 +572,7 @@ static void apply_roi_map(VP9_COMP *cpi) {
 
   // TODO(jianj): Investigate why ROI not working in speed < 5 or in non
   // realtime mode.
-  if (cpi->oxcf.mode != REALTIME || cpi->oxcf.speed < 5) return;
+  if (cpi->oxcf.mode != REALTIME || cpi->oxcf.speed <= 5) return;
   if (!roi->enabled) return;
 
   memcpy(&ref_frame, roi->ref_frame, sizeof(ref_frame));
