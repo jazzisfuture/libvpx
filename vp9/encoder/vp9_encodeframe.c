@@ -235,6 +235,10 @@ static void set_segment_index(VP9_COMP *cpi, MACROBLOCK *const x, int mi_row,
       break;
   }
 
+  // Set segment index from ROI map if it's enabled.
+  if (cpi->roi.enabled)
+    mi->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
+
   vp9_init_plane_quantizers(cpi, x);
 }
 
@@ -4849,6 +4853,7 @@ static void nonrd_pick_partition(VP9_COMP *cpi, ThreadData *td,
 
   if (best_rdc.rate < INT_MAX && best_rdc.dist < INT64_MAX && do_recon) {
     int output_enabled = (bsize == BLOCK_64X64);
+    set_segment_index(cpi, x, mi_row, mi_col, BLOCK_64X64, 0);
     encode_sb_rt(cpi, td, tile_info, tp, mi_row, mi_col, output_enabled, bsize,
                  pc_tree);
   }
@@ -4992,8 +4997,10 @@ static void nonrd_select_partition(VP9_COMP *cpi, ThreadData *td,
     }
   }
 
-  if (bsize == BLOCK_64X64 && output_enabled)
+  if (bsize == BLOCK_64X64 && output_enabled) {
+    set_segment_index(cpi, x, mi_row, mi_col, BLOCK_64X64, 0);
     encode_sb_rt(cpi, td, tile_info, tp, mi_row, mi_col, 1, bsize, pc_tree);
+  }
 }
 
 static void nonrd_use_partition(VP9_COMP *cpi, ThreadData *td,
