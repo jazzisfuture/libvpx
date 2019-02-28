@@ -3003,7 +3003,8 @@ static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 250 };
 
 static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
                                    BLOCK_SIZE bsize, int64_t *this_rd,
-                                   MV_REFERENCE_FRAME ref_frame) {
+                                   MV_REFERENCE_FRAME ref_frame,
+                                   PREDICTION_MODE this_mode) {
   MACROBLOCKD *const xd = &x->e_mbd;
   unsigned int rec_variance;
   unsigned int src_variance;
@@ -3011,6 +3012,7 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   unsigned int absvar_diff = 0;
   unsigned int var_factor = 0;
   unsigned int adj_max;
+  unsigned int low_var_thresh;
   const int bw = num_8x8_blocks_wide_lookup[bsize];
   const int bh = num_8x8_blocks_high_lookup[bsize];
   vp9e_tune_content content_type = cpi->oxcf.content;
@@ -3036,12 +3038,22 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   rec_variance /= (bw * bh);
   src_variance /= (bw * bh);
 
+  if (content_type == VP9E_CONTENT_FILM) {
+    if (ref_frame == INTRA_FRAME) {
+      if ((bsize >= BLOCK_16X16) && (this_mode == DC_PRED)) *this_rd *= 3;
+      else if (bsize > BLOCK_16X16) *this_rd *= 2;
+    }
+    low_var_thresh = LOW_VAR_THRESH;
+  } else {
+    low_var_thresh = LOW_VAR_THRESH / 2;
+  }
+
   // Lower of source (raw per pixel value) and recon variance. Note that
   // if the source per pixel is 0 then the recon value here will not be per
   // pixel (see above) so will likely be much larger.
   src_rec_min = VPXMIN(src_variance, rec_variance);
 
-  if (src_rec_min > LOW_VAR_THRESH) return;
+  if (src_rec_min > low_var_thresh) return;
 
   absvar_diff = (src_variance > rec_variance) ? (src_variance - rec_variance)
                                               : (rec_variance - src_variance);
@@ -3055,9 +3067,8 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   *this_rd += (*this_rd * var_factor) / 100;
 
   if (content_type == VP9E_CONTENT_FILM) {
-    if (src_rec_min <= LOW_VAR_THRESH / 2) {
+    if (src_rec_min <= low_var_thresh / 2) {
       if (ref_frame == INTRA_FRAME) *this_rd *= 2;
-      if (bsize > BLOCK_16X16) *this_rd *= 2;
     }
   }
 }
@@ -3581,7 +3592,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, TileDataEnc *tile_data,
 
     // Apply an adjustment to the rd value based on the similarity of the
     // source variance and reconstructed variance.
-    rd_variance_adjustment(cpi, x, bsize, &this_rd, ref_frame);
+    rd_variance_adjustment(cpi, x, bsize, &this_rd, ref_frame, this_mode);
 
     if (ref_frame == INTRA_FRAME) {
       // Keep record of best intra rd
