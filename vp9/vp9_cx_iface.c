@@ -698,7 +698,8 @@ static vpx_codec_err_t update_extra_cfg(vpx_codec_alg_priv_t *ctx,
 static vpx_codec_err_t ctrl_set_cpuused(vpx_codec_alg_priv_t *ctx,
                                         va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
-  extra_cfg.cpu_used = CAST(VP8E_SET_CPUUSED, args);
+  // Use maximum speed setting (speed 9) if it's set to greater than 9.
+  extra_cfg.cpu_used = VPXMIN(9, CAST(VP8E_SET_CPUUSED, args));
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
