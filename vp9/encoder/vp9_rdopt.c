@@ -3012,7 +3012,7 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   unsigned int absvar_diff = 0;
   unsigned int var_factor = 0;
   unsigned int adj_max;
-  unsigned int low_var_thresh;
+  unsigned int low_var_thresh = LOW_VAR_THRESH;
   const int bw = num_8x8_blocks_wide_lookup[bsize];
   const int bh = num_8x8_blocks_high_lookup[bsize];
   vp9e_tune_content content_type = cpi->oxcf.content;
@@ -3045,7 +3045,13 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
       else if (bsize > BLOCK_16X16)
         *this_rd *= 2;
     }
-    low_var_thresh = LOW_VAR_THRESH;
+
+    if (cpi->oxcf.pass == 2) {
+      // Adjust low variance threshold based on estimated group noise enegry.
+      double noise_factor = (double)cpi->twopass.gf_group.group_noise_energy /
+                            SECTION_NOISE_DEF;
+      low_var_thresh = (unsigned int)(low_var_thresh * noise_factor);
+    }
   } else {
     low_var_thresh = LOW_VAR_THRESH / 2;
   }
