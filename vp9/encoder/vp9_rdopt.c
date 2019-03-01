@@ -4385,6 +4385,10 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, TileDataEnc *tile_data,
         best_filter_rd[i] = VPXMIN(best_filter_rd[i], this_rd);
     }
 
+    // Apply an adjustment to the rd value based on the similarity of the
+    // source variance and reconstructed variance.
+    rd_variance_adjustment(cpi, x, bsize, &this_rd, ref_frame, mi->mode);
+
     // Did this mode help.. i.e. is it the new best mode
     if (this_rd < best_rd || x->skip) {
       if (!mode_excluded) {
