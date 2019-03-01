@@ -3045,7 +3045,6 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
       else if (bsize > BLOCK_16X16)
         *this_rd *= 2;
     }
-    low_var_thresh = LOW_VAR_THRESH;
   } else {
     low_var_thresh = LOW_VAR_THRESH / 2;
   }
@@ -4384,6 +4383,10 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, TileDataEnc *tile_data,
       for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
         best_filter_rd[i] = VPXMIN(best_filter_rd[i], this_rd);
     }
+
+    // Apply an adjustment to the rd value based on the similarity of the
+    // source variance and reconstructed variance.
+    rd_variance_adjustment(cpi, x, bsize, &this_rd, ref_frame, mi->mode);
 
     // Did this mode help.. i.e. is it the new best mode
     if (this_rd < best_rd || x->skip) {
