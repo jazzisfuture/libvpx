@@ -3070,7 +3070,10 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
 
   if (content_type == VP9E_CONTENT_FILM) {
     if (src_rec_min <= low_var_thresh / 2) {
-      if (ref_frame == INTRA_FRAME) *this_rd *= 2;
+      if (ref_frame == INTRA_FRAME) {
+        if (this_mode == DC_PRED) *this_rd *= 2;
+        else *this_rd += (*this_rd / 4);
+      }
     }
   }
 }
