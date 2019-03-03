@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d43ac62c_66e673de",
+        "filename": "vp9/encoder/x86/highbd_temporal_filter_sse4.c",
+        "patchSetId": 14
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2019-03-03T15:46:41Z",
+      "side": 1,
+      "message": "2019",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "55edae5dcf3ec73d9b1a095be5649327c343d12e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b156a3d1_e3c3fb04",
+        "filename": "vp9/encoder/x86/temporal_filter_sse4.c",
+        "patchSetId": 14
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2019-03-03T15:46:41Z",
+      "side": 1,
+      "message": "Use INLINE consistently in this file? average_4_4?",
+      "range": {
+        "startLine": 76,
+        "startChar": 7,
+        "endLine": 76,
+        "endChar": 13
+      },
+      "revId": "55edae5dcf3ec73d9b1a095be5649327c343d12e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16366521_2e8183e3",
+        "filename": "vp9/encoder/x86/temporal_filter_sse4.c",
+        "patchSetId": 14
+      },
+      "lineNbr": 671,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2019-03-03T15:46:41Z",
+      "side": 1,
+      "message": "Just notice this: is it possible to calculate weight(__m128i) for average_4_4 and average_8 at beginning of the file, so these 2 functions can be combined into 1?",
+      "range": {
+        "startLine": 671,
+        "startChar": 8,
+        "endLine": 671,
+        "endChar": 19
+      },
+      "revId": "55edae5dcf3ec73d9b1a095be5649327c343d12e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
