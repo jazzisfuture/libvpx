@@ -189,6 +189,8 @@ typedef struct SVC {
   int64_t time_stamp_prev[VPX_SS_MAX_LAYERS];
 
   int num_encoded_top_layer;
+
+  int simulcast;
 } SVC;
 
 struct VP9_COMP;
@@ -257,6 +259,8 @@ void vp9_svc_assert_constraints_pattern(struct VP9_COMP *const cpi);
 void vp9_svc_check_spatial_layer_sync(struct VP9_COMP *const cpi);
 
 void vp9_svc_update_ref_frame_buffer_idx(struct VP9_COMP *const cpi);
+
+void vp9_svc_update_ref_frame_key(struct VP9_COMP *const cpi);
 
 void vp9_svc_update_ref_frame(struct VP9_COMP *const cpi);
 
