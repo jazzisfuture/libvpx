@@ -34,6 +34,8 @@
 
 #define OUTPUT_RC_STATS 1
 
+#define OUTPUT_SEPARATE_LAYERS 0
+
 static const arg_def_t outputfile =
     ARG_DEF("o", "output", 1, "Output filename");
 static const arg_def_t skip_frames_arg =
@@ -834,12 +836,21 @@ static void svc_output_rc_stats(
   for (sl = 0; sl < enc_cfg->ss_number_layers; ++sl) {
     unsigned int sl2;
     uint64_t tot_size = 0;
+#if OUTPUT_SEPARATE_LAYERS
+    for (sl2 = 0; sl2 < sl; ++sl2) {
+      if (cx_pkt->data.frame.spatial_layer_encoded[sl2]) tot_size += sizes[sl2];
+    }
+    vpx_video_writer_write_frame(outfile[sl],
+                                 (uint8_t *)(cx_pkt->data.frame.buf) + tot_size,
+                                 (size_t)(sizes[sl]), cx_pkt->data.frame.pts);
+#else
     for (sl2 = 0; sl2 <= sl; ++sl2) {
       if (cx_pkt->data.frame.spatial_layer_encoded[sl2]) tot_size += sizes[sl2];
     }
     if (tot_size > 0)
       vpx_video_writer_write_frame(outfile[sl], cx_pkt->data.frame.buf,
                                    (size_t)(tot_size), cx_pkt->data.frame.pts);
+#endif  // OUTPUT_SEPARATE_LAYERS
   }
   for (sl = 0; sl < enc_cfg->ss_number_layers; ++sl) {
     if (cx_pkt->data.frame.spatial_layer_encoded[sl]) {
