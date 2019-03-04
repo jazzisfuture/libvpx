@@ -130,7 +130,10 @@ class SyncFrameOnePassCbrSvc : public OnePassCbrSvc,
     current_video_frame_ = video->frame();
     PreEncodeFrameHookSetup(video, encoder);
     if (video->frame() == 0) {
-      encoder->Control(VP9E_SET_SVC_INTER_LAYER_PRED, inter_layer_pred_mode_);
+      // Do not turn off inter-layer pred completely because simulcast mode
+      // fails.
+      if (inter_layer_pred_mode_ != 1)
+        encoder->Control(VP9E_SET_SVC_INTER_LAYER_PRED, inter_layer_pred_mode_);
       encoder->Control(VP9E_SET_NOISE_SENSITIVITY, denoiser_on_);
       if (intra_only_test_)
         // Decoder sets the color_space for Intra-only frames

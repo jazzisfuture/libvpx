@@ -54,6 +54,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->superframe_has_layer_sync = 0;
   svc->use_set_ref_frame_config = 0;
   svc->num_encoded_top_layer = 0;
+  svc->simulcast_mode = 0;
 
   for (i = 0; i < REF_FRAMES; ++i) {
     svc->fb_idx_spatial_layer_id[i] = -1;
@@ -474,6 +475,15 @@ static void reset_fb_idx_unused(VP9_COMP *const cpi) {
   }
 }
 
+static void non_reference_frame_simulcast(VP9_COMP *const cpi) {
+  if (cpi->svc.temporal_layer_id == cpi->svc.number_temporal_layers - 1 &&
+      cpi->svc.temporal_layer_id > 0) {
+    cpi->ext_refresh_last_frame = 0;
+    cpi->ext_refresh_golden_frame = 0;
+    cpi->ext_refresh_alt_ref_frame = 0;
+  }
+}
+
 // The function sets proper ref_frame_flags, buffer indices, and buffer update
 // variables for temporal layering mode 3 - that does 0-2-1-2 temporal layering
 // scheme.
@@ -578,6 +588,10 @@ static void set_flags_and_fb_idx_for_temporal_mode3(VP9_COMP *const cpi) {
     cpi->alt_fb_idx = cpi->svc.number_spatial_layers + spatial_id;
   }
 
+  // Never refresh any reference frame buffers on top temporal layers in
+  // simulcast mode, which has interlayer prediction disabled.
+  if (cpi->svc.simulcast_mode) non_reference_frame_simulcast(cpi);
+
   reset_fb_idx_unused(cpi);
 }
 
@@ -639,6 +653,10 @@ static void set_flags_and_fb_idx_for_temporal_mode2(VP9_COMP *const cpi) {
     cpi->alt_fb_idx = cpi->svc.number_spatial_layers + spatial_id;
   }
 
+  // Never refresh any reference frame buffers on top temporal layers in
+  // simulcast mode, which has interlayer prediction disabled.
+  if (cpi->svc.simulcast_mode) non_reference_frame_simulcast(cpi);
+
   reset_fb_idx_unused(cpi);
 }
 
@@ -672,6 +690,10 @@ static void set_flags_and_fb_idx_for_temporal_mode_noLayering(
   } else {
     cpi->gld_fb_idx = 0;
   }
+
+  // Never refresh any reference frame buffers on top temporal layers in
+  // simulcast mode, which has interlayer prediction disabled.
+  if (cpi->svc.simulcast_mode) non_reference_frame_simulcast(cpi);
 
   reset_fb_idx_unused(cpi);
 }
@@ -732,6 +754,15 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   SVC *const svc = &cpi->svc;
   LAYER_CONTEXT *lc = NULL;
   svc->skip_enhancement_layer = 0;
+
+  if (svc->disable_inter_layer_pred == INTER_LAYER_PRED_OFF &&
+      svc->number_spatial_layers <= 3 && svc->number_temporal_layers <= 3 &&
+      !(svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS &&
+        svc->use_set_ref_frame_config))
+    svc->simulcast_mode = 1;
+  else
+    svc->simulcast_mode = 0;
+
   if (svc->number_spatial_layers > 1) {
     svc->use_base_mv = 1;
     svc->use_partition_reuse = 1;
@@ -1184,6 +1215,41 @@ static void vp9_svc_update_ref_frame_bypass_mode(VP9_COMP *const cpi) {
   }
 }
 
+void vp9_svc_update_ref_frame_key_simulcast(VP9_COMP *const cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  SVC *const svc = &cpi->svc;
+  BufferPool *const pool = cm->buffer_pool;
+  const int sl_id = svc->spatial_layer_id;
+  const int tl_id = svc->temporal_layer_id;
+  const int num_sl = svc->number_spatial_layers;
+  // SL0:
+  // 3 spatial layers: update slot 0 and 3
+  // 2 spatial layers: update slot 0 and 2
+  // 1 spatial layer:  update slot 0 and 1
+  // SL1:
+  // 3 spatial layers: update slot 1, 4, and 6
+  // 2 spatial layers: update slot 1, 3, and 6
+  // slot 6 is for golden frame long temporal prediction.
+  // SL2: update slot 2, 5 and 7
+  // slot 7 is for golden frame long temporal prediction.
+  ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[sl_id], cm->new_fb_idx);
+  ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[num_sl + sl_id],
+             cm->new_fb_idx);
+  svc->fb_idx_spatial_layer_id[sl_id] = sl_id;
+  svc->fb_idx_temporal_layer_id[sl_id] = tl_id;
+  svc->fb_idx_spatial_layer_id[num_sl + sl_id] = sl_id;
+  svc->fb_idx_temporal_layer_id[num_sl + sl_id] = tl_id;
+  // Update slots for golden frame long temporal prediction.
+  if (svc->spatial_layer_id == 1) {
+    ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[6], cm->new_fb_idx);
+  } else if (svc->spatial_layer_id == 2) {
+    ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[7], cm->new_fb_idx);
+  }
+
+  vp9_copy_flags_ref_update_idx(cpi);
+  vp9_svc_update_ref_frame_buffer_idx(cpi);
+}
+
 void vp9_svc_update_ref_frame(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
   SVC *const svc = &cpi->svc;
@@ -1192,7 +1258,7 @@ void vp9_svc_update_ref_frame(VP9_COMP *const cpi) {
   if (svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS &&
       svc->use_set_ref_frame_config) {
     vp9_svc_update_ref_frame_bypass_mode(cpi);
-  } else if (cm->frame_type == KEY_FRAME) {
+  } else if (cm->frame_type == KEY_FRAME && !svc->simulcast_mode) {
     // Keep track of frame index for each reference frame.
     int i;
     // On key frame update all reference frame slots.
