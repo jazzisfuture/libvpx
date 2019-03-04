@@ -2171,6 +2171,8 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
                                svc->number_temporal_layers);
   if (svc->first_spatial_layer_to_encode)
     svc->layer_context[svc->temporal_layer_id].is_key_frame = 0;
+  if (svc->spatial_layer_id == 0 && svc->temporal_layer_id == 0)
+    svc->layer_context[svc->temporal_layer_id].is_key_frame = 0;
   // Periodic key frames is based on the super-frame counter
   // (svc.current_superframe), also only base spatial layer is key frame.
   // Key frame is set for any of the following: very first frame, frame flags
@@ -2189,6 +2191,19 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
       layer = LAYER_IDS_TO_IDX(svc->spatial_layer_id, svc->temporal_layer_id,
                                svc->number_temporal_layers);
       svc->layer_context[layer].is_key_frame = 1;
+      cpi->ref_frame_flags &= (~VP9_LAST_FLAG & ~VP9_GOLD_FLAG & ~VP9_ALT_FLAG);
+      // Assumption here is that LAST_FRAME is being updated for a keyframe.
+      // Thus no change in update flags.
+      target = calc_iframe_target_size_one_pass_cbr(cpi);
+    }
+  } else if (svc->layer_context[svc->temporal_layer_id].is_key_frame == 1 &&
+             svc->simulcast) {
+    cm->frame_type = KEY_FRAME;
+    rc->source_alt_ref_active = 0;
+    if (is_one_pass_cbr_svc(cpi)) {
+      layer = LAYER_IDS_TO_IDX(svc->spatial_layer_id, svc->temporal_layer_id,
+                               svc->number_temporal_layers);
+      // svc->layer_context[layer].is_key_frame = 1;
       cpi->ref_frame_flags &= (~VP9_LAST_FLAG & ~VP9_GOLD_FLAG & ~VP9_ALT_FLAG);
       // Assumption here is that LAST_FRAME is being updated for a keyframe.
       // Thus no change in update flags.
