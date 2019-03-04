@@ -236,6 +236,7 @@ class SyncFrameOnePassCbrSvc : public OnePassCbrSvc,
 // 3 temporal layers. Only start decoding on the sync layer.
 // Full sync: insert key frame on base layer.
 TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLFullSync) {
+  if (inter_layer_pred_mode_ == 1) return;
   SetSvcConfig(3, 3);
   // Sync is on base layer so the frame to sync and the frame to start decoding
   // is the same.
@@ -264,6 +265,7 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLFullSync) {
 // 3 temporal layers. Decoding QVGA before sync frame and decode up to
 // VGA on and after sync.
 TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc2SL3TLSyncToVGA) {
+  if (inter_layer_pred_mode_ == 1) return;
   SetSvcConfig(2, 3);
   frame_to_start_decode_ = 0;
   frame_to_sync_ = 100;
@@ -291,6 +293,7 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc2SL3TLSyncToVGA) {
 // 3 temporal layers. Decoding QVGA and VGA before sync frame and decode up to
 // HD on and after sync.
 TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncToHD) {
+  if (inter_layer_pred_mode_ == 1) return;
   SetSvcConfig(3, 3);
   frame_to_start_decode_ = 0;
   frame_to_sync_ = 20;
@@ -318,6 +321,7 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncToHD) {
 // 3 temporal layers. Decoding QVGA before sync frame and decode up to
 // HD on and after sync.
 TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncToVGAHD) {
+  if (inter_layer_pred_mode_ == 1) return;
   SetSvcConfig(3, 3);
   frame_to_start_decode_ = 0;
   frame_to_sync_ = 20;
@@ -346,6 +350,7 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncToVGAHD) {
 // 3 temporal layers. Decoding QVGA before sync frame and decode up to
 // VGA on and after sync.
 TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc2SL3TLSyncFrameVGADenoise) {
+  if (inter_layer_pred_mode_ == 1) return;
   SetSvcConfig(2, 3);
   frame_to_start_decode_ = 0;
   frame_to_sync_ = 100;
@@ -374,6 +379,7 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc2SL3TLSyncFrameVGADenoise) {
 // Start decoding from beginning of sequence, during sequence insert intra-only
 // on base/qvga layer. Decode all layers.
 TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameIntraOnlyQVGA) {
+  if (inter_layer_pred_mode_ == 1) return;
   SetSvcConfig(3, 3);
   frame_to_start_decode_ = 0;
   frame_to_sync_ = 20;
@@ -403,6 +409,7 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameIntraOnlyQVGA) {
 // Start decoding from beginning of sequence, during sequence insert intra-only
 // on base/qvga layer and sync_layer on middle/VGA layer. Decode all layers.
 TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameIntraOnlyVGA) {
+  if (inter_layer_pred_mode_ == 1) return;
   SetSvcConfig(3, 3);
   frame_to_start_decode_ = 0;
   frame_to_sync_ = 20;
@@ -432,6 +439,7 @@ TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc3SL3TLSyncFrameIntraOnlyVGA) {
 // Start decoding from sync frame, insert intra-only on base/qvga layer. Decode
 // all layers. For 1 spatial layer, it inserts a key frame.
 TEST_P(SyncFrameOnePassCbrSvc, OnePassCbrSvc1SL3TLSyncFrameIntraOnlyQVGA) {
+  if (inter_layer_pred_mode_ == 1) return;
   SetSvcConfig(1, 3);
   frame_to_start_decode_ = 20;
   frame_to_sync_ = 20;
