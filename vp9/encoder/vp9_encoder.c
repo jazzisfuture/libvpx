@@ -3099,6 +3099,8 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
 #endif
 
   if (is_one_pass_cbr_svc(cpi)) vp9_svc_update_ref_frame(cpi);
+  if (is_one_pass_cbr_svc(cpi) && cpi->common.frame_type == KEY_FRAME)
+    vp9_svc_update_ref_frame_key(cpi);
 }
 
 static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
