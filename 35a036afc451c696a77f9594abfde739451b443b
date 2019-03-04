@@ -16,6 +16,23 @@
       "revId": "35a036afc451c696a77f9594abfde739451b443b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce22f303_ab11fdac",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 701,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-03-04T20:09:24Z",
+      "side": 1,
+      "message": "you could do the same for vp8 as well; what about clamping the negative range?",
+      "revId": "35a036afc451c696a77f9594abfde739451b443b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
