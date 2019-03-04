@@ -54,6 +54,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->superframe_has_layer_sync = 0;
   svc->use_set_ref_frame_config = 0;
   svc->num_encoded_top_layer = 0;
+  svc->simulcast = 0;
 
   for (i = 0; i < REF_FRAMES; ++i) {
     svc->fb_idx_spatial_layer_id[i] = -1;
@@ -578,6 +579,14 @@ static void set_flags_and_fb_idx_for_temporal_mode3(VP9_COMP *const cpi) {
     cpi->alt_fb_idx = cpi->svc.number_spatial_layers + spatial_id;
   }
 
+  // COMMENT
+  if (cpi->svc.simulcast &&
+      cpi->svc.temporal_layer_id == cpi->svc.number_temporal_layers - 1 &&
+      cpi->svc.temporal_layer_id > 0) {
+    cpi->ext_refresh_last_frame = 0;
+    cpi->ext_refresh_golden_frame = 0;
+    cpi->ext_refresh_alt_ref_frame = 0;
+  }
   reset_fb_idx_unused(cpi);
 }
 
@@ -639,6 +648,15 @@ static void set_flags_and_fb_idx_for_temporal_mode2(VP9_COMP *const cpi) {
     cpi->alt_fb_idx = cpi->svc.number_spatial_layers + spatial_id;
   }
 
+  // COMMENT
+  if (cpi->svc.simulcast &&
+      cpi->svc.temporal_layer_id == cpi->svc.number_temporal_layers - 1 &&
+      cpi->svc.temporal_layer_id > 0) {
+    cpi->ext_refresh_last_frame = 0;
+    cpi->ext_refresh_golden_frame = 0;
+    cpi->ext_refresh_alt_ref_frame = 0;
+  }
+
   reset_fb_idx_unused(cpi);
 }
 
@@ -671,6 +689,15 @@ static void set_flags_and_fb_idx_for_temporal_mode_noLayering(
     }
   } else {
     cpi->gld_fb_idx = 0;
+  }
+
+  // COMMENT
+  if (cpi->svc.simulcast &&
+      cpi->svc.temporal_layer_id == cpi->svc.number_temporal_layers - 1 &&
+      cpi->svc.temporal_layer_id > 0) {
+    cpi->ext_refresh_last_frame = 0;
+    cpi->ext_refresh_golden_frame = 0;
+    cpi->ext_refresh_alt_ref_frame = 0;
   }
 
   reset_fb_idx_unused(cpi);
@@ -732,6 +759,13 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   SVC *const svc = &cpi->svc;
   LAYER_CONTEXT *lc = NULL;
   svc->skip_enhancement_layer = 0;
+
+  if (svc->disable_inter_layer_pred == INTER_LAYER_PRED_OFF &&
+      svc->number_spatial_layers <= 3 &&
+      !(svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS &&
+        svc->use_set_ref_frame_config))
+    svc->simulcast = 1;
+
   if (svc->number_spatial_layers > 1) {
     svc->use_base_mv = 1;
     svc->use_partition_reuse = 1;
@@ -1184,6 +1218,29 @@ static void vp9_svc_update_ref_frame_bypass_mode(VP9_COMP *const cpi) {
   }
 }
 
+void vp9_svc_update_ref_frame_key(VP9_COMP *const cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  SVC *const svc = &cpi->svc;
+  BufferPool *const pool = cm->buffer_pool;
+  if (cpi->svc.simulcast) {
+    if (svc->spatial_layer_id == 0) {
+      // SL0: update 0 and 3
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[0], cm->new_fb_idx);
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[3], cm->new_fb_idx);
+    } else if (svc->spatial_layer_id == 1) {
+      // SL0: update 1 and 4, and 6
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[1], cm->new_fb_idx);
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[4], cm->new_fb_idx);
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[6], cm->new_fb_idx);
+    } else if (svc->spatial_layer_id == 2) {
+      // SL0: update 2 and 5, 7
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[2], cm->new_fb_idx);
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[5], cm->new_fb_idx);
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[7], cm->new_fb_idx);
+    }
+  }
+}
+
 void vp9_svc_update_ref_frame(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
   SVC *const svc = &cpi->svc;
@@ -1192,7 +1249,7 @@ void vp9_svc_update_ref_frame(VP9_COMP *const cpi) {
   if (svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS &&
       svc->use_set_ref_frame_config) {
     vp9_svc_update_ref_frame_bypass_mode(cpi);
-  } else if (cm->frame_type == KEY_FRAME) {
+  } else if (cm->frame_type == KEY_FRAME && !svc->simulcast) {
     // Keep track of frame index for each reference frame.
     int i;
     // On key frame update all reference frame slots.
