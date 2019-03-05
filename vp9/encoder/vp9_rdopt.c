@@ -2997,7 +2997,7 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
 
 // This function is designed to apply a bias or adjustment to an rd value based
 // on the relative variance of the source and reconstruction.
-#define LOW_VAR_THRESH 2500
+#define LOW_VAR_THRESH 250
 #define VAR_MULT 250
 static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 250 };
 
@@ -3039,11 +3039,20 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
   src_variance /= (bw * bh);
 
   if (content_type == VP9E_CONTENT_FILM) {
+    // Apply fixed bias against intra modes when film mode selected.
+    // Strongest bias agains DC_PRED and larger block sizes where
+    // the smoothing / averaging effect is likely to be most visble.
     if (ref_frame == INTRA_FRAME) {
-      if ((bsize >= BLOCK_16X16) && (this_mode == DC_PRED))
-        *this_rd *= 3;
-      else if (bsize > BLOCK_16X16)
+      if (this_mode == DC_PRED) {
+        if (bsize > BLOCK_16X16)
+          *this_rd *= 4;
+        else if (bsize == BLOCK_16X16)
+          *this_rd *= 3;
+        else
+          *this_rd *= 2;
+      } else if (bsize > BLOCK_16X16) {
         *this_rd *= 2;
+      }
     }
 
     if (cpi->oxcf.pass == 2) {
@@ -3076,12 +3085,11 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
 
   if (content_type == VP9E_CONTENT_FILM) {
     if (src_rec_min <= low_var_thresh / 2) {
-      if (ref_frame == INTRA_FRAME) {
-        if (this_mode == DC_PRED)
-          *this_rd *= 2;
-        else
-          *this_rd += (*this_rd / 4);
-      }
+      // Small bias against all intra at all sizes for very low variance blocks
+      if (ref_frame == INTRA_FRAME) *this_rd += (*this_rd / 4);
+      // Small bias against last frame as reference (vs GF or ARF)
+      else if (ref_frame == LAST_FRAME)
+        *this_rd += (*this_rd / 16);
     }
   }
 }
