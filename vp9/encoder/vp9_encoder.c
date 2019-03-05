@@ -4709,13 +4709,15 @@ static void set_mb_wiener_variance(VP9_COMP *cpi) {
   DECLARE_ALIGNED(16, int16_t, coeff[32 * 32]);
   DECLARE_ALIGNED(16, uint8_t, zero_pred[32 * 32]);
 
-  int mb_row, mb_col;
+  int mb_row, mb_col, count = 0;
   // Hard coded operating block size
   const int block_size = 16;
   const int coeff_count = block_size * block_size;
   const TX_SIZE tx_size = TX_16X16;
 
   memset(zero_pred, 0, sizeof(zero_pred));
+
+  cpi->norm_wiener_variance = 0;
 
   for (mb_row = 0; mb_row < cm->mb_rows; ++mb_row) {
     for (mb_col = 0; mb_col < cm->mb_cols; ++mb_col) {
@@ -4753,8 +4755,14 @@ static void set_mb_wiener_variance(VP9_COMP *cpi) {
       }
       cpi->mb_wiener_variance[mb_row * cm->mb_cols + mb_col] =
           wiener_variance / coeff_count;
+      cpi->norm_wiener_variance +=
+          cpi->mb_wiener_variance[mb_row * cm->mb_cols + mb_col];
+      ++count;
     }
   }
+
+  cpi->norm_wiener_variance /= count;
+  cpi->norm_wiener_variance = VPXMAX(1, cpi->norm_wiener_variance);
 }
 
 static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
