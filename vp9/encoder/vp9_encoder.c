@@ -4715,13 +4715,16 @@ static void set_frame_index(VP9_COMP *cpi, VP9_COMMON *cm) {
 // Process the wiener variance in 16x16 block basis.
 static void set_mb_wiener_variance(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
+  ThreadData *td = &cpi->td;
+  MACROBLOCK *x = &td->mb;
+  MACROBLOCKD *xd = &x->e_mbd;
   uint8_t *buffer = cpi->Source->y_buffer;
   int buf_stride = cpi->Source->y_stride;
   DECLARE_ALIGNED(16, int16_t, src_diff[32 * 32]);
-  DECLARE_ALIGNED(16, int16_t, coeff[32 * 32]);
+  DECLARE_ALIGNED(16, tran_low_t, coeff[32 * 32]);
   DECLARE_ALIGNED(16, uint8_t, zero_pred[32 * 32]);
 
-  int mb_row, mb_col;
+  int mb_row, mb_col, count = 0;
   // Hard coded operating block size
   const int block_size = 16;
   const int coeff_count = block_size * block_size;
@@ -4730,6 +4733,8 @@ static void set_mb_wiener_variance(VP9_COMP *cpi) {
   if (cpi->sf.enable_wiener_variance == 0) return;
 
   memset(zero_pred, 0, sizeof(zero_pred));
+
+  cpi->norm_wiener_variance = 0;
 
   for (mb_row = 0; mb_row < cm->mb_rows; ++mb_row) {
     for (mb_col = 0; mb_col < cm->mb_cols; ++mb_col) {
@@ -4741,7 +4746,7 @@ static void set_mb_wiener_variance(VP9_COMP *cpi) {
 
 #if CONFIG_VP9_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-        vpx_highbd_subtract_block(block_size, block_size, src_diff, bw,
+        vpx_highbd_subtract_block(block_size, block_size, src_diff, block_size,
                                   mb_buffer, buf_stride, zero_pred, block_size,
                                   xd->bd);
         highbd_wht_fwd_txfm(src_diff, block_size, coeff, tx_size);
@@ -4781,8 +4786,14 @@ static void set_mb_wiener_variance(VP9_COMP *cpi) {
       }
       cpi->mb_wiener_variance[mb_row * cm->mb_cols + mb_col] =
           wiener_variance / coeff_count;
+      cpi->norm_wiener_variance +=
+          cpi->mb_wiener_variance[mb_row * cm->mb_cols + mb_col];
+      ++count;
     }
   }
+
+  cpi->norm_wiener_variance /= count;
+  cpi->norm_wiener_variance = VPXMAX(1, cpi->norm_wiener_variance);
 }
 
 static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
