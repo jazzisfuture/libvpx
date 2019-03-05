@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "267dbee5_a9c932dd",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 3103,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-05T17:36:53Z",
+      "side": 1,
+      "message": "i thought we need to put this on top since update_ref_frames will update lst/gld/alt on key frames?\n\nsomething like:\nif (is_one_pass_cbr_svc(cpi) \u0026\u0026 cpi-\u003ecommon.frame_type \u003d\u003d KEY_FRAME)\n  vp9_svc_update_ref_frame_key(cpi);\nelse\n  update_ref_frames(cpi);",
+      "revId": "73c800a4aa3d2d65a9ab7754f6f5ee8f0d357755",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00596211_75b7e497",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2174,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-05T17:36:53Z",
+      "side": 1,
+      "message": "don\u0027t think we should need this",
+      "revId": "73c800a4aa3d2d65a9ab7754f6f5ee8f0d357755",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3be6f51c_43348d07",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2226,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-05T17:36:53Z",
+      "side": 1,
+      "message": "instead of the block of code 2199-2211, can we do this here (just overwrite the setting from above):\n\nif (svc-\u003esimulcast \u0026\u0026 svc-\u003espatial_layer_id \u003e 0 \u0026\u0026 lc-\u003eis_key_frame \u003d\u003d 1)  {\n  cm-\u003eframe_type \u003d KEY_FRAME;\n  cpi-\u003eref_frame_flags \u0026\u003d (~VP9_LAST_FLAG \u0026 ~VP9_GOLD_FLAG \u0026 ~VP9_ALT_FLAG);\n  target \u003d calc_iframe_target_size_one_pass_cbr(cpi);\n}",
+      "revId": "73c800a4aa3d2d65a9ab7754f6f5ee8f0d357755",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "952cc4e6_794677a0",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 767,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-05T17:36:53Z",
+      "side": 1,
+      "message": "add also number_temporal_layers \u003c\u003d 3",
+      "revId": "73c800a4aa3d2d65a9ab7754f6f5ee8f0d357755",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb5fd7c1_302cf12c",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 814,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-05T17:36:53Z",
+      "side": 1,
+      "message": "if you want/need to disable long-term reference you can add !svc-\u003esimulcast_mode here\n\nbut if it works as is, which it should (since those slots are always 6 and 7), then we can leave it.",
+      "revId": "73c800a4aa3d2d65a9ab7754f6f5ee8f0d357755",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c890e82_1181f78e",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-05T17:36:53Z",
+      "side": 1,
+      "message": "rename: simulcast_mode",
+      "revId": "73c800a4aa3d2d65a9ab7754f6f5ee8f0d357755",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
