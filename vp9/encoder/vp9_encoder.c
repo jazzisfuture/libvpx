@@ -4788,7 +4788,6 @@ static void set_mb_wiener_variance(VP9_COMP *cpi) {
 
       // Noise level estimation
       median_val = idx;
-
       // Use Wiener filter to reduce the noise level and calcualte the
       // resulting variance.
       for (idx = 1; idx < coeff_count; ++idx) {
