@@ -4732,7 +4732,7 @@ static void set_mb_wiener_variance(VP9_COMP *cpi) {
 
       for (idx = 0; idx < UINT16_MAX; ++idx) cpi->stack_rank_buffer[idx] = 0;
 
-      for (idx = 0; idx < coeff_count; ++idx)
+      for (idx = 1; idx < coeff_count; ++idx)
         ++cpi->stack_rank_buffer[abs(coeff[idx])];
 
       for (idx = 0; idx < UINT16_MAX; ++idx) {
@@ -4744,11 +4744,11 @@ static void set_mb_wiener_variance(VP9_COMP *cpi) {
       median_val = idx;
 
       // Wiener filter
-      for (idx = 0; idx < coeff_count; ++idx) {
+      for (idx = 1; idx < coeff_count; ++idx) {
         int sign = coeff[idx] < 0;
         int64_t sqr_coeff = (int64_t)coeff[idx] * coeff[idx];
         coeff[idx] = (int16_t)((sqr_coeff * coeff[idx]) /
-                               (sqr_coeff + (int64_t)median_val * median_val));
+                               (sqr_coeff + (int64_t)median_val * median_val + 1));
         if (sign) coeff[idx] = -coeff[idx];
 
         wiener_variance += (int64_t)coeff[idx] * coeff[idx];
