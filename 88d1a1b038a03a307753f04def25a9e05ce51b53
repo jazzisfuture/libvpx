@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3fd8078a_6ab42bac",
+        "filename": "vp9/encoder/x86/temporal_filter_sse4.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2019-03-07T21:40:02Z",
+      "side": 1,
+      "message": "Is the only difference between the above 2 cases is the weight? If it is true, can you pass in (weight_first, weight_second) for (blk_fw !\u003d NULL) case, and (weight_first, weight_first) for the other case, and hopefully average_8 and average_16 can be consolidated into 1?",
+      "range": {
+        "startLine": 366,
+        "startChar": 0,
+        "endLine": 374,
+        "endChar": 3
+      },
+      "revId": "88d1a1b038a03a307753f04def25a9e05ce51b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
