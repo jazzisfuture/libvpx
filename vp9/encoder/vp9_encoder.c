@@ -6043,6 +6043,7 @@ static int get_block_src_pred_buf(MACROBLOCKD *xd, GF_PICTURE *gf_picture,
 #define kMvPreCheckSize 15
 
 #define MV_REF_POS_NUM 3
+#define MV_REF_CTX_NUM 2
 POSITION mv_ref_pos[MV_REF_POS_NUM] = {
   { -1, 0 },
   { 0, -1 },
@@ -6149,21 +6150,58 @@ static double get_mv_dist(int mv_mode, VP9_COMP *cpi, MACROBLOCKD *xd,
   }
 }
 
-static int get_mv_mode_cost(int mv_mode) {
-  // TODO(angiebird): The probabilities are roughly inferred from
-  // default_inter_mode_probs. Check if there is a better way to set the
-  // probabilities.
-  const int zero_mv_prob = 9;
-  const int new_mv_prob = 77;
-  const int ref_mv_prob = 170;
-  assert(zero_mv_prob + new_mv_prob + ref_mv_prob == 256);
+static int mv_mode_to_mb_mode(int mv_mode) {
   switch (mv_mode) {
-    case ZERO_MV_MODE: return vp9_prob_cost[zero_mv_prob]; break;
-    case NEW_MV_MODE: return vp9_prob_cost[new_mv_prob]; break;
-    case NEAREST_MV_MODE: return vp9_prob_cost[ref_mv_prob]; break;
-    case NEAR_MV_MODE: return vp9_prob_cost[ref_mv_prob]; break;
+    case ZERO_MV_MODE: return ZEROMV; break;
+    case NEW_MV_MODE: return NEWMV; break;
+    case NEAREST_MV_MODE: return NEARESTMV; break;
+    case NEAR_MV_MODE:
+      return NEARESTMV;
+      break;  // We treat NEAREST_MV_MODE equivalent to NEAR_MV_MODE when
+              // predictting mv mode.
     default: assert(0); return -1;
   }
+}
+
+// this function simulates the behavior of get_mode_context()
+static int get_inter_mode_ctx(const TplDepFrame *tpl_frame, int rf_idx,
+                              BLOCK_SIZE bsize, int mi_row, int mi_col) {
+  const int mi_height = num_8x8_blocks_high_lookup[bsize];
+  const int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  int i;
+  int context_counter = 0;
+  for (i = 0; i < MV_REF_CTX_NUM; ++i) {
+    const POSITION offset = mv_ref_pos[i];
+    const int nb_row = mi_row + offset.row * mi_height;
+    const int nb_col = mi_col + offset.col * mi_width;
+    if (nb_row >= 0 && nb_row < tpl_frame->mi_rows && nb_col >= 0 &&
+        nb_col < tpl_frame->mi_cols) {
+      const int mv_mode =
+          tpl_frame->mv_mode_arr[rf_idx][nb_row * tpl_frame->stride + nb_col];
+      const int mb_mode = mv_mode_to_mb_mode(mv_mode);
+      context_counter += mode_2_counter[mb_mode];
+    }
+  }
+  return counter_to_context[context_counter];
+}
+
+static int get_mv_mode_cost(int mv_mode, VP9_COMP *cpi,
+                            const TplDepFrame *tpl_frame, int rf_idx,
+                            BLOCK_SIZE bsize, int mi_row, int mi_col) {
+  const int inter_mode_ctx =
+      get_inter_mode_ctx(tpl_frame, rf_idx, bsize, mi_row, mi_col);
+  int cost;
+  if (mv_mode == NEAREST_MV_MODE || mv_mode == NEAR_MV_MODE) {
+    // When prediction mv mode, we treat NEAREST_MV_MODE and NEAR_MV_MODE the
+    // same. So their cost is the average of their actual costs.
+    cost = cpi->inter_mode_cost[inter_mode_ctx][INTER_OFFSET(NEARESTMV)];
+    cost += cpi->inter_mode_cost[inter_mode_ctx][INTER_OFFSET(NEARMV)];
+    cost >>= 1;
+  } else {
+    const int mb_mode = mv_mode_to_mb_mode(mv_mode);
+    cost = cpi->inter_mode_cost[inter_mode_ctx][INTER_OFFSET(mb_mode)];
+  }
+  return cost;
 }
 
 static INLINE double get_mv_diff_cost(MV *new_mv, MV *ref_mv) {
@@ -6175,7 +6213,8 @@ static INLINE double get_mv_diff_cost(MV *new_mv, MV *ref_mv) {
 static double get_mv_cost(int mv_mode, VP9_COMP *cpi, TplDepFrame *tpl_frame,
                           int rf_idx, BLOCK_SIZE bsize, int mi_row,
                           int mi_col) {
-  double mv_cost = get_mv_mode_cost(mv_mode);
+  double mv_cost =
+      get_mv_mode_cost(mv_mode, cpi, tpl_frame, rf_idx, bsize, mi_row, mi_col);
   if (mv_mode == NEW_MV_MODE) {
     MV new_mv = get_mv_from_mv_mode(mv_mode, cpi, tpl_frame, rf_idx, bsize,
                                     mi_row, mi_col)
@@ -6675,6 +6714,7 @@ static void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture,
     BLOCK_SIZE square_bsize = square_block_idx_to_bsize(square_block_idx);
     build_motion_field(cpi, xd, frame_idx, ref_frame, square_bsize);
   }
+  vp9_build_inter_mode_cost(cpi);
   for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
     int ref_frame_idx = gf_picture[frame_idx].ref_frame[rf_idx];
     if (ref_frame_idx != -1) {
