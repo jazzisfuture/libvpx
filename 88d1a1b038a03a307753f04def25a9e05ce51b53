@@ -22,6 +22,30 @@
       "revId": "88d1a1b038a03a307753f04def25a9e05ce51b53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29b13d75_739ca2e9",
+        "filename": "vp9/encoder/x86/temporal_filter_sse4.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1306723
+      },
+      "writtenOn": "2019-03-08T00:48:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3fd8078a_6ab42bac",
+      "range": {
+        "startLine": 366,
+        "startChar": 0,
+        "endLine": 374,
+        "endChar": 3
+      },
+      "revId": "88d1a1b038a03a307753f04def25a9e05ce51b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
