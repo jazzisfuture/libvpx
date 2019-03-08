@@ -3004,12 +3004,13 @@ static unsigned int max_var_adjust[VP9E_CONTENT_INVALID] = { 16, 16, 250 };
 static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
                                    BLOCK_SIZE bsize, int64_t *this_rd,
                                    MV_REFERENCE_FRAME ref_frame,
+                                   MV_REFERENCE_FRAME second_ref_frame,
                                    PREDICTION_MODE this_mode) {
   MACROBLOCKD *const xd = &x->e_mbd;
   unsigned int rec_variance;
   unsigned int src_variance;
   unsigned int src_rec_min;
-  unsigned int absvar_diff = 0;
+  unsigned int var_diff = 0;
   unsigned int var_factor = 0;
   unsigned int adj_max;
   unsigned int low_var_thresh = LOW_VAR_THRESH;
@@ -3072,13 +3073,15 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
 
   if (src_rec_min > low_var_thresh) return;
 
-  absvar_diff = (src_variance > rec_variance) ? (src_variance - rec_variance)
-                                              : (rec_variance - src_variance);
+  // We care more when the reconstruction has lower variance so give this case
+  // a stronger weighting.
+  var_diff = (src_variance > rec_variance) ? (src_variance - rec_variance) * 2
+                                           : (rec_variance - src_variance) / 2;
 
   adj_max = max_var_adjust[content_type];
 
   var_factor =
-      (unsigned int)((int64_t)VAR_MULT * absvar_diff) / VPXMAX(1, src_variance);
+      (unsigned int)((int64_t)VAR_MULT * var_diff) / VPXMAX(1, src_variance);
   var_factor = VPXMIN(adj_max, var_factor);
 
   *this_rd += (*this_rd * var_factor) / 100;
@@ -3089,8 +3092,8 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
       if (ref_frame == INTRA_FRAME)
         *this_rd += (*this_rd / 4);
       // Small bias against last frame as reference (vs GF or ARF)
-      else if (ref_frame == LAST_FRAME)
-        *this_rd += (*this_rd / 16);
+      else if ((ref_frame == LAST_FRAME) || (second_ref_frame > 0))
+        *this_rd += (*this_rd / 8);
     }
   }
 }
@@ -3614,7 +3617,8 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, TileDataEnc *tile_data,
 
     // Apply an adjustment to the rd value based on the similarity of the
     // source variance and reconstructed variance.
-    rd_variance_adjustment(cpi, x, bsize, &this_rd, ref_frame, this_mode);
+    rd_variance_adjustment(cpi, x, bsize, &this_rd, ref_frame,
+                           second_ref_frame, this_mode);
 
     if (ref_frame == INTRA_FRAME) {
       // Keep record of best intra rd
