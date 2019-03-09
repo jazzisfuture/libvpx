@@ -2030,14 +2030,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     if (!(cpi->ref_frame_flags & flag_list[ref_frame])) continue;
 
     // For screen content on flat blocks: skip non-zero motion check for
-    // stationary blocks, only skip zero motion check for non-stationary blocks.
+    // stationary blocks. If the superblock is non-stationary then skip
+    // the zero-last check (keep golden as it may be inter-layer reference).
     if (cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
         sf->short_circuit_flat_blocks && x->source_variance == 0 &&
         cpi->compute_source_sad_onepass && cpi->sf.use_source_sad &&
         ((frame_mv[this_mode][ref_frame].as_int != 0 &&
           x->zero_temp_sad_source) ||
          (frame_mv[this_mode][ref_frame].as_int == 0 &&
-          !x->zero_temp_sad_source))) {
+          ref_frame == LAST_FRAME && !x->zero_temp_sad_source))) {
       continue;
     }
 
