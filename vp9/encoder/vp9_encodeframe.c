@@ -3584,7 +3584,7 @@ static void ml_predict_var_rd_paritioning(const VP9_COMP *const cpi,
 #undef FEATURES
 
 static int wiener_var_segment(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
-                              int mi_col) {
+                              int mi_col, int show) {
   VP9_COMMON *cm = &cpi->common;
   int mb_row_start = mi_row >> 1;
   int mb_col_start = mi_col >> 1;
@@ -3615,6 +3615,10 @@ static int wiener_var_segment(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
 #if CONFIG_MULTITHREAD
   pthread_mutex_unlock(&cpi->kmeans_mutex);
 #endif  // CONFIG_MULTITHREAD
+  if (show) {
+    printf("mi_row %d mi_col %d wiener_variance %ld\n", mi_row, mi_col,
+           wiener_variance);
+  }
 
   segment_id = vp9_get_group_idx(kmeans_data->value, cpi->kmeans_boundary_ls,
                                  cpi->kmeans_ctr_num);
@@ -4328,7 +4332,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
       }
 
       if (cpi->sf.enable_wiener_variance && cm->show_frame) {
-        x->segment_id = wiener_var_segment(cpi, BLOCK_64X64, mi_row, mi_col);
+        x->segment_id = wiener_var_segment(cpi, BLOCK_64X64, mi_row, mi_col, 0);
         x->cb_rdmult = vp9_compute_rd_mult(
             cpi, vp9_get_qindex(&cm->seg, x->segment_id, cm->base_qindex));
       }
@@ -5788,6 +5792,26 @@ void vp9_kmeans(double *ctr_ls, double *boundary_ls, int k, KMEANS_DATA *arr,
   }
 }
 
+static void dump_buf(uint8_t *buf, int stride, int row, int col, int h, int w) {
+  int i, j;
+  printf("%d %d\n", h, w);
+  for (i = 0; i < h; ++i) {
+    for (j = 0; j < w; ++j) {
+      printf("%d ", buf[(row + i) * stride + col + j]);
+    }
+  }
+  printf("\n");
+}
+
+static void dump_frame_buf(const YV12_BUFFER_CONFIG *frame_buf) {
+  dump_buf(frame_buf->y_buffer, frame_buf->y_stride, 0, 0, frame_buf->y_height,
+           frame_buf->y_width);
+  dump_buf(frame_buf->u_buffer, frame_buf->uv_stride, 0, 0,
+           frame_buf->uv_height, frame_buf->uv_width);
+  dump_buf(frame_buf->v_buffer, frame_buf->uv_stride, 0, 0,
+           frame_buf->uv_height, frame_buf->uv_width);
+}
+
 static void encode_frame_internal(VP9_COMP *cpi) {
   SPEED_FEATURES *const sf = &cpi->sf;
   ThreadData *const td = &cpi->td;
@@ -5894,13 +5918,35 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       cpi->kmeans_data_size = 0;
       cpi->kmeans_ctr_num = 5;
 
+      printf("= mi_rows %d mi_cols %d block_size %d\n", cm->mi_rows,
+             cm->mi_cols, 8);
+
       for (mi_row = 0; mi_row < cm->mi_rows; mi_row += MI_BLOCK_SIZE)
         for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE)
-          wiener_var_segment(cpi, BLOCK_64X64, mi_row, mi_col);
+          wiener_var_segment(cpi, BLOCK_64X64, mi_row, mi_col, 1);
 
       vp9_kmeans(cpi->kmeans_ctr_ls, cpi->kmeans_boundary_ls,
                  cpi->kmeans_ctr_num, cpi->kmeans_data_arr,
                  cpi->kmeans_data_size);
+
+      {
+        int i;
+        printf("=\n");
+        printf("kmeans_ctr_num %d\n", cpi->kmeans_ctr_num);
+        for (i = 0; i < cpi->kmeans_ctr_num; ++i) {
+          printf("%f ", cpi->kmeans_ctr_ls[i]);
+        }
+        printf("\n");
+        printf("kmeans_data_size %d\n", cpi->kmeans_data_size);
+        for (i = 0; i < cpi->kmeans_data_size; ++i) {
+          KMEANS_DATA *data = &cpi->kmeans_data_arr[i];
+          int mi_row = data->pos / cpi->kmeans_data_stride;
+          int mi_col = data->pos % cpi->kmeans_data_stride;
+          printf("mi_row %d mi_col %d value %f group_idx %d\n", mi_row, mi_col,
+                 data->value, data->group_idx);
+        }
+        dump_frame_buf(cpi->Source);
+      }
 
       vp9_perceptual_aq_mode_setup(cpi, &cm->seg);
     }
