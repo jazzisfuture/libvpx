@@ -1703,7 +1703,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int scene_change_detected =
       cpi->rc.high_source_sad ||
       (cpi->use_svc && cpi->svc.high_source_sad_superframe);
-
+  int bl_zero_temp_sad_source = x->zero_temp_sad_source;
   init_best_pickmode(&best_pickmode);
 
   x->encode_breakout = seg->enabled
@@ -1942,6 +1942,27 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     flag_svc_subpel = 1;
   }
 
+  if (cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
+      cpi->compute_source_sad_onepass && cpi->sf.use_source_sad &&
+      bsize < BLOCK_64X64 && !x->zero_temp_sad_source) {
+    uint64_t tmp_sad;
+    uint8_t *src_y = cpi->Source->y_buffer;
+    int src_ystride = cpi->Source->y_stride;
+    uint8_t *last_src_y = cpi->Last_Source->y_buffer;
+    int last_src_ystride = cpi->Last_Source->y_stride;
+    int shift = src_ystride * (mi_row << 3) + (mi_col << 3);
+    src_y += shift;
+    last_src_y += shift;
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (cpi->common.use_highbitdepth)
+      tmp_sad = !x->zero_temp_sad_source;
+    else
+#endif
+    tmp_sad=
+      cpi->fn_ptr[bsize].sdf(src_y, src_ystride, last_src_y, last_src_ystride);
+    bl_zero_temp_sad_source = (tmp_sad == 0) ? 1 : 0;
+  }
+
   // For SVC with quality layers, when QP of lower layer is lower
   // than current layer: force check of GF-ZEROMV before early exit
   // due to skip flag.
@@ -2029,16 +2050,22 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
 
     if (!(cpi->ref_frame_flags & flag_list[ref_frame])) continue;
 
-    // For screen content on flat blocks: skip non-zero motion check for
-    // stationary blocks, only skip zero motion check for non-stationary blocks.
-    if (cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
-        sf->short_circuit_flat_blocks && x->source_variance == 0 &&
-        cpi->compute_source_sad_onepass && cpi->sf.use_source_sad &&
-        ((frame_mv[this_mode][ref_frame].as_int != 0 &&
-          x->zero_temp_sad_source) ||
-         (frame_mv[this_mode][ref_frame].as_int == 0 &&
-          !x->zero_temp_sad_source))) {
-      continue;
+    // For screen content. If zero_temp_sad source is computed: skip
+    // non-zero motion check for stationary blocks. If the superblock is
+    // non-stationary then for flat blocks skip the zero last check (keep golden
+    // as it may be inter-layer reference). Otherwise (if zero_temp_sad_source
+    // is not computed) skip non-zero motion check for flat blocks.
+    // TODO(marpan): Compute zero_temp_sad_source per coding block.
+    if (cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
+      if (cpi->compute_source_sad_onepass && cpi->sf.use_source_sad) {
+        if ((frame_mv[this_mode][ref_frame].as_int != 0 &&
+             bl_zero_temp_sad_source) ||
+            (frame_mv[this_mode][ref_frame].as_int == 0 && x->source_variance == 0 &&
+             ref_frame == LAST_FRAME && !bl_zero_temp_sad_source))
+          continue;
+      } else if (frame_mv[this_mode][ref_frame].as_int != 0 && x->source_variance == 0) {
+        continue;
+      }
     }
 
     if (!(cpi->sf.inter_mode_mask[bsize] & (1 << this_mode))) continue;
@@ -2463,7 +2490,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       // only check DC mode for stationary blocks, otherwise also check
       // H and V mode.
       if (sf->short_circuit_flat_blocks && x->source_variance == 0 &&
-          ((x->zero_temp_sad_source && this_mode != DC_PRED) || i > 2)) {
+          ((bl_zero_temp_sad_source && this_mode != DC_PRED) || i > 2)) {
         continue;
       }
 
