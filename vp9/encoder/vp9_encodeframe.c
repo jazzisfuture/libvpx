@@ -815,6 +815,21 @@ static void set_low_temp_var_flag(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
   int i, j;
   VP9_COMMON *const cm = &cpi->common;
   const int mv_thr = cm->width > 640 ? 8 : 4;
+  int64_t thresh_64X64 = thresholds[0] >> 1;
+  int64_t thresh_64X32 = thresholds[0] >> 2;  // Same for 32X64.
+  int64_t thresh_32X32 = (cpi->sf.short_circuit_low_temp_var == 1 ||
+                          cpi->sf.short_circuit_low_temp_var == 3)
+                             ? ((5 * thresholds[1]) >> 3)
+                             : (thresholds[1] >> 1);
+  int64_t thresh_16X16 = thresholds[2] >> 8; // same for 16X32/32X16.
+  // For screen only set the low_temp_var flag if variance is 0.
+  if (cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
+    thresh_64X64 = 1;
+    thresh_64X32 = 1;
+    thresh_32X32 = 1;
+    thresh_16X16 = 1;
+  }
+
   // Check temporal variance for bsize >= 16x16, if LAST_FRAME was selected and
   // int_pro mv is small. If the temporal variance is small set the flag
   // variance_low for the block. The variance threshold can be adjusted, the
@@ -826,16 +841,16 @@ static void set_low_temp_var_flag(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
         xd->mi[0]->mv[0].as_mv.row < mv_thr &&
         xd->mi[0]->mv[0].as_mv.row > -mv_thr))) {
     if (xd->mi[0]->sb_type == BLOCK_64X64) {
-      if ((vt->part_variances).none.variance < (thresholds[0] >> 1))
+      if ((vt->part_variances).none.variance < thresh_64X64)
         x->variance_low[0] = 1;
     } else if (xd->mi[0]->sb_type == BLOCK_64X32) {
       for (i = 0; i < 2; i++) {
-        if (vt->part_variances.horz[i].variance < (thresholds[0] >> 2))
+        if (vt->part_variances.horz[i].variance < thresh_64X32)
           x->variance_low[i + 1] = 1;
       }
     } else if (xd->mi[0]->sb_type == BLOCK_32X64) {
       for (i = 0; i < 2; i++) {
-        if (vt->part_variances.vert[i].variance < (thresholds[0] >> 2))
+        if (vt->part_variances.vert[i].variance < thresh_64X32)
           x->variance_low[i + 3] = 1;
       }
     } else {
@@ -850,11 +865,7 @@ static void set_low_temp_var_flag(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
           continue;
 
         if ((*this_mi)->sb_type == BLOCK_32X32) {
-          int64_t threshold_32x32 = (cpi->sf.short_circuit_low_temp_var == 1 ||
-                                     cpi->sf.short_circuit_low_temp_var == 3)
-                                        ? ((5 * thresholds[1]) >> 3)
-                                        : (thresholds[1] >> 1);
-          if (vt->split[i].part_variances.none.variance < threshold_32x32)
+          if (vt->split[i].part_variances.none.variance < thresh_32X32)
             x->variance_low[i + 5] = 1;
         } else if (cpi->sf.short_circuit_low_temp_var >= 2) {
           // For 32x16 and 16x32 blocks, the flag is set on each 16x16 block
@@ -864,7 +875,7 @@ static void set_low_temp_var_flag(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
               (*this_mi)->sb_type == BLOCK_16X32) {
             for (j = 0; j < 4; j++) {
               if (vt->split[i].split[j].part_variances.none.variance <
-                  (thresholds[2] >> 8))
+                  thresh_16X16)
                 x->variance_low[(i << 2) + j + 9] = 1;
             }
           }
