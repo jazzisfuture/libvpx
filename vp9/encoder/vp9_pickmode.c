@@ -1700,6 +1700,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   int no_scaling = 0;
   unsigned int thresh_svc_skip_golden = 500;
   unsigned int thresh_skip_golden = 500;
+  int low_temp_var_screen = 0;
   int scene_change_detected =
       cpi->rc.high_source_sad ||
       (cpi->use_svc && cpi->svc.high_source_sad_superframe);
@@ -1874,14 +1875,19 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   }
 
   if (cpi->sf.short_circuit_low_temp_var) {
-    force_skip_low_temp_var =
-        get_force_skip_low_temp_var(&x->variance_low[0], mi_row, mi_col, bsize);
-    // If force_skip_low_temp_var is set, and for short circuit mode = 1 and 3,
-    // skip golden reference.
-    if ((cpi->sf.short_circuit_low_temp_var == 1 ||
-         cpi->sf.short_circuit_low_temp_var == 3) &&
-        force_skip_low_temp_var) {
-      usable_ref_frame = LAST_FRAME;
+    if (cpi->oxcf.content != VP9E_CONTENT_SCREEN) {
+      force_skip_low_temp_var = get_force_skip_low_temp_var(
+          &x->variance_low[0], mi_row, mi_col, bsize);
+      // If force_skip_low_temp_var is set, and for short circuit mode = 1 and 3,
+      // skip golden reference.
+      if ((cpi->sf.short_circuit_low_temp_var == 1 ||
+           cpi->sf.short_circuit_low_temp_var == 3) &&
+           force_skip_low_temp_var) {
+        usable_ref_frame = LAST_FRAME;
+      }
+    } else {
+      low_temp_var_screen =
+          get_force_skip_low_temp_var(&x->variance_low[0], mi_row, mi_col, bsize);
     }
   }
 
@@ -2033,8 +2039,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     // non-zero motion check for stationary blocks. If the superblock is
     // non-stationary then for flat blocks skip the zero last check (keep golden
     // as it may be inter-layer reference). Otherwise (if zero_temp_sad_source
-    // is not computed) skip non-zero motion check for flat blocks.
-    // TODO(marpan): Compute zero_temp_sad_source per coding block.
+    // is not computed) skip non-zero motion check for flat blocks based on
+    // the low_temp_var_screen flag.
     if (cpi->oxcf.content == VP9E_CONTENT_SCREEN) {
       if (cpi->compute_source_sad_onepass && cpi->sf.use_source_sad) {
         if ((frame_mv[this_mode][ref_frame].as_int != 0 &&
@@ -2044,7 +2050,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
              !x->zero_temp_sad_source))
           continue;
       } else if (frame_mv[this_mode][ref_frame].as_int != 0 &&
-                 x->source_variance == 0) {
+                 low_temp_var_screen && x->source_variance == 0) {
         continue;
       }
     }
@@ -2467,6 +2473,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       const PREDICTION_MODE this_mode = intra_mode_list[i];
       THR_MODES mode_index = mode_idx[INTRA_FRAME][mode_offset(this_mode)];
       int mode_rd_thresh = rd_threshes[mode_index];
+
       // For spatially flat blocks, under short_circuit_flat_blocks flag:
       // only check DC mode for stationary blocks, otherwise also check
       // H and V mode.
