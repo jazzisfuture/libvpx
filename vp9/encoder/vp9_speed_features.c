@@ -642,7 +642,7 @@ static void set_rt_speed_feature_framesize_independent(
             (cm->mi_stride >> 3) * ((cm->mi_rows >> 3) + 1), sizeof(uint8_t));
       }
     }
-    if (cpi->oxcf.rc_mode == VPX_CBR && content != VP9E_CONTENT_SCREEN) {
+    if (cpi->oxcf.rc_mode == VPX_CBR) {
       // Enable short circuit for low temporal variance.
       sf->short_circuit_low_temp_var = 1;
     }
