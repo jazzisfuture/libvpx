@@ -392,13 +392,13 @@ void vpx_idct8x8_64_add_vsx(const tran_low_t *input, uint8_t *dest,
   int16x8_t src[8], tmp[8];
 
   src[0] = load_tran_low(0, input);
-  src[1] = load_tran_low(8 * sizeof(*input), input);
-  src[2] = load_tran_low(16 * sizeof(*input), input);
-  src[3] = load_tran_low(24 * sizeof(*input), input);
-  src[4] = load_tran_low(32 * sizeof(*input), input);
-  src[5] = load_tran_low(40 * sizeof(*input), input);
-  src[6] = load_tran_low(48 * sizeof(*input), input);
-  src[7] = load_tran_low(56 * sizeof(*input), input);
+  src[1] = load_tran_low(8 * sizeof(*(input)), input);
+  src[2] = load_tran_low(16 * sizeof(*(input)), input);
+  src[3] = load_tran_low(24 * sizeof(*(input)), input);
+  src[4] = load_tran_low(32 * sizeof(*(input)), input);
+  src[5] = load_tran_low(40 * sizeof(*(input)), input);
+  src[6] = load_tran_low(48 * sizeof(*(input)), input);
+  src[7] = load_tran_low(56 * sizeof(*(input)), input);
 
   vpx_idct8_vsx(src, tmp);
   vpx_idct8_vsx(tmp, src);
@@ -667,7 +667,7 @@ void vpx_idct16x16_256_add_vsx(const tran_low_t *input, uint8_t *dest,
 
   LOAD_INPUT16(load_tran_low, input, 0, 8 * sizeof(*input), src0);
   LOAD_INPUT16(load_tran_low, input, 8 * 8 * 2 * sizeof(*input),
-               8 * sizeof(*input), src1);
+               8 * sizeof(*(input)), src1);
 
   // transform rows
   // transform the upper half of 16x16 matrix
@@ -1074,15 +1074,15 @@ void vpx_idct16x16_256_add_vsx(const tran_low_t *input, uint8_t *dest,
   PIXEL_ADD(in3, d_ul, add, shift6);                       \
   vec_vsx_st(vec_packsu(d_uh, d_ul), (step)*stride + 16, dest);
 
-#define ADD_STORE_BLOCK(in, offset)                                      \
-  PIXEL_ADD_STORE32(in[0][0], in[1][0], in[2][0], in[3][0], offset + 0); \
-  PIXEL_ADD_STORE32(in[0][1], in[1][1], in[2][1], in[3][1], offset + 1); \
-  PIXEL_ADD_STORE32(in[0][2], in[1][2], in[2][2], in[3][2], offset + 2); \
-  PIXEL_ADD_STORE32(in[0][3], in[1][3], in[2][3], in[3][3], offset + 3); \
-  PIXEL_ADD_STORE32(in[0][4], in[1][4], in[2][4], in[3][4], offset + 4); \
-  PIXEL_ADD_STORE32(in[0][5], in[1][5], in[2][5], in[3][5], offset + 5); \
-  PIXEL_ADD_STORE32(in[0][6], in[1][6], in[2][6], in[3][6], offset + 6); \
-  PIXEL_ADD_STORE32(in[0][7], in[1][7], in[2][7], in[3][7], offset + 7);
+#define ADD_STORE_BLOCK(in, offset)                                        \
+  PIXEL_ADD_STORE32(in[0][0], in[1][0], in[2][0], in[3][0], (offset) + 0); \
+  PIXEL_ADD_STORE32(in[0][1], in[1][1], in[2][1], in[3][1], (offset) + 1); \
+  PIXEL_ADD_STORE32(in[0][2], in[1][2], in[2][2], in[3][2], (offset) + 2); \
+  PIXEL_ADD_STORE32(in[0][3], in[1][3], in[2][3], in[3][3], (offset) + 3); \
+  PIXEL_ADD_STORE32(in[0][4], in[1][4], in[2][4], in[3][4], (offset) + 4); \
+  PIXEL_ADD_STORE32(in[0][5], in[1][5], in[2][5], in[3][5], (offset) + 5); \
+  PIXEL_ADD_STORE32(in[0][6], in[1][6], in[2][6], in[3][6], (offset) + 6); \
+  PIXEL_ADD_STORE32(in[0][7], in[1][7], in[2][7], in[3][7], (offset) + 7);
 
 void vpx_idct32x32_1024_add_vsx(const tran_low_t *input, uint8_t *dest,
                                 int stride) {
