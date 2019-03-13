@@ -221,7 +221,7 @@ void vpx_idct4x4_16_add_vsx(const tran_low_t *input, uint8_t *dest,
   int16x8_t in[2], out[2];
 
   in[0] = load_tran_low(0, input);
-  in[1] = load_tran_low(8 * sizeof(*input), input);
+  in[1] = load_tran_low(8 * sizeof(*(input)), input);
   // Rows
   vpx_idct4_vsx(in, out);
 
@@ -346,12 +346,12 @@ void vpx_round_store8x8_vsx(int16x8_t *in, uint8_t *dest, int stride) {
   uint8x16_t zerov = vec_splat_u8(0);
   uint8x16_t dest0 = vec_vsx_ld(0, dest);
   uint8x16_t dest1 = vec_vsx_ld(stride, dest);
-  uint8x16_t dest2 = vec_vsx_ld(2 * stride, dest);
-  uint8x16_t dest3 = vec_vsx_ld(3 * stride, dest);
-  uint8x16_t dest4 = vec_vsx_ld(4 * stride, dest);
-  uint8x16_t dest5 = vec_vsx_ld(5 * stride, dest);
-  uint8x16_t dest6 = vec_vsx_ld(6 * stride, dest);
-  uint8x16_t dest7 = vec_vsx_ld(7 * stride, dest);
+  uint8x16_t dest2 = vec_vsx_ld(2 * (stride), dest);
+  uint8x16_t dest3 = vec_vsx_ld(3 * (stride), dest);
+  uint8x16_t dest4 = vec_vsx_ld(4 * (stride), dest);
+  uint8x16_t dest5 = vec_vsx_ld(5 * (stride), dest);
+  uint8x16_t dest6 = vec_vsx_ld(6 * (stride), dest);
+  uint8x16_t dest7 = vec_vsx_ld(7 * (stride), dest);
   int16x8_t d_u0 = (int16x8_t)vec_mergeh(dest0, zerov);
   int16x8_t d_u1 = (int16x8_t)vec_mergeh(dest1, zerov);
   int16x8_t d_u2 = (int16x8_t)vec_mergeh(dest2, zerov);
@@ -379,12 +379,12 @@ void vpx_round_store8x8_vsx(int16x8_t *in, uint8_t *dest, int stride) {
 
   vec_vsx_st(xxpermdi(output0, dest0, 1), 0, dest);
   vec_vsx_st(xxpermdi(output0, dest1, 3), stride, dest);
-  vec_vsx_st(xxpermdi(output1, dest2, 1), 2 * stride, dest);
-  vec_vsx_st(xxpermdi(output1, dest3, 3), 3 * stride, dest);
-  vec_vsx_st(xxpermdi(output2, dest4, 1), 4 * stride, dest);
-  vec_vsx_st(xxpermdi(output2, dest5, 3), 5 * stride, dest);
-  vec_vsx_st(xxpermdi(output3, dest6, 1), 6 * stride, dest);
-  vec_vsx_st(xxpermdi(output3, dest7, 3), 7 * stride, dest);
+  vec_vsx_st(xxpermdi(output1, dest2, 1), 2 * (stride), dest);
+  vec_vsx_st(xxpermdi(output1, dest3, 3), 3 * (stride), dest);
+  vec_vsx_st(xxpermdi(output2, dest4, 1), 4 * (stride), dest);
+  vec_vsx_st(xxpermdi(output2, dest5, 3), 5 * (stride), dest);
+  vec_vsx_st(xxpermdi(output3, dest6, 1), 6 * (stride), dest);
+  vec_vsx_st(xxpermdi(output3, dest7, 3), 7 * (stride), dest);
 }
 
 void vpx_idct8x8_64_add_vsx(const tran_low_t *input, uint8_t *dest,
@@ -392,13 +392,13 @@ void vpx_idct8x8_64_add_vsx(const tran_low_t *input, uint8_t *dest,
   int16x8_t src[8], tmp[8];
 
   src[0] = load_tran_low(0, input);
-  src[1] = load_tran_low(8 * sizeof(*input), input);
-  src[2] = load_tran_low(16 * sizeof(*input), input);
-  src[3] = load_tran_low(24 * sizeof(*input), input);
-  src[4] = load_tran_low(32 * sizeof(*input), input);
-  src[5] = load_tran_low(40 * sizeof(*input), input);
-  src[6] = load_tran_low(48 * sizeof(*input), input);
-  src[7] = load_tran_low(56 * sizeof(*input), input);
+  src[1] = load_tran_low(8 * sizeof(*(input)), input);
+  src[2] = load_tran_low(16 * sizeof(*(input)), input);
+  src[3] = load_tran_low(24 * sizeof(*(input)), input);
+  src[4] = load_tran_low(32 * sizeof(*(input)), input);
+  src[5] = load_tran_low(40 * sizeof(*(input)), input);
+  src[6] = load_tran_low(48 * sizeof(*(input)), input);
+  src[7] = load_tran_low(56 * sizeof(*(input)), input);
 
   vpx_idct8_vsx(src, tmp);
   vpx_idct8_vsx(tmp, src);
@@ -641,21 +641,21 @@ void vpx_round_store16x16_vsx(int16x8_t *src0, int16x8_t *src1, uint8_t *dest,
 
   PIXEL_ADD_STORE16(src0[0], src0[1], destv[0], 0);
   PIXEL_ADD_STORE16(src0[2], src0[3], destv[1], stride);
-  PIXEL_ADD_STORE16(src0[4], src0[5], destv[2], 2 * stride);
-  PIXEL_ADD_STORE16(src0[6], src0[7], destv[3], 3 * stride);
-  PIXEL_ADD_STORE16(src0[8], src0[9], destv[4], 4 * stride);
-  PIXEL_ADD_STORE16(src0[10], src0[11], destv[5], 5 * stride);
-  PIXEL_ADD_STORE16(src0[12], src0[13], destv[6], 6 * stride);
-  PIXEL_ADD_STORE16(src0[14], src0[15], destv[7], 7 * stride);
+  PIXEL_ADD_STORE16(src0[4], src0[5], destv[2], 2 * (stride));
+  PIXEL_ADD_STORE16(src0[6], src0[7], destv[3], 3 * (stride));
+  PIXEL_ADD_STORE16(src0[8], src0[9], destv[4], 4 * (stride));
+  PIXEL_ADD_STORE16(src0[10], src0[11], destv[5], 5 * (stride));
+  PIXEL_ADD_STORE16(src0[12], src0[13], destv[6], 6 * (stride));
+  PIXEL_ADD_STORE16(src0[14], src0[15], destv[7], 7 * (stride));
 
-  PIXEL_ADD_STORE16(src1[0], src1[1], destv[8], 8 * stride);
-  PIXEL_ADD_STORE16(src1[2], src1[3], destv[9], 9 * stride);
-  PIXEL_ADD_STORE16(src1[4], src1[5], destv[10], 10 * stride);
-  PIXEL_ADD_STORE16(src1[6], src1[7], destv[11], 11 * stride);
-  PIXEL_ADD_STORE16(src1[8], src1[9], destv[12], 12 * stride);
-  PIXEL_ADD_STORE16(src1[10], src1[11], destv[13], 13 * stride);
-  PIXEL_ADD_STORE16(src1[12], src1[13], destv[14], 14 * stride);
-  PIXEL_ADD_STORE16(src1[14], src1[15], destv[15], 15 * stride);
+  PIXEL_ADD_STORE16(src1[0], src1[1], destv[8], 8 * (stride));
+  PIXEL_ADD_STORE16(src1[2], src1[3], destv[9], 9 * (stride));
+  PIXEL_ADD_STORE16(src1[4], src1[5], destv[10], 10 * (stride));
+  PIXEL_ADD_STORE16(src1[6], src1[7], destv[11], 11 * (stride));
+  PIXEL_ADD_STORE16(src1[8], src1[9], destv[12], 12 * (stride));
+  PIXEL_ADD_STORE16(src1[10], src1[11], destv[13], 13 * (stride));
+  PIXEL_ADD_STORE16(src1[12], src1[13], destv[14], 14 * (stride));
+  PIXEL_ADD_STORE16(src1[14], src1[15], destv[15], 15 * (stride));
 }
 void vpx_idct16x16_256_add_vsx(const tran_low_t *input, uint8_t *dest,
                                int stride) {
@@ -665,9 +665,9 @@ void vpx_idct16x16_256_add_vsx(const tran_low_t *input, uint8_t *dest,
   int16x8_t tmp16_0, tmp16_1;
   ROUND_SHIFT_INIT;
 
-  LOAD_INPUT16(load_tran_low, input, 0, 8 * sizeof(*input), src0);
-  LOAD_INPUT16(load_tran_low, input, 8 * 8 * 2 * sizeof(*input),
-               8 * sizeof(*input), src1);
+  LOAD_INPUT16(load_tran_low, input, 0, 8 * sizeof(*(input)), src0);
+  LOAD_INPUT16(load_tran_low, input, 8 * 8 * 2 * sizeof(*(input)),
+               8 * sizeof(*(input)), src1);
 
   // transform rows
   // transform the upper half of 16x16 matrix
@@ -1074,15 +1074,15 @@ void vpx_idct16x16_256_add_vsx(const tran_low_t *input, uint8_t *dest,
   PIXEL_ADD(in3, d_ul, add, shift6);                       \
   vec_vsx_st(vec_packsu(d_uh, d_ul), (step)*stride + 16, dest);
 
-#define ADD_STORE_BLOCK(in, offset)                                      \
-  PIXEL_ADD_STORE32(in[0][0], in[1][0], in[2][0], in[3][0], offset + 0); \
-  PIXEL_ADD_STORE32(in[0][1], in[1][1], in[2][1], in[3][1], offset + 1); \
-  PIXEL_ADD_STORE32(in[0][2], in[1][2], in[2][2], in[3][2], offset + 2); \
-  PIXEL_ADD_STORE32(in[0][3], in[1][3], in[2][3], in[3][3], offset + 3); \
-  PIXEL_ADD_STORE32(in[0][4], in[1][4], in[2][4], in[3][4], offset + 4); \
-  PIXEL_ADD_STORE32(in[0][5], in[1][5], in[2][5], in[3][5], offset + 5); \
-  PIXEL_ADD_STORE32(in[0][6], in[1][6], in[2][6], in[3][6], offset + 6); \
-  PIXEL_ADD_STORE32(in[0][7], in[1][7], in[2][7], in[3][7], offset + 7);
+#define ADD_STORE_BLOCK(in, offset)                                        \
+  PIXEL_ADD_STORE32(in[0][0], in[1][0], in[2][0], in[3][0], (offset) + 0); \
+  PIXEL_ADD_STORE32(in[0][1], in[1][1], in[2][1], in[3][1], (offset) + 1); \
+  PIXEL_ADD_STORE32(in[0][2], in[1][2], in[2][2], in[3][2], (offset) + 2); \
+  PIXEL_ADD_STORE32(in[0][3], in[1][3], in[2][3], in[3][3], (offset) + 3); \
+  PIXEL_ADD_STORE32(in[0][4], in[1][4], in[2][4], in[3][4], (offset) + 4); \
+  PIXEL_ADD_STORE32(in[0][5], in[1][5], in[2][5], in[3][5], (offset) + 5); \
+  PIXEL_ADD_STORE32(in[0][6], in[1][6], in[2][6], in[3][6], (offset) + 6); \
+  PIXEL_ADD_STORE32(in[0][7], in[1][7], in[2][7], in[3][7], (offset) + 7);
 
 void vpx_idct32x32_1024_add_vsx(const tran_low_t *input, uint8_t *dest,
                                 int stride) {
