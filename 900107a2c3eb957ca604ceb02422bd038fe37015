@@ -53,6 +53,23 @@
     },
     {
       "key": {
+        "uuid": "99f917c7_d6aa0856",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 747,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-13T16:38:01Z",
+      "side": 1,
+      "message": "for long-term reference shouldn\u0027t we do (as is vp9_svc_update_ref_frame_key_simulcast()):\nif (svc-\u003euse_gf_temporal_ref_current_layer) {\n    const int index \u003d num_sl \u003d\u003d 3 ? sl_id - 1 : sl_id;\n    const int lt_buffer_index \u003d svc-\u003ebuffer_gf_temporal_ref[index].idx;\n\nand then update that slot too....",
+      "revId": "900107a2c3eb957ca604ceb02422bd038fe37015",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f75eebab_5c1ee1a6",
         "filename": "vp9/encoder/vp9_svc_layercontext.c",
         "patchSetId": 1
