@@ -732,6 +732,20 @@ void vp9_copy_flags_ref_update_idx(VP9_COMP *const cpi) {
         svc->update_buffer_slot[sl] |= (1 << ref);
     }
   }
+
+  if (svc->simulcast_mode && cpi->common.frame_type == KEY_FRAME) {
+    if (svc->number_spatial_layers == 1) {
+      svc->update_buffer_slot[sl] = 3;  // 0 and 1
+    } else if (svc->number_spatial_layers == 2) {
+      if (sl == 0) svc->update_buffer_slot[sl] = 5;   // 0 and 2
+      if (sl == 1) svc->update_buffer_slot[sl] = 10;  // 1 and 3
+    } else if (svc->number_spatial_layers == 3) {
+      if (sl == 0) svc->update_buffer_slot[sl] = 9;   // 0 and 3
+      if (sl == 1) svc->update_buffer_slot[sl] = 18;  // 1 and 4
+      if (sl == 2) svc->update_buffer_slot[sl] = 36;  // 2 and 5
+    }
+  }
+
   // TODO(jianj): Remove these 3, deprecated.
   svc->update_last[sl] = (uint8_t)cpi->refresh_last_frame;
   svc->update_golden[sl] = (uint8_t)cpi->refresh_golden_frame;
