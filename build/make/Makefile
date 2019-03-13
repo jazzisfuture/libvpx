@@ -91,6 +91,7 @@ all:
 .PHONY: clean
 clean::
 	rm -f $(OBJS-yes) $(OBJS-yes:.o=.d) $(OBJS-yes:.asm.S.o=.asm.S)
+	rm -f $(OBJS-yes:.o=.o.compile_commands.json)
 	rm -f $(CLEAN-OBJS)
 
 .PHONY: clean
@@ -155,6 +156,10 @@ $(BUILD_PFX)%.c.d: %.c
 $(BUILD_PFX)%.c.o: %.c
 	$(if $(quiet),@echo "    [CC] $@")
 	$(qexec)$(if $(CONFIG_DEPENDENCY_TRACKING),,mkdir -p $(dir $@))
+	@printf '{\n"directory": "%s",\n"command": "%s",\n"file": "%s"\n},\n' \
+      "$(BUILD_PFX)$(BUILD_ROOT)" \
+      "$(CC) $(INTERNAL_CFLAGS) $(CFLAGS) -c -o $@ $<" \
+	  "$<" >> $@.compile_commands.json
 	$(qexec)$(CC) $(INTERNAL_CFLAGS) $(CFLAGS) -c -o $@ $<
 
 $(BUILD_PFX)%.cc.d: %.cc
@@ -165,6 +170,10 @@ $(BUILD_PFX)%.cc.d: %.cc
 $(BUILD_PFX)%.cc.o: %.cc
 	$(if $(quiet),@echo "    [CXX] $@")
 	$(qexec)$(if $(CONFIG_DEPENDENCY_TRACKING),,mkdir -p $(dir $@))
+	@printf '{\n"directory": "%s",\n"command": "%s",\n"file": "%s"\n},\n' \
+      "$(BUILD_PFX)$(BUILD_ROOT)" \
+      "$(CXX) $(INTERNAL_CFLAGS) $(CXXFLAGS) -c -o $@ $<" \
+	  "$<" >> $@.compile_commands.json
 	$(qexec)$(CXX) $(INTERNAL_CFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 $(BUILD_PFX)%.cpp.d: %.cpp
