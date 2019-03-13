@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "93d2c559_e47e13e2",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 737,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-13T16:29:19Z",
+      "side": 1,
+      "message": "also we don\u0027t need to consider 1 spatial layer for simulcast, right, so we ignore this case.\n\nbut we should disable simulcast mode if number_spatial_layers \u003d\u003d 1.",
+      "revId": "900107a2c3eb957ca604ceb02422bd038fe37015",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "14d17869_06be06a9",
         "filename": "vp9/encoder/vp9_svc_layercontext.c",
         "patchSetId": 1
@@ -30,6 +47,23 @@
       "writtenOn": "2019-03-13T16:25:39Z",
       "side": 1,
       "message": "0, 3\n1, 4, 6\n2, 5, 7",
+      "revId": "900107a2c3eb957ca604ceb02422bd038fe37015",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f75eebab_5c1ee1a6",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 769,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-13T16:29:19Z",
+      "side": 1,
+      "message": "doesn\u0027t make sense to have simulcast mode if 1 spatial layer, so we should addL\n\nsvc-\u003enumber_spatial_layers \u003e 1 \u0026\u0026",
       "revId": "900107a2c3eb957ca604ceb02422bd038fe37015",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
