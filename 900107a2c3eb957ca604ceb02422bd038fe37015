@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "14d17869_06be06a9",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 740,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-13T16:25:39Z",
+      "side": 1,
+      "message": "should be:\n0, 2.\n1, 3, 6.\n\nand good to write it as:\nif (sl \u003d\u003d 0) svc-\u003eupdate_buffer_slot[sl] \u003d 1 + 4;   // 0, 2",
+      "revId": "900107a2c3eb957ca604ceb02422bd038fe37015",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1b82d12_b488fad5",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 743,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-13T16:25:39Z",
+      "side": 1,
+      "message": "0, 3\n1, 4, 6\n2, 5, 7",
+      "revId": "900107a2c3eb957ca604ceb02422bd038fe37015",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
