@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "d1d21aa5_91cb6ebe",
+        "filename": "vp8/common/common.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-03-14T19:03:49Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c68ccaad_8eced1c3",
+      "revId": "b3c0e831103093883dba7916503392e95490ff20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "455c9579_de46f9f5",
         "filename": "vp9/encoder/vp9_rd.h",
         "patchSetId": 5
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "a2d3881e_fdea7d34",
+        "filename": "vp9/encoder/vp9_rd.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-03-14T19:03:49Z",
+      "side": 1,
+      "message": "Actually this was due to change to line 30:\nIdeally the whole line 30 should be wrapped in parentheses:\n(ROUND_POWER_OF_TWO(((int64_t)(R)) * (RM), VP9_PROB_COST_SHIFT) + ((D) \u003c\u003c (DM)))\n\nBut I couldn\u0027t get it done to make both cpplint and clang-format happy...\n\nYou can find them in the first few patch set...",
+      "parentUuid": "455c9579_de46f9f5",
+      "revId": "b3c0e831103093883dba7916503392e95490ff20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "71f36f41_fa98326d",
         "filename": "vpx_dsp/ppc/inv_txfm_vsx.c",
         "patchSetId": 5
@@ -47,6 +83,24 @@
       "writtenOn": "2019-03-14T18:42:26Z",
       "side": 1,
       "message": "these are still strange. I\u0027m not sure how the ppc file ended up in the list with compile command output from x86.",
+      "revId": "b3c0e831103093883dba7916503392e95490ff20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dd6c8ca_9039abf2",
+        "filename": "vpx_dsp/ppc/inv_txfm_vsx.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-03-14T19:03:49Z",
+      "side": 1,
+      "message": "I was just eyeballing this file and made changes before I ran clang-tidy. So it was not related to clang-tidy...",
+      "parentUuid": "71f36f41_fa98326d",
       "revId": "b3c0e831103093883dba7916503392e95490ff20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
