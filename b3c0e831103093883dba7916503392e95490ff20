@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c68ccaad_8eced1c3",
+        "filename": "vp8/common/common.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-03-14T18:42:26Z",
+      "side": 1,
+      "message": "as a followup things like this should be a \u0027do {} while (0)\u0027 to avoid any side effects with other conditionals. That\u0027s especially true in legacy code like vp8 as many conditionals don\u0027t use {}s.",
+      "revId": "b3c0e831103093883dba7916503392e95490ff20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "455c9579_de46f9f5",
+        "filename": "vp9/encoder/vp9_rd.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-03-14T18:42:26Z",
+      "side": 1,
+      "message": "maybe this was from a clang-format run against all the files or you reflowed it in your editor at some point",
+      "revId": "b3c0e831103093883dba7916503392e95490ff20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71f36f41_fa98326d",
+        "filename": "vpx_dsp/ppc/inv_txfm_vsx.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-03-14T18:42:26Z",
+      "side": 1,
+      "message": "these are still strange. I\u0027m not sure how the ppc file ended up in the list with compile command output from x86.",
+      "revId": "b3c0e831103093883dba7916503392e95490ff20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

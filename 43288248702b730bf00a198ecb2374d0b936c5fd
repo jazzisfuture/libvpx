@@ -54,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "ff50637c_2853875e",
+        "filename": "vp8/encoder/lookahead.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-03-14T18:42:26Z",
+      "side": 1,
+      "message": "\u003e yeah it got clang-tidy\u0027s attention for all negative values.\n\u003e Should I leave it as it is or make the change\n\nIt\u0027s harmless, though it has a slight risk to be cleaned up if we don\u0027t start running clang-tidy regularly. For now I think it\u0027s better to clear the noise.",
+      "parentUuid": "320d71d8_d5736ee7",
+      "revId": "43288248702b730bf00a198ecb2374d0b936c5fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ebe61a14_5514e57e",
         "filename": "vp9/common/vp9_common.h",
         "patchSetId": 4
