@@ -3573,6 +3573,9 @@ static void ml_predict_var_rd_paritioning(const VP9_COMP *const cpi,
 
 static int wiener_var_rdmult(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
                              int mi_col, int orig_rdmult) {
+#if CONFIG_MULTITHREAD
+  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif  // CONFIG_MULTITHREAD
   VP9_COMMON *cm = &cpi->common;
   int mb_row_start = mi_row >> 1;
   int mb_col_start = mi_col >> 1;
@@ -3592,9 +3595,15 @@ static int wiener_var_rdmult(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
     for (col = mb_col_start; col < mb_col_end; ++col)
       wiener_variance += cpi->mb_wiener_variance[row * cm->mb_cols + col];
 
+#if CONFIG_MULTITHREAD
+  pthread_mutex_lock(&mutex);
+#endif  // CONFIG_MULTITHREAD
   kmeans_data = &cpi->kmeans_data_arr[cpi->kmeans_data_size++];
   kmeans_data->value = log(1 + wiener_variance);
   kmeans_data->pos = mi_row * cpi->kmeans_data_stride + mi_col;
+#if CONFIG_MULTITHREAD
+  pthread_mutex_unlock(&mutex);
+#endif  // CONFIG_MULTITHREAD
   if (wiener_variance)
     wiener_variance /=
         (mb_row_end - mb_row_start) * (mb_col_end - mb_col_start);
