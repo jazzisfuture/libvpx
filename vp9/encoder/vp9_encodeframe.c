@@ -3594,7 +3594,7 @@ static int wiener_var_rdmult(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
       wiener_variance += cpi->mb_wiener_variance[row * cm->mb_cols + col];
 
   kmeans_data = &cpi->kmeans_data_arr[cpi->kmeans_data_size++];
-  kmeans_data->value = log(1 + wiener_variance);
+  kmeans_data->value = log(1.0 + wiener_variance) / log(2.0);
   kmeans_data->pos = mi_row * cpi->kmeans_data_stride + mi_col;
   if (wiener_variance)
     wiener_variance /=
@@ -5874,6 +5874,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   }
 
   // Frame segmentation
+  vp9_disable_segmentation(&cm->seg);
   if (cpi->sf.enable_wiener_variance && cm->show_frame) {
     int mi_row, mi_col;
     cpi->kmeans_data_size = 0;
@@ -5885,6 +5886,8 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
     vp9_kmeans(cpi->kmeans_ctr_ls, cpi->kmeans_boundary_ls, cpi->kmeans_ctr_num,
                cpi->kmeans_data_arr, cpi->kmeans_data_size);
+
+    vp9_perceptual_aq_mode_setup(cpi, &cm->seg);
   }
 
   {
