@@ -2264,6 +2264,14 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       if (sse_y < best_sse_sofar) best_sse_sofar = sse_y;
     }
 
+    // On spatially flat blocks for screenc content: don't use zero-last
+    // if the sse_y is non-zero. Only on scene change or high motion frames.
+    if (cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
+        (scene_change_detected || svc->high_num_blocks_with_motion) &&
+        ref_frame == LAST_FRAME && frame_mv[this_mode][ref_frame].as_int == 0 &&
+        x->source_variance == 0 && sse_y > 0)
+      continue;
+
     if (!this_early_term) {
       this_sse = (int64_t)sse_y;
       block_yrd(cpi, x, &this_rdc, &is_skippable, &this_sse, bsize,
