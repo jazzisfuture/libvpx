@@ -2348,6 +2348,17 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       }
     }
 
+    // On spatially flat blocks for screne content: bias against zero-last
+    // if the sse_y is non-zero. Only on scene change or high motion frames.
+    if (cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
+        (scene_change_detected || svc->high_num_blocks_with_motion) &&
+        ref_frame == LAST_FRAME && frame_mv[this_mode][ref_frame].as_int == 0 &&
+        x->source_variance == 0 && sse_y > 0) {
+      this_rdc.rdcost = this_rdc.rdcost << 1;
+      x->skip = 0;
+      continue;
+    }
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
     if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc_pickmode &&
         cpi->denoiser.denoising_level > kDenLowLow) {
