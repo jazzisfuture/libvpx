@@ -5718,8 +5718,8 @@ int vp9_get_group_idx(double value, double *boundary_ls, int k) {
   return group_idx;
 }
 
-void vp9_kmeans(double *ctr_ls, double *boundary_ls, int k, KMEANS_DATA *arr,
-                int size) {
+void vp9_kmeans(double *ctr_ls, double *boundary_ls, int *count_ls, int k,
+                KMEANS_DATA *arr, int size) {
   double min, max;
   double step;
   int i, j;
@@ -5769,7 +5769,10 @@ void vp9_kmeans(double *ctr_ls, double *boundary_ls, int k, KMEANS_DATA *arr,
     }
   }
 
-  // compute group_idx
+  // compute group_idx, boundary_ls and count_ls
+  for (j = 0; j < k; ++j) {
+    count_ls[j] = 0;
+  }
   compute_boundary_ls(ctr_ls, k, boundary_ls);
   group_idx = 0;
   for (i = 0; i < size; ++i) {
@@ -5780,6 +5783,7 @@ void vp9_kmeans(double *ctr_ls, double *boundary_ls, int k, KMEANS_DATA *arr,
       }
     }
     arr[i].group_idx = group_idx;
+    ++count_ls[group_idx];
   }
 }
 
@@ -5891,7 +5895,8 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE)
         wiener_var_rdmult(cpi, BLOCK_64X64, mi_row, mi_col, cpi->rd.RDMULT);
 
-    vp9_kmeans(cpi->kmeans_ctr_ls, cpi->kmeans_boundary_ls, cpi->kmeans_ctr_num,
+    vp9_kmeans(cpi->kmeans_ctr_ls, cpi->kmeans_boundary_ls,
+               cpi->kmeans_count_ls, cpi->kmeans_ctr_num,
                cpi->kmeans_data_arr, cpi->kmeans_data_size);
   }
 
