@@ -22,6 +22,30 @@
       "revId": "30b6741381c9a6419f7b096a8af497df7738aa3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc6217af_0d08b563",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3586,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2019-03-18T22:37:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c09bffce_baddaadf",
+      "range": {
+        "startLine": 3586,
+        "startChar": 11,
+        "endLine": 3586,
+        "endChar": 28
+      },
+      "revId": "30b6741381c9a6419f7b096a8af497df7738aa3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
