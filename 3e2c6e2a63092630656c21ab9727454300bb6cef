@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "25975e1d_470b7d9b",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4729,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2019-03-20T20:44:29Z",
+      "side": 1,
+      "message": "Only need 16x16 here?",
+      "range": {
+        "startLine": 4729,
+        "startChar": 44,
+        "endLine": 4729,
+        "endChar": 51
+      },
+      "revId": "3e2c6e2a63092630656c21ab9727454300bb6cef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
