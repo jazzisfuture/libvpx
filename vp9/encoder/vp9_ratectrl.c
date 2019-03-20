@@ -1414,6 +1414,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
   const int cq_level = get_active_cq_level_two_pass(&cpi->twopass, rc, oxcf);
   int active_best_quality;
   int active_worst_quality = cpi->twopass.active_worst_quality;
+  int active_worst_quality_base;
   int q;
   int *inter_minq;
   const int boost_frame =
@@ -1478,6 +1479,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
     // the last boosted frame.
     active_best_quality = VPXMAX(active_best_quality, rc->last_boosted_qindex);
   }
+  active_worst_quality_base = active_worst_quality;
 
 #if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
   vpx_clear_system_state();
@@ -1497,6 +1499,24 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
         rc, cm->frame_type, active_best_quality, 2.0, cm->bit_depth);
     active_best_quality =
         VPXMAX(active_best_quality + qdelta, rc->best_quality);
+  }
+
+  if (gf_group->rf_level[gf_group_index] == GF_ARF_LOW) {
+    const int layer_depth = gf_group->layer_depth[gf_group_index];
+
+    int qdelta_arf_layer_2 =
+        vp9_frame_type_qdelta(cpi, GF_ARF_LOW, active_worst_quality_base);
+    int qdelta_inter =
+        vp9_frame_type_qdelta(cpi, INTER_NORMAL, active_worst_quality_base);
+    int active_worst_quality_layer2_arf = VPXMAX(
+        active_worst_quality_base + qdelta_arf_layer_2, active_best_quality);
+    int active_worst_quality_inter =
+        VPXMAX(active_worst_quality_base + qdelta_inter, active_best_quality);
+
+    active_worst_quality =
+        ((layer_depth - 2) * active_worst_quality_inter +
+         active_worst_quality_layer2_arf + (layer_depth - 1) / 2) /
+        (layer_depth - 1);
   }
 
   active_best_quality =
