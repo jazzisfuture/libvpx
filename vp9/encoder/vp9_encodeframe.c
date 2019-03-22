@@ -1916,7 +1916,6 @@ static void set_segment_rdmult(VP9_COMP *const cpi, MACROBLOCK *const x,
   const uint8_t *const map =
       cm->seg.update_map ? cpi->segmentation_map : cm->last_frame_seg_map;
 
-  vp9_init_plane_quantizers(cpi, x);
   vpx_clear_system_state();
 
   if (aq_mode == NO_AQ || aq_mode == PSNR_AQ) {
@@ -4359,6 +4358,8 @@ static void encode_rd_sb_row(VP9_COMP *cpi, ThreadData *td,
       seg_skip = segfeature_active(seg, segment_id, SEG_LVL_SKIP);
     }
 
+    vp9_init_plane_quantizers(cpi, x);
+
     x->source_variance = UINT_MAX;
 
     x->cb_rdmult = orig_rdmult;
@@ -5891,7 +5892,6 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   cm->tx_mode = select_tx_mode(cpi, xd);
 
   vp9_frame_init_quantizer(cpi);
-
   vp9_initialize_rd_consts(cpi);
   vp9_initialize_me_consts(cpi, x, cm->base_qindex);
   init_encode_frame_mb_context(cpi);
