@@ -1916,7 +1916,6 @@ static void set_segment_rdmult(VP9_COMP *const cpi, MACROBLOCK *const x,
   const uint8_t *const map =
       cm->seg.update_map ? cpi->segmentation_map : cm->last_frame_seg_map;
 
-  vp9_init_plane_quantizers(cpi, x);
   vpx_clear_system_state();
 
   if (aq_mode == NO_AQ || aq_mode == PSNR_AQ) {
