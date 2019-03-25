@@ -16,6 +16,24 @@
       "revId": "d6e40b68bceac111652f89dc2c3e2b7c65bf3356",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eae8b15c_f0e3f19b",
+        "filename": "vp9/encoder/vp9_encodemb.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 407,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2019-03-25T20:53:19Z",
+      "side": 0,
+      "message": "Yes, we can remove this function and its simd functions after this.",
+      "parentUuid": "df572d07_f8fa4690",
+      "revId": "d6e40b68bceac111652f89dc2c3e2b7c65bf3356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
