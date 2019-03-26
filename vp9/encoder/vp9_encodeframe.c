@@ -3615,6 +3615,7 @@ static int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
   int tpl_stride = tpl_frame->stride;
   int64_t intra_cost = 0;
   int64_t mc_dep_cost = 0;
+  int64_t inter_cost = 0;
   int mi_wide = num_8x8_blocks_wide_lookup[bsize];
   int mi_high = num_8x8_blocks_high_lookup[bsize];
   int row, col;
@@ -3625,7 +3626,8 @@ static int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
 
   if (tpl_frame->is_valid == 0) return orig_rdmult;
 
-  if (cpi->twopass.gf_group.layer_depth[gf_group_index] > 1) return orig_rdmult;
+  if (cpi->twopass.gf_group.update_type[gf_group_index] != ARF_UPDATE)
+    return orig_rdmult;
 
   if (gf_group_index >= MAX_ARF_GOP_SIZE) return orig_rdmult;
 
@@ -3637,6 +3639,7 @@ static int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
 
       intra_cost += this_stats->intra_cost;
       mc_dep_cost += this_stats->mc_dep_cost;
+      inter_cost += this_stats->inter_cost;
 
       ++count;
     }
@@ -3652,6 +3655,10 @@ static int get_rdmult_delta(VP9_COMP *cpi, BLOCK_SIZE bsize, int mi_row,
   dr = VPXMIN(dr, orig_rdmult * 3 / 2);
   dr = VPXMAX(dr, orig_rdmult * 1 / 2);
 
+  if (cpi->twopass.gf_group.layer_depth[gf_group_index] > 1) {
+    dr = dr * ((double)inter_cost / intra_cost) +
+         orig_rdmult * 3 / 2 * (1 - (double)inter_cost / intra_cost);
+  }
   dr = VPXMAX(1, dr);
 
   return dr;
