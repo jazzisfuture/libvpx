@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4a517e9_ca323453",
+        "filename": "test/timestamp_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002054
+      },
+      "writtenOn": "2019-03-26T07:15:42Z",
+      "side": 1,
+      "message": "Anyway I can test for failure here on the third frame without having to copy all of RunLoop() code?",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 25
+      },
+      "revId": "7f9213293fde1828e4ea0f9ecf587baf75b77096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
