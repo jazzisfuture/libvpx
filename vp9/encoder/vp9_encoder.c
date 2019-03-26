@@ -3967,7 +3967,8 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     vp9_360aq_frame_setup(cpi);
   } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
     vp9_setup_in_frame_q_adj(cpi);
-  } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    // TODO(marpan): cyclic_refresh only works for nonrd-pickmode, speeds >= 5.
+  } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi->oxcf.speed <= 4) {
     vp9_cyclic_refresh_setup(cpi);
   } else if (cpi->oxcf.aq_mode == LOOKAHEAD_AQ) {
     // it may be pretty bad for rate-control,
