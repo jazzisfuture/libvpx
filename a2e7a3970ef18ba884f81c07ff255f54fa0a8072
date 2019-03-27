@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d4bbe60_5e0a2d65",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1200,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-27T23:26:54Z",
+      "side": 1,
+      "message": "remove this, since ss_number_layers must be 1?",
+      "range": {
+        "startLine": 1200,
+        "startChar": 11,
+        "endLine": 1200,
+        "endChar": 39
+      },
+      "revId": "a2e7a3970ef18ba884f81c07ff255f54fa0a8072",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
