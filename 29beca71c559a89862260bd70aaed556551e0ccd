@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92287ece_0ec764ce",
+        "filename": "examples/vp9_spatial_svc_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1199,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-03-27T23:37:38Z",
+      "side": 1,
+      "message": "i don\u0027t understand this condition (ts_number_layers \u003e 1). We can have 1 spatial and 1 temporal, and mismatch check should be ok to run?.",
+      "range": {
+        "startLine": 1199,
+        "startChar": 43,
+        "endLine": 1199,
+        "endChar": 72
+      },
+      "revId": "29beca71c559a89862260bd70aaed556551e0ccd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
