@@ -167,8 +167,8 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
     unsigned int bin_size = 100;
     unsigned int hist[MAX_VAR_HIST_BINS] = {0};
     unsigned int hist_avg[MAX_VAR_HIST_BINS];
-    unsigned int max_bin=0;
-    unsigned int max_bin_count=0;
+    unsigned int max_bin = 0;
+    unsigned int max_bin_count = 0;
     int bsize = BLOCK_16X16;
     // Loop over sub-sample of 16x16 blocks of frame, and for blocks that have
     // been encoded as zero/small mv at least x consecutive frames, compute
@@ -259,7 +259,7 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
     }
 
     // Average hist[] and find largest bin
-    for (unsigned int bin_cnt=0; bin_cnt < MAX_VAR_HIST_BINS; bin_cnt++) {
+    for (unsigned int bin_cnt = 0; bin_cnt < MAX_VAR_HIST_BINS; bin_cnt++) {
       if (bin_cnt == 0)
         hist_avg[bin_cnt] = (hist[0] + hist[1] + hist[2]) / 3;
       else if (bin_cnt == MAX_VAR_HIST_BINS - 1)
@@ -271,7 +271,7 @@ void vp9_update_noise_estimate(VP9_COMP *const cpi) {
         hist_avg[bin_cnt] = (hist[bin_cnt - 1] + 2 * hist[bin_cnt] +
           hist[bin_cnt + 1] + 2) >> 2;
 
-      if (hist_avg[bin_cnt] > max_bin_count){
+      if (hist_avg[bin_cnt] > max_bin_count) {
           max_bin_count = hist_avg[bin_cnt];
           max_bin = bin_cnt;
       }
