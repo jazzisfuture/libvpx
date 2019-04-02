@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dfad2a54_f24846f1",
+        "filename": "tools/set_analyzer_env.sh",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-04-02T21:18:43Z",
+      "side": 1,
+      "message": "you can reset the mode to 644 on this file. it\u0027s non-executable as it\u0027s meant to be sourced, not run directly.",
+      "revId": "ec2dacb26810f3c4a5e21ca61df7b15bfbf8b85f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
