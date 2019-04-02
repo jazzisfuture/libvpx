@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2088208_5deafc0c",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-02T22:05:03Z",
+      "side": 1,
+      "message": "are these thresholds (line 115-117) still needed? Also same in lines 128-130.",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "939dc648_431a375a",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-02T22:05:03Z",
+      "side": 1,
+      "message": "space around \"\u003d\" (max_bin \u003d 0;)",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b21f322a_19234c9b",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-02T22:05:03Z",
+      "side": 1,
+      "message": "max_bin_count \u003d 0;",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce291a5e_2af6928a",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-02T22:05:03Z",
+      "side": 1,
+      "message": "space around \"/\"\n\nIf the bin_size can be chosen to be power of 2 (i.e., 128 instead of 100), then we can avoid these divisions (which are done per block) and do shift (\u003e\u003e 7).",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "236ea129_270bac1e",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-02T22:05:03Z",
+      "side": 1,
+      "message": "prefer \u003e\u003e 1 instead of / 2",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
