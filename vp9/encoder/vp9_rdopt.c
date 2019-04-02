@@ -3750,6 +3750,22 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, TileDataEnc *tile_data,
     // Apply an adjustment to the rd value based on the similarity of the
     // source variance and reconstructed variance.
     if (recon) {
+      // In film mode bias against DC pred and other intra if there is a
+      // significant difference between the variance of the sub blocks in the
+      // the source.
+      if ((cpi->oxcf.content == VP9E_CONTENT_FILM) &&
+          (ref_frame == INTRA_FRAME) && (bsize >= BLOCK_16X16)) {
+        int min_energy, max_energy;
+        vp9_get_sub_block_energy(cpi, x, mi_row, mi_col, bsize, &min_energy,
+                                 &max_energy);
+        if (max_energy > min_energy) {
+          if (this_mode == DC_PRED)
+            this_rd += this_rd * (max_energy - min_energy);
+          else
+            this_rd += (this_rd * (max_energy - min_energy)) / 4;
+        }
+      }
+
       rd_variance_adjustment(cpi, x, bsize, &this_rd, recon, ref_frame,
                              this_mode);
     }
