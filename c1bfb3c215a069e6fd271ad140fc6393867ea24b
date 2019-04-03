@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fbb0346e_7f50ee2a",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1045,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-03T20:49:16Z",
+      "side": 1,
+      "message": "do you need this: svc-\u003egld_fb_idx[sl] \u003d svc-\u003elst_fb_idx[sl]? Isn\u0027t that done in vp9_copy_flags_ref_update_idx() after encoding is done.",
+      "revId": "c1bfb3c215a069e6fd271ad140fc6393867ea24b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f00942c_10955974",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1046,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-03T20:49:16Z",
+      "side": 1,
+      "message": "To be more general: shouldn\u0027t we check that \"ref_frame\" is not last, and only if its gld/alt then we should set gld/alt_fb_idx to lst_fb_idx.",
+      "revId": "c1bfb3c215a069e6fd271ad140fc6393867ea24b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
