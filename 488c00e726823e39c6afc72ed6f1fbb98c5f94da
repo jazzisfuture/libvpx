@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a8f493ae_4f529202",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1266290
+      },
+      "writtenOn": "2019-04-03T19:15:33Z",
+      "side": 1,
+      "message": "You are correct.",
+      "parentUuid": "a2088208_5deafc0c",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "939dc648_431a375a",
         "filename": "vp9/encoder/vp9_noise_estimate.c",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74da75aa_da964bc3",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1266290
+      },
+      "writtenOn": "2019-04-03T19:15:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "939dc648_431a375a",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "1fcbe739_0ba2ab58",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1266290
+      },
+      "writtenOn": "2019-04-03T19:15:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b21f322a_19234c9b",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ce291a5e_2af6928a",
         "filename": "vp9/encoder/vp9_noise_estimate.c",
         "patchSetId": 2
@@ -70,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "7459f18e_0b86c3c4",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1266290
+      },
+      "writtenOn": "2019-04-03T19:15:33Z",
+      "side": 1,
+      "message": "Good idea. Will test in a future version since doing such would require re-tuning. Also, the larger bin size may be too large.",
+      "parentUuid": "ce291a5e_2af6928a",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "236ea129_270bac1e",
         "filename": "vp9/encoder/vp9_noise_estimate.c",
         "patchSetId": 2
@@ -84,6 +156,24 @@
       "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22de5c03_73e34dd9",
+        "filename": "vp9/encoder/vp9_noise_estimate.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1266290
+      },
+      "writtenOn": "2019-04-03T19:15:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "236ea129_270bac1e",
+      "revId": "488c00e726823e39c6afc72ed6f1fbb98c5f94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
