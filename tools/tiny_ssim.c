@@ -140,8 +140,10 @@ static int open_input_file(const char *file_name, input_file_t *input, int w,
         input->buf = malloc(input->frame_size);
         break;
     }
+    return 0;
+  } else {
+    return -1;
   }
-  return 0;
 }
 
 static void close_input_file(input_file_t *in) {
