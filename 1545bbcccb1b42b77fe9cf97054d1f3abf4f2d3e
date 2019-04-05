@@ -16,6 +16,24 @@
       "revId": "1545bbcccb1b42b77fe9cf97054d1f3abf4f2d3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93a2cd37_267e348b",
+        "filename": "vp8/encoder/rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1947,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-04-05T19:51:58Z",
+      "side": 1,
+      "message": "It should be done in rd_pick_intra_mbuv_mode.",
+      "parentUuid": "39a21e6f_6bae25a0",
+      "revId": "1545bbcccb1b42b77fe9cf97054d1f3abf4f2d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
