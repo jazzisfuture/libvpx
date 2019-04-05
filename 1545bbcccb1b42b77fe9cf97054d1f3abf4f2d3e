@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39a21e6f_6bae25a0",
+        "filename": "vp8/encoder/rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1947,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-04-05T03:44:42Z",
+      "side": 1,
+      "message": "this is what the code implies in any case. Marco, Jerome what do you think?",
+      "revId": "1545bbcccb1b42b77fe9cf97054d1f3abf4f2d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
