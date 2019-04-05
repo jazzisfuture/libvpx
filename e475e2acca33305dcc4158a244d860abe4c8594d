@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "ebc3d198_eb0990e7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-04-05T21:37:43Z",
+      "side": 1,
+      "message": "it\u0027s often helpful to mention where the fix is being applied in the subject, the following could work as a commit message:\n\ntiny_ssim: Fix an \u0027Uninitialized argument value\u0027 bug\n\nfound by clang-7.0.1 static analysis",
+      "revId": "e475e2acca33305dcc4158a244d860abe4c8594d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4cdf72bb_d33ef758",
         "filename": "/COMMIT_MSG",
         "patchSetId": 3
