@@ -16,6 +16,24 @@
       "revId": "b45d64dfa2aa4cb2a2d25202b81594a81c5c0435",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8447a23d_66e68d49",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2019-04-05T02:54:35Z",
+      "side": 1,
+      "message": "This cl is not addressing this issue.",
+      "parentUuid": "c4ef879f_de6f3a55",
+      "revId": "b45d64dfa2aa4cb2a2d25202b81594a81c5c0435",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
