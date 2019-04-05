@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c39f088d_d3492b17",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-04-05T03:14:39Z",
+      "side": 1,
+      "message": "another option would be to check the negative condition and return immediately since nothing is declared within the scope of the if ()",
+      "parentUuid": "06ef1770_5bf4a557",
+      "revId": "b45d64dfa2aa4cb2a2d25202b81594a81c5c0435",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c4ef879f_de6f3a55",
         "filename": "tools/tiny_ssim.c",
         "patchSetId": 2
