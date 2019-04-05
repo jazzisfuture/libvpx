@@ -6331,10 +6331,6 @@ static double get_mv_cost(int mv_mode, VP9_COMP *cpi, TplDepFrame *tpl_frame,
   return mv_cost;
 }
 
-static double rd_cost(int rdmult, int rddiv, double rate, double dist) {
-  return (rate * rdmult) / (1 << 9) + dist * (1 << rddiv);
-}
-
 static double eval_mv_mode(int mv_mode, VP9_COMP *cpi, MACROBLOCK *x,
                            GF_PICTURE *gf_picture, int frame_idx,
                            TplDepFrame *tpl_frame, int rf_idx, BLOCK_SIZE bsize,
@@ -6344,8 +6340,9 @@ static double eval_mv_mode(int mv_mode, VP9_COMP *cpi, MACROBLOCK *x,
                                tpl_frame, rf_idx, bsize, mi_row, mi_col, mv);
   double mv_cost =
       get_mv_cost(mv_mode, cpi, tpl_frame, rf_idx, bsize, mi_row, mi_col);
+  double mult = 180;
 
-  return rd_cost(x->rdmult, x->rddiv, mv_cost, mv_dist);
+  return mv_cost + mult * log2f(mv_dist);
 }
 
 static int find_best_ref_mv_mode(VP9_COMP *cpi, MACROBLOCK *x,
@@ -6472,6 +6469,9 @@ static void predict_mv_mode(VP9_COMP *cpi, MACROBLOCK *x,
   } else {
     rd_diff_arr[mi_row * stride + mi_col] =
         (no_new_mv_rd - this_no_new_mv_rd) - (new_mv_rd - this_new_mv_rd);
+    printf("rd_diff %f\n", rd_diff_arr[mi_row * stride + mi_col]);
+    printf("no_new_mv_rd %f this_no_new_mv_rd %f new_mv_rd %f this_new_mv_rd %f\n",
+           no_new_mv_rd, this_no_new_mv_rd, new_mv_rd, this_new_mv_rd);
   }
 }
 
