@@ -608,6 +608,11 @@ typedef struct SPEED_FEATURES {
 
   // Multiplier for base thresold for variance partitioning.
   int variance_part_thresh_mult;
+
+  // Setting to 1 means always do coarse sb motion in variance partition.
+  // Setting this to 0 means encoder may skip int_pro_motion_estimation based on
+  // source content value.
+  int sb_motion_variance_partition;
 } SPEED_FEATURES;
 
 struct VP9_COMP;

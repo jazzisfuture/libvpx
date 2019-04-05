@@ -452,6 +452,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->use_accurate_subpel_search = USE_2_TAPS;
   sf->nonrd_use_ml_partition = 0;
   sf->variance_part_thresh_mult = 1;
+  sf->sb_motion_variance_partition = 1;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -660,6 +661,7 @@ static void set_rt_speed_feature_framesize_independent(
   }
 
   if (speed >= 7) {
+    sf->sb_motion_variance_partition = 0;
     sf->adapt_partition_source_sad = 0;
     sf->adaptive_rd_thresh = 3;
     sf->mv.search_method = FAST_DIAMOND;
