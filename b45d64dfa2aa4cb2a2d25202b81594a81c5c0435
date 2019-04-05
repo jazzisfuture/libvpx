@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "06ef1770_5bf4a557",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-04-05T03:13:40Z",
+      "side": 1,
+      "message": "given the other block returns you can omit the else",
+      "revId": "b45d64dfa2aa4cb2a2d25202b81594a81c5c0435",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c4ef879f_de6f3a55",
         "filename": "tools/tiny_ssim.c",
         "patchSetId": 2
