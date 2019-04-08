@@ -1639,13 +1639,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
           : tile_data->thresh_freq_fact[bsize];
 
   INTERP_FILTER filter_ref;
-  const int bsl = mi_width_log2_lookup[bsize];
-  const int pred_filter_search =
-      cm->interp_filter == SWITCHABLE
-          ? (((mi_row + mi_col) >> bsl) +
-             get_chessboard_index(cm->current_video_frame)) &
-                0x1
-          : 0;
   int const_motion[MAX_REF_FRAMES] = { 0 };
   const int bh = num_4x4_blocks_high_lookup[bsize] << 2;
   const int bw = num_4x4_blocks_wide_lookup[bsize] << 2;
@@ -2213,7 +2206,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     }
 
     if ((this_mode == NEWMV || filter_ref == SWITCHABLE) &&
-        pred_filter_search &&
         (ref_frame == LAST_FRAME ||
          (ref_frame == GOLDEN_FRAME && !force_mv_inter_layer &&
           (cpi->use_svc || cpi->oxcf.rc_mode == VPX_VBR))) &&
