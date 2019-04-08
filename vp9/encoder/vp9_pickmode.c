@@ -2284,9 +2284,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
           this_rdc.rate += vp9_get_switchable_rate(cpi, xd);
       }
     } else {
-      this_rdc.rate += cm->interp_filter == SWITCHABLE
-                           ? vp9_get_switchable_rate(cpi, xd)
-                           : 0;
+      if (cm->interp_filter == SWITCHABLE) {
+        if ((mi->mv[0].as_mv.row | mi->mv[0].as_mv.col) & 0x07)
+          this_rdc.rate += vp9_get_switchable_rate(cpi, xd);
+      }
       this_rdc.rate += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
     }
 
