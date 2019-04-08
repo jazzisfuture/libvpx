@@ -22,6 +22,30 @@
       "revId": "9a9f798936de44e070b469c6e749bd1f3d3b6100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28e541eb_4f49a8e1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-04-08T19:27:13Z",
+      "side": 1,
+      "message": "\u003e would this require row_mt to be on?\n\nno this occurs with row-mt disabled using the default library settings for threading.",
+      "parentUuid": "417e2ce3_ae0bdab3",
+      "range": {
+        "startLine": 12,
+        "startChar": 13,
+        "endLine": 12,
+        "endChar": 53
+      },
+      "revId": "9a9f798936de44e070b469c6e749bd1f3d3b6100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
