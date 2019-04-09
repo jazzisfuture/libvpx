@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0bd7ad9a_f01c27ee",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 3774,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2019-04-09T03:19:05Z",
+      "side": 1,
+      "message": "Move it into rd_variance_adjustment() since the purpose is the same that is adjusting rd_cost by variance (energy) ?",
+      "range": {
+        "startLine": 3748,
+        "startChar": 0,
+        "endLine": 3774,
+        "endChar": 7
+      },
+      "revId": "8cf656e3f2be9ad651c9450ace39e16ddb529e3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
