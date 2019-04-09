@@ -2450,6 +2450,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   int gf_arf_bits;
   const int is_key_frame = frame_is_intra_only(cm);
   const int arf_active_or_kf = is_key_frame || rc->source_alt_ref_active;
+  int is_alt_ref_flash = 0;
 
   double gop_intra_factor = 1.0;
 
@@ -2661,6 +2662,9 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // Reset the file position.
   reset_fpf_position(twopass, start_pos);
 
+  if (rc->source_alt_ref_pending)
+    is_alt_ref_flash = detect_flash(twopass, rc->baseline_gf_interval);
+
   // Calculate the bits to be allocated to the gf/arf group as a whole
   gf_group_bits = calculate_total_gf_group_bits(cpi, gf_group_err);
 
@@ -2736,6 +2740,10 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   twopass->rolling_arf_group_target_bits = 0;
   twopass->rolling_arf_group_actual_bits = 0;
 #endif
+  cpi->preserve_arf_as_gld = 0;
+  // If alt ref frame is flash do not set preserve_arf_as_gld
+  if (!cpi->use_svc && cpi->oxcf.aq_mode == NO_AQ && !is_alt_ref_flash)
+    cpi->preserve_arf_as_gld = 1;
 }
 
 // Intra / Inter threshold very low

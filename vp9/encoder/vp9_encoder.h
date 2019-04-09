@@ -876,6 +876,8 @@ typedef struct VP9_COMP {
 
   int multi_layer_arf;
   vpx_roi_map_t roi;
+  int preserve_arf_as_gld;
+  int show_arf_as_gld;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
