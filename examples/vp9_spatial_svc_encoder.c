@@ -1046,7 +1046,7 @@ int main(int argc, const char **argv) {
   vpx_codec_control(&encoder, VP9E_SET_SVC_INTER_LAYER_PRED,
                     app_input.inter_layer_pred);
 
-  vpx_codec_control(&encoder, VP9E_SET_NOISE_SENSITIVITY, 0);
+  vpx_codec_control(&encoder, VP9E_SET_NOISE_SENSITIVITY, 1);
 
   vpx_codec_control(&encoder, VP9E_SET_TUNE_CONTENT, app_input.tune_content);
 
