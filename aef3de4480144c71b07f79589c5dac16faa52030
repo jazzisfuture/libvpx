@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2e2112c5_0fad177d",
+        "filename": "test/svc_datarate_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1067,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-11T18:26:15Z",
+      "side": 1,
+      "message": "inter-layer",
+      "revId": "aef3de4480144c71b07f79589c5dac16faa52030",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
