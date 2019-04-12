@@ -1016,8 +1016,9 @@ static void estimate_block_intra(int plane, int block, int row, int col,
 
   if (plane == 0) {
     int64_t this_sse = INT64_MAX;
-    // TODO(jingning): This needs further refactoring.
-    block_yrd(cpi, x, &this_rdc, &args->skippable, &this_sse, bsize_tx,
+    BLOCK_SIZE bsize = plane_bsize;
+    if (cpi->common.frame_type == KEY_FRAME) bsize = bsize_tx;
+    block_yrd(cpi, x, &this_rdc, &args->skippable, &this_sse, bsize,
               VPXMIN(tx_size, TX_16X16), 0);
   } else {
     unsigned int var = 0;
