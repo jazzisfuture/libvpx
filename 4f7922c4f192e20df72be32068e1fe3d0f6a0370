@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "622ae616_ec0e1f11",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2019-04-12T04:55:34Z",
+      "side": 1,
+      "message": "Better to add VP9_TUNE_SSIM enum there, so that not to be confused with VP8.",
+      "range": {
+        "startLine": 265,
+        "startChar": 24,
+        "endLine": 265,
+        "endChar": 25
+      },
+      "revId": "4f7922c4f192e20df72be32068e1fe3d0f6a0370",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c20aca01_236e8d62",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2019-04-12T04:55:34Z",
+      "side": 1,
+      "message": "Is this trying to get SB64X64 index ?\n\nCan this be simplified?",
+      "range": {
+        "startLine": 273,
+        "startChar": 14,
+        "endLine": 273,
+        "endChar": 19
+      },
+      "revId": "4f7922c4f192e20df72be32068e1fe3d0f6a0370",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
