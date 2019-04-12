@@ -997,7 +997,6 @@ static void estimate_block_intra(int plane, int block, int row, int col,
   MACROBLOCKD *const xd = &x->e_mbd;
   struct macroblock_plane *const p = &x->plane[0];
   struct macroblockd_plane *const pd = &xd->plane[0];
-  const BLOCK_SIZE bsize_tx = txsize_to_bsize[tx_size];
   uint8_t *const src_buf_base = p->src.buf;
   uint8_t *const dst_buf_base = pd->dst.buf;
   const int src_stride = p->src.stride;
@@ -1016,8 +1015,7 @@ static void estimate_block_intra(int plane, int block, int row, int col,
 
   if (plane == 0) {
     int64_t this_sse = INT64_MAX;
-    // TODO(jingning): This needs further refactoring.
-    block_yrd(cpi, x, &this_rdc, &args->skippable, &this_sse, bsize_tx,
+    block_yrd(cpi, x, &this_rdc, &args->skippable, &this_sse, plane_bsize,
               VPXMIN(tx_size, TX_16X16), 0);
   } else {
     unsigned int var = 0;
