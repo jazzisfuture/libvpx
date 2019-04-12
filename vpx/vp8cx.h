@@ -788,6 +788,7 @@ typedef enum {
  *
  */
 typedef enum { VP8_TUNE_PSNR, VP8_TUNE_SSIM } vp8e_tuning;
+typedef enum { VP9_TUNE_PSNR, VP9_TUNE_SSIM } vp9e_tuning;
 
 /*!\brief  vp9 svc layer parameters
  *
