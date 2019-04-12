@@ -75,6 +75,9 @@ struct vpx_codec_alg_priv {
   vpx_codec_priv_t base;
   vpx_codec_enc_cfg_t cfg;
   struct vp8_extracfg vp8_cfg;
+  vpx_rational_t timestamp_ratio;
+  vpx_codec_pts_t pts_offset;
+  unsigned char pts_offset_initialized;
   VP8_CONFIG oxcf;
   struct VP8_COMP *cpi;
   unsigned char *cx_data;
@@ -87,6 +90,23 @@ struct vpx_codec_alg_priv {
   unsigned int fixed_kf_cntr;
   vpx_enc_frame_flags_t control_frame_flags;
 };
+
+static INLINE int gcd(int a, int b) {
+  int r;  // remainder
+  while (b > 0) {
+    r = a % b;
+    a = b;
+    b = r;
+  }
+
+  return a;
+}
+
+static INLINE void reduce_ratio(vpx_rational_t* ratio) {
+  int denom = gcd(ratio->num, ratio->den);
+  ratio->num /= denom;
+  ratio->den /= denom;
+}
 
 static vpx_codec_err_t update_error_state(
     vpx_codec_alg_priv_t *ctx, const struct vpx_internal_error_info *error) {
@@ -657,6 +677,11 @@ static vpx_codec_err_t vp8e_init(vpx_codec_ctx_t *ctx,
     res = validate_config(priv, &priv->cfg, &priv->vp8_cfg, 0);
 
     if (!res) {
+      memcpy(&priv->timestamp_ratio, &priv->cfg.g_timebase,
+             sizeof(priv->timestamp_ratio));
+      priv->timestamp_ratio.num *= 10000000;
+      reduce_ratio(&priv->timestamp_ratio);
+
       set_vp8e_config(&priv->oxcf, priv->cfg, priv->vp8_cfg, mr_cfg);
       priv->cpi = vp8_create_compressor(&priv->oxcf);
       if (!priv->cpi) res = VPX_CODEC_MEM_ERROR;
@@ -724,9 +749,8 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
     uint64_t duration_us;
 
     /* Convert duration parameter from stream timebase to microseconds */
-    duration_us = (uint64_t)duration * 1000000 *
-                  (uint64_t)ctx->cfg.g_timebase.num /
-                  (uint64_t)ctx->cfg.g_timebase.den;
+    duration_us = (uint64_t)duration * (uint64_t)ctx->timestamp_ratio.num /
+                  ((uint64_t)ctx->timestamp_ratio.den * 10u);
 
     /* If the deadline is more that the duration this frame is to be shown,
      * use good quality mode. Otherwise use realtime mode.
@@ -805,6 +829,7 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
   volatile vpx_codec_err_t res = VPX_CODEC_OK;
   // Make a copy as volatile to avoid -Wclobbered with longjmp.
   volatile vpx_enc_frame_flags_t flags = enc_flags;
+  volatile vpx_codec_pts_t pts_val = pts;
 
   if (!ctx->cfg.rc_target_bitrate) {
 #if CONFIG_MULTI_RES_ENCODING
@@ -824,6 +849,12 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
   if (img) res = validate_img(ctx, img);
 
   if (!res) res = validate_config(ctx, &ctx->cfg, &ctx->vp8_cfg, 1);
+
+  if (!ctx->pts_offset_initialized) {
+    ctx->pts_offset = pts_val;
+    ctx->pts_offset_initialized = 1;
+  }
+  pts_val -= ctx->pts_offset;
 
   pick_quickcompress_mode(ctx, duration, deadline);
   vpx_codec_pkt_list_init(&ctx->pkt_list);
@@ -876,9 +907,9 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
 
     /* vp8 use 10,000,000 ticks/second as time stamp */
     dst_time_stamp =
-        pts * 10000000 * ctx->cfg.g_timebase.num / ctx->cfg.g_timebase.den;
-    dst_end_time_stamp = (pts + duration) * 10000000 * ctx->cfg.g_timebase.num /
-                         ctx->cfg.g_timebase.den;
+      pts_val * ctx->timestamp_ratio.num / ctx->timestamp_ratio.den;
+    dst_end_time_stamp = (pts_val + duration) * ctx->timestamp_ratio.num /
+                         ctx->timestamp_ratio.den;
 
     if (img != NULL) {
       res = image2yuvconfig(img, &sd);
@@ -917,15 +948,17 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
         VP8_COMP *cpi = (VP8_COMP *)ctx->cpi;
 
         /* Add the frame packet to the list of returned packets. */
-        round = (vpx_codec_pts_t)10000000 * ctx->cfg.g_timebase.num / 2 - 1;
+        round = (vpx_codec_pts_t)ctx->timestamp_ratio.num / 2;
+        if (round > 0) --round;
         delta = (dst_end_time_stamp - dst_time_stamp);
         pkt.kind = VPX_CODEC_CX_FRAME_PKT;
         pkt.data.frame.pts =
-            (dst_time_stamp * ctx->cfg.g_timebase.den + round) /
-            ctx->cfg.g_timebase.num / 10000000;
+            (dst_time_stamp * ctx->timestamp_ratio.den + round) /
+                ctx->timestamp_ratio.num +
+            ctx->pts_offset;
         pkt.data.frame.duration =
-            (unsigned long)((delta * ctx->cfg.g_timebase.den + round) /
-                            ctx->cfg.g_timebase.num / 10000000);
+            (unsigned long)((delta * ctx->timestamp_ratio.den + round) /
+                            ctx->timestamp_ratio.num);
         pkt.data.frame.flags = lib_flags << 16;
         pkt.data.frame.width[0] = cpi->common.Width;
         pkt.data.frame.height[0] = cpi->common.Height;
@@ -944,9 +977,9 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
            * Invisible frames have no duration.
            */
           pkt.data.frame.pts =
-              ((cpi->last_time_stamp_seen * ctx->cfg.g_timebase.den + round) /
-               ctx->cfg.g_timebase.num / 10000000) +
-              1;
+              ((cpi->last_time_stamp_seen * ctx->timestamp_ratio.den + round) /
+               ctx->timestamp_ratio.num) +
+              ctx->pts_offset + 1;
           pkt.data.frame.duration = 0;
         }
 
