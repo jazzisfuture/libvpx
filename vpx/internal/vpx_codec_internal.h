@@ -63,6 +63,15 @@ extern "C" {
 typedef struct vpx_codec_alg_priv vpx_codec_alg_priv_t;
 typedef struct vpx_codec_priv_enc_mr_cfg vpx_codec_priv_enc_mr_cfg_t;
 
+/*!\brief Rational Number with an int64 numerator
+ *
+ * This structure holds a fractional value.
+ */
+typedef struct vpx_rational64 {
+  int64_t num;      /**< fraction numerator */
+  int den;          /**< fraction denominator */
+} vpx_rational64_t; /**< alias for struct vpx_rational */
+
 /*!\brief init function pointer prototype
  *
  * Performs algorithm-specific initialization of the decoder context. This
