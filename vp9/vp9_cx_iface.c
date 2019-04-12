@@ -35,7 +35,7 @@ struct vp9_extracfg {
   unsigned int arnr_strength;
   unsigned int min_gf_interval;
   unsigned int max_gf_interval;
-  vp8e_tuning tuning;
+  vp9e_tuning tuning;
   unsigned int cq_level;  // constrained quality level
   unsigned int rc_max_intra_bitrate_pct;
   unsigned int rc_max_inter_bitrate_pct;
@@ -69,7 +69,7 @@ static struct vp9_extracfg default_extra_cfg = {
   5,                     // arnr_strength
   0,                     // min_gf_interval; 0 -> default decision
   0,                     // max_gf_interval; 0 -> default decision
-  VP8_TUNE_PSNR,         // tuning
+  VP9_TUNE_PSNR,         // tuning
   10,                    // cq_level
   0,                     // rc_max_intra_bitrate_pct
   0,                     // rc_max_inter_bitrate_pct
@@ -265,7 +265,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
 
   // TODO(sdeng): remove this when ssim tuning is implemented for highbd
 #if CONFIG_VP9_HIGHBITDEPTH
-  if (extra_cfg->tuning == VP8_TUNE_SSIM)
+  if (extra_cfg->tuning == VP9_TUNE_SSIM)
     ERROR("Option --tune=ssim is not currently supported in highbd VP9.");
 #endif
 
@@ -780,7 +780,8 @@ static vpx_codec_err_t ctrl_set_arnr_type(vpx_codec_alg_priv_t *ctx,
 static vpx_codec_err_t ctrl_set_tuning(vpx_codec_alg_priv_t *ctx,
                                        va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
-  extra_cfg.tuning = CAST(VP8E_SET_TUNING, args);
+  const vp8e_tuning tuning = CAST(VP8E_SET_TUNING, args);
+  extra_cfg.tuning = (tuning == VP8_TUNE_SSIM) ? VP9_TUNE_SSIM : VP9_TUNE_PSNR;
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
