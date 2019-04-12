@@ -220,6 +220,15 @@ typedef struct vpx_rational {
   int den;        /**< fraction denominator */
 } vpx_rational_t; /**< alias for struct vpx_rational */
 
+/*!\brief Rational Number with an int64 numerator
+ *
+ * This structure holds a fractional value.
+ */
+typedef struct vpx_rational64 {
+  int64_t num;       /**< fraction numerator */
+  int den;           /**< fraction denominator */
+} vpx_rational64_t;  /**< alias for struct vpx_rational */
+
 /*!\brief Multi-pass Encoding Pass */
 enum vpx_enc_pass {
   VPX_RC_ONE_PASS,   /**< Single pass mode */
