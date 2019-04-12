@@ -262,7 +262,7 @@ static INLINE void set_mode_info_offsets(VP9_COMMON *const cm,
 static double get_ssim_rdmult_scaling_factor(VP9_COMP *const cpi, int mi_row,
                                              int mi_col) {
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
-  if (oxcf->tuning == VP8_TUNE_SSIM) {
+  if (oxcf->tuning == VP9_TUNE_SSIM) {
     const VP9_COMMON *const cm = &cpi->common;
     // SSIM rdmult scaling factors are currently 64x64 based.
     const int num_8x8_w = 8;

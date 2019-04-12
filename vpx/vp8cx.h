@@ -789,6 +789,13 @@ typedef enum {
  */
 typedef enum { VP8_TUNE_PSNR, VP8_TUNE_SSIM } vp8e_tuning;
 
+/*!\brief VP9 model tuning parameters
+ *
+ * Changes the encoder to tune for certain types of input material.
+ *
+ */
+typedef enum { VP9_TUNE_PSNR, VP9_TUNE_SSIM } vp9e_tuning;
+
 /*!\brief  vp9 svc layer parameters
  *
  * This defines the spatial and temporal layer id numbers for svc encoding.
