@@ -35,7 +35,7 @@ struct vp9_extracfg {
   unsigned int arnr_strength;
   unsigned int min_gf_interval;
   unsigned int max_gf_interval;
-  vp8e_tuning tuning;
+  vp9e_tuning tuning;
   unsigned int cq_level;  // constrained quality level
   unsigned int rc_max_intra_bitrate_pct;
   unsigned int rc_max_inter_bitrate_pct;
@@ -780,7 +780,8 @@ static vpx_codec_err_t ctrl_set_arnr_type(vpx_codec_alg_priv_t *ctx,
 static vpx_codec_err_t ctrl_set_tuning(vpx_codec_alg_priv_t *ctx,
                                        va_list args) {
   struct vp9_extracfg extra_cfg = ctx->extra_cfg;
-  extra_cfg.tuning = CAST(VP8E_SET_TUNING, args);
+  extra_cfg.tuning = CAST(VP8E_SET_TUNING, args) == VP8_TUNE_SSIM ?
+                     VP9_TUNE_SSIM : VP9_TUNE_PSNR;
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
