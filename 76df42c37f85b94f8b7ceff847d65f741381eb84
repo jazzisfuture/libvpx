@@ -22,6 +22,30 @@
       "revId": "76df42c37f85b94f8b7ceff847d65f741381eb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7dc2cd43_8ddef67a",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 783,
+      "author": {
+        "id": 1300510
+      },
+      "writtenOn": "2019-04-13T18:08:42Z",
+      "side": 1,
+      "message": "vp8 is also using TUNE_SSIM and TUNE_PSNR\nI thought we would need to either have vp8e_ in vp9 folder or vp9e_ in vp8 folder...\nI will take a look again when I am back to office.",
+      "parentUuid": "c6db459a_ab80f96b",
+      "range": {
+        "startLine": 783,
+        "startChar": 8,
+        "endLine": 783,
+        "endChar": 19
+      },
+      "revId": "76df42c37f85b94f8b7ceff847d65f741381eb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
