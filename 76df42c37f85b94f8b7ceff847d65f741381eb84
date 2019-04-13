@@ -46,6 +46,30 @@
       "revId": "76df42c37f85b94f8b7ceff847d65f741381eb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "220aae8e_ea84b3a4",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 783,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2019-04-13T20:26:37Z",
+      "side": 1,
+      "message": "or just a single tune_ssim for both, given that the expected behavior would be the same.\n\nnot a blocker for checking in, better to fix it shortly.",
+      "parentUuid": "7dc2cd43_8ddef67a",
+      "range": {
+        "startLine": 783,
+        "startChar": 8,
+        "endLine": 783,
+        "endChar": 19
+      },
+      "revId": "76df42c37f85b94f8b7ceff847d65f741381eb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
