@@ -454,6 +454,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->variance_part_thresh_mult = 1;
   sf->cb_pred_filter_search = 0;
   sf->force_smooth_interpol = 0;
+  sf->nonrd_select_intra_tx_size = 0;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
