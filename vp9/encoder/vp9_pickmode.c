@@ -375,6 +375,26 @@ static TX_SIZE calculate_tx_size(VP9_COMP *const cpi, BLOCK_SIZE bsize,
   return tx_size;
 }
 
+static void  intra_set_tx_size(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
+                               MACROBLOCKD *xd, PREDICTION_MODE mode, int row,
+                               int col, int plane) {
+  unsigned int sse;
+  struct macroblock_plane *const p = &x->plane[0];
+  struct macroblockd_plane *const pd = &xd->plane[0];
+  const int64_t ac_thr = p->quant_thred[1] >> 6;
+  const int src_stride = p->src.stride;
+  const int dst_stride = pd->dst.stride;
+  unsigned int var = 0;
+  vp9_predict_intra_block(xd, b_width_log2_lookup[bsize], bsize,
+                          mode, x->skip_encode ? p->src.buf : pd->dst.buf,
+                          x->skip_encode ? src_stride : dst_stride, pd->dst.buf,
+                          dst_stride, col, row, plane);
+  var = cpi->fn_ptr[bsize].vf(p->src.buf, src_stride, pd->dst.buf,
+                              dst_stride, &sse);
+  xd->mi[0]->tx_size = calculate_tx_size(cpi, bsize, xd, var, sse, ac_thr);
+}
+
+
 static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
                                     MACROBLOCK *x, MACROBLOCKD *xd,
                                     int *out_rate_sum, int64_t *out_dist_sum,
@@ -2513,6 +2533,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       args.skippable = 1;
       args.rdc = &this_rdc;
       mi->tx_size = intra_tx_size;
+
+      intra_set_tx_size(cpi, bsize, x, xd, this_mode, mi_row, mi_col, 0);
+
       vp9_foreach_transformed_block_in_plane(xd, bsize, 0, estimate_block_intra,
                                              &args);
       // Check skip cost here since skippable is not set for for uv, this
