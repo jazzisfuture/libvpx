@@ -611,6 +611,10 @@ typedef struct SPEED_FEATURES {
 
   // Force subpel motion filter to always use SMOOTH_FILTER.
   int force_smooth_interpol;
+
+  // For nonrd pickmode: do selection of transform size for intra modes
+  // based on prediction residual on y channel.
+  int nonrd_select_intra_tx_size;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
