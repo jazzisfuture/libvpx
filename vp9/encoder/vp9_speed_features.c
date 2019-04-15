@@ -454,6 +454,7 @@ static void set_rt_speed_feature_framesize_independent(
   sf->variance_part_thresh_mult = 1;
   sf->cb_pred_filter_search = 0;
   sf->force_smooth_interpol = 0;
+  sf->nonrd_select_intra_tx_size = 0;
 
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
@@ -626,6 +627,7 @@ static void set_rt_speed_feature_framesize_independent(
       sf->use_compound_nonrd_pickmode = 1;
     }
     if (cm->width * cm->height > 1280 * 720) sf->cb_pred_filter_search = 1;
+    sf->nonrd_select_intra_tx_size = 1;
   }
 
   if (speed >= 6) {
