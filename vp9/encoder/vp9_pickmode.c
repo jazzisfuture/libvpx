@@ -375,12 +375,11 @@ static TX_SIZE calculate_tx_size(VP9_COMP *const cpi, BLOCK_SIZE bsize,
   return tx_size;
 }
 
-static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
-                                    MACROBLOCK *x, MACROBLOCKD *xd,
-                                    int *out_rate_sum, int64_t *out_dist_sum,
-                                    unsigned int *var_y, unsigned int *sse_y,
-                                    int mi_row, int mi_col, int *early_term,
-                                    int *flag_preduv_computed) {
+static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
+                              MACROBLOCKD *xd, int *out_rate_sum,
+                              int64_t *out_dist_sum, unsigned int *var_y,
+                              unsigned int *sse_y, int mi_row, int mi_col,
+                              int *early_term, int *flag_preduv_computed) {
   // Note our transform coeffs are 8 times an orthogonal transform.
   // Hence quantizer step is also 8 times. To get effective quantizer
   // we need to divide by 8 before sending to modeling function.
@@ -389,74 +388,93 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
   int64_t dist;
   struct macroblock_plane *const p = &x->plane[0];
   struct macroblockd_plane *const pd = &xd->plane[0];
+  int64_t dc_thr = p->quant_thred[0] >> 6;
+  int64_t ac_thr = p->quant_thred[1] >> 6;
   const uint32_t dc_quant = pd->dequant[0];
   const uint32_t ac_quant = pd->dequant[1];
-  int64_t dc_thr = dc_quant * dc_quant >> 6;
-  int64_t ac_thr = ac_quant * ac_quant >> 6;
-  unsigned int var;
-  int sum;
+  unsigned int var = cpi->fn_ptr[bsize].vf(p->src.buf, p->src.stride,
+                                           pd->dst.buf, pd->dst.stride, &sse);
   int skip_dc = 0;
-
-  const int bw = b_width_log2_lookup[bsize];
+  const int large_block =
+      (x->content_state_sb == kVeryHighSad ||
+       (x->sb_is_skin && cpi->rc.avg_frame_low_motion > 70) ||
+       cpi->oxcf.speed < 7)
+          ? bsize > BLOCK_32X32
+          : bsize >= BLOCK_32X32;
+  const int use_model_rd_large_block =
+      cpi->oxcf.rc_mode == VPX_CBR && large_block &&
+      !cyclic_refresh_segment_id_boosted(
+           xd->mi[0]->segment_id) &&cm->base_qindex const int bw =
+          b_width_log2_lookup[bsize];
   const int bh = b_height_log2_lookup[bsize];
   const int num8x8 = 1 << (bw + bh - 2);
   unsigned int sse8x8[64] = { 0 };
   int sum8x8[64] = { 0 };
   unsigned int var8x8[64] = { 0 };
-  TX_SIZE tx_size;
-  int i, k;
-#if CONFIG_VP9_HIGHBITDEPTH
-  const vpx_bit_depth_t bd = cpi->common.bit_depth;
-#endif
-  // Calculate variance for whole partition, and also save 8x8 blocks' variance
-  // to be used in following transform skipping test.
-  block_variance(p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride,
-                 4 << bw, 4 << bh, &sse, &sum, 8,
-#if CONFIG_VP9_HIGHBITDEPTH
-                 cpi->common.use_highbitdepth, bd,
-#endif
-                 sse8x8, sum8x8, var8x8);
-  var = sse - (unsigned int)(((int64_t)sum * sum) >> (bw + bh + 4));
+
+  if (use_model_rd_large_block) {
+    dc_thr = dc_quant * dc_quant >> 6;
+    ac_thr = ac_quant * ac_quant >> 6;
+  }
 
   *var_y = var;
   *sse_y = sse;
 
+  if (use_model_rd_large_block) {
+    int sum;
+    // Calculate variance for whole partition, and also save 8x8 blocks'
+    // variance
+    // to be used in following transform skipping test.
+    block_variance(p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride,
+                   4 << bw, 4 << bh, &sse, &sum, 8,
+#if CONFIG_VP9_HIGHBITDEPTH
+                   cpi->common.use_highbitdepth, bd,
+#endif
+                   sse8x8, sum8x8, var8x8);
+    var = sse - (unsigned int)(((int64_t)sum * sum) >> (bw + bh + 4));
+
+    *var_y = var;
+    *sse_y = sse;
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
-  if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
-      cpi->oxcf.speed > 5)
-    ac_thr = vp9_scale_acskip_thresh(ac_thr, cpi->denoiser.denoising_level,
-                                     (abs(sum) >> (bw + bh)),
-                                     cpi->svc.temporal_layer_id);
-  else
+    if (cpi->oxcf.noise_sensitivity > 0 && denoise_svc(cpi) &&
+        cpi->oxcf.speed > 5)
+      ac_thr = vp9_scale_acskip_thresh(ac_thr, cpi->denoiser.denoising_level,
+                                       (abs(sum) >> (bw + bh)),
+                                       cpi->svc.temporal_layer_id);
+    else
+      ac_thr *= ac_thr_factor(cpi->oxcf.speed, cpi->common.width,
+                              cpi->common.height, abs(sum) >> (bw + bh));
+#else
     ac_thr *= ac_thr_factor(cpi->oxcf.speed, cpi->common.width,
                             cpi->common.height, abs(sum) >> (bw + bh));
-#else
-  ac_thr *= ac_thr_factor(cpi->oxcf.speed, cpi->common.width,
-                          cpi->common.height, abs(sum) >> (bw + bh));
 #endif
+  }
 
-  tx_size = calculate_tx_size(cpi, bsize, xd, var, sse, ac_thr);
-  // The code below for setting skip flag assumes tranform size of at least 8x8,
-  // so force this lower limit on transform.
-  if (tx_size < TX_8X8) tx_size = TX_8X8;
-  xd->mi[0]->tx_size = tx_size;
+  xd->mi[0]->tx_size = calculate_tx_size(cpi, bsize, xd, var, sse, ac_thr);
 
-  if (cpi->oxcf.content == VP9E_CONTENT_SCREEN && x->zero_temp_sad_source &&
-      x->source_variance == 0)
-    dc_thr = dc_thr << 1;
+  if (use_model_rd_large_block) {
+    // The code below for setting skip flag assumes tranform size of at least
+    // 8x8, so force this lower limit on transform.
+    xd->mi[0]->tx_size = VPXMAX(xd->mi[0]->tx_size, TX_8X8);
+
+    if (cpi->oxcf.content == VP9E_CONTENT_SCREEN && x->zero_temp_sad_source &&
+        x->source_variance == 0)
+      dc_thr = dc_thr << 1;
+  }
 
   // Evaluate if the partition block is a skippable block in Y plane.
-  {
+  if (use_model_rd_large_block) {
     unsigned int sse16x16[16] = { 0 };
     int sum16x16[16] = { 0 };
     unsigned int var16x16[16] = { 0 };
     const int num16x16 = num8x8 >> 2;
-
+    const TX_SIZE tx_size = xd->mi[0]->tx_size;
     unsigned int sse32x32[4] = { 0 };
     int sum32x32[4] = { 0 };
     unsigned int var32x32[4] = { 0 };
     const int num32x32 = num8x8 >> 4;
-
+    int k;
     int ac_test = 1;
     int dc_test = 1;
     const int num = (tx_size == TX_8X8)
@@ -500,112 +518,7 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
     } else if (dc_test) {
       skip_dc = 1;
     }
-  }
-
-  if (x->skip_txfm[0] == SKIP_TXFM_AC_DC) {
-    int skip_uv[2] = { 0 };
-    unsigned int var_uv[2];
-    unsigned int sse_uv[2];
-
-    *out_rate_sum = 0;
-    *out_dist_sum = sse << 4;
-
-    // Transform skipping test in UV planes.
-    for (i = 1; i <= 2; i++) {
-      if (cpi->oxcf.speed < 8 || x->color_sensitivity[i - 1]) {
-        struct macroblock_plane *const p = &x->plane[i];
-        struct macroblockd_plane *const pd = &xd->plane[i];
-        const TX_SIZE uv_tx_size = get_uv_tx_size(xd->mi[0], pd);
-        const BLOCK_SIZE unit_size = txsize_to_bsize[uv_tx_size];
-        const BLOCK_SIZE uv_bsize = get_plane_block_size(bsize, pd);
-        const int uv_bw = b_width_log2_lookup[uv_bsize];
-        const int uv_bh = b_height_log2_lookup[uv_bsize];
-        const int sf = (uv_bw - b_width_log2_lookup[unit_size]) +
-                       (uv_bh - b_height_log2_lookup[unit_size]);
-        const uint32_t uv_dc_thr = pd->dequant[0] * pd->dequant[0] >> (6 - sf);
-        const uint32_t uv_ac_thr = pd->dequant[1] * pd->dequant[1] >> (6 - sf);
-        int j = i - 1;
-
-        vp9_build_inter_predictors_sbp(xd, mi_row, mi_col, bsize, i);
-        flag_preduv_computed[i - 1] = 1;
-        var_uv[j] = cpi->fn_ptr[uv_bsize].vf(
-            p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride, &sse_uv[j]);
-
-        if ((var_uv[j] < uv_ac_thr || var_uv[j] == 0) &&
-            (sse_uv[j] - var_uv[j] < uv_dc_thr || sse_uv[j] == var_uv[j]))
-          skip_uv[j] = 1;
-        else
-          break;
-      } else {
-        skip_uv[i - 1] = 1;
-      }
-    }
-
-    // If the transform in YUV planes are skippable, the mode search checks
-    // fewer inter modes and doesn't check intra modes.
-    if (skip_uv[0] & skip_uv[1]) {
-      *early_term = 1;
-    }
-    return;
-  }
-
-  if (!skip_dc) {
-#if CONFIG_VP9_HIGHBITDEPTH
-    vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bsize],
-                                 dc_quant >> (xd->bd - 5), &rate, &dist);
-#else
-    vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bsize],
-                                 dc_quant >> 3, &rate, &dist);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-  }
-
-  if (!skip_dc) {
-    *out_rate_sum = rate >> 1;
-    *out_dist_sum = dist << 3;
   } else {
-    *out_rate_sum = 0;
-    *out_dist_sum = (sse - var) << 4;
-  }
-
-#if CONFIG_VP9_HIGHBITDEPTH
-  vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bsize],
-                               ac_quant >> (xd->bd - 5), &rate, &dist);
-#else
-  vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bsize], ac_quant >> 3,
-                               &rate, &dist);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-
-  *out_rate_sum += rate;
-  *out_dist_sum += dist << 4;
-}
-
-static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
-                              MACROBLOCKD *xd, int *out_rate_sum,
-                              int64_t *out_dist_sum, unsigned int *var_y,
-                              unsigned int *sse_y) {
-  // Note our transform coeffs are 8 times an orthogonal transform.
-  // Hence quantizer step is also 8 times. To get effective quantizer
-  // we need to divide by 8 before sending to modeling function.
-  unsigned int sse;
-  int rate;
-  int64_t dist;
-  struct macroblock_plane *const p = &x->plane[0];
-  struct macroblockd_plane *const pd = &xd->plane[0];
-  const int64_t dc_thr = p->quant_thred[0] >> 6;
-  const int64_t ac_thr = p->quant_thred[1] >> 6;
-  const uint32_t dc_quant = pd->dequant[0];
-  const uint32_t ac_quant = pd->dequant[1];
-  unsigned int var = cpi->fn_ptr[bsize].vf(p->src.buf, p->src.stride,
-                                           pd->dst.buf, pd->dst.stride, &sse);
-  int skip_dc = 0;
-
-  *var_y = var;
-  *sse_y = sse;
-
-  xd->mi[0]->tx_size = calculate_tx_size(cpi, bsize, xd, var, sse, ac_thr);
-
-  // Evaluate if the partition block is a skippable block in Y plane.
-  {
     const BLOCK_SIZE unit_size = txsize_to_bsize[xd->mi[0]->tx_size];
     const unsigned int num_blk_log2 =
         (b_width_log2_lookup[bsize] - b_width_log2_lookup[unit_size]) +
@@ -626,9 +539,55 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
   }
 
   if (x->skip_txfm[0] == SKIP_TXFM_AC_DC) {
-    *out_rate_sum = 0;
-    *out_dist_sum = sse << 4;
-    return;
+    if (use_model_rd_large_block) {
+      int skip_uv[2] = { 0 };
+      unsigned int var_uv[2];
+      unsigned int sse_uv[2];
+      int i;
+      *out_rate_sum = 0;
+      *out_dist_sum = sse << 4;
+      // Transform skipping test in UV planes.
+      for (i = 1; i <= 2; i++) {
+        if (cpi->oxcf.speed < 8 || x->color_sensitivity[i - 1]) {
+          struct macroblock_plane *const p = &x->plane[i];
+          struct macroblockd_plane *const pd = &xd->plane[i];
+          const TX_SIZE uv_tx_size = get_uv_tx_size(xd->mi[0], pd);
+          const BLOCK_SIZE unit_size = txsize_to_bsize[uv_tx_size];
+          const BLOCK_SIZE uv_bsize = get_plane_block_size(bsize, pd);
+          const int uv_bw = b_width_log2_lookup[uv_bsize];
+          const int uv_bh = b_height_log2_lookup[uv_bsize];
+          const int sf = (uv_bw - b_width_log2_lookup[unit_size]) +
+                         (uv_bh - b_height_log2_lookup[unit_size]);
+          const uint32_t uv_dc_thr =
+              pd->dequant[0] * pd->dequant[0] >> (6 - sf);
+          const uint32_t uv_ac_thr =
+              pd->dequant[1] * pd->dequant[1] >> (6 - sf);
+          int j = i - 1;
+
+          vp9_build_inter_predictors_sbp(xd, mi_row, mi_col, bsize, i);
+          flag_preduv_computed[i - 1] = 1;
+          var_uv[j] =
+              cpi->fn_ptr[uv_bsize].vf(p->src.buf, p->src.stride, pd->dst.buf,
+                                       pd->dst.stride, &sse_uv[j]);
+
+          if ((var_uv[j] < uv_ac_thr || var_uv[j] == 0) &&
+              (sse_uv[j] - var_uv[j] < uv_dc_thr || sse_uv[j] == var_uv[j]))
+            skip_uv[j] = 1;
+          else
+            break;
+        } else {
+          skip_uv[i - 1] = 1;
+        }
+      }
+      // If the transform in YUV planes are skippable, the mode search checks
+      // fewer inter modes and doesn't check intra modes.
+      if (skip_uv[0] & skip_uv[1]) *early_term = 1;
+      return;
+    } else {
+      *out_rate_sum = 0;
+      *out_dist_sum = sse << 4;
+      return;
+    }
   }
 
   if (!skip_dc) {
@@ -688,7 +647,8 @@ static void block_yrd(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
     (void)tx_size;
     if (!rd_computed)
       model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc->rate, &this_rdc->dist,
-                        &var_y, &sse_y);
+                        &var_y, &sse_y, mi_row, mi_col, &this_early_term,
+                        flag_preduv_computed);
     *sse = INT_MAX;
     *skippable = 0;
     return;
@@ -1347,7 +1307,8 @@ static void recheck_zeromv_after_denoising(
     if (cpi->sf.default_interp_filter == BILINEAR) mi->interp_filter = BILINEAR;
     xd->plane[0].pre[0] = yv12_mb[LAST_FRAME][0];
     vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
-    model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist, &var_y, &sse_y);
+    model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist, &var_y, &sse_y, mi_row,
+                      mi_col, &this_early_term, flag_preduv_computed);
     this_rdc.rate = rate + ctx_den->ref_frame_cost[LAST_FRAME] +
                     cpi->inter_mode_cost[x->mbmi_ext->mode_context[LAST_FRAME]]
                                         [INTER_OFFSET(ZEROMV)];
@@ -1455,7 +1416,8 @@ static void search_filter_ref(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
     mi->interp_filter = filter;
     vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
     model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[filter], &pf_dist[filter],
-                      &pf_var[filter], &pf_sse[filter]);
+                      &pf_var[filter], &pf_sse[filter], mi_row, mi_col,
+                      &this_early_term, flag_preduv_computed);
     curr_rate[filter] = pf_rate[filter];
     pf_rate[filter] += vp9_get_switchable_rate(cpi, xd);
     cost = RDCOST(x->rdmult, x->rddiv, pf_rate[filter], pf_dist[filter]);
@@ -2229,34 +2191,17 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
                         reuse_inter_pred, &this_mode_pred, &var_y, &sse_y,
                         force_smooth_filter);
     } else {
-      // For low motion content use x->sb_is_skin in addition to VeryHighSad
-      // for setting large_block.
-      const int large_block =
-          (x->content_state_sb == kVeryHighSad ||
-           (x->sb_is_skin && cpi->rc.avg_frame_low_motion > 70) ||
-           cpi->oxcf.speed < 7)
-              ? bsize > BLOCK_32X32
-              : bsize >= BLOCK_32X32;
       mi->interp_filter = (filter_ref == SWITCHABLE) ? EIGHTTAP : filter_ref;
-
       if (cpi->use_svc && ref_frame == GOLDEN_FRAME &&
           svc_force_zero_mode[ref_frame - 1])
         mi->interp_filter = filter_gf_svc;
 
       vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
 
-      // For large partition blocks, extra testing is done.
-      if (cpi->oxcf.rc_mode == VPX_CBR && large_block &&
-          !cyclic_refresh_segment_id_boosted(xd->mi[0]->segment_id) &&
-          cm->base_qindex) {
-        model_rd_for_sb_y_large(cpi, bsize, x, xd, &this_rdc.rate,
-                                &this_rdc.dist, &var_y, &sse_y, mi_row, mi_col,
-                                &this_early_term, flag_preduv_computed);
-      } else {
-        rd_computed = 1;
-        model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc.rate, &this_rdc.dist,
-                          &var_y, &sse_y);
-      }
+      rd_computed = 1;
+      model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc.rate, &this_rdc.dist,
+                        &var_y, &sse_y, mi_row, mi_col, &this_early_term,
+                        flag_preduv_computed);
       // Save normalized sse (between current and last frame) for (0, 0) motion.
       if (ref_frame == LAST_FRAME &&
           frame_mv[this_mode][ref_frame].as_int == 0) {
@@ -2855,7 +2800,8 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x, int mi_row,
 #endif
 
           model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc.rate, &this_rdc.dist,
-                            &var_y, &sse_y);
+                            &var_y, &sse_y, mi_row, mi_col, &this_early_term,
+                            flag_preduv_computed);
 
           this_rdc.rate += b_rate;
           this_rdc.rdcost =
