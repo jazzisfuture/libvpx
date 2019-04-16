@@ -1453,6 +1453,7 @@ static void search_filter_ref(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
   PRED_BUFFER *current_pred = *this_mode_pred;
   uint8_t skip_txfm = SKIP_TXFM_NONE;
   INTERP_FILTER filter_start = force_smooth_filter ? EIGHTTAP_SMOOTH : EIGHTTAP;
+  if (cpi->sf.force_smooth_interpol) filter_start = EIGHTTAP_SMOOTH;
   for (filter = filter_start; filter <= EIGHTTAP_SMOOTH; ++filter) {
     int64_t cost;
     mi->interp_filter = filter;
