@@ -753,8 +753,8 @@ void vp9_temporal_filter_iterate_row_c(VP9_COMP *cpi, ThreadData *td,
         blk_fw[0] = blk_fw[1] = blk_fw[2] = blk_fw[3] = 2;
         use_32x32 = 1;
       } else {
-        const int thresh_low = 10000;
-        const int thresh_high = 20000;
+        const int thresh_low = 20000;
+        const int thresh_high = 40000;
         int blk_bestsme[4] = { INT_MAX, INT_MAX, INT_MAX, INT_MAX };
 
         // Find best match in this frame by MC
