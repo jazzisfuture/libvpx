@@ -1436,7 +1436,9 @@ static void search_filter_ref(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
                               int mi_row, int mi_col, PRED_BUFFER *tmp,
                               BLOCK_SIZE bsize, int reuse_inter_pred,
                               PRED_BUFFER **this_mode_pred, unsigned int *var_y,
-                              unsigned int *sse_y, int force_smooth_filter) {
+                              unsigned int *sse_y, int force_smooth_filter,
+                              int *this_early_term, int *flag_preduv_computed,
+                              int use_model_yrd_large) {
   MACROBLOCKD *const xd = &x->e_mbd;
   MODE_INFO *const mi = xd->mi[0];
   struct macroblockd_plane *const pd = &xd->plane[0];
@@ -1457,8 +1459,15 @@ static void search_filter_ref(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
     int64_t cost;
     mi->interp_filter = filter;
     vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
-    model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[filter], &pf_dist[filter],
-                      &pf_var[filter], &pf_sse[filter]);
+    // For large partition blocks, extra testing is done.
+    if (use_model_yrd_large)
+      model_rd_for_sb_y_large(cpi, bsize, x, xd, &pf_rate[filter],
+                              &pf_dist[filter], &pf_var[filter],
+                              &pf_sse[filter], mi_row, mi_col, this_early_term,
+                              flag_preduv_computed);
+    else
+      model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[filter], &pf_dist[filter],
+                        &pf_var[filter], &pf_sse[filter]);
     curr_rate[filter] = pf_rate[filter];
     pf_rate[filter] += vp9_get_switchable_rate(cpi, xd);
     cost = RDCOST(x->rdmult, x->rddiv, pf_rate[filter], pf_dist[filter]);
@@ -2237,7 +2246,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       rd_computed = 1;
       search_filter_ref(cpi, x, &this_rdc, mi_row, mi_col, tmp, bsize,
                         reuse_inter_pred, &this_mode_pred, &var_y, &sse_y,
-                        force_smooth_filter);
+                        force_smooth_filter, &this_early_term,
+                        flag_preduv_computed, use_model_yrd_large);
     } else {
       mi->interp_filter = (filter_ref == SWITCHABLE) ? EIGHTTAP : filter_ref;
 
