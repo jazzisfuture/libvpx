@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "53300cb6_966e3cd1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-04-18T22:04:04Z",
+      "side": 1,
+      "message": "libvpx",
+      "range": {
+        "startLine": 10,
+        "startChar": 37,
+        "endLine": 10,
+        "endChar": 43
+      },
+      "revId": "c400970e072b386d3125bf8824593d7848008bcf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e20f75c_dac493a0",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 961,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-04-18T22:04:04Z",
+      "side": 1,
+      "message": "uint64_t to clear up style warning?",
+      "range": {
+        "startLine": 961,
+        "startChar": 13,
+        "endLine": 961,
+        "endChar": 26
+      },
+      "revId": "c400970e072b386d3125bf8824593d7848008bcf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12e60f18_8268950f",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 988,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-04-18T22:04:04Z",
+      "side": 1,
+      "message": "only one of them should be enough",
+      "range": {
+        "startLine": 988,
+        "startChar": 34,
+        "endLine": 988,
+        "endChar": 42
+      },
+      "revId": "c400970e072b386d3125bf8824593d7848008bcf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
