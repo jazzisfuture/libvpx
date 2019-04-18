@@ -48,6 +48,29 @@
     },
     {
       "key": {
+        "uuid": "be581a19_ba0eee1a",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-04-18T22:12:30Z",
+      "side": 1,
+      "message": "these two functions (gcd and reduce_ratio) are both used in vp8 and vp9 so you can define them in vpx_util only once.",
+      "range": {
+        "startLine": 119,
+        "startChar": 18,
+        "endLine": 119,
+        "endChar": 21
+      },
+      "revId": "c400970e072b386d3125bf8824593d7848008bcf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12e60f18_8268950f",
         "filename": "vp9/vp9_cx_iface.c",
         "patchSetId": 9
