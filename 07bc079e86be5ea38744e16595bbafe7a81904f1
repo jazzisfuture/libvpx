@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "46f5989e_d02f48fb",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 21
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-04-19T22:48:25Z",
+      "side": 1,
+      "message": "as far as I understand, the calculation is duplicated because estimate_block_intra is called on every sub tx block.\nis this correct?",
+      "parentUuid": "ec6cc657_e15b0a32",
+      "range": {
+        "startLine": 412,
+        "startChar": 6,
+        "endLine": 412,
+        "endChar": 29
+      },
+      "revId": "07bc079e86be5ea38744e16595bbafe7a81904f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "758cf511_e3d767aa",
         "filename": "vp9/encoder/vp9_pickmode.c",
         "patchSetId": 21
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "this flag is to avoid calculating tx_size again in block_yrd (which is used to compute the rd-cost), since the tx_size is already set when the mode is being tested (once prediction for the given is done).",
       "parentUuid": "758cf511_e3d767aa",
+      "range": {
+        "startLine": 665,
+        "startChar": 6,
+        "endLine": 665,
+        "endChar": 17
+      },
+      "revId": "07bc079e86be5ea38744e16595bbafe7a81904f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84e3c9b5_e3417343",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 21
+      },
+      "lineNbr": 665,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-04-19T22:48:25Z",
+      "side": 1,
+      "message": "tx_size is calculated here, not block_yrd. so the problem is tx_size is calculated again even it\u0027s set before this, and it only happens for intra blocks.\nis this correct?",
+      "parentUuid": "b723140a_226e7c3d",
       "range": {
         "startLine": 665,
         "startChar": 6,
