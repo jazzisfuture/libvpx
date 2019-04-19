@@ -25,6 +25,23 @@
     },
     {
       "key": {
+        "uuid": "310058e7_26bf93f6",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 909,
+      "author": {
+        "id": 1341651
+      },
+      "writtenOn": "2019-04-19T11:18:54Z",
+      "side": 1,
+      "message": "This comment might be better placed above, around the \"priv-\u003etimestamp_ratio.num *\u003d 10000000;\" line now. Even better might be to turn 10000000 into a named constant or reuse TICKS_PER_SEC. If you choose to make it a named constant, it might be worth adding a _Static_assert above duration_us calculation (line 753), similar to VP9.",
+      "revId": "c400970e072b386d3125bf8824593d7848008bcf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4e20f75c_dac493a0",
         "filename": "vp8/vp8_cx_iface.c",
         "patchSetId": 9
