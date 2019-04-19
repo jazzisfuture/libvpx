@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ec6cc657_e15b0a32",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 21
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-19T22:37:05Z",
+      "side": 1,
+      "message": "The flag args.skip_ypred \u003d 1 (set when this function is called) is used to avoid the duplicate calculation in estimate_block_intra",
+      "parentUuid": "b2c8627c_c8d149eb",
+      "range": {
+        "startLine": 412,
+        "startChar": 6,
+        "endLine": 412,
+        "endChar": 29
+      },
+      "revId": "07bc079e86be5ea38744e16595bbafe7a81904f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "758cf511_e3d767aa",
         "filename": "vp9/encoder/vp9_pickmode.c",
         "patchSetId": 21
@@ -36,6 +60,30 @@
       "writtenOn": "2019-04-19T22:04:34Z",
       "side": 1,
       "message": "at this point, mode has been selected, right? so why can\u0027t we condition on the mode selected (if any of intra mode is selected then don\u0027t calculate_tx_size).",
+      "range": {
+        "startLine": 665,
+        "startChar": 6,
+        "endLine": 665,
+        "endChar": 17
+      },
+      "revId": "07bc079e86be5ea38744e16595bbafe7a81904f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b723140a_226e7c3d",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 21
+      },
+      "lineNbr": 665,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2019-04-19T22:37:05Z",
+      "side": 1,
+      "message": "this flag is to avoid calculating tx_size again in block_yrd (which is used to compute the rd-cost), since the tx_size is already set when the mode is being tested (once prediction for the given is done).",
+      "parentUuid": "758cf511_e3d767aa",
       "range": {
         "startLine": 665,
         "startChar": 6,
