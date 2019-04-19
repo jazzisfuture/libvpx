@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b2c8627c_c8d149eb",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 21
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-04-19T19:35:37Z",
+      "side": 1,
+      "message": "this is also computing predictors for each of sub tx block... which is same as existing behavior (it\u0027s just called in estimate_block_intra which is called for each sub tx block in vp9_foreach_transformed_block_in_plane)..\n\nSo how could this save some calculation?",
+      "range": {
+        "startLine": 412,
+        "startChar": 6,
+        "endLine": 412,
+        "endChar": 29
+      },
+      "revId": "07bc079e86be5ea38744e16595bbafe7a81904f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
