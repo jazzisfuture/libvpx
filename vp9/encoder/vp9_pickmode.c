@@ -582,7 +582,7 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
 static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
                               MACROBLOCKD *xd, int *out_rate_sum,
                               int64_t *out_dist_sum, unsigned int *var_y,
-                              unsigned int *sse_y) {
+                              unsigned int *sse_y, int select_tx_size) {
   // Note our transform coeffs are 8 times an orthogonal transform.
   // Hence quantizer step is also 8 times. To get effective quantizer
   // we need to divide by 8 before sending to modeling function.
@@ -602,7 +602,8 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
   *var_y = var;
   *sse_y = sse;
 
-  xd->mi[0]->tx_size = calculate_tx_size(cpi, bsize, xd, var, sse, ac_thr);
+  if (select_tx_size)
+    xd->mi[0]->tx_size = calculate_tx_size(cpi, bsize, xd, var, sse, ac_thr);
 
   // Evaluate if the partition block is a skippable block in Y plane.
   {
@@ -688,7 +689,7 @@ static void block_yrd(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
     (void)tx_size;
     if (!rd_computed)
       model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc->rate, &this_rdc->dist,
-                        &var_y, &sse_y);
+                        &var_y, &sse_y, 0);
     *sse = INT_MAX;
     *skippable = 0;
     return;
@@ -1349,7 +1350,7 @@ static void recheck_zeromv_after_denoising(
     if (cpi->sf.default_interp_filter == BILINEAR) mi->interp_filter = BILINEAR;
     xd->plane[0].pre[0] = yv12_mb[LAST_FRAME][0];
     vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
-    model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist, &var_y, &sse_y);
+    model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist, &var_y, &sse_y, 1);
     this_rdc.rate = rate + ctx_den->ref_frame_cost[LAST_FRAME] +
                     cpi->inter_mode_cost[x->mbmi_ext->mode_context[LAST_FRAME]]
                                         [INTER_OFFSET(ZEROMV)];
@@ -1469,7 +1470,7 @@ static void search_filter_ref(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
                               flag_preduv_computed);
     else
       model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[filter], &pf_dist[filter],
-                        &pf_var[filter], &pf_sse[filter]);
+                        &pf_var[filter], &pf_sse[filter], 1);
     curr_rate[filter] = pf_rate[filter];
     pf_rate[filter] += vp9_get_switchable_rate(cpi, xd);
     cost = RDCOST(x->rdmult, x->rddiv, pf_rate[filter], pf_dist[filter]);
@@ -2276,7 +2277,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       } else {
         rd_computed = 1;
         model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc.rate, &this_rdc.dist,
-                          &var_y, &sse_y);
+                          &var_y, &sse_y, 1);
       }
       // Save normalized sse (between current and last frame) for (0, 0) motion.
       if (ref_frame == LAST_FRAME &&
@@ -2876,7 +2877,7 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x, int mi_row,
 #endif
 
           model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc.rate, &this_rdc.dist,
-                            &var_y, &sse_y);
+                            &var_y, &sse_y, 1);
 
           this_rdc.rate += b_rate;
           this_rdc.rdcost =
