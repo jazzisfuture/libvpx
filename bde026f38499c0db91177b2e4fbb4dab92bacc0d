@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "60aa1720_ed3595bf",
+        "filename": "test/timestamp_test.cc",
+        "patchSetId": 13
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-04-20T06:31:21Z",
+      "side": 1,
+      "message": "will the test still fail if you leave this unmodified? if it only fails in vp8 you could run it only on vp9 and leave the TODO, otherwise that should be removed.",
+      "revId": "bde026f38499c0db91177b2e4fbb4dab92bacc0d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05fcc830_5d2c4859",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 735,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-04-20T06:31:21Z",
+      "side": 1,
+      "message": "this is from c11, it seems -std\u003dgnu89 is being permissive. if you wanted to keep this you could define a COMPILE_TIME_ASSERT, for instance:\nhttps://cs.chromium.org/chromium/src/native_client/src/include/nacl_macros.h?q\u003dCOMPILE_TIME_ASSERT\u0026sq\u003dpackage:chromium\u0026dr\u003dCSs\u0026l\u003d173\n(the other branch isn\u0027t really necessary)",
+      "revId": "bde026f38499c0db91177b2e4fbb4dab92bacc0d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
