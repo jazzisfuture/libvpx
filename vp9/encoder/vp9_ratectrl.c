@@ -437,6 +437,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->last_post_encode_dropped_scene_change = 0;
   rc->use_post_encode_drop = 0;
   rc->ext_use_post_encode_drop = 0;
+  rc->arf_boost_factor = 1.0;
 }
 
 static int check_buffer_above_thresh(VP9_COMP *cpi, int drop_mark) {
@@ -1417,6 +1418,8 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
   int active_worst_quality = cpi->twopass.active_worst_quality;
   int q;
   int *inter_minq;
+  int boost, min_boost;
+  int *arfgf_high_motion_minq;
   const int boost_frame =
       !rc->is_src_frame_alt_ref &&
       (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame);
@@ -1442,7 +1445,13 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
     if (oxcf->rc_mode == VPX_CQ) {
       if (q < cq_level) q = cq_level;
     }
+
+    ASSIGN_MINQ_TABLE(cm->bit_depth, arfgf_high_motion_minq);
+    min_boost = arfgf_high_motion_minq[q];
     active_best_quality = get_gf_active_quality(cpi, q, cm->bit_depth);
+    boost = min_boost - active_best_quality;
+
+    active_best_quality = min_boost - (int)(boost * rc->arf_boost_factor);
 
     // Modify best quality for second level arfs. For mode VPX_Q this
     // becomes the baseline frame q.
