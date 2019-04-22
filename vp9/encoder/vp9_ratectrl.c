@@ -1447,7 +1447,14 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
       // Constrained quality use slightly lower active best.
       active_best_quality = active_best_quality * 15 / 16;
     } else {
+      int boost, min_boost;
+      int *arfgf_high_motion_minq;
+      ASSIGN_MINQ_TABLE(cm->bit_depth, arfgf_high_motion_minq);
+      min_boost = arfgf_high_motion_minq[q];
       active_best_quality = get_gf_active_quality(cpi, q, cm->bit_depth);
+      boost = min_boost - active_best_quality;
+
+      active_best_quality = min_boost - (int)(boost * rc->arf_boost_factor);
     }
     // Modify best quality for second level arfs. For mode VPX_Q this
     // becomes the baseline frame q.
