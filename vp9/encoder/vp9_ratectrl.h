@@ -197,6 +197,8 @@ typedef struct {
   int ext_use_post_encode_drop;
 
   int damped_adjustment[RATE_FACTOR_LEVELS];
+  float arf_boost_factor;
+  int increase_ABQ_frames_to_key;
 } RATE_CONTROL;
 
 struct VP9_COMP;
