@@ -26,6 +26,9 @@
 #include "vpx_ports/mem.h"
 #include "vpx_ports/system_state.h"
 #include "vpx_ports/vpx_timer.h"
+#if CONFIG_BITSTREAM_DEBUG
+#include "vpx_util/vpx_debug_util.h"
+#endif  // CONFIG_BITSTREAM_DEBUG
 
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_filter.h"
@@ -7138,6 +7141,12 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   int arf_src_index;
   const int gf_group_index = cpi->twopass.gf_group.index;
   int i;
+#if CONFIG_BITSTREAM_DEBUG
+  assert(cpi->oxcf.max_threads == 0 &&
+         "bitstream debug tool does not support multithreading");
+  bitstream_queue_record_write();
+  bitstream_queue_set_frame_write(cm->current_video_frame * 2 + cm->show_frame);
+#endif
 
   if (is_one_pass_cbr_svc(cpi)) {
     vp9_one_pass_cbr_svc_start_layer(cpi);
