@@ -22,6 +22,30 @@
       "revId": "483b71e8e78dbd8759bf506b532b062aa5b2d713",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "642789ae_7671748d",
+        "filename": "vpx_util/vpx_debug_util.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-04-29T22:21:32Z",
+      "side": 1,
+      "message": "We do have an AOM version instruction doc here.\nhttps://docs.google.com/document/d/1nJDrnCi93O5KgVFi2yNxdDiz7N7oPQ6iwjwSzIGxUe0/edit?usp\u003dsharing",
+      "parentUuid": "ab7d3a6f_ffb993b5",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 30,
+        "endChar": 22
+      },
+      "revId": "483b71e8e78dbd8759bf506b532b062aa5b2d713",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
