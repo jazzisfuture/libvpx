@@ -2522,8 +2522,12 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
     // Would the active max drop us out just before the near the next kf?
     if ((active_max_gf_interval <= rc->frames_to_key) &&
-        (active_max_gf_interval >= (rc->frames_to_key - rc->min_gf_interval)))
-      active_max_gf_interval = rc->frames_to_key / 2;
+        (active_max_gf_interval >= (rc->frames_to_key - rc->min_gf_interval))) {
+      if (rc->frames_to_key >= 2 * rc->min_gf_interval) {
+        active_max_gf_interval = (rc->frames_to_key + 1) / 2;
+        active_max_gf_interval = active_max_gf_interval | 0x01;
+      }
+    }
   }
 
   if (cpi->multi_layer_arf) {
