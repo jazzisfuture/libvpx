@@ -1043,13 +1043,19 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest,
     cx_data[1] = 0x01;
     cx_data[2] = 0x2a;
 
+    /* Pack scale and frame size into 16 bits. Store it 8 bits at a time.
+     * https://tools.ietf.org/html/rfc6386
+     * 9.1. Uncompressed Data Chunk
+     * 16 bits      :     (2 bits Horizontal Scale << 14) | Width (14 bits)
+     * 16 bits      :     (2 bits Vertical Scale << 14) | Height (14 bits)
+     */
     v = (pc->horiz_scale << 14) | pc->Width;
-    cx_data[3] = v;
-    cx_data[4] = v >> 8;
+    cx_data[3] = (uint8_t)v;
+    cx_data[4] = (uint8_t)(v >> 8);
 
     v = (pc->vert_scale << 14) | pc->Height;
-    cx_data[5] = v;
-    cx_data[6] = v >> 8;
+    cx_data[5] = uint8_t(v);
+    cx_data[6] = uint8_t(v >> 8);
 
     extra_bytes_packed = 7;
     cx_data += extra_bytes_packed;
