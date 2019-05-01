@@ -52,6 +52,24 @@
       "revId": "7b3fbeec165f5743e2a4419535d28b66e547a2d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "473c4182_5cf7b5d8",
+        "filename": "vp8/common/reconinter.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-05-01T23:32:29Z",
+      "side": 1,
+      "message": "OK so they have different conditions:\n\nneed_to_clamp_mvs is set when col or row of mv is beyond mb_to_[left,right,top,bottom] edge.\n\nwhat clamp_uvmv_to_umv_border uses is 2 * [col,row] compared with mb_to_[left,right,top,bottom] - borders...\n\nBTW this change is bitexact for VP8 speed -8.",
+      "parentUuid": "f6f4d04d_dbafa667",
+      "revId": "7b3fbeec165f5743e2a4419535d28b66e547a2d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
