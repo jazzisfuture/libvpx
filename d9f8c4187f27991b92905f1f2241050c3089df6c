@@ -22,6 +22,30 @@
       "revId": "d9f8c4187f27991b92905f1f2241050c3089df6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "636d1b9f_f21eb4f8",
+        "filename": "vp9/encoder/vp9_temporal_filter.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 757,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2019-05-02T18:59:28Z",
+      "side": 1,
+      "message": "FYI: I tried to modify them before, but didn\u0027t get better result.",
+      "parentUuid": "82799bd0_037723ed",
+      "range": {
+        "startLine": 757,
+        "startChar": 32,
+        "endLine": 757,
+        "endChar": 38
+      },
+      "revId": "d9f8c4187f27991b92905f1f2241050c3089df6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
