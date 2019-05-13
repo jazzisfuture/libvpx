@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "4bd1f962_9dfab263",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-05-13T21:09:33Z",
+      "side": 1,
+      "message": "Please remove one of the Change-Id: lines. It should only have one.",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 9
+      },
+      "revId": "b18561ad0b80c584ae67ba23568ab55a5fb140ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "19606d2f_e11200a1",
         "filename": "test/dct_test.cc",
         "patchSetId": 4
@@ -30,6 +53,69 @@
       "writtenOn": "2019-05-13T21:07:05Z",
       "side": 1,
       "message": "make this the first call in the function",
+      "revId": "b18561ad0b80c584ae67ba23568ab55a5fb140ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "382f86b9_a9e7f47c",
+        "filename": "vpx_dsp/ppc/fwd_txfm_vsx.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-05-13T21:09:33Z",
+      "side": 1,
+      "message": "This should be in vpx_dsp_rtcd.h\n\nIf you are not seeing it for some configurations (high bit depth?) the file should be excluded from those builds.",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 75
+      },
+      "revId": "b18561ad0b80c584ae67ba23568ab55a5fb140ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "790cd5df_822c3fe8",
+        "filename": "vpx_dsp/ppc/fwd_txfm_vsx.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-05-13T21:09:33Z",
+      "side": 1,
+      "message": "I don\u0027t believe we have any BE ppc targets?\n\ncommit 31f674d3e4ba3041a7146e184c45096d87b20bfa\nAuthor: Luc Trudeau \u003cluc@trud.ca\u003e\nDate:   Wed May 9 15:08:53 2018 -0400\n\n    Remove ppc64 (big endian) from configure\n    \n    Remove big endian PowerPC 64 from configure, as this build is problematic and\n    not supported. PowerPC 64 will be limited to little endian (ppc64le).\n    \n    BUG\u003dwebm:1525\n    BUG\u003dwebm:1508\n    \n    Change-Id: Id6a86d5913192549e03ac8f77879ba7526b752c8",
+      "range": {
+        "startLine": 135,
+        "startChar": 7,
+        "endLine": 135,
+        "endChar": 22
+      },
+      "revId": "b18561ad0b80c584ae67ba23568ab55a5fb140ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30d600e8_8f6b4f91",
+        "filename": "vpx_dsp/vpx_dsp.mk",
+        "patchSetId": 4
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-05-13T21:09:33Z",
+      "side": 1,
+      "message": "This should be guarded against CONFIG_VP9_HIGHBITDEPTH",
       "revId": "b18561ad0b80c584ae67ba23568ab55a5fb140ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
