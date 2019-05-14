@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c43c2052_9b557fc2",
+        "filename": "vpx_util/vpx_timestamp.h",
+        "patchSetId": 17
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1341651
+      },
+      "writtenOn": "2019-05-14T17:36:06Z",
+      "side": 1,
+      "message": "vpx_rational64 in the comment.",
+      "range": {
+        "startLine": 22,
+        "startChar": 41,
+        "endLine": 22,
+        "endChar": 53
+      },
+      "revId": "86f3e33598810d546493fb1ecade1bfa2af75332",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
