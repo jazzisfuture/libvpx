@@ -4347,8 +4347,12 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
   /* For inter frames the current default behavior is that when
    * cm->refresh_golden_frame is set we copy the old GF over to the ARF buffer
    * This is purely an encoder decision at present.
+   * Avoid this behavior for real-time CBR mode when alt_ref_frame is also
+   * updated.
    */
-  if (!cpi->oxcf.error_resilient_mode && cm->refresh_golden_frame) {
+  if (!cpi->oxcf.error_resilient_mode && cm->refresh_golden_frame &&
+      !(cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
+        cpi->oxcf.Mode == MODE_REALTIME && cm->refresh_alt_ref_frame)) {
     cm->copy_buffer_to_arf = 2;
   } else {
     cm->copy_buffer_to_arf = 0;
