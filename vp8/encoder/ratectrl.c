@@ -856,7 +856,7 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
             fclose(f);
 #endif
       cpi->drop_frame = 1;
-
+      cpi->ext_refresh_frame_flags_pending = 0;
       /* Update the buffer level variable. */
       cpi->bits_off_target += cpi->av_per_frame_bandwidth;
       if (cpi->bits_off_target > cpi->oxcf.maximum_buffer_size) {
