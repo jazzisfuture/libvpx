@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "ce80173c_ec15e5b7",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 17
+      },
+      "lineNbr": 968,
+      "author": {
+        "id": 1341651
+      },
+      "writtenOn": "2019-05-14T17:37:08Z",
+      "side": 1,
+      "message": "Since you added COMPILE_TIME_ASSERT, you may want to use it here as well instead of _Static_assert.",
+      "revId": "86f3e33598810d546493fb1ecade1bfa2af75332",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c43c2052_9b557fc2",
         "filename": "vpx_util/vpx_timestamp.h",
         "patchSetId": 17
