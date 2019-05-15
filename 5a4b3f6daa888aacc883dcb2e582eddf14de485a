@@ -22,6 +22,30 @@
       "revId": "5a4b3f6daa888aacc883dcb2e582eddf14de485a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a131113e_769f4670",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1508,
+      "author": {
+        "id": 1328009
+      },
+      "writtenOn": "2019-05-15T12:19:53Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7b62db0d_3880abb8",
+      "range": {
+        "startLine": 1508,
+        "startChar": 8,
+        "endLine": 1508,
+        "endChar": 26
+      },
+      "revId": "5a4b3f6daa888aacc883dcb2e582eddf14de485a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
