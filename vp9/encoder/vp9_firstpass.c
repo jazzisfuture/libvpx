@@ -3175,6 +3175,11 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // Work out how many bits to allocate for the key frame itself.
   kf_bits = calculate_boost_bits((rc->frames_to_key - 1), rc->kf_boost,
                                  twopass->kf_group_bits);
+  kf_bits +=
+      (int)((twopass->kf_group_bits - kf_bits) * (kf_mod_err / kf_group_err));
+  kf_bits =
+      VPXMIN(kf_bits, (int)(twopass->kf_group_bits -
+                            (rc->frames_to_key - 1) * FRAME_OVERHEAD_BITS));
 
   twopass->kf_group_bits -= kf_bits;
 
