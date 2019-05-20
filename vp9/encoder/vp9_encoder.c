@@ -5804,6 +5804,16 @@ static void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
     if (frame_idx == gf_group->gf_group_size) break;
   }
 
+  // print out gop map to verify the first gop has the same size as
+  // libaom
+  for (i = 1; i <= gf_group->gf_group_size; i++) {
+    printf("gop idx %d disp idx %d gld disp idx %d lst disp idx %d alt disp idx %d\n",
+      i, gf_group->frame_gop_index[i],
+      gf_group->frame_gop_index[gf_picture[i].ref_frame[0]],
+      gf_group->frame_gop_index[gf_picture[i].ref_frame[1]],
+      gf_group->frame_gop_index[gf_picture[i].ref_frame[2]]);
+  }
+
   alt_index = -1;
   ++frame_idx;
   ++frame_gop_offset;
@@ -6258,7 +6268,13 @@ static void mode_estimation(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
       get_quantize_error(x, 0, coeff, qcoeff, dqcoeff, tx_size, recon_error,
                          sse);
     }
+    if (rf_idx == ALTREF_FRAME - LAST_FRAME && frame_idx == 9) {
+      printf("row %d col %d mvrow %d mvcol %d intracost %ld intercost %ld \n", mi_row * MI_SIZE, mi_col * MI_SIZE, best_mv.as_mv.row, best_mv.as_mv.col, 
+        intra_cost, inter_cost);
+    }
   }
+  if (frame_idx == 9 && best_rf_idx == ALTREF_FRAME - LAST_FRAME)
+    printf("ALTREF picked!===================================");
   best_intra_cost = VPXMAX(best_intra_cost, 1);
   best_inter_cost = VPXMIN(best_intra_cost, best_inter_cost);
   tpl_stats->inter_cost = VPXMAX(
@@ -6945,6 +6961,20 @@ static void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture,
                        bsize);
     }
   }
+
+  // printf out final stats of altref frame in the gop (frame_index == 1)
+  if (frame_idx == 1 && cpi->twopass.gf_group.gf_group_size > 1) {
+    for (mi_row = 0; mi_row < cm->mi_rows; mi_row++)
+      for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
+        TplDepStats *tpl_stats = tpl_frame->tpl_stats_ptr;
+        int tpl_stride = tpl_frame->stride;
+        TplDepStats *cur_tpl_stats = &tpl_stats[mi_col + mi_row * tpl_stride];
+
+        printf("row %d col %d intracost %ld intercost %ld mc_flow %ld mc_dep_cost %ld\n",
+          mi_row * MI_SIZE, mi_col * MI_SIZE, cur_tpl_stats->intra_cost, cur_tpl_stats->inter_cost,
+          cur_tpl_stats->mc_flow, cur_tpl_stats->mc_dep_cost);
+      }
+  }
 }
 
 #if CONFIG_NON_GREEDY_MV
@@ -7122,7 +7152,8 @@ static void setup_tpl_stats(VP9_COMP *cpi) {
   const GF_GROUP *gf_group = &cpi->twopass.gf_group;
   int tpl_group_frames = 0;
   int frame_idx;
-  cpi->tpl_bsize = BLOCK_32X32;
+  //cpi->tpl_bsize = BLOCK_32X32;
+  cpi->tpl_bsize = BLOCK_16X16;
 
   init_gop_frames(cpi, gf_picture, gf_group, &tpl_group_frames);
 
