@@ -2392,17 +2392,25 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
 static void adjust_group_arnr_filter(VP9_COMP *cpi, double section_noise,
                                      double section_inter,
                                      double section_motion) {
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   TWO_PASS *const twopass = &cpi->twopass;
   double section_zeromv = section_inter - section_motion;
 
   twopass->arnr_strength_adjustment = 0;
 
-  if (section_noise < 150) {
-    twopass->arnr_strength_adjustment -= 1;
-    if (section_noise < 75) twopass->arnr_strength_adjustment -= 1;
-  } else if (section_noise > 250)
-    twopass->arnr_strength_adjustment += 1;
+  if (cpi->oxcf.content == VP9E_CONTENT_FILM) {
+    int min_strength = VPXMIN(oxcf->arnr_strength,
+                              (int)((section_noise + 25) / 50.00));
 
+    twopass->arnr_strength_adjustment = min_strength - oxcf->arnr_strength;
+  } else {
+    twopass->arnr_strength_adjustment = 0;
+    if (section_noise < 150) {
+      twopass->arnr_strength_adjustment -= 1;
+      if (section_noise < 75) twopass->arnr_strength_adjustment -= 1;
+    } else if (section_noise > 250)
+      twopass->arnr_strength_adjustment += 1;
+  }
   if (section_zeromv > 0.50) twopass->arnr_strength_adjustment += 1;
 }
 
