@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "edfb4da0_38c77fd1",
+        "filename": "vpx_dsp/vpx_dsp_rtcd_defs.pl",
+        "patchSetId": 9
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-05-23T13:10:04Z",
+      "side": 1,
+      "message": "Since this block in between is guarded with VP9_HIGHBITDEPTH this could be\n\nif VP9\nif VP9_HIGHBITDEPTH\nendif\nendif\n\ninstead of\nif VP9\nendif\nif VP9_HIGHBITDEPTH\nendif\nif VP9\nendif",
+      "range": {
+        "startLine": 399,
+        "startChar": 0,
+        "endLine": 399,
+        "endChar": 13
+      },
+      "revId": "cab60a023412e1163bca47229054bc0a30f2c71f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
