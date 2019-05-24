@@ -436,6 +436,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->use_post_encode_drop = 0;
   rc->ext_use_post_encode_drop = 0;
   rc->arf_active_best_quality_adjustment_factor = 1.0;
+  rc->arf_increase_active_best_quality = 0;
 }
 
 static int check_buffer_above_thresh(VP9_COMP *cpi, int drop_mark) {
@@ -1416,8 +1417,8 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
   int active_worst_quality = cpi->twopass.active_worst_quality;
   int q;
   int *inter_minq;
-  int arf_active_best_quality_adjustment, arf_active_best_quality_max;
-  int *arfgf_high_motion_minq;
+  int arf_active_best_quality_hl;
+  int *arfgf_high_motion_minq, *arfgf_low_motion_minq;
   const int boost_frame =
       !rc->is_src_frame_alt_ref &&
       (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame);
@@ -1444,14 +1445,20 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
       if (q < cq_level) q = cq_level;
     }
     active_best_quality = get_gf_active_quality(cpi, q, cm->bit_depth);
+    arf_active_best_quality_hl = active_best_quality;
 
-    ASSIGN_MINQ_TABLE(cm->bit_depth, arfgf_high_motion_minq);
-    arf_active_best_quality_max = arfgf_high_motion_minq[q];
-    arf_active_best_quality_adjustment =
-        arf_active_best_quality_max - active_best_quality;
-    active_best_quality = arf_active_best_quality_max -
-                          (int)(arf_active_best_quality_adjustment *
-                                rc->arf_active_best_quality_adjustment_factor);
+    if (rc->arf_increase_active_best_quality == 1) {
+      ASSIGN_MINQ_TABLE(cm->bit_depth, arfgf_high_motion_minq);
+      arf_active_best_quality_hl = arfgf_high_motion_minq[q];
+    } else if (rc->arf_increase_active_best_quality == -1) {
+      ASSIGN_MINQ_TABLE(cm->bit_depth, arfgf_low_motion_minq);
+      arf_active_best_quality_hl = arfgf_low_motion_minq[q];
+    }
+    active_best_quality =
+        (int)((double)active_best_quality *
+                  rc->arf_active_best_quality_adjustment_factor +
+              (double)arf_active_best_quality_hl *
+                  (1.0 - rc->arf_active_best_quality_adjustment_factor));
 
     // Modify best quality for second level arfs. For mode VPX_Q this
     // becomes the baseline frame q.
