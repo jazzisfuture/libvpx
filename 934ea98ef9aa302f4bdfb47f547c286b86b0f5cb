@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4913bac_84b3c42b",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1595,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2019-05-28T11:16:50Z",
+      "side": 1,
+      "message": "Unfortunately show_existing_frame is known to cause problems with some hardware decoders that are out there in the wild.",
+      "range": {
+        "startLine": 1595,
+        "startChar": 0,
+        "endLine": 1595,
+        "endChar": 36
+      },
+      "revId": "934ea98ef9aa302f4bdfb47f547c286b86b0f5cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
