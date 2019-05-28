@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd794b5c_0b5f436b",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2689,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2019-05-28T10:31:36Z",
+      "side": 1,
+      "message": "if these values are now being divided by gop_frames not rc-\u003ebaseline_gf_interval perhaps gop_frames \u003e0 should be the test in the if statement. Also below (2710).",
+      "range": {
+        "startLine": 2689,
+        "startChar": 38,
+        "endLine": 2689,
+        "endChar": 68
+      },
+      "revId": "e3a061200eb7b96b3e568ecdc51ebfd5dbdebab7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
