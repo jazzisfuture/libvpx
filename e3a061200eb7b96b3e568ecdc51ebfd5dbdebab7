@@ -22,6 +22,30 @@
       "revId": "e3a061200eb7b96b3e568ecdc51ebfd5dbdebab7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "827dfc27_e8e75afc",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2689,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2019-05-28T12:28:57Z",
+      "side": 1,
+      "message": "Consider the case of a single GOLDEN_FRAME in a gf group. Here, we have rc-\u003ebaseline_gf_interval \u003d1 and  gop_frames\u003d1 and twopass-\u003eactive_worst_quality is not updated. However, if the condition is changed to gop_frames \u003e 0 we would be updating twopass-\u003eactive_worst_quality just based on one frame data. Please let us know if we we should still change it to gop_frames \u003e 0. Also, when rc-\u003ebaseline_gf_interval \u003e 1, gop_frames \u003e 0 thereby avoiding division by zero.\n\nHowever, at line 2710 as GOLDEN frame is not temporally filtered both rc-\u003ebaseline_gf_interval \u003e 1 or gop_frames \u003e 0 are equivalent. Please let us know your opinion.",
+      "parentUuid": "dd794b5c_0b5f436b",
+      "range": {
+        "startLine": 2689,
+        "startChar": 38,
+        "endLine": 2689,
+        "endChar": 68
+      },
+      "revId": "e3a061200eb7b96b3e568ecdc51ebfd5dbdebab7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
