@@ -2644,7 +2644,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
 #define LAST_ALR_ACTIVE_BEST_QUALITY_ADJUSTMENT_FACTOR 0.2
   rc->arf_active_best_quality_adjustment_factor = 1.0;
-  if (rc->source_alt_ref_pending && !is_lossless_requested(&cpi->oxcf) &&
+  if (!is_lossless_requested(&cpi->oxcf) &&
       rc->frames_to_key <= rc->arf_active_best_quality_adjustment_window) {
     rc->arf_active_best_quality_adjustment_factor =
         LAST_ALR_ACTIVE_BEST_QUALITY_ADJUSTMENT_FACTOR +
