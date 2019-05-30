@@ -517,6 +517,9 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->key_freq = cfg->kf_max_dist;
 
   oxcf->speed = abs(extra_cfg->cpu_used);
+  if (ctx->cfg.g_pass == VPX_RC_FIRST_PASS) {
+    oxcf->speed = VPXMAX(4, oxcf->speed);
+  }
   oxcf->encode_breakout = extra_cfg->static_thresh;
   oxcf->enable_auto_arf = extra_cfg->enable_auto_alt_ref;
   oxcf->noise_sensitivity = extra_cfg->noise_sensitivity;
