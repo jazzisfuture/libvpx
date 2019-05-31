@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b51ed8f6_7ba4b284",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-05-31T17:54:10Z",
+      "side": 1,
+      "message": "did you want to attach this to the bug?",
+      "revId": "61f524a333da7fb6116e5d3ab5f17dcb5ef6a499",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
