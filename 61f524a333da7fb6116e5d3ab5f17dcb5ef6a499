@@ -16,6 +16,24 @@
       "revId": "61f524a333da7fb6116e5d3ab5f17dcb5ef6a499",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e56a11f4_4f0cc81a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-05-31T20:17:18Z",
+      "side": 1,
+      "message": "the bug is for aom.",
+      "parentUuid": "b51ed8f6_7ba4b284",
+      "revId": "61f524a333da7fb6116e5d3ab5f17dcb5ef6a499",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
