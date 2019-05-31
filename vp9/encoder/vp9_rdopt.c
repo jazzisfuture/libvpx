@@ -81,6 +81,8 @@ struct rdcost_block_args {
 };
 
 #define LAST_NEW_MV_INDEX 6
+
+#if !CONFIG_REALTIME_ONLY
 static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   { NEARESTMV, { LAST_FRAME, NONE } },
   { NEARESTMV, { ALTREF_FRAME, NONE } },
@@ -122,6 +124,7 @@ static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   { D117_PRED, { INTRA_FRAME, NONE } },
   { D45_PRED, { INTRA_FRAME, NONE } },
 };
+#endif
 
 static const REF_DEFINITION vp9_ref_order[MAX_REFS] = {
   { { LAST_FRAME, NONE } },           { { GOLDEN_FRAME, NONE } },
@@ -154,6 +157,7 @@ static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx, int m, int n,
   }
 }
 
+#if !CONFIG_REALTIME_ONLY
 static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
                             MACROBLOCKD *xd, int *out_rate_sum,
                             int64_t *out_dist_sum, int *skip_txfm_sb,
@@ -278,6 +282,7 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize, MACROBLOCK *x,
   *out_rate_sum = (int)rate_sum;
   *out_dist_sum = dist_sum << VP9_DIST_SCALE_LOG2;
 }
+#endif  // !CONFIG_REALTIME_ONLY
 
 #if CONFIG_VP9_HIGHBITDEPTH
 int64_t vp9_highbd_block_error_c(const tran_low_t *coeff,
@@ -2464,6 +2469,7 @@ static int ref_frame_to_gf_rf_idx(int ref_frame) {
 }
 #endif
 
+#if !CONFIG_REALTIME_ONLY
 static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
                                  int mi_row, int mi_col, int_mv *tmp_mv,
                                  int *rate_mv) {
@@ -2651,6 +2657,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
     for (i = 0; i < MAX_MB_PLANE; i++) xd->plane[i].pre[0] = backup_yv12[i];
   }
 }
+#endif  // !CONFIG_REALTIME_ONLY
 
 static INLINE void restore_dst_buf(MACROBLOCKD *xd,
                                    uint8_t *orig_dst[MAX_MB_PLANE],
@@ -2662,6 +2669,7 @@ static INLINE void restore_dst_buf(MACROBLOCKD *xd,
   }
 }
 
+#if !CONFIG_REALTIME_ONLY
 // In some situations we want to discount tha pparent cost of a new motion
 // vector. Where there is a subtle motion field and especially where there is
 // low spatial complexity then it can be hard to cover the cost of a new motion
@@ -3075,6 +3083,7 @@ static int64_t handle_inter_mode(
   restore_dst_buf(xd, orig_dst, orig_dst_stride);
   return 0;  // The rate-distortion cost will be re-calculated by caller.
 }
+#endif  // !CONFIG_REALTIME_ONLY
 
 void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
                                BLOCK_SIZE bsize, PICK_MODE_CONTEXT *ctx,
@@ -3128,6 +3137,7 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
   rd_cost->rdcost = RDCOST(x->rdmult, x->rddiv, rd_cost->rate, rd_cost->dist);
 }
 
+#if !CONFIG_REALTIME_ONLY
 // This function is designed to apply a bias or adjustment to an rd value based
 // on the relative variance of the source and reconstruction.
 #define LOW_VAR_THRESH 250
@@ -3217,6 +3227,7 @@ static void rd_variance_adjustment(VP9_COMP *cpi, MACROBLOCK *x,
 
   (void)xd;
 }
+#endif  // !CONFIG_REALTIME_ONLY
 
 // Do we have an internal image edge (e.g. formatting bars).
 int vp9_internal_image_edge(VP9_COMP *cpi) {
@@ -3287,6 +3298,7 @@ int vp9_active_edge_sb(VP9_COMP *cpi, int mi_row, int mi_col) {
          vp9_active_v_edge(cpi, mi_col, MI_BLOCK_SIZE);
 }
 
+#if !CONFIG_REALTIME_ONLY
 void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, TileDataEnc *tile_data,
                                MACROBLOCK *x, int mi_row, int mi_col,
                                RD_COST *rd_cost, BLOCK_SIZE bsize,
@@ -3779,7 +3791,6 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, TileDataEnc *tile_data,
           }
         }
       }
-
       // Apply an adjustment to the rd value based on the similarity of the
       // source variance and reconstructed variance.
       rd_variance_adjustment(cpi, x, bsize, &this_rd, recon, ref_frame,
@@ -4117,6 +4128,7 @@ void vp9_rd_pick_inter_mode_sb_seg_skip(VP9_COMP *cpi, TileDataEnc *tile_data,
   if (!x->select_tx_size) swap_block_ptr(x, ctx, 1, 0, 0, MAX_MB_PLANE);
   store_coding_context(x, ctx, THR_ZEROMV, best_pred_diff, best_filter_diff, 0);
 }
+#endif  // !CONFIG_REALTIME_ONLY
 
 void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, TileDataEnc *tile_data,
                                    MACROBLOCK *x, int mi_row, int mi_col,

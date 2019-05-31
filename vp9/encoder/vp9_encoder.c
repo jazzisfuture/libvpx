@@ -127,6 +127,7 @@ void highbd_wht_fwd_txfm(int16_t *src_diff, int bw, tran_low_t *coeff,
 void wht_fwd_txfm(int16_t *src_diff, int bw, tran_low_t *coeff,
                   TX_SIZE tx_size);
 
+#if !CONFIG_REALTIME_ONLY
 // compute adaptive threshold for skip recoding
 static int compute_context_model_thresh(const VP9_COMP *const cpi) {
   const VP9_COMMON *const cm = &cpi->common;
@@ -451,6 +452,7 @@ static int compute_context_model_diff(const VP9_COMMON *const cm) {
 
   return -diff;
 }
+#endif  // !CONFIG_REALTIME_ONLY
 
 // Test for whether to calculate metrics for the frame.
 static int is_psnr_calc_enabled(VP9_COMP *cpi) {
@@ -2942,6 +2944,7 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if !CONFIG_REALTIME_ONLY
 static int scale_down(VP9_COMP *cpi, int q) {
   RATE_CONTROL *const rc = &cpi->rc;
   GF_GROUP *const gf_group = &cpi->twopass.gf_group;
@@ -3045,6 +3048,7 @@ static int recode_loop_test(VP9_COMP *cpi, int high_limit, int low_limit, int q,
   }
   return force_recode;
 }
+#endif  // !CONFIG_REALTIME_ONLY
 
 static void update_ref_frames(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
@@ -3972,6 +3976,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     }
   }
 
+#if !CONFIG_REALTIME_ONLY
   // Variance adaptive and in frame q adjustment experiments are mutually
   // exclusive.
   if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
@@ -3980,7 +3985,9 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     vp9_360aq_frame_setup(cpi);
   } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
     vp9_setup_in_frame_q_adj(cpi);
-  } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+  }
+#endif
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
     vp9_cyclic_refresh_setup(cpi);
   } else if (cpi->oxcf.aq_mode == LOOKAHEAD_AQ) {
     // it may be pretty bad for rate-control,
@@ -4041,6 +4048,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   return 1;
 }
 
+#if !CONFIG_REALTIME_ONLY
 #define MAX_QSTEP_ADJ 4
 static int get_qstep_adj(int rate_excess, int rate_limit) {
   int qstep =
@@ -4403,6 +4411,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size,
     restore_coding_context(cpi);
   }
 }
+#endif  // !CONFIG_REALTIME_ONLY
 
 static int get_ref_frame_flags(const VP9_COMP *cpi) {
   const int *const map = cpi->common.ref_frame_map;
@@ -5054,7 +5063,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
   if (cpi->sf.recode_loop == DISALLOW_RECODE) {
     if (!encode_without_recode_loop(cpi, size, dest)) return;
   } else {
+#if !CONFIG_REALTIME_ONLY
     encode_with_recode_loop(cpi, size, dest);
+#endif
   }
 
   // TODO(jingning): When using show existing frame mode, we assume that the
