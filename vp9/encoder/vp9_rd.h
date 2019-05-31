@@ -135,6 +135,8 @@ typedef struct RD_COST {
 void vp9_rd_cost_reset(RD_COST *rd_cost);
 // Initialize the rate distortion cost values to zero.
 void vp9_rd_cost_init(RD_COST *rd_cost);
+// Update the cost value based on its rate and distortion.
+void vp9_rd_cost_update(int mult, int div, RD_COST *rd_cost);
 
 struct TileInfo;
 struct TileDataEnc;
