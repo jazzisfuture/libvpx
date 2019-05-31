@@ -28,6 +28,10 @@ extern "C" {
 
 #define RDCOST(RM, DM, R, D) \
   ROUND_POWER_OF_TWO(((int64_t)(R)) * (RM), VP9_PROB_COST_SHIFT) + ((D) << (DM))
+#define RDCOST_NEG_R(RM, DM, R, D)                              \
+  (-(1 << (VP9_PROB_COST_SHIFT - 1)) + ((int64_t)(R)) * (RM)) / \
+          (1 << VP9_PROB_COST_SHIFT) +                          \
+      ((D) << (DM))
 #define QIDX_SKIP_THRESH 115
 
 #define MV_COST_WEIGHT 108
