@@ -2389,7 +2389,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
   vp9_set_speed_features_framesize_dependent(cpi, oxcf->speed);
 
   {
-    const int bsize = BLOCK_64X64;
+    const int bsize = BLOCK_16X16;
     const int w = num_8x8_blocks_wide_lookup[bsize];
     const int h = num_8x8_blocks_high_lookup[bsize];
     const int num_cols = (cm->mi_cols + w - 1) / w;
@@ -4754,7 +4754,7 @@ static void set_mb_ssim_rdmult_scaling(VP9_COMP *cpi) {
   MACROBLOCKD *xd = &x->e_mbd;
   uint8_t *y_buffer = cpi->Source->y_buffer;
   const int y_stride = cpi->Source->y_stride;
-  const int block_size = BLOCK_64X64;
+  const int block_size = BLOCK_16X16;
 
   const int num_8x8_w = num_8x8_blocks_wide_lookup[block_size];
   const int num_8x8_h = num_8x8_blocks_high_lookup[block_size];
