@@ -28,6 +28,27 @@ make install
 ```
 Now, glfw should be installed in /usr/local/include/
 
+#GLM
+GLM is a math library for OpenGL which has the same data type as GLSL.
+
+*Download GLM from the official website: https://github.com/g-truc/glm/releases/tag/0.9.9.5
+*Unzip downloaded file
+```
+unzip glm-0.9.9.5.zip
+```
+*Go to glm directory
+```
+cd glm
+```
+*Use CMake to generate makefile
+```
+cmake .
+```
+*Install
+```
+make
+make install
+```
 
 #Link OpenGl, GLFW and GLEW by Using CMake
 
