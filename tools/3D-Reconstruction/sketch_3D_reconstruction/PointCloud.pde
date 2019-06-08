@@ -18,7 +18,7 @@ class PointCloud
       {
          //get depth value (red channel)
          color depth_px = depth.get(u,v);
-         int d = depth_px>>16&0xFF;
+         int d = depth_px&0x0000FFFF;
          //only transform the pixel whose depth is not 0
          if(d>0)
          {

@@ -20,8 +20,8 @@ class Transform
   {
     //transfer from camera view to world view
     float z =d/5000.0f;
-    float x = (i - w/2.0f)*z/focal;
-    float y = (j - h/2.0f)*z/focal;
+    float x = (i - 319.5f)*z/focal;
+    float y = (j - 239.5f)*z/focal;
     return new PVector(x,y,z);
   }
 }

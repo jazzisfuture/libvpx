@@ -30,6 +30,13 @@ void setup()
  PVector cloud_center = point_cloud.getCloudCenter();
   //initialize camera
   cam = new Camera(fov,new PVector(0,0,0),cloud_center,new PVector(0,1,0));
+  String[] results = new String[point_cloud.points.size()];
+  for(int i=0;i<point_cloud.points.size();i++)
+  {
+    PVector point = point_cloud.points.get(i);
+    results[i] = str(point.x)+' '+str(point.y)+' '+str(point.z);
+  }
+  saveStrings("output.txt",results);
 }
 void draw()
 {
