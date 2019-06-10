@@ -1100,7 +1100,7 @@ EOF
         android*)
           echo "Assuming standalone build with NDK toolchain."
           echo "See build/make/Android.mk for details."
-          check_add_ldflags -static
+          # check_add_ldflags -static
           soft_enable unit_tests
           ;;
 
