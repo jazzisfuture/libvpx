@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "263f7ab0_1cf4a5b3",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/Camera.pde",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-11T18:32:08Z",
+      "side": 1,
+      "message": "Please use clang-format to auto format your code.\nUsing clang-format should automatically remove the trailing whitespaces here and every other places. The trailing whitespaces are the reasons of getting Jenkins build failure.\n\nThe clang-format can be downloaded here.\nhttps://sites.google.com/a/google.com/webm/howto/jenkins-like-builds/install-clang\n\nAlso read the aoto format part in this doc\nhttps://docs.google.com/document/d/1u540IbwhG9qMSf5WziO8vI4apgAxi3T-Q6cZBrtH1IY/edit#heading\u003dh.y2p9kmh71wj7",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 2
+      },
+      "revId": "7c7dabc49549b37439bac1fc2cd6c868d0e6a7cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d025ad0_11925dd3",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/sketch_3D_reconstruction.pde",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-11T18:32:08Z",
+      "side": 1,
+      "message": "Is it possible to use relative path here?\nPlease also add a link of the dataset in comment or README.",
+      "range": {
+        "startLine": 13,
+        "startChar": 16,
+        "endLine": 13,
+        "endChar": 82
+      },
+      "revId": "7c7dabc49549b37439bac1fc2cd6c868d0e6a7cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
