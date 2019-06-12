@@ -16,6 +16,23 @@
       "revId": "736f20626c6b456ff19003202d60680f49b739d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8e5712a_c9d7f147",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 756,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-12T21:50:38Z",
+      "side": 1,
+      "message": "you may not really need a compile time assert for this check since it\u0027s all integer constants and operations as opposed to say sizeof(). you can just check this with #if ..., it would most likely be better placed near the define or just make it a comment",
+      "revId": "736f20626c6b456ff19003202d60680f49b739d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
