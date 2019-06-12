@@ -39,6 +39,30 @@
       "revId": "86f3e33598810d546493fb1ecade1bfa2af75332",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2a6e9e5_7b5d92b2",
+        "filename": "vpx_util/vpx_timestamp.h",
+        "patchSetId": 17
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003078
+      },
+      "writtenOn": "2019-06-12T00:03:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c43c2052_9b557fc2",
+      "range": {
+        "startLine": 22,
+        "startChar": 41,
+        "endLine": 22,
+        "endChar": 53
+      },
+      "revId": "86f3e33598810d546493fb1ecade1bfa2af75332",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
