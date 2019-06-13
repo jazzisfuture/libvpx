@@ -25,7 +25,6 @@ class Transform {
     return new PVector(x, y, z);
   }
 }
-
 // get rotation matrix by using rotation axis and angle
 float[] getRotationMat3x3(float angle, float ax, float ay, float az) {
   float[] mat = new float[9];

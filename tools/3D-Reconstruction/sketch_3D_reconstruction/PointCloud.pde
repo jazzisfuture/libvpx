@@ -26,17 +26,44 @@ class PointCloud {
         }
       }
   }
-
+  
+  int size()
+  {
+    return points.size();
+  }
+  
+  PVector getPosition(int i)
+  {
+    if(i>=points.size())
+    {
+      println("point position: index "+str(i)+" exceeds");
+      exit();
+    }
+    return points.get(i);
+  }
+  
+  color getColor(int i)
+  {
+    if(i>=point_colors.size())
+    {
+      println("point color: index "+str(i)+" exceeds");
+      exit();
+    }
+    return point_colors.get(i);
+  }
+  
   PVector getCloudCenter() {
     if (points.size() > 0) return PVector.div(cloud_mass, points.size());
     return new PVector(0, 0, 0);
   }
-
-  void render() {
-    for (int i = 0; i < points.size(); i++) {
-      PVector v = points.get(i);
-      stroke(point_colors.get(i));
-      point(v.x, v.y, v.z);
+  
+  void merge(PointCloud point_cloud)
+  {
+    for(int i=0;i<point_cloud.size();i++)
+    {
+      points.add(point_cloud.getPosition(i));
+      point_colors.append(point_cloud.getColor(i));
     }
+    cloud_mass = PVector.add(cloud_mass,point_cloud.cloud_mass);
   }
 }
