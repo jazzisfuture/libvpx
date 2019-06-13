@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "b871779e_b2aa2c0a",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/Transform.pde",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-13T22:07:31Z",
+      "side": 1,
+      "message": "The same with focal. Since transform function does not have same name argument, it does not matter if we use w or this.w.",
+      "parentUuid": "5e8f616e_f590eb6d",
+      "range": {
+        "startLine": 23,
+        "startChar": 19,
+        "endLine": 23,
+        "endChar": 20
+      },
+      "revId": "955ec44347810c0a9259dff47de93ba2171aa422",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a5fdec9_9973b484",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/Transform.pde",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-13T22:07:31Z",
+      "side": 1,
+      "message": "focal is our class property. I used this.focal in constructor because constructor has an argument also called \u0027focal\u0027. In transform, since there is no same name argument, so it does not matter if we use focal or this.focal",
+      "parentUuid": "6c9de739_8dc506aa",
+      "range": {
+        "startLine": 23,
+        "startChar": 35,
+        "endLine": 23,
+        "endChar": 40
+      },
+      "revId": "955ec44347810c0a9259dff47de93ba2171aa422",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6242aa64_d19343cd",
         "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/sketch_3D_reconstruction.pde",
         "patchSetId": 1
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b84ca031_a8de94ef",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/sketch_3D_reconstruction.pde",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-13T22:07:31Z",
+      "side": 1,
+      "message": "But Processing is built on java Applet, it does not have a entry function (or the entry function is hidden from us). In this case, we need the global variable to communicate between setup() and draw(). The initial values can be moved to setup() but the variable shared by setup and draw needs to be global, I think.",
+      "parentUuid": "6242aa64_d19343cd",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 42
+      },
+      "revId": "955ec44347810c0a9259dff47de93ba2171aa422",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f473433d_43d5d9dc",
         "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/sketch_3D_reconstruction.pde",
         "patchSetId": 1
@@ -82,6 +154,30 @@
       "writtenOn": "2019-06-13T21:52:42Z",
       "side": 1,
       "message": "Please give this function proper parameters.\nSo that we know what is input and output.",
+      "range": {
+        "startLine": 49,
+        "startChar": 5,
+        "endLine": 49,
+        "endChar": 11
+      },
+      "revId": "955ec44347810c0a9259dff47de93ba2171aa422",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc655a8d_23121e40",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/sketch_3D_reconstruction.pde",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-13T22:07:31Z",
+      "side": 1,
+      "message": "the draw function is a processing built in function. It\u0027s in a loop util we close the window.",
+      "parentUuid": "f473433d_43d5d9dc",
       "range": {
         "startLine": 49,
         "startChar": 5,
