@@ -69,6 +69,24 @@
       "revId": "736f20626c6b456ff19003202d60680f49b739d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30f49922_96829207",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 756,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-13T03:40:53Z",
+      "side": 1,
+      "message": "\u003e \u003e Just for the record, static asserts originated from my patch. The rationale for having the asserts located at the places that rely on some property of the constant is that if the constant is incompatibly modified, such places immediately become apparent. They are, of course, not functionally necessary and can be removed or replaced with comments, but that would make the code less maintainable.\n\u003e \n\u003e I understand the reasoning. In this case I was just noting that bringing in something that needs special platform treatment may not be worth it if we can cover it with a #if.\n\nI\u0027m OK with keeping it the COMPILE_TIME_ASSERT as well as long as the platform detection is corrected.",
+      "parentUuid": "44d12b4d_af4450db",
+      "revId": "736f20626c6b456ff19003202d60680f49b739d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
