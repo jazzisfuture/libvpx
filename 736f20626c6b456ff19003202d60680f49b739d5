@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0dc80b97_a8d8c3be",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1003078
+      },
+      "writtenOn": "2019-06-13T22:15:38Z",
+      "side": 1,
+      "message": "Thanks, I changed it to _WIN32 but there is a compiler failure, therefore I deleted this branch.",
+      "parentUuid": "ef7aea8c_2778101e",
+      "revId": "736f20626c6b456ff19003202d60680f49b739d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e8e5712a_c9d7f147",
         "filename": "vp8/vp8_cx_iface.c",
         "patchSetId": 19
