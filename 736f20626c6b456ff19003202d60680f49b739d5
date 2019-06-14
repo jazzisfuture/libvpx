@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "cc97feea_0c7daac1",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1003078
+      },
+      "writtenOn": "2019-06-14T17:47:23Z",
+      "side": 1,
+      "message": "I mean since the first branch causes compiler failure that you mentioned, therefore I deleted the first branch so always use the second one regardless of win32 or not, seems like Jenkins does not complain, is it OK?",
+      "parentUuid": "14344b89_742de927",
+      "revId": "736f20626c6b456ff19003202d60680f49b739d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e8e5712a_c9d7f147",
         "filename": "vp8/vp8_cx_iface.c",
         "patchSetId": 19
