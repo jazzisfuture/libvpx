@@ -22,6 +22,30 @@
       "revId": "c06a917501294f8845df580b114a13fce7269b2f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6a9464e_a2485348",
+        "filename": "vpx/src/vpx_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-06-14T22:50:56Z",
+      "side": 1,
+      "message": "it eventually goes to ctx-\u003eoxcf.mr_low_res_mode_info\nhttps://chromium.googlesource.com/webm/libvpx/+/refs/heads/master/vp8/vp8_cx_iface.c#366\n\nand it\u0027s freed here:\nhttps://chromium.googlesource.com/webm/libvpx/+/refs/heads/master/vp8/vp8_cx_iface.c#676",
+      "parentUuid": "783d2559_2bc91c0f",
+      "range": {
+        "startLine": 135,
+        "startChar": 0,
+        "endLine": 135,
+        "endChar": 31
+      },
+      "revId": "c06a917501294f8845df580b114a13fce7269b2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
