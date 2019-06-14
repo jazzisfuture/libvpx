@@ -7156,7 +7156,9 @@ static void setup_tpl_stats(VP9_COMP *cpi) {
 
   // Backward propagation from tpl_group_frames to 1.
   for (frame_idx = tpl_group_frames - 1; frame_idx > 0; --frame_idx) {
-    if (gf_picture[frame_idx].update_type == USE_BUF_FRAME) continue;
+    if (gf_picture[frame_idx].update_type == USE_BUF_FRAME ||
+        (gf_picture[frame_idx].update_type == OVERLAY_UPDATE))
+      continue;
     mc_flow_dispenser(cpi, gf_picture, frame_idx, cpi->tpl_bsize);
   }
 #if CONFIG_NON_GREEDY_MV
