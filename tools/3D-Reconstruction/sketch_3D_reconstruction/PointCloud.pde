@@ -26,11 +26,34 @@ class PointCloud {
         }
       }
   }
+<<<<<<< HEAD
 
+=======
+  // get point cloud size
+  int size() { return points.size(); }
+  // get ith position
+  PVector getPosition(int i) {
+    if (i >= points.size()) {
+      println("point position: index " + str(i) + " exceeds");
+      exit();
+    }
+    return points.get(i);
+  }
+  // get ith color
+  color getColor(int i) {
+    if (i >= point_colors.size()) {
+      println("point color: index " + str(i) + " exceeds");
+      exit();
+    }
+    return point_colors.get(i);
+  }
+  // get cloud center
+>>>>>>> 7ade2803c... Add Scene to manage other modules and calculation
   PVector getCloudCenter() {
     if (points.size() > 0) return PVector.div(cloud_mass, points.size());
     return new PVector(0, 0, 0);
   }
+<<<<<<< HEAD
 
   void render() {
     for (int i = 0; i < points.size(); i++) {
@@ -38,5 +61,14 @@ class PointCloud {
       stroke(point_colors.get(i));
       point(v.x, v.y, v.z);
     }
+=======
+  // merge two clouds
+  void merge(PointCloud point_cloud) {
+    for (int i = 0; i < point_cloud.size(); i++) {
+      points.add(point_cloud.getPosition(i));
+      point_colors.append(point_cloud.getColor(i));
+    }
+    cloud_mass = PVector.add(cloud_mass, point_cloud.cloud_mass);
+>>>>>>> 7ade2803c... Add Scene to manage other modules and calculation
   }
 }

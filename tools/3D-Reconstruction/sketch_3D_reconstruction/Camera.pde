@@ -18,6 +18,19 @@ class Camera {
     init_center = center.copy();
     init_axis = axis.copy();
   }
+<<<<<<< HEAD
+=======
+  PVector project(PVector pos) {
+    float[] cam_mat = getCameraMat();
+    PVector trans_pos =
+        PVector.sub(pos, this.pos);  // translate based on camera's position
+    PVector rot_pos =
+        MatxVec3(cam_mat, trans_pos);  // rotate based on camera angle
+    PVector proj_pos = new PVector(0, 0, 0);
+    proj_pos.x = height / 2.0f * rot_pos.x / (rot_pos.z) / tan(fov / 2.0f);
+    proj_pos.y = height / 2.0f * rot_pos.y / (rot_pos.z) / tan(fov / 2.0f);
+    proj_pos.z = trans_pos.z;
+>>>>>>> 7ade2803c... Add Scene to manage other modules and calculation
 
   float[] getCameraMat() {
     float[] mat = new float[9];
@@ -112,8 +125,11 @@ class Camera {
           }
       }
     }
+<<<<<<< HEAD
     perspective(fov, float(width) / float(height), 1e-6, 1e5);
     camera(pos.x, pos.y, pos.z, center.x, center.y, center.z, axis.x, axis.y,
            axis.z);
+=======
+>>>>>>> 7ade2803c... Add Scene to manage other modules and calculation
   }
 }

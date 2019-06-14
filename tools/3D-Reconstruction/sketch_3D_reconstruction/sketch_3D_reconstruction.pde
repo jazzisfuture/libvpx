@@ -4,6 +4,7 @@
  *University of Munich
  *https://vision.in.tum.de/data/datasets/rgbd-dataset/download#freiburg1_xyz
  */
+<<<<<<< HEAD
 float focal = 525.0f;        // focal distance of camera
 Transform trans;             // transformer object
 PointCloud point_cloud;      // pointCloud object
@@ -15,6 +16,17 @@ int block_size = 8;          // block size
 float normalizer = 5000.0f;  // normalizer
 void setup() {
   size(640, 480, P3D);
+=======
+Scene scene;  // scene object
+void setup() {
+  size(640, 480);
+  // default settings
+  float focal = 525.0f;        // focal distance of camera
+  int frame_no = 10;           // frame number
+  float fov = PI / 3;          // field of view
+  int block_size = 8;          // block size
+  float normalizer = 5000.0f;  // normalizer
+>>>>>>> 7ade2803c... Add Scene to manage other modules and calculation
   // initialize
   point_cloud = new PointCloud();
   // synchronized rgb, depth and ground truth
@@ -32,8 +44,13 @@ void setup() {
         qw = float(info[13]);  // quaternion
 
   // build transformer
+<<<<<<< HEAD
   trans = new Transform(tx, ty, tz, qx, qy, qz, qw, focal, width, height,
                         normalizer);
+=======
+  Transform trans = new Transform(tx, ty, tz, qx, qy, qz, qw, focal, width,
+                                  height, normalizer);
+>>>>>>> 7ade2803c... Add Scene to manage other modules and calculation
   PImage rgb = loadImage(rgb_path);
   PImage depth = loadImage(depth_path);
   // generate point cloud
@@ -41,10 +58,19 @@ void setup() {
   // get the center of cloud
   PVector cloud_center = point_cloud.getCloudCenter();
   // initialize camera
+<<<<<<< HEAD
   cam =
       new Camera(fov, new PVector(0, 0, 0), cloud_center, new PVector(0, 1, 0));
   // initialize motion field
   mf = new MotionField(cam, point_cloud, fov, block_size);
+=======
+  Camera camera =
+      new Camera(fov, new PVector(0, 0, 0), cloud_center, new PVector(0, 1, 0));
+  // initialize motion field
+  MotionField motion_field = new MotionField(block_size);
+  // initialize scene
+  scene = new Scene(camera, point_cloud, motion_field);
+>>>>>>> 7ade2803c... Add Scene to manage other modules and calculation
 }
 void draw() {
   background(0);
@@ -65,5 +91,12 @@ void draw() {
   // update motion field
   mf.run();
   // draw motion field
+<<<<<<< HEAD
   mf.showMotionField();
+=======
+  scene.run(true);  // true: make interpolation; false: do not make
+                    // interpolation
+  scene.render(
+      false);  // true: turn on motion field; false: turn off motion field
+>>>>>>> 7ade2803c... Add Scene to manage other modules and calculation
 }
