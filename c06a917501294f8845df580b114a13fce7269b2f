@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "783d2559_2bc91c0f",
+        "filename": "vpx/src/vpx_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-14T19:30:02Z",
+      "side": 1,
+      "message": "does vpx_codec_destroy take care of freeing the pointer on success? It looks like each ctx gets a copy of the same value.",
+      "range": {
+        "startLine": 135,
+        "startChar": 0,
+        "endLine": 135,
+        "endChar": 31
+      },
+      "revId": "c06a917501294f8845df580b114a13fce7269b2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
