@@ -18,8 +18,7 @@ class Camera {
     init_center = center.copy();
     init_axis = axis.copy();
   }
-  PVector project(PVector pos)
-  {
+  PVector project(PVector pos) {
     float[] cam_mat = getCameraMat();
     PVector trans_pos =
         PVector.sub(pos, this.pos);  // translate based on camera's position
@@ -125,7 +124,5 @@ class Camera {
           }
       }
     }
-    //perspective(fov, float(width) / float(height), 1e-6, 1e5);
-    //camera(pos.x, pos.y, pos.z, center.x, center.y, center.z, axis.x, axis.y,axis.z);
   }
 }

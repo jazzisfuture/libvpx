@@ -4,15 +4,15 @@
  *University of Munich
  *https://vision.in.tum.de/data/datasets/rgbd-dataset/download#freiburg1_xyz
  */
- Scene scene; //scene object
+Scene scene;  // scene object
 void setup() {
-  size(640,480);
-  //default settings
+  size(640, 480);
+  // default settings
   float focal = 525.0f;        // focal distance of camera
-  int frame_no = 10;            // frame number
+  int frame_no = 10;           // frame number
   float fov = PI / 3;          // field of view
   int block_size = 8;          // block size
-float normalizer = 5000.0f;  // normalizer
+  float normalizer = 5000.0f;  // normalizer
   // initialize
   PointCloud point_cloud = new PointCloud();
   // synchronized rgb, depth and ground truth
@@ -21,7 +21,6 @@ float normalizer = 5000.0f;  // normalizer
 
   // read in rgb and depth image file paths as well as corresponding camera
   // posiiton and quaternion
-  //for(int i=0;i<10;i++){
   String[] info = split(rgb_depth_gt[frame_no], ' ');
   String rgb_path = head + info[1];
   String depth_path = head + info[3];
@@ -31,22 +30,21 @@ float normalizer = 5000.0f;  // normalizer
         qw = float(info[13]);  // quaternion
 
   // build transformer
-  Transform trans = new Transform(tx, ty, tz, qx, qy, qz, qw, focal, width, height,
-                        normalizer);
+  Transform trans = new Transform(tx, ty, tz, qx, qy, qz, qw, focal, width,
+                                  height, normalizer);
   PImage rgb = loadImage(rgb_path);
   PImage depth = loadImage(depth_path);
   // generate point cloud
   point_cloud.generate(rgb, depth, trans);
-  //}
   // get the center of cloud
   PVector cloud_center = point_cloud.getCloudCenter();
   // initialize camera
   Camera camera =
-      new Camera(fov, new PVector(0,0,0), cloud_center, new PVector(0,1,0));
+      new Camera(fov, new PVector(0, 0, 0), cloud_center, new PVector(0, 1, 0));
   // initialize motion field
   MotionField motion_field = new MotionField(block_size);
-  
-  scene = new Scene(camera,point_cloud,motion_field);
+  // initialize scene
+  scene = new Scene(camera, point_cloud, motion_field);
 }
 
 boolean interpolation = false;
@@ -64,10 +62,8 @@ void draw() {
   // r: rotate the camera
   // b: reset to initial position
   // draw motion field
-  if(keyPressed && key=='o')
-  {
-    interpolation = true;
-  }
-  scene.run(interpolation);
-  scene.render(false);
+  scene.run(true);  // true: make interpolation; false: do not make
+                    // interpolation
+  scene.render(
+      false);  // true: turn on motion field; false: turn off motion field
 }
