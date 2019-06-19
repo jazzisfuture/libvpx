@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8a722cbb_cad7853b",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1895,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-19T19:27:32Z",
+      "side": 1,
+      "message": "another option would be to downscale the value until a lookup could be used to avoid any double math except in extreme cases. in that case you might use a floating point divide which would be more expensive so it would be good to know the range before going that way (we use this option in FastLog2Slow_C in webp).",
+      "revId": "9f8ee48611a9f7bc708d6698b388996d5c6e4fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
