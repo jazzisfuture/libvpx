@@ -36,7 +36,6 @@ class PointCloud {
       for (int u = 0; u < width; u++) {
         if (int(depth[v * width + u].x) == 0) {
           interpolate(v, u);
-          // continue;
         }
         // add transformed pixel as well as pixel color to the list
         PVector pos = trans.transform(u, v, int(depth[v * width + u].x));
