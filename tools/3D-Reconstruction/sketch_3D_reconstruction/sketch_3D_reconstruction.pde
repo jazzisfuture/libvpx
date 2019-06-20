@@ -62,6 +62,13 @@ void draw() {
     inter = true;
   }
   scene.render(
-      true);  // true: turn on motion field; false: turn off motion field
+      false);  // true: turn on motion field; false: turn off motion field
+  // save frame with no motion field
+  scene.save("../data/frame/raw");
+  background(0);
+  scene.render(true);
   showGrids(scene.motion_field.block_size);
+  // save frame with motion field
+  scene.save("../data/frame/raw_mv");
+  scene.saveMotionField("../data/frame/mv");
 }
