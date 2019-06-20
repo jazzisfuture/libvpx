@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2771cb8f_4b97f89e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-20T17:49:48Z",
+      "side": 1,
+      "message": "better to indicate where this is (bit_writer.h: ... or vpx_write: ...) and put it into a present tense action (...: fix ...):\n\nhttps://git-scm.com/book/en/v2/Distributed-Git-Contributing-to-a-Project#_commit_guidelines",
+      "revId": "07dbe3a8ac5764e4b24eba3820b331395cafae58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6adf15a_093be7c7",
+        "filename": "vpx_dsp/bitwriter.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-20T17:49:48Z",
+      "side": 1,
+      "message": "buffer is a uint8_t pointer, in cases like this we typically do \u0027... \u0026 0xff\u0027",
+      "revId": "07dbe3a8ac5764e4b24eba3820b331395cafae58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
