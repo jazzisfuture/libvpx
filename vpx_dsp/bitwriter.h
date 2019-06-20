@@ -85,7 +85,7 @@ static INLINE void vpx_write(vpx_writer *br, int bit, int probability) {
       br->buffer[x] += 1;
     }
 
-    br->buffer[br->pos++] = (lowvalue >> (24 - offset));
+    br->buffer[br->pos++] = (int8_t)(lowvalue >> (24 - offset));
     lowvalue <<= offset;
     shift = count;
     lowvalue &= 0xffffff;
