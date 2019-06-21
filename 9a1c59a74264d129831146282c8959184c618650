@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cf0429d2_b7249ff8",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-21T02:41:51Z",
+      "side": 1,
+      "message": "remove redundant code",
+      "range": {
+        "startLine": 39,
+        "startChar": 10,
+        "endLine": 40,
+        "endChar": 9
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "816b3ae2_43e15d90",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-21T02:41:51Z",
+      "side": 1,
+      "message": "\"Check\" function should be a function that checking whether a condition is true or not.\nThis function however change the queue.\nSo maybe it\u0027s better to rename it or restructure the code.",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 47
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2fdcaad_46486849",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-21T02:41:51Z",
+      "side": 1,
+      "message": "Remove redundant code.",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 30
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbc40cc9_623b0a7d",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-21T02:41:51Z",
+      "side": 1,
+      "message": "interpolate_depth",
+      "range": {
+        "startLine": 81,
+        "startChar": 7,
+        "endLine": 81,
+        "endChar": 18
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b63a658_838fd276",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-21T02:41:51Z",
+      "side": 1,
+      "message": "In general, the function interface clarify what is input and output.\nWithout reading the code, it\u0027s hard to tell interpolate(), updateBackChain() and check()\u0027s behaviors.",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 38
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14b02c41_bd3eaca7",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-21T02:41:51Z",
+      "side": 1,
+      "message": "Will this point always exist?\nWill it\u0027s depth value always exist?",
+      "range": {
+        "startLine": 86,
+        "startChar": 31,
+        "endLine": 86,
+        "endChar": 38
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2514178b_84dd280c",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-21T02:41:51Z",
+      "side": 1,
+      "message": "You can just do back.add(int(pos.z))",
+      "range": {
+        "startLine": 97,
+        "startChar": 6,
+        "endLine": 98,
+        "endChar": 44
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b08e7383_93dfb435",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-21T02:41:51Z",
+      "side": 1,
+      "message": "This function should name update_depth\nCould we update the depth[i-1][j) using the depth[i][j]?",
+      "range": {
+        "startLine": 100,
+        "startChar": 8,
+        "endLine": 100,
+        "endChar": 51
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
