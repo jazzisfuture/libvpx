@@ -34,6 +34,7 @@ void setup() {
   PImage depth = loadImage(depth_path);
   // generate point cloud
   point_cloud.generate(rgb, depth, trans);
+  println("Finished!");
   // initialize camera
   Camera camera = new Camera(fov, new PVector(0, 0, 0), new PVector(0, 0, 1),
                              new PVector(0, 1, 0));
@@ -41,6 +42,7 @@ void setup() {
   MotionField motion_field = new MotionField(block_size);
   // initialize scene
   scene = new Scene(camera, point_cloud, motion_field);
+  frameRate(25);
 }
 boolean inter = false;
 void draw() {
@@ -68,7 +70,7 @@ void draw() {
   background(0);
   scene.render(true);
   showGrids(scene.motion_field.block_size);
-  // save frame with motion field
+   //save frame with motion field
   scene.save("../data/frame/raw_mv");
   scene.saveMotionField("../data/frame/mv");
 }
