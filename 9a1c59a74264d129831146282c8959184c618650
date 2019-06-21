@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4b38973d_7e4b8f36",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-21T03:55:35Z",
+      "side": 1,
+      "message": "deleted",
+      "parentUuid": "cf0429d2_b7249ff8",
+      "range": {
+        "startLine": 39,
+        "startChar": 10,
+        "endLine": 40,
+        "endChar": 9
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "816b3ae2_43e15d90",
         "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "0964a8a4_e123a09f",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-21T03:55:35Z",
+      "side": 1,
+      "message": "Get rid of it and reconstruct the code",
+      "parentUuid": "816b3ae2_43e15d90",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 47
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2fdcaad_46486849",
         "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
         "patchSetId": 4
@@ -68,6 +116,30 @@
       "revId": "9a1c59a74264d129831146282c8959184c618650",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2007594_6efef915",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-21T03:55:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2fdcaad_46486849",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 30
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,54 @@
     },
     {
       "key": {
+        "uuid": "3a81bea8_5b84b869",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-21T03:55:35Z",
+      "side": 1,
+      "message": "I delete the updateBackChain, check and reconstruct a more clear code. I change the name interpolate to interpolateDepth which is more meaningful",
+      "parentUuid": "1b63a658_838fd276",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 38
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "117baae5_54676c91",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-21T03:55:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dbc40cc9_623b0a7d",
+      "range": {
+        "startLine": 81,
+        "startChar": 7,
+        "endLine": 81,
+        "endChar": 18
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "14b02c41_bd3eaca7",
         "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
         "patchSetId": 4
@@ -128,6 +248,30 @@
       "writtenOn": "2019-06-21T02:41:51Z",
       "side": 1,
       "message": "Will this point always exist?\nWill it\u0027s depth value always exist?",
+      "range": {
+        "startLine": 86,
+        "startChar": 31,
+        "endLine": 86,
+        "endChar": 38
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bfbeee6_de1cc791",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-21T03:55:35Z",
+      "side": 1,
+      "message": "-1 is the end flag when we do back searching. I wanted to use the validate nearest neighbor depth value to update all the depth on the shortest path",
+      "parentUuid": "14b02c41_bd3eaca7",
       "range": {
         "startLine": 86,
         "startChar": 31,
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "9e678160_6312b372",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-21T03:55:35Z",
+      "side": 1,
+      "message": "Since the position (i,j) will be popped from queue, so we need to record the position",
+      "parentUuid": "2514178b_84dd280c",
+      "range": {
+        "startLine": 97,
+        "startChar": 6,
+        "endLine": 98,
+        "endChar": 44
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b08e7383_93dfb435",
         "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
         "patchSetId": 4
@@ -174,6 +342,30 @@
       "writtenOn": "2019-06-21T02:41:51Z",
       "side": 1,
       "message": "This function should name update_depth\nCould we update the depth[i-1][j) using the depth[i][j]?",
+      "range": {
+        "startLine": 100,
+        "startChar": 8,
+        "endLine": 100,
+        "endChar": 51
+      },
+      "revId": "9a1c59a74264d129831146282c8959184c618650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a907590d_8ecca031",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-21T03:55:35Z",
+      "side": 1,
+      "message": "I changed the code. My idea is to use a back index to indicate the last connected position. Then, we can update the depth of all the nodes on the shortest path",
+      "parentUuid": "b08e7383_93dfb435",
       "range": {
         "startLine": 100,
         "startChar": 8,
