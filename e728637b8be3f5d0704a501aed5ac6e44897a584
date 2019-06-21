@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d36ae600_c4c8764d",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1923,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-21T17:58:13Z",
+      "side": 1,
+      "message": "You\u0027re trading a floating point multiply for a divide here, which will have higher latency. It\u0027s outside of the loop, though, are you seeing a speed up?",
+      "revId": "e728637b8be3f5d0704a501aed5ac6e44897a584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
