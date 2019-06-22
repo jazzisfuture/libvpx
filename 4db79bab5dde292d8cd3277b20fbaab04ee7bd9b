@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2da2a2ac_98728c0e",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-22T01:55:39Z",
+      "side": 1,
+      "message": "Add parenthesis",
+      "range": {
+        "startLine": 85,
+        "startChar": 8,
+        "endLine": 85,
+        "endChar": 51
+      },
+      "revId": "4db79bab5dde292d8cd3277b20fbaab04ee7bd9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
