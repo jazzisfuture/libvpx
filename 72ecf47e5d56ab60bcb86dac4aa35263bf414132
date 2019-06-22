@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bd78af98_dc6c782b",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/PointCloud.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-22T01:30:12Z",
+      "side": 1,
+      "message": "Is back_idx an index point to an position in back or depth?",
+      "range": {
+        "startLine": 76,
+        "startChar": 10,
+        "endLine": 76,
+        "endChar": 37
+      },
+      "revId": "72ecf47e5d56ab60bcb86dac4aa35263bf414132",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
