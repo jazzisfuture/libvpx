@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "e270094e_17e18da1",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-24T19:29:00Z",
+      "side": 1,
+      "message": "This comment if for the third statement\nelse \n  pivot \u003d i + 1;\nIn this case left and right should be non-empty.\nShouldn\u0027t the be i?\n\nBTW, pivot is a good name.",
+      "parentUuid": "86233253_3cf2ac77",
+      "range": {
+        "startLine": 131,
+        "startChar": 6,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "e843ca6e5a3eb57fe48fad2309cd59d835551a5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6cfe447e_64cce3b1",
         "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
         "patchSetId": 5
