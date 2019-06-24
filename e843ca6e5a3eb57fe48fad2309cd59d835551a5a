@@ -261,6 +261,30 @@
     },
     {
       "key": {
+        "uuid": "d00deb83_267c27cb",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-06-24T20:13:44Z",
+      "side": 1,
+      "message": "Yes, you are right. pivot\u003d1 makes more sense. I changed it and use pivot name again",
+      "parentUuid": "e270094e_17e18da1",
+      "range": {
+        "startLine": 131,
+        "startChar": 6,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "e843ca6e5a3eb57fe48fad2309cd59d835551a5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6cfe447e_64cce3b1",
         "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
         "patchSetId": 5
