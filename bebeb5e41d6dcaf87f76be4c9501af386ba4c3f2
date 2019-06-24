@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4675e87c_13d94828",
+        "filename": "tools/3D-Reconstruction/genY4M/genY4M.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-24T18:28:22Z",
+      "side": 1,
+      "message": "Do you still have issue generating 4:4:4 video?",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 63
+      },
+      "revId": "bebeb5e41d6dcaf87f76be4c9501af386ba4c3f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
