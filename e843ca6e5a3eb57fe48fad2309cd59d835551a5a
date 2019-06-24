@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea005684_93b93147",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-24T18:20:48Z",
+      "side": 1,
+      "message": "axis",
+      "range": {
+        "startLine": 45,
+        "startChar": 37,
+        "endLine": 45,
+        "endChar": 40
+      },
+      "revId": "e843ca6e5a3eb57fe48fad2309cd59d835551a5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5eafc8d5_437c9ac7",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-24T18:20:48Z",
+      "side": 1,
+      "message": "Add a comment saying that this case is for axis \u003d\u003d 3",
+      "range": {
+        "startLine": 50,
+        "startChar": 11,
+        "endLine": 50,
+        "endChar": 35
+      },
+      "revId": "e843ca6e5a3eb57fe48fad2309cd59d835551a5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6919e0a2_e78aaa20",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-24T18:20:48Z",
+      "side": 1,
+      "message": "Use a more meaningful naming like overall_bbx.",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 18
+      },
+      "revId": "e843ca6e5a3eb57fe48fad2309cd59d835551a5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "880c1c7b_7d244da6",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-24T18:20:48Z",
+      "side": 1,
+      "message": "I assume pivot\u0027s meaning is as follows.\nif (k \u003c pivot) {\n  Triangle tk \u003d this.mesh.get(k);\n  tk.bbk.compare(bbx, axis) \u003c 0 ---\u003e this will be true\n}\n\nSo pivot \u003d i + 1, which means i \u003c pivot\nBut according to the code, ti.bbk.compare(bbx.axis) will be \u003e\u003d 0",
+      "range": {
+        "startLine": 131,
+        "startChar": 6,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "e843ca6e5a3eb57fe48fad2309cd59d835551a5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f382680_26d7fb6a",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-24T18:20:48Z",
+      "side": 1,
+      "message": "Use braces\nhttps://engdoc.corp.google.com/eng/doc/devguide/java/style/index.md?cl\u003dhead#s4.1.1-braces-always-used",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "e843ca6e5a3eb57fe48fad2309cd59d835551a5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cfe447e_64cce3b1",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-24T18:20:48Z",
+      "side": 1,
+      "message": "Use braces",
+      "range": {
+        "startLine": 135,
+        "startChar": 0,
+        "endLine": 138,
+        "endChar": 41
+      },
+      "revId": "e843ca6e5a3eb57fe48fad2309cd59d835551a5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ddd09ed_8973382c",
+        "filename": "tools/3D-Reconstruction/sketch_3D_reconstruction/BVH.pde",
+        "patchSetId": 5
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-06-24T18:20:48Z",
+      "side": 1,
+      "message": "Use braces",
+      "range": {
+        "startLine": 150,
+        "startChar": 4,
+        "endLine": 150,
+        "endChar": 40
+      },
+      "revId": "e843ca6e5a3eb57fe48fad2309cd59d835551a5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
