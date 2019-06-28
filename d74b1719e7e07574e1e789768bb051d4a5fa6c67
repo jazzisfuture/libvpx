@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80b0cabf_9f43a956",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-28T18:59:08Z",
+      "side": 1,
+      "message": "this should include something like \u0027fix\u0027 / \u0027quiet\u0027, etc.\n\nhttps://git-scm.com/book/en/v2/Distributed-Git-Contributing-to-a-Project#_commit_guidelines\n\"Write your commit message in the imperative: \"Fix bug\" and not \"Fixed bug\" or \"Fixes bug.\"",
+      "revId": "d74b1719e7e07574e1e789768bb051d4a5fa6c67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "430b05c3_e3ae9695",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-28T18:59:08Z",
+      "side": 1,
+      "message": "BUG\u003dwebm:1615 works",
+      "revId": "d74b1719e7e07574e1e789768bb051d4a5fa6c67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
