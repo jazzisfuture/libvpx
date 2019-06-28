@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff08922a_91c06ede",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2605,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-28T05:53:44Z",
+      "side": 1,
+      "message": "after this change nothing captures the return from this function, should it be made void?",
+      "revId": "295fd37912bad715be46b7b2789dbbf1bacb3523",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bfc94cc7_d7c7f0cb",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2638,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-28T05:53:44Z",
+      "side": 1,
+      "message": "same here and this one looks like it could be made static too",
+      "range": {
+        "startLine": 2638,
+        "startChar": 4,
+        "endLine": 2638,
+        "endChar": 31
+      },
+      "revId": "295fd37912bad715be46b7b2789dbbf1bacb3523",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
