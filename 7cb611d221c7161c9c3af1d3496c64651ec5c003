@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c0157796_6b4da6fd",
+        "filename": "vp8/encoder/boolhuff.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-06-28T21:34:00Z",
+      "side": 1,
+      "message": "\u003e\u003e will take precedence often we have the \u0026 outside of the ()s just to make the order clearer",
+      "range": {
+        "startLine": 95,
+        "startChar": 55,
+        "endLine": 95,
+        "endChar": 61
+      },
+      "revId": "7cb611d221c7161c9c3af1d3496c64651ec5c003",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
