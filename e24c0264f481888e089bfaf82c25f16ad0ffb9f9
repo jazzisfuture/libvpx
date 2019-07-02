@@ -52,6 +52,24 @@
       "revId": "e24c0264f481888e089bfaf82c25f16ad0ffb9f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79843cf5_6295595a",
+        "filename": "test/android/README",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1293682
+      },
+      "writtenOn": "2019-07-02T18:30:51Z",
+      "side": 1,
+      "message": "Done\nchange to\nhttps://developer.android.com/studio#downloads\nhttps://developer.android.com/ndk/downloads",
+      "parentUuid": "84e96b50_e6c42b6a",
+      "revId": "e24c0264f481888e089bfaf82c25f16ad0ffb9f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
