@@ -34,6 +34,24 @@
       "revId": "e24c0264f481888e089bfaf82c25f16ad0ffb9f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84e96b50_e6c42b6a",
+        "filename": "test/android/README",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-07-02T18:17:47Z",
+      "side": 1,
+      "message": "\u003e Android SDK is under src/third_party/android_sdk/ right now by cipd\n\u003e ndk is a different repo, so no need to download?\n\nI think the intent of this comment was to get users the binaries they needed to build and run the tests. Since this isn\u0027t a part of chrome proper it seems simpler to point to the sdk and ndk downloads to get adb and ndk-build. I don\u0027t think an external user would know what to do with a .cipd file.",
+      "parentUuid": "278a689c_4a18891e",
+      "revId": "e24c0264f481888e089bfaf82c25f16ad0ffb9f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
