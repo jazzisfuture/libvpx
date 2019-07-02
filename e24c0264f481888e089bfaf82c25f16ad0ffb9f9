@@ -16,6 +16,24 @@
       "revId": "e24c0264f481888e089bfaf82c25f16ad0ffb9f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "278a689c_4a18891e",
+        "filename": "test/android/README",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1293682
+      },
+      "writtenOn": "2019-07-02T17:54:59Z",
+      "side": 1,
+      "message": "Android SDK is under src/third_party/android_sdk/ right now by cipd\nndk is a different repo, so no need to download?",
+      "parentUuid": "c5e1d068_858b9390",
+      "revId": "e24c0264f481888e089bfaf82c25f16ad0ffb9f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
