@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16fc86be_187011e4",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 2042,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-07-12T22:27:42Z",
+      "side": 1,
+      "message": "you don\u0027t need the else if the other block returns, this is a clang-tidy check we often use elsewhere:\n\nhttp://clang.llvm.org/extra/clang-tidy/checks/readability-else-after-return.html",
+      "revId": "6a2530c1de9c3edb5b14c21aaf29206cd1bc197b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
