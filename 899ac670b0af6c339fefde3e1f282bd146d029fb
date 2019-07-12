@@ -16,6 +16,24 @@
       "revId": "899ac670b0af6c339fefde3e1f282bd146d029fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44fd506d_a7f5b089",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1942,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2019-07-12T17:07:45Z",
+      "side": 1,
+      "message": "if no one gets better results than the default initial guess, i guess we go with that?",
+      "parentUuid": "176187f7_961d7469",
+      "revId": "899ac670b0af6c339fefde3e1f282bd146d029fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
