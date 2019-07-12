@@ -34,6 +34,24 @@
       "revId": "899ac670b0af6c339fefde3e1f282bd146d029fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4405dc0c_6b730f06",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1942,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-07-12T22:15:59Z",
+      "side": 1,
+      "message": "Right now, according to the code flow, the *best_mv will be guaranteed to be within the limit.\nI added the assertion to make it clearer.",
+      "parentUuid": "44fd506d_a7f5b089",
+      "revId": "899ac670b0af6c339fefde3e1f282bd146d029fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
