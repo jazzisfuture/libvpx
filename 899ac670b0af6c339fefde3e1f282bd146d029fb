@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "176187f7_961d7469",
+        "filename": "vp9/encoder/vp9_mcomp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1942,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-07-12T02:38:57Z",
+      "side": 1,
+      "message": "best_mv isn\u0027t set on all paths after this, is there any risk if the return value isn\u0027t clamped? I\u0027m guessing in that case best_sad would be large so we\u0027d be unlikely to select this mv.",
+      "revId": "899ac670b0af6c339fefde3e1f282bd146d029fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
