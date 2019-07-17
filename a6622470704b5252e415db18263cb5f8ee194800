@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "863362bb_74e62010",
+        "filename": "test/sad_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-07-17T10:13:11Z",
+      "side": 1,
+      "message": "another option would be to overload the function to avoid the new name",
+      "range": {
+        "startLine": 223,
+        "startChar": 17,
+        "endLine": 223,
+        "endChar": 19
+      },
+      "revId": "a6622470704b5252e415db18263cb5f8ee194800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
