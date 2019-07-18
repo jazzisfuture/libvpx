@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f666dd7_f942da81",
+        "filename": "vp9/common/vp9_onyxc_int.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2019-07-18T21:42:39Z",
+      "side": 1,
+      "message": "I suspect the fields that I removed in this CL have been replaced by these fields in BufferPool, but I did not do source code archaeology to verify this.",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 44
+      },
+      "revId": "546c273f1ac139a5e30a790396ed28073b3e3bff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
