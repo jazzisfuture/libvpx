@@ -5248,6 +5248,22 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
 
   cpi->svc.previous_frame_is_intra_only = cm->intra_only;
   cpi->svc.set_intra_only_frame = 0;
+
+  RATE_CONTROL *rc = &cpi->rc;
+  const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+  if (cm->frame_type == KEY_FRAME) {
+    printf("Key frame, Frame index: %d, Qindex: %d\n", cm->current_video_frame,
+           cm->base_qindex);
+  } else if (gf_group->update_type[gf_group->index] == ARF_UPDATE) {
+    printf("ARF frame, Frame index: %d, Qindex: %d\n", cm->current_video_frame,
+           cm->base_qindex);
+  } else if (rc->is_src_frame_alt_ref) {
+    printf("Overlay frame, Frame index: %d, Qindex: %d\n",
+           cm->current_video_frame, cm->base_qindex);
+  } else {
+    printf("Inter frame, Frame index: %d, Qindex: %d\n",
+           cm->current_video_frame, cm->base_qindex);
+  }
 }
 
 static void SvcEncode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
