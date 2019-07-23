@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ea40416_99df18c8",
+        "filename": "tools/3D-Reconstruction/MotionEST/MotionEST.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-07-23T00:45:20Z",
+      "side": 1,
+      "message": "You can consider set the block partially in the future.",
+      "range": {
+        "startLine": 61,
+        "startChar": 6,
+        "endLine": 61,
+        "endChar": 35
+      },
+      "revId": "e1c7dea07a1ba6c69a14df511071ed533a6a8a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
