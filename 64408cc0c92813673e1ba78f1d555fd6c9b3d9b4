@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "630fa980_46bc52f5",
+        "filename": "tools/3D-Reconstruction/MotionEST/MotionEST.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-07-23T16:51:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b80796c5_6fb9dfb8",
+      "range": {
+        "startLine": 50,
+        "startChar": 6,
+        "endLine": 50,
+        "endChar": 10
+      },
+      "revId": "64408cc0c92813673e1ba78f1d555fd6c9b3d9b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e1326a2f_091665b8",
         "filename": "tools/3D-Reconstruction/MotionEST/MotionEST.py",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e5b1ba01_86668c23",
+        "filename": "tools/3D-Reconstruction/MotionEST/MotionEST.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-07-23T16:51:27Z",
+      "side": 1,
+      "message": "OK, I also change the name est to motion_filed_estimation as well",
+      "parentUuid": "e1326a2f_091665b8",
+      "range": {
+        "startLine": 80,
+        "startChar": 6,
+        "endLine": 80,
+        "endChar": 9
+      },
+      "revId": "64408cc0c92813673e1ba78f1d555fd6c9b3d9b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "52cdd612_efd7101e",
         "filename": "tools/3D-Reconstruction/MotionEST/Util.py",
         "patchSetId": 4
@@ -59,6 +107,30 @@
       "writtenOn": "2019-07-22T23:53:54Z",
       "side": 1,
       "message": "Shouldn\u0027t this be\nhead \u003d (center[0] + mf[i, j][0], center[1] + mf[i, j][1])?",
+      "range": {
+        "startLine": 35,
+        "startChar": 6,
+        "endLine": 35,
+        "endChar": 63
+      },
+      "revId": "64408cc0c92813673e1ba78f1d555fd6c9b3d9b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c9f144c_4947ced4",
+        "filename": "tools/3D-Reconstruction/MotionEST/Util.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-07-23T16:51:27Z",
+      "side": 1,
+      "message": "mf[i,j][0] is the row shift and mf[i,j][1] is the column shift. However, in PIL system the coordinates are x (column shift) and y (row shift). That\u0027s why I swap them.",
+      "parentUuid": "52cdd612_efd7101e",
       "range": {
         "startLine": 35,
         "startChar": 6,
