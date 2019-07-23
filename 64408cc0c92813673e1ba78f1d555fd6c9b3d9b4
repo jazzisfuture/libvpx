@@ -164,6 +164,30 @@
       "revId": "64408cc0c92813673e1ba78f1d555fd6c9b3d9b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66893ce7_5902341b",
+        "filename": "tools/3D-Reconstruction/MotionEST/Util.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1350413
+      },
+      "writtenOn": "2019-07-23T18:09:38Z",
+      "side": 1,
+      "message": "Okay, I will put the new comments in the newest commit to avoid rebasing everything again",
+      "parentUuid": "1402a6db_41828f07",
+      "range": {
+        "startLine": 35,
+        "startChar": 6,
+        "endLine": 35,
+        "endChar": 63
+      },
+      "revId": "64408cc0c92813673e1ba78f1d555fd6c9b3d9b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
