@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc00175f_9da660a8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-07-30T23:59:09Z",
+      "side": 1,
+      "message": "it\u0027s good to reference what\u0027s being fixed in the subject something like the following might work:\n\nvpx_dsp/bitwriter.h: fix clang integer sanitizer warning\n\nwith a description of the warning in the body",
+      "revId": "8e4847bd2fd53f10f8a5e17d2c20ea449b36212b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d43eded_32f71452",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-07-30T23:59:09Z",
+      "side": 1,
+      "message": "BUG\u003dwebm:1615 might be safer, I don\u0027t remember if bug\u003d is checked",
+      "revId": "8e4847bd2fd53f10f8a5e17d2c20ea449b36212b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
