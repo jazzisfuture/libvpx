@@ -77,7 +77,7 @@ class VP9QuantizeBase : public AbstractBench {
         coeff_(Buffer<tran_low_t>(max_size_, max_size_, 0, 16)),
         qcoeff_(Buffer<tran_low_t>(max_size_, max_size_, 0, 32)),
         dqcoeff_(Buffer<tran_low_t>(max_size_, max_size_, 0, 32)) {
-    max_value_ = (1 << bit_depth_) - 1;
+    max_value_ = (1 << (7 + bit_depth_)) - 1;
     zbin_ptr_ =
         reinterpret_cast<int16_t *>(vpx_memalign(16, 8 * sizeof(*zbin_ptr_)));
     round_fp_ptr_ = reinterpret_cast<int16_t *>(
