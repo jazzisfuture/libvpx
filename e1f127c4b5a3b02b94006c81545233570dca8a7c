@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1580e027_d2cc065b",
+        "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-08-05T23:44:54Z",
+      "side": 1,
+      "message": "in a non high bitdepth build do you need to go to 32-bits?",
+      "revId": "e1f127c4b5a3b02b94006c81545233570dca8a7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3705ed61_9c1144bc",
+        "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-08-05T23:44:54Z",
+      "side": 1,
+      "message": "they\u0027re equivalent in this branch, but you use store_s16q_to_tran_low() elsewhere.",
+      "revId": "e1f127c4b5a3b02b94006c81545233570dca8a7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
