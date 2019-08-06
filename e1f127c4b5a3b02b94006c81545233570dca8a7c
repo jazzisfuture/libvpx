@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5bc98e5f_a1911d10",
+        "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-08-06T00:04:17Z",
+      "side": 1,
+      "message": "qcoeff may be saturated in earlier calculation even in low bitdepth build.",
+      "parentUuid": "1580e027_d2cc065b",
+      "revId": "e1f127c4b5a3b02b94006c81545233570dca8a7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3705ed61_9c1144bc",
         "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
         "patchSetId": 2
