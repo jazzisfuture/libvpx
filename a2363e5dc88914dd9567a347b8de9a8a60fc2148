@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f1df7c7_26e79b40",
+        "filename": "test/acm_random.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-08-09T19:51:01Z",
+      "side": 1,
+      "message": "for this one you can just \u0027return static_cast\u003cint16_t\u003e(random_.Generate(65536));\u0027\n\nthe current implementation is doing that and then subtracting 32768, making the value more negative which is incorrect. the others work because the range fits within the data type.",
+      "revId": "a2363e5dc88914dd9567a347b8de9a8a60fc2148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
