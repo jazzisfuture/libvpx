@@ -42,8 +42,8 @@ class ACMRandom {
 
   int16_t Rand16Signed(void) {
     // Use 16 bits: values between 32767 and -32768.
-    const uint32_t value = random_.Generate(65536);
-    return static_cast<int16_t>(value) - 32768;
+    const uint16_t value = static_cast<int16_t>(random_.Generate(65536));
+    return (value - 32768);
   }
 
   int16_t Rand13Signed(void) {
@@ -69,7 +69,7 @@ class ACMRandom {
     // Returns a random value near 0 or near 255, to better exercise
     // saturation behavior.
     const uint8_t r = Rand8();
-    return r < 128 ? r << 4 : r >> 4;
+    return r < 128 ? (r << 4) & 0xff : (r >> 4) & 0xff;
   }
 
   uint32_t RandRange(const uint32_t range) {
