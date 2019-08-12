@@ -2588,7 +2588,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
                  "%7.2f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t"
                  "%7.3f\t%7.3f\t%7.3f\t%7.3f\t"
                  "%7.3f\t%7.3f\t%7.3f\t%7.3f\t"
-                 "%7.3f\t%7.3f\t%7.3f",
+                 "%7.3f\t%7.3f\t%7.3f\t%7.3f",
                  dr, cpi->psnr.stat[ALL] / cpi->count, total_psnr,
                  cpi->psnrp.stat[ALL] / cpi->count, totalp_psnr, total_ssim,
                  totalp_ssim, cpi->fastssim.stat[ALL] / cpi->count,
@@ -2613,9 +2613,15 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
           SNPRINT2(results, "\t%7.3f", cpi->worst_consistency);
         }
 
-        fprintf(f, "%s\t    Time\tRcErr\tAbsErr\n", headings);
-        fprintf(f, "%s\t%8.0f\t%7.2f\t%7.2f\n", results, total_encode_time,
+        fprintf(f, "%s\t    Time\tRcErr\tAbsErr", headings);
+        fprintf(f, "%s\t%8.0f\t%7.2f\t%7.2f", results, total_encode_time,
                 rate_err, fabs(rate_err));
+
+        fprintf(f, "\tAPsnr611\n", headings);
+        fprintf(
+            f, "\t%7.3f\n",
+            (6 * cpi->psnr.stat[Y] + cpi->psnr.stat[U] + cpi->psnr.stat[V]) /
+                 (cpi->count * 8));
       }
 
       fclose(f);
