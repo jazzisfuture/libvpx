@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0381d077_0d5d48f7",
+        "filename": "vpx_dsp/loopfilter.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-08-13T00:08:33Z",
+      "side": 1,
+      "message": "\u0027(int8_t)(*op1 ^ 0x80);\u0027 should be enough",
+      "range": {
+        "startLine": 84,
+        "startChar": 21,
+        "endLine": 84,
+        "endChar": 50
+      },
+      "revId": "52044316b5b1b8e7f814257963c0aba685240cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "542e8b24_17dcf8f3",
+        "filename": "vpx_dsp/loopfilter.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-08-13T00:08:33Z",
+      "side": 1,
+      "message": "casts might be more consistent here",
+      "revId": "52044316b5b1b8e7f814257963c0aba685240cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
