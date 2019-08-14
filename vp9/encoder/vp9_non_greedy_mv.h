@@ -15,11 +15,17 @@
 extern "C" {
 #endif
 
+#include "vp9/encoder/vp9_encoder.h"
+
 #define NB_MVS_NUM 4
 #define LOG2_PRECISION 20
 
 int64_t vp9_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_full_mvs,
                                  int mv_num);
+
+void get_local_structure(VP9_COMP *cpi, MACROBLOCKD *xd,
+                         YV12_BUFFER_CONFIG *frame[3], BLOCK_SIZE bsize,
+                         int *M[3]);
 
 #ifdef __cplusplus
 }  // extern "C"
