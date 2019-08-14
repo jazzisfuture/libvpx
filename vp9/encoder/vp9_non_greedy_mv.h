@@ -21,6 +21,10 @@ extern "C" {
 int64_t vp9_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_full_mvs,
                                  int mv_num);
 
+void get_local_structure(VP9 COMP *cpi, MACROBLOCKD *xd,
+                         YV12_BUFFER_CONFIG *frame[3], BLOCK_SIZE bsize,
+                         int *M[3]);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
