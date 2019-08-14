@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7d6fe35_64e5981e",
+        "filename": "vp8/encoder/vp8_quantize.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-08-14T17:53:23Z",
+      "side": 1,
+      "message": "I think the improved quant never ended up getting used. One of the myriads of cleanups vp8 could use.",
+      "range": {
+        "startLine": 173,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 32
+      },
+      "revId": "25e5beab74f3547e6eee33e25f387b64a4303198",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0c2b4af0_bb69f289",
+        "filename": "vp8/encoder/vp8_quantize.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-08-14T17:53:23Z",
+      "side": 1,
+      "message": "*shift is set to 0 above, so this should simplify to 1 \u003c\u003c 16? and since it\u0027s cast to short (16 bits), it should be \u003d\u003d 0?",
+      "range": {
+        "startLine": 178,
+        "startChar": 4,
+        "endLine": 178,
+        "endChar": 41
+      },
+      "revId": "25e5beab74f3547e6eee33e25f387b64a4303198",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
