@@ -24,6 +24,12 @@ int64_t vp9_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_full_mvs,
 void get_local_structure(VP9 COMP *cpi, MACROBLOCKD *xd,
                          YV12_BUFFER_CONFIG *frame[3], BLOCK_SIZE bsize,
                          int *M[3]);
+MV get_smooth_motion_vector(MV *scaled_search_mf, MV *tmp_mf, int *M, int rows,
+                            int cols, int row, int col, float alpha);
+
+void get_smooth_motion_field(MV *scaled_search_mf, MV *tmp_mf, int *M, int rows,
+                             int cols, float alpha, int num_iters,
+                             MV *smooth_mf);
 
 #ifdef __cplusplus
 }  // extern "C"
