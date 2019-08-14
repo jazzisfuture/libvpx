@@ -11,14 +11,17 @@
 #ifndef VPX_VP9_ENCODER_VP9_NON_GREEDY_MV_H_
 #define VPX_VP9_ENCODER_VP9_NON_GREEDY_MV_H_
 
-#include "vp9/common/vp9_mv.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 #define NB_MVS_NUM 4
 #define LOG2_PRECISION 20
+
+typedef struct VP9_COMP VP9_COMP;
+typedef struct macroblockd MACROBLOCKD;
+typedef struct yv12_buffer_config YV12_BUFFER_CONFIG;
+typedef uint8_t BLOCK_SIZE;
+struct MV;
 
 int64_t vp9_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_full_mvs,
                                  int mv_num);
@@ -28,6 +31,10 @@ MV get_smooth_motion_vector(MV *scaled_search_mf, MV *tmp_mf, int *M, int rows,
 
 void get_smooth_motion_field(MV *scaled_search_mf, int *M, int rows, int cols,
                              float alpha, int num_iters, MV *smooth_mf);
+
+void get_local_structure(VP9_COMP *cpi, MACROBLOCKD *xd,
+                         YV12_BUFFER_CONFIG *frame[3], BLOCK_SIZE bsize,
+                         int *M[3]);
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -8,7 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "vp9/common/vp9_mv.h"
+#include "vp9/common/vp9_enums.h"
+#include "vp9/common/vp9_blockd.h"
+#include "vpx_scale/yv12config.h"
 #include "vp9/encoder/vp9_non_greedy_mv.h"
+#include "vp9/encoder/vp9_encoder.h"
 // TODO(angiebird): move non_greedy_mv related functions to this file
 
 #define LOG2_TABLE_SIZE 1024
@@ -289,4 +294,59 @@ void get_smooth_motion_field(MV *scaled_search_mf, int *M, int rows, int cols,
   }
   free(input);
   free(output);
+}
+
+void get_local_structure(VP9_COMP *cpi, MACROBLOCKD *xd,
+                         YV12_BUFFER_CONFIG *frame[3], BLOCK_SIZE bsize,
+                         int *M[3]) {
+  VP9_COMMON *cm = &cpi->common;
+  int stride = xd->cur_buf->y_stride;
+  const int mi_height = num_8x8_blocks_high_lookup[bsize];
+  const int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  int m_stride = 4 * cm->mi_cols / mi_width;  // stride of M
+  int mi_row, mi_col;
+  int rf_idx;
+  const vp9_variance_fn_ptr_t *fn_ptr = &cpi->fn_ptr[bsize];
+  for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
+    for (mi_row = 0; mi_row < cm->mi_rows; mi_row += mi_height) {
+      for (mi_col = 0; mi_col < cm->mi_cols; mi_col += mi_width) {
+        const int mb_y_offset = mi_row * MI_SIZE * stride + mi_col * MI_SIZE;
+        int m_row = mi_row / mi_height;
+        int m_col = mi_col / mi_width;
+        uint8_t *center = frame[rf_idx]->y_buffer + mb_y_offset;
+        uint8_t *nb;
+        int I_row = 0, I_col = 0;
+        // up
+        if (mi_row > 0) {
+          nb = center - MI_SIZE * stride * mi_height;
+          I_row += fn_ptr->sdf(center, stride, nb, stride);
+        }
+        // down
+        if (mi_row < cm->mi_rows - 1) {
+          nb = center + MI_SIZE * stride * mi_height;
+          I_row += fn_ptr->sdf(center, stride, nb, stride);
+        }
+        if (mi_row > 0 && mi_row < cm->mi_rows - 1) {
+          I_row /= 2;
+        }
+        // left
+        if (mi_col > 0) {
+          nb = center - MI_SIZE * mi_width;
+          I_col += fn_ptr->sdf(center, stride, nb, stride);
+        }
+        // right
+        if (mi_col < cm->mi_cols - 1) {
+          nb = center + MI_SIZE * mi_width;
+          I_col += fn_ptr->sdf(center, stride, nb, stride);
+        }
+        if (mi_col > 0 && mi_col < cm->mi_cols - 1) {
+          I_col /= 2;
+        }
+        M[rf_idx][m_row * m_stride + m_col * 4] = I_row * I_row;
+        M[rf_idx][m_row * m_stride + m_col * 4 + 1] = I_row * I_col;
+        M[rf_idx][m_row * m_stride + m_col * 4 + 2] = I_col * I_row;
+        M[rf_idx][m_row * m_stride + m_col * 4 + 3] = I_col * I_col;
+      }
+    }
+  }
 }
