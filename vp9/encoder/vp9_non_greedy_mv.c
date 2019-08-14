@@ -204,3 +204,58 @@ int64_t vp9_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_full_mvs,
   }
   return 0;
 }
+
+void get_local_structure(VP9_COMP *cpi, MACROBLOCKD *xd,
+                         YV12_BUFFER_CONFIG *frame[3], BLOCK_SIZE bsize,
+                         int *M[3]) {
+  VP9_COMMON *cm = &cpi->common;
+  int stride = xd->cur_buf->y_stride;
+  const int mi_height = num_8x8_blocks_high_lookup[bsize];
+  const int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  int m_stride = 4 * cm->mi_cols / mi_width;  // stride of M
+  int mi_row, mi_col;
+  int rf_idx;
+  const vp9_variance_fn_ptr_t *fn_ptr = &cpi->fn_ptr[bsize];
+  for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
+    for (mi_row = 0; mi_row < cm->mi_rows; mi_row += mi_height) {
+      for (mi_col = 0; mi_col < cm->mi_cols; mi_col += mi_width) {
+        const int mb_y_offset = mi_row * MI_SIZE * stride + mi_col * MI_SIZE;
+        int m_row = mi_row / m_height;
+        int m_col = mi_col / m_width;
+        YV12_BUFFER_CONFIG *center = frame[rf_idx] + mb_y_offset;
+        YV12_BUFFER_CONFIG *nb;
+        int I_row = 0, I_col = 0;
+        // up
+        if (mi_row > 0) {
+          nb = center - MI_SIZE * stride * mi_height;
+          I_row += fn_ptr->sdf(center, stride, nb, stride);
+        }
+        // down
+        if (mi_row < cm->mi_rows - 1) {
+          nb = center + MI_SIZE * stride * mi_height;
+          I_row += fn_ptr->sdf(center, stride, nb, stride);
+        }
+        if (mi_row > 0 && mi_row < cm->mi_rows - 1) {
+          I_row /= 2.0;
+        }
+        // left
+        if (mi_col > 0) {
+          nb = center - MI_SIZE * mi_width;
+          I_col += fn_ptr->sdf(center, stride, nb, stride);
+        }
+        // right
+        if (mi_col < cm->mi_cols - 1) {
+          nb = center + MI_SIZE * mi_width;
+          I_col += fn_ptr->sdf(center, stride, nb, stride);
+        }
+        if (mi_col > 0 && mi_col < cm->mi_cols - 1) {
+          I_col /= 2.0;
+        }
+        M[rf_idx][m_row * m_stride + m_col * 4] = I_row * I_row;
+        M[rf_idx][m_row * m_stride + m_col * 4 + 1] = I_row * I_col;
+        M[rf_idx][m_row * m_stride + m_col * 4 + 2] = I_col * I_row;
+        M[rf_idx][m_row * m_stride + m_col * 4 + 3] = I_col * I_col;
+      }
+    }
+  }
+}
