@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f857935_d1b13be4",
+        "filename": "vp9/encoder/vp9_non_greedy_mv.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-08-15T22:33:11Z",
+      "side": 1,
+      "message": "Can we pass in fn_ptr/mi_rows/mi_cols here instead of cpi?",
+      "range": {
+        "startLine": 299,
+        "startChar": 25,
+        "endLine": 299,
+        "endChar": 38
+      },
+      "revId": "530d89fe16e7f7065cad31ed05a13a2cbefc367d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30b33f3b_d64783dc",
+        "filename": "vp9/encoder/vp9_non_greedy_mv.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-08-15T22:33:11Z",
+      "side": 1,
+      "message": "vp9_get_local_structure",
+      "range": {
+        "startLine": 299,
+        "startChar": 5,
+        "endLine": 299,
+        "endChar": 24
+      },
+      "revId": "530d89fe16e7f7065cad31ed05a13a2cbefc367d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fac7585f_afe9e887",
+        "filename": "vp9/encoder/vp9_non_greedy_mv.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-08-15T22:33:11Z",
+      "side": 1,
+      "message": "Let\u0027s focus on one frame at a time.\nAdd const like const YV12_BUFFER_CONFIG* frame.",
+      "range": {
+        "startLine": 300,
+        "startChar": 25,
+        "endLine": 300,
+        "endChar": 53
+      },
+      "revId": "530d89fe16e7f7065cad31ed05a13a2cbefc367d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cf8ed11_d35b67de",
+        "filename": "vp9/encoder/vp9_non_greedy_mv.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-08-15T22:33:11Z",
+      "side": 1,
+      "message": "You can use YV12_BUFFER_CONFIG\u0027s y_stride.\nNo need to pass in xd.",
+      "range": {
+        "startLine": 303,
+        "startChar": 2,
+        "endLine": 303,
+        "endChar": 37
+      },
+      "revId": "530d89fe16e7f7065cad31ed05a13a2cbefc367d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
