@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "187cb7a5_e9f74344",
+        "filename": "test/vp9_quantize_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-08-16T23:39:16Z",
+      "side": 1,
+      "message": "looks like these should receive casts for consistency",
+      "revId": "5ccb3d9017bfda685dfe3e24d68b93285e00c218",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
