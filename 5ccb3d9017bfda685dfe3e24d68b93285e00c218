@@ -16,6 +16,24 @@
       "revId": "5ccb3d9017bfda685dfe3e24d68b93285e00c218",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0826b6fb_0bb38752",
+        "filename": "test/vp9_quantize_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1337751
+      },
+      "writtenOn": "2019-08-19T16:31:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "187cb7a5_e9f74344",
+      "revId": "5ccb3d9017bfda685dfe3e24d68b93285e00c218",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
