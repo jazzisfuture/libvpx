@@ -69,6 +69,30 @@
       "revId": "25e5beab74f3547e6eee33e25f387b64a4303198",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "514adb19_2eaa7010",
+        "filename": "vp8/encoder/vp8_quantize.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-08-19T18:40:48Z",
+      "side": 1,
+      "message": "Instead of casting the result (which will always be zero:\n0x01 \u003c\u003c 16 \u003d\u003d 0x100\ncast to short is\n0x100 \u0026 0xff \u003d\u003d 0x00\n)\n\nyou could just drop the line entirely:\n} else { \n *quant \u003d (1 \u003c\u003c 16) / d;\n *shift \u003d 0;\n}",
+      "parentUuid": "28d583d0_172ffb18",
+      "range": {
+        "startLine": 178,
+        "startChar": 4,
+        "endLine": 178,
+        "endChar": 41
+      },
+      "revId": "25e5beab74f3547e6eee33e25f387b64a4303198",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
