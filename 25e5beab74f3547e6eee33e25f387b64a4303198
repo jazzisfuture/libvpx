@@ -45,6 +45,30 @@
       "revId": "25e5beab74f3547e6eee33e25f387b64a4303198",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28d583d0_172ffb18",
+        "filename": "vp8/encoder/vp8_quantize.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1337751
+      },
+      "writtenOn": "2019-08-19T16:32:50Z",
+      "side": 1,
+      "message": "yes that was warning from sanitizer",
+      "parentUuid": "0c2b4af0_bb69f289",
+      "range": {
+        "startLine": 178,
+        "startChar": 4,
+        "endLine": 178,
+        "endChar": 41
+      },
+      "revId": "25e5beab74f3547e6eee33e25f387b64a4303198",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
