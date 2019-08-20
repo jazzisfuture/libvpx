@@ -271,19 +271,22 @@ int64_t vp9_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_full_mvs,
   return 0;
 }
 
-static MV get_smooth_motion_vector(const MV search_mv, const MV *tmp_mf,
-                                   const int (*M)[MF_LOCAL_STRUCTURE_SIZE],
-                                   int rows, int cols, int row, int col,
-                                   float alpha) {
-  const MV tmp_mv = tmp_mf[row * cols + col];
+static Float_MV get_smooth_motion_vector(const MV search_mv,
+                                         const Float_MV *tmp_mf,
+                                         const int (*M)[4], int rows, int cols,
+                                         int row, int col, int bw, int bh,
+                                         float alpha) {
+  const Float_MV tmp_mv = tmp_mf[row * cols + col];
   int idx_row, idx_col;
   float avg_nb_mv[2] = { 0.0f, 0.0f };
-  MV mv = { 0, 0 };
+  float scaled_search_mv[2] = { (float)search_mv.row / bh,
+                                (float)search_mv.col / bw };
+  Float_MV mv = { 0.0f, 0.0f };
   float filter[3][3] = { { 1.0f / 12.0f, 1.0f / 6.0f, 1.0f / 12.0f },
                          { 1.0f / 6.0f, 0.0f, 1.0f / 6.0f },
                          { 1.0f / 12.0f, 1.0f / 6.0f, 1.0f / 12.0f } };
-  int ref_row = row + search_mv.row;
-  int ref_col = col + search_mv.col;
+  int ref_row = row + search_mv.row / bh;
+  int ref_col = col + search_mv.col / bw;
   ref_row = ref_row < 0 ? 0 : (ref_row >= rows ? rows - 1 : ref_row);
   ref_col = ref_col < 0 ? 0 : (ref_col >= cols ? cols - 1 : ref_col);
   for (idx_row = 0; idx_row < 3; ++idx_row) {
@@ -291,12 +294,12 @@ static MV get_smooth_motion_vector(const MV search_mv, const MV *tmp_mf,
     for (idx_col = 0; idx_col < 3; ++idx_col) {
       int nb_col = col + idx_col - 1;
       if (nb_row < 0 || nb_col < 0 || nb_row >= rows || nb_col >= cols) {
-        avg_nb_mv[0] += (tmp_mv.row) * filter[idx_row][idx_col];
-        avg_nb_mv[1] += (tmp_mv.col) * filter[idx_row][idx_col];
+        avg_nb_mv[0] += (tmp_mv.row) * filter[idx_row][idx_col] / bh;
+        avg_nb_mv[1] += (tmp_mv.col) * filter[idx_row][idx_col] / bw;
       } else {
-        const MV nb_mv = tmp_mf[nb_row * cols + nb_col];
-        avg_nb_mv[0] += (nb_mv.row) * filter[idx_row][idx_col];
-        avg_nb_mv[1] += (nb_mv.col) * filter[idx_row][idx_col];
+        const Float_MV nb_mv = tmp_mf[nb_row * cols + nb_col];
+        avg_nb_mv[0] += (nb_mv.row) * filter[idx_row][idx_col] / bh;
+        avg_nb_mv[1] += (nb_mv.col) * filter[idx_row][idx_col] / bw;
       }
     }
   }
@@ -319,36 +322,43 @@ static MV get_smooth_motion_vector(const MV search_mv, const MV *tmp_mf,
     float inv_MM10 = inv_M10 * M00 + inv_M11 * M10;
     float inv_MM11 = inv_M10 * M01 + inv_M11 * M11;
 
-    mv.row = (int)(inv_M00 * avg_nb_mv[0] + inv_M01 * avg_nb_mv[1] +
-                   inv_MM00 * search_mv.row + inv_MM01 * search_mv.col);
-    mv.col = (int)(inv_M10 * avg_nb_mv[0] + inv_M11 * avg_nb_mv[1] +
-                   inv_MM10 * search_mv.row + inv_MM11 * search_mv.col);
+    mv.row =
+        ((inv_M00 * avg_nb_mv[0] * alpha + inv_M01 * avg_nb_mv[1] * alpha +
+          inv_MM00 * scaled_search_mv[0] + inv_MM01 * scaled_search_mv[1]) *
+         bh);
+    mv.col =
+        ((inv_M10 * avg_nb_mv[0] * alpha + inv_M11 * avg_nb_mv[1] * alpha +
+          inv_MM10 * scaled_search_mv[0] + inv_MM11 * scaled_search_mv[1]) *
+         bw);
   }
   return mv;
 }
 
-void vp9_get_smooth_motion_field(const MV *scaled_search_mf,
+void vp9_get_smooth_motion_field(const MV *search_mf,
                                  const int (*M)[MF_LOCAL_STRUCTURE_SIZE],
-                                 int rows, int cols, float alpha, int num_iters,
-                                 MV *smooth_mf) {
+                                 int rows, int cols, BLOCK_SIZE bsize,
+                                 float alpha, int num_iters, MV *smooth_mf) {
   // note: the scaled_search_mf and smooth_mf are all scaled by macroblock size
   // M is the local variation of reference frame
   // build two buffers
-  MV *input = (MV *)malloc(rows * cols * sizeof(MV));
-  MV *output = (MV *)malloc(rows * cols * sizeof(MV));
+  Float_MV *input = (Float_MV *)malloc(rows * cols * sizeof(Float_MV));
+  Float_MV *output = (Float_MV *)malloc(rows * cols * sizeof(Float_MV));
   int idx;
   int row, col;
+  int bw = 4 << b_width_log2_lookup[bsize];
+  int bh = 4 << b_height_log2_lookup[bsize];
   // copy search results to input buffer
   for (idx = 0; idx < rows * cols; ++idx) {
-    input[idx] = scaled_search_mf[idx];
+    input[idx].row = (float)search_mf[idx].row;
+    input[idx].col = (float)search_mf[idx].col;
   }
   for (idx = 0; idx < num_iters; ++idx) {
-    MV *tmp;
+    Float_MV *tmp;
     for (row = 0; row < rows; ++row) {
       for (col = 0; col < cols; ++col) {
         output[row * cols + col] =
-            get_smooth_motion_vector(scaled_search_mf[row * cols + col], input,
-                                     M, rows, cols, row, col, alpha);
+            get_smooth_motion_vector(search_mf[row * cols + col], input, M,
+                                     rows, cols, row, col, bw, bh, alpha);
       }
     }
     // swap buffers
@@ -358,7 +368,8 @@ void vp9_get_smooth_motion_field(const MV *scaled_search_mf,
   }
   // copy smoothed results to output
   for (idx = 0; idx < rows * cols; ++idx) {
-    smooth_mf[idx] = input[idx];
+    smooth_mf[idx].row = (int)input[idx].row;
+    smooth_mf[idx].col = (int)input[idx].col;
   }
   free(input);
   free(output);

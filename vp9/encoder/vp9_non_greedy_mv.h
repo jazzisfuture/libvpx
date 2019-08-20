@@ -39,6 +39,10 @@ typedef struct MotionFieldInfo {
   MotionField (*motion_field_array)[3][SQUARE_BLOCK_SIZES];
 } MotionFieldInfo;
 
+typedef struct {
+  float row, col;
+} Float_MV;
+
 static INLINE int get_square_block_idx(BLOCK_SIZE bsize) {
   if (bsize == BLOCK_4X4) {
     return 0;
@@ -88,8 +92,8 @@ int64_t vp9_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_full_mvs,
 
 void vp9_get_smooth_motion_field(const MV *search_mf,
                                  const int (*M)[MF_LOCAL_STRUCTURE_SIZE],
-                                 int rows, int cols, float alpha, int num_iters,
-                                 MV *smooth_mf);
+                                 int rows, int cols, BLOCK_SIZE bize,
+                                 float alpha, int num_iters, MV *smooth_mf);
 
 void vp9_get_local_structure(const YV12_BUFFER_CONFIG *ref_frame,
                              const vp9_variance_fn_ptr_t *fn_ptr, int mi_rows,
