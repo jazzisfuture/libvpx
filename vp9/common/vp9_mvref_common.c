@@ -11,6 +11,177 @@
 
 #include "vp9/common/vp9_mvref_common.h"
 
+// This is used to figure out a context for the ref blocks. The code flattens
+// an array that would have 3 possible counts (0, 1 & 2) for 3 choices by
+// adding 9 for each intra block, 3 for each zero mv and 1 for each new
+// motion vector. This single number is then converted into a context
+// with a single lookup ( counter_to_context ).
+const int mode_2_counter[MB_MODE_COUNT] = {
+  9,  // DC_PRED
+  9,  // V_PRED
+  9,  // H_PRED
+  9,  // D45_PRED
+  9,  // D135_PRED
+  9,  // D117_PRED
+  9,  // D153_PRED
+  9,  // D207_PRED
+  9,  // D63_PRED
+  9,  // TM_PRED
+  0,  // NEARESTMV
+  0,  // NEARMV
+  3,  // ZEROMV
+  1,  // NEWMV
+};
+
+// There are 3^3 different combinations of 3 counts that can be either 0,1 or
+// 2. However the actual count can never be greater than 2 so the highest
+// counter we need is 18. 9 is an invalid counter that's never used.
+const int counter_to_context[19] = {
+  BOTH_PREDICTED,        // 0
+  NEW_PLUS_NON_INTRA,    // 1
+  BOTH_NEW,              // 2
+  ZERO_PLUS_PREDICTED,   // 3
+  NEW_PLUS_NON_INTRA,    // 4
+  INVALID_CASE,          // 5
+  BOTH_ZERO,             // 6
+  INVALID_CASE,          // 7
+  INVALID_CASE,          // 8
+  INTRA_PLUS_NON_INTRA,  // 9
+  INTRA_PLUS_NON_INTRA,  // 10
+  INVALID_CASE,          // 11
+  INTRA_PLUS_NON_INTRA,  // 12
+  INVALID_CASE,          // 13
+  INVALID_CASE,          // 14
+  INVALID_CASE,          // 15
+  INVALID_CASE,          // 16
+  INVALID_CASE,          // 17
+  BOTH_INTRA             // 18
+};
+
+const POSITION mv_ref_blocks[BLOCK_SIZES][MVREF_NEIGHBOURS] = {
+  // 4X4
+  { { -1, 0 },
+    { 0, -1 },
+    { -1, -1 },
+    { -2, 0 },
+    { 0, -2 },
+    { -2, -1 },
+    { -1, -2 },
+    { -2, -2 } },
+  // 4X8
+  { { -1, 0 },
+    { 0, -1 },
+    { -1, -1 },
+    { -2, 0 },
+    { 0, -2 },
+    { -2, -1 },
+    { -1, -2 },
+    { -2, -2 } },
+  // 8X4
+  { { -1, 0 },
+    { 0, -1 },
+    { -1, -1 },
+    { -2, 0 },
+    { 0, -2 },
+    { -2, -1 },
+    { -1, -2 },
+    { -2, -2 } },
+  // 8X8
+  { { -1, 0 },
+    { 0, -1 },
+    { -1, -1 },
+    { -2, 0 },
+    { 0, -2 },
+    { -2, -1 },
+    { -1, -2 },
+    { -2, -2 } },
+  // 8X16
+  { { 0, -1 },
+    { -1, 0 },
+    { 1, -1 },
+    { -1, -1 },
+    { 0, -2 },
+    { -2, 0 },
+    { -2, -1 },
+    { -1, -2 } },
+  // 16X8
+  { { -1, 0 },
+    { 0, -1 },
+    { -1, 1 },
+    { -1, -1 },
+    { -2, 0 },
+    { 0, -2 },
+    { -1, -2 },
+    { -2, -1 } },
+  // 16X16
+  { { -1, 0 },
+    { 0, -1 },
+    { -1, 1 },
+    { 1, -1 },
+    { -1, -1 },
+    { -3, 0 },
+    { 0, -3 },
+    { -3, -3 } },
+  // 16X32
+  { { 0, -1 },
+    { -1, 0 },
+    { 2, -1 },
+    { -1, -1 },
+    { -1, 1 },
+    { 0, -3 },
+    { -3, 0 },
+    { -3, -3 } },
+  // 32X16
+  { { -1, 0 },
+    { 0, -1 },
+    { -1, 2 },
+    { -1, -1 },
+    { 1, -1 },
+    { -3, 0 },
+    { 0, -3 },
+    { -3, -3 } },
+  // 32X32
+  { { -1, 1 },
+    { 1, -1 },
+    { -1, 2 },
+    { 2, -1 },
+    { -1, -1 },
+    { -3, 0 },
+    { 0, -3 },
+    { -3, -3 } },
+  // 32X64
+  { { 0, -1 },
+    { -1, 0 },
+    { 4, -1 },
+    { -1, 2 },
+    { -1, -1 },
+    { 0, -3 },
+    { -3, 0 },
+    { 2, -1 } },
+  // 64X32
+  { { -1, 0 },
+    { 0, -1 },
+    { -1, 4 },
+    { 2, -1 },
+    { -1, -1 },
+    { -3, 0 },
+    { 0, -3 },
+    { -1, 2 } },
+  // 64X64
+  { { -1, 3 },
+    { 3, -1 },
+    { -1, 4 },
+    { 4, -1 },
+    { -1, -1 },
+    { -1, 0 },
+    { 0, -1 },
+    { -1, 6 } }
+};
+
+const int idx_n_column_to_subblock[4][2] = {
+  { 1, 2 }, { 1, 3 }, { 3, 2 }, { 3, 3 }
+};
+
 // This function searches the neighborhood of a given MB/SB
 // to try and find candidate reference vectors.
 static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
