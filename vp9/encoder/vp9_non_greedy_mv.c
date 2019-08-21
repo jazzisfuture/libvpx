@@ -171,22 +171,25 @@ static int mi_size_to_block_size(int mi_bsize, int mi_num) {
 void vp9_alloc_motion_field_info(MotionFieldInfo *motion_field_info,
                                  int frame_num, int mi_rows, int mi_cols) {
   int frame_idx, rf_idx, square_block_idx;
-  motion_field_info->frame_num = frame_num;
-  motion_field_info->motion_field_array =
-      vpx_calloc(frame_num, sizeof(*motion_field_info->motion_field_array));
-  for (frame_idx = 0; frame_idx < frame_num; ++frame_idx) {
-    for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
-      for (square_block_idx = 0; square_block_idx < SQUARE_BLOCK_SIZES;
-           ++square_block_idx) {
-        BLOCK_SIZE bsize = square_block_idx_to_bsize(square_block_idx);
-        const int mi_height = num_8x8_blocks_high_lookup[bsize];
-        const int mi_width = num_8x8_blocks_wide_lookup[bsize];
-        const int block_rows = mi_size_to_block_size(mi_height, mi_rows);
-        const int block_cols = mi_size_to_block_size(mi_width, mi_cols);
-        MotionField *motion_field =
-            &motion_field_info
-                 ->motion_field_array[frame_idx][rf_idx][square_block_idx];
-        vp9_alloc_motion_field(motion_field, bsize, block_rows, block_cols);
+  if (motion_field_info->allocated) {
+    motion_field_info->allocated = 1;
+    motion_field_info->frame_num = frame_num;
+    motion_field_info->motion_field_array =
+        vpx_calloc(frame_num, sizeof(*motion_field_info->motion_field_array));
+    for (frame_idx = 0; frame_idx < frame_num; ++frame_idx) {
+      for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
+        for (square_block_idx = 0; square_block_idx < SQUARE_BLOCK_SIZES;
+             ++square_block_idx) {
+          BLOCK_SIZE bsize = square_block_idx_to_bsize(square_block_idx);
+          const int mi_height = num_8x8_blocks_high_lookup[bsize];
+          const int mi_width = num_8x8_blocks_wide_lookup[bsize];
+          const int block_rows = mi_size_to_block_size(mi_height, mi_rows);
+          const int block_cols = mi_size_to_block_size(mi_width, mi_cols);
+          MotionField *motion_field =
+              &motion_field_info
+                   ->motion_field_array[frame_idx][rf_idx][square_block_idx];
+          vp9_alloc_motion_field(motion_field, bsize, block_rows, block_cols);
+        }
       }
     }
   }
@@ -213,21 +216,23 @@ void vp9_free_motion_field(MotionField *motion_field) {
 }
 
 void vp9_free_motion_field_info(MotionFieldInfo *motion_field_info) {
-  int frame_idx, rf_idx, square_block_idx;
-  for (frame_idx = 0; frame_idx < motion_field_info->frame_num; ++frame_idx) {
-    for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
-      for (square_block_idx = 0; square_block_idx < SQUARE_BLOCK_SIZES;
-           ++square_block_idx) {
-        MotionField *motion_field =
-            &motion_field_info
-                 ->motion_field_array[frame_idx][rf_idx][square_block_idx];
-        vp9_free_motion_field(motion_field);
+  if (motion_field_info->allocated) {
+    int frame_idx, rf_idx, square_block_idx;
+    for (frame_idx = 0; frame_idx < motion_field_info->frame_num; ++frame_idx) {
+      for (rf_idx = 0; rf_idx < 3; ++rf_idx) {
+        for (square_block_idx = 0; square_block_idx < SQUARE_BLOCK_SIZES;
+             ++square_block_idx) {
+          MotionField *motion_field =
+              &motion_field_info
+                   ->motion_field_array[frame_idx][rf_idx][square_block_idx];
+          vp9_free_motion_field(motion_field);
+        }
       }
     }
+    vpx_free(motion_field_info->motion_field_array);
+    motion_field_info->motion_field_array = NULL;
+    motion_field_info->frame_num = 0;
   }
-  vpx_free(motion_field_info->motion_field_array);
-  motion_field_info->motion_field_array = NULL;
-  motion_field_info->frame_num = 0;
 }
 
 static int64_t log2_approximation(int64_t v) {

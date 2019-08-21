@@ -36,6 +36,7 @@ typedef struct MotionField {
 
 typedef struct MotionFieldInfo {
   int frame_num;
+  int allocated;
   MotionField (*motion_field_array)[3][SQUARE_BLOCK_SIZES];
 } MotionFieldInfo;
 
