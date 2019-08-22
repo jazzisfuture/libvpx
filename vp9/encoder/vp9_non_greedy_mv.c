@@ -393,19 +393,19 @@ void vp9_get_local_structure(const YV12_BUFFER_CONFIG *cur_frame,
       int search_dist;
       int nb_dist;
       int I_row = 0, I_col = 0;
-      // TODO: handle the case that when reference frame block beyond the
+      // TODO(Dan): handle the case that when reference frame block beyond the
       // boundary
       ref_h = ref_h < 0 ? 0 : (ref_h >= height - bh ? height - bh - 1 : ref_h);
       ref_w = ref_w < 0 ? 0 : (ref_w >= width - bw ? width - bw - 1 : ref_w);
       // compute search results distortion
-      // TODO: maybe need to use vp9 function to find the reference block, to
-      // compare with the results of my python code, I first use my way to
+      // TODO(Dan): maybe need to use vp9 function to find the reference block,
+      // to compare with the results of my python code, I first use my way to
       // compute the reference block
       ref_offset = ref_h * ref_stride + ref_w;
       target = ref_frame->y_buffer + ref_offset;
       search_dist = fn_ptr->sdf(center, cur_stride, target, ref_stride);
       // compute target's neighbors' distortions
-      // TODO: if using padding, the boundary condition may vary
+      // TODO(Dan): if using padding, the boundary condition may vary
       // up
       if (ref_h - bh >= 0) {
         nb = target - ref_stride * bh;
