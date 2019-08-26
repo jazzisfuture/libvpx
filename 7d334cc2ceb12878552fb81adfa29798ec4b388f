@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "222eb511_60adf1ba",
+        "filename": "vp9/encoder/vp9_non_greedy_mv.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2019-08-26T23:39:53Z",
+      "side": 1,
+      "message": "Nit/optional: This variable declaration can be moved into the new if (motion_field_info-\u003eallocated) block.",
+      "revId": "7d334cc2ceb12878552fb81adfa29798ec4b388f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6789442f_bda9822a",
+        "filename": "vp9/encoder/vp9_non_greedy_mv.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2019-08-26T23:39:53Z",
+      "side": 1,
+      "message": "Since vp9_alloc_motion_field_info is only calld by init_tpl_buffer, I guess this means init_tpl_buffer may be called multiple times?\n\nShould we check that the previously-allocated MotionFieldInfo struct is still valid for the new values of frame_num, mi_rows, and mi_cols?",
+      "revId": "7d334cc2ceb12878552fb81adfa29798ec4b388f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8aba520b_22c7d42e",
+        "filename": "vp9/encoder/vp9_non_greedy_mv.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2019-08-26T23:39:53Z",
+      "side": 1,
+      "message": "Nit: It may be good to also reset motion_field_info-\u003eallocated to 0.",
+      "revId": "7d334cc2ceb12878552fb81adfa29798ec4b388f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
