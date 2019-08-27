@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "2b8edc7f_b0cd2b59",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2019-08-27T22:07:21Z",
+      "side": 1,
+      "message": "Just to clarify: My suggestion was to move just the *declaration* of free_tpl_buffer() to the beginning of the file. The init_tpl_buffer and free_tpl_buffer functions can still be defined in the current place.\n\nIn any case, don\u0027t do both James\u0027 and my suggestions. They are alternatives.",
+      "parentUuid": "e5d6f176_1d560914",
+      "revId": "dbb05261eab6e09c5d71cfb2b644c2ad33432eef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a560a1f0_465a2bb6",
         "filename": "vp9/encoder/vp9_encoder.c",
         "patchSetId": 3
