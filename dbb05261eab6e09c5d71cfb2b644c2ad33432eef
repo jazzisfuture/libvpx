@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e5d6f176_1d560914",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-08-27T21:56:24Z",
+      "side": 1,
+      "message": "Okay, I will submit another patch to move init_tpl_buffer/free_tpl_buffer to here",
+      "parentUuid": "c724191a_f2817553",
+      "revId": "dbb05261eab6e09c5d71cfb2b644c2ad33432eef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a560a1f0_465a2bb6",
         "filename": "vp9/encoder/vp9_encoder.c",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2019-08-27T02:31:15Z",
       "side": 1,
       "message": "with the current code it makes more sense for this to be near the init, but as a followup you might want to move all the static functions before their first use to avoid the need for a prototype.",
+      "revId": "dbb05261eab6e09c5d71cfb2b644c2ad33432eef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a507e490_1fb33433",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 2541,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-08-27T21:56:24Z",
+      "side": 1,
+      "message": "Okay, I will submit another patch to move init_tpl_buffer/free_tpl_buffer.",
+      "parentUuid": "a560a1f0_465a2bb6",
       "revId": "dbb05261eab6e09c5d71cfb2b644c2ad33432eef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
