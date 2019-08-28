@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3cac9d4b_81390e27",
+        "filename": "test/resize_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-08-28T22:14:30Z",
+      "side": 1,
+      "message": "I think the problem is the larger size triggered the re-allocation but there is a condition on width (width must be larger too to get re-allocated). It won\u0027t be an issue in the situation where width is smaller and height is larger but the size stays the same.",
+      "parentUuid": "af8a6b4e_b9c224ff",
+      "range": {
+        "startLine": 98,
+        "startChar": 20,
+        "endLine": 98,
+        "endChar": 31
+      },
+      "revId": "0f7fb7e0389f1b5a6031868ba314cf8db750ba3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "465e5471_0140187f",
         "filename": "test/resize_test.cc",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "0f7fb7e0389f1b5a6031868ba314cf8db750ba3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad74b57a_1cedac1b",
+        "filename": "test/resize_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2019-08-28T22:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "465e5471_0140187f",
+      "revId": "0f7fb7e0389f1b5a6031868ba314cf8db750ba3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
