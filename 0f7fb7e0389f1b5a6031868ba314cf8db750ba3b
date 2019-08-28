@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "af8a6b4e_b9c224ff",
+        "filename": "test/resize_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-08-28T18:04:51Z",
+      "side": 1,
+      "message": "maybe _larger_height_ ?",
+      "range": {
+        "startLine": 98,
+        "startChar": 20,
+        "endLine": 98,
+        "endChar": 31
+      },
+      "revId": "0f7fb7e0389f1b5a6031868ba314cf8db750ba3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "465e5471_0140187f",
+        "filename": "test/resize_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-08-28T18:04:51Z",
+      "side": 1,
+      "message": "this could be a bool",
+      "revId": "0f7fb7e0389f1b5a6031868ba314cf8db750ba3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
