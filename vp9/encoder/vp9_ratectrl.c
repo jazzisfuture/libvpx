@@ -605,17 +605,26 @@ int post_encode_drop_cbr(VP9_COMP *cpi, size_t *size) {
   return 0;
 }
 
-int vp9_rc_drop_frame(VP9_COMP *cpi) {
+int vp9_rc_drop_frame(VP9_COMP *cpi, int check) {
   SVC *svc = &cpi->svc;
   int svc_prev_layer_dropped = 0;
+  if (check && cpi->use_svc &&
+      svc->framedrop_mode == REVERSE_CONSTRAINED_DROP) {
+    if (drop_frame(cpi))
+      return 1;
+    else
+      return 0;
+  }
   // In the constrained or full_superframe framedrop mode for svc
   // (framedrop_mode !=  LAYER_DROP), if the previous spatial layer was
   // dropped, drop the current spatial layer.
   if (cpi->use_svc && svc->spatial_layer_id > 0 &&
       svc->drop_spatial_layer[svc->spatial_layer_id - 1])
     svc_prev_layer_dropped = 1;
-  if ((svc_prev_layer_dropped && svc->framedrop_mode != LAYER_DROP) ||
-      drop_frame(cpi)) {
+  if ((svc_prev_layer_dropped && svc->framedrop_mode != LAYER_DROP &&
+       svc->framedrop_mode != REVERSE_CONSTRAINED_DROP) ||
+      drop_frame(cpi) ||
+      svc->force_drop_reverse_constrained[svc->spatial_layer_id]) {
     vp9_rc_postencode_update_drop_frame(cpi);
     cpi->ext_refresh_frame_flags_pending = 0;
     cpi->last_frame_dropped = 1;
