@@ -770,6 +770,31 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   svc->mi_rows[svc->spatial_layer_id] = cpi->common.mi_rows;
   svc->mi_cols[svc->spatial_layer_id] = cpi->common.mi_cols;
 
+  // For reverse-constrained drop mode: before encoding superframe (i.e.,
+  // at SL0 frame) check all spatial layers (starting from top) for possible
+  // drop, and if so, set a flag to force drop of that layer and all its lower
+  // layers.
+  if (svc->spatial_layer_to_encode == svc->first_spatial_layer_to_encode) {
+    int sl;
+    for (sl = 0; sl < svc->number_spatial_layers; sl++)
+      svc->force_drop_reverse_constrained[sl] = 0;
+    if (svc->framedrop_mode == CONSTRAINED_FROM_ABOVE_DROP) {
+      for (sl = svc->number_spatial_layers - 1; sl >= 0; sl--) {
+        int layer = sl * svc->number_temporal_layers + svc->temporal_layer_id;
+        LAYER_CONTEXT *const lc = &svc->layer_context[layer];
+        cpi->rc = lc->rc;
+        cpi->oxcf.target_bandwidth = lc->target_bandwidth;
+        if (vp9_test_drop(cpi)) {
+          int sl2;
+          // Set flag to force drop in encoding for this mode.
+          for (sl2 = sl; sl2 >= 0; sl2--)
+            svc->force_drop_reverse_constrained[sl2] = 1;
+          break;
+        }
+      }
+    }
+  }
+
   if (svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_0212) {
     set_flags_and_fb_idx_for_temporal_mode3(cpi);
   } else if (svc->temporal_layering_mode ==
