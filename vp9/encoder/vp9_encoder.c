@@ -3928,7 +3928,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
       !svc->superframe_has_layer_sync &&
       (!cpi->use_svc ||
        !svc->layer_context[svc->temporal_layer_id].is_key_frame)) {
-    if (vp9_rc_drop_frame(cpi)) return 0;
+    if (vp9_rc_drop_frame(cpi, 0)) return 0;
   }
 
   // For 1 pass CBR SVC, only ZEROMV is allowed for spatial reference frame

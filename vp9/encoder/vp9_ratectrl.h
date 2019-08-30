@@ -269,7 +269,7 @@ int post_encode_drop_cbr(struct VP9_COMP *cpi, size_t *size);
 
 // Decide if we should drop this frame: For 1-pass CBR.
 // Changes only the decimation count in the rate control structure
-int vp9_rc_drop_frame(struct VP9_COMP *cpi);
+int vp9_rc_drop_frame(struct VP9_COMP *cpi, int check);
 
 // Computes frame size bounds.
 void vp9_rc_compute_frame_size_bounds(const struct VP9_COMP *cpi,
