@@ -4996,9 +4996,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi, size_t *size,
     cpi->svc.last_layer_dropped[cpi->svc.spatial_layer_id] = 1;
     cpi->svc.drop_spatial_layer[cpi->svc.spatial_layer_id] = 1;
     if (cpi->svc.framedrop_mode == LAYER_DROP ||
+        (cpi->svc.framedrop_mode == CONSTRAINED_FROM_ABOVE_DROP &&
+         cpi->svc
+             .force_drop_constrained_from_above[cpi->svc.number_spatial_layers -
+                                                1]) ||
         cpi->svc.drop_spatial_layer[0] == 0) {
-      // For the case of constrained drop mode where the base is dropped
-      // (drop_spatial_layer[0] == 1), which means full superframe dropped,
+      // For the case of constrained drop where full superframe is dropped,
       // we don't increment the svc frame counters. In particular temporal
       // layer counter (which is incremented in vp9_inc_frame_in_layer())
       // won't be incremented, so on a dropped frame we try the same
