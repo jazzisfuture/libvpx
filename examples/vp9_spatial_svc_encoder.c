@@ -1050,7 +1050,8 @@ int main(int argc, const char **argv) {
 
   vpx_codec_control(&encoder, VP9E_SET_TUNE_CONTENT, app_input.tune_content);
 
-  svc_drop_frame.framedrop_mode = FULL_SUPERFRAME_DROP;
+  svc_drop_frame.framedrop_mode =
+      REVERSE_CONSTRAINED_DROP;  // FULL_SUPERFRAME_DROP;
   for (sl = 0; sl < (unsigned int)svc_ctx.spatial_layers; ++sl)
     svc_drop_frame.framedrop_thresh[sl] = enc_cfg.rc_dropframe_thresh;
   svc_drop_frame.max_consec_drop = INT_MAX;
