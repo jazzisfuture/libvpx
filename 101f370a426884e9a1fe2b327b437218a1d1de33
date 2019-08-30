@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8e8cbc0_3b31f1f2",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 7146,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2019-08-30T23:56:19Z",
+      "side": 1,
+      "message": "The parentheses around \u0027cm\u0027 are not necessary here.\n\nNote: I know you copied the parentheses from the CHECK_MEM_ERROR macro. In macro definitions, it is common to parenthesize the macro arguments for safety.",
+      "range": {
+        "startLine": 7146,
+        "startChar": 24,
+        "endLine": 7146,
+        "endChar": 28
+      },
+      "revId": "101f370a426884e9a1fe2b327b437218a1d1de33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99923669_0a0ed87f",
+        "filename": "vp9/encoder/vp9_non_greedy_mv.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2019-08-30T23:56:19Z",
+      "side": 1,
+      "message": "Optional: You may have noticed that there is duplicate code in the error recovery.\n\nIn C code, it is common to do this kind of error recovery by using goto statements. One way to do that is the following:\n\n1. Change line 234 to \"return STATUS_OK;\".\n\n2. Add the following after line 234:\n\n failed3:\n  vpx_free(motion_field-\u003eset_mv);\n  motion_field-\u003eset_mv \u003d NULL;\n failed2:\n  vpx_free(motion_field-\u003emf);\n  motion_field-\u003emf \u003d NULL;\n failed1:\n  return STATUS_FAILED;\n\n3. Change line 216 to \"goto failed1\".\n\n4. Change lines 221-223 to \"goto failed2\".\n\n5. Change lines 228-232 to \"goto failed3\".\n\nAnother way is as follows. IMPORTANT: This requires all members of motion_field be initialized to 0 before vp9_alloc_motion_field() is called.\n\n1. Change line 234 to \"return STATUS_OK;\".\n\n2. Add the following after line 234:\n\n failed:\n  if (motion_field-\u003eset_mv !\u003d NULL) {\n    vpx_free(motion_field-\u003eset_mv);\n    motion_field-\u003eset_mv \u003d NULL;\n  }\n  if (motion_field-\u003emf !\u003d NULL) {\n    vpx_free(motion_field-\u003emf);\n    motion_field-\u003emf \u003d NULL;\n  }\n  return STATUS_FAILED;\n\n3. Change line 216 to \"goto failed\".\n\n4. Change lines 221-223 to \"goto failed\".\n\n5. Change lines 228-232 to \"goto failed\".",
+      "revId": "101f370a426884e9a1fe2b327b437218a1d1de33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
