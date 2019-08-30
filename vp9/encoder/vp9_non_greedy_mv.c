@@ -235,6 +235,7 @@ Status vp9_alloc_motion_field(MotionField *motion_field, BLOCK_SIZE bsize,
 void vp9_free_motion_field(MotionField *motion_field) {
   vpx_free(motion_field->mf);
   vpx_free(motion_field->local_structure);
+  vpx_free(motion_field->set_mv);
   vp9_zero(*motion_field);
 }
 
