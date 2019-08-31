@@ -6767,11 +6767,6 @@ static void do_motion_search(VP9_COMP *cpi, ThreadData *td,
   }
 }
 
-#define CHANGE_MV_SEARCH_ORDER 1
-#define USE_PQSORT 1
-
-#if CHANGE_MV_SEARCH_ORDER
-#if USE_PQSORT
 static void max_heap_pop(FEATURE_SCORE_LOC **heap, int *size,
                          FEATURE_SCORE_LOC **output) {
   if (*size > 0) {
@@ -6843,8 +6838,6 @@ static void add_nb_blocks_to_heap(VP9_COMP *cpi, const TplDepFrame *tpl_frame,
     }
   }
 }
-#endif  // USE_PQSORT
-#endif  // CHANGE_MV_SEARCH_ORDER
 
 static void build_motion_field(
     VP9_COMP *cpi, MACROBLOCKD *xd, int frame_idx,
@@ -6895,14 +6888,7 @@ static void build_motion_field(
       continue;
     }
     vp9_motion_field_reset_mvs(motion_field);
-#if CHANGE_MV_SEARCH_ORDER
-#if !USE_PQSORT
-    for (i = 0; i < fs_loc_sort_size; ++i) {
-      FEATURE_SCORE_LOC *fs_loc = cpi->feature_score_loc_sort[i];
-      do_motion_search(cpi, td, motion_field, frame_idx, ref_frame[rf_idx],
-                       bsize, fs_loc->mi_row, fs_loc->mi_col);
-    }
-#else   // !USE_PQSORT
+
     fs_loc_heap_size = 0;
     max_heap_push(cpi->feature_score_loc_heap, &fs_loc_heap_size,
                   cpi->feature_score_loc_sort[0]);
@@ -6921,15 +6907,6 @@ static void build_motion_field(
       add_nb_blocks_to_heap(cpi, tpl_frame, bsize, fs_loc->mi_row,
                             fs_loc->mi_col, &fs_loc_heap_size);
     }
-#endif  // !USE_PQSORT
-#else   // CHANGE_MV_SEARCH_ORDER
-    for (mi_row = 0; mi_row < cm->mi_rows; mi_row += mi_height) {
-      for (mi_col = 0; mi_col < cm->mi_cols; mi_col += mi_width) {
-        do_motion_search(cpi, td, motion_field, frame_idx, ref_frame[rf_idx],
-                         bsize, mi_row, mi_col);
-      }
-    }
-#endif  // CHANGE_MV_SEARCH_ORDER
   }
 }
 #endif  // CONFIG_NON_GREEDY_MV
