@@ -7131,6 +7131,15 @@ static void init_tpl_buffer(VP9_COMP *cpi) {
 #if CONFIG_NON_GREEDY_MV
   int rf_idx;
 
+  // TODO(angiebird): This probably needs further modifications to support
+  // frame scaling later on.
+  Status status = vp9_alloc_motion_field_info(
+      &cpi->motion_field_info, MAX_ARF_GOP_SIZE, mi_rows, mi_cols);
+  if (status == STATUS_FAILED) {
+    vpx_internal_error(&(cm)->error, VPX_CODEC_MEM_ERROR,
+                       "vp9_alloc_motion_field_info failed");
+  }
+
   if (cpi->feature_score_loc_alloc == 0) {
     // The smallest block size of motion field is 4x4, but the mi_unit is 8x8,
     // therefore the number of units is "mi_rows * mi_cols * 4" here.
@@ -7356,10 +7365,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     if (source != NULL) {
       cm->show_frame = 1;
       cm->intra_only = 0;
-      // if the flags indicate intra frame, but if the current picture is for
-      // non-zero spatial layer, it should not be an intra picture.
+      // If the flags indicate intra frame, but if the current picture is for
+      // spatial layer above first_spatial_layer_to_encode, it should not be an
+      // intra picture.
       if ((source->flags & VPX_EFLAG_FORCE_KF) && cpi->use_svc &&
-          cpi->svc.spatial_layer_id > 0) {
+          cpi->svc.spatial_layer_id > cpi->svc.first_spatial_layer_to_encode) {
         source->flags &= ~(unsigned int)(VPX_EFLAG_FORCE_KF);
       }
 
@@ -7460,19 +7470,6 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->kmeans_data_stride = mi_cols;
     cpi->kmeans_data_arr_alloc = 1;
   }
-
-#if CONFIG_NON_GREEDY_MV
-  {
-    const int mi_cols = mi_cols_aligned_to_sb(cm->mi_cols);
-    const int mi_rows = mi_cols_aligned_to_sb(cm->mi_rows);
-    Status status = vp9_alloc_motion_field_info(
-        &cpi->motion_field_info, MAX_ARF_GOP_SIZE, mi_rows, mi_cols);
-    if (status == STATUS_FAILED) {
-      vpx_internal_error(&(cm)->error, VPX_CODEC_MEM_ERROR,
-                         "vp9_alloc_motion_field_info failed");
-    }
-  }
-#endif  // CONFIG_NON_GREEDY_MV
 
   if (gf_group_index == 1 &&
       cpi->twopass.gf_group.update_type[gf_group_index] == ARF_UPDATE &&
