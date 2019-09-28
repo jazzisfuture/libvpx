@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "38894334_619efcc9",
+        "filename": "tools/3D-Reconstruction/MotionEST/GroundTruth.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-09-28T01:03:56Z",
+      "side": 1,
+      "message": "I wonder if this one meant \u0027if gt_path:\u0027 since it\u0027s testing a string:\n\nhttp://google.github.io/styleguide/pyguide.html#2144-decision",
+      "revId": "39b3e9fb07d1743af0126704e0f116dfbfb0fa59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
