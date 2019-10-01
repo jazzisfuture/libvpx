@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff7f85d1_48376599",
+        "filename": "vpx_dsp/x86/avg_intrin_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-10-01T23:16:09Z",
+      "side": 1,
+      "message": "mean could just be made an int as it will be promoted back to one anyway in the multiplication",
+      "revId": "ff121ccb63a067e4d4c4f209fbc740ebbf433211",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
