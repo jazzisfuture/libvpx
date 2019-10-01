@@ -16,6 +16,24 @@
       "revId": "ff121ccb63a067e4d4c4f209fbc740ebbf433211",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6498038d_4cb63ee9",
+        "filename": "vpx_dsp/x86/avg_intrin_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1337751
+      },
+      "writtenOn": "2019-10-01T23:44:27Z",
+      "side": 1,
+      "message": "yeah i tried that but value after multiplication got an error of overflow.\n\"avg_intrin_sse2.c:576:42: runtime error: signed integer overflow: 64626 * 64626 cannot be \"represented in type \u0027int\u0027 \"",
+      "parentUuid": "ff7f85d1_48376599",
+      "revId": "ff121ccb63a067e4d4c4f209fbc740ebbf433211",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
