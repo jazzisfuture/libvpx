@@ -536,7 +536,7 @@ int16_t vpx_int_pro_col_sse2(const uint8_t *ref, const int width) {
 int vpx_vector_var_sse2(const int16_t *ref, const int16_t *src, const int bwl) {
   int idx;
   int width = 4 << bwl;
-  int16_t mean;
+  int  mean;
   __m128i v0 = _mm_loadu_si128((const __m128i *)ref);
   __m128i v1 = _mm_load_si128((const __m128i *)src);
   __m128i diff = _mm_subs_epi16(v0, v1);
@@ -571,7 +571,7 @@ int vpx_vector_var_sse2(const int16_t *ref, const int16_t *src, const int bwl) {
   v1 = _mm_srli_epi64(sse, 32);
   sse = _mm_add_epi32(sse, v1);
 
-  mean = _mm_extract_epi16(sum, 0);
+  mean = _mm_cvtsi128_si32(sum);
 
   return _mm_cvtsi128_si32(sse) - ((mean * mean) >> (bwl + 2));
 }
