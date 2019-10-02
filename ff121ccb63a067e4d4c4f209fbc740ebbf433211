@@ -34,6 +34,24 @@
       "revId": "ff121ccb63a067e4d4c4f209fbc740ebbf433211",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb852fad_57da5108",
+        "filename": "vpx_dsp/x86/avg_intrin_sse2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-10-02T00:50:34Z",
+      "side": 1,
+      "message": "\u003e yeah i tried that but value after multiplication got an error of overflow.\n\u003e \"avg_intrin_sse2.c:576:42: runtime error: signed integer overflow: 64626 * 64626 cannot be \"represented in type \u0027int\u0027 \"\n\nthe sum probably should have been expanded for the block size; I think this is a bug, maybe it matches what the C is doing.",
+      "parentUuid": "6498038d_4cb63ee9",
+      "revId": "ff121ccb63a067e4d4c4f209fbc740ebbf433211",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
