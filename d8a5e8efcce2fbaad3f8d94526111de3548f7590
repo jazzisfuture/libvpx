@@ -16,6 +16,24 @@
       "revId": "d8a5e8efcce2fbaad3f8d94526111de3548f7590",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db8c85be_c368e489",
+        "filename": "vpx_dsp/x86/avg_intrin_sse2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1337751
+      },
+      "writtenOn": "2019-10-04T21:52:42Z",
+      "side": 1,
+      "message": "After changes, still having issue with overflow.\n\n[ RUN      ] VP9/AqSegmentTest.TestNoMisMatchAQ1/1\n../libvpx/vpx_dsp/x86/avg_intrin_sse2.c:576:42: runtime error: signed integer overflow: -30933902 * -30933902 cannot be represented in type \u0027int\u0027",
+      "parentUuid": "50729849_6795ceb2",
+      "revId": "d8a5e8efcce2fbaad3f8d94526111de3548f7590",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
