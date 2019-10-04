@@ -1554,6 +1554,9 @@ static void search_filter_ref(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *this_rdc,
   if (reuse_inter_pred) {
     pd->dst.buf = (*this_mode_pred)->data;
     pd->dst.stride = (*this_mode_pred)->stride;
+  } else if (best_filter < EIGHTTAP_SMOOTH) {
+    mi->interp_filter = best_filter;
+    vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
   }
 }
 
