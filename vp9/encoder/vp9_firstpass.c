@@ -1839,7 +1839,9 @@ static int detect_flash_from_frame_stats(const FIRSTPASS_STATS *frame_stats) {
   // The recovery after a flash is indicated by a high pcnt_second_ref
   // useage or a second ref coded error notabley lower than the last
   // frame coded error.
-  assert(frame_stats != NULL);
+  if (frame_stats == NULL) {
+    return 0;
+  }
   return (frame_stats->sr_coded_error < frame_stats->coded_error) ||
          ((frame_stats->pcnt_second_ref > frame_stats->pcnt_inter) &&
           (frame_stats->pcnt_second_ref >= 0.5));
@@ -1847,9 +1849,6 @@ static int detect_flash_from_frame_stats(const FIRSTPASS_STATS *frame_stats) {
 
 static int detect_flash(const TWO_PASS *twopass, int offset) {
   const FIRSTPASS_STATS *const next_frame = read_frame_stats(twopass, offset);
-  if (next_frame == NULL) {
-    return 0;
-  }
   return detect_flash_from_frame_stats(next_frame);
 }
 
@@ -1973,6 +1972,7 @@ static int calc_arf_boost(VP9_COMP *cpi, int f_frames, int b_frames) {
   // Search forward from the proposed arf/next gf position.
   for (i = 0; i < f_frames; ++i) {
     const FIRSTPASS_STATS *this_frame = read_frame_stats(twopass, i);
+    const FIRSTPASS_STATS *next_frame = read_frame_stats(twopass, i + 1);
     if (this_frame == NULL) break;
 
     // Update the motion related elements to the boost calculation.
@@ -1982,7 +1982,8 @@ static int calc_arf_boost(VP9_COMP *cpi, int f_frames, int b_frames) {
 
     // We want to discount the flash frame itself and the recovery
     // frame that follows as both will have poor scores.
-    flash_detected = detect_flash(twopass, i) || detect_flash(twopass, i + 1);
+    flash_detected = detect_flash_from_frame_stats(this_frame) ||
+                     detect_flash_from_frame_stats(next_frame);
 
     // Accumulate the effect of prediction quality decay.
     if (!flash_detected) {
@@ -2009,6 +2010,7 @@ static int calc_arf_boost(VP9_COMP *cpi, int f_frames, int b_frames) {
   // Search backward towards last gf position.
   for (i = -1; i >= -b_frames; --i) {
     const FIRSTPASS_STATS *this_frame = read_frame_stats(twopass, i);
+    const FIRSTPASS_STATS *next_frame = read_frame_stats(twopass, i + 1);
     if (this_frame == NULL) break;
 
     // Update the motion related elements to the boost calculation.
@@ -2018,7 +2020,8 @@ static int calc_arf_boost(VP9_COMP *cpi, int f_frames, int b_frames) {
 
     // We want to discount the the flash frame itself and the recovery
     // frame that follows as both will have poor scores.
-    flash_detected = detect_flash(twopass, i) || detect_flash(twopass, i + 1);
+    flash_detected = detect_flash_from_frame_stats(this_frame) ||
+                     detect_flash_from_frame_stats(next_frame);
 
     // Cumulative effect of prediction quality decay.
     if (!flash_detected) {
