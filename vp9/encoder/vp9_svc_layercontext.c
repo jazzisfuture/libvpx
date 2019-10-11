@@ -1088,30 +1088,30 @@ void vp9_svc_constrain_inter_layer_pred(VP9_COMP *const cpi) {
     // check both here.
     MV_REFERENCE_FRAME ref_frame;
     for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ref_frame++) {
-      struct scale_factors *scale_fac = &cm->frame_refs[ref_frame - 1].sf;
-      if (vp9_is_scaled(scale_fac)) {
-        // If this reference  was updated on the previous spatial layer of the
-        // current superframe, then we keep this reference (don't disable).
-        // Otherwise we disable the inter-layer prediction.
-        // This condition is verified by checking if the current frame buffer
-        // index is equal to any of the slots for the previous spatial layer,
-        // and if so, check if that slot was updated/refreshed. If that is the
-        // case, then this reference is valid for inter-layer prediction under
-        // the mode INTER_LAYER_PRED_ON_CONSTRAINED.
-        int fb_idx =
-            ref_frame == LAST_FRAME ? cpi->lst_fb_idx : cpi->gld_fb_idx;
-        int ref_flag = ref_frame == LAST_FRAME ? VP9_LAST_FLAG : VP9_GOLD_FLAG;
-        int disable = 1;
-        if (fb_idx < 0) continue;
-        if ((fb_idx == svc->lst_fb_idx[sl - 1] &&
-             (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))) ||
-            (fb_idx == svc->gld_fb_idx[sl - 1] &&
-             (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))) ||
-            (fb_idx == svc->alt_fb_idx[sl - 1] &&
-             (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))))
-          disable = 0;
-        if (disable) cpi->ref_frame_flags &= (~ref_flag);
-      }
+      // If this reference was updated on the previous spatial layer of the
+      // current superframe, then we keep this reference (don't disable).
+      // Otherwise we disable the inter-layer prediction.
+      // This condition is verified by checking if the current frame buffer
+      // index is equal to any of the slots for the previous spatial layer,
+      // and if so, check if that slot was updated/refreshed.
+      // Make sure to keep the reference, for LAST or when GOLDEN is long-term
+      // temporal reference, if the fb_idx was last refreshed on frame with
+      // same spatial layer.
+      int fb_idx = ref_frame == LAST_FRAME ? cpi->lst_fb_idx : cpi->gld_fb_idx;
+      int ref_flag = ref_frame == LAST_FRAME ? VP9_LAST_FLAG : VP9_GOLD_FLAG;
+      int disable = 1;
+      if (fb_idx < 0) continue;
+      if ((fb_idx == svc->lst_fb_idx[sl - 1] &&
+           (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))) ||
+          (fb_idx == svc->gld_fb_idx[sl - 1] &&
+           (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))) ||
+          (fb_idx == svc->alt_fb_idx[sl - 1] &&
+           (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))) ||
+          ((ref_frame == LAST_FRAME ||
+            svc->use_gf_temporal_ref_current_layer) &&
+           svc->fb_idx_spatial_layer_id[fb_idx] == svc->spatial_layer_id))
+        disable = 0;
+      if (disable) cpi->ref_frame_flags &= (~ref_flag);
     }
   }
 }
