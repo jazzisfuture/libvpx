@@ -22,6 +22,30 @@
       "revId": "3a210cae432b105b24f1a3c50c2698dfddb8d765",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab04e2a5_c0866703",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1841,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-10-11T20:00:27Z",
+      "side": 1,
+      "message": "I change this part in a later CL here\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/1851172/2/vp9/encoder/vp9_firstpass.c",
+      "parentUuid": "69b0f136_9bababe7",
+      "range": {
+        "startLine": 1841,
+        "startChar": 21,
+        "endLine": 1841,
+        "endChar": 22
+      },
+      "revId": "3a210cae432b105b24f1a3c50c2698dfddb8d765",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
