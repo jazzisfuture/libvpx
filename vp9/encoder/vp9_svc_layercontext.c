@@ -1078,41 +1078,31 @@ void vp9_svc_constrain_inter_layer_pred(VP9_COMP *const cpi) {
     }
   }
   // For fixed/non-flexible SVC: check for disabling inter-layer prediction.
-  // If the reference for inter-layer prediction (the reference that is scaled)
-  // is not the previous spatial layer from the same superframe, then we disable
-  // inter-layer prediction. Only need to check when inter_layer prediction is
-  // not set to OFF mode.
+  // For fixed SVC mode golden is always the inter-layer reference (if not used
+  // as longterm reference), so check if golden reference is not the previous
+  // spatial layer from same superframe, if so disable inter-layer prediction.
+  // Only need to check when inter_layer prediction is not set to OFF mode.
   if (svc->temporal_layering_mode != VP9E_TEMPORAL_LAYERING_MODE_BYPASS &&
-      svc->disable_inter_layer_pred != INTER_LAYER_PRED_OFF) {
-    // We only use LAST and GOLDEN for prediction in real-time mode, so we
-    // check both here.
-    MV_REFERENCE_FRAME ref_frame;
-    for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ref_frame++) {
-      struct scale_factors *scale_fac = &cm->frame_refs[ref_frame - 1].sf;
-      if (vp9_is_scaled(scale_fac)) {
-        // If this reference  was updated on the previous spatial layer of the
-        // current superframe, then we keep this reference (don't disable).
-        // Otherwise we disable the inter-layer prediction.
-        // This condition is verified by checking if the current frame buffer
-        // index is equal to any of the slots for the previous spatial layer,
-        // and if so, check if that slot was updated/refreshed. If that is the
-        // case, then this reference is valid for inter-layer prediction under
-        // the mode INTER_LAYER_PRED_ON_CONSTRAINED.
-        int fb_idx =
-            ref_frame == LAST_FRAME ? cpi->lst_fb_idx : cpi->gld_fb_idx;
-        int ref_flag = ref_frame == LAST_FRAME ? VP9_LAST_FLAG : VP9_GOLD_FLAG;
-        int disable = 1;
-        if (fb_idx < 0) continue;
-        if ((fb_idx == svc->lst_fb_idx[sl - 1] &&
-             (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))) ||
-            (fb_idx == svc->gld_fb_idx[sl - 1] &&
-             (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))) ||
-            (fb_idx == svc->alt_fb_idx[sl - 1] &&
-             (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))))
-          disable = 0;
-        if (disable) cpi->ref_frame_flags &= (~ref_flag);
-      }
-    }
+      svc->disable_inter_layer_pred != INTER_LAYER_PRED_OFF &&
+      !svc->use_gf_temporal_ref_current_layer) {
+    // If the golden reference was updated on the previous spatial layer of the
+    // current superframe, then we keep this reference (don't disable).
+    // Otherwise we disable the inter-layer prediction.
+    // This condition is verified by checking if the current frame buffer
+    // index is equal to any of the slots for the previous spatial layer,
+    // and if so, check if that slot was updated/refreshed. If that is the
+    // case, then this reference is valid for inter-layer prediction.
+    int fb_idx = cpi->gld_fb_idx;
+    int ref_flag = VP9_GOLD_FLAG;
+    int disable = 1;
+    if ((fb_idx == svc->lst_fb_idx[sl - 1] &&
+         (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))) ||
+        (fb_idx == svc->gld_fb_idx[sl - 1] &&
+         (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))) ||
+        (fb_idx == svc->alt_fb_idx[sl - 1] &&
+         (svc->update_buffer_slot[sl - 1] & (1 << fb_idx))))
+      disable = 0;
+    if (disable) cpi->ref_frame_flags &= (~ref_flag);
   }
 }
 
