@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5fe35338_61640119",
+        "filename": "vpx_ports/x86.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-10-17T05:27:15Z",
+      "side": 1,
+      "message": "state. Necessary for AVX and AVX2.",
+      "range": {
+        "startLine": 205,
+        "startChar": 42,
+        "endLine": 205,
+        "endChar": 66
+      },
+      "revId": "e70e3efa9884d06fb77e7c0bc6011ea19b23f9b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd1f8575_f2ddbdf1",
+        "filename": "vpx_ports/x86.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-10-17T05:27:15Z",
+      "side": 1,
+      "message": "state. Necessary for AVX-512.",
+      "range": {
+        "startLine": 219,
+        "startChar": 56,
+        "endLine": 219,
+        "endChar": 65
+      },
+      "revId": "e70e3efa9884d06fb77e7c0bc6011ea19b23f9b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1020bed_6c8d45cb",
+        "filename": "vpx_ports/x86.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-10-17T05:27:15Z",
+      "side": 1,
+      "message": "The patch failed because clang-format expects this to be a single line:\n\nif ((xgetbv() \u0026 0xe6) \u003d\u003d 0xe6) flags |\u003d HAS_AVX512;",
+      "range": {
+        "startLine": 220,
+        "startChar": 10,
+        "endLine": 220,
+        "endChar": 30
+      },
+      "revId": "e70e3efa9884d06fb77e7c0bc6011ea19b23f9b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
