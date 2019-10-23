@@ -22,6 +22,30 @@
       "revId": "533702b3703f54908f3484c6d7f313cfc6d5b33d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "caaab071_a5534ea2",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 772,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-10-23T19:47:32Z",
+      "side": 1,
+      "message": "\u003e I started with\n\u003e tgt_os\u003d$(sed -e \u0027\u0027 \u003c\u003c\u003c ${gcctarget})\n\u003e \n\u003e but this matches the existing code:\n\u003e   var\u003d`echo $header | sed \u0027s/[^A-Za-z0-9_]/_/g\u0027`\n\n`` matches that too, I think we have a mix of $() and ``.",
+      "parentUuid": "6277b378_b2df2691",
+      "range": {
+        "startLine": 772,
+        "startChar": 0,
+        "endLine": 772,
+        "endChar": 67
+      },
+      "revId": "533702b3703f54908f3484c6d7f313cfc6d5b33d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
