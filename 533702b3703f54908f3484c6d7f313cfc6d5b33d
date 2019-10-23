@@ -46,6 +46,30 @@
       "revId": "533702b3703f54908f3484c6d7f313cfc6d5b33d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ca667055_c936130c",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 772,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-10-23T20:03:32Z",
+      "side": 1,
+      "message": "It looks like configure.sh uses `` for sed and $() for awk (and most other things). It\u0027s a very long shot wishlist item to clean that up. Someday I\u0027ll resurrect this: https://chromium-review.googlesource.com/c/webm/libvpx/+/72228",
+      "parentUuid": "caaab071_a5534ea2",
+      "range": {
+        "startLine": 772,
+        "startChar": 0,
+        "endLine": 772,
+        "endChar": 67
+      },
+      "revId": "533702b3703f54908f3484c6d7f313cfc6d5b33d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
