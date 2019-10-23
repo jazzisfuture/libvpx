@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fabcb6ca_14dddad7",
+        "filename": "vpx_dsp/x86/avg_intrin_sse2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-10-23T02:13:27Z",
+      "side": 1,
+      "message": "looking more closely at the ranges, casting this to int16_t will be enough. there\u0027s no chance of exceeding 16-bits with block sizes up to 64.",
+      "revId": "0042b69df5ce4d6d92bf33319cd8e08055444007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
