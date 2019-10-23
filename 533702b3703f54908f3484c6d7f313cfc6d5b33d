@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6277b378_b2df2691",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 772,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-10-23T18:20:05Z",
+      "side": 1,
+      "message": "I started with\ntgt_os\u003d$(sed -e \u0027\u0027 \u003c\u003c\u003c ${gcctarget})\n\nbut this matches the existing code:\n  var\u003d`echo $header | sed \u0027s/[^A-Za-z0-9_]/_/g\u0027`",
+      "range": {
+        "startLine": 772,
+        "startChar": 0,
+        "endLine": 772,
+        "endChar": 67
+      },
+      "revId": "533702b3703f54908f3484c6d7f313cfc6d5b33d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
