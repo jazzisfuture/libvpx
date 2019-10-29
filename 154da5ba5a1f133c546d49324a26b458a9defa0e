@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b12cee71_3c5788d7",
+        "filename": "build/make/gen_msvs_sln.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2019-10-29T22:07:28Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "bfb87776_2305ba06",
+      "range": {
+        "startLine": 236,
+        "startChar": 0,
+        "endLine": 236,
+        "endChar": 22
+      },
+      "revId": "154da5ba5a1f133c546d49324a26b458a9defa0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cd2e7233_ab34d640",
         "filename": "build/make/gen_msvs_vcxproj.sh",
         "patchSetId": 1
@@ -59,6 +83,30 @@
       "writtenOn": "2019-10-29T17:12:27Z",
       "side": 1,
       "message": "these could be [[ ver \u003d x ]] \u0026\u0026 tag_\u003dx\n\nbut i\u0027m trying not to go overboard on the cleanup",
+      "range": {
+        "startLine": 337,
+        "startChar": 27,
+        "endLine": 337,
+        "endChar": 28
+      },
+      "revId": "154da5ba5a1f133c546d49324a26b458a9defa0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "81d0135a_84416175",
+        "filename": "build/make/gen_msvs_vcxproj.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2019-10-29T22:07:28Z",
+      "side": 1,
+      "message": "Fair enough.",
+      "parentUuid": "7071283c_e6d9f135",
       "range": {
         "startLine": 337,
         "startChar": 27,
