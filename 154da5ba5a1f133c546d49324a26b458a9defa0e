@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bfb87776_2305ba06",
+        "filename": "build/make/gen_msvs_sln.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-10-29T17:12:27Z",
+      "side": 1,
+      "message": "This could go away, but just in case they bump the format version at some point it\u0027d be easier to fix it here",
+      "range": {
+        "startLine": 236,
+        "startChar": 0,
+        "endLine": 236,
+        "endChar": 22
+      },
+      "revId": "154da5ba5a1f133c546d49324a26b458a9defa0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cd2e7233_ab34d640",
+        "filename": "build/make/gen_msvs_vcxproj.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-10-29T17:12:27Z",
+      "side": 1,
+      "message": "use_custom is only used here",
+      "range": {
+        "startLine": 85,
+        "startChar": 87,
+        "endLine": 85,
+        "endChar": 95
+      },
+      "revId": "154da5ba5a1f133c546d49324a26b458a9defa0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7071283c_e6d9f135",
+        "filename": "build/make/gen_msvs_vcxproj.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-10-29T17:12:27Z",
+      "side": 1,
+      "message": "these could be [[ ver \u003d x ]] \u0026\u0026 tag_\u003dx\n\nbut i\u0027m trying not to go overboard on the cleanup",
+      "range": {
+        "startLine": 337,
+        "startChar": 27,
+        "endLine": 337,
+        "endChar": 28
+      },
+      "revId": "154da5ba5a1f133c546d49324a26b458a9defa0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
