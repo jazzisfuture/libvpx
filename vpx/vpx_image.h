@@ -200,6 +200,26 @@ void vpx_img_flip(vpx_image_t *img);
  */
 void vpx_img_free(vpx_image_t *img);
 
+/*!\brief Check whether the image format has subsampling in chroma.
+ *
+ * \param[in]    fmt            image format
+ *
+ * \param[in]    subsampling_x  the chroma plan's horizontal direction is
+ * subsampled
+ *
+ * \param[in]    subsampling_y  the chroma plan's vertical direction is
+ * subsampled
+ */
+void vpx_img_chroma_subsampling(vpx_img_fmt_t fmt, unsigned int *subsampling_x,
+                                unsigned int *subsampling_y);
+
+/*!\brief Check whether the image format use high bitdepth.
+ *
+ * \param[in]    fmt            image format
+ *
+ */
+int vpx_img_use_highbitdepth(vpx_img_fmt_t fmt);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
