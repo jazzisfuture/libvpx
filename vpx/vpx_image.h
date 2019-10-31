@@ -200,6 +200,10 @@ void vpx_img_flip(vpx_image_t *img);
  */
 void vpx_img_free(vpx_image_t *img);
 
+void vpx_img_chroma_subsampling(vpx_img_fmt_t fmt, unsigned int *subsampling_x,
+                                unsigned int *subsampling_y);
+int vpx_img_use_highbitdepth(vpx_img_fmt_t fmt);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

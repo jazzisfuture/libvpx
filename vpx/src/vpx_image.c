@@ -50,24 +50,7 @@ static vpx_image_t *img_alloc_helper(vpx_image_t *img, vpx_img_fmt_t fmt,
     default: bps = 16; break;
   }
 
-  /* Get chroma shift values for this format */
-  switch (fmt) {
-    case VPX_IMG_FMT_I420:
-    case VPX_IMG_FMT_YV12:
-    case VPX_IMG_FMT_I422:
-    case VPX_IMG_FMT_I42016:
-    case VPX_IMG_FMT_I42216: xcs = 1; break;
-    default: xcs = 0; break;
-  }
-
-  switch (fmt) {
-    case VPX_IMG_FMT_I420:
-    case VPX_IMG_FMT_I440:
-    case VPX_IMG_FMT_YV12:
-    case VPX_IMG_FMT_I42016:
-    case VPX_IMG_FMT_I44016: ycs = 1; break;
-    default: ycs = 0; break;
-  }
+  vpx_img_chroma_subsampling(fmt, &xcs, &ycs);
 
   /* Calculate storage sizes. If the buffer was allocated externally, the width
    * and height shouldn't be adjusted. */
@@ -225,4 +208,29 @@ void vpx_img_free(vpx_image_t *img) {
 
     if (img->self_allocd) free(img);
   }
+}
+
+void vpx_img_chroma_subsampling(vpx_img_fmt_t fmt, unsigned int *subsampling_x,
+                                unsigned int *subsampling_y) {
+  switch (fmt) {
+    case VPX_IMG_FMT_I420:
+    case VPX_IMG_FMT_YV12:
+    case VPX_IMG_FMT_I422:
+    case VPX_IMG_FMT_I42016:
+    case VPX_IMG_FMT_I42216: *subsampling_x = 1; break;
+    default: *subsampling_x = 0; break;
+  }
+
+  switch (fmt) {
+    case VPX_IMG_FMT_I420:
+    case VPX_IMG_FMT_I440:
+    case VPX_IMG_FMT_YV12:
+    case VPX_IMG_FMT_I42016:
+    case VPX_IMG_FMT_I44016: *subsampling_y = 1; break;
+    default: *subsampling_y = 0; break;
+  }
+}
+
+int vpx_img_use_highbitdepth(vpx_img_fmt_t fmt) {
+  return fmt & VPX_IMG_FMT_HIGHBITDEPTH;
 }
