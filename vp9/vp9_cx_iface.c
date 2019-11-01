@@ -1880,3 +1880,17 @@ FRAME_INFO vp9_get_frame_info(const VP9EncoderConfig *oxcf) {
   // TODO(angiebird): Figure out how to get subsampling_x/y here
   return frame_info;
 }
+
+VP9_COMP *vp9_init_encoder(VP9EncoderConfig *oxcf, vpx_img_fmt_t img_fmt) {
+  VP9_COMP *cpi;
+  BufferPool *buffer_pool = (BufferPool *)vpx_calloc(1, sizeof(*buffer_pool));
+  vp9_initialize_enc();
+  cpi = vp9_create_compressor(oxcf, buffer_pool);
+  vp9_update_compressor_with_img_fmt(cpi, img_fmt);
+  return cpi;
+}
+
+void vp9_free_encoder(VP9_COMP *cpi) {
+  vpx_free(cpi->common.buffer_pool);
+  vp9_remove_compressor(cpi);
+}

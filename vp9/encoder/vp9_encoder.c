@@ -7697,3 +7697,23 @@ void vp9_set_row_mt(VP9_COMP *cpi) {
   else
     cpi->row_mt_bit_exact = 0;
 }
+
+void vp9_update_compressor_with_img_fmt(VP9_COMP *cpi, vpx_img_fmt_t img_fmt) {
+  const VP9EncoderConfig *oxcf = &cpi->oxcf;
+  unsigned int subsampling_x, subsampling_y;
+  const int use_highbitdepth = vpx_img_use_highbitdepth(img_fmt);
+  vpx_img_chroma_subsampling(img_fmt, &subsampling_x, &subsampling_y);
+
+  update_initial_width(cpi, use_highbitdepth, subsampling_x, subsampling_y);
+#if CONFIG_VP9_TEMPORAL_DENOISING
+  setup_denoiser_buffer(cpi);
+#endif
+
+  assert(cpi->lookahead == NULL);
+  cpi->lookahead = vp9_lookahead_init(oxcf->width, oxcf->height, subsampling_x,
+                                      subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                      use_highbitdepth,
+#endif
+                                      oxcf->lag_in_frames);
+}

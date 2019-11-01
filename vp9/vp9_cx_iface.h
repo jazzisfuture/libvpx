@@ -22,6 +22,9 @@ VP9EncoderConfig vp9_get_encoder_config(int frame_width, int frame_height,
                                         vpx_enc_pass enc_pass);
 FRAME_INFO vp9_get_frame_info(const VP9EncoderConfig *oxcf);
 
+VP9_COMP *vp9_init_encoder(VP9EncoderConfig *oxcf, vpx_img_fmt_t img_fmt);
+void vp9_free_encoder(VP9_COMP *cpi);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
