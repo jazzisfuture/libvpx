@@ -2763,7 +2763,6 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 
 static void generate_psnr_packet(VP9_COMP *cpi) {
   struct vpx_codec_cx_pkt pkt;
-  int i;
   PSNR_STATS psnr;
 #if CONFIG_VP9_HIGHBITDEPTH
   vpx_calc_highbd_psnr(cpi->raw_source_frame, cpi->common.frame_to_show, &psnr,
@@ -2772,11 +2771,7 @@ static void generate_psnr_packet(VP9_COMP *cpi) {
   vpx_calc_psnr(cpi->raw_source_frame, cpi->common.frame_to_show, &psnr);
 #endif
 
-  for (i = 0; i < 4; ++i) {
-    pkt.data.psnr.samples[i] = psnr.samples[i];
-    pkt.data.psnr.sse[i] = psnr.sse[i];
-    pkt.data.psnr.psnr[i] = psnr.psnr[i];
-  }
+  pkt.data.psnr = psnr;
   pkt.kind = VPX_CODEC_PSNR_PKT;
   if (cpi->use_svc)
     cpi->svc
