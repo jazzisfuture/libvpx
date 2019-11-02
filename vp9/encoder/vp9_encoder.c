@@ -2773,13 +2773,9 @@ static void generate_psnr_packet(VP9_COMP *cpi) {
 
   pkt.data.psnr = psnr;
   pkt.kind = VPX_CODEC_PSNR_PKT;
-  if (cpi->use_svc)
-    cpi->svc
-        .layer_context[cpi->svc.spatial_layer_id *
-                       cpi->svc.number_temporal_layers]
-        .psnr_pkt = pkt.data.psnr;
-  else
+  if (!cpi->use_svc) {
     vpx_codec_pkt_list_add(cpi->output_pkt_list, &pkt);
+  }
 }
 
 int vp9_use_as_reference(VP9_COMP *cpi, int ref_frame_flags) {
