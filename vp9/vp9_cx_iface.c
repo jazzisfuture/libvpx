@@ -1227,6 +1227,17 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
            -1 != vp9_get_compressed_data(cpi, &lib_flags, &size, cx_data,
                                          &dst_time_stamp, &dst_end_time_stamp,
                                          !img)) {
+      // Pack psnr pkt
+      if (size > 0 && !cpi->use_svc) {
+        // TODO(angiebird): Figure out while we don't need psnr pkt when use_svc
+        // is on
+        PSNR_STATS psnr;
+        if (vp9_get_psnr(cpi, &psnr)) {
+          vpx_codec_cx_pkt_t psnr_pkt = get_psnr_pkt(&psnr);
+          vpx_codec_pkt_list_add(&ctx->pkt_list.head, &psnr_pkt);
+        }
+      }
+
       if (size || (cpi->use_svc && cpi->svc.skip_enhancement_layer)) {
         // Pack invisible frames with the next visible frame
         if (!cpi->common.show_frame ||

@@ -1061,6 +1061,8 @@ void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 
 void vp9_set_row_mt(VP9_COMP *cpi);
 
+int vp9_get_psnr(const VP9_COMP *cpi, PSNR_STATS *psnr);
+
 #define LAYER_IDS_TO_IDX(sl, tl, num_tl) ((sl) * (num_tl) + (tl))
 
 #ifdef __cplusplus

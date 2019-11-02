@@ -194,6 +194,13 @@ typedef struct vpx_codec_cx_pkt {
   } data;                                               /**< packet data */
 } vpx_codec_cx_pkt_t; /**< alias for struct vpx_codec_cx_pkt */
 
+static INLINE vpx_codec_cx_pkt_t get_psnr_pkt(const PSNR_STATS *psnr) {
+  vpx_codec_cx_pkt_t pkt;
+  pkt.kind = VPX_CODEC_PSNR_PKT;
+  pkt.data.psnr = *psnr;
+  return pkt;
+}
+
 /*!\brief Encoder return output buffer callback
  *
  * This callback function, when registered, returns with packets when each
