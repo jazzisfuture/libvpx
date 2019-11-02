@@ -29,6 +29,7 @@
 extern "C" {
 #endif
 
+#include "vpx_dsp/psnr.h"
 #include "./vpx_codec.h"
 
 /*! Temporal Scalability: Maximum length of the sequence defining frame
@@ -181,12 +182,8 @@ typedef struct vpx_codec_cx_pkt {
     } frame;                            /**< data for compressed frame packet */
     vpx_fixed_buf_t twopass_stats;      /**< data for two-pass packet */
     vpx_fixed_buf_t firstpass_mb_stats; /**< first pass mb packet */
-    struct vpx_psnr_pkt {
-      unsigned int samples[4]; /**< Number of samples, total/y/u/v */
-      uint64_t sse[4];         /**< sum squared error, total/y/u/v */
-      double psnr[4];          /**< PSNR, total/y/u/v */
-    } psnr;                    /**< data for PSNR packet */
-    vpx_fixed_buf_t raw;       /**< data for arbitrary packets */
+    PSNR_STATS psnr;                    /**< data for PSNR packet */
+    vpx_fixed_buf_t raw;                /**< data for arbitrary packets */
 
     /* This packet size is fixed to allow codecs to extend this
      * interface without having to manage storage for raw packets,
