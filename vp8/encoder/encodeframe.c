@@ -59,23 +59,16 @@ unsigned int b_modes[14] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
  */
 #define VP8_ACTIVITY_AVG_MIN (64)
 
-/* Stub for alternative experimental activity measures. */
-static unsigned int alt_activity_measure(VP8_COMP *cpi, MACROBLOCK *x,
-                                         int use_dc_pred) {
-  return vp8_encode_intra(cpi, x, use_dc_pred);
-}
-
 /* Measure the activity of the current macroblock
  * What we measure here is TBD so abstracted to this function
  */
-static unsigned int mb_activity_measure(VP8_COMP *cpi, MACROBLOCK *x,
-                                        int mb_row, int mb_col) {
+static unsigned int mb_activity_measure(MACROBLOCK *x, int mb_row, int mb_col) {
   unsigned int mb_activity;
 
   int use_dc_pred = (mb_col || mb_row) && (!mb_col || !mb_row);
 
   /* Or use an alternative. */
-  mb_activity = alt_activity_measure(cpi, x, use_dc_pred);
+  mb_activity = vp8_encode_intra(x, use_dc_pred);
 
   if (mb_activity < VP8_ACTIVITY_AVG_MIN) mb_activity = VP8_ACTIVITY_AVG_MIN;
 
@@ -120,7 +113,7 @@ static void build_activity_map(VP8_COMP *cpi) {
       vp8_copy_mem16x16(x->src.y_buffer, x->src.y_stride, x->thismb, 16);
 
       /* measure activity */
-      mb_activity = mb_activity_measure(cpi, x, mb_row, mb_col);
+      mb_activity = mb_activity_measure(x, mb_row, mb_col);
 
       /* Keep frame sum */
       activity_sum += mb_activity;
