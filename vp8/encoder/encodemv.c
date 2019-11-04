@@ -189,7 +189,7 @@ static void write_component_probs(vp8_writer *const w,
                                   const struct mv_context *default_mvc_,
                                   const struct mv_context *update_mvc,
                                   const unsigned int events[MVvals],
-                                  unsigned int rc, int *updated) {
+                                  int *updated) {
   vp8_prob *Pcur = cur_mvc->prob;
   const vp8_prob *default_mvc = default_mvc_->prob;
   const vp8_prob *Pupdate = update_mvc->prob;
@@ -202,7 +202,6 @@ static void write_component_probs(vp8_writer *const w,
 
   vp8_prob Pnew[MVPcount];
 
-  (void)rc;
   vp8_copy_array(Pnew, default_mvc, MVPcount);
 
   vp8_zero(is_short_ct) vp8_zero(sign_ct) vp8_zero(bit_ct) vp8_zero(short_ct)
@@ -306,11 +305,9 @@ void vp8_write_mvprobs(VP8_COMP *cpi) {
   MV_CONTEXT *mvc = cpi->common.fc.mvc;
   int flags[2] = { 0, 0 };
   write_component_probs(w, &mvc[0], &vp8_default_mv_context[0],
-                        &vp8_mv_update_probs[0], cpi->mb.MVcount[0], 0,
-                        &flags[0]);
+                        &vp8_mv_update_probs[0], cpi->mb.MVcount[0], &flags[0]);
   write_component_probs(w, &mvc[1], &vp8_default_mv_context[1],
-                        &vp8_mv_update_probs[1], cpi->mb.MVcount[1], 1,
-                        &flags[1]);
+                        &vp8_mv_update_probs[1], cpi->mb.MVcount[1], &flags[1]);
 
   if (flags[0] || flags[1]) {
     vp8_build_component_cost_table(
