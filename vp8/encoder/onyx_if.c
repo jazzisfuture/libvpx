@@ -2101,16 +2101,7 @@ void vp8_remove_compressor(VP8_COMP **comp) {
   if (!cpi) return;
 
   if (cpi && (cpi->common.current_video_frame > 0)) {
-#if !CONFIG_REALTIME_ONLY
-
-    if (cpi->pass == 2) {
-      vp8_end_second_pass(cpi);
-    }
-
-#endif
-
 #if CONFIG_INTERNAL_STATS
-
     if (cpi->pass != 1) {
       FILE *f = fopen("opsnr.stt", "a");
       double time_encoded =

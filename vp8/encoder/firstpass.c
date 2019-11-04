@@ -1332,8 +1332,6 @@ void vp8_init_second_pass(VP8_COMP *cpi) {
   }
 }
 
-void vp8_end_second_pass(VP8_COMP *cpi) { (void)cpi; }
-
 /* This function gives and estimate of how badly we believe the prediction
  * quality is decaying from frame to frame.
  */
