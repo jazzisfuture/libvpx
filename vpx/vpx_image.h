@@ -18,6 +18,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <stdio.h>
 
 /*!\brief Current ABI version number
  *
@@ -219,6 +220,14 @@ void vpx_img_chroma_subsampling(vpx_img_fmt_t fmt, unsigned int *subsampling_x,
  *
  */
 int vpx_img_use_highbitdepth(vpx_img_fmt_t fmt);
+
+int vpx_img_plane_width(const vpx_image_t *img, int plane);
+
+int vpx_img_plane_height(const vpx_image_t *img, int plane);
+
+void vpx_img_write(const vpx_image_t *img, FILE *file);
+
+int vpx_img_read(vpx_image_t *img, FILE *file);
 
 #ifdef __cplusplus
 }  // extern "C"
