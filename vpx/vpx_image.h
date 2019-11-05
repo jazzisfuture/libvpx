@@ -18,6 +18,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <stdio.h>
 
 /*!\brief Current ABI version number
  *
@@ -219,6 +220,40 @@ void vpx_img_chroma_subsampling(vpx_img_fmt_t fmt, unsigned int *subsampling_x,
  *
  */
 int vpx_img_use_highbitdepth(vpx_img_fmt_t fmt);
+
+/*!\brief Get plane width of the image.
+ *
+ * \param[in]    img       Image descriptor
+ *
+ * \param[in]    plane     Plane index
+ */
+int vpx_img_plane_width(const vpx_image_t *img, int plane);
+
+/*!\brief Get plane height of the image.
+ *
+ * \param[in]    img       Image descriptor
+ *
+ * \param[in]    plane     Plane index
+ */
+int vpx_img_plane_height(const vpx_image_t *img, int plane);
+
+/*!\brief Write image into a file in y4m format
+ *
+ * \param[in]    img       Image descriptor
+ *
+ * \param[in]    file      File pointer
+ */
+void vpx_img_write(const vpx_image_t *img, FILE *file);
+
+/*!\brief Read image from a file in y4m format
+ *
+ * \param[in]    img       Image descriptor
+ *
+ * \param[in]    file      File pointer
+ *
+ * \return 1 if the image is read successfully, otherwise return 0.
+ */
+int vpx_img_read(vpx_image_t *img, FILE *file);
 
 #ifdef __cplusplus
 }  // extern "C"
