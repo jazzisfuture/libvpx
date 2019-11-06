@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3b779950_87dac31b",
+        "filename": "vpx/vpx_image.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-11-06T01:28:08Z",
+      "side": 1,
+      "message": "this changes the ABI, something we\u0027re trying to avoid for the 1.8.2 release:\nhttps://crbug.com/webm/1661\n\nI believe there may have been an attempt to do something like this before, but these were only meant to be utilities for the examples not provided by the main library.",
+      "revId": "965147670ce56865114432c0461266c34ec67ae5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
