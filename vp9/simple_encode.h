@@ -20,6 +20,9 @@ class SimpleEncode {
   // Free the encoder
   void EndEncode();
 
+  // Encode a frame
+  void EncodeFrame(char *cx_data, size_t *size, size_t max_size);
+
  private:
   class impl;
   int frame_width;
