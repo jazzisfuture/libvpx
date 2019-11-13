@@ -23,7 +23,7 @@ class SimpleEncode {
  public:
   SimpleEncode(int frame_width, int frame_height, int frame_rate_num,
                int frame_rate_den, int target_bitrate, int num_frames,
-               FILE *file);
+               const char *infile_path);
   ~SimpleEncode();
 
   // Make encoder compute the first pass stats and store it internally for
