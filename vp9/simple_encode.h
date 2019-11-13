@@ -10,6 +10,7 @@ enum FrameType {
 struct EncodeFrameResult {
   int show_idx;
   FrameType frame_type;
+  size_t coding_data_bit_size;
   size_t coding_data_size;
   // The EncodeFrame will allocate a buffer, write the coding data into the
   // buffer and give the ownership of the buffer to coding_data
