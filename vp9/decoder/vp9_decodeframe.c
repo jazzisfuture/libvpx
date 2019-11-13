@@ -529,15 +529,13 @@ static void high_build_mc_border(const uint8_t *src8, int src_stride,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_VP9_HIGHBITDEPTH
-static void extend_and_predict(const uint8_t *buf_ptr1, int pre_buf_stride,
-                               int x0, int y0, int b_w, int b_h,
-                               int frame_width, int frame_height,
-                               int border_offset, uint8_t *const dst,
-                               int dst_buf_stride, int subpel_x, int subpel_y,
-                               const InterpKernel *kernel,
-                               const struct scale_factors *sf, MACROBLOCKD *xd,
-                               int w, int h, int ref, int xs, int ys) {
-  DECLARE_ALIGNED(16, uint16_t, mc_buf_high[80 * 2 * 80 * 2]);
+static void extend_and_predict(
+    const uint8_t *buf_ptr1, int pre_buf_stride, int x0, int y0, int b_w,
+    int b_h, int frame_width, int frame_height, int border_offset,
+    uint8_t *const dst, int dst_buf_stride, int subpel_x, int subpel_y,
+    const InterpKernel *kernel, const struct scale_factors *sf, MACROBLOCKD *xd,
+    int w, int h, int ref, int xs, int ys, uint8_t *mc_buf) {
+  uint16_t *mc_buf_high = (uint16_t *)mc_buf;
 
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     high_build_mc_border(buf_ptr1, pre_buf_stride, mc_buf_high, b_w, x0, y0,
@@ -561,8 +559,7 @@ static void extend_and_predict(const uint8_t *buf_ptr1, int pre_buf_stride,
                                int dst_buf_stride, int subpel_x, int subpel_y,
                                const InterpKernel *kernel,
                                const struct scale_factors *sf, int w, int h,
-                               int ref, int xs, int ys) {
-  DECLARE_ALIGNED(16, uint8_t, mc_buf[80 * 2 * 80 * 2]);
+                               int ref, int xs, int ys, uint8_t *mc_buf) {
   const uint8_t *buf_ptr;
 
   build_mc_border(buf_ptr1, pre_buf_stride, mc_buf, b_w, x0, y0, b_w, b_h,
@@ -579,7 +576,7 @@ static void dec_build_inter_predictors(
     int mi_x, int mi_y, const InterpKernel *kernel,
     const struct scale_factors *sf, struct buf_2d *pre_buf,
     struct buf_2d *dst_buf, const MV *mv, RefCntBuffer *ref_frame_buf,
-    int is_scaled, int ref) {
+    int is_scaled, int ref, uint8_t *mc_buf) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   uint8_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
   MV32 scaled_mv;
@@ -693,7 +690,7 @@ static void dec_build_inter_predictors(
 #if CONFIG_VP9_HIGHBITDEPTH
                          xd,
 #endif
-                         w, h, ref, xs, ys);
+                         w, h, ref, xs, ys, mc_buf);
       return;
     }
   }
@@ -755,10 +752,10 @@ static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
         for (y = 0; y < num_4x4_h; ++y) {
           for (x = 0; x < num_4x4_w; ++x) {
             const MV mv = average_split_mvs(pd, mi, ref, i++);
-            dec_build_inter_predictors(xd, plane, n4w_x4, n4h_x4, 4 * x, 4 * y,
-                                       4, 4, mi_x, mi_y, kernel, sf, pre_buf,
-                                       dst_buf, &mv, ref_frame_buf, is_scaled,
-                                       ref);
+            dec_build_inter_predictors(
+                xd, plane, n4w_x4, n4h_x4, 4 * x, 4 * y, 4, 4, mi_x, mi_y,
+                kernel, sf, pre_buf, dst_buf, &mv, ref_frame_buf, is_scaled,
+                ref, pbi->tile_worker_data->predictor_buf);
           }
         }
       }
@@ -774,7 +771,8 @@ static void dec_build_inter_predictors_sb(VP9Decoder *const pbi,
         struct buf_2d *const pre_buf = &pd->pre[ref];
         dec_build_inter_predictors(xd, plane, n4w_x4, n4h_x4, 0, 0, n4w_x4,
                                    n4h_x4, mi_x, mi_y, kernel, sf, pre_buf,
-                                   dst_buf, &mv, ref_frame_buf, is_scaled, ref);
+                                   dst_buf, &mv, ref_frame_buf, is_scaled, ref,
+                                   pbi->tile_worker_data->predictor_buf);
       }
     }
   }

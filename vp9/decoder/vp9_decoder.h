@@ -56,6 +56,8 @@ typedef struct TileWorkerData {
   /* dqcoeff are shared by all the planes. So planes must be decoded serially */
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
   struct vpx_internal_error_info error_info;
+  DECLARE_ALIGNED(16, uint8_t,
+                  predictor_buf[80 * 2 * 80 * 2 * sizeof(uint16_t)]);
 } TileWorkerData;
 
 typedef void (*process_block_fn_t)(TileWorkerData *twd,
