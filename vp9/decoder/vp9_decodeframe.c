@@ -537,7 +537,7 @@ static void extend_and_predict(const uint8_t *buf_ptr1, int pre_buf_stride,
                                const InterpKernel *kernel,
                                const struct scale_factors *sf, MACROBLOCKD *xd,
                                int w, int h, int ref, int xs, int ys) {
-  DECLARE_ALIGNED(16, uint16_t, mc_buf_high[80 * 2 * 80 * 2]);
+  DECLARE_ALIGNED(16, uint16_t, mc_buf_high[80 * 2 * 80 * 2] __attribute__((uninitialized)));
 
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     high_build_mc_border(buf_ptr1, pre_buf_stride, mc_buf_high, b_w, x0, y0,
@@ -562,7 +562,7 @@ static void extend_and_predict(const uint8_t *buf_ptr1, int pre_buf_stride,
                                const InterpKernel *kernel,
                                const struct scale_factors *sf, int w, int h,
                                int ref, int xs, int ys) {
-  DECLARE_ALIGNED(16, uint8_t, mc_buf[80 * 2 * 80 * 2]);
+  DECLARE_ALIGNED(16, uint8_t, mc_buf[80 * 2 * 80 * 2] __attribute__((uninitialized)));
   const uint8_t *buf_ptr;
 
   build_mc_border(buf_ptr1, pre_buf_stride, mc_buf, b_w, x0, y0, b_w, b_h,
