@@ -87,6 +87,8 @@ get_frame_type_from_update_type(FRAME_UPDATE_TYPE update_type) {
 static void update_encode_frame_result(
     EncodeFrameResult *encode_frame_result,
     const ENCODE_FRAME_RESULT *encode_frame_info) {
+  encode_frame_result->coding_data_bit_size =
+      encode_frame_result->coding_data_size * 8;
   encode_frame_result->show_idx = encode_frame_info->show_idx;
   encode_frame_result->frame_type =
       get_frame_type_from_update_type(encode_frame_info->update_type);
