@@ -51,4 +51,10 @@
 #define VPX_WITH_ASAN 0
 #endif  // __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
 
+#if __has_attribute(uninitialized)
+#define VPX_UNINITIALIZED __attribute__((uninitialized))
+#else
+#define VPX_UNINITIALIZED
+#endif  // __has_attribute(uninitialized)
+
 #endif  // VPX_VPX_PORTS_MEM_H_
