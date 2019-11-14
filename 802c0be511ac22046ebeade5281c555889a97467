@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "958eac8c_b1bfe8bc",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-11-14T01:07:27Z",
+      "side": 1,
+      "message": "https://google.github.io/styleguide/cppguide.html#The__define_Guard",
+      "revId": "802c0be511ac22046ebeade5281c555889a97467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
