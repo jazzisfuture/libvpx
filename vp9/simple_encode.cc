@@ -6,6 +6,8 @@
 #include "vp9/simple_encode.h"
 #include "vp9/vp9_cx_iface.h"
 
+namespace vp9_simple_encode {
+
 // TODO(angiebird): Merge this function with vpx_img_plane_width()
 static int img_plane_width(const vpx_image_t *img, int plane) {
   if (plane > 0 && img->x_chroma_shift > 0)
@@ -284,3 +286,5 @@ int SimpleEncode::GetCodingFrameNum() {
 }
 
 SimpleEncode::~SimpleEncode() {}
+
+}  // namespace vp9_simple_encode
