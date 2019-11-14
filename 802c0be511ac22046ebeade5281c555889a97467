@@ -16,6 +16,24 @@
       "revId": "802c0be511ac22046ebeade5281c555889a97467",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d72175d2_87e016e6",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-11-14T19:53:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "958eac8c_b1bfe8bc",
+      "revId": "802c0be511ac22046ebeade5281c555889a97467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
