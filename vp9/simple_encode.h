@@ -13,6 +13,8 @@
 #include <memory>
 #include <vector>
 
+namespace vp9_simple_encode {
+
 enum FrameType {
   kKeyFrame = 0,
   kInterFrame,
@@ -39,7 +41,7 @@ class SimpleEncode {
                const char *infile_path);
   ~SimpleEncode();
 
-  // Make encoder compute the first pass stats and store it internally for
+  // Makes encoder compute the first pass stats and store it internally for
   // future encode
   void ComputeFirstPassStats();
 
@@ -81,4 +83,6 @@ class SimpleEncode {
   SimpleEncode(SimpleEncode &&);
   SimpleEncode &operator=(SimpleEncode &&);
 };
+
+}  // namespace vp9_simple_encode
 #endif  // VPX_VP9_SIMPLE_ENCODE
