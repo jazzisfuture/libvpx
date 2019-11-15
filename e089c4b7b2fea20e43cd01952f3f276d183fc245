@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "102fb48d_b229a58d",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-11-15T23:18:11Z",
+      "side": 1,
+      "message": "Okay, I will write a new CL to modify this part.",
+      "parentUuid": "84ce1605_eeaf98a2",
+      "revId": "e089c4b7b2fea20e43cd01952f3f276d183fc245",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "654906e5_f5a3de71",
         "filename": "vp9/simple_encode.cc",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "63d52bed_f04ae13c",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-11-15T23:18:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "654906e5_f5a3de71",
+      "revId": "e089c4b7b2fea20e43cd01952f3f276d183fc245",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e055ef4_b8299a84",
         "filename": "vp9/simple_encode.h",
         "patchSetId": 3
@@ -50,6 +86,24 @@
       "revId": "e089c4b7b2fea20e43cd01952f3f276d183fc245",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b904124c_90685514",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-11-15T23:18:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e055ef4_b8299a84",
+      "revId": "e089c4b7b2fea20e43cd01952f3f276d183fc245",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
