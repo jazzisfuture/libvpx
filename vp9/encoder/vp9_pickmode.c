@@ -1764,6 +1764,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       cpi->rc.high_source_sad ||
       (cpi->use_svc && cpi->svc.high_source_sad_superframe);
 
+  memset(ctx->pred_buf, 0, sizeof(pred_buf));
+#if CONFIG_VP9_HIGHBITDEPTH
+  memset(ctx->pred_buf_16, 0, sizeof(pred_buf_16));
+#endif
+
   init_best_pickmode(&best_pickmode);
 
   x->encode_breakout = seg->enabled
