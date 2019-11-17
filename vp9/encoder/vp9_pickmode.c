@@ -1764,6 +1764,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
       cpi->rc.high_source_sad ||
       (cpi->use_svc && cpi->svc.high_source_sad_superframe);
 
+  memset(ctx->pred_buf, 0, sizeof(ctx->pred_buf));
+#if CONFIG_VP9_HIGHBITDEPTH
+  memset(ctx->pred_buf_16, 0, sizeof(ctx->pred_buf_16));
+#endif
+
   init_best_pickmode(&best_pickmode);
 
   x->encode_breakout = seg->enabled
@@ -1824,11 +1829,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     for (i = 0; i < 3; i++) {
 #if CONFIG_VP9_HIGHBITDEPTH
       if (cm->use_highbitdepth)
-        tmp[i].data = CONVERT_TO_BYTEPTR(&pred_buf_16[pixels_in_block * i]);
+        tmp[i].data = CONVERT_TO_BYTEPTR(&(ctx->pred_buf_16[pixels_in_block * i]));
       else
-        tmp[i].data = &pred_buf[pixels_in_block * i];
+        tmp[i].data = &(ctx->pred_buf[pixels_in_block * i]);
 #else
-      tmp[i].data = &pred_buf[pixels_in_block * i];
+      tmp[i].data = &(ctx->pred_buf[pixels_in_block * i]);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       tmp[i].stride = bw;
       tmp[i].in_use = 0;
