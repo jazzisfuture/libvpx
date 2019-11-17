@@ -1719,10 +1719,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
   // process.
   // tmp[3] points to dst buffer, and the other 3 point to allocated buffers.
   PRED_BUFFER tmp[4];
-  DECLARE_ALIGNED(16, uint8_t, pred_buf[3 * 64 * 64]);
-#if CONFIG_VP9_HIGHBITDEPTH
-  DECLARE_ALIGNED(16, uint16_t, pred_buf_16[3 * 64 * 64]);
-#endif
   struct buf_2d orig_dst = pd->dst;
   PRED_BUFFER *this_mode_pred = NULL;
   const int pixels_in_block = bh * bw;
@@ -1824,11 +1820,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x, TileDataEnc *tile_data,
     for (i = 0; i < 3; i++) {
 #if CONFIG_VP9_HIGHBITDEPTH
       if (cm->use_highbitdepth)
-        tmp[i].data = CONVERT_TO_BYTEPTR(&pred_buf_16[pixels_in_block * i]);
+        tmp[i].data =
+            CONVERT_TO_BYTEPTR(&ctx->pred_buf_16[pixels_in_block * i]);
       else
-        tmp[i].data = &pred_buf[pixels_in_block * i];
+        tmp[i].data = &ctx->pred_buf[pixels_in_block * i];
 #else
-      tmp[i].data = &pred_buf[pixels_in_block * i];
+      tmp[i].data = &ctx->pred_buf[pixels_in_block * i];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       tmp[i].stride = bw;
       tmp[i].in_use = 0;
