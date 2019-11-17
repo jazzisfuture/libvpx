@@ -78,6 +78,13 @@ typedef struct {
   int32_t sum_y_eobs;
   // Skip certain ref frames during RD search of rectangular partitions.
   uint8_t skip_ref_frame_mask;
+
+  // Keep away from vp9_pick_inter_mode stack to improve
+  // -ftrivial-auto-var-init=pattern performance.
+  DECLARE_ALIGNED(16, uint8_t, pred_buf[3 * 64 * 64]);
+#if CONFIG_VP9_HIGHBITDEPTH
+  DECLARE_ALIGNED(16, uint16_t, pred_buf_16[3 * 64 * 64]);
+#endif
 } PICK_MODE_CONTEXT;
 
 typedef struct PC_TREE {
