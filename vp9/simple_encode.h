@@ -85,4 +85,4 @@ class SimpleEncode {
 };
 
 }  // namespace vp9
-#endif  // VPX_VP9_SIMPLE_ENCODE
+#endif  // VPX_VP9_SIMPLE_ENCODE_H_
