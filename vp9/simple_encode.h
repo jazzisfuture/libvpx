@@ -10,6 +10,7 @@
 
 #ifndef VPX_VP9_SIMPLE_ENCODE_H_
 #define VPX_VP9_SIMPLE_ENCODE_H_
+#include <cstdio>
 #include <memory>
 #include <vector>
 
@@ -85,4 +86,4 @@ class SimpleEncode {
 };
 
 }  // namespace vp9
-#endif  // VPX_VP9_SIMPLE_ENCODE
+#endif  // VPX_VP9_SIMPLE_ENCODE_H_
