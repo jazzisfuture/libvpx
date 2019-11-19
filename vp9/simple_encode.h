@@ -10,6 +10,7 @@
 
 #ifndef VPX_VP9_SIMPLE_ENCODE_H_
 #define VPX_VP9_SIMPLE_ENCODE_H_
+#include <cstdio>
 #include <memory>
 #include <vector>
 
@@ -41,7 +42,6 @@ class SimpleEncode {
                const char *infile_path);
   ~SimpleEncode();
   SimpleEncode(SimpleEncode &&) = delete;
-  SimpleEncode &operator=(SimpleEncode &&) = delete;
 
   // Makes encoder compute the first pass stats and store it internally for
   // future encode
@@ -80,9 +80,9 @@ class SimpleEncode {
   int frame_rate_den;
   int target_bitrate;
   int num_frames;
-  FILE *file;
+  std::FILE *file;
   std::unique_ptr<impl> impl_ptr;
 };
 
 }  // namespace vp9
-#endif  // VPX_VP9_SIMPLE_ENCODE
+#endif  // VPX_VP9_SIMPLE_ENCODE_H_
