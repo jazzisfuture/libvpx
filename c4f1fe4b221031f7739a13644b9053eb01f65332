@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f5bbceba_d79c8ab0",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2019-11-19T23:51:47Z",
+      "side": 1,
+      "message": "const\n\nCould be added in the future cl after this is checked in.",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 111,
+        "endChar": 7
+      },
+      "revId": "c4f1fe4b221031f7739a13644b9053eb01f65332",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30806f47_b66c1d39",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2019-11-19T23:51:47Z",
+      "side": 1,
+      "message": "Better be:\n#endif  // CONFIG_RATE_CTRL\n\nAgain, can be done in future cl.",
+      "range": {
+        "startLine": 542,
+        "startChar": 0,
+        "endLine": 542,
+        "endChar": 6
+      },
+      "revId": "c4f1fe4b221031f7739a13644b9053eb01f65332",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
