@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f9e15e2c_7d61954c",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2019-11-19T23:55:36Z",
+      "side": 1,
+      "message": "I think this should be 1024?\n1kb \u003d 1024b.",
+      "range": {
+        "startLine": 20,
+        "startChar": 26,
+        "endLine": 20,
+        "endChar": 30
+      },
+      "revId": "6a950fee925c341352b6b0d2aef87293ac66f69c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffeae2d8_f4ba42ca",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2019-11-19T23:55:36Z",
+      "side": 1,
+      "message": "Give this magic number a name. like\noff_target_threshold.",
+      "range": {
+        "startLine": 88,
+        "startChar": 44,
+        "endLine": 88,
+        "endChar": 47
+      },
+      "revId": "6a950fee925c341352b6b0d2aef87293ac66f69c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
