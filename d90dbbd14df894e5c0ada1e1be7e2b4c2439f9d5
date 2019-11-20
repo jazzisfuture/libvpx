@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f6b978c1_6b300aaf",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1381831
+      },
+      "writtenOn": "2019-11-20T01:23:13Z",
+      "side": 1,
+      "message": "this is not pure cosmetic? consider updating CL description?",
+      "range": {
+        "startLine": 22,
+        "startChar": 26,
+        "endLine": 22,
+        "endChar": 30
+      },
+      "revId": "d90dbbd14df894e5c0ada1e1be7e2b4c2439f9d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
