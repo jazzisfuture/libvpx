@@ -22,6 +22,30 @@
       "revId": "1b0980402fba1de3fb29689d2409e9aca79c217a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7f15614_6d10c63d",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-11-20T01:05:49Z",
+      "side": 1,
+      "message": "This is fix here\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/1925529/3",
+      "parentUuid": "89da15c3_dc4d8444",
+      "range": {
+        "startLine": 84,
+        "startChar": 31,
+        "endLine": 84,
+        "endChar": 32
+      },
+      "revId": "1b0980402fba1de3fb29689d2409e9aca79c217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
