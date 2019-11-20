@@ -18,7 +18,7 @@ const char infile_path[] = "bus_352x288_420_f20_b8.yuv";
 static double get_bit_rate_in_kpbs(size_t bit_size, int num_frames,
                                    int frame_rate_num, int frame_rate_den) {
   return static_cast<double>(bit_size) / num_frames * frame_rate_num /
-         frame_rate_den / 1000.;
+         frame_rate_den / 1024.0;
 }
 
 TEST(SimpleEncode, ComputeFirstPassStats) {
