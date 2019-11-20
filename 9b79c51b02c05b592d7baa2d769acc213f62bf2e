@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb9b9d9b_c1be0dff",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 12
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1381831
+      },
+      "writtenOn": "2019-11-20T18:42:51Z",
+      "side": 1,
+      "message": "nit: let\u0027s add a newline after header guard",
+      "range": {
+        "startLine": 12,
+        "startChar": 8,
+        "endLine": 12,
+        "endChar": 32
+      },
+      "revId": "9b79c51b02c05b592d7baa2d769acc213f62bf2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55501392_eda30920",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 12
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1381831
+      },
+      "writtenOn": "2019-11-20T18:42:51Z",
+      "side": 1,
+      "message": "and new line before.",
+      "range": {
+        "startLine": 84,
+        "startChar": 11,
+        "endLine": 84,
+        "endChar": 32
+      },
+      "revId": "9b79c51b02c05b592d7baa2d769acc213f62bf2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
