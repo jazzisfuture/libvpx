@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "710bbc5c_e6f0a3fd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-11-21T00:05:03Z",
+      "side": 1,
+      "message": "this also didn\u0027t get renamed yet",
+      "range": {
+        "startLine": 7,
+        "startChar": 7,
+        "endLine": 7,
+        "endChar": 24
+      },
+      "revId": "fd793d26a7f01d35b697d5513fe931e0cd561fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fa6471e3_b8284f1b",
         "filename": "test/simple_encode_test.cc",
         "patchSetId": 1
