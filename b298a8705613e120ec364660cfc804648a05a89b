@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "726fe6d1_eaab24d6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-11-22T19:42:18Z",
+      "side": 1,
+      "message": "this is just a cosmetic to add 0 to the floating point literal in line with:\n\nhttps://google.github.io/styleguide/cppguide.html#Floating_Literals",
+      "revId": "b298a8705613e120ec364660cfc804648a05a89b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
