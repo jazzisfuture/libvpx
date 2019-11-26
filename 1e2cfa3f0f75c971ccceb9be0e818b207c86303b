@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0122ec4b_cc817f04",
+        "filename": "vp9/common/vp9_thread_common.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-11-26T01:13:25Z",
+      "side": 0,
+      "message": "this is currently coming from a non-pointer struct member, but can you make this an assert to avoid any potential regression?",
+      "revId": "1e2cfa3f0f75c971ccceb9be0e818b207c86303b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
