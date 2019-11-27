@@ -211,6 +211,7 @@ void SimpleEncode::StartEncode() {
   impl_ptr_->cpi = init_encoder(&oxcf, impl_ptr_->img_fmt);
   vpx_img_alloc(&impl_ptr_->tmp_img, impl_ptr_->img_fmt, frame_width_,
                 frame_height_, 1);
+  UpdateGroupOfPicture();
   rewind(file_);
 }
 
@@ -226,6 +227,72 @@ int SimpleEncode::GetKeyFrameGroupSize(int key_frame_index) const {
   return vp9_get_frames_to_next_key(&cpi->oxcf, &cpi->frame_info,
                                     &cpi->twopass.first_pass_info,
                                     key_frame_index, cpi->rc.min_gf_interval);
+}
+
+void SimpleEncode::UpdateGroupOfPictureIndex() {
+  ++group_of_picture_->encode_frame_index;
+}
+
+static void SetGroupOfPicture(GroupOfPicture *group_of_picture,
+                              int first_is_key_frame, int use_alt_ref,
+                              int coding_frame_count) {
+  group_of_picture->encode_frame_list.clear();
+  group_of_picture->encode_frame_index = 0;
+  {
+    // First frame in the group of pictures. It's either key frame or show inter
+    // frame.
+    EncodeFrameInfo encode_frame_info;
+    if (first_is_key_frame) {
+      encode_frame_info.frame_type = kKeyFrame;
+    } else {
+      encode_frame_info.frame_type = kInterFrame;
+    }
+    encode_frame_info.show_idx = first_show_idx;
+    group_of_picture->encode_frame_list.push_back(encode_frame_info);
+  }
+
+  const int show_frame_count = coding_frame_count - use_alt_ref;
+  if (use_alt_ref) {
+    // If there is alternate reference, it is always coded at the second place.
+    // It's show index (or time stamp) is at the last of this group
+    EncodeFrameInfo encode_frame_info;
+    encode_frame_info.frame_type = kAlternateReference;
+    encode_frame_info.show_idx = first_show_idx + show_frame_count;
+  }
+
+  // Encode the rest show inter frames.
+  for (int i = 1; i < show_frame_count; ++i) {
+    EncodeFrameInfo encode_frame_info;
+    encode_frame_info.frame_type = kAlternateReference;
+    encode_frame_info.show_idx = first_show_idx + i;
+    group_of_picture->encode_frame_list.push_back(encode_frame_info);
+  }
+}
+
+void SimpleEncode::UpdateGroupOfPicture() {
+  const VP9_COMP *cpi = impl_ptr_->cpi;
+  RATE_CONTROL rc = cpi->rc;
+  const int last_gop_use_alt_ref = rc.source_alt_ref_active;
+  const int multi_layer_arf = 0;
+  const int allow_alt_ref = 1;
+  const int first_show_idx = cpi->common.current_video_frame;  // TODO
+
+  int first_is_key_frame = 0;
+  if (rc->frames_to_key == 0) {
+    rc->frames_to_key = vp9_get_frames_to_next_key(
+        oxcf, frame_info, first_pass_info, kf_show_idx, rc->min_gf_interval);
+    rc.frames_since_key = 0;
+    first_is_key_frame = 1;
+  }
+
+  int use_alt_ref;
+  const int coding_frame_count = vp9_get_gop_coding_frame_count(
+      &use_alt_ref, &cpi->oxcf, &cpi->frame_info, &cpi->twopass.first_pass_info,
+      &rc, first_show_idx, multi_layer_arf, allow_alt_ref, first_is_key_frame,
+      last_gop_use_alt_ref);
+
+  SetGroupOfPicture(&cpi->group_of_picture_, first_is_key_frame, use_alt_ref,
+                    coding_frame_count);
 }
 
 void SimpleEncode::EncodeFrame(EncodeFrameResult *encode_frame_result) {
@@ -276,6 +343,7 @@ void SimpleEncode::EncodeFrame(EncodeFrameResult *encode_frame_result) {
          max_coding_data_byte_size);
 
   update_encode_frame_result(encode_frame_result, &encode_frame_info);
+  UpdateGroupOfPicture();
 }
 
 void SimpleEncode::EncodeFrameWithQuantizeIndex(
