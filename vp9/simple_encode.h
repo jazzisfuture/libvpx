@@ -25,7 +25,13 @@ enum FrameType {
   kAlternateReference,
 };
 
+struct EncodeFrameInfo {
+  int show_idx;
+  FrameType frame_type;
+};
+
 struct EncodeFrameResult {
+  EncodeFrameInfo encode_frame_info;
   int show_idx;
   FrameType frame_type;
   size_t coding_data_bit_size;
@@ -36,6 +42,11 @@ struct EncodeFrameResult {
   double psnr;
   uint64_t sse;
   int quantize_index;
+};
+
+struct GroupOfPicture {
+  std::vector<EncodeFrameInfo> encode_frame_list;
+  int current_index;
 };
 
 class SimpleEncode {
@@ -72,6 +83,8 @@ class SimpleEncode {
   // counted.
   int GetKeyFrameGroupSize(int key_frame_index) const;
 
+  GroupOfPicture ObserveGroupOfPicture() const;
+
   // Encodes a frame
   // This function should be called after StartEncode() and before EndEncode().
   void EncodeFrame(EncodeFrameResult *encode_frame_result);
@@ -95,6 +108,8 @@ class SimpleEncode {
   int frame_rate_den_;
   int target_bitrate_;
   int num_frames_;
+  void UpdateGroupOfPicture();
+  void UpdateGroupOfPictureIndex();
   std::FILE *file_;
   std::unique_ptr<EncodeImpl> impl_ptr_;
 };

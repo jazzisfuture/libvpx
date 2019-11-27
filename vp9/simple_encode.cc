@@ -228,6 +228,8 @@ int SimpleEncode::GetKeyFrameGroupSize(int key_frame_index) const {
                                     key_frame_index, cpi->rc.min_gf_interval);
 }
 
+GroupOfPicture SimpleEncode::ObserveGroupOfPicture() const {}
+
 void SimpleEncode::EncodeFrame(EncodeFrameResult *encode_frame_result) {
   VP9_COMP *cpi = impl_ptr_->cpi;
   struct lookahead_ctx *lookahead = cpi->lookahead;
