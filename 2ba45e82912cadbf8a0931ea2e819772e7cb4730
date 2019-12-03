@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "61cab655_417f4866",
+        "filename": "vp8/encoder/firstpass.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2077,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-12-03T01:37:12Z",
+      "side": 0,
+      "message": "DOUBLE_DIVIDE_CHECK is not as helpful as the name would imply, is there something similar in vp9?",
+      "revId": "2ba45e82912cadbf8a0931ea2e819772e7cb4730",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
