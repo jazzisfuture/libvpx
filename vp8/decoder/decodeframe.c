@@ -791,16 +791,18 @@ static void setup_token_decoder(VP8D_COMP *pbi,
 
   pbi->fragments.count = num_token_partitions + 1;
 
-  for (partition_idx = 1; partition_idx < pbi->fragments.count;
-       ++partition_idx) {
-    if (vp8dx_start_decode(bool_decoder, pbi->fragments.ptrs[partition_idx],
-                           pbi->fragments.sizes[partition_idx], pbi->decrypt_cb,
-                           pbi->decrypt_state)) {
-      vpx_internal_error(&pbi->common.error, VPX_CODEC_MEM_ERROR,
-                         "Failed to allocate bool decoder %d", partition_idx);
-    }
+  if (fragment_idx > 1) {
+    for (partition_idx = 1; partition_idx < pbi->fragments.count;
+         ++partition_idx) {
+      if (vp8dx_start_decode(bool_decoder, pbi->fragments.ptrs[partition_idx],
+                             pbi->fragments.sizes[partition_idx],
+                             pbi->decrypt_cb, pbi->decrypt_state)) {
+        vpx_internal_error(&pbi->common.error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate bool decoder %d", partition_idx);
+      }
 
-    bool_decoder++;
+      bool_decoder++;
+    }
   }
 
 #if CONFIG_MULTITHREAD
