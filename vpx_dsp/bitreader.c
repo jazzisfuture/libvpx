@@ -20,7 +20,7 @@
 
 int vpx_reader_init(vpx_reader *r, const uint8_t *buffer, size_t size,
                     vpx_decrypt_cb decrypt_cb, void *decrypt_state) {
-  if (size && !buffer) {
+  if (!buffer) {
     return 1;
   } else {
     r->buffer_end = buffer + size;
