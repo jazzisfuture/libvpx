@@ -23,7 +23,8 @@ int vpx_reader_init(vpx_reader *r, const uint8_t *buffer, size_t size,
   if (size && !buffer) {
     return 1;
   } else {
-    r->buffer_end = buffer + size;
+    // Avoid "incrementing" |buffer| by |size| when both are 0.
+    r->buffer_end = buffer ? (buffer + size) : buffer;
     r->buffer = buffer;
     r->value = 0;
     r->count = -8;

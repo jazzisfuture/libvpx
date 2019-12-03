@@ -15,15 +15,16 @@
 int vp8dx_start_decode(BOOL_DECODER *br, const unsigned char *source,
                        unsigned int source_sz, vpx_decrypt_cb decrypt_cb,
                        void *decrypt_state) {
-  br->user_buffer_end = source + source_sz;
+  if (source_sz && !source) return 1;
+
+  // Avoid "incrementing" |source| by |source_sz| when both are 0.
+  br->user_buffer_end = source ? (source + source_sz) : source;
   br->user_buffer = source;
   br->value = 0;
   br->count = -8;
   br->range = 255;
   br->decrypt_cb = decrypt_cb;
   br->decrypt_state = decrypt_state;
-
-  if (source_sz && !source) return 1;
 
   /* Populate the buffer */
   vp8dx_bool_decoder_fill(br);
