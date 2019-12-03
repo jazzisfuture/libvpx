@@ -791,6 +791,12 @@ static void setup_token_decoder(VP8D_COMP *pbi,
 
   pbi->fragments.count = num_token_partitions + 1;
 
+  if (pbi->fragments.count > fragment_idx) {
+    vpx_internal_error(&pbi->common.error, VPX_CODEC_CORRUPT_FRAME,
+                       "Fewer fragments (%d) than expected (%d)",
+                       fragment_idx, pbi->fragments.count);
+  }
+
   for (partition_idx = 1; partition_idx < pbi->fragments.count;
        ++partition_idx) {
     if (vp8dx_start_decode(bool_decoder, pbi->fragments.ptrs[partition_idx],
