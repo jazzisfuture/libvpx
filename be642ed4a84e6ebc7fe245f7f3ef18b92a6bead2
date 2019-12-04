@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "101720a1_74f723f2",
+        "filename": "vp8/decoder/dboolhuff.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-12-04T19:28:49Z",
+      "side": 1,
+      "message": "If bool decoder *must* have data it would probably be worth changing this to !source_sz \u003d\u003e VPX_CODEC_CORRUPT_FRAME\n!source \u003d\u003e VPX_CODEC_MEM_ERROR",
+      "parentUuid": "8307f171_48c9421f",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 37
+      },
+      "revId": "be642ed4a84e6ebc7fe245f7f3ef18b92a6bead2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ddb175ce_fb045610",
         "filename": "vp9/decoder/vp9_decodeframe.c",
         "patchSetId": 5
