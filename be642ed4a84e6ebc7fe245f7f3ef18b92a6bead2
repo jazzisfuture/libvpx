@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8307f171_48c9421f",
+        "filename": "vp8/decoder/dboolhuff.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-12-04T19:22:30Z",
+      "side": 1,
+      "message": "This is reasonable but can be it\u0027s own change.",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 37
+      },
+      "revId": "be642ed4a84e6ebc7fe245f7f3ef18b92a6bead2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ddb175ce_fb045610",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1302,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-12-04T19:22:30Z",
+      "side": 1,
+      "message": "This was copied from vp8. vp9 does not have an EC mode. Will remove from this patchset.",
+      "range": {
+        "startLine": 1301,
+        "startChar": 2,
+        "endLine": 1302,
+        "endChar": 55
+      },
+      "revId": "be642ed4a84e6ebc7fe245f7f3ef18b92a6bead2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53c356aa_a0610785",
+        "filename": "vpx_dsp/bitreader.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2019-12-04T19:22:30Z",
+      "side": 1,
+      "message": "Neglected to revert.",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 16
+      },
+      "revId": "be642ed4a84e6ebc7fe245f7f3ef18b92a6bead2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
