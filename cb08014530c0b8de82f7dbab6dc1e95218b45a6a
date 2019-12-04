@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "72e83d0b_c87ecce4",
+        "filename": "vp8/decoder/dboolhuff.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2019-12-04T00:27:44Z",
+      "side": 1,
+      "message": "these ()s aren\u0027t strictly necessary",
+      "range": {
+        "startLine": 21,
+        "startChar": 33,
+        "endLine": 21,
+        "endChar": 34
+      },
+      "revId": "cb08014530c0b8de82f7dbab6dc1e95218b45a6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
