@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b8c82255_db105e50",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-12-09T22:15:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "018ce187_bb0255f9",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 5
+      },
+      "revId": "3c221bf71937a943c808fecb965500bbddd518aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ffb288f_7d5206c0",
         "filename": "vp9/encoder/vp9_firstpass.c",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2019-12-09T19:51:52Z",
       "side": 1,
       "message": "typically this is \u0027/*active_worst_quality\u003d*/0\u0027 (no space and an \u0027\u003d\u0027). I don\u0027t know how tolerant tools like clang-tidy are, but when the form I\u0027m suggesting is used a mismatch can be reported if the parameter name changes.",
+      "range": {
+        "startLine": 3639,
+        "startChar": 50,
+        "endLine": 3639,
+        "endChar": 76
+      },
+      "revId": "3c221bf71937a943c808fecb965500bbddd518aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2c118d64_e6967eac",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3639,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-12-09T22:15:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ffb288f_7d5206c0",
       "range": {
         "startLine": 3639,
         "startChar": 50,
