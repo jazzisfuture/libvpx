@@ -582,8 +582,6 @@ static void set_rt_speed_feature_framesize_independent(
     sf->inter_mode_mask[BLOCK_64X32] = INTER_NEAREST_NEW_ZERO;
     sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST_NEW_ZERO;
     sf->adaptive_rd_thresh = 2;
-    // This feature is only enabled when partition search is disabled.
-    sf->reuse_inter_pred_sby = 1;
     sf->coeff_prob_appx_step = 4;
     sf->use_fast_coef_updates = is_keyframe ? TWO_LOOP : ONE_LOOP_REDUCED;
     sf->mode_search_skip_flags = FLAG_SKIP_INTRA_DIRMISMATCH;
@@ -641,6 +639,8 @@ static void set_rt_speed_feature_framesize_independent(
       sf->use_compound_nonrd_pickmode = 1;
     }
     sf->partition_search_type = VAR_BASED_PARTITION;
+    // This feature is only enabled when partition search is disabled.
+    sf->reuse_inter_pred_sby = 1;
     sf->mv.search_method = NSTEP;
     sf->mv.reduce_first_step_size = 1;
     sf->skip_encode_sb = 0;
@@ -649,6 +649,7 @@ static void set_rt_speed_feature_framesize_independent(
 
     if (sf->use_source_sad) {
       sf->adapt_partition_source_sad = 1;
+      sf->reuse_inter_pred_sby = 0;
       sf->adapt_partition_thresh =
           (cm->width * cm->height <= 640 * 360) ? 40000 : 60000;
       if (cpi->content_state_sb_fd == NULL &&
@@ -674,6 +675,7 @@ static void set_rt_speed_feature_framesize_independent(
 
   if (speed >= 7) {
     sf->adapt_partition_source_sad = 0;
+    sf->reuse_inter_pred_sby = 1;
     sf->adaptive_rd_thresh = 3;
     sf->mv.search_method = FAST_DIAMOND;
     sf->mv.fullpel_search_step_param = 10;
