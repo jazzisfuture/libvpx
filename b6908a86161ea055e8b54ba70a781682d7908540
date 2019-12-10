@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1eb9aa5b_75b61aad",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 3649,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-12-10T19:42:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7096b680_8bc00030",
+      "range": {
+        "startLine": 3649,
+        "startChar": 66,
+        "endLine": 3649,
+        "endChar": 78
+      },
+      "revId": "b6908a86161ea055e8b54ba70a781682d7908540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b8cf87ca_39b00d2d",
         "filename": "vp9/encoder/vp9_firstpass.h",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "b6908a86161ea055e8b54ba70a781682d7908540",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e09342c8_9e638686",
+        "filename": "vp9/encoder/vp9_firstpass.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-12-10T19:42:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8cf87ca_39b00d2d",
+      "range": {
+        "startLine": 256,
+        "startChar": 34,
+        "endLine": 256,
+        "endChar": 40
+      },
+      "revId": "b6908a86161ea055e8b54ba70a781682d7908540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "f9dc89c7_c5c85c16",
+        "filename": "vp9/encoder/vp9_firstpass.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-12-10T19:42:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f99f45df_2f304578",
+      "range": {
+        "startLine": 258,
+        "startChar": 9,
+        "endLine": 258,
+        "endChar": 11
+      },
+      "revId": "b6908a86161ea055e8b54ba70a781682d7908540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "609cb827_030dcd71",
         "filename": "vp9/simple_encode.cc",
         "patchSetId": 4
@@ -82,6 +154,30 @@
       "writtenOn": "2019-12-10T01:03:18Z",
       "side": 1,
       "message": "this is outside the scope of this change, but all of these functions could be put in an anonymous namespace to avoid marking them static. this is a bit more common:\nhttps://google.github.io/styleguide/cppguide.html#Unnamed_Namespaces_and_Static_Variables",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 105,
+        "endChar": 6
+      },
+      "revId": "b6908a86161ea055e8b54ba70a781682d7908540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "136683c8_e174e559",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-12-10T19:42:39Z",
+      "side": 1,
+      "message": "Okay, will modify this part later.",
+      "parentUuid": "609cb827_030dcd71",
       "range": {
         "startLine": 105,
         "startChar": 0,
@@ -114,6 +210,30 @@
       "revId": "b6908a86161ea055e8b54ba70a781682d7908540",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42667fcc_f264c5c2",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-12-10T19:42:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2732e7da_ccefc982",
+      "range": {
+        "startLine": 136,
+        "startChar": 7,
+        "endLine": 136,
+        "endChar": 11
+      },
+      "revId": "b6908a86161ea055e8b54ba70a781682d7908540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
