@@ -383,6 +383,10 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
           decode_one(ctx, &data_start, frame_size, user_priv, deadline);
       if (res != VPX_CODEC_OK) return res;
 
+#if 1
+      data_start = data_end;
+#endif
+
       // Account for suboptimal termination by the encoder.
       while (data_start < data_end) {
         const uint8_t marker =
