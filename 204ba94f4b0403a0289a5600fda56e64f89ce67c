@@ -22,6 +22,30 @@
       "revId": "204ba94f4b0403a0289a5600fda56e64f89ce67c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7878fdb5_bfe70f06",
+        "filename": "vp9/encoder/vp9_firstpass.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-12-12T20:01:54Z",
+      "side": 1,
+      "message": "Okay, I will do it in another CL.",
+      "parentUuid": "5809cabc_b5679072",
+      "range": {
+        "startLine": 283,
+        "startChar": 4,
+        "endLine": 283,
+        "endChar": 22
+      },
+      "revId": "204ba94f4b0403a0289a5600fda56e64f89ce67c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
