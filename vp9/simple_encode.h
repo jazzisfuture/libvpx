@@ -44,7 +44,18 @@ struct EncodeFrameResult {
 };
 
 struct GroupOfPicture {
+  // This list will be updated internally in StartEncode() and
+  // EncodeFrame()/EncodeFrameWithQuantizeIndex().
+  // In EncodeFrame()/EncodeFrameWithQuantizeIndex(), the update will only be
+  // triggered when the coded frame is the last one in the previous group of
+  // picture.
   std::vector<EncodeFrameInfo> encode_frame_list;
+  // Indicate the index of the next coding frame in encode_frame_list.
+  // In the other words, EncodeFrameInfo of the next coding frame can be
+  // obtained encode_frame_list[encode_frame_index].
+  // Internally, encode_frame_index will be set to zero after the last frame of
+  // group of picture is coded. Otherwise, encode_frame_index will be increased
+  // after each EncodeFrame()/EncodeFrameWithQuantizeIndex() call.
   int encode_frame_index;
 };
 
