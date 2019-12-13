@@ -22,6 +22,30 @@
       "revId": "ada04d7bf9b50edbe95373987e27a2406a8cb20b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8db7a9e8_ad450f0f",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2019-12-13T19:15:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64511cd7_ae9dd937",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 22
+      },
+      "revId": "ada04d7bf9b50edbe95373987e27a2406a8cb20b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
