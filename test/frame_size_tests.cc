@@ -9,9 +9,67 @@
  */
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "test/codec_factory.h"
+#include "test/register_state_check.h"
 #include "test/video_source.h"
 
 namespace {
+
+class EncoderWithExpectedError : public ::libvpx_test::Encoder {
+ public:
+  EncoderWithExpectedError(vpx_codec_enc_cfg_t cfg,
+                           unsigned long deadline,  // NOLINT
+                           const unsigned long init_flags,
+                           ::libvpx_test::TwopassStatsStore *stats)
+      : ::libvpx_test::Encoder(cfg, deadline, init_flags, stats) {}
+  // This overrides with expected error code.
+  void EncodeFrame(::libvpx_test::VideoSource *video,
+                   const unsigned long frame_flags,
+                   const vpx_codec_err_t expected_err) {
+    if (video->img()) {
+      EncodeFrameInternal(*video, frame_flags, expected_err);
+    } else {
+      Flush();
+    }
+
+    // Handle twopass stats
+    ::libvpx_test::CxDataIterator iter = GetCxData();
+
+    while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
+      if (pkt->kind != VPX_CODEC_STATS_PKT) continue;
+
+      stats_->Append(*pkt);
+    }
+  }
+
+  void EncodeFrameInternal(const ::libvpx_test::VideoSource &video,
+                           const unsigned long frame_flags,
+                           const vpx_codec_err_t expected_err) {
+    vpx_codec_err_t res;
+    const vpx_image_t *img = video.img();
+
+    // Handle frame resizing
+    if (cfg_.g_w != img->d_w || cfg_.g_h != img->d_h) {
+      cfg_.g_w = img->d_w;
+      cfg_.g_h = img->d_h;
+      res = vpx_codec_enc_config_set(&encoder_, &cfg_);
+      ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
+    }
+
+    // Encode the frame
+    API_REGISTER_STATE_CHECK(res = vpx_codec_encode(&encoder_, img, video.pts(),
+                                                    video.duration(),
+                                                    frame_flags, deadline_));
+    ASSERT_EQ(expected_err, res) << EncoderError();
+  }
+
+  virtual vpx_codec_iface_t *CodecInterface() const {
+#if CONFIG_VP9_ENCODER
+    return &vpx_codec_vp9_cx_algo;
+#else
+    return NULL;
+#endif
+  }
+};
 
 class VP9FrameSizeTestsLarge : public ::libvpx_test::EncoderTest,
                                public ::testing::Test {
@@ -43,7 +101,69 @@ class VP9FrameSizeTestsLarge : public ::libvpx_test::EncoderTest,
     }
   }
 
-  int expected_res_;
+  void RunLoop(::libvpx_test::VideoSource *video,
+               const vpx_codec_err_t expected_err) {
+    stats_.Reset();
+
+    ASSERT_TRUE(passes_ == 1 || passes_ == 2);
+    for (unsigned int pass = 0; pass < passes_; pass++) {
+      last_pts_ = 0;
+
+      if (passes_ == 1) {
+        cfg_.g_pass = VPX_RC_ONE_PASS;
+      } else if (pass == 0) {
+        cfg_.g_pass = VPX_RC_FIRST_PASS;
+      } else {
+        cfg_.g_pass = VPX_RC_LAST_PASS;
+      }
+
+      BeginPassHook(pass);
+      std::unique_ptr<EncoderWithExpectedError> encoder(
+          new EncoderWithExpectedError(cfg_, deadline_, init_flags_, &stats_));
+      ASSERT_TRUE(encoder.get() != NULL);
+
+      ASSERT_NO_FATAL_FAILURE(video->Begin());
+      encoder->InitEncoder(video);
+      ASSERT_FALSE(::testing::Test::HasFatalFailure());
+      bool again;
+      for (again = true; again; video->Next()) {
+        again = (video->img() != NULL);
+
+        PreEncodeFrameHook(video, encoder.get());
+        encoder->EncodeFrame(video, frame_flags_, expected_err);
+
+        PostEncodeFrameHook(encoder.get());
+
+        ::libvpx_test::CxDataIterator iter = encoder->GetCxData();
+
+        while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
+          pkt = MutateEncoderOutputHook(pkt);
+          again = true;
+          switch (pkt->kind) {
+            case VPX_CODEC_CX_FRAME_PKT:
+              ASSERT_GE(pkt->data.frame.pts, last_pts_);
+              last_pts_ = pkt->data.frame.pts;
+              FramePktHook(pkt);
+              break;
+
+            case VPX_CODEC_PSNR_PKT: PSNRPktHook(pkt); break;
+
+            case VPX_CODEC_STATS_PKT: StatsPktHook(pkt); break;
+
+            default: break;
+          }
+        }
+
+        if (!Continue()) break;
+      }
+
+      EndPassHook();
+
+      if (!Continue()) break;
+    }
+  }
+
+  vpx_codec_err_t expected_res_;
 };
 
 TEST_F(VP9FrameSizeTestsLarge, TestInvalidSizes) {
@@ -52,8 +172,8 @@ TEST_F(VP9FrameSizeTestsLarge, TestInvalidSizes) {
 #if CONFIG_SIZE_LIMIT
   video.SetSize(DECODE_WIDTH_LIMIT + 16, DECODE_HEIGHT_LIMIT + 16);
   video.set_limit(2);
-  expected_res_ = VPX_CODEC_CORRUPT_FRAME;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  expected_res_ = VPX_CODEC_MEM_ERROR;
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video, expected_res_));
 #endif
 }
 
@@ -64,7 +184,7 @@ TEST_F(VP9FrameSizeTestsLarge, ValidSizes) {
   video.SetSize(DECODE_WIDTH_LIMIT, DECODE_HEIGHT_LIMIT);
   video.set_limit(2);
   expected_res_ = VPX_CODEC_OK;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  ASSERT_NO_FATAL_FAILURE(::libvpx_test::EncoderTest::RunLoop(&video));
 #else
 // This test produces a pretty large single frame allocation,  (roughly
 // 25 megabits). The encoder allocates a good number of these frames
@@ -80,7 +200,7 @@ TEST_F(VP9FrameSizeTestsLarge, ValidSizes) {
 #endif
   video.set_limit(2);
   expected_res_ = VPX_CODEC_OK;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  ASSERT_NO_FATAL_FAILURE(::libvpx_test::EncoderTest::RunLoop(&video));
 #endif
 }
 
@@ -90,6 +210,6 @@ TEST_F(VP9FrameSizeTestsLarge, OneByOneVideo) {
   video.SetSize(1, 1);
   video.set_limit(2);
   expected_res_ = VPX_CODEC_OK;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  ASSERT_NO_FATAL_FAILURE(::libvpx_test::EncoderTest::RunLoop(&video));
 }
 }  // namespace
