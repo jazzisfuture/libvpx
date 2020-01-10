@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "53302c6a_3d0fe148",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-10T02:30:28Z",
+      "side": 1,
+      "message": "could you also mention the commit where the change in behavior was introduced to the commit message too?",
+      "revId": "7a5fc16c9142b694caeff1a9a2c5eb18332c41b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "facb537c_6bcf1940",
         "filename": "test/frame_size_tests.cc",
         "patchSetId": 7
