@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ed92d08b_ca01689e",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-01-13T19:18:06Z",
+      "side": 1,
+      "message": "Ack. I will add comments to these variables in a separate patch.",
+      "parentUuid": "8ab9ec29_8c1570b3",
+      "range": {
+        "startLine": 61,
+        "startChar": 41,
+        "endLine": 61,
+        "endChar": 47
+      },
+      "revId": "86675d87a3d3b639fb2f93a42619638447fd5e90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40744eb1_06659fb5",
         "filename": "vp9/simple_encode.h",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "86675d87a3d3b639fb2f93a42619638447fd5e90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1e00435_33fdef96",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-01-13T19:18:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "40744eb1_06659fb5",
+      "range": {
+        "startLine": 62,
+        "startChar": 41,
+        "endLine": 62,
+        "endChar": 48
+      },
+      "revId": "86675d87a3d3b639fb2f93a42619638447fd5e90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
