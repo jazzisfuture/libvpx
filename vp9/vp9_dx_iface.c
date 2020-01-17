@@ -16,6 +16,7 @@
 
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx/vp8dx.h"
+#include "vpx/vpx_codec.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx_dsp/bitreader_buffer.h"
 #include "vpx_dsp/vpx_dsp_common.h"
@@ -474,11 +475,15 @@ static vpx_codec_err_t ctrl_get_reference(vpx_codec_alg_priv_t *ctx,
   vp9_ref_frame_t *data = va_arg(args, vp9_ref_frame_t *);
 
   if (data) {
-    const int fb_idx = ctx->pbi->common.cur_show_frame_fb_idx;
-    YV12_BUFFER_CONFIG *fb = get_buf_frame(&ctx->pbi->common, fb_idx);
-    if (fb == NULL) return VPX_CODEC_ERROR;
-    yuvconfig2image(&data->img, fb, NULL);
-    return VPX_CODEC_OK;
+    if (ctx->pbi) {
+      const int fb_idx = ctx->pbi->common.cur_show_frame_fb_idx;
+      YV12_BUFFER_CONFIG *fb = get_buf_frame(&ctx->pbi->common, fb_idx);
+      if (fb == NULL) return VPX_CODEC_ERROR;
+      yuvconfig2image(&data->img, fb, NULL);
+      return VPX_CODEC_OK;
+    } else {
+      return VPX_CODEC_ERROR;
+    }
   } else {
     return VPX_CODEC_INVALID_PARAM;
   }
