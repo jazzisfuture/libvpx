@@ -22,6 +22,30 @@
       "revId": "084937b9aac4c6b377c1b43b506389c6c5ae1321",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a729de5_8c488e10",
+        "filename": "vp9/vp9_dx_iface.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1392287
+      },
+      "writtenOn": "2020-01-17T19:41:56Z",
+      "side": 1,
+      "message": "Apparently not anymore. Removed!",
+      "parentUuid": "c6cc1869_504031f8",
+      "range": {
+        "startLine": 19,
+        "startChar": 14,
+        "endLine": 19,
+        "endChar": 23
+      },
+      "revId": "084937b9aac4c6b377c1b43b506389c6c5ae1321",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
