@@ -1021,6 +1021,11 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vpx_free(cpi->mi_ssim_rdmult_scaling_factors);
   cpi->mi_ssim_rdmult_scaling_factors = NULL;
 
+#if CONFIG_RATE_CTRL
+  vpx_free(cpi->partition_info);
+  cpi->partition_info = NULL;
+#endif
+
   vp9_free_ref_frame_buffers(cm->buffer_pool);
 #if CONFIG_VP9_POSTPROC
   vp9_free_postproc_buffers(cm);
@@ -2649,6 +2654,7 @@ VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
 
 #if CONFIG_RATE_CTRL
   encode_command_init(&cpi->encode_command);
+  partition_info_init(cpi);
 #endif
 
   return cpi;

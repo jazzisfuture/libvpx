@@ -522,6 +522,15 @@ typedef struct ENCODE_COMMAND {
   int external_quantize_index;
 } ENCODE_COMMAND;
 
+typedef struct PARTITION_INFO {
+  int row;           // row pixel offset of current 8x8 block
+  int column;        // column pixel offset of current 8x8 block
+  int row_start;     // row pixel offset of the start of the prediction block
+  int column_start;  // column pixel offset of the start of the prediction block
+  int width;         // prediction block width
+  int height;        // prediction block height
+} PARTITION_INFO;
+
 static INLINE void encode_command_init(ENCODE_COMMAND *encode_command) {
   vp9_zero(*encode_command);
   encode_command->use_external_quantize_index = 0;
@@ -847,8 +856,25 @@ typedef struct VP9_COMP {
   vpx_roi_map_t roi;
 #if CONFIG_RATE_CTRL
   ENCODE_COMMAND encode_command;
+  PARTITION_INFO *partition_info;
 #endif
 } VP9_COMP;
+
+#if CONFIG_RATE_CTRL
+// Allocates memory for the partition information.
+// The unit size is each 4x4 block.
+// Only called once in vp9_create_compressor().
+static INLINE void partition_info_init(struct VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  const int unit_width = (cm->width + 3) >> 2;
+  const int unit_height = (cm->height + 3) >> 2;
+  CHECK_MEM_ERROR(cm, cpi->partition_info,
+                  (PARTITION_INFO *)vpx_calloc(unit_width * unit_height,
+                                               sizeof(PARTITION_INFO)));
+  memset(cpi->partition_info, 0,
+         unit_width * unit_height * sizeof(PARTITION_INFO));
+}
+#endif  // CONFIG_RATE_CTRL
 
 typedef struct ENCODE_FRAME_RESULT {
   int show_idx;
