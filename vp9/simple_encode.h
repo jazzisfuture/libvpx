@@ -25,6 +25,15 @@ enum FrameType {
   kAlternateReference,
 };
 
+struct PartitionInfo {
+  int row;           // row pixel offset of current 4x4 block
+  int column;        // column pixel offset of current 4x4 block
+  int row_start;     // row pixel offset of the start of the prediction block
+  int column_start;  // column pixel offset of the start of the prediction block
+  int width;         // prediction block width
+  int height;        // prediction block height
+};
+
 struct EncodeFrameInfo {
   int show_idx;
   FrameType frame_type;
@@ -126,6 +135,9 @@ struct EncodeFrameResult {
   uint64_t sse;
   int quantize_index;
   FrameCounts frame_counts;
+  int num_rows_4x4;
+  int num_cols_4x4;
+  std::unique_ptr<PartitionInfo[]> partition_info;
 };
 
 struct GroupOfPicture {
@@ -209,11 +221,21 @@ class SimpleEncode {
   // Gets the total number of pixels of YUV planes per frame.
   uint64_t GetFramePixelCount() const;
 
+  /*
+  // Returns number of row units in size of 4.
+  int GetNumRows4x4() const { return num_rows_4x4_; };
+
+  // Returns number of column units in size of 4.
+  int GetNumCols4x4() const { return num_cols_4x4_; };
+  */
+
  private:
   class EncodeImpl;
 
-  int frame_width_;
-  int frame_height_;
+  int frame_width_;   // frame width in pixels.
+  int frame_height_;  // frame height in pixels.
+  int num_rows_4x4_;  // number of row units, in size of 4.
+  int num_cols_4x4_;  // number of column units, in size of 4.
   int frame_rate_num_;
   int frame_rate_den_;
   int target_bitrate_;
