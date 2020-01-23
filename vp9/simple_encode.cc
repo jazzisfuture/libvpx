@@ -20,6 +20,37 @@
 
 namespace vp9 {
 
+static int get_plane_height(vpx_img_fmt_t img_fmt, int frame_height,
+                            int plane) {
+  assert(plane < 3);
+  if (plane == 0) {
+    return frame_height;
+  }
+  switch (img_fmt) {
+    case VPX_IMG_FMT_I420:
+    case VPX_IMG_FMT_I440:
+    case VPX_IMG_FMT_YV12:
+    case VPX_IMG_FMT_I42016:
+    case VPX_IMG_FMT_I44016: return (frame_height + 1) >> 1;
+    default: return frame_height;
+  }
+}
+
+static int get_plane_width(vpx_img_fmt_t img_fmt, int frame_width, int plane) {
+  assert(plane < 3);
+  if (plane == 0) {
+    return frame_width;
+  }
+  switch (img_fmt) {
+    case VPX_IMG_FMT_I420:
+    case VPX_IMG_FMT_YV12:
+    case VPX_IMG_FMT_I422:
+    case VPX_IMG_FMT_I42016:
+    case VPX_IMG_FMT_I42216: return (frame_width + 1) >> 1;
+    default: return frame_width;
+  }
+}
+
 // TODO(angiebird): Merge this function with vpx_img_plane_width()
 static int img_plane_width(const vpx_image_t *img, int plane) {
   if (plane > 0 && img->x_chroma_shift > 0)
@@ -322,6 +353,50 @@ static void update_frame_counts(const FRAME_COUNTS *input_counts,
   }
 }
 
+void output_image_buffer(const ImageBuffer &image_buffer, std::FILE *out_file) {
+  for (int plane = 0; plane < 3; ++plane) {
+    int w = image_buffer.plane_width[plane];
+    int h = image_buffer.plane_height[plane];
+    const uint8_t *buf = image_buffer.plane_buffer[plane].get();
+    fprintf(out_file, "%d %d\n", h, w);
+    for (int i = 0; i < w * h; ++i) {
+      fprintf(out_file, "%d ", (int)buf[i]);
+    }
+    fprintf(out_file, "\n");
+  }
+}
+
+static void init_image_buffer(ImageBuffer *image_buffer, int frame_width,
+                              int frame_height, vpx_img_fmt_t img_fmt) {
+  for (int plane = 0; plane < 3; ++plane) {
+    int w = get_plane_width(img_fmt, frame_width, plane);
+    int h = get_plane_height(img_fmt, frame_height, plane);
+    image_buffer->plane_width[plane] = w;
+    image_buffer->plane_height[plane] = h;
+    image_buffer->plane_buffer[plane].reset(new uint8_t[w * h]);
+  }
+}
+
+static void ImageBuffer_to_IMAGE_BUFFER(const ImageBuffer &image_buffer,
+                                        IMAGE_BUFFER *image_buffer_c) {
+  for (int plane = 0; plane < 3; ++plane) {
+    image_buffer_c->plane_width[plane] = image_buffer.plane_width[plane];
+    image_buffer_c->plane_height[plane] = image_buffer.plane_height[plane];
+    image_buffer_c->plane_buffer[plane] =
+        image_buffer.plane_buffer[plane].get();
+  }
+}
+
+static void init_encode_frame_result(EncodeFrameResult *encode_frame_result,
+                                     int frame_width, int frame_height,
+                                     vpx_img_fmt_t img_fmt) {
+  const size_t max_coding_data_byte_size = frame_width * frame_height * 3;
+  encode_frame_result->coding_data = std::move(
+      std::unique_ptr<uint8_t[]>(new uint8_t[max_coding_data_byte_size]));
+  init_image_buffer(&encode_frame_result->coded_frame, frame_width,
+                    frame_height, img_fmt);
+}
+
 static void update_encode_frame_result(
     EncodeFrameResult *encode_frame_result,
     const ENCODE_FRAME_RESULT *encode_frame_info) {
@@ -450,6 +525,7 @@ void SimpleEncode::ComputeFirstPassStats() {
         size_t size;
         unsigned int frame_flags = 0;
         ENCODE_FRAME_RESULT encode_frame_info;
+        vp9_init_encode_frame_result(&encode_frame_info);
         // TODO(angiebird): Call vp9_first_pass directly
         vp9_get_compressed_data(cpi, &frame_flags, &size, NULL, &time_stamp,
                                 &time_end, flush, &encode_frame_info);
@@ -563,14 +639,16 @@ void SimpleEncode::EncodeFrame(EncodeFrameResult *encode_frame_result) {
     }
   }
   assert(encode_frame_result->coding_data.get() == nullptr);
-  const size_t max_coding_data_byte_size = frame_width_ * frame_height_ * 3;
-  encode_frame_result->coding_data = std::move(
-      std::unique_ptr<uint8_t[]>(new uint8_t[max_coding_data_byte_size]));
+  init_encode_frame_result(encode_frame_result, frame_width_, frame_height_,
+                           impl_ptr_->img_fmt);
   int64_t time_stamp;
   int64_t time_end;
   int flush = 1;  // Make vp9_get_compressed_data encode a frame
   unsigned int frame_flags = 0;
   ENCODE_FRAME_RESULT encode_frame_info;
+  vp9_init_encode_frame_result(&encode_frame_info);
+  ImageBuffer_to_IMAGE_BUFFER(encode_frame_result->coded_frame,
+                              &encode_frame_info.coded_frame);
   vp9_get_compressed_data(cpi, &frame_flags,
                           &encode_frame_result->coding_data_byte_size,
                           encode_frame_result->coding_data.get(), &time_stamp,
