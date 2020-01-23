@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ab50f634_47e47d25",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4436,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-01-23T06:27:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d52c45be_f1297782",
+      "range": {
+        "startLine": 4436,
+        "startChar": 32,
+        "endLine": 4436,
+        "endChar": 52
+      },
+      "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0231bbce_226a7b4b",
         "filename": "vp9/encoder/vp9_encoder.c",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9be0d2e2_5af38702",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1026,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-01-23T06:27:48Z",
+      "side": 1,
+      "message": "Done. Similar to the above comment, cpi has to be passed in.",
+      "parentUuid": "0231bbce_226a7b4b",
+      "range": {
+        "startLine": 1025,
+        "startChar": 0,
+        "endLine": 1026,
+        "endChar": 29
+      },
+      "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "837a2ff8_78e895d3",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 859,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-01-23T06:27:48Z",
+      "side": 1,
+      "message": "SGTM. We can rename it when adding more features.",
+      "parentUuid": "74dc7a12_26077fce",
+      "range": {
+        "startLine": 859,
+        "startChar": 2,
+        "endLine": 859,
+        "endChar": 33
+      },
+      "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "94785adf_98d48668",
         "filename": "vp9/encoder/vp9_encoder.h",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f0ba657_56bdeb5c",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 867,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-01-23T06:27:48Z",
+      "side": 1,
+      "message": "I thought about this. But unfortunately, passing \npartition_info_init(const FRAME_INFO* frame_info, PARTITION_INFO* partition_info)\nis not possible. Because partition_info is a pointer in cpi. Its memory size depends\non the frame size, therefore can only be allocated dynamically. A fixed size array is not available.\n\nPassing in *partition_info, it is only an address. It\u0027s different from cpi-\u003epartition_info.\nSo I have to pass in cpi.\n\nBTW, I think CHECK_MEM_ERROR() is necessary to check the memory allocation is successful or not. And in vp9, any place CHECK_MEM_ERROR() is used, cpi-\u003esome_pointer, must be used.",
+      "parentUuid": "94785adf_98d48668",
+      "range": {
+        "startLine": 867,
+        "startChar": 39,
+        "endLine": 867,
+        "endChar": 60
+      },
+      "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
