@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d52c45be_f1297782",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4436,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-23T03:07:17Z",
+      "side": 1,
+      "message": "1) Let\u0027s use frame_info-\u003eframe_width.\n2) (cm-\u003ewidth/height + 3) \u003e\u003e 2 appears several times.\nMaybe it\u0027s better to put it into a function?\nAnd maybe explain why there is a \"+3\" and \"\u003e\u003e2\" in the function?",
+      "range": {
+        "startLine": 4436,
+        "startChar": 32,
+        "endLine": 4436,
+        "endChar": 52
+      },
+      "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0231bbce_226a7b4b",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1026,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-23T03:07:17Z",
+      "side": 1,
+      "message": "Let\u0027s use a free_partition_info() and keep this together with partition_info_init()?",
+      "range": {
+        "startLine": 1025,
+        "startChar": 0,
+        "endLine": 1026,
+        "endChar": 29
+      },
+      "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74dc7a12_26077fce",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 859,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-23T03:07:17Z",
+      "side": 1,
+      "message": "[Optional]\nIf we plan to add other feature into cpi, it\u0027s better to keep them in one structure.\nBut we can modify this part later if we decided to add more features.",
+      "range": {
+        "startLine": 859,
+        "startChar": 2,
+        "endLine": 859,
+        "endChar": 33
+      },
+      "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94785adf_98d48668",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 867,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-23T03:07:17Z",
+      "side": 1,
+      "message": "Let\u0027s avoid using cpi.\ncm-\u003ewidth/height can be obtained from cpi-\u003eframe_info.\n\nSo maybe the function interface can be\npartition_info_init(const FRAME_INFO* frame_info, PARTITION_INFO* partition_info)?",
+      "range": {
+        "startLine": 867,
+        "startChar": 39,
+        "endLine": 867,
+        "endChar": 60
+      },
+      "revId": "77de9a1f094cb8d3234dab704bb7916f5977fa73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
