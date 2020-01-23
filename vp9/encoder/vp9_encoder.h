@@ -851,6 +851,15 @@ typedef struct VP9_COMP {
 #endif
 } VP9_COMP;
 
+#if CONFIG_RATE_CTRL
+// This is the c-version counter part of ImageBuffer
+typedef struct IMAGE_BUFFER {
+  int plane_width[3];
+  int plane_height[3];
+  uint8_t *plane_buffer[3];
+} IMAGE_BUFFER;
+#endif
+
 typedef struct ENCODE_FRAME_RESULT {
   int show_idx;
   FRAME_UPDATE_TYPE update_type;
@@ -858,6 +867,7 @@ typedef struct ENCODE_FRAME_RESULT {
   double psnr;
   uint64_t sse;
   FRAME_COUNTS frame_counts;
+  IMAGE_BUFFER coded_frame;
 #endif  // CONFIG_RATE_CTRL
   int quantize_index;
 } ENCODE_FRAME_RESULT;
