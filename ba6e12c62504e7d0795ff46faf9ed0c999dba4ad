@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1d6c141_32d731c4",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 596,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-24T20:37:02Z",
+      "side": 1,
+      "message": "Maybe it\u0027s better to use a vector here?",
+      "range": {
+        "startLine": 594,
+        "startChar": 0,
+        "endLine": 596,
+        "endChar": 61
+      },
+      "revId": "ba6e12c62504e7d0795ff46faf9ed0c999dba4ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
