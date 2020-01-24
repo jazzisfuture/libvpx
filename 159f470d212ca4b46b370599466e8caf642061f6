@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "fa6514d1_0d743c1c",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-24T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "204bfd80_b773a446",
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "139d975d_34f17ba2",
         "filename": "vp9/simple_encode.cc",
         "patchSetId": 6
@@ -47,6 +65,30 @@
       "writtenOn": "2020-01-24T21:27:00Z",
       "side": 1,
       "message": "this should return a bool and check the allocations. you can use (std::nothrow) in the allocation to prevent a build with exceptions from throwing",
+      "range": {
+        "startLine": 369,
+        "startChar": 7,
+        "endLine": 369,
+        "endChar": 12
+      },
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "472f1991_cb3945bc",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-24T22:48:26Z",
+      "side": 1,
+      "message": "What should we do when init_image_buffer fails?",
+      "parentUuid": "139d975d_34f17ba2",
       "range": {
         "startLine": 369,
         "startChar": 7,
@@ -76,6 +118,24 @@
     },
     {
       "key": {
+        "uuid": "fbf7ffe2_4a56d6de",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-24T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c2d76df_5259fb41",
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa9691eb_fdf023e3",
         "filename": "vp9/simple_encode.cc",
         "patchSetId": 6
@@ -87,6 +147,24 @@
       "writtenOn": "2020-01-24T21:27:00Z",
       "side": 1,
       "message": "is there a benefit to this translation or could we use IMAGE_BUFFER throughout?",
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a1b1f7b_caec4168",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-24T22:48:26Z",
+      "side": 1,
+      "message": "There are two issues.\n1) We try to make simple_encode.h not use other headers in libvpx, so the dependency is simpler. Ideally, libvpx should be able to use simple_encode.h with --enable-rate-ctrl. \nHowever, simple_encode.h is in c++. So we can\u0027t.\n\nTherefore, so far every time we need use structure from simple_encode.h in libvpx, we need to create a counter part in C.\n\nOne way to circumvent this is to create another c_header.\nIf we are going to add more feature, I will add a c_header.\n\n2) I assume the ML env will use the buffer however they want, so it\u0027s better to use a unique pointer to pass the buffer ownership to them.",
+      "parentUuid": "fa9691eb_fdf023e3",
       "revId": "159f470d212ca4b46b370599466e8caf642061f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
