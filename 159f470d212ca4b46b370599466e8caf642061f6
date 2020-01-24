@@ -101,6 +101,30 @@
     },
     {
       "key": {
+        "uuid": "6339388b_814ecc93",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T23:58:53Z",
+      "side": 1,
+      "message": "\u003e What should we do when init_image_buffer fails?\n\nIt would be good to capture the failure and exit the encode gracefully. Some systems are ok with crashing on allocation failures, but I don\u0027t think it\u0027s the best practice for a library.",
+      "parentUuid": "472f1991_cb3945bc",
+      "range": {
+        "startLine": 369,
+        "startChar": 7,
+        "endLine": 369,
+        "endChar": 12
+      },
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3c2d76df_5259fb41",
         "filename": "vp9/simple_encode.cc",
         "patchSetId": 6
