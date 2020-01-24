@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "10cdf24b_15e3af3e",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 7222,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T01:10:10Z",
+      "side": 1,
+      "message": "you might want to go with the normal lowercase naming for this; vp8/9 have a similar yuvconfig2image for vpx_image_t",
+      "range": {
+        "startLine": 7222,
+        "startChar": 0,
+        "endLine": 7222,
+        "endChar": 39
+      },
+      "revId": "0af9920425f52c57e5b25d6fd83f289cfb25283c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b9b99c0_ba202bdd",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T01:10:10Z",
+      "side": 1,
+      "message": "you don\u0027t need an else if the other branch returns:\n\nhttp://clang.llvm.org/extra/clang-tidy/checks/readability-else-after-return.html",
+      "revId": "0af9920425f52c57e5b25d6fd83f289cfb25283c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cff4ab4d_76f60688",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T01:10:10Z",
+      "side": 1,
+      "message": "you can use .reset() directly here; this situation is what std::make_unique was added for.",
+      "revId": "0af9920425f52c57e5b25d6fd83f289cfb25283c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fdc4953_a5bb9a82",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T01:10:10Z",
+      "side": 1,
+      "message": "could this just be a FILE*?",
+      "revId": "0af9920425f52c57e5b25d6fd83f289cfb25283c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
