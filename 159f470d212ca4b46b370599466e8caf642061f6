@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cfaf30df_6e3a681b",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 7216,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T21:27:00Z",
+      "side": 1,
+      "message": "you could merge these two blocks",
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "204bfd80_b773a446",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T21:27:00Z",
+      "side": 1,
+      "message": "these two can be const, here and in the next function",
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "139d975d_34f17ba2",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T21:27:00Z",
+      "side": 1,
+      "message": "this should return a bool and check the allocations. you can use (std::nothrow) in the allocation to prevent a build with exceptions from throwing",
+      "range": {
+        "startLine": 369,
+        "startChar": 7,
+        "endLine": 369,
+        "endChar": 12
+      },
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c2d76df_5259fb41",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T21:27:00Z",
+      "side": 1,
+      "message": "this can use reset() too",
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa9691eb_fdf023e3",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-01-24T21:27:00Z",
+      "side": 1,
+      "message": "is there a benefit to this translation or could we use IMAGE_BUFFER throughout?",
+      "revId": "159f470d212ca4b46b370599466e8caf642061f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
