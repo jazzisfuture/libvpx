@@ -826,7 +826,7 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
   i = active_best_quality;
 
   do {
-    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled &&
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
         cr->apply_cyclic_refresh &&
         (!cpi->oxcf.gf_cbr_boost_pct || !cpi->refresh_golden_frame)) {
       bits_per_mb_at_this_q =
