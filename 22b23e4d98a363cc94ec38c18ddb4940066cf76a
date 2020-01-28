@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2dd2e999_0cbd4a3a",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-01-28T19:43:52Z",
+      "side": 1,
+      "message": "It\u0027s better to not expose the pointer directly.\nWe can use push_back() to change the vector in update_partition_info.",
+      "range": {
+        "startLine": 356,
+        "startChar": 24,
+        "endLine": 356,
+        "endChar": 63
+      },
+      "revId": "22b23e4d98a363cc94ec38c18ddb4940066cf76a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
