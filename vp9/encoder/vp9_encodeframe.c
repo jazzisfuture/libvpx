@@ -3855,6 +3855,13 @@ static void assign_motion_vector_info(const int block_width_4x4,
       motion_vector_info[unit_index].mv[1].as_mv.col = source_mv[1]->col;
     }
   }
+  {
+    const int unit_index = row_start_4x4 * num_unit_cols + col_start_4x4;
+    FILE *pfile = fopen("vp9_mv.txt", "a");
+    fprintf(pfile, "(%d, %d)\n", motion_vector_info[unit_index].mv[0].as_mv.row,
+            motion_vector_info[unit_index].mv[0].as_mv.col);
+    fclose(pfile);
+  }
 }
 
 static void store_superblock_info(
