@@ -269,6 +269,7 @@ class SimpleEncode {
   int target_bitrate_;
   int num_frames_;
   std::FILE *file_;
+  std::FILE *out_file_;
   std::unique_ptr<EncodeImpl> impl_ptr_;
 
   GroupOfPicture group_of_picture_;

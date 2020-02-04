@@ -80,6 +80,9 @@ TEST(SimpleEncode, EncodeFrame) {
     EncodeFrameResult encode_frame_result;
     simple_encode.EncodeFrame(&encode_frame_result);
     if (i == 0) {
+      std::FILE *out_image = fopen("output.img", "w");
+      output_image_buffer(encode_frame_result.coded_frame, out_image);
+      fclose(out_image);
       EXPECT_EQ(encode_frame_result.show_idx, 0);
       EXPECT_EQ(encode_frame_result.frame_type, kKeyFrame)
           << "The first coding frame should be key frame";
@@ -106,6 +109,7 @@ TEST(SimpleEncode, EncodeFrame) {
   simple_encode.EndEncode();
 }
 
+#if 0
 TEST(SimpleEncode, EncodeFrameWithQuantizeIndex) {
   SimpleEncode simple_encode(w, h, frame_rate_num, frame_rate_den,
                              target_bitrate, num_frames, infile_path);
@@ -121,6 +125,7 @@ TEST(SimpleEncode, EncodeFrameWithQuantizeIndex) {
   }
   simple_encode.EndEncode();
 }
+#endif
 
 TEST(SimpleEncode, EncodeConsistencyTest) {
   std::vector<int> quantize_index_list;

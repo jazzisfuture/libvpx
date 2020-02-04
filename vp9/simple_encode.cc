@@ -424,7 +424,8 @@ static bool init_encode_frame_result(EncodeFrameResult *encode_frame_result,
 
   encode_frame_result->num_rows_4x4 = get_num_unit_4x4(frame_width);
   encode_frame_result->num_cols_4x4 = get_num_unit_4x4(frame_height);
-  encode_frame_result->partition_info.resize(encode_frame_result->num_rows_4x4 * encode_frame_result->num_cols_4x4);
+  encode_frame_result->partition_info.resize(encode_frame_result->num_rows_4x4 *
+                                             encode_frame_result->num_cols_4x4);
 
   if (encode_frame_result->coding_data.get() == nullptr) {
     return false;
@@ -517,10 +518,10 @@ static void UpdateGroupOfPicture(const VP9_COMP *cpi,
                     first_show_idx, group_of_picture);
 }
 
-SimpleEncode::SimpleEncode(int frame_width, int frame_height,
-                           int frame_rate_num, int frame_rate_den,
-                           int target_bitrate, int num_frames,
-                           const char *infile_path) {
+SimpleEncode::SimpleEncode(
+    int frame_width, int frame_height, int frame_rate_num, int frame_rate_den,
+    int target_bitrate, int num_frames,
+    const char *infile_path /*, const char *outfile_path*/) {
   impl_ptr_ = std::unique_ptr<EncodeImpl>(new EncodeImpl());
   frame_width_ = frame_width;
   frame_height_ = frame_height;
@@ -530,6 +531,7 @@ SimpleEncode::SimpleEncode(int frame_width, int frame_height,
   num_frames_ = num_frames;
   // TODO(angirbid): Should we keep a file pointer here or keep the file_path?
   file_ = fopen(infile_path, "r");
+  // out_file_ = fopen(outfile_path, 'w');
   impl_ptr_->cpi = NULL;
   impl_ptr_->img_fmt = VPX_IMG_FMT_I420;
 }
@@ -610,6 +612,51 @@ std::vector<std::vector<double>> SimpleEncode::ObserveFirstPassStats() {
   return output_stats;
 }
 
+static void mem_put_le16(char *const mem, const unsigned int val) {
+  mem[0] = val;
+  mem[1] = val >> 8;
+}
+
+static void mem_put_le32(char *const mem, const unsigned int val) {
+  mem[0] = val;
+  mem[1] = val >> 8;
+  mem[2] = val >> 16;
+  mem[3] = val >> 24;
+}
+
+static void ivf_write_file_header_(FILE *outfile, unsigned int fourcc,
+                                   int frame_cnt, int frame_width,
+                                   int frame_height,
+                                   vpx_rational_t frame_rate) {
+  char header[32];
+
+  header[0] = 'D';
+  header[1] = 'K';
+  header[2] = 'I';
+  header[3] = 'F';
+  mem_put_le16(header + 4, 0);                // version
+  mem_put_le16(header + 6, 32);               // header size
+  mem_put_le32(header + 8, fourcc);           // fourcc
+  mem_put_le16(header + 12, frame_width);     // width
+  mem_put_le16(header + 14, frame_height);    // height
+  mem_put_le32(header + 16, frame_rate.den);  // rate
+  mem_put_le32(header + 20, frame_rate.num);  // scale
+  mem_put_le32(header + 24, frame_cnt);       // length
+  mem_put_le32(header + 28, 0);               // unused
+
+  fwrite(header, 1, 32, outfile);
+}
+
+static void ivf_write_frame_header(FILE *outfile, int64_t pts,
+                                   size_t frame_size) {
+  char header[12];
+
+  mem_put_le32(header, (int)frame_size);
+  mem_put_le32(header + 4, (int)(pts & 0xFFFFFFFF));
+  mem_put_le32(header + 8, (int)(pts >> 32));
+  fwrite(header, 1, 12, outfile);
+}
+
 void SimpleEncode::StartEncode() {
   assert(impl_ptr_->first_pass_stats.size() > 0);
   vpx_rational_t frame_rate =
@@ -629,6 +676,12 @@ void SimpleEncode::StartEncode() {
                 frame_height_, 1);
   UpdateGroupOfPicture(impl_ptr_->cpi, &group_of_picture_);
   rewind(file_);
+
+  FILE *out_file_ = fopen("output.ivf", "w");
+  const char *fourcc = "VP90";
+  ivf_write_file_header_(out_file_, *(const uint32_t *)fourcc, num_frames_,
+                         frame_width_, frame_height_, frame_rate);
+  fclose(out_file_);
 }
 
 void SimpleEncode::EndEncode() {
@@ -697,6 +750,22 @@ void SimpleEncode::EncodeFrame(EncodeFrameResult *encode_frame_result) {
                             &encode_frame_result->coding_data_byte_size,
                             encode_frame_result->coding_data.get(), &time_stamp,
                             &time_end, flush, &encode_frame_info);
+    if (encode_frame_result->show_idx == 0) {
+      // std::cout << "byte len" << encode_frame_result->coding_data_byte_size
+      //           << std::endl;
+      // for (int i = 0; i < encode_frame_result->coding_data_byte_size; ++i) {
+      //   printf("%d ", encode_frame_result->coding_data.get()[i]);
+      // }
+      // printf("\n");
+    }
+
+    FILE *out_file_ = fopen("output.ivf", "a");
+    ivf_write_frame_header(out_file_, time_stamp,
+                           encode_frame_result->coding_data_byte_size);
+    fwrite(encode_frame_result->coding_data.get(), 1,
+           encode_frame_result->coding_data_byte_size, out_file_);
+    fclose(out_file_);
+
     // vp9_get_compressed_data is expected to encode a frame every time, so the
     // data size should be greater than zero.
     if (encode_frame_result->coding_data_byte_size <= 0) {
