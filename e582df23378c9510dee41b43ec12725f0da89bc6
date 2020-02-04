@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "205bfe08_b2cb789f",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 3899,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-04T20:12:25Z",
+      "side": 1,
+      "message": "[optional]\nMaybe it\u0027s worth to have a function like\n\nget_motion_vector_from_mi(mi, partition, source_mv, source_ref_frame)\n\nThen assign_motion_vector_info() accordingly?",
+      "range": {
+        "startLine": 3899,
+        "startChar": 4,
+        "endLine": 3899,
+        "endChar": 25
+      },
+      "revId": "e582df23378c9510dee41b43ec12725f0da89bc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
