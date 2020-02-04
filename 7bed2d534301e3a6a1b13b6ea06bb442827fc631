@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34c75928_d82787ad",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-04T20:28:13Z",
+      "side": 1,
+      "message": "Maybe it\u0027s worth to have mv_count?\nkey frame mv_count \u003d 0\nsingle ref mv_count \u003d 1\ncompound mv_count \u003d 2?",
+      "range": {
+        "startLine": 42,
+        "startChar": 64,
+        "endLine": 43,
+        "endChar": 80
+      },
+      "revId": "7bed2d534301e3a6a1b13b6ea06bb442827fc631",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea6303e0_b06dbb7a",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-04T20:28:13Z",
+      "side": 1,
+      "message": "[0, 3)?\nMaybe add some comment about what does the number mean?",
+      "range": {
+        "startLine": 44,
+        "startChar": 58,
+        "endLine": 44,
+        "endChar": 64
+      },
+      "revId": "7bed2d534301e3a6a1b13b6ea06bb442827fc631",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fefd10cb_dde41a57",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-04T20:28:13Z",
+      "side": 1,
+      "message": "Maybe it\u0027s worth to mention the precision of the motion vectors?\nOr we can simply translate it into double value using pixel unit?",
+      "range": {
+        "startLine": 45,
+        "startChar": 2,
+        "endLine": 46,
+        "endChar": 60
+      },
+      "revId": "7bed2d534301e3a6a1b13b6ea06bb442827fc631",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
