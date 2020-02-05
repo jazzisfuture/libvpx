@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "68f6a4ff_355b656d",
+        "filename": "ivfenc.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-05T19:09:20Z",
+      "side": 1,
+      "message": "I think this is more straightforward.\nvpx_codec_enc_cfg is a big structure and most of its fields is not used in ivf_write_file_header.",
+      "parentUuid": "6688c834_f8e1700c",
+      "revId": "22d1f04b3c0e32726f2d2144eed7802c180c5563",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5cbc0ba2_fefea36a",
         "filename": "vp9/simple_encode.h",
         "patchSetId": 3
@@ -30,6 +48,30 @@
       "writtenOn": "2020-02-05T05:09:07Z",
       "side": 1,
       "message": "another option would be to make this explicit and at each call site use /*outfile_path\u003d*/NULL to make it explicit\n\nhttps://google.github.io/styleguide/cppguide.html#Function_Argument_Comments\n\nyour choice though",
+      "range": {
+        "startLine": 209,
+        "startChar": 40,
+        "endLine": 209,
+        "endChar": 71
+      },
+      "revId": "22d1f04b3c0e32726f2d2144eed7802c180c5563",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d8082514_5b761955",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-05T19:09:20Z",
+      "side": 1,
+      "message": "I use the default parameter because this way I don\u0027t have to modify many places where this function is called.",
+      "parentUuid": "5cbc0ba2_fefea36a",
       "range": {
         "startLine": 209,
         "startChar": 40,
