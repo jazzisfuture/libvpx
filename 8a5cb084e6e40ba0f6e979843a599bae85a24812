@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56a5db61_61cd4fed",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 12
+      },
+      "lineNbr": 917,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-02-06T02:16:03Z",
+      "side": 1,
+      "message": "could be \u0027counterpart\u0027",
+      "range": {
+        "startLine": 917,
+        "startChar": 25,
+        "endLine": 917,
+        "endChar": 37
+      },
+      "revId": "8a5cb084e6e40ba0f6e979843a599bae85a24812",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
