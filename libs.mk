@@ -91,6 +91,7 @@ ifeq ($(CONFIG_VP9_ENCODER),yes)
   INSTALL_MAPS += include/vpx/% $(SRC_PATH_BARE)/$(VP9_PREFIX)/%
   CODEC_DOC_SRCS += vpx/vp8.h vpx/vp8cx.h
   CODEC_DOC_SECTIONS += vp9 vp9_encoder
+  CODEC_SRCS-$(CONFIG_RATE_CTRL) += ivfenc.c ivfenc.h
 endif
 
 ifeq ($(CONFIG_VP9_DECODER),yes)
