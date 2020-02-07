@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95edf56a_55092a5b",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-02-07T01:56:59Z",
+      "side": 1,
+      "message": "this can be nullptr too if you wanted to treat it as part of the sync",
+      "range": {
+        "startLine": 246,
+        "startChar": 67,
+        "endLine": 246,
+        "endChar": 71
+      },
+      "revId": "8dca50195a4ac90b6dc902661659dd21ffec19d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
