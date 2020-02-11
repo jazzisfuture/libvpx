@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ec1ab54_8416fe27",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4742,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-11T02:30:32Z",
+      "side": 1,
+      "message": "What happen if this block does not use inter mode?",
+      "range": {
+        "startLine": 4736,
+        "startChar": 0,
+        "endLine": 4742,
+        "endChar": 3
+      },
+      "revId": "9d5bc18b099ea9115fde340e1db49536fa621318",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
