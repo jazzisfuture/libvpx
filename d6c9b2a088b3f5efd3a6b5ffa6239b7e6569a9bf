@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f6856f92_46a23475",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-11T02:41:11Z",
+      "side": 1,
+      "message": "This line is causing the failure.",
+      "range": {
+        "startLine": 250,
+        "startChar": 4,
+        "endLine": 250,
+        "endChar": 54
+      },
+      "revId": "d6c9b2a088b3f5efd3a6b5ffa6239b7e6569a9bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
