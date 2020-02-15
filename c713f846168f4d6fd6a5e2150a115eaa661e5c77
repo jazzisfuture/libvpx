@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f0945b7_2e8d0783",
+        "filename": "vpx_ports/compiler_attributes.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-02-15T07:02:55Z",
+      "side": 1,
+      "message": "I restored this in patchset 2 since gcc defines no_sanitize, but doesn\u0027t support \"unsigned-integer-overflow\"",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "c713f846168f4d6fd6a5e2150a115eaa661e5c77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
