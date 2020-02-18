@@ -2471,10 +2471,16 @@ typedef struct RANGE {
  *   rc->frames_since_key
  *   rc->source_alt_ref_active
  *
+ * Special case: if CONFIG_RATE_CTRL is true, the external arf indexes will
+ * determine the arf position.
+ *
  * TODO(angiebird): Separate the dynamic fields and static fields into two
  * structs.
  */
 static int get_gop_coding_frame_num(
+#if CONFIG_RATE_CTRL
+    const ENCODE_COMMAND *encode_command,
+#endif
     int *use_alt_ref, const FRAME_INFO *frame_info,
     const FIRST_PASS_INFO *first_pass_info, const RATE_CONTROL *rc,
     int gf_start_show_idx, const RANGE *active_gf_interval,
@@ -2490,6 +2496,11 @@ static int get_gop_coding_frame_num(
       (frame_info->frame_height + frame_info->frame_width) / 4.0;
   double zero_motion_accumulator = 1.0;
   int gop_coding_frames;
+#if CONFIG_RATE_CTRL
+  (void)mv_ratio_accumulator_thresh;
+  (void)active_gf_interval;
+  (void)gop_intra_factor;
+#endif  // CONFIG_RATE_CTRL
 
   *use_alt_ref = 1;
   gop_coding_frames = 0;
@@ -2553,6 +2564,15 @@ static int get_gop_coding_frame_num(
       }
     }
 
+#if CONFIG_RATE_CTRL
+    if (encode_command != NULL && encode_command->use_external_arf) {
+      const int frame_index = gf_start_show_idx + gop_coding_frames;
+      if (encode_command->external_arf_indexes[frame_index] == 1) break;
+      // Do not go to the break out conditions if external arf is used.
+      continue;
+    }
+#endif  // CONFIG_RATE_CTRL
+
     // Break out conditions.
     // Break at maximum of active_gf_interval->max unless almost totally
     // static.
@@ -2581,7 +2601,9 @@ static int get_gop_coding_frame_num(
       break;
     }
   }
+#if !CONFIG_RATE_CTRL
   *use_alt_ref &= zero_motion_accumulator < 0.995;
+#endif  // CONFIG_RATE_CTRL
   *use_alt_ref &= gop_coding_frames < lag_in_frames;
   *use_alt_ref &= gop_coding_frames >= rc->min_gf_interval;
   return gop_coding_frames;
@@ -2718,6 +2740,9 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
 
   {
     gop_coding_frames = get_gop_coding_frame_num(
+#if CONFIG_RATE_CTRL
+        &cpi->encode_command,
+#endif
         &use_alt_ref, frame_info, first_pass_info, rc, gf_start_show_idx,
         &active_gf_interval, gop_intra_factor, cpi->oxcf.lag_in_frames);
     use_alt_ref &= allow_alt_ref;
@@ -3669,12 +3694,13 @@ void vp9_get_next_group_of_picture(const VP9_COMP *cpi, int *first_is_key_frame,
   }
 
   *coding_frame_count = vp9_get_gop_coding_frame_count(
-      &cpi->oxcf, &cpi->frame_info, &cpi->twopass.first_pass_info, &rc,
-      *first_show_idx, multi_layer_arf, allow_alt_ref, *first_is_key_frame,
-      last_gop_use_alt_ref, use_alt_ref);
+      &cpi->encode_command, &cpi->oxcf, &cpi->frame_info,
+      &cpi->twopass.first_pass_info, &rc, *first_show_idx, multi_layer_arf,
+      allow_alt_ref, *first_is_key_frame, last_gop_use_alt_ref, use_alt_ref);
 }
 
-int vp9_get_gop_coding_frame_count(const VP9EncoderConfig *oxcf,
+int vp9_get_gop_coding_frame_count(const ENCODE_COMMAND *encode_command,
+                                   const VP9EncoderConfig *oxcf,
                                    const FRAME_INFO *frame_info,
                                    const FIRST_PASS_INFO *first_pass_info,
                                    const RATE_CONTROL *rc, int show_idx,
@@ -3697,6 +3723,9 @@ int vp9_get_gop_coding_frame_count(const VP9EncoderConfig *oxcf,
   }
 
   frame_count = get_gop_coding_frame_num(
+#if CONFIG_RATE_CTRL
+      encode_command,
+#endif
       use_alt_ref, frame_info, first_pass_info, rc, show_idx,
       &active_gf_interval, gop_intra_factor, oxcf->lag_in_frames);
   *use_alt_ref &= allow_alt_ref;
@@ -3705,7 +3734,8 @@ int vp9_get_gop_coding_frame_count(const VP9EncoderConfig *oxcf,
 
 // Under CONFIG_RATE_CTRL, once the first_pass_info is ready, the number of
 // coding frames (including show frame and alt ref) can be determined.
-int vp9_get_coding_frame_num(const VP9EncoderConfig *oxcf,
+int vp9_get_coding_frame_num(const ENCODE_COMMAND *encode_command,
+                             const VP9EncoderConfig *oxcf,
                              const FRAME_INFO *frame_info,
                              const FIRST_PASS_INFO *first_pass_info,
                              int multi_layer_arf, int allow_alt_ref) {
@@ -3729,8 +3759,9 @@ int vp9_get_coding_frame_num(const VP9EncoderConfig *oxcf,
     }
 
     gop_coding_frame_count = vp9_get_gop_coding_frame_count(
-        oxcf, frame_info, first_pass_info, &rc, show_idx, multi_layer_arf,
-        allow_alt_ref, first_is_key_frame, last_gop_use_alt_ref, &use_alt_ref);
+        encode_command, oxcf, frame_info, first_pass_info, &rc, show_idx,
+        multi_layer_arf, allow_alt_ref, first_is_key_frame,
+        last_gop_use_alt_ref, &use_alt_ref);
 
     rc.source_alt_ref_active = use_alt_ref;
     last_gop_use_alt_ref = use_alt_ref;
@@ -3742,7 +3773,7 @@ int vp9_get_coding_frame_num(const VP9EncoderConfig *oxcf,
   }
   return coding_frame_num;
 }
-#endif
+#endif  // CONFIG_RATE_CTRL
 
 FIRSTPASS_STATS vp9_get_frame_stats(const TWO_PASS *twopass) {
   return twopass->this_frame_stats;
