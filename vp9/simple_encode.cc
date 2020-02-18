@@ -545,6 +545,15 @@ static void SetGroupOfPicture(int first_is_key_frame, int use_alt_ref,
   }
 }
 
+// Sets arf indexes for the video from external input.
+// The arf index determines whether a frame is arf or not.
+// Therefore it also determines the group of picture size.
+static void SetExternalGroupOfPicture(VP9_COMP *cpi,
+                                      const int *external_arf_indexes) {
+  cpi->encode_command.use_external_arf = 1;
+  cpi->encode_command.external_arf_indexes = external_arf_indexes;
+}
+
 static void UpdateGroupOfPicture(const VP9_COMP *cpi,
                                  GroupOfPicture *group_of_picture) {
   int first_is_key_frame;
@@ -560,6 +569,8 @@ static void UpdateGroupOfPicture(const VP9_COMP *cpi,
 SimpleEncode::SimpleEncode(int frame_width, int frame_height,
                            int frame_rate_num, int frame_rate_den,
                            int target_bitrate, int num_frames,
+                           bool use_external_arf,
+                           const int *external_arf_indexes,
                            const char *infile_path, const char *outfile_path) {
   impl_ptr_ = std::unique_ptr<EncodeImpl>(new EncodeImpl());
   frame_width_ = frame_width;
@@ -568,7 +579,10 @@ SimpleEncode::SimpleEncode(int frame_width, int frame_height,
   frame_rate_den_ = frame_rate_den;
   target_bitrate_ = target_bitrate;
   num_frames_ = num_frames;
+  use_external_arf_ = use_external_arf;
+  external_arf_indexes_ = external_arf_indexes;
   // TODO(angirbid): Should we keep a file pointer here or keep the file_path?
+  assert(infile_path != nullptr);
   in_file_ = fopen(infile_path, "r");
   if (outfile_path != nullptr) {
     out_file_ = fopen(outfile_path, "w");
@@ -672,7 +686,11 @@ void SimpleEncode::StartEncode() {
   impl_ptr_->cpi = init_encoder(&oxcf, impl_ptr_->img_fmt);
   vpx_img_alloc(&impl_ptr_->tmp_img, impl_ptr_->img_fmt, frame_width_,
                 frame_height_, 1);
-  UpdateGroupOfPicture(impl_ptr_->cpi, &group_of_picture_);
+  if (use_external_arf_) {
+    SetExternalGroupOfPicture(impl_ptr_->cpi, external_arf_indexes_);
+  } else {
+    UpdateGroupOfPicture(impl_ptr_->cpi, &group_of_picture_);
+  }
   rewind(in_file_);
 
   if (out_file_ != nullptr) {
