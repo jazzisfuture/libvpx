@@ -245,7 +245,9 @@ class SimpleEncode {
   // format.
   SimpleEncode(int frame_width, int frame_height, int frame_rate_num,
                int frame_rate_den, int target_bitrate, int num_frames,
-               const char *infile_path, const char *outfile_path = nullptr);
+               bool use_external_arf, const int *external_arf_indexes = nullptr,
+               const char *infile_path = nullptr,
+               const char *outfile_path = nullptr);
   ~SimpleEncode();
   SimpleEncode(SimpleEncode &) = delete;
   SimpleEncode &operator=(const SimpleEncode &) = delete;
@@ -312,6 +314,9 @@ class SimpleEncode {
   std::FILE *in_file_;
   std::FILE *out_file_;
   std::unique_ptr<EncodeImpl> impl_ptr_;
+  int use_external_arf_;
+  // A list of indexes, each determining whether a frame is arf or not.
+  const int *external_arf_indexes_;
 
   GroupOfPicture group_of_picture_;
 };
