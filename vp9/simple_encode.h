@@ -272,11 +272,17 @@ class SimpleEncode {
   // values. For details, please check FIRSTPASS_STATS in vp9_firstpass.h
   std::vector<std::vector<double>> ObserveFirstPassStats();
 
+  // Initializes the encoder implemenation pointer (cpi), including
+  // encode_command, image buffer, etc. It must be called before
+  // SetExternalGroupOfPicture(), GetCodingFrameNum() and StartEncode().
+  void InitImplementation();
+
   // Sets arf indexes for the video from external input.
   // The arf index determines whether a frame is arf or not.
   // Therefore it also determines the group of picture size.
   // If set, VP9 will use the external arf index to make decision.
-  // This function is called only once before StartEncde().
+  // This function is called only once after InitImplementation(),
+  // before StartEncde().
   void SetExternalGroupOfPicture(bool use_external_arf,
                                  const int *external_arf_indexes);
 

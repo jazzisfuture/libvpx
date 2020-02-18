@@ -697,8 +697,7 @@ void SimpleEncode::SetExternalGroupOfPicture(const bool use_external_arf,
   impl_ptr_->cpi->encode_command.external_arf_indexes = external_arf_indexes;
 }
 
-void SimpleEncode::StartEncode() {
-  assert(impl_ptr_->first_pass_stats.size() > 0);
+void SimpleEncode::InitImplementation() {
   vpx_rational_t frame_rate =
       make_vpx_rational(frame_rate_num_, frame_rate_den_);
   VP9EncoderConfig oxcf =
@@ -714,6 +713,12 @@ void SimpleEncode::StartEncode() {
   impl_ptr_->cpi = init_encoder(&oxcf, impl_ptr_->img_fmt);
   vpx_img_alloc(&impl_ptr_->tmp_img, impl_ptr_->img_fmt, frame_width_,
                 frame_height_, 1);
+}
+
+void SimpleEncode::StartEncode() {
+  assert(impl_ptr_->first_pass_stats.size() > 0);
+  vpx_rational_t frame_rate =
+      make_vpx_rational(frame_rate_num_, frame_rate_den_);
   frame_coding_index_ = 0;
   UpdateGroupOfPicture(impl_ptr_->cpi, frame_coding_index_, &group_of_picture_);
   rewind(in_file_);
@@ -851,7 +856,7 @@ int SimpleEncode::GetCodingFrameNum() const {
   FIRST_PASS_INFO first_pass_info;
   fps_init_first_pass_info(&first_pass_info, impl_ptr_->first_pass_stats.data(),
                            num_frames_);
-  return vp9_get_coding_frame_num(/*encode_command=*/nullptr, &oxcf,
+  return vp9_get_coding_frame_num(&impl_ptr_->cpi->encode_command, &oxcf,
                                   &frame_info, &first_pass_info,
                                   multi_layer_arf, allow_alt_ref);
 }
