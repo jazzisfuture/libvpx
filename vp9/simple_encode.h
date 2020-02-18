@@ -262,6 +262,11 @@ class SimpleEncode {
   // values. For details, please check FIRSTPASS_STATS in vp9_firstpass.h
   std::vector<std::vector<double>> ObserveFirstPassStats();
 
+  // Initializes the encoder implemenation pointer (cpi), including
+  // encode_command, image buffer, etc. It must be called before
+  // GetCodingFrameNum() and StartEncode().
+  void InitImplementation();
+
   // Initializes the encoder for actual encoding.
   // This function should be called after ComputeFirstPassStats().
   void StartEncode();

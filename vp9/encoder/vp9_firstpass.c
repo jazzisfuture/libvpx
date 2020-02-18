@@ -2565,8 +2565,11 @@ static int get_gop_coding_frame_num(
     }
 
 #if CONFIG_RATE_CTRL
-    if (encode_command != NULL && encode_command->use_external_arf) {
-      const int frame_index = gf_start_show_idx + gop_coding_frames;
+    // gop_coding_frames > 1 is necessary to filter out the overlay frame,
+    // since the arf is in this group of picture and its overlay is in the next.
+    if (gop_coding_frames > 1 && encode_command != NULL &&
+        encode_command->use_external_arf) {
+      const int frame_index = gf_start_show_idx + gop_coding_frames - 1;
       if (encode_command->external_arf_indexes[frame_index] == 1) break;
       // Do not go to the break out conditions if external arf is used.
       continue;
