@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "072d94ff_9ea4ca26",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 557,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-21T02:36:15Z",
+      "side": 1,
+      "message": "Let\u0027s make this a public SimpleEncode API to set group of picture size.",
+      "range": {
+        "startLine": 553,
+        "startChar": 0,
+        "endLine": 557,
+        "endChar": 1
+      },
+      "revId": "af740ce916c54712ba2174820cfd5f5c91ebf75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1d2d762_18c51989",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 578,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-21T02:36:15Z",
+      "side": 1,
+      "message": "Please use a public API to set parameters so that we don\u0027t need to change the interface here.",
+      "range": {
+        "startLine": 577,
+        "startChar": 0,
+        "endLine": 578,
+        "endChar": 59
+      },
+      "revId": "af740ce916c54712ba2174820cfd5f5c91ebf75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
