@@ -161,19 +161,35 @@ static void update_partition_info(const PARTITION_INFO *input_partition_info,
   }
 }
 
+// translate MV_REFERENCE_FRAME to RefFrameType
+static RefFrameType mv_ref_frame_to_ref_frame_type(
+    MV_REFERENCE_FRAME mv_ref_frame) {
+  switch (mv_ref_frame) {
+    case LAST_FRAME: return kLastRefFrame;
+    case GOLDEN_FRAME: return kPastRefFrame;
+    case ALTREF_FRAME: return kFutureRefFrame;
+    default: return kNoneRefFrame;
+  }
+}
+
 static void update_motion_vector_info(
     const MOTION_VECTOR_INFO *input_motion_vector_info, const int num_rows_4x4,
     const int num_cols_4x4, MotionVectorInfo *output_motion_vector_info) {
   const int num_units_4x4 = num_rows_4x4 * num_cols_4x4;
   for (int i = 0; i < num_units_4x4; ++i) {
+    const MV_REFERENCE_FRAME *in_ref_frame =
+        input_motion_vector_info[i].ref_frame;
     output_motion_vector_info[i].mv_count =
-        (input_motion_vector_info[i].ref_frame[0] == INTRA_FRAME)
-            ? 0
-            : ((input_motion_vector_info[i].ref_frame[1] == -1) ? 1 : 2);
+        (in_ref_frame[0] == INTRA_FRAME) ? 0
+                                         : ((in_ref_frame[1] == NONE) ? 1 : 2);
+    if (in_ref_frame[0] == NONE) {
+      fprintf(stderr, "in_ref_frame[0] shouldn't be NONE\n");
+      abort();
+    }
     output_motion_vector_info[i].ref_frame[0] =
-        static_cast<RefFrameType>(input_motion_vector_info[i].ref_frame[0]);
+        mv_ref_frame_to_ref_frame_type(in_ref_frame[0]);
     output_motion_vector_info[i].ref_frame[1] =
-        static_cast<RefFrameType>(input_motion_vector_info[i].ref_frame[1]);
+        mv_ref_frame_to_ref_frame_type(in_ref_frame[1]);
     output_motion_vector_info[i].mv_row[0] =
         (double)input_motion_vector_info[i].mv[0].as_mv.row /
         kMotionVectorPrecision;
