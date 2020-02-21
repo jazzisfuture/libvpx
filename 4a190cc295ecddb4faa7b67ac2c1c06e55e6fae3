@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f1978ee_15e3046e",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-02-21T03:13:29Z",
+      "side": 1,
+      "message": "another naming scheme to better namespace the members is k\u003cenum\u003e\u003cname\u003e, e.g., kRefFrameTypeLast. If the values aren\u0027t used as integers an enum class is an option too:\n\nhttps://en.cppreference.com/w/cpp/language/enum",
+      "range": {
+        "startLine": 35,
+        "startChar": 2,
+        "endLine": 35,
+        "endChar": 15
+      },
+      "revId": "4a190cc295ecddb4faa7b67ac2c1c06e55e6fae3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
