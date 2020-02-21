@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "89347838_ac8bd4c5",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 676,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-21T02:54:46Z",
+      "side": 1,
+      "message": "Is this function\u0027s purpose is for readability?\nIf so, it\u0027s better to make it private and being called in StartEncode().",
+      "range": {
+        "startLine": 676,
+        "startChar": 0,
+        "endLine": 676,
+        "endChar": 0
+      },
+      "revId": "9d8f17c27cee2e0de1d65db67991b7666d4cb8ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
