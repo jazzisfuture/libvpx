@@ -332,6 +332,22 @@ class SimpleEncode {
   // coding order (starting from zero) in the coding process of the entire
   // video. The coding index of to-be-coded frame.
   int frame_coding_index_;
+  // TODO(angiebird): Do we need to reset ref_frame_valid_list_ and
+  // ref_frame_valid_list_ when nex key frame appears? The the coding indexes of
+  // reference frames of to-be-coded-frame.
+  int ref_frame_coding_indexes_[kRefFrameTypeMax];
+  // Indicate whether the reference frames are available or not.
+  // When the reference frame is not availble, it means the to-be-coded frame is
+  // key frame or the reference frame already appears in other reference frame
+  // type. vp9 always keep the three types of reference frames available.
+  // However, the duplicated reference frames will not be chose by encoder.
+  // The priorities of choosing reference frames are
+  // kRefFrameTypeLast > kRefFrameTypePast > kRefFrameTypeFuture
+  // For example, if kRefFrameTypeLast and kRefFrameTypePast both point to the
+  // same frame, kRefFrameTypePast will be set to invalid.
+  int ref_frame_valid_list_[kRefFrameTypeMax];
+
+  void PostUpdateState(const EncodeFrameResult &encode_frame_result);
 };
 
 }  // namespace vp9
