@@ -22,6 +22,30 @@
       "revId": "9d8f17c27cee2e0de1d65db67991b7666d4cb8ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef408839_68f8d451",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 676,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-02-24T22:55:44Z",
+      "side": 1,
+      "message": "As discussed offline. I think this is still necessary because we pass in external arfs.\nWe keep StartEnocde() interface the same. But we need to call\nInitImplementation()  --\u003e  SetExternalGroupOfPicture(use_external_arf, external_arf_indexes) --\u003e StartEncode()",
+      "parentUuid": "89347838_ac8bd4c5",
+      "range": {
+        "startLine": 676,
+        "startChar": 0,
+        "endLine": 676,
+        "endChar": 0
+      },
+      "revId": "9d8f17c27cee2e0de1d65db67991b7666d4cb8ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
