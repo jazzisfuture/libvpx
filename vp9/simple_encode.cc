@@ -789,6 +789,17 @@ void SimpleEncode::SetExternalGroupOfPicture(
   external_arf_indexes_ = external_arf_indexes;
 }
 
+template <class T>
+const T *GetVectorData(const std::vector<T> &v) {
+  // THis will guarantee that the data pointer is nullptr when the vector is
+  // empty
+  if (v.size() > 0) {
+    return v.data();
+  } else {
+    return nullptr;
+  }
+}
+
 void SimpleEncode::StartEncode() {
   assert(impl_ptr_->first_pass_stats.size() > 0);
   vpx_rational_t frame_rate =
@@ -797,6 +808,8 @@ void SimpleEncode::StartEncode() {
       vp9_get_encoder_config(frame_width_, frame_height_, frame_rate,
                              target_bitrate_, VPX_RC_LAST_PASS);
   vpx_fixed_buf_t stats;
+  // Idally we should use GetVectorData(), but stats.buf is not a const
+  // pointer and we can't change it's type.
   stats.buf = impl_ptr_->first_pass_stats.data();
   stats.sz = sizeof(impl_ptr_->first_pass_stats[0]) *
              impl_ptr_->first_pass_stats.size();
@@ -808,7 +821,7 @@ void SimpleEncode::StartEncode() {
                 frame_height_, 1);
   frame_coding_index_ = 0;
   encode_command_set_external_arf_indexes(&impl_ptr_->cpi->encode_command,
-                                          external_arf_indexes_.data());
+                                          GetVectorData(external_arf_indexes_));
   UpdateGroupOfPicture(impl_ptr_->cpi, frame_coding_index_, ref_frame_info_,
                        &group_of_picture_);
   rewind(in_file_);
@@ -952,7 +965,8 @@ int SimpleEncode::GetCodingFrameNum() const {
                              target_bitrate_, VPX_RC_LAST_PASS);
   FRAME_INFO frame_info = vp9_get_frame_info(&oxcf);
   FIRST_PASS_INFO first_pass_info;
-  fps_init_first_pass_info(&first_pass_info, impl_ptr_->first_pass_stats.data(),
+  fps_init_first_pass_info(&first_pass_info,
+                           GetVectorData(impl_ptr_->first_pass_stats),
                            num_frames_);
   return vp9_get_coding_frame_num(external_arf_indexes_.data(), &oxcf,
                                   &frame_info, &first_pass_info,
