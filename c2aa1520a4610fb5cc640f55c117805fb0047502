@@ -46,6 +46,30 @@
       "revId": "c2aa1520a4610fb5cc640f55c117805fb0047502",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f7f44e9_f5dd18ff",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 658,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-02-27T02:45:16Z",
+      "side": 1,
+      "message": "But ref_frame_info is a local variable. Update this local variable and it is not used any more. Do I miss something?",
+      "parentUuid": "2b5e9b00_f095b73e",
+      "range": {
+        "startLine": 658,
+        "startChar": 4,
+        "endLine": 658,
+        "endChar": 53
+      },
+      "revId": "c2aa1520a4610fb5cc640f55c117805fb0047502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
