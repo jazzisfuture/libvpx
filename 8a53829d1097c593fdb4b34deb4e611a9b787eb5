@@ -22,6 +22,30 @@
       "revId": "8a53829d1097c593fdb4b34deb4e611a9b787eb5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0dbea64e_3afb1a5f",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1482,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-02-28T04:15:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d1d39f08_5b46edfe",
+      "range": {
+        "startLine": 1482,
+        "startChar": 27,
+        "endLine": 1482,
+        "endChar": 43
+      },
+      "revId": "8a53829d1097c593fdb4b34deb4e611a9b787eb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
