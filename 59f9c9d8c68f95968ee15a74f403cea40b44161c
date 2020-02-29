@@ -245,6 +245,24 @@
       "revId": "59f9c9d8c68f95968ee15a74f403cea40b44161c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75d21bf3_41db3e55",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 812,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-02-29T01:09:11Z",
+      "side": 1,
+      "message": "I just mean \u0027T* GetVectorData() ...\u0027 similar to data()\u0027s variants\n\nhttps://en.cppreference.com/w/cpp/container/vector/data",
+      "parentUuid": "c814e90a_a6d2ac1e",
+      "revId": "59f9c9d8c68f95968ee15a74f403cea40b44161c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
