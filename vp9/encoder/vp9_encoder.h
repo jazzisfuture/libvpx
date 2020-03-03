@@ -535,8 +535,12 @@ typedef struct MOTION_VECTOR_INFO {
 typedef struct ENCODE_COMMAND {
   int use_external_quantize_index;
   int external_quantize_index;
-  // A list of binary flags set from the external controller.
-  // Each binary flag indicates whether the frame is an arf or not.
+  // A list of integers set from the external controller.
+  // It determines the gop size and the arf type.
+  // The current gop size is the length between two non zero indexes.
+  // If the index value is 1, it indicates the frame is an arf.
+  // If the index value is 2, it indicates although we set the end of this
+  // gop at this frame, it is not used as a arf.
   const int *external_arf_indexes;
 } ENCODE_COMMAND;
 
@@ -874,6 +878,7 @@ typedef struct VP9_COMP {
   int multi_layer_arf;
   vpx_roi_map_t roi;
 #if CONFIG_RATE_CTRL
+  int allow_alt_ref;
   ENCODE_COMMAND encode_command;
   PARTITION_INFO *partition_info;
   MOTION_VECTOR_INFO *motion_vector_info;
@@ -1125,6 +1130,9 @@ static INLINE int denoise_svc(const struct VP9_COMP *const cpi) {
 static INLINE int is_altref_enabled(const VP9_COMP *const cpi) {
   return !(cpi->oxcf.mode == REALTIME && cpi->oxcf.rc_mode == VPX_CBR) &&
          cpi->oxcf.lag_in_frames >= MIN_LOOKAHEAD_FOR_ARFS &&
+#if CONFIG_RATE_CTRL
+         cpi->allow_alt_ref &&
+#endif
          cpi->oxcf.enable_auto_arf;
 }
 

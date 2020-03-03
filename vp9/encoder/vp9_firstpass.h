@@ -258,6 +258,7 @@ int vp9_get_frames_to_next_key(const struct VP9EncoderConfig *oxcf,
  * the last group of pictures is just finished.
  */
 void vp9_get_next_group_of_picture(const struct VP9_COMP *cpi,
+                                   const int allow_alt_ref,
                                    int *first_is_key_frame, int *use_alt_ref,
                                    int *coding_frame_count, int *first_show_idx,
                                    int *last_gop_use_alt_ref);

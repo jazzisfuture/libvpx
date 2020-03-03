@@ -39,6 +39,24 @@ enum RefFrameType {
   kRefFrameTypeNone = -1,
 };
 
+// Frame types set by the external controller.
+// kEndOfGOPFrame indicates the frame is at the end of a group of picture,
+// but it is not an alt ref frame.
+// kAltRefFrame indicates the frame is an alt ref frame, it must be at the
+// end of a group of picture.
+// kNormalFrame is a frame that is not at the end of a group of picture.
+// This is used by an array |external_arf_indexes|, for example, if we want to
+// set the first gop of size 8, use arf; the second of size 9, not use arf,
+// we can set:
+// for (int i = 0; i < 17; ++i) external_arf_index[i] = kNormalFrame;
+// external_arf_indexes[7] = kAltRefFrame;
+// external_arf_indexes[16] = kEndOfGOPFrame;
+enum ExternalArfType {
+  kNormalFrame = 0,
+  kAltRefFrame = 1,
+  kEndOfGOPFrame = 2,
+};
+
 // The frame is split to 4x4 blocks.
 // This structure contains the information of each 4x4 block.
 struct PartitionInfo {
@@ -289,12 +307,17 @@ class SimpleEncode {
   std::vector<std::vector<double>> ObserveFirstPassStats();
 
   // Sets arf indexes for the video from external input.
-  // The arf index determines whether a frame is arf or not.
-  // Therefore it also determines the group of picture size.
+  // It determines the gop size and the arf type.
+  // The current gop size is the length between two non zero indexes.
+  // If the index value is 1, it indicates the frame is an arf.
+  // If the index value is 2, it indicates although we set the end of this
+  // gop at this frame, it is not used as a arf.
   // If set, VP9 will use the external arf index to make decision.
   // This function should be called only once after ComputeFirstPassStats(),
   // before StartEncde().
   void SetExternalGroupOfPicture(std::vector<int> external_arf_indexes);
+
+  void SetAllowAltRef(int allow_alt_ref) { allow_alt_ref_ = allow_alt_ref; }
 
   // Initializes the encoder for actual encoding.
   // This function should be called after ComputeFirstPassStats().
@@ -345,6 +368,7 @@ class SimpleEncode {
   int frame_rate_den_;
   int target_bitrate_;
   int num_frames_;
+  int allow_alt_ref_;
 
   std::FILE *in_file_;
   std::FILE *out_file_;

@@ -666,7 +666,8 @@ static void SetGroupOfPicture(int first_is_key_frame, int use_alt_ref,
 // Gets group of picture information from VP9's decision, and update
 // |group_of_picture| accordingly.
 // This is called at the starting of encoding of each group of picture.
-static void UpdateGroupOfPicture(const VP9_COMP *cpi, int start_coding_index,
+static void UpdateGroupOfPicture(const VP9_COMP *cpi, const int allow_alt_ref,
+                                 int start_coding_index,
                                  const RefFrameInfo &start_ref_frame_info,
                                  GroupOfPicture *group_of_picture) {
   int first_is_key_frame;
@@ -674,9 +675,9 @@ static void UpdateGroupOfPicture(const VP9_COMP *cpi, int start_coding_index,
   int coding_frame_count;
   int first_show_idx;
   int last_gop_use_alt_ref;
-  vp9_get_next_group_of_picture(cpi, &first_is_key_frame, &use_alt_ref,
-                                &coding_frame_count, &first_show_idx,
-                                &last_gop_use_alt_ref);
+  vp9_get_next_group_of_picture(cpi, allow_alt_ref, &first_is_key_frame,
+                                &use_alt_ref, &coding_frame_count,
+                                &first_show_idx, &last_gop_use_alt_ref);
   SetGroupOfPicture(first_is_key_frame, use_alt_ref, coding_frame_count,
                     first_show_idx, last_gop_use_alt_ref, start_coding_index,
                     start_ref_frame_info, group_of_picture);
@@ -693,6 +694,8 @@ SimpleEncode::SimpleEncode(int frame_width, int frame_height,
   frame_rate_den_ = frame_rate_den;
   target_bitrate_ = target_bitrate;
   num_frames_ = num_frames;
+  // Allow to use alt ref by default.
+  allow_alt_ref_ = 1;
   frame_coding_index_ = 0;
   // TODO(angirbid): Should we keep a file pointer here or keep the file_path?
   assert(infile_path != nullptr);
@@ -807,10 +810,12 @@ void SimpleEncode::StartEncode() {
   vpx_img_alloc(&impl_ptr_->tmp_img, impl_ptr_->img_fmt, frame_width_,
                 frame_height_, 1);
   frame_coding_index_ = 0;
+  // By default alt-ref is allowed.
+  if (!allow_alt_ref_) impl_ptr_->cpi->allow_alt_ref = 0;
   encode_command_set_external_arf_indexes(&impl_ptr_->cpi->encode_command,
                                           external_arf_indexes_.data());
-  UpdateGroupOfPicture(impl_ptr_->cpi, frame_coding_index_, ref_frame_info_,
-                       &group_of_picture_);
+  UpdateGroupOfPicture(impl_ptr_->cpi, allow_alt_ref_, frame_coding_index_,
+                       ref_frame_info_, &group_of_picture_);
   rewind(in_file_);
 
   if (out_file_ != nullptr) {
@@ -854,8 +859,8 @@ void SimpleEncode::PostUpdateState(
   ++frame_coding_index_;
   IncreaseGroupOfPictureIndex(&group_of_picture_);
   if (IsGroupOfPictureFinished(group_of_picture_)) {
-    UpdateGroupOfPicture(impl_ptr_->cpi, frame_coding_index_, ref_frame_info_,
-                         &group_of_picture_);
+    UpdateGroupOfPicture(impl_ptr_->cpi, allow_alt_ref_, frame_coding_index_,
+                         ref_frame_info_, &group_of_picture_);
   }
 }
 
@@ -944,7 +949,6 @@ int SimpleEncode::GetCodingFrameNum() const {
   assert(impl_ptr_->first_pass_stats.size() - 1 > 0);
   // These are the default settings for now.
   const int multi_layer_arf = 0;
-  const int allow_alt_ref = 1;
   vpx_rational_t frame_rate =
       make_vpx_rational(frame_rate_num_, frame_rate_den_);
   const VP9EncoderConfig oxcf =
@@ -956,7 +960,7 @@ int SimpleEncode::GetCodingFrameNum() const {
                            num_frames_);
   return vp9_get_coding_frame_num(external_arf_indexes_.data(), &oxcf,
                                   &frame_info, &first_pass_info,
-                                  multi_layer_arf, allow_alt_ref);
+                                  multi_layer_arf, allow_alt_ref_);
 }
 
 uint64_t SimpleEncode::GetFramePixelCount() const {

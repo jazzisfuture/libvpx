@@ -2653,6 +2653,7 @@ VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
   cm->error.setjmp = 0;
 
 #if CONFIG_RATE_CTRL
+  cpi->allow_alt_ref = 1;
   encode_command_init(&cpi->encode_command);
   partition_info_init(cpi);
   motion_vector_info_init(cpi);

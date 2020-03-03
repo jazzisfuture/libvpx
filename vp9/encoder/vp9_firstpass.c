@@ -2505,11 +2505,20 @@ static int get_gop_coding_frame_num(
     // gop_coding_frames = 1 is necessary to filter out the overlay frame,
     // since the arf is in this group of picture and its overlay is in the next.
     gop_coding_frames = 1;
-    *use_alt_ref = 1;
     while (gop_coding_frames < rc->frames_to_key) {
       const int frame_index = gf_start_show_idx + gop_coding_frames;
       ++gop_coding_frames;
-      if (external_arf_indexes[frame_index] == 1) break;
+      if (external_arf_indexes[frame_index] == 1) {
+        // An arf is found, and the end of this gop is determined.
+        *use_alt_ref = 1;
+        break;
+      } else if (external_arf_indexes[frame_index] == 2) {
+        // The end of this gop is determined, but arf is not used for this gop.
+        *use_alt_ref = 0;
+        break;
+      } else {
+        assert(0 && "Invalid external arf index value.");
+      }
     }
     return gop_coding_frames;
   }
@@ -3670,16 +3679,15 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
 }
 
 #if CONFIG_RATE_CTRL
-void vp9_get_next_group_of_picture(const VP9_COMP *cpi, int *first_is_key_frame,
-                                   int *use_alt_ref, int *coding_frame_count,
-                                   int *first_show_idx,
+void vp9_get_next_group_of_picture(const VP9_COMP *cpi, const int allow_alt_ref,
+                                   int *first_is_key_frame, int *use_alt_ref,
+                                   int *coding_frame_count, int *first_show_idx,
                                    int *last_gop_use_alt_ref) {
   // We make a copy of rc here because we want to get information from the
   // encoder without changing its state.
   // TODO(angiebird): Avoid copying rc here.
   RATE_CONTROL rc = cpi->rc;
   const int multi_layer_arf = 0;
-  const int allow_alt_ref = 1;
   // We assume that current_video_frame is updated to the show index of the
   // frame we are about to called. Note that current_video_frame is updated at
   // the end of encode_frame_to_data_rate().
