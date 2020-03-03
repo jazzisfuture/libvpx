@@ -55,6 +55,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->use_set_ref_frame_config = 0;
   svc->num_encoded_top_layer = 0;
   svc->simulcast_mode = 0;
+  svc->single_layer_svc = 0;
 
   for (i = 0; i < REF_FRAMES; ++i) {
     svc->fb_idx_spatial_layer_id[i] = 0xff;
@@ -193,6 +194,7 @@ void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
   const RATE_CONTROL *const rc = &cpi->rc;
   int sl, tl, layer = 0, spatial_layer_target;
   float bitrate_alloc = 1.0;
+  int num_spatial_layers_nonzero_rate = 0;
 
   cpi->svc.temporal_layering_mode = oxcf->temporal_layering_mode;
 
@@ -273,6 +275,14 @@ void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
       lrc->best_quality = rc->best_quality;
     }
   }
+  svc->single_layer_svc = 0;
+   for (sl = 0; sl < oxcf->ss_number_layers; ++sl) {
+    // Check bitrate of spatia layer.
+    layer = LAYER_IDS_TO_IDX(sl, oxcf->ts_number_layers -1, oxcf->ts_number_layers);
+    if (oxcf->layer_target_bitrate[layer] > 0)
+      num_spatial_layers_nonzero_rate += 1;
+  }
+  if (num_spatial_layers_nonzero_rate == 1) svc->single_layer_svc = 1;
 }
 
 static LAYER_CONTEXT *get_layer_context(VP9_COMP *const cpi) {
