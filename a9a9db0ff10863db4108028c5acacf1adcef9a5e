@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "169febe4_69410d5b",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 795,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-03-03T22:51:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6436991_28e8b6e7",
+      "revId": "a9a9db0ff10863db4108028c5acacf1adcef9a5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f9fa2e8_9d42868d",
         "filename": "vp9/simple_encode.cc",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "a9a9db0ff10863db4108028c5acacf1adcef9a5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "053d079e_be0f167e",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 811,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-03-03T22:51:16Z",
+      "side": 1,
+      "message": "The comment is removed.",
+      "parentUuid": "8f9fa2e8_9d42868d",
+      "range": {
+        "startLine": 811,
+        "startChar": 33,
+        "endLine": 811,
+        "endChar": 37
+      },
+      "revId": "a9a9db0ff10863db4108028c5acacf1adcef9a5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
