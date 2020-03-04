@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "133d70ef_6193931e",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-03-04T23:17:50Z",
+      "side": 1,
+      "message": "I think it\u0027s more straightforward to use SetExternalGroupOfPicture() here.\nAnd use ObserveGroupOfPicture() to check whether the gop is set as we intended to.\nThat way, you only need to encode the video one time.",
+      "range": {
+        "startLine": 363,
+        "startChar": 4,
+        "endLine": 363,
+        "endChar": 36
+      },
+      "revId": "9ef0ec0d0d4585e2ac7ae17bfdbdc8c4170dd6e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29ca7b0e_f45635df",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 881,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-03-04T23:17:50Z",
+      "side": 1,
+      "message": "If we need this flag, it should be put into encode_command.",
+      "range": {
+        "startLine": 881,
+        "startChar": 2,
+        "endLine": 881,
+        "endChar": 20
+      },
+      "revId": "9ef0ec0d0d4585e2ac7ae17bfdbdc8c4170dd6e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60cc820f_1cc8f617",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-03-04T23:17:50Z",
+      "side": 1,
+      "message": "My understanding is that we use external_arf_indexes[] to determine whether to use arf for each gop. Do we still need an extra API?",
+      "range": {
+        "startLine": 320,
+        "startChar": 2,
+        "endLine": 320,
+        "endChar": 76
+      },
+      "revId": "9ef0ec0d0d4585e2ac7ae17bfdbdc8c4170dd6e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
