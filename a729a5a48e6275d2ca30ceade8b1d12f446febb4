@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80264266_df79f704",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-03-04T04:47:23Z",
+      "side": 1,
+      "message": "better to add some comment saying these two flags are only used internally for dynamic resizing",
+      "range": {
+        "startLine": 50,
+        "startChar": 6,
+        "endLine": 50,
+        "endChar": 31
+      },
+      "revId": "a729a5a48e6275d2ca30ceade8b1d12f446febb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bff5ae07_f38a74bd",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-03-04T04:47:23Z",
+      "side": 1,
+      "message": "Flag",
+      "range": {
+        "startLine": 198,
+        "startChar": 5,
+        "endLine": 198,
+        "endChar": 9
+      },
+      "revId": "a729a5a48e6275d2ca30ceade8b1d12f446febb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc2b620f_38d0c937",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-03-04T04:47:23Z",
+      "side": 1,
+      "message": "Dynamically",
+      "range": {
+        "startLine": 198,
+        "startChar": 29,
+        "endLine": 198,
+        "endChar": 40
+      },
+      "revId": "a729a5a48e6275d2ca30ceade8b1d12f446febb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
