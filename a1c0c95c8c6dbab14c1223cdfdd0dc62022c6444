@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa6fe9f6_22647a81",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 797,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-05T02:09:38Z",
+      "side": 1,
+      "message": "data() is available in a non-const variant too, though you\u0027d need to change the function signature.",
+      "revId": "a1c0c95c8c6dbab14c1223cdfdd0dc62022c6444",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
