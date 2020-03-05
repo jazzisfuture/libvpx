@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ba9c9d4d_bd4413a6",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-03-05T01:49:52Z",
+      "side": 1,
+      "message": "The intent of this test is that we encode with vp9, and encode with external arfs. They should return the same results.\n\nHowever, currently vp9 doesn\u0027t have a control flag to allow or disallow alt ref.\nVP9 makes the decision of whether to use_alt_ref in \"get_gop_coding_frame_num\".\nThe |allow_alt_ref_| parameter is added to allow us to force vp9 to disallow alt ref.\n\"SetAllowAltRef\" is the setter of |allow_alt_ref_| accordingly.\n\nBasically, both |allow_alt_ref_| and \"SetAllowAltRef\" doesn\u0027t impact the ml external arf behavior. They are just helper variables and functions so that we can control VP9 and make this test possible.\n\nI think \"SetExternalGroupOfPicture\" and then \"ObserveGroupOfPicture\" is also a valid test.\nBut actual coding and matching coding stats provide higher confidence as a test.\n\nBesides, \"SetAllowAltRef\" will not be called in other code other than the test. I think it is not a burden.",
+      "parentUuid": "133d70ef_6193931e",
+      "range": {
+        "startLine": 363,
+        "startChar": 4,
+        "endLine": 363,
+        "endChar": 36
+      },
+      "revId": "9ef0ec0d0d4585e2ac7ae17bfdbdc8c4170dd6e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29ca7b0e_f45635df",
         "filename": "vp9/encoder/vp9_encoder.h",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "bce8c1fa_6da02b24",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 881,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-03-05T01:49:52Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "29ca7b0e_f45635df",
+      "range": {
+        "startLine": 881,
+        "startChar": 2,
+        "endLine": 881,
+        "endChar": 20
+      },
+      "revId": "9ef0ec0d0d4585e2ac7ae17bfdbdc8c4170dd6e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "60cc820f_1cc8f617",
         "filename": "vp9/simple_encode.h",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "9ef0ec0d0d4585e2ac7ae17bfdbdc8c4170dd6e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e32e1783_281eb6c6",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-03-05T01:49:52Z",
+      "side": 1,
+      "message": "Please see the first reply.",
+      "parentUuid": "60cc820f_1cc8f617",
+      "range": {
+        "startLine": 320,
+        "startChar": 2,
+        "endLine": 320,
+        "endChar": 76
+      },
+      "revId": "9ef0ec0d0d4585e2ac7ae17bfdbdc8c4170dd6e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
