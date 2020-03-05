@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "30cbba90_0025115b",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-03-05T19:18:17Z",
+      "side": 1,
+      "message": "1) If we don\u0027t use it, why do we need to test it?\n2) We still need to test if we set different frame types using SetExternalGroupOfPicture(),\nwhether the encoder will behave the way we wanted it to, which is the actual case we use.",
+      "parentUuid": "ba9c9d4d_bd4413a6",
+      "range": {
+        "startLine": 363,
+        "startChar": 4,
+        "endLine": 363,
+        "endChar": 36
+      },
+      "revId": "9ef0ec0d0d4585e2ac7ae17bfdbdc8c4170dd6e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29ca7b0e_f45635df",
         "filename": "vp9/encoder/vp9_encoder.h",
         "patchSetId": 1
