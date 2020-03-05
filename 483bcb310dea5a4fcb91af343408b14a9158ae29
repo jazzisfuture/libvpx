@@ -22,6 +22,30 @@
       "revId": "483bcb310dea5a4fcb91af343408b14a9158ae29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "299b824f_3ea9f593",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-03-05T18:11:20Z",
+      "side": 1,
+      "message": "Key frame also has an index in the group.",
+      "parentUuid": "c5e69742_18a519dc",
+      "range": {
+        "startLine": 364,
+        "startChar": 6,
+        "endLine": 364,
+        "endChar": 28
+      },
+      "revId": "483bcb310dea5a4fcb91af343408b14a9158ae29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
