@@ -821,6 +821,8 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
   volatile vpx_enc_frame_flags_t flags = enc_flags;
   volatile vpx_codec_pts_t pts_val = pts;
 
+  vpx_codec_pkt_list_init(&ctx->pkt_list);
+
   if (!ctx->cfg.rc_target_bitrate) {
 #if CONFIG_MULTI_RES_ENCODING
     if (!ctx->cpi) return VPX_CODEC_ERROR;
@@ -847,7 +849,6 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
   pts_val -= ctx->pts_offset;
 
   pick_quickcompress_mode(ctx, duration, deadline);
-  vpx_codec_pkt_list_init(&ctx->pkt_list);
 
   // If no flags are set in the encode call, then use the frame flags as
   // defined via the control function: vp8e_set_frame_flags.
