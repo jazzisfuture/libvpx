@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1c419760_028d64ef",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-14T05:35:06Z",
+      "side": 1,
+      "message": "This is a good start. It\u0027s common in the .cc file to try to match the definition order with the declaration order in the header.",
+      "revId": "34f3fe951254c85abd848441c3cc87bd5e24413b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
