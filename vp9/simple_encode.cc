@@ -852,7 +852,8 @@ void SimpleEncode::StartEncode() {
 
   if (out_file_ != nullptr) {
     const char *fourcc = "VP90";
-    vpx_rational_t time_base = invert_vpx_rational(frame_rate);
+    // TODO(angiebird): Add unit test for ivf timestamp
+    vpx_rational_t time_base = make_vpx_rational(1, TICKS_PER_SEC);
     ivf_write_file_header_with_video_info(out_file_, *(const uint32_t *)fourcc,
                                           num_frames_, frame_width_,
                                           frame_height_, time_base);
