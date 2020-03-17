@@ -16,6 +16,24 @@
       "revId": "5010fa9dc32fdb73e2ea0847dbbe62d452bb84b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1a625b2_70884e7d",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 855,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-03-17T05:51:43Z",
+      "side": 0,
+      "message": "I added some comments to clarify the intention.",
+      "parentUuid": "2383972a_4ee76711",
+      "revId": "5010fa9dc32fdb73e2ea0847dbbe62d452bb84b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
