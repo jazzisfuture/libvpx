@@ -125,6 +125,10 @@ struct vpx_codec_alg_priv {
   BufferPool *buffer_pool;
 };
 
+struct vpx_rc_priv {
+  VP9_COMP *cpi;
+};
+
 static vpx_codec_err_t update_error_state(
     vpx_codec_alg_priv_t *ctx, const struct vpx_internal_error_info *error) {
   const vpx_codec_err_t res = error->error_code;
@@ -885,6 +889,23 @@ static vpx_codec_err_t ctrl_get_level(vpx_codec_alg_priv_t *ctx, va_list args) {
   if (arg == NULL) return VPX_CODEC_INVALID_PARAM;
   *arg = (int)vp9_get_level(&ctx->cpi->level_info.level_spec);
   return VPX_CODEC_OK;
+}
+
+static vpx_codec_err_t rc_init(vpx_rc_ctx_t *ctx) {
+  vpx_codec_err_t res = VPX_CODEC_OK;
+  if (ctx->priv == NULL) {
+    vpx_rc_priv_t *const priv = vpx_calloc(1, sizeof(*priv));
+    VP9_COMP *const cpi = vpx_memalign(32, sizeof(VP9_COMP));
+    if (priv == NULL) return VPX_CODEC_MEM_ERROR;
+
+    ctx->priv = priv;
+
+    priv->cpi = cpi;
+    if (priv->cpi == NULL) res = VPX_CODEC_MEM_ERROR;
+    init_compressor_rc(priv->cpi);
+  }
+
+  return res;
 }
 
 static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
@@ -1841,6 +1862,7 @@ CODEC_INTERFACE(vpx_codec_vp9_cx) = {
 #endif
       VPX_CODEC_CAP_ENCODER | VPX_CODEC_CAP_PSNR,  // vpx_codec_caps_t
   encoder_init,                                    // vpx_codec_init_fn_t
+  rc_init,                                         // vpx_rc_init_fn_t
   encoder_destroy,                                 // vpx_codec_destroy_fn_t
   encoder_ctrl_maps,                               // vpx_codec_ctrl_fn_map_t
   {

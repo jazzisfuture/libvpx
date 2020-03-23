@@ -180,6 +180,10 @@ typedef const struct vpx_codec_iface vpx_codec_iface_t;
  */
 typedef struct vpx_codec_priv vpx_codec_priv_t;
 
+/*!\brief Rate control private data structure.
+ */
+typedef struct vpx_rc_priv vpx_rc_priv_t;
+
 /*!\brief Iterator
  *
  * Opaque storage used for iterating over lists.
@@ -209,6 +213,12 @@ typedef struct vpx_codec_ctx {
   } config;               /**< Configuration pointer aliasing union */
   vpx_codec_priv_t *priv; /**< Algorithm private storage */
 } vpx_codec_ctx_t;
+
+typedef struct vpx_rc_ctx {
+  vpx_codec_err_t err;
+  vpx_codec_iface_t *iface; /**< Interface pointers */
+  vpx_rc_priv_t *priv;
+} vpx_rc_ctx_t;
 
 /*!\brief Bit depth for codec
  * *

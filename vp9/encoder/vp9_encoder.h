@@ -954,6 +954,7 @@ void vp9_init_encode_frame_result(ENCODE_FRAME_RESULT *encode_frame_result);
 void vp9_initialize_enc(void);
 
 void vp9_update_compressor_with_img_fmt(VP9_COMP *cpi, vpx_img_fmt_t img_fmt);
+void init_compressor_rc(VP9_COMP *cpi);
 struct VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
                                        BufferPool *const pool);
 void vp9_remove_compressor(VP9_COMP *cpi);

@@ -26,6 +26,25 @@ static vpx_codec_alg_priv_t *get_alg_priv(vpx_codec_ctx_t *ctx) {
   return (vpx_codec_alg_priv_t *)ctx->priv;
 }
 
+vpx_codec_err_t vpx_codec_rc_init(vpx_rc_ctx_t *ctx, vpx_codec_iface_t *iface,
+                                  const vpx_codec_rc_cfg_t *rc_cfg, int ver) {
+  vpx_codec_err_t res;
+  if (ver != VPX_ENCODER_ABI_VERSION)
+    res = VPX_CODEC_ABI_MISMATCH;
+  else if (!ctx || !iface || !rc_cfg)
+    res = VPX_CODEC_INVALID_PARAM;
+  else if (iface->abi_version != VPX_CODEC_INTERNAL_ABI_VERSION)
+    res = VPX_CODEC_ABI_MISMATCH;
+  else if (!(iface->caps & VPX_CODEC_CAP_ENCODER))
+    res = VPX_CODEC_INCAPABLE;
+  else {
+    ctx->iface = iface;
+    ctx->priv = NULL;
+    res = ctx->iface->init_rc(ctx);
+  }
+  return SAVE_STATUS(ctx, res);
+}
+
 vpx_codec_err_t vpx_codec_enc_init_ver(vpx_codec_ctx_t *ctx,
                                        vpx_codec_iface_t *iface,
                                        const vpx_codec_enc_cfg_t *cfg,

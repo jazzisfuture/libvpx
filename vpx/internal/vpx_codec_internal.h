@@ -79,6 +79,10 @@ typedef struct vpx_codec_priv_enc_mr_cfg vpx_codec_priv_enc_mr_cfg_t;
 typedef vpx_codec_err_t (*vpx_codec_init_fn_t)(
     vpx_codec_ctx_t *ctx, vpx_codec_priv_enc_mr_cfg_t *data);
 
+/*!\brief rate control init function pointer prototype
+ */
+typedef vpx_codec_err_t (*vpx_rc_init_fn_t)(vpx_rc_ctx_t *rc_ctx);
+
 /*!\brief destroy function pointer prototype
  *
  * Performs algorithm-specific destruction of the decoder context. This
@@ -291,6 +295,7 @@ struct vpx_codec_iface {
   int abi_version;                    /**< Implemented ABI version */
   vpx_codec_caps_t caps;              /**< Decoder capabilities */
   vpx_codec_init_fn_t init;           /**< \copydoc ::vpx_codec_init_fn_t */
+  vpx_rc_init_fn_t init_rc;           /**< \copydoc ::vpx_rc_init_fn_t */
   vpx_codec_destroy_fn_t destroy;     /**< \copydoc ::vpx_codec_destroy_fn_t */
   vpx_codec_ctrl_fn_map_t *ctrl_maps; /**< \copydoc ::vpx_codec_ctrl_fn_map_t */
   struct vpx_codec_dec_iface {

@@ -2269,6 +2269,8 @@ void vp9_update_compressor_with_img_fmt(VP9_COMP *cpi, vpx_img_fmt_t img_fmt) {
   alloc_raw_frame_buffers(cpi);
 }
 
+void init_compressor_rc(VP9_COMP *cpi) { ; }
+
 VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
                                 BufferPool *const pool) {
   unsigned int i;
