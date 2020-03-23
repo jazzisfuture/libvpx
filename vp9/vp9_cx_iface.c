@@ -1655,6 +1655,192 @@ static vpx_codec_err_t ctrl_set_delta_q_uv(vpx_codec_alg_priv_t *ctx,
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
+static vpx_codec_err_t ctrl_init_rc_rtc(vpx_codec_alg_priv_t *ctx,
+                                        va_list args) {
+  // INIT RC VARIABLES FOR RT
+  vpx_rc_rtc_t *data = va_arg(args, vpx_rc_rtc_t *);
+  VP9_COMP *const cpi = ctx->cpi;
+  VP9_COMMON *const cm = &cpi->common;
+  VP9EncoderConfig *oxcf = &cpi->oxcf;
+  RATE_CONTROL *const rc = &cpi->rc;
+  int sl, tl;
+
+  cm->profile = 0;
+  cm->bit_depth = VPX_BITS_8;
+  cm->show_frame = 1;
+  oxcf->rc_mode = VPX_CBR;
+  oxcf->pass = 0;
+  oxcf->aq_mode = 0;
+  oxcf->content = 0;
+  oxcf->drop_frames_water_mark = 0;
+
+  // PUT THIS IN FUNCTION
+  cm->width = data->width;
+  cm->height = data->height;
+  oxcf->width = data->width;
+  oxcf->height = data->height;
+  oxcf->worst_allowed_q = vp9_quantizer_to_qindex(data->max_quantizer);
+  oxcf->best_allowed_q = vp9_quantizer_to_qindex(data->min_quantizer);
+  rc->worst_quality = oxcf->worst_allowed_q;
+  rc->best_quality = oxcf->best_allowed_q;
+  oxcf->target_bandwidth = 1000 * data->target_bandwidth;
+  oxcf->starting_buffer_level_ms = data->buf_initial_sz;
+  oxcf->optimal_buffer_level_ms = data->buf_optimal_sz;
+  oxcf->maximum_buffer_size_ms = data->buf_sz;
+  oxcf->under_shoot_pct = data->undershoot_pct;
+  oxcf->over_shoot_pct = data->overshoot_pct;
+  cpi->oxcf.rc_max_intra_bitrate_pct = data->max_intra_bitrate_pct;
+  cpi->framerate = data->framerate;
+  cpi->svc.number_spatial_layers = data->ss_number_layers;
+  cpi->svc.number_temporal_layers = data->ts_number_layers;
+  cpi->svc.temporal_layering_mode = (data->ts_number_layers > 1) ? data->ts_number_layers : 0;
+  for (sl = 0; sl < cpi->svc.number_spatial_layers; ++sl) {
+    for (tl = 0; tl < cpi->svc.number_temporal_layers; ++tl) {
+      const int layer =
+          LAYER_IDS_TO_IDX(sl, tl, cpi->svc.number_temporal_layers);
+      LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+      RATE_CONTROL *const lrc = &lc->rc;
+      oxcf->layer_target_bitrate[layer] = 1000 * data->layer_target_bitrate[layer];
+      lrc->worst_quality = vp9_quantizer_to_qindex(data->max_quantizers[layer]);
+      lrc->best_quality = vp9_quantizer_to_qindex(data->min_quantizers[layer]);
+      lc->scaling_factor_num = data->scaling_factor_num[sl];
+      lc->scaling_factor_den = data->scaling_factor_den[sl];
+    }
+  }
+  vp9_new_framerate(cpi, cpi->framerate);
+  vp9_set_rc_buffer_sizes(cpi);
+  if (cpi->svc.number_temporal_layers > 1) {
+    if (cm->current_video_frame == 0) vp9_init_layer_context(cpi);
+    vp9_update_layer_context_change_config(cpi,
+                                           (int)cpi->oxcf.target_bandwidth);
+  }
+  //
+
+  cpi->use_svc =
+      (cpi->svc.number_spatial_layers > 1 || cpi->svc.number_temporal_layers > 1) ? 1 : 0;
+  rc->rc_1_frame = 0;
+  rc->rc_2_frame = 0;
+  vp9_rc_init(oxcf, 0, rc);
+  cpi->sf.use_nonrd_pick_mode = 1;
+  rc->compute_frame_motion_pass0 = 0;
+  cm->current_video_frame = 0;
+  return VPX_CODEC_OK;
+}
+
+static vpx_codec_err_t ctrl_update_rc_rtc(vpx_codec_alg_priv_t *ctx,
+                                          va_list args) {
+  // UPDATE THE RC VARIABLES FOR RTC
+  vpx_rc_rtc_t *data = va_arg(args, vpx_rc_rtc_t *);
+  VP9_COMP *const cpi = ctx->cpi;
+  VP9_COMMON *const cm = &cpi->common;
+  VP9EncoderConfig *oxcf = &cpi->oxcf;
+  RATE_CONTROL *const rc = &cpi->rc;
+  int sl, tl;
+
+  // PUT THIS IN FUNCTION
+  cm->width = data->width;
+  cm->height = data->height;
+  oxcf->width = data->width;
+  oxcf->height = data->height;
+  oxcf->worst_allowed_q = vp9_quantizer_to_qindex(data->max_quantizer);
+  oxcf->best_allowed_q = vp9_quantizer_to_qindex(data->min_quantizer);
+  rc->worst_quality = oxcf->worst_allowed_q;
+  rc->best_quality = oxcf->best_allowed_q;
+  oxcf->target_bandwidth = 1000 * data->target_bandwidth;
+  oxcf->starting_buffer_level_ms = data->buf_initial_sz;
+  oxcf->optimal_buffer_level_ms = data->buf_optimal_sz;
+  oxcf->maximum_buffer_size_ms = data->buf_sz;
+  oxcf->under_shoot_pct = data->undershoot_pct;
+  oxcf->over_shoot_pct = data->overshoot_pct;
+  cpi->oxcf.rc_max_intra_bitrate_pct = data->max_intra_bitrate_pct;
+  cpi->framerate = data->framerate;
+  cpi->svc.number_spatial_layers = data->ss_number_layers;
+  cpi->svc.number_temporal_layers = data->ts_number_layers;
+  cpi->svc.temporal_layering_mode = (data->ts_number_layers > 1) ? data->ts_number_layers : 0;
+  for (sl = 0; sl < cpi->svc.number_spatial_layers; ++sl) {
+    for (tl = 0; tl < cpi->svc.number_temporal_layers; ++tl) {
+      const int layer =
+          LAYER_IDS_TO_IDX(sl, tl, cpi->svc.number_temporal_layers);
+      LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+      RATE_CONTROL *const lrc = &lc->rc;
+      oxcf->layer_target_bitrate[layer] = 1000 * data->layer_target_bitrate[layer];
+      lrc->worst_quality = vp9_quantizer_to_qindex(data->max_quantizers[layer]);
+      lrc->best_quality = vp9_quantizer_to_qindex(data->min_quantizers[layer]);
+      lc->scaling_factor_num = data->scaling_factor_num[sl];
+      lc->scaling_factor_den = data->scaling_factor_den[sl];
+    }
+  }
+  vp9_new_framerate(cpi, cpi->framerate);
+  vp9_set_rc_buffer_sizes(cpi);
+  if (cpi->svc.number_temporal_layers > 1) {
+    if (cm->current_video_frame == 0) vp9_init_layer_context(cpi);
+    vp9_update_layer_context_change_config(cpi,
+                                           (int)cpi->oxcf.target_bandwidth);
+  }
+  //
+
+  return VPX_CODEC_OK;
+}
+
+static vpx_codec_err_t ctrl_compute_q_rtc(vpx_codec_alg_priv_t *ctx,
+                                          va_list args) {
+  vpx_frame_params_qp_rtc_t *data = va_arg(args, vpx_frame_params_qp_rtc_t *);
+  VP9_COMP *const cpi = ctx->cpi;
+  VP9_COMMON *const cm = &cpi->common;
+  int width, height;
+  int bottom_index = 0;
+  int top_index = 0;
+  cpi->svc.spatial_layer_id = data->spatial_layer_id;
+  cpi->svc.temporal_layer_id = data->temporal_layer_id;
+  if (cpi->svc.number_spatial_layers > 1) {
+    const int layer = LAYER_IDS_TO_IDX(cpi->svc.spatial_layer_id,
+                                       cpi->svc.temporal_layer_id,
+                                       cpi->svc.number_temporal_layers);
+    LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+    get_layer_resolution(cpi->oxcf.width, cpi->oxcf.height, lc->scaling_factor_num,
+                         lc->scaling_factor_den, &width, &height);
+    cm->width = width;
+    cm->height = height;
+  }
+  vp9_set_mb_mi(cm, cm->width, cm->height);
+  cm->frame_type = data->frame_type;
+  cpi->refresh_golden_frame = (cpi->common.frame_type == KEY_FRAME) ? 1 : 0;
+  cpi->sf.use_nonrd_pick_mode = 1;
+  if (cpi->svc.number_spatial_layers == 1 && cpi->svc.number_temporal_layers == 1) {
+    vp9_rc_get_one_pass_cbr_params(cpi);
+  } else {
+    vp9_update_temporal_layer_framerate(cpi);
+    vp9_restore_layer_context(cpi);
+    vp9_rc_get_svc_params(cpi);
+  }
+  cpi->common.base_qindex =
+      vp9_rc_pick_q_and_bounds(cpi, &bottom_index, &top_index);
+  return VPX_CODEC_OK;
+}
+
+static vpx_codec_err_t ctrl_get_lf_rtc(vpx_codec_alg_priv_t *ctx,
+                                       va_list args) {
+  int *const arg = va_arg(args, int *);
+  VP9_COMP *const cpi = ctx->cpi;
+  VP9_COMMON *const cm = &cpi->common;
+  struct loopfilter *const lf = &cm->lf;
+  vp9_pick_filter_level(cpi->Source, cpi, LPF_PICK_FROM_Q);
+  *arg = lf->filter_level;
+  return VPX_CODEC_OK;
+}
+
+static vpx_codec_err_t ctrl_postencode_rtc(vpx_codec_alg_priv_t *ctx,
+                                           va_list args) {
+  uint64_t data = va_arg(args, uint64_t);
+  VP9_COMP *const cpi = ctx->cpi;
+  cpi->rc.compute_frame_motion_pass0 = 0;
+  vp9_rc_postencode_update(cpi, data);
+  if (cpi->svc.number_spatial_layers > 1 || cpi->svc.number_temporal_layers > 1)
+    vp9_save_layer_context(cpi);
+  cpi->common.current_video_frame++;
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_err_t ctrl_register_cx_callback(vpx_codec_alg_priv_t *ctx,
                                                  va_list args) {
   vpx_codec_priv_output_cx_pkt_cb_pair_t *cbp =
@@ -1753,6 +1939,12 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP9E_SET_SVC_GF_TEMPORAL_REF, ctrl_set_svc_gf_temporal_ref },
   { VP9E_SET_SVC_SPATIAL_LAYER_SYNC, ctrl_set_svc_spatial_layer_sync },
   { VP9E_SET_DELTA_Q_UV, ctrl_set_delta_q_uv },
+
+  { VP9E_INIT_RC_RTC, ctrl_init_rc_rtc },
+  { VP9E_UPDATE_RC_RTC, ctrl_update_rc_rtc },
+  { VP9E_COMPUTE_Q_RTC, ctrl_compute_q_rtc },
+  { VP9E_GET_LF_RTC, ctrl_get_lf_rtc },
+  { VP9E_POSTENCODE_RTC, ctrl_postencode_rtc },
 
   // Getters
   { VP8E_GET_LAST_QUANTIZER, ctrl_get_quantizer },
