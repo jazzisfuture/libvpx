@@ -614,6 +614,9 @@ int main(int argc, char **argv) {
   double sum_bitrate2 = 0.0;
   double framerate = 30.0;
 
+  // HACK
+  int test_rc_interface = 1;
+
   zero(rc.layer_target_bitrate);
   memset(&layer_id, 0, sizeof(vpx_svc_layer_id_t));
   memset(&input_ctx, 0, sizeof(input_ctx));
@@ -817,6 +820,28 @@ int main(int argc, char **argv) {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     die_codec(&codec, "Failed to initialize encoder");
 
+if (test_rc_interface) {
+   vpx_rc_rtc_t rc_rtc;
+
+   rc_rtc.width = cfg.g_w;
+   rc_rtc.height = cfg.g_h;
+   rc_rtc.max_quantizer = cfg.rc_max_quantizer;
+   rc_rtc.min_quantizer = cfg.rc_min_quantizer;
+   rc_rtc.target_bandwidth = cfg.rc_target_bitrate;
+   rc_rtc.buf_initial_sz = cfg.rc_buf_initial_sz;
+   rc_rtc.buf_optimal_sz = cfg.rc_buf_optimal_sz;
+   rc_rtc.buf_sz = cfg.rc_buf_sz;
+   rc_rtc.undershoot_pct = cfg.rc_undershoot_pct;
+   rc_rtc.overshoot_pct = cfg.rc_overshoot_pct;
+   rc_rtc.max_intra_bitrate_pct = 1000;
+   rc_rtc.framerate = 30.0;
+   rc_rtc.ss_number_layers = 1;
+   rc_rtc.ts_number_layers = 1;
+
+   vpx_codec_control(&codec, VP9E_UPDATE_RC_RTC, &rc_rtc);
+
+ } else {
+
   if (strncmp(encoder->name, "vp8", 3) == 0) {
     vpx_codec_control(&codec, VP8E_SET_CPUUSED, -speed);
     vpx_codec_control(&codec, VP8E_SET_NOISE_SENSITIVITY, kVp8DenoiserOff);
@@ -832,7 +857,7 @@ int main(int argc, char **argv) {
     vpx_svc_extra_cfg_t svc_params;
     memset(&svc_params, 0, sizeof(svc_params));
     vpx_codec_control(&codec, VP8E_SET_CPUUSED, speed);
-    vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 3);
+    vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 0);
     vpx_codec_control(&codec, VP9E_SET_GF_CBR_BOOST_PCT, 0);
     vpx_codec_control(&codec, VP9E_SET_FRAME_PARALLEL_DECODING, 0);
     vpx_codec_control(&codec, VP9E_SET_FRAME_PERIODIC_BOOST, 0);
@@ -841,8 +866,7 @@ int main(int argc, char **argv) {
     vpx_codec_control(&codec, VP9E_SET_TUNE_CONTENT, 0);
     vpx_codec_control(&codec, VP9E_SET_TILE_COLUMNS, get_msb(cfg.g_threads));
 #if ROI_MAP
-    set_roi_map(encoder->name, &cfg, &roi);
-    if (vpx_codec_control(&codec, VP9E_SET_ROI_MAP, &roi))
+    set_roi_map(encoder->name, &cfg, &roi);    if (vpx_codec_control(&codec, VP9E_SET_ROI_MAP, &roi))
       die_codec(&codec, "Failed to set ROI map");
     vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 0);
 #endif
@@ -873,6 +897,10 @@ int main(int argc, char **argv) {
                       max_intra_size_pct);
   }
 
+ }  // end else !test_rc_interace
+
+  FILE* fp = fopen("encoded_frame_size", "r");
+
   frame_avail = 1;
   while (frame_avail || got_data) {
     struct vpx_usec_timer timer;
@@ -894,10 +922,39 @@ int main(int argc, char **argv) {
     frame_avail = read_frame(&input_ctx, &raw);
     if (frame_avail) ++rc.layer_input_frames[layer_id.temporal_layer_id];
     vpx_usec_timer_start(&timer);
-    if (vpx_codec_encode(&codec, frame_avail ? &raw : NULL, pts, 1, flags,
+
+    if (test_rc_interface) {
+     int qp_internal = 0; int lf_level = 0;
+     vpx_frame_params_qp_rtc_t frame_params;
+
+     frame_params.frame_type = (frame_cnt > 0) ? 1 : 0;
+     frame_params.spatial_layer_id = 0;
+     frame_params.temporal_layer_id = 0;
+     // Compute Q:
+     vpx_codec_control(&codec, VP9E_COMPUTE_Q_RTC, &frame_params);
+
+     // Get the internal Q: 0 - 255
+     vpx_codec_control(&codec, VP8E_GET_LAST_QUANTIZER, &qp_internal);
+
+     // Get the LP level:
+     vpx_codec_control(&codec, VP9E_GET_LF_RTC, &lf_level);
+
+     printf("%d %d %d \n", frame_cnt, qp_internal, lf_level);
+    } else {
+      if (vpx_codec_encode(&codec, frame_avail ? &raw : NULL, pts, 1, flags,
                          VPX_DL_REALTIME)) {
-      die_codec(&codec, "Failed to encode frame");
+        die_codec(&codec, "Failed to encode frame");
+      }
     }
+
+    if (test_rc_interface) {
+      uint64_t encoded_frame_size = 0;
+      int x1, x2, x3;
+      fscanf(fp, "%d %d %d %d \n", &x1, &x2, &x3, &encoded_frame_size);
+      printf("encoded frame size %d \n", encoded_frame_size);
+      vpx_codec_control(&codec, VP9E_POSTENCODE_RTC, encoded_frame_size);
+    }
+
     vpx_usec_timer_mark(&timer);
     cx_time += vpx_usec_timer_elapsed(&timer);
     // Reset KF flag.

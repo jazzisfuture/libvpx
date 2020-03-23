@@ -435,6 +435,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->last_post_encode_dropped_scene_change = 0;
   rc->use_post_encode_drop = 0;
   rc->ext_use_post_encode_drop = 0;
+  rc->compute_frame_motion_pass0 = 1;
   rc->arf_active_best_quality_adjustment_factor = 1.0;
   rc->arf_increase_active_best_quality = 0;
   rc->preserve_arf_as_gld = 0;
@@ -1816,6 +1817,9 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   const int gf_group_index = cpi->twopass.gf_group.index;
   const int layer_depth = gf_group->layer_depth[gf_group_index];
 
+  struct loopfilter *const lf = &cm->lf;
+  printf("%d %d %d %d \n", cm->current_video_frame, cm->base_qindex, lf->filter_level, bytes_used);
+
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
@@ -1946,7 +1950,8 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   }
 
   if (oxcf->pass == 0) {
-    if (!frame_is_intra_only(cm) &&
+    if (cpi->rc.compute_frame_motion_pass0 &&
+        !frame_is_intra_only(cm) &&
         (!cpi->use_svc ||
          (cpi->use_svc &&
           !svc->layer_context[svc->temporal_layer_id].is_key_frame &&
@@ -2432,6 +2437,7 @@ void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
     vp9_cyclic_refresh_update_parameters(cpi);
 
+  // HACK
   if (frame_is_intra_only(cm))
     target = calc_iframe_target_size_one_pass_cbr(cpi);
   else
