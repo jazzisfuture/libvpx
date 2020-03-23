@@ -203,6 +203,9 @@ typedef struct {
   int preserve_arf_as_gld;
   int preserve_next_arf_as_gld;
   int show_arf_as_gld;
+
+  // Flag to compute frame low motion
+  int compute_frame_motion_pass0;
 } RATE_CONTROL;
 
 struct VP9_COMP;

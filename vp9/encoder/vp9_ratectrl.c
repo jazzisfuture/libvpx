@@ -1946,7 +1946,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   }
 
   if (oxcf->pass == 0) {
-    if (!frame_is_intra_only(cm) &&
+    if (cpi->rc.compute_frame_motion_pass0 && !frame_is_intra_only(cm) &&
         (!cpi->use_svc ||
          (cpi->use_svc &&
           !svc->layer_context[svc->temporal_layer_id].is_key_frame &&

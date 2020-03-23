@@ -2269,6 +2269,59 @@ void vp9_update_compressor_with_img_fmt(VP9_COMP *cpi, vpx_img_fmt_t img_fmt) {
   alloc_raw_frame_buffers(cpi);
 }
 
+void init_compressor_rc_rtc(VP9_COMP *cpi, const vpx_codec_rc_cfg_t *rc_cfg) {
+  VP9_COMMON *cm = &cpi->common;
+  VP9EncoderConfig *oxcf = &cpi->oxcf;
+  RATE_CONTROL *const rc = &cpi->rc;
+  cm->profile = 0;
+  cm->bit_depth = VPX_BITS_8;
+  cm->show_frame = 1;
+  oxcf->rc_mode = VPX_CBR;
+  oxcf->pass = 0;
+  oxcf->aq_mode = 0;
+  oxcf->content = 0;
+  oxcf->drop_frames_water_mark = 0;
+
+  cm->width = rc_cfg->width;
+  cm->height = rc_cfg->height;
+  oxcf->width = rc_cfg->width;
+  oxcf->width = rc_cfg->height;
+  oxcf->worst_allowed_q = vp9_quantizer_to_qindex(rc_cfg->max_quantizer);
+  oxcf->best_allowed_q = vp9_quantizer_to_qindex(rc_cfg->min_quantizer);
+  oxcf->target_bandwidth = 1000 * rc_cfg->target_bandwidth;
+  oxcf->starting_buffer_level_ms = rc_cfg->buf_initial_sz;
+  oxcf->optimal_buffer_level_ms = rc_cfg->buf_optimal_sz;
+  oxcf->maximum_buffer_size_ms = rc_cfg->buf_sz;
+  oxcf->under_shoot_pct = rc_cfg->undershoot_pct;
+  oxcf->over_shoot_pct = rc_cfg->overshoot_pct;
+  cpi->oxcf.rc_max_intra_bitrate_pct = rc_cfg->max_intra_bitrate_pct;
+  cpi->framerate = rc_cfg->framerate;
+  cpi->svc.number_spatial_layers = rc_cfg->ss_number_layers;
+  cpi->svc.number_temporal_layers = rc_cfg->ts_number_layers;
+  cpi->svc.temporal_layering_mode =
+      (rc_cfg->ts_number_layers > 1) ? rc_cfg->ts_number_layers : 0;
+  rc->worst_quality = oxcf->worst_allowed_q;
+  rc->best_quality = oxcf->best_allowed_q;
+  vp9_new_framerate(cpi, cpi->framerate);
+  set_rc_buffer_sizes(rc, oxcf);
+  if (cpi->svc.number_temporal_layers > 1) {
+    if (cm->current_video_frame == 0) vp9_init_layer_context(cpi);
+    vp9_update_layer_context_change_config(cpi,
+                                           (int)cpi->oxcf.target_bandwidth);
+  }
+
+  cpi->use_svc = (cpi->svc.number_spatial_layers > 1 ||
+                  cpi->svc.number_temporal_layers > 1)
+                     ? 1
+                     : 0;
+  rc->rc_1_frame = 0;
+  rc->rc_2_frame = 0;
+  vp9_rc_init(oxcf, 0, rc);
+  cpi->sf.use_nonrd_pick_mode = 1;
+  rc->compute_frame_motion_pass0 = 0;
+  cm->current_video_frame = 0;
+}
+
 VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
                                 BufferPool *const pool) {
   unsigned int i;

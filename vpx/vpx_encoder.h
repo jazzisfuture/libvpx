@@ -693,6 +693,24 @@ typedef struct vpx_codec_enc_cfg {
   int temporal_layering_mode;
 } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
+typedef struct vpx_codec_rc_cfg {
+  int width;
+  int height;
+  // 0-63
+  int max_quantizer;
+  int min_quantizer;
+  int64_t target_bandwidth;
+  int64_t buf_initial_sz;
+  int64_t buf_optimal_sz;
+  int64_t buf_sz;
+  int undershoot_pct;
+  int overshoot_pct;
+  int max_intra_bitrate_pct;
+  double framerate;
+  int ss_number_layers;
+  int ts_number_layers;
+} vpx_codec_rc_cfg_t;
+
 /*!\brief  vp9 svc extra configure parameters
  *
  * This defines max/min quantizers and scale factors for each layer
@@ -706,6 +724,9 @@ typedef struct vpx_svc_parameters {
   int speed_per_layer[VPX_MAX_LAYERS];    /**< Speed setting for each sl */
   int temporal_layering_mode;             /**< Temporal layering mode */
 } vpx_svc_extra_cfg_t;
+
+vpx_codec_err_t vpx_codec_rc_init(vpx_rc_ctx_t *ctx, vpx_codec_iface_t *iface,
+                                  const vpx_codec_rc_cfg_t *rc_cfg, int ver);
 
 /*!\brief Initialize an encoder instance
  *

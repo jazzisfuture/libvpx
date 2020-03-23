@@ -1295,6 +1295,7 @@ CODEC_INTERFACE(vpx_codec_vp8_cx) = {
   VPX_CODEC_CAP_ENCODER | VPX_CODEC_CAP_PSNR | VPX_CODEC_CAP_OUTPUT_PARTITION,
   /* vpx_codec_caps_t          caps; */
   vp8e_init,     /* vpx_codec_init_fn_t       init; */
+  NULL,          /* vpx_rc_init_fn_t */
   vp8e_destroy,  /* vpx_codec_destroy_fn_t    destroy; */
   vp8e_ctf_maps, /* vpx_codec_ctrl_fn_map_t  *ctrl_maps; */
   {
