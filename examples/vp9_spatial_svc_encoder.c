@@ -949,6 +949,10 @@ int main(int argc, const char **argv) {
   memset(&rc, 0, sizeof(struct RateControlStats));
   exec_name = argv[0];
 
+  int test_rc_interface = 1;
+  vpx_rc_rtc_t rc_rtc;
+  FILE* fp = fopen("encoded_frame_size_svc", "r");
+
   /* Setup default input stream settings */
   app_input.input_ctx.framerate.numerator = 30;
   app_input.input_ctx.framerate.denominator = 1;
@@ -975,7 +979,7 @@ int main(int argc, const char **argv) {
   }
 
   // Initialize codec
-  if (vpx_svc_init(&svc_ctx, &encoder, vpx_codec_vp9_cx(), &enc_cfg) !=
+  if (vpx_svc_init(&svc_ctx, &encoder, vpx_codec_vp9_cx(), &enc_cfg, test_rc_interface) !=
       VPX_CODEC_OK)
     die("Failed to initialize encoder\n");
 #if CONFIG_VP9_DECODER && !SIMULCAST_MODE
@@ -1027,6 +1031,7 @@ int main(int argc, const char **argv) {
   for (i = 0; i < app_input.frames_to_skip; ++i)
     read_frame(&app_input.input_ctx, &raw);
 
+if (!test_rc_interface) {
   if (svc_ctx.speed != -1)
     vpx_codec_control(&encoder, VP8E_SET_CPUUSED, svc_ctx.speed);
   if (svc_ctx.threads) {
@@ -1038,7 +1043,7 @@ int main(int argc, const char **argv) {
       vpx_codec_control(&encoder, VP9E_SET_ROW_MT, 0);
   }
   if (svc_ctx.speed >= 5 && svc_ctx.aqmode == 1)
-    vpx_codec_control(&encoder, VP9E_SET_AQ_MODE, 3);
+    vpx_codec_control(&encoder, VP9E_SET_AQ_MODE, 0);
   if (svc_ctx.speed >= 5)
     vpx_codec_control(&encoder, VP8E_SET_STATIC_THRESHOLD, 1);
   vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, 900);
@@ -1055,6 +1060,7 @@ int main(int argc, const char **argv) {
     svc_drop_frame.framedrop_thresh[sl] = enc_cfg.rc_dropframe_thresh;
   svc_drop_frame.max_consec_drop = INT_MAX;
   vpx_codec_control(&encoder, VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
+}
 
   // Encode frames
   while (!end_of_stream) {
@@ -1142,6 +1148,43 @@ int main(int argc, const char **argv) {
         ++rc.layer_input_frames[sl * enc_cfg.ts_number_layers + tl];
     }
 
+   if (test_rc_interface) {
+
+     int qp_internal = 0; int lf_level = 0;
+     vpx_frame_params_qp_rtc_t frame_params;
+
+     for (sl = 0; sl < svc_ctx.spatial_layers; sl++) {
+
+       frame_params.frame_type = (frame_cnt == 0 && sl == 0) ? 0 : 1;
+       frame_params.spatial_layer_id = layer_id.temporal_layer_id;
+       frame_params.temporal_layer_id = sl;
+       frame_params.encoded_frame_size = 0;
+
+      // Update bitrate
+      /*
+      if (frame_cnt == 100) {
+        rc_rtc.target_bandwidth = 2 * rc_rtc.target_bandwidth;
+        vpx_codec_control(&codec, VP9E_UPDATE_RC_RTC, &rc_rtc);
+      } else  if (frame_cnt == 300) {
+        rc_rtc.target_bandwidth = rc_rtc.target_bandwidth / 4;
+        vpx_codec_control(&codec, VP9E_UPDATE_RC_RTC, &rc_rtc);
+      }
+      */
+
+       // Compute Q:
+       vpx_codec_control(&encoder, VP9E_COMPUTE_Q_RTC, &frame_params);
+
+       // Get the internal Q: 0 - 255
+       vpx_codec_control(&encoder, VP8E_GET_LAST_QUANTIZER, &qp_internal);
+
+       // Get the LP level:
+       vpx_codec_control(&encoder, VP9E_GET_LF_RTC, &lf_level);
+
+       printf("%d %d %d \n", frame_cnt, qp_internal, lf_level);
+     }
+
+  }  else {
+
     vpx_usec_timer_start(&timer);
     res = vpx_svc_encode(
         &svc_ctx, &encoder, (end_of_stream ? NULL : &raw), pts, frame_duration,
@@ -1153,6 +1196,27 @@ int main(int argc, const char **argv) {
     if (res != VPX_CODEC_OK) {
       die_codec(&encoder, "Failed to encode frame");
     }
+
+    
+  }  // end of !test_rc_interface
+
+  if (test_rc_interface) {
+
+    // postencode
+    uint64_t encoded_frame_size = 0;
+    vpx_frame_params_qp_rtc_t frame_params;
+    int x1, x2, x3, x4, x5, x6, x7;
+    for (sl = 0; sl < svc_ctx.spatial_layers; sl++) {
+      fscanf(fp, "%d %d %d %d %d %d %d %d \n", &x1, &x2, &x3, &x4, &x5, &x6, &x7, &encoded_frame_size);
+        printf("encoded frame size %d \n", encoded_frame_size);
+       frame_params.frame_type = (frame_cnt == 0 && sl == 0) ? 0 : 1;
+       frame_params.spatial_layer_id = layer_id.temporal_layer_id;
+       frame_params.temporal_layer_id = sl;
+       frame_params.encoded_frame_size = encoded_frame_size;
+      vpx_codec_control(&encoder, VP9E_POSTENCODE_RTC, &frame_params);
+    }
+
+  }
 
     while ((cx_pkt = vpx_codec_get_cx_data(&encoder, &iter)) != NULL) {
       switch (cx_pkt->kind) {

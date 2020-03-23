@@ -87,7 +87,7 @@ vpx_codec_err_t vpx_svc_set_options(SvcContext *svc_ctx, const char *options);
  */
 vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
                              vpx_codec_iface_t *iface,
-                             vpx_codec_enc_cfg_t *cfg);
+                             vpx_codec_enc_cfg_t *cfg, int test_rc_inferface);
 /**
  * encode a frame of video with multiple layers
  */
