@@ -377,7 +377,9 @@ static vpx_codec_err_t assign_layer_bitrates(
 
 vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
                              vpx_codec_iface_t *iface,
-                             vpx_codec_enc_cfg_t *enc_cfg) {
+                             vpx_codec_enc_cfg_t *enc_cfg, 
+                             int test_rc_interface, 
+                             vpx_rc_rtc_t *rc_rtc) {
   vpx_codec_err_t res;
   int i, sl, tl;
   SvcInternal_t *const si = get_svc_internal(svc_ctx);
@@ -522,7 +524,44 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
     vpx_codec_control(codec_ctx, VP9E_SET_SVC, 1);
     vpx_codec_control(codec_ctx, VP9E_SET_SVC_PARAMETERS, &si->svc_params);
   }
+
+
+ if (test_rc_interface) {
+
+   rc_rtc->width = enc_cfg->g_w;
+   rc_rtc->height = enc_cfg->g_h;
+   rc_rtc->max_quantizer = enc_cfg->rc_max_quantizer;
+   rc_rtc->min_quantizer = enc_cfg->rc_min_quantizer;
+   rc_rtc->target_bandwidth = enc_cfg->rc_target_bitrate;
+   rc_rtc->buf_initial_sz = enc_cfg->rc_buf_initial_sz;
+   rc_rtc->buf_optimal_sz = enc_cfg->rc_buf_optimal_sz;
+   rc_rtc->buf_sz = enc_cfg->rc_buf_sz;
+   rc_rtc->undershoot_pct = enc_cfg->rc_undershoot_pct;
+   rc_rtc->overshoot_pct = enc_cfg->rc_overshoot_pct;
+   rc_rtc->max_intra_bitrate_pct = 900;
+   rc_rtc->framerate = 30.0;
+   rc_rtc->ss_number_layers = svc_ctx->spatial_layers;
+   rc_rtc->ts_number_layers = svc_ctx->temporal_layers;
+
+   for (sl = 0; sl < svc_ctx->spatial_layers; ++sl) {
+     rc_rtc->scaling_factor_num[sl] = si->svc_params.scaling_factor_num[sl];
+     rc_rtc->scaling_factor_den[sl] = si->svc_params.scaling_factor_den[sl];
+     for (tl = 0; tl < svc_ctx->temporal_layers; ++tl) {
+        i = sl * svc_ctx->temporal_layers + tl;
+        rc_rtc->layer_target_bitrate[i] = enc_cfg->layer_target_bitrate[i];
+        rc_rtc->max_quantizers[i] = si->svc_params.max_quantizers[i];
+        rc_rtc->min_quantizers[i] = si->svc_params.min_quantizers[i];
+        rc_rtc->ts_rate_decimator[tl] =  enc_cfg->ts_rate_decimator[tl];
+     }
+   }
+   vpx_codec_control(codec_ctx, VP9E_INIT_RC_RTC, rc_rtc);
+
+
+ }
+
+
   return VPX_CODEC_OK;
+
 }
 
 /**

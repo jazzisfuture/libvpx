@@ -684,6 +684,17 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_SET_DELTA_Q_UV,
+
+  VP9E_INIT_RC_RTC,
+
+  VP9E_UPDATE_RC_RTC,
+
+  VP9E_COMPUTE_Q_RTC,
+
+  VP9E_GET_LF_RTC,
+
+  VP9E_POSTENCODE_RTC,
+
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -799,6 +810,36 @@ typedef enum {
  *
  */
 typedef enum { VP8_TUNE_PSNR, VP8_TUNE_SSIM } vp8e_tuning;
+
+typedef struct vpx_rc_rtc {
+  int width;
+  int height;
+  int max_quantizer;
+  int min_quantizer;
+  int64_t target_bandwidth;
+  int64_t buf_initial_sz;
+  int64_t buf_optimal_sz;
+  int64_t buf_sz;
+  int undershoot_pct;
+  int overshoot_pct;
+  int max_intra_bitrate_pct;
+  double framerate;
+  int ss_number_layers;
+  int ts_number_layers;
+  int max_quantizers[VPX_MAX_LAYERS];
+  int min_quantizers[VPX_MAX_LAYERS];
+  int scaling_factor_num[VPX_SS_MAX_LAYERS];
+  int scaling_factor_den[VPX_SS_MAX_LAYERS]; 
+  int layer_target_bitrate[VPX_MAX_LAYERS];
+  int ts_rate_decimator[VPX_TS_MAX_LAYERS];
+} vpx_rc_rtc_t;
+
+typedef struct vpx_frame_params_qp_rtc {
+  int frame_type;
+  int spatial_layer_id;
+  int temporal_layer_id;
+} vpx_frame_params_qp_rtc_t;
+
 
 /*!\brief  vp9 svc layer parameters
  *
@@ -1033,6 +1074,21 @@ VPX_CTRL_USE_TYPE(VP9E_SET_POSTENCODE_DROP, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_DELTA_Q_UV, int)
 #define VPX_CTRL_VP9E_SET_DELTA_Q_UV
+
+VPX_CTRL_USE_TYPE(VP9E_INIT_RC_RTC, vpx_rc_rtc_t *)
+#define VPX_CTRL_VP9E_INIT_RC_RTC
+
+VPX_CTRL_USE_TYPE(VP9E_UPDATE_RC_RTC, vpx_rc_rtc_t *)
+#define VPX_CTRL_VP9E_UPDATE_RC_RTC
+
+VPX_CTRL_USE_TYPE(VP9E_COMPUTE_Q_RTC, vpx_frame_params_qp_rtc_t *)
+#define VPX_CTRL_VP9E_COMPUTE_Q_RTC
+
+VPX_CTRL_USE_TYPE(VP9E_GET_LF_RTC, int *)
+#define VPX_CTRL_VP9E_GET_LF_RTC
+
+VPX_CTRL_USE_TYPE(VP9E_POSTENCODE_RTC, uint64_t)
+#define VPX_CTRL_VP9E_POSTENCODE_RTC
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */
