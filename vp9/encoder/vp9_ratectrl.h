@@ -203,6 +203,9 @@ typedef struct {
   int preserve_arf_as_gld;
   int preserve_next_arf_as_gld;
   int show_arf_as_gld;
+
+  // To compute frame low motion.
+  int compute_frame_motion_pass0;
 } RATE_CONTROL;
 
 struct VP9_COMP;
@@ -252,6 +255,9 @@ int vp9_rc_get_default_max_gf_interval(double framerate, int min_gf_interval);
 // encode_frame_to_data_rate() function.
 void vp9_rc_get_one_pass_vbr_params(struct VP9_COMP *cpi);
 void vp9_rc_get_one_pass_cbr_params(struct VP9_COMP *cpi);
+int calc_pframe_target_size_one_pass_cbr(const struct VP9_COMP *cpi);
+int calc_iframe_target_size_one_pass_cbr(const struct VP9_COMP *cpi);
+void update_buffer_level_preencode(struct VP9_COMP *cpi);
 void vp9_rc_get_svc_params(struct VP9_COMP *cpi);
 
 // Post encode update of the rate control parameters based
