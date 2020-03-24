@@ -435,6 +435,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->last_post_encode_dropped_scene_change = 0;
   rc->use_post_encode_drop = 0;
   rc->ext_use_post_encode_drop = 0;
+  rc->compute_frame_motion_pass0 = 1;
   rc->arf_active_best_quality_adjustment_factor = 1.0;
   rc->arf_increase_active_best_quality = 0;
   rc->preserve_arf_as_gld = 0;
@@ -1947,7 +1948,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   }
 
   if (oxcf->pass == 0) {
-    if (!frame_is_intra_only(cm) &&
+    if (cpi->rc.compute_frame_motion_pass0 && !frame_is_intra_only(cm) &&
         (!cpi->use_svc ||
          (cpi->use_svc &&
           !svc->layer_context[svc->temporal_layer_id].is_key_frame &&
