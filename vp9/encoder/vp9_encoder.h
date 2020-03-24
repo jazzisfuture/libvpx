@@ -1000,6 +1000,10 @@ int vp9_set_size_literal(VP9_COMP *cpi, unsigned int width,
 
 void vp9_set_svc(VP9_COMP *cpi, int use_svc);
 
+void vp9_check_reset_rc_flag(VP9_COMP *cpi);
+
+void vp9_set_rc_buffer_sizes(VP9_COMP *cpi);
+
 static INLINE int stack_pop(int *stack, int stack_size) {
   int idx;
   const int r = stack[0];

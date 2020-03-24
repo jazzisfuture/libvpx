@@ -249,7 +249,7 @@ int vp9_rc_clamp_iframe_target_size(const VP9_COMP *const cpi, int target) {
 // way for CBR mode, for the buffering updates below. Look into removing one
 // of these (i.e., bits_off_target).
 // Update the buffer level before encoding with the per-frame-bandwidth,
-static void update_buffer_level_preencode(VP9_COMP *cpi) {
+void update_buffer_level_preencode(VP9_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
   rc->bits_off_target += rc->avg_frame_bandwidth;
   // Clip the buffer level to the maximum specified buffer size.
@@ -436,6 +436,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->last_post_encode_dropped_scene_change = 0;
   rc->use_post_encode_drop = 0;
   rc->ext_use_post_encode_drop = 0;
+  rc->compute_frame_motion_pass0 = 1;
   rc->arf_active_best_quality_adjustment_factor = 1.0;
   rc->arf_increase_active_best_quality = 0;
   rc->preserve_arf_as_gld = 0;
@@ -1948,7 +1949,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   }
 
   if (oxcf->pass == 0) {
-    if (!frame_is_intra_only(cm) &&
+    if (cpi->rc.compute_frame_motion_pass0 && !frame_is_intra_only(cm) &&
         (!cpi->use_svc ||
          (cpi->use_svc &&
           !svc->layer_context[svc->temporal_layer_id].is_key_frame &&
@@ -2102,7 +2103,7 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     vp9_cyclic_refresh_update_parameters(cpi);
 }
 
-static int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
+int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
   const VP9EncoderConfig *oxcf = &cpi->oxcf;
   const RATE_CONTROL *rc = &cpi->rc;
   const SVC *const svc = &cpi->svc;
@@ -2151,7 +2152,7 @@ static int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
   return VPXMAX(min_frame_target, target);
 }
 
-static int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
+int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
   const RATE_CONTROL *rc = &cpi->rc;
   const VP9EncoderConfig *oxcf = &cpi->oxcf;
   const SVC *const svc = &cpi->svc;
