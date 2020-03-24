@@ -503,6 +503,21 @@ OBJS-yes += $(GTEST_OBJS)
 LIBS-yes += $(BUILD_PFX)libgtest.a $(BUILD_PFX)libgtest_g.a
 $(BUILD_PFX)libgtest_g.a: $(GTEST_OBJS)
 
+ifeq ($(CONFIG_VP9_ENCODER),yes)
+  VP9_PREFIX=vp9/
+  include $(SRC_PATH_BARE)/$(VP9_PREFIX)vp9cx.mk
+  RC_RTC_SRCS := $(addprefix $(VP9_PREFIX),$(call enabled,VP9_CX_SRCS))
+  RC_RTC_SRCS += $(VP9_PREFIX)vp9cx.mk vpx/vp8.h vpx/vp8cx.h
+  RC_RTC_SRCS += $(VP9_PREFIX)ratectrl_rtc.cc
+  RC_RTC_SRCS += $(VP9_PREFIX)ratectrl_rtc.h
+  INSTALL-SRCS-$(CONFIG_VP9_ENCODER) += $(VP9_PREFIX)ratectrl_rtc.cc
+  INSTALL-SRCS-$(CONFIG_VP9_ENCODER) += $(VP9_PREFIX)ratectrl_rtc.h
+  RC_RTC_OBJS=$(call objs,$(RC_RTC_SRCS))
+  OBJS-yes += $(RC_RTC_OBJS)
+  LIBS-yes += $(BUILD_PFX)librcrtc.a $(BUILD_PFX)librcrtc_g.a
+  $(BUILD_PFX)librcrtc_g.a: $(RC_RTC_OBJS)
+endif
+
 LIBVPX_TEST_OBJS=$(sort $(call objs,$(LIBVPX_TEST_SRCS)))
 $(LIBVPX_TEST_OBJS) $(LIBVPX_TEST_OBJS:.o=.d): CXXFLAGS += $(GTEST_INCLUDES)
 OBJS-yes += $(LIBVPX_TEST_OBJS)
