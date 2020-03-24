@@ -122,6 +122,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
       lrc->decimation_factor = 0;
       lrc->worst_quality = oxcf->worst_allowed_q;
       lrc->best_quality = oxcf->best_allowed_q;
+      lrc->compute_frame_motion_pass0 = 1;
 
       for (i = 0; i < RATE_FACTOR_LEVELS; ++i) {
         lrc->rate_correction_factors[i] = 1.0;
