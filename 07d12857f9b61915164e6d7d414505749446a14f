@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "912ee937_f4036f1f",
+        "filename": "vp9/vp9cx.mk",
+        "patchSetId": 9
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-25T18:15:50Z",
+      "side": 1,
+      "message": "This should not be part of the main library, that would change the requirements from C to C++ and modify the ABI. This should be structured as a separate module that could be used with a static libvpx or either static/shared if we can make things visible via codec controls.",
+      "revId": "07d12857f9b61915164e6d7d414505749446a14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
