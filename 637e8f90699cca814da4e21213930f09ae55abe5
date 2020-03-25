@@ -16,6 +16,24 @@
       "revId": "637e8f90699cca814da4e21213930f09ae55abe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d6d1c4e_8a2261e2",
+        "filename": "vp9/vp9_ratecontrol_rtc.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2020-03-25T04:53:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "459d9072_ac95c455",
+      "revId": "637e8f90699cca814da4e21213930f09ae55abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
