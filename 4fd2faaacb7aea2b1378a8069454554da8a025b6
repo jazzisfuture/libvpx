@@ -1,0 +1,118 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "489def7f_599d2075",
+        "filename": "vp9/vp9_ratecontrol_rtc.cc",
+        "patchSetId": 15
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-26T02:04:09Z",
+      "side": 1,
+      "message": "you can use static_cast\u003c\u003e here and sizeof(*cpi_)",
+      "range": {
+        "startLine": 20,
+        "startChar": 9,
+        "endLine": 20,
+        "endChar": 21
+      },
+      "revId": "4fd2faaacb7aea2b1378a8069454554da8a025b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f95d767_8215aeaf",
+        "filename": "vp9/vp9_ratecontrol_rtc.h",
+        "patchSetId": 15
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-26T02:04:09Z",
+      "side": 1,
+      "message": "with the current file name this should be VPX_VP9_VP9...\nyou could drop the vp9 prefix from the file if you wanted. that was a quick workaround for duplicates with vp8 given the way the chrome rules and file lists were structured.",
+      "revId": "4fd2faaacb7aea2b1378a8069454554da8a025b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95bfaefe_f088727d",
+        "filename": "vp9/vp9_ratecontrol_rtc.h",
+        "patchSetId": 15
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-26T02:04:09Z",
+      "side": 1,
+      "message": "this isn\u0027t necessary in the header",
+      "revId": "4fd2faaacb7aea2b1378a8069454554da8a025b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "172ddc65_9b692335",
+        "filename": "vp9/vp9_ratecontrol_rtc.h",
+        "patchSetId": 15
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-26T02:04:09Z",
+      "side": 1,
+      "message": "these 3 aren\u0027t necessary in the header",
+      "revId": "4fd2faaacb7aea2b1378a8069454554da8a025b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18631c54_14c23a5f",
+        "filename": "vp9/vp9_ratecontrol_rtc.h",
+        "patchSetId": 15
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-26T02:04:09Z",
+      "side": 1,
+      "message": "you could go with FrameParamsQpRtc to make the acronym boundaries a little more apparent, same with the config struct above:\n\nhttps://google.github.io/styleguide/cppguide.html#Type_Names",
+      "range": {
+        "startLine": 55,
+        "startChar": 18,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "4fd2faaacb7aea2b1378a8069454554da8a025b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42748ab2_f55b4406",
+        "filename": "vp9/vp9_ratecontrol_rtc.h",
+        "patchSetId": 15
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-26T02:04:09Z",
+      "side": 1,
+      "message": "can this be private?",
+      "revId": "4fd2faaacb7aea2b1378a8069454554da8a025b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
