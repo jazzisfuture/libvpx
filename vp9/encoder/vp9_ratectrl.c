@@ -2657,8 +2657,8 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
   RESIZE_ACTION resize_action = NO_RESIZE;
   int avg_qp_thr1 = 70;
   int avg_qp_thr2 = 50;
-  int min_width = 180;
-  int min_height = 90;
+  int min_width = 320;
+  int min_height = 180;
   int down_size_on = 1;
   cpi->resize_scale_num = 1;
   cpi->resize_scale_den = 1;
