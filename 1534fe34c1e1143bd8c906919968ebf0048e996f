@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ce50ea3e_0107ac92",
+        "filename": "libs.mk",
+        "patchSetId": 19
+      },
+      "lineNbr": 517,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-28T02:16:16Z",
+      "side": 1,
+      "message": "maybe libvp9rc.a or libvp9rcrtc.a? rcrtc was a bit hard to parse for me.",
+      "range": {
+        "startLine": 517,
+        "startChar": 29,
+        "endLine": 517,
+        "endChar": 34
+      },
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50480189_7fd10f79",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 1526,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-28T02:16:16Z",
+      "side": 1,
+      "message": "is there any benefit in returning a true/false to the user if the flag was reset?",
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32e2df66_784b4975",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 1528,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-28T02:16:16Z",
+      "side": 1,
+      "message": "this should be with the function declaration in some form.",
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d66a94a0_ae13e795",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 19
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-28T02:16:16Z",
+      "side": 1,
+      "message": "RATECTRL",
+      "range": {
+        "startLine": 11,
+        "startChar": 16,
+        "endLine": 11,
+        "endChar": 25
+      },
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5e29ce9_12f4df5e",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 19
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-28T02:16:16Z",
+      "side": 1,
+      "message": "from the names these sound like they could be const member functions",
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
