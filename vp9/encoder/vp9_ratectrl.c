@@ -2670,7 +2670,7 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
   }
 
   // No resizing down if frame size is below some limit.
-  if (cm->width * cm->height <= min_width * min_height) down_size_on = 0;
+  if ((cm->width * cm->height * 9 / 16) < min_width * min_height) down_size_on = 0;
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   // If denoiser is on, apply a smaller qp threshold.
