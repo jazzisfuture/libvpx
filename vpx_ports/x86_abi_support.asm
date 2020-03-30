@@ -120,15 +120,15 @@
 ;
 %ifdef CHROMIUM
   %ifidn   __OUTPUT_FORMAT__,elf32
-    %define PRIVATE :hidden
+    %define PRIVATE :function hidden
   %elifidn __OUTPUT_FORMAT__,elf64
-    %define PRIVATE :hidden
+    %define PRIVATE :function hidden
   %elifidn __OUTPUT_FORMAT__,elfx32
-    %define PRIVATE :hidden
+    %define PRIVATE :function hidden
   %elif LIBVPX_YASM_WIN64
     %define PRIVATE
   %else
-    %define PRIVATE :private_extern
+    %define PRIVATE :function private_extern
   %endif
 %else
   %define PRIVATE
