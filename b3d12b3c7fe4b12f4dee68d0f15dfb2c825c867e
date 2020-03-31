@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fb827a82_2d0392b2",
+        "filename": "vpx_ports/x86_abi_support.asm",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2020-03-31T06:39:05Z",
+      "side": 1,
+      "message": "For some reason %error does not cut it. I tried to create a repro, but a basic file (and with an include of %error) both work. Trimming the nasm command is non-deterministic - I put the %error at the top of the file, and sometimes with -DCHROMIUM it died, sometimes not, sometimes with -f macho64 etc etc etc. Super annoying. %fatal seems to work consistently though.",
+      "range": {
+        "startLine": 125,
+        "startChar": 7,
+        "endLine": 125,
+        "endChar": 12
+      },
+      "revId": "b3d12b3c7fe4b12f4dee68d0f15dfb2c825c867e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
