@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "52af791c_87c62775",
+        "filename": "libs.mk",
+        "patchSetId": 19
+      },
+      "lineNbr": 517,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-03-31T02:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ce50ea3e_0107ac92",
+      "range": {
+        "startLine": 517,
+        "startChar": 29,
+        "endLine": 517,
+        "endChar": 34
+      },
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "50480189_7fd10f79",
         "filename": "vp9/encoder/vp9_encoder.c",
         "patchSetId": 19
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "508df6bd_410bc97c",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 1526,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-03-31T02:38:05Z",
+      "side": 1,
+      "message": "I don\u0027t think so, it\u0027s just resetting some flags based on some conditions.",
+      "parentUuid": "50480189_7fd10f79",
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "32e2df66_784b4975",
         "filename": "vp9/encoder/vp9_encoder.c",
         "patchSetId": 19
@@ -53,6 +95,24 @@
       "writtenOn": "2020-03-28T02:16:16Z",
       "side": 1,
       "message": "this should be with the function declaration in some form.",
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73c08e87_ed823f66",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 1528,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-03-31T02:38:05Z",
+      "side": 1,
+      "message": "Sorry, what do you mean by \"with the function declaration\"?",
+      "parentUuid": "32e2df66_784b4975",
       "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "b1508a85_75aec354",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 19
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-03-31T02:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d66a94a0_ae13e795",
+      "range": {
+        "startLine": 11,
+        "startChar": 16,
+        "endLine": 11,
+        "endChar": 25
+      },
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5e29ce9_12f4df5e",
         "filename": "vp9/ratectrl_rtc.h",
         "patchSetId": 19
@@ -96,6 +180,24 @@
       "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3cbeaf7_946717c0",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 19
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-03-31T02:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5e29ce9_12f4df5e",
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
