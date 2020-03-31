@@ -119,6 +119,24 @@
     },
     {
       "key": {
+        "uuid": "a4356a4d_34928725",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 1528,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T19:24:59Z",
+      "side": 1,
+      "message": "\u003e Sorry, what do you mean by \"with the function declaration\"?\n\nSorry for the confusion. I just meant it should be in the header with the prototype rather than buried in the implementation. static functions could have a top-level (outside the function scope) comment, but ones that are public are  usually best put in the header. Any implementation details that don\u0027t affect the result of the function could be put here.",
+      "parentUuid": "73c08e87_ed823f66",
+      "revId": "1534fe34c1e1143bd8c906919968ebf0048e996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d66a94a0_ae13e795",
         "filename": "vp9/ratectrl_rtc.h",
         "patchSetId": 19
