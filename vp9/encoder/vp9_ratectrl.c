@@ -1765,7 +1765,7 @@ static void update_golden_frame_stats(VP9_COMP *cpi) {
   }
 }
 
-static void update_altref_usage(VP9_COMP *const cpi) {
+void vp9_update_altref_usage(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
   int sum_ref_frame_usage = 0;
   int arf_frame_usage = 0;
@@ -1787,7 +1787,7 @@ static void update_altref_usage(VP9_COMP *const cpi) {
   }
 }
 
-static void compute_frame_low_motion(VP9_COMP *const cpi) {
+void vp9_compute_frame_low_motion(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
   int mi_row, mi_col;
   MODE_INFO **mi = cm->mi_grid_visible;
@@ -1948,14 +1948,6 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   }
 
   if (oxcf->pass == 0) {
-    if (!frame_is_intra_only(cm) &&
-        (!cpi->use_svc ||
-         (cpi->use_svc &&
-          !svc->layer_context[svc->temporal_layer_id].is_key_frame &&
-          svc->spatial_layer_id == svc->number_spatial_layers - 1))) {
-      compute_frame_low_motion(cpi);
-      if (cpi->sf.use_altref_onepass) update_altref_usage(cpi);
-    }
     // For SVC: set avg_frame_low_motion (only computed on top spatial layer)
     // to all lower spatial layers.
     if (cpi->use_svc &&
