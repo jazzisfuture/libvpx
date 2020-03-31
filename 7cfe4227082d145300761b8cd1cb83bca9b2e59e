@@ -1,0 +1,271 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "07f739e3_ccfd7c9b",
+        "filename": "libs.mk",
+        "patchSetId": 30
+      },
+      "lineNbr": 496,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "you can break this line with \\ after the : or one of the variables",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f5c9834_49eb8187",
+        "filename": "libs.mk",
+        "patchSetId": 30
+      },
+      "lineNbr": 568,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "this line can be broken too to keep the length down",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d91fda8_a1a14789",
+        "filename": "libs.mk",
+        "patchSetId": 30
+      },
+      "lineNbr": 625,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "this could be a separate +\u003d to keep the length down",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10de3136_38981925",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 30
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "it looks like you\u0027re only using \u003cfstream\u003e.",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96c0d640_160d6b8c",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 30
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "...compares against ground truth",
+      "range": {
+        "startLine": 49,
+        "startChar": 49,
+        "endLine": 49,
+        "endChar": 76
+      },
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a699abb5_1a8a9964",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 30
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "this one could still use an update to take option flags like the spatial svc encoder",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "befeb087_362e1bf8",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 30
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "frame...base QP",
+      "range": {
+        "startLine": 71,
+        "startChar": 3,
+        "endLine": 71,
+        "endChar": 8
+      },
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e2f66c5_20716ee0",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 30
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "this is consistent with other tests now, but we could use \u003d default and override since they\u0027re being built as c++11. that may be better done globally rather than a test by test basis.",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7caed8e8_6350d3bf",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 30
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "you could check the state of failbit via rdstate() after this",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d91ff103_df2633bc",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 30
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "these could be private since they\u0027re only used within the class",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4d10ae3_76cbba44",
+        "filename": "vp9/encoder/vp9_ratectrl.h",
+        "patchSetId": 30
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "these should be prefixed with vp9_",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6055049b_f41d5a94",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 30
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "I think it would be useful to document the usage of the class in pseudo-code in a comment above the declaration",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cf00d3a_639da938",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 30
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "it\u0027s ok to call vpx_free with a null pointer",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a140c9a3_c718ab0a",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 30
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "you might want to document when these are valid to call. ComputeQP could even serve this purpose unless there\u0027s value in being able to retrieve it multiple times.",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12c0ee4d_103cc24c",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 30
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-03-31T23:49:04Z",
+      "side": 1,
+      "message": "from the name it\u0027s not clear what this does",
+      "revId": "7cfe4227082d145300761b8cd1cb83bca9b2e59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
