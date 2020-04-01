@@ -19,3 +19,4 @@ Use .text instead of .rodata on macho to avoid broken tables in PIC mode.
 Use .text with no alignment for aout
 Only use 'hidden' visibility with Chromium
 Prefix ARCH_* with VPX_.
+Check nasm version before using :private_extern

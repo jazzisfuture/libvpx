@@ -813,7 +813,12 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
         global %2:function %%VISIBILITY
     %elif FORMAT_MACHO
         %ifdef __NASM_VER__
-            global %2
+            %if __NASM_VERSION_ID__ < 0x020e0000 ; 2.14
+                ; nasm < 2.14 does not support :private_extern directive
+                global %2
+            %else
+                global %2:private_extern
+            %endif
         %else
             global %2:private_extern
         %endif
