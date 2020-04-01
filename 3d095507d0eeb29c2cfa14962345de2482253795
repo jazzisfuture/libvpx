@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "701dea85_2004531d",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 31
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-01T19:19:04Z",
+      "side": 1,
+      "message": "you can use GetDataPath() from video_source.h, it\u0027s able to handle instances where the environment variable isn\u0027t set. this will throw.",
+      "range": {
+        "startLine": 187,
+        "startChar": 18,
+        "endLine": 187,
+        "endChar": 67
+      },
+      "revId": "3d095507d0eeb29c2cfa14962345de2482253795",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55377985_abe5179f",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 31
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-01T19:19:04Z",
+      "side": 1,
+      "message": "an Init or factory function would be better to catch allocation errors.\n\nhttps://google.github.io/styleguide/cppguide.html#Doing_Work_in_Constructors",
+      "revId": "3d095507d0eeb29c2cfa14962345de2482253795",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
