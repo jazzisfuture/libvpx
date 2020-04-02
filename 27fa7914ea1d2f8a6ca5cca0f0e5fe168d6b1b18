@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d84adf50_31e34501",
+        "filename": "third_party/x86inc/README.libvpx",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2020-04-02T02:16:29Z",
+      "side": 0,
+      "message": "This just gets deleted by the \"copy x86_abi_support macros\" change",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 64
+      },
+      "revId": "27fa7914ea1d2f8a6ca5cca0f0e5fe168d6b1b18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6cc98ab4_dc32d18d",
+        "filename": "third_party/x86inc/README.libvpx",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2020-04-02T02:16:29Z",
+      "side": 0,
+      "message": "This is the whole reason for updating.",
+      "range": {
+        "startLine": 16,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 50
+      },
+      "revId": "27fa7914ea1d2f8a6ca5cca0f0e5fe168d6b1b18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
