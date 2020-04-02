@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa37810c_e1ad3f27",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 36
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-02T19:11:46Z",
+      "side": 1,
+      "message": "include \u003cnew\u003e and make this (std::nothrow) to keep the behavior consistent",
+      "range": {
+        "startLine": 20,
+        "startChar": 44,
+        "endLine": 20,
+        "endChar": 47
+      },
+      "revId": "0564084c27882e4a985114dfde4c7bf07aed81c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52f6fd6b_f974a57f",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 36
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-02T19:11:46Z",
+      "side": 1,
+      "message": "this isn\u0027t necessary with a unique_ptr",
+      "revId": "0564084c27882e4a985114dfde4c7bf07aed81c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "898bd797_84648113",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 36
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-02T19:11:46Z",
+      "side": 1,
+      "message": "you might want to call this Create(), the Init() pattern typically return a bool after the object was constructed.\n\nSince InitRateControl looks to be a one-off call, could you send the config into this function?",
+      "revId": "0564084c27882e4a985114dfde4c7bf07aed81c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ccd9a89a_b0b5a43b",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 36
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-02T19:11:46Z",
+      "side": 1,
+      "message": "you\u0027re missing vpx_mem.h for these",
+      "revId": "0564084c27882e4a985114dfde4c7bf07aed81c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8130553e_7de93573",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 36
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-02T19:11:46Z",
+      "side": 1,
+      "message": "merge this and the section below",
+      "revId": "0564084c27882e4a985114dfde4c7bf07aed81c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
