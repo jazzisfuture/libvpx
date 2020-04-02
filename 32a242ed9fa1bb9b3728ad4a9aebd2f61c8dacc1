@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b48a403c_ba050779",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 35
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-02T19:02:54Z",
+      "side": 1,
+      "message": "\u003e I don\u0027t find the benefit of factory function pattern on Init().\n\u003e Init() always returns non nullptr unless \"new\" operation fails.\n\u003e \n\nI think it\u0027s just a question of semantics. With Init() it\u0027s 2 steps and you have a partially constructed object in between, the factory is all or nothing. Init() was quite a common pattern in past code, however.\n\n\u003e Aside from it, this should be std::unique_ptr\u003c\u003e?",
+      "parentUuid": "33ff2ae6_0f166731",
+      "range": {
+        "startLine": 82,
+        "startChar": 8,
+        "endLine": 82,
+        "endChar": 28
+      },
+      "revId": "32a242ed9fa1bb9b3728ad4a9aebd2f61c8dacc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "df889233_74b37f46",
         "filename": "vp9/ratectrl_rtc.h",
         "patchSetId": 35
