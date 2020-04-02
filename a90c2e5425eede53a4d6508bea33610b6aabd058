@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f5b6a6fb_392e7212",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2020-04-02T07:09:55Z",
+      "side": 1,
+      "message": "macho32 😭",
+      "range": {
+        "startLine": 7,
+        "startChar": 25,
+        "endLine": 7,
+        "endChar": 32
+      },
+      "revId": "a90c2e5425eede53a4d6508bea33610b6aabd058",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
