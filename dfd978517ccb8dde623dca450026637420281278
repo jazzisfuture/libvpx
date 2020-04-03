@@ -70,6 +70,30 @@
       "revId": "dfd978517ccb8dde623dca450026637420281278",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27248bc8_402cc845",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 16
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2020-04-03T02:46:11Z",
+      "side": 1,
+      "message": "No strong reason, but in calling outside of libvpx, the namespace would clarify more where the function is.",
+      "parentUuid": "156ae271_fae5acb5",
+      "range": {
+        "startLine": 24,
+        "startChar": 10,
+        "endLine": 24,
+        "endChar": 13
+      },
+      "revId": "dfd978517ccb8dde623dca450026637420281278",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

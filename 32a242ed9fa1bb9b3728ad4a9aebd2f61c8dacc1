@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "c002ff0e_0987d57d",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 35
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2020-04-03T02:46:11Z",
+      "side": 1,
+      "message": "Alright, now Create() might return nullptr. So this Create() function looks good to me.",
+      "parentUuid": "b48a403c_ba050779",
+      "range": {
+        "startLine": 82,
+        "startChar": 8,
+        "endLine": 82,
+        "endChar": 28
+      },
+      "revId": "32a242ed9fa1bb9b3728ad4a9aebd2f61c8dacc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "df889233_74b37f46",
         "filename": "vp9/ratectrl_rtc.h",
         "patchSetId": 35
