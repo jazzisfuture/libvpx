@@ -24,11 +24,10 @@ extern "C" {
 /*!\brief The maximum number of work buffers used by libvpx.
  *  Support maximum 4 threads to decode video in parallel.
  *  Each thread will use one work buffer.
- * TODO(hkuang): Add support to set number of worker threads dynamically.
  */
 #define VPX_MAXIMUM_WORK_BUFFERS 8
 
-/*!\brief The maximum number of reference buffers that a VP9 encoder may use.
+/*!\brief The maximum number of reference buffers that a VP9 decoder may use.
  */
 #define VP9_MAXIMUM_REF_BUFFERS 8
 
