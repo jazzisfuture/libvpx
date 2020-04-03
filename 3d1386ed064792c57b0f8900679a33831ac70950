@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "280b200d_20561544",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 40
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-03T02:19:15Z",
+      "side": 1,
+      "message": "usually the header that the test is covering is include first, not sure if you want to rename this one to be closer: ratectrl_rtc_test.cc\n\nhttps://google.github.io/styleguide/cppguide.html#Names_and_Order_of_Includes",
+      "revId": "3d1386ed064792c57b0f8900679a33831ac70950",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e23e0d77_d797f678",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 40
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-03T02:19:15Z",
+      "side": 1,
+      "message": "struct members don\u0027t use trailing \u0027_\u0027s:\n\nhttps://google.github.io/styleguide/cppguide.html#Variable_Names",
+      "range": {
+        "startLine": 34,
+        "startChar": 14,
+        "endLine": 34,
+        "endChar": 15
+      },
+      "revId": "3d1386ed064792c57b0f8900679a33831ac70950",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "720d4394_50476b82",
+        "filename": "test/vp9_rc_interface_test.cc",
+        "patchSetId": 40
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-03T02:19:15Z",
+      "side": 1,
+      "message": "public goes before protected:\n\nhttps://google.github.io/styleguide/cppguide.html#Declaration_Order\n\nOnly the Run*() calls need to be public / protected given they\u0027re called from the test",
+      "revId": "3d1386ed064792c57b0f8900679a33831ac70950",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
