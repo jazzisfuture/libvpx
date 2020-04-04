@@ -22,6 +22,30 @@
       "revId": "676c936ed3f832d9e3a70314b59c12d93e8b51d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d077ecbb_74b808c2",
+        "filename": "vpx/vpx_frame_buffer.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-04-04T02:17:21Z",
+      "side": 0,
+      "message": "\u003e I believe this comment is referring to frame parallel decoding. It is not implemented in libvpx, right?\n\nthat\u0027s right, I stripped it. technically this entire define could go away given it was meant for frame parallel only.",
+      "parentUuid": "fb9789db_1b3a68bb",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 73
+      },
+      "revId": "676c936ed3f832d9e3a70314b59c12d93e8b51d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
