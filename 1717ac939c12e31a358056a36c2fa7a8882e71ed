@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7e3e54d_5161cb34",
+        "filename": "vpx_ports/x86_abi_support.asm",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2020-04-06T08:31:05Z",
+      "side": 1,
+      "message": "This also makes it obvious that we only need to check nasm \u003e 2.14 for macho, but I\u0027m not sure it\u0027s worth making that fine grain distinction unless this gets used outside chromium.",
+      "range": {
+        "startLine": 136,
+        "startChar": 21,
+        "endLine": 136,
+        "endChar": 35
+      },
+      "revId": "1717ac939c12e31a358056a36c2fa7a8882e71ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
