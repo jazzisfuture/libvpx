@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fb00816b_24ec0f58",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 43
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-04-06T22:33:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d3ffa26_2bf49d95",
+      "revId": "626160dc5422ebc13c8dcb412289185451215dc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73f8b152_79e445b1",
         "filename": "vp9/ratectrl_rtc.cc",
         "patchSetId": 43
@@ -30,6 +48,24 @@
       "writtenOn": "2020-04-06T20:15:32Z",
       "side": 1,
       "message": "this is just optional, you could return immediately on allocation error and save some indent -\u003e if (!rc_api) return nullptr;",
+      "revId": "626160dc5422ebc13c8dcb412289185451215dc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "90298b5f_e2a0fba7",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 43
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-04-06T22:33:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73f8b152_79e445b1",
       "revId": "626160dc5422ebc13c8dcb412289185451215dc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
